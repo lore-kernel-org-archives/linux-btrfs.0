@@ -1,131 +1,172 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from magic.merlins.org ([209.81.13.136]:54174 "EHLO
-	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754668AbcARXkO (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 18 Jan 2016 18:40:14 -0500
-Date: Mon, 18 Jan 2016 15:39:43 -0800
-From: Marc MERLIN <marc@merlins.org>
-To: Duncan <1i5t5.duncan@cox.net>, Hugo Mills <hugo@carfax.org.uk>,
-        Btrfs mailing list <linux-btrfs@vger.kernel.org>
-Subject: Re: BTRFS: bdev /dev/mapper/dshelf1 errs: wr 2970, rd 848, flush 0,
- corrupt 189, gen 0
-Message-ID: <20160118233943.GF17679@merlins.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20160118124533.GU422@carfax.org.uk>
- <pan$6d745$1ec4d122$7401737e$1adc2b07@cox.net>
+Received: from plane.gmane.org ([80.91.229.3]:49000 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751786AbcASIay (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 19 Jan 2016 03:30:54 -0500
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+	id 1aLRgi-0000UE-Tb
+	for linux-btrfs@vger.kernel.org; Tue, 19 Jan 2016 09:30:52 +0100
+Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Tue, 19 Jan 2016 09:30:52 +0100
+Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Tue, 19 Jan 2016 09:30:52 +0100
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: Why is dedup inline, not delayed (as opposed to offline)?
+ Explain like I'm five pls.
+Date: Tue, 19 Jan 2016 08:30:43 +0000 (UTC)
+Message-ID: <pan$9821b$e84a8fc3$23a877ef$2b0858e0@cox.net>
+References: <loom.20160116T132316-196@post.gmane.org>
+	<569C41B1.1090206@cn.fujitsu.com>
+	<pan$9ea8b$cdf4a5be$a6b3ced0$e73fd4ce@cox.net>
+	<569C58FB.70407@cn.fujitsu.com>
+	<pan$9dd9b$58cdc4a$94401f0f$f97ce29e@cox.net> <569CDF0D.9030609@gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Jan 18, 2016 at 03:21:53AM +0000, Duncan wrote:
-> No.  Those are monotonically increasing counts that are never 
-> automatically reset over the life of the filesystem.  Use ...
+Austin S. Hemmelgarn posted on Mon, 18 Jan 2016 07:48:13 -0500 as
+excerpted:
+
+> On 2016-01-17 22:51, Duncan wrote:
+>>
+>> Checking a bit more my understanding, since you brought up the btrfs
+>> "commit=" mount option.
+>>
+>> I knew about the option previously, and obviously knew it worked in the
+>> same context as the page-cache stuff, but in my understanding the btrfs
+>> "commit=" mount option operates at the filesystem layer, not the
+>> general filesystem-vm layer controlled by /proc/sys/vm/dirty_*.  In my
+>> understanding, therefore, the two timeouts could effectively be added,
+>> yielding a maximum 1 minute (30 seconds btrfs default commit time plus
+>> 30 seconds vm expiry) commit time.
 > 
-> btrfs dev stats
+> In a way, yes, except the commit option controls when a transaction is
+> committed, and thus how often the log tree gets cleared.  It's
+> essentially saying 'ensure the filesystem is consistent without
+> replaying a log at least this often'.  AFAIUI, this doesn't guarantee
+> that you'll go that long without a transaction, but puts an upper bound
+> on it.  Looking at it another way, it pretty much says that you don't
+> care about losing the last n seconds of changes to the FS.
+
+Thanks.  That's the way I was treating it.
+
+> The sysctl values are a bit different, and control how long the kernel
+> will wait in the VFS layer to try and submit a larger batch of writes at
+> once, so that the block layer has more it can try to merge, and
+> hopefully things get written out faster as a result.  IOW, it's a knob
+> to control the VFS level write-back caching to try and tune for
+> performance.  This also ties in with
+> /proc/sys/vm/dirty_writeback_centisecs, which is how often after the
+> expiration hits that the kernel will flush a chunk of the cache, and
+> /proc/sys/vm/dirty_{background,}_{bytes,ratio} which puts an upper limit
+> on how much data will be buffered before trying to flush it out to
+> persistent storage.  You almost certainly want to change these, as they
+> defaults to 10% of system RAM, which is why it often takes a ridiculous
+> amount of time to unmount a flash drive that's been written to a lot.
+> dirty_{ratio,bytes} control the per-process limit, and
+> dirty_background_{ratio,bytes} control the system-wide limit.
+
+Got that too, and yes, I've been known to recommend to others changes to 
+the now-days ridiculous 10% of system RAM buffer thing, as well. =:^)  
+Random writes to spinning rust in particular may be 30 MiB/sec real-
+world, and 10% of 16 GiB is 1.6 GiB, 50-some seconds worth of writeback.  
+When the timeout is 30 seconds and the backlog is nearly double that, 
+something's wrong.  I set mine to 3% foreground (~ half a gig @ 16 GiB) 
+and 1% (~160 MiB) background when I upgraded to 16 GiB RAM, tho now I 
+have fast SSDs, but didn't see a need to boost it back up, as half a GiB 
+is quite enough to have unsynced in case of a crash anyway.
+
+(Obviously once RAM goes above ~16 GiB, for systems not yet on fast SSD, 
+the bytes values begin to make more sense to use than ratio, as 1% of RAM 
+is simply no longer fine enough granularity.  But 1% of 16 GiB is ~163 
+MiB, ~5 seconds worth @ 30 MiB/sec, so fine /enough/... barely.  The 3% 
+foreground figure is then ~16 seconds worth of writeback, a bit 
+uncomfortable if you're waiting on it, but comfortably below the 30 
+second timeout and still at least tolerable in human terms, so not /too/ 
+bad.  And as I said, for me the system and /home are now on fast SSD, so 
+in practice the only time I'm worrying about spinning rust transfer 
+backlogs is on the media and backups drive, which is still spinning 
+rust.  And it's tolerable there, so the ratio knobs continue to be fine, 
+for my own use.)
+
+>> But that has always been an unverified on my part fuzzy assumption. 
+>> The two times could be the same layer, with the btrfs mount option
+>> being a per-filesystem method of controlling the same thing that
+>> /proc/sys/vm/ dirty_expire_centisecs controls globally (as you seemed
+>> to imply above), or the two could be different layers but with the
+>> countdown times overlapping, both of which would result in a 30-second
+>> total timeout, instead of the 30+30=60 that I had assumed.
 > 
-> ... to display them on the commandline (vs. the kernel log at filesystem 
-> mount), with the -z option to reset them after display, if desired.
+> The two timers do overlap.
 
-It's a bit counter intuitive that check --repair doesn't reset error counts if it fixed
-underlying errors, but maybe there is a good reason :)
+Good to have it verified. =:^)  The difference between 30 seconds and a 
+minute's worth of work lost in a crash can be quite a lot, if one was 
+copying a big set of small files at the time.
 
-btrfs dev stats -z /dev/mapper/dshelf1
-put everything back to 0 as you hinted, I can now watch what's going on
-from here on, thanks.
+>> And while we're at it, how does /proc/sys/vm/vfs_cache_pressure play
+>> into all this?  I know the dirty_* and how the dirty_*bytes vs.
+>> dirty_*ratio vs. dirty_*centisecs thing works, but don't quite
+>> understand how vfs_cache_pressure fits in with dirty_*.
 
-On Mon, Jan 18, 2016 at 12:45:33PM +0000, Hugo Mills wrote:
-> > bad extent [8697338122240, 8697338126336), type mismatch with chunk
-> > bad extent [8697338126336, 8697338130432), type mismatch with chunk
-> > bad extent [8697338130432, 8697338134528), type mismatch with chunk
-> 
->    This is, I think, a symptom of an FS created with a broken
-> mkfs.btrfs, and it needs to be re-created. Take a look for that error
-> message in the mailing list archives -- there's been a few posts about
-> it in the last couple of months.
- 
-Thanks for that other hint.
-It was created quite a while ago (1y+), and ran ok until I had an
-unexpected crash.
-If I have to rebuild it, I will, but that will take 2 days+ due to the 
-size and getting the backup back (well also, I'm not home for a week, so
-restoring backups remotely isn't going to be fun).
+> vfs_cache_pressure controls how likely the kernel is to drop clean pages
+> (the documentation says just dentries and inodes, but I'm relatively
+> certain it's anything in the VFS cache) from the VFS cache to get memory
+> to allocate.  The higher this is, the more likely the VFS cache is to
+> get invalidated.  In general, you probably want to increase this on
+> systems that have fast storage (like SSD's or really good SAS RAID
+> arrays, 150 is usually a decent start), and decrease it if you have
+> really slow storage (Like a Raspberry Pi for example).  Setting this too
+> low (below about 50) however, will give you a very high chance of
+> getting an OOM condition.
 
-But sure enough, while it ran perfectly fine for a long time, after check --repair,
-my machine is now crashing every hour or so, with the crash below.
+So vfs_cache_pressure only applies if you're out of "free" memory, and 
+the kernel has to decide whether to dump cache or OOM, correct?  On 
+systems with enough memory, and with stuff like the local package cache 
+and/or multimedia on separate partitions that are mounted only when 
+needed and unmounted when not, so actual system-and-apps plus buffers 
+plus cache memory generally stays reasonably below total RAM, with 
+reasonable ulimits and tmpfs maximum sizes set so apps can't go hog-wild, 
+there's zero cache pressure so this setting doesn't apply at all... 
+unless/until there's a bad kernel leak and/or several apps go somewhat 
+wild, plus something's maximizing a few of those tmpfs, all at once, of 
+course.
 
-I had to have an older kernel due to a separate problem where PMP (sata
-port multiplier) support was broken in more recent kernels.
-I've just put 4.3.3 on it to see if crashes still, but either way, I thought
-btrfs had gotten rid of its last BUG_ON(xxx). System should never crash
-due to unexpected filesystem state on a non system partition.
+(As I write this system/app memory usage is ~2350 MiB, buffers 4 MiB, 
+cache 7321 MiB, total usage ~9680 MiB, on a 16 GiB system.  That's with 
+about three days uptime, after mounting the packages partition and 
+remounting / rw and doing a bunch of builds, then umounting the pkgs 
+partition, killing X and running a lib_users check to ensure no services 
+are running on outdated deleted libs and need restarted, remounting / ro, 
+and restarting X.  At some point I had the media partition mounted too, 
+but now it's unmounted again, dropping that cache.  So in addition to 
+cache memory which /could/ be dumped if I had to, I have 6+ GiB of 
+entirely idle unused memory.  Nice as I don't have swap configured, so if 
+I'm out of RAM, I'm out, but there's a lot of cache to dump first before 
+it gets that bad.  Meanwhile, zero cache pressure, and 6+ GiB of spare 
+RAM to use for apps/tmpfs/cache if I need it, before any cache dumps at 
+all! =:^)
 
-Mmmh, scratch this, here's the BUG_ON, it's a memory problem :(
-fs/btrfs/ctree.c:5200
-		/* save our key for returning back */
-		btrfs_node_key_to_cpu(cur, &found_key, slot);
-		path->slots[level] = slot;
-		if (level == path->lowest_level) {
-			ret = 0;
-			goto out;
-		}
-		btrfs_set_path_blocking(path);
-		cur = read_node_slot(root, cur, slot);
-		BUG_ON(!cur); /* -ENOMEM */
+> Documentation/sysctl/vm.txt in the kernel sources covers them, although
+> the documentation is a bit sparse even there.
 
-Did check --repair potentially change my FS in a way that is now making the
-kernel take a lot of RAM and crash?
+I knew the kernel's proc documentation in Documentation/filesystems/
+proc.txt, plus whatever outside resource it was that originally got me 
+looking into the whole thing in the first place, I had the /proc/sys/vm/
+dirty_* files and their usage covered.  But the sysctl/* doc files and 
+the the vfs_cache_pressure proc file, not so much, and as I said I didn't 
+understand how the btrfs commit= mount option fit into all of this.  So 
+now I have a rather better understanding of how it all fits together. =:^)
 
-
-------------[ cut here ]------------
-kernel BUG at fs/btrfs/ctree.c:5200!
-invalid opcode: 0000 [#1] SMP
-CPU: 3 PID: 29041 Comm: btrfs Tainted: G        W       4.2.5-amd64-i915-volpreempt-20150421 #4
-Hardware name: System manufacturer System Product Name/P8H67-M PRO, BIOS 3904 04/27/2013
-task: ffff88002f8482c0 ti: ffff8800c9058000 task.ti: ffff8800c9058000
-RIP: 0010:[<ffffffff81234001>]  [<ffffffff81234001>] btrfs_search_forward+0x1a6/0x24b
-RSP: 0018:ffff8800c905bbc8  EFLAGS: 00010246
-RAX: 0000000000000000 RBX: ffff8801494409b0 RCX: 000000000003c6c8
-RDX: 0000000000000000 RSI: 000000000aa60000 RDI: fffffffffffffffb
-RBP: ffff8800c905bc38 R08: 0000000001c00000 R09: 0000000000000000
-R10: 0000000000aaaaaa R11: ffffffff818799e0 R12: 0000000000000000
-R13: 0000000000000001 R14: 0000000000000000 R15: ffff8801494409b4
-FS:  00007fa9d46848c0(0000) GS:ffff88021e2c0000(0000) knlGS:0000000000000000
-CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
-CR2: 00000000f77cd000 CR3: 0000000143780000 CR4: 00000000001406e0
-Stack:
- ffff8800c9bb6050 0001880149440a18 ffff8800c905bc87 ffff8800c939a800
- 0000000000000003 1a0000000000002e 84000000000000b3 000000000003c59e
- 000000000000002c ffff8801494409b0 0000000000000000 ffff8800c905bce0
-Call Trace:
- [<ffffffff81278ca5>] search_ioctl+0xfc/0x167
- [<ffffffff81278d6b>] btrfs_ioctl_tree_search+0x5b/0x8e
- [<ffffffff8127c6af>] btrfs_ioctl+0x396/0x232f
- [<ffffffff81123a2d>] ? get_page+0xe/0x28
- [<ffffffff81123e68>] ? __lru_cache_add+0x23/0x44
- [<ffffffff81124139>] ? lru_cache_add_active_or_unevictable+0x2d/0x6b
- [<ffffffff8113a2df>] ? set_pte_at+0x9/0xd
- [<ffffffff8113e21d>] ? handle_mm_fault+0x90e/0xe9b
- [<ffffffff8100d02b>] ? paravirt_write_msr+0xf/0x13
- [<ffffffff811814af>] do_vfs_ioctl+0x39b/0x412
- [<ffffffff810ace61>] ? current_kernel_time+0xe/0x32
- [<ffffffff810d4d5c>] ? __audit_syscall_entry+0xbe/0xe0
- [<ffffffff81181580>] SyS_ioctl+0x5a/0x7f
- [<ffffffff816b0032>] entry_SYSCALL_64_fastpath+0x16/0x75
-Code: 89 47 40 44 3b ab 84 00 00 00 74 69 48 89 df e8 f7 a3 ff ff 8b 55 b8 48 8b 7d a8 4c 89 e6 e8 d8 86 ff ff 48 85 c0 
-<0f> 0b 48 89 c7 e8 23 a7 04 00 41 8d 45 ff 41 c7 47 5c 02 00 00
-RIP  [<ffffffff81234001>] btrfs_search_forward+0x1a6/0x24b
- RSP <ffff8800c905bbc8>
----[ end trace e3c37adcaa703f63 ]---
-Kernel panic - not syncing: Fatal exception
-Kernel Offset: disabled
-drm_kms_helper: panic occurred, switching back to text console
-
-
-
+Thanks.
 
 -- 
-"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
-Microsoft is to operating systems ....
-                                      .... what McDonalds is to gourmet cooking
-Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

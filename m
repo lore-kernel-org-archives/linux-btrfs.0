@@ -1,55 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:44843 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:44848 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S932983AbcASKn5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 19 Jan 2016 05:43:57 -0500
+	id S932985AbcASKoA (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 19 Jan 2016 05:44:00 -0500
 From: David Sterba <dsterba@suse.com>
 To: linux-btrfs@vger.kernel.org
-Cc: Geliang Tang <geliangtang@163.com>, David Sterba <dsterba@suse.com>
-Subject: [PATCH 2/4] btrfs: fix iterator with update error in backref.c
-Date: Tue, 19 Jan 2016 11:43:51 +0100
-Message-Id: <8e217858eea0d63de9d818f52fa98b5f9e502e5a.1453199864.git.dsterba@suse.com>
+Cc: Dan Carpenter <dan.carpenter@oracle.com>, David Sterba <dsterba@suse.com>
+Subject: [PATCH 3/4] Btrfs: clean up an error code in btrfs_init_space_info()
+Date: Tue, 19 Jan 2016 11:43:54 +0100
+Message-Id: <0dc924c5f2a3c4d999e12feaccee5f970cea1315.1453199864.git.dsterba@suse.com>
 In-Reply-To: <cover.1453199864.git.dsterba@suse.com>
 References: <cover.1453199864.git.dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Geliang Tang <geliangtang@163.com>
+From: Dan Carpenter <dan.carpenter@oracle.com>
 
-Fix the following error:
+If we return 1 here, then the caller treats it as an error and returns
+-EINVAL.  It causes a static checker warning to treat positive returns
+as an error.
 
-fs/btrfs/backref.c:565:1-20: iterator with update on line 577
-
-Fixes: a7ca422('btrfs: use list_for_each_entry* in backref.c')
-Signed-off-by: Geliang Tang <geliangtang@163.com>
+Fixes: 1aba86d67f34 ('Btrfs: fix easily get into ENOSPC in mixed case')
+Signed-off-by: Dan Carpenter <dan.carpenter@oracle.com>
 Signed-off-by: David Sterba <dsterba@suse.com>
 ---
- fs/btrfs/backref.c | 10 +++++-----
- 1 file changed, 5 insertions(+), 5 deletions(-)
+ fs/btrfs/extent-tree.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
-index 08405a3da6b1..b90cd3776f8e 100644
---- a/fs/btrfs/backref.c
-+++ b/fs/btrfs/backref.c
-@@ -560,13 +560,13 @@ static int __add_missing_keys(struct btrfs_fs_info *fs_info,
-  */
- static void __merge_refs(struct list_head *head, int mode)
- {
--	struct __prelim_ref *ref1;
-+	struct __prelim_ref *pos1;
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 8c912894a5bd..9d70330c6ebf 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -10509,7 +10509,7 @@ int btrfs_init_space_info(struct btrfs_fs_info *fs_info)
  
--	list_for_each_entry(ref1, head, list) {
--		struct __prelim_ref *ref2 = ref1, *tmp;
-+	list_for_each_entry(pos1, head, list) {
-+		struct __prelim_ref *pos2 = pos1, *tmp;
+ 	disk_super = fs_info->super_copy;
+ 	if (!btrfs_super_root(disk_super))
+-		return 1;
++		return -EINVAL;
  
--		list_for_each_entry_safe_continue(ref2, tmp, head, list) {
--			struct __prelim_ref *xchg;
-+		list_for_each_entry_safe_continue(pos2, tmp, head, list) {
-+			struct __prelim_ref *xchg, *ref1 = pos1, *ref2 = pos2;
- 			struct extent_inode_elem *eie;
- 
- 			if (!ref_for_same_block(ref1, ref2))
+ 	features = btrfs_super_incompat_flags(disk_super);
+ 	if (features & BTRFS_FEATURE_INCOMPAT_MIXED_GROUPS)
 -- 
 2.6.3
 

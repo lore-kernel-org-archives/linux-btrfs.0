@@ -1,41 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mailgw-01.dd24.net ([193.46.215.41]:55301 "EHLO
+Received: from mailgw-01.dd24.net ([193.46.215.41]:55330 "EHLO
 	mailgw-01.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756793AbcASB74 (ORCPT
+	with ESMTP id S1756986AbcASCA5 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 18 Jan 2016 20:59:56 -0500
-Message-ID: <1453168792.6445.2.camel@scientia.net>
-Subject: Re: [PATCH V6 2/3] btrfs: Introduce new mount option to disable
- tree log replay
+	Mon, 18 Jan 2016 21:00:57 -0500
+Message-ID: <1453168853.6445.3.camel@scientia.net>
+Subject: Re: [PATCH V6 1/3] btrfs: Introduce new mount option usebackuproot
+ to replace recovery
 From: Christoph Anton Mitterer <calestyo@scientia.net>
 To: Qu Wenruo <quwenruo@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
-Date: Tue, 19 Jan 2016 02:59:52 +0100
-In-Reply-To: <1453168195-18518-3-git-send-email-quwenruo@cn.fujitsu.com>
+Date: Tue, 19 Jan 2016 03:00:53 +0100
+In-Reply-To: <1453168195-18518-2-git-send-email-quwenruo@cn.fujitsu.com>
 References: <1453168195-18518-1-git-send-email-quwenruo@cn.fujitsu.com>
-	 <1453168195-18518-3-git-send-email-quwenruo@cn.fujitsu.com>
+	 <1453168195-18518-2-git-send-email-quwenruo@cn.fujitsu.com>
 Content-Type: multipart/signed; micalg="sha-512";
 	protocol="application/x-pkcs7-signature";
-	boundary="=-TjukRvYrcUG0EuAQ6ZiG"
+	boundary="=-p7IDCD8HwpTbY/s17BM7"
 Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---=-TjukRvYrcUG0EuAQ6ZiG
+--=-p7IDCD8HwpTbY/s17BM7
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
 
 On Tue, 2016-01-19 at 09:49 +0800, Qu Wenruo wrote:
-> Introduce a new mount option "nologreplay" to co-operate with "ro"
-> mount
-> option to get real readonly mount, like "norecovery" in ext* and xfs.
+> Also, since "backuproot" will only affect mount behavior and after
+> open_ctree() it has nothing to do with the filesystem, so clear the
+> flag
+> after mount succeeded.
+Haven't we talked about that it may be better to use something like
+"usebackuproot",... cause just "backuproot" rather sounds like
+"[perform] backup [of] root"?
 
-What happened to the nice plans to get a proper dedicated mount option
-for hard ro mounts, that will work even as btrfs changes and would
-require further options to get that behaviour?
-
+Cheers,
 Chris.
---=-TjukRvYrcUG0EuAQ6ZiG
+--=-p7IDCD8HwpTbY/s17BM7
 Content-Type: application/x-pkcs7-signature; name="smime.p7s"
 Content-Disposition: attachment; filename="smime.p7s"
 Content-Transfer-Encoding: base64
@@ -127,25 +128,25 @@ Yeq6UTW/JmfxF4xcbkNK/rv9ISBg9K+mZtg2QXr+P/CJBtej2RLUMYIEfjCCBHoCAQEwgYkwdTEL
 MAkGA1UEBhMCSUwxFjAUBgNVBAoTDVN0YXJ0Q29tIEx0ZC4xKTAnBgNVBAsTIFN0YXJ0Q29tIENl
 cnRpZmljYXRpb24gQXV0aG9yaXR5MSMwIQYDVQQDExpTdGFydENvbSBDbGFzcyAyIENsaWVudCBD
 QQIQPZ6tDP/RHLwcz1F+2kRADzANBglghkgBZQMEAgMFAKCCAcUwGAYJKoZIhvcNAQkDMQsGCSqG
-SIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTYwMTE5MDE1OTUyWjBPBgkqhkiG9w0BCQQxQgRAWHn8
-Bkpb7E1aFGIRgBz5uKrzTzEi8z5wQ7/syOchwoKvKYURcpld9ckWZ//Qd+aFzmbnWtWne/ZuEkK8
-o3LydjCBmgYJKwYBBAGCNxAEMYGMMIGJMHUxCzAJBgNVBAYTAklMMRYwFAYDVQQKEw1TdGFydENv
+SIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTYwMTE5MDIwMDUzWjBPBgkqhkiG9w0BCQQxQgRAj4/F
+Tqssfp+QiLC8/1P8UfGy574hLcyn/x5UOhpH9z99qr+Hqa8RFqRBpPY8djpvyEnJhvkE8u23DZQX
+03jq+TCBmgYJKwYBBAGCNxAEMYGMMIGJMHUxCzAJBgNVBAYTAklMMRYwFAYDVQQKEw1TdGFydENv
 bSBMdGQuMSkwJwYDVQQLEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0eTEjMCEGA1UE
 AxMaU3RhcnRDb20gQ2xhc3MgMiBDbGllbnQgQ0ECED2erQz/0Ry8HM9RftpEQA8wgZwGCyqGSIb3
 DQEJEAILMYGMoIGJMHUxCzAJBgNVBAYTAklMMRYwFAYDVQQKEw1TdGFydENvbSBMdGQuMSkwJwYD
 VQQLEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0eTEjMCEGA1UEAxMaU3RhcnRDb20g
-Q2xhc3MgMiBDbGllbnQgQ0ECED2erQz/0Ry8HM9RftpEQA8wDQYJKoZIhvcNAQEBBQAEggIAgCli
-wkIdE4ylS3EBvSGB6PVdKRTUvnMT8zksEf8685DcjnfjJrrw8mAsVlU/eEHvaSHOoCvL5VFCuMn2
-47v0fqNOkF+wiIreTmyMsjOxBYpayf4nHXVkiQmhDyWwmuebfpJ1Ez0J2/TTkZ5PelytJ1VJy4JK
-fLnC6997fHVR8X9xshWhObi8IwGj9r2T3/FDwHWxh+wwHgTOUXmx3WP/p7B5fO/HLyHo3u8KbVqm
-ylSvWJZ9ZOO8t95Si4Uwc6jCXKwv8yBKTIVLr7nZPjdyvIVPi74Pdt2U65iiIXEIFUN6R+0Yld/e
-5BxS8BvbmFOmcsWtnS11w/Myb6mvhuAZumu4c7anKeBg/57FKWUuLx+oM0qrKLAMXMPwOqxjnpHK
-CcPQ1ZvqUFq5XJukwy3OcT4UXz4DIAT/Qwdcomanb3pRsts1E/44BTl6jZXLWjFNEQ2pIT/bQc/R
-iKPUxyVRqax373ysZy0QBBdmK0lDZ71MNBTS/N+95OkXpXBf+Yi8bkzmkv6UBcD8pgbEJPaTn74i
-bP8r9NwnvomqBg/ttR2u95QXH3orZgdmmLJEblpQQYntU69qJldbPG3dRzwx0oL4Mq1ig1XxaToy
-2brV1oneSlQwn7lnV4fMu8HxgRYaVo6s1bMFlNCgEbQETwyY7TQWoTKOSzEbw6XhhghS6kgAAAAA
+Q2xhc3MgMiBDbGllbnQgQ0ECED2erQz/0Ry8HM9RftpEQA8wDQYJKoZIhvcNAQEBBQAEggIAjjkf
+/vi8FAUXpHshppqYaNfNIQiRdsOKqElSLIAUNa6fF9tMVsIwvSV27ysov9jev4mtVmfr2Dzm92RH
+uNVmyiIPQYqolXvftCxuvqYMHVoShwTJ4LCSB6H/iUr3H9xO3K4E9V/SZ6SS8OvZ31KswQXhPoN4
+lM3wM/FWIueVnr9AAYwCPCD034dNEf1PEOQvHFpp9ziARsjs94BeR0XkAKiG3JlY88fl+GQqm7kr
+1NUV+WFa2W4ud40f3I4B0SVov/wUH/5Mki5m3oBvmiT47aDUUNjYAaGlxHzt55gYgJ1JNyD7NxHU
+zUMphJyblnRDNbYXvjLl6QG3m1gYpGxRy+JC/Dau2EOzwmFXQjsDugbj9KP+Pscl8LGr8LgBcUuZ
+nsx/0peKBadzO+qRf5yehTdSGevi30D7UoXoWZYSRYOLh9y62HLthJqWQu10a4dUwOrp/V0Yh99l
+JgwTMTHSd+0IT4/e8Stxc0g0Od8fgoqfjZ2H4KMK0klYgPnBkzKztSlEumPGoHKUf80+LRIrdnt5
+RVLdjw1FBULccaSDa5er6vkPCd71aIdebTsvadsw7739RmdZiLFLtRvNTdMc6i7IY05WKOLOK0jJ
+9Sxfqt73CrWD8epwBAB9OV8V3dwCcqz+aqTudYm8OXxQkQk4rwC0KjuU+txOOf+XLih9YZcAAAAA
 AAA=
 
 
---=-TjukRvYrcUG0EuAQ6ZiG--
+--=-p7IDCD8HwpTbY/s17BM7--
 

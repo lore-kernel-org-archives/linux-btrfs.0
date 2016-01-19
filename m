@@ -1,212 +1,151 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:29715 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1756982AbcASBuX (ORCPT
+Received: from mailgw-01.dd24.net ([193.46.215.41]:55301 "EHLO
+	mailgw-01.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756793AbcASB74 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 18 Jan 2016 20:50:23 -0500
-Received: from G08CNEXCHPEKD02.g08.fujitsu.local (unknown [10.167.33.83])
-	by cn.fujitsu.com (Postfix) with ESMTP id B1BB341896D6
-	for <linux-btrfs@vger.kernel.org>; Tue, 19 Jan 2016 09:50:02 +0800 (CST)
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH V6 2/3] btrfs: Introduce new mount option to disable tree log replay
-Date: Tue, 19 Jan 2016 09:49:54 +0800
-Message-ID: <1453168195-18518-3-git-send-email-quwenruo@cn.fujitsu.com>
-In-Reply-To: <1453168195-18518-1-git-send-email-quwenruo@cn.fujitsu.com>
+	Mon, 18 Jan 2016 20:59:56 -0500
+Message-ID: <1453168792.6445.2.camel@scientia.net>
+Subject: Re: [PATCH V6 2/3] btrfs: Introduce new mount option to disable
+ tree log replay
+From: Christoph Anton Mitterer <calestyo@scientia.net>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
+Date: Tue, 19 Jan 2016 02:59:52 +0100
+In-Reply-To: <1453168195-18518-3-git-send-email-quwenruo@cn.fujitsu.com>
 References: <1453168195-18518-1-git-send-email-quwenruo@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+	 <1453168195-18518-3-git-send-email-quwenruo@cn.fujitsu.com>
+Content-Type: multipart/signed; micalg="sha-512";
+	protocol="application/x-pkcs7-signature";
+	boundary="=-TjukRvYrcUG0EuAQ6ZiG"
+Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Introduce a new mount option "nologreplay" to co-operate with "ro" mount
-option to get real readonly mount, like "norecovery" in ext* and xfs.
 
-Since the new parse_options() need to check new flags at remount time,
-so add a new parameter for parse_options().
+--=-TjukRvYrcUG0EuAQ6ZiG
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Reviewed-by: Chandan Rajendra <chandan@linux.vnet.ibm.com>
-Tested-by: Austin S. Hemmelgarn <ahferroin7@gmail.com>
+On Tue, 2016-01-19 at 09:49 +0800, Qu Wenruo wrote:
+> Introduce a new mount option "nologreplay" to co-operate with "ro"
+> mount
+> option to get real readonly mount, like "norecovery" in ext* and xfs.
 
----
-v2:
-  Make RO check mandatory for btrfs_parse_options().
-  Add btrfs_show_options() support for nologreplay.
+What happened to the nice plans to get a proper dedicated mount option
+for hard ro mounts, that will work even as btrfs changes and would
+require further options to get that behaviour?
 
-  Document for btrfs-mount(5) will follow after the patch being merged.
-v3:
-  Apply the document suggestion from  Chandan Rajendra.
-v4:
-  Add 'norecovery' alias for 'nologreplay'.
-v5:
-  None
-v6:
-  Splite alias for "norecovery" into another patch.
----
- Documentation/filesystems/btrfs.txt |  8 ++++++++
- fs/btrfs/ctree.h                    |  4 +++-
- fs/btrfs/disk-io.c                  |  7 ++++---
- fs/btrfs/super.c                    | 28 +++++++++++++++++++++++++---
- 4 files changed, 40 insertions(+), 7 deletions(-)
+Chris.
+--=-TjukRvYrcUG0EuAQ6ZiG
+Content-Type: application/x-pkcs7-signature; name="smime.p7s"
+Content-Disposition: attachment; filename="smime.p7s"
+Content-Transfer-Encoding: base64
 
-diff --git a/Documentation/filesystems/btrfs.txt b/Documentation/filesystems/btrfs.txt
-index 8e22d92..34ea3ed 100644
---- a/Documentation/filesystems/btrfs.txt
-+++ b/Documentation/filesystems/btrfs.txt
-@@ -168,6 +168,14 @@ Options with (*) are default options and will not show in the mount options.
-   notreelog
- 	Enable/disable the tree logging used for fsync and O_SYNC writes.
- 
-+  nologreplay
-+	Disable the log tree replay at mount time to prevent filesystem
-+	from getting modified.
-+	Must be used with 'ro' mount option.
-+	A filesystem mounted with this option cannot transition to a
-+	read-write mount via remount,rw - the filesystem must be unmounted
-+	and mounted back again if read-write access is desired.
-+
-   usebackuproot
- 	Enable attempts to use backup tree roots if a bad tree root is found at
- 	mount time.
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 47a96a7..7ef9b2a 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -2250,6 +2250,7 @@ struct btrfs_ioctl_defrag_range_args {
- #define BTRFS_MOUNT_FRAGMENT_DATA	(1 << 24)
- #define BTRFS_MOUNT_FRAGMENT_METADATA	(1 << 25)
- #define BTRFS_MOUNT_FREE_SPACE_TREE	(1 << 26)
-+#define BTRFS_MOUNT_NOLOGREPLAY		(1 << 27)
- 
- #define BTRFS_DEFAULT_COMMIT_INTERVAL	(30)
- #define BTRFS_DEFAULT_MAX_INLINE	(8192)
-@@ -4144,7 +4145,8 @@ void btrfs_sysfs_remove_mounted(struct btrfs_fs_info *fs_info);
- ssize_t btrfs_listxattr(struct dentry *dentry, char *buffer, size_t size);
- 
- /* super.c */
--int btrfs_parse_options(struct btrfs_root *root, char *options);
-+int btrfs_parse_options(struct btrfs_root *root, char *options,
-+			unsigned long new_flags);
- int btrfs_sync_fs(struct super_block *sb, int wait);
- 
- #ifdef CONFIG_PRINTK
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 6f16557..0ec4199 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -2726,7 +2726,7 @@ int open_ctree(struct super_block *sb,
- 	 */
- 	fs_info->compress_type = BTRFS_COMPRESS_ZLIB;
- 
--	ret = btrfs_parse_options(tree_root, options);
-+	ret = btrfs_parse_options(tree_root, options, sb->s_flags);
- 	if (ret) {
- 		err = ret;
- 		goto fail_alloc;
-@@ -3024,8 +3024,9 @@ retry_root_backup:
- 	if (ret)
- 		goto fail_trans_kthread;
- 
--	/* do not make disk changes in broken FS */
--	if (btrfs_super_log_root(disk_super) != 0) {
-+	/* do not make disk changes in broken FS or nologreplay is given */
-+	if (btrfs_super_log_root(disk_super) != 0 &&
-+	    !btrfs_test_opt(tree_root, NOLOGREPLAY)) {
- 		ret = btrfs_replay_log(fs_info, fs_devices);
- 		if (ret) {
- 			err = ret;
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 0842456..1f97aa1 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -304,6 +304,7 @@ enum {
- 	Opt_commit_interval, Opt_barrier, Opt_nodefrag, Opt_nodiscard,
- 	Opt_noenospc_debug, Opt_noflushoncommit, Opt_acl, Opt_datacow,
- 	Opt_datasum, Opt_treelog, Opt_noinode_cache, Opt_usebackuproot,
-+	Opt_nologreplay,
- #ifdef CONFIG_BTRFS_DEBUG
- 	Opt_fragment_data, Opt_fragment_metadata, Opt_fragment_all,
- #endif
-@@ -335,6 +336,7 @@ static const match_table_t tokens = {
- 	{Opt_noacl, "noacl"},
- 	{Opt_notreelog, "notreelog"},
- 	{Opt_treelog, "treelog"},
-+	{Opt_nologreplay, "nologreplay"},
- 	{Opt_flushoncommit, "flushoncommit"},
- 	{Opt_noflushoncommit, "noflushoncommit"},
- 	{Opt_ratio, "metadata_ratio=%d"},
-@@ -374,7 +376,8 @@ static const match_table_t tokens = {
-  * reading in a new superblock is parsed here.
-  * XXX JDM: This needs to be cleaned up for remount.
-  */
--int btrfs_parse_options(struct btrfs_root *root, char *options)
-+int btrfs_parse_options(struct btrfs_root *root, char *options,
-+			unsigned long new_flags)
- {
- 	struct btrfs_fs_info *info = root->fs_info;
- 	substring_t args[MAX_OPT_ARGS];
-@@ -391,8 +394,12 @@ int btrfs_parse_options(struct btrfs_root *root, char *options)
- 	else if (cache_gen)
- 		btrfs_set_opt(info->mount_opt, SPACE_CACHE);
- 
-+	/*
-+	 * Even the options are empty, we still need to do extra check
-+	 * against new flags
-+	 */
- 	if (!options)
--		goto out;
-+		goto check;
- 
- 	/*
- 	 * strsep changes the string, duplicate it because parse_options
-@@ -592,6 +599,10 @@ int btrfs_parse_options(struct btrfs_root *root, char *options)
- 			btrfs_clear_and_info(root, NOTREELOG,
- 					     "enabling tree log");
- 			break;
-+		case Opt_nologreplay:
-+			btrfs_set_and_info(root, NOLOGREPLAY,
-+					   "disabling log replay at mount time");
-+			break;
- 		case Opt_flushoncommit:
- 			btrfs_set_and_info(root, FLUSHONCOMMIT,
- 					   "turning on flush-on-commit");
-@@ -782,6 +793,15 @@ int btrfs_parse_options(struct btrfs_root *root, char *options)
- 			break;
- 		}
- 	}
-+check:
-+	/*
-+	 * Extra check for current option against current flag
-+	 */
-+	if (btrfs_test_opt(root, NOLOGREPLAY) && !(new_flags & MS_RDONLY)) {
-+		btrfs_err(root->fs_info,
-+			  "nologreplay must be used with ro mount option");
-+		ret = -EINVAL;
-+	}
- out:
- 	if (btrfs_fs_compat_ro(root->fs_info, FREE_SPACE_TREE) &&
- 	    !btrfs_test_opt(root, FREE_SPACE_TREE) &&
-@@ -1192,6 +1212,8 @@ static int btrfs_show_options(struct seq_file *seq, struct dentry *dentry)
- 		seq_puts(seq, ",ssd");
- 	if (btrfs_test_opt(root, NOTREELOG))
- 		seq_puts(seq, ",notreelog");
-+	if (btrfs_test_opt(root, NOLOGREPLAY))
-+		seq_puts(seq, ",nologreplay");
- 	if (btrfs_test_opt(root, FLUSHONCOMMIT))
- 		seq_puts(seq, ",flushoncommit");
- 	if (btrfs_test_opt(root, DISCARD))
-@@ -1677,7 +1699,7 @@ static int btrfs_remount(struct super_block *sb, int *flags, char *data)
- 		}
- 	}
- 
--	ret = btrfs_parse_options(root, data);
-+	ret = btrfs_parse_options(root, data, *flags);
- 	if (ret) {
- 		ret = -EINVAL;
- 		goto restore;
--- 
-2.7.0
+MIAGCSqGSIb3DQEHAqCAMIACAQExDzANBglghkgBZQMEAgMFADCABgkqhkiG9w0BBwEAAKCCEmow
+ggXiMIIDyqADAgECAhBctkhuRwyYxn/2gNtkSuKNMA0GCSqGSIb3DQEBCwUAMH0xCzAJBgNVBAYT
+AklMMRYwFAYDVQQKEw1TdGFydENvbSBMdGQuMSswKQYDVQQLEyJTZWN1cmUgRGlnaXRhbCBDZXJ0
+aWZpY2F0ZSBTaWduaW5nMSkwJwYDVQQDEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0
+eTAeFw0xNTEyMTYwMTAwMDVaFw0zMDEyMTYwMTAwMDVaMHUxCzAJBgNVBAYTAklMMRYwFAYDVQQK
+Ew1TdGFydENvbSBMdGQuMSkwJwYDVQQLEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0
+eTEjMCEGA1UEAxMaU3RhcnRDb20gQ2xhc3MgMiBDbGllbnQgQ0EwggEiMA0GCSqGSIb3DQEBAQUA
+A4IBDwAwggEKAoIBAQDuD1CMlQkjhKz1UGqP1jeiTiH9MgllRz6vOPrVG/eE0H/J4QQLV/PeL8RT
+4xc44bEzsoJu0IhwnEchb+TxE/qw88w7hxODuw3N8Faxix6a1jp83+RWvZHZf78+O+3GYBpekZfT
+Oe9A/FoTXbcgwZfLTMQodn+ckNnX31M/1M2f2/7VA7QBlvihontyHQOlIlryQXnGI0UMCD21oopK
+tW48ckv0wUVg8irBKGMeD65gTON/Fsw/ZBbBqadoD1jt85FIM1ql24WUBEBwO1d0ykCKOIbgcqes
+3fbcjQpruUNMBbIu1MMIRMqwjx/M7IvSKcS7VYRWl0/K2byzWvBAHh/1AgMBAAGjggFkMIIBYDAO
+BgNVHQ8BAf8EBAMCAQYwHQYDVR0lBBYwFAYIKwYBBQUHAwIGCCsGAQUFBwMEMBIGA1UdEwEB/wQI
+MAYBAf8CAQAwMgYDVR0fBCswKTAnoCWgI4YhaHR0cDovL2NybC5zdGFydHNzbC5jb20vc2ZzY2Eu
+Y3JsMGYGCCsGAQUFBwEBBFowWDAkBggrBgEFBQcwAYYYaHR0cDovL29jc3Auc3RhcnRzc2wuY29t
+MDAGCCsGAQUFBzAChiRodHRwOi8vYWlhLnN0YXJ0c3NsLmNvbS9jZXJ0cy9jYS5jcnQwHQYDVR0O
+BBYEFJmXqxg1OotZRUOYsnJxyPT7Cc8WMB8GA1UdIwQYMBaAFE4L7xqkQFulF2mHMMo0aEPQQa7y
+MD8GA1UdIAQ4MDYwNAYEVR0gADAsMCoGCCsGAQUFBwIBFh5odHRwOi8vd3d3LnN0YXJ0c3NsLmNv
+bS9wb2xpY3kwDQYJKoZIhvcNAQELBQADggIBAJlBQQTO9iT1TjA0eEO7V/1AbBvMAfibjAgofxmJ
+01jBmHKg0pbTjWInTTYoxb3LBgz3mfjvvS1PjnIfb29MyVm0G/PSHjgq7Ews1dEJMPC9XTuxPf2c
++MWLkynBlotW542JprW+iTWfZafyUtzIKW1hk0YASJ8zSSj8D++9yR+0UhkbvlECJkdi1+et0EaI
+7HIX6ccj1rfcFFflWX/fPT64dn9jpg9s0nuJug4WsVkEK236WndZoMHrZmgF7CIyZ3T0muqYwkAS
+DDcRt9A21o/Mc+D8Q6GVmKRGB3gEKvOtsioHZEqJv6CdAm3a6gloo5pX3RL1eCzc8Lzfs4T0ISZj
+r8xNMbTGlsuHaFH+stDewKsfnpo4N64OtAGrzmVfFFsMIRENRHsVlSEe/6LVpBpjn00+7bqEN3qe
+qSxIOraYJ12mJ08G4YnP2U1fadHIaS50O5ZXqAivoBl9pi/6CBNc5wIMlkXMyFZ0sLsI+9ErFDu9
+OJhX7iWCo69X0ydlzXj08+2K1PKyr+g6/vTPHur63JotNrhyoWEJyWEjBLA4QmJXfGpB5u+bCwNf
+sFpcYAlkiFt1Rs2vemgSBy3q4DHDbPKvr1YImZNRSHP+TX9NP94JRkmqcyD/qaN7u2JV1pRAlwG0
+npyrn6ZQM1QHV+iFbwQ4VqLMWk//QVo/rZy1MIIGPjCCBSagAwIBAgIQPZ6tDP/RHLwcz1F+2kRA
+DzANBgkqhkiG9w0BAQsFADB1MQswCQYDVQQGEwJJTDEWMBQGA1UEChMNU3RhcnRDb20gTHRkLjEp
+MCcGA1UECxMgU3RhcnRDb20gQ2VydGlmaWNhdGlvbiBBdXRob3JpdHkxIzAhBgNVBAMTGlN0YXJ0
+Q29tIENsYXNzIDIgQ2xpZW50IENBMB4XDTE2MDEwMjAyMDIzNloXDTE4MDEwMjAyMDIzNlowejEL
+MAkGA1UEBhMCREUxDzANBgNVBAgMBkJheWVybjERMA8GA1UEBwwITcO8bmNoZW4xITAfBgNVBAMM
+GENocmlzdG9waCBBbnRvbiBNaXR0ZXJlcjEkMCIGCSqGSIb3DQEJARYVY2FsZXN0eW9Ac2NpZW50
+aWEubmV0MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAsoxs789VtR81tlqeP2vwE3Cp
+YosZYRfrovj+Wb91paoV5OQcFuXA7yONnLsWxOnJ3AGgy1/wG79Ko+yHSmF2K88pEWjrFe0zmZWZ
+0b2OtMoKLEjxz7Nz2N7/lmgss8XinJ083LwLKSe4f+JLjnF5hX/g6wG4NkFXVOIf2YFZ0+c1NYFQ
+T6Vy42EWdk+JLDoXjyd2hEperLCz9rQr2k3wh0cn8R1FDUGerBGpMnvyKV6JXj5vZsqJnmiiId9e
+0IdBj4Wcs3hT2usk6dJYwHrZ8b7Fkv6BRq90DUI7i8+ukTdp5hnAb8TPSbe1JS4h3Jc7r2NVLkpo
+Gbuw98er9s2PEAvpECD3toO3ojBevL56vEDbGa5tXpvvcWCz6t3QyEKJ2E54hWw1fbUA0BtydQC0
+mhKBtrENVnnCDrSgiyBMnd8y+kw6iPKeJEjNObGubc4BZp47zPn/ZiDBaHue6S0MXsoS7XEGOuCU
+09S/8kD8wTecBg+KdlLSNkLm+xqx6Cy7zwcj3IuQv0PeWi4kfEkAJfl8IeAP/4049iA6a1rkhJl7
+1rDjpEGBCG+i9BAgBeNdHLtQ7bugdvU+GfHjFXEU1emUk91E2liML8kpCvhUAXcLhhL8bxPJiX2/
+VQ2esrpQVO56OzpivNauonLaWmHEKOSfPC3s5AKMytMTiUiszEUCAwEAAaOCAcMwggG/MAsGA1Ud
+DwQEAwIEsDAdBgNVHSUEFjAUBggrBgEFBQcDAgYIKwYBBQUHAwQwCQYDVR0TBAIwADAdBgNVHQ4E
+FgQUwRklxF1ZV2ooSMkFwLiK13apkK0wHwYDVR0jBBgwFoAUmZerGDU6i1lFQ5iycnHI9PsJzxYw
+bwYIKwYBBQUHAQEEYzBhMCQGCCsGAQUFBzABhhhodHRwOi8vb2NzcC5zdGFydHNzbC5jb20wOQYI
+KwYBBQUHMAKGLWh0dHA6Ly9haWEuc3RhcnRzc2wuY29tL2NlcnRzL3NjYS5jbGllbnQyLmNydDA4
+BgNVHR8EMTAvMC2gK6AphidodHRwOi8vY3JsLnN0YXJ0c3NsLmNvbS9zY2EtY2xpZW50Mi5jcmww
+IAYDVR0RBBkwF4EVY2FsZXN0eW9Ac2NpZW50aWEubmV0MCMGA1UdEgQcMBqGGGh0dHA6Ly93d3cu
+c3RhcnRzc2wuY29tLzBUBgNVHSAETTBLMAwGCisGAQQBgbU3BgEwOwYLKwYBBAGBtTcBAgQwLDAq
+BggrBgEFBQcCARYeaHR0cDovL3d3dy5zdGFydHNzbC5jb20vcG9saWN5MA0GCSqGSIb3DQEBCwUA
+A4IBAQBb8EIsoUN/tgUgQqrNXNtlksPep84kx5yRBgr71uf3ITLddGtzfDBj6KdZUoy7SG3MQkyO
+kvYmXBClj23rv8Iol48/3oi9XWZw5EV3uHrRse1TzQgMPZE0hZsDgkqXVoxMQfk55ndjZIHMfSkn
+hdnqSP5zZ4TCmDEKLppPMDcQSSrjilnbthpxlIJzeGeEFtrh6ssh/oF6mUaEGFcd8kx9RS51K1gt
+H4J36y4E6pKB7EdxG2+0yVzAIta8dkD/BiMCKRWhp1EmzQ2uIh2nX5y8t4e2xHHuiy11Yeq6UTW/
+JmfxF4xcbkNK/rv9ISBg9K+mZtg2QXr+P/CJBtej2RLUMIIGPjCCBSagAwIBAgIQPZ6tDP/RHLwc
+z1F+2kRADzANBgkqhkiG9w0BAQsFADB1MQswCQYDVQQGEwJJTDEWMBQGA1UEChMNU3RhcnRDb20g
+THRkLjEpMCcGA1UECxMgU3RhcnRDb20gQ2VydGlmaWNhdGlvbiBBdXRob3JpdHkxIzAhBgNVBAMT
+GlN0YXJ0Q29tIENsYXNzIDIgQ2xpZW50IENBMB4XDTE2MDEwMjAyMDIzNloXDTE4MDEwMjAyMDIz
+NlowejELMAkGA1UEBhMCREUxDzANBgNVBAgMBkJheWVybjERMA8GA1UEBwwITcO8bmNoZW4xITAf
+BgNVBAMMGENocmlzdG9waCBBbnRvbiBNaXR0ZXJlcjEkMCIGCSqGSIb3DQEJARYVY2FsZXN0eW9A
+c2NpZW50aWEubmV0MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAsoxs789VtR81tlqe
+P2vwE3CpYosZYRfrovj+Wb91paoV5OQcFuXA7yONnLsWxOnJ3AGgy1/wG79Ko+yHSmF2K88pEWjr
+Fe0zmZWZ0b2OtMoKLEjxz7Nz2N7/lmgss8XinJ083LwLKSe4f+JLjnF5hX/g6wG4NkFXVOIf2YFZ
+0+c1NYFQT6Vy42EWdk+JLDoXjyd2hEperLCz9rQr2k3wh0cn8R1FDUGerBGpMnvyKV6JXj5vZsqJ
+nmiiId9e0IdBj4Wcs3hT2usk6dJYwHrZ8b7Fkv6BRq90DUI7i8+ukTdp5hnAb8TPSbe1JS4h3Jc7
+r2NVLkpoGbuw98er9s2PEAvpECD3toO3ojBevL56vEDbGa5tXpvvcWCz6t3QyEKJ2E54hWw1fbUA
+0BtydQC0mhKBtrENVnnCDrSgiyBMnd8y+kw6iPKeJEjNObGubc4BZp47zPn/ZiDBaHue6S0MXsoS
+7XEGOuCU09S/8kD8wTecBg+KdlLSNkLm+xqx6Cy7zwcj3IuQv0PeWi4kfEkAJfl8IeAP/4049iA6
+a1rkhJl71rDjpEGBCG+i9BAgBeNdHLtQ7bugdvU+GfHjFXEU1emUk91E2liML8kpCvhUAXcLhhL8
+bxPJiX2/VQ2esrpQVO56OzpivNauonLaWmHEKOSfPC3s5AKMytMTiUiszEUCAwEAAaOCAcMwggG/
+MAsGA1UdDwQEAwIEsDAdBgNVHSUEFjAUBggrBgEFBQcDAgYIKwYBBQUHAwQwCQYDVR0TBAIwADAd
+BgNVHQ4EFgQUwRklxF1ZV2ooSMkFwLiK13apkK0wHwYDVR0jBBgwFoAUmZerGDU6i1lFQ5iycnHI
+9PsJzxYwbwYIKwYBBQUHAQEEYzBhMCQGCCsGAQUFBzABhhhodHRwOi8vb2NzcC5zdGFydHNzbC5j
+b20wOQYIKwYBBQUHMAKGLWh0dHA6Ly9haWEuc3RhcnRzc2wuY29tL2NlcnRzL3NjYS5jbGllbnQy
+LmNydDA4BgNVHR8EMTAvMC2gK6AphidodHRwOi8vY3JsLnN0YXJ0c3NsLmNvbS9zY2EtY2xpZW50
+Mi5jcmwwIAYDVR0RBBkwF4EVY2FsZXN0eW9Ac2NpZW50aWEubmV0MCMGA1UdEgQcMBqGGGh0dHA6
+Ly93d3cuc3RhcnRzc2wuY29tLzBUBgNVHSAETTBLMAwGCisGAQQBgbU3BgEwOwYLKwYBBAGBtTcB
+AgQwLDAqBggrBgEFBQcCARYeaHR0cDovL3d3dy5zdGFydHNzbC5jb20vcG9saWN5MA0GCSqGSIb3
+DQEBCwUAA4IBAQBb8EIsoUN/tgUgQqrNXNtlksPep84kx5yRBgr71uf3ITLddGtzfDBj6KdZUoy7
+SG3MQkyOkvYmXBClj23rv8Iol48/3oi9XWZw5EV3uHrRse1TzQgMPZE0hZsDgkqXVoxMQfk55ndj
+ZIHMfSknhdnqSP5zZ4TCmDEKLppPMDcQSSrjilnbthpxlIJzeGeEFtrh6ssh/oF6mUaEGFcd8kx9
+RS51K1gtH4J36y4E6pKB7EdxG2+0yVzAIta8dkD/BiMCKRWhp1EmzQ2uIh2nX5y8t4e2xHHuiy11
+Yeq6UTW/JmfxF4xcbkNK/rv9ISBg9K+mZtg2QXr+P/CJBtej2RLUMYIEfjCCBHoCAQEwgYkwdTEL
+MAkGA1UEBhMCSUwxFjAUBgNVBAoTDVN0YXJ0Q29tIEx0ZC4xKTAnBgNVBAsTIFN0YXJ0Q29tIENl
+cnRpZmljYXRpb24gQXV0aG9yaXR5MSMwIQYDVQQDExpTdGFydENvbSBDbGFzcyAyIENsaWVudCBD
+QQIQPZ6tDP/RHLwcz1F+2kRADzANBglghkgBZQMEAgMFAKCCAcUwGAYJKoZIhvcNAQkDMQsGCSqG
+SIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTYwMTE5MDE1OTUyWjBPBgkqhkiG9w0BCQQxQgRAWHn8
+Bkpb7E1aFGIRgBz5uKrzTzEi8z5wQ7/syOchwoKvKYURcpld9ckWZ//Qd+aFzmbnWtWne/ZuEkK8
+o3LydjCBmgYJKwYBBAGCNxAEMYGMMIGJMHUxCzAJBgNVBAYTAklMMRYwFAYDVQQKEw1TdGFydENv
+bSBMdGQuMSkwJwYDVQQLEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0eTEjMCEGA1UE
+AxMaU3RhcnRDb20gQ2xhc3MgMiBDbGllbnQgQ0ECED2erQz/0Ry8HM9RftpEQA8wgZwGCyqGSIb3
+DQEJEAILMYGMoIGJMHUxCzAJBgNVBAYTAklMMRYwFAYDVQQKEw1TdGFydENvbSBMdGQuMSkwJwYD
+VQQLEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0eTEjMCEGA1UEAxMaU3RhcnRDb20g
+Q2xhc3MgMiBDbGllbnQgQ0ECED2erQz/0Ry8HM9RftpEQA8wDQYJKoZIhvcNAQEBBQAEggIAgCli
+wkIdE4ylS3EBvSGB6PVdKRTUvnMT8zksEf8685DcjnfjJrrw8mAsVlU/eEHvaSHOoCvL5VFCuMn2
+47v0fqNOkF+wiIreTmyMsjOxBYpayf4nHXVkiQmhDyWwmuebfpJ1Ez0J2/TTkZ5PelytJ1VJy4JK
+fLnC6997fHVR8X9xshWhObi8IwGj9r2T3/FDwHWxh+wwHgTOUXmx3WP/p7B5fO/HLyHo3u8KbVqm
+ylSvWJZ9ZOO8t95Si4Uwc6jCXKwv8yBKTIVLr7nZPjdyvIVPi74Pdt2U65iiIXEIFUN6R+0Yld/e
+5BxS8BvbmFOmcsWtnS11w/Myb6mvhuAZumu4c7anKeBg/57FKWUuLx+oM0qrKLAMXMPwOqxjnpHK
+CcPQ1ZvqUFq5XJukwy3OcT4UXz4DIAT/Qwdcomanb3pRsts1E/44BTl6jZXLWjFNEQ2pIT/bQc/R
+iKPUxyVRqax373ysZy0QBBdmK0lDZ71MNBTS/N+95OkXpXBf+Yi8bkzmkv6UBcD8pgbEJPaTn74i
+bP8r9NwnvomqBg/ttR2u95QXH3orZgdmmLJEblpQQYntU69qJldbPG3dRzwx0oL4Mq1ig1XxaToy
+2brV1oneSlQwn7lnV4fMu8HxgRYaVo6s1bMFlNCgEbQETwyY7TQWoTKOSzEbw6XhhghS6kgAAAAA
+AAA=
 
 
+--=-TjukRvYrcUG0EuAQ6ZiG--
 

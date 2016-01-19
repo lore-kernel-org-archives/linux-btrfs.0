@@ -1,42 +1,193 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:44863 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:43874 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S932977AbcASKoE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 19 Jan 2016 05:44:04 -0500
+	id S932652AbcASKhJ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 19 Jan 2016 05:37:09 -0500
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+	by mx2.suse.de (Postfix) with ESMTP id EBFC9AD03
+	for <linux-btrfs@vger.kernel.org>; Tue, 19 Jan 2016 10:37:07 +0000 (UTC)
 From: David Sterba <dsterba@suse.com>
 To: linux-btrfs@vger.kernel.org
-Cc: Colin Ian King <colin.king@canonical.com>, David Sterba <dsterba@suse.com>
-Subject: [PATCH 4/4] btrfs: remove duplicate const specifier
-Date: Tue, 19 Jan 2016 11:43:57 +0100
-Message-Id: <fb75d857a31d600cc0c37b8c7d914014f7fa3f9a.1453199864.git.dsterba@suse.com>
-In-Reply-To: <cover.1453199864.git.dsterba@suse.com>
-References: <cover.1453199864.git.dsterba@suse.com>
+Cc: David Sterba <dsterba@suse.com>
+Subject: [PATCH 1/3] btrfs: send: use GFP_KERNEL everywhere
+Date: Tue, 19 Jan 2016 11:37:04 +0100
+Message-Id: <0a94d9ee1be0a8e2f7b6e268984a98336f6fe831.1453199502.git.dsterba@suse.com>
+In-Reply-To: <cover.1453199502.git.dsterba@suse.com>
+References: <cover.1453199502.git.dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Colin Ian King <colin.king@canonical.com>
+The send operation is not on the critical writeback path we don't need
+to use GFP_NOFS for allocations. All error paths are handled and the
+whole operation is restartable.
 
-duplicate const is redundant so remove it
-
-Signed-off-by: Colin Ian King <colin.king@canonical.com>
 Signed-off-by: David Sterba <dsterba@suse.com>
 ---
- fs/btrfs/volumes.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ fs/btrfs/send.c | 36 ++++++++++++++++++------------------
+ 1 file changed, 18 insertions(+), 18 deletions(-)
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 9cb78e31fc76..78f76958b855 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -108,7 +108,7 @@ const struct btrfs_raid_attr btrfs_raid_array[BTRFS_NR_RAID_TYPES] = {
- 	},
- };
+diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
+index 355a458cba1a..1affded5fba0 100644
+--- a/fs/btrfs/send.c
++++ b/fs/btrfs/send.c
+@@ -304,7 +304,7 @@ static struct fs_path *fs_path_alloc(void)
+ {
+ 	struct fs_path *p;
  
--const u64 const btrfs_raid_group[BTRFS_NR_RAID_TYPES] = {
-+const u64 btrfs_raid_group[BTRFS_NR_RAID_TYPES] = {
- 	[BTRFS_RAID_RAID10] = BTRFS_BLOCK_GROUP_RAID10,
- 	[BTRFS_RAID_RAID1]  = BTRFS_BLOCK_GROUP_RAID1,
- 	[BTRFS_RAID_DUP]    = BTRFS_BLOCK_GROUP_DUP,
+-	p = kmalloc(sizeof(*p), GFP_NOFS);
++	p = kmalloc(sizeof(*p), GFP_KERNEL);
+ 	if (!p)
+ 		return NULL;
+ 	p->reversed = 0;
+@@ -363,11 +363,11 @@ static int fs_path_ensure_buf(struct fs_path *p, int len)
+ 	 * First time the inline_buf does not suffice
+ 	 */
+ 	if (p->buf == p->inline_buf) {
+-		tmp_buf = kmalloc(len, GFP_NOFS);
++		tmp_buf = kmalloc(len, GFP_KERNEL);
+ 		if (tmp_buf)
+ 			memcpy(tmp_buf, p->buf, old_buf_len);
+ 	} else {
+-		tmp_buf = krealloc(p->buf, len, GFP_NOFS);
++		tmp_buf = krealloc(p->buf, len, GFP_KERNEL);
+ 	}
+ 	if (!tmp_buf)
+ 		return -ENOMEM;
+@@ -995,7 +995,7 @@ static int iterate_dir_item(struct btrfs_root *root, struct btrfs_path *path,
+ 	 * values are small.
+ 	 */
+ 	buf_len = PATH_MAX;
+-	buf = kmalloc(buf_len, GFP_NOFS);
++	buf = kmalloc(buf_len, GFP_KERNEL);
+ 	if (!buf) {
+ 		ret = -ENOMEM;
+ 		goto out;
+@@ -1042,7 +1042,7 @@ static int iterate_dir_item(struct btrfs_root *root, struct btrfs_path *path,
+ 				buf = NULL;
+ 			} else {
+ 				char *tmp = krealloc(buf, buf_len,
+-						     GFP_NOFS | __GFP_NOWARN);
++						GFP_KERNEL | __GFP_NOWARN);
+ 
+ 				if (!tmp)
+ 					kfree(buf);
+@@ -1303,7 +1303,7 @@ static int find_extent_clone(struct send_ctx *sctx,
+ 	/* We only use this path under the commit sem */
+ 	tmp_path->need_commit_sem = 0;
+ 
+-	backref_ctx = kmalloc(sizeof(*backref_ctx), GFP_NOFS);
++	backref_ctx = kmalloc(sizeof(*backref_ctx), GFP_KERNEL);
+ 	if (!backref_ctx) {
+ 		ret = -ENOMEM;
+ 		goto out;
+@@ -1970,7 +1970,7 @@ static int name_cache_insert(struct send_ctx *sctx,
+ 	nce_head = radix_tree_lookup(&sctx->name_cache,
+ 			(unsigned long)nce->ino);
+ 	if (!nce_head) {
+-		nce_head = kmalloc(sizeof(*nce_head), GFP_NOFS);
++		nce_head = kmalloc(sizeof(*nce_head), GFP_KERNEL);
+ 		if (!nce_head) {
+ 			kfree(nce);
+ 			return -ENOMEM;
+@@ -2165,7 +2165,7 @@ static int __get_cur_name_and_parent(struct send_ctx *sctx,
+ 	/*
+ 	 * Store the result of the lookup in the name cache.
+ 	 */
+-	nce = kmalloc(sizeof(*nce) + fs_path_len(dest) + 1, GFP_NOFS);
++	nce = kmalloc(sizeof(*nce) + fs_path_len(dest) + 1, GFP_KERNEL);
+ 	if (!nce) {
+ 		ret = -ENOMEM;
+ 		goto out;
+@@ -2301,7 +2301,7 @@ static int send_subvol_begin(struct send_ctx *sctx)
+ 	if (!path)
+ 		return -ENOMEM;
+ 
+-	name = kmalloc(BTRFS_PATH_NAME_MAX, GFP_NOFS);
++	name = kmalloc(BTRFS_PATH_NAME_MAX, GFP_KERNEL);
+ 	if (!name) {
+ 		btrfs_free_path(path);
+ 		return -ENOMEM;
+@@ -2716,7 +2716,7 @@ static int __record_ref(struct list_head *head, u64 dir,
+ {
+ 	struct recorded_ref *ref;
+ 
+-	ref = kmalloc(sizeof(*ref), GFP_NOFS);
++	ref = kmalloc(sizeof(*ref), GFP_KERNEL);
+ 	if (!ref)
+ 		return -ENOMEM;
+ 
+@@ -2741,7 +2741,7 @@ static int dup_ref(struct recorded_ref *ref, struct list_head *list)
+ {
+ 	struct recorded_ref *new;
+ 
+-	new = kmalloc(sizeof(*ref), GFP_NOFS);
++	new = kmalloc(sizeof(*ref), GFP_KERNEL);
+ 	if (!new)
+ 		return -ENOMEM;
+ 
+@@ -2804,7 +2804,7 @@ add_orphan_dir_info(struct send_ctx *sctx, u64 dir_ino)
+ 	struct rb_node *parent = NULL;
+ 	struct orphan_dir_info *entry, *odi;
+ 
+-	odi = kmalloc(sizeof(*odi), GFP_NOFS);
++	odi = kmalloc(sizeof(*odi), GFP_KERNEL);
+ 	if (!odi)
+ 		return ERR_PTR(-ENOMEM);
+ 	odi->ino = dir_ino;
+@@ -2959,7 +2959,7 @@ static int add_waiting_dir_move(struct send_ctx *sctx, u64 ino, bool orphanized)
+ 	struct rb_node *parent = NULL;
+ 	struct waiting_dir_move *entry, *dm;
+ 
+-	dm = kmalloc(sizeof(*dm), GFP_NOFS);
++	dm = kmalloc(sizeof(*dm), GFP_KERNEL);
+ 	if (!dm)
+ 		return -ENOMEM;
+ 	dm->ino = ino;
+@@ -3026,7 +3026,7 @@ static int add_pending_dir_move(struct send_ctx *sctx,
+ 	int exists = 0;
+ 	int ret;
+ 
+-	pm = kmalloc(sizeof(*pm), GFP_NOFS);
++	pm = kmalloc(sizeof(*pm), GFP_KERNEL);
+ 	if (!pm)
+ 		return -ENOMEM;
+ 	pm->parent_ino = parent_ino;
+@@ -4266,7 +4266,7 @@ static int __find_xattr(int num, struct btrfs_key *di_key,
+ 	    strncmp(name, ctx->name, name_len) == 0) {
+ 		ctx->found_idx = num;
+ 		ctx->found_data_len = data_len;
+-		ctx->found_data = kmemdup(data, data_len, GFP_NOFS);
++		ctx->found_data = kmemdup(data, data_len, GFP_KERNEL);
+ 		if (!ctx->found_data)
+ 			return -ENOMEM;
+ 		return 1;
+@@ -4467,7 +4467,7 @@ static ssize_t fill_read_buf(struct send_ctx *sctx, u64 offset, u32 len)
+ 	while (index <= last_index) {
+ 		unsigned cur_len = min_t(unsigned, len,
+ 					 PAGE_CACHE_SIZE - pg_offset);
+-		page = find_or_create_page(inode->i_mapping, index, GFP_NOFS);
++		page = find_or_create_page(inode->i_mapping, index, GFP_KERNEL);
+ 		if (!page) {
+ 			ret = -ENOMEM;
+ 			break;
+@@ -5975,7 +5975,7 @@ long btrfs_ioctl_send(struct file *mnt_file, void __user *arg_)
+ 		goto out;
+ 	}
+ 
+-	sctx = kzalloc(sizeof(struct send_ctx), GFP_NOFS);
++	sctx = kzalloc(sizeof(struct send_ctx), GFP_KERNEL);
+ 	if (!sctx) {
+ 		ret = -ENOMEM;
+ 		goto out;
+@@ -5983,7 +5983,7 @@ long btrfs_ioctl_send(struct file *mnt_file, void __user *arg_)
+ 
+ 	INIT_LIST_HEAD(&sctx->new_refs);
+ 	INIT_LIST_HEAD(&sctx->deleted_refs);
+-	INIT_RADIX_TREE(&sctx->name_cache, GFP_NOFS);
++	INIT_RADIX_TREE(&sctx->name_cache, GFP_KERNEL);
+ 	INIT_LIST_HEAD(&sctx->name_cache_list);
+ 
+ 	sctx->flags = arg->flags;
 -- 
 2.6.3
 

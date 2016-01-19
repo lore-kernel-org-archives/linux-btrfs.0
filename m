@@ -1,57 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:52513 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1757801AbcASJjN (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 19 Jan 2016 04:39:13 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1aLSkp-0006g7-V1
-	for linux-btrfs@vger.kernel.org; Tue, 19 Jan 2016 10:39:12 +0100
-Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 19 Jan 2016 10:39:11 +0100
-Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 19 Jan 2016 10:39:11 +0100
+Received: from dnvrco-outbound-snat.email.rr.com ([107.14.73.229]:18443 "EHLO
+	dnvrco-oedge-vip.email.rr.com" rhost-flags-OK-OK-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1753651AbcASLf2 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 19 Jan 2016 06:35:28 -0500
+Received: from ioko (router.asus.com [10.160.228.1])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+	(No client certificate requested)
+	(Authenticated sender: rian@thelig.ht)
+	by email-server.localdomain (Postfix) with ESMTPSA id 646E3301ECF
+	for <linux-btrfs@vger.kernel.org>; Tue, 19 Jan 2016 03:28:23 -0800 (PST)
+Date: Tue, 19 Jan 2016 03:28:53 -0800 (PST)
+From: Rian Hunter <rian@thelig.ht>
 To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: BTRFS: bdev /dev/mapper/dshelf1 errs: wr 2970, rd 848, flush 0,
- corrupt 189, gen 0
-Date: Tue, 19 Jan 2016 09:39:06 +0000 (UTC)
-Message-ID: <pan$e0095$a14e90a4$23be3f21$9c2ce6e8@cox.net>
-References: <20160118124533.GU422@carfax.org.uk>
-	<20160118233943.GF17679@merlins.org>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Subject: FS corruption when mounting non-degraded after mounting degraded
+Message-ID: <alpine.OSX.2.20.1601190308520.34954@ioko>
+MIME-Version: 1.0
+Content-Type: text/plain; format=flowed; charset=US-ASCII
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Marc MERLIN posted on Mon, 18 Jan 2016 15:39:43 -0800 as excerpted:
+In my raid6 setup, a disk was soft-failing on me. I pulled the disk, 
+inserted a new one, mounted degraded, then did btrfs-replace while 
+running some RW jobs on the FS.
 
-> On Mon, Jan 18, 2016 at 03:21:53AM +0000, Duncan wrote:
->> No.  Those are monotonically increasing counts that are never
->> automatically reset over the life of the filesystem.  Use ...
->> 
->> btrfs dev stats
->> 
->> ... to display them on the commandline (vs. the kernel log at
->> filesystem mount), with the -z option to reset them after display, if
->> desired.
-> 
-> It's a bit counter intuitive that check --repair doesn't reset error
-> counts if it fixed underlying errors, but maybe there is a good reason
-> :)
+My jobs were taking too long. It seems like raid6 btrfs-replace without 
+the source disk is not very fast. So I unmounted the FS, inserted the 
+soft-failing disk again, remounted normally (non-degraded) and restarted 
+the (now much faster) btrfs-replace.
 
-The idea is, I believe, that a new admin/tech or someone who hasn't been 
-paying attention can get a quick idea of where the problems have been and 
-may well still be, by looking at the error counts built up over the 
-lifetime of the filesystem.  An admin who is paying attention, meanwhile, 
-can always deliberately zero out the error counts once they've fixed 
-whatever was causing the problem triggering the errors in the first place.
+I checked on the status sometime later and there were hundreds if not 
+thousands of "transid verify failure" messages in my dmesg. 
+Additionally the btrfs-replace operation had outright failed.
 
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+After removing the soft-failing disk, and mounting degraded again, it now 
+seemed that some files in the FS were corrupted and in some instances 
+accessing certain files would actually cause the kernel to loop 
+indefinitely while eating up memory.
 
+Nothing was corrupted before I mounted the soft-failing disk in 
+non-degraded mode. This leads me to believe that btrfs doesn't 
+intelligently handle remounting normally previously degraded arrays. Can 
+anyone confirm this?
+
+I would highly recommend some sort of fast failure or DWIM behavior for 
+this, e.g.:
+
+     $ mount -o degraded /dev/sda1 /mnt
+     $ touch /mnt/newfile.txt
+     $ unmount /mnt
+     $ # plugin other device, e.g. /dev/sdb
+     $ mount /dev/sda1 /mnt
+     STDERR: Ignoring /dev/sdb1, FS has changed since mounting degraded
+     without it.
+
+Alternatively:
+
+     STDERR: Cannot mount file system with device /dev/sdb1, FS has changed
+     since mounting degraded without it.
+
+Rian

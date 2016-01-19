@@ -1,45 +1,46 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:33565 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:30473 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1756793AbcASCN3 (ORCPT
+	with ESMTP id S1756806AbcASCOO (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 18 Jan 2016 21:13:29 -0500
-Subject: Re: [PATCH V6 2/3] btrfs: Introduce new mount option to disable tree
- log replay
+	Mon, 18 Jan 2016 21:14:14 -0500
+Subject: Re: [PATCH V6 1/3] btrfs: Introduce new mount option usebackuproot to
+ replace recovery
 To: Christoph Anton Mitterer <calestyo@scientia.net>,
         <linux-btrfs@vger.kernel.org>
 References: <1453168195-18518-1-git-send-email-quwenruo@cn.fujitsu.com>
- <1453168195-18518-3-git-send-email-quwenruo@cn.fujitsu.com>
- <1453168792.6445.2.camel@scientia.net>
+ <1453168195-18518-2-git-send-email-quwenruo@cn.fujitsu.com>
+ <1453168853.6445.3.camel@scientia.net>
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <569D9BAA.3090106@cn.fujitsu.com>
-Date: Tue, 19 Jan 2016 10:12:58 +0800
+Message-ID: <569D9BDB.50400@cn.fujitsu.com>
+Date: Tue, 19 Jan 2016 10:13:47 +0800
 MIME-Version: 1.0
-In-Reply-To: <1453168792.6445.2.camel@scientia.net>
+In-Reply-To: <1453168853.6445.3.camel@scientia.net>
 Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
 
-Christoph Anton Mitterer wrote on 2016/01/19 02:59 +0100:
+Christoph Anton Mitterer wrote on 2016/01/19 03:00 +0100:
 > On Tue, 2016-01-19 at 09:49 +0800, Qu Wenruo wrote:
->> Introduce a new mount option "nologreplay" to co-operate with "ro"
->> mount
->> option to get real readonly mount, like "norecovery" in ext* and xfs.
+>> Also, since "backuproot" will only affect mount behavior and after
+>> open_ctree() it has nothing to do with the filesystem, so clear the
+>> flag
+>> after mount succeeded.
+> Haven't we talked about that it may be better to use something like
+> "usebackuproot",... cause just "backuproot" rather sounds like
+> "[perform] backup [of] root"?
 >
-> What happened to the nice plans to get a proper dedicated mount option
-> for hard ro mounts, that will work even as btrfs changes and would
-> require further options to get that behaviour?
->
+> Cheers,
 > Chris.
 >
+Oh, comment message copy and paste error.
 
-Sorry, I'm convinced by the fsdevel guys, and know I also believe we 
-don't need to make things too complicated.
-Just norecovery should be good enough.
+The code is using "usebackuproot".
 
-Further hard ro would need use blockdev to set device to RO.
+Thanks for pointing this out.
+I'll update it soon.
 
 Thanks,
 Qu

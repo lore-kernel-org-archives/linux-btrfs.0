@@ -1,39 +1,86 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:42352 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S934062AbcATOzF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 20 Jan 2016 09:55:05 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1aLuA3-0004sa-CE
-	for linux-btrfs@vger.kernel.org; Wed, 20 Jan 2016 15:55:03 +0100
-Received: from 87-127-115-15.static.enta.net ([87.127.115.15])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 20 Jan 2016 15:55:03 +0100
-Received: from 6401e46d by 87-127-115-15.static.enta.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 20 Jan 2016 15:55:03 +0100
-To: linux-btrfs@vger.kernel.org
-From: Al <6401e46d@opayq.com>
-Subject: Re: Why is dedup inline, not delayed (as opposed to offline)? Explain like I'm five pls.
-Date: Wed, 20 Jan 2016 14:53:26 +0000 (UTC)
-Message-ID: <loom.20160120T155155-84@post.gmane.org>
-References: <loom.20160116T132316-196@post.gmane.org> <569C41B1.1090206@cn.fujitsu.com>
+Received: from meiko.romanrm.net ([195.154.92.155]:55434 "EHLO
+	meiko.romanrm.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S933132AbcATPIF (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 20 Jan 2016 10:08:05 -0500
+Date: Wed, 20 Jan 2016 20:08:00 +0500
+From: Roman Mamedov <rm@romanrm.net>
+To: Paolo Bonzini <pbonzini@redhat.com>
+Cc: bo.li.liu@oracle.com, linux-btrfs@vger.kernel.org, kvm@vger.kernel.org
+Subject: Re: Kernel 4.4.0 KVM guest on Btrfs locks up on snapshotting
+Message-ID: <20160120200800.6858d6ee@natsu>
+In-Reply-To: <569F70AA.2030006@redhat.com>
+References: <20160120030223.22cc3ae0@natsu>
+ <20160120001944.GA9884@localhost.localdomain>
+ <20160120100852.470479a6@natsu>
+ <569F70AA.2030006@redhat.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: multipart/signed; micalg=PGP-SHA1;
+ boundary="Sig_/tFCtLXIvuwn4vCAcQb+ocZ="; protocol="application/pgp-signature"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Qu Wenruo <quwenruo <at> cn.fujitsu.com> writes:
+--Sig_/tFCtLXIvuwn4vCAcQb+ocZ=
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: quoted-printable
 
-> 
-> 
-> Al wrote on 2016/01/16 12:27 +0000:
-> > Hi,
+On Wed, 20 Jan 2016 12:34:02 +0100
+Paolo Bonzini <pbonzini@redhat.com> wrote:
 
-Thank you for taking the time to reply at length. Most helpful.
+> On 20/01/2016 06:08, Roman Mamedov wrote:
+> > I don't get any ENOSPC errors on the host, also it doesn't seem to
+> > be a slowdown caused by disk I/O searching for free space, just a
+> > complete lock-up: I monitor the guest with 'ping', and when it
+> > happens, the ping responses stop immediately and do not return,
+> > also there is no reaction to any keypress in the KVM VNC window.
+>=20
+> Can you go to the QEMU monitor (Ctrl-Alt-F2 typically, or just add
+> "-monitor stdio" to the QEMU command line) and type "info status"?
 
+Aha, now this is getting somewhere.
+------------------
+(qemu) info status
+VM status: paused (io-error)
 
+(qemu) info block
+hd: vm.img (raw)
+    I/O status:       nospace
+    Detect zeroes:    unmap
 
+ide1-cd0: [not inserted]
+    Removable device: not locked, tray closed
 
+floppy0: [not inserted]
+    Removable device: not locked, tray closed
+
+sd0: [not inserted]
+    Removable device: not locked, tray closed
+
+(qemu) info block-jobs
+No active jobs
+------------------
+
+So this seems to be an transient ENOSPC error returned to the data writing
+process by the FS during snapshotting. I can now reproduce this without KVM,
+just with dd. Seems not much to do with KVM then, I will post more details =
+to
+the btrfs list. Thanks!
+
+--=20
+With respect,
+Roman
+
+--Sig_/tFCtLXIvuwn4vCAcQb+ocZ=
+Content-Type: application/pgp-signature; name=signature.asc
+Content-Disposition: attachment; filename=signature.asc
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
+
+iEYEARECAAYFAlafotAACgkQTLKSvz+PZwjasACfWcsxV6stukHnqSjaXlbw76hx
+y1wAn0Ewyg5XIvR5xmX+3tRKcPCAPB4+
+=5aMo
+-----END PGP SIGNATURE-----
+
+--Sig_/tFCtLXIvuwn4vCAcQb+ocZ=--

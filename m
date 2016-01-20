@@ -1,86 +1,274 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:37618 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752905AbcAPCxt (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 15 Jan 2016 21:53:49 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1aKGzr-0004jJ-Hd
-	for linux-btrfs@vger.kernel.org; Sat, 16 Jan 2016 03:53:47 +0100
-Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sat, 16 Jan 2016 03:53:47 +0100
-Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sat, 16 Jan 2016 03:53:47 +0100
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: [PATCH v4 17/18] btrfs: dedup: add a property handler for
- online dedup
-Date: Sat, 16 Jan 2016 02:53:41 +0000 (UTC)
-Message-ID: <pan$634b4$69424819$e965c086$abbfc676@cox.net>
+Received: from cn.fujitsu.com ([59.151.112.132]:9832 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S935006AbcATDZ1 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 19 Jan 2016 22:25:27 -0500
+Subject: Re: [PATCH v4 05/18] btrfs: delayed-ref: Add support for atomic
+ increasing extent ref
+To: <fdmanana@gmail.com>
 References: <1452751054-2365-1-git-send-email-quwenruo@cn.fujitsu.com>
-	<1452751054-2365-18-git-send-email-quwenruo@cn.fujitsu.com>
-	<CAL3q7H4-Ztmx9Z4=jNT3610Y6eZbL5GqZXXOajYg3FoP_uyxYA@mail.gmail.com>
-	<56984D50.3040106@cn.fujitsu.com>
-	<CAL3q7H4ZS_qj3VqiFmDkvCBZK8f34SQ-T3jCDQv-V+rXrpu8Ng@mail.gmail.com>
-	<pan$225c9$759721a9$6dacacd5$7fd39236@cox.net>
-	<CAL3q7H5gusvi1Q0Q5uwXvf2zA+h6jHa5nSmQex4n9AZHzAR-Zw@mail.gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+ <1452751054-2365-6-git-send-email-quwenruo@cn.fujitsu.com>
+ <CAL3q7H4tLp4H-6=boucNsdhndfTeYZqweyWR3fbw-V=e=se4ow@mail.gmail.com>
+ <56984865.5070601@cn.fujitsu.com>
+CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Message-ID: <569EFE0C.6070502@cn.fujitsu.com>
+Date: Wed, 20 Jan 2016 11:25:00 +0800
+MIME-Version: 1.0
+In-Reply-To: <56984865.5070601@cn.fujitsu.com>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Filipe Manana posted on Fri, 15 Jan 2016 15:22:39 +0000 as excerpted:
 
-> On Fri, Jan 15, 2016 at 12:36 PM, Duncan <1i5t5.duncan@cox.net> wrote:
->> Filipe Manana posted on Fri, 15 Jan 2016 09:19:28 +0000 as excerpted:
+
+Qu Wenruo wrote on 2016/01/15 09:16 +0800:
+> Hi Filipe,
+>
+> Thanks for your review.
+>
+> Filipe Manana wrote on 2016/01/14 09:56 +0000:
+>> On Thu, Jan 14, 2016 at 5:57 AM, Qu Wenruo <quwenruo@cn.fujitsu.com>
+>> wrote:
+>>> Slightly modify btrfs_add_delayed_data_ref() to allow it accept
+>>> GFP_ATOMIC, and allow it to do be called inside a spinlock.
 >>
->>>> Yes, test driven development is very nice, but there is also problem,
->>>> especially for btrfs, like btrfs/047 which needs btrfs send
->>>> --stream-version support.
+>> Hi Qu,
+>>
+>> I really would prefer to avoid gfp_atomic allocations.
+>> Instead of using them, how about changing the approach so that callers
+>> allocate the ref structure (without using gfp_atomic), then take the
+>> spinlock, and then pass the structure to the inc/dec ref functions?
+>
+> Yes, we also considered that method too.
+>
+> But since it's only used for dedup hit case which has no existing
+> delayed ref head, it's on a uncommon routine.
+>
+> On the other hand, if using the method you mentioned, alloc memory first
+> then pass it to add_delayed_data_ref(), we will always need to alloc
+> memory for minority cases.
+>
+> It would be very nice if you can provide some extra disadvantage on
+> using GFP_ATOMIC, maybe there is something important I missed.
+>
+> Thanks
+> Qu
+>
+
+My previous comment is totally wrong.
+
+Such ATOMIC allocation failure has happened twice, much much more 
+possible than I expected.
+
+So I'll use the method mentioned.
+
+Thanks,
+Qu
+
+>>
+>> thanks
+>>
 >>>
->>> Yes, this one was a special case in that around 2 years ago it seemed
->>> the functionality was going to be merged, but it ended up not being
->>> merged due to reasons not known to me (no reasons pointed in the
->>> mailing list nor in private).
+>>> This is used by later dedup patches.
+>>>
+>>> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+>>> ---
+>>>   fs/btrfs/ctree.h       |  4 ++++
+>>>   fs/btrfs/delayed-ref.c | 25 +++++++++++++++++--------
+>>>   fs/btrfs/delayed-ref.h |  2 +-
+>>>   fs/btrfs/extent-tree.c | 24 +++++++++++++++++++++---
+>>>   4 files changed, 43 insertions(+), 12 deletions(-)
+>>>
+>>> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+>>> index 2132fa5..671be87 100644
+>>> --- a/fs/btrfs/ctree.h
+>>> +++ b/fs/btrfs/ctree.h
+>>> @@ -3539,6 +3539,10 @@ int btrfs_inc_extent_ref(struct
+>>> btrfs_trans_handle *trans,
+>>>                           struct btrfs_root *root,
+>>>                           u64 bytenr, u64 num_bytes, u64 parent,
+>>>                           u64 root_objectid, u64 owner, u64 offset);
+>>> +int btrfs_inc_extent_ref_atomic(struct btrfs_trans_handle *trans,
+>>> +                               struct btrfs_root *root, u64 bytenr,
+>>> +                               u64 num_bytes, u64 parent,
+>>> +                               u64 root_objectid, u64 owner, u64
+>>> offset);
+>>>
+>>>   int btrfs_start_dirty_block_groups(struct btrfs_trans_handle *trans,
+>>>                                     struct btrfs_root *root);
+>>> diff --git a/fs/btrfs/delayed-ref.c b/fs/btrfs/delayed-ref.c
+>>> index 914ac13..e869442 100644
+>>> --- a/fs/btrfs/delayed-ref.c
+>>> +++ b/fs/btrfs/delayed-ref.c
+>>> @@ -812,26 +812,31 @@ int btrfs_add_delayed_data_ref(struct
+>>> btrfs_fs_info *fs_info,
+>>>                                 u64 bytenr, u64 num_bytes,
+>>>                                 u64 parent, u64 ref_root,
+>>>                                 u64 owner, u64 offset, u64 reserved,
+>>> int action,
+>>> -                              struct btrfs_delayed_extent_op
+>>> *extent_op)
+>>> +                              int atomic)
+>>>   {
+>>>          struct btrfs_delayed_data_ref *ref;
+>>>          struct btrfs_delayed_ref_head *head_ref;
+>>>          struct btrfs_delayed_ref_root *delayed_refs;
+>>>          struct btrfs_qgroup_extent_record *record = NULL;
+>>> +       gfp_t gfp_flags;
+>>> +
+>>> +       if (atomic)
+>>> +               gfp_flags = GFP_ATOMIC;
+>>> +       else
+>>> +               gfp_flags = GFP_NOFS;
+>>>
+>>> -       BUG_ON(extent_op && !extent_op->is_data);
+>>> -       ref = kmem_cache_alloc(btrfs_delayed_data_ref_cachep, GFP_NOFS);
+>>> +       ref = kmem_cache_alloc(btrfs_delayed_data_ref_cachep,
+>>> gfp_flags);
+>>>          if (!ref)
+>>>                  return -ENOMEM;
+>>>
+>>> -       head_ref = kmem_cache_alloc(btrfs_delayed_ref_head_cachep,
+>>> GFP_NOFS);
+>>> +       head_ref = kmem_cache_alloc(btrfs_delayed_ref_head_cachep,
+>>> gfp_flags);
+>>>          if (!head_ref) {
+>>>                  kmem_cache_free(btrfs_delayed_data_ref_cachep, ref);
+>>>                  return -ENOMEM;
+>>>          }
+>>>
+>>>          if (fs_info->quota_enabled && is_fstree(ref_root)) {
+>>> -               record = kmalloc(sizeof(*record), GFP_NOFS);
+>>> +               record = kmalloc(sizeof(*record), gfp_flags);
+>>>                  if (!record) {
+>>>
+>>> kmem_cache_free(btrfs_delayed_data_ref_cachep, ref);
+>>>                          kmem_cache_free(btrfs_delayed_ref_head_cachep,
+>>> @@ -840,10 +845,13 @@ int btrfs_add_delayed_data_ref(struct
+>>> btrfs_fs_info *fs_info,
+>>>                  }
+>>>          }
+>>>
+>>> -       head_ref->extent_op = extent_op;
+>>> +       head_ref->extent_op = NULL;
+>>>
+>>>          delayed_refs = &trans->transaction->delayed_refs;
+>>> -       spin_lock(&delayed_refs->lock);
+>>> +
+>>> +       /* For atomic case, caller should already hold the
+>>> delayed_refs lock */
+>>> +       if (!atomic)
+>>> +               spin_lock(&delayed_refs->lock);
+>>>
+>>>          /*
+>>>           * insert both the head node and the new ref without dropping
+>>> @@ -856,7 +864,8 @@ int btrfs_add_delayed_data_ref(struct
+>>> btrfs_fs_info *fs_info,
+>>>          add_delayed_data_ref(fs_info, trans, head_ref, &ref->node,
+>>> bytenr,
+>>>                                     num_bytes, parent, ref_root,
+>>> owner, offset,
+>>>                                     action);
+>>> -       spin_unlock(&delayed_refs->lock);
+>>> +       if (!atomic)
+>>> +               spin_unlock(&delayed_refs->lock);
+>>>
+>>>          return 0;
+>>>   }
+>>> diff --git a/fs/btrfs/delayed-ref.h b/fs/btrfs/delayed-ref.h
+>>> index c24b653..e34f96a 100644
+>>> --- a/fs/btrfs/delayed-ref.h
+>>> +++ b/fs/btrfs/delayed-ref.h
+>>> @@ -249,7 +249,7 @@ int btrfs_add_delayed_data_ref(struct
+>>> btrfs_fs_info *fs_info,
+>>>                                 u64 bytenr, u64 num_bytes,
+>>>                                 u64 parent, u64 ref_root,
+>>>                                 u64 owner, u64 offset, u64 reserved,
+>>> int action,
+>>> -                              struct btrfs_delayed_extent_op
+>>> *extent_op);
+>>> +                              int atomic);
+>>>   int btrfs_add_delayed_qgroup_reserve(struct btrfs_fs_info *fs_info,
+>>>                                       struct btrfs_trans_handle *trans,
+>>>                                       u64 ref_root, u64 bytenr, u64
+>>> num_bytes);
+>>> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+>>> index 60cc139..4a01ca9 100644
+>>> --- a/fs/btrfs/extent-tree.c
+>>> +++ b/fs/btrfs/extent-tree.c
+>>> @@ -2105,11 +2105,29 @@ int btrfs_inc_extent_ref(struct
+>>> btrfs_trans_handle *trans,
+>>>                  ret = btrfs_add_delayed_data_ref(fs_info, trans,
+>>> bytenr,
+>>>                                          num_bytes, parent,
+>>> root_objectid,
+>>>                                          owner, offset, 0,
+>>> -                                       BTRFS_ADD_DELAYED_REF, NULL);
+>>> +                                       BTRFS_ADD_DELAYED_REF, 0);
+>>>          }
+>>>          return ret;
+>>>   }
+>>>
+>>> +int btrfs_inc_extent_ref_atomic(struct btrfs_trans_handle *trans,
+>>> +                               struct btrfs_root *root, u64 bytenr,
+>>> +                               u64 num_bytes, u64 parent,
+>>> +                               u64 root_objectid, u64 owner, u64
+>>> offset)
+>>> +{
+>>> +       struct btrfs_fs_info *fs_info = root->fs_info;
+>>> +
+>>> +       BUG_ON(owner < BTRFS_FIRST_FREE_OBJECTID &&
+>>> +              root_objectid == BTRFS_TREE_LOG_OBJECTID);
+>>> +
+>>> +       /* Only used by dedup, so only data is possible */
+>>> +       if (WARN_ON(owner < BTRFS_FIRST_FREE_OBJECTID))
+>>> +               return -EINVAL;
+>>> +       return btrfs_add_delayed_data_ref(fs_info, trans, bytenr,
+>>> +                       num_bytes, parent, root_objectid,
+>>> +                       owner, offset, 0, BTRFS_ADD_DELAYED_REF, 1);
+>>> +}
+>>> +
+>>>   static int __btrfs_inc_extent_ref(struct btrfs_trans_handle *trans,
+>>>                                    struct btrfs_root *root,
+>>>                                    struct btrfs_delayed_ref_node *node,
+>>> @@ -6893,7 +6911,7 @@ int btrfs_free_extent(struct btrfs_trans_handle
+>>> *trans, struct btrfs_root *root,
+>>>                                                  num_bytes,
+>>>                                                  parent,
+>>> root_objectid, owner,
+>>>                                                  offset, 0,
+>>> -
+>>> BTRFS_DROP_DELAYED_REF, NULL);
+>>> +
+>>> BTRFS_DROP_DELAYED_REF, 0);
+>>>          }
+>>>          return ret;
+>>>   }
+>>> @@ -7845,7 +7863,7 @@ int btrfs_alloc_reserved_file_extent(struct
+>>> btrfs_trans_handle *trans,
+>>>                                           ins->offset, 0,
+>>>                                           root_objectid, owner, offset,
+>>>                                           ram_bytes,
+>>> BTRFS_ADD_DELAYED_EXTENT,
+>>> -                                        NULL);
+>>> +                                        0);
+>>>          return ret;
+>>>   }
+>>>
+>>> --
+>>> 2.7.0
+>>>
+>>>
+>>>
+>>> --
+>>> To unsubscribe from this list: send the line "unsubscribe
+>>> linux-btrfs" in
+>>> the body of a message to majordomo@vger.kernel.org
+>>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 >>
->> AFAIK/IIRC, the reason as I understood it is that ideally Chris Mason
->> wants to do just one more stream version bump, which means being /very/
->> sure it includes anything that has come up as needed in intervening
->> development.  There's a few things agreed to be missing in the current
->> stream version
-> 
-> Either you have had access to information I didn't had (Chris didn't
-> ever commented on it, but Josef, David and Mark had) or you missed part
-> of past discussions in the mailing list (or perhaps my mail accounts
-> didn't got anything).
-> Yes there were several new things discussed for a new version (and lot
-> of it listed in some wiki page iirc), some of which I implemented and
-> the remaining I didn't, but left the necessary changes in the stream
-> format to avoid bumping the stream version again. And that's where
-> things settled, without any more comments (neither on the mailing list
-> nor anywhere I could read,
-> something that happens often unfortunately).
+>>
+>>
 
-So AFAIK/IIRC was incorrect, as I thought I had seen CMason comment on it 
-but perhaps it was the others, and I wasn't aware that you had 
-implemented all the proposed stream format changes, even if not all the 
-code to actually make use of them.  But then it just... dropped.
-
-Regardless of the details from back then, however, btrfs is arguably in a 
-far more stable and mature state now than it was two years ago, and it 
-may well be time to actually do that stream format bump now.
-
-Tho "now" obviously means 4.6 at the earliest as it'll surely take a bit 
-to dust off and reevaluate the patches, putting it beyond the current 4.5 
-commit window.
-
-Thanks.
-
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
 

@@ -1,33 +1,81 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wm0-f43.google.com ([74.125.82.43]:38020 "EHLO
-	mail-wm0-f43.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751263AbcATLeG (ORCPT
+Received: from meiko.romanrm.net ([195.154.92.155]:52090 "EHLO
+	meiko.romanrm.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932261AbcATN6Q (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 20 Jan 2016 06:34:06 -0500
-Subject: Re: Kernel 4.4.0 KVM guest on Btrfs locks up on snapshotting
-To: Roman Mamedov <rm@romanrm.net>, bo.li.liu@oracle.com
-References: <20160120030223.22cc3ae0@natsu>
- <20160120001944.GA9884@localhost.localdomain> <20160120100852.470479a6@natsu>
+	Wed, 20 Jan 2016 08:58:16 -0500
+Date: Wed, 20 Jan 2016 18:58:10 +0500
+From: Roman Mamedov <rm@romanrm.net>
+To: Paolo Bonzini <pbonzini@redhat.com>
 Cc: linux-btrfs@vger.kernel.org, kvm@vger.kernel.org
-From: Paolo Bonzini <pbonzini@redhat.com>
-Message-ID: <569F70AA.2030006@redhat.com>
-Date: Wed, 20 Jan 2016 12:34:02 +0100
-MIME-Version: 1.0
-In-Reply-To: <20160120100852.470479a6@natsu>
-Content-Type: text/plain; charset=windows-1252
+Subject: Re: Kernel 4.4.0 KVM guest on Btrfs locks up on snapshotting
+Message-ID: <20160120185810.2c566f98@natsu>
+In-Reply-To: <1185704624.11958670.1453278484410.JavaMail.zimbra@redhat.com>
+References: <20160120030223.22cc3ae0@natsu>
+	<569EB653.9080700@redhat.com>
+	<20160120040302.308f054e@natsu>
+	<1185704624.11958670.1453278484410.JavaMail.zimbra@redhat.com>
+Mime-Version: 1.0
+Content-Type: multipart/signed; micalg=PGP-SHA1;
+ boundary="Sig_/FV.UX2Fq6t49rfNqAZuBWSo"; protocol="application/pgp-signature"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+--Sig_/FV.UX2Fq6t49rfNqAZuBWSo
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: quoted-printable
 
+On Wed, 20 Jan 2016 03:28:04 -0500 (EST)
+Paolo Bonzini <pbonzini@redhat.com> wrote:
 
-On 20/01/2016 06:08, Roman Mamedov wrote:
-> I don't get any ENOSPC errors on the host, also it doesn't seem to
-> be a slowdown caused by disk I/O searching for free space, just a
-> complete lock-up: I monitor the guest with 'ping', and when it
-> happens, the ping responses stop immediately and do not return,
-> also there is no reaction to any keypress in the KVM VNC window.
+> Can you reproduce it on the host without QEMU in the middle?
 
-Can you go to the QEMU monitor (Ctrl-Alt-F2 typically, or just add
-"-monitor stdio" to the QEMU command line) and type "info status"?
+I did not try to stress-test this on purpose yet, but this is an actively u=
+sed
+system which is snapshotting its /home, VMs and root subvolumes every hour,=
+ so
+far no lock-ups of any other application than KVM, and with KVM it's trivia=
+lly
+easy to hit, in fact first two lockups occured in the first two hours of us=
+ing
+the kernel 4.4.0 at the hourly snapshots...
 
-Paolo
+> Also, can you find the value of the "FUA" file in sysfs (e.g. with
+> "cat /sys/block/sda/device/scsi_disk/*/FUA")?
+
+It is 0 both in IDE and SCSI modes.
+
+Since you mentioned queue depth, I tried setting this on SCSI:
+
+echo 1 > /sys/block/sda/device/queue_depth
+
+(was 128 by default). Does not solve the issue and doesn't seem to make it =
+any
+harder to hit.
+
+Couple more details about the locked-up state:
+
+- 0.0% "wa" state in 'top', so there's doesn't seem to be any disk activity
+
+- I can disconnect and then successfully reconnect to the VNC port of the
+  locked-up QEMU/KVM process (!), so it looks like it's not entirely dead, =
+but
+  just the virtualization part(?)
+
+--=20
+With respect,
+Roman
+
+--Sig_/FV.UX2Fq6t49rfNqAZuBWSo
+Content-Type: application/pgp-signature; name=signature.asc
+Content-Disposition: attachment; filename=signature.asc
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
+
+iEYEARECAAYFAlafknIACgkQTLKSvz+PZwjJyACaAvZpAe6luaXRR/bxeEvEXaIZ
+DV4AniyvqgZDj5vL9BvqJ8x8qFDkft4K
+=wiFi
+-----END PGP SIGNATURE-----
+
+--Sig_/FV.UX2Fq6t49rfNqAZuBWSo--

@@ -1,265 +1,461 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:54990 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:55000 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1758430AbcATVtf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 20 Jan 2016 16:49:35 -0500
+	id S1758441AbcATVtg (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 20 Jan 2016 16:49:36 -0500
 From: Mark Fasheh <mfasheh@suse.de>
 To: linux-btrfs@vger.kernel.org
 Cc: David Sterba <dsterba@suse.com>, Chris Mason <clm@fb.com>,
         Mark Fasheh <mfasheh@suse.de>
-Subject: [PATCH 1/3] btrfs-progs: Import interval tree implemenation from Linux v4.0-rc7.
-Date: Wed, 20 Jan 2016 13:49:25 -0800
-Message-Id: <1453326567-20454-2-git-send-email-mfasheh@suse.de>
+Subject: [PATCH 2/3] btrfs-progs: add 'du' command
+Date: Wed, 20 Jan 2016 13:49:26 -0800
+Message-Id: <1453326567-20454-3-git-send-email-mfasheh@suse.de>
 In-Reply-To: <1453326567-20454-1-git-send-email-mfasheh@suse.de>
 References: <1453326567-20454-1-git-send-email-mfasheh@suse.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-While I had the chance, I compared the rbtre code in btrfs-progs to that of
-the latest kernel.  No new bug fixes need importing, however rbtree.h and
-rbtree_augmented.h get documentation updates
+'btrfs du' differs from regular du in that it will work to resolve which
+blocks are shared between files in its list. This gives the user a more
+accurate bytecount from which they can make decisions regarding management
+of their file space.
+
+We still print a total number of bytes counted (like regular du), but also
+print the number of bytes which were found to have been shared amongst the
+file set provided. From there it becomes trivial to calculate how much space
+is exclusively owned.
 
 Signed-off-by: Mark Fasheh <mfasheh@suse.de>
 ---
- interval_tree_generic.h | 193 ++++++++++++++++++++++++++++++++++++++++++++++++
- rbtree.h                |   2 +-
- rbtree_augmented.h      |  10 +++
- 3 files changed, 204 insertions(+), 1 deletion(-)
- create mode 100644 interval_tree_generic.h
+ Makefile.in       |   2 +-
+ cmds-du.c         | 368 ++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ cmds-du.h         |   7 ++
+ cmds-filesystem.c |   3 +-
+ 4 files changed, 378 insertions(+), 2 deletions(-)
+ create mode 100644 cmds-du.c
+ create mode 100644 cmds-du.h
 
-diff --git a/interval_tree_generic.h b/interval_tree_generic.h
+diff --git a/Makefile.in b/Makefile.in
+index 8e24808..901c9e8 100644
+--- a/Makefile.in
++++ b/Makefile.in
+@@ -74,7 +74,7 @@ cmds_objects = cmds-subvolume.o cmds-filesystem.o cmds-device.o cmds-scrub.o \
+ 	       cmds-inspect.o cmds-balance.o cmds-send.o cmds-receive.o \
+ 	       cmds-quota.o cmds-qgroup.o cmds-replace.o cmds-check.o \
+ 	       cmds-restore.o cmds-rescue.o chunk-recover.o super-recover.o \
+-	       cmds-property.o cmds-fi-usage.o
++	       cmds-property.o cmds-fi-usage.o cmds-du.o
+ libbtrfs_objects = send-stream.o send-utils.o rbtree.o btrfs-list.o crc32c.o \
+ 		   uuid-tree.o utils-lib.o rbtree-utils.o
+ libbtrfs_headers = send-stream.h send-utils.h send.h rbtree.h btrfs-list.h \
+diff --git a/cmds-du.c b/cmds-du.c
 new file mode 100644
-index 0000000..e26c732
+index 0000000..57758d2
 --- /dev/null
-+++ b/interval_tree_generic.h
-@@ -0,0 +1,193 @@
-+/*
-+  Interval Trees
-+  (C) 2012  Michel Lespinasse <walken@google.com>
++++ b/cmds-du.c
+@@ -0,0 +1,368 @@
++#include <sys/types.h>
++#include <sys/stat.h>
++#include <unistd.h>
++#include <stdio.h>
++#include <stdlib.h>
++#include <string.h>
++#include <stdarg.h>
++#include <getopt.h>
++#include <fcntl.h>
++#include <dirent.h>
 +
-+  This program is free software; you can redistribute it and/or modify
-+  it under the terms of the GNU General Public License as published by
-+  the Free Software Foundation; either version 2 of the License, or
-+  (at your option) any later version.
++#include <sys/ioctl.h>
++#include <linux/fs.h>
++#include <linux/fiemap.h>
 +
-+  This program is distributed in the hope that it will be useful,
-+  but WITHOUT ANY WARRANTY; without even the implied warranty of
-+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+  GNU General Public License for more details.
++#include "utils.h"
++#include "commands.h"
++#include "kerncompat.h"
++#include "rbtree.h"
 +
-+  You should have received a copy of the GNU General Public License
-+  along with this program; if not, write to the Free Software
-+  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++static int summarize = 0;
++static unsigned unit_mode = UNITS_RAW;
++static char path[PATH_MAX] = { 0, };
++static char *pathp = path;
++static char *path_max = &path[PATH_MAX - 1];
 +
-+  include/linux/interval_tree_generic.h
-+*/
++/* Track which inodes we've seen for the purposes of hardlink detection. */
++struct seen_inode {
++	struct rb_node	i_node;
++	u64		i_ino;
++	u64		i_subvol;
++};
++static struct rb_root seen_inodes = RB_ROOT;
 +
-+#include <stdbool.h>
-+
-+#include "rbtree_augmented.h"
-+
-+/*
-+ * Template for implementing interval trees
-+ *
-+ * ITSTRUCT:   struct type of the interval tree nodes
-+ * ITRB:       name of struct rb_node field within ITSTRUCT
-+ * ITTYPE:     type of the interval endpoints
-+ * ITSUBTREE:  name of ITTYPE field within ITSTRUCT holding last-in-subtree
-+ * ITSTART(n): start endpoint of ITSTRUCT node n
-+ * ITLAST(n):  last endpoint of ITSTRUCT node n
-+ * ITSTATIC:   'static' or empty
-+ * ITPREFIX:   prefix to use for the inline tree definitions
-+ *
-+ * Note - before using this, please consider if non-generic version
-+ * (interval_tree.h) would work for you...
-+ */
-+
-+#define INTERVAL_TREE_DEFINE(ITSTRUCT, ITRB, ITTYPE, ITSUBTREE,		      \
-+			     ITSTART, ITLAST, ITSTATIC, ITPREFIX)	      \
-+									      \
-+/* Callbacks for augmented rbtree insert and remove */			      \
-+									      \
-+static inline ITTYPE ITPREFIX ## _compute_subtree_last(ITSTRUCT *node)	      \
-+{									      \
-+	ITTYPE max = ITLAST(node), subtree_last;			      \
-+	if (node->ITRB.rb_left) {					      \
-+		subtree_last = rb_entry(node->ITRB.rb_left,		      \
-+					ITSTRUCT, ITRB)->ITSUBTREE;	      \
-+		if (max < subtree_last)					      \
-+			max = subtree_last;				      \
-+	}								      \
-+	if (node->ITRB.rb_right) {					      \
-+		subtree_last = rb_entry(node->ITRB.rb_right,		      \
-+					ITSTRUCT, ITRB)->ITSUBTREE;	      \
-+		if (max < subtree_last)					      \
-+			max = subtree_last;				      \
-+	}								      \
-+	return max;							      \
-+}									      \
-+									      \
-+RB_DECLARE_CALLBACKS(static, ITPREFIX ## _augment, ITSTRUCT, ITRB,	      \
-+		     ITTYPE, ITSUBTREE, ITPREFIX ## _compute_subtree_last)    \
-+									      \
-+/* Insert / remove interval nodes from the tree */			      \
-+									      \
-+ITSTATIC void ITPREFIX ## _insert(ITSTRUCT *node, struct rb_root *root)	      \
-+{									      \
-+	struct rb_node **link = &root->rb_node, *rb_parent = NULL;	      \
-+	ITTYPE start = ITSTART(node), last = ITLAST(node);		      \
-+	ITSTRUCT *parent;						      \
-+									      \
-+	while (*link) {							      \
-+		rb_parent = *link;					      \
-+		parent = rb_entry(rb_parent, ITSTRUCT, ITRB);		      \
-+		if (parent->ITSUBTREE < last)				      \
-+			parent->ITSUBTREE = last;			      \
-+		if (start < ITSTART(parent))				      \
-+			link = &parent->ITRB.rb_left;			      \
-+		else							      \
-+			link = &parent->ITRB.rb_right;			      \
-+	}								      \
-+									      \
-+	node->ITSUBTREE = last;						      \
-+	rb_link_node(&node->ITRB, rb_parent, link);			      \
-+	rb_insert_augmented(&node->ITRB, root, &ITPREFIX ## _augment);	      \
-+}									      \
-+									      \
-+ITSTATIC void ITPREFIX ## _remove(ITSTRUCT *node, struct rb_root *root)	      \
-+{									      \
-+	rb_erase_augmented(&node->ITRB, root, &ITPREFIX ## _augment);	      \
-+}									      \
-+									      \
-+/*									      \
-+ * Iterate over intervals intersecting [start;last]			      \
-+ *									      \
-+ * Note that a node's interval intersects [start;last] iff:		      \
-+ *   Cond1: ITSTART(node) <= last					      \
-+ * and									      \
-+ *   Cond2: start <= ITLAST(node)					      \
-+ */									      \
-+									      \
-+static ITSTRUCT *							      \
-+ITPREFIX ## _subtree_search(ITSTRUCT *node, ITTYPE start, ITTYPE last)	      \
-+{									      \
-+	while (true) {							      \
-+		/*							      \
-+		 * Loop invariant: start <= node->ITSUBTREE		      \
-+		 * (Cond2 is satisfied by one of the subtree nodes)	      \
-+		 */							      \
-+		if (node->ITRB.rb_left) {				      \
-+			ITSTRUCT *left = rb_entry(node->ITRB.rb_left,	      \
-+						  ITSTRUCT, ITRB);	      \
-+			if (start <= left->ITSUBTREE) {			      \
-+				/*					      \
-+				 * Some nodes in left subtree satisfy Cond2.  \
-+				 * Iterate to find the leftmost such node N.  \
-+				 * If it also satisfies Cond1, that's the     \
-+				 * match we are looking for. Otherwise, there \
-+				 * is no matching interval as nodes to the    \
-+				 * right of N can't satisfy Cond1 either.     \
-+				 */					      \
-+				node = left;				      \
-+				continue;				      \
-+			}						      \
-+		}							      \
-+		if (ITSTART(node) <= last) {		/* Cond1 */	      \
-+			if (start <= ITLAST(node))	/* Cond2 */	      \
-+				return node;	/* node is leftmost match */  \
-+			if (node->ITRB.rb_right) {			      \
-+				node = rb_entry(node->ITRB.rb_right,	      \
-+						ITSTRUCT, ITRB);	      \
-+				if (start <= node->ITSUBTREE)		      \
-+					continue;			      \
-+			}						      \
-+		}							      \
-+		return NULL;	/* No match */				      \
-+	}								      \
-+}									      \
-+									      \
-+ITSTATIC ITSTRUCT *							      \
-+ITPREFIX ## _iter_first(struct rb_root *root, ITTYPE start, ITTYPE last)      \
-+{									      \
-+	ITSTRUCT *node;							      \
-+									      \
-+	if (!root->rb_node)						      \
-+		return NULL;						      \
-+	node = rb_entry(root->rb_node, ITSTRUCT, ITRB);			      \
-+	if (node->ITSUBTREE < start)					      \
-+		return NULL;						      \
-+	return ITPREFIX ## _subtree_search(node, start, last);		      \
-+}									      \
-+									      \
-+ITSTATIC ITSTRUCT *							      \
-+ITPREFIX ## _iter_next(ITSTRUCT *node, ITTYPE start, ITTYPE last)	      \
-+{									      \
-+	struct rb_node *rb = node->ITRB.rb_right, *prev;		      \
-+									      \
-+	while (true) {							      \
-+		/*							      \
-+		 * Loop invariants:					      \
-+		 *   Cond1: ITSTART(node) <= last			      \
-+		 *   rb == node->ITRB.rb_right				      \
-+		 *							      \
-+		 * First, search right subtree if suitable		      \
-+		 */							      \
-+		if (rb) {						      \
-+			ITSTRUCT *right = rb_entry(rb, ITSTRUCT, ITRB);	      \
-+			if (start <= right->ITSUBTREE)			      \
-+				return ITPREFIX ## _subtree_search(right,     \
-+								start, last); \
-+		}							      \
-+									      \
-+		/* Move up the tree until we come from a node's left child */ \
-+		do {							      \
-+			rb = rb_parent(&node->ITRB);			      \
-+			if (!rb)					      \
-+				return NULL;				      \
-+			prev = &node->ITRB;				      \
-+			node = rb_entry(rb, ITSTRUCT, ITRB);		      \
-+			rb = node->ITRB.rb_right;			      \
-+		} while (prev == rb);					      \
-+									      \
-+		/* Check if the node intersects [start;last] */		      \
-+		if (last < ITSTART(node))		/* !Cond1 */	      \
-+			return NULL;					      \
-+		else if (start <= ITLAST(node))		/* Cond2 */	      \
-+			return node;					      \
-+	}								      \
++static int cmp_si(struct seen_inode *si, u64 ino, u64 subvol)
++{
++	if (ino < si->i_ino)
++		return -1;
++	else if (ino > si->i_ino)
++		return 1;
++	if (subvol < si->i_subvol)
++		return -1;
++	else if (subvol > si->i_subvol)
++		return 1;
++	return 0;
 +}
-diff --git a/rbtree.h b/rbtree.h
-index 0d4f2bf..47b662a 100644
---- a/rbtree.h
-+++ b/rbtree.h
-@@ -57,7 +57,7 @@ struct rb_root {
- 
- #define RB_EMPTY_ROOT(root)  ((root)->rb_node == NULL)
- 
--/* 'empty' nodes are nodes that are known not to be inserted in an rbree */
-+/* 'empty' nodes are nodes that are known not to be inserted in an rtbree */
- #define RB_EMPTY_NODE(node)  \
- 	((node)->__rb_parent_color == (unsigned long)(node))
- #define RB_CLEAR_NODE(node)  \
-diff --git a/rbtree_augmented.h b/rbtree_augmented.h
-index cbc9639..5d26978 100644
---- a/rbtree_augmented.h
-+++ b/rbtree_augmented.h
-@@ -46,6 +46,16 @@ struct rb_augment_callbacks {
- 
- extern void __rb_insert_augmented(struct rb_node *node, struct rb_root *root,
- 	void (*augment_rotate)(struct rb_node *old, struct rb_node *new));
++
++static int mark_inode_seen(u64 ino, u64 subvol)
++{
++	int cmp;
++	struct rb_node **p = &seen_inodes.rb_node;
++	struct rb_node *parent = NULL;
++	struct seen_inode *si;
++
++	while (*p) {
++		parent = *p;
++
++		si = rb_entry(parent, struct seen_inode, i_node);
++		cmp = cmp_si(si, ino, subvol);
++		if (cmp < 0)
++			p = &(*p)->rb_left;
++		else if (cmp > 0)
++			p = &(*p)->rb_right;
++		else
++			BUG();
++	}
++
++	si = calloc(1, sizeof(*si));
++	if (!si)
++		return ENOMEM;
++
++	si->i_ino = ino;
++	si->i_subvol = subvol;
++
++	rb_link_node(&si->i_node, parent, p);
++	rb_insert_color(&si->i_node, &seen_inodes);
++
++	return 0;
++}
++
++static int inode_seen(u64 ino, u64 subvol)
++{
++	int cmp;
++	struct rb_node *n = seen_inodes.rb_node;
++	struct seen_inode *si;
++
++	while (n) {
++		si = rb_entry(n, struct seen_inode, i_node);
++
++		cmp = cmp_si(si, ino, subvol);
++		if (cmp < 0)
++			n = n->rb_left;
++		else if (cmp > 0)
++			n = n->rb_right;
++		else
++			return EEXIST;
++	}
++	return 0;
++
++}
++
++const char * const cmd_filesystem_du_usage[] = {
++	"btrfs filesystem du [options] <path> [<path>..]",
++	"Summarize disk usage of each file.",
++	"-h|--human-readable",
++	"                   human friendly numbers, base 1024 (default)",
++	"-s                 display only a total for each argument",
++	NULL
++};
++
 +/*
-+ * Fixup the rbtree and update the augmented information when rebalancing.
-+ *
-+ * On insertion, the user must update the augmented information on the path
-+ * leading to the inserted node, then call rb_link_node() as usual and
-+ * rb_augment_inserted() instead of the usual rb_insert_color() call.
-+ * If rb_augment_inserted() rebalances the rbtree, it will callback into
-+ * a user provided function to update the augmented information on the
-+ * affected subtrees.
++ * Inline extents are skipped because they do not take data space,
++ * delalloc and unknown are skipped because we do not know how much
++ * space they will use yet.
 + */
- static inline void
- rb_insert_augmented(struct rb_node *node, struct rb_root *root,
- 		    const struct rb_augment_callbacks *augment)
++#define	SKIP_FLAGS	(FIEMAP_EXTENT_UNKNOWN|FIEMAP_EXTENT_DELALLOC|FIEMAP_EXTENT_DATA_INLINE)
++static int du_calc_file_space(int dirfd, const char *filename,
++			      uint64_t *ret_total, uint64_t *ret_shared)
++{
++	char buf[16384];
++	struct fiemap *fiemap = (struct fiemap *)buf;
++	struct fiemap_extent *fm_ext = &fiemap->fm_extents[0];
++	int count = (sizeof(buf) - sizeof(*fiemap)) /
++			sizeof(struct fiemap_extent);
++	unsigned int i, ret;
++	int last = 0;
++	int rc;
++	u64 ext_len;
++	int fd;
++	u64 file_total = 0;
++	u64 file_shared = 0;
++	u32 flags;
++
++	memset(fiemap, 0, sizeof(struct fiemap));
++
++	fd = openat(dirfd, filename, O_RDONLY);
++	if (fd == -1) {
++		ret = errno;
++		fprintf(stderr, "ERROR: can't access '%s': %s\n",
++			filename, strerror(ret));
++		return ret;
++	}
++
++	do {
++		fiemap->fm_length = ~0ULL;
++		fiemap->fm_extent_count = count;
++		rc = ioctl(fd, FS_IOC_FIEMAP, (unsigned long) fiemap);
++		if (rc < 0) {
++			ret = errno;
++			goto out_close;
++		}
++
++		/* If 0 extents are returned, then more ioctls are not needed */
++		if (fiemap->fm_mapped_extents == 0)
++			break;
++
++		for (i = 0; i < fiemap->fm_mapped_extents; i++) {
++			ext_len = fm_ext[i].fe_length;
++			flags = fm_ext[i].fe_flags;
++
++			if (flags & FIEMAP_EXTENT_LAST)
++				last = 1;
++
++			if (flags & SKIP_FLAGS)
++				continue;
++
++			file_total += ext_len;
++			if (flags & FIEMAP_EXTENT_SHARED)
++				file_shared += ext_len;
++		}
++
++		fiemap->fm_start = (fm_ext[i - 1].fe_logical +
++				    fm_ext[i - 1].fe_length);
++	} while (last == 0);
++
++	*ret_total = file_total;
++	*ret_shared = file_shared;
++
++	ret = 0;
++out_close:
++	close(fd);
++	return ret;
++}
++
++struct du_dir_ctxt {
++	uint64_t	bytes_total;
++	uint64_t	bytes_shared;
++};
++
++static int du_add_file(const char *filename, int dirfd, uint64_t *ret_total,
++		       uint64_t *ret_shared, int top_level);
++
++static int du_walk_dir(struct du_dir_ctxt *ctxt)
++{
++	int fd, ret, type;
++	DIR *dirstream = NULL;
++	struct dirent *entry;
++
++	fd = open_file_or_dir(path, &dirstream);
++	if (fd < 0)
++		return fd;
++
++	ret = 0;
++	do {
++		uint64_t tot, shr;
++
++		errno = 0;
++		entry = readdir(dirstream);
++		if (entry) {
++			if (strcmp(entry->d_name, ".") == 0
++			    || strcmp(entry->d_name, "..") == 0)
++				continue;
++
++			type = entry->d_type;
++			if (type == DT_REG || type == DT_DIR) {
++				tot = shr = 0;
++
++				ret = du_add_file(entry->d_name,
++						  dirfd(dirstream), &tot,
++						  &shr, 0);
++				if (ret)
++					break;
++
++				ctxt->bytes_total += tot;
++				ctxt->bytes_shared += shr;
++			}
++		}
++	} while (entry != NULL);
++
++	close_file_or_dir(fd, dirstream);
++	return ret;
++}
++
++static int du_add_file(const char *filename, int dirfd, uint64_t *ret_total,
++		       uint64_t *ret_shared, int top_level)
++{
++	int ret, len = strlen(filename);
++	char *pathtmp;
++	struct stat st;
++	struct du_dir_ctxt dir;
++	uint64_t file_total = 0;
++	uint64_t file_shared = 0;
++	u64 subvol;
++	int fd;
++	DIR *dirstream = NULL;
++
++	ret = fstatat(dirfd, filename, &st, 0);
++	if (ret) {
++		ret = errno;
++		return ret;
++	}
++
++	if (!S_ISREG(st.st_mode) && !S_ISDIR(st.st_mode))
++		return 0;
++
++	if (len > (path_max - pathp)) {
++		fprintf(stderr, "ERROR: Path max exceeded: %s %s\n", path,
++			filename);
++		return ENAMETOOLONG;
++	}
++
++	pathtmp = pathp;
++	if (pathp == path)
++		ret = sprintf(pathp, "%s", filename);
++	else
++		ret = sprintf(pathp, "/%s", filename);
++	pathp += ret;
++
++	fd = open_file_or_dir(path, &dirstream);
++	if (fd < 0) {
++		ret = fd;
++		goto out;
++	}
++
++	ret = lookup_ino_rootid(fd, &subvol);
++	if (ret)
++		goto out_close;
++
++	if (inode_seen(st.st_ino, subvol))
++		goto out_close;
++
++	ret = mark_inode_seen(st.st_ino, subvol);
++	if (ret)
++		goto out_close;
++
++	if (S_ISREG(st.st_mode)) {
++		ret = du_calc_file_space(dirfd, filename, &file_total,
++					 &file_shared);
++		if (ret)
++			goto out_close;
++	} else if (S_ISDIR(st.st_mode)) {
++		memset(&dir, 0, sizeof(dir));
++
++		ret = du_walk_dir(&dir);
++		*pathp = '\0';
++		if (ret)
++			goto out_close;
++
++		file_total = dir.bytes_total;
++		file_shared = dir.bytes_shared;
++	}
++
++	if (!summarize || top_level) {
++		printf("%s\t%s\t%s\n", pretty_size_mode(file_total, unit_mode),
++		       pretty_size_mode((file_total - file_shared), unit_mode),
++		       path);
++	}
++
++	if (ret_total)
++		*ret_total = file_total;
++	if (ret_shared)
++		*ret_shared = file_shared;
++
++out_close:
++	close_file_or_dir(fd, dirstream);
++out:
++	/* reset path to just before this element */
++	pathp = pathtmp;
++
++	return ret;
++}
++
++int cmd_filesystem_du(int argc, char **argv)
++{
++	int ret = 0, error = 0;
++	int i;
++
++	optind = 1;
++	while (1) {
++		int long_index;
++		static const struct option long_options[] = {
++			{ "summarize", no_argument, NULL, 's'},
++			{ "human-readable", no_argument, NULL, 'h'},
++			{ NULL, 0, NULL, 0 }
++		};
++		int c = getopt_long(argc, argv, "sh", long_options,
++				&long_index);
++
++		if (c < 0)
++			break;
++		switch (c) {
++		case 'h':
++			unit_mode = UNITS_HUMAN;
++			break;
++		case 's':
++			summarize = 1;
++			break;
++		default:
++			usage(cmd_filesystem_du_usage);
++		}
++	}
++
++	if (check_argc_min(argc - optind, 1))
++		usage(cmd_filesystem_du_usage);
++
++	printf("total\texclusive\tfilename\n");
++
++	for (i = optind; i < argc; i++) {
++		ret = du_add_file(argv[i], AT_FDCWD, NULL, NULL, 1);
++		if (ret) {
++			fprintf(stderr, "ERROR: can't check space of '%s': %s\n",
++				argv[i], strerror(ret));
++			error = 1;
++		}
++	}
++
++	return error;
++}
+diff --git a/cmds-du.h b/cmds-du.h
+new file mode 100644
+index 0000000..5ffb178
+--- /dev/null
++++ b/cmds-du.h
+@@ -0,0 +1,7 @@
++#ifndef __CMDS_DU_H__
++#define __CMDS_DU_H__
++
++extern const char * const cmd_filesystem_du_usage[];
++int cmd_filesystem_du(int argc, char **argv);
++
++#endif	/* __CMDS_DU_H__ */
+diff --git a/cmds-filesystem.c b/cmds-filesystem.c
+index 25317fa..4973b10 100644
+--- a/cmds-filesystem.c
++++ b/cmds-filesystem.c
+@@ -37,7 +37,7 @@
+ #include "cmds-fi-usage.h"
+ #include "list_sort.h"
+ #include "disk-io.h"
+-
++#include "cmds-du.h"
+ 
+ /*
+  * for btrfs fi show, we maintain a hash of fsids we've already printed.
+@@ -1287,6 +1287,7 @@ static const char filesystem_cmd_group_info[] =
+ const struct cmd_group filesystem_cmd_group = {
+ 	filesystem_cmd_group_usage, filesystem_cmd_group_info, {
+ 		{ "df", cmd_filesystem_df, cmd_filesystem_df_usage, NULL, 0 },
++		{ "du", cmd_filesystem_du, cmd_filesystem_du_usage, NULL, 0 },
+ 		{ "show", cmd_filesystem_show, cmd_filesystem_show_usage, NULL,
+ 			0 },
+ 		{ "sync", cmd_filesystem_sync, cmd_filesystem_sync_usage, NULL,
 -- 
 2.1.4
 

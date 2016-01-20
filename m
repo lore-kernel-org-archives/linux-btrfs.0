@@ -1,31 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f182.google.com ([209.85.213.182]:34920 "EHLO
-	mail-ig0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751367AbcATPlF (ORCPT
+Received: from mail-wm0-f52.google.com ([74.125.82.52]:36527 "EHLO
+	mail-wm0-f52.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S934015AbcATR2h (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 20 Jan 2016 10:41:05 -0500
-Received: by mail-ig0-f182.google.com with SMTP id t15so104381222igr.0
-        for <linux-btrfs@vger.kernel.org>; Wed, 20 Jan 2016 07:41:04 -0800 (PST)
-Subject: Re: Interjection: autodefrag mount option aye, nae?
-To: Al <6401e46d@opayq.com>, linux-btrfs@vger.kernel.org
-References: <CAGkb5vfzcOmj1Js=pBR6=-Uad7jY2bJy5ht3F-m-1TEOBjwCYA@mail.gmail.com>
- <5697D0E9.3080007@gmail.com> <20160114192647.GB24567@localhost.localdomain>
- <5697F9E7.1020004@gmail.com> <loom.20160120T163054-326@post.gmane.org>
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <569FAA4E.1040204@gmail.com>
-Date: Wed, 20 Jan 2016 10:39:58 -0500
+	Wed, 20 Jan 2016 12:28:37 -0500
+Subject: Re: Kernel 4.4.0 KVM guest on Btrfs locks up on snapshotting
+To: Roman Mamedov <rm@romanrm.net>
+References: <20160120030223.22cc3ae0@natsu> <569EB653.9080700@redhat.com>
+ <20160120040302.308f054e@natsu>
+ <1185704624.11958670.1453278484410.JavaMail.zimbra@redhat.com>
+ <20160120185810.2c566f98@natsu>
+Cc: linux-btrfs@vger.kernel.org, kvm@vger.kernel.org
+From: Paolo Bonzini <pbonzini@redhat.com>
+Message-ID: <569FC3C1.2000804@redhat.com>
+Date: Wed, 20 Jan 2016 18:28:33 +0100
 MIME-Version: 1.0
-In-Reply-To: <loom.20160120T163054-326@post.gmane.org>
-Content-Type: text/plain; charset=windows-1252; format=flowed
+In-Reply-To: <20160120185810.2c566f98@natsu>
+Content-Type: text/plain; charset=windows-1252
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2016-01-20 10:33, Al wrote:
-> [very quietly] I've had autodefrag out of my mount options for a long while
-> now. Is that still the recommended position?
-I think it really depends on what you're doing.  In my case, I usually 
-have it on, and the only issue I've ever seen is that Chrome sometimes 
-loads pages from local cache slower than it should be.  I also don't use 
-ridiculous numbers of snapshots either (I use them only to get a stable 
-view of the filesystem when generating a backup), so I don't have much 
-experience with how they interact with autodefrag.
+
+
+On 20/01/2016 14:58, Roman Mamedov wrote:
+> On Wed, 20 Jan 2016 03:28:04 -0500 (EST) Paolo Bonzini
+> <pbonzini@redhat.com> wrote:
+> 
+>> Can you reproduce it on the host without QEMU in the middle?
+> 
+> I did not try to stress-test this on purpose yet, but this is an
+> actively used system which is snapshotting its /home, VMs and root
+> subvolumes every hour, so far no lock-ups of any other application
+> than KVM, and with KVM it's trivially easy to hit, in fact first
+> two lockups occured in the first two hours of using the kernel
+> 4.4.0 at the hourly snapshots...
+> 
+>> Also, can you find the value of the "FUA" file in sysfs (e.g.
+>> with "cat /sys/block/sda/device/scsi_disk/*/FUA")?
+> 
+> It is 0 both in IDE and SCSI modes.
+
+And in the host?
+
+Paolo

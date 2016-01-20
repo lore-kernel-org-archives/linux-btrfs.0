@@ -1,63 +1,126 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:65235 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1756785AbcASBg4 (ORCPT
+Received: from mail-io0-f194.google.com ([209.85.223.194]:33671 "EHLO
+	mail-io0-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752770AbcATUsr (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 18 Jan 2016 20:36:56 -0500
-Subject: Re: [PATCH v5 0/2][PULL REQUEST] Unify 'norecovery' bahavior with
- other filesystems
-To: <dsterba@suse.cz>, <linux-btrfs@vger.kernel.org>, <clm@fb.com>
-References: <1452564313-22007-1-git-send-email-quwenruo@cn.fujitsu.com>
- <20160114160031.GB4227@twin.jikos.cz>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <569D9321.2050805@cn.fujitsu.com>
-Date: Tue, 19 Jan 2016 09:36:33 +0800
+	Wed, 20 Jan 2016 15:48:47 -0500
+Received: by mail-io0-f194.google.com with SMTP id f81so2617814iof.0
+        for <linux-btrfs@vger.kernel.org>; Wed, 20 Jan 2016 12:48:46 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <20160114160031.GB4227@twin.jikos.cz>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+Reply-To: fdmanana@gmail.com
+In-Reply-To: <9b89157957abcc87a6ea0530989a4984794484cd.1452078012.git.zhaolei@cn.fujitsu.com>
+References: <9b89157957abcc87a6ea0530989a4984794484cd.1452078012.git.zhaolei@cn.fujitsu.com>
+Date: Wed, 20 Jan 2016 20:48:46 +0000
+Message-ID: <CAL3q7H4P5t0X7mw-BSt5H2h2e1U15Y=Wyd5RjtJzqEhQs6ODpQ@mail.gmail.com>
+Subject: Re: [PATCH 1/3] btrfs: Continue write in case of can_not_nocow
+From: Filipe Manana <fdmanana@gmail.com>
+To: Zhao Lei <zhaolei@cn.fujitsu.com>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
-
-David Sterba wrote on 2016/01/14 17:00 +0100:
-> On Tue, Jan 12, 2016 at 10:05:11AM +0800, Qu Wenruo wrote:
->> 'Norecovery' mount option is almost a standard for all other
->> filesystems, including f2fs, ext4, gfs2, nilfs2, and xfs.
->> And since current 'recovery' mount option for btrfs is too generic, it's
->> better to change btrfs 'recovery' to 'usebackuproot' and then we can
->> safely add 'norecovery' and 'nologreplay' mount option for btrfs.
->>
->> The patch itself is not huge and already tested by others since v2.
->> Only mount option name is changing during all these version changes.
+On Wed, Jan 6, 2016 at 11:00 AM, Zhao Lei <zhaolei@cn.fujitsu.com> wrote:
+> btrfs failed in xfstests btrfs/080 with -o nodatacow.
 >
-> So we have some kind of consensus about the options, but I think you
-> need to split the patches further.
+> Can be reproduced by following script:
+>   DEV=/dev/vdg
+>   MNT=/mnt/tmp
 >
-> * the new option 'nologreplay'
-> * keep 'usebackuproot' as a new alias for 'recovery' (with the
->    deprecation warning)
-> * new 'norecovery' that switches on 'nologreplay' and 'nousebackuproot'
->    (ie. the desired "no writes")
-
-Hi David,
-
-I'm curious about why 'norecovery' needs to imply 'nousebackuproot'.
-As usebackuproot only affects where btrfs to read the tree/chunk roots.
-It doesn't mean to change/write anything. RO will ensure superblock is 
-not modified.
-
-So I'll only add 'norecovery' as alias for 'nologreplay'.
-
-Thanks,
-Qu
-
+>   umount $DEV &>/dev/null
+>   mkfs.btrfs -f $DEV
+>   mount -o nodatacow $DEV $MNT
 >
-> There is a case in remount, when we start with 'ro,nologreplay' then
-> remount with just 'ro', the log should be replayed. The other
-> combinations should be easy. I haven't looked at the patch if it's
-> implemented that way though.
+>   dd if=/dev/zero of=$MNT/test bs=1 count=2048 &
+>   btrfs subvolume snapshot -r $MNT $MNT/test_snap &
+>   wait
+>   --
+>   We can see dd failed on NO_SPACE.
+>
+> Reason:
+>   __btrfs_buffered_write should run cow write when no_cow impossible,
+>   and current code is designed with above logic.
+>   But check_can_nocow() have 2 type of return value(0 and <0) on
+>   can_not_no_cow, and current code only continue write on first case,
+>   the second case happened in doing subvolume.
+>
+> Fix:
+>   Continue write when check_can_nocow() return 0 and <0.
+>
+> Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
+Reviewed-by: Filipe Manana <fdmanana@suse.com>
+
+Could you please submit a test case for xfstests as well?
+Thanks.
+
+> ---
+>  fs/btrfs/file.c | 37 +++++++++++++++++--------------------
+>  1 file changed, 17 insertions(+), 20 deletions(-)
+>
+> diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+> index 977e715..11fd981 100644
+> --- a/fs/btrfs/file.c
+> +++ b/fs/btrfs/file.c
+> @@ -1516,27 +1516,24 @@ static noinline ssize_t __btrfs_buffered_write(struct file *file,
+>
+>                 reserve_bytes = num_pages << PAGE_CACHE_SHIFT;
+>
+> -               if (BTRFS_I(inode)->flags & (BTRFS_INODE_NODATACOW |
+> -                                            BTRFS_INODE_PREALLOC)) {
+> -                       ret = check_can_nocow(inode, pos, &write_bytes);
+> -                       if (ret < 0)
+> -                               break;
+> -                       if (ret > 0) {
+> -                               /*
+> -                                * For nodata cow case, no need to reserve
+> -                                * data space.
+> -                                */
+> -                               only_release_metadata = true;
+> -                               /*
+> -                                * our prealloc extent may be smaller than
+> -                                * write_bytes, so scale down.
+> -                                */
+> -                               num_pages = DIV_ROUND_UP(write_bytes + offset,
+> -                                                        PAGE_CACHE_SIZE);
+> -                               reserve_bytes = num_pages << PAGE_CACHE_SHIFT;
+> -                               goto reserve_metadata;
+> -                       }
+> +               if ((BTRFS_I(inode)->flags & (BTRFS_INODE_NODATACOW |
+> +                                             BTRFS_INODE_PREALLOC)) &&
+> +                   check_can_nocow(inode, pos, &write_bytes) > 0) {
+> +                       /*
+> +                        * For nodata cow case, no need to reserve
+> +                        * data space.
+> +                        */
+> +                       only_release_metadata = true;
+> +                       /*
+> +                        * our prealloc extent may be smaller than
+> +                        * write_bytes, so scale down.
+> +                        */
+> +                       num_pages = DIV_ROUND_UP(write_bytes + offset,
+> +                                                PAGE_CACHE_SIZE);
+> +                       reserve_bytes = num_pages << PAGE_CACHE_SHIFT;
+> +                       goto reserve_metadata;
+>                 }
+> +
+>                 ret = btrfs_check_data_free_space(inode, pos, write_bytes);
+>                 if (ret < 0)
+>                         break;
+> --
+> 1.8.5.1
 >
 >
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 
 
+
+-- 
+Filipe David Manana,
+
+"Reasonable men adapt themselves to the world.
+ Unreasonable men adapt the world to themselves.
+ That's why all progress depends on unreasonable men."

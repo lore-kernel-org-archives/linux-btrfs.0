@@ -1,81 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from meiko.romanrm.net ([195.154.92.155]:52090 "EHLO
-	meiko.romanrm.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932261AbcATN6Q (ORCPT
+Received: from mail-wm0-f51.google.com ([74.125.82.51]:34675 "EHLO
+	mail-wm0-f51.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751205AbcATORs (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 20 Jan 2016 08:58:16 -0500
-Date: Wed, 20 Jan 2016 18:58:10 +0500
-From: Roman Mamedov <rm@romanrm.net>
-To: Paolo Bonzini <pbonzini@redhat.com>
-Cc: linux-btrfs@vger.kernel.org, kvm@vger.kernel.org
-Subject: Re: Kernel 4.4.0 KVM guest on Btrfs locks up on snapshotting
-Message-ID: <20160120185810.2c566f98@natsu>
-In-Reply-To: <1185704624.11958670.1453278484410.JavaMail.zimbra@redhat.com>
-References: <20160120030223.22cc3ae0@natsu>
-	<569EB653.9080700@redhat.com>
-	<20160120040302.308f054e@natsu>
-	<1185704624.11958670.1453278484410.JavaMail.zimbra@redhat.com>
-Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=PGP-SHA1;
- boundary="Sig_/FV.UX2Fq6t49rfNqAZuBWSo"; protocol="application/pgp-signature"
+	Wed, 20 Jan 2016 09:17:48 -0500
+Received: by mail-wm0-f51.google.com with SMTP id u188so186562367wmu.1
+        for <linux-btrfs@vger.kernel.org>; Wed, 20 Jan 2016 06:17:48 -0800 (PST)
+Received: from [10.3.28.25] ([155.210.218.230])
+        by smtp.gmail.com with ESMTPSA id q75sm25426182wmd.6.2016.01.20.06.17.46
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLSv1/SSLv3 cipher=OTHER);
+        Wed, 20 Jan 2016 06:17:46 -0800 (PST)
+Subject: Re: raid1 vs raid5
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+References: <568BEE3F.4060402@gmail.com>
+From: Psalle <psalleetsile@gmail.com>
+Message-ID: <569F9709.4090608@gmail.com>
+Date: Wed, 20 Jan 2016 15:17:45 +0100
+MIME-Version: 1.0
+In-Reply-To: <568BEE3F.4060402@gmail.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
---Sig_/FV.UX2Fq6t49rfNqAZuBWSo
-Content-Type: text/plain; charset=US-ASCII
-Content-Transfer-Encoding: quoted-printable
+I had forgotten about this post and on rethinking about it I realized 
+the kind of brain fart I was having. So thanks for the merciful silence ;-)
 
-On Wed, 20 Jan 2016 03:28:04 -0500 (EST)
-Paolo Bonzini <pbonzini@redhat.com> wrote:
+On 05/01/16 17:24, Psalle wrote:
+> Hello all and excuse me if this is a silly question. I looked around 
+> in the wiki and list archives but couldn't find any in-depth 
+> discussion about this:
+>
+> I just realized that, since raid1 in btrfs is special (meaning only 
+> two copies in different devices), the effect in terms of resilience 
+> achieved with raid1 and raid5 are the same: you can lose one drive and 
+> not lose data.
+>
+> So!, presuming that raid5 were at the same level of maturity, what 
+> would be the pros/cons of each mode?
+>
+> As a corollary, I guess that if raid1 is considered a good compromise, 
+> then functional equivalents to raid6 and beyond could simply be 
+> implemented as "storing n copies in different devices", dropping any 
+> complex parity computations and making this mode entirely generic. 
+> Since this seems pretty obvious, I'd welcome your insights on what are 
+> the things I'm missing, since it doesn't exist (and it isn't planned 
+> to be this way, AFAIK). I can foresee consistency difficulties, but 
+> that seems hardly insurmountable if its being done for raid1?
+>
+> Thanks in advance,
+> Psalle.
 
-> Can you reproduce it on the host without QEMU in the middle?
-
-I did not try to stress-test this on purpose yet, but this is an actively u=
-sed
-system which is snapshotting its /home, VMs and root subvolumes every hour,=
- so
-far no lock-ups of any other application than KVM, and with KVM it's trivia=
-lly
-easy to hit, in fact first two lockups occured in the first two hours of us=
-ing
-the kernel 4.4.0 at the hourly snapshots...
-
-> Also, can you find the value of the "FUA" file in sysfs (e.g. with
-> "cat /sys/block/sda/device/scsi_disk/*/FUA")?
-
-It is 0 both in IDE and SCSI modes.
-
-Since you mentioned queue depth, I tried setting this on SCSI:
-
-echo 1 > /sys/block/sda/device/queue_depth
-
-(was 128 by default). Does not solve the issue and doesn't seem to make it =
-any
-harder to hit.
-
-Couple more details about the locked-up state:
-
-- 0.0% "wa" state in 'top', so there's doesn't seem to be any disk activity
-
-- I can disconnect and then successfully reconnect to the VNC port of the
-  locked-up QEMU/KVM process (!), so it looks like it's not entirely dead, =
-but
-  just the virtualization part(?)
-
---=20
-With respect,
-Roman
-
---Sig_/FV.UX2Fq6t49rfNqAZuBWSo
-Content-Type: application/pgp-signature; name=signature.asc
-Content-Disposition: attachment; filename=signature.asc
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
-
-iEYEARECAAYFAlafknIACgkQTLKSvz+PZwjJyACaAvZpAe6luaXRR/bxeEvEXaIZ
-DV4AniyvqgZDj5vL9BvqJ8x8qFDkft4K
-=wiFi
------END PGP SIGNATURE-----
-
---Sig_/FV.UX2Fq6t49rfNqAZuBWSo--

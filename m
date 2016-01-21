@@ -1,55 +1,51 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:40579 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:40595 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1759061AbcAUScG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 21 Jan 2016 13:32:06 -0500
+	id S1759632AbcAUScM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 21 Jan 2016 13:32:12 -0500
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+	by mx2.suse.de (Postfix) with ESMTP id 2CCA0ACA7
+	for <linux-btrfs@vger.kernel.org>; Thu, 21 Jan 2016 18:32:09 +0000 (UTC)
 From: David Sterba <dsterba@suse.com>
 To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.com>, clm@fb.com
-Subject: [PULL][PATCH 0/4] Sysfs fixes to incompat bits
-Date: Thu, 21 Jan 2016 19:31:57 +0100
-Message-Id: <cover.1453400624.git.dsterba@suse.com>
+Cc: David Sterba <dsterba@suse.com>
+Subject: [PATCH 2/4] btrfs: sysfs: add free-space-tree bit attribute
+Date: Thu, 21 Jan 2016 19:32:04 +0100
+Message-Id: <3b5bb73bd88d1d90163c91e7cad50b12725dbb1c.1453400624.git.dsterba@suse.com>
+In-Reply-To: <cover.1453400624.git.dsterba@suse.com>
+References: <cover.1453400624.git.dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+The incompat bit representing the newly added free space tree feature is
+missing. Right now it will be listed only among features supported by
+the module, not per-fs.
 
-I've noticed that the free space tree compat bit is missing from the sysfs
-files, this patch series fixes that. Incidentally I found out that any incompat
-bits set during filesystem lifetime are not tracked there either, so that's
-also fixed.
+Signed-off-by: David Sterba <dsterba@suse.com>
+---
+ fs/btrfs/sysfs.c | 2 ++
+ 1 file changed, 2 insertions(+)
 
-This is not critical for using the free space tree feature itself, I'm
-targeting 4.5-rc2. Thanks.
-
-----------------------------------------------------------------
-The following changes since commit 988f1f576d4f7531cb2175ee1b7cb7afd6d95d22:
-
-  Merge branch 'for-chris-4.5' of git://git.kernel.org/pub/scm/linux/kernel/git/fdmanana/linux into for-linus-4.5 (2016-01-11 08:39:28 -0800)
-
-are available in the git repository at:
-
-  git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git fix/fst-sysfs
-
-for you to fetch changes up to 14e46e04958df740c6c6a94849f176159a333f13:
-
-  btrfs: synchronize incompat feature bits with sysfs files (2016-01-21 18:54:41 +0100)
-
-----------------------------------------------------------------
-David Sterba (4):
-  btrfs: sysfs: fix typo in compat_ro attribute definition
-  btrfs: sysfs: add free-space-tree bit attribute
-  btrfs: sysfs: introduce helper for syncing bits with sysfs files
-  btrfs: synchronize incompat feature bits with sysfs files
-
- fs/btrfs/free-space-tree.c |  7 +++++++
- fs/btrfs/ioctl.c           |  4 ++++
- fs/btrfs/super.c           |  4 ++++
- fs/btrfs/sysfs.c           | 32 ++++++++++++++++++++++++++++++++
- fs/btrfs/sysfs.h           |  5 ++++-
- fs/btrfs/volumes.c         |  2 ++
- 6 files changed, 53 insertions(+), 1 deletion(-)
-
+diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
+index e0ac85949067..906f7ed6fc80 100644
+--- a/fs/btrfs/sysfs.c
++++ b/fs/btrfs/sysfs.c
+@@ -202,6 +202,7 @@ BTRFS_FEAT_ATTR_INCOMPAT(extended_iref, EXTENDED_IREF);
+ BTRFS_FEAT_ATTR_INCOMPAT(raid56, RAID56);
+ BTRFS_FEAT_ATTR_INCOMPAT(skinny_metadata, SKINNY_METADATA);
+ BTRFS_FEAT_ATTR_INCOMPAT(no_holes, NO_HOLES);
++BTRFS_FEAT_ATTR_COMPAT_RO(free_space_tree, FREE_SPACE_TREE);
+ 
+ static struct attribute *btrfs_supported_feature_attrs[] = {
+ 	BTRFS_FEAT_ATTR_PTR(mixed_backref),
+@@ -213,6 +214,7 @@ static struct attribute *btrfs_supported_feature_attrs[] = {
+ 	BTRFS_FEAT_ATTR_PTR(raid56),
+ 	BTRFS_FEAT_ATTR_PTR(skinny_metadata),
+ 	BTRFS_FEAT_ATTR_PTR(no_holes),
++	BTRFS_FEAT_ATTR_PTR(free_space_tree),
+ 	NULL
+ };
+ 
 -- 
 2.6.3
 

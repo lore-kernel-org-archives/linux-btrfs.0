@@ -1,325 +1,261 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from e23smtp09.au.ibm.com ([202.81.31.142]:36873 "EHLO
-	e23smtp09.au.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1759292AbcAUK1J (ORCPT
+Received: from e23smtp01.au.ibm.com ([202.81.31.143]:55483 "EHLO
+	e23smtp01.au.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1759233AbcAUK1I (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 21 Jan 2016 05:27:09 -0500
+	Thu, 21 Jan 2016 05:27:08 -0500
 Received: from localhost
-	by e23smtp09.au.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
+	by e23smtp01.au.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
 	for <linux-btrfs@vger.kernel.org> from <chandan@linux.vnet.ibm.com>;
-	Thu, 21 Jan 2016 20:27:08 +1000
+	Thu, 21 Jan 2016 20:27:05 +1000
 Received: from d23relay06.au.ibm.com (d23relay06.au.ibm.com [9.185.63.219])
-	by d23dlp03.au.ibm.com (Postfix) with ESMTP id 4EB2F3578053
-	for <linux-btrfs@vger.kernel.org>; Thu, 21 Jan 2016 21:27:05 +1100 (EST)
+	by d23dlp01.au.ibm.com (Postfix) with ESMTP id 25A822CE8056
+	for <linux-btrfs@vger.kernel.org>; Thu, 21 Jan 2016 21:27:03 +1100 (EST)
 Received: from d23av03.au.ibm.com (d23av03.au.ibm.com [9.190.234.97])
-	by d23relay06.au.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id u0LAQlLJ15597596
-	for <linux-btrfs@vger.kernel.org>; Thu, 21 Jan 2016 21:26:55 +1100
+	by d23relay06.au.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id u0LAQibH46006486
+	for <linux-btrfs@vger.kernel.org>; Thu, 21 Jan 2016 21:26:53 +1100
 Received: from d23av03.au.ibm.com (localhost [127.0.0.1])
-	by d23av03.au.ibm.com (8.14.4/8.14.4/NCO v10.0 AVout) with ESMTP id u0LAQWAp013915
-	for <linux-btrfs@vger.kernel.org>; Thu, 21 Jan 2016 21:26:33 +1100
+	by d23av03.au.ibm.com (8.14.4/8.14.4/NCO v10.0 AVout) with ESMTP id u0LAQU8q013848
+	for <linux-btrfs@vger.kernel.org>; Thu, 21 Jan 2016 21:26:30 +1100
 From: Chandan Rajendra <chandan@linux.vnet.ibm.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Chandan Rajendra <chandan@linux.vnet.ibm.com>, jbacik@fb.com, clm@fb.com,
         bo.li.liu@oracle.com, dsterba@suse.cz, chandan@mykolab.com
-Subject: [PATCH V10 04/12] Btrfs: fallocate: Work with sectorsized blocks
-Date: Thu, 21 Jan 2016 15:55:56 +0530
-Message-Id: <1453371964-4917-5-git-send-email-chandan@linux.vnet.ibm.com>
+Subject: [PATCH V10 03/12] Btrfs: Direct I/O read: Work on sectorsized blocks
+Date: Thu, 21 Jan 2016 15:55:55 +0530
+Message-Id: <1453371964-4917-4-git-send-email-chandan@linux.vnet.ibm.com>
 In-Reply-To: <1453371964-4917-1-git-send-email-chandan@linux.vnet.ibm.com>
 References: <1453371964-4917-1-git-send-email-chandan@linux.vnet.ibm.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-While at it, this commit changes btrfs_truncate_page() to truncate sectorsized
-blocks instead of pages. Hence the function has been renamed to
-btrfs_truncate_block().
+The direct I/O read's endio and corresponding repair functions work on
+page sized blocks. This commit adds the ability for direct I/O read to work on
+subpagesized blocks.
 
 Signed-off-by: Chandan Rajendra <chandan@linux.vnet.ibm.com>
 ---
- fs/btrfs/ctree.h |  2 +-
- fs/btrfs/file.c  | 44 ++++++++++++++++++++---------------------
- fs/btrfs/inode.c | 60 ++++++++++++++++++++++++++++++--------------------------
- 3 files changed, 55 insertions(+), 51 deletions(-)
+ fs/btrfs/inode.c | 98 +++++++++++++++++++++++++++++++++++++++++++-------------
+ 1 file changed, 75 insertions(+), 23 deletions(-)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 9f4609c..15b630f 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -4027,7 +4027,7 @@ int btrfs_unlink_subvol(struct btrfs_trans_handle *trans,
- 			struct btrfs_root *root,
- 			struct inode *dir, u64 objectid,
- 			const char *name, int name_len);
--int btrfs_truncate_page(struct inode *inode, loff_t from, loff_t len,
-+int btrfs_truncate_block(struct inode *inode, loff_t from, loff_t len,
- 			int front);
- int btrfs_truncate_inode_items(struct btrfs_trans_handle *trans,
- 			       struct btrfs_root *root,
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index e294620..9682002 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -2312,10 +2312,10 @@ static int btrfs_punch_hole(struct inode *inode, loff_t offset, loff_t len)
- 	int ret = 0;
- 	int err = 0;
- 	unsigned int rsv_count;
--	bool same_page;
-+	bool same_block;
- 	bool no_holes = btrfs_fs_incompat(root->fs_info, NO_HOLES);
- 	u64 ino_size;
--	bool truncated_page = false;
-+	bool truncated_block = false;
- 	bool updated_inode = false;
- 
- 	ret = btrfs_wait_ordered_range(inode, offset, len);
-@@ -2323,7 +2323,7 @@ static int btrfs_punch_hole(struct inode *inode, loff_t offset, loff_t len)
- 		return ret;
- 
- 	mutex_lock(&inode->i_mutex);
--	ino_size = round_up(inode->i_size, PAGE_CACHE_SIZE);
-+	ino_size = round_up(inode->i_size, root->sectorsize);
- 	ret = find_first_non_hole(inode, &offset, &len);
- 	if (ret < 0)
- 		goto out_only_mutex;
-@@ -2336,31 +2336,30 @@ static int btrfs_punch_hole(struct inode *inode, loff_t offset, loff_t len)
- 	lockstart = round_up(offset, BTRFS_I(inode)->root->sectorsize);
- 	lockend = round_down(offset + len,
- 			     BTRFS_I(inode)->root->sectorsize) - 1;
--	same_page = ((offset >> PAGE_CACHE_SHIFT) ==
--		    ((offset + len - 1) >> PAGE_CACHE_SHIFT));
--
-+	same_block = (BTRFS_BYTES_TO_BLKS(root->fs_info, offset))
-+		== (BTRFS_BYTES_TO_BLKS(root->fs_info, offset + len - 1));
- 	/*
--	 * We needn't truncate any page which is beyond the end of the file
-+	 * We needn't truncate any block which is beyond the end of the file
- 	 * because we are sure there is no data there.
- 	 */
- 	/*
--	 * Only do this if we are in the same page and we aren't doing the
--	 * entire page.
-+	 * Only do this if we are in the same block and we aren't doing the
-+	 * entire block.
- 	 */
--	if (same_page && len < PAGE_CACHE_SIZE) {
-+	if (same_block && len < root->sectorsize) {
- 		if (offset < ino_size) {
--			truncated_page = true;
--			ret = btrfs_truncate_page(inode, offset, len, 0);
-+			truncated_block = true;
-+			ret = btrfs_truncate_block(inode, offset, len, 0);
- 		} else {
- 			ret = 0;
- 		}
- 		goto out_only_mutex;
- 	}
- 
--	/* zero back part of the first page */
-+	/* zero back part of the first block */
- 	if (offset < ino_size) {
--		truncated_page = true;
--		ret = btrfs_truncate_page(inode, offset, 0, 0);
-+		truncated_block = true;
-+		ret = btrfs_truncate_block(inode, offset, 0, 0);
- 		if (ret) {
- 			mutex_unlock(&inode->i_mutex);
- 			return ret;
-@@ -2395,9 +2394,10 @@ static int btrfs_punch_hole(struct inode *inode, loff_t offset, loff_t len)
- 		if (!ret) {
- 			/* zero the front end of the last page */
- 			if (tail_start + tail_len < ino_size) {
--				truncated_page = true;
--				ret = btrfs_truncate_page(inode,
--						tail_start + tail_len, 0, 1);
-+				truncated_block = true;
-+				ret = btrfs_truncate_block(inode,
-+							tail_start + tail_len,
-+							0, 1);
- 				if (ret)
- 					goto out_only_mutex;
- 			}
-@@ -2577,7 +2577,7 @@ out:
- 	unlock_extent_cached(&BTRFS_I(inode)->io_tree, lockstart, lockend,
- 			     &cached_state, GFP_NOFS);
- out_only_mutex:
--	if (!updated_inode && truncated_page && !ret && !err) {
-+	if (!updated_inode && truncated_block && !ret && !err) {
- 		/*
- 		 * If we only end up zeroing part of a page, we still need to
- 		 * update the inode item, so that all the time fields are
-@@ -2697,10 +2697,10 @@ static long btrfs_fallocate(struct file *file, int mode,
- 	} else if (offset + len > inode->i_size) {
- 		/*
- 		 * If we are fallocating from the end of the file onward we
--		 * need to zero out the end of the page if i_size lands in the
--		 * middle of a page.
-+		 * need to zero out the end of the block if i_size lands in the
-+		 * middle of a block.
- 		 */
--		ret = btrfs_truncate_page(inode, inode->i_size, 0, 0);
-+		ret = btrfs_truncate_block(inode, inode->i_size, 0, 0);
- 		if (ret)
- 			goto out;
- 	}
 diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index ede4af5..12bde50 100644
+index bdb0008..ede4af5 100644
 --- a/fs/btrfs/inode.c
 +++ b/fs/btrfs/inode.c
-@@ -4258,7 +4258,8 @@ static int truncate_inline_extent(struct inode *inode,
- 		 * read the extent item from disk (data not in the page cache).
- 		 */
- 		btrfs_release_path(path);
--		return btrfs_truncate_page(inode, offset, page_end - offset, 0);
-+		return btrfs_truncate_block(inode, offset, page_end - offset,
-+					0);
- 	}
- 
- 	btrfs_set_file_extent_ram_bytes(leaf, fi, size);
-@@ -4611,17 +4612,17 @@ error:
+@@ -7762,9 +7762,9 @@ static int btrfs_check_dio_repairable(struct inode *inode,
  }
  
- /*
-- * btrfs_truncate_page - read, zero a chunk and write a page
-+ * btrfs_truncate_block - read, zero a chunk and write a block
-  * @inode - inode that we're zeroing
-  * @from - the offset to start zeroing
-  * @len - the length to zero, 0 to zero the entire range respective to the
-  *	offset
-  * @front - zero up to the offset instead of from the offset on
-  *
-- * This will find the page for the "from" offset and cow the page and zero the
-+ * This will find the block for the "from" offset and cow the block and zero the
-  * part we want to zero.  This is used with truncate and hole punching.
-  */
--int btrfs_truncate_page(struct inode *inode, loff_t from, loff_t len,
-+int btrfs_truncate_block(struct inode *inode, loff_t from, loff_t len,
- 			int front)
+ static int dio_read_error(struct inode *inode, struct bio *failed_bio,
+-			  struct page *page, u64 start, u64 end,
+-			  int failed_mirror, bio_end_io_t *repair_endio,
+-			  void *repair_arg)
++			struct page *page, unsigned int pgoff,
++			u64 start, u64 end, int failed_mirror,
++			bio_end_io_t *repair_endio, void *repair_arg)
  {
- 	struct address_space *mapping = inode->i_mapping;
-@@ -4632,18 +4633,19 @@ int btrfs_truncate_page(struct inode *inode, loff_t from, loff_t len,
- 	char *kaddr;
- 	u32 blocksize = root->sectorsize;
- 	pgoff_t index = from >> PAGE_CACHE_SHIFT;
--	unsigned offset = from & (PAGE_CACHE_SIZE-1);
-+	unsigned offset = from & (blocksize - 1);
- 	struct page *page;
- 	gfp_t mask = btrfs_alloc_write_mask(mapping);
- 	int ret = 0;
--	u64 page_start;
--	u64 page_end;
-+	u64 block_start;
-+	u64 block_end;
+ 	struct io_failure_record *failrec;
+ 	struct bio *bio;
+@@ -7785,7 +7785,9 @@ static int dio_read_error(struct inode *inode, struct bio *failed_bio,
+ 		return -EIO;
+ 	}
  
- 	if ((offset & (blocksize - 1)) == 0 &&
- 	    (!len || ((len & (blocksize - 1)) == 0)))
- 		goto out;
+-	if (failed_bio->bi_vcnt > 1)
++	if ((failed_bio->bi_vcnt > 1)
++		|| (failed_bio->bi_io_vec->bv_len
++			> BTRFS_I(inode)->root->sectorsize))
+ 		read_mode = READ_SYNC | REQ_FAILFAST_DEV;
+ 	else
+ 		read_mode = READ_SYNC;
+@@ -7793,7 +7795,7 @@ static int dio_read_error(struct inode *inode, struct bio *failed_bio,
+ 	isector = start - btrfs_io_bio(failed_bio)->logical;
+ 	isector >>= inode->i_sb->s_blocksize_bits;
+ 	bio = btrfs_create_repair_bio(inode, failed_bio, failrec, page,
+-				      0, isector, repair_endio, repair_arg);
++				pgoff, isector, repair_endio, repair_arg);
+ 	if (!bio) {
+ 		free_io_failure(inode, failrec);
+ 		return -EIO;
+@@ -7823,12 +7825,17 @@ struct btrfs_retry_complete {
+ static void btrfs_retry_endio_nocsum(struct bio *bio)
+ {
+ 	struct btrfs_retry_complete *done = bio->bi_private;
++	struct inode *inode;
+ 	struct bio_vec *bvec;
+ 	int i;
+ 
+ 	if (bio->bi_error)
+ 		goto end;
+ 
++	ASSERT(bio->bi_vcnt == 1);
++	inode = bio->bi_io_vec->bv_page->mapping->host;
++	ASSERT(bio->bi_io_vec->bv_len == BTRFS_I(inode)->root->sectorsize);
 +
- 	ret = btrfs_delalloc_reserve_space(inode,
--			round_down(from, PAGE_CACHE_SIZE), PAGE_CACHE_SIZE);
-+			round_down(from, blocksize), blocksize);
- 	if (ret)
- 		goto out;
+ 	done->uptodate = 1;
+ 	bio_for_each_segment_all(bvec, bio, i)
+ 		clean_io_failure(done->inode, done->start, bvec->bv_page, 0);
+@@ -7840,25 +7847,35 @@ end:
+ static int __btrfs_correct_data_nocsum(struct inode *inode,
+ 				       struct btrfs_io_bio *io_bio)
+ {
++	struct btrfs_fs_info *fs_info;
+ 	struct bio_vec *bvec;
+ 	struct btrfs_retry_complete done;
+ 	u64 start;
++	unsigned int pgoff;
++	u32 sectorsize;
++	int nr_sectors;
+ 	int i;
+ 	int ret;
  
-@@ -4651,14 +4653,14 @@ again:
- 	page = find_or_create_page(mapping, index, mask);
- 	if (!page) {
- 		btrfs_delalloc_release_space(inode,
--				round_down(from, PAGE_CACHE_SIZE),
--				PAGE_CACHE_SIZE);
-+				round_down(from, blocksize),
-+				blocksize);
- 		ret = -ENOMEM;
- 		goto out;
++	fs_info = BTRFS_I(inode)->root->fs_info;
++	sectorsize = BTRFS_I(inode)->root->sectorsize;
++
+ 	start = io_bio->logical;
+ 	done.inode = inode;
+ 
+ 	bio_for_each_segment_all(bvec, &io_bio->bio, i) {
+-try_again:
++		nr_sectors = BTRFS_BYTES_TO_BLKS(fs_info, bvec->bv_len);
++		pgoff = bvec->bv_offset;
++
++next_block_or_try_again:
+ 		done.uptodate = 0;
+ 		done.start = start;
+ 		init_completion(&done.done);
+ 
+-		ret = dio_read_error(inode, &io_bio->bio, bvec->bv_page, start,
+-				     start + bvec->bv_len - 1,
+-				     io_bio->mirror_num,
+-				     btrfs_retry_endio_nocsum, &done);
++		ret = dio_read_error(inode, &io_bio->bio, bvec->bv_page,
++				pgoff, start, start + sectorsize - 1,
++				io_bio->mirror_num,
++				btrfs_retry_endio_nocsum, &done);
+ 		if (ret)
+ 			return ret;
+ 
+@@ -7866,10 +7883,15 @@ try_again:
+ 
+ 		if (!done.uptodate) {
+ 			/* We might have another mirror, so try again */
+-			goto try_again;
++			goto next_block_or_try_again;
+ 		}
+ 
+-		start += bvec->bv_len;
++		start += sectorsize;
++
++		if (nr_sectors--) {
++			pgoff += sectorsize;
++			goto next_block_or_try_again;
++		}
  	}
  
--	page_start = page_offset(page);
--	page_end = page_start + PAGE_CACHE_SIZE - 1;
-+	block_start = round_down(from, blocksize);
-+	block_end = block_start + blocksize - 1;
+ 	return 0;
+@@ -7879,7 +7901,9 @@ static void btrfs_retry_endio(struct bio *bio)
+ {
+ 	struct btrfs_retry_complete *done = bio->bi_private;
+ 	struct btrfs_io_bio *io_bio = btrfs_io_bio(bio);
++	struct inode *inode;
+ 	struct bio_vec *bvec;
++	u64 start;
+ 	int uptodate;
+ 	int ret;
+ 	int i;
+@@ -7888,13 +7912,20 @@ static void btrfs_retry_endio(struct bio *bio)
+ 		goto end;
  
- 	if (!PageUptodate(page)) {
- 		ret = btrfs_readpage(NULL, page);
-@@ -4675,12 +4677,12 @@ again:
- 	}
- 	wait_on_page_writeback(page);
- 
--	lock_extent_bits(io_tree, page_start, page_end, &cached_state);
-+	lock_extent_bits(io_tree, block_start, block_end, &cached_state);
- 	set_page_extent_mapped(page);
- 
--	ordered = btrfs_lookup_ordered_extent(inode, page_start);
-+	ordered = btrfs_lookup_ordered_extent(inode, block_start);
- 	if (ordered) {
--		unlock_extent_cached(io_tree, page_start, page_end,
-+		unlock_extent_cached(io_tree, block_start, block_end,
- 				     &cached_state, GFP_NOFS);
- 		unlock_page(page);
- 		page_cache_release(page);
-@@ -4689,39 +4691,41 @@ again:
- 		goto again;
- 	}
- 
--	clear_extent_bit(&BTRFS_I(inode)->io_tree, page_start, page_end,
-+	clear_extent_bit(&BTRFS_I(inode)->io_tree, block_start, block_end,
- 			  EXTENT_DIRTY | EXTENT_DELALLOC |
- 			  EXTENT_DO_ACCOUNTING | EXTENT_DEFRAG,
- 			  0, 0, &cached_state, GFP_NOFS);
- 
--	ret = btrfs_set_extent_delalloc(inode, page_start, page_end,
-+	ret = btrfs_set_extent_delalloc(inode, block_start, block_end,
- 					&cached_state);
- 	if (ret) {
--		unlock_extent_cached(io_tree, page_start, page_end,
-+		unlock_extent_cached(io_tree, block_start, block_end,
- 				     &cached_state, GFP_NOFS);
- 		goto out_unlock;
- 	}
- 
--	if (offset != PAGE_CACHE_SIZE) {
-+	if (offset != blocksize) {
- 		if (!len)
--			len = PAGE_CACHE_SIZE - offset;
-+			len = blocksize - offset;
- 		kaddr = kmap(page);
- 		if (front)
--			memset(kaddr, 0, offset);
-+			memset(kaddr + (block_start - page_offset(page)),
-+				0, offset);
+ 	uptodate = 1;
++
++	start = done->start;
++
++	ASSERT(bio->bi_vcnt == 1);
++	inode = bio->bi_io_vec->bv_page->mapping->host;
++	ASSERT(bio->bi_io_vec->bv_len == BTRFS_I(inode)->root->sectorsize);
++
+ 	bio_for_each_segment_all(bvec, bio, i) {
+ 		ret = __readpage_endio_check(done->inode, io_bio, i,
+-					     bvec->bv_page, 0,
+-					     done->start, bvec->bv_len);
++					bvec->bv_page, bvec->bv_offset,
++					done->start, bvec->bv_len);
+ 		if (!ret)
+ 			clean_io_failure(done->inode, done->start,
+-					 bvec->bv_page, 0);
++					bvec->bv_page, bvec->bv_offset);
  		else
--			memset(kaddr + offset, 0, len);
-+			memset(kaddr + (block_start - page_offset(page)) +  offset,
-+				0, len);
- 		flush_dcache_page(page);
- 		kunmap(page);
+ 			uptodate = 0;
  	}
- 	ClearPageChecked(page);
- 	set_page_dirty(page);
--	unlock_extent_cached(io_tree, page_start, page_end, &cached_state,
-+	unlock_extent_cached(io_tree, block_start, block_end, &cached_state,
- 			     GFP_NOFS);
+@@ -7908,20 +7939,34 @@ end:
+ static int __btrfs_subio_endio_read(struct inode *inode,
+ 				    struct btrfs_io_bio *io_bio, int err)
+ {
++	struct btrfs_fs_info *fs_info;
+ 	struct bio_vec *bvec;
+ 	struct btrfs_retry_complete done;
+ 	u64 start;
+ 	u64 offset = 0;
++	u32 sectorsize;
++	int nr_sectors;
++	unsigned int pgoff;
++	int csum_pos;
+ 	int i;
+ 	int ret;
  
- out_unlock:
- 	if (ret)
--		btrfs_delalloc_release_space(inode, page_start,
--					     PAGE_CACHE_SIZE);
-+		btrfs_delalloc_release_space(inode, block_start,
-+					     blocksize);
- 	unlock_page(page);
- 	page_cache_release(page);
- out:
-@@ -4792,11 +4796,11 @@ int btrfs_cont_expand(struct inode *inode, loff_t oldsize, loff_t size)
- 	int err = 0;
++	fs_info = BTRFS_I(inode)->root->fs_info;
++	sectorsize = BTRFS_I(inode)->root->sectorsize;
++
+ 	err = 0;
+ 	start = io_bio->logical;
+ 	done.inode = inode;
  
- 	/*
--	 * If our size started in the middle of a page we need to zero out the
--	 * rest of the page before we expand the i_size, otherwise we could
-+	 * If our size started in the middle of a block we need to zero out the
-+	 * rest of the block before we expand the i_size, otherwise we could
- 	 * expose stale data.
- 	 */
--	err = btrfs_truncate_page(inode, oldsize, 0, 0);
-+	err = btrfs_truncate_block(inode, oldsize, 0, 0);
- 	if (err)
- 		return err;
+ 	bio_for_each_segment_all(bvec, &io_bio->bio, i) {
+-		ret = __readpage_endio_check(inode, io_bio, i, bvec->bv_page,
+-					     0, start, bvec->bv_len);
++		nr_sectors = BTRFS_BYTES_TO_BLKS(fs_info, bvec->bv_len);
++
++		pgoff = bvec->bv_offset;
++next_block:
++		csum_pos = BTRFS_BYTES_TO_BLKS(fs_info, offset);
++		ret = __readpage_endio_check(inode, io_bio, csum_pos,
++					bvec->bv_page, pgoff, start,
++					sectorsize);
+ 		if (likely(!ret))
+ 			goto next;
+ try_again:
+@@ -7929,10 +7974,10 @@ try_again:
+ 		done.start = start;
+ 		init_completion(&done.done);
  
+-		ret = dio_read_error(inode, &io_bio->bio, bvec->bv_page, start,
+-				     start + bvec->bv_len - 1,
+-				     io_bio->mirror_num,
+-				     btrfs_retry_endio, &done);
++		ret = dio_read_error(inode, &io_bio->bio, bvec->bv_page,
++				pgoff, start, start + sectorsize - 1,
++				io_bio->mirror_num,
++				btrfs_retry_endio, &done);
+ 		if (ret) {
+ 			err = ret;
+ 			goto next;
+@@ -7945,8 +7990,15 @@ try_again:
+ 			goto try_again;
+ 		}
+ next:
+-		offset += bvec->bv_len;
+-		start += bvec->bv_len;
++		offset += sectorsize;
++		start += sectorsize;
++
++		ASSERT(nr_sectors);
++
++		if (--nr_sectors) {
++			pgoff += sectorsize;
++			goto next_block;
++		}
+ 	}
+ 
+ 	return err;
 -- 
 2.1.0
 

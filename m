@@ -1,49 +1,61 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:36909 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S965192AbcAUOxk (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 21 Jan 2016 09:53:40 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1aMGcD-0003K0-N3
-	for linux-btrfs@vger.kernel.org; Thu, 21 Jan 2016 15:53:37 +0100
-Received: from 87-127-115-15.static.enta.net ([87.127.115.15])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 21 Jan 2016 15:53:37 +0100
-Received: from 6401e46d by 87-127-115-15.static.enta.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 21 Jan 2016 15:53:37 +0100
-To: linux-btrfs@vger.kernel.org
-From: Al <6401e46d@opayq.com>
-Subject: Re: Why is dedup inline, not delayed (as opposed to offline)? Explain like I'm five pls.
-Date: Thu, 21 Jan 2016 14:53:30 +0000 (UTC)
-Message-ID: <loom.20160121T152848-821@post.gmane.org>
-References: <loom.20160116T132316-196@post.gmane.org> <pan$6d016$7902b96d$a10088a$d023ef02@cox.net> <loom.20160120T143906-108@post.gmane.org> <56A0956B.7060706@cn.fujitsu.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Received: from mail-io0-f182.google.com ([209.85.223.182]:36056 "EHLO
+	mail-io0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752233AbcAUQ0F (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 21 Jan 2016 11:26:05 -0500
+Received: by mail-io0-f182.google.com with SMTP id g73so60842840ioe.3
+        for <linux-btrfs@vger.kernel.org>; Thu, 21 Jan 2016 08:26:04 -0800 (PST)
+MIME-Version: 1.0
+In-Reply-To: <alpine.OSX.2.20.1601190308520.34954@ioko>
+References: <alpine.OSX.2.20.1601190308520.34954@ioko>
+Date: Thu, 21 Jan 2016 11:26:03 -0500
+Message-ID: <CAGfcS_=0Fu96a=SZwYkkV7Ukk7Jc_8c6sn8ZeiacocTcRbMp8w@mail.gmail.com>
+Subject: Re: FS corruption when mounting non-degraded after mounting degraded
+From: Rich Freeman <r-btrfs@gw.thefreemanclan.net>
+To: Rian Hunter <rian@thelig.ht>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
->> Al posted on Sat, 16 Jan 2016 12:27:16 +0000 as excerpted:
-> >
-> > .. unless you're really short of
-> > block dev space (!), which is a pretty naff dedup strategy,
+On Tue, Jan 19, 2016 at 6:28 AM, Rian Hunter <rian@thelig.ht> wrote:
+> In my raid6 setup, a disk was soft-failing on me. I pulled the disk,
+> inserted a new one, mounted degraded, then did btrfs-replace while running
+> some RW jobs on the FS.
+>
+> My jobs were taking too long. It seems like raid6 btrfs-replace without the
+> source disk is not very fast. So I unmounted the FS, inserted the
+> soft-failing disk again, remounted normally (non-degraded) and restarted the
+> (now much faster) btrfs-replace.
+>
+> I checked on the status sometime later and there were hundreds if not
+> thousands of "transid verify failure" messages in my dmesg. Additionally the
+> btrfs-replace operation had outright failed.
+>
 
-> > I'm looking forward to using it; keep up the very good work.
+I think the bottom line here is the same thing that everybody runs
+into when they have LVM snapshots of btrfs devices.
 
-> If you really think the design is naff, I'm very glad if you can provide 
-> a better one.
+Btrfs doesn't record any kind of timestamp or generation number of
+anything like that when it touches data on a drive, or if it does it
+isn't granular enough or it isn't being used when mounting drives to
+ensure consistency.
 
-Wenruo, I would suggest that you concentrate on your English comprehension
-before you reply in such a manner. You also appear to have replied to a
-thank-you message directed at another person.
+So, btrfs sees a bunch of partitions that at one time were consistent
+and assumes that they must still be consistent.  If they aren't
+consistent, almost anything can go wrong.
 
-Address your emotional problems in a more appropriate place.
+The bottom line is that anytime you mount btrfs in anything other than
+read-only mode, any partitions that may have been associated with that
+filesystem which aren't mounted should be treated like the plague.
+Don't let btrfs ever mount them again, because it will be all too
+willing to try and you'll likely lose data if it happens.
 
-As I said before,
+There was a long thread on this not long ago and I don't know what the
+final outcome of it was.  It would be ideal if btrfs could detect if a
+partition is out-of-date and not attempt to mount it, except perhaps
+as read-only in some kind of recovery mode.
 
-> > I'm looking forward to using [dedup]; keep up the very good work.
-
-
-
+--
+Rich

@@ -1,188 +1,136 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.136]:43401 "EHLO mail.kernel.org"
+Received: from mail.kernel.org ([198.145.29.136]:52257 "EHLO mail.kernel.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1161373AbcA1W2D (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 28 Jan 2016 17:28:03 -0500
-Received: from mail.kernel.org (localhost [127.0.0.1])
-	by mail.kernel.org (Postfix) with ESMTP id C7504202FE
-	for <linux-btrfs@vger.kernel.org>; Thu, 28 Jan 2016 22:28:01 +0000 (UTC)
-Received: from debian3.lan (bl8-199-62.dsl.telepac.pt [85.241.199.62])
-	(using TLSv1.2 with cipher AES128-SHA256 (128/128 bits))
-	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPSA id 7DACD202F8
-	for <linux-btrfs@vger.kernel.org>; Thu, 28 Jan 2016 22:28:00 +0000 (UTC)
+	id S1759092AbcAUKSL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 21 Jan 2016 05:18:11 -0500
 From: fdmanana@kernel.org
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 2/2 v2] Btrfs: remove no longer used function extent_read_full_page_nolock()
-Date: Thu, 28 Jan 2016 22:27:56 +0000
-Message-Id: <1454020076-2784-1-git-send-email-fdmanana@kernel.org>
-In-Reply-To: <1453923046-13815-1-git-send-email-fdmanana@kernel.org>
-References: <1453923046-13815-1-git-send-email-fdmanana@kernel.org>
+Cc: Filipe Manana <fdmanana@suse.com>
+Subject: [PATCH] Btrfs: fix race between fsync and lockless direct IO writes
+Date: Thu, 21 Jan 2016 10:17:54 +0000
+Message-Id: <1453371474-23798-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Filipe Manana <fdmanana@suse.com>
 
-Not needed after the previous patch named
-"Btrfs: fix page reading in extent_same ioctl leading to csum errors".
+An fsync, using the fast path, can race with a concurrent lockless direct
+IO write and end up logging a file extent item that points to an extent
+that wasn't written to yet. This is because the fast fsync path collects
+ordered extents into a local list and then collects all the new extent
+maps to log file extent items based on them, while the direct IO write
+path creates the new extent map before it creates the corresponding
+ordered extent (and submitting the respective bio(s)).
+
+So fix this by making the direct IO write path create ordered extents
+before the extent maps and make the fast fsync path collect any new
+ordered extents after it collects the extent maps.
+Note that making the fsync handler call inode_dio_wait() (after acquiring
+the inode's i_mutex) would not work and lead to a deadlock when doing
+AIO, as through AIO we end up in a path where the fsync handler is called
+(through dio_aio_complete_work() -> dio_complete() -> vfs_fsync_range())
+before the inode's dio counter is decremented (inode_dio_wait() waits
+for this counter to have a value of zero).
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
+ fs/btrfs/inode.c    | 36 ++++++++++++++++++++++++++++--------
+ fs/btrfs/tree-log.c | 14 +++++++++++---
+ 2 files changed, 39 insertions(+), 11 deletions(-)
 
-V2: Fixed assignment to variable "this_bio_flags". Should be set to 0
-    and not "*bio_flags".
-
- fs/btrfs/compression.c |  6 +-----
- fs/btrfs/extent_io.c   | 45 +++++++++++----------------------------------
- fs/btrfs/extent_io.h   |  3 ---
- 3 files changed, 12 insertions(+), 42 deletions(-)
-
-diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
-index c473c42..3346cd8 100644
---- a/fs/btrfs/compression.c
-+++ b/fs/btrfs/compression.c
-@@ -637,11 +637,7 @@ int btrfs_submit_compressed_read(struct inode *inode, struct bio *bio,
- 	faili = nr_pages - 1;
- 	cb->nr_pages = nr_pages;
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 8ad9e22..a9640d0 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -7135,21 +7135,41 @@ static struct extent_map *btrfs_new_extent_direct(struct inode *inode,
+ 	if (ret)
+ 		return ERR_PTR(ret);
  
--	/* In the parent-locked case, we only locked the range we are
--	 * interested in.  In all other cases, we can opportunistically
--	 * cache decompressed data that goes beyond the requested range. */
--	if (!(bio_flags & EXTENT_BIO_PARENT_LOCKED))
--		add_ra_bio_pages(inode, em_start + em_len, cb);
-+	add_ra_bio_pages(inode, em_start + em_len, cb);
+-	em = create_pinned_em(inode, start, ins.offset, start, ins.objectid,
+-			      ins.offset, ins.offset, ins.offset, 0);
+-	if (IS_ERR(em)) {
+-		btrfs_free_reserved_extent(root, ins.objectid, ins.offset, 1);
+-		return em;
+-	}
+-
++	/*
++	 * Create the ordered extent before the extent map. This is to avoid
++	 * races with the fast fsync path that would lead to it logging file
++	 * extent items that point to disk extents that were not yet written to.
++	 * The fast fsync path collects ordered extents into a local list and
++	 * then collects all the new extent maps, so we must create the ordered
++	 * extent first and make sure the fast fsync path collects any new
++	 * ordered extents after collecting new extent maps as well.
++	 * The fsync path simply can not rely on inode_dio_wait() because it
++	 * causes deadlock with AIO.
++	 */
+ 	ret = btrfs_add_ordered_extent_dio(inode, start, ins.objectid,
+ 					   ins.offset, ins.offset, 0);
+ 	if (ret) {
+ 		btrfs_free_reserved_extent(root, ins.objectid, ins.offset, 1);
+-		free_extent_map(em);
+ 		return ERR_PTR(ret);
+ 	}
  
- 	/* include any pages we added in add_ra-bio_pages */
- 	uncompressed_len = bio->bi_vcnt * PAGE_CACHE_SIZE;
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 2e7c97a..392592d 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -2897,12 +2897,11 @@ static int __do_readpage(struct extent_io_tree *tree,
- 	struct block_device *bdev;
- 	int ret;
- 	int nr = 0;
--	int parent_locked = *bio_flags & EXTENT_BIO_PARENT_LOCKED;
- 	size_t pg_offset = 0;
- 	size_t iosize;
- 	size_t disk_io_size;
- 	size_t blocksize = inode->i_sb->s_blocksize;
--	unsigned long this_bio_flag = *bio_flags & EXTENT_BIO_PARENT_LOCKED;
-+	unsigned long this_bio_flag = 0;
- 
- 	set_page_extent_mapped(page);
- 
-@@ -2942,18 +2941,16 @@ static int __do_readpage(struct extent_io_tree *tree,
- 			kunmap_atomic(userpage);
- 			set_extent_uptodate(tree, cur, cur + iosize - 1,
- 					    &cached, GFP_NOFS);
--			if (!parent_locked)
--				unlock_extent_cached(tree, cur,
--						     cur + iosize - 1,
--						     &cached, GFP_NOFS);
-+			unlock_extent_cached(tree, cur,
-+					     cur + iosize - 1,
-+					     &cached, GFP_NOFS);
- 			break;
- 		}
- 		em = __get_extent_map(inode, page, pg_offset, cur,
- 				      end - cur + 1, get_extent, em_cached);
- 		if (IS_ERR_OR_NULL(em)) {
- 			SetPageError(page);
--			if (!parent_locked)
--				unlock_extent(tree, cur, end);
-+			unlock_extent(tree, cur, end);
- 			break;
- 		}
- 		extent_offset = cur - em->start;
-@@ -3038,12 +3035,9 @@ static int __do_readpage(struct extent_io_tree *tree,
- 
- 			set_extent_uptodate(tree, cur, cur + iosize - 1,
- 					    &cached, GFP_NOFS);
--			if (parent_locked)
--				free_extent_state(cached);
--			else
--				unlock_extent_cached(tree, cur,
--						     cur + iosize - 1,
--						     &cached, GFP_NOFS);
-+			unlock_extent_cached(tree, cur,
-+					     cur + iosize - 1,
-+					     &cached, GFP_NOFS);
- 			cur = cur + iosize;
- 			pg_offset += iosize;
- 			continue;
-@@ -3052,8 +3046,7 @@ static int __do_readpage(struct extent_io_tree *tree,
- 		if (test_range_bit(tree, cur, cur_end,
- 				   EXTENT_UPTODATE, 1, NULL)) {
- 			check_page_uptodate(tree, page);
--			if (!parent_locked)
--				unlock_extent(tree, cur, cur + iosize - 1);
-+			unlock_extent(tree, cur, cur + iosize - 1);
- 			cur = cur + iosize;
- 			pg_offset += iosize;
- 			continue;
-@@ -3063,8 +3056,7 @@ static int __do_readpage(struct extent_io_tree *tree,
- 		 */
- 		if (block_start == EXTENT_MAP_INLINE) {
- 			SetPageError(page);
--			if (!parent_locked)
--				unlock_extent(tree, cur, cur + iosize - 1);
-+			unlock_extent(tree, cur, cur + iosize - 1);
- 			cur = cur + iosize;
- 			pg_offset += iosize;
- 			continue;
-@@ -3083,8 +3075,7 @@ static int __do_readpage(struct extent_io_tree *tree,
- 			*bio_flags = this_bio_flag;
- 		} else {
- 			SetPageError(page);
--			if (!parent_locked)
--				unlock_extent(tree, cur, cur + iosize - 1);
-+			unlock_extent(tree, cur, cur + iosize - 1);
- 		}
- 		cur = cur + iosize;
- 		pg_offset += iosize;
-@@ -3213,20 +3204,6 @@ int extent_read_full_page(struct extent_io_tree *tree, struct page *page,
- 	return ret;
++	em = create_pinned_em(inode, start, ins.offset, start, ins.objectid,
++			      ins.offset, ins.offset, ins.offset, 0);
++	if (IS_ERR(em)) {
++		struct btrfs_ordered_extent *oe;
++
++		btrfs_free_reserved_extent(root, ins.objectid, ins.offset, 1);
++		oe = btrfs_lookup_ordered_extent(inode, start);
++		ASSERT(oe);
++		if (WARN_ON(!oe))
++			return em;
++		set_bit(BTRFS_ORDERED_IOERR, &oe->flags);
++		set_bit(BTRFS_ORDERED_IO_DONE, &oe->flags);
++		btrfs_remove_ordered_extent(inode, oe);
++		/* Once for our lookup and once for the ordered extents tree. */
++		btrfs_put_ordered_extent(oe);
++		btrfs_put_ordered_extent(oe);
++	}
+ 	return em;
  }
  
--int extent_read_full_page_nolock(struct extent_io_tree *tree, struct page *page,
--				 get_extent_t *get_extent, int mirror_num)
--{
--	struct bio *bio = NULL;
--	unsigned long bio_flags = EXTENT_BIO_PARENT_LOCKED;
--	int ret;
--
--	ret = __do_readpage(tree, page, get_extent, NULL, &bio, mirror_num,
--			    &bio_flags, READ, NULL);
--	if (bio)
--		ret = submit_one_bio(READ, bio, mirror_num, bio_flags);
--	return ret;
--}
--
- static noinline void update_nr_written(struct page *page,
- 				      struct writeback_control *wbc,
- 				      unsigned long nr_written)
-diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
-index 0377413..880d529 100644
---- a/fs/btrfs/extent_io.h
-+++ b/fs/btrfs/extent_io.h
-@@ -29,7 +29,6 @@
-  */
- #define EXTENT_BIO_COMPRESSED 1
- #define EXTENT_BIO_TREE_LOG 2
--#define EXTENT_BIO_PARENT_LOCKED 4
- #define EXTENT_BIO_FLAG_SHIFT 16
+diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+index 323e12c..978c3a8 100644
+--- a/fs/btrfs/tree-log.c
++++ b/fs/btrfs/tree-log.c
+@@ -4127,7 +4127,9 @@ static int btrfs_log_changed_extents(struct btrfs_trans_handle *trans,
+ 				     struct inode *inode,
+ 				     struct btrfs_path *path,
+ 				     struct list_head *logged_list,
+-				     struct btrfs_log_ctx *ctx)
++				     struct btrfs_log_ctx *ctx,
++				     const u64 start,
++				     const u64 end)
+ {
+ 	struct extent_map *em, *n;
+ 	struct list_head extents;
+@@ -4166,7 +4168,13 @@ static int btrfs_log_changed_extents(struct btrfs_trans_handle *trans,
+ 	}
  
- /* these are bit numbers for test/set bit */
-@@ -210,8 +209,6 @@ static inline int lock_extent(struct extent_io_tree *tree, u64 start, u64 end)
- int try_lock_extent(struct extent_io_tree *tree, u64 start, u64 end);
- int extent_read_full_page(struct extent_io_tree *tree, struct page *page,
- 			  get_extent_t *get_extent, int mirror_num);
--int extent_read_full_page_nolock(struct extent_io_tree *tree, struct page *page,
--				 get_extent_t *get_extent, int mirror_num);
- int __init extent_io_init(void);
- void extent_io_exit(void);
- 
+ 	list_sort(NULL, &extents, extent_cmp);
+-
++	/*
++	 * Collect any new ordered extents within the range. This is to
++	 * prevent logging file extent items without waiting for the disk
++	 * location they point to being written. We do this only to deal
++	 * with races against concurrent lockless direct IO writes.
++	 */
++	btrfs_get_logged_extents(inode, logged_list, start, end);
+ process:
+ 	while (!list_empty(&extents)) {
+ 		em = list_entry(extents.next, struct extent_map, list);
+@@ -4701,7 +4709,7 @@ log_extents:
+ 			goto out_unlock;
+ 		}
+ 		ret = btrfs_log_changed_extents(trans, root, inode, dst_path,
+-						&logged_list, ctx);
++						&logged_list, ctx, start, end);
+ 		if (ret) {
+ 			err = ret;
+ 			goto out_unlock;
 -- 
 2.7.0.rc3
 

@@ -1,133 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from e23smtp04.au.ibm.com ([202.81.31.146]:59422 "EHLO
+Received: from e23smtp04.au.ibm.com ([202.81.31.146]:59499 "EHLO
 	e23smtp04.au.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1759313AbcAUK1O (ORCPT
+	with ESMTP id S1759320AbcAUK10 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 21 Jan 2016 05:27:14 -0500
+	Thu, 21 Jan 2016 05:27:26 -0500
 Received: from localhost
 	by e23smtp04.au.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
 	for <linux-btrfs@vger.kernel.org> from <chandan@linux.vnet.ibm.com>;
-	Thu, 21 Jan 2016 20:27:12 +1000
-Received: from d23relay06.au.ibm.com (d23relay06.au.ibm.com [9.185.63.219])
-	by d23dlp03.au.ibm.com (Postfix) with ESMTP id 571353578055
-	for <linux-btrfs@vger.kernel.org>; Thu, 21 Jan 2016 21:27:09 +1100 (EST)
+	Thu, 21 Jan 2016 20:27:23 +1000
+Received: from d23relay09.au.ibm.com (d23relay09.au.ibm.com [9.185.63.181])
+	by d23dlp01.au.ibm.com (Postfix) with ESMTP id A7C7C2CE8054
+	for <linux-btrfs@vger.kernel.org>; Thu, 21 Jan 2016 21:27:21 +1100 (EST)
 Received: from d23av03.au.ibm.com (d23av03.au.ibm.com [9.190.234.97])
-	by d23relay06.au.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id u0LAQp7R42270902
-	for <linux-btrfs@vger.kernel.org>; Thu, 21 Jan 2016 21:26:59 +1100
+	by d23relay09.au.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id u0LARDFa38928634
+	for <linux-btrfs@vger.kernel.org>; Thu, 21 Jan 2016 21:27:21 +1100
 Received: from d23av03.au.ibm.com (localhost [127.0.0.1])
-	by d23av03.au.ibm.com (8.14.4/8.14.4/NCO v10.0 AVout) with ESMTP id u0LAQaMg014138
-	for <linux-btrfs@vger.kernel.org>; Thu, 21 Jan 2016 21:26:37 +1100
+	by d23av03.au.ibm.com (8.14.4/8.14.4/NCO v10.0 AVout) with ESMTP id u0LAQmTr014808
+	for <linux-btrfs@vger.kernel.org>; Thu, 21 Jan 2016 21:26:49 +1100
 From: Chandan Rajendra <chandan@linux.vnet.ibm.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Chandan Rajendra <chandan@linux.vnet.ibm.com>, jbacik@fb.com, clm@fb.com,
         bo.li.liu@oracle.com, dsterba@suse.cz, chandan@mykolab.com
-Subject: [PATCH V10 06/12] Btrfs: Search for all ordered extents that could span across a page
-Date: Thu, 21 Jan 2016 15:55:58 +0530
-Message-Id: <1453371964-4917-7-git-send-email-chandan@linux.vnet.ibm.com>
+Subject: [PATCH V10 12/12] Btrfs: btrfs_ioctl_clone: Truncate complete page after performing clone operation
+Date: Thu, 21 Jan 2016 15:56:04 +0530
+Message-Id: <1453371964-4917-13-git-send-email-chandan@linux.vnet.ibm.com>
 In-Reply-To: <1453371964-4917-1-git-send-email-chandan@linux.vnet.ibm.com>
 References: <1453371964-4917-1-git-send-email-chandan@linux.vnet.ibm.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-In subpagesize-blocksize scenario it is not sufficient to search using the
-first byte of the page to make sure that there are no ordered extents
-present across the page. Fix this.
+In subpagesize-blocksize scenario, the "destination offset" argument passed to
+the btrfs_ioctl_clone() can be aligned to sectorsize but may not be
+necessarily aligned to the machine's page size. In such cases,
+truncate_inode_pages_range() ends up zeroing out the partial page and future
+read operations will return incorrect data. Hence this commit explicitly
+rounds down the "destination offset" to the machine's page size.
 
 Signed-off-by: Chandan Rajendra <chandan@linux.vnet.ibm.com>
 ---
- fs/btrfs/extent_io.c |  3 ++-
- fs/btrfs/inode.c     | 25 ++++++++++++++++++-------
- 2 files changed, 20 insertions(+), 8 deletions(-)
+ fs/btrfs/ioctl.c | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
 
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index a2356e2..ece40eda 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -3186,7 +3186,8 @@ static int __extent_read_full_page(struct extent_io_tree *tree,
- 
- 	while (1) {
- 		lock_extent(tree, start, end);
--		ordered = btrfs_lookup_ordered_extent(inode, start);
-+		ordered = btrfs_lookup_ordered_range(inode, start,
-+						PAGE_CACHE_SIZE);
- 		if (!ordered)
- 			break;
- 		unlock_extent(tree, start, end);
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 1cd37f7..d7bcf87 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -2003,7 +2003,8 @@ again:
- 	if (PagePrivate2(page))
- 		goto out;
- 
--	ordered = btrfs_lookup_ordered_extent(inode, page_start);
-+	ordered = btrfs_lookup_ordered_range(inode, page_start,
-+					PAGE_CACHE_SIZE);
- 	if (ordered) {
- 		unlock_extent_cached(&BTRFS_I(inode)->io_tree, page_start,
- 				     page_end, &cached_state, GFP_NOFS);
-@@ -8681,6 +8682,8 @@ static void btrfs_invalidatepage(struct page *page, unsigned int offset,
- 	struct extent_state *cached_state = NULL;
- 	u64 page_start = page_offset(page);
- 	u64 page_end = page_start + PAGE_CACHE_SIZE - 1;
-+	u64 start;
-+	u64 end;
- 	int inode_evicting = inode->i_state & I_FREEING;
- 
- 	/*
-@@ -8700,14 +8703,18 @@ static void btrfs_invalidatepage(struct page *page, unsigned int offset,
- 
- 	if (!inode_evicting)
- 		lock_extent_bits(tree, page_start, page_end, &cached_state);
--	ordered = btrfs_lookup_ordered_extent(inode, page_start);
-+again:
-+	start = page_start;
-+	ordered = btrfs_lookup_ordered_range(inode, start,
-+					page_end - start + 1);
- 	if (ordered) {
-+		end = min(page_end, ordered->file_offset + ordered->len - 1);
- 		/*
- 		 * IO on this page will never be started, so we need
- 		 * to account for any ordered extents now
- 		 */
- 		if (!inode_evicting)
--			clear_extent_bit(tree, page_start, page_end,
-+			clear_extent_bit(tree, start, end,
- 					 EXTENT_DIRTY | EXTENT_DELALLOC |
- 					 EXTENT_LOCKED | EXTENT_DO_ACCOUNTING |
- 					 EXTENT_DEFRAG, 1, 0, &cached_state,
-@@ -8724,22 +8731,26 @@ static void btrfs_invalidatepage(struct page *page, unsigned int offset,
- 
- 			spin_lock_irq(&tree->lock);
- 			set_bit(BTRFS_ORDERED_TRUNCATED, &ordered->flags);
--			new_len = page_start - ordered->file_offset;
-+			new_len = start - ordered->file_offset;
- 			if (new_len < ordered->truncated_len)
- 				ordered->truncated_len = new_len;
- 			spin_unlock_irq(&tree->lock);
- 
- 			if (btrfs_dec_test_ordered_pending(inode, &ordered,
--							   page_start,
--							   PAGE_CACHE_SIZE, 1))
-+							   start,
-+							   end - start + 1, 1))
- 				btrfs_finish_ordered_io(ordered);
- 		}
- 		btrfs_put_ordered_extent(ordered);
- 		if (!inode_evicting) {
- 			cached_state = NULL;
--			lock_extent_bits(tree, page_start, page_end,
-+			lock_extent_bits(tree, start, end,
- 					 &cached_state);
- 		}
-+
-+		start = end + 1;
-+		if (start < page_end)
-+			goto again;
- 	}
- 
- 	/*
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 8bbecda..4e11059 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -3914,8 +3914,9 @@ static noinline long btrfs_ioctl_clone(struct file *file, unsigned long srcfd,
+ 	 * Truncate page cache pages so that future reads will see the cloned
+ 	 * data immediately and not the previous data.
+ 	 */
+-	truncate_inode_pages_range(&inode->i_data, destoff,
+-				   PAGE_CACHE_ALIGN(destoff + len) - 1);
++	truncate_inode_pages_range(&inode->i_data,
++				round_down(destoff, PAGE_CACHE_SIZE),
++				round_up(destoff + len, PAGE_CACHE_SIZE) - 1);
+ out_unlock:
+ 	if (!same_inode)
+ 		btrfs_double_inode_unlock(src, inode);
 -- 
 2.1.0
 

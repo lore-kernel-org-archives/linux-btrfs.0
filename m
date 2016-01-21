@@ -1,78 +1,73 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from magic.merlins.org ([209.81.13.136]:56519 "EHLO
-	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756957AbcAUExD (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:40277 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1751528AbcAUIX3 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 20 Jan 2016 23:53:03 -0500
-Date: Wed, 20 Jan 2016 20:52:39 -0800
-From: Marc MERLIN <marc@merlins.org>
-To: Duncan <1i5t5.duncan@cox.net>, Hugo Mills <hugo@carfax.org.uk>,
-        Btrfs mailing list <linux-btrfs@vger.kernel.org>
-Subject: Re: BTRFS: bdev /dev/mapper/dshelf1 errs: wr 2970, rd 848, flush 0,
- corrupt 189, gen 0
-Message-ID: <20160121045239.GQ17679@merlins.org>
-References: <20160118124533.GU422@carfax.org.uk>
- <pan$6d745$1ec4d122$7401737e$1adc2b07@cox.net>
- <20160118233943.GF17679@merlins.org>
+	Thu, 21 Jan 2016 03:23:29 -0500
+Subject: Re: Why is dedup inline, not delayed (as opposed to offline)? Explain
+ like I'm five pls.
+To: Al <6401e46d@opayq.com>, <linux-btrfs@vger.kernel.org>
+References: <loom.20160116T132316-196@post.gmane.org>
+ <pan$6d016$7902b96d$a10088a$d023ef02@cox.net>
+ <loom.20160120T143906-108@post.gmane.org>
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Message-ID: <56A0956B.7060706@cn.fujitsu.com>
+Date: Thu, 21 Jan 2016 16:23:07 +0800
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20160118233943.GF17679@merlins.org>
+In-Reply-To: <loom.20160120T143906-108@post.gmane.org>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Jan 18, 2016 at 03:39:43PM -0800, Marc MERLIN wrote:
-> Thanks for that other hint.
-> It was created quite a while ago (1y+), and ran ok until I had an
-> unexpected crash.
-> If I have to rebuild it, I will, but that will take 2 days+ due to the 
-> size and getting the backup back (well also, I'm not home for a week, so
-> restoring backups remotely isn't going to be fun).
-> 
-> But sure enough, while it ran perfectly fine for a long time, after check --repair,
-> my machine is now crashing every hour or so, with the crash below.
 
-I ran check --repair a few more times on it but it does not seem to converge.
-The bad extent stuff, I understand cannot be fixed (although it's not obvious from check
---repair that they are not getting fixed).
 
-But how about 
-root 45940 inode 204450 errors 1000, some csum missing
-Are those getting fixed by check --repair or are they unfixable too?
- 
-(...)
-bad extent [8697338126336, 8697338130432), type mismatch with chunk
-bad extent [8697338130432, 8697338134528), type mismatch with chunk
-repaired damaged extent references
+Al wrote on 2016/01/20 14:43 +0000:
+> Duncan <1i5t5.duncan <at> cox.net> writes:
+>
+>>
+>> Al posted on Sat, 16 Jan 2016 12:27:16 +0000 as excerpted:
+>>
+>
+> That it does, Duncan, thank you!
+>
+> I was suggesting, albeit implicitly, that unless you're really short of
+> block dev space (!), which is a pretty naff dedup strategy, dedup isn't time
+> critical AFAIC(See). My server memory is not huge and I'd happily let it
+> chug away dedup'ing than have the whole thing run like a dog for lack of memory.
+>
+> I'm looking forward to using it; keep up the very good work.
+>
 
-Fixed 0 roots.
-cache and super generation don't match, space cache will be invalidated
-rootk262 inodeo204450 errors 1000, some csum missing
-root 262 inode 204452 errors 1000, some csum missing
-(...)
-root 45940 inode 204450 errors 1000, some csum missing
-root 45940 inode 204452 errors 1000, some csum missing
-root 45944 inode 204450 errors 1000, some csum missing
-root 45944 inode 204452 errors 1000, some csum missing
-root 45948 inode 204450 errors 1000, some csum missing
-root 45948 inode 204452 errors 1000, some csum missing
-checking fs roots [o]
-checking csums
-checking root refs
-found 9826295305149 bytes used err is 0
-total csum bytes: 9584154948
-total tree bytes: 12201304064
-total fs tree bytes: 330776576
-total extent tree bytes: 498921472
-btree space waste bytes: 1373183541
-file data blocks allocated: 9953275256832
- referenced 9964596801536
-btrfs-progs v4.3
+The design of providing two backends is for different use case.
 
+If you don't thinkg inmemory is good, then just use ondisk.
+Even inmemory doesn't seems useful for you, there is still some cases 
+that you doesn't know.
+
+The design of inmemory is not to save your block dev space, but to limit 
+the overhead of write to a consist value.
+
+If one day you just want to write 64K data, but you need to randomly 
+read 128K metadata and found a hash miss, and do the real write, then 
+you may understand the meaning of inmemory backend.
+
+
+
+To conclude, something meaningless to you doesn't mean it's meaningless 
+for everyone.
+If you really think the design is naff, I'm very glad if you can provide 
+a better one.
 
 Thanks,
-Marc
--- 
-"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
-Microsoft is to operating systems ....
-                                      .... what McDonalds is to gourmet cooking
-Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901
+Qu
+
+>
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>
+>
+
+

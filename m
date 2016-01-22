@@ -1,100 +1,69 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from bear.techie.net ([205.134.185.202]:52277 "EHLO bear.techie.net"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753504AbcAVOyF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 22 Jan 2016 09:54:05 -0500
-Date: Fri, 22 Jan 2016 09:53:55 -0500 (EST)
-From: Scott Talbert <swt@techie.net>
-To: Anand Jain <anand.jain@oracle.com>
-cc: linux-btrfs@vger.kernel.org
-Subject: Re: RAID1 root filesystem - same device shows up twice in 'btrfs fi
- show'
-In-Reply-To: <56A1B312.1010105@oracle.com>
-Message-ID: <alpine.DEB.2.10.1601220946210.16794@bear.techie.net>
-References: <alpine.DEB.2.10.1601211432430.9575@bear.techie.net> <56A1B312.1010105@oracle.com>
+Received: from mail-ig0-f172.google.com ([209.85.213.172]:35677 "EHLO
+	mail-ig0-f172.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750944AbcAVPMN (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 22 Jan 2016 10:12:13 -0500
+Received: by mail-ig0-f172.google.com with SMTP id t15so151201074igr.0
+        for <linux-btrfs@vger.kernel.org>; Fri, 22 Jan 2016 07:12:12 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: TEXT/PLAIN; charset=US-ASCII; format=flowed
+Reply-To: radek.sprta@gmail.com
+In-Reply-To: <CAM7-wL0OzZU9UvFHG0GauXz+ZSHg58CaPQR33CkxNRyPg6+SSg@mail.gmail.com>
+References: <CAM7-wL0OzZU9UvFHG0GauXz+ZSHg58CaPQR33CkxNRyPg6+SSg@mail.gmail.com>
+From: Radek Sprta <radek.sprta@gmail.com>
+Date: Fri, 22 Jan 2016 16:11:53 +0100
+Message-ID: <CAM7-wL0kU5TkZaOac1PG5Drk1+JZxYE35-r8y0YiZ2ngmEu9zg@mail.gmail.com>
+Subject: Fwd: Unmountable fs after power outage
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, 22 Jan 2016, Anand Jain wrote:
+Hello everybody,
 
-> Thanks for the report.
-> Strange. but interesting. Can you pls help to isolate...
->
-> On 01/22/2016 03:50 AM, Scott Talbert wrote:
->> Hi,
->> 
->> I'm using:
->> 
->> Kernel 4.2.6
->> btrfs-progs v4.3
->> Debian Wheezy
->> 
->> I have a RAID1 root filesystem with two devices.  When the system
->> initially boots up, "btrfs fi show" will show the same device twice:
->> 
->> Label: none  uuid: 49f7413a-99ad-41b0-8783-06c9406e2280
->>      Total devices 2 FS bytes used 1.19GiB
->>      devid    1 size 7.60GiB used 3.03GiB path /dev/sdf2
->>      devid    2 size 7.60GiB used 3.01GiB path /dev/sdf2
->> 
->> The filesystem seems to work fine (as best as I can tell) in this state.
->> If I then run another "btrfs device scan", it will correct itself:
->
->
->
->> Label: none  uuid: 49f7413a-99ad-41b0-8783-06c9406e2280
->>          Total devices 2 FS bytes used 1.19GiB
->>          devid    1 size 7.60GiB used 3.03GiB path /dev/sde2
->>          devid    2 size 7.60GiB used 3.01GiB path /dev/sdf2
->> 
->> Any idea what might be going on here?  On Debian it appears that the
->> initial "btrfs device scan" is being done by an initramfs local-premount
->> script where it does:
->> 
->> modprobe btrfs
->> /bin/btrfs device scan 2>/dev/null
->> 
->> Does there perhaps need to be some delay between inserting the kernel
->> module and running a scan?
->
-> May be dev1 is known as sdf initially before bootup and later when
-> system boots its known as sde.
->
-> I believe /boot is on non btrfs FS?
+after a recent power outage attempting to mount a my btrfs partition
+fails with the following error:
 
-/boot is on the btrfs rootfs, ie, /dev/sde2 / /dev/sdf2.  I do have a 
-bios_grub partition as partition #1 but not a separate /boot partition.
+mount: wrong fs type, bad option, bad superblock on /dev/sda8,
+       missing codepage or helper program, or other error
 
-> As this is a root device, Can you tell which "one" device is used for
-> the mount in fstab ?
+This is what dmesg shows:
+[ 1035.236081] BTRFS (device sda8): parent transid verify failed on
+410124288 wanted 85753 found 85755
+[ 1035.240756] BTRFS (device sda8): parent transid verify failed on
+410124288 wanted 85753 found 85755
+[ 1035.240780] BTRFS: failed to read tree root on sda8
+[ 1035.252025] BTRFS: open_ctree failed
 
-I am using the UUID to mount in fstab:
-UUID=49f7413a-99ad-41b0-8783-06c9406e2280 /               btrfs 
-defaults 0       1
+Below is the result of btrfs check:
+Checking filesystem on /dev/sda8
+UUID: b0486700-ff9f-4979-8735-257ff1428a0d
+checking extents
+checking free space cache
+checking fs roots
+checking csums
+checking root refs
+found 311702978854 bytes used err is 0
+total csum bytes: 271057636
+total tree bytes: 1859862528
+total fs tree bytes: 1473953792
+total extent tree bytes: 72876032
+btree space waste bytes: 377740163
+file data blocks allocated: 11278336921600
+ referenced 975937630208
+btrfs-progs v4.0
 
-> Do you see the following log in the bootup logs / dmesg ?
-> ------
-> printk(KERN_INFO "BTRFS: device fsid %pU devid %llu transid %llu %s %s\n",
-> disk_super->fsid, devid, transid, path,
-> ret == 2 ? "(overwritten)":"");
-> -------
+I tried googling the "open_ctree failed" error, but couldn't find any
+definite answers. Here's some additional info:
 
-Interestingly, the kernel logs show both devices...
+uname -a:
+Linux Computer 4.2.0-22-generic #27-Ubuntu SMP Thu Dec 17 22:57:08 UTC
+2015 x86_64 x86_64 x86_64 GNU/Linux
 
-[   10.225915] BTRFS: device fsid 49f7413a-99ad-41b0-8783-06c9406e2280 
-devid 2 transid 1033 /dev/sdf2
-[   10.226297] BTRFS: device fsid 49f7413a-99ad-41b0-8783-06c9406e2280 
-devid 1 transid 1033 /dev/sde2
+btrfs fi show:
+Label: none  uuid: b0486700-ff9f-4979-8735-257ff1428a0d
+Total devices 1 FS bytes used 290.37GiB
+devid    1 size 301.32GiB used 295.04GiB path /dev/sda8
 
-> Can you provide..
-> blkid output
-
-/dev/sde2: UUID="49f7413a-99ad-41b0-8783-06c9406e2280" 
-UUID_SUB="692ba0c4-05b9-4681-86c4-b4af9028a533" TYPE="btrfs"
-/dev/sdf2: UUID="49f7413a-99ad-41b0-8783-06c9406e2280" 
-UUID_SUB="63ee640c-0df0-490c-bff6-91d71a246ed6" TYPE="btrfs"
-
-Thanks,
-Scott
+Thanks in advance for any help,
+Radek

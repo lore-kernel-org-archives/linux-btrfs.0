@@ -1,59 +1,59 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cc-smtpout3.netcologne.de ([89.1.8.213]:38753 "EHLO
-	cc-smtpout3.netcologne.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753823AbcAVNiO (ORCPT
+Received: from mail-ig0-f177.google.com ([209.85.213.177]:34580 "EHLO
+	mail-ig0-f177.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754141AbcAVO2B (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 22 Jan 2016 08:38:14 -0500
-Received: from cc-smtpin2.netcologne.de (cc-smtpin2.netcologne.de [89.1.8.202])
-	by cc-smtpout3.netcologne.de (Postfix) with ESMTP id 61AC812685
-	for <linux-btrfs@vger.kernel.org>; Fri, 22 Jan 2016 14:38:11 +0100 (CET)
-Received: from localhost (localhost [127.0.0.1])
-	by cc-smtpin2.netcologne.de (Postfix) with ESMTP id 5E52E11E08
-	for <linux-btrfs@vger.kernel.org>; Fri, 22 Jan 2016 14:38:11 +0100 (CET)
-Received: from [194.8.193.239] (helo=cc-smtpin2.netcologne.de)
-	by localhost with ESMTP (eXpurgate 4.0.9)
-	(envelope-from <crohmann@netcologne.de>)
-	id 56a230c3-0b77-7f0000012729-7f000001e185-1
-	for <linux-btrfs@vger.kernel.org>; Fri, 22 Jan 2016 14:38:11 +0100
-Received: from [194.8.193.239] (sys-239.netcologne.de [194.8.193.239])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-SHA (256/256 bits))
-	(No client certificate requested)
-	by cc-smtpin2.netcologne.de (Postfix) with ESMTPSA
-	for <linux-btrfs@vger.kernel.org>; Fri, 22 Jan 2016 14:38:11 +0100 (CET)
-To: linux-btrfs@vger.kernel.org
-From: Christian Rohmann <crohmann@netcologne.de>
-Subject: btrfs-progs 4.4 re-balance of RAID6 is very slow / limited to one cpu
- core?
-Message-ID: <56A230C3.3080100@netcologne.de>
-Date: Fri, 22 Jan 2016 14:38:11 +0100
+	Fri, 22 Jan 2016 09:28:01 -0500
+Received: by mail-ig0-f177.google.com with SMTP id ik10so11845866igb.1
+        for <linux-btrfs@vger.kernel.org>; Fri, 22 Jan 2016 06:28:01 -0800 (PST)
+Subject: Re: RAID1 disk upgrade method
+To: Sean Greenslade <sean@seangreenslade.com>, linux-btrfs@vger.kernel.org
+References: <20160122034538.GA25196@coach.student.rit.edu>
+From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Message-ID: <56A23C45.4090805@gmail.com>
+Date: Fri, 22 Jan 2016 09:27:17 -0500
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
+In-Reply-To: <20160122034538.GA25196@coach.student.rit.edu>
+Content-Type: text/plain; charset=windows-1252; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello btrfs-folks,
+On 2016-01-21 22:45, Sean Greenslade wrote:
+> Hi, all. I have a box running a btrfs raid1 of two disks. One of the
+> disks started reallocating sectors, so I've decided to replace it
+> pre-emptively. And since larger disks are a bit cheaper now, I'm trading
+> up. The current disks are 2x 2TB, and I'm going to be putting in 2x 3TB
+> disks. Hopefully this should be reasonably straightforward, since the
+> raid is still healthy, but I wanted to ask what the best way to go about
+> doing this would be.
+>
+> I have the ability (through shuffling other drive bays around) to mount
+> the 2 existing drives + one new drive all at once. So my first blush
+> thought would be to mount one of the new drives, partition it, then
+> "btrfs replace" the worse existing drive.
+>
+> Another possibility is to "btrfs add" the new drive, balance, then
+> "btrfs device delete" the old drive. Would that make more sense if the
+> old drive is still (mostly) good?
+>
+> Or maybe I could just create a new btrfs partiton on the new device,
+> copy over the data, then shuffle the disks around and balance the new
+> single partition into raid1.
+>
+>
+> Which of these makes the most sense? Or is there something else I
+> haven't thought of?
+Just to further back up what everyone else has said, 'btrfs replace' is 
+the preferred way to do this, largely because it's significantly more 
+efficient and puts less stress on the disks.  Using add/delete requires 
+rewriting everything on the filesystem at least once, and possibly twice 
+depending on how you do it, whereas replace just rewrites the half of 
+the chunk that's on the disk being replaced, and updates some metadata 
+on the other disk.
 
-I am currently doing a big "btrfs balance" to extend a 8 drive RAID6 to
-12 drives using
- "btrfs balance start -dstripes 1..11 -mstripes 1..11"
-
-With kernel 4.4 and btrfs progs 4.4 it's running fine for a few days now
-and the new disks are slowing getting more and more extents.
-But somehow the process is VERY slow (3% in 3 days) and there is almost
-no additional disk utilization.
-
-The process doing the balance is doing 100% cpu (one core) so apparently
-the whole thing is very much single threaded and therefore CPU-bound in
-this case.
-
-Is this a known issue or is there anything I can do to speed this up? I
-mean the disks have plenty of iops left to work with and the box has
-many more CPU cores idling away.
-
-
-
-Regards
-
-
-Christian
-
+That said, if you have the time, it may be better for you to use 
+send/receive and create a new filesystem from scratch so that you can be 
+certain that you have a clean filesystem with all the new features.  If 
+you do go this way, use send/receive if possible, it's much more 
+efficient than rsync or cp, and can preserve almost everything (unlike 
+rsync).

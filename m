@@ -1,29 +1,49 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:41054 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1759617AbcAUSfh (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 21 Jan 2016 13:35:37 -0500
-Date: Thu, 21 Jan 2016 19:35:30 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Mike Gilbert <floppym@gentoo.org>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs-progs: Makefile.in: Simplify/correct install-static
-Message-ID: <20160121183530.GP4227@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1453391972-25669-1-git-send-email-floppym@gentoo.org>
+Received: from cn.fujitsu.com ([59.151.112.132]:22572 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1751953AbcAVBa5 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 21 Jan 2016 20:30:57 -0500
+Received: from G08CNEXCHPEKD02.g08.fujitsu.local (unknown [10.167.33.83])
+	by cn.fujitsu.com (Postfix) with ESMTP id 0FDC9418AD49
+	for <linux-btrfs@vger.kernel.org>; Fri, 22 Jan 2016 09:30:35 +0800 (CST)
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] btrfs: async-thread: Fix a use-after-free error for trace
+Date: Fri, 22 Jan 2016 09:28:38 +0800
+Message-ID: <1453426118-11198-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1453391972-25669-1-git-send-email-floppym@gentoo.org>
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Jan 21, 2016 at 10:59:32AM -0500, Mike Gilbert wrote:
-> install -D does not create the last component, so this failed if
-> $(DESTDIR)$(bindir) did not already exist.
-> 
-> There's no need for a loop here since install accepts multiple source
-> arguments.
-> 
-> Signed-off-by: Mike Gilbert <floppym@gentoo.org>
+Parameter of trace_btrfs_work_queued() can be freed in its workqueue.
+So no one use use that pointer after queue_work().
 
-Applied, thanks.
+Fix the user-after-free bug by move the trace line before queue_work().
+
+Reported-by: Dave Jones <davej@codemonkey.org.uk>
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+---
+ fs/btrfs/async-thread.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/fs/btrfs/async-thread.c b/fs/btrfs/async-thread.c
+index 88d9af3..5fb60ea 100644
+--- a/fs/btrfs/async-thread.c
++++ b/fs/btrfs/async-thread.c
+@@ -328,8 +328,8 @@ static inline void __btrfs_queue_work(struct __btrfs_workqueue *wq,
+ 		list_add_tail(&work->ordered_list, &wq->ordered_list);
+ 		spin_unlock_irqrestore(&wq->list_lock, flags);
+ 	}
+-	queue_work(wq->normal_wq, &work->normal_work);
+ 	trace_btrfs_work_queued(work);
++	queue_work(wq->normal_wq, &work->normal_work);
+ }
+ 
+ void btrfs_queue_work(struct btrfs_workqueue *wq,
+-- 
+2.7.0
+
+
+

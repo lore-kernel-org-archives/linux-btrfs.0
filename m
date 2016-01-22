@@ -1,69 +1,100 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:56191 "EHLO plane.gmane.org"
+Received: from bear.techie.net ([205.134.185.202]:52277 "EHLO bear.techie.net"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753618AbcAVOv7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 22 Jan 2016 09:51:59 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1aMd48-0000Np-PL
-	for linux-btrfs@vger.kernel.org; Fri, 22 Jan 2016 15:51:56 +0100
-Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 22 Jan 2016 15:51:56 +0100
-Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 22 Jan 2016 15:51:56 +0100
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: btrfs-progs 4.4 re-balance of RAID6 is very slow / limited to
- one cpu core?
-Date: Fri, 22 Jan 2016 14:51:47 +0000 (UTC)
-Message-ID: <pan$3f45c$28137200$2a7440f$6da4e9ad@cox.net>
-References: <56A230C3.3080100@netcologne.de>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+	id S1753504AbcAVOyF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 22 Jan 2016 09:54:05 -0500
+Date: Fri, 22 Jan 2016 09:53:55 -0500 (EST)
+From: Scott Talbert <swt@techie.net>
+To: Anand Jain <anand.jain@oracle.com>
+cc: linux-btrfs@vger.kernel.org
+Subject: Re: RAID1 root filesystem - same device shows up twice in 'btrfs fi
+ show'
+In-Reply-To: <56A1B312.1010105@oracle.com>
+Message-ID: <alpine.DEB.2.10.1601220946210.16794@bear.techie.net>
+References: <alpine.DEB.2.10.1601211432430.9575@bear.techie.net> <56A1B312.1010105@oracle.com>
+MIME-Version: 1.0
+Content-Type: TEXT/PLAIN; charset=US-ASCII; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Christian Rohmann posted on Fri, 22 Jan 2016 14:38:11 +0100 as excerpted:
+On Fri, 22 Jan 2016, Anand Jain wrote:
 
-> I am currently doing a big "btrfs balance" to extend a 8 drive RAID6 to
-> 12 drives using
->  "btrfs balance start -dstripes 1..11 -mstripes 1..11"
-> 
-> With kernel 4.4 and btrfs progs 4.4 it's running fine for a few days now
-> and the new disks are slowing getting more and more extents.
-> But somehow the process is VERY slow (3% in 3 days) and there is almost
-> no additional disk utilization.
-> 
-> The process doing the balance is doing 100% cpu (one core) so apparently
-> the whole thing is very much single threaded and therefore CPU-bound in
-> this case.
-> 
-> Is this a known issue or is there anything I can do to speed this up? I
-> mean the disks have plenty of iops left to work with and the box has
-> many more CPU cores idling away.
+> Thanks for the report.
+> Strange. but interesting. Can you pls help to isolate...
+>
+> On 01/22/2016 03:50 AM, Scott Talbert wrote:
+>> Hi,
+>> 
+>> I'm using:
+>> 
+>> Kernel 4.2.6
+>> btrfs-progs v4.3
+>> Debian Wheezy
+>> 
+>> I have a RAID1 root filesystem with two devices.  When the system
+>> initially boots up, "btrfs fi show" will show the same device twice:
+>> 
+>> Label: none  uuid: 49f7413a-99ad-41b0-8783-06c9406e2280
+>>      Total devices 2 FS bytes used 1.19GiB
+>>      devid    1 size 7.60GiB used 3.03GiB path /dev/sdf2
+>>      devid    2 size 7.60GiB used 3.01GiB path /dev/sdf2
+>> 
+>> The filesystem seems to work fine (as best as I can tell) in this state.
+>> If I then run another "btrfs device scan", it will correct itself:
+>
+>
+>
+>> Label: none  uuid: 49f7413a-99ad-41b0-8783-06c9406e2280
+>>          Total devices 2 FS bytes used 1.19GiB
+>>          devid    1 size 7.60GiB used 3.03GiB path /dev/sde2
+>>          devid    2 size 7.60GiB used 3.01GiB path /dev/sdf2
+>> 
+>> Any idea what might be going on here?  On Debian it appears that the
+>> initial "btrfs device scan" is being done by an initramfs local-premount
+>> script where it does:
+>> 
+>> modprobe btrfs
+>> /bin/btrfs device scan 2>/dev/null
+>> 
+>> Does there perhaps need to be some delay between inserting the kernel
+>> module and running a scan?
+>
+> May be dev1 is known as sdf initially before bootup and later when
+> system boots its known as sde.
+>
+> I believe /boot is on non btrfs FS?
 
-[This is only intended to be a stop-gap reply, until someone with more 
-detailed/direct knowledge/experience on the topic can reply.]
+/boot is on the btrfs rootfs, ie, /dev/sde2 / /dev/sdf2.  I do have a 
+bios_grub partition as partition #1 but not a separate /boot partition.
 
-My own use-case is btrfs raid1, but from what I've seen on the list, 
-raid56 mode maintenance that involves recalculating parity, as converting 
-from an 8-device stripe to a 12-device stripe will, is indeed /very/ slow.
+> As this is a root device, Can you tell which "one" device is used for
+> the mount in fstab ?
 
-I didn't know it was single-core limited, however.  If it's slow/complex 
-calculations, AND limited to a single core, plus given the likely size of 
-a filesystem of 8-12 devices in the day of multi-TB devices... ~1%/day, 
-100 days to complete... Ouch, that's going to be painful!
+I am using the UUID to mount in fstab:
+UUID=49f7413a-99ad-41b0-8783-06c9406e2280 /               btrfs 
+defaults 0       1
 
-The good thing is that it happens online, so you can be using the 
-filesystem and the other cores while it's happening.  Plus, balances are 
-interruptable.  You can reboot or whatever and it should pick up and 
-continue where it left off.
+> Do you see the following log in the bootup logs / dmesg ?
+> ------
+> printk(KERN_INFO "BTRFS: device fsid %pU devid %llu transid %llu %s %s\n",
+> disk_super->fsid, devid, transid, path,
+> ret == 2 ? "(overwritten)":"");
+> -------
 
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+Interestingly, the kernel logs show both devices...
 
+[   10.225915] BTRFS: device fsid 49f7413a-99ad-41b0-8783-06c9406e2280 
+devid 2 transid 1033 /dev/sdf2
+[   10.226297] BTRFS: device fsid 49f7413a-99ad-41b0-8783-06c9406e2280 
+devid 1 transid 1033 /dev/sde2
+
+> Can you provide..
+> blkid output
+
+/dev/sde2: UUID="49f7413a-99ad-41b0-8783-06c9406e2280" 
+UUID_SUB="692ba0c4-05b9-4681-86c4-b4af9028a533" TYPE="btrfs"
+/dev/sdf2: UUID="49f7413a-99ad-41b0-8783-06c9406e2280" 
+UUID_SUB="63ee640c-0df0-490c-bff6-91d71a246ed6" TYPE="btrfs"
+
+Thanks,
+Scott

@@ -1,28 +1,29 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:54660 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:54958 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753619AbcAVOAw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 22 Jan 2016 09:00:52 -0500
-Date: Fri, 22 Jan 2016 15:00:44 +0100
+	id S1753413AbcAVODT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 22 Jan 2016 09:03:19 -0500
+Date: Fri, 22 Jan 2016 15:03:11 +0100
 From: David Sterba <dsterba@suse.cz>
-To: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
 Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs: fix error number in send.c
-Message-ID: <20160122140043.GS4227@twin.jikos.cz>
+Subject: Re: [PATCH] btrfs: async-thread: Fix a use-after-free error for trace
+Message-ID: <20160122140311.GT4227@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <201601220013.AA00000@WIN-5MHF4RKU941.jp.fujitsu.com>
+References: <1453426118-11198-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <201601220013.AA00000@WIN-5MHF4RKU941.jp.fujitsu.com>
+In-Reply-To: <1453426118-11198-1-git-send-email-quwenruo@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Jan 22, 2016 at 09:13:25AM +0900, Tsutomu Itoh wrote:
-> ENOTSUPP should not be returned to the user program.
->  (cf. include/linux/errno.h)
-> Therefore, EOPNOTSUPP is used instead of ENOTSUPP.  
+On Fri, Jan 22, 2016 at 09:28:38AM +0800, Qu Wenruo wrote:
+> Parameter of trace_btrfs_work_queued() can be freed in its workqueue.
+> So no one use use that pointer after queue_work().
+> 
+> Fix the user-after-free bug by move the trace line before queue_work().
+> 
+> Reported-by: Dave Jones <davej@codemonkey.org.uk>
+> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 
-I'm not sure that EOPNOTSUPP is the right error code here. I'd rather
-make it EINVAL, the bug we're talking about is a new type of inode
-outside of the S_IFMT bits. "not supported" would mean we don't support
-it but we could in theory.
+Reviewed-by: David Sterba <dsterba@suse.com>

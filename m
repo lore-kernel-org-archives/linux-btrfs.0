@@ -1,60 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from email.routify.me ([162.208.10.182]:58594 "EHLO
-	cartman.routify.me" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751648AbcAVDpl (ORCPT
+Received: from userp1040.oracle.com ([156.151.31.81]:48756 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752324AbcAVD4B (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 21 Jan 2016 22:45:41 -0500
-Received: from coach.student.rit.edu (coach.student.rit.edu [129.21.178.64])
-	by cartman.routify.me (Postfix) with ESMTPSA id 4122381A62
-	for <linux-btrfs@vger.kernel.org>; Thu, 21 Jan 2016 22:45:40 -0500 (EST)
-Date: Thu, 21 Jan 2016 22:45:38 -0500
-From: Sean Greenslade <sean@seangreenslade.com>
-To: linux-btrfs@vger.kernel.org
-Subject: RAID1 disk upgrade method
-Message-ID: <20160122034538.GA25196@coach.student.rit.edu>
+	Thu, 21 Jan 2016 22:56:01 -0500
+Subject: Re: "Some devices missing" only while not mounted
+To: Konstantin Svist <fry.kun@gmail.com>, linux-btrfs@vger.kernel.org
+References: <56A13176.2050502@gmail.com>
+From: Anand Jain <anand.jain@oracle.com>
+Cc: David Sterba <dsterba@suse.cz>
+Message-ID: <56A1A84A.2020801@oracle.com>
+Date: Fri, 22 Jan 2016 11:55:54 +0800
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <56A13176.2050502@gmail.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi, all. I have a box running a btrfs raid1 of two disks. One of the
-disks started reallocating sectors, so I've decided to replace it
-pre-emptively. And since larger disks are a bit cheaper now, I'm trading
-up. The current disks are 2x 2TB, and I'm going to be putting in 2x 3TB
-disks. Hopefully this should be reasonably straightforward, since the
-raid is still healthy, but I wanted to ask what the best way to go about
-doing this would be.
-
-I have the ability (through shuffling other drive bays around) to mount
-the 2 existing drives + one new drive all at once. So my first blush
-thought would be to mount one of the new drives, partition it, then
-"btrfs replace" the worse existing drive.
-
-Another possibility is to "btrfs add" the new drive, balance, then
-"btrfs device delete" the old drive. Would that make more sense if the
-old drive is still (mostly) good?
-
-Or maybe I could just create a new btrfs partiton on the new device,
-copy over the data, then shuffle the disks around and balance the new
-single partition into raid1.
 
 
-Which of these makes the most sense? Or is there something else I
-haven't thought of?
 
-System info:
+On 01/22/2016 03:28 AM, Konstantin Svist wrote:
+> Hi,
+>
+> I have a btrfs raid10 with 4 drives on Fedora 23 x64.
+> Currently, the array is mountable (non-degraded) and all the content
+> appears accessible without any errors -- except that "btrfs dev ready"
+> returns 1 and "btrfs fi show -d" says "*** Some devices missing".
 
-[sean@rat ~]$ uname -a
-Linux rat 4.3.3-3-ARCH #1 SMP PREEMPT Wed Jan 20 08:12:23 CET 2016
-x86_64 GNU/Linux
+  'btrfs fi show -d':
 
-[sean@rat ~]$ btrfs --version
-btrfs-progs v4.3.1
+   Those were kind of anticipated !
+     http://www.spinics.net/lists/linux-btrfs/msg31445.html
 
-All drives are spinning rust. Original raid1 was created ~Aug 2013, on
-kernel 3.10.6.
+   end users:
+    pls just ignore -d output. Instead use with no option, which then
+    uses the kernel data for the mounted FS and userland data for the
+    unmounted.
 
 
-Thanks,
-
---Sean
+   'btrfs dev ready':
+      - cannot be fixed without breaking the API rules.
+      May be we would obsolete this cli to a sysfs interface or
+      something else.

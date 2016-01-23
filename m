@@ -1,116 +1,140 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:58702 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1753540AbcAVOTa (ORCPT
+Received: from userp1040.oracle.com ([156.151.31.81]:42308 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753058AbcAWAzW (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 22 Jan 2016 09:19:30 -0500
-Date: Fri, 22 Jan 2016 09:19:17 -0500
-From: Chris Mason <clm@fb.com>
-To: Zhao Lei <zhaolei@cn.fujitsu.com>
-CC: <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH 1/2] btrfs: reada: limit max works count
-Message-ID: <20160122141917.qs632ec3iwykdfdm@floor.thefacebook.com>
-References: <9d3a1b584cec0081382f832ab0a7f9b31b1d9798.1452584763.git.zhaolei@cn.fujitsu.com>
- <20160120151627.kuy3auwiguoe6xc6@floor.thefacebook.com>
- <20160120174823.ck5zeoihwsrbvoih@floor.thefacebook.com>
- <00a501d15433$61275d10$23761730$@cn.fujitsu.com>
- <20160121141444.gygz5lrkerq67lxz@floor.thefacebook.com>
- <00ce01d15510$0b35adc0$21a10940$@cn.fujitsu.com>
+	Fri, 22 Jan 2016 19:55:22 -0500
+Date: Fri, 22 Jan 2016 16:54:39 -0800
+From: "Darrick J. Wong" <darrick.wong@oracle.com>
+To: Eric Biggers <ebiggers3@gmail.com>
+Cc: david@fromorbit.com, linux-fsdevel@vger.kernel.org,
+        linux-api@vger.kernel.org, xfs@oss.sgi.com,
+        linux-btrfs@vger.kernel.org, hch@infradead.org
+Subject: Re: [PATCH 8/9] vfs: hoist the btrfs deduplication ioctl to the vfs
+Message-ID: <20160123005439.GA5496@birch.djwong.org>
+References: <20151219085505.12478.71157.stgit@birch.djwong.org>
+ <20151219085559.12478.33700.stgit@birch.djwong.org>
+ <20160112060714.GA4980@zzz>
+ <20160112091432.GB7832@birch.djwong.org>
+ <20160113023658.GA1551@zzz>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-In-Reply-To: <00ce01d15510$0b35adc0$21a10940$@cn.fujitsu.com>
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20160113023658.GA1551@zzz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Jan 22, 2016 at 08:25:56PM +0800, Zhao Lei wrote:
-> Hi, Chris Mason
+On Tue, Jan 12, 2016 at 08:36:58PM -0600, Eric Biggers wrote:
+> On Tue, Jan 12, 2016 at 01:14:32AM -0800, Darrick J. Wong wrote:
+> > 
+> > Frankly, I also wouldn't mind changing the VFS dedupe ioctl that to something
+> > that resembles the clone_range interface:
+> > 
+> > int ioctl(int dest_fd, FIDEDUPERANGE, struct file_dedupe_range * arg);
 > 
-> > -----Original Message-----
-> > From: Chris Mason [mailto:clm@fb.com]
-> > Sent: Thursday, January 21, 2016 10:15 PM
-> > To: Zhao Lei <zhaolei@cn.fujitsu.com>
-> > Cc: linux-btrfs@vger.kernel.org
-> > Subject: Re: [PATCH 1/2] btrfs: reada: limit max works count
-> > 
-> > On Thu, Jan 21, 2016 at 06:06:21PM +0800, Zhao Lei wrote:
-> > > Hi, Chris Mason
-> > >
-> > > > -----Original Message-----
-> > > > From: Chris Mason [mailto:clm@fb.com]
-> > > > Sent: Thursday, January 21, 2016 1:48 AM
-> > > > To: Zhao Lei <zhaolei@cn.fujitsu.com>; linux-btrfs@vger.kernel.org
-> > > > Subject: Re: [PATCH 1/2] btrfs: reada: limit max works count
-> > > >
-> > > > On Wed, Jan 20, 2016 at 10:16:27AM -0500, Chris Mason wrote:
-> > > > > On Tue, Jan 12, 2016 at 03:46:26PM +0800, Zhao Lei wrote:
-> > > > > > reada create 2 works for each level of tree in recursion.
-> > > > > >
-> > > > > > In case of a tree having many levels, the number of created
-> > > > > > works is 2^level_of_tree.
-> > > > > > Actually we don't need so many works in parallel, this patch
-> > > > > > limit max works to BTRFS_MAX_MIRRORS * 2.
-> > > > >
-> > > > > Hi,
-> > > > >
-> > > > > I don't think you end up calling atomic_dec() for every time that
-> > > > > reada_start_machine() is called.  Also, I'd rather not have a
-> > > > > global static variable to limit the parallel workers, when we have
-> > > > > more than one FS mounted it'll end up limiting things too much.
-> > > > >
-> > > > > With this patch applied, I'm seeing deadlocks during btrfs/066.    You
-> > > > > have to run the scrub tests as well, basically we're just getting
-> > > > > fsstress run alongside scrub.
-> > > > >
-> > > > > I'll run a few more times with it reverted to make sure, but I
-> > > > > think it's the root cause.
-> > > >
-> > > > I spoke too soon, it ended up deadlocking a few tests later.
-> > > >
-> > > In logic, even if the calculation of atomic_dec() in this patch having
-> > > bug, in worst condition, reada will works in single-thread mode, and
-> > > will not introduce deadlock.
-> > >
-> > > And by looking the backtrace in this mail, maybe it is caused by
-> > > reada_control->elems in someplace of this patchset.
-> > >
-> > > I recheck xfstests/066 in both vm and physical machine, on top of my
-> > > pull-request git today, with btrfs-progs 4.4 for many times, but had not
-> > triggered the bug.
-> > 
-> > Just running 066 alone doesn't trigger it for me.  I have to run everything from
-> > 00->066.
-> > 
-> > My setup is 5 drives.  I use a script to carve them up into logical volumes, 5 for
-> > the test device and 5 for the scratch pool.  I think it should reproduce with a
-> > single drive, if you still can't trigger I'll confirm that.
-> > 
-> > >
-> > > Could you tell me your test environment(TEST_DEV size, mount option),
-> > > and odds of fails in btrfs/066?
-> > 
-> > 100% odds of failing, one time it made it up to btrfs/072.  I think more
-> > important than the drive setup is that I have all the debugging on.
-> > CONFIG_DEBUG_PAGEALLOC, spinlock debugging, mutex debugging and lock
-> > dep enabled.
-> > 
-> Thanks for your answer.
-> 
-> But unfortunately I hadn't reproduce the dead_lock in above way today...
-> Now I queued loop of above reproduce script in more nodes, and hopes
-> it can happen in this weekend.
-> 
-> And by reviewing code, I found a problem which can introduce similar bad result
-> in logic, and made a patch for it.
-> [PATCH] [RFC] btrfs: reada: avoid undone reada extents in btrfs_reada_wait
-> 
-> Because it is only a problem in logic, but rarely happened, I only confirmed
-> no-problem after patch applied.
-> 
-> Sorry for increased your works, could you apply this patch and test is it
-> works?
+> Getting rid of the vectorization certainly avoids a lot of API complexity.  I
+> don't know precisely why it was made vectorized in the first place, but to me it
+> seems it shouldn't be vectorized unless there's a strong reason for it to be.
 
-No problem, I'll try the patch and see if I can get a more reliable way
-to reproduce if it doesn't fix things.  Thanks!
+I suppose the idea was that you could ask the kernel to dedupe a bunch of files
+"atomically" and that locks would be held (at least on the source file) during
+the entire operation...?
 
--chris
+Ick.  Given that you can have 65536 vectors of 16MB apiece, you could be
+reading up to 1TB of data into the pagecache.  That's a lot for a single
+ioctl, though I guess we unlock all the inodes between each vector.
 
+(Welll... we don't check for pending signals.  Urk.)
+
+> > Not sure what you mean by 'symmetric', but in any case the convention seems
+> > to be that src_fd's storage is shared with dest_fd if there's a match.
+> > ...
+> > I think the result of an earlier discussion was that src_fd must be readable,
+> > and dest_fd must be writable or appendable.
+> 
+> Deduplication is a strange operation since you're not "reading" or "writing" in
+> the traditional sense.  All file data stays exactly the same from a user
+> perspective.
+> 
+> So rather than arbitrarily say that you're "reading" from one file and "writing"
+> to the other, one possibility is to have an API where you submit two files and
+> the implementation decides how to best deduplicate them.  That could involve
+> sharing existing extents in file 1 with file 2; or sharing existing extents in
+> file 2 with file 1; or creating a new extent and referencing it from each file.
+> It would be up to the implementation to choose the most efficient approach.
+
+That's a very good point!  We needn't limit the API to whatever the first
+implementer does; all of the above are valid interpretations of what dedupe
+could involve.  I might even argue that this is the use-case for the vectorized
+dedupe call -- analyze all these proposed deduplications and figure out the
+best plan to make it happen.
+
+(Ofc the current implementation doesn't allow this, but we can change the
+code when the singularity happens, etc.)
+
+> But I take it that the existing btrfs ioctl doesn't work that way, and it always
+> will share the existing extents in file 1 with file 2.
+> 
+> That's probably a perfectly fine way to do it, but I was wondering whether it
+> really makes sense to hard-code that detail in the API, since an API could be
+> defined more generally.
+> 
+> And from a practical perpective, people using the ioctl to deduplicate two files
+> need to know which one to submit to the API as the "source" and which as the
+> "destination", if it matters.
+> 
+> Related to this are the permissions you need on each file descriptor.  Since
+> deduplication isn't "reading" or "writing" in the traditional sense it could,
+> theoretically, be argued that no permissions at all should be required: neither
+> FMODE_READ nor FMODE_WRITE.
+
+I don't like the idea of being able to make major changes to a file that
+I've opened with O_RDONLY. :)
+
+I suppose if you're going to allow the FS to figure out its own strategy
+and all that, then by the above reasoning one ought to have all the files
+opened as writable.
+
+> Most likely are concerns that would make that a bad idea, though.  Perhaps
+> someone could create mischief by causing fragmentation in system files.
+> 
+> If this was previously discussed, can you point me to that discussion?
+
+I don't know if there was a previous discussion, alas.
+
+> The proposed man page is also very brief on permissions, only mentioning them
+> indirectly in the error codes section.
+
+There's a lot of unfortunate hand-waving in that manpage -- I wasn't involved
+in designing the initial ioctl, so for the most part I'm simply sniffing my
+way through based on observed behaviors (of duperemove) and guessing based on
+the source code as I write the XFS version. :)
+
+> > > The man page also says you get EPERM if "dest_fd is immutable" and ETXTBSY if
+> > > "one of the files is a swap file", which I don't see actually happening in
+> > > the implementation; it seems those error codes perhaps exist at all for this
+> > > ioctl but rather be left to open(..., O_WRONLY).
+> > 
+> > Those could be hoisted to the VFS (from the XFS implementation), I think.
+> 
+> If the destination file has to already be open for writing then it can't be
+> immutable.  So I don't think that error code is needed.  Checking for an active
+> swapfile, on the other hand, may be valid, although I don't see such a check
+> anywhere in the version of the code I'm looking at.
+
+It's at the top of xfs_file_share_range() in the more recent RFCs of XFS reflink.
+
+> > I'll later take a look at how many of these issues apply to clone/clone_range.
+> 
+> clone and clone_range seem to avoid the two biggest issues I saw: they aren't
+> vectorized, and there's a natural distinction between the "source" and the
+> "destination" of the operation.  They definitely need careful consideration as
+> well, though.
+
+Indeed.  I appreciate your review of the manpages/patches!
+
+--D
+
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-api" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

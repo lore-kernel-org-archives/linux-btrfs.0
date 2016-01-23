@@ -1,39 +1,51 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f181.google.com ([209.85.223.181]:35907 "EHLO
-	mail-io0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751456AbcAWXnr (ORCPT
+Received: from mail-ig0-f180.google.com ([209.85.213.180]:37976 "EHLO
+	mail-ig0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751456AbcAWXs1 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 23 Jan 2016 18:43:47 -0500
-Received: by mail-io0-f181.google.com with SMTP id g73so123758329ioe.3
-        for <linux-btrfs@vger.kernel.org>; Sat, 23 Jan 2016 15:43:47 -0800 (PST)
+	Sat, 23 Jan 2016 18:48:27 -0500
+Received: by mail-ig0-f180.google.com with SMTP id mw1so12459987igb.1
+        for <linux-btrfs@vger.kernel.org>; Sat, 23 Jan 2016 15:48:26 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <6319302C-E745-4274-86BA-10FE457A511C@asselman.com>
-References: <6319302C-E745-4274-86BA-10FE457A511C@asselman.com>
-Date: Sat, 23 Jan 2016 16:43:47 -0700
-Message-ID: <CAJCQCtRCrjr4CXgREJrt=EaEm3hCi5324_NxebRUPMKOUHKUxQ@mail.gmail.com>
-Subject: Re: Bad metadata / Incorrect global backref count
+Date: Sat, 23 Jan 2016 16:48:26 -0700
+Message-ID: <CAJCQCtRyyu3rdyyykEjf8neLh3R+12to_gcCpU2ss51dU-_7PA@mail.gmail.com>
+Subject: [bug] btrfs send -e option always fails ERROR: unexpected EOF in stream.
 From: Chris Murphy <lists@colorremedies.com>
-To: Jeroen Asselman <jeroen@asselman.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Jan 22, 2016 at 3:50 AM, Jeroen Asselman <jeroen@asselman.com> wrote:
+https://bugzilla.kernel.org/show_bug.cgi?id=111221
 
-> Jan 20 22:00:14 streamlet kernel: WARNING: CPU: 1 PID: 4964 at /usr/src/linux-4.1.12-gentoo/fs/btrfs/extent-tree.c:6226
-> Jan 20 22:00:14 streamlet kernel: BTRFS info (device bcache1): leaf 2857340420096 total ptrs 271 free space 7297
+4.4.0-1.fc24.x86_64
+btrfs-progs-4.3.1-1.fc23.x86_64
 
-This is kernel 4.1.12, and Btrfs on bcache device?
 
-My suggestion, short of other more knowledgeable suggestions, is to
-make as few changes as possible. If you can mount it read-only OK,
-take advantage of this by making a current backup, at least of the
-most recent data you have on the volume.
 
-That you have 16000+ snapshots is a challenge to preserve all of it.
-The send -e flag should help with this, but in my tests today it seems
-to be broken. https://bugzilla.kernel.org/show_bug.cgi?id=111221
+[...snip...]
+BTRFS_IOC_SEND returned 0
+joining genl thread
+At subvol testsub.1
+ERROR: parent determination failed for 0
+chown temp/cockpit-shell-0.91-1.fc23.noarch.rpm - uid=0, gid=0
+chmod temp/cockpit-shell-0.91-1.fc23.noarch.rpm - mode=0644
+utimes temp/cockpit-shell-0.91-1.fc23.noarch.rpm
+mkfile o270-134474-0
+rename o270-134474-0 -> temp/cockpit-networkmanager-0.91-1.fc23.noarch.rpm
+utimes temp
+set_xattr temp/cockpit-networkmanager-0.91-1.fc23.noarch.rpm -
+name=security.selinux data_len=38
+data=unconfined_u:object_r:admin_home_t:s0
+truncate temp/cockpit-networkmanager-0.91-1.fc23.noarch.rpm size=37322
+chown temp/cockpit-networkmanager-0.91-1.fc23.noarch.rpm - uid=0, gid=0
+chmod temp/cockpit-networkmanager-0.91-1.fc23.noarch.rpm - mode=0644
+utimes temp/cockpit-networkmanager-0.91-1.fc23.noarch.rpm
+ERROR: unexpected EOF in stream.
+
+The same ERROR messages happens even if I use -p to specify the parent.
+
+Sending conventionally one at a time with -p works OK.
 
 
 -- 

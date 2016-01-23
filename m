@@ -1,66 +1,76 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:48904 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:49152 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754822AbcAWWLR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 23 Jan 2016 17:11:17 -0500
-Date: Sat, 23 Jan 2016 14:11:16 -0800
+	id S1754910AbcAWWWG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 23 Jan 2016 17:22:06 -0500
+Date: Sat, 23 Jan 2016 14:22:05 -0800
 From: Mark Fasheh <mfasheh@suse.de>
-To: James Hogarth <james.hogarth@gmail.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: Query about proposed dedup patches and behaviours
-Message-ID: <20160123221116.GD24672@wotan.suse.de>
+To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Cc: Rich Freeman <r-btrfs@gw.thefreemanclan.net>,
+        Duncan <1i5t5.duncan@cox.net>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Subject: Re: Why is dedup inline, not delayed (as opposed to offline)?
+ Explain like I'm five pls.
+Message-ID: <20160123222205.GE24672@wotan.suse.de>
 Reply-To: Mark Fasheh <mfasheh@suse.de>
-References: <CAGkb5vfzcOmj1Js=pBR6=-Uad7jY2bJy5ht3F-m-1TEOBjwCYA@mail.gmail.com>
+References: <loom.20160116T132316-196@post.gmane.org>
+ <pan$6d016$7902b96d$a10088a$d023ef02@cox.net>
+ <CAGfcS_mepN3bcgSo6qgjVAyROoRpX3G05dAm=-g-eOhSkv+GZA@mail.gmail.com>
+ <569CD935.4030708@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CAGkb5vfzcOmj1Js=pBR6=-Uad7jY2bJy5ht3F-m-1TEOBjwCYA@mail.gmail.com>
+In-Reply-To: <569CD935.4030708@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Jan 14, 2016 at 04:13:00PM +0000, James Hogarth wrote:
-> The duperemove[1] tool is in the process for packaging for Fedora at
-> present but I was wondering what future this may have with the 4.5
-> dedup patches being proposed.
-> 
-> WIll the btrfs command have the ability to out-of-line dedup files
-> similar to duperemove (thus negating the need for it) or will this
-> only control in-line dedup with a tool like duperemove still being
-> required for periodic only (or restricted path) dedup?
+On Mon, Jan 18, 2016 at 07:23:17AM -0500, Austin S. Hemmelgarn wrote:
+> On 2016-01-16 13:07, Rich Freeman wrote:
+> >On Sat, Jan 16, 2016 at 9:10 AM, Duncan <1i5t5.duncan@cox.net> wrote:
+> >>Al posted on Sat, 16 Jan 2016 12:27:16 +0000 as excerpted:
+> >>
+> >>>Is there any urgency for dedup? What's wrong with storing the hash on
+> >>>disk with the block and having a separate process dedup the written data
+> >>>over time;
+> >>
+> >>There's actually uses for both inline and out-of-line[1] aka delayed
+> >>dedup.  Btrfs already has a number of independent products doing various
+> >>forms of out-of-line dedup, so what's missing and being developed now is
+> >>the inline dedup option, which being directly in the write processing,
+> >>must be handled by btrfs itself -- it can't be primarily done by third
+> >>parties with just a few kernel calls, like out-of-line dedup can.
+> >
+> >Does the out-of-line dedup option actually utilize stored hashes, or
+> >is it forced to re-read all the data to compute hashes?  If it is
+> >collecting checksums/etc is this done efficiently?
+> AFAIK, duperemove has the option to store block hashes in a database
+> to save them between runs (I'm pretty sure that it invalidates
+> hashes if the file containing the block changed, but I'm not
+> certain).
 
-Similar to dupremove, I doubt it. Duperemove is about 12,000 lines at this
-point and very little of it is duplicated from btrfs-progs. Much of it is
-concerned with efficiently scanning files, making extents from duplicated
-blocks, managing a sqlite db, etc. Things that the btrfs command doesn't
-need to handle.
+Yes, duperemove can use a hashfile (this is the recommened way of running
+it). right now they're more or less temporary storage for one run (though as
+you noted you can reuse the hashfile later).
 
-Also Ocfs2 should be able to support extent-same at some point and
-duperemove will want to run on that FS as well.
-
-We could always have a small wrapper to the ioctl but again the difference
-between 'hey dedupe a couple of files' and 'scan terabytes of data to
-dedupe' is pretty big if you care about getting it done efficiently.
+The feature to rescan only the changed parts of a filesystem (and reuse the
+hashfile) is in development and will be available with the next major
+release.
 
 
-> To avoid memory usage bloat if the btrfs command can order dedup  of X
-> files on the path correctly can it be passed a path to carry the hash
-> map in some form (similar to how dupeemeove can use sqlite for this)
-> or is this another use case for the external tool?
+> >I think he is actually suggesting a hybrid approach where a bit of
+> >effort is done during operations to greatly streamline out-of-line
+> >deduplication.  I'm not sure how close we are to that already, or if
+> >any room for improvement remains.
+> There isn't any implementation I know of that does this.  In theory,
+> it would be pretty easy if we could somehow get block checksums
+> from BTRFS in userspace.
 
-I'm not totally clear on what you're asking here. Do you want the duperemove
-hashes passed into the kernel? There's no point since we just use that map
-to call our ioctl...
+btrfs block checksums are there for us to see if a block was corrupted.
+It is generally agreed that they will be colliding a lot which would cause
+unnecessary file reads during the dedupe ioctl.
 
-
-> Finally what's the present situation with regards to defragmentation
-> and deduplication? Is it safe to turn on autodefrag now when using
-> snapshots and duperemove? What should the behaviour be with the
-> proposed 4.5 dedup patches if both inline dedup and autodefrag are
-> enabled as mount options?
-
-Was there ever a reason it was unsafe to do dedupe + autodefrag? To my
-knowledge this should be fine.
-
-Thanks,
+Also, if we get them from the FS we can only get them in blocksized chunks
+which at 4K make dedupe expensive. Duperemove for example, defaults to 128K
+chunks for this reason.
 	--Mark
 
 --

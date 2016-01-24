@@ -1,20 +1,22 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f180.google.com ([209.85.213.180]:37685 "EHLO
-	mail-ig0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755737AbcAXWE0 (ORCPT
+Received: from mail-io0-f171.google.com ([209.85.223.171]:35606 "EHLO
+	mail-io0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754346AbcAXWpt (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 24 Jan 2016 17:04:26 -0500
-Received: by mail-ig0-f180.google.com with SMTP id h5so20169764igh.0
-        for <linux-btrfs@vger.kernel.org>; Sun, 24 Jan 2016 14:04:26 -0800 (PST)
+	Sun, 24 Jan 2016 17:45:49 -0500
+Received: by mail-io0-f171.google.com with SMTP id 77so135056136ioc.2
+        for <linux-btrfs@vger.kernel.org>; Sun, 24 Jan 2016 14:45:49 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <20160124211700.GF908@breitenfeld.lan>
+In-Reply-To: <20160124221614.GH908@breitenfeld.lan>
 References: <20160124175258.GD908@breitenfeld.lan>
 	<CAJCQCtTFwz3YxaYJSnq3M7fQQ152=1ka_Y1ecXT=9LurPSaRrw@mail.gmail.com>
 	<20160124205832.GE908@breitenfeld.lan>
 	<CAJCQCtQfpnis+m0QqSJ28wHidNCm2tAt8UXZuwrPg6fdrLohNw@mail.gmail.com>
 	<20160124211700.GF908@breitenfeld.lan>
-Date: Sun, 24 Jan 2016 15:04:25 -0700
-Message-ID: <CAJCQCtQjCgvHqfbuKF+E0xhEydu1SdwZ3uLyq+aDL=+Yrrkm4w@mail.gmail.com>
+	<CAJCQCtQjCgvHqfbuKF+E0xhEydu1SdwZ3uLyq+aDL=+Yrrkm4w@mail.gmail.com>
+	<20160124221614.GH908@breitenfeld.lan>
+Date: Sun, 24 Jan 2016 15:45:49 -0700
+Message-ID: <CAJCQCtRtZ+LxwZ8e_5s3AEfJ-a7wU9_DLz=UBNiJyY190i0CXw@mail.gmail.com>
 Subject: Re: Chicken-egg: uncorrectable checksum error prevents RAID1 rebalancing
 From: Chris Murphy <lists@colorremedies.com>
 To: Tom Hunt <tomdicksonhunt@gmail.com>
@@ -24,18 +26,36 @@ Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Jan 24, 2016 at 2:17 PM, Tom Hunt <tomdicksonhunt@gmail.com> wrote:
-> My arrangement is two subvolumes, 'root' and 'home', directly under the root
-> subvolume. The 'root' subvolume is mounted on /, the 'home' subvolume on /home.
-> I've tried both pointing the find command at /, and mounting the root subvolume
-> on a mount directory and pointing it there. Neither show any file or directory
-> with inum 515.
+On Sun, Jan 24, 2016 at 3:16 PM, Tom Hunt <tomdicksonhunt@gmail.com> wrote:
+> I get "currently mounted, aborting".
+>
+> If I must bring down the machine over this, I can, but I'd prefer not to.
 
-Inode 515 isn't special as far as I can tell. That you get zero
-results for 'find <mp> -inum 515' and yet it appears with an error
-during a scrub is weird.
+Now is a good time to refresh its backup, while it's online. It's also
+a good idea to maintain readonly snapshots of each subvolume you want
+to keep in case you need to depend on using btrfs send/receive to move
+the data to a new file system, since only ro snapshots can be used for
+send/receive.
 
-What do you get for btrfs check without --repair?
+Maybe it's an orphaned item. I don't know much about those, whether
+btrfs check finds or removes them. But you can safely use
+btrfs-debug-tree while the fs is mounted.
+
+btrfs-debug-tree <dev> | grep -A3 -B3 ORPHAN
+
+That'd find object type ORPHAN and item type ORPHAN_ITEM. Again, no
+idea what to do about it if either are found, and matches inode 515.
+You could also do a search using
+
+btrfs-debug-tree <dev> | grep -A3 -B3 "(515 "
+
+and see if that reveals anything.
+
+While the fs has to be umounted for this, the --init-csum-tree option
+for btrfs check will obliterate the current csum tree (and all file
+csums) and then compute new csums for everything. That might fix it,
+at least if it's a stuck orphan item then this ought to give it a
+valid csum so you can proceed with conversion.
 
 
 

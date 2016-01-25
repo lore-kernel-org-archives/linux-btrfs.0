@@ -1,26 +1,25 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lb0-f175.google.com ([209.85.217.175]:33241 "EHLO
-	mail-lb0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752280AbcAYQg5 convert rfc822-to-8bit (ORCPT
+Received: from mail-io0-f170.google.com ([209.85.223.170]:33532 "EHLO
+	mail-io0-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932998AbcAYQnd (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 25 Jan 2016 11:36:57 -0500
-Received: by mail-lb0-f175.google.com with SMTP id x4so77925956lbm.0
-        for <linux-btrfs@vger.kernel.org>; Mon, 25 Jan 2016 08:36:56 -0800 (PST)
+	Mon, 25 Jan 2016 11:43:33 -0500
+Received: by mail-io0-f170.google.com with SMTP id q21so157735754iod.0
+        for <linux-btrfs@vger.kernel.org>; Mon, 25 Jan 2016 08:43:33 -0800 (PST)
+Subject: Re: suspected BTRFS errors resulting in file system becoming
+ unrecovable
+To: WillIam Thorne <will.thorne@me.com>, linux-btrfs@vger.kernel.org
+References: <525D830B-C5A6-40DC-932C-B283A7FB8932@me.com>
+From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Message-ID: <56A650AC.6050901@gmail.com>
+Date: Mon, 25 Jan 2016 11:43:24 -0500
 MIME-Version: 1.0
 In-Reply-To: <525D830B-C5A6-40DC-932C-B283A7FB8932@me.com>
-References: <525D830B-C5A6-40DC-932C-B283A7FB8932@me.com>
-From: Patrik Lundquist <patrik.lundquist@gmail.com>
-Date: Mon, 25 Jan 2016 17:36:36 +0100
-Message-ID: <CAA7pwKOX2xqpmwAPxhK0=Bd4ouv1FobtahfjA0m+SA5E3hV2gA@mail.gmail.com>
-Subject: Re: suspected BTRFS errors resulting in file system becoming unrecovable
-To: WillIam Thorne <will.thorne@me.com>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 25 January 2016 at 15:58, WillIam Thorne <will.thorne@me.com> wrote:
->
+On 2016-01-25 09:58, WillIam Thorne wrote:
 > Hi
 >
 > I have a WD 3TB external HD attached over USB to an arm based micro PC (rasp pi). I was experimenting with btrfs for storing email archives but recently encountered some problems which resulted in the filesystem becoming apparently unrecoverable. I’m not an expert and it was quicker to switch back to ext4 and restored from backup so no support needed. Here what appears to be the relevant part of the syslog including the stack trace in case it is useful:
@@ -30,10 +29,10 @@ On 25 January 2016 at 15:58, WillIam Thorne <will.thorne@me.com> wrote:
 >
 > pi@mail /var/log $ btrfs --version
 > Btrfs Btrfs v0.19
-
-You're using an ancient btrfs-progs.
-
-
+In general, if you plan to use BTRFS on Debian (or Raspbian), you should 
+be building the tools yourself locally, Debian is almost as bad about 
+staying up to date as most enterprise distros.
+>
 > pi@mail /var/log $ uname -a
 > Linux mail 4.1.7-v7+ #817 SMP PREEMPT Sat Sep 19 15:32:00 BST 2015 armv7l GNU/Linux
 >
@@ -43,56 +42,13 @@ You're using an ancient btrfs-progs.
 > Jan 20 09:43:18 mail kernel: [2762823.972819] sd 0:0:0:0: [sda] ASC=0x3a ASCQ=0x0
 > Jan 20 09:43:18 mail kernel: [2762823.972837] sd 0:0:0:0: [sda] CDB: opcode=0x2a 2a 00 00 f7 2c 20 00 00 f0 00
 > Jan 20 09:43:18 mail kernel: [2762823.972851] blk_update_request: I/O error, dev sda, sector 16198688
-> Jan 20 09:43:18 mail kernel: [2762823.972867] BTRFS: bdev /dev/sda1 errs: wr 1, rd 0, flush 0, corrupt 0, gen 0
-
-Your USB controller resets device #4 and then you get write errors on
-sda. Not a Btrfs problem.
-
-
-> Jan 20 09:43:18 mail kernel: [2762823.976998] sd 0:0:0:0: [sda] UNKNOWN(0x2003) Result: hostbyte=0x00 driverbyte=0x08
-> Jan 20 09:43:18 mail kernel: [2762823.977015] sd 0:0:0:0: [sda] Sense Key : 0x2 [current]
-> Jan 20 09:43:18 mail kernel: [2762823.977028] sd 0:0:0:0: [sda] ASC=0x3a ASCQ=0x0
-> Jan 20 09:43:18 mail kernel: [2762823.977042] sd 0:0:0:0: [sda] CDB: opcode=0x2a 2a 00 00 f7 2d 10 00 00 f0 00
-> Jan 20 09:43:18 mail kernel: [2762823.977052] blk_update_request: I/O error, dev sda, sector 16198928
-> Jan 20 09:43:18 mail kernel: [2762823.977066] BTRFS: bdev /dev/sda1 errs: wr 2, rd 0, flush 0, corrupt 0, gen 0
-> Jan 20 09:43:18 mail kernel: [2762823.978226] sd 0:0:0:0: [sda] UNKNOWN(0x2003) Result: hostbyte=0x00 driverbyte=0x08
-> Jan 20 09:43:18 mail kernel: [2762823.978273] sd 0:0:0:0: [sda] Sense Key : 0x2 [current]
-> Jan 20 09:43:18 mail kernel: [2762823.978286] sd 0:0:0:0: [sda] ASC=0x3a ASCQ=0x0
-> Jan 20 09:43:18 mail kernel: [2762823.978301] sd 0:0:0:0: [sda] CDB: opcode=0x2a 2a 00 00 f7 2e 00 00 00 20 00
-> Jan 20 09:43:18 mail kernel: [2762823.978318] blk_update_request: I/O error, dev sda, sector 16199168
-> Jan 20 09:43:18 mail kernel: [2762823.978339] BTRFS: bdev /dev/sda1 errs: wr 3, rd 0, flush 0, corrupt 0, gen 0
-> Jan 20 09:43:18 mail kernel: [2762823.983241] sd 0:0:0:0: [sda] UNKNOWN(0x2003) Result: hostbyte=0x00 driverbyte=0x08
-> Jan 20 09:43:18 mail kernel: [2762823.983264] sd 0:0:0:0: [sda] Sense Key : 0x2 [current]
-> Jan 20 09:43:18 mail kernel: [2762823.983277] sd 0:0:0:0: [sda] ASC=0x3a ASCQ=0x0
-> Jan 20 09:43:18 mail kernel: [2762823.983292] sd 0:0:0:0: [sda] CDB: opcode=0x2a 2a 00 00 f6 c3 f8 00 00 f0 00
-> Jan 20 09:43:18 mail kernel: [2762823.983304] blk_update_request: I/O error, dev sda, sector 16172024
-> Jan 20 09:43:18 mail kernel: [2762823.983319] BTRFS: bdev /dev/sda1 errs: wr 4, rd 0, flush 0, corrupt 0, gen 0
-> Jan 20 09:43:18 mail kernel: [2762823.987799] sd 0:0:0:0: [sda] UNKNOWN(0x2003) Result: hostbyte=0x00 driverbyte=0x08
-> Jan 20 09:43:18 mail kernel: [2762823.987818] sd 0:0:0:0: [sda] Sense Key : 0x2 [current]
-> Jan 20 09:43:18 mail kernel: [2762823.987830] sd 0:0:0:0: [sda] ASC=0x3a ASCQ=0x0
-> Jan 20 09:43:18 mail kernel: [2762823.987844] sd 0:0:0:0: [sda] CDB: opcode=0x2a 2a 00 00 f6 c4 e8 00 00 f0 00
-> Jan 20 09:43:18 mail kernel: [2762823.987855] blk_update_request: I/O error, dev sda, sector 16172264
-> Jan 20 09:43:18 mail kernel: [2762823.987869] BTRFS: bdev /dev/sda1 errs: wr 5, rd 0, flush 0, corrupt 0, gen 0
-> Jan 20 09:43:18 mail kernel: [2762823.989136] sd 0:0:0:0: [sda] UNKNOWN(0x2003) Result: hostbyte=0x00 driverbyte=0x08
-> Jan 20 09:43:18 mail kernel: [2762823.989155] sd 0:0:0:0: [sda] Sense Key : 0x2 [current]
-> Jan 20 09:43:18 mail kernel: [2762823.989168] sd 0:0:0:0: [sda] ASC=0x3a ASCQ=0x0
-> Jan 20 09:43:18 mail kernel: [2762823.989182] sd 0:0:0:0: [sda] CDB: opcode=0x2a 2a 00 00 f6 c5 d8 00 00 20 00
-> Jan 20 09:43:18 mail kernel: [2762823.989193] blk_update_request: I/O error, dev sda, sector 16172504
-> Jan 20 09:43:18 mail kernel: [2762823.989207] BTRFS: bdev /dev/sda1 errs: wr 6, rd 0, flush 0, corrupt 0, gen 0
-> Jan 20 09:43:18 mail kernel: [2762823.993965] sd 0:0:0:0: [sda] UNKNOWN(0x2003) Result: hostbyte=0x00 driverbyte=0x08
-> Jan 20 09:43:18 mail kernel: [2762823.993988] sd 0:0:0:0: [sda] Sense Key : 0x2 [current]
-> Jan 20 09:43:18 mail kernel: [2762823.994000] sd 0:0:0:0: [sda] ASC=0x3a ASCQ=0x0
-> Jan 20 09:43:18 mail kernel: [2762823.994015] sd 0:0:0:0: [sda] CDB: opcode=0x2a 2a 00 00 17 53 68 00 00 c0 00
-> Jan 20 09:43:18 mail kernel: [2762823.994028] blk_update_request: I/O error, dev sda, sector 1528680
-> Jan 20 09:43:18 mail kernel: [2762823.994043] BTRFS: bdev /dev/sda1 errs: wr 7, rd 0, flush 0, corrupt 0, gen 0
-> Jan 20 09:43:18 mail kernel: [2762823.994058] BTRFS: bdev /dev/sda1 errs: wr 8, rd 0, flush 0, corrupt 0, gen 0
-> Jan 20 09:43:18 mail kernel: [2762823.994070] BTRFS: bdev /dev/sda1 errs: wr 9, rd 0, flush 0, corrupt 0, gen 0
-> Jan 20 09:43:18 mail kernel: [2762823.997419] sd 0:0:0:0: [sda] UNKNOWN(0x2003) Result: hostbyte=0x00 driverbyte=0x08
-> Jan 20 09:43:18 mail kernel: [2762823.997435] sd 0:0:0:0: [sda] Sense Key : 0x2 [current]
-> Jan 20 09:43:18 mail kernel: [2762823.997448] sd 0:0:0:0: [sda] ASC=0x3a ASCQ=0x0
-> Jan 20 09:43:18 mail kernel: [2762823.997461] sd 0:0:0:0: [sda] CDB: opcode=0x2a 2a 00 00 37 53 68 00 00 c0 00
-> Jan 20 09:43:18 mail kernel: [2762823.997471] blk_update_request: I/O error, dev sda, sector 3625832
-> Jan 20 09:43:18 mail kernel: [2762823.997484] BTRFS: bdev /dev/sda1 errs: wr 10, rd 0, flush 0, corrupt 0, gen 0
+This line right here ^^^ indicates that it was triggered by an issue 
+with the USB device.  I don't personally know enough about USB-MSC and 
+SCSI to know for certain what is happening, but you should probably scan 
+your logs and make sure you're not still getting stuff like this, 
+because if you are, you're likely to get data corruption on any 
+filesystem on the device.  Based on this, the BTRFS trace you got is 
+probably a result of problems with the USB device.
 > Jan 20 09:43:18 mail kernel: [2762823.997601] BTRFS: error (device sda1) in btrfs_commit_transaction:2068: errno=-5 IO failure (Error while writing out transaction)
 > Jan 20 09:43:18 mail kernel: [2762824.011517] BTRFS info (device sda1): forced readonly
 > Jan 20 09:43:18 mail kernel: [2762824.011537] BTRFS warning (device sda1): Skipping commit of aborted transaction.
@@ -114,3 +70,22 @@ sda. Not a Btrfs problem.
 > Jan 20 09:43:18 mail kernel: [2762824.012492] ---[ end trace 1c48a450ca505104 ]---
 > Jan 20 09:43:18 mail kernel: [2762824.012505] BTRFS: error (device sda1) in cleanup_transaction:1692: errno=-5 IO failure
 > Jan 20 09:43:18 mail kernel: [2762824.022734] BTRFS info (device sda1): delayed_refs has NO entry
+The bit about 'transaction aborted' is almost always indicative of an 
+error with the storage path (in your case, the USB controller, the USB 
+cable, or the USB device), not BTRFS.  That said, something like this 
+shouldn't usually cause the FS to be irreparably damaged, although it 
+will make the FS unusable until you remount (or possibly until you 
+reboot, I'm not certain about the error handling here because I've never 
+dealt with it myself).
+
+Now, just a general caution: Avoid using USB storage for persistent 
+online storage, there's just to many things that can go wrong, and quite 
+a few USB storage controllers are absolute crap.  I understand that this 
+can be somewhat tricky with something like a Raspberry Pi, but with 
+BTRFS especially, there's not sufficient error recovery in Linux to 
+safely use most USB storage devices for anything other than file 
+transfers or possibly off-line backups.  That said, there are some 
+brands that work well provided they get enough power (I've personally 
+had really good results using a SanDisk Cruzer Fit flash drive (the USB 
+3.0 version, I've had only intermittent success with the USB 2.0 ones) 
+with a Raspberry Pi via a powered hub).

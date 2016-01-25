@@ -1,58 +1,80 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f182.google.com ([209.85.213.182]:33318 "EHLO
-	mail-ig0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751763AbcAYWNs (ORCPT
+Received: from mail-ig0-f174.google.com ([209.85.213.174]:35957 "EHLO
+	mail-ig0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755345AbcAYWay (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 25 Jan 2016 17:13:48 -0500
-Received: by mail-ig0-f182.google.com with SMTP id z14so44677989igp.0
-        for <linux-btrfs@vger.kernel.org>; Mon, 25 Jan 2016 14:13:48 -0800 (PST)
+	Mon, 25 Jan 2016 17:30:54 -0500
+Received: by mail-ig0-f174.google.com with SMTP id z14so46401877igp.1
+        for <linux-btrfs@vger.kernel.org>; Mon, 25 Jan 2016 14:30:53 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <56A6082C.3030007@netcologne.de>
-References: <56A230C3.3080100@netcologne.de>
-	<CAPmG0jZoVmnUjqaWoZgAGEXUREyMyXPxQ_+M282F640jTw5b_A@mail.gmail.com>
-	<56A6082C.3030007@netcologne.de>
-Date: Mon, 25 Jan 2016 15:13:47 -0700
-Message-ID: <CAJCQCtQ7yGpoUZOmVcoaCGMMqg6oro-0w4HjsXK=HHe9cFg+sw@mail.gmail.com>
-Subject: Re: btrfs-progs 4.4 re-balance of RAID6 is very slow / limited to one
- cpu core?
+In-Reply-To: <20160125212929.GD6110@pontus.sran>
+References: <20160125212929.GD6110@pontus.sran>
+Date: Mon, 25 Jan 2016 15:30:53 -0700
+Message-ID: <CAJCQCtQDs-VpvdnP1iTLzLZKkE+5KeO1WSq_VTfYTqetWj2mdw@mail.gmail.com>
+Subject: Re: suspected BTRFS errors resulting in file system becoming unrecovable
 From: Chris Murphy <lists@colorremedies.com>
-To: Christian Rohmann <crohmann@netcologne.de>
-Cc: Henk Slager <eye1tm@gmail.com>, linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Piotr Szymaniak <szarpaj@grubelek.pl>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Jan 25, 2016 at 4:34 AM, Christian Rohmann
-<crohmann@netcologne.de> wrote:
-> Hey there Henk, btrfs-enthusiasts,
 >
+> Error 64 [15] occurred at disk power-on lifetime: 262 hours (10 days + 22 hours)
+>   When the command that caused the error occurred, the device was active or idle.
 >
-> On 01/24/2016 03:30 AM, Henk Slager wrote:
->> It might be that just a full balance runs faster, so no filters, you
->> could try that. Otherwise I wouldn't know how to speedup, hopefully
->> the fs is still usable while balancing.
->
-> Yes the FS is still usable, munin shows just a little increate in iops
-> and disk latency. The filter should not affect the performance of a
-> balance at all. I am simply saying to only consider chunks which are not
-> spread across all disks yet. Finding out a chunks data distribution
-> should not add any burden on the balancing.
->
-> The balancing is still VERY VERY slow, we still have 93% left to
-> balance. But since I did not hit any hardware limit (CPU or disk IO) I
-> am confident to say btrfs-balance is buggy in this regard. CPU single
-> thread performance will not explode anytime soon. But disks (or SSD)
-> will still grow in size and so will their potential iops.
->
-> With a 8 - 12 disk array growth I am not doing something crazy that has
-> never been done before on a storage array either ;-)
+>   After command completion occurred, registers were:
+>   ER -- ST COUNT  LBA_48  LH LM LL DV DC
+>   -- -- -- == -- == == == -- -- -- -- --
+>   40 -- 51 00 08 00 00 00 00 08 80 40 00  Error: UNC 8 sectors at LBA = 0x00000880 = 2176
 
-Does anyone suspect a kernel regression here? I wonder if its worth it
-to suggest testing the current version of all fairly recent kernels:
-4.5.rc1, 4.4, 4.3.4, 4.2.8, 4.1.16? I think going farther back to
-3.18.x isn't worth it since that's before the major work since raid56
-was added. Quite a while ago I've done a raid56 rebuild and balance
-that was pretty fast but it was only a 4 or 5 device test.
+This is an unrecoverable read or write error. I'm not having much luck
+figuring out if 40 or 51 refers to a read or a write. A write failure
+is fatal, the drive needs to be replaced under warranty. A read
+failure is more of a soft fail, it needs to be written over for the
+problem to get fixed by the drive firmware, but there's no indication
+there are pending (bad) sectors.
+
+
+>
+>   Commands leading to the command that caused the error were:
+>   CR FEATR COUNT  LBA_48  LH LM LL DV DC  Powered_Up_Time  Command/Feature_Name
+>   -- == -- == -- == == == -- -- -- -- --  ---------------  --------------------
+>   25 00 d0 00 08 00 00 00 00 08 80 40 00     00:30:50.583  READ DMA EXT
+
+
+Huh and this is a read error.
+
+So I wonder if what's really going on is a bad sector is just taking a
+long time to recover, and we're getting the USB equivalent of libata's
+link reset due to SCSI command timer (the topic of the month
+apparently)? And that's cause writes to "fail" possibly because they
+were lost in the command queue in the drive when the reset happened.
+
+Does this drive contain vital information or can it be destructively
+written to? If you can destructively write to it you could set it to
+do
+
+badblocks -b 4096 -c 256 -svw /dev/sdX
+
+Use whole block device *OR* if it's a partition, make sure the start
+LBA is divisible by 8 (it needs to be 4096 byte aligned on any recent
+drive, which will be a 512e AF drive).
+
+Again this is destructive, data will be lost on this drive. And it
+shouldn't be mounted at the time you do this (badblocks should fail).
+
+If you can't do a destructive write to this drive just yet, this is
+non-destructive:
+
+smartctl -t long /dev/sdX
+
+That starts an extended offline (readonly) test for bad sectors which
+will be aborted at the first bad sector it finds. You can check with
+smartctl -a, and look in the section "SMART Self-test log" for the
+first line.
+
+
 
 -- 
 Chris Murphy

@@ -1,39 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f182.google.com ([209.85.213.182]:36636 "EHLO
-	mail-ig0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752280AbcAYAss (ORCPT
+Received: from mail-io0-f170.google.com ([209.85.223.170]:34098 "EHLO
+	mail-io0-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751959AbcAYBGg (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 24 Jan 2016 19:48:48 -0500
-Received: by mail-ig0-f182.google.com with SMTP id z14so25204269igp.1
-        for <linux-btrfs@vger.kernel.org>; Sun, 24 Jan 2016 16:48:48 -0800 (PST)
+	Sun, 24 Jan 2016 20:06:36 -0500
+Received: by mail-io0-f170.google.com with SMTP id 1so137111999ion.1
+        for <linux-btrfs@vger.kernel.org>; Sun, 24 Jan 2016 17:06:36 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <pan$b9def$888b2261$49e72de1$f428a4c9@cox.net>
-References: <CAAcrkYJRzvmwdVVYLJ_+LAob=tGQrW3=R7hDfbU_jE3kaD+Kxw@mail.gmail.com>
-	<pan$b9def$888b2261$49e72de1$f428a4c9@cox.net>
-Date: Sun, 24 Jan 2016 17:48:48 -0700
-Message-ID: <CAJCQCtR=LyBq=bSYosXq1YrEzP2-HzJXHGzL70oFhbHb1dNweQ@mail.gmail.com>
-Subject: Re: uknown issues - different sha256 hash - files corruption
+In-Reply-To: <CAJCQCtRtZ+LxwZ8e_5s3AEfJ-a7wU9_DLz=UBNiJyY190i0CXw@mail.gmail.com>
+References: <20160124175258.GD908@breitenfeld.lan>
+	<CAJCQCtTFwz3YxaYJSnq3M7fQQ152=1ka_Y1ecXT=9LurPSaRrw@mail.gmail.com>
+	<20160124205832.GE908@breitenfeld.lan>
+	<CAJCQCtQfpnis+m0QqSJ28wHidNCm2tAt8UXZuwrPg6fdrLohNw@mail.gmail.com>
+	<20160124211700.GF908@breitenfeld.lan>
+	<CAJCQCtQjCgvHqfbuKF+E0xhEydu1SdwZ3uLyq+aDL=+Yrrkm4w@mail.gmail.com>
+	<20160124221614.GH908@breitenfeld.lan>
+	<CAJCQCtRtZ+LxwZ8e_5s3AEfJ-a7wU9_DLz=UBNiJyY190i0CXw@mail.gmail.com>
+Date: Sun, 24 Jan 2016 18:06:35 -0700
+Message-ID: <CAJCQCtTO3rx+hWNgiasOL9TeiM+gLexa3kbGBN6rE1VwRqPhuA@mail.gmail.com>
+Subject: Re: Chicken-egg: uncorrectable checksum error prevents RAID1 rebalancing
 From: Chris Murphy <lists@colorremedies.com>
 To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-re: network induced corruption
+On Sun, Jan 24, 2016 at 3:45 PM, Chris Murphy <lists@colorremedies.com> wrote:
 
-Some hints should be possible with either
+> Maybe it's an orphaned item. I don't know much about those, whether
+> btrfs check finds or removes them. But you can safely use
+> btrfs-debug-tree while the fs is mounted.
+>
+> btrfs-debug-tree <dev> | grep -A3 -B3 ORPHAN
+>
+> That'd find object type ORPHAN and item type ORPHAN_ITEM.
 
-# ip link
-# ip -s link show <specific link>
-
-or
-
-# ifconfig
-
-It should show packet errors. Check this on both sides of the network
-connection. It seems kinda unlikely to me that a lot of data can go
-through two NICs, have this much corruption, and not have some
-indication there are network problems.
+OK I guess that's not implemented yet, nevermind.
 
 
+-- 
 Chris Murphy

@@ -1,109 +1,88 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f174.google.com ([209.85.223.174]:33206 "EHLO
-	mail-io0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756823AbcAYUsZ convert rfc822-to-8bit (ORCPT
+Received: from magic.merlins.org ([209.81.13.136]:60930 "EHLO
+	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751913AbcAYUzI (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 25 Jan 2016 15:48:25 -0500
-Received: by mail-io0-f174.google.com with SMTP id q21so165195388iod.0
-        for <linux-btrfs@vger.kernel.org>; Mon, 25 Jan 2016 12:48:24 -0800 (PST)
+	Mon, 25 Jan 2016 15:55:08 -0500
+Date: Mon, 25 Jan 2016 12:55:00 -0800
+From: Marc MERLIN <marc@merlins.org>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: David Sterba <dsterba@suse.cz>,
+        Btrfs mailing list <linux-btrfs@vger.kernel.org>
+Message-ID: <20160125205500.GK23751@merlins.org>
+References: <20160123170354.GA10113@merlins.org>
+ <56A57C59.1040203@cn.fujitsu.com>
 MIME-Version: 1.0
-In-Reply-To: <525D830B-C5A6-40DC-932C-B283A7FB8932@me.com>
-References: <525D830B-C5A6-40DC-932C-B283A7FB8932@me.com>
-Date: Mon, 25 Jan 2016 13:48:24 -0700
-Message-ID: <CAJCQCtR3O3x2aFz-+LV8Jt5WAFY-i_V2r8B2ea2uDE+r54wtjg@mail.gmail.com>
-Subject: Re: suspected BTRFS errors resulting in file system becoming unrecovable
-From: Chris Murphy <lists@colorremedies.com>
-To: WillIam Thorne <will.thorne@me.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <56A57C59.1040203@cn.fujitsu.com>
+Subject: Re: BTRFS: bdev /dev/mapper/dshelf1 errs: wr 2970, rd 848, flush 0,
+ corrupt 189, gen 0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Jan 25, 2016 at 7:58 AM, WillIam Thorne <will.thorne@me.com> wrote:
-> Hi
->
-> I have a WD 3TB external HD attached over USB to an arm based micro PC (rasp pi). I was experimenting with btrfs for storing email archives but recently encountered some problems which resulted in the filesystem becoming apparently unrecoverable. I’m not an expert and it was quicker to switch back to ext4 and restored from backup so no support needed. Here what appears to be the relevant part of the syslog including the stack trace in case it is useful:
->
-> Best
-> W
->
-> pi@mail /var/log $ btrfs --version
-> Btrfs Btrfs v0.19
->
-> pi@mail /var/log $ uname -a
-> Linux mail 4.1.7-v7+ #817 SMP PREEMPT Sat Sep 19 15:32:00 BST 2015 armv7l GNU/Linux
->
-> Jan 20 09:42:08 mail kernel: [2762753.507576] usb 1-1.5: reset high-speed USB device number 4 using dwc_otg
-> Jan 20 09:43:18 mail kernel: [2762823.972777] sd 0:0:0:0: [sda] UNKNOWN(0x2003) Result: hostbyte=0x00 driverbyte=0x08
-> Jan 20 09:43:18 mail kernel: [2762823.972806] sd 0:0:0:0: [sda] Sense Key : 0x2 [current]
-> Jan 20 09:43:18 mail kernel: [2762823.972819] sd 0:0:0:0: [sda] ASC=0x3a ASCQ=0x0
-> Jan 20 09:43:18 mail kernel: [2762823.972837] sd 0:0:0:0: [sda] CDB: opcode=0x2a 2a 00 00 f7 2c 20 00 00 f0 00
-> Jan 20 09:43:18 mail kernel: [2762823.972851] blk_update_request: I/O error, dev sda, sector 16198688
+On Mon, Jan 25, 2016 at 09:37:29AM +0800, Qu Wenruo wrote:
+> >+David, +Qu
+> >about
+> >1) kernel crash on BUG_ON
+> 
+> From your code mentioned, and your second kernel warning, it's out
+> of memory.
+> Such case also happened when I was debugging in-band de-dup patches.
+ 
+Right. So it's obviously a bug since it's on a lightly loaded server
+with 8GB of RAM, and this only started happeening after my FS started
+having problems.
 
-These are not Btrfs errors, they're libata errors, it's having a
-problem writing to the drive. That this is a USB connected drive it
-could be related to insufficient power  or some incompatibility with
-the bridge chipset in the enclosure and the USB controller in the
-computer. I actually had a similar problem until I put a hub in
-between the drive and computer (a NUC).
+> Things seems that by some method, btrfs used a lot of memory for
+> dirty page caches. Maybe metadata pages.
+> 
+> Normally when such case happens, VFS should trigger a sync to free
+> dirty pages, but btrfs seems to either delayed the sync due to
+> running trans or the VFS sync is already too late.
+ 
+Oh, I see.
 
+> But it's also possible that large leafsize is related to such problem.
+> The larger leafsize is, the harder to alloc continuous memory for kmalloc().
 
+So basically, we seem to understand how we get there, but not quite why,
+or how to fix it, correct?
 
+> If you're using old version btrfsck, then it's possible such error
+> is a false alert. Update btrfsck and try again is a good idea.
+ 
+I had 4.3 as the latest in debian unstable, but now I see 4.4 just came
+out, so I installed it.
 
+> Even if it's not a false alert, mail list says it shouldn't cause
+> huge problem, only known problems happens is related to scrub.
+> And there is already some user reporting balance can fix it,
+> although you need to balance all chunks.
 
+Thanks for that tip.
+ 
+> >3) say more about "root 45948 inode 204452 errors 1000, some csum missing",
+> >that they aren't being fixed, and whether they're a big deal or not.
+> 
+> Personally speaking, I didn't consider it as a big problem itself.
+> If csum is missing/corrupted, btrfsck --init-csum-tree can rebuild it.
 
+Any idea why check --repair isn't fixing them too, is that expected?
 
+gargamel:~# btrfs --version
+btrfs-progs v4.4
+gargamel:~# btrfs check --repair --init-csum-tree -p /dev/mapper/dshelf1 2>&1  | tee check7
+Reinit crc root
+crc refilling failed   <<<< is that bad?
+enabling repair mode
+Creating a new CRC tree
+Checking filesystem on /dev/mapper/dshelf1
+UUID: 6358304a-2234-4243-b02d-4944c9af47d7
 
-> Jan 20 09:43:18 mail kernel: [2762823.972867] BTRFS: bdev /dev/sda1 errs: wr 1, rd 0, flush 0, corrupt 0, gen 0
-> Jan 20 09:43:18 mail kernel: [2762823.976998] sd 0:0:0:0: [sda] UNKNOWN(0x2003) Result: hostbyte=0x00 driverbyte=0x08
-> Jan 20 09:43:18 mail kernel: [2762823.977015] sd 0:0:0:0: [sda] Sense Key : 0x2 [current]
-> Jan 20 09:43:18 mail kernel: [2762823.977028] sd 0:0:0:0: [sda] ASC=0x3a ASCQ=0x0
-> Jan 20 09:43:18 mail kernel: [2762823.977042] sd 0:0:0:0: [sda] CDB: opcode=0x2a 2a 00 00 f7 2d 10 00 00 f0 00
-> Jan 20 09:43:18 mail kernel: [2762823.977052] blk_update_request: I/O error, dev sda, sector 16198928
-> Jan 20 09:43:18 mail kernel: [2762823.977066] BTRFS: bdev /dev/sda1 errs: wr 2, rd 0, flush 0, corrupt 0, gen 0
-> Jan 20 09:43:18 mail kernel: [2762823.978226] sd 0:0:0:0: [sda] UNKNOWN(0x2003) Result: hostbyte=0x00 driverbyte=0x08
-> Jan 20 09:43:18 mail kernel: [2762823.978273] sd 0:0:0:0: [sda] Sense Key : 0x2 [current]
-> Jan 20 09:43:18 mail kernel: [2762823.978286] sd 0:0:0:0: [sda] ASC=0x3a ASCQ=0x0
-> Jan 20 09:43:18 mail kernel: [2762823.978301] sd 0:0:0:0: [sda] CDB: opcode=0x2a 2a 00 00 f7 2e 00 00 00 20 00
-> Jan 20 09:43:18 mail kernel: [2762823.978318] blk_update_request: I/O error, dev sda, sector 16199168
-> Jan 20 09:43:18 mail kernel: [2762823.978339] BTRFS: bdev /dev/sda1 errs: wr 3, rd 0, flush 0, corrupt 0, gen 0
-> Jan 20 09:43:18 mail kernel: [2762823.983241] sd 0:0:0:0: [sda] UNKNOWN(0x2003) Result: hostbyte=0x00 driverbyte=0x08
-> Jan 20 09:43:18 mail kernel: [2762823.983264] sd 0:0:0:0: [sda] Sense Key : 0x2 [current]
-> Jan 20 09:43:18 mail kernel: [2762823.983277] sd 0:0:0:0: [sda] ASC=0x3a ASCQ=0x0
-> Jan 20 09:43:18 mail kernel: [2762823.983292] sd 0:0:0:0: [sda] CDB: opcode=0x2a 2a 00 00 f6 c3 f8 00 00 f0 00
-> Jan 20 09:43:18 mail kernel: [2762823.983304] blk_update_request: I/O error, dev sda, sector 16172024
-> Jan 20 09:43:18 mail kernel: [2762823.983319] BTRFS: bdev /dev/sda1 errs: wr 4, rd 0, flush 0, corrupt 0, gen 0
-> Jan 20 09:43:18 mail kernel: [2762823.987799] sd 0:0:0:0: [sda] UNKNOWN(0x2003) Result: hostbyte=0x00 driverbyte=0x08
-> Jan 20 09:43:18 mail kernel: [2762823.987818] sd 0:0:0:0: [sda] Sense Key : 0x2 [current]
-> Jan 20 09:43:18 mail kernel: [2762823.987830] sd 0:0:0:0: [sda] ASC=0x3a ASCQ=0x0
-> Jan 20 09:43:18 mail kernel: [2762823.987844] sd 0:0:0:0: [sda] CDB: opcode=0x2a 2a 00 00 f6 c4 e8 00 00 f0 00
-> Jan 20 09:43:18 mail kernel: [2762823.987855] blk_update_request: I/O error, dev sda, sector 16172264
-> Jan 20 09:43:18 mail kernel: [2762823.987869] BTRFS: bdev /dev/sda1 errs: wr 5, rd 0, flush 0, corrupt 0, gen 0
-> Jan 20 09:43:18 mail kernel: [2762823.989136] sd 0:0:0:0: [sda] UNKNOWN(0x2003) Result: hostbyte=0x00 driverbyte=0x08
-> Jan 20 09:43:18 mail kernel: [2762823.989155] sd 0:0:0:0: [sda] Sense Key : 0x2 [current]
-> Jan 20 09:43:18 mail kernel: [2762823.989168] sd 0:0:0:0: [sda] ASC=0x3a ASCQ=0x0
-> Jan 20 09:43:18 mail kernel: [2762823.989182] sd 0:0:0:0: [sda] CDB: opcode=0x2a 2a 00 00 f6 c5 d8 00 00 20 00
-> Jan 20 09:43:18 mail kernel: [2762823.989193] blk_update_request: I/O error, dev sda, sector 16172504
-> Jan 20 09:43:18 mail kernel: [2762823.989207] BTRFS: bdev /dev/sda1 errs: wr 6, rd 0, flush 0, corrupt 0, gen 0
-> Jan 20 09:43:18 mail kernel: [2762823.993965] sd 0:0:0:0: [sda] UNKNOWN(0x2003) Result: hostbyte=0x00 driverbyte=0x08
-> Jan 20 09:43:18 mail kernel: [2762823.993988] sd 0:0:0:0: [sda] Sense Key : 0x2 [current]
-> Jan 20 09:43:18 mail kernel: [2762823.994000] sd 0:0:0:0: [sda] ASC=0x3a ASCQ=0x0
-> Jan 20 09:43:18 mail kernel: [2762823.994015] sd 0:0:0:0: [sda] CDB: opcode=0x2a 2a 00 00 17 53 68 00 00 c0 00
-> Jan 20 09:43:18 mail kernel: [2762823.994028] blk_update_request: I/O error, dev sda, sector 1528680
-> Jan 20 09:43:18 mail kernel: [2762823.994043] BTRFS: bdev /dev/sda1 errs: wr 7, rd 0, flush 0, corrupt 0, gen 0
-> Jan 20 09:43:18 mail kernel: [2762823.994058] BTRFS: bdev /dev/sda1 errs: wr 8, rd 0, flush 0, corrupt 0, gen 0
-> Jan 20 09:43:18 mail kernel: [2762823.994070] BTRFS: bdev /dev/sda1 errs: wr 9, rd 0, flush 0, corrupt 0, gen 0
-> Jan 20 09:43:18 mail kernel: [2762823.997419] sd 0:0:0:0: [sda] UNKNOWN(0x2003) Result: hostbyte=0x00 driverbyte=0x08
-> Jan 20 09:43:18 mail kernel: [2762823.997435] sd 0:0:0:0: [sda] Sense Key : 0x2 [current]
-> Jan 20 09:43:18 mail kernel: [2762823.997448] sd 0:0:0:0: [sda] ASC=0x3a ASCQ=0x0
-> Jan 20 09:43:18 mail kernel: [2762823.997461] sd 0:0:0:0: [sda] CDB: opcode=0x2a 2a 00 00 37 53 68 00 00 c0 00
-> Jan 20 09:43:18 mail kernel: [2762823.997471] blk_update_request: I/O error, dev sda, sector 3625832
-> Jan 20 09:43:18 mail kernel: [2762823.997484] BTRFS: bdev /dev/sda1 errs: wr 10, rd 0, flush 0, corrupt 0, gen 0
-> Jan 20 09:43:18 mail kernel: [2762823.997601] BTRFS: error (device sda1) in btrfs_commit_transaction:2068: errno=-5 IO failure (Error while writing out transaction)
-> Jan 20 09:43:18 mail kernel: [2762824.011517] BTRFS info (device sda1): forced readonly
-> Jan 20 09:43:18 mail kernel: [2762824.011537] BTRFS warning (device sda1): Skipping commit of aborted transaction.
-
-Well this is nifty, I like that it's eventually giving up when it can't write!
-
+Thanks,
+Marc
 -- 
-Chris Murphy
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+Microsoft is to operating systems ....
+                                      .... what McDonalds is to gourmet cooking
+Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901

@@ -1,46 +1,88 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pf0-f193.google.com ([209.85.192.193]:36659 "EHLO
-	mail-pf0-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755744AbcA2Nge (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 29 Jan 2016 08:36:34 -0500
-Received: by mail-pf0-f193.google.com with SMTP id n128so3788489pfn.3
-        for <linux-btrfs@vger.kernel.org>; Fri, 29 Jan 2016 05:36:34 -0800 (PST)
-To: Chris Mason <clm@fb.com>, linux-btrfs@vger.kernel.org
-From: Kinglong Mee <kinglongmee@gmail.com>
-Subject: [PATCH 2/3] btrfs: fix compile warning of uninitialized value
-Cc: miaoxie@huawei.com, kinglongmee@gmail.com
-Message-ID: <56AB6AD5.2010403@gmail.com>
-Date: Fri, 29 Jan 2016 21:36:21 +0800
-MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
+Received: from mx2.suse.de ([195.135.220.15]:58278 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S932334AbcAYKCR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 25 Jan 2016 05:02:17 -0500
+From: David Sterba <dsterba@suse.com>
+To: clm@fb.com
+Cc: linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.com>,
+        stable@vger.kernel.org, #@suse.cz, 4.4@suse.cz,
+        Jiri Kosina <jkosina@suse.cz>
+Subject: [PATCH, 4.5-rc2] Revert "btrfs: clear PF_NOFREEZE in cleaner_kthread()"
+Date: Mon, 25 Jan 2016 11:02:06 +0100
+Message-Id: <1453716126-7282-1-git-send-email-dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-  CC [M]  fs/btrfs/extent-tree.o
-fs/btrfs/extent-tree.c: In function 'find_free_extent':
-fs/btrfs/extent-tree.c:7021:34: warning: 'used_bg' may be used uninitialized in this function [-Wmaybe-uninitialized]
-  struct btrfs_block_group_cache *used_bg;
-                                  ^
-Fixes: e570fd27f2 ("Btrfs: fix broken free space cache after the system crashed")
-Signed-off-by: Kinglong Mee <kinglongmee@gmail.com>
----
- fs/btrfs/extent-tree.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+This reverts commit 696249132158014d594896df3a81390616069c5c. The
+cleaner thread can block freezing when there's a snapshot cleaning in
+progress and the other threads get suspended first. From the logs
+provided by Martin we're waiting for reading extent pages:
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index e2287c7..f24e4c3 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -7018,7 +7018,7 @@ btrfs_lock_cluster(struct btrfs_block_group_cache *block_group,
- 		   struct btrfs_free_cluster *cluster,
- 		   int delalloc)
- {
--	struct btrfs_block_group_cache *used_bg;
-+	struct btrfs_block_group_cache *used_bg = NULL;
- 	bool locked = false;
- again:
- 	spin_lock(&cluster->refill_lock);
+kernel: PM: Syncing filesystems ... done.
+kernel: Freezing user space processes ... (elapsed 0.015 seconds) done.
+kernel: Freezing remaining freezable tasks ...
+kernel: Freezing of tasks failed after 20.003 seconds (1 tasks refusing to freeze, wq_busy=0):
+kernel: btrfs-cleaner   D ffff88033dd13bc0     0   152      2 0x00000000
+kernel: ffff88032ebc2e00 ffff88032e750000 ffff88032e74fa50 7fffffffffffffff
+kernel: ffffffff814a58df 0000000000000002 ffffea000934d580 ffffffff814a5451
+kernel: 7fffffffffffffff ffffffff814a6e8f 0000000000000000 0000000000000020
+kernel: Call Trace:
+kernel: [<ffffffff814a58df>] ? bit_wait+0x2c/0x2c
+kernel: [<ffffffff814a5451>] ? schedule+0x6f/0x7c
+kernel: [<ffffffff814a6e8f>] ? schedule_timeout+0x2f/0xd8
+kernel: [<ffffffff81076f94>] ? timekeeping_get_ns+0xa/0x2e
+kernel: [<ffffffff81077603>] ? ktime_get+0x36/0x44
+kernel: [<ffffffff814a4f6c>] ? io_schedule_timeout+0x94/0xf2
+kernel: [<ffffffff814a4f6c>] ? io_schedule_timeout+0x94/0xf2
+kernel: [<ffffffff814a590b>] ? bit_wait_io+0x2c/0x30
+kernel: [<ffffffff814a5694>] ? __wait_on_bit+0x41/0x73
+kernel: [<ffffffff8109eba8>] ? wait_on_page_bit+0x6d/0x72
+kernel: [<ffffffff8105d718>] ? autoremove_wake_function+0x2a/0x2a
+kernel: [<ffffffff811a02d7>] ? read_extent_buffer_pages+0x1bd/0x203
+kernel: [<ffffffff8117d9e9>] ? free_root_pointers+0x4c/0x4c
+kernel: [<ffffffff8117e831>] ? btree_read_extent_buffer_pages.constprop.57+0x5a/0xe9
+kernel: [<ffffffff8117f4f3>] ? read_tree_block+0x2d/0x45
+kernel: [<ffffffff8116782a>] ? read_block_for_search.isra.34+0x22a/0x26b
+kernel: [<ffffffff811656c3>] ? btrfs_set_path_blocking+0x1e/0x4a
+kernel: [<ffffffff8116919b>] ? btrfs_search_slot+0x648/0x736
+kernel: [<ffffffff81170559>] ? btrfs_lookup_extent_info+0xb7/0x2c7
+kernel: [<ffffffff81170ee5>] ? walk_down_proc+0x9c/0x1ae
+kernel: [<ffffffff81171c9d>] ? walk_down_tree+0x40/0xa4
+kernel: [<ffffffff8117375f>] ? btrfs_drop_snapshot+0x2da/0x664
+kernel: [<ffffffff8104ff21>] ? finish_task_switch+0x126/0x167
+kernel: [<ffffffff811850f8>] ? btrfs_clean_one_deleted_snapshot+0xa6/0xb0
+kernel: [<ffffffff8117eaba>] ? cleaner_kthread+0x13e/0x17b
+kernel: [<ffffffff8117e97c>] ? btrfs_item_end+0x33/0x33
+kernel: [<ffffffff8104d256>] ? kthread+0x95/0x9d
+kernel: [<ffffffff8104d1c1>] ? kthread_parkme+0x16/0x16
+kernel: [<ffffffff814a7b5f>] ? ret_from_fork+0x3f/0x70
+kernel: [<ffffffff8104d1c1>] ? kthread_parkme+0x16/0x16
+
+As this affects a released kernel (4.4) we need a minimal fix for
+stable kernels.
+
+Bugzilla: https://bugzilla.kernel.org/show_bug.cgi?id=108361
+Reported-by: Martin Ziegler <ziegler@uni-freiburg.de>
+CC: stable@vger.kernel.org # 4.4
+CC: Jiri Kosina <jkosina@suse.cz>
+Signed-off-by: David Sterba <dsterba@suse.com>
+---
+ fs/btrfs/disk-io.c | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 26ef14152093..404e894c33d9 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -1787,7 +1787,6 @@ static int cleaner_kthread(void *arg)
+ 	int again;
+ 	struct btrfs_trans_handle *trans;
+ 
+-	set_freezable();
+ 	do {
+ 		again = 0;
+ 
 -- 
-2.5.0
+2.6.3
 

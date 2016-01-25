@@ -1,54 +1,95 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from magic.merlins.org ([209.81.13.136]:33125 "EHLO
-	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932729AbcAYVVb (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 25 Jan 2016 16:21:31 -0500
-Date: Mon, 25 Jan 2016 13:21:24 -0800
-From: Marc MERLIN <marc@merlins.org>
-To: Filipe Manana <fdmanana@gmail.com>
-Cc: Qu Wenruo <quwenruo@cn.fujitsu.com>, David Sterba <dsterba@suse.cz>,
-        Btrfs mailing list <linux-btrfs@vger.kernel.org>
-Message-ID: <20160125212124.GL23751@merlins.org>
-References: <20160123170354.GA10113@merlins.org>
- <56A57C59.1040203@cn.fujitsu.com>
- <20160125155541.GD23751@merlins.org>
- <CAL3q7H63tfdYgDppk9WUO6S8GQXk7F9d_MSE+DkVmjDP7oAtXg@mail.gmail.com>
- <20160125195608.GJ23751@merlins.org>
- <CAL3q7H5rj4j10d34Wm_RxVf1yj4kg0tabCEHQdJrL2LyWUorCQ@mail.gmail.com>
+Received: from tur.go2.pl ([193.17.41.50]:59720 "EHLO tur.go2.pl"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S932069AbcAYVum (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 25 Jan 2016 16:50:42 -0500
+Received: from moh2-ve3.go2.pl (moh2-ve3.go2.pl [193.17.41.208])
+	by tur.go2.pl (Postfix) with ESMTP id 2C8C7102030A
+	for <linux-btrfs@vger.kernel.org>; Mon, 25 Jan 2016 22:27:46 +0100 (CET)
+Received: from moh2-ve3.go2.pl (unknown [10.0.0.208])
+	by moh2-ve3.go2.pl (Postfix) with ESMTP id 37452D35FA
+	for <linux-btrfs@vger.kernel.org>; Mon, 25 Jan 2016 22:27:44 +0100 (CET)
+Received: from unknown (unknown [10.0.0.74])
+	by moh2-ve3.go2.pl (Postfix) with SMTP
+	for <linux-btrfs@vger.kernel.org>; Mon, 25 Jan 2016 22:27:44 +0100 (CET)
+Date: Mon, 25 Jan 2016 22:27:43 +0100
+From: Piotr Szymaniak <szarpaj@grubelek.pl>
+To: linux-btrfs@vger.kernel.org
+Subject: Re: suspected BTRFS errors resulting in file system becoming
+ unrecovable
+Message-ID: <20160125212743.GB6110@pontus.sran>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CAL3q7H5rj4j10d34Wm_RxVf1yj4kg0tabCEHQdJrL2LyWUorCQ@mail.gmail.com>
-Subject: Re: 4.4.0: btrfs-send BUG_ON(sctx->cur_ino !=
- sctx->cmp_key->objectid);
+Content-Type: multipart/signed; micalg=pgp-sha256;
+	protocol="application/pgp-signature"; boundary="tjCHc7DPkfUGtrlw"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Jan 25, 2016 at 08:24:06PM +0000, Filipe Manana wrote:
-> > The point is that my filesystem is damaged, but this is not a reason to
-> > crash the kernel and the machine.
-> 
-> I've seen that happen on a non-damaged filesystem, for which I didn't
-> get an image nor debug-tree's output before it got recreated. That's
-> what I want to figure out, how/why it happened.
- 
-I'll see what I can do, this is going to take a lot of time on my end,
-just before a trip and a system I have to bring back to working order
-before I leave.
 
-> > Can this be changed to an abort and remount read only instead?
-> 
-> Like many other bug_on's yes.
+--tjCHc7DPkfUGtrlw
+Content-Type: text/plain; charset=utf-8
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-So, would you be able to first add the printk you requested to all
-kernels since this info seems required for you to know more?
-And then to change the BUG_ON into some kind of abort?
-Crashing the kernel causes collateral damage, including getting the logs
-you need to debug for many people without serial console :)
+Hi,
 
-Marc
--- 
-"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
-Microsoft is to operating systems ....
-                                      .... what McDonalds is to gourmet cooking
-Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901
+Sorry, forgot to ansewer on-list, but I'm forwarding my question to
+William and his answer in next message.
+
+
+----- Forwarded message from Piotr Szymaniak <szarpaj@grubelek.pl> -----
+Date: Mon, 25 Jan 2016 17:48:49 +0100
+=46rom: Piotr Szymaniak <szarpaj@grubelek.pl>
+To: WillIam Thorne <will.thorne@me.com>
+Subject: Re: suspected BTRFS errors resulting in file system becoming unrec=
+ovable
+User-Agent: Mutt/1.5.23 (2014-03-12)
+
+On Mon, Jan 25, 2016 at 02:58:31PM +0000, WillIam Thorne wrote:
+> Jan 20 09:43:18 mail kernel: [2762823.972851] blk_update_request: I/O err=
+or, dev sda, sector 16198688
+> Jan 20 09:43:18 mail kernel: [2762823.977052] blk_update_request: I/O err=
+or, dev sda, sector 16198928
+> Jan 20 09:43:18 mail kernel: [2762823.978318] blk_update_request: I/O err=
+or, dev sda, sector 16199168
+> Jan 20 09:43:18 mail kernel: [2762823.983304] blk_update_request: I/O err=
+or, dev sda, sector 16172024
+> Jan 20 09:43:18 mail kernel: [2762823.987855] blk_update_request: I/O err=
+or, dev sda, sector 16172264
+> Jan 20 09:43:18 mail kernel: [2762823.989193] blk_update_request: I/O err=
+or, dev sda, sector 16172504
+
+Hi,
+
+This looks like bad sectors, not btrfs fault (on the other hand, few bad
+sectors should not make fs unrecoverable).
+
+Can you paste smartctl -x /dev/[yourdevice] output?
+
+
+Best regards,
+Piotr Szymaniak.
+----- End forwarded message -----
+
+--tjCHc7DPkfUGtrlw
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2
+
+iQIcBAEBCAAGBQJWppNPAAoJEEMpAov1cw9lkiwQAIXpQeSS+EPziXzDh8wuVWHE
+R1qrOGZdg4Jo1dYTtiG7gIfpaACHZrkxA0r5ujS34kD2ZImLu9YNiUnmIL6/I5xv
+Bc3mlQaMZCDN1NqR68h8VkJdyOB4+bfW2nO6nygXqJwFyA1g70EtqohrUKAitzHm
+bhbpXHb9CSUwgZCuplL5lErHanbQX/hKFs1HZwePG35R5h9fIUMlsurNybANfWkH
+1YOZOZzT4fVNfCavFK0mZ+fNvewmUjB2wjAtORSyPAqdm/MOn0b/YgKjnpsN663M
+44iU/jkaISb1HGzIv+Yprnj0kkA8ISwMVzIy2QeBm03CMRq21vUtilMCp/GN6kWm
+GjKhwdOts5/4F860s7vVo+zdPE6jCUO+TTMxbHQo+dtN9ygLc/nBB0cqJ0va59I2
+PaUOMy0fSD5n2SZ5+TJogzcsSn9JZFbg4xxQmHGhUGEiquhzA7PjwMaufTA9n1up
+9RsNExNudl9oZipGRhyV2SQU3evpZoDM/m9HwyInB720kVzp+xb2Q986bX4qLSch
+xizvXsX81EXDXO8i0nIsPnZjEJM2pyL1yDFfH//9ZWzWUDcZPiXAtpfXa+5lIxsU
+Uj2mkd4sT8ZK2Y74qxIex+hljwGYEQjLnMFKjQDiKVT+mIyx35WFs6TV2OHOdzbi
+BRDjB6OdDcYG+A9UtOW+
+=JIzH
+-----END PGP SIGNATURE-----
+
+--tjCHc7DPkfUGtrlw--

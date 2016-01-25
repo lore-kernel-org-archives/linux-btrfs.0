@@ -1,97 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lb0-f170.google.com ([209.85.217.170]:34129 "EHLO
-	mail-lb0-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752521AbcAYJEB (ORCPT
+Received: from cc-smtpout3.netcologne.de ([89.1.8.213]:33115 "EHLO
+	cc-smtpout3.netcologne.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1757062AbcAYLeJ (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 25 Jan 2016 04:04:01 -0500
-Received: by mail-lb0-f170.google.com with SMTP id cl12so70165958lbc.1
-        for <linux-btrfs@vger.kernel.org>; Mon, 25 Jan 2016 01:04:00 -0800 (PST)
+	Mon, 25 Jan 2016 06:34:09 -0500
+Subject: Re: btrfs-progs 4.4 re-balance of RAID6 is very slow / limited to one
+ cpu core?
+To: Henk Slager <eye1tm@gmail.com>, linux-btrfs <linux-btrfs@vger.kernel.org>
+References: <56A230C3.3080100@netcologne.de>
+ <CAPmG0jZoVmnUjqaWoZgAGEXUREyMyXPxQ_+M282F640jTw5b_A@mail.gmail.com>
+From: Christian Rohmann <crohmann@netcologne.de>
+Message-ID: <56A6082C.3030007@netcologne.de>
+Date: Mon, 25 Jan 2016 12:34:04 +0100
 MIME-Version: 1.0
-In-Reply-To: <CAAcrkY+3w--OGYWwben+KYohdqwBBryDn8REJ6tiBk4jM3Tp9w@mail.gmail.com>
-References: <CAAcrkYJRzvmwdVVYLJ_+LAob=tGQrW3=R7hDfbU_jE3kaD+Kxw@mail.gmail.com>
- <CAA7pwKNoYVUYT6QzGQxiz6jW9zEPvp6DjRxBPun6Z+SpDcuUjg@mail.gmail.com> <CAAcrkY+3w--OGYWwben+KYohdqwBBryDn8REJ6tiBk4jM3Tp9w@mail.gmail.com>
-From: Patrik Lundquist <patrik.lundquist@gmail.com>
-Date: Mon, 25 Jan 2016 10:03:39 +0100
-Message-ID: <CAA7pwKP6KXHHkp4pALjbxqOFT2ve5T8r0RNcbmdVWXqLmveDgg@mail.gmail.com>
-Subject: Re: uknown issues - different sha256 hash - files corruption
-To: John Smith <lenovomi@gmail.com>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+In-Reply-To: <CAPmG0jZoVmnUjqaWoZgAGEXUREyMyXPxQ_+M282F640jTw5b_A@mail.gmail.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 25 January 2016 at 01:12, John Smith <lenovomi@gmail.com> wrote:
->
-> Hello,
->
-> what else/ or where it was corrupted?
-
-It got corrupted after leaving the source disk and before btrfs
-calculated the data checksum during file write.
+Hey there Henk, btrfs-enthusiasts,
 
 
-> I didnt check data checksum
-> errors - is it possible with some btrfs tools? But yes I can read
-> whole file after stored on btrfs.
+On 01/24/2016 03:30 AM, Henk Slager wrote:
+> It might be that just a full balance runs faster, so no filters, you
+> could try that. Otherwise I wouldn't know how to speedup, hopefully
+> the fs is still usable while balancing.
 
-You wouldn't have been able to read the whole corrupted file from
-btrfs if the corruption took place after the file was written (due to
-wrong checksum).
+Yes the FS is still usable, munin shows just a little increate in iops
+and disk latency. The filter should not affect the performance of a
+balance at all. I am simply saying to only consider chunks which are not
+spread across all disks yet. Finding out a chunks data distribution
+should not add any burden on the balancing.
 
+The balancing is still VERY VERY slow, we still have 93% left to
+balance. But since I did not hit any hardware limit (CPU or disk IO) I
+am confident to say btrfs-balance is buggy in this regard. CPU single
+thread performance will not explode anytime soon. But disks (or SSD)
+will still grow in size and so will their potential iops.
 
-> By checksum errors, do you mean sha256 hash?
-
-No, I mean the built-in data checksum in btrfs that guarantees file integrity.
-
-
-> I plan to run memcheck but on the irc i was suggested that it is not
-> RAM issue, based on the output from the cmp.
-
-Perhaps not, but you have to rule that out. Leave the memtest overnight.
-
-
-> The drives are brand new
-> and badblocks + smart test was executed with no errors.
-
-That's great.
+With a 8 - 12 disk array growth I am not doing something crazy that has
+never been done before on a storage array either ;-)
 
 
-> On Mon, Jan 25, 2016 at 1:06 AM, Patrik Lundquist
-> <patrik.lundquist@gmail.com> wrote:
-> > On 24 January 2016 at 23:00, John Smith <lenovomi@gmail.com> wrote:
-> >>
-> >> Dear,
-> >>
-> >> I have cubox-i4, running debian with 4.4 kernel. The icy box
-> >> IB-3664SU3 enclosure is attached into cubox using esata port,
-> >> enclosure uses JM393 and JM539 chipsets.
-> >>
-> >> I use btrfs volume in raid0 created from the two drives, and lvm ext4
-> >> volume that contains two drives also. When I copy (using rsync) big
-> >> file (the one i copied is 130GB) from ext4 to btrfs the sha256 hash is
-> >> differs.
-> >>
-> >> I did 2 tests, copy the source file from ext4 to btrfs, count sha256
-> >> hash, each time the destination file on btrfs has different hash
-> >> compared to the source file located on ext4 and even hashes from both
-> >> runs of target files on btrfs differs.
-> >>
-> >> I run cmp -l <(hexdump source_file_ext4) <(hexdump target_file_btrfs).
-> >> The snapshot of the result is here http://paste.debian.net/367678/,
-> >> the is so many bytes with differences. The size of the source and
-> >> target file is exactly the same.
-> >>
-> >>
-> >> I also copied around 600GB of data set that contains small files,
-> >> music, videos, etc... and i did sha256 on all the files ext4 vs btrfs
-> >> - all was fine.
-> >>
-> >> Any idea what can cause that issue or how can i debug it in more detail?
-> >
-> > The data must have become corrupted before it was written to the btrfs
-> > volume, since you can read it back without data checksum errors.
-> >
-> > Try copying the big file a couple of times but from btrfs to ext4 to
-> > see if you get data checksum errors.
-> >
-> > Run memcheck and long SMART tests on the disks.
+
+Regards
+
+Christian

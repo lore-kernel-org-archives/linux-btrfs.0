@@ -1,123 +1,89 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f173.google.com ([209.85.223.173]:32977 "EHLO
-	mail-io0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S933146AbcAYQyF (ORCPT
+Received: from mailcloud.dogado.de ([37.218.251.62]:34160 "EHLO
+	mailcloud.dogado.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1757063AbcAYTJX (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 25 Jan 2016 11:54:05 -0500
-Received: by mail-io0-f173.google.com with SMTP id q21so158081731iod.0
-        for <linux-btrfs@vger.kernel.org>; Mon, 25 Jan 2016 08:54:05 -0800 (PST)
+	Mon, 25 Jan 2016 14:09:23 -0500
+From: Stephan Olbrich <stephan@albapasser.de>
+To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Cc: Chris Murphy <lists@colorremedies.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Subject: Re: btrfs receive fails
+Date: Mon, 25 Jan 2016 20:07:54 +0100
+Message-ID: <2270853.djBQzZDCRQ@chaos-desktop>
+In-Reply-To: <56A6128E.1020403@gmail.com>
+References: <2928754.CoMICLlXAW@chaos-desktop> <CAJCQCtTRxL9tqrcP2z=Y7Se7fyeooXpEh6ByFv=n+UeuhsS2ZQ@mail.gmail.com> <56A6128E.1020403@gmail.com>
 MIME-Version: 1.0
-In-Reply-To: <CAA7pwKP6KXHHkp4pALjbxqOFT2ve5T8r0RNcbmdVWXqLmveDgg@mail.gmail.com>
-References: <CAAcrkYJRzvmwdVVYLJ_+LAob=tGQrW3=R7hDfbU_jE3kaD+Kxw@mail.gmail.com>
- <CAA7pwKNoYVUYT6QzGQxiz6jW9zEPvp6DjRxBPun6Z+SpDcuUjg@mail.gmail.com>
- <CAAcrkY+3w--OGYWwben+KYohdqwBBryDn8REJ6tiBk4jM3Tp9w@mail.gmail.com> <CAA7pwKP6KXHHkp4pALjbxqOFT2ve5T8r0RNcbmdVWXqLmveDgg@mail.gmail.com>
-From: John Smith <lenovomi@gmail.com>
-Date: Mon, 25 Jan 2016 17:53:35 +0100
-Message-ID: <CAAcrkYJKoooUWOOsbqXot=U4voe+V_8iMf1NODbjUqMdn6g0Hg@mail.gmail.com>
-Subject: Re: uknown issues - different sha256 hash - files corruption
-To: Patrik Lundquist <patrik.lundquist@gmail.com>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset="us-ascii"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello all,
+Am Monday 25 January 2016, 07:18:22 schrieb Austin S. Hemmelgarn:
+> On 2016-01-23 15:50, Chris Murphy wrote:
+> > On Sat, Jan 23, 2016 at 12:44 PM, Stephan Olbrich <stephan@albapasser.de> 
+wrote:
+> >> Hi,
+> >> 
+> >> I have three btrfs volumes. I do daily snapshots and transfer them to
+> >> another drive. This works fine for two of the volumes, for the 3. one
+> >> the send works fine but the receive sometimes fails with the following
+> >> output:
+> >> 
+> >> ERROR: unlink o128782-4421-0 failed. No such file or directory
+> >> 
+> >> The o128782-4421-0 is different each time but it is always "o" and then
+> >> some numbers.
+> >> My current workaround is to do the send with another parent (-p)
+> >> 
+> >> The problematic volume is my data partition and usually not much
+> >> happening
+> >> there besides the owncloud-client writing some status files (sqlite
+> >> database).
+> >> 
+> >> # uname -a
+> >> Linux chaos-desktop 4.2.1-040201-generic #201509211431 SMP Mon Sep 21
+> >> 18:34:44 UTC 2015 x86_64 x86_64 x86_64 GNU/Linux
+> >> 
+> >> # btrfs --version
+> >> btrfs-progs v4.0
+> > 
+> > I suggest first seeing if the problem is reproducible with btrfs-progs
+> > 4.3.1 or 4.4, since there have been receive bug fixes since v4.0
+> > (which is now kinda old) and most of the receive code is in the user
+> > space tools as I understand it. If that doesn't fix it, then I'd try
+> > two more things in parallel, one is -vvv on both the send and receive
+> > commands to see if that can help determine if the problem is on the
+> > send or receive side. Maybe someone will recognize the problem. And
+> > then also update the kernel to 4.4.0, 4.3.3, or 4.2.8 (in order of
+> > preference) because almost inevitably you're going to be asked to
+> > upgrade the kernel version to see if it's reproducible there.
+> 
+> Building further on that, there are some times that something in the
+> metadata for a file can cause send/receive to fail.  Using -vv on the
+> receive side should give you enough info to narrow down which file if
+> this is indeed the case, at which point you can fix the file by either
+> copying it to another filesystem and back again, or reinstalling
+> whichever package it belongs to.  It's worth noting that if something
+> like this is happening, it's probably multiple files with this issue,
+> not just one, so it may take multiple tries to get things working again.
 
-there is no network involvement in that copy process. Esata enclosure
-is attached directly to cuboxi and copy is between 2 sata drives in
-lvm (using ext4) and two btrfs drives in raid1.
+Thanks a lot for your tipps.
 
+# uname -a
+Linux chaos-desktop 4.4.0-040400-generic #201601101930 SMP Mon Jan 11 00:32:41 
+UTC 2016 x86_64 x86_64 x86_64 GNU/Linux
+# btrfs --version                                                                                                                                                           
+btrfs-progs v4.4
 
-When i copy data from lvm to btrfs, hash of the file on btrfs is
-different compare to the one on lvm. When I copy exactly same file
-multiple times all the time it got different hash on btrfs.
+Now the problem seems to be gone. If it shows up again, I'll report back.
 
-I did a test, i copied file from btrfs to lvm and both hashes are same.
+For the record:
+Using -vv did not give much information, just a lot of plausible changes and 
+right before the error "unlink o128782-4421-0"
+o128782-4421-0 did not show up before that, so I don't know where it came 
+from. Also with the new kernel and btrfs-progs o128782-4421-0 didn't show up 
+in the output, so I guess the send part changed something here.
 
+Regards,
+Stephan
 
-When can intervent / mess up data when i do copy between lvm to btrfs?
-
-All drives are brand new, badblocks was executed on each drive, also
-smart doesnt shows up any issues.
-
-
-
-thank you
-
-On Mon, Jan 25, 2016 at 10:03 AM, Patrik Lundquist
-<patrik.lundquist@gmail.com> wrote:
-> On 25 January 2016 at 01:12, John Smith <lenovomi@gmail.com> wrote:
->>
->> Hello,
->>
->> what else/ or where it was corrupted?
->
-> It got corrupted after leaving the source disk and before btrfs
-> calculated the data checksum during file write.
->
->
->> I didnt check data checksum
->> errors - is it possible with some btrfs tools? But yes I can read
->> whole file after stored on btrfs.
->
-> You wouldn't have been able to read the whole corrupted file from
-> btrfs if the corruption took place after the file was written (due to
-> wrong checksum).
->
->
->> By checksum errors, do you mean sha256 hash?
->
-> No, I mean the built-in data checksum in btrfs that guarantees file integrity.
->
->
->> I plan to run memcheck but on the irc i was suggested that it is not
->> RAM issue, based on the output from the cmp.
->
-> Perhaps not, but you have to rule that out. Leave the memtest overnight.
->
->
->> The drives are brand new
->> and badblocks + smart test was executed with no errors.
->
-> That's great.
->
->
->> On Mon, Jan 25, 2016 at 1:06 AM, Patrik Lundquist
->> <patrik.lundquist@gmail.com> wrote:
->> > On 24 January 2016 at 23:00, John Smith <lenovomi@gmail.com> wrote:
->> >>
->> >> Dear,
->> >>
->> >> I have cubox-i4, running debian with 4.4 kernel. The icy box
->> >> IB-3664SU3 enclosure is attached into cubox using esata port,
->> >> enclosure uses JM393 and JM539 chipsets.
->> >>
->> >> I use btrfs volume in raid0 created from the two drives, and lvm ext4
->> >> volume that contains two drives also. When I copy (using rsync) big
->> >> file (the one i copied is 130GB) from ext4 to btrfs the sha256 hash is
->> >> differs.
->> >>
->> >> I did 2 tests, copy the source file from ext4 to btrfs, count sha256
->> >> hash, each time the destination file on btrfs has different hash
->> >> compared to the source file located on ext4 and even hashes from both
->> >> runs of target files on btrfs differs.
->> >>
->> >> I run cmp -l <(hexdump source_file_ext4) <(hexdump target_file_btrfs).
->> >> The snapshot of the result is here http://paste.debian.net/367678/,
->> >> the is so many bytes with differences. The size of the source and
->> >> target file is exactly the same.
->> >>
->> >>
->> >> I also copied around 600GB of data set that contains small files,
->> >> music, videos, etc... and i did sha256 on all the files ext4 vs btrfs
->> >> - all was fine.
->> >>
->> >> Any idea what can cause that issue or how can i debug it in more detail?
->> >
->> > The data must have become corrupted before it was written to the btrfs
->> > volume, since you can read it back without data checksum errors.
->> >
->> > Try copying the big file a couple of times but from btrfs to ext4 to
->> > see if you get data checksum errors.
->> >
->> > Run memcheck and long SMART tests on the disks.

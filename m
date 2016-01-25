@@ -1,77 +1,97 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f180.google.com ([209.85.223.180]:36500 "EHLO
-	mail-io0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752738AbcAYF6W (ORCPT
+Received: from mail-lb0-f170.google.com ([209.85.217.170]:34129 "EHLO
+	mail-lb0-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752521AbcAYJEB (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 25 Jan 2016 00:58:22 -0500
-Received: by mail-io0-f180.google.com with SMTP id g73so144907442ioe.3
-        for <linux-btrfs@vger.kernel.org>; Sun, 24 Jan 2016 21:58:22 -0800 (PST)
+	Mon, 25 Jan 2016 04:04:01 -0500
+Received: by mail-lb0-f170.google.com with SMTP id cl12so70165958lbc.1
+        for <linux-btrfs@vger.kernel.org>; Mon, 25 Jan 2016 01:04:00 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <20160125032109.GI908@breitenfeld.lan>
-References: <20160124175258.GD908@breitenfeld.lan>
-	<CAJCQCtTFwz3YxaYJSnq3M7fQQ152=1ka_Y1ecXT=9LurPSaRrw@mail.gmail.com>
-	<20160124205832.GE908@breitenfeld.lan>
-	<CAJCQCtQfpnis+m0QqSJ28wHidNCm2tAt8UXZuwrPg6fdrLohNw@mail.gmail.com>
-	<20160124211700.GF908@breitenfeld.lan>
-	<CAJCQCtQjCgvHqfbuKF+E0xhEydu1SdwZ3uLyq+aDL=+Yrrkm4w@mail.gmail.com>
-	<20160124221614.GH908@breitenfeld.lan>
-	<CAJCQCtRtZ+LxwZ8e_5s3AEfJ-a7wU9_DLz=UBNiJyY190i0CXw@mail.gmail.com>
-	<20160125032109.GI908@breitenfeld.lan>
-Date: Sun, 24 Jan 2016 22:58:22 -0700
-Message-ID: <CAJCQCtS4SuDgy8bu3SA4=foG6Z78G2ieR7pkq8QomB60S3CNuw@mail.gmail.com>
-Subject: Re: Chicken-egg: uncorrectable checksum error prevents RAID1 rebalancing
-From: Chris Murphy <lists@colorremedies.com>
-To: Tom Hunt <tomdicksonhunt@gmail.com>
-Cc: Chris Murphy <lists@colorremedies.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+In-Reply-To: <CAAcrkY+3w--OGYWwben+KYohdqwBBryDn8REJ6tiBk4jM3Tp9w@mail.gmail.com>
+References: <CAAcrkYJRzvmwdVVYLJ_+LAob=tGQrW3=R7hDfbU_jE3kaD+Kxw@mail.gmail.com>
+ <CAA7pwKNoYVUYT6QzGQxiz6jW9zEPvp6DjRxBPun6Z+SpDcuUjg@mail.gmail.com> <CAAcrkY+3w--OGYWwben+KYohdqwBBryDn8REJ6tiBk4jM3Tp9w@mail.gmail.com>
+From: Patrik Lundquist <patrik.lundquist@gmail.com>
+Date: Mon, 25 Jan 2016 10:03:39 +0100
+Message-ID: <CAA7pwKP6KXHHkp4pALjbxqOFT2ve5T8r0RNcbmdVWXqLmveDgg@mail.gmail.com>
+Subject: Re: uknown issues - different sha256 hash - files corruption
+To: John Smith <lenovomi@gmail.com>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Jan 24, 2016 at 8:21 PM, Tom Hunt <tomdicksonhunt@gmail.com> wrote:
-> The only output from btrfs-debug-tree containing ORPHAN:
+On 25 January 2016 at 01:12, John Smith <lenovomi@gmail.com> wrote:
 >
->         item 151 key (ORPHAN ORPHAN_ITEM 150415) itemoff 4904 itemsize 0
->                   orphan item
->         item 152 key (ORPHAN ORPHAN_ITEM 150416) itemoff 4904 itemsize 0
->                   orphan item
->         item 153 key (ORPHAN ORPHAN_ITEM 175228) itemoff 4904 itemsize 0
->                   orphan item
->         item 154 key (ORPHAN ORPHAN_ITEM 175229) itemoff 4904 itemsize 0
->                   orphan item
+> Hello,
 >
-> Given the later talk about orphans, I don't think this is an orphan; the disks
-> are new, and I know the checksum error issues came from running with bad RAM,
-> which has since been replaced.
->
-> The output referring to 515:
->
->         item 49 key (515 INODE_ITEM 0) itemoff 10851 itemsize 160
->                 inode generation 132 transid 132 size 262144 nbytes 4194304
->                 block group 0 mode 100600 links 1 uid 0 gid 0
->                 rdev 0 flags 0x1b
->         item 50 key (515 EXTENT_DATA 0) itemoff 10798 itemsize 53
->                 extent data disk byte 603428720640 nr 262144
->                 extent data offset 0 nr 262144 ram 262144
->                 extent compression 0
+> what else/ or where it was corrupted?
 
-I'm kinda out of ideas. A full balance at least is an online process,
-maybe it gets rid of the phantom missing inode reference. It'd be
-interesting to see what 'btrfs check' shows. If you decide to try
---init-csum-tree, I'd first refresh a backup, and make current ro
-snapshots of things you'd send/receive, should it become necessary to
-create a new file system.
-
->
-> Incidentally, btrfs-debug-tree produced about 1.5G of text output; I'm not sure
-> whether that's normal for a 6TB volume with ~4TB used, or what.
-
-Yeah, very loose estimate is a btrfs-debug-tree output to a file is
-1/4 of the metadata size reported by 'fi usage/df' although it could
-be much smaller if if you have a lot of small files with inline data
-extents.
+It got corrupted after leaving the source disk and before btrfs
+calculated the data checksum during file write.
 
 
+> I didnt check data checksum
+> errors - is it possible with some btrfs tools? But yes I can read
+> whole file after stored on btrfs.
 
--- 
-Chris Murphy
+You wouldn't have been able to read the whole corrupted file from
+btrfs if the corruption took place after the file was written (due to
+wrong checksum).
+
+
+> By checksum errors, do you mean sha256 hash?
+
+No, I mean the built-in data checksum in btrfs that guarantees file integrity.
+
+
+> I plan to run memcheck but on the irc i was suggested that it is not
+> RAM issue, based on the output from the cmp.
+
+Perhaps not, but you have to rule that out. Leave the memtest overnight.
+
+
+> The drives are brand new
+> and badblocks + smart test was executed with no errors.
+
+That's great.
+
+
+> On Mon, Jan 25, 2016 at 1:06 AM, Patrik Lundquist
+> <patrik.lundquist@gmail.com> wrote:
+> > On 24 January 2016 at 23:00, John Smith <lenovomi@gmail.com> wrote:
+> >>
+> >> Dear,
+> >>
+> >> I have cubox-i4, running debian with 4.4 kernel. The icy box
+> >> IB-3664SU3 enclosure is attached into cubox using esata port,
+> >> enclosure uses JM393 and JM539 chipsets.
+> >>
+> >> I use btrfs volume in raid0 created from the two drives, and lvm ext4
+> >> volume that contains two drives also. When I copy (using rsync) big
+> >> file (the one i copied is 130GB) from ext4 to btrfs the sha256 hash is
+> >> differs.
+> >>
+> >> I did 2 tests, copy the source file from ext4 to btrfs, count sha256
+> >> hash, each time the destination file on btrfs has different hash
+> >> compared to the source file located on ext4 and even hashes from both
+> >> runs of target files on btrfs differs.
+> >>
+> >> I run cmp -l <(hexdump source_file_ext4) <(hexdump target_file_btrfs).
+> >> The snapshot of the result is here http://paste.debian.net/367678/,
+> >> the is so many bytes with differences. The size of the source and
+> >> target file is exactly the same.
+> >>
+> >>
+> >> I also copied around 600GB of data set that contains small files,
+> >> music, videos, etc... and i did sha256 on all the files ext4 vs btrfs
+> >> - all was fine.
+> >>
+> >> Any idea what can cause that issue or how can i debug it in more detail?
+> >
+> > The data must have become corrupted before it was written to the btrfs
+> > volume, since you can read it back without data checksum errors.
+> >
+> > Try copying the big file a couple of times but from btrfs to ext4 to
+> > see if you get data checksum errors.
+> >
+> > Run memcheck and long SMART tests on the disks.

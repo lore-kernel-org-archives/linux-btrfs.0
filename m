@@ -1,36 +1,36 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f179.google.com ([209.85.213.179]:33477 "EHLO
-	mail-ig0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752428AbcAZT1x (ORCPT
+Received: from mail-io0-f179.google.com ([209.85.223.179]:36039 "EHLO
+	mail-io0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751431AbcAZT5V (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 26 Jan 2016 14:27:53 -0500
-Received: by mail-ig0-f179.google.com with SMTP id z14so64640028igp.0
-        for <linux-btrfs@vger.kernel.org>; Tue, 26 Jan 2016 11:27:52 -0800 (PST)
-MIME-Version: 1.0
-In-Reply-To: <CAJCQCtTdDyv0PkkuHGrEpEnk5yzM1Fx1C0VUT8r7OAfU6i8Dfw@mail.gmail.com>
-References: <56A230C3.3080100@netcologne.de>
-	<CAPmG0jZoVmnUjqaWoZgAGEXUREyMyXPxQ_+M282F640jTw5b_A@mail.gmail.com>
-	<56A6082C.3030007@netcologne.de>
-	<CAJCQCtQ7yGpoUZOmVcoaCGMMqg6oro-0w4HjsXK=HHe9cFg+sw@mail.gmail.com>
-	<CAKZK7uxdX9UBPOKButtPjqBOdVUfHdRTimP+W34fkz1h9P+wHg@mail.gmail.com>
-	<CAKZK7uxOihVUSo9+LPfUxG7WawggkXSoaTbMVa3a4pkSEuxJdQ@mail.gmail.com>
-	<CAJCQCtQe=X4FPzTBKBpP826nswGQyiY4sNES9GugLju3-9HARA@mail.gmail.com>
-	<CAJCQCtTA4qUNX1R3Pgxq-17zAPJvwPGfO_Fo-qEy2LsQrpF+fg@mail.gmail.com>
-	<56A73460.7080100@netcologne.de>
-	<CAJCQCtTdDyv0PkkuHGrEpEnk5yzM1Fx1C0VUT8r7OAfU6i8Dfw@mail.gmail.com>
-Date: Tue, 26 Jan 2016 12:27:52 -0700
-Message-ID: <CAJCQCtQPtRTjvwCahMSLRDk7q8TQR6tcPnYXHv1FRig7hbAsNw@mail.gmail.com>
+	Tue, 26 Jan 2016 14:57:21 -0500
+Received: by mail-io0-f179.google.com with SMTP id g73so202144951ioe.3
+        for <linux-btrfs@vger.kernel.org>; Tue, 26 Jan 2016 11:57:21 -0800 (PST)
 Subject: Re: btrfs-progs 4.4 re-balance of RAID6 is very slow / limited to one
  cpu core?
-From: Chris Murphy <lists@colorremedies.com>
-To: Chris Murphy <lists@colorremedies.com>
-Cc: Christian Rohmann <crohmann@netcologne.de>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+To: Chris Murphy <lists@colorremedies.com>,
+        Christian Rohmann <crohmann@netcologne.de>
+References: <56A230C3.3080100@netcologne.de>
+ <CAPmG0jZoVmnUjqaWoZgAGEXUREyMyXPxQ_+M282F640jTw5b_A@mail.gmail.com>
+ <56A6082C.3030007@netcologne.de>
+ <CAJCQCtQ7yGpoUZOmVcoaCGMMqg6oro-0w4HjsXK=HHe9cFg+sw@mail.gmail.com>
+ <CAKZK7uxdX9UBPOKButtPjqBOdVUfHdRTimP+W34fkz1h9P+wHg@mail.gmail.com>
+ <CAKZK7uxOihVUSo9+LPfUxG7WawggkXSoaTbMVa3a4pkSEuxJdQ@mail.gmail.com>
+ <CAJCQCtQe=X4FPzTBKBpP826nswGQyiY4sNES9GugLju3-9HARA@mail.gmail.com>
+ <CAJCQCtTA4qUNX1R3Pgxq-17zAPJvwPGfO_Fo-qEy2LsQrpF+fg@mail.gmail.com>
+ <56A73460.7080100@netcologne.de>
+ <CAJCQCtTdDyv0PkkuHGrEpEnk5yzM1Fx1C0VUT8r7OAfU6i8Dfw@mail.gmail.com>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Message-ID: <56A7CF97.6030408@gmail.com>
+Date: Tue, 26 Jan 2016 14:57:11 -0500
+MIME-Version: 1.0
+In-Reply-To: <CAJCQCtTdDyv0PkkuHGrEpEnk5yzM1Fx1C0VUT8r7OAfU6i8Dfw@mail.gmail.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Jan 26, 2016 at 12:26 PM, Chris Murphy <lists@colorremedies.com> wrote:
+On 2016-01-26 14:26, Chris Murphy wrote:
 > On Tue, Jan 26, 2016 at 1:54 AM, Christian Rohmann
 > <crohmann@netcologne.de> wrote:
 >> Hey Chris and all,
@@ -78,11 +78,8 @@ On Tue, Jan 26, 2016 at 12:26 PM, Chris Murphy <lists@colorremedies.com> wrote:
 > four drives relatively recently, there won't be many chunks using
 > 12-strip stripes, most of them will be 8-strip stripes. So I don't
 > really know what you're limiting.
+>
+The filters he used are telling balance to re-stripe anything spanning 
+less than 12 devices.  So, in essence, it's only going to re-stripe the 
+chunks from before the fourth disk was added.
 
-I guess the bottom line of what I'm suggesting before trying anything
-else, is to stop the balance and start a normal one without filters
-and see how that performs.
-
-
--- 
-Chris Murphy

@@ -1,49 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp.gentoo.org ([140.211.166.183]:33557 "EHLO smtp.gentoo.org"
+Received: from mx2.suse.de ([195.135.220.15]:47376 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752233AbcAUP7h (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 21 Jan 2016 10:59:37 -0500
-Received: from naomi.gilbertsystems.net (d192-24-148-25.try.wideopenwest.com [24.192.25.148])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-SHA256 (128/128 bits))
-	(No client certificate requested)
-	(Authenticated sender: floppym)
-	by smtp.gentoo.org (Postfix) with ESMTPSA id 23419340998
-	for <linux-btrfs@vger.kernel.org>; Thu, 21 Jan 2016 15:59:37 +0000 (UTC)
-From: Mike Gilbert <floppym@gentoo.org>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs-progs: Makefile.in: Simplify/correct install-static
-Date: Thu, 21 Jan 2016 10:59:32 -0500
-Message-Id: <1453391972-25669-1-git-send-email-floppym@gentoo.org>
+	id S965181AbcAZNBL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 26 Jan 2016 08:01:11 -0500
+Date: Tue, 26 Jan 2016 14:01:00 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
+Cc: dsterba@suse.cz, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] Btrfs: fix error number in send.c
+Message-ID: <20160126130100.GF8567@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <201601220013.AA00000@WIN-5MHF4RKU941.jp.fujitsu.com>
+ <20160122140043.GS4227@twin.jikos.cz>
+ <56A58737.906@jp.fujitsu.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <56A58737.906@jp.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-install -D does not create the last component, so this failed if
-$(DESTDIR)$(bindir) did not already exist.
+On Mon, Jan 25, 2016 at 11:23:51AM +0900, Tsutomu Itoh wrote:
+> Hi, David,
+> 
+> On 2016/01/22 23:00, David Sterba wrote:
+> > On Fri, Jan 22, 2016 at 09:13:25AM +0900, Tsutomu Itoh wrote:
+> >> ENOTSUPP should not be returned to the user program.
+> >>   (cf. include/linux/errno.h)
+> >> Therefore, EOPNOTSUPP is used instead of ENOTSUPP.
+> >
+> > I'm not sure that EOPNOTSUPP is the right error code here. I'd rather
+> > make it EINVAL, the bug we're talking about is a new type of inode
+> > outside of the S_IFMT bits. "not supported" would mean we don't support
+> > it but we could in theory.
+> 
+> Thanks for review.
+> 
+> In the meaning that btrfs-send is not supporting a new type of inode now,
+> EOPNOTSUPP is acceptable, I think.
 
-There's no need for a loop here since install accepts multiple source
-arguments.
+It is, there's a warning message printed anyway, the actual error code
+does not matter much.
 
-Signed-off-by: Mike Gilbert <floppym@gentoo.org>
----
- Makefile.in | 5 ++---
- 1 file changed, 2 insertions(+), 3 deletions(-)
-
-diff --git a/Makefile.in b/Makefile.in
-index 19697ff..82a3143 100644
---- a/Makefile.in
-+++ b/Makefile.in
-@@ -379,9 +379,8 @@ install: $(libs) $(progs_install) $(INSTALLDIRS)
- 	$(INSTALL) -m644 $(headers) $(DESTDIR)$(incdir)
- 
- install-static: $(progs_static) $(INSTALLDIRS)
--	for p in $(progs_static) ; do \
--		$(INSTALL) -D -m755 $$p $(DESTDIR)$(bindir)/ ; \
--	done
-+	$(INSTALL) -m755 -d $(DESTDIR)$(bindir)
-+	$(INSTALL) $(progs_static) $(DESTDIR)$(bindir)
- 	# btrfsck is a link to btrfs in the src tree, make it so for installed file as well
- 	$(LN_S) -f btrfs.static $(DESTDIR)$(bindir)/btrfsck.static
- 
--- 
-2.7.0
-
+Reviewed-by: David Sterba <dsterba@suse.com>

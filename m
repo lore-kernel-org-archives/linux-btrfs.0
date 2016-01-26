@@ -1,26 +1,40 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:51368 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S967433AbcA1Lma (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 28 Jan 2016 06:42:30 -0500
-Date: Thu, 28 Jan 2016 12:42:15 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs-progs: doc: fix size suffix in mkfs.btrfs
-Message-ID: <20160128114214.GB31992@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <201601280800.AA00002@WIN-5MHF4RKU941.jp.fujitsu.com>
+Received: from mail-wm0-f53.google.com ([74.125.82.53]:33497 "EHLO
+	mail-wm0-f53.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S933294AbcAZKNh (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 26 Jan 2016 05:13:37 -0500
+Date: Tue, 26 Jan 2016 10:13:33 +0000
+From: Chris Bainbridge <chris.bainbridge@gmail.com>
+To: linux-kernel@vger.kernel.org
+Cc: aryabinin@virtuozzo.com, clm@fb.com, jbacik@fb.com, dsterba@suse.com,
+        linux-btrfs@vger.kernel.org
+Subject: UBSAN: Undefined behaviour in fs/btrfs/inode.c:5845:10
+Message-ID: <20160126101333.GC5054@localhost>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <201601280800.AA00002@WIN-5MHF4RKU941.jp.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Jan 28, 2016 at 05:00:33PM +0900, Tsutomu Itoh wrote:
-> There is no petabyte in the explanation of the suffix of
-> the size parameter. So, it's added.
-> 
-> Signed-off-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
+Booting 4.5.0-rc1 with new UBSAN checker enabled:
 
-Applied, thanks.
+[    3.859690] ================================================================================
+[    3.859694] UBSAN: Undefined behaviour in fs/btrfs/inode.c:5845:10
+[    3.859696] signed integer overflow:
+[    3.859697] 9223372036854775807 + 1 cannot be represented in type 'long long int'
+[    3.859701] CPU: 3 PID: 3237 Comm: polkitd Not tainted 4.5.0-rc1 #252
+[    3.859702] Hardware name: Apple Inc. MacBookPro10,2/Mac-AFD8A9D944EA4843, BIOS MBP102.88Z.0106.B0A.1509130955 09/13/2015
+[    3.859706]  0000000000000000 0000000000000000 0000000000000001 ffff88024d4bfcf8
+[    3.859709]  ffffffff81b2e7d9 0000000000000001 ffff88024d4bfd28 ffff88024d4bfd10
+[    3.859711]  ffffffff81bcb87d ffffffff83aceb48 ffff88024d4bfd98 ffffffff81bcbc4d
+[    3.859712] Call Trace:
+[    3.859719]  [<ffffffff81b2e7d9>] dump_stack+0x45/0x6c
+[    3.859723]  [<ffffffff81bcb87d>] ubsan_epilogue+0xd/0x40
+[    3.859725]  [<ffffffff81bcbc4d>] handle_overflow+0xbd/0xe0
+[    3.859728]  [<ffffffff81bcbc7e>] __ubsan_handle_add_overflow+0xe/0x10
+[    3.859732]  [<ffffffff818c6271>] btrfs_real_readdir+0x881/0xc10
+[    3.859737]  [<ffffffff8148b05d>] iterate_dir+0xdd/0x2d0
+[    3.859740]  [<ffffffff8148bb0b>] SyS_getdents+0x9b/0x110
+[    3.859743]  [<ffffffff8148b250>] ? iterate_dir+0x2d0/0x2d0
+[    3.859747]  [<ffffffff82b40a57>] entry_SYSCALL_64_fastpath+0x12/0x6a
+[    3.859749] ================================================================================

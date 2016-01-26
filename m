@@ -1,76 +1,172 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cc-smtpout3.netcologne.de ([89.1.8.213]:41715 "EHLO
-	cc-smtpout3.netcologne.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932511AbcAZIy7 (ORCPT
+Received: from mail-io0-f171.google.com ([209.85.223.171]:35689 "EHLO
+	mail-io0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S933801AbcAZLyi (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 26 Jan 2016 03:54:59 -0500
-Subject: Re: btrfs-progs 4.4 re-balance of RAID6 is very slow / limited to one
- cpu core?
-To: Chris Murphy <lists@colorremedies.com>
-References: <56A230C3.3080100@netcologne.de>
- <CAPmG0jZoVmnUjqaWoZgAGEXUREyMyXPxQ_+M282F640jTw5b_A@mail.gmail.com>
- <56A6082C.3030007@netcologne.de>
- <CAJCQCtQ7yGpoUZOmVcoaCGMMqg6oro-0w4HjsXK=HHe9cFg+sw@mail.gmail.com>
- <CAKZK7uxdX9UBPOKButtPjqBOdVUfHdRTimP+W34fkz1h9P+wHg@mail.gmail.com>
- <CAKZK7uxOihVUSo9+LPfUxG7WawggkXSoaTbMVa3a4pkSEuxJdQ@mail.gmail.com>
- <CAJCQCtQe=X4FPzTBKBpP826nswGQyiY4sNES9GugLju3-9HARA@mail.gmail.com>
- <CAJCQCtTA4qUNX1R3Pgxq-17zAPJvwPGfO_Fo-qEy2LsQrpF+fg@mail.gmail.com>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-From: Christian Rohmann <crohmann@netcologne.de>
-Message-ID: <56A73460.7080100@netcologne.de>
-Date: Tue, 26 Jan 2016 09:54:56 +0100
+	Tue, 26 Jan 2016 06:54:38 -0500
+Received: by mail-io0-f171.google.com with SMTP id 77so182323685ioc.2
+        for <linux-btrfs@vger.kernel.org>; Tue, 26 Jan 2016 03:54:38 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <CAJCQCtTA4qUNX1R3Pgxq-17zAPJvwPGfO_Fo-qEy2LsQrpF+fg@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8
+In-Reply-To: <CAPmG0jahDyaHhh1dZxS_L=0C27R_4GWtZeaGTrL50Gze4BRtKg@mail.gmail.com>
+References: <CAAcrkYJRzvmwdVVYLJ_+LAob=tGQrW3=R7hDfbU_jE3kaD+Kxw@mail.gmail.com>
+ <CAA7pwKNoYVUYT6QzGQxiz6jW9zEPvp6DjRxBPun6Z+SpDcuUjg@mail.gmail.com>
+ <CAAcrkY+3w--OGYWwben+KYohdqwBBryDn8REJ6tiBk4jM3Tp9w@mail.gmail.com>
+ <CAA7pwKP6KXHHkp4pALjbxqOFT2ve5T8r0RNcbmdVWXqLmveDgg@mail.gmail.com>
+ <CAAcrkYJKoooUWOOsbqXot=U4voe+V_8iMf1NODbjUqMdn6g0Hg@mail.gmail.com> <CAPmG0jahDyaHhh1dZxS_L=0C27R_4GWtZeaGTrL50Gze4BRtKg@mail.gmail.com>
+From: John Smith <lenovomi@gmail.com>
+Date: Tue, 26 Jan 2016 12:54:08 +0100
+Message-ID: <CAAcrkYKpSsC+H0BCM9pk=-S6VBF_qPKXMFswoGsVSUzRdTrKBg@mail.gmail.com>
+Subject: Re: uknown issues - different sha256 hash - files corruption
+To: Henk Slager <eye1tm@gmail.com>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hey Chris and all,
+Hi,
 
-On 01/25/2016 11:13 PM, Chris Murphy wrote:
-> Does anyone suspect a kernel regression here? I wonder if its worth it
-> to suggest testing the current version of all fairly recent kernels:
-> 4.5.rc1, 4.4, 4.3.4, 4.2.8, 4.1.16? I think going farther back to
-> 3.18.x isn't worth it since that's before the major work since raid56
-> was added. Quite a while ago I've done a raid56 rebuild and balance
-> that was pretty fast but it was only a 4 or 5 device test.
+is it possible there is connection with
+https://bugzilla.kernel.org/show_bug.cgi?id=93581, i have 2x 3tb wd
+red drives, kernel 4.4.
 
-Problem is that this balance did not work before going to 4.4 kernel,
-it's was simply crashing after about an hour or two of runtime.
-
-Currently I am using 4.4 kernel + btrfs-progs, so apart from 4.5rc1 I
-can not get any more bleeding edge.
-
-4.5 I am happy to try, but not RC1 as there are already some bugs
-popping up regarding the BTRFS changes.
-
-
-On 01/26/2016 07:14 AM, Chris Murphy wrote:
-> Christian, what are you getting for 'iotop -d3 -o' or 'iostat -d3'. Is
-> it consistent or is it fluctuating all over the place? What sort of
-> eyeball avg/min/max are you getting?
-
-"1672.81 K/s 1672.81 K/s  0.00 %  6.99 % btrfs balance start -dstripes
-1..11 -mstripes 1..11 "
-
-but it's jumping up to 25MB/s for a few polls, but most of the time it's
-at 1.3 to 1.7 MB/s
-
-
-You may check out more the various munin graphs of the box if you like:
- * http://mirror.netcologne.de/munin
-
-has all the goods.
-This also brings me to mention, that the disks (it's 12 disks though!)
-read somewhere between 20 and 60MB/s constantly.
+I did multiple times sha256sum on the file located on lvm and each
+time i got different hash.
 
 
 
 
-Regards
-
-Christian
-
-
-
-
+On Mon, Jan 25, 2016 at 11:02 PM, Henk Slager <eye1tm@gmail.com> wrote:
+> On Mon, Jan 25, 2016 at 5:53 PM, John Smith <lenovomi@gmail.com> wrote:
+>> Hello all,
+>>
+>> there is no network involvement in that copy process. Esata enclosure
+>> is attached directly to cuboxi and copy is between 2 sata drives in
+>> lvm (using ext4) and two btrfs drives in raid1.
+>
+> I thought it was raid0, anyhow it seems not relevant, it just a btrfs filesystem
+>
+>> When i copy data from lvm to btrfs, hash of the file on btrfs is
+>> different compare to the one on lvm. When I copy exactly same file
+>> multiple times all the time it got different hash on btrfs.
+>>
+>> I did a test, i copied file from btrfs to lvm and both hashes are same.
+>>
+>>
+>> When can intervent / mess up data when i do copy between lvm to btrfs?
+>
+> My first thought was that it could due to that you are using SATA port
+> multiplexing. But then you would likely experience some corruption of
+> the btrfs fs, although it might take some time (days/weeks) before you
+> discover. You could check dmesg to see what is there for ataX.Y.
+> A mitigation would be to do the same copy tests over USB, although
+> port-multiplexing might still be effective, I don't know that.
+>
+> It could also be that the cubox with its current firmware+software
+> fails under certain loads (btrfs writing is quite different from
+> ext4), it might be that it is just your cubox hardware, maybe power
+> issues or whatever. Or some btrfs/other piece of code overwrites the
+> rsync/btrfs write buffers before crc every now and then. Or just
+> memory errors as already suggested.
+>
+>>
+>> All drives are brand new, badblocks was executed on each drive, also
+>> smart doesnt shows up any issues.
+>
+> The drives are not the issue I think. I would temporary replace the
+> cubox with a typical x86_64 system with kernel v4.4 from kernel.org,
+> connect the icy box via eSATA port (or USB if you don't have) and
+> execute the copy tests lvm -> btrfs. From there you can see if it is
+> btrfs on the cubox and maybe then just connect a single SATA disk to
+> the cubox and repeat tests and maybe try a bit older kernel (like
+> 3.18) as well.
+>
+> And what if you do If this several times on cubox and PC?
+> # dd if=/dev/zero of=<fileonbtrfs> bs=1M count=130000
+>
+>> thank you
+>>
+>> On Mon, Jan 25, 2016 at 10:03 AM, Patrik Lundquist
+>> <patrik.lundquist@gmail.com> wrote:
+>>> On 25 January 2016 at 01:12, John Smith <lenovomi@gmail.com> wrote:
+>>>>
+>>>> Hello,
+>>>>
+>>>> what else/ or where it was corrupted?
+>>>
+>>> It got corrupted after leaving the source disk and before btrfs
+>>> calculated the data checksum during file write.
+>>>
+>>>
+>>>> I didnt check data checksum
+>>>> errors - is it possible with some btrfs tools? But yes I can read
+>>>> whole file after stored on btrfs.
+>>>
+>>> You wouldn't have been able to read the whole corrupted file from
+>>> btrfs if the corruption took place after the file was written (due to
+>>> wrong checksum).
+>>>
+>>>
+>>>> By checksum errors, do you mean sha256 hash?
+>>>
+>>> No, I mean the built-in data checksum in btrfs that guarantees file integrity.
+>>>
+>>>
+>>>> I plan to run memcheck but on the irc i was suggested that it is not
+>>>> RAM issue, based on the output from the cmp.
+>>>
+>>> Perhaps not, but you have to rule that out. Leave the memtest overnight.
+>>>
+>>>
+>>>> The drives are brand new
+>>>> and badblocks + smart test was executed with no errors.
+>>>
+>>> That's great.
+>>>
+>>>
+>>>> On Mon, Jan 25, 2016 at 1:06 AM, Patrik Lundquist
+>>>> <patrik.lundquist@gmail.com> wrote:
+>>>> > On 24 January 2016 at 23:00, John Smith <lenovomi@gmail.com> wrote:
+>>>> >>
+>>>> >> Dear,
+>>>> >>
+>>>> >> I have cubox-i4, running debian with 4.4 kernel. The icy box
+>>>> >> IB-3664SU3 enclosure is attached into cubox using esata port,
+>>>> >> enclosure uses JM393 and JM539 chipsets.
+>>>> >>
+>>>> >> I use btrfs volume in raid0 created from the two drives, and lvm ext4
+>>>> >> volume that contains two drives also. When I copy (using rsync) big
+>>>> >> file (the one i copied is 130GB) from ext4 to btrfs the sha256 hash is
+>>>> >> differs.
+>>>> >>
+>>>> >> I did 2 tests, copy the source file from ext4 to btrfs, count sha256
+>>>> >> hash, each time the destination file on btrfs has different hash
+>>>> >> compared to the source file located on ext4 and even hashes from both
+>>>> >> runs of target files on btrfs differs.
+>>>> >>
+>>>> >> I run cmp -l <(hexdump source_file_ext4) <(hexdump target_file_btrfs).
+>>>> >> The snapshot of the result is here http://paste.debian.net/367678/,
+>>>> >> the is so many bytes with differences. The size of the source and
+>>>> >> target file is exactly the same.
+>>>> >>
+>>>> >>
+>>>> >> I also copied around 600GB of data set that contains small files,
+>>>> >> music, videos, etc... and i did sha256 on all the files ext4 vs btrfs
+>>>> >> - all was fine.
+>>>> >>
+>>>> >> Any idea what can cause that issue or how can i debug it in more detail?
+>>>> >
+>>>> > The data must have become corrupted before it was written to the btrfs
+>>>> > volume, since you can read it back without data checksum errors.
+>>>> >
+>>>> > Try copying the big file a couple of times but from btrfs to ext4 to
+>>>> > see if you get data checksum errors.
+>>>> >
+>>>> > Run memcheck and long SMART tests on the disks.
+>> --
+>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>> the body of a message to majordomo@vger.kernel.org
+>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

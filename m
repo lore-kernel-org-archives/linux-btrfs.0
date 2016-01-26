@@ -1,24 +1,26 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:39037 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S934216AbcAZLDv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 26 Jan 2016 06:03:51 -0500
-Date: Tue, 26 Jan 2016 12:03:39 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Chris Bainbridge <chris.bainbridge@gmail.com>
-Cc: linux-kernel@vger.kernel.org, clm@fb.com, jbacik@fb.com,
-        linux-btrfs@vger.kernel.org, aryabinin@virtuozzo.com
+Received: from mail02.iobjects.de ([188.40.134.68]:36613 "EHLO
+	mail02.iobjects.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S934043AbcAZLDf (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 26 Jan 2016 06:03:35 -0500
 Subject: Re: UBSAN: Undefined behaviour in fs/btrfs/inode.c:5845:10
-Message-ID: <20160126110339.GE8567@suse.cz>
-Reply-To: dsterba@suse.cz
+To: Chris Bainbridge <chris.bainbridge@gmail.com>,
+        linux-kernel@vger.kernel.org
 References: <20160126101333.GC5054@localhost>
+Cc: aryabinin@virtuozzo.com, clm@fb.com, jbacik@fb.com, dsterba@suse.com,
+        linux-btrfs@vger.kernel.org
+From: =?UTF-8?Q?Holger_Hoffst=c3=a4tte?=
+	<holger.hoffstaette@googlemail.com>
+Message-ID: <56A75285.3010502@googlemail.com>
+Date: Tue, 26 Jan 2016 12:03:33 +0100
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
 In-Reply-To: <20160126101333.GC5054@localhost>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Jan 26, 2016 at 10:13:33AM +0000, Chris Bainbridge wrote:
+On 01/26/16 11:13, Chris Bainbridge wrote:
 > Booting 4.5.0-rc1 with new UBSAN checker enabled:
 > 
 > [    3.859690] ================================================================================
@@ -42,7 +44,7 @@ On Tue, Jan 26, 2016 at 10:13:33AM +0000, Chris Bainbridge wrote:
 > [    3.859747]  [<ffffffff82b40a57>] entry_SYSCALL_64_fastpath+0x12/0x6a
 > [    3.859749] ================================================================================
 
-That seems to be the same overflow as reported in the past, caught by
-the PaX SIZE_OVERFLOW plugin. There's a patch but not merged yet.
-
 https://patchwork.kernel.org/patch/7611351/
+
+-h
+

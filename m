@@ -1,28 +1,37 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:48667 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S932100AbcAYM2j (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 25 Jan 2016 07:28:39 -0500
-Date: Mon, 25 Jan 2016 13:28:37 +0100 (CET)
-From: Jiri Kosina <jikos@kernel.org>
+Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:57041 "EHLO
+	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1751275AbcAZAfF (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 25 Jan 2016 19:35:05 -0500
+Date: Mon, 25 Jan 2016 19:34:56 -0500
+From: Chris Mason <clm@fb.com>
 To: David Sterba <dsterba@suse.com>
-cc: clm@fb.com, linux-btrfs@vger.kernel.org, stable@vger.kernel.org
+CC: <linux-btrfs@vger.kernel.org>, <stable@vger.kernel.org>, <#@suse.cz>,
+        <4.4@suse.cz>, Jiri Kosina <jkosina@suse.cz>
 Subject: Re: [PATCH, 4.5-rc2] Revert "btrfs: clear PF_NOFREEZE in
  cleaner_kthread()"
-In-Reply-To: <1453716126-7282-1-git-send-email-dsterba@suse.com>
-Message-ID: <alpine.LNX.2.00.1601251325510.21446@cbobk.fhfr.pm>
+Message-ID: <20160126003456.gohrigjejpwb4ktk@floor.thefacebook.com>
 References: <1453716126-7282-1-git-send-email-dsterba@suse.com>
 MIME-Version: 1.0
-Content-Type: TEXT/PLAIN; charset=US-ASCII
+Content-Type: text/plain; charset="us-ascii"
+In-Reply-To: <1453716126-7282-1-git-send-email-dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, 25 Jan 2016, David Sterba wrote:
-
+On Mon, Jan 25, 2016 at 11:02:06AM +0100, David Sterba wrote:
 > This reverts commit 696249132158014d594896df3a81390616069c5c. The
 > cleaner thread can block freezing when there's a snapshot cleaning in
 > progress and the other threads get suspended first. From the logs
 > provided by Martin we're waiting for reading extent pages:
+
+Sorry, I specifically looked for this kind of interaction when I took
+the patch and missed it.
+
+I'll revert for rc2.
+
+-chris
+
 > 
 > kernel: PM: Syncing filesystems ... done.
 > kernel: Freezing user space processes ... (elapsed 0.015 seconds) done.
@@ -63,22 +72,31 @@ On Mon, 25 Jan 2016, David Sterba wrote:
 > kernel: [<ffffffff8104d1c1>] ? kthread_parkme+0x16/0x16
 > kernel: [<ffffffff814a7b5f>] ? ret_from_fork+0x3f/0x70
 > kernel: [<ffffffff8104d1c1>] ? kthread_parkme+0x16/0x16
-
-Proper fix should be calling
-
-	freezable_schedule()
-
-instead of
-
-	schedule()
-
-at the end of the main kthread loop.
-
-Calling try_to_freeze() on a non-freezable thread doesn't make any sense, 
-so while I agree with the revert for -stable, I don't think the code 
-should be kept as-is.
-
--- 
-Jiri Kosina
-SUSE Labs
-
+> 
+> As this affects a released kernel (4.4) we need a minimal fix for
+> stable kernels.
+> 
+> Bugzilla: https://bugzilla.kernel.org/show_bug.cgi?id=108361
+> Reported-by: Martin Ziegler <ziegler@uni-freiburg.de>
+> CC: stable@vger.kernel.org # 4.4
+> CC: Jiri Kosina <jkosina@suse.cz>
+> Signed-off-by: David Sterba <dsterba@suse.com>
+> ---
+>  fs/btrfs/disk-io.c | 1 -
+>  1 file changed, 1 deletion(-)
+> 
+> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+> index 26ef14152093..404e894c33d9 100644
+> --- a/fs/btrfs/disk-io.c
+> +++ b/fs/btrfs/disk-io.c
+> @@ -1787,7 +1787,6 @@ static int cleaner_kthread(void *arg)
+>  	int again;
+>  	struct btrfs_trans_handle *trans;
+>  
+> -	set_freezable();
+>  	do {
+>  		again = 0;
+>  
+> -- 
+> 2.6.3
+> 

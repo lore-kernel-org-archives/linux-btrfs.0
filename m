@@ -1,59 +1,51 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:59682 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:41806 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754295AbcA0Mjm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 27 Jan 2016 07:39:42 -0500
-Date: Wed, 27 Jan 2016 13:39:30 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Holger =?iso-8859-1?Q?Hoffst=E4tte?=
-	<holger.hoffstaette@googlemail.com>
-Cc: David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs: sysfs: check initialization state before updating
- features
-Message-ID: <20160127123930.GL8567@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1453889679-25588-1-git-send-email-dsterba@suse.com>
- <CAHji150m=sgHJ4SLB7YYD6DzkrSgcBfheqoDr=uwJm4LDuwtwA@mail.gmail.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
-In-Reply-To: <CAHji150m=sgHJ4SLB7YYD6DzkrSgcBfheqoDr=uwJm4LDuwtwA@mail.gmail.com>
+	id S932610AbcA0OCK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 27 Jan 2016 09:02:10 -0500
+From: David Sterba <dsterba@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: David Sterba <dsterba@suse.com>, clm@fb.com
+Subject: [PULL][PATCH 0/4] Minor fixes to free-space-tree patchset, for 4.5
+Date: Wed, 27 Jan 2016 15:01:59 +0100
+Message-Id: <cover.1453902967.git.dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jan 27, 2016 at 12:20:48PM +0100, Holger Hoffstätte wrote:
-> On Wed, Jan 27, 2016 at 11:14 AM, David Sterba <dsterba@suse.com> wrote:
-> > If the mount phase is not finished, we can't update the sysfs files.
-> >
-> > Reported-by: Chris Mason <clm@fb.com>
-> > Signed-off-by: David Sterba <dsterba@suse.com>
-> > ---
-> >  fs/btrfs/sysfs.c | 3 +++
-> >  1 file changed, 3 insertions(+)
-> >
-> > diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
-> > index 6986886243bf..1ae146a8093c 100644
-> > --- a/fs/btrfs/sysfs.c
-> > +++ b/fs/btrfs/sysfs.c
-> > @@ -804,6 +804,9 @@ void btrfs_sysfs_feature_update(struct btrfs_fs_info *fs_info,
-> >         fs_devs = fs_info->fs_devices;
-> >         fsid_kobj = &fs_devs->fsid_kobj;
-> >
-> > +       if (!fsid_kobj.state_initialized)
-> > +               return;
-> > +
-> 
-> uhm..
-> 
-> fs/btrfs/sysfs.c: In function 'btrfs_sysfs_feature_update':
-> fs/btrfs/sysfs.c:807:16: error: request for member 'state_initialized'
-> in something not a structure or union
->   if (!fsid_kobj.state_initialized)
->                 ^
-> 
-> I think this should be fsid_kobj->state_initialized, no?
+Hi,
 
-Of course. What I've tested was
+the newly added free space tree has to be added to a few more places.  Plus two
+minor updates to memory allocations, similar to what went in during this dev
+cycle.
 
-       if (!fs_devs->fsid_kobj.state_initialized)
+----------------------------------------------------------------
+The following changes since commit 988f1f576d4f7531cb2175ee1b7cb7afd6d95d22:
 
-and removed the "fs_devs->" but did not recompile. 
+  Merge branch 'for-chris-4.5' of git://git.kernel.org/pub/scm/linux/kernel/git/fdmanana/linux into for-linus-4.5 (2016-01-11 08:39:28 -0800)
+
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git dev/fst-followup
+
+for you to fetch changes up to 3e4c5efbb3ac7c9c4fb5f33b659fa98afe568ab1:
+
+  btrfs: add free space tree to the cow-only list (2016-01-25 16:48:07 +0100)
+----------------------------------------------------------------
+
+David Sterba (4):
+  btrfs: tests: switch to GFP_KERNEL
+  btrfs: tweak free space tree bitmap allocation
+  btrfs: add free space tree to lockdep classes
+  btrfs: add free space tree to the cow-only list
+
+ fs/btrfs/disk-io.c               |  1 +
+ fs/btrfs/free-space-tree.c       | 18 ++++++++++++++++--
+ fs/btrfs/relocation.c            |  3 ++-
+ fs/btrfs/tests/btrfs-tests.c     | 10 +++++-----
+ fs/btrfs/tests/extent-io-tests.c | 12 ++++++------
+ fs/btrfs/tests/inode-tests.c     |  8 ++++----
+ 6 files changed, 34 insertions(+), 18 deletions(-)
+
+-- 
+2.6.3
+

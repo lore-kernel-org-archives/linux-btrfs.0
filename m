@@ -1,146 +1,268 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:31538 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1752288AbcANGAU (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 14 Jan 2016 01:00:20 -0500
-Received: from G08CNEXCHPEKD02.g08.fujitsu.local (unknown [10.167.33.83])
-	by cn.fujitsu.com (Postfix) with ESMTP id D623641896EF
-	for <linux-btrfs@vger.kernel.org>; Thu, 14 Jan 2016 13:59:55 +0800 (CST)
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-CC: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
-Subject: [PATCH v3 8/8] btrfs-progs: property: add a dedup property
-Date: Thu, 14 Jan 2016 13:57:50 +0800
-Message-ID: <1452751070-2460-9-git-send-email-quwenruo@cn.fujitsu.com>
-In-Reply-To: <1452751070-2460-1-git-send-email-quwenruo@cn.fujitsu.com>
-References: <1452751070-2460-1-git-send-email-quwenruo@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+Received: from mail.kernel.org ([198.145.29.136]:37075 "EHLO mail.kernel.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751321AbcA0KlW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 27 Jan 2016 05:41:22 -0500
+Received: from mail.kernel.org (localhost [127.0.0.1])
+	by mail.kernel.org (Postfix) with ESMTP id 00A2420274
+	for <linux-btrfs@vger.kernel.org>; Wed, 27 Jan 2016 10:41:21 +0000 (UTC)
+Received: from debian3.lan (bl8-199-62.dsl.telepac.pt [85.241.199.62])
+	(using TLSv1.2 with cipher AES128-SHA256 (128/128 bits))
+	(No client certificate requested)
+	by mail.kernel.org (Postfix) with ESMTPSA id 690F020279
+	for <linux-btrfs@vger.kernel.org>; Wed, 27 Jan 2016 10:41:19 +0000 (UTC)
+From: fdmanana@kernel.org
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH] Btrfs: fix invalid page accesses in extent_same (dedup) ioctl
+Date: Wed, 27 Jan 2016 10:41:13 +0000
+Message-Id: <1453891273-22778-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
+From: Filipe Manana <fdmanana@suse.com>
 
-Normally if we enable online dedup for a fs, it's filesystem wide
-de-duplication. With this property, we can explicitly disable data
-de-duplication for specified files.
+In the extent_same ioctl we are getting the pages for the source and
+target ranges and unlocking them immediately after, which is incorrect
+because later we attempt to map them (with kmap_atomic) and access their
+contents at btrfs_cmp_data(). When we do such access the pages might have
+been relocated or removed from memory, which leads to an invalid memory
+access. This issue is detected on a kernel with CONFIG_DEBUG_PAGEALLOC=y
+which produces a trace like the following:
 
-Signed-off-by: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
+186736.677437] general protection fault: 0000 [#1] PREEMPT SMP DEBUG_PAGEALLOC
+[186736.680382] Modules linked in: btrfs dm_flakey dm_mod ppdev xor raid6_pq sha256_generic hmac drbg ansi_cprng acpi_cpufreq evdev sg aesni_intel aes_x86_64
+parport_pc ablk_helper tpm_tis psmouse parport i2c_piix4 tpm cryptd i2c_core lrw processor button serio_raw pcspkr gf128mul glue_helper loop autofs4 ext4
+crc16 mbcache jbd2 sd_mod sr_mod cdrom ata_generic virtio_scsi ata_piix libata virtio_pci virtio_ring crc32c_intel scsi_mod e1000 virtio floppy [last
+unloaded: btrfs]
+[186736.681319] CPU: 13 PID: 10222 Comm: duperemove Tainted: G        W       4.4.0-rc6-btrfs-next-18+ #1
+[186736.681319] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS by qemu-project.org 04/01/2014
+[186736.681319] task: ffff880132600400 ti: ffff880362284000 task.ti: ffff880362284000
+[186736.681319] RIP: 0010:[<ffffffff81264d00>]  [<ffffffff81264d00>] memcmp+0xb/0x22
+[186736.681319] RSP: 0018:ffff880362287d70  EFLAGS: 00010287
+[186736.681319] RAX: 000002c002468acf RBX: 0000000012345678 RCX: 0000000000000000
+[186736.681319] RDX: 0000000000001000 RSI: 0005d129c5cf9000 RDI: 0005d129c5cf9000
+[186736.681319] RBP: ffff880362287d70 R08: 0000000000000000 R09: 0000000000001000
+[186736.681319] R10: ffff880000000000 R11: 0000000000000476 R12: 0000000000001000
+[186736.681319] R13: ffff8802f91d4c88 R14: ffff8801f2a77830 R15: ffff880352e83e40
+[186736.681319] FS:  00007f27b37fe700(0000) GS:ffff88043dda0000(0000) knlGS:0000000000000000
+[186736.681319] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+[186736.681319] CR2: 00007f27a406a000 CR3: 0000000217421000 CR4: 00000000001406e0
+[186736.681319] Stack:
+[186736.681319]  ffff880362287ea0 ffffffffa048d0bd 000000000009f000 0000000000001000
+[186736.681319]  0100000000000000 ffff8801f2a77850 ffff8802f91d49b0 ffff880132600400
+[186736.681319]  00000000000004f8 ffff8801c1efbe41 0000000000000000 0000000000000038
+[186736.681319] Call Trace:
+[186736.681319]  [<ffffffffa048d0bd>] btrfs_ioctl+0x24cb/0x2731 [btrfs]
+[186736.681319]  [<ffffffff8108a8b0>] ? arch_local_irq_save+0x9/0xc
+[186736.681319]  [<ffffffff8118b3d4>] ? rcu_read_unlock+0x3e/0x5d
+[186736.681319]  [<ffffffff811822f8>] do_vfs_ioctl+0x42b/0x4ea
+[186736.681319]  [<ffffffff8118b4f3>] ? __fget_light+0x62/0x71
+[186736.681319]  [<ffffffff8118240e>] SyS_ioctl+0x57/0x79
+[186736.681319]  [<ffffffff814872d7>] entry_SYSCALL_64_fastpath+0x12/0x6f
+[186736.681319] Code: 0a 3c 6e 74 0d 3c 79 74 04 3c 59 75 0c c6 06 01 eb 03 c6 06 00 31 c0 eb 05 b8 ea ff ff ff 5d c3 55 31 c9 48 89 e5 48 39 d1 74 13 <0f> b6
+04 0f 44 0f b6 04 0e 48 ff c1 44 29 c0 74 ea eb 02 31 c0
+
+(gdb) list *(btrfs_ioctl+0x24cb)
+0x5e0e1 is in btrfs_ioctl (fs/btrfs/ioctl.c:2972).
+2967                    dst_addr = kmap_atomic(dst_page);
+2968
+2969                    flush_dcache_page(src_page);
+2970                    flush_dcache_page(dst_page);
+2971
+2972                    if (memcmp(addr, dst_addr, cmp_len))
+2973                            ret = BTRFS_SAME_DATA_DIFFERS;
+2974
+2975                    kunmap_atomic(addr);
+2976                    kunmap_atomic(dst_addr);
+
+So fix this by making sure we keep the pages locked and respect the same
+locking order as everywhere else: get and lock the pages first and then
+lock the range in the inode's io tree (like for example at
+__btrfs_buffered_write() and extent_readpages()). If an ordered extent
+is found after locking the range in the io tree, unlock the range,
+unlock the pages, wait for the ordered extent to complete and repeat the
+entire locking process until no overlapping ordered extents are found.
+
+Cc: stable@vger.kernel.org   # 4.2+
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- Documentation/btrfs-property.asciidoc |  2 +
- props.c                               | 73 +++++++++++++++++++++++++++++++++++
- 2 files changed, 75 insertions(+)
+ fs/btrfs/ioctl.c | 98 +++++++++++++++++++++++++++++++++++++++++++++++---------
+ 1 file changed, 82 insertions(+), 16 deletions(-)
 
-diff --git a/Documentation/btrfs-property.asciidoc b/Documentation/btrfs-property.asciidoc
-index 8b9b7f0..2fbecf6 100644
---- a/Documentation/btrfs-property.asciidoc
-+++ b/Documentation/btrfs-property.asciidoc
-@@ -44,6 +44,8 @@ label::::
- label of device
- compression::::
- compression setting for an inode: lzo, zlib, or "" (empty string)
-+dedup::::
-+online dedup setting for an inode: disable or "" (empty string)
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index e392dd6..dd39546 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -2807,7 +2807,6 @@ static struct page *extent_same_get_page(struct inode *inode, pgoff_t index)
+ 			return NULL;
+ 		}
+ 	}
+-	unlock_page(page);
  
- *list* [-t <type>] <object>::
- Lists available properties with their descriptions for the given object.
-diff --git a/props.c b/props.c
-index c9e2bd4..e22b797 100644
---- a/props.c
-+++ b/props.c
-@@ -187,6 +187,77 @@ out:
- 	return ret;
+ 	return page;
+ }
+@@ -2826,10 +2825,17 @@ static int gather_extent_pages(struct inode *inode, struct page **pages,
+ 	return 0;
  }
  
-+static int prop_dedup(enum prop_object_type type, const char *object,
-+	const char *name, const char *value)
-+{
+-static inline void lock_extent_range(struct inode *inode, u64 off, u64 len)
++static int lock_extent_range(struct inode *inode, u64 off, u64 len,
++			     bool retry_range_locking)
+ {
+-	/* do any pending delalloc/csum calc on src, one way or
+-	   another, and lock file content */
++	/*
++	 * Do any pending delalloc/csum calculations on inode, one way or
++	 * another, and lock file content.
++	 * The locking order is:
++	 *
++	 *   1) pages
++	 *   2) range in the inode's io tree
++	 */
+ 	while (1) {
+ 		struct btrfs_ordered_extent *ordered;
+ 		lock_extent(&BTRFS_I(inode)->io_tree, off, off + len - 1);
+@@ -2847,8 +2853,11 @@ static inline void lock_extent_range(struct inode *inode, u64 off, u64 len)
+ 		unlock_extent(&BTRFS_I(inode)->io_tree, off, off + len - 1);
+ 		if (ordered)
+ 			btrfs_put_ordered_extent(ordered);
++		if (!retry_range_locking)
++			return -EAGAIN;
+ 		btrfs_wait_ordered_range(inode, off, len);
+ 	}
++	return 0;
+ }
+ 
+ static void btrfs_double_inode_unlock(struct inode *inode1, struct inode *inode2)
+@@ -2873,15 +2882,24 @@ static void btrfs_double_extent_unlock(struct inode *inode1, u64 loff1,
+ 	unlock_extent(&BTRFS_I(inode2)->io_tree, loff2, loff2 + len - 1);
+ }
+ 
+-static void btrfs_double_extent_lock(struct inode *inode1, u64 loff1,
+-				     struct inode *inode2, u64 loff2, u64 len)
++static int btrfs_double_extent_lock(struct inode *inode1, u64 loff1,
++				    struct inode *inode2, u64 loff2, u64 len,
++				    bool retry_range_locking)
+ {
 +	int ret;
-+	ssize_t sret;
-+	int fd = -1;
-+	DIR *dirstream = NULL;
-+	char *buf = NULL;
-+	char *xattr_name = NULL;
-+	int open_flags = value ? O_RDWR : O_RDONLY;
 +
-+	fd = open_file_or_dir3(object, &dirstream, open_flags);
-+	if (fd == -1) {
-+		ret = -errno;
-+		fprintf(stderr, "ERROR: open %s failed. %s\n",
-+			object, strerror(-ret));
-+		goto out;
-+	}
-+
-+	xattr_name = malloc(XATTR_BTRFS_PREFIX_LEN + strlen(name) + 1);
-+	if (!xattr_name) {
-+		ret = -ENOMEM;
-+		goto out;
-+	}
-+	memcpy(xattr_name, XATTR_BTRFS_PREFIX, XATTR_BTRFS_PREFIX_LEN);
-+	memcpy(xattr_name + XATTR_BTRFS_PREFIX_LEN, name, strlen(name));
-+	xattr_name[XATTR_BTRFS_PREFIX_LEN + strlen(name)] = '\0';
-+
-+	if (value)
-+		sret = fsetxattr(fd, xattr_name, value, strlen(value), 0);
-+	else
-+		sret = fgetxattr(fd, xattr_name, NULL, 0);
-+	if (sret < 0) {
-+		ret = -errno;
-+		if (ret != -ENOATTR)
-+			fprintf(stderr,
-+				"ERROR: failed to %s dedup for %s. %s\n",
-+				value ? "set" : "get", object, strerror(-ret));
-+		else
-+			ret = 0;
-+		goto out;
-+	}
-+	if (!value) {
-+		size_t len = sret;
-+
-+		buf = malloc(len);
-+		if (!buf) {
-+			ret = -ENOMEM;
-+			goto out;
-+		}
-+		sret = fgetxattr(fd, xattr_name, buf, len);
-+		if (sret < 0) {
-+			ret = -errno;
-+			fprintf(stderr,
-+				"ERROR: failed to get dedup for %s. %s\n",
-+				object, strerror(-ret));
-+			goto out;
-+		}
-+		fprintf(stdout, "dedup=%.*s\n", (int)len, buf);
-+	}
-+
-+	ret = 0;
-+out:
-+	free(xattr_name);
-+	free(buf);
-+	if (fd >= 0)
-+		close_file_or_dir(fd, dirstream);
-+
+ 	if (inode1 < inode2) {
+ 		swap(inode1, inode2);
+ 		swap(loff1, loff2);
+ 	}
+-	lock_extent_range(inode1, loff1, len);
+-	lock_extent_range(inode2, loff2, len);
++	ret = lock_extent_range(inode1, loff1, len, retry_range_locking);
++	if (ret)
++		return ret;
++	ret = lock_extent_range(inode2, loff2, len, retry_range_locking);
++	if (ret)
++		unlock_extent(&BTRFS_I(inode1)->io_tree, loff1,
++			      loff1 + len - 1);
 +	return ret;
-+}
-+
- const struct prop_handler prop_handlers[] = {
- 	{"ro", "Set/get read-only flag of subvolume.", 0, prop_object_subvol,
- 	 prop_read_only},
-@@ -194,5 +265,7 @@ const struct prop_handler prop_handlers[] = {
- 	 prop_object_dev | prop_object_root, prop_label},
- 	{"compression", "Set/get compression for a file or directory", 0,
- 	 prop_object_inode, prop_compression},
-+	{"dedup", "Set/get dedup for a file or directory", 0,
-+	 prop_object_inode, prop_dedup},
- 	{0, 0, 0, 0, 0}
- };
+ }
+ 
+ struct cmp_pages {
+@@ -2897,11 +2915,15 @@ static void btrfs_cmp_data_free(struct cmp_pages *cmp)
+ 
+ 	for (i = 0; i < cmp->num_pages; i++) {
+ 		pg = cmp->src_pages[i];
+-		if (pg)
++		if (pg) {
++			unlock_page(pg);
+ 			page_cache_release(pg);
++		}
+ 		pg = cmp->dst_pages[i];
+-		if (pg)
++		if (pg) {
++			unlock_page(pg);
+ 			page_cache_release(pg);
++		}
+ 	}
+ 	kfree(cmp->src_pages);
+ 	kfree(cmp->dst_pages);
+@@ -2962,6 +2984,8 @@ static int btrfs_cmp_data(struct inode *src, u64 loff, struct inode *dst,
+ 
+ 		src_page = cmp->src_pages[i];
+ 		dst_page = cmp->dst_pages[i];
++		ASSERT(PageLocked(src_page));
++		ASSERT(PageLocked(dst_page));
+ 
+ 		addr = kmap_atomic(src_page);
+ 		dst_addr = kmap_atomic(dst_page);
+@@ -3074,14 +3098,50 @@ static int btrfs_extent_same(struct inode *src, u64 loff, u64 olen,
+ 		goto out_unlock;
+ 	}
+ 
++again:
+ 	ret = btrfs_cmp_data_prepare(src, loff, dst, dst_loff, olen, &cmp);
+ 	if (ret)
+ 		goto out_unlock;
+ 
+-	if (same_inode)
+-		lock_extent_range(src, same_lock_start, same_lock_len);
+-	else
+-		btrfs_double_extent_lock(src, loff, dst, dst_loff, len);
++	if (same_inode) {
++		ret = lock_extent_range(src, same_lock_start, same_lock_len,
++					false);
++	} else {
++		ret = btrfs_double_extent_lock(src, loff, dst, dst_loff, len,
++					       false);
++	}
++	/*
++	 * If one of the inodes had ordered extents in the respective range, we
++	 * unlocked its pages, unlocked its range in the io tree and waited for
++	 * the ordered extents to complete. We can not just attempt to re-lock
++	 * the pages and range for that inode only because we could deadlock
++	 * with a concurrent extent_same() call that uses the same inodes but
++	 * with the source and destination roles inverted. So we must unlock the
++	 * pages and ranges for both inodes and retry everything again.
++	 * For the sake of simplicity and convenience we do the same for the
++	 * case where the source and destination inodes are the same.
++	 */
++	if (ret == -EAGAIN) {
++		/*
++		 * Ranges in the io trees already unlocked. Now unlock all
++		 * pages before waiting for all IO to complete.
++		 */
++		btrfs_cmp_data_free(&cmp);
++		if (same_inode) {
++			btrfs_wait_ordered_range(src, same_lock_start,
++						 same_lock_len);
++		} else {
++			btrfs_wait_ordered_range(src, loff, len);
++			btrfs_wait_ordered_range(dst, dst_loff, len);
++		}
++		goto again;
++	}
++	ASSERT(ret == 0);
++	if (WARN_ON(ret)) {
++		/* ranges in the io trees already unlocked */
++		btrfs_cmp_data_free(&cmp);
++		return ret;
++	}
+ 
+ 	/* pass original length for comparison so we stay within i_size */
+ 	ret = btrfs_cmp_data(src, loff, dst, dst_loff, olen, &cmp);
+@@ -3903,9 +3963,15 @@ static noinline long btrfs_ioctl_clone(struct file *file, unsigned long srcfd,
+ 		u64 lock_start = min_t(u64, off, destoff);
+ 		u64 lock_len = max_t(u64, off, destoff) + len - lock_start;
+ 
+-		lock_extent_range(src, lock_start, lock_len);
++		ret = lock_extent_range(src, lock_start, lock_len, true);
+ 	} else {
+-		btrfs_double_extent_lock(src, off, inode, destoff, len);
++		ret = btrfs_double_extent_lock(src, off, inode, destoff, len,
++					       true);
++	}
++	ASSERT(ret == 0);
++	if (WARN_ON(ret)) {
++		/* ranges in the io trees already unlocked */
++		goto out_fput;
+ 	}
+ 
+ 	ret = btrfs_clone(src, inode, off, olen, len, destoff, 0);
 -- 
-2.7.0
+2.7.0.rc3
 
-
-
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo

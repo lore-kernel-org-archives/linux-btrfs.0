@@ -1,182 +1,170 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.136]:52868 "EHLO mail.kernel.org"
+Received: from mx2.suse.de ([195.135.220.15]:41822 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S935650AbcA0Tav (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 27 Jan 2016 14:30:51 -0500
-Received: from mail.kernel.org (localhost [127.0.0.1])
-	by mail.kernel.org (Postfix) with ESMTP id 92C21201FA
-	for <linux-btrfs@vger.kernel.org>; Wed, 27 Jan 2016 19:30:50 +0000 (UTC)
-Received: from debian3.lan (bl8-199-62.dsl.telepac.pt [85.241.199.62])
-	(using TLSv1.2 with cipher AES128-SHA256 (128/128 bits))
-	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPSA id 3A45D20251
-	for <linux-btrfs@vger.kernel.org>; Wed, 27 Jan 2016 19:30:49 +0000 (UTC)
-From: fdmanana@kernel.org
+	id S1754099AbcA0OCN (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 27 Jan 2016 09:02:13 -0500
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+	by mx2.suse.de (Postfix) with ESMTP id 487B1AC2E
+	for <linux-btrfs@vger.kernel.org>; Wed, 27 Jan 2016 14:02:11 +0000 (UTC)
+From: David Sterba <dsterba@suse.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 2/2] Btrfs: remove no longer used function extent_read_full_page_nolock()
-Date: Wed, 27 Jan 2016 19:30:46 +0000
-Message-Id: <1453923046-13815-1-git-send-email-fdmanana@kernel.org>
+Cc: David Sterba <dsterba@suse.com>
+Subject: [PATCH 1/4] btrfs: tests: switch to GFP_KERNEL
+Date: Wed, 27 Jan 2016 15:02:02 +0100
+Message-Id: <8cce83ba5062a301a09e0920df813bbbdd3e9dbf.1453902967.git.dsterba@suse.com>
+In-Reply-To: <cover.1453902967.git.dsterba@suse.com>
+References: <cover.1453902967.git.dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Filipe Manana <fdmanana@suse.com>
+There's no reason to do GFP_NOFS in tests, it's not data-heavy and
+memory allocation failures would affect only developers or testers.
 
-Not needed after the previous patch named
-"Btrfs: fix page reading in extent_same ioctl leading to csum errors".
-
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
+Signed-off-by: David Sterba <dsterba@suse.com>
 ---
- fs/btrfs/compression.c |  6 +-----
- fs/btrfs/extent_io.c   | 45 +++++++++++----------------------------------
- fs/btrfs/extent_io.h   |  3 ---
- 3 files changed, 12 insertions(+), 42 deletions(-)
+ fs/btrfs/tests/btrfs-tests.c     | 10 +++++-----
+ fs/btrfs/tests/extent-io-tests.c | 12 ++++++------
+ fs/btrfs/tests/inode-tests.c     |  8 ++++----
+ 3 files changed, 15 insertions(+), 15 deletions(-)
 
-diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
-index c473c42..3346cd8 100644
---- a/fs/btrfs/compression.c
-+++ b/fs/btrfs/compression.c
-@@ -637,11 +637,7 @@ int btrfs_submit_compressed_read(struct inode *inode, struct bio *bio,
- 	faili = nr_pages - 1;
- 	cb->nr_pages = nr_pages;
+diff --git a/fs/btrfs/tests/btrfs-tests.c b/fs/btrfs/tests/btrfs-tests.c
+index b1d920b30070..0e1e61a7ec23 100644
+--- a/fs/btrfs/tests/btrfs-tests.c
++++ b/fs/btrfs/tests/btrfs-tests.c
+@@ -82,18 +82,18 @@ void btrfs_destroy_test_fs(void)
+ struct btrfs_fs_info *btrfs_alloc_dummy_fs_info(void)
+ {
+ 	struct btrfs_fs_info *fs_info = kzalloc(sizeof(struct btrfs_fs_info),
+-						GFP_NOFS);
++						GFP_KERNEL);
  
--	/* In the parent-locked case, we only locked the range we are
--	 * interested in.  In all other cases, we can opportunistically
--	 * cache decompressed data that goes beyond the requested range. */
--	if (!(bio_flags & EXTENT_BIO_PARENT_LOCKED))
--		add_ra_bio_pages(inode, em_start + em_len, cb);
-+	add_ra_bio_pages(inode, em_start + em_len, cb);
+ 	if (!fs_info)
+ 		return fs_info;
+ 	fs_info->fs_devices = kzalloc(sizeof(struct btrfs_fs_devices),
+-				      GFP_NOFS);
++				      GFP_KERNEL);
+ 	if (!fs_info->fs_devices) {
+ 		kfree(fs_info);
+ 		return NULL;
+ 	}
+ 	fs_info->super_copy = kzalloc(sizeof(struct btrfs_super_block),
+-				      GFP_NOFS);
++				      GFP_KERNEL);
+ 	if (!fs_info->super_copy) {
+ 		kfree(fs_info->fs_devices);
+ 		kfree(fs_info);
+@@ -180,11 +180,11 @@ btrfs_alloc_dummy_block_group(unsigned long length)
+ {
+ 	struct btrfs_block_group_cache *cache;
  
- 	/* include any pages we added in add_ra-bio_pages */
- 	uncompressed_len = bio->bi_vcnt * PAGE_CACHE_SIZE;
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 2e7c97a..51909eb 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -2897,12 +2897,11 @@ static int __do_readpage(struct extent_io_tree *tree,
- 	struct block_device *bdev;
- 	int ret;
- 	int nr = 0;
--	int parent_locked = *bio_flags & EXTENT_BIO_PARENT_LOCKED;
- 	size_t pg_offset = 0;
- 	size_t iosize;
- 	size_t disk_io_size;
- 	size_t blocksize = inode->i_sb->s_blocksize;
--	unsigned long this_bio_flag = *bio_flags & EXTENT_BIO_PARENT_LOCKED;
-+	unsigned long this_bio_flag = *bio_flags;
+-	cache = kzalloc(sizeof(*cache), GFP_NOFS);
++	cache = kzalloc(sizeof(*cache), GFP_KERNEL);
+ 	if (!cache)
+ 		return NULL;
+ 	cache->free_space_ctl = kzalloc(sizeof(*cache->free_space_ctl),
+-					GFP_NOFS);
++					GFP_KERNEL);
+ 	if (!cache->free_space_ctl) {
+ 		kfree(cache);
+ 		return NULL;
+diff --git a/fs/btrfs/tests/extent-io-tests.c b/fs/btrfs/tests/extent-io-tests.c
+index e29fa297e053..669b58201e36 100644
+--- a/fs/btrfs/tests/extent-io-tests.c
++++ b/fs/btrfs/tests/extent-io-tests.c
+@@ -94,7 +94,7 @@ static int test_find_delalloc(void)
+ 	 * test.
+ 	 */
+ 	for (index = 0; index < (total_dirty >> PAGE_CACHE_SHIFT); index++) {
+-		page = find_or_create_page(inode->i_mapping, index, GFP_NOFS);
++		page = find_or_create_page(inode->i_mapping, index, GFP_KERNEL);
+ 		if (!page) {
+ 			test_msg("Failed to allocate test page\n");
+ 			ret = -ENOMEM;
+@@ -113,7 +113,7 @@ static int test_find_delalloc(void)
+ 	 * |--- delalloc ---|
+ 	 * |---  search  ---|
+ 	 */
+-	set_extent_delalloc(&tmp, 0, 4095, NULL, GFP_NOFS);
++	set_extent_delalloc(&tmp, 0, 4095, NULL, GFP_KERNEL);
+ 	start = 0;
+ 	end = 0;
+ 	found = find_lock_delalloc_range(inode, &tmp, locked_page, &start,
+@@ -144,7 +144,7 @@ static int test_find_delalloc(void)
+ 		test_msg("Couldn't find the locked page\n");
+ 		goto out_bits;
+ 	}
+-	set_extent_delalloc(&tmp, 4096, max_bytes - 1, NULL, GFP_NOFS);
++	set_extent_delalloc(&tmp, 4096, max_bytes - 1, NULL, GFP_KERNEL);
+ 	start = test_start;
+ 	end = 0;
+ 	found = find_lock_delalloc_range(inode, &tmp, locked_page, &start,
+@@ -199,7 +199,7 @@ static int test_find_delalloc(void)
+ 	 *
+ 	 * We are re-using our test_start from above since it works out well.
+ 	 */
+-	set_extent_delalloc(&tmp, max_bytes, total_dirty - 1, NULL, GFP_NOFS);
++	set_extent_delalloc(&tmp, max_bytes, total_dirty - 1, NULL, GFP_KERNEL);
+ 	start = test_start;
+ 	end = 0;
+ 	found = find_lock_delalloc_range(inode, &tmp, locked_page, &start,
+@@ -262,7 +262,7 @@ static int test_find_delalloc(void)
+ 	}
+ 	ret = 0;
+ out_bits:
+-	clear_extent_bits(&tmp, 0, total_dirty - 1, (unsigned)-1, GFP_NOFS);
++	clear_extent_bits(&tmp, 0, total_dirty - 1, (unsigned)-1, GFP_KERNEL);
+ out:
+ 	if (locked_page)
+ 		page_cache_release(locked_page);
+@@ -360,7 +360,7 @@ static int test_eb_bitmaps(void)
  
- 	set_page_extent_mapped(page);
+ 	test_msg("Running extent buffer bitmap tests\n");
  
-@@ -2942,18 +2941,16 @@ static int __do_readpage(struct extent_io_tree *tree,
- 			kunmap_atomic(userpage);
- 			set_extent_uptodate(tree, cur, cur + iosize - 1,
- 					    &cached, GFP_NOFS);
--			if (!parent_locked)
--				unlock_extent_cached(tree, cur,
--						     cur + iosize - 1,
--						     &cached, GFP_NOFS);
-+			unlock_extent_cached(tree, cur,
-+					     cur + iosize - 1,
-+					     &cached, GFP_NOFS);
- 			break;
- 		}
- 		em = __get_extent_map(inode, page, pg_offset, cur,
- 				      end - cur + 1, get_extent, em_cached);
- 		if (IS_ERR_OR_NULL(em)) {
- 			SetPageError(page);
--			if (!parent_locked)
--				unlock_extent(tree, cur, end);
-+			unlock_extent(tree, cur, end);
- 			break;
- 		}
- 		extent_offset = cur - em->start;
-@@ -3038,12 +3035,9 @@ static int __do_readpage(struct extent_io_tree *tree,
- 
- 			set_extent_uptodate(tree, cur, cur + iosize - 1,
- 					    &cached, GFP_NOFS);
--			if (parent_locked)
--				free_extent_state(cached);
--			else
--				unlock_extent_cached(tree, cur,
--						     cur + iosize - 1,
--						     &cached, GFP_NOFS);
-+			unlock_extent_cached(tree, cur,
-+					     cur + iosize - 1,
-+					     &cached, GFP_NOFS);
- 			cur = cur + iosize;
- 			pg_offset += iosize;
- 			continue;
-@@ -3052,8 +3046,7 @@ static int __do_readpage(struct extent_io_tree *tree,
- 		if (test_range_bit(tree, cur, cur_end,
- 				   EXTENT_UPTODATE, 1, NULL)) {
- 			check_page_uptodate(tree, page);
--			if (!parent_locked)
--				unlock_extent(tree, cur, cur + iosize - 1);
-+			unlock_extent(tree, cur, cur + iosize - 1);
- 			cur = cur + iosize;
- 			pg_offset += iosize;
- 			continue;
-@@ -3063,8 +3056,7 @@ static int __do_readpage(struct extent_io_tree *tree,
- 		 */
- 		if (block_start == EXTENT_MAP_INLINE) {
- 			SetPageError(page);
--			if (!parent_locked)
--				unlock_extent(tree, cur, cur + iosize - 1);
-+			unlock_extent(tree, cur, cur + iosize - 1);
- 			cur = cur + iosize;
- 			pg_offset += iosize;
- 			continue;
-@@ -3083,8 +3075,7 @@ static int __do_readpage(struct extent_io_tree *tree,
- 			*bio_flags = this_bio_flag;
- 		} else {
- 			SetPageError(page);
--			if (!parent_locked)
--				unlock_extent(tree, cur, cur + iosize - 1);
-+			unlock_extent(tree, cur, cur + iosize - 1);
- 		}
- 		cur = cur + iosize;
- 		pg_offset += iosize;
-@@ -3213,20 +3204,6 @@ int extent_read_full_page(struct extent_io_tree *tree, struct page *page,
+-	bitmap = kmalloc(len, GFP_NOFS);
++	bitmap = kmalloc(len, GFP_KERNEL);
+ 	if (!bitmap) {
+ 		test_msg("Couldn't allocate test bitmap\n");
+ 		return -ENOMEM;
+diff --git a/fs/btrfs/tests/inode-tests.c b/fs/btrfs/tests/inode-tests.c
+index 5de55fdd28bc..e2d3da02deee 100644
+--- a/fs/btrfs/tests/inode-tests.c
++++ b/fs/btrfs/tests/inode-tests.c
+@@ -974,7 +974,7 @@ static int test_extent_accounting(void)
+ 			       (BTRFS_MAX_EXTENT_SIZE >> 1) + 4095,
+ 			       EXTENT_DELALLOC | EXTENT_DIRTY |
+ 			       EXTENT_UPTODATE | EXTENT_DO_ACCOUNTING, 0, 0,
+-			       NULL, GFP_NOFS);
++			       NULL, GFP_KERNEL);
+ 	if (ret) {
+ 		test_msg("clear_extent_bit returned %d\n", ret);
+ 		goto out;
+@@ -1045,7 +1045,7 @@ static int test_extent_accounting(void)
+ 			       BTRFS_MAX_EXTENT_SIZE+8191,
+ 			       EXTENT_DIRTY | EXTENT_DELALLOC |
+ 			       EXTENT_DO_ACCOUNTING | EXTENT_UPTODATE, 0, 0,
+-			       NULL, GFP_NOFS);
++			       NULL, GFP_KERNEL);
+ 	if (ret) {
+ 		test_msg("clear_extent_bit returned %d\n", ret);
+ 		goto out;
+@@ -1079,7 +1079,7 @@ static int test_extent_accounting(void)
+ 	ret = clear_extent_bit(&BTRFS_I(inode)->io_tree, 0, (u64)-1,
+ 			       EXTENT_DIRTY | EXTENT_DELALLOC |
+ 			       EXTENT_DO_ACCOUNTING | EXTENT_UPTODATE, 0, 0,
+-			       NULL, GFP_NOFS);
++			       NULL, GFP_KERNEL);
+ 	if (ret) {
+ 		test_msg("clear_extent_bit returned %d\n", ret);
+ 		goto out;
+@@ -1096,7 +1096,7 @@ static int test_extent_accounting(void)
+ 		clear_extent_bit(&BTRFS_I(inode)->io_tree, 0, (u64)-1,
+ 				 EXTENT_DIRTY | EXTENT_DELALLOC |
+ 				 EXTENT_DO_ACCOUNTING | EXTENT_UPTODATE, 0, 0,
+-				 NULL, GFP_NOFS);
++				 NULL, GFP_KERNEL);
+ 	iput(inode);
+ 	btrfs_free_dummy_root(root);
  	return ret;
- }
- 
--int extent_read_full_page_nolock(struct extent_io_tree *tree, struct page *page,
--				 get_extent_t *get_extent, int mirror_num)
--{
--	struct bio *bio = NULL;
--	unsigned long bio_flags = EXTENT_BIO_PARENT_LOCKED;
--	int ret;
--
--	ret = __do_readpage(tree, page, get_extent, NULL, &bio, mirror_num,
--			    &bio_flags, READ, NULL);
--	if (bio)
--		ret = submit_one_bio(READ, bio, mirror_num, bio_flags);
--	return ret;
--}
--
- static noinline void update_nr_written(struct page *page,
- 				      struct writeback_control *wbc,
- 				      unsigned long nr_written)
-diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
-index 0377413..880d529 100644
---- a/fs/btrfs/extent_io.h
-+++ b/fs/btrfs/extent_io.h
-@@ -29,7 +29,6 @@
-  */
- #define EXTENT_BIO_COMPRESSED 1
- #define EXTENT_BIO_TREE_LOG 2
--#define EXTENT_BIO_PARENT_LOCKED 4
- #define EXTENT_BIO_FLAG_SHIFT 16
- 
- /* these are bit numbers for test/set bit */
-@@ -210,8 +209,6 @@ static inline int lock_extent(struct extent_io_tree *tree, u64 start, u64 end)
- int try_lock_extent(struct extent_io_tree *tree, u64 start, u64 end);
- int extent_read_full_page(struct extent_io_tree *tree, struct page *page,
- 			  get_extent_t *get_extent, int mirror_num);
--int extent_read_full_page_nolock(struct extent_io_tree *tree, struct page *page,
--				 get_extent_t *get_extent, int mirror_num);
- int __init extent_io_init(void);
- void extent_io_exit(void);
- 
 -- 
-2.7.0.rc3
+2.6.3
 

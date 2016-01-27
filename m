@@ -1,72 +1,64 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from email.routify.me ([162.208.10.182]:47390 "EHLO
-	cartman.routify.me" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S934427AbcA0Wpw (ORCPT
+Received: from mail-ig0-f177.google.com ([209.85.213.177]:33972 "EHLO
+	mail-ig0-f177.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754543AbcA0Xdc (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 27 Jan 2016 17:45:52 -0500
-Received: from fox.rh.rit.edu (fox.rh.rit.edu [129.21.125.28])
-	by cartman.routify.me (Postfix) with ESMTPSA id 3863181EE0
-	for <linux-btrfs@vger.kernel.org>; Wed, 27 Jan 2016 17:45:51 -0500 (EST)
-Date: Wed, 27 Jan 2016 17:45:49 -0500
-From: Sean Greenslade <sean@seangreenslade.com>
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Subject: Re: RAID1 disk upgrade method
-Message-ID: <20160127224549.GA4891@fox.rh.rit.edu>
-References: <20160122034538.GA25196@coach.student.rit.edu>
- <pan$ab5ec$b21ab56e$f67a3d97$7303502@cox.net>
- <20160123214127.GA601@fox.wireless.rit.edu>
- <CAJCQCtRLAoN+w_hy=jxwtCPkJPo_x5OGOshLr4aQ0=ZX3u91xw@mail.gmail.com>
+	Wed, 27 Jan 2016 18:33:32 -0500
+Received: by mail-ig0-f177.google.com with SMTP id ik10so1670982igb.1
+        for <linux-btrfs@vger.kernel.org>; Wed, 27 Jan 2016 15:33:32 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CAJCQCtRLAoN+w_hy=jxwtCPkJPo_x5OGOshLr4aQ0=ZX3u91xw@mail.gmail.com>
+In-Reply-To: <CA+-0u-YhEBy7jDoJZeZG4hbkj+oxmTJOcxmnMCueEb6+XTZ2Sg@mail.gmail.com>
+References: <CA+-0u-YhEBy7jDoJZeZG4hbkj+oxmTJOcxmnMCueEb6+XTZ2Sg@mail.gmail.com>
+Date: Wed, 27 Jan 2016 16:33:32 -0700
+Message-ID: <CAJCQCtSsqE5BLmHtjJb9dPbHkdem2XauFE-oe=SJtVHB2_47RA@mail.gmail.com>
+Subject: Re: btrfs subvolume list -o does not behave as expected
+From: Chris Murphy <lists@colorremedies.com>
+To: "Daniel E. Shub" <daniel.e.shub@gmail.com>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, Jan 23, 2016 at 05:03:15PM -0700, Chris Murphy wrote:
-> Just make sure you have backups before, during, and after all of this,
-> which should be the case no matter Btrfs or not. Mixed extent types
-> should work fine, but who knows you could get into an edge case at a
-> later time for all anyone knows. Looks like skinny extent became
-> default in btrfs-progs 3.18.
+On Wed, Jan 27, 2016 at 2:09 PM, Daniel E. Shub <daniel.e.shub@gmail.com> wrote:
+> I am experiencing what I think might be a bug with: btrfs subvolume list -o
+>
+> I reported it at https://bugzilla.kernel.org/show_bug.cgi?id=109861,
+> but have read that bugs should be sent to the mailing list also.
+>
+> My root file system is on a btrfs partition and I have created btrfs
+> subvolumes in /chroot and /var/lib. The following behavior seems
+> incorrect
+>
+> # btrfs subvolume list -o /chroot
+> ID 593 gen 6616 top level 5 path chroot/base-devel/root
+> ID 594 gen 6618 top level 5 path chroot/multilib-devel/root
+> ID 595 gen 6620 top level 5 path chroot/base/root
+> ID 597 gen 6624 top level 5 path chroot/twm/root
+> ID 599 gen 6628 top level 5 path chroot/lxde/root
+> ID 601 gen 6655 top level 5 path chroot/wheezy/root
+> ID 602 gen 6684 top level 5 path chroot/sid/root
+> ID 603 gen 6862 top level 5 path var/lib/machines
+>
+> The man page for btrfs subvolume says
+>   -o print only subvolumes below specified <path>.
+>
+> so I expected to only see the subvolumes below /chroot and to not see
+> /var/lib/machines/.
+>
+> I am running Arch Linux with the 4.2.5 kernel and btrfs-progs v4.3.1.
 
-OK, disks have arrived, and I've completed the first replace.
-Interestingly enough, the replace seems to have succeeded, however btrfs
-fi show doesn't seem to think so.
+I agree that it's confusing because of the word <path>. It may
+actually be a bug in documentation setting up the wrong expectation.
 
-Dmesg:
-[Wed Jan 27 13:03:09 2016] BTRFS info (device sdb1): disk space caching
-is enabled
-[Wed Jan 27 13:03:09 2016] BTRFS: has skinny extents
-[Wed Jan 27 13:03:09 2016] BTRFS: bdev /dev/sdb1 errs: wr 0, rd 186,
-flush 0, corrupt 0, gen 0
-[Wed Jan 27 13:05:23 2016]  sdc: sdc1
-[Wed Jan 27 13:05:25 2016]  sdc: sdc1
-[Wed Jan 27 13:08:37 2016] BTRFS: dev_replace from /dev/sdb1 (devid 2)
-to /dev/sdc1 started
-[Wed Jan 27 16:34:49 2016] BTRFS: dev_replace from /dev/sdb1 (devid 2)
-to /dev/sdc1 finished
+If chroot were a subvolume, this would work as you expect. Since
+chroot is a directory, in effect it's a request to show all subvolumes
+on the fs-tree that this directory is on, i.e. subvolume id 5, which
+would be all subvolumes. Whereas if chroot were a subvolume, the -o
+would limit results to subvolumes having a top level at or below the
+subvolume ID of chroot.
 
-Btrfs fi show:
-warning, device 3 is missing
-warning, device 3 is missing
-warning devid 3 not found already
-Label: none  uuid: 490b8b7c-59c4-45dc-ac63-6a90f0966776
-        Total devices 2 FS bytes used 1.45TiB
-		devid    1 size 1.82TiB used 1.52TiB path /dev/sda1
-		*** Some devices missing
-
-I haven't rebooted or remounted yet, so I'm curious if this is a bug,
-a normal thing that is fixed by a reboot, or what.
-
-Still running the same versions from my original email, but here they
-are again:
-
-Linux rat 4.3.3-3-ARCH #1 SMP PREEMPT Wed Jan 20 08:12:23 CET 2016
-x86_64 GNU/Linux
-
-btrfs-progs v4.3.1
+I think.
 
 
-Thanks,
-
---Sean
+-- 
+Chris Murphy

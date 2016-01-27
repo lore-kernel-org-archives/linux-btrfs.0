@@ -1,111 +1,182 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.136]:52755 "EHLO mail.kernel.org"
+Received: from mail.kernel.org ([198.145.29.136]:52868 "EHLO mail.kernel.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S934408AbcA0T3s (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 27 Jan 2016 14:29:48 -0500
+	id S935650AbcA0Tav (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 27 Jan 2016 14:30:51 -0500
 Received: from mail.kernel.org (localhost [127.0.0.1])
-	by mail.kernel.org (Postfix) with ESMTP id 705A9201ED
-	for <linux-btrfs@vger.kernel.org>; Wed, 27 Jan 2016 19:29:47 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 92C21201FA
+	for <linux-btrfs@vger.kernel.org>; Wed, 27 Jan 2016 19:30:50 +0000 (UTC)
 Received: from debian3.lan (bl8-199-62.dsl.telepac.pt [85.241.199.62])
 	(using TLSv1.2 with cipher AES128-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPSA id 16B1520251
-	for <linux-btrfs@vger.kernel.org>; Wed, 27 Jan 2016 19:29:45 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTPSA id 3A45D20251
+	for <linux-btrfs@vger.kernel.org>; Wed, 27 Jan 2016 19:30:49 +0000 (UTC)
 From: fdmanana@kernel.org
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 1/2] Btrfs: fix page reading in extent_same ioctl leading to csum errors
-Date: Wed, 27 Jan 2016 19:29:40 +0000
-Message-Id: <1453922980-2253-1-git-send-email-fdmanana@kernel.org>
+Subject: [PATCH 2/2] Btrfs: remove no longer used function extent_read_full_page_nolock()
+Date: Wed, 27 Jan 2016 19:30:46 +0000
+Message-Id: <1453923046-13815-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Filipe Manana <fdmanana@suse.com>
 
-In the extent_same ioctl, we were grabbing the pages (locked) and
-attempting to read them without bothering about any concurrent IO
-against them. That is, we were not checking for any ongoing ordered
-extents nor waiting for them to complete, which leads to a race where
-the extent_same() code gets a checksum verification error when it
-reads the pages, producing a message like the following in dmesg
-and making the operation fail to user space with -ENOMEM:
+Not needed after the previous patch named
+"Btrfs: fix page reading in extent_same ioctl leading to csum errors".
 
-[18990.161265] BTRFS warning (device sdc): csum failed ino 259 off 495616 csum 685204116 expected csum 1515870868
-
-Fix this by using btrfs_readpage() for reading the pages instead of
-extent_read_full_page_nolock(), which waits for any concurrent ordered
-extents to complete and locks the io range. Also do better error handling
-and don't treat all failures as -ENOMEM, as that's clearly misleasing,
-becoming identical to the checks and operation of prepare_uptodate_page().
-
-The use of extent_read_full_page_nolock() was required before
-commit f441460202cb ("btrfs: fix deadlock with extent-same and readpage"),
-as we had the range locked in an inode's io tree before attempting to
-read the pages.
-
-Fixes: f441460202cb ("btrfs: fix deadlock with extent-same and readpage")
-Cc: stable@vger.kernel.org   # 4.2+
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/ioctl.c | 29 +++++++++++++++++++++--------
- 1 file changed, 21 insertions(+), 8 deletions(-)
+ fs/btrfs/compression.c |  6 +-----
+ fs/btrfs/extent_io.c   | 45 +++++++++++----------------------------------
+ fs/btrfs/extent_io.h   |  3 ---
+ 3 files changed, 12 insertions(+), 42 deletions(-)
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index dd39546..d3784e9 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -2790,21 +2790,27 @@ out:
- static struct page *extent_same_get_page(struct inode *inode, pgoff_t index)
- {
- 	struct page *page;
--	struct extent_io_tree *tree = &BTRFS_I(inode)->io_tree;
+diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
+index c473c42..3346cd8 100644
+--- a/fs/btrfs/compression.c
++++ b/fs/btrfs/compression.c
+@@ -637,11 +637,7 @@ int btrfs_submit_compressed_read(struct inode *inode, struct bio *bio,
+ 	faili = nr_pages - 1;
+ 	cb->nr_pages = nr_pages;
  
- 	page = grab_cache_page(inode->i_mapping, index);
- 	if (!page)
--		return NULL;
-+		return ERR_PTR(-ENOMEM);
+-	/* In the parent-locked case, we only locked the range we are
+-	 * interested in.  In all other cases, we can opportunistically
+-	 * cache decompressed data that goes beyond the requested range. */
+-	if (!(bio_flags & EXTENT_BIO_PARENT_LOCKED))
+-		add_ra_bio_pages(inode, em_start + em_len, cb);
++	add_ra_bio_pages(inode, em_start + em_len, cb);
  
- 	if (!PageUptodate(page)) {
--		if (extent_read_full_page_nolock(tree, page, btrfs_get_extent,
--						 0))
--			return NULL;
-+		int ret;
-+
-+		ret = btrfs_readpage(NULL, page);
-+		if (ret)
-+			return ERR_PTR(ret);
- 		lock_page(page);
- 		if (!PageUptodate(page)) {
- 			unlock_page(page);
- 			page_cache_release(page);
--			return NULL;
-+			return ERR_PTR(-EIO);
-+		}
-+		if (page->mapping != inode->i_mapping) {
-+			unlock_page(page);
-+			page_cache_release(page);
-+			return ERR_PTR(-EAGAIN);
+ 	/* include any pages we added in add_ra-bio_pages */
+ 	uncompressed_len = bio->bi_vcnt * PAGE_CACHE_SIZE;
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index 2e7c97a..51909eb 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -2897,12 +2897,11 @@ static int __do_readpage(struct extent_io_tree *tree,
+ 	struct block_device *bdev;
+ 	int ret;
+ 	int nr = 0;
+-	int parent_locked = *bio_flags & EXTENT_BIO_PARENT_LOCKED;
+ 	size_t pg_offset = 0;
+ 	size_t iosize;
+ 	size_t disk_io_size;
+ 	size_t blocksize = inode->i_sb->s_blocksize;
+-	unsigned long this_bio_flag = *bio_flags & EXTENT_BIO_PARENT_LOCKED;
++	unsigned long this_bio_flag = *bio_flags;
+ 
+ 	set_page_extent_mapped(page);
+ 
+@@ -2942,18 +2941,16 @@ static int __do_readpage(struct extent_io_tree *tree,
+ 			kunmap_atomic(userpage);
+ 			set_extent_uptodate(tree, cur, cur + iosize - 1,
+ 					    &cached, GFP_NOFS);
+-			if (!parent_locked)
+-				unlock_extent_cached(tree, cur,
+-						     cur + iosize - 1,
+-						     &cached, GFP_NOFS);
++			unlock_extent_cached(tree, cur,
++					     cur + iosize - 1,
++					     &cached, GFP_NOFS);
+ 			break;
  		}
- 	}
+ 		em = __get_extent_map(inode, page, pg_offset, cur,
+ 				      end - cur + 1, get_extent, em_cached);
+ 		if (IS_ERR_OR_NULL(em)) {
+ 			SetPageError(page);
+-			if (!parent_locked)
+-				unlock_extent(tree, cur, end);
++			unlock_extent(tree, cur, end);
+ 			break;
+ 		}
+ 		extent_offset = cur - em->start;
+@@ -3038,12 +3035,9 @@ static int __do_readpage(struct extent_io_tree *tree,
  
-@@ -2818,9 +2824,16 @@ static int gather_extent_pages(struct inode *inode, struct page **pages,
- 	pgoff_t index = off >> PAGE_CACHE_SHIFT;
- 
- 	for (i = 0; i < num_pages; i++) {
-+again:
- 		pages[i] = extent_same_get_page(inode, index + i);
--		if (!pages[i])
--			return -ENOMEM;
-+		if (IS_ERR(pages[i])) {
-+			int err = PTR_ERR(pages[i]);
-+
-+			if (err == -EAGAIN)
-+				goto again;
-+			pages[i] = NULL;
-+			return err;
-+		}
- 	}
- 	return 0;
+ 			set_extent_uptodate(tree, cur, cur + iosize - 1,
+ 					    &cached, GFP_NOFS);
+-			if (parent_locked)
+-				free_extent_state(cached);
+-			else
+-				unlock_extent_cached(tree, cur,
+-						     cur + iosize - 1,
+-						     &cached, GFP_NOFS);
++			unlock_extent_cached(tree, cur,
++					     cur + iosize - 1,
++					     &cached, GFP_NOFS);
+ 			cur = cur + iosize;
+ 			pg_offset += iosize;
+ 			continue;
+@@ -3052,8 +3046,7 @@ static int __do_readpage(struct extent_io_tree *tree,
+ 		if (test_range_bit(tree, cur, cur_end,
+ 				   EXTENT_UPTODATE, 1, NULL)) {
+ 			check_page_uptodate(tree, page);
+-			if (!parent_locked)
+-				unlock_extent(tree, cur, cur + iosize - 1);
++			unlock_extent(tree, cur, cur + iosize - 1);
+ 			cur = cur + iosize;
+ 			pg_offset += iosize;
+ 			continue;
+@@ -3063,8 +3056,7 @@ static int __do_readpage(struct extent_io_tree *tree,
+ 		 */
+ 		if (block_start == EXTENT_MAP_INLINE) {
+ 			SetPageError(page);
+-			if (!parent_locked)
+-				unlock_extent(tree, cur, cur + iosize - 1);
++			unlock_extent(tree, cur, cur + iosize - 1);
+ 			cur = cur + iosize;
+ 			pg_offset += iosize;
+ 			continue;
+@@ -3083,8 +3075,7 @@ static int __do_readpage(struct extent_io_tree *tree,
+ 			*bio_flags = this_bio_flag;
+ 		} else {
+ 			SetPageError(page);
+-			if (!parent_locked)
+-				unlock_extent(tree, cur, cur + iosize - 1);
++			unlock_extent(tree, cur, cur + iosize - 1);
+ 		}
+ 		cur = cur + iosize;
+ 		pg_offset += iosize;
+@@ -3213,20 +3204,6 @@ int extent_read_full_page(struct extent_io_tree *tree, struct page *page,
+ 	return ret;
  }
+ 
+-int extent_read_full_page_nolock(struct extent_io_tree *tree, struct page *page,
+-				 get_extent_t *get_extent, int mirror_num)
+-{
+-	struct bio *bio = NULL;
+-	unsigned long bio_flags = EXTENT_BIO_PARENT_LOCKED;
+-	int ret;
+-
+-	ret = __do_readpage(tree, page, get_extent, NULL, &bio, mirror_num,
+-			    &bio_flags, READ, NULL);
+-	if (bio)
+-		ret = submit_one_bio(READ, bio, mirror_num, bio_flags);
+-	return ret;
+-}
+-
+ static noinline void update_nr_written(struct page *page,
+ 				      struct writeback_control *wbc,
+ 				      unsigned long nr_written)
+diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
+index 0377413..880d529 100644
+--- a/fs/btrfs/extent_io.h
++++ b/fs/btrfs/extent_io.h
+@@ -29,7 +29,6 @@
+  */
+ #define EXTENT_BIO_COMPRESSED 1
+ #define EXTENT_BIO_TREE_LOG 2
+-#define EXTENT_BIO_PARENT_LOCKED 4
+ #define EXTENT_BIO_FLAG_SHIFT 16
+ 
+ /* these are bit numbers for test/set bit */
+@@ -210,8 +209,6 @@ static inline int lock_extent(struct extent_io_tree *tree, u64 start, u64 end)
+ int try_lock_extent(struct extent_io_tree *tree, u64 start, u64 end);
+ int extent_read_full_page(struct extent_io_tree *tree, struct page *page,
+ 			  get_extent_t *get_extent, int mirror_num);
+-int extent_read_full_page_nolock(struct extent_io_tree *tree, struct page *page,
+-				 get_extent_t *get_extent, int mirror_num);
+ int __init extent_io_init(void);
+ void extent_io_exit(void);
+ 
 -- 
 2.7.0.rc3
 

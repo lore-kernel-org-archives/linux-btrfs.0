@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:33837 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:17204 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1756240AbcAZJI4 convert rfc822-to-8bit (ORCPT
+	with ESMTP id S933549AbcA1HuO convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 26 Jan 2016 04:08:56 -0500
+	Thu, 28 Jan 2016 02:50:14 -0500
 From: Zhao Lei <zhaolei@cn.fujitsu.com>
 To: "'Chris Mason'" <clm@fb.com>
 CC: <linux-btrfs@vger.kernel.org>
 References: <9d3a1b584cec0081382f832ab0a7f9b31b1d9798.1452584763.git.zhaolei@cn.fujitsu.com> <20160120151627.kuy3auwiguoe6xc6@floor.thefacebook.com> <20160120174823.ck5zeoihwsrbvoih@floor.thefacebook.com> <00a501d15433$61275d10$23761730$@cn.fujitsu.com> <20160121141444.gygz5lrkerq67lxz@floor.thefacebook.com> <00ce01d15510$0b35adc0$21a10940$@cn.fujitsu.com> <20160122141917.qs632ec3iwykdfdm@floor.thefacebook.com>
 In-Reply-To: <20160122141917.qs632ec3iwykdfdm@floor.thefacebook.com>
 Subject: RE: [PATCH 1/2] btrfs: reada: limit max works count
-Date: Tue, 26 Jan 2016 17:08:16 +0800
-Message-ID: <000b01d15819$17ccf5f0$4766e1d0$@cn.fujitsu.com>
+Date: Thu, 28 Jan 2016 15:49:54 +0800
+Message-ID: <006601d159a0$7a6a47c0$6f3ed740$@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="utf-8"
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -19,35 +19,6 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 Hi, Chris Mason
 
-> -----Original Message-----
-> From: Chris Mason [mailto:clm@fb.com]
-> Sent: Friday, January 22, 2016 10:19 PM
-> To: Zhao Lei <zhaolei@cn.fujitsu.com>
-> Cc: linux-btrfs@vger.kernel.org
-> Subject: Re: [PATCH 1/2] btrfs: reada: limit max works count
-> 
-> On Fri, Jan 22, 2016 at 08:25:56PM +0800, Zhao Lei wrote:
-> > Hi, Chris Mason
-> >
-> > > -----Original Message-----
-> > > From: Chris Mason [mailto:clm@fb.com]
-> > > Sent: Thursday, January 21, 2016 10:15 PM
-> > > To: Zhao Lei <zhaolei@cn.fujitsu.com>
-> > > Cc: linux-btrfs@vger.kernel.org
-> > > Subject: Re: [PATCH 1/2] btrfs: reada: limit max works count
-> > >
-> > > On Thu, Jan 21, 2016 at 06:06:21PM +0800, Zhao Lei wrote:
-> > > > Hi, Chris Mason
-> > > >
-> > > > > -----Original Message-----
-> > > > > From: Chris Mason [mailto:clm@fb.com]
-> > > > > Sent: Thursday, January 21, 2016 1:48 AM
-> > > > > To: Zhao Lei <zhaolei@cn.fujitsu.com>;
-> > > > > linux-btrfs@vger.kernel.org
-> > > > > Subject: Re: [PATCH 1/2] btrfs: reada: limit max works count
-> > > > >
-> > > > > On Wed, Jan 20, 2016 at 10:16:27AM -0500, Chris Mason wrote:
-> > > > > > On Tue, Jan 12, 2016 at 03:46:26PM +0800, Zhao Lei wrote:
 > > > > > > > reada create 2 works for each level of tree in recursion.
 > > > > > > >
 > > > > > > > In case of a tree having many levels, the number of created
@@ -124,49 +95,23 @@ Hi, Chris Mason
 > No problem, I'll try the patch and see if I can get a more reliable way to
 > reproduce if it doesn't fix things.  Thanks!
 > 
-Thanks for your effective help.
 
-I reproduced the bug in one of my node.
-And I got the bug reason.
+I rebased following branch:
+https://github.com/zhaoleidd/btrfs.git integration-4.5
 
-1: The background read thread in reada is not designed to complete
-  all works, as above description in this mail, plus addition case in
-  following.
+With updated patch to fix btrfs/066 bug.
+Bug reason is descripted in changelog of:
+btrfs: reada: avoid undone reada extents in btrfs_reada_wait
 
-2: For DUP, current code created 2 zones for it, and one of the zone
-  is "dummy"(we only read first strip for DUP).
-  And when the "dummy" zone is selected, current code ignore
-  read action, just bypass and do a cleanup.
-  Current code just return without re-select zone in this case to make
-  logic easy, and it make code likely to exit reada thread.
-  So, in DUP case, more background thread exit before all works done.
-  It is why btrfs/066 always hang in DUP profile.
+Test:
+1: In the node which can repgoduce btrfs/066 bug,
+  Confirmed HAVING_BUG before patch, and NO_BUG after patch.
+2: Run xfstests's btrfs group, confirmed no regression.
 
-3: This problem exist in old code too, but rarely happened, my patchset
-  trigger the problem because:
-  a. Limited background thread number
-    PATCH: btrfs: reada: limit max works count
-    In old code, there are more background threads, and if one of them exit,
-    remain threads will continue remain extents.
-  b. reduce thread lift time
-    PATCH: btrfs: reada: Avoid many times of empty loop
-    The lift time of thread is reduced, and make the no-thread window large.
+Most patchs in this branch are for reada, except this one for NO_SPACE bug:
+btrfs: Continue write in case of can_not_nocow
 
-Fix: 
-  We have following solution for this problem:
-  a. Not add above dummy zone for DUP
-    It will reduce the happen odds of the problem, but because
-    "device workload limit(MAX_IN_FLIGHT)" and "total reads limit"
-    in code, so the problem will still exist in very small case.
-  b. let the reada background thread do all works before exit.
-    It conflict with the limit design in [a].
-  c. Check to ensure we have at least one thread in btrfs_reada_wait()
-    It can fix the problem completely.
-  So I will fix the problem by way "c", based on:
-  [RFC] btrfs: reada: avoid undone reada extents in btrfs_reada_wait
-  With some enhancement.
-
-I'll make the fix and test it.
+Cound you consider merging it in suitable time?
 
 Thanks
 Zhaolei

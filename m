@@ -1,124 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:17204 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S933549AbcA1HuO convert rfc822-to-8bit (ORCPT
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:56117 "EHLO
+	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1751088AbcA1Nan (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 28 Jan 2016 02:50:14 -0500
-From: Zhao Lei <zhaolei@cn.fujitsu.com>
-To: "'Chris Mason'" <clm@fb.com>
+	Thu, 28 Jan 2016 08:30:43 -0500
+Date: Thu, 28 Jan 2016 08:30:32 -0500
+From: Chris Mason <clm@fb.com>
+To: Zhao Lei <zhaolei@cn.fujitsu.com>
 CC: <linux-btrfs@vger.kernel.org>
-References: <9d3a1b584cec0081382f832ab0a7f9b31b1d9798.1452584763.git.zhaolei@cn.fujitsu.com> <20160120151627.kuy3auwiguoe6xc6@floor.thefacebook.com> <20160120174823.ck5zeoihwsrbvoih@floor.thefacebook.com> <00a501d15433$61275d10$23761730$@cn.fujitsu.com> <20160121141444.gygz5lrkerq67lxz@floor.thefacebook.com> <00ce01d15510$0b35adc0$21a10940$@cn.fujitsu.com> <20160122141917.qs632ec3iwykdfdm@floor.thefacebook.com>
-In-Reply-To: <20160122141917.qs632ec3iwykdfdm@floor.thefacebook.com>
-Subject: RE: [PATCH 1/2] btrfs: reada: limit max works count
-Date: Thu, 28 Jan 2016 15:49:54 +0800
-Message-ID: <006601d159a0$7a6a47c0$6f3ed740$@cn.fujitsu.com>
+Subject: Re: [PATCH 1/2] btrfs: reada: limit max works count
+Message-ID: <20160128133032.aesambv5jlnungje@floor.thefacebook.com>
+References: <9d3a1b584cec0081382f832ab0a7f9b31b1d9798.1452584763.git.zhaolei@cn.fujitsu.com>
+ <20160120151627.kuy3auwiguoe6xc6@floor.thefacebook.com>
+ <20160120174823.ck5zeoihwsrbvoih@floor.thefacebook.com>
+ <00a501d15433$61275d10$23761730$@cn.fujitsu.com>
+ <20160121141444.gygz5lrkerq67lxz@floor.thefacebook.com>
+ <00ce01d15510$0b35adc0$21a10940$@cn.fujitsu.com>
+ <20160122141917.qs632ec3iwykdfdm@floor.thefacebook.com>
+ <006601d159a0$7a6a47c0$6f3ed740$@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
+Content-Type: text/plain; charset="us-ascii"
+In-Reply-To: <006601d159a0$7a6a47c0$6f3ed740$@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi, Chris Mason
-
-> > > > > > > reada create 2 works for each level of tree in recursion.
-> > > > > > >
-> > > > > > > In case of a tree having many levels, the number of created
-> > > > > > > works is 2^level_of_tree.
-> > > > > > > Actually we don't need so many works in parallel, this patch
-> > > > > > > limit max works to BTRFS_MAX_MIRRORS * 2.
-> > > > > >
-> > > > > > Hi,
-> > > > > >
-> > > > > > I don't think you end up calling atomic_dec() for every time
-> > > > > > that
-> > > > > > reada_start_machine() is called.  Also, I'd rather not have a
-> > > > > > global static variable to limit the parallel workers, when we
-> > > > > > have more than one FS mounted it'll end up limiting things too much.
-> > > > > >
-> > > > > > With this patch applied, I'm seeing deadlocks during btrfs/066.
-> You
-> > > > > > have to run the scrub tests as well, basically we're just
-> > > > > > getting fsstress run alongside scrub.
-> > > > > >
-> > > > > > I'll run a few more times with it reverted to make sure, but I
-> > > > > > think it's the root cause.
-> > > > >
-> > > > > I spoke too soon, it ended up deadlocking a few tests later.
-> > > > >
-> > > > In logic, even if the calculation of atomic_dec() in this patch
-> > > > having bug, in worst condition, reada will works in single-thread
-> > > > mode, and will not introduce deadlock.
-> > > >
-> > > > And by looking the backtrace in this mail, maybe it is caused by
-> > > > reada_control->elems in someplace of this patchset.
-> > > >
-> > > > I recheck xfstests/066 in both vm and physical machine, on top of
-> > > > my pull-request git today, with btrfs-progs 4.4 for many times,
-> > > > but had not
-> > > triggered the bug.
-> > >
-> > > Just running 066 alone doesn't trigger it for me.  I have to run
-> > > everything from
-> > > 00->066.
-> > >
-> > > My setup is 5 drives.  I use a script to carve them up into logical
-> > > volumes, 5 for the test device and 5 for the scratch pool.  I think
-> > > it should reproduce with a single drive, if you still can't trigger I'll confirm
-> that.
-> > >
-> > > >
-> > > > Could you tell me your test environment(TEST_DEV size, mount
-> > > > option), and odds of fails in btrfs/066?
-> > >
-> > > 100% odds of failing, one time it made it up to btrfs/072.  I think
-> > > more important than the drive setup is that I have all the debugging on.
-> > > CONFIG_DEBUG_PAGEALLOC, spinlock debugging, mutex debugging and
-> lock
-> > > dep enabled.
-> > >
-> > Thanks for your answer.
-> >
-> > But unfortunately I hadn't reproduce the dead_lock in above way today...
-> > Now I queued loop of above reproduce script in more nodes, and hopes
-> > it can happen in this weekend.
-> >
-> > And by reviewing code, I found a problem which can introduce similar
-> > bad result in logic, and made a patch for it.
-> > [PATCH] [RFC] btrfs: reada: avoid undone reada extents in
-> > btrfs_reada_wait
-> >
-> > Because it is only a problem in logic, but rarely happened, I only
-> > confirmed no-problem after patch applied.
-> >
-> > Sorry for increased your works, could you apply this patch and test is
-> > it works?
+On Thu, Jan 28, 2016 at 03:49:54PM +0800, Zhao Lei wrote:
+> I rebased following branch:
+> https://github.com/zhaoleidd/btrfs.git integration-4.5
 > 
-> No problem, I'll try the patch and see if I can get a more reliable way to
-> reproduce if it doesn't fix things.  Thanks!
+> With updated patch to fix btrfs/066 bug.
+> Bug reason is descripted in changelog of:
+> btrfs: reada: avoid undone reada extents in btrfs_reada_wait
 > 
-
-I rebased following branch:
-https://github.com/zhaoleidd/btrfs.git integration-4.5
-
-With updated patch to fix btrfs/066 bug.
-Bug reason is descripted in changelog of:
-btrfs: reada: avoid undone reada extents in btrfs_reada_wait
-
-Test:
-1: In the node which can repgoduce btrfs/066 bug,
-  Confirmed HAVING_BUG before patch, and NO_BUG after patch.
-2: Run xfstests's btrfs group, confirmed no regression.
-
-Most patchs in this branch are for reada, except this one for NO_SPACE bug:
-btrfs: Continue write in case of can_not_nocow
-
-Cound you consider merging it in suitable time?
-
-Thanks
-Zhaolei
-
-> -chris
+> Test:
+> 1: In the node which can repgoduce btrfs/066 bug,
+>   Confirmed HAVING_BUG before patch, and NO_BUG after patch.
+> 2: Run xfstests's btrfs group, confirmed no regression.
 > 
+> Most patchs in this branch are for reada, except this one for NO_SPACE bug:
+> btrfs: Continue write in case of can_not_nocow
+> 
+> Cound you consider merging it in suitable time?
 
+Thanks for tracking all of this down, I'll take a look.
 
-
-
+-chris

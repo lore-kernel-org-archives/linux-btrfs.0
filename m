@@ -1,63 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:34018 "EHLO
+Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:35724 "EHLO
 	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1750779AbcAMSVZ (ORCPT
+	by vger.kernel.org with ESMTP id S933476AbcA1U2l (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 13 Jan 2016 13:21:25 -0500
-Received: from pps.filterd (m0044008.ppops.net [127.0.0.1])
-	by mx0a-00082601.pphosted.com (8.15.0.59/8.15.0.59) with SMTP id u0DIIdRS003525
-	for <linux-btrfs@vger.kernel.org>; Wed, 13 Jan 2016 10:21:25 -0800
-Received: from mail.thefacebook.com ([199.201.64.23])
-	by mx0a-00082601.pphosted.com with ESMTP id 20dtsu8b2t-4
-	(version=TLSv1/SSLv3 cipher=AES128-SHA bits=128 verify=NOT)
-	for <linux-btrfs@vger.kernel.org>; Wed, 13 Jan 2016 10:21:25 -0800
-From: Josef Bacik <jbacik@fb.com>
-To: <linux-btrfs@vger.kernel.org>, <kernel-team@fb.com>
-Subject: [PATCH] Btrfs: add transaction space reservation tracepoints
-Date: Wed, 13 Jan 2016 13:21:20 -0500
-Message-ID: <1452709280-8098-1-git-send-email-jbacik@fb.com>
+	Thu, 28 Jan 2016 15:28:41 -0500
+Date: Thu, 28 Jan 2016 15:28:35 -0500
+From: Dave Jones <dsj@fb.com>
+To: Chris Mason <clm@fb.com>
+CC: Josef Bacik <jbacik@fb.com>, David Sterba <dsterba@suse.com>,
+        <linux-btrfs@vger.kernel.org>
+Subject: [v2] Re: btrfs: remove open-coded swap() in backref.c:__merge_refs
+Message-ID: <20160128202834.GA31832@fb.com>
+References: <20160128202556.GA31503@fb.com>
 MIME-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain; charset="us-ascii"
+In-Reply-To: <20160128202556.GA31503@fb.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-There are a few places where we add to trans->bytes_reserved but don't have the
-corresponding trace point.  With these added my tool no longer sees transaction
-leaks.
+The kernel provides a swap() that does the same thing as this code.
 
-Signed-off-by: Josef Bacik <jbacik@fb.com>
----
- fs/btrfs/transaction.c | 6 +++++-
- 1 file changed, 5 insertions(+), 1 deletion(-)
+Signed-off-by: Dave Jones <dsj@fb.com>
 
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index f85ccf6..a4fec0c 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -637,6 +637,8 @@ struct btrfs_trans_handle *btrfs_start_transaction_fallback_global_rsv(
- 
- 	trans->block_rsv = &root->fs_info->trans_block_rsv;
- 	trans->bytes_reserved = num_bytes;
-+	trace_btrfs_space_reservation(root->fs_info, "transaction",
-+				      trans->transid, num_bytes, 1);
- 
- 	return trans;
- }
-@@ -1376,7 +1378,9 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
- 	rsv = trans->block_rsv;
- 	trans->block_rsv = &pending->block_rsv;
- 	trans->bytes_reserved = trans->block_rsv->reserved;
--
-+	trace_btrfs_space_reservation(root->fs_info, "transaction",
-+				      trans->transid,
-+				      trans->bytes_reserved, 1);
- 	dentry = pending->dentry;
- 	parent_inode = pending->dir;
- 	parent_root = BTRFS_I(parent_inode)->root;
 -- 
-1.8.3.1
+v2: Was swapping the same var. duh.
 
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-
+diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
+index b90cd3776f8e..626bf6c12992 100644
+--- a/fs/btrfs/backref.c
++++ b/fs/btrfs/backref.c
+@@ -566,17 +566,14 @@ static void __merge_refs(struct list_head *head, int mode)
+ 		struct __prelim_ref *pos2 = pos1, *tmp;
+ 
+ 		list_for_each_entry_safe_continue(pos2, tmp, head, list) {
+-			struct __prelim_ref *xchg, *ref1 = pos1, *ref2 = pos2;
++			struct __prelim_ref *ref1 = pos1, *ref2 = pos2;
+ 			struct extent_inode_elem *eie;
+ 
+ 			if (!ref_for_same_block(ref1, ref2))
+ 				continue;
+ 			if (mode == 1) {
+-				if (!ref1->parent && ref2->parent) {
+-					xchg = ref1;
+-					ref1 = ref2;
+-					ref2 = xchg;
+-				}
++				if (!ref1->parent && ref2->parent)
++					swap(ref1, ref2);
+ 			} else {
+ 				if (ref1->parent != ref2->parent)
+ 					continue;

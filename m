@@ -1,279 +1,235 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f196.google.com ([209.85.223.196]:33693 "EHLO
-	mail-io0-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751154AbcANJ5r (ORCPT
+Received: from mail-wm0-f48.google.com ([74.125.82.48]:38117 "EHLO
+	mail-wm0-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752528AbcA1Rkw (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 14 Jan 2016 04:57:47 -0500
-Received: by mail-io0-f196.google.com with SMTP id f81so17143089iof.0
-        for <linux-btrfs@vger.kernel.org>; Thu, 14 Jan 2016 01:57:46 -0800 (PST)
+	Thu, 28 Jan 2016 12:40:52 -0500
+Received: by mail-wm0-f48.google.com with SMTP id p63so35190609wmp.1
+        for <linux-btrfs@vger.kernel.org>; Thu, 28 Jan 2016 09:40:51 -0800 (PST)
+Received: from mail-wm0-f42.google.com (mail-wm0-f42.google.com. [74.125.82.42])
+        by smtp.googlemail.com with ESMTPSA id v82sm3872673wmv.12.2016.01.28.09.40.49
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
+        Thu, 28 Jan 2016 09:40:49 -0800 (PST)
+Received: by mail-wm0-f42.google.com with SMTP id r129so35565899wmr.0
+        for <linux-btrfs@vger.kernel.org>; Thu, 28 Jan 2016 09:40:49 -0800 (PST)
 MIME-Version: 1.0
-Reply-To: fdmanana@gmail.com
-In-Reply-To: <1452761698-17301-1-git-send-email-quwenruo@cn.fujitsu.com>
-References: <1452761698-17301-1-git-send-email-quwenruo@cn.fujitsu.com>
-Date: Thu, 14 Jan 2016 09:57:46 +0000
-Message-ID: <CAL3q7H7XNrdrxKWfTmUGog3Oyunbwx3GTLxRBQKxnDYAUmkMuw@mail.gmail.com>
-Subject: Re: [PATCH v4.1 12/18] btrfs: dedup: Add support for on-disk hash search
-From: Filipe Manana <fdmanana@gmail.com>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
-Content-Type: text/plain; charset=UTF-8
+In-Reply-To: <CAO8L9g6EpXMNjWVunz2A-EPwGHBo=18T_a+3xovqMbHux3aHsw@mail.gmail.com>
+References: <CAO8L9g6EpXMNjWVunz2A-EPwGHBo=18T_a+3xovqMbHux3aHsw@mail.gmail.com>
+From: Dan Fuhry <dan@fuhry.com>
+Date: Thu, 28 Jan 2016 12:40:29 -0500
+Message-ID: <CAO8L9g5qet=wcqYFusNtVOZ8GJ_ZcQp++frjZmyFRNhKZ3xCbA@mail.gmail.com>
+Subject: Re: [PATCH] Add support for RENAME_{EXCHANGE,WHITEOUT}
+To: linux-btrfs@vger.kernel.org
+Content-Type: multipart/mixed; boundary=089e01030034539209052a686b7a
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Jan 14, 2016 at 8:54 AM, Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
-> Now on-disk backend should be able to search hash now.
->
-> Signed-off-by: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
-> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
-> ---
-> v4.1:
->    Fix a stupid typo where info->hash_type should be info->backend.
->    This makes on-disk backend almost unable to dedup.
+--089e01030034539209052a686b7a
+Content-Type: text/plain; charset=UTF-8
 
-Having test cases (xfstests) would avoid such simple errors... wouldn't it?
-As in the reply I just sent for another patch:
+Google didn't attach the patch the second time around. Herp-a-derp
+derp, sorry for the spam.
 
-"Take a look at the good example of xfs development. For example when
-all the recent patches for their reflink implementation was posted
-(and before getting merged), a comprehensive set of test cases for
-xfstests was also posted..."
-
-Test cases are a good thing :)
-
+On Thu, Jan 28, 2016 at 10:52 AM, Dan Fuhry <dan@fuhry.com> wrote:
+> Add support for the RENAME_WHITEOUT and RENAME_EXCHANGE flags in
+> renameat2(). This brings us pretty close to having btrfs ready to be
+> an upper layer for overlayfs. (The last remaining issue is in
+> btrfs_sync_file, which I'm looking at next if I have time.)
 >
-> ---
->  fs/btrfs/dedup.c | 145 +++++++++++++++++++++++++++++++++++++++++++++++--------
->  fs/btrfs/dedup.h |   3 ++
->  2 files changed, 127 insertions(+), 21 deletions(-)
+> This includes Davide Italiano's implementation of RENAME_EXCHANGE. I
+> quickly pinged him on github [1] last week to confirm resubmission of
+> his patch which originally went to this list on 2 April 2015 and
+> didn't make it in.
 >
-> diff --git a/fs/btrfs/dedup.c b/fs/btrfs/dedup.c
-> index c97823f..bee9589 100644
-> --- a/fs/btrfs/dedup.c
-> +++ b/fs/btrfs/dedup.c
-> @@ -482,6 +482,79 @@ int btrfs_dedup_disable(struct btrfs_fs_info *fs_info)
->  }
+> This is my first time submitting a kernel patch, I think I've covered
+> all the style recommendations, and also addressed Filipe David
+> Manana's review notes [2] on Davide Italiano's patch. Certainly let me
+> know if there's anything else that should be cleaned up. Thanks!
 >
->  /*
-> + * Return 0 for not found
-> + * Return >0 for found and set bytenr_ret
-> + * Return <0 for error
-> + */
-> +static int ondisk_search_hash(struct btrfs_dedup_info *dedup_info, u8 *hash,
-> +                             u64 *bytenr_ret, u32 *num_bytes_ret)
-> +{
-> +       struct btrfs_path *path;
-> +       struct btrfs_key key;
-> +       struct btrfs_root *dedup_root = dedup_info->dedup_root;
-> +       u8 *buf = NULL;
-> +       u64 hash_key;
-> +       int hash_len = btrfs_dedup_sizes[dedup_info->hash_type];
-> +       int ret;
-> +
-> +       path = btrfs_alloc_path();
-> +       if (!path)
-> +               return -ENOMEM;
-> +
-> +       buf = kmalloc(hash_len, GFP_NOFS);
-> +       if (!buf) {
-> +               ret = -ENOMEM;
-> +               goto out;
-> +       }
-> +
-> +       memcpy(&hash_key, hash + hash_len - 8, 8);
-> +       key.objectid = hash_key;
-> +       key.type = BTRFS_DEDUP_HASH_ITEM_KEY;
-> +       key.offset = (u64)-1;
-> +
-> +       ret = btrfs_search_slot(NULL, dedup_root, &key, path, 0, 0);
-> +       if (ret < 0)
-> +               goto out;
-> +       WARN_ON(ret == 0);
-> +       while (1) {
-> +               struct extent_buffer *node;
-> +               struct btrfs_dedup_hash_item *hash_item;
-> +               int slot;
-> +
-> +               ret = btrfs_previous_item(dedup_root, path, hash_key,
-> +                                         BTRFS_DEDUP_HASH_ITEM_KEY);
-> +               if (ret < 0)
-> +                       goto out;
-> +               if (ret > 0) {
-> +                       ret = 0;
-> +                       goto out;
-> +               }
-> +
-> +               node = path->nodes[0];
-> +               slot = path->slots[0];
-> +               btrfs_item_key_to_cpu(node, &key, slot);
-> +
-> +               if (key.type != BTRFS_DEDUP_HASH_ITEM_KEY ||
-> +                   memcmp(&key.objectid, hash + hash_len - 8, 8))
-> +                       break;
-> +               hash_item = btrfs_item_ptr(node, slot,
-> +                               struct btrfs_dedup_hash_item);
-> +               read_extent_buffer(node, buf, (unsigned long)(hash_item + 1),
-> +                                  hash_len);
-> +               if (!memcmp(buf, hash, hash_len)) {
-> +                       ret = 1;
-> +                       *bytenr_ret = key.offset;
-> +                       *num_bytes_ret = btrfs_dedup_hash_len(node, hash_item);
-> +                       break;
-> +               }
-> +       }
-> +out:
-> +       kfree(buf);
-> +       btrfs_free_path(path);
-> +       return ret;
-> +}
-> +
-> +/*
->   * Caller must ensure the corresponding ref head is not being run.
->   */
->  static struct inmem_hash *
-> @@ -511,7 +584,34 @@ inmem_search_hash(struct btrfs_dedup_info *dedup_info, u8 *hash)
->         return NULL;
->  }
->
-> -static int inmem_search(struct inode *inode, u64 file_pos,
-> +/* Wrapper for different backends, caller needs to hold dedup_info->lock */
-> +static inline int generic_search_hash(struct btrfs_dedup_info *dedup_info,
-> +                                     u8 *hash, u64 *bytenr_ret,
-> +                                     u32 *num_bytes_ret)
-> +{
-> +       if (dedup_info->backend == BTRFS_DEDUP_BACKEND_INMEMORY) {
-> +               struct inmem_hash *found_hash;
-> +               int ret;
-> +
-> +               found_hash = inmem_search_hash(dedup_info, hash);
-> +               if (found_hash) {
-> +                       ret = 1;
-> +                       *bytenr_ret = found_hash->bytenr;
-> +                       *num_bytes_ret = found_hash->num_bytes;
-> +               } else {
-> +                       ret = 0;
-> +                       *bytenr_ret = 0;
-> +                       *num_bytes_ret = 0;
-> +               }
-> +               return ret;
-> +       } else if (dedup_info->backend == BTRFS_DEDUP_BACKEND_ONDISK) {
-> +               return ondisk_search_hash(dedup_info, hash, bytenr_ret,
-> +                                         num_bytes_ret);
-> +       }
-> +       return -EINVAL;
-> +}
-> +
-> +static int generic_search(struct inode *inode, u64 file_pos,
->                         struct btrfs_dedup_hash *hash)
->  {
->         int ret;
-> @@ -520,9 +620,9 @@ static int inmem_search(struct inode *inode, u64 file_pos,
->         struct btrfs_trans_handle *trans;
->         struct btrfs_delayed_ref_root *delayed_refs;
->         struct btrfs_delayed_ref_head *head;
-> -       struct inmem_hash *found_hash;
->         struct btrfs_dedup_info *dedup_info = fs_info->dedup_info;
->         u64 bytenr;
-> +       u64 tmp_bytenr;
->         u32 num_bytes;
->
->         trans = btrfs_join_transaction(root);
-> @@ -531,14 +631,9 @@ static int inmem_search(struct inode *inode, u64 file_pos,
->
->  again:
->         mutex_lock(&dedup_info->lock);
-> -       found_hash = inmem_search_hash(dedup_info, hash->hash);
-> -       /* If we don't find a duplicated extent, just return. */
-> -       if (!found_hash) {
-> -               ret = 0;
-> +       ret = generic_search_hash(dedup_info, hash->hash, &bytenr, &num_bytes);
-> +       if (ret <= 0)
->                 goto out;
-> -       }
-> -       bytenr = found_hash->bytenr;
-> -       num_bytes = found_hash->num_bytes;
->
->         delayed_refs = &trans->transaction->delayed_refs;
->
-> @@ -574,13 +669,21 @@ again:
->                 goto again;
->
->         mutex_lock(&dedup_info->lock);
-> -       /* Search again to ensure the hash is still here */
-> -       found_hash = inmem_search_hash(dedup_info, hash->hash);
-> -       if (!found_hash) {
-> -               ret = 0;
-> +       /*
-> +        * Search again to ensure the hash is still here and bytenr didn't
-> +        * change
-> +        */
-> +       ret = generic_search_hash(dedup_info, hash->hash, &tmp_bytenr,
-> +                                 &num_bytes);
-> +       if (ret <= 0) {
->                 mutex_unlock(&head->mutex);
->                 goto out;
->         }
-> +       if (tmp_bytenr != bytenr) {
-> +               mutex_unlock(&head->mutex);
-> +               mutex_unlock(&dedup_info->lock);
-> +               goto again;
-> +       }
->         hash->bytenr = bytenr;
->         hash->num_bytes = num_bytes;
->
-> @@ -609,15 +712,15 @@ int btrfs_dedup_search(struct inode *inode, u64 file_pos,
->         if (WARN_ON(!dedup_info || !hash))
->                 return 0;
->
-> -       if (dedup_info->backend == BTRFS_DEDUP_BACKEND_INMEMORY)
-> -               ret = inmem_search(inode, file_pos, hash);
-> -
-> -       /* It's possible hash->bytenr/num_bytenr already changed */
-> -       if (ret == 0) {
-> -               hash->num_bytes = 0;
-> -               hash->bytenr = 0;
-> +       if (dedup_info->backend < BTRFS_DEDUP_BACKEND_LAST) {
-> +               ret = generic_search(inode, file_pos, hash);
-> +               if (ret == 0) {
-> +                       hash->num_bytes = 0;
-> +                       hash->bytenr = 0;
-> +               }
-> +               return ret;
->         }
-> -       return ret;
-> +       return -EINVAL;
->  }
->
->  static int hash_data(struct btrfs_dedup_info *dedup_info, const char *data,
-> diff --git a/fs/btrfs/dedup.h b/fs/btrfs/dedup.h
-> index f23053c..3c08b86 100644
-> --- a/fs/btrfs/dedup.h
-> +++ b/fs/btrfs/dedup.h
-> @@ -137,6 +137,9 @@ int btrfs_dedup_calc_hash(struct btrfs_root *root, struct inode *inode,
->   * *INCREASED*, and hash->bytenr/num_bytes will record the existing
->   * extent data.
->   * Return 0 for a hash miss. Nothing is done
-> + * Return <0 for error.
-> + *
-> + * Only on-disk backedn may return error though.
->   */
->  int btrfs_dedup_search(struct inode *inode, u64 file_pos,
->                        struct btrfs_dedup_hash *hash);
-> --
-> 2.7.0
->
->
+> [1] https://github.com/fuhry/linux/commit/9a7300d973a192193857c595997f292a14c14197#commitcomment-15570553
+> [2] https://www.marc.info/?l=linux-btrfs&m=142796914520768&w=3
 >
 > --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> Dan Fuhry
+> Senior Software Engineer, Datto Inc
+> (203) 529-4949 x402 / dfuhry@datto.com
 
+--089e01030034539209052a686b7a
+Content-Type: text/x-patch; charset=US-ASCII; name="btrfs-rename-exh-wht-4.4.patch"
+Content-Disposition: attachment; filename="btrfs-rename-exh-wht-4.4.patch"
+Content-Transfer-Encoding: base64
+X-Attachment-Id: f_ijyjq96h0
 
-
--- 
-Filipe David Manana,
-
-"Reasonable men adapt themselves to the world.
- Unreasonable men adapt the world to themselves.
- That's why all progress depends on unreasonable men."
+YnRyZnM6IGFkZCBzdXBwb3J0IGZvciBSRU5BTUVfRVhDSEFOR0UgYW5kIFJFTkFNRV9XSElURU9V
+VAoKVHdvIG5ldyBmbGFncywgUkVOQU1FX0VYQ0hBTkdFIGFuZCBSRU5BTUVfV0hJVEVPVVQsIHBy
+b3ZpZGUgZm9yIG5ldwpiZWhhdmlvciBpbiB0aGUgcmVuYW1lYXQyKCkgc3lzY2FsbC4gVGhpcyBi
+ZWhhdmlvciBpcyBwcmltYXJpbHkgdXNlZCBieQpvdmVybGF5ZnMuIFRoaXMgcGF0Y2ggYWRkcyBz
+dXBwb3J0IGZvciB0aGVzZSBmbGFncyB0byBidHJmcywgZW5hYmxpbmcgaXQgdG8KYmUgdXNlZCBh
+cyBhIGZ1bGx5IGZ1bmN0aW9uYWwgdXBwZXIgbGF5ZXIgZm9yIG92ZXJsYXlmcy4KClJFTkFNRV9F
+WENIQU5HRSBzdXBwb3J0IHdhcyB3cml0dGVuIGJ5IERhdmlkZSBJdGFsaWFubwo8ZGNjaXRhbGlh
+bm9AZ21haWwuY29tPiwgb3JpZ2luYWxseSBzdWJtaXR0ZWQgb24gMiBBcHJpbCAyMDE1LgoKU2ln
+bmVkLW9mZi1ieTogRGFuIEZ1aHJ5IDxkZnVocnlAZGF0dG8uY29tPgoKZGlmZiAtLWdpdCBhL2Zz
+L2J0cmZzL2lub2RlLmMgYi9mcy9idHJmcy9pbm9kZS5jCmluZGV4IGE3MGM1NzkuLjI3NGY4NTRh
+IDEwMDY0NAotLS0gYS9mcy9idHJmcy9pbm9kZS5jCisrKyBiL2ZzL2J0cmZzL2lub2RlLmMKQEAg
+LTkyMjAsOCArOTIyMCwyNDYgQEAgc3RhdGljIGludCBidHJmc19nZXRhdHRyKHN0cnVjdCB2ZnNt
+b3VudCAqbW50LAogCXJldHVybiAwOwogfQogCitzdGF0aWMgaW50IGJ0cmZzX3JlbmFtZV9leGNo
+YW5nZShzdHJ1Y3QgaW5vZGUgKm9sZF9kaXIsCisJCQkgICAgICBzdHJ1Y3QgZGVudHJ5ICpvbGRf
+ZGVudHJ5LAorCQkJICAgICAgc3RydWN0IGlub2RlICpuZXdfZGlyLAorCQkJICAgICAgc3RydWN0
+IGRlbnRyeSAqbmV3X2RlbnRyeSkKK3sKKwlzdHJ1Y3QgYnRyZnNfdHJhbnNfaGFuZGxlICp0cmFu
+czsKKwlzdHJ1Y3QgYnRyZnNfcm9vdCAqcm9vdCA9IEJUUkZTX0kob2xkX2RpciktPnJvb3Q7CisJ
+c3RydWN0IGJ0cmZzX3Jvb3QgKmRlc3QgPSBCVFJGU19JKG5ld19kaXIpLT5yb290OworCXN0cnVj
+dCBpbm9kZSAqbmV3X2lub2RlID0gbmV3X2RlbnRyeS0+ZF9pbm9kZTsKKwlzdHJ1Y3QgaW5vZGUg
+Km9sZF9pbm9kZSA9IG9sZF9kZW50cnktPmRfaW5vZGU7CisJc3RydWN0IHRpbWVzcGVjIGN0aW1l
+ID0gQ1VSUkVOVF9USU1FOworCXN0cnVjdCBkZW50cnkgKnBhcmVudDsKKwl1NjQgb2xkX2lubyA9
+IGJ0cmZzX2lubyhvbGRfaW5vZGUpOworCXU2NCBuZXdfaW5vID0gYnRyZnNfaW5vKG5ld19pbm9k
+ZSk7CisJdTY0IG9sZF9pZHggPSAwOworCXU2NCBuZXdfaWR4ID0gMDsKKwl1NjQgcm9vdF9vYmpl
+Y3RpZDsKKwlpbnQgcmV0OworCisJLyogd2Ugb25seSBhbGxvdyByZW5hbWUgc3Vidm9sdW1lIGxp
+bmsgYmV0d2VlbiBzdWJ2b2x1bWVzICovCisJaWYgKG9sZF9pbm8gIT0gQlRSRlNfRklSU1RfRlJF
+RV9PQkpFQ1RJRCAmJiByb290ICE9IGRlc3QpCisJCXJldHVybiAtRVhERVY7CisKKwkvKiBjbG9z
+ZSB0aGUgcmFjeSB3aW5kb3cgd2l0aCBzbmFwc2hvdCBjcmVhdGUvZGVzdHJveSBpb2N0bCAqLwor
+CWlmIChvbGRfaW5vID09IEJUUkZTX0ZJUlNUX0ZSRUVfT0JKRUNUSUQpCisJCWRvd25fcmVhZCgm
+cm9vdC0+ZnNfaW5mby0+c3Vidm9sX3NlbSk7CisJaWYgKG5ld19pbm8gPT0gQlRSRlNfRklSU1Rf
+RlJFRV9PQkpFQ1RJRCkKKwkJZG93bl9yZWFkKCZkZXN0LT5mc19pbmZvLT5zdWJ2b2xfc2VtKTsK
+KworCS8qCisJICogV2Ugd2FudCB0byByZXNlcnZlIHRoZSBhYnNvbHV0ZSB3b3JzdCBjYXNlIGFt
+b3VudCBvZiBpdGVtcy4gIFNvIGlmCisJICogYm90aCBpbm9kZXMgYXJlIHN1YnZvbHMgYW5kIHdl
+IG5lZWQgdG8gdW5saW5rIHRoZW0gdGhlbiB0aGF0IHdvdWxkCisJICogcmVxdWlyZSA0IGl0ZW0g
+bW9kaWZpY2F0aW9ucywgYnV0IGlmIHRoZXkgYXJlIGJvdGggbm9ybWFsIGlub2RlcyBpdAorCSAq
+IHdvdWxkIHJlcXVpcmUgNSBpdGVtIG1vZGlmaWNhdGlvbnMsIHNvIHdlJ2xsIGFzc3VtZSB0aGVp
+ciBub3JtYWwKKwkgKiBpbm9kZXMuICBTbyA1ICogMiBpcyAxMCwgcGx1cyAyIGZvciB0aGUgbmV3
+IGxpbmtzLCBzbyAxMiB0b3RhbCBpdGVtcworCSAqIHNob3VsZCBjb3ZlciB0aGUgd29yc3QgY2Fz
+ZSBudW1iZXIgb2YgaXRlbXMgd2UnbGwgbW9kaWZ5LgorCSAqLworCXRyYW5zID0gYnRyZnNfc3Rh
+cnRfdHJhbnNhY3Rpb24ocm9vdCwgMTIpOworCWlmIChJU19FUlIodHJhbnMpKSB7CisJCXJldCA9
+IFBUUl9FUlIodHJhbnMpOworCQlnb3RvIG91dF9ub3RyYW5zOworCX0KKworCS8qCisJICogV2Ug
+bmVlZCB0byBmaW5kIGEgZnJlZSBzZXF1ZW5jZSBudW1iZXIgYm90aCBpbiB0aGUgc291cmNlIGFu
+ZAorCSAqIGluIHRoZSBkZXN0aW5hdGlvbiBkaXJlY3RvcnkgZm9yIHRoZSBleGNoYW5nZS4KKwkg
+Ki8KKwlyZXQgPSBidHJmc19zZXRfaW5vZGVfaW5kZXgobmV3X2RpciwgJm9sZF9pZHgpOworCWlm
+IChyZXQpCisJCWdvdG8gb3V0X2ZhaWw7CisJcmV0ID0gYnRyZnNfc2V0X2lub2RlX2luZGV4KG9s
+ZF9kaXIsICZuZXdfaWR4KTsKKwlpZiAocmV0KQorCQlnb3RvIG91dF9mYWlsOworCisJQlRSRlNf
+SShvbGRfaW5vZGUpLT5kaXJfaW5kZXggPSAwVUxMOworCUJUUkZTX0kobmV3X2lub2RlKS0+ZGly
+X2luZGV4ID0gMFVMTDsKKworCS8qIFJlZmVyZW5jZSBmb3IgdGhlIHNvdXJjZS4gKi8KKwlpZiAo
+dW5saWtlbHkob2xkX2lubyA9PSBCVFJGU19GSVJTVF9GUkVFX09CSkVDVElEKSkgeworCQkvKiBm
+b3JjZSBmdWxsIGxvZyBjb21taXQgaWYgc3Vidm9sdW1lIGludm9sdmVkLiAqLworCQlidHJmc19z
+ZXRfbG9nX2Z1bGxfY29tbWl0KHJvb3QtPmZzX2luZm8sIHRyYW5zKTsKKwl9IGVsc2UgeworCQly
+ZXQgPSBidHJmc19pbnNlcnRfaW5vZGVfcmVmKHRyYW5zLCBkZXN0LAorCQkJCQkgICAgIG5ld19k
+ZW50cnktPmRfbmFtZS5uYW1lLAorCQkJCQkgICAgIG5ld19kZW50cnktPmRfbmFtZS5sZW4sCisJ
+CQkJCSAgICAgb2xkX2lubywKKwkJCQkJICAgICBidHJmc19pbm8obmV3X2RpciksIG9sZF9pZHgp
+OworCQlpZiAocmV0KQorCQkJZ290byBvdXRfZmFpbDsKKwkJYnRyZnNfcGluX2xvZ190cmFucyhy
+b290KTsKKwl9CisKKwkvKiBBbmQgbm93IGZvciB0aGUgZGVzdC4gKi8KKwlpZiAodW5saWtlbHko
+bmV3X2lubyA9PSBCVFJGU19GSVJTVF9GUkVFX09CSkVDVElEKSkgeworCQkvKiBmb3JjZSBmdWxs
+IGxvZyBjb21taXQgaWYgc3Vidm9sdW1lIGludm9sdmVkLiAqLworCQlidHJmc19zZXRfbG9nX2Z1
+bGxfY29tbWl0KGRlc3QtPmZzX2luZm8sIHRyYW5zKTsKKwl9IGVsc2UgeworCQlyZXQgPSBidHJm
+c19pbnNlcnRfaW5vZGVfcmVmKHRyYW5zLCByb290LAorCQkJCQkgICAgIG9sZF9kZW50cnktPmRf
+bmFtZS5uYW1lLAorCQkJCQkgICAgIG9sZF9kZW50cnktPmRfbmFtZS5sZW4sCisJCQkJCSAgICAg
+bmV3X2lubywKKwkJCQkJICAgICBidHJmc19pbm8ob2xkX2RpciksIG5ld19pZHgpOworCQlpZiAo
+cmV0KQorCQkJZ290byBvdXRfZmFpbDsKKwkJYnRyZnNfcGluX2xvZ190cmFucyhkZXN0KTsKKwl9
+CisKKwkvKgorCSAqIFVwZGF0ZSBpLW5vZGUgdmVyc2lvbiBhbmQgY3RpbWUvbXRpbWUuCisJICov
+CisJaW5vZGVfaW5jX2l2ZXJzaW9uKG9sZF9kaXIpOworCWlub2RlX2luY19pdmVyc2lvbihuZXdf
+ZGlyKTsKKwlpbm9kZV9pbmNfaXZlcnNpb24ob2xkX2lub2RlKTsKKwlpbm9kZV9pbmNfaXZlcnNp
+b24obmV3X2lub2RlKTsKKwlvbGRfZGlyLT5pX2N0aW1lID0gb2xkX2Rpci0+aV9tdGltZSA9IGN0
+aW1lOworCW5ld19kaXItPmlfY3RpbWUgPSBuZXdfZGlyLT5pX210aW1lID0gY3RpbWU7CisJb2xk
+X2lub2RlLT5pX2N0aW1lID0gY3RpbWU7CisJbmV3X2lub2RlLT5pX2N0aW1lID0gY3RpbWU7CisK
+KwlpZiAob2xkX2RlbnRyeS0+ZF9wYXJlbnQgIT0gbmV3X2RlbnRyeS0+ZF9wYXJlbnQpIHsKKwkJ
+YnRyZnNfcmVjb3JkX3VubGlua19kaXIodHJhbnMsIG9sZF9kaXIsIG9sZF9pbm9kZSwgMSk7CisJ
+CWJ0cmZzX3JlY29yZF91bmxpbmtfZGlyKHRyYW5zLCBuZXdfZGlyLCBuZXdfaW5vZGUsIDEpOwor
+CX0KKworCS8qIHNyYyBpcyBhIHN1YnZvbHVtZSAqLworCWlmICh1bmxpa2VseShvbGRfaW5vID09
+IEJUUkZTX0ZJUlNUX0ZSRUVfT0JKRUNUSUQpKSB7CisJCXJvb3Rfb2JqZWN0aWQgPSBCVFJGU19J
+KG9sZF9pbm9kZSktPnJvb3QtPnJvb3Rfa2V5Lm9iamVjdGlkOworCQlyZXQgPSBidHJmc191bmxp
+bmtfc3Vidm9sKHRyYW5zLCByb290LCBvbGRfZGlyLAorCQkJCQkgIHJvb3Rfb2JqZWN0aWQsCisJ
+CQkJCSAgb2xkX2RlbnRyeS0+ZF9uYW1lLm5hbWUsCisJCQkJCSAgb2xkX2RlbnRyeS0+ZF9uYW1l
+Lmxlbik7CisJfSBlbHNlIHsgLyogc3JjIGlzIGEgaW5vZGUgKi8KKwkJcmV0ID0gX19idHJmc191
+bmxpbmtfaW5vZGUodHJhbnMsIHJvb3QsIG9sZF9kaXIsCisJCQkJCSAgIG9sZF9kZW50cnktPmRf
+aW5vZGUsCisJCQkJCSAgIG9sZF9kZW50cnktPmRfbmFtZS5uYW1lLAorCQkJCQkgICBvbGRfZGVu
+dHJ5LT5kX25hbWUubGVuKTsKKwkJaWYgKCFyZXQpCisJCQlyZXQgPSBidHJmc191cGRhdGVfaW5v
+ZGUodHJhbnMsIHJvb3QsIG9sZF9pbm9kZSk7CisJfQorCWlmIChyZXQpIHsKKwkJYnRyZnNfYWJv
+cnRfdHJhbnNhY3Rpb24odHJhbnMsIHJvb3QsIHJldCk7CisJCWdvdG8gb3V0X2ZhaWw7CisJfQor
+CisJLyogZGVzdCBpcyBhIHN1YnZvbHVtZSAqLworCWlmICh1bmxpa2VseShuZXdfaW5vID09IEJU
+UkZTX0ZJUlNUX0ZSRUVfT0JKRUNUSUQpKSB7CisJCXJvb3Rfb2JqZWN0aWQgPSBCVFJGU19JKG5l
+d19pbm9kZSktPnJvb3QtPnJvb3Rfa2V5Lm9iamVjdGlkOworCQlyZXQgPSBidHJmc191bmxpbmtf
+c3Vidm9sKHRyYW5zLCBkZXN0LCBuZXdfZGlyLAorCQkJCQkgIHJvb3Rfb2JqZWN0aWQsCisJCQkJ
+CSAgbmV3X2RlbnRyeS0+ZF9uYW1lLm5hbWUsCisJCQkJCSAgbmV3X2RlbnRyeS0+ZF9uYW1lLmxl
+bik7CisJfSBlbHNlIHsgLyogZGVzdCBpcyBhbiBpbm9kZSAqLworCQlyZXQgPSBfX2J0cmZzX3Vu
+bGlua19pbm9kZSh0cmFucywgZGVzdCwgbmV3X2RpciwKKwkJCQkJICAgbmV3X2RlbnRyeS0+ZF9p
+bm9kZSwKKwkJCQkJICAgbmV3X2RlbnRyeS0+ZF9uYW1lLm5hbWUsCisJCQkJCSAgIG5ld19kZW50
+cnktPmRfbmFtZS5sZW4pOworCQlpZiAoIXJldCkKKwkJCXJldCA9IGJ0cmZzX3VwZGF0ZV9pbm9k
+ZSh0cmFucywgZGVzdCwgbmV3X2lub2RlKTsKKwl9CisJaWYgKHJldCkgeworCQlidHJmc19hYm9y
+dF90cmFuc2FjdGlvbih0cmFucywgcm9vdCwgcmV0KTsKKwkJZ290byBvdXRfZmFpbDsKKwl9CisK
+KwlyZXQgPSBidHJmc19hZGRfbGluayh0cmFucywgbmV3X2Rpciwgb2xkX2lub2RlLAorCQkJICAg
+ICBuZXdfZGVudHJ5LT5kX25hbWUubmFtZSwKKwkJCSAgICAgbmV3X2RlbnRyeS0+ZF9uYW1lLmxl
+biwgMCwgb2xkX2lkeCk7CisJaWYgKHJldCkgeworCQlidHJmc19hYm9ydF90cmFuc2FjdGlvbih0
+cmFucywgcm9vdCwgcmV0KTsKKwkJZ290byBvdXRfZmFpbDsKKwl9CisKKwlyZXQgPSBidHJmc19h
+ZGRfbGluayh0cmFucywgb2xkX2RpciwgbmV3X2lub2RlLAorCQkJICAgICBvbGRfZGVudHJ5LT5k
+X25hbWUubmFtZSwKKwkJCSAgICAgb2xkX2RlbnRyeS0+ZF9uYW1lLmxlbiwgMCwgbmV3X2lkeCk7
+CisJaWYgKHJldCkgeworCQlidHJmc19hYm9ydF90cmFuc2FjdGlvbih0cmFucywgcm9vdCwgcmV0
+KTsKKwkJZ290byBvdXRfZmFpbDsKKwl9CisKKwlpZiAob2xkX2lub2RlLT5pX25saW5rID09IDEp
+CisJCUJUUkZTX0kob2xkX2lub2RlKS0+ZGlyX2luZGV4ID0gb2xkX2lkeDsKKwlpZiAobmV3X2lu
+b2RlLT5pX25saW5rID09IDEpCisJCUJUUkZTX0kobmV3X2lub2RlKS0+ZGlyX2luZGV4ID0gbmV3
+X2lkeDsKKworCWlmIChvbGRfaW5vICE9IEJUUkZTX0ZJUlNUX0ZSRUVfT0JKRUNUSUQpIHsKKwkJ
+cGFyZW50ID0gbmV3X2RlbnRyeS0+ZF9wYXJlbnQ7CisJCWJ0cmZzX2xvZ19uZXdfbmFtZSh0cmFu
+cywgb2xkX2lub2RlLCBvbGRfZGlyLCBwYXJlbnQpOworCQlidHJmc19lbmRfbG9nX3RyYW5zKHJv
+b3QpOworCX0KKwlpZiAobmV3X2lubyAhPSBCVFJGU19GSVJTVF9GUkVFX09CSkVDVElEKSB7CisJ
+CXBhcmVudCA9IG9sZF9kZW50cnktPmRfcGFyZW50OworCQlidHJmc19sb2dfbmV3X25hbWUodHJh
+bnMsIG5ld19pbm9kZSwgbmV3X2RpciwgcGFyZW50KTsKKwkJYnRyZnNfZW5kX2xvZ190cmFucyhk
+ZXN0KTsKKwl9CitvdXRfZmFpbDoKKwlyZXQgPSBidHJmc19lbmRfdHJhbnNhY3Rpb24odHJhbnMs
+IHJvb3QpOworb3V0X25vdHJhbnM6CisJaWYgKG5ld19pbm8gPT0gQlRSRlNfRklSU1RfRlJFRV9P
+QkpFQ1RJRCkKKwkJdXBfcmVhZCgmZGVzdC0+ZnNfaW5mby0+c3Vidm9sX3NlbSk7CisJaWYgKG9s
+ZF9pbm8gPT0gQlRSRlNfRklSU1RfRlJFRV9PQkpFQ1RJRCkKKwkJdXBfcmVhZCgmcm9vdC0+ZnNf
+aW5mby0+c3Vidm9sX3NlbSk7CisKKwlyZXR1cm4gcmV0OworfQorCitzdGF0aWMgaW50IGJ0cmZz
+X3doaXRlb3V0X2Zvcl9yZW5hbWUoc3RydWN0IGJ0cmZzX3RyYW5zX2hhbmRsZSAqdHJhbnMsCisJ
+CQkJICAgICBzdHJ1Y3QgYnRyZnNfcm9vdCAqcm9vdCwKKwkJCQkgICAgIHN0cnVjdCBpbm9kZSAq
+ZGlyLAorCQkJCSAgICAgc3RydWN0IGRlbnRyeSAqZGVudHJ5KQoreworCWludCByZXQ7CisJc3Ry
+dWN0IGlub2RlICppbm9kZTsKKwl1NjQgb2JqZWN0aWQ7CisJdTY0IGluZGV4OworCisJcmV0ID0g
+YnRyZnNfZmluZF9mcmVlX2lubyhyb290LCAmb2JqZWN0aWQpOworCWlmIChyZXQpCisJCXJldHVy
+biByZXQ7CisKKwlpbm9kZSA9IGJ0cmZzX25ld19pbm9kZSh0cmFucywgcm9vdCwgZGlyLAorCQkJ
+CWRlbnRyeS0+ZF9uYW1lLm5hbWUsCisJCQkJZGVudHJ5LT5kX25hbWUubGVuLAorCQkJCWJ0cmZz
+X2lubyhkaXIpLAorCQkJCW9iamVjdGlkLAorCQkJCVNfSUZDSFIgfCBXSElURU9VVF9NT0RFLAor
+CQkJCSZpbmRleCk7CisKKwlpZiAoSVNfRVJSKGlub2RlKSkgeworCQlyZXQgPSBQVFJfRVJSKGlu
+b2RlKTsKKwkJcmV0dXJuIHJldDsKKwl9CisKKwlpbm9kZS0+aV9vcCA9ICZidHJmc19zcGVjaWFs
+X2lub2RlX29wZXJhdGlvbnM7CisJaW5pdF9zcGVjaWFsX2lub2RlKGlub2RlLCBpbm9kZS0+aV9t
+b2RlLAorCQlXSElURU9VVF9ERVYpOworCisJcmV0ID0gYnRyZnNfaW5pdF9pbm9kZV9zZWN1cml0
+eSh0cmFucywgaW5vZGUsIGRpciwKKwkJCQkmZGVudHJ5LT5kX25hbWUpOworCWlmIChyZXQpCisJ
+CXJldHVybiByZXQ7CisKKwlyZXQgPSBidHJmc19hZGRfbm9uZGlyKHRyYW5zLCBkaXIsIGRlbnRy
+eSwKKwkJCQlpbm9kZSwgMCwgaW5kZXgpOworCWlmIChyZXQpCisJCXJldHVybiByZXQ7CisKKwly
+ZXQgPSBidHJmc191cGRhdGVfaW5vZGUodHJhbnMsIHJvb3QsIGlub2RlKTsKKwlpZiAocmV0KQor
+CQlyZXR1cm4gcmV0OworCisJdW5sb2NrX25ld19pbm9kZShpbm9kZSk7CisJaXB1dChpbm9kZSk7
+CisKKwlyZXR1cm4gMDsKK30KKwogc3RhdGljIGludCBidHJmc19yZW5hbWUoc3RydWN0IGlub2Rl
+ICpvbGRfZGlyLCBzdHJ1Y3QgZGVudHJ5ICpvbGRfZGVudHJ5LAotCQkJICAgc3RydWN0IGlub2Rl
+ICpuZXdfZGlyLCBzdHJ1Y3QgZGVudHJ5ICpuZXdfZGVudHJ5KQorCQkJICAgc3RydWN0IGlub2Rl
+ICpuZXdfZGlyLCBzdHJ1Y3QgZGVudHJ5ICpuZXdfZGVudHJ5LAorCQkJICAgdW5zaWduZWQgaW50
+IGZsYWdzKQogewogCXN0cnVjdCBidHJmc190cmFuc19oYW5kbGUgKnRyYW5zOwogCXN0cnVjdCBi
+dHJmc19yb290ICpyb290ID0gQlRSRlNfSShvbGRfZGlyKS0+cm9vdDsKQEAgLTkyODMsMTUgKzk1
+MjEsMTUgQEAgc3RhdGljIGludCBidHJmc19yZW5hbWUoc3RydWN0IGlub2RlICpvbGRfZGlyLCBz
+dHJ1Y3QgZGVudHJ5ICpvbGRfZGVudHJ5LAogCSAqIFdlIHdhbnQgdG8gcmVzZXJ2ZSB0aGUgYWJz
+b2x1dGUgd29yc3QgY2FzZSBhbW91bnQgb2YgaXRlbXMuICBTbyBpZgogCSAqIGJvdGggaW5vZGVz
+IGFyZSBzdWJ2b2xzIGFuZCB3ZSBuZWVkIHRvIHVubGluayB0aGVtIHRoZW4gdGhhdCB3b3VsZAog
+CSAqIHJlcXVpcmUgNCBpdGVtIG1vZGlmaWNhdGlvbnMsIGJ1dCBpZiB0aGV5IGFyZSBib3RoIG5v
+cm1hbCBpbm9kZXMgaXQKLQkgKiB3b3VsZCByZXF1aXJlIDUgaXRlbSBtb2RpZmljYXRpb25zLCBz
+byB3ZSdsbCBhc3N1bWUgdGhlaXIgbm9ybWFsCisJICogd291bGQgcmVxdWlyZSA1IGl0ZW0gbW9k
+aWZpY2F0aW9ucywgc28gd2UnbGwgYXNzdW1lIHRoZXkgYXJlIG5vcm1hbAogCSAqIGlub2Rlcy4g
+IFNvIDUgKiAyIGlzIDEwLCBwbHVzIDEgZm9yIHRoZSBuZXcgbGluaywgc28gMTEgdG90YWwgaXRl
+bXMKIAkgKiBzaG91bGQgY292ZXIgdGhlIHdvcnN0IGNhc2UgbnVtYmVyIG9mIGl0ZW1zIHdlJ2xs
+IG1vZGlmeS4KIAkgKi8KIAl0cmFucyA9IGJ0cmZzX3N0YXJ0X3RyYW5zYWN0aW9uKHJvb3QsIDEx
+KTsKIAlpZiAoSVNfRVJSKHRyYW5zKSkgewotICAgICAgICAgICAgICAgIHJldCA9IFBUUl9FUlIo
+dHJhbnMpOwotICAgICAgICAgICAgICAgIGdvdG8gb3V0X25vdHJhbnM7Ci0gICAgICAgIH0KKwkJ
+cmV0ID0gUFRSX0VSUih0cmFucyk7CisJCWdvdG8gb3V0X25vdHJhbnM7CisJfQogCiAJaWYgKGRl
+c3QgIT0gcm9vdCkKIAkJYnRyZnNfcmVjb3JkX3Jvb3RfaW5fdHJhbnModHJhbnMsIGRlc3QpOwpA
+QCAtOTM5MSw2ICs5NjI5LDE2IEBAIHN0YXRpYyBpbnQgYnRyZnNfcmVuYW1lKHN0cnVjdCBpbm9k
+ZSAqb2xkX2Rpciwgc3RydWN0IGRlbnRyeSAqb2xkX2RlbnRyeSwKIAkJYnRyZnNfbG9nX25ld19u
+YW1lKHRyYW5zLCBvbGRfaW5vZGUsIG9sZF9kaXIsIHBhcmVudCk7CiAJCWJ0cmZzX2VuZF9sb2df
+dHJhbnMocm9vdCk7CiAJfQorCisJaWYgKGZsYWdzICYgUkVOQU1FX1dISVRFT1VUKSB7CisJCXJl
+dCA9IGJ0cmZzX3doaXRlb3V0X2Zvcl9yZW5hbWUodHJhbnMsIHJvb3QsIG9sZF9kaXIsCisJCQkJ
+CQlvbGRfZGVudHJ5KTsKKworCQlpZiAocmV0KSB7CisJCQlidHJmc19hYm9ydF90cmFuc2FjdGlv
+bih0cmFucywgcm9vdCwgcmV0KTsKKwkJCWdvdG8gb3V0X2ZhaWw7CisJCX0KKwl9CiBvdXRfZmFp
+bDoKIAlidHJmc19lbmRfdHJhbnNhY3Rpb24odHJhbnMsIHJvb3QpOwogb3V0X25vdHJhbnM6CkBA
+IC05NDA0LDEwICs5NjUyLDE0IEBAIHN0YXRpYyBpbnQgYnRyZnNfcmVuYW1lMihzdHJ1Y3QgaW5v
+ZGUgKm9sZF9kaXIsIHN0cnVjdCBkZW50cnkgKm9sZF9kZW50cnksCiAJCQkgc3RydWN0IGlub2Rl
+ICpuZXdfZGlyLCBzdHJ1Y3QgZGVudHJ5ICpuZXdfZGVudHJ5LAogCQkJIHVuc2lnbmVkIGludCBm
+bGFncykKIHsKLQlpZiAoZmxhZ3MgJiB+UkVOQU1FX05PUkVQTEFDRSkKKwlpZiAoZmxhZ3MgJiB+
+KFJFTkFNRV9OT1JFUExBQ0UgfCBSRU5BTUVfRVhDSEFOR0UgfCBSRU5BTUVfV0hJVEVPVVQpKQog
+CQlyZXR1cm4gLUVJTlZBTDsKIAotCXJldHVybiBidHJmc19yZW5hbWUob2xkX2Rpciwgb2xkX2Rl
+bnRyeSwgbmV3X2RpciwgbmV3X2RlbnRyeSk7CisJaWYgKGZsYWdzICYgUkVOQU1FX0VYQ0hBTkdF
+KQorCQlyZXR1cm4gYnRyZnNfcmVuYW1lX2V4Y2hhbmdlKG9sZF9kaXIsIG9sZF9kZW50cnksIG5l
+d19kaXIsCisJCQkJCSAgbmV3X2RlbnRyeSk7CisKKwlyZXR1cm4gYnRyZnNfcmVuYW1lKG9sZF9k
+aXIsIG9sZF9kZW50cnksIG5ld19kaXIsIG5ld19kZW50cnksIGZsYWdzKTsKIH0KIAogc3RhdGlj
+IHZvaWQgYnRyZnNfcnVuX2RlbGFsbG9jX3dvcmsoc3RydWN0IGJ0cmZzX3dvcmsgKndvcmspCg==
+--089e01030034539209052a686b7a--

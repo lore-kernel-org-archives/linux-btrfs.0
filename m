@@ -1,223 +1,78 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
 Received: from cn.fujitsu.com ([222.73.24.84]:7336 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1752122AbcA2FRX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 29 Jan 2016 00:17:23 -0500
+	id S1752282AbcA2FR1 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 29 Jan 2016 00:17:27 -0500
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
 Cc: dsterba@suse.cz, David Sterba <dsterba@suse.com>
-Subject: [PATCH v3 19/22] btrfs-progs: Introduce do_convert_v2 function
-Date: Fri, 29 Jan 2016 13:03:29 +0800
-Message-Id: <1454043812-7893-20-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH v3 20/22] btrfs-progs: Convert: Add support for rollback new convert behavior
+Date: Fri, 29 Jan 2016 13:03:30 +0800
+Message-Id: <1454043812-7893-21-git-send-email-quwenruo@cn.fujitsu.com>
 In-Reply-To: <1454043812-7893-1-git-send-email-quwenruo@cn.fujitsu.com>
 References: <1454043812-7893-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Introduce new function do_convert_v2() to do new convert.
+Add support to rollback new btrfs-convert.
+
+The support is quite easy unlike the new convert behavior, which in fact
+makes the rollback less restricted.
+
+The core is, rollback must support both old and new convert result.
+
+For old convert, all fs image extents can be covered by any chunk type.
+But any extents inside reserved range must be covered by chunk.
+For new convert, all fs image extents are covered by data chunk.
+
+Allowing any condition will just make another fail to pass.
+So make the convert condition a little less restricted to allow both can
+be converted.
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 Signed-off-by: David Sterba <dsterba@suse.com>
 ---
- btrfs-convert.c | 177 +++++++++++++++++++++++++++++++++++++++++++++++++++++++-
- 1 file changed, 176 insertions(+), 1 deletion(-)
+ btrfs-convert.c | 19 ++++++++++++++-----
+ 1 file changed, 14 insertions(+), 5 deletions(-)
 
 diff --git a/btrfs-convert.c b/btrfs-convert.c
-index ce6c59b..17ce8ac 100644
+index 17ce8ac..efa3b02 100644
 --- a/btrfs-convert.c
 +++ b/btrfs-convert.c
-@@ -3211,6 +3211,181 @@ static int convert_read_used_space(struct btrfs_convert_context *cctx)
- 	return ret;
- }
+@@ -3801,11 +3801,19 @@ static int do_rollback(const char *devname)
+ 		num_bytes = btrfs_file_extent_num_bytes(leaf, fi);
  
-+static int do_convert_v2(const char *devname, int datacsum, int packing,
-+		int noxattr, u32 nodesize, int copylabel, const char *fslabel,
-+		int progress, u64 features)
-+{
-+	int ret;
-+	int fd = -1;
-+	int is_btrfs = 0;
-+	u32 blocksize;
-+	u64 total_bytes;
-+	struct btrfs_root *root;
-+	struct btrfs_root *image_root;
-+	struct btrfs_convert_context cctx;
-+	struct btrfs_key key;
-+	char *subvol_name = NULL;
-+	struct task_ctx ctx;
-+	char features_buf[64];
-+	struct btrfs_mkfs_config mkfs_cfg;
-+
-+	init_convert_context(&cctx);
-+	ret = convert_open_fs(devname, &cctx);
-+	if (ret)
-+		goto fail;
-+	ret = convert_read_used_space(&cctx);
-+	if (ret)
-+		goto fail;
-+
-+	blocksize = cctx.blocksize;
-+	total_bytes = (u64)blocksize * (u64)cctx.block_count;
-+	if (blocksize < 4096) {
-+		fprintf(stderr, "block size is too small\n");
-+		goto fail;
-+	}
-+	if (btrfs_check_nodesize(nodesize, blocksize, features))
-+		goto fail;
-+	fd = open(devname, O_RDWR);
-+	if (fd < 0) {
-+		fprintf(stderr, "unable to open %s\n", devname);
-+		goto fail;
-+	}
-+	btrfs_parse_features_to_string(features_buf, features);
-+	if (features == BTRFS_MKFS_DEFAULT_FEATURES)
-+		strcat(features_buf, " (default)");
-+
-+	printf("create btrfs filesystem:\n");
-+	printf("\tblocksize: %u\n", blocksize);
-+	printf("\tnodesize:  %u\n", nodesize);
-+	printf("\tfeatures:  %s\n", features_buf);
-+
-+	mkfs_cfg.label = cctx.volume_name;
-+	mkfs_cfg.num_bytes = total_bytes;
-+	mkfs_cfg.nodesize = nodesize;
-+	mkfs_cfg.sectorsize = blocksize;
-+	mkfs_cfg.stripesize = blocksize;
-+	mkfs_cfg.features = features;
-+	/* New convert need these space */
-+	mkfs_cfg.fs_uuid = malloc(BTRFS_UUID_UNPARSED_SIZE);
-+	mkfs_cfg.chunk_uuid = malloc(BTRFS_UUID_UNPARSED_SIZE);
-+	*(mkfs_cfg.fs_uuid) = '\0';
-+	*(mkfs_cfg.chunk_uuid) = '\0';
-+
-+	ret = make_btrfs(fd, &mkfs_cfg, &cctx);
-+	if (ret) {
-+		fprintf(stderr, "unable to create initial ctree: %s\n",
-+			strerror(-ret));
-+		goto fail;
-+	}
-+
-+	root = open_ctree_fd(fd, devname, mkfs_cfg.super_bytenr,
-+			     OPEN_CTREE_WRITES);
-+	if (!root) {
-+		fprintf(stderr, "unable to open ctree\n");
-+		goto fail;
-+	}
-+	ret = init_btrfs_v2(&mkfs_cfg, root, &cctx, datacsum, packing, noxattr);
-+	if (ret) {
-+		fprintf(stderr, "unable to setup the root tree\n");
-+		goto fail;
-+	}
-+
-+	printf("creating %s image file.\n", cctx.convert_ops->name);
-+	ret = asprintf(&subvol_name, "%s_saved", cctx.convert_ops->name);
-+	if (ret < 0) {
-+		fprintf(stderr, "error allocating subvolume name: %s_saved\n",
-+			cctx.convert_ops->name);
-+		goto fail;
-+	}
-+	key.objectid = CONV_IMAGE_SUBVOL_OBJECTID;
-+	key.offset = (u64)-1;
-+	key.type = BTRFS_ROOT_ITEM_KEY;
-+	image_root = btrfs_read_fs_root(root->fs_info, &key);
-+	if (!image_root) {
-+		fprintf(stderr, "unable to create subvol\n");
-+		goto fail;
-+	}
-+	ret = create_image_v2(image_root, &mkfs_cfg, &cctx, fd,
-+			      mkfs_cfg.num_bytes, "image", datacsum);
-+	if (ret) {
-+		fprintf(stderr, "error during create_image %d\n", ret);
-+		goto fail;
-+	}
-+
-+	printf("creating btrfs metadata.\n");
-+	ctx.max_copy_inodes = (cctx.inodes_count - cctx.free_inodes_count);
-+	ctx.cur_copy_inodes = 0;
-+
-+	if (progress) {
-+		ctx.info = task_init(print_copied_inodes, after_copied_inodes,
-+				     &ctx);
-+		task_start(ctx.info);
-+	}
-+	ret = copy_inodes(&cctx, root, datacsum, packing, noxattr, &ctx);
-+	if (ret) {
-+		fprintf(stderr, "error during copy_inodes %d\n", ret);
-+		goto fail;
-+	}
-+	if (progress) {
-+		task_stop(ctx.info);
-+		task_deinit(ctx.info);
-+	}
-+
-+	image_root = link_subvol(root, subvol_name, CONV_IMAGE_SUBVOL_OBJECTID);
-+
-+	free(subvol_name);
-+
-+	memset(root->fs_info->super_copy->label, 0, BTRFS_LABEL_SIZE);
-+	if (copylabel == 1) {
-+		strncpy(root->fs_info->super_copy->label,
-+				cctx.volume_name, BTRFS_LABEL_SIZE);
-+		fprintf(stderr, "copy label '%s'\n",
-+				root->fs_info->super_copy->label);
-+	} else if (copylabel == -1) {
-+		strcpy(root->fs_info->super_copy->label, fslabel);
-+		fprintf(stderr, "set label to '%s'\n", fslabel);
-+	}
-+
-+	ret = close_ctree(root);
-+	if (ret) {
-+		fprintf(stderr, "error during close_ctree %d\n", ret);
-+		goto fail;
-+	}
-+	convert_close_fs(&cctx);
-+	clean_convert_context(&cctx);
-+
-+	/*
-+	 * If this step succeed, we get a mountable btrfs. Otherwise
-+	 * the source fs is left unchanged.
-+	 */
-+	ret = migrate_super_block(fd, mkfs_cfg.super_bytenr, blocksize);
-+	if (ret) {
-+		fprintf(stderr, "unable to migrate super block\n");
-+		goto fail;
-+	}
-+	is_btrfs = 1;
-+
-+	root = open_ctree_fd(fd, devname, 0, OPEN_CTREE_WRITES);
-+	if (!root) {
-+		fprintf(stderr, "unable to open ctree\n");
-+		goto fail;
-+	}
-+	close(fd);
-+
-+	printf("conversion complete.\n");
-+	return 0;
-+fail:
-+	clean_convert_context(&cctx);
-+	if (fd != -1)
-+		close(fd);
-+	if (is_btrfs)
-+		fprintf(stderr,
-+			"WARNING: an error occurred during chunk mapping fixup, filesystem mountable but not finalized\n");
-+	else
-+		fprintf(stderr, "conversion aborted\n");
-+	return -1;
-+}
-+
- static int do_convert(const char *devname, int datacsum, int packing, int noxattr,
- 		u32 nodesize, int copylabel, const char *fslabel, int progress,
- 		u64 features)
-@@ -3960,7 +4135,7 @@ int main(int argc, char *argv[])
- 	if (rollback) {
- 		ret = do_rollback(file);
- 	} else {
--		ret = do_convert(file, datacsum, packing, noxattr, nodesize,
-+		ret = do_convert_v2(file, datacsum, packing, noxattr, nodesize,
- 				copylabel, fslabel, progress, features);
+ 		cache1 = btrfs_lookup_block_group(root->fs_info, offset);
+-		cache2 =  btrfs_lookup_block_group(root->fs_info,
+-						   offset + num_bytes - 1);
+-		if (!cache1 || cache1 != cache2 ||
+-		    (!(cache1->flags & BTRFS_BLOCK_GROUP_SYSTEM) &&
+-		     !intersect_with_sb(offset, num_bytes)))
++		cache2 = btrfs_lookup_block_group(root->fs_info,
++						  offset + num_bytes - 1);
++		/*
++		 * Here we must take consideration of old and new convert
++		 * behavior.
++		 * For old convert case, sign, there is no consist chunk type
++		 * that will cover the extent. META/DATA/SYS are all possible.
++		 * Just ensure relocate one is in SYS chunk.
++		 * For new convert case, they are all covered by DATA chunk.
++		 *
++		 * So, there is not valid chunk type check for it now.
++		 */
++		if (cache1 != cache2)
+ 			break;
+ 
+ 		set_extent_bits(&io_tree, offset, offset + num_bytes - 1,
+@@ -3819,6 +3827,7 @@ next_extent:
+ 
+ 	if (offset < total_bytes) {
+ 		fprintf(stderr, "unable to build extent mapping\n");
++		fprintf(stderr, "converted filesystem after balance is unable to rollback\n");
+ 		goto fail;
  	}
- 	if (ret)
+ 
 -- 
 2.7.0
 

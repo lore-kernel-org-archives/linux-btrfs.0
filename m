@@ -1,39 +1,39 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:34115 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:31409 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1751867AbcA2FQm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 29 Jan 2016 00:16:42 -0500
+	id S1751116AbcA2FR7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 29 Jan 2016 00:17:59 -0500
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
 Cc: dsterba@suse.cz, David Sterba <dsterba@suse.com>
-Subject: [PATCH v3 09/22] btrfs-progs: Introduce function to initialize fs tree
-Date: Fri, 29 Jan 2016 13:03:19 +0800
-Message-Id: <1454043812-7893-10-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH v3 10/22] btrfs-progs: Introduce function to initialize csum tree
+Date: Fri, 29 Jan 2016 13:03:20 +0800
+Message-Id: <1454043812-7893-11-git-send-email-quwenruo@cn.fujitsu.com>
 In-Reply-To: <1454043812-7893-1-git-send-email-quwenruo@cn.fujitsu.com>
 References: <1454043812-7893-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Introudce new function, setup_temp_fs_tree(), to setup temporary fs tree
-for make_btrfs_v2().
+Introduce new function, setup_temp_csum_tree(), to setup temporary
+csum tree for make_btrfs_v2().
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 Signed-off-by: David Sterba <dsterba@suse.com>
 ---
- utils.c | 26 ++++++++++++++++++++++++++
- 1 file changed, 26 insertions(+)
+ utils.c | 25 +++++++++++++++++++++++++
+ 1 file changed, 25 insertions(+)
 
 diff --git a/utils.c b/utils.c
-index 4d29b1e..54085b0 100644
+index 54085b0..51daad9 100644
 --- a/utils.c
 +++ b/utils.c
-@@ -654,6 +654,28 @@ out:
+@@ -676,6 +676,28 @@ out:
  	return ret;
  }
  
-+static int setup_temp_fs_tree(int fd, struct btrfs_mkfs_config *cfg,
-+			      u64 fs_bytenr)
++static int setup_temp_csum_tree(int fd, struct btrfs_mkfs_config *cfg,
++				u64 csum_bytenr)
 +{
 +	struct extent_buffer *buf = NULL;
 +	int ret;
@@ -41,14 +41,14 @@ index 4d29b1e..54085b0 100644
 +	buf = malloc(sizeof(*buf) + cfg->nodesize);
 +	if (!buf)
 +		return -ENOMEM;
-+	ret = setup_temp_extent_buffer(buf, cfg, fs_bytenr,
-+				       BTRFS_FS_TREE_OBJECTID);
++	ret = setup_temp_extent_buffer(buf, cfg, csum_bytenr,
++				       BTRFS_CSUM_TREE_OBJECTID);
 +	if (ret < 0)
 +		goto out;
 +	/*
-+	 * Temporary fs tree is completely empty.
++	 * Temporary csum tree is completely empty.
 +	 */
-+	ret = write_temp_extent_buffer(fd, buf, fs_bytenr);
++	ret = write_temp_extent_buffer(fd, buf, csum_bytenr);
 +out:
 +	free(buf);
 +	return ret;
@@ -57,17 +57,16 @@ index 4d29b1e..54085b0 100644
  /*
   * Improved version of make_btrfs().
   *
-@@ -750,6 +772,10 @@ static int make_convert_btrfs(int fd, struct btrfs_mkfs_config *cfg,
+@@ -775,6 +797,9 @@ static int make_convert_btrfs(int fd, struct btrfs_mkfs_config *cfg,
+ 	if (ret < 0)
  		goto out;
- 	ret = setup_temp_dev_tree(fd, cfg, sys_chunk_start, meta_chunk_start,
- 				  dev_bytenr);
+ 	ret = setup_temp_fs_tree(fd, cfg, fs_bytenr);
 +	if (ret < 0)
 +		goto out;
-+	ret = setup_temp_fs_tree(fd, cfg, fs_bytenr);
-+
++	ret = setup_temp_csum_tree(fd, cfg, csum_bytenr);
+ 
  out:
  	return ret;
- }
 -- 
 2.7.0
 

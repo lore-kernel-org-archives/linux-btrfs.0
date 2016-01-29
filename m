@@ -1,83 +1,128 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f179.google.com ([209.85.213.179]:34173 "EHLO
-	mail-ig0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751215AbcA1X7e (ORCPT
+Received: from mail-ig0-f174.google.com ([209.85.213.174]:37220 "EHLO
+	mail-ig0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751211AbcA2MQO (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 28 Jan 2016 18:59:34 -0500
-Received: by mail-ig0-f179.google.com with SMTP id ik10so25478877igb.1
-        for <linux-btrfs@vger.kernel.org>; Thu, 28 Jan 2016 15:59:34 -0800 (PST)
-MIME-Version: 1.0
-In-Reply-To: <CA+-0u-bOPHs_cyci=_RXb3r=qVVe2jSh9sB1RE+tGbpaTY0ZfA@mail.gmail.com>
-References: <CA+-0u-YhEBy7jDoJZeZG4hbkj+oxmTJOcxmnMCueEb6+XTZ2Sg@mail.gmail.com>
-	<CAJCQCtSsqE5BLmHtjJb9dPbHkdem2XauFE-oe=SJtVHB2_47RA@mail.gmail.com>
-	<CA+-0u-bOPHs_cyci=_RXb3r=qVVe2jSh9sB1RE+tGbpaTY0ZfA@mail.gmail.com>
-Date: Thu, 28 Jan 2016 16:59:33 -0700
-Message-ID: <CAJCQCtQEt5CEp=v=GiV3YJ4BCSk7AVDLrDnmsEm2+DMJR_+RPA@mail.gmail.com>
-Subject: Re: btrfs subvolume list -o does not behave as expected
-From: Chris Murphy <lists@colorremedies.com>
-To: "Daniel E. Shub" <daniel.e.shub@gmail.com>
-Cc: Chris Murphy <lists@colorremedies.com>,
+	Fri, 29 Jan 2016 07:16:14 -0500
+Received: by mail-ig0-f174.google.com with SMTP id h5so32354307igh.0
+        for <linux-btrfs@vger.kernel.org>; Fri, 29 Jan 2016 04:16:14 -0800 (PST)
+Subject: Re: RAID1 disk upgrade method
+To: Chris Murphy <lists@colorremedies.com>
+References: <20160122034538.GA25196@coach.student.rit.edu>
+ <pan$ab5ec$b21ab56e$f67a3d97$7303502@cox.net>
+ <20160123214127.GA601@fox.wireless.rit.edu>
+ <CAJCQCtRLAoN+w_hy=jxwtCPkJPo_x5OGOshLr4aQ0=ZX3u91xw@mail.gmail.com>
+ <20160127224549.GA4891@fox.rh.rit.edu> <20160127235528.GA5498@fox.rh.rit.edu>
+ <56AA0A0A.1060807@gmail.com> <20160128153756.GA19617@fox.rh.rit.edu>
+ <CAJCQCtRQZOM3cYiG_KyJYWRS-OR7Q+xMm6o1vBD6BTy=Eb2MUw@mail.gmail.com>
+ <20160128184736.GB1167@fox.rh.rit.edu> <56AA6E17.3060104@gmail.com>
+ <CAJCQCtTJ75C2vz0b6v_=qzV304FyhR3q5CdPDqCsRD8U2kspMw@mail.gmail.com>
+ <56AA70DC.1000201@gmail.com>
+ <CAJCQCtR=+H94a=6H4=RPSpFb8GWN1g26NMhrwat9bgLWHYuZiA@mail.gmail.com>
+ <56AA7D94.4030706@gmail.com>
+ <CAJCQCtRd70PW6h_peaAmM2UD3xhPW8JX3MMnQK4eH56ybxbfwg@mail.gmail.com>
+Cc: Sean Greenslade <sean@seangreenslade.com>,
         Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Message-ID: <56AB57B9.6090801@gmail.com>
+Date: Fri, 29 Jan 2016 07:14:49 -0500
+MIME-Version: 1.0
+In-Reply-To: <CAJCQCtRd70PW6h_peaAmM2UD3xhPW8JX3MMnQK4eH56ybxbfwg@mail.gmail.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Jan 28, 2016 at 3:08 PM, Daniel E. Shub <daniel.e.shub@gmail.com> wrote:
-> On Wed, Jan 27, 2016 at 6:33 PM, Chris Murphy <lists@colorremedies.com> wrote:
->> On Wed, Jan 27, 2016 at 2:09 PM, Daniel E. Shub <daniel.e.shub@gmail.com> wrote:
->>> I am experiencing what I think might be a bug with: btrfs subvolume list -o
->>>
->>> I reported it at https://bugzilla.kernel.org/show_bug.cgi?id=109861,
->>> but have read that bugs should be sent to the mailing list also.
->>>
->>> My root file system is on a btrfs partition and I have created btrfs
->>> subvolumes in /chroot and /var/lib. The following behavior seems
->>> incorrect
->>>
->>> # btrfs subvolume list -o /chroot
->>> ID 593 gen 6616 top level 5 path chroot/base-devel/root
->>> ID 594 gen 6618 top level 5 path chroot/multilib-devel/root
->>> ID 595 gen 6620 top level 5 path chroot/base/root
->>> ID 597 gen 6624 top level 5 path chroot/twm/root
->>> ID 599 gen 6628 top level 5 path chroot/lxde/root
->>> ID 601 gen 6655 top level 5 path chroot/wheezy/root
->>> ID 602 gen 6684 top level 5 path chroot/sid/root
->>> ID 603 gen 6862 top level 5 path var/lib/machines
->>>
->>> The man page for btrfs subvolume says
->>>   -o print only subvolumes below specified <path>.
->>>
->>> so I expected to only see the subvolumes below /chroot and to not see
->>> /var/lib/machines/.
->>>
->>> I am running Arch Linux with the 4.2.5 kernel and btrfs-progs v4.3.1.
+On 2016-01-28 18:01, Chris Murphy wrote:
+> On Thu, Jan 28, 2016 at 1:44 PM, Austin S. Hemmelgarn
+> <ahferroin7@gmail.com> wrote:
+>>> Interesting, I figured a umount should include telling the drive to
+>>> flush the write cache; but maybe not, if the drive or connection (i.e.
+>>> USB enclosure) doesn't support FUA?
 >>
->> I agree that it's confusing because of the word <path>. It may
->> actually be a bug in documentation setting up the wrong expectation.
->>
->> If chroot were a subvolume, this would work as you expect. Since
->> chroot is a directory, in effect it's a request to show all subvolumes
->> on the fs-tree that this directory is on, i.e. subvolume id 5, which
->> would be all subvolumes. Whereas if chroot were a subvolume, the -o
->> would limit results to subvolumes having a top level at or below the
->> subvolume ID of chroot.
->>
->> I think.
->>
->>
->> --
->> Chris Murphy
+>> It's supposed to send an FUA, but depending on the hardware, this may either
+>> disappear on the way to the disk, or more likely just be a no-op.  A lot of
+>> cheap older HDD's just ignore it, and I've seen a lot of USB enclosures that
+>> just eat the command and don't pass anything to the disk, so sometimes you
+>> have to get creative to actually flush the cache.  It's worth noting that
+>> most such disks are not safe to use BTRFS on anyway though, because FUA is
+>> part of what's used to force write barriers.
 >
-> It seems like it would be much clearer if the -o option took a
-> subvolume id instead of a path.
+> Err. Really?
 >
-> The reason I was trying to get the list of subvolumes below /chroot/
-> was I want to delete the chroot directory. How can I do that?
+> [    0.833452] scsi 0:0:0:0: Direct-Access     ATA      Samsung SSD
+> 840  DB6Q PQ: 0 ANSI: 5
+> [    0.835810] ata3.00: ACPI cmd ef/10:03:00:00:00:a0 (SET FEATURES)
+> filtered out
+> [    0.835827] ata3.00: configured for UDMA/100
+> [    0.838010] usb 1-1: new high-speed USB device number 2 using ehci-pci
+> [    0.839785] sd 0:0:0:0: Attached scsi generic sg0 type 0
+> [    0.839810] sd 0:0:0:0: [sda] 488397168 512-byte logical blocks:
+> (250 GB/233 GiB)
+> [    0.840381] sd 0:0:0:0: [sda] Write Protect is off
+> [    0.840393] sd 0:0:0:0: [sda] Mode Sense: 00 3a 00 00
+> [    0.840634] sd 0:0:0:0: [sda] Write cache: enabled, read cache:
+> enabled, doesn't support DPO or FUA
+>
+> This is not a cheap or old HDD. It's not in an enclosure. I get the
+> same message for a new Toshiba 1TiB drive I just stuck in a new Intel
+> NUC. So now what?
+Well, depending on how the kernel talks to the device, there are ways 
+around this, but most of them are slow (like waiting for the write cache 
+to drain).  Just like SCT ERC, most drives marketed for 'desktop' usage 
+don't actually support FUA, but they report this fact correctly, so the 
+kernel can often work around it.  Most of the older drives that have 
+issues actually report that they support it, but just treat it like a 
+no-op.  Last I checked, Seagate's 'NAS' drives and whatever they've 
+re-branded their other enterprise line as, as well as WD's 'Red' drives 
+support both SCT ERC and FUA, but I don't know about any other brands 
+(most of the Hitachi, Toshiba, and Samsung drives I've seen do not 
+support FUA).  This is in-fact part of the reason I'm saving up to get 
+good NAS rated drives for my home server, because those almost always 
+support both SCT ERC and FUA.
 
-Do you want to delete all of the subvolumes also? If so, those have to
-be deleted first, and right now there is no recursive delete.
-
-
-
--- 
-Chris Murphy
+That said, you may want to test the performance difference with the 
+write cache disabled, depending on how the kernel is trying to emulate 
+write barriers, it may actually speed things up.
+>
+>
+>>> If I don't, my drives make a loud clank, and the smart attribute 192
+>>> Power-off Retract Count, goes up by one. This never happens on a
+>>> normal power off. So some message is being sent to the drive at
+>>> restart/poweroff that's different than just pulling the drive, even if
+>>> that message isn't the same thing as whatever hdparm -Y sends.
+>>>
+>> I'm not saying it's a good idea to not tell the drive to spin down, just
+>> that it won't damage most modern drives as long as they're kept level while
+>> they spin down and you don't do it all the time.
+>
+> Gotcha.
+>
+>
+>>
+>> Almost every modern hard disk uses a voice-coil actuator for the heads which
+>> gets balanced such that having no power to the coil causes the forces from
+>> the spinning disks to park the heads, so pulling power will (more than 99.9%
+>> of the time) not cause a head cash like a lot of older servo based drives as
+>> long as you keep the drive level.  The clank you hear is the end of the head
+>> armature opposite the heads hitting the mechanical stop that's present to
+>> prevent them from completely decoupling from the disk.  This gets accounted
+>> in SMART attributes because over extremely long times (usually tens
+>> thousands of cycles), this will eventually wear out that mechanical stop,
+>> and things will stop working, so it technically is a failure condition, but
+>> you're almost certain to hit some other failure condition before this
+>> becomes an issue.
+>
+> OK.
+>
+>>
+>> The interesting thing is that some drives actually _rely_ on this behavior
+>> to park the heads (I've seen a lot of Seagate desktop drives that appear to
+>> do this, although they use a rubber stopper instead of metal or plastic, so
+>> it tends to last longer).
+>
+> Cute.
+>
+Yeah, I've used a lot of Seagate drives that appear to do this, and 
+they've always failed in some way other than this failing.  It is kind 
+of nice though that it means you get clearly audible confirmation that 
+the drive has spun down.

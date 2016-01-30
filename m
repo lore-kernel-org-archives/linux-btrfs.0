@@ -1,21 +1,23 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.136]:37075 "EHLO mail.kernel.org"
+Received: from mail.kernel.org ([198.145.29.136]:43197 "EHLO mail.kernel.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751321AbcA0KlW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 27 Jan 2016 05:41:22 -0500
+	id S1753168AbcA3UOn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 30 Jan 2016 15:14:43 -0500
 Received: from mail.kernel.org (localhost [127.0.0.1])
-	by mail.kernel.org (Postfix) with ESMTP id 00A2420274
-	for <linux-btrfs@vger.kernel.org>; Wed, 27 Jan 2016 10:41:21 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 40B2820361
+	for <linux-btrfs@vger.kernel.org>; Sat, 30 Jan 2016 20:14:42 +0000 (UTC)
 Received: from debian3.lan (bl8-199-62.dsl.telepac.pt [85.241.199.62])
 	(using TLSv1.2 with cipher AES128-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPSA id 690F020279
-	for <linux-btrfs@vger.kernel.org>; Wed, 27 Jan 2016 10:41:19 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTPSA id 79C4A2034E
+	for <linux-btrfs@vger.kernel.org>; Sat, 30 Jan 2016 20:14:40 +0000 (UTC)
 From: fdmanana@kernel.org
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] Btrfs: fix invalid page accesses in extent_same (dedup) ioctl
-Date: Wed, 27 Jan 2016 10:41:13 +0000
-Message-Id: <1453891273-22778-1-git-send-email-fdmanana@kernel.org>
+Subject: [PATCH v2] Btrfs: fix invalid page accesses in extent_same (dedup) ioctl
+Date: Sat, 30 Jan 2016 18:20:49 +0000
+Message-Id: <1454178049-9344-1-git-send-email-fdmanana@kernel.org>
+In-Reply-To: <1453891273-22778-1-git-send-email-fdmanana@kernel.org>
+References: <1453891273-22778-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
@@ -86,14 +88,17 @@ entire locking process until no overlapping ordered extents are found.
 Cc: stable@vger.kernel.org   # 4.2+
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/ioctl.c | 98 +++++++++++++++++++++++++++++++++++++++++++++++---------
- 1 file changed, 82 insertions(+), 16 deletions(-)
+
+V2: Updated a comment for correctness. No code changes.
+
+ fs/btrfs/ioctl.c | 90 +++++++++++++++++++++++++++++++++++++++++++++++---------
+ 1 file changed, 76 insertions(+), 14 deletions(-)
 
 diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index e392dd6..dd39546 100644
+index 83c9ad3..c3c5def 100644
 --- a/fs/btrfs/ioctl.c
 +++ b/fs/btrfs/ioctl.c
-@@ -2807,7 +2807,6 @@ static struct page *extent_same_get_page(struct inode *inode, pgoff_t index)
+@@ -2811,7 +2811,6 @@ static struct page *extent_same_get_page(struct inode *inode, pgoff_t index)
  			return NULL;
  		}
  	}
@@ -101,7 +106,7 @@ index e392dd6..dd39546 100644
  
  	return page;
  }
-@@ -2826,10 +2825,17 @@ static int gather_extent_pages(struct inode *inode, struct page **pages,
+@@ -2830,10 +2829,17 @@ static int gather_extent_pages(struct inode *inode, struct page **pages,
  	return 0;
  }
  
@@ -122,7 +127,7 @@ index e392dd6..dd39546 100644
  	while (1) {
  		struct btrfs_ordered_extent *ordered;
  		lock_extent(&BTRFS_I(inode)->io_tree, off, off + len - 1);
-@@ -2847,8 +2853,11 @@ static inline void lock_extent_range(struct inode *inode, u64 off, u64 len)
+@@ -2851,8 +2857,11 @@ static inline void lock_extent_range(struct inode *inode, u64 off, u64 len)
  		unlock_extent(&BTRFS_I(inode)->io_tree, off, off + len - 1);
  		if (ordered)
  			btrfs_put_ordered_extent(ordered);
@@ -134,7 +139,7 @@ index e392dd6..dd39546 100644
  }
  
  static void btrfs_double_inode_unlock(struct inode *inode1, struct inode *inode2)
-@@ -2873,15 +2882,24 @@ static void btrfs_double_extent_unlock(struct inode *inode1, u64 loff1,
+@@ -2877,15 +2886,24 @@ static void btrfs_double_extent_unlock(struct inode *inode1, u64 loff1,
  	unlock_extent(&BTRFS_I(inode2)->io_tree, loff2, loff2 + len - 1);
  }
  
@@ -163,7 +168,7 @@ index e392dd6..dd39546 100644
  }
  
  struct cmp_pages {
-@@ -2897,11 +2915,15 @@ static void btrfs_cmp_data_free(struct cmp_pages *cmp)
+@@ -2901,11 +2919,15 @@ static void btrfs_cmp_data_free(struct cmp_pages *cmp)
  
  	for (i = 0; i < cmp->num_pages; i++) {
  		pg = cmp->src_pages[i];
@@ -181,7 +186,7 @@ index e392dd6..dd39546 100644
  	}
  	kfree(cmp->src_pages);
  	kfree(cmp->dst_pages);
-@@ -2962,6 +2984,8 @@ static int btrfs_cmp_data(struct inode *src, u64 loff, struct inode *dst,
+@@ -2966,6 +2988,8 @@ static int btrfs_cmp_data(struct inode *src, u64 loff, struct inode *dst,
  
  		src_page = cmp->src_pages[i];
  		dst_page = cmp->dst_pages[i];
@@ -190,7 +195,7 @@ index e392dd6..dd39546 100644
  
  		addr = kmap_atomic(src_page);
  		dst_addr = kmap_atomic(dst_page);
-@@ -3074,14 +3098,50 @@ static int btrfs_extent_same(struct inode *src, u64 loff, u64 olen,
+@@ -3078,14 +3102,46 @@ static int btrfs_extent_same(struct inode *src, u64 loff, u64 olen,
  		goto out_unlock;
  	}
  
@@ -199,27 +204,21 @@ index e392dd6..dd39546 100644
  	if (ret)
  		goto out_unlock;
  
--	if (same_inode)
+ 	if (same_inode)
 -		lock_extent_range(src, same_lock_start, same_lock_len);
--	else
--		btrfs_double_extent_lock(src, loff, dst, dst_loff, len);
-+	if (same_inode) {
 +		ret = lock_extent_range(src, same_lock_start, same_lock_len,
 +					false);
-+	} else {
+ 	else
+-		btrfs_double_extent_lock(src, loff, dst, dst_loff, len);
 +		ret = btrfs_double_extent_lock(src, loff, dst, dst_loff, len,
 +					       false);
-+	}
 +	/*
-+	 * If one of the inodes had ordered extents in the respective range, we
-+	 * unlocked its pages, unlocked its range in the io tree and waited for
-+	 * the ordered extents to complete. We can not just attempt to re-lock
-+	 * the pages and range for that inode only because we could deadlock
-+	 * with a concurrent extent_same() call that uses the same inodes but
-+	 * with the source and destination roles inverted. So we must unlock the
-+	 * pages and ranges for both inodes and retry everything again.
-+	 * For the sake of simplicity and convenience we do the same for the
-+	 * case where the source and destination inodes are the same.
++	 * If one of the inodes has dirty pages in the respective range or
++	 * ordered extents, we need to flush dellaloc and wait for all ordered
++	 * extents in the range. We must unlock the pages and the ranges in the
++	 * io trees to avoid deadlocks when flushing delalloc (requires locking
++	 * pages) and when waiting for ordered extents to complete (they require
++	 * range locking).
 +	 */
 +	if (ret == -EAGAIN) {
 +		/*
@@ -245,7 +244,7 @@ index e392dd6..dd39546 100644
  
  	/* pass original length for comparison so we stay within i_size */
  	ret = btrfs_cmp_data(src, loff, dst, dst_loff, olen, &cmp);
-@@ -3903,9 +3963,15 @@ static noinline long btrfs_ioctl_clone(struct file *file, unsigned long srcfd,
+@@ -3907,9 +3963,15 @@ static noinline long btrfs_ioctl_clone(struct file *file, unsigned long srcfd,
  		u64 lock_start = min_t(u64, off, destoff);
  		u64 lock_len = max_t(u64, off, destoff) + len - lock_start;
  

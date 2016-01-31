@@ -1,94 +1,78 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f179.google.com ([209.85.223.179]:36666 "EHLO
-	mail-io0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753256AbcAaBJj (ORCPT
+Received: from mail-io0-f175.google.com ([209.85.223.175]:36601 "EHLO
+	mail-io0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932156AbcAaBmH (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 30 Jan 2016 20:09:39 -0500
-Received: by mail-io0-f179.google.com with SMTP id g73so125573482ioe.3
-        for <linux-btrfs@vger.kernel.org>; Sat, 30 Jan 2016 17:09:38 -0800 (PST)
+	Sat, 30 Jan 2016 20:42:07 -0500
+Received: by mail-io0-f175.google.com with SMTP id g73so125886427ioe.3
+        for <linux-btrfs@vger.kernel.org>; Sat, 30 Jan 2016 17:42:05 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <CAKbQEqE0w5fewMw9YwooFXaEVT2ecfGf6ZCVvUmQg8SjGx2Zsw@mail.gmail.com>
+In-Reply-To: <CAKbQEqH5twwezxYicthcCb6=dWgW3Hy-s6fLjH_BQETk4i0ikQ@mail.gmail.com>
 References: <CAKbQEqE0w5fewMw9YwooFXaEVT2ecfGf6ZCVvUmQg8SjGx2Zsw@mail.gmail.com>
-Date: Sat, 30 Jan 2016 18:09:38 -0700
-Message-ID: <CAJCQCtS8TftFSzepEPGb8R+ZD=E_VETCZcd6HGmvkKGe_i9o7w@mail.gmail.com>
+	<CAPmG0jbLVVRJVoqehWxuNncF6oLydazo5-YO=3fLAbrksv2sJg@mail.gmail.com>
+	<CAKbQEqH5twwezxYicthcCb6=dWgW3Hy-s6fLjH_BQETk4i0ikQ@mail.gmail.com>
+Date: Sat, 30 Jan 2016 18:42:05 -0700
+Message-ID: <CAJCQCtRw1VqaES4UCbaSNqCRXV5puA5gssxNSxsiUBKxa13dPQ@mail.gmail.com>
 Subject: Re: "WARNING: device 0 not present" during scrub?
 From: Chris Murphy <lists@colorremedies.com>
 To: Christian Pernegger <pernegger@gmail.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, Jan 30, 2016 at 4:59 AM, Christian Pernegger
+On Sat, Jan 30, 2016 at 2:19 PM, Christian Pernegger
 <pernegger@gmail.com> wrote:
 
-> parent transid verify failed on 4693971959808 wanted 14495 found 14497
-> parent transid verify failed on 4693971959808 wanted 14495 found 14497
-> parent transid verify failed on 4693971959808 wanted 14495 found 14497
-> parent transid verify failed on 4693971959808 wanted 14495 found 14497
-
-Well it's not that far off so mounting with -o recovery should work.
-
-
-> Ignoring transid failure
-> print-tree.c:1074: btrfs_print_tree: Assertion failed.
-> btrfs-debug-tree[0x410489]
-> btrfs-debug-tree[0x411dbf]
-> btrfs-debug-tree[0x402adb]
-> /lib/x86_64-linux-gnu/libc.so.6(__libc_start_main+0xf5)[0x7f925b1ccb45]
-> btrfs-debug-tree[0x402d85]
-
-It could be a bug, and if so there's a good chance it's fixed in newer
-versions of btrfs-progs.
-
-
-
 >
-> Ouch.
+>> An an obvious advice is to use a 4.4 kernel and tools. Debian 'stable' doesn't mean
+>> that every piece of the kernel and tooling fits that 'stamp'. [...] Maybe you could switch
+>> to a rolling release linux distro or just update the debian kernel.
 >
-> This is on a 1-month-old Debian stable (jessie) install and yes, I
-> know that means the kernel and btrfs-progs are ancient but I'd still
-> very much appreciate some help. It's a backup box, so the data isn't
-> critical, but of course I need it stable in the long run.
+> Using Debian stable usally means that once something is set up and
+> works it keeps working until the hardware dies with little to no user
+> interaction. For someting that sits in a corner and pulls in backups
+> that suits me just fine. If there's a specific reason to update the
+> kernel and btrfs-progs, it's easily done of course, but "let's hope it
+> has gone away with the newer version" doesn't inspire me with
+> confidence on its own.
 
-Sorry, you need it to be stable but you're using an EOL unsupported
-kernel? That just doesn't square.
+It maybe be stable for Debian but is Debian explicitly supporting
+Btrfs with this release? I don't think they are. In which case, it's
+at the least the wrong kernel version. The only distro explicitly
+supporting Btrfs is openSUSE. So if you need Btrfs in particular to be
+stable, and you don't want to have to think quite as much about
+kernels, you could consider that.
 
-It's either a hardware problem (there are many softreset message, and
-possibly more than one ata instance than you have attached devices
-for, and no Btrfs errors), or it's a software bug. Either way you
-kinda need to try something newer to see if the problem has been since
-been fixed, because it's in the realm of 10,000 changes (probably
-more) since that kernel version you're using. There might be 4 people
-on the list who'd maybe recognize this, and say, yes in fact that was
-fixed in a newer kernel. So really no matter what you just have to
-upgrade.
+But absolutely, of course we hope the problem is gone with the newer
+version, *that's how file system development works.* If it hasn't, and
+you reproduce the problem with kernel 4.4, then that means you've
+found a new bug that needs to be fixed. And first, it'd only possibly
+get fixed in 4.5 or newer before being backported to older kernels.
+That's how it goes.
 
-
-> Is it
-> possible to fix this and prevent it from happening again? (How) can I
-> verify if the data is still good?
-
-The user space program crashed either due to a bug or it ran out of
-memory. Maybe increase swap size, sometimes that helps btrfs check and
-btrfs-debug-tree go farther without problems.
-
-Try mounting with -o recovery. If that doesn't work try -o
-recovery,ro, and if that doesn't work then try btrfs check (without
-repair), using kernel and progs no older than 4.1.15. It's middle aged
-in Btrfs terms, but at least that's a longterm currently maintained
-kernel.
+I can see how it might seem like it's a reasonable question to just
+ask first, but it really isn't. There's just so much development
+happening right now, a developer is not in a great position to think
+that far back for specific problems and whether yours might be one of
+them, and in what kernel version it was fixed. *shrug* just doesn't
+work that way, that's why there are changelogs for every sub kernel
+version.
 
 
-  If the verdict is that I have to
-> re-roll the box I wouldn't go with btrfs again at this time, but still
-> be willing to help with debugging first, if anyone is interested.
+>> But the more fundamental question is why you use btrfs? What features
+>> do you need that ext4 or xfs or reiserfs don't have?
+>
+> Data checksumming. I don't mind a bit flipping here or there in old
+> backups / archives but I'd have liked to know if something went bad
+> and which files were affected. Compression. Dedup that works on mortal
+> hardware.
 
-I can almost guarantee that if -o recovery does not work, no one will
-want to suggest anything more aggressive if you also aren't willing to
-upgrade kernel and tools to something much newer. Really, if you need
-Btrfs to be stable, you need to use a distro that makes it easy for
-you to get the latest bug fixes, not just features.
+Have you checked out ZFS on Linux? That might fit your use case better
+because it has the features you're asking for, but at least the ZFS
+portion is older and considered more stable.
+
+
 
 -- 
 Chris Murphy

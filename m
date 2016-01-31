@@ -1,96 +1,94 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lb0-f177.google.com ([209.85.217.177]:34748 "EHLO
-	mail-lb0-f177.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753709AbcA3VTp (ORCPT
+Received: from mail-io0-f179.google.com ([209.85.223.179]:36666 "EHLO
+	mail-io0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753256AbcAaBJj (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 30 Jan 2016 16:19:45 -0500
-Received: by mail-lb0-f177.google.com with SMTP id cl12so57218969lbc.1
-        for <linux-btrfs@vger.kernel.org>; Sat, 30 Jan 2016 13:19:44 -0800 (PST)
+	Sat, 30 Jan 2016 20:09:39 -0500
+Received: by mail-io0-f179.google.com with SMTP id g73so125573482ioe.3
+        for <linux-btrfs@vger.kernel.org>; Sat, 30 Jan 2016 17:09:38 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <CAPmG0jbLVVRJVoqehWxuNncF6oLydazo5-YO=3fLAbrksv2sJg@mail.gmail.com>
+In-Reply-To: <CAKbQEqE0w5fewMw9YwooFXaEVT2ecfGf6ZCVvUmQg8SjGx2Zsw@mail.gmail.com>
 References: <CAKbQEqE0w5fewMw9YwooFXaEVT2ecfGf6ZCVvUmQg8SjGx2Zsw@mail.gmail.com>
- <CAPmG0jbLVVRJVoqehWxuNncF6oLydazo5-YO=3fLAbrksv2sJg@mail.gmail.com>
-From: Christian Pernegger <pernegger@gmail.com>
-Date: Sat, 30 Jan 2016 22:19:04 +0100
-Message-ID: <CAKbQEqH5twwezxYicthcCb6=dWgW3Hy-s6fLjH_BQETk4i0ikQ@mail.gmail.com>
+Date: Sat, 30 Jan 2016 18:09:38 -0700
+Message-ID: <CAJCQCtS8TftFSzepEPGb8R+ZD=E_VETCZcd6HGmvkKGe_i9o7w@mail.gmail.com>
 Subject: Re: "WARNING: device 0 not present" during scrub?
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
+From: Chris Murphy <lists@colorremedies.com>
+To: Christian Pernegger <pernegger@gmail.com>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 30 January 2016 at 21:10, Henk Slager <eye1tm@gmail.com> wrote:
-> Can you mount the fs (readonly)?
+On Sat, Jan 30, 2016 at 4:59 AM, Christian Pernegger
+<pernegger@gmail.com> wrote:
 
-No idea, it's still mounted (rw even), aside from the scrub failing
-and debug-tree crashing I wouldn't know anything was amiss. I was kind
-of reluctant to shut the machine down lest it then wouldn't come up at
-all.
+> parent transid verify failed on 4693971959808 wanted 14495 found 14497
+> parent transid verify failed on 4693971959808 wanted 14495 found 14497
+> parent transid verify failed on 4693971959808 wanted 14495 found 14497
+> parent transid verify failed on 4693971959808 wanted 14495 found 14497
 
->  unmount and run a   btrfs check -p /dev/mapper/sda3_crypt
+Well it's not that far off so mounting with -o recovery should work.
 
-That would mean shutting it down and booting from a rescue image on
-USB (any suggestions for something with a recent kernel and progs?).
-That's fine of course, if there's nothing more to be gleaned from the
-running system.
 
-> I think there is a relation between the many ata2 messages and this
-> scrub failure.
+> Ignoring transid failure
+> print-tree.c:1074: btrfs_print_tree: Assertion failed.
+> btrfs-debug-tree[0x410489]
+> btrfs-debug-tree[0x411dbf]
+> btrfs-debug-tree[0x402adb]
+> /lib/x86_64-linux-gnu/libc.so.6(__libc_start_main+0xf5)[0x7f925b1ccb45]
+> btrfs-debug-tree[0x402d85]
 
-There's exactly one of these errors on every resume from suspend, I'd
-assumed it's just the disk being slow to wake up. Even if they aren't
-benign, I made sure beforehand that the box did not sleep during the
-scrub and according to the logs it didn't.
-Suspend-resume and/or systemd are still likely culprits of course.
-
-> You can use brute-force rsync -c (and more, see manpage) to validate your
-> data, assuming your sourcedata isn't on btrfs.
-
-The data that I can verify, i.e. where the source machines still have
-the version from the current backup, checks out.
-
-> A workaround might be to disable PM for the system,
-
-The system's supposed to wake up once daily (nightly), pull in
-rdiff-backups from a few others and go back to sleep 20 min later.
-Keeping it awake 24/7 is a no-go noise and cost-wise. (For testing /
-debugging, sure, just not in the long run.)
-
-> An an obvious advice is to use a 4.4 kernel and tools. Debian 'stable' doesn't mean
-> that every piece of the kernel and tooling fits that 'stamp'. [...] Maybe you could switch
-> to a rolling release linux distro or just update the debian kernel.
-
-Using Debian stable usally means that once something is set up and
-works it keeps working until the hardware dies with little to no user
-interaction. For someting that sits in a corner and pulls in backups
-that suits me just fine. If there's a specific reason to update the
-kernel and btrfs-progs, it's easily done of course, but "let's hope it
-has gone away with the newer version" doesn't inspire me with
-confidence on its own.
-
-> But the more fundamental question is why you use btrfs? What features
-> do you need that ext4 or xfs or reiserfs don't have?
-
-Data checksumming. I don't mind a bit flipping here or there in old
-backups / archives but I'd have liked to know if something went bad
-and which files were affected. Compression. Dedup that works on mortal
-hardware. To a lesser degree, subvolumes.
-Also I wanted to get familiar with the next big thing in Linux file
-systems. :-) My bigger boxes use md + dm-crypt + lvm + manual
-checksumming and the moment I can replace that (or part of it) with
-something integrated, I will. Once the resilience and fault tolerance
-is there. (The other day md-raid10 was so unfazed by what must have
-been a disk with a half-dead controller that it took me half a day to
-find out which one it was ...)
-I was fully aware that I might run into trouble, I just didn't expect
-it to take less than a month and/or happen without provocation.
+It could be a bug, and if so there's a good chance it's fixed in newer
+versions of btrfs-progs.
 
 
 
-The current install is expendable, even though it irks me to have to
-redo it (I didn't backup that, wanted to get it just right first), but
-I'd really like to find and fix the problem before I do, otherwise I
-might be back to square one in a month or so ...
+>
+> Ouch.
+>
+> This is on a 1-month-old Debian stable (jessie) install and yes, I
+> know that means the kernel and btrfs-progs are ancient but I'd still
+> very much appreciate some help. It's a backup box, so the data isn't
+> critical, but of course I need it stable in the long run.
 
-Cheers,
-C.
+Sorry, you need it to be stable but you're using an EOL unsupported
+kernel? That just doesn't square.
+
+It's either a hardware problem (there are many softreset message, and
+possibly more than one ata instance than you have attached devices
+for, and no Btrfs errors), or it's a software bug. Either way you
+kinda need to try something newer to see if the problem has been since
+been fixed, because it's in the realm of 10,000 changes (probably
+more) since that kernel version you're using. There might be 4 people
+on the list who'd maybe recognize this, and say, yes in fact that was
+fixed in a newer kernel. So really no matter what you just have to
+upgrade.
+
+
+> Is it
+> possible to fix this and prevent it from happening again? (How) can I
+> verify if the data is still good?
+
+The user space program crashed either due to a bug or it ran out of
+memory. Maybe increase swap size, sometimes that helps btrfs check and
+btrfs-debug-tree go farther without problems.
+
+Try mounting with -o recovery. If that doesn't work try -o
+recovery,ro, and if that doesn't work then try btrfs check (without
+repair), using kernel and progs no older than 4.1.15. It's middle aged
+in Btrfs terms, but at least that's a longterm currently maintained
+kernel.
+
+
+  If the verdict is that I have to
+> re-roll the box I wouldn't go with btrfs again at this time, but still
+> be willing to help with debugging first, if anyone is interested.
+
+I can almost guarantee that if -o recovery does not work, no one will
+want to suggest anything more aggressive if you also aren't willing to
+upgrade kernel and tools to something much newer. Really, if you need
+Btrfs to be stable, you need to use a distro that makes it easy for
+you to get the latest bug fixes, not just features.
+
+-- 
+Chris Murphy

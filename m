@@ -1,78 +1,74 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f175.google.com ([209.85.223.175]:36601 "EHLO
-	mail-io0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932156AbcAaBmH (ORCPT
+Received: from mail-lb0-f178.google.com ([209.85.217.178]:33406 "EHLO
+	mail-lb0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1757402AbcAaMgj (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 30 Jan 2016 20:42:07 -0500
-Received: by mail-io0-f175.google.com with SMTP id g73so125886427ioe.3
-        for <linux-btrfs@vger.kernel.org>; Sat, 30 Jan 2016 17:42:05 -0800 (PST)
+	Sun, 31 Jan 2016 07:36:39 -0500
+Received: by mail-lb0-f178.google.com with SMTP id x4so62243144lbm.0
+        for <linux-btrfs@vger.kernel.org>; Sun, 31 Jan 2016 04:36:39 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <CAKbQEqH5twwezxYicthcCb6=dWgW3Hy-s6fLjH_BQETk4i0ikQ@mail.gmail.com>
+In-Reply-To: <CAJCQCtRw1VqaES4UCbaSNqCRXV5puA5gssxNSxsiUBKxa13dPQ@mail.gmail.com>
 References: <CAKbQEqE0w5fewMw9YwooFXaEVT2ecfGf6ZCVvUmQg8SjGx2Zsw@mail.gmail.com>
-	<CAPmG0jbLVVRJVoqehWxuNncF6oLydazo5-YO=3fLAbrksv2sJg@mail.gmail.com>
-	<CAKbQEqH5twwezxYicthcCb6=dWgW3Hy-s6fLjH_BQETk4i0ikQ@mail.gmail.com>
-Date: Sat, 30 Jan 2016 18:42:05 -0700
-Message-ID: <CAJCQCtRw1VqaES4UCbaSNqCRXV5puA5gssxNSxsiUBKxa13dPQ@mail.gmail.com>
+ <CAPmG0jbLVVRJVoqehWxuNncF6oLydazo5-YO=3fLAbrksv2sJg@mail.gmail.com>
+ <CAKbQEqH5twwezxYicthcCb6=dWgW3Hy-s6fLjH_BQETk4i0ikQ@mail.gmail.com> <CAJCQCtRw1VqaES4UCbaSNqCRXV5puA5gssxNSxsiUBKxa13dPQ@mail.gmail.com>
+From: Christian Pernegger <pernegger@gmail.com>
+Date: Sun, 31 Jan 2016 13:35:58 +0100
+Message-ID: <CAKbQEqFYQ0XQAQOzOBX=n5jrxxws97Qd5OizEaGGq6tayEJcKg@mail.gmail.com>
 Subject: Re: "WARNING: device 0 not present" during scrub?
-From: Chris Murphy <lists@colorremedies.com>
-To: Christian Pernegger <pernegger@gmail.com>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, Jan 30, 2016 at 2:19 PM, Christian Pernegger
-<pernegger@gmail.com> wrote:
+On 31 January 2016 at 02:42, Chris Murphy <lists@colorremedies.com> wrote:
+> On Sat, Jan 30, 2016 at 2:19 PM, Christian Pernegger
+> It maybe be stable for Debian but is Debian explicitly supporting
+> Btrfs with this release? I don't think they are.
 
->
->> An an obvious advice is to use a 4.4 kernel and tools. Debian 'stable' doesn't mean
->> that every piece of the kernel and tooling fits that 'stamp'. [...] Maybe you could switch
->> to a rolling release linux distro or just update the debian kernel.
->
-> Using Debian stable usally means that once something is set up and
-> works it keeps working until the hardware dies with little to no user
-> interaction. For someting that sits in a corner and pulls in backups
-> that suits me just fine. If there's a specific reason to update the
-> kernel and btrfs-progs, it's easily done of course, but "let's hope it
-> has gone away with the newer version" doesn't inspire me with
-> confidence on its own.
+The modules are in the kernel, the progs are in the main archive, it's
+an option in the installer. It's not the default fs but I couldn't
+find any indication that it's more or less supported than, say, xfs.
+Why they've chosen 3.16 (and not 3.18, which would be a long term
+release) I don't know, but the fact remains that that's the default
+kernel of a tier 1 distro, so people using it are going to be around
+for a while.
 
-It maybe be stable for Debian but is Debian explicitly supporting
-Btrfs with this release? I don't think they are. In which case, it's
-at the least the wrong kernel version. The only distro explicitly
-supporting Btrfs is openSUSE. So if you need Btrfs in particular to be
-stable, and you don't want to have to think quite as much about
-kernels, you could consider that.
+> But absolutely, of course we hope the problem is gone with the newer
+> version, *that's how file system development works.*
 
-But absolutely, of course we hope the problem is gone with the newer
-version, *that's how file system development works.* If it hasn't, and
-you reproduce the problem with kernel 4.4, then that means you've
-found a new bug that needs to be fixed. And first, it'd only possibly
-get fixed in 4.5 or newer before being backported to older kernels.
-That's how it goes.
+Be that as it may, as I said, that approach doesn't inspire
+confidence. If I had the vaguest idea about how to reproduce it, sure,
+but all I have is an apparently lightly corrupted or at the very least
+glitchy fs (it mounts and unmounts just fine). How would I know if a
+new kernel helped things?
 
-I can see how it might seem like it's a reasonable question to just
-ask first, but it really isn't. There's just so much development
-happening right now, a developer is not in a great position to think
-that far back for specific problems and whether yours might be one of
-them, and in what kernel version it was fixed. *shrug* just doesn't
-work that way, that's why there are changelogs for every sub kernel
-version.
+> I can see how it might seem like it's a reasonable question to just
+> ask first, but it really isn't. There's just so much development
+> happening right now, a developer is not in a great position to think
+> that far back for specific problems and whether yours might be one of
+> them, and in what kernel version it was fixed. *shrug* just doesn't
+> work that way, that's why there are changelogs for every sub kernel
+> version.
 
+I do understand your point of view, but: If a possible fs corruption
+bug on a widespread (if older) kernel after one month of use and
+without any discernible cause gets nothing more than *shrug* from this
+list then btrfs isn't production ready nor ready for any kind of
+day-to-day use, not because of code maturity but because of that
+mindset. IMHO the btrfs-genie is too far out of the bottle for that,
+the wording of the stability status on the wiki much too inviting.
 
->> But the more fundamental question is why you use btrfs? What features
->> do you need that ext4 or xfs or reiserfs don't have?
->
-> Data checksumming. I don't mind a bit flipping here or there in old
-> backups / archives but I'd have liked to know if something went bad
-> and which files were affected. Compression. Dedup that works on mortal
-> hardware.
+Anyway, I knew what I was getting into, so I'll just chalk it up to
+experience and move on. Keep up the good work!
 
-Have you checked out ZFS on Linux? That might fit your use case better
-because it has the features you're asking for, but at least the ZFS
-portion is older and considered more stable.
+> Have you checked out ZFS on Linux? That might fit your use case better
+> because it has the features you're asking for, but at least the ZFS
+> portion is older and considered more stable.
 
+It seemed a bit over the top on a single disk and 4GB of (not even
+ECC) RAM. Between btrfs' heavy development and zfsonlinux being stable
+but needing potentially less stable Solaris-glue and having no
+distro-side support I thought I'd try btrfs first.
 
-
--- 
-Chris Murphy
+Regards,
+Christian Pernegger

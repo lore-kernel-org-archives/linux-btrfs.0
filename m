@@ -1,307 +1,112 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:43352 "EHLO
-	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932248AbcBAWLW (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 1 Feb 2016 17:11:22 -0500
-Date: Mon, 1 Feb 2016 22:11:20 +0000
-From: Hugo Mills <hugo@carfax.org.uk>
-To: Hendrik Friedel <hendrik@friedels.name>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Received: from plane.gmane.org ([80.91.229.3]:56241 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750899AbcBAXCx (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 1 Feb 2016 18:02:53 -0500
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+	id 1aQNUh-0007F5-TW
+	for linux-btrfs@vger.kernel.org; Tue, 02 Feb 2016 00:02:52 +0100
+Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Tue, 02 Feb 2016 00:02:51 +0100
+Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Tue, 02 Feb 2016 00:02:51 +0100
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
 Subject: Re: booting from BTRFS works only with one device in the pool
-Message-ID: <20160201221120.GD8313@carfax.org.uk>
+Date: Mon, 1 Feb 2016 23:02:42 +0000 (UTC)
+Message-ID: <pan$10266$74d6d340$652029ad$fa234679@cox.net>
 References: <56AFCEC3.9050803@friedels.name>
-MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="UfEAyuTBtIjiZzX6"
-In-Reply-To: <56AFCEC3.9050803@friedels.name>
+	<20160201221120.GD8313@carfax.org.uk>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hugo Mills posted on Mon, 01 Feb 2016 22:11:20 +0000 as excerpted:
 
---UfEAyuTBtIjiZzX6
-Content-Type: text/plain; charset=iso-8859-1
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+> On Mon, Feb 01, 2016 at 10:31:47PM +0100, Hendrik Friedel wrote:
+>> Hello,
+>> 
+>> I am running CentOS from a btrfs root.
+>> This worked fine until I added a device to that pool:
+>> btrfs device add /dev/sda3 /
+>> reboot
+>> 
+>> This now causes the errors:
+>> BTRFS: failed to read chunk tree on sdb3 BTRFS: open_ctree failed
+>> 
+>> Here  I am stuck in a recovery prompt.
+>> 
+>> btrfs fi show displays the file system correctly with 2.1GiB used for
+>> sdb3 and 0.00GiB used on sda3
+> 
+> By far the simplest and most reliable method of doing this is to
+> use an initramfs with the command "btrfs dev scan" in it somewhere
+> before mounting. Most of the major distributions already have an
+> initramfs set up (as does yours, I see), and will install the correct
+> commands in the initramfs if you install the btrfs-progs package
+> (btrfs-tools in Debian derivatives).
+> 
+> The other approach is to add "device=/dev/sda3,device=/dev/sdb3" to
+> the "rootflags=" option on the grub command line, but that's going to
+> break if your kernel or hardware decides to reorder your devices.
 
-On Mon, Feb 01, 2016 at 10:31:47PM +0100, Hendrik Friedel wrote:
-> Hello,
->=20
-> I am running CentOS from a btrfs root.
-> This worked fine until I added a device to that pool:
-> btrfs device add /dev/sda3 /
-> reboot
->=20
-> This now causes the errors:
-> BTRFS: failed to read chunk tree on sdb3
-> BTRFS: open_ctree failed
->=20
-> Here  I am stuck in a recovery prompt.
->=20
-> btrfs fi show displays the file system correctly with 2.1GiB used
-> for sdb3 and 0.00GiB used on sda3
+As a btrfs user with a two-device btrfs root filesystem who has had to 
+deal with this same problem myself...
 
-   By far the simplest and most reliable method of doing this is to
-use an initramfs with the command "btrfs dev scan" in it somewhere
-before mounting. Most of the major distributions already have an
-initramfs set up (as does yours, I see), and will install the correct
-commands in the initramfs if you install the btrfs-progs package
-(btrfs-tools in Debian derivatives).
+Unless the problem has been fixed in very recent kernels, device= doesn't 
+work in rootflags= for btrfs on the kernel commandline in any case.  I 
+don't know why, but I suspect it might be the fact that with 
+rootflags=device=, there's at least two =, and the kernel may split it at 
+the wrong = and instead of seeing a rootflags= option it knows what to do 
+with, it sees a rootflags=device= option that it ignores as making no 
+sense, making it a kernel commandline parsing bug.  Alternatively, 
+another poster hinted that the kernel may get it correct, but btrfs for 
+some reason can't use device= in the form it gets passed in from 
+rootflags=, while it can use it when passed in from userspace, which 
+would make it a btrfs bug.
 
-   The other approach is to add "device=3D/dev/sda3,device=3D/dev/sdb3" to
-the "rootflags=3D" option on the grub command line, but that's going to
-break if your kernel or hardware decides to reorder your devices.
+Either way, (1) the problem isn't new and has been there for quite some 
+time, since early in the kernel 3.x era at least, but (2) other options 
+such as degraded _can_ be passed successfully by rootflags=, so btrfs can 
+use rootflags= in general, it just has problems with device=, for 
+whatever reason.
 
-   Do the sensible thing and just use the initramfs solution.
+Which means...
 
-   Hugo.
+> Do the sensible thing and just use the initramfs solution.
 
-> btrfs-tools version reports
-> btrfs-progs v4.3.1
->=20
-> Now, I read that in case of this issue, should add the second device
-> of the pool to the commandline argument of the kernel/the boot
-> options/grub.cfg
->=20
-> But I am not sure how to do this.
-> I can mount /boot/  and the /boot/grub2/grub.cfg contains:
-> insmod ext2 (but not btrfs!)
-> set root=3D'hd0,msdos1'
-> search --no-floppy --fs-uuid --set=3Droot --hint-bios=3Dhd0,msdos1
-> --hint-efi=3Dhd0,msdos1 --hint-baremetal=3Dahci0,msdos1
-> --hint=3D'hd0,msdos1' 4a470ac6-f013-4e7b-a4f3-3a58cc4debc3
->=20
-> after removing sda3 from the pool again, the system boots normally.
->=20
-> blkid gives:
-> /dev/sdb3: LABEL=3D"rockstor_rockstor"
-> UUID=3D"f9de7c11-012e-4e5d-8b53-0e6d6c2916a3"
-> UUID_SUB=3D"24bdf07b-dbd3-44dc-9195-4b0bfedf974f" TYPE=3D"btrfs"
-> PARTLABEL=3D"Linux filesystem"
-> PARTUUID=3D"c438bd3c-df9a-4e49-8607-47cd9b45e212"
-> (note /dev/sda3 is not shown here)
->=20
-> btrfs fi show
-> Label: 'rockstor_rockstor'  uuid: f9de7c11-012e-4e5d-8b53-0e6d6c2916a3
->         Total devices 1 FS bytes used 1.38GiB
->         devid    1 size 6.87GiB used 2.10GiB path /dev/sdb3
->=20
->=20
->=20
->=20
->=20
-> It's a pitty that the only NAS Distribution built around btrfs does
-> not support the full feature-set of btrfs on its root partition.
-> Could you please help me fixing this?
->=20
-> Below you find the complete grub.cfg.
->=20
-> Regards,
-> Hendrik
->=20
->=20
->=20
->=20
->=20
->=20
->=20
-> cat /boot/grub2/grub.cfg
-> #
-> # DO NOT EDIT THIS FILE
-> #
-> # It is automatically generated by grub2-mkconfig using templates
-> # from /etc/grub.d and settings from /etc/default/grub
-> #
->=20
-> ### BEGIN /etc/grub.d/00_header ###
-> set pager=3D1
->=20
-> if [ -s $prefix/grubenv ]; then
->   load_env
-> fi
-> if [ "${next_entry}" ] ; then
->    set default=3D"${next_entry}"
->    set next_entry=3D
->    save_env next_entry
->    set boot_once=3Dtrue
-> else
->    set default=3D"${saved_entry}"
-> fi
->=20
-> if [ x"${feature_menuentry_id}" =3D xy ]; then
->   menuentry_id_option=3D"--id"
-> else
->   menuentry_id_option=3D""
-> fi
->=20
-> export menuentry_id_option
->=20
-> if [ "${prev_saved_entry}" ]; then
->   set saved_entry=3D"${prev_saved_entry}"
->   save_env saved_entry
->   set prev_saved_entry=3D
->   save_env prev_saved_entry
->   set boot_once=3Dtrue
-> fi
->=20
-> function savedefault {
->   if [ -z "${boot_once}" ]; then
->     saved_entry=3D"${chosen}"
->     save_env saved_entry
->   fi
-> }
->=20
-> function load_video {
->   if [ x$feature_all_video_module =3D xy ]; then
->     insmod all_video
->   else
->     insmod efi_gop
->     insmod efi_uga
->     insmod ieee1275_fb
->     insmod vbe
->     insmod vga
->     insmod video_bochs
->     insmod video_cirrus
->   fi
-> }
->=20
-> terminal_output console
-> if [ x$feature_timeout_style =3D xy ] ; then
->   set timeout_style=3Dmenu
->   set timeout=3D5
-> # Fallback normal timeout code in case the timeout_style feature is
-> # unavailable.
-> else
->   set timeout=3D5
-> fi
-> ### END /etc/grub.d/00_header ###
->=20
-> ### BEGIN /etc/grub.d/00_tuned ###
-> set tuned_params=3D""
-> ### END /etc/grub.d/00_tuned ###
->=20
-> ### BEGIN /etc/grub.d/01_users ###
-> if [ -f ${prefix}/user.cfg ]; then
->   source ${prefix}/user.cfg
->   if [ -n "${GRUB2_PASSWORD}" ]; then
->     set superusers=3D"root"
->     export superusers
->     password_pbkdf2 root ${GRUB2_PASSWORD}
->   fi
-> fi
-> ### END /etc/grub.d/01_users ###
->=20
-> ### BEGIN /etc/grub.d/10_linux ###
-> menuentry 'Rockstor (4.3.3-1.el7.elrepo.x86_64) 3 (Core)' --class
-> rhel fedora --class gnu-linux --class gnu --class os --unrestricted
-> $menuentry_id_option 'gnulinux-4.3.3-1.el7.elrepo.x86_64-advanced-f9de7c1=
-1-012e-4e5d-8b53-0e6d6c2916a3'
-> {
->         load_video
->         set gfxpayload=3Dkeep
->         insmod gzio
->         insmod part_msdos
->         insmod ext2
->         set root=3D'hd0,msdos1'
->         if [ x$feature_platform_search_hint =3D xy ]; then
->           search --no-floppy --fs-uuid --set=3Droot
-> --hint-bios=3Dhd0,msdos1 --hint-efi=3Dhd0,msdos1
-> --hint-baremetal=3Dahci0,msdos1 --hint=3D'hd0,msdos1'
-> 4a470ac6-f013-4e7b-a4f3-3a58cc4debc3
->         else
->           search --no-floppy --fs-uuid --set=3Droot
-> 4a470ac6-f013-4e7b-a4f3-3a58cc4debc3
->         fi
->         linux16 /vmlinuz-4.3.3-1.el7.elrepo.x86_64
-> root=3DUUID=3Df9de7c11-012e-4e5d-8b53-0e6d6c2916a3 ro
-> rootflags=3Dsubvol=3Droot crashkernel=3Dauto rhgb quiet LANG=3Den_US.UTF-8
->         initrd16 /initramfs-4.3.3-1.el7.elrepo.x86_64.img
-> }
-> menuentry 'Rockstor (0-rescue-f5f625480f394bdc90d6d3c06be7fb88) 3
-> (Core)' --class rhel fedora --class gnu-linux --class gnu --class os
-> --unrestricted $menuentry_id_option 'gnulinux-0-rescue-f5f625480f394bdc90=
-d6d3c06be7fb88-advanced-f9de7c11-012e-4e5d-8b53-0e6d6c2916a3'
-> {
->         load_video
->         insmod gzio
->         insmod part_msdos
->         insmod ext2
->         set root=3D'hd0,msdos1'
->         if [ x$feature_platform_search_hint =3D xy ]; then
->           search --no-floppy --fs-uuid --set=3Droot
-> --hint-bios=3Dhd0,msdos1 --hint-efi=3Dhd0,msdos1
-> --hint-baremetal=3Dahci0,msdos1 --hint=3D'hd0,msdos1'
-> 4a470ac6-f013-4e7b-a4f3-3a58cc4debc3
->         else
->           search --no-floppy --fs-uuid --set=3Droot
-> 4a470ac6-f013-4e7b-a4f3-3a58cc4debc3
->         fi
->         linux16 /vmlinuz-0-rescue-f5f625480f394bdc90d6d3c06be7fb88
-> root=3DUUID=3Df9de7c11-012e-4e5d-8b53-0e6d6c2916a3 ro
-> rootflags=3Dsubvol=3Droot crashkernel=3Dauto rhgb quiet
->         initrd16 /initramfs-0-rescue-f5f625480f394bdc90d6d3c06be7fb88.img
-> }
->=20
-> ### END /etc/grub.d/10_linux ###
->=20
-> ### BEGIN /etc/grub.d/20_linux_xen ###
->=20
-> ### END /etc/grub.d/20_linux_xen ###
->=20
-> ### BEGIN /etc/grub.d/20_ppc_terminfo ###
-> ### END /etc/grub.d/20_ppc_terminfo ###
->=20
-> ### BEGIN /etc/grub.d/30_os-prober ###
-> ### END /etc/grub.d/30_os-prober ###
->=20
-> ### BEGIN /etc/grub.d/40_custom ###
-> # This file provides an easy way to add custom menu entries.  Simply
-> type the
-> # menu entries you want to add after this comment.  Be careful not to cha=
-nge
-> # the 'exec tail' line above.
-> ### END /etc/grub.d/40_custom ###
->=20
-> ### BEGIN /etc/grub.d/41_custom ###
-> if [ -f  ${config_directory}/custom.cfg ]; then
->   source ${config_directory}/custom.cfg
-> elif [ -z "${config_directory}" -a -f  $prefix/custom.cfg ]; then
->   source $prefix/custom.cfg;
-> fi
-> ### END /etc/grub.d/41_custom ###
->=20
->=20
-> ---
-> Diese E-Mail wurde von Avast Antivirus-Software auf Viren gepr=FCft.
-> https://www.avast.com/antivirus
->=20
+Exactly.
 
---=20
-Hugo Mills             | I must be musical: I've got *loads* of CDs
-hugo@... carfax.org.uk |
-http://carfax.org.uk/  |
-PGP: E2AB1DE4          |                                     Fran, Black Bo=
-oks
+For over a decade I used reiserfs on / and was able to avoid an initr* 
+entirely.  And single-device btrfs / works without an initr*.  But multi-
+device... not so much.  While I definitely wasn't thrilled at the 
+prospect of having to complicate my boot process with an initr* that 
+_shouldn't_ be necessary, and had to spend some time learning about initr* 
+(I had initially dumped initr* early in my Linux experience and hadn't 
+had to learn about them until I tried multi-device btrfs /) so as to be 
+able to satisfy myself that I could work with it in both normal operation 
+and disaster recovery scenarios...
 
---UfEAyuTBtIjiZzX6
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+At this point there's really only two choices if you want multi-device 
+btrfs /, either use an initr* and have your multi-device btrfs /, or give 
+up on multi-device btrfs / and be satisfied with a more traditional 
+single-device /, btrfs or otherwise.
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
+Well, unless you're a kernel-level dev sufficiently motivated to look 
+into the problem, devise a patch to solve the problem, and get that patch 
+thru the approval process and into kernel mainline.  In that case there's 
+three options, and I dearly wish someone with the necessary kernel level 
+coder qualification would take that third option, making initr*less multi-
+device btrfs / a viable option for the rest of us who in the mean time 
+are stuck with only the first two options!
 
-iQIcBAEBAgAGBQJWr9gIAAoJEFheFHXiqx3kyDMQAKcI3MUtEx+457RhJJy/74nK
-mra7WRlzsTznnZbY4Lo/BZ6Wd8mNkgHtNl4pECkAkZ/ESWcOqGLxH1HBEAvFyB64
-TOvB1VPb/g80FpQ+JcWKUL+RNbeFs8HlPreLu1rqzpYVpcre7/EbWqt/biRrOVO/
-S3jTmhnMOlZXYelvaBY6PziCIFxxA4GFp/TyrVFsNMjWZ9LxVX6a8QoLswe7MD0h
-e1+VtvEc3lYbpajWW7nD9AF0rvXVq9dnK5Pk/RaCg2lZDw4h/UPjMm2e71/alvlO
-xHQSOZ7Z5MhdBtqj1i0I8/mgTgCrZuCsqGxWBKKx9hsku6fWLZ3OQwHykgYN1E95
-sVrMYZW1c1jCJkv253xPjAU4ND6aQpD+RQSiYa03ThGAfYZPPAo318cyYXPAZIL4
-C1HVMXY+5o78pQhGqUJAqyRR7Sed3mroHt7HzHurNgtZKilzkFN9ITCre+YzkxXW
-s31J70l5bnXwwrxmq3or2htBPyM1/v3ZhPA4/MUEv0XZa/DT0grEnqretoPHbau8
-npjfiK03tiRv2DzTtsjsd3YyPAUsiSPs6A6h0rSgJO/nP33HfyslRcw0uGMqFLB3
-q1eO/8sJmNmX06PSew73/U579BsSFaCSn9f9Fckv/9PM2eIoG8V0zV4482w1tBOm
-FvzMcJusVox1LqKSPGSo
-=n2ZJ
------END PGP SIGNATURE-----
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 
---UfEAyuTBtIjiZzX6--

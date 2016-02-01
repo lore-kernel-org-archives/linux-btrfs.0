@@ -1,66 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f181.google.com ([209.85.223.181]:35418 "EHLO
-	mail-io0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753922AbcBAMF7 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 1 Feb 2016 07:05:59 -0500
-Received: by mail-io0-f181.google.com with SMTP id d63so137254604ioj.2
-        for <linux-btrfs@vger.kernel.org>; Mon, 01 Feb 2016 04:05:58 -0800 (PST)
-MIME-Version: 1.0
-Reply-To: fdmanana@gmail.com
-In-Reply-To: <20160201115350.GA9678@googlemail.com>
-References: <20160201115350.GA9678@googlemail.com>
-Date: Mon, 1 Feb 2016 12:05:58 +0000
-Message-ID: <CAL3q7H4geSgrD21TFci6Z3BsVmCyFYXXiXq0eTqJVi4iFkwVkQ@mail.gmail.com>
-Subject: Re: [PATCH] fs: btrfs: fixes a pass by reference issue in send.c
-From: Filipe Manana <fdmanana@gmail.com>
-To: Ben Marsh <bmarsh94@gmail.com>
-Cc: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
-        David Sterba <dsterba@suse.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Received: from mail.kernel.org ([198.145.29.136]:56528 "EHLO mail.kernel.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S932183AbcBANsf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 1 Feb 2016 08:48:35 -0500
+From: fdmanana@kernel.org
+To: linux-btrfs@vger.kernel.org
+Cc: clm@fb.com, Filipe Manana <fdmanana@suse.com>
+Subject: [PATCH] Btrfs extent_same (dedup) ioctl fixes 
+Date: Mon,  1 Feb 2016 13:48:23 +0000
+Message-Id: <1454334503-7715-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Feb 1, 2016 at 11:53 AM, Ben Marsh <bmarsh94@gmail.com> wrote:
-> This patch fixes a pointer issue from passing a struct as a parameter
-> to the function btrfs_root_dec_send_in_progress.
->
-> Signed-off-by: Ben Marsh <bmarsh94@gmail.com>
-> ---
->  fs/btrfs/send.c | 2 +-
->  1 file changed, 1 insertion(+), 1 deletion(-)
->
-> diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-> index 63a6152..47ee63e 100644
-> --- a/fs/btrfs/send.c
-> +++ b/fs/btrfs/send.c
-> @@ -5911,7 +5911,7 @@ commit_trans:
->         return btrfs_commit_transaction(trans, sctx->send_root);
->  }
->
-> -static void btrfs_root_dec_send_in_progress(struct btrfs_root* root)
-> +static void btrfs_root_dec_send_in_progress(struct btrfs_root *root)
+From: Filipe Manana <fdmanana@suse.com>
 
-It's a white space change. Both forms are equivalent and pass the root
-by reference.
-IOW, you aren't fixing any problem.
+Hi Chris,
 
->  {
->         spin_lock(&root->root_item_lock);
->         root->send_in_progress--;
-> --
-> 1.9.1
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Please consider the following fixes for the extent_same ioctl. They fix
+issues related to missing proper page and range locking, which lead to
+invalid memory accesses and other unexpected failures (such as data
+checksum validation failures, on perfectly healthy hardware, making
+the ioctl fail with a non sense -ENOMEM error).
+The last patch just removes a function not needed anymore after the two
+fixes. I've tagged the two fixes for stable releases.
+These were all previously sent to the mailing list.
 
+Thanks.
 
+The following changes since commit e410e34fad913dd568ec28d2a9949694324c14db:
+
+  Revert "btrfs: synchronize incompat feature bits with sysfs files" (2016-01-29 08:19:37 -0800)
+
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/fdmanana/linux.git extent_same_fixes
+
+for you to fetch changes up to 30b809be1e150f91c5bbaf74d6a23bc81b37e2d9:
+
+  Btrfs: remove no longer used function extent_read_full_page_nolock() (2016-01-30 17:54:25 +0000)
+
+----------------------------------------------------------------
+Filipe Manana (3):
+      Btrfs: fix invalid page accesses in extent_same (dedup) ioctl
+      Btrfs: fix page reading in extent_same ioctl leading to csum errors
+      Btrfs: remove no longer used function extent_read_full_page_nolock()
+
+ fs/btrfs/compression.c |   6 +-----
+ fs/btrfs/extent_io.c   |  45 +++++++++++----------------------------------
+ fs/btrfs/extent_io.h   |   3 ---
+ fs/btrfs/ioctl.c       | 119 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++----------------------
+ 4 files changed, 109 insertions(+), 64 deletions(-)
 
 -- 
-Filipe David Manana,
+2.7.0.rc3
 
-"Reasonable men adapt themselves to the world.
- Unreasonable men adapt the world to themselves.
- That's why all progress depends on unreasonable men."

@@ -1,253 +1,307 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtprelay05.ispgateway.de ([80.67.18.28]:49974 "EHLO
-	smtprelay05.ispgateway.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753380AbcBAVoG convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 1 Feb 2016 16:44:06 -0500
-Received: from dslb-092-077-104-052.092.077.pools.vodafone-ip.de ([92.77.104.52] helo=[127.0.0.1])
-	by smtprelay05.ispgateway.de with esmtpsa (TLSv1.2:DHE-RSA-AES128-SHA:128)
-	(Exim 4.84)
-	(envelope-from <hendrik@friedels.name>)
-	id 1aQM4c-0002DV-Qs
-	for linux-btrfs@vger.kernel.org; Mon, 01 Feb 2016 22:31:51 +0100
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-From: Hendrik Friedel <hendrik@friedels.name>
-Subject: booting from BTRFS works only with one device in the pool
-Message-ID: <56AFCEC3.9050803@friedels.name>
-Date: Mon, 1 Feb 2016 22:31:47 +0100
+Received: from frost.carfax.org.uk ([85.119.82.111]:43352 "EHLO
+	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932248AbcBAWLW (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 1 Feb 2016 17:11:22 -0500
+Date: Mon, 1 Feb 2016 22:11:20 +0000
+From: Hugo Mills <hugo@carfax.org.uk>
+To: Hendrik Friedel <hendrik@friedels.name>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Subject: Re: booting from BTRFS works only with one device in the pool
+Message-ID: <20160201221120.GD8313@carfax.org.uk>
+References: <56AFCEC3.9050803@friedels.name>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="UfEAyuTBtIjiZzX6"
+In-Reply-To: <56AFCEC3.9050803@friedels.name>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
 
-I am running CentOS from a btrfs root.
-This worked fine until I added a device to that pool:
-btrfs device add /dev/sda3 /
-reboot
+--UfEAyuTBtIjiZzX6
+Content-Type: text/plain; charset=iso-8859-1
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-This now causes the errors:
-BTRFS: failed to read chunk tree on sdb3
-BTRFS: open_ctree failed
+On Mon, Feb 01, 2016 at 10:31:47PM +0100, Hendrik Friedel wrote:
+> Hello,
+>=20
+> I am running CentOS from a btrfs root.
+> This worked fine until I added a device to that pool:
+> btrfs device add /dev/sda3 /
+> reboot
+>=20
+> This now causes the errors:
+> BTRFS: failed to read chunk tree on sdb3
+> BTRFS: open_ctree failed
+>=20
+> Here  I am stuck in a recovery prompt.
+>=20
+> btrfs fi show displays the file system correctly with 2.1GiB used
+> for sdb3 and 0.00GiB used on sda3
 
-Here  I am stuck in a recovery prompt.
+   By far the simplest and most reliable method of doing this is to
+use an initramfs with the command "btrfs dev scan" in it somewhere
+before mounting. Most of the major distributions already have an
+initramfs set up (as does yours, I see), and will install the correct
+commands in the initramfs if you install the btrfs-progs package
+(btrfs-tools in Debian derivatives).
 
-btrfs fi show displays the file system correctly with 2.1GiB used for 
-sdb3 and 0.00GiB used on sda3
+   The other approach is to add "device=3D/dev/sda3,device=3D/dev/sdb3" to
+the "rootflags=3D" option on the grub command line, but that's going to
+break if your kernel or hardware decides to reorder your devices.
 
-btrfs-tools version reports
-btrfs-progs v4.3.1
+   Do the sensible thing and just use the initramfs solution.
 
-Now, I read that in case of this issue, should add the second device of 
-the pool to the commandline argument of the kernel/the boot options/grub.cfg
+   Hugo.
 
-But I am not sure how to do this.
-I can mount /boot/  and the /boot/grub2/grub.cfg contains:
-insmod ext2 (but not btrfs!)
-set root='hd0,msdos1'
-search --no-floppy --fs-uuid --set=root --hint-bios=hd0,msdos1 
---hint-efi=hd0,msdos1 --hint-baremetal=ahci0,msdos1 --hint='hd0,msdos1' 
-4a470ac6-f013-4e7b-a4f3-3a58cc4debc3
+> btrfs-tools version reports
+> btrfs-progs v4.3.1
+>=20
+> Now, I read that in case of this issue, should add the second device
+> of the pool to the commandline argument of the kernel/the boot
+> options/grub.cfg
+>=20
+> But I am not sure how to do this.
+> I can mount /boot/  and the /boot/grub2/grub.cfg contains:
+> insmod ext2 (but not btrfs!)
+> set root=3D'hd0,msdos1'
+> search --no-floppy --fs-uuid --set=3Droot --hint-bios=3Dhd0,msdos1
+> --hint-efi=3Dhd0,msdos1 --hint-baremetal=3Dahci0,msdos1
+> --hint=3D'hd0,msdos1' 4a470ac6-f013-4e7b-a4f3-3a58cc4debc3
+>=20
+> after removing sda3 from the pool again, the system boots normally.
+>=20
+> blkid gives:
+> /dev/sdb3: LABEL=3D"rockstor_rockstor"
+> UUID=3D"f9de7c11-012e-4e5d-8b53-0e6d6c2916a3"
+> UUID_SUB=3D"24bdf07b-dbd3-44dc-9195-4b0bfedf974f" TYPE=3D"btrfs"
+> PARTLABEL=3D"Linux filesystem"
+> PARTUUID=3D"c438bd3c-df9a-4e49-8607-47cd9b45e212"
+> (note /dev/sda3 is not shown here)
+>=20
+> btrfs fi show
+> Label: 'rockstor_rockstor'  uuid: f9de7c11-012e-4e5d-8b53-0e6d6c2916a3
+>         Total devices 1 FS bytes used 1.38GiB
+>         devid    1 size 6.87GiB used 2.10GiB path /dev/sdb3
+>=20
+>=20
+>=20
+>=20
+>=20
+> It's a pitty that the only NAS Distribution built around btrfs does
+> not support the full feature-set of btrfs on its root partition.
+> Could you please help me fixing this?
+>=20
+> Below you find the complete grub.cfg.
+>=20
+> Regards,
+> Hendrik
+>=20
+>=20
+>=20
+>=20
+>=20
+>=20
+>=20
+> cat /boot/grub2/grub.cfg
+> #
+> # DO NOT EDIT THIS FILE
+> #
+> # It is automatically generated by grub2-mkconfig using templates
+> # from /etc/grub.d and settings from /etc/default/grub
+> #
+>=20
+> ### BEGIN /etc/grub.d/00_header ###
+> set pager=3D1
+>=20
+> if [ -s $prefix/grubenv ]; then
+>   load_env
+> fi
+> if [ "${next_entry}" ] ; then
+>    set default=3D"${next_entry}"
+>    set next_entry=3D
+>    save_env next_entry
+>    set boot_once=3Dtrue
+> else
+>    set default=3D"${saved_entry}"
+> fi
+>=20
+> if [ x"${feature_menuentry_id}" =3D xy ]; then
+>   menuentry_id_option=3D"--id"
+> else
+>   menuentry_id_option=3D""
+> fi
+>=20
+> export menuentry_id_option
+>=20
+> if [ "${prev_saved_entry}" ]; then
+>   set saved_entry=3D"${prev_saved_entry}"
+>   save_env saved_entry
+>   set prev_saved_entry=3D
+>   save_env prev_saved_entry
+>   set boot_once=3Dtrue
+> fi
+>=20
+> function savedefault {
+>   if [ -z "${boot_once}" ]; then
+>     saved_entry=3D"${chosen}"
+>     save_env saved_entry
+>   fi
+> }
+>=20
+> function load_video {
+>   if [ x$feature_all_video_module =3D xy ]; then
+>     insmod all_video
+>   else
+>     insmod efi_gop
+>     insmod efi_uga
+>     insmod ieee1275_fb
+>     insmod vbe
+>     insmod vga
+>     insmod video_bochs
+>     insmod video_cirrus
+>   fi
+> }
+>=20
+> terminal_output console
+> if [ x$feature_timeout_style =3D xy ] ; then
+>   set timeout_style=3Dmenu
+>   set timeout=3D5
+> # Fallback normal timeout code in case the timeout_style feature is
+> # unavailable.
+> else
+>   set timeout=3D5
+> fi
+> ### END /etc/grub.d/00_header ###
+>=20
+> ### BEGIN /etc/grub.d/00_tuned ###
+> set tuned_params=3D""
+> ### END /etc/grub.d/00_tuned ###
+>=20
+> ### BEGIN /etc/grub.d/01_users ###
+> if [ -f ${prefix}/user.cfg ]; then
+>   source ${prefix}/user.cfg
+>   if [ -n "${GRUB2_PASSWORD}" ]; then
+>     set superusers=3D"root"
+>     export superusers
+>     password_pbkdf2 root ${GRUB2_PASSWORD}
+>   fi
+> fi
+> ### END /etc/grub.d/01_users ###
+>=20
+> ### BEGIN /etc/grub.d/10_linux ###
+> menuentry 'Rockstor (4.3.3-1.el7.elrepo.x86_64) 3 (Core)' --class
+> rhel fedora --class gnu-linux --class gnu --class os --unrestricted
+> $menuentry_id_option 'gnulinux-4.3.3-1.el7.elrepo.x86_64-advanced-f9de7c1=
+1-012e-4e5d-8b53-0e6d6c2916a3'
+> {
+>         load_video
+>         set gfxpayload=3Dkeep
+>         insmod gzio
+>         insmod part_msdos
+>         insmod ext2
+>         set root=3D'hd0,msdos1'
+>         if [ x$feature_platform_search_hint =3D xy ]; then
+>           search --no-floppy --fs-uuid --set=3Droot
+> --hint-bios=3Dhd0,msdos1 --hint-efi=3Dhd0,msdos1
+> --hint-baremetal=3Dahci0,msdos1 --hint=3D'hd0,msdos1'
+> 4a470ac6-f013-4e7b-a4f3-3a58cc4debc3
+>         else
+>           search --no-floppy --fs-uuid --set=3Droot
+> 4a470ac6-f013-4e7b-a4f3-3a58cc4debc3
+>         fi
+>         linux16 /vmlinuz-4.3.3-1.el7.elrepo.x86_64
+> root=3DUUID=3Df9de7c11-012e-4e5d-8b53-0e6d6c2916a3 ro
+> rootflags=3Dsubvol=3Droot crashkernel=3Dauto rhgb quiet LANG=3Den_US.UTF-8
+>         initrd16 /initramfs-4.3.3-1.el7.elrepo.x86_64.img
+> }
+> menuentry 'Rockstor (0-rescue-f5f625480f394bdc90d6d3c06be7fb88) 3
+> (Core)' --class rhel fedora --class gnu-linux --class gnu --class os
+> --unrestricted $menuentry_id_option 'gnulinux-0-rescue-f5f625480f394bdc90=
+d6d3c06be7fb88-advanced-f9de7c11-012e-4e5d-8b53-0e6d6c2916a3'
+> {
+>         load_video
+>         insmod gzio
+>         insmod part_msdos
+>         insmod ext2
+>         set root=3D'hd0,msdos1'
+>         if [ x$feature_platform_search_hint =3D xy ]; then
+>           search --no-floppy --fs-uuid --set=3Droot
+> --hint-bios=3Dhd0,msdos1 --hint-efi=3Dhd0,msdos1
+> --hint-baremetal=3Dahci0,msdos1 --hint=3D'hd0,msdos1'
+> 4a470ac6-f013-4e7b-a4f3-3a58cc4debc3
+>         else
+>           search --no-floppy --fs-uuid --set=3Droot
+> 4a470ac6-f013-4e7b-a4f3-3a58cc4debc3
+>         fi
+>         linux16 /vmlinuz-0-rescue-f5f625480f394bdc90d6d3c06be7fb88
+> root=3DUUID=3Df9de7c11-012e-4e5d-8b53-0e6d6c2916a3 ro
+> rootflags=3Dsubvol=3Droot crashkernel=3Dauto rhgb quiet
+>         initrd16 /initramfs-0-rescue-f5f625480f394bdc90d6d3c06be7fb88.img
+> }
+>=20
+> ### END /etc/grub.d/10_linux ###
+>=20
+> ### BEGIN /etc/grub.d/20_linux_xen ###
+>=20
+> ### END /etc/grub.d/20_linux_xen ###
+>=20
+> ### BEGIN /etc/grub.d/20_ppc_terminfo ###
+> ### END /etc/grub.d/20_ppc_terminfo ###
+>=20
+> ### BEGIN /etc/grub.d/30_os-prober ###
+> ### END /etc/grub.d/30_os-prober ###
+>=20
+> ### BEGIN /etc/grub.d/40_custom ###
+> # This file provides an easy way to add custom menu entries.  Simply
+> type the
+> # menu entries you want to add after this comment.  Be careful not to cha=
+nge
+> # the 'exec tail' line above.
+> ### END /etc/grub.d/40_custom ###
+>=20
+> ### BEGIN /etc/grub.d/41_custom ###
+> if [ -f  ${config_directory}/custom.cfg ]; then
+>   source ${config_directory}/custom.cfg
+> elif [ -z "${config_directory}" -a -f  $prefix/custom.cfg ]; then
+>   source $prefix/custom.cfg;
+> fi
+> ### END /etc/grub.d/41_custom ###
+>=20
+>=20
+> ---
+> Diese E-Mail wurde von Avast Antivirus-Software auf Viren gepr=FCft.
+> https://www.avast.com/antivirus
+>=20
 
-after removing sda3 from the pool again, the system boots normally.
+--=20
+Hugo Mills             | I must be musical: I've got *loads* of CDs
+hugo@... carfax.org.uk |
+http://carfax.org.uk/  |
+PGP: E2AB1DE4          |                                     Fran, Black Bo=
+oks
 
-blkid gives:
-/dev/sdb3: LABEL="rockstor_rockstor" 
-UUID="f9de7c11-012e-4e5d-8b53-0e6d6c2916a3" 
-UUID_SUB="24bdf07b-dbd3-44dc-9195-4b0bfedf974f" TYPE="btrfs" 
-PARTLABEL="Linux filesystem" PARTUUID="c438bd3c-df9a-4e49-8607-47cd9b45e212"
-(note /dev/sda3 is not shown here)
+--UfEAyuTBtIjiZzX6
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
 
-btrfs fi show
-Label: 'rockstor_rockstor'  uuid: f9de7c11-012e-4e5d-8b53-0e6d6c2916a3
-         Total devices 1 FS bytes used 1.38GiB
-         devid    1 size 6.87GiB used 2.10GiB path /dev/sdb3
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.12 (GNU/Linux)
 
+iQIcBAEBAgAGBQJWr9gIAAoJEFheFHXiqx3kyDMQAKcI3MUtEx+457RhJJy/74nK
+mra7WRlzsTznnZbY4Lo/BZ6Wd8mNkgHtNl4pECkAkZ/ESWcOqGLxH1HBEAvFyB64
+TOvB1VPb/g80FpQ+JcWKUL+RNbeFs8HlPreLu1rqzpYVpcre7/EbWqt/biRrOVO/
+S3jTmhnMOlZXYelvaBY6PziCIFxxA4GFp/TyrVFsNMjWZ9LxVX6a8QoLswe7MD0h
+e1+VtvEc3lYbpajWW7nD9AF0rvXVq9dnK5Pk/RaCg2lZDw4h/UPjMm2e71/alvlO
+xHQSOZ7Z5MhdBtqj1i0I8/mgTgCrZuCsqGxWBKKx9hsku6fWLZ3OQwHykgYN1E95
+sVrMYZW1c1jCJkv253xPjAU4ND6aQpD+RQSiYa03ThGAfYZPPAo318cyYXPAZIL4
+C1HVMXY+5o78pQhGqUJAqyRR7Sed3mroHt7HzHurNgtZKilzkFN9ITCre+YzkxXW
+s31J70l5bnXwwrxmq3or2htBPyM1/v3ZhPA4/MUEv0XZa/DT0grEnqretoPHbau8
+npjfiK03tiRv2DzTtsjsd3YyPAUsiSPs6A6h0rSgJO/nP33HfyslRcw0uGMqFLB3
+q1eO/8sJmNmX06PSew73/U579BsSFaCSn9f9Fckv/9PM2eIoG8V0zV4482w1tBOm
+FvzMcJusVox1LqKSPGSo
+=n2ZJ
+-----END PGP SIGNATURE-----
 
-
-
-
-It's a pitty that the only NAS Distribution built around btrfs does not 
-support the full feature-set of btrfs on its root partition.
-Could you please help me fixing this?
-
-Below you find the complete grub.cfg.
-
-Regards,
-Hendrik
-
-
-
-
-
-
-
-cat /boot/grub2/grub.cfg
-#
-# DO NOT EDIT THIS FILE
-#
-# It is automatically generated by grub2-mkconfig using templates
-# from /etc/grub.d and settings from /etc/default/grub
-#
-
-### BEGIN /etc/grub.d/00_header ###
-set pager=1
-
-if [ -s $prefix/grubenv ]; then
-   load_env
-fi
-if [ "${next_entry}" ] ; then
-    set default="${next_entry}"
-    set next_entry=
-    save_env next_entry
-    set boot_once=true
-else
-    set default="${saved_entry}"
-fi
-
-if [ x"${feature_menuentry_id}" = xy ]; then
-   menuentry_id_option="--id"
-else
-   menuentry_id_option=""
-fi
-
-export menuentry_id_option
-
-if [ "${prev_saved_entry}" ]; then
-   set saved_entry="${prev_saved_entry}"
-   save_env saved_entry
-   set prev_saved_entry=
-   save_env prev_saved_entry
-   set boot_once=true
-fi
-
-function savedefault {
-   if [ -z "${boot_once}" ]; then
-     saved_entry="${chosen}"
-     save_env saved_entry
-   fi
-}
-
-function load_video {
-   if [ x$feature_all_video_module = xy ]; then
-     insmod all_video
-   else
-     insmod efi_gop
-     insmod efi_uga
-     insmod ieee1275_fb
-     insmod vbe
-     insmod vga
-     insmod video_bochs
-     insmod video_cirrus
-   fi
-}
-
-terminal_output console
-if [ x$feature_timeout_style = xy ] ; then
-   set timeout_style=menu
-   set timeout=5
-# Fallback normal timeout code in case the timeout_style feature is
-# unavailable.
-else
-   set timeout=5
-fi
-### END /etc/grub.d/00_header ###
-
-### BEGIN /etc/grub.d/00_tuned ###
-set tuned_params=""
-### END /etc/grub.d/00_tuned ###
-
-### BEGIN /etc/grub.d/01_users ###
-if [ -f ${prefix}/user.cfg ]; then
-   source ${prefix}/user.cfg
-   if [ -n "${GRUB2_PASSWORD}" ]; then
-     set superusers="root"
-     export superusers
-     password_pbkdf2 root ${GRUB2_PASSWORD}
-   fi
-fi
-### END /etc/grub.d/01_users ###
-
-### BEGIN /etc/grub.d/10_linux ###
-menuentry 'Rockstor (4.3.3-1.el7.elrepo.x86_64) 3 (Core)' --class rhel 
-fedora --class gnu-linux --class gnu --class os --unrestricted 
-$menuentry_id_option 
-'gnulinux-4.3.3-1.el7.elrepo.x86_64-advanced-f9de7c11-012e-4e5d-8b53-0e6d6c2916a3' 
-{
-         load_video
-         set gfxpayload=keep
-         insmod gzio
-         insmod part_msdos
-         insmod ext2
-         set root='hd0,msdos1'
-         if [ x$feature_platform_search_hint = xy ]; then
-           search --no-floppy --fs-uuid --set=root 
---hint-bios=hd0,msdos1 --hint-efi=hd0,msdos1 
---hint-baremetal=ahci0,msdos1 --hint='hd0,msdos1' 
-4a470ac6-f013-4e7b-a4f3-3a58cc4debc3
-         else
-           search --no-floppy --fs-uuid --set=root 
-4a470ac6-f013-4e7b-a4f3-3a58cc4debc3
-         fi
-         linux16 /vmlinuz-4.3.3-1.el7.elrepo.x86_64 
-root=UUID=f9de7c11-012e-4e5d-8b53-0e6d6c2916a3 ro rootflags=subvol=root 
-crashkernel=auto rhgb quiet LANG=en_US.UTF-8
-         initrd16 /initramfs-4.3.3-1.el7.elrepo.x86_64.img
-}
-menuentry 'Rockstor (0-rescue-f5f625480f394bdc90d6d3c06be7fb88) 3 
-(Core)' --class rhel fedora --class gnu-linux --class gnu --class os 
---unrestricted $menuentry_id_option 
-'gnulinux-0-rescue-f5f625480f394bdc90d6d3c06be7fb88-advanced-f9de7c11-012e-4e5d-8b53-0e6d6c2916a3' 
-{
-         load_video
-         insmod gzio
-         insmod part_msdos
-         insmod ext2
-         set root='hd0,msdos1'
-         if [ x$feature_platform_search_hint = xy ]; then
-           search --no-floppy --fs-uuid --set=root 
---hint-bios=hd0,msdos1 --hint-efi=hd0,msdos1 
---hint-baremetal=ahci0,msdos1 --hint='hd0,msdos1' 
-4a470ac6-f013-4e7b-a4f3-3a58cc4debc3
-         else
-           search --no-floppy --fs-uuid --set=root 
-4a470ac6-f013-4e7b-a4f3-3a58cc4debc3
-         fi
-         linux16 /vmlinuz-0-rescue-f5f625480f394bdc90d6d3c06be7fb88 
-root=UUID=f9de7c11-012e-4e5d-8b53-0e6d6c2916a3 ro rootflags=subvol=root 
-crashkernel=auto rhgb quiet
-         initrd16 /initramfs-0-rescue-f5f625480f394bdc90d6d3c06be7fb88.img
-}
-
-### END /etc/grub.d/10_linux ###
-
-### BEGIN /etc/grub.d/20_linux_xen ###
-
-### END /etc/grub.d/20_linux_xen ###
-
-### BEGIN /etc/grub.d/20_ppc_terminfo ###
-### END /etc/grub.d/20_ppc_terminfo ###
-
-### BEGIN /etc/grub.d/30_os-prober ###
-### END /etc/grub.d/30_os-prober ###
-
-### BEGIN /etc/grub.d/40_custom ###
-# This file provides an easy way to add custom menu entries.  Simply 
-type the
-# menu entries you want to add after this comment.  Be careful not to change
-# the 'exec tail' line above.
-### END /etc/grub.d/40_custom ###
-
-### BEGIN /etc/grub.d/41_custom ###
-if [ -f  ${config_directory}/custom.cfg ]; then
-   source ${config_directory}/custom.cfg
-elif [ -z "${config_directory}" -a -f  $prefix/custom.cfg ]; then
-   source $prefix/custom.cfg;
-fi
-### END /etc/grub.d/41_custom ###
-
-
----
-Diese E-Mail wurde von Avast Antivirus-Software auf Viren geprüft.
-https://www.avast.com/antivirus
-
+--UfEAyuTBtIjiZzX6--

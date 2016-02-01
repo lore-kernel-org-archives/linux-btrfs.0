@@ -1,95 +1,33 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:18117 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1751503AbcBEBZD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 4 Feb 2016 20:25:03 -0500
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
-Subject: [PATCH v6 17/19] btrfs: dedup: add a property handler for online dedup
-Date: Fri,  5 Feb 2016 09:22:37 +0800
-Message-Id: <1454635359-10013-18-git-send-email-quwenruo@cn.fujitsu.com>
-In-Reply-To: <1454635359-10013-1-git-send-email-quwenruo@cn.fujitsu.com>
-References: <1454635359-10013-1-git-send-email-quwenruo@cn.fujitsu.com>
+Received: from mx2.suse.de ([195.135.220.15]:35355 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750877AbcBAXoA (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 1 Feb 2016 18:44:00 -0500
+Date: Tue, 2 Feb 2016 00:43:45 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Mark Fasheh <mfasheh@suse.de>
+Cc: linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.com>,
+        Chris Mason <clm@fb.com>
+Subject: Re: [PATCH] btrfs-progs: add 'du' command
+Message-ID: <20160201234345.GJ31992@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1453326567-20454-1-git-send-email-mfasheh@suse.de>
 MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1453326567-20454-1-git-send-email-mfasheh@suse.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
+Hi,
 
-We use btrfs extended attribute "btrfs.dedup" to record per-file online
-dedup status, so add a dedup property handler.
+On Wed, Jan 20, 2016 at 01:49:24PM -0800, Mark Fasheh wrote:
+> A git tree of the patches can be found here:
+> 
+> https://github.com/markfasheh/btrfs-progs-patches/tree/du
 
-Signed-off-by: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
----
- fs/btrfs/props.c | 40 ++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 40 insertions(+)
+what changed since the previous posting?
 
-diff --git a/fs/btrfs/props.c b/fs/btrfs/props.c
-index f9e6023..fb82080 100644
---- a/fs/btrfs/props.c
-+++ b/fs/btrfs/props.c
-@@ -41,6 +41,10 @@ static int prop_compression_apply(struct inode *inode,
- 				  size_t len);
- static const char *prop_compression_extract(struct inode *inode);
- 
-+static int prop_dedup_validate(const char *value, size_t len);
-+static int prop_dedup_apply(struct inode *inode, const char *value, size_t len);
-+static const char *prop_dedup_extract(struct inode *inode);
-+
- static struct prop_handler prop_handlers[] = {
- 	{
- 		.xattr_name = XATTR_BTRFS_PREFIX "compression",
-@@ -49,6 +53,13 @@ static struct prop_handler prop_handlers[] = {
- 		.extract = prop_compression_extract,
- 		.inheritable = 1
- 	},
-+	{
-+		.xattr_name = XATTR_BTRFS_PREFIX "dedup",
-+		.validate = prop_dedup_validate,
-+		.apply = prop_dedup_apply,
-+		.extract = prop_dedup_extract,
-+		.inheritable = 1
-+	},
- };
- 
- void __init btrfs_props_init(void)
-@@ -425,4 +436,33 @@ static const char *prop_compression_extract(struct inode *inode)
- 	return NULL;
- }
- 
-+static int prop_dedup_validate(const char *value, size_t len)
-+{
-+	if (!strncmp("disable", value, len))
-+		return 0;
-+
-+	return -EINVAL;
-+}
-+
-+static int prop_dedup_apply(struct inode *inode, const char *value, size_t len)
-+{
-+	if (len == 0) {
-+		BTRFS_I(inode)->flags &= ~BTRFS_INODE_NODEDUP;
-+		return 0;
-+	}
-+
-+	if (!strncmp("disable", value, len)) {
-+		BTRFS_I(inode)->flags |= BTRFS_INODE_NODEDUP;
-+		return 0;
-+	}
-+
-+	return -EINVAL;
-+}
-+
-+static const char *prop_dedup_extract(struct inode *inode)
-+{
-+	if (BTRFS_I(inode)->flags & BTRFS_INODE_NODEDUP)
-+		return "disable";
- 
-+	return NULL;
-+}
--- 
-2.7.0
-
-
-
+Otherwise code looks ok, I saw use of uint64_t, the units help can be
+extended to the full units set, and maybe other minor things that would
+be good to fix. I'll do a more fine grained review when applying the
+patches.

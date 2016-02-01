@@ -1,137 +1,66 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:59567 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1752065AbcBBDBf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 1 Feb 2016 22:01:35 -0500
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
-Subject: [PATCH v4 8/8] btrfs-progs: property: add a dedup property
-Date: Tue,  2 Feb 2016 10:59:13 +0800
-Message-Id: <1454381953-29676-9-git-send-email-quwenruo@cn.fujitsu.com>
-In-Reply-To: <1454381953-29676-1-git-send-email-quwenruo@cn.fujitsu.com>
-References: <1454381953-29676-1-git-send-email-quwenruo@cn.fujitsu.com>
+Received: from mail-io0-f181.google.com ([209.85.223.181]:35418 "EHLO
+	mail-io0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753922AbcBAMF7 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 1 Feb 2016 07:05:59 -0500
+Received: by mail-io0-f181.google.com with SMTP id d63so137254604ioj.2
+        for <linux-btrfs@vger.kernel.org>; Mon, 01 Feb 2016 04:05:58 -0800 (PST)
 MIME-Version: 1.0
+Reply-To: fdmanana@gmail.com
+In-Reply-To: <20160201115350.GA9678@googlemail.com>
+References: <20160201115350.GA9678@googlemail.com>
+Date: Mon, 1 Feb 2016 12:05:58 +0000
+Message-ID: <CAL3q7H4geSgrD21TFci6Z3BsVmCyFYXXiXq0eTqJVi4iFkwVkQ@mail.gmail.com>
+Subject: Re: [PATCH] fs: btrfs: fixes a pass by reference issue in send.c
+From: Filipe Manana <fdmanana@gmail.com>
+To: Ben Marsh <bmarsh94@gmail.com>
+Cc: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
+        David Sterba <dsterba@suse.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
+On Mon, Feb 1, 2016 at 11:53 AM, Ben Marsh <bmarsh94@gmail.com> wrote:
+> This patch fixes a pointer issue from passing a struct as a parameter
+> to the function btrfs_root_dec_send_in_progress.
+>
+> Signed-off-by: Ben Marsh <bmarsh94@gmail.com>
+> ---
+>  fs/btrfs/send.c | 2 +-
+>  1 file changed, 1 insertion(+), 1 deletion(-)
+>
+> diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
+> index 63a6152..47ee63e 100644
+> --- a/fs/btrfs/send.c
+> +++ b/fs/btrfs/send.c
+> @@ -5911,7 +5911,7 @@ commit_trans:
+>         return btrfs_commit_transaction(trans, sctx->send_root);
+>  }
+>
+> -static void btrfs_root_dec_send_in_progress(struct btrfs_root* root)
+> +static void btrfs_root_dec_send_in_progress(struct btrfs_root *root)
 
-Normally if we enable online dedup for a fs, it's filesystem wide
-de-duplication. With this property, we can explicitly disable data
-de-duplication for specified files.
+It's a white space change. Both forms are equivalent and pass the root
+by reference.
+IOW, you aren't fixing any problem.
 
-Signed-off-by: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
----
- Documentation/btrfs-property.asciidoc |  2 +
- props.c                               | 73 +++++++++++++++++++++++++++++++++++
- 2 files changed, 75 insertions(+)
+>  {
+>         spin_lock(&root->root_item_lock);
+>         root->send_in_progress--;
+> --
+> 1.9.1
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 
-diff --git a/Documentation/btrfs-property.asciidoc b/Documentation/btrfs-property.asciidoc
-index 8b9b7f0..2fbecf6 100644
---- a/Documentation/btrfs-property.asciidoc
-+++ b/Documentation/btrfs-property.asciidoc
-@@ -44,6 +44,8 @@ label::::
- label of device
- compression::::
- compression setting for an inode: lzo, zlib, or "" (empty string)
-+dedup::::
-+online dedup setting for an inode: disable or "" (empty string)
- 
- *list* [-t <type>] <object>::
- Lists available properties with their descriptions for the given object.
-diff --git a/props.c b/props.c
-index 5b74932..f27eb8b 100644
---- a/props.c
-+++ b/props.c
-@@ -187,6 +187,77 @@ out:
- 	return ret;
- }
- 
-+static int prop_dedup(enum prop_object_type type, const char *object,
-+	const char *name, const char *value)
-+{
-+	int ret;
-+	ssize_t sret;
-+	int fd = -1;
-+	DIR *dirstream = NULL;
-+	char *buf = NULL;
-+	char *xattr_name = NULL;
-+	int open_flags = value ? O_RDWR : O_RDONLY;
-+
-+	fd = open_file_or_dir3(object, &dirstream, open_flags);
-+	if (fd == -1) {
-+		ret = -errno;
-+		fprintf(stderr, "ERROR: open %s failed. %s\n",
-+			object, strerror(-ret));
-+		goto out;
-+	}
-+
-+	xattr_name = malloc(XATTR_BTRFS_PREFIX_LEN + strlen(name) + 1);
-+	if (!xattr_name) {
-+		ret = -ENOMEM;
-+		goto out;
-+	}
-+	memcpy(xattr_name, XATTR_BTRFS_PREFIX, XATTR_BTRFS_PREFIX_LEN);
-+	memcpy(xattr_name + XATTR_BTRFS_PREFIX_LEN, name, strlen(name));
-+	xattr_name[XATTR_BTRFS_PREFIX_LEN + strlen(name)] = '\0';
-+
-+	if (value)
-+		sret = fsetxattr(fd, xattr_name, value, strlen(value), 0);
-+	else
-+		sret = fgetxattr(fd, xattr_name, NULL, 0);
-+	if (sret < 0) {
-+		ret = -errno;
-+		if (ret != -ENOATTR)
-+			fprintf(stderr,
-+				"ERROR: failed to %s dedup for %s. %s\n",
-+				value ? "set" : "get", object, strerror(-ret));
-+		else
-+			ret = 0;
-+		goto out;
-+	}
-+	if (!value) {
-+		size_t len = sret;
-+
-+		buf = malloc(len);
-+		if (!buf) {
-+			ret = -ENOMEM;
-+			goto out;
-+		}
-+		sret = fgetxattr(fd, xattr_name, buf, len);
-+		if (sret < 0) {
-+			ret = -errno;
-+			fprintf(stderr,
-+				"ERROR: failed to get dedup for %s. %s\n",
-+				object, strerror(-ret));
-+			goto out;
-+		}
-+		fprintf(stdout, "dedup=%.*s\n", (int)len, buf);
-+	}
-+
-+	ret = 0;
-+out:
-+	free(xattr_name);
-+	free(buf);
-+	if (fd >= 0)
-+		close_file_or_dir(fd, dirstream);
-+
-+	return ret;
-+}
-+
- const struct prop_handler prop_handlers[] = {
- 	{"ro", "Set/get read-only flag of subvolume.", 0, prop_object_subvol,
- 	 prop_read_only},
-@@ -194,5 +265,7 @@ const struct prop_handler prop_handlers[] = {
- 	 prop_object_dev | prop_object_root, prop_label},
- 	{"compression", "Set/get compression for a file or directory", 0,
- 	 prop_object_inode, prop_compression},
-+	{"dedup", "Set/get dedup for a file or directory", 0,
-+	 prop_object_inode, prop_dedup},
- 	{NULL, NULL, 0, 0, NULL}
- };
+
+
 -- 
-2.7.0
+Filipe David Manana,
 
-
-
+"Reasonable men adapt themselves to the world.
+ Unreasonable men adapt the world to themselves.
+ That's why all progress depends on unreasonable men."

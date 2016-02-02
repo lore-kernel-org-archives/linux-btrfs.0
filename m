@@ -1,67 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:9625 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751342AbcBBCzT (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 1 Feb 2016 21:55:19 -0500
-Subject: Re: Why is dedup inline, not delayed (as opposed to offline)? Explain
- like I'm five pls.
-To: Al <6401e46d@opayq.com>, <linux-btrfs@vger.kernel.org>
-References: <loom.20160116T132316-196@post.gmane.org>
- <pan$6d016$7902b96d$a10088a$d023ef02@cox.net>
- <loom.20160120T143906-108@post.gmane.org> <56A0956B.7060706@cn.fujitsu.com>
- <loom.20160121T152848-821@post.gmane.org>
- <CAJCQCtQr18LnkrxpnBR0MrTjLGuUd=wPsa9+NoW-TfrycT8Zvw@mail.gmail.com>
- <loom.20160122T122307-195@post.gmane.org>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <56B01A85.80507@cn.fujitsu.com>
-Date: Tue, 2 Feb 2016 10:55:01 +0800
+Received: from mail-ig0-f176.google.com ([209.85.213.176]:36401 "EHLO
+	mail-ig0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754317AbcBBNBX (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 2 Feb 2016 08:01:23 -0500
+Received: by mail-ig0-f176.google.com with SMTP id z14so59554906igp.1
+        for <linux-btrfs@vger.kernel.org>; Tue, 02 Feb 2016 05:01:23 -0800 (PST)
+Subject: Re: Question about a specific error.
+To: Hugo Mills <hugo@carfax.org.uk>, Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+References: <56AFB598.2020307@gmail.com> <20160201202112.GB8313@carfax.org.uk>
+From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Message-ID: <56B0A881.5080403@gmail.com>
+Date: Tue, 2 Feb 2016 08:00:49 -0500
 MIME-Version: 1.0
-In-Reply-To: <loom.20160122T122307-195@post.gmane.org>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+In-Reply-To: <20160201202112.GB8313@carfax.org.uk>
+Content-Type: text/plain; charset=windows-1252; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-You're right, I misunderstood the mail and get a little emotional.
-
-And sorry for that inappropriate reply.
-
-
-BTW, the new patchset will be sent to btrfs mail list in coming hour, if 
-you're interested in inband de-dup, you can try the following github 
-repos to build and test in-band de-dup:
-
-Kernel
-https://github.com/adam900710/linux.git wang_dedup
-
-Btrfs-progs
-https://github.com/adam900710/btrfs-progs.git dedup
-
-And if you have any concern on the implementation or the dedup related 
-Document, I'm happy to hear.
-(I was a little emotional just because some unexpected bugs that time.)
-
-Thanks,
-Qu
-
-
-Al wrote on 2016/01/22 11:33 +0000:
-> With respect Chris, if you intentionally ignore all of the other context
-> clues ("keep up the great work", "looking forward to using it"), you could
-> come to that conclusion. You'd have to try really really hard.
+On 2016-02-01 15:21, Hugo Mills wrote:
+> On Mon, Feb 01, 2016 at 02:44:24PM -0500, Austin S. Hemmelgarn wrote:
+>> In the process of trying to debug issues I'm having on one of my
+>> systems with a new kernel version, I decided to do a dry run check on
+>> the root filesystem.  'btrfs check' returned a bunch of lines like:
+>>
+>> root 257 inode XXXXXX errors 2000, link count wrong
+>>          unresolved ref dir YYYYY index 53 namelen 3 name LOG filetype 0 errors 3, no dir item, no dir index
+>>
+>> I got about 20 messages like this with varying values for everything
+>> except the filetype and error counts.  Based on what I can tell, these
+>> look like orphaned inodex, but I'm not certain.
+>> Is it safe to tell BTRFS to try and fix these errors?
 >
-> I wasn't criticising your buddy in anyway, quite the opposite. Can we move
-> on, now? There are better ways of spending our time.
+>     Yes, those are errors I'd expect btrfs check --repair to handle
+> properly.
 >
->
->
->
->
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
->
-
+OK, it looks like things were fixed safely, but I'm not 100% certain 
+that it fixed things the way it should have.  All of the files it 
+reported got moved to /lost+found (which makes me think it thought they 
+were orphaned items), but none of the files themselves showed any issues 
+in regular usage (they were all perfectly visible beforehand in the 
+regular directory structure, and there were no errors accessing them). 
+On top of that, it pulled out two different versions of each one, one 
+from more than a year ago, and one current version.  I think btrfs check 
+may have gotten either confused or over-zealous and just decided it 
+needed to pull out the current, perfectly fine versions of the files as 
+well.
 

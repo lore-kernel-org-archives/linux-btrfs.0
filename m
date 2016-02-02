@@ -1,151 +1,95 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.136]:34354 "EHLO mail.kernel.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750922AbcBOKxt (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 15 Feb 2016 05:53:49 -0500
-From: fdmanana@kernel.org
-To: fstests@vger.kernel.org
-Cc: linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH Resend] fstests: btrfs, test directory fsync after deleting snapshots
-Date: Mon, 15 Feb 2016 10:53:39 +0000
-Message-Id: <1455533619-7598-1-git-send-email-fdmanana@kernel.org>
+Received: from mail-yk0-f182.google.com ([209.85.160.182]:34412 "EHLO
+	mail-yk0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755163AbcBBXjQ (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 2 Feb 2016 18:39:16 -0500
+Received: by mail-yk0-f182.google.com with SMTP id u9so4427487ykd.1
+        for <linux-btrfs@vger.kernel.org>; Tue, 02 Feb 2016 15:39:16 -0800 (PST)
+MIME-Version: 1.0
+In-Reply-To: <CAPcyv4gtcL_WwZpmiAUhO5h4q3YyXinkpz9SwKm5SBA9-1kE9Q@mail.gmail.com>
+References: <1454454702-11889-1-git-send-email-ross.zwisler@linux.intel.com>
+	<20160202231931.GR17997@ZenIV.linux.org.uk>
+	<CAPcyv4gtcL_WwZpmiAUhO5h4q3YyXinkpz9SwKm5SBA9-1kE9Q@mail.gmail.com>
+Date: Tue, 2 Feb 2016 15:39:15 -0800
+Message-ID: <CAPcyv4gqq0guubnddRPmDVA0N1=vfh3w6jPf4GsuYs0D29nS4w@mail.gmail.com>
+Subject: Re: [PATCH] dax: allow DAX to look up an inode's block device
+From: Dan Williams <dan.j.williams@intel.com>
+To: Al Viro <viro@zeniv.linux.org.uk>
+Cc: Ross Zwisler <ross.zwisler@linux.intel.com>,
+        "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>,
+        "J. Bruce Fields" <bfields@fieldses.org>,
+        Andrew Morton <akpm@linux-foundation.org>,
+        Dave Chinner <david@fromorbit.com>, Jan Kara <jack@suse.com>,
+        Jeff Layton <jlayton@poochiereds.net>,
+        Matthew Wilcox <willy@linux.intel.com>,
+        linux-fsdevel <linux-fsdevel@vger.kernel.org>,
+        linux-nvdimm <linux-nvdimm@ml01.01.org>,
+        XFS Developers <xfs@oss.sgi.com>, linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Filipe Manana <fdmanana@suse.com>
+[ adding btrfs, resend with the correct list address  ]
 
-Test that if we fsync a directory that had a snapshot entry in it that
-was deleted and crash, the next time we mount the filesystem, the log
-replay procedure will not fail and the snapshot is not present anymore.
+On Tue, Feb 2, 2016 at 3:19 PM, Al Viro <viro@zeniv.linux.org.uk> wrote:
+> On Tue, Feb 02, 2016 at 04:11:42PM -0700, Ross Zwisler wrote:
+>
+>> However, for raw block devices and for XFS with a real-time device, the
+>> value in inode->i_sb->s_bdev is not correct.  With the code as it is
+>> currently written, an fsync or msync to a DAX enabled raw block device will
+>> cause a NULL pointer dereference kernel BUG.  For this to work correctly we
+>> need to ask the block device or filesystem what struct block_device is
+>> appropriate for our inode.
+>>
+>> To that end, add a get_bdev(struct inode *) entry point to struct
+>> super_operations.  If this function pointer is non-NULL, this notifies DAX
+>> that it needs to use it to look up the correct block_device.  If
+>> i_sb->get_bdev() is NULL DAX will default to inode->i_sb->s_bdev.
+>
+> Umm...  It assumes that bdev will stay pinned for as long as inode is
+> referenced, presumably?  If so, that needs to be documented (and verified
+> for existing fs instances).  In principle, multi-disk fs might want to
+> support things like "silently move the inodes backed by that disk to other
+> ones"...
 
-This issue is fixed by the following patch for the linux kernel:
+I assume btrfs is the only fs we have that might reassign the bdev for
+a given inode on the fly?  Hopefully we don't need anything stronger
+than rcu_read_lock() to pin the result as valid.
 
-  "Btrfs: fix unreplayable log after snapshot delete + parent dir fsync"
+At least in this case the initial user is dax-fsync where the
+->get_bdev() answer should be static for the life of the inode, and
+btrfs does not currently interface with dax.  But yes, we need to get
+the expected semantics clear.
 
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
-Tested-by: Liu Bo <bo.li.liu@oracle.com>
-Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
----
-
-Resend since it was not picked in the last update.
-Rebased against current master branch.
-
- tests/btrfs/118     | 86 +++++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/118.out |  2 ++
- tests/btrfs/group   |  1 +
- 3 files changed, 89 insertions(+)
- create mode 100755 tests/btrfs/118
- create mode 100644 tests/btrfs/118.out
-
-diff --git a/tests/btrfs/118 b/tests/btrfs/118
-new file mode 100755
-index 0000000..3ed1cbe
---- /dev/null
-+++ b/tests/btrfs/118
-@@ -0,0 +1,86 @@
-+#! /bin/bash
-+# FSQA Test No. 118
-+#
-+# Test that if we fsync a directory that had a snapshot entry in it that was
-+# deleted and crash, the next time we mount the filesystem, the log replay
-+# procedure will not fail and the snapshot is not present anymore.
-+#
-+#-----------------------------------------------------------------------
-+#
-+# Copyright (C) 2016 SUSE Linux Products GmbH. All Rights Reserved.
-+# Author: Filipe Manana <fdmanana@suse.com>
-+#
-+# This program is free software; you can redistribute it and/or
-+# modify it under the terms of the GNU General Public License as
-+# published by the Free Software Foundation.
-+#
-+# This program is distributed in the hope that it would be useful,
-+# but WITHOUT ANY WARRANTY; without even the implied warranty of
-+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+# GNU General Public License for more details.
-+#
-+# You should have received a copy of the GNU General Public License
-+# along with this program; if not, write the Free Software Foundation,
-+# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-+#-----------------------------------------------------------------------
-+#
-+
-+seq=`basename $0`
-+seqres=$RESULT_DIR/$seq
-+echo "QA output created by $seq"
-+tmp=/tmp/$$
-+status=1	# failure is the default!
-+trap "_cleanup; exit \$status" 0 1 2 3 15
-+
-+_cleanup()
-+{
-+	_cleanup_flakey
-+	cd /
-+	rm -f $tmp.*
-+}
-+
-+# get standard environment, filters and checks
-+. ./common/rc
-+. ./common/filter
-+. ./common/dmflakey
-+
-+# real QA test starts here
-+_need_to_be_root
-+_supported_fs btrfs
-+_supported_os Linux
-+_require_scratch
-+_require_dm_target flakey
-+_require_metadata_journaling $SCRATCH_DEV
-+
-+rm -f $seqres.full
-+
-+_scratch_mkfs >>$seqres.full 2>&1
-+_init_flakey
-+_mount_flakey
-+
-+# Create a snapshot at the root of our filesystem (mount point path), delete it,
-+# fsync the mount point path, crash and mount to replay the log. This should
-+# succeed and after the filesystem is mounted the snapshot should not be visible
-+# anymore.
-+_run_btrfs_util_prog subvolume snapshot $SCRATCH_MNT $SCRATCH_MNT/snap1
-+_run_btrfs_util_prog subvolume delete $SCRATCH_MNT/snap1
-+$XFS_IO_PROG -c "fsync" $SCRATCH_MNT
-+_flakey_drop_and_remount
-+[ -e $SCRATCH_MNT/snap1 ] && echo "Snapshot snap1 still exists after log replay"
-+
-+# Similar scenario as above, but this time the snapshot is created inside a
-+# directory and not directly under the root (mount point path).
-+mkdir $SCRATCH_MNT/testdir
-+_run_btrfs_util_prog subvolume snapshot $SCRATCH_MNT $SCRATCH_MNT/testdir/snap2
-+_run_btrfs_util_prog subvolume delete $SCRATCH_MNT/testdir/snap2
-+$XFS_IO_PROG -c "fsync" $SCRATCH_MNT/testdir
-+_flakey_drop_and_remount
-+[ -e $SCRATCH_MNT/testdir/snap2 ] && \
-+	echo "Snapshot snap2 still exists after log replay"
-+
-+_unmount_flakey
-+
-+echo "Silence is golden"
-+
-+status=0
-+exit
-diff --git a/tests/btrfs/118.out b/tests/btrfs/118.out
-new file mode 100644
-index 0000000..3daed86
---- /dev/null
-+++ b/tests/btrfs/118.out
-@@ -0,0 +1,2 @@
-+QA output created by 118
-+Silence is golden
-diff --git a/tests/btrfs/group b/tests/btrfs/group
-index f74ffbb..a2fa412 100644
---- a/tests/btrfs/group
-+++ b/tests/btrfs/group
-@@ -118,3 +118,4 @@
- 115 auto qgroup
- 116 auto quick metadata
- 117 auto quick send clone
-+118 auto quick snapshot metadata
--- 
-2.7.0.rc3
-
+On Tue, Feb 2, 2016 at 3:38 PM, Dan Williams <dan.j.williams@intel.com> wrote:
+> [ adding btrfs ]
+>
+> On Tue, Feb 2, 2016 at 3:19 PM, Al Viro <viro@zeniv.linux.org.uk> wrote:
+>> On Tue, Feb 02, 2016 at 04:11:42PM -0700, Ross Zwisler wrote:
+>>
+>>> However, for raw block devices and for XFS with a real-time device, the
+>>> value in inode->i_sb->s_bdev is not correct.  With the code as it is
+>>> currently written, an fsync or msync to a DAX enabled raw block device will
+>>> cause a NULL pointer dereference kernel BUG.  For this to work correctly we
+>>> need to ask the block device or filesystem what struct block_device is
+>>> appropriate for our inode.
+>>>
+>>> To that end, add a get_bdev(struct inode *) entry point to struct
+>>> super_operations.  If this function pointer is non-NULL, this notifies DAX
+>>> that it needs to use it to look up the correct block_device.  If
+>>> i_sb->get_bdev() is NULL DAX will default to inode->i_sb->s_bdev.
+>>
+>> Umm...  It assumes that bdev will stay pinned for as long as inode is
+>> referenced, presumably?  If so, that needs to be documented (and verified
+>> for existing fs instances).  In principle, multi-disk fs might want to
+>> support things like "silently move the inodes backed by that disk to other
+>> ones"...
+>
+> I assume btrfs is the only fs we have that might reassign the bdev for
+> a given inode on the fly?  Hopefully we don't need anything stronger
+> than rcu_read_lock() to pin the result as valid.
+>
+> At least in this case the initial user is dax-fsync where the
+> ->get_bdev() answer should be static for the life of the inode, and
+> btrfs does not currently interface with dax.  But yes, we need to get
+> the expected semantics clear.

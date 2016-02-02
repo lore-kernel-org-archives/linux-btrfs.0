@@ -1,129 +1,117 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
 Received: from cn.fujitsu.com ([222.73.24.84]:65010 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1751342AbcBBDH7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 1 Feb 2016 22:07:59 -0500
+	id S1751925AbcBBDIA (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 1 Feb 2016 22:08:00 -0500
+Received: from localhost.localdomain (unknown [10.167.226.34])
+	by cn.fujitsu.com (Postfix) with ESMTP id 9DCC24056414
+	for <linux-btrfs@vger.kernel.org>; Tue,  2 Feb 2016 11:07:51 +0800 (CST)
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
-Cc: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
-Subject: [PATCH v5 14/19] btrfs: dedup: Add support for adding hash for on-disk backend
-Date: Tue,  2 Feb 2016 11:05:46 +0800
-Message-Id: <1454382351-31775-15-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH v5 05/19] btrfs: delayed-ref: Add support for increasing data ref under spinlock
+Date: Tue,  2 Feb 2016 11:05:37 +0800
+Message-Id: <1454382351-31775-6-git-send-email-quwenruo@cn.fujitsu.com>
 In-Reply-To: <1454382351-31775-1-git-send-email-quwenruo@cn.fujitsu.com>
 References: <1454382351-31775-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Now on-disk backend can add hash now.
+For in-band dedup, btrfs needs to increase data ref with delayed_ref
+locked, so add a new function btrfs_add_delayed_data_ref_lock() to
+increase extent ref with delayed_refs already locked.
 
-Signed-off-by: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- fs/btrfs/dedup.c | 83 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 83 insertions(+)
+ fs/btrfs/dedup.c       |  1 +
+ fs/btrfs/delayed-ref.c | 30 +++++++++++++++++++++++-------
+ fs/btrfs/delayed-ref.h |  8 ++++++++
+ 3 files changed, 32 insertions(+), 7 deletions(-)
 
 diff --git a/fs/btrfs/dedup.c b/fs/btrfs/dedup.c
-index 309cbc3..073726d 100644
+index 57c9dfe..be93cf3 100644
 --- a/fs/btrfs/dedup.c
 +++ b/fs/btrfs/dedup.c
-@@ -407,6 +407,87 @@ out:
- 	return 0;
+@@ -20,6 +20,7 @@
+ #include "btrfs_inode.h"
+ #include "transaction.h"
+ #include "delayed-ref.h"
++#include "qgroup.h"
+ 
+ struct inmem_hash {
+ 	struct rb_node hash_node;
+diff --git a/fs/btrfs/delayed-ref.c b/fs/btrfs/delayed-ref.c
+index 914ac13..1091810 100644
+--- a/fs/btrfs/delayed-ref.c
++++ b/fs/btrfs/delayed-ref.c
+@@ -805,6 +805,26 @@ free_ref:
  }
  
-+static int ondisk_search_bytenr(struct btrfs_trans_handle *trans,
-+				struct btrfs_dedup_info *dedup_info,
-+				struct btrfs_path *path, u64 bytenr,
-+				int prepare_del);
-+static int ondisk_search_hash(struct btrfs_dedup_info *dedup_info, u8 *hash,
-+			      u64 *bytenr_ret, u32 *num_bytes_ret);
-+static int ondisk_add(struct btrfs_trans_handle *trans,
-+		      struct btrfs_dedup_info *dedup_info,
-+		      struct btrfs_dedup_hash *hash)
+ /*
++ * Do real delayed data ref insert.
++ * Caller must hold delayed_refs->lock and allocation memory
++ * for dref,head_ref and record.
++ */
++void btrfs_add_delayed_data_ref_locked(struct btrfs_fs_info *fs_info,
++			struct btrfs_trans_handle *trans,
++			struct btrfs_delayed_data_ref *dref,
++			struct btrfs_delayed_ref_head *head_ref,
++			struct btrfs_qgroup_extent_record *qrecord,
++			u64 bytenr, u64 num_bytes, u64 parent, u64 ref_root,
++			u64 owner, u64 offset, u64 reserved, int action)
 +{
-+	struct btrfs_path *path;
-+	struct btrfs_root *dedup_root = dedup_info->dedup_root;
-+	struct btrfs_key key;
-+	struct btrfs_dedup_hash_item *hash_item;
-+	u64 bytenr;
-+	u32 num_bytes;
-+	int hash_len = btrfs_dedup_sizes[dedup_info->hash_type];
-+	int ret;
-+
-+	path = btrfs_alloc_path();
-+	if (!path)
-+		return -ENOMEM;
-+
-+	mutex_lock(&dedup_info->lock);
-+
-+	ret = ondisk_search_bytenr(NULL, dedup_info, path, hash->bytenr, 0);
-+	if (ret < 0)
-+		goto out;
-+	if (ret > 0) {
-+		ret = 0;
-+		goto out;
-+	}
-+	btrfs_release_path(path);
-+
-+	ret = ondisk_search_hash(dedup_info, hash->hash, &bytenr, &num_bytes);
-+	if (ret < 0)
-+		goto out;
-+	/* Same hash found, don't re-add to save dedup tree space */
-+	if (ret > 0) {
-+		ret = 0;
-+		goto out;
-+	}
-+
-+	/* Insert hash->bytenr item */
-+	memcpy(&key.objectid, hash->hash + hash_len - 8, 8);
-+	key.type = BTRFS_DEDUP_HASH_ITEM_KEY;
-+	key.offset = hash->bytenr;
-+
-+	ret = btrfs_insert_empty_item(trans, dedup_root, path, &key,
-+			sizeof(*hash_item) + hash_len);
-+	WARN_ON(ret == -EEXIST);
-+	if (ret < 0)
-+		goto out;
-+	hash_item = btrfs_item_ptr(path->nodes[0], path->slots[0],
-+				   struct btrfs_dedup_hash_item);
-+	btrfs_set_dedup_hash_len(path->nodes[0], hash_item, hash->num_bytes);
-+	write_extent_buffer(path->nodes[0], hash->hash,
-+			    (unsigned long)(hash_item + 1), hash_len);
-+	btrfs_mark_buffer_dirty(path->nodes[0]);
-+	btrfs_release_path(path);
-+
-+	/* Then bytenr->hash item */
-+	key.objectid = hash->bytenr;
-+	key.type = BTRFS_DEDUP_BYTENR_ITEM_KEY;
-+	memcpy(&key.offset, hash->hash + hash_len - 8, 8);
-+
-+	ret = btrfs_insert_empty_item(trans, dedup_root, path, &key, hash_len);
-+	WARN_ON(ret == -EEXIST);
-+	if (ret < 0)
-+		goto out;
-+	write_extent_buffer(path->nodes[0], hash->hash,
-+			btrfs_item_ptr_offset(path->nodes[0], path->slots[0]),
-+			hash_len);
-+	btrfs_mark_buffer_dirty(path->nodes[0]);
-+
-+out:
-+	mutex_unlock(&dedup_info->lock);
-+	btrfs_free_path(path);
-+	return ret;
++	head_ref = add_delayed_ref_head(fs_info, trans, &head_ref->node,
++			qrecord, bytenr, num_bytes, ref_root, reserved,
++			action, 1);
++	add_delayed_data_ref(fs_info, trans, head_ref, &dref->node, bytenr,
++			num_bytes, parent, ref_root, owner, offset, action);
 +}
 +
- int btrfs_dedup_add(struct btrfs_trans_handle *trans,
- 		    struct btrfs_dedup_info *dedup_info,
- 		    struct btrfs_dedup_hash *hash)
-@@ -423,6 +504,8 @@ int btrfs_dedup_add(struct btrfs_trans_handle *trans,
++/*
+  * add a delayed data ref. it's similar to btrfs_add_delayed_tree_ref.
+  */
+ int btrfs_add_delayed_data_ref(struct btrfs_fs_info *fs_info,
+@@ -849,13 +869,9 @@ int btrfs_add_delayed_data_ref(struct btrfs_fs_info *fs_info,
+ 	 * insert both the head node and the new ref without dropping
+ 	 * the spin lock
+ 	 */
+-	head_ref = add_delayed_ref_head(fs_info, trans, &head_ref->node, record,
+-					bytenr, num_bytes, ref_root, reserved,
+-					action, 1);
+-
+-	add_delayed_data_ref(fs_info, trans, head_ref, &ref->node, bytenr,
+-				   num_bytes, parent, ref_root, owner, offset,
+-				   action);
++	btrfs_add_delayed_data_ref_locked(fs_info, trans, ref, head_ref, record,
++			bytenr, num_bytes, parent, ref_root, owner, offset,
++			reserved, action);
+ 	spin_unlock(&delayed_refs->lock);
  
- 	if (dedup_info->backend == BTRFS_DEDUP_BACKEND_INMEMORY)
- 		return inmem_add(dedup_info, hash);
-+	if (dedup_info->backend == BTRFS_DEDUP_BACKEND_ONDISK)
-+		return ondisk_add(trans, dedup_info, hash);
- 	return -EINVAL;
+ 	return 0;
+diff --git a/fs/btrfs/delayed-ref.h b/fs/btrfs/delayed-ref.h
+index c24b653..2765858 100644
+--- a/fs/btrfs/delayed-ref.h
++++ b/fs/btrfs/delayed-ref.h
+@@ -239,11 +239,19 @@ static inline void btrfs_put_delayed_ref(struct btrfs_delayed_ref_node *ref)
+ 	}
  }
  
++struct btrfs_qgroup_extent_record;
+ int btrfs_add_delayed_tree_ref(struct btrfs_fs_info *fs_info,
+ 			       struct btrfs_trans_handle *trans,
+ 			       u64 bytenr, u64 num_bytes, u64 parent,
+ 			       u64 ref_root, int level, int action,
+ 			       struct btrfs_delayed_extent_op *extent_op);
++void btrfs_add_delayed_data_ref_locked(struct btrfs_fs_info *fs_info,
++			struct btrfs_trans_handle *trans,
++			struct btrfs_delayed_data_ref *dref,
++			struct btrfs_delayed_ref_head *head_ref,
++			struct btrfs_qgroup_extent_record *qrecord,
++			u64 bytenr, u64 num_bytes, u64 parent, u64 ref_root,
++			u64 owner, u64 offset, u64 reserved, int action);
+ int btrfs_add_delayed_data_ref(struct btrfs_fs_info *fs_info,
+ 			       struct btrfs_trans_handle *trans,
+ 			       u64 bytenr, u64 num_bytes,
 -- 
 2.7.0
 

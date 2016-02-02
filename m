@@ -1,61 +1,39 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtprelay05.ispgateway.de ([80.67.31.97]:35607 "EHLO
-	smtprelay05.ispgateway.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751720AbcBBWAD convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 2 Feb 2016 17:00:03 -0500
+Received: from smtprelay06.ispgateway.de ([80.67.31.101]:40139 "EHLO
+	smtprelay06.ispgateway.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751720AbcBBWBn convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 2 Feb 2016 17:01:43 -0500
 Subject: Re: booting from BTRFS works only with one device in the pool
-To: Chris Murphy <lists@colorremedies.com>
+To: Hugo Mills <hugo@carfax.org.uk>, Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 References: <56AFCEC3.9050803@friedels.name>
- <CAJCQCtRox+q5u902iwA3YL2yvEP+9_=02HJzpZU6TWZ1R9V+Qg@mail.gmail.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+ <20160201221120.GD8313@carfax.org.uk>
 From: Hendrik Friedel <hendrik@friedels.name>
-Message-ID: <56B126DD.90009@friedels.name>
-Date: Tue, 2 Feb 2016 22:59:57 +0100
+Message-ID: <56B12742.9090101@friedels.name>
+Date: Tue, 2 Feb 2016 23:01:38 +0100
 MIME-Version: 1.0
-In-Reply-To: <CAJCQCtRox+q5u902iwA3YL2yvEP+9_=02HJzpZU6TWZ1R9V+Qg@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+In-Reply-To: <20160201221120.GD8313@carfax.org.uk>
+Content-Type: text/plain; charset=windows-1252; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello Chris,
+Hello Hugo,
 
-> That's a bit weird. This is BIOS or UEFI system? On UEFI, the prebaked
-> grubx64.efi includes btrfs, so insmod isn't strictly needed. But on
-> BIOS it would be.
-it is a Virtual-Box-VM. It is a BIOS system
-
- > It might be as simple as manually mounting:
- >btrfs dev scan
- >btrfs fi show
-## hopefully both devices are now associated with the volume
- > mount /dev/sdXY /sysroot
- > exit
-
-The mount works.
-After entering "exit" I get the feedback "logout" and the system hangs.
-
- > If it mounts, you can exit to continue the startup process. And then: 
-dracut -f That'll rebuild the initramfs.
-
-And dracut then somehow understands that btrfs dev scan is needed?
->> set root='hd0,msdos1'
->> search --no-floppy --fs-uuid --set=root --hint-bios=hd0,msdos1
->> --hint-efi=hd0,msdos1 --hint-baremetal=ahci0,msdos1 --hint='hd0,msdos1'
->> 4a470ac6-f013-4e7b-a4f3-3a58cc4debc3
->>
->> after removing sda3 from the pool again, the system boots normally.
-> That's unexpected. Both devices should now refer to each other, so
-> either device missing should fail, it's effectively raid0 except on a
-> chunk level.
+ >> Here I am stuck in a recovery prompt.
+>     By far the simplest and most reliable method of doing this is to
+> use an initramfs with the command "btrfs dev scan" in it somewhere
+> before mounting. Most of the major distributions already have an
+> initramfs set up (as does yours, I see), and will install the correct
+> commands in the initramfs if you install the btrfs-progs package
+> (btrfs-tools in Debian derivatives).
 >
-That's way beyond my understanding. I am not sure how this entry is 
-generated. But it is somehow a default behavior, as it seems (I have not 
-done this)
+I would like to go the sensible way :-)
+But can you hint me how and where to add the btrfs device scan option to 
+the initramfs?
 
-Greetings,
+Regards,
 Hendrik
 
 ---
-Diese E-Mail wurde von Avast Antivirus-Software auf Viren geprÃ¼ft.
+Diese E-Mail wurde von Avast Antivirus-Software auf Viren geprüft.
 https://www.avast.com/antivirus
 

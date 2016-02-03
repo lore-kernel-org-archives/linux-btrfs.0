@@ -1,27 +1,259 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:50335 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750746AbcBWM2V (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 23 Feb 2016 07:28:21 -0500
-Date: Tue, 23 Feb 2016 13:28:12 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Liu Bo <bo.li.liu@oracle.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 2/2] Btrfs: fix lockdep deadlock warning due to
- dev_replace
-Message-ID: <20160223122812.GL4374@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1437122959-23376-1-git-send-email-bo.li.liu@oracle.com>
- <1437122959-23376-2-git-send-email-bo.li.liu@oracle.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1437122959-23376-2-git-send-email-bo.li.liu@oracle.com>
+Received: from mail-pa0-f66.google.com ([209.85.220.66]:36695 "EHLO
+	mail-pa0-f66.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S933441AbcBCGMP (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 3 Feb 2016 01:12:15 -0500
+From: Deepa Dinamani <deepa.kernel@gmail.com>
+To: linux-fsdevel@vger.kernel.org, y2038@lists.linaro.org
+Cc: Arnd Bergmann <arnd@arndb.de>, Dave Chinner <david@fromorbit.com>,
+        "Theodore Ts'o" <tytso@mit.edu>, linux-kernel@vger.kernel.org,
+        Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
+        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
+Subject: [PATCH 10/10] fs: btrfs: Replace CURRENT_TIME by current_fs_time()
+Date: Tue,  2 Feb 2016 22:07:50 -0800
+Message-Id: <1454479670-8204-11-git-send-email-deepa.kernel@gmail.com>
+In-Reply-To: <1454479670-8204-1-git-send-email-deepa.kernel@gmail.com>
+References: <1454479670-8204-1-git-send-email-deepa.kernel@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Jul 17, 2015 at 04:49:19PM +0800, Liu Bo wrote:
-> With this, btrfs/011 no more produces warnings in dmesg.
-> 
-> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+CURRENT_TIME macro is not appropriate for filesystems as it
+doesn't use the right granularity for filesystem timestamps.
+Use current_fs_time() instead.
 
-Patch added to next for 4.6.
+Signed-off-by: Deepa Dinamani <deepa.kernel@gmail.com>
+Cc: Chris Mason <clm@fb.com>
+Cc: Josef Bacik <jbacik@fb.com>
+Cc: David Sterba <dsterba@suse.com>
+Cc: linux-btrfs@vger.kernel.org
+---
+ fs/btrfs/file.c        |  4 ++--
+ fs/btrfs/inode.c       | 25 +++++++++++++------------
+ fs/btrfs/ioctl.c       |  8 ++++----
+ fs/btrfs/root-tree.c   |  2 +-
+ fs/btrfs/transaction.c |  7 +++++--
+ fs/btrfs/xattr.c       |  2 +-
+ 6 files changed, 26 insertions(+), 22 deletions(-)
+
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index 098bb8f..610f569 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -2544,7 +2544,7 @@ out_trans:
+ 		goto out_free;
+ 
+ 	inode_inc_iversion(inode);
+-	inode->i_mtime = inode->i_ctime = CURRENT_TIME;
++	inode->i_mtime = inode->i_ctime = current_fs_time(inode->i_sb);
+ 
+ 	trans->block_rsv = &root->fs_info->trans_block_rsv;
+ 	ret = btrfs_update_inode(trans, root, inode);
+@@ -2794,7 +2794,7 @@ static long btrfs_fallocate(struct file *file, int mode,
+ 		if (IS_ERR(trans)) {
+ 			ret = PTR_ERR(trans);
+ 		} else {
+-			inode->i_ctime = CURRENT_TIME;
++			inode->i_ctime = current_fs_time(inode->i_sb);
+ 			i_size_write(inode, actual_end);
+ 			btrfs_ordered_update_i_size(inode, actual_end, NULL);
+ 			ret = btrfs_update_inode(trans, root, inode);
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index e28f3d4..59c0e22 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -4013,7 +4013,8 @@ err:
+ 	btrfs_i_size_write(dir, dir->i_size - name_len * 2);
+ 	inode_inc_iversion(inode);
+ 	inode_inc_iversion(dir);
+-	inode->i_ctime = dir->i_mtime = dir->i_ctime = CURRENT_TIME;
++	inode->i_ctime = dir->i_mtime =
++		dir->i_ctime = current_fs_time(inode->i_sb);
+ 	ret = btrfs_update_inode(trans, root, dir);
+ out:
+ 	return ret;
+@@ -4156,7 +4157,7 @@ int btrfs_unlink_subvol(struct btrfs_trans_handle *trans,
+ 
+ 	btrfs_i_size_write(dir, dir->i_size - name_len * 2);
+ 	inode_inc_iversion(dir);
+-	dir->i_mtime = dir->i_ctime = CURRENT_TIME;
++	dir->i_mtime = dir->i_ctime = current_fs_time(dir->i_sb);
+ 	ret = btrfs_update_inode_fallback(trans, root, dir);
+ 	if (ret)
+ 		btrfs_abort_transaction(trans, root, ret);
+@@ -5588,7 +5589,7 @@ static struct inode *new_simple_dir(struct super_block *s,
+ 	inode->i_op = &btrfs_dir_ro_inode_operations;
+ 	inode->i_fop = &simple_dir_operations;
+ 	inode->i_mode = S_IFDIR | S_IRUGO | S_IWUSR | S_IXUGO;
+-	inode->i_mtime = CURRENT_TIME;
++	inode->i_mtime = current_fs_time(inode->i_sb);
+ 	inode->i_atime = inode->i_mtime;
+ 	inode->i_ctime = inode->i_mtime;
+ 	BTRFS_I(inode)->i_otime = inode->i_mtime;
+@@ -6160,7 +6161,7 @@ static struct inode *btrfs_new_inode(struct btrfs_trans_handle *trans,
+ 	inode_init_owner(inode, dir, mode);
+ 	inode_set_bytes(inode, 0);
+ 
+-	inode->i_mtime = CURRENT_TIME;
++	inode->i_mtime = current_fs_time(inode->i_sb);
+ 	inode->i_atime = inode->i_mtime;
+ 	inode->i_ctime = inode->i_mtime;
+ 	BTRFS_I(inode)->i_otime = inode->i_mtime;
+@@ -6273,7 +6274,8 @@ int btrfs_add_link(struct btrfs_trans_handle *trans,
+ 	btrfs_i_size_write(parent_inode, parent_inode->i_size +
+ 			   name_len * 2);
+ 	inode_inc_iversion(parent_inode);
+-	parent_inode->i_mtime = parent_inode->i_ctime = CURRENT_TIME;
++	parent_inode->i_mtime = parent_inode->i_ctime =
++		current_fs_time(parent_inode->i_sb);
+ 	ret = btrfs_update_inode(trans, root, parent_inode);
+ 	if (ret)
+ 		btrfs_abort_transaction(trans, root, ret);
+@@ -6491,7 +6493,7 @@ static int btrfs_link(struct dentry *old_dentry, struct inode *dir,
+ 	BTRFS_I(inode)->dir_index = 0ULL;
+ 	inc_nlink(inode);
+ 	inode_inc_iversion(inode);
+-	inode->i_ctime = CURRENT_TIME;
++	inode->i_ctime = current_fs_time(inode->i_sb);
+ 	ihold(inode);
+ 	set_bit(BTRFS_INODE_COPY_EVERYTHING, &BTRFS_I(inode)->runtime_flags);
+ 
+@@ -9234,7 +9236,6 @@ static int btrfs_rename(struct inode *old_dir, struct dentry *old_dentry,
+ 	struct btrfs_root *dest = BTRFS_I(new_dir)->root;
+ 	struct inode *new_inode = d_inode(new_dentry);
+ 	struct inode *old_inode = d_inode(old_dentry);
+-	struct timespec ctime = CURRENT_TIME;
+ 	u64 index = 0;
+ 	u64 root_objectid;
+ 	int ret;
+@@ -9331,9 +9332,9 @@ static int btrfs_rename(struct inode *old_dir, struct dentry *old_dentry,
+ 	inode_inc_iversion(old_dir);
+ 	inode_inc_iversion(new_dir);
+ 	inode_inc_iversion(old_inode);
+-	old_dir->i_ctime = old_dir->i_mtime = ctime;
+-	new_dir->i_ctime = new_dir->i_mtime = ctime;
+-	old_inode->i_ctime = ctime;
++	old_dir->i_ctime = old_dir->i_mtime =
++	new_dir->i_ctime = new_dir->i_mtime =
++	old_inode->i_ctime = current_fs_time(old_dir->i_sb);
+ 
+ 	if (old_dentry->d_parent != new_dentry->d_parent)
+ 		btrfs_record_unlink_dir(trans, old_dir, old_inode, 1);
+@@ -9358,7 +9359,7 @@ static int btrfs_rename(struct inode *old_dir, struct dentry *old_dentry,
+ 
+ 	if (new_inode) {
+ 		inode_inc_iversion(new_inode);
+-		new_inode->i_ctime = CURRENT_TIME;
++		new_inode->i_ctime = current_fs_time(new_inode->i_sb);
+ 		if (unlikely(btrfs_ino(new_inode) ==
+ 			     BTRFS_EMPTY_SUBVOL_DIR_OBJECTID)) {
+ 			root_objectid = BTRFS_I(new_inode)->location.objectid;
+@@ -9836,7 +9837,7 @@ next:
+ 		*alloc_hint = ins.objectid + ins.offset;
+ 
+ 		inode_inc_iversion(inode);
+-		inode->i_ctime = CURRENT_TIME;
++		inode->i_ctime = current_fs_time(inode->i_sb);
+ 		BTRFS_I(inode)->flags |= BTRFS_INODE_PREALLOC;
+ 		if (!(mode & FALLOC_FL_KEEP_SIZE) &&
+ 		    (actual_len > inode->i_size) &&
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 952172c..6f35d9c 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -347,7 +347,7 @@ static int btrfs_ioctl_setflags(struct file *file, void __user *arg)
+ 
+ 	btrfs_update_iflags(inode);
+ 	inode_inc_iversion(inode);
+-	inode->i_ctime = CURRENT_TIME;
++	inode->i_ctime = current_fs_time(inode->i_sb);
+ 	ret = btrfs_update_inode(trans, root, inode);
+ 
+ 	btrfs_end_transaction(trans, root);
+@@ -443,7 +443,7 @@ static noinline int create_subvol(struct inode *dir,
+ 	struct btrfs_root *root = BTRFS_I(dir)->root;
+ 	struct btrfs_root *new_root;
+ 	struct btrfs_block_rsv block_rsv;
+-	struct timespec cur_time = CURRENT_TIME;
++	struct timespec cur_time = current_fs_time(dir->i_sb);
+ 	struct inode *inode;
+ 	int ret;
+ 	int err;
+@@ -3148,7 +3148,7 @@ static int clone_finish_inode_update(struct btrfs_trans_handle *trans,
+ 
+ 	inode_inc_iversion(inode);
+ 	if (!no_time_update)
+-		inode->i_mtime = inode->i_ctime = CURRENT_TIME;
++		inode->i_mtime = inode->i_ctime = current_fs_time(inode->i_sb);
+ 	/*
+ 	 * We round up to the block size at eof when determining which
+ 	 * extents to clone above, but shouldn't round up the file size.
+@@ -4956,7 +4956,7 @@ static long _btrfs_ioctl_set_received_subvol(struct file *file,
+ 	struct btrfs_root *root = BTRFS_I(inode)->root;
+ 	struct btrfs_root_item *root_item = &root->root_item;
+ 	struct btrfs_trans_handle *trans;
+-	struct timespec ct = CURRENT_TIME;
++	struct timespec ct = current_fs_time(inode->i_sb);
+ 	int ret = 0;
+ 	int received_uuid_changed;
+ 
+diff --git a/fs/btrfs/root-tree.c b/fs/btrfs/root-tree.c
+index 7cf8509..0d3a4ee 100644
+--- a/fs/btrfs/root-tree.c
++++ b/fs/btrfs/root-tree.c
+@@ -488,7 +488,7 @@ void btrfs_update_root_times(struct btrfs_trans_handle *trans,
+ 			     struct btrfs_root *root)
+ {
+ 	struct btrfs_root_item *item = &root->root_item;
+-	struct timespec ct = CURRENT_TIME;
++	struct timespec ct = current_fs_time(root->ino_cache_inode->i_sb);
+ 
+ 	spin_lock(&root->root_item_lock);
+ 	btrfs_set_root_ctransid(item, trans->transid);
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index b6031ce..37562d6 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -1333,7 +1333,7 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
+ 	struct dentry *dentry;
+ 	struct extent_buffer *tmp;
+ 	struct extent_buffer *old;
+-	struct timespec cur_time = CURRENT_TIME;
++	struct timespec cur_time;
+ 	int ret = 0;
+ 	u64 to_reserve = 0;
+ 	u64 index = 0;
+@@ -1381,6 +1381,8 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
+ 	parent_root = BTRFS_I(parent_inode)->root;
+ 	record_root_in_trans(trans, parent_root);
+ 
++	cur_time = current_fs_time(parent_inode->i_sb);
++
+ 	/*
+ 	 * insert the directory item
+ 	 */
+@@ -1523,7 +1525,8 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
+ 
+ 	btrfs_i_size_write(parent_inode, parent_inode->i_size +
+ 					 dentry->d_name.len * 2);
+-	parent_inode->i_mtime = parent_inode->i_ctime = CURRENT_TIME;
++	parent_inode->i_mtime = parent_inode->i_ctime =
++		current_fs_time(parent_inode->i_sb);
+ 	ret = btrfs_update_inode_fallback(trans, parent_root, parent_inode);
+ 	if (ret) {
+ 		btrfs_abort_transaction(trans, root, ret);
+diff --git a/fs/btrfs/xattr.c b/fs/btrfs/xattr.c
+index 6c68d63..f2a20d5 100644
+--- a/fs/btrfs/xattr.c
++++ b/fs/btrfs/xattr.c
+@@ -249,7 +249,7 @@ int __btrfs_setxattr(struct btrfs_trans_handle *trans,
+ 		goto out;
+ 
+ 	inode_inc_iversion(inode);
+-	inode->i_ctime = CURRENT_TIME;
++	inode->i_ctime = current_fs_time(inode->i_sb);
+ 	set_bit(BTRFS_INODE_COPY_EVERYTHING, &BTRFS_I(inode)->runtime_flags);
+ 	ret = btrfs_update_inode(trans, root, inode);
+ 	BUG_ON(ret);
+-- 
+1.9.1
+

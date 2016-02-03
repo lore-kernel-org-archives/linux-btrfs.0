@@ -1,84 +1,70 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from youngberry.canonical.com ([91.189.89.112]:40643 "EHLO
-	youngberry.canonical.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751284AbcBPQRn (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 16 Feb 2016 11:17:43 -0500
-Subject: Re: BZ#101951, Overlayfs on top of btrfs causes kernel oops + freeze
-To: fdmanana@gmail.com
-References: <56C3428D.1010000@canonical.com>
- <CAL3q7H7XVLTHrv+tdNiF4W=VZGNQ9S3dNNdh1wvHkPjYZ0QhkQ@mail.gmail.com>
- <56C34996.3050802@canonical.com>
- <CAL3q7H7YYf0ntQiF4A1FQXYvRxgprQORoF-8jFe3i5T-=ELzzQ@mail.gmail.com>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-From: Colin Ian King <colin.king@canonical.com>
-Message-ID: <56C34BA5.8040407@canonical.com>
-Date: Tue, 16 Feb 2016 16:17:41 +0000
+Received: from mail-io0-f176.google.com ([209.85.223.176]:34854 "EHLO
+	mail-io0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S965110AbcBCVyj (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 3 Feb 2016 16:54:39 -0500
+Received: by mail-io0-f176.google.com with SMTP id d63so72074527ioj.2
+        for <linux-btrfs@vger.kernel.org>; Wed, 03 Feb 2016 13:54:38 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <CAL3q7H7YYf0ntQiF4A1FQXYvRxgprQORoF-8jFe3i5T-=ELzzQ@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8
+Date: Wed, 3 Feb 2016 22:54:38 +0100
+Message-ID: <CAM=f9=V-7hbjGLzWUxbynsoJdP-NexEoaTJ3GJJxn3gBYsW1BA@mail.gmail.com>
+Subject: btrfs-progs and btrfs(8) inconsistencies
+From: Moviuro <moviuro@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 16/02/16 16:11, Filipe Manana wrote:
-> On Tue, Feb 16, 2016 at 4:08 PM, Colin Ian King
-> <colin.king@canonical.com> wrote:
->> On 16/02/16 15:51, Filipe Manana wrote:
->>> On Tue, Feb 16, 2016 at 3:38 PM, Colin Ian King
->>> <colin.king@canonical.com> wrote:
->>>> Hi there,
->>>>
->>>> bug: https://bugzilla.kernel.org/show_bug.cgi?id=101951 and also
->>>> https://bugs.launchpad.net/ubuntu/+source/linux/+bug/1532145
->>>>
->>>> Commit 4bacc9c9234c7c8eec44f5ed4e960d9f96fa0f01 ("overlayfs: Make f_path
->>>> always point to the overlay and f_inode to the underlay") resulted in an
->>>> issue when using a combination of btrfs and overlayfs.  This is
->>>> noticeable when doing a fsync() on a file in a chroot with overlayfs on
->>>> top of btrfs; we hit a kernel oops in btrfs_sync_file() on
->>>> atomic_inc(&root->log_batch) because root is NULL.
->>>>
->>>> I've debugged this further and found that in btrfs_sync_file():
->>>>
->>>>         struct inode *inode = d_inode(dentry);
->>>>
->>>> does not return the inode I expected when using the stacked overlay fs,
->>>> where as:
->>>>
->>>>         struct inode *inode = file_inode(file);
->>>>
->>>> does.
->>>
->>> See the discussion at
->>> https://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg48131.html
->>>
->>> You can get along with file_inode() in btrfs_sync_file(), but not
->>> later the fsync code path where we traverse the hierarchy up using
->>> dentries.
->>> More details on that thread.
->>
->> Ah, good. So was there any resolution on a way forward for a fix?
-> 
-> Nop.
-> 
-OK, so chroots don't work, that's a bit of a show stopper :-/
+Hi all,
 
->>
->>>
->>>>
->>>> However, I'm not well at all well versed in btrfs, so I am not confident
->>>> this is a actually correct.  Any comments?
->>>>
->>>> Colin
->>>> --
->>>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->>>> the body of a message to majordomo@vger.kernel.org
->>>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->>>
->>>
->>>
->>
-> 
-> 
-> 
+I should have done this a long time ago, so here goes.
 
+Btrfs is certainly the best FS out there but btrfs(8) is a pain to use in
+scripts. That is, it talks way too much, exposes unparseable outputs and
+has inconsistent behavior.
+
+I strongly believe that the CLI may use a complete revamp, that is: think
+of the needed/wanted output. I actually ran into this frustrating behavior
+while writing butter (https://github.com/moviuro/butter).
+
+Eg: # btrfs subvolume create foo
+Should be silent. I don't want btrfs(8) to bug me about successful
+commands. Everything that is a success is silent. In its current form,
+btrfs-subvolume(8) would spat out a complete sentence in English that we
+don't need, which however contains a tiny bit of useful info: the path
+(though relative) to the new subvolume. A -v/--verbose option might be here
+a good idea to implement and the following behavior (just thinking out
+loud, I'm sure there would be lots of things to think about more precisely):
+
+# btrfs subvolume create foo # should be silent
+# btrfs subvolume create -v foo
+/absolute/path/foo
+# btrfs subvolume create [--details|-vv] foo
+PATH:/absolute/path/foo
+UUID:082df386-98c2-44d9-9012-07fb2b22ea20
+[And whatnot]
+
+That's a first example. Same should go for all the commands. I have no idea
+how/where we could share about good/bad outputs (Google Drive? Framapad?
+git[hub|lab]?)
+
+Then come inconsistencies: compare the outputs of
+# btrfs sub create foo
+# btrfs sub delete foo
+
+This also needs to be taken care of, but it should be a by-product of
+thinking the outputs all over again.
+
+Behavior inconsistencies: some seemingly valid commands fail, because of
+some code that can be easily changed (I'm working on it in my spare time
+already, see https://github.com/moviuro/btrfs-progs/tree/getopts):
+
+The valid '--' doesn't work on every command, see
+0aa796cad7ed3fce9d5964646a8f1f5a142b4989 here:
+https://github.com/kdave/btrfs-progs/commit/0aa796cad7ed3fce9d5964646a8f1f5a142b4989
+
+
+That's it. And since AFAICT btrfs is FLOSS, I'm sharing about my experience
+as user and hope my opinion will change btrfs(8) for the better.
+
+Cheers,

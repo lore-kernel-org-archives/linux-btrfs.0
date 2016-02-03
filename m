@@ -1,41 +1,61 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f175.google.com ([209.85.213.175]:37801 "EHLO
-	mail-ig0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755589AbcBCEsG (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 2 Feb 2016 23:48:06 -0500
-Received: by mail-ig0-f175.google.com with SMTP id 5so28067827igt.0
-        for <linux-btrfs@vger.kernel.org>; Tue, 02 Feb 2016 20:48:05 -0800 (PST)
+Received: from smtprelay01.ispgateway.de ([80.67.31.24]:56730 "EHLO
+	smtprelay01.ispgateway.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753278AbcBCGbO convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 3 Feb 2016 01:31:14 -0500
+Subject: Re: booting from BTRFS works only with one device in the pool
+To: Chris Murphy <lists@colorremedies.com>
+References: <56AFCEC3.9050803@friedels.name>
+ <20160201221120.GD8313@carfax.org.uk> <56B12742.9090101@friedels.name>
+ <CAJCQCtS3fQuypTbwTe4=H95rwtN0dMih_nPaBiWUc2s-qE2Xag@mail.gmail.com>
+Cc: Hugo Mills <hugo@carfax.org.uk>, Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+From: Hendrik Friedel <hendrik@friedels.name>
+Message-ID: <56B19EAA.4000702@friedels.name>
+Date: Wed, 3 Feb 2016 07:31:06 +0100
 MIME-Version: 1.0
-In-Reply-To: <CAJCQCtRjCixev=Mt=jaL1ZytYaxj7Fa-AViLYGB-ALufyL98VA@mail.gmail.com>
-References: <CABXGCsOrgnvE=qbftu=7OuJenq7Vw6HzM9B86DLT4xJGLmqbMQ@mail.gmail.com>
-	<CAJCQCtS3MsrF43PnueK3-4kVLGfTNGjN4Tv-c=Jo1jVWYL7ksw@mail.gmail.com>
-	<CABXGCsOAyYa96E965ruKp9evCY3FrCdBr-GTPvCws5VqmjUC5Q@mail.gmail.com>
-	<CAJCQCtRjCixev=Mt=jaL1ZytYaxj7Fa-AViLYGB-ALufyL98VA@mail.gmail.com>
-Date: Tue, 2 Feb 2016 21:48:05 -0700
-Message-ID: <CAJCQCtRtVjyjvSfT=BCZZwfaSvbD4YVxEBezfAx+-q7cwMHmRQ@mail.gmail.com>
-Subject: Re: task btrfs-cleaner:770 blocked for more than 120 seconds.
-From: Chris Murphy <lists@colorremedies.com>
-To: bo.li.liu@oracle.com
-Cc: =?UTF-8?B?0JzQuNGF0LDQuNC7INCT0LDQstGA0LjQu9C+0LI=?=
-	<mikhail.v.gavrilov@gmail.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+In-Reply-To: <CAJCQCtS3fQuypTbwTe4=H95rwtN0dMih_nPaBiWUc2s-qE2Xag@mail.gmail.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Mike: From your attachment, looks like you rebooted. So do this:
+Hello,
+>> I would like to go the sensible way :-)
+>> But can you hint me how and where to add the btrfs device scan option to the
+>> initramfs?
+> If btrfs-progs 4.3.1 is installed already, dracut -f will rebuild the
+> initramfs and should just drag in current tools which will include
+> 'btrfs device scan'.
+>
 
-echo 1 > /proc/sys/kernel/sysrq
-Reproduce the problem where you get blocked task messages in dmesg
-echo w > /proc/sysrq-trigger
-journalctl -k > kernel-sysrqw-btrfscleaner770blocked-2.txt
+Yes, 4.3.1 is installed and even in the recovery-mode (i.e. if boot 
+fails) btrfs reports version 4.3.1.
+Also, in this recovery mode, btrfs dev scan is working. Furthermore, I 
+can mount the drive in this recovery mode (which I *suspect* is the 
+initramfs).
+
+My understanding is/was, that it is not sufficient that btrfs dev scan 
+is available, but also its execution must be triggered.  Is that right?
+
+> Like I said above, just install the distribution's own
+> btrfs-progs/btrfs-tools package, and it should do the right thing. You
+> may have to tell the distribution to rebuild the initramfs
+
+I have run dracut -f. It does not solve the issue.
+
+ >This is CentOS 7.2 installed to a single VDI file, and then you use
+ > 'btrfs dev add' to add another VDI file? I'd like to know how to 
+reproduce the conditions
+ > so I can figure out what's wrong because it ought to work, seeing as 
+it worked for me with
+ > Fedora 19 and CentOS 7.x is in the vicinity of Fedora 19/20.
+
+Yes, it is Rockstor (CentOS 7.2  based) installed in the way you mention.
+
+Regards,
+Hendrik
 
 
-Make sure you use the same mount options. Looks like you're using
-autodefrag, and inode_cache. Are there others? And can you say what
-the workload is? Especially because inode_cache is not a default mount
-option and isn't recommended except for certain workloads, but still I
-think it shouldn't hang. But that's a question for Liu Bo.
+---
+Diese E-Mail wurde von Avast Antivirus-Software auf Viren geprüft.
+https://www.avast.com/antivirus
 
-
-Chris Murphy

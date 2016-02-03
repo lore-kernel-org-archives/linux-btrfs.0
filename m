@@ -1,104 +1,81 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:51061 "EHLO
-	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S933481AbcBCV1m (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 3 Feb 2016 16:27:42 -0500
-Date: Wed, 3 Feb 2016 21:27:40 +0000
-From: Hugo Mills <hugo@carfax.org.uk>
-To: Chris Murphy <lists@colorremedies.com>
-Cc: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Subject: Re: Question about a specific error.
-Message-ID: <20160203212740.GC30635@carfax.org.uk>
-References: <56AFB598.2020307@gmail.com>
- <20160201202112.GB8313@carfax.org.uk>
- <56B0A881.5080403@gmail.com>
- <CAJCQCtQ_c1-ck6=_XasvDVwEepXQjB7V4jfxJ9Fe_pPmExtG=A@mail.gmail.com>
+Received: from mail-io0-f173.google.com ([209.85.223.173]:35816 "EHLO
+	mail-io0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S965604AbcBCWT3 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 3 Feb 2016 17:19:29 -0500
+Received: by mail-io0-f173.google.com with SMTP id d63so72756264ioj.2
+        for <linux-btrfs@vger.kernel.org>; Wed, 03 Feb 2016 14:19:28 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="sHrvAb52M6C8blB9"
-In-Reply-To: <CAJCQCtQ_c1-ck6=_XasvDVwEepXQjB7V4jfxJ9Fe_pPmExtG=A@mail.gmail.com>
+In-Reply-To: <CAJCQCtQgXRULpEG4HkOfhsB658kQS_jo2iw-xsY9zNpB1yDFoQ@mail.gmail.com>
+References: <56AFCEC3.9050803@friedels.name>
+	<CAJCQCtRox+q5u902iwA3YL2yvEP+9_=02HJzpZU6TWZ1R9V+Qg@mail.gmail.com>
+	<56B126DD.90009@friedels.name>
+	<CAJCQCtT0S6CiErJYUju5D5-q0s-KBXuYkXxMURjppZcgURP4wA@mail.gmail.com>
+	<56B24393.9030108@friedels.name>
+	<CAJCQCtQgXRULpEG4HkOfhsB658kQS_jo2iw-xsY9zNpB1yDFoQ@mail.gmail.com>
+Date: Wed, 3 Feb 2016 15:19:28 -0700
+Message-ID: <CAJCQCtTth7gKnCKsuJhaJ2jvYxzgZ76+gqQZOE2q7HJANXPQag@mail.gmail.com>
+Subject: Re: booting from BTRFS works only with one device in the pool
+From: Chris Murphy <lists@colorremedies.com>
+To: Chris Murphy <lists@colorremedies.com>
+Cc: Hendrik Friedel <hendrik@friedels.name>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Wed, Feb 3, 2016 at 1:30 PM, Chris Murphy <lists@colorremedies.com> wrote:
+> On Wed, Feb 3, 2016 at 11:14 AM, Hendrik Friedel <hendrik@friedels.name> wrote:
+>> Sorry, I missed this:
+>>> What do you get for rpm -q grub2
+>> grub2-2.02-0.34.el7.centos.x86_64
+>>
+>
+> Weird. I was not able to reproduce the problem with CentOS 7.0 doing
+> the following in virt-manager with two qcow2s backing /dev/vda and
+> /dev/vdb.
+>
+> 1. Install only to /dev/vda using custom partitioning, partition
+> scheme is btrfs.
+> 2. Reboot.
+> 3. Install btrfs-progs-4.4-1.fc23.x86_64.rpm
+> 4. Install kernel-ml-4.4.1-1.el7.elrepo.x86_64.rpm
+> ## I did those installs separately to make sure the newer progs goes
+> in the initramfs that's created when the newer kernel is installed;
+> it's just a time savings is all.
+> 5. Reboot
+> 6. btrfs dev add /dev/vdb /
+> 7. Reboot
+> 8. yum upgrade
+> ## at this point both devices have chunks
+> 9. Reboot
+> 10. btrfs balance start /
+> ## now only vdb has chunks (due to how single balance allocator works,
+> and vdb is bigger than vda2)
+> 11. Reboot.
+> ## still works
+>
+> Of course with a VM it's better to just grow the backing device, and
+> then something like 'btrfs fi resize max /' rather than have two
+> devices. But on a real system, you'd have two devices (with the caveat
+> that this is more fragile a setup than a single device because of
+> course if either device dies, the whole Btrfs volume implodes).
+>
+> I can try it without any updates and see if it works....
 
---sHrvAb52M6C8blB9
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+1. Install CentOS 7.0 to vda
+2. reboot
+3. btrfs dev add /dev/vdb /
+4. reboot
+## works
+5. btrfs balance start /
+6. reboot
+## works
 
-On Wed, Feb 03, 2016 at 02:17:06PM -0700, Chris Murphy wrote:
-> On Tue, Feb 2, 2016 at 6:00 AM, Austin S. Hemmelgarn
-> <ahferroin7@gmail.com> wrote:
-> > On 2016-02-01 15:21, Hugo Mills wrote:
-> >>
-> >> On Mon, Feb 01, 2016 at 02:44:24PM -0500, Austin S. Hemmelgarn wrote:
-> >>>
-> >>> In the process of trying to debug issues I'm having on one of my
-> >>> systems with a new kernel version, I decided to do a dry run check on
-> >>> the root filesystem.  'btrfs check' returned a bunch of lines like:
-> >>>
-> >>> root 257 inode XXXXXX errors 2000, link count wrong
-> >>>          unresolved ref dir YYYYY index 53 namelen 3 name LOG filetype 0
-> >>> errors 3, no dir item, no dir index
-> >>>
-> >>> I got about 20 messages like this with varying values for everything
-> >>> except the filetype and error counts.  Based on what I can tell, these
-> >>> look like orphaned inodex, but I'm not certain.
-> >>> Is it safe to tell BTRFS to try and fix these errors?
-> >>
-> >>
-> >>     Yes, those are errors I'd expect btrfs check --repair to handle
-> >> properly.
-> >>
-> > OK, it looks like things were fixed safely, but I'm not 100% certain that it
-> > fixed things the way it should have.  All of the files it reported got moved
-> > to /lost+found (which makes me think it thought they were orphaned items),
-> > but none of the files themselves showed any issues in regular usage (they
-> > were all perfectly visible beforehand in the regular directory structure,
-> > and there were no errors accessing them). On top of that, it pulled out two
-> > different versions of each one, one from more than a year ago, and one
-> > current version.  I think btrfs check may have gotten either confused or
-> > over-zealous and just decided it needed to pull out the current, perfectly
-> > fine versions of the files as well.
-> 
-> The problems look different. You're reporting errors 2000. I'm seeing
-> errors 2001. I'm not sure what the distinction is; but in my case,
-> cancelling btrfs check and just rerunning it gives different results.
-> https://bugzilla.kernel.org/show_bug.cgi?id=111841
+Same thing when starting with CentOS 7.2 media.
 
-   The "errors" field in the output of btrfs check is a hex
-(strange... I thought it was octal...) bit-field indicating the set of
-error types encountered. They're defined in #defines at the top of
-cmds-check.c. 2000 is I_ERR_SOME_CSUM_MISSING, 1 is I_ERR_NO_INODE_ITEM.
-
-   Hugo.
+This is a NAS product using CentOS 7.2? My only guess is they've
+changed something broke this.
 
 -- 
-Hugo Mills             | You are not stuck in traffic: you are traffic
-hugo@... carfax.org.uk |
-http://carfax.org.uk/  |
-PGP: E2AB1DE4          |                                    German ad campaign
-
---sHrvAb52M6C8blB9
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-
-iQIcBAEBAgAGBQJWsnDMAAoJEFheFHXiqx3kXqsP/RlIlmrRPe/exrvrHQnMyaI9
-e84gFzoI3Sz/EjekRzzgQamV18wSIjgXDBFumQddt5L4vBUDgPmb5rFvBoO20838
-dSQu7VqkSoeklHqY6LR5+cjNVYmK3P0wxHtR/gEbytcAtTNRThBzvlgUn7V6o6yK
-qXqW06zmFwRWdfr5X/P6McJFfqTo9sloKl0n/16z8bFmKC6NG6pD70hcGsaDrGqX
-UIjPb+hiSEjWWab8fLmvgEHu2MH7jRjc536LojwATxxlY7sgr02BGCpPxz8drXLV
-6V34ZHr+JexrF+N1CmICNPlmp+BghO/CeVjsN0d1MlXD/wB/QH3hMp3Q5fpvFeG6
-kk2PUOtqjWiZhOXHEnFHXAVK/Gr8lgXI/xz5vdo3PQJ/k7Zl+WjL+eLyPwGwvgif
-b3qBhQe/J8jCv71OCqjy9tvmCJwwVjof96ty4P4JMCmthEHLMvqCkY5AiQ25woK6
-htypw6EkyG+WreA5GjrT7Fu2MJ8K0X2xFvbPXK/Zn/750S/4uSkJamqJC+dMLJPy
-6bHJDW663M6yZ8Bh4h49dBsZ+bBACOAkfMRY+nVKA6vSh3bRQF61cTXbRe2t9Xvr
-DOWgz3EeQ4NEc3ogdSJa4pRS1htBVHIGXowJn9S78eXW5nc/rYBuyV9iwTyhsJuW
-kOwlrD/QhZWf7/UrshrJ
-=FVn4
------END PGP SIGNATURE-----
-
---sHrvAb52M6C8blB9--
+Chris Murphy

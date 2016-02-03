@@ -1,33 +1,67 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtprelay06.ispgateway.de ([80.67.18.29]:60896 "EHLO
-	smtprelay06.ispgateway.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S965042AbcBCSOu convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 3 Feb 2016 13:14:50 -0500
-Subject: Re: booting from BTRFS works only with one device in the pool
-To: Chris Murphy <lists@colorremedies.com>
-References: <56AFCEC3.9050803@friedels.name>
- <CAJCQCtRox+q5u902iwA3YL2yvEP+9_=02HJzpZU6TWZ1R9V+Qg@mail.gmail.com>
- <56B126DD.90009@friedels.name>
- <CAJCQCtT0S6CiErJYUju5D5-q0s-KBXuYkXxMURjppZcgURP4wA@mail.gmail.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-From: Hendrik Friedel <hendrik@friedels.name>
-Message-ID: <56B24393.9030108@friedels.name>
-Date: Wed, 3 Feb 2016 19:14:43 +0100
+Received: from mail-ig0-f194.google.com ([209.85.213.194]:32960 "EHLO
+	mail-ig0-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755180AbcBCUaV (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 3 Feb 2016 15:30:21 -0500
+Received: by mail-ig0-f194.google.com with SMTP id hb3so719389igb.0
+        for <linux-btrfs@vger.kernel.org>; Wed, 03 Feb 2016 12:30:20 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <CAJCQCtT0S6CiErJYUju5D5-q0s-KBXuYkXxMURjppZcgURP4wA@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+In-Reply-To: <56B24393.9030108@friedels.name>
+References: <56AFCEC3.9050803@friedels.name>
+	<CAJCQCtRox+q5u902iwA3YL2yvEP+9_=02HJzpZU6TWZ1R9V+Qg@mail.gmail.com>
+	<56B126DD.90009@friedels.name>
+	<CAJCQCtT0S6CiErJYUju5D5-q0s-KBXuYkXxMURjppZcgURP4wA@mail.gmail.com>
+	<56B24393.9030108@friedels.name>
+Date: Wed, 3 Feb 2016 13:30:20 -0700
+Message-ID: <CAJCQCtQgXRULpEG4HkOfhsB658kQS_jo2iw-xsY9zNpB1yDFoQ@mail.gmail.com>
+Subject: Re: booting from BTRFS works only with one device in the pool
+From: Chris Murphy <lists@colorremedies.com>
+To: Hendrik Friedel <hendrik@friedels.name>
+Cc: Chris Murphy <lists@colorremedies.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Sorry, I missed this:
- > What do you get for rpm -q grub2
-grub2-2.02-0.34.el7.centos.x86_64
+On Wed, Feb 3, 2016 at 11:14 AM, Hendrik Friedel <hendrik@friedels.name> wrote:
+> Sorry, I missed this:
+>> What do you get for rpm -q grub2
+> grub2-2.02-0.34.el7.centos.x86_64
+>
+
+Weird. I was not able to reproduce the problem with CentOS 7.0 doing
+the following in virt-manager with two qcow2s backing /dev/vda and
+/dev/vdb.
+
+1. Install only to /dev/vda using custom partitioning, partition
+scheme is btrfs.
+2. Reboot.
+3. Install btrfs-progs-4.4-1.fc23.x86_64.rpm
+4. Install kernel-ml-4.4.1-1.el7.elrepo.x86_64.rpm
+## I did those installs separately to make sure the newer progs goes
+in the initramfs that's created when the newer kernel is installed;
+it's just a time savings is all.
+5. Reboot
+6. btrfs dev add /dev/vdb /
+7. Reboot
+8. yum upgrade
+## at this point both devices have chunks
+9. Reboot
+10. btrfs balance start /
+## now only vdb has chunks (due to how single balance allocator works,
+and vdb is bigger than vda2)
+11. Reboot.
+## still works
+
+Of course with a VM it's better to just grow the backing device, and
+then something like 'btrfs fi resize max /' rather than have two
+devices. But on a real system, you'd have two devices (with the caveat
+that this is more fragile a setup than a single device because of
+course if either device dies, the whole Btrfs volume implodes).
+
+I can try it without any updates and see if it works....
 
 
-Greetings,
-Hendrik
 
----
-Diese E-Mail wurde von Avast Antivirus-Software auf Viren geprüft.
-https://www.avast.com/antivirus
-
+-- 
+Chris Murphy

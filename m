@@ -1,294 +1,51 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:46273 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751927AbcBDCX0 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 3 Feb 2016 21:23:26 -0500
-Subject: Re: btrfs partition spontaneously corrupted - No recovery options.
- Kernel oops / "Kernel Bug"?
-To: Dion Gullotta <Dion.Gullotta@faredge.com.au>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-References: <CCD0821AE781994EB8BAB510676B5EF502F2987D7119@ZEUS.faredge.local>
- <56B2AC54.5080505@cn.fujitsu.com>
- <CCD0821AE781994EB8BAB510676B5EF502F2987D711D@ZEUS.faredge.local>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <56B2B60D.4000203@cn.fujitsu.com>
-Date: Thu, 4 Feb 2016 10:23:09 +0800
-MIME-Version: 1.0
-In-Reply-To: <CCD0821AE781994EB8BAB510676B5EF502F2987D711D@ZEUS.faredge.local>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+Received: from plane.gmane.org ([80.91.229.3]:43712 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1756022AbcBDK5F (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 4 Feb 2016 05:57:05 -0500
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+	id 1aRHaw-0002CU-SH
+	for linux-btrfs@vger.kernel.org; Thu, 04 Feb 2016 11:57:03 +0100
+Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Thu, 04 Feb 2016 11:57:02 +0100
+Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Thu, 04 Feb 2016 11:57:02 +0100
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: Question about a specific error.
+Date: Thu, 4 Feb 2016 10:56:55 +0000 (UTC)
+Message-ID: <pan$8c79e$f48a8297$43b8c26c$ded608ed@cox.net>
+References: <56AFB598.2020307@gmail.com>
+	<20160201202112.GB8313@carfax.org.uk> <56B0A881.5080403@gmail.com>
+	<CAJCQCtQ_c1-ck6=_XasvDVwEepXQjB7V4jfxJ9Fe_pPmExtG=A@mail.gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Chris Murphy posted on Wed, 03 Feb 2016 14:17:06 -0700 as excerpted:
 
+> The problems look different. You're reporting errors 2000. I'm seeing
+> errors 2001. I'm not sure what the distinction is; but in my case,
+> cancelling btrfs check and just rerunning it gives different results.
+> https://bugzilla.kernel.org/show_bug.cgi?id=111841
 
-Dion Gullotta wrote on 2016/02/04 12:53 +1100:
-> Hi Qu, thanks so much for your fast reply.
->
-> I'm running this right now and hoping for some good results:
->
-> root@odin:/var/readynasd# btrfs rescue chunk-recover -vy /dev/md127
-> All Devices:
->          Device: id = 1, name = /dev/md127
->
->
-> You said " Other idea including try to use backup roots manually" how do I do this? I tried btrfs-find-root but it doesn't find anything.
->
+You likely know this but didn't explicitly state it, and for others...
 
-Use btrfs-show-super -f.
-You'll see things like:
-------
-backup_roots[4]:
-	backup 0:
-		backup_tree_root:	29392896	gen: 6	level: 0
-		backup_chunk_root:	20987904	gen: 5	level: 0
-		backup_extent_root:	29409280	gen: 6	level: 0
-		backup_fs_root:		29360128	gen: 4	level: 0
-		backup_dev_root:	29507584	gen: 6	level: 0
-		backup_csum_root:	29425664	gen: 4	level: 0
-		backup_total_bytes:	10737418240
-		backup_bytes_used:	393216
-		backup_num_devices:	1
+AFAIK, errors is a bitmask, so errors 2001 is the same bitmask error as 
+2000, plus another, errors 0001.
 
-	backup 1:
-		backup_tree_root:	29540352	gen: 7	level: 0
-		backup_chunk_root:	20987904	gen: 5	level: 0
-		backup_extent_root:	29556736	gen: 7	level: 0
-		backup_fs_root:		29360128	gen: 4	level: 0
-		backup_dev_root:	29507584	gen: 6	level: 0
-		backup_csum_root:	29573120	gen: 7	level: 0
-		backup_total_bytes:	10737418240
-		backup_bytes_used:	409600
-		backup_num_devices:	1
-------
+But I'm not sure what errors those actually are, either.  The errors 
+bitmask is obviously targeted at devs who can read the code and see what 
+each bit means, and to my knowledge there's no table posted on the wiki 
+or wherever for non-devs to look it up.
 
-Find a backup_chunk_root whose gen is smaller than your current 
-chunk_root, which is also shown in btrfs-show-super -f(before backup 
-sections):
-------
-chunk_root_generation	5 <<< Here
-root_level		0
-chunk_root		20987904
-chunk_root_level	0
-------
-
-But most case, the chunk changes are quite seldom, so no much luck though.
-
-Another way is use btrfs-find-root, which should find all old chunks.
-But the problem is, current btrfs-find-root can't handle chunk tree.
-So no luck either.
-
-Thanks,
-Qu
-
-> Any further info appreciated.
->
-> Cheers,
-> Dion
->
->
-> -----Original Message-----
-> From: linux-btrfs-owner@vger.kernel.org [mailto:linux-btrfs-owner@vger.kernel.org] On Behalf Of Qu Wenruo
-> Sent: Thursday, 4 February 2016 12:42 PM
-> To: Dion Gullotta <Dion.Gullotta@faredge.com.au>; linux-btrfs@vger.kernel.org
-> Subject: Re: btrfs partition spontaneously corrupted - No recovery options. Kernel oops / "Kernel Bug"?
->
->
->
-> Dion Gullotta wrote on 2016/02/04 12:28 +1100:
->> Hi,
->>
->> We have a btrfs partition that was working fine up until last night whereupon it stopped working. The first thing I tried was rebooting the server, which got stuck on a hung mount process. I've tried every diagnostic and recovery option I can find online and nothing is working.
->>
->> We did have regular snapshots being taken, and regular scrubbing was being performed as well. If you need any information I'm more than happy to provide.
->>
->> The OS is ReadyNAS which is linux under the hood. Readynas OS version
->> 6.2.4
->>
->> Here are the relevant details:
->>
->> Broken device is /dev/md127 which is usually mounted under /data
->>
->> root@odin:/var/readynasd# uname -a
->> Linux odin 3.0.101.RN2120.3 #1 SMP Wed Apr 1 16:09:30 PDT 2015 armv7l
->> GNU/Linux
->>
->> root@odin:/var/readynasd# btrfs fi show checksum verify failed on
->> 18949527437312 found 4A677799 wanted CB641650 checksum verify failed
->> on 18949527437312 found 4A677799 wanted CB641650 checksum verify
->> failed on 18949527437312 found 4A677799 wanted CB641650 checksum
->> verify failed on 18949527437312 found 4A677799 wanted CB641650 Csum
->> didn't match Couldn't read chunk root
->
-> One of the most deadly corruption for current btrfs, chunk tree root corrupt.
->
-> Normally, btrfs rescue chunk-recovery should be the correct tool to fix it, but several bug and some bad design makes chunk-recovery quite easy to crash, and not recover the fs.
->
-> But you can alwasy try that tool.
->
-> Other idea including try to use backup roots manually, but under most case it doesn't work as backup root is only up to 4 backups, which normally doesn't contain the needed chunk root.
->
-> Thanks,
-> Qu
->
->
->> Label: '2fe6230e:data'  uuid: 04c95625-4927-4ade-80e7-de45a7536271
->>           Total devices 1 FS bytes used 13.62TiB
->>           devid    1 size 21.82TiB used 14.24TiB path /dev/md127
->>
->> Btrfs v3.17.3
->>
->> This is the relevant part of dmesg
->>
->> udevd[862]: starting version 175
->> btrfs: device label 2fe6230e:data devid 1 transid 248531 /dev/md127
->> Adding 1047420k swap on /dev/md1. Priority:-1 extents:1
->> across:1047420k BTRFS critical (device md127): unable to find logical
->> 1357341392896 len 4096 kernel BUG at fs/btrfs/inode.c:1621!
->> Unable to handle kernel NULL pointer dereference at virtual address
->> 00000000 pgd = f0260000 [00000000] *pgd=30015831, *pte=00000000,
->> *ppte=00000000 Internal error: Oops: 817 [#1] SMP
->>
->> Note the kernel bug and kernel oops lines.
->>
->>
->> I've tried the following things, results shown:
->>
->> mount -o recovery /dev/md127 /data
->>
->> mount -o ro,recovery /dev/md127 /data
->>
->> mount -o ro /dev/md127 /data
->>
->> All of these just hang and a reboot is necessary in order to kill the process.
->>
->>
->>
->> Things that don't work:
->>
->> root@odin:/tmp# btrfs-zero-log /dev/md127 checksum verify failed on
->> 18949527437312 found 4A677799 wanted CB641650 checksum verify failed
->> on 18949527437312 found 4A677799 wanted CB641650 checksum verify
->> failed on 18949527437312 found 4A677799 wanted CB641650 checksum
->> verify failed on 18949527437312 found 4A677799 wanted CB641650 Csum
->> didn't match Couldn't read chunk root
->>
->>
->> root@odin:/tmp# btrfs restore -F -i -D -v /dev/md127 /dev/null
->> checksum verify failed on 18949527437312 found 4A677799 wanted
->> CB641650 checksum verify failed on 18949527437312 found 4A677799
->> wanted CB641650 checksum verify failed on 18949527437312 found
->> 4A677799 wanted CB641650 checksum verify failed on 18949527437312
->> found 4A677799 wanted CB641650 Csum didn't match Couldn't read chunk
->> root Could not open root, trying backup super checksum verify failed
->> on 18949527437312 found 4A677799 wanted CB641650 checksum verify
->> failed on 18949527437312 found 4A677799 wanted CB641650 checksum
->> verify failed on 18949527437312 found 4A677799 wanted CB641650
->> checksum verify failed on 18949527437312 found 4A677799 wanted
->> CB641650 Csum didn't match Couldn't read chunk root Could not open
->> root, trying backup super checksum verify failed on 18949527437312
->> found 4A677799 wanted CB641650 checksum verify failed on
->> 18949527437312 found 4A677799 wanted CB641650 checksum verify failed
->> on 18949527437312 found 4A677799 wanted CB641650 checksum verify
->> failed on 18949527437312 found 4A677799 wanted CB641650 Csum didn't
->> match Couldn't read chunk root
->>
->>
->> root@odin:/tmp# btrfs-find-root /dev/md127 checksum verify failed on
->> 18949527437312 found 4A677799 wanted CB641650 checksum verify failed
->> on 18949527437312 found 4A677799 wanted CB641650 checksum verify
->> failed on 18949527437312 found 4A677799 wanted CB641650 checksum
->> verify failed on 18949527437312 found 4A677799 wanted CB641650 Csum
->> didn't match Couldn't read chunk root Open ctree failed
->>
->> root@odin:/tmp# btrfsck /dev/md127
->> Couldn't open file system
->>
->> oot@odin:/tmp# btrfs rescue super-recover -v /dev/md127 All Devices:
->> Device: id = 1, name = /dev/md127
->>
->> Before Recovering:
->> [All good supers]:
->> device name = /dev/md127
->> superblock bytenr = 65536
->>
->> device name = /dev/md127
->> superblock bytenr = 67108864
->>
->> device name = /dev/md127
->> superblock bytenr = 274877906944
->>
->> [All bad supers]:
->>
->> All supers are valid, no need to recover
->>
->>
->> root@odin:/tmp# btrfs check /dev/md127 Couldn't open file system
->> root@odin:/tmp# btrfsck /dev/md127 Couldn't open file system
->>
->> Other info
->>
->> root@odin:/tmp# lsblk -o name,type,size,fstype,mountpoint NAME TYPE
->> SIZE FSTYPE MOUNTPOINT
->> mtdblock0 disk 1.5M
->> mtdblock1 disk 128K
->> mtdblock2 disk 6M
->> mtdblock3 disk 4M
->> mtdblock4 disk 116M
->> sda disk 7.3T
->> ├─sda1 part 4G linux_raid_member
->> │ └─md0 raid1 4G ext4 /
->> ├─sda2 part 512M linux_raid_member
->> │ └─md1 raid6 1022.9M swap [SWAP]
->> └─sda3 part 7.3T linux_raid_member
->> └─md127 raid5 21.8T btrfs
->> sdb disk 7.3T
->> ├─sdb1 part 4G linux_raid_member
->> │ └─md0 raid1 4G ext4 /
->> ├─sdb2 part 512M linux_raid_member
->> │ └─md1 raid6 1022.9M swap [SWAP]
->> └─sdb3 part 7.3T linux_raid_member
->> └─md127 raid5 21.8T btrfs
->> sdc disk 7.3T
->> ├─sdc1 part 4G linux_raid_member
->> │ └─md0 raid1 4G ext4 /
->> ├─sdc2 part 512M linux_raid_member
->> │ └─md1 raid6 1022.9M swap [SWAP]
->> └─sdc3 part 7.3T linux_raid_member
->> └─md127 raid5 21.8T btrfs
->> sdd disk 7.3T
->> ├─sdd1 part 4G linux_raid_member
->> │ └─md0 raid1 4G ext4 /
->> ├─sdd2 part 512M linux_raid_member
->> │ └─md1 raid6 1022.9M swap [SWAP]
->> └─sdd3 part 7.3T linux_raid_member
->> └─md127 raid5 21.8T btrfs
->>
->>
->>    Disk health seems fine:
->> root@odin:/tmp# smartctl -a /dev/sda | grep PASSED SMART
->> overall-health self-assessment test result: PASSED root@odin:/tmp#
->> smartctl -a /dev/sdb | grep PASSED SMART overall-health
->> self-assessment test result: PASSED root@odin:/tmp# smartctl -a
->> /dev/sdc | grep PASSED SMART overall-health self-assessment test
->> result: PASSED root@odin:/tmp# smartctl -a /dev/sdd | grep PASSED
->> SMART overall-health self-assessment test result: PASSED
->>
->>
->>
->>
->> Dion
->>
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs"
->> in the body of a message to majordomo@vger.kernel.org More majordomo
->> info at  http://vger.kernel.org/majordomo-info.html
->>
->>
->
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in the body of a message to majordomo@vger.kernel.org More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> N�����r��y���b�X��ǧv�^�)޺{.n�+����{�n�߲)���w*jg��������ݢj/���z�ޖ��2�ޙ���&�)ߡ�a�����G���h��j:+v���w�٥
->
-
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 

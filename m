@@ -1,138 +1,459 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from e23smtp05.au.ibm.com ([202.81.31.147]:46764 "EHLO
-	e23smtp05.au.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753658AbcBDGre (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 4 Feb 2016 01:47:34 -0500
+Received: from e23smtp02.au.ibm.com ([202.81.31.144]:43768 "EHLO
+	e23smtp02.au.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755494AbcBDGrh (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 4 Feb 2016 01:47:37 -0500
 Received: from localhost
-	by e23smtp05.au.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
+	by e23smtp02.au.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
 	for <linux-btrfs@vger.kernel.org> from <chandan@linux.vnet.ibm.com>;
-	Thu, 4 Feb 2016 16:47:32 +1000
-Received: from d23relay08.au.ibm.com (d23relay08.au.ibm.com [9.185.71.33])
-	by d23dlp02.au.ibm.com (Postfix) with ESMTP id 610DD2BB004D
-	for <linux-btrfs@vger.kernel.org>; Thu,  4 Feb 2016 17:47:28 +1100 (EST)
+	Thu, 4 Feb 2016 16:47:34 +1000
+Received: from d23relay10.au.ibm.com (d23relay10.au.ibm.com [9.190.26.77])
+	by d23dlp01.au.ibm.com (Postfix) with ESMTP id C4AB52CE8055
+	for <linux-btrfs@vger.kernel.org>; Thu,  4 Feb 2016 17:47:32 +1100 (EST)
 Received: from d23av03.au.ibm.com (d23av03.au.ibm.com [9.190.234.97])
-	by d23relay08.au.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id u146ku3H45482130
-	for <linux-btrfs@vger.kernel.org>; Thu, 4 Feb 2016 17:47:04 +1100
+	by d23relay10.au.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id u146lOJR64684088
+	for <linux-btrfs@vger.kernel.org>; Thu, 4 Feb 2016 17:47:32 +1100
 Received: from d23av03.au.ibm.com (localhost [127.0.0.1])
-	by d23av03.au.ibm.com (8.14.4/8.14.4/NCO v10.0 AVout) with ESMTP id u146ktZ6014320
-	for <linux-btrfs@vger.kernel.org>; Thu, 4 Feb 2016 17:46:56 +1100
+	by d23av03.au.ibm.com (8.14.4/8.14.4/NCO v10.0 AVout) with ESMTP id u146kxIm014482
+	for <linux-btrfs@vger.kernel.org>; Thu, 4 Feb 2016 17:46:59 +1100
 From: Chandan Rajendra <chandan@linux.vnet.ibm.com>
 To: clm@fb.com, jbacik@fb.com, bo.li.liu@oracle.com, dsterba@suse.cz
 Cc: Chandan Rajendra <chandan@linux.vnet.ibm.com>,
         aneesh.kumar@linux.vnet.ibm.com, linux-btrfs@vger.kernel.org,
         chandan@mykolab.com
-Subject: [PATCH V14 00/15] Btrfs: Subpagesize-blocksize: Allow I/O on blocks whose size is less than page size.
-Date: Thu,  4 Feb 2016 12:16:07 +0530
-Message-Id: <1454568382-2020-1-git-send-email-chandan@linux.vnet.ibm.com>
+Subject: [PATCH V14 02/15] Btrfs: subpagesize-blocksize: Fix whole page write
+Date: Thu,  4 Feb 2016 12:16:09 +0530
+Message-Id: <1454568382-2020-3-git-send-email-chandan@linux.vnet.ibm.com>
+In-Reply-To: <1454568382-2020-1-git-send-email-chandan@linux.vnet.ibm.com>
+References: <1454568382-2020-1-git-send-email-chandan@linux.vnet.ibm.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Btrfs assumes block size to be the same as the machine's page
-size. This would mean that a Btrfs instance created on a 4k page size
-machine (e.g. x86) will not be mountable on machines with larger page
-sizes (e.g. PPC64/AARCH64). This patchset aims to resolve this
-incompatibility.
+For the subpagesize-blocksize scenario, a page can contain multiple
+blocks. In such cases, this patch handles writing data to files.
 
-This patchset continues with the work posted previously at
-http://article.gmane.org/gmane.comp.file-systems.btrfs/52408.
+Also, When setting EXTENT_DELALLOC, we no longer set EXTENT_UPTODATE bit on
+the extent_io_tree since uptodate status is being tracked by the bitmap
+pointed to by page->private.
 
-I have reverted the upstream commit "btrfs: fix lockups from
-btrfs_clear_path_blocking" (f82c458a2c3ffb94b431fc6ad791a79df1b3713e)
-since this led to soft-lockups when the patch "Btrfs:
-subpagesize-blocksize: Prevent writes to an extent buffer when
-PG_writeback flag is set" is applied. During 2015's Vault Conference
-Btrfs meetup, Chris Mason had suggested that he will write up a
-suitable locking function to be used when writing dirty pages that map
-metadata blocks. Until we have a suitable locking function available,
-this patchset temporarily disables the commit
-f82c458a2c3ffb94b431fc6ad791a79df1b3713e.
+Signed-off-by: Chandan Rajendra <chandan@linux.vnet.ibm.com>
+---
+ fs/btrfs/extent_io.c  | 145 ++++++++++++++++++++++++--------------------------
+ fs/btrfs/file.c       |  16 ++++++
+ fs/btrfs/inode.c      |  64 +++++++++++++++++-----
+ fs/btrfs/relocation.c |   3 ++
+ 4 files changed, 142 insertions(+), 86 deletions(-)
 
-The commits for the Btrfs kernel module can be found at
-https://github.com/chandanr/linux/tree/btrfs/subpagesize-blocksize.
-
-To create a filesystem with block size < page size, a patched version
-of the Btrfs-progs package is required. The corresponding fixes for
-Btrfs-progs can be found at
-https://github.com/chandanr/btrfs-progs/tree/btrfs/subpagesize-blocksize.
-
-Fstests run status:
-1. x86_64
-   - With 4k sectorsize, all the tests that succeed with
-     linux-btrfs/integration-4.5 branch also do so with the patches
-     applied.
-   - With 2k sectorsize, all the *generic* tests that succeed with
-     linux-btrfs/integration-4.5 branch also do so with the patches
-     applied.
-2. ppc64
-   - With 4k sectorsize, 16k nodesize and with "nospace_cache" mount
-     option, all the *generic* tests that succeed with
-     linux-btrfs/integration-4.5 branch also do so with the patches
-     applied.
-   - With 64k sectorsize & nodesize, all the tests that succeed with
-     linux-btrfs/integration-4.5 branch also do so with the patches
-     applied.
-
-Changes from V13:
-1. Enable dedup ioctl to work in subpagesize-blocksize scenario.
-
-Changes from V12:
-1. The logic in the function btrfs_punch_hole() has been fixed to
-   check for the presence of BLK_STATE_UPTODATE flags for blocks in
-   pages which partially map the file range being punched.
-   
-Changes from V11:
-1. Addressed the review comments provided by Liu Bo for version V11.
-2. Fixed file defragmentation code to work in subpagesize-blocksize
-   scenario.
-3. Many "hard to reproduce" bugs were fixed.
-
-Chandan Rajendra (15):
-  Btrfs: subpagesize-blocksize: Fix whole page read.
-  Btrfs: subpagesize-blocksize: Fix whole page write
-  Btrfs: subpagesize-blocksize: Make sure delalloc range intersects with
-    the locked page's range
-  Btrfs: subpagesize-blocksize: Define extent_buffer_head.
-  Btrfs: subpagesize-blocksize: Read tree blocks whose size is <
-    PAGE_SIZE.
-  Btrfs: subpagesize-blocksize: Write only dirty extent buffers
-    belonging to a page
-  Btrfs: subpagesize-blocksize: Allow mounting filesystems where
-    sectorsize != PAGE_SIZE
-  Btrfs: subpagesize-blocksize: Deal with partial ordered extent
-    allocations.
-  Btrfs: subpagesize-blocksize: Explicitly track I/O status of blocks of
-    an ordered extent.
-  Btrfs: subpagesize-blocksize: btrfs_punch_hole: Fix uptodate blocks
-    check
-  Btrfs: subpagesize-blocksize: Prevent writes to an extent buffer when
-    PG_writeback flag is set.
-  Revert "btrfs: fix lockups from btrfs_clear_path_blocking"
-  Btrfs: subpagesize-blocksize: Fix file defragmentation code
-  Btrfs: subpagesize-blocksize: extent_clear_unlock_delalloc: Prevent
-    page from being unlocked more than once
-  Btrfs: subpagesize-blocksize: Enable dedup ioctl
-
- fs/btrfs/backref.c           |    2 +-
- fs/btrfs/ctree.c             |   37 +-
- fs/btrfs/ctree.h             |    6 +-
- fs/btrfs/disk-io.c           |  161 +++--
- fs/btrfs/disk-io.h           |    3 +
- fs/btrfs/extent-tree.c       |   17 +-
- fs/btrfs/extent_io.c         | 1606 ++++++++++++++++++++++++++++++------------
- fs/btrfs/extent_io.h         |  102 ++-
- fs/btrfs/file.c              |   82 ++-
- fs/btrfs/inode.c             |  491 +++++++++----
- fs/btrfs/ioctl.c             |  205 ++++--
- fs/btrfs/locking.c           |   24 +-
- fs/btrfs/locking.h           |    2 -
- fs/btrfs/ordered-data.c      |   19 +
- fs/btrfs/ordered-data.h      |    4 +
- fs/btrfs/relocation.c        |    3 +
- fs/btrfs/root-tree.c         |    2 +-
- fs/btrfs/volumes.c           |    2 +-
- include/trace/events/btrfs.h |    2 +-
- 19 files changed, 1966 insertions(+), 804 deletions(-)
-
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index 2b1ca46..81e70b7 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -1483,24 +1483,6 @@ void extent_range_redirty_for_io(struct inode *inode, u64 start, u64 end)
+ 	}
+ }
+ 
+-/*
+- * helper function to set both pages and extents in the tree writeback
+- */
+-static void set_range_writeback(struct extent_io_tree *tree, u64 start, u64 end)
+-{
+-	unsigned long index = start >> PAGE_CACHE_SHIFT;
+-	unsigned long end_index = end >> PAGE_CACHE_SHIFT;
+-	struct page *page;
+-
+-	while (index <= end_index) {
+-		page = find_get_page(tree->mapping, index);
+-		BUG_ON(!page); /* Pages should be in the extent_io_tree */
+-		set_page_writeback(page);
+-		page_cache_release(page);
+-		index++;
+-	}
+-}
+-
+ /* find the first state struct with 'bits' set after 'start', and
+  * return it.  tree->lock must be held.  NULL will returned if
+  * nothing was found after 'start'
+@@ -2063,6 +2045,14 @@ static int page_read_complete(struct page *page)
+ 	return !test_page_blks_state(page, BLK_STATE_IO, start, end, 0);
+ }
+ 
++static int page_write_complete(struct page *page)
++{
++	u64 start = page_offset(page);
++	u64 end = start + PAGE_CACHE_SIZE - 1;
++
++	return !test_page_blks_state(page, BLK_STATE_IO, start, end, 0);
++}
++
+ int free_io_failure(struct inode *inode, struct io_failure_record *rec)
+ {
+ 	int ret;
+@@ -2557,36 +2547,34 @@ void end_extent_writepage(struct page *page, int err, u64 start, u64 end)
+  */
+ static void end_bio_extent_writepage(struct bio *bio)
+ {
++	struct btrfs_page_private *pg_private;
+ 	struct bio_vec *bvec;
++	unsigned long flags;
+ 	u64 start;
+ 	u64 end;
++	int clear_writeback;
+ 	int i;
+ 
+ 	bio_for_each_segment_all(bvec, bio, i) {
+ 		struct page *page = bvec->bv_page;
+ 
+-		/* We always issue full-page reads, but if some block
+-		 * in a page fails to read, blk_update_request() will
+-		 * advance bv_offset and adjust bv_len to compensate.
+-		 * Print a warning for nonzero offsets, and an error
+-		 * if they don't add up to a full page.  */
+-		if (bvec->bv_offset || bvec->bv_len != PAGE_CACHE_SIZE) {
+-			if (bvec->bv_offset + bvec->bv_len != PAGE_CACHE_SIZE)
+-				btrfs_err(BTRFS_I(page->mapping->host)->root->fs_info,
+-				   "partial page write in btrfs with offset %u and length %u",
+-					bvec->bv_offset, bvec->bv_len);
+-			else
+-				btrfs_info(BTRFS_I(page->mapping->host)->root->fs_info,
+-				   "incomplete page write in btrfs with offset %u and "
+-				   "length %u",
+-					bvec->bv_offset, bvec->bv_len);
+-		}
++		start = page_offset(page) + bvec->bv_offset;
++		end = start + bvec->bv_len - 1;
++
++		pg_private = (struct btrfs_page_private *)page->private;
+ 
+-		start = page_offset(page);
+-		end = start + bvec->bv_offset + bvec->bv_len - 1;
++		spin_lock_irqsave(&pg_private->io_lock, flags);
+ 
+ 		end_extent_writepage(page, bio->bi_error, start, end);
+-		end_page_writeback(page);
++
++		clear_page_blks_state(page, 1 << BLK_STATE_IO, start, end);
++
++		clear_writeback = page_write_complete(page);
++
++		spin_unlock_irqrestore(&pg_private->io_lock, flags);
++
++		if (clear_writeback)
++			end_page_writeback(page);
+ 	}
+ 
+ 	bio_put(bio);
+@@ -3449,14 +3437,14 @@ static noinline_for_stack int __extent_writepage_io(struct inode *inode,
+ 	u64 page_end = start + PAGE_CACHE_SIZE - 1;
+ 	u64 end;
+ 	u64 cur = start;
++	u64 next;
+ 	u64 extent_offset;
+ 	u64 block_start;
+ 	u64 iosize;
+ 	sector_t sector;
+-	struct extent_state *cached_state = NULL;
+ 	struct extent_map *em;
+ 	struct block_device *bdev;
+-	size_t pg_offset = 0;
++	size_t pg_offset;
+ 	size_t blocksize;
+ 	int ret = 0;
+ 	int nr = 0;
+@@ -3503,20 +3491,38 @@ static noinline_for_stack int __extent_writepage_io(struct inode *inode,
+ 							 page_end, NULL, 1);
+ 			break;
+ 		}
+-		em = epd->get_extent(inode, page, pg_offset, cur,
+-				     end - cur + 1, 1);
++
++		if (!test_page_blks_state(page, BLK_STATE_DIRTY, cur,
++						cur + blocksize - 1, 1)) {
++			cur += blocksize;
++			continue;
++		}
++
++		pg_offset = cur & (PAGE_CACHE_SIZE - 1);
++
++		em = epd->get_extent(inode, page, pg_offset, cur, blocksize, 1);
+ 		if (IS_ERR_OR_NULL(em)) {
+ 			SetPageError(page);
+ 			ret = PTR_ERR_OR_ZERO(em);
+ 			break;
+ 		}
+ 
+-		extent_offset = cur - em->start;
+ 		em_end = extent_map_end(em);
+ 		BUG_ON(em_end <= cur);
+ 		BUG_ON(end < cur);
+-		iosize = min(em_end - cur, end - cur + 1);
++
++		iosize = blocksize;
++		next = cur + blocksize;
++		while ((next < end)
++			&& (next < em_end)
++			&& test_page_blks_state(page, BLK_STATE_DIRTY, next,
++						next + blocksize - 1, 1)) {
++			iosize += blocksize;
++			next += blocksize;
++		}
++
+ 		iosize = ALIGN(iosize, blocksize);
++		extent_offset = cur - em->start;
+ 		sector = (em->block_start + extent_offset) >> 9;
+ 		bdev = em->bdev;
+ 		block_start = em->block_start;
+@@ -3524,32 +3530,20 @@ static noinline_for_stack int __extent_writepage_io(struct inode *inode,
+ 		free_extent_map(em);
+ 		em = NULL;
+ 
+-		/*
+-		 * compressed and inline extents are written through other
+-		 * paths in the FS
+-		 */
+-		if (compressed || block_start == EXTENT_MAP_HOLE ||
+-		    block_start == EXTENT_MAP_INLINE) {
+-			/*
+-			 * end_io notification does not happen here for
+-			 * compressed extents
+-			 */
+-			if (!compressed && tree->ops &&
+-			    tree->ops->writepage_end_io_hook)
+-				tree->ops->writepage_end_io_hook(page, cur,
+-							 cur + iosize - 1,
+-							 NULL, 1);
+-			else if (compressed) {
+-				/* we don't want to end_page_writeback on
+-				 * a compressed extent.  this happens
+-				 * elsewhere
+-				 */
+-				nr++;
+-			}
++		BUG_ON(compressed);
++		BUG_ON(block_start == EXTENT_MAP_INLINE);
+ 
+-			cur += iosize;
+-			pg_offset += iosize;
+-			continue;
++		if (block_start == EXTENT_MAP_HOLE) {
++			if (test_page_blks_state(page, BLK_STATE_UPTODATE, cur,
++							cur + iosize - 1, 1)) {
++				clear_page_blks_state(page,
++						1 << BLK_STATE_DIRTY, cur,
++						cur + iosize - 1);
++				cur += iosize;
++				continue;
++			} else {
++				BUG();
++			}
+ 		}
+ 
+ 		if (tree->ops && tree->ops->writepage_io_hook) {
+@@ -3563,7 +3557,13 @@ static noinline_for_stack int __extent_writepage_io(struct inode *inode,
+ 		} else {
+ 			unsigned long max_nr = (i_size >> PAGE_CACHE_SHIFT) + 1;
+ 
+-			set_range_writeback(tree, cur, cur + iosize - 1);
++			clear_page_blks_state(page, 1 << BLK_STATE_DIRTY, cur,
++					cur + iosize - 1);
++			set_page_writeback(page);
++
++			set_page_blks_state(page, 1 << BLK_STATE_IO, cur,
++					cur + iosize - 1);
++
+ 			if (!PageWriteback(page)) {
+ 				btrfs_err(BTRFS_I(inode)->root->fs_info,
+ 					   "page %lu not writeback, cur %llu end %llu",
+@@ -3578,17 +3578,14 @@ static noinline_for_stack int __extent_writepage_io(struct inode *inode,
+ 			if (ret)
+ 				SetPageError(page);
+ 		}
+-		cur = cur + iosize;
+-		pg_offset += iosize;
++
++		cur += iosize;
+ 		nr++;
+ 	}
+ done:
+ 	*nr_ret = nr;
+ 
+ done_unlocked:
+-
+-	/* drop our reference on any cached states */
+-	free_extent_state(cached_state);
+ 	return ret;
+ }
+ 
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index 953f0ad..b8b0eda 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -494,6 +494,9 @@ int btrfs_dirty_pages(struct btrfs_root *root, struct inode *inode,
+ 	u64 num_bytes;
+ 	u64 start_pos;
+ 	u64 end_of_last_block;
++	u64 start;
++	u64 end;
++	u64 page_end;
+ 	u64 end_pos = pos + write_bytes;
+ 	loff_t isize = i_size_read(inode);
+ 
+@@ -506,11 +509,24 @@ int btrfs_dirty_pages(struct btrfs_root *root, struct inode *inode,
+ 	if (err)
+ 		return err;
+ 
++	start = start_pos;
++
+ 	for (i = 0; i < num_pages; i++) {
+ 		struct page *p = pages[i];
+ 		SetPageUptodate(p);
+ 		ClearPageChecked(p);
++
++		end = page_end = page_offset(p) + PAGE_CACHE_SIZE - 1;
++
++		if (i == num_pages - 1)
++			end = min_t(u64, page_end, end_of_last_block);
++
++		set_page_blks_state(p,
++				1 << BLK_STATE_DIRTY | 1 << BLK_STATE_UPTODATE,
++				start, end);
+ 		set_page_dirty(p);
++
++		start = page_end + 1;
+ 	}
+ 
+ 	/*
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index fbcd866..e103b8e 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -210,6 +210,9 @@ static int insert_inline_extent(struct btrfs_trans_handle *trans,
+ 		page = find_get_page(inode->i_mapping,
+ 				     start >> PAGE_CACHE_SHIFT);
+ 		btrfs_set_file_extent_compression(leaf, ei, 0);
++		clear_page_blks_state(page, 1 << BLK_STATE_DIRTY, start,
++                                round_up(start + size - 1, root->sectorsize)
++				- 1);
+ 		kaddr = kmap_atomic(page);
+ 		offset = start & (PAGE_CACHE_SIZE - 1);
+ 		write_extent_buffer(leaf, kaddr + offset, ptr, size);
+@@ -2023,6 +2026,11 @@ again:
+ 	 }
+ 
+ 	btrfs_set_extent_delalloc(inode, page_start, page_end, &cached_state);
++
++	set_page_blks_state(page,
++			1 << BLK_STATE_DIRTY | 1 << BLK_STATE_UPTODATE,
++			page_start, page_end);
++
+ 	ClearPageChecked(page);
+ 	set_page_dirty(page);
+ out:
+@@ -3025,26 +3033,48 @@ static int btrfs_writepage_end_io_hook(struct page *page, u64 start, u64 end,
+ 	struct btrfs_ordered_extent *ordered_extent = NULL;
+ 	struct btrfs_workqueue *wq;
+ 	btrfs_work_func_t func;
++	u64 ordered_start, ordered_end;
++	int done;
+ 
+ 	trace_btrfs_writepage_end_io_hook(page, start, end, uptodate);
+ 
+ 	ClearPagePrivate2(page);
+-	if (!btrfs_dec_test_ordered_pending(inode, &ordered_extent, start,
+-					    end - start + 1, uptodate))
+-		return 0;
++loop:
++	ordered_extent = btrfs_lookup_ordered_range(inode, start,
++						end - start + 1);
++	if (!ordered_extent)
++		goto out;
+ 
+-	if (btrfs_is_free_space_inode(inode)) {
+-		wq = root->fs_info->endio_freespace_worker;
+-		func = btrfs_freespace_write_helper;
+-	} else {
+-		wq = root->fs_info->endio_write_workers;
+-		func = btrfs_endio_write_helper;
++	ordered_start = max_t(u64, start, ordered_extent->file_offset);
++	ordered_end = min_t(u64, end,
++			ordered_extent->file_offset + ordered_extent->len - 1);
++
++	done = btrfs_dec_test_ordered_pending(inode, &ordered_extent,
++					ordered_start,
++					ordered_end - ordered_start + 1,
++					uptodate);
++	if (done) {
++		if (btrfs_is_free_space_inode(inode)) {
++			wq = root->fs_info->endio_freespace_worker;
++			func = btrfs_freespace_write_helper;
++		} else {
++			wq = root->fs_info->endio_write_workers;
++			func = btrfs_endio_write_helper;
++		}
++
++		btrfs_init_work(&ordered_extent->work, func,
++				finish_ordered_fn, NULL, NULL);
++		btrfs_queue_work(wq, &ordered_extent->work);
+ 	}
+ 
+-	btrfs_init_work(&ordered_extent->work, func, finish_ordered_fn, NULL,
+-			NULL);
+-	btrfs_queue_work(wq, &ordered_extent->work);
++	btrfs_put_ordered_extent(ordered_extent);
++
++	start = ordered_end + 1;
++
++	if (start < end)
++		goto loop;
+ 
++out:
+ 	return 0;
+ }
+ 
+@@ -4694,6 +4724,9 @@ again:
+ 		goto out_unlock;
+ 	}
+ 
++	set_page_blks_state(page, 1 << BLK_STATE_DIRTY | 1 << BLK_STATE_UPTODATE,
++			block_start, block_end);
++
+ 	if (offset != blocksize) {
+ 		if (!len)
+ 			len = blocksize - offset;
+@@ -8753,6 +8786,9 @@ again:
+ 	 *    This means the reserved space should be freed here.
+ 	 */
+ 	btrfs_qgroup_free_data(inode, page_start, PAGE_CACHE_SIZE);
++
++	clear_page_blks_state(page, 1 << BLK_STATE_DIRTY, page_start, page_end);
++
+ 	if (!inode_evicting) {
+ 		clear_extent_bit(tree, page_start, page_end,
+ 				 EXTENT_LOCKED | EXTENT_DIRTY |
+@@ -8896,6 +8932,10 @@ again:
+ 		ret = VM_FAULT_SIGBUS;
+ 		goto out_unlock;
+ 	}
++
++	set_page_blks_state(page, 1 << BLK_STATE_DIRTY | 1 << BLK_STATE_UPTODATE,
++			page_start, end);
++
+ 	ret = 0;
+ 
+ 	/* page is wholly or partially inside EOF */
+diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
+index ef6d8fc..ac9d91f 100644
+--- a/fs/btrfs/relocation.c
++++ b/fs/btrfs/relocation.c
+@@ -3185,6 +3185,9 @@ static int relocate_file_extent_cluster(struct inode *inode,
+ 		}
+ 
+ 		btrfs_set_extent_delalloc(inode, page_start, page_end, NULL);
++		set_page_blks_state(page,
++				1 << BLK_STATE_DIRTY | 1 << BLK_STATE_UPTODATE,
++				page_start, page_end);
+ 		set_page_dirty(page);
+ 
+ 		unlock_extent(&BTRFS_I(inode)->io_tree,
 -- 
 2.1.0
 

@@ -1,262 +1,212 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.136]:35539 "EHLO mail.kernel.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752097AbcBDAdX convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 3 Feb 2016 19:33:23 -0500
-Received: from mail.kernel.org (localhost [127.0.0.1])
-	by mail.kernel.org (Postfix) with ESMTP id 06A6320303
-	for <linux-btrfs@vger.kernel.org>; Thu,  4 Feb 2016 00:33:21 +0000 (UTC)
-Received: from mail-ig0-f178.google.com (mail-ig0-f178.google.com [209.85.213.178])
-	(using TLSv1.2 with cipher AES128-GCM-SHA256 (128/128 bits))
-	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPSA id 444D1202F2
-	for <linux-btrfs@vger.kernel.org>; Thu,  4 Feb 2016 00:33:19 +0000 (UTC)
-Received: by mail-ig0-f178.google.com with SMTP id rs20so2808571igc.0
-        for <linux-btrfs@vger.kernel.org>; Wed, 03 Feb 2016 16:33:19 -0800 (PST)
-MIME-Version: 1.0
-In-Reply-To: <20160204002813.GC13006@localhost.localdomain>
-References: <1454531210-7629-1-git-send-email-fdmanana@kernel.org>
-	<20160203231941.GA13006@localhost.localdomain>
-	<CAL3q7H7N=Fe=QFEr2U2qFPFzwDEGPneVOy_ez_x7B1t3oXzK8g@mail.gmail.com>
-	<20160204002021.GB13006@localhost.localdomain>
-	<CAL3q7H5FJmvmKLOWZh9QGc3ukvgLT5Z=iJuoYRh+wKws8N-sqw@mail.gmail.com>
-	<20160204002813.GC13006@localhost.localdomain>
-Date: Thu, 4 Feb 2016 00:33:18 +0000
-Message-ID: <CAL3q7H7w0h6=GAP=ZLYgVa1sgv9kzt61XkEchbVG81H1Vd2kAA@mail.gmail.com>
+Received: from userp1040.oracle.com ([156.151.31.81]:20820 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932434AbcBDXDh (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 4 Feb 2016 18:03:37 -0500
+Received: from aserv0021.oracle.com (aserv0021.oracle.com [141.146.126.233])
+	by userp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id u14N3Z3c016310
+	(version=TLSv1 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Thu, 4 Feb 2016 23:03:36 GMT
+Received: from aserv0122.oracle.com (aserv0122.oracle.com [141.146.126.236])
+	by aserv0021.oracle.com (8.13.8/8.13.8) with ESMTP id u14N3Z01028108
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=FAIL)
+	for <linux-btrfs@vger.kernel.org>; Thu, 4 Feb 2016 23:03:35 GMT
+Received: from abhmp0011.oracle.com (abhmp0011.oracle.com [141.146.116.17])
+	by aserv0122.oracle.com (8.13.8/8.13.8) with ESMTP id u14N3ZYn018785
+	for <linux-btrfs@vger.kernel.org>; Thu, 4 Feb 2016 23:03:35 GMT
+Date: Thu, 4 Feb 2016 15:03:23 -0800
+From: Liu Bo <bo.li.liu@oracle.com>
+To: linux-btrfs@vger.kernel.org
 Subject: Re: [PATCH] Btrfs: fix hang on extent buffer lock caused by the
  inode_paths ioctl
-From: Filipe Manana <fdmanana@kernel.org>
-To: Liu Bo <bo.li.liu@oracle.com>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Message-ID: <20160204230323.GA30055@localhost.localdomain>
+Reply-To: bo.li.liu@oracle.com
+References: <1454531210-7629-1-git-send-email-fdmanana@kernel.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1454531210-7629-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Feb 4, 2016 at 12:28 AM, Liu Bo <bo.li.liu@oracle.com> wrote:
-> On Thu, Feb 04, 2016 at 12:23:12AM +0000, Filipe Manana wrote:
->> On Thu, Feb 4, 2016 at 12:20 AM, Liu Bo <bo.li.liu@oracle.com> wrote:
->> > On Wed, Feb 03, 2016 at 11:24:33PM +0000, Filipe Manana wrote:
->> >> On Wed, Feb 3, 2016 at 11:19 PM, Liu Bo <bo.li.liu@oracle.com> wrote:
->> >> > On Wed, Feb 03, 2016 at 08:26:50PM +0000, fdmanana@kernel.org wrote:
->> >> >> From: Filipe Manana <fdmanana@suse.com>
->> >> >>
->> >> >> While doing some tests I ran into an hang on an extent buffer's rwlock
->> >> >> that produced the following trace:
->> >> >>
->> >> >> [39389.800012] NMI watchdog: BUG: soft lockup - CPU#15 stuck for 22s! [fdm-stress:32166]
->> >> >> [39389.800016] NMI watchdog: BUG: soft lockup - CPU#14 stuck for 22s! [fdm-stress:32165]
->> >> >> [39389.800016] Modules linked in: btrfs dm_mod ppdev xor sha256_generic hmac raid6_pq drbg ansi_cprng aesni_intel i2c_piix4 acpi_cpufreq aes_x86_64 ablk_helper tpm_tis parport_pc i2c_core sg cryptd evdev psmouse lrw tpm parport gf128mul serio_raw pcspkr glue_helper processor button loop autofs4 ext4 crc16 mbcache jbd2 sd_mod sr_mod cdrom ata_generic virtio_scsi ata_piix libata virtio_pci virtio_ring crc32c_intel scsi_mod e1000 virtio floppy [last unloaded: btrfs]
->> >> >> [39389.800016] irq event stamp: 0
->> >> >> [39389.800016] hardirqs last  enabled at (0): [<          (null)>]           (null)
->> >> >> [39389.800016] hardirqs last disabled at (0): [<ffffffff8104e58d>] copy_process+0x638/0x1a35
->> >> >> [39389.800016] softirqs last  enabled at (0): [<ffffffff8104e58d>] copy_process+0x638/0x1a35
->> >> >> [39389.800016] softirqs last disabled at (0): [<          (null)>]           (null)
->> >> >> [39389.800016] CPU: 14 PID: 32165 Comm: btrfs Not tainted 4.4.0-rc6-btrfs-next-18+ #1
->> >> >> [39389.800016] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS by qemu-project.org 04/01/2014
->> >> >> [39389.800016] task: ffff880175b1ca40 ti: ffff8800a185c000 task.ti: ffff8800a185c000
->> >> >> [39389.800016] RIP: 0010:[<ffffffff810902af>]  [<ffffffff810902af>] queued_spin_lock_slowpath+0x57/0x158
->> >> >> [39389.800016] RSP: 0018:ffff8800a185fb80  EFLAGS: 00000202
->> >> >> [39389.800016] RAX: 0000000000000101 RBX: ffff8801710c4e9c RCX: 0000000000000101
->> >> >> [39389.800016] RDX: 0000000000000100 RSI: 0000000000000001 RDI: 0000000000000001
->> >> >> [39389.800016] RBP: ffff8800a185fb98 R08: 0000000000000001 R09: 0000000000000000
->> >> >> [39389.800016] R10: ffff8800a185fb68 R11: 6db6db6db6db6db7 R12: ffff8801710c4e98
->> >> >> [39389.800016] R13: ffff880175b1ca40 R14: ffff8800a185fc10 R15: ffff880175b1ca40
->> >> >> [39389.800016] FS:  00007f6d37fff700(0000) GS:ffff8802be9c0000(0000) knlGS:0000000000000000
->> >> >> [39389.800016] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
->> >> >> [39389.800016] CR2: 00007f6d300019b8 CR3: 0000000037c93000 CR4: 00000000001406e0
->> >> >> [39389.800016] Stack:
->> >> >> [39389.800016]  ffff8801710c4e98 ffff8801710c4e98 ffff880175b1ca40 ffff8800a185fbb0
->> >> >> [39389.800016]  ffffffff81091e11 ffff8801710c4e98 ffff8800a185fbc8 ffffffff81091895
->> >> >> [39389.800016]  ffff8801710c4e98 ffff8800a185fbe8 ffffffff81486c5c ffffffffa067288c
->> >> >> [39389.800016] Call Trace:
->> >> >> [39389.800016]  [<ffffffff81091e11>] queued_read_lock_slowpath+0x46/0x60
->> >> >> [39389.800016]  [<ffffffff81091895>] do_raw_read_lock+0x3e/0x41
->> >> >> [39389.800016]  [<ffffffff81486c5c>] _raw_read_lock+0x3d/0x44
->> >> >> [39389.800016]  [<ffffffffa067288c>] ? btrfs_tree_read_lock+0x54/0x125 [btrfs]
->> >> >> [39389.800016]  [<ffffffffa067288c>] btrfs_tree_read_lock+0x54/0x125 [btrfs]
->> >> >> [39389.800016]  [<ffffffffa0622ced>] ? btrfs_find_item+0xa7/0xd2 [btrfs]
->> >> >> [39389.800016]  [<ffffffffa069363f>] btrfs_ref_to_path+0xd6/0x174 [btrfs]
->> >> >> [39389.800016]  [<ffffffffa0693730>] inode_to_path+0x53/0xa2 [btrfs]
->> >> >> [39389.800016]  [<ffffffffa0693e2e>] paths_from_inode+0x117/0x2ec [btrfs]
->> >> >> [39389.800016]  [<ffffffffa0670cff>] btrfs_ioctl+0xd5b/0x2793 [btrfs]
->> >> >> [39389.800016]  [<ffffffff8108a8b0>] ? arch_local_irq_save+0x9/0xc
->> >> >> [39389.800016]  [<ffffffff81276727>] ? __this_cpu_preempt_check+0x13/0x15
->> >> >> [39389.800016]  [<ffffffff8108a8b0>] ? arch_local_irq_save+0x9/0xc
->> >> >> [39389.800016]  [<ffffffff8118b3d4>] ? rcu_read_unlock+0x3e/0x5d
->> >> >> [39389.800016]  [<ffffffff811822f8>] do_vfs_ioctl+0x42b/0x4ea
->> >> >> [39389.800016]  [<ffffffff8118b4f3>] ? __fget_light+0x62/0x71
->> >> >> [39389.800016]  [<ffffffff8118240e>] SyS_ioctl+0x57/0x79
->> >> >> [39389.800016]  [<ffffffff814872d7>] entry_SYSCALL_64_fastpath+0x12/0x6f
->> >> >> [39389.800016] Code: b9 01 01 00 00 f7 c6 00 ff ff ff 75 32 83 fe 01 89 ca 89 f0 0f 45 d7 f0 0f b1 13 39 f0 74 04 89 c6 eb e2 ff ca 0f 84 fa 00 00 00 <8b> 03 84 c0 74 04 f3 90 eb f6 66 c7 03 01 00 e9 e6 00 00 00 e8
->> >> >> [39389.800012] Modules linked in: btrfs dm_mod ppdev xor sha256_generic hmac raid6_pq drbg ansi_cprng aesni_intel i2c_piix4 acpi_cpufreq aes_x86_64 ablk_helper tpm_tis parport_pc i2c_core sg cryptd evdev psmouse lrw tpm parport gf128mul serio_raw pcspkr glue_helper processor button loop autofs4 ext4 crc16 mbcache jbd2 sd_mod sr_mod cdrom ata_generic virtio_scsi ata_piix libata virtio_pci virtio_ring crc32c_intel scsi_mod e1000 virtio floppy [last unloaded: btrfs]
->> >> >> [39389.800012] irq event stamp: 0
->> >> >> [39389.800012] hardirqs last  enabled at (0): [<          (null)>]           (null)
->> >> >> [39389.800012] hardirqs last disabled at (0): [<ffffffff8104e58d>] copy_process+0x638/0x1a35
->> >> >> [39389.800012] softirqs last  enabled at (0): [<ffffffff8104e58d>] copy_process+0x638/0x1a35
->> >> >> [39389.800012] softirqs last disabled at (0): [<          (null)>]           (null)
->> >> >> [39389.800012] CPU: 15 PID: 32166 Comm: btrfs Tainted: G             L  4.4.0-rc6-btrfs-next-18+ #1
->> >> >> [39389.800012] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS by qemu-project.org 04/01/2014
->> >> >> [39389.800012] task: ffff880179294380 ti: ffff880034a60000 task.ti: ffff880034a60000
->> >> >> [39389.800012] RIP: 0010:[<ffffffff81091e8d>]  [<ffffffff81091e8d>] queued_write_lock_slowpath+0x62/0x72
->> >> >> [39389.800012] RSP: 0018:ffff880034a639f0  EFLAGS: 00000206
->> >> >> [39389.800012] RAX: 0000000000000101 RBX: ffff8801710c4e98 RCX: 0000000000000000
->> >> >> [39389.800012] RDX: 00000000000000ff RSI: 0000000000000000 RDI: ffff8801710c4e9c
->> >> >> [39389.800012] RBP: ffff880034a639f8 R08: 0000000000000001 R09: 0000000000000000
->> >> >> [39389.800012] R10: ffff880034a639b0 R11: 0000000000001000 R12: ffff8801710c4e98
->> >> >> [39389.800012] R13: 0000000000000001 R14: ffff880172cbc000 R15: ffff8801710c4e00
->> >> >> [39389.800012] FS:  00007f6d377fe700(0000) GS:ffff8802be9e0000(0000) knlGS:0000000000000000
->> >> >> [39389.800012] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
->> >> >> [39389.800012] CR2: 00007f6d3d3c1000 CR3: 0000000037c93000 CR4: 00000000001406e0
->> >> >> [39389.800012] Stack:
->> >> >> [39389.800012]  ffff8801710c4e98 ffff880034a63a10 ffffffff81091963 ffff8801710c4e98
->> >> >> [39389.800012]  ffff880034a63a30 ffffffff81486f1b ffffffffa0672cb3 ffff8801710c4e00
->> >> >> [39389.800012]  ffff880034a63a78 ffffffffa0672cb3 ffff8801710c4e00 ffff880034a63a58
->> >> >> [39389.800012] Call Trace:
->> >> >> [39389.800012]  [<ffffffff81091963>] do_raw_write_lock+0x72/0x8c
->> >> >> [39389.800012]  [<ffffffff81486f1b>] _raw_write_lock+0x3a/0x41
->> >> >> [39389.800012]  [<ffffffffa0672cb3>] ? btrfs_tree_lock+0x119/0x251 [btrfs]
->> >> >> [39389.800012]  [<ffffffffa0672cb3>] btrfs_tree_lock+0x119/0x251 [btrfs]
->> >> >> [39389.800012]  [<ffffffffa061aeba>] ? rcu_read_unlock+0x5b/0x5d [btrfs]
->> >> >> [39389.800012]  [<ffffffffa061ce13>] ? btrfs_root_node+0xda/0xe6 [btrfs]
->> >> >> [39389.800012]  [<ffffffffa061ce83>] btrfs_lock_root_node+0x22/0x42 [btrfs]
->> >> >> [39389.800012]  [<ffffffffa062046b>] btrfs_search_slot+0x1b8/0x758 [btrfs]
->> >> >> [39389.800012]  [<ffffffff810fc6b0>] ? time_hardirqs_on+0x15/0x28
->> >> >> [39389.800012]  [<ffffffffa06365db>] btrfs_lookup_inode+0x31/0x95 [btrfs]
->> >> >> [39389.800012]  [<ffffffff8108d62f>] ? trace_hardirqs_on+0xd/0xf
->> >> >> [39389.800012]  [<ffffffff8148482b>] ? mutex_lock_nested+0x397/0x3bc
->> >> >> [39389.800012]  [<ffffffffa068821b>] __btrfs_update_delayed_inode+0x59/0x1c0 [btrfs]
->> >> >> [39389.800012]  [<ffffffffa068858e>] __btrfs_commit_inode_delayed_items+0x194/0x5aa [btrfs]
->> >> >> [39389.800012]  [<ffffffff81486ab7>] ? _raw_spin_unlock+0x31/0x44
->> >> >> [39389.800012]  [<ffffffffa0688a48>] __btrfs_run_delayed_items+0xa4/0x15c [btrfs]
->> >> >> [39389.800012]  [<ffffffffa0688d62>] btrfs_run_delayed_items+0x11/0x13 [btrfs]
->> >> >> [39389.800012]  [<ffffffffa064048e>] btrfs_commit_transaction+0x234/0x96e [btrfs]
->> >> >> [39389.800012]  [<ffffffffa0618d10>] btrfs_sync_fs+0x145/0x1ad [btrfs]
->> >> >> [39389.800012]  [<ffffffffa0671176>] btrfs_ioctl+0x11d2/0x2793 [btrfs]
->> >> >> [39389.800012]  [<ffffffff8108a8b0>] ? arch_local_irq_save+0x9/0xc
->> >> >> [39389.800012]  [<ffffffff81140261>] ? __might_fault+0x4c/0xa7
->> >> >> [39389.800012]  [<ffffffff81140261>] ? __might_fault+0x4c/0xa7
->> >> >> [39389.800012]  [<ffffffff8108a8b0>] ? arch_local_irq_save+0x9/0xc
->> >> >> [39389.800012]  [<ffffffff8118b3d4>] ? rcu_read_unlock+0x3e/0x5d
->> >> >> [39389.800012]  [<ffffffff811822f8>] do_vfs_ioctl+0x42b/0x4ea
->> >> >> [39389.800012]  [<ffffffff8118b4f3>] ? __fget_light+0x62/0x71
->> >> >> [39389.800012]  [<ffffffff8118240e>] SyS_ioctl+0x57/0x79
->> >> >> [39389.800012]  [<ffffffff814872d7>] entry_SYSCALL_64_fastpath+0x12/0x6f
->> >> >> [39389.800012] Code: f0 0f b1 13 85 c0 75 ef eb 2a f3 90 8a 03 84 c0 75 f8 f0 0f b0 13 84 c0 75 f0 ba ff 00 00 00 eb 0a f0 0f b1 13 ff c8 74 0b f3 90 <8b> 03 83 f8 01 75 f7 eb ed c6 43 04 00 5b 5d c3 0f 1f 44 00 00
->> >> >>
->> >> >> This happens because in the code path executed by the inode_paths ioctl we
->> >> >> end up nesting two calls to read lock a leaf's rwlock when after the first
->> >> >> call to read_lock() and before the second call to read_lock(), another
->> >> >> task (running the delayed items as part of a transaction commit) has
->> >> >> already called write_lock() against the leaf's rwlock. This situation is
->> >> >> illustrated by the following diagram:
->> >> >>
->> >> >>          Task A                       Task B
->> >> >>
->> >> >>   btrfs_ref_to_path()               btrfs_commit_transaction()
->> >> >>     read_lock(&eb->lock);
->> >> >>
->> >> >>                                       btrfs_run_delayed_items()
->> >> >>                                         __btrfs_commit_inode_delayed_items()
->> >> >>                                           __btrfs_update_delayed_inode()
->> >> >>                                             btrfs_lookup_inode()
->> >> >>
->> >> >>                                               write_lock(&eb->lock);
->> >> >>                                                 --> task waits for lock
->> >> >>
->> >> >>     read_lock(&eb->lock);
->> >> >>     --> makes this task hang
->> >> >>         forever (and task B too
->> >> >>       of course)
->> >> >>
->> >> >> So fix this by avoiding doing the nested read lock, which is easily
->> >> >> avoidable. This issue does not happen if task B calls write_lock() after
->> >> >> task A does the second call to read_lock(), however there does not seem
->> >> >> to exist anything in the documentation that mentions what is the expected
->> >> >> behaviour for recursive locking of rwlocks (leaving the idea that doing
->> >> >> so is not a good usage of rwlocks).
->> >> >
->> >> > iterate_inode_refs() does it in anothe way, it's using
->> >> > btrfs_clone_extent_buffer() to keep btrfs from similar deadlock,
->> >>
->> >> Yeah, I know, I made that fix long time ago.
->> >>
->> >> > it creates a clone so we don't have trouble on the original eb's read
->> >> > lock, it's more reasonable to me.
->> >>
->> >> Here it would be overkill to do similar approach, and it's a different
->> >> problem, we're not attempting to lock one leaf while having some other
->> >> leaf locked. We just want to transition a lock from spinning to
->> >> blocking mode - so it was silly to double read lock, we can do
->> >> directly the transition and make sure the release path call below
->> >> doesn't release the leaf. No need to waste memory and time cloning a
->> >> leaf.
->> >
->> > Correct, I missed that fact, so the patch is good.
->> >
->> > Since we're passing a clone eb into btrfs_ref_to_path(), the check 'if
->> > (eb != eb_in) will only be false for the first time when it enters into
->> > while(), maybe we can add 'likely' preference for it.
->>
->> What do you mean by 'likely' preference? The macro likely/unlikely?
->
-> Exactly, the macro likely/unlikely.
+On Wed, Feb 03, 2016 at 08:26:50PM +0000, fdmanana@kernel.org wrote:
+> From: Filipe Manana <fdmanana@suse.com>
+> 
+> While doing some tests I ran into an hang on an extent buffer's rwlock
+> that produced the following trace:
+> 
+> [39389.800012] NMI watchdog: BUG: soft lockup - CPU#15 stuck for 22s! [fdm-stress:32166]
+> [39389.800016] NMI watchdog: BUG: soft lockup - CPU#14 stuck for 22s! [fdm-stress:32165]
+> [39389.800016] Modules linked in: btrfs dm_mod ppdev xor sha256_generic hmac raid6_pq drbg ansi_cprng aesni_intel i2c_piix4 acpi_cpufreq aes_x86_64 ablk_helper tpm_tis parport_pc i2c_core sg cryptd evdev psmouse lrw tpm parport gf128mul serio_raw pcspkr glue_helper processor button loop autofs4 ext4 crc16 mbcache jbd2 sd_mod sr_mod cdrom ata_generic virtio_scsi ata_piix libata virtio_pci virtio_ring crc32c_intel scsi_mod e1000 virtio floppy [last unloaded: btrfs]
+> [39389.800016] irq event stamp: 0
+> [39389.800016] hardirqs last  enabled at (0): [<          (null)>]           (null)
+> [39389.800016] hardirqs last disabled at (0): [<ffffffff8104e58d>] copy_process+0x638/0x1a35
+> [39389.800016] softirqs last  enabled at (0): [<ffffffff8104e58d>] copy_process+0x638/0x1a35
+> [39389.800016] softirqs last disabled at (0): [<          (null)>]           (null)
+> [39389.800016] CPU: 14 PID: 32165 Comm: btrfs Not tainted 4.4.0-rc6-btrfs-next-18+ #1
+> [39389.800016] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS by qemu-project.org 04/01/2014
+> [39389.800016] task: ffff880175b1ca40 ti: ffff8800a185c000 task.ti: ffff8800a185c000
+> [39389.800016] RIP: 0010:[<ffffffff810902af>]  [<ffffffff810902af>] queued_spin_lock_slowpath+0x57/0x158
+> [39389.800016] RSP: 0018:ffff8800a185fb80  EFLAGS: 00000202
+> [39389.800016] RAX: 0000000000000101 RBX: ffff8801710c4e9c RCX: 0000000000000101
+> [39389.800016] RDX: 0000000000000100 RSI: 0000000000000001 RDI: 0000000000000001
+> [39389.800016] RBP: ffff8800a185fb98 R08: 0000000000000001 R09: 0000000000000000
+> [39389.800016] R10: ffff8800a185fb68 R11: 6db6db6db6db6db7 R12: ffff8801710c4e98
+> [39389.800016] R13: ffff880175b1ca40 R14: ffff8800a185fc10 R15: ffff880175b1ca40
+> [39389.800016] FS:  00007f6d37fff700(0000) GS:ffff8802be9c0000(0000) knlGS:0000000000000000
+> [39389.800016] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+> [39389.800016] CR2: 00007f6d300019b8 CR3: 0000000037c93000 CR4: 00000000001406e0
+> [39389.800016] Stack:
+> [39389.800016]  ffff8801710c4e98 ffff8801710c4e98 ffff880175b1ca40 ffff8800a185fbb0
+> [39389.800016]  ffffffff81091e11 ffff8801710c4e98 ffff8800a185fbc8 ffffffff81091895
+> [39389.800016]  ffff8801710c4e98 ffff8800a185fbe8 ffffffff81486c5c ffffffffa067288c
+> [39389.800016] Call Trace:
+> [39389.800016]  [<ffffffff81091e11>] queued_read_lock_slowpath+0x46/0x60
+> [39389.800016]  [<ffffffff81091895>] do_raw_read_lock+0x3e/0x41
+> [39389.800016]  [<ffffffff81486c5c>] _raw_read_lock+0x3d/0x44
+> [39389.800016]  [<ffffffffa067288c>] ? btrfs_tree_read_lock+0x54/0x125 [btrfs]
+> [39389.800016]  [<ffffffffa067288c>] btrfs_tree_read_lock+0x54/0x125 [btrfs]
+> [39389.800016]  [<ffffffffa0622ced>] ? btrfs_find_item+0xa7/0xd2 [btrfs]
+> [39389.800016]  [<ffffffffa069363f>] btrfs_ref_to_path+0xd6/0x174 [btrfs]
+> [39389.800016]  [<ffffffffa0693730>] inode_to_path+0x53/0xa2 [btrfs]
+> [39389.800016]  [<ffffffffa0693e2e>] paths_from_inode+0x117/0x2ec [btrfs]
+> [39389.800016]  [<ffffffffa0670cff>] btrfs_ioctl+0xd5b/0x2793 [btrfs]
+> [39389.800016]  [<ffffffff8108a8b0>] ? arch_local_irq_save+0x9/0xc
+> [39389.800016]  [<ffffffff81276727>] ? __this_cpu_preempt_check+0x13/0x15
+> [39389.800016]  [<ffffffff8108a8b0>] ? arch_local_irq_save+0x9/0xc
+> [39389.800016]  [<ffffffff8118b3d4>] ? rcu_read_unlock+0x3e/0x5d
+> [39389.800016]  [<ffffffff811822f8>] do_vfs_ioctl+0x42b/0x4ea
+> [39389.800016]  [<ffffffff8118b4f3>] ? __fget_light+0x62/0x71
+> [39389.800016]  [<ffffffff8118240e>] SyS_ioctl+0x57/0x79
+> [39389.800016]  [<ffffffff814872d7>] entry_SYSCALL_64_fastpath+0x12/0x6f
+> [39389.800016] Code: b9 01 01 00 00 f7 c6 00 ff ff ff 75 32 83 fe 01 89 ca 89 f0 0f 45 d7 f0 0f b1 13 39 f0 74 04 89 c6 eb e2 ff ca 0f 84 fa 00 00 00 <8b> 03 84 c0 74 04 f3 90 eb f6 66 c7 03 01 00 e9 e6 00 00 00 e8
+> [39389.800012] Modules linked in: btrfs dm_mod ppdev xor sha256_generic hmac raid6_pq drbg ansi_cprng aesni_intel i2c_piix4 acpi_cpufreq aes_x86_64 ablk_helper tpm_tis parport_pc i2c_core sg cryptd evdev psmouse lrw tpm parport gf128mul serio_raw pcspkr glue_helper processor button loop autofs4 ext4 crc16 mbcache jbd2 sd_mod sr_mod cdrom ata_generic virtio_scsi ata_piix libata virtio_pci virtio_ring crc32c_intel scsi_mod e1000 virtio floppy [last unloaded: btrfs]
+> [39389.800012] irq event stamp: 0
+> [39389.800012] hardirqs last  enabled at (0): [<          (null)>]           (null)
+> [39389.800012] hardirqs last disabled at (0): [<ffffffff8104e58d>] copy_process+0x638/0x1a35
+> [39389.800012] softirqs last  enabled at (0): [<ffffffff8104e58d>] copy_process+0x638/0x1a35
+> [39389.800012] softirqs last disabled at (0): [<          (null)>]           (null)
+> [39389.800012] CPU: 15 PID: 32166 Comm: btrfs Tainted: G             L  4.4.0-rc6-btrfs-next-18+ #1
+> [39389.800012] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS by qemu-project.org 04/01/2014
+> [39389.800012] task: ffff880179294380 ti: ffff880034a60000 task.ti: ffff880034a60000
+> [39389.800012] RIP: 0010:[<ffffffff81091e8d>]  [<ffffffff81091e8d>] queued_write_lock_slowpath+0x62/0x72
+> [39389.800012] RSP: 0018:ffff880034a639f0  EFLAGS: 00000206
+> [39389.800012] RAX: 0000000000000101 RBX: ffff8801710c4e98 RCX: 0000000000000000
+> [39389.800012] RDX: 00000000000000ff RSI: 0000000000000000 RDI: ffff8801710c4e9c
+> [39389.800012] RBP: ffff880034a639f8 R08: 0000000000000001 R09: 0000000000000000
+> [39389.800012] R10: ffff880034a639b0 R11: 0000000000001000 R12: ffff8801710c4e98
+> [39389.800012] R13: 0000000000000001 R14: ffff880172cbc000 R15: ffff8801710c4e00
+> [39389.800012] FS:  00007f6d377fe700(0000) GS:ffff8802be9e0000(0000) knlGS:0000000000000000
+> [39389.800012] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+> [39389.800012] CR2: 00007f6d3d3c1000 CR3: 0000000037c93000 CR4: 00000000001406e0
+> [39389.800012] Stack:
+> [39389.800012]  ffff8801710c4e98 ffff880034a63a10 ffffffff81091963 ffff8801710c4e98
+> [39389.800012]  ffff880034a63a30 ffffffff81486f1b ffffffffa0672cb3 ffff8801710c4e00
+> [39389.800012]  ffff880034a63a78 ffffffffa0672cb3 ffff8801710c4e00 ffff880034a63a58
+> [39389.800012] Call Trace:
+> [39389.800012]  [<ffffffff81091963>] do_raw_write_lock+0x72/0x8c
+> [39389.800012]  [<ffffffff81486f1b>] _raw_write_lock+0x3a/0x41
+> [39389.800012]  [<ffffffffa0672cb3>] ? btrfs_tree_lock+0x119/0x251 [btrfs]
+> [39389.800012]  [<ffffffffa0672cb3>] btrfs_tree_lock+0x119/0x251 [btrfs]
+> [39389.800012]  [<ffffffffa061aeba>] ? rcu_read_unlock+0x5b/0x5d [btrfs]
+> [39389.800012]  [<ffffffffa061ce13>] ? btrfs_root_node+0xda/0xe6 [btrfs]
+> [39389.800012]  [<ffffffffa061ce83>] btrfs_lock_root_node+0x22/0x42 [btrfs]
+> [39389.800012]  [<ffffffffa062046b>] btrfs_search_slot+0x1b8/0x758 [btrfs]
+> [39389.800012]  [<ffffffff810fc6b0>] ? time_hardirqs_on+0x15/0x28
+> [39389.800012]  [<ffffffffa06365db>] btrfs_lookup_inode+0x31/0x95 [btrfs]
+> [39389.800012]  [<ffffffff8108d62f>] ? trace_hardirqs_on+0xd/0xf
+> [39389.800012]  [<ffffffff8148482b>] ? mutex_lock_nested+0x397/0x3bc
+> [39389.800012]  [<ffffffffa068821b>] __btrfs_update_delayed_inode+0x59/0x1c0 [btrfs]
+> [39389.800012]  [<ffffffffa068858e>] __btrfs_commit_inode_delayed_items+0x194/0x5aa [btrfs]
+> [39389.800012]  [<ffffffff81486ab7>] ? _raw_spin_unlock+0x31/0x44
+> [39389.800012]  [<ffffffffa0688a48>] __btrfs_run_delayed_items+0xa4/0x15c [btrfs]
+> [39389.800012]  [<ffffffffa0688d62>] btrfs_run_delayed_items+0x11/0x13 [btrfs]
+> [39389.800012]  [<ffffffffa064048e>] btrfs_commit_transaction+0x234/0x96e [btrfs]
+> [39389.800012]  [<ffffffffa0618d10>] btrfs_sync_fs+0x145/0x1ad [btrfs]
+> [39389.800012]  [<ffffffffa0671176>] btrfs_ioctl+0x11d2/0x2793 [btrfs]
+> [39389.800012]  [<ffffffff8108a8b0>] ? arch_local_irq_save+0x9/0xc
+> [39389.800012]  [<ffffffff81140261>] ? __might_fault+0x4c/0xa7
+> [39389.800012]  [<ffffffff81140261>] ? __might_fault+0x4c/0xa7
+> [39389.800012]  [<ffffffff8108a8b0>] ? arch_local_irq_save+0x9/0xc
+> [39389.800012]  [<ffffffff8118b3d4>] ? rcu_read_unlock+0x3e/0x5d
+> [39389.800012]  [<ffffffff811822f8>] do_vfs_ioctl+0x42b/0x4ea
+> [39389.800012]  [<ffffffff8118b4f3>] ? __fget_light+0x62/0x71
+> [39389.800012]  [<ffffffff8118240e>] SyS_ioctl+0x57/0x79
+> [39389.800012]  [<ffffffff814872d7>] entry_SYSCALL_64_fastpath+0x12/0x6f
+> [39389.800012] Code: f0 0f b1 13 85 c0 75 ef eb 2a f3 90 8a 03 84 c0 75 f8 f0 0f b0 13 84 c0 75 f0 ba ff 00 00 00 eb 0a f0 0f b1 13 ff c8 74 0b f3 90 <8b> 03 83 f8 01 75 f7 eb ed c6 43 04 00 5b 5d c3 0f 1f 44 00 00
+> 
+> This happens because in the code path executed by the inode_paths ioctl we
+> end up nesting two calls to read lock a leaf's rwlock when after the first
+> call to read_lock() and before the second call to read_lock(), another
+> task (running the delayed items as part of a transaction commit) has
+> already called write_lock() against the leaf's rwlock. This situation is
+> illustrated by the following diagram:
+> 
+>          Task A                       Task B
+> 
+>   btrfs_ref_to_path()               btrfs_commit_transaction()
+>     read_lock(&eb->lock);
+> 
+>                                       btrfs_run_delayed_items()
+>                                         __btrfs_commit_inode_delayed_items()
+>                                           __btrfs_update_delayed_inode()
+>                                             btrfs_lookup_inode()
+> 
+>                                               write_lock(&eb->lock);
+>                                                 --> task waits for lock
+> 
+>     read_lock(&eb->lock);
+>     --> makes this task hang
+>         forever (and task B too
+> 	of course)
+> 
+> So fix this by avoiding doing the nested read lock, which is easily
+> avoidable. This issue does not happen if task B calls write_lock() after
+> task A does the second call to read_lock(), however there does not seem
+> to exist anything in the documentation that mentions what is the expected
+> behaviour for recursive locking of rwlocks (leaving the idea that doing
+> so is not a good usage of rwlocks).
 
-What's the point? Makes the code more unreadable and most often has
-negative effects (and cpus are good doing branch predictions nowadays
-I believe). Plus this isn't a performance critical piece of code (if
-it was, btrfs would be the fastest fs ever). Also it's not necessarily
-always true only for the first iteration, when used from send for
-example, eb_in isn't a cloned eb.
+For anyone who cares about why the 2nd read_lock is blocked...
 
-Thanks.
+On archs which have enabled CONFIG_QUEUED_RWLOCKS, For nested read_lock
+who is not in interrupted context, it will be blocked if a write_lock is
+waiting in line.
 
->
-> Thanks,
->
-> -liubo
->
->>
->>
->> >
->> > Thanks,
->> >
->> > -liubo
->> >
->> >>
->> >> thanks
->> >>
->> >> >
->> >> > Thanks,
->> >> >
->> >> > -liubo
->> >> >
->> >> >>
->> >> >> Cc: stable@vger.kernel.org
->> >> >> Signed-off-by: Filipe Manana <fdmanana@suse.com>
->> >> >> ---
->> >> >>  fs/btrfs/backref.c | 4 ++--
->> >> >>  1 file changed, 2 insertions(+), 2 deletions(-)
->> >> >>
->> >> >> diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
->> >> >> index b90cd37..198a0f8 100644
->> >> >> --- a/fs/btrfs/backref.c
->> >> >> +++ b/fs/btrfs/backref.c
->> >> >> @@ -1426,9 +1426,9 @@ char *btrfs_ref_to_path(struct btrfs_root *fs_root, struct btrfs_path *path,
->> >> >>               eb = path->nodes[0];
->> >> >>               /* make sure we can use eb after releasing the path */
->> >> >>               if (eb != eb_in) {
->> >> >> -                     atomic_inc(&eb->refs);
->> >> >> -                     btrfs_tree_read_lock(eb);
->> >> >>                       btrfs_set_lock_blocking_rw(eb, BTRFS_READ_LOCK);
->> >> >> +                     path->nodes[0] = NULL;
->> >> >> +                     path->locks[0] = 0;
->> >> >>               }
->> >> >>               btrfs_release_path(path);
->> >> >>               iref = btrfs_item_ptr(eb, slot, struct btrfs_inode_ref);
->> >> >> --
->> >> >> 2.7.0.rc3
->> >> >>
->> >> >> --
->> >> >> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> >> >> the body of a message to majordomo@vger.kernel.org
->> >> >> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+This is the fair queued rwlock[1].
+
+[1] commit 70af2f8a4f48d6cebdf92d533d3aef37853ce6de (locking/rwlocks: Introduce 'qrwlocks' - fair, queued rwlocks)
+
+Thanks,
+
+-liubo
+
+> 
+> Cc: stable@vger.kernel.org
+> Signed-off-by: Filipe Manana <fdmanana@suse.com>
+> ---
+>  fs/btrfs/backref.c | 4 ++--
+>  1 file changed, 2 insertions(+), 2 deletions(-)
+> 
+> diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
+> index b90cd37..198a0f8 100644
+> --- a/fs/btrfs/backref.c
+> +++ b/fs/btrfs/backref.c
+> @@ -1426,9 +1426,9 @@ char *btrfs_ref_to_path(struct btrfs_root *fs_root, struct btrfs_path *path,
+>  		eb = path->nodes[0];
+>  		/* make sure we can use eb after releasing the path */
+>  		if (eb != eb_in) {
+> -			atomic_inc(&eb->refs);
+> -			btrfs_tree_read_lock(eb);
+>  			btrfs_set_lock_blocking_rw(eb, BTRFS_READ_LOCK);
+> +			path->nodes[0] = NULL;
+> +			path->locks[0] = 0;
+>  		}
+>  		btrfs_release_path(path);
+>  		iref = btrfs_item_ptr(eb, slot, struct btrfs_inode_ref);
+> -- 
+> 2.7.0.rc3
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

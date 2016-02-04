@@ -1,47 +1,43 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:11889 "EHLO
-	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1750918AbcBLQo5 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 12 Feb 2016 11:44:57 -0500
-Date: Fri, 12 Feb 2016 11:43:16 -0500
-From: Chris Mason <clm@fb.com>
-To: Linus Torvalds <torvalds@linux-foundation.org>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>,
-        LKML <linux-kernel@vger.kernel.org>
-Subject: [GIT PULL] Btrfs
-Message-ID: <20160212164316.x2svnvzckxeorpkz@floor.thefacebook.com>
+Received: from mgwkm04.jp.fujitsu.com ([202.219.69.171]:40473 "EHLO
+	mgwkm04.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S964885AbcBDCBn (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 3 Feb 2016 21:01:43 -0500
+Received: from g01jpfmpwkw03.exch.g01.fujitsu.local (g01jpfmpwkw03.exch.g01.fujitsu.local [10.0.193.57])
+	by kw-mxoi2.gw.nic.fujitsu.com (Postfix) with ESMTP id E7989AC0484
+	for <linux-btrfs@vger.kernel.org>; Thu,  4 Feb 2016 10:51:27 +0900 (JST)
+Received: from g01jpexchkw34.g01.fujitsu.local (unknown [10.0.193.4])
+	by g01jpfmpwkw03.exch.g01.fujitsu.local (Postfix) with ESMTP id 06E9BBD645A
+	for <linux-btrfs@vger.kernel.org>; Thu,  4 Feb 2016 10:51:27 +0900 (JST)
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+From: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
+Subject: [PATCH] btrfs-progs: Fix self-reference of man btrfs-subvolume
+Message-ID: <56B2AE9A.5000204@jp.fujitsu.com>
+Date: Thu, 4 Feb 2016 10:51:23 +0900
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset="iso-2022-jp"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Linus,
+btrfs-subvolume(8) is mentioned at "SEE ALSO" section of itself.
 
-Please pull my for-linus-4.5 branch:
+Signed-off-by: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
+---
+ Documentation/btrfs-subvolume.asciidoc | 1 -
+ 1 file changed, 1 deletion(-)
 
-git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git for-linus-4.5
+diff --git a/Documentation/btrfs-subvolume.asciidoc b/Documentation/btrfs-subvolume.asciidoc
+index c187fd8..96cfe4a 100644
+--- a/Documentation/btrfs-subvolume.asciidoc
++++ b/Documentation/btrfs-subvolume.asciidoc
+@@ -178,6 +178,5 @@ further details.
+ SEE ALSO
+ --------
+ `mkfs.btrfs`(8),
+-`btrfs-subvolume`(8),
+ `btrfs-quota`(8),
+ `btrfs-qgroup`(8),
+-- 
+2.7.0.rc3
 
-This has a few fixes from Filipe, along with a readdir fix from Dave
-that we've been testing for some time.
 
-Filipe Manana (4) commits (+115/-68):
-    Btrfs: remove no longer used function extent_read_full_page_nolock() (+12/-42)
-    Btrfs: fix hang on extent buffer lock caused by the inode_paths ioctl (+6/-4)
-    Btrfs: fix page reading in extent_same ioctl leading to csum errors (+21/-8)
-    Btrfs: fix invalid page accesses in extent_same (dedup) ioctl (+76/-14)
-
-David Sterba (1) commits (+16/-3):
-    btrfs: properly set the termination value of ctx->pos in readdir
-
-Total: (5) commits (+131/-71)
-
- fs/btrfs/backref.c       |  10 ++--
- fs/btrfs/compression.c   |   6 +--
- fs/btrfs/delayed-inode.c |   3 +-
- fs/btrfs/delayed-inode.h |   2 +-
- fs/btrfs/extent_io.c     |  45 +++++-------------
- fs/btrfs/extent_io.h     |   3 --
- fs/btrfs/inode.c         |  14 +++++-
- fs/btrfs/ioctl.c         | 119 ++++++++++++++++++++++++++++++++++++++---------
- 8 files changed, 131 insertions(+), 71 deletions(-)

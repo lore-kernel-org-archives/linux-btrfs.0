@@ -1,124 +1,196 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:26383 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S964847AbcBDBNG (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 3 Feb 2016 20:13:06 -0500
-Subject: Re: [PATCH 0/7] Let user specify the kernel version for features
-To: <dsterba@suse.cz>, Qu Wenruo <quwenruo.btrfs@gmx.com>,
-        Anand Jain <anand.jain@oracle.com>, <linux-btrfs@vger.kernel.org>,
-        <calestyo@scientia.net>, <ahferroin7@gmail.com>,
-        <1i5t5.duncan@cox.net>
-References: <5656A18E.9050607@oracle.com> <5656AC64.3030304@cn.fujitsu.com>
- <5656EA7F.1070500@oracle.com> <5656FBB7.5020802@gmx.com>
- <565784DE.5080401@oracle.com> <5657A757.90909@cn.fujitsu.com>
- <56581742.9030308@oracle.com> <565A5317.8040506@gmx.com>
- <565BD67B.9090007@oracle.com> <565BE2A7.8050501@gmx.com>
- <20160203105038.GL31992@twin.jikos.cz>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <56B2A592.3000305@cn.fujitsu.com>
-Date: Thu, 4 Feb 2016 09:12:50 +0800
+Received: from molniya.faredge.com.au ([220.233.140.169]:48351 "EHLO
+	molniya.faredge.com.au" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752408AbcBDBfH convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 3 Feb 2016 20:35:07 -0500
+From: Dion Gullotta <Dion.Gullotta@faredge.com.au>
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Date: Thu, 4 Feb 2016 12:28:09 +1100
+Subject: btrfs partition spontaneously corrupted - No recovery options.
+ Kernel oops / "Kernel Bug"?
+Message-ID: <CCD0821AE781994EB8BAB510676B5EF502F2987D7119@ZEUS.faredge.local>
+Content-Type: text/plain; charset="koi8-r"
 MIME-Version: 1.0
-In-Reply-To: <20160203105038.GL31992@twin.jikos.cz>
-Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hi,
+
+We have a btrfs partition that was working fine up until last night whereupon it stopped working. The first thing I tried was rebooting the server, which got stuck on a hung mount process. I've tried every diagnostic and recovery option I can find online and nothing is working.
+
+We did have regular snapshots being taken, and regular scrubbing was being performed as well. If you need any information I'm more than happy to provide. 
+
+The OS is ReadyNAS which is linux under the hood. Readynas OS version 6.2.4 
+
+Here are the relevant details:
+
+Broken device is /dev/md127 which is usually mounted under /data
+
+root@odin:/var/readynasd# uname -a
+Linux odin 3.0.101.RN2120.3 #1 SMP Wed Apr 1 16:09:30 PDT 2015 armv7l GNU/Linux
+
+root@odin:/var/readynasd# btrfs fi show
+checksum verify failed on 18949527437312 found 4A677799 wanted CB641650
+checksum verify failed on 18949527437312 found 4A677799 wanted CB641650
+checksum verify failed on 18949527437312 found 4A677799 wanted CB641650
+checksum verify failed on 18949527437312 found 4A677799 wanted CB641650
+Csum didn't match
+Couldn't read chunk root
+Label: '2fe6230e:data'  uuid: 04c95625-4927-4ade-80e7-de45a7536271
+        Total devices 1 FS bytes used 13.62TiB
+        devid    1 size 21.82TiB used 14.24TiB path /dev/md127
+
+Btrfs v3.17.3
+
+This is the relevant part of dmesg
+
+udevd[862]: starting version 175
+btrfs: device label 2fe6230e:data devid 1 transid 248531 /dev/md127
+Adding 1047420k swap on /dev/md1. Priority:-1 extents:1 across:1047420k
+BTRFS critical (device md127): unable to find logical 1357341392896 len 4096
+kernel BUG at fs/btrfs/inode.c:1621!
+Unable to handle kernel NULL pointer dereference at virtual address 00000000
+pgd = f0260000
+[00000000] *pgd=30015831, *pte=00000000, *ppte=00000000
+Internal error: Oops: 817 [#1] SMP
+
+Note the kernel bug and kernel oops lines.
 
 
-David Sterba wrote on 2016/02/03 11:50 +0100:
-> Going back to this discussion,
->
-> On Mon, Nov 30, 2015 at 01:46:15PM +0800, Qu Wenruo wrote:
->> To be honest, how many guys really unhappy with current default features
->> behavior *except* you?
->
-> Me too.
->
-> Anand's summary matches my view of how we should do it:
->
-> ". Do it at run time for the running kernel. Current. In the order of
->     priority .. check sysfs, if not check kernel-version, if not use
->     progs-version-based-defaults (original)."
+I've tried the following things, results shown:
 
-I'm curious under which case btrfs will fallback to 
-progs-version-based-default, as I though kernel-version probe will make 
-it never go to progs-version-based one. (Maybe non-numeric kernel version?)
+mount -o recovery /dev/md127 /data
+ 
+mount -o ro,recovery /dev/md127 /data
+ 
+mount -o ro /dev/md127 /data
+ 
+All of these just hang and a reboot is necessary in order to kill the process.
 
->
-> I understand that the the kernel version is not always reliable, but
-> when we use it only as a fallback we know that at least kernel of this
-> upstream version can mount the filesystem.
 
-Yes, upstream version can mount it, but it does not always make sense.
 
-For example, the kernel used by user may doesn't contain btrfs 
-modules/built-in.
-We shouldn't do extra check even trying to ensure something we can't ensure.
+Things that don't work:
+ 
+root@odin:/tmp# btrfs-zero-log /dev/md127
+checksum verify failed on 18949527437312 found 4A677799 wanted CB641650
+checksum verify failed on 18949527437312 found 4A677799 wanted CB641650
+checksum verify failed on 18949527437312 found 4A677799 wanted CB641650
+checksum verify failed on 18949527437312 found 4A677799 wanted CB641650
+Csum didn't match
+Couldn't read chunk root
+ 
+ 
+root@odin:/tmp# btrfs restore -F -i -D -v /dev/md127 /dev/null
+checksum verify failed on 18949527437312 found 4A677799 wanted CB641650
+checksum verify failed on 18949527437312 found 4A677799 wanted CB641650
+checksum verify failed on 18949527437312 found 4A677799 wanted CB641650
+checksum verify failed on 18949527437312 found 4A677799 wanted CB641650
+Csum didn't match
+Couldn't read chunk root
+Could not open root, trying backup super
+checksum verify failed on 18949527437312 found 4A677799 wanted CB641650
+checksum verify failed on 18949527437312 found 4A677799 wanted CB641650
+checksum verify failed on 18949527437312 found 4A677799 wanted CB641650
+checksum verify failed on 18949527437312 found 4A677799 wanted CB641650
+Csum didn't match
+Couldn't read chunk root
+Could not open root, trying backup super
+checksum verify failed on 18949527437312 found 4A677799 wanted CB641650
+checksum verify failed on 18949527437312 found 4A677799 wanted CB641650
+checksum verify failed on 18949527437312 found 4A677799 wanted CB641650
+checksum verify failed on 18949527437312 found 4A677799 wanted CB641650
+Csum didn't match
+Couldn't read chunk root
+ 
+ 
+root@odin:/tmp# btrfs-find-root /dev/md127
+checksum verify failed on 18949527437312 found 4A677799 wanted CB641650
+checksum verify failed on 18949527437312 found 4A677799 wanted CB641650
+checksum verify failed on 18949527437312 found 4A677799 wanted CB641650
+checksum verify failed on 18949527437312 found 4A677799 wanted CB641650
+Csum didn't match
+Couldn't read chunk root
+Open ctree failed
+ 
+root@odin:/tmp# btrfsck /dev/md127
+Couldn't open file system
 
->
-> And becase we can turn on additional features later this should not be a
-> blocker.
->
-> I disagree with your view that the weight should be put on the distro
-> integrators. I've been packaging btrfs-progs for the SLES and openSUSE,
-> several product lines with different kernels (upstream and backports).
-> Keeping the features in sync with kernel started to be an issue with the
-> first incompat feature that was different among the kernels. And we want
-> change the defaults further.
->
-> The main user bases that I take into account:
->
-> * upstream community, ie. the latest stable version or the git version
-> * older stable trees, ie. 3.2, 3.14 up to 4.1
-> * heavy backports to enterprise kernels, arbitrary base version
->
-> My idea of the default behaviour is to be able to use latest btrfs-progs
-> (released or git) on any of them and minimize possible damage. Ie.
-> respect the running kernel and try to best detect the features.
+oot@odin:/tmp# btrfs rescue super-recover -v /dev/md127
+All Devices:
+Device: id = 1, name = /dev/md127
+ 
+Before Recovering:
+[All good supers]:
+device name = /dev/md127
+superblock bytenr = 65536
+ 
+device name = /dev/md127
+superblock bytenr = 67108864
+ 
+device name = /dev/md127
+superblock bytenr = 274877906944
+ 
+[All bad supers]:
+ 
+All supers are valid, no need to recover
+ 
+ 
+root@odin:/tmp# btrfs check /dev/md127
+Couldn't open file system
+root@odin:/tmp# btrfsck /dev/md127
+Couldn't open file system
 
-OK, but I didn't see anything sysfs-based probe can't handle.
-(Except kernel doesn't support btrfs sysfs interface)
+Other info
 
-Personally, I just prefer to deprecate any kernel doesn't support btrfs 
-features sysfs interface, and give a strong enough warning.
+root@odin:/tmp# lsblk -o name,type,size,fstype,mountpoint
+NAME TYPE SIZE FSTYPE MOUNTPOINT
+mtdblock0 disk 1.5M
+mtdblock1 disk 128K
+mtdblock2 disk 6M
+mtdblock3 disk 4M
+mtdblock4 disk 116M
+sda disk 7.3T
+†€sda1 part 4G linux_raid_member
+ „€md0 raid1 4G ext4 /
+†€sda2 part 512M linux_raid_member
+ „€md1 raid6 1022.9M swap [SWAP]
+„€sda3 part 7.3T linux_raid_member
+„€md127 raid5 21.8T btrfs
+sdb disk 7.3T
+†€sdb1 part 4G linux_raid_member
+ „€md0 raid1 4G ext4 /
+†€sdb2 part 512M linux_raid_member
+ „€md1 raid6 1022.9M swap [SWAP]
+„€sdb3 part 7.3T linux_raid_member
+„€md127 raid5 21.8T btrfs
+sdc disk 7.3T
+†€sdc1 part 4G linux_raid_member
+ „€md0 raid1 4G ext4 /
+†€sdc2 part 512M linux_raid_member
+ „€md1 raid6 1022.9M swap [SWAP]
+„€sdc3 part 7.3T linux_raid_member
+„€md127 raid5 21.8T btrfs
+sdd disk 7.3T
+†€sdd1 part 4G linux_raid_member
+ „€md0 raid1 4G ext4 /
+†€sdd2 part 512M linux_raid_member
+ „€md1 raid6 1022.9M swap [SWAP]
+„€sdd3 part 7.3T linux_raid_member
+„€md127 raid5 21.8T btrfs
 
-So my idea about the workflow would be:
-1) Check sysfs feature interface and use it.
-2) Fallback to progs-default-feature unless '-f' is given.
 
-Much more straightforward and makes sense for me.
-If kernel is too old without the sysfs intreface backported (or without 
-btrfs modules/built-in), it's a very bad idea to use btrfs.
+ Disk health seems fine:
+root@odin:/tmp# smartctl -a /dev/sda | grep PASSED
+SMART overall-health self-assessment test result: PASSED
+root@odin:/tmp# smartctl -a /dev/sdb | grep PASSED
+SMART overall-health self-assessment test result: PASSED
+root@odin:/tmp# smartctl -a /dev/sdc | grep PASSED
+SMART overall-health self-assessment test result: PASSED
+root@odin:/tmp# smartctl -a /dev/sdd | grep PASSED
+SMART overall-health self-assessment test result: PASSED
 
->
-> Besides ancient kernels and the 3.2 that's still in use, the sysfs based
-> detection should work.
 
-Ancient kernels (including 3.2 though) without heavy backports are never 
-a good idea to run btrfs on.
-So I just like to deprecate them in btrfs-progs.
 
->
->> Or how many bug report in maillist/bugzilla is about that?
->>
->> Introducing a new feature matrix only to change the behavior to your flavor?
->> Isn't this what you called "bloated intelligence"?
->
-> I'm not sure why you see the feature matrix getting more complicated.
-> The testeres and developers know what features to turn on if desired,
-> testing recent kernel with recent progs will do the right thing on
-> itself.  The rest of the user are supposed to just install and use it.
->
->
-Your point also shows that, -O ver=X.XX is not needed.
-Testers/developers know which exactly feature they need to enable/disable.
 
-And end user just use it, sysfs-based probe handles them quite well.
-
-Ancient kernel users also get warned, so I see no need to use feature 
-matrix.
-
-Thanks,
-Qu
-
+Dion 
 

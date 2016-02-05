@@ -1,31 +1,54 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lf0-f53.google.com ([209.85.215.53]:36441 "EHLO
-	mail-lf0-f53.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751674AbcBDUGA (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 4 Feb 2016 15:06:00 -0500
-Received: by mail-lf0-f53.google.com with SMTP id 78so43792766lfy.3
-        for <linux-btrfs@vger.kernel.org>; Thu, 04 Feb 2016 12:05:59 -0800 (PST)
+Received: from mail-ob0-f171.google.com ([209.85.214.171]:36419 "EHLO
+	mail-ob0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753723AbcBETge (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 5 Feb 2016 14:36:34 -0500
+Received: by mail-ob0-f171.google.com with SMTP id ba1so97814252obb.3
+        for <linux-btrfs@vger.kernel.org>; Fri, 05 Feb 2016 11:36:33 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <20160106013134.GA13956@localhost>
-References: <20160104170553.GA4975@localhost>
-	<568B2304.8090205@cn.fujitsu.com>
-	<CAP-bSRYB4mH1TK9uQnHQaMazxOnMcmCYkhF9xXmrVHPbveZLQQ@mail.gmail.com>
-	<568C6678.8020803@cn.fujitsu.com>
-	<20160106013134.GA13956@localhost>
-Date: Thu, 4 Feb 2016 20:05:59 +0000
-Message-ID: <CAP-bSRbueHoWAn1Djyj9bpzcpBX-7J=RzO6vZOm6i3Bx70hRbg@mail.gmail.com>
-Subject: Re: Crash, boot mount failure: "corrupt leaf, slot offset bad"
-From: Chris Bainbridge <chris.bainbridge@gmail.com>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Cc: linux-btrfs@vger.kernel.org
+Date: Fri, 5 Feb 2016 14:36:33 -0500
+Message-ID: <CAKr9ZMFwxZ01gw7SAyFReOfXFb=hVzUXNgYoGcUc2xzLuo+9mg@mail.gmail.com>
+Subject: BTRFS RAM requirements, RAID 6 stability/write holes and expansion questions
+From: Mackenzie Meyer <snackmasterx@gmail.com>
+To: linux-btrfs@vger.kernel.org
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I had another btrfs crash with identical symptoms. This time I managed
-to reproduce the crash and identify the root cause. It turns out that
-the Apple boot firmware is buggy and leaves wifi DMA turned on, which
-randomly corrupts memory after Linux is running.
-https://bugzilla.kernel.org/show_bug.cgi?id=111781
+Hello,
 
-So btrfs is not to blame after all.
+I've tried checking around on google but can't find information
+regarding the RAM requirements of BTRFS and most of the topics on
+stability seem quite old.
+
+So first would be memory requirements, my goal is to use deduplication
+and compression. Approximately how many GB of RAM per TB of storage
+would be recommended?
+
+RAID 6 write holes?
+The BTRFS wiki states that parity might be inconsistent after a crash.
+That said, the wiki page for RAID 5/6 doesn't look like it has much
+recent information on there. Has this issue been addressed and if not,
+are there plans to address the RAID write hole issue? What would be a
+recommended workaround to resolve inconsistent parity, should an
+unexpected power down happen during write operations?
+
+RAID 6 stability?
+Any articles I've tried looking for online seem to be from early 2014,
+I can't find anything recent discussing the stability of RAID 5 or 6.
+Are there or have there recently been any data corruption bugs which
+impact RAID 6? Would you consider RAID 6 safe/stable enough for
+production use?
+
+Do you still strongly recommend backups, or has stability reached a
+point where backups aren't as critical? I'm thinking from a data
+consistency standpoint, not a hardware failure standpoint.
+
+I plan to start with a small array and add disks over time. That said,
+currently I have mostly 2TB disks and some 3TB disks. If I replace all
+2TB disks with 3TB disks, would BTRFS then start utilizing the full
+3TB capacity of each disk, or would I need to destroy and rebuild my
+array to benefit from the larger disks?
+
+
+Thanks!

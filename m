@@ -1,487 +1,466 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from e23smtp07.au.ibm.com ([202.81.31.140]:52651 "EHLO
-	e23smtp07.au.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756355AbcBDGrn (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 4 Feb 2016 01:47:43 -0500
-Received: from localhost
-	by e23smtp07.au.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
-	for <linux-btrfs@vger.kernel.org> from <chandan@linux.vnet.ibm.com>;
-	Thu, 4 Feb 2016 16:47:42 +1000
-Received: from d23relay07.au.ibm.com (d23relay07.au.ibm.com [9.190.26.37])
-	by d23dlp02.au.ibm.com (Postfix) with ESMTP id 48D752BB0055
-	for <linux-btrfs@vger.kernel.org>; Thu,  4 Feb 2016 17:47:40 +1100 (EST)
-Received: from d23av03.au.ibm.com (d23av03.au.ibm.com [9.190.234.97])
-	by d23relay07.au.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id u146lYDa29294618
-	for <linux-btrfs@vger.kernel.org>; Thu, 4 Feb 2016 17:47:42 +1100
-Received: from d23av03.au.ibm.com (localhost [127.0.0.1])
-	by d23av03.au.ibm.com (8.14.4/8.14.4/NCO v10.0 AVout) with ESMTP id u146l7MA014873
-	for <linux-btrfs@vger.kernel.org>; Thu, 4 Feb 2016 17:47:07 +1100
-From: Chandan Rajendra <chandan@linux.vnet.ibm.com>
-To: clm@fb.com, jbacik@fb.com, bo.li.liu@oracle.com, dsterba@suse.cz
-Cc: Chandan Rajendra <chandan@linux.vnet.ibm.com>,
-        aneesh.kumar@linux.vnet.ibm.com, linux-btrfs@vger.kernel.org,
-        chandan@mykolab.com
-Subject: [PATCH V14 06/15] Btrfs: subpagesize-blocksize: Write only dirty extent buffers belonging to a page
-Date: Thu,  4 Feb 2016 12:16:13 +0530
-Message-Id: <1454568382-2020-7-git-send-email-chandan@linux.vnet.ibm.com>
-In-Reply-To: <1454568382-2020-1-git-send-email-chandan@linux.vnet.ibm.com>
-References: <1454568382-2020-1-git-send-email-chandan@linux.vnet.ibm.com>
+Received: from cn.fujitsu.com ([222.73.24.84]:18117 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1751082AbcBEBYw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 4 Feb 2016 20:24:52 -0500
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
+Subject: [PATCH v6 11/19] btrfs: dedup: Introduce interfaces to resume and cleanup dedup info
+Date: Fri,  5 Feb 2016 09:22:31 +0800
+Message-Id: <1454635359-10013-12-git-send-email-quwenruo@cn.fujitsu.com>
+In-Reply-To: <1454635359-10013-1-git-send-email-quwenruo@cn.fujitsu.com>
+References: <1454635359-10013-1-git-send-email-quwenruo@cn.fujitsu.com>
+MIME-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-For the subpagesize-blocksize scenario, this patch adds the ability to write a
-single extent buffer to the disk.
+Since we will introduce a new on-disk based dedup method, introduce new
+interfaces to resume previous dedup setup.
 
-Signed-off-by: Chandan Rajendra <chandan@linux.vnet.ibm.com>
+And since we introduce a new tree for status, also add disable handler
+for it.
+
+Signed-off-by: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- fs/btrfs/disk-io.c   |  19 ++--
- fs/btrfs/extent_io.c | 277 +++++++++++++++++++++++++++++++++++++++++----------
- 2 files changed, 238 insertions(+), 58 deletions(-)
+ fs/btrfs/dedup.c   | 270 +++++++++++++++++++++++++++++++++++++++++++++++++----
+ fs/btrfs/dedup.h   |  13 +++
+ fs/btrfs/disk-io.c |  21 ++++-
+ fs/btrfs/disk-io.h |   1 +
+ 4 files changed, 283 insertions(+), 22 deletions(-)
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 30ef057..ea540ba 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -504,17 +504,24 @@ static int btree_read_extent_buffer_pages(struct btrfs_root *root,
+diff --git a/fs/btrfs/dedup.c b/fs/btrfs/dedup.c
+index 9777355..ad7b7e1 100644
+--- a/fs/btrfs/dedup.c
++++ b/fs/btrfs/dedup.c
+@@ -21,6 +21,8 @@
+ #include "transaction.h"
+ #include "delayed-ref.h"
+ #include "qgroup.h"
++#include "disk-io.h"
++#include "locking.h"
  
- static int csum_dirty_buffer(struct btrfs_fs_info *fs_info, struct page *page)
- {
--	u64 start = page_offset(page);
--	u64 found_start;
- 	struct extent_buffer *eb;
-+	u64 found_start;
- 
- 	eb = (struct extent_buffer *)page->private;
- 	if (page != eb_head(eb)->pages[0])
- 		return 0;
--	found_start = btrfs_header_bytenr(eb);
--	if (WARN_ON(found_start != start || !PageUptodate(page)))
--		return 0;
--	csum_tree_block(fs_info, eb, 0);
-+
-+	do {
-+		if (!test_bit(EXTENT_BUFFER_WRITEBACK, &eb->ebflags))
-+			continue;
-+		if (WARN_ON(!test_bit(EXTENT_BUFFER_UPTODATE, &eb->ebflags)))
-+			continue;
-+		found_start = btrfs_header_bytenr(eb);
-+		if (WARN_ON(found_start != eb->start))
-+			return 0;
-+		csum_tree_block(fs_info, eb, 0);
-+	} while ((eb = eb->eb_next) != NULL);
-+
- 	return 0;
+ struct inmem_hash {
+ 	struct rb_node hash_node;
+@@ -41,10 +43,103 @@ static inline struct inmem_hash *inmem_alloc_hash(u16 type)
+ 			GFP_NOFS);
  }
  
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 57d590d..d3ce244 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -3701,29 +3701,49 @@ void wait_on_extent_buffer_writeback(struct extent_buffer *eb)
- 		    TASK_UNINTERRUPTIBLE);
- }
- 
--static noinline_for_stack int
--lock_extent_buffer_for_io(struct extent_buffer *eb,
--			  struct btrfs_fs_info *fs_info,
--			  struct extent_page_data *epd)
-+static void lock_extent_buffer_pages(struct extent_buffer_head *ebh,
-+				struct extent_page_data *epd)
- {
-+	struct extent_buffer *eb = &ebh->eb;
- 	unsigned long i, num_pages;
--	int flush = 0;
++static int init_dedup_info(struct btrfs_dedup_info **ret_info, u16 type,
++			   u16 backend, u64 blocksize, u64 limit)
++{
++	struct btrfs_dedup_info *dedup_info;
 +
-+	num_pages = num_extent_pages(eb->start, eb->len);
-+	for (i = 0; i < num_pages; i++) {
-+		struct page *p = ebh->pages[i];
-+		if (!trylock_page(p)) {
-+			flush_write_bio(epd);
-+			lock_page(p);
-+		}
++	dedup_info = kzalloc(sizeof(*dedup_info), GFP_NOFS);
++	if (!dedup_info)
++		return -ENOMEM;
++
++	dedup_info->hash_type = type;
++	dedup_info->backend = backend;
++	dedup_info->blocksize = blocksize;
++	dedup_info->limit_nr = limit;
++
++	/* only support SHA256 yet */
++	dedup_info->dedup_driver = crypto_alloc_shash("sha256", 0, 0);
++	if (IS_ERR(dedup_info->dedup_driver)) {
++		int ret;
++
++		ret = PTR_ERR(dedup_info->dedup_driver);
++		kfree(dedup_info);
++		return ret;
 +	}
 +
-+	return;
++	dedup_info->hash_root = RB_ROOT;
++	dedup_info->bytenr_root = RB_ROOT;
++	dedup_info->current_nr = 0;
++	INIT_LIST_HEAD(&dedup_info->lru_list);
++	mutex_init(&dedup_info->lock);
++
++	*ret_info = dedup_info;
++	return 0;
 +}
 +
-+static int noinline_for_stack
-+lock_extent_buffer_for_io(struct extent_buffer *eb,
-+			struct btrfs_fs_info *fs_info,
-+			struct extent_page_data *epd)
++static int init_dedup_tree(struct btrfs_fs_info *fs_info,
++			   struct btrfs_dedup_info *dedup_info)
 +{
-+	int dirty;
- 	int ret = 0;
- 
- 	if (!btrfs_try_tree_write_lock(eb)) {
--		flush = 1;
- 		flush_write_bio(epd);
- 		btrfs_tree_lock(eb);
- 	}
- 
- 	if (test_bit(EXTENT_BUFFER_WRITEBACK, &eb->ebflags)) {
-+		dirty = test_bit(EXTENT_BUFFER_DIRTY, &eb->ebflags);
- 		btrfs_tree_unlock(eb);
--		if (!epd->sync_io)
--			return 0;
--		if (!flush) {
--			flush_write_bio(epd);
--			flush = 1;
-+		if (!epd->sync_io) {
-+			if (!dirty)
-+				return 1;
-+			else
-+				return 2;
- 		}
++	struct btrfs_root *dedup_root;
++	struct btrfs_key key;
++	struct btrfs_path *path;
++	struct btrfs_dedup_status_item *status;
++	struct btrfs_trans_handle *trans;
++	int ret;
 +
-+		flush_write_bio(epd);
++	path = btrfs_alloc_path();
++	if (!path)
++		return -ENOMEM;
 +
- 		while (1) {
- 			wait_on_extent_buffer_writeback(eb);
- 			btrfs_tree_lock(eb);
-@@ -3746,29 +3766,14 @@ lock_extent_buffer_for_io(struct extent_buffer *eb,
- 		__percpu_counter_add(&fs_info->dirty_metadata_bytes,
- 				     -eb->len,
- 				     fs_info->dirty_metadata_batch);
--		ret = 1;
-+		ret = 0;
- 	} else {
- 		spin_unlock(&eb_head(eb)->refs_lock);
-+		ret = 1;
- 	}
- 
- 	btrfs_tree_unlock(eb);
- 
--	if (!ret)
--		return ret;
--
--	num_pages = num_extent_pages(eb->start, eb->len);
--	for (i = 0; i < num_pages; i++) {
--		struct page *p = eb_head(eb)->pages[i];
--
--		if (!trylock_page(p)) {
--			if (!flush) {
--				flush_write_bio(epd);
--				flush = 1;
--			}
--			lock_page(p);
--		}
--	}
--
- 	return ret;
- }
- 
-@@ -3847,9 +3852,8 @@ static void end_extent_buffer_writeback(struct extent_buffer *eb)
- 	wake_up_bit(&eb->ebflags, EXTENT_BUFFER_WRITEBACK);
- }
- 
--static void set_btree_ioerr(struct page *page)
-+static void set_btree_ioerr(struct extent_buffer *eb, struct page *page)
- {
--	struct extent_buffer *eb = (struct extent_buffer *)page->private;
- 	struct extent_buffer_head *ebh = eb_head(eb);
- 	struct btrfs_inode *btree_ino = BTRFS_I(ebh->fs_info->btree_inode);
- 
-@@ -3910,7 +3914,8 @@ static void set_btree_ioerr(struct page *page)
- 	}
- }
- 
--static void end_bio_extent_buffer_writepage(struct bio *bio)
++	trans = btrfs_start_transaction(fs_info->tree_root, 2);
++	if (IS_ERR(trans)) {
++		ret = PTR_ERR(trans);
++		goto out;
++	}
++	dedup_root = btrfs_create_tree(trans, fs_info,
++				       BTRFS_DEDUP_TREE_OBJECTID);
++	if (IS_ERR(dedup_root)) {
++		ret = PTR_ERR(dedup_root);
++		btrfs_abort_transaction(trans, fs_info->tree_root, ret);
++		goto out;
++	}
++	dedup_info->dedup_root = dedup_root;
 +
-+static void end_bio_subpagesize_blocksize_ebh_writepage(struct bio *bio)
- {
- 	struct bio_vec *bvec;
- 	struct extent_buffer *eb;
-@@ -3918,15 +3923,58 @@ static void end_bio_extent_buffer_writepage(struct bio *bio)
- 
- 	bio_for_each_segment_all(bvec, bio, i) {
- 		struct page *page = bvec->bv_page;
-+		u64 start, end;
- 
- 		eb = (struct extent_buffer *)page->private;
- 		BUG_ON(!eb);
-+		start = page_offset(page) + bvec->bv_offset;
-+		end = start + bvec->bv_len - 1;
++	key.objectid = 0;
++	key.type = BTRFS_DEDUP_STATUS_ITEM_KEY;
++	key.offset = 0;
 +
-+		do {
-+			if (!(eb->start >= start
-+					&& (eb->start + eb->len) <= (end + 1))) {
-+				continue;
-+			}
-+
-+			done = atomic_dec_and_test(&eb_head(eb)->io_bvecs);
-+
-+			if (bio->bi_error
-+				|| test_bit(EXTENT_BUFFER_WRITE_ERR,
-+					&eb->ebflags)) {
-+				ClearPageUptodate(page);
-+				set_btree_ioerr(eb, page);
-+			}
-+
-+			if (done)
-+				end_page_writeback(page);
-+
-+			end_extent_buffer_writeback(eb);
-+
-+		} while ((eb = eb->eb_next) != NULL);
-+
++	ret = btrfs_insert_empty_item(trans, dedup_root, path, &key,
++				      sizeof(*status));
++	if (ret < 0) {
++		btrfs_abort_transaction(trans, fs_info->tree_root, ret);
++		goto out;
 +	}
 +
-+	bio_put(bio);
-+}
-+
-+static void end_bio_regular_ebh_writepage(struct bio *bio)
-+{
-+	struct extent_buffer *eb;
-+	struct bio_vec *bvec;
-+	int i, done;
-+
-+	bio_for_each_segment_all(bvec, bio, i) {
-+		struct page *page = bvec->bv_page;
-+
-+		eb = (struct extent_buffer *)page->private;
-+		BUG_ON(!eb);
-+
- 		done = atomic_dec_and_test(&eb_head(eb)->io_bvecs);
- 
- 		if (bio->bi_error ||
- 		    test_bit(EXTENT_BUFFER_WRITE_ERR, &eb->ebflags)) {
- 			ClearPageUptodate(page);
--			set_btree_ioerr(page);
-+			set_btree_ioerr(eb, page);
- 		}
- 
- 		end_page_writeback(page);
-@@ -3940,14 +3988,17 @@ static void end_bio_extent_buffer_writepage(struct bio *bio)
- 	bio_put(bio);
- }
- 
--static noinline_for_stack int write_one_eb(struct extent_buffer *eb,
--			struct btrfs_fs_info *fs_info,
--			struct writeback_control *wbc,
--			struct extent_page_data *epd)
-+
-+static noinline_for_stack int
-+write_regular_ebh(struct extent_buffer_head *ebh,
-+		struct btrfs_fs_info *fs_info,
-+		struct writeback_control *wbc,
-+		struct extent_page_data *epd)
- {
- 	struct block_device *bdev = fs_info->fs_devices->latest_bdev;
- 	struct extent_io_tree *tree = &BTRFS_I(fs_info->btree_inode)->io_tree;
--	u64 offset = eb->start;
-+	struct extent_buffer *eb = &ebh->eb;
-+	u64 offset = eb->start & ~(PAGE_CACHE_SIZE - 1);
- 	unsigned long i, num_pages;
- 	unsigned long bio_flags = 0;
- 	int rw = (epd->sync_io ? WRITE_SYNC : WRITE) | REQ_META;
-@@ -3966,11 +4017,11 @@ static noinline_for_stack int write_one_eb(struct extent_buffer *eb,
- 		set_page_writeback(p);
- 		ret = submit_extent_page(rw, tree, wbc, p, offset >> 9,
- 					 PAGE_CACHE_SIZE, 0, bdev, &epd->bio,
--					 -1, end_bio_extent_buffer_writepage,
--					 0, epd->bio_flags, bio_flags, false);
-+					-1, end_bio_regular_ebh_writepage,
-+					0, epd->bio_flags, bio_flags, false);
- 		epd->bio_flags = bio_flags;
- 		if (ret) {
--			set_btree_ioerr(p);
-+			set_btree_ioerr(eb, p);
- 			end_page_writeback(p);
- 			if (atomic_sub_and_test(num_pages - i,
- 							&eb_head(eb)->io_bvecs))
-@@ -3994,12 +4045,84 @@ static noinline_for_stack int write_one_eb(struct extent_buffer *eb,
- 	return ret;
- }
- 
-+static int write_subpagesize_blocksize_ebh(struct extent_buffer_head *ebh,
-+					struct btrfs_fs_info *fs_info,
-+					struct writeback_control *wbc,
-+					struct extent_page_data *epd,
-+					unsigned long ebs_to_write)
-+{
-+	struct block_device *bdev = fs_info->fs_devices->latest_bdev;
-+	struct extent_io_tree *tree = &BTRFS_I(fs_info->btree_inode)->io_tree;
-+	struct extent_buffer *eb;
-+	struct page *p;
-+	u64 offset;
-+	unsigned long i;
-+	unsigned long bio_flags = 0;
-+	int rw = (epd->sync_io ? WRITE_SYNC : WRITE) | REQ_META;
-+	int ret = 0, err = 0;
-+
-+	eb = &ebh->eb;
-+	p = ebh->pages[0];
-+	clear_page_dirty_for_io(p);
-+	set_page_writeback(p);
-+	i = 0;
-+	do {
-+		if (!test_bit(i++, &ebs_to_write))
-+			continue;
-+
-+		clear_bit(EXTENT_BUFFER_WRITE_ERR, &eb->ebflags);
-+		atomic_inc(&eb_head(eb)->io_bvecs);
-+
-+		if (btrfs_header_owner(eb) == BTRFS_TREE_LOG_OBJECTID)
-+			bio_flags = EXTENT_BIO_TREE_LOG;
-+
-+		offset = eb->start - page_offset(p);
-+
-+		ret = submit_extent_page(rw, tree, wbc, p, eb->start >> 9,
-+					eb->len, offset,
-+					bdev, &epd->bio, -1,
-+					end_bio_subpagesize_blocksize_ebh_writepage,
-+					0, epd->bio_flags, bio_flags, false);
-+		epd->bio_flags = bio_flags;
-+		if (ret) {
-+			set_btree_ioerr(eb, p);
-+			atomic_dec(&eb_head(eb)->io_bvecs);
-+			end_extent_buffer_writeback(eb);
-+			err = -EIO;
-+		}
-+	} while ((eb = eb->eb_next) != NULL);
-+
-+	if (!err) {
-+		update_nr_written(p, wbc, 1);
-+	}
-+
-+	unlock_page(p);
-+
++	status = btrfs_item_ptr(path->nodes[0], path->slots[0],
++				struct btrfs_dedup_status_item);
++	btrfs_set_dedup_status_blocksize(path->nodes[0], status,
++					 dedup_info->blocksize);
++	btrfs_set_dedup_status_limit(path->nodes[0], status,
++			dedup_info->limit_nr);
++	btrfs_set_dedup_status_hash_type(path->nodes[0], status,
++			dedup_info->hash_type);
++	btrfs_set_dedup_status_backend(path->nodes[0], status,
++			dedup_info->backend);
++	btrfs_mark_buffer_dirty(path->nodes[0]);
++out:
++	btrfs_free_path(path);
++	if (ret == 0)
++		btrfs_commit_transaction(trans, fs_info->tree_root);
 +	return ret;
 +}
 +
-+static void redirty_extent_buffer_pages_for_writepage(struct extent_buffer *eb,
-+						struct writeback_control *wbc)
-+{
-+	unsigned long i, num_pages;
-+	struct page *p;
+ int btrfs_dedup_enable(struct btrfs_fs_info *fs_info, u16 type, u16 backend,
+ 		       u64 blocksize, u64 limit_nr)
+ {
+ 	struct btrfs_dedup_info *dedup_info;
++	int create_tree;
++	u64 compat_ro_flag = btrfs_super_compat_ro_flags(fs_info->super_copy);
+ 	u64 limit = limit_nr;
+ 	int ret = 0;
+ 
+@@ -63,6 +158,14 @@ int btrfs_dedup_enable(struct btrfs_fs_info *fs_info, u16 type, u16 backend,
+ 		limit = 4096; /* default value */
+ 	if (backend == BTRFS_DEDUP_BACKEND_ONDISK && limit_nr != 0)
+ 		limit = 0;
++	/* Ondisk backend needs DEDUP RO compat feature */
++	if (!(compat_ro_flag & BTRFS_FEATURE_COMPAT_RO_DEDUP) &&
++	    backend == BTRFS_DEDUP_BACKEND_ONDISK)
++		return -EOPNOTSUPP;
 +
-+	num_pages = num_extent_pages(eb->start, eb->len);
-+	for (i = 0; i < num_pages; i++) {
-+		p = eb_head(eb)->pages[i];
-+		redirty_page_for_writepage(wbc, p);
++	/* Meaningless and unable to enable dedup for RO fs */
++	if (fs_info->sb->s_flags & MS_RDONLY)
++		return -EROFS;
+ 
+ 	dedup_info = fs_info->dedup_info;
+ 	if (dedup_info) {
+@@ -80,30 +183,71 @@ int btrfs_dedup_enable(struct btrfs_fs_info *fs_info, u16 type, u16 backend,
+ 		mutex_unlock(&dedup_info->lock);
+ 		return 0;
+ 	}
+-
++	dedup_info = NULL;
+ enable:
+-	dedup_info = kzalloc(sizeof(*dedup_info), GFP_NOFS);
+-	if (dedup_info)
++	create_tree = compat_ro_flag & BTRFS_FEATURE_COMPAT_RO_DEDUP;
++
++	ret = init_dedup_info(&dedup_info, type, backend, blocksize, limit);
++	if (ret < 0)
++		return ret;
++	if (create_tree) {
++		ret = init_dedup_tree(fs_info, dedup_info);
++		if (ret < 0)
++			goto out;
 +	}
 +
-+	return;
++	fs_info->dedup_info = dedup_info;
++	/* We must ensure dedup_enabled is modified after dedup_info */
++	smp_wmb();
++	fs_info->dedup_enabled = 1;
++out:
++	if (ret < 0) {
++		crypto_free_shash(dedup_info->dedup_driver);
++		kfree(dedup_info);
++	}
++	return ret;
 +}
 +
- int btree_write_cache_pages(struct address_space *mapping,
--				   struct writeback_control *wbc)
-+			struct writeback_control *wbc)
++int btrfs_dedup_resume(struct btrfs_fs_info *fs_info,
++		       struct btrfs_root *dedup_root)
++{
++	struct btrfs_dedup_info *dedup_info;
++	struct btrfs_dedup_status_item *status;
++	struct btrfs_key key;
++	struct btrfs_path *path;
++	u64 blocksize;
++	u64 limit;
++	u16 type;
++	u16 backend;
++	int ret = 0;
++
++	path = btrfs_alloc_path();
++	if (!path)
+ 		return -ENOMEM;
+ 
+-	dedup_info->hash_type = type;
+-	dedup_info->backend = backend;
+-	dedup_info->blocksize = blocksize;
+-	dedup_info->limit_nr = limit;
++	key.objectid = 0;
++	key.type = BTRFS_DEDUP_STATUS_ITEM_KEY;
++	key.offset = 0;
+ 
+-	/* Only support SHA256 yet */
+-	dedup_info->dedup_driver = crypto_alloc_shash("sha256", 0, 0);
+-	if (IS_ERR(dedup_info->dedup_driver)) {
+-		btrfs_err(fs_info, "failed to init sha256 driver");
+-		ret = PTR_ERR(dedup_info->dedup_driver);
++	ret = btrfs_search_slot(NULL, dedup_root, &key, path, 0, 0);
++	if (ret > 0) {
++		ret = -ENOENT;
++		goto out;
++	} else if (ret < 0) {
+ 		goto out;
+ 	}
+ 
+-	dedup_info->hash_root = RB_ROOT;
+-	dedup_info->bytenr_root = RB_ROOT;
+-	dedup_info->current_nr = 0;
+-	INIT_LIST_HEAD(&dedup_info->lru_list);
+-	mutex_init(&dedup_info->lock);
++	status = btrfs_item_ptr(path->nodes[0], path->slots[0],
++				struct btrfs_dedup_status_item);
++	blocksize = btrfs_dedup_status_blocksize(path->nodes[0], status);
++	limit = btrfs_dedup_status_limit(path->nodes[0], status);
++	type = btrfs_dedup_status_hash_type(path->nodes[0], status);
++	backend = btrfs_dedup_status_backend(path->nodes[0], status);
++
++	ret = init_dedup_info(&dedup_info, type, backend, blocksize, limit);
++	if (ret < 0)
++		goto out;
++	dedup_info->dedup_root = dedup_root;
+ 
+ 	fs_info->dedup_info = dedup_info;
+ 	/* We must ensure dedup_enabled is modified after dedup_info */
+@@ -111,11 +255,36 @@ enable:
+ 	fs_info->dedup_enabled = 1;
+ 
+ out:
+-	if (ret < 0)
+-		kfree(dedup_info);
++	btrfs_free_path(path);
+ 	return ret;
+ }
+ 
++static void inmem_destroy(struct btrfs_dedup_info *dedup_info);
++int btrfs_dedup_cleanup(struct btrfs_fs_info *fs_info)
++{
++	struct btrfs_dedup_info *dedup_info;
++
++	fs_info->dedup_enabled = 0;
++
++	smp_wmb();
++	/* same as disable */
++	dedup_info = fs_info->dedup_info;
++	fs_info->dedup_info = NULL;
++
++	if (!dedup_info)
++		return 0;
++
++	if (dedup_info->backend == BTRFS_DEDUP_BACKEND_INMEMORY)
++		inmem_destroy(dedup_info);
++	if (dedup_info->dedup_root) {
++		free_root_extent_buffers(dedup_info->dedup_root);
++		kfree(dedup_info->dedup_root);
++	}
++	crypto_free_shash(dedup_info->dedup_driver);
++	kfree(dedup_info);
++	return 0;
++}
++
+ static int inmem_insert_hash(struct rb_root *root,
+ 			     struct inmem_hash *hash, int hash_len)
  {
- 	struct extent_io_tree *tree = &BTRFS_I(mapping->host)->io_tree;
- 	struct btrfs_fs_info *fs_info = BTRFS_I(mapping->host)->root->fs_info;
--	struct extent_buffer *eb, *prev_eb = NULL;
-+	struct extent_buffer *eb;
-+	struct extent_buffer_head *ebh, *prev_ebh = NULL;
- 	struct extent_page_data epd = {
- 		.bio = NULL,
- 		.tree = tree,
-@@ -4010,6 +4133,7 @@ int btree_write_cache_pages(struct address_space *mapping,
- 	int ret = 0;
- 	int done = 0;
- 	int nr_to_write_done = 0;
-+	unsigned long ebs_to_write, dirty_ebs;
- 	struct pagevec pvec;
- 	int nr_pages;
- 	pgoff_t index;
-@@ -4036,7 +4160,7 @@ retry:
- 	while (!done && !nr_to_write_done && (index <= end) &&
- 	       (nr_pages = pagevec_lookup_tag(&pvec, mapping, &index, tag,
- 			min(end - index, (pgoff_t)PAGEVEC_SIZE-1) + 1))) {
--		unsigned i;
-+		unsigned i, j;
+@@ -325,6 +494,65 @@ static void inmem_destroy(struct btrfs_dedup_info *dedup_info)
+ 	mutex_unlock(&dedup_info->lock);
+ }
  
- 		scanned = 1;
- 		for (i = 0; i < nr_pages; i++) {
-@@ -4068,30 +4192,79 @@ retry:
- 				continue;
- 			}
++static int remove_dedup_tree(struct btrfs_root *dedup_root)
++{
++	struct btrfs_trans_handle *trans;
++	struct btrfs_fs_info *fs_info = dedup_root->fs_info;
++	struct btrfs_path *path;
++	struct btrfs_key key;
++	struct extent_buffer *node;
++	int ret;
++	int nr;
++
++	path = btrfs_alloc_path();
++	if (!path)
++		return -ENOMEM;
++	trans = btrfs_start_transaction(fs_info->tree_root, 2);
++	if (IS_ERR(trans)) {
++		ret = PTR_ERR(trans);
++		goto out;
++	}
++
++	path->leave_spinning = 1;
++	key.objectid = 0;
++	key.offset = 0;
++	key.type = 0;
++
++	while (1) {
++		ret = btrfs_search_slot(trans, dedup_root, &key, path, -1, 1);
++		if (ret < 0)
++			goto out;
++		node = path->nodes[0];
++		nr = btrfs_header_nritems(node);
++		if (nr == 0) {
++			btrfs_release_path(path);
++			break;
++		}
++		path->slots[0] = 0;
++		ret = btrfs_del_items(trans, dedup_root, path, 0, nr);
++		if (ret)
++			goto out;
++		btrfs_release_path(path);
++	}
++
++	ret = btrfs_del_root(trans, fs_info->tree_root, &dedup_root->root_key);
++	if (ret)
++		goto out;
++
++	list_del(&dedup_root->dirty_list);
++	btrfs_tree_lock(dedup_root->node);
++	clean_tree_block(trans, fs_info, dedup_root->node);
++	btrfs_tree_unlock(dedup_root->node);
++	btrfs_free_tree_block(trans, dedup_root, dedup_root->node, 0, 1);
++	free_extent_buffer(dedup_root->node);
++	free_extent_buffer(dedup_root->commit_root);
++	kfree(dedup_root);
++	ret = btrfs_commit_transaction(trans, fs_info->tree_root);
++out:
++	btrfs_free_path(path);
++	return ret;
++}
++
+ int btrfs_dedup_disable(struct btrfs_fs_info *fs_info)
+ {
+ 	struct btrfs_dedup_info *dedup_info;
+@@ -358,10 +586,12 @@ int btrfs_dedup_disable(struct btrfs_fs_info *fs_info)
+ 	/* now we are OK to clean up everything */
+ 	if (dedup_info->backend == BTRFS_DEDUP_BACKEND_INMEMORY)
+ 		inmem_destroy(dedup_info);
++	if (dedup_info->dedup_root)
++		ret = remove_dedup_tree(dedup_info->dedup_root);
  
--			if (eb == prev_eb) {
-+			ebh = eb_head(eb);
-+			if (ebh == prev_ebh) {
- 				spin_unlock(&mapping->private_lock);
- 				continue;
- 			}
+ 	crypto_free_shash(dedup_info->dedup_driver);
+ 	kfree(dedup_info);
+-	return 0;
++	return ret;
+ }
  
--			ret = atomic_inc_not_zero(&eb_head(eb)->refs);
-+			ret = atomic_inc_not_zero(&ebh->refs);
- 			spin_unlock(&mapping->private_lock);
- 			if (!ret)
- 				continue;
+ /*
+diff --git a/fs/btrfs/dedup.h b/fs/btrfs/dedup.h
+index 4f681bb..31c6b17 100644
+--- a/fs/btrfs/dedup.h
++++ b/fs/btrfs/dedup.h
+@@ -109,6 +109,19 @@ int btrfs_dedup_enable(struct btrfs_fs_info *fs_info, u16 type, u16 backend,
+ int btrfs_dedup_disable(struct btrfs_fs_info *fs_info);
  
--			prev_eb = eb;
--			ret = lock_extent_buffer_for_io(eb, fs_info, &epd);
--			if (!ret) {
--				free_extent_buffer(eb);
-+			prev_ebh = ebh;
+ /*
++ * Restore previous dedup setup from disk
++ * Called at mount time
++ */
++int btrfs_dedup_resume(struct btrfs_fs_info *fs_info,
++		       struct btrfs_root *dedup_root);
 +
-+			j = 0;
-+			ebs_to_write = dirty_ebs = 0;
-+			eb = &ebh->eb;
-+			do {
-+				BUG_ON(j >= BITS_PER_LONG);
++/*
++ * Cleanup current btrfs_dedup_info
++ * Called in umount time
++ */
++int btrfs_dedup_cleanup(struct btrfs_fs_info *fs_info);
 +
-+				ret = lock_extent_buffer_for_io(eb, fs_info, &epd);
-+				switch (ret) {
-+				case 0:
-+					/*
-+					  EXTENT_BUFFER_DIRTY was set and we were able to
-+					  clear it.
-+					*/
-+					set_bit(j, &ebs_to_write);
-+					break;
-+				case 2:
-+					/*
-+					  EXTENT_BUFFER_DIRTY was set, but we were unable
-+					  to clear EXTENT_BUFFER_WRITEBACK that was set
-+					  before we got the extent buffer locked.
-+					 */
-+					set_bit(j, &dirty_ebs);
-+				default:
-+					/*
-+					  EXTENT_BUFFER_DIRTY wasn't set.
-+					 */
-+					break;
-+				}
-+				++j;
-+			} while ((eb = eb->eb_next) != NULL);
-+
-+			ret = 0;
-+
-+			if (!ebs_to_write) {
-+				free_extent_buffer(&ebh->eb);
- 				continue;
- 			}
++/*
+  * Calculate hash for dedup.
+  * Caller must ensure [start, start + dedup_bs) has valid data.
+  */
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 5ecffd7..8b9ce75 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -50,6 +50,7 @@
+ #include "raid56.h"
+ #include "sysfs.h"
+ #include "qgroup.h"
++#include "dedup.h"
  
--			ret = write_one_eb(eb, fs_info, wbc, &epd);
-+			/*
-+			  Now that we know that atleast one of the extent buffer
-+			  belonging to the extent buffer head must be written to
-+			  the disk, lock the extent_buffer_head's pages.
-+			 */
-+			lock_extent_buffer_pages(ebh, &epd);
-+
-+			if (ebh->eb.len < PAGE_CACHE_SIZE) {
-+				ret = write_subpagesize_blocksize_ebh(ebh, fs_info, wbc, &epd, ebs_to_write);
-+				if (dirty_ebs) {
-+					redirty_extent_buffer_pages_for_writepage(&ebh->eb, wbc);
-+				}
-+			} else {
-+				ret = write_regular_ebh(ebh, fs_info, wbc, &epd);
-+			}
-+
- 			if (ret) {
- 				done = 1;
--				free_extent_buffer(eb);
-+				free_extent_buffer(&ebh->eb);
- 				break;
- 			}
--			free_extent_buffer(eb);
-+			free_extent_buffer(&ebh->eb);
+ #ifdef CONFIG_X86
+ #include <asm/cpufeature.h>
+@@ -2155,7 +2156,7 @@ static void btrfs_stop_all_workers(struct btrfs_fs_info *fs_info)
+ 	btrfs_destroy_workqueue(fs_info->extent_workers);
+ }
  
- 			/*
- 			 * the filesystem may choose to bump up nr_to_write.
+-static void free_root_extent_buffers(struct btrfs_root *root)
++void free_root_extent_buffers(struct btrfs_root *root)
+ {
+ 	if (root) {
+ 		free_extent_buffer(root->node);
+@@ -2487,7 +2488,21 @@ static int btrfs_read_roots(struct btrfs_fs_info *fs_info,
+ 		fs_info->free_space_root = root;
+ 	}
+ 
+-	return 0;
++	location.objectid = BTRFS_DEDUP_TREE_OBJECTID;
++	root = btrfs_read_tree_root(tree_root, &location);
++	if (IS_ERR(root)) {
++		ret = PTR_ERR(root);
++		if (ret != -ENOENT)
++			return ret;
++		return 0;
++	}
++	set_bit(BTRFS_ROOT_TRACK_DIRTY, &root->state);
++	ret = btrfs_dedup_resume(fs_info, root);
++	if (ret < 0) {
++		free_root_extent_buffers(root);
++		kfree(root);
++	}
++	return ret;
+ }
+ 
+ int open_ctree(struct super_block *sb,
+@@ -3874,6 +3889,8 @@ void close_ctree(struct btrfs_root *root)
+ 
+ 	btrfs_free_qgroup_config(fs_info);
+ 
++	btrfs_dedup_cleanup(fs_info);
++
+ 	if (percpu_counter_sum(&fs_info->delalloc_bytes)) {
+ 		btrfs_info(fs_info, "at unmount delalloc count %lld",
+ 		       percpu_counter_sum(&fs_info->delalloc_bytes));
+diff --git a/fs/btrfs/disk-io.h b/fs/btrfs/disk-io.h
+index 8e79d00..42c4ff2 100644
+--- a/fs/btrfs/disk-io.h
++++ b/fs/btrfs/disk-io.h
+@@ -70,6 +70,7 @@ struct btrfs_root *btrfs_read_fs_root(struct btrfs_root *tree_root,
+ int btrfs_init_fs_root(struct btrfs_root *root);
+ int btrfs_insert_fs_root(struct btrfs_fs_info *fs_info,
+ 			 struct btrfs_root *root);
++void free_root_extent_buffers(struct btrfs_root *root);
+ void btrfs_free_fs_roots(struct btrfs_fs_info *fs_info);
+ 
+ struct btrfs_root *btrfs_get_fs_root(struct btrfs_fs_info *fs_info,
 -- 
-2.1.0
+2.7.0
+
+
 

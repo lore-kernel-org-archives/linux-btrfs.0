@@ -1,54 +1,39 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ob0-f171.google.com ([209.85.214.171]:36419 "EHLO
-	mail-ob0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753723AbcBETge (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 5 Feb 2016 14:36:34 -0500
-Received: by mail-ob0-f171.google.com with SMTP id ba1so97814252obb.3
-        for <linux-btrfs@vger.kernel.org>; Fri, 05 Feb 2016 11:36:33 -0800 (PST)
-MIME-Version: 1.0
-Date: Fri, 5 Feb 2016 14:36:33 -0500
-Message-ID: <CAKr9ZMFwxZ01gw7SAyFReOfXFb=hVzUXNgYoGcUc2xzLuo+9mg@mail.gmail.com>
-Subject: BTRFS RAM requirements, RAID 6 stability/write holes and expansion questions
-From: Mackenzie Meyer <snackmasterx@gmail.com>
+Received: from mail-io0-f174.google.com ([209.85.223.174]:34725 "EHLO
+	mail-io0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751652AbcBEU15 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 5 Feb 2016 15:27:57 -0500
+Received: by mail-io0-f174.google.com with SMTP id 9so141532115iom.1
+        for <linux-btrfs@vger.kernel.org>; Fri, 05 Feb 2016 12:27:57 -0800 (PST)
+Received: from [192.168.0.233] ([65.94.14.3])
+        by smtp.googlemail.com with ESMTPSA id o14sm101897igi.21.2016.02.05.12.27.56
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLSv1/SSLv3 cipher=OTHER);
+        Fri, 05 Feb 2016 12:27:56 -0800 (PST)
 To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+From: Nicholas D Steeves <nsteeves@gmail.com>
+Subject: btrfs-progs4.4 with linux-3.16.7 (with truncation of extends patch)
+Message-ID: <56B505CB.8080604@gmail.com>
+Date: Fri, 5 Feb 2016 15:27:55 -0500
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 Hello,
 
-I've tried checking around on google but can't find information
-regarding the RAM requirements of BTRFS and most of the topics on
-stability seem quite old.
+Is it safe to use btrfs-progs-4.4 with linux-3.16.7 patched with the 
+following:
 
-So first would be memory requirements, my goal is to use deduplication
-and compression. Approximately how many GB of RAM per TB of storage
-would be recommended?
+linux-3.16.7
+Btrfs: fix truncation of compressed and inlined extents
+https://git.kernel.org/linus/0305cd5f7fca85dae392b9ba85b116896eb7c1c7
 
-RAID 6 write holes?
-The BTRFS wiki states that parity might be inconsistent after a crash.
-That said, the wiki page for RAID 5/6 doesn't look like it has much
-recent information on there. Has this issue been addressed and if not,
-are there plans to address the RAID write hole issue? What would be a
-recommended workaround to resolve inconsistent parity, should an
-unexpected power down happen during write operations?
+The specific case I'm looking into is when a Debian user sticks with the 
+default kernel, but installs btrfs-progs-4.4 from backports.  I've also 
+read that there will be some userspace<->kernel compatibility checks 
+added to btrfs-progs at some point, but I wasn't able to find recent 
+news on its progress.
 
-RAID 6 stability?
-Any articles I've tried looking for online seem to be from early 2014,
-I can't find anything recent discussing the stability of RAID 5 or 6.
-Are there or have there recently been any data corruption bugs which
-impact RAID 6? Would you consider RAID 6 safe/stable enough for
-production use?
-
-Do you still strongly recommend backups, or has stability reached a
-point where backups aren't as critical? I'm thinking from a data
-consistency standpoint, not a hardware failure standpoint.
-
-I plan to start with a small array and add disks over time. That said,
-currently I have mostly 2TB disks and some 3TB disks. If I replace all
-2TB disks with 3TB disks, would BTRFS then start utilizing the full
-3TB capacity of each disk, or would I need to destroy and rebuild my
-array to benefit from the larger disks?
-
-
-Thanks!
+Kind regards,
+Nicholas

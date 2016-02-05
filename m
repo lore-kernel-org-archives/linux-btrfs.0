@@ -1,98 +1,132 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
 Received: from cn.fujitsu.com ([222.73.24.84]:23014 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1751537AbcBEBZK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 4 Feb 2016 20:25:10 -0500
+	id S1751471AbcBEBZP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 4 Feb 2016 20:25:15 -0500
 Received: from localhost.localdomain (unknown [10.167.226.34])
-	by cn.fujitsu.com (Postfix) with ESMTP id AA8A5405640E
+	by cn.fujitsu.com (Postfix) with ESMTP id BD2894056404
 	for <linux-btrfs@vger.kernel.org>; Fri,  5 Feb 2016 09:25:04 +0800 (CST)
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v5 3/8] btrfs-progs: dedup: Add disable support for inband deduplication
-Date: Fri,  5 Feb 2016 09:22:59 +0800
-Message-Id: <1454635384-10106-4-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH v5 4/8] btrfs-progs: dedup: Add status subcommand
+Date: Fri,  5 Feb 2016 09:23:00 +0800
+Message-Id: <1454635384-10106-5-git-send-email-quwenruo@cn.fujitsu.com>
 In-Reply-To: <1454635384-10106-1-git-send-email-quwenruo@cn.fujitsu.com>
 References: <1454635384-10106-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Add disable subcommand for dedup command group.
+Add status subcommand for dedup command group.
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- Documentation/btrfs-dedup.asciidoc |  5 +++++
- cmds-dedup.c                       | 42 ++++++++++++++++++++++++++++++++++++++
- 2 files changed, 47 insertions(+)
+ Documentation/btrfs-dedup.asciidoc |  3 ++
+ cmds-dedup.c                       | 76 ++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 79 insertions(+)
 
 diff --git a/Documentation/btrfs-dedup.asciidoc b/Documentation/btrfs-dedup.asciidoc
-index aa378df..12ca91d 100644
+index 12ca91d..9a1e966 100644
 --- a/Documentation/btrfs-dedup.asciidoc
 +++ b/Documentation/btrfs-dedup.asciidoc
-@@ -21,6 +21,11 @@ use with caution.
+@@ -61,6 +61,9 @@ Only works for 'inmemory' backend.
+ Conflicts with '-l' option.
+ No default value.
  
- SUBCOMMAND
- ----------
-+*disable* <path>::
-+Disable in-band de-duplication for a filesystem.
-++
-+This will trash all stored dedup hash.
-++
- *enable* [options] <path>::
- Enable in-band de-duplication for a filesystem.
- +
++*status* <path>::
++Show current in-band de-duplication status of a filesystem.
++
+ BACKENDS
+ --------
+ Btrfs in-band de-duplication support two different backends with their own
 diff --git a/cmds-dedup.c b/cmds-dedup.c
-index 1da416f..c85bb5b 100644
+index c85bb5b..64f898b 100644
 --- a/cmds-dedup.c
 +++ b/cmds-dedup.c
-@@ -173,9 +173,51 @@ out:
- 	return ret;
+@@ -213,11 +213,87 @@ out:
+ 	return 0;
  }
  
-+static const char * const cmd_dedup_disable_usage[] = {
-+	"btrfs dedup disable <path>",
-+	"Disable in-band(write time) de-duplication of a btrfs.",
++static const char * const cmd_dedup_status_usage[] = {
++	"btrfs dedup status <path>",
++	"Show current in-band(write time) de-duplication status of a btrfs.",
 +	NULL
 +};
 +
-+static int cmd_dedup_disable(int argc, char **argv)
++static int cmd_dedup_status(int argc, char **argv)
 +{
 +	struct btrfs_ioctl_dedup_args dargs;
 +	DIR *dirstream;
 +	char *path;
 +	int fd;
 +	int ret;
++	int print_limit = 1;
 +
 +	if (check_argc_exact(argc, 2))
-+		usage(cmd_dedup_disable_usage);
++		usage(cmd_dedup_status_usage);
 +
 +	path = argv[1];
 +	fd = open_file_or_dir(path, &dirstream);
 +	if (fd < 0) {
 +		error("failed to open file or directory: %s", path);
-+		return 1;
++		ret = 1;
++		goto out;
 +	}
 +	memset(&dargs, 0, sizeof(dargs));
-+	dargs.cmd = BTRFS_DEDUP_CTL_DISABLE;
++	dargs.cmd = BTRFS_DEDUP_CTL_STATUS;
 +
 +	ret = ioctl(fd, BTRFS_IOC_DEDUP_CTL, &dargs);
 +	if (ret < 0) {
-+		error("failed to disable inband deduplication: %s",
++		error("failed to get inband deduplication status: %s",
 +		      strerror(errno));
 +		ret = 1;
 +		goto out;
 +	}
 +	ret = 0;
++	if (dargs.status == 0) {
++		printf("Status: \t\t\tDisabled\n");
++		goto out;
++	}
++	printf("Status:\t\t\tEnabled\n");
 +
++	if (dargs.hash_type == BTRFS_DEDUP_HASH_SHA256)
++		printf("Hash algorithm:\t\tSHA-256\n");
++	else
++		printf("Hash algorithm:\t\tUnrecognized(%x)\n",
++			dargs.hash_type);
++
++	if (dargs.backend == BTRFS_DEDUP_BACKEND_INMEMORY) {
++		printf("Backend:\t\tIn-memory\n");
++		print_limit = 1;
++	} else if (dargs.backend == BTRFS_DEDUP_BACKEND_ONDISK) {
++		printf("Backend:\t\tOn-disk\n");
++		print_limit = 0;
++	} else  {
++		printf("Backend:\t\tUnrecognized(%x)\n",
++			dargs.backend);
++	}
++
++	printf("Dedup Blocksize:\t%llu\n", dargs.blocksize);
++
++	if (print_limit) {
++		printf("Number of hash: \t[%llu/%llu]\n", dargs.current_nr,
++			dargs.limit_nr);
++		printf("Memory usage: \t\t[%s/%s]\n",
++			pretty_size(dargs.current_nr *
++				(dargs.limit_mem / dargs.limit_nr)),
++			pretty_size(dargs.limit_mem));
++	}
 +out:
 +	close_file_or_dir(fd, dirstream);
-+	return 0;
++	return ret;
 +}
 +
  const struct cmd_group dedup_cmd_group = {
  	dedup_cmd_group_usage, dedup_cmd_group_info, {
  		{ "enable", cmd_dedup_enable, cmd_dedup_enable_usage, NULL, 0},
-+		{ "disable", cmd_dedup_disable, cmd_dedup_disable_usage,
+ 		{ "disable", cmd_dedup_disable, cmd_dedup_disable_usage,
+ 		  NULL, 0},
++		{ "status", cmd_dedup_status, cmd_dedup_status_usage,
 +		  NULL, 0},
  		NULL_CMD_STRUCT
  	}

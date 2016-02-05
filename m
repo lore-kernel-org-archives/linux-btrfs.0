@@ -1,14 +1,14 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
 Received: from cn.fujitsu.com ([222.73.24.84]:18117 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1751357AbcBEBYy (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 4 Feb 2016 20:24:54 -0500
+	id S1751503AbcBEBZD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 4 Feb 2016 20:25:03 -0500
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
-Subject: [PATCH v6 16/19] btrfs: dedup: add an inode nodedup flag
-Date: Fri,  5 Feb 2016 09:22:36 +0800
-Message-Id: <1454635359-10013-17-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH v6 17/19] btrfs: dedup: add a property handler for online dedup
+Date: Fri,  5 Feb 2016 09:22:37 +0800
+Message-Id: <1454635359-10013-18-git-send-email-quwenruo@cn.fujitsu.com>
 In-Reply-To: <1454635359-10013-1-git-send-email-quwenruo@cn.fujitsu.com>
 References: <1454635359-10013-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -17,51 +17,77 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
 
-Introduce BTRFS_INODE_NODEDUP flag, then we can explicitly disable
-online data deduplication for specified files.
+We use btrfs extended attribute "btrfs.dedup" to record per-file online
+dedup status, so add a dedup property handler.
 
 Signed-off-by: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
 ---
- fs/btrfs/ctree.h | 1 +
- fs/btrfs/ioctl.c | 6 +++++-
- 2 files changed, 6 insertions(+), 1 deletion(-)
+ fs/btrfs/props.c | 40 ++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 40 insertions(+)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 8c04920..bd68b97 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -2401,6 +2401,7 @@ do {                                                                   \
- #define BTRFS_INODE_NOATIME		(1 << 9)
- #define BTRFS_INODE_DIRSYNC		(1 << 10)
- #define BTRFS_INODE_COMPRESS		(1 << 11)
-+#define BTRFS_INODE_NODEDUP		(1 << 12)
+diff --git a/fs/btrfs/props.c b/fs/btrfs/props.c
+index f9e6023..fb82080 100644
+--- a/fs/btrfs/props.c
++++ b/fs/btrfs/props.c
+@@ -41,6 +41,10 @@ static int prop_compression_apply(struct inode *inode,
+ 				  size_t len);
+ static const char *prop_compression_extract(struct inode *inode);
  
- #define BTRFS_INODE_ROOT_ITEM_INIT	(1 << 31)
- 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 2bd1a97..0dab40c 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -159,7 +159,8 @@ void btrfs_update_iflags(struct inode *inode)
- /*
-  * Inherit flags from the parent inode.
-  *
-- * Currently only the compression flags and the cow flags are inherited.
-+ * Currently only the compression flags, the dedup flags and the cow
-+ * flags are inherited.
-  */
- void btrfs_inherit_iflags(struct inode *inode, struct inode *dir)
- {
-@@ -184,6 +185,9 @@ void btrfs_inherit_iflags(struct inode *inode, struct inode *dir)
- 			BTRFS_I(inode)->flags |= BTRFS_INODE_NODATASUM;
- 	}
- 
-+	if (flags & BTRFS_INODE_NODEDUP)
-+		BTRFS_I(inode)->flags |= BTRFS_INODE_NODEDUP;
++static int prop_dedup_validate(const char *value, size_t len);
++static int prop_dedup_apply(struct inode *inode, const char *value, size_t len);
++static const char *prop_dedup_extract(struct inode *inode);
 +
- 	btrfs_update_iflags(inode);
+ static struct prop_handler prop_handlers[] = {
+ 	{
+ 		.xattr_name = XATTR_BTRFS_PREFIX "compression",
+@@ -49,6 +53,13 @@ static struct prop_handler prop_handlers[] = {
+ 		.extract = prop_compression_extract,
+ 		.inheritable = 1
+ 	},
++	{
++		.xattr_name = XATTR_BTRFS_PREFIX "dedup",
++		.validate = prop_dedup_validate,
++		.apply = prop_dedup_apply,
++		.extract = prop_dedup_extract,
++		.inheritable = 1
++	},
+ };
+ 
+ void __init btrfs_props_init(void)
+@@ -425,4 +436,33 @@ static const char *prop_compression_extract(struct inode *inode)
+ 	return NULL;
  }
  
++static int prop_dedup_validate(const char *value, size_t len)
++{
++	if (!strncmp("disable", value, len))
++		return 0;
++
++	return -EINVAL;
++}
++
++static int prop_dedup_apply(struct inode *inode, const char *value, size_t len)
++{
++	if (len == 0) {
++		BTRFS_I(inode)->flags &= ~BTRFS_INODE_NODEDUP;
++		return 0;
++	}
++
++	if (!strncmp("disable", value, len)) {
++		BTRFS_I(inode)->flags |= BTRFS_INODE_NODEDUP;
++		return 0;
++	}
++
++	return -EINVAL;
++}
++
++static const char *prop_dedup_extract(struct inode *inode)
++{
++	if (BTRFS_I(inode)->flags & BTRFS_INODE_NODEDUP)
++		return "disable";
+ 
++	return NULL;
++}
 -- 
 2.7.0
 

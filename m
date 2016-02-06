@@ -1,190 +1,351 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:46544 "EHLO plane.gmane.org"
+Received: from plane.gmane.org ([80.91.229.3]:49941 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750771AbcBFF5f (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 6 Feb 2016 00:57:35 -0500
+	id S1750754AbcBFInL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 6 Feb 2016 03:43:11 -0500
 Received: from list by plane.gmane.org with local (Exim 4.69)
 	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1aRvsC-0001Ju-Uy
-	for linux-btrfs@vger.kernel.org; Sat, 06 Feb 2016 06:57:33 +0100
+	id 1aRyST-0007aJ-HE
+	for linux-btrfs@vger.kernel.org; Sat, 06 Feb 2016 09:43:09 +0100
 Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
         by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sat, 06 Feb 2016 06:57:32 +0100
+        for <linux-btrfs@vger.kernel.org>; Sat, 06 Feb 2016 09:43:09 +0100
 Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sat, 06 Feb 2016 06:57:32 +0100
+        for <linux-btrfs@vger.kernel.org>; Sat, 06 Feb 2016 09:43:09 +0100
 To: linux-btrfs@vger.kernel.org
 From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: btrfs-progs4.4 with linux-3.16.7 (with truncation of extends
- patch)
-Date: Sat, 6 Feb 2016 05:57:21 +0000 (UTC)
-Message-ID: <pan$84aa7$90a27a$80294ac8$88eb3ebd@cox.net>
-References: <56B505CB.8080604@gmail.com>
+Subject: Re: BTRFS RAM requirements, RAID 6 stability/write holes and
+ expansion questions
+Date: Sat, 6 Feb 2016 08:43:03 +0000 (UTC)
+Message-ID: <pan$ce3b3$68b46c86$49ef689d$3d714f96@cox.net>
+References: <CAKr9ZMFwxZ01gw7SAyFReOfXFb=hVzUXNgYoGcUc2xzLuo+9mg@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Nicholas D Steeves posted on Fri, 05 Feb 2016 15:27:55 -0500 as excerpted:
+Mackenzie Meyer posted on Fri, 05 Feb 2016 14:36:33 -0500 as excerpted:
 
 > Hello,
 > 
-> Is it safe to use btrfs-progs-4.4 with linux-3.16.7 patched with the
-> following:
+> I've tried checking around on google but can't find information
+> regarding the RAM requirements of BTRFS and most of the topics on
+> stability seem quite old.
 > 
-> linux-3.16.7 Btrfs: fix truncation of compressed and inlined extents
-> https://git.kernel.org/linus/0305cd5f7fca85dae392b9ba85b116896eb7c1c7
+> So first would be memory requirements, my goal is to use deduplication
+> and compression. Approximately how many GB of RAM per TB of storage
+> would be recommended?
+
+The inline dedup patches are just reaching maturity and mainlining right 
+now, and aren't in a release yet.  Dedup's not my use-case so I've not 
+been following it /too/ closely, but briefly, as it's shaping up there's 
+going to be two backends available, an on-device backend that will be a 
+bit slower but should be more efficient at deduping, and an in-memory 
+backend that will be fast but less efficient.  Dedup memory usage is 
+configurable, however, with a rather low default of (IIRC) some MiB, 
+certainly nothing like GiB, unless of course you configure it that way 
+(which you may wish to if you have the memory and choose the memory-based 
+backend).
+
+The memory issue is thus neither dedup nor compression (which is on-the-
+fly and uses very little additional memory).
+
+Instead, btrfs memory issues tend to be scaling related, specifically, 
+related to the number of subvolumes/snapshots, and to whether you have 
+quotas activated.
+
+I'm actually not sure what the current quota status is as of 4.4 and the 
+in-development 4.5, but definitely, previous to that, quotas simply were 
+not stable and had known-broken corner-cases as well as serious scaling 
+issues, so the recommendation has been, you either need them or you 
+don't: if you need them, use a filesystem where quotas are mature and 
+stable; if not, use btrfs but leave quotas disabled as they have 
+definitely caused many a user serious headaches as they simply didn't 
+work well.  Unless of course you're specifically working with the devs to 
+test current quota code, reporting results and potentially running 
+debugging patches to get more info when there's problems, in which case 
+go right ahead, as you're one of the folks that's helping to eventually 
+make the feature stable and workable enough to actually depend on.
+
+Btrfs snapshots/subvolumes are of course a relatively more stable btrfs 
+feature and are regularly used by many.  But there remain scaling issues 
+there as well, such that the recommended total filesystem cap on number 
+of subvolumes (including snapshots, which are a special kind of subvolume 
+that simply happens to share most of its data with other subvolumes) is 
+no more than 1000-3000.  The number of snapshots of individual 
+subvolumes, meanwhile, should be kept to 250 or so, which is actually 
+pretty reasonable even if you're starting with for instance half-hourly 
+auto-snapshotting (using snapper or the like), as long as a reasonable 
+snapshot thinning schedule is followed as well.
+
+(As I've posted several times, starting with half-hourly snapshots, 
+thinning to hourly after say 12 hours, 2-hourly after 48 hours, daily 
+after a week, and weekly after perhaps 13 weeks (a quarter), then keeping 
+the remaining weeklys for another year, so 15 months of snapshots total, 
+after which if you haven't backed up to other media you obviously aren't 
+worried too much about losing the data anyway, you're still reasonably 
+close to 250-300 snapshots per subvolume, thus allowing snapshotting of 
+up to eight subvolumes on a similar program while still staying within 
+the filesystem cap of 2000 or so snapshots/subvolumes.)
+
+Because with btrfs snapshotting being so easy, what we too often see if 
+people aren't warned about it, are people with 100K snapshots or the 
+like.  And during normal runtime, other than perhaps some slowdown due to 
+fragmentation, etc, even that works deceptively well.
+
+Where the _problem_ occurs, however, is when you try to actually do 
+filesystem maintenance on that monster!  Both btrfs balance and btrfs 
+check slow down *dramatically*, to the point of practical unworkability, 
+somewhere in the double-digit-K (tens of thousands) snapshots range.  
+With 3000 it's noticeably slower than with only 1000, but while slow, 
+it's still _usable_.  Which is why the 1000-3000 range.  Depending on 
+people's pain point vs snapshotting needs, 1000 snapshots shouldn't be 
+much of a problem yet, but might not be enough for people with more than 
+3-4 subvolumes they want to keep snapshotted, while 3000 snapshots will 
+already be hitting the pain point for many, but may be needed and still 
+just fast enough to be tolerably usable given the tradeoff, for people 
+with many subvolumes they want to keep snapshotted.
+
+And based on reports, btrfs check with tens of thousands of snapshots is 
+where memory usage goes thru the roof as well.  I'm not actually sure 
+about balance in terms of memory usage, tho it's definitely much slower 
+with that many snapshots.
+
+It can also be noted that the problem affects snapshot deletion (unlike 
+snapshot creation which is effectively instantaneous, thus making it 
+deceptively easy for the unaware to get in such a hole with hundreds of 
+thousands of them, if they're doing scheduled snapshots but don't have a 
+snapshot thinning schedule setup as well) as well, since btrfs has to go 
+thru and sort out which other snapshots reference the same extents and 
+either delete the extents or simply reduce the reference count 
+accordingly, and if there's 100K snapshots to process, that can be 
+expected to take awhile.
+
+Meanwhile, that's the problem for quotas as well, as they apparently at 
+least double the problem compared to snapshots without quotas.  And 
+because at least until very recently (current status unknown) they've 
+actually been broken and not reliable anyway, it simply hasn't been worth 
+the hassle, thus the "just turn them off, or if you actually need them, 
+use a filesystem where they're actually stable and reliable, not btrfs as 
+that's anything but the case here" recommendation.
+
+> RAID 6 write holes?
+> The BTRFS wiki states that parity might be inconsistent after a crash.
+> That said, the wiki page for RAID 5/6 doesn't look like it has much
+> recent information on there. Has this issue been addressed and if not,
+> are there plans to address the RAID write hole issue? What would be a
+> recommended workaround to resolve inconsistent parity, should an
+> unexpected power down happen during write operations?
+
+My own use-case is raid1 (preferably N-way-mirroring raid1 like mdraid, 
+but with btrfs runtime checksum verification, except that N-way-mirroring 
+is still to come, with current btrfs being pair-mirroring only, 
+unfortunately, so pair-mirroring I must be satisfied with, for now), so 
+while I've followed the raid56 situation with academic interest, it's not 
+personal interest so my detail knowledge is a bit more limited for raid56.
+
+So I don't know for sure what the btrfs-specific status is on the raid56 
+write hole.  What I _do_ know is that raid5 and 6 in general are known to 
+have a write hole, that applies to parity-raid, in general.  Various 
+specific implementations try to do various things to limit damage, but as 
+it's a limitation of parity-raid technology in general, there's a limit 
+to the degree the hole _CAN_ be worked around or plugged.  Certainly it's 
+possible, but many implementations don't consider the complexity and 
+performance tradeoffs to be worth it, vs. the risk for their target use-
+case(s).
+
+So while I don't know the btrfs specifics, other than that btrfs raid56 
+modes do, like most other raid56 implementations, have a write hole to 
+worry about, I do know that the problem is a general parity-raid problem, 
+not btrfs-specific (tho due to btrfs' per-chunk raid vs. the more usual 
+per-device raid, it is indeed quite likely that the effect of the write 
+hole on btrfs is different, and may be much more likely to trigger 
+problems... I simply don't know further detail in that area).
+
+> RAID 6 stability?
+> Any articles I've tried looking for online seem to be from early 2014,
+> I can't find anything recent discussing the stability of RAID 5 or 6.
+> Are there or have there recently been any data corruption bugs which
+> impact RAID 6?
+
+Back when btrfs raid56 mode was first nominally complete in kernel 3.19, 
+about a year ago, I warned people not to consider it at all stable until 
+at _least_ a year, five kernel cycles, after initial nominal completion.  
+Turns out I was right, and there were several pretty serious bugs in 
+raid56 mode for 3.19, 4.0 and into the early 4.1 cycle (tho I believe the 
+fixes were in well before 4.1 release).
+
+I also suggested that a further stability-recommendation requirement, 
+from my point of view anyway, was at least two full kernel cycles without 
+serious raid56 bugs.  Thus, while 4.4 does complete the year, the 
+question now becomes one of whether there have been any serious raid56 
+bugs since the last "blocker-level" bug was fixed in early 4.1.
+
+Keeping in mind that following filesystem failure reports on the lists of 
+even so-called "stable" filesystems like ext4 certainly isn't for the 
+faint of heart, because there you only see the problems not the tens to 
+hundreds of thousands of "no problem" installs...
+
+I'd honestly call it an open question.
+
+There have certainly been a couple reports of failure to recover from 
+device loss as expected into 4.3 at least, but I don't know if they've 
+actually been traced to raid56 mode problems, or if they're unrelated 
+bugs, or maybe simply related to that previously discussed write hole...
+
+Personally, if I had to call it right now, I'd say treat raid56 as 
+borderline stable, definitely not yet to the stability level of the rest 
+of btrfs in general, but also reasonably obviously beyond the initial 
+"teething problems" bugs, as there's reports of bugs that _could_ be 
+raid56 related, but to my knowledge at least, there's been nothing 
+definitely pinned to raid56 bugs since the last blocker-level bugs were 
+fixed in 4.1.
+
+If there's time, I'd definitely prefer to give it another couple kernel 
+cycles, to 4.6 or so, after which 4.4 as an LTS kernel will get 4.6's bug-
+fix backports, so assuming no big raid56 bugs show up by then, once it 
+gets those backports I'd probably consider 4.4-LTS as btrfs raid56 stable 
+as 4.6.
+
+So 4.4 should be healthily developing toward btrfs raid56 stable, but I'd 
+still not consider raid56 mode as stable as the rest of btrfs until 4.6 
+or so, that of course assuming no bad raid56 bugs appear in the mean time.
+
+
+There *IS* one known caveat at this point, however.  Raid56 parity 
+rebuild or balance to more/fewer devices can be ***VERY*** slow at this 
+point -- but isn't for everyone.  We have multiple reports and at least 
+one independent test confirmation of those reports to that effect.  We're 
+talking 2 MiB/sec slow... One guy doing a raid6 reshape from 10 devices 
+to 12 indicated 3% completion in three days, 1%/day so ~ 100 days to 
+complete, tho he was able to continue using the filesystem for other 
+things, with longer IO times, of course, while it was happening.
+
+Again, not everyone is seeing it, but it's common enough that there's 
+probably something going on there that we don't know about yet, that 
+needs fixed.
+
+FWIW, here's a gmane-archive link to the most informative recent thread 
+on the problem:
+
+http://comments.gmane.org/gmane.comp.file-systems.btrfs/52469
+
+
+Tho something just occurred to me... I wonder if the problem might 
+actually be the snapshots and/or quota scaling issues discussed above.  
+That scaling issue is definitely one entirely unrelated to raid56 mode 
+problem that we already know about, and if they have quotas and 100K or 
+so snapshots, it'd pretty well explain things, because that's /exactly/ 
+the sort of maintenance-time problems triggered with too many snapshots 
+and/or fewer but also active quotas.
+
+> Would you consider RAID 6 safe/stable enough for production use?
 > 
-> The specific case I'm looking into is when a Debian user sticks with the
-> default kernel, but installs btrfs-progs-4.4 from backports.  I've also
-> read that there will be some userspace<->kernel compatibility checks
-> added to btrfs-progs at some point, but I wasn't able to find recent
-> news on its progress.
+> Do you still strongly recommend backups, or has stability reached a
+> point where backups aren't as critical? I'm thinking from a data
+> consistency standpoint, not a hardware failure standpoint.
 
-There's two ways to answer that.  First...
+This actually could be your show-stopper, but not for the reason you 
+think.
 
-In general, here on-list we consider btrfs still stabilizING, not yet 
-fully stable or mature, and strongly recommend that people stick to the 
-two latest kernels of either the LTS kernel series or current.  With 4.4 
-both latest current and latest LTS, and 4.1 the latest previous LTS, that 
-and the one-back 4.3 on the current kernel side are the currently 
-recommended kernels, altho as stated, btrfs is gradually stabilizing, and 
-it seems that with 4.4-LTS we may actually continue to support the second-
-back LTS, 3.18, as well, so three LTS kernel series, now.
+On this list, btrfs _in_ _general_ is still considered "stabilizING, not 
+yet fully stable and mature, and not yet ready for 'production use.'"  
+Let me emphasize that.  It's *not* just raid56 mode, which is as 
+explained above not yet as stable as btrfs in general, but ALL OF BTRFS 
+that is not yet considered fully stable, not yet ready for production 
+usage, and *DEFINITELY* backups recommended!
 
-In that regard, kernel 3.16 is simply too far back to really be 
-recommended on-list in any case.  We will of course try to support it as 
-best we can, but the general on-list feeling seems to be that while there 
-are valid reasons to run older and more stale^H^Hble kernels, those 
-reasons tend to be incompatible with an interest in running a filesystem 
-that itself isn't yet fully stable and mature.  The recommendation, then, 
-is to pick one or the other.  If people really want sta(b)le, then btrfs 
-isn't for them as it's honestly not there yet, and the btrfs 
-recommendation to stay near current simply isn't compatible with that.  
-Otherwise, if people really want to use btrfs, they really need to give 
-up the idea of running years outdated kernels and (at least btrfs) 
-userspace, as btrfs simply isn't to the level yet where it has been 
-proven stable over enough years that people /can/ run old kernels and not 
-have to worry about code that is known outdated and buggy.
+In fact, I've actually developed a bit of a reputation on this list for 
+drumming this point home in various levels of detail, depending on how 
+detailed I feel like being:
 
-That said, we recognize that various longer term and enterprise distros 
-are billing their (nominally) older-kernel btrfs as supported, and 
-indeed, often there's serious effort going into backporting fixes, thus 
-the "(nominally)" parenthetical.  That's their decision to make, and 
-their users' decisions to go with that support or not.  But here we track 
-upstream, and don't really track what patches various distros have 
-backported.  Basically, our position where distros are choosing to 
-support btrfs on older kernels, is that if users choose to use them, they 
-really should be looking to those distros for proper support, not this 
-list, since only those distros know what is backported, etc, while our 
-focus here is current mainline, not older distro kernels with who knows 
-what fixes backported... or not.  If it says 3.16 on the label, as far as 
-we're concerned it's an old kernel that's long "water under the bridge" 
-as they say, and we've simply moved on.  Again, we'll still try to offer 
-help where we can, but generally where there's issues with these old 
-kernels one of the first requests is that people try a newer kernel, 
-preferably latest current, and see if the problem's still there.  If they 
-don't wish to, well, that's what the distro's claims of support are for, 
-they really need to be using that, as if they won't try current, there's 
-a rather serious limit to the level of help we can provide them here, and 
-they really /do/ need to be taking their distro up on that offer of 
-support running btrfs on what to us really are long outdated and known 
-buggy kernels.
+The sysadmin's first rule of backups states that for any level of backup 
+and the corresponding risk factor of having to use it, your data is 
+either worth the hassle and resources necessary to do that (additional?) 
+level of backup, or it's not.  Absolutely trivial data, internet cache, 
+on Linux, probably the local packages cache, etc, is either easily 
+redownloaded/recreated, or simply not worth worrying about at all, and is 
+thus likely not worth even a single level of backup.  OTOH, extremely 
+valuable data may be worth 101 levels of backup or more, some offsite in 
+multiple locations to protect against disaster outages, etc, because the 
+data is simply valuable enough that even given the extremely small risk 
+of losing or finding bad all 100 previous levels of backup at the same 
+time, it's still worth that 101 level (more?) of backup, just in case.
 
-So really, our support for kernel 3.16 in any form is very limited, and 
-our best recommendation is to choose between running really old and 
-hopefully stable systems without btrfs, if that's what their use-case 
-calls for, or running btrfs on newer kernels, if they're willing to live 
-a bit more on the edge than that old sta(b)le stuff, because by choosing 
-btrfs they're already choosing to live a bit on the edge as it really is 
-_not_ yet fully stable, and if they really need stable, that's a 
-potentially very serious incompatibility they need to resolve, one way or 
-the other.
+That's for *ANY* filesystem, including the most mature and stable ones.  
+Put in simpler form, if you don't even have a single level of backup, you 
+are by your actions, defining that data as of trivial value at best, 
+since the risk of having to actually use that primary backup isn't 
+trivial at all, even on the most stable and mature filesystem on proven 
+stable hardware.
 
-To get specific about that debian user with the old kernel, then, and 
-we've specifically dealt with _exactly_ this problem with debian users 
-before, our recommendation is to either update to at least mainline 
-kernel 3.18 LTS and preferably LTS-4.1 or even better LTS-4.4 if there's 
-no specific bug in the still new 4.4 preventing it, if they want the best 
-support possible from this list, OR switch to a filesystem that's fully 
-stabilized and thus more appropriate to the level of stability they need, 
-OR since they're running debian, which seems to be claiming support for 
-btrfs on old kernels, they really need to be taking up debian on that 
-offer of support, as what we can provide here really is rather limited if 
-they don't choose to upgrade to something closer to what this list 
-considers at least reasonably current.
+Of course with btrfs itself being still stabilizing, not yet fully stable 
+and mature, the risk factor of actually having to use that backup is 
+higher, high enough that arguably, you consider the working copy a throw-
+away copy, and the first level of backup your actual primary copy, such 
+that a second level of backup can actually be considered your first level 
+of backup.
 
-With the above understood, however, there's a second, arguably more 
-direct way to answer the question, that's also probably more to your 
-liking. =:^)
+And of course as I said, btrfs raid56 mode, while developing in a healthy 
+way with no known show-stoppers for a couple kernels, still isn't yet 
+what I'd call quite as stable as btrfs in general, so that ups the risk 
+factor yet again.
 
-The btrfs goal is that both kernel and userspace should be both forward 
-and backward compatible with the other, and (with the caveat of 
-appropriate compatibility settings) to the extent that a filesystem 
-created and used with the one breaks the other, it's considered a bug 
-(well, back to the oldest LTS with btrfs, at least, that being the 2.6.32 
-stable series that's just now going unsupported, which until now we were 
-at least still trying to support in the userspace as well).  Newer 
-userspace therefore should be just fine with older kernels, at least to 
-the level of 3.16 "older", and newer kernels equally fine with older 
-userspace, again, with the caveat that, for instance, a newer userspace 
-mkfs.btrfs is run with the appropriate options to keep compatibility with 
-older kernels that didn't understand a few of the newer device layout 
-defaults.
+So seriously, either have that backup made _before_ you need it, or be 
+glad when you lose the data that after all you only lost the trivial 
+stuff, because your actions defined the time and resources saved by NOT 
+doing the backup to be worth more than the data you were risking losing, 
+and you saved it even if you did lose the data, which means you really 
+CAN still be happy, because you really DID save what your actions defined 
+as most important to you. =:^)
 
-The userspace/kernel compatibility checks that you mention are in the 
-context of better automation of that compatibility caveat.  Right now, a 
-new btrfs-progs userspace mkfs.btrfs defaults to creating a filesystem 
-that an older kernel is likely to have problems with, because the 
-defaults turn on a number of on-device-format options that older kernels 
-would refuse to mount due to incompatibility flags that they know nothing 
-about.
+And if you don't like the way that sounds, seriously, do NOT consider 
+raid56 mode at this time, and really, you should be reconsidering even 
+thinking about btrfs at all, because you need stability in your 
+filesystem that btrfs simply isn't ready to provide, yet.  (Tho I do 
+wonder if the ext4, or for that matter, pretty much any other filesystem 
+devs, would consider their filesystem _that_ stable, to be ready to 
+handle those who aren't willing to make backups, who then blame the 
+filesystem instead of their priority-defining actions when data is 
+inevitably lost -- because on ANY filesystem and hardware, it's not if, 
+it's when, that being the whole reason behind the sysadmin's first rule 
+of backups and those multiple levels of backup in the first place.)
 
-btrfs-convert has similar issues.
+> I plan to start with a small array and add disks over time. That said,
+> currently I have mostly 2TB disks and some 3TB disks. If I replace all
+> 2TB disks with 3TB disks, would BTRFS then start utilizing the full 3TB
+> capacity of each disk, or would I need to destroy and rebuild my array
+> to benefit from the larger disks?
 
-But other than those two and people deliberately turning on incompatible 
-options with btrfs-tune, the rest of btrfs userspace should just work 
-with whatever it finds, both in the kernel and on-device.  Btrfs check, 
-for instance, shouldn't "repair" the filesystem by turning on these 
-incompatibilities; it should "just work" with what it finds.  Btrfs 
-restore similarly, altho it's read-only in terms of the btrfs it's 
-restoring from in any case.  Most of the rest of the userspace tools, in 
-particular, btrfs scrub, subvolume, balance, device, filesystem, send, 
-receive, etc, work by making kernel calls to do the actual work in any 
-case, and they will use the old calls if they need to.
+With raid6, btrfs needs four devices to allocate new raid6 chunks.  
+Additional devices with space available simply increase the width of the 
+stripe and (to a limit) the size of the chunk.  Allocation is is width-
+first, using all devices with space available.
 
-The compatibility discussion, meanwhile, is on making mkfs.btrfs (and 
-btrfs-convert) check the running kernel and taking its defaults from what 
-that kernel supports, instead of choosing arbitrary defaults that may be 
-better when supported, but that older kernels don't actually support.  Of 
-course there will still be options to set these as desired regardless of 
-defaults, just as there are now, so people using for instance booted to 
-an old recovery kernel for system maintenance can still choose whatever 
-options that version of mkfs.btrfs supports if they know they'll actually 
-be mounting with a newer kernel, but the idea is simply to have 
-mkfs.btrfs act more sanely /by/ /default/ when run on old kernels, so 
-those same old kernels can actually mount a filesystem created with 
-defaults.
+So with a mix of 2TB and 3TB devices, btrfs raid6 would allocate across 
+all devices until the 2TB devices are full, after which, as long as there 
+are still at least four 3TB devices available with their remaining free 
+space, it'll continue to allocate additional chunks to just them.
 
-Along that line, as a distro maintainer of the btrfs-progs package, you 
-may wish to patch the mkfs.btrfs defaults to what your kernel supports.  
-Btrfs-progs will probably ship with kernel-sensitive defaults some time 
-in the future (userspace 4.5 release, probably), but it doesn't do so 
-yet... that of course underlining the point I made earlier, that btrfs is 
-_not_ fully stable yet. =:^)
+When you add devices, they will of course have much more space available 
+than the others.  So btrfs will start allocating to them too, but will 
+still allocate from the old devices as well until they are entirely out 
+of room.  As such, unless a balance is done to reallocate existing 
+chunks, if you add one device at a time, you may come to a point where 
+there's no longer unallocated space on older devices, only on new 
+devices, and there's not at least four of them, so btrfs will be unable 
+to allocate additional raid6 chunks, and the space on the odd new devices 
+will be unusable in raid6 mode at least until you add more devices so 
+there's unallocated free space on at least four of them again.
 
-But still... btrfs on a 3.16 kernel just isn't something we recommend, 
-here, new userspace or not.  Because btrfs just wasn't stable enough for 
-that, back then.  The 3.18 LTS, borderline, but 3.16, no.  And unless you 
-want to be providing that support as a distro, for not even LTS kernels 
-the age of 3.16 (the LTS previous to 3.18 was 3.14, which is definitely 
-too far back to be considered reasonable to still be running btrfs on, 
-list-perspective anyway), I believe the best recommendation for your 
-users as well, would be to either run a newer kernel if they're 
-comfortable with that, or choose something other than btrfs, as its 
-stability level on kernels that old simply isn't compatible with the 
-reasons you'd be running that old a kernel in the first place.
+You can of course do a rebalance after adding new devices so existing 
+stripes are rewritten broader, over the new devices as well (and 
+similarly, btrfs device remove will trigger a reshape-rebalance to narrow 
+the stripes and put the data that was on that removed device elsewhere) 
+but as mentioned above, at least right now, some people are finding that 
+operation to be *extremely* slow.
 
 -- 
 Duncan - List replies preferred.   No HTML msgs.

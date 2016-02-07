@@ -1,117 +1,51 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.22]:65499 "EHLO mout.gmx.net"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753551AbcBGKIB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 7 Feb 2016 05:08:01 -0500
+Received: from smtp-31.italiaonline.it ([212.48.25.159]:52892 "EHLO libero.it"
+	rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+	id S1750997AbcBGU0N (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 7 Feb 2016 15:26:13 -0500
+Reply-To: kreijack@inwind.it
 Subject: Re: btrfs-progs and btrfs(8) inconsistencies
-To: Anand Jain <anand.jain@oracle.com>, Moviuro <moviuro@gmail.com>,
-        linux-btrfs@vger.kernel.org
 References: <CAM=f9=V-7hbjGLzWUxbynsoJdP-NexEoaTJ3GJJxn3gBYsW1BA@mail.gmail.com>
- <56B412FC.8060007@oracle.com>
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <56B71777.7050609@gmx.com>
-Date: Sun, 7 Feb 2016 18:07:51 +0800
+ <56B412FC.8060007@oracle.com> <56B71777.7050609@gmx.com>
+To: Qu Wenruo <quwenruo.btrfs@gmx.com>, Anand Jain <anand.jain@oracle.com>,
+        Moviuro <moviuro@gmail.com>, linux-btrfs@vger.kernel.org
+From: Goffredo Baroncelli <kreijack@inwind.it>
+Message-ID: <56B7A861.2060802@inwind.it>
+Date: Sun, 7 Feb 2016 21:26:09 +0100
 MIME-Version: 1.0
-In-Reply-To: <56B412FC.8060007@oracle.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+In-Reply-To: <56B71777.7050609@gmx.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On 2016-02-07 11:07, Qu Wenruo wrote:
+> +1 too.
+> 
+> But first in C, then python wrapper.
+> 
+> Not sure why there is no such libbtrfs for C wrapper of btrfs ioctls.
+> 
+> Maybe just because current btrfs ioctl is too easy to use?
+
+Unfortunately no. 
+
+I think the main problem of writing a libbtrfs, is the code changes needed. 
+In fact in order to avoid code duplication (and to have more testing), the btrfs command has to be a client of libbtrfs. But it is not easy: you have to refactoring the error handling and the message printing...
+
+> AFAIK, systemd (container storage part) calls btrfs ioctl directly, especially for subvolume/snapshot creation mainly > because the design of them are quite easy.
+
+Also udev does the same (I don't remember if this happened before or after it went under the systemd umbrella).
+
+I remember a case where it was impossible to change the semantic of BTRFS_IOC_DEVICES_READY: on the basis of its name, it could be seems that this ioctl should _only_ check if a filesystem is ready. Unfortunately it register also the device [1].
+It was discussed in the ML to change its semantic, but having already widespread client  like udev it was impossible to do (even tough we could discuss to change their name)
 
 
-On 02/05/2016 11:11 AM, Anand Jain wrote:
->
->
->   If you look critically we have been using UI/CLI as API,
->   IMO these two class of interfaces be distinct clearly.
->
->   Btrfs needs library functions/APIs which is callable in
->   popular scripting language like python.
->
-> Thanks, Anand
->
-+1 too.
+> Thanks,
+> Qu 
 
-But first in C, then python wrapper.
 
-Not sure why there is no such libbtrfs for C wrapper of btrfs ioctls.
+BR
+G.Baroncelli
 
-Maybe just because current btrfs ioctl is too easy to use?
 
-AFAIK, systemd (container storage part) calls btrfs ioctl directly, 
-especially for subvolume/snapshot creation mainly because the design of 
-them are quite easy.
-
-Thanks,
-Qu
-
->
-> On 02/04/2016 05:54 AM, Moviuro wrote:
->> Hi all,
->>
->> I should have done this a long time ago, so here goes.
->>
->> Btrfs is certainly the best FS out there but btrfs(8) is a pain to use in
->> scripts. That is, it talks way too much, exposes unparseable outputs and
->> has inconsistent behavior.
->>
->> I strongly believe that the CLI may use a complete revamp, that is: think
->> of the needed/wanted output. I actually ran into this frustrating
->> behavior
->> while writing butter (https://github.com/moviuro/butter).
->>
->> Eg: # btrfs subvolume create foo
->> Should be silent. I don't want btrfs(8) to bug me about successful
->> commands. Everything that is a success is silent. In its current form,
->> btrfs-subvolume(8) would spat out a complete sentence in English that we
->> don't need, which however contains a tiny bit of useful info: the path
->> (though relative) to the new subvolume. A -v/--verbose option might be
->> here
->> a good idea to implement and the following behavior (just thinking out
->> loud, I'm sure there would be lots of things to think about more
->> precisely):
->>
->> # btrfs subvolume create foo # should be silent
->> # btrfs subvolume create -v foo
->> /absolute/path/foo
->> # btrfs subvolume create [--details|-vv] foo
->> PATH:/absolute/path/foo
->> UUID:082df386-98c2-44d9-9012-07fb2b22ea20
->> [And whatnot]
->>
->> That's a first example. Same should go for all the commands. I have no
->> idea
->> how/where we could share about good/bad outputs (Google Drive? Framapad?
->> git[hub|lab]?)
->>
->> Then come inconsistencies: compare the outputs of
->> # btrfs sub create foo
->> # btrfs sub delete foo
->>
->> This also needs to be taken care of, but it should be a by-product of
->> thinking the outputs all over again.
->>
->> Behavior inconsistencies: some seemingly valid commands fail, because of
->> some code that can be easily changed (I'm working on it in my spare time
->> already, see https://github.com/moviuro/btrfs-progs/tree/getopts):
->>
->> The valid '--' doesn't work on every command, see
->> 0aa796cad7ed3fce9d5964646a8f1f5a142b4989 here:
->> https://github.com/kdave/btrfs-progs/commit/0aa796cad7ed3fce9d5964646a8f1f5a142b4989
->>
->>
->>
->> That's it. And since AFAICT btrfs is FLOSS, I'm sharing about my
->> experience
->> as user and hope my opinion will change btrfs(8) for the better.
->>
->> Cheers,
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->>
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+[1] https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=772744

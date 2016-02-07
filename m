@@ -1,80 +1,78 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lf0-f49.google.com ([209.85.215.49]:35811 "EHLO
-	mail-lf0-f49.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751154AbcBGAkl (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 6 Feb 2016 19:40:41 -0500
-Received: by mail-lf0-f49.google.com with SMTP id l143so77426273lfe.2
-        for <linux-btrfs@vger.kernel.org>; Sat, 06 Feb 2016 16:40:40 -0800 (PST)
-Subject: Re: Unrecoverable error on raid10
-To: Chris Murphy <lists@colorremedies.com>
-References: <56B66704.5070505@gmail.com>
- <CAJCQCtSOv8rhDi69NyR6J4cs91bc9ahh7382+kHz1knAe5BRdg@mail.gmail.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-From: Tom Arild Naess <tanaess@gmail.com>
-Message-ID: <56B69286.3080205@gmail.com>
-Date: Sun, 7 Feb 2016 01:40:38 +0100
+Received: from mail.palepurple.co.uk ([89.16.183.188]:55089 "EHLO
+	mail.palepurple.co.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751053AbcBGG5Y (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 7 Feb 2016 01:57:24 -0500
+Received: from localhost (localhost [127.0.0.1])
+	by mail.palepurple.co.uk (Postfix) with ESMTP id C9E8481E4
+	for <linux-btrfs@vger.kernel.org>; Sun,  7 Feb 2016 06:57:21 +0000 (GMT)
+Received: from mail.palepurple.co.uk ([127.0.0.1])
+	by localhost (mail.palepurple.co.uk [127.0.0.50]) (amavisd-new, port 10024)
+	with ESMTP id TZpVK-WswO7q for <linux-btrfs@vger.kernel.org>;
+	Sun,  7 Feb 2016 06:57:11 +0000 (GMT)
+Received: from mabel.local (5ec3d602.skybroadband.com [94.195.214.2])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+	(No client certificate requested)
+	(Authenticated sender: david@codepoets.co.uk)
+	by mail.palepurple.co.uk (Postfix) with ESMTPSA id D4FCD8076
+	for <linux-btrfs@vger.kernel.org>; Sun,  7 Feb 2016 06:57:10 +0000 (GMT)
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+From: David Goodwin <david@codepoets.co.uk>
+Subject: kernel 4.1.15 balance => oops. out of memory.
+Message-ID: <56B6EAC5.4040206@codepoets.co.uk>
+Date: Sun, 7 Feb 2016 06:57:09 +0000
 MIME-Version: 1.0
-In-Reply-To: <CAJCQCtSOv8rhDi69NyR6J4cs91bc9ahh7382+kHz1knAe5BRdg@mail.gmail.com>
 Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 07. feb. 2016 00:32, Chris Murphy wrote:
+kernel 4.1.15
 
-> It's probably unrelated the problem, but I would given the many bug
-> fixes (including in send/receive) since kernel 3.19, and progs 4.1,
-> that I'd get both systems using the same kernel and progs version. I
-> suspect most of upstream's testing before release for send/receive is
-> with matching kernel and progs versions. My understanding is most of
-> the send code is in the kernel, and most of the receive code is in
-> progs (of course, receive also implies writing to a Btrfs volume as
-> well which would be kernel code too). I really wouldn't intentionally
-> mix and match versions like this, unless you're trying to find bugs as
-> a result of mismatching versions.
-Ok, that sounds like good advice. My thought was to keep the versions 
-different to reduce the risk of my data getting nuked on both systems 
-because of some obscure bug in one specific version, since btrfs is not 
-100% stable yet. Also, it was much easier to create a small read-only 
-"NAS OS" to run from a USB stick using Arch Linux than with Ubuntu. 
-Guess I'll have to re-evaluate this then.
+balancing a fs led to this oops.
 
-> Note that this is a logical address. The chunk tree will translate
-> that into separate physical sectors on the actual drives. This kind of
-> corruption suggests that it's not media, or even storage stack related
-> like a torn write or anything like that. I'm not sure how it can
-> happen, someone else who knows the sequence of data checksumming, data
-> allocation being split into two paths for writes, and metadata writes,
-> would have to speak up.
-Being a logical or physical address is not the point here at all. The 
-file ended up corrupted because somehow both copies of the file had a 
-checksum mismatch on the exact same (4k) block of data. This should not 
-be possible. For now I can only see two explanations - a weird bug 
-somewhere in btrfs or corrupt RAM, because either the data block or the 
-checksum must have been corrupted somewhere between the calculation and 
-writing to the disk. Next step now is a few rounds of memtest.
-> Also, the file is still recoverable most likely. You can use btrfs
-> restore to extract it from the unmounted file system without
-> complaining about checksum mismatches. It's just that the normal read
-> path won't hand over data it thinks is corrupt.
-I still haven't learned enough about the capabilities of btrfs, so I 
-wasn't aware of this. And since this was the backup server, I replaced 
-the file from the main server to see if this would break the incremental 
-send/receive (and that worked perfectly, since I kept the inode i guess).
+after a reboot, the balance resumed without problem.
 
->> This is not what I expect from a raid10!
-> Technically what you don't expect from raid10 is any notification that
-> the file may be corrupt at all. It'd be interesting to extract the
-> file with restore, and then compare hashes to a known good copy.
-Well, I really don't expect this to be happening at all. If this is a 
-bug in btrfs, it could just as well have struck the same file on the 
-server. Without a backup I could not know if it was the data or the 
-checksum that was bogus. This being a 16GB edited family film video 
-file, I had the original source deleted, so I could very well end up 
-with some very annoying chop in the video in a worst case scenario.
+presumably there wasn't enough real memory available
 
-Anyway, I just hope that if there is a bug in the code, this could help 
-find it.
+David
 
--- 
-Tom Arild Naess
-
+  ------------[ cut here ]------------
+  WARNING: CPU: 1 PID: 16560 at fs/btrfs/super.c:260 
+__btrfs_abort_transaction+0x4b/0x120 [btrfs]()
+  BTRFS: Transaction aborted (error -12)
+  Modules linked in: ufs qnx4 hfsplus hfs minix ntfs vfat msdos fat jfs 
+xfs libcrc32c dm_mod veth xt_multiport iptable_filter ip_tables x_tables 
+nfsd auth_rpcgss oid_registry nfs_acl nfs lockd grace fscache sunrpc 
+bridge stp llc ip_gre ip_tunnel gre fuse crct10dif_pclmul crc32_pclmul 
+ppdev cirrus aesni_intel snd_pcsp aes_x86_64 lrw gf128mul glue_helper 
+ablk_helper cryptd snd_pcm ttm snd_timer evdev psmouse snd soundcore 
+serio_raw drm_kms_helper parport_pc 8250_fintek parport drm i2c_piix4 
+i2c_core acpi_cpufreq processor thermal_sys button ext4 crc16 mbcache 
+jbd2 btrfs xor raid6_pq ata_generic xen_blkfront crc32c_intel floppy 
+ata_piix libata scsi_mod ixgbevf
+  CPU: 1 PID: 16560 Comm: apache2 Not tainted 4.1.15-dg1 #1
+  Hardware name: Xen HVM domU, BIOS 4.2.amazon 12/07/2015
+   0000000000000000 ffffffffa01a1af2 ffffffff81573596 ffff880029f13b08
+   ffffffff81071221 ffff880139897388 00000000fffffff4 ffff88014ba71000
+   ffffffffa01a061c 0000000000001854 ffffffff8107129a ffffffffa01a46e8
+  Call Trace:
+   [<ffffffff81573596>] ? dump_stack+0x40/0x50
+   [<ffffffff81071221>] ? warn_slowpath_common+0x81/0xb0
+   [<ffffffff8107129a>] ? warn_slowpath_fmt+0x4a/0x50
+   [<ffffffffa00f4d8b>] ? __btrfs_abort_transaction+0x4b/0x120 [btrfs]
+   [<ffffffffa013213a>] ? btrfs_add_link+0x2ea/0x350 [btrfs]
+   [<ffffffffa01331e2>] ? btrfs_create+0x1a2/0x1e0 [btrfs]
+   [<ffffffff811d663e>] ? generic_permission+0x13e/0x1a0
+   [<ffffffff811d79d4>] ? vfs_create+0xc4/0x130
+   [<ffffffff811dbe44>] ? do_last+0x1154/0x1210
+   [<ffffffff810afe01>] ? __init_waitqueue_head+0x1/0x20
+   [<ffffffff811dbf83>] ? path_openat+0x83/0x600
+   [<ffffffff8118850e>] ? do_set_pte+0x9e/0xd0
+   [<ffffffff8115c95e>] ? filemap_map_pages+0x23e/0x250
+   [<ffffffff811ddce0>] ? do_filp_open+0x30/0xa0
+   [<ffffffff811ea56f>] ? __alloc_fd+0x9f/0x130
+   [<ffffffff811cb19a>] ? do_sys_open+0x12a/0x220
+   [<ffffffff81579872>] ? system_call_fastpath+0x16/0x75
+  ---[ end trace 388b9f3bfbb5b4e9 ]---
+  BTRFS: error (device xvdf) in btrfs_add_link:6228: errno=-12 Out of memory
+  BTRFS info (device xvdf): forced readonly

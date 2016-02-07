@@ -1,188 +1,278 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:50370 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751974AbcBKMYR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 11 Feb 2016 07:24:17 -0500
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id B7559AD10
-	for <linux-btrfs@vger.kernel.org>; Thu, 11 Feb 2016 12:24:15 +0000 (UTC)
-From: David Sterba <dsterba@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.com>
-Subject: [PATCH] btrfs: use proper type for failrec in extent_state
-Date: Thu, 11 Feb 2016 13:24:13 +0100
-Message-Id: <1455193453-14837-1-git-send-email-dsterba@suse.com>
+Received: from mail-pa0-f68.google.com ([209.85.220.68]:36719 "EHLO
+	mail-pa0-f68.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751060AbcBGH52 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 7 Feb 2016 02:57:28 -0500
+Date: Sat, 6 Feb 2016 23:57:21 -0800
+From: Deepa Dinamani <deepa.kernel@gmail.com>
+To: dsterba@suse.cz, linux-fsdevel@vger.kernel.org
+Cc: y2038@lists.linaro.org, Arnd Bergmann <arnd@arndb.de>,
+        Dave Chinner <david@fromorbit.com>, "Theodore Ts'o" <tytso@mit.edu>,
+        linux-kernel@vger.kernel.org, Chris Mason <clm@fb.com>,
+        Josef Bacik <jbacik@fb.com>, David Sterba <dsterba@suse.com>,
+        linux-btrfs@vger.kernel.org
+Subject: [PATCH v2 10/10] fs: btrfs: Replace CURRENT_TIME by current_fs_time()
+Message-ID: <20160207075720.GB4786@deepa-ubuntu>
+References: <1454479670-8204-1-git-send-email-deepa.kernel@gmail.com>
+ <1454479670-8204-11-git-send-email-deepa.kernel@gmail.com>
+ <20160204141436.GB9136@twin.jikos.cz>
+ <CABeXuvqBYcgrMzjqesz+m37A3UzxCixkWvg8OyO5AdraMnQu-Q@mail.gmail.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <CABeXuvqBYcgrMzjqesz+m37A3UzxCixkWvg8OyO5AdraMnQu-Q@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We use the private member of extent_state to store the failrec and play
-pointless pointer games.
+CURRENT_TIME macro is not appropriate for filesystems as it
+doesn't use the right granularity for filesystem timestamps.
+Use current_fs_time() instead.
 
-Signed-off-by: David Sterba <dsterba@suse.com>
+Signed-off-by: Deepa Dinamani <deepa.kernel@gmail.com>
+Cc: Chris Mason <clm@fb.com>
+Cc: Josef Bacik <jbacik@fb.com>
+Cc: David Sterba <dsterba@suse.com>
+Cc: linux-btrfs@vger.kernel.org
 ---
- fs/btrfs/extent_io.c | 31 ++++++++++++++-----------------
- fs/btrfs/extent_io.h |  5 ++---
- 2 files changed, 16 insertions(+), 20 deletions(-)
+changes since v1:
+	btrfs_update_root_times uses root->fs_info instead of
+	root->ino_cache_inode to obtain struct super_block pointer
+	from struct btrfs_root.
+	
+	The issue that was reported by the kernel tester was that
+	a null pointer dereference occurred. This is because the
+	inode cache is disabled by default and this inode pointer
+	was null.
 
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 2e7c97a3f344..f3910ac00d89 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -232,7 +232,7 @@ static struct extent_state *alloc_extent_state(gfp_t mask)
- 	if (!state)
- 		return state;
- 	state->state = 0;
--	state->private = 0;
-+	state->failrec = NULL;
- 	RB_CLEAR_NODE(&state->rb_node);
- 	btrfs_leak_debug_add(&state->leak_list, &states);
- 	atomic_set(&state->refs, 1);
-@@ -1844,7 +1844,8 @@ out:
-  * set the private field for a given byte offset in the tree.  If there isn't
-  * an extent_state there already, this does nothing.
-  */
--static int set_state_private(struct extent_io_tree *tree, u64 start, u64 private)
-+static int set_state_failrec(struct extent_io_tree *tree, u64 start,
-+		struct io_failure_record *failrec)
- {
- 	struct rb_node *node;
- 	struct extent_state *state;
-@@ -1865,13 +1866,14 @@ static int set_state_private(struct extent_io_tree *tree, u64 start, u64 private
- 		ret = -ENOENT;
- 		goto out;
- 	}
--	state->private = private;
-+	state->failrec = failrec;
+	Inode cache inode pointer should not be used to access super
+	block information.
+
+ fs/btrfs/file.c        |  4 ++--
+ fs/btrfs/inode.c       | 25 +++++++++++++------------
+ fs/btrfs/ioctl.c       |  8 ++++----
+ fs/btrfs/root-tree.c   |  2 +-
+ fs/btrfs/transaction.c |  7 +++++--
+ fs/btrfs/xattr.c       |  2 +-
+ 6 files changed, 26 insertions(+), 22 deletions(-)
+
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index 098bb8f..610f569 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -2544,7 +2544,7 @@ out_trans:
+ 		goto out_free;
+ 
+ 	inode_inc_iversion(inode);
+-	inode->i_mtime = inode->i_ctime = CURRENT_TIME;
++	inode->i_mtime = inode->i_ctime = current_fs_time(inode->i_sb);
+ 
+ 	trans->block_rsv = &root->fs_info->trans_block_rsv;
+ 	ret = btrfs_update_inode(trans, root, inode);
+@@ -2794,7 +2794,7 @@ static long btrfs_fallocate(struct file *file, int mode,
+ 		if (IS_ERR(trans)) {
+ 			ret = PTR_ERR(trans);
+ 		} else {
+-			inode->i_ctime = CURRENT_TIME;
++			inode->i_ctime = current_fs_time(inode->i_sb);
+ 			i_size_write(inode, actual_end);
+ 			btrfs_ordered_update_i_size(inode, actual_end, NULL);
+ 			ret = btrfs_update_inode(trans, root, inode);
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index e28f3d4..59c0e22 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -4013,7 +4013,8 @@ err:
+ 	btrfs_i_size_write(dir, dir->i_size - name_len * 2);
+ 	inode_inc_iversion(inode);
+ 	inode_inc_iversion(dir);
+-	inode->i_ctime = dir->i_mtime = dir->i_ctime = CURRENT_TIME;
++	inode->i_ctime = dir->i_mtime =
++		dir->i_ctime = current_fs_time(inode->i_sb);
+ 	ret = btrfs_update_inode(trans, root, dir);
  out:
- 	spin_unlock(&tree->lock);
  	return ret;
- }
+@@ -4156,7 +4157,7 @@ int btrfs_unlink_subvol(struct btrfs_trans_handle *trans,
  
--int get_state_private(struct extent_io_tree *tree, u64 start, u64 *private)
-+static int get_state_failrec(struct extent_io_tree *tree, u64 start,
-+		struct io_failure_record **failrec)
- {
- 	struct rb_node *node;
- 	struct extent_state *state;
-@@ -1892,7 +1894,7 @@ int get_state_private(struct extent_io_tree *tree, u64 start, u64 *private)
- 		ret = -ENOENT;
- 		goto out;
- 	}
--	*private = state->private;
-+	*failrec = state->failrec;
- out:
- 	spin_unlock(&tree->lock);
- 	return ret;
-@@ -1972,7 +1974,7 @@ int free_io_failure(struct inode *inode, struct io_failure_record *rec)
- 	int err = 0;
- 	struct extent_io_tree *failure_tree = &BTRFS_I(inode)->io_failure_tree;
- 
--	set_state_private(failure_tree, rec->start, 0);
-+	set_state_failrec(failure_tree, rec->start, NULL);
- 	ret = clear_extent_bits(failure_tree, rec->start,
- 				rec->start + rec->len - 1,
- 				EXTENT_LOCKED | EXTENT_DIRTY, GFP_NOFS);
-@@ -2089,7 +2091,6 @@ int clean_io_failure(struct inode *inode, u64 start, struct page *page,
- 		     unsigned int pg_offset)
- {
- 	u64 private;
--	u64 private_failure;
- 	struct io_failure_record *failrec;
- 	struct btrfs_fs_info *fs_info = BTRFS_I(inode)->root->fs_info;
- 	struct extent_state *state;
-@@ -2102,12 +2103,11 @@ int clean_io_failure(struct inode *inode, u64 start, struct page *page,
- 	if (!ret)
- 		return 0;
- 
--	ret = get_state_private(&BTRFS_I(inode)->io_failure_tree, start,
--				&private_failure);
-+	ret = get_state_failrec(&BTRFS_I(inode)->io_failure_tree, start,
-+			&failrec);
+ 	btrfs_i_size_write(dir, dir->i_size - name_len * 2);
+ 	inode_inc_iversion(dir);
+-	dir->i_mtime = dir->i_ctime = CURRENT_TIME;
++	dir->i_mtime = dir->i_ctime = current_fs_time(dir->i_sb);
+ 	ret = btrfs_update_inode_fallback(trans, root, dir);
  	if (ret)
- 		return 0;
+ 		btrfs_abort_transaction(trans, root, ret);
+@@ -5588,7 +5589,7 @@ static struct inode *new_simple_dir(struct super_block *s,
+ 	inode->i_op = &btrfs_dir_ro_inode_operations;
+ 	inode->i_fop = &simple_dir_operations;
+ 	inode->i_mode = S_IFDIR | S_IRUGO | S_IWUSR | S_IXUGO;
+-	inode->i_mtime = CURRENT_TIME;
++	inode->i_mtime = current_fs_time(inode->i_sb);
+ 	inode->i_atime = inode->i_mtime;
+ 	inode->i_ctime = inode->i_mtime;
+ 	BTRFS_I(inode)->i_otime = inode->i_mtime;
+@@ -6160,7 +6161,7 @@ static struct inode *btrfs_new_inode(struct btrfs_trans_handle *trans,
+ 	inode_init_owner(inode, dir, mode);
+ 	inode_set_bytes(inode, 0);
  
--	failrec = (struct io_failure_record *)(unsigned long) private_failure;
- 	BUG_ON(!failrec->this_mirror);
+-	inode->i_mtime = CURRENT_TIME;
++	inode->i_mtime = current_fs_time(inode->i_sb);
+ 	inode->i_atime = inode->i_mtime;
+ 	inode->i_ctime = inode->i_mtime;
+ 	BTRFS_I(inode)->i_otime = inode->i_mtime;
+@@ -6273,7 +6274,8 @@ int btrfs_add_link(struct btrfs_trans_handle *trans,
+ 	btrfs_i_size_write(parent_inode, parent_inode->i_size +
+ 			   name_len * 2);
+ 	inode_inc_iversion(parent_inode);
+-	parent_inode->i_mtime = parent_inode->i_ctime = CURRENT_TIME;
++	parent_inode->i_mtime = parent_inode->i_ctime =
++		current_fs_time(parent_inode->i_sb);
+ 	ret = btrfs_update_inode(trans, root, parent_inode);
+ 	if (ret)
+ 		btrfs_abort_transaction(trans, root, ret);
+@@ -6491,7 +6493,7 @@ static int btrfs_link(struct dentry *old_dentry, struct inode *dir,
+ 	BTRFS_I(inode)->dir_index = 0ULL;
+ 	inc_nlink(inode);
+ 	inode_inc_iversion(inode);
+-	inode->i_ctime = CURRENT_TIME;
++	inode->i_ctime = current_fs_time(inode->i_sb);
+ 	ihold(inode);
+ 	set_bit(BTRFS_INODE_COPY_EVERYTHING, &BTRFS_I(inode)->runtime_flags);
  
- 	if (failrec->in_validation) {
-@@ -2167,7 +2167,7 @@ void btrfs_free_io_failure_record(struct inode *inode, u64 start, u64 end)
- 
- 		next = next_state(state);
- 
--		failrec = (struct io_failure_record *)(unsigned long)state->private;
-+		failrec = state->failrec;
- 		free_extent_state(state);
- 		kfree(failrec);
- 
-@@ -2177,10 +2177,9 @@ void btrfs_free_io_failure_record(struct inode *inode, u64 start, u64 end)
- }
- 
- int btrfs_get_io_failure_record(struct inode *inode, u64 start, u64 end,
--				struct io_failure_record **failrec_ret)
-+		struct io_failure_record **failrec_ret)
- {
- 	struct io_failure_record *failrec;
--	u64 private;
- 	struct extent_map *em;
- 	struct extent_io_tree *failure_tree = &BTRFS_I(inode)->io_failure_tree;
- 	struct extent_io_tree *tree = &BTRFS_I(inode)->io_tree;
-@@ -2188,7 +2187,7 @@ int btrfs_get_io_failure_record(struct inode *inode, u64 start, u64 end,
+@@ -9234,7 +9236,6 @@ static int btrfs_rename(struct inode *old_dir, struct dentry *old_dentry,
+ 	struct btrfs_root *dest = BTRFS_I(new_dir)->root;
+ 	struct inode *new_inode = d_inode(new_dentry);
+ 	struct inode *old_inode = d_inode(old_dentry);
+-	struct timespec ctime = CURRENT_TIME;
+ 	u64 index = 0;
+ 	u64 root_objectid;
  	int ret;
- 	u64 logical;
+@@ -9331,9 +9332,9 @@ static int btrfs_rename(struct inode *old_dir, struct dentry *old_dentry,
+ 	inode_inc_iversion(old_dir);
+ 	inode_inc_iversion(new_dir);
+ 	inode_inc_iversion(old_inode);
+-	old_dir->i_ctime = old_dir->i_mtime = ctime;
+-	new_dir->i_ctime = new_dir->i_mtime = ctime;
+-	old_inode->i_ctime = ctime;
++	old_dir->i_ctime = old_dir->i_mtime =
++	new_dir->i_ctime = new_dir->i_mtime =
++	old_inode->i_ctime = current_fs_time(old_dir->i_sb);
  
--	ret = get_state_private(failure_tree, start, &private);
-+	ret = get_state_failrec(failure_tree, start, &failrec);
+ 	if (old_dentry->d_parent != new_dentry->d_parent)
+ 		btrfs_record_unlink_dir(trans, old_dir, old_inode, 1);
+@@ -9358,7 +9359,7 @@ static int btrfs_rename(struct inode *old_dir, struct dentry *old_dentry,
+ 
+ 	if (new_inode) {
+ 		inode_inc_iversion(new_inode);
+-		new_inode->i_ctime = CURRENT_TIME;
++		new_inode->i_ctime = current_fs_time(new_inode->i_sb);
+ 		if (unlikely(btrfs_ino(new_inode) ==
+ 			     BTRFS_EMPTY_SUBVOL_DIR_OBJECTID)) {
+ 			root_objectid = BTRFS_I(new_inode)->location.objectid;
+@@ -9836,7 +9837,7 @@ next:
+ 		*alloc_hint = ins.objectid + ins.offset;
+ 
+ 		inode_inc_iversion(inode);
+-		inode->i_ctime = CURRENT_TIME;
++		inode->i_ctime = current_fs_time(inode->i_sb);
+ 		BTRFS_I(inode)->flags |= BTRFS_INODE_PREALLOC;
+ 		if (!(mode & FALLOC_FL_KEEP_SIZE) &&
+ 		    (actual_len > inode->i_size) &&
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 952172c..6f35d9c 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -347,7 +347,7 @@ static int btrfs_ioctl_setflags(struct file *file, void __user *arg)
+ 
+ 	btrfs_update_iflags(inode);
+ 	inode_inc_iversion(inode);
+-	inode->i_ctime = CURRENT_TIME;
++	inode->i_ctime = current_fs_time(inode->i_sb);
+ 	ret = btrfs_update_inode(trans, root, inode);
+ 
+ 	btrfs_end_transaction(trans, root);
+@@ -443,7 +443,7 @@ static noinline int create_subvol(struct inode *dir,
+ 	struct btrfs_root *root = BTRFS_I(dir)->root;
+ 	struct btrfs_root *new_root;
+ 	struct btrfs_block_rsv block_rsv;
+-	struct timespec cur_time = CURRENT_TIME;
++	struct timespec cur_time = current_fs_time(dir->i_sb);
+ 	struct inode *inode;
+ 	int ret;
+ 	int err;
+@@ -3148,7 +3148,7 @@ static int clone_finish_inode_update(struct btrfs_trans_handle *trans,
+ 
+ 	inode_inc_iversion(inode);
+ 	if (!no_time_update)
+-		inode->i_mtime = inode->i_ctime = CURRENT_TIME;
++		inode->i_mtime = inode->i_ctime = current_fs_time(inode->i_sb);
+ 	/*
+ 	 * We round up to the block size at eof when determining which
+ 	 * extents to clone above, but shouldn't round up the file size.
+@@ -4956,7 +4956,7 @@ static long _btrfs_ioctl_set_received_subvol(struct file *file,
+ 	struct btrfs_root *root = BTRFS_I(inode)->root;
+ 	struct btrfs_root_item *root_item = &root->root_item;
+ 	struct btrfs_trans_handle *trans;
+-	struct timespec ct = CURRENT_TIME;
++	struct timespec ct = current_fs_time(inode->i_sb);
+ 	int ret = 0;
+ 	int received_uuid_changed;
+ 
+diff --git a/fs/btrfs/root-tree.c b/fs/btrfs/root-tree.c
+index 7cf8509..a25f3b2 100644
+--- a/fs/btrfs/root-tree.c
++++ b/fs/btrfs/root-tree.c
+@@ -488,7 +488,7 @@ void btrfs_update_root_times(struct btrfs_trans_handle *trans,
+ 			     struct btrfs_root *root)
+ {
+ 	struct btrfs_root_item *item = &root->root_item;
+-	struct timespec ct = CURRENT_TIME;
++	struct timespec ct = current_fs_time(root->fs_info->sb);
+ 
+ 	spin_lock(&root->root_item_lock);
+ 	btrfs_set_root_ctransid(item, trans->transid);
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index b6031ce..37562d6 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -1333,7 +1333,7 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
+ 	struct dentry *dentry;
+ 	struct extent_buffer *tmp;
+ 	struct extent_buffer *old;
+-	struct timespec cur_time = CURRENT_TIME;
++	struct timespec cur_time;
+ 	int ret = 0;
+ 	u64 to_reserve = 0;
+ 	u64 index = 0;
+@@ -1381,6 +1381,8 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
+ 	parent_root = BTRFS_I(parent_inode)->root;
+ 	record_root_in_trans(trans, parent_root);
+ 
++	cur_time = current_fs_time(parent_inode->i_sb);
++
+ 	/*
+ 	 * insert the directory item
+ 	 */
+@@ -1523,7 +1525,8 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
+ 
+ 	btrfs_i_size_write(parent_inode, parent_inode->i_size +
+ 					 dentry->d_name.len * 2);
+-	parent_inode->i_mtime = parent_inode->i_ctime = CURRENT_TIME;
++	parent_inode->i_mtime = parent_inode->i_ctime =
++		current_fs_time(parent_inode->i_sb);
+ 	ret = btrfs_update_inode_fallback(trans, parent_root, parent_inode);
  	if (ret) {
- 		failrec = kzalloc(sizeof(*failrec), GFP_NOFS);
- 		if (!failrec)
-@@ -2237,8 +2236,7 @@ int btrfs_get_io_failure_record(struct inode *inode, u64 start, u64 end,
- 		ret = set_extent_bits(failure_tree, start, end,
- 					EXTENT_LOCKED | EXTENT_DIRTY, GFP_NOFS);
- 		if (ret >= 0)
--			ret = set_state_private(failure_tree, start,
--						(u64)(unsigned long)failrec);
-+			ret = set_state_failrec(failure_tree, start, failrec);
- 		/* set the bits in the inode's tree */
- 		if (ret >= 0)
- 			ret = set_extent_bits(tree, start, end, EXTENT_DAMAGED,
-@@ -2248,7 +2246,6 @@ int btrfs_get_io_failure_record(struct inode *inode, u64 start, u64 end,
- 			return ret;
- 		}
- 	} else {
--		failrec = (struct io_failure_record *)(unsigned long)private;
- 		pr_debug("Get IO Failure Record: (found) logical=%llu, start=%llu, len=%llu, validation=%d\n",
- 			 failrec->logical, failrec->start, failrec->len,
- 			 failrec->in_validation);
-diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
-index 0377413bd4b9..98a25a100674 100644
---- a/fs/btrfs/extent_io.h
-+++ b/fs/btrfs/extent_io.h
-@@ -62,6 +62,7 @@
- struct extent_state;
- struct btrfs_root;
- struct btrfs_io_bio;
-+struct io_failure_record;
+ 		btrfs_abort_transaction(trans, root, ret);
+diff --git a/fs/btrfs/xattr.c b/fs/btrfs/xattr.c
+index 6c68d63..f2a20d5 100644
+--- a/fs/btrfs/xattr.c
++++ b/fs/btrfs/xattr.c
+@@ -249,7 +249,7 @@ int __btrfs_setxattr(struct btrfs_trans_handle *trans,
+ 		goto out;
  
- typedef	int (extent_submit_bio_hook_t)(struct inode *inode, int rw,
- 				       struct bio *bio, int mirror_num,
-@@ -112,8 +113,7 @@ struct extent_state {
- 	atomic_t refs;
- 	unsigned state;
- 
--	/* for use by the FS */
--	u64 private;
-+	struct io_failure_record *failrec;
- 
- #ifdef CONFIG_BTRFS_DEBUG
- 	struct list_head leak_list;
-@@ -345,7 +345,6 @@ int extent_readpages(struct extent_io_tree *tree,
- 		     get_extent_t get_extent);
- int extent_fiemap(struct inode *inode, struct fiemap_extent_info *fieinfo,
- 		__u64 start, __u64 len, get_extent_t *get_extent);
--int get_state_private(struct extent_io_tree *tree, u64 start, u64 *private);
- void set_page_extent_mapped(struct page *page);
- 
- struct extent_buffer *alloc_extent_buffer(struct btrfs_fs_info *fs_info,
+ 	inode_inc_iversion(inode);
+-	inode->i_ctime = CURRENT_TIME;
++	inode->i_ctime = current_fs_time(inode->i_sb);
+ 	set_bit(BTRFS_INODE_COPY_EVERYTHING, &BTRFS_I(inode)->runtime_flags);
+ 	ret = btrfs_update_inode(trans, root, inode);
+ 	BUG_ON(ret);
 -- 
-1.8.4.5
+1.9.1
 

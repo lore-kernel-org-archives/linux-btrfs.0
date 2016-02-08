@@ -1,119 +1,113 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.20]:60976 "EHLO mout.gmx.net"
+Received: from mout.gmx.net ([212.227.15.15]:62403 "EHLO mout.gmx.net"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751168AbcBHNFR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 8 Feb 2016 08:05:17 -0500
-Subject: Re: Fwd: Unmountable fs after power outage
-To: Hugo Mills <hugo@carfax.org.uk>, Radek Sprta <radek.sprta@gmail.com>,
-        linux-btrfs@vger.kernel.org
-References: <CAM7-wL0OzZU9UvFHG0GauXz+ZSHg58CaPQR33CkxNRyPg6+SSg@mail.gmail.com>
- <CAM7-wL0kU5TkZaOac1PG5Drk1+JZxYE35-r8y0YiZ2ngmEu9zg@mail.gmail.com>
- <20160122152530.GX422@carfax.org.uk>
+	id S1751764AbcBHNUw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 8 Feb 2016 08:20:52 -0500
+Subject: Re: Use fast device only for metadata?
+To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>,
+        Martin Steigerwald <martin@lichtvoll.de>,
+        Kai Krakow <hurikhan77@gmail.com>
+References: <874mdktk4t.fsf@vostro.rath.org>
+ <20160207210713.7e4661a8@jupiter.sol.kaishome.de>
+ <1507413.RERLDqpHyU@merkaba> <56B888FF.5080605@gmail.com>
+Cc: linux-btrfs@vger.kernel.org
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <56B89285.7070303@gmx.com>
-Date: Mon, 8 Feb 2016 21:05:09 +0800
+Message-ID: <56B8962C.6050302@gmx.com>
+Date: Mon, 8 Feb 2016 21:20:44 +0800
 MIME-Version: 1.0
-In-Reply-To: <20160122152530.GX422@carfax.org.uk>
+In-Reply-To: <56B888FF.5080605@gmail.com>
 Content-Type: text/plain; charset=windows-1252; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
 
-On 01/22/2016 11:25 PM, Hugo Mills wrote:
-> On Fri, Jan 22, 2016 at 04:11:53PM +0100, Radek Sprta wrote:
->> Hello everybody,
+On 02/08/2016 08:24 PM, Austin S. Hemmelgarn wrote:
+> On 2016-02-07 15:59, Martin Steigerwald wrote:
+>> Am Sonntag, 7. Februar 2016, 21:07:13 CET schrieb Kai Krakow:
+>>> Am Sun, 07 Feb 2016 11:06:58 -0800
+>>>
+>>> schrieb Nikolaus Rath <Nikolaus@rath.org>:
+>>>> Hello,
+>>>>
+>>>> I have a large home directory on a spinning disk that I regularly
+>>>> synchronize between different computers using unison. That takes ages,
+>>>> even though the amount of changed files is typically small. I suspect
+>>>> most if the time is spend walking through the file system and checking
+>>>> mtimes.
+>>>>
+>>>> So I was wondering if I could possibly speed-up this operation by
+>>>> storing all btrfs metadata on a fast, SSD drive. It seems that
+>>>> mkfs.btrfs allows me to put the metadata in raid1 or dup mode, and the
+>>>> file contents in single mode. However, I could not find a way to tell
+>>>> btrfs to use a device *only* for metadata. Is there a way to do that?
+>>>>
+>>>> Also, what is the difference between using "dup" and "raid1" for the
+>>>> metadata?
+>>>
+>>> You may want to try bcache. It will speedup random access which is
+>>> probably the main cause for your slow sync. Unfortunately it requires
+>>> you to reformat your btrfs partitions to add a bcache superblock. But
+>>> it's worth the efforts.
+>>>
+>>> I use a nightly rsync to USB3 disk, and bcache reduced it from 5+ hours
+>>> to typically 1.5-3 depending on how much data changed.
 >>
->> after a recent power outage attempting to mount a my btrfs partition
->> fails with the following error:
->>
->> mount: wrong fs type, bad option, bad superblock on /dev/sda8,
->>         missing codepage or helper program, or other error
->>
->> This is what dmesg shows:
->> [ 1035.236081] BTRFS (device sda8): parent transid verify failed on
->> 410124288 wanted 85753 found 85755
->> [ 1035.240756] BTRFS (device sda8): parent transid verify failed on
->> 410124288 wanted 85753 found 85755
->> [ 1035.240780] BTRFS: failed to read tree root on sda8
->> [ 1035.252025] BTRFS: open_ctree failed
+>> An alternative is using dm-cache, I think it doesn´t need to recreate the
+>> filesystem.
+> That's correct, dm-cache can use a regular underlying storage device.
+> This of course has potential implications for a multi-device filesystem
+> (it can seriously confuse BTRFS and cause data corruption), but it works
+> just fine for a single device filesystem.  This makes it a bit easier to
+> test run, but also means you need more devices (internally, it uses 3,
+> one backing device, one cache device, and a metadata device for
+> persistently mapping between the two).  It's really easy to set up
+> though if you have a recent version of LVM built with dm-cache support.
 >
->     Try mounting with -orecovery. That's the main approach for dealing
-> with transid failures.
-
-IIRC, current "recovery" will only try to use backup roots.
-And that's why I am going to rename the mount option to "usebackuproot" 
-in next kernel release.
-
-It's quite strange that current kernel doesn't have mount option to 
-ignore transid error any longer.
-Just grep "RECOVERY" in btrfs modules sources, and it should be quite 
-easy to find this fact.
-
+> In general, bcache takes a bit more setup, but avoids the multi-device
+> issues, and importantly, doesn't require LVM or dmsetup (which are
+> usually pretty big packages on many distros).  The caveat with bcache
+> though is that there have been issues in the past with data integrity
+> when used with BTRFS, but if you're on a recent kernel (at least 4.0 if
+> you're using BTRFS for actual data storage), you should have no issues.
 >
->> Below is the result of btrfs check:
->> Checking filesystem on /dev/sda8
->> UUID: b0486700-ff9f-4979-8735-257ff1428a0d
->> checking extents
->> checking free space cache
->> checking fs roots
->> checking csums
->> checking root refs
->> found 311702978854 bytes used err is 0
->> total csum bytes: 271057636
->> total tree bytes: 1859862528
->> total fs tree bytes: 1473953792
->> total extent tree bytes: 72876032
->> btree space waste bytes: 377740163
->> file data blocks allocated: 11278336921600
->>   referenced 975937630208
->> btrfs-progs v4.0
->
->     That looks reasonably promising -- nothing seriously damaged that
-> btrfs check could find, at least.
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 
-Quite strange.
-IIRC, btrfsck should at least report transid error.
-As written in disk-io.c, verify_parent_transid() function.
+And I just want to add more about using a device *only* for metadata.
 
-Since btrfsck reports no error, I think btrfs-image could dump the 
-metadata without problem.
+The short answer is, unfortunately, NO.
 
-So, would you please dump a btrfs-image dump, by the following command?
-# btrfs-image -c9 /dev/sda8
+1) Even using bcache/dm-cache, it may still cache small data write
 
-Such dump will only contain your metadata(dir/file hierarchy including 
-dir/file names), no data will be dump.
+Although I'm not quite sure about dm-cache/bcache, but as long as the 
+top file is Btrfs, it won't be possible to limit data/metadata to/from 
+specific device.
 
-And if you think the filename can leak important data, you can use '-ss' 
-or '-s' to sanitize them.
+IIRC, bcache or similiar method may cache most random r/w of metadata, 
+it's still quite possible to cache a lot of random r/w of data.
+
+And depending on the sector size(minimal data block size) and leaf size 
+(metadata block size), it's even more possible to cache small data other 
+than metadata under specific worload.
+As default sectorsize is 4K, but leafsize is 16K.
+
+2) Btrfs don't have special preference on chunk allocation.
+
+Btrfs just allocate chunks in the order of unallocated space.
+So, even there is a super big TB or PB spinning device, and GB level 
+SSD, btrfs will just trust them according to unallocated space.
+
+
+
+BTW, to really allocate the bottleneck, it's better to use perf to 
+allocate which function btrfs spends most of its time on.
+
+Although it's a known fact that btrfs is quite slow on metadata 
+modification compared to other file systems, I'm still not quite sure 
+about if that's the root cause.
 
 Thanks,
 Qu
-
->
->> I tried googling the "open_ctree failed" error, but couldn't find any
->> definite answers. Here's some additional info:
->
->     "open_ctree failed" is a really generic error message,
-> unfortunately. Almost every case that leads to a failure to mount will
-> output that message, so there's no single solution you can find from
-> just that error. The "parent transid verify failed" is a much better
-> indication of what's happened here, and the small difference in
-> transid numbers would indicate that -orecovery might actually have a
-> chance of working.
->
->     Hugo.
->
->> uname -a:
->> Linux Computer 4.2.0-22-generic #27-Ubuntu SMP Thu Dec 17 22:57:08 UTC
->> 2015 x86_64 x86_64 x86_64 GNU/Linux
->>
->> btrfs fi show:
->> Label: none  uuid: b0486700-ff9f-4979-8735-257ff1428a0d
->> Total devices 1 FS bytes used 290.37GiB
->> devid    1 size 301.32GiB used 295.04GiB path /dev/sda8
->>
->> Thanks in advance for any help,
->> Radek
->

@@ -1,60 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:51735 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1755850AbcBHWMv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 8 Feb 2016 17:12:51 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1aSu38-0002J1-5b
-	for linux-btrfs@vger.kernel.org; Mon, 08 Feb 2016 23:12:50 +0100
-Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 08 Feb 2016 23:12:50 +0100
-Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 08 Feb 2016 23:12:50 +0100
+Received: from mxout015.mail.hostpoint.ch ([217.26.49.175]:55068 "EHLO
+	mxout015.mail.hostpoint.ch" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1756293AbcBHWvS convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 8 Feb 2016 17:51:18 -0500
+Received: from [10.0.2.46] (helo=asmtp013.mail.hostpoint.ch)
+	by mxout015.mail.hostpoint.ch with esmtp (Exim 4.84 (FreeBSD))
+	(envelope-from <btrfs@bueechi.net>)
+	id 1aSu9x-0004Er-8u
+	for linux-btrfs@vger.kernel.org; Mon, 08 Feb 2016 23:19:53 +0100
+Received: from 217-162-125-82.dynamic.hispeed.ch ([217.162.125.82] helo=imac.lan)
+	by asmtp013.mail.hostpoint.ch with esmtpa (Exim 4.84 (FreeBSD))
+	(envelope-from <btrfs@bueechi.net>)
+	id 1aSu9x-00043d-77
+	for linux-btrfs@vger.kernel.org; Mon, 08 Feb 2016 23:19:53 +0100
+From: boli <btrfs@bueechi.net>
+Content-Type: text/plain; charset=utf-8
+Subject: "layout" of a six drive raid10
+Date: Mon, 8 Feb 2016 23:19:52 +0100
 To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: Use fast device only for metadata?
-Date: Mon, 8 Feb 2016 22:12:42 +0000 (UTC)
-Message-ID: <pan$dd516$c0f5f933$630bef62$f9ac950d@cox.net>
-References: <874mdktk4t.fsf@vostro.rath.org>
-	<20160207210713.7e4661a8@jupiter.sol.kaishome.de>
-	<1507413.RERLDqpHyU@merkaba> <87twliri6m.fsf@thinkpad.rath.org>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Message-Id: <1E2010FD-CBFD-44BD-B5DB-9ECD5C009391@bueechi.net>
+Mime-Version: 1.0 (Mac OS X Mail 9.2 \(3112\))
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Nikolaus Rath posted on Mon, 08 Feb 2016 13:44:17 -0800 as excerpted:
+Hi
 
-> Otherwise I'll give bcache a shot. I've avoided it so far because of the
-> need to reformat and because of rumours that it doesn't work well with
-> LVM or BTRFS. But it sounds as if that's not the case..
+I'm trying to figure out what a six drive btrfs raid10 would look like. The example at <https://btrfs.wiki.kernel.org/index.php/FAQ#What_are_the_differences_among_MD-RAID_.2F_device_mapper_.2F_btrfs_raid.3F> seems ambiguous to me.
 
-Bcache used to have problems with btrfs, but as I and others have 
-mentioned, we have people known to be using btrfs with bcache on the 
-list, and it has been working fine for quite some time, now.
+It could mean that stripes are split over two raid1 sets of three devices each. The sentence "Every stripe is split across to exactly 2 RAID-1 sets" would lead me to believe this.
 
-Bcache vs. LVM, OTOH, I know nothing about.  Tho to be fair I guess I'm a 
-bit anti-LVM biased myself, as it seems a bit too much complexity for the 
-offered advantages, and when I tried it some time ago along with mdraid, 
-I decided to keep the mdraid, but kill the lvm as too complex to be 
-confident I could manage it correctly under the pressures of a disaster 
-recovery situation, possibly with limited access to documentation, 
-manpages, other recovery tools, etc.  MDRaid, OTOH, was easier to 
-administer, in part because it's possible to assemble mdraid direct from 
-the kernel without userspace (initr* or the like if / is on it), and I 
-successfully managed it thru various issues over some time.
+However, earlier it says for raid0 that "stripe[s are] split across as many devices as possible". Which for six drives would be: stripes are split over three raid1 sets of two devices each.
 
-Of course these days I use multi-device btrfs directly, no mdraid, and a 
-multi-device btrfs root unfortunately does seem to require an initr*, but 
-its other advantages outweigh the additional complexity of having to use 
-an initr*, so...
+Can anyone enlighten me as to which is correct?
 
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
 
+Reason I'm asking is that I'm deciding on a suitable raid level for a new DIY NAS box. I'd rather not use btrfs raid6 (for now). The first alternative I thought of was raid10. Later I learned how btrfs raid1 works and figured it might be better suited for my use case: Striping the data over multiple raid1 sets doesn't really help, as transfer from/to my box will be limited by gigabit ethernet anyway, and a single drive can saturate that.
+
+Thoughts on this would also be appreciated.
+
+
+As a bonus I was wondering how btrfs raid1 are layed out in general, in particular with even and odd numbers of drives. A pair is trivial. For three drives I think a "ring setup" with each drive sharing half of its data with another drive. But how is it with four drives – are they organized as two pairs, or four-way, or …
+
+Cheers, boli

@@ -1,57 +1,86 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f175.google.com ([209.85.213.175]:32904 "EHLO
-	mail-ig0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752807AbcBGX57 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 7 Feb 2016 18:57:59 -0500
-Received: by mail-ig0-f175.google.com with SMTP id y8so20224788igp.0
-        for <linux-btrfs@vger.kernel.org>; Sun, 07 Feb 2016 15:57:59 -0800 (PST)
-MIME-Version: 1.0
-In-Reply-To: <56B69286.3080205@gmail.com>
-References: <56B66704.5070505@gmail.com>
-	<CAJCQCtSOv8rhDi69NyR6J4cs91bc9ahh7382+kHz1knAe5BRdg@mail.gmail.com>
-	<56B69286.3080205@gmail.com>
-Date: Sun, 7 Feb 2016 16:57:58 -0700
-Message-ID: <CAJCQCtQY8m9EMXxg40+9F9mbPiaunbgHDcztq_HrNCy1vpJ2Fw@mail.gmail.com>
-Subject: Re: Unrecoverable error on raid10
-From: Chris Murphy <lists@colorremedies.com>
-To: Tom Arild Naess <tanaess@gmail.com>
-Cc: Chris Murphy <lists@colorremedies.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Received: from plane.gmane.org ([80.91.229.3]:51100 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751414AbcBHBEa (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 7 Feb 2016 20:04:30 -0500
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+	id 1aSaFe-0008OK-Ca
+	for linux-btrfs@vger.kernel.org; Mon, 08 Feb 2016 02:04:26 +0100
+Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Mon, 08 Feb 2016 02:04:26 +0100
+Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Mon, 08 Feb 2016 02:04:26 +0100
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: Use fast device only for metadata?
+Date: Mon, 8 Feb 2016 01:04:21 +0000 (UTC)
+Message-ID: <pan$47bb8$3ee33232$868a6132$8161e79b@cox.net>
+References: <874mdktk4t.fsf@vostro.rath.org>
+	<20160207210713.7e4661a8@jupiter.sol.kaishome.de>
+	<1507413.RERLDqpHyU@merkaba>
+Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, Feb 6, 2016 at 5:40 PM, Tom Arild Naess <tanaess@gmail.com> wrote:
+Martin Steigerwald posted on Sun, 07 Feb 2016 21:59:48 +0100 as excerpted:
 
->>> This is not what I expect from a raid10!
->>
->> Technically what you don't expect from raid10 is any notification that
->> the file may be corrupt at all. It'd be interesting to extract the
->> file with restore, and then compare hashes to a known good copy.
->
-> Well, I really don't expect this to be happening at all. If this is a bug in
-> btrfs, it could just as well have struck the same file on the server.
+> Am Sonntag, 7. Februar 2016, 21:07:13 CET schrieb Kai Krakow:
+>> Am Sun, 07 Feb 2016 11:06:58 -0800
+>> 
+>> schrieb Nikolaus Rath <Nikolaus@rath.org>:
+>>> 
+>>> I have a large home directory on a spinning disk that I regularly
+>>> synchronize between different computers using unison. That takes
+>>> ages, even though the amount of changed files is typically small.
+>>> I suspect most if the time is spend walking through the file system
+>>> and checking mtimes.
+>>> 
+>>> So I was wondering if I could possibly speed-up this operation by
+>>> storing all btrfs metadata on a fast, SSD drive. It seems that
+>>> mkfs.btrfs allows me to put the metadata in raid1 or dup mode, and
+>>> the file contents in single mode. However, I could not find a way to
+>>> tell btrfs to use a device *only* for metadata. Is there a way to do
+>>> that?
 
-Seems like a bug in that the results are definitely not expected. But
-there isn't enough information to isolate the source. I'm not aware of
-any sort of Btrfs bug like this.
+As with the others, I'd recommend bcache or dmcache.  Which one is up to 
+you, but AFAIK, bcache has more on-list users and is thus potentially 
+better tested with btrfs and easier to find someone to compare btrfs-on-
+XXcache notes with, if you find you need to.
 
+>>> Also, what is the difference between using "dup" and "raid1" for the
+>>> metadata?
 
->This being a 16GB edited family film video file, I had the
-> original source deleted, so I could very well end up with some very annoying
-> chop in the video in a worst case scenario.
->
-> Anyway, I just hope that if there is a bug in the code, this could help find
-> it.
+Dup is 2X on a single device and is the single-device metadata default on 
+spinning rust (single is the default for single-device on SSDs, primarily 
+due to some SSD firmware doing dedup already, in which case dup wouldn't 
+do anything but take more CPU time).
 
-There isn't enough information to know what's even going on in this
-particular instance, let alone to deduce if there's a bug in the code.
-The entire dmesg would be more helpful than just one snippet, because
-invariably the problem occurred before the uncorrectable corruption
-messages appear. Whether or not the kernel messages report the
-instigator is another question, it may have happened this boot, or
-some other boot you no longer even have messages for.
+Raid1 is 2X on multiple devices, with the allocator ensuring the two 
+copies don't end up on the same device.  It's the metadata default on 
+multi-device.
 
+>> You may want to try bcache. [...] I use a nightly rsync to USB3 disk,
+>> and bcache reduced it from 5+ hours to typically 1.5-3 depending on
+>> how much data changed.
+> 
+> An alternative is using dm-cache, I think it doesn´t need to recreate
+> the filesystem.
+> 
+> I wonder what happened to the VFS hot data tracking stuff patchset
+> floating around here quite some time ago.
 
+AFAIK it's still around, and very possibly in-use by some major user.  I 
+believe it's still on the btrfs roadmap and should eventually be 
+mainlined, but with bcache and dmcache maturing now, there's not the 
+pressing need for it to be btrfs-built-in that there was before.
 
-Chris Murphy
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

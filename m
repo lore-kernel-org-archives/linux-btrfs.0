@@ -1,86 +1,83 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:51100 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751414AbcBHBEa (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 7 Feb 2016 20:04:30 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1aSaFe-0008OK-Ca
-	for linux-btrfs@vger.kernel.org; Mon, 08 Feb 2016 02:04:26 +0100
-Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 08 Feb 2016 02:04:26 +0100
-Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 08 Feb 2016 02:04:26 +0100
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: Use fast device only for metadata?
-Date: Mon, 8 Feb 2016 01:04:21 +0000 (UTC)
-Message-ID: <pan$47bb8$3ee33232$868a6132$8161e79b@cox.net>
-References: <874mdktk4t.fsf@vostro.rath.org>
-	<20160207210713.7e4661a8@jupiter.sol.kaishome.de>
-	<1507413.RERLDqpHyU@merkaba>
-Mime-Version: 1.0
+Received: from mail-io0-f173.google.com ([209.85.223.173]:34285 "EHLO
+	mail-io0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753011AbcBHCCX (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 7 Feb 2016 21:02:23 -0500
+Received: by mail-io0-f173.google.com with SMTP id 9so182245059iom.1
+        for <linux-btrfs@vger.kernel.org>; Sun, 07 Feb 2016 18:02:23 -0800 (PST)
+MIME-Version: 1.0
+In-Reply-To: <56A764FE.5040603@gmail.com>
+References: <525D830B-C5A6-40DC-932C-B283A7FB8932@me.com>
+	<56A650AC.6050901@gmail.com>
+	<CAJCQCtSBNpaMFDpRQOEAVV2d_okrWVv_OgW=J10uMaRiRThe3g@mail.gmail.com>
+	<56A764FE.5040603@gmail.com>
+Date: Sun, 7 Feb 2016 19:02:22 -0700
+Message-ID: <CAJCQCtRYbrhoArEbRZOE3e2kjfigEBrWnwmB73wR9ZN=Jdqbog@mail.gmail.com>
+Subject: Re: suspected BTRFS errors resulting in file system becoming unrecovable
+From: Chris Murphy <lists@colorremedies.com>
+To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Cc: Chris Murphy <lists@colorremedies.com>,
+        WillIam Thorne <will.thorne@me.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Martin Steigerwald posted on Sun, 07 Feb 2016 21:59:48 +0100 as excerpted:
+On Tue, Jan 26, 2016 at 5:22 AM, Austin S. Hemmelgarn
+<ahferroin7@gmail.com> wrote:
+> On 2016-01-25 16:12, Chris Murphy wrote:
 
-> Am Sonntag, 7. Februar 2016, 21:07:13 CET schrieb Kai Krakow:
->> Am Sun, 07 Feb 2016 11:06:58 -0800
->> 
->> schrieb Nikolaus Rath <Nikolaus@rath.org>:
->>> 
->>> I have a large home directory on a spinning disk that I regularly
->>> synchronize between different computers using unison. That takes
->>> ages, even though the amount of changed files is typically small.
->>> I suspect most if the time is spend walking through the file system
->>> and checking mtimes.
->>> 
->>> So I was wondering if I could possibly speed-up this operation by
->>> storing all btrfs metadata on a fast, SSD drive. It seems that
->>> mkfs.btrfs allows me to put the metadata in raid1 or dup mode, and
->>> the file contents in single mode. However, I could not find a way to
->>> tell btrfs to use a device *only* for metadata. Is there a way to do
->>> that?
+>> I really think USB hubs help fix a lot of USB related problems, even
+>> when it's not a power related problem. Currently I'm using internal
+>> SATA in a NUC for the primary storage, but use send/receive to two
+>> separate raid1 volumes that are USB drives. I can balance/scrub, and
+>> read/write to any and all drives with no problems since getting a
+>> dyconn "industrial" (probably a design term, it's aluminum not
+>> plastic) hub. Before that, one drive or another would just
+>> intermittently reset, usually to no ill effect, but once it wigged
+>> out, vanished, and reappeared as a completely different /dev/sdx
+>> device. The enclosures are crap, the manufacturer (ASMedia Technology
+>> Inc.) didn't bother to fully populate all of the USB descriptors and
+>> it doesn't pass through physical sector size properly, or report max
+>> power correctly, etc.
+>
+> That's interesting, I've usually had really good results with ASMedia's USB
+> devices (for reference, they're the semiconductor division of the same
+> company that ASUS and ASRock are owned by); as far as not passing through
+> physical sector size properly though, that's normal on almost all external
+> IDE/SATA adapters (both enclosures and regular adapters), as is not properly
+> handling commands other than the basic ones needed for disk access (such as
+> SCT stuff and SMART related commands).  That said, the USB issues on the NUC
+> don't surprise me too much, Intel's USB controller chips have been known to
+> have hardware bugs (especially their original XHCI implementation), and I've
+> seen stuff similar to what you're talking about before with other Intel
+> systems.  Now, for other systems, you have to keep in mind that most of them
+> have hubs internal to the system, and the external USB ports don't go
+> directly to the USB controllers, but quite often these hubs are not
+> particularly high quality, so they often make things worse.
+>
 
-As with the others, I'd recommend bcache or dmcache.  Which one is up to 
-you, but AFAIK, bcache has more on-list users and is thus potentially 
-better tested with btrfs and easier to find someone to compare btrfs-on-
-XXcache notes with, if you find you need to.
+Fair enough, it may just be some weirdness between Intel and ASMedia.
+But the external hub in between them has solved the intermittant
+"reset" messages I'd get, and so far I haven't had any drive vanish,
+only to come back as a different /dev/sdX letter, as I had a couple
+times before the hub was present.
 
->>> Also, what is the difference between using "dup" and "raid1" for the
->>> metadata?
+Curiously, the NUC has a high powered port. No enclosure complains
+when on that high powered port. All drives are rated in the 1A range,
+but that's just for spin up, they aren't pulling that current once
+spun up, even with heavy read/write. So a regular 900mA port should be
+plenty adequate. But those are the ports I have the problem on...
+UNLESS there's a powered external hub being used on that same 900mA
+port. And then I can have 4 drives (on the hub) doing simultaneous
+balance or scrubs and not a peep of an error. So I don't actually
+think this is a power problem. I think it's something to do with the
+internal hub you're referring to.
 
-Dup is 2X on a single device and is the single-device metadata default on 
-spinning rust (single is the default for single-device on SSDs, primarily 
-due to some SSD firmware doing dedup already, in which case dup wouldn't 
-do anything but take more CPU time).
+Also, the normal 900mA ports provide no power when the NUC is powered
+off. The orange 1.5A high powered port does provide power, despite the
+NUC being off.
 
-Raid1 is 2X on multiple devices, with the allocator ensuring the two 
-copies don't end up on the same device.  It's the metadata default on 
-multi-device.
-
->> You may want to try bcache. [...] I use a nightly rsync to USB3 disk,
->> and bcache reduced it from 5+ hours to typically 1.5-3 depending on
->> how much data changed.
-> 
-> An alternative is using dm-cache, I think it doesn´t need to recreate
-> the filesystem.
-> 
-> I wonder what happened to the VFS hot data tracking stuff patchset
-> floating around here quite some time ago.
-
-AFAIK it's still around, and very possibly in-use by some major user.  I 
-believe it's still on the btrfs roadmap and should eventually be 
-mainlined, but with bcache and dmcache maturing now, there's not the 
-pressing need for it to be btrfs-built-in that there was before.
 
 -- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+Chris Murphy

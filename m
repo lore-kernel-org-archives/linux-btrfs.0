@@ -1,15 +1,14 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:32675 "EHLO
+Received: from aserp1040.oracle.com ([141.146.126.69]:32806 "EHLO
 	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932359AbcBIBMW (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 8 Feb 2016 20:12:22 -0500
-Subject: [PATCH 04/23] reflink: remove redundant filesystem checks from the
- end of the tests
+	with ESMTP id S932359AbcBIBMv (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 8 Feb 2016 20:12:51 -0500
+Subject: [PATCH 08/23] reflink: test CoW behavior with IO errors
 From: "Darrick J. Wong" <darrick.wong@oracle.com>
 To: david@fromorbit.com, darrick.wong@oracle.com
 Cc: linux-btrfs@vger.kernel.org, fstests@vger.kernel.org, xfs@oss.sgi.com
-Date: Mon, 08 Feb 2016 17:12:11 -0800
-Message-ID: <20160209011211.23099.49959.stgit@birch.djwong.org>
+Date: Mon, 08 Feb 2016 17:12:36 -0800
+Message-ID: <20160209011236.23099.3947.stgit@birch.djwong.org>
 In-Reply-To: <20160209011145.23099.95354.stgit@birch.djwong.org>
 References: <20160209011145.23099.95354.stgit@birch.djwong.org>
 MIME-Version: 1.0
@@ -17,675 +16,1659 @@ Content-Type: text/plain; charset="utf-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Turns out that check already runs _check_filesystems after each test,
-so we don't need to do this at the end of each test.
+Test various scenarios (with dm-flakey) where we simulate write
+failures during CoW, to see if the FS can get through it without
+blowing up or corrupting data.  Plumb in a FS-generic method to
+sort out repairing filesystems after they get hit by IO errors.
 
 Signed-off-by: Darrick J. Wong <darrick.wong@oracle.com>
 ---
- tests/generic/157 |    1 -
- tests/generic/158 |    1 -
- tests/generic/161 |    1 -
- tests/generic/162 |    1 -
- tests/generic/163 |    1 -
- tests/generic/164 |    1 -
- tests/generic/165 |    1 -
- tests/generic/166 |    1 -
- tests/generic/167 |    1 -
- tests/generic/168 |    1 -
- tests/generic/170 |    1 -
- tests/generic/171 |    1 -
- tests/generic/172 |    1 -
- tests/generic/173 |    1 -
- tests/generic/174 |    1 -
- tests/generic/175 |    1 -
- tests/generic/176 |    1 -
- tests/generic/183 |    1 -
- tests/generic/185 |    1 -
- tests/generic/186 |    1 -
- tests/generic/187 |    1 -
- tests/generic/188 |    1 -
- tests/generic/189 |    1 -
- tests/generic/190 |    1 -
- tests/generic/191 |    1 -
- tests/generic/194 |    1 -
- tests/generic/195 |    1 -
- tests/generic/196 |    1 -
- tests/generic/197 |    1 -
- tests/generic/199 |    1 -
- tests/generic/200 |    1 -
- tests/generic/201 |    1 -
- tests/generic/202 |    1 -
- tests/generic/203 |    1 -
- tests/generic/205 |    1 -
- tests/generic/206 |    1 -
- tests/generic/216 |    1 -
- tests/generic/217 |    1 -
- tests/generic/218 |    1 -
- tests/generic/220 |    1 -
- tests/generic/222 |    1 -
- tests/generic/227 |    1 -
- tests/generic/229 |    1 -
- tests/generic/238 |    1 -
- tests/generic/242 |    1 -
- tests/generic/243 |    1 -
- tests/xfs/127     |    1 -
- tests/xfs/128     |    1 -
- tests/xfs/131     |    1 -
- tests/xfs/139     |    1 -
- tests/xfs/140     |    1 -
- 51 files changed, 51 deletions(-)
+ common/rc             |   28 +++++++++++++
+ tests/generic/265     |  102 +++++++++++++++++++++++++++++++++++++++++++++++
+ tests/generic/265.out |   11 +++++
+ tests/generic/266     |  103 +++++++++++++++++++++++++++++++++++++++++++++++
+ tests/generic/266.out |   12 +++++
+ tests/generic/267     |  103 +++++++++++++++++++++++++++++++++++++++++++++++
+ tests/generic/267.out |   10 +++++
+ tests/generic/268     |  106 +++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/generic/268.out |   12 +++++
+ tests/generic/271     |  102 +++++++++++++++++++++++++++++++++++++++++++++++
+ tests/generic/271.out |   11 +++++
+ tests/generic/272     |  103 +++++++++++++++++++++++++++++++++++++++++++++++
+ tests/generic/272.out |   12 +++++
+ tests/generic/276     |  103 +++++++++++++++++++++++++++++++++++++++++++++++
+ tests/generic/276.out |   11 +++++
+ tests/generic/278     |  106 +++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/generic/278.out |   12 +++++
+ tests/generic/279     |  103 +++++++++++++++++++++++++++++++++++++++++++++++
+ tests/generic/279.out |   11 +++++
+ tests/generic/281     |  104 ++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/generic/281.out |   12 +++++
+ tests/generic/282     |  104 ++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/generic/282.out |   10 +++++
+ tests/generic/283     |  107 +++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/generic/283.out |   12 +++++
+ tests/generic/group   |   12 +++++
+ 26 files changed, 1422 insertions(+)
+ create mode 100755 tests/generic/265
+ create mode 100644 tests/generic/265.out
+ create mode 100755 tests/generic/266
+ create mode 100644 tests/generic/266.out
+ create mode 100755 tests/generic/267
+ create mode 100644 tests/generic/267.out
+ create mode 100755 tests/generic/268
+ create mode 100644 tests/generic/268.out
+ create mode 100755 tests/generic/271
+ create mode 100644 tests/generic/271.out
+ create mode 100755 tests/generic/272
+ create mode 100644 tests/generic/272.out
+ create mode 100755 tests/generic/276
+ create mode 100644 tests/generic/276.out
+ create mode 100755 tests/generic/278
+ create mode 100644 tests/generic/278.out
+ create mode 100755 tests/generic/279
+ create mode 100644 tests/generic/279.out
+ create mode 100755 tests/generic/281
+ create mode 100644 tests/generic/281.out
+ create mode 100755 tests/generic/282
+ create mode 100644 tests/generic/282.out
+ create mode 100755 tests/generic/283
+ create mode 100644 tests/generic/283.out
 
 
-diff --git a/tests/generic/157 b/tests/generic/157
-index 0150866..74314d8 100755
---- a/tests/generic/157
-+++ b/tests/generic/157
-@@ -123,7 +123,6 @@ _reflink_range "$testdir2/file1" 0 "$testdir2/file2" 0 $blksz >> "$seqres.full"
- 
- echo "Check scratch fs"
- _scratch_unmount
--_check_scratch_fs
- 
- # success, all done
- status=0
-diff --git a/tests/generic/158 b/tests/generic/158
-index 807c247..779d55e 100755
---- a/tests/generic/158
-+++ b/tests/generic/158
-@@ -124,7 +124,6 @@ _dedupe_range "$testdir2/file1" 0 "$testdir2/file2" 0 $blksz >> "$seqres.full"
- 
- echo "Check scratch fs"
- _scratch_unmount
--_check_scratch_fs
- 
- # success, all done
- status=0
-diff --git a/tests/generic/161 b/tests/generic/161
-index 7fb8963..b271936 100755
---- a/tests/generic/161
-+++ b/tests/generic/161
-@@ -71,7 +71,6 @@ wait
- 
- echo "Check fs"
- umount "$SCRATCH_MNT"
--_check_scratch_fs
- 
- echo "Done"
- # success, all done
-diff --git a/tests/generic/162 b/tests/generic/162
-index 2fb947a..30c761b 100755
---- a/tests/generic/162
-+++ b/tests/generic/162
-@@ -87,7 +87,6 @@ wait
- 
- echo "Check fs"
- umount "$SCRATCH_MNT"
--_check_scratch_fs
- 
- echo "Done"
- # success, all done
-diff --git a/tests/generic/163 b/tests/generic/163
-index 0186443..f2ea334 100755
---- a/tests/generic/163
-+++ b/tests/generic/163
-@@ -87,7 +87,6 @@ wait
- 
- echo "Check fs"
- umount "$SCRATCH_MNT"
--_check_scratch_fs
- 
- echo "Done"
- # success, all done
-diff --git a/tests/generic/164 b/tests/generic/164
-index 087c6ba..e97ac13 100755
---- a/tests/generic/164
-+++ b/tests/generic/164
-@@ -97,7 +97,6 @@ wait
- 
- echo "Check fs"
- umount "$SCRATCH_MNT"
--_check_scratch_fs
- 
- echo "Done"
- # success, all done
-diff --git a/tests/generic/165 b/tests/generic/165
-index 6bd15e1..b305079 100755
---- a/tests/generic/165
-+++ b/tests/generic/165
-@@ -97,7 +97,6 @@ wait
- 
- echo "Check fs"
- umount "$SCRATCH_MNT"
--_check_scratch_fs
- 
- echo "Done"
- # success, all done
-diff --git a/tests/generic/166 b/tests/generic/166
-index 6cfb821..2c2ff4e 100755
---- a/tests/generic/166
-+++ b/tests/generic/166
-@@ -84,7 +84,6 @@ wait
- 
- echo "Check for damage"
- _scratch_unmount
--_check_scratch_fs
- 
- echo "Done"
- 
-diff --git a/tests/generic/167 b/tests/generic/167
-index fc5a86c..b80b481 100755
---- a/tests/generic/167
-+++ b/tests/generic/167
-@@ -84,7 +84,6 @@ wait
- 
- echo "Check for damage"
- _scratch_unmount
--_check_scratch_fs
- 
- echo "Done"
- 
-diff --git a/tests/generic/168 b/tests/generic/168
-index ee3848d..0d620da 100755
---- a/tests/generic/168
-+++ b/tests/generic/168
-@@ -88,7 +88,6 @@ wait
- 
- echo "Check for damage"
- umount "$SCRATCH_MNT"
--_check_scratch_fs
- 
- echo "Done"
- 
-diff --git a/tests/generic/170 b/tests/generic/170
-index 6d27810..78ed63d 100755
---- a/tests/generic/170
-+++ b/tests/generic/170
-@@ -88,7 +88,6 @@ wait
- 
- echo "Check for damage"
- umount "$SCRATCH_MNT"
--_check_scratch_fs
- 
- echo "Done"
- 
-diff --git a/tests/generic/171 b/tests/generic/171
-index ec3729d..4b4f141 100755
---- a/tests/generic/171
-+++ b/tests/generic/171
-@@ -100,7 +100,6 @@ echo "${out}"
- 
- echo "Check scratch fs"
- umount "$SCRATCH_MNT"
--_check_scratch_fs
- 
- # success, all done
- status=0
-diff --git a/tests/generic/172 b/tests/generic/172
-index 1988c8d..98eb97f 100755
---- a/tests/generic/172
-+++ b/tests/generic/172
-@@ -100,7 +100,6 @@ echo "${out}"
- 
- echo "Check scratch fs"
- umount "$SCRATCH_MNT"
--_check_scratch_fs
- 
- # success, all done
- status=0
-diff --git a/tests/generic/173 b/tests/generic/173
-index 5bb9ce6..e26f5a9 100755
---- a/tests/generic/173
-+++ b/tests/generic/173
-@@ -102,7 +102,6 @@ fi
- 
- echo "Check scratch fs"
- umount "$SCRATCH_MNT"
--_check_scratch_fs
- 
- # success, all done
- status=0
-diff --git a/tests/generic/174 b/tests/generic/174
-index a8e0bb5..1749a1c 100755
---- a/tests/generic/174
-+++ b/tests/generic/174
-@@ -100,7 +100,6 @@ echo "${out}"
- 
- echo "Check scratch fs"
- umount "$SCRATCH_MNT"
--_check_scratch_fs
- 
- # success, all done
- status=0
-diff --git a/tests/generic/175 b/tests/generic/175
-index b37ff66..ac2f54f 100755
---- a/tests/generic/175
-+++ b/tests/generic/175
-@@ -92,7 +92,6 @@ _check_scratch_fs
- echo "Remove all files and recheck"
- _scratch_mount >> "$seqres.full" 2>&1
- umount "$SCRATCH_MNT"
--_check_scratch_fs
- 
- # success, all done
- status=0
-diff --git a/tests/generic/176 b/tests/generic/176
-index 0ca0b17..e32f94f 100755
---- a/tests/generic/176
-+++ b/tests/generic/176
-@@ -74,7 +74,6 @@ done
- 
- echo "Check scratch fs"
- umount "$SCRATCH_MNT"
--_check_scratch_fs
- 
- # success, all done
- status=0
-diff --git a/tests/generic/183 b/tests/generic/183
-index 8141f38..27179fd 100755
---- a/tests/generic/183
-+++ b/tests/generic/183
-@@ -94,7 +94,6 @@ md5sum "$testdir/file3.chk" | _filter_scratch
- 
- echo "Check for damage"
- umount "$SCRATCH_MNT"
--_check_scratch_fs
- 
- # success, all done
- status=0
-diff --git a/tests/generic/185 b/tests/generic/185
-index 1d6dff2..368260d 100755
---- a/tests/generic/185
-+++ b/tests/generic/185
-@@ -94,7 +94,6 @@ md5sum "$testdir/file3.chk" | _filter_scratch
- 
- echo "Check for damage"
- umount "$SCRATCH_MNT"
--_check_scratch_fs
- 
- # success, all done
- status=0
-diff --git a/tests/generic/186 b/tests/generic/186
-index 9aac966..67e52b5 100755
---- a/tests/generic/186
-+++ b/tests/generic/186
-@@ -139,7 +139,6 @@ md5sum "$testdir/file3.chk" | _filter_scratch
- 
- echo "Check for damage"
- umount "$SCRATCH_MNT"
--_check_scratch_fs
- 
- # success, all done
- status=0
-diff --git a/tests/generic/187 b/tests/generic/187
-index b3f1542..c993394 100755
---- a/tests/generic/187
-+++ b/tests/generic/187
-@@ -139,7 +139,6 @@ md5sum "$testdir/file3.chk" | _filter_scratch
- 
- echo "Check for damage"
- umount "$SCRATCH_MNT"
--_check_scratch_fs
- 
- # success, all done
- status=0
-diff --git a/tests/generic/188 b/tests/generic/188
-index c67b847..9e63388 100755
---- a/tests/generic/188
-+++ b/tests/generic/188
-@@ -89,7 +89,6 @@ md5sum "$testdir/file3.chk" | _filter_scratch
- 
- echo "Check for damage"
- umount "$SCRATCH_MNT"
--_check_scratch_fs
- 
- # success, all done
- status=0
-diff --git a/tests/generic/189 b/tests/generic/189
-index 1954235..661129c 100755
---- a/tests/generic/189
-+++ b/tests/generic/189
-@@ -89,7 +89,6 @@ md5sum "$testdir/file3.chk" | _filter_scratch
- 
- echo "Check for damage"
- umount "$SCRATCH_MNT"
--_check_scratch_fs
- 
- # success, all done
- status=0
-diff --git a/tests/generic/190 b/tests/generic/190
-index d3d573b..4e272c2 100755
---- a/tests/generic/190
-+++ b/tests/generic/190
-@@ -89,7 +89,6 @@ md5sum "$testdir/file3.chk" | _filter_scratch
- 
- echo "Check for damage"
- umount "$SCRATCH_MNT"
--_check_scratch_fs
- 
- # success, all done
- status=0
-diff --git a/tests/generic/191 b/tests/generic/191
-index 8b19084..5aadded 100755
---- a/tests/generic/191
-+++ b/tests/generic/191
-@@ -89,7 +89,6 @@ md5sum "$testdir/file3.chk" | _filter_scratch
- 
- echo "Check for damage"
- umount "$SCRATCH_MNT"
--_check_scratch_fs
- 
- # success, all done
- status=0
-diff --git a/tests/generic/194 b/tests/generic/194
-index 1fc2cd7..a17debc 100755
---- a/tests/generic/194
-+++ b/tests/generic/194
-@@ -94,7 +94,6 @@ md5sum "$testdir/file3.chk" | _filter_scratch
- 
- echo "Check for damage"
- umount "$SCRATCH_MNT"
--_check_scratch_fs
- 
- # success, all done
- status=0
-diff --git a/tests/generic/195 b/tests/generic/195
-index 087275c..f49d0c2 100755
---- a/tests/generic/195
-+++ b/tests/generic/195
-@@ -94,7 +94,6 @@ md5sum "$testdir/file3.chk" | _filter_scratch
- 
- echo "Check for damage"
- umount "$SCRATCH_MNT"
--_check_scratch_fs
- 
- # success, all done
- status=0
-diff --git a/tests/generic/196 b/tests/generic/196
-index d815232..4da9c76 100755
---- a/tests/generic/196
-+++ b/tests/generic/196
-@@ -89,7 +89,6 @@ md5sum "$testdir/file3.chk" | _filter_scratch
- 
- echo "Check for damage"
- umount "$SCRATCH_MNT"
--_check_scratch_fs
- 
- # success, all done
- status=0
-diff --git a/tests/generic/197 b/tests/generic/197
-index 54005ae..54ee5ab 100755
---- a/tests/generic/197
-+++ b/tests/generic/197
-@@ -89,7 +89,6 @@ md5sum "$testdir/file3.chk" | _filter_scratch
- 
- echo "Check for damage"
- umount "$SCRATCH_MNT"
--_check_scratch_fs
- 
- # success, all done
- status=0
-diff --git a/tests/generic/199 b/tests/generic/199
-index eb567e4..5e4bca8 100755
---- a/tests/generic/199
-+++ b/tests/generic/199
-@@ -118,7 +118,6 @@ md5sum "$testdir/file3.chk" | _filter_scratch
- 
- echo "Check for damage"
- umount "$SCRATCH_MNT"
--_check_scratch_fs
- 
- # success, all done
- status=0
-diff --git a/tests/generic/200 b/tests/generic/200
-index 991fed0..f0521ae 100755
---- a/tests/generic/200
-+++ b/tests/generic/200
-@@ -118,7 +118,6 @@ md5sum "$testdir/file3.chk" | _filter_scratch
- 
- echo "Check for damage"
- umount "$SCRATCH_MNT"
--_check_scratch_fs
- 
- # success, all done
- status=0
-diff --git a/tests/generic/201 b/tests/generic/201
-index ffc1ce4..db77a5e 100755
---- a/tests/generic/201
-+++ b/tests/generic/201
-@@ -79,7 +79,6 @@ rm "$testdir/file3"
- 
- echo "Check for damage"
- umount "$SCRATCH_MNT"
--_check_scratch_fs
- 
- # success, all done
- status=0
-diff --git a/tests/generic/202 b/tests/generic/202
-index 375b65f..91f2d9b 100755
---- a/tests/generic/202
-+++ b/tests/generic/202
-@@ -79,7 +79,6 @@ md5sum "$testdir/file2.chk" | _filter_scratch
- 
- echo "Check for damage"
- umount "$SCRATCH_MNT"
--_check_scratch_fs
- 
- # success, all done
- status=0
-diff --git a/tests/generic/203 b/tests/generic/203
-index 549f2ba..86a672b 100755
---- a/tests/generic/203
-+++ b/tests/generic/203
-@@ -79,7 +79,6 @@ md5sum "$testdir/file2.chk" | _filter_scratch
- 
- echo "Check for damage"
- umount "$SCRATCH_MNT"
--_check_scratch_fs
- 
- # success, all done
- status=0
-diff --git a/tests/generic/205 b/tests/generic/205
-index 8f0ec45..8fed955 100755
---- a/tests/generic/205
-+++ b/tests/generic/205
-@@ -95,7 +95,6 @@ cmp -s "$testdir/file2" "$testdir/file2.chk" || _fail "file2 and file2.chk don't
- 
- echo "Check for damage"
- umount "$SCRATCH_MNT"
--_check_scratch_fs
- 
- # success, all done
- status=0
-diff --git a/tests/generic/206 b/tests/generic/206
-index f2c4ecc..10b5285 100755
---- a/tests/generic/206
-+++ b/tests/generic/206
-@@ -95,7 +95,6 @@ cmp -s "$testdir/file2" "$testdir/file2.chk" || _fail "file2 and file2.chk don't
- 
- echo "Check for damage"
- umount "$SCRATCH_MNT"
--_check_scratch_fs
- 
- # success, all done
- status=0
-diff --git a/tests/generic/216 b/tests/generic/216
-index 3789cb0..671f0c1 100755
---- a/tests/generic/216
-+++ b/tests/generic/216
-@@ -96,7 +96,6 @@ cmp -s "$testdir/file2" "$testdir/file2.chk" || _fail "file2 and file2.chk don't
- 
- echo "Check for damage"
- umount "$SCRATCH_MNT"
--_check_scratch_fs
- 
- # success, all done
- status=0
-diff --git a/tests/generic/217 b/tests/generic/217
-index 4ae603f..e4d40c7 100755
---- a/tests/generic/217
-+++ b/tests/generic/217
-@@ -96,7 +96,6 @@ cmp -s "$testdir/file2" "$testdir/file2.chk" || _fail "file2 and file2.chk don't
- 
- echo "Check for damage"
- umount "$SCRATCH_MNT"
--_check_scratch_fs
- 
- # success, all done
- status=0
-diff --git a/tests/generic/218 b/tests/generic/218
-index d63c06f..eb52fea 100755
---- a/tests/generic/218
-+++ b/tests/generic/218
-@@ -90,7 +90,6 @@ cmp -s "$testdir/file2" "$testdir/file2.chk" || _fail "file2 and file2.chk don't
- 
- echo "Check for damage"
- umount "$SCRATCH_MNT"
--_check_scratch_fs
- 
- # success, all done
- status=0
-diff --git a/tests/generic/220 b/tests/generic/220
-index ccdb32e..fb5ecda 100755
---- a/tests/generic/220
-+++ b/tests/generic/220
-@@ -90,7 +90,6 @@ cmp -s "$testdir/file2" "$testdir/file2.chk" || _fail "file2 and file2.chk don't
- 
- echo "Check for damage"
- umount "$SCRATCH_MNT"
--_check_scratch_fs
- 
- # success, all done
- status=0
-diff --git a/tests/generic/222 b/tests/generic/222
-index cb5a788..ab3f65f 100755
---- a/tests/generic/222
-+++ b/tests/generic/222
-@@ -96,7 +96,6 @@ cmp -s "$testdir/file2" "$testdir/file2.chk" || _fail "file2 and file2.chk don't
- 
- echo "Check for damage"
- umount "$SCRATCH_MNT"
--_check_scratch_fs
- 
- # success, all done
- status=0
-diff --git a/tests/generic/227 b/tests/generic/227
-index d200424..387c714 100755
---- a/tests/generic/227
-+++ b/tests/generic/227
-@@ -96,7 +96,6 @@ cmp -s "$testdir/file2" "$testdir/file2.chk" || _fail "file2 and file2.chk don't
- 
- echo "Check for damage"
- umount "$SCRATCH_MNT"
--_check_scratch_fs
- 
- # success, all done
- status=0
-diff --git a/tests/generic/229 b/tests/generic/229
-index cdaddaf..eb105a3 100755
---- a/tests/generic/229
-+++ b/tests/generic/229
-@@ -156,7 +156,6 @@ runtest delalloc regular "$testdir/d-r"
- 
- echo "Check for damage"
- umount "$SCRATCH_MNT"
--_check_scratch_fs
- 
- # success, all done
- status=0
-diff --git a/tests/generic/238 b/tests/generic/238
-index 98530e0..02057ad 100755
---- a/tests/generic/238
-+++ b/tests/generic/238
-@@ -156,7 +156,6 @@ runtest delalloc regular "$testdir/d-r"
- 
- echo "Check for damage"
- umount "$SCRATCH_MNT"
--_check_scratch_fs
- 
- # success, all done
- status=0
-diff --git a/tests/generic/242 b/tests/generic/242
-index a5a17c3..3023ac7 100755
---- a/tests/generic/242
-+++ b/tests/generic/242
-@@ -92,7 +92,6 @@ md5sum "$testdir/file2.chk" | _filter_scratch
- 
- echo "Check for damage"
- umount "$SCRATCH_MNT"
--_check_scratch_fs
- 
- # success, all done
- status=0
-diff --git a/tests/generic/243 b/tests/generic/243
-index b7ca466..e65347f 100755
---- a/tests/generic/243
-+++ b/tests/generic/243
-@@ -92,7 +92,6 @@ md5sum "$testdir/file2.chk" | _filter_scratch
- 
- echo "Check for damage"
- umount "$SCRATCH_MNT"
--_check_scratch_fs
- 
- # success, all done
- status=0
-diff --git a/tests/xfs/127 b/tests/xfs/127
-index c31cd17..63d5890 100755
---- a/tests/xfs/127
-+++ b/tests/xfs/127
-@@ -72,7 +72,6 @@ xfs_info "$SCRATCH_MNT" >> "$seqres.full"
- 
- echo "Check scratch fs"
- umount "$SCRATCH_MNT"
--_check_scratch_fs
- 
- # success, all done
- status=0
-diff --git a/tests/xfs/128 b/tests/xfs/128
-index c9547fb..2e1da3f 100755
---- a/tests/xfs/128
-+++ b/tests/xfs/128
-@@ -142,7 +142,6 @@ _within_tolerance "free blocks after all tests" $free_blocks3 $((free_blocks0 -
- 
- echo "Check scratch fs"
- umount "$SCRATCH_MNT"
--_check_scratch_fs
- 
- # success, all done
- status=0
-diff --git a/tests/xfs/131 b/tests/xfs/131
-index 8442821..adab31f 100755
---- a/tests/xfs/131
-+++ b/tests/xfs/131
-@@ -69,7 +69,6 @@ test -s "$testdir/file2" && _fail "Should not be able to reflink a realtime file
- 
- echo "Check restored fs"
- umount "$SCRATCH_MNT"
--_check_scratch_fs
- 
- # success, all done
- status=0
-diff --git a/tests/xfs/139 b/tests/xfs/139
-index 51c903e..feb55bd 100755
---- a/tests/xfs/139
-+++ b/tests/xfs/139
-@@ -75,7 +75,6 @@ md5sum "$testdir/file2" | _filter_scratch
- 
- echo "Check scratch fs"
- umount "$SCRATCH_MNT"
--_check_scratch_fs
- 
- # success, all done
- status=0
-diff --git a/tests/xfs/140 b/tests/xfs/140
-index 133bb72..309b284 100644
---- a/tests/xfs/140
-+++ b/tests/xfs/140
-@@ -82,7 +82,6 @@ cmp -s "$testdir/file2" "$testdir/file2.chk" || echo "file2 and file2.chk do not
- 
- echo "Check scratch fs"
- umount "$SCRATCH_MNT"
--_check_scratch_fs
- 
- # success, all done
- status=0
+diff --git a/common/rc b/common/rc
+index 863d4b3..467c217 100644
+--- a/common/rc
++++ b/common/rc
+@@ -953,6 +953,34 @@ _scratch_xfs_repair()
+     $XFS_REPAIR_PROG $SCRATCH_OPTIONS $* $SCRATCH_DEV
+ }
+ 
++_repair_scratch_fs()
++{
++    case $FSTYP in
++    xfs)
++        _scratch_xfs_repair "$@"
++	res=$?
++	if [ "$res" -eq 2 ]; then
++		echo "xfs_repair returns $res; replay log?"
++		_scratch_mount
++		res=$?
++		if [ "$res" -gt 0 ]; then
++			echo "mount returns $res; zap log?"
++			_scratch_xfs_repair -L
++			echo "log zap returns $?"
++		else
++			umount "$SCRATCH_MNT"
++		fi
++		_scratch_xfs_repair "$@"
++	fi
++	echo "error $?"
++        ;;
++    *)
++        # Let's hope fsck -y suffices...
++        fsck -t $FSTYP -y $SCRATCH_DEV
++        ;;
++    esac
++}
++
+ _get_pids_by_name()
+ {
+     if [ $# -ne 1 ]
+diff --git a/tests/generic/265 b/tests/generic/265
+new file mode 100755
+index 0000000..e91b307
+--- /dev/null
++++ b/tests/generic/265
+@@ -0,0 +1,102 @@
++#! /bin/bash
++# FS QA Test No. 265
++#
++# Test CoW behavior when the write temporarily fails.
++#
++#-----------------------------------------------------------------------
++# Copyright (c) 2016, Oracle and/or its affiliates.  All Rights Reserved.
++#
++# This program is free software; you can redistribute it and/or
++# modify it under the terms of the GNU General Public License as
++# published by the Free Software Foundation.
++#
++# This program is distributed in the hope that it would be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write the Free Software Foundation,
++# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++#-----------------------------------------------------------------------
++
++seq=`basename "$0"`
++seqres="$RESULT_DIR/$seq"
++echo "QA output created by $seq"
++
++here=`pwd`
++tmp=/tmp/$$
++status=1    # failure is the default!
++trap "_cleanup; exit \$status" 0 1 2 3 15
++
++_cleanup()
++{
++    cd /
++    rm -rf "$tmp".*
++    _dmerror_cleanup
++}
++
++# get standard environment, filters and checks
++. ./common/rc
++. ./common/filter
++. ./common/reflink
++. ./common/dmerror
++
++# real QA test starts here
++_supported_os Linux
++_require_scratch_reflink
++_require_cp_reflink
++_need_to_be_root
++_require_dm_target error
++
++rm -f "$seqres.full"
++
++
++echo "Format and mount"
++_scratch_mkfs > "$seqres.full" 2>&1
++_dmerror_init
++_dmerror_mount >> "$seqres.full" 2>&1
++
++testdir="$SCRATCH_MNT/test-$seq"
++rm -rf $testdir
++mkdir $testdir
++
++blksz=65536
++nr=640
++bsz=128
++
++free_blocks=$(stat -f -c '%a' "$testdir")
++real_blksz=$(stat -f -c '%S' "$testdir")
++space_needed=$(((blksz * nr * 3) * 5 / 4))
++space_avail=$((free_blocks * real_blksz))
++test $space_needed -gt $space_avail && _notrun "Not enough space. $space_avail < $space_needed"
++
++echo "Create the original files"
++"$XFS_IO_PROG" -f -c "pwrite -S 0x61 -b $((blksz * bsz)) 0 $((blksz * nr))" "$testdir/file1" >> "$seqres.full"
++_cp_reflink "$testdir/file1" "$testdir/file2" >> "$seqres.full"
++_dmerror_unmount
++_dmerror_mount
++
++echo "Compare files"
++md5sum "$testdir/file1" | _filter_scratch
++md5sum "$testdir/file2" | _filter_scratch
++
++echo "CoW and unmount"
++sync
++_dmerror_load_error_table
++"$XFS_IO_PROG" -f -c "pwrite -S 0x63 -b $((blksz * bsz)) 0 $((blksz * nr))" -c "fdatasync" "$testdir/file2" >> "$seqres.full"
++_dmerror_load_working_table
++_dmerror_unmount
++_dmerror_mount
++
++echo "Compare files"
++md5sum "$testdir/file1" | _filter_scratch
++
++echo "Check for damage"
++_dmerror_unmount
++_dmerror_cleanup
++_repair_scratch_fs >> "$seqres.full" 2>&1
++
++# success, all done
++status=0
++exit
+diff --git a/tests/generic/265.out b/tests/generic/265.out
+new file mode 100644
+index 0000000..1b67114
+--- /dev/null
++++ b/tests/generic/265.out
+@@ -0,0 +1,11 @@
++QA output created by 265
++Format and mount
++Create the original files
++Compare files
++1886e67cf8783e89ce6ddc5bb09a3944  SCRATCH_MNT/test-265/file1
++1886e67cf8783e89ce6ddc5bb09a3944  SCRATCH_MNT/test-265/file2
++CoW and unmount
++fdatasync: Input/output error
++Compare files
++1886e67cf8783e89ce6ddc5bb09a3944  SCRATCH_MNT/test-265/file1
++Check for damage
+diff --git a/tests/generic/266 b/tests/generic/266
+new file mode 100755
+index 0000000..a100348
+--- /dev/null
++++ b/tests/generic/266
+@@ -0,0 +1,103 @@
++#! /bin/bash
++# FS QA Test No. 266
++#
++# Test CoW behavior when the write permanently fails.
++#
++#-----------------------------------------------------------------------
++# Copyright (c) 2016, Oracle and/or its affiliates.  All Rights Reserved.
++#
++# This program is free software; you can redistribute it and/or
++# modify it under the terms of the GNU General Public License as
++# published by the Free Software Foundation.
++#
++# This program is distributed in the hope that it would be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write the Free Software Foundation,
++# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++#-----------------------------------------------------------------------
++
++seq=`basename "$0"`
++seqres="$RESULT_DIR/$seq"
++echo "QA output created by $seq"
++
++here=`pwd`
++tmp=/tmp/$$
++status=1    # failure is the default!
++trap "_cleanup; exit \$status" 0 1 2 3 15
++
++_cleanup()
++{
++    cd /
++    rm -rf "$tmp".*
++    _dmerror_cleanup
++}
++
++# get standard environment, filters and checks
++. ./common/rc
++. ./common/filter
++. ./common/reflink
++. ./common/dmerror
++
++# real QA test starts here
++_supported_os Linux
++_require_scratch_reflink
++_require_cp_reflink
++_need_to_be_root
++_require_dm_target error
++
++rm -f "$seqres.full"
++
++
++echo "Format and mount"
++_scratch_mkfs > "$seqres.full" 2>&1
++_dmerror_init
++_dmerror_mount >> "$seqres.full" 2>&1
++
++testdir="$SCRATCH_MNT/test-$seq"
++rm -rf $testdir
++mkdir $testdir
++
++blksz=65536
++nr=640
++bsz=128
++
++free_blocks=$(stat -f -c '%a' "$testdir")
++real_blksz=$(stat -f -c '%S' "$testdir")
++space_needed=$(((blksz * nr * 3) * 5 / 4))
++space_avail=$((free_blocks * real_blksz))
++test $space_needed -gt $space_avail && _notrun "Not enough space. $space_avail < $space_needed"
++
++echo "Create the original files"
++"$XFS_IO_PROG" -f -c "pwrite -S 0x61 -b $((blksz * bsz)) 0 $((blksz * nr))" "$testdir/file1" >> "$seqres.full"
++_cp_reflink "$testdir/file1" "$testdir/file2" >> "$seqres.full"
++_dmerror_unmount
++_dmerror_mount
++
++echo "Compare files"
++md5sum "$testdir/file1" | _filter_scratch
++md5sum "$testdir/file2" | _filter_scratch
++
++echo "CoW and unmount"
++sync
++_dmerror_load_error_table
++"$XFS_IO_PROG" -f -c "pwrite -S 0x63 -b $((blksz * bsz)) 0 $((blksz * nr))" -c "fdatasync" "$testdir/file2" >> "$seqres.full"
++
++echo "Clean up the mess"
++_dmerror_unmount
++_dmerror_cleanup
++_repair_scratch_fs >> "$seqres.full" 2>&1
++_scratch_mount >> "$seqres.full" 2>&1
++
++echo "Compare files"
++md5sum "$testdir/file1" | _filter_scratch
++
++echo "Check for damage"
++umount "$SCRATCH_MNT"
++
++# success, all done
++status=0
++exit
+diff --git a/tests/generic/266.out b/tests/generic/266.out
+new file mode 100644
+index 0000000..bcfa097
+--- /dev/null
++++ b/tests/generic/266.out
+@@ -0,0 +1,12 @@
++QA output created by 266
++Format and mount
++Create the original files
++Compare files
++1886e67cf8783e89ce6ddc5bb09a3944  SCRATCH_MNT/test-266/file1
++1886e67cf8783e89ce6ddc5bb09a3944  SCRATCH_MNT/test-266/file2
++CoW and unmount
++fdatasync: Input/output error
++Clean up the mess
++Compare files
++1886e67cf8783e89ce6ddc5bb09a3944  SCRATCH_MNT/test-266/file1
++Check for damage
+diff --git a/tests/generic/267 b/tests/generic/267
+new file mode 100755
+index 0000000..25aaed7
+--- /dev/null
++++ b/tests/generic/267
+@@ -0,0 +1,103 @@
++#! /bin/bash
++# FS QA Test No. 267
++#
++# Test CoW behavior when the write temporarily fails and we unmount.
++#
++#-----------------------------------------------------------------------
++# Copyright (c) 2016, Oracle and/or its affiliates.  All Rights Reserved.
++#
++# This program is free software; you can redistribute it and/or
++# modify it under the terms of the GNU General Public License as
++# published by the Free Software Foundation.
++#
++# This program is distributed in the hope that it would be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write the Free Software Foundation,
++# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++#-----------------------------------------------------------------------
++
++seq=`basename "$0"`
++seqres="$RESULT_DIR/$seq"
++echo "QA output created by $seq"
++
++here=`pwd`
++tmp=/tmp/$$
++status=1    # failure is the default!
++trap "_cleanup; exit \$status" 0 1 2 3 15
++
++_cleanup()
++{
++    cd /
++    rm -rf "$tmp".*
++    _dmerror_cleanup
++}
++
++# get standard environment, filters and checks
++. ./common/rc
++. ./common/filter
++. ./common/reflink
++. ./common/dmerror
++
++# real QA test starts here
++_supported_os Linux
++_require_scratch_reflink
++_require_cp_reflink
++_need_to_be_root
++_require_dm_target error
++
++rm -f "$seqres.full"
++
++
++echo "Format and mount"
++_scratch_mkfs > "$seqres.full" 2>&1
++_dmerror_init
++_dmerror_mount >> "$seqres.full" 2>&1
++
++testdir="$SCRATCH_MNT/test-$seq"
++rm -rf $testdir
++mkdir $testdir
++
++blksz=65536
++nr=640
++bsz=128
++
++free_blocks=$(stat -f -c '%a' "$testdir")
++real_blksz=$(stat -f -c '%S' "$testdir")
++space_needed=$(((blksz * nr * 3) * 5 / 4))
++space_avail=$((free_blocks * real_blksz))
++test $space_needed -gt $space_avail && _notrun "Not enough space. $space_avail < $space_needed"
++
++echo "Create the original files"
++"$XFS_IO_PROG" -f -c "pwrite -S 0x61 -b $((blksz * bsz)) 0 $((blksz * nr))" "$testdir/file1" >> "$seqres.full"
++_cp_reflink "$testdir/file1" "$testdir/file2" >> "$seqres.full"
++_dmerror_unmount
++_dmerror_mount
++
++echo "Compare files"
++md5sum "$testdir/file1" | _filter_scratch
++md5sum "$testdir/file2" | _filter_scratch
++
++echo "CoW and unmount"
++sync
++_dmerror_load_error_table
++"$XFS_IO_PROG" -f -c "pwrite -S 0x63 -b $((blksz * bsz)) 0 $((blksz * nr))" "$testdir/file2" >> "$seqres.full"
++_dmerror_load_working_table
++rm -rf "$testdir/file2" >> "$seqres.full" 2>&1
++_dmerror_unmount
++_dmerror_mount
++
++echo "Compare files"
++md5sum "$testdir/file1" | _filter_scratch
++
++echo "Check for damage"
++_dmerror_unmount
++_dmerror_cleanup
++_repair_scratch_fs >> "$seqres.full" 2>&1
++
++# success, all done
++status=0
++exit
+diff --git a/tests/generic/267.out b/tests/generic/267.out
+new file mode 100644
+index 0000000..3c58e67
+--- /dev/null
++++ b/tests/generic/267.out
+@@ -0,0 +1,10 @@
++QA output created by 267
++Format and mount
++Create the original files
++Compare files
++1886e67cf8783e89ce6ddc5bb09a3944  SCRATCH_MNT/test-267/file1
++1886e67cf8783e89ce6ddc5bb09a3944  SCRATCH_MNT/test-267/file2
++CoW and unmount
++Compare files
++1886e67cf8783e89ce6ddc5bb09a3944  SCRATCH_MNT/test-267/file1
++Check for damage
+diff --git a/tests/generic/268 b/tests/generic/268
+new file mode 100755
+index 0000000..fa3d991
+--- /dev/null
++++ b/tests/generic/268
+@@ -0,0 +1,106 @@
++#! /bin/bash
++# FS QA Test No. 268
++#
++# Test CoW behavior when the write temporarily fails but the userspace
++# program writes again.
++#
++#-----------------------------------------------------------------------
++# Copyright (c) 2016, Oracle and/or its affiliates.  All Rights Reserved.
++#
++# This program is free software; you can redistribute it and/or
++# modify it under the terms of the GNU General Public License as
++# published by the Free Software Foundation.
++#
++# This program is distributed in the hope that it would be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write the Free Software Foundation,
++# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++#-----------------------------------------------------------------------
++
++seq=`basename "$0"`
++seqres="$RESULT_DIR/$seq"
++echo "QA output created by $seq"
++
++here=`pwd`
++tmp=/tmp/$$
++status=1    # failure is the default!
++trap "_cleanup; exit \$status" 0 1 2 3 15
++
++_cleanup()
++{
++    cd /
++    rm -rf "$tmp".*
++    _dmerror_cleanup
++}
++
++# get standard environment, filters and checks
++. ./common/rc
++. ./common/filter
++. ./common/reflink
++. ./common/dmerror
++
++# real QA test starts here
++_supported_os Linux
++_require_scratch_reflink
++_require_cp_reflink
++_need_to_be_root
++_require_dm_target error
++
++rm -f "$seqres.full"
++
++
++echo "Format and mount"
++_scratch_mkfs > "$seqres.full" 2>&1
++_dmerror_init
++_dmerror_mount >> "$seqres.full" 2>&1
++
++testdir="$SCRATCH_MNT/test-$seq"
++rm -rf $testdir
++mkdir $testdir
++
++blksz=65536
++nr=640
++bsz=128
++
++free_blocks=$(stat -f -c '%a' "$testdir")
++real_blksz=$(stat -f -c '%S' "$testdir")
++space_needed=$(((blksz * nr * 3) * 5 / 4))
++space_avail=$((free_blocks * real_blksz))
++test $space_needed -gt $space_avail && _notrun "Not enough space. $space_avail < $space_needed"
++
++echo "Create the original files"
++"$XFS_IO_PROG" -f -c "pwrite -S 0x61 -b $((blksz * bsz)) 0 $((blksz * nr))" "$testdir/file1" >> "$seqres.full"
++_cp_reflink "$testdir/file1" "$testdir/file2" >> "$seqres.full"
++_dmerror_unmount
++_dmerror_mount
++
++echo "Compare files"
++md5sum "$testdir/file1" | _filter_scratch
++md5sum "$testdir/file2" | _filter_scratch
++
++echo "CoW and unmount"
++sync
++_dmerror_load_error_table
++"$XFS_IO_PROG" -f -c "pwrite -S 0x63 -b $((blksz * bsz)) 0 $((blksz * nr))" -c "fdatasync" "$testdir/file2" >> "$seqres.full"
++_dmerror_load_working_table
++
++echo "Rewrite"
++"$XFS_IO_PROG" -f -c "pwrite -S 0x64 -b $((blksz * bsz)) 0 $((blksz * nr))" -c "fdatasync" "$testdir/file2" >> "$seqres.full" 2>&1
++_dmerror_unmount
++_dmerror_mount
++
++echo "Compare files"
++md5sum "$testdir/file1" | _filter_scratch
++
++echo "Check for damage"
++_dmerror_unmount
++_dmerror_cleanup
++_repair_scratch_fs >> "$seqres.full" 2>&1
++
++# success, all done
++status=0
++exit
+diff --git a/tests/generic/268.out b/tests/generic/268.out
+new file mode 100644
+index 0000000..234e8be
+--- /dev/null
++++ b/tests/generic/268.out
+@@ -0,0 +1,12 @@
++QA output created by 268
++Format and mount
++Create the original files
++Compare files
++1886e67cf8783e89ce6ddc5bb09a3944  SCRATCH_MNT/test-268/file1
++1886e67cf8783e89ce6ddc5bb09a3944  SCRATCH_MNT/test-268/file2
++CoW and unmount
++fdatasync: Input/output error
++Rewrite
++Compare files
++1886e67cf8783e89ce6ddc5bb09a3944  SCRATCH_MNT/test-268/file1
++Check for damage
+diff --git a/tests/generic/271 b/tests/generic/271
+new file mode 100755
+index 0000000..efdd377
+--- /dev/null
++++ b/tests/generic/271
+@@ -0,0 +1,102 @@
++#! /bin/bash
++# FS QA Test No. 271
++#
++# Test DIO CoW behavior when the write temporarily fails.
++#
++#-----------------------------------------------------------------------
++# Copyright (c) 2016, Oracle and/or its affiliates.  All Rights Reserved.
++#
++# This program is free software; you can redistribute it and/or
++# modify it under the terms of the GNU General Public License as
++# published by the Free Software Foundation.
++#
++# This program is distributed in the hope that it would be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write the Free Software Foundation,
++# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++#-----------------------------------------------------------------------
++
++seq=`basename "$0"`
++seqres="$RESULT_DIR/$seq"
++echo "QA output created by $seq"
++
++here=`pwd`
++tmp=/tmp/$$
++status=1    # failure is the default!
++trap "_cleanup; exit \$status" 0 1 2 3 15
++
++_cleanup()
++{
++    cd /
++    rm -rf "$tmp".*
++    _dmerror_cleanup
++}
++
++# get standard environment, filters and checks
++. ./common/rc
++. ./common/filter
++. ./common/reflink
++. ./common/dmerror
++
++# real QA test starts here
++_supported_os Linux
++_require_scratch_reflink
++_require_cp_reflink
++_need_to_be_root
++_require_dm_target error
++
++rm -f "$seqres.full"
++
++
++echo "Format and mount"
++_scratch_mkfs > "$seqres.full" 2>&1
++_dmerror_init
++_dmerror_mount >> "$seqres.full" 2>&1
++
++testdir="$SCRATCH_MNT/test-$seq"
++rm -rf $testdir
++mkdir $testdir
++
++blksz=65536
++nr=640
++bsz=128
++
++free_blocks=$(stat -f -c '%a' "$testdir")
++real_blksz=$(stat -f -c '%S' "$testdir")
++space_needed=$(((blksz * nr * 3) * 5 / 4))
++space_avail=$((free_blocks * real_blksz))
++test $space_needed -gt $space_avail && _notrun "Not enough space. $space_avail < $space_needed"
++
++echo "Create the original files"
++"$XFS_IO_PROG" -f -c "pwrite -S 0x61 -b $((blksz * bsz)) 0 $((blksz * nr))" "$testdir/file1" >> "$seqres.full"
++_cp_reflink "$testdir/file1" "$testdir/file2" >> "$seqres.full"
++_dmerror_unmount
++_dmerror_mount
++
++echo "Compare files"
++md5sum "$testdir/file1" | _filter_scratch
++md5sum "$testdir/file2" | _filter_scratch
++
++echo "CoW and unmount"
++sync
++_dmerror_load_error_table
++"$XFS_IO_PROG" -d -f -c "pwrite -S 0x63 -b $((blksz * bsz)) 0 $((blksz * nr))" "$testdir/file2" >> "$seqres.full"
++_dmerror_load_working_table
++_dmerror_unmount
++_dmerror_mount
++
++echo "Compare files"
++md5sum "$testdir/file1" | _filter_scratch
++
++echo "Check for damage"
++_dmerror_unmount
++_dmerror_cleanup
++_repair_scratch_fs >> "$seqres.full" 2>&1
++
++# success, all done
++status=0
++exit
+diff --git a/tests/generic/271.out b/tests/generic/271.out
+new file mode 100644
+index 0000000..f7ea004
+--- /dev/null
++++ b/tests/generic/271.out
+@@ -0,0 +1,11 @@
++QA output created by 271
++Format and mount
++Create the original files
++Compare files
++1886e67cf8783e89ce6ddc5bb09a3944  SCRATCH_MNT/test-271/file1
++1886e67cf8783e89ce6ddc5bb09a3944  SCRATCH_MNT/test-271/file2
++CoW and unmount
++pwrite64: Input/output error
++Compare files
++1886e67cf8783e89ce6ddc5bb09a3944  SCRATCH_MNT/test-271/file1
++Check for damage
+diff --git a/tests/generic/272 b/tests/generic/272
+new file mode 100755
+index 0000000..64c9834
+--- /dev/null
++++ b/tests/generic/272
+@@ -0,0 +1,103 @@
++#! /bin/bash
++# FS QA Test No. 272
++#
++# Test DIO CoW behavior when the write permanently fails.
++#
++#-----------------------------------------------------------------------
++# Copyright (c) 2016, Oracle and/or its affiliates.  All Rights Reserved.
++#
++# This program is free software; you can redistribute it and/or
++# modify it under the terms of the GNU General Public License as
++# published by the Free Software Foundation.
++#
++# This program is distributed in the hope that it would be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write the Free Software Foundation,
++# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++#-----------------------------------------------------------------------
++
++seq=`basename "$0"`
++seqres="$RESULT_DIR/$seq"
++echo "QA output created by $seq"
++
++here=`pwd`
++tmp=/tmp/$$
++status=1    # failure is the default!
++trap "_cleanup; exit \$status" 0 1 2 3 15
++
++_cleanup()
++{
++    cd /
++    rm -rf "$tmp".*
++    _dmerror_cleanup
++}
++
++# get standard environment, filters and checks
++. ./common/rc
++. ./common/filter
++. ./common/reflink
++. ./common/dmerror
++
++# real QA test starts here
++_supported_os Linux
++_require_scratch_reflink
++_require_cp_reflink
++_need_to_be_root
++_require_dm_target error
++
++rm -f "$seqres.full"
++
++
++echo "Format and mount"
++_scratch_mkfs > "$seqres.full" 2>&1
++_dmerror_init
++_dmerror_mount >> "$seqres.full" 2>&1
++
++testdir="$SCRATCH_MNT/test-$seq"
++rm -rf $testdir
++mkdir $testdir
++
++blksz=65536
++nr=640
++bsz=128
++
++free_blocks=$(stat -f -c '%a' "$testdir")
++real_blksz=$(stat -f -c '%S' "$testdir")
++space_needed=$(((blksz * nr * 3) * 5 / 4))
++space_avail=$((free_blocks * real_blksz))
++test $space_needed -gt $space_avail && _notrun "Not enough space. $space_avail < $space_needed"
++
++echo "Create the original files"
++"$XFS_IO_PROG" -f -c "pwrite -S 0x61 -b $((blksz * bsz)) 0 $((blksz * nr))" "$testdir/file1" >> "$seqres.full"
++_cp_reflink "$testdir/file1" "$testdir/file2" >> "$seqres.full"
++_dmerror_unmount
++_dmerror_mount
++
++echo "Compare files"
++md5sum "$testdir/file1" | _filter_scratch
++md5sum "$testdir/file2" | _filter_scratch
++
++echo "CoW and unmount"
++sync
++_dmerror_load_error_table
++"$XFS_IO_PROG" -d -f -c "pwrite -S 0x63 -b $((blksz * bsz)) 0 $((blksz * nr))" "$testdir/file2" >> "$seqres.full"
++
++echo "Clean up the mess"
++_dmerror_unmount
++_dmerror_cleanup
++_repair_scratch_fs >> "$seqres.full" 2>&1
++_scratch_mount >> "$seqres.full" 2>&1
++
++echo "Compare files"
++md5sum "$testdir/file1" | _filter_scratch
++
++echo "Check for damage"
++umount "$SCRATCH_MNT"
++
++# success, all done
++status=0
++exit
+diff --git a/tests/generic/272.out b/tests/generic/272.out
+new file mode 100644
+index 0000000..4794088
+--- /dev/null
++++ b/tests/generic/272.out
+@@ -0,0 +1,12 @@
++QA output created by 272
++Format and mount
++Create the original files
++Compare files
++1886e67cf8783e89ce6ddc5bb09a3944  SCRATCH_MNT/test-272/file1
++1886e67cf8783e89ce6ddc5bb09a3944  SCRATCH_MNT/test-272/file2
++CoW and unmount
++pwrite64: Input/output error
++Clean up the mess
++Compare files
++1886e67cf8783e89ce6ddc5bb09a3944  SCRATCH_MNT/test-272/file1
++Check for damage
+diff --git a/tests/generic/276 b/tests/generic/276
+new file mode 100755
+index 0000000..3b51ffd
+--- /dev/null
++++ b/tests/generic/276
+@@ -0,0 +1,103 @@
++#! /bin/bash
++# FS QA Test No. 276
++#
++# Test DIO CoW behavior when the write temporarily fails and we unmount.
++#
++#-----------------------------------------------------------------------
++# Copyright (c) 2016, Oracle and/or its affiliates.  All Rights Reserved.
++#
++# This program is free software; you can redistribute it and/or
++# modify it under the terms of the GNU General Public License as
++# published by the Free Software Foundation.
++#
++# This program is distributed in the hope that it would be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write the Free Software Foundation,
++# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++#-----------------------------------------------------------------------
++
++seq=`basename "$0"`
++seqres="$RESULT_DIR/$seq"
++echo "QA output created by $seq"
++
++here=`pwd`
++tmp=/tmp/$$
++status=1    # failure is the default!
++trap "_cleanup; exit \$status" 0 1 2 3 15
++
++_cleanup()
++{
++    cd /
++    rm -rf "$tmp".*
++    _dmerror_cleanup
++}
++
++# get standard environment, filters and checks
++. ./common/rc
++. ./common/filter
++. ./common/reflink
++. ./common/dmerror
++
++# real QA test starts here
++_supported_os Linux
++_require_scratch_reflink
++_require_cp_reflink
++_need_to_be_root
++_require_dm_target error
++
++rm -f "$seqres.full"
++
++
++echo "Format and mount"
++_scratch_mkfs > "$seqres.full" 2>&1
++_dmerror_init
++_dmerror_mount >> "$seqres.full" 2>&1
++
++testdir="$SCRATCH_MNT/test-$seq"
++rm -rf $testdir
++mkdir $testdir
++
++blksz=65536
++nr=640
++bsz=128
++
++free_blocks=$(stat -f -c '%a' "$testdir")
++real_blksz=$(stat -f -c '%S' "$testdir")
++space_needed=$(((blksz * nr * 3) * 5 / 4))
++space_avail=$((free_blocks * real_blksz))
++test $space_needed -gt $space_avail && _notrun "Not enough space. $space_avail < $space_needed"
++
++echo "Create the original files"
++"$XFS_IO_PROG" -f -c "pwrite -S 0x61 -b $((blksz * bsz)) 0 $((blksz * nr))" "$testdir/file1" >> "$seqres.full"
++_cp_reflink "$testdir/file1" "$testdir/file2" >> "$seqres.full"
++_dmerror_unmount
++_dmerror_mount
++
++echo "Compare files"
++md5sum "$testdir/file1" | _filter_scratch
++md5sum "$testdir/file2" | _filter_scratch
++
++echo "CoW and unmount"
++sync
++_dmerror_load_error_table
++"$XFS_IO_PROG" -d -f -c "pwrite -S 0x63 -b $((blksz * bsz)) 0 $((blksz * nr))" "$testdir/file2" >> "$seqres.full"
++_dmerror_load_working_table
++rm -rf "$testdir/file2" >> "$seqres.full" 2>&1
++_dmerror_unmount
++_dmerror_mount
++
++echo "Compare files"
++md5sum "$testdir/file1" | _filter_scratch
++
++echo "Check for damage"
++_dmerror_unmount
++_dmerror_cleanup
++_repair_scratch_fs >> "$seqres.full" 2>&1
++
++# success, all done
++status=0
++exit
+diff --git a/tests/generic/276.out b/tests/generic/276.out
+new file mode 100644
+index 0000000..e2aeacf
+--- /dev/null
++++ b/tests/generic/276.out
+@@ -0,0 +1,11 @@
++QA output created by 276
++Format and mount
++Create the original files
++Compare files
++1886e67cf8783e89ce6ddc5bb09a3944  SCRATCH_MNT/test-276/file1
++1886e67cf8783e89ce6ddc5bb09a3944  SCRATCH_MNT/test-276/file2
++CoW and unmount
++pwrite64: Input/output error
++Compare files
++1886e67cf8783e89ce6ddc5bb09a3944  SCRATCH_MNT/test-276/file1
++Check for damage
+diff --git a/tests/generic/278 b/tests/generic/278
+new file mode 100755
+index 0000000..892320e
+--- /dev/null
++++ b/tests/generic/278
+@@ -0,0 +1,106 @@
++#! /bin/bash
++# FS QA Test No. 278
++#
++# Test CoW behavior when the write temporarily fails but the userspace
++# program writes again.
++#
++#-----------------------------------------------------------------------
++# Copyright (c) 2016, Oracle and/or its affiliates.  All Rights Reserved.
++#
++# This program is free software; you can redistribute it and/or
++# modify it under the terms of the GNU General Public License as
++# published by the Free Software Foundation.
++#
++# This program is distributed in the hope that it would be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write the Free Software Foundation,
++# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++#-----------------------------------------------------------------------
++
++seq=`basename "$0"`
++seqres="$RESULT_DIR/$seq"
++echo "QA output created by $seq"
++
++here=`pwd`
++tmp=/tmp/$$
++status=1    # failure is the default!
++trap "_cleanup; exit \$status" 0 1 2 3 15
++
++_cleanup()
++{
++    cd /
++    rm -rf "$tmp".*
++    _dmerror_cleanup
++}
++
++# get standard environment, filters and checks
++. ./common/rc
++. ./common/filter
++. ./common/reflink
++. ./common/dmerror
++
++# real QA test starts here
++_supported_os Linux
++_require_scratch_reflink
++_require_cp_reflink
++_need_to_be_root
++_require_dm_target error
++
++rm -f "$seqres.full"
++
++
++echo "Format and mount"
++_scratch_mkfs > "$seqres.full" 2>&1
++_dmerror_init
++_dmerror_mount >> "$seqres.full" 2>&1
++
++testdir="$SCRATCH_MNT/test-$seq"
++rm -rf $testdir
++mkdir $testdir
++
++blksz=65536
++nr=640
++bsz=128
++
++free_blocks=$(stat -f -c '%a' "$testdir")
++real_blksz=$(stat -f -c '%S' "$testdir")
++space_needed=$(((blksz * nr * 3) * 5 / 4))
++space_avail=$((free_blocks * real_blksz))
++test $space_needed -gt $space_avail && _notrun "Not enough space. $space_avail < $space_needed"
++
++echo "Create the original files"
++"$XFS_IO_PROG" -f -c "pwrite -S 0x61 -b $((blksz * bsz)) 0 $((blksz * nr))" "$testdir/file1" >> "$seqres.full"
++_cp_reflink "$testdir/file1" "$testdir/file2" >> "$seqres.full"
++_dmerror_unmount
++_dmerror_mount
++
++echo "Compare files"
++md5sum "$testdir/file1" | _filter_scratch
++md5sum "$testdir/file2" | _filter_scratch
++
++echo "CoW and unmount"
++sync
++_dmerror_load_error_table
++"$XFS_IO_PROG" -d -f -c "pwrite -S 0x63 -b $((blksz * bsz)) 0 $((blksz * nr))" "$testdir/file2" >> "$seqres.full"
++_dmerror_load_working_table
++
++echo "Rewrite"
++"$XFS_IO_PROG" -d -f -c "pwrite -S 0x64 -b $((blksz * bsz)) 0 $((blksz * nr))" "$testdir/file2" >> "$seqres.full" 2>&1
++_dmerror_unmount
++_dmerror_mount
++
++echo "Compare files"
++md5sum "$testdir/file1" | _filter_scratch
++
++echo "Check for damage"
++_dmerror_unmount
++_dmerror_cleanup
++_repair_scratch_fs >> "$seqres.full" 2>&1
++
++# success, all done
++status=0
++exit
+diff --git a/tests/generic/278.out b/tests/generic/278.out
+new file mode 100644
+index 0000000..6723b73
+--- /dev/null
++++ b/tests/generic/278.out
+@@ -0,0 +1,12 @@
++QA output created by 278
++Format and mount
++Create the original files
++Compare files
++1886e67cf8783e89ce6ddc5bb09a3944  SCRATCH_MNT/test-278/file1
++1886e67cf8783e89ce6ddc5bb09a3944  SCRATCH_MNT/test-278/file2
++CoW and unmount
++pwrite64: Input/output error
++Rewrite
++Compare files
++1886e67cf8783e89ce6ddc5bb09a3944  SCRATCH_MNT/test-278/file1
++Check for damage
+diff --git a/tests/generic/279 b/tests/generic/279
+new file mode 100755
+index 0000000..66ea000
+--- /dev/null
++++ b/tests/generic/279
+@@ -0,0 +1,103 @@
++#! /bin/bash
++# FS QA Test No. 279
++#
++# Test mmap CoW behavior when the write temporarily fails.
++#
++#-----------------------------------------------------------------------
++# Copyright (c) 2016, Oracle and/or its affiliates.  All Rights Reserved.
++#
++# This program is free software; you can redistribute it and/or
++# modify it under the terms of the GNU General Public License as
++# published by the Free Software Foundation.
++#
++# This program is distributed in the hope that it would be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write the Free Software Foundation,
++# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++#-----------------------------------------------------------------------
++
++seq=`basename "$0"`
++seqres="$RESULT_DIR/$seq"
++echo "QA output created by $seq"
++
++here=`pwd`
++tmp=/tmp/$$
++status=1    # failure is the default!
++trap "_cleanup; exit \$status" 0 1 2 3 15
++
++_cleanup()
++{
++    cd /
++    rm -rf "$tmp".* "$TEST_DIR/mwrite.out"
++    _dmerror_cleanup
++}
++
++# get standard environment, filters and checks
++. ./common/rc
++. ./common/filter
++. ./common/reflink
++. ./common/dmerror
++
++# real QA test starts here
++_supported_os Linux
++_require_scratch_reflink
++_require_cp_reflink
++_need_to_be_root
++_require_dm_target error
++
++rm -f "$seqres.full"
++
++
++echo "Format and mount"
++_scratch_mkfs > "$seqres.full" 2>&1
++_dmerror_init
++_dmerror_mount >> "$seqres.full" 2>&1
++
++testdir="$SCRATCH_MNT/test-$seq"
++rm -rf $testdir
++mkdir $testdir
++
++blksz=65536
++nr=640
++bsz=128
++
++free_blocks=$(stat -f -c '%a' "$testdir")
++real_blksz=$(stat -f -c '%S' "$testdir")
++space_needed=$(((blksz * nr * 3) * 5 / 4))
++space_avail=$((free_blocks * real_blksz))
++test $space_needed -gt $space_avail && _notrun "Not enough space. $space_avail < $space_needed"
++
++echo "Create the original files"
++"$XFS_IO_PROG" -f -c "pwrite -S 0x61 -b $((blksz * bsz)) 0 $((blksz * nr))" "$testdir/file1" >> "$seqres.full"
++_cp_reflink "$testdir/file1" "$testdir/file2" >> "$seqres.full"
++_dmerror_unmount
++_dmerror_mount
++
++echo "Compare files"
++md5sum "$testdir/file1" | _filter_scratch
++md5sum "$testdir/file2" | _filter_scratch
++
++echo "CoW and unmount"
++sync
++_dmerror_load_error_table
++urk=$("$XFS_IO_PROG" -f -c "mmap -rw 0 $((blksz * nr))" -c "mwrite -S 0x63 0 $((blksz * nr))" -c "msync -s 0 $((blksz * nr))" "$testdir/file2" > "$TEST_DIR/mwrite.out" 2>&1)
++cat "$TEST_DIR/mwrite.out" | tee -a "$seqres.full"
++_dmerror_load_working_table
++_dmerror_unmount
++_dmerror_mount
++
++echo "Compare files"
++md5sum "$testdir/file1" | _filter_scratch
++
++echo "Check for damage"
++_dmerror_unmount
++_dmerror_cleanup
++_repair_scratch_fs >> "$seqres.full" 2>&1
++
++# success, all done
++status=0
++exit
+diff --git a/tests/generic/279.out b/tests/generic/279.out
+new file mode 100644
+index 0000000..f34c2b2
+--- /dev/null
++++ b/tests/generic/279.out
+@@ -0,0 +1,11 @@
++QA output created by 279
++Format and mount
++Create the original files
++Compare files
++1886e67cf8783e89ce6ddc5bb09a3944  SCRATCH_MNT/test-279/file1
++1886e67cf8783e89ce6ddc5bb09a3944  SCRATCH_MNT/test-279/file2
++CoW and unmount
++msync: Input/output error
++Compare files
++1886e67cf8783e89ce6ddc5bb09a3944  SCRATCH_MNT/test-279/file1
++Check for damage
+diff --git a/tests/generic/281 b/tests/generic/281
+new file mode 100755
+index 0000000..09dc4be
+--- /dev/null
++++ b/tests/generic/281
+@@ -0,0 +1,104 @@
++#! /bin/bash
++# FS QA Test No. 281
++#
++# Test mmap CoW behavior when the write permanently fails.
++#
++#-----------------------------------------------------------------------
++# Copyright (c) 2016, Oracle and/or its affiliates.  All Rights Reserved.
++#
++# This program is free software; you can redistribute it and/or
++# modify it under the terms of the GNU General Public License as
++# published by the Free Software Foundation.
++#
++# This program is distributed in the hope that it would be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write the Free Software Foundation,
++# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++#-----------------------------------------------------------------------
++
++seq=`basename "$0"`
++seqres="$RESULT_DIR/$seq"
++echo "QA output created by $seq"
++
++here=`pwd`
++tmp=/tmp/$$
++status=1    # failure is the default!
++trap "_cleanup; exit \$status" 0 1 2 3 15
++
++_cleanup()
++{
++    cd /
++    rm -rf "$tmp".* "$TEST_DIR/mwrite.out"
++    _dmerror_cleanup
++}
++
++# get standard environment, filters and checks
++. ./common/rc
++. ./common/filter
++. ./common/reflink
++. ./common/dmerror
++
++# real QA test starts here
++_supported_os Linux
++_require_scratch_reflink
++_require_cp_reflink
++_need_to_be_root
++_require_dm_target error
++
++rm -f "$seqres.full"
++
++
++echo "Format and mount"
++_scratch_mkfs > "$seqres.full" 2>&1
++_dmerror_init
++_dmerror_mount >> "$seqres.full" 2>&1
++
++testdir="$SCRATCH_MNT/test-$seq"
++rm -rf $testdir
++mkdir $testdir
++
++blksz=65536
++nr=640
++bsz=128
++
++free_blocks=$(stat -f -c '%a' "$testdir")
++real_blksz=$(stat -f -c '%S' "$testdir")
++space_needed=$(((blksz * nr * 3) * 5 / 4))
++space_avail=$((free_blocks * real_blksz))
++test $space_needed -gt $space_avail && _notrun "Not enough space. $space_avail < $space_needed"
++
++echo "Create the original files"
++"$XFS_IO_PROG" -f -c "pwrite -S 0x61 -b $((blksz * bsz)) 0 $((blksz * nr))" "$testdir/file1" >> "$seqres.full"
++_cp_reflink "$testdir/file1" "$testdir/file2" >> "$seqres.full"
++_dmerror_unmount
++_dmerror_mount
++
++echo "Compare files"
++md5sum "$testdir/file1" | _filter_scratch
++md5sum "$testdir/file2" | _filter_scratch
++
++echo "CoW and unmount"
++sync
++_dmerror_load_error_table
++urk=$("$XFS_IO_PROG" -f -c "mmap -rw 0 $((blksz * nr))" -c "mwrite -S 0x63 0 $((blksz * nr))" -c "msync -s 0 $((blksz * nr))" "$testdir/file2" > "$TEST_DIR/mwrite.out" 2>&1)
++cat "$TEST_DIR/mwrite.out" | tee -a "$seqres.full"
++
++echo "Clean up the mess"
++_dmerror_unmount
++_dmerror_cleanup
++_repair_scratch_fs >> "$seqres.full" 2>&1
++_scratch_mount >> "$seqres.full" 2>&1
++
++echo "Compare files"
++md5sum "$testdir/file1" | _filter_scratch
++
++echo "Check for damage"
++umount "$SCRATCH_MNT"
++
++# success, all done
++status=0
++exit
+diff --git a/tests/generic/281.out b/tests/generic/281.out
+new file mode 100644
+index 0000000..17a656b
+--- /dev/null
++++ b/tests/generic/281.out
+@@ -0,0 +1,12 @@
++QA output created by 281
++Format and mount
++Create the original files
++Compare files
++1886e67cf8783e89ce6ddc5bb09a3944  SCRATCH_MNT/test-281/file1
++1886e67cf8783e89ce6ddc5bb09a3944  SCRATCH_MNT/test-281/file2
++CoW and unmount
++msync: Input/output error
++Clean up the mess
++Compare files
++1886e67cf8783e89ce6ddc5bb09a3944  SCRATCH_MNT/test-281/file1
++Check for damage
+diff --git a/tests/generic/282 b/tests/generic/282
+new file mode 100755
+index 0000000..29b7c13
+--- /dev/null
++++ b/tests/generic/282
+@@ -0,0 +1,104 @@
++#! /bin/bash
++# FS QA Test No. 282
++#
++# Test mmap CoW behavior when the write temporarily fails and we unmount.
++#
++#-----------------------------------------------------------------------
++# Copyright (c) 2016, Oracle and/or its affiliates.  All Rights Reserved.
++#
++# This program is free software; you can redistribute it and/or
++# modify it under the terms of the GNU General Public License as
++# published by the Free Software Foundation.
++#
++# This program is distributed in the hope that it would be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write the Free Software Foundation,
++# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++#-----------------------------------------------------------------------
++
++seq=`basename "$0"`
++seqres="$RESULT_DIR/$seq"
++echo "QA output created by $seq"
++
++here=`pwd`
++tmp=/tmp/$$
++status=1    # failure is the default!
++trap "_cleanup; exit \$status" 0 1 2 3 15
++
++_cleanup()
++{
++    cd /
++    rm -rf "$tmp".* "$TEST_DIR/mwrite.out"
++    _dmerror_cleanup
++}
++
++# get standard environment, filters and checks
++. ./common/rc
++. ./common/filter
++. ./common/reflink
++. ./common/dmerror
++
++# real QA test starts here
++_supported_os Linux
++_require_scratch_reflink
++_require_cp_reflink
++_need_to_be_root
++_require_dm_target error
++
++rm -f "$seqres.full"
++
++
++echo "Format and mount"
++_scratch_mkfs > "$seqres.full" 2>&1
++_dmerror_init
++_dmerror_mount >> "$seqres.full" 2>&1
++
++testdir="$SCRATCH_MNT/test-$seq"
++rm -rf $testdir
++mkdir $testdir
++
++blksz=65536
++nr=640
++bsz=128
++
++free_blocks=$(stat -f -c '%a' "$testdir")
++real_blksz=$(stat -f -c '%S' "$testdir")
++space_needed=$(((blksz * nr * 3) * 5 / 4))
++space_avail=$((free_blocks * real_blksz))
++test $space_needed -gt $space_avail && _notrun "Not enough space. $space_avail < $space_needed"
++
++echo "Create the original files"
++"$XFS_IO_PROG" -f -c "pwrite -S 0x61 -b $((blksz * bsz)) 0 $((blksz * nr))" "$testdir/file1" >> "$seqres.full"
++_cp_reflink "$testdir/file1" "$testdir/file2" >> "$seqres.full"
++_dmerror_unmount
++_dmerror_mount
++
++echo "Compare files"
++md5sum "$testdir/file1" | _filter_scratch
++md5sum "$testdir/file2" | _filter_scratch
++
++echo "CoW and unmount"
++sync
++_dmerror_load_error_table
++urk=$("$XFS_IO_PROG" -f -c "mmap -rw 0 $((blksz * nr))" -c "mwrite -S 0x63 0 $((blksz * nr))" "$testdir/file2" > "$TEST_DIR/mwrite.out" 2>&1)
++cat "$TEST_DIR/mwrite.out" | tee -a "$seqres.full"
++_dmerror_load_working_table
++rm -rf "$testdir/file2" >> "$seqres.full" 2>&1
++_dmerror_unmount
++_dmerror_mount
++
++echo "Compare files"
++md5sum "$testdir/file1" | _filter_scratch
++
++echo "Check for damage"
++_dmerror_unmount
++_dmerror_cleanup
++_repair_scratch_fs >> "$seqres.full" 2>&1
++
++# success, all done
++status=0
++exit
+diff --git a/tests/generic/282.out b/tests/generic/282.out
+new file mode 100644
+index 0000000..624dbfa
+--- /dev/null
++++ b/tests/generic/282.out
+@@ -0,0 +1,10 @@
++QA output created by 282
++Format and mount
++Create the original files
++Compare files
++1886e67cf8783e89ce6ddc5bb09a3944  SCRATCH_MNT/test-282/file1
++1886e67cf8783e89ce6ddc5bb09a3944  SCRATCH_MNT/test-282/file2
++CoW and unmount
++Compare files
++1886e67cf8783e89ce6ddc5bb09a3944  SCRATCH_MNT/test-282/file1
++Check for damage
+diff --git a/tests/generic/283 b/tests/generic/283
+new file mode 100755
+index 0000000..3861954
+--- /dev/null
++++ b/tests/generic/283
+@@ -0,0 +1,107 @@
++#! /bin/bash
++# FS QA Test No. 283
++#
++# Test mmap CoW behavior when the write temporarily fails but the userspace
++# program writes again.
++#
++#-----------------------------------------------------------------------
++# Copyright (c) 2016, Oracle and/or its affiliates.  All Rights Reserved.
++#
++# This program is free software; you can redistribute it and/or
++# modify it under the terms of the GNU General Public License as
++# published by the Free Software Foundation.
++#
++# This program is distributed in the hope that it would be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write the Free Software Foundation,
++# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++#-----------------------------------------------------------------------
++
++seq=`basename "$0"`
++seqres="$RESULT_DIR/$seq"
++echo "QA output created by $seq"
++
++here=`pwd`
++tmp=/tmp/$$
++status=1    # failure is the default!
++trap "_cleanup; exit \$status" 0 1 2 3 15
++
++_cleanup()
++{
++    cd /
++    rm -rf "$tmp".* "$TEST_DIR/mwrite.out"
++    _dmerror_cleanup
++}
++
++# get standard environment, filters and checks
++. ./common/rc
++. ./common/filter
++. ./common/reflink
++. ./common/dmerror
++
++# real QA test starts here
++_supported_os Linux
++_require_scratch_reflink
++_require_cp_reflink
++_need_to_be_root
++_require_dm_target error
++
++rm -f "$seqres.full"
++
++
++echo "Format and mount"
++_scratch_mkfs > "$seqres.full" 2>&1
++_dmerror_init
++_dmerror_mount >> "$seqres.full" 2>&1
++
++testdir="$SCRATCH_MNT/test-$seq"
++rm -rf $testdir
++mkdir $testdir
++
++blksz=65536
++nr=640
++bsz=128
++
++free_blocks=$(stat -f -c '%a' "$testdir")
++real_blksz=$(stat -f -c '%S' "$testdir")
++space_needed=$(((blksz * nr * 3) * 5 / 4))
++space_avail=$((free_blocks * real_blksz))
++test $space_needed -gt $space_avail && _notrun "Not enough space. $space_avail < $space_needed"
++
++echo "Create the original files"
++"$XFS_IO_PROG" -f -c "pwrite -S 0x61 -b $((blksz * bsz)) 0 $((blksz * nr))" "$testdir/file1" >> "$seqres.full"
++_cp_reflink "$testdir/file1" "$testdir/file2" >> "$seqres.full"
++_dmerror_unmount
++_dmerror_mount
++
++echo "Compare files"
++md5sum "$testdir/file1" | _filter_scratch
++md5sum "$testdir/file2" | _filter_scratch
++
++echo "CoW and unmount"
++sync
++_dmerror_load_error_table
++urk=$("$XFS_IO_PROG" -f -c "mmap -rw 0 $((blksz * nr))" -c "mwrite -S 0x63 0 $((blksz * nr))" -c "msync -s 0 $((blksz * nr))" "$testdir/file2" > "$TEST_DIR/mwrite.out" 2>&1)
++cat "$TEST_DIR/mwrite.out" | tee -a "$seqres.full"
++_dmerror_load_working_table
++
++echo "Rewrite"
++"$XFS_IO_PROG" -f -c "mmap -rw 0 $((blksz * nr))" -c "mwrite -S 0x63 0 $((blksz * nr))" -c "msync 0 $((blksz * nr))" "$testdir/file2" >> "$seqres.full" 2>&1
++_dmerror_unmount
++_dmerror_mount
++
++echo "Compare files"
++md5sum "$testdir/file1" | _filter_scratch
++
++echo "Check for damage"
++_dmerror_unmount
++_dmerror_cleanup
++_repair_scratch_fs >> "$seqres.full" 2>&1
++
++# success, all done
++status=0
++exit
+diff --git a/tests/generic/283.out b/tests/generic/283.out
+new file mode 100644
+index 0000000..f9fd5c8
+--- /dev/null
++++ b/tests/generic/283.out
+@@ -0,0 +1,12 @@
++QA output created by 283
++Format and mount
++Create the original files
++Compare files
++1886e67cf8783e89ce6ddc5bb09a3944  SCRATCH_MNT/test-283/file1
++1886e67cf8783e89ce6ddc5bb09a3944  SCRATCH_MNT/test-283/file2
++CoW and unmount
++msync: Input/output error
++Rewrite
++Compare files
++1886e67cf8783e89ce6ddc5bb09a3944  SCRATCH_MNT/test-283/file1
++Check for damage
+diff --git a/tests/generic/group b/tests/generic/group
+index 0b584d9..c2624eb 100644
+--- a/tests/generic/group
++++ b/tests/generic/group
+@@ -267,13 +267,25 @@
+ 262 auto quick clone
+ 263 rw auto quick
+ 264 auto quick clone
++265 auto quick clone
++266 auto quick clone
++267 auto quick clone
++268 auto quick clone
+ 269 auto rw prealloc ioctl enospc stress
+ 270 auto quota rw prealloc ioctl enospc stress
++271 auto quick clone
++272 auto quick clone
+ 273 auto rw
+ 274 auto rw prealloc
+ 275 auto rw enospc
++276 auto quick clone
+ 277 auto ioctl quick metadata
++278 auto quick clone
++279 auto quick clone
+ 280 auto quota freeze dangerous
++281 auto quick clone
++282 auto quick clone
++283 auto quick clone
+ 285 auto rw
+ 286 auto quick other
+ 288 auto quick ioctl trim
 

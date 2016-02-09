@@ -1,15 +1,14 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:23629 "EHLO
+Received: from userp1040.oracle.com ([156.151.31.81]:23698 "EHLO
 	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S933033AbcBIBNs (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 8 Feb 2016 20:13:48 -0500
-Subject: [PATCH 18/23] xfs: test the automatic cowextsize extent garbage
- collector
+	with ESMTP id S932858AbcBIBOC (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 8 Feb 2016 20:14:02 -0500
+Subject: [PATCH 20/23] reflink: test aio copy on write
 From: "Darrick J. Wong" <darrick.wong@oracle.com>
 To: david@fromorbit.com, darrick.wong@oracle.com
 Cc: linux-btrfs@vger.kernel.org, fstests@vger.kernel.org, xfs@oss.sgi.com
-Date: Mon, 08 Feb 2016 17:13:42 -0800
-Message-ID: <20160209011342.23099.23019.stgit@birch.djwong.org>
+Date: Mon, 08 Feb 2016 17:13:55 -0800
+Message-ID: <20160209011355.23099.80973.stgit@birch.djwong.org>
 In-Reply-To: <20160209011145.23099.95354.stgit@birch.djwong.org>
 References: <20160209011145.23099.95354.stgit@birch.djwong.org>
 MIME-Version: 1.0
@@ -17,35 +16,40 @@ Content-Type: text/plain; charset="utf-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Make sure that copy on write works with the AIO path.
+
 Signed-off-by: Darrick J. Wong <darrick.wong@oracle.com>
 ---
- tests/xfs/231     |  135 ++++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/xfs/231.out |   17 +++++++
- tests/xfs/232     |  137 +++++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/xfs/232.out |   17 +++++++
- tests/xfs/group   |    2 +
- 5 files changed, 308 insertions(+)
- create mode 100755 tests/xfs/231
- create mode 100644 tests/xfs/231.out
- create mode 100755 tests/xfs/232
- create mode 100644 tests/xfs/232.out
+ tests/generic/329     |  105 ++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/generic/329.out |   12 +++++
+ tests/generic/330     |   96 ++++++++++++++++++++++++++++++++++++++++++++
+ tests/generic/330.out |   11 +++++
+ tests/generic/331     |  107 +++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/generic/331.out |   12 +++++
+ tests/generic/332     |   97 ++++++++++++++++++++++++++++++++++++++++++++
+ tests/generic/332.out |   11 +++++
+ tests/generic/group   |    4 ++
+ 9 files changed, 455 insertions(+)
+ create mode 100755 tests/generic/329
+ create mode 100644 tests/generic/329.out
+ create mode 100755 tests/generic/330
+ create mode 100644 tests/generic/330.out
+ create mode 100755 tests/generic/331
+ create mode 100644 tests/generic/331.out
+ create mode 100755 tests/generic/332
+ create mode 100644 tests/generic/332.out
 
 
-diff --git a/tests/xfs/231 b/tests/xfs/231
+diff --git a/tests/generic/329 b/tests/generic/329
 new file mode 100755
-index 0000000..d9ae102
+index 0000000..cf6dab0
 --- /dev/null
-+++ b/tests/xfs/231
-@@ -0,0 +1,135 @@
++++ b/tests/generic/329
+@@ -0,0 +1,105 @@
 +#! /bin/bash
-+# FS QA Test No. 231
++# FS QA Test No. 329
 +#
-+# Test recovery of unused CoW reservations:
-+# - Create two reflinked files.  Set extsz hint on second file.
-+# - Dirty a single byte on a number of CoW reservations in the second file.
-+# - Fsync to flush out the dirty pages.
-+# - Wait for the reclaim to run.
-+# - Write more and see how bad fragmentation is.
++# Test AIO DIO CoW behavior when the write temporarily fails.
 +#
 +#-----------------------------------------------------------------------
 +# Copyright (c) 2016, Oracle and/or its affiliates.  All Rights Reserved.
@@ -76,141 +80,105 @@ index 0000000..d9ae102
 +_cleanup()
 +{
 +    cd /
-+    echo $old_cow_lifetime > /proc/sys/fs/xfs/speculative_cow_prealloc_lifetime
-+    #rm -rf "$tmp".* "$testdir"
++    rm -rf "$tmp".* "$TEST_DIR/moo"
++    _dmerror_cleanup
 +}
 +
 +# get standard environment, filters and checks
 +. ./common/rc
 +. ./common/filter
 +. ./common/reflink
++. ./common/dmerror
 +
 +# real QA test starts here
 +_supported_os Linux
-+_supported_fs xfs
 +_require_scratch_reflink
 +_require_cp_reflink
-+_require_fiemap
-+
-+old_cow_lifetime=$(cat /proc/sys/fs/xfs/speculative_cow_prealloc_lifetime)
++_require_dm_target error
++_require_aiodio "aiocp"
 +
 +rm -f "$seqres.full"
 +
++
 +echo "Format and mount"
 +_scratch_mkfs > "$seqres.full" 2>&1
-+_scratch_mount >> "$seqres.full" 2>&1
++_dmerror_init
++_dmerror_mount >> "$seqres.full" 2>&1
 +
 +testdir="$SCRATCH_MNT/test-$seq"
 +rm -rf $testdir
 +mkdir $testdir
 +
 +blksz=65536
-+nr=64
-+bsz=2
++nr=640
++bsz=128
 +
 +free_blocks=$(stat -f -c '%a' "$testdir")
 +real_blksz=$(stat -f -c '%S' "$testdir")
 +space_needed=$(((blksz * nr * 3) * 5 / 4))
 +space_avail=$((free_blocks * real_blksz))
-+internal_blks=$((blksz * nr / real_blksz))
 +test $space_needed -gt $space_avail && _notrun "Not enough space. $space_avail < $space_needed"
 +
 +echo "Create the original files"
-+"$XFS_IO_PROG" -c "cowextsize $((blksz * bsz))" "$testdir"
 +"$XFS_IO_PROG" -f -c "pwrite -S 0x61 -b $((blksz * bsz)) 0 $((blksz * nr))" "$testdir/file1" >> "$seqres.full"
-+"$XFS_IO_PROG" -f -c "pwrite -S 0x61 -b $((blksz * bsz)) 0 $((blksz * nr))" "$testdir/file2.chk" >> "$seqres.full"
 +_cp_reflink "$testdir/file1" "$testdir/file2" >> "$seqres.full"
-+_scratch_remount
++_dmerror_unmount
++_dmerror_mount
 +
 +echo "Compare files"
 +md5sum "$testdir/file1" | _filter_scratch
 +md5sum "$testdir/file2" | _filter_scratch
-+md5sum "$testdir/file2.chk" | _filter_scratch
 +
-+echo "CoW and leave leftovers"
-+echo 2 > /proc/sys/fs/xfs/speculative_cow_prealloc_lifetime
-+seq 2 2 $((nr - 1)) | while read f; do
-+	"$XFS_IO_PROG" -f -c "pwrite -S 0x63 $((blksz * f - 1)) 1" "$testdir/file2" >> "$seqres.full"
-+	"$XFS_IO_PROG" -f -c "pwrite -S 0x63 $((blksz * f - 1)) 1" "$testdir/file2.chk" >> "$seqres.full"
-+done
++echo "CoW and unmount"
++"$XFS_IO_PROG" -f -c "pwrite -S 0x63 $((blksz * bsz)) 1" "$testdir/file2" >> "$seqres.full"
++"$XFS_IO_PROG" -f -c "pwrite -S 0x63 -b $((blksz * bsz)) 0 $((blksz * nr))" "$TEST_DIR/moo" >> "$seqres.full"
 +sync
-+
-+echo "Wait for CoW expiration"
-+sleep 3
-+
-+echo "Allocate free space"
-+for i in $(seq 1 32); do
-+	"$XFS_IO_PROG" -f -c "falloc 0 1" "$testdir/junk.$i" >> "$seqres.full"
-+done
-+"$XFS_IO_PROG" -f -c "falloc 0 $((blksz * nr))" "$testdir/junk" >> "$seqres.full"
-+
-+echo "CoW and leave leftovers"
-+echo $old_cow_lifetime > /proc/sys/fs/xfs/speculative_cow_prealloc_lifetime
-+seq 2 2 $((nr - 1)) | while read f; do
-+	"$XFS_IO_PROG" -f -c "pwrite -S 0x63 $((blksz * f)) 1" "$testdir/file2" >> "$seqres.full"
-+	"$XFS_IO_PROG" -f -c "pwrite -S 0x63 $((blksz * f)) 1" "$testdir/file2.chk" >> "$seqres.full"
-+done
-+sync
++_dmerror_load_error_table
++"$AIO_TEST" -f DIRECT -b $((blksz * bsz)) "$TEST_DIR/moo" "$testdir/file2" >> "$seqres.full"
++_dmerror_load_working_table
++_dmerror_unmount
++_dmerror_mount
 +
 +echo "Compare files"
 +md5sum "$testdir/file1" | _filter_scratch
 +md5sum "$testdir/file2" | _filter_scratch
-+md5sum "$testdir/file2.chk" | _filter_scratch
-+
-+echo "Check extent counts"
-+old_extents=$(_count_extents "$testdir/file1")
-+new_extents=$(_count_extents "$testdir/file2")
-+
-+echo "old extents: $old_extents" >> "$seqres.full"
-+echo "new extents: $new_extents" >> "$seqres.full"
-+echo "maximum extents: $internal_blks" >> "$seqres.full"
-+test $new_extents -lt $((internal_blks / 7)) || _fail "file2 badly fragmented"
 +
 +echo "Check for damage"
-+umount "$SCRATCH_MNT"
++_dmerror_unmount
++_dmerror_cleanup
++_repair_scratch_fs >> "$seqres.full" 2>&1
 +
 +# success, all done
 +status=0
 +exit
-diff --git a/tests/xfs/231.out b/tests/xfs/231.out
+diff --git a/tests/generic/329.out b/tests/generic/329.out
 new file mode 100644
-index 0000000..872ce7b
+index 0000000..f14726c
 --- /dev/null
-+++ b/tests/xfs/231.out
-@@ -0,0 +1,17 @@
-+QA output created by 231
++++ b/tests/generic/329.out
+@@ -0,0 +1,12 @@
++QA output created by 329
 +Format and mount
 +Create the original files
 +Compare files
-+bdbcf02ee0aa977795a79d25fcfdccb1  SCRATCH_MNT/test-231/file1
-+bdbcf02ee0aa977795a79d25fcfdccb1  SCRATCH_MNT/test-231/file2
-+bdbcf02ee0aa977795a79d25fcfdccb1  SCRATCH_MNT/test-231/file2.chk
-+CoW and leave leftovers
-+Wait for CoW expiration
-+Allocate free space
-+CoW and leave leftovers
++1886e67cf8783e89ce6ddc5bb09a3944  SCRATCH_MNT/test-329/file1
++1886e67cf8783e89ce6ddc5bb09a3944  SCRATCH_MNT/test-329/file2
++CoW and unmount
++write missed bytes expect 8388608 got 0
 +Compare files
-+bdbcf02ee0aa977795a79d25fcfdccb1  SCRATCH_MNT/test-231/file1
-+211b0f725e67149d75104a747365eb70  SCRATCH_MNT/test-231/file2
-+211b0f725e67149d75104a747365eb70  SCRATCH_MNT/test-231/file2.chk
-+Check extent counts
++1886e67cf8783e89ce6ddc5bb09a3944  SCRATCH_MNT/test-329/file1
++d94b0ab13385aba594411c174b1cc13c  SCRATCH_MNT/test-329/file2
 +Check for damage
-diff --git a/tests/xfs/232 b/tests/xfs/232
+diff --git a/tests/generic/330 b/tests/generic/330
 new file mode 100755
-index 0000000..1cbc791
+index 0000000..d720f58
 --- /dev/null
-+++ b/tests/xfs/232
-@@ -0,0 +1,137 @@
++++ b/tests/generic/330
+@@ -0,0 +1,96 @@
 +#! /bin/bash
-+# FS QA Test No. 232
++# FS QA Test No. 330
 +#
-+# Test non-recovery of unused CoW reservations for dirty files:
-+# - Create two reflinked files.  Set extsz hint on second file.
-+# - Dirty a single byte on a number of CoW reservations in the second file.
-+# - Fsync to flush out the dirty pages.
-+# - Dirty a single byte anywhere in the second file.
-+# - Wait for the reclaim to run.
-+# - Write more and see how bad fragmentation is.
++# Test AIO DIO CoW behavior.
 +#
 +#-----------------------------------------------------------------------
 +# Copyright (c) 2016, Oracle and/or its affiliates.  All Rights Reserved.
@@ -241,8 +209,7 @@ index 0000000..1cbc791
 +_cleanup()
 +{
 +    cd /
-+    echo $old_cow_lifetime > /proc/sys/fs/xfs/speculative_cow_prealloc_lifetime
-+    #rm -rf "$tmp".* "$testdir"
++    rm -rf "$tmp".* "$TEST_DIR/moo"
 +}
 +
 +# get standard environment, filters and checks
@@ -252,14 +219,12 @@ index 0000000..1cbc791
 +
 +# real QA test starts here
 +_supported_os Linux
-+_supported_fs xfs
 +_require_scratch_reflink
 +_require_cp_reflink
-+_require_fiemap
-+
-+old_cow_lifetime=$(cat /proc/sys/fs/xfs/speculative_cow_prealloc_lifetime)
++_require_aiodio "aiocp"
 +
 +rm -f "$seqres.full"
++
 +
 +echo "Format and mount"
 +_scratch_mkfs > "$seqres.full" 2>&1
@@ -270,108 +235,320 @@ index 0000000..1cbc791
 +mkdir $testdir
 +
 +blksz=65536
-+nr=64
-+bsz=2
++nr=640
++bsz=128
 +
 +free_blocks=$(stat -f -c '%a' "$testdir")
 +real_blksz=$(stat -f -c '%S' "$testdir")
 +space_needed=$(((blksz * nr * 3) * 5 / 4))
 +space_avail=$((free_blocks * real_blksz))
-+internal_blks=$((blksz * nr / real_blksz))
 +test $space_needed -gt $space_avail && _notrun "Not enough space. $space_avail < $space_needed"
 +
 +echo "Create the original files"
-+"$XFS_IO_PROG" -c "cowextsize $((blksz * bsz))" "$testdir"
 +"$XFS_IO_PROG" -f -c "pwrite -S 0x61 -b $((blksz * bsz)) 0 $((blksz * nr))" "$testdir/file1" >> "$seqres.full"
-+"$XFS_IO_PROG" -f -c "pwrite -S 0x61 -b $((blksz * bsz)) 0 $((blksz * nr))" "$testdir/file2.chk" >> "$seqres.full"
 +_cp_reflink "$testdir/file1" "$testdir/file2" >> "$seqres.full"
 +_scratch_remount
 +
 +echo "Compare files"
 +md5sum "$testdir/file1" | _filter_scratch
 +md5sum "$testdir/file2" | _filter_scratch
-+md5sum "$testdir/file2.chk" | _filter_scratch
 +
-+echo "CoW and leave leftovers"
-+echo 2 > /proc/sys/fs/xfs/speculative_cow_prealloc_lifetime
-+seq 2 2 $((nr - 1)) | while read f; do
-+	"$XFS_IO_PROG" -f -c "pwrite -S 0x63 $((blksz * f - 1)) 1" "$testdir/file2" >> "$seqres.full"
-+	"$XFS_IO_PROG" -f -c "pwrite -S 0x63 $((blksz * f - 1)) 1" "$testdir/file2.chk" >> "$seqres.full"
-+done
++echo "CoW and unmount"
++"$XFS_IO_PROG" -f -c "pwrite -S 0x63 $((blksz * bsz)) 1" "$testdir/file2" >> "$seqres.full"
 +sync
-+
-+echo "Wait for CoW expiration"
-+"$XFS_IO_PROG" -f -c "pwrite -S 0x63 $((blksz * 2)) 1" "$testdir/file2" >> "$seqres.full"
-+sleep 3
-+
-+echo "Allocate free space"
-+for i in $(seq 1 32); do
-+	"$XFS_IO_PROG" -f -c "falloc 0 1" "$testdir/junk.$i" >> "$seqres.full"
-+done
-+"$XFS_IO_PROG" -f -c "falloc 0 $((blksz * nr))" "$testdir/junk" >> "$seqres.full"
-+
-+echo "CoW and leave leftovers"
-+echo $old_cow_lifetime > /proc/sys/fs/xfs/speculative_cow_prealloc_lifetime
-+seq 2 2 $((nr - 1)) | while read f; do
-+	"$XFS_IO_PROG" -f -c "pwrite -S 0x63 $((blksz * f)) 1" "$testdir/file2" >> "$seqres.full"
-+	"$XFS_IO_PROG" -f -c "pwrite -S 0x63 $((blksz * f)) 1" "$testdir/file2.chk" >> "$seqres.full"
-+done
-+sync
++"$XFS_IO_PROG" -f -c "pwrite -S 0x63 -b $((blksz * bsz)) 0 $((blksz * nr))" "$TEST_DIR/moo" >> "$seqres.full"
++"$AIO_TEST" -f DIRECT -b $((blksz * bsz)) "$TEST_DIR/moo" "$testdir/file2" >> "$seqres.full"
++_scratch_remount
 +
 +echo "Compare files"
 +md5sum "$testdir/file1" | _filter_scratch
 +md5sum "$testdir/file2" | _filter_scratch
-+md5sum "$testdir/file2.chk" | _filter_scratch
-+
-+echo "Check extent counts"
-+old_extents=$(_count_extents "$testdir/file1")
-+new_extents=$(_count_extents "$testdir/file2")
-+
-+echo "old extents: $old_extents" >> "$seqres.full"
-+echo "new extents: $new_extents" >> "$seqres.full"
-+echo "maximum extents: $internal_blks" >> "$seqres.full"
-+test $new_extents -lt $((internal_blks / 12)) || _fail "file2 not sufficiently fragmented"
 +
 +echo "Check for damage"
 +umount "$SCRATCH_MNT"
++_repair_scratch_fs >> "$seqres.full" 2>&1
 +
 +# success, all done
 +status=0
 +exit
-diff --git a/tests/xfs/232.out b/tests/xfs/232.out
+diff --git a/tests/generic/330.out b/tests/generic/330.out
 new file mode 100644
-index 0000000..ccabdaa
+index 0000000..9a33a22
 --- /dev/null
-+++ b/tests/xfs/232.out
-@@ -0,0 +1,17 @@
-+QA output created by 232
++++ b/tests/generic/330.out
+@@ -0,0 +1,11 @@
++QA output created by 330
 +Format and mount
 +Create the original files
 +Compare files
-+bdbcf02ee0aa977795a79d25fcfdccb1  SCRATCH_MNT/test-232/file1
-+bdbcf02ee0aa977795a79d25fcfdccb1  SCRATCH_MNT/test-232/file2
-+bdbcf02ee0aa977795a79d25fcfdccb1  SCRATCH_MNT/test-232/file2.chk
-+CoW and leave leftovers
-+Wait for CoW expiration
-+Allocate free space
-+CoW and leave leftovers
++1886e67cf8783e89ce6ddc5bb09a3944  SCRATCH_MNT/test-330/file1
++1886e67cf8783e89ce6ddc5bb09a3944  SCRATCH_MNT/test-330/file2
++CoW and unmount
 +Compare files
-+bdbcf02ee0aa977795a79d25fcfdccb1  SCRATCH_MNT/test-232/file1
-+211b0f725e67149d75104a747365eb70  SCRATCH_MNT/test-232/file2
-+211b0f725e67149d75104a747365eb70  SCRATCH_MNT/test-232/file2.chk
-+Check extent counts
++1886e67cf8783e89ce6ddc5bb09a3944  SCRATCH_MNT/test-330/file1
++7a4d22297e80ff3c92cb1b3e4566d234  SCRATCH_MNT/test-330/file2
 +Check for damage
-diff --git a/tests/xfs/group b/tests/xfs/group
-index da83274..de3c7d6 100644
---- a/tests/xfs/group
-+++ b/tests/xfs/group
-@@ -228,6 +228,8 @@
- 228 auto quick clone
- 229 auto rw
- 230 auto quick clone
-+231 auto quick clone
-+232 auto quick clone
- 238 auto quick metadata ioctl
- 242 auto quick prealloc
- 244 auto quota quick
+diff --git a/tests/generic/331 b/tests/generic/331
+new file mode 100755
+index 0000000..589150b
+--- /dev/null
++++ b/tests/generic/331
+@@ -0,0 +1,107 @@
++#! /bin/bash
++# FS QA Test No. 331
++#
++# Test AIO CoW behavior when the write temporarily fails.
++#
++#-----------------------------------------------------------------------
++# Copyright (c) 2016, Oracle and/or its affiliates.  All Rights Reserved.
++#
++# This program is free software; you can redistribute it and/or
++# modify it under the terms of the GNU General Public License as
++# published by the Free Software Foundation.
++#
++# This program is distributed in the hope that it would be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write the Free Software Foundation,
++# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++#-----------------------------------------------------------------------
++
++seq=`basename "$0"`
++seqres="$RESULT_DIR/$seq"
++echo "QA output created by $seq"
++
++here=`pwd`
++tmp=/tmp/$$
++status=1    # failure is the default!
++trap "_cleanup; exit \$status" 0 1 2 3 15
++
++_cleanup()
++{
++    cd /
++    rm -rf "$tmp".* "$TEST_DIR/moo"
++    _dmerror_cleanup
++}
++
++# get standard environment, filters and checks
++. ./common/rc
++. ./common/filter
++. ./common/reflink
++. ./common/dmerror
++
++# real QA test starts here
++_supported_os Linux
++_require_scratch_reflink
++_require_cp_reflink
++_require_dm_target error
++AIO_TEST="src/aio-dio-regress/aiocp"
++test -x "$AIO_TEST" || _notrun "aiocp not built"
++
++rm -f "$seqres.full"
++
++
++echo "Format and mount"
++_scratch_mkfs > "$seqres.full" 2>&1
++_dmerror_init
++_dmerror_mount >> "$seqres.full" 2>&1
++
++testdir="$SCRATCH_MNT/test-$seq"
++rm -rf $testdir
++mkdir $testdir
++
++blksz=65536
++nr=640
++bsz=128
++
++free_blocks=$(stat -f -c '%a' "$testdir")
++real_blksz=$(stat -f -c '%S' "$testdir")
++space_needed=$(((blksz * nr * 3) * 5 / 4))
++space_avail=$((free_blocks * real_blksz))
++test $space_needed -gt $space_avail && _notrun "Not enough space. $space_avail < $space_needed"
++
++echo "Create the original files"
++"$XFS_IO_PROG" -f -c "pwrite -S 0x61 -b $((blksz * bsz)) 0 $((blksz * nr))" "$testdir/file1" >> "$seqres.full"
++_cp_reflink "$testdir/file1" "$testdir/file2" >> "$seqres.full"
++_dmerror_unmount
++_dmerror_mount
++
++echo "Compare files"
++md5sum "$testdir/file1" | _filter_scratch
++md5sum "$testdir/file2" | _filter_scratch
++
++echo "CoW and unmount"
++"$XFS_IO_PROG" -f -c "pwrite -S 0x63 $((blksz * bsz)) 1" "$testdir/file2" >> "$seqres.full"
++"$XFS_IO_PROG" -f -c "pwrite -S 0x63 -b $((blksz * bsz)) 0 $((blksz * nr))" "$TEST_DIR/moo" >> "$seqres.full"
++sync
++_dmerror_load_error_table
++"$AIO_TEST" -b $((blksz * bsz)) "$TEST_DIR/moo" "$testdir/file2" >> "$seqres.full"
++"$XFS_IO_PROG" -c "fdatasync" "$testdir/file2"
++_dmerror_load_working_table
++_dmerror_unmount
++_dmerror_mount
++
++echo "Compare files"
++md5sum "$testdir/file1" | _filter_scratch
++md5sum "$testdir/file2" | _filter_scratch
++
++echo "Check for damage"
++_dmerror_unmount
++_dmerror_cleanup
++_repair_scratch_fs >> "$seqres.full" 2>&1
++
++# success, all done
++status=0
++exit
+diff --git a/tests/generic/331.out b/tests/generic/331.out
+new file mode 100644
+index 0000000..adbf841
+--- /dev/null
++++ b/tests/generic/331.out
+@@ -0,0 +1,12 @@
++QA output created by 331
++Format and mount
++Create the original files
++Compare files
++1886e67cf8783e89ce6ddc5bb09a3944  SCRATCH_MNT/test-331/file1
++1886e67cf8783e89ce6ddc5bb09a3944  SCRATCH_MNT/test-331/file2
++CoW and unmount
++fdatasync: Input/output error
++Compare files
++1886e67cf8783e89ce6ddc5bb09a3944  SCRATCH_MNT/test-331/file1
++d94b0ab13385aba594411c174b1cc13c  SCRATCH_MNT/test-331/file2
++Check for damage
+diff --git a/tests/generic/332 b/tests/generic/332
+new file mode 100755
+index 0000000..7c24a61
+--- /dev/null
++++ b/tests/generic/332
+@@ -0,0 +1,97 @@
++#! /bin/bash
++# FS QA Test No. 332
++#
++# Test AIO CoW behavior.
++#
++#-----------------------------------------------------------------------
++# Copyright (c) 2016, Oracle and/or its affiliates.  All Rights Reserved.
++#
++# This program is free software; you can redistribute it and/or
++# modify it under the terms of the GNU General Public License as
++# published by the Free Software Foundation.
++#
++# This program is distributed in the hope that it would be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write the Free Software Foundation,
++# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++#-----------------------------------------------------------------------
++
++seq=`basename "$0"`
++seqres="$RESULT_DIR/$seq"
++echo "QA output created by $seq"
++
++here=`pwd`
++tmp=/tmp/$$
++status=1    # failure is the default!
++trap "_cleanup; exit \$status" 0 1 2 3 15
++
++_cleanup()
++{
++    cd /
++    rm -rf "$tmp".* "$TEST_DIR/moo"
++}
++
++# get standard environment, filters and checks
++. ./common/rc
++. ./common/filter
++. ./common/reflink
++
++# real QA test starts here
++_supported_os Linux
++_require_scratch_reflink
++_require_cp_reflink
++AIO_TEST="src/aio-dio-regress/aiocp"
++test -x "$AIO_TEST" || _notrun "aiocp not built"
++
++rm -f "$seqres.full"
++
++
++echo "Format and mount"
++_scratch_mkfs > "$seqres.full" 2>&1
++_scratch_mount >> "$seqres.full" 2>&1
++
++testdir="$SCRATCH_MNT/test-$seq"
++rm -rf $testdir
++mkdir $testdir
++
++blksz=65536
++nr=640
++bsz=128
++
++free_blocks=$(stat -f -c '%a' "$testdir")
++real_blksz=$(stat -f -c '%S' "$testdir")
++space_needed=$(((blksz * nr * 3) * 5 / 4))
++space_avail=$((free_blocks * real_blksz))
++test $space_needed -gt $space_avail && _notrun "Not enough space. $space_avail < $space_needed"
++
++echo "Create the original files"
++"$XFS_IO_PROG" -f -c "pwrite -S 0x61 -b $((blksz * bsz)) 0 $((blksz * nr))" "$testdir/file1" >> "$seqres.full"
++_cp_reflink "$testdir/file1" "$testdir/file2" >> "$seqres.full"
++_scratch_remount
++
++echo "Compare files"
++md5sum "$testdir/file1" | _filter_scratch
++md5sum "$testdir/file2" | _filter_scratch
++
++echo "CoW and unmount"
++"$XFS_IO_PROG" -f -c "pwrite -S 0x63 $((blksz * bsz)) 1" "$testdir/file2" >> "$seqres.full"
++"$XFS_IO_PROG" -f -c "pwrite -S 0x63 -b $((blksz * bsz)) 0 $((blksz * nr))" "$TEST_DIR/moo" >> "$seqres.full"
++sync
++"$AIO_TEST" -b $((blksz * bsz)) "$TEST_DIR/moo" "$testdir/file2" >> "$seqres.full"
++_scratch_remount
++
++echo "Compare files"
++md5sum "$testdir/file1" | _filter_scratch
++md5sum "$testdir/file2" | _filter_scratch
++
++echo "Check for damage"
++umount "$SCRATCH_MNT"
++_repair_scratch_fs >> "$seqres.full" 2>&1
++
++# success, all done
++status=0
++exit
+diff --git a/tests/generic/332.out b/tests/generic/332.out
+new file mode 100644
+index 0000000..b584b1e
+--- /dev/null
++++ b/tests/generic/332.out
+@@ -0,0 +1,11 @@
++QA output created by 332
++Format and mount
++Create the original files
++Compare files
++1886e67cf8783e89ce6ddc5bb09a3944  SCRATCH_MNT/test-332/file1
++1886e67cf8783e89ce6ddc5bb09a3944  SCRATCH_MNT/test-332/file2
++CoW and unmount
++Compare files
++1886e67cf8783e89ce6ddc5bb09a3944  SCRATCH_MNT/test-332/file1
++7a4d22297e80ff3c92cb1b3e4566d234  SCRATCH_MNT/test-332/file2
++Check for damage
+diff --git a/tests/generic/group b/tests/generic/group
+index d4531f8..b5ae5ad 100644
+--- a/tests/generic/group
++++ b/tests/generic/group
+@@ -331,3 +331,7 @@
+ 326 auto quick clone
+ 327 auto quick clone
+ 328 auto quick clone
++329 auto quick clone
++330 auto quick clone
++331 auto quick clone
++332 auto quick clone
 

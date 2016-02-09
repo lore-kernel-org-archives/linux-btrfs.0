@@ -1,14 +1,15 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:23572 "EHLO
+Received: from userp1040.oracle.com ([156.151.31.81]:23629 "EHLO
 	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S933033AbcBIBNh (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 8 Feb 2016 20:13:37 -0500
-Subject: [PATCH 16/23] reflink: test quota accounting
+	with ESMTP id S933033AbcBIBNs (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 8 Feb 2016 20:13:48 -0500
+Subject: [PATCH 18/23] xfs: test the automatic cowextsize extent garbage
+ collector
 From: "Darrick J. Wong" <darrick.wong@oracle.com>
 To: david@fromorbit.com, darrick.wong@oracle.com
 Cc: linux-btrfs@vger.kernel.org, fstests@vger.kernel.org, xfs@oss.sgi.com
-Date: Mon, 08 Feb 2016 17:13:29 -0800
-Message-ID: <20160209011329.23099.8307.stgit@birch.djwong.org>
+Date: Mon, 08 Feb 2016 17:13:42 -0800
+Message-ID: <20160209011342.23099.23019.stgit@birch.djwong.org>
 In-Reply-To: <20160209011145.23099.95354.stgit@birch.djwong.org>
 References: <20160209011145.23099.95354.stgit@birch.djwong.org>
 MIME-Version: 1.0
@@ -18,60 +19,33 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 Signed-off-by: Darrick J. Wong <darrick.wong@oracle.com>
 ---
- common/reflink        |    2 -
- tests/generic/305     |  105 +++++++++++++++++++++++++++++++++++++++++++++++
- tests/generic/305.out |   23 ++++++++++
- tests/generic/326     |  105 +++++++++++++++++++++++++++++++++++++++++++++++
- tests/generic/326.out |   23 ++++++++++
- tests/generic/327     |   92 +++++++++++++++++++++++++++++++++++++++++
- tests/generic/327.out |   13 ++++++
- tests/generic/328     |  109 +++++++++++++++++++++++++++++++++++++++++++++++++
- tests/generic/328.out |   26 ++++++++++++
- tests/generic/group   |    4 ++
- tests/xfs/213         |  110 +++++++++++++++++++++++++++++++++++++++++++++++++
- tests/xfs/213.out     |   23 ++++++++++
- tests/xfs/214         |  109 +++++++++++++++++++++++++++++++++++++++++++++++++
- tests/xfs/214.out     |   23 ++++++++++
- tests/xfs/group       |    2 +
- 15 files changed, 768 insertions(+), 1 deletion(-)
- create mode 100755 tests/generic/305
- create mode 100644 tests/generic/305.out
- create mode 100755 tests/generic/326
- create mode 100644 tests/generic/326.out
- create mode 100755 tests/generic/327
- create mode 100644 tests/generic/327.out
- create mode 100755 tests/generic/328
- create mode 100644 tests/generic/328.out
- create mode 100755 tests/xfs/213
- create mode 100644 tests/xfs/213.out
- create mode 100755 tests/xfs/214
- create mode 100644 tests/xfs/214.out
+ tests/xfs/231     |  135 ++++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/xfs/231.out |   17 +++++++
+ tests/xfs/232     |  137 +++++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/xfs/232.out |   17 +++++++
+ tests/xfs/group   |    2 +
+ 5 files changed, 308 insertions(+)
+ create mode 100755 tests/xfs/231
+ create mode 100644 tests/xfs/231.out
+ create mode 100755 tests/xfs/232
+ create mode 100644 tests/xfs/232.out
 
 
-diff --git a/common/reflink b/common/reflink
-index 3d6a8c1..139e00e 100644
---- a/common/reflink
-+++ b/common/reflink
-@@ -153,7 +153,7 @@ _cp_reflink() {
- 	file1="$1"
- 	file2="$2"
- 
--	cp --reflink=always "$file1" "$file2"
-+	cp --reflink=always -p "$file1" "$file2"
- }
- 
- # Reflink some file1 into file2
-diff --git a/tests/generic/305 b/tests/generic/305
+diff --git a/tests/xfs/231 b/tests/xfs/231
 new file mode 100755
-index 0000000..5721dd0
+index 0000000..d9ae102
 --- /dev/null
-+++ b/tests/generic/305
-@@ -0,0 +1,105 @@
++++ b/tests/xfs/231
+@@ -0,0 +1,135 @@
 +#! /bin/bash
-+# FS QA Test No. 305
++# FS QA Test No. 231
 +#
-+# Ensure that quota charges us for reflinking a file and that we're not
-+# charged for buffered copy on write.
++# Test recovery of unused CoW reservations:
++# - Create two reflinked files.  Set extsz hint on second file.
++# - Dirty a single byte on a number of CoW reservations in the second file.
++# - Fsync to flush out the dirty pages.
++# - Wait for the reclaim to run.
++# - Write more and see how bad fragmentation is.
 +#
 +#-----------------------------------------------------------------------
 +# Copyright (c) 2016, Oracle and/or its affiliates.  All Rights Reserved.
@@ -102,6 +76,7 @@ index 0000000..5721dd0
 +_cleanup()
 +{
 +    cd /
++    echo $old_cow_lifetime > /proc/sys/fs/xfs/speculative_cow_prealloc_lifetime
 +    #rm -rf "$tmp".* "$testdir"
 +}
 +
@@ -109,571 +84,6 @@ index 0000000..5721dd0
 +. ./common/rc
 +. ./common/filter
 +. ./common/reflink
-+. ./common/quota
-+
-+# real QA test starts here
-+_supported_os Linux
-+_require_scratch_reflink
-+_require_cp_reflink
-+_require_fiemap
-+_require_quota
-+_need_to_be_root
-+_require_nobody
-+
-+_repquota() {
-+	repquota "$SCRATCH_MNT" | egrep '^(fsgqa|root|nobody)'
-+}
-+rm -f "$seqres.full"
-+
-+echo "Format and mount"
-+_scratch_mkfs > "$seqres.full" 2>&1
-+export MOUNT_OPTIONS="-o usrquota,grpquota $MOUNT_OPTIONS"
-+_scratch_mount >> "$seqres.full" 2>&1
-+quotacheck -u -g "$SCRATCH_MNT" 2> /dev/null
-+quotaon "$SCRATCH_MNT" 2> /dev/null
-+
-+testdir="$SCRATCH_MNT/test-$seq"
-+rm -rf $testdir
-+mkdir $testdir
-+
-+sz=1048576
-+echo "Create the original files"
-+"$XFS_IO_PROG" -f -c "pwrite -S 0x61 -b $sz 0 $sz" "$testdir/file1" >> "$seqres.full"
-+_cp_reflink "$testdir/file1" "$testdir/file2" >> "$seqres.full"
-+_cp_reflink "$testdir/file1" "$testdir/file3" >> "$seqres.full"
-+touch "$testdir/urk"
-+chown nobody "$testdir/urk"
-+touch "$testdir/erk"
-+chown fsgqa "$testdir/erk"
-+_repquota
-+_scratch_remount
-+
-+echo "Change file ownership"
-+chown fsgqa "$testdir/file1"
-+chown fsgqa "$testdir/file2"
-+chown fsgqa "$testdir/file3"
-+_repquota
-+
-+echo "CoW one of the files"
-+"$XFS_IO_PROG" -f -c "pwrite -S 0x63 -b $((sz/2)) 0 $((sz/2))" -c "fsync" "$testdir/file2" >> "$seqres.full"
-+_repquota
-+
-+echo "Remount the FS to see if accounting changes"
-+_scratch_remount
-+_repquota
-+
-+echo "Chown one of the files"
-+chown nobody "$testdir/file3"
-+_repquota
-+
-+echo "Check for damage"
-+umount "$SCRATCH_MNT"
-+
-+# success, all done
-+status=0
-+exit
-diff --git a/tests/generic/305.out b/tests/generic/305.out
-new file mode 100644
-index 0000000..2acfe04
---- /dev/null
-+++ b/tests/generic/305.out
-@@ -0,0 +1,23 @@
-+QA output created by 305
-+Format and mount
-+Create the original files
-+root      --    3072       0       0              7     0     0       
-+nobody    --       0       0       0              1     0     0       
-+fsgqa     --       0       0       0              1     0     0       
-+Change file ownership
-+root      --       0       0       0              4     0     0       
-+nobody    --       0       0       0              1     0     0       
-+fsgqa     --    3072       0       0              4     0     0       
-+CoW one of the files
-+root      --       0       0       0              4     0     0       
-+nobody    --       0       0       0              1     0     0       
-+fsgqa     --    3072       0       0              4     0     0       
-+Remount the FS to see if accounting changes
-+root      --       0       0       0              4     0     0       
-+nobody    --       0       0       0              1     0     0       
-+fsgqa     --    3072       0       0              4     0     0       
-+Chown one of the files
-+root      --       0       0       0              4     0     0       
-+nobody    --    1024       0       0              2     0     0       
-+fsgqa     --    2048       0       0              3     0     0       
-+Check for damage
-diff --git a/tests/generic/326 b/tests/generic/326
-new file mode 100755
-index 0000000..b71d4bb
---- /dev/null
-+++ b/tests/generic/326
-@@ -0,0 +1,105 @@
-+#! /bin/bash
-+# FS QA Test No. 326
-+#
-+# Ensure that quota charges us for reflinking a file and that we're not
-+# charged for directio copy on write.
-+#
-+#-----------------------------------------------------------------------
-+# Copyright (c) 2016, Oracle and/or its affiliates.  All Rights Reserved.
-+#
-+# This program is free software; you can redistribute it and/or
-+# modify it under the terms of the GNU General Public License as
-+# published by the Free Software Foundation.
-+#
-+# This program is distributed in the hope that it would be useful,
-+# but WITHOUT ANY WARRANTY; without even the implied warranty of
-+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+# GNU General Public License for more details.
-+#
-+# You should have received a copy of the GNU General Public License
-+# along with this program; if not, write the Free Software Foundation,
-+# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-+#-----------------------------------------------------------------------
-+
-+seq=`basename "$0"`
-+seqres="$RESULT_DIR/$seq"
-+echo "QA output created by $seq"
-+
-+here=`pwd`
-+tmp=/tmp/$$
-+status=1    # failure is the default!
-+trap "_cleanup; exit \$status" 0 1 2 3 15
-+
-+_cleanup()
-+{
-+    cd /
-+    #rm -rf "$tmp".* "$testdir"
-+}
-+
-+# get standard environment, filters and checks
-+. ./common/rc
-+. ./common/filter
-+. ./common/reflink
-+. ./common/quota
-+
-+# real QA test starts here
-+_supported_os Linux
-+_require_scratch_reflink
-+_require_cp_reflink
-+_require_fiemap
-+_require_quota
-+_need_to_be_root
-+_require_nobody
-+
-+_repquota() {
-+	repquota "$SCRATCH_MNT" | egrep '^(fsgqa|root|nobody)'
-+}
-+rm -f "$seqres.full"
-+
-+echo "Format and mount"
-+_scratch_mkfs > "$seqres.full" 2>&1
-+export MOUNT_OPTIONS="-o usrquota,grpquota $MOUNT_OPTIONS"
-+_scratch_mount >> "$seqres.full" 2>&1
-+quotacheck -u -g "$SCRATCH_MNT" 2> /dev/null
-+quotaon "$SCRATCH_MNT" 2> /dev/null
-+
-+testdir="$SCRATCH_MNT/test-$seq"
-+rm -rf $testdir
-+mkdir $testdir
-+
-+sz=1048576
-+echo "Create the original files"
-+"$XFS_IO_PROG" -f -c "pwrite -S 0x61 -b $sz 0 $sz" "$testdir/file1" >> "$seqres.full"
-+_cp_reflink "$testdir/file1" "$testdir/file2" >> "$seqres.full"
-+_cp_reflink "$testdir/file1" "$testdir/file3" >> "$seqres.full"
-+touch "$testdir/urk"
-+chown nobody "$testdir/urk"
-+touch "$testdir/erk"
-+chown fsgqa "$testdir/erk"
-+_repquota
-+_scratch_remount
-+
-+echo "Change file ownership"
-+chown fsgqa "$testdir/file1"
-+chown fsgqa "$testdir/file2"
-+chown fsgqa "$testdir/file3"
-+_repquota
-+
-+echo "CoW one of the files"
-+"$XFS_IO_PROG" -d -f -c "pwrite -S 0x63 -b $((sz/2)) 0 $((sz/2))" -c "fsync" "$testdir/file2" >> "$seqres.full"
-+_repquota
-+
-+echo "Remount the FS to see if accounting changes"
-+_scratch_remount
-+_repquota
-+
-+echo "Chown one of the files"
-+chown nobody "$testdir/file3"
-+_repquota
-+
-+echo "Check for damage"
-+umount "$SCRATCH_MNT"
-+
-+# success, all done
-+status=0
-+exit
-diff --git a/tests/generic/326.out b/tests/generic/326.out
-new file mode 100644
-index 0000000..950d8f8
---- /dev/null
-+++ b/tests/generic/326.out
-@@ -0,0 +1,23 @@
-+QA output created by 326
-+Format and mount
-+Create the original files
-+root      --    3072       0       0              7     0     0       
-+nobody    --       0       0       0              1     0     0       
-+fsgqa     --       0       0       0              1     0     0       
-+Change file ownership
-+root      --       0       0       0              4     0     0       
-+nobody    --       0       0       0              1     0     0       
-+fsgqa     --    3072       0       0              4     0     0       
-+CoW one of the files
-+root      --       0       0       0              4     0     0       
-+nobody    --       0       0       0              1     0     0       
-+fsgqa     --    3072       0       0              4     0     0       
-+Remount the FS to see if accounting changes
-+root      --       0       0       0              4     0     0       
-+nobody    --       0       0       0              1     0     0       
-+fsgqa     --    3072       0       0              4     0     0       
-+Chown one of the files
-+root      --       0       0       0              4     0     0       
-+nobody    --    1024       0       0              2     0     0       
-+fsgqa     --    2048       0       0              3     0     0       
-+Check for damage
-diff --git a/tests/generic/327 b/tests/generic/327
-new file mode 100755
-index 0000000..95fa223
---- /dev/null
-+++ b/tests/generic/327
-@@ -0,0 +1,92 @@
-+#! /bin/bash
-+# FS QA Test No. 327
-+#
-+# Ensure that we can't go over the hard block limit when reflinking.
-+#
-+#-----------------------------------------------------------------------
-+# Copyright (c) 2016, Oracle and/or its affiliates.  All Rights Reserved.
-+#
-+# This program is free software; you can redistribute it and/or
-+# modify it under the terms of the GNU General Public License as
-+# published by the Free Software Foundation.
-+#
-+# This program is distributed in the hope that it would be useful,
-+# but WITHOUT ANY WARRANTY; without even the implied warranty of
-+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+# GNU General Public License for more details.
-+#
-+# You should have received a copy of the GNU General Public License
-+# along with this program; if not, write the Free Software Foundation,
-+# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-+#-----------------------------------------------------------------------
-+
-+seq=`basename "$0"`
-+seqres="$RESULT_DIR/$seq"
-+echo "QA output created by $seq"
-+
-+here=`pwd`
-+tmp=/tmp/$$
-+status=1    # failure is the default!
-+trap "_cleanup; exit \$status" 0 1 2 3 15
-+
-+_cleanup()
-+{
-+    cd /
-+    #rm -rf "$tmp".* "$testdir"
-+}
-+
-+# get standard environment, filters and checks
-+. ./common/rc
-+. ./common/filter
-+. ./common/reflink
-+. ./common/quota
-+
-+# real QA test starts here
-+_supported_os Linux
-+_require_scratch_reflink
-+_require_cp_reflink
-+_require_fiemap
-+_require_quota
-+_need_to_be_root
-+_require_nobody
-+
-+_repquota() {
-+	repquota "$SCRATCH_MNT" | egrep '^(fsgqa|root|nobody)'
-+}
-+rm -f "$seqres.full"
-+
-+echo "Format and mount"
-+_scratch_mkfs > "$seqres.full" 2>&1
-+export MOUNT_OPTIONS="-o usrquota,grpquota $MOUNT_OPTIONS"
-+_scratch_mount >> "$seqres.full" 2>&1
-+quotacheck -u -g "$SCRATCH_MNT" 2> /dev/null
-+quotaon "$SCRATCH_MNT" 2> /dev/null
-+
-+testdir="$SCRATCH_MNT/test-$seq"
-+rm -rf $testdir
-+mkdir $testdir
-+
-+sz=1048576
-+echo "Create the original files"
-+"$XFS_IO_PROG" -f -c "pwrite -S 0x61 -b $sz 0 $sz" "$testdir/file1" >> "$seqres.full"
-+chown fsgqa "$testdir/file1"
-+_cp_reflink "$testdir/file1" "$testdir/file2" >> "$seqres.full"
-+_repquota
-+_scratch_remount
-+
-+echo "Set hard quota to prevent third reflink"
-+setquota -u fsgqa 0 1024 0 0 "$SCRATCH_MNT"
-+_repquota
-+
-+echo "Try to reflink again"
-+touch "$testdir/file3"
-+chown fsgqa "$testdir/file3"
-+_cp_reflink "$testdir/file1" "$testdir/file3" 2>&1 | _filter_scratch
-+_repquota
-+
-+echo "Check for damage"
-+umount "$SCRATCH_MNT"
-+
-+# success, all done
-+status=0
-+exit
-diff --git a/tests/generic/327.out b/tests/generic/327.out
-new file mode 100644
-index 0000000..32e5eab
---- /dev/null
-+++ b/tests/generic/327.out
-@@ -0,0 +1,13 @@
-+QA output created by 327
-+Format and mount
-+Create the original files
-+root      --       0       0       0              4     0     0       
-+fsgqa     --    2048       0       0              2     0     0       
-+Set hard quota to prevent third reflink
-+root      --       0       0       0              4     0     0       
-+fsgqa     +-    2048       0    1024              2     0     0       
-+Try to reflink again
-+cp: failed to clone 'SCRATCH_MNT/test-327/file3' from 'SCRATCH_MNT/test-327/file1': Disk quota exceeded
-+root      --       0       0       0              4     0     0       
-+fsgqa     +-    2048       0    1024              3     0     0       
-+Check for damage
-diff --git a/tests/generic/328 b/tests/generic/328
-new file mode 100755
-index 0000000..506ca7f
---- /dev/null
-+++ b/tests/generic/328
-@@ -0,0 +1,109 @@
-+#! /bin/bash
-+# FS QA Test No. 328
-+#
-+# Ensure that we can't go over the hard block limit when CoWing a file.
-+#
-+#-----------------------------------------------------------------------
-+# Copyright (c) 2016, Oracle and/or its affiliates.  All Rights Reserved.
-+#
-+# This program is free software; you can redistribute it and/or
-+# modify it under the terms of the GNU General Public License as
-+# published by the Free Software Foundation.
-+#
-+# This program is distributed in the hope that it would be useful,
-+# but WITHOUT ANY WARRANTY; without even the implied warranty of
-+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+# GNU General Public License for more details.
-+#
-+# You should have received a copy of the GNU General Public License
-+# along with this program; if not, write the Free Software Foundation,
-+# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-+#-----------------------------------------------------------------------
-+
-+seq=`basename "$0"`
-+seqres="$RESULT_DIR/$seq"
-+echo "QA output created by $seq"
-+
-+here=`pwd`
-+tmp=/tmp/$$
-+status=1    # failure is the default!
-+trap "_cleanup; exit \$status" 0 1 2 3 15
-+
-+_cleanup()
-+{
-+    cd /
-+    #rm -rf "$tmp".* "$testdir"
-+}
-+
-+# get standard environment, filters and checks
-+. ./common/rc
-+. ./common/filter
-+. ./common/reflink
-+. ./common/quota
-+
-+# real QA test starts here
-+_supported_os Linux
-+_require_scratch_reflink
-+_require_cp_reflink
-+_require_fiemap
-+_require_quota
-+_need_to_be_root
-+_require_nobody
-+
-+_repquota() {
-+	repquota "$SCRATCH_MNT" | egrep '^(fsgqa|root|nobody)'
-+}
-+rm -f "$seqres.full"
-+
-+echo "Format and mount"
-+_scratch_mkfs > "$seqres.full" 2>&1
-+export MOUNT_OPTIONS="-o usrquota,grpquota $MOUNT_OPTIONS"
-+_scratch_mount >> "$seqres.full" 2>&1
-+quotacheck -u -g "$SCRATCH_MNT" 2> /dev/null
-+quotaon "$SCRATCH_MNT" 2> /dev/null
-+
-+testdir="$SCRATCH_MNT/test-$seq"
-+rm -rf $testdir
-+mkdir $testdir
-+
-+sz=1048576
-+echo "Create the original files"
-+"$XFS_IO_PROG" -f -c "pwrite -S 0x61 -b $sz 0 $sz" "$testdir/file1" >> "$seqres.full"
-+chown fsgqa "$testdir/file1"
-+_cp_reflink "$testdir/file1" "$testdir/file2" >> "$seqres.full"
-+_cp_reflink "$testdir/file1" "$testdir/file3" >> "$seqres.full"
-+_repquota
-+_scratch_remount
-+
-+echo "Set hard quota to prevent rewrite"
-+setquota -u fsgqa 0 1024 0 0 "$SCRATCH_MNT"
-+_repquota
-+
-+echo "Try to dio write the whole file"
-+_pwrite_byte 0x62 0 $sz "$testdir/file1" -d >> "$seqres.full"
-+_repquota
-+
-+echo "Try to write the whole file"
-+_pwrite_byte 0x62 0 $sz "$testdir/file1" >> "$seqres.full"
-+_repquota
-+
-+echo "Set hard quota to allow rewrite"
-+setquota -u fsgqa 0 8192 0 0 "$SCRATCH_MNT"
-+_repquota
-+
-+echo "Try to dio write the whole file"
-+_pwrite_byte 0x62 0 $sz "$testdir/file1" -d >> "$seqres.full"
-+sync
-+_repquota
-+
-+echo "Try to write the whole file"
-+_pwrite_byte 0x62 0 $sz "$testdir/file3" >> "$seqres.full"
-+sync
-+_repquota
-+
-+echo "Check for damage"
-+umount "$SCRATCH_MNT"
-+
-+# success, all done
-+status=0
-+exit
-diff --git a/tests/generic/328.out b/tests/generic/328.out
-new file mode 100644
-index 0000000..e5dcb67
---- /dev/null
-+++ b/tests/generic/328.out
-@@ -0,0 +1,26 @@
-+QA output created by 328
-+Format and mount
-+Create the original files
-+root      --       0       0       0              4     0     0       
-+fsgqa     --    3072       0       0              3     0     0       
-+Set hard quota to prevent rewrite
-+root      --       0       0       0              4     0     0       
-+fsgqa     +-    3072       0    1024              3     0     0       
-+Try to dio write the whole file
-+pwrite64: Disk quota exceeded
-+root      --       0       0       0              4     0     0       
-+fsgqa     +-    3072       0    1024              3     0     0       
-+Try to write the whole file
-+pwrite64: Disk quota exceeded
-+root      --       0       0       0              4     0     0       
-+fsgqa     +-    3072       0    1024              3     0     0       
-+Set hard quota to allow rewrite
-+root      --       0       0       0              4     0     0       
-+fsgqa     --    3072       0    8192              3     0     0       
-+Try to dio write the whole file
-+root      --       0       0       0              4     0     0       
-+fsgqa     --    3072       0    8192              3     0     0       
-+Try to write the whole file
-+root      --       0       0       0              4     0     0       
-+fsgqa     --    3072       0    8192              3     0     0       
-+Check for damage
-diff --git a/tests/generic/group b/tests/generic/group
-index 3229dad..d4531f8 100644
---- a/tests/generic/group
-+++ b/tests/generic/group
-@@ -307,6 +307,7 @@
- 302 auto quick clone
- 303 auto quick clone
- 304 auto quick clone
-+305 auto quick clone
- 306 auto quick rw
- 307 auto quick
- 308 auto quick
-@@ -327,3 +328,6 @@
- 323 auto aio stress
- 324 auto fsr quick
- 325 auto quick data log
-+326 auto quick clone
-+327 auto quick clone
-+328 auto quick clone
-diff --git a/tests/xfs/213 b/tests/xfs/213
-new file mode 100755
-index 0000000..7441e78
---- /dev/null
-+++ b/tests/xfs/213
-@@ -0,0 +1,110 @@
-+#! /bin/bash
-+# FS QA Test No. 213
-+#
-+# Ensure that quota charges us for reflnking a file and that we're not
-+# charged for buffered copy on write.  Same test as 822, but we get to
-+# play with cowextsz.
-+#
-+#-----------------------------------------------------------------------
-+# Copyright (c) 2016, Oracle and/or its affiliates.  All Rights Reserved.
-+#
-+# This program is free software; you can redistribute it and/or
-+# modify it under the terms of the GNU General Public License as
-+# published by the Free Software Foundation.
-+#
-+# This program is distributed in the hope that it would be useful,
-+# but WITHOUT ANY WARRANTY; without even the implied warranty of
-+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+# GNU General Public License for more details.
-+#
-+# You should have received a copy of the GNU General Public License
-+# along with this program; if not, write the Free Software Foundation,
-+# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-+#-----------------------------------------------------------------------
-+
-+seq=`basename "$0"`
-+seqres="$RESULT_DIR/$seq"
-+echo "QA output created by $seq"
-+
-+here=`pwd`
-+tmp=/tmp/$$
-+status=1    # failure is the default!
-+trap "_cleanup; exit \$status" 0 1 2 3 15
-+
-+_cleanup()
-+{
-+    cd /
-+    #rm -rf "$tmp".* "$testdir"
-+}
-+
-+# get standard environment, filters and checks
-+. ./common/rc
-+. ./common/filter
-+. ./common/reflink
-+. ./common/quota
 +
 +# real QA test starts here
 +_supported_os Linux
@@ -681,58 +91,80 @@ index 0000000..7441e78
 +_require_scratch_reflink
 +_require_cp_reflink
 +_require_fiemap
-+_require_quota
-+_need_to_be_root
-+_require_nobody
-+_require_xfs_io_command "cowextsize"
 +
-+_repquota() {
-+	repquota "$SCRATCH_MNT" | egrep '^(fsgqa|root|nobody)'
-+}
++old_cow_lifetime=$(cat /proc/sys/fs/xfs/speculative_cow_prealloc_lifetime)
++
 +rm -f "$seqres.full"
 +
 +echo "Format and mount"
 +_scratch_mkfs > "$seqres.full" 2>&1
-+export MOUNT_OPTIONS="-o usrquota,grpquota $MOUNT_OPTIONS"
 +_scratch_mount >> "$seqres.full" 2>&1
-+quotacheck -u -g "$SCRATCH_MNT" 2> /dev/null
-+quotaon "$SCRATCH_MNT" 2> /dev/null
 +
 +testdir="$SCRATCH_MNT/test-$seq"
 +rm -rf $testdir
 +mkdir $testdir
 +
-+sz=1048576
 +blksz=65536
++nr=64
++bsz=2
++
++free_blocks=$(stat -f -c '%a' "$testdir")
++real_blksz=$(stat -f -c '%S' "$testdir")
++space_needed=$(((blksz * nr * 3) * 5 / 4))
++space_avail=$((free_blocks * real_blksz))
++internal_blks=$((blksz * nr / real_blksz))
++test $space_needed -gt $space_avail && _notrun "Not enough space. $space_avail < $space_needed"
++
 +echo "Create the original files"
-+"$XFS_IO_PROG" -c "cowextsize $((sz/2))" "$testdir" >> "$seqres.full"
-+"$XFS_IO_PROG" -f -c "pwrite -S 0x61 -b $sz 0 $sz" "$testdir/file1" >> "$seqres.full"
++"$XFS_IO_PROG" -c "cowextsize $((blksz * bsz))" "$testdir"
++"$XFS_IO_PROG" -f -c "pwrite -S 0x61 -b $((blksz * bsz)) 0 $((blksz * nr))" "$testdir/file1" >> "$seqres.full"
++"$XFS_IO_PROG" -f -c "pwrite -S 0x61 -b $((blksz * bsz)) 0 $((blksz * nr))" "$testdir/file2.chk" >> "$seqres.full"
 +_cp_reflink "$testdir/file1" "$testdir/file2" >> "$seqres.full"
-+_cp_reflink "$testdir/file1" "$testdir/file3" >> "$seqres.full"
-+touch "$testdir/urk"
-+chown nobody "$testdir/urk"
-+touch "$testdir/erk"
-+chown fsgqa "$testdir/erk"
-+_repquota
 +_scratch_remount
 +
-+echo "Change file ownership"
-+chown fsgqa "$testdir/file1"
-+chown fsgqa "$testdir/file2"
-+chown fsgqa "$testdir/file3"
-+_repquota
++echo "Compare files"
++md5sum "$testdir/file1" | _filter_scratch
++md5sum "$testdir/file2" | _filter_scratch
++md5sum "$testdir/file2.chk" | _filter_scratch
 +
-+echo "CoW one of the files"
-+"$XFS_IO_PROG" -f -c "pwrite -S 0x63 -b $blksz $((sz - blksz)) $blksz" -c "fsync" "$testdir/file2" >> "$seqres.full"
-+_repquota
++echo "CoW and leave leftovers"
++echo 2 > /proc/sys/fs/xfs/speculative_cow_prealloc_lifetime
++seq 2 2 $((nr - 1)) | while read f; do
++	"$XFS_IO_PROG" -f -c "pwrite -S 0x63 $((blksz * f - 1)) 1" "$testdir/file2" >> "$seqres.full"
++	"$XFS_IO_PROG" -f -c "pwrite -S 0x63 $((blksz * f - 1)) 1" "$testdir/file2.chk" >> "$seqres.full"
++done
++sync
 +
-+echo "Remount the FS to see if accounting changes"
-+_scratch_remount
-+_repquota
++echo "Wait for CoW expiration"
++sleep 3
 +
-+echo "Chown one of the files"
-+chown nobody "$testdir/file3"
-+_repquota
++echo "Allocate free space"
++for i in $(seq 1 32); do
++	"$XFS_IO_PROG" -f -c "falloc 0 1" "$testdir/junk.$i" >> "$seqres.full"
++done
++"$XFS_IO_PROG" -f -c "falloc 0 $((blksz * nr))" "$testdir/junk" >> "$seqres.full"
++
++echo "CoW and leave leftovers"
++echo $old_cow_lifetime > /proc/sys/fs/xfs/speculative_cow_prealloc_lifetime
++seq 2 2 $((nr - 1)) | while read f; do
++	"$XFS_IO_PROG" -f -c "pwrite -S 0x63 $((blksz * f)) 1" "$testdir/file2" >> "$seqres.full"
++	"$XFS_IO_PROG" -f -c "pwrite -S 0x63 $((blksz * f)) 1" "$testdir/file2.chk" >> "$seqres.full"
++done
++sync
++
++echo "Compare files"
++md5sum "$testdir/file1" | _filter_scratch
++md5sum "$testdir/file2" | _filter_scratch
++md5sum "$testdir/file2.chk" | _filter_scratch
++
++echo "Check extent counts"
++old_extents=$(_count_extents "$testdir/file1")
++new_extents=$(_count_extents "$testdir/file2")
++
++echo "old extents: $old_extents" >> "$seqres.full"
++echo "new extents: $new_extents" >> "$seqres.full"
++echo "maximum extents: $internal_blks" >> "$seqres.full"
++test $new_extents -lt $((internal_blks / 7)) || _fail "file2 badly fragmented"
 +
 +echo "Check for damage"
 +umount "$SCRATCH_MNT"
@@ -740,46 +172,45 @@ index 0000000..7441e78
 +# success, all done
 +status=0
 +exit
-diff --git a/tests/xfs/213.out b/tests/xfs/213.out
+diff --git a/tests/xfs/231.out b/tests/xfs/231.out
 new file mode 100644
-index 0000000..0028bd1
+index 0000000..872ce7b
 --- /dev/null
-+++ b/tests/xfs/213.out
-@@ -0,0 +1,23 @@
-+QA output created by 213
++++ b/tests/xfs/231.out
+@@ -0,0 +1,17 @@
++QA output created by 231
 +Format and mount
 +Create the original files
-+root      --    3072       0       0              7     0     0       
-+nobody    --       0       0       0              1     0     0       
-+fsgqa     --       0       0       0              1     0     0       
-+Change file ownership
-+root      --       0       0       0              4     0     0       
-+nobody    --       0       0       0              1     0     0       
-+fsgqa     --    3072       0       0              4     0     0       
-+CoW one of the files
-+root      --       0       0       0              4     0     0       
-+nobody    --       0       0       0              1     0     0       
-+fsgqa     --    3520       0       0              4     0     0       
-+Remount the FS to see if accounting changes
-+root      --       0       0       0              4     0     0       
-+nobody    --       0       0       0              1     0     0       
-+fsgqa     --    3072       0       0              4     0     0       
-+Chown one of the files
-+root      --       0       0       0              4     0     0       
-+nobody    --    1024       0       0              2     0     0       
-+fsgqa     --    2048       0       0              3     0     0       
++Compare files
++bdbcf02ee0aa977795a79d25fcfdccb1  SCRATCH_MNT/test-231/file1
++bdbcf02ee0aa977795a79d25fcfdccb1  SCRATCH_MNT/test-231/file2
++bdbcf02ee0aa977795a79d25fcfdccb1  SCRATCH_MNT/test-231/file2.chk
++CoW and leave leftovers
++Wait for CoW expiration
++Allocate free space
++CoW and leave leftovers
++Compare files
++bdbcf02ee0aa977795a79d25fcfdccb1  SCRATCH_MNT/test-231/file1
++211b0f725e67149d75104a747365eb70  SCRATCH_MNT/test-231/file2
++211b0f725e67149d75104a747365eb70  SCRATCH_MNT/test-231/file2.chk
++Check extent counts
 +Check for damage
-diff --git a/tests/xfs/214 b/tests/xfs/214
+diff --git a/tests/xfs/232 b/tests/xfs/232
 new file mode 100755
-index 0000000..0cfd69b
+index 0000000..1cbc791
 --- /dev/null
-+++ b/tests/xfs/214
-@@ -0,0 +1,109 @@
++++ b/tests/xfs/232
+@@ -0,0 +1,137 @@
 +#! /bin/bash
-+# FS QA Test No. 214
++# FS QA Test No. 232
 +#
-+# Ensure that quota charges us for reflnking a file and that we're not
-+# charged for directio copy on write.
++# Test non-recovery of unused CoW reservations for dirty files:
++# - Create two reflinked files.  Set extsz hint on second file.
++# - Dirty a single byte on a number of CoW reservations in the second file.
++# - Fsync to flush out the dirty pages.
++# - Dirty a single byte anywhere in the second file.
++# - Wait for the reclaim to run.
++# - Write more and see how bad fragmentation is.
 +#
 +#-----------------------------------------------------------------------
 +# Copyright (c) 2016, Oracle and/or its affiliates.  All Rights Reserved.
@@ -810,6 +241,7 @@ index 0000000..0cfd69b
 +_cleanup()
 +{
 +    cd /
++    echo $old_cow_lifetime > /proc/sys/fs/xfs/speculative_cow_prealloc_lifetime
 +    #rm -rf "$tmp".* "$testdir"
 +}
 +
@@ -817,7 +249,6 @@ index 0000000..0cfd69b
 +. ./common/rc
 +. ./common/filter
 +. ./common/reflink
-+. ./common/quota
 +
 +# real QA test starts here
 +_supported_os Linux
@@ -825,58 +256,81 @@ index 0000000..0cfd69b
 +_require_scratch_reflink
 +_require_cp_reflink
 +_require_fiemap
-+_require_quota
-+_need_to_be_root
-+_require_nobody
-+_require_xfs_io_command "cowextsize"
 +
-+_repquota() {
-+	repquota "$SCRATCH_MNT" | egrep '^(fsgqa|root|nobody)'
-+}
++old_cow_lifetime=$(cat /proc/sys/fs/xfs/speculative_cow_prealloc_lifetime)
++
 +rm -f "$seqres.full"
 +
 +echo "Format and mount"
 +_scratch_mkfs > "$seqres.full" 2>&1
-+export MOUNT_OPTIONS="-o usrquota,grpquota $MOUNT_OPTIONS"
 +_scratch_mount >> "$seqres.full" 2>&1
-+quotacheck -u -g "$SCRATCH_MNT" 2> /dev/null
-+quotaon "$SCRATCH_MNT" 2> /dev/null
 +
 +testdir="$SCRATCH_MNT/test-$seq"
 +rm -rf $testdir
 +mkdir $testdir
 +
-+sz=1048576
 +blksz=65536
++nr=64
++bsz=2
++
++free_blocks=$(stat -f -c '%a' "$testdir")
++real_blksz=$(stat -f -c '%S' "$testdir")
++space_needed=$(((blksz * nr * 3) * 5 / 4))
++space_avail=$((free_blocks * real_blksz))
++internal_blks=$((blksz * nr / real_blksz))
++test $space_needed -gt $space_avail && _notrun "Not enough space. $space_avail < $space_needed"
++
 +echo "Create the original files"
-+"$XFS_IO_PROG" -c "cowextsize $((sz/2))" "$testdir" >> "$seqres.full"
-+"$XFS_IO_PROG" -f -c "pwrite -S 0x61 -b $sz 0 $sz" "$testdir/file1" >> "$seqres.full"
++"$XFS_IO_PROG" -c "cowextsize $((blksz * bsz))" "$testdir"
++"$XFS_IO_PROG" -f -c "pwrite -S 0x61 -b $((blksz * bsz)) 0 $((blksz * nr))" "$testdir/file1" >> "$seqres.full"
++"$XFS_IO_PROG" -f -c "pwrite -S 0x61 -b $((blksz * bsz)) 0 $((blksz * nr))" "$testdir/file2.chk" >> "$seqres.full"
 +_cp_reflink "$testdir/file1" "$testdir/file2" >> "$seqres.full"
-+_cp_reflink "$testdir/file1" "$testdir/file3" >> "$seqres.full"
-+touch "$testdir/urk"
-+chown nobody "$testdir/urk"
-+touch "$testdir/erk"
-+chown fsgqa "$testdir/erk"
-+_repquota
 +_scratch_remount
 +
-+echo "Change file ownership"
-+chown fsgqa "$testdir/file1"
-+chown fsgqa "$testdir/file2"
-+chown fsgqa "$testdir/file3"
-+_repquota
++echo "Compare files"
++md5sum "$testdir/file1" | _filter_scratch
++md5sum "$testdir/file2" | _filter_scratch
++md5sum "$testdir/file2.chk" | _filter_scratch
 +
-+echo "CoW one of the files"
-+"$XFS_IO_PROG" -d -f -c "pwrite -S 0x63 -b $blksz $((sz - blksz)) $blksz" -c "fsync" "$testdir/file2" >> "$seqres.full"
-+_repquota
++echo "CoW and leave leftovers"
++echo 2 > /proc/sys/fs/xfs/speculative_cow_prealloc_lifetime
++seq 2 2 $((nr - 1)) | while read f; do
++	"$XFS_IO_PROG" -f -c "pwrite -S 0x63 $((blksz * f - 1)) 1" "$testdir/file2" >> "$seqres.full"
++	"$XFS_IO_PROG" -f -c "pwrite -S 0x63 $((blksz * f - 1)) 1" "$testdir/file2.chk" >> "$seqres.full"
++done
++sync
 +
-+echo "Remount the FS to see if accounting changes"
-+_scratch_remount
-+_repquota
++echo "Wait for CoW expiration"
++"$XFS_IO_PROG" -f -c "pwrite -S 0x63 $((blksz * 2)) 1" "$testdir/file2" >> "$seqres.full"
++sleep 3
 +
-+echo "Chown one of the files"
-+chown nobody "$testdir/file3"
-+_repquota
++echo "Allocate free space"
++for i in $(seq 1 32); do
++	"$XFS_IO_PROG" -f -c "falloc 0 1" "$testdir/junk.$i" >> "$seqres.full"
++done
++"$XFS_IO_PROG" -f -c "falloc 0 $((blksz * nr))" "$testdir/junk" >> "$seqres.full"
++
++echo "CoW and leave leftovers"
++echo $old_cow_lifetime > /proc/sys/fs/xfs/speculative_cow_prealloc_lifetime
++seq 2 2 $((nr - 1)) | while read f; do
++	"$XFS_IO_PROG" -f -c "pwrite -S 0x63 $((blksz * f)) 1" "$testdir/file2" >> "$seqres.full"
++	"$XFS_IO_PROG" -f -c "pwrite -S 0x63 $((blksz * f)) 1" "$testdir/file2.chk" >> "$seqres.full"
++done
++sync
++
++echo "Compare files"
++md5sum "$testdir/file1" | _filter_scratch
++md5sum "$testdir/file2" | _filter_scratch
++md5sum "$testdir/file2.chk" | _filter_scratch
++
++echo "Check extent counts"
++old_extents=$(_count_extents "$testdir/file1")
++new_extents=$(_count_extents "$testdir/file2")
++
++echo "old extents: $old_extents" >> "$seqres.full"
++echo "new extents: $new_extents" >> "$seqres.full"
++echo "maximum extents: $internal_blks" >> "$seqres.full"
++test $new_extents -lt $((internal_blks / 12)) || _fail "file2 not sufficiently fragmented"
 +
 +echo "Check for damage"
 +umount "$SCRATCH_MNT"
@@ -884,46 +338,40 @@ index 0000000..0cfd69b
 +# success, all done
 +status=0
 +exit
-diff --git a/tests/xfs/214.out b/tests/xfs/214.out
+diff --git a/tests/xfs/232.out b/tests/xfs/232.out
 new file mode 100644
-index 0000000..8f6bb0f
+index 0000000..ccabdaa
 --- /dev/null
-+++ b/tests/xfs/214.out
-@@ -0,0 +1,23 @@
-+QA output created by 214
++++ b/tests/xfs/232.out
+@@ -0,0 +1,17 @@
++QA output created by 232
 +Format and mount
 +Create the original files
-+root      --    3072       0       0              7     0     0       
-+nobody    --       0       0       0              1     0     0       
-+fsgqa     --       0       0       0              1     0     0       
-+Change file ownership
-+root      --       0       0       0              4     0     0       
-+nobody    --       0       0       0              1     0     0       
-+fsgqa     --    3072       0       0              4     0     0       
-+CoW one of the files
-+root      --       0       0       0              4     0     0       
-+nobody    --       0       0       0              1     0     0       
-+fsgqa     --    3520       0       0              4     0     0       
-+Remount the FS to see if accounting changes
-+root      --       0       0       0              4     0     0       
-+nobody    --       0       0       0              1     0     0       
-+fsgqa     --    3072       0       0              4     0     0       
-+Chown one of the files
-+root      --       0       0       0              4     0     0       
-+nobody    --    1024       0       0              2     0     0       
-+fsgqa     --    2048       0       0              3     0     0       
++Compare files
++bdbcf02ee0aa977795a79d25fcfdccb1  SCRATCH_MNT/test-232/file1
++bdbcf02ee0aa977795a79d25fcfdccb1  SCRATCH_MNT/test-232/file2
++bdbcf02ee0aa977795a79d25fcfdccb1  SCRATCH_MNT/test-232/file2.chk
++CoW and leave leftovers
++Wait for CoW expiration
++Allocate free space
++CoW and leave leftovers
++Compare files
++bdbcf02ee0aa977795a79d25fcfdccb1  SCRATCH_MNT/test-232/file1
++211b0f725e67149d75104a747365eb70  SCRATCH_MNT/test-232/file2
++211b0f725e67149d75104a747365eb70  SCRATCH_MNT/test-232/file2.chk
++Check extent counts
 +Check for damage
 diff --git a/tests/xfs/group b/tests/xfs/group
-index d4a0d59..afd960f 100644
+index da83274..de3c7d6 100644
 --- a/tests/xfs/group
 +++ b/tests/xfs/group
-@@ -210,6 +210,8 @@
- 210 auto quick clone
- 211 clone_stress
- 212 auto quick clone
-+213 auto quick clone
-+214 auto quick clone
- 216 log metadata auto quick
- 217 log metadata auto
- 220 auto quota quick
+@@ -228,6 +228,8 @@
+ 228 auto quick clone
+ 229 auto rw
+ 230 auto quick clone
++231 auto quick clone
++232 auto quick clone
+ 238 auto quick metadata ioctl
+ 242 auto quick prealloc
+ 244 auto quota quick
 

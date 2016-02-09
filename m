@@ -1,15 +1,15 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:32989 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932861AbcBIBN1 (ORCPT
+Received: from userp1040.oracle.com ([156.151.31.81]:23530 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S933033AbcBIBN1 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 8 Feb 2016 20:13:27 -0500
-Subject: [PATCH 15/23] reflink: test xfs cow behavior when the filesystem
- crashes
+Subject: [PATCH 14/23] reflink: high offset reflink and dedupe tests
 From: "Darrick J. Wong" <darrick.wong@oracle.com>
 To: david@fromorbit.com, darrick.wong@oracle.com
-Cc: linux-btrfs@vger.kernel.org, fstests@vger.kernel.org, xfs@oss.sgi.com
-Date: Mon, 08 Feb 2016 17:13:22 -0800
-Message-ID: <20160209011322.23099.43873.stgit@birch.djwong.org>
+Cc: linux-btrfs@vger.kernel.org, Christoph Hellwig <hch@lst.de>,
+        fstests@vger.kernel.org, xfs@oss.sgi.com
+Date: Mon, 08 Feb 2016 17:13:16 -0800
+Message-ID: <20160209011316.23099.62123.stgit@birch.djwong.org>
 In-Reply-To: <20160209011145.23099.95354.stgit@birch.djwong.org>
 References: <20160209011145.23099.95354.stgit@birch.djwong.org>
 MIME-Version: 1.0
@@ -17,32 +17,37 @@ Content-Type: text/plain; charset="utf-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Use the extent size hint to force leftover CoW reservations then
-crash the filesystem to see how recovery works.
+Ensure that we can pass absurdly enormous offsets and lengths to
+reflink/dedupe and it'll survive.
+
+v2: Ask for dedupe in the dedupe test.
 
 Signed-off-by: Darrick J. Wong <darrick.wong@oracle.com>
+[hch@lst.de: call _require_test_dedupe]
+Signed-off-by: Christoph Hellwig <hch@lst.de>
 ---
- tests/xfs/212     |  106 +++++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/xfs/212.out |   14 +++++++
- tests/xfs/group   |    1 +
- 3 files changed, 121 insertions(+)
- create mode 100755 tests/xfs/212
- create mode 100644 tests/xfs/212.out
+ tests/generic/303     |   99 +++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/generic/303.out |   21 ++++++++++
+ tests/generic/304     |  100 +++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/generic/304.out |   22 +++++++++++
+ tests/generic/group   |    2 +
+ 5 files changed, 244 insertions(+)
+ create mode 100755 tests/generic/303
+ create mode 100644 tests/generic/303.out
+ create mode 100755 tests/generic/304
+ create mode 100644 tests/generic/304.out
 
 
-diff --git a/tests/xfs/212 b/tests/xfs/212
+diff --git a/tests/generic/303 b/tests/generic/303
 new file mode 100755
-index 0000000..ccddf05
+index 0000000..c337483
 --- /dev/null
-+++ b/tests/xfs/212
-@@ -0,0 +1,106 @@
++++ b/tests/generic/303
+@@ -0,0 +1,99 @@
 +#! /bin/bash
-+# FS QA Test No. 212
++# FS QA Test No. 303
 +#
-+# Test recovery of "lost" CoW blocks after a crash:
-+# - Create two reflinked files.  Set extsz hint on second file.
-+# - Dirty one byte on the second file and fsync.
-+# - Crash the FS to test recovery.
++# Check that high-offset reflinks work.
 +#
 +#-----------------------------------------------------------------------
 +# Copyright (c) 2016, Oracle and/or its affiliates.  All Rights Reserved.
@@ -73,105 +78,243 @@ index 0000000..ccddf05
 +_cleanup()
 +{
 +    cd /
-+    #rm -rf "$tmp".* "$testdir"
++    rm -rf "$tmp".* "$testdir"
 +}
 +
 +# get standard environment, filters and checks
 +. ./common/rc
 +. ./common/filter
++. ./common/attr
 +. ./common/reflink
 +
 +# real QA test starts here
 +_supported_os Linux
-+_supported_fs xfs
-+_require_scratch_reflink
++_require_test_reflink
 +_require_cp_reflink
-+_require_fiemap
 +
 +rm -f "$seqres.full"
 +
 +echo "Format and mount"
-+_scratch_mkfs > "$seqres.full" 2>&1
-+_scratch_mount >> "$seqres.full" 2>&1
-+
-+testdir="$SCRATCH_MNT/test-$seq"
-+rm -rf $testdir
-+mkdir $testdir
-+
-+blksz=65536
-+nr=16
-+bsz=2
-+
-+free_blocks=$(stat -f -c '%a' "$testdir")
-+real_blksz=$(stat -f -c '%S' "$testdir")
-+space_needed=$(((blksz * nr * 3) * 5 / 4))
-+space_avail=$((free_blocks * real_blksz))
-+internal_blks=$((blksz * nr / real_blksz))
-+test $space_needed -gt $space_avail && _notrun "Not enough space. $space_avail < $space_needed"
++testdir="$TEST_DIR/test-$seq"
++rm -rf "$testdir"
++mkdir "$testdir"
 +
 +echo "Create the original files"
-+"$XFS_IO_PROG" -f -c "pwrite -S 0x61 -b $((blksz * bsz)) 0 $((blksz * nr))" "$testdir/file1" >> "$seqres.full"
-+"$XFS_IO_PROG" -f -c "pwrite -S 0x61 -b $((blksz * bsz)) 0 $((blksz * nr))" "$testdir/file2.chk" >> "$seqres.full"
-+"$XFS_IO_PROG" -f -c "extsize $((blksz * bsz))" "$testdir/file2"
-+_cp_reflink "$testdir/file1" "$testdir/file2" >> "$seqres.full"
-+_scratch_remount
++bigoff=9223372036854775806
++len=9223372036854775807
++bigoff_64k=9223372036854710272	# bigoff rounded down to 64k
++"$XFS_IO_PROG" -f -c "truncate $len" "$testdir/file0" >> "$seqres.full"
++test -s "$testdir/file0" || _notrun "High offset ftruncate failed"
++_pwrite_byte 0x61 $bigoff 1 "$testdir/file1" >> "$seqres.full"
++_pwrite_byte 0x61 1048575 1 "$testdir/file2" >> "$seqres.full"
 +
-+echo "Compare files"
-+md5sum "$testdir/file1" | _filter_scratch
-+md5sum "$testdir/file2" | _filter_scratch
-+md5sum "$testdir/file2.chk" | _filter_scratch
++echo "Reflink large single byte file"
++_cp_reflink "$testdir/file1" "$testdir/file3" >> "$seqres.full"
 +
-+echo "CoW and leave leftovers"
-+"$XFS_IO_PROG" -f -c "extsize" "$testdir/file2" >> "$seqres.full"
-+"$XFS_IO_PROG" -f -c "pwrite -S 0x63 $((blksz * nr - 1)) 1" -c "fsync" "$testdir/file2" >> "$seqres.full"
-+"$XFS_IO_PROG" -f -c "pwrite -S 0x63 $((blksz * nr - 1)) 1" -c "fsync" "$testdir/file2.chk" >> "$seqres.full"
-+sync
++echo "Reflink large empty file"
++_cp_reflink "$testdir/file0" "$testdir/file4" >> "$seqres.full"
 +
-+echo "Crash and recover"
-+"$XFS_IO_PROG" -x -c "shutdown" "$testdir/file2" >> "$seqres.full"
-+_scratch_remount
++echo "Reflink past maximum file size in dest file (should fail)"
++_reflink_range "$testdir/file1" 0 "$testdir/file5" 4611686018427322368 $len >> "$seqres.full"
 +
-+echo "Compare files"
-+md5sum "$testdir/file1" | _filter_scratch
-+md5sum "$testdir/file2" | _filter_scratch
-+md5sum "$testdir/file2.chk" | _filter_scratch
++echo "Reflink high offset to low offset"
++_reflink_range "$testdir/file1" $bigoff_64k "$testdir/file6" 1048576 65535 >> "$seqres.full"
 +
-+echo "Check for damage"
-+umount "$SCRATCH_MNT"
++echo "Reflink past source file EOF (should fail)"
++_reflink_range "$testdir/file2" 524288 "$testdir/file7" 0 1048576 >> "$seqres.full"
++
++echo "Reflink max size at nonzero offset (should fail)"
++_reflink_range "$testdir/file2" 524288 "$testdir/file8" 0 $len >> "$seqres.full"
++
++echo "Reflink with huge off/len (should fail)"
++_reflink_range "$testdir/file2" $bigoff_64k "$testdir/file9" 0 $bigoff_64k >> "$seqres.full"
++
++echo "Check file creation"
++_test_remount
++echo "file3"
++"$XFS_IO_PROG" -c "pread -v -q $bigoff 1" "$testdir/file3"
++echo "file4"
++"$XFS_IO_PROG" -c "pread -v -q $bigoff 1" "$testdir/file4"
++# file5 should fail above
++echo "file6"
++"$XFS_IO_PROG" -c "pread -v -q 1114110 1" "$testdir/file6"
++# file7 should fail above
 +
 +# success, all done
 +status=0
 +exit
-diff --git a/tests/xfs/212.out b/tests/xfs/212.out
+diff --git a/tests/generic/303.out b/tests/generic/303.out
 new file mode 100644
-index 0000000..24b35e2
+index 0000000..39a8803
 --- /dev/null
-+++ b/tests/xfs/212.out
-@@ -0,0 +1,14 @@
-+QA output created by 212
++++ b/tests/generic/303.out
+@@ -0,0 +1,21 @@
++QA output created by 303
 +Format and mount
 +Create the original files
-+Compare files
-+7202826a7791073fe2787f0c94603278  SCRATCH_MNT/test-212/file1
-+7202826a7791073fe2787f0c94603278  SCRATCH_MNT/test-212/file2
-+7202826a7791073fe2787f0c94603278  SCRATCH_MNT/test-212/file2.chk
-+CoW and leave leftovers
-+Crash and recover
-+Compare files
-+7202826a7791073fe2787f0c94603278  SCRATCH_MNT/test-212/file1
-+83feff041c88d5c746837552399dc27d  SCRATCH_MNT/test-212/file2
-+83feff041c88d5c746837552399dc27d  SCRATCH_MNT/test-212/file2.chk
-+Check for damage
-diff --git a/tests/xfs/group b/tests/xfs/group
-index 119e1fd..d4a0d59 100644
---- a/tests/xfs/group
-+++ b/tests/xfs/group
-@@ -209,6 +209,7 @@
- 209 auto quick clone
- 210 auto quick clone
- 211 clone_stress
-+212 auto quick clone
- 216 log metadata auto quick
- 217 log metadata auto
- 220 auto quota quick
++Reflink large single byte file
++Reflink large empty file
++Reflink past maximum file size in dest file (should fail)
++XFS_IOC_CLONE_RANGE: Invalid argument
++Reflink high offset to low offset
++Reflink past source file EOF (should fail)
++XFS_IOC_CLONE_RANGE: Invalid argument
++Reflink max size at nonzero offset (should fail)
++XFS_IOC_CLONE_RANGE: Invalid argument
++Reflink with huge off/len (should fail)
++XFS_IOC_CLONE_RANGE: Invalid argument
++Check file creation
++file3
++7ffffffffffffffe:  61  a
++file4
++7ffffffffffffffe:  00  .
++file6
++0010fffe:  61  a
+diff --git a/tests/generic/304 b/tests/generic/304
+new file mode 100755
+index 0000000..443ed21
+--- /dev/null
++++ b/tests/generic/304
+@@ -0,0 +1,100 @@
++#! /bin/bash
++# FS QA Test No. 304
++#
++# Check that high-offset dedupes work.
++#
++#-----------------------------------------------------------------------
++# Copyright (c) 2016, Oracle and/or its affiliates.  All Rights Reserved.
++#
++# This program is free software; you can redistribute it and/or
++# modify it under the terms of the GNU General Public License as
++# published by the Free Software Foundation.
++#
++# This program is distributed in the hope that it would be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write the Free Software Foundation,
++# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++#-----------------------------------------------------------------------
++
++seq=`basename "$0"`
++seqres="$RESULT_DIR/$seq"
++echo "QA output created by $seq"
++
++here=`pwd`
++tmp=/tmp/$$
++status=1    # failure is the default!
++trap "_cleanup; exit \$status" 0 1 2 3 15
++
++_cleanup()
++{
++    cd /
++    rm -rf "$tmp".* "$testdir"
++}
++
++# get standard environment, filters and checks
++. ./common/rc
++. ./common/filter
++. ./common/attr
++. ./common/reflink
++
++# real QA test starts here
++_supported_os Linux
++_require_test_dedupe
++_require_cp_reflink
++
++rm -f "$seqres.full"
++
++echo "Format and mount"
++testdir="$TEST_DIR/test-$seq"
++rm -rf "$testdir"
++mkdir "$testdir"
++
++echo "Create the original files"
++bigoff=9223372036854775806
++len=9223372036854775807
++bigoff_64k=9223372036854710272	# bigoff rounded down to 64k
++"$XFS_IO_PROG" -f -c "truncate $len" "$testdir/file0" >> "$seqres.full"
++test -s "$testdir/file0" || _notrun "High offset ftruncate failed"
++_pwrite_byte 0x61 $bigoff 1 "$testdir/file1" >> "$seqres.full"
++_pwrite_byte 0x61 $bigoff 1 "$testdir/file3" >> "$seqres.full"
++_pwrite_byte 0x61 1048575 1 "$testdir/file2" >> "$seqres.full"
++
++echo "Dedupe large single byte file"
++_dedupe_range "$testdir/file1" 0 "$testdir/file3" 0 $len >> "$seqres.full"
++
++echo "Dedupe large empty file"
++_dedupe_range "$testdir/file0" 0 "$testdir/file4" 0 $len >> "$seqres.full"
++
++echo "Dedupe past maximum file size in dest file (should fail)"
++_dedupe_range "$testdir/file1" 0 "$testdir/file5" 4611686018427322368 $len >> "$seqres.full"
++
++echo "Dedupe high offset to low offset"
++_dedupe_range "$testdir/file1" $bigoff_64k "$testdir/file6" 1048576 65535 >> "$seqres.full"
++
++echo "Dedupe past source file EOF (should fail)"
++_dedupe_range "$testdir/file2" 524288 "$testdir/file7" 0 1048576 >> "$seqres.full"
++
++echo "Dedupe max size at nonzero offset (should fail)"
++_dedupe_range "$testdir/file2" 524288 "$testdir/file8" 0 $len >> "$seqres.full"
++
++echo "Dedupe with huge off/len (should fail)"
++_dedupe_range "$testdir/file2" $bigoff_64k "$testdir/file9" 0 $bigoff_64k >> "$seqres.full"
++
++echo "Check file creation"
++_test_remount
++echo "file3"
++"$XFS_IO_PROG" -c "pread -v -q $bigoff 1" "$testdir/file3"
++echo "file4"
++"$XFS_IO_PROG" -c "pread -v -q $bigoff 1" "$testdir/file4"
++# file5 should fail above
++echo "file6"
++"$XFS_IO_PROG" -c "pread -v -q 1114110 1" "$testdir/file6"
++# file7 should fail above
++
++# success, all done
++status=0
++exit
+diff --git a/tests/generic/304.out b/tests/generic/304.out
+new file mode 100644
+index 0000000..4af2a39
+--- /dev/null
++++ b/tests/generic/304.out
+@@ -0,0 +1,22 @@
++QA output created by 304
++Format and mount
++Create the original files
++Dedupe large single byte file
++dedupe: Invalid argument
++Dedupe large empty file
++dedupe: Invalid argument
++Dedupe past maximum file size in dest file (should fail)
++dedupe: Invalid argument
++Dedupe high offset to low offset
++dedupe: Extents did not match.
++Dedupe past source file EOF (should fail)
++dedupe: Invalid argument
++Dedupe max size at nonzero offset (should fail)
++dedupe: Invalid argument
++Dedupe with huge off/len (should fail)
++XFS_IOC_FILE_EXTENT_SAME: Invalid argument
++Check file creation
++file3
++7ffffffffffffffe:  61  a
++file4
++file6
+diff --git a/tests/generic/group b/tests/generic/group
+index 7e1ea72..3229dad 100644
+--- a/tests/generic/group
++++ b/tests/generic/group
+@@ -305,6 +305,8 @@
+ 300 auto aio enospc preallocrw stress
+ 301 auto quick clone
+ 302 auto quick clone
++303 auto quick clone
++304 auto quick clone
+ 306 auto quick rw
+ 307 auto quick
+ 308 auto quick
 

@@ -1,15 +1,15 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:23202 "EHLO
+Received: from userp1040.oracle.com ([156.151.31.81]:23251 "EHLO
 	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932359AbcBIBMC (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 8 Feb 2016 20:12:02 -0500
-Subject: [PATCH 01/23] generic/182: this is a dedupe test, check for dedupe
+	with ESMTP id S932359AbcBIBMP (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 8 Feb 2016 20:12:15 -0500
+Subject: [PATCH 03/23] xfstests: make _scratch_mkfs_blocksized usable
 From: "Darrick J. Wong" <darrick.wong@oracle.com>
 To: david@fromorbit.com, darrick.wong@oracle.com
 Cc: linux-btrfs@vger.kernel.org, Christoph Hellwig <hch@lst.de>,
         fstests@vger.kernel.org, xfs@oss.sgi.com
-Date: Mon, 08 Feb 2016 17:11:51 -0800
-Message-ID: <20160209011151.23099.17497.stgit@birch.djwong.org>
+Date: Mon, 08 Feb 2016 17:12:04 -0800
+Message-ID: <20160209011204.23099.75138.stgit@birch.djwong.org>
 In-Reply-To: <20160209011145.23099.95354.stgit@birch.djwong.org>
 References: <20160209011145.23099.95354.stgit@birch.djwong.org>
 MIME-Version: 1.0
@@ -17,44 +17,93 @@ Content-Type: text/plain; charset="utf-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Since this test examines dedupe behavior, the documentation should
-say 'dedupe', not 'reflink'.  Furthermore, the feature checks must
-look for working dedupe functionality, not reflink functionality.
+The default mkfs.xfs options contain -b size=4096, so all tests
+using _scratch_mkfs_blocksized won't actually run unless those
+options are changed.  As we're trying to specificly test 1k
+blocks we should always override the default option.
 
-Signed-off-by: Darrick J. Wong <darrick.wong@oracle.com>
-[hch@lst.de: add the test for dedupe support]
+v2: Move the function to common/rc
+
 Signed-off-by: Christoph Hellwig <hch@lst.de>
+[darrick.wong@oracle.com: move function to common/rc]
+Signed-off-by: Darrick J. Wong <darrick.wong@oracle.com>
 ---
- tests/generic/182 |    9 ++++-----
- 1 file changed, 4 insertions(+), 5 deletions(-)
+ common/rc      |   24 ++++++++++++++++++++++++
+ common/reflink |   30 ------------------------------
+ 2 files changed, 24 insertions(+), 30 deletions(-)
 
 
-diff --git a/tests/generic/182 b/tests/generic/182
-index bf5cd38..ef10af8 100755
---- a/tests/generic/182
-+++ b/tests/generic/182
-@@ -1,10 +1,10 @@
- #! /bin/bash
- # FS QA Test No. 182
- #
--# Test the convention that reflink with length == 0 means "to the end of fileA"
-+# Test the convention that dedupe with length == 0 means "to the end of fileA"
- #   - Create a file.
--#   - Try to reflink "zero" bytes (which means reflink to EOF).
--#   - Check that the reflink happened.
-+#   - Try to dedupe "zero" bytes (which means dedupe to EOF).
-+#   - Check that the dedupe happened.
- #
- #-----------------------------------------------------------------------
- # Copyright (c) 2015, Oracle and/or its affiliates.  All Rights Reserved.
-@@ -45,8 +45,7 @@ _cleanup()
+diff --git a/common/rc b/common/rc
+index f08cb3a..863d4b3 100644
+--- a/common/rc
++++ b/common/rc
+@@ -881,6 +881,30 @@ _scratch_mkfs_geom()
+     _scratch_mkfs
+ }
  
- # real QA test starts here
- _supported_os Linux
--_require_test_reflink
--_require_cp_reflink
-+_require_test_dedupe
++# Create fs of certain blocksize on scratch device
++# _scratch_mkfs_blocksized blocksize
++_scratch_mkfs_blocksized()
++{
++    blocksize=$1
++
++    re='^[0-9]+$'
++    if ! [[ $blocksize =~ $re ]] ; then
++        _notrun "error: _scratch_mkfs_sized: block size \"$blocksize\" not an integer."
++    fi
++
++    case $FSTYP in
++    xfs)
++	_scratch_mkfs_xfs $MKFS_OPTIONS -b size=$blocksize
++	;;
++    ext2|ext3|ext4|ocfs2)
++	${MKFS_PROG}.$FSTYP -F $MKFS_OPTIONS -b $blocksize $SCRATCH_DEV
++	;;
++    *)
++	_notrun "Filesystem $FSTYP not supported in _scratch_mkfs_blocksized"
++	;;
++    esac
++}
++
+ _scratch_resvblks()
+ {
+ 	case $FSTYP in
+diff --git a/common/reflink b/common/reflink
+index 8638aba..3d6a8c1 100644
+--- a/common/reflink
++++ b/common/reflink
+@@ -187,33 +187,3 @@ _dedupe_range() {
  
- rm -f "$seqres.full"
- 
+ 	"$XFS_IO_PROG" $xfs_io_args -f -c "dedupe $file1 $offset1 $offset2 $len" "$file2"
+ }
+-
+-# Create fs of certain blocksize on scratch device
+-# _scratch_mkfs_blocksized blocksize
+-_scratch_mkfs_blocksized()
+-{
+-    blocksize=$1
+-
+-    re='^[0-9]+$'
+-    if ! [[ $blocksize =~ $re ]] ; then
+-        _notrun "error: _scratch_mkfs_sized: block size \"$blocksize\" not an integer."
+-    fi
+-
+-    case $FSTYP in
+-    xfs)
+-	# don't override MKFS_OPTIONS that set a block size.
+-	echo $MKFS_OPTIONS |egrep -q "b?size="
+-	if [ $? -eq 0 ]; then
+-		_scratch_mkfs_xfs
+-	else
+-		_scratch_mkfs_xfs -b size=$blocksize
+-	fi
+-	;;
+-    ext2|ext3|ext4|ocfs2)
+-	${MKFS_PROG}.$FSTYP -F $MKFS_OPTIONS -b $blocksize $SCRATCH_DEV
+-	;;
+-    *)
+-	_notrun "Filesystem $FSTYP not supported in _scratch_mkfs_blocksized"
+-	;;
+-    esac
+-}
 

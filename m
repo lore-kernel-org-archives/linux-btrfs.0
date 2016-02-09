@@ -1,46 +1,78 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:52939 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752153AbcBJKor (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 10 Feb 2016 05:44:47 -0500
-Date: Wed, 10 Feb 2016 11:44:24 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Liu Bo <bo.li.liu@oracle.com>
-Cc: Chandan Rajendra <chandan@linux.vnet.ibm.com>, clm@fb.com, jbacik@fb.com,
-        dsterba@suse.cz, linux-btrfs@vger.kernel.org, chandan@mykolab.com
-Subject: Re: [RFC PATCH V11 01/21] Btrfs: subpagesize-blocksize: Fix whole
- page read.
-Message-ID: <20160210104424.GD30511@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1433172176-8742-1-git-send-email-chandan@linux.vnet.ibm.com>
- <1433172176-8742-2-git-send-email-chandan@linux.vnet.ibm.com>
- <20150619044536.GA31508@localhost.localdomain>
- <2574653.62sO1fmDVj@localhost.localdomain>
- <20150623083747.GA1641@localhost.localdomain>
+Received: from userp1040.oracle.com ([156.151.31.81]:23178 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752850AbcBIBL6 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 8 Feb 2016 20:11:58 -0500
+Subject: [PATCH v4.1 00/23] xfstests: test the nfs/cifs/btrfs/xfs
+ reflink/dedupe ioctls
+From: "Darrick J. Wong" <darrick.wong@oracle.com>
+To: david@fromorbit.com, darrick.wong@oracle.com
+Cc: linux-btrfs@vger.kernel.org, fstests@vger.kernel.org, xfs@oss.sgi.com
+Date: Mon, 08 Feb 2016 17:11:45 -0800
+Message-ID: <20160209011145.23099.95354.stgit@birch.djwong.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20150623083747.GA1641@localhost.localdomain>
+Content-Type: text/plain; charset="utf-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Jun 23, 2015 at 04:37:48PM +0800, Liu Bo wrote:
-...
-> > | - clear BLK_STATE_IO    | - clear BLK_STATE_IO    |             |
-> > | - page_read_complete    | - page_read_complete    |             |
-> > |   - returns true        |   - returns true        |             |
-> > |   - unlock_page()       |                         |             |
-> > |                         |                         | lock_page() |
-> > |                         |   - unlock_page()       |             |
-> > |-------------------------+-------------------------+-------------|
-> > 
-> > So we end up incorrectly unlocking the page twice and "Task C" ends up working
-> > on an unlocked page. So private->io_lock makes sure that only one of the tasks
-> > gets "true" as the return value when page_read_complete() is invoked. As an
-> > optimization the patch gets the io_lock only when nr_sectors counter reaches
-> > the value 0 (i.e. when the last block of the bio_vec is being processed).
-> > Please let me know if my analysis was incorrect.
-> 
-> Thanks for the nice explanation, it looks reasonable to me.
+Happy New Year!
 
-Please don't hesitate to add your reviewed-by if you spent time on that
-and think it's ok, this rellay helps to make decisions about merging.
+Dave Chinner: I've renumbered the new tests and pushed to github[3] if
+you'd like to pull.
+
+This is a (no longer) small patch set against the reflink/dedupe test
+cases in xfstests.  The first four patches fix errors in the existing
+reflink tests, some of which are from Christoph Hellwig.
+
+Patches 5-6 refactor the dmerror code so that we can use it to
+simulate transient IO errors, then use this code to test that
+unwritten extent conversion does NOT happen after a directio write to
+an unwritten extent hits a disk error.   Due to a bug in the VFS
+directio code, ext4 can disclose stale disk contents if an aio dio
+write fails; XFS suffers this problem for any failing dio write to an
+unwritten extent.  Christoph's kernel patchset titled "vfs/xfs:
+directio updates to ease COW handling V2" (and a separate ext4 warning
+cleanup) is needed to fix this.
+
+Patches 7-9, 13, 15, 17, 18, 20, 21, and 23 exercise various parts
+of the copy on write behavior that are necessary to support shared
+blocks.  The earlier patches focus on correct CoW behavior in the
+presence of IO errors during the copy-write, and the later patches
+focus on XFS' new cow-extent-size hint that greatly reduces
+fragmentation due to copy on write behavior by encouraging the
+allocator to allocate larger extents of replacement blocks.
+
+Patches 10-12 and 14 perform stress testing on reflink and CoW to
+check the behaviors when we get close to maximum refcount, when we
+specify obnxiously large offsets and lengths, and when we try to
+reflink millions of extents at a time.
+
+Patch 16 tests quota accounting behavior when reflink is enabled.
+
+Patch 19 adds a few tests for the XFS reverse mapping btree to ensure
+that things like metadump and growfs work correctly.
+
+Patch 22 checks that get_bmapx and fiemap (on XFS) correctly flag
+extents as having shared blocks.  XFS now follows btrfs and ocfs2
+FIEMAP behavior such that if any blocks of a file's extent are shared,
+the whole extent is marked shared.  This is in contrast to earlier
+XFS-only behavior that reported shared and non-shared regions as
+separate extents.
+
+If you're going to start using this mess, you probably ought to just
+pull from my github trees for kernel[1], xfsprogs[2], xfstests[3],
+xfs-docs[4], and man-pages[5].  All tests should pass on XFS.   I
+tried btrfs this weekend and it failed 166, 175, 182, 266, 271, 272,
+278, 281, 297, 298, 304, 333, and 334.  ocfs2 (when I jury-rigged it
+to run the cp_reflink tests) seemed to have a quota bug and crashes
+hard in 284 (but was otherwise fine).
+
+Comments and questions are, as always, welcome.
+
+--D
+
+[1] https://github.com/djwong/linux/tree/for-dave
+[2] https://github.com/djwong/xfsprogs/tree/for-dave
+[3] https://github.com/djwong/xfstests/tree/for-dave
+[4] https://github.com/djwong/xfs-documentation/tree/for-dave
+[5] https://github.com/djwong/man-pages/commits/for-mtk

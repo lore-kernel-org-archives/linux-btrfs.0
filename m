@@ -1,14 +1,14 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:32806 "EHLO
+Received: from aserp1040.oracle.com ([141.146.126.69]:32745 "EHLO
 	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932359AbcBIBMv (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 8 Feb 2016 20:12:51 -0500
-Subject: [PATCH 08/23] reflink: test CoW behavior with IO errors
+	with ESMTP id S932359AbcBIBMf (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 8 Feb 2016 20:12:35 -0500
+Subject: [PATCH 06/23] dio unwritten conversion bug tests
 From: "Darrick J. Wong" <darrick.wong@oracle.com>
 To: david@fromorbit.com, darrick.wong@oracle.com
 Cc: linux-btrfs@vger.kernel.org, fstests@vger.kernel.org, xfs@oss.sgi.com
-Date: Mon, 08 Feb 2016 17:12:36 -0800
-Message-ID: <20160209011236.23099.3947.stgit@birch.djwong.org>
+Date: Mon, 08 Feb 2016 17:12:23 -0800
+Message-ID: <20160209011223.23099.3987.stgit@birch.djwong.org>
 In-Reply-To: <20160209011145.23099.95354.stgit@birch.djwong.org>
 References: <20160209011145.23099.95354.stgit@birch.djwong.org>
 MIME-Version: 1.0
@@ -16,1384 +16,545 @@ Content-Type: text/plain; charset="utf-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Test various scenarios (with dm-flakey) where we simulate write
-failures during CoW, to see if the FS can get through it without
-blowing up or corrupting data.  Plumb in a FS-generic method to
-sort out repairing filesystems after they get hit by IO errors.
+Check that we don't expose old disk contents when a directio write to
+an unwritten extent fails due to IO errors.  This primarily affects
+XFS and ext4.
 
 Signed-off-by: Darrick J. Wong <darrick.wong@oracle.com>
 ---
- common/rc             |   28 +++++++++++++
- tests/generic/265     |  102 +++++++++++++++++++++++++++++++++++++++++++++++
- tests/generic/265.out |   11 +++++
- tests/generic/266     |  103 +++++++++++++++++++++++++++++++++++++++++++++++
- tests/generic/266.out |   12 +++++
- tests/generic/267     |  103 +++++++++++++++++++++++++++++++++++++++++++++++
- tests/generic/267.out |   10 +++++
- tests/generic/268     |  106 +++++++++++++++++++++++++++++++++++++++++++++++++
- tests/generic/268.out |   12 +++++
- tests/generic/271     |  102 +++++++++++++++++++++++++++++++++++++++++++++++
- tests/generic/271.out |   11 +++++
- tests/generic/272     |  103 +++++++++++++++++++++++++++++++++++++++++++++++
- tests/generic/272.out |   12 +++++
- tests/generic/276     |  103 +++++++++++++++++++++++++++++++++++++++++++++++
- tests/generic/276.out |   11 +++++
- tests/generic/278     |  106 +++++++++++++++++++++++++++++++++++++++++++++++++
- tests/generic/278.out |   12 +++++
- tests/generic/279     |  103 +++++++++++++++++++++++++++++++++++++++++++++++
- tests/generic/279.out |   11 +++++
- tests/generic/281     |  104 ++++++++++++++++++++++++++++++++++++++++++++++++
- tests/generic/281.out |   12 +++++
- tests/generic/282     |  104 ++++++++++++++++++++++++++++++++++++++++++++++++
- tests/generic/282.out |   10 +++++
- tests/generic/283     |  107 +++++++++++++++++++++++++++++++++++++++++++++++++
- tests/generic/283.out |   12 +++++
- tests/generic/group   |   12 +++++
- 26 files changed, 1422 insertions(+)
- create mode 100755 tests/generic/265
- create mode 100644 tests/generic/265.out
- create mode 100755 tests/generic/266
- create mode 100644 tests/generic/266.out
- create mode 100755 tests/generic/267
- create mode 100644 tests/generic/267.out
- create mode 100755 tests/generic/268
- create mode 100644 tests/generic/268.out
- create mode 100755 tests/generic/271
- create mode 100644 tests/generic/271.out
- create mode 100755 tests/generic/272
- create mode 100644 tests/generic/272.out
- create mode 100755 tests/generic/276
- create mode 100644 tests/generic/276.out
- create mode 100755 tests/generic/278
- create mode 100644 tests/generic/278.out
- create mode 100755 tests/generic/279
- create mode 100644 tests/generic/279.out
- create mode 100755 tests/generic/281
- create mode 100644 tests/generic/281.out
- create mode 100755 tests/generic/282
- create mode 100644 tests/generic/282.out
- create mode 100755 tests/generic/283
- create mode 100644 tests/generic/283.out
+ .gitignore                  |    1 
+ src/aio-dio-regress/aiocp.c |  489 +++++++++++++++++++++++++++++++++++++++++++
+ tests/generic/250           |  104 +++++++++
+ tests/generic/250.out       |   10 +
+ tests/generic/252           |  107 +++++++++
+ tests/generic/252.out       |   10 +
+ tests/generic/group         |    2 
+ 7 files changed, 723 insertions(+)
+ create mode 100644 src/aio-dio-regress/aiocp.c
+ create mode 100755 tests/generic/250
+ create mode 100644 tests/generic/250.out
+ create mode 100755 tests/generic/252
+ create mode 100644 tests/generic/252.out
 
 
-diff --git a/common/rc b/common/rc
-index 863d4b3..467c217 100644
---- a/common/rc
-+++ b/common/rc
-@@ -953,6 +953,34 @@ _scratch_xfs_repair()
-     $XFS_REPAIR_PROG $SCRATCH_OPTIONS $* $SCRATCH_DEV
- }
- 
-+_repair_scratch_fs()
-+{
-+    case $FSTYP in
-+    xfs)
-+        _scratch_xfs_repair "$@"
-+	res=$?
-+	if [ "$res" -eq 2 ]; then
-+		echo "xfs_repair returns $res; replay log?"
-+		_scratch_mount
-+		res=$?
-+		if [ "$res" -gt 0 ]; then
-+			echo "mount returns $res; zap log?"
-+			_scratch_xfs_repair -L
-+			echo "log zap returns $?"
-+		else
-+			umount "$SCRATCH_MNT"
-+		fi
-+		_scratch_xfs_repair "$@"
-+	fi
-+	echo "error $?"
-+        ;;
-+    *)
-+        # Let's hope fsck -y suffices...
-+        fsck -t $FSTYP -y $SCRATCH_DEV
-+        ;;
-+    esac
-+}
-+
- _get_pids_by_name()
- {
-     if [ $# -ne 1 ]
-diff --git a/tests/generic/265 b/tests/generic/265
-new file mode 100755
-index 0000000..e91b307
---- /dev/null
-+++ b/tests/generic/265
-@@ -0,0 +1,102 @@
-+#! /bin/bash
-+# FS QA Test No. 265
-+#
-+# Test CoW behavior when the write temporarily fails.
-+#
-+#-----------------------------------------------------------------------
-+# Copyright (c) 2016, Oracle and/or its affiliates.  All Rights Reserved.
-+#
-+# This program is free software; you can redistribute it and/or
-+# modify it under the terms of the GNU General Public License as
-+# published by the Free Software Foundation.
-+#
-+# This program is distributed in the hope that it would be useful,
-+# but WITHOUT ANY WARRANTY; without even the implied warranty of
-+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+# GNU General Public License for more details.
-+#
-+# You should have received a copy of the GNU General Public License
-+# along with this program; if not, write the Free Software Foundation,
-+# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-+#-----------------------------------------------------------------------
-+
-+seq=`basename "$0"`
-+seqres="$RESULT_DIR/$seq"
-+echo "QA output created by $seq"
-+
-+here=`pwd`
-+tmp=/tmp/$$
-+status=1    # failure is the default!
-+trap "_cleanup; exit \$status" 0 1 2 3 15
-+
-+_cleanup()
-+{
-+    cd /
-+    rm -rf "$tmp".*
-+    _dmerror_cleanup
-+}
-+
-+# get standard environment, filters and checks
-+. ./common/rc
-+. ./common/filter
-+. ./common/reflink
-+. ./common/dmerror
-+
-+# real QA test starts here
-+_supported_os Linux
-+_require_scratch_reflink
-+_require_cp_reflink
-+_need_to_be_root
-+_require_dm_target error
-+
-+rm -f "$seqres.full"
-+
-+
-+echo "Format and mount"
-+_scratch_mkfs > "$seqres.full" 2>&1
-+_dmerror_init
-+_dmerror_mount >> "$seqres.full" 2>&1
-+
-+testdir="$SCRATCH_MNT/test-$seq"
-+rm -rf $testdir
-+mkdir $testdir
-+
-+blksz=65536
-+nr=640
-+bsz=128
-+
-+free_blocks=$(stat -f -c '%a' "$testdir")
-+real_blksz=$(stat -f -c '%S' "$testdir")
-+space_needed=$(((blksz * nr * 3) * 5 / 4))
-+space_avail=$((free_blocks * real_blksz))
-+test $space_needed -gt $space_avail && _notrun "Not enough space. $space_avail < $space_needed"
-+
-+echo "Create the original files"
-+"$XFS_IO_PROG" -f -c "pwrite -S 0x61 -b $((blksz * bsz)) 0 $((blksz * nr))" "$testdir/file1" >> "$seqres.full"
-+_cp_reflink "$testdir/file1" "$testdir/file2" >> "$seqres.full"
-+_dmerror_unmount
-+_dmerror_mount
-+
-+echo "Compare files"
-+md5sum "$testdir/file1" | _filter_scratch
-+md5sum "$testdir/file2" | _filter_scratch
-+
-+echo "CoW and unmount"
-+sync
-+_dmerror_load_error_table
-+"$XFS_IO_PROG" -f -c "pwrite -S 0x63 -b $((blksz * bsz)) 0 $((blksz * nr))" -c "fdatasync" "$testdir/file2" >> "$seqres.full"
-+_dmerror_load_working_table
-+_dmerror_unmount
-+_dmerror_mount
-+
-+echo "Compare files"
-+md5sum "$testdir/file1" | _filter_scratch
-+
-+echo "Check for damage"
-+_dmerror_unmount
-+_dmerror_cleanup
-+_repair_scratch_fs >> "$seqres.full" 2>&1
-+
-+# success, all done
-+status=0
-+exit
-diff --git a/tests/generic/265.out b/tests/generic/265.out
+diff --git a/.gitignore b/.gitignore
+index a6f47d3..bbe7c1a 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -112,6 +112,7 @@
+ /src/aio-dio-regress/aio-free-ring-with-bogus-nr-pages
+ /src/aio-dio-regress/aio-io-setup-with-nonwritable-context-pointer
+ /src/aio-dio-regress/aio-last-ref-held-by-io
++/src/aio-dio-regress/aiocp
+ /src/aio-dio-regress/aiodio_sparse2
+ /src/aio-dio-regress/aio-dio-eof-race
+ /src/cloner
+diff --git a/src/aio-dio-regress/aiocp.c b/src/aio-dio-regress/aiocp.c
 new file mode 100644
-index 0000000..1b67114
+index 0000000..1abff9c
 --- /dev/null
-+++ b/tests/generic/265.out
-@@ -0,0 +1,11 @@
-+QA output created by 265
-+Format and mount
-+Create the original files
-+Compare files
-+1886e67cf8783e89ce6ddc5bb09a3944  SCRATCH_MNT/test-265/file1
-+1886e67cf8783e89ce6ddc5bb09a3944  SCRATCH_MNT/test-265/file2
-+CoW and unmount
-+fdatasync: Input/output error
-+Compare files
-+1886e67cf8783e89ce6ddc5bb09a3944  SCRATCH_MNT/test-265/file1
-+Check for damage
-diff --git a/tests/generic/266 b/tests/generic/266
-new file mode 100755
-index 0000000..a100348
---- /dev/null
-+++ b/tests/generic/266
-@@ -0,0 +1,103 @@
-+#! /bin/bash
-+# FS QA Test No. 266
-+#
-+# Test CoW behavior when the write permanently fails.
-+#
-+#-----------------------------------------------------------------------
-+# Copyright (c) 2016, Oracle and/or its affiliates.  All Rights Reserved.
-+#
-+# This program is free software; you can redistribute it and/or
-+# modify it under the terms of the GNU General Public License as
-+# published by the Free Software Foundation.
-+#
-+# This program is distributed in the hope that it would be useful,
-+# but WITHOUT ANY WARRANTY; without even the implied warranty of
-+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+# GNU General Public License for more details.
-+#
-+# You should have received a copy of the GNU General Public License
-+# along with this program; if not, write the Free Software Foundation,
-+# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-+#-----------------------------------------------------------------------
++++ b/src/aio-dio-regress/aiocp.c
+@@ -0,0 +1,489 @@
++/*
++ * Copyright (c) 2004 Daniel McNeil <daniel@osdl.org>
++ *               2004 Open Source Development Lab
++ *   This program is free software;  you can redistribute it and/or modify
++ *   it under the terms of the GNU General Public License as published by
++ *   the Free Software Foundation; either version 2 of the License, or
++ *   (at your option) any later version.
++ *
++ *   This program is distributed in the hope that it will be useful,
++ *   but WITHOUT ANY WARRANTY;  without even the implied warranty of
++ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See
++ *   the GNU General Public License for more details.
++ *
++ *   You should have received a copy of the GNU General Public License
++ *   along with this program;  if not, write to the Free Software
++ *   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
++ *
++ * Module: .c
++ */
 +
-+seq=`basename "$0"`
-+seqres="$RESULT_DIR/$seq"
-+echo "QA output created by $seq"
++/*
++ * Change History:
++ *
++ *
++ * version of copy command using async i/o
++ * From:	Stephen Hemminger <shemminger@osdl.org>
++ * Modified by Daniel McNeil <daniel@osdl.org> for testing aio.
++ *	- added -a alignment
++ *	- added -b blksize option 
++ *	_ added -s size	option
++ *	- added -f open_flag option
++ *	- added -w (no write) option (reads from source only)
++ *	- added -n (num aio) option 
++ *	- added -z (zero dest) opton (writes zeros to dest only)
++ *	- added -D delay_ms option
++ *  - 2/2004  Marty Ridgeway (mridge@us.ibm.com) Changes to adapt to LTP
++ *
++ * Copy file by using a async I/O state machine.
++ * 1. Start read request
++ * 2. When read completes turn it into a write request
++ * 3. When write completes decrement counter and free resources
++ *
++ *
++ * Usage: aiocp [-b blksize] -n [num_aio] [-w] [-z] [-s filesize] 
++ *		[-f DIRECT|TRUNC|CREAT|SYNC|LARGEFILE] src dest
++ */
 +
-+here=`pwd`
-+tmp=/tmp/$$
-+status=1    # failure is the default!
-+trap "_cleanup; exit \$status" 0 1 2 3 15
++//#define _GNU_SOURCE
++//#define DEBUG 1
++#undef DEBUG
 +
-+_cleanup()
++#include <unistd.h>
++#include <stdio.h>
++#include <sys/types.h>
++#include <sys/stat.h>
++#include <sys/param.h>
++#include <fcntl.h>
++#include <errno.h>
++#include <stdlib.h>
++#include <sys/select.h>
++
++#include <libaio.h>
++
++#define AIO_BLKSIZE	(64*1024)
++#define AIO_MAXIO	32
++
++static int aio_blksize = AIO_BLKSIZE;
++static int aio_maxio = AIO_MAXIO;
++
++static int busy = 0;		// # of I/O's in flight
++static int tocopy = 0;		// # of blocks left to copy
++static int srcfd;		// source fd
++static int dstfd = -1;		// destination file descriptor
++static const char *dstname = NULL;
++static const char *srcname = NULL;
++static int source_open_flag = O_RDONLY;	/* open flags on source file */
++static int dest_open_flag = O_WRONLY;	/* open flags on dest file */
++static int no_write;			/* do not write */
++static int zero;			/* write zero's only */
++
++static int debug;
++static int count_io_q_waits;	/* how many time io_queue_wait called */
++
++struct iocb **iocb_free;	/* array of pointers to iocb */
++int iocb_free_count;		/* current free count */
++int alignment = 512;		/* buffer alignment */
++
++struct timeval delay;		/* delay between i/o */
++
++int init_iocb(int n, int iosize)
 +{
-+    cd /
-+    rm -rf "$tmp".*
-+    _dmerror_cleanup
++	void *buf;
++	int i;
++
++	if ((iocb_free = malloc(n * sizeof(struct iocb *))) == 0) {
++		return -1;
++	}
++
++	for (i = 0; i < n; i++) {
++		if (!(iocb_free[i] = (struct iocb *) malloc(sizeof(struct iocb))))
++			return -1;
++		if (posix_memalign(&buf, alignment, iosize))
++			return -1;
++		if (debug > 1) {
++			printf("buf allocated at 0x%p, align:%d\n",
++					buf, alignment);
++		}
++		if (zero) {
++			/*
++			 * We are writing zero's to dstfd
++			 */
++			memset(buf, 0, iosize);
++		}
++		io_prep_pread(iocb_free[i], -1, buf, iosize, 0);
++	}
++	iocb_free_count = i;
++	return 0;
 +}
 +
-+# get standard environment, filters and checks
-+. ./common/rc
-+. ./common/filter
-+. ./common/reflink
-+. ./common/dmerror
-+
-+# real QA test starts here
-+_supported_os Linux
-+_require_scratch_reflink
-+_require_cp_reflink
-+_need_to_be_root
-+_require_dm_target error
-+
-+rm -f "$seqres.full"
-+
-+
-+echo "Format and mount"
-+_scratch_mkfs > "$seqres.full" 2>&1
-+_dmerror_init
-+_dmerror_mount >> "$seqres.full" 2>&1
-+
-+testdir="$SCRATCH_MNT/test-$seq"
-+rm -rf $testdir
-+mkdir $testdir
-+
-+blksz=65536
-+nr=640
-+bsz=128
-+
-+free_blocks=$(stat -f -c '%a' "$testdir")
-+real_blksz=$(stat -f -c '%S' "$testdir")
-+space_needed=$(((blksz * nr * 3) * 5 / 4))
-+space_avail=$((free_blocks * real_blksz))
-+test $space_needed -gt $space_avail && _notrun "Not enough space. $space_avail < $space_needed"
-+
-+echo "Create the original files"
-+"$XFS_IO_PROG" -f -c "pwrite -S 0x61 -b $((blksz * bsz)) 0 $((blksz * nr))" "$testdir/file1" >> "$seqres.full"
-+_cp_reflink "$testdir/file1" "$testdir/file2" >> "$seqres.full"
-+_dmerror_unmount
-+_dmerror_mount
-+
-+echo "Compare files"
-+md5sum "$testdir/file1" | _filter_scratch
-+md5sum "$testdir/file2" | _filter_scratch
-+
-+echo "CoW and unmount"
-+sync
-+_dmerror_load_error_table
-+"$XFS_IO_PROG" -f -c "pwrite -S 0x63 -b $((blksz * bsz)) 0 $((blksz * nr))" -c "fdatasync" "$testdir/file2" >> "$seqres.full"
-+
-+echo "Clean up the mess"
-+_dmerror_unmount
-+_dmerror_cleanup
-+_repair_scratch_fs >> "$seqres.full" 2>&1
-+_scratch_mount >> "$seqres.full" 2>&1
-+
-+echo "Compare files"
-+md5sum "$testdir/file1" | _filter_scratch
-+
-+echo "Check for damage"
-+umount "$SCRATCH_MNT"
-+
-+# success, all done
-+status=0
-+exit
-diff --git a/tests/generic/266.out b/tests/generic/266.out
-new file mode 100644
-index 0000000..bcfa097
---- /dev/null
-+++ b/tests/generic/266.out
-@@ -0,0 +1,12 @@
-+QA output created by 266
-+Format and mount
-+Create the original files
-+Compare files
-+1886e67cf8783e89ce6ddc5bb09a3944  SCRATCH_MNT/test-266/file1
-+1886e67cf8783e89ce6ddc5bb09a3944  SCRATCH_MNT/test-266/file2
-+CoW and unmount
-+fdatasync: Input/output error
-+Clean up the mess
-+Compare files
-+1886e67cf8783e89ce6ddc5bb09a3944  SCRATCH_MNT/test-266/file1
-+Check for damage
-diff --git a/tests/generic/267 b/tests/generic/267
-new file mode 100755
-index 0000000..25aaed7
---- /dev/null
-+++ b/tests/generic/267
-@@ -0,0 +1,103 @@
-+#! /bin/bash
-+# FS QA Test No. 267
-+#
-+# Test CoW behavior when the write temporarily fails and we unmount.
-+#
-+#-----------------------------------------------------------------------
-+# Copyright (c) 2016, Oracle and/or its affiliates.  All Rights Reserved.
-+#
-+# This program is free software; you can redistribute it and/or
-+# modify it under the terms of the GNU General Public License as
-+# published by the Free Software Foundation.
-+#
-+# This program is distributed in the hope that it would be useful,
-+# but WITHOUT ANY WARRANTY; without even the implied warranty of
-+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+# GNU General Public License for more details.
-+#
-+# You should have received a copy of the GNU General Public License
-+# along with this program; if not, write the Free Software Foundation,
-+# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-+#-----------------------------------------------------------------------
-+
-+seq=`basename "$0"`
-+seqres="$RESULT_DIR/$seq"
-+echo "QA output created by $seq"
-+
-+here=`pwd`
-+tmp=/tmp/$$
-+status=1    # failure is the default!
-+trap "_cleanup; exit \$status" 0 1 2 3 15
-+
-+_cleanup()
++struct iocb *alloc_iocb()
 +{
-+    cd /
-+    rm -rf "$tmp".*
-+    _dmerror_cleanup
++	if (!iocb_free_count)
++		return 0;
++	return iocb_free[--iocb_free_count];
 +}
 +
-+# get standard environment, filters and checks
-+. ./common/rc
-+. ./common/filter
-+. ./common/reflink
-+. ./common/dmerror
-+
-+# real QA test starts here
-+_supported_os Linux
-+_require_scratch_reflink
-+_require_cp_reflink
-+_need_to_be_root
-+_require_dm_target error
-+
-+rm -f "$seqres.full"
-+
-+
-+echo "Format and mount"
-+_scratch_mkfs > "$seqres.full" 2>&1
-+_dmerror_init
-+_dmerror_mount >> "$seqres.full" 2>&1
-+
-+testdir="$SCRATCH_MNT/test-$seq"
-+rm -rf $testdir
-+mkdir $testdir
-+
-+blksz=65536
-+nr=640
-+bsz=128
-+
-+free_blocks=$(stat -f -c '%a' "$testdir")
-+real_blksz=$(stat -f -c '%S' "$testdir")
-+space_needed=$(((blksz * nr * 3) * 5 / 4))
-+space_avail=$((free_blocks * real_blksz))
-+test $space_needed -gt $space_avail && _notrun "Not enough space. $space_avail < $space_needed"
-+
-+echo "Create the original files"
-+"$XFS_IO_PROG" -f -c "pwrite -S 0x61 -b $((blksz * bsz)) 0 $((blksz * nr))" "$testdir/file1" >> "$seqres.full"
-+_cp_reflink "$testdir/file1" "$testdir/file2" >> "$seqres.full"
-+_dmerror_unmount
-+_dmerror_mount
-+
-+echo "Compare files"
-+md5sum "$testdir/file1" | _filter_scratch
-+md5sum "$testdir/file2" | _filter_scratch
-+
-+echo "CoW and unmount"
-+sync
-+_dmerror_load_error_table
-+"$XFS_IO_PROG" -f -c "pwrite -S 0x63 -b $((blksz * bsz)) 0 $((blksz * nr))" "$testdir/file2" >> "$seqres.full"
-+_dmerror_load_working_table
-+rm -rf "$testdir/file2" >> "$seqres.full" 2>&1
-+_dmerror_unmount
-+_dmerror_mount
-+
-+echo "Compare files"
-+md5sum "$testdir/file1" | _filter_scratch
-+
-+echo "Check for damage"
-+_dmerror_unmount
-+_dmerror_cleanup
-+_repair_scratch_fs >> "$seqres.full" 2>&1
-+
-+# success, all done
-+status=0
-+exit
-diff --git a/tests/generic/267.out b/tests/generic/267.out
-new file mode 100644
-index 0000000..3c58e67
---- /dev/null
-+++ b/tests/generic/267.out
-@@ -0,0 +1,10 @@
-+QA output created by 267
-+Format and mount
-+Create the original files
-+Compare files
-+1886e67cf8783e89ce6ddc5bb09a3944  SCRATCH_MNT/test-267/file1
-+1886e67cf8783e89ce6ddc5bb09a3944  SCRATCH_MNT/test-267/file2
-+CoW and unmount
-+Compare files
-+1886e67cf8783e89ce6ddc5bb09a3944  SCRATCH_MNT/test-267/file1
-+Check for damage
-diff --git a/tests/generic/268 b/tests/generic/268
-new file mode 100755
-index 0000000..fa3d991
---- /dev/null
-+++ b/tests/generic/268
-@@ -0,0 +1,106 @@
-+#! /bin/bash
-+# FS QA Test No. 268
-+#
-+# Test CoW behavior when the write temporarily fails but the userspace
-+# program writes again.
-+#
-+#-----------------------------------------------------------------------
-+# Copyright (c) 2016, Oracle and/or its affiliates.  All Rights Reserved.
-+#
-+# This program is free software; you can redistribute it and/or
-+# modify it under the terms of the GNU General Public License as
-+# published by the Free Software Foundation.
-+#
-+# This program is distributed in the hope that it would be useful,
-+# but WITHOUT ANY WARRANTY; without even the implied warranty of
-+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+# GNU General Public License for more details.
-+#
-+# You should have received a copy of the GNU General Public License
-+# along with this program; if not, write the Free Software Foundation,
-+# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-+#-----------------------------------------------------------------------
-+
-+seq=`basename "$0"`
-+seqres="$RESULT_DIR/$seq"
-+echo "QA output created by $seq"
-+
-+here=`pwd`
-+tmp=/tmp/$$
-+status=1    # failure is the default!
-+trap "_cleanup; exit \$status" 0 1 2 3 15
-+
-+_cleanup()
++void free_iocb(struct iocb *io)
 +{
-+    cd /
-+    rm -rf "$tmp".*
-+    _dmerror_cleanup
++	iocb_free[iocb_free_count++] = io;
 +}
 +
-+# get standard environment, filters and checks
-+. ./common/rc
-+. ./common/filter
-+. ./common/reflink
-+. ./common/dmerror
-+
-+# real QA test starts here
-+_supported_os Linux
-+_require_scratch_reflink
-+_require_cp_reflink
-+_need_to_be_root
-+_require_dm_target error
-+
-+rm -f "$seqres.full"
-+
-+
-+echo "Format and mount"
-+_scratch_mkfs > "$seqres.full" 2>&1
-+_dmerror_init
-+_dmerror_mount >> "$seqres.full" 2>&1
-+
-+testdir="$SCRATCH_MNT/test-$seq"
-+rm -rf $testdir
-+mkdir $testdir
-+
-+blksz=65536
-+nr=640
-+bsz=128
-+
-+free_blocks=$(stat -f -c '%a' "$testdir")
-+real_blksz=$(stat -f -c '%S' "$testdir")
-+space_needed=$(((blksz * nr * 3) * 5 / 4))
-+space_avail=$((free_blocks * real_blksz))
-+test $space_needed -gt $space_avail && _notrun "Not enough space. $space_avail < $space_needed"
-+
-+echo "Create the original files"
-+"$XFS_IO_PROG" -f -c "pwrite -S 0x61 -b $((blksz * bsz)) 0 $((blksz * nr))" "$testdir/file1" >> "$seqres.full"
-+_cp_reflink "$testdir/file1" "$testdir/file2" >> "$seqres.full"
-+_dmerror_unmount
-+_dmerror_mount
-+
-+echo "Compare files"
-+md5sum "$testdir/file1" | _filter_scratch
-+md5sum "$testdir/file2" | _filter_scratch
-+
-+echo "CoW and unmount"
-+sync
-+_dmerror_load_error_table
-+"$XFS_IO_PROG" -f -c "pwrite -S 0x63 -b $((blksz * bsz)) 0 $((blksz * nr))" -c "fdatasync" "$testdir/file2" >> "$seqres.full"
-+_dmerror_load_working_table
-+
-+echo "Rewrite"
-+"$XFS_IO_PROG" -f -c "pwrite -S 0x64 -b $((blksz * bsz)) 0 $((blksz * nr))" -c "fdatasync" "$testdir/file2" >> "$seqres.full" 2>&1
-+_dmerror_unmount
-+_dmerror_mount
-+
-+echo "Compare files"
-+md5sum "$testdir/file1" | _filter_scratch
-+
-+echo "Check for damage"
-+_dmerror_unmount
-+_dmerror_cleanup
-+_repair_scratch_fs >> "$seqres.full" 2>&1
-+
-+# success, all done
-+status=0
-+exit
-diff --git a/tests/generic/268.out b/tests/generic/268.out
-new file mode 100644
-index 0000000..234e8be
---- /dev/null
-+++ b/tests/generic/268.out
-@@ -0,0 +1,12 @@
-+QA output created by 268
-+Format and mount
-+Create the original files
-+Compare files
-+1886e67cf8783e89ce6ddc5bb09a3944  SCRATCH_MNT/test-268/file1
-+1886e67cf8783e89ce6ddc5bb09a3944  SCRATCH_MNT/test-268/file2
-+CoW and unmount
-+fdatasync: Input/output error
-+Rewrite
-+Compare files
-+1886e67cf8783e89ce6ddc5bb09a3944  SCRATCH_MNT/test-268/file1
-+Check for damage
-diff --git a/tests/generic/271 b/tests/generic/271
-new file mode 100755
-index 0000000..efdd377
---- /dev/null
-+++ b/tests/generic/271
-@@ -0,0 +1,102 @@
-+#! /bin/bash
-+# FS QA Test No. 271
-+#
-+# Test DIO CoW behavior when the write temporarily fails.
-+#
-+#-----------------------------------------------------------------------
-+# Copyright (c) 2016, Oracle and/or its affiliates.  All Rights Reserved.
-+#
-+# This program is free software; you can redistribute it and/or
-+# modify it under the terms of the GNU General Public License as
-+# published by the Free Software Foundation.
-+#
-+# This program is distributed in the hope that it would be useful,
-+# but WITHOUT ANY WARRANTY; without even the implied warranty of
-+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+# GNU General Public License for more details.
-+#
-+# You should have received a copy of the GNU General Public License
-+# along with this program; if not, write the Free Software Foundation,
-+# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-+#-----------------------------------------------------------------------
-+
-+seq=`basename "$0"`
-+seqres="$RESULT_DIR/$seq"
-+echo "QA output created by $seq"
-+
-+here=`pwd`
-+tmp=/tmp/$$
-+status=1    # failure is the default!
-+trap "_cleanup; exit \$status" 0 1 2 3 15
-+
-+_cleanup()
++/*
++ * io_wait_run() - wait for an io_event and then call the callback.
++ */
++int io_wait_run(io_context_t ctx, struct timespec *to)
 +{
-+    cd /
-+    rm -rf "$tmp".*
-+    _dmerror_cleanup
++	struct io_event events[aio_maxio];
++	struct io_event *ep;
++	int ret, n;
++
++	/*
++	 * get up to aio_maxio events at a time.
++	 */
++	ret = n = io_getevents(ctx, 1, aio_maxio, events, to);
++
++	/*
++	 * Call the callback functions for each event.
++	 */
++	for (ep = events; n-- > 0; ep++) {
++		io_callback_t cb = (io_callback_t)ep->data;
++		struct iocb *iocb = (struct iocb *)ep->obj;
++
++		cb(ctx, iocb, ep->res, ep->res2);
++	}
++	return ret;
 +}
 +
-+# get standard environment, filters and checks
-+. ./common/rc
-+. ./common/filter
-+. ./common/reflink
-+. ./common/dmerror
-+
-+# real QA test starts here
-+_supported_os Linux
-+_require_scratch_reflink
-+_require_cp_reflink
-+_need_to_be_root
-+_require_dm_target error
-+
-+rm -f "$seqres.full"
-+
-+
-+echo "Format and mount"
-+_scratch_mkfs > "$seqres.full" 2>&1
-+_dmerror_init
-+_dmerror_mount >> "$seqres.full" 2>&1
-+
-+testdir="$SCRATCH_MNT/test-$seq"
-+rm -rf $testdir
-+mkdir $testdir
-+
-+blksz=65536
-+nr=640
-+bsz=128
-+
-+free_blocks=$(stat -f -c '%a' "$testdir")
-+real_blksz=$(stat -f -c '%S' "$testdir")
-+space_needed=$(((blksz * nr * 3) * 5 / 4))
-+space_avail=$((free_blocks * real_blksz))
-+test $space_needed -gt $space_avail && _notrun "Not enough space. $space_avail < $space_needed"
-+
-+echo "Create the original files"
-+"$XFS_IO_PROG" -f -c "pwrite -S 0x61 -b $((blksz * bsz)) 0 $((blksz * nr))" "$testdir/file1" >> "$seqres.full"
-+_cp_reflink "$testdir/file1" "$testdir/file2" >> "$seqres.full"
-+_dmerror_unmount
-+_dmerror_mount
-+
-+echo "Compare files"
-+md5sum "$testdir/file1" | _filter_scratch
-+md5sum "$testdir/file2" | _filter_scratch
-+
-+echo "CoW and unmount"
-+sync
-+_dmerror_load_error_table
-+"$XFS_IO_PROG" -d -f -c "pwrite -S 0x63 -b $((blksz * bsz)) 0 $((blksz * nr))" "$testdir/file2" >> "$seqres.full"
-+_dmerror_load_working_table
-+_dmerror_unmount
-+_dmerror_mount
-+
-+echo "Compare files"
-+md5sum "$testdir/file1" | _filter_scratch
-+
-+echo "Check for damage"
-+_dmerror_unmount
-+_dmerror_cleanup
-+_repair_scratch_fs >> "$seqres.full" 2>&1
-+
-+# success, all done
-+status=0
-+exit
-diff --git a/tests/generic/271.out b/tests/generic/271.out
-new file mode 100644
-index 0000000..f7ea004
---- /dev/null
-+++ b/tests/generic/271.out
-@@ -0,0 +1,11 @@
-+QA output created by 271
-+Format and mount
-+Create the original files
-+Compare files
-+1886e67cf8783e89ce6ddc5bb09a3944  SCRATCH_MNT/test-271/file1
-+1886e67cf8783e89ce6ddc5bb09a3944  SCRATCH_MNT/test-271/file2
-+CoW and unmount
-+pwrite64: Input/output error
-+Compare files
-+1886e67cf8783e89ce6ddc5bb09a3944  SCRATCH_MNT/test-271/file1
-+Check for damage
-diff --git a/tests/generic/272 b/tests/generic/272
-new file mode 100755
-index 0000000..64c9834
---- /dev/null
-+++ b/tests/generic/272
-@@ -0,0 +1,103 @@
-+#! /bin/bash
-+# FS QA Test No. 272
-+#
-+# Test DIO CoW behavior when the write permanently fails.
-+#
-+#-----------------------------------------------------------------------
-+# Copyright (c) 2016, Oracle and/or its affiliates.  All Rights Reserved.
-+#
-+# This program is free software; you can redistribute it and/or
-+# modify it under the terms of the GNU General Public License as
-+# published by the Free Software Foundation.
-+#
-+# This program is distributed in the hope that it would be useful,
-+# but WITHOUT ANY WARRANTY; without even the implied warranty of
-+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+# GNU General Public License for more details.
-+#
-+# You should have received a copy of the GNU General Public License
-+# along with this program; if not, write the Free Software Foundation,
-+# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-+#-----------------------------------------------------------------------
-+
-+seq=`basename "$0"`
-+seqres="$RESULT_DIR/$seq"
-+echo "QA output created by $seq"
-+
-+here=`pwd`
-+tmp=/tmp/$$
-+status=1    # failure is the default!
-+trap "_cleanup; exit \$status" 0 1 2 3 15
-+
-+_cleanup()
++/* Fatal error handler */
++static void io_error(const char *func, int rc)
 +{
-+    cd /
-+    rm -rf "$tmp".*
-+    _dmerror_cleanup
++	if (rc == -ENOSYS)
++		fprintf(stderr, "AIO not in this kernel\n");
++	else if (rc < 0)
++		fprintf(stderr, "%s: %s\n", func, strerror(-rc));
++	else
++		fprintf(stderr, "%s: error %d\n", func, rc);
++
++	if (dstfd > 0)
++		close(dstfd);
++	if (dstname && dest_open_flag & O_CREAT)
++		unlink(dstname);
++	exit(1);
 +}
 +
-+# get standard environment, filters and checks
-+. ./common/rc
-+. ./common/filter
-+. ./common/reflink
-+. ./common/dmerror
-+
-+# real QA test starts here
-+_supported_os Linux
-+_require_scratch_reflink
-+_require_cp_reflink
-+_need_to_be_root
-+_require_dm_target error
-+
-+rm -f "$seqres.full"
-+
-+
-+echo "Format and mount"
-+_scratch_mkfs > "$seqres.full" 2>&1
-+_dmerror_init
-+_dmerror_mount >> "$seqres.full" 2>&1
-+
-+testdir="$SCRATCH_MNT/test-$seq"
-+rm -rf $testdir
-+mkdir $testdir
-+
-+blksz=65536
-+nr=640
-+bsz=128
-+
-+free_blocks=$(stat -f -c '%a' "$testdir")
-+real_blksz=$(stat -f -c '%S' "$testdir")
-+space_needed=$(((blksz * nr * 3) * 5 / 4))
-+space_avail=$((free_blocks * real_blksz))
-+test $space_needed -gt $space_avail && _notrun "Not enough space. $space_avail < $space_needed"
-+
-+echo "Create the original files"
-+"$XFS_IO_PROG" -f -c "pwrite -S 0x61 -b $((blksz * bsz)) 0 $((blksz * nr))" "$testdir/file1" >> "$seqres.full"
-+_cp_reflink "$testdir/file1" "$testdir/file2" >> "$seqres.full"
-+_dmerror_unmount
-+_dmerror_mount
-+
-+echo "Compare files"
-+md5sum "$testdir/file1" | _filter_scratch
-+md5sum "$testdir/file2" | _filter_scratch
-+
-+echo "CoW and unmount"
-+sync
-+_dmerror_load_error_table
-+"$XFS_IO_PROG" -d -f -c "pwrite -S 0x63 -b $((blksz * bsz)) 0 $((blksz * nr))" "$testdir/file2" >> "$seqres.full"
-+
-+echo "Clean up the mess"
-+_dmerror_unmount
-+_dmerror_cleanup
-+_repair_scratch_fs >> "$seqres.full" 2>&1
-+_scratch_mount >> "$seqres.full" 2>&1
-+
-+echo "Compare files"
-+md5sum "$testdir/file1" | _filter_scratch
-+
-+echo "Check for damage"
-+umount "$SCRATCH_MNT"
-+
-+# success, all done
-+status=0
-+exit
-diff --git a/tests/generic/272.out b/tests/generic/272.out
-new file mode 100644
-index 0000000..4794088
---- /dev/null
-+++ b/tests/generic/272.out
-@@ -0,0 +1,12 @@
-+QA output created by 272
-+Format and mount
-+Create the original files
-+Compare files
-+1886e67cf8783e89ce6ddc5bb09a3944  SCRATCH_MNT/test-272/file1
-+1886e67cf8783e89ce6ddc5bb09a3944  SCRATCH_MNT/test-272/file2
-+CoW and unmount
-+pwrite64: Input/output error
-+Clean up the mess
-+Compare files
-+1886e67cf8783e89ce6ddc5bb09a3944  SCRATCH_MNT/test-272/file1
-+Check for damage
-diff --git a/tests/generic/276 b/tests/generic/276
-new file mode 100755
-index 0000000..3b51ffd
---- /dev/null
-+++ b/tests/generic/276
-@@ -0,0 +1,103 @@
-+#! /bin/bash
-+# FS QA Test No. 276
-+#
-+# Test DIO CoW behavior when the write temporarily fails and we unmount.
-+#
-+#-----------------------------------------------------------------------
-+# Copyright (c) 2016, Oracle and/or its affiliates.  All Rights Reserved.
-+#
-+# This program is free software; you can redistribute it and/or
-+# modify it under the terms of the GNU General Public License as
-+# published by the Free Software Foundation.
-+#
-+# This program is distributed in the hope that it would be useful,
-+# but WITHOUT ANY WARRANTY; without even the implied warranty of
-+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+# GNU General Public License for more details.
-+#
-+# You should have received a copy of the GNU General Public License
-+# along with this program; if not, write the Free Software Foundation,
-+# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-+#-----------------------------------------------------------------------
-+
-+seq=`basename "$0"`
-+seqres="$RESULT_DIR/$seq"
-+echo "QA output created by $seq"
-+
-+here=`pwd`
-+tmp=/tmp/$$
-+status=1    # failure is the default!
-+trap "_cleanup; exit \$status" 0 1 2 3 15
-+
-+_cleanup()
++/*
++ * Write complete callback.
++ * Adjust counts and free resources
++ */
++static void wr_done(io_context_t ctx, struct iocb *iocb, long res, long res2)
 +{
-+    cd /
-+    rm -rf "$tmp".*
-+    _dmerror_cleanup
++	if (res2 != 0) {
++		io_error("aio write", res2);
++	}
++	if (res != iocb->u.c.nbytes) {
++		fprintf(stderr, "write missed bytes expect %lu got %ld\n",
++			iocb->u.c.nbytes, res2);
++		exit(1);
++	}
++	--tocopy;
++	--busy;
++	free_iocb(iocb);
++	if (debug)
++		write(2, "w", 1);
 +}
 +
-+# get standard environment, filters and checks
-+. ./common/rc
-+. ./common/filter
-+. ./common/reflink
-+. ./common/dmerror
-+
-+# real QA test starts here
-+_supported_os Linux
-+_require_scratch_reflink
-+_require_cp_reflink
-+_need_to_be_root
-+_require_dm_target error
-+
-+rm -f "$seqres.full"
-+
-+
-+echo "Format and mount"
-+_scratch_mkfs > "$seqres.full" 2>&1
-+_dmerror_init
-+_dmerror_mount >> "$seqres.full" 2>&1
-+
-+testdir="$SCRATCH_MNT/test-$seq"
-+rm -rf $testdir
-+mkdir $testdir
-+
-+blksz=65536
-+nr=640
-+bsz=128
-+
-+free_blocks=$(stat -f -c '%a' "$testdir")
-+real_blksz=$(stat -f -c '%S' "$testdir")
-+space_needed=$(((blksz * nr * 3) * 5 / 4))
-+space_avail=$((free_blocks * real_blksz))
-+test $space_needed -gt $space_avail && _notrun "Not enough space. $space_avail < $space_needed"
-+
-+echo "Create the original files"
-+"$XFS_IO_PROG" -f -c "pwrite -S 0x61 -b $((blksz * bsz)) 0 $((blksz * nr))" "$testdir/file1" >> "$seqres.full"
-+_cp_reflink "$testdir/file1" "$testdir/file2" >> "$seqres.full"
-+_dmerror_unmount
-+_dmerror_mount
-+
-+echo "Compare files"
-+md5sum "$testdir/file1" | _filter_scratch
-+md5sum "$testdir/file2" | _filter_scratch
-+
-+echo "CoW and unmount"
-+sync
-+_dmerror_load_error_table
-+"$XFS_IO_PROG" -d -f -c "pwrite -S 0x63 -b $((blksz * bsz)) 0 $((blksz * nr))" "$testdir/file2" >> "$seqres.full"
-+_dmerror_load_working_table
-+rm -rf "$testdir/file2" >> "$seqres.full" 2>&1
-+_dmerror_unmount
-+_dmerror_mount
-+
-+echo "Compare files"
-+md5sum "$testdir/file1" | _filter_scratch
-+
-+echo "Check for damage"
-+_dmerror_unmount
-+_dmerror_cleanup
-+_repair_scratch_fs >> "$seqres.full" 2>&1
-+
-+# success, all done
-+status=0
-+exit
-diff --git a/tests/generic/276.out b/tests/generic/276.out
-new file mode 100644
-index 0000000..e2aeacf
---- /dev/null
-+++ b/tests/generic/276.out
-@@ -0,0 +1,11 @@
-+QA output created by 276
-+Format and mount
-+Create the original files
-+Compare files
-+1886e67cf8783e89ce6ddc5bb09a3944  SCRATCH_MNT/test-276/file1
-+1886e67cf8783e89ce6ddc5bb09a3944  SCRATCH_MNT/test-276/file2
-+CoW and unmount
-+pwrite64: Input/output error
-+Compare files
-+1886e67cf8783e89ce6ddc5bb09a3944  SCRATCH_MNT/test-276/file1
-+Check for damage
-diff --git a/tests/generic/278 b/tests/generic/278
-new file mode 100755
-index 0000000..892320e
---- /dev/null
-+++ b/tests/generic/278
-@@ -0,0 +1,106 @@
-+#! /bin/bash
-+# FS QA Test No. 278
-+#
-+# Test CoW behavior when the write temporarily fails but the userspace
-+# program writes again.
-+#
-+#-----------------------------------------------------------------------
-+# Copyright (c) 2016, Oracle and/or its affiliates.  All Rights Reserved.
-+#
-+# This program is free software; you can redistribute it and/or
-+# modify it under the terms of the GNU General Public License as
-+# published by the Free Software Foundation.
-+#
-+# This program is distributed in the hope that it would be useful,
-+# but WITHOUT ANY WARRANTY; without even the implied warranty of
-+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+# GNU General Public License for more details.
-+#
-+# You should have received a copy of the GNU General Public License
-+# along with this program; if not, write the Free Software Foundation,
-+# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-+#-----------------------------------------------------------------------
-+
-+seq=`basename "$0"`
-+seqres="$RESULT_DIR/$seq"
-+echo "QA output created by $seq"
-+
-+here=`pwd`
-+tmp=/tmp/$$
-+status=1    # failure is the default!
-+trap "_cleanup; exit \$status" 0 1 2 3 15
-+
-+_cleanup()
++/*
++ * Read complete callback.
++ * Change read iocb into a write iocb and start it.
++ */
++static void rd_done(io_context_t ctx, struct iocb *iocb, long res, long res2)
 +{
-+    cd /
-+    rm -rf "$tmp".*
-+    _dmerror_cleanup
++	/* library needs accessors to look at iocb? */
++	int iosize = iocb->u.c.nbytes;
++	char *buf = iocb->u.c.buf;
++	off_t offset = iocb->u.c.offset;
++
++	if (res2 != 0)
++		io_error("aio read", res2);
++	if (res != iosize) {
++		fprintf(stderr, "read missing bytes expect %lu got %ld\n",
++			iocb->u.c.nbytes, res);
++		exit(1);
++	}
++
++
++	/* turn read into write */
++	if (no_write) {
++		--tocopy;
++		--busy;
++		free_iocb(iocb);
++	} else {
++		io_prep_pwrite(iocb, dstfd, buf, iosize, offset);
++		io_set_callback(iocb, wr_done);
++		if (1 != (res = io_submit(ctx, 1, &iocb)))
++			io_error("io_submit write", res);
++	}
++	if (debug)
++		write(2, "r", 1);
++	if (debug > 1)
++		printf("%d", iosize);
 +}
 +
-+# get standard environment, filters and checks
-+. ./common/rc
-+. ./common/filter
-+. ./common/reflink
-+. ./common/dmerror
-+
-+# real QA test starts here
-+_supported_os Linux
-+_require_scratch_reflink
-+_require_cp_reflink
-+_need_to_be_root
-+_require_dm_target error
-+
-+rm -f "$seqres.full"
-+
-+
-+echo "Format and mount"
-+_scratch_mkfs > "$seqres.full" 2>&1
-+_dmerror_init
-+_dmerror_mount >> "$seqres.full" 2>&1
-+
-+testdir="$SCRATCH_MNT/test-$seq"
-+rm -rf $testdir
-+mkdir $testdir
-+
-+blksz=65536
-+nr=640
-+bsz=128
-+
-+free_blocks=$(stat -f -c '%a' "$testdir")
-+real_blksz=$(stat -f -c '%S' "$testdir")
-+space_needed=$(((blksz * nr * 3) * 5 / 4))
-+space_avail=$((free_blocks * real_blksz))
-+test $space_needed -gt $space_avail && _notrun "Not enough space. $space_avail < $space_needed"
-+
-+echo "Create the original files"
-+"$XFS_IO_PROG" -f -c "pwrite -S 0x61 -b $((blksz * bsz)) 0 $((blksz * nr))" "$testdir/file1" >> "$seqres.full"
-+_cp_reflink "$testdir/file1" "$testdir/file2" >> "$seqres.full"
-+_dmerror_unmount
-+_dmerror_mount
-+
-+echo "Compare files"
-+md5sum "$testdir/file1" | _filter_scratch
-+md5sum "$testdir/file2" | _filter_scratch
-+
-+echo "CoW and unmount"
-+sync
-+_dmerror_load_error_table
-+"$XFS_IO_PROG" -d -f -c "pwrite -S 0x63 -b $((blksz * bsz)) 0 $((blksz * nr))" "$testdir/file2" >> "$seqres.full"
-+_dmerror_load_working_table
-+
-+echo "Rewrite"
-+"$XFS_IO_PROG" -d -f -c "pwrite -S 0x64 -b $((blksz * bsz)) 0 $((blksz * nr))" "$testdir/file2" >> "$seqres.full" 2>&1
-+_dmerror_unmount
-+_dmerror_mount
-+
-+echo "Compare files"
-+md5sum "$testdir/file1" | _filter_scratch
-+
-+echo "Check for damage"
-+_dmerror_unmount
-+_dmerror_cleanup
-+_repair_scratch_fs >> "$seqres.full" 2>&1
-+
-+# success, all done
-+status=0
-+exit
-diff --git a/tests/generic/278.out b/tests/generic/278.out
-new file mode 100644
-index 0000000..6723b73
---- /dev/null
-+++ b/tests/generic/278.out
-@@ -0,0 +1,12 @@
-+QA output created by 278
-+Format and mount
-+Create the original files
-+Compare files
-+1886e67cf8783e89ce6ddc5bb09a3944  SCRATCH_MNT/test-278/file1
-+1886e67cf8783e89ce6ddc5bb09a3944  SCRATCH_MNT/test-278/file2
-+CoW and unmount
-+pwrite64: Input/output error
-+Rewrite
-+Compare files
-+1886e67cf8783e89ce6ddc5bb09a3944  SCRATCH_MNT/test-278/file1
-+Check for damage
-diff --git a/tests/generic/279 b/tests/generic/279
-new file mode 100755
-index 0000000..66ea000
---- /dev/null
-+++ b/tests/generic/279
-@@ -0,0 +1,103 @@
-+#! /bin/bash
-+# FS QA Test No. 279
-+#
-+# Test mmap CoW behavior when the write temporarily fails.
-+#
-+#-----------------------------------------------------------------------
-+# Copyright (c) 2016, Oracle and/or its affiliates.  All Rights Reserved.
-+#
-+# This program is free software; you can redistribute it and/or
-+# modify it under the terms of the GNU General Public License as
-+# published by the Free Software Foundation.
-+#
-+# This program is distributed in the hope that it would be useful,
-+# but WITHOUT ANY WARRANTY; without even the implied warranty of
-+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+# GNU General Public License for more details.
-+#
-+# You should have received a copy of the GNU General Public License
-+# along with this program; if not, write the Free Software Foundation,
-+# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-+#-----------------------------------------------------------------------
-+
-+seq=`basename "$0"`
-+seqres="$RESULT_DIR/$seq"
-+echo "QA output created by $seq"
-+
-+here=`pwd`
-+tmp=/tmp/$$
-+status=1    # failure is the default!
-+trap "_cleanup; exit \$status" 0 1 2 3 15
-+
-+_cleanup()
++void usage()
 +{
-+    cd /
-+    rm -rf "$tmp".* "$TEST_DIR/mwrite.out"
-+    _dmerror_cleanup
++	fprintf(stderr,
++		"Usage: aiocp [-a align] [-s size] [-b blksize] [-n num_io]"
++		" [-f open_flag] SOURCE DEST\n"
++		"This copies from SOURCE to DEST using AIO.\n\n"
++		"Usage: aiocp [options] -w SOURCE\n"
++		"This does sequential AIO reads (no writes).\n\n"
++		"Usage: aiocp [options] -z DEST\n"
++		"This does sequential AIO writes of zeros.\n");
++		
++	exit(1);
 +}
 +
-+# get standard environment, filters and checks
-+. ./common/rc
-+. ./common/filter
-+. ./common/reflink
-+. ./common/dmerror
++/*
++ * Scale value by kilo, mega, or giga.
++ */
++long long scale_by_kmg(long long value, char scale)
++{
++	switch (scale) {
++	case 'g':
++	case 'G':
++		value *= 1024;
++	case 'm':
++	case 'M':
++		value *= 1024;
++	case 'k':
++	case 'K':
++		value *= 1024;
++		break;
++	case '\0':
++		break;
++	default:
++		usage();
++		break;
++	}
++	return value;
++}
 +
-+# real QA test starts here
-+_supported_os Linux
-+_require_scratch_reflink
-+_require_cp_reflink
-+_need_to_be_root
-+_require_dm_target error
++int main(int argc, char *const *argv)
++{
++	struct stat st;
++	off_t length = 0, offset = 0;
++	io_context_t myctx;
++	int c;
++	extern char *optarg;
++	extern int optind, opterr, optopt;
 +
-+rm -f "$seqres.full"
++	while ((c = getopt(argc, argv, "a:b:df:n:s:wzD:")) != -1) {
++		char *endp;
 +
++		switch (c) {
++		case 'a':	/* alignment of data buffer */
++			alignment = strtol(optarg, &endp, 0);
++			alignment = (long)scale_by_kmg((long long)alignment,
++							*endp);
++			break;
++		case 'f':	/* use these open flags */
++			if (strcmp(optarg, "LARGEFILE") == 0 ||
++			    strcmp(optarg, "O_LARGEFILE") == 0) {
++				source_open_flag |= O_LARGEFILE;
++				dest_open_flag |= O_LARGEFILE;
++			} else if (strcmp(optarg, "TRUNC") == 0 ||
++			           strcmp(optarg, "O_TRUNC") == 0) {
++				dest_open_flag |= O_TRUNC;
++			} else if (strcmp(optarg, "SYNC") == 0 ||
++				   strcmp(optarg, "O_SYNC") == 0) {
++				dest_open_flag |= O_SYNC | O_NONBLOCK;
++			} else if (strcmp(optarg, "DIRECT") == 0 ||
++				   strcmp(optarg, "O_DIRECT") == 0) {
++				source_open_flag |= O_DIRECT;
++				dest_open_flag |= O_DIRECT;
++			} else if (strncmp(optarg, "CREAT", 5) == 0 ||
++				   strncmp(optarg, "O_CREAT", 5) == 0) {
++				dest_open_flag |= O_CREAT;
++			}
++			break;
++		case 'd':
++			debug++;
++			break;
++		case 'D':
++			delay.tv_usec = atoi(optarg);
++			break;
++		case 'b':	/* block size */
++			aio_blksize = strtol(optarg, &endp, 0);
++			aio_blksize = (long)scale_by_kmg((long long)aio_blksize, *endp);
++			break;
 +
-+echo "Format and mount"
-+_scratch_mkfs > "$seqres.full" 2>&1
-+_dmerror_init
-+_dmerror_mount >> "$seqres.full" 2>&1
++		case 'n':	/* num io */
++			aio_maxio = strtol(optarg, &endp, 0);
++			break;
++		case 's':	/* size to transfer */
++			length = strtoll(optarg, &endp, 0);
++			length = scale_by_kmg(length, *endp);
++			break;
++		case 'w':	/* no write */
++			no_write = 1;
++			break;
++		case 'z':	/* write zero's */
++			zero = 1;
++			break;
 +
-+testdir="$SCRATCH_MNT/test-$seq"
-+rm -rf $testdir
-+mkdir $testdir
++		default:
++			usage();
++		}
++	}
 +
-+blksz=65536
-+nr=640
-+bsz=128
++	argc -= optind;
++	argv += optind;
++	
++#ifndef DEBUG
++	if (argc < 1) {
++		usage();
++	}
++#else
++    source_open_flag |= O_DIRECT;
++    dest_open_flag |= O_DIRECT;
++    aio_blksize = 1;
++    aio_maxio=1;
++    srcname = "junkdata";
++    dstname = "ff2";
++#endif
++	if (!zero) {
++#ifndef DEBUG
++	       	if ((srcfd = open(srcname = *argv, source_open_flag)) < 0) {
++#else
++                if ((srcfd = open(srcname, source_open_flag)) < 0) {
++#endif
++			perror(srcname);
++			exit(1);
++		}
++		argv++;
++		argc--;
++		if (fstat(srcfd, &st) < 0) {
++			perror("fstat");
++			exit(1);
++		}
++		if (length == 0)
++			length = st.st_size;
++	}
 +
-+free_blocks=$(stat -f -c '%a' "$testdir")
-+real_blksz=$(stat -f -c '%S' "$testdir")
-+space_needed=$(((blksz * nr * 3) * 5 / 4))
-+space_avail=$((free_blocks * real_blksz))
-+test $space_needed -gt $space_avail && _notrun "Not enough space. $space_avail < $space_needed"
++	if (!no_write) {
++		/*
++		 * We are either copying or writing zeros to dstname
++		 */
++#ifndef DEBUG
++		if (argc < 1) {
++			usage();
++		}
++		if ((dstfd = open(dstname = *argv, dest_open_flag, 0666)) < 0) {
++#else
++            if ((dstfd = open(dstname, dest_open_flag, 0666)) < 0) {
++#endif
++			perror(dstname);
++			exit(1);
++		}
++		if (zero) {
++			/*
++			 * get size of dest, if we are zeroing it.
++			 * TODO: handle devices.
++			 */
++			if (fstat(dstfd, &st) < 0) {
++				perror("fstat");
++				exit(1);
++			}
++			if (length == 0)
++				length = st.st_size;
++		}
++	}
 +
-+echo "Create the original files"
-+"$XFS_IO_PROG" -f -c "pwrite -S 0x61 -b $((blksz * bsz)) 0 $((blksz * nr))" "$testdir/file1" >> "$seqres.full"
-+_cp_reflink "$testdir/file1" "$testdir/file2" >> "$seqres.full"
-+_dmerror_unmount
-+_dmerror_mount
++	/* initialize state machine */
++	memset(&myctx, 0, sizeof(myctx));
++	io_queue_init(aio_maxio, &myctx);
++	tocopy = howmany(length, aio_blksize);
++printf("tocopy=%d len=%d blk=%d\n", tocopy, length, aio_blksize);
++	if (init_iocb(aio_maxio, aio_blksize) < 0) {
++		fprintf(stderr, "Error allocating the i/o buffers\n");
++		exit(1);
++	}
 +
-+echo "Compare files"
-+md5sum "$testdir/file1" | _filter_scratch
-+md5sum "$testdir/file2" | _filter_scratch
++	while (tocopy > 0) {
++		int i, rc;
++		/* Submit as many reads as once as possible upto aio_maxio */
++		int n = MIN(MIN(aio_maxio - busy, aio_maxio),
++				howmany(length - offset, aio_blksize));
++		if (n > 0) {
++			struct iocb *ioq[n];
 +
-+echo "CoW and unmount"
-+sync
-+_dmerror_load_error_table
-+urk=$("$XFS_IO_PROG" -f -c "mmap -rw 0 $((blksz * nr))" -c "mwrite -S 0x63 0 $((blksz * nr))" -c "msync -s 0 $((blksz * nr))" "$testdir/file2" > "$TEST_DIR/mwrite.out" 2>&1)
-+cat "$TEST_DIR/mwrite.out" | tee -a "$seqres.full"
-+_dmerror_load_working_table
-+_dmerror_unmount
-+_dmerror_mount
++			for (i = 0; i < n; i++) {
++				struct iocb *io = alloc_iocb();
++				int iosize = MIN(length - offset, aio_blksize);
 +
-+echo "Compare files"
-+md5sum "$testdir/file1" | _filter_scratch
++				if (zero) {
++					/*
++					 * We are writing zero's to dstfd
++					 */
++					io_prep_pwrite(io, dstfd, io->u.c.buf,
++							iosize, offset);
++					io_set_callback(io, wr_done);
++				} else {
++					io_prep_pread(io, srcfd, io->u.c.buf,
++							iosize, offset);
++					io_set_callback(io, rd_done);
++				}
++				ioq[i] = io;
++				offset += iosize;
++			}
 +
-+echo "Check for damage"
-+_dmerror_unmount
-+_dmerror_cleanup
-+_repair_scratch_fs >> "$seqres.full" 2>&1
++			rc = io_submit(myctx, n, ioq);
++			if (rc < 0)
++				io_error("io_submit", rc);
 +
-+# success, all done
-+status=0
-+exit
-diff --git a/tests/generic/279.out b/tests/generic/279.out
-new file mode 100644
-index 0000000..f34c2b2
---- /dev/null
-+++ b/tests/generic/279.out
-@@ -0,0 +1,11 @@
-+QA output created by 279
-+Format and mount
-+Create the original files
-+Compare files
-+1886e67cf8783e89ce6ddc5bb09a3944  SCRATCH_MNT/test-279/file1
-+1886e67cf8783e89ce6ddc5bb09a3944  SCRATCH_MNT/test-279/file2
-+CoW and unmount
-+msync: Input/output error
-+Compare files
-+1886e67cf8783e89ce6ddc5bb09a3944  SCRATCH_MNT/test-279/file1
-+Check for damage
-diff --git a/tests/generic/281 b/tests/generic/281
++			busy += n;
++			if (debug > 1)
++				printf("io_submit(%d) busy:%d\n", n, busy);
++			if (delay.tv_usec) {
++				struct timeval t = delay;
++				(void)select(0,0,0,0,&t);
++			}
++		}
++
++		/*
++		 * We have submitted all the i/o requests. Wait for at least one to complete
++		 * and call the callbacks.
++		 */
++		count_io_q_waits++;
++		rc = io_wait_run(myctx, 0);
++		if (rc < 0)
++			io_error("io_wait_run", rc);
++
++		if (debug > 1) {
++			printf("io_wait_run: rc == %d\n", rc);
++			printf("busy:%d aio_maxio:%d tocopy:%d\n",
++					busy, aio_maxio, tocopy);
++		}
++	}
++
++	if (srcfd != -1)
++		close(srcfd);
++	if (dstfd != -1)
++		close(dstfd);
++	exit(0);
++}
++
++/* 
++ * Results look like:
++ * [alanm@toolbox ~/MOT3]$ ../taio -d kernel-source-2.4.8-0.4g.ppc.rpm abc
++ * rrrrrrrrrrrrrrrwwwrwrrwwrrwrwwrrwrwrwwrrwrwrrrrwwrwwwrrwrrrwwwwwwwwwwwwwwwww
++ * rrrrrrrrrrrrrrwwwrrwrwrwrwrrwwwwwwwwwwwwwwrrrrrrrrrrrrrrrrrrwwwwrwrwwrwrwrwr
++ * wrrrrrrrwwwwwwwwwwwwwrrrwrrrwrrwrwwwwwwwwwwrrrrwwrwrrrrrrrrrrrwwwwwwwwwwwrww
++ * wwwrrrrrrrrwwrrrwwrwrwrwwwrrrrrrrwwwrrwwwrrwrwwwwwwwwrrrrrrrwwwrrrrrrrwwwwww
++ * wwwwwwwrwrrrrrrrrwrrwrrwrrwrwrrrwrrrwrrrwrwwwwwwwwwwwwwwwwwwrrrwwwrrrrrrrrrr
++ * rrwrrrrrrwrrwwwwwwwwwwwwwwwwrwwwrrwrwwrrrrrrrrrrrrrrrrrrrwwwwwwwwwwwwwwwwwww
++ * rrrrrwrrwrwrwrrwrrrwwwwwwwwrrrrwrrrwrwwrwrrrwrrwrrrrwwwwwwwrwrwwwwrwwrrrwrrr
++ * rrrwwwwwwwrrrrwwrrrrrrrrrrrrwrwrrrrwwwwwwwwwwwwwwrwrrrrwwwwrwrrrrwrwwwrrrwww
++ * rwwrrrrrrrwrrrrrrrrrrrrwwwwrrrwwwrwrrwwwwwwwwwwwwwwwwwwwwwrrrrrrrwwwwwwwrw
++ */
+diff --git a/tests/generic/250 b/tests/generic/250
 new file mode 100755
-index 0000000..09dc4be
+index 0000000..0953e26
 --- /dev/null
-+++ b/tests/generic/281
++++ b/tests/generic/250
 @@ -0,0 +1,104 @@
 +#! /bin/bash
-+# FS QA Test No. 281
++# FS QA Test No. 250
 +#
-+# Test mmap CoW behavior when the write permanently fails.
-+#
-+#-----------------------------------------------------------------------
-+# Copyright (c) 2016, Oracle and/or its affiliates.  All Rights Reserved.
-+#
-+# This program is free software; you can redistribute it and/or
-+# modify it under the terms of the GNU General Public License as
-+# published by the Free Software Foundation.
-+#
-+# This program is distributed in the hope that it would be useful,
-+# but WITHOUT ANY WARRANTY; without even the implied warranty of
-+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+# GNU General Public License for more details.
-+#
-+# You should have received a copy of the GNU General Public License
-+# along with this program; if not, write the Free Software Foundation,
-+# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-+#-----------------------------------------------------------------------
-+
-+seq=`basename "$0"`
-+seqres="$RESULT_DIR/$seq"
-+echo "QA output created by $seq"
-+
-+here=`pwd`
-+tmp=/tmp/$$
-+status=1    # failure is the default!
-+trap "_cleanup; exit \$status" 0 1 2 3 15
-+
-+_cleanup()
-+{
-+    cd /
-+    rm -rf "$tmp".* "$TEST_DIR/mwrite.out"
-+    _dmerror_cleanup
-+}
-+
-+# get standard environment, filters and checks
-+. ./common/rc
-+. ./common/filter
-+. ./common/reflink
-+. ./common/dmerror
-+
-+# real QA test starts here
-+_supported_os Linux
-+_require_scratch_reflink
-+_require_cp_reflink
-+_need_to_be_root
-+_require_dm_target error
-+
-+rm -f "$seqres.full"
-+
-+
-+echo "Format and mount"
-+_scratch_mkfs > "$seqres.full" 2>&1
-+_dmerror_init
-+_dmerror_mount >> "$seqres.full" 2>&1
-+
-+testdir="$SCRATCH_MNT/test-$seq"
-+rm -rf $testdir
-+mkdir $testdir
-+
-+blksz=65536
-+nr=640
-+bsz=128
-+
-+free_blocks=$(stat -f -c '%a' "$testdir")
-+real_blksz=$(stat -f -c '%S' "$testdir")
-+space_needed=$(((blksz * nr * 3) * 5 / 4))
-+space_avail=$((free_blocks * real_blksz))
-+test $space_needed -gt $space_avail && _notrun "Not enough space. $space_avail < $space_needed"
-+
-+echo "Create the original files"
-+"$XFS_IO_PROG" -f -c "pwrite -S 0x61 -b $((blksz * bsz)) 0 $((blksz * nr))" "$testdir/file1" >> "$seqres.full"
-+_cp_reflink "$testdir/file1" "$testdir/file2" >> "$seqres.full"
-+_dmerror_unmount
-+_dmerror_mount
-+
-+echo "Compare files"
-+md5sum "$testdir/file1" | _filter_scratch
-+md5sum "$testdir/file2" | _filter_scratch
-+
-+echo "CoW and unmount"
-+sync
-+_dmerror_load_error_table
-+urk=$("$XFS_IO_PROG" -f -c "mmap -rw 0 $((blksz * nr))" -c "mwrite -S 0x63 0 $((blksz * nr))" -c "msync -s 0 $((blksz * nr))" "$testdir/file2" > "$TEST_DIR/mwrite.out" 2>&1)
-+cat "$TEST_DIR/mwrite.out" | tee -a "$seqres.full"
-+
-+echo "Clean up the mess"
-+_dmerror_unmount
-+_dmerror_cleanup
-+_repair_scratch_fs >> "$seqres.full" 2>&1
-+_scratch_mount >> "$seqres.full" 2>&1
-+
-+echo "Compare files"
-+md5sum "$testdir/file1" | _filter_scratch
-+
-+echo "Check for damage"
-+umount "$SCRATCH_MNT"
-+
-+# success, all done
-+status=0
-+exit
-diff --git a/tests/generic/281.out b/tests/generic/281.out
-new file mode 100644
-index 0000000..17a656b
---- /dev/null
-+++ b/tests/generic/281.out
-@@ -0,0 +1,12 @@
-+QA output created by 281
-+Format and mount
-+Create the original files
-+Compare files
-+1886e67cf8783e89ce6ddc5bb09a3944  SCRATCH_MNT/test-281/file1
-+1886e67cf8783e89ce6ddc5bb09a3944  SCRATCH_MNT/test-281/file2
-+CoW and unmount
-+msync: Input/output error
-+Clean up the mess
-+Compare files
-+1886e67cf8783e89ce6ddc5bb09a3944  SCRATCH_MNT/test-281/file1
-+Check for damage
-diff --git a/tests/generic/282 b/tests/generic/282
-new file mode 100755
-index 0000000..29b7c13
---- /dev/null
-+++ b/tests/generic/282
-@@ -0,0 +1,104 @@
-+#! /bin/bash
-+# FS QA Test No. 282
-+#
-+# Test mmap CoW behavior when the write temporarily fails and we unmount.
++# Create an unwritten extent, set up dm-error, try a DIO write, then
++# make sure we can't read back old disk contents.
 +#
 +#-----------------------------------------------------------------------
 +# Copyright (c) 2016, Oracle and/or its affiliates.  All Rights Reserved.
@@ -1424,30 +585,31 @@ index 0000000..29b7c13
 +_cleanup()
 +{
 +    cd /
-+    rm -rf "$tmp".* "$TEST_DIR/mwrite.out"
++    rm -rf "$tmp".* "$testdir"
 +    _dmerror_cleanup
 +}
 +
 +# get standard environment, filters and checks
 +. ./common/rc
 +. ./common/filter
-+. ./common/reflink
 +. ./common/dmerror
 +
 +# real QA test starts here
 +_supported_os Linux
-+_require_scratch_reflink
-+_require_cp_reflink
-+_need_to_be_root
++_require_scratch
 +_require_dm_target error
++_require_xfs_io_command "falloc"
 +
 +rm -f "$seqres.full"
 +
 +
 +echo "Format and mount"
-+_scratch_mkfs > "$seqres.full" 2>&1
++"$XFS_IO_PROG" -d -c "pwrite -S 0x69 -b 1048576 0 $((64 * 1048576))" "$SCRATCH_DEV" >> "$seqres.full"
++_scratch_mkfs_sized $((64 * 1048576)) > "$seqres.full" 2>&1
 +_dmerror_init
 +_dmerror_mount >> "$seqres.full" 2>&1
++_dmerror_unmount
++_dmerror_mount
 +
 +testdir="$SCRATCH_MNT/test-$seq"
 +rm -rf $testdir
@@ -1459,32 +621,30 @@ index 0000000..29b7c13
 +
 +free_blocks=$(stat -f -c '%a' "$testdir")
 +real_blksz=$(stat -f -c '%S' "$testdir")
-+space_needed=$(((blksz * nr * 3) * 5 / 4))
++space_needed=$(((blksz * nr) * 5 / 4))
 +space_avail=$((free_blocks * real_blksz))
 +test $space_needed -gt $space_avail && _notrun "Not enough space. $space_avail < $space_needed"
 +
 +echo "Create the original files"
-+"$XFS_IO_PROG" -f -c "pwrite -S 0x61 -b $((blksz * bsz)) 0 $((blksz * nr))" "$testdir/file1" >> "$seqres.full"
-+_cp_reflink "$testdir/file1" "$testdir/file2" >> "$seqres.full"
++#"$XFS_IO_PROG" -c "extsize $((blksz * bsz))" "$testdir" >> "$seqres.full"
++"$XFS_IO_PROG" -f -c "falloc 0 $((blksz * nr))" "$testdir/file2" >> "$seqres.full"
 +_dmerror_unmount
 +_dmerror_mount
 +
 +echo "Compare files"
-+md5sum "$testdir/file1" | _filter_scratch
 +md5sum "$testdir/file2" | _filter_scratch
 +
 +echo "CoW and unmount"
++"$XFS_IO_PROG" -f -c "pwrite -S 0x63 $((blksz * bsz)) 1" "$testdir/file2" >> "$seqres.full"
 +sync
 +_dmerror_load_error_table
-+urk=$("$XFS_IO_PROG" -f -c "mmap -rw 0 $((blksz * nr))" -c "mwrite -S 0x63 0 $((blksz * nr))" "$testdir/file2" > "$TEST_DIR/mwrite.out" 2>&1)
-+cat "$TEST_DIR/mwrite.out" | tee -a "$seqres.full"
++"$XFS_IO_PROG" -d -f -c "pwrite -S 0x63 -b $((blksz * bsz)) 0 $((blksz * nr))" "$testdir/file2" >> "$seqres.full"
 +_dmerror_load_working_table
-+rm -rf "$testdir/file2" >> "$seqres.full" 2>&1
 +_dmerror_unmount
 +_dmerror_mount
 +
 +echo "Compare files"
-+md5sum "$testdir/file1" | _filter_scratch
++md5sum "$testdir/file2" | _filter_scratch
 +
 +echo "Check for damage"
 +_dmerror_unmount
@@ -1494,33 +654,33 @@ index 0000000..29b7c13
 +# success, all done
 +status=0
 +exit
-diff --git a/tests/generic/282.out b/tests/generic/282.out
+diff --git a/tests/generic/250.out b/tests/generic/250.out
 new file mode 100644
-index 0000000..624dbfa
+index 0000000..710c80e
 --- /dev/null
-+++ b/tests/generic/282.out
++++ b/tests/generic/250.out
 @@ -0,0 +1,10 @@
-+QA output created by 282
++QA output created by 250
 +Format and mount
 +Create the original files
 +Compare files
-+1886e67cf8783e89ce6ddc5bb09a3944  SCRATCH_MNT/test-282/file1
-+1886e67cf8783e89ce6ddc5bb09a3944  SCRATCH_MNT/test-282/file2
++ec8bb3b24d5b0f1b5bdf8c8f0f541ee6  SCRATCH_MNT/test-250/file2
 +CoW and unmount
++pwrite64: Input/output error
 +Compare files
-+1886e67cf8783e89ce6ddc5bb09a3944  SCRATCH_MNT/test-282/file1
++3ed86318f4ff8da26c1c2a6e3041f9be  SCRATCH_MNT/test-250/file2
 +Check for damage
-diff --git a/tests/generic/283 b/tests/generic/283
+diff --git a/tests/generic/252 b/tests/generic/252
 new file mode 100755
-index 0000000..3861954
+index 0000000..535b34b
 --- /dev/null
-+++ b/tests/generic/283
++++ b/tests/generic/252
 @@ -0,0 +1,107 @@
 +#! /bin/bash
-+# FS QA Test No. 283
++# FS QA Test No. 252
 +#
-+# Test mmap CoW behavior when the write temporarily fails but the userspace
-+# program writes again.
++# Create an unwritten extent, set up dm-error, try an AIO DIO write, then
++# make sure we can't read back old disk contents.
 +#
 +#-----------------------------------------------------------------------
 +# Copyright (c) 2016, Oracle and/or its affiliates.  All Rights Reserved.
@@ -1551,30 +711,33 @@ index 0000000..3861954
 +_cleanup()
 +{
 +    cd /
-+    rm -rf "$tmp".* "$TEST_DIR/mwrite.out"
++    rm -rf "$tmp".* "$testdir" "$TEST_DIR/moo"
 +    _dmerror_cleanup
 +}
 +
 +# get standard environment, filters and checks
 +. ./common/rc
 +. ./common/filter
-+. ./common/reflink
 +. ./common/dmerror
 +
 +# real QA test starts here
 +_supported_os Linux
-+_require_scratch_reflink
-+_require_cp_reflink
-+_need_to_be_root
++_require_scratch
 +_require_dm_target error
++_require_xfs_io_command "falloc"
++AIO_TEST="src/aio-dio-regress/aiocp"
++test -x "$AIO_TEST" || _notrun "aiocp not built"
 +
 +rm -f "$seqres.full"
 +
 +
 +echo "Format and mount"
-+_scratch_mkfs > "$seqres.full" 2>&1
++"$XFS_IO_PROG" -d -c "pwrite -S 0x69 -b 1048576 0 $((64 * 1048576))" "$SCRATCH_DEV" >> "$seqres.full"
++_scratch_mkfs_sized $((64 * 1048576)) > "$seqres.full" 2>&1
 +_dmerror_init
 +_dmerror_mount >> "$seqres.full" 2>&1
++_dmerror_unmount
++_dmerror_mount
 +
 +testdir="$SCRATCH_MNT/test-$seq"
 +rm -rf $testdir
@@ -1586,34 +749,31 @@ index 0000000..3861954
 +
 +free_blocks=$(stat -f -c '%a' "$testdir")
 +real_blksz=$(stat -f -c '%S' "$testdir")
-+space_needed=$(((blksz * nr * 3) * 5 / 4))
++space_needed=$(((blksz * nr) * 5 / 4))
 +space_avail=$((free_blocks * real_blksz))
 +test $space_needed -gt $space_avail && _notrun "Not enough space. $space_avail < $space_needed"
 +
 +echo "Create the original files"
-+"$XFS_IO_PROG" -f -c "pwrite -S 0x61 -b $((blksz * bsz)) 0 $((blksz * nr))" "$testdir/file1" >> "$seqres.full"
-+_cp_reflink "$testdir/file1" "$testdir/file2" >> "$seqres.full"
++#"$XFS_IO_PROG" -c "extsize $((blksz * bsz))" "$testdir" >> "$seqres.full"
++"$XFS_IO_PROG" -f -c "falloc 0 $((blksz * nr))" "$testdir/file2" >> "$seqres.full"
 +_dmerror_unmount
 +_dmerror_mount
 +
 +echo "Compare files"
-+md5sum "$testdir/file1" | _filter_scratch
 +md5sum "$testdir/file2" | _filter_scratch
 +
 +echo "CoW and unmount"
++"$XFS_IO_PROG" -f -c "pwrite -S 0x63 $((blksz * bsz)) 1" "$testdir/file2" >> "$seqres.full"
++"$XFS_IO_PROG" -f -c "pwrite -S 0x63 -b $((blksz * bsz)) 0 $((blksz * nr))" "$TEST_DIR/moo" >> "$seqres.full"
 +sync
 +_dmerror_load_error_table
-+urk=$("$XFS_IO_PROG" -f -c "mmap -rw 0 $((blksz * nr))" -c "mwrite -S 0x63 0 $((blksz * nr))" -c "msync -s 0 $((blksz * nr))" "$testdir/file2" > "$TEST_DIR/mwrite.out" 2>&1)
-+cat "$TEST_DIR/mwrite.out" | tee -a "$seqres.full"
++"$AIO_TEST" -f DIRECT -b $((blksz * bsz)) "$TEST_DIR/moo" "$testdir/file2" >> "$seqres.full"
 +_dmerror_load_working_table
-+
-+echo "Rewrite"
-+"$XFS_IO_PROG" -f -c "mmap -rw 0 $((blksz * nr))" -c "mwrite -S 0x63 0 $((blksz * nr))" -c "msync 0 $((blksz * nr))" "$testdir/file2" >> "$seqres.full" 2>&1
 +_dmerror_unmount
 +_dmerror_mount
 +
 +echo "Compare files"
-+md5sum "$testdir/file1" | _filter_scratch
++md5sum "$testdir/file2" | _filter_scratch
 +
 +echo "Check for damage"
 +_dmerror_unmount
@@ -1623,52 +783,34 @@ index 0000000..3861954
 +# success, all done
 +status=0
 +exit
-diff --git a/tests/generic/283.out b/tests/generic/283.out
+diff --git a/tests/generic/252.out b/tests/generic/252.out
 new file mode 100644
-index 0000000..f9fd5c8
+index 0000000..3bc78c2
 --- /dev/null
-+++ b/tests/generic/283.out
-@@ -0,0 +1,12 @@
-+QA output created by 283
++++ b/tests/generic/252.out
+@@ -0,0 +1,10 @@
++QA output created by 252
 +Format and mount
 +Create the original files
 +Compare files
-+1886e67cf8783e89ce6ddc5bb09a3944  SCRATCH_MNT/test-283/file1
-+1886e67cf8783e89ce6ddc5bb09a3944  SCRATCH_MNT/test-283/file2
++ec8bb3b24d5b0f1b5bdf8c8f0f541ee6  SCRATCH_MNT/test-252/file2
 +CoW and unmount
-+msync: Input/output error
-+Rewrite
++write missed bytes expect 8388608 got 0
 +Compare files
-+1886e67cf8783e89ce6ddc5bb09a3944  SCRATCH_MNT/test-283/file1
++3ed86318f4ff8da26c1c2a6e3041f9be  SCRATCH_MNT/test-252/file2
 +Check for damage
 diff --git a/tests/generic/group b/tests/generic/group
-index 0b584d9..c2624eb 100644
+index 860ff4a..1767484 100644
 --- a/tests/generic/group
 +++ b/tests/generic/group
-@@ -267,13 +267,25 @@
- 262 auto quick clone
- 263 rw auto quick
- 264 auto quick clone
-+265 auto quick clone
-+266 auto quick clone
-+267 auto quick clone
-+268 auto quick clone
- 269 auto rw prealloc ioctl enospc stress
- 270 auto quota rw prealloc ioctl enospc stress
-+271 auto quick clone
-+272 auto quick clone
- 273 auto rw
- 274 auto rw prealloc
- 275 auto rw enospc
-+276 auto quick clone
- 277 auto ioctl quick metadata
-+278 auto quick clone
-+279 auto quick clone
- 280 auto quota freeze dangerous
-+281 auto quick clone
-+282 auto quick clone
-+283 auto quick clone
- 285 auto rw
- 286 auto quick other
- 288 auto quick ioctl trim
+@@ -252,7 +252,9 @@
+ 247 auto quick rw
+ 248 auto quick rw
+ 249 auto quick rw
++250 auto quick
+ 251 ioctl trim
++252 auto quick
+ 255 auto quick prealloc
+ 256 auto quick
+ 257 dir auto quick
 

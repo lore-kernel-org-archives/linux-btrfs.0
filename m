@@ -1,327 +1,105 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:23788 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S964804AbcBIBOU (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 8 Feb 2016 20:14:20 -0500
-Subject: [PATCH 23/23] reflink: test reflink+cow+enospc all at the same time
-From: "Darrick J. Wong" <darrick.wong@oracle.com>
-To: david@fromorbit.com, darrick.wong@oracle.com
+Received: from ipmail06.adl2.internode.on.net ([150.101.137.129]:50571 "EHLO
+	ipmail06.adl2.internode.on.net" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1751929AbcBIHVK (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 9 Feb 2016 02:21:10 -0500
+Date: Tue, 9 Feb 2016 18:21:06 +1100
+From: Dave Chinner <david@fromorbit.com>
+To: "Darrick J. Wong" <darrick.wong@oracle.com>
 Cc: linux-btrfs@vger.kernel.org, fstests@vger.kernel.org, xfs@oss.sgi.com
-Date: Mon, 08 Feb 2016 17:14:14 -0800
-Message-ID: <20160209011414.23099.38917.stgit@birch.djwong.org>
-In-Reply-To: <20160209011145.23099.95354.stgit@birch.djwong.org>
+Subject: Re: [PATCH v4.1 00/23] xfstests: test the nfs/cifs/btrfs/xfs
+ reflink/dedupe ioctls
+Message-ID: <20160209072106.GH19486@dastard>
 References: <20160209011145.23099.95354.stgit@birch.djwong.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20160209011145.23099.95354.stgit@birch.djwong.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Set up an impossibly small filesystem and try to reflink and rewrite a
-file on it to see what happens when we ENOSPC.  Basically
-generic/16[67] but with a constrained fs size.
+On Mon, Feb 08, 2016 at 05:11:45PM -0800, Darrick J. Wong wrote:
+> Happy New Year!
+> 
+> Dave Chinner: I've renumbered the new tests and pushed to github[3] if
+> you'd like to pull.
 
-Signed-off-by: Darrick J. Wong <darrick.wong@oracle.com>
----
- tests/generic/166     |    6 ++-
- tests/generic/167     |    6 ++-
- tests/generic/333     |  104 +++++++++++++++++++++++++++++++++++++++++++++++++
- tests/generic/333.out |    6 +++
- tests/generic/334     |  104 +++++++++++++++++++++++++++++++++++++++++++++++++
- tests/generic/334.out |    6 +++
- tests/generic/group   |    2 +
- 7 files changed, 232 insertions(+), 2 deletions(-)
- create mode 100755 tests/generic/333
- create mode 100644 tests/generic/333.out
- create mode 100755 tests/generic/334
- create mode 100644 tests/generic/334.out
+Can you include the commit ID I should see at the head of the
+tree so I can confirm I'm pulling the right branch?
 
+BTW, git doesn't like this:
 
-diff --git a/tests/generic/166 b/tests/generic/166
-index 2c2ff4e..30d76a0 100755
---- a/tests/generic/166
-+++ b/tests/generic/166
-@@ -69,7 +69,11 @@ _scratch_remount
- snappy() {
- 	n=0
- 	while [ ! -e "$testdir/finished" ]; do
--		_cp_reflink "$testdir/file1" "$testdir/snap_$n" || break
-+		out="$(_cp_reflink "$testdir/file1" "$testdir/snap_$n" 2>&1)"
-+		res=$?
-+		echo "$out" | grep -q "No space left" && break
-+		test -n "$out" && echo "$out"
-+		test $res -ne 0 && break
- 		n=$((n + 1))
- 	done
- }
-diff --git a/tests/generic/167 b/tests/generic/167
-index b80b481..5198a81 100755
---- a/tests/generic/167
-+++ b/tests/generic/167
-@@ -69,7 +69,11 @@ _scratch_remount
- snappy() {
- 	n=0
- 	while [ ! -e "$testdir/finished" ]; do
--		_cp_reflink "$testdir/file1" "$testdir/snap_$n" || break
-+		out="$(_cp_reflink "$testdir/file1" "$testdir/snap_$n" 2>&1)"
-+		res=$?
-+		echo "$out" | grep -q "No space left" && break
-+		test -n "$out" && echo "$out"
-+		test $res -ne 0 && break
- 		n=$((n + 1))
- 	done
- }
-diff --git a/tests/generic/333 b/tests/generic/333
-new file mode 100755
-index 0000000..4ca7803
---- /dev/null
-+++ b/tests/generic/333
-@@ -0,0 +1,104 @@
-+#! /bin/bash
-+# FS QA Test No. 333
-+#
-+# Test for races or FS corruption when trying to hit ENOSPC while DIO writing
-+# to a file that's also the source of a reflink operation.
-+#
-+#-----------------------------------------------------------------------
-+# Copyright (c) 2016 Oracle, Inc.  All Rights Reserved.
-+#
-+# This program is free software; you can redistribute it and/or
-+# modify it under the terms of the GNU General Public License as
-+# published by the Free Software Foundation.
-+#
-+# This program is distributed in the hope that it would be useful,
-+# but WITHOUT ANY WARRANTY; without even the implied warranty of
-+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+# GNU General Public License for more details.
-+#
-+# You should have received a copy of the GNU General Public License
-+# along with this program; if not, write the Free Software Foundation,
-+# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-+#-----------------------------------------------------------------------
-+#
-+
-+seq=`basename "$0"`
-+seqres="$RESULT_DIR/$seq"
-+echo "QA output created by $seq"
-+
-+here=`pwd`
-+tmp=/tmp/$$
-+status=1	# failure is the default!
-+trap "_cleanup; exit \$status" 0 1 2 3 7 15
-+
-+_cleanup()
-+{
-+    cd /
-+    rm -rf "$tmp".*
-+    wait
-+}
-+
-+# get standard environment, filters and checks
-+. ./common/rc
-+. ./common/filter
-+. ./common/reflink
-+
-+# real QA test starts here
-+_supported_os Linux
-+_require_scratch_reflink
-+_require_cp_reflink
-+
-+echo "Format and mount"
-+_scratch_mkfs_sized $((400 * 1048576)) > "$seqres.full" 2>&1
-+_scratch_mount >> "$seqres.full" 2>&1
-+
-+testdir="$SCRATCH_MNT/test-$seq"
-+rm -rf "$testdir"
-+mkdir "$testdir"
-+
-+loops=1024
-+nr_loops=$((loops - 1))
-+blksz=65536
-+
-+echo "Initialize file"
-+echo > "$seqres.full"
-+_pwrite_byte 0x61 0 $((loops * blksz)) "$testdir/file1" >> "$seqres.full"
-+_scratch_remount
-+
-+# Snapshot creator...
-+snappy() {
-+	n=0
-+	while [ ! -e "$testdir/finished" ]; do
-+		out="$(_cp_reflink "$testdir/file1" "$testdir/snap_$n" 2>&1)"
-+		res=$?
-+		echo "$out" | grep -q "No space left" && break
-+		test -n "$out" && echo "$out"
-+		test $res -ne 0 && break
-+		n=$((n + 1))
-+	done
-+	touch "$testdir/abort"
-+}
-+
-+echo "Snapshot a file undergoing directio rewrite"
-+snappy &
-+seq 1 1000 | while read i; do
-+	seq $nr_loops -1 0 | while read i; do
-+		out="$(_pwrite_byte 0x63 $((i * blksz)) $blksz -d "$testdir/file1" 2>&1)"
-+		echo "$out" >> "$seqres.full"
-+		echo "$out" | grep -q "No space left" && touch "$testdir/abort"
-+		echo "$out" | grep -qi "error" && touch "$testdir/abort"
-+		test -e "$testdir/abort" && break
-+	done
-+	test -e "$testdir/abort" && break
-+done
-+touch "$testdir/finished"
-+wait
-+
-+echo "Check for damage"
-+_scratch_unmount
-+
-+echo "Done"
-+
-+# success, all done
-+status=0
-+exit
-diff --git a/tests/generic/333.out b/tests/generic/333.out
-new file mode 100644
-index 0000000..501f2d6
---- /dev/null
-+++ b/tests/generic/333.out
-@@ -0,0 +1,6 @@
-+QA output created by 333
-+Format and mount
-+Initialize file
-+Snapshot a file undergoing directio rewrite
-+Check for damage
-+Done
-diff --git a/tests/generic/334 b/tests/generic/334
-new file mode 100755
-index 0000000..a246711
---- /dev/null
-+++ b/tests/generic/334
-@@ -0,0 +1,104 @@
-+#! /bin/bash
-+# FS QA Test No. 334
-+#
-+# Test for races or FS corruption when trying to hit ENOSPC while DIO writing
-+# to a file that's also the source of a reflink operation.
-+#
-+#-----------------------------------------------------------------------
-+# Copyright (c) 2016 Oracle, Inc.  All Rights Reserved.
-+#
-+# This program is free software; you can redistribute it and/or
-+# modify it under the terms of the GNU General Public License as
-+# published by the Free Software Foundation.
-+#
-+# This program is distributed in the hope that it would be useful,
-+# but WITHOUT ANY WARRANTY; without even the implied warranty of
-+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+# GNU General Public License for more details.
-+#
-+# You should have received a copy of the GNU General Public License
-+# along with this program; if not, write the Free Software Foundation,
-+# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-+#-----------------------------------------------------------------------
-+#
-+
-+seq=`basename "$0"`
-+seqres="$RESULT_DIR/$seq"
-+echo "QA output created by $seq"
-+
-+here=`pwd`
-+tmp=/tmp/$$
-+status=1	# failure is the default!
-+trap "_cleanup; exit \$status" 0 1 2 3 7 15
-+
-+_cleanup()
-+{
-+    cd /
-+    rm -rf "$tmp".*
-+    wait
-+}
-+
-+# get standard environment, filters and checks
-+. ./common/rc
-+. ./common/filter
-+. ./common/reflink
-+
-+# real QA test starts here
-+_supported_os Linux
-+_require_scratch_reflink
-+_require_cp_reflink
-+
-+echo "Format and mount"
-+_scratch_mkfs_sized $((400 * 1048576)) > "$seqres.full" 2>&1
-+_scratch_mount >> "$seqres.full" 2>&1
-+
-+testdir="$SCRATCH_MNT/test-$seq"
-+rm -rf "$testdir"
-+mkdir "$testdir"
-+
-+loops=1024
-+nr_loops=$((loops - 1))
-+blksz=65536
-+
-+echo "Initialize file"
-+echo > "$seqres.full"
-+_pwrite_byte 0x61 0 $((loops * blksz)) "$testdir/file1" >> "$seqres.full"
-+_scratch_remount
-+
-+# Snapshot creator...
-+snappy() {
-+	n=0
-+	while [ ! -e "$testdir/finished" ]; do
-+		out="$(_cp_reflink "$testdir/file1" "$testdir/snap_$n" 2>&1)"
-+		res=$?
-+		echo "$out" | grep -q "No space left" && break
-+		test -n "$out" && echo "$out"
-+		test $res -ne 0 && break
-+		n=$((n + 1))
-+	done
-+	touch "$testdir/abort"
-+}
-+
-+echo "Snapshot a file undergoing buffered rewrite"
-+snappy &
-+seq 1 1000 | while read i; do
-+	seq $nr_loops -1 0 | while read i; do
-+		out="$(_pwrite_byte 0x63 $((i * blksz)) $blksz "$testdir/file1" 2>&1)"
-+		echo "$out" >> "$seqres.full"
-+		echo "$out" | grep -q "No space left" && touch "$testdir/abort"
-+		echo "$out" | grep -qi "error" && touch "$testdir/abort"
-+		test -e "$testdir/abort" && break
-+	done
-+	test -e "$testdir/abort" && break
-+done
-+touch "$testdir/finished"
-+wait
-+
-+echo "Check for damage"
-+_scratch_unmount
-+
-+echo "Done"
-+
-+# success, all done
-+status=0
-+exit
-diff --git a/tests/generic/334.out b/tests/generic/334.out
-new file mode 100644
-index 0000000..c196ff1
---- /dev/null
-+++ b/tests/generic/334.out
-@@ -0,0 +1,6 @@
-+QA output created by 334
-+Format and mount
-+Initialize file
-+Snapshot a file undergoing buffered rewrite
-+Check for damage
-+Done
-diff --git a/tests/generic/group b/tests/generic/group
-index b5ae5ad..a23ffc9 100644
---- a/tests/generic/group
-+++ b/tests/generic/group
-@@ -335,3 +335,5 @@
- 330 auto quick clone
- 331 auto quick clone
- 332 auto quick clone
-+333 auto quick clone
-+334 auto quick clone
+https://github.com/djwong/xfstests/tree/for-dave
 
+What git really wants is the tree url with a separate branch name
+like so:
+
+https://github.com/djwong/xfstests.git for-dave
+
+(i.e. the typical output from a git request-pull command)
+
+> This is a (no longer) small patch set against the reflink/dedupe test
+> cases in xfstests.  The first four patches fix errors in the existing
+> reflink tests, some of which are from Christoph Hellwig.
+> 
+> Patches 5-6 refactor the dmerror code so that we can use it to
+> simulate transient IO errors, then use this code to test that
+> unwritten extent conversion does NOT happen after a directio write to
+> an unwritten extent hits a disk error.   Due to a bug in the VFS
+> directio code, ext4 can disclose stale disk contents if an aio dio
+> write fails; XFS suffers this problem for any failing dio write to an
+> unwritten extent.  Christoph's kernel patchset titled "vfs/xfs:
+> directio updates to ease COW handling V2" (and a separate ext4 warning
+> cleanup) is needed to fix this.
+> 
+> Patches 7-9, 13, 15, 17, 18, 20, 21, and 23 exercise various parts
+> of the copy on write behavior that are necessary to support shared
+> blocks.  The earlier patches focus on correct CoW behavior in the
+> presence of IO errors during the copy-write, and the later patches
+> focus on XFS' new cow-extent-size hint that greatly reduces
+> fragmentation due to copy on write behavior by encouraging the
+> allocator to allocate larger extents of replacement blocks.
+> 
+> Patches 10-12 and 14 perform stress testing on reflink and CoW to
+> check the behaviors when we get close to maximum refcount, when we
+> specify obnxiously large offsets and lengths, and when we try to
+> reflink millions of extents at a time.
+> 
+> Patch 16 tests quota accounting behavior when reflink is enabled.
+> 
+> Patch 19 adds a few tests for the XFS reverse mapping btree to ensure
+> that things like metadump and growfs work correctly.
+> 
+> Patch 22 checks that get_bmapx and fiemap (on XFS) correctly flag
+> extents as having shared blocks.  XFS now follows btrfs and ocfs2
+> FIEMAP behavior such that if any blocks of a file's extent are shared,
+> the whole extent is marked shared.  This is in contrast to earlier
+> XFS-only behavior that reported shared and non-shared regions as
+> separate extents.
+
+This may change - xfs_bmap doesn't combine extents in it's output
+even if they are adjacent. For debugging purposes (which is what
+xfs_bmap/fiemap is for), it's much better to be able to see the
+exact extent layout and block sharing.
+
+I suspect the solution of least surprise is to make fiemap behave
+like the other filesystems, and make xfs_bmap behave in a manner
+that is useful to us.... :P
+
+> If you're going to start using this mess, you probably ought to just
+> pull from my github trees for kernel[1], xfsprogs[2], xfstests[3],
+> xfs-docs[4], and man-pages[5].  All tests should pass on XFS.   I
+> tried btrfs this weekend and it failed 166, 175, 182, 266, 271, 272,
+> 278, 281, 297, 298, 304, 333, and 334.  ocfs2 (when I jury-rigged it
+> to run the cp_reflink tests) seemed to have a quota bug and crashes
+> hard in 284 (but was otherwise fine).
+
+Fun fun fun. I'll look through the patchs, and if there's nothing
+major I'll pull it in once I get a commit ID from you.
+
+Cheers,
+
+Dave.
+-- 
+Dave Chinner
+david@fromorbit.com

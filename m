@@ -1,68 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:50491 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S932764AbcBIVys (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 9 Feb 2016 16:54:48 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1aTGFA-0001s9-CO
-	for linux-btrfs@vger.kernel.org; Tue, 09 Feb 2016 22:54:44 +0100
-Received: from ip5f5ae057.dynamic.kabel-deutschland.de ([95.90.224.87])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 09 Feb 2016 22:54:44 +0100
-Received: from hurikhan77 by ip5f5ae057.dynamic.kabel-deutschland.de with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 09 Feb 2016 22:54:44 +0100
-To: linux-btrfs@vger.kernel.org
-From: Kai Krakow <hurikhan77@gmail.com>
-Subject: Re: USB memory sticks wear & speed: btrfs vs f2fs?
-Date: Tue, 9 Feb 2016 22:52:04 +0100
-Message-ID: <20160209225204.13f9ffbc@jupiter.sol.kaishome.de>
-References: <n9chle$q0h$1@ger.gmane.org>
-	<56B9F2E2.8010808@swiftspirit.co.za>
-	<56B9FEC0.8020603@gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+Received: from mail-io0-f181.google.com ([209.85.223.181]:36721 "EHLO
+	mail-io0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932560AbcBIWCM (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 9 Feb 2016 17:02:12 -0500
+Received: by mail-io0-f181.google.com with SMTP id l127so2326014iof.3
+        for <linux-btrfs@vger.kernel.org>; Tue, 09 Feb 2016 14:02:11 -0800 (PST)
+MIME-Version: 1.0
+In-Reply-To: <20160209224341.5bfa20b7@jupiter.sol.kaishome.de>
+References: <874mdktk4t.fsf@vostro.rath.org>
+	<20160207210713.7e4661a8@jupiter.sol.kaishome.de>
+	<1507413.RERLDqpHyU@merkaba>
+	<87twliri6m.fsf@thinkpad.rath.org>
+	<20160209082933.52273993@jupiter.sol.kaishome.de>
+	<87mvr9euhb.fsf@vostro.rath.org>
+	<20160209224341.5bfa20b7@jupiter.sol.kaishome.de>
+Date: Tue, 9 Feb 2016 15:02:11 -0700
+Message-ID: <CAJCQCtS9QN_xKeUe+v25Q6uMAknkoajsU8KKXmHej5fsuUPcUg@mail.gmail.com>
+Subject: Re: Use fast device only for metadata?
+From: Chris Murphy <lists@colorremedies.com>
+To: Kai Krakow <hurikhan77@gmail.com>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am Tue, 9 Feb 2016 09:59:12 -0500
-schrieb "Austin S. Hemmelgarn" <ahferroin7@gmail.com>:
+On Tue, Feb 9, 2016 at 2:43 PM, Kai Krakow <hurikhan77@gmail.com> wrote:
 
-> > I haven't found much reference or comparison information online wrt
-> > wear leveling - mostly performance benchmarks that don't really
-> > address your request. Personally I will likely never bother with
-> > f2fs unless I somehow end up working on a project requiring
-> > relatively small storage in Flash (as that is what f2fs was
-> > designed for).  
-> I would tend to agree, but that's largely because BTRFS is more of a 
-> known entity for me, and certain features (send/receive in
-> particular) are important enough for my usage that I'm willing to
-> take the performance hit.  IIRC, F2FS was developed for usage in
-> stuff like Android devices and other compact embedded devices, where
-> the FTL may not do a good job of wear leveling, so it should work
-> equally well on USB flash drives (many of the cheap ones have no
-> wear-leveling at all, and even some of the expensive ones have
-> sub-par wear-leveling compared to good SSD's).
+> Wasn't there plans for integrating per-file encryption into btrfs (like
+> there's already for ext4)? I think this could pretty well obsolete your
+> plans - except you prefer full-device encryption.
 
-Actually, I think most of them only do wear-levelling in the storage
-area where the FAT is expected - making them pretty useless for
-anything else than FAT formatting...
+https://btrfs.wiki.kernel.org/index.php/Project_ideas#Encryption
 
-I think the expected use-case for USB flash drives is only adding
-files, and occasionally delete them - or just delete all / reformat.
-It's not expected to actually "work" with files on such drives. Most of
-them are pretty bad at performance anyways for such usage patterns.
-It's actually pretty easy to wear out such a drive within a few days.
-I've tried myself with a drive called "ReadyBoost-capable" - yeah, it
-took me 2 weeks to wear it out after activating "ReadyBoost" on it, and
-it took only a few days to make its performance crawl. It's just slow
-now and full of unusable blocks.
+I don't know whether the ZFS strategy (it would be per subvolume on
+Btrfs) or the per directory strategy of ext4 is simpler. The simpler
+it is, the more viable it is, I feel.
+
+Maybe it's too much of a tonka toy to only encrypt file data, not
+metadata (?) a question for someone more security conscious, but I'd
+rather have some level of integrated encryption rather than none. So I
+wonder if encryption could be a compression option - that is, it'd fit
+into the compression code path and instead of compressing, it'd
+encrypt. I guess the bigger problem then is user space tools to manage
+keys. For booting, there'd need to be a libbtrfs api or ioctl for
+systemd+plymouth to get the passphrase from the user. And for home, it
+actually can't be in the startup process at all, it has to be
+integrated into the desktop, using the user login passphrase to unlock
+a KEK, and from there the DEK. The whole point of per directory
+encryption is, a bunch of stuff remains encrypted.
+
+If it were treated as a variation on compression, specifically a
+variant of forced compression,  it means no key is needed to do
+balance, scrub, device replace, etc, and even inline data gets
+encrypted also. Open question if the metadata slot for compression is
+big enough to include something like a key uuid, because each dir item
+(at least) needs to point to the key needed to decrypt the data. Hmm,
+or maybe a new tree to contain and track the encryption keys meant for
+each dir item.
 
 -- 
-Regards,
-Kai
-
-Replies to list-only preferred.
-
+Chris Murphy

@@ -1,47 +1,77 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from out5-smtp.messagingengine.com ([66.111.4.29]:54026 "EHLO
-	out5-smtp.messagingengine.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1757875AbcBIQKR convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 9 Feb 2016 11:10:17 -0500
-Received: from compute5.internal (compute5.nyi.internal [10.202.2.45])
-	by mailout.nyi.internal (Postfix) with ESMTP id 5B30F2091F
-	for <linux-btrfs@vger.kernel.org>; Tue,  9 Feb 2016 11:10:17 -0500 (EST)
-Received: from ebox.rath.org (ebox.rath.org [45.79.69.51])
-	by mail.messagingengine.com (Postfix) with ESMTPA id C6FAFC0001F
-	for <linux-btrfs@vger.kernel.org>; Tue,  9 Feb 2016 11:10:16 -0500 (EST)
-Received: from vostro.rath.org (vostro [192.168.12.4])
-	by ebox.rath.org (Postfix) with ESMTPS id A30561CE4FE
-	for <linux-btrfs@vger.kernel.org>; Tue,  9 Feb 2016 16:10:15 +0000 (UTC)
-From: Nikolaus Rath <Nikolaus@rath.org>
-To: linux-btrfs@vger.kernel.org
-Subject: Re: Use fast device only for metadata?
-References: <874mdktk4t.fsf@vostro.rath.org>
-	<20160207210713.7e4661a8@jupiter.sol.kaishome.de>
-	<1507413.RERLDqpHyU@merkaba> <87twliri6m.fsf@thinkpad.rath.org>
-	<20160209082933.52273993@jupiter.sol.kaishome.de>
-Date: Tue, 09 Feb 2016 08:10:15 -0800
-In-Reply-To: <20160209082933.52273993@jupiter.sol.kaishome.de> (Kai Krakow's
-	message of "Tue, 9 Feb 2016 08:29:33 +0100")
-Message-ID: <87k2mdeufs.fsf@vostro.rath.org>
+Received: from magic.merlins.org ([209.81.13.136]:35048 "EHLO
+	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751802AbcBIQrG (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 9 Feb 2016 11:47:06 -0500
+Date: Tue, 9 Feb 2016 08:46:37 -0800
+From: Marc MERLIN <marc@merlins.org>
+To: Christian Rohmann <crohmann@netcologne.de>
+Cc: Chris Murphy <lists@colorremedies.com>,
+        "Austin S. Hemmelgarn" <ahferroin7@gmail.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: btrfs-progs 4.4 re-balance of RAID6 is very slow / limited to
+ one cpu core?
+Message-ID: <20160209164637.GL13969@merlins.org>
+References: <56A73460.7080100@netcologne.de>
+ <CAJCQCtTdDyv0PkkuHGrEpEnk5yzM1Fx1C0VUT8r7OAfU6i8Dfw@mail.gmail.com>
+ <56A7CF97.6030408@gmail.com>
+ <CAJCQCtTMEHcc1CnuHqS=g23tsirQv3S9cmDcHaK0WXyQrRds1w@mail.gmail.com>
+ <56A88452.6020306@netcologne.de>
+ <56A8F18E.3070400@gmail.com>
+ <CAJCQCtT9NZdaJ8MKHQw-1ARi7PkLeq_p9dtdZaPYdLt8EpTcbA@mail.gmail.com>
+ <56AF676B.2070902@netcologne.de>
+ <CAJCQCtS1gX4jbnpjmgnGn2WE5TTfHnSfeyQioDwRL4vgZrXMhA@mail.gmail.com>
+ <56B9EE1E.2040000@netcologne.de>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <56B9EE1E.2040000@netcologne.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Feb 09 2016, Kai Krakow <hurikhan77@gmail.com> wrote:
-> You could even format a bcache superblock "just in case",
-> and add an SSD later. Without SSD, bcache will just work in passthru
-> mode.
+On Tue, Feb 09, 2016 at 02:48:14PM +0100, Christian Rohmann wrote:
+> 
+> 
+> On 02/01/2016 09:52 PM, Chris Murphy wrote:
+> >> Would some sort of stracing or profiling of the process help to narrow
+> >> > down where the time is currently spent and why the balancing is only
+> >> > running single-threaded?
+> > This can't be straced. Someone a lot more knowledgeable than I am
+> > might figure out where all the waits are with just a sysrq + t, if it
+> > is a hold up in say parity computations. Otherwise perf which is a
+> > rabbit hole but perf top is kinda cool to watch. That might give you
+> > an idea where most of the cpu cycles are going if you can isolate the
+> > workload to just the balance. Otherwise you may end up with noisy
+> > data.
+> 
+> My balance run is now working away since 19th of January:
+>  "885 out of about 3492 chunks balanced (996 considered),  75% left"
+> 
+> So this will take several more WEEKS to finish. Is there really nothing
+> anyone here wants me to do or analyze to help finding the root cause of
+> this? I mean with this kind of performance there is no way a RAID6 can
+> be used in production. Not because the code is not stable or
+> functioning, but because regular maintenance like replacing a drive or
+> growing an array takes WEEKS in which another maintenance procedure
+> could be necessary or, much worse, another drive might have failed.
+> 
+> What I'm saying is: Such a slow RAID6 balance renders the redundancy
+> unusable because drives might fail quicker than the potential rebuild
+> (read "balance").
 
-Do the LVM concerns still apply in passthrough mode, or only when
-there's an actual cache?
+I agree, this is bad.
+For what it's worth, one of my own filesystems (target for backups, many
+many files) has apparently become slow enough that it half hangs my
+system when I'm using it.
+I've just unmounted it to make sure my overall system performance comes
+back, and I may have to delete and recreate it.
 
-Thanks,
--Nikolaus
+Sadly, this also means that btrfs still seems to get itself in corner
+cases that are causing performance issues.
+I'm not saying that you did hit this problem, but it is possible.
 
+Marc
 -- 
-GPG encrypted emails preferred. Key id: 0xD113FCAC3C4E599F
-Fingerprint: ED31 791B 2C5C 1613 AF38 8B8A D113 FCAC 3C4E 599F
-
-             »Time flies like an arrow, fruit flies like a Banana.«
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+Microsoft is to operating systems ....
+                                      .... what McDonalds is to gourmet cooking
+Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901

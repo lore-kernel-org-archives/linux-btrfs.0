@@ -1,122 +1,153 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:41710 "EHLO
-	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932113AbcBHXFG (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 8 Feb 2016 18:05:06 -0500
-Date: Mon, 8 Feb 2016 23:05:02 +0000
-From: Hugo Mills <hugo@carfax.org.uk>
-To: boli <btrfs@bueechi.net>
-Cc: linux-btrfs@vger.kernel.org
+Received: from plane.gmane.org ([80.91.229.3]:37720 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752850AbcBIBmu (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 8 Feb 2016 20:42:50 -0500
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+	id 1aSxKK-0005A5-Nm
+	for linux-btrfs@vger.kernel.org; Tue, 09 Feb 2016 02:42:48 +0100
+Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Tue, 09 Feb 2016 02:42:48 +0100
+Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Tue, 09 Feb 2016 02:42:48 +0100
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
 Subject: Re: "layout" of a six drive raid10
-Message-ID: <20160208230502.GG30635@carfax.org.uk>
+Date: Tue, 9 Feb 2016 01:42:40 +0000 (UTC)
+Message-ID: <pan$b862$fa78f2fd$bea6373b$99d690b8@cox.net>
 References: <1E2010FD-CBFD-44BD-B5DB-9ECD5C009391@bueechi.net>
-MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="+1TulI7fc0PCHNy3"
-In-Reply-To: <1E2010FD-CBFD-44BD-B5DB-9ECD5C009391@bueechi.net>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+boli posted on Mon, 08 Feb 2016 23:19:52 +0100 as excerpted:
 
---+1TulI7fc0PCHNy3
-Content-Type: text/plain; charset=utf-8
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
-
-On Mon, Feb 08, 2016 at 11:19:52PM +0100, boli wrote:
 > Hi
->=20
-> I'm trying to figure out what a six drive btrfs raid10 would look like. T=
-he example at <https://btrfs.wiki.kernel.org/index.php/FAQ#What_are_the_dif=
-ferences_among_MD-RAID_.2F_device_mapper_.2F_btrfs_raid.3F> seems ambiguous=
- to me.
->=20
-> It could mean that stripes are split over two raid1 sets of three devices=
- each. The sentence "Every stripe is split across to exactly 2 RAID-1 sets"=
- would lead me to believe this.
->=20
-> However, earlier it says for raid0 that "stripe[s are] split across as ma=
-ny devices as possible". Which for six drives would be: stripes are split o=
-ver three raid1 sets of two devices each.
->=20
+> 
+> I'm trying to figure out what a six drive btrfs raid10 would look like.
+
+> It could mean that stripes are split over two raid1 sets of three
+> devices each. The sentence "Every stripe is split across to exactly 2
+> RAID-1 sets" would lead me to believe this.
+> 
+> However, earlier it says for raid0 that "stripe[s are] split across as
+> many devices as possible". Which for six drives would be: stripes are
+> split over three raid1 sets of two devices each.
+> 
 > Can anyone enlighten me as to which is correct?
 
-   Both? :)
+Hugo's correct, and this is pretty much restating what he did.  Sometimes 
+I find that reading things again in different words helps me better 
+understand the concept, and this post is made with that in mind.
 
-   You'll find that on six devices, you'll have six chunks allocated
-at the same time: A1, B1, C1, A2, B2, C2. The "2" chunks are
-duplicates of the corresponding "1" chunks. The "A", "B", "C" chunks
-are the alternate stripes. There's no hierarchy of RAID-0-then-RAID-1
-or RAID-1-then-RAID-0.
+At present, btrfs has only two-way mirroring, not N-way.  So any raid 
+level that includes mirroring will have exactly two copies, no matter the 
+number of devices.  (FWIW, N-way-mirroring is on the roadmap, but who 
+knows when it'll come, and like raid56 mode, it will likely take some 
+time to stabilize even once it does.)
 
-> Reason I'm asking is that I'm deciding on a suitable raid level for a new=
- DIY NAS box. I'd rather not use btrfs raid6 (for now). The first alternati=
-ve I thought of was raid10. Later I learned how btrfs raid1 works and figur=
-ed it might be better suited for my use case: Striping the data over multip=
-le raid1 sets doesn't really help, as transfer from/to my box will be limit=
-ed by gigabit ethernet anyway, and a single drive can saturate that.
->=20
+What that means for a six device raid1 or raid10 is, still exactly two 
+copies of everything, with raid1 simply being three independent chunks, 
+two copies each, and raid10 being two copies of a three-device stripe.
+
+> Reason I'm asking is that I'm deciding on a suitable raid level for a
+> new DIY NAS box. I'd rather not use btrfs raid6 (for now).
+
+Agreed and I think wise choice. =:^)  I'd still be a bit cautious of 
+btrfs raid56, as I don't think it's quite to the level of stability that 
+other btrfs raid types are, just yet.  I expect to be much more 
+comfortable recommending it in another couple kernel cycles.
+
+> The first
+> alternative I thought of was raid10. Later I learned how btrfs raid1
+> works and figured it might be better suited for my use case: Striping
+> the data over multiple raid1 sets doesn't really help, as transfer
+> from/to my box will be limited by gigabit ethernet anyway, and a single
+> drive can saturate that.
+> 
 > Thoughts on this would also be appreciated.
 
-> As a bonus I was wondering how btrfs raid1 are layed out in general,
-> in particular with even and odd numbers of drives. A pair is
-> trivial. For three drives I think a "ring setup" with each drive
-> sharing half of its data with another drive. But how is it with four
-> drives =E2=80=93 are they organized as two pairs, or four-way, or =E2=80=
-=A6
+Agreed, again. =:^)
 
-   The fundamental unit of space allocation at this level is the chunk
--- a 1 GiB unit of storage on one device. (Or 256 MiB for metadata).
-Chunks are allocated in block groups to form the RAID behaviour of the
-FS.
+Tho I'd consider benchmarking or testing, as I'm not sure btrfs raid1 on 
+spinning rust will in practice fully saturate the gigabit Ethernet, 
+particularly as it gets fragmented (which COW filesystems such as btrfs 
+tend to do much more so than non-COW, unless you're using something like 
+the autodefrag mount option from the get-go, as I do here, tho in that 
+case, striping won't necessarily help a lot either).
 
-   So, single mode will allocate one chunk in a block group. RAID-1
-and -0 will allocate two chunks in a block group. RAID-10 will
-allocate N chunks in a block group, where N is the largest even number
-equal to or smaller than the number of devices [with space on]. RAID-5
-and -6 will allocate N chunks, where N is the number of devices [with
-space on].
+If you're concerned about getting the last bit of performance possible, 
+I'd say raid10, tho over the gigabit ethernet, the difference isn't 
+likely to be much.
 
-   When chunks are to be allocated, they devices are ordered by the
-amount of free space on them. The chunks are allocated to devices in
-that order.
+OTOH, if you're more concerned about ease of maintenance, replacing 
+devices, etc, I believe raid1 is a bit less complex both in code terms 
+(where less code complexity means less chance of bugs) and in 
+administration, at least conceptually, tho in practice the administration 
+is going to be very close to the same as well.
 
-   So, if you have three equal devices, 1, 2, 3, RAID-1 chunks will be
-allocated to them as: 1+2, 3+1, 2+3, repeat.
+So I'd tend to lean toward raid1 for a use-case thruput limited to gitabit 
+Ethernet speeds, even on spinning rust, as I think there may be a bit of 
+a difference in speed vs raid10, but I doubt it'll be much due to the 
+gigabit thruput limit, and I'd consider the lower complexity of raid1 to 
+offset that.
 
-   With one device larger than the others (say, device 3), it'll start
-as: 3+1, 3+2, 3+1, 3+2, repeating until all three devices have equal
-free space, and then going back to the pattern above.
+> As a bonus I was wondering how btrfs raid1 are layed out in general, in
+> particular with even and odd numbers of drives. A pair is trivial. For
+> three drives I think a "ring setup" with each drive sharing half of its
+> data with another drive. But how is it with four drives – are they
+> organized as two pairs, or four-way, or …
 
-   Hugo.
+For raid1, allocation is done in pairs, with each allocation taking the 
+device with the most space left, except that both copies can't be on a 
+single device, even if for instance you have a 3 TB device and the rest 
+are 1 TB or smaller.  That case would result in one copy of each pair on 
+the 3 TB device, one copy on whatever device has the most space left of 
+the others.
 
---=20
-Hugo Mills             | Well, you don't get to be a kernel hacker simply by
-hugo@... carfax.org.uk | looking good in Speedos.
-http://carfax.org.uk/  |
-PGP: E2AB1DE4          |                                         Rusty Russ=
-ell
+Which on a filesystem with all equal sized devices, tends to result in 
+round-robin allocation, tho of course in the odd number of devices case, 
+there will always be at least one device that has either more or less 
+allocation by a one-chunk margin.  (Tho it can be noted that metadata 
+chunks are smaller than data chunks, and while Hugo noted the nominal 1 
+GiB data chunk size and 256 MiB metadata chunk size, at the 100 GiB plus 
+per device scale, chunks can be larger, upto 10 GiB data chunk, and of 
+course smaller on very small devices, so the 1GiB-data/256MiB-metadata 
+values are indeed only nominal, but they still give you some idea of the 
+relative size.)
 
---+1TulI7fc0PCHNy3
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+So a btrfs raid1 on four equally sized devices will indeed result in two 
+pairs, but simply because of the most-space-available allocation rule, 
+not because it's forced to pairs of pairs.  And with unequally sized 
+devices, the device with the most space will always get one of the two 
+copies, until its space equalizes to that of at least one other device.
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
+Btrfs raid10 works similarly with the copy allocation, but stripe 
+allocation works exactly opposite, prioritizing stripe width.  So with an 
+even number of equally sized devices, each stripe will be half the number 
+of devices wide, with the second copy being the other half.  If there's 
+an odd number of devices, one will be left out on each allocation, but 
+the one that's left out will change with each allocation, as the one left 
+out in the previous allocation will now have more space available than 
+the others so it'll be allocated first for one of the copies, leaving a 
+different one to be left out on this allocation round.  And with 
+unequally sized devices, allocation will always be to an even number and 
+always to at least four at once, of course favoring the device with the 
+most space available, but stripes will always be half the available 
+width, with a second copy of the stripe to the other half, so will use up 
+space on all devices at once if it's an even number of devices with space 
+left, all but one if it's an odd number with space left, since both 
+copies can't be on the same device, which means that odd device can't be 
+used for that allocation round, tho it will be for the next, and a 
+different device left out instead.
 
-iQIcBAEBAgAGBQJWuR8eAAoJEFheFHXiqx3kzuYP+QHG5UHAUBuDzISoC44Kq6tO
-7U15xOJphB5tXpfaOkVXFhbxQf9L+Y24MBmLV0wBaJZIGHhnJ3aV+Bjbdmf2VDwV
-Amnuw3IjCeARK2rU9wXaQh8Arnwza6qeR7lIgf1tFAyeb5KF0O02Cr/OllJK5Gz6
-znOUuV0PHPjhxvonr5YzsEhxBwahPvQVIXQsJ9S8QPOIhEXGOg7P8i3teLbU4NO9
-vQvt8HhEJ322EqWFAJGXMVDfWkfgc+sAF7n3OVxqOlYR1dg//Y7S13T/hZ05QZLl
-TFau8HMiWZpeJYIpeqlPet9E6NSTIrjB3HTYUu5yz3lNwJHJesGdVti4bbH8cuCN
-BHSn9b76AxNQei+zm/ARhGbHhYZIaTJoPL/yDBgqYSa8CPQ9UNmq1P+2BhSXziao
-8AAVd0uOGshreHtGSHtMTWcRcvmmiicVl7EfDMTT7kZo2B8IVt6kf2iMmkC0xoPF
-ibh2aLFyoLOuACNQOOfkCgy69t08x1+1h+E8CRK8fyoklFAMjlf30kRDWspWlhfE
-R61Yb2DDIvdXqEUEGZZwk7XUF0AQVRx7QxPcYqQnmgqdGEYHXeAYmaodNUd7QHhM
-LGB0x/VCujbJSZiFR/tlc7ycM1M5O1C43o6Q/xklQ5xGhDI6UI5JMDlLF2cxXicB
-ppP7Ku6asaUb7MvvfuY7
-=kg8M
------END PGP SIGNATURE-----
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 
---+1TulI7fc0PCHNy3--

@@ -1,69 +1,79 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cc-smtpout1.netcologne.de ([89.1.8.211]:53927 "EHLO
-	cc-smtpout1.netcologne.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752979AbcBINsS (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 9 Feb 2016 08:48:18 -0500
-Subject: Re: btrfs-progs 4.4 re-balance of RAID6 is very slow / limited to one
- cpu core?
-To: Chris Murphy <lists@colorremedies.com>
-References: <56A230C3.3080100@netcologne.de>
- <CAPmG0jZoVmnUjqaWoZgAGEXUREyMyXPxQ_+M282F640jTw5b_A@mail.gmail.com>
- <56A6082C.3030007@netcologne.de>
- <CAJCQCtQ7yGpoUZOmVcoaCGMMqg6oro-0w4HjsXK=HHe9cFg+sw@mail.gmail.com>
- <CAKZK7uxdX9UBPOKButtPjqBOdVUfHdRTimP+W34fkz1h9P+wHg@mail.gmail.com>
- <CAKZK7uxOihVUSo9+LPfUxG7WawggkXSoaTbMVa3a4pkSEuxJdQ@mail.gmail.com>
- <CAJCQCtQe=X4FPzTBKBpP826nswGQyiY4sNES9GugLju3-9HARA@mail.gmail.com>
- <CAJCQCtTA4qUNX1R3Pgxq-17zAPJvwPGfO_Fo-qEy2LsQrpF+fg@mail.gmail.com>
- <56A73460.7080100@netcologne.de>
- <CAJCQCtTdDyv0PkkuHGrEpEnk5yzM1Fx1C0VUT8r7OAfU6i8Dfw@mail.gmail.com>
- <56A7CF97.6030408@gmail.com>
- <CAJCQCtTMEHcc1CnuHqS=g23tsirQv3S9cmDcHaK0WXyQrRds1w@mail.gmail.com>
- <56A88452.6020306@netcologne.de> <56A8F18E.3070400@gmail.com>
- <CAJCQCtT9NZdaJ8MKHQw-1ARi7PkLeq_p9dtdZaPYdLt8EpTcbA@mail.gmail.com>
- <56AF676B.2070902@netcologne.de>
- <CAJCQCtS1gX4jbnpjmgnGn2WE5TTfHnSfeyQioDwRL4vgZrXMhA@mail.gmail.com>
-Cc: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-From: Christian Rohmann <crohmann@netcologne.de>
-Message-ID: <56B9EE1E.2040000@netcologne.de>
-Date: Tue, 9 Feb 2016 14:48:14 +0100
+Received: from mail-wm0-f49.google.com ([74.125.82.49]:36169 "EHLO
+	mail-wm0-f49.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755645AbcBIOHF (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 9 Feb 2016 09:07:05 -0500
+Received: by mail-wm0-f49.google.com with SMTP id p63so159675629wmp.1
+        for <linux-btrfs@vger.kernel.org>; Tue, 09 Feb 2016 06:07:05 -0800 (PST)
+Subject: Re: BTRFS RAM requirements, RAID 6 stability/write holes and
+ expansion questions
+To: Mackenzie Meyer <snackmasterx@gmail.com>, linux-btrfs@vger.kernel.org
+References: <CAKr9ZMFwxZ01gw7SAyFReOfXFb=hVzUXNgYoGcUc2xzLuo+9mg@mail.gmail.com>
+From: Psalle <psalleetsile@gmail.com>
+Message-ID: <56B9F286.9070408@gmail.com>
+Date: Tue, 9 Feb 2016 15:07:02 +0100
 MIME-Version: 1.0
-In-Reply-To: <CAJCQCtS1gX4jbnpjmgnGn2WE5TTfHnSfeyQioDwRL4vgZrXMhA@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8
+In-Reply-To: <CAKr9ZMFwxZ01gw7SAyFReOfXFb=hVzUXNgYoGcUc2xzLuo+9mg@mail.gmail.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
 
-On 02/01/2016 09:52 PM, Chris Murphy wrote:
->> Would some sort of stracing or profiling of the process help to narrow
->> > down where the time is currently spent and why the balancing is only
->> > running single-threaded?
-> This can't be straced. Someone a lot more knowledgeable than I am
-> might figure out where all the waits are with just a sysrq + t, if it
-> is a hold up in say parity computations. Otherwise perf which is a
-> rabbit hole but perf top is kinda cool to watch. That might give you
-> an idea where most of the cpu cycles are going if you can isolate the
-> workload to just the balance. Otherwise you may end up with noisy
-> data.
+On 05/02/16 20:36, Mackenzie Meyer wrote:
+> Hello,
+>
+> I've tried checking around on google but can't find information
+> regarding the RAM requirements of BTRFS and most of the topics on
+> stability seem quite old.
 
-My balance run is now working away since 19th of January:
- "885 out of about 3492 chunks balanced (996 considered),  75% left"
+To keep my answer short: every time I've tried (offline) deduplication 
+or raid5 pools I've ended with borked filesystems. Last attempt was 
+about a year ago. Given that the pages you mention looked the same by 
+then, I'd stay away of raid56 for anything but testing purposes. I 
+haven't read anything about raid5 that increases my confidence in it 
+recently (i.e. post 3.19 kernels). Dedup, OTOH, I don't know. What I 
+used were third-party (I think?) things so the fault may have rested on 
+them and not btrfs (does that makes sense?)
 
-So this will take several more WEEKS to finish. Is there really nothing
-anyone here wants me to do or analyze to help finding the root cause of
-this? I mean with this kind of performance there is no way a RAID6 can
-be used in production. Not because the code is not stable or
-functioning, but because regular maintenance like replacing a drive or
-growing an array takes WEEKS in which another maintenance procedure
-could be necessary or, much worse, another drive might have failed.
+I'm building a new small raid5 pool as we speak, though, for throw-away 
+data, so I hope to be favourably impressed.
 
-What I'm saying is: Such a slow RAID6 balance renders the redundancy
-unusable because drives might fail quicker than the potential rebuild
-(read "balance").
+Cheers.
 
+> So first would be memory requirements, my goal is to use deduplication
+> and compression. Approximately how many GB of RAM per TB of storage
+> would be recommended?
+>
+> RAID 6 write holes?
+> The BTRFS wiki states that parity might be inconsistent after a crash.
+> That said, the wiki page for RAID 5/6 doesn't look like it has much
+> recent information on there. Has this issue been addressed and if not,
+> are there plans to address the RAID write hole issue? What would be a
+> recommended workaround to resolve inconsistent parity, should an
+> unexpected power down happen during write operations?
+>
+> RAID 6 stability?
+> Any articles I've tried looking for online seem to be from early 2014,
+> I can't find anything recent discussing the stability of RAID 5 or 6.
+> Are there or have there recently been any data corruption bugs which
+> impact RAID 6? Would you consider RAID 6 safe/stable enough for
+> production use?
+>
+> Do you still strongly recommend backups, or has stability reached a
+> point where backups aren't as critical? I'm thinking from a data
+> consistency standpoint, not a hardware failure standpoint.
+>
+> I plan to start with a small array and add disks over time. That said,
+> currently I have mostly 2TB disks and some 3TB disks. If I replace all
+> 2TB disks with 3TB disks, would BTRFS then start utilizing the full
+> 3TB capacity of each disk, or would I need to destroy and rebuild my
+> array to benefit from the larger disks?
+>
+>
+> Thanks!
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 
-
-Regards
-
-Christian

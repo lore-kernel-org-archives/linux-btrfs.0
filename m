@@ -1,60 +1,60 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f182.google.com ([209.85.223.182]:35141 "EHLO
-	mail-io0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755093AbcBIPAn (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 9 Feb 2016 10:00:43 -0500
-Received: by mail-io0-f182.google.com with SMTP id d63so19781838ioj.2
-        for <linux-btrfs@vger.kernel.org>; Tue, 09 Feb 2016 07:00:42 -0800 (PST)
-Subject: Re: USB memory sticks wear & speed: btrfs vs f2fs?
-To: Brendan Hide <brendan@swiftspirit.co.za>, Martin <m_btrfs@ml1.co.uk>,
-        linux-btrfs@vger.kernel.org
-References: <n9chle$q0h$1@ger.gmane.org> <56B9F2E2.8010808@swiftspirit.co.za>
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <56B9FEC0.8020603@gmail.com>
-Date: Tue, 9 Feb 2016 09:59:12 -0500
+Received: from out5-smtp.messagingengine.com ([66.111.4.29]:51975 "EHLO
+	out5-smtp.messagingengine.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1757795AbcBIQJW convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 9 Feb 2016 11:09:22 -0500
+Received: from compute5.internal (compute5.nyi.internal [10.202.2.45])
+	by mailout.nyi.internal (Postfix) with ESMTP id 582D220758
+	for <linux-btrfs@vger.kernel.org>; Tue,  9 Feb 2016 11:09:22 -0500 (EST)
+Received: from ebox.rath.org (ebox.rath.org [45.79.69.51])
+	by mail.messagingengine.com (Postfix) with ESMTPA id B1E666801B7
+	for <linux-btrfs@vger.kernel.org>; Tue,  9 Feb 2016 11:09:21 -0500 (EST)
+Received: from vostro.rath.org (vostro [192.168.12.4])
+	by ebox.rath.org (Postfix) with ESMTPS id 5F3791CE4FD
+	for <linux-btrfs@vger.kernel.org>; Tue,  9 Feb 2016 16:09:20 +0000 (UTC)
+From: Nikolaus Rath <Nikolaus@rath.org>
+To: linux-btrfs@vger.kernel.org
+Subject: Re: Use fast device only for metadata?
+References: <874mdktk4t.fsf@vostro.rath.org>
+	<20160207210713.7e4661a8@jupiter.sol.kaishome.de>
+	<1507413.RERLDqpHyU@merkaba> <87twliri6m.fsf@thinkpad.rath.org>
+	<20160209082933.52273993@jupiter.sol.kaishome.de>
+Date: Tue, 09 Feb 2016 08:09:20 -0800
+In-Reply-To: <20160209082933.52273993@jupiter.sol.kaishome.de> (Kai Krakow's
+	message of "Tue, 9 Feb 2016 08:29:33 +0100")
+Message-ID: <87mvr9euhb.fsf@vostro.rath.org>
 MIME-Version: 1.0
-In-Reply-To: <56B9F2E2.8010808@swiftspirit.co.za>
-Content-Type: text/plain; charset=windows-1252; format=flowed
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2016-02-09 09:08, Brendan Hide wrote:
-> On 2/9/2016 1:13 PM, Martin wrote:
->> How does btrfs compare to f2fs for use on (128GByte) USB memory sticks?
->>
->> Particularly for wearing out certain storage blocks?
->>
->> Does btrfs heavily use particular storage blocks that will prematurely
->> "wear out"?
->>
->> (That is, could the whole 128GBytes be lost due to one 4kByte block
->> having been re-written excessively too many times due to a fixed
->> repeatedly used filesystem block?)
->>
->> Any other comparisons/thoughts for btrfs vs f2fs?
-> Copy-on-write (CoW) designs tend naturally to work well with flash
-> media. F2fs is *specifically* designed to work well with flash, whereas
-> for btrfs it is a natural consequence of the copy-on-write design. With
-> both filesystems, if you randomly generate a 1GB file and delete it 1000
-> times, onto a 1TB flash, you are *very* likely to get exactly one write
-> to *every* block on the flash (possibly two writes to <1% of the blocks)
-> rather than, as would be the case with non-CoW filesystems, 1000 writes
-> to a small chunk of blocks.
-This goes double if you're using the 'ssd' mount option on BTRFS.  Also, 
-the only blocks that are rewritten in place on BTRFS (unless you turn 
-off COW) are the superblocks, but all filesystems rewrite those in-place.
->
-> I haven't found much reference or comparison information online wrt wear
-> leveling - mostly performance benchmarks that don't really address your
-> request. Personally I will likely never bother with f2fs unless I
-> somehow end up working on a project requiring relatively small storage
-> in Flash (as that is what f2fs was designed for).
-I would tend to agree, but that's largely because BTRFS is more of a 
-known entity for me, and certain features (send/receive in particular) 
-are important enough for my usage that I'm willing to take the 
-performance hit.  IIRC, F2FS was developed for usage in stuff like 
-Android devices and other compact embedded devices, where the FTL may 
-not do a good job of wear leveling, so it should work equally well on 
-USB flash drives (many of the cheap ones have no wear-leveling at all, 
-and even some of the expensive ones have sub-par wear-leveling compared 
-to good SSD's).
+On Feb 09 2016, Kai Krakow <hurikhan77@gmail.com> wrote:
+> I'm myself using bcache+btrfs and it ran bullet proof so far, even
+> after unintentional resets or power outage. It's important tho to NOT
+> put any storage layer between bcache and your devices or between btrfs
+> and your device as there are reports it becomes unstable with md or lvm
+> involved.
+
+Do you mean I should not use anything in the stack other than btrfs and
+bcache, or do you mean I should not put anything under bcache?
+
+In other words, I assume bcache on LVM is a bad idea. But what about LVM
+on bcache?
+
+Also, btrfs on LVM on disk is working fine for me, but you seem to be
+saying that it should not? Or are you talking specifically about btrfs
+on LVM on bcache?
+
+
+If there's no way to put LVM anywhere into the stack that'd be a bummer,
+I very much want to use dm-crypt (and I guess that counts as lvm?).
+
+Thanks,
+-Nikolaus
+
+-- 
+GPG encrypted emails preferred. Key id: 0xD113FCAC3C4E599F
+Fingerprint: ED31 791B 2C5C 1613 AF38 8B8A D113 FCAC 3C4E 599F
+
+             »Time flies like an arrow, fruit flies like a Banana.«

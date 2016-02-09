@@ -1,14 +1,14 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:33108 "EHLO
+Received: from aserp1040.oracle.com ([141.146.126.69]:33181 "EHLO
 	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S933033AbcBIBNy (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 8 Feb 2016 20:13:54 -0500
-Subject: [PATCH 19/23] xfs: test rmapbt functionality
+	with ESMTP id S964804AbcBIBOI (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 8 Feb 2016 20:14:08 -0500
+Subject: [PATCH 21/23] xfs: aio cow tests
 From: "Darrick J. Wong" <darrick.wong@oracle.com>
 To: david@fromorbit.com, darrick.wong@oracle.com
 Cc: linux-btrfs@vger.kernel.org, fstests@vger.kernel.org, xfs@oss.sgi.com
-Date: Mon, 08 Feb 2016 17:13:48 -0800
-Message-ID: <20160209011348.23099.30668.stgit@birch.djwong.org>
+Date: Mon, 08 Feb 2016 17:14:01 -0800
+Message-ID: <20160209011401.23099.38.stgit@birch.djwong.org>
 In-Reply-To: <20160209011145.23099.95354.stgit@birch.djwong.org>
 References: <20160209011145.23099.95354.stgit@birch.djwong.org>
 MIME-Version: 1.0
@@ -18,88 +18,36 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 Signed-off-by: Darrick J. Wong <darrick.wong@oracle.com>
 ---
- common/xfs        |   44 ++++++++++++++++++++++
- tests/xfs/233     |   78 ++++++++++++++++++++++++++++++++++++++
- tests/xfs/233.out |    6 +++
- tests/xfs/234     |   89 ++++++++++++++++++++++++++++++++++++++++++++
- tests/xfs/234.out |    6 +++
- tests/xfs/235     |  108 +++++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/xfs/235.out |   14 +++++++
- tests/xfs/236     |   93 ++++++++++++++++++++++++++++++++++++++++++++++
- tests/xfs/236.out |    8 ++++
+ tests/xfs/237     |  107 ++++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/xfs/237.out |   12 ++++++
+ tests/xfs/239     |   98 ++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/xfs/239.out |   11 +++++
+ tests/xfs/240     |  109 +++++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/xfs/240.out |   12 ++++++
+ tests/xfs/241     |   99 ++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/xfs/241.out |   11 +++++
  tests/xfs/group   |    4 ++
- 10 files changed, 450 insertions(+)
- create mode 100644 common/xfs
- create mode 100755 tests/xfs/233
- create mode 100644 tests/xfs/233.out
- create mode 100755 tests/xfs/234
- create mode 100644 tests/xfs/234.out
- create mode 100755 tests/xfs/235
- create mode 100644 tests/xfs/235.out
- create mode 100755 tests/xfs/236
- create mode 100644 tests/xfs/236.out
+ 9 files changed, 463 insertions(+)
+ create mode 100755 tests/xfs/237
+ create mode 100644 tests/xfs/237.out
+ create mode 100755 tests/xfs/239
+ create mode 100644 tests/xfs/239.out
+ create mode 100755 tests/xfs/240
+ create mode 100644 tests/xfs/240.out
+ create mode 100755 tests/xfs/241
+ create mode 100644 tests/xfs/241.out
 
 
-diff --git a/common/xfs b/common/xfs
-new file mode 100644
-index 0000000..2d1a76f
---- /dev/null
-+++ b/common/xfs
-@@ -0,0 +1,44 @@
-+##/bin/bash
-+# Routines for handling XFS
-+#-----------------------------------------------------------------------
-+#  Copyright (c) 2015 Oracle.  All Rights Reserved.
-+#  This program is free software; you can redistribute it and/or modify
-+#  it under the terms of the GNU General Public License as published by
-+#  the Free Software Foundation; either version 2 of the License, or
-+#  (at your option) any later version.
-+#
-+#  This program is distributed in the hope that it will be useful,
-+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+#  GNU General Public License for more details.
-+#
-+#  You should have received a copy of the GNU General Public License
-+#  along with this program; if not, write to the Free Software
-+#  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307
-+#  USA
-+#
-+#  Contact information: Oracle Corporation, 500 Oracle Parkway,
-+#  Redwood Shores, CA 94065, USA, or: http://www.oracle.com/
-+#-----------------------------------------------------------------------
-+
-+_require_xfs_test_rmapbt()
-+{
-+	_require_test
-+
-+	if [ "$(xfs_info "$TEST_DIR" | grep -c "rmapbt=1")" -ne 1 ]; then
-+		_notrun "rmapbt not supported by test filesystem type: $FSTYP"
-+	fi
-+}
-+
-+_require_xfs_scratch_rmapbt()
-+{
-+	_require_scratch
-+
-+	_scratch_mkfs > /dev/null
-+	_scratch_mount
-+	if [ "$(xfs_info "$SCRATCH_MNT" | grep -c "rmapbt=1")" -ne 1 ]; then
-+		_scratch_unmount
-+		_notrun "rmapbt not supported by scratch filesystem type: $FSTYP"
-+	fi
-+	_scratch_unmount
-+}
-diff --git a/tests/xfs/233 b/tests/xfs/233
+diff --git a/tests/xfs/237 b/tests/xfs/237
 new file mode 100755
-index 0000000..2e61275
+index 0000000..8288724
 --- /dev/null
-+++ b/tests/xfs/233
-@@ -0,0 +1,78 @@
++++ b/tests/xfs/237
+@@ -0,0 +1,107 @@
 +#! /bin/bash
-+# FS QA Test No. 233
++# FS QA Test No. 237
 +#
-+# Tests xfs_growfs on a rmapbt filesystem
++# Test AIO DIO CoW behavior when the write temporarily fails.
 +#
 +#-----------------------------------------------------------------------
 +# Copyright (c) 2016, Oracle and/or its affiliates.  All Rights Reserved.
@@ -117,7 +65,6 @@ index 0000000..2e61275
 +# along with this program; if not, write the Free Software Foundation,
 +# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 +#-----------------------------------------------------------------------
-+#
 +
 +seq=`basename "$0"`
 +seqres="$RESULT_DIR/$seq"
@@ -131,73 +78,228 @@ index 0000000..2e61275
 +_cleanup()
 +{
 +    cd /
-+    rm -f "$tmp".*
++    rm -rf "$tmp".* "$testdir" "$TEST_DIR/moo"
++    _dmerror_cleanup
 +}
 +
 +# get standard environment, filters and checks
 +. ./common/rc
 +. ./common/filter
-+. ./common/xfs
++. ./common/reflink
++. ./common/dmerror
 +
 +# real QA test starts here
 +_supported_os Linux
-+_supported_fs xfs
-+_require_xfs_scratch_rmapbt
++_require_scratch_reflink
++_require_cp_reflink
++_require_dm_target error
++_require_xfs_io_command "cowextsize"
++_require_aiodio "aiocp"
++
++rm -f "$seqres.full"
++
 +
 +echo "Format and mount"
-+_scratch_mkfs -d size=$((2 * 4096 * 4096)) -l size=4194304 > "$seqres.full" 2>&1
++_scratch_mkfs > "$seqres.full" 2>&1
++_dmerror_init
++_dmerror_mount >> "$seqres.full" 2>&1
++
++testdir="$SCRATCH_MNT/test-$seq"
++rm -rf $testdir
++mkdir $testdir
++
++blksz=65536
++nr=640
++bsz=128
++
++free_blocks=$(stat -f -c '%a' "$testdir")
++real_blksz=$(stat -f -c '%S' "$testdir")
++space_needed=$(((blksz * nr * 3) * 5 / 4))
++space_avail=$((free_blocks * real_blksz))
++test $space_needed -gt $space_avail && _notrun "Not enough space. $space_avail < $space_needed"
++
++echo "Create the original files"
++"$XFS_IO_PROG" -c "cowextsize $((blksz * bsz * 2))" "$testdir"
++"$XFS_IO_PROG" -f -c "pwrite -S 0x61 -b $((blksz * bsz)) 0 $((blksz * nr))" "$testdir/file1" >> "$seqres.full"
++_cp_reflink "$testdir/file1" "$testdir/file2" >> "$seqres.full"
++_dmerror_unmount
++_dmerror_mount
++
++echo "Compare files"
++md5sum "$testdir/file1" | _filter_scratch
++md5sum "$testdir/file2" | _filter_scratch
++
++echo "CoW and unmount"
++"$XFS_IO_PROG" -f -c "pwrite -S 0x63 $((blksz * bsz)) 1" "$testdir/file2" >> "$seqres.full"
++"$XFS_IO_PROG" -f -c "pwrite -S 0x63 -b $((blksz * bsz)) 0 $((blksz * nr))" "$TEST_DIR/moo" >> "$seqres.full"
++sync
++_dmerror_load_error_table
++"$AIO_TEST" -f DIRECT -b $((blksz * bsz)) "$TEST_DIR/moo" "$testdir/file2" >> "$seqres.full"
++_dmerror_load_working_table
++_dmerror_unmount
++_dmerror_mount
++
++echo "Compare files"
++md5sum "$testdir/file1" | _filter_scratch
++md5sum "$testdir/file2" | _filter_scratch
++
++echo "Check for damage"
++_dmerror_unmount
++_dmerror_cleanup
++_repair_scratch_fs >> "$seqres.full" 2>&1
++
++# success, all done
++status=0
++exit
+diff --git a/tests/xfs/237.out b/tests/xfs/237.out
+new file mode 100644
+index 0000000..c83dd8b
+--- /dev/null
++++ b/tests/xfs/237.out
+@@ -0,0 +1,12 @@
++QA output created by 237
++Format and mount
++Create the original files
++Compare files
++1886e67cf8783e89ce6ddc5bb09a3944  SCRATCH_MNT/test-237/file1
++1886e67cf8783e89ce6ddc5bb09a3944  SCRATCH_MNT/test-237/file2
++CoW and unmount
++write missed bytes expect 8388608 got 0
++Compare files
++1886e67cf8783e89ce6ddc5bb09a3944  SCRATCH_MNT/test-237/file1
++d94b0ab13385aba594411c174b1cc13c  SCRATCH_MNT/test-237/file2
++Check for damage
+diff --git a/tests/xfs/239 b/tests/xfs/239
+new file mode 100755
+index 0000000..dfb1107
+--- /dev/null
++++ b/tests/xfs/239
+@@ -0,0 +1,98 @@
++#! /bin/bash
++# FS QA Test No. 239
++#
++# Test AIO DIO CoW behavior.
++#
++#-----------------------------------------------------------------------
++# Copyright (c) 2016, Oracle and/or its affiliates.  All Rights Reserved.
++#
++# This program is free software; you can redistribute it and/or
++# modify it under the terms of the GNU General Public License as
++# published by the Free Software Foundation.
++#
++# This program is distributed in the hope that it would be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write the Free Software Foundation,
++# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++#-----------------------------------------------------------------------
++
++seq=`basename "$0"`
++seqres="$RESULT_DIR/$seq"
++echo "QA output created by $seq"
++
++here=`pwd`
++tmp=/tmp/$$
++status=1    # failure is the default!
++trap "_cleanup; exit \$status" 0 1 2 3 15
++
++_cleanup()
++{
++    cd /
++    rm -rf "$tmp".* "$testdir" "$TEST_DIR/moo"
++}
++
++# get standard environment, filters and checks
++. ./common/rc
++. ./common/filter
++. ./common/reflink
++
++# real QA test starts here
++_supported_os Linux
++_require_scratch_reflink
++_require_cp_reflink
++_require_xfs_io_command "cowextsize"
++_require_aiodio "aiocp"
++
++rm -f "$seqres.full"
++
++
++echo "Format and mount"
++_scratch_mkfs > "$seqres.full" 2>&1
 +_scratch_mount >> "$seqres.full" 2>&1
 +
 +testdir="$SCRATCH_MNT/test-$seq"
-+rm -rf "$testdir"
-+mkdir "$testdir"
++rm -rf $testdir
++mkdir $testdir
++
++blksz=65536
++nr=640
++bsz=128
++
++free_blocks=$(stat -f -c '%a' "$testdir")
++real_blksz=$(stat -f -c '%S' "$testdir")
++space_needed=$(((blksz * nr * 3) * 5 / 4))
++space_avail=$((free_blocks * real_blksz))
++test $space_needed -gt $space_avail && _notrun "Not enough space. $space_avail < $space_needed"
 +
 +echo "Create the original files"
-+blksz="$(stat -f "$testdir" -c '%S')"
-+_pwrite_byte 0x61 0 $((blksz * 14 + 71)) "$testdir/original" >> "$seqres.full"
-+cp -p "$testdir/original" "$testdir/copy1"
-+cp -p "$testdir/copy1" "$testdir/copy2"
-+
-+echo "Grow fs"
-+"$XFS_GROWFS_PROG" "$SCRATCH_MNT" 2>&1 |  _filter_growfs >> "$seqres.full"
++"$XFS_IO_PROG" -c "cowextsize $((blksz * bsz * 2))" "$testdir"
++"$XFS_IO_PROG" -f -c "pwrite -S 0x61 -b $((blksz * bsz)) 0 $((blksz * nr))" "$testdir/file1" >> "$seqres.full"
++_cp_reflink "$testdir/file1" "$testdir/file2" >> "$seqres.full"
 +_scratch_remount
 +
-+echo "Create more copies"
-+cp -p "$testdir/original" "$testdir/copy3"
++echo "Compare files"
++md5sum "$testdir/file1" | _filter_scratch
++md5sum "$testdir/file2" | _filter_scratch
 +
-+xfs_info "$SCRATCH_MNT" >> "$seqres.full"
++echo "CoW and unmount"
++"$XFS_IO_PROG" -f -c "pwrite -S 0x63 $((blksz * bsz)) 1" "$testdir/file2" >> "$seqres.full"
++sync
++"$XFS_IO_PROG" -f -c "pwrite -S 0x63 -b $((blksz * bsz)) 0 $((blksz * nr))" "$TEST_DIR/moo" >> "$seqres.full"
++"$AIO_TEST" -f DIRECT -b $((blksz * bsz)) "$TEST_DIR/moo" "$testdir/file2" >> "$seqres.full"
++_scratch_remount
 +
-+echo "Check scratch fs"
++echo "Compare files"
++md5sum "$testdir/file1" | _filter_scratch
++md5sum "$testdir/file2" | _filter_scratch
++
++echo "Check for damage"
 +umount "$SCRATCH_MNT"
-+_check_scratch_fs
++_repair_scratch_fs >> "$seqres.full" 2>&1
 +
 +# success, all done
 +status=0
 +exit
-diff --git a/tests/xfs/233.out b/tests/xfs/233.out
+diff --git a/tests/xfs/239.out b/tests/xfs/239.out
 new file mode 100644
-index 0000000..7a7b991
+index 0000000..a123da9
 --- /dev/null
-+++ b/tests/xfs/233.out
-@@ -0,0 +1,6 @@
-+QA output created by 233
++++ b/tests/xfs/239.out
+@@ -0,0 +1,11 @@
++QA output created by 239
 +Format and mount
 +Create the original files
-+Grow fs
-+Create more copies
-+Check scratch fs
-diff --git a/tests/xfs/234 b/tests/xfs/234
++Compare files
++1886e67cf8783e89ce6ddc5bb09a3944  SCRATCH_MNT/test-239/file1
++1886e67cf8783e89ce6ddc5bb09a3944  SCRATCH_MNT/test-239/file2
++CoW and unmount
++Compare files
++1886e67cf8783e89ce6ddc5bb09a3944  SCRATCH_MNT/test-239/file1
++7a4d22297e80ff3c92cb1b3e4566d234  SCRATCH_MNT/test-239/file2
++Check for damage
+diff --git a/tests/xfs/240 b/tests/xfs/240
 new file mode 100755
-index 0000000..1bdf8b2
+index 0000000..100beba
 --- /dev/null
-+++ b/tests/xfs/234
-@@ -0,0 +1,89 @@
++++ b/tests/xfs/240
+@@ -0,0 +1,109 @@
 +#! /bin/bash
-+# FS QA Test No. 234
++# FS QA Test No. 240
 +#
-+# Ensure that we can create enough distinct rmap entries to force creation
-+# of a multi-level rmap btree, and that metadump will successfully copy
-+# said block.
++# Test AIO CoW behavior when the write temporarily fails.
 +#
 +#-----------------------------------------------------------------------
 +# Copyright (c) 2016, Oracle and/or its affiliates.  All Rights Reserved.
@@ -215,113 +317,6 @@ index 0000000..1bdf8b2
 +# along with this program; if not, write the Free Software Foundation,
 +# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 +#-----------------------------------------------------------------------
-+
-+seq=`basename "$0"`
-+seqres=$RESULT_DIR/$seq
-+echo "QA output created by $seq"
-+
-+here=`pwd`
-+tmp=/tmp/$$
-+status=1    # failure is the default!
-+trap "_cleanup; exit \$status" 0 1 2 3 15
-+
-+_cleanup()
-+{
-+    cd /
-+    umount "$SCRATCH_MNT" > /dev/null 2>&1
-+    rm -rf "$tmp".* "$testdir" "$metadump_file" "$TEST_DIR/image"
-+}
-+
-+# get standard environment, filters and checks
-+. ./common/rc
-+. ./common/filter
-+. ./common/xfs
-+
-+# real QA test starts here
-+_supported_os Linux
-+_supported_fs xfs
-+_require_loop
-+_require_xfs_scratch_rmapbt
-+_require_xfs_io_command "fpunch"
-+
-+rm -f "$seqres.full"
-+
-+_scratch_mkfs >/dev/null 2>&1
-+_scratch_mount
-+
-+testdir="$SCRATCH_MNT/test-$seq"
-+rm -rf "$testdir"
-+mkdir "$testdir"
-+metadump_file="$TEST_DIR/${seq}_metadump"
-+
-+echo "Create the original file blocks"
-+blksz="$(stat -f "$testdir" -c '%S')"
-+nr_blks=$((4 * blksz / 12))
-+_pwrite_byte 0x61 0 $((blksz * nr_blks)) "$testdir/file1" >> "$seqres.full"
-+sync
-+
-+echo "Punch every other block"
-+seq 1 2 $((nr_blks - 1)) | while read nr; do
-+	"$XFS_IO_PROG" -c "fpunch $((nr * blksz)) $blksz" "$testdir/file1" >> "$seqres.full"
-+done
-+
-+echo "Create metadump file"
-+_scratch_unmount
-+_scratch_metadump "$metadump_file"
-+
-+# Now restore the obfuscated one back and take a look around
-+echo "Restore metadump"
-+xfs_mdrestore "$metadump_file" "$TEST_DIR/image"
-+_mount -t $FSTYP "$TEST_DIR/image" "$SCRATCH_MNT"
-+umount "$SCRATCH_MNT"
-+
-+echo "Check restored fs"
-+_check_generic_filesystem "$metadump_file"
-+
-+# success, all done
-+status=0
-+exit
-diff --git a/tests/xfs/234.out b/tests/xfs/234.out
-new file mode 100644
-index 0000000..463d466
---- /dev/null
-+++ b/tests/xfs/234.out
-@@ -0,0 +1,6 @@
-+QA output created by 234
-+Create the original file blocks
-+Punch every other block
-+Create metadump file
-+Restore metadump
-+Check restored fs
-diff --git a/tests/xfs/235 b/tests/xfs/235
-new file mode 100755
-index 0000000..4e34d3c
---- /dev/null
-+++ b/tests/xfs/235
-@@ -0,0 +1,108 @@
-+#! /bin/bash
-+# FS QA Test No. 235
-+#
-+# Create and populate an XFS filesystem, corrupt the rmap btree,
-+# then see how the kernel and xfs_repair deal with it.
-+#
-+#-----------------------------------------------------------------------
-+# Copyright (c) 2016 Oracle, Inc.  All Rights Reserved.
-+#
-+# This program is free software; you can redistribute it and/or
-+# modify it under the terms of the GNU General Public License as
-+# published by the Free Software Foundation.
-+#
-+# This program is distributed in the hope that it would be useful,
-+# but WITHOUT ANY WARRANTY; without even the implied warranty of
-+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+# GNU General Public License for more details.
-+#
-+# You should have received a copy of the GNU General Public License
-+# along with this program; if not, write the Free Software Foundation,
-+# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-7031  USA
-+#-----------------------------------------------------------------------
-+#
 +
 +seq=`basename "$0"`
 +seqres="$RESULT_DIR/$seq"
@@ -329,116 +324,115 @@ index 0000000..4e34d3c
 +
 +here=`pwd`
 +tmp=/tmp/$$
-+status=1	# failure is the default!
++status=1    # failure is the default!
 +trap "_cleanup; exit \$status" 0 1 2 3 15
 +
 +_cleanup()
 +{
 +    cd /
-+    #rm -f $tmp.*
++    rm -rf "$tmp".* "$testdir" "$TEST_DIR/moo"
++    _dmerror_cleanup
 +}
 +
 +# get standard environment, filters and checks
 +. ./common/rc
 +. ./common/filter
-+. ./common/attr
-+. ./common/xfs
++. ./common/reflink
++. ./common/dmerror
 +
 +# real QA test starts here
 +_supported_os Linux
-+_supported_fs xfs
-+_require_xfs_scratch_rmapbt
-+test -n "${FORCE_FUZZ}" || _require_scratch_xfs_crc
++_require_scratch_reflink
++_require_cp_reflink
++_require_dm_target error
++_require_xfs_io_command "cowextsize"
++AIO_TEST="src/aio-dio-regress/aiocp"
++test -x "$AIO_TEST" || _notrun "aiocp not built"
 +
 +rm -f "$seqres.full"
 +
-+echo "+ create scratch fs"
-+_scratch_mkfs_xfs > /dev/null
 +
-+echo "+ mount fs image"
-+_scratch_mount
-+blksz="$(stat -f -c '%s' "${SCRATCH_MNT}")"
-+agcount="$(xfs_info "${SCRATCH_MNT}" | grep agcount= | sed -e 's/^.*agcount=\([0-9]*\),.*$/\1/g')"
++echo "Format and mount"
++_scratch_mkfs > "$seqres.full" 2>&1
++_dmerror_init
++_dmerror_mount >> "$seqres.full" 2>&1
 +
-+echo "+ make some files"
-+_pwrite_byte 0x62 0 $((blksz * 64)) "${SCRATCH_MNT}/file0" >> "$seqres.full"
-+_pwrite_byte 0x61 0 $((blksz * 64)) "${SCRATCH_MNT}/file1" >> "$seqres.full"
-+cp -p "${SCRATCH_MNT}/file0" "${SCRATCH_MNT}/file2"
-+cp -p "${SCRATCH_MNT}/file1" "${SCRATCH_MNT}/file3"
-+umount "${SCRATCH_MNT}"
++testdir="$SCRATCH_MNT/test-$seq"
++rm -rf $testdir
++mkdir $testdir
 +
-+echo "+ check fs"
-+_scratch_xfs_repair -n >> "$seqres.full" 2>&1 || \
-+	_fail "xfs_repair should not fail"
++blksz=65536
++nr=640
++bsz=128
 +
-+echo "+ corrupt image"
-+seq 0 $((agcount - 1)) | while read ag; do
-+	$XFS_DB_PROG -x -c "agf ${ag}" -c "agf ${ag}" -c "addr rmaproot" \
-+		-c "stack" -c "blocktrash -x 4096 -y 4096 -z -n 8 -3" \
-+		"${SCRATCH_DEV}" >> "$seqres.full" 2>&1
-+done
++free_blocks=$(stat -f -c '%a' "$testdir")
++real_blksz=$(stat -f -c '%S' "$testdir")
++space_needed=$(((blksz * nr * 3) * 5 / 4))
++space_avail=$((free_blocks * real_blksz))
++test $space_needed -gt $space_avail && _notrun "Not enough space. $space_avail < $space_needed"
 +
-+echo "+ mount image"
-+_scratch_mount
++echo "Create the original files"
++"$XFS_IO_PROG" -c "cowextsize $((blksz * bsz * 2))" "$testdir"
++"$XFS_IO_PROG" -f -c "pwrite -S 0x61 -b $((blksz * bsz)) 0 $((blksz * nr))" "$testdir/file1" >> "$seqres.full"
++_cp_reflink "$testdir/file1" "$testdir/file2" >> "$seqres.full"
++_dmerror_unmount
++_dmerror_mount
 +
-+echo "+ copy more"
-+"$XFS_IO_PROG" -f -c "pwrite -S 0x63 0 $((blksz * 64))" -c "fsync" "${SCRATCH_MNT}/file4" >> "$seqres.full"
-+test -s "${SCRATCH_MNT}/file4" || _fail "should not be able to copy with busted rmap btree"
-+umount "${SCRATCH_MNT}"
++echo "Compare files"
++md5sum "$testdir/file1" | _filter_scratch
++md5sum "$testdir/file2" | _filter_scratch
 +
-+echo "+ repair fs"
-+_scratch_xfs_repair >> "$seqres.full" 2>&1
-+_scratch_xfs_repair >> "$seqres.full" 2>&1
++echo "CoW and unmount"
++"$XFS_IO_PROG" -f -c "pwrite -S 0x63 $((blksz * bsz)) 1" "$testdir/file2" >> "$seqres.full"
++"$XFS_IO_PROG" -f -c "pwrite -S 0x63 -b $((blksz * bsz)) 0 $((blksz * nr))" "$TEST_DIR/moo" >> "$seqres.full"
++sync
++_dmerror_load_error_table
++"$AIO_TEST" -b $((blksz * bsz)) "$TEST_DIR/moo" "$testdir/file2" >> "$seqres.full"
++"$XFS_IO_PROG" -c "fdatasync" "$testdir/file2"
++_dmerror_load_working_table
++_dmerror_unmount
++_dmerror_mount
 +
-+echo "+ mount image (2)"
-+_scratch_mount
++echo "Compare files"
++md5sum "$testdir/file1" | _filter_scratch
++md5sum "$testdir/file2" | _filter_scratch
 +
-+echo "+ chattr -R -i"
-+chattr -R -f -i "${SCRATCH_MNT}/"
++echo "Check for damage"
++_dmerror_unmount
++_dmerror_cleanup
++_repair_scratch_fs >> "$seqres.full" 2>&1
 +
-+echo "+ copy more (2)"
-+cp -p "${SCRATCH_MNT}/file1" "${SCRATCH_MNT}/file5" || \
-+	_fail "modified rmap tree"
-+umount "${SCRATCH_MNT}"
-+
-+echo "+ check fs (2)"
-+_scratch_xfs_repair -n >> "$seqres.full" 2>&1 || \
-+	_fail "xfs_repair should not fail"
-+
++# success, all done
 +status=0
 +exit
-diff --git a/tests/xfs/235.out b/tests/xfs/235.out
+diff --git a/tests/xfs/240.out b/tests/xfs/240.out
 new file mode 100644
-index 0000000..89a11d6
+index 0000000..1a22e8a
 --- /dev/null
-+++ b/tests/xfs/235.out
-@@ -0,0 +1,14 @@
-+QA output created by 235
-++ create scratch fs
-++ mount fs image
-++ make some files
-++ check fs
-++ corrupt image
-++ mount image
-++ copy more
-+fsync: Structure needs cleaning
-++ repair fs
-++ mount image (2)
-++ chattr -R -i
-++ copy more (2)
-++ check fs (2)
-diff --git a/tests/xfs/236 b/tests/xfs/236
++++ b/tests/xfs/240.out
+@@ -0,0 +1,12 @@
++QA output created by 240
++Format and mount
++Create the original files
++Compare files
++1886e67cf8783e89ce6ddc5bb09a3944  SCRATCH_MNT/test-240/file1
++1886e67cf8783e89ce6ddc5bb09a3944  SCRATCH_MNT/test-240/file2
++CoW and unmount
++fdatasync: Input/output error
++Compare files
++1886e67cf8783e89ce6ddc5bb09a3944  SCRATCH_MNT/test-240/file1
++d94b0ab13385aba594411c174b1cc13c  SCRATCH_MNT/test-240/file2
++Check for damage
+diff --git a/tests/xfs/241 b/tests/xfs/241
 new file mode 100755
-index 0000000..d3a9edc
+index 0000000..3fdb9c3
 --- /dev/null
-+++ b/tests/xfs/236
-@@ -0,0 +1,93 @@
++++ b/tests/xfs/241
+@@ -0,0 +1,99 @@
 +#! /bin/bash
-+# FS QA Test No. 236
++# FS QA Test No. 241
 +#
-+# Ensure that we can create enough distinct rmapbt entries to force creation
-+# of a multi-level rmap btree.  Delete and recreate a few times to
-+# exercise the rmap btree grow/shrink functions.
++# Test AIO CoW behavior.
 +#
 +#-----------------------------------------------------------------------
 +# Copyright (c) 2016, Oracle and/or its affiliates.  All Rights Reserved.
@@ -458,7 +452,7 @@ index 0000000..d3a9edc
 +#-----------------------------------------------------------------------
 +
 +seq=`basename "$0"`
-+seqres=$RESULT_DIR/$seq
++seqres="$RESULT_DIR/$seq"
 +echo "QA output created by $seq"
 +
 +here=`pwd`
@@ -469,90 +463,102 @@ index 0000000..d3a9edc
 +_cleanup()
 +{
 +    cd /
-+    umount "$SCRATCH_MNT" > /dev/null 2>&1
-+    rm -rf "$tmp".* "$testdir"
++    rm -rf "$tmp".* "$testdir" "$TEST_DIR/moo"
 +}
 +
 +# get standard environment, filters and checks
 +. ./common/rc
 +. ./common/filter
-+. ./common/xfs
++. ./common/reflink
 +
 +# real QA test starts here
 +_supported_os Linux
-+_supported_fs xfs
-+_require_xfs_scratch_rmapbt
-+_require_xfs_io_command "fpunch"
++_require_scratch_reflink
++_require_cp_reflink
++_require_xfs_io_command "cowextsize"
++AIO_TEST="src/aio-dio-regress/aiocp"
++test -x "$AIO_TEST" || _notrun "aiocp not built"
 +
 +rm -f "$seqres.full"
 +
-+_scratch_mkfs >/dev/null 2>&1
-+_scratch_mount
++
++echo "Format and mount"
++_scratch_mkfs > "$seqres.full" 2>&1
++_scratch_mount >> "$seqres.full" 2>&1
 +
 +testdir="$SCRATCH_MNT/test-$seq"
-+rm -rf "$testdir"
-+mkdir "$testdir"
++rm -rf $testdir
++mkdir $testdir
 +
-+echo "Create the original file blocks"
-+blksz="$(stat -f "$testdir" -c '%S')"
-+nr_blks=$((8 * blksz / 12))
++blksz=65536
++nr=640
++bsz=128
 +
-+for i in 1 2 x; do
-+	_pwrite_byte 0x61 0 $((blksz * nr_blks)) "$testdir/file1" >> "$seqres.full"
-+	_pwrite_byte 0x62 0 $((blksz * nr_blks)) "$testdir/file2" >> "$seqres.full"
-+	sync
++free_blocks=$(stat -f -c '%a' "$testdir")
++real_blksz=$(stat -f -c '%S' "$testdir")
++space_needed=$(((blksz * nr * 3) * 5 / 4))
++space_avail=$((free_blocks * real_blksz))
++test $space_needed -gt $space_avail && _notrun "Not enough space. $space_avail < $space_needed"
 +
-+	echo "$i: Reflink every other block"
-+	seq 1 2 $((nr_blks - 1)) | while read nr; do
-+		"$XFS_IO_PROG" -c "fpunch $((nr * blksz)) $blksz" "$testdir/file2" >> "$seqres.full"
-+	done
-+	umount "$SCRATCH_MNT"
-+	_check_scratch_fs
-+	_scratch_mount
++echo "Create the original files"
++"$XFS_IO_PROG" -c "cowextsize $((blksz * bsz * 2))" "$testdir"
++"$XFS_IO_PROG" -f -c "pwrite -S 0x61 -b $((blksz * bsz)) 0 $((blksz * nr))" "$testdir/file1" >> "$seqres.full"
++_cp_reflink "$testdir/file1" "$testdir/file2" >> "$seqres.full"
++_scratch_remount
 +
-+	test "$i" = "x" && break
++echo "Compare files"
++md5sum "$testdir/file1" | _filter_scratch
++md5sum "$testdir/file2" | _filter_scratch
 +
-+	echo "$i: Delete both files"
-+	rm -rf "$testdir/file1" "$testdir/file2"
-+	umount "$SCRATCH_MNT"
-+	_check_scratch_fs
-+	_scratch_mount
-+done
++echo "CoW and unmount"
++"$XFS_IO_PROG" -f -c "pwrite -S 0x63 $((blksz * bsz)) 1" "$testdir/file2" >> "$seqres.full"
++"$XFS_IO_PROG" -f -c "pwrite -S 0x63 -b $((blksz * bsz)) 0 $((blksz * nr))" "$TEST_DIR/moo" >> "$seqres.full"
++sync
++"$AIO_TEST" -b $((blksz * bsz)) "$TEST_DIR/moo" "$testdir/file2" >> "$seqres.full"
++_scratch_remount
++
++echo "Compare files"
++md5sum "$testdir/file1" | _filter_scratch
++md5sum "$testdir/file2" | _filter_scratch
 +
 +echo "Check for damage"
 +umount "$SCRATCH_MNT"
-+_check_scratch_fs
++_repair_scratch_fs >> "$seqres.full" 2>&1
 +
 +# success, all done
 +status=0
 +exit
-diff --git a/tests/xfs/236.out b/tests/xfs/236.out
+diff --git a/tests/xfs/241.out b/tests/xfs/241.out
 new file mode 100644
-index 0000000..237a7e1
+index 0000000..a7e7df2
 --- /dev/null
-+++ b/tests/xfs/236.out
-@@ -0,0 +1,8 @@
-+QA output created by 236
-+Create the original file blocks
-+1: Reflink every other block
-+1: Delete both files
-+2: Reflink every other block
-+2: Delete both files
-+x: Reflink every other block
++++ b/tests/xfs/241.out
+@@ -0,0 +1,11 @@
++QA output created by 241
++Format and mount
++Create the original files
++Compare files
++1886e67cf8783e89ce6ddc5bb09a3944  SCRATCH_MNT/test-241/file1
++1886e67cf8783e89ce6ddc5bb09a3944  SCRATCH_MNT/test-241/file2
++CoW and unmount
++Compare files
++1886e67cf8783e89ce6ddc5bb09a3944  SCRATCH_MNT/test-241/file1
++7a4d22297e80ff3c92cb1b3e4566d234  SCRATCH_MNT/test-241/file2
 +Check for damage
 diff --git a/tests/xfs/group b/tests/xfs/group
-index de3c7d6..1d08065 100644
+index 1d08065..c0ce1f4 100644
 --- a/tests/xfs/group
 +++ b/tests/xfs/group
-@@ -230,6 +230,10 @@
- 230 auto quick clone
- 231 auto quick clone
- 232 auto quick clone
-+233 auto quick rmap
-+234 auto quick rmap
-+235 fuzzers rmap
-+236 auto quick rmap
+@@ -234,7 +234,11 @@
+ 234 auto quick rmap
+ 235 fuzzers rmap
+ 236 auto quick rmap
++237 auto quick clone
  238 auto quick metadata ioctl
++239 auto quick clone
++240 auto quick clone
++241 auto quick clone
  242 auto quick prealloc
  244 auto quota quick
+ 250 auto quick rw prealloc metadata
 

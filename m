@@ -1,78 +1,168 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:23178 "EHLO
+Received: from userp1040.oracle.com ([156.151.31.81]:23232 "EHLO
 	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752850AbcBIBL6 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 8 Feb 2016 20:11:58 -0500
-Subject: [PATCH v4.1 00/23] xfstests: test the nfs/cifs/btrfs/xfs
- reflink/dedupe ioctls
+	with ESMTP id S932359AbcBIBMJ (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 8 Feb 2016 20:12:09 -0500
+Subject: [PATCH 02/23] xfstests: filter whitespace in 128 and 132
 From: "Darrick J. Wong" <darrick.wong@oracle.com>
 To: david@fromorbit.com, darrick.wong@oracle.com
-Cc: linux-btrfs@vger.kernel.org, fstests@vger.kernel.org, xfs@oss.sgi.com
-Date: Mon, 08 Feb 2016 17:11:45 -0800
-Message-ID: <20160209011145.23099.95354.stgit@birch.djwong.org>
+Cc: linux-btrfs@vger.kernel.org, Christoph Hellwig <hch@lst.de>,
+        fstests@vger.kernel.org, xfs@oss.sgi.com
+Date: Mon, 08 Feb 2016 17:11:58 -0800
+Message-ID: <20160209011158.23099.47980.stgit@birch.djwong.org>
+In-Reply-To: <20160209011145.23099.95354.stgit@birch.djwong.org>
+References: <20160209011145.23099.95354.stgit@birch.djwong.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="utf-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Happy New Year!
+Seems either I have a different lsattr version, or different mount points
+cause differences in the golden output.  Send the lsattr output through
+the whitespaces filter so that it works everywhere.
 
-Dave Chinner: I've renumbered the new tests and pushed to github[3] if
-you'd like to pull.
+The lsattr output /does/ change depending on mountpoints.  Ick.  I'd
+actually changed it to the long format output because line length in
+the short format changes every time the flags change.
 
-This is a (no longer) small patch set against the reflink/dedupe test
-cases in xfstests.  The first four patches fix errors in the existing
-reflink tests, some of which are from Christoph Hellwig.
+Signed-off-by: Christoph Hellwig <hch@lst.de>
+[darrick.wong@oracle.com: update changelog]
+Signed-off-by: Darrick J. Wong <darrick.wong@oracle.com>
+---
+ tests/xfs/128     |    2 +-
+ tests/xfs/128.out |    8 ++++----
+ tests/xfs/132     |   10 +++++-----
+ tests/xfs/132.out |   40 ++++++++++++++++++++--------------------
+ 4 files changed, 30 insertions(+), 30 deletions(-)
 
-Patches 5-6 refactor the dmerror code so that we can use it to
-simulate transient IO errors, then use this code to test that
-unwritten extent conversion does NOT happen after a directio write to
-an unwritten extent hits a disk error.   Due to a bug in the VFS
-directio code, ext4 can disclose stale disk contents if an aio dio
-write fails; XFS suffers this problem for any failing dio write to an
-unwritten extent.  Christoph's kernel patchset titled "vfs/xfs:
-directio updates to ease COW handling V2" (and a separate ext4 warning
-cleanup) is needed to fix this.
 
-Patches 7-9, 13, 15, 17, 18, 20, 21, and 23 exercise various parts
-of the copy on write behavior that are necessary to support shared
-blocks.  The earlier patches focus on correct CoW behavior in the
-presence of IO errors during the copy-write, and the later patches
-focus on XFS' new cow-extent-size hint that greatly reduces
-fragmentation due to copy on write behavior by encouraging the
-allocator to allocate larger extents of replacement blocks.
+diff --git a/tests/xfs/128 b/tests/xfs/128
+index a96291a..c9547fb 100755
+--- a/tests/xfs/128
++++ b/tests/xfs/128
+@@ -97,7 +97,7 @@ c13=$(_md5_checksum "$testdir/file3")
+ c14=$(_md5_checksum "$testdir/file4")
+ 
+ echo "Defragment"
+-lsattr -l "$testdir/" | _filter_scratch
++lsattr -l "$testdir/" | _filter_scratch | _filter_spaces
+ xfs_fsr -v -d "$testdir/file1" >> "$seqres.full"
+ xfs_fsr -v -d "$testdir/file2" >> "$seqres.full" # fsr probably breaks the link
+ xfs_fsr -v -d "$testdir/file3" >> "$seqres.full" # fsr probably breaks the link
+diff --git a/tests/xfs/128.out b/tests/xfs/128.out
+index 7e72dcd..0ac06db 100644
+--- a/tests/xfs/128.out
++++ b/tests/xfs/128.out
+@@ -11,10 +11,10 @@ c650f1cf6c9f07b22e3e21ec7d49ded5  SCRATCH_MNT/test-128/file2
+ 56ed2f712c91e035adeeb26ed105a982  SCRATCH_MNT/test-128/file3
+ b81534f439aac5c34ce3ed60a03eba70  SCRATCH_MNT/test-128/file4
+ Defragment
+-SCRATCH_MNT/test-128/file1          ---
+-SCRATCH_MNT/test-128/file2          ---
+-SCRATCH_MNT/test-128/file3          ---
+-SCRATCH_MNT/test-128/file4          ---
++SCRATCH_MNT/test-128/file1 ---
++SCRATCH_MNT/test-128/file2 ---
++SCRATCH_MNT/test-128/file3 ---
++SCRATCH_MNT/test-128/file4 ---
+ b81534f439aac5c34ce3ed60a03eba70  SCRATCH_MNT/test-128/file1
+ c650f1cf6c9f07b22e3e21ec7d49ded5  SCRATCH_MNT/test-128/file2
+ 56ed2f712c91e035adeeb26ed105a982  SCRATCH_MNT/test-128/file3
+diff --git a/tests/xfs/132 b/tests/xfs/132
+index 79a6d57..9c57c3b 100755
+--- a/tests/xfs/132
++++ b/tests/xfs/132
+@@ -87,32 +87,32 @@ for i in `seq 2 $nr`; do
+ done
+ _test_remount
+ free_blocks1=$(stat -f "$testdir" -c '%f')
+-lsattr -l $testdir/ | _filter_test_dir
++lsattr -l $testdir/ | _filter_test_dir | _filter_spaces
+ 
+ echo "funshare part of a file"
+ "$XFS_IO_PROG" -f -c "falloc 0 $((sz / 2))" "$testdir/file2"
+ _test_remount
+-lsattr -l $testdir/ | _filter_test_dir
++lsattr -l $testdir/ | _filter_test_dir | _filter_spaces
+ 
+ echo "funshare some of the copies"
+ "$XFS_IO_PROG" -f -c "falloc 0 $sz" "$testdir/file2"
+ "$XFS_IO_PROG" -f -c "falloc 0 $sz" "$testdir/file3"
+ _test_remount
+ free_blocks2=$(stat -f "$testdir" -c '%f')
+-lsattr -l $testdir/ | _filter_test_dir
++lsattr -l $testdir/ | _filter_test_dir | _filter_spaces
+ 
+ echo "funshare the rest of the files"
+ "$XFS_IO_PROG" -f -c "falloc 0 $sz" "$testdir/file4"
+ "$XFS_IO_PROG" -f -c "falloc 0 $sz" "$testdir/file1"
+ _test_remount
+ free_blocks3=$(stat -f "$testdir" -c '%f')
+-lsattr -l $testdir/ | _filter_test_dir
++lsattr -l $testdir/ | _filter_test_dir | _filter_spaces
+ 
+ echo "Rewrite the original file"
+ _pwrite_byte 0x65 0 $sz "$testdir/file1" >> "$seqres.full"
+ _test_remount
+ free_blocks4=$(stat -f "$testdir" -c '%f')
+-lsattr -l $testdir/ | _filter_test_dir
++lsattr -l $testdir/ | _filter_test_dir | _filter_spaces
+ #echo $free_blocks0 $free_blocks1 $free_blocks2 $free_blocks3 $free_blocks4
+ 
+ _within_tolerance "free blocks after reflinking" $free_blocks1 $((free_blocks0 - blks)) $margin -v
+diff --git a/tests/xfs/132.out b/tests/xfs/132.out
+index fd2b7bd..f32db7d 100644
+--- a/tests/xfs/132.out
++++ b/tests/xfs/132.out
+@@ -1,30 +1,30 @@
+ QA output created by 132
+ Create the original file blocks
+ Create the reflink copies
+-TEST_DIR/test-132/file1          ---
+-TEST_DIR/test-132/file2          ---
+-TEST_DIR/test-132/file3          ---
+-TEST_DIR/test-132/file4          ---
++TEST_DIR/test-132/file1 ---
++TEST_DIR/test-132/file2 ---
++TEST_DIR/test-132/file3 ---
++TEST_DIR/test-132/file4 ---
+ funshare part of a file
+-TEST_DIR/test-132/file1          ---
+-TEST_DIR/test-132/file2          ---
+-TEST_DIR/test-132/file3          ---
+-TEST_DIR/test-132/file4          ---
++TEST_DIR/test-132/file1 ---
++TEST_DIR/test-132/file2 ---
++TEST_DIR/test-132/file3 ---
++TEST_DIR/test-132/file4 ---
+ funshare some of the copies
+-TEST_DIR/test-132/file1          ---
+-TEST_DIR/test-132/file2          No_COW
+-TEST_DIR/test-132/file3          No_COW
+-TEST_DIR/test-132/file4          ---
++TEST_DIR/test-132/file1 ---
++TEST_DIR/test-132/file2 No_COW
++TEST_DIR/test-132/file3 No_COW
++TEST_DIR/test-132/file4 ---
+ funshare the rest of the files
+-TEST_DIR/test-132/file1          No_COW
+-TEST_DIR/test-132/file2          No_COW
+-TEST_DIR/test-132/file3          No_COW
+-TEST_DIR/test-132/file4          No_COW
++TEST_DIR/test-132/file1 No_COW
++TEST_DIR/test-132/file2 No_COW
++TEST_DIR/test-132/file3 No_COW
++TEST_DIR/test-132/file4 No_COW
+ Rewrite the original file
+-TEST_DIR/test-132/file1          No_COW
+-TEST_DIR/test-132/file2          No_COW
+-TEST_DIR/test-132/file3          No_COW
+-TEST_DIR/test-132/file4          No_COW
++TEST_DIR/test-132/file1 No_COW
++TEST_DIR/test-132/file2 No_COW
++TEST_DIR/test-132/file3 No_COW
++TEST_DIR/test-132/file4 No_COW
+ free blocks after reflinking is in range
+ free blocks after nocow'ing some copies is in range
+ free blocks after nocow'ing all copies is in range
 
-Patches 10-12 and 14 perform stress testing on reflink and CoW to
-check the behaviors when we get close to maximum refcount, when we
-specify obnxiously large offsets and lengths, and when we try to
-reflink millions of extents at a time.
-
-Patch 16 tests quota accounting behavior when reflink is enabled.
-
-Patch 19 adds a few tests for the XFS reverse mapping btree to ensure
-that things like metadump and growfs work correctly.
-
-Patch 22 checks that get_bmapx and fiemap (on XFS) correctly flag
-extents as having shared blocks.  XFS now follows btrfs and ocfs2
-FIEMAP behavior such that if any blocks of a file's extent are shared,
-the whole extent is marked shared.  This is in contrast to earlier
-XFS-only behavior that reported shared and non-shared regions as
-separate extents.
-
-If you're going to start using this mess, you probably ought to just
-pull from my github trees for kernel[1], xfsprogs[2], xfstests[3],
-xfs-docs[4], and man-pages[5].  All tests should pass on XFS.   I
-tried btrfs this weekend and it failed 166, 175, 182, 266, 271, 272,
-278, 281, 297, 298, 304, 333, and 334.  ocfs2 (when I jury-rigged it
-to run the cp_reflink tests) seemed to have a quota bug and crashes
-hard in 284 (but was otherwise fine).
-
-Comments and questions are, as always, welcome.
-
---D
-
-[1] https://github.com/djwong/linux/tree/for-dave
-[2] https://github.com/djwong/xfsprogs/tree/for-dave
-[3] https://github.com/djwong/xfstests/tree/for-dave
-[4] https://github.com/djwong/xfs-documentation/tree/for-dave
-[5] https://github.com/djwong/man-pages/commits/for-mtk

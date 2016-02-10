@@ -1,59 +1,125 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from out5-smtp.messagingengine.com ([66.111.4.29]:50950 "EHLO
-	out5-smtp.messagingengine.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1755083AbcBJEIm convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 9 Feb 2016 23:08:42 -0500
-Received: from compute5.internal (compute5.nyi.internal [10.202.2.45])
-	by mailout.nyi.internal (Postfix) with ESMTP id D0B6A21AFE
-	for <linux-btrfs@vger.kernel.org>; Tue,  9 Feb 2016 23:08:41 -0500 (EST)
-Received: from ebox.rath.org (ebox.rath.org [45.79.69.51])
-	by mail.messagingengine.com (Postfix) with ESMTPA id 8816E6800F1
-	for <linux-btrfs@vger.kernel.org>; Tue,  9 Feb 2016 23:08:41 -0500 (EST)
-Received: from vostro.rath.org (vostro [192.168.12.4])
-	by ebox.rath.org (Postfix) with ESMTPS id B6B5D1CF581
-	for <linux-btrfs@vger.kernel.org>; Wed, 10 Feb 2016 04:08:40 +0000 (UTC)
-From: Nikolaus Rath <Nikolaus@rath.org>
-To: linux-btrfs@vger.kernel.org
-Subject: Re: Use fast device only for metadata?
-References: <874mdktk4t.fsf@vostro.rath.org>
-	<20160207210713.7e4661a8@jupiter.sol.kaishome.de>
-	<1507413.RERLDqpHyU@merkaba> <87twliri6m.fsf@thinkpad.rath.org>
-Date: Tue, 09 Feb 2016 20:08:39 -0800
-In-Reply-To: <87twliri6m.fsf@thinkpad.rath.org> (Nikolaus Rath's message of
-	"Mon, 08 Feb 2016 13:44:17 -0800")
-Message-ID: <87pow5tdfc.fsf@vostro.rath.org>
+Received: from mail-wm0-f49.google.com ([74.125.82.49]:38882 "EHLO
+	mail-wm0-f49.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1757048AbcBJHRh (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 10 Feb 2016 02:17:37 -0500
+Received: by mail-wm0-f49.google.com with SMTP id p63so13755035wmp.1
+        for <linux-btrfs@vger.kernel.org>; Tue, 09 Feb 2016 23:17:37 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
+From: Rene Castberg <rene@castberg.org>
+Date: Wed, 10 Feb 2016 08:17:21 +0100
+Message-ID: <CAKUFzr8gm-yN01CY=H_j6jdEXJL5b0A_vS6gJ5iH1YN1+ZJAvg@mail.gmail.com>
+Subject: RAID5 Unable to remove Failing HD
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Feb 08 2016, Nikolaus Rath <Nikolaus@rath.org> wrote:
-> Otherwise I'll give bcache a shot. I've avoided it so far because of the
-> need to reformat and because of rumours that it doesn't work well with
-> LVM or BTRFS. But it sounds as if that's not the case..
+Hi,
 
-I now have the following stack:
+This morning i woke up to a failing disk:
 
-btrfs on LUKS on LVM on bcache
+[230743.953079] BTRFS: bdev /dev/sdc errs: wr 1573, rd 45648, flush
+503, corrupt 0, gen 0
+[230743.953970] BTRFS: bdev /dev/sdc errs: wr 1573, rd 45649, flush
+503, corrupt 0, gen 0
+[230744.106443] BTRFS: lost page write due to I/O error on /dev/sdc
+[230744.180412] BTRFS: lost page write due to I/O error on /dev/sdc
+[230760.116173] btrfs_dev_stat_print_on_error: 5 callbacks suppressed
+[230760.116176] BTRFS: bdev /dev/sdc errs: wr 1577, rd 45651, flush
+503, corrupt 0, gen 0
+[230760.726244] BTRFS: bdev /dev/sdc errs: wr 1577, rd 45652, flush
+503, corrupt 0, gen 0
+[230761.392939] btrfs_end_buffer_write_sync: 2 callbacks suppressed
+[230761.392947] BTRFS: lost page write due to I/O error on /dev/sdc
+[230761.392953] BTRFS: bdev /dev/sdc errs: wr 1578, rd 45652, flush
+503, corrupt 0, gen 0
+[230761.393813] BTRFS: lost page write due to I/O error on /dev/sdc
+[230761.393818] BTRFS: bdev /dev/sdc errs: wr 1579, rd 45652, flush
+503, corrupt 0, gen 0
+[230761.394843] BTRFS: lost page write due to I/O error on /dev/sdc
+[230761.394849] BTRFS: bdev /dev/sdc errs: wr 1580, rd 45652, flush
+503, corrupt 0, gen 0
+[230802.000425] nfsd: last server has exited, flushing export cache
+[230898.791862] BTRFS: lost page write due to I/O error on /dev/sdc
+[230898.791873] BTRFS: bdev /dev/sdc errs: wr 1581, rd 45652, flush
+503, corrupt 0, gen 0
+[230898.792746] BTRFS: lost page write due to I/O error on /dev/sdc
+[230898.792752] BTRFS: bdev /dev/sdc errs: wr 1582, rd 45652, flush
+503, corrupt 0, gen 0
+[230898.793723] BTRFS: lost page write due to I/O error on /dev/sdc
+[230898.793728] BTRFS: bdev /dev/sdc errs: wr 1583, rd 45652, flush
+503, corrupt 0, gen 0
+[230898.830893] BTRFS info (device sdd): allowing degraded mounts
+[230898.830902] BTRFS info (device sdd): disk space caching is enabled
 
-The VG contains two bcache PVs with backing devices on different
-spinning disks, and a shared cache device on SSD. I'm using Kernel 4.3.
+Eventually i remounted it as degraded, hopefully to prevent any loss of data.
 
-I'm super happy with the performance, boot times increased from 1:30
-minutes to X11 and 2:00 to Firefox roughly 0:10 to X11 and 0:30 to
-Firefox.
+It seems taht the btrfs filesystem still hasn't noticed that the disk
+has failed:
+$btrfs fi show
+Label: 'RenesData'  uuid: ee80dae2-7c86-43ea-a253-c8f04589b496
+        Total devices 5 FS bytes used 5.38TiB
+        devid    1 size 2.73TiB used 1.84TiB path /dev/sdb
+        devid    2 size 2.73TiB used 1.84TiB path /dev/sde
+        devid    3 size 3.64TiB used 1.84TiB path /dev/sdf
+        devid    4 size 2.73TiB used 1.84TiB path /dev/sdd
+        devid    5 size 3.64TiB used 1.84TiB path /dev/sdc
+
+I tried deleting the device:
+# btrfs device delete /dev/sdc /mnt2/RenesData/
+ERROR: error removing device '/dev/sdc': Invalid argument
+
+I have been unlucky and already had a failure last friday, where a
+RAID5 array failed after a disk failure.  I rebooted, and the data was
+unrecoverable. Fortunately this was only temp data so the failure
+wasn't a real issue.
+
+Can somebody give me some advice how to delete the failing disk? I
+plan on replacing the disk but unfortunately the system doesn't have
+hotplug, so i will need to shutdown to replace the disk without
+loosing any of the data stored on these devices.
+
+Regards
+
+Rene Castberg
+
+# uname -a
+Linux midgard 4.3.3-1.el7.elrepo.x86_64 #1 SMP Tue Dec 15 11:18:19 EST
+2015 x86_64 x86_64 x86_64 GNU/Linux
+[root@midgard ~]# btrfs --version
+btrfs-progs v4.3.1
+[root@midgard ~]# btrfs fi df  /mnt2/RenesData/
+Data, RAID6: total=5.52TiB, used=5.37TiB
+System, RAID6: total=96.00MiB, used=480.00KiB
+Metadata, RAID6: total=17.53GiB, used=11.86GiB
+GlobalReserve, single: total=512.00MiB, used=0.00B
 
 
-Time will tell if it also keeps my data intact, but I hope btrfs would
-at least detect any corruption. 
-
-
-Best,
--Nikolaus
-
--- 
-GPG encrypted emails preferred. Key id: 0xD113FCAC3C4E599F
-Fingerprint: ED31 791B 2C5C 1613 AF38 8B8A D113 FCAC 3C4E 599F
-
-             »Time flies like an arrow, fruit flies like a Banana.«
+# btrfs device stats /mnt2/RenesData/
+[/dev/sdb].write_io_errs   0
+[/dev/sdb].read_io_errs    0
+[/dev/sdb].flush_io_errs   0
+[/dev/sdb].corruption_errs 0
+[/dev/sdb].generation_errs 0
+[/dev/sde].write_io_errs   0
+[/dev/sde].read_io_errs    0
+[/dev/sde].flush_io_errs   0
+[/dev/sde].corruption_errs 0
+[/dev/sde].generation_errs 0
+[/dev/sdf].write_io_errs   0
+[/dev/sdf].read_io_errs    0
+[/dev/sdf].flush_io_errs   0
+[/dev/sdf].corruption_errs 0
+[/dev/sdf].generation_errs 0
+[/dev/sdd].write_io_errs   0
+[/dev/sdd].read_io_errs    0
+[/dev/sdd].flush_io_errs   0
+[/dev/sdd].corruption_errs 0
+[/dev/sdd].generation_errs 0
+[/dev/sdc].write_io_errs   1583
+[/dev/sdc].read_io_errs    45652
+[/dev/sdc].flush_io_errs   503
+[/dev/sdc].corruption_errs 0
+[/dev/sdc].generation_errs 0

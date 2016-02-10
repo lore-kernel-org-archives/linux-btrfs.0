@@ -1,110 +1,161 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:30596 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932512AbcBIVv5 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 9 Feb 2016 16:51:57 -0500
-Date: Tue, 9 Feb 2016 13:51:49 -0800
+Received: from aserp1040.oracle.com ([141.146.126.69]:16945 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752598AbcBJBCZ (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 9 Feb 2016 20:02:25 -0500
+Date: Tue, 9 Feb 2016 17:02:13 -0800
 From: "Darrick J. Wong" <darrick.wong@oracle.com>
 To: Dave Chinner <david@fromorbit.com>
 Cc: fstests@vger.kernel.org, linux-btrfs@vger.kernel.org, xfs@oss.sgi.com
-Subject: Re: [PATCH 21/23] xfs: aio cow tests
-Message-ID: <20160209215149.GD6350@birch.djwong.org>
+Subject: Re: [PATCH 13/23] xfs: test fragmentation characteristics of
+ copy-on-write
+Message-ID: <20160210010213.GE6350@birch.djwong.org>
 References: <20160209011145.23099.95354.stgit@birch.djwong.org>
- <20160209011401.23099.38.stgit@birch.djwong.org>
- <20160209083215.GP19486@dastard>
+ <20160209011309.23099.60912.stgit@birch.djwong.org>
+ <20160209080144.GL19486@dastard>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20160209083215.GP19486@dastard>
+In-Reply-To: <20160209080144.GL19486@dastard>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Feb 09, 2016 at 07:32:15PM +1100, Dave Chinner wrote:
-> On Mon, Feb 08, 2016 at 05:14:01PM -0800, Darrick J. Wong wrote:
-> .,,,
+On Tue, Feb 09, 2016 at 07:01:44PM +1100, Dave Chinner wrote:
+> On Mon, Feb 08, 2016 at 05:13:09PM -0800, Darrick J. Wong wrote:
+> > Perform copy-on-writes at random offsets to stress the CoW allocation
+> > system.  Assess the effectiveness of the extent size hint at
+> > combatting fragmentation via unshare, a rewrite, and no-op after the
+> > random writes.
+> > 
+> > Signed-off-by: Darrick J. Wong <darrick.wong@oracle.com>
+> ....
+> > +seq=`basename "$0"`
+> > +seqres="$RESULT_DIR/$seq"
+> > +echo "QA output created by $seq"
 > > +
+> > +here=`pwd`
+> > +tmp=/tmp/$$
+> > +status=1    # failure is the default!
+> > +trap "_cleanup; exit \$status" 0 1 2 3 15
+> > +
+> > +_cleanup()
+> > +{
+> > +    cd /
+> > +    #rm -rf "$tmp".* "$testdir"
+> 
+> Now that I've noticed it, a few tests have this line commented out.
+> Probably should remove the tmp files, at least.
+
+Done.
+
+> > +rm -f "$seqres.full"
+> > +
+> > +echo "Format and mount"
+> > +_scratch_mkfs > "$seqres.full" 2>&1
+> > +_scratch_mount >> "$seqres.full" 2>&1
+> > +
+> > +testdir="$SCRATCH_MNT/test-$seq"
+> > +rm -rf $testdir
+> > +mkdir $testdir
+> 
+> Again, somthing that is repeated - we just mkfs'd the scratch
+> device, so the $testdir is guaranteed not to exist...
+
+I've done that to the new tests, will do to the existing ones.
+
 > > +echo "Check for damage"
-> > +_dmerror_unmount
-> > +_dmerror_cleanup
-> > +_repair_scratch_fs >> "$seqres.full" 2>&1
+> > +umount "$SCRATCH_MNT"
 > 
-> Are you testing repair here? If so, why doesn't failure matter.
-> If not, why do it? Or is _require_scratch_nocheck all that is needed
-> here?
+> I've also noticed this in a lot of tests - the scratch device will
+> be unmounted by the harness, so I don't think this is necessary....
 
-Uggghhh.... so xfs_repair dumps its regular output to stderr, so the "2>&1"
-pushes the output to $seqres.full.
+Done.
 
-The return codes from xfs_repair seem to be:
-0: fs is ok now
-1: fs is probably broken
-2: log needs to be replayed
-
-The return codes from fsck seem to be:
-0: no errors found
-1: errors fixed
-2: errors fixed, reboot required
-(etc)
-
-So I guess the way out is to provide a better wrapper to the repair tools
-so that _repair_scratch_fs always returns 0 for "fs should be ok now" and
-nonzero otherwise:
-
-_repair_scratch_fs()
-{
-    case $FSTYP in
-    xfs)
-        _scratch_xfs_repair "$@" 2>&1
-	res=$?
-	if [ "$res" -eq 2 ]; then
-		echo "xfs_repair returns $res; replay log?"
-		_scratch_mount
-		res=$?
-		if [ "$res" -gt 0 ]; then
-			echo "mount returns $res; zap log?"
-			_scratch_xfs_repair -L 2>&1
-			echo "log zap returns $?"
-		else
-			umount "$SCRATCH_MNT"
-		fi
-		_scratch_xfs_repair "$@" 2>&1
-		res=$?
-	fi
-	test $res -ne 0 && >&2 echo "xfs_repair failed, err=$res"
-	return $res
-        ;;
-    *)
-        # Let's hope fsck -y suffices...
-        fsck -t $FSTYP -y $SCRATCH_DEV 2>&1
-	res=$?
-	case $res in
-	0|1|2)
-		res=0
-		;;
-	*)
-		>&2 echo "fsck.$FSTYP failed, err=$res"
-		;;
-	esac
-	return $res
-        ;;
-    esac
-}
-
-> > +echo "CoW and unmount"
-> > +"$XFS_IO_PROG" -f -c "pwrite -S 0x63 $((blksz * bsz)) 1" "$testdir/file2" >> "$seqres.full"
-> > +"$XFS_IO_PROG" -f -c "pwrite -S 0x63 -b $((blksz * bsz)) 0 $((blksz * nr))" "$TEST_DIR/moo" >> "$seqres.full"
+> > +free_blocks=$(stat -f -c '%a' "$testdir")
+> > +real_blksz=$(stat -f -c '%S' "$testdir")
+> > +space_needed=$(((blksz * nr * 3) * 5 / 4))
+> > +space_avail=$((free_blocks * real_blksz))
+> > +internal_blks=$((blksz * nr / real_blksz))
+> > +test $space_needed -gt $space_avail && _notrun "Not enough space. $space_avail < $space_needed"
 > 
-> offset = block size times block size?
+> Why not:
 > 
-> I think some better names might be needed...
+> _require_fs_space $space_needed
+> 
+> At minimum, it seems to be a repeated hunk of code, so it shoul dbe
+> factored.
 
-Yes.  Is now "bufnr" and bufsize=$((blksz * bufnr)).
+Ok, done.
+
+> > +testdir="$SCRATCH_MNT/test-$seq"
+> > +rm -rf $testdir
+> > +mkdir $testdir
+> > +
+> > +echo "Create the original files"
+> > +"$XFS_IO_PROG" -f -c "pwrite -S 0x61 0 0" "$testdir/file1" >> "$seqres.full"
+> > +"$XFS_IO_PROG" -f -c "pwrite -S 0x61 0 1048576" "$testdir/file2" >> "$seqres.full"
+> > +_scratch_remount
+> > +
+> > +echo "Set extsz and cowextsz on zero byte file"
+> > +"$XFS_IO_PROG" -f -c "extsize 1048576" "$testdir/file1" | _filter_scratch
+> > +"$XFS_IO_PROG" -f -c "cowextsize 1048576" "$testdir/file1" | _filter_scratch
+> > +
+> > +echo "Set extsz and cowextsz on 1Mbyte file"
+> > +"$XFS_IO_PROG" -f -c "extsize 1048576" "$testdir/file2" | _filter_scratch
+> > +"$XFS_IO_PROG" -f -c "cowextsize 1048576" "$testdir/file2" | _filter_scratch
+> > +_scratch_remount
+> > +
+> > +fn() {
+> > +	"$XFS_IO_PROG" -c "$1" "$2" | sed -e 's/.\([0-9]*\).*$/\1/g'
+> > +}
+> > +echo "Check extsz and cowextsz settings on zero byte file"
+> > +test $(fn extsize "$testdir/file1") -eq 1048576 || echo "file1 extsize not set"
+> > +test $(fn cowextsize "$testdir/file1") -eq 1048576 || echo "file1 cowextsize not set" 
+> 
+> For this sort of thing, just dump the extent size value to the
+> golden output. i.e.
+> 
+> echo "Check extsz and cowextsz settings on zero byte file"
+> $XFS_IO_PROG -c extsize $testdir/file1
+> $XFS_IO_PROG -c cowextsize $testdir/file1
+> 
+> is all that is needed. that way if it fails, we see what value it
+> had instead of the expected 1MB. This also makes the test much less
+> verbose and easier to read
+
+Done.
+
+> > +
+> > +echo "Check extsz and cowextsz settings on 1Mbyte file"
+> > +test $(fn extsize "$testdir/file2") -eq 0 || echo "file2 extsize not set"
+> > +test $(fn cowextsize "$testdir/file2") -eq 1048576 || echo "file2 cowextsize not set" 
+> > +
+> > +echo "Set cowextsize and check flag"
+> > +"$XFS_IO_PROG" -f -c "cowextsize 1048576" "$testdir/file3" | _filter_scratch
+> > +_scratch_remount
+> > +test $("$XFS_IO_PROG" -c "stat" "$testdir/file3" | grep 'fsxattr.xflags' | awk '{print $4}' | grep -c 'C') -eq 1 || echo "file3 cowextsz flag not set"
+> > +test $(fn cowextsize "$testdir/file3") -eq 1048576 || echo "file3 cowextsize not set"
+> > +"$XFS_IO_PROG" -f -c "cowextsize 0" "$testdir/file3" | _filter_scratch
+> > +_scratch_remount
+> > +test $(fn cowextsize "$testdir/file3") -eq 0 || echo "file3 cowextsize not set"
+> > +test $("$XFS_IO_PROG" -c "stat" "$testdir/file3" | grep 'fsxattr.xflags' | awk '{print $4}' | grep -c 'C') -eq 0 || echo "file3 cowextsz flag not set"
+> 
+> Same with all these - just grep the output for the line you want,
+> and the golden output matching does everything else. e.g. the flag
+> check simply becomes:
+> 
+> $XFS_IO_PROG -c "stat" $testdir/file3 | grep 'fsxattr.xflags'
+> 
+> Again, this tells us what the wrong flags are if it fails...
+
+Done.  It'll probably break whenever we add new flags, but that can be fixed.
 
 --D
 
 > 
-> Cheers,
+> There are quite a few bits of these tests where the same thing
+> applies....
 > 
-> Dave.
+> -Dave.
 > -- 
 > Dave Chinner
 > david@fromorbit.com

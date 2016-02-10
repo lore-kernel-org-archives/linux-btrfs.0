@@ -1,59 +1,59 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f180.google.com ([209.85.223.180]:34858 "EHLO
-	mail-io0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752530AbcBJCgL (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 9 Feb 2016 21:36:11 -0500
-Received: by mail-io0-f180.google.com with SMTP id d63so7895595ioj.2
-        for <linux-btrfs@vger.kernel.org>; Tue, 09 Feb 2016 18:36:11 -0800 (PST)
+Received: from out5-smtp.messagingengine.com ([66.111.4.29]:50950 "EHLO
+	out5-smtp.messagingengine.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1755083AbcBJEIm convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 9 Feb 2016 23:08:42 -0500
+Received: from compute5.internal (compute5.nyi.internal [10.202.2.45])
+	by mailout.nyi.internal (Postfix) with ESMTP id D0B6A21AFE
+	for <linux-btrfs@vger.kernel.org>; Tue,  9 Feb 2016 23:08:41 -0500 (EST)
+Received: from ebox.rath.org (ebox.rath.org [45.79.69.51])
+	by mail.messagingengine.com (Postfix) with ESMTPA id 8816E6800F1
+	for <linux-btrfs@vger.kernel.org>; Tue,  9 Feb 2016 23:08:41 -0500 (EST)
+Received: from vostro.rath.org (vostro [192.168.12.4])
+	by ebox.rath.org (Postfix) with ESMTPS id B6B5D1CF581
+	for <linux-btrfs@vger.kernel.org>; Wed, 10 Feb 2016 04:08:40 +0000 (UTC)
+From: Nikolaus Rath <Nikolaus@rath.org>
+To: linux-btrfs@vger.kernel.org
+Subject: Re: Use fast device only for metadata?
+References: <874mdktk4t.fsf@vostro.rath.org>
+	<20160207210713.7e4661a8@jupiter.sol.kaishome.de>
+	<1507413.RERLDqpHyU@merkaba> <87twliri6m.fsf@thinkpad.rath.org>
+Date: Tue, 09 Feb 2016 20:08:39 -0800
+In-Reply-To: <87twliri6m.fsf@thinkpad.rath.org> (Nikolaus Rath's message of
+	"Mon, 08 Feb 2016 13:44:17 -0800")
+Message-ID: <87pow5tdfc.fsf@vostro.rath.org>
 MIME-Version: 1.0
-In-Reply-To: <CAJCQCtSTNr7YGz+ASRBBOgtZEbPiBN-k8yWtUnUM-p4UXrsaFA@mail.gmail.com>
-References: <56A230C3.3080100@netcologne.de>
-	<CAPmG0jZoVmnUjqaWoZgAGEXUREyMyXPxQ_+M282F640jTw5b_A@mail.gmail.com>
-	<56A6082C.3030007@netcologne.de>
-	<CAJCQCtQ7yGpoUZOmVcoaCGMMqg6oro-0w4HjsXK=HHe9cFg+sw@mail.gmail.com>
-	<CAKZK7uxdX9UBPOKButtPjqBOdVUfHdRTimP+W34fkz1h9P+wHg@mail.gmail.com>
-	<CAKZK7uxOihVUSo9+LPfUxG7WawggkXSoaTbMVa3a4pkSEuxJdQ@mail.gmail.com>
-	<CAJCQCtQe=X4FPzTBKBpP826nswGQyiY4sNES9GugLju3-9HARA@mail.gmail.com>
-	<CAJCQCtTA4qUNX1R3Pgxq-17zAPJvwPGfO_Fo-qEy2LsQrpF+fg@mail.gmail.com>
-	<56A73460.7080100@netcologne.de>
-	<CAJCQCtTdDyv0PkkuHGrEpEnk5yzM1Fx1C0VUT8r7OAfU6i8Dfw@mail.gmail.com>
-	<56A7CF97.6030408@gmail.com>
-	<CAJCQCtTMEHcc1CnuHqS=g23tsirQv3S9cmDcHaK0WXyQrRds1w@mail.gmail.com>
-	<56A88452.6020306@netcologne.de>
-	<56A8F18E.3070400@gmail.com>
-	<CAJCQCtT9NZdaJ8MKHQw-1ARi7PkLeq_p9dtdZaPYdLt8EpTcbA@mail.gmail.com>
-	<56AF676B.2070902@netcologne.de>
-	<CAJCQCtS1gX4jbnpjmgnGn2WE5TTfHnSfeyQioDwRL4vgZrXMhA@mail.gmail.com>
-	<56B9EE1E.2040000@netcologne.de>
-	<CAJCQCtTPQE+hBzaktURR1v3GtObSjH=UV806qU-RmFVomwK3GA@mail.gmail.com>
-	<CAJCQCtSTNr7YGz+ASRBBOgtZEbPiBN-k8yWtUnUM-p4UXrsaFA@mail.gmail.com>
-Date: Tue, 9 Feb 2016 19:36:10 -0700
-Message-ID: <CAJCQCtSwLqp2--DNiJeJqJ0qWXzkP2cKKAAMid-VuNdEqNTPMQ@mail.gmail.com>
-Subject: Re: btrfs-progs 4.4 re-balance of RAID6 is very slow / limited to one
- cpu core?
-From: Chris Murphy <lists@colorremedies.com>
-Cc: Christian Rohmann <crohmann@netcologne.de>,
-        "Austin S. Hemmelgarn" <ahferroin7@gmail.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
-To: unlisted-recipients:; (no To-header on input)
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This could also be interesting. It means canceling the balance in
-progress; waiting some time; and then cancelling it again to get
-results to return.
+On Feb 08 2016, Nikolaus Rath <Nikolaus@rath.org> wrote:
+> Otherwise I'll give bcache a shot. I've avoided it so far because of the
+> need to reformat and because of rumours that it doesn't work well with
+> LVM or BTRFS. But it sounds as if that's not the case..
 
-# perf stat -B btrfs balance start /
+I now have the following stack:
 
-## Again, single device example, balancing at expected performance.
-http://fpaste.org/320562/55071438/
+btrfs on LUKS on LVM on bcache
 
-I didn't try this but, it looks like it'd be a variation on the above,
-attaching to a running balance:
+The VG contains two bcache PVs with backing devices on different
+spinning disks, and a shared cache device on SSD. I'm using Kernel 4.3.
 
-# perf stat -B -p <pidforbalance> sleep 60
+I'm super happy with the performance, boot times increased from 1:30
+minutes to X11 and 2:00 to Firefox roughly 0:10 to X11 and 0:30 to
+Firefox.
 
-Anyway...
 
-Chris Murphy
+Time will tell if it also keeps my data intact, but I hope btrfs would
+at least detect any corruption. 
+
+
+Best,
+-Nikolaus
+
+-- 
+GPG encrypted emails preferred. Key id: 0xD113FCAC3C4E599F
+Fingerprint: ED31 791B 2C5C 1613 AF38 8B8A D113 FCAC 3C4E 599F
+
+             »Time flies like an arrow, fruit flies like a Banana.«

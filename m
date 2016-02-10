@@ -1,116 +1,195 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f179.google.com ([209.85.223.179]:34255 "EHLO
-	mail-io0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751367AbcBJOAC (ORCPT
+Received: from mail-wm0-f52.google.com ([74.125.82.52]:34108 "EHLO
+	mail-wm0-f52.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752224AbcBJQ6t (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 10 Feb 2016 09:00:02 -0500
-Received: by mail-io0-f179.google.com with SMTP id 9so21734489iom.1
-        for <linux-btrfs@vger.kernel.org>; Wed, 10 Feb 2016 06:00:02 -0800 (PST)
-Subject: Re: BTRFS RAM requirements, RAID 6 stability/write holes and
- expansion questions
-To: Chris Murphy <lists@colorremedies.com>,
-        Mackenzie Meyer <snackmasterx@gmail.com>
-References: <CAKr9ZMFwxZ01gw7SAyFReOfXFb=hVzUXNgYoGcUc2xzLuo+9mg@mail.gmail.com>
- <CAJCQCtQCadspcPie_f6nv=MvC=2=PxxpLbLqtkD3_hBjkBs-zw@mail.gmail.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <56BB41E3.8050906@gmail.com>
-Date: Wed, 10 Feb 2016 08:57:55 -0500
+	Wed, 10 Feb 2016 11:58:49 -0500
+Received: by mail-wm0-f52.google.com with SMTP id 128so35251839wmz.1
+        for <linux-btrfs@vger.kernel.org>; Wed, 10 Feb 2016 08:58:48 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <CAJCQCtQCadspcPie_f6nv=MvC=2=PxxpLbLqtkD3_hBjkBs-zw@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+In-Reply-To: <CAKUFzr___Mc56XSu2nCuKbt11bAWdOdNo4y1LEZ47E5_TDxFGQ@mail.gmail.com>
+References: <CAKUFzr8gm-yN01CY=H_j6jdEXJL5b0A_vS6gJ5iH1YN1+ZJAvg@mail.gmail.com>
+ <56BAFC15.6080106@oracle.com> <CAKUFzr___Mc56XSu2nCuKbt11bAWdOdNo4y1LEZ47E5_TDxFGQ@mail.gmail.com>
+From: Rene Castberg <rene@castberg.org>
+Date: Wed, 10 Feb 2016 17:58:33 +0100
+Message-ID: <CAKUFzr-9ubFeoG2e14KFYWsXsid+aqD0psOTtokp9rLnF6w6Gg@mail.gmail.com>
+Subject: Re: RAID5 Unable to remove Failing HD
+To: Anand Jain <anand.jain@oracle.com>
+Cc: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2016-02-09 15:39, Chris Murphy wrote:
-> On Fri, Feb 5, 2016 at 12:36 PM, Mackenzie Meyer <snackmasterx@gmail.com> wrote:
->
->>
->> RAID 6 write holes?
->
-> I don't even understand the nature of the write hole on Btrfs. If
-> modification is still always COW, then either an fs block, a strip, or
-> whole stripe write happens, I'm not sure where the hole comes from. It
-> suggests some raid56 writes are not atomic.
-It's an issue of torn writes in this case, not of atomicity of BTRFS. 
-Disks can't atomically write more than sector size chunks, which means 
-that almost all BTRFS filesystems are doing writes that disks can't 
-atomically complete.  Add to that that we serialized writes to different 
-devices, and it becomes trivial to lose some data if the system crashes 
-while BTRFS is writing out a stripe (it shouldn't screw up existing data 
-though, you'll just loose whatever you were trying to write).
+Arnand, thanks for the tip. What kernels are these meant for? I am not
+able to apply these cleanly to the kernels i have tried. Or is there a
+kernel with these incorporated?
 
-One way to minimize this which would also boost performance on slow 
-storage would be to avoid writing parts of the stripe that aren't 
-changed (so for example, if only one disk in the stripe actually has 
-changed data, only write that and the parities).
+I have tried rebooting without the disk attached and am unable to
+mount the partition. Complaining about bad tree and
+failed to read chunk. So at the moment the disk is still readable,
+though not sure how long that will last.
+
+I have posted a copy of my messages log, only the last couple of days.
+https://www.dropbox.com/s/9f05e1q5w4zkp38/messages_trimmed2?dl=0
+
+If you or anybody else has some tips i would appreciate it.
+
+Regards
+
+On 10 February 2016 at 17:58, Rene Castberg <rene@castberg.org> wrote:
+> Arnand, thanks for the tip. What kernels are these meant for? I am not able
+> to apply these cleanly to the kernels i have tried. Or is there a kernel
+> with these incorporated?
 >
-> If you're worried about raid56 write holes, then a.) you need a server
-> running this raid where power failures or crashes don't happen b.)
-> don't use raid56 c.) use ZFS.
-It's not just BTRFS that has this issue though, ZFS does too, it just 
-recovers more gracefully than BTRFS does, and even with the journaled 
-RAID{5,6} support that's being added in MDRAID (and by extension DM-RAID 
-and therefore LVM), it still has the same issue, it just moves it 
-elsewhere (in this case, it has problems if there's a torn write to the 
-journal).
+> I have tried rebooting without the disk attached and am unable to mount the
+> partition. Complaining about bad tree and
+> failed to read chunk. So at the moment the disk is still readable, though
+> not sure how long that will last.
 >
->> RAID 6 stability?
->> Any articles I've tried looking for online seem to be from early 2014,
->> I can't find anything recent discussing the stability of RAID 5 or 6.
->> Are there or have there recently been any data corruption bugs which
->> impact RAID 6? Would you consider RAID 6 safe/stable enough for
->> production use?
+> I have posted a copy of my messages log, only the last couple of days.
+> https://www.dropbox.com/s/9f05e1q5w4zkp38/messages_trimmed2?dl=0
 >
-> It's not stable for your use case, if you have to ask others if it's
-> stable enough for your use case. Simple as that. Right now some raid6
-> users are experiencing remarkably slow balances, on the order of
-> weeks. If device replacement rebuild times are that long, I'd say it's
-> disqualifying for most any use case, just because there are
-> alternatives that have better fail over behavior than this. So far
-> there's no word from any developers what the problem might be, or
-> where to gather more information. So chances are they're already aware
-> of it but haven't reproduced it, or isolated it, or have a fix for it
-> yet.
-Double on this, we should probably put something similar on the wiki, 
-and this really applies to any feature, not just raid56.
+> If you or anybody else has some tips i would appreciate it.
 >
->> Do you still strongly recommend backups, or has stability reached a
->> point where backups aren't as critical? I'm thinking from a data
->> consistency standpoint, not a hardware failure standpoint.
+> Regards
 >
-> You can't separate them. On completely stable hardware, stem to stern,
-> you'd have no backups, no Btrfs or ZFS, you'd just run linear/concat
-> arrays with XFS, for example. So you can't just hand wave the hardware
-> part away. There are bugs in the entire storage stack, there are
-> connectors that can become intermittent, the system could crash. All
-> of these affect data consistency.
-I may be wrong, but I believe the intent of this question was to try and 
-figure out how likely BTRFS itself is to cause crashes or data 
-corruption, independent of the hardware. In other words, 'Do I need to 
-worry significantly about BTRFS in planning for disaster recovery, or 
-can I focus primarily on the hardware itself?' or 'Is the most likely 
-failure mode going to be hardware failure, or software?'. In general, 
-right now I'd say that using BTRFS in traditional multi-device setup 
-(nothing more than raid1 or possibly raid10), you've got roughly a 50% 
-chance of an arbitrary crash being a software issue instead of hardware. 
-Single disk, I'd say it's probably closer to 25%, and raid56 I'd say 
-it's probably closer to 75%. By comparison, I'd say that with ZFS it's 
-maybe a 5% chance (ZFS is developed as enterprise level software, it has 
-to work, period), and with XFS on LVM raid, probably about 15% (similar 
-to ZFS, XFS is supposed to be enterprise level software, the difference 
-here comes from LVM, which has had some interesting issues recently due 
-to incomplete testing of certain things before they got pushed upstream).
+> Rene Castberg
 >
-> Stability has not reach a point where backups aren't as critical. I
-> don't really even know what that means though. No matter Btrfs or not,
-> you need to be doing backups such that if the primary stack is a 100%
-> loss without notice, is not a disaster. Plan on having to use it. If
-> you don't like the sound of that, look elsewhere.
-What your using has impact on how you need to do backups.  For someone 
-who can afford long periods of down time for example, it may be 
-perfectly fine to use something like Amazon S3 Glacier storage (which 
-has a 4 hour lead time on restoration for read access) for backups. 
-OTOH, if you can't afford more than a few minutes of down time and want 
-to use BTRFS, you should probably have full on-line on-site backups 
-which you can switch in on a moments notice while you fix things.
+> On 10 February 2016 at 10:00, Anand Jain <anand.jain@oracle.com> wrote:
+>>
+>>
+>>
+>> Rene,
+>>
+>> Thanks for the report. Fixes are in the following patch sets
+>>
+>>  concern1:
+>>  Btrfs to fail/offline a device for write/flush error:
+>>    [PATCH 00/15] btrfs: Hot spare and Auto replace
+>>
+>>  concern2:
+>>  User should be able to delete a device when device has failed:
+>>    [PATCH 0/7] Introduce device delete by devid
+>>
+>>  If you were able to tryout these patches, pls lets know.
+>>
+>> Thanks, Anand
+>>
+>>
+>>
+>> On 02/10/2016 03:17 PM, Rene Castberg wrote:
+>>>
+>>> Hi,
+>>>
+>>> This morning i woke up to a failing disk:
+>>>
+>>> [230743.953079] BTRFS: bdev /dev/sdc errs: wr 1573, rd 45648, flush
+>>> 503, corrupt 0, gen 0
+>>> [230743.953970] BTRFS: bdev /dev/sdc errs: wr 1573, rd 45649, flush
+>>> 503, corrupt 0, gen 0
+>>> [230744.106443] BTRFS: lost page write due to I/O error on /dev/sdc
+>>> [230744.180412] BTRFS: lost page write due to I/O error on /dev/sdc
+>>> [230760.116173] btrfs_dev_stat_print_on_error: 5 callbacks suppressed
+>>> [230760.116176] BTRFS: bdev /dev/sdc errs: wr 1577, rd 45651, flush
+>>> 503, corrupt 0, gen 0
+>>> [230760.726244] BTRFS: bdev /dev/sdc errs: wr 1577, rd 45652, flush
+>>> 503, corrupt 0, gen 0
+>>> [230761.392939] btrfs_end_buffer_write_sync: 2 callbacks suppressed
+>>> [230761.392947] BTRFS: lost page write due to I/O error on /dev/sdc
+>>> [230761.392953] BTRFS: bdev /dev/sdc errs: wr 1578, rd 45652, flush
+>>> 503, corrupt 0, gen 0
+>>> [230761.393813] BTRFS: lost page write due to I/O error on /dev/sdc
+>>> [230761.393818] BTRFS: bdev /dev/sdc errs: wr 1579, rd 45652, flush
+>>> 503, corrupt 0, gen 0
+>>> [230761.394843] BTRFS: lost page write due to I/O error on /dev/sdc
+>>> [230761.394849] BTRFS: bdev /dev/sdc errs: wr 1580, rd 45652, flush
+>>> 503, corrupt 0, gen 0
+>>> [230802.000425] nfsd: last server has exited, flushing export cache
+>>> [230898.791862] BTRFS: lost page write due to I/O error on /dev/sdc
+>>> [230898.791873] BTRFS: bdev /dev/sdc errs: wr 1581, rd 45652, flush
+>>> 503, corrupt 0, gen 0
+>>> [230898.792746] BTRFS: lost page write due to I/O error on /dev/sdc
+>>> [230898.792752] BTRFS: bdev /dev/sdc errs: wr 1582, rd 45652, flush
+>>> 503, corrupt 0, gen 0
+>>> [230898.793723] BTRFS: lost page write due to I/O error on /dev/sdc
+>>> [230898.793728] BTRFS: bdev /dev/sdc errs: wr 1583, rd 45652, flush
+>>> 503, corrupt 0, gen 0
+>>> [230898.830893] BTRFS info (device sdd): allowing degraded mounts
+>>> [230898.830902] BTRFS info (device sdd): disk space caching is enabled
+>>>
+>>> Eventually i remounted it as degraded, hopefully to prevent any loss of
+>>> data.
+>>>
+>>> It seems taht the btrfs filesystem still hasn't noticed that the disk
+>>> has failed:
+>>> $btrfs fi show
+>>> Label: 'RenesData'  uuid: ee80dae2-7c86-43ea-a253-c8f04589b496
+>>>          Total devices 5 FS bytes used 5.38TiB
+>>>          devid    1 size 2.73TiB used 1.84TiB path /dev/sdb
+>>>          devid    2 size 2.73TiB used 1.84TiB path /dev/sde
+>>>          devid    3 size 3.64TiB used 1.84TiB path /dev/sdf
+>>>          devid    4 size 2.73TiB used 1.84TiB path /dev/sdd
+>>>          devid    5 size 3.64TiB used 1.84TiB path /dev/sdc
+>>>
+>>> I tried deleting the device:
+>>> # btrfs device delete /dev/sdc /mnt2/RenesData/
+>>> ERROR: error removing device '/dev/sdc': Invalid argument
+>>>
+>>> I have been unlucky and already had a failure last friday, where a
+>>> RAID5 array failed after a disk failure.  I rebooted, and the data was
+>>> unrecoverable. Fortunately this was only temp data so the failure
+>>> wasn't a real issue.
+>>>
+>>> Can somebody give me some advice how to delete the failing disk? I
+>>> plan on replacing the disk but unfortunately the system doesn't have
+>>> hotplug, so i will need to shutdown to replace the disk without
+>>> loosing any of the data stored on these devices.
+>>>
+>>> Regards
+>>>
+>>> Rene Castberg
+>>>
+>>> # uname -a
+>>> Linux midgard 4.3.3-1.el7.elrepo.x86_64 #1 SMP Tue Dec 15 11:18:19 EST
+>>> 2015 x86_64 x86_64 x86_64 GNU/Linux
+>>> [root@midgard ~]# btrfs --version
+>>> btrfs-progs v4.3.1
+>>> [root@midgard ~]# btrfs fi df  /mnt2/RenesData/
+>>> Data, RAID6: total=5.52TiB, used=5.37TiB
+>>> System, RAID6: total=96.00MiB, used=480.00KiB
+>>> Metadata, RAID6: total=17.53GiB, used=11.86GiB
+>>> GlobalReserve, single: total=512.00MiB, used=0.00B
+>>>
+>>>
+>>> # btrfs device stats /mnt2/RenesData/
+>>> [/dev/sdb].write_io_errs   0
+>>> [/dev/sdb].read_io_errs    0
+>>> [/dev/sdb].flush_io_errs   0
+>>> [/dev/sdb].corruption_errs 0
+>>> [/dev/sdb].generation_errs 0
+>>> [/dev/sde].write_io_errs   0
+>>> [/dev/sde].read_io_errs    0
+>>> [/dev/sde].flush_io_errs   0
+>>> [/dev/sde].corruption_errs 0
+>>> [/dev/sde].generation_errs 0
+>>> [/dev/sdf].write_io_errs   0
+>>> [/dev/sdf].read_io_errs    0
+>>> [/dev/sdf].flush_io_errs   0
+>>> [/dev/sdf].corruption_errs 0
+>>> [/dev/sdf].generation_errs 0
+>>> [/dev/sdd].write_io_errs   0
+>>> [/dev/sdd].read_io_errs    0
+>>> [/dev/sdd].flush_io_errs   0
+>>> [/dev/sdd].corruption_errs 0
+>>> [/dev/sdd].generation_errs 0
+>>> [/dev/sdc].write_io_errs   1583
+>>> [/dev/sdc].read_io_errs    45652
+>>> [/dev/sdc].flush_io_errs   503
+>>> [/dev/sdc].corruption_errs 0
+>>> [/dev/sdc].generation_errs 0
+>>> --
+>>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>>> the body of a message to majordomo@vger.kernel.org
+>>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>>>
+>

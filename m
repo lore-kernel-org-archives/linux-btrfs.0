@@ -1,77 +1,78 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from torres.zugschlus.de ([85.214.131.164]:50502 "EHLO
-	torres.zugschlus.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751041AbcB2Pdy (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 29 Feb 2016 10:33:54 -0500
-Received: from mh by torres.zugschlus.de with local (Exim 4.84)
-	(envelope-from <mh+linux-btrfs@zugschlus.de>)
-	id 1aaPpY-000184-JL
-	for linux-btrfs@vger.kernel.org; Mon, 29 Feb 2016 16:33:52 +0100
-Date: Mon, 29 Feb 2016 16:33:52 +0100
-From: Marc Haber <mh+linux-btrfs@zugschlus.de>
-To: linux-btrfs@vger.kernel.org
-Subject: Re: Again, no space left on device while rebalancing and recipe
- doesnt work
-Message-ID: <20160229153352.GE2334@torres.zugschlus.de>
-References: <20160227211450.GS26042@torres.zugschlus.de>
- <56D3A56A.20809@cn.fujitsu.com>
+Received: from mx2.suse.de ([195.135.220.15]:52453 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753587AbcBJKjr (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 10 Feb 2016 05:39:47 -0500
+Date: Wed, 10 Feb 2016 11:39:25 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Chandan Rajendra <chandan@linux.vnet.ibm.com>
+Cc: bo.li.liu@oracle.com, clm@fb.com, jbacik@fb.com, dsterba@suse.cz,
+        linux-btrfs@vger.kernel.org, chandan@mykolab.com
+Subject: Re: [RFC PATCH V11 01/21] Btrfs: subpagesize-blocksize: Fix whole
+ page read.
+Message-ID: <20160210103924.GC30511@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1433172176-8742-1-git-send-email-chandan@linux.vnet.ibm.com>
+ <1433172176-8742-2-git-send-email-chandan@linux.vnet.ibm.com>
+ <20150619044536.GA31508@localhost.localdomain>
+ <2574653.62sO1fmDVj@localhost.localdomain>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-In-Reply-To: <56D3A56A.20809@cn.fujitsu.com>
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <2574653.62sO1fmDVj@localhost.localdomain>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
-
-On Mon, Feb 29, 2016 at 09:56:58AM +0800, Qu Wenruo wrote:
-> Marc Haber wrote on 2016/02/27 22:14 +0100:
-> >I have again the issue of no space left on device while rebalancing
-> >(with btrfs-tools 4.4.1 on kernel 4.4.2 on Debian unstable):
+On Fri, Jun 19, 2015 at 03:15:01PM +0530, Chandan Rajendra wrote:
+> > private->io_lock is not acquired here but not in below.
+> > 
+> > IIUC, this can be protected by EXTENT_LOCKED.
 > >
-> >mh@fan:~$ sudo btrfs balance start /mnt/fanbtr
-> >ERROR: error during balancing '/mnt/fanbtr': No space left on device
 > 
-> It seems that, only when balancing all chunks, ENOSPC error happens.
+> private->io_lock plays the same role as BH_Uptodate_Lock (see
+> end_buffer_async_read()) i.e. without the io_lock we may end up in the
+> following situation,
 > 
-> And did you run any other heavy IO at background?
-
-Not when running those last commands for the mailing list post.
-
-> BTW, is there any kernel log when the ENOSPC happens?
-
-> Would you please try the following commands to see which one caused the
-> problem?
-> And would you please provide the dmesg of them?
+> NOTE: Assume 64k page size and 4k block size. Also assume that the first 12
+> blocks of the page are contiguous while the next 4 blocks are contiguous. When
+> reading the page we end up submitting two "logical address space" bios. So
+> end_bio_extent_readpage function is invoked twice (once for each bio).
 > 
-> # btrfs balance start -dprofiles=single /mnt/fanbtr
-> # btrfs balance start -mprofile=dup /mnt/fanbtr
-> # btrfs balance start -sprofile=dup /mnt/fanbtr
+> |-------------------------+-------------------------+-------------|
+> | Task A                  | Task B                  | Task C      |
+> |-------------------------+-------------------------+-------------|
+> | end_bio_extent_readpage |                         |             |
+> | process block 0         |                         |             |
+> | - clear BLK_STATE_IO    |                         |             |
+> | - page_read_complete    |                         |             |
+> | process block 1         |                         |             |
+> | ...                     |                         |             |
+> | ...                     |                         |             |
+> | ...                     | end_bio_extent_readpage |             |
+> | ...                     | process block 0         |             |
+> | ...                     | - clear BLK_STATE_IO    |             |
+> | ...                     | - page_read_complete    |             |
+> | ...                     | process block 1         |             |
+> | ...                     | ...                     |             |
+> | process block 11        | process block 3         |             |
+> | - clear BLK_STATE_IO    | - clear BLK_STATE_IO    |             |
+> | - page_read_complete    | - page_read_complete    |             |
+> |   - returns true        |   - returns true        |             |
+> |   - unlock_page()       |                         |             |
+> |                         |                         | lock_page() |
+> |                         |   - unlock_page()       |             |
+> |-------------------------+-------------------------+-------------|
+> 
+> So we end up incorrectly unlocking the page twice and "Task C" ends up working
+> on an unlocked page. So private->io_lock makes sure that only one of the tasks
+> gets "true" as the return value when page_read_complete() is invoked. As an
+> optimization the patch gets the io_lock only when nr_sectors counter reaches
+> the value 0 (i.e. when the last block of the bio_vec is being processed).
+> Please let me know if my analysis was incorrect.
+> 
+> Also, I noticed that page_read_complete() and page_write_complete() can be
+> replaced by just one function i.e. page_io_complete().
 
-I have attached the logs. I used logger(1) to have in syslog which
-command I executed, and I have piped the userspace's output to logger
-so that the syslog entries match the userspace output.
-
--mprofile gave an error message, I therefore tried -mprofiles, and
--sprofiles wanted me to use the --force, so I did that as well.
-
-The three balance commands above all three finshed alright without
-running into ENOSPC, while running a plain balance (which is also part
-of the log) errors out every time.
-
-And, the -dprofiles=single log caused a number of INFOs regarding
-btrfs-cleaner and btrfa-balance processes gotten stuck for more than
-120 seconds during the run.
-
-I now have a kworker and a btfs-transact kernel process taking most of
-one CPU core each, even after the userspace programs have terminated.
-Is there a way to find out what these threads are actually doing?
-
-Greetings
-Marc
-
--- 
------------------------------------------------------------------------------
-Marc Haber         | "I don't trust Computers. They | Mailadresse im Header
-Leimen, Germany    |  lose things."    Winona Ryder | Fon: *49 6224 1600402
-Nordisch by Nature |  How to make an American Quilt | Fax: *49 6224 1600421
+The explanations and the table would be good in the changelog and as
+comments. I think we'll need to consider the smaller blocks more often
+so some examples and locking rules would be useful, eg. documented in
+this file.

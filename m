@@ -1,12 +1,12 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f182.google.com ([209.85.213.182]:35165 "EHLO
-	mail-ig0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752866AbcBJCXL (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 9 Feb 2016 21:23:11 -0500
-Received: by mail-ig0-f182.google.com with SMTP id hb3so5155695igb.0
-        for <linux-btrfs@vger.kernel.org>; Tue, 09 Feb 2016 18:23:10 -0800 (PST)
+Received: from mail-io0-f180.google.com ([209.85.223.180]:34858 "EHLO
+	mail-io0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752530AbcBJCgL (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 9 Feb 2016 21:36:11 -0500
+Received: by mail-io0-f180.google.com with SMTP id d63so7895595ioj.2
+        for <linux-btrfs@vger.kernel.org>; Tue, 09 Feb 2016 18:36:11 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <CAJCQCtTPQE+hBzaktURR1v3GtObSjH=UV806qU-RmFVomwK3GA@mail.gmail.com>
+In-Reply-To: <CAJCQCtSTNr7YGz+ASRBBOgtZEbPiBN-k8yWtUnUM-p4UXrsaFA@mail.gmail.com>
 References: <56A230C3.3080100@netcologne.de>
 	<CAPmG0jZoVmnUjqaWoZgAGEXUREyMyXPxQ_+M282F640jTw5b_A@mail.gmail.com>
 	<56A6082C.3030007@netcologne.de>
@@ -26,8 +26,9 @@ References: <56A230C3.3080100@netcologne.de>
 	<CAJCQCtS1gX4jbnpjmgnGn2WE5TTfHnSfeyQioDwRL4vgZrXMhA@mail.gmail.com>
 	<56B9EE1E.2040000@netcologne.de>
 	<CAJCQCtTPQE+hBzaktURR1v3GtObSjH=UV806qU-RmFVomwK3GA@mail.gmail.com>
-Date: Tue, 9 Feb 2016 19:23:10 -0700
-Message-ID: <CAJCQCtSTNr7YGz+ASRBBOgtZEbPiBN-k8yWtUnUM-p4UXrsaFA@mail.gmail.com>
+	<CAJCQCtSTNr7YGz+ASRBBOgtZEbPiBN-k8yWtUnUM-p4UXrsaFA@mail.gmail.com>
+Date: Tue, 9 Feb 2016 19:36:10 -0700
+Message-ID: <CAJCQCtSwLqp2--DNiJeJqJ0qWXzkP2cKKAAMid-VuNdEqNTPMQ@mail.gmail.com>
 Subject: Re: btrfs-progs 4.4 re-balance of RAID6 is very slow / limited to one
  cpu core?
 From: Chris Murphy <lists@colorremedies.com>
@@ -39,41 +40,20 @@ To: unlisted-recipients:; (no To-header on input)
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-# perf stat -e 'btrfs:*' -a sleep 10
+This could also be interesting. It means canceling the balance in
+progress; waiting some time; and then cancelling it again to get
+results to return.
 
+# perf stat -B btrfs balance start /
 
-## This is single device HDD, balance of a root fs was started before
-these 10 seconds of sampling. There are some differences in the
-statistics depending on whether there are predominately reads or
-writes for the balance, so clearly balance does predominately reads,
-then predominately writes. Unsurprising but the three tries I did were
-largely in agreement (orders of magnitude wise).
-http://fpaste.org/320551/06921614/
+## Again, single device example, balancing at expected performance.
+http://fpaste.org/320562/55071438/
 
+I didn't try this but, it looks like it'd be a variation on the above,
+attaching to a running balance:
 
-# perf record -e block:block_rq_issue -ag
-^C   ## after ~30 seconds
-# perf report
+# perf stat -B -p <pidforbalance> sleep 60
 
-## Single device HDD, balance of root fs start before perf record.
-There's a lot of data, collapsed by default. I expanded a few items at
-random just as an example. I suspect the write of the perf.data file
-is a non-factor because it was just under 2MiB.
-http://fpaste.org/320555/14550698/raw/
-
-
-# perf top
-
-## Single device HDD, balance of root fs start before issuing this
-command, and let it run for about 20 seconds. This is actually not as
-interesting as I thought it might be, but I don't really know what I'm
-looking for. I'd need something else to compare it to.
-http://fpaste.org/320559/55070873/
-
-
-Anyway, all of these are single device, so it's not apples/apples
-comparison, but it is a working (full speed for the block device)
-balance.
-
+Anyway...
 
 Chris Murphy

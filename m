@@ -1,37 +1,32 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.15.18]:65170 "EHLO mout.gmx.net"
+Received: from mx2.suse.de ([195.135.220.15]:49237 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751671AbcBNCFa (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 13 Feb 2016 21:05:30 -0500
-Subject: Re: [PATCH V7 0/3][PULL REQUEST] Unify 'norecovery' bahavior with
- other filesystems
-To: dsterba@suse.cz, Qu Wenruo <quwenruo@cn.fujitsu.com>,
-        linux-btrfs@vger.kernel.org
-References: <1453170184-22869-1-git-send-email-quwenruo@cn.fujitsu.com>
- <56AAD9DC.90805@cn.fujitsu.com> <20160212141833.GH4374@twin.jikos.cz>
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <56BFE0D8.8070006@gmx.com>
-Date: Sun, 14 Feb 2016 10:05:12 +0800
+	id S932448AbcBJKN6 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 10 Feb 2016 05:13:58 -0500
+Date: Wed, 10 Feb 2016 11:13:37 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Zhao Lei <zhaolei@cn.fujitsu.com>
+Cc: "'Chris Mason'" <clm@fb.com>, "'btrfs'" <linux-btrfs@vger.kernel.org>
+Subject: Re: [GIT PULL] Fujitsu for 4.5
+Message-ID: <20160210101336.GB30511@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <01ad01d14de4$b9489900$2bd9cb00$@cn.fujitsu.com>
 MIME-Version: 1.0
-In-Reply-To: <20160212141833.GH4374@twin.jikos.cz>
-Content-Type: text/plain; charset=windows-1252; format=flowed
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <01ad01d14de4$b9489900$2bd9cb00$@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Thanks for the modification.
-Qu
+On Wed, Jan 13, 2016 at 05:28:12PM +0800, Zhao Lei wrote:
+> This is collection of some bug fix, enhance and cleanup from fujitsu
+> against btrfs for v4.5, mainly for reada, plus some small fix and cleanup
+> for scrub and raid56.
+> 
+> All patchs are in btrfs-maillist, rebased on top of integration-4.5.
 
-On 02/12/2016 10:18 PM, David Sterba wrote:
-> On Fri, Jan 29, 2016 at 11:17:48AM +0800, Qu Wenruo wrote:
->> Ping.
->>
->> Any comment?
->> Or will it be merged into current 4.5?
->
-> I've fixed the 1/3 and will add this patchset to my for-next, scheduled
-> for 4.6.
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
+I was trying to isolate safe fixes for 4.5 but saw hangs (same as Chris
+reported) and was not able to find the right followups.
+
+Can you please collect all your readahead patches sent recently? I got
+lost. Make it a git branch and let me know, I'll add it to for-next and
+send pull request for 4.6 later.

@@ -1,48 +1,64 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from ipmail06.adl2.internode.on.net ([150.101.137.129]:5871 "EHLO
-	ipmail06.adl2.internode.on.net" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1755664AbcB1XDJ (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 28 Feb 2016 18:03:09 -0500
-Date: Mon, 29 Feb 2016 10:02:14 +1100
-From: Dave Chinner <david@fromorbit.com>
-To: dsterba@suse.cz, Anand Jain <anand.jain@oracle.com>,
-        fstests@vger.kernel.org, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 1/2] fstests: btrfs/011 use replace_options
-Message-ID: <20160228230214.GE29057@dastard>
-References: <1455888329-16981-1-git-send-email-anand.jain@oracle.com>
- <20160224124208.GD23746@twin.jikos.cz>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20160224124208.GD23746@twin.jikos.cz>
+Received: from mx2.suse.de ([195.135.220.15]:39689 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750784AbcBKQ4y (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 11 Feb 2016 11:56:54 -0500
+From: David Sterba <dsterba@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: David Sterba <dsterba@suse.com>, clm@fb.com
+Subject: [PULL][PATCH 0/9] GFP_NOFS flags cleanup, part 2
+Date: Thu, 11 Feb 2016 17:56:52 +0100
+Message-Id: <cover.1455208920.git.dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Feb 24, 2016 at 01:42:08PM +0100, David Sterba wrote:
-> On Fri, Feb 19, 2016 at 09:25:28PM +0800, Anand Jain wrote:
-> > This patch fixes test btrfs/011 which intended to use -r option
-> > but was never used since its associated args 'replace_options'
-> > didn't make it to the cli.
-> 
-> After this patch the tests fails due to extra output. I've tested
-> several kernels (4.5 rcs), HDD and SSD so it's not caused by my testing
-> setup.
+Hi,
 
-I'll use this as an opportunity to point out that nobody is
-reviewing most btrfs test changes. I'll commit the changes if no-one
-says anything about them, they look sane to me and don't cause me
-any problems, but that doesn't mean they will work. Mostly I'm
-concerned about changes to the common code and code patterns, not
-what the test does or whether it is even a valid test.
+another portion of the NOFS -> KERNEL conversions, in ioctl handlers and
+mount-time functions. Branch will be in my for-next. Please merge to 4.6.
 
-IOWs, it is up to the developers who use xfstests to make sure the
-tests relevant to their areas of expertise work correctly and are
-valid/viable tests, not me. To avoid this sort of issue in
-future, please review changes promptly.
+Currently all the simple cases without refactoring seem to be covered. What next
+is still going to be determined. There are several classes of functions that
+would be fixed in a similar way, eg. the extent state bit wrappers, bios, ulist,
+csum calculations.
 
-Cheers,
+----------------------------------------------------------------
+The following changes since commit 388f7b1d6e8ca06762e2454d28d6c3c55ad0fe95:
 
-Dave.
+  Linux 4.5-rc3 (2016-02-07 15:38:30 -0800)
+
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git dev/gfp-flags
+
+for you to fetch changes up to 66722f7c059089ad7f11eaa3e27af2321ab1b0e6:
+
+  btrfs: switch to kcalloc in btrfs_cmp_data_prepare (2016-02-11 15:19:39 +0100)
+
+----------------------------------------------------------------
+David Sterba (9):
+  btrfs: send: use GFP_KERNEL everywhere
+  btrfs: reada: use GFP_KERNEL everywhere
+  btrfs: scrub: use GFP_KERNEL on the submission path
+  btrfs: let callers of btrfs_alloc_root pass gfp flags
+  btrfs: fallocate: use GFP_KERNEL
+  btrfs: readdir: use GFP_KERNEL
+  btrfs: device add and remove: use GFP_KERNEL
+  btrfs: extent same: use GFP_KERNEL for page array allocations
+  btrfs: switch to kcalloc in btrfs_cmp_data_prepare
+
+ fs/btrfs/ctree.c       |  2 +-
+ fs/btrfs/dev-replace.c |  2 +-
+ fs/btrfs/disk-io.c     | 21 +++++++++++----------
+ fs/btrfs/file.c        |  6 +++---
+ fs/btrfs/inode.c       |  2 +-
+ fs/btrfs/ioctl.c       |  4 ++--
+ fs/btrfs/reada.c       | 10 +++++-----
+ fs/btrfs/scrub.c       | 24 +++++++++++++-----------
+ fs/btrfs/send.c        | 36 ++++++++++++++++++------------------
+ fs/btrfs/volumes.c     |  9 +++++----
+ 10 files changed, 60 insertions(+), 56 deletions(-)
+
 -- 
-Dave Chinner
-david@fromorbit.com
+2.7.1
+

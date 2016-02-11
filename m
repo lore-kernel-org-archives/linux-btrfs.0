@@ -1,71 +1,64 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:7096 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751058AbcBKHQx (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 11 Feb 2016 02:16:53 -0500
-Subject: Re: btrfs-image failure (btrfs-tools 4.4)
-To: Marc MERLIN <marc@merlins.org>
-References: <20160123170354.GA10113@merlins.org>
- <56A57C59.1040203@cn.fujitsu.com> <20160125205500.GK23751@merlins.org>
- <56A6C5CB.5060406@cn.fujitsu.com> <20160211063132.GX13969@merlins.org>
-CC: David Sterba <dsterba@suse.cz>,
-        Btrfs mailing list <linux-btrfs@vger.kernel.org>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <56BC355F.1080305@cn.fujitsu.com>
-Date: Thu, 11 Feb 2016 15:16:47 +0800
+Received: from smtp-33.italiaonline.it ([212.48.25.161]:54896 "EHLO libero.it"
+	rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+	id S1750765AbcBKOOQ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 11 Feb 2016 09:14:16 -0500
+Reply-To: kreijack@inwind.it
+Subject: Re: BTRFS RAM requirements, RAID 6 stability/write holes and
+ expansion questions
+References: <CAKr9ZMFwxZ01gw7SAyFReOfXFb=hVzUXNgYoGcUc2xzLuo+9mg@mail.gmail.com>
+ <CAJCQCtQCadspcPie_f6nv=MvC=2=PxxpLbLqtkD3_hBjkBs-zw@mail.gmail.com>
+ <56BB41E3.8050906@gmail.com>
+ <CAJCQCtS8wDV93Eyb6pDaCJBY7_v8misn1p9e=4KVGdK6=CKL_A@mail.gmail.com>
+ <56BB9698.5020203@gmail.com>
+To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>,
+        Chris Murphy <lists@colorremedies.com>
+Cc: Mackenzie Meyer <snackmasterx@gmail.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+From: Goffredo Baroncelli <kreijack@inwind.it>
+Message-ID: <56BC9734.403@inwind.it>
+Date: Thu, 11 Feb 2016 15:14:12 +0100
 MIME-Version: 1.0
-In-Reply-To: <20160211063132.GX13969@merlins.org>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+In-Reply-To: <56BB9698.5020203@gmail.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On 2016-02-10 20:59, Austin S. Hemmelgarn wrote:
+[...]
+> Again, a torn write to the metadata referencing the block (stripe in
+> this case I believe) will result in loosing anything written by the
+> update to the stripe. 
+
+I think that the order matters: first the data block are written (in a new location, so the old data are untouched), then the metadata, from the leafs up to the upper node (again in a new location), then the superblock which references to the upper node of the tree(s).
+
+If you interrupt the writes in any time, the filesystem can survive because the old superblock-metadata-tree and data-block are still valid until the last pieces (the new superblock) is written.
+
+And if this last step fails, the checksum shows that the super-block is invalid and the old one is taken in consideration.
 
 
-Marc MERLIN wrote on 2016/02/10 22:31 -0800:
-> On Tue, Jan 26, 2016 at 09:03:07AM +0800, Qu Wenruo wrote:
->> If the fs is small enough, would you please do a btrfs-image dump?
->> That would help a lot to locate the direct cause.
->
-> I started making a dump, image was growing past 3GB, and then it failed
-> and the image got deleted:
->
-> gargamel:~# btrfs-image -s -c 9 /dev/mapper/dshelf1old /mnt/dshelf1/ds1old.dump
-> Error adding space cache blocks -5
+> There is no way that _any_ system can avoid
+> this issue without having the ability to truly atomically write out
+> the entire metadata tree after the block (stripe) update.  
 
-It seems that btrfs-image failed to read space cache, in 
-read_data_extent() function.
+It is not needed to atomically write the (meta)data in a COW filesystem, because the new data don't owerwrite the old one. The only thing that is needed is that before the last piece is written all the previous (mata)data are already written.
 
-And since there is no "Couldn't map the block XXXX" error message, 
-either some device is missing or pread64 failed to read the desired data.
+For not COW filesystem a journal is required to avoid this kind of problem.
 
-> Error flushing pending -5
-> create failed (Success)
->
-> gargamel:~# dpkg --status btrfs-tools
-> Package: btrfs-tools
-> Status: install ok installed
-> Priority: optional
-> Section: admin
-> Installed-Size: 3605
-> Maintainer: Dimitri John Ledkov <xnox@debian.org>
-> Architecture: amd64
-> Version: 4.4-1
->
-> Is there a 4G file size limit, or did I hit another problem?
+> Doing so
+> would require a degree of tight hardware level integration that's
+> functionally impossible for any general purpose system (in essence,
+> the filesystem would have to be implemented in the hardware, not
+> software).
 
-For the 4G file size limit, did you mean the limit from old filesystem 
-like FAT32?
+To solve the raid-write-hole problem, a checksum system (of data and metadata) is sufficient. However to protect with checksum the data, it seems that a COW filesystem is required.
 
-I didn't think there is such limit for modern Linux filesystem, or 
-normal read/write operation won't has such limit either.
+The only critical thing, is that the hardware has to not lie about the fact that the data reached the platter. Most of the problem reported in the ML are related to external disk used in USB enclousure, which most of the time lie about this aspect.
 
-Thanks,
-Qu
-
->
-> Thanks,
-> Marc
->
+GB
 
 
+
+-- 
+gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
+Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5

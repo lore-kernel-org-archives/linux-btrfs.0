@@ -1,84 +1,71 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wm0-f68.google.com ([74.125.82.68]:34678 "EHLO
+Received: from mail-wm0-f68.google.com ([74.125.82.68]:36861 "EHLO
 	mail-wm0-f68.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S964783AbcBIQMc (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 9 Feb 2016 11:12:32 -0500
-Received: by mail-wm0-f68.google.com with SMTP id p63so4306797wmp.1
-        for <linux-btrfs@vger.kernel.org>; Tue, 09 Feb 2016 08:12:31 -0800 (PST)
+	with ESMTP id S1751974AbcBKNCM (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 11 Feb 2016 08:02:12 -0500
+Received: by mail-wm0-f68.google.com with SMTP id 128so10537476wmz.3
+        for <linux-btrfs@vger.kernel.org>; Thu, 11 Feb 2016 05:02:12 -0800 (PST)
 From: Alexander Fougner <fougner89@gmail.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Alexander Fougner <fougner89@gmail.com>
-Subject: [PATCH 2/2] btrfs-progs: update docs for inspect-internal dump-tree
-Date: Tue,  9 Feb 2016 17:12:09 +0100
-Message-Id: <1455034329-27200-2-git-send-email-fougner89@gmail.com>
-In-Reply-To: <1455034329-27200-1-git-send-email-fougner89@gmail.com>
-References: <1455034329-27200-1-git-send-email-fougner89@gmail.com>
+Subject: [PATCH 1/2] btrfs-progs: clean up unnecessary headers and move radix_tree_init()
+Date: Thu, 11 Feb 2016 14:01:55 +0100
+Message-Id: <1455195716-16282-1-git-send-email-fougner89@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 Signed-off-by: Alexander Fougner <fougner89@gmail.com>
 ---
- Documentation/btrfs-debug-tree.asciidoc       |  7 +++++++
- Documentation/btrfs-inspect-internal.asciidoc | 26 ++++++++++++++++++++++++++
- 2 files changed, 33 insertions(+)
+ btrfs-debug-tree.c       | 13 ++-----------
+ cmds-inspect-dump-tree.c |  2 --
+ 2 files changed, 2 insertions(+), 13 deletions(-)
 
-diff --git a/Documentation/btrfs-debug-tree.asciidoc b/Documentation/btrfs-debug-tree.asciidoc
-index 23fc115..6d6d884 100644
---- a/Documentation/btrfs-debug-tree.asciidoc
-+++ b/Documentation/btrfs-debug-tree.asciidoc
-@@ -25,8 +25,15 @@ Print detailed extents info.
- Print info of btrfs device and root tree dirs only.
- -r::
- Print info of roots only.
-+-R::
-+Print info of roots and root backups.
-+-u::
-+Print info of UUID tree only.
- -b <block_num>::
- Print info of the specified block only.
-+-t <tree_id>::
-+Print only the tree with the specified ID.
-+
+diff --git a/btrfs-debug-tree.c b/btrfs-debug-tree.c
+index 057a715..d6e5a69 100644
+--- a/btrfs-debug-tree.c
++++ b/btrfs-debug-tree.c
+@@ -16,18 +16,7 @@
+  * Boston, MA 021110-1307, USA.
+  */
  
- EXIT STATUS
- -----------
-diff --git a/Documentation/btrfs-inspect-internal.asciidoc b/Documentation/btrfs-inspect-internal.asciidoc
-index 1c7c361..25e6b8b 100644
---- a/Documentation/btrfs-inspect-internal.asciidoc
-+++ b/Documentation/btrfs-inspect-internal.asciidoc
-@@ -67,6 +67,32 @@ inode number 2), but such subvolume does not contain any files anyway
- +
- resolve the absolute path of a the subvolume id 'subvolid'
+-#include <stdio.h>
+-#include <stdlib.h>
+-#include <unistd.h>
+-#include <uuid/uuid.h>
+-#include <getopt.h>
+-
+-#include "kerncompat.h"
+-#include "radix-tree.h"
+-#include "ctree.h"
+ #include "disk-io.h"
+-#include "print-tree.h"
+-#include "transaction.h"
+ #include "volumes.h"
+ #include "utils.h"
+ #include "commands.h"
+@@ -42,6 +31,8 @@ int main(int ac, char **av)
+ 	if (ac > 1 && !strcmp(av[1], "--help"))
+ 		usage(cmd_inspect_dump_tree_usage);
  
-+*dump-tree* [options] <device>::
-+(needs root privileges)
-++
-+Dump the whole tree of the given device.
-+This is useful for analyzing filesystem state or inconsistence and has
-+a positive educational effect on understanding the internal structure.
-+<device> is the device file where the filesystem is stored.
-++
-+`Options`
-++
-+-e::::
-+Print detailed extents info.
-+-d::::
-+Print info of btrfs device and root tree dirs only.
-+-r::::
-+Print info of roots only.
-+-R::::
-+Print info of roots and root backups.
-+-u::::
-+Print info of UUID tree only.
-+-b <block_num>::::
-+Print info of the specified block only.
-+-t <tree_id>::::
-+Print only the tree with the specified ID.
++	radix_tree_init();
 +
-+
- EXIT STATUS
- -----------
- *btrfs inspect-internal* returns a zero exit status if it succeeds. Non zero is
+ 	ret = cmd_inspect_dump_tree(ac, av);
+ 
+ 	btrfs_close_all_devices();
+diff --git a/cmds-inspect-dump-tree.c b/cmds-inspect-dump-tree.c
+index 8a3cf0b..0dab506 100644
+--- a/cmds-inspect-dump-tree.c
++++ b/cmds-inspect-dump-tree.c
+@@ -128,8 +128,6 @@ int cmd_inspect_dump_tree(int ac, char **av)
+ 	struct btrfs_root *tree_root_scan;
+ 	u64 tree_id = 0;
+ 
+-	radix_tree_init();
+-
+ 	while (1) {
+ 		int c;
+ 		static const struct option long_options[] = {
 -- 
 2.7.1
 

@@ -1,15 +1,15 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:20841 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751928AbcBKXm7 (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:20002 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752006AbcBKXml (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 11 Feb 2016 18:42:59 -0500
-Subject: [PATCH 32/32] reflink: kick the slow tests out of the 'quick' group
+	Thu, 11 Feb 2016 18:42:41 -0500
+Subject: [PATCH 29/32] reflink: test reflink+cow+enospc all at the same time
 From: "Darrick J. Wong" <darrick.wong@oracle.com>
 To: david@fromorbit.com, darrick.wong@oracle.com
 Cc: linux-btrfs@vger.kernel.org, fstests@vger.kernel.org, xfs@oss.sgi.com
-Date: Thu, 11 Feb 2016 15:42:54 -0800
-Message-ID: <20160211234254.2202.90445.stgit@birch.djwong.org>
+Date: Thu, 11 Feb 2016 15:42:34 -0800
+Message-ID: <20160211234234.2202.62281.stgit@birch.djwong.org>
 In-Reply-To: <20160211233916.2202.40961.stgit@birch.djwong.org>
 References: <20160211233916.2202.40961.stgit@birch.djwong.org>
 MIME-Version: 1.0
@@ -17,127 +17,297 @@ Content-Type: text/plain; charset="utf-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Since 'quick' tests are supposed to run in < 15s, kick out the ones
-that can't finish that soon even on fast storage.
+Set up an impossibly small filesystem and try to reflink and rewrite a
+file on it to see what happens when we ENOSPC.  Basically
+generic/16[67] but with a constrained fs size.
 
 Signed-off-by: Darrick J. Wong <darrick.wong@oracle.com>
 ---
- tests/generic/group |   34 +++++++++++++++++-----------------
- tests/xfs/group     |    6 +++---
- 2 files changed, 20 insertions(+), 20 deletions(-)
+ tests/generic/166     |    6 ++-
+ tests/generic/167     |    6 ++-
+ tests/generic/333     |   99 +++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/generic/333.out |    4 ++
+ tests/generic/334     |   98 +++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/generic/334.out |    4 ++
+ tests/generic/group   |    2 +
+ 7 files changed, 217 insertions(+), 2 deletions(-)
+ create mode 100755 tests/generic/333
+ create mode 100644 tests/generic/333.out
+ create mode 100755 tests/generic/334
+ create mode 100644 tests/generic/334.out
 
 
+diff --git a/tests/generic/166 b/tests/generic/166
+index 9b177be..a1e4ff4 100755
+--- a/tests/generic/166
++++ b/tests/generic/166
+@@ -69,7 +69,11 @@ _scratch_remount
+ snappy() {
+ 	n=0
+ 	while [ ! -e $testdir/finished ]; do
+-		_cp_reflink $testdir/file1 $testdir/snap_$n || break
++		out="$(_cp_reflink $testdir/file1 $testdir/snap_$n 2>&1)"
++		res=$?
++		echo "$out" | grep -q "No space left" && break
++		test -n "$out" && echo "$out"
++		test $res -ne 0 && break
+ 		n=$((n + 1))
+ 	done
+ }
+diff --git a/tests/generic/167 b/tests/generic/167
+index ef8e75b..76969c1 100755
+--- a/tests/generic/167
++++ b/tests/generic/167
+@@ -68,7 +68,11 @@ _scratch_remount
+ snappy() {
+ 	n=0
+ 	while [ ! -e $testdir/finished ]; do
+-		_cp_reflink $testdir/file1 $testdir/snap_$n || break
++		out="$(_cp_reflink $testdir/file1 $testdir/snap_$n 2>&1)"
++		res=$?
++		echo "$out" | grep -q "No space left" && break
++		test -n "$out" && echo "$out"
++		test $res -ne 0 && break
+ 		n=$((n + 1))
+ 	done
+ }
+diff --git a/tests/generic/333 b/tests/generic/333
+new file mode 100755
+index 0000000..b8a1ea8
+--- /dev/null
++++ b/tests/generic/333
+@@ -0,0 +1,99 @@
++#! /bin/bash
++# FS QA Test No. 333
++#
++# Test for races or FS corruption when trying to hit ENOSPC while DIO writing
++# to a file that's also the source of a reflink operation.
++#
++#-----------------------------------------------------------------------
++# Copyright (c) 2016 Oracle, Inc.  All Rights Reserved.
++#
++# This program is free software; you can redistribute it and/or
++# modify it under the terms of the GNU General Public License as
++# published by the Free Software Foundation.
++#
++# This program is distributed in the hope that it would be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write the Free Software Foundation,
++# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++#-----------------------------------------------------------------------
++#
++
++seq=`basename $0`
++seqres=$RESULT_DIR/$seq
++echo "QA output created by $seq"
++
++here=`pwd`
++tmp=/tmp/$$
++status=1	# failure is the default!
++trap "_cleanup; exit \$status" 0 1 2 3 7 15
++
++_cleanup()
++{
++    cd /
++    rm -rf $tmp.*
++    wait
++}
++
++# get standard environment, filters and checks
++. ./common/rc
++. ./common/filter
++. ./common/reflink
++
++# real QA test starts here
++_supported_os Linux
++_require_scratch_reflink
++_require_cp_reflink
++_require_odirect
++
++echo "Format and mount"
++_scratch_mkfs_sized $((400 * 1048576)) > $seqres.full 2>&1
++_scratch_mount >> $seqres.full 2>&1
++
++testdir=$SCRATCH_MNT/test-$seq
++mkdir $testdir
++
++loops=1024
++nr_loops=$((loops - 1))
++blksz=65536
++
++echo "Initialize file"
++echo > $seqres.full
++_pwrite_byte 0x61 0 $((loops * blksz)) $testdir/file1 >> $seqres.full
++_scratch_remount
++
++# Snapshot creator...
++snappy() {
++	n=0
++	while [ ! -e $testdir/finished ]; do
++		out="$(_cp_reflink $testdir/file1 $testdir/snap_$n 2>&1)"
++		res=$?
++		echo $out | grep -q "No space left" && break
++		test -n "$out" && echo $out
++		test $res -ne 0 && break
++		n=$((n + 1))
++	done
++	touch $testdir/abort
++}
++
++echo "Snapshot a file undergoing directio rewrite"
++snappy &
++seq 1 1000 | while read j; do
++	seq $nr_loops -1 0 | while read i; do
++		out="$(_pwrite_byte 0x63 $((i * blksz)) $blksz -d $testdir/file1 2>&1)"
++		echo $out >> $seqres.full
++		echo $out | grep -q "No space left" && touch $testdir/abort
++		echo $out | grep -qi "error" && touch $testdir/abort
++		test -e $testdir/abort && break
++	done
++	test -e $testdir/abort && break
++done
++touch $testdir/finished
++wait
++
++# success, all done
++status=0
++exit
+diff --git a/tests/generic/333.out b/tests/generic/333.out
+new file mode 100644
+index 0000000..3354c98
+--- /dev/null
++++ b/tests/generic/333.out
+@@ -0,0 +1,4 @@
++QA output created by 333
++Format and mount
++Initialize file
++Snapshot a file undergoing directio rewrite
+diff --git a/tests/generic/334 b/tests/generic/334
+new file mode 100755
+index 0000000..89601be
+--- /dev/null
++++ b/tests/generic/334
+@@ -0,0 +1,98 @@
++#! /bin/bash
++# FS QA Test No. 334
++#
++# Test for races or FS corruption when trying to hit ENOSPC while writing
++# to a file that's also the source of a reflink operation.
++#
++#-----------------------------------------------------------------------
++# Copyright (c) 2016 Oracle, Inc.  All Rights Reserved.
++#
++# This program is free software; you can redistribute it and/or
++# modify it under the terms of the GNU General Public License as
++# published by the Free Software Foundation.
++#
++# This program is distributed in the hope that it would be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write the Free Software Foundation,
++# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++#-----------------------------------------------------------------------
++#
++
++seq=`basename $0`
++seqres=$RESULT_DIR/$seq
++echo "QA output created by $seq"
++
++here=`pwd`
++tmp=/tmp/$$
++status=1	# failure is the default!
++trap "_cleanup; exit \$status" 0 1 2 3 7 15
++
++_cleanup()
++{
++    cd /
++    rm -rf $tmp.*
++    wait
++}
++
++# get standard environment, filters and checks
++. ./common/rc
++. ./common/filter
++. ./common/reflink
++
++# real QA test starts here
++_supported_os Linux
++_require_scratch_reflink
++_require_cp_reflink
++
++echo "Format and mount"
++_scratch_mkfs_sized $((400 * 1048576)) > $seqres.full 2>&1
++_scratch_mount >> $seqres.full 2>&1
++
++testdir=$SCRATCH_MNT/test-$seq
++mkdir $testdir
++
++loops=1024
++nr_loops=$((loops - 1))
++blksz=65536
++
++echo "Initialize file"
++echo > $seqres.full
++_pwrite_byte 0x61 0 $((loops * blksz)) $testdir/file1 >> $seqres.full
++_scratch_remount
++
++# Snapshot creator...
++snappy() {
++	n=0
++	while [ ! -e $testdir/finished ]; do
++		out="$(_cp_reflink $testdir/file1 $testdir/snap_$n 2>&1)"
++		res=$?
++		echo $out | grep -q "No space left" && break
++		test -n "$out" && echo $out
++		test $res -ne 0 && break
++		n=$((n + 1))
++	done
++	touch $testdir/abort
++}
++
++echo "Snapshot a file undergoing buffered rewrite"
++snappy &
++seq 1 1000 | while read j; do
++	seq $nr_loops -1 0 | while read i; do
++		out="$(_pwrite_byte 0x63 $((i * blksz)) $blksz $testdir/file1 2>&1)"
++		echo $out >> $seqres.full
++		echo $out | grep -q "No space left" && touch $testdir/abort
++		echo $out | grep -qi "error" && touch $testdir/abort
++		test -e $testdir/abort && break
++	done
++	test -e $testdir/abort && break
++done
++touch $testdir/finished
++wait
++
++# success, all done
++status=0
++exit
+diff --git a/tests/generic/334.out b/tests/generic/334.out
+new file mode 100644
+index 0000000..c2c40fd
+--- /dev/null
++++ b/tests/generic/334.out
+@@ -0,0 +1,4 @@
++QA output created by 334
++Format and mount
++Initialize file
++Snapshot a file undergoing buffered rewrite
 diff --git a/tests/generic/group b/tests/generic/group
-index e3c4e8a..5f699ce 100644
+index e7ed475..e3c4e8a 100644
 --- a/tests/generic/group
 +++ b/tests/generic/group
-@@ -139,7 +139,7 @@
- 134 auto quick clone
- 135 metadata auto quick
- 136 auto quick clone dedupe
--137 auto quick clone dedupe
-+137 auto clone dedupe
- 138 auto quick clone
- 139 auto quick clone
- 140 auto quick clone
-@@ -166,19 +166,19 @@
- 161 auto quick clone
- 162 auto quick clone dedupe
- 163 auto quick clone dedupe
--164 auto quick clone
--165 auto quick clone
--166 auto quick clone
--167 auto quick clone
--168 auto quick clone
-+164 auto clone
-+165 auto clone
-+166 auto clone
-+167 auto clone
-+168 auto clone
- 169 rw metadata auto quick
--170 auto quick clone
-+170 auto clone
- 171 auto quick clone
- 172 auto quick clone
- 173 auto quick clone
- 174 auto quick clone
--175 auto quick clone
--176 auto quick clone
-+175 auto clone
-+176 auto clone
- 177 auto quick prealloc metadata
- 178 auto quick clone
- 179 auto quick clone
-@@ -188,8 +188,8 @@
- 183 auto quick clone
- 184 metadata auto quick
- 185 auto quick clone
--186 auto quick clone
--187 auto quick clone
-+186 auto clone
-+187 auto clone
- 188 auto quick clone
- 189 auto quick clone
- 190 auto quick clone
-@@ -244,8 +244,8 @@
- 239 auto aio rw
- 240 auto aio quick rw
- 241 auto
--242 auto quick clone
--243 auto quick clone
-+242 auto clone
-+243 auto clone
- 244 auto quick quota
- 245 auto quick dir
- 246 auto quick rw
-@@ -299,8 +299,8 @@
- 294 auto quick
- 295 auto quick clone
- 296 auto quick clone
--297 auto quick clone
--298 auto quick clone
-+297 auto clone
-+298 auto clone
- 299 auto aio enospc rw stress
- 300 auto aio enospc preallocrw stress
- 301 auto quick clone
-@@ -335,5 +335,5 @@
+@@ -335,3 +335,5 @@
  330 auto quick clone
  331 auto quick clone
  332 auto quick clone
--333 auto quick clone
--334 auto quick clone
-+333 auto clone
-+334 auto clone
-diff --git a/tests/xfs/group b/tests/xfs/group
-index 4fb7618..eadc212 100644
---- a/tests/xfs/group
-+++ b/tests/xfs/group
-@@ -137,7 +137,7 @@
- 137 auto metadata v2log
- 138 auto quick quota
- 139 auto quick clone
--140 auto quick clone
-+140 auto clone
- 141 auto log metadata
- 142 dmapi
- 143 dmapi
-@@ -166,7 +166,7 @@
- 166 rw metadata auto quick
- 167 rw metadata auto stress
- 168 dmapi
--169 auto quick clone
-+169 auto clone
- 170 rw filestreams auto quick
- 171 rw filestreams
- 172 rw filestreams
-@@ -233,7 +233,7 @@
- 233 auto quick rmap
- 234 auto quick rmap
- 235 fuzzers rmap
--236 auto quick rmap
-+236 auto rmap
- 237 auto quick clone
- 238 auto quick metadata ioctl
- 239 auto quick clone
++333 auto quick clone
++334 auto quick clone
 

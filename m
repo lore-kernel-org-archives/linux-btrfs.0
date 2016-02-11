@@ -1,38 +1,188 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:46405 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:50370 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750832AbcBWLeR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 23 Feb 2016 06:34:17 -0500
-Date: Tue, 23 Feb 2016 12:34:07 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Cc: David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs: use proper type for failrec in extent_state
-Message-ID: <20160223113407.GJ4374@suse.cz>
-Reply-To: dsterba@suse.cz
-References: <1455193453-14837-1-git-send-email-dsterba@suse.com>
- <20160222175837.GH4374@twin.jikos.cz>
- <56CBBEC3.8040106@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-In-Reply-To: <56CBBEC3.8040106@cn.fujitsu.com>
+	id S1751974AbcBKMYR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 11 Feb 2016 07:24:17 -0500
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+	by mx2.suse.de (Postfix) with ESMTP id B7559AD10
+	for <linux-btrfs@vger.kernel.org>; Thu, 11 Feb 2016 12:24:15 +0000 (UTC)
+From: David Sterba <dsterba@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: David Sterba <dsterba@suse.com>
+Subject: [PATCH] btrfs: use proper type for failrec in extent_state
+Date: Thu, 11 Feb 2016 13:24:13 +0100
+Message-Id: <1455193453-14837-1-git-send-email-dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Feb 23, 2016 at 10:06:59AM +0800, Qu Wenruo wrote:
-> > I'm not sure why, but my gcc 5.3.1 think's that a member of failrec can
-> > be used uninitialized:
-> >
-> >    CC [M]  fs/btrfs/extent_io.o
-> > fs/btrfs/extent_io.c: In function ‘clean_io_failure’:
-> > fs/btrfs/extent_io.c:2133:4: warning: ‘failrec’ may be used uninitialized in this function [-Wmaybe-uninitialized]
-> >      repair_io_failure(inode, start, failrec->len,
-> >      ^
-> >
-> After applying your patch on integration-4.6, and compiling, my gcc 
-> 5.3.0 didn't give such warning though.
-> 
-> And I didn't see an official 5.3.1, but only 5.3 so I assume maybe it's 
-> related to the .1 from your distribution?
+We use the private member of extent_state to store the failrec and play
+pointless pointer games.
 
-Yes it's distro gcc 5.3 + patches. Arnd sent a patch to fix the warning.
+Signed-off-by: David Sterba <dsterba@suse.com>
+---
+ fs/btrfs/extent_io.c | 31 ++++++++++++++-----------------
+ fs/btrfs/extent_io.h |  5 ++---
+ 2 files changed, 16 insertions(+), 20 deletions(-)
+
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index 2e7c97a3f344..f3910ac00d89 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -232,7 +232,7 @@ static struct extent_state *alloc_extent_state(gfp_t mask)
+ 	if (!state)
+ 		return state;
+ 	state->state = 0;
+-	state->private = 0;
++	state->failrec = NULL;
+ 	RB_CLEAR_NODE(&state->rb_node);
+ 	btrfs_leak_debug_add(&state->leak_list, &states);
+ 	atomic_set(&state->refs, 1);
+@@ -1844,7 +1844,8 @@ out:
+  * set the private field for a given byte offset in the tree.  If there isn't
+  * an extent_state there already, this does nothing.
+  */
+-static int set_state_private(struct extent_io_tree *tree, u64 start, u64 private)
++static int set_state_failrec(struct extent_io_tree *tree, u64 start,
++		struct io_failure_record *failrec)
+ {
+ 	struct rb_node *node;
+ 	struct extent_state *state;
+@@ -1865,13 +1866,14 @@ static int set_state_private(struct extent_io_tree *tree, u64 start, u64 private
+ 		ret = -ENOENT;
+ 		goto out;
+ 	}
+-	state->private = private;
++	state->failrec = failrec;
+ out:
+ 	spin_unlock(&tree->lock);
+ 	return ret;
+ }
+ 
+-int get_state_private(struct extent_io_tree *tree, u64 start, u64 *private)
++static int get_state_failrec(struct extent_io_tree *tree, u64 start,
++		struct io_failure_record **failrec)
+ {
+ 	struct rb_node *node;
+ 	struct extent_state *state;
+@@ -1892,7 +1894,7 @@ int get_state_private(struct extent_io_tree *tree, u64 start, u64 *private)
+ 		ret = -ENOENT;
+ 		goto out;
+ 	}
+-	*private = state->private;
++	*failrec = state->failrec;
+ out:
+ 	spin_unlock(&tree->lock);
+ 	return ret;
+@@ -1972,7 +1974,7 @@ int free_io_failure(struct inode *inode, struct io_failure_record *rec)
+ 	int err = 0;
+ 	struct extent_io_tree *failure_tree = &BTRFS_I(inode)->io_failure_tree;
+ 
+-	set_state_private(failure_tree, rec->start, 0);
++	set_state_failrec(failure_tree, rec->start, NULL);
+ 	ret = clear_extent_bits(failure_tree, rec->start,
+ 				rec->start + rec->len - 1,
+ 				EXTENT_LOCKED | EXTENT_DIRTY, GFP_NOFS);
+@@ -2089,7 +2091,6 @@ int clean_io_failure(struct inode *inode, u64 start, struct page *page,
+ 		     unsigned int pg_offset)
+ {
+ 	u64 private;
+-	u64 private_failure;
+ 	struct io_failure_record *failrec;
+ 	struct btrfs_fs_info *fs_info = BTRFS_I(inode)->root->fs_info;
+ 	struct extent_state *state;
+@@ -2102,12 +2103,11 @@ int clean_io_failure(struct inode *inode, u64 start, struct page *page,
+ 	if (!ret)
+ 		return 0;
+ 
+-	ret = get_state_private(&BTRFS_I(inode)->io_failure_tree, start,
+-				&private_failure);
++	ret = get_state_failrec(&BTRFS_I(inode)->io_failure_tree, start,
++			&failrec);
+ 	if (ret)
+ 		return 0;
+ 
+-	failrec = (struct io_failure_record *)(unsigned long) private_failure;
+ 	BUG_ON(!failrec->this_mirror);
+ 
+ 	if (failrec->in_validation) {
+@@ -2167,7 +2167,7 @@ void btrfs_free_io_failure_record(struct inode *inode, u64 start, u64 end)
+ 
+ 		next = next_state(state);
+ 
+-		failrec = (struct io_failure_record *)(unsigned long)state->private;
++		failrec = state->failrec;
+ 		free_extent_state(state);
+ 		kfree(failrec);
+ 
+@@ -2177,10 +2177,9 @@ void btrfs_free_io_failure_record(struct inode *inode, u64 start, u64 end)
+ }
+ 
+ int btrfs_get_io_failure_record(struct inode *inode, u64 start, u64 end,
+-				struct io_failure_record **failrec_ret)
++		struct io_failure_record **failrec_ret)
+ {
+ 	struct io_failure_record *failrec;
+-	u64 private;
+ 	struct extent_map *em;
+ 	struct extent_io_tree *failure_tree = &BTRFS_I(inode)->io_failure_tree;
+ 	struct extent_io_tree *tree = &BTRFS_I(inode)->io_tree;
+@@ -2188,7 +2187,7 @@ int btrfs_get_io_failure_record(struct inode *inode, u64 start, u64 end,
+ 	int ret;
+ 	u64 logical;
+ 
+-	ret = get_state_private(failure_tree, start, &private);
++	ret = get_state_failrec(failure_tree, start, &failrec);
+ 	if (ret) {
+ 		failrec = kzalloc(sizeof(*failrec), GFP_NOFS);
+ 		if (!failrec)
+@@ -2237,8 +2236,7 @@ int btrfs_get_io_failure_record(struct inode *inode, u64 start, u64 end,
+ 		ret = set_extent_bits(failure_tree, start, end,
+ 					EXTENT_LOCKED | EXTENT_DIRTY, GFP_NOFS);
+ 		if (ret >= 0)
+-			ret = set_state_private(failure_tree, start,
+-						(u64)(unsigned long)failrec);
++			ret = set_state_failrec(failure_tree, start, failrec);
+ 		/* set the bits in the inode's tree */
+ 		if (ret >= 0)
+ 			ret = set_extent_bits(tree, start, end, EXTENT_DAMAGED,
+@@ -2248,7 +2246,6 @@ int btrfs_get_io_failure_record(struct inode *inode, u64 start, u64 end,
+ 			return ret;
+ 		}
+ 	} else {
+-		failrec = (struct io_failure_record *)(unsigned long)private;
+ 		pr_debug("Get IO Failure Record: (found) logical=%llu, start=%llu, len=%llu, validation=%d\n",
+ 			 failrec->logical, failrec->start, failrec->len,
+ 			 failrec->in_validation);
+diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
+index 0377413bd4b9..98a25a100674 100644
+--- a/fs/btrfs/extent_io.h
++++ b/fs/btrfs/extent_io.h
+@@ -62,6 +62,7 @@
+ struct extent_state;
+ struct btrfs_root;
+ struct btrfs_io_bio;
++struct io_failure_record;
+ 
+ typedef	int (extent_submit_bio_hook_t)(struct inode *inode, int rw,
+ 				       struct bio *bio, int mirror_num,
+@@ -112,8 +113,7 @@ struct extent_state {
+ 	atomic_t refs;
+ 	unsigned state;
+ 
+-	/* for use by the FS */
+-	u64 private;
++	struct io_failure_record *failrec;
+ 
+ #ifdef CONFIG_BTRFS_DEBUG
+ 	struct list_head leak_list;
+@@ -345,7 +345,6 @@ int extent_readpages(struct extent_io_tree *tree,
+ 		     get_extent_t get_extent);
+ int extent_fiemap(struct inode *inode, struct fiemap_extent_info *fieinfo,
+ 		__u64 start, __u64 len, get_extent_t *get_extent);
+-int get_state_private(struct extent_io_tree *tree, u64 start, u64 *private);
+ void set_page_extent_mapped(struct page *page);
+ 
+ struct extent_buffer *alloc_extent_buffer(struct btrfs_fs_info *fs_info,
+-- 
+1.8.4.5
+

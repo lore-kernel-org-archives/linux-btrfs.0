@@ -1,16 +1,15 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:19504 "EHLO
+Received: from userp1040.oracle.com ([156.151.31.81]:19647 "EHLO
 	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750818AbcBKXjd (ORCPT
+	with ESMTP id S1750898AbcBKXkA (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 11 Feb 2016 18:39:33 -0500
-Subject: [PATCH 01/32] generic/182: this is a dedupe test, check for dedupe
+	Thu, 11 Feb 2016 18:40:00 -0500
+Subject: [PATCH 06/32] common/dmerror: add some more dmerror routines
 From: "Darrick J. Wong" <darrick.wong@oracle.com>
 To: david@fromorbit.com, darrick.wong@oracle.com
-Cc: linux-btrfs@vger.kernel.org, Christoph Hellwig <hch@lst.de>,
-        fstests@vger.kernel.org, xfs@oss.sgi.com
-Date: Thu, 11 Feb 2016 15:39:23 -0800
-Message-ID: <20160211233923.2202.16359.stgit@birch.djwong.org>
+Cc: linux-btrfs@vger.kernel.org, fstests@vger.kernel.org, xfs@oss.sgi.com
+Date: Thu, 11 Feb 2016 15:39:55 -0800
+Message-ID: <20160211233955.2202.37204.stgit@birch.djwong.org>
 In-Reply-To: <20160211233916.2202.40961.stgit@birch.djwong.org>
 References: <20160211233916.2202.40961.stgit@birch.djwong.org>
 MIME-Version: 1.0
@@ -18,44 +17,91 @@ Content-Type: text/plain; charset="utf-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Since this test examines dedupe behavior, the documentation should
-say 'dedupe', not 'reflink'.  Furthermore, the feature checks must
-look for working dedupe functionality, not reflink functionality.
+Add functions to the dmerror routine so that we can load both the
+error table and the linear table.  This will help us with EIO testing
+of copy-on-write.
 
 Signed-off-by: Darrick J. Wong <darrick.wong@oracle.com>
-[hch@lst.de: add the test for dedupe support]
-Signed-off-by: Christoph Hellwig <hch@lst.de>
 ---
- tests/generic/182 |    9 ++++-----
- 1 file changed, 4 insertions(+), 5 deletions(-)
+ common/dmerror  |   27 +++++++++++++++++++++++++--
+ tests/btrfs/100 |    2 +-
+ tests/btrfs/101 |    2 +-
+ 3 files changed, 27 insertions(+), 4 deletions(-)
 
 
-diff --git a/tests/generic/182 b/tests/generic/182
-index bf5cd38..ef10af8 100755
---- a/tests/generic/182
-+++ b/tests/generic/182
-@@ -1,10 +1,10 @@
- #! /bin/bash
- # FS QA Test No. 182
- #
--# Test the convention that reflink with length == 0 means "to the end of fileA"
-+# Test the convention that dedupe with length == 0 means "to the end of fileA"
- #   - Create a file.
--#   - Try to reflink "zero" bytes (which means reflink to EOF).
--#   - Check that the reflink happened.
-+#   - Try to dedupe "zero" bytes (which means dedupe to EOF).
-+#   - Check that the dedupe happened.
- #
- #-----------------------------------------------------------------------
- # Copyright (c) 2015, Oracle and/or its affiliates.  All Rights Reserved.
-@@ -45,8 +45,7 @@ _cleanup()
+diff --git a/common/dmerror b/common/dmerror
+index 3900a4e..004530d 100644
+--- a/common/dmerror
++++ b/common/dmerror
+@@ -46,15 +46,23 @@ _dmerror_mount()
+ 	_mount -t $FSTYP `_dmerror_mount_options $*`
+ }
  
- # real QA test starts here
- _supported_os Linux
--_require_test_reflink
--_require_cp_reflink
-+_require_test_dedupe
++_dmerror_unmount()
++{
++	umount $SCRATCH_MNT
++}
++
+ _dmerror_cleanup()
+ {
+ 	$UMOUNT_PROG $SCRATCH_MNT > /dev/null 2>&1
+ 	$DMSETUP_PROG remove error-test > /dev/null 2>&1
+ }
  
- rm -f "$seqres.full"
+-_dmerror_load_table()
++_dmerror_load_error_table()
+ {
+-	$DMSETUP_PROG suspend error-test
++	suspend_opt="--nolockfs"
++	[ $# -gt 1 ] && [ $2 -eq 1 ] && suspend_opt=""
++
++	$DMSETUP_PROG suspend $suspend_opt error-test
+ 	[ $? -ne 0 ] && _fail  "dmsetup suspend failed"
+ 
+ 	$DMSETUP_PROG load error-test --table "$DMERROR_TABLE"
+@@ -63,3 +71,18 @@ _dmerror_load_table()
+ 	$DMSETUP_PROG resume error-test
+ 	[ $? -ne 0 ] && _fail  "dmsetup resume failed"
+ }
++
++_dmerror_load_working_table()
++{
++	suspend_opt="--nolockfs"
++	[ $# -gt 1 ] && [ $2 -eq 1 ] && suspend_opt=""
++
++	$DMSETUP_PROG suspend $suspend_opt error-test
++	[ $? -ne 0 ] && _fail  "dmsetup suspend failed"
++
++	$DMSETUP_PROG load error-test --table "$DMLINEAR_TABLE"
++	[ $? -ne 0 ] && _fail "dmsetup failed to load error table"
++
++	$DMSETUP_PROG resume error-test
++	[ $? -ne 0 ] && _fail  "dmsetup resume failed"
++}
+diff --git a/tests/btrfs/100 b/tests/btrfs/100
+index 080d0ae..cd385e1 100755
+--- a/tests/btrfs/100
++++ b/tests/btrfs/100
+@@ -69,7 +69,7 @@ run_check $FSSTRESS_PROG -d $SCRATCH_MNT -n 200 -p 8 $FSSTRESS_AVOID -x \
+ 							"$snapshot_cmd" -X 50
+ 
+ # now load the error into the DMERROR_DEV
+-_dmerror_load_table
++_dmerror_load_error_table
+ 
+ _run_btrfs_util_prog replace start -B $error_devid $dev2 $SCRATCH_MNT
+ 
+diff --git a/tests/btrfs/101 b/tests/btrfs/101
+index 0824de1..8d7af85 100755
+--- a/tests/btrfs/101
++++ b/tests/btrfs/101
+@@ -70,7 +70,7 @@ run_check $FSSTRESS_PROG -d $SCRATCH_MNT -n 200 -p 8 $FSSTRESS_AVOID -x \
+ 							"$snapshot_cmd" -X 50
+ 
+ # now load the error into the DMERROR_DEV
+-_dmerror_load_table
++_dmerror_load_error_table
+ 
+ _run_btrfs_util_prog device delete $error_devid $SCRATCH_MNT
  
 

@@ -1,158 +1,81 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:39707 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:39702 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750961AbcBKQ5E (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 11 Feb 2016 11:57:04 -0500
+	id S1751210AbcBKQ5A (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 11 Feb 2016 11:57:00 -0500
 Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id DD320AB9D
-	for <linux-btrfs@vger.kernel.org>; Thu, 11 Feb 2016 16:57:02 +0000 (UTC)
+	by mx2.suse.de (Postfix) with ESMTP id 96946AB9D
+	for <linux-btrfs@vger.kernel.org>; Thu, 11 Feb 2016 16:56:59 +0000 (UTC)
 From: David Sterba <dsterba@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: David Sterba <dsterba@suse.com>
-Subject: [PATCH 3/9] btrfs: scrub: use GFP_KERNEL on the submission path
-Date: Thu, 11 Feb 2016 17:57:02 +0100
-Message-Id: <58c4e173847af8e63537e11be6c1c3fd4b6153fe.1455208920.git.dsterba@suse.com>
+Subject: [PATCH 2/9] btrfs: reada: use GFP_KERNEL everywhere
+Date: Thu, 11 Feb 2016 17:56:59 +0100
+Message-Id: <ed0244faf59e33ff915b83acd15c903b81fd357b.1455208920.git.dsterba@suse.com>
 In-Reply-To: <cover.1455208920.git.dsterba@suse.com>
 References: <cover.1455208920.git.dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Scrub is not on the critical writeback path we don't need to use
-GFP_NOFS for all allocations. The failures are handled and stats passed
-back to userspace.
-
-Let's use GFP_KERNEL on the paths where everything is ok, ie. setup the
-global structures and the IO submission paths.
-
-Functions that do the repair and fixups still use GFP_NOFS as we might
-want to skip any other filesystem activity if we encounter an error.
-This could turn out to be unnecessary, but requires more review compared
-to the easy cases in this patch.
+The readahead framework is not on the critical writeback path we don't
+need to use GFP_NOFS for allocations. All error paths are handled and
+the readahead failures are not fatal. The actual users (scrub,
+dev-replace) will trigger reads if the blocks are not found in cache.
 
 Signed-off-by: David Sterba <dsterba@suse.com>
 ---
- fs/btrfs/dev-replace.c |  2 +-
- fs/btrfs/scrub.c       | 24 +++++++++++++-----------
- 2 files changed, 14 insertions(+), 12 deletions(-)
+ fs/btrfs/reada.c | 10 +++++-----
+ 1 file changed, 5 insertions(+), 5 deletions(-)
 
-diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
-index cbb7dbfb3fff..01ce5fcecc5c 100644
---- a/fs/btrfs/dev-replace.c
-+++ b/fs/btrfs/dev-replace.c
-@@ -802,7 +802,7 @@ static int btrfs_dev_replace_kthread(void *data)
- 	struct btrfs_ioctl_dev_replace_args *status_args;
- 	u64 progress;
+diff --git a/fs/btrfs/reada.c b/fs/btrfs/reada.c
+index 619f92963e27..c5f1773c4794 100644
+--- a/fs/btrfs/reada.c
++++ b/fs/btrfs/reada.c
+@@ -280,7 +280,7 @@ static struct reada_zone *reada_find_zone(struct btrfs_fs_info *fs_info,
+ 	end = start + cache->key.offset - 1;
+ 	btrfs_put_block_group(cache);
  
--	status_args = kzalloc(sizeof(*status_args), GFP_NOFS);
-+	status_args = kzalloc(sizeof(*status_args), GFP_KERNEL);
- 	if (status_args) {
- 		btrfs_dev_replace_status(fs_info, status_args);
- 		progress = status_args->status.progress_1000;
-diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index 92bf5ee732fb..2de7817d0e1b 100644
---- a/fs/btrfs/scrub.c
-+++ b/fs/btrfs/scrub.c
-@@ -461,7 +461,7 @@ struct scrub_ctx *scrub_setup_ctx(struct btrfs_device *dev, int is_dev_replace)
- 	struct btrfs_fs_info *fs_info = dev->dev_root->fs_info;
- 	int ret;
+-	zone = kzalloc(sizeof(*zone), GFP_NOFS);
++	zone = kzalloc(sizeof(*zone), GFP_KERNEL);
+ 	if (!zone)
+ 		return NULL;
  
--	sctx = kzalloc(sizeof(*sctx), GFP_NOFS);
-+	sctx = kzalloc(sizeof(*sctx), GFP_KERNEL);
- 	if (!sctx)
- 		goto nomem;
- 	atomic_set(&sctx->refs, 1);
-@@ -472,7 +472,7 @@ struct scrub_ctx *scrub_setup_ctx(struct btrfs_device *dev, int is_dev_replace)
- 	for (i = 0; i < SCRUB_BIOS_PER_SCTX; ++i) {
- 		struct scrub_bio *sbio;
+@@ -343,7 +343,7 @@ static struct reada_extent *reada_find_extent(struct btrfs_root *root,
+ 	if (re)
+ 		return re;
  
--		sbio = kzalloc(sizeof(*sbio), GFP_NOFS);
-+		sbio = kzalloc(sizeof(*sbio), GFP_KERNEL);
- 		if (!sbio)
- 			goto nomem;
- 		sctx->bios[i] = sbio;
-@@ -1654,7 +1654,7 @@ static int scrub_add_page_to_wr_bio(struct scrub_ctx *sctx,
- again:
- 	if (!wr_ctx->wr_curr_bio) {
- 		wr_ctx->wr_curr_bio = kzalloc(sizeof(*wr_ctx->wr_curr_bio),
--					      GFP_NOFS);
-+					      GFP_KERNEL);
- 		if (!wr_ctx->wr_curr_bio) {
- 			mutex_unlock(&wr_ctx->wr_lock);
- 			return -ENOMEM;
-@@ -1671,7 +1671,8 @@ static int scrub_add_page_to_wr_bio(struct scrub_ctx *sctx,
- 		sbio->dev = wr_ctx->tgtdev;
- 		bio = sbio->bio;
- 		if (!bio) {
--			bio = btrfs_io_bio_alloc(GFP_NOFS, wr_ctx->pages_per_wr_bio);
-+			bio = btrfs_io_bio_alloc(GFP_KERNEL,
-+					wr_ctx->pages_per_wr_bio);
- 			if (!bio) {
- 				mutex_unlock(&wr_ctx->wr_lock);
- 				return -ENOMEM;
-@@ -2076,7 +2077,8 @@ static int scrub_add_page_to_rd_bio(struct scrub_ctx *sctx,
- 		sbio->dev = spage->dev;
- 		bio = sbio->bio;
- 		if (!bio) {
--			bio = btrfs_io_bio_alloc(GFP_NOFS, sctx->pages_per_rd_bio);
-+			bio = btrfs_io_bio_alloc(GFP_KERNEL,
-+					sctx->pages_per_rd_bio);
- 			if (!bio)
- 				return -ENOMEM;
- 			sbio->bio = bio;
-@@ -2241,7 +2243,7 @@ static int scrub_pages(struct scrub_ctx *sctx, u64 logical, u64 len,
- 	struct scrub_block *sblock;
- 	int index;
+-	re = kzalloc(sizeof(*re), GFP_NOFS);
++	re = kzalloc(sizeof(*re), GFP_KERNEL);
+ 	if (!re)
+ 		return NULL;
  
--	sblock = kzalloc(sizeof(*sblock), GFP_NOFS);
-+	sblock = kzalloc(sizeof(*sblock), GFP_KERNEL);
- 	if (!sblock) {
- 		spin_lock(&sctx->stat_lock);
- 		sctx->stat.malloc_errors++;
-@@ -2259,7 +2261,7 @@ static int scrub_pages(struct scrub_ctx *sctx, u64 logical, u64 len,
- 		struct scrub_page *spage;
- 		u64 l = min_t(u64, len, PAGE_SIZE);
+@@ -566,7 +566,7 @@ static int reada_add_block(struct reada_control *rc, u64 logical,
+ 	if (!re)
+ 		return -1;
  
--		spage = kzalloc(sizeof(*spage), GFP_NOFS);
-+		spage = kzalloc(sizeof(*spage), GFP_KERNEL);
- 		if (!spage) {
- leave_nomem:
- 			spin_lock(&sctx->stat_lock);
-@@ -2286,7 +2288,7 @@ static int scrub_pages(struct scrub_ctx *sctx, u64 logical, u64 len,
- 			spage->have_csum = 0;
- 		}
- 		sblock->page_count++;
--		spage->page = alloc_page(GFP_NOFS);
-+		spage->page = alloc_page(GFP_KERNEL);
- 		if (!spage->page)
- 			goto leave_nomem;
- 		len -= l;
-@@ -2541,7 +2543,7 @@ static int scrub_pages_for_parity(struct scrub_parity *sparity,
- 	struct scrub_block *sblock;
- 	int index;
+-	rec = kzalloc(sizeof(*rec), GFP_NOFS);
++	rec = kzalloc(sizeof(*rec), GFP_KERNEL);
+ 	if (!rec) {
+ 		reada_extent_put(root->fs_info, re);
+ 		return -ENOMEM;
+@@ -791,7 +791,7 @@ static void reada_start_machine(struct btrfs_fs_info *fs_info)
+ {
+ 	struct reada_machine_work *rmw;
  
--	sblock = kzalloc(sizeof(*sblock), GFP_NOFS);
-+	sblock = kzalloc(sizeof(*sblock), GFP_KERNEL);
- 	if (!sblock) {
- 		spin_lock(&sctx->stat_lock);
- 		sctx->stat.malloc_errors++;
-@@ -2561,7 +2563,7 @@ static int scrub_pages_for_parity(struct scrub_parity *sparity,
- 		struct scrub_page *spage;
- 		u64 l = min_t(u64, len, PAGE_SIZE);
+-	rmw = kzalloc(sizeof(*rmw), GFP_NOFS);
++	rmw = kzalloc(sizeof(*rmw), GFP_KERNEL);
+ 	if (!rmw) {
+ 		/* FIXME we cannot handle this properly right now */
+ 		BUG();
+@@ -926,7 +926,7 @@ struct reada_control *btrfs_reada_add(struct btrfs_root *root,
+ 		.offset = (u64)-1
+ 	};
  
--		spage = kzalloc(sizeof(*spage), GFP_NOFS);
-+		spage = kzalloc(sizeof(*spage), GFP_KERNEL);
- 		if (!spage) {
- leave_nomem:
- 			spin_lock(&sctx->stat_lock);
-@@ -2591,7 +2593,7 @@ static int scrub_pages_for_parity(struct scrub_parity *sparity,
- 			spage->have_csum = 0;
- 		}
- 		sblock->page_count++;
--		spage->page = alloc_page(GFP_NOFS);
-+		spage->page = alloc_page(GFP_KERNEL);
- 		if (!spage->page)
- 			goto leave_nomem;
- 		len -= l;
+-	rc = kzalloc(sizeof(*rc), GFP_NOFS);
++	rc = kzalloc(sizeof(*rc), GFP_KERNEL);
+ 	if (!rc)
+ 		return ERR_PTR(-ENOMEM);
+ 
 -- 
 2.7.1
 

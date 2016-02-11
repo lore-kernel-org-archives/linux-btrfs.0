@@ -1,61 +1,112 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:39717 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:39713 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751019AbcBKQ5K (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 11 Feb 2016 11:57:10 -0500
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id 69C2AAB9D
-	for <linux-btrfs@vger.kernel.org>; Thu, 11 Feb 2016 16:57:09 +0000 (UTC)
+	id S1751121AbcBKQ5H (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 11 Feb 2016 11:57:07 -0500
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+	by mx2.suse.de (Postfix) with ESMTP id 2639DAC01
+	for <linux-btrfs@vger.kernel.org>; Thu, 11 Feb 2016 16:57:06 +0000 (UTC)
 From: David Sterba <dsterba@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: David Sterba <dsterba@suse.com>
-Subject: [PATCH 5/9] btrfs: fallocate: use GFP_KERNEL
-Date: Thu, 11 Feb 2016 17:57:09 +0100
-Message-Id: <32fc932e30c4b6a03847426f52e23459c9fb906f.1455208920.git.dsterba@suse.com>
+Subject: [PATCH 4/9] btrfs: let callers of btrfs_alloc_root pass gfp flags
+Date: Thu, 11 Feb 2016 17:57:05 +0100
+Message-Id: <74e4d82757f7479bab6b854783f84a5b9f2df78f.1455208920.git.dsterba@suse.com>
 In-Reply-To: <cover.1455208920.git.dsterba@suse.com>
 References: <cover.1455208920.git.dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Fallocate is initiated from userspace and is not on the critical
-writeback path, we don't need to use GFP_NOFS for allocations.
+We don't need to use GFP_NOFS in all contexts, eg. during mount or for
+dummy root tree, but we might for the the log tree creation.
 
 Signed-off-by: David Sterba <dsterba@suse.com>
 ---
- fs/btrfs/file.c | 6 +++---
- 1 file changed, 3 insertions(+), 3 deletions(-)
+ fs/btrfs/disk-io.c | 21 +++++++++++----------
+ 1 file changed, 11 insertions(+), 10 deletions(-)
 
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index 098bb8f690c9..5d46fdc4651c 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -2611,7 +2611,7 @@ static int add_falloc_range(struct list_head *head, u64 start, u64 len)
- 		return 0;
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 4545e2e2ad45..40690e90beee 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -1296,9 +1296,10 @@ static void __setup_root(u32 nodesize, u32 sectorsize, u32 stripesize,
+ 	spin_lock_init(&root->root_item_lock);
+ }
+ 
+-static struct btrfs_root *btrfs_alloc_root(struct btrfs_fs_info *fs_info)
++static struct btrfs_root *btrfs_alloc_root(struct btrfs_fs_info *fs_info,
++		gfp_t flags)
+ {
+-	struct btrfs_root *root = kzalloc(sizeof(*root), GFP_NOFS);
++	struct btrfs_root *root = kzalloc(sizeof(*root), flags);
+ 	if (root)
+ 		root->fs_info = fs_info;
+ 	return root;
+@@ -1310,7 +1311,7 @@ struct btrfs_root *btrfs_alloc_dummy_root(void)
+ {
+ 	struct btrfs_root *root;
+ 
+-	root = btrfs_alloc_root(NULL);
++	root = btrfs_alloc_root(NULL, GFP_KERNEL);
+ 	if (!root)
+ 		return ERR_PTR(-ENOMEM);
+ 	__setup_root(4096, 4096, 4096, root, NULL, 1);
+@@ -1332,7 +1333,7 @@ struct btrfs_root *btrfs_create_tree(struct btrfs_trans_handle *trans,
+ 	int ret = 0;
+ 	uuid_le uuid;
+ 
+-	root = btrfs_alloc_root(fs_info);
++	root = btrfs_alloc_root(fs_info, GFP_KERNEL);
+ 	if (!root)
+ 		return ERR_PTR(-ENOMEM);
+ 
+@@ -1408,7 +1409,7 @@ static struct btrfs_root *alloc_log_tree(struct btrfs_trans_handle *trans,
+ 	struct btrfs_root *tree_root = fs_info->tree_root;
+ 	struct extent_buffer *leaf;
+ 
+-	root = btrfs_alloc_root(fs_info);
++	root = btrfs_alloc_root(fs_info, GFP_NOFS);
+ 	if (!root)
+ 		return ERR_PTR(-ENOMEM);
+ 
+@@ -1506,7 +1507,7 @@ static struct btrfs_root *btrfs_read_tree_root(struct btrfs_root *tree_root,
+ 	if (!path)
+ 		return ERR_PTR(-ENOMEM);
+ 
+-	root = btrfs_alloc_root(fs_info);
++	root = btrfs_alloc_root(fs_info, GFP_NOFS);
+ 	if (!root) {
+ 		ret = -ENOMEM;
+ 		goto alloc_fail;
+@@ -2385,7 +2386,7 @@ static int btrfs_replay_log(struct btrfs_fs_info *fs_info,
+ 		return -EIO;
  	}
- insert:
--	range = kmalloc(sizeof(*range), GFP_NOFS);
-+	range = kmalloc(sizeof(*range), GFP_KERNEL);
- 	if (!range)
+ 
+-	log_tree_root = btrfs_alloc_root(fs_info);
++	log_tree_root = btrfs_alloc_root(fs_info, GFP_KERNEL);
+ 	if (!log_tree_root)
  		return -ENOMEM;
- 	range->start = start;
-@@ -2712,7 +2712,7 @@ static long btrfs_fallocate(struct file *file, int mode,
- 			btrfs_put_ordered_extent(ordered);
- 			unlock_extent_cached(&BTRFS_I(inode)->io_tree,
- 					     alloc_start, locked_end,
--					     &cached_state, GFP_NOFS);
-+					     &cached_state, GFP_KERNEL);
- 			/*
- 			 * we can't wait on the range with the transaction
- 			 * running or with the extent lock held
-@@ -2806,7 +2806,7 @@ static long btrfs_fallocate(struct file *file, int mode,
- 	}
- out_unlock:
- 	unlock_extent_cached(&BTRFS_I(inode)->io_tree, alloc_start, locked_end,
--			     &cached_state, GFP_NOFS);
-+			     &cached_state, GFP_KERNEL);
- out:
- 	/*
- 	 * As we waited the extent range, the data_rsv_map must be empty
+ 
+@@ -2510,8 +2511,8 @@ int open_ctree(struct super_block *sb,
+ 	int backup_index = 0;
+ 	int max_active;
+ 
+-	tree_root = fs_info->tree_root = btrfs_alloc_root(fs_info);
+-	chunk_root = fs_info->chunk_root = btrfs_alloc_root(fs_info);
++	tree_root = fs_info->tree_root = btrfs_alloc_root(fs_info, GFP_KERNEL);
++	chunk_root = fs_info->chunk_root = btrfs_alloc_root(fs_info, GFP_KERNEL);
+ 	if (!tree_root || !chunk_root) {
+ 		err = -ENOMEM;
+ 		goto fail;
+@@ -2622,7 +2623,7 @@ int open_ctree(struct super_block *sb,
+ 	INIT_LIST_HEAD(&fs_info->ordered_roots);
+ 	spin_lock_init(&fs_info->ordered_root_lock);
+ 	fs_info->delayed_root = kmalloc(sizeof(struct btrfs_delayed_root),
+-					GFP_NOFS);
++					GFP_KERNEL);
+ 	if (!fs_info->delayed_root) {
+ 		err = -ENOMEM;
+ 		goto fail_iput;
 -- 
 2.7.1
 

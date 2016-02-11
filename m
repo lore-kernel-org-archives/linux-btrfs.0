@@ -1,16 +1,15 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:19522 "EHLO
+Received: from userp1040.oracle.com ([156.151.31.81]:19884 "EHLO
 	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750866AbcBKXjh (ORCPT
+	with ESMTP id S1750970AbcBKXkh (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 11 Feb 2016 18:39:37 -0500
-Subject: [PATCH 02/32] xfstests: filter whitespace in 128 and 132
+	Thu, 11 Feb 2016 18:40:37 -0500
+Subject: [PATCH 11/32] reflink: add _require_odirect to the directio tests
 From: "Darrick J. Wong" <darrick.wong@oracle.com>
 To: david@fromorbit.com, darrick.wong@oracle.com
-Cc: linux-btrfs@vger.kernel.org, Christoph Hellwig <hch@lst.de>,
-        fstests@vger.kernel.org, xfs@oss.sgi.com
-Date: Thu, 11 Feb 2016 15:39:29 -0800
-Message-ID: <20160211233929.2202.11011.stgit@birch.djwong.org>
+Cc: linux-btrfs@vger.kernel.org, fstests@vger.kernel.org, xfs@oss.sgi.com
+Date: Thu, 11 Feb 2016 15:40:29 -0800
+Message-ID: <20160211234029.2202.82743.stgit@birch.djwong.org>
 In-Reply-To: <20160211233916.2202.40961.stgit@birch.djwong.org>
 References: <20160211233916.2202.40961.stgit@birch.djwong.org>
 MIME-Version: 1.0
@@ -18,152 +17,297 @@ Content-Type: text/plain; charset="utf-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Seems either I have a different lsattr version, or different mount points
-cause differences in the golden output.  Send the lsattr output through
-the whitespaces filter so that it works everywhere.
+For the tests that test O_DIRECT, we need to _require_odirect.
 
-The lsattr output /does/ change depending on mountpoints.  Ick.  I'd
-actually changed it to the long format output because line length in
-the short format changes every time the flags change.
-
-Signed-off-by: Christoph Hellwig <hch@lst.de>
-[darrick.wong@oracle.com: update changelog]
 Signed-off-by: Darrick J. Wong <darrick.wong@oracle.com>
 ---
- tests/xfs/128     |    2 +-
- tests/xfs/128.out |    8 ++++----
- tests/xfs/132     |   10 +++++-----
- tests/xfs/132.out |   40 ++++++++++++++++++++--------------------
- 4 files changed, 30 insertions(+), 30 deletions(-)
+ tests/generic/139 |    1 +
+ tests/generic/143 |    1 +
+ tests/generic/155 |    1 +
+ tests/generic/165 |    1 +
+ tests/generic/166 |    1 +
+ tests/generic/170 |    1 +
+ tests/generic/174 |    1 +
+ tests/generic/183 |    1 +
+ tests/generic/187 |    1 +
+ tests/generic/188 |    1 +
+ tests/generic/190 |    1 +
+ tests/generic/194 |    1 +
+ tests/generic/196 |    1 +
+ tests/generic/199 |    1 +
+ tests/generic/200 |    1 +
+ tests/generic/203 |    1 +
+ tests/generic/206 |    1 +
+ tests/generic/217 |    1 +
+ tests/generic/220 |    1 +
+ tests/generic/227 |    1 +
+ tests/generic/238 |    1 +
+ tests/generic/243 |    1 +
+ 22 files changed, 22 insertions(+)
 
 
-diff --git a/tests/xfs/128 b/tests/xfs/128
-index a96291a..c9547fb 100755
---- a/tests/xfs/128
-+++ b/tests/xfs/128
-@@ -97,7 +97,7 @@ c13=$(_md5_checksum "$testdir/file3")
- c14=$(_md5_checksum "$testdir/file4")
+diff --git a/tests/generic/139 b/tests/generic/139
+index 5e7b631..989b054 100755
+--- a/tests/generic/139
++++ b/tests/generic/139
+@@ -47,6 +47,7 @@ _cleanup()
+ _supported_os Linux
+ _require_test_reflink
+ _require_cp_reflink
++_require_odirect
  
- echo "Defragment"
--lsattr -l "$testdir/" | _filter_scratch
-+lsattr -l "$testdir/" | _filter_scratch | _filter_spaces
- xfs_fsr -v -d "$testdir/file1" >> "$seqres.full"
- xfs_fsr -v -d "$testdir/file2" >> "$seqres.full" # fsr probably breaks the link
- xfs_fsr -v -d "$testdir/file3" >> "$seqres.full" # fsr probably breaks the link
-diff --git a/tests/xfs/128.out b/tests/xfs/128.out
-index 7e72dcd..0ac06db 100644
---- a/tests/xfs/128.out
-+++ b/tests/xfs/128.out
-@@ -11,10 +11,10 @@ c650f1cf6c9f07b22e3e21ec7d49ded5  SCRATCH_MNT/test-128/file2
- 56ed2f712c91e035adeeb26ed105a982  SCRATCH_MNT/test-128/file3
- b81534f439aac5c34ce3ed60a03eba70  SCRATCH_MNT/test-128/file4
- Defragment
--SCRATCH_MNT/test-128/file1          ---
--SCRATCH_MNT/test-128/file2          ---
--SCRATCH_MNT/test-128/file3          ---
--SCRATCH_MNT/test-128/file4          ---
-+SCRATCH_MNT/test-128/file1 ---
-+SCRATCH_MNT/test-128/file2 ---
-+SCRATCH_MNT/test-128/file3 ---
-+SCRATCH_MNT/test-128/file4 ---
- b81534f439aac5c34ce3ed60a03eba70  SCRATCH_MNT/test-128/file1
- c650f1cf6c9f07b22e3e21ec7d49ded5  SCRATCH_MNT/test-128/file2
- 56ed2f712c91e035adeeb26ed105a982  SCRATCH_MNT/test-128/file3
-diff --git a/tests/xfs/132 b/tests/xfs/132
-index 79a6d57..9c57c3b 100755
---- a/tests/xfs/132
-+++ b/tests/xfs/132
-@@ -87,32 +87,32 @@ for i in `seq 2 $nr`; do
- done
- _test_remount
- free_blocks1=$(stat -f "$testdir" -c '%f')
--lsattr -l $testdir/ | _filter_test_dir
-+lsattr -l $testdir/ | _filter_test_dir | _filter_spaces
+ rm -f $seqres.full
  
- echo "funshare part of a file"
- "$XFS_IO_PROG" -f -c "falloc 0 $((sz / 2))" "$testdir/file2"
- _test_remount
--lsattr -l $testdir/ | _filter_test_dir
-+lsattr -l $testdir/ | _filter_test_dir | _filter_spaces
+diff --git a/tests/generic/143 b/tests/generic/143
+index 586cf5c..703b585 100755
+--- a/tests/generic/143
++++ b/tests/generic/143
+@@ -49,6 +49,7 @@ _cleanup()
+ _supported_os Linux
+ _require_test_reflink
+ _require_cp_reflink
++_require_odirect
  
- echo "funshare some of the copies"
- "$XFS_IO_PROG" -f -c "falloc 0 $sz" "$testdir/file2"
- "$XFS_IO_PROG" -f -c "falloc 0 $sz" "$testdir/file3"
- _test_remount
- free_blocks2=$(stat -f "$testdir" -c '%f')
--lsattr -l $testdir/ | _filter_test_dir
-+lsattr -l $testdir/ | _filter_test_dir | _filter_spaces
+ rm -f $seqres.full
  
- echo "funshare the rest of the files"
- "$XFS_IO_PROG" -f -c "falloc 0 $sz" "$testdir/file4"
- "$XFS_IO_PROG" -f -c "falloc 0 $sz" "$testdir/file1"
- _test_remount
- free_blocks3=$(stat -f "$testdir" -c '%f')
--lsattr -l $testdir/ | _filter_test_dir
-+lsattr -l $testdir/ | _filter_test_dir | _filter_spaces
+diff --git a/tests/generic/155 b/tests/generic/155
+index c6416a1..e96bda7 100755
+--- a/tests/generic/155
++++ b/tests/generic/155
+@@ -55,6 +55,7 @@ _supported_os Linux
+ _require_test_reflink
+ _require_cp_reflink
+ _require_xfs_io_command "fzero"
++_require_odirect
  
- echo "Rewrite the original file"
- _pwrite_byte 0x65 0 $sz "$testdir/file1" >> "$seqres.full"
- _test_remount
- free_blocks4=$(stat -f "$testdir" -c '%f')
--lsattr -l $testdir/ | _filter_test_dir
-+lsattr -l $testdir/ | _filter_test_dir | _filter_spaces
- #echo $free_blocks0 $free_blocks1 $free_blocks2 $free_blocks3 $free_blocks4
+ rm -f $seqres.full
  
- _within_tolerance "free blocks after reflinking" $free_blocks1 $((free_blocks0 - blks)) $margin -v
-diff --git a/tests/xfs/132.out b/tests/xfs/132.out
-index fd2b7bd..f32db7d 100644
---- a/tests/xfs/132.out
-+++ b/tests/xfs/132.out
-@@ -1,30 +1,30 @@
- QA output created by 132
- Create the original file blocks
- Create the reflink copies
--TEST_DIR/test-132/file1          ---
--TEST_DIR/test-132/file2          ---
--TEST_DIR/test-132/file3          ---
--TEST_DIR/test-132/file4          ---
-+TEST_DIR/test-132/file1 ---
-+TEST_DIR/test-132/file2 ---
-+TEST_DIR/test-132/file3 ---
-+TEST_DIR/test-132/file4 ---
- funshare part of a file
--TEST_DIR/test-132/file1          ---
--TEST_DIR/test-132/file2          ---
--TEST_DIR/test-132/file3          ---
--TEST_DIR/test-132/file4          ---
-+TEST_DIR/test-132/file1 ---
-+TEST_DIR/test-132/file2 ---
-+TEST_DIR/test-132/file3 ---
-+TEST_DIR/test-132/file4 ---
- funshare some of the copies
--TEST_DIR/test-132/file1          ---
--TEST_DIR/test-132/file2          No_COW
--TEST_DIR/test-132/file3          No_COW
--TEST_DIR/test-132/file4          ---
-+TEST_DIR/test-132/file1 ---
-+TEST_DIR/test-132/file2 No_COW
-+TEST_DIR/test-132/file3 No_COW
-+TEST_DIR/test-132/file4 ---
- funshare the rest of the files
--TEST_DIR/test-132/file1          No_COW
--TEST_DIR/test-132/file2          No_COW
--TEST_DIR/test-132/file3          No_COW
--TEST_DIR/test-132/file4          No_COW
-+TEST_DIR/test-132/file1 No_COW
-+TEST_DIR/test-132/file2 No_COW
-+TEST_DIR/test-132/file3 No_COW
-+TEST_DIR/test-132/file4 No_COW
- Rewrite the original file
--TEST_DIR/test-132/file1          No_COW
--TEST_DIR/test-132/file2          No_COW
--TEST_DIR/test-132/file3          No_COW
--TEST_DIR/test-132/file4          No_COW
-+TEST_DIR/test-132/file1 No_COW
-+TEST_DIR/test-132/file2 No_COW
-+TEST_DIR/test-132/file3 No_COW
-+TEST_DIR/test-132/file4 No_COW
- free blocks after reflinking is in range
- free blocks after nocow'ing some copies is in range
- free blocks after nocow'ing all copies is in range
+diff --git a/tests/generic/165 b/tests/generic/165
+index e4c9a9d..1ae08a4 100755
+--- a/tests/generic/165
++++ b/tests/generic/165
+@@ -47,6 +47,7 @@ _cleanup()
+ _supported_os Linux
+ _require_scratch_reflink
+ _require_cp_reflink
++_require_odirect
+ 
+ echo "Format and mount"
+ _scratch_mkfs > $seqres.full 2>&1
+diff --git a/tests/generic/166 b/tests/generic/166
+index 9be753d..9b177be 100755
+--- a/tests/generic/166
++++ b/tests/generic/166
+@@ -47,6 +47,7 @@ _cleanup()
+ _supported_os Linux
+ _require_scratch_reflink
+ _require_cp_reflink
++_require_odirect
+ 
+ echo "Format and mount"
+ _scratch_mkfs > $seqres.full 2>&1
+diff --git a/tests/generic/170 b/tests/generic/170
+index dbf1564..0f29b3a 100755
+--- a/tests/generic/170
++++ b/tests/generic/170
+@@ -46,6 +46,7 @@ _cleanup()
+ # real QA test starts here
+ _supported_os Linux
+ _require_scratch_reflink
++_require_odirect
+ 
+ echo "Format and mount"
+ _scratch_mkfs > $seqres.full 2>&1
+diff --git a/tests/generic/174 b/tests/generic/174
+index cec2f05..edfc2bc 100755
+--- a/tests/generic/174
++++ b/tests/generic/174
+@@ -46,6 +46,7 @@ _cleanup()
+ _supported_os Linux
+ _require_scratch_reflink
+ _require_cp_reflink
++_require_odirect
+ 
+ rm -f $seqres.full
+ 
+diff --git a/tests/generic/183 b/tests/generic/183
+index 0f35da2..0ab4afe 100755
+--- a/tests/generic/183
++++ b/tests/generic/183
+@@ -49,6 +49,7 @@ _cleanup()
+ # real QA test starts here
+ _supported_os Linux
+ _require_scratch_reflink
++_require_odirect
+ 
+ rm -f $seqres.full
+ 
+diff --git a/tests/generic/187 b/tests/generic/187
+index b8fade2..ac6037d 100755
+--- a/tests/generic/187
++++ b/tests/generic/187
+@@ -55,6 +55,7 @@ _require_cp_reflink
+ _require_xfs_io_command "falloc"
+ _require_xfs_io_command "fpunch"
+ test $FSTYP = "btrfs" && _notrun "Can't fragment free space on btrfs."
++_require_odirect
+ 
+ rm -f $seqres.full
+ 
+diff --git a/tests/generic/188 b/tests/generic/188
+index 7be1080..bb293b1 100755
+--- a/tests/generic/188
++++ b/tests/generic/188
+@@ -49,6 +49,7 @@ _cleanup()
+ _supported_os Linux
+ _require_scratch_reflink
+ _require_xfs_io_command "falloc"
++_require_odirect
+ 
+ rm -f $seqres.full
+ 
+diff --git a/tests/generic/190 b/tests/generic/190
+index a5c2137..b4de3ed 100755
+--- a/tests/generic/190
++++ b/tests/generic/190
+@@ -49,6 +49,7 @@ _cleanup()
+ _supported_os Linux
+ _require_scratch_reflink
+ _require_xfs_io_command "falloc"
++_require_odirect
+ 
+ rm -f $seqres.full
+ 
+diff --git a/tests/generic/194 b/tests/generic/194
+index 69a3e6c..f67e567 100755
+--- a/tests/generic/194
++++ b/tests/generic/194
+@@ -50,6 +50,7 @@ _cleanup()
+ _supported_os Linux
+ _require_scratch_reflink
+ _require_xfs_io_command "falloc"
++_require_odirect
+ 
+ rm -f $seqres.full
+ 
+diff --git a/tests/generic/196 b/tests/generic/196
+index 951079c..1505de8 100755
+--- a/tests/generic/196
++++ b/tests/generic/196
+@@ -49,6 +49,7 @@ _cleanup()
+ _supported_os Linux
+ _require_scratch_reflink
+ _require_xfs_io_command "falloc"
++_require_odirect
+ 
+ rm -f $seqres.full
+ 
+diff --git a/tests/generic/199 b/tests/generic/199
+index f457245..04380ed 100755
+--- a/tests/generic/199
++++ b/tests/generic/199
+@@ -55,6 +55,7 @@ _require_scratch_reflink
+ _require_xfs_io_command "falloc"
+ _require_xfs_io_command "fpunch"
+ _require_cp_reflink
++_require_odirect
+ 
+ rm -f $seqres.full
+ 
+diff --git a/tests/generic/200 b/tests/generic/200
+index ffb5869..2aa0315 100755
+--- a/tests/generic/200
++++ b/tests/generic/200
+@@ -55,6 +55,7 @@ _require_scratch_reflink
+ _require_xfs_io_command "falloc"
+ _require_xfs_io_command "fpunch"
+ _require_cp_reflink
++_require_odirect
+ 
+ rm -f $seqres.full
+ 
+diff --git a/tests/generic/203 b/tests/generic/203
+index 5d9bfc4..2ffb311 100755
+--- a/tests/generic/203
++++ b/tests/generic/203
+@@ -44,6 +44,7 @@ _cleanup()
+ _supported_os Linux
+ _require_scratch_reflink
+ _require_cp_reflink
++_require_odirect
+ 
+ rm -f $seqres.full
+ 
+diff --git a/tests/generic/206 b/tests/generic/206
+index 4054626..6b3e200 100755
+--- a/tests/generic/206
++++ b/tests/generic/206
+@@ -47,6 +47,7 @@ _cleanup()
+ # real QA test starts here
+ _supported_os Linux
+ _require_scratch_reflink
++_require_odirect
+ 
+ rm -f $seqres.full
+ 
+diff --git a/tests/generic/217 b/tests/generic/217
+index b1bd635..ce8e0a1 100755
+--- a/tests/generic/217
++++ b/tests/generic/217
+@@ -48,6 +48,7 @@ _cleanup()
+ _supported_os Linux
+ _require_scratch_reflink
+ _require_xfs_io_command "falloc"
++_require_odirect
+ 
+ rm -f $seqres.full
+ 
+diff --git a/tests/generic/220 b/tests/generic/220
+index edb8432..3bce21b 100755
+--- a/tests/generic/220
++++ b/tests/generic/220
+@@ -48,6 +48,7 @@ _cleanup()
+ _supported_os Linux
+ _require_scratch_reflink
+ _require_xfs_io_command "falloc"
++_require_odirect
+ 
+ rm -f $seqres.full
+ 
+diff --git a/tests/generic/227 b/tests/generic/227
+index abaf8f7..00985d3 100755
+--- a/tests/generic/227
++++ b/tests/generic/227
+@@ -48,6 +48,7 @@ _cleanup()
+ _supported_os Linux
+ _require_scratch_reflink
+ _require_xfs_io_command "falloc"
++_require_odirect
+ 
+ rm -f $seqres.full
+ 
+diff --git a/tests/generic/238 b/tests/generic/238
+index ce7408c..3b46492 100755
+--- a/tests/generic/238
++++ b/tests/generic/238
+@@ -48,6 +48,7 @@ _cleanup()
+ _supported_os Linux
+ _require_scratch_reflink
+ _require_xfs_io_command "falloc"
++_require_odirect
+ 
+ rm -f $seqres.full
+ 
+diff --git a/tests/generic/243 b/tests/generic/243
+index 127070e..e1d698b 100755
+--- a/tests/generic/243
++++ b/tests/generic/243
+@@ -47,6 +47,7 @@ _cleanup()
+ _supported_os Linux
+ _require_scratch_reflink
+ _require_cp_reflink
++_require_odirect
+ 
+ rm -f $seqres.full
+ 
 

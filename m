@@ -1,83 +1,46 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:49638 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1424672AbcBRIHl (ORCPT
+Received: from e23smtp05.au.ibm.com ([202.81.31.147]:51742 "EHLO
+	e23smtp05.au.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751330AbcBKFnR (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 18 Feb 2016 03:07:41 -0500
-From: Anand Jain <anand.jain@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.cz, clm@fb.com
-Subject: [PATCH RFC] btrfs-progs: make add and delete path max len consistent
-Date: Thu, 18 Feb 2016 16:07:17 +0800
-Message-Id: <1455782837-15630-3-git-send-email-anand.jain@oracle.com>
-In-Reply-To: <1455782837-15630-1-git-send-email-anand.jain@oracle.com>
+	Thu, 11 Feb 2016 00:43:17 -0500
+Received: from localhost
+	by e23smtp05.au.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
+	for <linux-btrfs@vger.kernel.org> from <chandan@linux.vnet.ibm.com>;
+	Thu, 11 Feb 2016 15:43:15 +1000
+Received: from d23relay10.au.ibm.com (d23relay10.au.ibm.com [9.190.26.77])
+	by d23dlp03.au.ibm.com (Postfix) with ESMTP id 328B1357803F
+	for <linux-btrfs@vger.kernel.org>; Thu, 11 Feb 2016 16:43:11 +1100 (EST)
+Received: from d23av01.au.ibm.com (d23av01.au.ibm.com [9.190.234.96])
+	by d23relay10.au.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id u1B5h2Iu62128318
+	for <linux-btrfs@vger.kernel.org>; Thu, 11 Feb 2016 16:43:11 +1100
+Received: from d23av01.au.ibm.com (localhost [127.0.0.1])
+	by d23av01.au.ibm.com (8.14.4/8.14.4/NCO v10.0 AVout) with ESMTP id u1B5gb7T019759
+	for <linux-btrfs@vger.kernel.org>; Thu, 11 Feb 2016 16:42:38 +1100
+From: Chandan Rajendra <chandan@linux.vnet.ibm.com>
+To: dsterba@suse.cz
+Cc: bo.li.liu@oracle.com, clm@fb.com, jbacik@fb.com,
+        linux-btrfs@vger.kernel.org, chandan@mykolab.com
+Subject: Re: [RFC PATCH V11 01/21] Btrfs: subpagesize-blocksize: Fix whole page read.
+Date: Thu, 11 Feb 2016 11:12:19 +0530
+Message-ID: <8178488.APUmxNEtXs@localhost.localdomain>
+In-Reply-To: <20160210103924.GC30511@twin.jikos.cz>
+References: <1433172176-8742-1-git-send-email-chandan@linux.vnet.ibm.com> <2574653.62sO1fmDVj@localhost.localdomain> <20160210103924.GC30511@twin.jikos.cz>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
-References: <1455782837-15630-1-git-send-email-anand.jain@oracle.com>
 
-Add device ioctl uses BTRFS_PATH_NAME_MAX however delete
-uses BTRFS_SUBVOL_NAME_MAX to hold device path. This patch
-makes them consistent.
+On Wednesday 10 Feb 2016 11:39:25 David Sterba wrote:
+> 
+> The explanations and the table would be good in the changelog and as
+> comments. I think we'll need to consider the smaller blocks more often
+> so some examples and locking rules would be useful, eg. documented in
+> this file.
 
-Depends on
-  btrfs: make add and device ioctl args path max consistent
+David, I agree.  As suggested, I will add the documentation to the commit
+message and as comments in the code.
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
----
- cmds-device.c |  2 +-
- ioctl.h       | 19 ++++++++++++++++++-
- 2 files changed, 19 insertions(+), 2 deletions(-)
-
-diff --git a/cmds-device.c b/cmds-device.c
-index 879ba94d7ea5..be07e34c2af8 100644
---- a/cmds-device.c
-+++ b/cmds-device.c
-@@ -160,7 +160,7 @@ static int _cmd_device_remove(int argc, char **argv,
- 		struct	btrfs_ioctl_vol_args arg;
- 		int	res;
- 
--		struct btrfs_ioctl_vol_args_v2 argv2 = {0};
-+		struct btrfs_ioctl_vol_args_v3 argv2 = {0};
- 		int is_devid = 0;
- 
- 		if (string_is_numerical(argv[i])) {
-diff --git a/ioctl.h b/ioctl.h
-index 1560dcb4b457..8e444ca374fd 100644
---- a/ioctl.h
-+++ b/ioctl.h
-@@ -92,6 +92,23 @@ struct btrfs_ioctl_vol_args_v2 {
- 	};
- };
- 
-+struct btrfs_ioctl_vol_args_v3 {
-+	__s64 fd;
-+	__u64 transid;
-+	__u64 flags;
-+	union {
-+		struct {
-+			__u64 size;
-+			struct btrfs_qgroup_inherit __user *qgroup_inherit;
-+		};
-+		__u64 unused[4];
-+	};
-+	union {
-+		char name[BTRFS_PATH_NAME_MAX + 1];
-+		u64 devid;
-+	};
-+};
-+
- /*
-  * structure to report errors and progress to userspace, either as a
-  * result of a finished scrub, a canceled scrub or a progress inquiry
-@@ -689,7 +706,7 @@ static inline char *btrfs_err_str(enum btrfs_err_code err_code)
- #define BTRFS_IOC_GET_SUPPORTED_FEATURES _IOR(BTRFS_IOCTL_MAGIC, 57, \
-                                   struct btrfs_ioctl_feature_flags[3])
- #define BTRFS_IOC_RM_DEV_V2 _IOW(BTRFS_IOCTL_MAGIC, 58, \
--				   struct btrfs_ioctl_vol_args_v2)
-+				   struct btrfs_ioctl_vol_args_v3)
- #ifdef __cplusplus
- }
- #endif
 -- 
-2.7.0
+chandan
 

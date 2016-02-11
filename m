@@ -1,92 +1,273 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from e23smtp06.au.ibm.com ([202.81.31.148]:50598 "EHLO
-	e23smtp06.au.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751917AbcBKRtE (ORCPT
+Received: from e23smtp04.au.ibm.com ([202.81.31.146]:46889 "EHLO
+	e23smtp04.au.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751622AbcBKRtB (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 11 Feb 2016 12:49:04 -0500
+	Thu, 11 Feb 2016 12:49:01 -0500
 Received: from localhost
-	by e23smtp06.au.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
+	by e23smtp04.au.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
 	for <linux-btrfs@vger.kernel.org> from <chandan@linux.vnet.ibm.com>;
-	Fri, 12 Feb 2016 03:49:02 +1000
-Received: from d23relay09.au.ibm.com (d23relay09.au.ibm.com [9.185.63.181])
-	by d23dlp03.au.ibm.com (Postfix) with ESMTP id 1FEDD3578052
-	for <linux-btrfs@vger.kernel.org>; Fri, 12 Feb 2016 04:49:00 +1100 (EST)
+	Fri, 12 Feb 2016 03:48:59 +1000
+Received: from d23relay08.au.ibm.com (d23relay08.au.ibm.com [9.185.71.33])
+	by d23dlp01.au.ibm.com (Postfix) with ESMTP id 260872CE8046
+	for <linux-btrfs@vger.kernel.org>; Fri, 12 Feb 2016 04:48:57 +1100 (EST)
 Received: from d23av03.au.ibm.com (d23av03.au.ibm.com [9.190.234.97])
-	by d23relay09.au.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id u1BHmqsR1573272
-	for <linux-btrfs@vger.kernel.org>; Fri, 12 Feb 2016 04:49:00 +1100
+	by d23relay08.au.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id u1BHmiQM36110398
+	for <linux-btrfs@vger.kernel.org>; Fri, 12 Feb 2016 04:48:52 +1100
 Received: from d23av03.au.ibm.com (localhost [127.0.0.1])
-	by d23av03.au.ibm.com (8.14.4/8.14.4/NCO v10.0 AVout) with ESMTP id u1BHmREi021126
-	for <linux-btrfs@vger.kernel.org>; Fri, 12 Feb 2016 04:48:27 +1100
+	by d23av03.au.ibm.com (8.14.4/8.14.4/NCO v10.0 AVout) with ESMTP id u1BHmOUZ021073
+	for <linux-btrfs@vger.kernel.org>; Fri, 12 Feb 2016 04:48:24 +1100
 From: Chandan Rajendra <chandan@linux.vnet.ibm.com>
 To: clm@fb.com, jbacik@fb.com, bo.li.liu@oracle.com, dsterba@suse.cz
 Cc: Chandan Rajendra <chandan@linux.vnet.ibm.com>, linux-btrfs@vger.kernel.org,
         chandan@mykolab.com
-Subject: [PATCH V15 02/15] Btrfs: subpage-blocksize: Fix whole page write
-Date: Thu, 11 Feb 2016 23:17:40 +0530
-Message-Id: <1455212873-14829-3-git-send-email-chandan@linux.vnet.ibm.com>
+Subject: [PATCH V15 01/15] Btrfs: subpage-blocksize: Fix whole page read.
+Date: Thu, 11 Feb 2016 23:17:39 +0530
+Message-Id: <1455212873-14829-2-git-send-email-chandan@linux.vnet.ibm.com>
 In-Reply-To: <1455212873-14829-1-git-send-email-chandan@linux.vnet.ibm.com>
 References: <1455212873-14829-1-git-send-email-chandan@linux.vnet.ibm.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 For the subpagesize-blocksize scenario, a page can contain multiple
-blocks. In such cases, this patch handles writing data to files.
+blocks. In such cases, this patch handles reading data from files.
 
-Also, When setting EXTENT_DELALLOC, we no longer set EXTENT_UPTODATE bit on
-the extent_io_tree since uptodate status is being tracked by the bitmap
-pointed to by page->private.
+To track the status of individual blocks of a page, this patch makes use
+of a bitmap pointed to by the newly introduced per-page 'struct
+btrfs_page_private'.
+
+The per-page btrfs_page_private->io_lock plays the same role as
+BH_Uptodate_Lock (see end_buffer_async_read()) i.e. without the io_lock
+we may end up in the following situation,
+
+NOTE: Assume 64k page size and 4k block size. Also assume that the first
+12 blocks of the page are contiguous while the next 4 blocks are
+contiguous. When reading the page we end up submitting two "logical
+address space" bios. So end_bio_extent_readpage function is invoked
+twice, once for each bio.
+
+|-------------------------+-------------------------+-------------|
+| Task A                  | Task B                  | Task C      |
+|-------------------------+-------------------------+-------------|
+| end_bio_extent_readpage |                         |             |
+| process block 0         |                         |             |
+| - clear BLK_STATE_IO    |                         |             |
+| - page_read_complete    |                         |             |
+| process block 1         |                         |             |
+|                         |                         |             |
+|                         |                         |             |
+|                         | end_bio_extent_readpage |             |
+|                         | process block 0         |             |
+|                         | - clear BLK_STATE_IO    |             |
+|                         | - page_read_complete    |             |
+|                         | process block 1         |             |
+|                         |                         |             |
+| process block 11        | process block 3         |             |
+| - clear BLK_STATE_IO    | - clear BLK_STATE_IO    |             |
+| - page_read_complete    | - page_read_complete    |             |
+|   - returns true        |   - returns true        |             |
+|   - unlock_page()       |                         |             |
+|                         |                         | lock_page() |
+|                         |   - unlock_page()       |             |
+|-------------------------+-------------------------+-------------|
+
+We end up incorrectly unlocking the page twice and "Task C" ends up
+working on an unlocked page. So private->io_lock makes sure that only
+one of the tasks gets "true" as the return value when page_io_complete()
+is invoked. As an optimization the patch gets the io_lock only when the
+last block of the bio_vec is being processed.
 
 Signed-off-by: Chandan Rajendra <chandan@linux.vnet.ibm.com>
 ---
- fs/btrfs/extent_io.c  | 137 +++++++++++++++++++++++---------------------------
- fs/btrfs/file.c       |  16 ++++++
- fs/btrfs/inode.c      |  64 ++++++++++++++++++-----
- fs/btrfs/relocation.c |   3 ++
- 4 files changed, 134 insertions(+), 86 deletions(-)
+ fs/btrfs/extent_io.c | 324 +++++++++++++++++++++++++++++++++------------------
+ fs/btrfs/extent_io.h |  70 ++++++++++-
+ fs/btrfs/inode.c     |  13 +--
+ 3 files changed, 282 insertions(+), 125 deletions(-)
 
 diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index ee4f1e0..3228446 100644
+index 1b20733..ee4f1e0 100644
 --- a/fs/btrfs/extent_io.c
 +++ b/fs/btrfs/extent_io.c
-@@ -1483,24 +1483,6 @@ void extent_range_redirty_for_io(struct inode *inode, u64 start, u64 end)
- 	}
+@@ -1323,6 +1323,95 @@ int clear_record_extent_bits(struct extent_io_tree *tree, u64 start, u64 end,
+ 				  changeset);
  }
  
--/*
-- * helper function to set both pages and extents in the tree writeback
-- */
--static void set_range_writeback(struct extent_io_tree *tree, u64 start, u64 end)
++static int modify_page_blks_state(struct page *page,
++				unsigned long blk_states,
++				u64 start, u64 end, int set)
++{
++	struct inode *inode = page->mapping->host;
++	unsigned long *bitmap;
++	unsigned long first_state;
++	unsigned long state;
++	u64 nr_blks;
++	u64 blk;
++
++	BUG_ON(!PagePrivate(page));
++
++	bitmap = ((struct btrfs_page_private *)page->private)->bstate;
++
++	blk = BTRFS_BYTES_TO_BLKS(BTRFS_I(inode)->root->fs_info,
++				start & (PAGE_CACHE_SIZE - 1));
++	nr_blks = BTRFS_BYTES_TO_BLKS(BTRFS_I(inode)->root->fs_info,
++				(end - start + 1));
++
++	first_state = find_next_bit(&blk_states, BLK_NR_STATE, 0);
++
++	while (nr_blks--) {
++		state = first_state;
++
++		while (state < BLK_NR_STATE) {
++			if (set)
++				set_bit((blk * BLK_NR_STATE) + state, bitmap);
++			else
++				clear_bit((blk * BLK_NR_STATE) + state, bitmap);
++
++			state = find_next_bit(&blk_states, BLK_NR_STATE,
++					state + 1);
++		}
++
++		++blk;
++	}
++
++	return 0;
++}
++
++int set_page_blks_state(struct page *page, unsigned long blk_states,
++			u64 start, u64 end)
++{
++	return modify_page_blks_state(page, blk_states, start, end, 1);
++}
++
++int clear_page_blks_state(struct page *page, unsigned long blk_states,
++			u64 start, u64 end)
++{
++	return modify_page_blks_state(page, blk_states, start, end, 0);
++}
++
++int test_page_blks_state(struct page *page, enum blk_state blk_state,
++			u64 start, u64 end, int check_all)
++{
++	struct inode *inode = page->mapping->host;
++	unsigned long *bitmap;
++	unsigned long blk;
++	u64 nr_blks;
++	int found = 0;
++
++	BUG_ON(!PagePrivate(page));
++
++	bitmap = ((struct btrfs_page_private *)page->private)->bstate;
++
++	blk = BTRFS_BYTES_TO_BLKS(BTRFS_I(inode)->root->fs_info,
++				start & (PAGE_CACHE_SIZE - 1));
++	nr_blks = BTRFS_BYTES_TO_BLKS(BTRFS_I(inode)->root->fs_info,
++				(end - start + 1));
++
++	while (nr_blks--) {
++		if (test_bit((blk * BLK_NR_STATE) + blk_state, bitmap)) {
++			if (!check_all)
++				return 1;
++			found = 1;
++		} else if (check_all) {
++			return 0;
++		}
++
++		++blk;
++	}
++
++	if (!check_all && !found)
++		return 0;
++
++	return 1;
++}
++
+ /*
+  * either insert or lock state struct between start and end use mask to tell
+  * us if waiting is desired.
+@@ -1958,14 +2047,22 @@ int test_range_bit(struct extent_io_tree *tree, u64 start, u64 end,
+  * helper function to set a given page up to date if all the
+  * extents in the tree for that page are up to date
+  */
+-static void check_page_uptodate(struct extent_io_tree *tree, struct page *page)
++static void check_page_uptodate(struct page *page)
+ {
+ 	u64 start = page_offset(page);
+ 	u64 end = start + PAGE_CACHE_SIZE - 1;
+-	if (test_range_bit(tree, start, end, EXTENT_UPTODATE, 1, NULL))
++	if (test_page_blks_state(page, BLK_STATE_UPTODATE, start, end, 1))
+ 		SetPageUptodate(page);
+ }
+ 
++static int page_io_complete(struct page *page)
++{
++	u64 start = page_offset(page);
++	u64 end = start + PAGE_CACHE_SIZE - 1;
++
++	return !test_page_blks_state(page, BLK_STATE_IO, start, end, 0);
++}
++
+ int free_io_failure(struct inode *inode, struct io_failure_record *rec)
+ {
+ 	int ret;
+@@ -2287,7 +2384,9 @@ int btrfs_check_repairable(struct inode *inode, struct bio *failed_bio,
+ 	 *	a) deliver good data to the caller
+ 	 *	b) correct the bad sectors on disk
+ 	 */
+-	if (failed_bio->bi_vcnt > 1) {
++	if ((failed_bio->bi_vcnt > 1)
++		|| (failed_bio->bi_io_vec->bv_len
++			> BTRFS_I(inode)->root->sectorsize)) {
+ 		/*
+ 		 * to fulfill b), we need to know the exact failing sectors, as
+ 		 * we don't want to rewrite any more than the failed ones. thus,
+@@ -2493,18 +2592,6 @@ static void end_bio_extent_writepage(struct bio *bio)
+ 	bio_put(bio);
+ }
+ 
+-static void
+-endio_readpage_release_extent(struct extent_io_tree *tree, u64 start, u64 len,
+-			      int uptodate)
 -{
--	unsigned long index = start >> PAGE_CACHE_SHIFT;
--	unsigned long end_index = end >> PAGE_CACHE_SHIFT;
--	struct page *page;
+-	struct extent_state *cached = NULL;
+-	u64 end = start + len - 1;
 -
--	while (index <= end_index) {
--		page = find_get_page(tree->mapping, index);
--		BUG_ON(!page); /* Pages should be in the extent_io_tree */
--		set_page_writeback(page);
--		page_cache_release(page);
--		index++;
--	}
+-	if (uptodate && tree->track_uptodate)
+-		set_extent_uptodate(tree, start, end, &cached, GFP_ATOMIC);
+-	unlock_extent_cached(tree, start, end, &cached, GFP_ATOMIC);
 -}
 -
- /* find the first state struct with 'bits' set after 'start', and
-  * return it.  tree->lock must be held.  NULL will returned if
-  * nothing was found after 'start'
-@@ -2557,36 +2539,34 @@ void end_extent_writepage(struct page *page, int err, u64 start, u64 end)
-  */
- static void end_bio_extent_writepage(struct bio *bio)
- {
-+	struct btrfs_page_private *pg_private;
+ /*
+  * after a readpage IO is done, we need to:
+  * clear the uptodate bits on error
+@@ -2521,67 +2608,49 @@ static void end_bio_extent_readpage(struct bio *bio)
  	struct bio_vec *bvec;
+ 	int uptodate = !bio->bi_error;
+ 	struct btrfs_io_bio *io_bio = btrfs_io_bio(bio);
++	struct extent_state *cached = NULL;
++	struct btrfs_page_private *pg_private;
+ 	struct extent_io_tree *tree;
 +	unsigned long flags;
+ 	u64 offset = 0;
  	u64 start;
  	u64 end;
-+	int clear_writeback;
+-	u64 len;
+-	u64 extent_start = 0;
+-	u64 extent_len = 0;
++	int nr_sectors;
+ 	int mirror;
++	int unlock;
+ 	int ret;
  	int i;
  
  	bio_for_each_segment_all(bvec, bio, i) {
  		struct page *page = bvec->bv_page;
+ 		struct inode *inode = page->mapping->host;
++		struct btrfs_root *root = BTRFS_I(inode)->root;
+ 
+ 		pr_debug("end_bio_extent_readpage: bi_sector=%llu, err=%d, "
+ 			 "mirror=%u\n", (u64)bio->bi_iter.bi_sector,
+ 			 bio->bi_error, io_bio->mirror_num);
+ 		tree = &BTRFS_I(inode)->io_tree;
  
 -		/* We always issue full-page reads, but if some block
 -		 * in a page fails to read, blk_update_request() will
@@ -96,349 +277,426 @@ index ee4f1e0..3228446 100644
 -		if (bvec->bv_offset || bvec->bv_len != PAGE_CACHE_SIZE) {
 -			if (bvec->bv_offset + bvec->bv_len != PAGE_CACHE_SIZE)
 -				btrfs_err(BTRFS_I(page->mapping->host)->root->fs_info,
--				   "partial page write in btrfs with offset %u and length %u",
+-				   "partial page read in btrfs with offset %u and length %u",
 -					bvec->bv_offset, bvec->bv_len);
 -			else
 -				btrfs_info(BTRFS_I(page->mapping->host)->root->fs_info,
--				   "incomplete page write in btrfs with offset %u and "
+-				   "incomplete page read in btrfs with offset %u and "
 -				   "length %u",
 -					bvec->bv_offset, bvec->bv_len);
 -		}
-+		start = page_offset(page) + bvec->bv_offset;
-+		end = start + bvec->bv_len - 1;
-+
-+		pg_private = (struct btrfs_page_private *)page->private;
- 
+-
 -		start = page_offset(page);
 -		end = start + bvec->bv_offset + bvec->bv_len - 1;
-+		spin_lock_irqsave(&pg_private->io_lock, flags);
+-		len = bvec->bv_len;
+-
++		start = page_offset(page) + bvec->bv_offset;
++		end = start + bvec->bv_len - 1;
++		nr_sectors = BTRFS_BYTES_TO_BLKS(root->fs_info,
++						bvec->bv_len);
+ 		mirror = io_bio->mirror_num;
++
++next_block:
+ 		if (likely(uptodate && tree->ops &&
+-			   tree->ops->readpage_end_io_hook)) {
++				tree->ops->readpage_end_io_hook)) {
+ 			ret = tree->ops->readpage_end_io_hook(io_bio, offset,
+-							      page, start, end,
+-							      mirror);
++							page, start,
++							start + root->sectorsize - 1,
++							mirror);
+ 			if (ret)
+ 				uptodate = 0;
+ 			else
+ 				clean_io_failure(inode, start, page, 0);
+ 		}
  
- 		end_extent_writepage(page, bio->bi_error, start, end);
--		end_page_writeback(page);
+-		if (likely(uptodate))
+-			goto readpage_ok;
+-
+-		if (tree->ops && tree->ops->readpage_io_failed_hook) {
+-			ret = tree->ops->readpage_io_failed_hook(page, mirror);
+-			if (!ret && !bio->bi_error)
+-				uptodate = 1;
+-		} else {
++		if (!uptodate) {
+ 			/*
+ 			 * The generic bio_readpage_error handles errors the
+ 			 * following way: If possible, new read requests are
+@@ -2592,58 +2661,61 @@ static void end_bio_extent_readpage(struct bio *bio)
+ 			 * can't handle the error it will return -EIO and we
+ 			 * remain responsible for that page.
+ 			 */
+-			ret = bio_readpage_error(bio, offset, page, start, end,
+-						 mirror);
++			ret = bio_readpage_error(bio, offset, page,
++						start, start + root->sectorsize - 1,
++						mirror);
+ 			if (ret == 0) {
+ 				uptodate = !bio->bi_error;
+-				offset += len;
+-				continue;
++				offset += root->sectorsize;
++				if (--nr_sectors) {
++					start += root->sectorsize;
++					goto next_block;
++				} else {
++					continue;
++				}
+ 			}
+ 		}
+-readpage_ok:
+-		if (likely(uptodate)) {
+-			loff_t i_size = i_size_read(inode);
+-			pgoff_t end_index = i_size >> PAGE_CACHE_SHIFT;
+-			unsigned off;
+-
+-			/* Zero out the end if this page straddles i_size */
+-			off = i_size & (PAGE_CACHE_SIZE-1);
+-			if (page->index == end_index && off)
+-				zero_user_segment(page, off, PAGE_CACHE_SIZE);
+-			SetPageUptodate(page);
 +
-+		clear_page_blks_state(page, 1 << BLK_STATE_IO, start, end);
++		if (uptodate) {
++			set_page_blks_state(page, 1 << BLK_STATE_UPTODATE, start,
++					start + root->sectorsize - 1);
++			check_page_uptodate(page);
+ 		} else {
+ 			ClearPageUptodate(page);
+ 			SetPageError(page);
+ 		}
+-		unlock_page(page);
+-		offset += len;
+-
+-		if (unlikely(!uptodate)) {
+-			if (extent_len) {
+-				endio_readpage_release_extent(tree,
+-							      extent_start,
+-							      extent_len, 1);
+-				extent_start = 0;
+-				extent_len = 0;
+-			}
+-			endio_readpage_release_extent(tree, start,
+-						      end - start + 1, 0);
+-		} else if (!extent_len) {
+-			extent_start = start;
+-			extent_len = end + 1 - start;
+-		} else if (extent_start + extent_len == start) {
+-			extent_len += end + 1 - start;
+-		} else {
+-			endio_readpage_release_extent(tree, extent_start,
+-						      extent_len, uptodate);
+-			extent_start = start;
+-			extent_len = end + 1 - start;
 +
-+		clear_writeback = page_io_complete(page);
++		offset += root->sectorsize;
++
++		if (--nr_sectors) {
++			clear_page_blks_state(page, 1 << BLK_STATE_IO,
++					start, start + root->sectorsize - 1);
++			clear_extent_bit(tree, start, start + root->sectorsize - 1,
++					EXTENT_LOCKED, 1, 0, &cached, GFP_ATOMIC);
++			start += root->sectorsize;
++			goto next_block;
+ 		}
++
++		WARN_ON(!PagePrivate(page));
++
++		pg_private = (struct btrfs_page_private *)page->private;
++
++		spin_lock_irqsave(&pg_private->io_lock, flags);
++
++		clear_page_blks_state(page, 1 << BLK_STATE_IO,
++				start, start + root->sectorsize - 1);
++
++		unlock = page_io_complete(page);
 +
 +		spin_unlock_irqrestore(&pg_private->io_lock, flags);
 +
-+		if (clear_writeback)
-+			end_page_writeback(page);
++		clear_extent_bit(tree, start, start + root->sectorsize - 1,
++				EXTENT_LOCKED, 1, 0, &cached, GFP_ATOMIC);
++
++		if (unlock)
++			unlock_page(page);
  	}
  
+-	if (extent_len)
+-		endio_readpage_release_extent(tree, extent_start, extent_len,
+-					      uptodate);
+ 	if (io_bio->end_io)
+ 		io_bio->end_io(io_bio, bio->bi_error);
  	bio_put(bio);
-@@ -3450,14 +3430,14 @@ static noinline_for_stack int __extent_writepage_io(struct inode *inode,
+@@ -2833,13 +2905,36 @@ static void attach_extent_buffer_page(struct extent_buffer *eb,
+ 	}
+ }
+ 
+-void set_page_extent_mapped(struct page *page)
++int set_page_extent_mapped(struct page *page)
+ {
++	struct btrfs_page_private *pg_private;
++
+ 	if (!PagePrivate(page)) {
++		pg_private = kzalloc(sizeof(*pg_private), GFP_NOFS);
++		if (!pg_private)
++			return -ENOMEM;
++
++		spin_lock_init(&pg_private->io_lock);
++
+ 		SetPagePrivate(page);
+ 		page_cache_get(page);
+-		set_page_private(page, EXTENT_PAGE_PRIVATE);
++
++		set_page_private(page, (unsigned long)pg_private);
+ 	}
++
++	return 0;
++}
++
++int clear_page_extent_mapped(struct page *page)
++{
++	if (PagePrivate(page)) {
++		kfree((struct btrfs_page_private *)(page->private));
++		ClearPagePrivate(page);
++		set_page_private(page, 0);
++		page_cache_release(page);
++	}
++
++	return 0;
+ }
+ 
+ static struct extent_map *
+@@ -2884,6 +2979,7 @@ static int __do_readpage(struct extent_io_tree *tree,
+ 			 u64 *prev_em_start)
+ {
+ 	struct inode *inode = page->mapping->host;
++	struct extent_state *cached = NULL;
+ 	u64 start = page_offset(page);
  	u64 page_end = start + PAGE_CACHE_SIZE - 1;
  	u64 end;
- 	u64 cur = start;
-+	u64 next;
- 	u64 extent_offset;
- 	u64 block_start;
- 	u64 iosize;
- 	sector_t sector;
--	struct extent_state *cached_state = NULL;
- 	struct extent_map *em;
- 	struct block_device *bdev;
--	size_t pg_offset = 0;
-+	size_t pg_offset;
- 	size_t blocksize;
- 	int ret = 0;
- 	int nr = 0;
-@@ -3504,20 +3484,38 @@ static noinline_for_stack int __extent_writepage_io(struct inode *inode,
- 							 page_end, NULL, 1);
- 			break;
- 		}
--		em = epd->get_extent(inode, page, pg_offset, cur,
--				     end - cur + 1, 1);
-+
-+		if (!test_page_blks_state(page, BLK_STATE_DIRTY, cur,
-+						cur + blocksize - 1, 1)) {
-+			cur += blocksize;
-+			continue;
+@@ -2907,13 +3003,6 @@ static int __do_readpage(struct extent_io_tree *tree,
+ 	set_page_extent_mapped(page);
+ 
+ 	end = page_end;
+-	if (!PageUptodate(page)) {
+-		if (cleancache_get_page(page) == 0) {
+-			BUG_ON(blocksize != PAGE_SIZE);
+-			unlock_extent(tree, start, end);
+-			goto out;
+-		}
+-	}
+ 
+ 	if (page->index == last_byte >> PAGE_CACHE_SHIFT) {
+ 		char *userpage;
+@@ -2940,8 +3029,8 @@ static int __do_readpage(struct extent_io_tree *tree,
+ 			memset(userpage + pg_offset, 0, iosize);
+ 			flush_dcache_page(page);
+ 			kunmap_atomic(userpage);
+-			set_extent_uptodate(tree, cur, cur + iosize - 1,
+-					    &cached, GFP_NOFS);
++			set_page_blks_state(page, 1 << BLK_STATE_UPTODATE, cur,
++					cur + iosize - 1);
+ 			if (!parent_locked)
+ 				unlock_extent_cached(tree, cur,
+ 						     cur + iosize - 1,
+@@ -2981,6 +3070,14 @@ static int __do_readpage(struct extent_io_tree *tree,
+ 		if (test_bit(EXTENT_FLAG_PREALLOC, &em->flags))
+ 			block_start = EXTENT_MAP_HOLE;
+ 
++		if ((block_start != EXTENT_MAP_HOLE) &&
++			(blocksize == PAGE_CACHE_SIZE) && !PageUptodate(page) &&
++			(cleancache_get_page(page) == 0)) {
++			if (!parent_locked)
++				unlock_extent(tree, cur, end);
++			break;
 +		}
 +
-+		pg_offset = cur & (PAGE_CACHE_SIZE - 1);
-+
-+		em = epd->get_extent(inode, page, pg_offset, cur, blocksize, 1);
- 		if (IS_ERR_OR_NULL(em)) {
- 			SetPageError(page);
- 			ret = PTR_ERR_OR_ZERO(em);
- 			break;
+ 		/*
+ 		 * If we have a file range that points to a compressed extent
+ 		 * and it's followed by a consecutive file range that points to
+@@ -3036,11 +3133,9 @@ static int __do_readpage(struct extent_io_tree *tree,
+ 			flush_dcache_page(page);
+ 			kunmap_atomic(userpage);
+ 
+-			set_extent_uptodate(tree, cur, cur + iosize - 1,
+-					    &cached, GFP_NOFS);
+-			if (parent_locked)
+-				free_extent_state(cached);
+-			else
++			set_page_blks_state(page, 1 << BLK_STATE_UPTODATE, cur,
++					cur + iosize - 1);
++			if (!parent_locked)
+ 				unlock_extent_cached(tree, cur,
+ 						     cur + iosize - 1,
+ 						     &cached, GFP_NOFS);
+@@ -3049,9 +3144,9 @@ static int __do_readpage(struct extent_io_tree *tree,
+ 			continue;
+ 		}
+ 		/* the get_extent function already copied into the page */
+-		if (test_range_bit(tree, cur, cur_end,
+-				   EXTENT_UPTODATE, 1, NULL)) {
+-			check_page_uptodate(tree, page);
++		if (test_page_blks_state(page, BLK_STATE_UPTODATE, cur,
++						cur_end, 1)) {
++			check_page_uptodate(page);
+ 			if (!parent_locked)
+ 				unlock_extent(tree, cur, cur + iosize - 1);
+ 			cur = cur + iosize;
+@@ -3071,6 +3166,8 @@ static int __do_readpage(struct extent_io_tree *tree,
  		}
  
--		extent_offset = cur - em->start;
- 		em_end = extent_map_end(em);
- 		BUG_ON(em_end <= cur);
- 		BUG_ON(end < cur);
--		iosize = min(em_end - cur, end - cur + 1);
-+
-+		iosize = blocksize;
-+		next = cur + blocksize;
-+		while ((next < end)
-+			&& (next < em_end)
-+			&& test_page_blks_state(page, BLK_STATE_DIRTY, next,
-+						next + blocksize - 1, 1)) {
-+			iosize += blocksize;
-+			next += blocksize;
-+		}
-+
- 		iosize = ALIGN(iosize, blocksize);
-+		extent_offset = cur - em->start;
- 		sector = (em->block_start + extent_offset) >> 9;
- 		bdev = em->bdev;
- 		block_start = em->block_start;
-@@ -3525,32 +3523,20 @@ static noinline_for_stack int __extent_writepage_io(struct inode *inode,
- 		free_extent_map(em);
- 		em = NULL;
- 
--		/*
--		 * compressed and inline extents are written through other
--		 * paths in the FS
--		 */
--		if (compressed || block_start == EXTENT_MAP_HOLE ||
--		    block_start == EXTENT_MAP_INLINE) {
--			/*
--			 * end_io notification does not happen here for
--			 * compressed extents
--			 */
--			if (!compressed && tree->ops &&
--			    tree->ops->writepage_end_io_hook)
--				tree->ops->writepage_end_io_hook(page, cur,
--							 cur + iosize - 1,
--							 NULL, 1);
--			else if (compressed) {
--				/* we don't want to end_page_writeback on
--				 * a compressed extent.  this happens
--				 * elsewhere
--				 */
--				nr++;
--			}
-+		BUG_ON(compressed);
-+		BUG_ON(block_start == EXTENT_MAP_INLINE);
- 
--			cur += iosize;
--			pg_offset += iosize;
--			continue;
-+		if (block_start == EXTENT_MAP_HOLE) {
-+			if (test_page_blks_state(page, BLK_STATE_UPTODATE, cur,
-+							cur + iosize - 1, 1)) {
-+				clear_page_blks_state(page,
-+						1 << BLK_STATE_DIRTY, cur,
-+						cur + iosize - 1);
-+				cur += iosize;
-+				continue;
-+			} else {
-+				BUG();
-+			}
- 		}
- 
- 		if (tree->ops && tree->ops->writepage_io_hook) {
-@@ -3564,7 +3550,13 @@ static noinline_for_stack int __extent_writepage_io(struct inode *inode,
+ 		pnr -= page->index;
++		set_page_blks_state(page, 1 << BLK_STATE_IO, cur,
++				cur + iosize - 1);
+ 		ret = submit_extent_page(rw, tree, NULL, page,
+ 					 sector, disk_io_size, pg_offset,
+ 					 bdev, bio, pnr,
+@@ -3083,13 +3180,16 @@ static int __do_readpage(struct extent_io_tree *tree,
+ 			*bio_flags = this_bio_flag;
  		} else {
- 			unsigned long max_nr = (i_size >> PAGE_CACHE_SHIFT) + 1;
- 
--			set_range_writeback(tree, cur, cur + iosize - 1);
-+			clear_page_blks_state(page, 1 << BLK_STATE_DIRTY, cur,
+ 			SetPageError(page);
++			clear_page_blks_state(page, 1 << BLK_STATE_IO, cur,
 +					cur + iosize - 1);
-+			set_page_writeback(page);
-+
-+			set_page_blks_state(page, 1 << BLK_STATE_IO, cur,
-+					cur + iosize - 1);
-+
- 			if (!PageWriteback(page)) {
- 				btrfs_err(BTRFS_I(inode)->root->fs_info,
- 					   "page %lu not writeback, cur %llu end %llu",
-@@ -3579,17 +3571,14 @@ static noinline_for_stack int __extent_writepage_io(struct inode *inode,
- 			if (ret)
- 				SetPageError(page);
+ 			if (!parent_locked)
+-				unlock_extent(tree, cur, cur + iosize - 1);
++				unlock_extent_cached(tree, cur, cur + iosize - 1,
++						&cached, GFP_NOFS);
  		}
--		cur = cur + iosize;
--		pg_offset += iosize;
-+
-+		cur += iosize;
- 		nr++;
+ 		cur = cur + iosize;
+ 		pg_offset += iosize;
  	}
- done:
- 	*nr_ret = nr;
+-out:
++
+ 	if (!nr) {
+ 		if (!PageError(page))
+ 			SetPageUptodate(page);
+diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
+index 0377413..e7d377f 100644
+--- a/fs/btrfs/extent_io.h
++++ b/fs/btrfs/extent_io.h
+@@ -53,11 +53,64 @@
+ #define PAGE_SET_PRIVATE2	(1 << 4)
+ #define PAGE_SET_ERROR		(1 << 5)
  
- done_unlocked:
--
--	/* drop our reference on any cached states */
--	free_extent_state(cached_state);
++enum blk_state {
++	BLK_STATE_UPTODATE,
++	BLK_STATE_DIRTY,
++	BLK_STATE_IO,
++	BLK_NR_STATE,
++};
++
+ /*
+- * page->private values.  Every page that is controlled by the extent
+- * map has page->private set to one.
+- */
+-#define EXTENT_PAGE_PRIVATE 1
++  The maximum number of blocks per page (i.e. 32) occurs when using 2k
++  as the block size and having 64k as the page size.
++*/
++#define BLK_STATE_NR_LONGS DIV_ROUND_UP(BLK_NR_STATE * 32, BITS_PER_LONG)
++
++/*
++  btrfs_page_private->io_lock plays the same role as BH_Uptodate_Lock
++  (see end_buffer_async_read()) i.e. without the io_lock we may end up
++  in the following situation,
++
++  NOTE: Assume 64k page size and 4k block size. Also assume that the first 12
++  blocks of the page are contiguous while the next 4 blocks are contiguous. When
++  reading the page we end up submitting two "logical address space" bios. So
++  end_bio_extent_readpage function is invoked twice, once for each bio.
++
++  |-------------------------+-------------------------+-------------|
++  | Task A                  | Task B                  | Task C      |
++  |-------------------------+-------------------------+-------------|
++  | end_bio_extent_readpage |                         |             |
++  | process block 0         |                         |             |
++  | - clear BLK_STATE_IO    |                         |             |
++  | - page_read_complete    |                         |             |
++  | process block 1         |                         |             |
++  |                         |                         |             |
++  |                         |                         |             |
++  |                         | end_bio_extent_readpage |             |
++  |                         | process block 0         |             |
++  |                         | - clear BLK_STATE_IO    |             |
++  |                         | - page_read_complete    |             |
++  |                         | process block 1         |             |
++  |                         |                         |             |
++  | process block 11        | process block 3         |             |
++  | - clear BLK_STATE_IO    | - clear BLK_STATE_IO    |             |
++  | - page_read_complete    | - page_read_complete    |             |
++  |   - returns true        |   - returns true        |             |
++  |   - unlock_page()       |                         |             |
++  |                         |                         | lock_page() |
++  |                         |   - unlock_page()       |             |
++  |-------------------------+-------------------------+-------------|
++
++  We end up incorrectly unlocking the page twice and "Task C" ends up
++  working on an unlocked page. So private->io_lock makes sure that
++  only one of the tasks gets "true" as the return value when
++  page_io_complete() is invoked. As an optimization the patch gets the
++  io_lock only when the last block of the bio_vec is being processed.
++*/
++struct btrfs_page_private {
++	spinlock_t io_lock;
++	unsigned long bstate[BLK_STATE_NR_LONGS];
++};
+ 
+ struct extent_state;
+ struct btrfs_root;
+@@ -346,7 +399,14 @@ int extent_readpages(struct extent_io_tree *tree,
+ int extent_fiemap(struct inode *inode, struct fiemap_extent_info *fieinfo,
+ 		__u64 start, __u64 len, get_extent_t *get_extent);
+ int get_state_private(struct extent_io_tree *tree, u64 start, u64 *private);
+-void set_page_extent_mapped(struct page *page);
++int set_page_extent_mapped(struct page *page);
++int clear_page_extent_mapped(struct page *page);
++int set_page_blks_state(struct page *page, unsigned long blk_states,
++ 			u64 start, u64 end);
++int clear_page_blks_state(struct page *page, unsigned long blk_states,
++ 			u64 start, u64 end);
++int test_page_blks_state(struct page *page, enum blk_state blk_state,
++			u64 start, u64 end, int check_all);
+ 
+ struct extent_buffer *alloc_extent_buffer(struct btrfs_fs_info *fs_info,
+ 					  u64 start);
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index d689b0e..fbcd866 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -6726,7 +6726,6 @@ struct extent_map *btrfs_get_extent(struct inode *inode, struct page *page,
+ 	struct btrfs_key found_key;
+ 	struct extent_map *em = NULL;
+ 	struct extent_map_tree *em_tree = &BTRFS_I(inode)->extent_tree;
+-	struct extent_io_tree *io_tree = &BTRFS_I(inode)->io_tree;
+ 	struct btrfs_trans_handle *trans = NULL;
+ 	const bool new_inline = !page || create;
+ 
+@@ -6903,8 +6902,8 @@ next:
+ 			kunmap(page);
+ 			btrfs_mark_buffer_dirty(leaf);
+ 		}
+-		set_extent_uptodate(io_tree, em->start,
+-				    extent_map_end(em) - 1, NULL, GFP_NOFS);
++		set_page_blks_state(page, 1 << BLK_STATE_UPTODATE, em->start,
++				extent_map_end(em) - 1);
+ 		goto insert;
+ 	}
+ not_found:
+@@ -8649,11 +8648,9 @@ static int __btrfs_releasepage(struct page *page, gfp_t gfp_flags)
+ 	tree = &BTRFS_I(page->mapping->host)->io_tree;
+ 	map = &BTRFS_I(page->mapping->host)->extent_tree;
+ 	ret = try_release_extent_mapping(map, tree, page, gfp_flags);
+-	if (ret == 1) {
+-		ClearPagePrivate(page);
+-		set_page_private(page, 0);
+-		page_cache_release(page);
+-	}
++	if (ret == 1)
++		clear_page_extent_mapped(page);
++
  	return ret;
  }
  
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index 953f0ad..b8b0eda 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -494,6 +494,9 @@ int btrfs_dirty_pages(struct btrfs_root *root, struct inode *inode,
- 	u64 num_bytes;
- 	u64 start_pos;
- 	u64 end_of_last_block;
-+	u64 start;
-+	u64 end;
-+	u64 page_end;
- 	u64 end_pos = pos + write_bytes;
- 	loff_t isize = i_size_read(inode);
- 
-@@ -506,11 +509,24 @@ int btrfs_dirty_pages(struct btrfs_root *root, struct inode *inode,
- 	if (err)
- 		return err;
- 
-+	start = start_pos;
-+
- 	for (i = 0; i < num_pages; i++) {
- 		struct page *p = pages[i];
- 		SetPageUptodate(p);
- 		ClearPageChecked(p);
-+
-+		end = page_end = page_offset(p) + PAGE_CACHE_SIZE - 1;
-+
-+		if (i == num_pages - 1)
-+			end = min_t(u64, page_end, end_of_last_block);
-+
-+		set_page_blks_state(p,
-+				1 << BLK_STATE_DIRTY | 1 << BLK_STATE_UPTODATE,
-+				start, end);
- 		set_page_dirty(p);
-+
-+		start = page_end + 1;
- 	}
- 
- 	/*
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index fbcd866..e103b8e 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -210,6 +210,9 @@ static int insert_inline_extent(struct btrfs_trans_handle *trans,
- 		page = find_get_page(inode->i_mapping,
- 				     start >> PAGE_CACHE_SHIFT);
- 		btrfs_set_file_extent_compression(leaf, ei, 0);
-+		clear_page_blks_state(page, 1 << BLK_STATE_DIRTY, start,
-+                                round_up(start + size - 1, root->sectorsize)
-+				- 1);
- 		kaddr = kmap_atomic(page);
- 		offset = start & (PAGE_CACHE_SIZE - 1);
- 		write_extent_buffer(leaf, kaddr + offset, ptr, size);
-@@ -2023,6 +2026,11 @@ again:
- 	 }
- 
- 	btrfs_set_extent_delalloc(inode, page_start, page_end, &cached_state);
-+
-+	set_page_blks_state(page,
-+			1 << BLK_STATE_DIRTY | 1 << BLK_STATE_UPTODATE,
-+			page_start, page_end);
-+
- 	ClearPageChecked(page);
- 	set_page_dirty(page);
- out:
-@@ -3025,26 +3033,48 @@ static int btrfs_writepage_end_io_hook(struct page *page, u64 start, u64 end,
- 	struct btrfs_ordered_extent *ordered_extent = NULL;
- 	struct btrfs_workqueue *wq;
- 	btrfs_work_func_t func;
-+	u64 ordered_start, ordered_end;
-+	int done;
- 
- 	trace_btrfs_writepage_end_io_hook(page, start, end, uptodate);
- 
- 	ClearPagePrivate2(page);
--	if (!btrfs_dec_test_ordered_pending(inode, &ordered_extent, start,
--					    end - start + 1, uptodate))
--		return 0;
-+loop:
-+	ordered_extent = btrfs_lookup_ordered_range(inode, start,
-+						end - start + 1);
-+	if (!ordered_extent)
-+		goto out;
- 
--	if (btrfs_is_free_space_inode(inode)) {
--		wq = root->fs_info->endio_freespace_worker;
--		func = btrfs_freespace_write_helper;
--	} else {
--		wq = root->fs_info->endio_write_workers;
--		func = btrfs_endio_write_helper;
-+	ordered_start = max_t(u64, start, ordered_extent->file_offset);
-+	ordered_end = min_t(u64, end,
-+			ordered_extent->file_offset + ordered_extent->len - 1);
-+
-+	done = btrfs_dec_test_ordered_pending(inode, &ordered_extent,
-+					ordered_start,
-+					ordered_end - ordered_start + 1,
-+					uptodate);
-+	if (done) {
-+		if (btrfs_is_free_space_inode(inode)) {
-+			wq = root->fs_info->endio_freespace_worker;
-+			func = btrfs_freespace_write_helper;
-+		} else {
-+			wq = root->fs_info->endio_write_workers;
-+			func = btrfs_endio_write_helper;
-+		}
-+
-+		btrfs_init_work(&ordered_extent->work, func,
-+				finish_ordered_fn, NULL, NULL);
-+		btrfs_queue_work(wq, &ordered_extent->work);
- 	}
- 
--	btrfs_init_work(&ordered_extent->work, func, finish_ordered_fn, NULL,
--			NULL);
--	btrfs_queue_work(wq, &ordered_extent->work);
-+	btrfs_put_ordered_extent(ordered_extent);
-+
-+	start = ordered_end + 1;
-+
-+	if (start < end)
-+		goto loop;
- 
-+out:
- 	return 0;
- }
- 
-@@ -4694,6 +4724,9 @@ again:
- 		goto out_unlock;
- 	}
- 
-+	set_page_blks_state(page, 1 << BLK_STATE_DIRTY | 1 << BLK_STATE_UPTODATE,
-+			block_start, block_end);
-+
- 	if (offset != blocksize) {
- 		if (!len)
- 			len = blocksize - offset;
-@@ -8753,6 +8786,9 @@ again:
- 	 *    This means the reserved space should be freed here.
- 	 */
- 	btrfs_qgroup_free_data(inode, page_start, PAGE_CACHE_SIZE);
-+
-+	clear_page_blks_state(page, 1 << BLK_STATE_DIRTY, page_start, page_end);
-+
- 	if (!inode_evicting) {
- 		clear_extent_bit(tree, page_start, page_end,
- 				 EXTENT_LOCKED | EXTENT_DIRTY |
-@@ -8896,6 +8932,10 @@ again:
- 		ret = VM_FAULT_SIGBUS;
- 		goto out_unlock;
- 	}
-+
-+	set_page_blks_state(page, 1 << BLK_STATE_DIRTY | 1 << BLK_STATE_UPTODATE,
-+			page_start, end);
-+
- 	ret = 0;
- 
- 	/* page is wholly or partially inside EOF */
-diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-index ef6d8fc..ac9d91f 100644
---- a/fs/btrfs/relocation.c
-+++ b/fs/btrfs/relocation.c
-@@ -3185,6 +3185,9 @@ static int relocate_file_extent_cluster(struct inode *inode,
- 		}
- 
- 		btrfs_set_extent_delalloc(inode, page_start, page_end, NULL);
-+		set_page_blks_state(page,
-+				1 << BLK_STATE_DIRTY | 1 << BLK_STATE_UPTODATE,
-+				page_start, page_end);
- 		set_page_dirty(page);
- 
- 		unlock_extent(&BTRFS_I(inode)->io_tree,
 -- 
 2.1.0
 

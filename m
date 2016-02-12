@@ -1,47 +1,101 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f180.google.com ([209.85.213.180]:37955 "EHLO
-	mail-ig0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750820AbcBLDih convert rfc822-to-8bit (ORCPT
+Received: from magic.merlins.org ([209.81.13.136]:45503 "EHLO
+	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751157AbcBLQEm (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 11 Feb 2016 22:38:37 -0500
-Received: by mail-ig0-f180.google.com with SMTP id y8so2241494igp.1
-        for <linux-btrfs@vger.kernel.org>; Thu, 11 Feb 2016 19:38:37 -0800 (PST)
+	Fri, 12 Feb 2016 11:04:42 -0500
+Received: from merlin by mail1.merlins.org with local (Exim 4.80 #2)
+	id 1aUGD3-0007S2-BL by authid <merlin>
+	for <linux-btrfs@vger.kernel.org>; Fri, 12 Feb 2016 08:04:41 -0800
+Date: Fri, 12 Feb 2016 08:04:41 -0800
+From: Marc MERLIN <marc@merlins.org>
+To: linux-btrfs@vger.kernel.org
+Subject: btrfs on top of bcache on top of dmcrypt on top of md raid5
+Message-ID: <20160212160441.GH2763@merlins.org>
 MIME-Version: 1.0
-In-Reply-To: <20160212032226.GA10542@localhost.localdomain>
-References: <CABXGCsOrgnvE=qbftu=7OuJenq7Vw6HzM9B86DLT4xJGLmqbMQ@mail.gmail.com>
-	<CAJCQCtS3MsrF43PnueK3-4kVLGfTNGjN4Tv-c=Jo1jVWYL7ksw@mail.gmail.com>
-	<CABXGCsOAyYa96E965ruKp9evCY3FrCdBr-GTPvCws5VqmjUC5Q@mail.gmail.com>
-	<CAJCQCtRjCixev=Mt=jaL1ZytYaxj7Fa-AViLYGB-ALufyL98VA@mail.gmail.com>
-	<CAJCQCtRtVjyjvSfT=BCZZwfaSvbD4YVxEBezfAx+-q7cwMHmRQ@mail.gmail.com>
-	<CABXGCsNivrLgTEE+HZOLHXA-kpLVQOUv9L_nTw96nvy+DHodZg@mail.gmail.com>
-	<CAJCQCtTrcnwvumgt-bOx+9wX+f50S9ja5rDrnYAsuuN1aDTsZA@mail.gmail.com>
-	<20160211191741.GA4762@localhost.localdomain>
-	<CABXGCsPN3MOLkU68gpw=TsnZLODEkYZ66ZHgUxMyeqbdNME9Sw@mail.gmail.com>
-	<20160212032226.GA10542@localhost.localdomain>
-Date: Thu, 11 Feb 2016 20:38:36 -0700
-Message-ID: <CAJCQCtRw2hm=c+0Jm8s3yVNO8kWkt_R7_6+67_76brH02x4StQ@mail.gmail.com>
-Subject: Re: task btrfs-cleaner:770 blocked for more than 120 seconds.
-From: Chris Murphy <lists@colorremedies.com>
-To: bo.li.liu@oracle.com
-Cc: =?UTF-8?B?0JzQuNGF0LDQuNC7INCT0LDQstGA0LjQu9C+0LI=?=
-	<mikhail.v.gavrilov@gmail.com>,
-        Chris Murphy <lists@colorremedies.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Feb 11, 2016 at 8:22 PM, Liu Bo <bo.li.liu@oracle.com> wrote:
-> On Fri, Feb 12, 2016 at 02:03:15AM +0500, Михаил Гаврилов wrote:
->> Thanks guys, I appreciate your's work.
->> In which kernel this patch would landed?
->
-> You can try it on your 4.2.3 kernel or the latest 4.5, but I guess it
-> doesn't not fix the real deadlock you're hitting...
+I have a 5 drive md array with dmcrypt on top, and btrfs on top of that.
+Kernel: 4.4 but the filesystem was created 2 years ago with an older version
+of btrfs.
+It's littered with files and hardlinks (it's a backup server). Mostly it
+gets btrfs receive data, and rsyncs of filesystem trees that are
+occasionally hardlinked to keep history (for data that wasn't on btrfs to
+start with).
+Basically the filesystem works, but it's slow, I can see that my system
+feels sluggish when backups are running, cronjobs that are somewhat time
+critical also fail to run in time when rsyncs/backups to that filesystem,
+are running.
 
-I think the question is whether the patch is already in a stable
-kernel, or mainline, or not yet merged?
+It's time to re-create it, but this time I'm looking at adding bcache in the
+middle (backed by an encrypted ssd) to hopefully help with the random I/O
+bits that won't be as fast on disk backed raid5.
 
+Are there best practises in doing this?
 
+Are there issues with the default filesystem options in btrfs?
+
+Do I want -m dup considering it's ultimately backed by raid5/hdd and not
+ssd? (I would think yes, but I've noticed -m dup gets disabled when bcache
+is in the middle, probably because the detection gets foiled).
+
+Do I want to mess with --nodesize or --sectorsize and adjust for ssd write
+block size? (with ext4, I use -b 4096 -E stride=128,stripe-width=128 )
+
+Any specific configuration I ought to do with bcache or mdadm chunk sizes?
+
+Does align-payload look ok?
+cryptsetup luksFormat --align-payload=8192 -s 256 -c aes-xts-plain
+
+Thanks,
+Marc
+
+PS: for reference:
+As discussed in the past, there seems to be a general agreement that dmcrypt
+on top of mdadm is better than mdadm on top of dmcrypt now that dmcrypt is
+multithreaded.
+My current array and encryption look like this.
+
+Currently, I have:
+gargamel:~# mdadm --detail /dev/md8
+/dev/md8:   
+        Version : 1.2
+  Creation Time : Sat Apr 19 23:03:59 2014
+     Raid Level : raid5
+     Array Size : 7813523456 (7451.56 GiB 8001.05 GB)
+  Used Dev Size : 1953380864 (1862.89 GiB 2000.26 GB)
+   Raid Devices : 5
+  Total Devices : 5
+    Persistence : Superblock is persistent
+
+  Intent Bitmap : Internal
+
+    Update Time : Thu Feb 11 08:26:45 2016
+          State : active 
+ Active Devices : 5
+Working Devices : 5
+ Failed Devices : 0
+  Spare Devices : 0
+
+         Layout : left-symmetric
+     Chunk Size : 256K
+
+gargamel:~# cryptsetup luksDump /dev/md8
+LUKS header information for /dev/md8
+
+Version:        1
+Cipher name:    aes
+Cipher mode:    xts-plain64
+Hash spec:      sha1
+Payload offset: 3072
+MK bits:        256
+
+Thanks,
+Marc
 -- 
-Chris Murphy
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+Microsoft is to operating systems ....
+                                      .... what McDonalds is to gourmet cooking
+Home page: http://marc.merlins.org/  

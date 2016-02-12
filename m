@@ -1,28 +1,146 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:34419 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:53174 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750721AbcBAXQg (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 1 Feb 2016 18:16:36 -0500
-Date: Tue, 2 Feb 2016 00:16:21 +0100
+	id S1752446AbcBLNFP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 12 Feb 2016 08:05:15 -0500
+Date: Fri, 12 Feb 2016 14:05:12 +0100
 From: David Sterba <dsterba@suse.cz>
 To: Qu Wenruo <quwenruo@cn.fujitsu.com>
 Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH V7 0/3][PULL REQUEST] Unify 'norecovery' bahavior with
- other filesystems
-Message-ID: <20160201231621.GI31992@twin.jikos.cz>
+Subject: Re: [PATCH V7 1/3] btrfs: Introduce new mount option usebackuproot
+ to replace recovery
+Message-ID: <20160212130512.GG4374@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
 References: <1453170184-22869-1-git-send-email-quwenruo@cn.fujitsu.com>
- <56AAD9DC.90805@cn.fujitsu.com>
+ <1453170184-22869-2-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <56AAD9DC.90805@cn.fujitsu.com>
+In-Reply-To: <1453170184-22869-2-git-send-email-quwenruo@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Jan 29, 2016 at 11:17:48AM +0800, Qu Wenruo wrote:
-> Ping.
-> 
-> Any comment?
-> Or will it be merged into current 4.5?
+On Tue, Jan 19, 2016 at 10:23:02AM +0800, Qu Wenruo wrote:
+> diff --git a/Documentation/filesystems/btrfs.txt b/Documentation/filesystems/btrfs.txt
+> index c772b47..8e22d92 100644
+> --- a/Documentation/filesystems/btrfs.txt
+> +++ b/Documentation/filesystems/btrfs.txt
+> @@ -168,10 +168,13 @@ Options with (*) are default options and will not show in the mount options.
+>    notreelog
+>  	Enable/disable the tree logging used for fsync and O_SYNC writes.
+>  
+> -  recovery
+> -	Enable autorecovery attempts if a bad tree root is found at mount time.
+> -	Currently this scans a list of several previous tree roots and tries to
 
-Apparently not for 4.5, I'm going to revisit that for 4.6.
+We should still mention 'recovery' even if it's obsoleted.
+
+> +  usebackuproot
+> +	Enable attempts to use backup tree roots if a bad tree root is found at
+> +	mount time.
+> +	Currently this scans a list of 4 previous tree roots and tries to
+>  	use the first readable.
+> +	And since the mount option doesn't affect any behavior after mount,
+> +	it won't be shown in mount info.
+>  
+>    rescan_uuid_tree
+>  	Force check and rebuild procedure of the UUID tree. This should not
+> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+> index c5f40dc..47a96a7 100644
+> --- a/fs/btrfs/ctree.h
+> +++ b/fs/btrfs/ctree.h
+> @@ -2241,7 +2241,7 @@ struct btrfs_ioctl_defrag_range_args {
+>  #define BTRFS_MOUNT_ENOSPC_DEBUG	 (1 << 15)
+>  #define BTRFS_MOUNT_AUTO_DEFRAG		(1 << 16)
+>  #define BTRFS_MOUNT_INODE_MAP_CACHE	(1 << 17)
+> -#define BTRFS_MOUNT_RECOVERY		(1 << 18)
+> +#define BTRFS_MOUNT_USEBACKUPROOT	(1 << 18)
+>  #define BTRFS_MOUNT_SKIP_BALANCE	(1 << 19)
+>  #define BTRFS_MOUNT_CHECK_INTEGRITY	(1 << 20)
+>  #define BTRFS_MOUNT_CHECK_INTEGRITY_INCLUDING_EXTENT_DATA (1 << 21)
+> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+> index c67c129..6f16557 100644
+> --- a/fs/btrfs/disk-io.c
+> +++ b/fs/btrfs/disk-io.c
+> @@ -3141,6 +3141,12 @@ retry_root_backup:
+>  
+>  	fs_info->open = 1;
+>  
+> +	/*
+> +	 * backuproot only affect mount behavior, and if open_ctree succeeded,
+> +	 * no need to keep the flag
+> +	 */
+> +	btrfs_clear_opt(fs_info->mount_opt, USEBACKUPROOT);
+> +
+>  	return 0;
+>  
+>  fail_qgroup:
+> @@ -3195,7 +3201,7 @@ fail:
+>  	return err;
+>  
+>  recovery_tree_root:
+> -	if (!btrfs_test_opt(tree_root, RECOVERY))
+> +	if (!btrfs_test_opt(tree_root, USEBACKUPROOT))
+>  		goto fail_tree_roots;
+>  
+>  	free_root_pointers(fs_info, 0);
+> diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+> index 86f7fdc..0842456 100644
+> --- a/fs/btrfs/super.c
+> +++ b/fs/btrfs/super.c
+> @@ -303,7 +303,7 @@ enum {
+>  	Opt_check_integrity_print_mask, Opt_fatal_errors, Opt_rescan_uuid_tree,
+>  	Opt_commit_interval, Opt_barrier, Opt_nodefrag, Opt_nodiscard,
+>  	Opt_noenospc_debug, Opt_noflushoncommit, Opt_acl, Opt_datacow,
+> -	Opt_datasum, Opt_treelog, Opt_noinode_cache,
+> +	Opt_datasum, Opt_treelog, Opt_noinode_cache, Opt_usebackuproot,
+>  #ifdef CONFIG_BTRFS_DEBUG
+>  	Opt_fragment_data, Opt_fragment_metadata, Opt_fragment_all,
+>  #endif
+> @@ -352,7 +352,8 @@ static const match_table_t tokens = {
+>  	{Opt_inode_cache, "inode_cache"},
+>  	{Opt_noinode_cache, "noinode_cache"},
+>  	{Opt_no_space_cache, "nospace_cache"},
+> -	{Opt_recovery, "recovery"},
+> +	{Opt_recovery, "recovery"}, /* deprecated */
+> +	{Opt_usebackuproot, "usebackuproot"},
+>  	{Opt_skip_balance, "skip_balance"},
+>  	{Opt_check_integrity, "check_int"},
+>  	{Opt_check_integrity_including_extent_data, "check_int_data"},
+> @@ -681,8 +682,12 @@ int btrfs_parse_options(struct btrfs_root *root, char *options)
+>  					     "disabling auto defrag");
+>  			break;
+>  		case Opt_recovery:
+> -			btrfs_info(root->fs_info, "enabling auto recovery");
+> -			btrfs_set_opt(info->mount_opt, RECOVERY);
+> +			btrfs_warn(root->fs_info,
+> +				   "'recovery' is deprecated, use 'usebackuproot' instead");
+> +		case Opt_usebackuproot:
+> +			btrfs_info(root->fs_info,
+> +				   "trying to use backup root at mount time");
+> +			btrfs_set_opt(info->mount_opt, USEBACKUPROOT);
+>  			break;
+>  		case Opt_skip_balance:
+>  			btrfs_set_opt(info->mount_opt, SKIP_BALANCE);
+> @@ -1213,8 +1218,8 @@ static int btrfs_show_options(struct seq_file *seq, struct dentry *dentry)
+>  		seq_puts(seq, ",inode_cache");
+>  	if (btrfs_test_opt(root, SKIP_BALANCE))
+>  		seq_puts(seq, ",skip_balance");
+> -	if (btrfs_test_opt(root, RECOVERY))
+> -		seq_puts(seq, ",recovery");
+> +	if (btrfs_test_opt(root, USEBACKUPROOT))
+> +		seq_puts(seq, ",usebackuproot");
+
+We can drop this.
+
+>  #ifdef CONFIG_BTRFS_FS_CHECK_INTEGRITY
+>  	if (btrfs_test_opt(root, CHECK_INTEGRITY_INCLUDING_EXTENT_DATA))
+>  		seq_puts(seq, ",check_int_data");
+> -- 
+> 2.7.0
+> 
+> 
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

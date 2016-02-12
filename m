@@ -1,52 +1,30 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:17709 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751536AbcBJTSz (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 10 Feb 2016 14:18:55 -0500
-Date: Wed, 10 Feb 2016 11:18:48 -0800
-From: "Darrick J. Wong" <darrick.wong@oracle.com>
-To: lsf-pc@lists.linux-foundation.org
-Cc: xfs <xfs@oss.sgi.com>, linux-fsdevel <linux-fsdevel@vger.kernel.org>,
-        linux-ext4 <linux-ext4@vger.kernel.org>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>, ocfs2-devel@oss.oracle.com
-Subject: [LFS/MM TOPIC] fs reflink issues, fs online scrub/check, etc
-Message-ID: <20160210191848.GC6346@birch.djwong.org>
-References: <20160210191715.GB6339@birch.djwong.org>
+Received: from mx2.suse.de ([195.135.220.15]:48549 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752235AbcBLSWK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 12 Feb 2016 13:22:10 -0500
+Date: Fri, 12 Feb 2016 19:22:07 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Anand Jain <anand.jain@oracle.com>
+Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz
+Subject: Re: [PATCH 0/7] Introduce device delete by devid
+Message-ID: <20160212182207.GJ4374@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1444144764-2384-1-git-send-email-anand.jain@oracle.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20160210191715.GB6339@birch.djwong.org>
+In-Reply-To: <1444144764-2384-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-[resend, email exploded, sorry...]
+On Tue, Oct 06, 2015 at 11:19:17PM +0800, Anand Jain wrote:
+> The operation of device replace and device delete follows same steps
+> upto some depths, however they don't share codes.
+> This set of enhancement will help device replace and device delete to
+> share codes.
+> And at the end add support to delete device using devid.
 
-Hi,
-
-I want to discuss a few FS related topics that I haven't already seen on
-the mailing lists:
-
- * Shared pagecache pages for reflinked files (and by extension making dax
-   work with reflink on xfs)
-
- * Providing a simple interface for scrubbing filesystem metadata in the
-   background (the online check thing).  Ideally we'd make it easy to discover
-   what kind of metadata there is to check and provide a simple interface to
-   check the metadata, once discovered.  This is a tricky interface topic
-   since FS design differs pretty widely.
-
- * Rudimentary online repair and rebuilding (xfs) from secondary metadata
-
- * Working out the variances in the btrfs/xfs/ocfs2/nfs reflink implementations
-   and making sure they all get test coverage
-
-I would also like participate in some of the proposed discussions:
-
- * The ext4 summit (and whatever meeting of XFS devs may happen)
-
- * Integrating existing filesystems into pmem, or hallway bofs about designing
-   new filesystems for pmem
-
- * Actually seeing the fs developers (well, everyone!) in person again :)
-
---Darrick
+I'd like to get this rolling again, do you have an updated branch? I'm
+not sure what's the latest status of the 'number of devices vs raid
+constraints' problem. Qu did some patches, I hope either of you can let
+me know. Thanks.

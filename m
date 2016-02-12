@@ -1,60 +1,41 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from magic.merlins.org ([209.81.13.136]:46398 "EHLO
-	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750898AbcBLR0v (ORCPT
+Received: from mail-wm0-f45.google.com ([74.125.82.45]:34031 "EHLO
+	mail-wm0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750707AbcBLTPY (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 12 Feb 2016 12:26:51 -0500
-Date: Fri, 12 Feb 2016 09:26:28 -0800
-From: Marc MERLIN <marc@merlins.org>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Cc: David Sterba <dsterba@suse.cz>,
-        Btrfs mailing list <linux-btrfs@vger.kernel.org>
-Subject: Re: btrfs-image failure (btrfs-tools 4.4)
-Message-ID: <20160212172628.GJ2763@merlins.org>
-References: <20160123170354.GA10113@merlins.org> <56A57C59.1040203@cn.fujitsu.com> <20160125205500.GK23751@merlins.org> <56A6C5CB.5060406@cn.fujitsu.com> <20160211063132.GX13969@merlins.org> <56BC355F.1080305@cn.fujitsu.com> <20160211150947.GY13969@merlins.org> <20160211151339.GZ13969@merlins.org> <56BD2847.8070403@cn.fujitsu.com>
+	Fri, 12 Feb 2016 14:15:24 -0500
+Received: by mail-wm0-f45.google.com with SMTP id 128so74808836wmz.1
+        for <linux-btrfs@vger.kernel.org>; Fri, 12 Feb 2016 11:15:23 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <56BD2847.8070403@cn.fujitsu.com>
+In-Reply-To: <20160212032226.GA10542@localhost.localdomain>
+References: <CABXGCsOrgnvE=qbftu=7OuJenq7Vw6HzM9B86DLT4xJGLmqbMQ@mail.gmail.com>
+ <CAJCQCtS3MsrF43PnueK3-4kVLGfTNGjN4Tv-c=Jo1jVWYL7ksw@mail.gmail.com>
+ <CABXGCsOAyYa96E965ruKp9evCY3FrCdBr-GTPvCws5VqmjUC5Q@mail.gmail.com>
+ <CAJCQCtRjCixev=Mt=jaL1ZytYaxj7Fa-AViLYGB-ALufyL98VA@mail.gmail.com>
+ <CAJCQCtRtVjyjvSfT=BCZZwfaSvbD4YVxEBezfAx+-q7cwMHmRQ@mail.gmail.com>
+ <CABXGCsNivrLgTEE+HZOLHXA-kpLVQOUv9L_nTw96nvy+DHodZg@mail.gmail.com>
+ <CAJCQCtTrcnwvumgt-bOx+9wX+f50S9ja5rDrnYAsuuN1aDTsZA@mail.gmail.com>
+ <20160211191741.GA4762@localhost.localdomain> <CABXGCsPN3MOLkU68gpw=TsnZLODEkYZ66ZHgUxMyeqbdNME9Sw@mail.gmail.com>
+ <20160212032226.GA10542@localhost.localdomain>
+From: =?UTF-8?B?0JzQuNGF0LDQuNC7INCT0LDQstGA0LjQu9C+0LI=?=
+	<mikhail.v.gavrilov@gmail.com>
+Date: Sat, 13 Feb 2016 00:15:08 +0500
+Message-ID: <CABXGCsNjHq4M8TBibeWQLyK+Of0cu++P3QQ=+e=TUuZjaPMLtA@mail.gmail.com>
+Subject: Re: task btrfs-cleaner:770 blocked for more than 120 seconds.
+To: bo.li.liu@oracle.com
+Cc: Chris Murphy <lists@colorremedies.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Feb 12, 2016 at 08:33:11AM +0800, Qu Wenruo wrote:
-> There is still a last chance.
-> 
-> If btrfsck still report original error about "bad file extent" in root: 
->  45851/45852/...
-> Btrfs-debug-tree may provide useful info by dumping only that root.
-> 
-> # btrfs-debug-tree -t 45851
-> 
-> But the problem is, there is no filename fuzz option.
-> You need to mask all the filenames in INODE_REF/DIR_ITEM/DIR_INDEX by 
-> script, or just grep the affected inode info following the pattern "key 
-> (<INODE_NUM>".
-> 
-> At least this should tell us what's the problem and we can check 
-> manually to determine if it's fixable.
+2016-02-12 8:22 GMT+05:00 Liu Bo <bo.li.liu@oracle.com>:
+> You can try it on your 4.2.3 kernel or the latest 4.5, but I guess it
+> doesn't not fix the real deadlock you're hitting...
 
-Mmmh, so the fsck is looking a bit worse now, here is the output:
-http://marc.merlins.org/tmp/ggm-broken-ds1-fsck.txt
+It means it is not final patch? you continue investigate problem? Can
+I help you?
 
-I'm not super sure what inode I should use for debug tree. Can you suggest
-one?
-
-I ran the dump 
-gargamel:~# btrfs-image -s -c 9 /dev/mapper/dshelf1old
-/mnt/dshelf1/ds1old.dump
-Error adding space cache blocks -5
-Error flushing pending -5
-create failed (Success)
-
-and a du every so often showed the file go to 9.3GB before btrfs-image
-deleted it:
-9.3G    /mnt/dshelf1/ds1old.dump
-
-Marc
--- 
-"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
-Microsoft is to operating systems ....
-                                      .... what McDonalds is to gourmet cooking
-Home page: http://marc.merlins.org/  
+--
+Best Regards,
+Mike Gavrilov.

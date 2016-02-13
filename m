@@ -1,47 +1,172 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:41994 "EHLO
+Received: from aserp1040.oracle.com ([141.146.126.69]:41928 "EHLO
 	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751217AbcBMCCP (ORCPT
+	with ESMTP id S1751137AbcBMCCA (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 12 Feb 2016 21:02:15 -0500
+	Fri, 12 Feb 2016 21:02:00 -0500
 From: Anand Jain <anand.jain@oracle.com>
 To: dsterba@suse.cz
 Cc: linux-btrfs@vger.kernel.org
-Subject: [PATCH 13/13] btrfs: optimize check for stale device
-Date: Sat, 13 Feb 2016 10:01:40 +0800
-Message-Id: <1455328900-1476-14-git-send-email-anand.jain@oracle.com>
+Subject: [PATCH 02/13] btrfs: create a helper function to read the disk super
+Date: Sat, 13 Feb 2016 10:01:29 +0800
+Message-Id: <1455328900-1476-3-git-send-email-anand.jain@oracle.com>
 In-Reply-To: <1455328900-1476-1-git-send-email-anand.jain@oracle.com>
 References: <1455328900-1476-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Optimize check for stale device to only be checked when there is device
-added or changed. If there is no update to the device, there is no need
-to call btrfs_free_stale_device().
+A part of code from btrfs_scan_one_device() is moved to a new function
+btrfs_read_disk_super(), so that former function looks cleaner. (In this
+process it also moves the code which ensures null terminating label). So
+this creates easy opportunity to merge various duplicate codes on read
+disk super. Earlier attempt to merge duplicate codes highlighted that
+there were some issues for which there are duplicate codes (to read disk
+super), however it was not clear what was the issue. So until we figure
+that out, its better to keep them in a separate functions.
 
 Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
- This is good to go. The there were some stale devices while testing
- and now I have confirmed it wasn't due to this. Sorry that I was bit
- jumpy on concluding this patch as bad.
-
- fs/btrfs/volumes.c | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+ fs/btrfs/volumes.c | 87 ++++++++++++++++++++++++++++++++----------------------
+ 1 file changed, 52 insertions(+), 35 deletions(-)
 
 diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index f47bd0b..b7cbb31 100644
+index 6e0e439..9860b10 100644
 --- a/fs/btrfs/volumes.c
 +++ b/fs/btrfs/volumes.c
-@@ -701,7 +701,8 @@ static noinline int device_list_add(const char *path,
- 	 * if there is new btrfs on an already registered device,
- 	 * then remove the stale device entry.
- 	 */
--	btrfs_free_stale_device(device);
-+	if (ret > 0)
-+		btrfs_free_stale_device(device);
+@@ -988,6 +988,56 @@ int btrfs_open_devices(struct btrfs_fs_devices *fs_devices,
+ 	return ret;
+ }
  
- 	*fs_devices_ret = fs_devices;
++void btrfs_release_disk_super(struct page *page)
++{
++	kunmap(page);
++	page_cache_release(page);
++}
++
++int btrfs_read_disk_super(struct block_device *bdev, u64 bytenr,
++		struct page **page, struct btrfs_super_block **disk_super)
++{
++	void *p;
++	pgoff_t index;
++
++	/* make sure our super fits in the device */
++	if (bytenr + PAGE_CACHE_SIZE >= i_size_read(bdev->bd_inode))
++		return 1;
++
++	/* make sure our super fits in the page */
++	if (sizeof(**disk_super) > PAGE_CACHE_SIZE)
++		return 1;
++
++	/* make sure our super doesn't straddle pages on disk */
++	index = bytenr >> PAGE_CACHE_SHIFT;
++	if ((bytenr + sizeof(**disk_super) - 1) >> PAGE_CACHE_SHIFT != index)
++		return 1;
++
++	/* pull in the page with our super */
++	*page = read_cache_page_gfp(bdev->bd_inode->i_mapping,
++				   index, GFP_NOFS);
++
++	if (IS_ERR_OR_NULL(*page))
++		return 1;
++
++	p = kmap(*page);
++
++	/* align our pointer to the offset of the super block */
++	*disk_super = p + (bytenr & ~PAGE_CACHE_MASK);
++
++	if (btrfs_super_bytenr(*disk_super) != bytenr ||
++	    btrfs_super_magic(*disk_super) != BTRFS_MAGIC) {
++		btrfs_release_disk_super(*page);
++		return 1;
++	}
++
++	if ((*disk_super)->label[0] &&
++		(*disk_super)->label[BTRFS_LABEL_SIZE - 1])
++		(*disk_super)->label[BTRFS_LABEL_SIZE - 1] = '\0';
++
++	return 0;
++}
++
+ /*
+  * Look for a btrfs signature on a device. This may be called out of the mount path
+  * and we are not allowed to call set_blocksize during the scan. The superblock
+@@ -999,13 +1049,11 @@ int btrfs_scan_one_device(const char *path, fmode_t flags, void *holder,
+ 	struct btrfs_super_block *disk_super;
+ 	struct block_device *bdev;
+ 	struct page *page;
+-	void *p;
+ 	int ret = -EINVAL;
+ 	u64 devid;
+ 	u64 transid;
+ 	u64 total_devices;
+ 	u64 bytenr;
+-	pgoff_t index;
  
+ 	/*
+ 	 * we would like to check all the supers, but that would make
+@@ -1018,41 +1066,14 @@ int btrfs_scan_one_device(const char *path, fmode_t flags, void *holder,
+ 	mutex_lock(&uuid_mutex);
+ 
+ 	bdev = blkdev_get_by_path(path, flags, holder);
+-
+ 	if (IS_ERR(bdev)) {
+ 		ret = PTR_ERR(bdev);
+ 		goto error;
+ 	}
+ 
+-	/* make sure our super fits in the device */
+-	if (bytenr + PAGE_CACHE_SIZE >= i_size_read(bdev->bd_inode))
++	if (btrfs_read_disk_super(bdev, bytenr, &page, &disk_super))
+ 		goto error_bdev_put;
+ 
+-	/* make sure our super fits in the page */
+-	if (sizeof(*disk_super) > PAGE_CACHE_SIZE)
+-		goto error_bdev_put;
+-
+-	/* make sure our super doesn't straddle pages on disk */
+-	index = bytenr >> PAGE_CACHE_SHIFT;
+-	if ((bytenr + sizeof(*disk_super) - 1) >> PAGE_CACHE_SHIFT != index)
+-		goto error_bdev_put;
+-
+-	/* pull in the page with our super */
+-	page = read_cache_page_gfp(bdev->bd_inode->i_mapping,
+-				   index, GFP_NOFS);
+-
+-	if (IS_ERR_OR_NULL(page))
+-		goto error_bdev_put;
+-
+-	p = kmap(page);
+-
+-	/* align our pointer to the offset of the super block */
+-	disk_super = p + (bytenr & ~PAGE_CACHE_MASK);
+-
+-	if (btrfs_super_bytenr(disk_super) != bytenr ||
+-	    btrfs_super_magic(disk_super) != BTRFS_MAGIC)
+-		goto error_unmap;
+-
+ 	devid = btrfs_stack_device_id(&disk_super->dev_item);
+ 	transid = btrfs_super_generation(disk_super);
+ 	total_devices = btrfs_super_num_devices(disk_super);
+@@ -1060,8 +1081,6 @@ int btrfs_scan_one_device(const char *path, fmode_t flags, void *holder,
+ 	ret = device_list_add(path, disk_super, devid, fs_devices_ret);
+ 	if (ret > 0) {
+ 		if (disk_super->label[0]) {
+-			if (disk_super->label[BTRFS_LABEL_SIZE - 1])
+-				disk_super->label[BTRFS_LABEL_SIZE - 1] = '\0';
+ 			printk(KERN_INFO "BTRFS: device label %s ", disk_super->label);
+ 		} else {
+ 			printk(KERN_INFO "BTRFS: device fsid %pU ", disk_super->fsid);
+@@ -1073,9 +1092,7 @@ int btrfs_scan_one_device(const char *path, fmode_t flags, void *holder,
+ 	if (!ret && fs_devices_ret)
+ 		(*fs_devices_ret)->total_devices = total_devices;
+ 
+-error_unmap:
+-	kunmap(page);
+-	page_cache_release(page);
++	btrfs_release_disk_super(page);
+ 
+ error_bdev_put:
+ 	blkdev_put(bdev, flags);
 -- 
 2.7.0
 

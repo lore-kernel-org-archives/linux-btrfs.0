@@ -1,49 +1,51 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:45787 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1425942AbcBRJxV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 18 Feb 2016 04:53:21 -0500
-Date: Thu, 18 Feb 2016 10:53:14 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Anand Jain <anand.jain@oracle.com>
-Cc: dsterba@suse.cz, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v4 12/13] btrfs: introduce device delete by devid
-Message-ID: <20160218095314.GX4374@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
+Received: from userp1040.oracle.com ([156.151.31.81]:43056 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751118AbcBMCB6 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 12 Feb 2016 21:01:58 -0500
+From: Anand Jain <anand.jain@oracle.com>
+To: dsterba@suse.cz
+Cc: linux-btrfs@vger.kernel.org
+Subject: [PATCH v2 01/13] btrfs: pass the error code to the btrfs_std_error and log ret
+Date: Sat, 13 Feb 2016 10:01:28 +0800
+Message-Id: <1455328900-1476-2-git-send-email-anand.jain@oracle.com>
+In-Reply-To: <1455328900-1476-1-git-send-email-anand.jain@oracle.com>
 References: <1455328900-1476-1-git-send-email-anand.jain@oracle.com>
- <1455328900-1476-13-git-send-email-anand.jain@oracle.com>
- <20160217104911.GS4374@twin.jikos.cz>
- <56C56BCE.3020009@oracle.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <56C56BCE.3020009@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Feb 18, 2016 at 02:59:26PM +0800, Anand Jain wrote:
-> #define BTRFS_PATH_NAME_MAX 4087
-> #define BTRFS_SUBVOL_NAME_MAX 4039
-> 
->   I am fine with using BTRFS_SUBVOL_NAME_MAX for now. But theoretical
->   anomaly is that add-device code path will use BTRFS_PATH_NAME_MAX and
->   delete device will use BTRFS_SUBVOL_NAME_MAX.. its only theoretical
->   as most of the devices path are well below 4k IMO. So its a good
->   trade off than other solutions like.. (just for the understanding),
-> 
->     - Update add device code as well to use btrfs_ioctl_vol_args_v2
->       Which means we need to introduce BTRFS_IOC_ADD_DEV_V2 (system
->       PATH_MAX is 4096).
-> 
->     OR
-> 
->     - Create new btrfs_ioctl_vol_args_v3 with name[BTRFS_PATH_NAME_MAX+1]
->     (instead of name[BTRFS_SUBVOL_NAME_MAX+1]) and BTRFS_IOC_RM_DEV_V2
->     will be the only consumer of btrfs_ioctl_vol_args_v3 as of now.
+This patch will log return value of add/del_qgroup_relation() and pass the
+err code of btrfs_run_qgroups to the btrfs_std_error().
 
-I'd rather not introduce any new structures or ioctls, the problem seems
-to be marginal. As mentioned, paths are way shorter than 4k. A symlink
-can be used as a workaround. We can document that.
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
+---
+v2: fix the forgotten git commit amend, to take in compile fail, sorry
 
-The use of BTRFS_SUBVOL_NAME_MAX is confusing for devices, we can do
+ fs/btrfs/ioctl.c | 7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
 
-#define BTRFS_DEVICE_PATH_MAX	BTRFS_SUBVOL_NAME_MAX
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 293ecd0..e54a4e9 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -4841,10 +4841,15 @@ static long btrfs_ioctl_qgroup_assign(struct file *file, void __user *arg)
+ 						sa->src, sa->dst);
+ 	}
+ 
++	if (ret)
++		btrfs_err(root->fs_info,
++			"add/del qgroup relation failed, assign %llu ret %d",
++			sa->assign, ret);
++
+ 	/* update qgroup status and info */
+ 	err = btrfs_run_qgroups(trans, root->fs_info);
+ 	if (err < 0)
+-		btrfs_std_error(root->fs_info, ret,
++		btrfs_std_error(root->fs_info, err,
+ 			    "failed to update qgroup status and info\n");
+ 	err = btrfs_end_transaction(trans, root);
+ 	if (err && !ret)
+-- 
+2.7.0
+

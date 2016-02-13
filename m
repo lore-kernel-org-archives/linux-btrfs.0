@@ -1,51 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:43056 "EHLO
+Received: from userp1040.oracle.com ([156.151.31.81]:43080 "EHLO
 	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751118AbcBMCB6 (ORCPT
+	with ESMTP id S1751164AbcBMCCC (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 12 Feb 2016 21:01:58 -0500
+	Fri, 12 Feb 2016 21:02:02 -0500
 From: Anand Jain <anand.jain@oracle.com>
 To: dsterba@suse.cz
 Cc: linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 01/13] btrfs: pass the error code to the btrfs_std_error and log ret
-Date: Sat, 13 Feb 2016 10:01:28 +0800
-Message-Id: <1455328900-1476-2-git-send-email-anand.jain@oracle.com>
+Subject: [PATCH v2 03/13] btrfs: maintain consistency in logging to help debugging
+Date: Sat, 13 Feb 2016 10:01:30 +0800
+Message-Id: <1455328900-1476-4-git-send-email-anand.jain@oracle.com>
 In-Reply-To: <1455328900-1476-1-git-send-email-anand.jain@oracle.com>
 References: <1455328900-1476-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This patch will log return value of add/del_qgroup_relation() and pass the
-err code of btrfs_run_qgroups to the btrfs_std_error().
+Optional Label may or may not be set, or it might be set at some time
+later. However while debugging to search through the kernel logs the
+scripts would need the logs to be consistent, so logs search key words
+shouldn't depend on the optional variables, instead fsid is better.
 
 Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
-v2: fix the forgotten git commit amend, to take in compile fail, sorry
+v2: fix commit log
 
- fs/btrfs/ioctl.c | 7 ++++++-
- 1 file changed, 6 insertions(+), 1 deletion(-)
+ fs/btrfs/volumes.c | 9 ++-------
+ 1 file changed, 2 insertions(+), 7 deletions(-)
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 293ecd0..e54a4e9 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -4841,10 +4841,15 @@ static long btrfs_ioctl_qgroup_assign(struct file *file, void __user *arg)
- 						sa->src, sa->dst);
- 	}
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 9860b10..36108e9 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -1080,13 +1080,8 @@ int btrfs_scan_one_device(const char *path, fmode_t flags, void *holder,
  
-+	if (ret)
-+		btrfs_err(root->fs_info,
-+			"add/del qgroup relation failed, assign %llu ret %d",
-+			sa->assign, ret);
-+
- 	/* update qgroup status and info */
- 	err = btrfs_run_qgroups(trans, root->fs_info);
- 	if (err < 0)
--		btrfs_std_error(root->fs_info, ret,
-+		btrfs_std_error(root->fs_info, err,
- 			    "failed to update qgroup status and info\n");
- 	err = btrfs_end_transaction(trans, root);
- 	if (err && !ret)
+ 	ret = device_list_add(path, disk_super, devid, fs_devices_ret);
+ 	if (ret > 0) {
+-		if (disk_super->label[0]) {
+-			printk(KERN_INFO "BTRFS: device label %s ", disk_super->label);
+-		} else {
+-			printk(KERN_INFO "BTRFS: device fsid %pU ", disk_super->fsid);
+-		}
+-
+-		printk(KERN_CONT "devid %llu transid %llu %s\n", devid, transid, path);
++		printk(KERN_INFO "BTRFS: device fsid %pU devid %llu transid %llu %s\n",
++						disk_super->fsid, devid, transid, path);
+ 		ret = 0;
+ 	}
+ 	if (!ret && fs_devices_ret)
 -- 
 2.7.0
 

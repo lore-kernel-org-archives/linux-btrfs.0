@@ -1,63 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:43082 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751137AbcBMCCC (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:41958 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751182AbcBMCCE (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 12 Feb 2016 21:02:02 -0500
+	Fri, 12 Feb 2016 21:02:04 -0500
 From: Anand Jain <anand.jain@oracle.com>
 To: dsterba@suse.cz
 Cc: linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 04/13] btrfs: device path change must be logged
-Date: Sat, 13 Feb 2016 10:01:31 +0800
-Message-Id: <1455328900-1476-5-git-send-email-anand.jain@oracle.com>
+Subject: [PATCH 05/13] Btrfs: fix fs logging for multi device
+Date: Sat, 13 Feb 2016 10:01:32 +0800
+Message-Id: <1455328900-1476-6-git-send-email-anand.jain@oracle.com>
 In-Reply-To: <1455328900-1476-1-git-send-email-anand.jain@oracle.com>
 References: <1455328900-1476-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
->From the issue diagnosable point of view, log if the device path is changed.
+In case of multi device btrfs fs, using one of device for
+the logging purpose it quite confusing, instead use the
+fsid. FSID is bit long, but the device path can be long
+as well in some cases.
 
 Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
- V2: Accepts David's review comment and adds a new ret value 2
-     for device_list_add() and based on that the caller function
-     would indicate if the path is overwritten (thanks David).
+ fs/btrfs/super.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
- fs/btrfs/volumes.c | 7 +++++--
- 1 file changed, 5 insertions(+), 2 deletions(-)
-
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 36108e9..76133e0 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -585,6 +585,7 @@ void btrfs_free_stale_device(struct btrfs_device *cur_dev)
-  *
-  * Returns:
-  * 1   - first time device is seen
-+ * 2   - device already known but now is overwritten with new path
-  * 0   - device already known
-  * < 0 - error
-  */
-@@ -684,6 +685,7 @@ static noinline int device_list_add(const char *path,
- 			fs_devices->missing_devices--;
- 			device->missing = 0;
- 		}
-+		ret = 2;
- 	}
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index bf75200..f0bbfa9 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -190,12 +190,12 @@ static const char * const logtypes[] = {
  
- 	/*
-@@ -1080,8 +1082,9 @@ int btrfs_scan_one_device(const char *path, fmode_t flags, void *holder,
+ void btrfs_printk(const struct btrfs_fs_info *fs_info, const char *fmt, ...)
+ {
+-	struct super_block *sb = fs_info->sb;
+ 	char lvl[4];
+ 	struct va_format vaf;
+ 	va_list args;
+ 	const char *type = logtypes[4];
+ 	int kern_level;
++	struct btrfs_fs_devices *fs_devs = fs_info->fs_devices;
  
- 	ret = device_list_add(path, disk_super, devid, fs_devices_ret);
- 	if (ret > 0) {
--		printk(KERN_INFO "BTRFS: device fsid %pU devid %llu transid %llu %s\n",
--						disk_super->fsid, devid, transid, path);
-+		printk(KERN_INFO "BTRFS: device fsid %pU devid %llu transid %llu %s %s\n",
-+						disk_super->fsid, devid, transid, path,
-+						ret == 2 ? "(overwritten)":"");
- 		ret = 0;
- 	}
- 	if (!ret && fs_devices_ret)
+ 	va_start(args, fmt);
+ 
+@@ -212,7 +212,7 @@ void btrfs_printk(const struct btrfs_fs_info *fs_info, const char *fmt, ...)
+ 	vaf.fmt = fmt;
+ 	vaf.va = &args;
+ 
+-	printk("%sBTRFS %s (device %s): %pV\n", lvl, type, sb->s_id, &vaf);
++	printk("%sBTRFS: %pU %s: %pV\n", lvl, fs_devs->fsid, type, &vaf);
+ 
+ 	va_end(args);
+ }
 -- 
 2.7.0
 

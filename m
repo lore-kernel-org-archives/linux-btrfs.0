@@ -1,59 +1,112 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:41910 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751118AbcBMCB5 (ORCPT
+Received: from userp1040.oracle.com ([156.151.31.81]:43088 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751121AbcBMCCF (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 12 Feb 2016 21:01:57 -0500
+	Fri, 12 Feb 2016 21:02:05 -0500
 From: Anand Jain <anand.jain@oracle.com>
 To: dsterba@suse.cz
 Cc: linux-btrfs@vger.kernel.org
-Subject: [PATCH resend 00/13] misc patches plus Introduce device delete by devid
-Date: Sat, 13 Feb 2016 10:01:27 +0800
-Message-Id: <1455328900-1476-1-git-send-email-anand.jain@oracle.com>
+Subject: [PATCH v2 06/13] btrfs: create helper function __check_raid_min_devices()
+Date: Sat, 13 Feb 2016 10:01:33 +0800
+Message-Id: <1455328900-1476-7-git-send-email-anand.jain@oracle.com>
+In-Reply-To: <1455328900-1476-1-git-send-email-anand.jain@oracle.com>
+References: <1455328900-1476-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Dave,
+move a section of btrfs_rm_device() code to check for min number of the
+devices into the function __check_raid_min_devices()
 
- These patches are based on top of your for-next.
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
+---
+v2: commit update and title renamed from
+    Btrfs: move check for min number of devices to a function
+ fs/btrfs/volumes.c | 51 ++++++++++++++++++++++++++++++++-------------------
+ 1 file changed, 32 insertions(+), 19 deletions(-)
 
-Patch 1-5 are miscellaneous fixes which were sent before as independent
-patch, they aren't related to the patch set 'Introduce device delete by
-devid' but they are included here as the patch apply may fail without
-them.
-
-Patch 6-12 are related to 'Introduce device delete by devid'
-
-Patch 13 is device related which is good to be integrated. Earlier
-it was withdrawn wrongly after seeing some stale device in a test
-environment. But later it was found that this patch wasn't the reason
-for the stale devices and this fix is good.
-
-Thanks, Anand
-
-Anand Jain (13):
-  btrfs: pass the error code to the btrfs_std_error and log ret
-  btrfs: create a helper function to read the disk super
-  btrfs: maintain consistency in logging to help debugging
-  btrfs: device path change must be logged
-  Btrfs: fix fs logging for multi device
-  btrfs: create helper function __check_raid_min_devices()
-  btrfs: clean up and optimize __check_raid_min_device()
-  btrfs: create helper btrfs_find_device_by_user_input()
-  btrfs: make use of btrfs_find_device_by_user_input()
-  btrfs: enhance btrfs_find_device_by_user_input() to check device path
-  btrfs: make use of btrfs_scratch_superblocks() in btrfs_rm_device()
-  btrfs: introduce device delete by devid
-  btrfs: optimize check for stale device
-
- fs/btrfs/dev-replace.c     |  28 +---
- fs/btrfs/ioctl.c           |  65 +++++++++-
- fs/btrfs/super.c           |   4 +-
- fs/btrfs/volumes.c         | 316 ++++++++++++++++++++-------------------------
- fs/btrfs/volumes.h         |   5 +-
- include/uapi/linux/btrfs.h |  14 +-
- 6 files changed, 226 insertions(+), 206 deletions(-)
-
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 76133e0..506d1fd 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -1703,23 +1703,20 @@ out:
+ 	return ret;
+ }
+ 
+-int btrfs_rm_device(struct btrfs_root *root, char *device_path)
++static int __check_raid_min_devices(struct btrfs_root *root)
+ {
+-	struct btrfs_device *device;
+-	struct btrfs_device *next_device;
+-	struct block_device *bdev;
+-	struct buffer_head *bh = NULL;
+-	struct btrfs_super_block *disk_super;
+-	struct btrfs_fs_devices *cur_devices;
+ 	u64 all_avail;
+-	u64 devid;
+ 	u64 num_devices;
+-	u8 *dev_uuid;
+ 	unsigned seq;
+ 	int ret = 0;
+-	bool clear_super = false;
+ 
+-	mutex_lock(&uuid_mutex);
++	num_devices = root->fs_info->fs_devices->num_devices;
++	btrfs_dev_replace_lock(&root->fs_info->dev_replace);
++	if (btrfs_dev_replace_is_ongoing(&root->fs_info->dev_replace)) {
++		WARN_ON(num_devices < 1);
++		num_devices--;
++	}
++	btrfs_dev_replace_unlock(&root->fs_info->dev_replace);
+ 
+ 	do {
+ 		seq = read_seqbegin(&root->fs_info->profiles_lock);
+@@ -1729,14 +1726,6 @@ int btrfs_rm_device(struct btrfs_root *root, char *device_path)
+ 			    root->fs_info->avail_metadata_alloc_bits;
+ 	} while (read_seqretry(&root->fs_info->profiles_lock, seq));
+ 
+-	num_devices = root->fs_info->fs_devices->num_devices;
+-	btrfs_dev_replace_lock(&root->fs_info->dev_replace);
+-	if (btrfs_dev_replace_is_ongoing(&root->fs_info->dev_replace)) {
+-		WARN_ON(num_devices < 1);
+-		num_devices--;
+-	}
+-	btrfs_dev_replace_unlock(&root->fs_info->dev_replace);
+-
+ 	if ((all_avail & BTRFS_BLOCK_GROUP_RAID10) && num_devices <= 4) {
+ 		ret = BTRFS_ERROR_DEV_RAID10_MIN_NOT_MET;
+ 		goto out;
+@@ -1758,6 +1747,30 @@ int btrfs_rm_device(struct btrfs_root *root, char *device_path)
+ 		goto out;
+ 	}
+ 
++out:
++	return ret;
++}
++
++int btrfs_rm_device(struct btrfs_root *root, char *device_path)
++{
++	struct btrfs_device *device;
++	struct btrfs_device *next_device;
++	struct block_device *bdev;
++	struct buffer_head *bh = NULL;
++	struct btrfs_super_block *disk_super;
++	struct btrfs_fs_devices *cur_devices;
++	u64 devid;
++	u64 num_devices;
++	u8 *dev_uuid;
++	int ret = 0;
++	bool clear_super = false;
++
++	mutex_lock(&uuid_mutex);
++
++	ret = __check_raid_min_devices(root);
++	if (ret)
++		goto out;
++
+ 	if (strcmp(device_path, "missing") == 0) {
+ 		struct list_head *devices;
+ 		struct btrfs_device *tmp;
 -- 
 2.7.0
 

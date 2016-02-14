@@ -1,48 +1,67 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lf0-f48.google.com ([209.85.215.48]:33117 "EHLO
-	mail-lf0-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751311AbcBNLV6 (ORCPT
+Received: from magic.merlins.org ([209.81.13.136]:39186 "EHLO
+	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751317AbcBNR1X (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 14 Feb 2016 06:21:58 -0500
-Received: by mail-lf0-f48.google.com with SMTP id m1so74695164lfg.0
-        for <linux-btrfs@vger.kernel.org>; Sun, 14 Feb 2016 03:21:57 -0800 (PST)
+	Sun, 14 Feb 2016 12:27:23 -0500
+Date: Sun, 14 Feb 2016 09:26:59 -0800
+From: Marc MERLIN <marc@merlins.org>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: David Sterba <dsterba@suse.cz>,
+        Btrfs mailing list <linux-btrfs@vger.kernel.org>
+Subject: Re: btrfs-image failure (btrfs-tools 4.4)
+Message-ID: <20160214172659.GD4115@merlins.org>
+References: <20160123170354.GA10113@merlins.org> <56A57C59.1040203@cn.fujitsu.com> <20160125205500.GK23751@merlins.org> <56A6C5CB.5060406@cn.fujitsu.com> <20160211063132.GX13969@merlins.org> <56BC355F.1080305@cn.fujitsu.com> <20160211150947.GY13969@merlins.org> <20160211151339.GZ13969@merlins.org> <56BD2847.8070403@cn.fujitsu.com> <20160212172628.GJ2763@merlins.org>
 MIME-Version: 1.0
-In-Reply-To: <loom.20160214T072657-687@post.gmane.org>
-References: <20160207182841.0d749ea7@redPill>
-	<CAPmG0jaRphE4jWi4aGUk_tV2OYyddVUXjwcNtuN+A97PTWtYVA@mail.gmail.com>
-	<loom.20160214T072657-687@post.gmane.org>
-Date: Sun, 14 Feb 2016 12:21:56 +0100
-Message-ID: <CAPmG0jYL_No0JU=NuT7gZ1SVdNOmBHFZnatboORyx5kdbQ3aFg@mail.gmail.com>
-Subject: Re: One disc of 3-disc btrfs-raid5 failed - files only partially readable
-From: Henk Slager <eye1tm@gmail.com>
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20160212172628.GJ2763@merlins.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
->> > Do you think there is still a chance to recover those files?
->>
->> You can use  btrfs restore  to get files off a damaged fs.
->
-> This however does work - thank you!
-> Now since I'm a bit short on disc space, can I remove the disc that
-> previously disappeared (and thus doesn't have all the
-> data) from the RAID, format it and run btrfs rescue on the degraded array,
-> saving the rescued data to the now free disc?
+On Fri, Feb 12, 2016 at 09:26:28AM -0800, Marc MERLIN wrote:
+> On Fri, Feb 12, 2016 at 08:33:11AM +0800, Qu Wenruo wrote:
+> > There is still a last chance.
+> > 
+> > If btrfsck still report original error about "bad file extent" in root: 
+> >  45851/45852/...
+> > Btrfs-debug-tree may provide useful info by dumping only that root.
+> > 
+> > # btrfs-debug-tree -t 45851
+> > 
+> > But the problem is, there is no filename fuzz option.
+> > You need to mask all the filenames in INODE_REF/DIR_ITEM/DIR_INDEX by 
+> > script, or just grep the affected inode info following the pattern "key 
+> > (<INODE_NUM>".
+> > 
+> > At least this should tell us what's the problem and we can check 
+> > manually to determine if it's fixable.
+> 
+> Mmmh, so the fsck is looking a bit worse now, here is the output:
+> http://marc.merlins.org/tmp/ggm-broken-ds1-fsck.txt
+> 
+> I'm not super sure what inode I should use for debug tree. Can you suggest
+> one?
+> 
+> I ran the dump 
+> gargamel:~# btrfs-image -s -c 9 /dev/mapper/dshelf1old
+> /mnt/dshelf1/ds1old.dump
+> Error adding space cache blocks -5
+> Error flushing pending -5
+> create failed (Success)
+> 
+> and a du every so often showed the file go to 9.3GB before btrfs-image
+> deleted it:
+> 9.3G    /mnt/dshelf1/ds1old.dump
 
-In theory   btrfs restore   should be able to read files from
-(unmounted) /dev/sdb (devid 2) + /dev/sdc (devid 3).
-The kernel code should still be able to mount devid 2 + devid 3 in
-degraded mode, but   btrfs restore  needs unmounted fs and I am not
-sure if userspace tools can also decode raid5 degraded well enough.
-For a single device, so non-raid profiles, it might be different.
+So I'm at a point where I need to delete this filesystem. I believe it'll be
+monday morning soon on your side of the world :) 
+Can you let me know if there is anything else I can/should get before I wipe
+it?
 
-lf you unplug /dev/sda (devid 1) you can dry-run  btrfs restore -v -D
-<some_path>
-and see if it would work.
-
-If not, maybe first save the files that have csum errors with restore
-(all 3 discs connected) to other storage and then delete the files
-from the normally mounted 3 discs raid5 array and then do a normal
-copy from degraded,ro mounted 2 disc to the newly formatted /dev/sda.
-Hopefully there's enough space in total.
+Thanks,
+Marc
+-- 
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+Microsoft is to operating systems ....
+                                      .... what McDonalds is to gourmet cooking
+Home page: http://marc.merlins.org/  

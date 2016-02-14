@@ -1,61 +1,89 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from magic.merlins.org ([209.81.13.136]:40892 "EHLO
-	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751447AbcBNV1v (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:25854 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751430AbcBNVcg (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 14 Feb 2016 16:27:51 -0500
-Date: Sun, 14 Feb 2016 13:27:30 -0800
-From: Marc MERLIN <marc@merlins.org>
-To: Chris Murphy <lists@colorremedies.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Subject: Re: btrfs on top of bcache on top of dmcrypt on top of md raid5
-Message-ID: <20160214212730.GG4115@merlins.org>
-References: <20160212160441.GH2763@merlins.org> <CAJCQCtT6P15w-uhoYSb038-UJk+8ggpEF0D84CzJt2Ue_ZCaeA@mail.gmail.com>
+	Sun, 14 Feb 2016 16:32:36 -0500
+Date: Sun, 14 Feb 2016 13:32:24 -0800
+From: Liu Bo <bo.li.liu@oracle.com>
+To: =?utf-8?B?0JzQuNGF0LDQuNC7INCT0LDQstGA0LjQu9C+0LI=?=
+	<mikhail.v.gavrilov@gmail.com>
+Cc: Chris Murphy <lists@colorremedies.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Subject: Re: task btrfs-cleaner:770 blocked for more than 120 seconds.
+Message-ID: <20160214213224.GB28882@localhost.localdomain>
+Reply-To: bo.li.liu@oracle.com
+References: <CAJCQCtRjCixev=Mt=jaL1ZytYaxj7Fa-AViLYGB-ALufyL98VA@mail.gmail.com>
+ <CAJCQCtRtVjyjvSfT=BCZZwfaSvbD4YVxEBezfAx+-q7cwMHmRQ@mail.gmail.com>
+ <CABXGCsNivrLgTEE+HZOLHXA-kpLVQOUv9L_nTw96nvy+DHodZg@mail.gmail.com>
+ <CAJCQCtTrcnwvumgt-bOx+9wX+f50S9ja5rDrnYAsuuN1aDTsZA@mail.gmail.com>
+ <20160211191741.GA4762@localhost.localdomain>
+ <CABXGCsPN3MOLkU68gpw=TsnZLODEkYZ66ZHgUxMyeqbdNME9Sw@mail.gmail.com>
+ <20160212032226.GA10542@localhost.localdomain>
+ <CABXGCsNjHq4M8TBibeWQLyK+Of0cu++P3QQ=+e=TUuZjaPMLtA@mail.gmail.com>
+ <20160212203426.GA24399@localhost.localdomain>
+ <CABXGCsMMkcMmEH8=d3TqJksB8uc_OVrRqfjX7E1RO+4R94O=Ug@mail.gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CAJCQCtT6P15w-uhoYSb038-UJk+8ggpEF0D84CzJt2Ue_ZCaeA@mail.gmail.com>
+Content-Type: text/plain; charset=utf-8
+In-Reply-To: <CABXGCsMMkcMmEH8=d3TqJksB8uc_OVrRqfjX7E1RO+4R94O=Ug@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Feb 14, 2016 at 01:43:05PM -0700, Chris Murphy wrote:
-> Use all defaults for everything. Anything new by show should do the
-> right thing including 4096 byte alignment.
+Hi Mike,
+On Sun, Feb 14, 2016 at 12:23:16AM +0500, Михаил Гаврилов wrote:
+> Sorry, I have not yet had time to apply your patch.
 > 
-> gargamel:~# cryptsetup luksDump /dev/md8
-> [snip]
-> Payload offset: 3072
+> And get hang again when launch web browser.
 > 
-> This is a bit weird because the default is 4096. But because the LUKS
-> offset (header + payload + extra unused space) is 2MiB, so it doesn't
-> affect alignment. There may be unpatched (fixes not backported) in the
-> tools of current long term supported distros, that can cause
-> misalignment. Probably top concern would be parted/libparted, which
-> would start partition 1 at LBA 63, which is not aligned. The upstream
-> tools for a long time now have set partition 1 to LBA 2048, but these
-> crusty old unpatched versions just seem to persist like a booger you
-> can't flick off. It's really annoying - this idea of "stable bugs"
-> that go on and on for a decade.
+> Here new logs: http://btrfs.sy24.ru/kernel-sysrqw-btrfscleaner770blocked-3.txt
 
-Indeed. Thankfully my partitions now start at 2048 like you say.
+The logs show,
+every hung process is waiting for fs tree root's WRITE_LOCK, but someone who's
+holding the WRITE_LOCK is not reflected here.
 
-The only thing I did wrong last time (when using bcache) is
-md5 - dmcrypt - bcache - btrfs
-ssd - dmcrypt /
+Only one suspicious process is 
+"Chrome_FileThre D ffff8807fe1d7a18 10360 22486   2826 0x00000000"
+it's also waiting on btrfs_tree_lock(), but I can't tell whether it
+waits for the fs tree root node's lock or the children node's lock.
 
-This was stupid, I needed to do this:
-md5  - bcache - dmcrypt - btrfs
-ssd /
+Hmm, sorry for not being helpful, but I was wondering if this also
+occurs on the latest btrfs(4.5) or is it possible to give it a shot?
 
-So I think at this point, just to be future proof, I'm going to add bcache 
-on top of all block devices I have, before putting dmcrypt on top, even if I
-don't have a cache device.
-That way I can later add a cache device without problems.
+The best result is that it's been fixed by one commit in 4.5.
 
-Without doing that, adding bcache later is a full re-install :(
+> 
+> Addition info: when btrfs partition hangs also hang GUI it is normal?
+> For grab logs I switch to tty3 (Ctrl - Alt - F3)
 
-Marc
--- 
-"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
-Microsoft is to operating systems ....
-                                      .... what McDonalds is to gourmet cooking
-Home page: http://marc.merlins.org/  
+I'm afraid the answer is yes because GUI needs to read files (like
+config files) from the underlying partition.
+
+Thanks,
+
+-liubo
+
+> 
+> 
+> 
+> --
+> Best Regards,
+> Mike Gavrilov.
+> 
+> 
+> 2016-02-13 1:34 GMT+05:00 Liu Bo <bo.li.liu@oracle.com>:
+> > On Sat, Feb 13, 2016 at 12:15:08AM +0500, Михаил Гаврилов wrote:
+> >> 2016-02-12 8:22 GMT+05:00 Liu Bo <bo.li.liu@oracle.com>:
+> >> > You can try it on your 4.2.3 kernel or the latest 4.5, but I guess it
+> >> > doesn't not fix the real deadlock you're hitting...
+> >>
+> >> It means it is not final patch? you continue investigate problem? Can
+> >> I help you?
+> >
+> > Yeah, it's not the final patch, you can apply it and see if the deadlock
+> > will happen again.
+> >
+> > Unless we can get a way to reproduce it, I'm afraid there's little things we can  do here.
+> >
+> > Thanks,
+> >
+> > -liubo

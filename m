@@ -1,29 +1,37 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:59311 "EHLO mx2.suse.de"
+Received: from mout.gmx.net ([212.227.15.18]:65170 "EHLO mout.gmx.net"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752532AbcBLOSf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 12 Feb 2016 09:18:35 -0500
-Date: Fri, 12 Feb 2016 15:18:33 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Cc: linux-btrfs@vger.kernel.org
+	id S1751671AbcBNCFa (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 13 Feb 2016 21:05:30 -0500
 Subject: Re: [PATCH V7 0/3][PULL REQUEST] Unify 'norecovery' bahavior with
  other filesystems
-Message-ID: <20160212141833.GH4374@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
+To: dsterba@suse.cz, Qu Wenruo <quwenruo@cn.fujitsu.com>,
+        linux-btrfs@vger.kernel.org
 References: <1453170184-22869-1-git-send-email-quwenruo@cn.fujitsu.com>
- <56AAD9DC.90805@cn.fujitsu.com>
+ <56AAD9DC.90805@cn.fujitsu.com> <20160212141833.GH4374@twin.jikos.cz>
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Message-ID: <56BFE0D8.8070006@gmx.com>
+Date: Sun, 14 Feb 2016 10:05:12 +0800
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <56AAD9DC.90805@cn.fujitsu.com>
+In-Reply-To: <20160212141833.GH4374@twin.jikos.cz>
+Content-Type: text/plain; charset=windows-1252; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Jan 29, 2016 at 11:17:48AM +0800, Qu Wenruo wrote:
-> Ping.
-> 
-> Any comment?
-> Or will it be merged into current 4.5?
+Thanks for the modification.
+Qu
 
-I've fixed the 1/3 and will add this patchset to my for-next, scheduled
-for 4.6.
+On 02/12/2016 10:18 PM, David Sterba wrote:
+> On Fri, Jan 29, 2016 at 11:17:48AM +0800, Qu Wenruo wrote:
+>> Ping.
+>>
+>> Any comment?
+>> Or will it be merged into current 4.5?
+>
+> I've fixed the 1/3 and will add this patchset to my for-next, scheduled
+> for 4.6.
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>

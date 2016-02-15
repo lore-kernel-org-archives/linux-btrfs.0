@@ -1,87 +1,163 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.136]:34377 "EHLO mail.kernel.org"
+Received: from mail.kernel.org ([198.145.29.136]:34433 "EHLO mail.kernel.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750922AbcBOKyB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 15 Feb 2016 05:54:01 -0500
+	id S1750925AbcBOKyk (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 15 Feb 2016 05:54:40 -0500
 From: fdmanana@kernel.org
 To: fstests@vger.kernel.org
 Cc: linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH Resend] fstests: generic/158, test dedupe with destination offset past EOF
-Date: Mon, 15 Feb 2016 10:53:55 +0000
-Message-Id: <1455533635-7655-1-git-send-email-fdmanana@kernel.org>
+Subject: [PATCH 2/2] fstests: generic test for file fsync after rename operation
+Date: Mon, 15 Feb 2016 10:54:34 +0000
+Message-Id: <1455533674-7753-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Filipe Manana <fdmanana@suse.com>
 
-We were testing when the source file offset starts at EOF or beyond,
-but not when the destination offset is beyond EOF or when the
-destination offset is smaller than EOF but destination offset plus
-dedup length is greater than EOF.
+Test that if we have a file F1 with two links, one in a directory A and
+the other in directory B, if we remove the link in directory B, move some
+other file F2 from directory B into directory C, fsync inode F1, power
+fail and remount the filesystem, file F2 exists and is located only in
+directory C.
 
-This is motivated by a bug in btrfs' extent_same (dedup) ioctl where
-we allowed the destination offset to start at EOF and beyond (and
-destination offset + length beyond EOF) for the case where the source
-and destination files are the same (was not allowed for different
-files used as source and destination). This also made the file's
-metadata inconsistent when the dedup operation succeeded, which
-happened when the source range corresponded to a file hole, prealloc
-extent or a data extent filled with zeroes.
+This is motivated by a bug found in btrfs, which is fixed by the patch
+(for the linux kernel) titled:
 
-The btrfs issue is fixed by the following patch for the linux kernel:
+   "Btrfs: fix file loss on log replay after renaming a file and fsync"
 
-  "Btrfs: fix extent_same allowing destination offset beyond i_size"
+Tested against ext3, ext4, xfs, f2fs and reiserfs.
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
 
-Resent since it was not picked in the last update.
-Rebased against current master branch.
+Resend since it was not picked in the last update.
+Rebased against current master branch (changed test number).
 
- tests/generic/158     | 10 +++++++++-
- tests/generic/158.out |  6 +++++-
- 2 files changed, 14 insertions(+), 2 deletions(-)
+ tests/generic/336     | 95 +++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/generic/336.out |  2 ++
+ tests/generic/group   |  1 +
+ 3 files changed, 98 insertions(+)
+ create mode 100755 tests/generic/336
+ create mode 100644 tests/generic/336.out
 
-diff --git a/tests/generic/158 b/tests/generic/158
-index 0da5daa..38506c9 100755
---- a/tests/generic/158
-+++ b/tests/generic/158
-@@ -97,9 +97,17 @@ _dedupe_range $testdir1/file1 37 $testdir1/file1 59 23
- echo "Try overlapping dedupe"
- _dedupe_range $testdir1/file1 0 $testdir1/file1 1 $((blksz * 2))
- 
--echo "Try dedupe past EOF"
-+echo "Try dedupe from past EOF"
- _dedupe_range $testdir1/file1 $(( (blks + 10) * blksz)) $testdir1/file1 0 $blksz
- 
-+echo "Try dedupe to past EOF, destination offset beyond EOF"
-+_dedupe_range $testdir1/file1 0 $testdir1/file1 $(( (blks + 10) * blksz )) \
-+	$blksz
+diff --git a/tests/generic/336 b/tests/generic/336
+new file mode 100755
+index 0000000..f784b98
+--- /dev/null
++++ b/tests/generic/336
+@@ -0,0 +1,95 @@
++#! /bin/bash
++# FSQA Test No. 336
++#
++# Test that if we have a file F1 with two links, one in a directory A and the
++# other in directory B, if we remove the link in directory B, move some other
++# file F2 from directory B into directory C, fsync inode F1, power fail and
++# remount the filesystem, file F2 exists and is located only in directory C.
++#
++#-----------------------------------------------------------------------
++#
++# Copyright (C) 2016 SUSE Linux Products GmbH. All Rights Reserved.
++# Author: Filipe Manana <fdmanana@suse.com>
++#
++# This program is free software; you can redistribute it and/or
++# modify it under the terms of the GNU General Public License as
++# published by the Free Software Foundation.
++#
++# This program is distributed in the hope that it would be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write the Free Software Foundation,
++# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++#-----------------------------------------------------------------------
++#
 +
-+echo "Try dedupe to past EOF, destination offset behind EOF"
-+_dedupe_range $testdir1/file1 0 $testdir1/file1 $(( (blks - 1) * blksz )) \
-+	$(( blksz * 2 ))
++seq=`basename $0`
++seqres=$RESULT_DIR/$seq
++echo "QA output created by $seq"
++tmp=/tmp/$$
++status=1	# failure is the default!
++trap "_cleanup; exit \$status" 0 1 2 3 15
 +
- echo "Try to dedupe a dir"
- _dedupe_range $testdir1/dir1 0 $testdir1/file2 0 $blksz
- 
-diff --git a/tests/generic/158.out b/tests/generic/158.out
-index 7f88403..9b82ddf 100644
---- a/tests/generic/158.out
-+++ b/tests/generic/158.out
-@@ -7,7 +7,11 @@ Try unaligned dedupe
- dedupe: Invalid argument
- Try overlapping dedupe
- dedupe: Invalid argument
--Try dedupe past EOF
-+Try dedupe from past EOF
-+dedupe: Invalid argument
-+Try dedupe to past EOF, destination offset beyond EOF
-+dedupe: Invalid argument
-+Try dedupe to past EOF, destination offset behind EOF
- dedupe: Invalid argument
- Try to dedupe a dir
- XFS_IOC_FILE_EXTENT_SAME: Is a directory
++_cleanup()
++{
++	_cleanup_flakey
++	cd /
++	rm -f $tmp.*
++}
++
++# get standard environment, filters and checks
++. ./common/rc
++. ./common/filter
++. ./common/dmflakey
++
++# real QA test starts here
++_need_to_be_root
++_supported_fs generic
++_supported_os Linux
++_require_scratch
++_require_dm_target flakey
++_require_metadata_journaling $SCRATCH_DEV
++
++rm -f $seqres.full
++
++_scratch_mkfs >>$seqres.full 2>&1
++_init_flakey
++_mount_flakey
++
++# Create our test directories and the file we will later check if it has
++# disappeared (file bar).
++mkdir $SCRATCH_MNT/a
++mkdir $SCRATCH_MNT/b
++mkdir $SCRATCH_MNT/c
++touch $SCRATCH_MNT/a/foo
++ln $SCRATCH_MNT/a/foo $SCRATCH_MNT/b/foo_link
++touch $SCRATCH_MNT/b/bar
++
++# Make sure everything is durably persisted.
++sync
++
++# Now delete one of the hard links of file foo and move file bar into c/
++unlink $SCRATCH_MNT/b/foo_link
++mv $SCRATCH_MNT/b/bar $SCRATCH_MNT/c/
++
++# Now fsync file foo.
++$XFS_IO_PROG -c "fsync" $SCRATCH_MNT/a/foo
++
++# Simulate a power failure / crash and remount the filesystem, so that the
++# journal/log is replayed.
++_flakey_drop_and_remount
++
++# We expect that after the journal/log was replayed, we no longer have the link
++# foo_link and file bar was moved from directory b/ to directory c/.
++[ -e $SCRATCH_MNT/b/foo_link ] && echo "Link foo_link still exists"
++[ -e $SCRATCH_MNT/b/bar ] && echo "File bar is still at directory b/"
++[ -e $SCRATCH_MNT/c/bar ] || echo "File bar is not at directory c/"
++
++_unmount_flakey
++
++echo "Silence is golden"
++status=0
++exit
+diff --git a/tests/generic/336.out b/tests/generic/336.out
+new file mode 100644
+index 0000000..9263628
+--- /dev/null
++++ b/tests/generic/336.out
+@@ -0,0 +1,2 @@
++QA output created by 336
++Silence is golden
+diff --git a/tests/generic/group b/tests/generic/group
+index f270edb..a47e23d 100644
+--- a/tests/generic/group
++++ b/tests/generic/group
+@@ -338,3 +338,4 @@
+ 333 auto clone
+ 334 auto clone
+ 335 auto quick metadata
++336 auto quick metadata
 -- 
 2.7.0.rc3
 

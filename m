@@ -1,49 +1,85 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:34930 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:34966 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751742AbcBORee (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 15 Feb 2016 12:34:34 -0500
+	id S1751742AbcBOReu (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 15 Feb 2016 12:34:50 -0500
 From: David Sterba <dsterba@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: David Sterba <dsterba@suse.com>, anand.jain@oracle.com
-Subject: [PATCH 10/15] btrfs: rename __check_raid_min_devices
-Date: Mon, 15 Feb 2016 18:34:29 +0100
-Message-Id: <f618945b86f4bba6037bd4917a4b461503183f0e.1455556900.git.dsterba@suse.com>
+Subject: [PATCH 15/15] btrfs: rename flags for vol args v2
+Date: Mon, 15 Feb 2016 18:34:46 +0100
+Message-Id: <533b0847dc15f8d719aaf6198cf18953899f2164.1455556900.git.dsterba@suse.com>
 In-Reply-To: <cover.1455556900.git.dsterba@suse.com>
 References: <cover.1455556900.git.dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Underscores are for special functions, use the full prefix for better
-stacktrace recognition.
+Rename BTRFS_DEVICE_BY_ID so it's more descriptive that we specify the
+device by id, it'll be part of the public API. The mask of supported
+flags is also renamed, only for internal use.
+
+The error code for unknown flags is EOPNOTSUPP, fixed.
 
 Signed-off-by: David Sterba <dsterba@suse.com>
 ---
- fs/btrfs/volumes.c | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+ fs/btrfs/ioctl.c           | 8 ++++----
+ include/uapi/linux/btrfs.h | 7 ++++---
+ 2 files changed, 8 insertions(+), 7 deletions(-)
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 20af20b0eaee..4fa4a836a072 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -1705,7 +1705,7 @@ static int btrfs_rm_dev_item(struct btrfs_root *root,
- 	return ret;
- }
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 57fb05960435..6bcd7700b9fd 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -2689,8 +2689,8 @@ static long btrfs_ioctl_rm_dev_v2(struct file *file, void __user *arg)
+ 	}
  
--static int __check_raid_min_devices(struct btrfs_fs_info *fs_info)
-+static int btrfs_check_raid_min_devices(struct btrfs_fs_info *fs_info)
- {
- 	u64 all_avail;
- 	u64 num_devices;
-@@ -1760,7 +1760,7 @@ int btrfs_rm_device(struct btrfs_root *root, char *device_path, u64 devid)
+ 	/* Check for compatibility reject unknown flags */
+-	if (vol_args->flags & ~BTRFS_VOL_ARG_V2_FLAGS)
+-		return -ENOTTY;
++	if (vol_args->flags & ~BTRFS_VOL_ARG_V2_FLAGS_SUPPORTED)
++		return -EOPNOTSUPP;
  
- 	mutex_lock(&uuid_mutex);
+ 	if (atomic_xchg(&root->fs_info->mutually_exclusive_operation_running,
+ 			1)) {
+@@ -2699,7 +2699,7 @@ static long btrfs_ioctl_rm_dev_v2(struct file *file, void __user *arg)
+ 	}
  
--	ret = __check_raid_min_devices(root->fs_info);
-+	ret = btrfs_check_raid_min_devices(root->fs_info);
- 	if (ret)
- 		goto out;
+ 	mutex_lock(&root->fs_info->volume_mutex);
+-	if (vol_args->flags & BTRFS_DEVICE_BY_ID) {
++	if (vol_args->flags & BTRFS_DEVICE_SPEC_BY_ID) {
+ 		ret = btrfs_rm_device(root, NULL, vol_args->devid);
+ 	} else {
+ 		vol_args->name[BTRFS_PATH_NAME_MAX] = '\0';
+@@ -2709,7 +2709,7 @@ static long btrfs_ioctl_rm_dev_v2(struct file *file, void __user *arg)
+ 	atomic_set(&root->fs_info->mutually_exclusive_operation_running, 0);
  
+ 	if (!ret) {
+-		if (vol_args->flags & BTRFS_DEVICE_BY_ID)
++		if (vol_args->flags & BTRFS_DEVICE_SPEC_BY_ID)
+ 			btrfs_info(root->fs_info, "device deleted: id %llu",
+ 					vol_args->devid);
+ 		else
+diff --git a/include/uapi/linux/btrfs.h b/include/uapi/linux/btrfs.h
+index 396a4efca775..3975e683af72 100644
+--- a/include/uapi/linux/btrfs.h
++++ b/include/uapi/linux/btrfs.h
+@@ -36,12 +36,13 @@ struct btrfs_ioctl_vol_args {
+ #define BTRFS_SUBVOL_CREATE_ASYNC	(1ULL << 0)
+ #define BTRFS_SUBVOL_RDONLY		(1ULL << 1)
+ #define BTRFS_SUBVOL_QGROUP_INHERIT	(1ULL << 2)
+-#define BTRFS_DEVICE_BY_ID		(1ULL << 3)
+-#define BTRFS_VOL_ARG_V2_FLAGS				\
++#define BTRFS_DEVICE_SPEC_BY_ID		(1ULL << 3)
++
++#define BTRFS_VOL_ARG_V2_FLAGS_SUPPORTED		\
+ 			(BTRFS_SUBVOL_CREATE_ASYNC |	\
+ 			BTRFS_SUBVOL_RDONLY |		\
+ 			BTRFS_SUBVOL_QGROUP_INHERIT |	\
+-			BTRFS_DEVICE_BY_ID)
++			BTRFS_DEVICE_SPEC_BY_ID)
+ 
+ #define BTRFS_FSID_SIZE 16
+ #define BTRFS_UUID_SIZE 16
 -- 
 2.7.1
 

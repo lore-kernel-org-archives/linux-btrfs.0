@@ -1,14 +1,14 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:34926 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:34895 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751680AbcBORea (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 15 Feb 2016 12:34:30 -0500
+	id S1753736AbcBOReH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 15 Feb 2016 12:34:07 -0500
 From: David Sterba <dsterba@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Anand Jain <anand.jain@oracle.com>, David Sterba <dsterba@suse.com>
-Subject: [PATCH 09/15] btrfs: optimize check for stale device
-Date: Mon, 15 Feb 2016 18:34:26 +0100
-Message-Id: <1f778216eb80083cc7c105b0fe7aa17e4ba22821.1455556900.git.dsterba@suse.com>
+Subject: [PATCH 02/15] btrfs: create helper function __check_raid_min_devices()
+Date: Mon, 15 Feb 2016 18:34:03 +0100
+Message-Id: <d58e4f573486b42b4505c4d19d5163dc5a591caa.1455556900.git.dsterba@suse.com>
 In-Reply-To: <cover.1455556900.git.dsterba@suse.com>
 References: <cover.1455556900.git.dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -16,30 +16,97 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Anand Jain <anand.jain@oracle.com>
 
-Optimize check for stale device to only be checked when there is device
-added or changed. If there is no update to the device, there is no need
-to call btrfs_free_stale_device().
+move a section of btrfs_rm_device() code to check for min number of the
+devices into the function __check_raid_min_devices()
 
 Signed-off-by: Anand Jain <anand.jain@oracle.com>
 Signed-off-by: David Sterba <dsterba@suse.com>
 ---
- fs/btrfs/volumes.c | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+ fs/btrfs/volumes.c | 51 ++++++++++++++++++++++++++++++++-------------------
+ 1 file changed, 32 insertions(+), 19 deletions(-)
 
 diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 5e49adb34b2e..20af20b0eaee 100644
+index fa119ea8c74b..8511f917c469 100644
 --- a/fs/btrfs/volumes.c
 +++ b/fs/btrfs/volumes.c
-@@ -699,7 +699,8 @@ static noinline int device_list_add(const char *path,
- 	 * if there is new btrfs on an already registered device,
- 	 * then remove the stale device entry.
- 	 */
--	btrfs_free_stale_device(device);
-+	if (ret > 0)
-+		btrfs_free_stale_device(device);
+@@ -1704,23 +1704,20 @@ static int btrfs_rm_dev_item(struct btrfs_root *root,
+ 	return ret;
+ }
  
- 	*fs_devices_ret = fs_devices;
+-int btrfs_rm_device(struct btrfs_root *root, char *device_path)
++static int __check_raid_min_devices(struct btrfs_root *root)
+ {
+-	struct btrfs_device *device;
+-	struct btrfs_device *next_device;
+-	struct block_device *bdev;
+-	struct buffer_head *bh = NULL;
+-	struct btrfs_super_block *disk_super;
+-	struct btrfs_fs_devices *cur_devices;
+ 	u64 all_avail;
+-	u64 devid;
+ 	u64 num_devices;
+-	u8 *dev_uuid;
+ 	unsigned seq;
+ 	int ret = 0;
+-	bool clear_super = false;
  
+-	mutex_lock(&uuid_mutex);
++	num_devices = root->fs_info->fs_devices->num_devices;
++	btrfs_dev_replace_lock(&root->fs_info->dev_replace);
++	if (btrfs_dev_replace_is_ongoing(&root->fs_info->dev_replace)) {
++		WARN_ON(num_devices < 1);
++		num_devices--;
++	}
++	btrfs_dev_replace_unlock(&root->fs_info->dev_replace);
+ 
+ 	do {
+ 		seq = read_seqbegin(&root->fs_info->profiles_lock);
+@@ -1730,14 +1727,6 @@ int btrfs_rm_device(struct btrfs_root *root, char *device_path)
+ 			    root->fs_info->avail_metadata_alloc_bits;
+ 	} while (read_seqretry(&root->fs_info->profiles_lock, seq));
+ 
+-	num_devices = root->fs_info->fs_devices->num_devices;
+-	btrfs_dev_replace_lock(&root->fs_info->dev_replace);
+-	if (btrfs_dev_replace_is_ongoing(&root->fs_info->dev_replace)) {
+-		WARN_ON(num_devices < 1);
+-		num_devices--;
+-	}
+-	btrfs_dev_replace_unlock(&root->fs_info->dev_replace);
+-
+ 	if ((all_avail & BTRFS_BLOCK_GROUP_RAID10) && num_devices <= 4) {
+ 		ret = BTRFS_ERROR_DEV_RAID10_MIN_NOT_MET;
+ 		goto out;
+@@ -1759,6 +1748,30 @@ int btrfs_rm_device(struct btrfs_root *root, char *device_path)
+ 		goto out;
+ 	}
+ 
++out:
++	return ret;
++}
++
++int btrfs_rm_device(struct btrfs_root *root, char *device_path)
++{
++	struct btrfs_device *device;
++	struct btrfs_device *next_device;
++	struct block_device *bdev;
++	struct buffer_head *bh = NULL;
++	struct btrfs_super_block *disk_super;
++	struct btrfs_fs_devices *cur_devices;
++	u64 devid;
++	u64 num_devices;
++	u8 *dev_uuid;
++	int ret = 0;
++	bool clear_super = false;
++
++	mutex_lock(&uuid_mutex);
++
++	ret = __check_raid_min_devices(root);
++	if (ret)
++		goto out;
++
+ 	if (strcmp(device_path, "missing") == 0) {
+ 		struct list_head *devices;
+ 		struct btrfs_device *tmp;
 -- 
 2.7.1
 

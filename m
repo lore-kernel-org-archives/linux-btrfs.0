@@ -1,83 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.136]:34791 "EHLO mail.kernel.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750940AbcBLQYF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 12 Feb 2016 11:24:05 -0500
-From: fdmanana@kernel.org
-To: fstests@vger.kernel.org
-Cc: linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH] fstests: generic/158, test dedupe with destination offset past EOF
-Date: Fri, 12 Feb 2016 16:23:59 +0000
-Message-Id: <1455294239-9049-1-git-send-email-fdmanana@kernel.org>
+Received: from aserp1040.oracle.com ([141.146.126.69]:43138 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751471AbcBOUqP (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 15 Feb 2016 15:46:15 -0500
+Subject: [PATCH v4.3 0/3] xfstests: minor fixes for the reflink/dedupe tests
+From: "Darrick J. Wong" <darrick.wong@oracle.com>
+To: david@fromorbit.com, darrick.wong@oracle.com
+Cc: linux-btrfs@vger.kernel.org, fstests@vger.kernel.org, xfs@oss.sgi.com
+Date: Mon, 15 Feb 2016 12:46:08 -0800
+Message-ID: <20160215204608.7977.2802.stgit@birch.djwong.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="utf-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Filipe Manana <fdmanana@suse.com>
+This is a patch set against the reflink/dedupe test cases in xfstests.
+All three patches fix some minor problems in the giant testcase merge
+last weekend.
 
-We were testing when the source file offset starts at EOF or beyond,
-but not when the destination offset is beyond EOF or when the
-destination offset is smaller than EOF but destination offset plus
-dedup length is greater than EOF.
+The zeroth patch ought to be Filipe Manana's patch ("fstests:
+generic/158, test dedupe with destination offset past EOF") but as he
+just resent that this morning, I won't repost it here.
 
-This is motivated by a bug in btrfs' extent_same (dedup) ioctl where
-we allowed the destination offset to start at EOF and beyond (and
-destination offset + length beyond EOF) for the case where the source
-and destination files are the same (was not allowed for different
-files used as source and destination). This also made the file's
-metadata inconsistent when the dedup operation succeeded, which
-happened when the source range corresponded to a file hole, prealloc
-extent or a data extent filled with zeroes.
+The first patch, then, corrects the error output in the high offset
+dedupe test (generic/304).
 
-The btrfs issue is fixed by the following patch for the linux kernel:
+The second patch changes punch-alternating.c to use the filesystem
+accounting block size to determine where to punch holes in the file
+because that value is the internal filesystem block size.  This makes
+the program behave as expected when testing with non-page-size block
+sizes on XFS.
 
-  "Btrfs: fix extent_same allowing destination offset beyond i_size"
+The third patch adds to _require_xfs_io_command the ability to check
+that a subcommand supports a particular command line argument and adds
+to xfs/24[356] the ability to check for the -c switch to the xfs_io
+bmap command.
 
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
- tests/generic/158     | 10 +++++++++-
- tests/generic/158.out |  6 +++++-
- 2 files changed, 14 insertions(+), 2 deletions(-)
+Comments and questions are, as always, welcome.  The fixes are
+available on github[1].
 
-diff --git a/tests/generic/158 b/tests/generic/158
-index 807c247..9c2d17a 100755
---- a/tests/generic/158
-+++ b/tests/generic/158
-@@ -97,9 +97,17 @@ _dedupe_range "$testdir1/file1" 37 "$testdir1/file1" 59 23
- echo "Try overlapping dedupe"
- _dedupe_range "$testdir1/file1" 0 "$testdir1/file1" 1 $((blksz * 2))
- 
--echo "Try dedupe past EOF"
-+echo "Try dedupe from past EOF"
- _dedupe_range "$testdir1/file1" $(( (blks + 10) * blksz)) "$testdir1/file1" 0 $blksz
- 
-+echo "Try dedupe to past EOF, destination offset beyond EOF"
-+_dedupe_range "$testdir1/file1" 0 "$testdir1/file1" $(( (blks + 10) * blksz)) \
-+	$blksz
-+
-+echo "Try dedupe to past EOF, destination offset behind EOF"
-+_dedupe_range "$testdir1/file1" 0 "$testdir1/file1" $(( (blks - 1) * blksz)) \
-+	$(( blksz * 2))
-+
- echo "Try to dedupe a dir"
- _dedupe_range "$testdir1/dir1" 0 "$testdir1/file2" 0 $blksz
- 
-diff --git a/tests/generic/158.out b/tests/generic/158.out
-index dff3692..9aa337f 100644
---- a/tests/generic/158.out
-+++ b/tests/generic/158.out
-@@ -7,7 +7,11 @@ Try unaligned dedupe
- dedupe: Invalid argument
- Try overlapping dedupe
- dedupe: Invalid argument
--Try dedupe past EOF
-+Try dedupe from past EOF
-+dedupe: Invalid argument
-+Try dedupe to past EOF, destination offset beyond EOF
-+dedupe: Invalid argument
-+Try dedupe to past EOF, destination offset behind EOF
- dedupe: Invalid argument
- Try to dedupe a dir
- XFS_IOC_FILE_EXTENT_SAME: Is a directory
--- 
-2.7.0.rc3
+--D
 
+[1] https://github.com/djwong/xfstests/tree/for-dave

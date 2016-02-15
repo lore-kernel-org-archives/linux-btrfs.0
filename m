@@ -1,14 +1,14 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:34913 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:34917 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751326AbcBOReU (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 15 Feb 2016 12:34:20 -0500
+	id S1751547AbcBOReY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 15 Feb 2016 12:34:24 -0500
 From: David Sterba <dsterba@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Anand Jain <anand.jain@oracle.com>, David Sterba <dsterba@suse.com>
-Subject: [PATCH 06/15] btrfs: enhance btrfs_find_device_by_user_input() to check device path
-Date: Mon, 15 Feb 2016 18:34:16 +0100
-Message-Id: <da335ed6f002f12b4934d7466dddefd6247061e1.1455556900.git.dsterba@suse.com>
+Subject: [PATCH 07/15] btrfs: make use of btrfs_scratch_superblocks() in btrfs_rm_device()
+Date: Mon, 15 Feb 2016 18:34:19 +0100
+Message-Id: <3fb2fe75b8616cfb5be9eb7fc664cb25c7dcd4bb.1455556900.git.dsterba@suse.com>
 In-Reply-To: <cover.1455556900.git.dsterba@suse.com>
 References: <cover.1455556900.git.dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -16,46 +16,129 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Anand Jain <anand.jain@oracle.com>
 
-The operation of device replace and device delete follows same steps upto
-some depth with in btrfs kernel, however they don't share codes. This
-enhancement will help replace and delete to share codes.
+With the previous patches now the btrfs_scratch_superblocks() is ready to
+be used in btrfs_rm_device() so use it.
 
 Signed-off-by: Anand Jain <anand.jain@oracle.com>
+[ use GFP_KERNEL ]
 Signed-off-by: David Sterba <dsterba@suse.com>
 ---
- fs/btrfs/dev-replace.c | 4 ----
- fs/btrfs/volumes.c     | 3 +++
- 2 files changed, 3 insertions(+), 4 deletions(-)
+ fs/btrfs/volumes.c | 78 ++++++++++--------------------------------------------
+ 1 file changed, 14 insertions(+), 64 deletions(-)
 
-diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
-index 12d941d9b0e8..3e2616d151d9 100644
---- a/fs/btrfs/dev-replace.c
-+++ b/fs/btrfs/dev-replace.c
-@@ -320,10 +320,6 @@ int btrfs_dev_replace_start(struct btrfs_root *root,
- 		return -EINVAL;
- 	}
- 
--	if ((args->start.srcdevid == 0 && args->start.srcdev_name[0] == '\0') ||
--	    args->start.tgtdev_name[0] == '\0')
--		return -EINVAL;
--
- 	/* the disk copy procedure reuses the scrub code */
- 	mutex_lock(&fs_info->volume_mutex);
- 	ret = btrfs_find_device_by_user_input(root, args->start.srcdevid,
 diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 6d8b78ffb0a0..fede69134368 100644
+index fede69134368..0b1fa2faa4eb 100644
 --- a/fs/btrfs/volumes.c
 +++ b/fs/btrfs/volumes.c
-@@ -2112,6 +2112,9 @@ int btrfs_find_device_by_user_input(struct btrfs_root *root, u64 srcdevid,
- 		if (!*device)
- 			ret = -ENOENT;
- 	} else {
-+		if (!srcdev_name || !srcdev_name[0])
-+			return -EINVAL;
-+
- 		ret = btrfs_find_device_missing_or_by_path(root, srcdev_name,
- 							   device);
+@@ -1751,13 +1751,11 @@ int btrfs_rm_device(struct btrfs_root *root, char *device_path)
+ {
+ 	struct btrfs_device *device;
+ 	struct btrfs_device *next_device;
+-	struct block_device *bdev = NULL;
+-	struct buffer_head *bh = NULL;
+-	struct btrfs_super_block *disk_super = NULL;
+ 	struct btrfs_fs_devices *cur_devices;
+ 	u64 num_devices;
+ 	int ret = 0;
+ 	bool clear_super = false;
++	char *dev_name = NULL;
+ 
+ 	mutex_lock(&uuid_mutex);
+ 
+@@ -1785,6 +1783,11 @@ int btrfs_rm_device(struct btrfs_root *root, char *device_path)
+ 		list_del_init(&device->dev_alloc_list);
+ 		device->fs_devices->rw_devices--;
+ 		unlock_chunks(root);
++		dev_name = kstrdup(device->name->str, GFP_KERNEL);
++		if (!dev_name) {
++			ret = -ENOMEM;
++			goto error_undo;
++		}
+ 		clear_super = true;
  	}
+ 
+@@ -1868,73 +1871,20 @@ int btrfs_rm_device(struct btrfs_root *root, char *device_path)
+ 	 * remove it from the devices list and zero out the old super
+ 	 */
+ 	if (clear_super) {
+-		u64 bytenr;
+-		int i;
+-
+-		if (!disk_super) {
+-			ret = btrfs_get_bdev_and_sb(device_path,
+-					FMODE_WRITE | FMODE_EXCL,
+-					root->fs_info->bdev_holder, 0,
+-					&bdev, &bh);
+-			if (ret) {
+-				/*
+-				 * It could be a failed device ok for clear_super
+-				 * to fail. So return success
+-				 */
+-				ret = 0;
+-				goto out;
+-			}
+-
+-			disk_super = (struct btrfs_super_block *)bh->b_data;
+-		}
+-		/* make sure this device isn't detected as part of
+-		 * the FS anymore
+-		 */
+-		memset(&disk_super->magic, 0, sizeof(disk_super->magic));
+-		set_buffer_dirty(bh);
+-		sync_dirty_buffer(bh);
+-		brelse(bh);
+-
+-		/* clear the mirror copies of super block on the disk
+-		 * being removed, 0th copy is been taken care above and
+-		 * the below would take of the rest
+-		 */
+-		for (i = 1; i < BTRFS_SUPER_MIRROR_MAX; i++) {
+-			bytenr = btrfs_sb_offset(i);
+-			if (bytenr + BTRFS_SUPER_INFO_SIZE >=
+-					i_size_read(bdev->bd_inode))
+-				break;
+-
+-			bh = __bread(bdev, bytenr / 4096,
+-					BTRFS_SUPER_INFO_SIZE);
+-			if (!bh)
+-				continue;
++		struct block_device *bdev;
+ 
+-			disk_super = (struct btrfs_super_block *)bh->b_data;
+-
+-			if (btrfs_super_bytenr(disk_super) != bytenr ||
+-				btrfs_super_magic(disk_super) != BTRFS_MAGIC) {
+-				brelse(bh);
+-				continue;
+-			}
+-			memset(&disk_super->magic, 0,
+-						sizeof(disk_super->magic));
+-			set_buffer_dirty(bh);
+-			sync_dirty_buffer(bh);
+-			brelse(bh);
+-		}
+-
+-		if (bdev) {
+-			/* Notify udev that device has changed */
+-			btrfs_kobject_uevent(bdev, KOBJ_CHANGE);
+-
+-			/* Update ctime/mtime for device path for libblkid */
+-			update_dev_time(device_path);
++		bdev = blkdev_get_by_path(dev_name, FMODE_READ | FMODE_EXCL,
++						root->fs_info->bdev_holder);
++		if (!IS_ERR(bdev)) {
++			btrfs_scratch_superblocks(bdev, dev_name);
+ 			blkdev_put(bdev, FMODE_READ | FMODE_EXCL);
+ 		}
+ 	}
+ 
+ out:
++	if (dev_name)
++		kfree(dev_name);
++
+ 	mutex_unlock(&uuid_mutex);
+ 	return ret;
+ 
 -- 
 2.7.1
 

@@ -1,104 +1,115 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:34952 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:34899 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752898AbcBORer (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 15 Feb 2016 12:34:47 -0500
+	id S1751640AbcBOReL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 15 Feb 2016 12:34:11 -0500
 From: David Sterba <dsterba@suse.com>
 To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.com>, anand.jain@oracle.com
-Subject: [PATCH 14/15] btrfs: rename btrfs_find_device_by_user_input
-Date: Mon, 15 Feb 2016 18:34:43 +0100
-Message-Id: <fc1748ace148802b9a122ae6222aea742f7cb9ea.1455556900.git.dsterba@suse.com>
+Cc: Anand Jain <anand.jain@oracle.com>, David Sterba <dsterba@suse.com>
+Subject: [PATCH 03/15] btrfs: clean up and optimize __check_raid_min_device()
+Date: Mon, 15 Feb 2016 18:34:06 +0100
+Message-Id: <9459980ba74d725103cc877c20b7d8ca34999c39.1455556900.git.dsterba@suse.com>
 In-Reply-To: <cover.1455556900.git.dsterba@suse.com>
 References: <cover.1455556900.git.dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-For clarity how we are going to find the device, let's call it a device
-specifier, devspec for short. Also rename the arguments that are a
-leftover from previous function purpose.
+From: Anand Jain <anand.jain@oracle.com>
 
+__check_raid_min_device() which was pealed from btrfs_rm_device()
+maintianed its original code to show the block move. This patch cleans up
+__check_raid_min_device().
+
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
 Signed-off-by: David Sterba <dsterba@suse.com>
 ---
- fs/btrfs/dev-replace.c |  2 +-
- fs/btrfs/volumes.c     | 17 ++++++++++-------
- fs/btrfs/volumes.h     |  4 ++--
- 3 files changed, 13 insertions(+), 10 deletions(-)
+ fs/btrfs/volumes.c | 43 +++++++++++++++++++------------------------
+ 1 file changed, 19 insertions(+), 24 deletions(-)
 
-diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
-index 3e2616d151d9..1731f92b6247 100644
---- a/fs/btrfs/dev-replace.c
-+++ b/fs/btrfs/dev-replace.c
-@@ -322,7 +322,7 @@ int btrfs_dev_replace_start(struct btrfs_root *root,
- 
- 	/* the disk copy procedure reuses the scrub code */
- 	mutex_lock(&fs_info->volume_mutex);
--	ret = btrfs_find_device_by_user_input(root, args->start.srcdevid,
-+	ret = btrfs_find_device_by_devspec(root, args->start.srcdevid,
- 					    args->start.srcdev_name,
- 					    &src_device);
- 	if (ret) {
 diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 8fee24f92574..05d9bc0cdd49 100644
+index 8511f917c469..ffc9a215e6ec 100644
 --- a/fs/btrfs/volumes.c
 +++ b/fs/btrfs/volumes.c
-@@ -1779,7 +1779,7 @@ int btrfs_rm_device(struct btrfs_root *root, char *device_path, u64 devid)
- 	if (ret)
- 		goto out;
- 
--	ret = btrfs_find_device_by_user_input(root, devid, device_path,
-+	ret = btrfs_find_device_by_devspec(root, devid, device_path,
- 				&device);
- 	if (ret)
- 		goto out;
-@@ -2065,23 +2065,26 @@ int btrfs_find_device_missing_or_by_path(struct btrfs_root *root,
- 	}
+@@ -1704,52 +1704,47 @@ static int btrfs_rm_dev_item(struct btrfs_root *root,
+ 	return ret;
  }
  
--int btrfs_find_device_by_user_input(struct btrfs_root *root, u64 srcdevid,
--					 char *srcdev_name,
-+/*
-+ * Lookup a device given by device id, or the path if the id is 0.
-+ */
-+int btrfs_find_device_by_devspec(struct btrfs_root *root, u64 devid,
-+					 char *devpath,
- 					 struct btrfs_device **device)
+-static int __check_raid_min_devices(struct btrfs_root *root)
++static int __check_raid_min_devices(struct btrfs_fs_info *fs_info)
  {
- 	int ret;
+ 	u64 all_avail;
+ 	u64 num_devices;
+ 	unsigned seq;
+-	int ret = 0;
  
--	if (srcdevid) {
-+	if (devid) {
- 		ret = 0;
--		*device = btrfs_find_device(root->fs_info, srcdevid, NULL,
-+		*device = btrfs_find_device(root->fs_info, devid, NULL,
- 					    NULL);
- 		if (!*device)
- 			ret = -ENOENT;
- 	} else {
--		if (!srcdev_name || !srcdev_name[0])
-+		if (!devpath || !devpath[0])
- 			return -EINVAL;
- 
--		ret = btrfs_find_device_missing_or_by_path(root, srcdev_name,
-+		ret = btrfs_find_device_missing_or_by_path(root, devpath,
- 							   device);
+-	num_devices = root->fs_info->fs_devices->num_devices;
+-	btrfs_dev_replace_lock(&root->fs_info->dev_replace);
+-	if (btrfs_dev_replace_is_ongoing(&root->fs_info->dev_replace)) {
++	num_devices = fs_info->fs_devices->num_devices;
++	btrfs_dev_replace_lock(&fs_info->dev_replace);
++	if (btrfs_dev_replace_is_ongoing(&fs_info->dev_replace)) {
+ 		WARN_ON(num_devices < 1);
+ 		num_devices--;
  	}
- 	return ret;
-diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-index a13a538cb01e..febdb7bc9370 100644
---- a/fs/btrfs/volumes.h
-+++ b/fs/btrfs/volumes.h
-@@ -448,8 +448,8 @@ void btrfs_close_extra_devices(struct btrfs_fs_devices *fs_devices, int step);
- int btrfs_find_device_missing_or_by_path(struct btrfs_root *root,
- 					 char *device_path,
- 					 struct btrfs_device **device);
--int btrfs_find_device_by_user_input(struct btrfs_root *root, u64 srcdevid,
--					 char *srcdev_name,
-+int btrfs_find_device_by_devspec(struct btrfs_root *root, u64 devid,
-+					 char *devpath,
- 					 struct btrfs_device **device);
- struct btrfs_device *btrfs_alloc_device(struct btrfs_fs_info *fs_info,
- 					const u64 *devid,
+-	btrfs_dev_replace_unlock(&root->fs_info->dev_replace);
++	btrfs_dev_replace_unlock(&fs_info->dev_replace);
+ 
+ 	do {
+-		seq = read_seqbegin(&root->fs_info->profiles_lock);
++		seq = read_seqbegin(&fs_info->profiles_lock);
+ 
+-		all_avail = root->fs_info->avail_data_alloc_bits |
+-			    root->fs_info->avail_system_alloc_bits |
+-			    root->fs_info->avail_metadata_alloc_bits;
+-	} while (read_seqretry(&root->fs_info->profiles_lock, seq));
++		all_avail = fs_info->avail_data_alloc_bits |
++			    fs_info->avail_system_alloc_bits |
++			    fs_info->avail_metadata_alloc_bits;
++	} while (read_seqretry(&fs_info->profiles_lock, seq));
+ 
+ 	if ((all_avail & BTRFS_BLOCK_GROUP_RAID10) && num_devices <= 4) {
+-		ret = BTRFS_ERROR_DEV_RAID10_MIN_NOT_MET;
+-		goto out;
++		return BTRFS_ERROR_DEV_RAID10_MIN_NOT_MET;
+ 	}
+ 
+ 	if ((all_avail & BTRFS_BLOCK_GROUP_RAID1) && num_devices <= 2) {
+-		ret = BTRFS_ERROR_DEV_RAID1_MIN_NOT_MET;
+-		goto out;
++		return BTRFS_ERROR_DEV_RAID1_MIN_NOT_MET;
+ 	}
+ 
+ 	if ((all_avail & BTRFS_BLOCK_GROUP_RAID5) &&
+-	    root->fs_info->fs_devices->rw_devices <= 2) {
+-		ret = BTRFS_ERROR_DEV_RAID5_MIN_NOT_MET;
+-		goto out;
++	    fs_info->fs_devices->rw_devices <= 2) {
++		return BTRFS_ERROR_DEV_RAID5_MIN_NOT_MET;
+ 	}
++
+ 	if ((all_avail & BTRFS_BLOCK_GROUP_RAID6) &&
+-	    root->fs_info->fs_devices->rw_devices <= 3) {
+-		ret = BTRFS_ERROR_DEV_RAID6_MIN_NOT_MET;
+-		goto out;
++	    fs_info->fs_devices->rw_devices <= 3) {
++		return BTRFS_ERROR_DEV_RAID6_MIN_NOT_MET;
+ 	}
+ 
+-out:
+-	return ret;
++	return 0;
+ }
+ 
+ int btrfs_rm_device(struct btrfs_root *root, char *device_path)
+@@ -1768,7 +1763,7 @@ int btrfs_rm_device(struct btrfs_root *root, char *device_path)
+ 
+ 	mutex_lock(&uuid_mutex);
+ 
+-	ret = __check_raid_min_devices(root);
++	ret = __check_raid_min_devices(root->fs_info);
+ 	if (ret)
+ 		goto out;
+ 
 -- 
 2.7.1
 

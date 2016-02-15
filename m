@@ -1,19 +1,14 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:46477 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752567AbcBLScT (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 12 Feb 2016 13:32:19 -0500
-Date: Fri, 12 Feb 2016 10:32:11 -0800
-From: "Darrick J. Wong" <darrick.wong@oracle.com>
-To: Dave Chinner <david@fromorbit.com>
-Cc: fstests@vger.kernel.org, linux-btrfs@vger.kernel.org,
-        Filipe Manana <fdmanana@suse.com>, fdmanana@kernel.org
-Subject: [PATCH v2] fstests: generic/158, test dedupe with destination offset
- past EOF
-Message-ID: <20160212183211.GH6346@birch.djwong.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Received: from mail.kernel.org ([198.145.29.136]:34377 "EHLO mail.kernel.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750922AbcBOKyB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 15 Feb 2016 05:54:01 -0500
+From: fdmanana@kernel.org
+To: fstests@vger.kernel.org
+Cc: linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@suse.com>
+Subject: [PATCH Resend] fstests: generic/158, test dedupe with destination offset past EOF
+Date: Mon, 15 Feb 2016 10:53:55 +0000
+Message-Id: <1455533635-7655-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
@@ -38,15 +33,17 @@ The btrfs issue is fixed by the following patch for the linux kernel:
   "Btrfs: fix extent_same allowing destination offset beyond i_size"
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
-[darrick.wong@oracle.com: fix merge conflicts with latest reflink patchbomb]
-Signed-off-by: Darrick J. Wong <darrick.wong@oracle.com>
 ---
- tests/generic/158     |   10 +++++++++-
- tests/generic/158.out |    6 +++++-
+
+Resent since it was not picked in the last update.
+Rebased against current master branch.
+
+ tests/generic/158     | 10 +++++++++-
+ tests/generic/158.out |  6 +++++-
  2 files changed, 14 insertions(+), 2 deletions(-)
 
 diff --git a/tests/generic/158 b/tests/generic/158
-index 0da5daa..dd64562 100755
+index 0da5daa..38506c9 100755
 --- a/tests/generic/158
 +++ b/tests/generic/158
 @@ -97,9 +97,17 @@ _dedupe_range $testdir1/file1 37 $testdir1/file1 59 23
@@ -58,12 +55,12 @@ index 0da5daa..dd64562 100755
  _dedupe_range $testdir1/file1 $(( (blks + 10) * blksz)) $testdir1/file1 0 $blksz
  
 +echo "Try dedupe to past EOF, destination offset beyond EOF"
-+_dedupe_range $testdir1/file1 0 $testdir1/file1 $(( (blks + 10) * blksz)) \
++_dedupe_range $testdir1/file1 0 $testdir1/file1 $(( (blks + 10) * blksz )) \
 +	$blksz
 +
 +echo "Try dedupe to past EOF, destination offset behind EOF"
-+_dedupe_range $testdir1/file1 0 $testdir1/file1 $(( (blks - 1) * blksz)) \
-+	$((blksz * 2))
++_dedupe_range $testdir1/file1 0 $testdir1/file1 $(( (blks - 1) * blksz )) \
++	$(( blksz * 2 ))
 +
  echo "Try to dedupe a dir"
  _dedupe_range $testdir1/dir1 0 $testdir1/file2 0 $blksz
@@ -85,3 +82,6 @@ index 7f88403..9b82ddf 100644
  dedupe: Invalid argument
  Try to dedupe a dir
  XFS_IOC_FILE_EXTENT_SAME: Is a directory
+-- 
+2.7.0.rc3
+

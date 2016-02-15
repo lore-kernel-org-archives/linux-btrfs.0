@@ -1,85 +1,64 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:34966 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:34941 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751742AbcBOReu (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 15 Feb 2016 12:34:50 -0500
+	id S1753019AbcBORek (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 15 Feb 2016 12:34:40 -0500
 From: David Sterba <dsterba@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: David Sterba <dsterba@suse.com>, anand.jain@oracle.com
-Subject: [PATCH 15/15] btrfs: rename flags for vol args v2
-Date: Mon, 15 Feb 2016 18:34:46 +0100
-Message-Id: <533b0847dc15f8d719aaf6198cf18953899f2164.1455556900.git.dsterba@suse.com>
+Subject: [PATCH 12/15] btrfs: indtroduce raid-type to error-code table, for minimum device constraint
+Date: Mon, 15 Feb 2016 18:34:36 +0100
+Message-Id: <d05a46053f82b1b716cad4178c91242ed515b166.1455556900.git.dsterba@suse.com>
 In-Reply-To: <cover.1455556900.git.dsterba@suse.com>
 References: <cover.1455556900.git.dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Rename BTRFS_DEVICE_BY_ID so it's more descriptive that we specify the
-device by id, it'll be part of the public API. The mask of supported
-flags is also renamed, only for internal use.
-
-The error code for unknown flags is EOPNOTSUPP, fixed.
-
 Signed-off-by: David Sterba <dsterba@suse.com>
 ---
- fs/btrfs/ioctl.c           | 8 ++++----
- include/uapi/linux/btrfs.h | 7 ++++---
- 2 files changed, 8 insertions(+), 7 deletions(-)
+ fs/btrfs/volumes.c | 15 +++++++++++++++
+ fs/btrfs/volumes.h |  2 +-
+ 2 files changed, 16 insertions(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 57fb05960435..6bcd7700b9fd 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -2689,8 +2689,8 @@ static long btrfs_ioctl_rm_dev_v2(struct file *file, void __user *arg)
- 	}
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index ae94e06f3e61..a67249582a6f 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -118,6 +118,21 @@ const u64 btrfs_raid_group[BTRFS_NR_RAID_TYPES] = {
+ 	[BTRFS_RAID_RAID6]  = BTRFS_BLOCK_GROUP_RAID6,
+ };
  
- 	/* Check for compatibility reject unknown flags */
--	if (vol_args->flags & ~BTRFS_VOL_ARG_V2_FLAGS)
--		return -ENOTTY;
-+	if (vol_args->flags & ~BTRFS_VOL_ARG_V2_FLAGS_SUPPORTED)
-+		return -EOPNOTSUPP;
- 
- 	if (atomic_xchg(&root->fs_info->mutually_exclusive_operation_running,
- 			1)) {
-@@ -2699,7 +2699,7 @@ static long btrfs_ioctl_rm_dev_v2(struct file *file, void __user *arg)
- 	}
- 
- 	mutex_lock(&root->fs_info->volume_mutex);
--	if (vol_args->flags & BTRFS_DEVICE_BY_ID) {
-+	if (vol_args->flags & BTRFS_DEVICE_SPEC_BY_ID) {
- 		ret = btrfs_rm_device(root, NULL, vol_args->devid);
- 	} else {
- 		vol_args->name[BTRFS_PATH_NAME_MAX] = '\0';
-@@ -2709,7 +2709,7 @@ static long btrfs_ioctl_rm_dev_v2(struct file *file, void __user *arg)
- 	atomic_set(&root->fs_info->mutually_exclusive_operation_running, 0);
- 
- 	if (!ret) {
--		if (vol_args->flags & BTRFS_DEVICE_BY_ID)
-+		if (vol_args->flags & BTRFS_DEVICE_SPEC_BY_ID)
- 			btrfs_info(root->fs_info, "device deleted: id %llu",
- 					vol_args->devid);
- 		else
-diff --git a/include/uapi/linux/btrfs.h b/include/uapi/linux/btrfs.h
-index 396a4efca775..3975e683af72 100644
---- a/include/uapi/linux/btrfs.h
-+++ b/include/uapi/linux/btrfs.h
-@@ -36,12 +36,13 @@ struct btrfs_ioctl_vol_args {
- #define BTRFS_SUBVOL_CREATE_ASYNC	(1ULL << 0)
- #define BTRFS_SUBVOL_RDONLY		(1ULL << 1)
- #define BTRFS_SUBVOL_QGROUP_INHERIT	(1ULL << 2)
--#define BTRFS_DEVICE_BY_ID		(1ULL << 3)
--#define BTRFS_VOL_ARG_V2_FLAGS				\
-+#define BTRFS_DEVICE_SPEC_BY_ID		(1ULL << 3)
++/*
++ * Table to convert BTRFS_RAID_* to the error code if minimum number of devices
++ * condition is not met. Zero means there's no corresponding
++ * BTRFS_ERROR_DEV_*_NOT_MET value.
++ */
++const int btrfs_raid_mindev_error[BTRFS_NR_RAID_TYPES] = {
++	[BTRFS_RAID_RAID10] = BTRFS_ERROR_DEV_RAID10_MIN_NOT_MET,
++	[BTRFS_RAID_RAID1]  = BTRFS_ERROR_DEV_RAID1_MIN_NOT_MET,
++	[BTRFS_RAID_DUP]    = 0,
++	[BTRFS_RAID_RAID0]  = 0,
++	[BTRFS_RAID_SINGLE] = 0,
++	[BTRFS_RAID_RAID5]  = BTRFS_ERROR_DEV_RAID5_MIN_NOT_MET,
++	[BTRFS_RAID_RAID6]  = BTRFS_ERROR_DEV_RAID6_MIN_NOT_MET,
++};
 +
-+#define BTRFS_VOL_ARG_V2_FLAGS_SUPPORTED		\
- 			(BTRFS_SUBVOL_CREATE_ASYNC |	\
- 			BTRFS_SUBVOL_RDONLY |		\
- 			BTRFS_SUBVOL_QGROUP_INHERIT |	\
--			BTRFS_DEVICE_BY_ID)
-+			BTRFS_DEVICE_SPEC_BY_ID)
+ static int init_first_rw_device(struct btrfs_trans_handle *trans,
+ 				struct btrfs_root *root,
+ 				struct btrfs_device *device);
+diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
+index c73d027e2f8b..a13a538cb01e 100644
+--- a/fs/btrfs/volumes.h
++++ b/fs/btrfs/volumes.h
+@@ -340,7 +340,7 @@ struct btrfs_raid_attr {
+ };
  
- #define BTRFS_FSID_SIZE 16
- #define BTRFS_UUID_SIZE 16
+ extern const struct btrfs_raid_attr btrfs_raid_array[BTRFS_NR_RAID_TYPES];
+-
++extern const int btrfs_raid_mindev_error[BTRFS_NR_RAID_TYPES];
+ extern const u64 btrfs_raid_group[BTRFS_NR_RAID_TYPES];
+ 
+ struct map_lookup {
 -- 
 2.7.1
 

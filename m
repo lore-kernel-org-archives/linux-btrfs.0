@@ -1,36 +1,49 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:46745 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751405AbcBWLlF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 23 Feb 2016 06:41:05 -0500
-Date: Tue, 23 Feb 2016 12:40:55 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Arnd Bergmann <arnd@arndb.de>
-Cc: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
-        linux-arm-kernel@lists.infradead.org, linux-btrfs@vger.kernel.org,
-        linux-kernel@vger.kernel.org
-Subject: Re: [PATCH] btrfs: avoid uninitialized variable warning
-Message-ID: <20160223114055.GK4374@suse.cz>
-Reply-To: dsterba@suse.cz
-References: <1456178006-1619105-1-git-send-email-arnd@arndb.de>
+Received: from mail-pf0-f178.google.com ([209.85.192.178]:34269 "EHLO
+	mail-pf0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753953AbcBPIC6 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 16 Feb 2016 03:02:58 -0500
+From: Sudip Mukherjee <sudipm.mukherjee@gmail.com>
+To: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
+        David Sterba <dsterba@suse.com>
+Cc: linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org,
+        Sudip Mukherjee <sudipm.mukherjee@gmail.com>
+Subject: [PATCH] btrfs: fix build warning
+Date: Tue, 16 Feb 2016 13:32:47 +0530
+Message-Id: <1455609767-26992-1-git-send-email-sudipm.mukherjee@gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1456178006-1619105-1-git-send-email-arnd@arndb.de>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Feb 22, 2016 at 10:53:20PM +0100, Arnd Bergmann wrote:
-> With CONFIG_SMP and CONFIG_PREEMPT both disabled, gcc decides
-> to partially inline the get_state_failrec() function but cannot
-> figure out that means the failrec pointer is always valid
-> if the function returns success, which causes a harmless
-> warning:
-> 
-> fs/btrfs/extent_io.c: In function 'clean_io_failure':
-> fs/btrfs/extent_io.c:2131:4: error: 'failrec' may be used uninitialized in this function [-Werror=maybe-uninitialized]
-> 
-> This marks get_state_failrec() and set_state_failrec() both
-> as 'noinline', which avoids the warning in all cases for me,
-> and seems less ugly than adding a fake initialization.
+We were getting build warning about:
+fs/btrfs/extent-tree.c:7021:34: warning: ‘used_bg’ may be used
+	uninitialized in this function
 
-Thanks for the analysis and the fix, works for me.
+It is not a valid warning as used_bg is never used uninitilized since
+locked is initially false so we can never be in the section where
+'used_bg' is used. But gcc is not able to understand that and we can
+initialize it while declaring to silence the warning.
+
+Signed-off-by: Sudip Mukherjee <sudip@vectorindia.org>
+---
+ fs/btrfs/extent-tree.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index e2287c7..f24e4c3 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -7018,7 +7018,7 @@ btrfs_lock_cluster(struct btrfs_block_group_cache *block_group,
+ 		   struct btrfs_free_cluster *cluster,
+ 		   int delalloc)
+ {
+-	struct btrfs_block_group_cache *used_bg;
++	struct btrfs_block_group_cache *used_bg = NULL;
+ 	bool locked = false;
+ again:
+ 	spin_lock(&cluster->refill_lock);
+-- 
+1.9.1
+

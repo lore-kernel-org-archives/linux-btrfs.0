@@ -1,39 +1,43 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wm0-f47.google.com ([74.125.82.47]:34693 "EHLO
-	mail-wm0-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754674AbcB1VMR (ORCPT
+Received: from youngberry.canonical.com ([91.189.89.112]:40160 "EHLO
+	youngberry.canonical.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932173AbcBPPiz (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 28 Feb 2016 16:12:17 -0500
-Received: by mail-wm0-f47.google.com with SMTP id p65so45399569wmp.1
-        for <linux-btrfs@vger.kernel.org>; Sun, 28 Feb 2016 13:12:16 -0800 (PST)
-From: Alexander Fougner <fougner89@gmail.com>
+	Tue, 16 Feb 2016 10:38:55 -0500
 To: linux-btrfs@vger.kernel.org
-Cc: Alexander Fougner <fougner89@gmail.com>
-Subject: [PATCH] btrfs-progs: docs: add note about resizing to max after device replace
-Date: Sun, 28 Feb 2016 22:11:54 +0100
-Message-Id: <1456693914-31899-1-git-send-email-fougner89@gmail.com>
+From: Colin Ian King <colin.king@canonical.com>
+Subject: BZ#101951, Overlayfs on top of btrfs causes kernel oops + freeze
+Message-ID: <56C3428D.1010000@canonical.com>
+Date: Tue, 16 Feb 2016 15:38:53 +0000
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Signed-off-by: Alexander Fougner <fougner89@gmail.com>
----
- Documentation/btrfs-replace.asciidoc | 3 +++
- 1 file changed, 3 insertions(+)
+Hi there,
 
-diff --git a/Documentation/btrfs-replace.asciidoc b/Documentation/btrfs-replace.asciidoc
-index 5a14a40..61ab306 100644
---- a/Documentation/btrfs-replace.asciidoc
-+++ b/Documentation/btrfs-replace.asciidoc
-@@ -32,6 +32,9 @@ of the filesystem which is mounted at <path>, otherwise is is
- the path to the source device. If the source device is disconnected,
- from the system, you have to use the devid parameter format.
- The <targetdev> needs to be same size or larger than the <srcdev>.
-+Note that the filesystem has to be resized to fully take advantage of a
-+larger target device, this can be achieved with
-+`btrfs filesystem resize <devid>:max /path`.
- +
- `Options`
- +
--- 
-2.7.2
+bug: https://bugzilla.kernel.org/show_bug.cgi?id=101951 and also
+https://bugs.launchpad.net/ubuntu/+source/linux/+bug/1532145
 
+Commit 4bacc9c9234c7c8eec44f5ed4e960d9f96fa0f01 ("overlayfs: Make f_path
+always point to the overlay and f_inode to the underlay") resulted in an
+issue when using a combination of btrfs and overlayfs.  This is
+noticeable when doing a fsync() on a file in a chroot with overlayfs on
+top of btrfs; we hit a kernel oops in btrfs_sync_file() on
+atomic_inc(&root->log_batch) because root is NULL.
+
+I've debugged this further and found that in btrfs_sync_file():
+
+	struct inode *inode = d_inode(dentry);
+
+does not return the inode I expected when using the stacked overlay fs,
+where as:
+
+	struct inode *inode = file_inode(file);
+
+does.
+
+However, I'm not well at all well versed in btrfs, so I am not confident
+this is a actually correct.  Any comments?
+
+Colin

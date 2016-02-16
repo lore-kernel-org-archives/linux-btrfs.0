@@ -1,88 +1,84 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f179.google.com ([209.85.223.179]:33802 "EHLO
-	mail-io0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932640AbcBPQLT (ORCPT
+Received: from youngberry.canonical.com ([91.189.89.112]:40643 "EHLO
+	youngberry.canonical.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751284AbcBPQRn (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 16 Feb 2016 11:11:19 -0500
-Received: by mail-io0-f179.google.com with SMTP id 9so198910273iom.1
-        for <linux-btrfs@vger.kernel.org>; Tue, 16 Feb 2016 08:11:19 -0800 (PST)
-MIME-Version: 1.0
-Reply-To: fdmanana@gmail.com
-In-Reply-To: <56C34996.3050802@canonical.com>
-References: <56C3428D.1010000@canonical.com>
-	<CAL3q7H7XVLTHrv+tdNiF4W=VZGNQ9S3dNNdh1wvHkPjYZ0QhkQ@mail.gmail.com>
-	<56C34996.3050802@canonical.com>
-Date: Tue, 16 Feb 2016 16:11:19 +0000
-Message-ID: <CAL3q7H7YYf0ntQiF4A1FQXYvRxgprQORoF-8jFe3i5T-=ELzzQ@mail.gmail.com>
+	Tue, 16 Feb 2016 11:17:43 -0500
 Subject: Re: BZ#101951, Overlayfs on top of btrfs causes kernel oops + freeze
-From: Filipe Manana <fdmanana@gmail.com>
-To: Colin Ian King <colin.king@canonical.com>
+To: fdmanana@gmail.com
+References: <56C3428D.1010000@canonical.com>
+ <CAL3q7H7XVLTHrv+tdNiF4W=VZGNQ9S3dNNdh1wvHkPjYZ0QhkQ@mail.gmail.com>
+ <56C34996.3050802@canonical.com>
+ <CAL3q7H7YYf0ntQiF4A1FQXYvRxgprQORoF-8jFe3i5T-=ELzzQ@mail.gmail.com>
 Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+From: Colin Ian King <colin.king@canonical.com>
+Message-ID: <56C34BA5.8040407@canonical.com>
+Date: Tue, 16 Feb 2016 16:17:41 +0000
+MIME-Version: 1.0
+In-Reply-To: <CAL3q7H7YYf0ntQiF4A1FQXYvRxgprQORoF-8jFe3i5T-=ELzzQ@mail.gmail.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Feb 16, 2016 at 4:08 PM, Colin Ian King
-<colin.king@canonical.com> wrote:
-> On 16/02/16 15:51, Filipe Manana wrote:
->> On Tue, Feb 16, 2016 at 3:38 PM, Colin Ian King
->> <colin.king@canonical.com> wrote:
->>> Hi there,
+On 16/02/16 16:11, Filipe Manana wrote:
+> On Tue, Feb 16, 2016 at 4:08 PM, Colin Ian King
+> <colin.king@canonical.com> wrote:
+>> On 16/02/16 15:51, Filipe Manana wrote:
+>>> On Tue, Feb 16, 2016 at 3:38 PM, Colin Ian King
+>>> <colin.king@canonical.com> wrote:
+>>>> Hi there,
+>>>>
+>>>> bug: https://bugzilla.kernel.org/show_bug.cgi?id=101951 and also
+>>>> https://bugs.launchpad.net/ubuntu/+source/linux/+bug/1532145
+>>>>
+>>>> Commit 4bacc9c9234c7c8eec44f5ed4e960d9f96fa0f01 ("overlayfs: Make f_path
+>>>> always point to the overlay and f_inode to the underlay") resulted in an
+>>>> issue when using a combination of btrfs and overlayfs.  This is
+>>>> noticeable when doing a fsync() on a file in a chroot with overlayfs on
+>>>> top of btrfs; we hit a kernel oops in btrfs_sync_file() on
+>>>> atomic_inc(&root->log_batch) because root is NULL.
+>>>>
+>>>> I've debugged this further and found that in btrfs_sync_file():
+>>>>
+>>>>         struct inode *inode = d_inode(dentry);
+>>>>
+>>>> does not return the inode I expected when using the stacked overlay fs,
+>>>> where as:
+>>>>
+>>>>         struct inode *inode = file_inode(file);
+>>>>
+>>>> does.
 >>>
->>> bug: https://bugzilla.kernel.org/show_bug.cgi?id=101951 and also
->>> https://bugs.launchpad.net/ubuntu/+source/linux/+bug/1532145
+>>> See the discussion at
+>>> https://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg48131.html
 >>>
->>> Commit 4bacc9c9234c7c8eec44f5ed4e960d9f96fa0f01 ("overlayfs: Make f_path
->>> always point to the overlay and f_inode to the underlay") resulted in an
->>> issue when using a combination of btrfs and overlayfs.  This is
->>> noticeable when doing a fsync() on a file in a chroot with overlayfs on
->>> top of btrfs; we hit a kernel oops in btrfs_sync_file() on
->>> atomic_inc(&root->log_batch) because root is NULL.
->>>
->>> I've debugged this further and found that in btrfs_sync_file():
->>>
->>>         struct inode *inode = d_inode(dentry);
->>>
->>> does not return the inode I expected when using the stacked overlay fs,
->>> where as:
->>>
->>>         struct inode *inode = file_inode(file);
->>>
->>> does.
+>>> You can get along with file_inode() in btrfs_sync_file(), but not
+>>> later the fsync code path where we traverse the hierarchy up using
+>>> dentries.
+>>> More details on that thread.
 >>
->> See the discussion at
->> https://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg48131.html
->>
->> You can get along with file_inode() in btrfs_sync_file(), but not
->> later the fsync code path where we traverse the hierarchy up using
->> dentries.
->> More details on that thread.
->
-> Ah, good. So was there any resolution on a way forward for a fix?
+>> Ah, good. So was there any resolution on a way forward for a fix?
+> 
+> Nop.
+> 
+OK, so chroots don't work, that's a bit of a show stopper :-/
 
-Nop.
-
->
 >>
 >>>
->>> However, I'm not well at all well versed in btrfs, so I am not confident
->>> this is a actually correct.  Any comments?
+>>>>
+>>>> However, I'm not well at all well versed in btrfs, so I am not confident
+>>>> this is a actually correct.  Any comments?
+>>>>
+>>>> Colin
+>>>> --
+>>>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>>>> the body of a message to majordomo@vger.kernel.org
+>>>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 >>>
->>> Colin
->>> --
->>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->>> the body of a message to majordomo@vger.kernel.org
->>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>>>
+>>>
 >>
->>
->>
->
+> 
+> 
+> 
 
-
-
--- 
-Filipe David Manana,
-
-"Reasonable men adapt themselves to the world.
- Unreasonable men adapt the world to themselves.
- That's why all progress depends on unreasonable men."

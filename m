@@ -1,82 +1,75 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:50934 "EHLO plane.gmane.org"
+Received: from plane.gmane.org ([80.91.229.3]:51624 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S965142AbcBQE2X (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 16 Feb 2016 23:28:23 -0500
+	id S933169AbcBQEto (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 16 Feb 2016 23:49:44 -0500
 Received: from list by plane.gmane.org with local (Exim 4.69)
 	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1aVtiv-0008C7-W2
-	for linux-btrfs@vger.kernel.org; Wed, 17 Feb 2016 05:28:22 +0100
+	id 1aVu3a-0007Eg-Jz
+	for linux-btrfs@vger.kernel.org; Wed, 17 Feb 2016 05:49:42 +0100
 Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
         by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 17 Feb 2016 05:28:21 +0100
+        for <linux-btrfs@vger.kernel.org>; Wed, 17 Feb 2016 05:49:42 +0100
 Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 17 Feb 2016 05:28:21 +0100
+        for <linux-btrfs@vger.kernel.org>; Wed, 17 Feb 2016 05:49:42 +0100
 To: linux-btrfs@vger.kernel.org
 From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: RAID 6 full, but there is still space left on some devices
-Date: Wed, 17 Feb 2016 04:28:16 +0000 (UTC)
-Message-ID: <pan$14375$e0cb4647$d3ccfaa2$90fd0ecc@cox.net>
-References: <CABmr4wVBb0CCEoU_N2jxYvC=gVn9vUKWfb0902yZDuP2N3ck3w@mail.gmail.com>
+Subject: Re: [Docs]? Only one Subvolume with DUP (or different parameters)?
+Date: Wed, 17 Feb 2016 04:49:37 +0000 (UTC)
+Message-ID: <pan$17e03$37c598a8$93a246ff$ae65c0fd@cox.net>
+References: <56C377BB.9020101@knebb.de>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Dan Blazejewski posted on Tue, 16 Feb 2016 15:20:12 -0500 as excerpted:
+Christian Völker posted on Tue, 16 Feb 2016 20:25:47 +0100 as excerpted:
 
-> A little background: I started using BTRFS over a year ago, in RAID 1
-> with mixed size drives. A few months ago, I started replacing the disks
-> with 4 TB drives, and eventually switched over to RAID 6. I am currently
-> running a 6x4TB RAID6 drive configuration, which should give me ~14.5 TB
-> usable, but I'm only getting around 11.
+> sorry for the simple question and I assume every developer here laughs
+> about this question.
 > 
-> The weird thing is that It seems to completely fill 4/6 of the disks,
-> while leaving lots of space free on 2 of the disks. I've tried full
-> filesystem balances, yet the problem continues.
+> Anyway:
 > 
-> # btrfs fi show
+> I have read loads of documents but did not find an answer for sure. Even
+> though I assume I am right.
 > 
-> Label: none  uuid: 78733087-d597-4301-8efa-8e1df800b108
->         Total devices 6 FS bytes used 11.59TiB
->         devid    1 size 3.64TiB used 3.64TiB path /dev/sdd
->         devid    2 size 3.64TiB used 3.64TiB path /dev/sdg
->         devid    3 size 3.64TiB used 3.64TiB path /dev/sdf
->         devid    5 size 3.64TiB used 2.92TiB path /dev/sda
->         devid    6 size 3.64TiB used 1.48TiB path /dev/sdb
->         devid    7 size 3.64TiB used 3.64TiB path /dev/sdc
+> On a btrfs filesystem created; is it possible to have subvolumes with
+> data duplication and another subvolume without (resp. with just metadata
+> duplication)?
 > 
-> btrfs-progs v4.2.3
+> I have some large filesystems currently with ext4 and I am thinking of
+> changing to btrfs. Some of the data is more important than others. So I
+> want to have data duplication on the important files (sorted in a mount
+> point) and without for the other subvolume.
 > 
-> 
-> 
-> # btrfs fi df /mnt/data
-> 
-> Data, RAID6: total=11.67TiB, used=11.58TiB
-> System, RAID6: total=64.00MiB, used=1.70MiB
-> Metadata, RAID6: total=15.58GiB, used=13.89GiB
-> GlobalReserve, single: total=512.00MiB, used=0.00B
-> 
-> # btrfs fi usage /mnt/data
-> 
-> WARNING: RAID56 detected, not implemented
+> So I want to have the advantage of redundancy of important files
+> combined with the flexibility of the volume manager and shared disk
+> space.
 
-Your btrfs-progs is old and I don't see any indication of kernel version 
-at all, but I'll guess it's old as well.  Particularly for raid56 mode, 
-which still isn't to the maturity level of the rest of btrfs, using 
-current kernel and btrfs-progs is *very* strongly recommended.
+As Hugo mentions, that's not possible at this point, tho the plan is to 
+make replication mode a per-subvolume or even per-file property at some 
+still-future point.  Given the rate of progress, however, that future 
+point is extremely likely to be at least two years out and could well be 5
++ years out -- IOW, it's nothing you could plan for at this point.
 
-Among other things, current userspace 4.4 btrfs fi usage should support 
-raid56 mode properly, now.  Also, with newer userspace and kernel, btrfs 
-balance supports the stripes= filter, which appears to be what you're 
-looking for, to rebalance to full-width stripes anything that's not yet 
-full width, thereby evening out your usage.
+However, it's quite possible to do multiple separate btrfs, with each one 
+having its own replication mode.  That is, in fact, what I do here, tho 
+in my case it's more to keep all my data eggs from being in the same 
+filesystem basket, in case btrfs decides to eat a filesystem, than it is 
+for different replication (most of mine are raid1 across partitions on 
+two devices).  If the filesystem goes, being on a different subvolume 
+from whatever triggered the problem isn't going to help much, while being 
+on a different filesystem entirely, which might have been mounted
+read-only or not even mounted at all at the time, very likely will, and I 
+prefer not having all my data eggs in the same filesystem basket, 
+particularly when that filesystem basket is btrfs, which while 
+stabilizing, isn't yet full stable and mature yet, even if it means a bit 
+more hands-on administration than would simply shoving everything in the 
+same basket and hoping the bottom doesn't drop out of it.
 
-A full balance /should/ do it as well, I believe, but with raid56 support 
-still not yet at the maturity level of btrfs in general, it's likely your 
-version is old and buggy in that regard.
+Tho that might be just me...
 
 -- 
 Duncan - List replies preferred.   No HTML msgs.

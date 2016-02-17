@@ -1,25 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from bombadil.infradead.org ([198.137.202.9]:43974 "EHLO
-	bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S933325AbcBQJ6N (ORCPT
+Received: from mail-io0-f172.google.com ([209.85.223.172]:33375 "EHLO
+	mail-io0-f172.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S933366AbcBQKEX (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 17 Feb 2016 04:58:13 -0500
-Date: Wed, 17 Feb 2016 01:58:12 -0800
-From: Christoph Hellwig <hch@infradead.org>
-To: "Darrick J. Wong" <darrick.wong@oracle.com>
-Cc: david@fromorbit.com, linux-btrfs@vger.kernel.org, fstests@vger.kernel.org,
-        xfs@oss.sgi.com
-Subject: Re: [PATCH 3/3] xfs/24[356]: check for -c switch to xfs_io bmap
- command
-Message-ID: <20160217095812.GC21482@infradead.org>
-References: <20160215204608.7977.2802.stgit@birch.djwong.org>
- <20160215204627.7977.93549.stgit@birch.djwong.org>
+	Wed, 17 Feb 2016 05:04:23 -0500
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20160215204627.7977.93549.stgit@birch.djwong.org>
+Reply-To: fdmanana@gmail.com
+In-Reply-To: <20160217095646.GA21482@infradead.org>
+References: <20160215204608.7977.2802.stgit@birch.djwong.org>
+	<20160215204614.7977.2848.stgit@birch.djwong.org>
+	<20160217095646.GA21482@infradead.org>
+Date: Wed, 17 Feb 2016 10:04:23 +0000
+Message-ID: <CAL3q7H5NRUXvo=mEtGr4-S4yPT7k_yw6LsMAq_V8bPD1T=7r0g@mail.gmail.com>
+Subject: Re: [PATCH 1/3] generic/304: fix high offset
+From: Filipe Manana <fdmanana@gmail.com>
+To: Christoph Hellwig <hch@infradead.org>
+Cc: "Darrick J. Wong" <darrick.wong@oracle.com>,
+        Dave Chinner <david@fromorbit.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        fstests@vger.kernel.org, "xfs@oss.sgi.com" <xfs@oss.sgi.com>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Looks fine,
+On Wed, Feb 17, 2016 at 9:56 AM, Christoph Hellwig <hch@infradead.org> wrote:
+> On Mon, Feb 15, 2016 at 12:46:14PM -0800, Darrick J. Wong wrote:
+>> "Invalid argument" is a better response to an impossibly high offset
+>> dedupe request than "extents don't match", so change the test.
+>
+> What does btrfs return here?
 
-Reviewed-by: Christoph Hellwig <hch@lst.de>
+-EINVAL, so this makes the test pass on btrfs.
+
+> --
+> To unsubscribe from this list: send the line "unsubscribe fstests" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+
+
+
+-- 
+Filipe David Manana,
+
+"Reasonable men adapt themselves to the world.
+ Unreasonable men adapt the world to themselves.
+ That's why all progress depends on unreasonable men."

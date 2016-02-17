@@ -1,29 +1,67 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:43915 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750885AbcBKRxN (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 11 Feb 2016 12:53:13 -0500
-Date: Thu, 11 Feb 2016 18:53:10 +0100
-From: David Sterba <dsterba@suse.cz>
-To: "Lakshmipathi.G" <lakshmipathi.g@gmail.com>
-Cc: linux-btrfs@vger.kernel.org, "Lakshmipathi.G" <Lakshmipathi.G@giis.co.in>
+Received: from fep28.mx.upcmail.net ([62.179.121.48]:50415 "EHLO
+	fep28.mx.upcmail.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1161499AbcBQV1H (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 17 Feb 2016 16:27:07 -0500
+Received: from edge04.upcmail.net ([192.168.13.239])
+          by viefep28-int.chello.at
+          (InterMail vM.8.01.05.21 201-2260-151-156-20141103) with ESMTP
+          id <20160217212702.UYPL24578.viefep28-int.chello.at@edge04.upcmail.net>
+          for <linux-btrfs@vger.kernel.org>;
+          Wed, 17 Feb 2016 22:27:02 +0100
+Date: Wed, 17 Feb 2016 22:26:02 +0100
+Message-Id: <201602172126.u1HLQ2H9020811@webminal.org>
+From: "Lakshmipathi.G" <lakshmipathi.g@gmail.com>
+To: David Sterba <dsterba@suse.cz>, Btrfs <linux-btrfs@vger.kernel.org>,
+        lakshmipathi <lakshmipathi.g@giis.co.in>
 Subject: Re: [PATCH][btrfs-progs] Include file verification with convert-tests
-Message-ID: <20160211175310.GF4374@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1453738113-19583-1-git-send-email-Lakshmipathi.G@giis.co.in>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1453738113-19583-1-git-send-email-Lakshmipathi.G@giis.co.in>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Jan 25, 2016 at 09:38:33PM +0530, Lakshmipathi.G wrote:
-> From: "Lakshmipathi.G" <Lakshmipathi.G@giis.co.in>
-> 
-> Signed-off-by: Lakshmipathi.G <Lakshmipathi.G@giis.co.in>
+I think its a good idea to populate fs and verify them after conversion.
+I'm not sure about existing tools, simply we can create local script to
+this testsuite. Some thoughts on possible data set:
 
-Applied, thanks.
+--
+a) regular files
+   - empty files (touch)
+   - smaller files dd if=/dev/zero 
+   - smaller files dd if=/dev/urandom 
+   
+b) directory
+   - empty dirs.
+   - dir with files 
+   - dir depth upto N
+   - dir with no file but lot of unlinked entries.
+       
+c) fast/slow symlink
+   - to dir
+   - to file
 
-The external checksum verification is a good thing to do. We'll have to
-add some ways to populate the filesystems, by external scripts/tools or
-some local to this testsuite.
+d) hardlink :
+   - between files
+   - between files in different sub-dir
+
+e) fifo files and sparsefile, broken symlink
+
+f) file and dir with special inode attribute: 
+    - immutable flag
+    - sticky bit etc
+
+g) file/directory acls:
+   - large no.of acls
+
+--
+fs images with debugfs tool:
+
+a) an valid image with bad blocks.
+
+b) corrupted images:
+Ex: Create duplicate blocks and convert it & expect btrfs-check to catch issue?
+
+Any thoughts on above list, suggestions/comments? thanks!
+
+
+Cheers,
+Lakshmipathi.G 

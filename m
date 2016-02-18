@@ -1,48 +1,51 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:49592 "EHLO
+Received: from userp1040.oracle.com ([156.151.31.81]:49638 "EHLO
 	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1423915AbcBRIHf (ORCPT
+	with ESMTP id S1424672AbcBRIHl (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 18 Feb 2016 03:07:35 -0500
+	Thu, 18 Feb 2016 03:07:41 -0500
 From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
 Cc: dsterba@suse.cz, clm@fb.com
-Subject: [PATCH RFC] btrfs: make add and device ioctl args path max consistent
-Date: Thu, 18 Feb 2016 16:07:16 +0800
-Message-Id: <1455782837-15630-2-git-send-email-anand.jain@oracle.com>
+Subject: [PATCH RFC] btrfs-progs: make add and delete path max len consistent
+Date: Thu, 18 Feb 2016 16:07:17 +0800
+Message-Id: <1455782837-15630-3-git-send-email-anand.jain@oracle.com>
 In-Reply-To: <1455782837-15630-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 References: <1455782837-15630-1-git-send-email-anand.jain@oracle.com>
 
 Add device ioctl uses BTRFS_PATH_NAME_MAX however delete
-uses BTRFS_SUBVOL_NAME_MAX for device path.  This patch makes
-them consistent.
+uses BTRFS_SUBVOL_NAME_MAX to hold device path. This patch
+makes them consistent.
+
+Depends on
+  btrfs: make add and device ioctl args path max consistent
 
 Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
- fs/btrfs/ioctl.c           |  2 +-
- include/uapi/linux/btrfs.h | 19 ++++++++++++++++++-
+ cmds-device.c |  2 +-
+ ioctl.h       | 19 ++++++++++++++++++-
  2 files changed, 19 insertions(+), 2 deletions(-)
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 1f72f8ed38f5..15fc91291c40 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -2672,7 +2672,7 @@ out:
- static long btrfs_ioctl_rm_dev_v2(struct file *file, void __user *arg)
- {
- 	struct btrfs_root *root = BTRFS_I(file_inode(file))->root;
--	struct btrfs_ioctl_vol_args_v2 *vol_args;
-+	struct btrfs_ioctl_vol_args_v3 *vol_args;
- 	int ret;
+diff --git a/cmds-device.c b/cmds-device.c
+index 879ba94d7ea5..be07e34c2af8 100644
+--- a/cmds-device.c
++++ b/cmds-device.c
+@@ -160,7 +160,7 @@ static int _cmd_device_remove(int argc, char **argv,
+ 		struct	btrfs_ioctl_vol_args arg;
+ 		int	res;
  
- 	if (!capable(CAP_SYS_ADMIN))
-diff --git a/include/uapi/linux/btrfs.h b/include/uapi/linux/btrfs.h
-index 3975e683af72..3d58182b68e8 100644
---- a/include/uapi/linux/btrfs.h
-+++ b/include/uapi/linux/btrfs.h
-@@ -90,6 +90,23 @@ struct btrfs_ioctl_vol_args_v2 {
+-		struct btrfs_ioctl_vol_args_v2 argv2 = {0};
++		struct btrfs_ioctl_vol_args_v3 argv2 = {0};
+ 		int is_devid = 0;
+ 
+ 		if (string_is_numerical(argv[i])) {
+diff --git a/ioctl.h b/ioctl.h
+index 1560dcb4b457..8e444ca374fd 100644
+--- a/ioctl.h
++++ b/ioctl.h
+@@ -92,6 +92,23 @@ struct btrfs_ioctl_vol_args_v2 {
  	};
  };
  
@@ -66,14 +69,15 @@ index 3975e683af72..3d58182b68e8 100644
  /*
   * structure to report errors and progress to userspace, either as a
   * result of a finished scrub, a canceled scrub or a progress inquiry
-@@ -671,6 +688,6 @@ static inline char *btrfs_err_str(enum btrfs_err_code err_code)
+@@ -689,7 +706,7 @@ static inline char *btrfs_err_str(enum btrfs_err_code err_code)
  #define BTRFS_IOC_GET_SUPPORTED_FEATURES _IOR(BTRFS_IOCTL_MAGIC, 57, \
- 				   struct btrfs_ioctl_feature_flags[3])
+                                   struct btrfs_ioctl_feature_flags[3])
  #define BTRFS_IOC_RM_DEV_V2 _IOW(BTRFS_IOCTL_MAGIC, 58, \
 -				   struct btrfs_ioctl_vol_args_v2)
 +				   struct btrfs_ioctl_vol_args_v3)
- 
- #endif /* _UAPI_LINUX_BTRFS_H */
+ #ifdef __cplusplus
+ }
+ #endif
 -- 
 2.7.0
 

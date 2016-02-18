@@ -1,76 +1,37 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.136]:36154 "EHLO mail.kernel.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751449AbcBZNNh (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 26 Feb 2016 08:13:37 -0500
-Received: from mail.kernel.org (localhost [127.0.0.1])
-	by mail.kernel.org (Postfix) with ESMTP id 83EB22039E
-	for <linux-btrfs@vger.kernel.org>; Fri, 26 Feb 2016 13:13:36 +0000 (UTC)
-Received: from debian3.lan (bl8-199-62.dsl.telepac.pt [85.241.199.62])
-	(using TLSv1.2 with cipher AES128-SHA256 (128/128 bits))
-	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPSA id 6782E20394
-	for <linux-btrfs@vger.kernel.org>; Fri, 26 Feb 2016 13:13:35 +0000 (UTC)
-From: fdmanana@kernel.org
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] Btrfs: do not collect ordered extents when logging that inode exists
-Date: Fri, 26 Feb 2016 04:35:49 +0000
-Message-Id: <1456461349-17957-1-git-send-email-fdmanana@kernel.org>
+Received: from userp1040.oracle.com ([156.151.31.81]:45633 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750872AbcBRFBW (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 18 Feb 2016 00:01:22 -0500
+Date: Thu, 18 Feb 2016 08:01:09 +0300
+From: Dan Carpenter <dan.carpenter@oracle.com>
+To: Chris Mason <clm@fb.com>, Anand Jain <anand.jain@oracle.com>
+Cc: Josef Bacik <jbacik@fb.com>, David Sterba <dsterba@suse.com>,
+        linux-btrfs@vger.kernel.org, kernel-janitors@vger.kernel.org
+Subject: [patch] btrfs: array overflow in btrfs_ioctl_rm_dev_v2()
+Message-ID: <20160218050109.GA7781@mwanda>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Filipe Manana <fdmanana@suse.com>
+We were putting the NUL terminator at BTRFS_PATH_NAME_MAX (4087) bytes
+instead of BTRFS_SUBVOL_NAME_MAX (4039) so it corrupted memory.
 
-When logging that an inode exists, for example as part of a directory
-fsync operation, we were collecting any ordered extents for the inode but
-we ended up doing nothing with them except tagging them as processed, by
-setting the flag BTRFS_ORDERED_LOGGED on them, which prevented a
-subsequent fsync of that inode (using the LOG_INODE_ALL mode) from
-collecting and processing them. This created a time window where a second
-fsync against the inode, using the fast path, ended up not logging the
-checksums for the new extents but it logged the extents since they were
-part of the list of modified extents. This happened because the ordered
-extents were not collected and checksums were not yet added to the csum
-tree - the ordered extents have not gone through btrfs_finish_ordered_io()
-yet (which is where we add them to the csum tree by calling
-inode.c:add_pending_csums()).
+Fixes: 22af1a869288 ('btrfs: introduce device delete by devid')
+Signed-off-by: Dan Carpenter <dan.carpenter@oracle.com>
 
-So fix this by not collecting an inode's ordered extents if we are logging
-it with the LOG_INODE_EXISTS mode.
-
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
- fs/btrfs/tree-log.c | 17 ++++++++++++++++-
- 1 file changed, 16 insertions(+), 1 deletion(-)
-
-diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index 9f6372d..9d2e8ec 100644
---- a/fs/btrfs/tree-log.c
-+++ b/fs/btrfs/tree-log.c
-@@ -4500,7 +4500,22 @@ static int btrfs_log_inode(struct btrfs_trans_handle *trans,
- 
- 	mutex_lock(&BTRFS_I(inode)->log_mutex);
- 
--	btrfs_get_logged_extents(inode, &logged_list, start, end);
-+	/*
-+	 * Collect ordered extents only if we are logging data. This is to
-+	 * ensure a subsequent request to log this inode in LOG_INODE_ALL mode
-+	 * will process the ordered extents if they still exists at the time,
-+	 * because when we collect them we test and set for the flag
-+	 * BTRFS_ORDERED_LOGGED to prevent multiple log requests to process the
-+	 * same ordered extents. The consequence for the LOG_INODE_ALL log mode
-+	 * not processing the ordered extents is that we end up logging the
-+	 * corresponding file extent items, based on the extent maps in the
-+	 * inode's extent_map_tree's modified_list, without logging the
-+	 * respective checksums (since the may still be only attached to the
-+	 * ordered extents and have not been inserted in the csum tree by
-+	 * btrfs_finish_ordered_io() yet).
-+	 */
-+	if (inode_only == LOG_INODE_ALL)
-+		btrfs_get_logged_extents(inode, &logged_list, start, end);
- 
- 	/*
- 	 * a brute force approach to making sure we get the most uptodate
--- 
-2.7.0.rc3
-
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 5224fc8..77c61b4 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -2700,7 +2700,7 @@ static long btrfs_ioctl_rm_dev_v2(struct file *file, void __user *arg)
+ 	if (vol_args->flags & BTRFS_DEVICE_SPEC_BY_ID) {
+ 		ret = btrfs_rm_device(root, NULL, vol_args->devid);
+ 	} else {
+-		vol_args->name[BTRFS_PATH_NAME_MAX] = '\0';
++		vol_args->name[BTRFS_SUBVOL_NAME_MAX] = '\0';
+ 		ret = btrfs_rm_device(root, vol_args->name, 0);
+ 	}
+ 	mutex_unlock(&root->fs_info->volume_mutex);

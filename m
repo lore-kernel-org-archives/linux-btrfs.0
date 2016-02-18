@@ -1,14 +1,14 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
 Received: from cn.fujitsu.com ([222.73.24.84]:45545 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1425095AbcBRFpg (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 18 Feb 2016 00:45:36 -0500
+	id S1425091AbcBRFpe (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 18 Feb 2016 00:45:34 -0500
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org, clm@fb.com
 Cc: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
-Subject: [PATCH v7 18/20] btrfs: dedup: add per-file online dedup control
-Date: Thu, 18 Feb 2016 13:42:56 +0800
-Message-Id: <1455774178-3595-19-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH v7 07/20] btrfs: dedup: Implement btrfs_dedup_calc_hash interface
+Date: Thu, 18 Feb 2016 13:42:45 +0800
+Message-Id: <1455774178-3595-8-git-send-email-quwenruo@cn.fujitsu.com>
 In-Reply-To: <1455774178-3595-1-git-send-email-quwenruo@cn.fujitsu.com>
 References: <1455774178-3595-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -17,46 +17,73 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
 
-Introduce inode_need_dedup() to implement per-file online dedup control.
+Unlike in-memory or on-disk dedup method, only SHA256 hash method is
+supported yet, so implement btrfs_dedup_calc_hash() interface using
+SHA256.
 
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 Signed-off-by: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
 ---
- fs/btrfs/inode.c | 15 ++++++++++++++-
- 1 file changed, 14 insertions(+), 1 deletion(-)
+ fs/btrfs/dedup.c | 49 +++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 49 insertions(+)
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 92b3bdd..07c8f89 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -676,6 +676,18 @@ static void free_async_extent_pages(struct async_extent *async_extent)
- 	async_extent->pages = NULL;
+diff --git a/fs/btrfs/dedup.c b/fs/btrfs/dedup.c
+index dbcfcc9..9777355 100644
+--- a/fs/btrfs/dedup.c
++++ b/fs/btrfs/dedup.c
+@@ -543,3 +543,52 @@ int btrfs_dedup_search(struct btrfs_fs_info *fs_info,
+ 	}
+ 	return ret;
  }
- 
-+static inline int inode_need_dedup(struct btrfs_fs_info *fs_info,
-+				   struct inode *inode)
++
++int btrfs_dedup_calc_hash(struct btrfs_fs_info *fs_info,
++			  struct inode *inode, u64 start,
++			  struct btrfs_dedup_hash *hash)
 +{
-+	if (!fs_info->dedup_enabled)
++	int i;
++	int ret;
++	struct page *p;
++	struct btrfs_dedup_info *dedup_info = fs_info->dedup_info;
++	struct crypto_shash *tfm = dedup_info->dedup_driver;
++	struct {
++		struct shash_desc desc;
++		char ctx[crypto_shash_descsize(tfm)];
++	} sdesc;
++	u64 dedup_bs;
++	u64 sectorsize = BTRFS_I(inode)->root->sectorsize;
++
++	if (!fs_info->dedup_enabled || !hash)
 +		return 0;
 +
-+	if (BTRFS_I(inode)->flags & BTRFS_INODE_NODEDUP)
-+		return 0;
++	if (WARN_ON(dedup_info == NULL))
++		return -EINVAL;
 +
-+	return 1;
++	WARN_ON(!IS_ALIGNED(start, sectorsize));
++
++	dedup_bs = dedup_info->blocksize;
++
++	sdesc.desc.tfm = tfm;
++	sdesc.desc.flags = 0;
++	ret = crypto_shash_init(&sdesc.desc);
++	if (ret)
++		return ret;
++	for (i = 0; sectorsize * i < dedup_bs; i++) {
++		char *d;
++
++		p = find_get_page(inode->i_mapping,
++				  (start >> PAGE_CACHE_SHIFT) + i);
++		if (WARN_ON(!p))
++			return -ENOENT;
++		d = kmap(p);
++		ret = crypto_shash_update(&sdesc.desc, d, sectorsize);
++		kunmap(p);
++		page_cache_release(p);
++		if (ret)
++			return ret;
++	}
++	ret = crypto_shash_final(&sdesc.desc, hash->hash);
++	return ret;
 +}
-+
- /*
-  * phase two of compressed writeback.  This is the ordered portion
-  * of the code, which only gets called in the order the work was
-@@ -1637,7 +1649,8 @@ static int run_delalloc_range(struct inode *inode, struct page *locked_page,
- 	} else if (BTRFS_I(inode)->flags & BTRFS_INODE_PREALLOC && !force_cow) {
- 		ret = run_delalloc_nocow(inode, locked_page, start, end,
- 					 page_started, 0, nr_written);
--	} else if (!inode_need_compress(inode) && !fs_info->dedup_enabled) {
-+	} else if (!inode_need_compress(inode) &&
-+		   !inode_need_dedup(fs_info, inode)) {
- 		ret = cow_file_range(inode, locked_page, start, end,
- 				      page_started, nr_written, 1, NULL);
- 	} else {
 -- 
 2.7.1
 

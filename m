@@ -1,85 +1,289 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qg0-f46.google.com ([209.85.192.46]:34980 "EHLO
-	mail-qg0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1030335AbcBQOd1 (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:54440 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1424572AbcBRCD7 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 17 Feb 2016 09:33:27 -0500
-Received: by mail-qg0-f46.google.com with SMTP id y89so12710597qge.2
-        for <linux-btrfs@vger.kernel.org>; Wed, 17 Feb 2016 06:33:27 -0800 (PST)
+	Wed, 17 Feb 2016 21:03:59 -0500
+Subject: Re: RAID 6 full, but there is still space left on some devices
+To: Dan Blazejewski <dan.blazejewski@gmail.com>,
+        btrfs <linux-btrfs@vger.kernel.org>
+References: <CABmr4wVBb0CCEoU_N2jxYvC=gVn9vUKWfb0902yZDuP2N3ck3w@mail.gmail.com>
+ <56C40C06.8090900@cn.fujitsu.com>
+ <CABmr4wVvjB7vGDsZWyCd222E1D-+kmk2SS2XwH2dp+K6YWWe=A@mail.gmail.com>
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Message-ID: <56C52685.8090505@cn.fujitsu.com>
+Date: Thu, 18 Feb 2016 10:03:49 +0800
 MIME-Version: 1.0
-Date: Wed, 17 Feb 2016 15:33:26 +0100
-Message-ID: <CAH4oapeNxzNgLy6X9x4u3hueWf9t+Xfu7P7f51Vb3h0TgyeZhQ@mail.gmail.com>
-Subject: btrfs_orphan_cleanup
-From: Pavol Cupka <pavol.cupka@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+In-Reply-To: <CABmr4wVvjB7vGDsZWyCd222E1D-+kmk2SS2XwH2dp+K6YWWe=A@mail.gmail.com>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi all,
-
-after boot I am seeing this in dmesg
 
 
-[   23.874698] BTRFS info (device sda1): enabling auto defrag
-[   23.874702] BTRFS info (device sda1): disk space caching is enabled
-[   26.074456] Adding 4193276k swap on /dev/sda4.  Priority:-1
-extents:1 across:4193276k
-[   26.242940] ------------[ cut here ]------------
-[   26.242953] WARNING: CPU: 1 PID: 1863 at fs/btrfs/inode.c:3443
-btrfs_orphan_cleanup+0x2d1/0x420()
-[   26.242955] Modules linked in: vboxnetadp(O) vboxnetflt(O)
-vboxdrv(O) tun nvidia(PO) cdc_ether usbnet mii cdc_acm cdc_wdm iwldvm
-iwlwifi intel_agp intel_gtt efivarfs
-[   26.242977] CPU: 1 PID: 1863 Comm: mount Tainted: P        W  O
-4.1.7-hardened-r1 #3
-[   26.242979] Hardware name: Dell Inc. Latitude E6510/0N5KHN, BIOS
-A16 12/05/2013
-[   26.242982]  ffffffff81c113c4 ffffc90001633918 ffffffff819d1e43
-ffffffff81e3a0f8
-[   26.242986]  0000000000000000 ffffc90001633958 ffffffff8107cf25
-ffff88021f57f800
-[   26.242989]  ffff88021f57f800 ffff880222c39e10 ffff8802217d74e0
-0000000000000000
-[   26.242993] Call Trace:
-[   26.243004]  [<ffffffff819d1e43>] dump_stack+0x45/0x5d
-[   26.243012]  [<ffffffff8107cf25>] warn_slowpath_common+0x85/0xd0
-[   26.243016]  [<ffffffff8107d025>] warn_slowpath_null+0x15/0x20
-[   26.243019]  [<ffffffff8133f4f1>] btrfs_orphan_cleanup+0x2d1/0x420
-[   26.243023]  [<ffffffff8133f9c0>] btrfs_lookup_dentry+0x380/0x530
-[   26.243027]  [<ffffffff8133fb81>] btrfs_lookup+0x11/0x50
-[   26.243033]  [<ffffffff811bb1fc>] lookup_real+0x2c/0x80
-[   26.243036]  [<ffffffff811bbd4e>] __lookup_hash+0x2e/0x40
-[   26.243041]  [<ffffffff811c187e>] path_lookupat+0x88e/0xd10
-[   26.243048]  [<ffffffff8144574e>] ? idr_get_empty_slot+0x1be/0x4e0
-[   26.243056]  [<ffffffff8119f4bc>] ? kmem_cache_alloc+0x2c/0x150
-[   26.243058]  [<ffffffff811c2adf>] ? getname_kernel+0x2f/0x130
-[   26.243060]  [<ffffffff811c1d1f>] filename_lookup+0x1f/0x100
-[   26.243062]  [<ffffffff811c2f82>] vfs_path_lookup+0x62/0xc0
-[   26.243065]  [<ffffffff8122a3be>] ? proc_alloc_inum+0x2e/0xb0
-[   26.243069]  [<ffffffff81464b7b>] ? __list_add+0x1b/0x40
-[   26.243073]  [<ffffffff811d88eb>] mount_subtree+0x3b/0x90
-[   26.243075]  [<ffffffff811a0bb8>] ? kfree+0x38/0x180
-[   26.243079]  [<ffffffff81303e93>] btrfs_mount+0x273/0x970
-[   26.243081]  [<ffffffff811b3aaf>] mount_fs+0x3f/0x1a0
-[   26.243085]  [<ffffffff811710e0>] ? __alloc_percpu+0x10/0x20
-[   26.243087]  [<ffffffff811d4123>] vfs_kern_mount+0x63/0x120
-[   26.243089]  [<ffffffff811d7587>] do_mount+0x557/0xdc0
-[   26.243091]  [<ffffffff81199c65>] ? alloc_pages_current+0x95/0x120
-[   26.243094]  [<ffffffff81154b09>] ? __get_free_pages+0x9/0xb0
-[   26.243096]  [<ffffffff811d6e75>] ? copy_mount_options+0x35/0x1c0
-[   26.243098]  [<ffffffff811d83aa>] SyS_mount+0x8a/0xf0
-[   26.243101]  [<ffffffff819dba4b>] system_call_fastpath+0x12/0x79
-[   26.243102] ---[ end trace 666fc5daa976e384 ]---
-[   26.243108] BTRFS error (device sda1): Error removing orphan entry,
-stopping orphan cleanup
-[   26.243110] BTRFS error (device sda1): could not do orphan cleanup -22
+Dan Blazejewski wrote on 2016/02/17 18:04 -0500:
+> Hello,
+>
+> I upgraded my kernel to 4.4.2, and btrfs-progs to 4.4. I also added
+> another 4TB disk and kicked off a full balance (currently 7x4TB
+> RAID6). I'm interested to see what an additional drive will do to
+> this. I'll also have to wait and see if a full system balance on a
+> newer version of BTRFS tools does the trick or not.
+>
+> I also noticed that "btrfs device usage" shows multiple entries for
+> Data, RAID 6 on some drives. Is this normal? Please note that /dev/sdh
+> is the new disk, and I only just started the balance.
+>
+> # btrfs dev usage /mnt/data
+> /dev/sda, ID: 5
+>     Device size:             3.64TiB
+>     Data,RAID6:              1.43TiB
+>     Data,RAID6:              1.48TiB
+>     Data,RAID6:            320.00KiB
+>     Metadata,RAID6:          2.55GiB
+>     Metadata,RAID6:          1.50GiB
+>     System,RAID6:           16.00MiB
+>     Unallocated:           733.67GiB
+>
+> /dev/sdb, ID: 6
+>     Device size:             3.64TiB
+>     Data,RAID6:              1.48TiB
+>     Data,RAID6:            320.00KiB
+>     Metadata,RAID6:          1.50GiB
+>     System,RAID6:           16.00MiB
+>     Unallocated:             2.15TiB
+>
+> /dev/sdc, ID: 7
+>     Device size:             3.64TiB
+>     Data,RAID6:              1.43TiB
+>     Data,RAID6:            732.69GiB
+>     Data,RAID6:              1.48TiB
+>     Data,RAID6:            320.00KiB
+>     Metadata,RAID6:          2.55GiB
+>     Metadata,RAID6:        982.00MiB
+>     Metadata,RAID6:          1.50GiB
+>     System,RAID6:           16.00MiB
+>     Unallocated:            25.21MiB
+>
+> /dev/sdd, ID: 1
+>     Device size:             3.64TiB
+>     Data,RAID6:              1.43TiB
+>     Data,RAID6:            732.69GiB
+>     Data,RAID6:              1.48TiB
+>     Data,RAID6:            320.00KiB
+>     Metadata,RAID6:          2.55GiB
+>     Metadata,RAID6:        982.00MiB
+>     Metadata,RAID6:          1.50GiB
+>     System,RAID6:           16.00MiB
+>     Unallocated:            25.21MiB
+>
+> /dev/sdf, ID: 3
+>     Device size:             3.64TiB
+>     Data,RAID6:              1.43TiB
+>     Data,RAID6:            732.69GiB
+>     Data,RAID6:              1.48TiB
+>     Data,RAID6:            320.00KiB
+>     Metadata,RAID6:          2.55GiB
+>     Metadata,RAID6:        982.00MiB
+>     Metadata,RAID6:          1.50GiB
+>     System,RAID6:           16.00MiB
+>     Unallocated:            25.21MiB
+>
+> /dev/sdg, ID: 2
+>     Device size:             3.64TiB
+>     Data,RAID6:              1.43TiB
+>     Data,RAID6:            732.69GiB
+>     Data,RAID6:              1.48TiB
+>     Data,RAID6:            320.00KiB
+>     Metadata,RAID6:          2.55GiB
+>     Metadata,RAID6:        982.00MiB
+>     Metadata,RAID6:          1.50GiB
+>     System,RAID6:           16.00MiB
+>     Unallocated:            25.21MiB
+>
+> /dev/sdh, ID: 8
+>     Device size:             3.64TiB
+>     Data,RAID6:            320.00KiB
+>     Unallocated:             3.64TiB
+>
 
-Linux  4.1.7-hardened-r1 #3 SMP Thu Dec 24 14:19:04 CET 2015 x86_64
-Intel(R) Core(TM) i7 CPU M 640 @ 2.80GHz GenuineIntel GNU/Linux
-btrfs-progs v4.3.1
+Not sure how that multiple chunk type shows up.
+Maybe all these shown RAID6 has different number of stripes?
 
-Is there something I can do about it?
+>
+>
+> Qu, in regards to your question, I ran RAID 1 on multiple disks of
+> different sizes. I believe I had a mix of 2x4TB, 1x2TB, and 1x3TB
+> drive. I replaced the 2TB drive first with a 4TB, and balanced it.
+> Later on, I replaced the 3TB drive with another 4TB, and balanced,
+> yielding an array of 4x4TB RAID1. A little while later, I wound up
+> sticking a fifth 4TB drive in, and converting to RAID6. The sixth 4TB
+> drive was added some time after that. The seventh was added just a few
+> minutes ago.
 
-Thank you in advance
-Pavol
+Personally speaking, I just came up to one method to balance all these 
+disks, and in fact you don't need to add a disk.
+
+1) Balance all data chunk to single profile
+2) Balance all metadata chunk to single or RAID1 profile
+3) Balance all data chunk back to RAID6 profile
+4) Balance all metadata chunk back to RAID6 profile
+System chunk is so small that normally you don't need to bother.
+
+The trick is, as single is the most flex chunk type, only needs one disk 
+with unallocated space.
+And btrfs chunk allocater will allocate chunk to device with most 
+unallocated space.
+
+So after 1) and 2) you should found that chunk allocation is almost 
+perfectly balanced across all devices, as long as they are in same size.
+
+Now you have a balance base layout for RAID6 allocation. Should make 
+things go quite smooth and result a balanced RAID6 chunk layout.
+
+Thanks,
+Qu
+
+
+>
+> Thanks!
+>
+> On Wed, Feb 17, 2016 at 12:58 AM, Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
+>>
+>>
+>> Dan Blazejewski wrote on 2016/02/16 15:20 -0500:
+>>>
+>>> Hello,
+>>>
+>>> I've searched high and low about my issue, but have been unable to
+>>> turn up anything like what I'm seeing right now.
+>>>
+>>> A little background: I started using BTRFS over a year ago, in RAID 1
+>>> with mixed size drives. A few months ago, I started replacing the
+>>> disks with 4 TB drives, and eventually switched over to RAID 6. I am
+>>> currently running a 6x4TB RAID6 drive configuration, which should give
+>>> me ~14.5 TB
+>>> usable, but I'm only getting around 11.
+>>>
+>>> The weird thing is that It seems to completely fill 4/6 of the disks,
+>>> while leaving lots of space free on 2 of the disks. I've tried full
+>>> filesystem balances, yet the problem continues.
+>>>
+>>> # btrfs fi show
+>>>
+>>> Label: none  uuid: 78733087-d597-4301-8efa-8e1df800b108
+>>>           Total devices 6 FS bytes used 11.59TiB
+>>>           devid    1 size 3.64TiB used 3.64TiB path /dev/sdd
+>>>           devid    2 size 3.64TiB used 3.64TiB path /dev/sdg
+>>>           devid    3 size 3.64TiB used 3.64TiB path /dev/sdf
+>>>           devid    5 size 3.64TiB used 2.92TiB path /dev/sda
+>>>           devid    6 size 3.64TiB used 1.48TiB path /dev/sdb
+>>>           devid    7 size 3.64TiB used 3.64TiB path /dev/sdc
+>>>
+>>> btrfs-progs v4.2.3
+>>
+>>
+>> Your space really used up, as it can't found *at least 4* disk with enough
+>> space to allocate a new chunk.
+>> As 4 devices in your array is already filled, the rest 2 is of no means for
+>> RAID6, and can only be allocated with Single/RAID1/RAID0.
+>>
+>>
+>> But the real problem is, why your devices get such a unbalanced layout.
+>>
+>> Normally, for RAID5/6, it will allocate chunks using all disk with available
+>> space, and since all your devices are in the same size, it should result
+>> very balanced allocation.
+>>
+>> How did you convert to current RAID6? Did it involves balance from already
+>> some used disks?
+>>
+>> Thanks,
+>> Qu
+>>
+>>>
+>>>
+>>>
+>>> # btrfs fi df /mnt/data
+>>>
+>>> Data, RAID6: total=11.67TiB, used=11.58TiB
+>>> System, RAID6: total=64.00MiB, used=1.70MiB
+>>> Metadata, RAID6: total=15.58GiB, used=13.89GiB
+>>> GlobalReserve, single: total=512.00MiB, used=0.00B
+>>> dan@Morpheus:/mnt/data/temp$ sudo btrfs fi usage /mnt/data
+>>>
+>>>
+>>>
+>>> # btrfs fi usage /mnt/data
+>>>
+>>> WARNING: RAID56 detected, not implemented
+>>> WARNING: RAID56 detected, not implemented
+>>> WARNING: RAID56 detected, not implemented
+>>> Overall:
+>>>       Device size:                  21.83TiB
+>>>       Device allocated:                0.00B
+>>>       Device unallocated:           21.83TiB
+>>>       Device missing:                  0.00B
+>>>       Used:                            0.00B
+>>>       Free (estimated):                0.00B      (min: 8.00EiB)
+>>>       Data ratio:                       0.00
+>>>       Metadata ratio:                   0.00
+>>>       Global reserve:              512.00MiB      (used: 0.00B)
+>>>
+>>> Data,RAID6: Size:11.67TiB, Used:11.58TiB
+>>>      /dev/sda        2.92TiB
+>>>      /dev/sdb        1.48TiB
+>>>      /dev/sdc        3.63TiB
+>>>      /dev/sdd        3.63TiB
+>>>      /dev/sdf        3.63TiB
+>>>      /dev/sdg        3.63TiB
+>>>
+>>> Metadata,RAID6: Size:15.58GiB, Used:13.89GiB
+>>>      /dev/sda        4.05GiB
+>>>      /dev/sdb        1.50GiB
+>>>      /dev/sdc        5.01GiB
+>>>      /dev/sdd        5.01GiB
+>>>      /dev/sdf        5.01GiB
+>>>      /dev/sdg        5.01GiB
+>>>
+>>> System,RAID6: Size:64.00MiB, Used:1.70MiB
+>>>      /dev/sda       16.00MiB
+>>>      /dev/sdb       16.00MiB
+>>>      /dev/sdc       16.00MiB
+>>>      /dev/sdd       16.00MiB
+>>>      /dev/sdf       16.00MiB
+>>>      /dev/sdg       16.00MiB
+>>>
+>>> Unallocated:
+>>>      /dev/sda      733.65GiB
+>>>      /dev/sdb        2.15TiB
+>>>      /dev/sdc        1.02MiB
+>>>      /dev/sdd        1.02MiB
+>>>      /dev/sdf        1.02MiB
+>>>      /dev/sdg        1.02MiB
+>>>
+>>>
+>>>
+>>>
+>>> Can anyone shed some light on why a full balance (sudo btrfs balance
+>>> start /mnt/data) doesnt seem to straighten this out? Any and all help
+>>> is appreciated.
+>>>
+>>>
+>>> Thanks!
+>>> --
+>>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>>> the body of a message to majordomo@vger.kernel.org
+>>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>>>
+>>>
+>>
+>>
+>> --
+>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>> the body of a message to majordomo@vger.kernel.org
+>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>
+>
+
+

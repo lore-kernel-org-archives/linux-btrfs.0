@@ -1,29 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:50532 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752180AbcB2MLg (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 29 Feb 2016 07:11:36 -0500
-Date: Mon, 29 Feb 2016 13:11:20 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Chandan Rajendra <chandan@linux.vnet.ibm.com>
-Cc: clm@fb.com, jbacik@fb.com, bo.li.liu@oracle.com,
-        linux-btrfs@vger.kernel.org, chandan@mykolab.com
-Subject: Re: [PATCH V15 00/15] Btrfs: Subpagesize-blocksize: Allow I/O on
- blocks whose size is less than page size
-Message-ID: <20160229121120.GT23746@suse.cz>
-Reply-To: dsterba@suse.cz
-References: <1455212873-14829-1-git-send-email-chandan@linux.vnet.ibm.com>
- <2493765.95l8sSnlWq@localhost.localdomain>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <2493765.95l8sSnlWq@localhost.localdomain>
+Received: from aserp1040.oracle.com ([141.146.126.69]:51418 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1030337AbcBRIHd (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 18 Feb 2016 03:07:33 -0500
+From: Anand Jain <anand.jain@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Cc: dsterba@suse.cz, clm@fb.com
+Subject: [PATCH RFC] Make add and device ioctls device path len consistent
+Date: Thu, 18 Feb 2016 16:07:15 +0800
+Message-Id: <1455782837-15630-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Feb 29, 2016 at 11:22:48AM +0530, Chandan Rajendra wrote:
-> Can you please look into the patchset and provide review comments if any. I am
-> hoping to get the patchset merged by linux-4.6.
+ Just in case if need to fix it properly, this patch helps.
+ Its a bit of overkill though, on the basis of being theoretically
+ correct. As discussed, this or Chris suggested to use simpler
+ BTRFS_SUBVOL_NAME_MAX will fix equally from practical perspective.
 
-4.6 is not realistic for patchset of such impact. The preparatory
-patchset will be merged to 4.6, the core will possibly go to 4.7 if the
-reviews pass.
+ This patch is ontop the patch
+   btrfs: Introduce device delete by devid
+   btrfs-progs: Introduce device delete by devid
+ respectively.
+
+Thanks, Anand
+
+Anand Jain (1):
+  btrfs: make add and device ioctl args path max consistent
+
+ fs/btrfs/ioctl.c           |  2 +-
+ include/uapi/linux/btrfs.h | 19 ++++++++++++++++++-
+ 2 files changed, 19 insertions(+), 2 deletions(-)
+
+Anand Jain (1):
+  btrfs-progs: make add and delete path max len consistent
+
+ cmds-device.c |  2 +-
+ ioctl.h       | 19 ++++++++++++++++++-
+ 2 files changed, 19 insertions(+), 2 deletions(-)
+
+-- 
+2.7.0
+

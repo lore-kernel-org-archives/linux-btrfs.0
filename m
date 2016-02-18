@@ -1,289 +1,195 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:54440 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1424572AbcBRCD7 (ORCPT
+Received: from mail-wm0-f53.google.com ([74.125.82.53]:37086 "EHLO
+	mail-wm0-f53.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1424633AbcBRI3w (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 17 Feb 2016 21:03:59 -0500
-Subject: Re: RAID 6 full, but there is still space left on some devices
-To: Dan Blazejewski <dan.blazejewski@gmail.com>,
-        btrfs <linux-btrfs@vger.kernel.org>
-References: <CABmr4wVBb0CCEoU_N2jxYvC=gVn9vUKWfb0902yZDuP2N3ck3w@mail.gmail.com>
- <56C40C06.8090900@cn.fujitsu.com>
- <CABmr4wVvjB7vGDsZWyCd222E1D-+kmk2SS2XwH2dp+K6YWWe=A@mail.gmail.com>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <56C52685.8090505@cn.fujitsu.com>
-Date: Thu, 18 Feb 2016 10:03:49 +0800
+	Thu, 18 Feb 2016 03:29:52 -0500
+Received: by mail-wm0-f53.google.com with SMTP id g62so13976736wme.0
+        for <linux-btrfs@vger.kernel.org>; Thu, 18 Feb 2016 00:29:51 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <CABmr4wVvjB7vGDsZWyCd222E1D-+kmk2SS2XwH2dp+K6YWWe=A@mail.gmail.com>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+From: Jan Alexander Steffens <jan.steffens@gmail.com>
+Date: Thu, 18 Feb 2016 09:29:31 +0100
+Message-ID: <CAMQ-g0cfWswiW94MEocyGU1PoMtOUyio-bB6N79LtpU8jDwJaw@mail.gmail.com>
+Subject: Oops on Send
+To: Linux Btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Greetings,
+
+I'm getting reproducible Oopses when attempting "btrfs send" on my
+root vol, quickly ending in a hard lockup of the machine. Both
+incremental send and non-incremental send crash, the former much
+earlier. The volume is in a LUKS container.
+
+The initial fault is always during LZO decompression, but scrub does
+not find any errors. Could this be invalid compressed data with good
+checksums? "btrfs check" finds bad extent backrefs which --repair
+claims to fix, but they reappear on a subsequent check.
+
+Is there a way to find out which files' extents are damaged so I can
+delete them and complete my backup?
+
+I'm not subscribed, so please include my address in To or Cc.
+
+Kind regards,
+Jan
 
 
-Dan Blazejewski wrote on 2016/02/17 18:04 -0500:
-> Hello,
->
-> I upgraded my kernel to 4.4.2, and btrfs-progs to 4.4. I also added
-> another 4TB disk and kicked off a full balance (currently 7x4TB
-> RAID6). I'm interested to see what an additional drive will do to
-> this. I'll also have to wait and see if a full system balance on a
-> newer version of BTRFS tools does the trick or not.
->
-> I also noticed that "btrfs device usage" shows multiple entries for
-> Data, RAID 6 on some drives. Is this normal? Please note that /dev/sdh
-> is the new disk, and I only just started the balance.
->
-> # btrfs dev usage /mnt/data
-> /dev/sda, ID: 5
->     Device size:             3.64TiB
->     Data,RAID6:              1.43TiB
->     Data,RAID6:              1.48TiB
->     Data,RAID6:            320.00KiB
->     Metadata,RAID6:          2.55GiB
->     Metadata,RAID6:          1.50GiB
->     System,RAID6:           16.00MiB
->     Unallocated:           733.67GiB
->
-> /dev/sdb, ID: 6
->     Device size:             3.64TiB
->     Data,RAID6:              1.48TiB
->     Data,RAID6:            320.00KiB
->     Metadata,RAID6:          1.50GiB
->     System,RAID6:           16.00MiB
->     Unallocated:             2.15TiB
->
-> /dev/sdc, ID: 7
->     Device size:             3.64TiB
->     Data,RAID6:              1.43TiB
->     Data,RAID6:            732.69GiB
->     Data,RAID6:              1.48TiB
->     Data,RAID6:            320.00KiB
->     Metadata,RAID6:          2.55GiB
->     Metadata,RAID6:        982.00MiB
->     Metadata,RAID6:          1.50GiB
->     System,RAID6:           16.00MiB
->     Unallocated:            25.21MiB
->
-> /dev/sdd, ID: 1
->     Device size:             3.64TiB
->     Data,RAID6:              1.43TiB
->     Data,RAID6:            732.69GiB
->     Data,RAID6:              1.48TiB
->     Data,RAID6:            320.00KiB
->     Metadata,RAID6:          2.55GiB
->     Metadata,RAID6:        982.00MiB
->     Metadata,RAID6:          1.50GiB
->     System,RAID6:           16.00MiB
->     Unallocated:            25.21MiB
->
-> /dev/sdf, ID: 3
->     Device size:             3.64TiB
->     Data,RAID6:              1.43TiB
->     Data,RAID6:            732.69GiB
->     Data,RAID6:              1.48TiB
->     Data,RAID6:            320.00KiB
->     Metadata,RAID6:          2.55GiB
->     Metadata,RAID6:        982.00MiB
->     Metadata,RAID6:          1.50GiB
->     System,RAID6:           16.00MiB
->     Unallocated:            25.21MiB
->
-> /dev/sdg, ID: 2
->     Device size:             3.64TiB
->     Data,RAID6:              1.43TiB
->     Data,RAID6:            732.69GiB
->     Data,RAID6:              1.48TiB
->     Data,RAID6:            320.00KiB
->     Metadata,RAID6:          2.55GiB
->     Metadata,RAID6:        982.00MiB
->     Metadata,RAID6:          1.50GiB
->     System,RAID6:           16.00MiB
->     Unallocated:            25.21MiB
->
-> /dev/sdh, ID: 8
->     Device size:             3.64TiB
->     Data,RAID6:            320.00KiB
->     Unallocated:             3.64TiB
->
 
-Not sure how that multiple chunk type shows up.
-Maybe all these shown RAID6 has different number of stripes?
-
->
->
-> Qu, in regards to your question, I ran RAID 1 on multiple disks of
-> different sizes. I believe I had a mix of 2x4TB, 1x2TB, and 1x3TB
-> drive. I replaced the 2TB drive first with a 4TB, and balanced it.
-> Later on, I replaced the 3TB drive with another 4TB, and balanced,
-> yielding an array of 4x4TB RAID1. A little while later, I wound up
-> sticking a fifth 4TB drive in, and converting to RAID6. The sixth 4TB
-> drive was added some time after that. The seventh was added just a few
-> minutes ago.
-
-Personally speaking, I just came up to one method to balance all these 
-disks, and in fact you don't need to add a disk.
-
-1) Balance all data chunk to single profile
-2) Balance all metadata chunk to single or RAID1 profile
-3) Balance all data chunk back to RAID6 profile
-4) Balance all metadata chunk back to RAID6 profile
-System chunk is so small that normally you don't need to bother.
-
-The trick is, as single is the most flex chunk type, only needs one disk 
-with unallocated space.
-And btrfs chunk allocater will allocate chunk to device with most 
-unallocated space.
-
-So after 1) and 2) you should found that chunk allocation is almost 
-perfectly balanced across all devices, as long as they are in same size.
-
-Now you have a balance base layout for RAID6 allocation. Should make 
-things go quite smooth and result a balanced RAID6 chunk layout.
-
-Thanks,
-Qu
-
-
->
-> Thanks!
->
-> On Wed, Feb 17, 2016 at 12:58 AM, Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
->>
->>
->> Dan Blazejewski wrote on 2016/02/16 15:20 -0500:
->>>
->>> Hello,
->>>
->>> I've searched high and low about my issue, but have been unable to
->>> turn up anything like what I'm seeing right now.
->>>
->>> A little background: I started using BTRFS over a year ago, in RAID 1
->>> with mixed size drives. A few months ago, I started replacing the
->>> disks with 4 TB drives, and eventually switched over to RAID 6. I am
->>> currently running a 6x4TB RAID6 drive configuration, which should give
->>> me ~14.5 TB
->>> usable, but I'm only getting around 11.
->>>
->>> The weird thing is that It seems to completely fill 4/6 of the disks,
->>> while leaving lots of space free on 2 of the disks. I've tried full
->>> filesystem balances, yet the problem continues.
->>>
->>> # btrfs fi show
->>>
->>> Label: none  uuid: 78733087-d597-4301-8efa-8e1df800b108
->>>           Total devices 6 FS bytes used 11.59TiB
->>>           devid    1 size 3.64TiB used 3.64TiB path /dev/sdd
->>>           devid    2 size 3.64TiB used 3.64TiB path /dev/sdg
->>>           devid    3 size 3.64TiB used 3.64TiB path /dev/sdf
->>>           devid    5 size 3.64TiB used 2.92TiB path /dev/sda
->>>           devid    6 size 3.64TiB used 1.48TiB path /dev/sdb
->>>           devid    7 size 3.64TiB used 3.64TiB path /dev/sdc
->>>
->>> btrfs-progs v4.2.3
->>
->>
->> Your space really used up, as it can't found *at least 4* disk with enough
->> space to allocate a new chunk.
->> As 4 devices in your array is already filled, the rest 2 is of no means for
->> RAID6, and can only be allocated with Single/RAID1/RAID0.
->>
->>
->> But the real problem is, why your devices get such a unbalanced layout.
->>
->> Normally, for RAID5/6, it will allocate chunks using all disk with available
->> space, and since all your devices are in the same size, it should result
->> very balanced allocation.
->>
->> How did you convert to current RAID6? Did it involves balance from already
->> some used disks?
->>
->> Thanks,
->> Qu
->>
->>>
->>>
->>>
->>> # btrfs fi df /mnt/data
->>>
->>> Data, RAID6: total=11.67TiB, used=11.58TiB
->>> System, RAID6: total=64.00MiB, used=1.70MiB
->>> Metadata, RAID6: total=15.58GiB, used=13.89GiB
->>> GlobalReserve, single: total=512.00MiB, used=0.00B
->>> dan@Morpheus:/mnt/data/temp$ sudo btrfs fi usage /mnt/data
->>>
->>>
->>>
->>> # btrfs fi usage /mnt/data
->>>
->>> WARNING: RAID56 detected, not implemented
->>> WARNING: RAID56 detected, not implemented
->>> WARNING: RAID56 detected, not implemented
->>> Overall:
->>>       Device size:                  21.83TiB
->>>       Device allocated:                0.00B
->>>       Device unallocated:           21.83TiB
->>>       Device missing:                  0.00B
->>>       Used:                            0.00B
->>>       Free (estimated):                0.00B      (min: 8.00EiB)
->>>       Data ratio:                       0.00
->>>       Metadata ratio:                   0.00
->>>       Global reserve:              512.00MiB      (used: 0.00B)
->>>
->>> Data,RAID6: Size:11.67TiB, Used:11.58TiB
->>>      /dev/sda        2.92TiB
->>>      /dev/sdb        1.48TiB
->>>      /dev/sdc        3.63TiB
->>>      /dev/sdd        3.63TiB
->>>      /dev/sdf        3.63TiB
->>>      /dev/sdg        3.63TiB
->>>
->>> Metadata,RAID6: Size:15.58GiB, Used:13.89GiB
->>>      /dev/sda        4.05GiB
->>>      /dev/sdb        1.50GiB
->>>      /dev/sdc        5.01GiB
->>>      /dev/sdd        5.01GiB
->>>      /dev/sdf        5.01GiB
->>>      /dev/sdg        5.01GiB
->>>
->>> System,RAID6: Size:64.00MiB, Used:1.70MiB
->>>      /dev/sda       16.00MiB
->>>      /dev/sdb       16.00MiB
->>>      /dev/sdc       16.00MiB
->>>      /dev/sdd       16.00MiB
->>>      /dev/sdf       16.00MiB
->>>      /dev/sdg       16.00MiB
->>>
->>> Unallocated:
->>>      /dev/sda      733.65GiB
->>>      /dev/sdb        2.15TiB
->>>      /dev/sdc        1.02MiB
->>>      /dev/sdd        1.02MiB
->>>      /dev/sdf        1.02MiB
->>>      /dev/sdg        1.02MiB
->>>
->>>
->>>
->>>
->>> Can anyone shed some light on why a full balance (sudo btrfs balance
->>> start /mnt/data) doesnt seem to straighten this out? Any and all help
->>> is appreciated.
->>>
->>>
->>> Thanks!
->>> --
->>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->>> the body of a message to majordomo@vger.kernel.org
->>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->>>
->>>
->>
->>
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
->
-
-
+BUG: unable to handle kernel paging request at ffffc90001bb6000
+IP: [<ffffffff812d4d16>] memcpy_erms+0x6/0x10
+PGD 40f08d067 PUD 40f08e067 PMD 40c65e067 PTE 0
+Oops: 0002 [#1] PREEMPT SMP
+Modules linked in: ctr ccm xt_CHECKSUM iptable_mangle ipt_MASQUERADE
+nf_nat_masquerade_ipv4 iptable_nat nf_nat_ipv4 nf_nat
+nf_conntrack_ipv4 nf_defrag_ipv4 xt_conntrack nf_conntrack ipt_REJECT
+nf_reject_ipv4 xt_tcpudp rfcomm tun bridge stp llc ebtable_filter
+ebtables ip6table_filter ip6_tables iptable_filter uas usb_storage
+bnep joydev mousedev tpm_infineon arc4 nls_iso8859_1 nls_cp437 vfat
+fat snd_hda_codec_via snd_hda_codec_generic snd_hda_codec_hdmi
+iTCO_wdt iTCO_vendor_support iwlmvm mac80211 x86_pkg_temp_thermal
+intel_powerclamp coretemp kvm_intel kvm iwlwifi irqbypass btusb btrtl
+btbcm input_leds btintel led_class cfg80211 bluetooth psmouse
+serio_raw snd_hda_intel e1000e snd_hda_codec rfkill i2c_i801
+rtsx_pci_ms crc16 memstick snd_hda_core ptp mei_me pps_core snd_hwdep
+lpc_ich mei
+ shpchp snd_pcm wmi thermal battery fjes evdev tpm_tis mac_hid ac
+processor sch_fq_codel usbip_host usbip_core snd_seq_dummy snd_seq_oss
+snd_seq_midi_event snd_seq snd_seq_device snd_timer snd soundcore cuse
+fuse nfs lockd grace sunrpc fscache tcp_cdg tpm_rng rng_core tpm
+vhba(O) ip_tables x_tables btrfs xor raid6_pq sha256_ssse3
+sha256_generic hmac drbg ansi_cprng algif_skcipher af_alg dm_crypt
+dm_mod sd_mod rtsx_pci_sdmmc mmc_core atkbd libps2 crct10dif_pclmul
+xhci_pci crc32_pclmul crc32c_intel xhci_hcd aesni_intel ehci_pci ahci
+aes_x86_64 lrw ehci_hcd libahci gf128mul glue_helper ablk_helper
+cryptd libata scsi_mod usbcore rtsx_pci usb_common i8042 serio i915
+video button intel_gtt i2c_algo_bit drm_kms_helper syscopyarea
+sysfillrect sysimgblt fb_sys_fops drm
+CPU: 4 PID: 12114 Comm: kworker/u16:5 Tainted: G           O    4.4.1-2-ARCH #1
+Hardware name: Notebook                         W740SU
+         /W740SU                          , BIOS 4.6.5 09/11/2014
+Workqueue: btrfs-endio btrfs_endio_helper [btrfs]
+task: ffff8803942f9b80 ti: ffff8803aee78000 task.ti: ffff8803aee78000
+RIP: 0010:[<ffffffff812d4d16>]  [<ffffffff812d4d16>] memcpy_erms+0x6/0x10
+RSP: 0018:ffff8803aee7bc58  EFLAGS: 00010286
+RAX: ffffc90001bb5ff8 RBX: 0000000000001000 RCX: 0000000000000ff8
+RDX: 0000000000001000 RSI: ffff880260ca7008 RDI: ffffc90001bb6000
+RBP: ffff8803aee7bd28 R08: ffffc90001bb4000 R09: 0000000000001000
+R10: 0000000000000000 R11: ffff880408b5c398 R12: 0000000000000000
+R13: 0000000000230021 R14: ffff880408b5c398 R15: 0000000000230029
+FS:  0000000000000000(0000) GS:ffff88041fb00000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: ffffc90001bb6000 CR3: 0000000001809000 CR4: 00000000001406e0
+Stack:
+ ffffffffa04dbce3 ffffffff8102166e ffff8803aee7bc90 0000160000000000
+ ffff8803581f5800 000000000000000e 0000000000000000 000000000022e029
+ ffffc90001bb4000 0000000000000002 00000000001a0000 0000001a00000048
+Call Trace:
+ [<ffffffffa04dbce3>] ? lzo_decompress_biovec+0x1e3/0x2d0 [btrfs]
+ [<ffffffff8102166e>] ? kernel_fpu_end+0xe/0x20
+ [<ffffffffa04dc785>] end_compressed_bio_read+0x1c5/0x300 [btrfs]
+ [<ffffffff81292c7f>] bio_endio+0x3f/0x60
+ [<ffffffffa048919c>] end_workqueue_fn+0x3c/0x40 [btrfs]
+ [<ffffffffa04c4a17>] btrfs_scrubparity_helper+0x77/0x2e0 [btrfs]
+ [<ffffffffa04c4d6e>] btrfs_endio_helper+0xe/0x10 [btrfs]
+ [<ffffffff8108e21b>] process_one_work+0x14b/0x440
+ [<ffffffff8108e558>] worker_thread+0x48/0x4a0
+ [<ffffffff8108e510>] ? process_one_work+0x440/0x440
+ [<ffffffff81093ff8>] kthread+0xd8/0xf0
+ [<ffffffff81093f20>] ? kthread_worker_fn+0x170/0x170
+ [<ffffffff81591e8f>] ret_from_fork+0x3f/0x70
+ [<ffffffff81093f20>] ? kthread_worker_fn+0x170/0x170
+Code: f3 c3 90 90 90 eb 1e 0f 1f 00 48 89 f8 48 89 d1 48 c1 e9 03 83
+e2 07 f3 48 a5 89 d1 f3 a4 c3 66 0f 1f 44 00 00 48 89 f8 48 89 d1 <f3>
+a4 c3 0f 1f 80 00 00 00 00 48 89 f8 48 83 fa 20 72 7e 40 38
+RIP  [<ffffffff812d4d16>] memcpy_erms+0x6/0x10
+ RSP <ffff8803aee7bc58>
+CR2: ffffc90001bb6000
+---[ end trace 99ccc6da83f67660 ]---
+BUG: unable to handle kernel paging request at ffffffffffffffd8
+IP: [<ffffffff81094500>] kthread_data+0x10/0x20
+PGD 180c067 PUD 180e067 PMD 0
+Oops: 0000 [#2] PREEMPT SMP
+Modules linked in: ctr ccm xt_CHECKSUM iptable_mangle ipt_MASQUERADE
+nf_nat_masquerade_ipv4 iptable_nat nf_nat_ipv4 nf_nat
+nf_conntrack_ipv4 nf_defrag_ipv4 xt_conntrack nf_conntrack ipt_REJECT
+nf_reject_ipv4 xt_tcpudp rfcomm tun bridge stp llc ebtable_filter
+ebtables ip6table_filter ip6_tables iptable_filter uas usb_storage
+bnep joydev mousedev tpm_infineon arc4 nls_iso8859_1 nls_cp437 vfat
+fat snd_hda_codec_via snd_hda_codec_generic snd_hda_codec_hdmi
+iTCO_wdt iTCO_vendor_support iwlmvm mac80211 x86_pkg_temp_thermal
+intel_powerclamp coretemp kvm_intel kvm iwlwifi irqbypass btusb btrtl
+btbcm input_leds btintel led_class cfg80211 bluetooth psmouse
+serio_raw snd_hda_intel e1000e snd_hda_codec rfkill i2c_i801
+rtsx_pci_ms crc16 memstick snd_hda_core ptp mei_me pps_core snd_hwdep
+lpc_ich mei
+ shpchp snd_pcm wmi thermal battery fjes evdev tpm_tis mac_hid ac
+processor sch_fq_codel usbip_host usbip_core snd_seq_dummy snd_seq_oss
+snd_seq_midi_event snd_seq snd_seq_device snd_timer snd soundcore cuse
+fuse nfs lockd grace sunrpc fscache tcp_cdg tpm_rng rng_core tpm
+vhba(O) ip_tables x_tables btrfs xor raid6_pq sha256_ssse3
+sha256_generic hmac drbg ansi_cprng algif_skcipher af_alg dm_crypt
+dm_mod sd_mod rtsx_pci_sdmmc mmc_core atkbd libps2 crct10dif_pclmul
+xhci_pci crc32_pclmul crc32c_intel xhci_hcd aesni_intel ehci_pci ahci
+aes_x86_64 lrw ehci_hcd libahci gf128mul glue_helper ablk_helper
+cryptd libata scsi_mod usbcore rtsx_pci usb_common i8042 serio i915
+video button intel_gtt i2c_algo_bit drm_kms_helper syscopyarea
+sysfillrect sysimgblt fb_sys_fops drm
+CPU: 4 PID: 12114 Comm: kworker/u16:5 Tainted: G      D    O    4.4.1-2-ARCH #1
+Hardware name: Notebook                         W740SU
+         /W740SU                          , BIOS 4.6.5 09/11/2014
+task: ffff8803942f9b80 ti: ffff8803aee78000 task.ti: ffff8803aee78000
+RIP: 0010:[<ffffffff81094500>]  [<ffffffff81094500>] kthread_data+0x10/0x20
+RSP: 0018:ffff8803aee7b948  EFLAGS: 00010002
+RAX: 0000000000000000 RBX: 0000000000000004 RCX: ffffffff81a61700
+RDX: 0000000000000004 RSI: 0000000000000004 RDI: ffff8803942f9b80
+RBP: ffff8803aee7b948 R08: 00000000ffffffff R09: 0000000000000000
+R10: ffff8803942f9be0 R11: 0000000000000810 R12: 0000000000000000
+R13: 0000000000015700 R14: ffff8803942f9b80 R15: ffff88041fb15700
+FS:  0000000000000000(0000) GS:ffff88041fb00000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 0000000000000028 CR3: 0000000001809000 CR4: 00000000001406e0
+Stack:
+ ffff8803aee7b960 ffffffff8108edf1 ffff88041fb15700 ffff8803aee7b9b0
+ ffffffff8158dbd0 ffff8803aee7b9a0 ffffffff00000004 ffff8803942f9b80
+ ffff8803aee7c000 ffff8803942fa238 ffff8803aee7b560 ffffc90001bb6000
+Call Trace:
+ [<ffffffff8108edf1>] wq_worker_sleeping+0x11/0x90
+ [<ffffffff8158dbd0>] __schedule+0x640/0xa70
+ [<ffffffff8158e03c>] schedule+0x3c/0x90
+ [<ffffffff810795c8>] do_exit+0x768/0xae0
+ [<ffffffff8101976a>] oops_end+0x9a/0xd0
+ [<ffffffff81063bbc>] no_context+0x15c/0x380
+ [<ffffffff810ad566>] ? enqueue_task_fair+0xa6/0x8f0
+ [<ffffffff81063f08>] __bad_area_nosemaphore+0x128/0x230
+ [<ffffffff8109e654>] ? check_preempt_curr+0x54/0x90
+ [<ffffffff81064023>] bad_area_nosemaphore+0x13/0x20
+ [<ffffffff81064482>] __do_page_fault+0x222/0x450
+ [<ffffffff8109f39d>] ? try_to_wake_up+0x18d/0x390
+ [<ffffffff810646d2>] do_page_fault+0x22/0x30
+ [<ffffffff81593c88>] page_fault+0x28/0x30
+ [<ffffffff812d4d16>] ? memcpy_erms+0x6/0x10
+ [<ffffffffa04dbce3>] ? lzo_decompress_biovec+0x1e3/0x2d0 [btrfs]
+ [<ffffffff8102166e>] ? kernel_fpu_end+0xe/0x20
+ [<ffffffffa04dc785>] end_compressed_bio_read+0x1c5/0x300 [btrfs]
+ [<ffffffff81292c7f>] bio_endio+0x3f/0x60
+ [<ffffffffa048919c>] end_workqueue_fn+0x3c/0x40 [btrfs]
+ [<ffffffffa04c4a17>] btrfs_scrubparity_helper+0x77/0x2e0 [btrfs]
+ [<ffffffffa04c4d6e>] btrfs_endio_helper+0xe/0x10 [btrfs]
+ [<ffffffff8108e21b>] process_one_work+0x14b/0x440
+ [<ffffffff8108e558>] worker_thread+0x48/0x4a0
+ [<ffffffff8108e510>] ? process_one_work+0x440/0x440
+ [<ffffffff81093ff8>] kthread+0xd8/0xf0
+ [<ffffffff81093f20>] ? kthread_worker_fn+0x170/0x170
+ [<ffffffff81591e8f>] ret_from_fork+0x3f/0x70
+ [<ffffffff81093f20>] ? kthread_worker_fn+0x170/0x170
+Code: 41 5d 5d c3 e8 36 eb f6 ff e9 13 ff ff ff 0f 1f 00 66 2e 0f 1f
+84 00 00 00 00 00 0f 1f 44 00 00 48 8b 87 10 05 00 00 55 48 89 e5 <48>
+8b 40 d8 5d c3 66 2e 0f 1f 84 00 00 00 00 00 0f 1f 44 00 00
+RIP  [<ffffffff81094500>] kthread_data+0x10/0x20
+ RSP <ffff8803aee7b948>
+CR2: ffffffffffffffd8
+---[ end trace 99ccc6da83f67661 ]---
+Fixing recursive fault but reboot is needed!

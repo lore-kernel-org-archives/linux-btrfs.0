@@ -1,98 +1,200 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:7891 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:41093 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1751342AbcBBDIB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 1 Feb 2016 22:08:01 -0500
+	id S1424610AbcBRFp3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 18 Feb 2016 00:45:29 -0500
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-To: linux-btrfs@vger.kernel.org
+To: linux-btrfs@vger.kernel.org, clm@fb.com
 Cc: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
-Subject: [PATCH v5 19/19] btrfs: try more times to alloc metadata reserve space
-Date: Tue,  2 Feb 2016 11:05:51 +0800
-Message-Id: <1454382351-31775-20-git-send-email-quwenruo@cn.fujitsu.com>
-In-Reply-To: <1454382351-31775-1-git-send-email-quwenruo@cn.fujitsu.com>
-References: <1454382351-31775-1-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH v7 01/20] btrfs: dedup: Introduce dedup framework and its header
+Date: Thu, 18 Feb 2016 13:42:39 +0800
+Message-Id: <1455774178-3595-2-git-send-email-quwenruo@cn.fujitsu.com>
+In-Reply-To: <1455774178-3595-1-git-send-email-quwenruo@cn.fujitsu.com>
+References: <1455774178-3595-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
 
-In btrfs_delalloc_reserve_metadata(), the number of metadata bytes we try
-to reserve is calculated by the difference between outstanding_extents and
-reserved_extents.
+Introduce the header for btrfs online(write time) de-duplication
+framework and needed header.
 
-When reserve_metadata_bytes() fails to reserve desited metadata space,
-it has already done some reclaim work, such as write ordered extents.
+The new de-duplication framework is going to support 2 different dedup
+method and 1 dedup hash.
 
-In that case, outstanding_extents and reserved_extents may already
-changed, and we may reserve enough metadata space then.
-
-So this patch will try to call reserve_metadata_bytes() at most 3 times
-to ensure we really run out of space.
-
-Such false ENOSPC is mainly caused by small file extents and time
-consuming delalloc functions, which mainly affects in-band
-de-duplication. (Compress should also be affected, but LZO/zlib is
-faster than SHA256, so still harder to trigger than dedup).
-
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 Signed-off-by: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
 ---
- fs/btrfs/extent-tree.c | 23 +++++++++++++++++++++--
- 1 file changed, 21 insertions(+), 2 deletions(-)
+ fs/btrfs/ctree.h   |   5 +++
+ fs/btrfs/dedup.h   | 127 +++++++++++++++++++++++++++++++++++++++++++++++++++++
+ fs/btrfs/disk-io.c |   1 +
+ 3 files changed, 133 insertions(+)
+ create mode 100644 fs/btrfs/dedup.h
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index f9fc25c..0a6d172 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -5671,6 +5671,7 @@ int btrfs_delalloc_reserve_metadata(struct inode *inode, u64 num_bytes)
- 	bool delalloc_lock = true;
- 	u64 to_free = 0;
- 	unsigned dropped;
-+	int loops = 0;
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index bc6a87e..094db5c 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -1866,6 +1866,11 @@ struct btrfs_fs_info {
+ 	struct list_head pinned_chunks;
  
- 	/* If we are a free space inode we need to not flush since we will be in
- 	 * the middle of a transaction commit.  We also don't need the delalloc
-@@ -5686,11 +5687,12 @@ int btrfs_delalloc_reserve_metadata(struct inode *inode, u64 num_bytes)
- 	    btrfs_transaction_in_commit(root->fs_info))
- 		schedule_timeout(1);
- 
-+	num_bytes = ALIGN(num_bytes, root->sectorsize);
+ 	int creating_free_space_tree;
 +
-+again:
- 	if (delalloc_lock)
- 		mutex_lock(&BTRFS_I(inode)->delalloc_mutex);
++	/* Inband de-duplication related structures*/
++	unsigned int dedup_enabled:1;
++	struct btrfs_dedup_info *dedup_info;
++	struct mutex dedup_ioctl_lock;
+ };
  
--	num_bytes = ALIGN(num_bytes, root->sectorsize);
--
- 	spin_lock(&BTRFS_I(inode)->lock);
- 	nr_extents = (unsigned)div64_u64(num_bytes +
- 					 BTRFS_MAX_EXTENT_SIZE - 1,
-@@ -5811,6 +5813,23 @@ out_fail:
- 	}
- 	if (delalloc_lock)
- 		mutex_unlock(&BTRFS_I(inode)->delalloc_mutex);
-+	/*
-+	 * The number of metadata bytes is calculated by the difference
-+	 * between outstanding_extents and reserved_extents. Sometimes though
-+	 * reserve_metadata_bytes() fails to reserve the wanted metadata bytes,
-+	 * indeed it has already done some work to reclaim metadata space, hence
-+	 * both outstanding_extents and reserved_extents would have changed and
-+	 * the bytes we try to reserve would also has changed(may be smaller).
-+	 * So here we try to reserve again. This is much useful for online
-+	 * dedup, which will easily eat almost all meta space.
-+	 *
-+	 * XXX: Indeed here 3 is arbitrarily choosed, it's a good workaround for
-+	 * online dedup, later we should find a better method to avoid dedup
-+	 * enospc issue.
-+	 */
-+	if (unlikely(ret == -ENOSPC && loops++ < 3))
-+		goto again;
+ struct btrfs_subvolume_writers {
+diff --git a/fs/btrfs/dedup.h b/fs/btrfs/dedup.h
+new file mode 100644
+index 0000000..8e1ff03
+--- /dev/null
++++ b/fs/btrfs/dedup.h
+@@ -0,0 +1,127 @@
++/*
++ * Copyright (C) 2015 Fujitsu.  All rights reserved.
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public
++ * License v2 as published by the Free Software Foundation.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++ * General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public
++ * License along with this program; if not, write to the
++ * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
++ * Boston, MA 021110-1307, USA.
++ */
 +
- 	return ret;
- }
++#ifndef __BTRFS_DEDUP__
++#define __BTRFS_DEDUP__
++
++#include <linux/btrfs.h>
++#include <linux/wait.h>
++#include <crypto/hash.h>
++
++/*
++ * Dedup storage backend
++ * On disk is persist storage but overhead is large
++ * In memory is fast but will lose all its hash on umount
++ */
++#define BTRFS_DEDUP_BACKEND_INMEMORY		0
++#define BTRFS_DEDUP_BACKEND_ONDISK		1
++#define BTRFS_DEDUP_BACKEND_LAST		2
++
++/* Dedup block size limit and default value */
++#define BTRFS_DEDUP_BLOCKSIZE_MAX	(8 * 1024 * 1024)
++#define BTRFS_DEDUP_BLOCKSIZE_MIN	(16 * 1024)
++#define BTRFS_DEDUP_BLOCKSIZE_DEFAULT	(128 * 1024)
++
++/* Hash algorithm, only support SHA256 yet */
++#define BTRFS_DEDUP_HASH_SHA256		0
++
++static int btrfs_dedup_sizes[] = { 32 };
++
++/*
++ * For caller outside of dedup.c
++ *
++ * Different dedup backends should have their own hash structure
++ */
++struct btrfs_dedup_hash {
++	u64 bytenr;
++	u32 num_bytes;
++
++	/* last field is a variable length array of dedup hash */
++	u8 hash[];
++};
++
++struct btrfs_dedup_info {
++	/* dedup blocksize */
++	u64 blocksize;
++	u16 backend;
++	u16 hash_type;
++
++	struct crypto_shash *dedup_driver;
++	struct mutex lock;
++
++	/* following members are only used in in-memory dedup mode */
++	struct rb_root hash_root;
++	struct rb_root bytenr_root;
++	struct list_head lru_list;
++	u64 limit_nr;
++	u64 current_nr;
++};
++
++struct btrfs_trans_handle;
++
++int btrfs_dedup_hash_size(u16 type);
++struct btrfs_dedup_hash *btrfs_dedup_alloc_hash(u16 type);
++
++/*
++ * Initial inband dedup info
++ * Called at dedup enable time.
++ */
++int btrfs_dedup_enable(struct btrfs_fs_info *fs_info, u16 type, u16 backend,
++		       u64 blocksize, u64 limit_nr);
++
++/*
++ * Disable dedup and invalidate all its dedup data.
++ * Called at dedup disable time.
++ */
++int btrfs_dedup_disable(struct btrfs_fs_info *fs_info);
++
++/*
++ * Calculate hash for dedup.
++ * Caller must ensure [start, start + dedup_bs) has valid data.
++ */
++int btrfs_dedup_calc_hash(struct btrfs_fs_info *fs_info,
++			  struct inode *inode, u64 start,
++			  struct btrfs_dedup_hash *hash);
++
++/*
++ * Search for duplicated extents by calculated hash
++ * Caller must call btrfs_dedup_calc_hash() first to get the hash.
++ *
++ * @inode: the inode for we are writing
++ * @file_pos: offset inside the inode
++ * As we will increase extent ref immediately after a hash match,
++ * we need @file_pos and @inode in this case.
++ *
++ * Return > 0 for a hash match, and the extent ref will be
++ * *INCREASED*, and hash->bytenr/num_bytes will record the existing
++ * extent data.
++ * Return 0 for a hash miss. Nothing is done
++ */
++int btrfs_dedup_search(struct btrfs_fs_info *fs_info,
++		       struct inode *inode, u64 file_pos,
++		       struct btrfs_dedup_hash *hash);
++
++/* Add a dedup hash into dedup info */
++int btrfs_dedup_add(struct btrfs_trans_handle *trans,
++		    struct btrfs_fs_info *fs_info,
++		    struct btrfs_dedup_hash *hash);
++
++/* Remove a dedup hash from dedup info */
++int btrfs_dedup_del(struct btrfs_trans_handle *trans,
++		    struct btrfs_fs_info *fs_info, u64 bytenr);
++#endif
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index de68b8b..bbc17f2 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -2582,6 +2582,7 @@ int open_ctree(struct super_block *sb,
+ 	mutex_init(&fs_info->reloc_mutex);
+ 	mutex_init(&fs_info->delalloc_root_mutex);
+ 	mutex_init(&fs_info->cleaner_delayed_iput_mutex);
++	mutex_init(&fs_info->dedup_ioctl_lock);
+ 	seqlock_init(&fs_info->profiles_lock);
  
+ 	INIT_LIST_HEAD(&fs_info->dirty_cowonly_roots);
 -- 
-2.7.0
+2.7.1
 
 
 

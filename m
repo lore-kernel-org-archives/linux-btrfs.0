@@ -1,58 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.136]:35319 "EHLO mail.kernel.org"
+Received: from mail.kernel.org ([198.145.29.136]:35458 "EHLO mail.kernel.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1947316AbcBRXJL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 18 Feb 2016 18:09:11 -0500
+	id S1947005AbcBRXLQ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 18 Feb 2016 18:11:16 -0500
 From: fdmanana@kernel.org
 To: fstests@vger.kernel.org
 Cc: linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH v2] fstests: btrfs, test directory fsync after deleting snapshots
-Date: Thu, 18 Feb 2016 23:08:59 +0000
-Message-Id: <1455836939-10028-1-git-send-email-fdmanana@kernel.org>
-In-Reply-To: <1455533619-7598-1-git-send-email-fdmanana@kernel.org>
-References: <1455533619-7598-1-git-send-email-fdmanana@kernel.org>
+Subject: [PATCH 2/2 v2] fstests: generic test for file fsync after rename operation
+Date: Thu, 18 Feb 2016 23:11:07 +0000
+Message-Id: <1455837067-10160-1-git-send-email-fdmanana@kernel.org>
+In-Reply-To: <1455533674-7753-1-git-send-email-fdmanana@kernel.org>
+References: <1455533674-7753-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Filipe Manana <fdmanana@suse.com>
 
-Test that if we fsync a directory that had a snapshot entry in it that
-was deleted and crash, the next time we mount the filesystem, the log
-replay procedure will not fail and the snapshot is not present anymore.
+Test that if we have a file F1 with two links, one in a directory A and
+the other in directory B, if we remove the link in directory B, move some
+other file F2 from directory B into directory C, fsync inode F1, power
+fail and remount the filesystem, file F2 exists and is located only in
+directory C.
 
-This issue is fixed by the following patch for the linux kernel:
+This is motivated by a bug found in btrfs, which is fixed by the patch
+(for the linux kernel) titled:
 
-  "Btrfs: fix unreplayable log after snapshot delete + parent dir fsync"
+   "Btrfs: fix file loss on log replay after renaming a file and fsync"
+
+Tested against ext3, ext4, xfs, f2fs and reiserfs.
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
-Tested-by: Liu Bo <bo.li.liu@oracle.com>
-Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
 ---
 
 V2: Removed the call to _need_to_be_root since there's a patch around to
     kill it.
-    Removed explicit snapshot existence tests with bash and replaced
+    Removed explicit file existence tests with bash and replaced them
     with calls to ls -R.
 
- tests/btrfs/118     | 98 +++++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/118.out | 15 ++++++++
- tests/btrfs/group   |  1 +
+ tests/generic/336     | 96 +++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/generic/336.out | 17 +++++++++
+ tests/generic/group   |  1 +
  3 files changed, 114 insertions(+)
- create mode 100755 tests/btrfs/118
- create mode 100644 tests/btrfs/118.out
+ create mode 100755 tests/generic/336
+ create mode 100644 tests/generic/336.out
 
-diff --git a/tests/btrfs/118 b/tests/btrfs/118
+diff --git a/tests/generic/336 b/tests/generic/336
 new file mode 100755
-index 0000000..d0a1f2e
+index 0000000..acf9856
 --- /dev/null
-+++ b/tests/btrfs/118
-@@ -0,0 +1,98 @@
++++ b/tests/generic/336
+@@ -0,0 +1,96 @@
 +#! /bin/bash
-+# FSQA Test No. 118
++# FSQA Test No. 336
 +#
-+# Test that if we fsync a directory that had a snapshot entry in it that was
-+# deleted and crash, the next time we mount the filesystem, the log replay
-+# procedure will not fail and the snapshot is not present anymore.
++# Test that if we have a file F1 with two links, one in a directory A and the
++# other in directory B, if we remove the link in directory B, move some other
++# file F2 from directory B into directory C, fsync inode F1, power fail and
++# remount the filesystem, file F2 exists and is located only in directory C.
 +#
 +#-----------------------------------------------------------------------
 +#
@@ -94,7 +98,7 @@ index 0000000..d0a1f2e
 +. ./common/dmflakey
 +
 +# real QA test starts here
-+_supported_fs btrfs
++_supported_fs generic
 +_supported_os Linux
 +_require_scratch
 +_require_dm_target flakey
@@ -106,75 +110,74 @@ index 0000000..d0a1f2e
 +_init_flakey
 +_mount_flakey
 +
-+# Create a snapshot at the root of our filesystem (mount point path), delete it,
-+# fsync the mount point path, crash and mount to replay the log. This should
-+# succeed and after the filesystem is mounted the snapshot should not be visible
-+# anymore.
-+_run_btrfs_util_prog subvolume snapshot $SCRATCH_MNT $SCRATCH_MNT/snap1
-+_run_btrfs_util_prog subvolume delete $SCRATCH_MNT/snap1
-+$XFS_IO_PROG -c "fsync" $SCRATCH_MNT
++# Create our test directories and the file we will later check if it has
++# disappeared (file bar).
++mkdir $SCRATCH_MNT/a
++mkdir $SCRATCH_MNT/b
++mkdir $SCRATCH_MNT/c
++touch $SCRATCH_MNT/a/foo
++ln $SCRATCH_MNT/a/foo $SCRATCH_MNT/b/foo_link
++touch $SCRATCH_MNT/b/bar
 +
-+echo "Filesystem content before first power failure:"
-+ls -R $SCRATCH_MNT | _filter_scratch
++# Make sure everything is durably persisted.
++sync
 +
++# Now delete one of the hard links of file foo and move file bar into c/
++unlink $SCRATCH_MNT/b/foo_link
++mv $SCRATCH_MNT/b/bar $SCRATCH_MNT/c/
++
++# Now fsync file foo.
++$XFS_IO_PROG -c "fsync" $SCRATCH_MNT/a/foo
++
++echo "Filesystem content before power failure:"
++ls -R $SCRATCH_MNT/a $SCRATCH_MNT/b $SCRATCH_MNT/c | _filter_scratch
++
++# Simulate a power failure / crash and remount the filesystem, so that the
++# journal/log is replayed.
 +_flakey_drop_and_remount
 +
-+echo "Filesystem content after first power failure:"
-+# Must match what we had before the power failure, we don't expect to see the
-+# snapshot anymore.
-+ls -R $SCRATCH_MNT | _filter_scratch
-+
-+# Similar scenario as above, but this time the snapshot is created inside a
-+# directory and not directly under the root (mount point path).
-+mkdir $SCRATCH_MNT/testdir
-+_run_btrfs_util_prog subvolume snapshot $SCRATCH_MNT $SCRATCH_MNT/testdir/snap2
-+_run_btrfs_util_prog subvolume delete $SCRATCH_MNT/testdir/snap2
-+$XFS_IO_PROG -c "fsync" $SCRATCH_MNT/testdir
-+
-+echo "Filesystem content before second power failure:"
-+ls -R $SCRATCH_MNT | _filter_scratch
-+
-+_flakey_drop_and_remount
-+
-+echo "Filesystem content after second power failure:"
-+# Must match what we had before the power failure, we don't expect to see the
-+# snapshot anymore.
-+ls -R $SCRATCH_MNT | _filter_scratch
++# We expect that after the journal/log was replayed, we no longer have the link
++# foo_link and file bar was moved from directory b/ to directory c/.
++echo "Filesystem content after power failure:"
++# Must match what we had before the power failure.
++ls -R $SCRATCH_MNT/a $SCRATCH_MNT/b $SCRATCH_MNT/c | _filter_scratch
 +
 +_unmount_flakey
 +
 +status=0
 +exit
-diff --git a/tests/btrfs/118.out b/tests/btrfs/118.out
+diff --git a/tests/generic/336.out b/tests/generic/336.out
 new file mode 100644
-index 0000000..fee12ad
+index 0000000..6c82fc4
 --- /dev/null
-+++ b/tests/btrfs/118.out
-@@ -0,0 +1,15 @@
-+QA output created by 118
-+Filesystem content before first power failure:
-+SCRATCH_MNT:
-+Filesystem content after first power failure:
-+SCRATCH_MNT:
-+Filesystem content before second power failure:
-+SCRATCH_MNT:
-+testdir
++++ b/tests/generic/336.out
+@@ -0,0 +1,17 @@
++QA output created by 336
++Filesystem content before power failure:
++SCRATCH_MNT/a:
++foo
 +
-+SCRATCH_MNT/testdir:
-+Filesystem content after second power failure:
-+SCRATCH_MNT:
-+testdir
++SCRATCH_MNT/b:
 +
-+SCRATCH_MNT/testdir:
-diff --git a/tests/btrfs/group b/tests/btrfs/group
-index f74ffbb..a2fa412 100644
---- a/tests/btrfs/group
-+++ b/tests/btrfs/group
-@@ -118,3 +118,4 @@
- 115 auto qgroup
- 116 auto quick metadata
- 117 auto quick send clone
-+118 auto quick snapshot metadata
++SCRATCH_MNT/c:
++bar
++Filesystem content after power failure:
++SCRATCH_MNT/a:
++foo
++
++SCRATCH_MNT/b:
++
++SCRATCH_MNT/c:
++bar
+diff --git a/tests/generic/group b/tests/generic/group
+index f270edb..a47e23d 100644
+--- a/tests/generic/group
++++ b/tests/generic/group
+@@ -338,3 +338,4 @@
+ 333 auto clone
+ 334 auto clone
+ 335 auto quick metadata
++336 auto quick metadata
 -- 
 2.7.0.rc3
 

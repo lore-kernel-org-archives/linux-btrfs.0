@@ -1,64 +1,46 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.136]:35358 "EHLO mail.kernel.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1947005AbcBRXKY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 18 Feb 2016 18:10:24 -0500
-From: fdmanana@kernel.org
-To: fstests@vger.kernel.org
-Cc: linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH 1/2 v2] fstests: generic test for directory fsync after rename operation
-Date: Thu, 18 Feb 2016 23:09:56 +0000
-Message-Id: <1455836996-10077-1-git-send-email-fdmanana@kernel.org>
-In-Reply-To: <1455533663-7704-1-git-send-email-fdmanana@kernel.org>
-References: <1455533663-7704-1-git-send-email-fdmanana@kernel.org>
+Received: from cn.fujitsu.com ([222.73.24.84]:27412 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1422791AbcBRG0e (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 18 Feb 2016 01:26:34 -0500
+Received: from localhost.localdomain (unknown [10.167.226.34])
+	by cn.fujitsu.com (Postfix) with ESMTP id 1C9EF4056407
+	for <linux-btrfs@vger.kernel.org>; Thu, 18 Feb 2016 14:26:29 +0800 (CST)
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [RFC PATCH v2 3/5] fstests: btrfs: Add testcase for btrfs dedup enable disable race test
+Date: Thu, 18 Feb 2016 14:24:26 +0800
+Message-Id: <1455776668-12306-4-git-send-email-quwenruo@cn.fujitsu.com>
+In-Reply-To: <1455776668-12306-1-git-send-email-quwenruo@cn.fujitsu.com>
+References: <1455776668-12306-1-git-send-email-quwenruo@cn.fujitsu.com>
+MIME-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Filipe Manana <fdmanana@suse.com>
+Add test case to check btrfs dedup enable/disable race.
 
-Test that if we move one file between directories, fsync the parent
-directory of the old directory, power fail and remount the filesystem,
-the file is not lost and it's located at the destination directory.
-
-This is motivated by a bug found in btrfs, which is fixed by the patch
-(for the linux kernel) titled:
-
-  "Btrfs: fix file loss on log replay after renaming a file and fsync"
-
-Tested against ext3, ext4, xfs, f2fs and reiserfs.
-
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
+ tests/btrfs/201     | 101 ++++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/201.out |   1 +
+ tests/btrfs/group   |   1 +
+ 3 files changed, 103 insertions(+)
+ create mode 100755 tests/btrfs/201
+ create mode 100644 tests/btrfs/201.out
 
-V2: Removed the call to _need_to_be_root since there's a patch around to
-    kill it.
-    Removed explicit file existence tests with bash and replaced them with
-    calls to ls -R.
-
- tests/generic/335     | 96 +++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/generic/335.out | 19 ++++++++++
- tests/generic/group   |  1 +
- 3 files changed, 116 insertions(+)
- create mode 100755 tests/generic/335
- create mode 100644 tests/generic/335.out
-
-diff --git a/tests/generic/335 b/tests/generic/335
+diff --git a/tests/btrfs/201 b/tests/btrfs/201
 new file mode 100755
-index 0000000..0f79b6d
+index 0000000..dd573a5
 --- /dev/null
-+++ b/tests/generic/335
-@@ -0,0 +1,96 @@
++++ b/tests/btrfs/201
+@@ -0,0 +1,101 @@
 +#! /bin/bash
-+# FSQA Test No. 335
++# FS QA Test 201
 +#
-+# Test that if we move one file between directories, fsync the parent directory
-+# of the old directory, power fail and remount the filesystem, the file is not
-+# lost and it's located at the destination directory.
++# Basic btrfs inband dedup enable/disable race test
 +#
 +#-----------------------------------------------------------------------
-+#
-+# Copyright (C) 2016 SUSE Linux Products GmbH. All Rights Reserved.
-+# Author: Filipe Manana <fdmanana@suse.com>
++# Copyright (c) 2016 Fujitsu.  All Rights Reserved.
 +#
 +# This program is free software; you can redistribute it and/or
 +# modify it under the terms of the GNU General Public License as
@@ -78,106 +60,99 @@ index 0000000..0f79b6d
 +seq=`basename $0`
 +seqres=$RESULT_DIR/$seq
 +echo "QA output created by $seq"
++
++here=`pwd`
 +tmp=/tmp/$$
 +status=1	# failure is the default!
 +trap "_cleanup; exit \$status" 0 1 2 3 15
 +
 +_cleanup()
 +{
-+	_cleanup_flakey
 +	cd /
 +	rm -f $tmp.*
++	kill $trigger_work &> /dev/null
++	kill $fsstress_work &> /dev/null
++	wait
 +}
 +
 +# get standard environment, filters and checks
 +. ./common/rc
 +. ./common/filter
-+. ./common/dmflakey
 +
-+# real QA test starts here
-+_supported_fs generic
-+_supported_os Linux
-+_require_scratch
-+_require_dm_target flakey
-+_require_metadata_journaling $SCRATCH_DEV
-+
++# remove previous $seqres.full before test
 +rm -f $seqres.full
 +
-+_scratch_mkfs >>$seqres.full 2>&1
-+_init_flakey
-+_mount_flakey
++# real QA test starts here
 +
-+# Create our test directories and the file we will later check if it has
-+# disappeared.
-+mkdir -p $SCRATCH_MNT/a/b
-+mkdir $SCRATCH_MNT/c
-+touch $SCRATCH_MNT/a/b/foo
++_supported_fs btrfs
++_supported_os Linux
++_require_scratch
++_need_to_be_root
++_require_btrfs_subcommand dedup
++_require_btrfs_kernel_feature dedup
++_require_btrfs_mkfs_feature dedup
 +
-+# Make sure everything is durably persisted.
-+sync
++# Use 64K dedup size to keep compatibility for 64K page size
++dedup_bs=64K
 +
-+# Now move our test file into a new parent directory.
-+mv $SCRATCH_MNT/a/b/foo $SCRATCH_MNT/c/
++_scratch_mkfs "-O dedup" >> $seqres.full 2>&1
++_scratch_mount
 +
-+# Create a new file inside the parent directory of the directory where our test
-+# file foo was previously at. This is just to ensure the fsync we do next
-+# against that parent directory actually does something and it's not a noop.
-+touch $SCRATCH_MNT/a/bar
-+$XFS_IO_PROG -c "fsync" $SCRATCH_MNT/a
++mkdir -p $SCRATCH_MNT/stressdir
 +
-+echo "Filesystem content before power failure:"
-+ls -R $SCRATCH_MNT/a $SCRATCH_MNT/c | _filter_scratch
++fsstress_work()
++{
++	$FSSTRESS_PROG $(_scale_fsstress_args -p 8 -n 5000) $FSSTRESS_AVOID \
++		-d $SCRATCH_MNT/stressdir > /dev/null 2>&1
++}
 +
-+# Simulate a power failure / crash and remount the filesystem, so that the
-+# journal/log is replayed.
-+_flakey_drop_and_remount
++trigger_work()
++{
++	while true; do
++		_run_btrfs_util_prog dedup enable -s inmemory \
++			-b $dedup_bs $SCRATCH_MNT
++		sleep 5
++		_run_btrfs_util_prog dedup disable $SCRATCH_MNT
++		sleep 5
++		_run_btrfs_util_prog dedup enable -s ondisk \
++			-b $dedup_bs $SCRATCH_MNT
++		sleep 5
++		_run_btrfs_util_prog dedup disable $SCRATCH_MNT
++		sleep 5
++	done
++}
 +
-+# We expect our file foo to exist, have an entry in the new parent
-+# directory (c/) and not have anymore an entry in the old parent directory
-+# (a/b/).
-+# The new file named bar should also exist.
-+echo "Filesystem content after power failure:"
-+# Must match what we had before the power failure.
-+ls -R $SCRATCH_MNT/a $SCRATCH_MNT/c | _filter_scratch
++fsstress_work &
++fsstress_pid=$!
 +
-+_unmount_flakey
++trigger_work &
++trigger_pid=$!
 +
++wait $fsstress_pid
++kill $trigger_pid
++wait
++
++# success, all done
 +status=0
 +exit
-diff --git a/tests/generic/335.out b/tests/generic/335.out
+diff --git a/tests/btrfs/201.out b/tests/btrfs/201.out
 new file mode 100644
-index 0000000..bd38d75
+index 0000000..b8969af
 --- /dev/null
-+++ b/tests/generic/335.out
-@@ -0,0 +1,19 @@
-+QA output created by 335
-+Filesystem content before power failure:
-+SCRATCH_MNT/a:
-+b
-+bar
-+
-+SCRATCH_MNT/a/b:
-+
-+SCRATCH_MNT/c:
-+foo
-+Filesystem content after power failure:
-+SCRATCH_MNT/a:
-+b
-+bar
-+
-+SCRATCH_MNT/a/b:
-+
-+SCRATCH_MNT/c:
-+foo
-diff --git a/tests/generic/group b/tests/generic/group
-index 5f699ce..f270edb 100644
---- a/tests/generic/group
-+++ b/tests/generic/group
-@@ -337,3 +337,4 @@
- 332 auto quick clone
- 333 auto clone
- 334 auto clone
-+335 auto quick metadata
++++ b/tests/btrfs/201.out
+@@ -0,0 +1 @@
++QA output created by 201
+diff --git a/tests/btrfs/group b/tests/btrfs/group
+index 9b08570..6ee90a4 100644
+--- a/tests/btrfs/group
++++ b/tests/btrfs/group
+@@ -119,3 +119,4 @@
+ 116 auto quick metadata
+ 117 auto quick send clone
+ 200 auto dedup
++201 auto dedup
 -- 
-2.7.0.rc3
+2.7.1
+
+
 

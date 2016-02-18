@@ -1,119 +1,184 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lb0-f178.google.com ([209.85.217.178]:34929 "EHLO
-	mail-lb0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1426824AbcBRSTK (ORCPT
+Received: from mail-lf0-f48.google.com ([209.85.215.48]:34625 "EHLO
+	mail-lf0-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1946330AbcBRX1L (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 18 Feb 2016 13:19:10 -0500
-Received: by mail-lb0-f178.google.com with SMTP id bc4so33587534lbc.2
-        for <linux-btrfs@vger.kernel.org>; Thu, 18 Feb 2016 10:19:10 -0800 (PST)
+	Thu, 18 Feb 2016 18:27:11 -0500
+Received: by mail-lf0-f48.google.com with SMTP id j78so43115699lfb.1
+        for <linux-btrfs@vger.kernel.org>; Thu, 18 Feb 2016 15:27:10 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <b9e02f6f-dc3e-94c1-1a60-30192206c95e@mokrynskyi.com>
-References: <b9e02f6f-dc3e-94c1-1a60-30192206c95e@mokrynskyi.com>
-Date: Thu, 18 Feb 2016 19:19:09 +0100
-Message-ID: <CAPmG0ja7T9waYuBagRjDdGQutrcgA3nPygmLUMjGaT5owWX1sg@mail.gmail.com>
-Subject: Re: Major HDD performance degradation on btrfs receive
+In-Reply-To: <56C52685.8090505@cn.fujitsu.com>
+References: <CABmr4wVBb0CCEoU_N2jxYvC=gVn9vUKWfb0902yZDuP2N3ck3w@mail.gmail.com>
+	<56C40C06.8090900@cn.fujitsu.com>
+	<CABmr4wVvjB7vGDsZWyCd222E1D-+kmk2SS2XwH2dp+K6YWWe=A@mail.gmail.com>
+	<56C52685.8090505@cn.fujitsu.com>
+Date: Fri, 19 Feb 2016 00:27:09 +0100
+Message-ID: <CAPmG0jbi=TB=0+3mHmxW0+7s+mA79YExiSKoQGs1W-DdU1fKbA@mail.gmail.com>
+Subject: Re: RAID 6 full, but there is still space left on some devices
 From: Henk Slager <eye1tm@gmail.com>
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
+To: btrfs <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Feb 16, 2016 at 5:44 AM, Nazar Mokrynskyi <nazar@mokrynskyi.com> wrote:
-> I have 2 SSD with BTRFS filesystem (RAID) on them and several subvolumes.
-> Each 15 minutes I'm creating read-only snapshot of subvolumes /root, /home
-> and /web inside /backup.
-> After this I'm searching for last common subvolume on /backup_hdd, sending
-> difference between latest common snapshot and simply latest snapshot to
-> /backup_hdd.
-> On top of all above there is snapshots rotation, so that /backup contains
-> much less snapshots than /backup_hdd.
+On Thu, Feb 18, 2016 at 3:03 AM, Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
 >
-> I'm using this setup for last 7 months or so and this is luckily the longest
-> period when I had no problems with BTRFS at all.
-> However, last 2+ months btrfs receive command loads HDD so much that I can't
-> even get list of directories in it.
-> This happens even if diff between snapshots is really small.
-> HDD contains 2 filesystems - mentioned BTRFS and ext4 for other files, so I
-> can't even play mp3 file from ext4 filesystem while btrfs receive is
-> running.
-> Since I'm running everything each 15 minutes this is a real headache.
 >
-> My guess is that performance hit might be caused by filesystem fragmentation
-> even though there is more than enough empty space. But I'm not sure how to
-> properly check this and can't, obviously, run defragmentation on read-only
-> subvolumes.
+> Dan Blazejewski wrote on 2016/02/17 18:04 -0500:
+>>
+>> Hello,
+>>
+>> I upgraded my kernel to 4.4.2, and btrfs-progs to 4.4. I also added
+>> another 4TB disk and kicked off a full balance (currently 7x4TB
+>> RAID6). I'm interested to see what an additional drive will do to
+>> this. I'll also have to wait and see if a full system balance on a
+>> newer version of BTRFS tools does the trick or not.
+>>
+>> I also noticed that "btrfs device usage" shows multiple entries for
+>> Data, RAID 6 on some drives. Is this normal? Please note that /dev/sdh
+>> is the new disk, and I only just started the balance.
+>>
+>> # btrfs dev usage /mnt/data
+>> /dev/sda, ID: 5
+>>     Device size:             3.64TiB
+>>     Data,RAID6:              1.43TiB
+>>     Data,RAID6:              1.48TiB
+>>     Data,RAID6:            320.00KiB
+>>     Metadata,RAID6:          2.55GiB
+>>     Metadata,RAID6:          1.50GiB
+>>     System,RAID6:           16.00MiB
+>>     Unallocated:           733.67GiB
+>>
+>> /dev/sdb, ID: 6
+>>     Device size:             3.64TiB
+>>     Data,RAID6:              1.48TiB
+>>     Data,RAID6:            320.00KiB
+>>     Metadata,RAID6:          1.50GiB
+>>     System,RAID6:           16.00MiB
+>>     Unallocated:             2.15TiB
+>>
+>> /dev/sdc, ID: 7
+>>     Device size:             3.64TiB
+>>     Data,RAID6:              1.43TiB
+>>     Data,RAID6:            732.69GiB
+>>     Data,RAID6:              1.48TiB
+>>     Data,RAID6:            320.00KiB
+>>     Metadata,RAID6:          2.55GiB
+>>     Metadata,RAID6:        982.00MiB
+>>     Metadata,RAID6:          1.50GiB
+>>     System,RAID6:           16.00MiB
+>>     Unallocated:            25.21MiB
+>>
+>> /dev/sdd, ID: 1
+>>     Device size:             3.64TiB
+>>     Data,RAID6:              1.43TiB
+>>     Data,RAID6:            732.69GiB
+>>     Data,RAID6:              1.48TiB
+>>     Data,RAID6:            320.00KiB
+>>     Metadata,RAID6:          2.55GiB
+>>     Metadata,RAID6:        982.00MiB
+>>     Metadata,RAID6:          1.50GiB
+>>     System,RAID6:           16.00MiB
+>>     Unallocated:            25.21MiB
+>>
+>> /dev/sdf, ID: 3
+>>     Device size:             3.64TiB
+>>     Data,RAID6:              1.43TiB
+>>     Data,RAID6:            732.69GiB
+>>     Data,RAID6:              1.48TiB
+>>     Data,RAID6:            320.00KiB
+>>     Metadata,RAID6:          2.55GiB
+>>     Metadata,RAID6:        982.00MiB
+>>     Metadata,RAID6:          1.50GiB
+>>     System,RAID6:           16.00MiB
+>>     Unallocated:            25.21MiB
+>>
+>> /dev/sdg, ID: 2
+>>     Device size:             3.64TiB
+>>     Data,RAID6:              1.43TiB
+>>     Data,RAID6:            732.69GiB
+>>     Data,RAID6:              1.48TiB
+>>     Data,RAID6:            320.00KiB
+>>     Metadata,RAID6:          2.55GiB
+>>     Metadata,RAID6:        982.00MiB
+>>     Metadata,RAID6:          1.50GiB
+>>     System,RAID6:           16.00MiB
+>>     Unallocated:            25.21MiB
+>>
+>> /dev/sdh, ID: 8
+>>     Device size:             3.64TiB
+>>     Data,RAID6:            320.00KiB
+>>     Unallocated:             3.64TiB
+>>
 >
-> I'll be thankful for anything that might help to identify and resolve this
-> issue.
->
-> ~> uname -a
-> Linux nazar-pc 4.5.0-rc4-haswell #1 SMP Tue Feb 16 02:09:13 CET 2016 x86_64
-> x86_64 x86_64 GNU/Linux
->
-> ~> btrfs --version
-> btrfs-progs v4.4
->
-> ~> sudo btrfs fi show
-> Label: none  uuid: 5170aca4-061a-4c6c-ab00-bd7fc8ae6030
->     Total devices 2 FS bytes used 71.00GiB
->     devid    1 size 111.30GiB used 111.30GiB path /dev/sdb2
->     devid    2 size 111.30GiB used 111.29GiB path /dev/sdc2
->
-> Label: 'Backup'  uuid: 40b8240a-a0a2-4034-ae55-f8558c0343a8
->     Total devices 1 FS bytes used 252.54GiB
->     devid    1 size 800.00GiB used 266.08GiB path /dev/sda1
->
-> ~> sudo btrfs fi df /
-> Data, RAID0: total=214.56GiB, used=69.10GiB
-> System, RAID1: total=8.00MiB, used=16.00KiB
-> System, single: total=4.00MiB, used=0.00B
-> Metadata, RAID1: total=4.00GiB, used=1.87GiB
-> Metadata, single: total=8.00MiB, used=0.00B
-> GlobalReserve, single: total=512.00MiB, used=0.00B
->
-> ~> sudo btrfs fi df /backup_hdd
-> Data, single: total=245.01GiB, used=243.61GiB
-> System, DUP: total=32.00MiB, used=48.00KiB
-> System, single: total=4.00MiB, used=0.00B
-> Metadata, DUP: total=10.50GiB, used=8.93GiB
-> Metadata, single: total=8.00MiB, used=0.00B
-> GlobalReserve, single: total=512.00MiB, used=0.00B
->
-> Relevant mount options:
-> UUID=5170aca4-061a-4c6c-ab00-bd7fc8ae6030    / btrfs
-> compress=lzo,noatime,relatime,ssd,subvol=/root    0 1
-> UUID=5170aca4-061a-4c6c-ab00-bd7fc8ae6030    /home btrfs
-> compress=lzo,noatime,relatime,ssd,subvol=/home 0    1
-> UUID=5170aca4-061a-4c6c-ab00-bd7fc8ae6030    /backup btrfs
-> compress=lzo,noatime,relatime,ssd,subvol=/backup 0    1
-> UUID=5170aca4-061a-4c6c-ab00-bd7fc8ae6030    /web btrfs
-> compress=lzo,noatime,relatime,ssd,subvol=/web 0    1
-> UUID=40b8240a-a0a2-4034-ae55-f8558c0343a8    /backup_hdd btrfs
-> compress=lzo,noatime,relatime,noexec 0    1
+> Not sure how that multiple chunk type shows up.
+> Maybe all these shown RAID6 has different number of stripes?
 
-As already indicated by Duncan, the amount of snapshots might be just
-too much. The fragmentation on the HDD might have become very high. If
-there is limited amount of RAM in the system (so limited caching), too
-much time is lost in seeks. In addition:
+Indeed, its 4 different sets of stripe-widths, i.e. how many drives is
+striped accross. Someone has suggested to indicate this in the output
+of    btrfs de us  comand some time ago.
 
- compress=lzo
-this also increases the chance of scattering fragments and fragmentation.
+The fs has only RAID6 profile and I am not fully sure if the
+'Unallocated'  numbers are correct (on RAID10 they are 2x too high
+with unpatched v4.4 progs), but anyhow the lower devid's are way too
+full.
 
- noatime,relatime
-I am not sure why you have this. Hopefully you have the actual mount
-listed as   noatime
+>From the size, one can derive how many devices (or stipe-width):
+732.69GiB 4, 1.43TiB 5, 1.48TiB 6, 320.00KiB 7
 
-You could use the principles of the tool/package called  snapper  to
-do a sort of non-linear snapshot thinning: further back in time you
-will have a much higher granularity of snapshot over a certain
-timeframe.
+>> Qu, in regards to your question, I ran RAID 1 on multiple disks of
+>> different sizes. I believe I had a mix of 2x4TB, 1x2TB, and 1x3TB
+>> drive. I replaced the 2TB drive first with a 4TB, and balanced it.
+>> Later on, I replaced the 3TB drive with another 4TB, and balanced,
+>> yielding an array of 4x4TB RAID1. A little while later, I wound up
+>> sticking a fifth 4TB drive in, and converting to RAID6. The sixth 4TB
+>> drive was added some time after that. The seventh was added just a few
+>> minutes ago.
+>
+>
+> Personally speaking, I just came up to one method to balance all these
+> disks, and in fact you don't need to add a disk.
+>
+> 1) Balance all data chunk to single profile
+> 2) Balance all metadata chunk to single or RAID1 profile
+> 3) Balance all data chunk back to RAID6 profile
+> 4) Balance all metadata chunk back to RAID6 profile
+> System chunk is so small that normally you don't need to bother.
+>
+> The trick is, as single is the most flex chunk type, only needs one disk
+> with unallocated space.
+> And btrfs chunk allocater will allocate chunk to device with most
+> unallocated space.
+>
+> So after 1) and 2) you should found that chunk allocation is almost
+> perfectly balanced across all devices, as long as they are in same size.
+>
+> Now you have a balance base layout for RAID6 allocation. Should make things
+> go quite smooth and result a balanced RAID6 chunk layout.
 
-You could use skinny metadata (recreate the fs with newer tools or use
-btrfstune -x on /dev/sda1). I think at the moment this flag is not
-enabled on /dev/sda1
+This is a good trick to get out of 'the RAID6 full' situation. I have
+done some RAID5 tests on 100G VM disks with kernel/tools 4.5-rcX/v4.4,
+and various balancing starts, cancels, profile converts etc, worked
+surprisingly well, compared to my experience a year back with RAID5
+(hitting bugs, crashes).
 
-If you put just 1 btrfs fs on the hdd (so move all the content from
-the ext4 fs in the the btrfs fs) you might get better overall
-performance. I assume the ext4 fs is on the second (slower part) of
-the HDD and that is a disadvantage I think.
-But you probably have reasons for why the setup is like it is.
+A RAID6 full balance with this setup might be very slow, even if the
+fs would be not so full. The VMs I use are on a mixed SSD/HDD
+(bcache'd) array so balancing within the last GB(s), so almost no
+workspace, still makes progress. But on HDD only, things can take very
+long. The 'Unallocated' space on devid 1 should be at least a few GiB,
+otherwise rebalancing will be very slow or just not work.
+
+The way from RAID6 -> single/RAID1 -> RAID6 might also be more
+acceptable w.r.t. speed in total. Just watch progress I would say.
+Maybe its not needed to do a full convert, just make sure you will
+have enough workspace before starting a convert from single/RAID1 to
+RAID6 again.
+
+With v4.4 tools, you can do filtered balance based on stripe-width, so
+it avoids complete balance again of block groups that are already
+allocated across the right amount of devices.
+
+In this case, avoiding the re-balance of the '320.00KiB group' (in the
+means time could be much larger) you could do this:
+btrfs balance start -v -dstripes=1..6 /mnt/data

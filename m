@@ -1,14 +1,14 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
 Received: from cn.fujitsu.com ([222.73.24.84]:24930 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1425092AbcBRFpf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 18 Feb 2016 00:45:35 -0500
+	id S1425089AbcBRFpd (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 18 Feb 2016 00:45:33 -0500
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org, clm@fb.com
 Cc: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
-Subject: [PATCH v7 19/20] btrfs: try more times to alloc metadata reserve space
-Date: Thu, 18 Feb 2016 13:42:57 +0800
-Message-Id: <1455774178-3595-20-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH v7 04/20] btrfs: dedup: Introduce function to remove hash from in-memory tree
+Date: Thu, 18 Feb 2016 13:42:42 +0800
+Message-Id: <1455774178-3595-5-git-send-email-quwenruo@cn.fujitsu.com>
 In-Reply-To: <1455774178-3595-1-git-send-email-quwenruo@cn.fujitsu.com>
 References: <1455774178-3595-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -17,80 +17,129 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
 
-In btrfs_delalloc_reserve_metadata(), the number of metadata bytes we try
-to reserve is calculated by the difference between outstanding_extents and
-reserved_extents.
+Introduce static function inmem_del() to remove hash from in-memory
+dedup tree.
+And implement btrfs_dedup_del() and btrfs_dedup_destroy() interfaces.
 
-When reserve_metadata_bytes() fails to reserve desited metadata space,
-it has already done some reclaim work, such as write ordered extents.
-
-In that case, outstanding_extents and reserved_extents may already
-changed, and we may reserve enough metadata space then.
-
-So this patch will try to call reserve_metadata_bytes() at most 3 times
-to ensure we really run out of space.
-
-Such false ENOSPC is mainly caused by small file extents and time
-consuming delalloc functions, which mainly affects in-band
-de-duplication. (Compress should also be affected, but LZO/zlib is
-faster than SHA256, so still harder to trigger than dedup).
-
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 Signed-off-by: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
 ---
- fs/btrfs/extent-tree.c | 23 +++++++++++++++++++++--
- 1 file changed, 21 insertions(+), 2 deletions(-)
+ fs/btrfs/dedup.c | 105 +++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 105 insertions(+)
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 2a17c88..c60e24a 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -5669,6 +5669,7 @@ int btrfs_delalloc_reserve_metadata(struct inode *inode, u64 num_bytes)
- 	bool delalloc_lock = true;
- 	u64 to_free = 0;
- 	unsigned dropped;
-+	int loops = 0;
- 
- 	/* If we are a free space inode we need to not flush since we will be in
- 	 * the middle of a transaction commit.  We also don't need the delalloc
-@@ -5684,11 +5685,12 @@ int btrfs_delalloc_reserve_metadata(struct inode *inode, u64 num_bytes)
- 	    btrfs_transaction_in_commit(root->fs_info))
- 		schedule_timeout(1);
- 
-+	num_bytes = ALIGN(num_bytes, root->sectorsize);
-+
-+again:
- 	if (delalloc_lock)
- 		mutex_lock(&BTRFS_I(inode)->delalloc_mutex);
- 
--	num_bytes = ALIGN(num_bytes, root->sectorsize);
--
- 	spin_lock(&BTRFS_I(inode)->lock);
- 	nr_extents = (unsigned)div64_u64(num_bytes +
- 					 BTRFS_MAX_EXTENT_SIZE - 1,
-@@ -5809,6 +5811,23 @@ out_fail:
- 	}
- 	if (delalloc_lock)
- 		mutex_unlock(&BTRFS_I(inode)->delalloc_mutex);
-+	/*
-+	 * The number of metadata bytes is calculated by the difference
-+	 * between outstanding_extents and reserved_extents. Sometimes though
-+	 * reserve_metadata_bytes() fails to reserve the wanted metadata bytes,
-+	 * indeed it has already done some work to reclaim metadata space, hence
-+	 * both outstanding_extents and reserved_extents would have changed and
-+	 * the bytes we try to reserve would also has changed(may be smaller).
-+	 * So here we try to reserve again. This is much useful for online
-+	 * dedup, which will easily eat almost all meta space.
-+	 *
-+	 * XXX: Indeed here 3 is arbitrarily choosed, it's a good workaround for
-+	 * online dedup, later we should find a better method to avoid dedup
-+	 * enospc issue.
-+	 */
-+	if (unlikely(ret == -ENOSPC && loops++ < 3))
-+		goto again;
-+
- 	return ret;
+diff --git a/fs/btrfs/dedup.c b/fs/btrfs/dedup.c
+index 5fa15ae..259b32d 100644
+--- a/fs/btrfs/dedup.c
++++ b/fs/btrfs/dedup.c
+@@ -257,3 +257,108 @@ int btrfs_dedup_add(struct btrfs_trans_handle *trans,
+ 		return inmem_add(dedup_info, hash);
+ 	return -EINVAL;
  }
- 
++
++static struct inmem_hash *
++inmem_search_bytenr(struct btrfs_dedup_info *dedup_info, u64 bytenr)
++{
++	struct rb_node **p = &dedup_info->bytenr_root.rb_node;
++	struct rb_node *parent = NULL;
++	struct inmem_hash *entry = NULL;
++
++	while (*p) {
++		parent = *p;
++		entry = rb_entry(parent, struct inmem_hash, bytenr_node);
++
++		if (bytenr < entry->bytenr)
++			p = &(*p)->rb_left;
++		else if (bytenr > entry->bytenr)
++			p = &(*p)->rb_right;
++		else
++			return entry;
++	}
++
++	return NULL;
++}
++
++/* Delete a hash from in-memory dedup tree */
++static int inmem_del(struct btrfs_dedup_info *dedup_info, u64 bytenr)
++{
++	struct inmem_hash *hash;
++
++	mutex_lock(&dedup_info->lock);
++	hash = inmem_search_bytenr(dedup_info, bytenr);
++	if (!hash) {
++		mutex_unlock(&dedup_info->lock);
++		return 0;
++	}
++
++	__inmem_del(dedup_info, hash);
++	mutex_unlock(&dedup_info->lock);
++	return 0;
++}
++
++/* Remove a dedup hash from dedup tree */
++int btrfs_dedup_del(struct btrfs_trans_handle *trans,
++		    struct btrfs_fs_info *fs_info, u64 bytenr)
++{
++	struct btrfs_dedup_info *dedup_info = fs_info->dedup_info;
++
++	if (!fs_info->dedup_enabled)
++		return 0;
++
++	if (WARN_ON(dedup_info == NULL))
++		return -EINVAL;
++
++	if (dedup_info->backend == BTRFS_DEDUP_BACKEND_INMEMORY)
++		return inmem_del(dedup_info, bytenr);
++	return -EINVAL;
++}
++
++static void inmem_destroy(struct btrfs_dedup_info *dedup_info)
++{
++	struct inmem_hash *entry, *tmp;
++
++	mutex_lock(&dedup_info->lock);
++	list_for_each_entry_safe(entry, tmp, &dedup_info->lru_list, lru_list)
++		__inmem_del(dedup_info, entry);
++	mutex_unlock(&dedup_info->lock);
++}
++
++int btrfs_dedup_disable(struct btrfs_fs_info *fs_info)
++{
++	struct btrfs_dedup_info *dedup_info;
++	int ret;
++
++	/* Here we don't want to increase refs of dedup_info */
++	fs_info->dedup_enabled = 0;
++
++	dedup_info = fs_info->dedup_info;
++
++	if (!dedup_info)
++		return 0;
++
++	/* Don't allow disable status change in RO mount */
++	if (fs_info->sb->s_flags & MS_RDONLY)
++		return -EROFS;
++
++	/*
++	 * Wait for all unfinished write to complete dedup routine
++	 * As disable operation is not a frequent operation, we are
++	 * OK to use heavy but safe sync_filesystem().
++	 */
++	down_read(&fs_info->sb->s_umount);
++	ret = sync_filesystem(fs_info->sb);
++	up_read(&fs_info->sb->s_umount);
++	if (ret < 0)
++		return ret;
++
++	fs_info->dedup_info = NULL;
++
++	/* now we are OK to clean up everything */
++	if (dedup_info->backend == BTRFS_DEDUP_BACKEND_INMEMORY)
++		inmem_destroy(dedup_info);
++
++	crypto_free_shash(dedup_info->dedup_driver);
++	kfree(dedup_info);
++	return 0;
++}
 -- 
 2.7.1
 

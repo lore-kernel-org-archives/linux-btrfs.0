@@ -1,27 +1,34 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lf0-f48.google.com ([209.85.215.48]:34625 "EHLO
-	mail-lf0-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1946330AbcBRX1L (ORCPT
+Received: from mail-vk0-f43.google.com ([209.85.213.43]:35009 "EHLO
+	mail-vk0-f43.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1426761AbcBSABy (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 18 Feb 2016 18:27:11 -0500
-Received: by mail-lf0-f48.google.com with SMTP id j78so43115699lfb.1
-        for <linux-btrfs@vger.kernel.org>; Thu, 18 Feb 2016 15:27:10 -0800 (PST)
+	Thu, 18 Feb 2016 19:01:54 -0500
+Received: by mail-vk0-f43.google.com with SMTP id e6so60071485vkh.2
+        for <linux-btrfs@vger.kernel.org>; Thu, 18 Feb 2016 16:01:54 -0800 (PST)
 MIME-Version: 1.0
 In-Reply-To: <56C52685.8090505@cn.fujitsu.com>
 References: <CABmr4wVBb0CCEoU_N2jxYvC=gVn9vUKWfb0902yZDuP2N3ck3w@mail.gmail.com>
 	<56C40C06.8090900@cn.fujitsu.com>
 	<CABmr4wVvjB7vGDsZWyCd222E1D-+kmk2SS2XwH2dp+K6YWWe=A@mail.gmail.com>
 	<56C52685.8090505@cn.fujitsu.com>
-Date: Fri, 19 Feb 2016 00:27:09 +0100
-Message-ID: <CAPmG0jbi=TB=0+3mHmxW0+7s+mA79YExiSKoQGs1W-DdU1fKbA@mail.gmail.com>
+Date: Thu, 18 Feb 2016 19:01:53 -0500
+Message-ID: <CABmr4wV7FwcPibZ18coRubmfDnfuUWpcG8jLABBUP4rr2jJC9w@mail.gmail.com>
 Subject: Re: RAID 6 full, but there is still space left on some devices
-From: Henk Slager <eye1tm@gmail.com>
-To: btrfs <linux-btrfs@vger.kernel.org>
+From: Dan Blazejewski <dan.blazejewski@gmail.com>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: btrfs <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Feb 18, 2016 at 3:03 AM, Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
+Qu, thanks for your input. I cancelled the existing balance, and
+kicked off a balance set to dconvert=single. Should be busy for the
+next few days, but I already see the multiple RAID 6 stripes
+disappearing, and the chunk distribution across all drives is starting
+to normalize. I'll let you know if it works once it's done. Thanks!
+
+On Wed, Feb 17, 2016 at 9:03 PM, Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
 >
 >
 > Dan Blazejewski wrote on 2016/02/17 18:04 -0500:
@@ -113,19 +120,9 @@ On Thu, Feb 18, 2016 at 3:03 AM, Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
 >
 > Not sure how that multiple chunk type shows up.
 > Maybe all these shown RAID6 has different number of stripes?
-
-Indeed, its 4 different sets of stripe-widths, i.e. how many drives is
-striped accross. Someone has suggested to indicate this in the output
-of    btrfs de us  comand some time ago.
-
-The fs has only RAID6 profile and I am not fully sure if the
-'Unallocated'  numbers are correct (on RAID10 they are 2x too high
-with unpatched v4.4 progs), but anyhow the lower devid's are way too
-full.
-
->From the size, one can derive how many devices (or stipe-width):
-732.69GiB 4, 1.43TiB 5, 1.48TiB 6, 320.00KiB 7
-
+>
+>>
+>>
 >> Qu, in regards to your question, I ran RAID 1 on multiple disks of
 >> different sizes. I believe I had a mix of 2x4TB, 1x2TB, and 1x3TB
 >> drive. I replaced the 2TB drive first with a 4TB, and balanced it.
@@ -155,30 +152,161 @@ full.
 >
 > Now you have a balance base layout for RAID6 allocation. Should make things
 > go quite smooth and result a balanced RAID6 chunk layout.
-
-This is a good trick to get out of 'the RAID6 full' situation. I have
-done some RAID5 tests on 100G VM disks with kernel/tools 4.5-rcX/v4.4,
-and various balancing starts, cancels, profile converts etc, worked
-surprisingly well, compared to my experience a year back with RAID5
-(hitting bugs, crashes).
-
-A RAID6 full balance with this setup might be very slow, even if the
-fs would be not so full. The VMs I use are on a mixed SSD/HDD
-(bcache'd) array so balancing within the last GB(s), so almost no
-workspace, still makes progress. But on HDD only, things can take very
-long. The 'Unallocated' space on devid 1 should be at least a few GiB,
-otherwise rebalancing will be very slow or just not work.
-
-The way from RAID6 -> single/RAID1 -> RAID6 might also be more
-acceptable w.r.t. speed in total. Just watch progress I would say.
-Maybe its not needed to do a full convert, just make sure you will
-have enough workspace before starting a convert from single/RAID1 to
-RAID6 again.
-
-With v4.4 tools, you can do filtered balance based on stripe-width, so
-it avoids complete balance again of block groups that are already
-allocated across the right amount of devices.
-
-In this case, avoiding the re-balance of the '320.00KiB group' (in the
-means time could be much larger) you could do this:
-btrfs balance start -v -dstripes=1..6 /mnt/data
+>
+> Thanks,
+> Qu
+>
+>
+>
+>>
+>> Thanks!
+>>
+>> On Wed, Feb 17, 2016 at 12:58 AM, Qu Wenruo <quwenruo@cn.fujitsu.com>
+>> wrote:
+>>>
+>>>
+>>>
+>>> Dan Blazejewski wrote on 2016/02/16 15:20 -0500:
+>>>>
+>>>>
+>>>> Hello,
+>>>>
+>>>> I've searched high and low about my issue, but have been unable to
+>>>> turn up anything like what I'm seeing right now.
+>>>>
+>>>> A little background: I started using BTRFS over a year ago, in RAID 1
+>>>> with mixed size drives. A few months ago, I started replacing the
+>>>> disks with 4 TB drives, and eventually switched over to RAID 6. I am
+>>>> currently running a 6x4TB RAID6 drive configuration, which should give
+>>>> me ~14.5 TB
+>>>> usable, but I'm only getting around 11.
+>>>>
+>>>> The weird thing is that It seems to completely fill 4/6 of the disks,
+>>>> while leaving lots of space free on 2 of the disks. I've tried full
+>>>> filesystem balances, yet the problem continues.
+>>>>
+>>>> # btrfs fi show
+>>>>
+>>>> Label: none  uuid: 78733087-d597-4301-8efa-8e1df800b108
+>>>>           Total devices 6 FS bytes used 11.59TiB
+>>>>           devid    1 size 3.64TiB used 3.64TiB path /dev/sdd
+>>>>           devid    2 size 3.64TiB used 3.64TiB path /dev/sdg
+>>>>           devid    3 size 3.64TiB used 3.64TiB path /dev/sdf
+>>>>           devid    5 size 3.64TiB used 2.92TiB path /dev/sda
+>>>>           devid    6 size 3.64TiB used 1.48TiB path /dev/sdb
+>>>>           devid    7 size 3.64TiB used 3.64TiB path /dev/sdc
+>>>>
+>>>> btrfs-progs v4.2.3
+>>>
+>>>
+>>>
+>>> Your space really used up, as it can't found *at least 4* disk with
+>>> enough
+>>> space to allocate a new chunk.
+>>> As 4 devices in your array is already filled, the rest 2 is of no means
+>>> for
+>>> RAID6, and can only be allocated with Single/RAID1/RAID0.
+>>>
+>>>
+>>> But the real problem is, why your devices get such a unbalanced layout.
+>>>
+>>> Normally, for RAID5/6, it will allocate chunks using all disk with
+>>> available
+>>> space, and since all your devices are in the same size, it should result
+>>> very balanced allocation.
+>>>
+>>> How did you convert to current RAID6? Did it involves balance from
+>>> already
+>>> some used disks?
+>>>
+>>> Thanks,
+>>> Qu
+>>>
+>>>>
+>>>>
+>>>>
+>>>> # btrfs fi df /mnt/data
+>>>>
+>>>> Data, RAID6: total=11.67TiB, used=11.58TiB
+>>>> System, RAID6: total=64.00MiB, used=1.70MiB
+>>>> Metadata, RAID6: total=15.58GiB, used=13.89GiB
+>>>> GlobalReserve, single: total=512.00MiB, used=0.00B
+>>>> dan@Morpheus:/mnt/data/temp$ sudo btrfs fi usage /mnt/data
+>>>>
+>>>>
+>>>>
+>>>> # btrfs fi usage /mnt/data
+>>>>
+>>>> WARNING: RAID56 detected, not implemented
+>>>> WARNING: RAID56 detected, not implemented
+>>>> WARNING: RAID56 detected, not implemented
+>>>> Overall:
+>>>>       Device size:                  21.83TiB
+>>>>       Device allocated:                0.00B
+>>>>       Device unallocated:           21.83TiB
+>>>>       Device missing:                  0.00B
+>>>>       Used:                            0.00B
+>>>>       Free (estimated):                0.00B      (min: 8.00EiB)
+>>>>       Data ratio:                       0.00
+>>>>       Metadata ratio:                   0.00
+>>>>       Global reserve:              512.00MiB      (used: 0.00B)
+>>>>
+>>>> Data,RAID6: Size:11.67TiB, Used:11.58TiB
+>>>>      /dev/sda        2.92TiB
+>>>>      /dev/sdb        1.48TiB
+>>>>      /dev/sdc        3.63TiB
+>>>>      /dev/sdd        3.63TiB
+>>>>      /dev/sdf        3.63TiB
+>>>>      /dev/sdg        3.63TiB
+>>>>
+>>>> Metadata,RAID6: Size:15.58GiB, Used:13.89GiB
+>>>>      /dev/sda        4.05GiB
+>>>>      /dev/sdb        1.50GiB
+>>>>      /dev/sdc        5.01GiB
+>>>>      /dev/sdd        5.01GiB
+>>>>      /dev/sdf        5.01GiB
+>>>>      /dev/sdg        5.01GiB
+>>>>
+>>>> System,RAID6: Size:64.00MiB, Used:1.70MiB
+>>>>      /dev/sda       16.00MiB
+>>>>      /dev/sdb       16.00MiB
+>>>>      /dev/sdc       16.00MiB
+>>>>      /dev/sdd       16.00MiB
+>>>>      /dev/sdf       16.00MiB
+>>>>      /dev/sdg       16.00MiB
+>>>>
+>>>> Unallocated:
+>>>>      /dev/sda      733.65GiB
+>>>>      /dev/sdb        2.15TiB
+>>>>      /dev/sdc        1.02MiB
+>>>>      /dev/sdd        1.02MiB
+>>>>      /dev/sdf        1.02MiB
+>>>>      /dev/sdg        1.02MiB
+>>>>
+>>>>
+>>>>
+>>>>
+>>>> Can anyone shed some light on why a full balance (sudo btrfs balance
+>>>> start /mnt/data) doesnt seem to straighten this out? Any and all help
+>>>> is appreciated.
+>>>>
+>>>>
+>>>> Thanks!
+>>>> --
+>>>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs"
+>>>> in
+>>>> the body of a message to majordomo@vger.kernel.org
+>>>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>>>>
+>>>>
+>>>
+>>>
+>>> --
+>>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>>> the body of a message to majordomo@vger.kernel.org
+>>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>>
+>>
+>>
+>
+>

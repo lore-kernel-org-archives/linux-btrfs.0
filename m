@@ -1,65 +1,61 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wm0-f68.google.com ([74.125.82.68]:34479 "EHLO
-	mail-wm0-f68.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751974AbcBKNCO (ORCPT
+Received: from mail1.windriver.com ([147.11.146.13]:50671 "EHLO
+	mail1.windriver.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1947233AbcBSCOk (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 11 Feb 2016 08:02:14 -0500
-Received: by mail-wm0-f68.google.com with SMTP id p63so10547265wmp.1
-        for <linux-btrfs@vger.kernel.org>; Thu, 11 Feb 2016 05:02:14 -0800 (PST)
-From: Alexander Fougner <fougner89@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Alexander Fougner <fougner89@gmail.com>
-Subject: [PATCH 2/2] btrfs-progs: add completion for subcommand dump-tree
-Date: Thu, 11 Feb 2016 14:01:56 +0100
-Message-Id: <1455195716-16282-2-git-send-email-fougner89@gmail.com>
-In-Reply-To: <1455195716-16282-1-git-send-email-fougner89@gmail.com>
-References: <1455195716-16282-1-git-send-email-fougner89@gmail.com>
+	Thu, 18 Feb 2016 21:14:40 -0500
+Received: from ALA-HCA.corp.ad.wrs.com (ala-hca.corp.ad.wrs.com [147.11.189.40])
+	by mail1.windriver.com (8.15.2/8.15.1) with ESMTPS id u1J2EbXg026072
+	(version=TLSv1 cipher=AES128-SHA bits=128 verify=FAIL)
+	for <linux-btrfs@vger.kernel.org>; Thu, 18 Feb 2016 18:14:37 -0800 (PST)
+From: Hongxu Jia <hongxu.jia@windriver.com>
+To: <linux-btrfs@vger.kernel.org>
+CC: <hongxu.jia@windriver.com>
+Subject: [PATCH] btrfs-progs: fix symlink creation multiple times
+Date: Thu, 18 Feb 2016 21:14:34 -0500
+Message-ID: <1455848074-47741-1-git-send-email-hongxu.jia@windriver.com>
+MIME-Version: 1.0
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Signed-off-by: Alexander Fougner <fougner89@gmail.com>
----
- btrfs-completion | 8 ++++----
- 1 file changed, 4 insertions(+), 4 deletions(-)
+The rule to create symlink in Makefile caused parallel issue:
+$ make -j 40 DESTDIR=/image install BUILD_VERBOSE=1
+...
+  1     [LN]     libbtrfs.so.0
+  2     [LN]     libbtrfs.so
+  3 ln -s -f libbtrfs.so.0.1 libbtrfs.so.0
+  4 ln -s -f libbtrfs.so.0.1 libbtrfs.so.0
+  5 ln -s -f libbtrfs.so.0.1 libbtrfs.so
+  6 ln -s -f libbtrfs.so.0.1 libbtrfs.so
+...
 
-diff --git a/btrfs-completion b/btrfs-completion
-index a34191b..7631911 100644
---- a/btrfs-completion
-+++ b/btrfs-completion
-@@ -20,13 +20,13 @@ _btrfs_mnts()
- 	COMPREPLY+=( $( compgen -W "$MNTS" -- "$cur" ) )
- }
+It failed occasionally:
+...
+|symlinkat: couldn't stat 'git/libbtrfs.so' even though symlink
+creation succeeded (No such file or directory).
+|ln: failed to create symbolic link 'libbtrfs.so': No such file or directory
+...
+
+Signed-off-by: Hongxu Jia <hongxu.jia@windriver.com>
+---
+ Makefile.in | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+diff --git a/Makefile.in b/Makefile.in
+index 1f4002e..16eeaf9 100644
+--- a/Makefile.in
++++ b/Makefile.in
+@@ -236,8 +236,7 @@ $(libs_static): $(libbtrfs_objects)
  
--_btrfs() 
-+_btrfs()
- {
- 	local cur prev words cword
-     _init_completion || return
+ $(lib_links):
+ 	@echo "    [LN]     $@"
+-	$(Q)$(LN_S) -f libbtrfs.so.0.1 libbtrfs.so.0
+-	$(Q)$(LN_S) -f libbtrfs.so.0.1 libbtrfs.so
++	$(Q)$(LN_S) -f libbtrfs.so.0.1 $@
  
-     COMPREPLY=()
--    
-+
- 	local cmd=${words[1]}
- 
-     commands='subvolume filesystem balance device scrub check rescue restore inspect-internal property send receive quota qgroup replace help version'
-@@ -36,7 +36,7 @@ _btrfs()
-     commands_device='scan add delete remove ready stats usage'
-     commands_scrub='start cancel resume status'
-     commands_rescue='chunk-recover super-recover'
--    commands_inspect_internal='inode-resolve logical-resolve subvolid-resolve rootid min-dev-size'
-+    commands_inspect_internal='inode-resolve logical-resolve subvolid-resolve rootid min-dev-size dump-tree'
-     commands_property='get set list'
-     commands_quota='enable disable rescan'
-     commands_qgroup='assign remove create destroy show limit'
-@@ -146,7 +146,7 @@ _btrfs()
-     fi
- 
-     _filedir -d
--    return 0  
-+    return 0
- }
- 
- complete -F _btrfs btrfs
+ # keep intermediate files from the below implicit rules around
+ .PRECIOUS: $(addsuffix .o,$(progs))
 -- 
-2.7.1
+1.9.1
 

@@ -1,50 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from 17.mo1.mail-out.ovh.net ([87.98.179.142]:58919 "EHLO
-	17.mo1.mail-out.ovh.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754271AbcBVKSY (ORCPT
+Received: from mail-io0-f169.google.com ([209.85.223.169]:34093 "EHLO
+	mail-io0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1758948AbcBTRfT (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 22 Feb 2016 05:18:24 -0500
-Received: from mail690.ha.ovh.net (b6.ovh.net [213.186.33.56])
-	by mo1.mail-out.ovh.net (Postfix) with SMTP id EE692FFBDF8
-	for <linux-btrfs@vger.kernel.org>; Mon, 22 Feb 2016 11:18:22 +0100 (CET)
-From: Philippe Loctaux <phil@philippeloctaux.com>
+	Sat, 20 Feb 2016 12:35:19 -0500
+From: Simon Quigley <tsimonq2@ubuntu.com>
 To: clm@fb.com
-Cc: jbacik@fb.com, dsterba@suse.com, linux-btrfs@vger.kernel.org,
-        linux-kernel@vger.kernel.org,
-        Philippe Loctaux <phil@philippeloctaux.com>
-Subject: [PATCH 3/3] Btrfs: disk-io: fixed a comment block coding style issue
-Date: Mon, 22 Feb 2016 11:18:08 +0100
-Message-Id: <1456136288-4718-3-git-send-email-phil@philippeloctaux.com>
-In-Reply-To: <1456136288-4718-1-git-send-email-phil@philippeloctaux.com>
-References: <1456136288-4718-1-git-send-email-phil@philippeloctaux.com>
+Cc: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
+        Simon Quigley <tsimonq2@ubuntu.com>
+Subject: [PATCH] btrfs: async-thread: Fixed a brace coding style issue
+Date: Sat, 20 Feb 2016 11:34:07 -0600
+Message-Id: <1455989647-7336-1-git-send-email-tsimonq2@ubuntu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Makes the comment block start with /* on a separate line, and end
-with */ on a separate line as well.
+Braces aren't needed if it's only a single-line statement.
+checkpatch.pl confirmed this.
+This is now fixed.
 
-Signed-off-by: Philippe Loctaux <phil@philippeloctaux.com>
+Signed-off-by: Simon Quigley <tsimonq2@ubuntu.com>
 ---
- fs/btrfs/disk-io.c | 6 +++---
- 1 file changed, 3 insertions(+), 3 deletions(-)
+ fs/btrfs/async-thread.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index f642b30..2545d01 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -4416,9 +4416,9 @@ void btrfs_cleanup_one_transaction(struct btrfs_transaction *cur_trans,
- 	wake_up(&cur_trans->commit_wait);
+diff --git a/fs/btrfs/async-thread.c b/fs/btrfs/async-thread.c
+index 5fb60ea..7914dd2 100644
+--- a/fs/btrfs/async-thread.c
++++ b/fs/btrfs/async-thread.c
+@@ -227,9 +227,9 @@ static inline void thresh_exec_hook(struct __btrfs_workqueue *wq)
+ out:
+ 	spin_unlock(&wq->thres_lock);
  
- 	/*
--	memset(cur_trans, 0, sizeof(*cur_trans));
--	kmem_cache_free(btrfs_transaction_cachep, cur_trans);
--	*/
-+	 * memset(cur_trans, 0, sizeof(*cur_trans));
-+	 * kmem_cache_free(btrfs_transaction_cachep, cur_trans);
-+	 */
+-	if (need_change) {
++	if (need_change)
+ 		workqueue_set_max_active(wq->normal_wq, wq->current_active);
+-	}
++
  }
  
- static int btrfs_cleanup_transaction(struct btrfs_root *root)
+ static void run_ordered_work(struct __btrfs_workqueue *wq)
 -- 
-2.7.1
+2.7.0
 

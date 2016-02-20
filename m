@@ -1,44 +1,43 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f171.google.com ([209.85.213.171]:36979 "EHLO
-	mail-ig0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752952AbcBTRj7 (ORCPT
+Received: from mail-io0-f179.google.com ([209.85.223.179]:34385 "EHLO
+	mail-io0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1759244AbcBTSQc (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 20 Feb 2016 12:39:59 -0500
+	Sat, 20 Feb 2016 13:16:32 -0500
 From: Simon Quigley <tsimonq2@ubuntu.com>
 To: clm@fb.com
 Cc: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
         Simon Quigley <tsimonq2@ubuntu.com>
-Subject: [PATCH] btrfs: async-thread: Fixed a brace coding style issue
-Date: Sat, 20 Feb 2016 11:39:45 -0600
-Message-Id: <1455989985-7521-1-git-send-email-tsimonq2@ubuntu.com>
+Subject: [PATCH] btrfs: backref: Fixed checkpatch warning of over 80 characters
+Date: Sat, 20 Feb 2016 12:16:14 -0600
+Message-Id: <1455992174-9121-1-git-send-email-tsimonq2@ubuntu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Braces aren't needed if it's only a single-line statement.
-checkpatch.pl confirmed this.
-This is now fixed.
+checkpatch.pl reported a warning of over 80 characters on line 1833
 
-Signed-off-by: Simon Quigley <tsimonq2@ubuntu.com>
+Fixed by splitting up into multiple lines, no build errors afterwards
 ---
- fs/btrfs/async-thread.c | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+ fs/btrfs/backref.c | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/async-thread.c b/fs/btrfs/async-thread.c
-index 5fb60ea..7914dd2 100644
---- a/fs/btrfs/async-thread.c
-+++ b/fs/btrfs/async-thread.c
-@@ -227,9 +227,9 @@ static inline void thresh_exec_hook(struct __btrfs_workqueue *wq)
- out:
- 	spin_unlock(&wq->thres_lock);
+diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
+index f6dac40..d097777 100644
+--- a/fs/btrfs/backref.c
++++ b/fs/btrfs/backref.c
+@@ -1830,7 +1830,11 @@ static int iterate_inode_extrefs(u64 inum, struct btrfs_root *fs_root,
+ 	unsigned long ptr;
  
--	if (need_change) {
-+	if (need_change)
- 		workqueue_set_max_active(wq->normal_wq, wq->current_active);
--	}
-+
- }
- 
- static void run_ordered_work(struct __btrfs_workqueue *wq)
+ 	while (1) {
+-		ret = btrfs_find_one_extref(fs_root, inum, offset, path, &extref,
++		ret = btrfs_find_one_extref(fs_root,
++						inum,
++						offset,
++						path,
++						&extref,
+ 					    &offset);
+ 		if (ret < 0)
+ 			break;
 -- 
 2.7.0
 

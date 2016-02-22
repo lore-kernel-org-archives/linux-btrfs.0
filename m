@@ -1,61 +1,69 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail1.windriver.com ([147.11.146.13]:50671 "EHLO
-	mail1.windriver.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1947233AbcBSCOk (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 18 Feb 2016 21:14:40 -0500
-Received: from ALA-HCA.corp.ad.wrs.com (ala-hca.corp.ad.wrs.com [147.11.189.40])
-	by mail1.windriver.com (8.15.2/8.15.1) with ESMTPS id u1J2EbXg026072
-	(version=TLSv1 cipher=AES128-SHA bits=128 verify=FAIL)
-	for <linux-btrfs@vger.kernel.org>; Thu, 18 Feb 2016 18:14:37 -0800 (PST)
-From: Hongxu Jia <hongxu.jia@windriver.com>
-To: <linux-btrfs@vger.kernel.org>
-CC: <hongxu.jia@windriver.com>
-Subject: [PATCH] btrfs-progs: fix symlink creation multiple times
-Date: Thu, 18 Feb 2016 21:14:34 -0500
-Message-ID: <1455848074-47741-1-git-send-email-hongxu.jia@windriver.com>
+Received: from cn.fujitsu.com ([222.73.24.84]:63508 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1752015AbcBVHCM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 22 Feb 2016 02:02:12 -0500
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+To: linux-btrfs@vger.kernel.org
+Cc: dsterba@suse.cz
+Subject: [PATCH 1/5] btrfs-progs: volume: Fix a bug causing btrfs-find-root to skip first chunk
+Date: Mon, 22 Feb 2016 14:59:53 +0800
+Message-Id: <1456124397-21403-2-git-send-email-quwenruo@cn.fujitsu.com>
+In-Reply-To: <1456124397-21403-1-git-send-email-quwenruo@cn.fujitsu.com>
+References: <1456124397-21403-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The rule to create symlink in Makefile caused parallel issue:
-$ make -j 40 DESTDIR=/image install BUILD_VERBOSE=1
-...
-  1     [LN]     libbtrfs.so.0
-  2     [LN]     libbtrfs.so
-  3 ln -s -f libbtrfs.so.0.1 libbtrfs.so.0
-  4 ln -s -f libbtrfs.so.0.1 libbtrfs.so.0
-  5 ln -s -f libbtrfs.so.0.1 libbtrfs.so
-  6 ln -s -f libbtrfs.so.0.1 libbtrfs.so
-...
+There is a small bug from 2011, where btrfs_next_bg (formally
+btrfs_next_metadata) function will always skip the first chunk.
 
-It failed occasionally:
-...
-|symlinkat: couldn't stat 'git/libbtrfs.so' even though symlink
-creation succeeded (No such file or directory).
-|ln: failed to create symbolic link 'libbtrfs.so': No such file or directory
-...
+That's OK for that time, as there is always 3 empty temporary chunks.
+But now, we may ended up with only one metadata or system chunk, with
+empty chunk auto-remove from kernel or new mkfs.btrfs.
 
-Signed-off-by: Hongxu Jia <hongxu.jia@windriver.com>
+So fix it by checking the initial value so btrfs_next_bg() will return
+the first chunk if its *logical parameter is 0.
+
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- Makefile.in | 3 +--
- 1 file changed, 1 insertion(+), 2 deletions(-)
+ volumes.c | 17 +++++++++++++----
+ 1 file changed, 13 insertions(+), 4 deletions(-)
 
-diff --git a/Makefile.in b/Makefile.in
-index 1f4002e..16eeaf9 100644
---- a/Makefile.in
-+++ b/Makefile.in
-@@ -236,8 +236,7 @@ $(libs_static): $(libbtrfs_objects)
+diff --git a/volumes.c b/volumes.c
+index a94be0e..059c4f4 100644
+--- a/volumes.c
++++ b/volumes.c
+@@ -1170,14 +1170,23 @@ int btrfs_next_bg(struct btrfs_mapping_tree *map_tree, u64 *logical,
+ {
+ 	struct cache_extent *ce;
+ 	struct map_lookup *map;
++	u64 cur = *logical;
  
- $(lib_links):
- 	@echo "    [LN]     $@"
--	$(Q)$(LN_S) -f libbtrfs.so.0.1 libbtrfs.so.0
--	$(Q)$(LN_S) -f libbtrfs.so.0.1 libbtrfs.so
-+	$(Q)$(LN_S) -f libbtrfs.so.0.1 $@
+-	ce = search_cache_extent(&map_tree->cache_tree, *logical);
++	ce = search_cache_extent(&map_tree->cache_tree, cur);
  
- # keep intermediate files from the below implicit rules around
- .PRECIOUS: $(addsuffix .o,$(progs))
+ 	while (ce) {
+-		ce = next_cache_extent(ce);
+-		if (!ce)
+-			return -ENOENT;
++		/*
++		 * only jump to next bg if our cur is not 0
++		 * As the initial logical for btrfs_next_bg() is 0, and
++		 * if we jump to next bg, we skipped a valid bg.
++		 */
++		if (cur) {
++			ce = next_cache_extent(ce);
++			if (!ce)
++				return -ENOENT;
++		}
+ 
++		cur = ce->start;
+ 		map = container_of(ce, struct map_lookup, ce);
+ 		if (map->type & type) {
+ 			*logical = ce->start;
 -- 
-1.9.1
+2.7.1
+
+
 

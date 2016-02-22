@@ -1,36 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtprelay0173.hostedemail.com ([216.40.44.173]:54703 "EHLO
-	smtprelay.hostedemail.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1752434AbcBVAoR (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:30158 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1752304AbcBVBSL (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 21 Feb 2016 19:44:17 -0500
-Message-ID: <1456101854.31061.20.camel@perches.com>
-Subject: Re: [PATCH] Btrfs: ctree: added lines after variable declarations
-From: Joe Perches <joe@perches.com>
-To: Philippe Loctaux <phil@philippeloctaux.com>
-Cc: jbacik@fb.com, dsterba@suse.com, linux-btrfs@vger.kernel.org,
-        linux-kernel@vger.kernel.org
-Date: Sun, 21 Feb 2016 16:44:14 -0800
-In-Reply-To: <20160222003132.GA15773@carbon.home>
-References: <1456098390-9859-1-git-send-email-phil@philippeloctaux.com>
-	 <1456098784.31061.10.camel@perches.com>
-	 <20160222000107.GA11444@carbon.home>
-	 <1456099563.31061.12.camel@perches.com>
-	 <20160222003132.GA15773@carbon.home>
-Content-Type: text/plain; charset="ISO-8859-1"
-Mime-Version: 1.0
+	Sun, 21 Feb 2016 20:18:11 -0500
+Subject: Re: [Question]: Contributing to btrfs
+To: Philippe Loctaux <phil@philippeloctaux.com>, <linux-btrfs@vger.kernel.org>
+References: <20160220210903.GA3182@carbon.home>
+ <20160220224050.GA10864@carbon.home>
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Message-ID: <56CA61CC.7010703@cn.fujitsu.com>
+Date: Mon, 22 Feb 2016 09:18:04 +0800
+MIME-Version: 1.0
+In-Reply-To: <20160220224050.GA10864@carbon.home>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, 2016-02-22 at 01:31 +0100, Philippe Loctaux wrote:
-> Hi,
-> I'm really sorry, but I don't understand what you're trying to mean.
-> Could you simplify your sentence please (since I'm not english
-> native)?
-> I'd really apreciate that, thanks :)
 
-Please do not put your reply at the top of the email. (top-post)
 
-This was the only instance I found where your modifications
-were inappropriate (just here)
+Philippe Loctaux wrote on 2016/02/20 23:40 +0100:
+> Hello!
+>
+> I'm new to the mailing list and btrfs in general (I've been using it for
+> two weeks on my new arch install) and I'd like to contribute to the code :)
+>
+> I know how to work w/ git and patches, I just wanted to know which
+> git repo I need to clone to start contributing :)
+
+https://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git
+For branch, normally I use 'integration-X.X' as base for kernel development.
+
+And for btrfs-progs,
+https://github.com/kdave/btrfs-progs.git devel
+
+Thanks,
+Qu
+>
+> I went on the kernel wiki and I saw some git repos, that confused me,
+> that's why I'm asking here :)
+>
+> I'd like to apologize for my english, I'm not english native (french).
+>
+> I'll wait for your replies, thanks and have a nice day!
+>
+> --
+> Phil
+> phil@philippeloctaux.com
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>
+>
+
 

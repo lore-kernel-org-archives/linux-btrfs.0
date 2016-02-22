@@ -1,159 +1,127 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lf0-f45.google.com ([209.85.215.45]:35790 "EHLO
-	mail-lf0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751937AbcBVRx3 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 22 Feb 2016 12:53:29 -0500
-Received: by mail-lf0-f45.google.com with SMTP id l143so99090311lfe.2
-        for <linux-btrfs@vger.kernel.org>; Mon, 22 Feb 2016 09:53:28 -0800 (PST)
-From: Henrik Asp <solenskiner@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Henrik Asp <solenskiner@gmail.com>
-Subject: [PATCH] btrfs-progs: restore: make btrfs restore able to read a file which lists files to restore
-Date: Mon, 22 Feb 2016 18:53:23 +0100
-Message-Id: <1456163603-6712-1-git-send-email-solenskiner@gmail.com>
+Received: from mail.kernel.org ([198.145.29.136]:38799 "EHLO mail.kernel.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752304AbcBVBFf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 21 Feb 2016 20:05:35 -0500
+Received: from mail.kernel.org (localhost [127.0.0.1])
+	by mail.kernel.org (Postfix) with ESMTP id A5127203B1
+	for <linux-btrfs@vger.kernel.org>; Mon, 22 Feb 2016 01:05:33 +0000 (UTC)
+Received: from mail-ig0-f170.google.com (mail-ig0-f170.google.com [209.85.213.170])
+	(using TLSv1.2 with cipher AES128-GCM-SHA256 (128/128 bits))
+	(No client certificate requested)
+	by mail.kernel.org (Postfix) with ESMTPSA id 268AC203AB
+	for <linux-btrfs@vger.kernel.org>; Mon, 22 Feb 2016 01:05:32 +0000 (UTC)
+Received: by mail-ig0-f170.google.com with SMTP id g6so75916560igt.1
+        for <linux-btrfs@vger.kernel.org>; Sun, 21 Feb 2016 17:05:32 -0800 (PST)
+MIME-Version: 1.0
+In-Reply-To: <286C424321A6496789A866288933406A@alyakaslap>
+References: <286C424321A6496789A866288933406A@alyakaslap>
+Date: Mon, 22 Feb 2016 01:05:31 +0000
+Message-ID: <CAL3q7H7f3wWtWQYy1mSjcMcYopKCtU0mxeeP3J_r74js9U26Yg@mail.gmail.com>
+Subject: Re: [RFC - PATCH] btrfs: do not write corrupted metadata blocks to disk
+From: Filipe Manana <fdmanana@kernel.org>
+To: Alex Lyakas <alex@zadarastorage.com>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        Josef Bacik <jbacik@fb.com>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
---path-regex' syntax does not map well to restoring specific files.
-this patch introduces --path-from-file which takes a file listing
-files to restore.
-that file is memory mapped, and for every leaf, memmem is used to
-check if fs_file is in that list.
+On Sun, Feb 21, 2016 at 3:36 PM, Alex Lyakas <alex@zadarastorage.com> wrote:
+> csum_dirty_buffer was issuing a warning in case the extent buffer
+> did not look alright, but was still returning success.
+> Let's return error in this case, and also add two additional sanity
+> checks on the extent buffer header.
+>
+> We had btrfs metadata corruption, and after looking at the logs we saw
+> that WARN_ON(found_start != start) has been triggered. We are still
+> investigating
 
-Signed-off-by: Henrik Asp <solenskiner@gmail.com>
-Tested-by: Henrik Asp <solenskiner@gmail.com>
----
- cmds-restore.c | 48 ++++++++++++++++++++++++++++++++++++++++++++----
- 1 file changed, 44 insertions(+), 4 deletions(-)
+There's a warning for WARN_ON(found_start != start || !PageUptodate(page))
 
-diff --git a/cmds-restore.c b/cmds-restore.c
-index dd0b242..5fa0b98 100644
---- a/cmds-restore.c
-+++ b/cmds-restore.c
-@@ -16,7 +16,6 @@
-  * Boston, MA 021110-1307, USA.
-  */
- 
--
- #include "kerncompat.h"
- 
- #include <ctype.h>
-@@ -33,6 +32,7 @@
- #include <getopt.h>
- #include <sys/types.h>
- #include <sys/xattr.h>
-+#include <sys/mman.h>
- 
- #include "ctree.h"
- #include "disk-io.h"
-@@ -932,7 +932,9 @@ out:
- 
- static int search_dir(struct btrfs_root *root, struct btrfs_key *key,
- 		      const char *output_rootdir, const char *in_dir,
--		      const regex_t *mreg)
-+		      const regex_t *mreg,
-+		      const char *mfile,
-+		      const int msize)
- {
- 	struct btrfs_path *path;
- 	struct extent_buffer *leaf;
-@@ -1040,6 +1042,9 @@ static int search_dir(struct btrfs_root *root, struct btrfs_key *key,
- 		if (mreg && REG_NOMATCH == regexec(mreg, fs_name, 0, NULL, 0))
- 			goto next;
- 
-+		if (mfile && NULL == memmem(mfile, msize, fs_name, strlen(fs_name)))
-+			goto next;
-+
- 		/* full path from system root */
- 		snprintf(path_name, PATH_MAX, "%s%s", output_rootdir, fs_name);
- 
-@@ -1142,7 +1147,7 @@ static int search_dir(struct btrfs_root *root, struct btrfs_key *key,
- 			}
- 			loops = 0;
- 			ret = search_dir(search_root, &location,
--					 output_rootdir, dir, mreg);
-+					 output_rootdir, dir, mreg, mfile, msize);
- 			free(dir);
- 			if (ret) {
- 				fprintf(stderr, "Error searching %s\n",
-@@ -1402,6 +1407,9 @@ const char * const cmd_restore_usage[] = {
- 	"                     you have to use following syntax (possibly quoted):",
- 	"                     ^/(|home(|/username(|/Desktop(|/.*))))$",
- 	"-c                   ignore case (--path-regex only)",
-+	"--path-from-file <file>",
-+	"                     restore only filenames from file,",
-+	"                     one file per line, case sensitive",
- 	NULL
- };
- 
-@@ -1422,11 +1430,17 @@ int cmd_restore(int argc, char **argv)
- 	int match_cflags = REG_EXTENDED | REG_NOSUB | REG_NEWLINE;
- 	regex_t match_reg, *mreg = NULL;
- 	char reg_err[256];
-+	char *mfile = NULL;
-+	int msize = 0;
-+	const char *match_filename = NULL;
-+	struct stat match_filestat;
-+	int match_fd = 0;
- 
- 	while (1) {
- 		int opt;
- 		static const struct option long_options[] = {
- 			{ "path-regex", required_argument, NULL, 256},
-+			{ "path-from-file", required_argument, NULL, 255},
- 			{ "dry-run", no_argument, NULL, 'D'},
- 			{ "metadata", no_argument, NULL, 'm'},
- 			{ "symlinks", no_argument, NULL, 'S'},
-@@ -1503,6 +1517,9 @@ int cmd_restore(int argc, char **argv)
- 			case 256:
- 				match_regstr = optarg;
- 				break;
-+			case 255:
-+				match_filename = optarg;
-+				break;
- 			case 'x':
- 				get_xattrs = 1;
- 				break;
-@@ -1599,14 +1616,37 @@ int cmd_restore(int argc, char **argv)
- 		mreg = &match_reg;
- 	}
- 
-+	if (match_filename) {
-+		if ((match_fd = open(match_filename, O_RDONLY)) == -1) {
-+			fprintf(stderr, "Failed to open file: %s\n", match_filename);
-+			goto out;
-+		}
-+		if ((fstat (match_fd, &match_filestat)) == -1) {
-+			fprintf(stderr, "Failed to stat file: %s\n", match_filename);
-+			goto out;
-+		}
-+		msize = match_filestat.st_size;
-+		if ((mfile = mmap(0, match_filestat.st_size, PROT_READ, MAP_PRIVATE, match_fd, 0)) == (char*) -1) {
-+			fprintf(stderr, "Failed to map file: %s\n", match_filename);
-+			mfile = NULL;
-+			goto out;
-+		}
-+		if (close(match_fd) == -1) {
-+			fprintf(stderr, "Failed to close file: %s\n", match_filename);
-+			goto out;
-+		}
-+	}
-+
- 	if (dry_run)
- 		printf("This is a dry-run, no files are going to be restored\n");
- 
--	ret = search_dir(root, &key, dir_name, "", mreg);
-+	ret = search_dir(root, &key, dir_name, "", mreg, mfile, msize);
- 
- out:
- 	if (mreg)
- 		regfree(mreg);
-+	if (mfile)
-+		munmap(mfile, match_filestat.st_size);
- 	close_ctree(root);
- 	return !!ret;
- }
--- 
-2.7.1
+Are you sure it triggered only because of found_start != start and not
+because of !PageUptodate(page) (or both)?
 
+> which component trashed the cache page which belonged to btrfs. But btrfs
+> only issued a warning, and as a result, the corrupted metadata block went to
+> disk.
+>
+> I think we should return an error in such case that the extent buffer
+> doesn't look alright.
+
+I think so too.
+
+> The caller up the chain may BUG_ON on this, for example flush_epd_write_bio
+> will,
+> but it is better than to have a silent metadata corruption on disk.
+>
+> Note: this patch has been properly tested on 3.18 kernel only.
+>
+> Signed-off-by: Alex Lyakas <alex@zadarastorage.com>
+> ---
+> fs/btrfs/disk-io.c | 14 ++++++++++++--
+> 1 file changed, 12 insertions(+), 2 deletions(-)
+>
+> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+> index 4545e2e..701e706 100644
+> --- a/fs/btrfs/disk-io.c
+> +++ b/fs/btrfs/disk-io.c
+> @@ -508,22 +508,32 @@ static int csum_dirty_buffer(struct btrfs_fs_info
+> *fs_info, struct page *page)
+> {
+>     u64 start = page_offset(page);
+>     u64 found_start;
+>     struct extent_buffer *eb;
+>
+>     eb = (struct extent_buffer *)page->private;
+>     if (page != eb->pages[0])
+>         return 0;
+>     found_start = btrfs_header_bytenr(eb);
+>     if (WARN_ON(found_start != start || !PageUptodate(page)))
+> -        return 0;
+> -    csum_tree_block(fs_info, eb, 0);
+> +        return -EUCLEAN;
+> +#ifdef CONFIG_BTRFS_ASSERT
+
+A bit odd to surround these with CONFIG_BTRFS_ASSERT if we don't do assertions.
+I would remove this #ifdef ... #endif or do the memcmp calls inside ASSERT().
+
+> +    if (WARN_ON(memcmp_extent_buffer(eb, fs_info->fsid,
+> +                    (unsigned long)btrfs_header_fsid(), BTRFS_FSID_SIZE)))
+> +        return -EUCLEAN;
+> +    if (WARN_ON(memcmp_extent_buffer(eb, fs_info->fsid,
+> +                    (unsigned long)btrfs_header_chunk_tree_uuid(eb),
+> +                    BTRFS_FSID_SIZE)))
+
+This second comparison doesn't seem correct. Second argument to
+memcmp_extent_buffer should be fs_info->chunk_tree_uuid, which
+shouldn't be the same as the fsid (take a look at utils.c:make_btrfs()
+in the tools, both uuids are generated by different calls to
+uuid_generate()) - did you make your tests only before adding this
+comparison?. Also you should use BTRFS_UUID_SIZE instead of
+BTRFS_FSID_SIZE (even if both have the same value).
+
+> +        return -EUCLEAN;
+> +#endif
+> +    if (csum_tree_block(fs_info, eb, 0))
+> +        return -EUCLEAN;
+
+I would just return the real error from csum_tree_block() - currently
+it returns 1 for all possible failures instead of its real possible
+failures: -ENOMEM or -EINVAL.
+
+Thanks.
+
+>     return 0;
+> }
+>
+> static int check_tree_block_fsid(struct btrfs_fs_info *fs_info,
+>                  struct extent_buffer *eb)
+> {
+>     struct btrfs_fs_devices *fs_devices = fs_info->fs_devices;
+>     u8 fsid[BTRFS_UUID_SIZE];
+>     int ret = 1;
+>
+> --
+> 1.9.1
+>

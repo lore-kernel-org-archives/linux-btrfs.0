@@ -1,62 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.136]:35458 "EHLO mail.kernel.org"
+Received: from mail.kernel.org ([198.145.29.136]:49319 "EHLO mail.kernel.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1947005AbcBRXLQ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 18 Feb 2016 18:11:16 -0500
+	id S1752596AbcBVRyh (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 22 Feb 2016 12:54:37 -0500
 From: fdmanana@kernel.org
 To: fstests@vger.kernel.org
 Cc: linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH 2/2 v2] fstests: generic test for file fsync after rename operation
-Date: Thu, 18 Feb 2016 23:11:07 +0000
-Message-Id: <1455837067-10160-1-git-send-email-fdmanana@kernel.org>
-In-Reply-To: <1455533674-7753-1-git-send-email-fdmanana@kernel.org>
-References: <1455533674-7753-1-git-send-email-fdmanana@kernel.org>
+Subject: [PATCH] fstests: generic test for listing an inode's xattrs
+Date: Mon, 22 Feb 2016 17:52:38 +0000
+Message-Id: <1456163558-1148-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Filipe Manana <fdmanana@suse.com>
 
-Test that if we have a file F1 with two links, one in a directory A and
-the other in directory B, if we remove the link in directory B, move some
-other file F2 from directory B into directory C, fsync inode F1, power
-fail and remount the filesystem, file F2 exists and is located only in
-directory C.
+Test that the filesystem's implementation of the listxattrs system call
+lists all the xattrs an inode has.
 
-This is motivated by a bug found in btrfs, which is fixed by the patch
-(for the linux kernel) titled:
+This test is motivated by a bug found in btrfs, which is fixed by the
+following patch for the linux kernel:
 
-   "Btrfs: fix file loss on log replay after renaming a file and fsync"
-
-Tested against ext3, ext4, xfs, f2fs and reiserfs.
+  "Btrfs: fix listxattrs not listing all xattrs packed in the same item"
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
-
-V2: Removed the call to _need_to_be_root since there's a patch around to
-    kill it.
-    Removed explicit file existence tests with bash and replaced them
-    with calls to ls -R.
-
- tests/generic/336     | 96 +++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/generic/336.out | 17 +++++++++
+ tests/generic/337     | 72 +++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/generic/337.out |  8 ++++++
  tests/generic/group   |  1 +
- 3 files changed, 114 insertions(+)
- create mode 100755 tests/generic/336
- create mode 100644 tests/generic/336.out
+ 3 files changed, 81 insertions(+)
+ create mode 100755 tests/generic/337
+ create mode 100644 tests/generic/337.out
 
-diff --git a/tests/generic/336 b/tests/generic/336
+diff --git a/tests/generic/337 b/tests/generic/337
 new file mode 100755
-index 0000000..acf9856
+index 0000000..1758871
 --- /dev/null
-+++ b/tests/generic/336
-@@ -0,0 +1,96 @@
++++ b/tests/generic/337
+@@ -0,0 +1,72 @@
 +#! /bin/bash
-+# FSQA Test No. 336
++# FSQA Test No. 337
 +#
-+# Test that if we have a file F1 with two links, one in a directory A and the
-+# other in directory B, if we remove the link in directory B, move some other
-+# file F2 from directory B into directory C, fsync inode F1, power fail and
-+# remount the filesystem, file F2 exists and is located only in directory C.
++# Test that the filesystem's implementation of the listxattrs system call lists
++# all the xattrs an inode has.
 +#
 +#-----------------------------------------------------------------------
 +#
@@ -87,7 +72,6 @@ index 0000000..acf9856
 +
 +_cleanup()
 +{
-+	_cleanup_flakey
 +	cd /
 +	rm -f $tmp.*
 +}
@@ -95,89 +79,59 @@ index 0000000..acf9856
 +# get standard environment, filters and checks
 +. ./common/rc
 +. ./common/filter
-+. ./common/dmflakey
++. ./common/attr
 +
 +# real QA test starts here
 +_supported_fs generic
 +_supported_os Linux
 +_require_scratch
-+_require_dm_target flakey
-+_require_metadata_journaling $SCRATCH_DEV
++_require_attrs
 +
 +rm -f $seqres.full
 +
 +_scratch_mkfs >>$seqres.full 2>&1
-+_init_flakey
-+_mount_flakey
++_scratch_mount
 +
-+# Create our test directories and the file we will later check if it has
-+# disappeared (file bar).
-+mkdir $SCRATCH_MNT/a
-+mkdir $SCRATCH_MNT/b
-+mkdir $SCRATCH_MNT/c
-+touch $SCRATCH_MNT/a/foo
-+ln $SCRATCH_MNT/a/foo $SCRATCH_MNT/b/foo_link
-+touch $SCRATCH_MNT/b/bar
++# Create our test file with a few xattrs. The first 3 xattrs have a name that
++# when given as input to a crc32c function result in the same checksum. This
++# made btrfs list only one of the xattrs through listxattrs system call (because
++# it packs xattrs with the same name checksum into the same btree item).
++touch $SCRATCH_MNT/testfile
++$SETFATTR_PROG -n user.foobar -v 123 $SCRATCH_MNT/testfile
++$SETFATTR_PROG -n user.WvG1c1Td -v qwerty $SCRATCH_MNT/testfile
++$SETFATTR_PROG -n user.J3__T_Km3dVsW_ -v hello $SCRATCH_MNT/testfile
++$SETFATTR_PROG -n user.something -v pizza $SCRATCH_MNT/testfile
++$SETFATTR_PROG -n user.ping -v pong $SCRATCH_MNT/testfile
 +
-+# Make sure everything is durably persisted.
-+sync
-+
-+# Now delete one of the hard links of file foo and move file bar into c/
-+unlink $SCRATCH_MNT/b/foo_link
-+mv $SCRATCH_MNT/b/bar $SCRATCH_MNT/c/
-+
-+# Now fsync file foo.
-+$XFS_IO_PROG -c "fsync" $SCRATCH_MNT/a/foo
-+
-+echo "Filesystem content before power failure:"
-+ls -R $SCRATCH_MNT/a $SCRATCH_MNT/b $SCRATCH_MNT/c | _filter_scratch
-+
-+# Simulate a power failure / crash and remount the filesystem, so that the
-+# journal/log is replayed.
-+_flakey_drop_and_remount
-+
-+# We expect that after the journal/log was replayed, we no longer have the link
-+# foo_link and file bar was moved from directory b/ to directory c/.
-+echo "Filesystem content after power failure:"
-+# Must match what we had before the power failure.
-+ls -R $SCRATCH_MNT/a $SCRATCH_MNT/b $SCRATCH_MNT/c | _filter_scratch
-+
-+_unmount_flakey
++# Now call getfattr with --dump, which calls the listxattrs system call.
++# It should list all the xattrs we have set before.
++$GETFATTR_PROG --absolute-names --dump $SCRATCH_MNT/testfile | _filter_scratch
 +
 +status=0
 +exit
-diff --git a/tests/generic/336.out b/tests/generic/336.out
+diff --git a/tests/generic/337.out b/tests/generic/337.out
 new file mode 100644
-index 0000000..6c82fc4
+index 0000000..1cd92ff
 --- /dev/null
-+++ b/tests/generic/336.out
-@@ -0,0 +1,17 @@
-+QA output created by 336
-+Filesystem content before power failure:
-+SCRATCH_MNT/a:
-+foo
++++ b/tests/generic/337.out
+@@ -0,0 +1,8 @@
++QA output created by 337
++# file: SCRATCH_MNT/testfile
++user.J3__T_Km3dVsW_="hello"
++user.WvG1c1Td="qwerty"
++user.foobar="123"
++user.ping="pong"
++user.something="pizza"
 +
-+SCRATCH_MNT/b:
-+
-+SCRATCH_MNT/c:
-+bar
-+Filesystem content after power failure:
-+SCRATCH_MNT/a:
-+foo
-+
-+SCRATCH_MNT/b:
-+
-+SCRATCH_MNT/c:
-+bar
 diff --git a/tests/generic/group b/tests/generic/group
-index f270edb..a47e23d 100644
+index a47e23d..b6b27f8 100644
 --- a/tests/generic/group
 +++ b/tests/generic/group
-@@ -338,3 +338,4 @@
- 333 auto clone
+@@ -339,3 +339,4 @@
  334 auto clone
  335 auto quick metadata
-+336 auto quick metadata
+ 336 auto quick metadata
++337 auto quick metadata
 -- 
 2.7.0.rc3
 

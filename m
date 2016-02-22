@@ -1,284 +1,171 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from static.3.12.4.46.clients.your-server.de ([46.4.12.3]:54386 "EHLO
+Received: from static.3.12.4.46.clients.your-server.de ([46.4.12.3]:58060 "EHLO
 	mx.mokrynskyi.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1752254AbcBVTje (ORCPT
+	with ESMTP id S1753075AbcBVT6u (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 22 Feb 2016 14:39:34 -0500
+	Mon, 22 Feb 2016 14:58:50 -0500
 Received: from localhost (localhost [127.0.0.1])
-	by mx.mokrynskyi.com (Postfix) with ESMTP id 51C9D71DE
-	for <linux-btrfs@vger.kernel.org>; Mon, 22 Feb 2016 19:39:33 +0000 (UTC)
+	by mx.mokrynskyi.com (Postfix) with ESMTP id 9F9F271FA
+	for <linux-btrfs@vger.kernel.org>; Mon, 22 Feb 2016 19:58:48 +0000 (UTC)
 Received: from mx.mokrynskyi.com ([127.0.0.1])
 	by localhost (mx.mokrynskyi.com [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id 4U7LL_r2_GGD for <linux-btrfs@vger.kernel.org>;
-	Mon, 22 Feb 2016 19:39:32 +0000 (UTC)
+	with ESMTP id FrHGT26edY7q for <linux-btrfs@vger.kernel.org>;
+	Mon, 22 Feb 2016 19:58:48 +0000 (UTC)
 Received: from [10.8.0.6] (unknown [91.234.34.231])
-	by mx.mokrynskyi.com (Postfix) with ESMTPSA id 55BE971DD
-	for <linux-btrfs@vger.kernel.org>; Mon, 22 Feb 2016 19:39:31 +0000 (UTC)
-To: linux-btrfs@vger.kernel.org
+	by mx.mokrynskyi.com (Postfix) with ESMTPSA id E9E9D71F9
+	for <linux-btrfs@vger.kernel.org>; Mon, 22 Feb 2016 19:58:46 +0000 (UTC)
 From: Nazar Mokrynskyi <nazar@mokrynskyi.com>
+To: linux-btrfs@vger.kernel.org
 Subject: Re: Major HDD performance degradation on btrfs receive
-Message-ID: <9cc4652e-5991-8a92-bf9b-d2771c176ca3@mokrynskyi.com>
-Date: Mon, 22 Feb 2016 20:39:29 +0100
+Message-ID: <a55e81de-412b-c269-775d-3f8e0d96d7a9@mokrynskyi.com>
+Date: Mon, 22 Feb 2016 20:58:45 +0100
 MIME-Version: 1.0
-Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha-256; boundary="------------ms050704010803070701040207"
+Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha-256; boundary="------------ms040709060309080103000405"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 This is a cryptographically signed message in MIME format.
 
---------------ms050704010803070701040207
+--------------ms040709060309080103000405
 Content-Type: text/plain; charset=utf-8; format=flowed
 Content-Transfer-Encoding: quoted-printable
 
-> > I have 2 SSD with BTRFS filesystem (RAID) on them and several
-> > subvolumes. Each 15 minutes I'm creating read-only snapshot of
-> > subvolumes /root, /home and /web inside /backup.
-> > After this I'm searching for last common subvolume on /backup_hdd,
-> > sending difference between latest common snapshot and simply latest
-> > snapshot to /backup_hdd.
-> > On top of all above there is snapshots rotation, so that /backup
-> > contains much less snapshots than /backup_hdd.
-> One thing thing that you imply, but don't actually make explicit except=
-
-> in the btrfs command output and mount options listing, is that /backup_=
-hdd
-> is a mountpoint for a second entirely independent btrfs (LABEL=3DBackup=
-),
-> while /backup is a subvolume on the primary / btrfs.  Knowing that is
-> quite helpful in figuring out exactly what you're doing. =3D:^)
->
-> Further, implied, but not explicit since some folks use hdd when
-> referring to ssds as well, is that the /backup_hdd hdd is spinning rust=
-,
-> tho you do make it explicit that the primary btrfs is on ssds.
->
-> > I'm using this setup for last 7 months or so and this is luckily the
-> > longest period when I had no problems with BTRFS at all.
+> On Tue, Feb 16, 2016 at 5:44 AM, Nazar Mokrynskyi <na...@mokrynskyi.com=
+> wrote:
+> > I have 2 SSD with BTRFS filesystem (RAID) on them and several subvolu=
+mes.
+> > Each 15 minutes I'm creating read-only snapshot of subvolumes /root, =
+/home
+> > and /web inside /backup.
+> > After this I'm searching for last common subvolume on /backup_hdd, se=
+nding
+> > difference between latest common snapshot and simply latest snapshot =
+to
+> > /backup_hdd.
+> > On top of all above there is snapshots rotation, so that /backup cont=
+ains
+> > much less snapshots than /backup_hdd.
+> >
+> > I'm using this setup for last 7 months or so and this is luckily the =
+longest
+> > period when I had no problems with BTRFS at all.
 > > However, last 2+ months btrfs receive command loads HDD so much that =
-I
-> > can't even get list of directories in it.
+I can't
+> > even get list of directories in it.
 > > This happens even if diff between snapshots is really small.
 > > HDD contains 2 filesystems - mentioned BTRFS and ext4 for other files=
-,
-> > so I can't even play mp3 file from ext4 filesystem while btrfs receiv=
-e
-> > is running.
+, so I
+> > can't even play mp3 file from ext4 filesystem while btrfs receive is
+> > running.
 > > Since I'm running everything each 15 minutes this is a real headache.=
 
->
-> The *big* question is how many snapshots you have on LABEL=3DBackup, si=
-nce
-> you mention rotating backups in /backup, but don't mention rotating/
-> thinning backups on LABEL=3DBackup, and do explicitly state that it has=
- far
-> more snapshots, and with four snapshots an hour, they'll build up rathe=
-r
-> fast if you aren't thinning them.
->
-> The rest of this post assumes that's the issue, since you didn't mentio=
-n
-> thinning out the snapshots on LABEL=3DBackup.  If you're already famili=
-ar
-> with the snapshot scaling issue and snapshot caps and thinning
-> recommendations regularly posted here, feel free to skip the below as
-> it'll simply be review. =3D:^)
->
-> Btrfs has scaling issues when there's too many snapshots.  The
-> recommendation I've been using is a target of no more than 250 snapshot=
-s
-> per subvolume, with a target of no more than eight subvolumes and ideal=
-ly
-> no more than four subvolumes being snapshotted per filesystem, which
-> doing the math leads to an overall filesystem target snapshot cap of
-> 1000-2000, and definitely no more than 3000, tho by that point the
-> scaling issues are beginning to kick in and you'll feel it in lost
-> performance, particularly on spinning rust, when doing btrfs maintenanc=
-e
-> such as snapshotting, send/receive, balance, check, etc.
->
-> Unfortunately, many people post here complaining about performance issu=
-es
-> when they're running 10K+ or even 100K+ snapshots per filesystem and th=
-e
-> various btrfs maintenance commands have almost ground to a halt. =3D:^(=
-
->
-> You say you're snapshotting three subvolumes, / /home and /web, at 15
-> minute intervals.  That's 3*4=3D12 snapshots per hour, 12*24=3D288 snap=
-shots
-> per day.  If all those are on LABEL=3DBackup, you're hitting the 250
-> snapshots per subvolume target in 250/4/24 =3D ... just over 2 and a ha=
-lf
-> days.  And you're hitting the total per-filesystem snapshots target cap=
-
-> in 2000/288=3D ... just under seven days.
->
-> If you've been doing that for 7 months with no thinning, that's
-> 7*30*288=3D ... over 60K snapshots!  No *WONDER* you're seeing performa=
-nce
-> issues!
->
-> Meanwhile, say you need a file from a snapshot from six months ago.  Ar=
-e
-> you *REALLY* going to care, or even _know_, exactly what 15 minute
-> snapshot it was?  And even if you do, just digging thru 60K+ snapshots.=
-=2E.
-> OK, so we'll assume you sort them by snapshotted subvolume so only have=
-
-> to dig thru 20K+ snapshots... just digging thru 20K snapshots to find t=
-he
-> exact 15-minute snapshot you need... is quite a bit of work!
->
-> Instead, suppose you have a "reasonable" thinning program.  First, do y=
-ou
-> really need _FOUR_ snapshots an hour to LABEL=3DBackup?  Say you make i=
-t
-> every 20 minutes, three an hour instead of four.  That already kills a
-> third of them.  Then, say you take them every 15 or 20 minutes, but onl=
-y
-> send one per hour to LABEL=3DBackup.  (Or if you want, do them every 15=
-
-> minutes and send only ever other one, half-hourly to LABEL=3DBackup.  T=
-he
-> point is to keep it both something you're comfortable with but also mor=
-e
-> reasonable.)
->
-> For illustration, I'll say you send once an hour.  That's 3*24=3D72
-> snapshots per day, 24/day per subvolume, already a great improvement ov=
-er
-> the 96/day/subvolume and 288/day total you're doing now.
->
-> If then once a day, you thin down the third day back to every other hou=
-r,
-> you'll have 2-3 days worth of hourly snapshots on LABEL=3Dbackup, so up=
-to
-> 72 hourly snapshots per subvolume.  If on the 8th day you thin down to
-> six-hourly, 4/day, cutting out 2/3, you'll have five days of 12/day/
-> subvolume, 60 snapshots per subvolume, plus the 72, 132 snapshots per
-> subvolume total, to 8 days out so you can recover over a week's worth a=
-t
-> at least 2-hourly, if needed.
->
-> If then on the 32 day (giving you a month's worth of at least 4X/day),
-> you cut every other one, giving you twice a day snapshots, that's 24 da=
-ys
-> of 2X/day or 48 snapshots per subvolume, plus the 132 from before, 180
-> snapshots per subvolume total, now.
->
-> If then on the 92 day (giving you two more months of 2X/day, a quarter'=
-s
-> worth of at least 2X/day) you again thin every other one, to one per da=
-y,
-> you have 60 days @ 2X/day or 120 snapshots per subvolume, plus the 180 =
-we
-> had already, 300 snapshots per subvolume, now.
->
-> OK, so we're already over our target 250/subvolume, so we could thin a
-> bit more drastically.  However, we're only snapshotting three subvolume=
-s,
-> so we can afford a bit of lenience on the per-subvolume cap as that's
-> assuming 4-8 snapshotted subvolumes, and we're still well under our tot=
-al
-> filesystem snapshot cap.
->
-> If then you keep another quarter's worth of daily snapshots, out to 183=
-
-> days, that's 91 days of daily snapshots, 91 per subvolume, on top of th=
-e
-> 300 we had, so now 391 snapshots per subvolume.
->
-> If you then thin to weekly snapshots, cutting 6/7, and keep them around=
-
-> another 27 weeks (just over half a year, thus over a year total), that'=
-s
-> 27 more snapshots per subvolume, plus the 391 we had, 418 snapshots per=
-
-> subvolume total.
->
-> 418 snapshots per subvolume total, starting at 3-4X per hour to /backup=
-
-> and hourly to LABEL=3DBackup, thinning down gradually to weekly after s=
-ix
-> months and keeping that for the rest of the year.  Given that you're
-> snapshotting three subvolumes, that's 1254 snapshots total, still well
-> within the 1000-2000 total snapshots per filesystem target cap.
->
-> During that year, if the data is worth it, you should have done an offs=
-ite
-> or at least offline backup, we'll say quarterly.  After that, keeping t=
-he
-> local online backup around is merely for convenience, and with quarterl=
-y
-> backups, after a year you have multiple copies and can simply delete th=
-e
-> year-old snapshots, one a week, probably at the same time you thin down=
-
-> the six-month-old daily snapshots to weekly.
->
-> Compare that just over 1200 snapshots to the 60K+ snapshots you may hav=
-e
-> now, knowing that scaling over 10K snapshots is an issue particularly o=
-n
-> spinning rust, and you should be able to appreciate the difference it's=
-
-> likely to make. =3D:^)
->
-> But at the same time, in practice it'll probably be much easier to
-> actually retrieve something from a snapshot a few months old, because y=
-ou
-> won't have tens of thousands of effectively useless snapshots to sort
-> thru as you will be regularly thinning them down! =3D:^)
->
-> > ~> uname [-r]
-> > 4.5.0-rc4-haswell
+> >
+> > My guess is that performance hit might be caused by filesystem fragme=
+ntation
+> > even though there is more than enough empty space. But I'm not sure h=
+ow to
+> > properly check this and can't, obviously, run defragmentation on read=
+-only
+> > subvolumes.
+> >
+> > I'll be thankful for anything that might help to identify and resolve=
+ this
+> > issue.
+> >
+> > ~> uname -a
+> > Linux nazar-pc 4.5.0-rc4-haswell #1 SMP Tue Feb 16 02:09:13 CET 2016 =
+x86_64
+> > x86_64 x86_64 GNU/Linux
 > >
 > > ~> btrfs --version
 > > btrfs-progs v4.4
+> >
+> > ~> sudo btrfs fi show
+> > Label: none  uuid: 5170aca4-061a-4c6c-ab00-bd7fc8ae6030
+> >     Total devices 2 FS bytes used 71.00GiB
+> >     devid    1 size 111.30GiB used 111.30GiB path /dev/sdb2
+> >     devid    2 size 111.30GiB used 111.29GiB path /dev/sdc2
+> >
+> > Label: 'Backup'  uuid: 40b8240a-a0a2-4034-ae55-f8558c0343a8
+> >     Total devices 1 FS bytes used 252.54GiB
+> >     devid    1 size 800.00GiB used 266.08GiB path /dev/sda1
+> >
+> > ~> sudo btrfs fi df /
+> > Data, RAID0: total=3D214.56GiB, used=3D69.10GiB
+> > System, RAID1: total=3D8.00MiB, used=3D16.00KiB
+> > System, single: total=3D4.00MiB, used=3D0.00B
+> > Metadata, RAID1: total=3D4.00GiB, used=3D1.87GiB
+> > Metadata, single: total=3D8.00MiB, used=3D0.00B
+> > GlobalReserve, single: total=3D512.00MiB, used=3D0.00B
+> >
+> > ~> sudo btrfs fi df /backup_hdd
+> > Data, single: total=3D245.01GiB, used=3D243.61GiB
+> > System, DUP: total=3D32.00MiB, used=3D48.00KiB
+> > System, single: total=3D4.00MiB, used=3D0.00B
+> > Metadata, DUP: total=3D10.50GiB, used=3D8.93GiB
+> > Metadata, single: total=3D8.00MiB, used=3D0.00B
+> > GlobalReserve, single: total=3D512.00MiB, used=3D0.00B
+> >
+> > Relevant mount options:
+> > UUID=3D5170aca4-061a-4c6c-ab00-bd7fc8ae6030    / btrfs
+> > compress=3Dlzo,noatime,relatime,ssd,subvol=3D/root    0 1
+> > UUID=3D5170aca4-061a-4c6c-ab00-bd7fc8ae6030    /home btrfs
+> > compress=3Dlzo,noatime,relatime,ssd,subvol=3D/home 0    1
+> > UUID=3D5170aca4-061a-4c6c-ab00-bd7fc8ae6030    /backup btrfs
+> > compress=3Dlzo,noatime,relatime,ssd,subvol=3D/backup 0    1
+> > UUID=3D5170aca4-061a-4c6c-ab00-bd7fc8ae6030    /web btrfs
+> > compress=3Dlzo,noatime,relatime,ssd,subvol=3D/web 0    1
+> > UUID=3D40b8240a-a0a2-4034-ae55-f8558c0343a8    /backup_hdd btrfs
+> > compress=3Dlzo,noatime,relatime,noexec 0    1
+> As already indicated by Duncan, the amount of snapshots might be just
+> too much. The fragmentation on the HDD might have become very high. If
+> there is limited amount of RAM in the system (so limited caching), too
+> much time is lost in seeks. In addition:
 >
-> You're staying current with your btrfs versions.  Kudos on that! =3D:^)=
-
+>   compress=3Dlzo
+> this also increases the chance of scattering fragments and fragmentatio=
+n.
 >
-> And on including btrfs fi show and btrfs fi df, as they were useful, th=
-o
-> I'm snipping them here.
+>   noatime,relatime
+> I am not sure why you have this. Hopefully you have the actual mount
+> listed as   noatime
 >
-> One more tip.  Btrfs quotas are known to have scaling issues as well.  =
-If
-> you're using them, they'll exacerbate the problem.  And while I'm not
-> sure about current 4.4 status, thru 4.3 at least, they were buggy and n=
-ot
-> reliable anyway.  So the recommendation is to leave quotas off on btrfs=
-,
-> and use some other more mature filesystem where they're known to work
-> reliably if you really need them.
+> You could use the principles of the tool/package called  snapper  to
+> do a sort of non-linear snapshot thinning: further back in time you
+> will have a much higher granularity of snapshot over a certain
+> timeframe.
 >
-> --=20
-> Duncan - List replies preferred.   No HTML msgs.
-> "Every nonfree program has a lord, a master --
-> and if you use the program, he is your master."  Richard Stallman
-First of all, sorry for delay, for whatever reason was not subscribed to =
+> You could use skinny metadata (recreate the fs with newer tools or use
+> btrfstune -x on /dev/sda1). I think at the moment this flag is not
+> enabled on /dev/sda1
+>
+> If you put just 1 btrfs fs on the hdd (so move all the content from
+> the ext4 fs in the the btrfs fs) you might get better overall
+> performance. I assume the ext4 fs is on the second (slower part) of
+> the HDD and that is a disadvantage I think.
+> But you probably have reasons for why the setup is like it is.
+I've replied to Duncan's message about number of snapshots, there is=20
+snapshots rotation and number of snapshots it is quite small, 491 in tota=
+l.
 
-mailing list.
+About memory - 16 GiB of RAM should be enough I guess:) Can I measure=20
+somehow if seeking is a problem?
 
-You are right, RAID is on 2 SSDs and backup_hdd (LABEL=3DBackup) is=20
-separate really HDD.
+What is wrong with noatime,relatime? I'm using them for a long time as=20
+good compromise in terms of performance.
 
-Example was simplified to give an overview to not dig too deep into=20
-details. I actually have correct backups rotation, so we are not talking =
+I'll try btrfstune -x and let you know whether it changes anything.
 
-about thousands of snapshots:)
-Here is tool I've created and using right now:=20
-https://github.com/nazar-pc/just-backup-btrfs
-I'm keeping all snapshots for last day, up to 90 for last month and up=20
-to 48 throughout the year.
-So as result there are:
-* 166 snapshots in /backup_hdd/root
-* 166 snapshots in /backup_hdd/home
-* 159 snapshots in /backup_hdd/web
+About ext4 - it is actually because I did have some serious problems=20
+with BTRFS in past 2.5 years or so (however, first time I've recovered=20
+files by building manually git version of btrfs-tools and last time I=20
+had not very up to date, but backup of everything in other place so I=20
+didn't miss too much unrecoverable data), so for a while I'd like to=20
+store some files separately on filesystem that is extremely difficult to =
 
-I'm not using quotas, there is nothing on this BTRFS partition besides=20
-mentioned snapshots.
+break. Its content not critical in terms of performance, files do not=20
+compress well and I do not really need any other extended features on=20
+that partition - so ext4 will be there for a while.
 
 --=20
 Sincerely, Nazar Mokrynskyi
@@ -290,7 +177,7 @@ F5261249
 
 
 
---------------ms050704010803070701040207
+--------------ms040709060309080103000405
 Content-Type: application/pkcs7-signature; name="smime.p7s"
 Content-Transfer-Encoding: base64
 Content-Disposition: attachment; filename="smime.p7s"
@@ -352,8 +239,8 @@ L2nTET8ZrSl5Utp1UeGp/2deoprGevfnxWB+vHNQiu85o6MxggPMMIIDyAIBATCBiTB1MQsw
 CQYDVQQGEwJJTDEWMBQGA1UEChMNU3RhcnRDb20gTHRkLjEpMCcGA1UECxMgU3RhcnRDb20g
 Q2VydGlmaWNhdGlvbiBBdXRob3JpdHkxIzAhBgNVBAMTGlN0YXJ0Q29tIENsYXNzIDEgQ2xp
 ZW50IENBAhBk6v6TVth6hqLyl5xsFf+NMA0GCWCGSAFlAwQCAQUAoIICEzAYBgkqhkiG9w0B
-CQMxCwYJKoZIhvcNAQcBMBwGCSqGSIb3DQEJBTEPFw0xNjAyMjIxOTM5MjlaMC8GCSqGSIb3
-DQEJBDEiBCA2/Qeih8ygMVfLX/hk3NYGfe8DiIosqwltq5BBLuV33jBsBgkqhkiG9w0BCQ8x
+CQMxCwYJKoZIhvcNAQcBMBwGCSqGSIb3DQEJBTEPFw0xNjAyMjIxOTU4NDVaMC8GCSqGSIb3
+DQEJBDEiBCDn/JGMWtOll4qkOcghHgvyugCjaWQrvccLBqlqoGVjgzBsBgkqhkiG9w0BCQ8x
 XzBdMAsGCWCGSAFlAwQBKjALBglghkgBZQMEAQIwCgYIKoZIhvcNAwcwDgYIKoZIhvcNAwIC
 AgCAMA0GCCqGSIb3DQMCAgFAMAcGBSsOAwIHMA0GCCqGSIb3DQMCAgEoMIGaBgkrBgEEAYI3
 EAQxgYwwgYkwdTELMAkGA1UEBhMCSUwxFjAUBgNVBAoTDVN0YXJ0Q29tIEx0ZC4xKTAnBgNV
@@ -361,10 +248,10 @@ BAsTIFN0YXJ0Q29tIENlcnRpZmljYXRpb24gQXV0aG9yaXR5MSMwIQYDVQQDExpTdGFydENv
 bSBDbGFzcyAxIENsaWVudCBDQQIQZOr+k1bYeoai8pecbBX/jTCBnAYLKoZIhvcNAQkQAgsx
 gYyggYkwdTELMAkGA1UEBhMCSUwxFjAUBgNVBAoTDVN0YXJ0Q29tIEx0ZC4xKTAnBgNVBAsT
 IFN0YXJ0Q29tIENlcnRpZmljYXRpb24gQXV0aG9yaXR5MSMwIQYDVQQDExpTdGFydENvbSBD
-bGFzcyAxIENsaWVudCBDQQIQZOr+k1bYeoai8pecbBX/jTANBgkqhkiG9w0BAQEFAASCAQCI
-L6Bc9iR0HIGXcZdaBUiqa1o/kNpODksjCGvhdJQ5k/Z1kClLpGIoxWuQTzLJUkuzTF6c15vz
-ET+mOc10qPGP56y/naFNhG8MUUyuW0hrBWs+87SYjccIJktxa/0I0Qy/HN/cQX8vJZo3xcoU
-NEq38wRL22jyY4vESFtYguc1mkUW/kciPGhJzZyWk/8jN4sEMqJNFK0L08AO4NaGL8g02FRx
-n/4a5Ko6nCe2tNuiJF8cGPwjOMhE/dOGHEJwfHrVzgbWvchcItM9kOmBt9JtKdqcoZg9DF7w
-7EvBpIyS2iB7kvJu5ZD/lEUMELU1ysSlJ304pCbogezO3QjFNekaAAAAAAAA
---------------ms050704010803070701040207--
+bGFzcyAxIENsaWVudCBDQQIQZOr+k1bYeoai8pecbBX/jTANBgkqhkiG9w0BAQEFAASCAQB+
+5h1aPl1Jt7wCmKalQdReACyMRcuIFMc1AVpu5CSBvwaabQK/t4qNqkMGbX9TidaxtS+XY5Di
+5/zdBxhPkS+tR/bNwD+ZBF7QwLMaS7+pvq1d32fML8HX8IFOK8wnnuC2y5isqviL2/x86PtM
+VxpgRRF3aMttrylrMjCPc8uhc4W2B4x6PfgZ5FILXV+3W4qoZEfwvWT9MmlflgBMKs5wSx5G
++0mCRKTMQsT+FA3n8XneXYK9pU3pb5qKDmlILkdjQQ6KHtBSiESjD18LIvPmH2IG7Dl6xjXL
+yNS4IZvj5SsGM1dwlxcobh3W/UIk2d3JhCGzASe11g71XmhoKeRqAAAAAAAA
+--------------ms040709060309080103000405--

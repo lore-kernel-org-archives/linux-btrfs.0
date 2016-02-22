@@ -1,41 +1,29 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:48258 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:49782 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754199AbcBVLeV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 22 Feb 2016 06:34:21 -0500
-Date: Mon, 22 Feb 2016 12:34:12 +0100
+	id S1751137AbcBVL5u (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 22 Feb 2016 06:57:50 -0500
+Date: Mon, 22 Feb 2016 12:57:41 +0100
 From: David Sterba <dsterba@suse.cz>
-To: Philippe Loctaux <phil@philippeloctaux.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [Question]: Contributing to btrfs
-Message-ID: <20160222113412.GB4374@twin.jikos.cz>
+To: Simon Quigley <tsimonq2@ubuntu.com>
+Cc: clm@fb.com, linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
+Subject: Re: [PATCH] btrfs: backref: Fixed checkpatch warning of over 80
+ characters
+Message-ID: <20160222115741.GC4374@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <20160220210903.GA3182@carbon.home>
+References: <1455992258-9176-1-git-send-email-tsimonq2@ubuntu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20160220210903.GA3182@carbon.home>
+In-Reply-To: <1455992258-9176-1-git-send-email-tsimonq2@ubuntu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+On Sat, Feb 20, 2016 at 12:17:38PM -0600, Simon Quigley wrote:
+> checkpatch.pl reported a warning of over 80 characters on line 1833
 
-On Sat, Feb 20, 2016 at 10:09:03PM +0100, Philippe Loctaux wrote:
-> I'm new to the mailing list and btrfs in general (I've been using it for
-> two weeks on my new arch install) and I'd like to contribute to the code :)
+Please read the answers from Filipe or me
 
-contributions to code are welcome, but please try not to spend too much
-time fixing style problems or checkpatch warnings. This may be a good
-start to get used to the patch formatting, mails and the feedback loop,
-which you seem to understand now.
+http://article.gmane.org/gmane.comp.file-systems.btrfs/53421
+http://article.gmane.org/gmane.comp.file-systems.btrfs/53422
 
-But otherwise whitespace-only changes are not considered worth the time,
-and I don't want to encourage people to do that. My usual answer to that
-is at
-
-https://btrfs.wiki.kernel.org/index.php/Project_ideas#Cleanup_projects
-
-"Please note that pure whitespace and style reformatting changes are not
-really necessary at this phase of development. They get fixed along
-regular changes. Possibly once upon in a while a patch that fixes many
-if not all whitespace errors could work, but otherwise it's considered a
-noise."
+in short, whitespace-only changes do not help too much.

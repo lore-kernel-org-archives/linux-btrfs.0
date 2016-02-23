@@ -1,103 +1,233 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lb0-f171.google.com ([209.85.217.171]:35233 "EHLO
-	mail-lb0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752114AbcBWR3G (ORCPT
+Received: from static.3.12.4.46.clients.your-server.de ([46.4.12.3]:52140 "EHLO
+	mx.mokrynskyi.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1753752AbcBWRe2 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 23 Feb 2016 12:29:06 -0500
-Received: by mail-lb0-f171.google.com with SMTP id bc4so105060369lbc.2
-        for <linux-btrfs@vger.kernel.org>; Tue, 23 Feb 2016 09:29:05 -0800 (PST)
-MIME-Version: 1.0
-In-Reply-To: <4fec7e2f-8464-6a2e-3096-66155f7a58fd@mokrynskyi.com>
-References: <a55e81de-412b-c269-775d-3f8e0d96d7a9@mokrynskyi.com>
-	<04df0eaf-9dc8-b9fa-05cb-020507940bed@mokrynskyi.com>
-	<CAGGqMYS=O=zzZE2pK=Stx6OwrZn1Fz59oYBS+jbSHfu4Ovv68Q@mail.gmail.com>
-	<4fec7e2f-8464-6a2e-3096-66155f7a58fd@mokrynskyi.com>
-Date: Tue, 23 Feb 2016 18:29:04 +0100
-Message-ID: <CAGGqMYQkz0FnU6TFzAqMZf9D3y2-d16xVemoLOW1sC76Eeg-ZA@mail.gmail.com>
+	Tue, 23 Feb 2016 12:34:28 -0500
+Received: from localhost (localhost [127.0.0.1])
+	by mx.mokrynskyi.com (Postfix) with ESMTP id 3B898BF7E
+	for <linux-btrfs@vger.kernel.org>; Tue, 23 Feb 2016 17:34:27 +0000 (UTC)
+Received: from mx.mokrynskyi.com ([127.0.0.1])
+	by localhost (mx.mokrynskyi.com [127.0.0.1]) (amavisd-new, port 10024)
+	with ESMTP id R0tSj5Fj7uvo for <linux-btrfs@vger.kernel.org>;
+	Tue, 23 Feb 2016 17:34:26 +0000 (UTC)
+Received: from [192.168.1.167] (user-31-175-12-243.play-internet.pl [31.175.12.243])
+	by mx.mokrynskyi.com (Postfix) with ESMTPSA id 9373FBF7C
+	for <linux-btrfs@vger.kernel.org>; Tue, 23 Feb 2016 17:34:25 +0000 (UTC)
 Subject: Re: Major HDD performance degradation on btrfs receive
-From: Alexander Fougner <fougner89@gmail.com>
-To: Nazar Mokrynskyi <nazar@mokrynskyi.com>
-Cc: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+References: <a55e81de-412b-c269-775d-3f8e0d96d7a9@mokrynskyi.com>
+ <04df0eaf-9dc8-b9fa-05cb-020507940bed@mokrynskyi.com>
+ <CAGGqMYS=O=zzZE2pK=Stx6OwrZn1Fz59oYBS+jbSHfu4Ovv68Q@mail.gmail.com>
+ <4fec7e2f-8464-6a2e-3096-66155f7a58fd@mokrynskyi.com>
+ <CAGGqMYQkz0FnU6TFzAqMZf9D3y2-d16xVemoLOW1sC76Eeg-ZA@mail.gmail.com>
+To: linux-btrfs@vger.kernel.org
+From: Nazar Mokrynskyi <nazar@mokrynskyi.com>
+Message-ID: <5ca0c6e3-624e-ebc9-045b-09c5fba9f9a8@mokrynskyi.com>
+Date: Tue, 23 Feb 2016 18:34:24 +0100
+MIME-Version: 1.0
+In-Reply-To: <CAGGqMYQkz0FnU6TFzAqMZf9D3y2-d16xVemoLOW1sC76Eeg-ZA@mail.gmail.com>
+Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha-256; boundary="------------ms080109050806000007060909"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-2016-02-23 18:18 GMT+01:00 Nazar Mokrynskyi <nazar@mokrynskyi.com>:
-> But why? I have relatime option, it should not cause changes unless file
-> contents is actually changed if I understand this option correctly.
->
+This is a cryptographically signed message in MIME format.
 
-*or* if it is older than 1 day. From the manpages:
+--------------ms080109050806000007060909
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Transfer-Encoding: quoted-printable
 
-relatime
-              Update inode access times relative to modify or change time.
-              Access time is only updated if the previous access time was
-              earlier than the current modify or change time.  (Similar to
-              noatime, but it doesn't break mutt or other applications that
-              need to know if a file has been read since the last time it
-              was modified.)
+Wow, this is interesting, didn't know it.
 
-              Since Linux 2.6.30, the kernel defaults to the behavior
-              provided by this option (unless noatime was specified), and
-              the strictatime option is required to obtain traditional
->>>>>   semantics.  In addition, since Linux 2.6.30, the file's last
-              access time is always updated if it is more than 1 day old. <<<<<
+I'll probably try noatime instead:)
 
-Also, if you only use relatime, then you don't need to specify it,
-it's the default since 2.6.30 as mentioned above.
+Sincerely, Nazar Mokrynskyi
+github.com/nazar-pc
+Skype: nazar-pc
+Diaspora: nazarpc@diaspora.mokrynskyi.com
+Tox: A9D95C9AA5F7A3ED75D83D0292E22ACE84BA40E912185939414475AF28FD2B2A5C8E=
+F5261249
 
-
-> Sincerely, Nazar Mokrynskyi
-> github.com/nazar-pc
-> Skype: nazar-pc
-> Diaspora: nazarpc@diaspora.mokrynskyi.com
-> Tox:
-> A9D95C9AA5F7A3ED75D83D0292E22ACE84BA40E912185939414475AF28FD2B2A5C8EF5261249
->
-> On 23.02.16 18:05, Alexander Fougner wrote:
+On 23.02.16 18:29, Alexander Fougner wrote:
+> 2016-02-23 18:18 GMT+01:00 Nazar Mokrynskyi <nazar@mokrynskyi.com>:
+>> But why? I have relatime option, it should not cause changes unless fi=
+le
+>> contents is actually changed if I understand this option correctly.
 >>
->> 2016-02-23 17:55 GMT+01:00 Nazar Mokrynskyi <nazar@mokrynskyi.com>:
+> *or* if it is older than 1 day. From the manpages:
+>
+> relatime
+>                Update inode access times relative to modify or change t=
+ime.
+>                Access time is only updated if the previous access time =
+was
+>                earlier than the current modify or change time.  (Simila=
+r to
+>                noatime, but it doesn't break mutt or other applications=
+ that
+>                need to know if a file has been read since the last time=
+ it
+>                was modified.)
+>
+>                Since Linux 2.6.30, the kernel defaults to the behavior
+>                provided by this option (unless noatime was specified), =
+and
+>                the strictatime option is required to obtain traditional=
+
+>>>>>>    semantics.  In addition, since Linux 2.6.30, the file's last
+>                access time is always updated if it is more than 1 day o=
+ld. <<<<<
+>
+> Also, if you only use relatime, then you don't need to specify it,
+> it's the default since 2.6.30 as mentioned above.
+>
+>
+>> Sincerely, Nazar Mokrynskyi
+>> github.com/nazar-pc
+>> Skype: nazar-pc
+>> Diaspora: nazarpc@diaspora.mokrynskyi.com
+>> Tox:
+>> A9D95C9AA5F7A3ED75D83D0292E22ACE84BA40E912185939414475AF28FD2B2A5C8EF5=
+261249
+>>
+>> On 23.02.16 18:05, Alexander Fougner wrote:
+>>> 2016-02-23 17:55 GMT+01:00 Nazar Mokrynskyi <nazar@mokrynskyi.com>:
+>>>>>> What is wrong with noatime,relatime? I'm using them for a long tim=
+e as
+>>>>>> good compromise in terms of performance.
+>>>>> The one option ends up canceling the other, as they're both atime
+>>>>> related
+>>>>> options that say do different things.
 >>>>>
->>>>> What is wrong with noatime,relatime? I'm using them for a long time as
->>>>> good compromise in terms of performance.
->>>>
->>>> The one option ends up canceling the other, as they're both atime
->>>> related
->>>> options that say do different things.
->>>>
->>>> I'd have to actually setup a test or do some research to be sure which
->>>> one overrides the other (but someone here probably can say without
->>>> further research), tho I'd /guess/ the latter one overrides the earlier
->>>> one, which would effectively make them both pretty much useless, since
->>>> relatime is the normal kernel default and thus doesn't need to be
->>>> specified.
->>>>
->>>> Noatime is strongly recommended for btrfs, however, particularly with
->>>> snapshots, as otherwise, the changes between snapshots can consist
->>>> mostly
->>>> of generally useless atime changes.
->>>>
->>>> (FWIW, after over a decade of using noatime here (I first used it on the
->>>> then new reiserfs, after finding a recommendation for it on that), I got
->>>> tired of specifying the option on nearly all my fstab entries, and now
->>>> days carry a local kernel patch that changes the default to noatime,
->>>> allowing me to drop specifying it everywhere.  I don't claim to be a
->>>> coder, let alone a kernel level coder, but as a gentooer used to
->>>> building
->>>> from source for over a decade, I've found that I can often find the code
->>>> behind some behavior I'd like to tweak, and given good enough comments,
->>>> I
->>>> can often create trivial patches to accomplish that tweak, even if it's
->>>> not exactly the code a real C coder would choose to use, which is
->>>> exactly
->>>> what I've done here.  So now, unless some other atime option is
->>>> specified, my filesystems are all mounted noatime.  =:^)
->>>
->>> Well, then I'll leave relatime on root fs and noatime on partition with
->>> snapshots, thanks.
+>>>>> I'd have to actually setup a test or do some research to be sure wh=
+ich
+>>>>> one overrides the other (but someone here probably can say without
+>>>>> further research), tho I'd /guess/ the latter one overrides the ear=
+lier
+>>>>> one, which would effectively make them both pretty much useless, si=
+nce
+>>>>> relatime is the normal kernel default and thus doesn't need to be
+>>>>> specified.
+>>>>>
+>>>>> Noatime is strongly recommended for btrfs, however, particularly wi=
+th
+>>>>> snapshots, as otherwise, the changes between snapshots can consist
+>>>>> mostly
+>>>>> of generally useless atime changes.
+>>>>>
+>>>>> (FWIW, after over a decade of using noatime here (I first used it o=
+n the
+>>>>> then new reiserfs, after finding a recommendation for it on that), =
+I got
+>>>>> tired of specifying the option on nearly all my fstab entries, and =
+now
+>>>>> days carry a local kernel patch that changes the default to noatime=
+,
+>>>>> allowing me to drop specifying it everywhere.  I don't claim to be =
+a
+>>>>> coder, let alone a kernel level coder, but as a gentooer used to
+>>>>> building
+>>>>> from source for over a decade, I've found that I can often find the=
+ code
+>>>>> behind some behavior I'd like to tweak, and given good enough comme=
+nts,
+>>>>> I
+>>>>> can often create trivial patches to accomplish that tweak, even if =
+it's
+>>>>> not exactly the code a real C coder would choose to use, which is
+>>>>> exactly
+>>>>> what I've done here.  So now, unless some other atime option is
+>>>>> specified, my filesystems are all mounted noatime.  =3D:^)
+>>>> Well, then I'll leave relatime on root fs and noatime on partition w=
+ith
+>>>> snapshots, thanks.
+>>> If you snapshot the root filesystem then the atime changes will still=
+
+>>> be there, and you'll be having a lot of unnecessary changes between
+>>> each snapshot.
 >>
->> If you snapshot the root filesystem then the atime changes will still
->> be there, and you'll be having a lot of unnecessary changes between
->> each snapshot.
->
->
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+
+
+
+--------------ms080109050806000007060909
+Content-Type: application/pkcs7-signature; name="smime.p7s"
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment; filename="smime.p7s"
+Content-Description: ÐÑÑÐ¿ÑÐ¾Ð³ÑÐ°ÑÑÑÐ½Ð¸Ð¹ Ð¿ÑÐ´Ð¿Ð¸Ñ S/MIME
+
+MIAGCSqGSIb3DQEHAqCAMIACAQExDzANBglghkgBZQMEAgEFADCABgkqhkiG9w0BBwEAAKCC
+CuMwggT5MIID4aADAgECAhBk6v6TVth6hqLyl5xsFf+NMA0GCSqGSIb3DQEBCwUAMHUxCzAJ
+BgNVBAYTAklMMRYwFAYDVQQKEw1TdGFydENvbSBMdGQuMSkwJwYDVQQLEyBTdGFydENvbSBD
+ZXJ0aWZpY2F0aW9uIEF1dGhvcml0eTEjMCEGA1UEAxMaU3RhcnRDb20gQ2xhc3MgMSBDbGll
+bnQgQ0EwHhcNMTUxMjIyMDYwNTUxWhcNMTYxMjIyMDYwNTUxWjBEMR0wGwYDVQQDDBRuYXph
+ckBtb2tyeW5za3lpLmNvbTEjMCEGCSqGSIb3DQEJARYUbmF6YXJAbW9rcnluc2t5aS5jb20w
+ggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQCugsLCcazI+Sjl29kaCHer/z6I0aPy
+cKYqk4Bk0jUE6CcfQLX98E8b1sc2kbBjwd+jPPvWtqSGHzLUKLL1jfXJC6X5At+UHNdWiU6n
+xaKnCiWiV0NZK6AVfrr+KdP+f1gYfMryPp/JkzcRDquML+YSz0BJ3ODaU538lDtC2sPeH7hY
+nTiuMBfL6h2c680MF9UrIUqvqJ94QEillrDShGxaMHIWZepLxydmACnI9Sga8dZPjG84hV//
+JKGRmdlQ1fA7g0LUE2hZcY/zdB6Qey87ctNkND/bQfghbArOdJZK2/cal0xJ6znrPAyqs7wj
+2HVz8/coOlXPPsV4OkoA9X1PAgMBAAGjggG0MIIBsDALBgNVHQ8EBAMCBLAwHQYDVR0lBBYw
+FAYIKwYBBQUHAwIGCCsGAQUFBwMEMAkGA1UdEwQCMAAwHQYDVR0OBBYEFCfmAiR7cI5aUj1L
+5j5v0+wVzVy1MB8GA1UdIwQYMBaAFCSBbDlhvkkPj7cbRivJKLUnSG1oMG8GCCsGAQUFBwEB
+BGMwYTAkBggrBgEFBQcwAYYYaHR0cDovL29jc3Auc3RhcnRzc2wuY29tMDkGCCsGAQUFBzAC
+hi1odHRwOi8vYWlhLnN0YXJ0c3NsLmNvbS9jZXJ0cy9zY2EuY2xpZW50MS5jcnQwOAYDVR0f
+BDEwLzAtoCugKYYnaHR0cDovL2NybC5zdGFydHNzbC5jb20vc2NhLWNsaWVudDEuY3JsMB8G
+A1UdEQQYMBaBFG5hemFyQG1va3J5bnNreWkuY29tMCMGA1UdEgQcMBqGGGh0dHA6Ly93d3cu
+c3RhcnRzc2wuY29tLzBGBgNVHSAEPzA9MDsGCysGAQQBgbU3AQIEMCwwKgYIKwYBBQUHAgEW
+Hmh0dHA6Ly93d3cuc3RhcnRzc2wuY29tL3BvbGljeTANBgkqhkiG9w0BAQsFAAOCAQEAkIZk
+GJPfY91CrJnZzsF0+qviIsqRCWqdT64E5ttyODEvfo9TVccBvwTgVZzKJY2e+ALaDNX0dBH+
+9YXMUg5pNfXGHauhQjGan8bdKsaLhvqaq3g0CO1oZU38pqizWTzQYbzu62414VeIDauHMbFD
+pdRD0Egx/iY8R7JAO9k+hciD0W/L7FPRU7UTtz1vPqrKO54mYNFMn6EUhR2poM1j0dmwZH4W
+Cly6N88RT6zhncbgDnjKr6+IHCxSP0E75uf+6kgbYRtwHnLydUIZdkEESlHhKdgJJFoL7nHr
+PU3kWyAMrRdf2YtCwDa5USI5mE9v6sf0ynMrThlXbkb12Dz9wzCCBeIwggPKoAMCAQICEGun
+in0K14jWUQr5WeTntOEwDQYJKoZIhvcNAQELBQAwfTELMAkGA1UEBhMCSUwxFjAUBgNVBAoT
+DVN0YXJ0Q29tIEx0ZC4xKzApBgNVBAsTIlNlY3VyZSBEaWdpdGFsIENlcnRpZmljYXRlIFNp
+Z25pbmcxKTAnBgNVBAMTIFN0YXJ0Q29tIENlcnRpZmljYXRpb24gQXV0aG9yaXR5MB4XDTE1
+MTIxNjAxMDAwNVoXDTMwMTIxNjAxMDAwNVowdTELMAkGA1UEBhMCSUwxFjAUBgNVBAoTDVN0
+YXJ0Q29tIEx0ZC4xKTAnBgNVBAsTIFN0YXJ0Q29tIENlcnRpZmljYXRpb24gQXV0aG9yaXR5
+MSMwIQYDVQQDExpTdGFydENvbSBDbGFzcyAxIENsaWVudCBDQTCCASIwDQYJKoZIhvcNAQEB
+BQADggEPADCCAQoCggEBAL192vfDon2D9luC/dtbX64eG3XAtRmvmCSsu1d52DXsCR58zJQb
+CtB2/A5uFqNxWacpXGGtTCRk9dEDBlmixEd8QiLkUfvHpJX/xKnmVkS6Iye8wUbYzMsDzgnp
+azlPg19dnSqfhM+Cevdfa89VLnUztRr2cgmCfyO9Otrh7LJDPG+4D8ZnAqDtVB8MKYJL6QgK
+yVhhaBc4y3bGWxKyXEtx7QIZZGxPwSkzK3WIN+VKNdkiwTubW5PIdopmykwvIjLPqbJK7yPw
+FZYekKE015OsW6FV+s4DIM8UlVS8pkIsoGGJtMuWjLL4tq2hYQuuN0jhrxK1ljz50hH23gA9
+cbMCAwEAAaOCAWQwggFgMA4GA1UdDwEB/wQEAwIBBjAdBgNVHSUEFjAUBggrBgEFBQcDAgYI
+KwYBBQUHAwQwEgYDVR0TAQH/BAgwBgEB/wIBADAyBgNVHR8EKzApMCegJaAjhiFodHRwOi8v
+Y3JsLnN0YXJ0c3NsLmNvbS9zZnNjYS5jcmwwZgYIKwYBBQUHAQEEWjBYMCQGCCsGAQUFBzAB
+hhhodHRwOi8vb2NzcC5zdGFydHNzbC5jb20wMAYIKwYBBQUHMAKGJGh0dHA6Ly9haWEuc3Rh
+cnRzc2wuY29tL2NlcnRzL2NhLmNydDAdBgNVHQ4EFgQUJIFsOWG+SQ+PtxtGK8kotSdIbWgw
+HwYDVR0jBBgwFoAUTgvvGqRAW6UXaYcwyjRoQ9BBrvIwPwYDVR0gBDgwNjA0BgRVHSAAMCww
+KgYIKwYBBQUHAgEWHmh0dHA6Ly93d3cuc3RhcnRzc2wuY29tL3BvbGljeTANBgkqhkiG9w0B
+AQsFAAOCAgEAi+P3h+wBi4StDwECW5zhIycjBL008HACblIf26HY0JdOruKbrWDsXUsiI0j/
+7Crft9S5oxvPiDtVqspBOB/y5uzSns1lZwh7sG96bYBZpcGzGxpFNjDmQbcM3yl3WFIRS4Wh
+NrsOY14V7y2IrUGsvetsD+bjyOngCIVeC/GmsmtbuLOzJ606tEc9uRbhjTu/b0x2Fo+/e7Uk
+QvKzNeo7OMhijixaULyINBfCBJb+e29bLafgu6JqjOUJ9eXXj20p6q/CW+uVrZiSW57+q5an
+2P2i7hP85jQJcy5j4HzA0rSiF3YPhKGAWUxKPMAVGgcYoXzWydOvZ3UDsTDTagXpRDIKQLZo
+02wrlxY6iMFqvlzsemVf1odhQJmi7Eh5TbxI40kDGcBOBHhwnaOumZhLP+SWJQnjpLpSlUOj
+95uf1zo9oz9e0NgIJoz/tdfrBzez76xtDsK0KfUDHt1/q59BvDI7RX6gVr0fQoCyMczNzCTc
+RXYHY0tq2J0oT+bsb6sH2b4WVWAiJKnSYaWDjdA70qHX4mq9MIjO/ZskmSY8wtAk24orAc0v
+wXgYanqNsBX5Yv4sN4Z9VyrwMdLcusP7HJgRdAGKpkR2I9U4zEsNJQJewM7S4Jalo1DyPrLp
+L2nTET8ZrSl5Utp1UeGp/2deoprGevfnxWB+vHNQiu85o6MxggPMMIIDyAIBATCBiTB1MQsw
+CQYDVQQGEwJJTDEWMBQGA1UEChMNU3RhcnRDb20gTHRkLjEpMCcGA1UECxMgU3RhcnRDb20g
+Q2VydGlmaWNhdGlvbiBBdXRob3JpdHkxIzAhBgNVBAMTGlN0YXJ0Q29tIENsYXNzIDEgQ2xp
+ZW50IENBAhBk6v6TVth6hqLyl5xsFf+NMA0GCWCGSAFlAwQCAQUAoIICEzAYBgkqhkiG9w0B
+CQMxCwYJKoZIhvcNAQcBMBwGCSqGSIb3DQEJBTEPFw0xNjAyMjMxNzM0MjRaMC8GCSqGSIb3
+DQEJBDEiBCA1vcnk/zSkx6WvTIoZAdSmbXDBuakzuagc8CqyOxeWyDBsBgkqhkiG9w0BCQ8x
+XzBdMAsGCWCGSAFlAwQBKjALBglghkgBZQMEAQIwCgYIKoZIhvcNAwcwDgYIKoZIhvcNAwIC
+AgCAMA0GCCqGSIb3DQMCAgFAMAcGBSsOAwIHMA0GCCqGSIb3DQMCAgEoMIGaBgkrBgEEAYI3
+EAQxgYwwgYkwdTELMAkGA1UEBhMCSUwxFjAUBgNVBAoTDVN0YXJ0Q29tIEx0ZC4xKTAnBgNV
+BAsTIFN0YXJ0Q29tIENlcnRpZmljYXRpb24gQXV0aG9yaXR5MSMwIQYDVQQDExpTdGFydENv
+bSBDbGFzcyAxIENsaWVudCBDQQIQZOr+k1bYeoai8pecbBX/jTCBnAYLKoZIhvcNAQkQAgsx
+gYyggYkwdTELMAkGA1UEBhMCSUwxFjAUBgNVBAoTDVN0YXJ0Q29tIEx0ZC4xKTAnBgNVBAsT
+IFN0YXJ0Q29tIENlcnRpZmljYXRpb24gQXV0aG9yaXR5MSMwIQYDVQQDExpTdGFydENvbSBD
+bGFzcyAxIENsaWVudCBDQQIQZOr+k1bYeoai8pecbBX/jTANBgkqhkiG9w0BAQEFAASCAQBw
+4vJukiYyOu7SfMmCRcaIY6fJ1iMFTqhJoi1uUxUkhKSTGEd1tHy4+K4c20oq6tWk+ETofVF5
+QK0u0c16WEk0+db9g7d3HusS6Nw07m52Audd8ARDZrP2aejpdLCO5mNNP/rx9QgkwUZO6C4o
+M1wOTKJ27jU408tUXStP63Lh3Y7CyRN2c9MXyZKRuqu4htXhoN3eSePAPrHsKtEmddVZFigk
+YKkjlQ/8hmfktx/EnDl2J3NjOdPKU/puJMVJG6VvAwcH/JgrIRc5zIUE50FpZOr4Brw1iwTs
+MniTlwR/PUUp228iZVgr+ccuq7oQHkCHB1qZG4qlR74rHV8EbNxaAAAAAAAA
+--------------ms080109050806000007060909--

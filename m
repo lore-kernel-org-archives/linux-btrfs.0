@@ -1,32 +1,27 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:48748 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:50335 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1758056AbcBDOZZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 4 Feb 2016 09:25:25 -0500
-Date: Thu, 4 Feb 2016 15:25:08 +0100
+	id S1750746AbcBWM2V (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 23 Feb 2016 07:28:21 -0500
+Date: Tue, 23 Feb 2016 13:28:12 +0100
 From: David Sterba <dsterba@suse.cz>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Cc: Liu Bo <bo.li.liu@oracle.com>, linux-btrfs@vger.kernel.org
+To: Liu Bo <bo.li.liu@oracle.com>
+Cc: linux-btrfs@vger.kernel.org
 Subject: Re: [PATCH 2/2] Btrfs: fix lockdep deadlock warning due to
  dev_replace
-Message-ID: <20160204142508.GE9136@twin.jikos.cz>
+Message-ID: <20160223122812.GL4374@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
 References: <1437122959-23376-1-git-send-email-bo.li.liu@oracle.com>
  <1437122959-23376-2-git-send-email-bo.li.liu@oracle.com>
- <56B30F79.4060907@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <56B30F79.4060907@cn.fujitsu.com>
+In-Reply-To: <1437122959-23376-2-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Feb 04, 2016 at 04:44:41PM +0800, Qu Wenruo wrote:
-> Hi
+On Fri, Jul 17, 2015 at 04:49:19PM +0800, Liu Bo wrote:
+> With this, btrfs/011 no more produces warnings in dmesg.
 > 
-> Will this patch get merged in next merge windows?
-> (Although it should be merged in 4.5 merge window).
-> 
-> I also encountered the same warning, but with fsstress + some sync calls.
+> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
 
-Besides a ping, you can help to get this patch merged by testing or
-reviewing it.
+Patch added to next for 4.6.

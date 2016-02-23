@@ -1,49 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qk0-f170.google.com ([209.85.220.170]:35293 "EHLO
-	mail-qk0-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751799AbcBWSKH (ORCPT
+Received: from magic.merlins.org ([209.81.13.136]:48756 "EHLO
+	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753940AbcBWSac (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 23 Feb 2016 13:10:07 -0500
-Received: by mail-qk0-f170.google.com with SMTP id o6so71459544qkc.2
-        for <linux-btrfs@vger.kernel.org>; Tue, 23 Feb 2016 10:10:07 -0800 (PST)
-Subject: Re: Major HDD performance degradation on btrfs receive
-To: Nazar Mokrynskyi <nazar@mokrynskyi.com>, linux-btrfs@vger.kernel.org
-References: <a55e81de-412b-c269-775d-3f8e0d96d7a9@mokrynskyi.com>
+	Tue, 23 Feb 2016 13:30:32 -0500
+Date: Tue, 23 Feb 2016 10:30:21 -0800
+From: Marc MERLIN <marc@merlins.org>
+To: Lionel Bouton <lionel-subscription@bouton.name>
+Cc: Duncan <1i5t5.duncan@cox.net>, Nazar Mokrynskyi <nazar@mokrynskyi.com>,
+        Alexander Fougner <fougner89@gmail.com>, linux-btrfs@vger.kernel.org
+Message-ID: <20160223183021.GM22487@merlins.org>
+References: <CAGGqMYS=O=zzZE2pK=Stx6OwrZn1Fz59oYBS+jbSHfu4Ovv68Q@mail.gmail.com>
  <04df0eaf-9dc8-b9fa-05cb-020507940bed@mokrynskyi.com>
- <CAGGqMYS=O=zzZE2pK=Stx6OwrZn1Fz59oYBS+jbSHfu4Ovv68Q@mail.gmail.com>
- <4fec7e2f-8464-6a2e-3096-66155f7a58fd@mokrynskyi.com>
- <CAGGqMYQkz0FnU6TFzAqMZf9D3y2-d16xVemoLOW1sC76Eeg-ZA@mail.gmail.com>
- <5ca0c6e3-624e-ebc9-045b-09c5fba9f9a8@mokrynskyi.com>
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <56CCA075.8020409@gmail.com>
-Date: Tue, 23 Feb 2016 13:09:57 -0500
+ <pan$9ab32$bee891f3$832766e9$6d69ce8@cox.net>
+ <20160223172635.GI22487@merlins.org>
+ <20160223173444.GJ22487@merlins.org>
+ <56CC9E90.30509@bouton.name>
 MIME-Version: 1.0
-In-Reply-To: <5ca0c6e3-624e-ebc9-045b-09c5fba9f9a8@mokrynskyi.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <56CC9E90.30509@bouton.name>
+Subject: Re: Major HDD performance degradation on btrfs receive
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2016-02-23 12:34, Nazar Mokrynskyi wrote:
-> Wow, this is interesting, didn't know it.
->
-> I'll probably try noatime instead:)
->
-For what it's worth, due to how it's implemented on almost every UNIX 
-derived system in existence (including Linux), atimes are essentially 
-useless.  A majority of the software that has used them over the years 
-has mad the flawed assumption that the atime only gets updated when the 
-file data is read or modified, when they actually get updated when ever 
-the file data is read or modified, and when the metadata is modified 
-(and in some old UNIX systems, the update on file data modification was 
-simply implemented as a cascade effect from the mtime getting updated). 
-  Mutt is one of the only publicly available programs I know of that 
-uses them, and it makes this same flawed assumption.  The only software 
-I know of that uses them right is tmpwatch and tmpreaper, which use them 
-to clean up /tmp and similar directories when files there haven't been 
-touched in a long time, and even those have the option to not use atimes.
+On Tue, Feb 23, 2016 at 07:01:52PM +0100, Lionel Bouton wrote:
+> Why don't you use autodefrag ? If you have writable snapshots and do
+> write to them heavily it would not be a good idea (depending on how
+> BTRFS handles this in most cases you would probably either break the
+> reflinks or fragment a snapshot to defragment another) but if you only
+> have read-only snapshots it may work for you (it does for me).
+ 
+It's not a stupid question, I had issues with autodefrag in the past,
+and turned it off, but it's been a good 2 years, so maybe it works well
+enough now.
 
-Now, long rant aside, you may want to also look into the 'lazytime' 
-mount option.  It won't reduce fragmentation, but it should improve 
-performance overall, the only downsides are that mtimes might be 
-incorrect after a crash, and it's only available in newer kernels (I 
-think it got added in 4.0 or 4.1, but I'm not certain).
+> The only BTRFS filesystems where I disabled autodefrag where Ceph OSDs
+> with heavy in-place updates. Another option would have been to mark
+> files NoCoW but I didn't want to abandon BTRFS checksumming.
+
+Right. I don't have to worry about COW for virtualbox images there, and
+the snapshots are read only (well, my script makes read-write snapshots
+too, but I almost never use them. Hopefully their presence isn't a
+problem, right?)
+
+Thanks for the suggestion.
+Marc
+-- 
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+Microsoft is to operating systems ....
+                                      .... what McDonalds is to gourmet cooking
+Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901

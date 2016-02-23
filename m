@@ -1,183 +1,230 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.136]:49145 "EHLO mail.kernel.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751096AbcBVRwM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 22 Feb 2016 12:52:12 -0500
-Received: from mail.kernel.org (localhost [127.0.0.1])
-	by mail.kernel.org (Postfix) with ESMTP id D4DBF202C8
-	for <linux-btrfs@vger.kernel.org>; Mon, 22 Feb 2016 17:52:10 +0000 (UTC)
-Received: from debian3.lan (bl8-199-62.dsl.telepac.pt [85.241.199.62])
-	(using TLSv1.2 with cipher AES128-SHA256 (128/128 bits))
-	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPSA id 8E88020274
-	for <linux-btrfs@vger.kernel.org>; Mon, 22 Feb 2016 17:52:09 +0000 (UTC)
-From: fdmanana@kernel.org
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] Btrfs: fix listxattrs not listing all xattrs packed in the same item
-Date: Mon, 22 Feb 2016 17:52:05 +0000
-Message-Id: <1456163525-1098-1-git-send-email-fdmanana@kernel.org>
+Received: from mgwkm02.jp.fujitsu.com ([202.219.69.169]:41183 "EHLO
+	mgwkm02.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752948AbcBWX3v (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 23 Feb 2016 18:29:51 -0500
+Received: from m3050.s.css.fujitsu.com (msm.b.css.fujitsu.com [10.134.21.208])
+	by kw-mxoi1.gw.nic.fujitsu.com (Postfix) with ESMTP id D3F7DAC017A
+	for <linux-btrfs@vger.kernel.org>; Wed, 24 Feb 2016 08:29:46 +0900 (JST)
+Subject: Re: [PATCH] Btrfs: fix listxattrs not listing all xattrs packed in
+ the same item
+To: fdmanana@kernel.org, linux-btrfs@vger.kernel.org
+References: <1456163525-1098-1-git-send-email-fdmanana@kernel.org>
+From: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
+Message-ID: <56CCEB60.4080404@jp.fujitsu.com>
+Date: Wed, 24 Feb 2016 08:29:36 +0900
+MIME-Version: 1.0
+In-Reply-To: <1456163525-1098-1-git-send-email-fdmanana@kernel.org>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Filipe Manana <fdmanana@suse.com>
+On 2016/02/23 2:52, fdmanana@kernel.org wrote:
+> From: Filipe Manana <fdmanana@suse.com>
+>
+> In the listxattrs handler, we were not listing all the xattrs that are
+> packed in the same btree item, which happens when multiple xattrs have
+> a name that when crc32c hashed produce the same checksum value.
+>
+> Fix this by processing them all.
+>
+> The following test case for xfstests reproduces the issue:
+>
+>    seq=`basename $0`
+>    seqres=$RESULT_DIR/$seq
+>    echo "QA output created by $seq"
+>    tmp=/tmp/$$
+>    status=1	# failure is the default!
+>    trap "_cleanup; exit \$status" 0 1 2 3 15
+>
+>    _cleanup()
+>    {
+>        cd /
+>        rm -f $tmp.*
+>    }
+>
+>    # get standard environment, filters and checks
+>    . ./common/rc
+>    . ./common/filter
+>    . ./common/attr
+>
+>    # real QA test starts here
+>    _supported_fs generic
+>    _supported_os Linux
+>    _require_scratch
+>    _require_attrs
+>
+>    rm -f $seqres.full
+>
+>    _scratch_mkfs >>$seqres.full 2>&1
+>    _scratch_mount
+>
+>    # Create our test file with a few xattrs. The first 3 xattrs have a name
+>    # that when given as input to a crc32c function result in the same checksum.
+>    # This made btrfs list only one of the xattrs through listxattrs system call
+>    # (because it packs xattrs with the same name checksum into the same btree
+>    # item).
+>    touch $SCRATCH_MNT/testfile
+>    $SETFATTR_PROG -n user.foobar -v 123 $SCRATCH_MNT/testfile
+>    $SETFATTR_PROG -n user.WvG1c1Td -v qwerty $SCRATCH_MNT/testfile
+>    $SETFATTR_PROG -n user.J3__T_Km3dVsW_ -v hello $SCRATCH_MNT/testfile
+>    $SETFATTR_PROG -n user.something -v pizza $SCRATCH_MNT/testfile
+>    $SETFATTR_PROG -n user.ping -v pong $SCRATCH_MNT/testfile
+>
+>    # Now call getfattr with --dump, which calls the listxattrs system call.
+>    # It should list all the xattrs we have set before.
+>    $GETFATTR_PROG --absolute-names --dump $SCRATCH_MNT/testfile | _filter_scratch
+>
+>    status=0
+>    exit
 
-In the listxattrs handler, we were not listing all the xattrs that are
-packed in the same btree item, which happens when multiple xattrs have
-a name that when crc32c hashed produce the same checksum value.
+Tested-by: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
 
-Fix this by processing them all.
+* chris/integration-4.6(HEAD is 790dd8b)
 
-The following test case for xfstests reproduces the issue:
+=======================================
+# ./check generic/337
+FSTYP         -- btrfs
+PLATFORM      -- Linux/x86_64 fedora23 4.2.7-300.fc23.x86_64
+MKFS_OPTIONS  -- /dev/vdc
+MOUNT_OPTIONS -- -o context=system_u:object_r:nfs_t:s0 /dev/vdc /scratch_mnt
 
-  seq=`basename $0`
-  seqres=$RESULT_DIR/$seq
-  echo "QA output created by $seq"
-  tmp=/tmp/$$
-  status=1	# failure is the default!
-  trap "_cleanup; exit \$status" 0 1 2 3 15
+generic/337      - output mismatch (see /root/xfstests/results//generic/337.out.bad)
+     --- tests/generic/337.out   2016-02-24 07:26:33.000000000 +0900
+     +++ /root/xfstests/results//generic/337.out.bad     2016-02-24 07:43:02.471000000 +0900
+     @@ -1,7 +1,5 @@
+      QA output created by 337
+      # file: SCRATCH_MNT/testfile
+     -user.J3__T_Km3dVsW_="hello"
+     -user.WvG1c1Td="qwerty"
+      user.foobar="123"
+      user.ping="pong"
+      user.something="pizza"
+     ...
+     (Run 'diff -u tests/generic/337.out /root/xfstests/results//generic/337.out.bad'  to see the entire diff)
+Ran: generic/337
+Failures: generic/337
+Failed 1 of 1 tests
+================================================================
 
-  _cleanup()
-  {
-      cd /
-      rm -f $tmp.*
-  }
+* the above source + your patch
 
-  # get standard environment, filters and checks
-  . ./common/rc
-  . ./common/filter
-  . ./common/attr
+============================================================
+# ./check generic/337
+FSTYP         -- btrfs
+PLATFORM      -- Linux/x86_64 fedora23 4.5.0-rc3-ktest+
+MKFS_OPTIONS  -- /dev/vdc
+MOUNT_OPTIONS -- /dev/vdc /scratch_mnt
 
-  # real QA test starts here
-  _supported_fs generic
-  _supported_os Linux
-  _require_scratch
-  _require_attrs
+generic/337      0s
+Ran: generic/337
+Passed all 1 tests
+============================================================
 
-  rm -f $seqres.full
+Thanks,
+Satoru
 
-  _scratch_mkfs >>$seqres.full 2>&1
-  _scratch_mount
-
-  # Create our test file with a few xattrs. The first 3 xattrs have a name
-  # that when given as input to a crc32c function result in the same checksum.
-  # This made btrfs list only one of the xattrs through listxattrs system call
-  # (because it packs xattrs with the same name checksum into the same btree
-  # item).
-  touch $SCRATCH_MNT/testfile
-  $SETFATTR_PROG -n user.foobar -v 123 $SCRATCH_MNT/testfile
-  $SETFATTR_PROG -n user.WvG1c1Td -v qwerty $SCRATCH_MNT/testfile
-  $SETFATTR_PROG -n user.J3__T_Km3dVsW_ -v hello $SCRATCH_MNT/testfile
-  $SETFATTR_PROG -n user.something -v pizza $SCRATCH_MNT/testfile
-  $SETFATTR_PROG -n user.ping -v pong $SCRATCH_MNT/testfile
-
-  # Now call getfattr with --dump, which calls the listxattrs system call.
-  # It should list all the xattrs we have set before.
-  $GETFATTR_PROG --absolute-names --dump $SCRATCH_MNT/testfile | _filter_scratch
-
-  status=0
-  exit
-
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
- fs/btrfs/xattr.c | 62 +++++++++++++++++++++++++++++++++++---------------------
- 1 file changed, 39 insertions(+), 23 deletions(-)
-
-diff --git a/fs/btrfs/xattr.c b/fs/btrfs/xattr.c
-index f2a20d5..caf643d 100644
---- a/fs/btrfs/xattr.c
-+++ b/fs/btrfs/xattr.c
-@@ -260,16 +260,12 @@ out:
- 
- ssize_t btrfs_listxattr(struct dentry *dentry, char *buffer, size_t size)
- {
--	struct btrfs_key key, found_key;
-+	struct btrfs_key key;
- 	struct inode *inode = d_inode(dentry);
- 	struct btrfs_root *root = BTRFS_I(inode)->root;
- 	struct btrfs_path *path;
--	struct extent_buffer *leaf;
--	struct btrfs_dir_item *di;
--	int ret = 0, slot;
-+	int ret = 0;
- 	size_t total_size = 0, size_left = size;
--	unsigned long name_ptr;
--	size_t name_len;
- 
- 	/*
- 	 * ok we want all objects associated with this id.
-@@ -291,6 +287,13 @@ ssize_t btrfs_listxattr(struct dentry *dentry, char *buffer, size_t size)
- 		goto err;
- 
- 	while (1) {
-+		struct extent_buffer *leaf;
-+		int slot;
-+		struct btrfs_dir_item *di;
-+		struct btrfs_key found_key;
-+		u32 item_size;
-+		u32 cur;
-+
- 		leaf = path->nodes[0];
- 		slot = path->slots[0];
- 
-@@ -319,28 +322,41 @@ ssize_t btrfs_listxattr(struct dentry *dentry, char *buffer, size_t size)
- 			goto next;
- 
- 		di = btrfs_item_ptr(leaf, slot, struct btrfs_dir_item);
--		if (verify_dir_item(root, leaf, di))
--			goto next;
--
--		name_len = btrfs_dir_name_len(leaf, di);
--		total_size += name_len + 1;
-+		item_size = btrfs_item_size_nr(leaf, slot);
-+		cur = 0;
-+		while (cur < item_size) {
-+			u16 name_len = btrfs_dir_name_len(leaf, di);
-+			u16 data_len = btrfs_dir_data_len(leaf, di);
-+			u32 this_len = sizeof(*di) + name_len + data_len;
-+			unsigned long name_ptr = (unsigned long)(di + 1);
-+
-+			if (verify_dir_item(root, leaf, di)) {
-+				ret = -EIO;
-+				goto err;
-+			}
- 
--		/* we are just looking for how big our buffer needs to be */
--		if (!size)
--			goto next;
-+			total_size += name_len + 1;
-+			/*
-+			 * We are just looking for how big our buffer needs to
-+			 * be.
-+			 */
-+			if (!size)
-+				goto next;
- 
--		if (!buffer || (name_len + 1) > size_left) {
--			ret = -ERANGE;
--			goto err;
--		}
-+			if (!buffer || (name_len + 1) > size_left) {
-+				ret = -ERANGE;
-+				goto err;
-+			}
- 
--		name_ptr = (unsigned long)(di + 1);
--		read_extent_buffer(leaf, buffer, name_ptr, name_len);
--		buffer[name_len] = '\0';
-+			read_extent_buffer(leaf, buffer, name_ptr, name_len);
-+			buffer[name_len] = '\0';
- 
--		size_left -= name_len + 1;
--		buffer += name_len + 1;
-+			size_left -= name_len + 1;
-+			buffer += name_len + 1;
- next:
-+			cur += this_len;
-+			di = (struct btrfs_dir_item *)((char *)di + this_len);
-+		}
- 		path->slots[0]++;
- 	}
- 	ret = total_size;
--- 
-2.7.0.rc3
-
+>
+> Signed-off-by: Filipe Manana <fdmanana@suse.com>
+> ---
+>   fs/btrfs/xattr.c | 62 +++++++++++++++++++++++++++++++++++---------------------
+>   1 file changed, 39 insertions(+), 23 deletions(-)
+>
+> diff --git a/fs/btrfs/xattr.c b/fs/btrfs/xattr.c
+> index f2a20d5..caf643d 100644
+> --- a/fs/btrfs/xattr.c
+> +++ b/fs/btrfs/xattr.c
+> @@ -260,16 +260,12 @@ out:
+>
+>   ssize_t btrfs_listxattr(struct dentry *dentry, char *buffer, size_t size)
+>   {
+> -	struct btrfs_key key, found_key;
+> +	struct btrfs_key key;
+>   	struct inode *inode = d_inode(dentry);
+>   	struct btrfs_root *root = BTRFS_I(inode)->root;
+>   	struct btrfs_path *path;
+> -	struct extent_buffer *leaf;
+> -	struct btrfs_dir_item *di;
+> -	int ret = 0, slot;
+> +	int ret = 0;
+>   	size_t total_size = 0, size_left = size;
+> -	unsigned long name_ptr;
+> -	size_t name_len;
+>
+>   	/*
+>   	 * ok we want all objects associated with this id.
+> @@ -291,6 +287,13 @@ ssize_t btrfs_listxattr(struct dentry *dentry, char *buffer, size_t size)
+>   		goto err;
+>
+>   	while (1) {
+> +		struct extent_buffer *leaf;
+> +		int slot;
+> +		struct btrfs_dir_item *di;
+> +		struct btrfs_key found_key;
+> +		u32 item_size;
+> +		u32 cur;
+> +
+>   		leaf = path->nodes[0];
+>   		slot = path->slots[0];
+>
+> @@ -319,28 +322,41 @@ ssize_t btrfs_listxattr(struct dentry *dentry, char *buffer, size_t size)
+>   			goto next;
+>
+>   		di = btrfs_item_ptr(leaf, slot, struct btrfs_dir_item);
+> -		if (verify_dir_item(root, leaf, di))
+> -			goto next;
+> -
+> -		name_len = btrfs_dir_name_len(leaf, di);
+> -		total_size += name_len + 1;
+> +		item_size = btrfs_item_size_nr(leaf, slot);
+> +		cur = 0;
+> +		while (cur < item_size) {
+> +			u16 name_len = btrfs_dir_name_len(leaf, di);
+> +			u16 data_len = btrfs_dir_data_len(leaf, di);
+> +			u32 this_len = sizeof(*di) + name_len + data_len;
+> +			unsigned long name_ptr = (unsigned long)(di + 1);
+> +
+> +			if (verify_dir_item(root, leaf, di)) {
+> +				ret = -EIO;
+> +				goto err;
+> +			}
+>
+> -		/* we are just looking for how big our buffer needs to be */
+> -		if (!size)
+> -			goto next;
+> +			total_size += name_len + 1;
+> +			/*
+> +			 * We are just looking for how big our buffer needs to
+> +			 * be.
+> +			 */
+> +			if (!size)
+> +				goto next;
+>
+> -		if (!buffer || (name_len + 1) > size_left) {
+> -			ret = -ERANGE;
+> -			goto err;
+> -		}
+> +			if (!buffer || (name_len + 1) > size_left) {
+> +				ret = -ERANGE;
+> +				goto err;
+> +			}
+>
+> -		name_ptr = (unsigned long)(di + 1);
+> -		read_extent_buffer(leaf, buffer, name_ptr, name_len);
+> -		buffer[name_len] = '\0';
+> +			read_extent_buffer(leaf, buffer, name_ptr, name_len);
+> +			buffer[name_len] = '\0';
+>
+> -		size_left -= name_len + 1;
+> -		buffer += name_len + 1;
+> +			size_left -= name_len + 1;
+> +			buffer += name_len + 1;
+>   next:
+> +			cur += this_len;
+> +			di = (struct btrfs_dir_item *)((char *)di + this_len);
+> +		}
+>   		path->slots[0]++;
+>   	}
+>   	ret = total_size;
+>

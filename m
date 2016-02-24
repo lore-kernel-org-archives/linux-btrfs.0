@@ -1,63 +1,152 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
 Received: from cn.fujitsu.com ([222.73.24.84]:63709 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1752147AbcBXIIs (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 24 Feb 2016 03:08:48 -0500
+	id S1757625AbcBXIIw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 24 Feb 2016 03:08:52 -0500
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: fstests@vger.kernel.org, linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 RESEND 0/5] Btrfs in-band de-duplication tests cases
-Date: Wed, 24 Feb 2016 16:06:31 +0800
-Message-Id: <1456301196-15874-1-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH v2 RESEND 3/5] fstests: btrfs: Add testcase for btrfs dedup enable disable race test
+Date: Wed, 24 Feb 2016 16:06:34 +0800
+Message-Id: <1456301196-15874-4-git-send-email-quwenruo@cn.fujitsu.com>
+In-Reply-To: <1456301196-15874-1-git-send-email-quwenruo@cn.fujitsu.com>
+References: <1456301196-15874-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Since we are push btrfs in-band de-duplication for v4.6, it's better to
-add test cases for this new feature.
+Add test case to check btrfs dedup enable/disable race.
 
-Except the first basic function test, the rest are all regression test
-which we found during the development.
-We also found some bugs from the generic test, but we need some xfstests
-option allowing us to enable dedup for any test case.
-(We did it by hack _scratch_mount and _test_mount to enable dedup for
-any test case)
-
-Use the sequence number starts from 200 to avoid any possible conflicts.
-The new script returns some hole number which is not that proper for
-such related test case set.
-Hopes it's not too hard for maintainer to modify the sequence number.
-
-Qu Wenruo (5):
-  fstests: rename _require_btrfs to _require_btrfs_subcommand
-  fstests: btrfs: Add basic test for btrfs in-band de-duplication
-  fstests: btrfs: Add testcase for btrfs dedup enable disable race test
-  fstests: btrfs: Add per inode dedup flag test
-  fstests: btrfs: Test inband dedup with balance.
-
- common/defrag       |   8 ++++
- common/rc           |   2 +-
- tests/btrfs/004     |   2 +-
- tests/btrfs/048     |   1 +
- tests/btrfs/059     |   1 +
- tests/btrfs/200     | 125 ++++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/200.out |  19 ++++++++
- tests/btrfs/201     | 100 +++++++++++++++++++++++++++++++++++++++++
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+---
+ tests/btrfs/201     | 100 ++++++++++++++++++++++++++++++++++++++++++++++++++++
  tests/btrfs/201.out |   1 +
- tests/btrfs/202     | 116 ++++++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/202.out |  15 +++++++
- tests/btrfs/203     |  91 ++++++++++++++++++++++++++++++++++++++
- tests/btrfs/203.out |   3 ++
- tests/btrfs/group   |   4 ++
- 14 files changed, 486 insertions(+), 2 deletions(-)
- create mode 100755 tests/btrfs/200
- create mode 100644 tests/btrfs/200.out
+ tests/btrfs/group   |   1 +
+ 3 files changed, 102 insertions(+)
  create mode 100755 tests/btrfs/201
  create mode 100644 tests/btrfs/201.out
- create mode 100755 tests/btrfs/202
- create mode 100644 tests/btrfs/202.out
- create mode 100755 tests/btrfs/203
- create mode 100644 tests/btrfs/203.out
 
+diff --git a/tests/btrfs/201 b/tests/btrfs/201
+new file mode 100755
+index 0000000..4bcad13
+--- /dev/null
++++ b/tests/btrfs/201
+@@ -0,0 +1,100 @@
++#! /bin/bash
++# FS QA Test 201
++#
++# Basic btrfs inband dedup enable/disable race test
++#
++#-----------------------------------------------------------------------
++# Copyright (c) 2016 Fujitsu.  All Rights Reserved.
++#
++# This program is free software; you can redistribute it and/or
++# modify it under the terms of the GNU General Public License as
++# published by the Free Software Foundation.
++#
++# This program is distributed in the hope that it would be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write the Free Software Foundation,
++# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++#-----------------------------------------------------------------------
++#
++
++seq=`basename $0`
++seqres=$RESULT_DIR/$seq
++echo "QA output created by $seq"
++
++here=`pwd`
++tmp=/tmp/$$
++status=1	# failure is the default!
++trap "_cleanup; exit \$status" 0 1 2 3 15
++
++_cleanup()
++{
++	cd /
++	rm -f $tmp.*
++	kill $trigger_work &> /dev/null
++	kill $fsstress_work &> /dev/null
++	wait
++}
++
++# get standard environment, filters and checks
++. ./common/rc
++. ./common/filter
++
++# remove previous $seqres.full before test
++rm -f $seqres.full
++
++# real QA test starts here
++
++_supported_fs btrfs
++_supported_os Linux
++_require_scratch
++_require_btrfs_subcommand dedup
++_require_btrfs_fs_feature dedup
++_require_btrfs_mkfs_feature dedup
++
++# Use 64K dedup size to keep compatibility for 64K page size
++dedup_bs=64K
++
++_scratch_mkfs "-O dedup" >> $seqres.full 2>&1
++_scratch_mount
++
++mkdir -p $SCRATCH_MNT/stressdir
++
++fsstress_work()
++{
++	$FSSTRESS_PROG $(_scale_fsstress_args -p 8 -n 5000) $FSSTRESS_AVOID \
++		-d $SCRATCH_MNT/stressdir > /dev/null 2>&1
++}
++
++trigger_work()
++{
++	while true; do
++		_run_btrfs_util_prog dedup enable -s inmemory \
++			-b $dedup_bs $SCRATCH_MNT
++		sleep 5
++		_run_btrfs_util_prog dedup disable $SCRATCH_MNT
++		sleep 5
++		_run_btrfs_util_prog dedup enable -s ondisk \
++			-b $dedup_bs $SCRATCH_MNT
++		sleep 5
++		_run_btrfs_util_prog dedup disable $SCRATCH_MNT
++		sleep 5
++	done
++}
++
++fsstress_work &
++fsstress_pid=$!
++
++trigger_work &
++trigger_pid=$!
++
++wait $fsstress_pid
++kill $trigger_pid
++wait
++
++# success, all done
++status=0
++exit
+diff --git a/tests/btrfs/201.out b/tests/btrfs/201.out
+new file mode 100644
+index 0000000..b8969af
+--- /dev/null
++++ b/tests/btrfs/201.out
+@@ -0,0 +1 @@
++QA output created by 201
+diff --git a/tests/btrfs/group b/tests/btrfs/group
+index 0b7354b..76ebea7 100644
+--- a/tests/btrfs/group
++++ b/tests/btrfs/group
+@@ -120,3 +120,4 @@
+ 117 auto quick send clone
+ 118 auto quick snapshot metadata
+ 200 auto dedup
++201 auto dedup
 -- 
 2.7.1
 

@@ -1,48 +1,54 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lf0-f54.google.com ([209.85.215.54]:33474 "EHLO
-	mail-lf0-f54.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753177AbcBXKBi (ORCPT
+Received: from mail-io0-f174.google.com ([209.85.223.174]:34678 "EHLO
+	mail-io0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754053AbcBXSDS (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 24 Feb 2016 05:01:38 -0500
-Received: by mail-lf0-f54.google.com with SMTP id m1so8409591lfg.0
-        for <linux-btrfs@vger.kernel.org>; Wed, 24 Feb 2016 02:01:37 -0800 (PST)
+	Wed, 24 Feb 2016 13:03:18 -0500
+Received: by mail-io0-f174.google.com with SMTP id 9so51969992iom.1
+        for <linux-btrfs@vger.kernel.org>; Wed, 24 Feb 2016 10:03:18 -0800 (PST)
+Received: from gmail.com (DRMONS0544W-142134058156.dhcp-dynamic.FibreOp.ns.bellaliant.net. [142.134.58.156])
+        by smtp.gmail.com with ESMTPSA id n1sm13507372ige.19.2016.02.24.10.02.54
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLS1 cipher=ECDHE-RSA-AES128-SHA bits=128/128);
+        Wed, 24 Feb 2016 10:02:55 -0800 (PST)
+Date: Wed, 24 Feb 2016 14:02:52 -0400
+From: Kenny MacDermid <kenny.macdermid@gmail.com>
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Subject: Re: Input/Output errors
+Message-ID: <20160224180251.GA5697@gmail.com>
+References: <20160224004045.GA20632@gmail.com>
+ <20160224015658.GY22487@merlins.org>
+ <20160224030236.GA30797@gmail.com>
+ <CAJCQCtQLY-zcz1e8zqNrekEfo1yo9DcDfwR_m4Y8AGaKxV32qg@mail.gmail.com>
 MIME-Version: 1.0
-In-Reply-To: <20160223172635.GI22487@merlins.org>
-References: <CAGGqMYS=O=zzZE2pK=Stx6OwrZn1Fz59oYBS+jbSHfu4Ovv68Q@mail.gmail.com>
- <04df0eaf-9dc8-b9fa-05cb-020507940bed@mokrynskyi.com> <pan$9ab32$bee891f3$832766e9$6d69ce8@cox.net>
- <20160223172635.GI22487@merlins.org>
-From: Patrik Lundquist <patrik.lundquist@gmail.com>
-Date: Wed, 24 Feb 2016 11:01:16 +0100
-Message-ID: <CAA7pwKMkrraeCcusTaKDjinKQ5YPgAyRPoKa+66XOZefYhi8Tg@mail.gmail.com>
-Subject: Re: Major HDD performance degradation on btrfs receive
-To: Marc MERLIN <marc@merlins.org>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <CAJCQCtQLY-zcz1e8zqNrekEfo1yo9DcDfwR_m4Y8AGaKxV32qg@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 23 February 2016 at 18:26, Marc MERLIN <marc@merlins.org> wrote:
->
-> I'm currently doing a very slow defrag to see if it'll help (looks like
-> it's going to take days).
-> I'm doing this:
-> for i in dir1 dir2 debian32 debian64 ubuntu dir4 ; do echo $i; time btrfs fi defragment -v -r $i; done
-[snip]
-> Also, should I try running defragment -r from cron from time to time?
+On Tue, Feb 23, 2016 at 09:37:03PM -0700, Chris Murphy wrote:
+> On Tue, Feb 23, 2016 at 8:02 PM, Kenny MacDermid
+> <kenny.macdermid@gmail.com> wrote:
+> 
+> >
+> > rw,noatime,compress=lzo,ssd,discard,space_cache,autodefrag,inode_cache
+> 
+> It sounds like an ssd trim bug. I'd check the firmware for updates. If
+> it's up to date, I'd drop discard mount option first and try to
+> reproduce. Or just use the default mount options and try to reproduce,
+> then add them back one at a time until you discover the culprit.
 
-I find the default threshold a bit low and defragment daily with "-t
-1m" to combat heavy random write fragmentation.
+Thanks Chris,
 
-Once in a while I defrag e.g. VM disk images with "-t 128m" but find
-higher thresholds mostly a waste of time.
+The disk is a SAMSUNG MZMTE512HMHP-000L1 running f/w: EXT42L0Q. I didn't
+find any updates in my searches.
 
-YMMV.
+I did drop the discard option, and the inode_cache and space_cache ones
+as well. I'm not sure I originally got them from.
 
+Even if it's a disk firmware bug, doesn't it seem like some layer should
+report something about it? Is there any extra logging I should enable in
+case it happens again?
 
-> But, just to be clear, is there a way I missed to see how fragmented my
-> filesystem is without running filefrag on millions of files and parsing
-> the output?
-
-I don't think so, and filefrag is slow with heavily fragmented files
-because ioctl(FS_IOC_FIEMAP) is called many times with a buffer which
-only fits 292 fiemap_extents.
+As I don't have a way to reliable reproduce the error, I'll have to wait
+and see if this helps.

@@ -1,51 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:55012 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752305AbcBXLvs (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 24 Feb 2016 06:51:48 -0500
-Date: Wed, 24 Feb 2016 12:51:37 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Henrik Asp <solenskiner@gmail.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs-progs: restore: make btrfs restore able to read a
- file which lists files to restore
-Message-ID: <20160224115137.GA23746@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1456163603-6712-1-git-send-email-solenskiner@gmail.com>
+Received: from mail-lb0-f180.google.com ([209.85.217.180]:36534 "EHLO
+	mail-lb0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750763AbcBXNBt (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 24 Feb 2016 08:01:49 -0500
+Received: by mail-lb0-f180.google.com with SMTP id x1so9774105lbj.3
+        for <linux-btrfs@vger.kernel.org>; Wed, 24 Feb 2016 05:01:49 -0800 (PST)
+From: Henrik Asp <solenskiner@gmail.com>
+To: dsterba@suse.cz, Henrik Asp <solenskiner@gmail.com>,
+        linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs-progs: restore: make btrfs restore able to read a file which lists files to restore
+Date: Wed, 24 Feb 2016 14:01:46 +0100
+Message-ID: <42857949.PiLisvDqGC@moerta>
+In-Reply-To: <20160224115137.GA23746@twin.jikos.cz>
+References: <1456163603-6712-1-git-send-email-solenskiner@gmail.com> <20160224115137.GA23746@twin.jikos.cz>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1456163603-6712-1-git-send-email-solenskiner@gmail.com>
+Content-Type: text/plain; charset="us-ascii"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Feb 22, 2016 at 06:53:23PM +0100, Henrik Asp wrote:
-> --path-regex' syntax does not map well to restoring specific files.
-> this patch introduces --path-from-file which takes a file listing
-> files to restore.
-> that file is memory mapped, and for every leaf, memmem is used to
-> check if fs_file is in that list.
+On onsdag 24 februari 2016 kl. 12:51:37 CET David Sterba wrote:
 
-Is it supposed to match only full path or also substrings? The way it's
-implemented it can match just part of the path but I'm not sure if this
-is intended or not.
+> Is it supposed to match only full path or also substrings? The way
+> it's implemented it can match just part of the path but I'm not sure
+> if this is intended or not.
+> 
+> Paths in path-from-file:
+> 
+>   /a/b/c/d
+> 
+> In filesystem:
+> 
+>   /backup1/a/b/c/d
+>   /backup2/a/b/c/d
 
-Paths in path-from-file:
+neither /backup1/a/b/c/d nor /backup2/a/b/c/d are substrings of /a/b/c/
+d, so they wouldn't match; /a, /a/b, /a/b/c would match, so the 
+hierarchy ./a/b/c/ is already created where data is rescued to, when d 
+is encountered by search_dir().
 
-  /a/b/c/d
+Thinking about it now, /b/c/d in the filesystem would also match, though. 
+That's clearly wrong.
 
-In filesystem:
+> I'd expect that the path would need to match absolutelly.
+> Alternatively, we could do relative path matching, so:
+> 
+> Paths in path-from-file:
+> 
+>   a/b/c/d
+> 
+> would match both /backup[12].
+> 
+> Either way i find the matching rules ambiguous and not documented.
+> Please clarify.
 
-  /backup1/a/b/c/d
-  /backup2/a/b/c/d
-
-I'd expect that the path would need to match absolutelly. Alternatively,
-we could do relative path matching, so:
-
-Paths in path-from-file:
-
-  a/b/c/d
-
-would match both /backup[12].
-
-Either way i find the matching rules ambiguous and not documented.
-Please clarify.
+Agreed, its ambiguous. And the code unclear. I'll rethink it.

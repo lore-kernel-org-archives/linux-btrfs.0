@@ -1,35 +1,76 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oi0-f41.google.com ([209.85.218.41]:34230 "EHLO
-	mail-oi0-f41.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1757199AbcBXSNf (ORCPT
+Received: from mail-lb0-f170.google.com ([209.85.217.170]:35513 "EHLO
+	mail-lb0-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754043AbcBXWcP (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 24 Feb 2016 13:13:35 -0500
-Received: by mail-oi0-f41.google.com with SMTP id m82so22276529oif.1
-        for <linux-btrfs@vger.kernel.org>; Wed, 24 Feb 2016 10:13:35 -0800 (PST)
-Received: from gmail.com (DRMONS0544W-142134058156.dhcp-dynamic.FibreOp.ns.bellaliant.net. [142.134.58.156])
-        by smtp.gmail.com with ESMTPSA id 4sm1327984igz.2.2016.02.24.10.13.33
-        for <linux-btrfs@vger.kernel.org>
-        (version=TLS1 cipher=ECDHE-RSA-AES128-SHA bits=128/128);
-        Wed, 24 Feb 2016 10:13:33 -0800 (PST)
-Date: Wed, 24 Feb 2016 14:13:31 -0400
-From: Kenny MacDermid <kenny.macdermid@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Subject: Re: Input/Output errors
-Message-ID: <20160224181329.GB5697@gmail.com>
-References: <20160224004045.GA20632@gmail.com>
- <20160224015658.GY22487@merlins.org>
- <20160224030236.GA30797@gmail.com>
- <CAJCQCtQLY-zcz1e8zqNrekEfo1yo9DcDfwR_m4Y8AGaKxV32qg@mail.gmail.com>
- <56CD70A0.30201@dblaci.hu>
+	Wed, 24 Feb 2016 17:32:15 -0500
+Received: by mail-lb0-f170.google.com with SMTP id bc4so18932291lbc.2
+        for <linux-btrfs@vger.kernel.org>; Wed, 24 Feb 2016 14:32:14 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
-In-Reply-To: <56CD70A0.30201@dblaci.hu>
+In-Reply-To: <72cb240a-fdb2-c38b-adb1-2b72847ab29a@mokrynskyi.com>
+References: <a55e81de-412b-c269-775d-3f8e0d96d7a9@mokrynskyi.com>
+	<72cb240a-fdb2-c38b-adb1-2b72847ab29a@mokrynskyi.com>
+Date: Wed, 24 Feb 2016 23:32:13 +0100
+Message-ID: <CAPmG0jZvioaxdr4FNHRQJTDZwuxq5EwUTay+VB=c+hKAzdDGYg@mail.gmail.com>
+Subject: Re: Major HDD performance degradation on btrfs receive
+From: Henk Slager <eye1tm@gmail.com>
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Feb 24, 2016 at 09:58:08AM +0100, Szalma László wrote:
-> - echo 3 > /proc/sys/vm/drop_caches    sometimes fixes the problem, but not
-> every time
+On Tue, Feb 23, 2016 at 6:44 PM, Nazar Mokrynskyi <nazar@mokrynskyi.com> wrote:
+> Looks like btrfstune -x did nothing, probably, it was already used at
+> creation time, I'm using rcX versions of kernel all the time and rolling
+> version of Ubuntu, so this is very likely to be the case.
 
-Interesting. I just had the issue happen with one of my files, tried
-this, and it's now readable again.
+The command    btrfs-show-super   shows the features of the
+filesystem. You have a 'dummy' single profiles on the HDD fs and that
+gives me a hint that you likely have used older tools to create the
+fs. The current kernel does not set this feature flag on disk. If the
+flag was already set, then no difference in performance.
+
+If it was not set, then from now on, new metadata extents should be
+skinny, which saves on total memory size and processing for (the
+larger) filesystems. But for your existing data (snapshot subvolumes
+in your  case) the metadata is then still non-skinny. So you won't
+notice an instant difference only after all exiting fileblocks are
+re-written or removed.
+You will probably have a measurable difference if you equally fill 2
+filesystems, one with and the other without the flag.
+
+> One thing I've noticed is much slower mount/umount on HDD than on SSD:
+>
+>> nazar-pc@nazar-pc ~> time sudo umount /backup
+>> 0.00user 0.00system 0:00.01elapsed 36%CPU (0avgtext+0avgdata
+>> 7104maxresident)k
+>> 0inputs+0outputs (0major+784minor)pagefaults 0swaps
+>> nazar-pc@nazar-pc ~> time sudo mount /backup
+>> 0.00user 0.00system 0:00.03elapsed 23%CPU (0avgtext+0avgdata
+>> 7076maxresident)k
+>> 0inputs+0outputs (0major+803minor)pagefaults 0swaps
+>> nazar-pc@nazar-pc ~> time sudo umount /backup_hdd
+>> 0.00user 0.11system 0:01.04elapsed 11%CPU (0avgtext+0avgdata
+>> 7092maxresident)k
+>> 0inputs+15296outputs (0major+787minor)pagefaults 0swaps
+>> nazar-pc@nazar-pc ~> time sudo mount /backup_hdd
+>> 0.00user 0.02system 0:04.45elapsed 0%CPU (0avgtext+0avgdata
+>> 7140maxresident)k
+>> 14648inputs+0outputs (0major+795minor)pagefaults 0swaps
+>
+> It is especially long (tenth of seconds with hight HDD load) when called
+> after some time, not consequently.
+>
+> Once it took something like 20 seconds to unmount filesystem and around 10
+> seconds to mount it.
+
+Those are quite typical values for an already heavily used btrfs on a HDD.
+
+>> About memory - 16 GiB of RAM should be enough I guess:) Can I measure
+>> somehow if seeking is a problem?
+
+I don't know a tool that can measure seek times and gather statistics
+over and extended period of time and relate that to filesystem
+internal actions. It would be best if all this were done by the HDD
+firmware (under command of the filesystem code). One can make a model
+of it I think, but the question is how good that is for modern drives.

@@ -1,133 +1,65 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:6639 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1756699AbcBXHxz (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 24 Feb 2016 02:53:55 -0500
-Subject: Re: [PATCH 1/5] fstests: Add support to check btrfs sysfs features
-To: <fdmanana@gmail.com>
-References: <1456295716-9589-1-git-send-email-quwenruo@cn.fujitsu.com>
- <1456295716-9589-2-git-send-email-quwenruo@cn.fujitsu.com>
- <CAL3q7H5Vii4TVT9TMsnGMk1dMzF=Z69e-_0m6yE+n5JSgT8_Rw@mail.gmail.com>
-CC: <fstests@vger.kernel.org>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Received: from cn.fujitsu.com ([222.73.24.84]:63709 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1752147AbcBXIIs (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 24 Feb 2016 03:08:48 -0500
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <56CD6188.7000407@cn.fujitsu.com>
-Date: Wed, 24 Feb 2016 15:53:44 +0800
+To: fstests@vger.kernel.org, linux-btrfs@vger.kernel.org
+Subject: [PATCH v2 RESEND 0/5] Btrfs in-band de-duplication tests cases
+Date: Wed, 24 Feb 2016 16:06:31 +0800
+Message-Id: <1456301196-15874-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-In-Reply-To: <CAL3q7H5Vii4TVT9TMsnGMk1dMzF=Z69e-_0m6yE+n5JSgT8_Rw@mail.gmail.com>
-Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Since we are push btrfs in-band de-duplication for v4.6, it's better to
+add test cases for this new feature.
 
+Except the first basic function test, the rest are all regression test
+which we found during the development.
+We also found some bugs from the generic test, but we need some xfstests
+option allowing us to enable dedup for any test case.
+(We did it by hack _scratch_mount and _test_mount to enable dedup for
+any test case)
 
-Filipe Manana wrote on 2016/02/24 07:27 +0000:
-> On Wed, Feb 24, 2016 at 6:35 AM, Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
->> Btrfs has its sysfs interface showing what features current kernel/btrfs
->> module support.
->>
->> Add _require_btrfs_kernel_feature() to check such interface.
->
->
-> I think you sent the wrong patch. This doesn't add such a function and
-> the changes are exactly the same as in:
->
-> [PATCH 1/5] fstests: rename _require_btrfs to _require_btrfs_subcommand
+Use the sequence number starts from 200 to avoid any possible conflicts.
+The new script returns some hole number which is not that proper for
+such related test case set.
+Hopes it's not too hard for maintainer to modify the sequence number.
 
-Oh, this is one old and deprecated patch.
-I forgot to cleanup the dir...
+Qu Wenruo (5):
+  fstests: rename _require_btrfs to _require_btrfs_subcommand
+  fstests: btrfs: Add basic test for btrfs in-band de-duplication
+  fstests: btrfs: Add testcase for btrfs dedup enable disable race test
+  fstests: btrfs: Add per inode dedup flag test
+  fstests: btrfs: Test inband dedup with balance.
 
-Please ignore this one.
+ common/defrag       |   8 ++++
+ common/rc           |   2 +-
+ tests/btrfs/004     |   2 +-
+ tests/btrfs/048     |   1 +
+ tests/btrfs/059     |   1 +
+ tests/btrfs/200     | 125 ++++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/200.out |  19 ++++++++
+ tests/btrfs/201     | 100 +++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/201.out |   1 +
+ tests/btrfs/202     | 116 ++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/202.out |  15 +++++++
+ tests/btrfs/203     |  91 ++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/203.out |   3 ++
+ tests/btrfs/group   |   4 ++
+ 14 files changed, 486 insertions(+), 2 deletions(-)
+ create mode 100755 tests/btrfs/200
+ create mode 100644 tests/btrfs/200.out
+ create mode 100755 tests/btrfs/201
+ create mode 100644 tests/btrfs/201.out
+ create mode 100755 tests/btrfs/202
+ create mode 100644 tests/btrfs/202.out
+ create mode 100755 tests/btrfs/203
+ create mode 100644 tests/btrfs/203.out
 
-The other one, "[PATCH 1/5] fstests: rename _require_btrfs to
-  _require_btrfs_subcommand" is the correct one.
+-- 
+2.7.1
 
-As fstests already provide _btrfs_require_fs_feature().
-
-I'll send the patchset.
-
-Thanks,
-Qu
->
->>
->> Also rename _require_btrfs() to _require_btrfs_subcommand() to avoid
->> confusion.
->
-> So if there's a dedicated patch to do that already (the one I
-> mentioned above), why do it here again? (and should be a separate
-> patch anyway, since it's unrelated)
->
->>
->> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
->> ---
->>   common/rc       | 2 +-
->>   tests/btrfs/004 | 2 +-
->>   tests/btrfs/048 | 1 +
->>   tests/btrfs/059 | 1 +
->>   4 files changed, 4 insertions(+), 2 deletions(-)
->>
->> diff --git a/common/rc b/common/rc
->> index af16c81..ff57862 100644
->> --- a/common/rc
->> +++ b/common/rc
->> @@ -2706,7 +2706,7 @@ _require_deletable_scratch_dev_pool()
->>   }
->>
->>   # We check for btrfs and (optionally) features of the btrfs command
->> -_require_btrfs()
->> +_require_btrfs_subcommand()
->>   {
->>          cmd=$1
->>          _require_command "$BTRFS_UTIL_PROG" btrfs
->> diff --git a/tests/btrfs/004 b/tests/btrfs/004
->> index 905770a..2ce628e 100755
->> --- a/tests/btrfs/004
->> +++ b/tests/btrfs/004
->> @@ -51,7 +51,7 @@ _supported_fs btrfs
->>   _supported_os Linux
->>   _require_scratch
->>   _require_no_large_scratch_dev
->> -_require_btrfs inspect-internal
->> +_require_btrfs_subcommand inspect-internal
->>   _require_command "/usr/sbin/filefrag" filefrag
->>
->>   rm -f $seqres.full
->> diff --git a/tests/btrfs/048 b/tests/btrfs/048
->> index c2cb4a6..d15346a 100755
->> --- a/tests/btrfs/048
->> +++ b/tests/btrfs/048
->> @@ -48,6 +48,7 @@ _supported_os Linux
->>   _require_test
->>   _require_scratch
->>   _require_btrfs "property"
->> +_require_btrfs_subcommand "property"
->>
->>   send_files_dir=$TEST_DIR/btrfs-test-$seq
->>
->> diff --git a/tests/btrfs/059 b/tests/btrfs/059
->> index b9a6ef4..6e7f7ee 100755
->> --- a/tests/btrfs/059
->> +++ b/tests/btrfs/059
->> @@ -51,6 +51,7 @@ _supported_os Linux
->>   _require_test
->>   _require_scratch
->>   _require_btrfs "property"
->> +_require_btrfs_subcommand "property"
->>
->>   rm -f $seqres.full
->>
->> --
->> 2.7.1
->>
->>
->>
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
->
->
 
 

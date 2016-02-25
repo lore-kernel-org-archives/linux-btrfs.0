@@ -1,37 +1,59 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:51620 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751351AbcBXP3F (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 24 Feb 2016 10:29:05 -0500
-Date: Wed, 24 Feb 2016 16:28:52 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Mark Fasheh <mfasheh@suse.de>
-Cc: dsterba@suse.cz, linux-btrfs@vger.kernel.org,
-        David Sterba <dsterba@suse.com>, Chris Mason <clm@fb.com>
-Subject: Re: [PATCH] btrfs-progs: add 'du' command
-Message-ID: <20160224152852.GG23746@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1453326567-20454-1-git-send-email-mfasheh@suse.de>
- <20160201234345.GJ31992@twin.jikos.cz>
- <20160202200921.GH24672@wotan.suse.de>
+Received: from cn.fujitsu.com ([59.151.112.132]:43369 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1758804AbcBYAnK (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 24 Feb 2016 19:43:10 -0500
+Subject: Re: [PATCH 0/5] btrfs-find-root enhancement for chunk tree corrupted
+ fs
+To: <dsterba@suse.cz>, <linux-btrfs@vger.kernel.org>
+References: <1456124397-21403-1-git-send-email-quwenruo@cn.fujitsu.com>
+ <20160224123806.GC23746@twin.jikos.cz>
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Message-ID: <56CE4CE7.3020300@cn.fujitsu.com>
+Date: Thu, 25 Feb 2016 08:37:59 +0800
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20160202200921.GH24672@wotan.suse.de>
+In-Reply-To: <20160224123806.GC23746@twin.jikos.cz>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Feb 02, 2016 at 12:09:21PM -0800, Mark Fasheh wrote:
-> > Otherwise code looks ok, I saw use of uint64_t, the units help can be
-> > extended to the full units set, and maybe other minor things that would
-> > be good to fix. I'll do a more fine grained review when applying the
-> > patches.
-> 
-> Awesome thanks for that, let me know if there's anything I can do to help
-> the process along.
 
-Patches added to devel, I've added the GPL header and did some trivial
-changes, the non-trivial changes go as separate patches.
 
-Please update documentation.
+David Sterba wrote on 2016/02/24 13:38 +0100:
+> On Mon, Feb 22, 2016 at 02:59:52PM +0800, Qu Wenruo wrote:
+>> Before this patchset, btrfs-find-root needs valid chunk tree from the
+>> fs.
+>> However for chunk root corrupted case, btrfs-find-root is of no use due
+>> to above limitation.
+>>
+>> This patchset will allow open_ctree_fs_info() to return a fs_info
+>> without any valid tree root, but system chunk map from superblock only.
+>> And modify btrfs-find-root along with some infrastructure to do chunk
+>> root search.
+>>
+>> Also fix an old bug where btrfs-find-root will always skip the first
+>> chunk, with its corresponding regression test.
+>>
+>> This also provides the basis for later "btrfsck --chunk-root" and faster
+>> chunk-recovery enhancement.
+>>
+>> Qu Wenruo (5):
+>>    btrfs: volume: Fix a bug causing btrfs-find-root to skip first chunk
+>>    btrfs: Allow open_ctree to return fs_info even chunk tree is corrupted
+>>    btrfs: Add support for tree block operations on fs_info without roots.
+>>    btrfs: find-root: Allow btrfs-find-root to search chunk root even
+>>      chunk     root is corrupted
+>>    btrfs: misc-test: Add regression test for find-root gives empty result
+>
+> All applied, with minor adjustments. I'm not going to point them out
+> in the mails, please make a diff against your branch to see.
+>
+>
+Thanks for the modification.
+It's completely OK.
 
-The output can be improved, so the numbers are aligned in columns etc.
+Thanks,
+Qu
+
+

@@ -1,70 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f169.google.com ([209.85.213.169]:37097 "EHLO
-	mail-ig0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S933629AbcBYTx7 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 25 Feb 2016 14:53:59 -0500
-Received: by mail-ig0-f169.google.com with SMTP id z8so21244845ige.0
-        for <linux-btrfs@vger.kernel.org>; Thu, 25 Feb 2016 11:53:59 -0800 (PST)
+Received: from smtp-17.italiaonline.it ([212.48.25.145]:41569 "EHLO libero.it"
+	rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+	id S1751910AbcBYVfp (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 25 Feb 2016 16:35:45 -0500
+Reply-To: kreijack@inwind.it
+Subject: Re: btrfs raid1 filesystem on sdcard corrupted
+References: <nandur$4li$1@ger.gmane.org> <56CF3D78.90705@hsr.ch>
+ <56CF4301.9090601@bouton.name> <nank09$nad$1@ger.gmane.org>
+To: Hegner Robert <rhegner@hsr.ch>, linux-btrfs@vger.kernel.org
+From: Goffredo Baroncelli <kreijack@inwind.it>
+Message-ID: <56CF73AF.70301@inwind.it>
+Date: Thu, 25 Feb 2016 22:35:43 +0100
 MIME-Version: 1.0
 In-Reply-To: <nank09$nad$1@ger.gmane.org>
-References: <nandur$4li$1@ger.gmane.org>
-	<56CF3D78.90705@hsr.ch>
-	<56CF4301.9090601@bouton.name>
-	<nank09$nad$1@ger.gmane.org>
-Date: Thu, 25 Feb 2016 12:53:58 -0700
-Message-ID: <CAJCQCtRtcSFWAnauhMvLOvVjvuY+wNo1Qf5sd+pM_OdTE6cezw@mail.gmail.com>
-Subject: Re: btrfs raid1 filesystem on sdcard corrupted
-From: Chris Murphy <lists@colorremedies.com>
-To: Hegner Robert <rhegner@hsr.ch>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Feb 25, 2016 at 12:18 PM, Hegner Robert <rhegner@hsr.ch> wrote:
->The idea with the btrfs-raid1 came from
-> (http://unix.stackexchange.com/a/186954) and it made perfect sense to me to
-> use a filesystem which is designed with flash-memory in mind and to use
-> raid1 to achieve some redundancy. But it looks like this was wrong
-> thinking...
+Hi Robert,
 
-I'd say Lionel is right in that these cards have a lot of reliability
-problems, but a big part of that is fake flash. You might test your
-cards to see if they are looping on themselves, i.e. lying about how
-big they really are and what happens is as they get only partly full
-they're really totally full and start overwriting themselves.
+On 2016-02-25 20:18, Hegner Robert wrote:
+[...]
+> So, in your experience 1) Which are the SDcards we can trust in?
+> (brand? model?)
 
-If these two systems are essentially identically configured (same size
-flash, even if they aren't both raid1 configurations; and were setup
-on about the same day or week with the same kinds of workload being
-done) then it's plausible they both ran out of real space at the same
-time and face plant.
+For this kind of use you should look to an "industrial grade" SD cards. But these are quite expensive (we are talking about 50€ for 4GB....). Our supplier suggested us the ATP sd cards [*].
 
-For a GUI app that can test the flash quickly:
-https://blogs.gnome.org/hughsie/2015/01/28/detecting-fake-flash/
+I tested a NON industrial grade sdcard with simulated power failure; my test showed that this card fails quite early (about hundreds of cycles).
+I have to point out that "industrial grade" is a generic definition. Unfortunately I was unable to find a more detailed spec.
 
-For CLI app that not as fast (it works differently, not sure if it's
-better or not), look for the F3 package.
-http://oss.digirati.com.br/f3/
+> 2) What would be a better way (with or without the use of btrfs) to
+> make an embedded system more robust against power failures and
+> flash-memory-wearing?
 
-I think if you find good quality flash your idea of using Btrfs raid1
-either DUP or separate flash cards for embedded use is OK. I mean,
-it's what we have, even if it's not ideal. If it turns out there's
-some evidence a lot of flash out there totally face plants when the
-write pattern is substantially different than FAT32/64 then that
-suggests to me Btrfs needs a new (additional) ssd write allocator that
-more closely mimics FAT32 while still of course being COW and all
-that. But I suspect you've just got a bad batch of flash - I've got
-some PNY, Lexar, Kingston flash here that I use with Btrfs (for years
-now some of them) and don't have problems.
+If it is possible to avoid don't write on the storage Don't log. Leave the filesystem "read only" and switch to read/write only when you have to write; after the write re-switch the filesystem RO. This cannot prevent the damage of the card, but could reduce the likelihood of the damage.
 
-And for development depending on Btrfs, I really do think you should
-consider a much newer kernel. Fedora 23 (current release) is on kernel
-4.4.2 using the normal default stable updates repo. So it's not like
-you have to be adding on separate repos or manually installing
-packages to get new kernels.
+I never tested the internal flash of these boards. May be that this flash is more reliable...
 
+BR
+G.Baroncelli
+
+[*] "http://www.digikey.com/product-search/en?mpart=AF8GUDI-OEM&vendor=1282"
 
 -- 
-Chris Murphy
+gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
+Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5

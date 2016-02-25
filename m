@@ -1,95 +1,153 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:43369 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1753293AbcBYAnI (ORCPT
+Received: from mail-oi0-f65.google.com ([209.85.218.65]:36257 "EHLO
+	mail-oi0-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1759722AbcBYI5v (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 24 Feb 2016 19:43:08 -0500
-Subject: Re: [PATCH 5/5] btrfs-progs: misc-test: Add regression test for
- find-root gives empty result
-To: <dsterba@suse.cz>, <linux-btrfs@vger.kernel.org>
-References: <1456124397-21403-1-git-send-email-quwenruo@cn.fujitsu.com>
- <1456124397-21403-6-git-send-email-quwenruo@cn.fujitsu.com>
- <20160224121051.GB23746@twin.jikos.cz>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <56CE4CA9.6080106@cn.fujitsu.com>
-Date: Thu, 25 Feb 2016 08:36:57 +0800
+	Thu, 25 Feb 2016 03:57:51 -0500
+Received: by mail-oi0-f65.google.com with SMTP id w71so2169890oia.3
+        for <linux-btrfs@vger.kernel.org>; Thu, 25 Feb 2016 00:57:51 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <20160224121051.GB23746@twin.jikos.cz>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+In-Reply-To: <1453326567-20454-3-git-send-email-mfasheh@suse.de>
+References: <1453326567-20454-1-git-send-email-mfasheh@suse.de>
+	<1453326567-20454-3-git-send-email-mfasheh@suse.de>
+Date: Thu, 25 Feb 2016 03:57:51 -0500
+Message-ID: <CALJXSJoatg4G8YnJxk=oRJzS2vJXyJoWceNFeEZqoK_7vfdbPw@mail.gmail.com>
+Subject: Re: [PATCH 2/3] btrfs-progs: add 'du' command
+From: =?UTF-8?B?SsOpcsO0bWUgUG91bGlu?= <jeromepoulin@gmail.com>
+To: Mark Fasheh <mfasheh@suse.de>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Wed, Jan 20, 2016 at 4:49 PM, Mark Fasheh <mfasheh@suse.de> wrote:
+> 'btrfs du' differs from regular du in that it will work to resolve which
+> blocks are shared between files in its list. This gives the user a more
+> accurate bytecount from which they can make decisions regarding management
+> of their file space.
 
 
-David Sterba wrote on 2016/02/24 13:10 +0100:
-> On Mon, Feb 22, 2016 at 02:59:57PM +0800, Qu Wenruo wrote:
->> zA}GrL`3QeIdg)w^i(C5r-$jn2OSESOZGFpc5^m2cCgLRjc8Y&wBj@6PxG<e;@Q)<_
->> Mne-=t|1Sdn0?V+~RR910
->>
->> literal 0
->> HcmV?d00001
->>
->> diff --git a/tests/misc-tests/012-find-root-no-result/test.sh b/tests/misc-tests/012-find-root-no-result/test.sh
->> new file mode 100644
->> index 0000000..4951633
->> --- /dev/null
->> +++ b/tests/misc-tests/012-find-root-no-result/test.sh
->> @@ -0,0 +1,20 @@
->> +#!/bin/bash
->> +# Regression test for case btrfs-find-root may print no result on a
->> +# recent fs or balanced fs, whose metadata chunk is the first chunk
->> +# and the only metadata chunk
->> +
->> +source $TOP/tests/common
->> +
->> +check_prereq btrfs-find-root
->> +check_prereq btrfs-image
->> +
->> +$TOP/btrfs-image -r first_meta_chunk.btrfs-image test.img || \
->> +	_fail "failed to extract first_meta_chunk.btrfs-image"
->> +
->> +result=$($TOP/btrfs-find-root test.img | sed '/^Superblock/d')
->> +
->> +if [ -z "$result" ]; then
->> +	_fail "btrfs-find-root failed to find tree root"
->> +fi
->> +
->> +rm test.img
->
-> Applied with following fixups:
->
-> --- a/tests/misc-tests/012-find-root-no-result/test.sh
-> +++ b/tests/misc-tests/012-find-root-no-result/test.sh
-> @@ -8,13 +8,17 @@ source $TOP/tests/common
->   check_prereq btrfs-find-root
->   check_prereq btrfs-image
->
-> -$TOP/btrfs-image -r first_meta_chunk.btrfs-image test.img || \
-> +run_check $TOP/btrfs-image -r first_meta_chunk.btrfs-image test.img || \
->          _fail "failed to extract first_meta_chunk.btrfs-image"
->
+Would it be a good idea for this new du to show the compressed file size too?
 
-Thanks, I just forget that we have run_check suffix to handle errors.
+It was not made by me but I know I had this patch lying around, it
+also does not compile right now but I could give it an update. The
+wiki says this patch was "not merged yet" but I have no idea why it
+was not since it was working correctly 2 years ago on my machine.
 
-> -result=$($TOP/btrfs-find-root test.img | sed '/^Superblock/d')
-> +result=$(run_check_stdout $TOP/btrfs-find-root test.img | sed '/^Superblock/d')
->
->   if [ -z "$result" ]; then
->          _fail "btrfs-find-root failed to find tree root"
->   fi
->
-> +if ! echo "$result" | grep -q 'Found tree root at'; then
-> +       _fail "btrfs-find-root failed to find tree root, unexpected output"
-> +fi
-> +
-Right, if btrfs-find-root failed to find the tree root matches with 
-superblock, it's also a bug.
+---
+ fs/btrfs/ioctl.c           | 77 ++++++++++++++++++++++++++++++++++++++++++++++
+ include/uapi/linux/btrfs.h |  2 ++
+ 2 files changed, 79 insertions(+)
 
-Thanks,
-Qu
->   rm test.img
->
->
->
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index da94138..1c6285b 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -4499,6 +4499,81 @@ static int build_ino_list(u64 inum, u64 offset,
+u64 root, void *ctx)
+     return 0;
+ }
 
-
++/*
++ * Returns the compressed size of an inode in 512 byte blocks.
++ * Count the on-disk space used by extents starting in range [start, end),
++ * inline data are rounded up to sector, ie. 512.
++ *
++ * The range is start inclusive and end exclusive so it can be used to
++ * determine compressed size of a given extent by its start and start of the
++ * next extent easily, without counting length.
++ * Whole file is specified as start = 0, end = (u64)-1
++ */
++static long btrfs_ioctl_compr_size(struct file *file, void __user *argp)
++{
++    struct inode *inode = fdentry(file)->d_inode;
++    struct btrfs_ioctl_compr_size_args compr_args;
++    u64 len;
++    u64 compressed_size = 0;
++    u64 offset = 0;
++
++    if (S_ISDIR(inode->i_mode))
++        return -EISDIR;
++
++    if (copy_from_user(&compr_args, argp,
++                sizeof(struct btrfs_ioctl_compr_size_args)))
++        return -EFAULT;
++
++    if (compr_args.start > compr_args.end)
++        return -EINVAL;
++
++    mutex_lock(&inode->i_mutex);
++
++    offset = compr_args.start;
++    if (inode->i_size > compr_args.end)
++        len = compr_args.end;
++    else
++        len = inode->i_size;
++
++    /*
++     * do any pending delalloc/csum calc on inode, one way or
++     * another, and lock file content
++     */
++    btrfs_wait_ordered_range(inode, compr_args.start, len);
++
++    while (offset < len) {
++        struct extent_map *em;
++
++        em = btrfs_get_extent(inode, NULL, 0, offset, 1, 0);
++        if (IS_ERR_OR_NULL(em))
++            goto error;
++        if (em->block_len != (u64)-1)
++            compressed_size += em->block_len;
++        else if (em->block_start == EXTENT_MAP_INLINE) {
++            compressed_size += ALIGN(em->len, 512);
++        }
++        offset += em->len;
++        free_extent_map(em);
++    }
++    mutex_unlock(&inode->i_mutex);
++
++    unlock_extent(&BTRFS_I(inode)->io_tree, compr_args.start, len);
++
++    compr_args.size = compressed_size >> 9;
++
++    if (copy_to_user(argp, &compr_args, sizeof(struct
++                    btrfs_ioctl_compr_size_args)))
++        return -EFAULT;
++
++    return 0;
++
++error:
++    mutex_unlock(&inode->i_mutex);
++    unlock_extent(&BTRFS_I(inode)->io_tree, compr_args.start, len);
++
++    return -EIO;
++}
++
+ static long btrfs_ioctl_logical_to_ino(struct btrfs_root *root,
+                     void __user *arg)
+ {
+@@ -5532,6 +5607,8 @@ long btrfs_ioctl(struct file *file, unsigned int
+         return btrfs_ioctl_scrub_progress(root, argp);
+     case BTRFS_IOC_BALANCE_V2:
+         return btrfs_ioctl_balance(file, argp);
++    case BTRFS_IOC_COMPR_SIZE:
++        return btrfs_ioctl_compr_size(file, argp);
+     case BTRFS_IOC_BALANCE_CTL:
+         return btrfs_ioctl_balance_ctl(root, arg);
+     case BTRFS_IOC_BALANCE_PROGRESS:
+diff --git a/include/uapi/linux/btrfs.h b/include/uapi/linux/btrfs.h
+index dea8931..cd52cda 100644
+--- a/include/uapi/linux/btrfs.h
++++ b/include/uapi/linux/btrfs.h
+@@ -647,6 +647,8 @@ static inline char *btrfs_err_str(enum
+btrfs_err_code err_code)
+                    char[BTRFS_LABEL_SIZE])
+ #define BTRFS_IOC_SET_FSLABEL _IOW(BTRFS_IOCTL_MAGIC, 50, \
+                    char[BTRFS_LABEL_SIZE])
++#define BTRFS_IOC_COMPR_SIZE _IOR(BTRFS_IOCTL_MAGIC, 51, \
++                struct btrfs_ioctl_compr_size_args)
+ #define BTRFS_IOC_GET_DEV_STATS _IOWR(BTRFS_IOCTL_MAGIC, 52, \
+                       struct btrfs_ioctl_get_dev_stats)
+ #define BTRFS_IOC_DEV_REPLACE _IOWR(BTRFS_IOCTL_MAGIC, 53, \
+-- 
+2.7.0

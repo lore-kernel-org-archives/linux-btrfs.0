@@ -1,72 +1,86 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f175.google.com ([209.85.223.175]:34761 "EHLO
-	mail-io0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754946AbcBZUhM (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 26 Feb 2016 15:37:12 -0500
+Received: from mx2.suse.de ([195.135.220.15]:34920 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1755177AbcBZUh0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 26 Feb 2016 15:37:26 -0500
+From: Stanislav Brabec <sbrabec@suse.cz>
 Subject: Re: loop subsystem corrupted after mounting multiple btrfs
  sub-volumes
-To: Al Viro <viro@ZenIV.linux.org.uk>
+To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>,
+        Al Viro <viro@ZenIV.linux.org.uk>
 References: <56CF5490.7040102@suse.cz> <56D04630.1020809@gmail.com>
  <56D0743F.9040102@suse.cz> <56D07FAF.3080605@gmail.com>
  <20160226175311.GC17997@ZenIV.linux.org.uk> <56D0A38B.3050701@suse.cz>
- <56D0B007.2050106@gmail.com> <20160226203010.GD17997@ZenIV.linux.org.uk>
-Cc: Stanislav Brabec <sbrabec@suse.cz>, linux-kernel@vger.kernel.org,
-        Jens Axboe <axboe@kernel.dk>,
+ <56D0B007.2050106@gmail.com>
+Cc: linux-kernel@vger.kernel.org, Jens Axboe <axboe@kernel.dk>,
         Btrfs BTRFS <linux-btrfs@vger.kernel.org>,
         David Sterba <dsterba@suse.cz>
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <56D0B736.2050904@gmail.com>
-Date: Fri, 26 Feb 2016 15:36:06 -0500
+Message-ID: <56D0B782.20606@suse.cz>
+Date: Fri, 26 Feb 2016 21:37:22 +0100
 MIME-Version: 1.0
-In-Reply-To: <20160226203010.GD17997@ZenIV.linux.org.uk>
-Content-Type: text/plain; charset=windows-1252; format=flowed
+In-Reply-To: <56D0B007.2050106@gmail.com>
+Content-Type: text/plain; charset=windows-1252
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2016-02-26 15:30, Al Viro wrote:
-> On Fri, Feb 26, 2016 at 03:05:27PM -0500, Austin S. Hemmelgarn wrote:
->>> Where is /mnt/2?
->> It's kind of interesting, but I can't reproduce _any_ of this
->> behavior with either ext4 or BTRFS when I manually set up the loop
->> devices and point mount(8) at those instead of using -o loop on a
->> file. That really seems to indicate that this is caused by something
->> mount(8) is doing when it's calling losetup. I'm running a mostly
->> unmodified version of 4.4.2 (the only modification that would come
->> even remotely close to this is that I changed the default mount
->> options for everything from relatime to noatime), and util-linux
->> 2.27.1 from Gentoo.
->
-> Sigh...  sys_mount() (mount_bdev(), actually) has no way to tell if two
-> loop devices refer to the same underlying object.  As far as it's
-> concerned, you are asking to mount a completely unrelated block device.
-> Which just happens to see the data (living in separate pagecache, even)
-> modified behind its back (with some delay) after it gets written to another
-> device.  Filesystem drivers generally don't like when something is screwing
-> the underlying data, to put it mildly...
->
-> When you ask to mount the _same_ device, mount_bdev(), as well as btrfs
-> counterpart, makes sure that you get a reference to the same struct
-> super_block, which avoids all coherency problems - all mounted instances
-> refer to the same in-core objects (dentries, inodes, page cache, etc.).
-> They get separate struct vfsmount instances, but that only matters for
-> mountpoint crossing.
->
-> As soon as you've set the second /dev/loop alias for the same underlying
-> file, you are asking for all kinds of trouble.  If you use the same one
-> consistently, you are OK.  BTW, even
-> losetup /dev/loop0 /dev/sda1
-> mount -t ext2 /dev/sda1 /mnt/1
-> mount -t ext2 /dev/loop0 /mnt/2
-> is enough for trouble - you get (as far as ext2 knows) unrelated devices
-> screwing each other, with no good way to predict that.  And you need to
-> check propagation through more than one layer - loop over loop over block
-> is also possible.
->
-> IMO on-demand losetup a-la -o loop is simply a bad idea...
->
-I agree wholeheartedly and wasn't disputing any of this, I meant I'm not 
-seeing any of the odd mount(2) or /proc/self/mountinfo behavior that 
-Stanislav started the thread about.  It was entirely trivial to get the 
-filesystem images I used into a state where they couldn't be mounted 
-again afterwards.
+On Feb 26, 2016 at 21:05 Austin S. Hemmelgarn wrote:
+
+> It's kind of interesting, but I can't reproduce _any_ of this behavior
+> with either ext4 or BTRFS when I manually set up the loop devices and
+> point mount(8) at those instead of using -o loop on a file. That really
+> seems to indicate that this is caused by something mount(8) is doing
+> when it's calling losetup.
+
+Behavior of "-oloop" is more similar to "losetup -f /fs.img"? than to
+"losetup /dev/loop0 /fs.img".
+
+Anyway, I can reproduce without -oloop:
+# losetup /dev/loop0 /btrfs.img
+# mount /dev/loop0 /mnt/1
+# grep /mnt /proc/self/mountinfo
+107 59 0:59 /d0/dd0/ddd0/s1/d1/dd1/ddd1/s2 /mnt/1 rw,relatime shared:45 - btrfs /dev/loop0 rw,space_cache,subvolid=257,subvol=/d0/dd0/ddd0/s1/d1/dd1/ddd1/s2
+# losetup /dev/loop1 /btrfs.img
+# mount -osubvol=/ /dev/loop1 /mnt/2
+# grep /mnt /proc/self/mountinfo
+107 59 0:59 /d0/dd0/ddd0/s1/d1/dd1/ddd1/s2 /mnt/1 rw,relatime shared:45 - btrfs /dev/loop1 rw,space_cache,subvolid=257,subvol=/d0/dd0/ddd0/s1/d1/dd1/ddd1/s2
+108 59 0:59 / /mnt/2 rw,relatime shared:48 - btrfs /dev/loop1 rw,space_cache,subvolid=5,subvol=/
+# uname -a
+Linux oct 4.4.1-1-default #1 SMP PREEMPT Mon Feb 15 11:03:27 UTC 2016 (6398c2d) x86_64 x86_64 x86_64 GNU/Linux
+
+(Note that the system was freshly rebooted. After other experiments,
+the second line of mountinfo can be missing completely.)
+
+>> 2) mount(2) called after the reproducer returns OK but does nothing.
+>>
+> OK, we've determined that mount(2) is misbehaving.  That doesn't change
+> the fact that mount(8) is triggering this, and therefore should itself
+> be corrected.
+
+> Assume that mount(2) gets fixed so it doesn't lose it's
+> mind and /proc/self/mountinfo doesn't change.  There will still be
+> issues resulting from mount(8)'s behavior:
+> 1. BTRFS will lose it's mind and corrupt data when using a multi-device
+> filesystem (due to the problems with duplicate FS UUID's).
+> 2. XFS might have similar issues to 1 when using metadata checksumming,
+> although it's more likely that it won't allow the second mount to succeed.
+> 3. Most other filesystems will likely end up corrupting data.
+
+Do I understand, that you are saying:
+
+Yes, mounting multiple loop devices associated with one file is a
+legitimate use, but mount(8) should never do it, because it has other
+ugly side effects?
+
+OK, it looks like a next task for mount(8) to fix.
+
+-- 
+Best Regards / S pozdravem,
+
+Stanislav Brabec
+software developer
+---------------------------------------------------------------------
+SUSE LINUX, s. r. o.                         e-mail: sbrabec@suse.com
+Lihovarská 1060/12                            tel: +49 911 7405384547
+190 00 Praha 9                                 fax:  +420 284 084 001
+Czech Republic                                    http://www.suse.cz/
+PGP: 830B 40D5 9E05 35D8 5E27 6FA3 717C 209F A04F CD76

@@ -1,108 +1,76 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:61479 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1752115AbcB2BRJ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 28 Feb 2016 20:17:09 -0500
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-To: clm@fb.com, linux-btrfs@vger.kernel.org
-Subject: [PULL][v7 REBASED 00/20] Btrfs In-band de-duplication
-Date: Mon, 29 Feb 2016 09:14:54 +0800
-Message-Id: <1456708494-8852-1-git-send-email-quwenruo@cn.fujitsu.com>
-MIME-Version: 1.0
+Received: from mail.kernel.org ([198.145.29.136]:36154 "EHLO mail.kernel.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751449AbcBZNNh (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 26 Feb 2016 08:13:37 -0500
+Received: from mail.kernel.org (localhost [127.0.0.1])
+	by mail.kernel.org (Postfix) with ESMTP id 83EB22039E
+	for <linux-btrfs@vger.kernel.org>; Fri, 26 Feb 2016 13:13:36 +0000 (UTC)
+Received: from debian3.lan (bl8-199-62.dsl.telepac.pt [85.241.199.62])
+	(using TLSv1.2 with cipher AES128-SHA256 (128/128 bits))
+	(No client certificate requested)
+	by mail.kernel.org (Postfix) with ESMTPSA id 6782E20394
+	for <linux-btrfs@vger.kernel.org>; Fri, 26 Feb 2016 13:13:35 +0000 (UTC)
+From: fdmanana@kernel.org
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH] Btrfs: do not collect ordered extents when logging that inode exists
+Date: Fri, 26 Feb 2016 04:35:49 +0000
+Message-Id: <1456461349-17957-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Chris,
+From: Filipe Manana <fdmanana@suse.com>
 
-Would you please consider to merge the rebased version of btrfs in-band
-de-duplication for 4.6 merge window?
+When logging that an inode exists, for example as part of a directory
+fsync operation, we were collecting any ordered extents for the inode but
+we ended up doing nothing with them except tagging them as processed, by
+setting the flag BTRFS_ORDERED_LOGGED on them, which prevented a
+subsequent fsync of that inode (using the LOG_INODE_ALL mode) from
+collecting and processing them. This created a time window where a second
+fsync against the inode, using the fast path, ended up not logging the
+checksums for the new extents but it logged the extents since they were
+part of the list of modified extents. This happened because the ordered
+extents were not collected and checksums were not yet added to the csum
+tree - the ordered extents have not gone through btrfs_finish_ordered_io()
+yet (which is where we add them to the csum tree by calling
+inode.c:add_pending_csums()).
 
-The pull can be fetched from github:
-https://github.com/adam900710/linux.git wang_dedup_20160229
+So fix this by not collecting an inode's ordered extents if we are logging
+it with the LOG_INODE_EXISTS mode.
 
-We have tested previous v7 patchset for one week and found no new
-in-band de-duplication bug.
-The rebase itself can be done by git automatically without any manual
-edit.
-So we assume that's good enough for 4.6 merge window.
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+ fs/btrfs/tree-log.c | 17 ++++++++++++++++-
+ 1 file changed, 16 insertions(+), 1 deletion(-)
 
-Main features:
-1) 2 different backend for in-band de-duplication
-   In-memory backend with more fine tuning and theoretically faster hash
-   search.
-   On-disk backend with persist hash storage.
-
-2) Tunable in-band dedup block size
-   Let user to determine the balance between fragmentation and
-   performance.
-
-3) Per inode dedup disable
-   Make things more flex.
-
-4) Re-use compression routine
-   Which is much cleaner than old(v4 and older) version
-
-We have ran the whole xfstests with dedup enabled, although most
-regression test won't be able to trigger in-band dedup and fallback to
-normal routine, but some stress test did expose some bugs for us to fix.
-
-Also, we have submitted in-band dedup specific regression test case,
-which we found during the development.
-
-Personally I really hope this function can be merged so we can get
-enough feedback to further polish the UI related minor design.
-
-Thanks,
-Qu
-
-Qu Wenruo (7):
-  btrfs: delayed-ref: Add support for increasing data ref under spinlock
-  btrfs: dedup: Inband in-memory only de-duplication implement
-  btrfs: dedup: Add basic tree structure for on-disk dedup method
-  btrfs: dedup: Introduce interfaces to resume and cleanup dedup info
-  btrfs: dedup: Add support for on-disk hash search
-  btrfs: dedup: Add support to delete hash for on-disk backend
-  btrfs: dedup: Add support for adding hash for on-disk backend
-
-Wang Xiaoguang (13):
-  btrfs: dedup: Introduce dedup framework and its header
-  btrfs: dedup: Introduce function to initialize dedup info
-  btrfs: dedup: Introduce function to add hash into in-memory tree
-  btrfs: dedup: Introduce function to remove hash from in-memory tree
-  btrfs: dedup: Introduce function to search for an existing hash
-  btrfs: dedup: Implement btrfs_dedup_calc_hash interface
-  btrfs: ordered-extent: Add support for dedup
-  btrfs: dedup: Add ioctl for inband deduplication
-  btrfs: dedup: add an inode nodedup flag
-  btrfs: dedup: add a property handler for online dedup
-  btrfs: dedup: add per-file online dedup control
-  btrfs: try more times to alloc metadata reserve space
-  btrfs: dedup: Fix a bug when running inband dedup with balance
-
- fs/btrfs/Makefile            |    2 +-
- fs/btrfs/ctree.h             |   73 ++-
- fs/btrfs/dedup.c             | 1146 ++++++++++++++++++++++++++++++++++++++++++
- fs/btrfs/dedup.h             |  167 ++++++
- fs/btrfs/delayed-ref.c       |   30 +-
- fs/btrfs/delayed-ref.h       |    8 +
- fs/btrfs/disk-io.c           |   23 +-
- fs/btrfs/disk-io.h           |    1 +
- fs/btrfs/extent-tree.c       |   41 +-
- fs/btrfs/inode.c             |  183 ++++++-
- fs/btrfs/ioctl.c             |   70 ++-
- fs/btrfs/ordered-data.c      |   43 +-
- fs/btrfs/ordered-data.h      |   13 +
- fs/btrfs/props.c             |   40 ++
- fs/btrfs/relocation.c        |   13 +
- fs/btrfs/sysfs.c             |    2 +
- include/trace/events/btrfs.h |    3 +-
- include/uapi/linux/btrfs.h   |   24 +
- 18 files changed, 1839 insertions(+), 43 deletions(-)
- create mode 100644 fs/btrfs/dedup.c
- create mode 100644 fs/btrfs/dedup.h
-
+diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+index 9f6372d..9d2e8ec 100644
+--- a/fs/btrfs/tree-log.c
++++ b/fs/btrfs/tree-log.c
+@@ -4500,7 +4500,22 @@ static int btrfs_log_inode(struct btrfs_trans_handle *trans,
+ 
+ 	mutex_lock(&BTRFS_I(inode)->log_mutex);
+ 
+-	btrfs_get_logged_extents(inode, &logged_list, start, end);
++	/*
++	 * Collect ordered extents only if we are logging data. This is to
++	 * ensure a subsequent request to log this inode in LOG_INODE_ALL mode
++	 * will process the ordered extents if they still exists at the time,
++	 * because when we collect them we test and set for the flag
++	 * BTRFS_ORDERED_LOGGED to prevent multiple log requests to process the
++	 * same ordered extents. The consequence for the LOG_INODE_ALL log mode
++	 * not processing the ordered extents is that we end up logging the
++	 * corresponding file extent items, based on the extent maps in the
++	 * inode's extent_map_tree's modified_list, without logging the
++	 * respective checksums (since the may still be only attached to the
++	 * ordered extents and have not been inserted in the csum tree by
++	 * btrfs_finish_ordered_io() yet).
++	 */
++	if (inode_only == LOG_INODE_ALL)
++		btrfs_get_logged_extents(inode, &logged_list, start, end);
+ 
+ 	/*
+ 	 * a brute force approach to making sure we get the most uptodate
 -- 
-2.7.2
-
-
+2.7.0.rc3
 

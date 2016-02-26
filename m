@@ -1,77 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:34920 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:36008 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1755177AbcBZUh0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 26 Feb 2016 15:37:26 -0500
-From: Stanislav Brabec <sbrabec@suse.cz>
+	id S1755268AbcBZVAw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 26 Feb 2016 16:00:52 -0500
 Subject: Re: loop subsystem corrupted after mounting multiple btrfs
  sub-volumes
-To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>,
-        Al Viro <viro@ZenIV.linux.org.uk>
+To: Al Viro <viro@ZenIV.linux.org.uk>,
+        "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
 References: <56CF5490.7040102@suse.cz> <56D04630.1020809@gmail.com>
  <56D0743F.9040102@suse.cz> <56D07FAF.3080605@gmail.com>
  <20160226175311.GC17997@ZenIV.linux.org.uk> <56D0A38B.3050701@suse.cz>
- <56D0B007.2050106@gmail.com>
+ <56D0B007.2050106@gmail.com> <20160226203010.GD17997@ZenIV.linux.org.uk>
 Cc: linux-kernel@vger.kernel.org, Jens Axboe <axboe@kernel.dk>,
         Btrfs BTRFS <linux-btrfs@vger.kernel.org>,
         David Sterba <dsterba@suse.cz>
-Message-ID: <56D0B782.20606@suse.cz>
-Date: Fri, 26 Feb 2016 21:37:22 +0100
+From: Stanislav Brabec <sbrabec@suse.cz>
+Message-ID: <56D0BCFC.5020302@suse.cz>
+Date: Fri, 26 Feb 2016 22:00:44 +0100
 MIME-Version: 1.0
-In-Reply-To: <56D0B007.2050106@gmail.com>
-Content-Type: text/plain; charset=windows-1252
+In-Reply-To: <20160226203010.GD17997@ZenIV.linux.org.uk>
+Content-Type: text/plain; charset=windows-1252; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Feb 26, 2016 at 21:05 Austin S. Hemmelgarn wrote:
+On Feb 26, 2016 at 21:30 Al Viro wrote:
+> IMO on-demand losetup a-la -o loop is simply a bad idea...
 
-> It's kind of interesting, but I can't reproduce _any_ of this behavior
-> with either ext4 or BTRFS when I manually set up the loop devices and
-> point mount(8) at those instead of using -o loop on a file. That really
-> seems to indicate that this is caused by something mount(8) is doing
-> when it's calling losetup.
+So the correct behavior of -o loop should:
 
-Behavior of "-oloop" is more similar to "losetup -f /fs.img"? than to
-"losetup /dev/loop0 /fs.img".
+Check, whether another mount command already did losetup.
 
-Anyway, I can reproduce without -oloop:
-# losetup /dev/loop0 /btrfs.img
-# mount /dev/loop0 /mnt/1
-# grep /mnt /proc/self/mountinfo
-107 59 0:59 /d0/dd0/ddd0/s1/d1/dd1/ddd1/s2 /mnt/1 rw,relatime shared:45 - btrfs /dev/loop0 rw,space_cache,subvolid=257,subvol=/d0/dd0/ddd0/s1/d1/dd1/ddd1/s2
-# losetup /dev/loop1 /btrfs.img
-# mount -osubvol=/ /dev/loop1 /mnt/2
-# grep /mnt /proc/self/mountinfo
-107 59 0:59 /d0/dd0/ddd0/s1/d1/dd1/ddd1/s2 /mnt/1 rw,relatime shared:45 - btrfs /dev/loop1 rw,space_cache,subvolid=257,subvol=/d0/dd0/ddd0/s1/d1/dd1/ddd1/s2
-108 59 0:59 / /mnt/2 rw,relatime shared:48 - btrfs /dev/loop1 rw,space_cache,subvolid=5,subvol=/
-# uname -a
-Linux oct 4.4.1-1-default #1 SMP PREEMPT Mon Feb 15 11:03:27 UTC 2016 (6398c2d) x86_64 x86_64 x86_64 GNU/Linux
+If not, allocate new loop device.
 
-(Note that the system was freshly rebooted. After other experiments,
-the second line of mountinfo can be missing completely.)
+If yes, reuse existing loop device.
 
->> 2) mount(2) called after the reproducer returns OK but does nothing.
->>
-> OK, we've determined that mount(2) is misbehaving.  That doesn't change
-> the fact that mount(8) is triggering this, and therefore should itself
-> be corrected.
+Well, it seems to be safe, even if the loop device was not allocated by 
+mount(8) itself, as
+ioctl(fd, LOOP_CLR_FD)
+never returns EBUSY:
 
-> Assume that mount(2) gets fixed so it doesn't lose it's
-> mind and /proc/self/mountinfo doesn't change.  There will still be
-> issues resulting from mount(8)'s behavior:
-> 1. BTRFS will lose it's mind and corrupt data when using a multi-device
-> filesystem (due to the problems with duplicate FS UUID's).
-> 2. XFS might have similar issues to 1 when using metadata checksumming,
-> although it's more likely that it won't allow the second mount to succeed.
-> 3. Most other filesystems will likely end up corrupting data.
+# losetup /dev/loop2 /ext4.img
+# mount /dev/loop2 /mnt
+# strace losetup -d /dev/loop2 2>&1 | tail -n7 | head -n3
+open("/dev/loop2", O_RDONLY|O_CLOEXEC)  = 3
+ioctl(3, LOOP_CLR_FD)                   = 0
+close(3)                                = 0
 
-Do I understand, that you are saying:
+If the recycling "alien" loop devices will not be considered as a good 
+idea, then (if possible):
 
-Yes, mounting multiple loop devices associated with one file is a
-legitimate use, but mount(8) should never do it, because it has other
-ugly side effects?
+If the loop device was allocated by mount(8) itself, recycle it.
 
-OK, it looks like a next task for mount(8) to fix.
+If the loop device was not allocated by mount(8) itself, return error.
 
 -- 
 Best Regards / S pozdravem,

@@ -1,70 +1,106 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from torres.zugschlus.de ([85.214.131.164]:47786 "EHLO
-	torres.zugschlus.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755826AbcB0Vgw (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:49778 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756728AbcB0W6O (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 27 Feb 2016 16:36:52 -0500
-Received: from mh by torres.zugschlus.de with local (Exim 4.84)
-	(envelope-from <mh+linux-btrfs@zugschlus.de>)
-	id 1aZmCQ-0001Fp-HZ
-	for linux-btrfs@vger.kernel.org; Sat, 27 Feb 2016 22:14:50 +0100
-Date: Sat, 27 Feb 2016 22:14:50 +0100
-From: Marc Haber <mh+linux-btrfs@zugschlus.de>
-To: linux-btrfs@vger.kernel.org
-Subject: Again, no space left on device while rebalancing and recipe  doesnt
- work
-Message-ID: <20160227211450.GS26042@torres.zugschlus.de>
+	Sat, 27 Feb 2016 17:58:14 -0500
+Subject: Re: btrfs check --repair is clean, but mount fails
+To: Marc MERLIN <marc@merlins.org>, Liu Bo <bo.li.liu@oracle.com>
+References: <20160227023938.GB5286@merlins.org>
+ <20160227024533.GB11954@localhost.localdomain>
+ <20160227030304.GC5286@merlins.org>
+Cc: linux-btrfs@vger.kernel.org
+From: Anand Jain <anand.jain@oracle.com>
+Message-ID: <56D229F8.5080002@oracle.com>
+Date: Sun, 28 Feb 2016 06:58:00 +0800
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
+In-Reply-To: <20160227030304.GC5286@merlins.org>
+Content-Type: text/plain; charset=windows-1252; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
-
-I have again the issue of no space left on device while rebalancing
-(with btrfs-tools 4.4.1 on kernel 4.4.2 on Debian unstable):
-
-mh@fan:~$ sudo btrfs balance start /mnt/fanbtr
-ERROR: error during balancing '/mnt/fanbtr': No space left on device
-mh@fan:~$ sudo btrfs fi show /mnt/fanbtr
-mh@fan:~$ sudo btrfs fi show -m
-Label: 'fanbtr'  uuid: 4198d1bc-e3ce-40df-a7ee-44a2d120bff3
-        Total devices 1 FS bytes used 116.49GiB
-        devid    1 size 417.19GiB used 177.06GiB path /dev/mapper/fanbtr
-mh@fan:~$ sudo btrfs fi df /mnt/fanbtr
-Data, single: total=113.00GiB, used=112.77GiB
-System, DUP: total=32.00MiB, used=48.00KiB
-Metadata, DUP: total=32.00GiB, used=3.72GiB
-GlobalReserve, single: total=512.00MiB, used=0.00B
-mh@fan:~$
-
-The filesystem was recently resized from 300 GB to 420 GB.
-
-Why does btrfs fi show /mnt/fanbtr not give any output? Wy does btrfs
-fi df /mnt/fanbtr say that my data space is only 113 GiB large?
-
-btrfs balance start -dusage=5 works up to -dusage=100:
-
-mh@fan:~$ sudo btrfs balance start -dusage=100 /mnt/fanbtr
-Done, had to relocate 111 out of 179 chunks
-mh@fan:~$ sudo btrfs balance start -dusage=100 /mnt/fanbtr
-Done, had to relocate 111 out of 179 chunks
-mh@fan:~$ sudo btrfs balance start -dusage=100 /mnt/fanbtr
-Done, had to relocate 110 out of 179 chunks
-mh@fan:~$ sudo btrfs balance start -dusage=100 /mnt/fanbtr
-Done, had to relocate 109 out of 179 chunks
-mh@fan:~$ sudo btrfs balance start /mnt/fanbtr
-ERROR: error during balancing '/mnt/fanbtr': No space left on device
-mh@fan:~$
-
-What is going on here? How do I get away from here?
-
-Greetings
-Marc
 
 
--- 
------------------------------------------------------------------------------
-Marc Haber         | "I don't trust Computers. They | Mailadresse im Header
-Leimen, Germany    |  lose things."    Winona Ryder | Fon: *49 6224 1600402
-Nordisch by Nature |  How to make an American Quilt | Fax: *49 6224 1600421
+On 02/27/2016 11:03 AM, Marc MERLIN wrote:
+> On Fri, Feb 26, 2016 at 06:45:34PM -0800, Liu Bo wrote:
+>> On Fri, Feb 26, 2016 at 06:39:38PM -0800, Marc MERLIN wrote:
+>>> btrfs-tools 4.4-1
+>>> gargamel:~# uname -r
+>>> 4.4.2-amd64-i915-volpreempt-20160214bc2
+>>>
+>>> 2 drive array stopped working after a crash/reboot. Check --repair finds nothing wrong with it:
+>>>
+>>> gargamel:~# btrfs check --repair /dev/mapper/raid0d1
+>>> enabling repair mode
+>>> Checking filesystem on /dev/mapper/raid0d1
+>>> UUID: 01334b81-c0db-4e80-92e4-cac4da867651
+>>> checking extents
+>>> Fixed 0 roots.
+>>> checking free space cache
+>>> cache and super generation don't match, space cache will be invalidated
+>>> checking fs roots
+>>> checking csums
+>>> checking root refs
+>>> found 1201345524312 bytes used err is 0
+>>> total csum bytes: 1165124220
+>>> total tree bytes: 8258322432
+>>> total fs tree bytes: 5574197248
+>>> total extent tree bytes: 1020428288
+>>> btree space waste bytes: 1902023247
+>>> file data blocks allocated: 1193398628352
+>>>   referenced 1209324777472
+>>> gargamel:~# mount /var/local/space
+>>> mount: wrong fs type, bad option, bad superblock on /dev/mapper/raid0d1,
+>>>         missing codepage or helper program, or other error
+>>>         In some cases useful info is found in syslog - try
+>>>         dmesg | tail  or so
+>>> [ 8200.511021] BTRFS info (device dm-6): disk space caching is enabled
+>>> [ 8200.533030] BTRFS: failed to read the system array on dm-6
+>>> [ 8200.582097] BTRFS: open_ctree failed
+>>
+>> Does 'btrfs dev scan' help?
+>
+> Oh my, it does...
+> gargamel:~# btrfs dev scan
+> Scanning for Btrfs filesystems
+> gargamel:~# mount /var/local/space
+>
+> [14477.028083] BTRFS: device label btrfs_space devid 2 transid 776784 /dev/mapper/raid0d2
+> [14500.262307] BTRFS info (device dm-7): disk space caching is enabled
+> [14504.042485] BTRFS: checking UUID tree
+>
+> Err, I'm very perplexed now. I already have a scan in my boot process after device decrypts.
+
+   Can you log the output of blkid here. If blkid output does
+   not report all the btrfs devs correctly the kernel won't know
+   as well.
+
+Thanks, Anand
+
+
+> Somehow it saw one of my 2 devices, but not the other one?
+>
+> I'm looking at my boot:
+> [  112.063677] BTRFS: device label btrfs_space devid 1 transid 776782 /dev/mapper/raid0d1
+> [  112.090192] BTRFS info (device dm-6): disk space caching is enabled
+> [  112.111740] BTRFS: failed to read the system array on dm-6
+> [  112.160047] BTRFS: open_ctree failed
+> [  112.269710] BTRFS info (device dm-6): disk space caching is enabled
+> [  112.291430] BTRFS: failed to read the system array on dm-6
+> [  112.320104] BTRFS: open_ctree failed
+>
+> So dm-6 is: raid0d1 -> ../dm-6
+>
+> So, raid0d1 had an issue, btrfs check didn't really report any, for some unknown
+> reason this caused raid0d2 not to be scanned, and in turn this caused
+> mounting that filesystem to fail?
+>
+> Or did btrfs check actually fix something that I missed?
+> Any why would scan have missed raid0d2 the first time around?
+>
+> Is it complaining that it can't read btrfs structures from raid0d1 because raid0d2
+> wasn't known yet? I'm not too sure what open_ctree means in that context.
+>
+> Thanks,
+> Marc
+>

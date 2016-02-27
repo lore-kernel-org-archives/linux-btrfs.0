@@ -1,97 +1,234 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from magic.merlins.org ([209.81.13.136]:33980 "EHLO
-	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755861AbcB0DDF (ORCPT
+Received: from mout.gmx.net ([212.227.17.20]:54328 "EHLO mout.gmx.net"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753521AbcB0JL3 convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 26 Feb 2016 22:03:05 -0500
-Date: Fri, 26 Feb 2016 19:03:04 -0800
-From: Marc MERLIN <marc@merlins.org>
-To: Liu Bo <bo.li.liu@oracle.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: btrfs check --repair is clean, but mount fails
-Message-ID: <20160227030304.GC5286@merlins.org>
-References: <20160227023938.GB5286@merlins.org> <20160227024533.GB11954@localhost.localdomain>
+	Sat, 27 Feb 2016 04:11:29 -0500
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20160227024533.GB11954@localhost.localdomain>
+Message-ID: <trinity-bf6c2c0d-170a-40b8-9658-c5ed72e8b58f-1456564286770@3capp-gmx-bs71>
+From: "Jan Koester" <jan.koester@gmx.net>
+To: linux-btrfs@vger.kernel.org
+Subject: cannot repair raid6 volume rescue zero-log crashed
+Content-Type: text/plain; charset=UTF-8
+Date: Sat, 27 Feb 2016 10:11:26 +0100
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Feb 26, 2016 at 06:45:34PM -0800, Liu Bo wrote:
-> On Fri, Feb 26, 2016 at 06:39:38PM -0800, Marc MERLIN wrote:
-> > btrfs-tools 4.4-1
-> > gargamel:~# uname -r
-> > 4.4.2-amd64-i915-volpreempt-20160214bc2
-> > 
-> > 2 drive array stopped working after a crash/reboot. Check --repair finds nothing wrong with it:
-> > 
-> > gargamel:~# btrfs check --repair /dev/mapper/raid0d1
-> > enabling repair mode
-> > Checking filesystem on /dev/mapper/raid0d1
-> > UUID: 01334b81-c0db-4e80-92e4-cac4da867651
-> > checking extents
-> > Fixed 0 roots.
-> > checking free space cache
-> > cache and super generation don't match, space cache will be invalidated
-> > checking fs roots
-> > checking csums
-> > checking root refs
-> > found 1201345524312 bytes used err is 0
-> > total csum bytes: 1165124220
-> > total tree bytes: 8258322432
-> > total fs tree bytes: 5574197248
-> > total extent tree bytes: 1020428288
-> > btree space waste bytes: 1902023247
-> > file data blocks allocated: 1193398628352
-> >  referenced 1209324777472
-> > gargamel:~# mount /var/local/space
-> > mount: wrong fs type, bad option, bad superblock on /dev/mapper/raid0d1,
-> >        missing codepage or helper program, or other error
-> >        In some cases useful info is found in syslog - try
-> >        dmesg | tail  or so
-> > [ 8200.511021] BTRFS info (device dm-6): disk space caching is enabled
-> > [ 8200.533030] BTRFS: failed to read the system array on dm-6
-> > [ 8200.582097] BTRFS: open_ctree failed
-> 
-> Does 'btrfs dev scan' help?
- 
-Oh my, it does...
-gargamel:~# btrfs dev scan
-Scanning for Btrfs filesystems
-gargamel:~# mount /var/local/space
+Hi,
+ 
+cannot recover my home filesystem.
+ 
+Linux dibsi 4.2.0-30-generic #35-Ubuntu SMP Fri Feb 19 13:52:26 UTC 2016 x86_64 x86_64 x86_64 GNU/Linux
+ 
+btrfs --version
+btrfs-progs v4.4
 
-[14477.028083] BTRFS: device label btrfs_space devid 2 transid 776784 /dev/mapper/raid0d2
-[14500.262307] BTRFS info (device dm-7): disk space caching is enabled
-[14504.042485] BTRFS: checking UUID tree
+btrfs fi show
+Label: 'root'  uuid: 3d279e92-d021-4a57-92b8-db3bfcbba79d
+        Total devices 1 FS bytes used 74.47GiB
+        devid    1 size 111.79GiB used 82.02GiB path /dev/sdf1
 
-Err, I'm very perplexed now. I already have a scan in my boot process after device decrypts. 
-Somehow it saw one of my 2 devices, but not the other one?
+Label: none  uuid: 73d4dc77-6ff3-412f-9b0a-0d11458faf32
+        Total devices 5 FS bytes used 1.17TiB
+        devid    1 size 931.51GiB used 420.78GiB path /dev/sdb
+        devid    2 size 931.51GiB used 420.78GiB path /dev/sdc
+        devid    3 size 931.51GiB used 420.78GiB path /dev/sdd
+        devid    4 size 931.51GiB used 420.78GiB path /dev/sde
+        devid    5 size 931.51GiB used 420.78GiB path /dev/sda
 
-I'm looking at my boot:
-[  112.063677] BTRFS: device label btrfs_space devid 1 transid 776782 /dev/mapper/raid0d1
-[  112.090192] BTRFS info (device dm-6): disk space caching is enabled
-[  112.111740] BTRFS: failed to read the system array on dm-6
-[  112.160047] BTRFS: open_ctree failed
-[  112.269710] BTRFS info (device dm-6): disk space caching is enabled
-[  112.291430] BTRFS: failed to read the system array on dm-6
-[  112.320104] BTRFS: open_ctree failed
+ 
+btrfs rescue zero-log:
 
-So dm-6 is: raid0d1 -> ../dm-6
-
-So, raid0d1 had an issue, btrfs check didn't really report any, for some unknown 
-reason this caused raid0d2 not to be scanned, and in turn this caused
-mounting that filesystem to fail?
-
-Or did btrfs check actually fix something that I missed?
-Any why would scan have missed raid0d2 the first time around?
-
-Is it complaining that it can't read btrfs structures from raid0d1 because raid0d2
-wasn't known yet? I'm not too sure what open_ctree means in that context.
-
-Thanks,
-Marc
--- 
-"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
-Microsoft is to operating systems ....
-                                      .... what McDonalds is to gourmet cooking
-Home page: http://marc.merlins.org/  
+root@dibsi:/home/jan# gdb --args btrfs rescue zero-log /dev/disk/by-uuid/73d4dc77-6ff3-412f-9b0a-0d11458faf32
+GNU gdb (Ubuntu 7.10-1ubuntu2) 7.10
+Copyright (C) 2015 Free Software Foundation, Inc.
+License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html[https://deref-gmx.net/mail/client/dereferrer/?redirectUrl=http%3A%2F%2Fgnu.org%2Flicenses%2Fgpl.html]>
+This is free software: you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law.  Type "show copying"
+and "show warranty" for details.
+This GDB was configured as "x86_64-linux-gnu".
+Type "show configuration" for configuration details.
+For bug reporting instructions, please see:
+<http://www.gnu.org/software/gdb/bugs/[https://deref-gmx.net/mail/client/dereferrer/?redirectUrl=http%3A%2F%2Fwww.gnu.org%2Fsoftware%2Fgdb%2Fbugs%2F]>.
+Find the GDB manual and other documentation resources online at:
+<http://www.gnu.org/software/gdb/documentation/[https://deref-gmx.net/mail/client/dereferrer/?redirectUrl=http%3A%2F%2Fwww.gnu.org%2Fsoftware%2Fgdb%2Fdocumentation%2F]>.
+For help, type "help".
+Type "apropos word" to search for commands related to "word"...
+Reading symbols from btrfs...done.
+(gdb) r
+Starting program: /usr/local/bin/btrfs rescue zero-log /dev/disk/by-uuid/73d4dc77-6ff3-412f-9b0a-0d11458faf32
+[Thread debugging using libthread_db enabled]
+Using host libthread_db library "/lib/x86_64-linux-gnu/libthread_db.so.1".
+parent transid verify failed on 2280450637824 wanted 861168 found 860380
+parent transid verify failed on 2280450637824 wanted 861168 found 860380
+checksum verify failed on 2280450637824 found BF5F5D16 wanted AE725F92
+checksum verify failed on 2280450637824 found BF5F5D16 wanted AE725F92
+bytenr mismatch, want=2280450637824, have=15938376490240
+Clearing log on /dev/disk/by-uuid/73d4dc77-6ff3-412f-9b0a-0d11458faf32, previous log_root 2280534142976, level 0
+parent transid verify failed on 2280260939776 wanted 861166 found 860368
+parent transid verify failed on 2280260939776 wanted 861166 found 860368
+checksum verify failed on 2280260939776 found 816E966C wanted CB60A223
+checksum verify failed on 2280260939776 found 816E966C wanted CB60A223
+bytenr mismatch, want=2280260939776, have=15937230354176
+parent transid verify failed on 2280260939776 wanted 861166 found 860368
+parent transid verify failed on 2280260939776 wanted 861166 found 860368
+checksum verify failed on 2280260939776 found 816E966C wanted CB60A223
+checksum verify failed on 2280260939776 found 816E966C wanted CB60A223
+bytenr mismatch, want=2280260939776, have=15937230354176
+parent transid verify failed on 2280260939776 wanted 861166 found 860368
+parent transid verify failed on 2280260939776 wanted 861166 found 860368
+checksum verify failed on 2280260939776 found 816E966C wanted CB60A223
+checksum verify failed on 2280260939776 found 816E966C wanted CB60A223
+bytenr mismatch, want=2280260939776, have=15937230354176
+parent transid verify failed on 2280260939776 wanted 861166 found 860368
+parent transid verify failed on 2280260939776 wanted 861166 found 860368
+checksum verify failed on 2280260939776 found 816E966C wanted CB60A223
+checksum verify failed on 2280260939776 found 816E966C wanted CB60A223
+bytenr mismatch, want=2280260939776, have=15937230354176
+parent transid verify failed on 2280260939776 wanted 861166 found 860368
+parent transid verify failed on 2280260939776 wanted 861166 found 860368
+checksum verify failed on 2280260939776 found 816E966C wanted CB60A223
+checksum verify failed on 2280260939776 found 816E966C wanted CB60A223
+bytenr mismatch, want=2280260939776, have=15937230354176
+parent transid verify failed on 2280260939776 wanted 861166 found 860368
+parent transid verify failed on 2280260939776 wanted 861166 found 860368
+checksum verify failed on 2280260939776 found 816E966C wanted CB60A223
+checksum verify failed on 2280260939776 found 816E966C wanted CB60A223
+bytenr mismatch, want=2280260939776, have=15937230354176
+parent transid verify failed on 2280260939776 wanted 861166 found 860368
+parent transid verify failed on 2280260939776 wanted 861166 found 860368
+checksum verify failed on 2280260939776 found 816E966C wanted CB60A223
+checksum verify failed on 2280260939776 found 816E966C wanted CB60A223
+bytenr mismatch, want=2280260939776, have=15937230354176
+parent transid verify failed on 2280260939776 wanted 861166 found 860368
+parent transid verify failed on 2280260939776 wanted 861166 found 860368
+checksum verify failed on 2280260939776 found 816E966C wanted CB60A223
+checksum verify failed on 2280260939776 found 816E966C wanted CB60A223
+bytenr mismatch, want=2280260939776, have=15937230354176
+parent transid verify failed on 2280260939776 wanted 861166 found 860368
+parent transid verify failed on 2280260939776 wanted 861166 found 860368
+checksum verify failed on 2280260939776 found 816E966C wanted CB60A223
+checksum verify failed on 2280260939776 found 816E966C wanted CB60A223
+bytenr mismatch, want=2280260939776, have=15937230354176
+parent transid verify failed on 2280260939776 wanted 861166 found 860368
+parent transid verify failed on 2280260939776 wanted 861166 found 860368
+checksum verify failed on 2280260939776 found 816E966C wanted CB60A223
+checksum verify failed on 2280260939776 found 816E966C wanted CB60A223
+bytenr mismatch, want=2280260939776, have=15937230354176
+parent transid verify failed on 2280260939776 wanted 861166 found 860368
+parent transid verify failed on 2280260939776 wanted 861166 found 860368
+checksum verify failed on 2280260939776 found 816E966C wanted CB60A223
+checksum verify failed on 2280260939776 found 816E966C wanted CB60A223
+bytenr mismatch, want=2280260939776, have=15937230354176
+parent transid verify failed on 2280260939776 wanted 861166 found 860368
+parent transid verify failed on 2280260939776 wanted 861166 found 860368
+checksum verify failed on 2280260939776 found 816E966C wanted CB60A223
+checksum verify failed on 2280260939776 found 816E966C wanted CB60A223
+bytenr mismatch, want=2280260939776, have=15937230354176
+btrfs unable to find ref byte nr 2280388792320 parent 0 root 2  owner 3 offset 0
+parent transid verify failed on 2280394903552 wanted 861168 found 860376
+parent transid verify failed on 2280394903552 wanted 861168 found 860376
+checksum verify failed on 2280394903552 found 49326465 wanted 1DF607C0
+checksum verify failed on 2280394903552 found 49326465 wanted 1DF607C0
+bytenr mismatch, want=2280394903552, have=15938169211392
+btrfs unable to find ref byte nr 2280244973568 parent 0 root 2  owner 0 offset 0
+parent transid verify failed on 2280389988352 wanted 861168 found 860375
+parent transid verify failed on 2280389988352 wanted 861168 found 860375
+checksum verify failed on 2280389988352 found 9EFF3657 wanted C933E8C1
+checksum verify failed on 2280389988352 found 9EFF3657 wanted C933E8C1
+bytenr mismatch, want=2280389988352, have=15938306902528
+btrfs unable to find ref byte nr 2280388808704 parent 0 root 2  owner 2 offset 0
+parent transid verify failed on 2280389992448 wanted 861168 found 860375
+parent transid verify failed on 2280389992448 wanted 861168 found 860375
+checksum verify failed on 2280389992448 found 1AF14813 wanted B3ED8CAB
+checksum verify failed on 2280389992448 found 1AF14813 wanted B3ED8CAB
+bytenr mismatch, want=2280389992448, have=15938306939392
+btrfs unable to find ref byte nr 2280388935680 parent 0 root 2  owner 1 offset 0
+Failed to find [2280445247488, 168, 4096]
+btrfs unable to find ref byte nr 2280445247488 parent 0 root 2  owner 0 offset 0
+Failed to find [2280463486976, 168, 4096]
+btrfs unable to find ref byte nr 2280463486976 parent 0 root 2  owner 1 offset 0
+Failed to find [2280463491072, 168, 4096]
+btrfs unable to find ref byte nr 2280463491072 parent 0 root 2  owner 0 offset 0
+parent transid verify failed on 2280458645504 wanted 861168 found 860380
+parent transid verify failed on 2280458645504 wanted 861168 found 860380
+checksum verify failed on 2280458645504 found 609E8D90 wanted 62B88736
+checksum verify failed on 2280458645504 found 609E8D90 wanted 62B88736
+bytenr mismatch, want=2280458645504, have=15938383793408
+btrfs unable to find ref byte nr 2280458211328 parent 0 root 1  owner 1 offset 0
+parent transid verify failed on 2280458645504 wanted 861168 found 860380
+parent transid verify failed on 2280458645504 wanted 861168 found 860380
+checksum verify failed on 2280458645504 found 609E8D90 wanted 62B88736
+checksum verify failed on 2280458645504 found 609E8D90 wanted 62B88736
+bytenr mismatch, want=2280458645504, have=15938383793408
+parent transid verify failed on 2280458645504 wanted 861168 found 860380
+parent transid verify failed on 2280458645504 wanted 861168 found 860380
+checksum verify failed on 2280458645504 found 609E8D90 wanted 62B88736
+checksum verify failed on 2280458645504 found 609E8D90 wanted 62B88736
+bytenr mismatch, want=2280458645504, have=15938383793408
+Program received signal SIGSEGV, Segmentation fault.
+alloc_reserved_tree_block (trans=trans@entry=0x69b230, root=root@entry=0x69c850, root_objectid=root_objectid@entry=1,
+    generation=generation@entry=861169, flags=flags@entry=0, key=key@entry=0x7fffffffe070, level=0, ins=0x7fffffffdf50) at extent-tree.c:2731
+warning: Source file is more recent than executable.
+2731            extent_item = btrfs_item_ptr(leaf, path->slots[0],
+(gdb) bt
+#0  alloc_reserved_tree_block (trans=trans@entry=0x69b230, root=root@entry=0x69c850, root_objectid=root_objectid@entry=1,
+    generation=generation@entry=861169, flags=flags@entry=0, key=key@entry=0x7fffffffe070, level=0, ins=0x7fffffffdf50) at extent-tree.c:2731
+#1  0x000000000044b2a9 in alloc_tree_block (ins=0x7fffffffdf50, search_end=18446744073709551615, hint_byte=2279553892352, empty_size=0,
+    level=0, key=0x7fffffffe070, flags=0, generation=861169, root_objectid=1, num_bytes=4096, root=0x69c850, trans=0x69b230)
+    at extent-tree.c:2794
+#2  btrfs_alloc_free_block (trans=trans@entry=0x69b230, root=root@entry=0x69c850, blocksize=4096, root_objectid=1,
+    key=key@entry=0x7fffffffe070, level=level@entry=0, hint=2279553892352, empty_size=0) at extent-tree.c:2817
+#3  0x000000000043a55c in __btrfs_cow_block (trans=0x69b230, root=0x69c850, buf=0x6b1260, parent=0x6c3d40, parent_slot=0,
+    cow_ret=0x7fffffffe2a8, search_start=2279553892352, empty_size=0) at ctree.c:278
+#4  0x000000000043afe1 in btrfs_cow_block (trans=trans@entry=0x69b230, root=root@entry=0x69c850, buf=<optimized out>,
+    parent=<optimized out>, parent_slot=<optimized out>, cow_ret=cow_ret@entry=0x7fffffffe2a8) at ctree.c:371
+#5  0x000000000043da90 in btrfs_search_slot (trans=trans@entry=0x69b230, root=root@entry=0x69c850, key=key@entry=0x69cc77,
+    p=p@entry=0x6cefe0, ins_len=ins_len@entry=0, cow=cow@entry=1) at ctree.c:1122
+#6  0x000000000044f3a9 in btrfs_update_root (trans=trans@entry=0x69b230, root=root@entry=0x69c850, key=key@entry=0x69cc77,
+    item=item@entry=0x69cac0) at root-tree.c:78
+#7  0x0000000000440935 in update_cowonly_root (root=0x69cab0, trans=0x69b230) at disk-io.c:492
+#8  commit_tree_roots (trans=trans@entry=0x69b230, fs_info=fs_info@entry=0x69c5f0) at disk-io.c:523
+#9  0x000000000044271f in btrfs_commit_transaction (trans=0x69b230, root=root@entry=0x6b7330) at disk-io.c:582
+#10 0x0000000000430d0a in cmd_rescue_zero_log (argc=<optimized out>, argv=<optimized out>) at cmds-rescue.c:195
+#11 0x0000000000409e39 in handle_command_group (grp=grp@entry=0x694380 <rescue_cmd_group>, argc=2, argv=<optimized out>) at btrfs.c:135
+#12 0x0000000000430d3a in cmd_rescue (argc=<optimized out>, argv=<optimized out>) at cmds-rescue.c:218
+#13 0x0000000000409f93 in main (argc=3, argv=0x7fffffffe600) at btrfs.c:243
+ 
+btrfsck --repair :
+ 
+root@dibsi:/home/jan# gdb --args btrfsck --repair --init-extent-tree /dev/disk/by-uuid/73d4dc77-6ff3-412f-9b0a-0d11458faf32
+GNU gdb (Ubuntu 7.10-1ubuntu2) 7.10
+Copyright (C) 2015 Free Software Foundation, Inc.
+License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html[https://deref-gmx.net/mail/client/dereferrer/?redirectUrl=http%3A%2F%2Fgnu.org%2Flicenses%2Fgpl.html]>
+This is free software: you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law.  Type "show copying"
+and "show warranty" for details.
+This GDB was configured as "x86_64-linux-gnu".
+Type "show configuration" for configuration details.
+For bug reporting instructions, please see:
+<http://www.gnu.org/software/gdb/bugs/[https://deref-gmx.net/mail/client/dereferrer/?redirectUrl=http%3A%2F%2Fwww.gnu.org%2Fsoftware%2Fgdb%2Fbugs%2F]>.
+Find the GDB manual and other documentation resources online at:
+<http://www.gnu.org/software/gdb/documentation/[https://deref-gmx.net/mail/client/dereferrer/?redirectUrl=http%3A%2F%2Fwww.gnu.org%2Fsoftware%2Fgdb%2Fdocumentation%2F]>.
+For help, type "help".
+Type "apropos word" to search for commands related to "word"...
+Reading symbols from btrfsck...done.
+(gdb) r
+Starting program: /usr/local/bin/btrfsck --repair --init-extent-tree /dev/disk/by-uuid/73d4dc77-6ff3-412f-9b0a-0d11458faf32
+[Thread debugging using libthread_db enabled]
+Using host libthread_db library "/lib/x86_64-linux-gnu/libthread_db.so.1".
+enabling repair mode
+repair mode will force to clear out log tree, Are you sure? [y/N]: y
+Unable to find block group for 0
+extent-tree.c:289: find_search_start: Assertion `1` failed.
+btrfs check(btrfs_reserve_extent+0x99e)[0x44ad51]
+btrfs check(btrfs_alloc_free_block+0x60)[0x44b0e4]
+btrfs check(__btrfs_cow_block+0x1a7)[0x43a55c]
+btrfs check(btrfs_cow_block+0x102)[0x43afe1]
+btrfs check[0x440880]
+btrfs check(btrfs_commit_transaction+0xec)[0x44271f]
+btrfs check(cmd_check+0x65b)[0x42a35d]
+btrfs check(main+0x155)[0x409f93]
+/lib/x86_64-linux-gnu/libc.so.6(__libc_start_main+0xf0)[0x7ffff6f8ea40]
+btrfs check(_start+0x29)[0x409b89]
+[Inferior 1 (process 1916) exited with code 01]

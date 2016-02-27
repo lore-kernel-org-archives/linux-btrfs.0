@@ -1,106 +1,176 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:49778 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756728AbcB0W6O (ORCPT
+Received: from mondschein.lichtvoll.de ([194.150.191.11]:41936 "EHLO
+	mail.lichtvoll.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S2992623AbcB0XPY convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 27 Feb 2016 17:58:14 -0500
-Subject: Re: btrfs check --repair is clean, but mount fails
-To: Marc MERLIN <marc@merlins.org>, Liu Bo <bo.li.liu@oracle.com>
-References: <20160227023938.GB5286@merlins.org>
- <20160227024533.GB11954@localhost.localdomain>
- <20160227030304.GC5286@merlins.org>
+	Sat, 27 Feb 2016 18:15:24 -0500
+From: Martin Steigerwald <martin@lichtvoll.de>
+To: Marc Haber <mh+linux-btrfs@zugschlus.de>
 Cc: linux-btrfs@vger.kernel.org
-From: Anand Jain <anand.jain@oracle.com>
-Message-ID: <56D229F8.5080002@oracle.com>
-Date: Sun, 28 Feb 2016 06:58:00 +0800
+Subject: Re: Again, no space left on device while rebalancing and recipe  doesnt work
+Date: Sun, 28 Feb 2016 00:15:21 +0100
+Message-ID: <1595760.q3He7oiP70@merkaba>
+In-Reply-To: <20160227211450.GS26042@torres.zugschlus.de>
+References: <20160227211450.GS26042@torres.zugschlus.de>
 MIME-Version: 1.0
-In-Reply-To: <20160227030304.GC5286@merlins.org>
-Content-Type: text/plain; charset=windows-1252; format=flowed
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Samstag, 27. Februar 2016 22:14:50 CET Marc Haber wrote:
+> Hi,
+
+Hi Marc.
+
+> I have again the issue of no space left on device while rebalancing
+> (with btrfs-tools 4.4.1 on kernel 4.4.2 on Debian unstable):
+> 
+> mh@fan:~$ sudo btrfs balance start /mnt/fanbtr
+> ERROR: error during balancing '/mnt/fanbtr': No space left on device
+> mh@fan:~$ sudo btrfs fi show /mnt/fanbtr
+> mh@fan:~$ sudo btrfs fi show -m
+> Label: 'fanbtr'  uuid: 4198d1bc-e3ce-40df-a7ee-44a2d120bff3
+>         Total devices 1 FS bytes used 116.49GiB
+>         devid    1 size 417.19GiB used 177.06GiB path /dev/mapper/fanbtr
+
+Hmmm, thats still a ton of space to allocate chunks from.
+
+> mh@fan:~$ sudo btrfs fi df /mnt/fanbtr
+> Data, single: total=113.00GiB, used=112.77GiB
+> System, DUP: total=32.00MiB, used=48.00KiB
+> Metadata, DUP: total=32.00GiB, used=3.72GiB
+> GlobalReserve, single: total=512.00MiB, used=0.00B
+> mh@fan:~$
+> 
+> The filesystem was recently resized from 300 GB to 420 GB.
+> 
+> Why does btrfs fi show /mnt/fanbtr not give any output? Wy does btrfs
+> fi df /mnt/fanbtr say that my data space is only 113 GiB large?
+
+Cause it is.
+
+The "used" in "devid 1" line is btrfs fi sh is "data + 2x system + 2x metadata 
+= 113 GiB + 2 * 32 GiB + 2 * 32 MiB, i.e. what amount of the size of the 
+device is allocated for chunks.
+
+The value one line above is what is allocated inside the chunks.
+
+I.e. the line in "devid 1" is "total" of btrfs fi df summed up, and the line 
+above is "used" in btrfs fi df summed up. And… with more devices you have more 
+fun.
+
+I suggest:
+
+merkaba:~> btrfs fi usage -T /daten
+Overall:
+    Device size:                 235.00GiB
+    Device allocated:            227.04GiB
+    Device unallocated:            7.96GiB
+    Device missing:                  0.00B
+    Used:                        225.84GiB
+    Free (estimated):              8.48GiB      (min: 8.48GiB)
+    Data ratio:                       1.00
+    Metadata ratio:                   1.00
+    Global reserve:              128.00MiB      (used: 0.00B)
+
+             Data      Metadata  System              
+Id Path      single    single    single   Unallocated
+-- --------- --------- --------- -------- -----------
+ 1 /dev/dm-1 226.00GiB   1.01GiB 32.00MiB     7.96GiB
+-- --------- --------- --------- -------- -----------
+   Total     226.00GiB   1.01GiB 32.00MiB     7.96GiB
+   Used      225.48GiB 371.83MiB 48.00KiB 
+
+as that is much clearer to read IMHO.
+
+and
+
+merkaba:~> btrfs device usage /daten   
+/dev/dm-1, ID: 1
+   Device size:           235.00GiB
+   Data,single:           226.00GiB
+   Metadata,single:         1.01GiB
+   System,single:          32.00MiB
+   Unallocated:             7.96GiB
+
+(although thats include in the filesystem usage output)
 
 
-On 02/27/2016 11:03 AM, Marc MERLIN wrote:
-> On Fri, Feb 26, 2016 at 06:45:34PM -0800, Liu Bo wrote:
->> On Fri, Feb 26, 2016 at 06:39:38PM -0800, Marc MERLIN wrote:
->>> btrfs-tools 4.4-1
->>> gargamel:~# uname -r
->>> 4.4.2-amd64-i915-volpreempt-20160214bc2
->>>
->>> 2 drive array stopped working after a crash/reboot. Check --repair finds nothing wrong with it:
->>>
->>> gargamel:~# btrfs check --repair /dev/mapper/raid0d1
->>> enabling repair mode
->>> Checking filesystem on /dev/mapper/raid0d1
->>> UUID: 01334b81-c0db-4e80-92e4-cac4da867651
->>> checking extents
->>> Fixed 0 roots.
->>> checking free space cache
->>> cache and super generation don't match, space cache will be invalidated
->>> checking fs roots
->>> checking csums
->>> checking root refs
->>> found 1201345524312 bytes used err is 0
->>> total csum bytes: 1165124220
->>> total tree bytes: 8258322432
->>> total fs tree bytes: 5574197248
->>> total extent tree bytes: 1020428288
->>> btree space waste bytes: 1902023247
->>> file data blocks allocated: 1193398628352
->>>   referenced 1209324777472
->>> gargamel:~# mount /var/local/space
->>> mount: wrong fs type, bad option, bad superblock on /dev/mapper/raid0d1,
->>>         missing codepage or helper program, or other error
->>>         In some cases useful info is found in syslog - try
->>>         dmesg | tail  or so
->>> [ 8200.511021] BTRFS info (device dm-6): disk space caching is enabled
->>> [ 8200.533030] BTRFS: failed to read the system array on dm-6
->>> [ 8200.582097] BTRFS: open_ctree failed
->>
->> Does 'btrfs dev scan' help?
->
-> Oh my, it does...
-> gargamel:~# btrfs dev scan
-> Scanning for Btrfs filesystems
-> gargamel:~# mount /var/local/space
->
-> [14477.028083] BTRFS: device label btrfs_space devid 2 transid 776784 /dev/mapper/raid0d2
-> [14500.262307] BTRFS info (device dm-7): disk space caching is enabled
-> [14504.042485] BTRFS: checking UUID tree
->
-> Err, I'm very perplexed now. I already have a scan in my boot process after device decrypts.
+Or for a BTRFS RAID 1:
 
-   Can you log the output of blkid here. If blkid output does
-   not report all the btrfs devs correctly the kernel won't know
-   as well.
+merkaba:~> btrfs fi usage -T /home  
+Overall:
+    Device size:                 340.00GiB
+    Device allocated:            340.00GiB
+    Device unallocated:            2.00MiB
+    Device missing:                  0.00B
+    Used:                        306.47GiB
+    Free (estimated):             14.58GiB      (min: 14.58GiB)
+    Data ratio:                       2.00
+    Metadata ratio:                   2.00
+    Global reserve:              512.00MiB      (used: 0.00B)
 
-Thanks, Anand
+             Data      Metadata System              
+Id Path      RAID1     RAID1    RAID1    Unallocated
+-- --------- --------- -------- -------- -----------
+ 1 /dev/dm-0 163.94GiB  6.03GiB 32.00MiB     1.00MiB
+ 2 /dev/dm-3 163.94GiB  6.03GiB 32.00MiB     1.00MiB
+-- --------- --------- -------- -------- -----------
+   Total     163.94GiB  6.03GiB 32.00MiB     2.00MiB
+   Used      149.36GiB  3.88GiB 48.00KiB            
 
 
-> Somehow it saw one of my 2 devices, but not the other one?
->
-> I'm looking at my boot:
-> [  112.063677] BTRFS: device label btrfs_space devid 1 transid 776782 /dev/mapper/raid0d1
-> [  112.090192] BTRFS info (device dm-6): disk space caching is enabled
-> [  112.111740] BTRFS: failed to read the system array on dm-6
-> [  112.160047] BTRFS: open_ctree failed
-> [  112.269710] BTRFS info (device dm-6): disk space caching is enabled
-> [  112.291430] BTRFS: failed to read the system array on dm-6
-> [  112.320104] BTRFS: open_ctree failed
->
-> So dm-6 is: raid0d1 -> ../dm-6
->
-> So, raid0d1 had an issue, btrfs check didn't really report any, for some unknown
-> reason this caused raid0d2 not to be scanned, and in turn this caused
-> mounting that filesystem to fail?
->
-> Or did btrfs check actually fix something that I missed?
-> Any why would scan have missed raid0d2 the first time around?
->
-> Is it complaining that it can't read btrfs structures from raid0d1 because raid0d2
-> wasn't known yet? I'm not too sure what open_ctree means in that context.
->
-> Thanks,
-> Marc
->
+merkaba:~> btrfs device usage /home
+/dev/dm-0, ID: 1
+   Device size:           170.00GiB
+   Data,RAID1:            163.94GiB
+   Metadata,RAID1:          6.03GiB
+   System,RAID1:           32.00MiB
+   Unallocated:             1.00MiB
+
+/dev/dm-3, ID: 2
+   Device size:           170.00GiB
+   Data,RAID1:            163.94GiB
+   Metadata,RAID1:          6.03GiB
+   System,RAID1:           32.00MiB
+   Unallocated:             1.00MiB
+
+
+(this is actually the situation asking for hung task trouble with kworker 
+threads seeking for free space inside chunks, as no new chunks can be 
+allocated, lets hope kernel 4.4 finally really has fixes for this)
+
+> btrfs balance start -dusage=5 works up to -dusage=100:
+> 
+> mh@fan:~$ sudo btrfs balance start -dusage=100 /mnt/fanbtr
+> Done, had to relocate 111 out of 179 chunks
+> mh@fan:~$ sudo btrfs balance start -dusage=100 /mnt/fanbtr
+> Done, had to relocate 111 out of 179 chunks
+> mh@fan:~$ sudo btrfs balance start -dusage=100 /mnt/fanbtr
+> Done, had to relocate 110 out of 179 chunks
+> mh@fan:~$ sudo btrfs balance start -dusage=100 /mnt/fanbtr
+> Done, had to relocate 109 out of 179 chunks
+> mh@fan:~$ sudo btrfs balance start /mnt/fanbtr
+> ERROR: error during balancing '/mnt/fanbtr': No space left on device
+> mh@fan:~$
+> 
+> What is going on here? How do I get away from here?
+
+Others may have better tips, but what can always work is:
+
+Adding a new device temporarily, doing the balance and then removing it.
+
+Before that I´d try to balance the metadata chunks, cause 
+
+> Metadata, DUP: total=32.00GiB, used=3.72GiB
+
+32 GiB chunks allocated, only 3,72 GiB used.
+
+Maybe that way you can gain more free space to have a full balance run.
+
+Also note that it is not necessary to do a full balance in case everything 
+works okayish.
+
+Thanks,
+-- 
+Martin

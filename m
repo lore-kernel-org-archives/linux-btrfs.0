@@ -1,176 +1,196 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mondschein.lichtvoll.de ([194.150.191.11]:41936 "EHLO
-	mail.lichtvoll.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S2992623AbcB0XPY convert rfc822-to-8bit (ORCPT
+Received: from torres.zugschlus.de ([85.214.131.164]:47986 "EHLO
+	torres.zugschlus.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756809AbcB1AIc (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 27 Feb 2016 18:15:24 -0500
-From: Martin Steigerwald <martin@lichtvoll.de>
-To: Marc Haber <mh+linux-btrfs@zugschlus.de>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: Again, no space left on device while rebalancing and recipe  doesnt work
-Date: Sun, 28 Feb 2016 00:15:21 +0100
-Message-ID: <1595760.q3He7oiP70@merkaba>
-In-Reply-To: <20160227211450.GS26042@torres.zugschlus.de>
+	Sat, 27 Feb 2016 19:08:32 -0500
+Received: from mh by torres.zugschlus.de with local (Exim 4.84)
+	(envelope-from <mh+linux-btrfs@zugschlus.de>)
+	id 1aZouT-0001pZ-Kw
+	for linux-btrfs@vger.kernel.org; Sun, 28 Feb 2016 01:08:29 +0100
+Date: Sun, 28 Feb 2016 01:08:29 +0100
+From: Marc Haber <mh+linux-btrfs@zugschlus.de>
+To: linux-btrfs@vger.kernel.org
+Subject: Re: Again, no space left on device while rebalancing and recipe
+ doesnt work
+Message-ID: <20160228000829.GT26042@torres.zugschlus.de>
 References: <20160227211450.GS26042@torres.zugschlus.de>
+ <1595760.q3He7oiP70@merkaba>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: text/plain; charset=utf-8
+In-Reply-To: <1595760.q3He7oiP70@merkaba>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Samstag, 27. Februar 2016 22:14:50 CET Marc Haber wrote:
-> Hi,
-
-Hi Marc.
-
-> I have again the issue of no space left on device while rebalancing
-> (with btrfs-tools 4.4.1 on kernel 4.4.2 on Debian unstable):
+On Sun, Feb 28, 2016 at 12:15:21AM +0100, Martin Steigerwald wrote:
+> On Samstag, 27. Februar 2016 22:14:50 CET Marc Haber wrote:
+> > I have again the issue of no space left on device while rebalancing
+> > (with btrfs-tools 4.4.1 on kernel 4.4.2 on Debian unstable):
+> > 
+> > mh@fan:~$ sudo btrfs balance start /mnt/fanbtr
+> > ERROR: error during balancing '/mnt/fanbtr': No space left on device
+> > mh@fan:~$ sudo btrfs fi show /mnt/fanbtr
+> > mh@fan:~$ sudo btrfs fi show -m
+> > Label: 'fanbtr'  uuid: 4198d1bc-e3ce-40df-a7ee-44a2d120bff3
+> >         Total devices 1 FS bytes used 116.49GiB
+> >         devid    1 size 417.19GiB used 177.06GiB path /dev/mapper/fanbtr
 > 
-> mh@fan:~$ sudo btrfs balance start /mnt/fanbtr
-> ERROR: error during balancing '/mnt/fanbtr': No space left on device
-> mh@fan:~$ sudo btrfs fi show /mnt/fanbtr
-> mh@fan:~$ sudo btrfs fi show -m
-> Label: 'fanbtr'  uuid: 4198d1bc-e3ce-40df-a7ee-44a2d120bff3
->         Total devices 1 FS bytes used 116.49GiB
->         devid    1 size 417.19GiB used 177.06GiB path /dev/mapper/fanbtr
-
-Hmmm, thats still a ton of space to allocate chunks from.
-
-> mh@fan:~$ sudo btrfs fi df /mnt/fanbtr
-> Data, single: total=113.00GiB, used=112.77GiB
-> System, DUP: total=32.00MiB, used=48.00KiB
-> Metadata, DUP: total=32.00GiB, used=3.72GiB
-> GlobalReserve, single: total=512.00MiB, used=0.00B
-> mh@fan:~$
+> Hmmm, thats still a ton of space to allocate chunks from.
 > 
-> The filesystem was recently resized from 300 GB to 420 GB.
+> > mh@fan:~$ sudo btrfs fi df /mnt/fanbtr
+> > Data, single: total=113.00GiB, used=112.77GiB
+> > System, DUP: total=32.00MiB, used=48.00KiB
+> > Metadata, DUP: total=32.00GiB, used=3.72GiB
+> > GlobalReserve, single: total=512.00MiB, used=0.00B
+> > mh@fan:~$
+> > 
+> > The filesystem was recently resized from 300 GB to 420 GB.
+> > 
+> > Why does btrfs fi show /mnt/fanbtr not give any output? Wy does btrfs
+> > fi df /mnt/fanbtr say that my data space is only 113 GiB large?
 > 
-> Why does btrfs fi show /mnt/fanbtr not give any output? Wy does btrfs
-> fi df /mnt/fanbtr say that my data space is only 113 GiB large?
+> Cause it is.
+> 
+> The "used" in "devid 1" line is btrfs fi sh is "data + 2x system + 2x metadata 
+> = 113 GiB + 2 * 32 GiB + 2 * 32 MiB, i.e. what amount of the size of the 
+> device is allocated for chunks.
+> 
+> The value one line above is what is allocated inside the chunks.
+> 
+> I.e. the line in "devid 1" is "total" of btrfs fi df summed up, and the line 
+> above is "used" in btrfs fi df summed up. And… with more devices you have more 
+> fun.
 
-Cause it is.
+Why wouldn't btrfs allocate more data chunks from the ample free space?
 
-The "used" in "devid 1" line is btrfs fi sh is "data + 2x system + 2x metadata 
-= 113 GiB + 2 * 32 GiB + 2 * 32 MiB, i.e. what amount of the size of the 
-device is allocated for chunks.
+> I suggest:
+> 
+> merkaba:~> btrfs fi usage -T /daten
 
-The value one line above is what is allocated inside the chunks.
 
-I.e. the line in "devid 1" is "total" of btrfs fi df summed up, and the line 
-above is "used" in btrfs fi df summed up. And… with more devices you have more 
-fun.
-
-I suggest:
-
-merkaba:~> btrfs fi usage -T /daten
+[2/498]mh@fan:~$ sudo btrfs fi usage /mnt/fanbtr
 Overall:
-    Device size:                 235.00GiB
-    Device allocated:            227.04GiB
-    Device unallocated:            7.96GiB
+    Device size:                 417.19GiB
+    Device allocated:            177.06GiB
+    Device unallocated:          240.12GiB
     Device missing:                  0.00B
-    Used:                        225.84GiB
-    Free (estimated):              8.48GiB      (min: 8.48GiB)
+    Used:                        120.23GiB
+    Free (estimated):            240.33GiB      (min: 120.27GiB)
     Data ratio:                       1.00
-    Metadata ratio:                   1.00
-    Global reserve:              128.00MiB      (used: 0.00B)
-
-             Data      Metadata  System              
-Id Path      single    single    single   Unallocated
--- --------- --------- --------- -------- -----------
- 1 /dev/dm-1 226.00GiB   1.01GiB 32.00MiB     7.96GiB
--- --------- --------- --------- -------- -----------
-   Total     226.00GiB   1.01GiB 32.00MiB     7.96GiB
-   Used      225.48GiB 371.83MiB 48.00KiB 
-
-as that is much clearer to read IMHO.
-
-and
-
-merkaba:~> btrfs device usage /daten   
-/dev/dm-1, ID: 1
-   Device size:           235.00GiB
-   Data,single:           226.00GiB
-   Metadata,single:         1.01GiB
-   System,single:          32.00MiB
-   Unallocated:             7.96GiB
-
-(although thats include in the filesystem usage output)
-
-
-Or for a BTRFS RAID 1:
-
-merkaba:~> btrfs fi usage -T /home  
-Overall:
-    Device size:                 340.00GiB
-    Device allocated:            340.00GiB
-    Device unallocated:            2.00MiB
-    Device missing:                  0.00B
-    Used:                        306.47GiB
-    Free (estimated):             14.58GiB      (min: 14.58GiB)
-    Data ratio:                       2.00
     Metadata ratio:                   2.00
     Global reserve:              512.00MiB      (used: 0.00B)
 
-             Data      Metadata System              
-Id Path      RAID1     RAID1    RAID1    Unallocated
--- --------- --------- -------- -------- -----------
- 1 /dev/dm-0 163.94GiB  6.03GiB 32.00MiB     1.00MiB
- 2 /dev/dm-3 163.94GiB  6.03GiB 32.00MiB     1.00MiB
--- --------- --------- -------- -------- -----------
-   Total     163.94GiB  6.03GiB 32.00MiB     2.00MiB
-   Used      149.36GiB  3.88GiB 48.00KiB            
+Data,single: Size:113.00GiB, Used:112.79GiB
+   /dev/mapper/fanbtr    113.00GiB
 
+Metadata,DUP: Size:32.00GiB, Used:3.72GiB
+   /dev/mapper/fanbtr     64.00GiB
 
-merkaba:~> btrfs device usage /home
-/dev/dm-0, ID: 1
-   Device size:           170.00GiB
-   Data,RAID1:            163.94GiB
-   Metadata,RAID1:          6.03GiB
-   System,RAID1:           32.00MiB
-   Unallocated:             1.00MiB
+System,DUP: Size:32.00MiB, Used:48.00KiB
+   /dev/mapper/fanbtr     64.00MiB
 
-/dev/dm-3, ID: 2
-   Device size:           170.00GiB
-   Data,RAID1:            163.94GiB
-   Metadata,RAID1:          6.03GiB
-   System,RAID1:           32.00MiB
-   Unallocated:             1.00MiB
+[3/498]mh@fan:~$ sudo btrfs fi usage -T /mnt/fanbtr
+Overall:
+    Device size:                 417.19GiB
+    Device allocated:            177.06GiB
+    Device unallocated:          240.12GiB
+    Device missing:                  0.00B
+    Used:                        120.23GiB
+    Free (estimated):            240.33GiB      (min: 120.27GiB)
+    Data ratio:                       1.00
+    Metadata ratio:                   2.00
+    Global reserve:              512.00MiB      (used: 0.00B)
 
+                      Data      Metadata System
+Id Path               single    DUP      DUP      Unallocated
+-- ------------------ --------- -------- -------- -----------
+ 1 /dev/mapper/fanbtr 113.00GiB 64.00GiB 64.00MiB   240.12GiB
+-- ------------------ --------- -------- -------- -----------
+   Total              113.00GiB 32.00GiB 32.00MiB   240.12GiB
+   Used               112.79GiB  3.72GiB 48.00KiB
+[4/499]mh@fan:~$
 
-(this is actually the situation asking for hung task trouble with kworker 
-threads seeking for free space inside chunks, as no new chunks can be 
-allocated, lets hope kernel 4.4 finally really has fixes for this)
+> (this is actually the situation asking for hung task trouble with kworker 
+> threads seeking for free space inside chunks, as no new chunks can be 
+> allocated, lets hope kernel 4.4 finally really has fixes for this)
 
-> btrfs balance start -dusage=5 works up to -dusage=100:
+I am running a 4.4.2 kernel on the system in question.
+
+> Adding a new device temporarily, doing the balance and then removing it.
+
+I currently refuse to do this on a 400 GiB device that has more than
+half of its capacity free. I do expect a modern filesystem to get out
+of that situation without a manual intervention this invasive.
+
+> Before that I´d try to balance the metadata chunks, cause 
 > 
-> mh@fan:~$ sudo btrfs balance start -dusage=100 /mnt/fanbtr
-> Done, had to relocate 111 out of 179 chunks
-> mh@fan:~$ sudo btrfs balance start -dusage=100 /mnt/fanbtr
-> Done, had to relocate 111 out of 179 chunks
-> mh@fan:~$ sudo btrfs balance start -dusage=100 /mnt/fanbtr
-> Done, had to relocate 110 out of 179 chunks
-> mh@fan:~$ sudo btrfs balance start -dusage=100 /mnt/fanbtr
-> Done, had to relocate 109 out of 179 chunks
-> mh@fan:~$ sudo btrfs balance start /mnt/fanbtr
-> ERROR: error during balancing '/mnt/fanbtr': No space left on device
-> mh@fan:~$
+> > Metadata, DUP: total=32.00GiB, used=3.72GiB
 > 
-> What is going on here? How do I get away from here?
+> 32 GiB chunks allocated, only 3,72 GiB used.
 
-Others may have better tips, but what can always work is:
+Why would I rebalance metadata if there is less than 20 % used?
 
-Adding a new device temporarily, doing the balance and then removing it.
+[21/504]mh@fan:~$ sudo btrfs balance start -musage=5 /mnt/fanbtr
+ERROR: error during balancing '/mnt/fanbtr': No space left on device
+There may be more info in syslog - try dmesg | tail
+[22/505]mh@fan:~$ sudo btrfs balance start -musage=1 /mnt/fanbtr
+Done, had to relocate 56 out of 179 chunks
+[23/506]mh@fan:~$ sudo btrfs balance start -musage=1 /mnt/fanbtr
+Done, had to relocate 56 out of 179 chunks
+[24/506]mh@fan:~$ sudo btrfs balance start -musage=1 /mnt/fanbtr
+Done, had to relocate 56 out of 179 chunks
+[25/506]mh@fan:~$ sudo btrfs balance start -musage=5 /mnt/fanbtr
+Done, had to relocate 56 out of 179 chunks
+[26/507]mh@fan:~$ sudo btrfs balance start -musage=50 /mnt/fanbtr
+Done, had to relocate 56 out of 179 chunks
+[27/508]mh@fan:~$ sudo btrfs balance start -musage=90 /mnt/fanbtr
+Done, had to relocate 61 out of 179 chunks
+[29/510]mh@fan:~$ sudo btrfs balance start -musage=90 /mnt/fanbtr
+ERROR: error during balancing '/mnt/fanbtr': No space left on device
+There may be more info in syslog - try dmesg | tail
+[30/511]mh@fan:~$ sudo btrfs balance start -musage=90 /mnt/fanbtr
+ERROR: error during balancing '/mnt/fanbtr': No space left on device
+There may be more info in syslog - try dmesg | tail
+[31/511]mh@fan:~$ sudo btrfs fi usage -T /mnt/fanbtr
+Overall:
+    Device size:                 417.19GiB
+    Device allocated:            177.06GiB
+    Device unallocated:          240.12GiB
+    Device missing:                  0.00B
+    Used:                        120.24GiB
+    Free (estimated):            240.32GiB      (min: 120.26GiB)
+    Data ratio:                       1.00
+    Metadata ratio:                   2.00
+    Global reserve:              512.00MiB      (used: 0.00B)
 
-Before that I´d try to balance the metadata chunks, cause 
+                      Data      Metadata System
+Id Path               single    DUP      DUP      Unallocated
+-- ------------------ --------- -------- -------- -----------
+ 1 /dev/mapper/fanbtr 113.00GiB 64.00GiB 64.00MiB   240.12GiB
+-- ------------------ --------- -------- -------- -----------
+   Total              113.00GiB 32.00GiB 32.00MiB   240.12GiB
+   Used               112.80GiB  3.72GiB 48.00KiB
+[32/512]mh@fan:~$
 
-> Metadata, DUP: total=32.00GiB, used=3.72GiB
+Why does the number of reallocated chunks not decrease, why does
+-musage=90 finish the first time and throw out of space errors on
+subsequent invocations, and why doesn't the balance change anything in
+btrfs fi usage?
 
-32 GiB chunks allocated, only 3,72 GiB used.
+> Maybe that way you can gain more free space to have a full balance run.
 
-Maybe that way you can gain more free space to have a full balance run.
+Why would i need more free space? there are 240 GiB free!
 
-Also note that it is not necessary to do a full balance in case everything 
-works okayish.
+> Also note that it is not necessary to do a full balance in case everything 
+> works okayish.
 
-Thanks,
+The filesystem does not look healthy to me.
+
+Greetings
+Marc
+
 -- 
-Martin
+-----------------------------------------------------------------------------
+Marc Haber         | "I don't trust Computers. They | Mailadresse im Header
+Leimen, Germany    |  lose things."    Winona Ryder | Fon: *49 6224 1600402
+Nordisch by Nature |  How to make an American Quilt | Fax: *49 6224 1600421

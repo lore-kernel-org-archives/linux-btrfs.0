@@ -1,40 +1,127 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from magic.merlins.org ([209.81.13.136]:48562 "EHLO
-	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1757247AbcB1N4I (ORCPT
+Received: from dragon.async.com.br ([208.70.149.241]:56449 "EHLO
+	dragon.async.com.br" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754748AbcB1UXW (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 28 Feb 2016 08:56:08 -0500
-Date: Sun, 28 Feb 2016 05:56:07 -0800
-From: Marc MERLIN <marc@merlins.org>
-To: Duncan <1i5t5.duncan@cox.net>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: btrfs check --repair is clean, but mount fails
-Message-ID: <20160228135607.GB14776@merlins.org>
-References: <20160227023938.GB5286@merlins.org> <20160227024533.GB11954@localhost.localdomain> <20160227030304.GC5286@merlins.org> <56D229F8.5080002@oracle.com> <20160228005614.GP19699@merlins.org> <56D25104.9020107@oracle.com> <20160228030930.GS19699@merlins.org> <pan$5fdff$39b005f1$778b3960$a3d0b01e@cox.net>
+	Sun, 28 Feb 2016 15:23:22 -0500
+Received: from anthem.async.com.br (189-19-234-109.dsl.telesp.net.br [189.19.234.109])
+	by dragon.async.com.br (Postfix) with ESMTPS id 37F814540F8
+	for <linux-btrfs@vger.kernel.org>; Sun, 28 Feb 2016 14:15:37 -0600 (CST)
+Received: from anthem.async.com.br (kiko@localhost [127.0.0.1])
+	by anthem.async.com.br (8.14.4/8.14.4/Debian-2ubuntu2.1) with ESMTP id u1SKFWIm029480
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT)
+	for <linux-btrfs@vger.kernel.org>; Sun, 28 Feb 2016 17:15:33 -0300
+Received: (from kiko@localhost)
+	by anthem.async.com.br (8.14.4/8.14.4/Submit) id u1SKFWAe029479
+	for linux-btrfs@vger.kernel.org; Sun, 28 Feb 2016 17:15:32 -0300
+Date: Sun, 28 Feb 2016 17:15:32 -0300
+From: Christian Robottom Reis <kiko@async.com.br>
+To: linux-btrfs@vger.kernel.org
+Subject: Replacing RAID-1 devices with larger disks
+Message-ID: <20160228201532.GA26692@anthem.async.com.br>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <pan$5fdff$39b005f1$778b3960$a3d0b01e@cox.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Feb 28, 2016 at 06:49:21AM +0000, Duncan wrote:
-> The "defaults" mount option in fstab is just that, the defaults, and
-> doesn't really apply as an option because they /are/ the defaults.  The
+Hello there,
 
-Yeah, been having this for some 20 years, cut and paste, and I should get
-used to just removing it :)
+    I'm running a btrfs RAID-1 on two 128GB SSDs that were getting kind
+of full. I found two 256GB SSDs that I plan to use to replace the 128TB
+versions.
 
-> Additionally, with any reasonably modern util-linux, the last two fields,
-> dump and fsck-passno, both default to 0 if not present, so don't need to
-> be explicitly included if zero, unless of course you want to as a matter of
+I've managed to do the actual swap using a series of btrfs replace
+commands with no special arguments, and the system is now live and
+booting from the 256GB drives. However, I haven't actually noticed any
+difference in btrfs fi show output, and usage looks weird. Has anyone
+seen this before or have a clue as to who?
 
-Correct. That one is mostly style/cut&paste and an fstab that was created in
-1999 or so :)
+The relevant partition sizes are now (sdb is identical):
 
-Cheers,
-Marc
+    /dev/sda1   *        2048    83888127    41943040   83  Linux
+    /dev/sda3        92276736   427821055   167772160   83  Linux
+
+Here's the show output:
+
+    Label: 'root'  uuid: 670d1132-00dc-4511-a2f6-d28ce08b4d3a
+        Total devices 2 FS bytes used 9.33GiB
+        devid    1 size 13.97GiB used 11.78GiB path /dev/sda1
+        devid    2 size 13.97GiB used 11.78GiB path /dev/sdb1
+
+    Label: 'var'  uuid: 815b3280-e90f-483a-b244-1d2dfe9b6e67
+        Total devices 2 FS bytes used 56.14GiB
+        devid    1 size 80.00GiB used 80.00GiB path /dev/sda3
+        devid    2 size 80.00GiB used 80.00GiB path /dev/sdb3
+
+Those sizes have not changed over the resize; i.e. the original sda1/sdb1 pair
+was 14GB and the sda3/sdb3 pair was 80GB, and after the replace, they haven't
+changed.
+
+And usage for / is now weird:
+
+    Overall:
+        Device size:          27.94GiB
+        Device allocated:         21.56GiB
+        Device unallocated:        6.38GiB
+        Device missing:          0.00B
+        Used:             18.66GiB
+        Free (estimated):          3.99GiB  (min: 3.99GiB)
+        Data ratio:               2.00
+        Metadata ratio:           2.00
+        Global reserve:      208.00MiB  (used: 0.00B)
+
+    Data,RAID1: Size:9.00GiB, Used:8.20GiB
+       /dev/sda1       9.00GiB
+       /dev/sdb1       9.00GiB
+
+    Metadata,RAID1: Size:1.75GiB, Used:1.13GiB
+       /dev/sda1       1.75GiB
+       /dev/sdb1       1.75GiB
+
+    System,RAID1: Size:32.00MiB, Used:16.00KiB
+       /dev/sda1      32.00MiB
+       /dev/sdb1      32.00MiB
+
+Usage for /var also looks wrong, but in a different way:
+
+    Overall:
+        Device size:         160.00GiB
+        Device allocated:        160.00GiB
+        Device unallocated:        2.00MiB
+        Device missing:          0.00B
+        Used:            112.28GiB
+        Free (estimated):         21.20GiB  (min: 21.20GiB)
+        Data ratio:               2.00
+        Metadata ratio:           2.00
+        Global reserve:      512.00MiB  (used: 0.00B)
+
+    Data,RAID1: Size:74.97GiB, Used:53.77GiB
+       /dev/sda3      74.97GiB
+       /dev/sdb3      74.97GiB
+
+    Metadata,RAID1: Size:5.00GiB, Used:2.37GiB
+       /dev/sda3       5.00GiB
+       /dev/sdb3       5.00GiB
+
+    System,RAID1: Size:32.00MiB, Used:16.00KiB
+       /dev/sda3      32.00MiB
+       /dev/sdb3      32.00MiB
+
+    Unallocated:
+       /dev/sda3       1.00MiB
+       /dev/sdb3       1.00MiB
+
+
+Version information:
+
+    async@riff:~$ uname -a
+    Linux riff 4.2.0-30-generic #36~14.04.1-Ubuntu SMP Fri Feb 26 18:49:23
+    UTC 2016 x86_64 x86_64 x86_64 GNU/Linux
+
+    async@riff:~$ btrfs --version
+    btrfs-progs v4.0
+
+Thanks,
 -- 
-"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
-Microsoft is to operating systems ....
-                                      .... what McDonalds is to gourmet cooking
-Home page: http://marc.merlins.org/  
+Christian Robottom Reis | [+55 16] 3376 0125   | http://async.com.br/~kiko
+

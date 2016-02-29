@@ -1,100 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:20065 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1753428AbcB2B5J (ORCPT
+Received: from mail-qg0-f52.google.com ([209.85.192.52]:35256 "EHLO
+	mail-qg0-f52.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751893AbcB2NMM (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 28 Feb 2016 20:57:09 -0500
-Subject: Re: Again, no space left on device while rebalancing and recipe
- doesnt work
-To: Marc Haber <mh+linux-btrfs@zugschlus.de>, <linux-btrfs@vger.kernel.org>
-References: <20160227211450.GS26042@torres.zugschlus.de>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <56D3A56A.20809@cn.fujitsu.com>
-Date: Mon, 29 Feb 2016 09:56:58 +0800
+	Mon, 29 Feb 2016 08:12:12 -0500
+Subject: Re: loop subsystem corrupted after mounting multiple btrfs
+ sub-volumes
+To: Al Viro <viro@ZenIV.linux.org.uk>, Stanislav Brabec <sbrabec@suse.cz>
+References: <56CF5490.7040102@suse.cz> <56D04630.1020809@gmail.com>
+ <56D0743F.9040102@suse.cz> <56D07FAF.3080605@gmail.com>
+ <20160226175311.GC17997@ZenIV.linux.org.uk> <56D0A38B.3050701@suse.cz>
+ <56D0B007.2050106@gmail.com> <56D0B782.20606@suse.cz>
+ <20160226210302.GE17997@ZenIV.linux.org.uk> <56D0C572.3050503@suse.cz>
+ <20160226214514.GG17997@ZenIV.linux.org.uk>
+Cc: linux-kernel@vger.kernel.org, Jens Axboe <axboe@kernel.dk>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>,
+        David Sterba <dsterba@suse.cz>
+From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Message-ID: <56D44386.8080101@gmail.com>
+Date: Mon, 29 Feb 2016 08:11:34 -0500
 MIME-Version: 1.0
-In-Reply-To: <20160227211450.GS26042@torres.zugschlus.de>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+In-Reply-To: <20160226214514.GG17997@ZenIV.linux.org.uk>
+Content-Type: text/plain; charset=windows-1252; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
-
-Marc Haber wrote on 2016/02/27 22:14 +0100:
-> Hi,
+On 2016-02-26 16:45, Al Viro wrote:
+> On Fri, Feb 26, 2016 at 10:36:50PM +0100, Stanislav Brabec wrote:
 >
-> I have again the issue of no space left on device while rebalancing
-> (with btrfs-tools 4.4.1 on kernel 4.4.2 on Debian unstable):
+>> It should definitely report error whenever trying -oloop on top of
+>> anything else than a file. Or at least a warning.
+>>
+>> Well, even losetup should report a warning.
 >
-> mh@fan:~$ sudo btrfs balance start /mnt/fanbtr
-> ERROR: error during balancing '/mnt/fanbtr': No space left on device
-
-It seems that, only when balancing all chunks, ENOSPC error happens.
-
-And did you run any other heavy IO at background?
-
-BTW, is there any kernel log when the ENOSPC happens?
-
-> mh@fan:~$ sudo btrfs fi show /mnt/fanbtr
-> mh@fan:~$ sudo btrfs fi show -m
-> Label: 'fanbtr'  uuid: 4198d1bc-e3ce-40df-a7ee-44a2d120bff3
->          Total devices 1 FS bytes used 116.49GiB
->          devid    1 size 417.19GiB used 177.06GiB path /dev/mapper/fanbtr
-> mh@fan:~$ sudo btrfs fi df /mnt/fanbtr
-> Data, single: total=113.00GiB, used=112.77GiB
-> System, DUP: total=32.00MiB, used=48.00KiB
-> Metadata, DUP: total=32.00GiB, used=3.72GiB
-> GlobalReserve, single: total=512.00MiB, used=0.00B
-> mh@fan:~$
+> Keep in mind that with crypto in the game it just might be useful to have
+> loop-over-loop - it might be _not_ a no-op (hell, you might have two
+> layers of encryption - not the smartest thing to do, but if that's what
+> got dumped on your lap, you deal with what you've got).  So such warnings
+> shouldn't be hard errors.
 >
-> The filesystem was recently resized from 300 GB to 420 GB.
->
-> Why does btrfs fi show /mnt/fanbtr not give any output? Wy does btrfs
-> fi df /mnt/fanbtr say that my data space is only 113 GiB large?
->
-> btrfs balance start -dusage=5 works up to -dusage=100:
->
-> mh@fan:~$ sudo btrfs balance start -dusage=100 /mnt/fanbtr
-> Done, had to relocate 111 out of 179 chunks
-> mh@fan:~$ sudo btrfs balance start -dusage=100 /mnt/fanbtr
-> Done, had to relocate 111 out of 179 chunks
-> mh@fan:~$ sudo btrfs balance start -dusage=100 /mnt/fanbtr
-> Done, had to relocate 110 out of 179 chunks
-> mh@fan:~$ sudo btrfs balance start -dusage=100 /mnt/fanbtr
-> Done, had to relocate 109 out of 179 chunks
-> mh@fan:~$ sudo btrfs balance start /mnt/fanbtr
-> ERROR: error during balancing '/mnt/fanbtr': No space left on device
-> mh@fan:~$
+That and that using a loop device is one of the ways to expose 
+partitions on a device the kernel doesn't normally expose them from.  In 
+general, I'm pretty certain the preferred method is to use DM based 
+mappings, but those aren't always available, and I've had multiple cases 
+where I had to use nested loop devices to get to a filesystem.
 
-Would you please try the following commands to see which one caused the 
-problem?
-And would you please provide the dmesg of them?
-
-# btrfs balance start -dprofiles=single /mnt/fanbtr
-# btrfs balance start -mprofile=dup /mnt/fanbtr
-# btrfs balance start -sprofile=dup /mnt/fanbtr
-
-The above three commands should be equal to your "btrfs balance start" 
-command without any parameter, but do them separately, so it should tell 
-you which chunk type caused the ENOSPC error.
-
- From your above -dusage=100 parameter, I think data should be OK, and 
-since the metadata chunk is larger than 1G, and there are a lot of free 
-metadata space, I assume it's the single system chunk causing the problem.
-
-And if my assumption is right, you have nothing to worry as data and 
-metadata should be OK to allocate new chunks, and 32M system chunks is 
-definitely large enough.
-But in that case, we should have a clearer clue to trace and fix the bug.
-
-Thanks,
-Qu
-
->
-> What is going on here? How do I get away from here?
->
-> Greetings
-> Marc
->
->
-
-
+You can't protect against everything, but you very much should not be 
+doing something that is known to cause issues, and the current behavior 
+of mount(8) WRT -o loop definitely can cause issues.

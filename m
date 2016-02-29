@@ -1,68 +1,77 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:33361 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752788AbcB2O4l (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 29 Feb 2016 09:56:41 -0500
-Subject: Re: loop subsystem corrupted after mounting multiple btrfs
- sub-volumes
-To: Valdis.Kletnieks@vt.edu
-References: <56CF5490.7040102@suse.cz> <56D04630.1020809@gmail.com>
- <56D0743F.9040102@suse.cz> <56D07FAF.3080605@gmail.com>
- <20160226175311.GC17997@ZenIV.linux.org.uk> <56D0A38B.3050701@suse.cz>
- <56D0B007.2050106@gmail.com> <20160226203010.GD17997@ZenIV.linux.org.uk>
- <56D0BCFC.5020302@suse.cz> <52677.1456524057@turing-police.cc.vt.edu>
-Cc: Al Viro <viro@ZenIV.linux.org.uk>,
-        "Austin S. Hemmelgarn" <ahferroin7@gmail.com>,
-        linux-kernel@vger.kernel.org, Jens Axboe <axboe@kernel.dk>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>,
-        David Sterba <dsterba@suse.cz>
-From: Stanislav Brabec <sbrabec@suse.cz>
-Message-ID: <56D45C27.2080102@suse.cz>
-Date: Mon, 29 Feb 2016 15:56:39 +0100
+Received: from torres.zugschlus.de ([85.214.131.164]:50502 "EHLO
+	torres.zugschlus.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751041AbcB2Pdy (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 29 Feb 2016 10:33:54 -0500
+Received: from mh by torres.zugschlus.de with local (Exim 4.84)
+	(envelope-from <mh+linux-btrfs@zugschlus.de>)
+	id 1aaPpY-000184-JL
+	for linux-btrfs@vger.kernel.org; Mon, 29 Feb 2016 16:33:52 +0100
+Date: Mon, 29 Feb 2016 16:33:52 +0100
+From: Marc Haber <mh+linux-btrfs@zugschlus.de>
+To: linux-btrfs@vger.kernel.org
+Subject: Re: Again, no space left on device while rebalancing and recipe
+ doesnt work
+Message-ID: <20160229153352.GE2334@torres.zugschlus.de>
+References: <20160227211450.GS26042@torres.zugschlus.de>
+ <56D3A56A.20809@cn.fujitsu.com>
 MIME-Version: 1.0
-In-Reply-To: <52677.1456524057@turing-police.cc.vt.edu>
-Content-Type: text/plain; charset=windows-1252; format=flowed
+Content-Type: text/plain; charset=utf-8
+In-Reply-To: <56D3A56A.20809@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Feb 26, 2016 at 23:00 Valdis.Kletnieks@vt.edu wrote:
-> On Fri, 26 Feb 2016 22:00:44 +0100, Stanislav Brabec said:
->
->> Well, it seems to be safe, even if the loop device was not allocated by
->> mount(8) itself, as
->> ioctl(fd, LOOP_CLR_FD)
->> never returns EBUSY:
->
-> The fact you don't get an EBUSY doesn't mean it's actually safe....
->
-Then, what should mount do, when -oloop is used and loop for the file
-is already set?
+Hi,
 
-1) Verify that the loop device is a plain loop without encryption, and
-recycle it.
+On Mon, Feb 29, 2016 at 09:56:58AM +0800, Qu Wenruo wrote:
+> Marc Haber wrote on 2016/02/27 22:14 +0100:
+> >I have again the issue of no space left on device while rebalancing
+> >(with btrfs-tools 4.4.1 on kernel 4.4.2 on Debian unstable):
+> >
+> >mh@fan:~$ sudo btrfs balance start /mnt/fanbtr
+> >ERROR: error during balancing '/mnt/fanbtr': No space left on device
+> 
+> It seems that, only when balancing all chunks, ENOSPC error happens.
+> 
+> And did you run any other heavy IO at background?
 
-2) Allocate new loop device? (Known to cause issues, and corrupts
-structures on a current kernel.)
+Not when running those last commands for the mailing list post.
 
-3) Trace loop devices allocated by mount itself and report error, if it
-was not allocated by mount. (But there can still be legitimate uses,
-e. g. two filesystems in one file, each at different offset, one of
-them is encrypted.)
+> BTW, is there any kernel log when the ENOSPC happens?
 
-3) Report error and recommend direct use of /dev/loop*. (See 3 plus
-setup of a system with /dev/loop* in fstab needs a non-standard
-actions.)
+> Would you please try the following commands to see which one caused the
+> problem?
+> And would you please provide the dmesg of them?
+> 
+> # btrfs balance start -dprofiles=single /mnt/fanbtr
+> # btrfs balance start -mprofile=dup /mnt/fanbtr
+> # btrfs balance start -sprofile=dup /mnt/fanbtr
 
-4) Other ideas?
+I have attached the logs. I used logger(1) to have in syslog which
+command I executed, and I have piped the userspace's output to logger
+so that the syslog entries match the userspace output.
+
+-mprofile gave an error message, I therefore tried -mprofiles, and
+-sprofiles wanted me to use the --force, so I did that as well.
+
+The three balance commands above all three finshed alright without
+running into ENOSPC, while running a plain balance (which is also part
+of the log) errors out every time.
+
+And, the -dprofiles=single log caused a number of INFOs regarding
+btrfs-cleaner and btrfa-balance processes gotten stuck for more than
+120 seconds during the run.
+
+I now have a kworker and a btfs-transact kernel process taking most of
+one CPU core each, even after the userspace programs have terminated.
+Is there a way to find out what these threads are actually doing?
+
+Greetings
+Marc
 
 -- 
-Best Regards / S pozdravem,
-
-Stanislav Brabec
-software developer
----------------------------------------------------------------------
-SUSE LINUX, s. r. o.                         e-mail: sbrabec@suse.com
-Lihovarská 1060/12                            tel: +49 911 7405384547
-190 00 Praha 9                                 fax:  +420 284 084 001
-Czech Republic                                    http://www.suse.cz/
-PGP: 830B 40D5 9E05 35D8 5E27 6FA3 717C 209F A04F CD76
+-----------------------------------------------------------------------------
+Marc Haber         | "I don't trust Computers. They | Mailadresse im Header
+Leimen, Germany    |  lose things."    Winona Ryder | Fon: *49 6224 1600402
+Nordisch by Nature |  How to make an American Quilt | Fax: *49 6224 1600421

@@ -1,60 +1,134 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mgwkm04.jp.fujitsu.com ([202.219.69.171]:38525 "EHLO
-	mgwkm04.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932298AbcCNA2H (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 13 Mar 2016 20:28:07 -0400
-Received: from m3050.s.css.fujitsu.com (msm.b.css.fujitsu.com [10.134.21.208])
-	by kw-mxoi1.gw.nic.fujitsu.com (Postfix) with ESMTP id E649AAC00FD
-	for <linux-btrfs@vger.kernel.org>; Mon, 14 Mar 2016 09:27:58 +0900 (JST)
-Subject: [PATCH 4/4] btrfs-progs: "device ready" accepts just one device
-To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-References: <56E5FF9A.4020609@jp.fujitsu.com>
-From: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
-Message-ID: <56E6056A.4020307@jp.fujitsu.com>
-Date: Mon, 14 Mar 2016 09:27:22 +0900
-MIME-Version: 1.0
-In-Reply-To: <56E5FF9A.4020609@jp.fujitsu.com>
-Content-Type: text/plain; charset=iso-2022-jp
+Received: from aserp1040.oracle.com ([141.146.126.69]:32139 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754523AbcCAQIi (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 1 Mar 2016 11:08:38 -0500
+From: Anand Jain <anand.jain@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Cc: clm@fb.com, dsterba@suse.cz, Anand Jain <anand.jain@oracle.com>
+Subject: [RFC] Experimental btrfs encryption
+Date: Wed,  2 Mar 2016 00:08:09 +0800
+Message-Id: <1456848492-4814-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-* actual result
+This patchset adds btrfs encryption support.
 
-  =======================================
-  # ./btrfs device ready /dev/sdb foo
-  #
-  =======================================
+Warning:
+The code is in prototype/experimental stage and is not suitable
+for the production data yet.
 
-* expecting result
+Example usage:
+Create an encrypted subvolume:
+  btrfs subvol create -e /btrfs/sv1
+  Paraphrase: <-
 
-  =======================================
-  # ./btrfs device ready /dev/sdb foo
-  btrfs device ready: too many arguments
-  usage: btrfs device ready <device>
+Review encryption status
+  btrfs subvol show /btrfs/sv1
+  btrfs/sv1
+    Name: sv1
+    UID: d8bf1718-56a7-da40-86d9-b8e87315f63f
+    Parent UUID: -
+    Received UUID: -
+    Creation time: 2016-03-01 17:11:58 +0800
+    Subvolume ID: 257
+    Generation: 13
+    Gen at creation:7
+    Parent ID: 5
+    Top level ID: 5
+    Flags: -
+    Encryption: aes@btrfs:d8bf1718 (188612608)
+                   ^ ^^^^^^^^^^^^^^ ^^^^^^^^^
+                   |        |               |
+                Algorithm Key-Tag Key-serial-number
 
-      Check device to see if it has all of its devices in cache for mounting
+  keyctl show
+  ::
+  188612608 --alswrv 0 0 \_ user: btrfs:d8bf1718
 
-  #
-  =======================================
+Logout/revoke:
+  btrfs subvol encrypt -k out /btrfs/sv1
+  btrfs subvol show /btrfs/sv1 | egrep Encrypt
+  Encryption: aes@btrfs:d8bf1718 (Required key not available)
 
-Signed-off-by: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
----
- cmds-device.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+sign in:
+  btrfs subvol encrypt -k in /btrfs/sv1
 
-diff --git a/cmds-device.c b/cmds-device.c
-index 33da2ce..23656c3 100644
---- a/cmds-device.c
-+++ b/cmds-device.c
-@@ -326,7 +326,7 @@ static int cmd_device_ready(int argc, char **argv)
+Known issues / limitation / for future expansion:
+- Need to set FS incompatible feature.
 
- 	clean_args_no_options(argc, argv, cmd_device_ready_usage);
+- No password verification yet.
 
--	if (check_argc_min(argc - optind, 1))
-+	if (check_argc_exact(argc - optind, 1))
- 		usage(cmd_device_ready_usage);
+- Move of files across subvolume is not supported when both
+  or either one has encryption set.
 
- 	fd = open("/dev/btrfs-control", O_RDWR);
+- No way to change the password.
+
+- Does not drop the cached pages when key is revoked.
+
+- Need to get password twice from the user.
+
+- No user permeable subvol info ioctl.
+
+- Provide a method to pass key using the mount option.
+
+- Provide a method to read the key from the file.
+
+- Current encryption method is symmetric (same key for both
+  encryption and decryption), however we could easily expand
+  this to other potentially useful methods like asymmetric
+  (private/public) encryption.
+
+- As of now uses "user" keytype, I am still considering/
+  evaluating other key type such as logon.
+
+- Evaluate other encryption algorithms,  as of now it is
+  using "cts(cbc(aes)".
+
+- Uses btrfs compression framework, so compression and then
+  encryption is not possible. However yet evaluate if there
+  are encryption algorithm which can compress as well.
+
+
+Anand Jain (1):
+  btrfs: encryption
+
+ fs/btrfs/Makefile      |   2 +-
+ fs/btrfs/btrfs_inode.h |   2 +
+ fs/btrfs/compression.c |  53 ++++-
+ fs/btrfs/compression.h |   1 +
+ fs/btrfs/ctree.h       |  11 +-
+ fs/btrfs/encrypt.c     | 544 +++++++++++++++++++++++++++++++++++++++++++++++++
+ fs/btrfs/encrypt.h     |  21 ++
+ fs/btrfs/inode.c       |  37 +++-
+ fs/btrfs/ioctl.c       |   7 +
+ fs/btrfs/props.c       | 140 ++++++++++++-
+ fs/btrfs/super.c       |   5 +-
+ 11 files changed, 812 insertions(+), 11 deletions(-)
+ create mode 100644 fs/btrfs/encrypt.c
+ create mode 100644 fs/btrfs/encrypt.h
+
+Anand Jain (2):
+  btrfs-progs: subvolume functions reorg
+  btrfs-progs: add encrypt as subvol sub-command
+
+ Makefile.in      |   5 +-
+ btrfs-list.c     |  33 +++++
+ cmds-qgroup.c    |   1 +
+ cmds-send.c      |  12 +-
+ cmds-subvolume.c | 209 +++++++++++++++--------------
+ commands.h       |   1 +
+ encrypt.c        | 397 +++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ encrypt.h        |  33 +++++
+ props.c          |   3 +
+ subvolume.c      | 152 +++++++++++++++++++++
+ subvolume.h      |  22 +++
+ 11 files changed, 757 insertions(+), 111 deletions(-)
+ create mode 100644 encrypt.c
+ create mode 100644 encrypt.h
+ create mode 100644 subvolume.c
+ create mode 100644 subvolume.h
+
 -- 
 2.7.0
+

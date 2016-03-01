@@ -1,60 +1,49 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:49939 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:44882 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751366AbcCIQzh (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 9 Mar 2016 11:55:37 -0500
-Date: Wed, 9 Mar 2016 17:55:15 +0100
+	id S1752090AbcCAJUm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 1 Mar 2016 04:20:42 -0500
+Date: Tue, 1 Mar 2016 10:20:26 +0100
 From: David Sterba <dsterba@suse.cz>
-To: Anand Jain <anand.jain@oracle.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH V4 2/2] btrfs-progs: Introduce device delete by devid
-Message-ID: <20160309165515.GA18908@suse.cz>
+To: clm@fb.com
+Cc: fdmanana@kernel.org, linux-btrfs@vger.kernel.org
+Subject: Re: [GIT PULL] Btrfs fixes for 4.6
+Message-ID: <20160301092026.GX23746@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <1444123990-8832-1-git-send-email-anand.jain@oracle.com>
- <1457518226-601-1-git-send-email-anand.jain@oracle.com>
+References: <1456492920-18169-1-git-send-email-fdmanana@kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1457518226-601-1-git-send-email-anand.jain@oracle.com>
+In-Reply-To: <1456492920-18169-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Mar 09, 2016 at 06:10:26PM +0800, Anand Jain wrote:
-> From: Anand Jain <Anand.Jain@oracle.com>
-> 
-> This patch introduces new option <devid> for the command
-> 
->   btrfs device delete <device_path|devid>[..]  <mnt>
-> 
-> In a user reported issue on a 3-disk-RAID1, one disk failed with its SB
-> unreadable. Now with this patch user will have a choice to delete the
-> device using devid.
-> 
-> The other method we could do, is to match the input device_path to the
-> available device_paths with in the kernel. But that won't work in all the
-> cases, like what if user provided mapper path when the path within the
-> kernel is a non-mapper path.
-> 
-> This patch depends on the below kernel patch for the new feature to work,
-> however it will fail-back to the old interface for the kernel without the
-> patch
-> 
->   Btrfs: Introduce device delete by devid
-> 
-> Signed-off-by: Anand Jain <anand.jain@oracle.com>
-> [ coding style fixes ]
-> Signed-off-by: David Sterba <dsterba@suse.com>
-> ---
-> v4: a. For future benefit we should check for EOPNOTSUPP as well.
->     b. Update the changes to be inline with kernel that is
->        BTRFS_DEVICE_SPEC_BY_ID and BTRFS_VOL_ARG_V2_FLAGS_SUPPORTED
->        naming changes. and
->     (c. As I didn't see progs patch matching with the kernel naming
->        changes in the ML.)
+Hi Chris,
 
-I did these changes and updated the patch in devel, mentioned in the
-changelog as
+On Fri, Feb 26, 2016 at 01:22:00PM +0000, fdmanana@kernel.org wrote:
+> The following changes since commit 0fcb760afa6103419800674e22fb7f4de1f9670b:
+> 
+>   Merge branch 'for-next' of git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux into for-linus-4.6 (2016-02-24 10:21:44 -0800)
+> 
+> are available in the git repository at:
+> 
+>   git://git.kernel.org/pub/scm/linux/kernel/git/fdmanana/linux.git integration-4.6
+> 
+> for you to fetch changes up to 97c86c11a5cb9839609a9df195e998c3312e68b0:
+> 
+>   Btrfs: do not collect ordered extents when logging that inode exists (2016-02-26 04:28:15 +0000)
 
-    [ refresh on top of current code, sync with latest kernel patches, other
-      minor changes ]
+Filipe's branch is based on some integration snapshot that contains the
+'delete device by id' patchset that was removed from the 4.6 queue.
 
-Please send any followup changes on top of the current devel patch.
+Your branch 'next' merges it back again through Filipe's tree, besides
+that the merge commits of the topic branches in my for-next appear
+twice. While the duplicated commits are only an esthetic issue, the
+extra branch bothers me.
+
+I don't see a nice way how to avoid rebases in this cases. My suggestion
+is that Filipe rebases the branch on my for-chris that could have been
+an integration at some point.
+
+As we're merging our branches that way for the first time I'd like to
+find the workflow also for the next dev cycles so I'm open to other
+suggestions.

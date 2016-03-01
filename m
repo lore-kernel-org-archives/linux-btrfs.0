@@ -1,88 +1,218 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:12784 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:59078 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751953AbcCAAq5 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 29 Feb 2016 19:46:57 -0500
+	with ESMTP id S1750823AbcCAHYP (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 1 Mar 2016 02:24:15 -0500
 Subject: Re: Again, no space left on device while rebalancing and recipe
  doesnt work
-To: Marc Haber <mh+linux-btrfs@zugschlus.de>, <linux-btrfs@vger.kernel.org>
+To: Marc Haber <mh+linux-btrfs@zugschlus.de>
 References: <20160227211450.GS26042@torres.zugschlus.de>
  <56D3A56A.20809@cn.fujitsu.com> <20160229153352.GE2334@torres.zugschlus.de>
+ <56D4E621.3010604@cn.fujitsu.com> <20160301065448.GJ2334@torres.zugschlus.de>
+CC: <linux-btrfs@vger.kernel.org>
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <56D4E621.3010604@cn.fujitsu.com>
-Date: Tue, 1 Mar 2016 08:45:21 +0800
+Message-ID: <56D54393.8060307@cn.fujitsu.com>
+Date: Tue, 1 Mar 2016 15:24:03 +0800
 MIME-Version: 1.0
-In-Reply-To: <20160229153352.GE2334@torres.zugschlus.de>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+In-Reply-To: <20160301065448.GJ2334@torres.zugschlus.de>
+Content-Type: multipart/mixed;
+	boundary="------------080304070208010300030007"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+--------------080304070208010300030007
+Content-Type: text/plain; charset="utf-8"; format=flowed
+Content-Transfer-Encoding: 7bit
 
 
-Marc Haber wrote on 2016/02/29 16:33 +0100:
-> Hi,
+
+Marc Haber wrote on 2016/03/01 07:54 +0100:
+> On Tue, Mar 01, 2016 at 08:45:21AM +0800, Qu Wenruo wrote:
+>> Didn't see the attachment though, seems to be filtered by maillist police.
 >
-> On Mon, Feb 29, 2016 at 09:56:58AM +0800, Qu Wenruo wrote:
->> Marc Haber wrote on 2016/02/27 22:14 +0100:
->>> I have again the issue of no space left on device while rebalancing
->>> (with btrfs-tools 4.4.1 on kernel 4.4.2 on Debian unstable):
->>>
->>> mh@fan:~$ sudo btrfs balance start /mnt/fanbtr
->>> ERROR: error during balancing '/mnt/fanbtr': No space left on device
+> Trying again.
+
+OK, I got the attachment.
+
+And, surprisingly, btrfs balance on data chunk works without problem, 
+but it fails on plain btrfs balance command.
+
+>
+>>> I now have a kworker and a btfs-transact kernel process taking most of
+>>> one CPU core each, even after the userspace programs have terminated.
+>>> Is there a way to find out what these threads are actually doing?
 >>
->> It seems that, only when balancing all chunks, ENOSPC error happens.
->>
->> And did you run any other heavy IO at background?
+>> Did btrfs balance status gives any hint?
 >
-> Not when running those last commands for the mailing list post.
->
->> BTW, is there any kernel log when the ENOSPC happens?
->
->> Would you please try the following commands to see which one caused the
->> problem?
->> And would you please provide the dmesg of them?
->>
->> # btrfs balance start -dprofiles=single /mnt/fanbtr
->> # btrfs balance start -mprofile=dup /mnt/fanbtr
->> # btrfs balance start -sprofile=dup /mnt/fanbtr
->
-> I have attached the logs. I used logger(1) to have in syslog which
-> command I executed, and I have piped the userspace's output to logger
-> so that the syslog entries match the userspace output.
+> It says 'No balance found on /mnt/fanbtr'. I do have a second btrfs on
+> the box, which is acting up as well (it has a five digit number of
+> snapshots, and deleting a single snapshot takes about five to ten
+> minutes. I was planning to write another mailing list article once
+> this balance issue is through).
 
-Didn't see the attachment though, seems to be filtered by maillist police.
+I assume the large number of snapshots is related to the high CPU usage.
+As so many snapshots will make btrfs take so much time to calculate its 
+backref, and the backtrace seems to prove that.
 
->
-> -mprofile gave an error message, I therefore tried -mprofiles, and
-> -sprofiles wanted me to use the --force, so I did that as well.
->
-> The three balance commands above all three finshed alright without
-> running into ENOSPC, while running a plain balance (which is also part
-> of the log) errors out every time.
+I'd like to remove unused snapshots and keep the number of them to 4 
+digits, as a workaround.
 
-Strange, but at least some small clue to chase.
+But still not sure if it's related to the ENOSPC problem.
 
->
-> And, the -dprofiles=single log caused a number of INFOs regarding
-> btrfs-cleaner and btrfa-balance processes gotten stuck for more than
-> 120 seconds during the run.
+It would provide great help if you can modify your kernel and add the 
+following debug: (same as attachment)
 
-That's not normal and it would be a bug.
+------
+ From f2cc7af0aea659a522b97d3776b719f14532bce9 Mon Sep 17 00:00:00 2001
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Date: Tue, 1 Mar 2016 15:21:18 +0800
+Subject: [PATCH] btrfs: debug patch
 
->
-> I now have a kworker and a btfs-transact kernel process taking most of
-> one CPU core each, even after the userspace programs have terminated.
-> Is there a way to find out what these threads are actually doing?
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+---
+  fs/btrfs/extent-tree.c | 15 +++++++++++++--
+  1 file changed, 13 insertions(+), 2 deletions(-)
 
-Did btrfs balance status gives any hint?
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 083783b..70b284b 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -9393,8 +9393,10 @@ int btrfs_can_relocate(struct btrfs_root *root, 
+u64 bytenr)
+  	block_group = btrfs_lookup_block_group(root->fs_info, bytenr);
+
+  	/* odd, couldn't find the block group, leave it alone */
+-	if (!block_group)
++	if (!block_group) {
++		pr_info("no such chunk: %llu\n", bytenr);
+  		return -1;
++	}
+
+  	min_free = btrfs_block_group_used(&block_group->item);
+
+@@ -9419,6 +9421,11 @@ int btrfs_can_relocate(struct btrfs_root *root, 
+u64 bytenr)
+  	     space_info->bytes_pinned + space_info->bytes_readonly +
+  	     min_free < space_info->total_bytes)) {
+  		spin_unlock(&space_info->lock);
++		pr_info("no space: total:%llu, bg_len:%llu, used:%llu, reseved:%llu, 
+pinned:%llu, ro:%llu, min_free:%llu\n",
++			space_info->total_bytes, block_group->key.offset,
++			space_info->bytes_used, space_info->bytes_reserved,
++			space_info->bytes_pinned, space_info->bytes_readonly,
++			min_free);
+  		goto out;
+  	}
+  	spin_unlock(&space_info->lock);
+@@ -9448,8 +9455,10 @@ int btrfs_can_relocate(struct btrfs_root *root, 
+u64 bytenr)
+  		 * this is just a balance, so if we were marked as full
+  		 * we know there is no space for a new chunk
+  		 */
+-		if (full)
++		if (full) {
++			pr_info("space full\n");
+  			goto out;
++		}
+
+  		index = get_block_group_index(block_group);
+  	}
+@@ -9496,6 +9505,8 @@ int btrfs_can_relocate(struct btrfs_root *root, 
+u64 bytenr)
+  			ret = -1;
+  		}
+  	}
++	if (ret == -1)
++		pr_info("no new chunk allocatable\n");
+  	mutex_unlock(&root->fs_info->chunk_mutex);
+  	btrfs_end_transaction(trans, root);
+  out:
+-- 
+2.7.2
+
+------
 
 Thanks,
 Qu
 
+>
+> So I do not even know which filesystem is making two processes run in
+> circles. I have noticed that the "btrfs-transact" process is still the
+> same that started 24 hours ago, while the "kworker/u16:10" process
+> occasionally gets replaced by a new one which runs in circles as well.
 >
 > Greetings
 > Marc
 >
 
 
+
+--------------080304070208010300030007
+Content-Type: text/x-patch; name="0001-btrfs-debug-patch.patch"
+Content-Transfer-Encoding: 7bit
+Content-Disposition: attachment; filename="0001-btrfs-debug-patch.patch"
+
+>From f2cc7af0aea659a522b97d3776b719f14532bce9 Mon Sep 17 00:00:00 2001
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Date: Tue, 1 Mar 2016 15:21:18 +0800
+Subject: [PATCH] btrfs: debug patch
+
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+---
+ fs/btrfs/extent-tree.c | 15 +++++++++++++--
+ 1 file changed, 13 insertions(+), 2 deletions(-)
+
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 083783b..70b284b 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -9393,8 +9393,10 @@ int btrfs_can_relocate(struct btrfs_root *root, u64 bytenr)
+ 	block_group = btrfs_lookup_block_group(root->fs_info, bytenr);
+ 
+ 	/* odd, couldn't find the block group, leave it alone */
+-	if (!block_group)
++	if (!block_group) {
++		pr_info("no such chunk: %llu\n", bytenr);
+ 		return -1;
++	}
+ 
+ 	min_free = btrfs_block_group_used(&block_group->item);
+ 
+@@ -9419,6 +9421,11 @@ int btrfs_can_relocate(struct btrfs_root *root, u64 bytenr)
+ 	     space_info->bytes_pinned + space_info->bytes_readonly +
+ 	     min_free < space_info->total_bytes)) {
+ 		spin_unlock(&space_info->lock);
++		pr_info("no space: total:%llu, bg_len:%llu, used:%llu, reseved:%llu, pinned:%llu, ro:%llu, min_free:%llu\n",
++			space_info->total_bytes, block_group->key.offset,
++			space_info->bytes_used, space_info->bytes_reserved,
++			space_info->bytes_pinned, space_info->bytes_readonly,
++			min_free);
+ 		goto out;
+ 	}
+ 	spin_unlock(&space_info->lock);
+@@ -9448,8 +9455,10 @@ int btrfs_can_relocate(struct btrfs_root *root, u64 bytenr)
+ 		 * this is just a balance, so if we were marked as full
+ 		 * we know there is no space for a new chunk
+ 		 */
+-		if (full)
++		if (full) {
++			pr_info("space full\n");
+ 			goto out;
++		}
+ 
+ 		index = get_block_group_index(block_group);
+ 	}
+@@ -9496,6 +9505,8 @@ int btrfs_can_relocate(struct btrfs_root *root, u64 bytenr)
+ 			ret = -1;
+ 		}
+ 	}
++	if (ret == -1)
++		pr_info("no new chunk allocatable\n");
+ 	mutex_unlock(&root->fs_info->chunk_mutex);
+ 	btrfs_end_transaction(trans, root);
+ out:
+-- 
+2.7.2
+
+
+--------------080304070208010300030007--

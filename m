@@ -1,89 +1,88 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wm0-f52.google.com ([74.125.82.52]:38815 "EHLO
-	mail-wm0-f52.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751645AbcBUR3H (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:12784 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1751953AbcCAAq5 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 21 Feb 2016 12:29:07 -0500
-Received: by mail-wm0-f52.google.com with SMTP id a4so133460089wme.1
-        for <linux-btrfs@vger.kernel.org>; Sun, 21 Feb 2016 09:29:06 -0800 (PST)
-Message-ID: <286C424321A6496789A866288933406A@alyakaslap>
-From: "Alex Lyakas" <alex@zadarastorage.com>
-To: <linux-btrfs@vger.kernel.org>, <fdmanana@kernel.org>, <jbacik@fb.com>
-Subject: [RFC - PATCH] btrfs: do not write corrupted metadata blocks to disk
-Date: Sun, 21 Feb 2016 17:36:04 +0200
+	Mon, 29 Feb 2016 19:46:57 -0500
+Subject: Re: Again, no space left on device while rebalancing and recipe
+ doesnt work
+To: Marc Haber <mh+linux-btrfs@zugschlus.de>, <linux-btrfs@vger.kernel.org>
+References: <20160227211450.GS26042@torres.zugschlus.de>
+ <56D3A56A.20809@cn.fujitsu.com> <20160229153352.GE2334@torres.zugschlus.de>
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Message-ID: <56D4E621.3010604@cn.fujitsu.com>
+Date: Tue, 1 Mar 2016 08:45:21 +0800
 MIME-Version: 1.0
-Content-Type: text/plain;
-	format=flowed;
-	charset="iso-8859-1";
-	reply-type=original
+In-Reply-To: <20160229153352.GE2334@torres.zugschlus.de>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-csum_dirty_buffer was issuing a warning in case the extent buffer
-did not look alright, but was still returning success.
-Let's return error in this case, and also add two additional sanity
-checks on the extent buffer header.
 
-We had btrfs metadata corruption, and after looking at the logs we saw
-that WARN_ON(found_start != start) has been triggered. We are still 
-investigating
-which component trashed the cache page which belonged to btrfs. But btrfs
-only issued a warning, and as a result, the corrupted metadata block went to 
-disk.
 
-I think we should return an error in such case that the extent buffer 
-doesn't look alright.
-The caller up the chain may BUG_ON on this, for example flush_epd_write_bio 
-will,
-but it is better than to have a silent metadata corruption on disk.
+Marc Haber wrote on 2016/02/29 16:33 +0100:
+> Hi,
+>
+> On Mon, Feb 29, 2016 at 09:56:58AM +0800, Qu Wenruo wrote:
+>> Marc Haber wrote on 2016/02/27 22:14 +0100:
+>>> I have again the issue of no space left on device while rebalancing
+>>> (with btrfs-tools 4.4.1 on kernel 4.4.2 on Debian unstable):
+>>>
+>>> mh@fan:~$ sudo btrfs balance start /mnt/fanbtr
+>>> ERROR: error during balancing '/mnt/fanbtr': No space left on device
+>>
+>> It seems that, only when balancing all chunks, ENOSPC error happens.
+>>
+>> And did you run any other heavy IO at background?
+>
+> Not when running those last commands for the mailing list post.
+>
+>> BTW, is there any kernel log when the ENOSPC happens?
+>
+>> Would you please try the following commands to see which one caused the
+>> problem?
+>> And would you please provide the dmesg of them?
+>>
+>> # btrfs balance start -dprofiles=single /mnt/fanbtr
+>> # btrfs balance start -mprofile=dup /mnt/fanbtr
+>> # btrfs balance start -sprofile=dup /mnt/fanbtr
+>
+> I have attached the logs. I used logger(1) to have in syslog which
+> command I executed, and I have piped the userspace's output to logger
+> so that the syslog entries match the userspace output.
 
-Note: this patch has been properly tested on 3.18 kernel only.
+Didn't see the attachment though, seems to be filtered by maillist police.
 
-Signed-off-by: Alex Lyakas <alex@zadarastorage.com>
----
-fs/btrfs/disk-io.c | 14 ++++++++++++--
-1 file changed, 12 insertions(+), 2 deletions(-)
+>
+> -mprofile gave an error message, I therefore tried -mprofiles, and
+> -sprofiles wanted me to use the --force, so I did that as well.
+>
+> The three balance commands above all three finshed alright without
+> running into ENOSPC, while running a plain balance (which is also part
+> of the log) errors out every time.
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 4545e2e..701e706 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -508,22 +508,32 @@ static int csum_dirty_buffer(struct btrfs_fs_info 
-*fs_info, struct page *page)
-{
-     u64 start = page_offset(page);
-     u64 found_start;
-     struct extent_buffer *eb;
+Strange, but at least some small clue to chase.
 
-     eb = (struct extent_buffer *)page->private;
-     if (page != eb->pages[0])
-         return 0;
-     found_start = btrfs_header_bytenr(eb);
-     if (WARN_ON(found_start != start || !PageUptodate(page)))
--        return 0;
--    csum_tree_block(fs_info, eb, 0);
-+        return -EUCLEAN;
-+#ifdef CONFIG_BTRFS_ASSERT
-+    if (WARN_ON(memcmp_extent_buffer(eb, fs_info->fsid,
-+                    (unsigned long)btrfs_header_fsid(), BTRFS_FSID_SIZE)))
-+        return -EUCLEAN;
-+    if (WARN_ON(memcmp_extent_buffer(eb, fs_info->fsid,
-+                    (unsigned long)btrfs_header_chunk_tree_uuid(eb),
-+                    BTRFS_FSID_SIZE)))
-+        return -EUCLEAN;
-+#endif
-+    if (csum_tree_block(fs_info, eb, 0))
-+        return -EUCLEAN;
-     return 0;
-}
+>
+> And, the -dprofiles=single log caused a number of INFOs regarding
+> btrfs-cleaner and btrfa-balance processes gotten stuck for more than
+> 120 seconds during the run.
 
-static int check_tree_block_fsid(struct btrfs_fs_info *fs_info,
-                  struct extent_buffer *eb)
-{
-     struct btrfs_fs_devices *fs_devices = fs_info->fs_devices;
-     u8 fsid[BTRFS_UUID_SIZE];
-     int ret = 1;
+That's not normal and it would be a bug.
 
--- 
-1.9.1
+>
+> I now have a kworker and a btfs-transact kernel process taking most of
+> one CPU core each, even after the userspace programs have terminated.
+> Is there a way to find out what these threads are actually doing?
+
+Did btrfs balance status gives any hint?
+
+Thanks,
+Qu
+
+>
+> Greetings
+> Marc
+>
+
 

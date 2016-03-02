@@ -1,281 +1,202 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.136]:36937 "EHLO mail.kernel.org"
+Received: from mail.kernel.org ([198.145.29.136]:60656 "EHLO mail.kernel.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1755582AbcCCJRv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 3 Mar 2016 04:17:51 -0500
+	id S1754499AbcCBPtq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 2 Mar 2016 10:49:46 -0500
 Received: from mail.kernel.org (localhost [127.0.0.1])
-	by mail.kernel.org (Postfix) with ESMTP id 7F79420268
-	for <linux-btrfs@vger.kernel.org>; Thu,  3 Mar 2016 09:17:49 +0000 (UTC)
-Received: from mail-io0-f173.google.com (mail-io0-f173.google.com [209.85.223.173])
-	(using TLSv1.2 with cipher AES128-GCM-SHA256 (128/128 bits))
+	by mail.kernel.org (Postfix) with ESMTP id C61422013D
+	for <linux-btrfs@vger.kernel.org>; Wed,  2 Mar 2016 15:49:44 +0000 (UTC)
+Received: from debian3.lan (bl8-199-62.dsl.telepac.pt [85.241.199.62])
+	(using TLSv1.2 with cipher AES128-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPSA id 327BB20145
-	for <linux-btrfs@vger.kernel.org>; Thu,  3 Mar 2016 09:17:48 +0000 (UTC)
-Received: by mail-io0-f173.google.com with SMTP id n190so21193700iof.0
-        for <linux-btrfs@vger.kernel.org>; Thu, 03 Mar 2016 01:17:48 -0800 (PST)
-MIME-Version: 1.0
-In-Reply-To: <56D7D9D8.6090107@cn.fujitsu.com>
-References: <1456933778-7944-1-git-send-email-fdmanana@kernel.org>
-	<56D7D9D8.6090107@cn.fujitsu.com>
-Date: Thu, 3 Mar 2016 09:17:47 +0000
-Message-ID: <CAL3q7H4eWDnenYNoXsWAJ5yzo+p0FOx3RtzigtBX_36LAj-2rA@mail.gmail.com>
-Subject: Re: [PATCH] Btrfs: fix loading of orphan roots leading to BUG_ON
-From: Filipe Manana <fdmanana@kernel.org>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+	by mail.kernel.org (Postfix) with ESMTPSA id 1147B20394
+	for <linux-btrfs@vger.kernel.org>; Wed,  2 Mar 2016 15:49:41 +0000 (UTC)
+From: fdmanana@kernel.org
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH] Btrfs: fix loading of orphan roots leading to BUG_ON
+Date: Wed,  2 Mar 2016 15:49:38 +0000
+Message-Id: <1456933778-7944-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Mar 3, 2016 at 6:29 AM, Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
->
->
->  wrote on 2016/03/02 15:49 +0000:
->>
->> From: Filipe Manana <fdmanana@suse.com>
->>
->> When looking for orphan roots during mount we can end up hitting a
->> BUG_ON() (at root-item.c:btrfs_find_orphan_roots()) if a log tree is
->> replayed and qgroups are enabled. This is because after a log tree is
->> replayed, a transaction commit is made, which triggers qgroup extent
->> accounting which in turn does backref walking which ends up reading and
->> inserting all roots in the radix tree fs_info->fs_root_radix, including
->> orphan roots (deleted snapshots). So after the log tree is replayed, when
->> finding orphan roots we hit the BUG_ON with the following trace:
->>
->> [118209.182438] ------------[ cut here ]------------
->> [118209.183279] kernel BUG at fs/btrfs/root-tree.c:314!
->> [118209.184074] invalid opcode: 0000 [#1] PREEMPT SMP DEBUG_PAGEALLOC
->> [118209.185123] Modules linked in: btrfs dm_flakey dm_mod crc32c_generic
->> ppdev xor raid6_pq evdev sg parport_pc parport acpi_cpufreq tpm_tis tpm
->> psmouse
->> processor i2c_piix4 serio_raw pcspkr i2c_core button loop autofs4 ext4
->> crc16 mbcache jbd2 sd_mod sr_mod cdrom ata_generic virtio_scsi ata_piix
->> libata
->> virtio_pci virtio_ring virtio scsi_mod e1000 floppy [last unloaded: btrfs]
->> [118209.186318] CPU: 14 PID: 28428 Comm: mount Tainted: G        W
->> 4.5.0-rc5-btrfs-next-24+ #1
->> [118209.186318] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996),
->> BIOS by qemu-project.org 04/01/2014
->> [118209.186318] task: ffff8801ec131040 ti: ffff8800af34c000 task.ti:
->> ffff8800af34c000
->> [118209.186318] RIP: 0010:[<ffffffffa04237d7>]  [<ffffffffa04237d7>]
->> btrfs_find_orphan_roots+0x1fc/0x244 [btrfs]
->> [118209.186318] RSP: 0018:ffff8800af34faa8  EFLAGS: 00010246
->> [118209.186318] RAX: 00000000ffffffef RBX: 00000000ffffffef RCX:
->> 0000000000000001
->> [118209.186318] RDX: 0000000080000000 RSI: 0000000000000001 RDI:
->> 00000000ffffffff
->> [118209.186318] RBP: ffff8800af34fb08 R08: 0000000000000001 R09:
->> 0000000000000000
->> [118209.186318] R10: ffff8800af34f9f0 R11: 6db6db6db6db6db7 R12:
->> ffff880171b97000
->> [118209.186318] R13: ffff8801ca9d65e0 R14: ffff8800afa2e000 R15:
->> 0000160000000000
->> [118209.186318] FS:  00007f5bcb914840(0000) GS:ffff88023edc0000(0000)
->> knlGS:0000000000000000
->> [118209.186318] CS:  0010 DS: 0000 ES: 0000 CR0: 000000008005003b
->> [118209.186318] CR2: 00007f5bcaceb5d9 CR3: 00000000b49b5000 CR4:
->> 00000000000006e0
->> [118209.186318] Stack:
->> [118209.186318]  fffffbffffffffff 010230ffffffffff 0101000000000000
->> ff84000000000000
->> [118209.186318]  fbffffffffffffff 30ffffffffffffff 0000000000000101
->> ffff880082348000
->> [118209.186318]  0000000000000000 ffff8800afa2e000 ffff8800afa2e000
->> 0000000000000000
->> [118209.186318] Call Trace:
->> [118209.186318]  [<ffffffffa042e2db>] open_ctree+0x1e37/0x21b9 [btrfs]
->> [118209.186318]  [<ffffffffa040a753>] btrfs_mount+0x97e/0xaed [btrfs]
->> [118209.186318]  [<ffffffff8108e1c0>] ? trace_hardirqs_on+0xd/0xf
->> [118209.186318]  [<ffffffff8117b87e>] mount_fs+0x67/0x131
->> [118209.186318]  [<ffffffff81192d2b>] vfs_kern_mount+0x6c/0xde
->> [118209.186318]  [<ffffffffa0409f81>] btrfs_mount+0x1ac/0xaed [btrfs]
->> [118209.186318]  [<ffffffff8108e1c0>] ? trace_hardirqs_on+0xd/0xf
->> [118209.186318]  [<ffffffff8108c26b>] ? lockdep_init_map+0xb9/0x1b3
->> [118209.186318]  [<ffffffff8117b87e>] mount_fs+0x67/0x131
->> [118209.186318]  [<ffffffff81192d2b>] vfs_kern_mount+0x6c/0xde
->> [118209.186318]  [<ffffffff81195637>] do_mount+0x8a6/0x9e8
->> [118209.186318]  [<ffffffff8119598d>] SyS_mount+0x77/0x9f
->> [118209.186318]  [<ffffffff81493017>] entry_SYSCALL_64_fastpath+0x12/0x6b
->> [118209.186318] Code: 64 00 00 85 c0 89 c3 75 24 f0 41 80 4c 24 20 20 49
->> 8b bc 24 f0 01 00 00 4c 89 e6 e8 e8 65 00 00 85 c0 89 c3 74 11 83 f8 ef 75
->> 02 <0f> 0b
->> 4c 89 e7 e8 da 72 00 00 eb 1c 41 83 bc 24 00 01 00 00 00
->> [118209.186318] RIP  [<ffffffffa04237d7>]
->> btrfs_find_orphan_roots+0x1fc/0x244 [btrfs]
->> [118209.186318]  RSP <ffff8800af34faa8>
->> [118209.230735] ---[ end trace 83938f987d85d477 ]---
->>
->> So fix this by not treating the error -EEXIST, returned when attempting
->> to insert a root already inserted by the backref walking code, as an
->> error.
->>
->> The following test case for xfstests reproduces the bug:
->>
->>    seq=`basename $0`
->>    seqres=$RESULT_DIR/$seq
->>    echo "QA output created by $seq"
->>    tmp=/tmp/$$
->>    status=1     # failure is the default!
->>    trap "_cleanup; exit \$status" 0 1 2 3 15
->>
->>    _cleanup()
->>    {
->>        _cleanup_flakey
->>        cd /
->>        rm -f $tmp.*
->>    }
->>
->>    # get standard environment, filters and checks
->>    . ./common/rc
->>    . ./common/filter
->>    . ./common/dmflakey
->>
->>    # real QA test starts here
->>    _supported_fs btrfs
->>    _supported_os Linux
->>    _require_scratch
->>    _require_dm_target flakey
->>    _require_metadata_journaling $SCRATCH_DEV
->>
->>    rm -f $seqres.full
->>
->>    _scratch_mkfs >>$seqres.full 2>&1
->>    _init_flakey
->>    _mount_flakey
->>
->>    _run_btrfs_util_prog quota enable $SCRATCH_MNT
->>
->>    # Create 2 directories with one file in one of them.
->>    # We use these just to trigger a transaction commit later, moving the
->> file from
->>    # directory a to directory b and doing an fsync against directory a.
->>    mkdir $SCRATCH_MNT/a
->>    mkdir $SCRATCH_MNT/b
->>    touch $SCRATCH_MNT/a/f
->>    sync
->>
->>    # Create our test file with 2 4K extents.
->>    $XFS_IO_PROG -f -s -c "pwrite -S 0xaa 0 8K" $SCRATCH_MNT/foobar |
->> _filter_xfs_io
->>
->>    # Create a snapshot and delete it. This doesn't really delete the
->> snapshot
->>    # immediately, just makes it inaccessible and invisible to user space,
->> the
->>    # snapshot is deleted later by a dedicated kernel thread (cleaner
->> kthread)
->>    # which is woke up at the next transaction commit.
->>    # A root orphan item is inserted into the tree of tree roots, so that
->> if a
->>    # power failure happens before the dedicated kernel thread does the
->> snapshot
->>    # deletion, the next time the filesystem is mounted it resumes the
->> snapshot
->>    # deletion.
->>    _run_btrfs_util_prog subvolume snapshot $SCRATCH_MNT $SCRATCH_MNT/snap
->>    _run_btrfs_util_prog subvolume delete $SCRATCH_MNT/snap
->>
->>    # Now overwrite half of the extents we wrote before. Because we made a
->> snapshpot
->>    # before, which isn't really deleted yet (since no transaction commit
->> happened
->>    # after we did the snapshot delete request), the non overwritten
->> extents get
->>    # referenced twice, once by the default subvolume and once by the
->> snapshot.
->>    $XFS_IO_PROG -c "pwrite -S 0xbb 4K 8K" $SCRATCH_MNT/foobar |
->> _filter_xfs_io
->>
->>    # Now move file f from directory a to directory b and fsync directory
->> a.
->>    # The fsync on the directory a triggers a transaction commit (because a
->> file
->>    # was moved from it to another directory) and the file fsync leaves a
->> log tree
->>    # with file extent items to replay.
->>    mv $SCRATCH_MNT/a/f $SCRATCH_MNT/a/b
->>    $XFS_IO_PROG -c "fsync" $SCRATCH_MNT/a
->>    $XFS_IO_PROG -c "fsync" $SCRATCH_MNT/foobar
->>
->>    echo "File digest before power failure:"
->>    md5sum $SCRATCH_MNT/foobar | _filter_scratch
->>
->>    # Now simulate a power failure and mount the filesystem to replay the
->> log tree.
->>    # After the log tree was replayed, we used to hit a BUG_ON() when
->> processing
->>    # the root orphan item for the deleted snapshot. This is because when
->> processing
->>    # an orphan root the code expected to be the first code inserting the
->> root into
->>    # the fs_info->fs_root_radix radix tree, while in reallity it was the
->> second
->>    # caller attempting to do it - the first caller was the transaction
->> commit that
->>    # took place after replaying the log tree, when updating the qgroup
->> counters.
->>    _flakey_drop_and_remount
->>
->>    echo "File digest before after failure:"
->>    # Must match what he got before the power failure.
->>    md5sum $SCRATCH_MNT/foobar | _filter_scratch
->>
->>    _unmount_flakey
->>    status=0
->>    exit
->>
->> Fixes: 2d9e97761087 ("Btrfs: use btrfs_get_fs_root in
->> resolve_indirect_ref")
->> Cc: stable@vger.kernel.org  # 4.4+
->> Signed-off-by: Filipe Manana <fdmanana@suse.com>
->
->
-> Reviewed-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
->
-> Looks good, and the comment is clear enough.
->
-> Thanks for your long effort to spot and fix corner cases like this.
+From: Filipe Manana <fdmanana@suse.com>
 
-Well, using qgroups, deleting snapshots and fsync'ing file data isn't
-that much of a rare use case, is it? :P
+When looking for orphan roots during mount we can end up hitting a
+BUG_ON() (at root-item.c:btrfs_find_orphan_roots()) if a log tree is
+replayed and qgroups are enabled. This is because after a log tree is
+replayed, a transaction commit is made, which triggers qgroup extent
+accounting which in turn does backref walking which ends up reading and
+inserting all roots in the radix tree fs_info->fs_root_radix, including
+orphan roots (deleted snapshots). So after the log tree is replayed, when
+finding orphan roots we hit the BUG_ON with the following trace:
 
+[118209.182438] ------------[ cut here ]------------
+[118209.183279] kernel BUG at fs/btrfs/root-tree.c:314!
+[118209.184074] invalid opcode: 0000 [#1] PREEMPT SMP DEBUG_PAGEALLOC
+[118209.185123] Modules linked in: btrfs dm_flakey dm_mod crc32c_generic ppdev xor raid6_pq evdev sg parport_pc parport acpi_cpufreq tpm_tis tpm psmouse
+processor i2c_piix4 serio_raw pcspkr i2c_core button loop autofs4 ext4 crc16 mbcache jbd2 sd_mod sr_mod cdrom ata_generic virtio_scsi ata_piix libata
+virtio_pci virtio_ring virtio scsi_mod e1000 floppy [last unloaded: btrfs]
+[118209.186318] CPU: 14 PID: 28428 Comm: mount Tainted: G        W       4.5.0-rc5-btrfs-next-24+ #1
+[118209.186318] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS by qemu-project.org 04/01/2014
+[118209.186318] task: ffff8801ec131040 ti: ffff8800af34c000 task.ti: ffff8800af34c000
+[118209.186318] RIP: 0010:[<ffffffffa04237d7>]  [<ffffffffa04237d7>] btrfs_find_orphan_roots+0x1fc/0x244 [btrfs]
+[118209.186318] RSP: 0018:ffff8800af34faa8  EFLAGS: 00010246
+[118209.186318] RAX: 00000000ffffffef RBX: 00000000ffffffef RCX: 0000000000000001
+[118209.186318] RDX: 0000000080000000 RSI: 0000000000000001 RDI: 00000000ffffffff
+[118209.186318] RBP: ffff8800af34fb08 R08: 0000000000000001 R09: 0000000000000000
+[118209.186318] R10: ffff8800af34f9f0 R11: 6db6db6db6db6db7 R12: ffff880171b97000
+[118209.186318] R13: ffff8801ca9d65e0 R14: ffff8800afa2e000 R15: 0000160000000000
+[118209.186318] FS:  00007f5bcb914840(0000) GS:ffff88023edc0000(0000) knlGS:0000000000000000
+[118209.186318] CS:  0010 DS: 0000 ES: 0000 CR0: 000000008005003b
+[118209.186318] CR2: 00007f5bcaceb5d9 CR3: 00000000b49b5000 CR4: 00000000000006e0
+[118209.186318] Stack:
+[118209.186318]  fffffbffffffffff 010230ffffffffff 0101000000000000 ff84000000000000
+[118209.186318]  fbffffffffffffff 30ffffffffffffff 0000000000000101 ffff880082348000
+[118209.186318]  0000000000000000 ffff8800afa2e000 ffff8800afa2e000 0000000000000000
+[118209.186318] Call Trace:
+[118209.186318]  [<ffffffffa042e2db>] open_ctree+0x1e37/0x21b9 [btrfs]
+[118209.186318]  [<ffffffffa040a753>] btrfs_mount+0x97e/0xaed [btrfs]
+[118209.186318]  [<ffffffff8108e1c0>] ? trace_hardirqs_on+0xd/0xf
+[118209.186318]  [<ffffffff8117b87e>] mount_fs+0x67/0x131
+[118209.186318]  [<ffffffff81192d2b>] vfs_kern_mount+0x6c/0xde
+[118209.186318]  [<ffffffffa0409f81>] btrfs_mount+0x1ac/0xaed [btrfs]
+[118209.186318]  [<ffffffff8108e1c0>] ? trace_hardirqs_on+0xd/0xf
+[118209.186318]  [<ffffffff8108c26b>] ? lockdep_init_map+0xb9/0x1b3
+[118209.186318]  [<ffffffff8117b87e>] mount_fs+0x67/0x131
+[118209.186318]  [<ffffffff81192d2b>] vfs_kern_mount+0x6c/0xde
+[118209.186318]  [<ffffffff81195637>] do_mount+0x8a6/0x9e8
+[118209.186318]  [<ffffffff8119598d>] SyS_mount+0x77/0x9f
+[118209.186318]  [<ffffffff81493017>] entry_SYSCALL_64_fastpath+0x12/0x6b
+[118209.186318] Code: 64 00 00 85 c0 89 c3 75 24 f0 41 80 4c 24 20 20 49 8b bc 24 f0 01 00 00 4c 89 e6 e8 e8 65 00 00 85 c0 89 c3 74 11 83 f8 ef 75 02 <0f> 0b
+4c 89 e7 e8 da 72 00 00 eb 1c 41 83 bc 24 00 01 00 00 00
+[118209.186318] RIP  [<ffffffffa04237d7>] btrfs_find_orphan_roots+0x1fc/0x244 [btrfs]
+[118209.186318]  RSP <ffff8800af34faa8>
+[118209.230735] ---[ end trace 83938f987d85d477 ]---
 
->
-> Thanks,
-> Qu
->
->
->> ---
->>   fs/btrfs/root-tree.c | 10 +++++++++-
->>   1 file changed, 9 insertions(+), 1 deletion(-)
->>
->> diff --git a/fs/btrfs/root-tree.c b/fs/btrfs/root-tree.c
->> index a25f3b2..9fcd6df 100644
->> --- a/fs/btrfs/root-tree.c
->> +++ b/fs/btrfs/root-tree.c
->> @@ -310,8 +310,16 @@ int btrfs_find_orphan_roots(struct btrfs_root
->> *tree_root)
->>                 set_bit(BTRFS_ROOT_ORPHAN_ITEM_INSERTED, &root->state);
->>
->>                 err = btrfs_insert_fs_root(root->fs_info, root);
->> +               /*
->> +                * The root might have been inserted already, as before we
->> look
->> +                * for orphan roots, log replay might have happened, which
->> +                * triggers a transaction commit and qgroup accounting,
->> which
->> +                * in turn reads and inserts fs roots while doing backref
->> +                * walking.
->> +                */
->> +               if (err == -EEXIST)
->> +                       err = 0;
->>                 if (err) {
->> -                       BUG_ON(err == -EEXIST);
->>                         btrfs_free_fs_root(root);
->>                         break;
->>                 }
->>
->
->
+So fix this by not treating the error -EEXIST, returned when attempting
+to insert a root already inserted by the backref walking code, as an error.
+
+The following test case for xfstests reproduces the bug:
+
+  seq=`basename $0`
+  seqres=$RESULT_DIR/$seq
+  echo "QA output created by $seq"
+  tmp=/tmp/$$
+  status=1	# failure is the default!
+  trap "_cleanup; exit \$status" 0 1 2 3 15
+
+  _cleanup()
+  {
+      _cleanup_flakey
+      cd /
+      rm -f $tmp.*
+  }
+
+  # get standard environment, filters and checks
+  . ./common/rc
+  . ./common/filter
+  . ./common/dmflakey
+
+  # real QA test starts here
+  _supported_fs btrfs
+  _supported_os Linux
+  _require_scratch
+  _require_dm_target flakey
+  _require_metadata_journaling $SCRATCH_DEV
+
+  rm -f $seqres.full
+
+  _scratch_mkfs >>$seqres.full 2>&1
+  _init_flakey
+  _mount_flakey
+
+  _run_btrfs_util_prog quota enable $SCRATCH_MNT
+
+  # Create 2 directories with one file in one of them.
+  # We use these just to trigger a transaction commit later, moving the file from
+  # directory a to directory b and doing an fsync against directory a.
+  mkdir $SCRATCH_MNT/a
+  mkdir $SCRATCH_MNT/b
+  touch $SCRATCH_MNT/a/f
+  sync
+
+  # Create our test file with 2 4K extents.
+  $XFS_IO_PROG -f -s -c "pwrite -S 0xaa 0 8K" $SCRATCH_MNT/foobar | _filter_xfs_io
+
+  # Create a snapshot and delete it. This doesn't really delete the snapshot
+  # immediately, just makes it inaccessible and invisible to user space, the
+  # snapshot is deleted later by a dedicated kernel thread (cleaner kthread)
+  # which is woke up at the next transaction commit.
+  # A root orphan item is inserted into the tree of tree roots, so that if a
+  # power failure happens before the dedicated kernel thread does the snapshot
+  # deletion, the next time the filesystem is mounted it resumes the snapshot
+  # deletion.
+  _run_btrfs_util_prog subvolume snapshot $SCRATCH_MNT $SCRATCH_MNT/snap
+  _run_btrfs_util_prog subvolume delete $SCRATCH_MNT/snap
+
+  # Now overwrite half of the extents we wrote before. Because we made a snapshpot
+  # before, which isn't really deleted yet (since no transaction commit happened
+  # after we did the snapshot delete request), the non overwritten extents get
+  # referenced twice, once by the default subvolume and once by the snapshot.
+  $XFS_IO_PROG -c "pwrite -S 0xbb 4K 8K" $SCRATCH_MNT/foobar | _filter_xfs_io
+
+  # Now move file f from directory a to directory b and fsync directory a.
+  # The fsync on the directory a triggers a transaction commit (because a file
+  # was moved from it to another directory) and the file fsync leaves a log tree
+  # with file extent items to replay.
+  mv $SCRATCH_MNT/a/f $SCRATCH_MNT/a/b
+  $XFS_IO_PROG -c "fsync" $SCRATCH_MNT/a
+  $XFS_IO_PROG -c "fsync" $SCRATCH_MNT/foobar
+
+  echo "File digest before power failure:"
+  md5sum $SCRATCH_MNT/foobar | _filter_scratch
+
+  # Now simulate a power failure and mount the filesystem to replay the log tree.
+  # After the log tree was replayed, we used to hit a BUG_ON() when processing
+  # the root orphan item for the deleted snapshot. This is because when processing
+  # an orphan root the code expected to be the first code inserting the root into
+  # the fs_info->fs_root_radix radix tree, while in reallity it was the second
+  # caller attempting to do it - the first caller was the transaction commit that
+  # took place after replaying the log tree, when updating the qgroup counters.
+  _flakey_drop_and_remount
+
+  echo "File digest before after failure:"
+  # Must match what he got before the power failure.
+  md5sum $SCRATCH_MNT/foobar | _filter_scratch
+
+  _unmount_flakey
+  status=0
+  exit
+
+Fixes: 2d9e97761087 ("Btrfs: use btrfs_get_fs_root in resolve_indirect_ref")
+Cc: stable@vger.kernel.org  # 4.4+
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+ fs/btrfs/root-tree.c | 10 +++++++++-
+ 1 file changed, 9 insertions(+), 1 deletion(-)
+
+diff --git a/fs/btrfs/root-tree.c b/fs/btrfs/root-tree.c
+index a25f3b2..9fcd6df 100644
+--- a/fs/btrfs/root-tree.c
++++ b/fs/btrfs/root-tree.c
+@@ -310,8 +310,16 @@ int btrfs_find_orphan_roots(struct btrfs_root *tree_root)
+ 		set_bit(BTRFS_ROOT_ORPHAN_ITEM_INSERTED, &root->state);
+ 
+ 		err = btrfs_insert_fs_root(root->fs_info, root);
++		/*
++		 * The root might have been inserted already, as before we look
++		 * for orphan roots, log replay might have happened, which
++		 * triggers a transaction commit and qgroup accounting, which
++		 * in turn reads and inserts fs roots while doing backref
++		 * walking.
++		 */
++		if (err == -EEXIST)
++			err = 0;
+ 		if (err) {
+-			BUG_ON(err == -EEXIST);
+ 			btrfs_free_fs_root(root);
+ 			break;
+ 		}
+-- 
+2.7.0.rc3
+

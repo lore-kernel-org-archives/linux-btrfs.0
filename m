@@ -1,50 +1,122 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qg0-f43.google.com ([209.85.192.43]:35295 "EHLO
-	mail-qg0-f43.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752187AbcCBNn2 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 2 Mar 2016 08:43:28 -0500
-Received: by mail-qg0-f43.google.com with SMTP id y89so168923490qge.2
-        for <linux-btrfs@vger.kernel.org>; Wed, 02 Mar 2016 05:43:28 -0800 (PST)
-Received: from [127.0.0.1] (rrcs-70-62-41-24.central.biz.rr.com. [70.62.41.24])
-        by smtp.gmail.com with ESMTPSA id d71sm14892458qhd.18.2016.03.02.05.43.26
-        for <linux-btrfs@vger.kernel.org>
-        (version=TLSv1/SSLv3 cipher=OTHER);
-        Wed, 02 Mar 2016 05:43:26 -0800 (PST)
-Subject: Re: raid5
-To: linux-btrfs@vger.kernel.org
-References: <CAAcrkYL_=8Ru+_Aum_ZR14AD-D44Dki7Qr9pyAzezWMMZJ8A2w@mail.gmail.com>
- <pan$d7909$c07dac53$17a8f04a$fdf6e07b@cox.net>
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <56D6EDF5.2010408@gmail.com>
-Date: Wed, 2 Mar 2016 08:43:17 -0500
+Received: from mail-ig0-f174.google.com ([209.85.213.174]:33677 "EHLO
+	mail-ig0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756334AbcCBSWD (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 2 Mar 2016 13:22:03 -0500
+Received: by mail-ig0-f174.google.com with SMTP id y8so584260igp.0
+        for <linux-btrfs@vger.kernel.org>; Wed, 02 Mar 2016 10:22:03 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <pan$d7909$c07dac53$17a8f04a$fdf6e07b@cox.net>
-Content-Type: text/plain; charset=utf-8; format=flowed
+In-Reply-To: <CAGTZdkyxxjfTP+1Ej-vpmMr7zRU7S_WHDQVzL1AcCe0iSQVx=w@mail.gmail.com>
+References: <CAGTZdkyxxjfTP+1Ej-vpmMr7zRU7S_WHDQVzL1AcCe0iSQVx=w@mail.gmail.com>
+Date: Wed, 2 Mar 2016 11:22:02 -0700
+Message-ID: <CAJCQCtQ+inGUAKCG9LTCCcF7rxDq+hh8a=ngcUUfg2MYssVQDA@mail.gmail.com>
+Subject: Re: BTRFS Raid 6 corruption - please help with restore
+From: Chris Murphy <lists@colorremedies.com>
+To: Stuart Gittings <gittings.s@gmail.com>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2016-03-01 16:44, Duncan wrote:
-> John Smith posted on Tue, 01 Mar 2016 15:24:04 +0100 as excerpted:
+On Wed, Mar 2, 2016 at 3:47 AM, Stuart Gittings <gittings.s@gmail.com> wrote:
+> Hi - I have some corruption on a 12 drive Raid 6 volume.  Here's the
+> basics - if someone could help with restore it would save me a ton of
+> time (and some data loss - I have critical data backed up, but not
+> all).
 >
->> what is the status of  btrfs raid5 in kernel 4.4? Thank you
+> stuart@debian:~$ uname -a
+> Linux debian 4.3.0-0.bpo.1-amd64 #1 SMP Debian 4.3.3-7~bpo8+1
+> (2016-01-19) x86_64 GNU/Linux
 >
-> That is a very good question. =:^)
+> stuart@debian:~$ sudo btrfs --version
+> btrfs-progs v4.4
 >
-> The answer, to the best I can give it, is, btrfs raid56 mode has no known
-> outstanding bugs specific to it at this time (unless a dev knows of any,
-> but I've not seen any confirmed on-list), and hasn't had any, at least
-> nothing major, since early in the 4.1 cycle, so 4.2 thru 4.4 should be
-> clean of /known/ raid56 bugs.
-That really depends on what you consider to be a bug...
+>  sudo btrfs fi sh
+> Label: none  uuid: 7f994e11-e146-4dee-80f0-c16ac3073e91
+>         Total devices 12 FS bytes used 14.25TiB
+>         devid    1 size 2.73TiB used 167.14GiB path /dev/sdc
+>         devid    2 size 5.46TiB used 1.75TiB path /dev/sdd
+>         devid    3 size 5.46TiB used 1.75TiB path /dev/sde
+>         devid    4 size 2.73TiB used 167.14GiB path /dev/sdn
+>         devid    5 size 5.46TiB used 1.75TiB path /dev/sdf
+>         devid    6 size 2.73TiB used 1.75TiB path /dev/sdm
+>         devid    9 size 2.73TiB used 1.75TiB path /dev/sdj
+>         devid   10 size 2.73TiB used 1.75TiB path /dev/sdi
+>         devid   11 size 2.73TiB used 1.75TiB path /dev/sdg
+>         devid   13 size 2.73TiB used 1.75TiB path /dev/sdl
+>         devid   14 size 2.73TiB used 1.75TiB path /dev/sdk
+>         devid   15 size 2.73TiB used 1.75TiB path /dev/sdh
+>
+> sudo mount -t btrfs -oro,recover /dev/sdc /data
+> mount: wrong fs type, bad option, bad superblock on /dev/sdc,
+>        missing codepage or helper program, or other error
+>
+>        In some cases useful info is found in syslog - try
+>        dmesg | tail or so.
+>
+> dmesg:
+>
+> [ 5642.118303] BTRFS info (device sdc): enabling auto recovery
+> [ 5642.118313] BTRFS info (device sdc): disk space caching is enabled
+> [ 5642.118316] BTRFS: has skinny extents
+> [ 5642.130145] btree_readpage_end_io_hook: 39 callbacks suppressed
+> [ 5642.130148] BTRFS (device sdc): bad tree block start
+> 13629298965300190098 47255853072384
+> [ 5642.130759] BTRFS (device sdc): bad tree block start
+> 10584834564968318131 47255853105152
+> [ 5642.131289] BTRFS (device sdc): bad tree block start
+> 2775635947161390306 47255853121536
+> [ 5644.730012] BTRFS: bdev /dev/sdc errs: wr 1664846, rd 210656, flush
+> 18054, corrupt 0, gen 0
+> [ 5644.801291] BTRFS (device sdc): bad tree block start
+> 8578409561856120450 47254279438336
+> [ 5644.801304] BTRFS (device sdc): bad tree block start
+> 18087369170870825197 47254279454720
+> [ 5644.831199] BTRFS (device sdc): bad tree block start
+> 9721403008164124267 47254277718016
+> [ 5644.842763] BTRFS (device sdc): bad tree block start
+> 18087369170870825197 47254279454720
+> [ 5644.891992] BTRFS (device sdc): bad tree block start
+> 17582844917171188859 47254194176000
+> [ 5644.951366] BTRFS (device sdc): bad tree block start
+> 3962496226683925584 47254278586368
+> [ 5645.097168] BTRFS (device sdc): bad tree block start
+> 17049293152820168762 47255619846144
+> [ 5646.159819] BTRFS: Failed to read block groups: -5
+> [ 5646.215905] BTRFS: open_ctree failed
+> stuart@debian:~$
+>
+> Finally:
+>  sudo btrfs restore /dev/sdc /backup
+> checksum verify failed on 47255853072384 found 70F58CCA wanted AE18D5BC
+> checksum verify failed on 47255853072384 found 70F58CCA wanted AE18D5BC
+> checksum verify failed on 47255853072384 found 805B1FF7 wanted B76A652F
+> checksum verify failed on 47255853072384 found 70F58CCA wanted AE18D5BC
+> bytenr mismatch, want=47255853072384, have=13629298965300190098
+> Couldn't read chunk tree
+> Could not open root, trying backup super
+> warning, device 3 is missing
+> warning, device 2 is missing
+> warning, device 5 is missing
+> warning, device 4 is missing
+> bytenr mismatch, want=47255851761664, have=47255851958272
+> Couldn't read chunk root
+> Could not open root, trying backup super
+> warning, device 3 is missing
+> warning, device 2 is missing
+> warning, device 5 is missing
+> warning, device 4 is missing
+> bytenr mismatch, want=47255851761664, have=47255851958272
+> Couldn't read chunk root
+> Could not open root, trying backup super
+>
 
-For example, for most production usage, the insanely long 
-rebuild/rebalance times that people are seeing with BTRFS raid56 (on the 
-order of multiple days per terabyte of data to be rebuilt, compared to a 
-couple of hours for a rebuild on the same hardware using MDRAID or LVM) 
-would very much be considered a serious bug, as it significantly 
-increases the chances of data loss due to further disk failures. 
-Personally, my recommendation would be to not use BTRFS raid56 for 
-anything other than testing if you're working with data-sets bigger than 
-about 250G until this particular issue gets fixed, which may be a while 
-as we can't seem to figure out what exactly is causing the problem.
 
+Well there appear to be too many devices missing, I count four. What
+does 'btrfs fi show' look like? If there are missing devices, try
+'btrfs dev scan' and then 'btrfs fi show' again and see if it changes.
+I don't think much can be done if there really are four missing
+devices.
+
+-- 
+Chris Murphy

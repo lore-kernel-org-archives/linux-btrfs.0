@@ -1,64 +1,41 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:31497 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751349AbcCBEso (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 1 Mar 2016 23:48:44 -0500
+Received: from userp1040.oracle.com ([156.151.31.81]:18042 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750858AbcCBHHJ (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 2 Mar 2016 02:07:09 -0500
 Subject: Re: [RFC] Experimental btrfs encryption
-To: Chris Mason <clm@fb.com>, Christoph Hellwig <hch@infradead.org>,
-        Tomasz Torcz <tomek@pipebreaker.pl>, linux-btrfs@vger.kernel.org
+To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>, linux-btrfs@vger.kernel.org
 References: <1456848492-4814-1-git-send-email-anand.jain@oracle.com>
- <20160301162952.GB718307@mother.pipebreaker.pl>
- <20160301164616.dbbeuzccfkzupign@floor.thefacebook.com>
- <20160301175927.GA32354@infradead.org>
- <20160301182312.fdl264cxemz2fy5m@floor.thefacebook.com>
+ <56D5C64F.3000800@gmail.com>
+Cc: clm@fb.com, dsterba@suse.cz
 From: Anand Jain <anand.jain@oracle.com>
-Message-ID: <56D67087.7040702@oracle.com>
-Date: Wed, 2 Mar 2016 12:48:07 +0800
+Message-ID: <56D69114.5020002@oracle.com>
+Date: Wed, 2 Mar 2016 15:07:00 +0800
 MIME-Version: 1.0
-In-Reply-To: <20160301182312.fdl264cxemz2fy5m@floor.thefacebook.com>
+In-Reply-To: <56D5C64F.3000800@gmail.com>
 Content-Type: text/plain; charset=windows-1252; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
 
+Thanks Austin for commenting.
 
-On 03/02/2016 02:23 AM, Chris Mason wrote:
-> On Tue, Mar 01, 2016 at 09:59:27AM -0800, Christoph Hellwig wrote:
->> On Tue, Mar 01, 2016 at 11:46:16AM -0500, Chris Mason wrote:
->>> We'll definitely move in line with the common API over time.  Thanks
->>> Anand for starting this!
->>>
->>> I'd prefer that we keep it per-subvolume for now, just because
->>> subvolumes are so cheap and because it seems like a better collection
->>> point for general use.  But as the other filesystems add features we'll
->>> make sure and keep parity with what users expect.
->>
->> We already have per-file encryption in f2fs and ext4, and both have
->> a compatible userspace API and ABI.  It would be a pitty to deviate
->> from that intead of reusing it, and if needed extending it.
->
-> I wasn't very clear here sorry.  per-subvolume is my favorite way, but
-> we'll go with the existing ABIs as well.  There's no reason to be
-> different.
+  Yes to most of it. And probably I should have titled known-issues
+  to known-bugs, which I meant to fix before final integration.
 
 
-Thanks for commenting.
+In general:
+Its good to explore options of both compression+encryption OR an
+algorithm engine which can automatically do both because whether
+data centers will look for it or not is a balance trade off between
 
-btrfs encryption creates attributes per file its named
+      CPU load VS Storage space saved VS Network bandwidth needed
 
-   btrfs.encrypt
+  Yes, network as well because of the remote replication and remote
+  backup data center use cases.
 
-But when we have a standard attribute for file encryption
-this should be updated.
+  So its good to keep that option open.
 
-I wrote a design approaches/principles on which btrfs encryption
-is based on.. and it here
-
-https://docs.google.com/document/d/1fq9snDM_4ikn44UDNErjHqKXgZHukiJWS4Il3qVhm3M/edit?usp=sharing
-
-for your kind review.
-
-
-Thanks! Anand
+Thanks, Anand
 

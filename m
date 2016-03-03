@@ -1,59 +1,46 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:40570 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753479AbcCXKsa (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 24 Mar 2016 06:48:30 -0400
-From: Anand Jain <anand.jain@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.cz
-Subject: [PATCH 1/3] btrfs: use fs_info directly
-Date: Thu, 24 Mar 2016 18:48:12 +0800
-Message-Id: <1458816494-483-1-git-send-email-anand.jain@oracle.com>
+Received: from mail.kernel.org ([198.145.29.136]:52026 "EHLO mail.kernel.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1754218AbcCCRag (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 3 Mar 2016 12:30:36 -0500
+From: fdmanana@kernel.org
+To: fstests@vger.kernel.org
+Cc: linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@suse.com>
+Subject: [PATCH] fstests: remove call to _need_to_be_root from btrfs/118
+Date: Thu,  3 Mar 2016 07:32:57 +0000
+Message-Id: <1456990377-2453-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Local variable fs_info, contains root->fs_info, use it.
+From: Filipe Manana <fdmanana@suse.com>
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
+The function _need_to_be_root does not exists anymore as of commit
+56ff01f471c9 ("xfstests: remove _need_to_be_root").
+
+A v2 of the patch that added test btrfs/118 without calling this
+function was sent but not picked [1], instead v1 was picked.
+
+So fix this now.
+
+[1] https://patchwork.kernel.org/patch/8354831/
+
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/dev-replace.c | 8 ++++----
- 1 file changed, 4 insertions(+), 4 deletions(-)
+ tests/btrfs/118 | 1 -
+ 1 file changed, 1 deletion(-)
 
-diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
-index a1d6652e0c47..d38cad37ba27 100644
---- a/fs/btrfs/dev-replace.c
-+++ b/fs/btrfs/dev-replace.c
-@@ -375,7 +375,7 @@ int btrfs_dev_replace_start(struct btrfs_root *root,
- 	WARN_ON(!tgt_device);
- 	dev_replace->tgtdev = tgt_device;
+diff --git a/tests/btrfs/118 b/tests/btrfs/118
+index 3ed1cbe..740cb92 100755
+--- a/tests/btrfs/118
++++ b/tests/btrfs/118
+@@ -45,7 +45,6 @@ _cleanup()
+ . ./common/dmflakey
  
--	btrfs_info_in_rcu(root->fs_info,
-+	btrfs_info_in_rcu(fs_info,
- 		      "dev_replace from %s (devid %llu) to %s started",
- 		      src_device->missing ? "<missing disk>" :
- 		        rcu_str_deref(src_device->name),
-@@ -399,9 +399,9 @@ int btrfs_dev_replace_start(struct btrfs_root *root,
- 
- 	ret = btrfs_sysfs_add_device_link(tgt_device->fs_devices, tgt_device);
- 	if (ret)
--		btrfs_err(root->fs_info, "kobj add dev failed %d\n", ret);
-+		btrfs_err(fs_info, "kobj add dev failed %d\n", ret);
- 
--	btrfs_wait_ordered_roots(root->fs_info, -1);
-+	btrfs_wait_ordered_roots(fs_info, -1);
- 
- 	/* force writing the updated state information to disk */
- 	trans = btrfs_start_transaction(root, 0);
-@@ -419,7 +419,7 @@ int btrfs_dev_replace_start(struct btrfs_root *root,
- 			      btrfs_device_get_total_bytes(src_device),
- 			      &dev_replace->scrub_progress, 0, 1);
- 
--	ret = btrfs_dev_replace_finishing(root->fs_info, ret);
-+	ret = btrfs_dev_replace_finishing(fs_info, ret);
- 	/* don't warn if EINPROGRESS, someone else might be running scrub */
- 	if (ret == -EINPROGRESS) {
- 		args->result = BTRFS_IOCTL_DEV_REPLACE_RESULT_SCRUB_INPROGRESS;
+ # real QA test starts here
+-_need_to_be_root
+ _supported_fs btrfs
+ _supported_os Linux
+ _require_scratch
 -- 
-2.7.0
+2.7.0.rc3
 

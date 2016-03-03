@@ -1,105 +1,81 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:32946 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S932348AbcCCIFR (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 3 Mar 2016 03:05:17 -0500
-Subject: Re: [PATCH] Btrfs: fix loading of orphan roots leading to BUG_ON
-To: Duncan <1i5t5.duncan@cox.net>, <linux-btrfs@vger.kernel.org>
-References: <1456933778-7944-1-git-send-email-fdmanana@kernel.org>
- <pan$91701$3af360aa$c931211b$9c451328@cox.net>
- <56D7D925.8070004@cn.fujitsu.com>
- <pan$3da48$d9875bc6$b571bd11$61baf2c8@cox.net>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <56D7F00E.6000002@cn.fujitsu.com>
-Date: Thu, 3 Mar 2016 16:04:30 +0800
+Received: from mail-ig0-f176.google.com ([209.85.213.176]:37379 "EHLO
+	mail-ig0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932230AbcCCJK7 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 3 Mar 2016 04:10:59 -0500
+Received: by mail-ig0-f176.google.com with SMTP id z8so13126942ige.0
+        for <linux-btrfs@vger.kernel.org>; Thu, 03 Mar 2016 01:10:58 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <pan$3da48$d9875bc6$b571bd11$61baf2c8@cox.net>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+Reply-To: fdmanana@gmail.com
+In-Reply-To: <pan$91701$3af360aa$c931211b$9c451328@cox.net>
+References: <1456933778-7944-1-git-send-email-fdmanana@kernel.org>
+	<pan$91701$3af360aa$c931211b$9c451328@cox.net>
+Date: Thu, 3 Mar 2016 09:10:58 +0000
+Message-ID: <CAL3q7H7zawdrwbnnwr4nRg5PTj3BqRjDpZJo+idxCANMs185LA@mail.gmail.com>
+Subject: Re: [PATCH] Btrfs: fix loading of orphan roots leading to BUG_ON
+From: Filipe Manana <fdmanana@gmail.com>
+To: Duncan <1i5t5.duncan@cox.net>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Thu, Mar 3, 2016 at 4:31 AM, Duncan <1i5t5.duncan@cox.net> wrote:
+> fdmanana posted on Wed, 02 Mar 2016 15:49:38 +0000 as excerpted:
+>
+>> When looking for orphan roots during mount we can end up hitting a
+>> BUG_ON() (at root-item.c:btrfs_find_orphan_roots()) if a log tree is
+>> replayed and qgroups are enabled.
+>
+> This should hit 4.6, right?  Will it hit 4.5 before release?
 
-
-Duncan wrote on 2016/03/03 07:44 +0000:
-> Qu Wenruo posted on Thu, 03 Mar 2016 14:26:45 +0800 as excerpted:
->
->> Never heard the 2 release cycles principle, but seems to be not flex
->> enough.
->>   From this point of view, every time Filipe(just an example, as he finds
->> the most of bugs and corner case), some part or even the whole btrfs is
->> not stable for 4 months.
->
-> Well, once a feature is considered stable (relative to the rest of btrfs,
-> anyway), the two-releases-without-bugs counter/clock no longer resets,
-> and it's simply bugs in otherwise stable features as opposed to more bugs
-> in still unstable features, resetting the clock on those features and
-> preventing them from reaching (my measure of) stability.
->
-> And it's more or less just a general rule of thumb, anyway, with per-
-> feature and per-bug adjustments based on the amount of new code in the
-> feature and how critical the bug is or isn't.
->
-> But in my experience it /does/ seem a relatively good general rule of
-> thumb level guideline, provided it is taken /as/ a rule of thumb level
-> guideline and not applied too inflexibly.
->
-> The other factor, however, would be the relative view into bugs...
->
-> I suppose it's reasonably well known that in practice, one has to be a
-> bit cautious about evaluating the stability of a project by the raw
-> number of scary looking problems reported on the mailing list or bug
-> tracker, in part, because that's what those are /for/, and while they're
-> good at tracking that, they don't normally yield a good picture at all of
-> all the hundreds or thousands or tens of thousands or millions actually
-> using the project without problems at all.
->
-> By the same token, the developer's viewpoint of a feature is likely to
-> see quite a few more bugs, due to simple familarity with the topic and
-> exposure on multiple channels (IRC/btrfs-list/private-mail/lkml/
-> filesystems-list/kernel-bugzilla/one-or-more-distro-lists...), than
-> someone like me, a simple user/admin, tracking perhaps one or two of
-> those channels.
->
-> There's a lot of feature bugs that a feature developer is going to be
-> aware of, that simply won't rise to my level of consciousness.  But by
-> the same token, if multiple people are suddenly reporting an issue, as
-> will likely happen for the serious bugs, I'm likely to see one and
-> possibly more reports of it here, and /will/ be aware of it.
->
-> So what I'm saying is that, at my level of awareness at least, and
-> assuming it is taken as the rule of thumb guideline I intend it as, the
-> two releases without a known bug in a feature /guideline/ has from my
-> experience turned out to be reasonably practical and reliable, tho I'd
-> expect it would not and could not be workable at that level, applied by a
-> feature dev, because by definition, that feature dev is going to know
-> about way more bugs in the feature than I will, and as you said, applying
-> it in that case would mean the feature /never/ stabilizes.
->
-> Does that make more sense, now?
-
-Make sense now.
+It's not the first time you do a similar question, and if it's
+targeted at me, all I can tell you is I don't know. It's the
+maintainers (Chris, Josef, David)  who decide when to pick patches and
+for which releases.
 
 >
-> Now back to the specific feature in question, btrfs quotas.  Thanks for
-> affirming that they are in general considered workable now.  I'll mention
-> that as developer perspective when I make my recommendations, and it will
-> certainly positively influence my own recommendations, as well, tho I'll
-> mention that there are still corner-case bugs being worked out, so
-> recommend following quota related discussion and patches on the list for
-> now as well.  But considering it ready for normal use is already beyond
-> what I felt ready to recommend before, so it's already a much more
-> positive recommendation now that previously, even if it's still tempered
-> with "but keep up with the list discussion and current on your kernels,
-> and be aware there are still occasional corner-cases being worked out" as
-> a caveat, which it should be said, is only slightly stronger than the
-> general recommendation for btrfs itself.
->
-Thanks for your recommendation about qgroup, I'm also seeking some 
-feedback from end users to either spot some corner case or enhance UI 
-related design.
+> Because I wasn't sure of current quota functionality status, but this bug
+> obviously resets the counter on my ongoing "two kernel cycles with no
+> known quota bugs before you try to use quotas" recommendation.
 
-Thanks,
-Qu
+You shouldn't spread such affirmation with such a level of certainty
+every time a user reports a problem.
+There are many bugs affecting the last 2 to 3 releases, but there are
+also many bugs present since btrfs was added to the linux kernel tree,
+and many others present for 2+ years, etc.
+
+>
+> Meanwhile, what /is/ current quota feature status?  Other than this bug,
+> is it now considered known bug free, or is more quota reworking and/or
+> bug fixing known to be needed for 4.6 and beyond?
+>
+> IOW, given that two release cycles no known bugs counter, are we
+> realistically looking at that being 4.8, or are we now looking at 4.9 or
+> beyond for reasonable quota stability?
+
+I don't know. I generally don't look actively look at qgroups, and I'm
+not a user either.
+You can only take conclusions based on user bug reports. Probably
+there aren't more bugs for qgroups than there are for send/receive or
+even non-btrfs specific features for example.
+
+>
+> --
+> Duncan - List replies preferred.   No HTML msgs.
+> "Every nonfree program has a lord, a master --
+> and if you use the program, he is your master."  Richard Stallman
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 
 
 
+-- 
+Filipe David Manana,
+
+"Reasonable men adapt themselves to the world.
+ Unreasonable men adapt the world to themselves.
+ That's why all progress depends on unreasonable men."

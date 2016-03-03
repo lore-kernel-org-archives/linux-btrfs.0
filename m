@@ -1,211 +1,104 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:18974 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1750908AbcCCGdG (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 3 Mar 2016 01:33:06 -0500
+Received: from plane.gmane.org ([80.91.229.3]:33007 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1754502AbcCCHoy (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 3 Mar 2016 02:44:54 -0500
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+	id 1abNwJ-0001S0-PB
+	for linux-btrfs@vger.kernel.org; Thu, 03 Mar 2016 08:44:51 +0100
+Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Thu, 03 Mar 2016 08:44:51 +0100
+Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Thu, 03 Mar 2016 08:44:51 +0100
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
 Subject: Re: [PATCH] Btrfs: fix loading of orphan roots leading to BUG_ON
-To: <fdmanana@kernel.org>, <linux-btrfs@vger.kernel.org>
+Date: Thu, 3 Mar 2016 07:44:40 +0000 (UTC)
+Message-ID: <pan$3da48$d9875bc6$b571bd11$61baf2c8@cox.net>
 References: <1456933778-7944-1-git-send-email-fdmanana@kernel.org>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <56D7D9D8.6090107@cn.fujitsu.com>
-Date: Thu, 3 Mar 2016 14:29:44 +0800
-MIME-Version: 1.0
-In-Reply-To: <1456933778-7944-1-git-send-email-fdmanana@kernel.org>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+	<pan$91701$3af360aa$c931211b$9c451328@cox.net>
+	<56D7D925.8070004@cn.fujitsu.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Qu Wenruo posted on Thu, 03 Mar 2016 14:26:45 +0800 as excerpted:
 
+> Never heard the 2 release cycles principle, but seems to be not flex
+> enough.
+>  From this point of view, every time Filipe(just an example, as he finds
+> the most of bugs and corner case), some part or even the whole btrfs is
+> not stable for 4 months.
 
-  wrote on 2016/03/02 15:49 +0000:
-> From: Filipe Manana <fdmanana@suse.com>
->
-> When looking for orphan roots during mount we can end up hitting a
-> BUG_ON() (at root-item.c:btrfs_find_orphan_roots()) if a log tree is
-> replayed and qgroups are enabled. This is because after a log tree is
-> replayed, a transaction commit is made, which triggers qgroup extent
-> accounting which in turn does backref walking which ends up reading and
-> inserting all roots in the radix tree fs_info->fs_root_radix, including
-> orphan roots (deleted snapshots). So after the log tree is replayed, when
-> finding orphan roots we hit the BUG_ON with the following trace:
->
-> [118209.182438] ------------[ cut here ]------------
-> [118209.183279] kernel BUG at fs/btrfs/root-tree.c:314!
-> [118209.184074] invalid opcode: 0000 [#1] PREEMPT SMP DEBUG_PAGEALLOC
-> [118209.185123] Modules linked in: btrfs dm_flakey dm_mod crc32c_generic ppdev xor raid6_pq evdev sg parport_pc parport acpi_cpufreq tpm_tis tpm psmouse
-> processor i2c_piix4 serio_raw pcspkr i2c_core button loop autofs4 ext4 crc16 mbcache jbd2 sd_mod sr_mod cdrom ata_generic virtio_scsi ata_piix libata
-> virtio_pci virtio_ring virtio scsi_mod e1000 floppy [last unloaded: btrfs]
-> [118209.186318] CPU: 14 PID: 28428 Comm: mount Tainted: G        W       4.5.0-rc5-btrfs-next-24+ #1
-> [118209.186318] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS by qemu-project.org 04/01/2014
-> [118209.186318] task: ffff8801ec131040 ti: ffff8800af34c000 task.ti: ffff8800af34c000
-> [118209.186318] RIP: 0010:[<ffffffffa04237d7>]  [<ffffffffa04237d7>] btrfs_find_orphan_roots+0x1fc/0x244 [btrfs]
-> [118209.186318] RSP: 0018:ffff8800af34faa8  EFLAGS: 00010246
-> [118209.186318] RAX: 00000000ffffffef RBX: 00000000ffffffef RCX: 0000000000000001
-> [118209.186318] RDX: 0000000080000000 RSI: 0000000000000001 RDI: 00000000ffffffff
-> [118209.186318] RBP: ffff8800af34fb08 R08: 0000000000000001 R09: 0000000000000000
-> [118209.186318] R10: ffff8800af34f9f0 R11: 6db6db6db6db6db7 R12: ffff880171b97000
-> [118209.186318] R13: ffff8801ca9d65e0 R14: ffff8800afa2e000 R15: 0000160000000000
-> [118209.186318] FS:  00007f5bcb914840(0000) GS:ffff88023edc0000(0000) knlGS:0000000000000000
-> [118209.186318] CS:  0010 DS: 0000 ES: 0000 CR0: 000000008005003b
-> [118209.186318] CR2: 00007f5bcaceb5d9 CR3: 00000000b49b5000 CR4: 00000000000006e0
-> [118209.186318] Stack:
-> [118209.186318]  fffffbffffffffff 010230ffffffffff 0101000000000000 ff84000000000000
-> [118209.186318]  fbffffffffffffff 30ffffffffffffff 0000000000000101 ffff880082348000
-> [118209.186318]  0000000000000000 ffff8800afa2e000 ffff8800afa2e000 0000000000000000
-> [118209.186318] Call Trace:
-> [118209.186318]  [<ffffffffa042e2db>] open_ctree+0x1e37/0x21b9 [btrfs]
-> [118209.186318]  [<ffffffffa040a753>] btrfs_mount+0x97e/0xaed [btrfs]
-> [118209.186318]  [<ffffffff8108e1c0>] ? trace_hardirqs_on+0xd/0xf
-> [118209.186318]  [<ffffffff8117b87e>] mount_fs+0x67/0x131
-> [118209.186318]  [<ffffffff81192d2b>] vfs_kern_mount+0x6c/0xde
-> [118209.186318]  [<ffffffffa0409f81>] btrfs_mount+0x1ac/0xaed [btrfs]
-> [118209.186318]  [<ffffffff8108e1c0>] ? trace_hardirqs_on+0xd/0xf
-> [118209.186318]  [<ffffffff8108c26b>] ? lockdep_init_map+0xb9/0x1b3
-> [118209.186318]  [<ffffffff8117b87e>] mount_fs+0x67/0x131
-> [118209.186318]  [<ffffffff81192d2b>] vfs_kern_mount+0x6c/0xde
-> [118209.186318]  [<ffffffff81195637>] do_mount+0x8a6/0x9e8
-> [118209.186318]  [<ffffffff8119598d>] SyS_mount+0x77/0x9f
-> [118209.186318]  [<ffffffff81493017>] entry_SYSCALL_64_fastpath+0x12/0x6b
-> [118209.186318] Code: 64 00 00 85 c0 89 c3 75 24 f0 41 80 4c 24 20 20 49 8b bc 24 f0 01 00 00 4c 89 e6 e8 e8 65 00 00 85 c0 89 c3 74 11 83 f8 ef 75 02 <0f> 0b
-> 4c 89 e7 e8 da 72 00 00 eb 1c 41 83 bc 24 00 01 00 00 00
-> [118209.186318] RIP  [<ffffffffa04237d7>] btrfs_find_orphan_roots+0x1fc/0x244 [btrfs]
-> [118209.186318]  RSP <ffff8800af34faa8>
-> [118209.230735] ---[ end trace 83938f987d85d477 ]---
->
-> So fix this by not treating the error -EEXIST, returned when attempting
-> to insert a root already inserted by the backref walking code, as an error.
->
-> The following test case for xfstests reproduces the bug:
->
->    seq=`basename $0`
->    seqres=$RESULT_DIR/$seq
->    echo "QA output created by $seq"
->    tmp=/tmp/$$
->    status=1	# failure is the default!
->    trap "_cleanup; exit \$status" 0 1 2 3 15
->
->    _cleanup()
->    {
->        _cleanup_flakey
->        cd /
->        rm -f $tmp.*
->    }
->
->    # get standard environment, filters and checks
->    . ./common/rc
->    . ./common/filter
->    . ./common/dmflakey
->
->    # real QA test starts here
->    _supported_fs btrfs
->    _supported_os Linux
->    _require_scratch
->    _require_dm_target flakey
->    _require_metadata_journaling $SCRATCH_DEV
->
->    rm -f $seqres.full
->
->    _scratch_mkfs >>$seqres.full 2>&1
->    _init_flakey
->    _mount_flakey
->
->    _run_btrfs_util_prog quota enable $SCRATCH_MNT
->
->    # Create 2 directories with one file in one of them.
->    # We use these just to trigger a transaction commit later, moving the file from
->    # directory a to directory b and doing an fsync against directory a.
->    mkdir $SCRATCH_MNT/a
->    mkdir $SCRATCH_MNT/b
->    touch $SCRATCH_MNT/a/f
->    sync
->
->    # Create our test file with 2 4K extents.
->    $XFS_IO_PROG -f -s -c "pwrite -S 0xaa 0 8K" $SCRATCH_MNT/foobar | _filter_xfs_io
->
->    # Create a snapshot and delete it. This doesn't really delete the snapshot
->    # immediately, just makes it inaccessible and invisible to user space, the
->    # snapshot is deleted later by a dedicated kernel thread (cleaner kthread)
->    # which is woke up at the next transaction commit.
->    # A root orphan item is inserted into the tree of tree roots, so that if a
->    # power failure happens before the dedicated kernel thread does the snapshot
->    # deletion, the next time the filesystem is mounted it resumes the snapshot
->    # deletion.
->    _run_btrfs_util_prog subvolume snapshot $SCRATCH_MNT $SCRATCH_MNT/snap
->    _run_btrfs_util_prog subvolume delete $SCRATCH_MNT/snap
->
->    # Now overwrite half of the extents we wrote before. Because we made a snapshpot
->    # before, which isn't really deleted yet (since no transaction commit happened
->    # after we did the snapshot delete request), the non overwritten extents get
->    # referenced twice, once by the default subvolume and once by the snapshot.
->    $XFS_IO_PROG -c "pwrite -S 0xbb 4K 8K" $SCRATCH_MNT/foobar | _filter_xfs_io
->
->    # Now move file f from directory a to directory b and fsync directory a.
->    # The fsync on the directory a triggers a transaction commit (because a file
->    # was moved from it to another directory) and the file fsync leaves a log tree
->    # with file extent items to replay.
->    mv $SCRATCH_MNT/a/f $SCRATCH_MNT/a/b
->    $XFS_IO_PROG -c "fsync" $SCRATCH_MNT/a
->    $XFS_IO_PROG -c "fsync" $SCRATCH_MNT/foobar
->
->    echo "File digest before power failure:"
->    md5sum $SCRATCH_MNT/foobar | _filter_scratch
->
->    # Now simulate a power failure and mount the filesystem to replay the log tree.
->    # After the log tree was replayed, we used to hit a BUG_ON() when processing
->    # the root orphan item for the deleted snapshot. This is because when processing
->    # an orphan root the code expected to be the first code inserting the root into
->    # the fs_info->fs_root_radix radix tree, while in reallity it was the second
->    # caller attempting to do it - the first caller was the transaction commit that
->    # took place after replaying the log tree, when updating the qgroup counters.
->    _flakey_drop_and_remount
->
->    echo "File digest before after failure:"
->    # Must match what he got before the power failure.
->    md5sum $SCRATCH_MNT/foobar | _filter_scratch
->
->    _unmount_flakey
->    status=0
->    exit
->
-> Fixes: 2d9e97761087 ("Btrfs: use btrfs_get_fs_root in resolve_indirect_ref")
-> Cc: stable@vger.kernel.org  # 4.4+
-> Signed-off-by: Filipe Manana <fdmanana@suse.com>
+Well, once a feature is considered stable (relative to the rest of btrfs, 
+anyway), the two-releases-without-bugs counter/clock no longer resets, 
+and it's simply bugs in otherwise stable features as opposed to more bugs 
+in still unstable features, resetting the clock on those features and 
+preventing them from reaching (my measure of) stability.
 
-Reviewed-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+And it's more or less just a general rule of thumb, anyway, with per-
+feature and per-bug adjustments based on the amount of new code in the 
+feature and how critical the bug is or isn't.
 
-Looks good, and the comment is clear enough.
+But in my experience it /does/ seem a relatively good general rule of 
+thumb level guideline, provided it is taken /as/ a rule of thumb level 
+guideline and not applied too inflexibly.
 
-Thanks for your long effort to spot and fix corner cases like this.
+The other factor, however, would be the relative view into bugs...
 
-Thanks,
-Qu
+I suppose it's reasonably well known that in practice, one has to be a 
+bit cautious about evaluating the stability of a project by the raw 
+number of scary looking problems reported on the mailing list or bug 
+tracker, in part, because that's what those are /for/, and while they're 
+good at tracking that, they don't normally yield a good picture at all of 
+all the hundreds or thousands or tens of thousands or millions actually 
+using the project without problems at all.
 
-> ---
->   fs/btrfs/root-tree.c | 10 +++++++++-
->   1 file changed, 9 insertions(+), 1 deletion(-)
->
-> diff --git a/fs/btrfs/root-tree.c b/fs/btrfs/root-tree.c
-> index a25f3b2..9fcd6df 100644
-> --- a/fs/btrfs/root-tree.c
-> +++ b/fs/btrfs/root-tree.c
-> @@ -310,8 +310,16 @@ int btrfs_find_orphan_roots(struct btrfs_root *tree_root)
->   		set_bit(BTRFS_ROOT_ORPHAN_ITEM_INSERTED, &root->state);
->
->   		err = btrfs_insert_fs_root(root->fs_info, root);
-> +		/*
-> +		 * The root might have been inserted already, as before we look
-> +		 * for orphan roots, log replay might have happened, which
-> +		 * triggers a transaction commit and qgroup accounting, which
-> +		 * in turn reads and inserts fs roots while doing backref
-> +		 * walking.
-> +		 */
-> +		if (err == -EEXIST)
-> +			err = 0;
->   		if (err) {
-> -			BUG_ON(err == -EEXIST);
->   			btrfs_free_fs_root(root);
->   			break;
->   		}
->
+By the same token, the developer's viewpoint of a feature is likely to 
+see quite a few more bugs, due to simple familarity with the topic and 
+exposure on multiple channels (IRC/btrfs-list/private-mail/lkml/
+filesystems-list/kernel-bugzilla/one-or-more-distro-lists...), than 
+someone like me, a simple user/admin, tracking perhaps one or two of 
+those channels.
 
+There's a lot of feature bugs that a feature developer is going to be 
+aware of, that simply won't rise to my level of consciousness.  But by 
+the same token, if multiple people are suddenly reporting an issue, as 
+will likely happen for the serious bugs, I'm likely to see one and 
+possibly more reports of it here, and /will/ be aware of it.
+
+So what I'm saying is that, at my level of awareness at least, and 
+assuming it is taken as the rule of thumb guideline I intend it as, the 
+two releases without a known bug in a feature /guideline/ has from my 
+experience turned out to be reasonably practical and reliable, tho I'd 
+expect it would not and could not be workable at that level, applied by a 
+feature dev, because by definition, that feature dev is going to know 
+about way more bugs in the feature than I will, and as you said, applying 
+it in that case would mean the feature /never/ stabilizes.
+
+Does that make more sense, now?
+
+Now back to the specific feature in question, btrfs quotas.  Thanks for 
+affirming that they are in general considered workable now.  I'll mention 
+that as developer perspective when I make my recommendations, and it will 
+certainly positively influence my own recommendations, as well, tho I'll 
+mention that there are still corner-case bugs being worked out, so 
+recommend following quota related discussion and patches on the list for 
+now as well.  But considering it ready for normal use is already beyond 
+what I felt ready to recommend before, so it's already a much more 
+positive recommendation now that previously, even if it's still tempered 
+with "but keep up with the list discussion and current on your kernels, 
+and be aware there are still occasional corner-cases being worked out" as 
+a caveat, which it should be said, is only slightly stronger than the 
+general recommendation for btrfs itself.
+
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 

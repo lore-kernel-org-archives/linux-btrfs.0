@@ -1,73 +1,93 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:52198 "EHLO plane.gmane.org"
+Received: from plane.gmane.org ([80.91.229.3]:53346 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752861AbcCCERL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 2 Mar 2016 23:17:11 -0500
+	id S1752112AbcCCE5h (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 2 Mar 2016 23:57:37 -0500
 Received: from list by plane.gmane.org with local (Exim 4.69)
 	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1abKhJ-0005hN-9D
-	for linux-btrfs@vger.kernel.org; Thu, 03 Mar 2016 05:17:09 +0100
+	id 1abLKN-0002bi-BD
+	for linux-btrfs@vger.kernel.org; Thu, 03 Mar 2016 05:57:31 +0100
 Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
         by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 03 Mar 2016 05:17:09 +0100
+        for <linux-btrfs@vger.kernel.org>; Thu, 03 Mar 2016 05:57:31 +0100
 Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 03 Mar 2016 05:17:09 +0100
+        for <linux-btrfs@vger.kernel.org>; Thu, 03 Mar 2016 05:57:31 +0100
 To: linux-btrfs@vger.kernel.org
 From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: raid5
-Date: Thu, 3 Mar 2016 04:16:59 +0000 (UTC)
-Message-ID: <pan$428f7$ac0ca994$7fa9e21d$b3ab1072@cox.net>
-References: <CAAcrkYL_=8Ru+_Aum_ZR14AD-D44Dki7Qr9pyAzezWMMZJ8A2w@mail.gmail.com>
-	<pan$d7909$c07dac53$17a8f04a$fdf6e07b@cox.net>
-	<56D6EDF5.2010408@gmail.com>
+Subject: Re: Again, no space left on device while rebalancing and recipe
+ doesnt work
+Date: Thu, 3 Mar 2016 04:57:23 +0000 (UTC)
+Message-ID: <pan$1a785$dbfe4789$bdc8f4d5$778788dd@cox.net>
+References: <20160227211450.GS26042@torres.zugschlus.de>
+	<CAOE4rSyPvkzjKDVoQ-7U8ay5t7Pp2qeaCqh-tFg-etmgHGEOJQ@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Austin S. Hemmelgarn posted on Wed, 02 Mar 2016 08:43:17 -0500 as
-excerpted:
+Dāvis Mosāns posted on Thu, 03 Mar 2016 02:28:36 +0200 as excerpted:
 
-> On 2016-03-01 16:44, Duncan wrote:
->> John Smith posted on Tue, 01 Mar 2016 15:24:04 +0100 as excerpted:
+> 2016-02-27 23:14 GMT+02:00 Marc Haber <mh+linux-btrfs@zugschlus.de>:
+>> Hi,
 >>
->>> what is the status of  btrfs raid5 in kernel 4.4? Thank you
+>> I have again the issue of no space left on device while rebalancing
+>> (with btrfs-tools 4.4.1 on kernel 4.4.2 on Debian unstable):
 >>
->> That is a very good question. =:^)
 >>
->> The answer, to the best I can give it, is, btrfs raid56 mode has no
->> known outstanding bugs specific to it at this time (unless a dev knows
->> of any,
->> but I've not seen any confirmed on-list), and hasn't had any, at least
->> nothing major, since early in the 4.1 cycle, so 4.2 thru 4.4 should be
->> clean of /known/ raid56 bugs.
-> That really depends on what you consider to be a bug...
+> I've same issue, 4.4.3 kernel on Arch Linux
 > 
-> For example, for most production usage, the insanely long
-> rebuild/rebalance times that people are seeing with BTRFS raid56 (on the
-> order of multiple days per terabyte of data to be rebuilt, compared to a
-> couple of hours for a rebuild on the same hardware using MDRAID or LVM)
+> $ sudo btrfs fi show /mnt/fs/
+> Label: 'fs'  uuid: a3c66d25-2c25-40e5-a827-5f7e5208e235
+>         Total devices 1 FS bytes used 396.94GiB
+>         devid    1 size 435.76GiB used 435.76GiB path /dev/sdi2
+> 
 
-Very good point.  I wasn't considering that a bug as it's not a direct 
-dataloss danger (only the indirect danger of another device dying during 
-the extremely long rebuilds), but you're correct, in practice it's a 
-potentially blocker level bug.
+> $ sudo btrfs fi usage /mnt/fs/
+> Overall:
+>     Device size:                 435.76GiB
+>     Device allocated:            435.76GiB
+>     Device unallocated:            1.00MiB
 
-But from what I've seen, it isn't affecting everyone, which is of course 
-part of the problem from a developer POV, since that makes it harder to 
-replicate and trace down.  And it's equally a problem from a user POV, as 
-until it's fixed, even if your testing demonstrates that it's not 
-affecting you ATM, until we actually pin down what's triggering it, 
-there's no way of knowing whether or when it /might/ trigger, which means 
-even if it's not affecting you in testing, you gotta assume it's going to 
-affect you if you end up trying to do data recovery.
+[Snipped the longer story, but the summary is that at first a full 
+balance would fail, but after jumping thru some balance filtering hoops, 
+you cleared enough space to unallocated that you could then do a full 
+balance and it was working, tho it was still running.]
 
-So agreed, tho the effect is pretty much the same as my preferred 
-recommendation in any case, effectively, hold off another couple kernel 
-cycles and ask again.  I simply wasn't thinking of this specific bug at 
-the time and thus couldn't specifically mention it as a concrete reason.
+
+You're issue isn't the same, because all your space was allocated, 
+leaving only 1 MiB unallocated, which isn't normally enough to allocate a 
+new chunk to rewrite the data or metadata from the old chunks into.
+
+That's a known issue, with known workarounds as dealt with in the FAQ. 
+
+Ideally, you catch it while you have at least a gig or two of unallocated 
+space (apparently in some instances with huge filesystems, you may need 
+up to 10 GiB free, as data chunk allocations can be larger than the 
+nominal 1 GiB on really large filesystems, but yours obviously isn't 
+/that/ large) thereby giving you enough room to allocate at least one new 
+chunk in ordered to rewrite data from old chunks while consolidating.
+
+You only had 1 MiB of unallocated space in that first report, so you're a 
+bit lucky that you didn't have to temporarily add a second device of at 
+least several gigs in size, at least long enough to rewrite a few chunks 
+and clear some additional space.  (FWIW, a few GiB USB thumb drive can be 
+used, or even a loopback file on tmpfs, if you have enough memory for it 
+and your system and power is stable enough that you're willing to take 
+the gamble of not having an unscheduled reboot in the middle and thus 
+losing your loopback, before you're able to btrfs device delete it again 
+after you've completed at least enough of the balance to have enough room 
+to do so.)  That's what some folks end up having to do if all space is 
+allocated and they don't even have enough left to allocate even one more 
+new chunk in ordered to do the balance and consolidate the partially-free 
+chunks, thereby freeing the space they were using.
+
+The issue of this thread is quite different, as they've triggered a bug 
+that the devs have been trying to track down for quite awhile, where even 
+with /lots/ of unallocated free space, btrfs will due to the bug refuse 
+to allocate more, resulting in ENOSPC errors even when there's tens or 
+hundreds of GiB of unallocated space, where you had only that 1 MiB.
 
 -- 
 Duncan - List replies preferred.   No HTML msgs.

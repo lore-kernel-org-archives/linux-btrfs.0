@@ -1,138 +1,163 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f182.google.com ([209.85.223.182]:36218 "EHLO
-	mail-io0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752672AbcCCA2h (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 2 Mar 2016 19:28:37 -0500
-Received: by mail-io0-f182.google.com with SMTP id l127so10575656iof.3
-        for <linux-btrfs@vger.kernel.org>; Wed, 02 Mar 2016 16:28:37 -0800 (PST)
+Received: from aserp1040.oracle.com ([141.146.126.69]:21754 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755108AbcCCBQv (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 2 Mar 2016 20:16:51 -0500
+Subject: Re: duplicate automounts with btrfs RAID1
+To: Pavol Cupka <pavol.cupka@gmail.com>
+References: <1456950881.15729.2.camel@gmail.com>
+ <CAH4oapdmQQVwpPD0JNufak7A-=Y=RBNugsM_0Bz=edUG2KRFAw@mail.gmail.com>
+ <CABmfUYCQVaCHPBzQ4_SUrD=36-7iMarrHpAUd_DGjJxx2zfYbQ@mail.gmail.com>
+ <CAH4oapcoR2E+9GyiLBD+ykXC7WX58tjWSQUJEP+6k8wzbwRVxg@mail.gmail.com>
+Cc: linux-btrfs@vger.kernel.org
+From: Anand Jain <anand.jain@oracle.com>
+Message-ID: <56D7907E.9040502@oracle.com>
+Date: Thu, 3 Mar 2016 09:16:46 +0800
 MIME-Version: 1.0
-In-Reply-To: <20160227211450.GS26042@torres.zugschlus.de>
-References: <20160227211450.GS26042@torres.zugschlus.de>
-Date: Thu, 3 Mar 2016 02:28:36 +0200
-Message-ID: <CAOE4rSyPvkzjKDVoQ-7U8ay5t7Pp2qeaCqh-tFg-etmgHGEOJQ@mail.gmail.com>
-Subject: Re: Again, no space left on device while rebalancing and recipe
- doesnt work
-From: =?UTF-8?B?RMSBdmlzIE1vc8SBbnM=?= <davispuh@gmail.com>
-To: Marc Haber <mh+linux-btrfs@zugschlus.de>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+In-Reply-To: <CAH4oapcoR2E+9GyiLBD+ykXC7WX58tjWSQUJEP+6k8wzbwRVxg@mail.gmail.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-2016-02-27 23:14 GMT+02:00 Marc Haber <mh+linux-btrfs@zugschlus.de>:
-> Hi,
+
+
+First,
+If /dev/sdc1 is getting disappeared and reappearing you may have this
+problem, securing the connection for /dev/sdc1 will help.
+
+But, Should automount be more intelligent to identify FSID thats
+already mounted ? In btrfs RAIDs, Both /dev/sdc1 /dev/sdd1 contains
+same FSID. With btrfs its not guaranteed that there is one unique FSID
+per device.
+So automount should, depend on the FSID to check if its already mounted
+I am not sure if its doing it, but apparently it does not appears to
+be doing it.
+
+Further, I think there is small little bug in the btrfs that, when
+one of the device disappears the /proc/self/mounts should should
+probably show surviving device. To implement this we need device
+state being managed dynamically. Which my hot-spare and auto-replace
+patch introduced.
+
+Thanks, Anand
+
+On 03/03/2016 06:01 AM, Pavol Cupka wrote:
+> and disk/ata/usb resets?
 >
-> I have again the issue of no space left on device while rebalancing
-> (with btrfs-tools 4.4.1 on kernel 4.4.2 on Debian unstable):
+> On Wed, Mar 2, 2016 at 10:56 PM, Leigh Orf <leigh.orf@gmail.com> wrote:
+>> On Wed, Mar 2, 2016 at 3:34 PM, Pavol Cupka <pavol.cupka@gmail.com> wrote:
+>>> is anything in dmesg that would point to diskscontrollers being reset?
+>>>
+>>> or something like that?
+>>>
+>>> pavol
+>>
+>> Pavol,
+>>
+>> Hmm, yes, there are some weird things going on. I am attaching what I
+>> see as the relevant bits from /var/log/messages (command: egrep
+>> '(sd[cd]|mount)' /var/log/messages)
+>>
+>> Note, /dev/sdc is disk 1 and /dev/sdd is disk 2 (the two btrfs RAID1 members).
+>>
+>> Leigh
+>>
+>>>
+>>> On Wed, Mar 2, 2016 at 9:34 PM, Leigh Orf <leigh.orf@gmail.com> wrote:
+>>>> Hello,
+>>>>
+>>>> Not entirely sure this is a btrfs issue, but here is my problem. I've
+>>>> had this issue with recent Fedora and CentOS distros.
+>>>>
+>>>> I created a btrfs RAID 1 pair with two identical USB external drives,
+>>>> following the instructions found online:
+>>>>
+>>>> mkfs.btrfs -m raid1 -d raid1 /dev/sdc1 /dev/sdd1
+>>>>
+>>>> Then I mount it as /ext1:
+>>>>
+>>>> % df |grep sdc
+>>>> /dev/sdc1      9767539112 1280   9765383552   1% /ext1
+>>>>
+>>>> The problem? Over time, /dev/sdc1 keeps getting mounted under a
+>>>> different mount point, these accrue a couple per day:
+>>>>
+>>>> % mount|grep sdc
+>>>> /dev/sdc1 on /ext1 type btrfs (rw,relatime,space_cache)
+>>>> /dev/sdc1 on /run/media/fred/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxx38fd1 type
+>>>> btrfs (rw,nosuid,nodev,relatime,space_cache)
+>>>> /dev/sdc1 on /run/media/fred/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxx38fd11 type
+>>>> btrfs (rw,nosuid,nodev,relatime,space_cache)
+>>>> /dev/sdc1 on /run/media/fred/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxx38fd12 type
+>>>> btrfs (rw,nosuid,nodev,relatime,space_cache)
+>>>> /dev/sdc1 on /run/media/fred/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxx38fd13 type
+>>>> btrfs (rw,nosuid,nodev,relatime,space_cache)
+>>>> /dev/sdc1 on /run/media/fred/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxx38fd14 type
+>>>> btrfs (rw,nosuid,nodev,relatime,space_cache)
+>>>> /dev/sdc1 on /run/media/fred/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxx38fd15 type
+>>>> btrfs (rw,nosuid,nodev,relatime,space_cache)
+>>>> /dev/sdc1 on /run/media/fred/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxx38fd16 type
+>>>> btrfs (rw,nosuid,nodev,relatime,space_cache)
+>>>> /dev/sdc1 on /run/media/fred/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxx38fd17 type
+>>>> btrfs (rw,nosuid,nodev,relatime,space_cache)
+>>>> /dev/sdc1 on /run/media/fred/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxx38fd18 type
+>>>> btrfs (rw,nosuid,nodev,relatime,space_cache)
+>>>> /dev/sdc1 on /run/media/fred/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxx38fd19 type
+>>>> btrfs (rw,nosuid,nodev,relatime,space_cache)
+>>>>
+>>>> It's as if the OS keeps "discovering a new disk" and mounting it
+>>>> under /run/media (where things like external drives, thumb drives etc.
+>>>> automount).
+>>>>
+>>>> Here is info about my setup (up to date CentOS 7.2):
+>>>>
+>>>> % cat /etc/system-release
+>>>> CentOS Linux release 7.2.1511 (Core)
+>>>> % uname -a
+>>>> Linux xxx.xxx.xxx.edu 3.10.0-123.20.1.el7.x86_64 #1 SMP Thu Jan 29
+>>>> 18:05:33 UTC 2015 x86_64 x86_64 x86_64 GNU/Linux
+>>>> % btrfs --version
+>>>> btrfs-progs v3.19.1
+>>>> % btrfs fi show
+>>>> Label: none  uuid: d9706351-609b-4c6e-9f37-7058bb038fd1
+>>>>          Total devices 2 FS bytes used 640.00KiB
+>>>>          devid    1 size 4.55TiB used 2.03GiB path /dev/sdc1
+>>>>          devid    2 size 4.55TiB used 2.01GiB path /dev/sdd1
+>>>>
+>>>> btrfs-progs v3.19.1
+>>>> % btrfs fi df /ext1
+>>>> Data, RAID1: total=1.00GiB, used=512.00KiB
+>>>> Data, single: total=8.00MiB, used=0.00B
+>>>> System, RAID1: total=8.00MiB, used=16.00KiB
+>>>> System, single: total=4.00MiB, used=0.00B
+>>>> Metadata, RAID1: total=1.00GiB, used=112.00KiB
+>>>> Metadata, single: total=8.00MiB, used=0.00B
+>>>>
+>>>> Periodically I manually unmount these duplicates, but they come back.
+>>>> I'd like a solution that doesn't involve disabling automount all
+>>>> together.
+>>>>
+>>>> Thanks for any pointers, and apologies if this issue is unrelated to the
+>>>> btrfs project.
+>>>>
+>>>> Leigh
+>>>>
+>>>> --
+>>>> Leigh Orf
+>>>> Associate Scientist
+>>>> Cooperative Institute for Meteorological Satellite Studies
+>>>> University of Wisconsin - Madison
+>>>>
+>>>> --
+>>>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>>>> the body of a message to majordomo@vger.kernel.org
+>>>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>>> --
+>>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>>> the body of a message to majordomo@vger.kernel.org
+>>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 >
-
-I've same issue, 4.4.3 kernel on Arch Linux
-
-$ sudo btrfs fi show /mnt/fs/
-Label: 'fs'  uuid: a3c66d25-2c25-40e5-a827-5f7e5208e235
-        Total devices 1 FS bytes used 396.94GiB
-        devid    1 size 435.76GiB used 435.76GiB path /dev/sdi2
-
-$ sudo btrfs fi df /mnt/fs/
-Data, single: total=416.70GiB, used=390.62GiB
-System, DUP: total=32.00MiB, used=96.00KiB
-Metadata, DUP: total=9.50GiB, used=6.32GiB
-GlobalReserve, single: total=512.00MiB, used=0.00B
-
-$ sudo btrfs fi usage /mnt/fs/
-Overall:
-    Device size:                 435.76GiB
-    Device allocated:            435.76GiB
-    Device unallocated:            1.00MiB
-    Device missing:                  0.00B
-    Used:                        403.26GiB
-    Free (estimated):             26.07GiB      (min: 26.07GiB)
-    Data ratio:                       1.00
-    Metadata ratio:                   2.00
-    Global reserve:              512.00MiB      (used: 0.00B)
-
-Data,single: Size:416.70GiB, Used:390.62GiB
-   /dev/sdi2     416.70GiB
-
-Metadata,DUP: Size:9.50GiB, Used:6.32GiB
-   /dev/sdi2      19.00GiB
-
-System,DUP: Size:32.00MiB, Used:96.00KiB
-   /dev/sdi2      64.00MiB
-
-Unallocated:
-   /dev/sdi2       1.00MiB
-
-
-$ sudo btrfs balance start -v /mnt/fs/
-Dumping filters: flags 0x7, state 0x0, force is off
-  DATA (flags 0x0): balancing
-  METADATA (flags 0x0): balancing
-  SYSTEM (flags 0x0): balancing
-ERROR: error during balancing '/mnt/fs/': No space left on device
-There may be more info in syslog - try dmesg | tail
-
-$ sudo btrfs balance start -dusage=34 /mnt/fs/
-Done, had to relocate 0 out of 438 chunks
-$ sudo btrfs balance start -dusage=35 /mnt/fs/
-ERROR: error during balancing '/mnt/fs/': No space left on device
-
-
-$ sudo btrfs balance start -musage=0 /mnt/fs/
-Done, had to relocate 0 out of 438 chunks
-$ sudo btrfs balance start -musage=1 /mnt/fs/
-ERROR: error during balancing '/mnt/fs/': No space left on device
-
-
-$ sudo btrfs balance start -dprofiles=single /mnt/fs
-ERROR: error during balancing '/mnt/fs': No space left on device
-
-$ sudo btrfs balance start -mprofiles=dup /mnt/fs
-Done, had to relocate 20 out of 438 chunks
-
-$ sudo btrfs balance start -sprofiles=dup --force /mnt/fs
-Done, had to relocate 1 out of 433 chunks
-
-
-$ sudo btrfs fi df /mnt/fs/
-Data, single: total=416.70GiB, used=390.62GiB
-System, DUP: total=32.00MiB, used=96.00KiB
-Metadata, DUP: total=7.00GiB, used=6.31GiB
-GlobalReserve, single: total=512.00MiB, used=0.00B
-
-$  sudo btrfs fi usage /mnt/fs/
-Overall:
-    Device size:                 435.76GiB
-    Device allocated:            430.76GiB
-    Device unallocated:            5.00GiB
-    Device missing:                  0.00B
-    Used:                        403.25GiB
-    Free (estimated):             31.07GiB      (min: 28.57GiB)
-    Data ratio:                       1.00
-    Metadata ratio:                   2.00
-    Global reserve:              512.00MiB      (used: 0.00B)
-
-Data,single: Size:416.70GiB, Used:390.62GiB
-   /dev/sdi2     416.70GiB
-
-Metadata,DUP: Size:7.00GiB, Used:6.31GiB
-   /dev/sdi2      14.00GiB
-
-System,DUP: Size:32.00MiB, Used:96.00KiB
-   /dev/sdi2      64.00MiB
-
-Unallocated:
-   /dev/sdi2       5.00GiB
-
-now balance works
-
-$ sudo btrfs balance start -m /mnt/fs/
-Done, had to relocate 15 out of 433 chunks
-
-$ sudo btrfs balance start /mnt/fs/
-
-it's still going but most likley it will finish
-
-$ sudo btrfs balance status /mnt/fs/
-Balance on '/mnt/fs/' is running
-26 out of about 431 chunks balanced (27 considered),  94% left

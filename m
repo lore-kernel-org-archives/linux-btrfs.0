@@ -1,54 +1,61 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wm0-f53.google.com ([74.125.82.53]:38605 "EHLO
-	mail-wm0-f53.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755278AbcCCBZs (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 2 Mar 2016 20:25:48 -0500
-Received: by mail-wm0-f53.google.com with SMTP id l68so12325647wml.1
-        for <linux-btrfs@vger.kernel.org>; Wed, 02 Mar 2016 17:25:47 -0800 (PST)
+Received: from cn.fujitsu.com ([59.151.112.132]:38237 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1752425AbcCCCCx (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 2 Mar 2016 21:02:53 -0500
+Subject: Re: Again, no space left on device while rebalancing and recipe
+ doesnt work
+To: Marc Haber <mh+linux-btrfs@zugschlus.de>
+References: <20160227211450.GS26042@torres.zugschlus.de>
+ <56D3A56A.20809@cn.fujitsu.com> <20160229153352.GE2334@torres.zugschlus.de>
+ <56D4E621.3010604@cn.fujitsu.com> <20160301065448.GJ2334@torres.zugschlus.de>
+ <56D54393.8060307@cn.fujitsu.com> <56D54F2F.5050205@cn.fujitsu.com>
+ <20160301161659.GR2334@torres.zugschlus.de>
+CC: <linux-btrfs@vger.kernel.org>
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Message-ID: <56D79B38.6060501@cn.fujitsu.com>
+Date: Thu, 3 Mar 2016 10:02:32 +0800
 MIME-Version: 1.0
-Date: Wed, 2 Mar 2016 20:25:46 -0500
-Message-ID: <CAD=QJKiB9m_F+6AgmSJT_Dsd9HLBhXjEDFAcy6wLQNzO1DOkbQ@mail.gmail.com>
-Subject: incomplete conversion to RAID1?
-From: Nicholas D Steeves <nsteeves@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+In-Reply-To: <20160301161659.GR2334@torres.zugschlus.de>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+Thanks for the output.
 
-I recently moved my main system to btrfs and had to shuffle everything
-around in tricky ways while migrating from LVM while maintaining at
-least two copies + backup of everything.  I'm using linux-4.4.3 with
-btrfs-progs-4.4.1.  The end result, after adding sdc and then
-converting both metadata and data to RAID1 is:
+At least for mprofile enospc error, the problem itself is very 
+straightforward, just unable to alloc tree block.
 
-fdisk -l output:
-/dev/sdb1                4096 1943359487   1943355392 926.7G 83 Linux
-/dev/sdb2   1943359488 1953523711       10164224      4.9G 82 Linux
-swap / Solaris
+I'll check the codes to see if we can improve it, by finding out why we 
+can't alloc a new chunk to resolve the problem.
 
-and
+But I'm still a little concerned about the dprofile case, as this time, 
+dprofile doesn't trigger a ENOSPC and my debug info is not triggered.
 
-/dev/sdc1                4096 1943359487    1943355392 926.7G Linux filesystem
-/dev/sdc2   1943359488 1951748095          8388608         4G Linux swap
+Thanks,
+Qu
 
-btrfs fi show
-Label: none  uuid: 2757c0b7-daf1-41a5-860b-9e4bc36417d3
-        Total devices 2 FS bytes used 882.28GiB
-        devid    1 size 926.66GiB used 886.03GiB path /dev/sdb1
-        devid    2 size 926.66GiB used 887.03GiB path /dev/sdc1
+Marc Haber wrote on 2016/03/01 17:16 +0100:
+> Hi,
+>
+> On Tue, Mar 01, 2016 at 04:13:35PM +0800, Qu Wenruo wrote:
+>> Oh, I'm sorry that the output is not necessary, it's better to use the newer
+>> patch:
+>> https://patchwork.kernel.org/patch/8462881/
+>>
+>> With the newer patch, you will need to use enospc_debug mount option to get
+>> the debug information.
+>
+> I'll copy the log this time in the body of the message so that it gets
+> through to the list. Let me know if you'd prefer an attachment.
+>
+> This time, I didn't see the busy kernel threads, and I now see ENOSPC
+> during the mprofiles part of the manual balance.
+>
+> Hope this helps.
+>
+> Greetings
+> Marc
+>
 
-But this is what's troubling:
 
-btrfs fi df /.btrfs-admin/
-Data, RAID1: total=882.00GiB, used=880.87GiB
-Data, single: total=1.00GiB, used=0.00B
-System, RAID1: total=32.00MiB, used=160.00KiB
-Metadata, RAID1: total=4.00GiB, used=1.41GiB
-GlobalReserve, single: total=496.00MiB, used=0.00B
-
-Do I still have 1.00GiB that isn't in RAID1?
-
-Best regards,
-Nicholas

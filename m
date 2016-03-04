@@ -1,89 +1,79 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:55523 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750832AbcCDMzl (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 4 Mar 2016 07:55:41 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1abpGd-0007HB-4T
-	for linux-btrfs@vger.kernel.org; Fri, 04 Mar 2016 13:55:39 +0100
-Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 04 Mar 2016 13:55:39 +0100
-Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 04 Mar 2016 13:55:39 +0100
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: incomplete conversion to RAID1?
-Date: Fri, 4 Mar 2016 12:55:31 +0000 (UTC)
-Message-ID: <pan$a0b9$20e2036$fc12847$9c0b91e0@cox.net>
-References: <CAD=QJKiB9m_F+6AgmSJT_Dsd9HLBhXjEDFAcy6wLQNzO1DOkbQ@mail.gmail.com>
-	<pan$54754$3acbb0c8$6074e95a$678977e7@cox.net>
-	<CAD=QJKh2ugTHe7OyHniPL0dXm9wXZ3ur3-SSUTCAUWB2ZHRT9Q@mail.gmail.com>
-Mime-Version: 1.0
+Received: from mail-vk0-f41.google.com ([209.85.213.41]:32819 "EHLO
+	mail-vk0-f41.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751431AbcCDOOh (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 4 Mar 2016 09:14:37 -0500
+Received: by mail-vk0-f41.google.com with SMTP id k1so38304249vkb.0
+        for <linux-btrfs@vger.kernel.org>; Fri, 04 Mar 2016 06:14:36 -0800 (PST)
+MIME-Version: 1.0
+Date: Fri, 4 Mar 2016 09:14:36 -0500
+Message-ID: <CAJtFHUR7Jppv_znVBPLEZy3RU9n3jaA7dNUPOjrmMOCS4-_z_w@mail.gmail.com>
+Subject: linux 4.4.3 oops on aborted transaction, forces FS read-only
+From: E V <eliventer@gmail.com>
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Nicholas D Steeves posted on Thu, 03 Mar 2016 16:21:53 -0500 as excerpted:
-
-> Hi Duncan,
-> 
->> Of course either way assumes you don't run into some bug that will
->> prevent removal of that chunk, perhaps exactly the same one that kept
->> it from being removed during the normal raid1 conversion.  If that
->> happens,
->> the devs may well be interested in tracking it down, as I'm not aware
->> of anything similar being posted to the list.
-> 
-> I've made up-to-date backups of this volume.  Is one of these two
-> methods more likely to trigger a potential bug?  Also, this potential
-> bug, if it's not just cosmetic wouldn't silently corrupt something in my
-> pool, right?  It's when things won't fail loudly and immediately that
-> concerns me, but if that's not an issue then I'd prefer to try to gather
-> potentially useful data.
-
-I don't actually expect a bug.
-
-The only reason I added that as a caveat is that having that one empty 
-single-profile chunk left around is a bit surprising as well, tho I 
-expect it's simply an artifact of the hoops you needed to jump thru to 
-manage the available space well enough to keep backups while doing the 
-convert from LVM to, ultimately btrfs raid1.  But since that left over 
-chunk /is/ a bit unexpected, it's /also/ possible it's evidence of a bug, 
-not simply an artifact from the roundabout conversion process used, in 
-which case the bug may hit again when trying to remove the empty chunk, 
-and since it's an unknown (possible) bug, the extent of its affects are 
-also unknown.
-
-But that's just a caveat to cover the possible case, and not something 
-actually expected.
-
-Meanwhile, both methods use balance filters, either usage or profile 
-based, to accomplish the same end result.  They simply take advantage of 
-two different descriptors of the empty chunk, that it's empty (0% usage), 
-and that it's single-profile, the only single-profile chunk left.
-
-And both /should/ work quickly and with little to no risk.  But since we 
-/do/ have the remote possibility of a possible unknown bug, it's equally 
-remotely possible that one method will work while the other one won't, 
-that being the possibility I had in mind when I mentioned both instead of 
-just one, or that one will trigger on the unknown bug, with equally 
-unknown consequences since it's an unknown bug that we only have a slight 
-hint is there in the first place, with the hint just as likely being 
-attributable to being a legitimate artifact of the round about way you 
-had to do the conversion in ordered to be sure you weren't risking your 
-backups while working within the space you had available.
-
-Which basically is a very wordy way of saying don't worry about it; just 
-do it.  You have backups and thus are covered in the remote case that the 
-apparently empty chunk is actually evidence of a bug, not just the 
-artifact of the conversion it would seem to be at first glance. =:^)
-
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+Looks like the transaction abort ends up causing the no space, if
+that's at all helpful. Lot's of free space seems to be irrelevant.
+Any chance this will be getting better soon? Seems to happen to me a
+lot these days, and adding space doesn't change anything.
+[282713.823416] WARNING: CPU: 4 PID: 3978 at
+fs/btrfs/extent-tree.c:6549 __btrfs_free_extent+0x98c/0x9a8 [btrfs]()
+[282713.823466] BTRFS: Transaction aborted (error -28)
+[282713.823467] Modules linked in: ipmi_si mpt3sas raid_class
+scsi_transport_sas dell_rbu nfsv3 nfsv4 nfsd auth_rpcgss oid_registry
+nfs_acl nfs lockd grace fscache sunrpc ext2 intel_powerclamp coretemp
+crct10dif_pclmul crc32_pclmul sha256_generic hmac drbg aesni_intel
+joydev aes_x86_64 glue_helper lrw gf128mul evdev ipmi_devintf iTCO_wdt
+ablk_helper cryptd iTCO_vendor_support dcdbas psmouse serio_raw pcspkr
+i7core_edac edac_core lpc_ich mfd_core ipmi_msghandler
+acpi_power_meter button processor loop autofs4 ext4 crc16 mbcache jbd2
+btrfs xor raid6_pq hid_generic usbhid hid sg sd_mod crc32c_intel
+uhci_hcd ehci_pci ehci_hcd megaraid_sas ixgbe mdio usbcore ptp
+usb_common pps_core scsi_mod bnx2 [last unloaded: ipmi_si]
+[282713.823891] CPU: 4 PID: 3978 Comm: btrfs-transacti Tainted: G
+    I     4.4.3 #1
+[282713.823979]  0000000000000006 ffffffff811eba76 ffff8807c4fbbb50
+0000000000000009
+[282713.824029]  ffffffff810442ee ffffffffa0160c9e 00000000ffffffe4
+ffff8807c4fbbba8
+[282713.824080]  ffff88041e0e8000 0000000000000000 ffffffff81044346
+ffffffffa01db5aa
+[282713.824130] Call Trace:
+[282713.824155]  [<ffffffff811eba76>] ? dump_stack+0x46/0x59
+[282713.824185]  [<ffffffff810442ee>] ? warn_slowpath_common+0x94/0xa9
+[282713.824222]  [<ffffffffa0160c9e>] ? __btrfs_free_extent+0x98c/0x9a8 [btrfs]
+[282713.824252]  [<ffffffff81044346>] ? warn_slowpath_fmt+0x43/0x4b
+[282713.824288]  [<ffffffffa0160c9e>] ? __btrfs_free_extent+0x98c/0x9a8 [btrfs]
+[282713.824319]  [<ffffffff811182d7>] ? __cache_free.isra.49+0x1df/0x1ee
+[282713.824358]  [<ffffffffa01b124e>] ?
+btrfs_merge_delayed_refs+0x59/0x23d [btrfs]
+[282713.824412]  [<ffffffffa016438b>] ?
+__btrfs_run_delayed_refs+0xad5/0xc83 [btrfs]
+[282713.824466]  [<ffffffffa0165c63>] ?
+btrfs_run_delayed_refs+0x6a/0x1a7 [btrfs]
+[282713.824519]  [<ffffffffa01666ec>] ?
+btrfs_write_dirty_block_groups+0xd0/0x219 [btrfs]
+[282713.824573]  [<ffffffffa01d2e7a>] ? commit_cowonly_roots+0x1dd/0x275 [btrfs]
+[282713.824613]  [<ffffffffa0176ccd>] ?
+btrfs_commit_transaction+0x476/0x924 [btrfs]
+[282713.824668]  [<ffffffffa017745c>] ? start_transaction+0x2e1/0x46f [btrfs]
+[282713.824708]  [<ffffffffa0172b53>] ? transaction_kthread+0xde/0x18e [btrfs]
+[282713.824749]  [<ffffffffa0172a75>] ?
+btrfs_cleanup_transaction+0x3ee/0x3ee [btrfs]
+[282713.824794]  [<ffffffff81059f1a>] ? kthread+0xa7/0xaf
+[282713.824820]  [<ffffffff81059e73>] ? kthread_parkme+0x16/0x16
+[282713.824849]  [<ffffffff813c6d5f>] ? ret_from_fork+0x3f/0x70
+[282713.824876]  [<ffffffff81059e73>] ? kthread_parkme+0x16/0x16
+[282713.824902] ---[ end trace 2857e44546172518 ]---
+[282713.824946] BTRFS: error (device sdh) in __btrfs_free_extent:6549:
+errno=-28 No space left
+[282713.824995] BTRFS info (device sdh): forced readonly
+[282713.825021] BTRFS: error (device sdh) in
+btrfs_run_delayed_refs:2927: errno=-28 No space left
+[282713.856362] BTRFS warning (device sdh): Skipping commit of aborted
+transaction.
+[282713.856413] BTRFS: error (device sdh) in cleanup_transaction:1746:
+errno=-28 No space left

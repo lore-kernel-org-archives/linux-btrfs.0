@@ -1,75 +1,83 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:5165 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751892AbcCDB4Z (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 3 Mar 2016 20:56:25 -0500
-Subject: Re: Byte comparison before hashing
-To: Nikolai Viktorovich <nikolai.viktorovich@gmail.com>,
-        <linux-btrfs@vger.kernel.org>
-References: <CACSpBpFBW=t1hyejRVxkzuauZy-18e3S4RoyCby4mUJMdtWftw@mail.gmail.com>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <56D8E42C.6030106@cn.fujitsu.com>
-Date: Fri, 4 Mar 2016 09:26:04 +0800
-MIME-Version: 1.0
-In-Reply-To: <CACSpBpFBW=t1hyejRVxkzuauZy-18e3S4RoyCby4mUJMdtWftw@mail.gmail.com>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+Received: from plane.gmane.org ([80.91.229.3]:54227 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751294AbcCDMb4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 4 Mar 2016 07:31:56 -0500
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+	id 1abotd-0002wi-QL
+	for linux-btrfs@vger.kernel.org; Fri, 04 Mar 2016 13:31:53 +0100
+Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Fri, 04 Mar 2016 13:31:53 +0100
+Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Fri, 04 Mar 2016 13:31:53 +0100
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: Again, no space left on device while rebalancing and recipe
+ doesnt work
+Date: Fri, 4 Mar 2016 12:31:44 +0000 (UTC)
+Message-ID: <pan$a7a0b$d1f1da3$f3b73157$2f7e8e17@cox.net>
+References: <20160227211450.GS26042@torres.zugschlus.de>
+	<CAOE4rSyPvkzjKDVoQ-7U8ay5t7Pp2qeaCqh-tFg-etmgHGEOJQ@mail.gmail.com>
+	<pan$1a785$dbfe4789$bdc8f4d5$778788dd@cox.net>
+	<CAOE4rSw_+PQEjAiHJkk03ec=J3ti9t9VCOD-zJSi=rP4dPnsjQ@mail.gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Dāvis Mosāns posted on Thu, 03 Mar 2016 17:39:12 +0200 as excerpted:
 
+> 2016-03-03 6:57 GMT+02:00 Duncan <1i5t5.duncan@cox.net>:
+>>
+>> You're issue isn't the same, because all your space was allocated,
+>> leaving only 1 MiB unallocated, which isn't normally enough to allocate
+>> a new chunk to rewrite the data or metadata from the old chunks into.
+>>
+>> That's a known issue, with known workarounds as dealt with in the FAQ.
+>>
+>>
+> Ah, thanks, well it was surprising for me that balance failed with out
+> of space when both data and metadata had not all been used and I thought
+> it could just use space from those...
+> 
+> especially as from FAQ:
+>> If there is a lot of allocated but unused data or metadata chunks,
+>> a balance may reclaim some of that allocated space. This is the main
+>> reason for running a balance on a single-device filesystem.
+> 
+> so I think regular balance should be smart enough that it could solve
+> this on own and wouldn't need to specify any options.
 
-Nikolai Viktorovich wrote on 2016/03/03 20:50 -0300:
-> First of all: Thanks for the great work on btrfs!
-> How about taking only few bytes of data from each block and compare
-> those, before attempting to hash? This way you could quickly discard
-> blocks with really no similar data and hash only ones that matched the
-> "first look" byte comparison? This could lead to less CPU consumption,
-> since hashing is an intense operation, and to less memory footprint,
-> since you don't need to store all those non-dedupable hashes.
+Well it does solve the problem on its own... to the extent that it 
+eliminates empty chunks (kernel 3.17+, it didn't before that).  But if 
+there's even a single 4 KiB file block used in the (nominal 1 GiB sized 
+data) chunk, it's no longer empty and thus not eliminated by the empty 
+chunk cleanup routines.
 
-I assume you're talking about in-band dedup.
-For that case, byte-by-byte comparison is in our future planned feature 
-list, for using faster but more conflicts algorithm.
+Additionally, balance, which was originally called the restriper, by 
+definition, must have enough space to create at least one empty chunk in 
+ordered to copy the data from existing chunks into, such that it can 
+consolidate that data into fewer new chunks when the old ones were partly 
+empty.  If there's not enough unallocated space left to write even one 
+chunk, balance can't do its thing, because there's nowhere to create the 
+new chunk it needs to be able to copy over the data from the old chunk.
 
-The problem we don't do it at beginning(and even not some time soon) is:
-1) Lack of facility to read page without inode
-    Read page inside one inode is easy, but without inode, maybe I'm
-    missing something, but at least I didn't find a proper and easy
-    facility to  do it now.
+With nominal 1 GiB data chunk size (up to 10 GiB in some instances if the 
+filesystem is large enough), that means you need at least 1 GiB of free 
+unallocated space in ordered to have room to create that single chunk 
+that starts the rewrite process off.  Without it, you're stuck, tho there 
+are workarounds like trying to balance the smaller (256 MiB nominal) 
+metadata chunks first, hoping that frees the minimum 1 GiB space needed 
+for a data chunk, or temporarily adding another device a few GiB in size 
+to the filesystem, to give it somewhere to write the new chunk to so it 
+can start off the rewrite and shrinking process.
 
-2) Delayed ref hell
-    Current implement is already spending a lot of code to handling
-    possible delayed ref problem.
-    If doing byte-by-byte comparison, we need to handle delayed ref for
-    both extents(the one we read to compare and the one we are writing
-    back)
-
-    I prefer to do it only after we have a better way to deal with
-    delayed ref. E.g only permit run_delayed_ref() inside commit_trans().
-
-3) Performance
-    If one hash algorithm needs byte-to-byte comparison, then not the
-    beginning, but the whole range must be read out and do the
-    comparison.
-
-    Some hash, IIRC md5, is easy to conflict, one user(attacker) can
-    easily build two blocks, which have the same md5 and the same
-    several beginning bytes.
-
-    Due to this, if we do it performance may be impacted for hash hit
-    case.(depending on the memory pressure).
-
-So we may finally add such feature for inband dedup, but not now, not 
-anytime soon.
-
-Thanks,
-Qu
-
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
->
-
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 

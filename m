@@ -1,45 +1,38 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:49082 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751243AbcCCKDB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 3 Mar 2016 05:03:01 -0500
-Date: Thu, 3 Mar 2016 11:02:44 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Cc: Hugo Mills <hugo@carfax.org.uk>, sri <toyours_sridhar@yahoo.co.in>,
-        linux-btrfs@vger.kernel.org
+Received: from aserp1040.oracle.com ([141.146.126.69]:33658 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750874AbcCDC6a (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 3 Mar 2016 21:58:30 -0500
 Subject: Re: how many chunk trees and extent trees present
-Message-ID: <20160303100244.GE29310@suse.cz>
-Reply-To: dsterba@suse.cz
+To: dsterba@suse.cz, Hugo Mills <hugo@carfax.org.uk>,
+        sri <toyours_sridhar@yahoo.co.in>, linux-btrfs@vger.kernel.org
 References: <loom.20150417T081705-332@post.gmane.org>
- <20150417091911.GK22084@carfax.org.uk>
- <20150417172928.GT25622@twin.jikos.cz>
- <56CFAA79.9020706@cn.fujitsu.com>
+ <20150417091911.GK22084@carfax.org.uk> <20150417172928.GT25622@twin.jikos.cz>
+From: Anand Jain <anand.jain@oracle.com>
+Message-ID: <56D8F9C7.70609@oracle.com>
+Date: Fri, 4 Mar 2016 10:58:15 +0800
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <56CFAA79.9020706@cn.fujitsu.com>
+In-Reply-To: <20150417172928.GT25622@twin.jikos.cz>
+Content-Type: text/plain; charset=windows-1252; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Feb 26, 2016 at 09:29:29AM +0800, Qu Wenruo wrote:
-> 
-> 
-> David Sterba wrote on 2015/04/17 19:29 +0200:
-> > On Fri, Apr 17, 2015 at 09:19:11AM +0000, Hugo Mills wrote:
-> >>> In, some article i read that future there will be more chunk tree/ extent
-> >>> tree for single btrfs. Is this true.
-> >>
-> >>     I recall, many moons ago, Chris saying that there probably wouldn't
-> >> be.
-> >
-> > More extent trees tied to a set of fs trees/subvolumes would be very
-> > useful for certain usecases *cough*encryption*cough*.
-> 
-> BTW, will such design makes reflink between different set of extents 
-> fallback to normal copy?
 
-Yes, the actual reflink will not be possible.
 
-> And I'm pretty sure that inband dedup will be affected too...
+On 04/18/2015 01:29 AM, David Sterba wrote:
+> On Fri, Apr 17, 2015 at 09:19:11AM +0000, Hugo Mills wrote:
+>>> In, some article i read that future there will be more chunk tree/ extent
+>>> tree for single btrfs. Is this true.
+>>
+>>     I recall, many moons ago, Chris saying that there probably wouldn't
+>> be.
+>
+> More extent trees tied to a set of fs trees/subvolumes would be very
+> useful for certain usecases *cough*encryption*cough*.
 
-Yes.
+  I didn't understand in full what's the idea here, but let met try..
+  would it not defeat the purpose of encryption which is not to let
+  disk have the un-encrypted data ? Looks like I am missing something
+  here.
+
+Thanks, Anand

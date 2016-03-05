@@ -1,91 +1,63 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from scarab.smoula.net ([83.240.14.6]:45346 "EHLO scarab.smoula.net"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1756259AbcCEK0E convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 5 Mar 2016 05:26:04 -0500
-Subject: Re: ENOSPC while creating snapshot
-To: Duncan <1i5t5.duncan@cox.net>, linux-btrfs@vger.kernel.org
-References: <c2e396477401f3441bdc364456b399f4@smoula.net>
- <CAJCQCtRP6yNOk-oDy9dOiuTL1e19SB9H9cjueEZVsCwJS4vC6w@mail.gmail.com>
- <CAJ88j0axsFA3HFc6Cr5o-dtYxLau_iDS2Mx2uVzKvF5HCe9F5Q@mail.gmail.com>
- <CAJCQCtS6cMjc0MQZresKJpkDnhLF7st2wyvwCKmsPSaT3mYmbw@mail.gmail.com>
- <pan$691ee$6e394beb$af481c7f$72f2b3f6@cox.net>
-From: =?UTF-8?B?TWFydGluIE1seW7DocWZ?= <nexus@smoula.net>
-Message-ID: <56DAB3F7.4050601@smoula.net>
-Date: Sat, 5 Mar 2016 11:24:55 +0100
+Received: from mail-ig0-f174.google.com ([209.85.213.174]:33892 "EHLO
+	mail-ig0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755993AbcCEKqB (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 5 Mar 2016 05:46:01 -0500
+Received: by mail-ig0-f174.google.com with SMTP id ir4so17660624igb.1
+        for <linux-btrfs@vger.kernel.org>; Sat, 05 Mar 2016 02:46:00 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <pan$691ee$6e394beb$af481c7f$72f2b3f6@cox.net>
-Content-Type: text/plain; charset=utf-8; format=flowed
+Reply-To: fdmanana@gmail.com
+In-Reply-To: <pan$297ce$3e554bcd$6c1aeaa$9eef485a@cox.net>
+References: <c2e396477401f3441bdc364456b399f4@smoula.net>
+	<20160305034910.576d2230@natsu>
+	<pan$297ce$3e554bcd$6c1aeaa$9eef485a@cox.net>
+Date: Sat, 5 Mar 2016 10:46:00 +0000
+Message-ID: <CAL3q7H5KQYHWeAfMQgLnffQdb6yU_-3jiGg8LfnU=f2cD0o09Q@mail.gmail.com>
+Subject: Re: ENOSPC while creating snapshot
+From: Filipe Manana <fdmanana@gmail.com>
+To: Duncan <1i5t5.duncan@cox.net>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
-
-On 5.3.2016 06:34, Duncan wrote:
-> Chris Murphy posted on Fri, 04 Mar 2016 19:46:34 -0700 as excerpted:
+On Sat, Mar 5, 2016 at 2:09 AM, Duncan <1i5t5.duncan@cox.net> wrote:
+> Roman Mamedov posted on Sat, 05 Mar 2016 03:49:10 +0500 as excerpted:
 >
->> On Fri, Mar 4, 2016 at 4:16 PM, Martin Mlynář <nexus@smoula.net> wrote:
->
-> [Mount options line split/wrapped for followup]
->
->>>>> rw,noatime,nodatasum,nodatacow,ssd,discard,space_cache,
->>>>> enospc_debug,commit=900,subvolid=5,subvol=/
->>>>
->>>> Most likely unrelated but commit time of 15 minutes? Umm, OK why?
->>>
->>> I'm trying to reduce writes to my ssd.
+>> As you use the nodatacow mount option, this seems to be another case of
+>> http://www.spinics.net/lists/linux-btrfs/msg51276.html
+>> http://www.spinics.net/lists/linux-btrfs/msg51819.html
 >>
->> This will not reduce writes. It will only delay them. And it increases
->> the chance of data loss by a lot.
+>> and is fixed by https://patchwork.kernel.org/patch/7967161/
+>>
+>> Unfortunately the bug is known since the start of the 4.4 series and the
+>> patch is out for 2 months, but it didn't get included into even 4.4.4
+>> released recently. You have to apply it by yourself and recompile the
+>> kernel.
 >
-> AFAIK, to the extent that temporary files are created and then deleted
-> again, within that 900 seconds aka 15 minutes, it will indeed reduce
-> writes.
->
-> This can be the case for the build-tmp location for people running build-
-> from-sources distros such as gentoo, for instance, as many packages will
-> be built and tmp-installed to that build-tmp, before being quick-merged
-> to the live system and the work deleted from build-tmp in well under 15
-> minutes, at least on today's reasonably powerful quad-core-plus systems.
-> Tho on gentoo, the recommendation for those with the memory available is
-> to point that build-tmp at a tmpfs instead of a permanent-storage backed
-> filesystem of any sort.
->
-> And in general, for those without the memory to support build-tmp in
-> tmpfs, a 15-minute commit time isn't going to help either, because if
-> they have enough memory to avoid flushing to free up memory for that full
-> 15 minutes, they obviously have enough memory to store all those files
-> that would be in tmpfs if they'd have simply pointed build-tmp at that,
-> instead.
->
-> Another use-case is laptops and other mobile systems with enough memory
-> to cache the normal working set, is to power down the storage devices for
-> as long as possible between powerups.  However, the heavy power usage
-> there is normally on spinning up the disk and/or keeping it spinning, and
-> SSDs obviously aren't subject to that.  While some small amount of power
-> may still be saved by powering down the SSD, I expect it to be pretty
-> small, and the writes are going to take the same amount of power no
-> matter when they're done.
->
-> In either case, 15 minute commit times are rather extreme, because as has
-> been pointed out, that's potentially 15 minutes of lost work should the
-> system crash before those writes are completed, and losing 15 minutes
-> worth of work is well beyond the acceptable risk level for most people.
-> 5 minutes, much more common, 10 minutes, not so common but you'll fine
-> people doing it.  15 minutes, pretty rare, I expect.
->
-> The point being, yes, there are use-cases where 15 minute commit times
-> makes sense.  But the given reason, a bare wish to reduce writes to the
-> ssd, without support such as one of the above use-cases or something
-> similar, really doesn't make sense, at least on its face.  I'll agree
-> with other posters on that.
-Thank you for valuable insight, all of you.
+> Tho AFAIK it should be in 4.5, which is getting close to release, so if
+> you prefer to run 4.5-rcX to applying the patch yourself, that should
+> work as well.
 
-It is battery backed-up laptop so I thought it should work well. I've 
-met no problems since when I've set up this few years ago. To be hones I 
-even forgot I've got this set up :)
+No, it's not in any 4.5-rc.
+It's in the integration branch for 4.6, however.
 
-I'll lower the value, you're right, that 15 minutes are pretty extreme.
+>
+> --
+> Duncan - List replies preferred.   No HTML msgs.
+> "Every nonfree program has a lord, a master --
+> and if you use the program, he is your master."  Richard Stallman
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 
---
-Martin
+
+
+-- 
+Filipe David Manana,
+
+"Reasonable men adapt themselves to the world.
+ Unreasonable men adapt the world to themselves.
+ That's why all progress depends on unreasonable men."

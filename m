@@ -1,16 +1,15 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:39538 "EHLO
+Received: from aserp1040.oracle.com ([141.146.126.69]:39643 "EHLO
 	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1759626AbcCEAhq (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 4 Mar 2016 19:37:46 -0500
-Subject: [PATCH 03/12] reflink: fix fragmentation tests to work on >4k block
- size filesystems
+	with ESMTP id S1760082AbcCEAh7 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 4 Mar 2016 19:37:59 -0500
+Subject: [PATCH 05/12] xfs/206: fix output when mkfs knows about reflink
 From: "Darrick J. Wong" <darrick.wong@oracle.com>
 To: david@fromorbit.com, darrick.wong@oracle.com
 Cc: linux-ext4@vger.kernel.org, linux-btrfs@vger.kernel.org,
         fstests@vger.kernel.org, xfs@oss.sgi.com
-Date: Fri, 04 Mar 2016 16:37:37 -0800
-Message-ID: <20160305003737.28738.35234.stgit@birch.djwong.org>
+Date: Fri, 04 Mar 2016 16:37:50 -0800
+Message-ID: <20160305003750.28738.48204.stgit@birch.djwong.org>
 In-Reply-To: <20160305003717.28738.98818.stgit@birch.djwong.org>
 References: <20160305003717.28738.98818.stgit@birch.djwong.org>
 MIME-Version: 1.0
@@ -18,198 +17,43 @@ Content-Type: text/plain; charset="utf-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-For tests that only overwrite part of a file, only consider the number
-of extents in the *rewritten* blocks when deciding if the FS
-fragmentation performance is satisfactory.
-
-(Also slip in a fix for xfs/127 so that it formats correctly when we
-specify big blocksizes via MKFS_OPTIONS.)
-
 Signed-off-by: Darrick J. Wong <darrick.wong@oracle.com>
 ---
- tests/xfs/127 |    2 +-
- tests/xfs/215 |    2 +-
- tests/xfs/218 |    2 +-
- tests/xfs/219 |    2 +-
- tests/xfs/221 |    2 +-
- tests/xfs/223 |    2 +-
- tests/xfs/224 |    2 +-
- tests/xfs/225 |    2 +-
- tests/xfs/226 |    2 +-
- tests/xfs/228 |    2 +-
- tests/xfs/230 |    2 +-
- tests/xfs/231 |    2 +-
- tests/xfs/232 |    2 +-
- 13 files changed, 13 insertions(+), 13 deletions(-)
+ tests/xfs/206     |    1 +
+ tests/xfs/206.out |    2 ++
+ 2 files changed, 3 insertions(+)
 
 
-diff --git a/tests/xfs/127 b/tests/xfs/127
-index f44daae..6b768c9 100755
---- a/tests/xfs/127
-+++ b/tests/xfs/127
-@@ -48,7 +48,7 @@ _require_scratch_reflink
- _require_cp_reflink
- 
- echo "Format and mount"
--_scratch_mkfs -d size=$((2 * 4096 * 4096)) -l size=4194304 > $seqres.full 2>&1
-+_scratch_mkfs_sized $((2 * 4096 * 4096)) > $seqres.full 2>&1
- _scratch_mount >> $seqres.full 2>&1
- 
- testdir=$SCRATCH_MNT/test-$seq
-diff --git a/tests/xfs/215 b/tests/xfs/215
-index 5ae4d85..7a517d7 100755
---- a/tests/xfs/215
-+++ b/tests/xfs/215
-@@ -95,7 +95,7 @@ new_extents=$(_count_extents $testdir/file3)
- echo "old extents: $old_extents" >> $seqres.full
- echo "new extents: $new_extents" >> $seqres.full
- echo "maximum extents: $internal_blks" >> $seqres.full
--test $new_extents -lt $((internal_blks / 20)) || echo "file3 badly fragmented"
-+test $((new_extents - (nr / 2))) -lt $((internal_blks / 2)) || echo "file3 badly fragmented"
- 
- # success, all done
- status=0
-diff --git a/tests/xfs/218 b/tests/xfs/218
-index ea464f2..0ab4102 100755
---- a/tests/xfs/218
-+++ b/tests/xfs/218
-@@ -94,7 +94,7 @@ new_extents=$(_count_extents $testdir/file3)
- echo "old extents: $old_extents" >> $seqres.full
- echo "new extents: $new_extents" >> $seqres.full
- echo "maximum extents: $internal_blks" >> $seqres.full
--test $new_extents -lt $((internal_blks / 20)) || echo "file3 badly fragmented"
-+test $((new_extents - (nr / 2))) -lt $((internal_blks / 2)) || echo "file3 badly fragmented"
- 
- # success, all done
- status=0
-diff --git a/tests/xfs/219 b/tests/xfs/219
-index 012b07c..df57e07 100755
---- a/tests/xfs/219
-+++ b/tests/xfs/219
-@@ -95,7 +95,7 @@ new_extents=$(_count_extents $testdir/file3)
- echo "old extents: $old_extents" >> $seqres.full
- echo "new extents: $new_extents" >> $seqres.full
- echo "maximum extents: $internal_blks" >> $seqres.full
--test $new_extents -lt $((internal_blks / 20)) || echo "file3 badly fragmented"
-+test $((new_extents - (nr / 4))) -lt $((internal_blks / 2)) || echo "file3 badly fragmented"
- 
- # success, all done
- status=0
-diff --git a/tests/xfs/221 b/tests/xfs/221
-index 8b860f2..03d81ac 100755
---- a/tests/xfs/221
-+++ b/tests/xfs/221
-@@ -94,7 +94,7 @@ new_extents=$(_count_extents $testdir/file3)
- echo "old extents: $old_extents" >> $seqres.full
- echo "new extents: $new_extents" >> $seqres.full
- echo "maximum extents: $internal_blks" >> $seqres.full
--test $new_extents -lt $((internal_blks / 20)) || echo "file3 badly fragmented"
-+test $((new_extents - (nr / 4))) -lt $((internal_blks / 2)) || echo "file3 badly fragmented"
- 
- # success, all done
- status=0
-diff --git a/tests/xfs/223 b/tests/xfs/223
-index 1e6ba98..7c990a2 100755
---- a/tests/xfs/223
-+++ b/tests/xfs/223
-@@ -97,7 +97,7 @@ new_extents=$(_count_extents $testdir/file3)
- echo "old extents: $old_extents" >> $seqres.full
- echo "new extents: $new_extents" >> $seqres.full
- echo "maximum extents: $internal_blks" >> $seqres.full
--test $new_extents -lt $((internal_blks / 20)) || echo "file3 badly fragmented"
-+test $((new_extents - (nr / 2))) -lt $((internal_blks / 2)) || echo "file3 badly fragmented"
- 
- # success, all done
- status=0
-diff --git a/tests/xfs/224 b/tests/xfs/224
-index 3d19f94..bf33d1f 100755
---- a/tests/xfs/224
-+++ b/tests/xfs/224
-@@ -96,7 +96,7 @@ new_extents=$(_count_extents $testdir/file3)
- echo "old extents: $old_extents" >> $seqres.full
- echo "new extents: $new_extents" >> $seqres.full
- echo "maximum extents: $internal_blks" >> $seqres.full
--test $new_extents -lt $((internal_blks / 20)) || echo "file3 badly fragmented"
-+test $((new_extents - (nr / 2))) -lt $((internal_blks / 2)) || echo "file3 badly fragmented"
- 
- # success, all done
- status=0
-diff --git a/tests/xfs/225 b/tests/xfs/225
-index c2e5b82..749816f 100755
---- a/tests/xfs/225
-+++ b/tests/xfs/225
-@@ -95,7 +95,7 @@ new_extents=$(_count_extents $testdir/file3)
- echo "old extents: $old_extents" >> $seqres.full
- echo "new extents: $new_extents" >> $seqres.full
- echo "maximum extents: $internal_blks" >> $seqres.full
--test $new_extents -lt $((internal_blks / 20)) || echo "file3 badly fragmented"
-+test $((new_extents - (nr / 2))) -lt $((internal_blks / 2)) || echo "file3 badly fragmented"
- 
- # success, all done
- status=0
-diff --git a/tests/xfs/226 b/tests/xfs/226
-index 3f035b4..bb94d24 100755
---- a/tests/xfs/226
-+++ b/tests/xfs/226
-@@ -94,7 +94,7 @@ new_extents=$(_count_extents $testdir/file3)
- echo "old extents: $old_extents" >> $seqres.full
- echo "new extents: $new_extents" >> $seqres.full
- echo "maximum extents: $internal_blks" >> $seqres.full
--test $new_extents -lt $((internal_blks / 20)) || echo "file3 badly fragmented"
-+test $((new_extents - (nr / 2))) -lt $((internal_blks / 2)) || echo "file3 badly fragmented"
- 
- # success, all done
- status=0
-diff --git a/tests/xfs/228 b/tests/xfs/228
-index 52fbb75..df1fd7a 100755
---- a/tests/xfs/228
-+++ b/tests/xfs/228
-@@ -103,7 +103,7 @@ new_extents=$(_count_extents $testdir/file3)
- echo "old extents: $old_extents" >> $seqres.full
- echo "new extents: $new_extents" >> $seqres.full
- echo "maximum extents: $internal_blks" >> $seqres.full
--test $new_extents -lt $((internal_blks / 20)) || echo "file3 badly fragmented"
-+test $((new_extents - (nr * 4 / 10))) -lt $((internal_blks / 2)) || echo "file3 badly fragmented"
- 
- # success, all done
- status=0
-diff --git a/tests/xfs/230 b/tests/xfs/230
-index 91e4d3f..73f599a 100755
---- a/tests/xfs/230
-+++ b/tests/xfs/230
-@@ -103,7 +103,7 @@ new_extents=$(_count_extents $testdir/file3)
- echo "old extents: $old_extents" >> $seqres.full
- echo "new extents: $new_extents" >> $seqres.full
- echo "maximum extents: $internal_blks" >> $seqres.full
--test $new_extents -lt $((internal_blks / 20)) || echo "file3 badly fragmented"
-+test $((new_extents - (nr * 4 / 10))) -lt $((internal_blks / 2)) || echo "file3 badly fragmented"
- 
- # success, all done
- status=0
-diff --git a/tests/xfs/231 b/tests/xfs/231
-index 60f59a9..166f6b0 100755
---- a/tests/xfs/231
-+++ b/tests/xfs/231
-@@ -123,7 +123,7 @@ new_extents=$(_count_extents $testdir/file2)
- echo "old extents: $old_extents" >> $seqres.full
- echo "new extents: $new_extents" >> $seqres.full
- echo "maximum extents: $internal_blks" >> $seqres.full
--test $new_extents -lt $((internal_blks / 7)) || echo "file2 badly fragmented"
-+test $new_extents -le $((3 * nr / bufnr)) || echo "file2 more fragmented than expected"
- 
- # success, all done
- status=0
-diff --git a/tests/xfs/232 b/tests/xfs/232
-index 9a8403c..0008dbf 100755
---- a/tests/xfs/232
-+++ b/tests/xfs/232
-@@ -125,7 +125,7 @@ new_extents=$(_count_extents $testdir/file2)
- echo "old extents: $old_extents" >> $seqres.full
- echo "new extents: $new_extents" >> $seqres.full
- echo "maximum extents: $internal_blks" >> $seqres.full
--test $new_extents -lt $((internal_blks / 12)) || echo "file2 not sufficiently fragmented"
-+test $new_extents -le $((2 * nr / bufnr)) || echo "file2 more fragmented than expected"
- 
- # success, all done
- status=0
+diff --git a/tests/xfs/206 b/tests/xfs/206
+index 0f5d97d..24e690a 100755
+--- a/tests/xfs/206
++++ b/tests/xfs/206
+@@ -80,6 +80,7 @@ mkfs_filter()
+ 	    -e "s/\(^log.*blocks=\)\([0-9]*,\)/\1XXXXX,/" \
+ 	    -e "s/, projid32bit=[0-9]//" \
+ 	    -e "s/ ftype=[0-9]//" \
++	    -e "s/ reflink=[0-9]//" \
+ 	    -e "s/\(sectsz\)\(=[0-9]* *\)/\1=512   /" \
+ 	    -e "s/\(sunit=\)\([0-9]* blks,\)/\10 blks,/" \
+ 	    -e "s/, lazy-count=[0-9]//" \
+diff --git a/tests/xfs/206.out b/tests/xfs/206.out
+index 2db839d..e73a954 100644
+--- a/tests/xfs/206.out
++++ b/tests/xfs/206.out
+@@ -12,6 +12,7 @@ realtime =none                   extsz=4096   blocks=0, rtextents=0
+ === xfs_growfs ===
+ meta-data=FILE isize=N    agcount=52, agsize=76288719 blks
+          =                       sectsz=512   attr=2
++         =                      
+ data     =                       bsize=4096   blocks=3905982455, imaxpct=5
+          =                       sunit=0      swidth=0 blks
+ naming   =version 2              bsize=4096   ascii-ci=0
+@@ -22,6 +23,7 @@ data blocks changed from 3905982455 to 4882478016
+ === xfs_info ===
+ meta-data=FILE isize=N    agcount=64, agsize=76288719 blks
+          =                       sectsz=512   attr=2
++         =                      
+ data     =                       bsize=4096   blocks=4882478016, imaxpct=5
+          =                       sunit=0      swidth=0 blks
+ naming   =version 2              bsize=4096   ascii-ci=0
 

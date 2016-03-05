@@ -1,60 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from torres.zugschlus.de ([85.214.131.164]:40048 "EHLO
-	torres.zugschlus.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750744AbcCERZz (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 5 Mar 2016 12:25:55 -0500
-Received: from mh by torres.zugschlus.de with local (Exim 4.84)
-	(envelope-from <mh+linux-btrfs@zugschlus.de>)
-	id 1acFxh-0003E8-Mi
-	for linux-btrfs@vger.kernel.org; Sat, 05 Mar 2016 18:25:53 +0100
-Date: Sat, 5 Mar 2016 18:25:53 +0100
-From: Marc Haber <mh+linux-btrfs@zugschlus.de>
-To: linux-btrfs@vger.kernel.org
+Received: from mail02.iobjects.de ([188.40.134.68]:52641 "EHLO
+	mail02.iobjects.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750709AbcCESAd (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 5 Mar 2016 13:00:33 -0500
 Subject: Re: balance hangs and starts again on reboot
-Message-ID: <20160305172553.GF1902@torres.zugschlus.de>
+To: Marc Haber <mh+linux-btrfs@zugschlus.de>, linux-btrfs@vger.kernel.org
 References: <20160304173125.GA1902@torres.zugschlus.de>
- <56D9CF63.3060603@googlemail.com>
- <20160305141707.GC1902@torres.zugschlus.de>
- <56DAFD91.2090805@googlemail.com>
+ <56D9CF63.3060603@googlemail.com> <20160305141707.GC1902@torres.zugschlus.de>
+ <56DAFD91.2090805@googlemail.com> <20160305172553.GF1902@torres.zugschlus.de>
+From: =?UTF-8?Q?Holger_Hoffst=c3=a4tte?=
+	<holger.hoffstaette@googlemail.com>
+Message-ID: <56DB1EBD.2070904@googlemail.com>
+Date: Sat, 5 Mar 2016 19:00:29 +0100
 MIME-Version: 1.0
+In-Reply-To: <20160305172553.GF1902@torres.zugschlus.de>
 Content-Type: text/plain; charset=utf-8
-In-Reply-To: <56DAFD91.2090805@googlemail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, Mar 05, 2016 at 04:38:57PM +0100, Holger Hoffstätte wrote:
-> On 03/05/16 15:17, Marc Haber wrote:
-> >> Then try to balance in small increments.
-> > 
-> > -dusage=5 and incrementing? Or what do you mean with "in small
-> > increments"?
+On 03/05/16 18:25, Marc Haber wrote:
+> On Sat, Mar 05, 2016 at 04:38:57PM +0100, Holger Hoffstätte wrote:
+>> On 03/05/16 15:17, Marc Haber wrote:
+>>>> Then try to balance in small increments.
+>>>
+>>> -dusage=5 and incrementing? Or what do you mean with "in small
+>>> increments"?
+>>
+>> Exactly, yes. Sorry for not being more clear.
 > 
-> Exactly, yes. Sorry for not being more clear.
+> So you would recommend something along
+> 
+> for nr in $(seq 5 5 100); do
+>   btrfs balance start -dusage=$nr $FS
+> done
+> 
+> right?
 
-So you would recommend something along
+Except for the 100 part, which seems pointless. Maybe more like
+10,20..80 max. If that doesn't help you are probably out of space
+anyway.
 
-for nr in $(seq 5 5 100); do
-  btrfs balance start -dusage=$nr $FS
-done
+> Won't this take ages longer than a straight unfiltered balance?
 
-right?
+Touching less stuff conditionally is pretty much guaranteed to be
+faster than unconditionally rewriting everything, and less likely to
+end up out of space since you garbage-collect the smallest chunks
+first, freeing up a larger one and so on.
 
-Won't this take ages longer than a straight unfiltered balance?
+> md as in the Linux Software RAID? That's not in the game here, it's a
+> single SATA hard disk.
 
-> FWIW I've been balancing a lot recently (both for stress testing and
-> cleaning up a few filesystems) and have never run into this particular
-> stall, but only ever do filtered balances. Also I wouldn't be surprised
-> at all if this is yet another problem where md does something in a way
-> that btrfs doesn' expect, and things go wrong.
+I thought your df output contained md or something. If not, all the
+better.
 
-md as in the Linux Software RAID? That's not in the game here, it's a
-single SATA hard disk.
+-h
 
-Greetings
-Marc
-
--- 
------------------------------------------------------------------------------
-Marc Haber         | "I don't trust Computers. They | Mailadresse im Header
-Leimen, Germany    |  lose things."    Winona Ryder | Fon: *49 6224 1600402
-Nordisch by Nature |  How to make an American Quilt | Fax: *49 6224 1600421

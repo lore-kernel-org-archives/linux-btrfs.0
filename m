@@ -1,57 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail02.iobjects.de ([188.40.134.68]:52641 "EHLO
-	mail02.iobjects.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750709AbcCESAd (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 5 Mar 2016 13:00:33 -0500
-Subject: Re: balance hangs and starts again on reboot
-To: Marc Haber <mh+linux-btrfs@zugschlus.de>, linux-btrfs@vger.kernel.org
-References: <20160304173125.GA1902@torres.zugschlus.de>
- <56D9CF63.3060603@googlemail.com> <20160305141707.GC1902@torres.zugschlus.de>
- <56DAFD91.2090805@googlemail.com> <20160305172553.GF1902@torres.zugschlus.de>
-From: =?UTF-8?Q?Holger_Hoffst=c3=a4tte?=
-	<holger.hoffstaette@googlemail.com>
-Message-ID: <56DB1EBD.2070904@googlemail.com>
-Date: Sat, 5 Mar 2016 19:00:29 +0100
+Received: from mail-io0-f176.google.com ([209.85.223.176]:33471 "EHLO
+	mail-io0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750724AbcCETeL (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 5 Mar 2016 14:34:11 -0500
+Received: by mail-io0-f176.google.com with SMTP id n190so95152967iof.0
+        for <linux-btrfs@vger.kernel.org>; Sat, 05 Mar 2016 11:34:10 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <20160305172553.GF1902@torres.zugschlus.de>
-Content-Type: text/plain; charset=utf-8
+In-Reply-To: <20160305143934.GE1902@torres.zugschlus.de>
+References: <20160227211450.GS26042@torres.zugschlus.de>
+	<CAOE4rSyPvkzjKDVoQ-7U8ay5t7Pp2qeaCqh-tFg-etmgHGEOJQ@mail.gmail.com>
+	<20160305143934.GE1902@torres.zugschlus.de>
+Date: Sat, 5 Mar 2016 12:34:09 -0700
+Message-ID: <CAJCQCtTw1+E=X1bbGgSB-fPHDtEPUO5amFUEs4fyPmTfK4QaGw@mail.gmail.com>
+Subject: Re: Again, no space left on device while rebalancing and recipe
+ doesnt work
+From: Chris Murphy <lists@colorremedies.com>
+To: Marc Haber <mh+linux-btrfs@zugschlus.de>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 03/05/16 18:25, Marc Haber wrote:
-> On Sat, Mar 05, 2016 at 04:38:57PM +0100, Holger Hoffstätte wrote:
->> On 03/05/16 15:17, Marc Haber wrote:
->>>> Then try to balance in small increments.
->>>
->>> -dusage=5 and incrementing? Or what do you mean with "in small
->>> increments"?
->>
->> Exactly, yes. Sorry for not being more clear.
-> 
-> So you would recommend something along
-> 
-> for nr in $(seq 5 5 100); do
->   btrfs balance start -dusage=$nr $FS
-> done
-> 
-> right?
+I can't tell what this btrfs-balance script is doing because not every
+btrfs balance command is in the log. It may be doing something not
+advisable or suboptimal or unexpected that along with some other bug
+is causing this to happen
 
-Except for the 100 part, which seems pointless. Maybe more like
-10,20..80 max. If that doesn't help you are probably out of space
-anyway.
+Metadata,DUP: Size:107.00GiB, Used:2.11GiB
 
-> Won't this take ages longer than a straight unfiltered balance?
+I'd try to use -musage filter alone, in whatever increments work. So
+try 0. Then 5. If 5 fails, try 2. Increment until size is not much
+more than 2-3x used.
 
-Touching less stuff conditionally is pretty much guaranteed to be
-faster than unconditionally rewriting everything, and less likely to
-end up out of space since you garbage-collect the smallest chunks
-first, freeing up a larger one and so on.
+Something is happening with the usage of this file system that's out
+of the ordinary. This is the first time I've seen such a large amount
+of unused metadata allocation. And then for it not only fail to
+balance, but for the allocation amount to increase is a first. So
+understanding the usage is important to figuring out what's happening.
+I'd file a bug and include as much information on how the fs got into
+this state as possible. And also if possible make a btrfs-image using
+the proper flags to blot out the filenames for privacy. And what
+btrfs-progs tools were used to create this file system. Etc.
 
-> md as in the Linux Software RAID? That's not in the game here, it's a
-> single SATA hard disk.
+The alternative if this can't be fixed, is to recreate the filesystem
+because there's no practical way yet to migrate so many snapshots to a
+new file system.
 
-I thought your df output contained md or something. If not, all the
-better.
 
--h
-
+Chris Murphy

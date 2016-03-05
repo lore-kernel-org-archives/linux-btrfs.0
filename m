@@ -1,35 +1,49 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail02.iobjects.de ([188.40.134.68]:52499 "EHLO
-	mail02.iobjects.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750804AbcCEPjA (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 5 Mar 2016 10:39:00 -0500
-Subject: Re: balance hangs and starts again on reboot
-To: Marc Haber <mh+linux-btrfs@zugschlus.de>, linux-btrfs@vger.kernel.org
-References: <20160304173125.GA1902@torres.zugschlus.de>
- <56D9CF63.3060603@googlemail.com> <20160305141707.GC1902@torres.zugschlus.de>
-From: =?UTF-8?Q?Holger_Hoffst=c3=a4tte?=
-	<holger.hoffstaette@googlemail.com>
-Message-ID: <56DAFD91.2090805@googlemail.com>
-Date: Sat, 5 Mar 2016 16:38:57 +0100
+Received: from mail-io0-f173.google.com ([209.85.223.173]:33583 "EHLO
+	mail-io0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750714AbcCERHE (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 5 Mar 2016 12:07:04 -0500
+Received: by mail-io0-f173.google.com with SMTP id n190so93136557iof.0
+        for <linux-btrfs@vger.kernel.org>; Sat, 05 Mar 2016 09:07:03 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <20160305141707.GC1902@torres.zugschlus.de>
-Content-Type: text/plain; charset=utf-8
+In-Reply-To: <20160305141232.GB1902@torres.zugschlus.de>
+References: <20160304173125.GA1902@torres.zugschlus.de>
+	<CAJCQCtTtfwQgt5+MwP9QjKMLwAM+StMSq+DFDTMTV7u_78t45g@mail.gmail.com>
+	<20160305141232.GB1902@torres.zugschlus.de>
+Date: Sat, 5 Mar 2016 10:07:03 -0700
+Message-ID: <CAJCQCtQoad6dGUHnk5UMJzYMOcmZiVbJoQ_1o9nqZTm-xOQ+1g@mail.gmail.com>
+Subject: Re: balance hangs and starts again on reboot
+From: Chris Murphy <lists@colorremedies.com>
+To: Marc Haber <mh+linux-btrfs@zugschlus.de>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 03/05/16 15:17, Marc Haber wrote:
->> Then try to balance in small increments.
-> 
-> -dusage=5 and incrementing? Or what do you mean with "in small
-> increments"?
+On Sat, Mar 5, 2016 at 7:12 AM, Marc Haber <mh+linux-btrfs@zugschlus.de> wrote:
 
-Exactly, yes. Sorry for not being more clear.
+> What is the most helpful way to include logs?
 
-FWIW I've been balancing a lot recently (both for stress testing and
-cleaning up a few filesystems) and have never run into this particular
-stall, but only ever do filtered balances. Also I wouldn't be surprised
-at all if this is yet another problem where md does something in a way
-that btrfs doesn' expect, and things go wrong.
+Attach as a text file. If they're too big and get rejected, then it
+depends. If I'm pretty sure it's a bug, I open a bug report on
+bugzilla.kernel.org and attach there, then URL in list. If I'm not
+sure, I put the text file on google drive or dropbox and post public
+URL here.
 
--h
+> including them
+> causes "annoying MUA wrapping".
 
+It can be either sending or receiving client that does this. I have no
+doubt gmail does it sending and receiving because I always have this
+problem.
+
+> I do only have 24 years of e-mail
+> experience, so I'm a clueless newbie, maybe one can give advice how to
+> do that properly.
+
+I've given up with pasting kernel messages inline.
+
+
+
+-- 
+Chris Murphy

@@ -1,51 +1,63 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from linux-libre.fsfla.org ([208.118.235.54]:36414 "EHLO
-	linux-libre.fsfla.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751300AbcCEWjf (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 5 Mar 2016 17:39:35 -0500
-Received: from freie.home (home.lxoliva.fsfla.org [172.31.160.22])
-	by linux-libre.fsfla.org (8.14.4/8.14.4/Debian-4.1ubuntu1) with ESMTP id u25MdSfw020924
-	for <linux-btrfs@vger.kernel.org>; Sat, 5 Mar 2016 22:39:29 GMT
-From: Alexandre Oliva <oliva@gnu.org>
+Received: from plane.gmane.org ([80.91.229.3]:49878 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751132AbcCFGMO (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 6 Mar 2016 01:12:14 -0500
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+	id 1acRvI-0005pc-98
+	for linux-btrfs@vger.kernel.org; Sun, 06 Mar 2016 07:12:12 +0100
+Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sun, 06 Mar 2016 07:12:12 +0100
+Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sun, 06 Mar 2016 07:12:12 +0100
 To: linux-btrfs@vger.kernel.org
-Subject: [check] set metadata extent size of tree block extents
-Date: Sat, 05 Mar 2016 19:39:06 -0300
-Message-ID: <orpov8pn1x.fsf@livre.home>
-MIME-Version: 1.0
-Content-Type: text/plain
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: balance hangs and starts again on reboot
+Date: Sun, 6 Mar 2016 06:12:04 +0000 (UTC)
+Message-ID: <pan$44b2d$92437ced$cc156215$bd43ad44@cox.net>
+References: <20160304173125.GA1902@torres.zugschlus.de>
+	<56D9CF63.3060603@googlemail.com>
+	<20160305141707.GC1902@torres.zugschlus.de>
+	<56DAFD91.2090805@googlemail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When scanning extents, we didn't set num_bytes when visiting a tree
-block extent.  On the corrupted filesystem I was trying to fix, this
-caused an extent to have its size guessed as zero, so we'd compute end
-as start-1, which caused us to hit insert_state's BUG_ON(end<start).
+Holger Hoffstätte posted on Sat, 05 Mar 2016 16:38:57 +0100 as excerpted:
 
-Signed-off-by: Alexandre Oliva <oliva@gnu.org>
----
- cmds-check.c |    5 +++--
- 1 file changed, 3 insertions(+), 2 deletions(-)
+> On 03/05/16 15:17, Marc Haber wrote:
+>>> Then try to balance in small increments.
+>> 
+>> -dusage=5 and incrementing? Or what do you mean with "in small
+>> increments"?
+> 
+> Exactly, yes. Sorry for not being more clear.
+> 
+> FWIW I've been balancing a lot recently (both for stress testing and
+> cleaning up a few filesystems) and have never run into this particular
+> stall, but only ever do filtered balances. Also I wouldn't be surprised
+> at all if this is yet another problem where md does something in a way
+> that btrfs doesn' expect, and things go wrong.
 
-diff --git a/cmds-check.c b/cmds-check.c
-index 0165fba..e563354 100644
---- a/cmds-check.c
-+++ b/cmds-check.c
-@@ -5208,9 +5208,10 @@ static int process_extent_item(struct btrfs_root *root,
- 
- 	ei = btrfs_item_ptr(eb, slot, struct btrfs_extent_item);
- 	refs = btrfs_extent_refs(eb, ei);
--	if (btrfs_extent_flags(eb, ei) & BTRFS_EXTENT_FLAG_TREE_BLOCK)
-+	if (btrfs_extent_flags(eb, ei) & BTRFS_EXTENT_FLAG_TREE_BLOCK) {
- 		metadata = 1;
--	else
-+		num_bytes = root->leafsize;
-+	} else
- 		metadata = 0;
- 
- 	add_extent_rec(extent_cache, NULL, 0, key.objectid, num_bytes,
+What I thought you meant was the drange= or vrange= filters, changing the 
+range to eventually cover the entire filesystem.
+
+That should work too, tho I've never actually used it myself and I 
+suspect I'd have to play around with the ranges a bit to figure out what 
+numbers I should actually be supplying, as the filter descriptions in the 
+manpage are somewhat vague on this point.
+
+(Anyone who knows where to actually find those numbers to plug in and/or 
+has useful examples, feel free to consider this an invitation to 
+elucidate. =:^)
 
 -- 
-Alexandre Oliva, freedom fighter    http://FSFLA.org/~lxoliva/
-You must be the change you wish to see in the world. -- Gandhi
-Be Free! -- http://FSFLA.org/   FSF Latin America board member
-Free Software Evangelist|Red Hat Brasil GNU Toolchain Engineer
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

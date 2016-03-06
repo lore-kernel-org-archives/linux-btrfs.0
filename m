@@ -1,94 +1,115 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:35188 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751394AbcCFOCr (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 6 Mar 2016 09:02:47 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1acZGd-0002QV-F5
-	for linux-btrfs@vger.kernel.org; Sun, 06 Mar 2016 15:02:43 +0100
-Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sun, 06 Mar 2016 15:02:43 +0100
-Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sun, 06 Mar 2016 15:02:43 +0100
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: btrfs raid
-Date: Sun, 6 Mar 2016 14:02:38 +0000 (UTC)
-Message-ID: <pan$77bad$4a5f81ec$4b6f7ef6$12196f5c@cox.net>
-References: <CAO2Nr8dqVBiOSTLxdS-E_WoKk13mJkGJ9PB7qOBDq-1YhHi-Gg@mail.gmail.com>
-	<20160301162758.GA27786@carfax.org.uk>
-	<CAGfcS_nXei2FszQz_-HoeOi04vhWw9YF3LKwd+2zRxmW1Wiupw@mail.gmail.com>
-Mime-Version: 1.0
+Received: from mail-io0-f169.google.com ([209.85.223.169]:36046 "EHLO
+	mail-io0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751228AbcCFU1L (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 6 Mar 2016 15:27:11 -0500
+Received: by mail-io0-f169.google.com with SMTP id z76so10279337iof.3
+        for <linux-btrfs@vger.kernel.org>; Sun, 06 Mar 2016 12:27:11 -0800 (PST)
+MIME-Version: 1.0
+In-Reply-To: <pan$1c315$d49e06ee$da97f10b$cb207808@cox.net>
+References: <20160227211450.GS26042@torres.zugschlus.de>
+	<CAOE4rSyPvkzjKDVoQ-7U8ay5t7Pp2qeaCqh-tFg-etmgHGEOJQ@mail.gmail.com>
+	<20160305143934.GE1902@torres.zugschlus.de>
+	<CAJCQCtTw1+E=X1bbGgSB-fPHDtEPUO5amFUEs4fyPmTfK4QaGw@mail.gmail.com>
+	<20160305200909.GJ1902@torres.zugschlus.de>
+	<pan$1c315$d49e06ee$da97f10b$cb207808@cox.net>
+Date: Sun, 6 Mar 2016 13:27:10 -0700
+Message-ID: <CAJCQCtSyKgs4ki_dEraofWJtXzN5ecUSFCHjrGF5vyFNJzFY0g@mail.gmail.com>
+Subject: Re: Again, no space left on device while rebalancing and recipe
+ doesnt work
+From: Chris Murphy <lists@colorremedies.com>
+To: Duncan <1i5t5.duncan@cox.net>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Rich Freeman posted on Sun, 06 Mar 2016 07:01:00 -0500 as excerpted:
-
-> On Tue, Mar 1, 2016 at 11:27 AM, Hugo Mills <hugo@carfax.org.uk> wrote:
+On Sat, Mar 5, 2016 at 11:43 PM, Duncan <1i5t5.duncan@cox.net> wrote:
+> Marc Haber posted on Sat, 05 Mar 2016 21:09:09 +0100 as excerpted:
+>
+>> On Sat, Mar 05, 2016 at 12:34:09PM -0700, Chris Murphy wrote:
+>
+>>> Something is happening with the usage of this file system that's out of
+>>> the ordinary. This is the first time I've seen such a large amount of
+>>> unused metadata allocation. And then for it not only fail to balance,
+>>> but for the allocation amount to increase is a first.
 >>
->>    Definitely don't use parity RAID on 3.19. It's not really something
->> I'd trust, personally, even on 4.4, except for testing purposes.
-> 
-> ++ - raid 5/6 are fairly unstable at this point.  Raid 1 should be just
-> fine.
-> 
->>    TBH, I wouldn't really want to be running something as old as 3.19
->> either. The actual problems of running older kernels are, IME,
->> considerably worse than the perceived problems of upgrading.
-> 
-> I think it depends on how you define "old."  I think that 3.18.28 would
-> be fine as it is a supported longterm.  I've just upgraded to the 4.1
-> series which I plan to track until a new longterm has been out for a few
-> months and things lok quiet.
-> 
-> 3.19 is very problematic though, as it is no longer supported.  I'd
-> sooner "downgrade" to 3.18.28 (which likely has more btrfs backports
-> unless your distro handles them).  Or, upgrade to 4.1.19.
-> 
-> If you are using highly experimental features like raid5 support on
-> btrfs then bleeding-edge is probably better, but I've found I've had the
-> fewest issues sticking with the previous longterm.  I've been bitten by
-> a few btrfs regressions over the years and I think 3.19 was actually
-> around the time I got hit by one of them.  Since I've switched to just
-> staying on a longterm once it hits the x.x.15 version or so I've found
-> things to be much more reliable.
+>> It is just a root filesystem of a workstation running Debian Linux, in
+>> daily use, with daily snapshots of the system, and ten-minute-increment
+>> snapshots of /home, with no cleanup happening for a few months.
+>>
+>>>  So understanding the usage is important to figuring out what's
+>>>  happening. I'd file a bug and include as much information on how the
+>>>  fs got into this state as possible. And also if possible make a
+>>>  btrfs-image using the proper flags to blot out the filenames for
+>>>  privacy.
+>
+> Now you're homing in on what I picked up on.  There's something very
+> funky about that metadata, 100+ GiB of metadata total, only just over 2
+> GiB metadata used, and attempts to balance it don't help with the spread
+> between the two at all, only increasing the total metadata, if anything,
+> but still seem to complete without error.  There's gotta be some sort of
+> bug going on there, and I'd /bet/ it's the same one that's keeping full
+> balances from working, as well.
+>
+>
+> OK, this question's out of left field, but it's the only thing (well,
+> /almost/ only, see below) I've seen do anything /remotely/ like that:
+>
+> Was the filesystem originally created as a convert from ext*, using btrfs-
+> convert?  If so, was the ext2_saved or whatever subvolume removed, and a
+> successful defrag and balance completed at that time?
+>
+> Because as I said, problems due to faulty conversion from ext* have been
+> the one thing repeatedly reported to trigger balance behavior and spreads
+> between total and used that balance doesn't fix, like this.
+>
+>
+> Tho AFAIK there was in addition a very narrow timeframe in which a bug in
+> mkfs.btrfs would create invalid btrfs'.  That was with btrfs-progs 4.1.1,
+> released in July 2015, with an urgent bugfix release 4.1.2 in the same
+> month to fix the problem, so the timeframe was days or weeks.  Btrfs
+> created with that buggy mkfs.btrfs were known to have some pretty wild
+> behavior as well, with the recommendation being to simply blow them up
+> and recreate them with a mkfs.btrfs from a btrfs-progs without the bug,
+> as the btrfs created by the bugged version were simply too bugged out to
+> reliably fix, and might well appear to work fine for awhile, until BOOM!
+> If there's a chance the filesystem in question was created by that bugged
+> mkfs.btrfs, don't even try to fix it, just get what you can off it and
+> recreate with a mkfs.btrfs without that bug, ASAP.
 
-Agreed.
+Marc said it was created maybe 2 years ago and doesn't remember what
+version of the tools were used. Between it being two years ago and
+also being Debian, for all we know it could've been 0.19. *shrug*
 
-The two generally recommended kernel tracks are current and long-term 
-stable.  If you choose current, staying within the last two releases is 
-recommended.  That's 4.3 or 4.4 at this point, tho 4.3 is getting a bit 
-long in the tooth and 4.5 is close to release (I upgraded to it between 
-rc5 and rc6).
+On the one hand, the practical advice is to just blow it away and use
+everything current, go back to the same workload including thousands
+of snapshots, and see if this balance problem is reproducible. That's
+pretty clearly a bug.
 
-For some time, the LTS track was also the last couple releases, which 
-with 4.4 being LTS, would be it or 4.1, but the previous LTS 3.18 has 
-been fairly stable as well, and as long as you're not trying to run 
-parity raid, there hasn't been a hugely pressing reason to recommend 
-upgrading for those who prefer to play things conservative.
+On the other hand, we're approaching the state with Btrfs where the
+problems we're seeing are at least as much about aging file systems,
+because the stability is permitting file systems to get older. As they
+get older though, the issues get more non-deterministic. So it's an
+interesting bug from that perspective, the current kernel code ought
+to be able to contend with this (as in, the user is right to expect
+the code to deal with this scenario, and if it doesn't it's a bug; not
+that I expect today's code to actually do this).
 
-But older than 3.18 LTS is definitely not recommended, and 3.19 isn't LTS 
-and is long out of standard support so isn't recommended either.  Neither 
-are 4.0 and 4.2 as they too are out of support.
+That's why I'm suggesting btrfs-image, because at some point the aging
+question might get a dev's attention. But in the meantime the user
+should get back to a reliable state and also find out sooner than
+later if this is still a problem with all current tools and code.
 
-And parity raid is still unstable enough that you really need to be on 
-latest current for it, for another couple kernel series anyway.  Once it 
-stabilizes, it's likely 4.4 will be the first LTS series considered 
-stable for parity raid, and hopefully 4.6 will do it, but as of now, 
-there's at least one more bug that hasn't been traced, whereby restriping 
-to cover changes in the number of devices takes about 10 times longer 
-than it should, and if that change in the number of devices is due to a 
-device failure, that means a window during which additional device 
-failures isn't covered also 10 times longer than it should be.  Not good 
-for the life of your data, for sure!
+So if it were me, I'd gather all possible data, including complete,
+not trimmed, logs. And as for the btrfs-image, it could be huge. It
+should be only 1GB based on the used metadata but the fact there's 50x
+more allocated, I'm not sure how big it'll actually be or if
+btrfs-image even has the granularity to capture this. It might not be
+a bad idea to capture a complete btrfs-debug-tree also, and compress
+that, add as attachment. For the image, stick it up in dropbox or
+google drive, and post the URL in the bug and give it a year... I've
+had devs come back and fix stuff that old before.
 
 -- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+Chris Murphy

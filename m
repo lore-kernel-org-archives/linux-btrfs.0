@@ -1,70 +1,38 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from magic.merlins.org ([209.81.13.136]:42717 "EHLO
-	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752841AbcCGPNa (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 7 Mar 2016 10:13:30 -0500
-Received: from [12.139.153.2] (port=50204 helo=legolas.merlins.org)
-	by mail1.merlins.org with esmtpsa
-	(Cipher TLS1.2:DHE_RSA_AES_128_CBC_SHA1:128) (Exim 4.80 #2)
-	id 1acwqf-0002kI-Jp by authid <merlins.org> with srv_auth_plain
-	for <linux-btrfs@vger.kernel.org>; Mon, 07 Mar 2016 07:13:29 -0800
-Received: from merlin by legolas.merlins.org with local (Exim 4.80)
-	(envelope-from <marc@merlins.org>)
-	id 1acwqe-0005bf-I9
-	for linux-btrfs@vger.kernel.org; Mon, 07 Mar 2016 07:13:28 -0800
-Date: Mon, 7 Mar 2016 07:13:28 -0800
-From: Marc MERLIN <marc@merlins.org>
+Received: from torres.zugschlus.de ([85.214.131.164]:45902 "EHLO
+	torres.zugschlus.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752807AbcCGR1T (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 7 Mar 2016 12:27:19 -0500
+Received: from mh by torres.zugschlus.de with local (Exim 4.84)
+	(envelope-from <mh+linux-btrfs@zugschlus.de>)
+	id 1acywA-0008U9-39
+	for linux-btrfs@vger.kernel.org; Mon, 07 Mar 2016 18:27:18 +0100
+Date: Mon, 7 Mar 2016 18:27:17 +0100
+From: Marc Haber <mh+linux-btrfs@zugschlus.de>
 To: linux-btrfs@vger.kernel.org
-Subject: Re: Documentation for BTRFS error (device dev): bdev /dev/xx errs:
- wr 22, rd 0, flush 0, corrupt 0, gen 0
-Message-ID: <20160307151328.GF29369@merlins.org>
-References: <20160223215911.GA13811@merlins.org>
+Subject: btrfs-image run time
+Message-ID: <20160307172717.GJ6939@torres.zugschlus.de>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20160223215911.GA13811@merlins.org>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Feb 23, 2016 at 01:59:11PM -0800, Marc MERLIN wrote:
-> I have a freshly created md5 array, with drives that I specifically
-> scanned one by one block by block, and for good measure, I also scanned
-> the entire software raid with a check command which took 3 days to run.
-> 
-> Everything passed.
-> 
-> Then, I made a bcache of that device, an ssd that seems to work fine
-> otherwise (brand new), and dmcrypted the result
-> 
-> md5 - bache - dmcrypt - btrfs
-> ssd /
-> 
-> Now, I'm copying data over with btrfs send, and I'm seeing these slowly
-> show up and the write counter go up one by one.
-> BTRFS error (device dm-7): bdev /dev/mapper/oldds1 errs: wr 17, rd 0, flush 0, corrupt 0, gen 0
-> 
-> Where is the documentation for those counters?
-> Is the write error fatal, or a recovered error?
-> Should I consider that my filesystem is corrupted as soon as any of
-> those counters go up?
-> (I couldn't find an exact meaning of each of them)
-> 
+Hi,
 
-Sadly, this problem hasn't gone away
-[ 2381.333412] BTRFS error (device dm-5): bdev /dev/mapper/oldds1 errs: wr 298, rd 0, flush 0, corrupt 0, gen 0
+how long is btrfs-image taking to run on a 400 GiB filesystem?
 
-I'm really trying to make sense out of it.
-Are those recovered errors (bad IO, command was retried, things worked
-after that), fatal errors (data loss)
+I have /bin/btrfs-image -s -t 8 -s /dev/mapper/mydevice - | pixz -9 >
+file.on.other.fs running for four hours now, and it's constantly
+taking a single core, but is neither reading from the disk nor writing
+to its output.
 
-That md5 is in a disk shelf at the end of a longish esata cable. It's
-possible that the cable is bad, or it couuld be something else entirely.
-I'm still trying to understand the error so that I can diagnose and
-address it properly.
+Is that expeced behavior?
 
-Thanks,
+Greetings
 Marc
+
 -- 
-"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
-Microsoft is to operating systems ....
-                                      .... what McDonalds is to gourmet cooking
-Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901
+-----------------------------------------------------------------------------
+Marc Haber         | "I don't trust Computers. They | Mailadresse im Header
+Leimen, Germany    |  lose things."    Winona Ryder | Fon: *49 6224 1600402
+Nordisch by Nature |  How to make an American Quilt | Fax: *49 6224 1600421

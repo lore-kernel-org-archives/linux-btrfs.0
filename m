@@ -1,41 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from torres.zugschlus.de ([85.214.131.164]:46256 "EHLO
-	torres.zugschlus.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752350AbcCGSuQ (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 7 Mar 2016 13:50:16 -0500
-Received: from mh by torres.zugschlus.de with local (Exim 4.84)
-	(envelope-from <mh+linux-btrfs@zugschlus.de>)
-	id 1ad0EQ-0000fy-Hi
-	for linux-btrfs@vger.kernel.org; Mon, 07 Mar 2016 19:50:14 +0100
-Date: Mon, 7 Mar 2016 19:50:06 +0100
-From: Marc Haber <mh+linux-btrfs@zugschlus.de>
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Subject: Re: btrfs-image run time
-Message-ID: <20160307185006.GM6939@torres.zugschlus.de>
-References: <20160307172717.GJ6939@torres.zugschlus.de>
- <20160307173811.GK6939@torres.zugschlus.de>
- <CAJCQCtRe4NXm5kC4svvO1det4NFN2fxUjDPSe7DFpOvXiL9X6w@mail.gmail.com>
- <CAHRk+qwqgqP3vyE1rSVLRDQrQXRy1sj_NktunR9pMQVSYYNkPA@mail.gmail.com>
+Received: from mail-qk0-f181.google.com ([209.85.220.181]:34761 "EHLO
+	mail-qk0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752506AbcCGS5i (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 7 Mar 2016 13:57:38 -0500
+Received: by mail-qk0-f181.google.com with SMTP id x1so50535261qkc.1
+        for <linux-btrfs@vger.kernel.org>; Mon, 07 Mar 2016 10:57:38 -0800 (PST)
+Subject: Re: Again, no space left on device while rebalancing and recipe
+ doesnt work
+To: Chris Murphy <lists@colorremedies.com>,
+        Marc Haber <mh+linux-btrfs@zugschlus.de>
+References: <20160227211450.GS26042@torres.zugschlus.de>
+ <CAOE4rSyPvkzjKDVoQ-7U8ay5t7Pp2qeaCqh-tFg-etmgHGEOJQ@mail.gmail.com>
+ <20160305143934.GE1902@torres.zugschlus.de>
+ <CAJCQCtTw1+E=X1bbGgSB-fPHDtEPUO5amFUEs4fyPmTfK4QaGw@mail.gmail.com>
+ <20160305200909.GJ1902@torres.zugschlus.de>
+ <pan$1c315$d49e06ee$da97f10b$cb207808@cox.net>
+ <CAJCQCtSyKgs4ki_dEraofWJtXzN5ecUSFCHjrGF5vyFNJzFY0g@mail.gmail.com>
+ <20160307084235.GB6939@torres.zugschlus.de>
+ <CAJCQCtTbfexN9UKRrHTs6yDkSxP3G7qsX-TMR8qZi=x1ef6vSg@mail.gmail.com>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Message-ID: <56DDCEF6.4050308@gmail.com>
+Date: Mon, 7 Mar 2016 13:56:54 -0500
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-In-Reply-To: <CAHRk+qwqgqP3vyE1rSVLRDQrQXRy1sj_NktunR9pMQVSYYNkPA@mail.gmail.com>
+In-Reply-To: <CAJCQCtTbfexN9UKRrHTs6yDkSxP3G7qsX-TMR8qZi=x1ef6vSg@mail.gmail.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Mar 07, 2016 at 07:15:24PM +0100, Garmine 42 wrote:
-> According to the manpage duplicate -s is valid and the high CPU usage is
-> intended. Although a warning could be valid in case of -ss.
+On 2016-03-07 13:39, Chris Murphy wrote:
+> On Mon, Mar 7, 2016 at 1:42 AM, Marc Haber <mh+linux-btrfs@zugschlus.de> wrote:
+>> [1] Does RHEL 6 have btrfs in the first place?
+>
+> They do, but you need a decoder ring to figure out what's been
+> backported to have some vague idea of what equivalent kernel.org
+> kernel it is.
+>
+Yeah, in general, if you want to get good upstream support for BTRFS 
+(such as from the mailing lists), you still want to steer clear of 
+'Enterprise' branded distros (RHEL (and by extension CentOS) is 
+particularly bad about kernel versioning, OEL and and SLES are 
+marginally better but still not great).  People don't often think about 
+it, but given the degree of code and version divergence due to patches, 
+RHEL, SLES, and OEL kernels are strictly speaking, forks of Linux (most 
+distro kernels are, but usually not to the extreme degree that 
+enterprise kernels are (with the exception of some embedded systems, 
+which can be even worse)).
 
-Or use a different letter. Anyway, that was my stupidity and no
-developer time should be wasted for that. btrfs-image behaves as
-documented, everything else was a problem existing between chair and
-keyboard. Sorry for the noise.
-
-Greetings
-Marc
-
--- 
------------------------------------------------------------------------------
-Marc Haber         | "I don't trust Computers. They | Mailadresse im Header
-Leimen, Germany    |  lose things."    Winona Ryder | Fon: *49 6224 1600402
-Nordisch by Nature |  How to make an American Quilt | Fax: *49 6224 1600421
+In fact, this is part of the reason I switched from using Gentoo's 
+official kernel sources (they're nowhere near as bad about kernel 
+versioning as enterprise distros, but they do have back-ports and 
+numerous local modifications I don't care about) to my own sources which 
+(try to) directly track linux-stable (the other reason being that it's 
+easier to maintain my own patches via git than trying to handle user 
+patching for gentoo-sources).

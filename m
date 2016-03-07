@@ -1,65 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from torres.zugschlus.de ([85.214.131.164]:43762 "EHLO
+Received: from torres.zugschlus.de ([85.214.131.164]:43810 "EHLO
 	torres.zugschlus.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751958AbcCGIrZ (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 7 Mar 2016 03:47:25 -0500
+	with ESMTP id S1752509AbcCGI4G (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 7 Mar 2016 03:56:06 -0500
 Received: from mh by torres.zugschlus.de with local (Exim 4.84)
 	(envelope-from <mh+linux-btrfs@zugschlus.de>)
-	id 1acqp1-0004oY-BZ
-	for linux-btrfs@vger.kernel.org; Mon, 07 Mar 2016 09:47:23 +0100
-Date: Mon, 7 Mar 2016 09:47:23 +0100
+	id 1acqxQ-0004sU-LX
+	for linux-btrfs@vger.kernel.org; Mon, 07 Mar 2016 09:56:04 +0100
+Date: Mon, 7 Mar 2016 09:56:04 +0100
 From: Marc Haber <mh+linux-btrfs@zugschlus.de>
 To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Subject: Re: Again, no space left on device while rebalancing and recipe
  doesnt work
-Message-ID: <20160307084723.GC6939@torres.zugschlus.de>
+Message-ID: <20160307085604.GD6939@torres.zugschlus.de>
 References: <20160227211450.GS26042@torres.zugschlus.de>
  <CAOE4rSyPvkzjKDVoQ-7U8ay5t7Pp2qeaCqh-tFg-etmgHGEOJQ@mail.gmail.com>
  <20160305143934.GE1902@torres.zugschlus.de>
  <CAJCQCtTw1+E=X1bbGgSB-fPHDtEPUO5amFUEs4fyPmTfK4QaGw@mail.gmail.com>
  <20160305200909.GJ1902@torres.zugschlus.de>
- <pan$1c315$d49e06ee$da97f10b$cb207808@cox.net>
- <CAJCQCtSyKgs4ki_dEraofWJtXzN5ecUSFCHjrGF5vyFNJzFY0g@mail.gmail.com>
- <CAJCQCtSArZq3nW-zrR--xCa1=0XkKiPWfekL2_wYKvZ7H8XQLg@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=utf-8
-In-Reply-To: <CAJCQCtSArZq3nW-zrR--xCa1=0XkKiPWfekL2_wYKvZ7H8XQLg@mail.gmail.com>
+In-Reply-To: <20160305200909.GJ1902@torres.zugschlus.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Mar 06, 2016 at 01:37:31PM -0700, Chris Murphy wrote:
-> On Sun, Mar 6, 2016 at 1:27 PM, Chris Murphy <lists@colorremedies.com> wrote:
-> > So if it were me, I'd gather all possible data, including complete,
-> > not trimmed, logs.
+On Sat, Mar 05, 2016 at 09:09:09PM +0100, Marc Haber wrote:
+> On Sat, Mar 05, 2016 at 12:34:09PM -0700, Chris Murphy wrote:
+> >  So understanding the usage is important to figuring out what's
+> >  happening. I'd file a bug and include as much information on how the
+> >  fs got into this state as possible. And also if possible make a
+> >  btrfs-image using the proper flags to blot out the filenames for
+> >  privacy.
 > 
-> Also include in the bug, the balance script being used. It might be a
-> contributing factor.
+> That would btrfs-image -s?
 
-The balance script was only written after Duncan asked me to do
-filtered balances instead of a full balance. The issue showed itself
-while the filesystem was still managed using the procedures from "the
-book" ;-)
+btrfs-image -s -t 8 -s /dev/mapper/fanbtr
 
-> I wonder if the ENOSPC is happening just prior to the point where
-> balance would free up the unused portion of allocated metadata chunks
-> and that's why this just keeps getting worse? The balance function is
-> COW, so I wonder if there are a bunch of failed chunk migrations that
-> are just accumulating due to the ENOSPC stopping the balance?
+complains about a mounted filesystem. Will an image made from the
+running system with the filesyste mounted help, or do I need to take
+down the machine while the image is being made?
 
-How do we find out?
-
-> Anyway, after collecting all data and btrfs-image, I would blow away
-> this fs using current kernel and tools. And then go back to the
-> original workload. I would not pare down the number or frequency of
-> snapshots. If anything increase it. The idea is to reproduce the bug.
-
-... losing another pile of snapshots in the process? This is a
-productive machine[1].
+Also, threading does not seem to work, despite the -t 8 CPU usage
+never increases 100 % in atop.
 
 Greetings
 Marc
-
-[1] yes, with off-line backups being made
 
 -- 
 -----------------------------------------------------------------------------

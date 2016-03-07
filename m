@@ -1,56 +1,60 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:37238 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S932424AbcCKPt4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 11 Mar 2016 10:49:56 -0500
-Date: Fri, 11 Mar 2016 16:49:34 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Ashish Samant <ashish.samant@oracle.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH V2] btrfs: Print Warning only if ENOSPC_DEBUG is enabled
-Message-ID: <20160311154934.GT18908@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1446501310-4408-1-git-send-email-ashish.samant@oracle.com>
+Received: from cn.fujitsu.com ([59.151.112.132]:10266 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1751798AbcCGFmf (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 7 Mar 2016 00:42:35 -0500
+Received: from G08CNEXCHPEKD02.g08.fujitsu.local (unknown [10.167.33.83])
+	by cn.fujitsu.com (Postfix) with ESMTP id B1EAA41890FE
+	for <linux-btrfs@vger.kernel.org>; Mon,  7 Mar 2016 13:42:19 +0800 (CST)
+To: btrfs <linux-btrfs@vger.kernel.org>
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Subject: Btrfsck memory usage reduce idea
+Message-ID: <56DD14B6.4070908@cn.fujitsu.com>
+Date: Mon, 7 Mar 2016 13:42:14 +0800
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1446501310-4408-1-git-send-email-ashish.samant@oracle.com>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Nov 02, 2015 at 01:55:10PM -0800, Ashish Samant wrote:
-> Dont call WARN_ON for ENOSPC error unless ENOSPC_DEBUG is enabled.
-> 
-> Signed-off-by : Ashish Samant <ashish.samant@oracle.com>
-> ---
->  fs/btrfs/delayed-inode.c | 6 +++++-
->  1 file changed, 5 insertions(+), 1 deletion(-)
-> 
-> diff --git a/fs/btrfs/delayed-inode.c b/fs/btrfs/delayed-inode.c
-> index a2ae427..b86cfd9 100644
-> --- a/fs/btrfs/delayed-inode.c
-> +++ b/fs/btrfs/delayed-inode.c
-> @@ -652,9 +652,13 @@ static int btrfs_delayed_inode_reserve_metadata(
->  			goto out;
->  
->  		ret = btrfs_block_rsv_migrate(src_rsv, dst_rsv, num_bytes);
-> -		if (!WARN_ON(ret))
-> +		if (!ret)
->  			goto out;
->  
-> +		if (btrfs_test_opt(root, ENOSPC_DEBUG))
-> +			WARN(1, KERN_DEBUG
-> +			     "btrfs: block rsv migrate returned %d\n", ret);
+Hi,
 
-Please use btrfs_debug
+As many have already known, "btrfs check" is a memory eater.
 
-> +
->  		/*
->  		 * Ok this is a problem, let's just steal from the global rsv
->  		 * since this really shouldn't happen that often.
-> -- 
-> 1.8.3.2
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+The problem is, btrfsck checks extent tree in a very comprehensive method.
+1) Create extent_ref for each extent item with backref
+2) Iterate all other trees to add extent ref
+3) If one extent_ref with all ref/backref matches, it's deleted.
+
+The method is good, can found any extent mismatch problem when checking 
+extent tree. (Although it has already iterated the whole fs)
+For a large enough filesystem, it may have tegas of extents, and memory 
+is easy eaten up.
+
+
+We hope to fix it in the following method:
+1) Only check extent backref when iterating extent tree
+    Unlike current implement, we check one extent item and its backref
+    only.
+
+    If one backref can't be reached, then it's an error and output (or
+    try to fix).
+    After iterating all backref of an extent item, all related memory is
+    freed and we won't bother recording anything for later use.
+
+    That's to say, we only care backref mismatch case when checking
+    extent tree.
+    Case like missing EXTENT_ITEM for some extent is not checked here.
+
+2) Check extent ref while iterating other trees
+    We only check forward-ref while iterating one tree.
+
+    In this step, we only check forward-ref, so we can find the remaining
+    problem like missing EXTENT_ITEM for given extent.
+
+Any further advice/suggestion? Or is there anyone already doing such work?
+
+Thanks,
+Qu
+
+
+

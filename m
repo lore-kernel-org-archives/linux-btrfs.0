@@ -1,14 +1,16 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:51985 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S933609AbcCGXpd (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 7 Mar 2016 18:45:33 -0500
+Received: from aserp1040.oracle.com ([141.146.126.69]:24377 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S933254AbcCHAZo (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 7 Mar 2016 19:25:44 -0500
 From: Liu Bo <bo.li.liu@oracle.com>
 To: fstests@vger.kernel.org
 Cc: linux-btrfs@vger.kernel.org
-Subject: [PATCH] fstest: btrfs: test single 4k extent after subpagesize buffered writes
-Date: Mon,  7 Mar 2016 15:47:47 -0800
-Message-Id: <1457394467-1245-1-git-send-email-bo.li.liu@oracle.com>
+Subject: [PATCH v2] fstest: btrfs: test single 4k extent after subpagesize buffered writes
+Date: Mon,  7 Mar 2016 16:27:59 -0800
+Message-Id: <1457396879-30572-1-git-send-email-bo.li.liu@oracle.com>
+In-Reply-To: <1457394467-1245-1-git-send-email-bo.li.liu@oracle.com>
+References: <1457394467-1245-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
@@ -17,24 +19,30 @@ when doing subpagesize buffered writes.
 
 Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
 ---
- tests/btrfs/027     | 94 +++++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/027.out |  2 ++
+v2: - Fix 027.out to make sure we don't get single 4k extents.
+    - Add the original mail list discussion as the reference.
+
+ tests/btrfs/027     | 97 +++++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/027.out |  1 +
  tests/btrfs/group   |  1 +
- 3 files changed, 97 insertions(+)
+ 3 files changed, 99 insertions(+)
  create mode 100755 tests/btrfs/027
  create mode 100644 tests/btrfs/027.out
 
 diff --git a/tests/btrfs/027 b/tests/btrfs/027
 new file mode 100755
-index 0000000..37a9920
+index 0000000..820973d
 --- /dev/null
 +++ b/tests/btrfs/027
-@@ -0,0 +1,94 @@
+@@ -0,0 +1,97 @@
 +#! /bin/bash
 +# FS QA Test 027
 +#
 +# When btrfs is using cow mode, buffered writes of sub-pagesize can end up with
 +# single 4k extents.
++# Ref:
++#     "Stray 4k extents with slow buffered writes" 
++#     https://www.spinics.net/lists/linux-btrfs/msg52628.html
 +#
 +#-----------------------------------------------------------------------
 +# Copyright (c) 2016 Liu Bo.  All Rights Reserved.
@@ -126,12 +134,11 @@ index 0000000..37a9920
 +exit
 diff --git a/tests/btrfs/027.out b/tests/btrfs/027.out
 new file mode 100644
-index 0000000..6050bdc
+index 0000000..e8291ab
 --- /dev/null
 +++ b/tests/btrfs/027.out
-@@ -0,0 +1,2 @@
+@@ -0,0 +1 @@
 +QA output created by 027
-+8
 diff --git a/tests/btrfs/group b/tests/btrfs/group
 index a2fa412..f06d5fe 100644
 --- a/tests/btrfs/group

@@ -1,25 +1,24 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mgwym02.jp.fujitsu.com ([211.128.242.41]:63367 "EHLO
-	mgwym02.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751341AbcCGDZj (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 6 Mar 2016 22:25:39 -0500
-Received: from m3051.s.css.fujitsu.com (m3051.s.css.fujitsu.com [10.134.21.209])
-	by yt-mxauth.gw.nic.fujitsu.com (Postfix) with ESMTP id F39F1AC01A6
-	for <linux-btrfs@vger.kernel.org>; Mon,  7 Mar 2016 12:25:30 +0900 (JST)
+Received: from smtp-31.italiaonline.it ([212.48.25.159]:51447 "EHLO libero.it"
+	rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+	id S1750852AbcCHTYj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 8 Mar 2016 14:24:39 -0500
+Reply-To: kreijack@inwind.it
 Subject: Re: [PATCH v2] Btrfs: Show a warning message if one of objectid
  reaches its highest value
-To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 References: <56DCF015.9060703@jp.fujitsu.com>
-From: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
-Message-ID: <56DCF4A3.1080300@jp.fujitsu.com>
-Date: Mon, 7 Mar 2016 12:25:23 +0900
+To: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+From: Goffredo Baroncelli <kreijack@inwind.it>
+Message-ID: <56DF26F4.2010508@inwind.it>
+Date: Tue, 8 Mar 2016 20:24:36 +0100
 MIME-Version: 1.0
 In-Reply-To: <56DCF015.9060703@jp.fujitsu.com>
 Content-Type: text/plain; charset=iso-2022-jp
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2016/03/07 12:05, Satoru Takeuchi wrote:
+On 2016-03-07 04:05, Satoru Takeuchi wrote:
 > - It's better to show a warning message for the exceptional case
 >    that one of objectid (in most case, inode number) reaches its
 >    highest value. Show this message only once to avoid filling
@@ -31,19 +30,6 @@ On 2016/03/07 12:05, Satoru Takeuchi wrote:
 > Signed-off-by: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
 > ---
 > This patch can be applied to 4.5-rc7
-
-Sorry, I forgot to add changelog.
-
-===
-V2:
- - Reflect Filipe's comment
-   - Use btrfs_warn() instead of WARN_ONCE()
-   - Print the id of the tree
-===
-
-Thanks,
-Satoru
-
 > ---
 >   fs/btrfs/inode-map.c | 10 +++++++++-
 >   1 file changed, 9 insertions(+), 1 deletion(-)
@@ -58,6 +44,18 @@ Satoru
 >   	if (unlikely(root->highest_objectid >= BTRFS_LAST_FREE_OBJECTID)) {
 > -		ret = -ENOSPC;
 > +		static bool __warned = false;
+
+
+Please, don't use a static GLOBAL variable. I suggest to move to a "per filesystem" variables for two main reasons:
+
+1) if in the (very unlikely) case where two different filesystems reach BTRFS_LAST_FREE_OBJECTID, the first error will hide the second one.
+
+2) if you umount and remount the filesystem the error is not shown anymore. A module unload/load or a reboot is required. 
+If something strange happens, one of the first thing that the user does, is to umount/remount the filesystem. But the error is not show anymore. This could complicate the diagnosis of the problem. 
+
+
+
+
 > +
 > +		if (unlikely(!__warned)) {
 > +			btrfs_warn(root->fs_info,
@@ -69,3 +67,8 @@ Satoru
 >   		goto out;
 >   	}
 > 
+
+
+-- 
+gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
+Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5

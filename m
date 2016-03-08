@@ -1,68 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:45807 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S932440AbcCOK3B (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 15 Mar 2016 06:29:01 -0400
-Date: Tue, 15 Mar 2016 11:28:59 +0100 (CET)
-From: Jiri Kosina <jkosina@suse.cz>
-To: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
-        David Sterba <dsterba@suse.com>
-cc: linux-btrfs@vger.kernel.org, linux-btrfs@vger.kernel.org, jack@suse.cz,
-        mhocko@suse.cz
-Subject: [PATCH 2/2] btrfs: transaction_kthread() is not freezable
-In-Reply-To: <alpine.LNX.2.00.1603151126080.3656@cbobk.fhfr.pm>
-Message-ID: <alpine.LNX.2.00.1603151127560.3656@cbobk.fhfr.pm>
-References: <alpine.LNX.2.00.1603151126080.3656@cbobk.fhfr.pm>
+Received: from mail02.iobjects.de ([188.40.134.68]:39996 "EHLO
+	mail02.iobjects.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751182AbcCHMe5 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Mar 2016 07:34:57 -0500
+Subject: Re: [PATCH 1/2] Btrfs: make mapping->writeback_index point to the
+ last written page
+To: Liu Bo <bo.li.liu@oracle.com>, linux-btrfs@vger.kernel.org
+References: <1457398582-12606-1-git-send-email-bo.li.liu@oracle.com>
+From: =?UTF-8?Q?Holger_Hoffst=c3=a4tte?=
+	<holger.hoffstaette@googlemail.com>
+Message-ID: <56DEC6EE.9000002@googlemail.com>
+Date: Tue, 8 Mar 2016 13:34:54 +0100
 MIME-Version: 1.0
-Content-Type: TEXT/PLAIN; charset=US-ASCII
+In-Reply-To: <1457398582-12606-1-git-send-email-bo.li.liu@oracle.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-transaction_kthread() is calling try_to_freeze(), but that's just an 
-expeinsive no-op given the fact that the thread is not marked freezable.
+On 03/08/16 01:56, Liu Bo wrote:
+> If sequential writer is writing in the middle of the page and it just redirties
+> the last written page by continuing from it.
+> 
+> In the above case this can end up with seeking back to that firstly redirtied
+> page after writing all the pages at the end of file because btrfs updates
+> mapping->writeback_index to 1 past the current one.
+> 
+> For non-cow filesystems, the cost is only about extra seek, while for cow 
+> filesystems such as btrfs, it means unnecessary fragments.
+> 
+> To avoid it, we just need to continue writeback from the last written page.
+> 
+> This also updates btrfs to behave like what write_cache_pages() does, ie, bail
+>  out immediately if there is an error in writepage().
+> 
+> <Ref: https://www.spinics.net/lists/linux-btrfs/msg52628.html>
+> 
+> Reported-by: Holger Hoffstätte <holger.hoffstaette@googlemail.com>
+> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
 
-After removing this, disk-io.c is now independent on freezer API.
+Very nice, seems to work as advertised. Can't speak for the data integrity
+implications, but for the functionality of both patches:
 
-Signed-off-by: Jiri Kosina <jkosina@suse.cz>
----
- fs/btrfs/disk-io.c | 15 ++++++---------
- 1 file changed, 6 insertions(+), 9 deletions(-)
+Tested-by: Holger Hoffstätte <holger.hoffstaette@googlemail.com>
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index d8d68af..4c7361a 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -25,7 +25,6 @@
- #include <linux/buffer_head.h>
- #include <linux/workqueue.h>
- #include <linux/kthread.h>
--#include <linux/freezer.h>
- #include <linux/slab.h>
- #include <linux/migrate.h>
- #include <linux/ratelimit.h>
-@@ -1920,14 +1919,12 @@ sleep:
- 		if (unlikely(test_bit(BTRFS_FS_STATE_ERROR,
- 				      &root->fs_info->fs_state)))
- 			btrfs_cleanup_transaction(root);
--		if (!try_to_freeze()) {
--			set_current_state(TASK_INTERRUPTIBLE);
--			if (!kthread_should_stop() &&
--			    (!btrfs_transaction_blocked(root->fs_info) ||
--			     cannot_commit))
--				schedule_timeout(delay);
--			__set_current_state(TASK_RUNNING);
--		}
-+		set_current_state(TASK_INTERRUPTIBLE);
-+		if (!kthread_should_stop() &&
-+				(!btrfs_transaction_blocked(root->fs_info) ||
-+				 cannot_commit))
-+			schedule_timeout(delay);
-+		__set_current_state(TASK_RUNNING);
- 	} while (!kthread_should_stop());
- 	return 0;
- }
-
--- 
-Jiri Kosina
-SUSE Labs
+Thank you!
+Holger
 

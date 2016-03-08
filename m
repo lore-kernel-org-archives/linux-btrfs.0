@@ -1,24 +1,23 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f177.google.com ([209.85.213.177]:36987 "EHLO
-	mail-ig0-f177.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932384AbcCGXpM (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 7 Mar 2016 18:45:12 -0500
-Received: by mail-ig0-f177.google.com with SMTP id z8so4514564ige.0
-        for <linux-btrfs@vger.kernel.org>; Mon, 07 Mar 2016 15:45:11 -0800 (PST)
+Received: from mail-qk0-f173.google.com ([209.85.220.173]:34249 "EHLO
+	mail-qk0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932068AbcCHMM4 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Mar 2016 07:12:56 -0500
+Received: by mail-qk0-f173.google.com with SMTP id x1so4687802qkc.1
+        for <linux-btrfs@vger.kernel.org>; Tue, 08 Mar 2016 04:12:56 -0800 (PST)
+Subject: Re: btrfs and containers
+To: Tobias Hunger <tobias.hunger@gmail.com>, linux-btrfs@vger.kernel.org
+References: <CAMdWP3G9uaTcbDWE68LYd17sf8-j11Aqo+ACRrZFFGdB995gSQ@mail.gmail.com>
+From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Message-ID: <56DEC1BE.6040005@gmail.com>
+Date: Tue, 8 Mar 2016 07:12:46 -0500
 MIME-Version: 1.0
 In-Reply-To: <CAMdWP3G9uaTcbDWE68LYd17sf8-j11Aqo+ACRrZFFGdB995gSQ@mail.gmail.com>
-References: <CAMdWP3G9uaTcbDWE68LYd17sf8-j11Aqo+ACRrZFFGdB995gSQ@mail.gmail.com>
-Date: Mon, 7 Mar 2016 16:45:09 -0700
-Message-ID: <CAJCQCtSPEY1c-=GTJwH3-qRNxGCEsd0bVu9A_srdFt03bX7BcQ@mail.gmail.com>
-Subject: Re: btrfs and containers
-From: Chris Murphy <lists@colorremedies.com>
-To: Tobias Hunger <tobias.hunger@gmail.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Mar 7, 2016 at 3:55 PM, Tobias Hunger <tobias.hunger@gmail.com> wrote:
+On 2016-03-07 17:55, Tobias Hunger wrote:
 > Hi,
 >
 > I have been running systemd-nspawn containers on top of a btrfs
@@ -34,16 +33,12 @@ On Mon, Mar 7, 2016 at 3:55 PM, Tobias Hunger <tobias.hunger@gmail.com> wrote:
 > Is there a way to stop btrfs from listing subvolumes "above" the
 > current location? So that "btrfs subvol list /" in a container will
 > only show subvolumes that are set up in the container?
+>
+There is not currently a way to do this.  My personal recommendation 
+until there is would be to use LVM or something similar and have each 
+container on it's own FS (this has other advantages too, like being able 
+to use seed devices to quickly spin up containers in a known state.
 
-I'm not sure whether this is something that goes in Btrfs proper,
-since this is presumably a privileged container? The same thing
-happens with Docker containers. One way to do this is if it's not
-privileged, as non-root can't list subvolumes. I think some work is
-needed to make it possible for users to list subvolumes they own.
-Right now a user can create a subvolume but then now list or get
-information on it. By default they can't delete it either unless a
-special mount option is used. So I think there's work that's needed
-one way or another, and maybe in more than one part.
+Ideally though, we should be checking the current root directory when in 
+a mount namespace, and not list subvolumes outside that tree.
 
--- 
-Chris Murphy

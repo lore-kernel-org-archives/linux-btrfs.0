@@ -1,48 +1,130 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail02.iobjects.de ([188.40.134.68]:39996 "EHLO
-	mail02.iobjects.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751182AbcCHMe5 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Mar 2016 07:34:57 -0500
-Subject: Re: [PATCH 1/2] Btrfs: make mapping->writeback_index point to the
- last written page
-To: Liu Bo <bo.li.liu@oracle.com>, linux-btrfs@vger.kernel.org
-References: <1457398582-12606-1-git-send-email-bo.li.liu@oracle.com>
-From: =?UTF-8?Q?Holger_Hoffst=c3=a4tte?=
+Received: from userp1040.oracle.com ([156.151.31.81]:39067 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932114AbcCHAyI (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 7 Mar 2016 19:54:08 -0500
+From: Liu Bo <bo.li.liu@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Cc: =?UTF-8?q?Holger=20Hoffst=C3=A4tte?=
 	<holger.hoffstaette@googlemail.com>
-Message-ID: <56DEC6EE.9000002@googlemail.com>
-Date: Tue, 8 Mar 2016 13:34:54 +0100
+Subject: [PATCH 1/2] Btrfs: make mapping->writeback_index point to the last written page
+Date: Mon,  7 Mar 2016 16:56:21 -0800
+Message-Id: <1457398582-12606-1-git-send-email-bo.li.liu@oracle.com>
 MIME-Version: 1.0
-In-Reply-To: <1457398582-12606-1-git-send-email-bo.li.liu@oracle.com>
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 03/08/16 01:56, Liu Bo wrote:
-> If sequential writer is writing in the middle of the page and it just redirties
-> the last written page by continuing from it.
-> 
-> In the above case this can end up with seeking back to that firstly redirtied
-> page after writing all the pages at the end of file because btrfs updates
-> mapping->writeback_index to 1 past the current one.
-> 
-> For non-cow filesystems, the cost is only about extra seek, while for cow 
-> filesystems such as btrfs, it means unnecessary fragments.
-> 
-> To avoid it, we just need to continue writeback from the last written page.
-> 
-> This also updates btrfs to behave like what write_cache_pages() does, ie, bail
->  out immediately if there is an error in writepage().
-> 
-> <Ref: https://www.spinics.net/lists/linux-btrfs/msg52628.html>
-> 
-> Reported-by: Holger Hoffstätte <holger.hoffstaette@googlemail.com>
-> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+If sequential writer is writing in the middle of the page and it just redirties
+the last written page by continuing from it.
 
-Very nice, seems to work as advertised. Can't speak for the data integrity
-implications, but for the functionality of both patches:
+In the above case this can end up with seeking back to that firstly redirtied
+page after writing all the pages at the end of file because btrfs updates
+mapping->writeback_index to 1 past the current one.
 
-Tested-by: Holger Hoffstätte <holger.hoffstaette@googlemail.com>
+For non-cow filesystems, the cost is only about extra seek, while for cow 
+filesystems such as btrfs, it means unnecessary fragments.
 
-Thank you!
-Holger
+To avoid it, we just need to continue writeback from the last written page.
+
+This also updates btrfs to behave like what write_cache_pages() does, ie, bail
+ out immediately if there is an error in writepage().
+
+<Ref: https://www.spinics.net/lists/linux-btrfs/msg52628.html>
+
+Reported-by: Holger Hoffstätte <holger.hoffstaette@googlemail.com>
+Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+---
+ fs/btrfs/extent_io.c | 32 ++++++++++++++++++++++++++------
+ 1 file changed, 26 insertions(+), 6 deletions(-)
+
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index 392592d..1dfcffe 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -3204,14 +3204,10 @@ int extent_read_full_page(struct extent_io_tree *tree, struct page *page,
+ 	return ret;
+ }
+ 
+-static noinline void update_nr_written(struct page *page,
+-				      struct writeback_control *wbc,
+-				      unsigned long nr_written)
++static void update_nr_written(struct page *page, struct writeback_control *wbc,
++			      unsigned long nr_written)
+ {
+ 	wbc->nr_to_write -= nr_written;
+-	if (wbc->range_cyclic || (wbc->nr_to_write > 0 &&
+-	    wbc->range_start == 0 && wbc->range_end == LLONG_MAX))
+-		page->mapping->writeback_index = page->index + nr_written;
+ }
+ 
+ /*
+@@ -3932,6 +3928,8 @@ static int extent_write_cache_pages(struct extent_io_tree *tree,
+ 	int nr_pages;
+ 	pgoff_t index;
+ 	pgoff_t end;		/* Inclusive */
++	pgoff_t done_index;
++	int range_whole = 0;
+ 	int scanned = 0;
+ 	int tag;
+ 
+@@ -3954,6 +3952,8 @@ static int extent_write_cache_pages(struct extent_io_tree *tree,
+ 	} else {
+ 		index = wbc->range_start >> PAGE_CACHE_SHIFT;
+ 		end = wbc->range_end >> PAGE_CACHE_SHIFT;
++		if (wbc->range_start == 0 && wbc->range_end == LLONG_MAX)
++			range_whole = 1;
+ 		scanned = 1;
+ 	}
+ 	if (wbc->sync_mode == WB_SYNC_ALL)
+@@ -3963,6 +3963,7 @@ static int extent_write_cache_pages(struct extent_io_tree *tree,
+ retry:
+ 	if (wbc->sync_mode == WB_SYNC_ALL)
+ 		tag_pages_for_writeback(mapping, index, end);
++	done_index = index;
+ 	while (!done && !nr_to_write_done && (index <= end) &&
+ 	       (nr_pages = pagevec_lookup_tag(&pvec, mapping, &index, tag,
+ 			min(end - index, (pgoff_t)PAGEVEC_SIZE-1) + 1))) {
+@@ -3972,6 +3973,7 @@ retry:
+ 		for (i = 0; i < nr_pages; i++) {
+ 			struct page *page = pvec.pages[i];
+ 
++			done_index = page->index;
+ 			/*
+ 			 * At this point we hold neither mapping->tree_lock nor
+ 			 * lock on the page itself: the page may be truncated or
+@@ -4015,6 +4017,20 @@ retry:
+ 			}
+ 			if (!err && ret < 0)
+ 				err = ret;
++			if (ret < 0) {
++				/*
++				 * done_index is set past this page,
++				 * so media errors will not choke
++				 * background writeout for the entire
++				 * file. This has consequences for
++				 * range_cyclic semantics (ie. it may
++				 * not be suitable for data integrity
++				 * writeout).
++				 */
++				done_index = page->index + 1;
++				done = 1;
++				break;
++			}
+ 
+ 			/*
+ 			 * the filesystem may choose to bump up nr_to_write.
+@@ -4035,6 +4051,10 @@ retry:
+ 		index = 0;
+ 		goto retry;
+ 	}
++
++	if (wbc->range_cyclic || (wbc->nr_to_write > 0 && range_whole))
++		mapping->writeback_index = done_index;
++
+ 	btrfs_add_delayed_iput(inode);
+ 	return err;
+ }
+-- 
+2.5.0
 

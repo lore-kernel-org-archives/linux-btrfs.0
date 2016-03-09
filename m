@@ -1,70 +1,85 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:53449 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:19234 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1752486AbcCIIg1 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 9 Mar 2016 03:36:27 -0500
+	id S1752473AbcCIIg0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 9 Mar 2016 03:36:26 -0500
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: fstests@vger.kernel.org, linux-btrfs@vger.kernel.org
-Subject: [PATCH v4 2/6] fstests: btrfs: Add basic test for btrfs in-band de-duplication
-Date: Wed,  9 Mar 2016 16:33:40 +0800
-Message-Id: <1457512424-9215-3-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH v4 6/6] fstests: btrfs: Test for btrfs dedup tree balance bug
+Date: Wed,  9 Mar 2016 16:33:44 +0800
+Message-Id: <1457512424-9215-7-git-send-email-quwenruo@cn.fujitsu.com>
 In-Reply-To: <1457512424-9215-1-git-send-email-quwenruo@cn.fujitsu.com>
 References: <1457512424-9215-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Add basic test for btrfs in-band de-duplication, including:
-1) Enable
-2) Re-enable
-3) Dedup
-4) File correctness
-5) Disable
+Btrfs in-band de-duplication has a bug when dedup tree metadata is
+balanced, it will corrupted btrfs delayed ref and cause the following
+kernel warning:
 
+BTRFS error (device sdb6): unable to find ref byte nr 29736960 parent 0
+root 11  owner 0 offset 0
+------------[ cut here ]------------
+WARNING: CPU: 1 PID: 19113 at fs/btrfs/extent-tree.c:6636
+__btrfs_free_extent.isra.66+0xb6d/0xd20 [btrfs]()
+BTRFS: Transaction aborted (error -2)
+Modules linked in: btrfs(O) xor zlib_deflate raid6_pq xfs [last
+unloaded: btrfs]
+CPU: 1 PID: 19113 Comm: btrfs Tainted: G        W  O    4.5.0-rc5+ #2
+Hardware name: innotek GmbH VirtualBox/VirtualBox, BIOS VirtualBox
+12/01/2006
+ 0000000000000000 ffff880035b0ba18 ffffffff813771ff ffff880035b0ba60
+ ffffffffa06a810a ffff880035b0ba50 ffffffff810bcb81 ffff88003c45c528
+ 0000000001c5c000 00000000fffffffe ffff88003dc8c520 0000000000000000
+Call Trace:
+ [<ffffffff813771ff>] dump_stack+0x67/0x98
+ [<ffffffff810bcb81>] warn_slowpath_common+0x81/0xc0
+ [<ffffffff810bcc07>] warn_slowpath_fmt+0x47/0x50
+ [<ffffffffa06028fd>] __btrfs_free_extent.isra.66+0xb6d/0xd20 [btrfs]
+ [<ffffffffa0606d4d>] __btrfs_run_delayed_refs.constprop.71+0x96d/0x1560
+[btrfs]
+ [<ffffffff81202ad9>] ? cmpxchg_double_slab.isra.68+0x149/0x160
+ [<ffffffff81106a1d>] ? trace_hardirqs_on+0xd/0x10
+ [<ffffffffa060a5ce>] btrfs_run_delayed_refs+0x8e/0x2d0 [btrfs]
+ [<ffffffffa06209fe>] btrfs_commit_transaction+0x3e/0xb50 [btrfs]
+ [<ffffffffa069f26e>] ? btrfs_dedup_disable+0x28e/0x2c0 [btrfs]
+ [<ffffffff812035c3>] ? kfree+0x223/0x270
+ [<ffffffffa069f27a>] btrfs_dedup_disable+0x29a/0x2c0 [btrfs]
+ [<ffffffffa065e403>] btrfs_ioctl+0x2363/0x2a40 [btrfs]
+ [<ffffffff8116b12a>] ? __audit_syscall_entry+0xaa/0xf0
+ [<ffffffff81137ce6>] ? current_kernel_time64+0x56/0xa0
+ [<ffffffff8122080e>] do_vfs_ioctl+0x8e/0x690
+ [<ffffffff8116b12a>] ? __audit_syscall_entry+0xaa/0xf0
+ [<ffffffff8122c181>] ? __fget_light+0x61/0x90
+ [<ffffffff81220e84>] SyS_ioctl+0x74/0x80
+ [<ffffffff8180ad57>] entry_SYSCALL_64_fastpath+0x12/0x6f
+---[ end trace 618d5a5bc21d6a7c ]---
+
+Add regression test case for it.
+
+Reported-by: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- common/defrag       |  13 +++++++
- tests/btrfs/200     | 109 ++++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/200.out |  21 ++++++++++
- tests/btrfs/group   |   1 +
- 4 files changed, 144 insertions(+)
- create mode 100755 tests/btrfs/200
- create mode 100644 tests/btrfs/200.out
+ tests/btrfs/204     | 74 +++++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/204.out |  2 ++
+ tests/btrfs/group   |  1 +
+ 3 files changed, 77 insertions(+)
+ create mode 100755 tests/btrfs/204
+ create mode 100644 tests/btrfs/204.out
 
-diff --git a/common/defrag b/common/defrag
-index 6fbf830..756a76d 100644
---- a/common/defrag
-+++ b/common/defrag
-@@ -49,6 +49,19 @@ _extent_count()
- 	$XFS_IO_PROG -c "fiemap" $1 | tail -n +2 | grep -v hole | wc -l| $AWK_PROG '{print $1}'
- }
- 
-+# Get the number of unique file extents
-+# Unique file extents means they have different ondisk bytenr
-+# Some filesystem supports reflinkat() or in-band de-dup can create
-+# a file whose all file extents points to the same ondisk bytenr
-+# this can be used to test if such reflinkat() or in-band de-dup works
-+_extent_count_uniq()
-+{
-+	file=$1
-+	$XFS_IO_PROG -c "fiemap" $file >> $seqres.full 2>&1
-+	$XFS_IO_PROG -c "fiemap" $file | tail -n +2 | grep -v hole |\
-+		$AWK_PROG '{print $3}' | sort | uniq | wc -l
-+}
-+
- _check_extent_count()
- {
- 	min=$1
-diff --git a/tests/btrfs/200 b/tests/btrfs/200
+diff --git a/tests/btrfs/204 b/tests/btrfs/204
 new file mode 100755
-index 0000000..240b7db
+index 0000000..5baecf8
 --- /dev/null
-+++ b/tests/btrfs/200
-@@ -0,0 +1,109 @@
++++ b/tests/btrfs/204
+@@ -0,0 +1,74 @@
 +#! /bin/bash
-+# FS QA Test 200
++# FS QA Test 204
 +#
-+# Basic btrfs inband dedup test
++# Regression test for dedup tree metadata balance
++# If btrfs balanced dedup tree block twice, delayed ref will be corrupted
++# and cause kernel warning with RO fs.
 +#
 +#-----------------------------------------------------------------------
 +# Copyright (c) 2016 Fujitsu.  All Rights Reserved.
@@ -102,7 +117,7 @@ index 0000000..240b7db
 +# get standard environment, filters and checks
 +. ./common/rc
 +. ./common/filter
-+. ./common/defrag
++. ./common/reflink
 +
 +# remove previous $seqres.full before test
 +rm -f $seqres.full
@@ -116,96 +131,40 @@ index 0000000..240b7db
 +_require_btrfs_fs_feature dedup
 +_require_btrfs_mkfs_feature dedup
 +
-+# File size is twice the maximum file extent of btrfs
-+# So even fallbacked to non-dedup, it will have at least 2 extents
-+file_size=256m
-+
 +_scratch_mkfs "-O dedup" >> $seqres.full 2>&1
 +_scratch_mount
 +
-+do_dedup_test()
-+{
-+	backend=$1
-+	dedup_bs=$2
++_run_btrfs_util_prog dedup enable $SCRATCH_MNT
 +
-+	_run_btrfs_util_prog dedup enable -s $backend -b $dedup_bs $SCRATCH_MNT
-+	# do sync write to ensure dedup hash is added into dedup pool
-+	$XFS_IO_PROG -f -c "pwrite -b $dedup_bs 0 $dedup_bs" -c "fsync"\
-+		$SCRATCH_MNT/initial_block | _filter_xfs_io
++# Balance btrfs metadata twice, this will ensure the second balance
++# to drop refence on old dedup root bytenr if kernel has the dedup bug
++_run_btrfs_util_prog balance start -m $SCRATCH_MNT
++_run_btrfs_util_prog balance start -m $SCRATCH_MNT
 +
-+	# do sync write to ensure we can get stable fiemap later
-+	$XFS_IO_PROG -f -c "pwrite -b $dedup_bs 0 $file_size" -c "fsync"\
-+		$SCRATCH_MNT/real_file | _filter_xfs_io
-+
-+	# Test if real_file is de-duplicated
-+	nr_uniq_extents=$(_extent_count_uniq $SCRATCH_MNT/real_file)
-+	nr_total_extents=$(_extent_count $SCRATCH_MNT/real_file)
-+
-+	echo "uniq/total: $nr_uniq_extents/$nr_total_extents" >> $seqres.full
-+	# Allow a small amount of dedup miss, as commit interval or
-+	# memory pressure may break a dedup_bs block and cause
-+	# small extent which won't go through dedup routine
-+	_within_tolerance "number of uniq extents" $nr_uniq_extents \
-+		$nr_total_extents $(($nr_total_extents - 1)) 5%
-+
-+	# Also check the md5sum to ensure data is not corrupted
-+	md5=$(_md5_checksum $SCRATCH_MNT/real_file)
-+	echo "md5sum: $md5"
-+}
-+
-+# Test inmemory dedup first, use 64K dedup bs to keep compatibility
-+# with 64K page size
-+do_dedup_test inmemory 64K
-+
-+# Test ondisk backend, and re-enable function
-+do_dedup_test ondisk 64K
-+
-+# Test 128K(default) dedup bs
-+do_dedup_test inmemory 128K
-+do_dedup_test ondisk 128K
-+
-+# Check dedup disable
++# Disable will force a sync_fs() and cause kernel warning
 +_run_btrfs_util_prog dedup disable $SCRATCH_MNT
 +
++echo "Silence is golden"
 +# success, all done
 +status=0
 +exit
-diff --git a/tests/btrfs/200.out b/tests/btrfs/200.out
+diff --git a/tests/btrfs/204.out b/tests/btrfs/204.out
 new file mode 100644
-index 0000000..e965f8a
+index 0000000..1035eae
 --- /dev/null
-+++ b/tests/btrfs/200.out
-@@ -0,0 +1,21 @@
-+QA output created by 200
-+wrote 65536/65536 bytes at offset 0
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+wrote 268435456/268435456 bytes at offset 0
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+md5sum: a30e0f3f1b0884081de11d4357811c2e
-+wrote 65536/65536 bytes at offset 0
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+wrote 268435456/268435456 bytes at offset 0
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+md5sum: a30e0f3f1b0884081de11d4357811c2e
-+wrote 131072/131072 bytes at offset 0
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+wrote 268435456/268435456 bytes at offset 0
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+md5sum: a30e0f3f1b0884081de11d4357811c2e
-+wrote 131072/131072 bytes at offset 0
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+wrote 268435456/268435456 bytes at offset 0
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+md5sum: a30e0f3f1b0884081de11d4357811c2e
++++ b/tests/btrfs/204.out
+@@ -0,0 +1,2 @@
++QA output created by 204
++Silence is golden
 diff --git a/tests/btrfs/group b/tests/btrfs/group
-index a2fa412..0b7354b 100644
+index fa90f33..089e4a8 100644
 --- a/tests/btrfs/group
 +++ b/tests/btrfs/group
-@@ -119,3 +119,4 @@
- 116 auto quick metadata
- 117 auto quick send clone
- 118 auto quick snapshot metadata
-+200 auto dedup
+@@ -123,3 +123,4 @@
+ 201 auto dedup
+ 202 auto dedup
+ 203 auto dedup balance
++204 auto quick dedup
 -- 
 2.7.2
 

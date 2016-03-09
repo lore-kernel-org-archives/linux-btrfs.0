@@ -1,118 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtprelay02.ispgateway.de ([80.67.18.44]:40200 "EHLO
-	smtprelay02.ispgateway.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932065AbcCIWD7 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 9 Mar 2016 17:03:59 -0500
-Subject: Re: How to move a btrfs volume to a smaller disk
-To: Hugo Mills <hugo@carfax.org.uk>, Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-References: <56E099A1.8040506@friedels.name>
- <20160309215029.GG17196@carfax.org.uk>
-From: Hendrik Friedel <hendrik@friedels.name>
-Message-ID: <56E09DC9.7040402@friedels.name>
-Date: Wed, 9 Mar 2016 23:03:53 +0100
+Received: from mail-wm0-f45.google.com ([74.125.82.45]:37086 "EHLO
+	mail-wm0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750765AbcCIWI0 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 9 Mar 2016 17:08:26 -0500
+Received: by mail-wm0-f45.google.com with SMTP id p65so4766565wmp.0
+        for <linux-btrfs@vger.kernel.org>; Wed, 09 Mar 2016 14:08:25 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <20160309215029.GG17196@carfax.org.uk>
-Content-Type: text/plain; charset=utf-8; format=flowed
+In-Reply-To: <CAJCQCtQ-0KqCmfeV9n7VMnvFvN=K3uEhGsSJKMeHwTxjz3to6Q@mail.gmail.com>
+References: <CAD=QJKi-3PJQViAaRmGoz3_w6RQbRehDL9vXs14+CSHsG3ipTg@mail.gmail.com>
+	<CAD=QJKg6xFSFjJdDyD+v0Rd2afeB-ZRRy2SncC1Db5fyT3cf9A@mail.gmail.com>
+	<20160310023627.2e915667@natsu>
+	<CAJCQCtQ-0KqCmfeV9n7VMnvFvN=K3uEhGsSJKMeHwTxjz3to6Q@mail.gmail.com>
+Date: Wed, 9 Mar 2016 17:08:24 -0500
+Message-ID: <CAD=QJKhw-2+b3i0K3oznR3zp5+z4A2XVgfQhdEA318XmQtR1Zg@mail.gmail.com>
+Subject: Re: dstat shows unexpected result for two disk RAID1
+From: Nicholas D Steeves <nsteeves@gmail.com>
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello Hugo,
-
-thanks for your ultrafast reply.
-Unfortunately, it does not work for me:
-[root@homeserver mnt2]# btrfs filesystem resize 80G /mnt2/Data_Store/ && 
-btrfs replace start /dev/sdb4 /dev/sda4 /mnt2/Data_Store/ -f && btrfs 
-filesystem resize max /mnt2/Data_Store/
-Resize '/mnt2/Data_Store/' of '80G'
-ERROR: target device smaller than source device (required 119121379328 
-bytes)
-[root@homeserver mnt2]# btrfs filesystem show /mnt2/Data_Store/
-Label: 'Data_Store'  uuid: 0ccc1e24-090d-42e2-9e61-d0a1b3101f93
-         Total devices 1 FS bytes used 47.95GiB
-         devid    1 size 80.00GiB used 66.03GiB path /dev/sdb4
-
-[root@homeserver mnt2]# lsblk | grep sda4
-└─sda4    8:4    0 103.5G  0 part
-
-
-Greetings,
-Hendrik
-
-On 09.03.2016 22:50, Hugo Mills wrote:
-> On Wed, Mar 09, 2016 at 10:46:09PM +0100, Hendrik Friedel wrote:
->> Hello,
->>
->> I intend to move this subvolume to a new device.
->> btrfs fi show /mnt2/Data_Store/
->> Label: 'Data_Store'  uuid: 0ccc1e24-090d-42e2-9e61-d0a1b3101f93
->>          Total devices 1 FS bytes used 47.93GiB
->>          devid    1 size 102.94GiB used 76.03GiB path /dev/sdb4
->>
->> (fi usage at the bottom of this message)
->>
->> The new device (sda4) is 8G smaller unfortunately.
->> sda       8:0    0 111.8G  0 disk
->> └─sda4    8:4    0 103.5G  0 part
->> sdb       8:16   0 119.2G  0 disk
->> └─sdb4    8:20   0   111G  0 part  /mnt2/Data_Store
->>
->> Thus, btrfs replace does not work
->>
->> What would you suggest now to move the FS (it does contain many subvolumes)?
->     btrfs dev resize to shrink it to (slightly smaller than) the
-> replacement device, then btrfs replace should work. Then btrfs dev
-> resize max to fill up the replacement device completely.
+On 9 March 2016 at 16:43, Chris Murphy <lists@colorremedies.com> wrote:
+> On Wed, Mar 9, 2016 at 2:36 PM, Roman Mamedov <rm@romanrm.net> wrote:
+>> On Wed, 9 Mar 2016 15:25:19 -0500
+> This is a better qualification than my answer.
 >
->     Hugo.
+>>
+>> Now if you want to do some more performance evaluation, check with your dstat
+>> if both disks happen to *write* data in parallel, when you write to the array,
+>> as ideally they should. Last I checked they mostly didn't, and this almost
+>> halved write performance on a Btrfs RAID1 compared to a single disk.
 >
->> I tried btrfs send /mnt2/Data_Store/read_only_snapshot/ | btrfs
->> receive /mnt/sda4/
->> but this only created an empty subvolume /mnt/sda4/read_only_snapshot/
->>
->> So, then
->> btrfs device add /dev/sda4 /mnt/Data_Store
->> btrfs balance start /mnt/Data_Store
->> btrfs device remove /dev/sdb4 /mnt/Data_Store
->> ?
->>
->> Or is there a better option?
->>
->> Regards,
->> Hendrik
->>
->>
->>   btrfs fi usage  /mnt2/Data_Store/
->> Overall:
->>      Device size:                 102.94GiB
->>      Device allocated:             74.03GiB
->>      Device unallocated:           28.91GiB
->>      Device missing:                  0.00B
->>      Used:                         47.96GiB
->>      Free (estimated):             53.24GiB      (min: 53.24GiB)
->>      Data ratio:                       1.00
->>      Metadata ratio:                   1.00
->>      Global reserve:              512.00MiB      (used: 0.00B)
->>
->> Data,single: Size:69.00GiB, Used:44.67GiB
->>     /dev/sdb4      69.00GiB
->>
->> Metadata,single: Size:5.00GiB, Used:3.29GiB
->>     /dev/sdb4       5.00GiB
->>
->> System,single: Size:32.00MiB, Used:16.00KiB
->>     /dev/sdb4      32.00MiB
->>
->> Unallocated:
->>     /dev/sdb4      28.91GiB
->>
->>
->> ---
->> Diese E-Mail wurde von Avast Antivirus-Software auf Viren geprüft.
->> https://www.avast.com/antivirus
->>
+> I've found it to be about the same or slightly less than single disk.
+> But most of my writes to raid1 are btrfs receive.
 
+Here are my results for sending pv /tmpfs_mem_disk/deleteme.tar -pabet
+> /scratch/deleteme.tar, after I've cleared all caches.  Pv states the
+average rate was 77MiB/s, which seems low for a 4GB file.  Here is the
+dstat section for peak rates for writing.
 
----
-Diese E-Mail wurde von Avast Antivirus-Software auf Viren geprüft.
-https://www.avast.com/antivirus
+----system---- -dsk/total----dsk/sdb-----dsk/sdd--
+            time     |  read     writ: read   writ: read  writ
+09-03 16:48:43|   48k  145M:   0    74M:  48k   72M
+09-03 16:48:44|      0   120M:   0    74M:   0     46M
+09-03 16:48:45| 840k  144M:   0    74M:   0     70M
+09-03 16:48:46|      0   147M:   0    80M:   0     67M
 
+and for reading many >200MB raw WAVs from one subvolume while writing
+a ~20GB tar to another subvolume:
+
+09-03 16:59:57|  56M  103M:   0    54M:  56M   50M
+09-03 16:59:58|  48M  118M:  32k   56M:  48M   62M
+09-03 16:59:59|  54M  113M:   0    57M:  54M   55M
+09-03 17:00:00|  43M  116M:   0    54M:  43M   63M
+09-03 17:00:01|  60M  118M:   0    64M:  60M   54M
+09-03 17:00:02|  57M   97M:  32k   48M:  54M   49M

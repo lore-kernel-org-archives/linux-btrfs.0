@@ -1,57 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:6701 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1751621AbcCICNZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 8 Mar 2016 21:13:25 -0500
-Received: from localhost.localdomain (unknown [10.167.226.34])
-	by cn.fujitsu.com (Postfix) with ESMTP id 7E60E4056401
-	for <linux-btrfs@vger.kernel.org>; Wed,  9 Mar 2016 10:13:01 +0800 (CST)
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs-progs: util: Fix a wrong unit of pretty_size
-Date: Wed,  9 Mar 2016 10:10:55 +0800
-Message-Id: <1457489455-9685-1-git-send-email-quwenruo@cn.fujitsu.com>
+Received: from mgwym03.jp.fujitsu.com ([211.128.242.42]:56758 "EHLO
+	mgwym03.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754203AbcCIXIm (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 9 Mar 2016 18:08:42 -0500
+Received: from m3050.s.css.fujitsu.com (msm.b.css.fujitsu.com [10.134.21.208])
+	by yt-mxoi1.gw.nic.fujitsu.com (Postfix) with ESMTP id CACF7AC0170
+	for <linux-btrfs@vger.kernel.org>; Thu, 10 Mar 2016 08:08:37 +0900 (JST)
+Subject: [PATCH 2/2] btrfs-progs: Describe device scan -d is a deprecated
+ option in manpage
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+References: <56E0AC1B.3020405@jp.fujitsu.com>
+From: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
+Message-ID: <56E0ACEF.5050701@jp.fujitsu.com>
+Date: Thu, 10 Mar 2016 08:08:31 +0900
 MIME-Version: 1.0
+In-Reply-To: <56E0AC1B.3020405@jp.fujitsu.com>
+Content-Type: text/plain; charset=iso-2022-jp
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-If parameter for pretty_size is smaller than default base(1024),
-pretty_size() will output wrong unit.
-For example, pretty_size(1008) will output '0.98B' not '1008B' or
-'0.98KiB'.
+It's already marked as deprecated in cmd_device_scan_usage().
 
-The cause is, for default base and auto-detect unit, base will be 1024
-but num_divs is still 0, last result will still be divided by base,
-causing the bug.
+commit 5444864e5605 ("btrfs-progs: remove BTRFS_SCAN_PROC scan method")
 
-Fix it by checking num_divs in default case, and if num_divs is 0,
-change base to 1.
-
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Signed-off-by: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
 ---
- utils.c | 7 +++++++
- 1 file changed, 7 insertions(+)
+ Documentation/btrfs-device.asciidoc | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/utils.c b/utils.c
-index f814017..52237db 100644
---- a/utils.c
-+++ b/utils.c
-@@ -1695,6 +1695,13 @@ int pretty_size_snprintf(u64 size, char *str, size_t str_size, unsigned unit_mod
- 			size /= mult;
- 			num_divs++;
- 		}
-+		/*
-+		 * If the value is smaller than base, we didn't do any
-+		 * division, in that case, base should be 1, not original
-+		 * base, or the unit will be wrong
-+		 */
-+		if (num_divs == 0)
-+			base = 1;
- 	}
- 
- 	if (num_divs >= ARRAY_SIZE(unit_suffix_binary)) {
+diff --git a/Documentation/btrfs-device.asciidoc b/Documentation/btrfs-device.asciidoc
+index bd878f4..bf16a94 100644
+--- a/Documentation/btrfs-device.asciidoc
++++ b/Documentation/btrfs-device.asciidoc
+@@ -89,8 +89,8 @@ Scan devices for a btrfs filesystem.
+ If one or more devices are passed, these are scanned for a btrfs filesystem.
+ If no devices are passed, btrfs uses block devices containing btrfs
+ filesystem as listed by blkid.
+-Finally, if '--all-devices' or '-d' is passed, all the devices under /dev are
+-scanned.
++Finally, '--all-devices' or '-d' is the deprecated option. If it is passed,
++its behavior is the same as if no devices are passed.
+
+ *stats* [-z] <path>|<device>::
+ Read and print the device IO stats for all mounted devices of the filesystem
 -- 
-2.7.2
-
-
-
+2.7.0

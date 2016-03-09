@@ -1,131 +1,93 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:20615 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750853AbcCIJx7 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 9 Mar 2016 04:53:59 -0500
-From: Anand Jain <anand.jain@oracle.com>
-To: fstests@vger.kernel.org
-Cc: linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 2/2] fstests: btrfs/011 add debug logs to seqres.full
-Date: Wed,  9 Mar 2016 17:53:46 +0800
-Message-Id: <1457517226-440-1-git-send-email-anand.jain@oracle.com>
-In-Reply-To: <1455888329-16981-2-git-send-email-anand.jain@oracle.com>
-References: <1455888329-16981-2-git-send-email-anand.jain@oracle.com>
+Received: from mail-qk0-f181.google.com ([209.85.220.181]:35287 "EHLO
+	mail-qk0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750937AbcCIMQL (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 9 Mar 2016 07:16:11 -0500
+Received: by mail-qk0-f181.google.com with SMTP id o6so18994282qkc.2
+        for <linux-btrfs@vger.kernel.org>; Wed, 09 Mar 2016 04:16:11 -0800 (PST)
+Subject: Re: btrfs and containers
+To: Chris Murphy <lists@colorremedies.com>, bo.li.liu@oracle.com
+References: <CAMdWP3G9uaTcbDWE68LYd17sf8-j11Aqo+ACRrZFFGdB995gSQ@mail.gmail.com>
+ <CAJCQCtSPEY1c-=GTJwH3-qRNxGCEsd0bVu9A_srdFt03bX7BcQ@mail.gmail.com>
+ <20160308195857.GB26981@localhost.localdomain>
+ <CAJCQCtSp5B=nnpCs3zaCsMK+8qLNLzYQAqka5P1X+a+R4RzGOQ@mail.gmail.com>
+Cc: Tobias Hunger <tobias.hunger@gmail.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Message-ID: <56E013E8.9080401@gmail.com>
+Date: Wed, 9 Mar 2016 07:15:36 -0500
+MIME-Version: 1.0
+In-Reply-To: <CAJCQCtSp5B=nnpCs3zaCsMK+8qLNLzYQAqka5P1X+a+R4RzGOQ@mail.gmail.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Adds debug logs to $seqres.full and as the btrfs fi show command shows
-unwanted extra errors from the previous test defunct volumes, avoid this
-by adding wipefs -a of scratch_pool_device before the each sub test case.
+On 2016-03-08 16:28, Chris Murphy wrote:
+> On Tue, Mar 8, 2016 at 12:58 PM, Liu Bo <bo.li.liu@oracle.com> wrote:
+>> On Mon, Mar 07, 2016 at 04:45:09PM -0700, Chris Murphy wrote:
+>>> On Mon, Mar 7, 2016 at 3:55 PM, Tobias Hunger <tobias.hunger@gmail.com> wrote:
+>>>> Hi,
+>>>>
+>>>> I have been running systemd-nspawn containers on top of a btrfs
+>>>> filesystem for a while now.
+>>>>
+>>>> This works great: Snapshots are a huge help to manage containers!
+>>>>
+>>>> But today I ran btrfs subvol list . *inside* a container. To my
+>>>> surprise I got a list of *all* subvolumes on that drive. That is
+>>>> basically a complete list of containers running on the machine. I do
+>>>> not want to have that kind of information exposed to my containers.
+>>>>
+>>>> Is there a way to stop btrfs from listing subvolumes "above" the
+>>>> current location? So that "btrfs subvol list /" in a container will
+>>>> only show subvolumes that are set up in the container?
+>>
+>> That's a good question.
+>>
+>> Looks like that "btrfs subvolume list -o" match the needs here.
+>>
+>>>
+>>> I'm not sure whether this is something that goes in Btrfs proper,
+>>> since this is presumably a privileged container? The same thing
+>>> happens with Docker containers. One way to do this is if it's not
+>>> privileged, as non-root can't list subvolumes. I think some work is
+>>> needed to make it possible for users to list subvolumes they own.
+>>> Right now a user can create a subvolume but then now list or get
+>>> information on it. By default they can't delete it either unless a
+>>> special mount option is used. So I think there's work that's needed
+>>> one way or another, and maybe in more than one part.
+>>
+>> Unfortunately, btrfs subvolume list 's various usage is built on top of TREE_SEARCH ioctl
+>> which requires CAP_SYS_ADMIN.
+>>
+>> So what we need here might be to teach 'btrfs sub list' to recognize
+>> container's CAP_SYS_XXX (if this is possible).
+>
+>
+> Yes, it's a bit peculiar I can create subvolumes and snapshot them,
+> but can't 'btrfs sub list/show'
+>
+> It's an open question why the user needs a subvolume, but I'm not
+> thinking of a human user necessarily but rather some service, maybe
+> it's httpd. Or maybe with the xdg-app stuff the Gnome folks are
+> working on it makes sense to encapsulate applications and their
+> updates in their own subvolume. *shrug*  I'm open to the idea that the
+> use case needs to be more compelling and detailed in order to get the
+> implementation right.
+>
+It's probably worth tossing out there that I use them on a regular basis 
+as a normal user (not root or some service) for:
+1. Local copies of VCS repositories.
+2. Build directories.
+3. Staging areas for a variety of things.
+4. Specifically isolating certain parts of my home directory from backups.
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
----
-v2:
- Commit update and,
- Add wipefs for each of the scratch_pool_device, so that
- we circumvent a known issue about the 'btrfs fi show'
- that it reports extra warnings/errors about the defunct
- volumes.
+1-3 are mostly because of the fact that deleting a subvolume is insanely 
+fast compared to recursive deletion of a directory, although 4 is 
+somewhat significant for those as well.
 
- common/rc       | 10 ++++++++++
- tests/btrfs/011 | 21 +++++++++++++++++++++
- 2 files changed, 31 insertions(+)
-
-diff --git a/common/rc b/common/rc
-index 52c4a36ec8d9..4c6ec2d6448f 100644
---- a/common/rc
-+++ b/common/rc
-@@ -783,6 +783,16 @@ _scratch_pool_mkfs()
-     esac
- }
- 
-+_scratch_pool_wipe()
-+{
-+	local sdp
-+
-+	for sdp in ${SCRATCH_DEV_POOL}; do
-+		echo "$WIPEFS_PROG -a ${sdp}" >> $seqres.full
-+		$WIPEFS_PROG -a ${sdp} > /dev/null 2>&1
-+	done
-+}
-+
- # Create fs of certain size on scratch device
- # _scratch_mkfs_sized <size in bytes> [optional blocksize]
- _scratch_mkfs_sized()
-diff --git a/tests/btrfs/011 b/tests/btrfs/011
-index 3bc7f0af70a3..e93ab8769536 100755
---- a/tests/btrfs/011
-+++ b/tests/btrfs/011
-@@ -64,6 +64,7 @@ _supported_fs btrfs
- _require_scratch_nocheck
- _require_scratch_dev_pool 4
- _require_command "$BTRFS_SHOW_SUPER_PROG" btrfs-show-super
-+_require_command "$WIPEFS_PROG" wipefs
- 
- rm -f $seqres.full
- rm -f $tmp.tmp
-@@ -80,6 +81,11 @@ workout()
- 	local target_dev="`echo ${SCRATCH_DEV_POOL} | awk '{print $NF}'`"
- 	local fssize
- 
-+	_scratch_pool_wipe
-+
-+	echo >> $seqres.full
-+	echo "---------workout \"$1\" $2 $3 $4-----------" >> $seqres.full
-+
- 	if [ "`echo $SCRATCH_DEV_POOL | wc -w`" -lt `expr $num_devs4raid + 1` ]; then
- 		echo "Skip workout $1 $2 $3 $4" >> $seqres.full
- 		echo "Too few devices in SCRATCH_DEV_POOL $SCRATCH_DEV_POOL, required: " `expr $num_devs4raid + 1` >> $seqres.full
-@@ -112,8 +118,14 @@ workout()
- 		_notrun "device size too small"
- 	fi
- 
-+	# Since mkfs on target_dev was only to find size, wipefs after about
-+	# size is done
-+	$WIPEFS_PROG -a ${target_dev} > /dev/null 2>&1
- 	_scratch_mount
- 
-+	echo "$BTRFS_UTIL_PROG filesystem show (1)" >> $seqres.full
-+	$BTRFS_UTIL_PROG filesystem show >> $seqres.full 2>&1
-+
- 	# Generate metadata and some minimal user data, generate 500 times
- 	# 20K extents in the data chunk and fill up metadata with inline
- 	# extents.
-@@ -220,8 +232,10 @@ btrfs_replace_test()
- 
- 	if [ "${with_cancel}Q" = "cancelQ" ]; then
- 		# background the replace operation (no '-B' option given)
-+		echo "$BTRFS_UTIL_PROG replace start -f $replace_options $source_dev $target_dev $SCRATCH_MNT" >> $seqres.full
- 		$BTRFS_UTIL_PROG replace start -f $replace_options $source_dev $target_dev $SCRATCH_MNT >> $seqres.full 2>&1 || _fail "btrfs replace start failed"
- 		sleep 1
-+		echo "$BTRFS_UTIL_PROG replace cancel $SCRATCH_MNT" >> $seqres.full
- 		$BTRFS_UTIL_PROG replace cancel $SCRATCH_MNT >> $seqres.full 2>&1 || _fail "btrfs replace cancel failed"
- 
- 		# 'replace status' waits for the replace operation to finish
-@@ -236,6 +250,7 @@ btrfs_replace_test()
- 			# a sync in the middle of the replace operation.
- 			(sleep 1; sync) > /dev/null 2>&1 &
- 		fi
-+		echo "$BTRFS_UTIL_PROG replace start -Bf $replace_options $source_dev $target_dev $SCRATCH_MNT" >> $seqres.full
- 		$BTRFS_UTIL_PROG replace start -Bf $replace_options $source_dev $target_dev $SCRATCH_MNT >> $seqres.full 2>&1 || _fail "btrfs replace start failed"
- 
- 		$BTRFS_UTIL_PROG replace status $SCRATCH_MNT > $tmp.tmp 2>&1
-@@ -267,9 +282,15 @@ btrfs_replace_test()
- 	_scratch_unmount > /dev/null 2>&1
- 	if [ "${with_cancel}Q" != "cancelQ" ]; then
- 		# after the replace operation, use the target_dev for everything
-+		echo "$BTRFS_UTIL_PROG filesystem show -d (2)" >> $seqres.full
-+		$BTRFS_UTIL_PROG filesystem show -d >> $seqres.full 2>&1
-+		echo "$BTRFS_UTIL_PROG filesystem show (3)" >> $seqres.full
-+		$BTRFS_UTIL_PROG filesystem show >> $seqres.full 2>&1
-+		echo "_check_btrfs_filesystem $target_dev" >> $seqres.full
- 		_check_btrfs_filesystem $target_dev
- 		_mount -t $FSTYP `_scratch_mount_options | sed "s&${SCRATCH_DEV}&${target_dev}&"`
- 	else
-+		echo "_check_btrfs_filesystem $source_dev" >> $seqres.full
- 		_check_btrfs_filesystem $source_dev
- 		_scratch_mount
- 	fi
--- 
-2.7.0
+In general I can see them being useful for any number of things from a 
+service perspective, although I feel that snapshots are likely more 
+useful there (the ability to atomically save the state of a set of files 
+is extremely useful for a lot of things).
 

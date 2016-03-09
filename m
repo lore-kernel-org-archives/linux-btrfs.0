@@ -1,93 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qk0-f181.google.com ([209.85.220.181]:35287 "EHLO
-	mail-qk0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750937AbcCIMQL (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 9 Mar 2016 07:16:11 -0500
-Received: by mail-qk0-f181.google.com with SMTP id o6so18994282qkc.2
-        for <linux-btrfs@vger.kernel.org>; Wed, 09 Mar 2016 04:16:11 -0800 (PST)
-Subject: Re: btrfs and containers
-To: Chris Murphy <lists@colorremedies.com>, bo.li.liu@oracle.com
-References: <CAMdWP3G9uaTcbDWE68LYd17sf8-j11Aqo+ACRrZFFGdB995gSQ@mail.gmail.com>
- <CAJCQCtSPEY1c-=GTJwH3-qRNxGCEsd0bVu9A_srdFt03bX7BcQ@mail.gmail.com>
- <20160308195857.GB26981@localhost.localdomain>
- <CAJCQCtSp5B=nnpCs3zaCsMK+8qLNLzYQAqka5P1X+a+R4RzGOQ@mail.gmail.com>
-Cc: Tobias Hunger <tobias.hunger@gmail.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <56E013E8.9080401@gmail.com>
-Date: Wed, 9 Mar 2016 07:15:36 -0500
+Received: from mail-wm0-f41.google.com ([74.125.82.41]:38178 "EHLO
+	mail-wm0-f41.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S934061AbcCIUSG (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 9 Mar 2016 15:18:06 -0500
+Received: by mail-wm0-f41.google.com with SMTP id l68so1575533wml.1
+        for <linux-btrfs@vger.kernel.org>; Wed, 09 Mar 2016 12:18:05 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <CAJCQCtSp5B=nnpCs3zaCsMK+8qLNLzYQAqka5P1X+a+R4RzGOQ@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+In-Reply-To: <pan$a0b9$20e2036$fc12847$9c0b91e0@cox.net>
+References: <CAD=QJKiB9m_F+6AgmSJT_Dsd9HLBhXjEDFAcy6wLQNzO1DOkbQ@mail.gmail.com>
+	<pan$54754$3acbb0c8$6074e95a$678977e7@cox.net>
+	<CAD=QJKh2ugTHe7OyHniPL0dXm9wXZ3ur3-SSUTCAUWB2ZHRT9Q@mail.gmail.com>
+	<pan$a0b9$20e2036$fc12847$9c0b91e0@cox.net>
+Date: Wed, 9 Mar 2016 15:18:03 -0500
+Message-ID: <CAD=QJKi95sM6s7vJrZFhf9kz=zGZPD7dkfNiX08iqjG8erdXZw@mail.gmail.com>
+Subject: Re: incomplete conversion to RAID1?
+From: Nicholas D Steeves <nsteeves@gmail.com>
+To: Duncan <1i5t5.duncan@cox.net>
+Cc: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2016-03-08 16:28, Chris Murphy wrote:
-> On Tue, Mar 8, 2016 at 12:58 PM, Liu Bo <bo.li.liu@oracle.com> wrote:
->> On Mon, Mar 07, 2016 at 04:45:09PM -0700, Chris Murphy wrote:
->>> On Mon, Mar 7, 2016 at 3:55 PM, Tobias Hunger <tobias.hunger@gmail.com> wrote:
->>>> Hi,
->>>>
->>>> I have been running systemd-nspawn containers on top of a btrfs
->>>> filesystem for a while now.
->>>>
->>>> This works great: Snapshots are a huge help to manage containers!
->>>>
->>>> But today I ran btrfs subvol list . *inside* a container. To my
->>>> surprise I got a list of *all* subvolumes on that drive. That is
->>>> basically a complete list of containers running on the machine. I do
->>>> not want to have that kind of information exposed to my containers.
->>>>
->>>> Is there a way to stop btrfs from listing subvolumes "above" the
->>>> current location? So that "btrfs subvol list /" in a container will
->>>> only show subvolumes that are set up in the container?
->>
->> That's a good question.
->>
->> Looks like that "btrfs subvolume list -o" match the needs here.
->>
->>>
->>> I'm not sure whether this is something that goes in Btrfs proper,
->>> since this is presumably a privileged container? The same thing
->>> happens with Docker containers. One way to do this is if it's not
->>> privileged, as non-root can't list subvolumes. I think some work is
->>> needed to make it possible for users to list subvolumes they own.
->>> Right now a user can create a subvolume but then now list or get
->>> information on it. By default they can't delete it either unless a
->>> special mount option is used. So I think there's work that's needed
->>> one way or another, and maybe in more than one part.
->>
->> Unfortunately, btrfs subvolume list 's various usage is built on top of TREE_SEARCH ioctl
->> which requires CAP_SYS_ADMIN.
->>
->> So what we need here might be to teach 'btrfs sub list' to recognize
->> container's CAP_SYS_XXX (if this is possible).
+On 4 March 2016 at 07:55, Duncan <1i5t5.duncan@cox.net> wrote:
+> Nicholas D Steeves posted on Thu, 03 Mar 2016 16:21:53 -0500 as excerpted:
 >
+>>> Of course either way assumes you don't run into some bug that will
+>>> prevent removal of that chunk, perhaps exactly the same one that kept
+>>> it from being removed during the normal raid1 conversion.  If that
+>>> happens,
+>>> the devs may well be interested in tracking it down, as I'm not aware
+>>> of anything similar being posted to the list.
+>>
+>> I've made up-to-date backups of this volume.  Is one of these two
+>> methods more likely to trigger a potential bug?  Also, this potential
+>> bug, if it's not just cosmetic wouldn't silently corrupt something in my
+>> pool, right?  It's when things won't fail loudly and immediately that
+>> concerns me, but if that's not an issue then I'd prefer to try to gather
+>> potentially useful data.
 >
-> Yes, it's a bit peculiar I can create subvolumes and snapshot them,
-> but can't 'btrfs sub list/show'
->
-> It's an open question why the user needs a subvolume, but I'm not
-> thinking of a human user necessarily but rather some service, maybe
-> it's httpd. Or maybe with the xdg-app stuff the Gnome folks are
-> working on it makes sense to encapsulate applications and their
-> updates in their own subvolume. *shrug*  I'm open to the idea that the
-> use case needs to be more compelling and detailed in order to get the
-> implementation right.
->
-It's probably worth tossing out there that I use them on a regular basis 
-as a normal user (not root or some service) for:
-1. Local copies of VCS repositories.
-2. Build directories.
-3. Staging areas for a variety of things.
-4. Specifically isolating certain parts of my home directory from backups.
+> I don't actually expect a bug.
 
-1-3 are mostly because of the fact that deleting a subvolume is insanely 
-fast compared to recursive deletion of a directory, although 4 is 
-somewhat significant for those as well.
 
-In general I can see them being useful for any number of things from a 
-service perspective, although I feel that snapshots are likely more 
-useful there (the ability to atomically save the state of a set of files 
-is extremely useful for a lot of things).
+I used btrfs balance start -dprofiles=single, because you mentioned
+you usually use btrfs balance start -dusage=0, in the hopes that I
+might be able to find a useful bug.  Nope!  100% trouble free, and
+very fast.
 
+Thank you,
+Nicholas

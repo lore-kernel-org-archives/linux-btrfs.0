@@ -1,306 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:51019 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751775AbcCHRFK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 8 Mar 2016 12:05:10 -0500
-From: David Sterba <dsterba@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: clm@fb.com, David Sterba <dsterba@suse.com>
-Subject: [PATCH] Documentation: btrfs: remove usage specific information
-Date: Tue,  8 Mar 2016 18:04:46 +0100
-Message-Id: <1457456686-30474-1-git-send-email-dsterba@suse.com>
+Received: from mgwym04.jp.fujitsu.com ([211.128.242.43]:13248 "EHLO
+	mgwym04.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752511AbcCIGTS (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 9 Mar 2016 01:19:18 -0500
+Received: from m3051.s.css.fujitsu.com (m3051.s.css.fujitsu.com [10.134.21.209])
+	by yt-mxq.gw.nic.fujitsu.com (Postfix) with ESMTP id 6B4FEAC0126
+	for <linux-btrfs@vger.kernel.org>; Wed,  9 Mar 2016 15:19:09 +0900 (JST)
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+From: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
+Subject: [PATCH v3] Btrfs: Show a warning message if one of objectid reaches
+ its highest value
+Message-ID: <56DFC051.1040409@jp.fujitsu.com>
+Date: Wed, 9 Mar 2016 15:18:57 +0900
+MIME-Version: 1.0
+Content-Type: text/plain; charset=iso-2022-jp
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The document in the kernel sources is yet another palce where the
-documentation would need to be updated, while it is not the primary
-source. We actively maintain the wiki pages.
+It's better to show a warning message for the exceptional case
+that one of objectid (in most case, inode number) reaches its
+highest value. For example, if inode cache is off and this event
+happens, we can't create any file even if there are not so many files.
+This message ease detecting such problem.
 
-Signed-off-by: David Sterba <dsterba@suse.com>
+Signed-off-by: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
 ---
- Documentation/filesystems/btrfs.txt | 261 ++----------------------------------
- 1 file changed, 11 insertions(+), 250 deletions(-)
+This patch can be applied to 4.5-rc7
 
-diff --git a/Documentation/filesystems/btrfs.txt b/Documentation/filesystems/btrfs.txt
-index c772b47e7ef0..f9dad22d95ce 100644
---- a/Documentation/filesystems/btrfs.txt
-+++ b/Documentation/filesystems/btrfs.txt
-@@ -1,20 +1,10 @@
--
- BTRFS
- =====
- 
--Btrfs is a copy on write filesystem for Linux aimed at
--implementing advanced features while focusing on fault tolerance,
--repair and easy administration. Initially developed by Oracle, Btrfs
--is licensed under the GPL and open for contribution from anyone.
--
--Linux has a wealth of filesystems to choose from, but we are facing a
--number of challenges with scaling to the large storage subsystems that
--are becoming common in today's data centers. Filesystems need to scale
--in their ability to address and manage large storage, and also in
--their ability to detect, repair and tolerate errors in the data stored
--on disk.  Btrfs is under heavy development, and is not suitable for
--any uses other than benchmarking and review. The Btrfs disk format is
--not yet finalized.
-+Btrfs is a copy on write filesystem for Linux aimed at implementing advanced
-+features while focusing on fault tolerance, repair and easy administration.
-+Jointly developed by several companies, licensed under the GPL and open for
-+contribution from anyone.
- 
- The main Btrfs features include:
- 
-@@ -28,243 +18,14 @@ The main Btrfs features include:
-     * Checksums on data and metadata (multiple algorithms available)
-     * Compression
-     * Integrated multiple device support, with several raid algorithms
--    * Online filesystem check (not yet implemented)
--    * Very fast offline filesystem check
--    * Efficient incremental backup and FS mirroring (not yet implemented)
-+    * Offline filesystem check
-+    * Efficient incremental backup and FS mirroring
-     * Online filesystem defragmentation
- 
-+For more information please refer to the wiki
- 
--Mount Options
--=============
--
--When mounting a btrfs filesystem, the following option are accepted.
--Options with (*) are default options and will not show in the mount options.
--
--  alloc_start=<bytes>
--	Debugging option to force all block allocations above a certain
--	byte threshold on each block device.  The value is specified in
--	bytes, optionally with a K, M, or G suffix, case insensitive.
--	Default is 1MB.
--
--  noautodefrag(*)
--  autodefrag
--	Disable/enable auto defragmentation.
--	Auto defragmentation detects small random writes into files and queue
--	them up for the defrag process.  Works best for small files;
--	Not well suited for large database workloads.
--
--  check_int
--  check_int_data
--  check_int_print_mask=<value>
--	These debugging options control the behavior of the integrity checking
--	module (the BTRFS_FS_CHECK_INTEGRITY config option required).
--
--	check_int enables the integrity checker module, which examines all
--	block write requests to ensure on-disk consistency, at a large
--	memory and CPU cost.
--
--	check_int_data includes extent data in the integrity checks, and
--	implies the check_int option.
--
--	check_int_print_mask takes a bitmask of BTRFSIC_PRINT_MASK_* values
--	as defined in fs/btrfs/check-integrity.c, to control the integrity
--	checker module behavior.
--
--	See comments at the top of fs/btrfs/check-integrity.c for more info.
--
--  commit=<seconds>
--	Set the interval of periodic commit, 30 seconds by default. Higher
--	values defer data being synced to permanent storage with obvious
--	consequences when the system crashes. The upper bound is not forced,
--	but a warning is printed if it's more than 300 seconds (5 minutes).
--
--  compress
--  compress=<type>
--  compress-force
--  compress-force=<type>
--	Control BTRFS file data compression.  Type may be specified as "zlib"
--	"lzo" or "no" (for no compression, used for remounting).  If no type
--	is specified, zlib is used.  If compress-force is specified,
--	all files will be compressed, whether or not they compress well.
--	If compression is enabled, nodatacow and nodatasum are disabled.
--
--  degraded
--	Allow mounts to continue with missing devices.  A read-write mount may
--	fail with too many devices missing, for example if a stripe member
--	is completely missing.
--
--  device=<devicepath>
--	Specify a device during mount so that ioctls on the control device
--	can be avoided.  Especially useful when trying to mount a multi-device
--	setup as root.  May be specified multiple times for multiple devices.
--
--  nodiscard(*)
--  discard
--	Disable/enable discard mount option.
--	Discard issues frequent commands to let the block device reclaim space
--	freed by the filesystem.
--	This is useful for SSD devices, thinly provisioned
--	LUNs and virtual machine images, but may have a significant
--	performance impact.  (The fstrim command is also available to
--	initiate batch trims from userspace).
--
--  noenospc_debug(*)
--  enospc_debug
--	Disable/enable debugging option to be more verbose in some ENOSPC conditions.
--
--  fatal_errors=<action>
--	Action to take when encountering a fatal error:
--	  "bug" - BUG() on a fatal error.  This is the default.
--	  "panic" - panic() on a fatal error.
--
--  noflushoncommit(*)
--  flushoncommit
--	The 'flushoncommit' mount option forces any data dirtied by a write in a
--	prior transaction to commit as part of the current commit.  This makes
--	the committed state a fully consistent view of the file system from the
--	application's perspective (i.e., it includes all completed file system
--	operations).  This was previously the behavior only when a snapshot is
--	created.
--
--  inode_cache
--	Enable free inode number caching.   Defaults to off due to an overflow
--	problem when the free space crcs don't fit inside a single page.
--
--  max_inline=<bytes>
--	Specify the maximum amount of space, in bytes, that can be inlined in
--	a metadata B-tree leaf.  The value is specified in bytes, optionally
--	with a K, M, or G suffix, case insensitive.  In practice, this value
--	is limited by the root sector size, with some space unavailable due
--	to leaf headers.  For a 4k sector size, max inline data is ~3900 bytes.
--
--  metadata_ratio=<value>
--	Specify that 1 metadata chunk should be allocated after every <value>
--	data chunks.  Off by default.
--
--  acl(*)
--  noacl
--	Enable/disable support for Posix Access Control Lists (ACLs).  See the
--	acl(5) manual page for more information about ACLs.
--
--  barrier(*)
--  nobarrier
--        Enable/disable the use of block layer write barriers.  Write barriers
--	ensure that certain IOs make it through the device cache and are on
--	persistent storage. If disabled on a device with a volatile
--	(non-battery-backed) write-back cache, nobarrier option will lead to
--	filesystem corruption on a system crash or power loss.
--
--  datacow(*)
--  nodatacow
--	Enable/disable data copy-on-write for newly created files.
--	Nodatacow implies nodatasum, and disables all compression.
--
--  datasum(*)
--  nodatasum
--	Enable/disable data checksumming for newly created files.
--	Datasum implies datacow.
--
--  treelog(*)
--  notreelog
--	Enable/disable the tree logging used for fsync and O_SYNC writes.
--
--  recovery
--	Enable autorecovery attempts if a bad tree root is found at mount time.
--	Currently this scans a list of several previous tree roots and tries to
--	use the first readable.
--
--  rescan_uuid_tree
--	Force check and rebuild procedure of the UUID tree. This should not
--	normally be needed.
--
--  skip_balance
--	Skip automatic resume of interrupted balance operation after mount.
--	May be resumed with "btrfs balance resume."
--
--  space_cache (*)
--	Enable the on-disk freespace cache.
--  nospace_cache
--	Disable freespace cache loading without clearing the cache.
--  clear_cache
--	Force clearing and rebuilding of the disk space cache if something
--	has gone wrong.
--
--  ssd
--  nossd
--  ssd_spread
--	Options to control ssd allocation schemes.  By default, BTRFS will
--	enable or disable ssd allocation heuristics depending on whether a
--	rotational or non-rotational disk is in use.  The ssd and nossd options
--	can override this autodetection.
--
--	The ssd_spread mount option attempts to allocate into big chunks
--	of unused space, and may perform better on low-end ssds.  ssd_spread
--	implies ssd, enabling all other ssd heuristics as well.
--
--  subvol=<path>
--	Mount subvolume at <path> rather than the root subvolume.  <path> is
--	relative to the top level subvolume.
--
--  subvolid=<ID>
--	Mount subvolume specified by an ID number rather than the root subvolume.
--	This allows mounting of subvolumes which are not in the root of the mounted
--	filesystem.
--	You can use "btrfs subvolume list" to see subvolume ID numbers.
--
--  subvolrootid=<objectid> (deprecated)
--	Mount subvolume specified by <objectid> rather than the root subvolume.
--	This allows mounting of subvolumes which are not in the root of the mounted
--	filesystem.
--	You can use "btrfs subvolume show " to see the object ID for a subvolume.
--
--  thread_pool=<number>
--	The number of worker threads to allocate.  The default number is equal
--	to the number of CPUs + 2, or 8, whichever is smaller.
--
--  user_subvol_rm_allowed
--	Allow subvolumes to be deleted by a non-root user. Use with caution.
--
--MAILING LIST
--============
--
--There is a Btrfs mailing list hosted on vger.kernel.org. You can
--find details on how to subscribe here:
--
--http://vger.kernel.org/vger-lists.html#linux-btrfs
--
--Mailing list archives are available from gmane:
--
--http://dir.gmane.org/gmane.comp.file-systems.btrfs
--
--
--
--IRC
--===
--
--Discussion of Btrfs also occurs on the #btrfs channel of the Freenode
--IRC network.
--
--
--
--	UTILITIES
--	=========
--
--Userspace tools for creating and manipulating Btrfs file systems are
--available from the git repository at the following location:
--
-- http://git.kernel.org/?p=linux/kernel/git/mason/btrfs-progs.git
-- git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-progs.git
--
--These include the following tools:
--
--* mkfs.btrfs: create a filesystem
--
--* btrfs: a single tool to manage the filesystems, refer to the manpage for more details
--
--* 'btrfsck' or 'btrfs check': do a consistency check of the filesystem
--
--Other tools for specific tasks:
--
--* btrfs-convert: in-place conversion from ext2/3/4 filesystems
-+  https://btrfs.wiki.kernel.org
- 
--* btrfs-image: dump filesystem metadata for debugging
-+that maintains information about administration tasks, frequently asked
-+questions, use cases, mount options, comprehensible changelogs, features,
-+manual pages, source code repositories, contacts etc.
+V3:
+- Show this message every time when hitting this problem
+  for simplicity (thanks to the comment from Goffredo).
+- Reflect Naota's comment
+  - Keep the error code as is.
+V2:
+ - Reflect Filipe's comment
+   - Use btrfs_warn() instead of WARN_ONCE()
+   - Print the id of the tree
+---
+ fs/btrfs/inode-map.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/fs/btrfs/inode-map.c b/fs/btrfs/inode-map.c
+index e50316c..5d97ee7 100644
+--- a/fs/btrfs/inode-map.c
++++ b/fs/btrfs/inode-map.c
+@@ -556,6 +556,9 @@ int btrfs_find_free_objectid(struct btrfs_root *root, u64 *objectid)
+ 	mutex_lock(&root->objectid_mutex);
+
+ 	if (unlikely(root->highest_objectid >= BTRFS_LAST_FREE_OBJECTID)) {
++		btrfs_warn(root->fs_info,
++			   "The objectid of root %llu reaches its highest value.\n",
++			   root->root_key.objectid);
+ 		ret = -ENOSPC;
+ 		goto out;
+ 	}
 -- 
-1.8.4.5
-
+2.5.0
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-

@@ -1,41 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pf0-f180.google.com ([209.85.192.180]:36088 "EHLO
-	mail-pf0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750981AbcCIBTr (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Mar 2016 20:19:47 -0500
-Received: by mail-pf0-f180.google.com with SMTP id 63so25922817pfe.3
-        for <linux-btrfs@vger.kernel.org>; Tue, 08 Mar 2016 17:19:47 -0800 (PST)
-From: Yauhen Kharuzhy <yauhen.kharuzhy@zavadatar.com>
+Received: from cn.fujitsu.com ([222.73.24.84]:6701 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1751621AbcCICNZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 8 Mar 2016 21:13:25 -0500
+Received: from localhost.localdomain (unknown [10.167.226.34])
+	by cn.fujitsu.com (Postfix) with ESMTP id 7E60E4056401
+	for <linux-btrfs@vger.kernel.org>; Wed,  9 Mar 2016 10:13:01 +0800 (CST)
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
-Cc: Yauhen Kharuzhy <yauhen.kharuzhy@zavadatar.com>
-Subject: [PATCH] Fix broken 'device scan' arguments parsing
-Date: Tue,  8 Mar 2016 17:19:40 -0800
-Message-Id: <1457486380-4051-1-git-send-email-yauhen.kharuzhy@zavadatar.com>
+Subject: [PATCH] btrfs-progs: util: Fix a wrong unit of pretty_size
+Date: Wed,  9 Mar 2016 10:10:55 +0800
+Message-Id: <1457489455-9685-1-git-send-email-quwenruo@cn.fujitsu.com>
+MIME-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-commit 52179e4fea41e55f31c92cd033a0b53a5107b4f4 'btrfs-progs: unify argc
-min/max checking' brokes 'btrfs device scan' command when no argument
-was given. Fix this.
+If parameter for pretty_size is smaller than default base(1024),
+pretty_size() will output wrong unit.
+For example, pretty_size(1008) will output '0.98B' not '1008B' or
+'0.98KiB'.
 
-Signed-off-by: Yauhen Kharuzhy <yauhen.kharuzhy@zavadatar.com>
+The cause is, for default base and auto-detect unit, base will be 1024
+but num_divs is still 0, last result will still be divided by base,
+causing the bug.
+
+Fix it by checking num_divs in default case, and if num_divs is 0,
+change base to 1.
+
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- cmds-device.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ utils.c | 7 +++++++
+ 1 file changed, 7 insertions(+)
 
-diff --git a/cmds-device.c b/cmds-device.c
-index cb470af..94ffdc5 100644
---- a/cmds-device.c
-+++ b/cmds-device.c
-@@ -273,7 +273,7 @@ static int cmd_device_scan(int argc, char **argv)
- 	if (all && check_argc_max(argc - optind, 1))
- 		usage(cmd_device_scan_usage);
+diff --git a/utils.c b/utils.c
+index f814017..52237db 100644
+--- a/utils.c
++++ b/utils.c
+@@ -1695,6 +1695,13 @@ int pretty_size_snprintf(u64 size, char *str, size_t str_size, unsigned unit_mod
+ 			size /= mult;
+ 			num_divs++;
+ 		}
++		/*
++		 * If the value is smaller than base, we didn't do any
++		 * division, in that case, base should be 1, not original
++		 * base, or the unit will be wrong
++		 */
++		if (num_divs == 0)
++			base = 1;
+ 	}
  
--	if (all || argc - optind == 1) {
-+	if (all || argc - optind == 0) {
- 		printf("Scanning for Btrfs filesystems\n");
- 		ret = btrfs_scan_lblkid();
- 		error_on(ret, "error %d while scanning", ret);
+ 	if (num_divs >= ARRAY_SIZE(unit_suffix_binary)) {
 -- 
-2.5.0
+2.7.2
+
+
 

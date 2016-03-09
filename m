@@ -1,14 +1,14 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:22718 "EHLO
+Received: from aserp1040.oracle.com ([141.146.126.69]:24863 "EHLO
 	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751300AbcCIKHg (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 9 Mar 2016 05:07:36 -0500
+	with ESMTP id S1751300AbcCIKKj (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 9 Mar 2016 05:10:39 -0500
 From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
 Cc: dsterba@suse.cz
 Subject: [PATCH V4 2/2] btrfs-progs: Introduce device delete by devid
-Date: Wed,  9 Mar 2016 18:07:23 +0800
-Message-Id: <1457518043-559-1-git-send-email-anand.jain@oracle.com>
+Date: Wed,  9 Mar 2016 18:10:26 +0800
+Message-Id: <1457518226-601-1-git-send-email-anand.jain@oracle.com>
 In-Reply-To: <1444123990-8832-1-git-send-email-anand.jain@oracle.com>
 References: <1444123990-8832-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -39,12 +39,12 @@ Signed-off-by: Anand Jain <anand.jain@oracle.com>
 [ coding style fixes ]
 Signed-off-by: David Sterba <dsterba@suse.com>
 ---
-v4: a. For future benifit we should check for EOPNOTSUPP as well.
+v4: a. For future benefit we should check for EOPNOTSUPP as well.
     b. Update the changes to be inline with kernel that is
-    BTRFS_DEVICE_SPEC_BY_ID and BTRFS_VOL_ARG_V2_FLAGS_SUPPORTED
-    naimg changes. and
+       BTRFS_DEVICE_SPEC_BY_ID and BTRFS_VOL_ARG_V2_FLAGS_SUPPORTED
+       naming changes. and
     (c. As I didn't see progs patch matching with the kernel naming
-    changes in the ML.)
+       changes in the ML.)
 
 v3: enahnced btrfs_ioctl_vol_args_v2 to accept devid instead of
     creating a new structure. Thanks to David.
@@ -53,7 +53,6 @@ v3: enahnced btrfs_ioctl_vol_args_v2 to accept devid instead of
 
 v2: update the missed Documentation for delete (not just remove) as well.
     Thanks to Goffredo.
-
  Documentation/btrfs-device.asciidoc |  4 +--
  cmds-device.c                       | 52 ++++++++++++++++++++++++++++++-------
  ioctl.h                             | 15 ++++++++++-

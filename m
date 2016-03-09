@@ -1,60 +1,49 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp-18.italiaonline.it ([212.48.25.146]:49732 "EHLO libero.it"
-	rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-	id S1751999AbcCIUuI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 9 Mar 2016 15:50:08 -0500
-Reply-To: kreijack@inwind.it
-Subject: Re: dstat shows unexpected result for two disk RAID1
-References: <CAD=QJKi-3PJQViAaRmGoz3_w6RQbRehDL9vXs14+CSHsG3ipTg@mail.gmail.com>
- <CAD=QJKg6xFSFjJdDyD+v0Rd2afeB-ZRRy2SncC1Db5fyT3cf9A@mail.gmail.com>
-To: Nicholas D Steeves <nsteeves@gmail.com>, linux-btrfs@vger.kernel.org
-From: Goffredo Baroncelli <kreijack@inwind.it>
-Message-ID: <56E08C7D.3040304@inwind.it>
-Date: Wed, 9 Mar 2016 21:50:05 +0100
+Received: from magic.merlins.org ([209.81.13.136]:48033 "EHLO
+	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753943AbcCIVKH (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 9 Mar 2016 16:10:07 -0500
+Date: Wed, 9 Mar 2016 13:10:04 -0800
+From: Marc MERLIN <marc@merlins.org>
+To: Tobias Hunger <tobias.hunger@gmail.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: btrfs and containers
+Message-ID: <20160309211004.GK27437@merlins.org>
+References: <CAMdWP3G9uaTcbDWE68LYd17sf8-j11Aqo+ACRrZFFGdB995gSQ@mail.gmail.com>
 MIME-Version: 1.0
-In-Reply-To: <CAD=QJKg6xFSFjJdDyD+v0Rd2afeB-ZRRy2SncC1Db5fyT3cf9A@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <CAMdWP3G9uaTcbDWE68LYd17sf8-j11Aqo+ACRrZFFGdB995gSQ@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2016-03-09 21:25, Nicholas D Steeves wrote:
-> grr.  Gmail is terrible :-/
+On Mon, Mar 07, 2016 at 11:55:47PM +0100, Tobias Hunger wrote:
+> Hi,
 > 
-> I understood that a btrfs RAID1 would at best grab one block from sdb
-> and then one block from sdd in round-robin fashion, or at worse grab
-> one chunk from sdb and then one chunk from sdd.  Alternatively I
-> thought that it might read from both simultaneously, to make sure that
-> all data matches, while at the same time providing single-disk
-> performance.  None of these was the case.  Running a single
-> IO-intensive process reads from a single drive.
+> I have been running systemd-nspawn containers on top of a btrfs
+> filesystem for a while now.
 > 
-> Did I misunderstand the documentation and is this normal, or is this a bug?
-> Nicholas
-
-In a case of a BTRFS RAID, I knew that a process read from a drive depending by its pid. 
-I don't know if it is changed. But what from you write it seems that it still true today.
-
-
-
+> This works great: Snapshots are a huge help to manage containers!
 > 
-> On 9 March 2016 at 15:21, Nicholas D Steeves <nsteeves@gmail.com> wrote:
->> Hello everyone,
->>
->> I've run into an expected behaviour for a my two disk RAID1.  I mount
->> with UUIDs, because sometimes my USB disk gets /dev/sdc instead of
->> /dev/sdd.  The two elements of my RAID1 are currently sdb and sdd.
->>
->> dstat -tdD total,sdb,sdc,sdd
->>
->> It seems that per process, reads come from either sdb or sdd.  This
->> surprises me, because I understood that a btrfs RAID1
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+> But today I ran btrfs subvol list . *inside* a container. To my
+> surprise I got a list of *all* subvolumes on that drive. That is
+> basically a complete list of containers running on the machine. I do
+> not want to have that kind of information exposed to my containers.
 
+I have a very stripped down docker image that actually mounts portion of
+of my root filesystem read only.
+While it's running out of a btrfs filesystem, you can't run btrfs
+commands against it:
+05233e5c91f0:/# btrfs fi show
+05233e5c91f0:/# btrfs subvol list /
+ERROR: can't perform the search - Operation not permitted
+05233e5c91f0:/# btrfs subvol list .
+ERROR: can't perform the search - Operation not permitted
 
+I didn't do anything special, it's just working that way.
+
+Marc
 -- 
-gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
-Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+Microsoft is to operating systems ....
+                                      .... what McDonalds is to gourmet cooking
+Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901

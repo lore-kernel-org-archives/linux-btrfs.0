@@ -1,39 +1,30 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:58981 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752809AbcCHQDF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 8 Mar 2016 11:03:05 -0500
-Date: Tue, 8 Mar 2016 17:02:44 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Moviuro <moviuro@gmail.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: btrfs-progs and btrfs(8) inconsistencies
-Message-ID: <20160308160244.GF30625@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <CAM=f9=V-7hbjGLzWUxbynsoJdP-NexEoaTJ3GJJxn3gBYsW1BA@mail.gmail.com>
+Received: from mail-wm0-f46.google.com ([74.125.82.46]:36636 "EHLO
+	mail-wm0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751687AbcCIKCc (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 9 Mar 2016 05:02:32 -0500
+Received: by mail-wm0-f46.google.com with SMTP id n186so170132698wmn.1
+        for <linux-btrfs@vger.kernel.org>; Wed, 09 Mar 2016 02:02:32 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CAM=f9=V-7hbjGLzWUxbynsoJdP-NexEoaTJ3GJJxn3gBYsW1BA@mail.gmail.com>
+In-Reply-To: <20160308160244.GF30625@twin.jikos.cz>
+References: <CAM=f9=V-7hbjGLzWUxbynsoJdP-NexEoaTJ3GJJxn3gBYsW1BA@mail.gmail.com>
+	<20160308160244.GF30625@twin.jikos.cz>
+Date: Wed, 9 Mar 2016 11:02:31 +0100
+Message-ID: <CAM=f9=X2pRjyC1H3799WmkuZ=7DSLMNnFmv4T30TcZ2VKUg_uA@mail.gmail.com>
+Subject: Re: btrfs-progs and btrfs(8) inconsistencies
+From: Moviuro <moviuro@gmail.com>
+To: dsterba@suse.cz, Moviuro <moviuro@gmail.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Let me answer here for the whole thread. There are lot of issues to
-cover, I think the github way would work here, so the project you've
-created for the purpose seems ok to me.
+Don't hesitate to drop an email here (with your Github account
+name...) to get invited into the Github group. That's because you
+can't ask to join a group on GitHub.
+At the moment, kdave and myself are administrators of the said group
+(https://github.com/btrfs8-revamp). I'm sure we can nominate David
+too, once he joined ;-)
 
-https://github.com/btrfs8-revamp
-
-I assume way more dicussions than actual patches and coding, the web
-platform offers commenting at the exact locations of files, issue
-tracking works better than over mail.
-
-Initially we'd cover all the stuff mentioned in this thread, naming,
-conventions etc. After we agree we can start changing code in btrfs-progs.
-
-We can ask for feedback wider audience in the mailinglist if needed,
-possibly with a draft that would be reviewed already.
-
-After we write comprehensive guidelines for the UI, we can add it to
-btrfs-progs, I really want to avoid high churn in that repository for
-things that are not related to code. For that the revamp repository is
-good, the only requirement is a github account.
+PS: I really didn't expect my first mail to cause this movement, I'm
+glad it took this shape!

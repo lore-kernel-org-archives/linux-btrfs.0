@@ -1,27 +1,32 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f182.google.com ([209.85.223.182]:36579 "EHLO
-	mail-io0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752040AbcCIV00 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 9 Mar 2016 16:26:26 -0500
-Received: by mail-io0-f182.google.com with SMTP id z76so82428244iof.3
-        for <linux-btrfs@vger.kernel.org>; Wed, 09 Mar 2016 13:26:25 -0800 (PST)
-MIME-Version: 1.0
+Received: from meiko.romanrm.net ([195.154.92.155]:43044 "EHLO
+	meiko.romanrm.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754166AbcCIVgk (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 9 Mar 2016 16:36:40 -0500
+Date: Thu, 10 Mar 2016 02:36:27 +0500
+From: Roman Mamedov <rm@romanrm.net>
+To: Nicholas D Steeves <nsteeves@gmail.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: dstat shows unexpected result for two disk RAID1
+Message-ID: <20160310023627.2e915667@natsu>
 In-Reply-To: <CAD=QJKg6xFSFjJdDyD+v0Rd2afeB-ZRRy2SncC1Db5fyT3cf9A@mail.gmail.com>
 References: <CAD=QJKi-3PJQViAaRmGoz3_w6RQbRehDL9vXs14+CSHsG3ipTg@mail.gmail.com>
-	<CAD=QJKg6xFSFjJdDyD+v0Rd2afeB-ZRRy2SncC1Db5fyT3cf9A@mail.gmail.com>
-Date: Wed, 9 Mar 2016 14:26:25 -0700
-Message-ID: <CAJCQCtShrmtnO-d3u+jnFOWqct5QQ0oKErJpDeC+0pw-XiECBA@mail.gmail.com>
-Subject: Re: dstat shows unexpected result for two disk RAID1
-From: Chris Murphy <lists@colorremedies.com>
-To: Nicholas D Steeves <nsteeves@gmail.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+ <CAD=QJKg6xFSFjJdDyD+v0Rd2afeB-ZRRy2SncC1Db5fyT3cf9A@mail.gmail.com>
+MIME-Version: 1.0
+Content-Type: multipart/signed; micalg=pgp-sha1;
+ boundary="Sig_/jfnEfMC+b5gkQegp.OZ9KWg"; protocol="application/pgp-signature"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Mar 9, 2016 at 1:25 PM, Nicholas D Steeves <nsteeves@gmail.com> wrote:
+--Sig_/jfnEfMC+b5gkQegp.OZ9KWg
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: quoted-printable
+
+On Wed, 9 Mar 2016 15:25:19 -0500
+Nicholas D Steeves <nsteeves@gmail.com> wrote:
+
 > grr.  Gmail is terrible :-/
->
+>=20
 > I understood that a btrfs RAID1 would at best grab one block from sdb
 > and then one block from sdd in round-robin fashion, or at worse grab
 > one chunk from sdb and then one chunk from sdd.  Alternatively I
@@ -29,32 +34,46 @@ On Wed, Mar 9, 2016 at 1:25 PM, Nicholas D Steeves <nsteeves@gmail.com> wrote:
 > all data matches, while at the same time providing single-disk
 > performance.  None of these was the case.  Running a single
 > IO-intensive process reads from a single drive.
->
-> Did I misunderstand the documentation and is this normal, or is this a bug?
-> Nicholas
->
-> On 9 March 2016 at 15:21, Nicholas D Steeves <nsteeves@gmail.com> wrote:
->> Hello everyone,
->>
->> I've run into an expected behaviour for a my two disk RAID1.  I mount
->> with UUIDs, because sometimes my USB disk gets /dev/sdc instead of
->> /dev/sdd.  The two elements of my RAID1 are currently sdb and sdd.
->>
->> dstat -tdD total,sdb,sdc,sdd
->>
->> It seems that per process, reads come from either sdb or sdd.  This
->> surprises me, because I understood that a btrfs RAID1
 
-It's normal and recognized to be sub-optimal. So it's an optimization
-opportunity. :-)
+No RAID1 implementation reads from disks in a round-robin fashion, as that
+would give terrible performance giving disks a constant seek load instead of
+the normal linear read scenario.
 
-I see parallelization of reads and writes to data single profile
-multiple devices as useful also, similar to XFS allocation group
-parallelization. Those AGs are spread across multiple devices in
-md/lvm linear layouts, so if you have processes that read/write to
-multiple AGs at a time, those I/Os happen at the same time when on
-separate devices.
+As for reading at the same time, there's no reason to do that either, since
+the data integrity is protected by checksums, and "the other" disk for a
+particular data piece is being consulted only in case the checksum did not
+match (or when you execute a 'scrub').
 
+It's a known limitation that the disks are in effect "pinned" to running
+processes, based on their process ID. One process reads from the same disk,
+from the point it started and until it terminates. Other processes by luck =
+may
+read from a different disk, thus achieving load balancing. Or they may not,
+and you will have contention with the other disk idling. This is unlike MD
+RAID1, which knows to distribute read load dynamically to the least-utilized
+array members.
 
--- 
-Chris Murphy
+Now if you want to do some more performance evaluation, check with your dst=
+at
+if both disks happen to *write* data in parallel, when you write to the arr=
+ay,
+as ideally they should. Last I checked they mostly didn't, and this almost
+halved write performance on a Btrfs RAID1 compared to a single disk.
+
+--=20
+With respect,
+Roman
+
+--Sig_/jfnEfMC+b5gkQegp.OZ9KWg
+Content-Type: application/pgp-signature
+Content-Description: OpenPGP digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2
+
+iEYEARECAAYFAlbgl14ACgkQTLKSvz+PZwjTRACfecVUUgypfECOgEJps+bUWdP1
+sO4An1vn5x9HMrm9Onpipo+9Jp9Kt42S
+=5lD4
+-----END PGP SIGNATURE-----
+
+--Sig_/jfnEfMC+b5gkQegp.OZ9KWg--

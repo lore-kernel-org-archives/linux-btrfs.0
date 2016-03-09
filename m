@@ -1,49 +1,86 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from magic.merlins.org ([209.81.13.136]:48547 "EHLO
-	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S933155AbcCIVpa (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 9 Mar 2016 16:45:30 -0500
-Date: Wed, 9 Mar 2016 13:45:27 -0800
-From: Marc MERLIN <marc@merlins.org>
-To: Chris Murphy <lists@colorremedies.com>
-Cc: Tobias Hunger <tobias.hunger@gmail.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Subject: Re: btrfs and containers
-Message-ID: <20160309214527.GH14112@merlins.org>
-References: <CAMdWP3G9uaTcbDWE68LYd17sf8-j11Aqo+ACRrZFFGdB995gSQ@mail.gmail.com>
- <20160309211004.GK27437@merlins.org>
- <CAJCQCtRDGvxgktjQ8zduHAxh=6TvNsnEa9tz75NUvsj-SwsJ9A@mail.gmail.com>
+Received: from smtprelay06.ispgateway.de ([80.67.31.96]:38367 "EHLO
+	smtprelay06.ispgateway.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750872AbcCIVqO (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 9 Mar 2016 16:46:14 -0500
+Received: from dslb-092-077-111-077.092.077.pools.vodafone-ip.de ([92.77.111.77] helo=[127.0.0.1])
+	by smtprelay06.ispgateway.de with esmtpsa (TLSv1.2:DHE-RSA-AES128-SHA:128)
+	(Exim 4.84)
+	(envelope-from <hendrik@friedels.name>)
+	id 1adlvm-0004OX-Sj
+	for linux-btrfs@vger.kernel.org; Wed, 09 Mar 2016 22:46:10 +0100
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+From: Hendrik Friedel <hendrik@friedels.name>
+Subject: How to move a btrfs volume to a smaller disk
+Message-ID: <56E099A1.8040506@friedels.name>
+Date: Wed, 9 Mar 2016 22:46:09 +0100
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CAJCQCtRDGvxgktjQ8zduHAxh=6TvNsnEa9tz75NUvsj-SwsJ9A@mail.gmail.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Mar 09, 2016 at 02:21:26PM -0700, Chris Murphy wrote:
-> > I have a very stripped down docker image that actually mounts portion of
-> > of my root filesystem read only.
-> > While it's running out of a btrfs filesystem, you can't run btrfs
-> > commands against it:
-> > 05233e5c91f0:/# btrfs fi show
-> > 05233e5c91f0:/# btrfs subvol list /
-> > ERROR: can't perform the search - Operation not permitted
-> > 05233e5c91f0:/# btrfs subvol list .
-> > ERROR: can't perform the search - Operation not permitted
-> >
-> > I didn't do anything special, it's just working that way.
-> 
-> Yep, you're not using --privileged in which case you can't list
-> things. But I'm not sure what the equivalent is off hand with
-> systemd-nspawn containers, I think those may always be privileged?
+Hello,
 
-Ok, cool. I just used docker out of the box, glad to know it errs on
-the secure side by default.
-(and I don't have systemd, so that may also help me there)
+I intend to move this subvolume to a new device.
+btrfs fi show /mnt2/Data_Store/
+Label: 'Data_Store'  uuid: 0ccc1e24-090d-42e2-9e61-d0a1b3101f93
+         Total devices 1 FS bytes used 47.93GiB
+         devid    1 size 102.94GiB used 76.03GiB path /dev/sdb4
 
-Thanks,
-Marc
--- 
-"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
-Microsoft is to operating systems ....
-                                      .... what McDonalds is to gourmet cooking
-Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901
+(fi usage at the bottom of this message)
+
+The new device (sda4) is 8G smaller unfortunately.
+sda       8:0    0 111.8G  0 disk
+└─sda4    8:4    0 103.5G  0 part
+sdb       8:16   0 119.2G  0 disk
+└─sdb4    8:20   0   111G  0 part  /mnt2/Data_Store
+
+Thus, btrfs replace does not work
+
+What would you suggest now to move the FS (it does contain many subvolumes)?
+
+I tried btrfs send /mnt2/Data_Store/read_only_snapshot/ | btrfs receive 
+/mnt/sda4/
+but this only created an empty subvolume /mnt/sda4/read_only_snapshot/
+
+So, then
+btrfs device add /dev/sda4 /mnt/Data_Store
+btrfs balance start /mnt/Data_Store
+btrfs device remove /dev/sdb4 /mnt/Data_Store
+?
+
+Or is there a better option?
+
+Regards,
+Hendrik
+
+
+  btrfs fi usage  /mnt2/Data_Store/
+Overall:
+     Device size:                 102.94GiB
+     Device allocated:             74.03GiB
+     Device unallocated:           28.91GiB
+     Device missing:                  0.00B
+     Used:                         47.96GiB
+     Free (estimated):             53.24GiB      (min: 53.24GiB)
+     Data ratio:                       1.00
+     Metadata ratio:                   1.00
+     Global reserve:              512.00MiB      (used: 0.00B)
+
+Data,single: Size:69.00GiB, Used:44.67GiB
+    /dev/sdb4      69.00GiB
+
+Metadata,single: Size:5.00GiB, Used:3.29GiB
+    /dev/sdb4       5.00GiB
+
+System,single: Size:32.00MiB, Used:16.00KiB
+    /dev/sdb4      32.00MiB
+
+Unallocated:
+    /dev/sdb4      28.91GiB
+
+
+---
+Diese E-Mail wurde von Avast Antivirus-Software auf Viren geprüft.
+https://www.avast.com/antivirus
+

@@ -1,73 +1,55 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:38143 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S934359AbcCKISP (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 11 Mar 2016 03:18:15 -0500
-Subject: Re: [PATCH 00/15] Device delete by id
-To: dsterba@suse.cz, David Sterba <dsterba@suse.com>,
-        linux-btrfs@vger.kernel.org, clm@fb.com
-References: <cover.1455556900.git.dsterba@suse.com>
- <20160225175905.GJ23746@twin.jikos.cz>
+Received: from aserp1040.oracle.com ([141.146.126.69]:50605 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751773AbcCIJyx (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 9 Mar 2016 04:54:53 -0500
+Subject: Re: [PATCH 13/13] btrfs: optimize check for stale device
+To: dsterba@suse.cz, linux-btrfs@vger.kernel.org
+References: <1455328900-1476-1-git-send-email-anand.jain@oracle.com>
+ <1455328900-1476-14-git-send-email-anand.jain@oracle.com>
+ <20160218151348.GY4374@twin.jikos.cz>
 From: Anand Jain <anand.jain@oracle.com>
-Message-ID: <56E27EF8.1080408@oracle.com>
-Date: Fri, 11 Mar 2016 16:16:56 +0800
+Message-ID: <56DFF2E6.4020300@oracle.com>
+Date: Wed, 9 Mar 2016 17:54:47 +0800
 MIME-Version: 1.0
-In-Reply-To: <20160225175905.GJ23746@twin.jikos.cz>
+In-Reply-To: <20160218151348.GY4374@twin.jikos.cz>
 Content-Type: text/plain; charset=windows-1252; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
 
-On 02/26/2016 01:59 AM, David Sterba wrote:
-> On Mon, Feb 15, 2016 at 06:33:56PM +0100, David Sterba wrote:
->> this patchset extends the ioctl arugments to take an id so we can delete a
->> device by it. It reuses the existing structure btrfs_ioctl_vol_args_v2 and
->> extends it in na backward-compatible way so that we don't need to introduce
->> another one.
->>
->> The core patchset is from Anand, I did some cleanups as I went through the
->> series again and made some cleanups and minor naming tweaks to the interface.
->>
->> I'll add the branch to for-next and if everything goes fine I'll send a pull
->> request for 4.6 in a week.
+Dave,
+
+> I see crashes with btrfs/011 on a non-debugging config
 >
-> This patchset is causing crashes in my setup, based on linux-next tree
-> with my for-next. I did a test round without it and it passes, so I'm
-> removing it from 4.6 queue. We need more time to find and fix it.
+> [  641.714363] BUG: unable to handle kernel NULL pointer dereference at 0000000000000068
+> [  641.716057] IP: [<ffffffffa0152eb6>] scrub_setup_ctx.isra.19+0x1f6/0x260 [btrfs]
+::
+> [  641.744599] Call Trace:
+> [  641.745553]  [<ffffffffa01566fd>] btrfs_scrub_dev+0x13d/0x510 [btrfs]
+> [  641.746894]  [<ffffffffa0169ca9>] btrfs_dev_replace_start+0x279/0x3f0 [btrfs]
+> [  641.748282]  [<ffffffffa0132839>] btrfs_ioctl+0x1869/0x2070 [btrfs]
+> [  641.749587]  [<ffffffff8106d553>] ? pte_alloc_one+0x33/0x40
+> [  641.750850]  [<ffffffff81222516>] do_vfs_ioctl+0x96/0x590
+> [  641.752128]  [<ffffffff810682d1>] ? __do_page_fault+0x181/0x450
+> [  641.753432]  [<ffffffff81222a89>] SyS_ioctl+0x79/0x90
+> [  641.754663]  [<ffffffff816d4336>] entry_SYSCALL_64_fastpath+0x1e/0xa8
+> [  641.756037] Code: 00 48 c7 c2 38 56 19 a0 48 c7 c6 a8 c5 17 a0 e8 21 39 f7 e0 45 85 ed 48 c7 83 68 02 00 00 00 00 00 00 48 89 d8 0f 84 03 ff ff ff <49> 83 7c 24 68 00 74 40 c7 83 78 02 00 00 20 00 00 00 4c 89 a3
+> [  641.760392] RIP  [<ffffffffa0152eb6>] scrub_setup_ctx.isra.19+0x1f6/0x260 [btrfs]
+> [  641.761970]  RSP <ffff880071d13ce8>
+> [  641.763190] CR2: 0000000000000068
+> [  641.767218] ---[ end trace f46d4e6a90bda310 ]---
+>
+> the dereference happens at offset 0x68 which matches bdev in
+> btrfs_device, so this patch is my best guess at the moment. I'm not able
+> to reproduce it directly so I need to wait for a rebuild and repeat.
 
-  (crash.. are you ref to the below ?)
-  BUG: unable to handle kernel NULL pointer dereference
-  scrub_setup_ctx.isra.19+0x1f6/0x260 [btrfs]
 
-  Current status: as of now there is nothing that tells me the
-  above crash was due to the set of patches in here, if there
-  are further data I will be happy to review, also this wasn't
-  reproducible.
+  As of now,
+  There is nothing that tells me the above crash is due to this patch.
 
-
-  Also:
-  Most of the xfstest btrfs/tests aren't designed to generate a
-  consistent result, it can be consistent with a sequence of tests,
-  but when this sequence of tests is altered, it may generate
-  different results.
-
-  As xfstest results also depends on the factors like state of
-  stale FSID on the devices and state of btrfs_device list with
-  in the kernel, which depends on the previous tests.
-
-  And looks like following changes can make it consistent.
-    Before each test/sub-test:
-    . wipefs -a of all scratch pool dev
-    . modprobe -r btrfs && modprobe btrfs
-  So that kernel will have a clean state of btrfs_device list.
-
-  Which means all the btrfs tests especially which are grouped
-  under replace should be updated with the above change, So that
-  we can ensure kernel and devices are in the same state each
-  time the test is run.
-
-  Any idea?
+  By any chance were you running multiple instance of fstests ? If that's
+  possible ?
 
 Thanks, Anand

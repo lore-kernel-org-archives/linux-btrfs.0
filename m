@@ -1,54 +1,59 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f178.google.com ([209.85.213.178]:35013 "EHLO
-	mail-ig0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932504AbcCIVV1 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 9 Mar 2016 16:21:27 -0500
-Received: by mail-ig0-f178.google.com with SMTP id vf5so2340140igb.0
-        for <linux-btrfs@vger.kernel.org>; Wed, 09 Mar 2016 13:21:27 -0800 (PST)
+Received: from mail-io0-f182.google.com ([209.85.223.182]:36579 "EHLO
+	mail-io0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752040AbcCIV00 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 9 Mar 2016 16:26:26 -0500
+Received: by mail-io0-f182.google.com with SMTP id z76so82428244iof.3
+        for <linux-btrfs@vger.kernel.org>; Wed, 09 Mar 2016 13:26:25 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <20160309211004.GK27437@merlins.org>
-References: <CAMdWP3G9uaTcbDWE68LYd17sf8-j11Aqo+ACRrZFFGdB995gSQ@mail.gmail.com>
-	<20160309211004.GK27437@merlins.org>
-Date: Wed, 9 Mar 2016 14:21:26 -0700
-Message-ID: <CAJCQCtRDGvxgktjQ8zduHAxh=6TvNsnEa9tz75NUvsj-SwsJ9A@mail.gmail.com>
-Subject: Re: btrfs and containers
+In-Reply-To: <CAD=QJKg6xFSFjJdDyD+v0Rd2afeB-ZRRy2SncC1Db5fyT3cf9A@mail.gmail.com>
+References: <CAD=QJKi-3PJQViAaRmGoz3_w6RQbRehDL9vXs14+CSHsG3ipTg@mail.gmail.com>
+	<CAD=QJKg6xFSFjJdDyD+v0Rd2afeB-ZRRy2SncC1Db5fyT3cf9A@mail.gmail.com>
+Date: Wed, 9 Mar 2016 14:26:25 -0700
+Message-ID: <CAJCQCtShrmtnO-d3u+jnFOWqct5QQ0oKErJpDeC+0pw-XiECBA@mail.gmail.com>
+Subject: Re: dstat shows unexpected result for two disk RAID1
 From: Chris Murphy <lists@colorremedies.com>
-To: Marc MERLIN <marc@merlins.org>
-Cc: Tobias Hunger <tobias.hunger@gmail.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+To: Nicholas D Steeves <nsteeves@gmail.com>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Mar 9, 2016 at 2:10 PM, Marc MERLIN <marc@merlins.org> wrote:
-> On Mon, Mar 07, 2016 at 11:55:47PM +0100, Tobias Hunger wrote:
->> Hi,
->>
->> I have been running systemd-nspawn containers on top of a btrfs
->> filesystem for a while now.
->>
->> This works great: Snapshots are a huge help to manage containers!
->>
->> But today I ran btrfs subvol list . *inside* a container. To my
->> surprise I got a list of *all* subvolumes on that drive. That is
->> basically a complete list of containers running on the machine. I do
->> not want to have that kind of information exposed to my containers.
+On Wed, Mar 9, 2016 at 1:25 PM, Nicholas D Steeves <nsteeves@gmail.com> wrote:
+> grr.  Gmail is terrible :-/
 >
-> I have a very stripped down docker image that actually mounts portion of
-> of my root filesystem read only.
-> While it's running out of a btrfs filesystem, you can't run btrfs
-> commands against it:
-> 05233e5c91f0:/# btrfs fi show
-> 05233e5c91f0:/# btrfs subvol list /
-> ERROR: can't perform the search - Operation not permitted
-> 05233e5c91f0:/# btrfs subvol list .
-> ERROR: can't perform the search - Operation not permitted
+> I understood that a btrfs RAID1 would at best grab one block from sdb
+> and then one block from sdd in round-robin fashion, or at worse grab
+> one chunk from sdb and then one chunk from sdd.  Alternatively I
+> thought that it might read from both simultaneously, to make sure that
+> all data matches, while at the same time providing single-disk
+> performance.  None of these was the case.  Running a single
+> IO-intensive process reads from a single drive.
 >
-> I didn't do anything special, it's just working that way.
+> Did I misunderstand the documentation and is this normal, or is this a bug?
+> Nicholas
+>
+> On 9 March 2016 at 15:21, Nicholas D Steeves <nsteeves@gmail.com> wrote:
+>> Hello everyone,
+>>
+>> I've run into an expected behaviour for a my two disk RAID1.  I mount
+>> with UUIDs, because sometimes my USB disk gets /dev/sdc instead of
+>> /dev/sdd.  The two elements of my RAID1 are currently sdb and sdd.
+>>
+>> dstat -tdD total,sdb,sdc,sdd
+>>
+>> It seems that per process, reads come from either sdb or sdd.  This
+>> surprises me, because I understood that a btrfs RAID1
 
-Yep, you're not using --privileged in which case you can't list
-things. But I'm not sure what the equivalent is off hand with
-systemd-nspawn containers, I think those may always be privileged?
+It's normal and recognized to be sub-optimal. So it's an optimization
+opportunity. :-)
+
+I see parallelization of reads and writes to data single profile
+multiple devices as useful also, similar to XFS allocation group
+parallelization. Those AGs are spread across multiple devices in
+md/lvm linear layouts, so if you have processes that read/write to
+multiple AGs at a time, those I/Os happen at the same time when on
+separate devices.
 
 
 -- 

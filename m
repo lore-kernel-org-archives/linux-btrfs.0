@@ -1,112 +1,35 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mgwkm01.jp.fujitsu.com ([202.219.69.168]:47088 "EHLO
-	mgwkm01.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751451AbcCIIYc (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 9 Mar 2016 03:24:32 -0500
-Received: from m3051.s.css.fujitsu.com (m3051.s.css.fujitsu.com [10.134.21.209])
-	by kw-mxq.gw.nic.fujitsu.com (Postfix) with ESMTP id 95C0FAC0123
-	for <linux-btrfs@vger.kernel.org>; Wed,  9 Mar 2016 17:24:28 +0900 (JST)
-Subject: Re: [PATCH] Fix broken 'device scan' arguments parsing
-To: Yauhen Kharuzhy <yauhen.kharuzhy@zavadatar.com>,
-        linux-btrfs@vger.kernel.org
-References: <1457486380-4051-1-git-send-email-yauhen.kharuzhy@zavadatar.com>
-From: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
-Message-ID: <56DFDDB0.5090207@jp.fujitsu.com>
-Date: Wed, 9 Mar 2016 17:24:16 +0900
+Received: from mx2.suse.de ([195.135.220.15]:42592 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752712AbcCINEF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 9 Mar 2016 08:04:05 -0500
+Date: Wed, 9 Mar 2016 14:03:44 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs-progs: util: Fix a wrong unit of pretty_size
+Message-ID: <20160309130344.GC738@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1457489455-9685-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-In-Reply-To: <1457486380-4051-1-git-send-email-yauhen.kharuzhy@zavadatar.com>
-Content-Type: text/plain; charset=iso-2022-jp
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1457489455-9685-1-git-send-email-quwenruo@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2016/03/09 10:19, Yauhen Kharuzhy wrote:
-> commit 52179e4fea41e55f31c92cd033a0b53a5107b4f4 'btrfs-progs: unify argc
-> min/max checking' brokes 'btrfs device scan' command when no argument
-> was given. Fix this.
+On Wed, Mar 09, 2016 at 10:10:55AM +0800, Qu Wenruo wrote:
+> If parameter for pretty_size is smaller than default base(1024),
+> pretty_size() will output wrong unit.
+> For example, pretty_size(1008) will output '0.98B' not '1008B' or
+> '0.98KiB'.
 > 
-> Signed-off-by: Yauhen Kharuzhy <yauhen.kharuzhy@zavadatar.com>
-> ---
->   cmds-device.c | 2 +-
->   1 file changed, 1 insertion(+), 1 deletion(-)
+> The cause is, for default base and auto-detect unit, base will be 1024
+> but num_divs is still 0, last result will still be divided by base,
+> causing the bug.
 > 
-> diff --git a/cmds-device.c b/cmds-device.c
-> index cb470af..94ffdc5 100644
-> --- a/cmds-device.c
-> +++ b/cmds-device.c
-> @@ -273,7 +273,7 @@ static int cmd_device_scan(int argc, char **argv)
->   	if (all && check_argc_max(argc - optind, 1))
-
-It's better to the above line as follows.
-
-========
-	if (all && check_argc_exact(argc - optind, 0))
-========
-
->   		usage(cmd_device_scan_usage);
->   
-> -	if (all || argc - optind == 1) {
-> +	if (all || argc - optind == 0) {
->   		printf("Scanning for Btrfs filesystems\n");
->   		ret = btrfs_scan_lblkid();
->   		error_on(ret, "error %d while scanning", ret);
+> Fix it by checking num_divs in default case, and if num_divs is 0,
+> change base to 1.
 > 
+> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 
-Here is the test result.
-
-* v4.4.1
-
-======================
-# ./btrfs device scan
-Scanning for Btrfs filesystems
-# ./btrfs device scan -d
-Scanning for Btrfs filesystems
-# ./btrfs device scan -d foo
-btrfs device scan: too many arguments
-usage: btrfs device scan [(-d|--all-devices)|<device> [<device>...]]
-
-    Scan devices for a btrfs filesystem
-
-     -d|--all-devices (deprecated)
-
-==========================
-
-* devel branch with this patch.
-
-==========================
-# ./btrfs device scan
-Scanning for Btrfs filesystems
-# ./btrfs device scan -d
-Scanning for Btrfs filesystems
-# ./btrfs device scan -d foo
-Scanning for Btrfs filesystems
-===========================
-
-* devel branch without this patch.
-
-==================
-# ./btrfs device scan
-# ./btrfs device scan -d
-Scanning for Btrfs filesystems
-# ./btrfs device scan -d foo
-Scanning for Btrfs filesystems
-===================
-
-* devel branch with this patch and my patch.
-
-=========================
-# ./btrfs device scan
-Scanning for Btrfs filesystems
-# ./btrfs device scan -d
-Scanning for Btrfs filesystems
-# ./btrfs device scan -d foo
-btrfs device scan: too many arguments
-usage: btrfs device scan [(-d|--all-devices)|<device> [<device>...]]
-
-    Scan devices for a btrfs filesystem
-
-     -d|--all-devices (deprecated)
-
-===========================
-
-Thanks,
-Satoru
+Applied, thanks.

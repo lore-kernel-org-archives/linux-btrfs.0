@@ -1,27 +1,28 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:46401 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:47373 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S932075AbcCINfp (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 9 Mar 2016 08:35:45 -0500
-Date: Wed, 9 Mar 2016 14:35:24 +0100
+	id S1753608AbcCINnM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 9 Mar 2016 08:43:12 -0500
+Date: Wed, 9 Mar 2016 14:42:51 +0100
 From: David Sterba <dsterba@suse.cz>
-To: Yauhen Kharuzhy <yauhen.kharuzhy@zavadatar.com>
+To: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
 Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Fix broken 'device scan' arguments parsing
-Message-ID: <20160309133524.GE738@twin.jikos.cz>
+Subject: Re: [PATCH] btrfs-progs: Add new option for specify chunk root bytenr
+Message-ID: <20160309134251.GF738@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <1457486380-4051-1-git-send-email-yauhen.kharuzhy@zavadatar.com>
+References: <1457326661-9646-1-git-send-email-lufq.fnst@cn.fujitsu.com>
+ <1457326661-9646-2-git-send-email-lufq.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1457486380-4051-1-git-send-email-yauhen.kharuzhy@zavadatar.com>
+In-Reply-To: <1457326661-9646-2-git-send-email-lufq.fnst@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Mar 08, 2016 at 05:19:40PM -0800, Yauhen Kharuzhy wrote:
-> commit 52179e4fea41e55f31c92cd033a0b53a5107b4f4 'btrfs-progs: unify argc
-> min/max checking' brokes 'btrfs device scan' command when no argument
-> was given. Fix this.
-> 
-> Signed-off-by: Yauhen Kharuzhy <yauhen.kharuzhy@zavadatar.com>
+On Mon, Mar 07, 2016 at 12:57:41PM +0800, Lu Fengqi wrote:
+> Add new btrfsck option, '--chunk-root', to specify chunk root bytenr.And
+> allow open_ctree_fs_info() function accept chunk_root_bytenr to override
+> the bytenr in superblock.This will be mainly used when chunk tree
+> corruption.
 
-Applied, thanks.
+Good idea. I'll remove the short option for now as this does not seem to
+be frequently needed, we can reserve -c for something else.

@@ -1,47 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f181.google.com ([209.85.223.181]:36857 "EHLO
-	mail-io0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750705AbcCJFBW (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 10 Mar 2016 00:01:22 -0500
-Received: by mail-io0-f181.google.com with SMTP id z76so92960909iof.3
-        for <linux-btrfs@vger.kernel.org>; Wed, 09 Mar 2016 21:01:21 -0800 (PST)
-MIME-Version: 1.0
-In-Reply-To: <pan$9dde$acf9ba51$bb837cb8$8c954a04@cox.net>
+Received: from plane.gmane.org ([80.91.229.3]:43246 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751711AbcCJIKu (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 10 Mar 2016 03:10:50 -0500
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+	id 1advg6-0006hE-EU
+	for linux-btrfs@vger.kernel.org; Thu, 10 Mar 2016 09:10:38 +0100
+Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Thu, 10 Mar 2016 09:10:38 +0100
+Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Thu, 10 Mar 2016 09:10:38 +0100
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: dstat shows unexpected result for two disk RAID1
+Date: Thu, 10 Mar 2016 08:10:33 +0000 (UTC)
+Message-ID: <pan$8ef9e$1a5c729d$235b0083$a170814e@cox.net>
 References: <CAD=QJKi-3PJQViAaRmGoz3_w6RQbRehDL9vXs14+CSHsG3ipTg@mail.gmail.com>
 	<CAD=QJKg6xFSFjJdDyD+v0Rd2afeB-ZRRy2SncC1Db5fyT3cf9A@mail.gmail.com>
 	<20160310023627.2e915667@natsu>
 	<pan$9dde$acf9ba51$bb837cb8$8c954a04@cox.net>
-Date: Wed, 9 Mar 2016 22:01:21 -0700
-Message-ID: <CAJCQCtRXEcCJQdSLYfRXrU992jn8VPuGTFpSetaANHkES0Q+7g@mail.gmail.com>
-Subject: Re: dstat shows unexpected result for two disk RAID1
-From: Chris Murphy <lists@colorremedies.com>
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+	<CAJCQCtRXEcCJQdSLYfRXrU992jn8VPuGTFpSetaANHkES0Q+7g@mail.gmail.com>
+Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Mar 9, 2016 at 9:06 PM, Duncan <1i5t5.duncan@cox.net> wrote:
+Chris Murphy posted on Wed, 09 Mar 2016 22:01:21 -0700 as excerpted:
 
-> Tho hopefully all the really tough problems they would have hit with N-
-> way-mirroring were hit and resolved with raid56, and N-way-mirroring will
-> thus be relatively simple, so hopefully it's less than the four years
-> it's taking raid56.  But I don't expect to see it for another year or
-> two, and don't expect to be actually use it as intended (as a more
-> failure resistant raid1) for some time after that as the bugs get worked
-> out, so realistically, 2-3 years.
->
-> If multi-device scheduling optimization is done in say 6 months after
-> that... that means we're looking at 2.5-3.5 years, perhaps longer, for
-> it.  So it's a known issue, yes, and on the roadmap, yes, but don't
-> expect to see anything in the near (-2-year) future, more like
-> intermediate (3-5) year future.  In all honesty I don't seriously expect
-> it to be long-term future, beyond 5 years, but it's possible.
+> Meh, encryption RFC patches arrived 8 days ago and I wasn't expecting
+> that to happen for a couple years. So I think our expectations have
+> almost no bearing on feature or fix arrival. For all we know n-way could
+> appear in 4.6.
 
-Meh, encryption RFC patches arrived 8 days ago and I wasn't expecting
-that to happen for a couple years. So I think our expectations have
-almost no bearing on feature or fix arrival. For all we know n-way
-could appear in 4.6.
+The crypto rfc patches were out of left field for me as well.
+
+But if n-way does show up effectively "tomorrow" (as it would need to, to 
+hit 4.6), I'd suspect someone with some money to spend prioritized it, 
+much as I suspect that's what happened with the crypto patches.
+
+Call me a conspiracy nut, but don't be too surprised if someone's 
+introducing some product with btrfs and encrypted subvolumes a year or 18 
+months from now...  I know I won't be! =:^)
 
 -- 
-Chris Murphy
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

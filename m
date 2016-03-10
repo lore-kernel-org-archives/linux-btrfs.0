@@ -1,62 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:46989 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S933486AbcCKD2F (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 10 Mar 2016 22:28:05 -0500
-Message-ID: <56E236B5.9000807@cn.fujitsu.com>
-Date: Fri, 11 Mar 2016 11:08:37 +0800
-From: Xiaoguang Wang <wangxg.fnst@cn.fujitsu.com>
+Received: from mx2.suse.de ([195.135.220.15]:43849 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751484AbcCJN2F (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 10 Mar 2016 08:28:05 -0500
+Date: Thu, 10 Mar 2016 14:27:44 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH 1/2] btrfs-progs: Remove unnecessary variable devstart
+ from cmd_device_scan()
+Message-ID: <20160310132744.GG18908@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <56E0AC1B.3020405@jp.fujitsu.com>
 MIME-Version: 1.0
-To: <dsterba@suse.cz>, <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] btrfs-progs: btrfs-debug-tree: show the compression method
- string
-References: <1457599239-5512-1-git-send-email-wangxg.fnst@cn.fujitsu.com> <20160310132303.GF18908@twin.jikos.cz>
-In-Reply-To: <20160310132303.GF18908@twin.jikos.cz>
-Content-Type: text/plain; charset="ISO-8859-1"
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <56E0AC1B.3020405@jp.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-hello,
-
-On 03/10/2016 09:23 PM, David Sterba wrote:
-> On Thu, Mar 10, 2016 at 04:40:39PM +0800, Xiaoguang Wang wrote:
->> From: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
->>
->> Signed-off-by: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
->> ---
->>  print-tree.c | 22 ++++++++++++++++++----
->>  1 file changed, 18 insertions(+), 4 deletions(-)
->>
->> diff --git a/print-tree.c b/print-tree.c
->> index 53a6813..5727cb9 100644
->> --- a/print-tree.c
->> +++ b/print-tree.c
->> @@ -286,6 +286,20 @@ static void print_uuids(struct extent_buffer *eb)
->>  	printf("fs uuid %s\nchunk uuid %s\n", fs_uuid, chunk_uuid);
->>  }
->>  
->> +static char *compress_flags_to_str(u8 flag)
->> +{
->> +	switch (flag) {
->> +	case BTRFS_COMPRESS_NONE:
->> +		return "none";
->> +	case BTRFS_COMPRESS_ZLIB:
->> +		return "zlib";
->> +	case BTRFS_COMPRESS_LZO:
->> +		return "lzo";
->> +	default:
->> +		return "UNKNOWN";
+On Thu, Mar 10, 2016 at 08:04:59AM +0900, Satoru Takeuchi wrote:
+> It's unnecessary since it's always 1.
 > 
-> would be good to print the actual value
-OK, new version will be sent soon.
-
-Regards,
-Xiaoguang Wang
-
+> Signed-off-by: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
+> ---
+> This patch can be applied to devel (commit b2bdd0da8969).
+> ---
+>  cmds-device.c | 3 +--
+>  1 file changed, 1 insertion(+), 2 deletions(-)
 > 
+> diff --git a/cmds-device.c b/cmds-device.c
+> index cb470af..78d6535 100644
+> --- a/cmds-device.c
+> +++ b/cmds-device.c
+> @@ -246,7 +246,6 @@ static const char * const cmd_device_scan_usage[] = {
+>  static int cmd_device_scan(int argc, char **argv)
+>  {
+>  	int i;
+> -	int devstart = 1;
+>  	int all = 0;
+>  	int ret = 0;
 > 
+> @@ -282,7 +281,7 @@ static int cmd_device_scan(int argc, char **argv)
+>  		goto out;
+>  	}
 > 
+> -	for( i = devstart ; i < argc ; i++ ){
+> +	for (i = 1; i < argc; i++) {
 
+Actually it needs to be set to optind before the for cycle, otherwise:
 
-
+  # btrfs device scan -- /dev/sda
+  ERROR: not a block device: --

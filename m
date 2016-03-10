@@ -1,104 +1,139 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:58339 "EHLO plane.gmane.org"
+Received: from plane.gmane.org ([80.91.229.3]:35525 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754376AbcCJCzm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 9 Mar 2016 21:55:42 -0500
+	id S933173AbcCJEG5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 9 Mar 2016 23:06:57 -0500
 Received: from list by plane.gmane.org with local (Exim 4.69)
 	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1adqlH-0004VR-W4
-	for linux-btrfs@vger.kernel.org; Thu, 10 Mar 2016 03:55:40 +0100
+	id 1adrsE-0003wI-AO
+	for linux-btrfs@vger.kernel.org; Thu, 10 Mar 2016 05:06:54 +0100
 Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
         by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 10 Mar 2016 03:55:39 +0100
+        for <linux-btrfs@vger.kernel.org>; Thu, 10 Mar 2016 05:06:54 +0100
 Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 10 Mar 2016 03:55:39 +0100
+        for <linux-btrfs@vger.kernel.org>; Thu, 10 Mar 2016 05:06:54 +0100
 To: linux-btrfs@vger.kernel.org
 From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: btrfs and containers
-Date: Thu, 10 Mar 2016 02:55:33 +0000 (UTC)
-Message-ID: <pan$389e0$596a4ce9$6594c4ff$3be23a55@cox.net>
-References: <CAMdWP3G9uaTcbDWE68LYd17sf8-j11Aqo+ACRrZFFGdB995gSQ@mail.gmail.com>
-	<CAJCQCtSPEY1c-=GTJwH3-qRNxGCEsd0bVu9A_srdFt03bX7BcQ@mail.gmail.com>
-	<20160308195857.GB26981@localhost.localdomain>
-	<CAJCQCtSp5B=nnpCs3zaCsMK+8qLNLzYQAqka5P1X+a+R4RzGOQ@mail.gmail.com>
-	<56E013E8.9080401@gmail.com>
+Subject: Re: dstat shows unexpected result for two disk RAID1
+Date: Thu, 10 Mar 2016 04:06:45 +0000 (UTC)
+Message-ID: <pan$9dde$acf9ba51$bb837cb8$8c954a04@cox.net>
+References: <CAD=QJKi-3PJQViAaRmGoz3_w6RQbRehDL9vXs14+CSHsG3ipTg@mail.gmail.com>
+	<CAD=QJKg6xFSFjJdDyD+v0Rd2afeB-ZRRy2SncC1Db5fyT3cf9A@mail.gmail.com>
+	<20160310023627.2e915667@natsu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Austin S. Hemmelgarn posted on Wed, 09 Mar 2016 07:15:36 -0500 as
-excerpted:
+Roman Mamedov posted on Thu, 10 Mar 2016 02:36:27 +0500 as excerpted:
 
-> On 2016-03-08 16:28, Chris Murphy wrote:
-
->> Yes, it's a bit peculiar I can create subvolumes and snapshot them, but
->> can't 'btrfs sub list/show'
->>
->> It's an open question why the user needs a subvolume, but I'm not
->> thinking of a human user necessarily but rather some service, maybe
->> it's httpd. Or maybe with the xdg-app stuff the Gnome folks are working
->> on it makes sense to encapsulate applications and their updates in
->> their own subvolume. *shrug*  I'm open to the idea that the use case
->> needs to be more compelling and detailed in order to get the
->> implementation right.
->>
-> It's probably worth tossing out there that I use them on a regular basis
-> as a normal user (not root or some service) for:
-> 1. Local copies of VCS repositories.
-> 2. Build directories.
-> 3. Staging areas for a variety of things.
-> 4. Specifically isolating certain parts of my home directory from
-> backups.
+> It's a known limitation that the disks are in effect "pinned" to running
+> processes, based on their process ID. One process reads from the same
+> disk, from the point it started and until it terminates. Other processes
+> by luck may read from a different disk, thus achieving load balancing.
+> Or they may not, and you will have contention with the other disk
+> idling. This is unlike MD RAID1, which knows to distribute read load
+> dynamically to the least-utilized array members.
 > 
-> 1-3 are mostly because of the fact that deleting a subvolume is insanely
-> fast compared to recursive deletion of a directory, although 4 is
-> somewhat significant for those as well.
+> Now if you want to do some more performance evaluation, check with your
+> dstat if both disks happen to *write* data in parallel, when you write
+> to the array,
+> as ideally they should. Last I checked they mostly didn't, and this
+> almost halved write performance on a Btrfs RAID1 compared to a single
+> disk.
 
-For #2 and possibly #3, depending on what's being staged and why, tmpfs 
-works well, and deleting should be even faster (AFAIK, subvolume deletion 
-returns immediately but the work continues in the background, so if 
-you're running other IO-bound jobs they'll still be affected even tho the 
-subvolume deletion command has returned... if it's all in memory as is 
-tmpfs, that problem's eliminated too), tho of course you need enough 
-memory so that tmpfs doesn't trigger swap-thrashing.
+As stated, at present btrfs mostly handles devices (I've made it a 
+personal point to try not to say disks, because SSD, etc, unless it's 
+/specific/ /to/ spinning rust, but device remains correct) one at a time 
+per task.
 
-But #1 and #4 of course don't work as well on tmpfs as you'll likely want 
-them around longer, and all four cases definitely make use of the the 
-fact that nested subvolumes wall off snapshotting and thus btrfs send, 
-for backup purposes.  And of course if you're on a limited-memory machine 
-and thus can't easily use tmpfs for building and other staging, and don't 
-need to care about the ongoing background IO, using subvolumes for #2 and 
-3 remains useful, as well.
+And for raid1 read in particular, the read scheduler is a very simple 
+even/odd PID based scheduler, implemented early on when simplicity of 
+implementation and easy testing of single-task single-device, multi-task 
+multi-device, and multi-task-bottlenecked-to-single-device, all three 
+scenarios, was of prime consideration, far more so than a speed.  Indeed, 
+at that point, optimization would have been a prime example of "premature 
+optimization", as it would have almost certainly either restricted 
+various later added feature implementation choices later on, or would 
+have needed redone later, once those features and their constraints were 
+known, thus losing the work done in the first optimization.
 
-> In general I can see them being useful for any number of things from a
-> service perspective, although I feel that snapshots are likely more
-> useful there (the ability to atomically save the state of a set of files
-> is extremely useful for a lot of things).
+And in fact, I've pointed out this very fact as a an easily seen example 
+of why btrfs isn't yet fully stable or production ready -- as can be seen 
+in the work of the very developers themselves.  Any developer worth the 
+name will be very wary of the dangers of "premature optimization" and the 
+risk it brings of either severely limiting implementations of further 
+features or having to be good work thrown out because it doesn't match 
+the new code.
 
-I consider the current situation somewhat of a security (DoS) issue, 
-since users (or runaway scripts or malware) can create unlimited 
-subvolumes as an ordinary user, with that user then not being able to 
-delete them, requiring admin intervention to do so.  Of course as long as 
-it's a single-human-user with an admin-rights alter-ego login, it's not 
-/that/ much of a security issue, but I could see it being one for human 
-users who do not have that admin-rights alter-ego login.  So were I to be 
-running in such a situation, I'd probably use the mount option to let the 
-users delete their own subvolumes, unless of course that opens up other 
-security issues I'm not aware of.
+When the devs consider the btrfs code stable enough, they'll optimize 
+this.  Until then, it's prime evidence that they do _not_ consider btrfs 
+stable and mature enough for this sort of optimization just yet. =:^)
 
-IMO before btrfs can really be considered stable, this possible DoS needs 
-resolved by making the list/delete set the exact same as the create set, 
-either by giving users some way to deal with (only) their own subvolumes 
-just as they can their own directories, or by reserving subvolume 
-creation to superuser, because that's what's needed for listing and 
-deletion.  Because if not, I fear someone's going to take advantage of it 
-in some way, perhaps, as with many DoS vulns, using it to deny critical 
-resources as a way to simplify some other more critical attack, and it'll 
-be in the headlines as an attack that worked and a zero-day that still 
-works.
+
+Meanwhile, for quite some time (since at least kernel 3.5 when raid56 was 
+expected in kernel 3.6) on the roadmap for implementation after raid56, 
+is N-way-mirroring -- basically, raid1 the way mdraid does it, so 5 
+devices means 5 mirrors, not the precisely two mirrors of each chunk, 
+with new chunks distributed across the other devices until they've all 
+been used, that we have now (tho it would continue to be an option).
+
+And FWIW, N-way-mirroring is a primary feature interest of mine so I've 
+been following it more closely than much of btrfs development.
+
+Of course the logical raid10 extension of that would be the ability to 
+specify N mirrors and M stripes on raid10 as well, so that for a 6-device 
+raid10, you could choose between the existing two-way-mirroring, three-
+way-striping, and a new three-way-mirroring, two-way-striping, mode, tho 
+I don't know if they'll implement both N-way-mirroring raid1 and N-way-
+mirroring raid10 at the same time, or wait on the latter.
+
+Either way, my point in bringing up N-way-mirroring, is that it has been 
+roadmapped for quite some time, and with it roadmapped, attempting either 
+two-way-only-optimization or N-way-optimization, now, arguably _would_ be 
+premature optimization, because the first would have to be redone for N-
+way once it became available, and there's no way to test that the second 
+actually works beyond two-way, until n-way is actually available.
+
+So I'd guess N-way-read-optimization, with N=2 just one of the 
+possibilities, will come after N-way-mirroring, which in turn has long 
+been roadmapped for after raid56.
+
+Meanwhile, while parity-raid (aka raid56) isn't as bad as it was when 
+first nominally completed in 3.19, as of 4.4 (and I think 4.5 as I've not 
+seen a full trace yet, let alone a fix), there's still at least one known 
+bug remaining to be traced down and exterminated, that's causing at least 
+some raid56 reshapes to different numbers of devices or recovery from a 
+lost device to take at least 10 times as long as they logically should, 
+we're talking times of weeks to months, during which time the array can 
+be used, but if it's a bad device replacement and more devices go down in 
+that time...  So even if it's not an immediate data-loss bug, it's still 
+a blocker in terms of actually using parity-raid for the purposes parity-
+raid is normally used.
+
+So raid56, while nominally complete now (after nearing four /years/ of 
+work, remember, originally it was intended for kernel 3.5 or 3.6), still 
+isn't anything close to stable as the rest of btrfs, and is still 
+requiring developer focus, so it could be awhile before we see that N-way-
+mirroring that was roadmapped after it, which in turn means it'll likely 
+be even longer before we see good raid1 read optimization.
+
+Tho hopefully all the really tough problems they would have hit with N-
+way-mirroring were hit and resolved with raid56, and N-way-mirroring will 
+thus be relatively simple, so hopefully it's less than the four years 
+it's taking raid56.  But I don't expect to see it for another year or 
+two, and don't expect to be actually use it as intended (as a more 
+failure resistant raid1) for some time after that as the bugs get worked 
+out, so realistically, 2-3 years.
+
+If multi-device scheduling optimization is done in say 6 months after 
+that... that means we're looking at 2.5-3.5 years, perhaps longer, for 
+it.  So it's a known issue, yes, and on the roadmap, yes, but don't 
+expect to see anything in the near (-2-year) future, more like 
+intermediate (3-5) year future.  In all honesty I don't seriously expect 
+it to be long-term future, beyond 5 years, but it's possible.
 
 -- 
 Duncan - List replies preferred.   No HTML msgs.

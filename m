@@ -1,54 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:40607 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755089AbcCXKsb (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 24 Mar 2016 06:48:31 -0400
-From: Anand Jain <anand.jain@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.cz
-Subject: [PATCH 2/3] btrfs: keep sysfs target add in the last
-Date: Thu, 24 Mar 2016 18:48:13 +0800
-Message-Id: <1458816494-483-2-git-send-email-anand.jain@oracle.com>
-In-Reply-To: <1458816494-483-1-git-send-email-anand.jain@oracle.com>
-References: <1458816494-483-1-git-send-email-anand.jain@oracle.com>
+Received: from mx2.suse.de ([195.135.220.15]:33082 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1754693AbcCJRlQ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 10 Mar 2016 12:41:16 -0500
+Date: Thu, 10 Mar 2016 18:40:54 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Roman Mamedov <rm@romanrm.net>
+Cc: Chris Murphy <lists@colorremedies.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Subject: Re: [bug] df returns 100% used for empty mixed block group filesystem
+Message-ID: <20160310174054.GL18908@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <CAJCQCtRzt-BeoW9KNQC3kmBXw8MoydJv7Qy8fu0HmF3hAOgFRQ@mail.gmail.com>
+ <20160310133334.1528bc88@natsu>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20160310133334.1528bc88@natsu>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Sysfs create context should come in the last, so that we
-don't have to undo sysfs operation for the reason that any
-other operation has failed.
+On Thu, Mar 10, 2016 at 01:33:34PM +0500, Roman Mamedov wrote:
+> On Thu, 10 Mar 2016 01:24:44 -0700
+> Chris Murphy <lists@colorremedies.com> wrote:
+> 
+> > kernel 4.5.0 rc7
+> > btrfs-progs-4.4.1-1
+> > 
+> > Summary: A new empty mixed block group "-M" filesystem shows up as
+> > 100% full with regular df (gnu coreutils 8.24). Pretty sure this is
+> > not a regression, but no regression testing done.
+> > 
+> > 
+> > https://bugzilla.kernel.org/show_bug.cgi?id=114281
+> 
+> Just guessing here, but this might be related?
+> 
+>   [PATCH] btrfs: statfs: report zero available if metadata are exhausted
+>   http://www.spinics.net/lists/linux-btrfs/msg48013.html
+> 
+> Maybe some maths there are wrong in case of a mixed blockgroup filesystem.
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
----
- fs/btrfs/dev-replace.c | 7 +++----
- 1 file changed, 3 insertions(+), 4 deletions(-)
-
-diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
-index d38cad37ba27..025f42ef5ab3 100644
---- a/fs/btrfs/dev-replace.c
-+++ b/fs/btrfs/dev-replace.c
-@@ -397,10 +397,6 @@ int btrfs_dev_replace_start(struct btrfs_root *root,
- 	args->result = BTRFS_IOCTL_DEV_REPLACE_RESULT_NO_ERROR;
- 	btrfs_dev_replace_unlock(dev_replace, 1);
- 
--	ret = btrfs_sysfs_add_device_link(tgt_device->fs_devices, tgt_device);
--	if (ret)
--		btrfs_err(fs_info, "kobj add dev failed %d\n", ret);
--
- 	btrfs_wait_ordered_roots(fs_info, -1);
- 
- 	/* force writing the updated state information to disk */
-@@ -428,6 +424,9 @@ int btrfs_dev_replace_start(struct btrfs_root *root,
- 		WARN_ON(ret);
- 	}
- 
-+	if (btrfs_sysfs_add_device_link(tgt_device->fs_devices, tgt_device))
-+		btrfs_err(fs_info, "kobj add dev failed during replace\n");
-+
- 	return ret;
- 
- leave:
--- 
-2.7.0
-
+Yes it's caused by the referenced patch.  The statfs has been broken for
+mixed blockgroups but the 100% used on empty filesystem looks weird, so
+it's time to fix the mixed-bg case.

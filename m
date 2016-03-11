@@ -1,262 +1,1128 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from e23smtp01.au.ibm.com ([202.81.31.143]:35030 "EHLO
-	e23smtp01.au.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756299AbcCUQZC (ORCPT
+Received: from mail-wm0-f65.google.com ([74.125.82.65]:34806 "EHLO
+	mail-wm0-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752519AbcCKLuC (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 21 Mar 2016 12:25:02 -0400
-Received: from localhost
-	by e23smtp01.au.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
-	for <linux-btrfs@vger.kernel.org> from <chandan@linux.vnet.ibm.com>;
-	Tue, 22 Mar 2016 02:24:59 +1000
-From: Chandan Rajendra <chandan@linux.vnet.ibm.com>
-To: fstests@vger.kernel.org
-Cc: Chandan Rajendra <chandan@linux.vnet.ibm.com>, linux-btrfs@vger.kernel.org,
-        chandan@mykolab.com, eguan@redhat.com
-Subject: [PATCH V3] _btrfs_stress_subvolume: Fix race condition by making 'subvolume stress' task to exit gracefully
-Date: Mon, 21 Mar 2016 21:54:03 +0530
-Message-Id: <1458577443-2334-1-git-send-email-chandan@linux.vnet.ibm.com>
+	Fri, 11 Mar 2016 06:50:02 -0500
+Received: by mail-wm0-f65.google.com with SMTP id p65so1979689wmp.1
+        for <linux-btrfs@vger.kernel.org>; Fri, 11 Mar 2016 03:50:00 -0800 (PST)
+From: Alexander Fougner <fougner89@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Alexander Fougner <fougner89@gmail.com>
+Subject: [PATCH 1/2] btrfs-progs: copy btrfs-calc-size to inspect-internal tree-stats
+Date: Fri, 11 Mar 2016 12:49:45 +0100
+Message-Id: <1457696986-19287-1-git-send-email-fougner89@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The following scenario can occur when running btrfs/066,
-
-  Task A                                Task B                     Task C
-
-  run_test()
-  - Execute _btrfs_stress_subvolume()
-    in a background shell.
-                                        _btrfs_stress_subvolme()
-                                          ...
-                                        - fork & exec "mount"
-                                               	      		   Mount subvolume on directory in $TEST_DIR
-  - Wait for fsstress to finish                                    do_mount()
-  - kill shell process executing                                   - btrfs_mount()
-    _btrfs_stress_subvolume()
-    i.e. Task B.
-  - Init process becomes the parent
-    of "subvolume mount" task
-    i.e. Task C.
-  - In case subvolume is mounted
-    (which is not the case),
-    unmount it.
-                                                                   - Complete mounting subvolume
-
-Hence on the completion of one iteration of run_test(), the subvolume
-created inside the filesystem on $SCRATCH_DEV continues to be mounted on
-$TEST_DIR/$seq.mnt. Subsequent invocations of run_test() (called for
-remaining Btrfs profile configs) fail during _scratch_pool_mkfs.
-
-Instead of killing the 'subvolume stress' task this commit makes
-_btrfs_stress_subvolume() to break out of the loop when a file exists
-on the filesystem. The commit also makes relevant changes to other
-users of _btrfs_stress_subvolume() i.e. btrfs/060, btrfs/065,
-btrfs/067 & btrfs/068.
-
-Suggested-by: Eryu Guan <eguan@redhat.com>
-Reviewed-by: Eryu Guan <eguan@redhat.com>
-Signed-off-by: Chandan Rajendra <chandan@linux.vnet.ibm.com>
+Signed-off-by: Alexander Fougner <fougner89@gmail.com>
 ---
-Changelog:
+ Makefile.in               |   3 +-
+ btrfs-calc-size.c         | 482 +------------------------------------------
+ cmds-inspect-tree-stats.c | 506 ++++++++++++++++++++++++++++++++++++++++++++++
+ cmds-inspect-tree-stats.h |  26 +++
+ cmds-inspect.c            |   5 +-
+ 5 files changed, 545 insertions(+), 477 deletions(-)
+ create mode 100644 cmds-inspect-tree-stats.c
+ create mode 100644 cmds-inspect-tree-stats.h
 
-V2->V3: Use the correct argument value as the 'stop file' name in
-_btrfs_stress_subvolume(). I had forgotten to pull the changes from my
-github repo and hence had sent out the incorrect patch.
-
-V1->V2: Instead of named pipes, Use a file to let 'subvolume stress' task know
-that it should break from the while loop.
- common/rc       | 3 ++-
- tests/btrfs/060 | 8 ++++++--
- tests/btrfs/065 | 8 ++++++--
- tests/btrfs/066 | 8 ++++++--
- tests/btrfs/067 | 8 ++++++--
- tests/btrfs/068 | 8 ++++++--
- 6 files changed, 32 insertions(+), 11 deletions(-)
-
-diff --git a/common/rc b/common/rc
-index 16f5a43..886625c 100644
---- a/common/rc
-+++ b/common/rc
-@@ -3280,9 +3280,10 @@ _btrfs_stress_subvolume()
- 	local btrfs_mnt=$2
- 	local subvol_name=$3
- 	local subvol_mnt=$4
-+	local stop_file=$5
+diff --git a/Makefile.in b/Makefile.in
+index dd30686..a179a36 100644
+--- a/Makefile.in
++++ b/Makefile.in
+@@ -76,7 +76,7 @@ cmds_objects = cmds-subvolume.o cmds-filesystem.o cmds-device.o cmds-scrub.o \
+ 	       cmds-quota.o cmds-qgroup.o cmds-replace.o cmds-check.o \
+ 	       cmds-restore.o cmds-rescue.o chunk-recover.o super-recover.o \
+ 	       cmds-property.o cmds-fi-usage.o cmds-inspect-dump-tree.o \
+-	       cmds-inspect-dump-super.o cmds-fi-du.o
++	       cmds-inspect-dump-super.o cmds-inspect-tree-stats.o cmds-fi-du.o
+ libbtrfs_objects = send-stream.o send-utils.o rbtree.o btrfs-list.o crc32c.o \
+ 		   uuid-tree.o utils-lib.o rbtree-utils.o
+ libbtrfs_headers = send-stream.h send-utils.h send.h rbtree.h btrfs-list.h \
+@@ -128,6 +128,7 @@ btrfs_convert_libs = @EXT2FS_LIBS@ @COM_ERR_LIBS@
+ btrfs_fragments_libs = -lgd -lpng -ljpeg -lfreetype
+ btrfs_debug_tree_objects = cmds-inspect-dump-tree.o
+ btrfs_show_super_objects = cmds-inspect-dump-super.o
++btrfs_calc_size_objects = cmds-inspect-tree-stats.o
  
- 	mkdir -p $subvol_mnt
--	while true; do
-+	while [ ! -e $stop_file ]; do
- 		$BTRFS_UTIL_PROG subvolume create $btrfs_mnt/$subvol_name
- 		$MOUNT_PROG -o subvol=$subvol_name $btrfs_dev $subvol_mnt
- 		$UMOUNT_PROG $subvol_mnt
-diff --git a/tests/btrfs/060 b/tests/btrfs/060
-index 8ef0e7f..6b6a480 100755
---- a/tests/btrfs/060
-+++ b/tests/btrfs/060
-@@ -56,6 +56,7 @@ run_test()
+ SUBDIRS =
+ BUILDDIRS = $(patsubst %,build-%,$(SUBDIRS))
+diff --git a/btrfs-calc-size.c b/btrfs-calc-size.c
+index 45fb510..2d29901 100644
+--- a/btrfs-calc-size.c
++++ b/btrfs-calc-size.c
+@@ -16,490 +16,22 @@
+  * Boston, MA 021110-1307, USA.
+  */
+ 
+-#include <ctype.h>
+-#include <stdio.h>
+-#include <stdlib.h>
+-#include <unistd.h>
+-#include <fcntl.h>
+-#include <sys/stat.h>
+-#include <sys/time.h>
+-#include <sys/types.h>
+-#include <zlib.h>
+-#include "kerncompat.h"
+-#include "ctree.h"
+-#include "disk-io.h"
+-#include "print-tree.h"
+-#include "transaction.h"
+-#include "list.h"
+ #include "volumes.h"
+ #include "utils.h"
++#include "commands.h"
++#include "cmds-inspect-tree-stats.h"
+ 
+-static int verbose = 0;
+-static int no_pretty = 0;
+-
+-struct seek {
+-	u64 distance;
+-	u64 count;
+-	struct rb_node n;
+-};
+-
+-struct root_stats {
+-	u64 total_nodes;
+-	u64 total_leaves;
+-	u64 total_bytes;
+-	u64 total_inline;
+-	u64 total_seeks;
+-	u64 forward_seeks;
+-	u64 backward_seeks;
+-	u64 total_seek_len;
+-	u64 max_seek_len;
+-	u64 total_clusters;
+-	u64 total_cluster_size;
+-	u64 min_cluster_size;
+-	u64 max_cluster_size;
+-	u64 lowest_bytenr;
+-	u64 highest_bytenr;
+-	struct rb_root seek_root;
+-	int total_levels;
+-};
+-
+-static int add_seek(struct rb_root *root, u64 dist)
+-{
+-	struct rb_node **p = &root->rb_node;
+-	struct rb_node *parent = NULL;
+-	struct seek *seek = NULL;
+-
+-	while (*p) {
+-		parent = *p;
+-		seek = rb_entry(parent, struct seek, n);
+-
+-		if (dist < seek->distance) {
+-			p = &(*p)->rb_left;
+-		} else if (dist > seek->distance) {
+-			p = &(*p)->rb_right;
+-		} else {
+-			seek->count++;
+-			return 0;
+-		}
+-	}
+-
+-	seek = malloc(sizeof(struct seek));
+-	if (!seek)
+-		return -ENOMEM;
+-	seek->distance = dist;
+-	seek->count = 1;
+-	rb_link_node(&seek->n, parent, p);
+-	rb_insert_color(&seek->n, root);
+-	return 0;
+-}
+-
+-static int walk_leaf(struct btrfs_root *root, struct btrfs_path *path,
+-		     struct root_stats *stat, int find_inline)
+-{
+-	struct extent_buffer *b = path->nodes[0];
+-	struct btrfs_file_extent_item *fi;
+-	struct btrfs_key found_key;
+-	int i;
+-
+-	stat->total_bytes += root->leafsize;
+-	stat->total_leaves++;
+-
+-	if (!find_inline)
+-		return 0;
+-
+-	for (i = 0; i < btrfs_header_nritems(b); i++) {
+-		btrfs_item_key_to_cpu(b, &found_key, i);
+-		if (found_key.type != BTRFS_EXTENT_DATA_KEY)
+-			continue;
+-
+-		fi = btrfs_item_ptr(b, i, struct btrfs_file_extent_item);
+-		if (btrfs_file_extent_type(b, fi) == BTRFS_FILE_EXTENT_INLINE)
+-			stat->total_inline +=
+-				btrfs_file_extent_inline_item_len(b,
+-							btrfs_item_nr(i));
+-	}
+-
+-	return 0;
+-}
+-
+-static u64 calc_distance(u64 block1, u64 block2)
+-{
+-	if (block1 < block2)
+-		return block2 - block1;
+-	return block1 - block2;
+-}
+-
+-static int walk_nodes(struct btrfs_root *root, struct btrfs_path *path,
+-		      struct root_stats *stat, int level, int find_inline)
+-{
+-	struct extent_buffer *b = path->nodes[level];
+-	u64 last_block;
+-	u64 cluster_size = root->leafsize;
+-	int i;
+-	int ret = 0;
+-
+-	stat->total_bytes += root->nodesize;
+-	stat->total_nodes++;
+-
+-	last_block = btrfs_header_bytenr(b);
+-	for (i = 0; i < btrfs_header_nritems(b); i++) {
+-		struct extent_buffer *tmp = NULL;
+-		u64 cur_blocknr = btrfs_node_blockptr(b, i);
+-
+-		path->slots[level] = i;
+-		if ((level - 1) > 0 || find_inline) {
+-			tmp = read_tree_block(root, cur_blocknr,
+-					      btrfs_level_size(root, level - 1),
+-					      btrfs_node_ptr_generation(b, i));
+-			if (!extent_buffer_uptodate(tmp)) {
+-				fprintf(stderr, "Failed to read blocknr %Lu\n",
+-					btrfs_node_blockptr(b, i));
+-				continue;
+-			}
+-			path->nodes[level - 1] = tmp;
+-		}
+-		if (level - 1)
+-			ret = walk_nodes(root, path, stat, level - 1,
+-					 find_inline);
+-		else
+-			ret = walk_leaf(root, path, stat, find_inline);
+-		if (last_block + root->leafsize != cur_blocknr) {
+-			u64 distance = calc_distance(last_block +
+-						     root->leafsize,
+-						     cur_blocknr);
+-			stat->total_seeks++;
+-			stat->total_seek_len += distance;
+-			if (stat->max_seek_len < distance)
+-				stat->max_seek_len = distance;
+-			if (add_seek(&stat->seek_root, distance)) {
+-				fprintf(stderr, "Error adding new seek\n");
+-				ret = -ENOMEM;
+-				break;
+-			}
+-
+-			if (last_block < cur_blocknr)
+-				stat->forward_seeks++;
+-			else
+-				stat->backward_seeks++;
+-			if (cluster_size != root->leafsize) {
+-				stat->total_cluster_size += cluster_size;
+-				stat->total_clusters++;
+-				if (cluster_size < stat->min_cluster_size)
+-					stat->min_cluster_size = cluster_size;
+-				if (cluster_size > stat->max_cluster_size)
+-					stat->max_cluster_size = cluster_size;
+-			}
+-			cluster_size = root->leafsize;
+-		} else {
+-			cluster_size += root->leafsize;
+-		}
+-		last_block = cur_blocknr;
+-		if (cur_blocknr < stat->lowest_bytenr)
+-			stat->lowest_bytenr = cur_blocknr;
+-		if (cur_blocknr > stat->highest_bytenr)
+-			stat->highest_bytenr = cur_blocknr;
+-		free_extent_buffer(tmp);
+-		if (ret) {
+-			fprintf(stderr, "Error walking down path\n");
+-			break;
+-		}
+-	}
+-
+-	return ret;
+-}
+-
+-static void print_seek_histogram(struct root_stats *stat)
+-{
+-	struct rb_node *n = rb_first(&stat->seek_root);
+-	struct seek *seek;
+-	u64 tick_interval;
+-	u64 group_start = 0;
+-	u64 group_count = 0;
+-	u64 group_end = 0;
+-	u64 i;
+-	u64 max_seek = stat->max_seek_len;
+-	int digits = 1;
+-
+-	if (stat->total_seeks < 20)
+-		return;
+-
+-	while ((max_seek /= 10))
+-		digits++;
+-
+-	/* Make a tick count as 5% of the total seeks */
+-	tick_interval = stat->total_seeks / 20;
+-	printf("\tSeek histogram\n");
+-	for (; n; n = rb_next(n)) {
+-		u64 ticks, gticks = 0;
+-
+-		seek = rb_entry(n, struct seek, n);
+-		ticks = seek->count / tick_interval;
+-		if (group_count)
+-			gticks = group_count / tick_interval;
+-
+-		if (ticks <= 2 && gticks <= 2) {
+-			if (group_count == 0)
+-				group_start = seek->distance;
+-			group_end = seek->distance;
+-			group_count += seek->count;
+-			continue;
+-		}
+-
+-		if (group_count) {
+-
+-			gticks = group_count / tick_interval;
+-			printf("\t\t%*Lu - %*Lu: %*Lu ", digits, group_start,
+-			       digits, group_end, digits, group_count);
+-			if (gticks) {
+-				for (i = 0; i < gticks; i++)
+-					printf("#");
+-				printf("\n");
+-			} else {
+-				printf("|\n");
+-			}
+-			group_count = 0;
+-		}
+-
+-		if (ticks <= 2)
+-			continue;
+-
+-		printf("\t\t%*Lu - %*Lu: %*Lu ", digits, seek->distance,
+-		       digits, seek->distance, digits, seek->count);
+-		for (i = 0; i < ticks; i++)
+-			printf("#");
+-		printf("\n");
+-	}
+-	if (group_count) {
+-		u64 gticks;
+-
+-		gticks = group_count / tick_interval;
+-		printf("\t\t%*Lu - %*Lu: %*Lu ", digits, group_start,
+-		       digits, group_end, digits, group_count);
+-		if (gticks) {
+-			for (i = 0; i < gticks; i++)
+-				printf("#");
+-			printf("\n");
+-		} else {
+-			printf("|\n");
+-		}
+-		group_count = 0;
+-	}
+-}
+-
+-static void timeval_subtract(struct timeval *result,struct timeval *x,
+-			     struct timeval *y)
+-{
+-	if (x->tv_usec < y->tv_usec) {
+-		int nsec = (y->tv_usec - x->tv_usec) / 1000000 + 1;
+-		y->tv_usec -= 1000000 * nsec;
+-		y->tv_sec += nsec;
+-	}
+-
+-	if (x->tv_usec - y->tv_usec > 1000000) {
+-		int nsec = (x->tv_usec - y->tv_usec) / 1000000;
+-		y->tv_usec += 1000000 * nsec;
+-		y->tv_sec -= nsec;
+-	}
+-
+-	result->tv_sec = x->tv_sec - y->tv_sec;
+-	result->tv_usec = x->tv_usec - y->tv_usec;
+-}
+-
+-static int calc_root_size(struct btrfs_root *tree_root, struct btrfs_key *key,
+-			  int find_inline)
+-{
+-	struct btrfs_root *root;
+-	struct btrfs_path *path;
+-	struct rb_node *n;
+-	struct timeval start, end, diff = {0};
+-	struct root_stats stat;
+-	int level;
+-	int ret = 0;
+-	int size_fail = 0;
+-
+-	root = btrfs_read_fs_root(tree_root->fs_info, key);
+-	if (IS_ERR(root)) {
+-		fprintf(stderr, "Failed to read root %Lu\n", key->objectid);
+-		return 1;
+-	}
+-
+-	path = btrfs_alloc_path();
+-	if (!path) {
+-		fprintf(stderr, "Could not allocate path\n");
+-		return 1;
+-	}
+-
+-	memset(&stat, 0, sizeof(stat));
+-	level = btrfs_header_level(root->node);
+-	stat.lowest_bytenr = btrfs_header_bytenr(root->node);
+-	stat.highest_bytenr = stat.lowest_bytenr;
+-	stat.min_cluster_size = (u64)-1;
+-	stat.max_cluster_size = root->leafsize;
+-	path->nodes[level] = root->node;
+-	if (gettimeofday(&start, NULL)) {
+-		fprintf(stderr, "Error getting time: %d\n", errno);
+-		goto out;
+-	}
+-	if (!level) {
+-		ret = walk_leaf(root, path, &stat, find_inline);
+-		if (ret)
+-			goto out;
+-		goto out_print;
+-	}
+-
+-	ret = walk_nodes(root, path, &stat, level, find_inline);
+-	if (ret)
+-		goto out;
+-	if (gettimeofday(&end, NULL)) {
+-		fprintf(stderr, "Error getting time: %d\n", errno);
+-		goto out;
+-	}
+-	timeval_subtract(&diff, &end, &start);
+-out_print:
+-	if (stat.min_cluster_size == (u64)-1) {
+-		stat.min_cluster_size = 0;
+-		stat.total_clusters = 1;
+-	}
+-
+-	if (no_pretty || size_fail) {
+-		printf("\tTotal size: %Lu\n", stat.total_bytes);
+-		printf("\t\tInline data: %Lu\n", stat.total_inline);
+-		printf("\tTotal seeks: %Lu\n", stat.total_seeks);
+-		printf("\t\tForward seeks: %Lu\n", stat.forward_seeks);
+-		printf("\t\tBackward seeks: %Lu\n", stat.backward_seeks);
+-		printf("\t\tAvg seek len: %llu\n", stat.total_seeks ?
+-			stat.total_seek_len / stat.total_seeks : 0);
+-		print_seek_histogram(&stat);
+-		printf("\tTotal clusters: %Lu\n", stat.total_clusters);
+-		printf("\t\tAvg cluster size: %Lu\n", stat.total_cluster_size /
+-		       stat.total_clusters);
+-		printf("\t\tMin cluster size: %Lu\n", stat.min_cluster_size);
+-		printf("\t\tMax cluster size: %Lu\n", stat.max_cluster_size);
+-		printf("\tTotal disk spread: %Lu\n", stat.highest_bytenr -
+-		       stat.lowest_bytenr);
+-		printf("\tTotal read time: %d s %d us\n", (int)diff.tv_sec,
+-		       (int)diff.tv_usec);
+-		printf("\tLevels: %d\n", level + 1);
+-	} else {
+-		printf("\tTotal size: %s\n", pretty_size(stat.total_bytes));
+-		printf("\t\tInline data: %s\n", pretty_size(stat.total_inline));
+-		printf("\tTotal seeks: %Lu\n", stat.total_seeks);
+-		printf("\t\tForward seeks: %Lu\n", stat.forward_seeks);
+-		printf("\t\tBackward seeks: %Lu\n", stat.backward_seeks);
+-		printf("\t\tAvg seek len: %s\n", stat.total_seeks ?
+-			pretty_size(stat.total_seek_len / stat.total_seeks) :
+-			pretty_size(0));
+-		print_seek_histogram(&stat);
+-		printf("\tTotal clusters: %Lu\n", stat.total_clusters);
+-		printf("\t\tAvg cluster size: %s\n",
+-				pretty_size((stat.total_cluster_size /
+-						stat.total_clusters)));
+-		printf("\t\tMin cluster size: %s\n",
+-				pretty_size(stat.min_cluster_size));
+-		printf("\t\tMax cluster size: %s\n",
+-				pretty_size(stat.max_cluster_size));
+-		printf("\tTotal disk spread: %s\n",
+-				pretty_size(stat.highest_bytenr -
+-					stat.lowest_bytenr));
+-		printf("\tTotal read time: %d s %d us\n", (int)diff.tv_sec,
+-		       (int)diff.tv_usec);
+-		printf("\tLevels: %d\n", level + 1);
+-	}
+-out:
+-	while ((n = rb_first(&stat.seek_root)) != NULL) {
+-		struct seek *seek = rb_entry(n, struct seek, n);
+-		rb_erase(n, &stat.seek_root);
+-		free(seek);
+-	}
+-
+-	/*
+-	 * We only use path to save node data in iterating,
+-	 * without holding eb's ref_cnt in path.
+-	 * Don't use btrfs_free_path() here, it will free these
+-	 * eb again, and cause many problems, as negative ref_cnt
+-	 * or invalid memory access.
+-	 */
+-	free(path);
+-	return ret;
+-}
+-
+-static void usage(void)
+-{
+-	fprintf(stderr, "Usage: calc-size [-v] [-b] <device>\n");
+-}
+ 
+ int main(int argc, char **argv)
  {
- 	local mkfs_opts=$1
- 	local subvol_mnt=$TEST_DIR/$seq.mnt
-+	local stop_file=$TEST_DIR/$seq.stop.$$
+-	struct btrfs_key key;
+-	struct btrfs_root *root;
+-	int opt;
+-	int ret = 0;
+-
+-	while ((opt = getopt(argc, argv, "vb")) != -1) {
+-		switch (opt) {
+-			case 'v':
+-				verbose++;
+-				break;
+-			case 'b':
+-				no_pretty = 1;
+-				break;
+-			default:
+-				usage();
+-				exit(1);
+-		}
+-	}
+-
+-	set_argv0(argv);
+-	if (check_argc_min(argc - optind, 1)) {
+-		usage();
+-		exit(1);
+-	}
++	int ret;
  
- 	echo "Test $mkfs_opts" >>$seqres.full
+-	/*
+-	if ((ret = check_mounted(argv[optind])) < 0) {
+-		fprintf(stderr, "Could not check mount status: %d\n", ret);
+-		if (ret == -EACCES)
+-			fprintf(stderr, "Maybe you need to run as root?\n");
+-		return ret;
+-	} else if (ret) {
+-		fprintf(stderr, "%s is currently mounted.  Aborting.\n",
+-			argv[optind]);
+-		return -EBUSY;
+-	}
+-	*/
++	if (argc > 1 && !strcmp(argv[1], "--help"))
++		usage(cmd_inspect_tree_stats_usage);
  
-@@ -77,15 +78,18 @@ run_test()
- 	balance_pid=$!
- 	echo "$balance_pid" >>$seqres.full
+-	root = open_ctree(argv[optind], 0, 0);
+-	if (!root) {
+-		fprintf(stderr, "Couldn't open ctree\n");
+-		exit(1);
+-	}
++	ret = cmd_inspect_tree_stats(argc, argv);
  
-+	# make sure the stop sign is not there
-+	rm -f $stop_file
- 	echo -n "Start subvolume worker: " >>$seqres.full
--	_btrfs_stress_subvolume $SCRATCH_DEV $SCRATCH_MNT subvol_$$ $subvol_mnt >/dev/null 2>&1 &
-+	_btrfs_stress_subvolume $SCRATCH_DEV $SCRATCH_MNT subvol_$$ $subvol_mnt $stop_file >/dev/null 2>&1 &
- 	subvol_pid=$!
- 	echo "$subvol_pid" >>$seqres.full
+-	printf("Calculating size of root tree\n");
+-	key.objectid = BTRFS_ROOT_TREE_OBJECTID;
+-	ret = calc_root_size(root, &key, 0);
+-	if (ret)
+-		goto out;
+-
+-	printf("Calculating size of extent tree\n");
+-	key.objectid = BTRFS_EXTENT_TREE_OBJECTID;
+-	ret = calc_root_size(root, &key, 0);
+-	if (ret)
+-		goto out;
+-
+-	printf("Calculating size of csum tree\n");
+-	key.objectid = BTRFS_CSUM_TREE_OBJECTID;
+-	ret = calc_root_size(root, &key, 0);
+-	if (ret)
+-		goto out;
+-
+-	key.objectid = BTRFS_FS_TREE_OBJECTID;
+-	key.offset = (u64)-1;
+-	printf("Calculatin' size of fs tree\n");
+-	ret = calc_root_size(root, &key, 1);
+-	if (ret)
+-		goto out;
+-out:
+-	close_ctree(root);
+ 	btrfs_close_all_devices();
++
+ 	return ret;
+ }
+diff --git a/cmds-inspect-tree-stats.c b/cmds-inspect-tree-stats.c
+new file mode 100644
+index 0000000..792ccaa
+--- /dev/null
++++ b/cmds-inspect-tree-stats.c
+@@ -0,0 +1,506 @@
++/*
++ * Copyright (C) 2011 Red Hat.  All rights reserved.
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public
++ * License v2 as published by the Free Software Foundation.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++ * General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public
++ * License along with this program; if not, write to the
++ * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
++ * Boston, MA 021110-1307, USA.
++ */
++
++#include <ctype.h>
++#include <stdio.h>
++#include <stdlib.h>
++#include <unistd.h>
++#include <fcntl.h>
++#include <sys/stat.h>
++#include <sys/time.h>
++#include <sys/types.h>
++#include <zlib.h>
++
++#include "kerncompat.h"
++#include "ctree.h"
++#include "disk-io.h"
++#include "print-tree.h"
++#include "transaction.h"
++#include "list.h"
++#include "volumes.h"
++#include "utils.h"
++#include "commands.h"
++#include "cmds-inspect-tree-stats.h"
++
++static int verbose = 0;
++static int no_pretty = 0;
++
++struct seek {
++	u64 distance;
++	u64 count;
++	struct rb_node n;
++};
++
++struct root_stats {
++	u64 total_nodes;
++	u64 total_leaves;
++	u64 total_bytes;
++	u64 total_inline;
++	u64 total_seeks;
++	u64 forward_seeks;
++	u64 backward_seeks;
++	u64 total_seek_len;
++	u64 max_seek_len;
++	u64 total_clusters;
++	u64 total_cluster_size;
++	u64 min_cluster_size;
++	u64 max_cluster_size;
++	u64 lowest_bytenr;
++	u64 highest_bytenr;
++	struct rb_root seek_root;
++	int total_levels;
++};
++
++static int add_seek(struct rb_root *root, u64 dist)
++{
++	struct rb_node **p = &root->rb_node;
++	struct rb_node *parent = NULL;
++	struct seek *seek = NULL;
++
++	while (*p) {
++		parent = *p;
++		seek = rb_entry(parent, struct seek, n);
++
++		if (dist < seek->distance) {
++			p = &(*p)->rb_left;
++		} else if (dist > seek->distance) {
++			p = &(*p)->rb_right;
++		} else {
++			seek->count++;
++			return 0;
++		}
++	}
++
++	seek = malloc(sizeof(struct seek));
++	if (!seek)
++		return -ENOMEM;
++	seek->distance = dist;
++	seek->count = 1;
++	rb_link_node(&seek->n, parent, p);
++	rb_insert_color(&seek->n, root);
++	return 0;
++}
++
++static int walk_leaf(struct btrfs_root *root, struct btrfs_path *path,
++		     struct root_stats *stat, int find_inline)
++{
++	struct extent_buffer *b = path->nodes[0];
++	struct btrfs_file_extent_item *fi;
++	struct btrfs_key found_key;
++	int i;
++
++	stat->total_bytes += root->leafsize;
++	stat->total_leaves++;
++
++	if (!find_inline)
++		return 0;
++
++	for (i = 0; i < btrfs_header_nritems(b); i++) {
++		btrfs_item_key_to_cpu(b, &found_key, i);
++		if (found_key.type != BTRFS_EXTENT_DATA_KEY)
++			continue;
++
++		fi = btrfs_item_ptr(b, i, struct btrfs_file_extent_item);
++		if (btrfs_file_extent_type(b, fi) == BTRFS_FILE_EXTENT_INLINE)
++			stat->total_inline +=
++				btrfs_file_extent_inline_item_len(b,
++							btrfs_item_nr(i));
++	}
++
++	return 0;
++}
++
++static u64 calc_distance(u64 block1, u64 block2)
++{
++	if (block1 < block2)
++		return block2 - block1;
++	return block1 - block2;
++}
++
++static int walk_nodes(struct btrfs_root *root, struct btrfs_path *path,
++		      struct root_stats *stat, int level, int find_inline)
++{
++	struct extent_buffer *b = path->nodes[level];
++	u64 last_block;
++	u64 cluster_size = root->leafsize;
++	int i;
++	int ret = 0;
++
++	stat->total_bytes += root->nodesize;
++	stat->total_nodes++;
++
++	last_block = btrfs_header_bytenr(b);
++	for (i = 0; i < btrfs_header_nritems(b); i++) {
++		struct extent_buffer *tmp = NULL;
++		u64 cur_blocknr = btrfs_node_blockptr(b, i);
++
++		path->slots[level] = i;
++		if ((level - 1) > 0 || find_inline) {
++			tmp = read_tree_block(root, cur_blocknr,
++					      btrfs_level_size(root, level - 1),
++					      btrfs_node_ptr_generation(b, i));
++			if (!extent_buffer_uptodate(tmp)) {
++				fprintf(stderr, "Failed to read blocknr %llu\n",
++					btrfs_node_blockptr(b, i));
++				continue;
++			}
++			path->nodes[level - 1] = tmp;
++		}
++		if (level - 1)
++			ret = walk_nodes(root, path, stat, level - 1,
++					 find_inline);
++		else
++			ret = walk_leaf(root, path, stat, find_inline);
++		if (last_block + root->leafsize != cur_blocknr) {
++			u64 distance = calc_distance(last_block +
++						     root->leafsize,
++						     cur_blocknr);
++			stat->total_seeks++;
++			stat->total_seek_len += distance;
++			if (stat->max_seek_len < distance)
++				stat->max_seek_len = distance;
++			if (add_seek(&stat->seek_root, distance)) {
++				fprintf(stderr, "Error adding new seek\n");
++				ret = -ENOMEM;
++				break;
++			}
++
++			if (last_block < cur_blocknr)
++				stat->forward_seeks++;
++			else
++				stat->backward_seeks++;
++			if (cluster_size != root->leafsize) {
++				stat->total_cluster_size += cluster_size;
++				stat->total_clusters++;
++				if (cluster_size < stat->min_cluster_size)
++					stat->min_cluster_size = cluster_size;
++				if (cluster_size > stat->max_cluster_size)
++					stat->max_cluster_size = cluster_size;
++			}
++			cluster_size = root->leafsize;
++		} else {
++			cluster_size += root->leafsize;
++		}
++		last_block = cur_blocknr;
++		if (cur_blocknr < stat->lowest_bytenr)
++			stat->lowest_bytenr = cur_blocknr;
++		if (cur_blocknr > stat->highest_bytenr)
++			stat->highest_bytenr = cur_blocknr;
++		free_extent_buffer(tmp);
++		if (ret) {
++			fprintf(stderr, "Error walking down path\n");
++			break;
++		}
++	}
++
++	return ret;
++}
++
++static void print_seek_histogram(struct root_stats *stat)
++{
++	struct rb_node *n = rb_first(&stat->seek_root);
++	struct seek *seek;
++	u64 tick_interval;
++	u64 group_start = 0;
++	u64 group_count = 0;
++	u64 group_end = 0;
++	u64 i;
++	u64 max_seek = stat->max_seek_len;
++	int digits = 1;
++
++	if (stat->total_seeks < 20)
++		return;
++
++	while ((max_seek /= 10))
++		digits++;
++
++	/* Make a tick count as 5% of the total seeks */
++	tick_interval = stat->total_seeks / 20;
++	printf("\tSeek histogram\n");
++	for (; n; n = rb_next(n)) {
++		u64 ticks, gticks = 0;
++
++		seek = rb_entry(n, struct seek, n);
++		ticks = seek->count / tick_interval;
++		if (group_count)
++			gticks = group_count / tick_interval;
++
++		if (ticks <= 2 && gticks <= 2) {
++			if (group_count == 0)
++				group_start = seek->distance;
++			group_end = seek->distance;
++			group_count += seek->count;
++			continue;
++		}
++
++		if (group_count) {
++
++			gticks = group_count / tick_interval;
++			printf("\t\t%*Lu - %*Lu: %*Lu ", digits, group_start,
++			       digits, group_end, digits, group_count);
++			if (gticks) {
++				for (i = 0; i < gticks; i++)
++					printf("#");
++				printf("\n");
++			} else {
++				printf("|\n");
++			}
++			group_count = 0;
++		}
++
++		if (ticks <= 2)
++			continue;
++
++		printf("\t\t%*Lu - %*Lu: %*Lu ", digits, seek->distance,
++		       digits, seek->distance, digits, seek->count);
++		for (i = 0; i < ticks; i++)
++			printf("#");
++		printf("\n");
++	}
++	if (group_count) {
++		u64 gticks;
++
++		gticks = group_count / tick_interval;
++		printf("\t\t%*Lu - %*Lu: %*Lu ", digits, group_start,
++		       digits, group_end, digits, group_count);
++		if (gticks) {
++			for (i = 0; i < gticks; i++)
++				printf("#");
++			printf("\n");
++		} else {
++			printf("|\n");
++		}
++		group_count = 0;
++	}
++}
++
++static void timeval_subtract(struct timeval *result, struct timeval *x,
++			     struct timeval *y)
++{
++	if (x->tv_usec < y->tv_usec) {
++		int nsec = (y->tv_usec - x->tv_usec) / 1000000 + 1;
++		y->tv_usec -= 1000000 * nsec;
++		y->tv_sec += nsec;
++	}
++
++	if (x->tv_usec - y->tv_usec > 1000000) {
++		int nsec = (x->tv_usec - y->tv_usec) / 1000000;
++		y->tv_usec += 1000000 * nsec;
++		y->tv_sec -= nsec;
++	}
++
++	result->tv_sec = x->tv_sec - y->tv_sec;
++	result->tv_usec = x->tv_usec - y->tv_usec;
++}
++
++static int calc_root_size(struct btrfs_root *tree_root, struct btrfs_key *key,
++			  int find_inline)
++{
++	struct btrfs_root *root;
++	struct btrfs_path *path;
++	struct rb_node *n;
++	struct timeval start, end, diff = {0};
++	struct root_stats stat;
++	int level;
++	int ret = 0;
++	int size_fail = 0;
++
++	root = btrfs_read_fs_root(tree_root->fs_info, key);
++	if (IS_ERR(root)) {
++		fprintf(stderr, "Failed to read root %llu\n", key->objectid);
++		return 1;
++	}
++
++	path = btrfs_alloc_path();
++	if (!path) {
++		fprintf(stderr, "Could not allocate path\n");
++		return 1;
++	}
++
++	memset(&stat, 0, sizeof(stat));
++	level = btrfs_header_level(root->node);
++	stat.lowest_bytenr = btrfs_header_bytenr(root->node);
++	stat.highest_bytenr = stat.lowest_bytenr;
++	stat.min_cluster_size = (u64)-1;
++	stat.max_cluster_size = root->leafsize;
++	path->nodes[level] = root->node;
++	if (gettimeofday(&start, NULL)) {
++		fprintf(stderr, "Error getting time: %d\n", errno);
++		goto out;
++	}
++	if (!level) {
++		ret = walk_leaf(root, path, &stat, find_inline);
++		if (ret)
++			goto out;
++		goto out_print;
++	}
++
++	ret = walk_nodes(root, path, &stat, level, find_inline);
++	if (ret)
++		goto out;
++	if (gettimeofday(&end, NULL)) {
++		fprintf(stderr, "Error getting time: %d\n", errno);
++		goto out;
++	}
++	timeval_subtract(&diff, &end, &start);
++out_print:
++	if (stat.min_cluster_size == (u64)-1) {
++		stat.min_cluster_size = 0;
++		stat.total_clusters = 1;
++	}
++
++	if (no_pretty || size_fail) {
++		printf("\tTotal size: %llu\n", stat.total_bytes);
++		printf("\t\tInline data: %llu\n", stat.total_inline);
++		printf("\tTotal seeks: %llu\n", stat.total_seeks);
++		printf("\t\tForward seeks: %llu\n", stat.forward_seeks);
++		printf("\t\tBackward seeks: %llu\n", stat.backward_seeks);
++		printf("\t\tAvg seek len: %llu\n", stat.total_seeks ?
++			stat.total_seek_len / stat.total_seeks : 0);
++		print_seek_histogram(&stat);
++		printf("\tTotal clusters: %llu\n", stat.total_clusters);
++		printf("\t\tAvg cluster size: %llu\n", stat.total_cluster_size /
++		       stat.total_clusters);
++		printf("\t\tMin cluster size: %llu\n", stat.min_cluster_size);
++		printf("\t\tMax cluster size: %llu\n", stat.max_cluster_size);
++		printf("\tTotal disk spread: %llu\n", stat.highest_bytenr -
++		       stat.lowest_bytenr);
++		printf("\tTotal read time: %d s %d us\n", (int)diff.tv_sec,
++		       (int)diff.tv_usec);
++		printf("\tLevels: %d\n", level + 1);
++	} else {
++		printf("\tTotal size: %s\n", pretty_size(stat.total_bytes));
++		printf("\t\tInline data: %s\n", pretty_size(stat.total_inline));
++		printf("\tTotal seeks: %llu\n", stat.total_seeks);
++		printf("\t\tForward seeks: %llu\n", stat.forward_seeks);
++		printf("\t\tBackward seeks: %llu\n", stat.backward_seeks);
++		printf("\t\tAvg seek len: %s\n", stat.total_seeks ?
++			pretty_size(stat.total_seek_len / stat.total_seeks) :
++			pretty_size(0));
++		print_seek_histogram(&stat);
++		printf("\tTotal clusters: %llu\n", stat.total_clusters);
++		printf("\t\tAvg cluster size: %s\n",
++				pretty_size((stat.total_cluster_size /
++						stat.total_clusters)));
++		printf("\t\tMin cluster size: %s\n",
++				pretty_size(stat.min_cluster_size));
++		printf("\t\tMax cluster size: %s\n",
++				pretty_size(stat.max_cluster_size));
++		printf("\tTotal disk spread: %s\n",
++				pretty_size(stat.highest_bytenr -
++					stat.lowest_bytenr));
++		printf("\tTotal read time: %d s %d us\n", (int)diff.tv_sec,
++		       (int)diff.tv_usec);
++		printf("\tLevels: %d\n", level + 1);
++	}
++out:
++	while ((n = rb_first(&stat.seek_root)) != NULL) {
++		struct seek *seek = rb_entry(n, struct seek, n);
++		rb_erase(n, &stat.seek_root);
++		free(seek);
++	}
++
++	/*
++	 * We only use path to save node data in iterating,
++	 * without holding eb's ref_cnt in path.
++	 * Don't use btrfs_free_path() here, it will free these
++	 * eb again, and cause many problems, as negative ref_cnt
++	 * or invalid memory access.
++	 */
++	free(path);
++	return ret;
++}
++
++const char * const cmd_inspect_tree_stats_usage[] = {
++	"btrfs inspect-internal tree-stats [options] <device>",
++	"Print various stats for trees",
++	"-b		raw numbers in bytes",
++	NULL
++};
++
++int cmd_inspect_tree_stats(int argc, char **argv)
++{
++	struct btrfs_key key;
++	struct btrfs_root *root;
++	int opt;
++	int ret = 0;
++
++	while ((opt = getopt(argc, argv, "vb")) != -1) {
++		switch (opt) {
++		case 'v':
++			verbose++;
++			break;
++		case 'b':
++			no_pretty = 1;
++			break;
++		default:
++			usage(cmd_inspect_tree_stats_usage);
++		}
++	}
++
++	if (check_argc_exact(argc - optind, 1)) {
++		usage(cmd_inspect_tree_stats_usage);
++	}
++
++	/*
++	if ((ret = check_mounted(argv[optind])) < 0) {
++		fprintf(stderr, "Could not check mount status: %d\n", ret);
++		if (ret == -EACCES)
++			fprintf(stderr, "Maybe you need to run as root?\n");
++		return ret;
++	} else if (ret) {
++		fprintf(stderr, "%s is currently mounted.  Aborting.\n",
++			argv[optind]);
++		return -EBUSY;
++	}
++	*/
++
++	root = open_ctree(argv[optind], 0, 0);
++	if (!root) {
++		fprintf(stderr, "Couldn't open ctree\n");
++		exit(1);
++	}
++
++	printf("Calculating size of root tree\n");
++	key.objectid = BTRFS_ROOT_TREE_OBJECTID;
++	ret = calc_root_size(root, &key, 0);
++	if (ret)
++		goto out;
++
++	printf("Calculating size of extent tree\n");
++	key.objectid = BTRFS_EXTENT_TREE_OBJECTID;
++	ret = calc_root_size(root, &key, 0);
++	if (ret)
++		goto out;
++
++	printf("Calculating size of csum tree\n");
++	key.objectid = BTRFS_CSUM_TREE_OBJECTID;
++	ret = calc_root_size(root, &key, 0);
++	if (ret)
++		goto out;
++
++	key.objectid = BTRFS_FS_TREE_OBJECTID;
++	key.offset = (u64)-1;
++	printf("Calculatin' size of fs tree\n");
++	ret = calc_root_size(root, &key, 1);
++	if (ret)
++		goto out;
++out:
++	close_ctree(root);
++	return ret;
++}
+diff --git a/cmds-inspect-tree-stats.h b/cmds-inspect-tree-stats.h
+new file mode 100644
+index 0000000..eb401da
+--- /dev/null
++++ b/cmds-inspect-tree-stats.h
+@@ -0,0 +1,26 @@
++/*
++ * Copyright (C) 2011 Red Hat.  All rights reserved.
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public
++ * License v2 as published by the Free Software Foundation.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++ * General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public
++ * License along with this program; if not, write to the
++ * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
++ * Boston, MA 021110-1307, USA.
++ */
++
++#ifndef __CMDS_INSPECT_TREE_STATS_H__
++#define __CMDS_INSPECT_TREE_STATS_H__
++
++int cmd_inspect_tree_stats(int argc, char **argv);
++
++extern const char * const cmd_inspect_tree_stats_usage[];
++
++#endif
+diff --git a/cmds-inspect.c b/cmds-inspect.c
+index 04e1ae8..d96b5c2 100644
+--- a/cmds-inspect.c
++++ b/cmds-inspect.c
+@@ -33,6 +33,7 @@
+ #include "btrfs-list.h"
+ #include "cmds-inspect-dump-tree.h"
+ #include "cmds-inspect-dump-super.h"
++#include "cmds-inspect-tree-stats.h"
  
- 	echo "Wait for fsstress to exit and kill all background workers" >>$seqres.full
- 	wait $fsstress_pid
+ static const char * const inspect_cmd_group_usage[] = {
+ 	"btrfs inspect-internal <command> <args>",
+@@ -293,7 +294,7 @@ static int cmd_inspect_subvolid_resolve(int argc, char **argv)
  
--	kill $balance_pid $subvol_pid
-+	touch $stop_file
-+	kill $balance_pid
- 	wait
- 	# wait for the balance operation to finish
- 	while ps aux | grep "balance start" | grep -qv grep; do
-diff --git a/tests/btrfs/065 b/tests/btrfs/065
-index 7d8249b..a4afe73 100755
---- a/tests/btrfs/065
-+++ b/tests/btrfs/065
-@@ -58,6 +58,7 @@ run_test()
- 	local mkfs_opts=$1
- 	local saved_scratch_dev_pool=$SCRATCH_DEV_POOL
- 	local subvol_mnt=$TEST_DIR/$seq.mnt
-+	local stop_file=$TEST_DIR/$seq.stop.$$
+ out:
+ 	close_file_or_dir(fd, dirstream);
+-	return ret ? 1 : 0;
++	return !!ret;
+ }
  
- 	echo "Test $mkfs_opts" >>$seqres.full
- 
-@@ -80,8 +81,10 @@ run_test()
- 	$FSSTRESS_PROG $args >/dev/null 2>&1 &
- 	fsstress_pid=$!
- 
-+	# make sure the stop sign is not there
-+	rm -f $stop_file
- 	echo -n "Start subvolume worker: " >>$seqres.full
--	_btrfs_stress_subvolume $SCRATCH_DEV $SCRATCH_MNT subvol_$$ $subvol_mnt >/dev/null 2>&1 &
-+	_btrfs_stress_subvolume $SCRATCH_DEV $SCRATCH_MNT subvol_$$ $subvol_mnt $stop_file >/dev/null 2>&1 &
- 	subvol_pid=$!
- 	echo "$subvol_pid" >>$seqres.full
- 
-@@ -93,7 +96,8 @@ run_test()
- 	echo "Wait for fsstress to exit and kill all background workers" >>$seqres.full
- 	wait $fsstress_pid
- 
--	kill $subvol_pid $replace_pid
-+	touch $stop_file
-+	kill $replace_pid
- 	wait
- 	# wait for the replace operation to finish
- 	while ps aux | grep "replace start" | grep -qv grep; do
-diff --git a/tests/btrfs/066 b/tests/btrfs/066
-index 2d9a1d2..cf4dd0d 100755
---- a/tests/btrfs/066
-+++ b/tests/btrfs/066
-@@ -56,6 +56,7 @@ run_test()
- {
- 	local mkfs_opts=$1
- 	local subvol_mnt=$TEST_DIR/$seq.mnt
-+	local stop_file=$TEST_DIR/$seq.stop.$$
- 
- 	echo "Test $mkfs_opts" >>$seqres.full
- 
-@@ -72,8 +73,10 @@ run_test()
- 	$FSSTRESS_PROG $args >/dev/null 2>&1 &
- 	fsstress_pid=$!
- 
-+	# make sure the stop sign is not there
-+	rm -f $stop_file
- 	echo -n "Start subvolume worker: " >>$seqres.full
--	_btrfs_stress_subvolume $SCRATCH_DEV $SCRATCH_MNT subvol_$$ $subvol_mnt >/dev/null 2>&1 &
-+	_btrfs_stress_subvolume $SCRATCH_DEV $SCRATCH_MNT subvol_$$ $subvol_mnt $stop_file >/dev/null 2>&1 &
- 	subvol_pid=$!
- 	echo "$subvol_pid" >>$seqres.full
- 
-@@ -85,7 +88,8 @@ run_test()
- 	echo "Wait for fsstress to exit and kill all background workers" >>$seqres.full
- 	wait $fsstress_pid
- 
--	kill $subvol_pid $scrub_pid
-+	touch $stop_file
-+	kill $scrub_pid
- 	wait
- 	# wait for the scrub operation to finish
- 	while ps aux | grep "scrub start" | grep -qv grep; do
-diff --git a/tests/btrfs/067 b/tests/btrfs/067
-index 2c1e284..b76f5ec 100755
---- a/tests/btrfs/067
-+++ b/tests/btrfs/067
-@@ -57,6 +57,7 @@ run_test()
- 	local mkfs_opts=$1
- 	local with_compress=$2
- 	local subvol_mnt=$TEST_DIR/$seq.mnt
-+	local stop_file=$TEST_DIR/$seq.stop.$$
- 
- 	echo "Test $mkfs_opts with $with_compress" >>$seqres.full
- 
-@@ -73,8 +74,10 @@ run_test()
- 	$FSSTRESS_PROG $args >/dev/null 2>&1 &
- 	fsstress_pid=$!
- 
-+	# make sure the stop sign is not there
-+	rm -f $stop_file
- 	echo -n "Start subvolume worker: " >>$seqres.full
--	_btrfs_stress_subvolume $SCRATCH_DEV $SCRATCH_MNT subvol_$$ $subvol_mnt >/dev/null 2>&1 &
-+	_btrfs_stress_subvolume $SCRATCH_DEV $SCRATCH_MNT subvol_$$ $subvol_mnt $stop_file >/dev/null 2>&1 &
- 	subvol_pid=$!
- 	echo "$subvol_pid" >>$seqres.full
- 
-@@ -86,7 +89,8 @@ run_test()
- 	echo "Wait for fsstress to exit and kill all background workers" >>$seqres.full
- 	wait $fsstress_pid
- 
--	kill $subvol_pid $defrag_pid
-+	touch $stop_file
-+	kill $defrag_pid
- 	wait
- 	# wait for btrfs defrag process to exit, otherwise it will block umount
- 	while ps aux | grep "btrfs filesystem defrag" | grep -qv grep; do
-diff --git a/tests/btrfs/068 b/tests/btrfs/068
-index 3126ec2..534aee6 100755
---- a/tests/btrfs/068
-+++ b/tests/btrfs/068
-@@ -57,6 +57,7 @@ run_test()
- {
- 	local mkfs_opts=$1
- 	local subvol_mnt=$TEST_DIR/$seq.mnt
-+	local stop_file=$TEST_DIR/$seq.stop.$$
- 
- 	echo "Test $mkfs_opts with $with_compress" >>$seqres.full
- 
-@@ -73,8 +74,10 @@ run_test()
- 	$FSSTRESS_PROG $args >/dev/null 2>&1 &
- 	fsstress_pid=$!
- 
-+	# make sure the stop sign is not there
-+	rm -f $stop_file
- 	echo -n "Start subvolume worker: " >>$seqres.full
--	_btrfs_stress_subvolume $SCRATCH_DEV $SCRATCH_MNT subvol_$$ $subvol_mnt >/dev/null 2>&1 &
-+	_btrfs_stress_subvolume $SCRATCH_DEV $SCRATCH_MNT subvol_$$ $subvol_mnt $stop_file >/dev/null 2>&1 &
- 	subvol_pid=$!
- 	echo "$subvol_pid" >>$seqres.full
- 
-@@ -86,7 +89,8 @@ run_test()
- 	echo "Wait for fsstress to exit and kill all background workers" >>$seqres.full
- 	wait $fsstress_pid
- 
--	kill $subvol_pid $remount_pid
-+	touch $stop_file
-+	kill $remount_pid
- 	wait
- 	# wait for the remount loop process to finish
- 	while ps aux | grep "mount.*$SCRATCH_MNT" | grep -qv grep; do
+ static const char* const cmd_inspect_rootid_usage[] = {
+@@ -640,6 +641,8 @@ const struct cmd_group inspect_cmd_group = {
+ 				cmd_inspect_dump_tree_usage, NULL, 0 },
+ 		{ "dump-super", cmd_inspect_dump_super,
+ 				cmd_inspect_dump_super_usage, NULL, 0 },
++		{ "tree-stats", cmd_inspect_tree_stats,
++				cmd_inspect_tree_stats_usage, NULL, 0 },
+ 		NULL_CMD_STRUCT
+ 	}
+ };
 -- 
-2.1.0
+2.7.2
 

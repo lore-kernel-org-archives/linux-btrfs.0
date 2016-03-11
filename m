@@ -1,60 +1,73 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:34498 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1759012AbcCDJ1K (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 4 Mar 2016 04:27:10 -0500
-Date: Fri, 4 Mar 2016 10:26:52 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Anand Jain <anand.jain@oracle.com>
-Cc: Hugo Mills <hugo@carfax.org.uk>, sri <toyours_sridhar@yahoo.co.in>,
-        linux-btrfs@vger.kernel.org
-Subject: Re: how many chunk trees and extent trees present
-Message-ID: <20160304092652.GI29310@suse.cz>
-Reply-To: dsterba@suse.cz
-References: <loom.20150417T081705-332@post.gmane.org>
- <20150417091911.GK22084@carfax.org.uk>
- <20150417172928.GT25622@twin.jikos.cz>
- <56D8F9C7.70609@oracle.com>
+Received: from userp1040.oracle.com ([156.151.31.81]:38143 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S934359AbcCKISP (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 11 Mar 2016 03:18:15 -0500
+Subject: Re: [PATCH 00/15] Device delete by id
+To: dsterba@suse.cz, David Sterba <dsterba@suse.com>,
+        linux-btrfs@vger.kernel.org, clm@fb.com
+References: <cover.1455556900.git.dsterba@suse.com>
+ <20160225175905.GJ23746@twin.jikos.cz>
+From: Anand Jain <anand.jain@oracle.com>
+Message-ID: <56E27EF8.1080408@oracle.com>
+Date: Fri, 11 Mar 2016 16:16:56 +0800
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <56D8F9C7.70609@oracle.com>
+In-Reply-To: <20160225175905.GJ23746@twin.jikos.cz>
+Content-Type: text/plain; charset=windows-1252; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Mar 04, 2016 at 10:58:15AM +0800, Anand Jain wrote:
-> 
-> 
-> On 04/18/2015 01:29 AM, David Sterba wrote:
-> > On Fri, Apr 17, 2015 at 09:19:11AM +0000, Hugo Mills wrote:
-> >>> In, some article i read that future there will be more chunk tree/ extent
-> >>> tree for single btrfs. Is this true.
-> >>
-> >>     I recall, many moons ago, Chris saying that there probably wouldn't
-> >> be.
-> >
-> > More extent trees tied to a set of fs trees/subvolumes would be very
-> > useful for certain usecases *cough*encryption*cough*.
-> 
->   I didn't understand in full what's the idea here, but let met try..
->   would it not defeat the purpose of encryption which is not to let
->   disk have the un-encrypted data ? Looks like I am missing something
->   here.
 
-Depends how the encryption is designed. The separate extent trees would
-allow to have mixed data in the filesystem, encrypted or not.
 
-I can start with a normal filesystem, and then create encrypted
-subvolumes any time later.
+On 02/26/2016 01:59 AM, David Sterba wrote:
+> On Mon, Feb 15, 2016 at 06:33:56PM +0100, David Sterba wrote:
+>> this patchset extends the ioctl arugments to take an id so we can delete a
+>> device by it. It reuses the existing structure btrfs_ioctl_vol_args_v2 and
+>> extends it in na backward-compatible way so that we don't need to introduce
+>> another one.
+>>
+>> The core patchset is from Anand, I did some cleanups as I went through the
+>> series again and made some cleanups and minor naming tweaks to the interface.
+>>
+>> I'll add the branch to for-next and if everything goes fine I'll send a pull
+>> request for 4.6 in a week.
+>
+> This patchset is causing crashes in my setup, based on linux-next tree
+> with my for-next. I did a test round without it and it passes, so I'm
+> removing it from 4.6 queue. We need more time to find and fix it.
 
-The idea of multiple extent trees:
+  (crash.. are you ref to the below ?)
+  BUG: unable to handle kernel NULL pointer dereference
+  scrub_setup_ctx.isra.19+0x1f6/0x260 [btrfs]
 
-Currently we have only one, all subvolume share the extent tree, can do
-reflinks freely. We can create a subvolume (S1) and ask for a separate
-extent tree (E1). Now we can create snapshots of S1 that would share E1,
-and reflink accross snapshots that share E1.
+  Current status: as of now there is nothing that tells me the
+  above crash was due to the set of patches in here, if there
+  are further data I will be happy to review, also this wasn't
+  reproducible.
 
-Why is this useful to encryption: all data _and_ metadata blocks tied to
-E1 and the attached subvolums are encrypted, the plain text is not
-accessible without the key.
 
-But the separate extent trees are useful on itself.
+  Also:
+  Most of the xfstest btrfs/tests aren't designed to generate a
+  consistent result, it can be consistent with a sequence of tests,
+  but when this sequence of tests is altered, it may generate
+  different results.
+
+  As xfstest results also depends on the factors like state of
+  stale FSID on the devices and state of btrfs_device list with
+  in the kernel, which depends on the previous tests.
+
+  And looks like following changes can make it consistent.
+    Before each test/sub-test:
+    . wipefs -a of all scratch pool dev
+    . modprobe -r btrfs && modprobe btrfs
+  So that kernel will have a clean state of btrfs_device list.
+
+  Which means all the btrfs tests especially which are grouped
+  under replace should be updated with the above change, So that
+  we can ensure kernel and devices are in the same state each
+  time the test is run.
+
+  Any idea?
+
+Thanks, Anand

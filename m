@@ -1,112 +1,119 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:56938 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S933083AbcCKCvE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 10 Mar 2016 21:51:04 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1aeDAJ-0002PU-Q9
-	for linux-btrfs@vger.kernel.org; Fri, 11 Mar 2016 03:50:59 +0100
-Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 11 Mar 2016 03:50:59 +0100
-Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 11 Mar 2016 03:50:59 +0100
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: btrfs and containers
-Date: Fri, 11 Mar 2016 02:50:53 +0000 (UTC)
-Message-ID: <pan$5ccec$498efbab$a72ad404$705bc0c4@cox.net>
-References: <CAMdWP3G9uaTcbDWE68LYd17sf8-j11Aqo+ACRrZFFGdB995gSQ@mail.gmail.com>
-	<CAJCQCtSPEY1c-=GTJwH3-qRNxGCEsd0bVu9A_srdFt03bX7BcQ@mail.gmail.com>
-	<20160308195857.GB26981@localhost.localdomain>
-	<CAJCQCtSp5B=nnpCs3zaCsMK+8qLNLzYQAqka5P1X+a+R4RzGOQ@mail.gmail.com>
-	<56E013E8.9080401@gmail.com>
-	<pan$389e0$596a4ce9$6594c4ff$3be23a55@cox.net>
-	<56E1A901.6050207@gmail.com>
-	<CAJCQCtQVUiVhjop5oE9G_XzReXw=GFtQDgHtjn2=X_qwwsPt8A@mail.gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Received: from mgwkm04.jp.fujitsu.com ([202.219.69.171]:33467 "EHLO
+	mgwkm04.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S933456AbcCKD3d (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 10 Mar 2016 22:29:33 -0500
+Received: from m3051.s.css.fujitsu.com (m3051.s.css.fujitsu.com [10.134.21.209])
+	by kw-mxoi2.gw.nic.fujitsu.com (Postfix) with ESMTP id C0AF2AC0332
+	for <linux-btrfs@vger.kernel.org>; Fri, 11 Mar 2016 12:29:28 +0900 (JST)
+Subject: Re: How to move a btrfs volume to a smaller disk
+To: Hendrik Friedel <hendrik@friedels.name>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+References: <56E099A1.8040506@friedels.name>
+From: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
+Message-ID: <56E23B91.9080203@jp.fujitsu.com>
+Date: Fri, 11 Mar 2016 12:29:21 +0900
+MIME-Version: 1.0
+In-Reply-To: <56E099A1.8040506@friedels.name>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Chris Murphy posted on Thu, 10 Mar 2016 12:35:31 -0700 as excerpted:
+On 2016/03/10 6:46, Hendrik Friedel wrote:
+> Hello,
+>
+> I intend to move this subvolume to a new device.
+> btrfs fi show /mnt2/Data_Store/
+> Label: 'Data_Store'  uuid: 0ccc1e24-090d-42e2-9e61-d0a1b3101f93
+>          Total devices 1 FS bytes used 47.93GiB
+>          devid    1 size 102.94GiB used 76.03GiB path /dev/sdb4
+>
+> (fi usage at the bottom of this message)
+>
+> The new device (sda4) is 8G smaller unfortunately.
+> sda       8:0    0 111.8G  0 disk
+> └─sda4    8:4    0 103.5G  0 part
+> sdb       8:16   0 119.2G  0 disk
+> └─sdb4    8:20   0   111G  0 part  /mnt2/Data_Store
+>
+> Thus, btrfs replace does not work
+>
+> What would you suggest now to move the FS (it does contain many subvolumes)?
+>
+> I tried btrfs send /mnt2/Data_Store/read_only_snapshot/ | btrfs receive /mnt/sda4/
+> but this only created an empty subvolume /mnt/sda4/read_only_snapshot/
 
-> It's a tricky problem. If you're the owner of a filesystem tree, but
-> something definitely not owned at all by you is buried in that tree
-> somewhere, to do a subvolume delete don't you have to now traverse the
-> entire thing to find out? Or does the owning user have sufficient
-> implied permission by owning the subvolume, that no matter what's in it,
-> is simply gone unless it's another subvolume?
+I suspect that you captured snapshot as
 
-Well, to the extent that subvolumes aren't special, they're supposed to 
-behave like subdirs.  So it seems simple enough to me, just use subdir 
-permissions semantics and don't worry about it.
+   ==========================
+   btrfs sub snap -r /mnt2/Data_Store /mnt2/Data_Store/read_only_snapshot
+   ==========================
 
-Which means you can delete files you don't own located directly in a 
-directory (so subvol) you have write permissions to, even if you couldn't 
-write to the files themselves, but if those files are in turn nested in a 
-subdir you can't write to, then you can't delete the files (even if you 
-actually own the files and can write to them, meaning you could change 
-them, but not delete them), and thus can't delete the dir, which means 
-you can't delete its parent dir... or subvol.
+and /mnt2/Data_Store only contains subvolumes
+instead of having files/directries directly.
+Then send/receive work as you said. Probably if you run
+"ls -li /mnt2/Data_Store", all files have
+inode 256 (it means subvolume). In addition,
+all the directories under
+/mnt2/Data_Store/read_only_snapshot are empty.
 
-At least, that's the way it /should/ work.
+It's because "sub snap" only handles one subvolume
+and doesn't handle subvolumes inside it. So, if you'd
+like to copy all the data by send/receive, you should
+capture and send/receive snapshot for each subvolume.
 
-Unless of course subvolumes are documented to be special in that regard, 
-since subvolumes are allowed to differ in behavior from subdirs if that's 
-a specific feature of being a subvolume, in which case the documentation 
-can simply document the way it works, which can be arbitrarily defined as 
-convenient for the implementation if desired, and be done with it.
+>
+> So, then
+> btrfs device add /dev/sda4 /mnt/Data_Store
+> btrfs balance start /mnt/Data_Store
+> btrfs device remove /dev/sdb4 /mnt/Data_Store
+> ?
 
-Of course, if subvolumes were /not/ declared to be special in that 
-regard, and thus were supposed to fit the subdir model, actually 
-implementing that would involve crawling the subdir tree checking the 
-ownership and permissions of all nested subdirs and subvols, as many 
-layers deep as it goes, and that would need done in the foreground, 
-before the deletion could return, which would tend to slow down the 
-subvolume delete implementation toward that of subdir delete.  So of 
-speedy subvolume delete is to be retained, then it seems subvols need to 
-be defined to have special subvol behavior in this regard, that does NOT 
-follow subdir behavior, with that special behavior being defined as, if 
-you own the subvolume, you can delete it (and its children), regardless 
-of whether you'd have permissions to delete files in the subdirs beneath 
-it and thus couldn't delete it were it a regular subdir.
+balance is not necessary. When you run
+device remove /dev/sdb4, then all the contents of
+/dev/sdb4 migrate to /dev/sda4 properly.
 
+Thanks,
+Satoru
 
-But that brings up the opposite question, or otherwise put, the same 
-question in the other direction, as well.  Currently, users can create 
-subvols but not (ordinarily) delete them.  Can they create those subvols 
-in directories they don't have write permissions in, and thus couldn't 
-create subdirs or files in?  If so, that seems to be another security 
-issue waiting to be exploited.  If not, then even if they have ownership 
-of the subvol itself, they shouldn't be able to delete it, if it's in a 
-subdir they don't have write permissions in and thus couldn't create it 
-in.
-
-
-Every time this sort of subvolumes permissions issue comes up, I get a 
-(metaphorical) headache trying to sort out the permissions and thus 
-security implications, and end up glad I'm simply not dealing with them 
-here.  Tho I can't do anything about the security implications if normal 
-users can create them, even if my policy is not to do so.  Which does 
-have me somewhat worried, because that sort of problem is notorious for 
-its unforeseen security implications, and right now, because any user 
-(presumably with write permissions on any subdir on a btrfs) can create 
-subvolumes, that means anyone running btrfs is exposed to those 
-convoluted and likely unforeseen security issues.
-
-Which is definitely another reason not to consider btrfs fully 
-stabilized, until that sort of thing gets sorted.  Personally, I'd say 
-just require superuser privs (and/or appropriate filecaps and/or SEL 
-security labels) to create them as well, and avoid the whole problem.  
-Yes, it'll be limiting, but it's a limit that will avoid the entire 
-Pandora's box of permissions and security implications.
-
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+>
+> Or is there a better option?
+>
+> Regards,
+> Hendrik
+>
+>
+>   btrfs fi usage  /mnt2/Data_Store/
+> Overall:
+>      Device size:                 102.94GiB
+>      Device allocated:             74.03GiB
+>      Device unallocated:           28.91GiB
+>      Device missing:                  0.00B
+>      Used:                         47.96GiB
+>      Free (estimated):             53.24GiB      (min: 53.24GiB)
+>      Data ratio:                       1.00
+>      Metadata ratio:                   1.00
+>      Global reserve:              512.00MiB      (used: 0.00B)
+>
+> Data,single: Size:69.00GiB, Used:44.67GiB
+>     /dev/sdb4      69.00GiB
+>
+> Metadata,single: Size:5.00GiB, Used:3.29GiB
+>     /dev/sdb4       5.00GiB
+>
+> System,single: Size:32.00MiB, Used:16.00KiB
+>     /dev/sdb4      32.00MiB
+>
+> Unallocated:
+>     /dev/sdb4      28.91GiB
+>
+>
+> ---
+> Diese E-Mail wurde von Avast Antivirus-Software auf Viren geprüft.
+> https://www.avast.com/antivirus
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

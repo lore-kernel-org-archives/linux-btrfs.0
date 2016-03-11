@@ -1,52 +1,98 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:41811 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751602AbcCUHYl (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 21 Mar 2016 03:24:41 -0400
-Subject: Re: [PATCH v2] btrfs-progs: subvolume functions reorg
-To: dsterba@suse.cz, linux-btrfs@vger.kernel.org
-References: <1458137673-464-1-git-send-email-anand.jain@oracle.com>
- <20160317141945.GU21722@twin.jikos.cz> <56EBC240.40306@oracle.com>
- <20160318133136.GY21722@twin.jikos.cz>
-From: Anand Jain <anand.jain@oracle.com>
-Message-ID: <56EFA1B3.2020206@oracle.com>
-Date: Mon, 21 Mar 2016 15:24:35 +0800
+Received: from mx2.suse.de ([195.135.220.15]:36793 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S932544AbcCKPoT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 11 Mar 2016 10:44:19 -0500
+Date: Fri, 11 Mar 2016 16:43:55 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs: Output more info for enospc_debug mount option
+Message-ID: <20160311154355.GR18908@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1456819701-21067-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-In-Reply-To: <20160318133136.GY21722@twin.jikos.cz>
-Content-Type: text/plain; charset=windows-1252; format=flowed
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1456819701-21067-1-git-send-email-quwenruo@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Tue, Mar 01, 2016 at 04:08:21PM +0800, Qu Wenruo wrote:
+> As one user in mail list report reproducible balance ENOSPC error, it's
+> better to add more debug info for enospc_debug mount option.
+> 
+> Reported-by: Marc Haber <mh+linux-btrfs@zugschlus.de>
+> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+> ---
+>  fs/btrfs/extent-tree.c | 17 +++++++++++++++--
+>  1 file changed, 15 insertions(+), 2 deletions(-)
+> 
+> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+> index 083783b..a95d247 100644
+> --- a/fs/btrfs/extent-tree.c
+> +++ b/fs/btrfs/extent-tree.c
+> @@ -9386,15 +9386,23 @@ int btrfs_can_relocate(struct btrfs_root *root, u64 bytenr)
+>  	u64 dev_min = 1;
+>  	u64 dev_nr = 0;
+>  	u64 target;
+> +	int debug;
+>  	int index;
+>  	int full = 0;
+>  	int ret = 0;
+>  
+> +	debug = btrfs_test_opt(root, ENOSPC_DEBUG);
+> +
+>  	block_group = btrfs_lookup_block_group(root->fs_info, bytenr);
+>  
+>  	/* odd, couldn't find the block group, leave it alone */
+> -	if (!block_group)
+> +	if (!block_group) {
+> +		if (debug)
+> +			btrfs_warn(root->fs_info,
+> +				   "Can't find block group %llu\n",
 
+no newline, no capital 'C'
 
-On 03/18/2016 09:31 PM, David Sterba wrote:
-> On Fri, Mar 18, 2016 at 04:54:24PM +0800, Anand Jain wrote:
->>
->>
->> On 03/17/2016 10:19 PM, David Sterba wrote:
->>> On Wed, Mar 16, 2016 at 10:14:33PM +0800, Anand Jain wrote:
->>>> Makes few subvol related functions usable outside of subvol
->>>> command set.
->>>>
->>>> This is a preparatory patch for encryption support. The changes
->>>> here are:
->>>>
->>>> Created new file subvolume.c
->>>> Created btrfs_get_subvol_info() from parts of cmd_subvol_show()
->>>> Moved get_subvol_name() to subvolume.c
->>>> Moved test_issubvolume() to subvolume.c
->>>> Created subvolume.h to define the above functions.
->>>
->>> Such helpers are in utils.[ch], eg. there's test_issubvolname.
->>
->>    You meant to move them/it to subvolume.c/h right ?
->
-> No, please keep using utils.[ch] for now.
+> +				   bytenr);
+>  		return -1;
+> +	}
+>  
+>  	min_free = btrfs_block_group_used(&block_group->item);
+>  
+> @@ -9448,8 +9456,11 @@ int btrfs_can_relocate(struct btrfs_root *root, u64 bytenr)
+>  		 * this is just a balance, so if we were marked as full
+>  		 * we know there is no space for a new chunk
+>  		 */
+> -		if (full)
+> +		if (full) {
+> +			if (debug)
+> +				btrfs_warn(root->fs_info, "space info full");
 
-Agreed.
+the block group bytenr should be printed as well
 
-V3 was sent out. (and now its a patch set of 6).
+>  			goto out;
+> +		}
+>  
+>  		index = get_block_group_index(block_group);
+>  	}
+> @@ -9496,6 +9507,8 @@ int btrfs_can_relocate(struct btrfs_root *root, u64 bytenr)
+>  			ret = -1;
+>  		}
+>  	}
+> +	if (debug && ret == -1)
+> +		btrfs_warn(root->fs_info, "no space to allocate a new chunk");
 
-Thanks, Anand
+same here, add bytenr
 
+>  	mutex_unlock(&root->fs_info->chunk_mutex);
+>  	btrfs_end_transaction(trans, root);
+>  out:
+> -- 
+> 2.7.2
+> 
+> 
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

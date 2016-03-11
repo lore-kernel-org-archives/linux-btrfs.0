@@ -1,91 +1,64 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pf0-f181.google.com ([209.85.192.181]:36112 "EHLO
-	mail-pf0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932844AbcCKAEs (ORCPT
+Received: from mgwym04.jp.fujitsu.com ([211.128.242.43]:26222 "EHLO
+	mgwym04.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932844AbcCKA0X (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 10 Mar 2016 19:04:48 -0500
-Received: by mail-pf0-f181.google.com with SMTP id u190so51110263pfb.3
-        for <linux-btrfs@vger.kernel.org>; Thu, 10 Mar 2016 16:04:48 -0800 (PST)
-From: Yauhen Kharuzhy <yauhen.kharuzhy@zavadatar.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Yauhen Kharuzhy <yauhen.kharuzhy@zavadatar.com>
-Subject: [PATCH] btrfs-progs: Dont' stop scanning of devices at first failed device
-Date: Thu, 10 Mar 2016 16:04:35 -0800
-Message-Id: <1457654675-14084-1-git-send-email-yauhen.kharuzhy@zavadatar.com>
+	Thu, 10 Mar 2016 19:26:23 -0500
+Received: from m3051.s.css.fujitsu.com (m3051.s.css.fujitsu.com [10.134.21.209])
+	by yt-mxauth.gw.nic.fujitsu.com (Postfix) with ESMTP id B2887AC01FB
+	for <linux-btrfs@vger.kernel.org>; Fri, 11 Mar 2016 09:26:17 +0900 (JST)
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+From: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
+Subject: [PATCH] btrfs-progs: Fix device scan to interpret its argument
+ properly
+Message-ID: <56E210A5.8030100@jp.fujitsu.com>
+Date: Fri, 11 Mar 2016 09:26:13 +0900
+MIME-Version: 1.0
+Content-Type: text/plain; charset=iso-2022-jp
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When 'btrfs device scan' command is invoked, it scans all devices,
-check them for btrfs superblock and add devices with btrfs to a list.
+Fix the following bug.
 
-Next, each device from the list is passed to kernel where it is handled
-in the btrfs_scan_one_device() function. This function can, for example,
-return -EBUSY when device contains superblock matched to existing and
-mounted filesystem (if this device was pulled out from RAID and
-connected again after some time).
+  ================================
+  # btrfs device scan -- /dev/sdb
+  ERROR: not a block device: --
+  ================================
 
-btrfs tool stops device scan if any device has been failed to add, so
-other existing devices with (possibly) valid FS will never be reached.
+It should work as follow.
 
-Fix this by remove stopping at any failure in the btrfs_register_all_devices(),
-just return error count. btrfs_scan_one_device() reports any kind of
-error already.
+  ================================
+  # ./btrfs device scan -- /dev/sdb
+  Scanning for Btrfs filesystems in '/dev/sdb'
+  ================================
 
-Signed-off-by: Yauhen Kharuzhy <yauhen.kharuzhy@zavadatar.com>
+Signed-off-by: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
 ---
- cmds-device.c |  2 +-
- utils.c       | 15 +++++++--------
- 2 files changed, 8 insertions(+), 9 deletions(-)
+This patch can be applied to devel (commit: 5d038a7ed212)
+---
+ cmds-device.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
 
 diff --git a/cmds-device.c b/cmds-device.c
-index 94ffdc5..ec871d2 100644
+index 94ffdc5..e500638 100644
 --- a/cmds-device.c
 +++ b/cmds-device.c
-@@ -278,7 +278,7 @@ static int cmd_device_scan(int argc, char **argv)
- 		ret = btrfs_scan_lblkid();
- 		error_on(ret, "error %d while scanning", ret);
- 		ret = btrfs_register_all_devices();
--		error_on(ret, "error %d while registering devices", ret);
-+		error_on(ret, "there are %d errors while registering devices", ret);
- 		goto out;
- 	}
- 
-diff --git a/utils.c b/utils.c
-index eabc36d..a5dcfbe 100644
---- a/utils.c
-+++ b/utils.c
-@@ -1545,7 +1545,7 @@ int btrfs_register_one_device(const char *fname)
-  */
- int btrfs_register_all_devices(void)
+@@ -246,7 +246,7 @@ static const char * const cmd_device_scan_usage[] = {
+ static int cmd_device_scan(int argc, char **argv)
  {
--	int err;
-+	int err, ret = 0;
- 	struct btrfs_fs_devices *fs_devices;
- 	struct btrfs_device *device;
- 	struct list_head *all_uuids;
-@@ -1554,16 +1554,15 @@ int btrfs_register_all_devices(void)
- 
- 	list_for_each_entry(fs_devices, all_uuids, list) {
- 		list_for_each_entry(device, &fs_devices->devices, dev_list) {
--			if (*device->name) {
-+			if (*device->name)
- 				err = btrfs_register_one_device(device->name);
--				if (err < 0)
--					return err;
--				if (err > 0)
--					return -err;
--			}
-+
-+			if (err)
-+				ret++;
+ 	int i;
+-	int devstart = 1;
++	int devstart;
+ 	int all = 0;
+ 	int ret = 0;
+
+@@ -269,6 +269,7 @@ static int cmd_device_scan(int argc, char **argv)
+ 			usage(cmd_device_scan_usage);
  		}
  	}
--	return 0;
-+
-+	return ret;
- }
- 
- int btrfs_device_already_in_root(struct btrfs_root *root, int fd,
++	devstart = optind;
+
+ 	if (all && check_argc_max(argc - optind, 1))
+ 		usage(cmd_device_scan_usage);
 -- 
 2.5.0
-

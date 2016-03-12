@@ -1,18 +1,19 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wm0-f48.google.com ([74.125.82.48]:35097 "EHLO
-	mail-wm0-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751562AbcCKXmd (ORCPT
+Received: from mail-wm0-f42.google.com ([74.125.82.42]:36668 "EHLO
+	mail-wm0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751720AbcCLAEs (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 11 Mar 2016 18:42:33 -0500
-Received: by mail-wm0-f48.google.com with SMTP id l68so38293391wml.0
-        for <linux-btrfs@vger.kernel.org>; Fri, 11 Mar 2016 15:42:32 -0800 (PST)
+	Fri, 11 Mar 2016 19:04:48 -0500
+Received: by mail-wm0-f42.google.com with SMTP id n186so38678855wmn.1
+        for <linux-btrfs@vger.kernel.org>; Fri, 11 Mar 2016 16:04:47 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <CAJCQCtShrmtnO-d3u+jnFOWqct5QQ0oKErJpDeC+0pw-XiECBA@mail.gmail.com>
+In-Reply-To: <pan$9dde$acf9ba51$bb837cb8$8c954a04@cox.net>
 References: <CAD=QJKi-3PJQViAaRmGoz3_w6RQbRehDL9vXs14+CSHsG3ipTg@mail.gmail.com>
 	<CAD=QJKg6xFSFjJdDyD+v0Rd2afeB-ZRRy2SncC1Db5fyT3cf9A@mail.gmail.com>
-	<CAJCQCtShrmtnO-d3u+jnFOWqct5QQ0oKErJpDeC+0pw-XiECBA@mail.gmail.com>
-Date: Fri, 11 Mar 2016 18:42:31 -0500
-Message-ID: <CAD=QJKjohwOz=yRJzFy2T6XN+OODdbMW9ggj6Qg0qDYoVVpj_A@mail.gmail.com>
+	<20160310023627.2e915667@natsu>
+	<pan$9dde$acf9ba51$bb837cb8$8c954a04@cox.net>
+Date: Fri, 11 Mar 2016 19:04:46 -0500
+Message-ID: <CAD=QJKjkzh4U5Gmp=PJMiR8w3by12BVCDZ+MN2S+Ekk_EksjAg@mail.gmail.com>
 Subject: Re: dstat shows unexpected result for two disk RAID1
 From: Nicholas D Steeves <nsteeves@gmail.com>
 To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
@@ -20,33 +21,32 @@ Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 9 March 2016 at 16:26, Chris Murphy <lists@colorremedies.com> wrote:
+On 9 March 2016 at 23:06, Duncan <1i5t5.duncan@cox.net> wrote:
 >
-> It's normal and recognized to be sub-optimal. So it's an optimization
-> opportunity. :-)
+> Meanwhile, while parity-raid (aka raid56) isn't as bad as it was when
+> first nominally completed in 3.19, as of 4.4 (and I think 4.5 as I've not
+> seen a full trace yet, let alone a fix), there's still at least one known
+> bug remaining to be traced down and exterminated, that's causing at least
+> some raid56 reshapes to different numbers of devices or recovery from a
+> lost device to take at least 10 times as long as they logically should,
+> we're talking times of weeks to months, during which time the array can
+> be used, but if it's a bad device replacement and more devices go down in
+> that time...
 >
-> I see parallelization of reads and writes to data single profile
-> multiple devices as useful also, similar to XFS allocation group
-> parallelization. Those AGs are spread across multiple devices in
-> md/lvm linear layouts, so if you have processes that read/write to
-> multiple AGs at a time, those I/Os happen at the same time when on
-> separate devices.
+> Tho hopefully all the really tough problems they would have hit with N-
+> way-mirroring were hit and resolved with raid56, and N-way-mirroring will
+> thus be relatively simple, so hopefully it's less than the four years
+> it's taking raid56.  But I don't expect to see it for another year or
+> two, and don't expect to be actually use it as intended (as a more
+> failure resistant raid1) for some time after that as the bugs get worked
+> out, so realistically, 2-3 years.
 
-I'm not sure if I can pull it off... :-)  At best I might only be able
-to define the problem and how things fit together, and then attempt to
-logic my way through it with pseudo-code.  My hope is that someone
-would look at this work, say "Aha!  You're doing it wrong!" and then
-implement it the right way.
+Could the raid5 code could be patched to copy/read instead of
+build/check parity?  In effect I'm wondering if this could be used as
+an alternative to the current raid1 profile.  The bonus being that it
+seems like it might accelerate shaking out the bugs in raid5.
+Likewise, would doing the same with the raid6 code in effect implement
+a 3-way mirror distributed over n-devices?
 
-On 10 March 2016 at 03:10, Duncan <1i5t5.duncan@cox.net> wrote:
->
-> Call me a conspiracy nut, but don't be too surprised if someone's
-> introducing some product with btrfs and encrypted subvolumes a year or 18
-> months from now...  I know I won't be! =:^)
-
-In that case, couldn't an "at a glance" overview of what needs to be
-done for distributed read optimisation entice a product-manager
-somewhere out there to throw some employee-time at the problem? :-p
-
-Best regards,
+Kind regards,
 Nicholas

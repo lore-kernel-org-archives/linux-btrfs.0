@@ -1,76 +1,49 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from meiko.romanrm.net ([195.154.92.155]:51526 "EHLO
-	meiko.romanrm.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752389AbcCLRPa (ORCPT
+Received: from torres.zugschlus.de ([85.214.131.164]:58098 "EHLO
+	torres.zugschlus.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751750AbcCLT55 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 12 Mar 2016 12:15:30 -0500
-Received: from natsu (unknown [IPv6:fd39::e9:9eff:fe8f:1bcf])
-	by meiko.romanrm.net (Postfix) with SMTP id E0D9D124798
-	for <linux-btrfs@vger.kernel.org>; Sat, 12 Mar 2016 17:15:27 +0000 (UTC)
-Date: Sat, 12 Mar 2016 22:15:24 +0500
-From: Roman Mamedov <rm@romanrm.net>
-To: linux-btrfs@vger.kernel.org
-Subject: Re: parent transid verify failed on snapshot deletion
-Message-ID: <20160312221524.646e1a66@natsu>
-In-Reply-To: <20160312204847.2092f3f3@natsu>
-References: <20160312204847.2092f3f3@natsu>
+	Sat, 12 Mar 2016 14:57:57 -0500
+Received: from mh by torres.zugschlus.de with local (Exim 4.84)
+	(envelope-from <mh+linux-btrfs@zugschlus.de>)
+	id 1aepfX-000783-3l
+	for linux-btrfs@vger.kernel.org; Sat, 12 Mar 2016 20:57:47 +0100
+Date: Sat, 12 Mar 2016 20:57:46 +0100
+From: Marc Haber <mh+linux-btrfs@zugschlus.de>
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Subject: Re: Again, no space left on device while rebalancing and recipe
+ doesnt work
+Message-ID: <20160312195746.GJ2334@torres.zugschlus.de>
+References: <20160227211450.GS26042@torres.zugschlus.de>
+ <CAOE4rSyPvkzjKDVoQ-7U8ay5t7Pp2qeaCqh-tFg-etmgHGEOJQ@mail.gmail.com>
+ <20160305143934.GE1902@torres.zugschlus.de>
+ <CAJCQCtTw1+E=X1bbGgSB-fPHDtEPUO5amFUEs4fyPmTfK4QaGw@mail.gmail.com>
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
- boundary="Sig_/efzmZ53z03UkrS1WN+u7NrP"; protocol="application/pgp-signature"
+Content-Type: text/plain; charset=utf-8
+In-Reply-To: <CAJCQCtTw1+E=X1bbGgSB-fPHDtEPUO5amFUEs4fyPmTfK4QaGw@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
---Sig_/efzmZ53z03UkrS1WN+u7NrP
-Content-Type: text/plain; charset=US-ASCII
-Content-Transfer-Encoding: quoted-printable
+On Sat, Mar 05, 2016 at 12:34:09PM -0700, Chris Murphy wrote:
+> Something is happening with the usage of this file system that's out
+> of the ordinary. This is the first time I've seen such a large amount
+> of unused metadata allocation. And then for it not only fail to
+> balance, but for the allocation amount to increase is a first. So
+> understanding the usage is important to figuring out what's happening.
+> I'd file a bug and include as much information on how the fs got into
+> this state as possible. And also if possible make a btrfs-image using
+> the proper flags to blot out the filenames for privacy. And what
+> btrfs-progs tools were used to create this file system. Etc.
 
-Hello,
+https://bugzilla.kernel.org/show_bug.cgi?id=114451
 
-btrfsck output:
+Please advise if there is something missing.
 
-# btrfsck /dev/alpha/lv1
-Checking filesystem on /dev/alpha/lv1
-UUID: 8cf8eff9-fd5a-4b6f-bb85-3f2df2f63c99
-checking extents
-parent transid verify failed on 7483566862336 wanted 410578 found 404133
-parent transid verify failed on 7483566862336 wanted 410578 found 404133
-parent transid verify failed on 7483566862336 wanted 410578 found 404133
-parent transid verify failed on 7483566862336 wanted 410578 found 404133
-Ignoring transid failure
-bad block 7483566862336
-Errors found in extent allocation tree or chunk allocation
-parent transid verify failed on 7483566862336 wanted 410578 found 404133
-Ignoring transid failure
-checking free space cache
-parent transid verify failed on 7483566862336 wanted 410578 found 404133
-Ignoring transid failure
-There is no free space entry for 6504947712-7537164288
-cache appears valid but isnt 6463422464
-found 2455135703350 bytes used err is -22
-total csum bytes: 0
-total tree bytes: 368590848
-total fs tree bytes: 0
-total extent tree bytes: 364605440
-btree space waste bytes: 122267203
-file data blocks allocated: 1294204928
- referenced 1294204928
+Greetings
+Marc
 
-Seems like it should be safe to run --repair?
-
---=20
-With respect,
-Roman
-
---Sig_/efzmZ53z03UkrS1WN+u7NrP
-Content-Type: application/pgp-signature
-Content-Description: OpenPGP digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2
-
-iEYEARECAAYFAlbkTq8ACgkQTLKSvz+PZwisXACeJ47aTvrkFWmsYbnqoOnKWzPx
-1OcAmgJeB6QbhC9BgxxCFWOzXwQqAiQO
-=oaJ7
------END PGP SIGNATURE-----
-
---Sig_/efzmZ53z03UkrS1WN+u7NrP--
+-- 
+-----------------------------------------------------------------------------
+Marc Haber         | "I don't trust Computers. They | Mailadresse im Header
+Leimen, Germany    |  lose things."    Winona Ryder | Fon: *49 6224 1600402
+Nordisch by Nature |  How to make an American Quilt | Fax: *49 6224 1600421

@@ -1,34 +1,80 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f175.google.com ([209.85.223.175]:35270 "EHLO
-	mail-io0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751287AbcCLBUO (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 11 Mar 2016 20:20:14 -0500
-Received: by mail-io0-f175.google.com with SMTP id g203so166031115iof.2
-        for <linux-btrfs@vger.kernel.org>; Fri, 11 Mar 2016 17:20:14 -0800 (PST)
-MIME-Version: 1.0
-In-Reply-To: <CAD=QJKi7=R92UP4PKH4UAYH1HUB0Pr8DwO+MsyLNamKryYuZVA@mail.gmail.com>
-References: <CAD=QJKi-3PJQViAaRmGoz3_w6RQbRehDL9vXs14+CSHsG3ipTg@mail.gmail.com>
-	<CAD=QJKg6xFSFjJdDyD+v0Rd2afeB-ZRRy2SncC1Db5fyT3cf9A@mail.gmail.com>
-	<20160310023627.2e915667@natsu>
-	<pan$9dde$acf9ba51$bb837cb8$8c954a04@cox.net>
-	<CAD=QJKjkzh4U5Gmp=PJMiR8w3by12BVCDZ+MN2S+Ekk_EksjAg@mail.gmail.com>
-	<CAD=QJKi7=R92UP4PKH4UAYH1HUB0Pr8DwO+MsyLNamKryYuZVA@mail.gmail.com>
-Date: Fri, 11 Mar 2016 18:20:13 -0700
-Message-ID: <CAJCQCtR60t=XN1vXaRoMA_YBAy=jje6ns9EoUO1wG_+Zk02LZw@mail.gmail.com>
-Subject: Re: dstat shows unexpected result for two disk RAID1
-From: Chris Murphy <lists@colorremedies.com>
-To: Nicholas D Steeves <nsteeves@gmail.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Received: from know-smtprelay-omc-11.server.virginmedia.net ([80.0.253.75]:52501
+	"EHLO know-smtprelay-omc-11.server.virginmedia.net"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751921AbcCLNBU (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 12 Mar 2016 08:01:20 -0500
+Received: from phoenix.vfire (localhost [127.0.0.1])
+	by phoenix.vfire (8.14.9/8.14.5) with ESMTP id u2CD1HjW022215
+	for <linux-btrfs@vger.kernel.org>; Sat, 12 Mar 2016 13:01:17 GMT
+Received: (from pete@localhost)
+	by phoenix.vfire (8.14.9/8.14.5/Submit) id u2CD1HCC022214
+	for linux-btrfs@vger.kernel.org; Sat, 12 Mar 2016 13:01:17 GMT
+Date: Sat, 12 Mar 2016 13:01:17 GMT
+Message-Id: <201603121301.u2CD1HCC022214@phoenix.vfire>
+From: pete@petezilla.co.uk
+To: linux-btrfs@vger.kernel.org
+Subject: Re: Snapshots slowing system
+In-Reply-To: loom.20160312T002538-774@post.gmane.org
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Mar 11, 2016 at 5:10 PM, Nicholas D Steeves <nsteeves@gmail.com> wrote:
-> P.S. Rather than parity, I mean instead of distributing into stripes, do a copy!
 
-raid56 by definition are parity based, so I'd say no that's confusing
-to turn it into something it's not.
+I hope this message stays within the thread on the list.  I had email problems
+and ended up hacking around with sendmail & grabbing the message id off of
+the web based group archives.
 
--- 
-Chris Murphy
+
+>I wondered whether you had elimated fragmentation, or any other known gotchas, 
+>as a cause?
+
+Subvolumes are mounted with the following options:
+autodefrag,relatime,compress=lzo,subvol=<sub vol name>
+
+Not sure if there is much else to do about fragmentation apart from running a
+balance which would probally make thje machine v sluggish for a day or so.
+
+>Out of curiosity, what is/was the utilisation of the disk? Were the snapshots 
+>read-only or read-write?
+
+root@phoenix:~# btrfs fi df /    
+Data, single: total=101.03GiB, used=97.91GiB
+System, single: total=32.00MiB, used=16.00KiB
+Metadata, single: total=8.00GiB, used=5.29GiB
+GlobalReserve, single: total=512.00MiB, used=0.00B
+
+root@phoenix:~# btrfs fi df /home
+Data, RAID1: total=1.99TiB, used=1.97TiB
+System, RAID1: total=32.00MiB, used=352.00KiB
+Metadata, RAID1: total=53.00GiB, used=50.22GiB
+GlobalReserve, single: total=512.00MiB, used=0.00B
+
+
+Hmm.  The system disk is getting a little tight. cddisk reports the partition I
+use for btrfs containing root as 127GB approx.  Not sure why it grows so much.
+Suspect that software updates can't help as snapshots will contain the legacy
+versions.  On the other hand they can be useful.
+
+Is it likely the SSD?  If likely I could get a larger one, now is a good time with
+a new version of slackware imminent.  However, no point in spending money for
+the sake of it.
+
+All snapshots read-write.  However, I have mainly treated them as read-only.  
+Does that make a difference?
+
+
+
+>Apropos Nada: quick shout out to Qu to wish him luck for the 4.6 merge.
+
+I'm wondering if it is time for an update from 4.0.4?
+
+
+>[Also, damn you autocorrection on my phone!]
+
+Yep!
+
+
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

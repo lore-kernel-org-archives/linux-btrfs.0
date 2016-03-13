@@ -1,86 +1,110 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:35866 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S932148AbcCMDzK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 12 Mar 2016 22:55:10 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1aex7T-0007uj-0U
-	for linux-btrfs@vger.kernel.org; Sun, 13 Mar 2016 04:55:07 +0100
-Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sun, 13 Mar 2016 04:55:06 +0100
-Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sun, 13 Mar 2016 04:55:06 +0100
+Received: from meiko.romanrm.net ([195.154.92.155]:51562 "EHLO
+	meiko.romanrm.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752231AbcCMJYj (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 13 Mar 2016 05:24:39 -0400
+Received: from natsu (unknown [IPv6:fd39::e9:9eff:fe8f:1bcf])
+	by meiko.romanrm.net (Postfix) with SMTP id E28FB124C82
+	for <linux-btrfs@vger.kernel.org>; Sun, 13 Mar 2016 09:24:33 +0000 (UTC)
+Date: Sun, 13 Mar 2016 14:24:28 +0500
+From: Roman Mamedov <rm@romanrm.net>
 To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
 Subject: Re: parent transid verify failed on snapshot deletion
-Date: Sun, 13 Mar 2016 03:54:45 +0000 (UTC)
-Message-ID: <pan$c954b$14267bd6$8ef1d5a7$ce601fa2@cox.net>
+Message-ID: <20160313142428.377b51b8@natsu>
+In-Reply-To: <20160312221524.646e1a66@natsu>
 References: <20160312204847.2092f3f3@natsu>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+	<20160312221524.646e1a66@natsu>
+MIME-Version: 1.0
+Content-Type: multipart/signed; micalg=pgp-sha1;
+ boundary="Sig_/CCsgtcI.qU0HbdnD/W6zUpY"; protocol="application/pgp-signature"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Roman Mamedov posted on Sat, 12 Mar 2016 20:48:47 +0500 as excerpted:
+--Sig_/CCsgtcI.qU0HbdnD/W6zUpY
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: quoted-printable
 
-> I wonder what's the best way to proceed here. Maybe try btrfs-zero-log?
-> But the difference between transid numbers of 6 thousands is concerning.
+On Sat, 12 Mar 2016 22:15:24 +0500
+Roman Mamedov <rm@romanrm.net> wrote:
 
-btrfs-zero-log is a very specific tool designed to fix a very specific 
-problem, and transid differences >1 are not it.
+> Seems like it should be safe to run --repair?
 
-I read your followup, posting btrfs check output and wondering about 
-enabling --repair, as well.
+Well this is unexpected, I ran --repair, and it did not do anything.
 
-As long as you have a backup, shouldn't be a problem, even if it does 
-cause further damage (which it doesn't appear like it will in your case).
+# btrfsck --repair /dev/alpha/lv1
+enabling repair mode
+Checking filesystem on /dev/alpha/lv1
+UUID: 8cf8eff9-fd5a-4b6f-bb85-3f2df2f63c99
+checking extents
+parent transid verify failed on 7483566862336 wanted 410578 found 404133
+parent transid verify failed on 7483566862336 wanted 410578 found 404133
+parent transid verify failed on 7483566862336 wanted 410578 found 404133
+parent transid verify failed on 7483566862336 wanted 410578 found 404133
+Ignoring transid failure
+bad block 7483566862336
+Errors found in extent allocation tree or chunk allocation
+parent transid verify failed on 7483566862336 wanted 410578 found 404133
+Ignoring transid failure
+Fixed 0 roots.
+checking free space cache
+parent transid verify failed on 7483566862336 wanted 410578 found 404133
+Ignoring transid failure
+There is no free space entry for 6504947712-7537164288
+cache appears valid but isnt 6463422464
+found 2455135691065 bytes used err is -22
+total csum bytes: 0
+total tree bytes: 368590848
+total fs tree bytes: 0
+total extent tree bytes: 364605440
+btree space waste bytes: 122267201
+file data blocks allocated: 1294204928
+ referenced 1294204928
 
-If you don't have a backup it shouldn't be a problem either, since the 
-very fact that you don't have a backup, indicates by your actions that 
-you consider the data at risk as of less value than the time, effort and 
-resources necessary to have that backup in the first place.   As such, 
-even if you lose the data, you saved what was obviously more important 
-than that data to you, the time, effort and resources that you would have 
-otherwise put into making and testing that backup, so you're still coming 
-out ahead. =:^)
+# btrfsck /dev/alpha/lv1
+Checking filesystem on /dev/alpha/lv1
+UUID: 8cf8eff9-fd5a-4b6f-bb85-3f2df2f63c99
+checking extents
+parent transid verify failed on 7483566862336 wanted 410578 found 404133
+parent transid verify failed on 7483566862336 wanted 410578 found 404133
+parent transid verify failed on 7483566862336 wanted 410578 found 404133
+parent transid verify failed on 7483566862336 wanted 410578 found 404133
+Ignoring transid failure
+bad block 7483566862336
+Errors found in extent allocation tree or chunk allocation
+parent transid verify failed on 7483566862336 wanted 410578 found 404133
+Ignoring transid failure
+checking free space cache
+parent transid verify failed on 7483566862336 wanted 410578 found 404133
+Ignoring transid failure
+There is no free space entry for 6504947712-7537164288
+cache appears valid but isnt 6463422464
+found 2455135691065 bytes used err is -22
+total csum bytes: 0
+total tree bytes: 368590848
+total fs tree bytes: 0
+total extent tree bytes: 364605440
+btree space waste bytes: 122267201
+file data blocks allocated: 1294204928
+ referenced 1294204928
 
-Which means the only case not clearly covered is that of data worth 
-having backed up, which you do, but the backup is somewhat stale, and as 
-long as the risk was theoretical, you didn't consider the chance of 
-something happening to the data updated since the backup worth more than 
-the cost of updating that backup.  But now that the theoretical chance 
-has become reality, while loss of that incremental data isn't earth 
-shattering in its consequences, you'd prefer not to lose it if you can 
-save it without too much trouble.  That's quite understandable, and is 
-the exact position I've been in myself a couple times.
+With "Errors found in extent allocation tree", I wonder if I should
+try --init-extent-tree next.
 
-In both my cases where I did end up actually giving up on repair and 
-eventually blowing away the filesystem, btrfs restore (before that blow-
-away) was able to get me back the incremental changes since my last 
-proper backup.  If it hadn't worked I'd have certainly lost some work and 
-been less than absolutely happy, but as I _did_ have backups (which by 
-the fact that I had them indicated I actually valued the data at risk at 
-something above trivial), they were simply somewhat stale, it wouldn't 
-have been the end of the world.
+--=20
+With respect,
+Roman
 
+--Sig_/CCsgtcI.qU0HbdnD/W6zUpY
+Content-Type: application/pgp-signature
+Content-Description: OpenPGP digital signature
 
-Of course in your case you _can_ mount, if only in read-only mode.  So 
-take the opportunity you've been handed and update your backups (and of 
-course backups that haven't been verified readable/restorable aren't yet 
-completed backups, as a would-be backup isn't complete and can't really 
-be considered a backup yet, until that verification is done), just in 
-case, and then even in the worst-case scenario, btrfs check --repair 
-can't do more than inconvenience you a bit if it makes the problem worse 
-instead of fixing it, since you have current backups and will only need 
-to blow away the filesystem and recreate it fresh, in ordered to restore 
-them.
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2
 
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+iEYEARECAAYFAlblMdEACgkQTLKSvz+PZwhi6gCgl3GFKwXlNbbXUclrm/VRRxjl
+1A0An1lSDkEBgvfnhCl2+00V8sgd8nvx
+=1L+b
+-----END PGP SIGNATURE-----
 
+--Sig_/CCsgtcI.qU0HbdnD/W6zUpY--

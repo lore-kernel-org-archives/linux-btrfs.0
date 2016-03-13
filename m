@@ -1,277 +1,70 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from torres.zugschlus.de ([85.214.131.164]:59288 "EHLO
-	torres.zugschlus.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752879AbcCML6M (ORCPT
+Received: from mail-yw0-f170.google.com ([209.85.161.170]:36227 "EHLO
+	mail-yw0-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752908AbcCMNRZ (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 13 Mar 2016 07:58:12 -0400
-Received: from mh by torres.zugschlus.de with local (Exim 4.84)
-	(envelope-from <mh+linux-btrfs@zugschlus.de>)
-	id 1af4ew-0002fD-4Y
-	for linux-btrfs@vger.kernel.org; Sun, 13 Mar 2016 12:58:10 +0100
-Date: Sun, 13 Mar 2016 12:58:10 +0100
-From: Marc Haber <mh+linux-btrfs@zugschlus.de>
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Subject: New file system with same issue (was: Again, no space left on device
- while rebalancing and recipe doesnt work)
-Message-ID: <20160313115809.GQ2334@torres.zugschlus.de>
-References: <20160227211450.GS26042@torres.zugschlus.de>
- <CAOE4rSyPvkzjKDVoQ-7U8ay5t7Pp2qeaCqh-tFg-etmgHGEOJQ@mail.gmail.com>
- <20160305143934.GE1902@torres.zugschlus.de>
- <CAJCQCtTw1+E=X1bbGgSB-fPHDtEPUO5amFUEs4fyPmTfK4QaGw@mail.gmail.com>
+	Sun, 13 Mar 2016 09:17:25 -0400
+Received: by mail-yw0-f170.google.com with SMTP id g3so139487311ywa.3
+        for <linux-btrfs@vger.kernel.org>; Sun, 13 Mar 2016 06:17:24 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-In-Reply-To: <CAJCQCtTw1+E=X1bbGgSB-fPHDtEPUO5amFUEs4fyPmTfK4QaGw@mail.gmail.com>
+In-Reply-To: <20160313115809.GQ2334@torres.zugschlus.de>
+References: <20160227211450.GS26042@torres.zugschlus.de>
+	<CAOE4rSyPvkzjKDVoQ-7U8ay5t7Pp2qeaCqh-tFg-etmgHGEOJQ@mail.gmail.com>
+	<20160305143934.GE1902@torres.zugschlus.de>
+	<CAJCQCtTw1+E=X1bbGgSB-fPHDtEPUO5amFUEs4fyPmTfK4QaGw@mail.gmail.com>
+	<20160313115809.GQ2334@torres.zugschlus.de>
+Date: Mon, 14 Mar 2016 00:17:24 +1100
+Message-ID: <CALxwgb5oMZWT3v7vLvs_nqZ+eNzUns78yW51mj+N7zbsMf1_MQ@mail.gmail.com>
+Subject: Re: New file system with same issue (was: Again, no space left on
+ device while rebalancing and recipe doesnt work)
+From: Andrew Vaughan <andrewjvaughan@gmail.com>
+To: Marc Haber <mh+linux-btrfs@zugschlus.de>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+Hi Marc
 
-On Sat, Mar 05, 2016 at 12:34:09PM -0700, Chris Murphy wrote:
-> The alternative if this can't be fixed, is to recreate the filesystem
-> because there's no practical way yet to migrate so many snapshots to a
-> new file system.
+On 13 March 2016 at 22:58, Marc Haber <mh+linux-btrfs@zugschlus.de> wrote:
+> Hi,
+>
+> On Sat, Mar 05, 2016 at 12:34:09PM -0700, Chris Murphy wrote:
+>> The alternative if this can't be fixed, is to recreate the filesystem
+>> because there's no practical way yet to migrate so many snapshots to a
+>> new file system.
+>
+> I recreated the file system on March 7, with 200 GiB in size, using
+> btrfs-tools 4.4. The snapshot-taking process has been running since
+> then, but I also regularly cleaned up. The number of snapshots on the
+> new filesystem has never exceeded 1000, with the current count being
+> at 148.
+>
+<snip>
 
-I recreated the file system on March 7, with 200 GiB in size, using
-btrfs-tools 4.4. The snapshot-taking process has been running since
-then, but I also regularly cleaned up. The number of snapshots on the
-new filesystem has never exceeded 1000, with the current count being
-at 148.
 
-And btrfs balance runs into the same ENOSPC issues as the old one:
+I'm not a dev, so I'll just thouw out a random, and possibly naive idea.
 
-[9/508]mh@fan:~$ grep -v 'device dm-15' 20160313-fanbtr-btrfs-syslog
-Mar 13 11:05:45 fan mh: BEGIN btrfs-balance script
-Mar 13 11:05:45 fan mh: btrfs fi df /
-Mar 13 11:05:45 fan root: Data, single: total=80.00GiB, used=77.71GiB
-Mar 13 11:05:45 fan root: System, single: total=32.00MiB, used=16.00KiB
-Mar 13 11:05:45 fan root: Metadata, single: total=27.00GiB, used=2.38GiB
-Mar 13 11:05:45 fan root: GlobalReserve, single: total=512.00MiB, used=0.00B
-Mar 13 11:05:45 fan mh: btrfs fi show /
-Mar 13 11:05:45 fan root: Label: 'fanbtr'  uuid: 90f8d728-6bae-4fca-8cda-b368ba2c008e
-Mar 13 11:05:45 fan root: #011Total devices 1 FS bytes used 80.09GiB
-Mar 13 11:05:45 fan root: #011devid    1 size 200.00GiB used 107.03GiB path /dev/mapper/fanbtr
-Mar 13 11:05:45 fan root:
-Mar 13 11:05:45 fan mh: btrfs fi usage /
-Mar 13 11:05:45 fan root: Overall:
-Mar 13 11:05:45 fan root:     Device size:#011#011 200.00GiB
-Mar 13 11:05:45 fan root:     Device allocated:#011#011 107.03GiB
-Mar 13 11:05:45 fan root:     Device unallocated:#011#011  92.97GiB
-Mar 13 11:05:45 fan root:     Device missing:#011#011     0.00B
-Mar 13 11:05:45 fan root:     Used:#011#011#011  80.09GiB
-Mar 13 11:05:45 fan root:     Free (estimated):#011#011  95.26GiB#011(min: 95.26GiB)
-Mar 13 11:05:45 fan root:     Data ratio:#011#011#011      1.00
-Mar 13 11:05:45 fan root:     Metadata ratio:#011#011      1.00
-Mar 13 11:05:45 fan root:     Global reserve:#011#011 512.00MiB#011(used: 0.00B)
-Mar 13 11:05:45 fan root:
-Mar 13 11:05:45 fan root: Data,single: Size:80.00GiB, Used:77.71GiB
-Mar 13 11:05:45 fan root:    /dev/mapper/fanbtr#011  80.00GiB
-Mar 13 11:05:45 fan root:
-Mar 13 11:05:45 fan root: Metadata,single: Size:27.00GiB, Used:2.38GiB
-Mar 13 11:05:45 fan root:    /dev/mapper/fanbtr#011  27.00GiB
-Mar 13 11:05:45 fan root:
-Mar 13 11:05:45 fan root: System,single: Size:32.00MiB, Used:16.00KiB
-Mar 13 11:05:45 fan root:    /dev/mapper/fanbtr#011  32.00MiB
-Mar 13 11:05:45 fan root:
-Mar 13 11:05:45 fan root: Unallocated:
-Mar 13 11:05:45 fan root:    /dev/mapper/fanbtr#011  92.97GiB
-Mar 13 11:05:45 fan mh: BEGIN btrfs balance start /
-Mar 13 11:20:30 fan root: ERROR: error during balancing '/': No space left on device
-Mar 13 11:20:30 fan root: There may be more info in syslog - try dmesg | tail
-Mar 13 11:20:30 fan root: btrfs fi df /
-Mar 13 11:20:30 fan root: Data, single: total=78.00GiB, used=77.70GiB
-Mar 13 11:20:30 fan root: System, single: total=32.00MiB, used=16.00KiB
-Mar 13 11:20:30 fan root: Metadata, single: total=15.00GiB, used=2.38GiB
-Mar 13 11:20:30 fan root: GlobalReserve, single: total=512.00MiB, used=0.00B
-Mar 13 11:20:30 fan root: btrfs fi show /
-Mar 13 11:20:30 fan root: Label: 'fanbtr'  uuid: 90f8d728-6bae-4fca-8cda-b368ba2c008e
-Mar 13 11:20:30 fan root: #011Total devices 1 FS bytes used 80.08GiB
-Mar 13 11:20:30 fan root: #011devid    1 size 200.00GiB used 93.03GiB path /dev/mapper/fanbtr
-Mar 13 11:20:30 fan root:
-Mar 13 11:20:30 fan root: btrfs fi usage /
-Mar 13 11:20:30 fan root: Overall:
-Mar 13 11:20:30 fan root:     Device size:#011#011 200.00GiB
-Mar 13 11:20:30 fan root:     Device allocated:#011#011  93.03GiB
-Mar 13 11:20:30 fan root:     Device unallocated:#011#011 106.97GiB
-Mar 13 11:20:30 fan root:     Device missing:#011#011     0.00B
-Mar 13 11:20:30 fan root:     Used:#011#011#011  80.08GiB
-Mar 13 11:20:30 fan root:     Free (estimated):#011#011 107.27GiB#011(min: 107.27GiB)
-Mar 13 11:20:30 fan root:     Data ratio:#011#011#011      1.00
-Mar 13 11:20:30 fan root:     Metadata ratio:#011#011      1.00
-Mar 13 11:20:30 fan root:     Global reserve:#011#011 512.00MiB#011(used: 0.00B)
-Mar 13 11:20:30 fan root:
-Mar 13 11:20:30 fan root: Data,single: Size:78.00GiB, Used:77.70GiB
-Mar 13 11:20:30 fan root:    /dev/mapper/fanbtr#011  78.00GiB
-Mar 13 11:20:30 fan root:
-Mar 13 11:20:30 fan root: Metadata,single: Size:15.00GiB, Used:2.38GiB
-Mar 13 11:20:30 fan root:    /dev/mapper/fanbtr#011  15.00GiB
-Mar 13 11:20:30 fan root:
-Mar 13 11:20:30 fan root: System,single: Size:32.00MiB, Used:16.00KiB
-Mar 13 11:20:30 fan root:    /dev/mapper/fanbtr#011  32.00MiB
-Mar 13 11:20:30 fan root:
-Mar 13 11:20:30 fan root: Unallocated:
-Mar 13 11:20:30 fan root:    /dev/mapper/fanbtr#011 106.97GiB
-Mar 13 11:20:30 fan root: BEGIN btrfs balance start -dprofiles=single /
-Mar 13 11:36:17 fan root: Done, had to relocate 78 out of 94 chunks
-Mar 13 11:36:17 fan root: btrfs fi df /
-Mar 13 11:36:17 fan root: Data, single: total=78.00GiB, used=77.71GiB
-Mar 13 11:36:17 fan root: System, single: total=32.00MiB, used=16.00KiB
-Mar 13 11:36:17 fan root: Metadata, single: total=15.00GiB, used=2.38GiB
-Mar 13 11:36:17 fan root: GlobalReserve, single: total=512.00MiB, used=0.00B
-Mar 13 11:36:17 fan root: btrfs fi show /
-Mar 13 11:36:17 fan root: Label: 'fanbtr'  uuid: 90f8d728-6bae-4fca-8cda-b368ba2c008e
-Mar 13 11:36:17 fan root: #011Total devices 1 FS bytes used 80.09GiB
-Mar 13 11:36:17 fan root: #011devid    1 size 200.00GiB used 93.03GiB path /dev/mapper/fanbtr
-Mar 13 11:36:17 fan root:
-Mar 13 11:36:17 fan root: btrfs fi usage /
-Mar 13 11:36:17 fan root: Overall:
-Mar 13 11:36:17 fan root:     Device size:#011#011 200.00GiB
-Mar 13 11:36:17 fan root:     Device allocated:#011#011  93.03GiB
-Mar 13 11:36:17 fan root:     Device unallocated:#011#011 106.97GiB
-Mar 13 11:36:17 fan root:     Device missing:#011#011     0.00B
-Mar 13 11:36:17 fan root:     Used:#011#011#011  80.09GiB
-Mar 13 11:36:17 fan root:     Free (estimated):#011#011 107.26GiB#011(min: 107.26GiB)
-Mar 13 11:36:17 fan root:     Data ratio:#011#011#011      1.00
-Mar 13 11:36:17 fan root:     Metadata ratio:#011#011      1.00
-Mar 13 11:36:17 fan root:     Global reserve:#011#011 512.00MiB#011(used: 0.00B)
-Mar 13 11:36:17 fan root:
-Mar 13 11:36:17 fan root: Data,single: Size:78.00GiB, Used:77.71GiB
-Mar 13 11:36:17 fan root:    /dev/mapper/fanbtr#011  78.00GiB
-Mar 13 11:36:17 fan root:
-Mar 13 11:36:17 fan root: Metadata,single: Size:15.00GiB, Used:2.38GiB
-Mar 13 11:36:17 fan root:    /dev/mapper/fanbtr#011  15.00GiB
-Mar 13 11:36:17 fan root:
-Mar 13 11:36:17 fan root: System,single: Size:32.00MiB, Used:16.00KiB
-Mar 13 11:36:17 fan root:    /dev/mapper/fanbtr#011  32.00MiB
-Mar 13 11:36:17 fan root:
-Mar 13 11:36:17 fan root: Unallocated:
-Mar 13 11:36:17 fan root:    /dev/mapper/fanbtr#011 106.97GiB
-Mar 13 11:36:17 fan root: BEGIN btrfs balance start -mprofiles=dup /
-Mar 13 11:36:17 fan root: Done, had to relocate 0 out of 94 chunks
-Mar 13 11:36:17 fan root: btrfs fi df /
-Mar 13 11:36:17 fan root: Data, single: total=78.00GiB, used=77.71GiB
-Mar 13 11:36:17 fan root: System, single: total=32.00MiB, used=16.00KiB
-Mar 13 11:36:17 fan root: Metadata, single: total=15.00GiB, used=2.38GiB
-Mar 13 11:36:17 fan root: GlobalReserve, single: total=512.00MiB, used=0.00B
-Mar 13 11:36:17 fan root: btrfs fi show /
-Mar 13 11:36:17 fan root: Label: 'fanbtr'  uuid: 90f8d728-6bae-4fca-8cda-b368ba2c008e
-Mar 13 11:36:17 fan root: #011Total devices 1 FS bytes used 80.09GiB
-Mar 13 11:36:17 fan root: #011devid    1 size 200.00GiB used 93.03GiB path /dev/mapper/fanbtr
-Mar 13 11:36:17 fan root:
-Mar 13 11:36:17 fan root: btrfs fi usage /
-Mar 13 11:36:17 fan root: Overall:
-Mar 13 11:36:17 fan root:     Device size:#011#011 200.00GiB
-Mar 13 11:36:17 fan root:     Device allocated:#011#011  93.03GiB
-Mar 13 11:36:17 fan root:     Device unallocated:#011#011 106.97GiB
-Mar 13 11:36:17 fan root:     Device missing:#011#011     0.00B
-Mar 13 11:36:17 fan root:     Used:#011#011#011  80.09GiB
-Mar 13 11:36:17 fan root:     Free (estimated):#011#011 107.26GiB#011(min: 107.26GiB)
-Mar 13 11:36:17 fan root:     Data ratio:#011#011#011      1.00
-Mar 13 11:36:17 fan root:     Metadata ratio:#011#011      1.00
-Mar 13 11:36:17 fan root:     Global reserve:#011#011 512.00MiB#011(used: 0.00B)
-Mar 13 11:36:17 fan root:
-Mar 13 11:36:17 fan root: Data,single: Size:78.00GiB, Used:77.71GiB
-Mar 13 11:36:17 fan root:    /dev/mapper/fanbtr#011  78.00GiB
-Mar 13 11:36:17 fan root:
-Mar 13 11:36:17 fan root: Metadata,single: Size:15.00GiB, Used:2.38GiB
-Mar 13 11:36:17 fan root:    /dev/mapper/fanbtr#011  15.00GiB
-Mar 13 11:36:17 fan root:
-Mar 13 11:36:17 fan root: System,single: Size:32.00MiB, Used:16.00KiB
-Mar 13 11:36:17 fan root:    /dev/mapper/fanbtr#011  32.00MiB
-Mar 13 11:36:17 fan root:
-Mar 13 11:36:17 fan root: Unallocated:
-Mar 13 11:36:17 fan root:    /dev/mapper/fanbtr#011 106.97GiB
-Mar 13 11:36:17 fan root: BEGIN btrfs balance start --force -sprofiles=dup /
-Mar 13 11:36:17 fan root: Done, had to relocate 0 out of 94 chunks
-Mar 13 11:36:17 fan root: btrfs fi df /
-Mar 13 11:36:17 fan root: Data, single: total=78.00GiB, used=77.71GiB
-Mar 13 11:36:17 fan root: System, single: total=32.00MiB, used=16.00KiB
-Mar 13 11:36:17 fan root: Metadata, single: total=15.00GiB, used=2.38GiB
-Mar 13 11:36:17 fan root: GlobalReserve, single: total=512.00MiB, used=0.00B
-Mar 13 11:36:17 fan root: btrfs fi show /
-Mar 13 11:36:17 fan root: Label: 'fanbtr'  uuid: 90f8d728-6bae-4fca-8cda-b368ba2c008e
-Mar 13 11:36:17 fan root: #011Total devices 1 FS bytes used 80.09GiB
-Mar 13 11:36:17 fan root: #011devid    1 size 200.00GiB used 93.03GiB path /dev/mapper/fanbtr
-Mar 13 11:36:17 fan root:
-Mar 13 11:36:17 fan root: btrfs fi usage /
-Mar 13 11:36:17 fan root: Overall:
-Mar 13 11:36:17 fan root:     Device size:#011#011 200.00GiB
-Mar 13 11:36:17 fan root:     Device allocated:#011#011  93.03GiB
-Mar 13 11:36:17 fan root:     Device unallocated:#011#011 106.97GiB
-Mar 13 11:36:17 fan root:     Device missing:#011#011     0.00B
-Mar 13 11:36:17 fan root:     Used:#011#011#011  80.09GiB
-Mar 13 11:36:17 fan root:     Free (estimated):#011#011 107.26GiB#011(min: 107.26GiB)
-Mar 13 11:36:17 fan root:     Data ratio:#011#011#011      1.00
-Mar 13 11:36:17 fan root:     Metadata ratio:#011#011      1.00
-Mar 13 11:36:17 fan root:     Global reserve:#011#011 512.00MiB#011(used: 0.00B)
-Mar 13 11:36:17 fan root:
-Mar 13 11:36:17 fan root: Data,single: Size:78.00GiB, Used:77.71GiB
-Mar 13 11:36:17 fan root:    /dev/mapper/fanbtr#011  78.00GiB
-Mar 13 11:36:17 fan root:
-Mar 13 11:36:17 fan root: Metadata,single: Size:15.00GiB, Used:2.38GiB
-Mar 13 11:36:17 fan root:    /dev/mapper/fanbtr#011  15.00GiB
-Mar 13 11:36:17 fan root:
-Mar 13 11:36:17 fan root: System,single: Size:32.00MiB, Used:16.00KiB
-Mar 13 11:36:17 fan root:    /dev/mapper/fanbtr#011  32.00MiB
-Mar 13 11:36:17 fan root:
-Mar 13 11:36:17 fan root: Unallocated:
-Mar 13 11:36:17 fan root:    /dev/mapper/fanbtr#011 106.97GiB
-Mar 13 11:36:17 fan root: BEGIN btrfs balance start /
-Mar 13 11:51:23 fan root: ERROR: error during balancing '/': No space left on device
-Mar 13 11:51:23 fan root: There may be more info in syslog - try dmesg | tail
-Mar 13 11:51:23 fan root: btrfs fi df /
-Mar 13 11:51:23 fan root: Data, single: total=78.00GiB, used=77.70GiB
-Mar 13 11:51:23 fan root: System, single: total=32.00MiB, used=16.00KiB
-Mar 13 11:51:23 fan root: Metadata, single: total=23.00GiB, used=2.38GiB
-Mar 13 11:51:23 fan root: GlobalReserve, single: total=512.00MiB, used=0.00B
-Mar 13 11:51:23 fan root: btrfs fi show /
-Mar 13 11:51:23 fan root: Label: 'fanbtr'  uuid: 90f8d728-6bae-4fca-8cda-b368ba2c008e
-Mar 13 11:51:23 fan root: #011Total devices 1 FS bytes used 80.08GiB
-Mar 13 11:51:23 fan root: #011devid    1 size 200.00GiB used 101.03GiB path /dev/mapper/fanbtr
-Mar 13 11:51:23 fan root:
-Mar 13 11:51:23 fan root: btrfs fi usage /
-Mar 13 11:51:23 fan root: Overall:
-Mar 13 11:51:23 fan root:     Device size:#011#011 200.00GiB
-Mar 13 11:51:23 fan root:     Device allocated:#011#011 101.03GiB
-Mar 13 11:51:23 fan root:     Device unallocated:#011#011  98.97GiB
-Mar 13 11:51:23 fan root:     Device missing:#011#011     0.00B
-Mar 13 11:51:23 fan root:     Used:#011#011#011  80.08GiB
-Mar 13 11:51:23 fan root:     Free (estimated):#011#011  99.26GiB#011(min: 99.26GiB)
-Mar 13 11:51:23 fan root:     Data ratio:#011#011#011      1.00
-Mar 13 11:51:23 fan root:     Metadata ratio:#011#011      1.00
-Mar 13 11:51:23 fan root:     Global reserve:#011#011 512.00MiB#011(used: 0.00B)
-Mar 13 11:51:23 fan root:
-Mar 13 11:51:23 fan root: Data,single: Size:78.00GiB, Used:77.70GiB
-Mar 13 11:51:23 fan root:    /dev/mapper/fanbtr#011  78.00GiB
-Mar 13 11:51:23 fan root:
-Mar 13 11:51:23 fan root: Metadata,single: Size:23.00GiB, Used:2.38GiB
-Mar 13 11:51:23 fan root:    /dev/mapper/fanbtr#011  23.00GiB
-Mar 13 11:51:23 fan root:
-Mar 13 11:51:23 fan root: System,single: Size:32.00MiB, Used:16.00KiB
-Mar 13 11:51:23 fan root:    /dev/mapper/fanbtr#011  32.00MiB
-Mar 13 11:51:23 fan root:
-Mar 13 11:51:23 fan root: Unallocated:
-Mar 13 11:51:23 fan root:    /dev/mapper/fanbtr#011  98.97GiB
-Mar 13 11:51:23 fan root: END btrfs-balance script
-[10/509]mh@fan:~$
+How much i/o load is this filesystem under?
+What type of access pattern(s), how frequent and large are the changes?
 
-I see the same metadata spread as with the old filesystem in btrfs fi
-df, totl at 23 and used at 2.38 GiB. What I find strange is that this
-filesystem has Data, System and Metadata in "single" profile, is this
-the new default for a 200 GiB file system?
+Are you still making snapshots every 10m?
+How often do you delete old snapshots?  Also every 10m, or do you
+delete them in batchs every hour or so?
 
-Full log is at http://q.bofh.de/~mh/stuff/20160313-fanbtr-btrfs-syslog
+How long does "btrfs subvolume delete -c <one_snapshot>" take?
+What does "time btrfs subvolume delete -C <one_snapshot> ; time btrfs
+subvolume sync <mount_point>" print ?
 
-The log was taken with enospc_debug active on the file system and all
-file system, block device and storage relevant log lines were left in.
+The reason for asking is that even on a lightly loaded filesystem I
+have seen btrfs subvolume delete take more than 30 seconds.  On a more
+heavily load filesystem  I have seen 5+ minutes before btrfs subvolume
+delete had finished.
 
-Is there anything missing? Is this the same issue? Would the log help
-as addition in https://bugzilla.kernel.org/show_bug.cgi?id=114451?
+If you have a high enough i/o load, plus large enough changes per
+snapshot, it might be possible to get btrfs into a situation were it
+never actually finishes cleaning up deleted snapshots.  (I'm also not
+sure what happens if you shutdown or unmount whilst btrfs is still
+cleaning up, but I expect the devs thought of that).
 
-Greetings
-Marc
-
--- 
------------------------------------------------------------------------------
-Marc Haber         | "I don't trust Computers. They | Mailadresse im Header
-Leimen, Germany    |  lose things."    Winona Ryder | Fon: *49 6224 1600402
-Nordisch by Nature |  How to make an American Quilt | Fax: *49 6224 1600421
+Andrew

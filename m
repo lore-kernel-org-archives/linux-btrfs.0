@@ -1,64 +1,73 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f174.google.com ([209.85.223.174]:32785 "EHLO
-	mail-io0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752539AbcCMUKs (ORCPT
+Received: from torres.zugschlus.de ([85.214.131.164]:60548 "EHLO
+	torres.zugschlus.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752876AbcCMUu2 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 13 Mar 2016 16:10:48 -0400
-Received: by mail-io0-f174.google.com with SMTP id n190so201359491iof.0
-        for <linux-btrfs@vger.kernel.org>; Sun, 13 Mar 2016 13:10:48 -0700 (PDT)
+	Sun, 13 Mar 2016 16:50:28 -0400
+Received: from mh by torres.zugschlus.de with local (Exim 4.84)
+	(envelope-from <mh+linux-btrfs@zugschlus.de>)
+	id 1afCy2-0004wT-Di
+	for linux-btrfs@vger.kernel.org; Sun, 13 Mar 2016 21:50:26 +0100
+Date: Sun, 13 Mar 2016 21:50:26 +0100
+From: Marc Haber <mh+linux-btrfs@zugschlus.de>
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Subject: Re: Again, no space left on device while rebalancing and recipe
+ doesnt work
+Message-ID: <20160313205026.GU2334@torres.zugschlus.de>
+References: <20160227211450.GS26042@torres.zugschlus.de>
+ <CAOE4rSyPvkzjKDVoQ-7U8ay5t7Pp2qeaCqh-tFg-etmgHGEOJQ@mail.gmail.com>
+ <20160305143934.GE1902@torres.zugschlus.de>
+ <CAJCQCtTw1+E=X1bbGgSB-fPHDtEPUO5amFUEs4fyPmTfK4QaGw@mail.gmail.com>
+ <20160312195746.GJ2334@torres.zugschlus.de>
+ <CAJCQCtSmHAs_zMt3kHdCL9Nd+aAMW-2nDSNYXhizwan8OL3mGw@mail.gmail.com>
 MIME-Version: 1.0
-In-Reply-To: <20160313222442.1fa22a57@natsu>
-References: <20160312204847.2092f3f3@natsu>
-	<20160312221524.646e1a66@natsu>
-	<20160313142428.377b51b8@natsu>
-	<pan$a52ce$b1beae3d$57f5b99c$a796a0ec@cox.net>
-	<20160313222442.1fa22a57@natsu>
-Date: Sun, 13 Mar 2016 14:10:47 -0600
-Message-ID: <CAJCQCtSnSm355BC-hVRL9NnRLxXiYQefbepvm2yfTXd6PdLghw@mail.gmail.com>
-Subject: Re: parent transid verify failed on snapshot deletion
-From: Chris Murphy <lists@colorremedies.com>
-To: Roman Mamedov <rm@romanrm.net>
-Cc: Duncan <1i5t5.duncan@cox.net>, Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=utf-8
+In-Reply-To: <CAJCQCtSmHAs_zMt3kHdCL9Nd+aAMW-2nDSNYXhizwan8OL3mGw@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Mar 13, 2016 at 11:24 AM, Roman Mamedov <rm@romanrm.net> wrote:
+On Sun, Mar 13, 2016 at 01:43:50PM -0600, Chris Murphy wrote:
+> On Sat, Mar 12, 2016 at 12:57 PM, Marc Haber
+> <mh+linux-btrfs@zugschlus.de> wrote:
+> > On Sat, Mar 05, 2016 at 12:34:09PM -0700, Chris Murphy wrote:
+> >> Something is happening with the usage of this file system that's out
+> >> of the ordinary. This is the first time I've seen such a large amount
+> >> of unused metadata allocation. And then for it not only fail to
+> >> balance, but for the allocation amount to increase is a first. So
+> >> understanding the usage is important to figuring out what's happening.
+> >> I'd file a bug and include as much information on how the fs got into
+> >> this state as possible. And also if possible make a btrfs-image using
+> >> the proper flags to blot out the filenames for privacy. And what
+> >> btrfs-progs tools were used to create this file system. Etc.
+> >
+> > https://bugzilla.kernel.org/show_bug.cgi?id=114451
+> >
+> > Please advise if there is something missing.
+> 
+> No enospc_debug mount option used for kernel messages.
 
->
-> "Blowing away" a 6TB filesystem just because some block randomly went "bad",
+I apologize for not having this mentioned, but why do you think that
+it wasn't active?
 
-I'm going to guess it's a metadata block, and the profile is single.
-Otherwise, if it were data it'd just be a corrupt file and you'd be
-told which one is affected. And if metadata had more than one copy,
-then it should recover from the copy. The exact nature of the loss
-isn't clear, a kernel message for the time of the bad block message
-might help but I'm going to guess again that it's a 4096 byte missing
-block of metadata. Depending on what it is, that could be a pretty
-serious hole for any file system.
+|[28/527]mh@fan:~$ grep enospc /proc/mounts
+|/dev/mapper/fanbtr / btrfs rw,noatime,nodiratime,ssd,space_cache,enospc_debug,subvolid=257,subvol=/fan-root 0 0
+|/dev/mapper/fanbtr /mnt/snapshots/fanbtr btrfs rw,noatime,nodiratime,ssd,space_cache,enospc_debug,subvolid=266,subvol=/snapshots 0 0
+|[29/528]mh@fan:~$
 
+>  And no indication you applied Qu's patch mentioned on March 1 to get
+>  more info with enospc_debug mount:
+> 
+> >Oh, I'm sorry that the output is not necessary, it's better to use the newer patch:
+> >https://patchwork.kernel.org/patch/8462881/
+> >With the newer patch, you will need to use enospc_debug mount option to get the debug information.
 
-> I'm running --init-extent-tree right now in a "what if" mode, using
-> the copy-on-write feature of 'nbd-server' (this way the original block device
-> is not modified, and all changes are saved in a separate file).
+That one didn't make it in 4.4.5 yet?
 
-So it's a Btrfs on NDB with no replication either from Btrfs or the
-storage backing it on the server? Off hand I'd say one of them needs
-redundancy to avoid this very problem, otherwise it's just too easy
-for even network corruption to cause a problem (NDB or iSCSI).
-
-Not related to your problem, I'm not sure whether and how many times
-Btrfs retries corrupt reads. That is, device returns read command OK
-(no error), but Btrfs detects corruption. Does it retry? Or
-immediately fail? For flash and network based Btrfs, it's possible the
-result is intermittant so it should try again.
-
-> It's been
-> running for a good 8 hours now, with 100% CPU use of btrfsck and very little
-> disk access.
-
-Yeah btrfs check is very much RAM intensive.
-
+Greetings
+Marc
 
 -- 
-Chris Murphy
+-----------------------------------------------------------------------------
+Marc Haber         | "I don't trust Computers. They | Mailadresse im Header
+Leimen, Germany    |  lose things."    Winona Ryder | Fon: *49 6224 1600402
+Nordisch by Nature |  How to make an American Quilt | Fax: *49 6224 1600421

@@ -1,80 +1,167 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f173.google.com ([209.85.223.173]:33487 "EHLO
-	mail-io0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932122AbcCMVbF (ORCPT
+Received: from mail-io0-f176.google.com ([209.85.223.176]:33599 "EHLO
+	mail-io0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751094AbcCMVwx (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 13 Mar 2016 17:31:05 -0400
-Received: by mail-io0-f173.google.com with SMTP id n190so202528622iof.0
-        for <linux-btrfs@vger.kernel.org>; Sun, 13 Mar 2016 14:31:04 -0700 (PDT)
+	Sun, 13 Mar 2016 17:52:53 -0400
+Received: by mail-io0-f176.google.com with SMTP id n190so202834889iof.0
+        for <linux-btrfs@vger.kernel.org>; Sun, 13 Mar 2016 14:52:53 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <20160313205026.GU2334@torres.zugschlus.de>
-References: <20160227211450.GS26042@torres.zugschlus.de>
-	<CAOE4rSyPvkzjKDVoQ-7U8ay5t7Pp2qeaCqh-tFg-etmgHGEOJQ@mail.gmail.com>
-	<20160305143934.GE1902@torres.zugschlus.de>
-	<CAJCQCtTw1+E=X1bbGgSB-fPHDtEPUO5amFUEs4fyPmTfK4QaGw@mail.gmail.com>
-	<20160312195746.GJ2334@torres.zugschlus.de>
-	<CAJCQCtSmHAs_zMt3kHdCL9Nd+aAMW-2nDSNYXhizwan8OL3mGw@mail.gmail.com>
-	<20160313205026.GU2334@torres.zugschlus.de>
-Date: Sun, 13 Mar 2016 15:31:03 -0600
-Message-ID: <CAJCQCtQQghWgM8fikyrFGfJhBgJ-N7Mni0pAvp-LMFpzCQ=NfQ@mail.gmail.com>
-Subject: Re: Again, no space left on device while rebalancing and recipe
- doesnt work
+In-Reply-To: <20160314015554.544ee05c@natsu>
+References: <20160312204847.2092f3f3@natsu>
+	<20160312221524.646e1a66@natsu>
+	<20160313142428.377b51b8@natsu>
+	<pan$a52ce$b1beae3d$57f5b99c$a796a0ec@cox.net>
+	<20160313222442.1fa22a57@natsu>
+	<CAJCQCtSnSm355BC-hVRL9NnRLxXiYQefbepvm2yfTXd6PdLghw@mail.gmail.com>
+	<20160314015554.544ee05c@natsu>
+Date: Sun, 13 Mar 2016 15:52:52 -0600
+Message-ID: <CAJCQCtQr66+5ufqom-DMoJDuT+fkg20mbvz+je2cUZ43i3Zneg@mail.gmail.com>
+Subject: Re: parent transid verify failed on snapshot deletion
 From: Chris Murphy <lists@colorremedies.com>
-To: Marc Haber <mh+linux-btrfs@zugschlus.de>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>,
-        Qu Wenruo <quwenruo@cn.fujitsu.com>
+To: Roman Mamedov <rm@romanrm.net>, Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Mar 13, 2016 at 2:50 PM, Marc Haber <mh+linux-btrfs@zugschlus.de> wrote:
-> On Sun, Mar 13, 2016 at 01:43:50PM -0600, Chris Murphy wrote:
->> On Sat, Mar 12, 2016 at 12:57 PM, Marc Haber
->> <mh+linux-btrfs@zugschlus.de> wrote:
->> > On Sat, Mar 05, 2016 at 12:34:09PM -0700, Chris Murphy wrote:
->> >> Something is happening with the usage of this file system that's out
->> >> of the ordinary. This is the first time I've seen such a large amount
->> >> of unused metadata allocation. And then for it not only fail to
->> >> balance, but for the allocation amount to increase is a first. So
->> >> understanding the usage is important to figuring out what's happening.
->> >> I'd file a bug and include as much information on how the fs got into
->> >> this state as possible. And also if possible make a btrfs-image using
->> >> the proper flags to blot out the filenames for privacy. And what
->> >> btrfs-progs tools were used to create this file system. Etc.
->> >
->> > https://bugzilla.kernel.org/show_bug.cgi?id=114451
->> >
->> > Please advise if there is something missing.
->>
->> No enospc_debug mount option used for kernel messages.
+On Sun, Mar 13, 2016 at 2:55 PM, Roman Mamedov <rm@romanrm.net> wrote:
+> On Sun, 13 Mar 2016 14:10:47 -0600
+> Chris Murphy <lists@colorremedies.com> wrote:
 >
-> I apologize for not having this mentioned, but why do you think that
-> it wasn't active?
+>> I'm going to guess it's a metadata block, and the profile is single.
+>> Otherwise, if it were data it'd just be a corrupt file and you'd be
+>> told which one is affected. And if metadata had more than one copy,
+>> then it should recover from the copy. The exact nature of the loss
+>> isn't clear, a kernel message for the time of the bad block message
+>> might help but I'm going to guess again that it's a 4096 byte missing
+>> block of metadata. Depending on what it is, that could be a pretty
+>> serious hole for any file system.
+>
+> Pretty sure the metadata is DUP on that FS.
 
-No additional information in the log attached to the bug. So I guess
-this particular problem doesn't trigger any enospc debug options and
-hence the patch.
+Big difference. If it's single and the block is bad, it's uncertain if
+it's something Btrfs should be able to recover from. If it's DUP then
+it should be a non-factor. In either case, kernel messages would be a
+lot more enlightening about what happened right before this. The call
+trace really isn't that helpful in my opinion, all that tells us is
+Btrfs got confused.
 
 
+I saved this from before the btrfsck passes:
 >
-> |[28/527]mh@fan:~$ grep enospc /proc/mounts
-> |/dev/mapper/fanbtr / btrfs rw,noatime,nodiratime,ssd,space_cache,enospc_debug,subvolid=257,subvol=/fan-root 0 0
-> |/dev/mapper/fanbtr /mnt/snapshots/fanbtr btrfs rw,noatime,nodiratime,ssd,space_cache,enospc_debug,subvolid=266,subvol=/snapshots 0 0
-> |[29/528]mh@fan:~$
->
->>  And no indication you applied Qu's patch mentioned on March 1 to get
->>  more info with enospc_debug mount:
->>
->> >Oh, I'm sorry that the output is not necessary, it's better to use the newer patch:
->> >https://patchwork.kernel.org/patch/8462881/
->> >With the newer patch, you will need to use enospc_debug mount option to get the debug information.
->
-> That one didn't make it in 4.4.5 yet?
+> # btrfs-debug-tree -b 7483566862336 /dev/alpha/lv1                                                                   :(
+> node 7483566862336 level 3 items 95 free 26 generation 404133 owner 7
+> fs uuid 8cf8eff9-fd5a-4b6f-bb85-3f2df2f63c99
+> chunk uuid 4688dce4-89dd-43eb-a0f4-d10900535183
+>         key (EXTENT_CSUM EXTENT_CSUM 1062973087744) block 4314139631616 (1053256746) gen 402032
+>         key (EXTENT_CSUM EXTENT_CSUM 1091441795072) block 4314548232192 (1053356502) gen 402102
+>         key (EXTENT_CSUM EXTENT_CSUM 1107647541248) block 7482607947776 (1826808581) gen 402791
+>         key (EXTENT_CSUM EXTENT_CSUM 1176289222656) block 7482608832512 (1826808797) gen 402791
+>         key (EXTENT_CSUM EXTENT_CSUM 1199852232704) block 7483421888512 (1827007297) gen 403882
+>         key (EXTENT_CSUM EXTENT_CSUM 1252762054656) block 7483566968832 (1827042717) gen 404133
+>         key (EXTENT_CSUM EXTENT_CSUM 1302207705088) block 7486122131456 (1827666536) gen 399086
+>         key (EXTENT_CSUM EXTENT_CSUM 1342292983808) block 7486136766464 (1827670109) gen 399086
+>         key (EXTENT_CSUM EXTENT_CSUM 1357230608384) block 7486143053824 (1827671644) gen 399088
+>         key (EXTENT_CSUM EXTENT_CSUM 1374801608704) block 7486219661312 (1827690347) gen 399097
+>         key (EXTENT_CSUM EXTENT_CSUM 1406541111296) block 7482936365056 (1826888761) gen 403108
+>         key (EXTENT_CSUM EXTENT_CSUM 1425602490368) block 7482806996992 (1826857177) gen 402938
+>         key (EXTENT_CSUM EXTENT_CSUM 1439588401152) block 7492133109760 (1829134060) gen 400631
+>         key (EXTENT_CSUM EXTENT_CSUM 1471449923584) block 7486878142464 (1827851109) gen 399121
+>         key (EXTENT_CSUM EXTENT_CSUM 1494641868800) block 7486882181120 (1827852095) gen 399121
+>         key (EXTENT_CSUM EXTENT_CSUM 1511553085440) block 7492376141824 (1829193394) gen 400803
+>         key (EXTENT_CSUM EXTENT_CSUM 1530452836352) block 7492377698304 (1829193774) gen 400803
+>         key (EXTENT_CSUM EXTENT_CSUM 1557468987392) block 7544937934848 (1842025863) gen 401275
+>         key (EXTENT_CSUM EXTENT_CSUM 1589122428928) block 7544937947136 (1842025866) gen 401275
+>         key (EXTENT_CSUM EXTENT_CSUM 1623402835968) block 7544935043072 (1842025157) gen 401275
+>         key (EXTENT_CSUM EXTENT_CSUM 1660158967808) block 7544935292928 (1842025218) gen 401275
+>         key (EXTENT_CSUM EXTENT_CSUM 1686639628288) block 7544935317504 (1842025224) gen 401275
+>         key (EXTENT_CSUM EXTENT_CSUM 1717318074368) block 7545404669952 (1842139812) gen 401300
+>         key (EXTENT_CSUM EXTENT_CSUM 1755587174400) block 7544935378944 (1842025239) gen 401275
+>         key (EXTENT_CSUM EXTENT_CSUM 1771312803840) block 7482802622464 (1826856109) gen 402938
+>         key (EXTENT_CSUM EXTENT_CSUM 1792774889472) block 7545001177088 (1842041303) gen 401281
+>         key (EXTENT_CSUM EXTENT_CSUM 1833762066432) block 7545013350400 (1842044275) gen 401278
+>         key (EXTENT_CSUM EXTENT_CSUM 1848938086400) block 7545009430528 (1842043318) gen 401278
+>         key (EXTENT_CSUM EXTENT_CSUM 1874773962752) block 7545013170176 (1842044231) gen 401278
+>         key (EXTENT_CSUM EXTENT_CSUM 1912300650496) block 4309044703232 (1052012867) gen 401366
+>         key (EXTENT_CSUM EXTENT_CSUM 1934921564160) block 4308804886528 (1051954318) gen 401354
+>         key (EXTENT_CSUM EXTENT_CSUM 1951308283904) block 4310900432896 (1052465926) gen 401686
+>         key (EXTENT_CSUM EXTENT_CSUM 1966261223424) block 4309153787904 (1052039499) gen 401376
+>         key (EXTENT_CSUM EXTENT_CSUM 1985369530368) block 4311094611968 (1052513333) gen 401757
+>         key (EXTENT_CSUM EXTENT_CSUM 2002212573184) block 4311279501312 (1052558472) gen 401766
+>         key (EXTENT_CSUM EXTENT_CSUM 2031789600768) block 4311093194752 (1052512987) gen 401757
+>         key (EXTENT_CSUM EXTENT_CSUM 2056985681920) block 4311095111680 (1052513455) gen 401757
+>         key (EXTENT_CSUM EXTENT_CSUM 2086494728192) block 4310101364736 (1052270841) gen 401441
+>         key (EXTENT_CSUM EXTENT_CSUM 2114637971456) block 4311356846080 (1052577355) gen 401773
+>         key (EXTENT_CSUM EXTENT_CSUM 2138850193408) block 4313693347840 (1053147790) gen 401966
+>         key (EXTENT_CSUM EXTENT_CSUM 2160176660480) block 4314105159680 (1053248330) gen 402026
+>         key (EXTENT_CSUM EXTENT_CSUM 2191463452672) block 4313988440064 (1053219834) gen 402009
+>         key (EXTENT_CSUM EXTENT_CSUM 2219386761216) block 4313964060672 (1053213882) gen 402005
+>         key (EXTENT_CSUM EXTENT_CSUM 2277297422336) block 4314309550080 (1053298230) gen 402066
+>         key (EXTENT_CSUM EXTENT_CSUM 2341651099648) block 4314278002688 (1053290528) gen 402058
+>         key (EXTENT_CSUM EXTENT_CSUM 2385829801984) block 4314699358208 (1053393398) gen 402131
+>         key (EXTENT_CSUM EXTENT_CSUM 2443256795136) block 4314533724160 (1053352960) gen 402102
+>         key (EXTENT_CSUM EXTENT_CSUM 2473251045376) block 4314534068224 (1053353044) gen 402102
+>         key (EXTENT_CSUM EXTENT_CSUM 2492309962752) block 4314533797888 (1053352978) gen 402102
+>         key (EXTENT_CSUM EXTENT_CSUM 2541250543616) block 7491513913344 (1828982889) gen 367993
+>         key (EXTENT_CSUM EXTENT_CSUM 2624366092288) block 4314533789696 (1053352976) gen 402102
+>         key (EXTENT_CSUM EXTENT_CSUM 2661959823360) block 4314533863424 (1053352994) gen 402102
+>         key (EXTENT_CSUM EXTENT_CSUM 2722339299328) block 4314643193856 (1053379686) gen 402118
+>         key (EXTENT_CSUM EXTENT_CSUM 2769931730944) block 4314614272000 (1053372625) gen 402114
+>         key (EXTENT_CSUM EXTENT_CSUM 2795646136320) block 4314612932608 (1053372298) gen 402114
+>         key (EXTENT_CSUM EXTENT_CSUM 2843763052544) block 4314612928512 (1053372297) gen 402114
+>         key (EXTENT_CSUM EXTENT_CSUM 2902613557248) block 4314614157312 (1053372597) gen 402114
+>         key (EXTENT_CSUM EXTENT_CSUM 2968288628736) block 4314614329344 (1053372639) gen 402114
+>         key (EXTENT_CSUM EXTENT_CSUM 3134623027200) block 7492569567232 (1829240617) gen 400840
+>         key (EXTENT_CSUM EXTENT_CSUM 3384253874176) block 7268773081088 (1774602803) gen 402786
+>         key (EXTENT_CSUM EXTENT_CSUM 3434919317504) block 7268782407680 (1774605080) gen 402786
+>         key (EXTENT_CSUM EXTENT_CSUM 3589271453696) block 7482801561600 (1826855850) gen 402938
+>         key (EXTENT_CSUM EXTENT_CSUM 3610059431936) block 7482801238016 (1826855771) gen 402938
+>         key (EXTENT_CSUM EXTENT_CSUM 3632980488192) block 4310713114624 (1052420194) gen 379864
+>         key (EXTENT_CSUM EXTENT_CSUM 3662123552768) block 7482802126848 (1826855988) gen 402938
+>         key (EXTENT_CSUM EXTENT_CSUM 3693896204288) block 7482802315264 (1826856034) gen 402938
+>         key (EXTENT_CSUM EXTENT_CSUM 3731483045888) block 7483428696064 (1827008959) gen 403882
+>         key (EXTENT_CSUM EXTENT_CSUM 3890200125440) block 7483526922240 (1827032940) gen 404055
+>         key (EXTENT_CSUM EXTENT_CSUM 3924815777792) block 7483418935296 (1827006576) gen 403882
+>         key (EXTENT_CSUM EXTENT_CSUM 3953528250368) block 4314230116352 (1053278837) gen 402051
+>         key (EXTENT_CSUM EXTENT_CSUM 3978332045312) block 4314185465856 (1053267936) gen 402046
+>         key (EXTENT_CSUM EXTENT_CSUM 3999411937280) block 4314513797120 (1053348095) gen 402097
+>         key (EXTENT_CSUM EXTENT_CSUM 4022030766080) block 4309417017344 (1052103764) gen 401401
+>         key (EXTENT_CSUM EXTENT_CSUM 4328173846528) block 4314038706176 (1053232106) gen 402015
+>         key (EXTENT_CSUM EXTENT_CSUM 4388483334144) block 4314774265856 (1053411686) gen 402142
+>         key (EXTENT_CSUM EXTENT_CSUM 4492224630784) block 7483410653184 (1827004554) gen 403881
+>         key (EXTENT_CSUM EXTENT_CSUM 4540637818880) block 4314122088448 (1053252463) gen 402032
+>         key (EXTENT_CSUM EXTENT_CSUM 4614089646080) block 4314448781312 (1053332222) gen 402086
+>         key (EXTENT_CSUM EXTENT_CSUM 4720340647936) block 7483409018880 (1827004155) gen 403881
+>         key (EXTENT_CSUM EXTENT_CSUM 4736819306496) block 4310925000704 (1052471924) gen 401688
+>         key (EXTENT_CSUM EXTENT_CSUM 4755398365184) block 4314130493440 (1053254515) gen 402030
+>         key (EXTENT_CSUM EXTENT_CSUM 4774954143744) block 7492586037248 (1829244638) gen 400843
+>         key (EXTENT_CSUM EXTENT_CSUM 4805973180416) block 7492582633472 (1829243807) gen 400842
+>         key (EXTENT_CSUM EXTENT_CSUM 4837741899776) block 7492538318848 (1829232988) gen 400835
+>         key (EXTENT_CSUM EXTENT_CSUM 4871764180992) block 7492545794048 (1829234813) gen 400836
+>         key (EXTENT_CSUM EXTENT_CSUM 4919789879296) block 7492521549824 (1829228894) gen 400832
+>         key (EXTENT_CSUM EXTENT_CSUM 4956089876480) block 7492569387008 (1829240573) gen 400840
+>         key (EXTENT_CSUM EXTENT_CSUM 5004070121472) block 7268872728576 (1774627131) gen 402787
+>         key (EXTENT_CSUM EXTENT_CSUM 5065431572480) block 4314616324096 (1053373126) gen 402114
+>         key (EXTENT_CSUM EXTENT_CSUM 5090921189376) block 7492482326528 (1829219318) gen 400825
+>         key (EXTENT_CSUM EXTENT_CSUM 5132048932864) block 4310321446912 (1052324572) gen 309501
+>         key (EXTENT_CSUM EXTENT_CSUM 5180942753792) block 4310060957696 (1052260976) gen 394444
+>         key (EXTENT_CSUM EXTENT_CSUM 5232640884736) block 4310459052032 (1052358167) gen 394446
+>         key (EXTENT_CSUM EXTENT_CSUM 5270016761856) block 7492586082304 (1829244649) gen 400843
+>         key (EXTENT_CSUM EXTENT_CSUM 5298670948352) block 7483409063936 (1827004166) gen 403881
 
-I got no indication it was even going to make it into mainline
-actually, I was thinking it was a one off patch. But if it does, it'll
-need to be in 4.5.0 before it'd be backported to 4.4.x. Maybe Qu can
-clarify?
+
+Weird, I'm lost. That block address is bad, but btrsf-debug-tree shows
+you it's a node pointing to a bunch of csum tree entries? If that
+block is bad then I'd expect a lot more csum mismatches if it can't do
+csum tree lookups. Although it's somewhat consistent with the last
+part of the call trace from when the file system went read only:
+
+> [Sat Mar 12 20:17:10 2016] pending csums is 103825408
+
+I really think you need a minute's worth of kernel messages prior to
+that time stamp.
+
+
 
 -- 
 Chris Murphy

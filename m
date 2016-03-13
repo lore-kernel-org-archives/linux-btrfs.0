@@ -1,87 +1,284 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oi0-f41.google.com ([209.85.218.41]:32775 "EHLO
-	mail-oi0-f41.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752892AbcCMUzJ convert rfc822-to-8bit (ORCPT
+Received: from meiko.romanrm.net ([195.154.92.155]:47336 "EHLO
+	meiko.romanrm.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752442AbcCMU4B (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 13 Mar 2016 16:55:09 -0400
-Received: by mail-oi0-f41.google.com with SMTP id d205so120300120oia.0
-        for <linux-btrfs@vger.kernel.org>; Sun, 13 Mar 2016 13:55:09 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <20160312204847.2092f3f3@natsu>
-References: <20160312204847.2092f3f3@natsu>
-From: Sylvain Joyeux <sylvain.joyeux@m4x.org>
-Date: Sun, 13 Mar 2016 17:54:49 -0300
-Message-ID: <CAFENT7JJkYma5QAE0dKnYsWurH4oNaqqEOpVoELa2XMpCfo-4A@mail.gmail.com>
+	Sun, 13 Mar 2016 16:56:01 -0400
+Date: Mon, 14 Mar 2016 01:55:54 +0500
+From: Roman Mamedov <rm@romanrm.net>
+To: Chris Murphy <lists@colorremedies.com>
+Cc: Duncan <1i5t5.duncan@cox.net>, Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Subject: Re: parent transid verify failed on snapshot deletion
-To: Roman Mamedov <rm@romanrm.net>
-Cc: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+Message-ID: <20160314015554.544ee05c@natsu>
+In-Reply-To: <CAJCQCtSnSm355BC-hVRL9NnRLxXiYQefbepvm2yfTXd6PdLghw@mail.gmail.com>
+References: <20160312204847.2092f3f3@natsu>
+	<20160312221524.646e1a66@natsu>
+	<20160313142428.377b51b8@natsu>
+	<pan$a52ce$b1beae3d$57f5b99c$a796a0ec@cox.net>
+	<20160313222442.1fa22a57@natsu>
+	<CAJCQCtSnSm355BC-hVRL9NnRLxXiYQefbepvm2yfTXd6PdLghw@mail.gmail.com>
+MIME-Version: 1.0
+Content-Type: multipart/signed; micalg=pgp-sha1;
+ boundary="Sig_/FeB+2B8yPHJH7YGOOUKoH12"; protocol="application/pgp-signature"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-My unfortunate experience with these transid problems is that they (1)
-randomly appear without warning and (2) --repair completely destroys
-the filesystem. I have right now two separate volumes on two separate
-disks reporting that error, and --repair surely destroyed the first
-one. I am trying to see what I can restore from the second one before
-I try --repair as well.
+--Sig_/FeB+2B8yPHJH7YGOOUKoH12
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: quoted-printable
 
-The frustrating part is that these volumes in my case are only used to
-receive subvolumes, and delete them. From an outsider's point of view,
-it hardly seems to be a very intensive workload.
+On Sun, 13 Mar 2016 14:10:47 -0600
+Chris Murphy <lists@colorremedies.com> wrote:
 
-Sylvain
+> I'm going to guess it's a metadata block, and the profile is single.
+> Otherwise, if it were data it'd just be a corrupt file and you'd be
+> told which one is affected. And if metadata had more than one copy,
+> then it should recover from the copy. The exact nature of the loss
+> isn't clear, a kernel message for the time of the bad block message
+> might help but I'm going to guess again that it's a 4096 byte missing
+> block of metadata. Depending on what it is, that could be a pretty
+> serious hole for any file system.
 
-2016-03-12 12:48 GMT-03:00 Roman Mamedov <rm@romanrm.net>:
-> Hello,
->
-> The system was seemingly running just fine for days or weeks, then I
-> routinely deleted a bunch of old snapshots, and suddenly got hit with:
->
-> [Sat Mar 12 20:17:10 2016] BTRFS error (device dm-0): parent transid verify failed on 7483566862336 wanted 410578 found 404133
-> [Sat Mar 12 20:17:10 2016] BTRFS error (device dm-0): parent transid verify failed on 7483566862336 wanted 410578 found 404133
-> [Sat Mar 12 20:17:10 2016] ------------[ cut here ]------------
-> [Sat Mar 12 20:17:10 2016] WARNING: CPU: 0 PID: 217 at fs/btrfs/extent-tree.c:6549 __btrfs_free_extent.isra.67+0x2c2/0xd40 [btrfs]()
-> [Sat Mar 12 20:17:10 2016] BTRFS: Transaction aborted (error -5)
-> [Sat Mar 12 20:17:10 2016] Modules linked in: xt_tcpudp xt_multiport xt_limit xt_length xt_conntrack ip6t_rpfilter ipt_rpfilter ip6table_raw ip6table_mangle iptable_raw iptable_nat nf_conntrack_ipv4 nf_defrag_ipv4 nf_nat_ipv4 nf_nat nf_conntrack ip6table_filter ip6_tables iptable_filter ip_tables x_tables cpufreq_userspace cpufreq_stats cpufreq_powersave cpufreq_conservative cfg80211 rfkill arc4 ecb md4 hmac nls_utf8 cifs dns_resolver fscache 8021q garp mrp bridge stp llc tcp_illinois ext4 crc16 mbcache jbd2 fuse kvm_amd kvm irqbypass serio_raw evdev pcspkr joydev snd_hda_codec_realtek k10temp snd_hda_codec_generic snd_hda_codec_hdmi snd_hda_intel snd_hda_codec snd_hda_core snd_hwdep acpi_cpufreq sp5100_tco snd_pcm snd_timer tpm_tis snd tpm shpchp soundcore i2c_piix4 button processor btrfs dm_mod raid1 raid456
-> [Sat Mar 12 20:17:10 2016]  async_raid6_recov async_memcpy async_pq async_xor async_tx xor raid6_pq libcrc32c crc32c_generic md_mod sg ata_generic sd_mod hid_generic usbhid hid uas usb_storage ohci_pci xhci_pci xhci_hcd r8169 mii sata_mv ahci libahci pata_atiixp ehci_pci ohci_hcd ehci_hcd libata usbcore usb_common scsi_mod
-> [Sat Mar 12 20:17:10 2016] CPU: 0 PID: 217 Comm: btrfs-cleaner Tainted: G        W       4.4.4-rm1+ #108
-> [Sat Mar 12 20:17:10 2016] Hardware name: Gigabyte Technology Co., Ltd. GA-E350N-USB3/GA-E350N-USB3, BIOS F2 09/19/2011
-> [Sat Mar 12 20:17:10 2016]  0000000000000286 000000007223a131 ffff880406befa88 ffffffff81315721
-> [Sat Mar 12 20:17:10 2016]  ffff880406befad0 ffffffffa03539b2 ffff880406befac0 ffffffff8107e735
-> [Sat Mar 12 20:17:10 2016]  0000000183c9c000 00000000fffffffb ffff88032dbc0e01 0000069c4f95b000
-> [Sat Mar 12 20:17:10 2016] Call Trace:
-> [Sat Mar 12 20:17:10 2016]  [<ffffffff81315721>] dump_stack+0x63/0x82
-> [Sat Mar 12 20:17:10 2016]  [<ffffffff8107e735>] warn_slowpath_common+0x95/0xe0
-> [Sat Mar 12 20:17:10 2016]  [<ffffffff8107e7dc>] warn_slowpath_fmt+0x5c/0x80
-> [Sat Mar 12 20:17:10 2016]  [<ffffffffa02b2e42>] __btrfs_free_extent.isra.67+0x2c2/0xd40 [btrfs]
-> [Sat Mar 12 20:17:10 2016]  [<ffffffffa02b6f12>] __btrfs_run_delayed_refs+0x412/0x1230 [btrfs]
-> [Sat Mar 12 20:17:10 2016]  [<ffffffff8133edad>] ? __percpu_counter_add+0x5d/0x80
-> [Sat Mar 12 20:17:10 2016]  [<ffffffffa02bab4e>] btrfs_run_delayed_refs+0x7e/0x2b0 [btrfs]
-> [Sat Mar 12 20:17:10 2016]  [<ffffffffa02cfd08>] btrfs_should_end_transaction+0x68/0x70 [btrfs]
-> [Sat Mar 12 20:17:10 2016]  [<ffffffffa02b932d>] btrfs_drop_snapshot+0x45d/0x840 [btrfs]
-> [Sat Mar 12 20:17:10 2016]  [<ffffffff815d1ee5>] ? __schedule+0x355/0xa30
-> [Sat Mar 12 20:17:10 2016]  [<ffffffffa02d020d>] btrfs_clean_one_deleted_snapshot+0xbd/0x120 [btrfs]
-> [Sat Mar 12 20:17:10 2016]  [<ffffffffa02c7e6d>] cleaner_kthread+0x17d/0x210 [btrfs]
-> [Sat Mar 12 20:17:10 2016]  [<ffffffffa02c7cf0>] ? check_leaf+0x370/0x370 [btrfs]
-> [Sat Mar 12 20:17:10 2016]  [<ffffffff8109db9a>] kthread+0xea/0x100
-> [Sat Mar 12 20:17:10 2016]  [<ffffffff8109dab0>] ? kthread_park+0x60/0x60
-> [Sat Mar 12 20:17:10 2016]  [<ffffffff815d6c4f>] ret_from_fork+0x3f/0x70
-> [Sat Mar 12 20:17:10 2016]  [<ffffffff8109dab0>] ? kthread_park+0x60/0x60
-> [Sat Mar 12 20:17:10 2016] ---[ end trace 4a0a05309f1c27f4 ]---
-> [Sat Mar 12 20:17:10 2016] BTRFS: error (device dm-0) in __btrfs_free_extent:6549: errno=-5 IO failure
-> [Sat Mar 12 20:17:10 2016] BTRFS info (device dm-0): forced readonly
-> [Sat Mar 12 20:17:10 2016] BTRFS: error (device dm-0) in btrfs_run_delayed_refs:2927: errno=-5 IO failure
-> [Sat Mar 12 20:17:10 2016] pending csums is 103825408
->
-> Now this happens after each reboot too, causing the FS to be remounted read-only.
->
-> I wonder what's the best way to proceed here. Maybe try btrfs-zero-log? But
-> the difference between transid numbers of 6 thousands is concerning.
->
-> Also puzzling why did this happen in the first place, I don't think this
-> filesystem had any crashes or storage device-related issues recently.
->
-> --
-> With respect,
-> Roman
+Pretty sure the metadata is DUP on that FS.
+
+Besides, the "bad" block (only going by btrfsck's lingo here, it's not the =
+usual
+"hard disk got a bad block" problem) is not entirely missing, just 6k trans=
+ids
+older than it should be(???). I saved this from before the btrfsck passes:
+
+# btrfs-debug-tree -b 7483566862336 /dev/alpha/lv1                         =
+                                          :(
+node 7483566862336 level 3 items 95 free 26 generation 404133 owner 7
+fs uuid 8cf8eff9-fd5a-4b6f-bb85-3f2df2f63c99
+chunk uuid 4688dce4-89dd-43eb-a0f4-d10900535183
+	key (EXTENT_CSUM EXTENT_CSUM 1062973087744) block 4314139631616 (105325674=
+6) gen 402032
+	key (EXTENT_CSUM EXTENT_CSUM 1091441795072) block 4314548232192 (105335650=
+2) gen 402102
+	key (EXTENT_CSUM EXTENT_CSUM 1107647541248) block 7482607947776 (182680858=
+1) gen 402791
+	key (EXTENT_CSUM EXTENT_CSUM 1176289222656) block 7482608832512 (182680879=
+7) gen 402791
+	key (EXTENT_CSUM EXTENT_CSUM 1199852232704) block 7483421888512 (182700729=
+7) gen 403882
+	key (EXTENT_CSUM EXTENT_CSUM 1252762054656) block 7483566968832 (182704271=
+7) gen 404133
+	key (EXTENT_CSUM EXTENT_CSUM 1302207705088) block 7486122131456 (182766653=
+6) gen 399086
+	key (EXTENT_CSUM EXTENT_CSUM 1342292983808) block 7486136766464 (182767010=
+9) gen 399086
+	key (EXTENT_CSUM EXTENT_CSUM 1357230608384) block 7486143053824 (182767164=
+4) gen 399088
+	key (EXTENT_CSUM EXTENT_CSUM 1374801608704) block 7486219661312 (182769034=
+7) gen 399097
+	key (EXTENT_CSUM EXTENT_CSUM 1406541111296) block 7482936365056 (182688876=
+1) gen 403108
+	key (EXTENT_CSUM EXTENT_CSUM 1425602490368) block 7482806996992 (182685717=
+7) gen 402938
+	key (EXTENT_CSUM EXTENT_CSUM 1439588401152) block 7492133109760 (182913406=
+0) gen 400631
+	key (EXTENT_CSUM EXTENT_CSUM 1471449923584) block 7486878142464 (182785110=
+9) gen 399121
+	key (EXTENT_CSUM EXTENT_CSUM 1494641868800) block 7486882181120 (182785209=
+5) gen 399121
+	key (EXTENT_CSUM EXTENT_CSUM 1511553085440) block 7492376141824 (182919339=
+4) gen 400803
+	key (EXTENT_CSUM EXTENT_CSUM 1530452836352) block 7492377698304 (182919377=
+4) gen 400803
+	key (EXTENT_CSUM EXTENT_CSUM 1557468987392) block 7544937934848 (184202586=
+3) gen 401275
+	key (EXTENT_CSUM EXTENT_CSUM 1589122428928) block 7544937947136 (184202586=
+6) gen 401275
+	key (EXTENT_CSUM EXTENT_CSUM 1623402835968) block 7544935043072 (184202515=
+7) gen 401275
+	key (EXTENT_CSUM EXTENT_CSUM 1660158967808) block 7544935292928 (184202521=
+8) gen 401275
+	key (EXTENT_CSUM EXTENT_CSUM 1686639628288) block 7544935317504 (184202522=
+4) gen 401275
+	key (EXTENT_CSUM EXTENT_CSUM 1717318074368) block 7545404669952 (184213981=
+2) gen 401300
+	key (EXTENT_CSUM EXTENT_CSUM 1755587174400) block 7544935378944 (184202523=
+9) gen 401275
+	key (EXTENT_CSUM EXTENT_CSUM 1771312803840) block 7482802622464 (182685610=
+9) gen 402938
+	key (EXTENT_CSUM EXTENT_CSUM 1792774889472) block 7545001177088 (184204130=
+3) gen 401281
+	key (EXTENT_CSUM EXTENT_CSUM 1833762066432) block 7545013350400 (184204427=
+5) gen 401278
+	key (EXTENT_CSUM EXTENT_CSUM 1848938086400) block 7545009430528 (184204331=
+8) gen 401278
+	key (EXTENT_CSUM EXTENT_CSUM 1874773962752) block 7545013170176 (184204423=
+1) gen 401278
+	key (EXTENT_CSUM EXTENT_CSUM 1912300650496) block 4309044703232 (105201286=
+7) gen 401366
+	key (EXTENT_CSUM EXTENT_CSUM 1934921564160) block 4308804886528 (105195431=
+8) gen 401354
+	key (EXTENT_CSUM EXTENT_CSUM 1951308283904) block 4310900432896 (105246592=
+6) gen 401686
+	key (EXTENT_CSUM EXTENT_CSUM 1966261223424) block 4309153787904 (105203949=
+9) gen 401376
+	key (EXTENT_CSUM EXTENT_CSUM 1985369530368) block 4311094611968 (105251333=
+3) gen 401757
+	key (EXTENT_CSUM EXTENT_CSUM 2002212573184) block 4311279501312 (105255847=
+2) gen 401766
+	key (EXTENT_CSUM EXTENT_CSUM 2031789600768) block 4311093194752 (105251298=
+7) gen 401757
+	key (EXTENT_CSUM EXTENT_CSUM 2056985681920) block 4311095111680 (105251345=
+5) gen 401757
+	key (EXTENT_CSUM EXTENT_CSUM 2086494728192) block 4310101364736 (105227084=
+1) gen 401441
+	key (EXTENT_CSUM EXTENT_CSUM 2114637971456) block 4311356846080 (105257735=
+5) gen 401773
+	key (EXTENT_CSUM EXTENT_CSUM 2138850193408) block 4313693347840 (105314779=
+0) gen 401966
+	key (EXTENT_CSUM EXTENT_CSUM 2160176660480) block 4314105159680 (105324833=
+0) gen 402026
+	key (EXTENT_CSUM EXTENT_CSUM 2191463452672) block 4313988440064 (105321983=
+4) gen 402009
+	key (EXTENT_CSUM EXTENT_CSUM 2219386761216) block 4313964060672 (105321388=
+2) gen 402005
+	key (EXTENT_CSUM EXTENT_CSUM 2277297422336) block 4314309550080 (105329823=
+0) gen 402066
+	key (EXTENT_CSUM EXTENT_CSUM 2341651099648) block 4314278002688 (105329052=
+8) gen 402058
+	key (EXTENT_CSUM EXTENT_CSUM 2385829801984) block 4314699358208 (105339339=
+8) gen 402131
+	key (EXTENT_CSUM EXTENT_CSUM 2443256795136) block 4314533724160 (105335296=
+0) gen 402102
+	key (EXTENT_CSUM EXTENT_CSUM 2473251045376) block 4314534068224 (105335304=
+4) gen 402102
+	key (EXTENT_CSUM EXTENT_CSUM 2492309962752) block 4314533797888 (105335297=
+8) gen 402102
+	key (EXTENT_CSUM EXTENT_CSUM 2541250543616) block 7491513913344 (182898288=
+9) gen 367993
+	key (EXTENT_CSUM EXTENT_CSUM 2624366092288) block 4314533789696 (105335297=
+6) gen 402102
+	key (EXTENT_CSUM EXTENT_CSUM 2661959823360) block 4314533863424 (105335299=
+4) gen 402102
+	key (EXTENT_CSUM EXTENT_CSUM 2722339299328) block 4314643193856 (105337968=
+6) gen 402118
+	key (EXTENT_CSUM EXTENT_CSUM 2769931730944) block 4314614272000 (105337262=
+5) gen 402114
+	key (EXTENT_CSUM EXTENT_CSUM 2795646136320) block 4314612932608 (105337229=
+8) gen 402114
+	key (EXTENT_CSUM EXTENT_CSUM 2843763052544) block 4314612928512 (105337229=
+7) gen 402114
+	key (EXTENT_CSUM EXTENT_CSUM 2902613557248) block 4314614157312 (105337259=
+7) gen 402114
+	key (EXTENT_CSUM EXTENT_CSUM 2968288628736) block 4314614329344 (105337263=
+9) gen 402114
+	key (EXTENT_CSUM EXTENT_CSUM 3134623027200) block 7492569567232 (182924061=
+7) gen 400840
+	key (EXTENT_CSUM EXTENT_CSUM 3384253874176) block 7268773081088 (177460280=
+3) gen 402786
+	key (EXTENT_CSUM EXTENT_CSUM 3434919317504) block 7268782407680 (177460508=
+0) gen 402786
+	key (EXTENT_CSUM EXTENT_CSUM 3589271453696) block 7482801561600 (182685585=
+0) gen 402938
+	key (EXTENT_CSUM EXTENT_CSUM 3610059431936) block 7482801238016 (182685577=
+1) gen 402938
+	key (EXTENT_CSUM EXTENT_CSUM 3632980488192) block 4310713114624 (105242019=
+4) gen 379864
+	key (EXTENT_CSUM EXTENT_CSUM 3662123552768) block 7482802126848 (182685598=
+8) gen 402938
+	key (EXTENT_CSUM EXTENT_CSUM 3693896204288) block 7482802315264 (182685603=
+4) gen 402938
+	key (EXTENT_CSUM EXTENT_CSUM 3731483045888) block 7483428696064 (182700895=
+9) gen 403882
+	key (EXTENT_CSUM EXTENT_CSUM 3890200125440) block 7483526922240 (182703294=
+0) gen 404055
+	key (EXTENT_CSUM EXTENT_CSUM 3924815777792) block 7483418935296 (182700657=
+6) gen 403882
+	key (EXTENT_CSUM EXTENT_CSUM 3953528250368) block 4314230116352 (105327883=
+7) gen 402051
+	key (EXTENT_CSUM EXTENT_CSUM 3978332045312) block 4314185465856 (105326793=
+6) gen 402046
+	key (EXTENT_CSUM EXTENT_CSUM 3999411937280) block 4314513797120 (105334809=
+5) gen 402097
+	key (EXTENT_CSUM EXTENT_CSUM 4022030766080) block 4309417017344 (105210376=
+4) gen 401401
+	key (EXTENT_CSUM EXTENT_CSUM 4328173846528) block 4314038706176 (105323210=
+6) gen 402015
+	key (EXTENT_CSUM EXTENT_CSUM 4388483334144) block 4314774265856 (105341168=
+6) gen 402142
+	key (EXTENT_CSUM EXTENT_CSUM 4492224630784) block 7483410653184 (182700455=
+4) gen 403881
+	key (EXTENT_CSUM EXTENT_CSUM 4540637818880) block 4314122088448 (105325246=
+3) gen 402032
+	key (EXTENT_CSUM EXTENT_CSUM 4614089646080) block 4314448781312 (105333222=
+2) gen 402086
+	key (EXTENT_CSUM EXTENT_CSUM 4720340647936) block 7483409018880 (182700415=
+5) gen 403881
+	key (EXTENT_CSUM EXTENT_CSUM 4736819306496) block 4310925000704 (105247192=
+4) gen 401688
+	key (EXTENT_CSUM EXTENT_CSUM 4755398365184) block 4314130493440 (105325451=
+5) gen 402030
+	key (EXTENT_CSUM EXTENT_CSUM 4774954143744) block 7492586037248 (182924463=
+8) gen 400843
+	key (EXTENT_CSUM EXTENT_CSUM 4805973180416) block 7492582633472 (182924380=
+7) gen 400842
+	key (EXTENT_CSUM EXTENT_CSUM 4837741899776) block 7492538318848 (182923298=
+8) gen 400835
+	key (EXTENT_CSUM EXTENT_CSUM 4871764180992) block 7492545794048 (182923481=
+3) gen 400836
+	key (EXTENT_CSUM EXTENT_CSUM 4919789879296) block 7492521549824 (182922889=
+4) gen 400832
+	key (EXTENT_CSUM EXTENT_CSUM 4956089876480) block 7492569387008 (182924057=
+3) gen 400840
+	key (EXTENT_CSUM EXTENT_CSUM 5004070121472) block 7268872728576 (177462713=
+1) gen 402787
+	key (EXTENT_CSUM EXTENT_CSUM 5065431572480) block 4314616324096 (105337312=
+6) gen 402114
+	key (EXTENT_CSUM EXTENT_CSUM 5090921189376) block 7492482326528 (182921931=
+8) gen 400825
+	key (EXTENT_CSUM EXTENT_CSUM 5132048932864) block 4310321446912 (105232457=
+2) gen 309501
+	key (EXTENT_CSUM EXTENT_CSUM 5180942753792) block 4310060957696 (105226097=
+6) gen 394444
+	key (EXTENT_CSUM EXTENT_CSUM 5232640884736) block 4310459052032 (105235816=
+7) gen 394446
+	key (EXTENT_CSUM EXTENT_CSUM 5270016761856) block 7492586082304 (182924464=
+9) gen 400843
+	key (EXTENT_CSUM EXTENT_CSUM 5298670948352) block 7483409063936 (182700416=
+6) gen 403881
+
+> > I'm running --init-extent-tree right now in a "what if" mode, using
+> > the copy-on-write feature of 'nbd-server' (this way the original block =
+device
+> > is not modified, and all changes are saved in a separate file).
+>=20
+> So it's a Btrfs on NDB with no replication either from Btrfs or the
+> storage backing it on the server? Off hand I'd say one of them needs
+> redundancy to avoid this very problem, otherwise it's just too easy
+> for even network corruption to cause a problem (NDB or iSCSI).
+
+Its normal mode of operation is to be mounted locally, I only use NDB right=
+ now in the=20
+recovery process, primarily for that nifty COW feature, and also to mount t=
+he FS on a more
+powerful machine than its local one.
+
+As for reliability, both Ethernet and TCP/IP have checksums for transferred=
+ content;
+in case of AoE this might be more concerning as it can only rely on the for=
+mer, but NBD and
+iSCSI should be rather safe.
+
+--=20
+With respect,
+Roman
+
+--Sig_/FeB+2B8yPHJH7YGOOUKoH12
+Content-Type: application/pgp-signature
+Content-Description: OpenPGP digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2
+
+iEYEARECAAYFAlbl094ACgkQTLKSvz+PZwjyhACff4QzPGOfEaMei/LrcmL9pUEP
+gZcAn1HhxvrGdvtzmIo72qBLFB8daoyR
+=Zd6h
+-----END PGP SIGNATURE-----
+
+--Sig_/FeB+2B8yPHJH7YGOOUKoH12--

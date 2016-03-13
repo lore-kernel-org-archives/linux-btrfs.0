@@ -1,284 +1,68 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from meiko.romanrm.net ([195.154.92.155]:47336 "EHLO
-	meiko.romanrm.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752442AbcCMU4B (ORCPT
+Received: from torres.zugschlus.de ([85.214.131.164]:60566 "EHLO
+	torres.zugschlus.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752442AbcCMU4H (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 13 Mar 2016 16:56:01 -0400
-Date: Mon, 14 Mar 2016 01:55:54 +0500
-From: Roman Mamedov <rm@romanrm.net>
-To: Chris Murphy <lists@colorremedies.com>
-Cc: Duncan <1i5t5.duncan@cox.net>, Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Subject: Re: parent transid verify failed on snapshot deletion
-Message-ID: <20160314015554.544ee05c@natsu>
-In-Reply-To: <CAJCQCtSnSm355BC-hVRL9NnRLxXiYQefbepvm2yfTXd6PdLghw@mail.gmail.com>
-References: <20160312204847.2092f3f3@natsu>
-	<20160312221524.646e1a66@natsu>
-	<20160313142428.377b51b8@natsu>
-	<pan$a52ce$b1beae3d$57f5b99c$a796a0ec@cox.net>
-	<20160313222442.1fa22a57@natsu>
-	<CAJCQCtSnSm355BC-hVRL9NnRLxXiYQefbepvm2yfTXd6PdLghw@mail.gmail.com>
+	Sun, 13 Mar 2016 16:56:07 -0400
+Received: from mh by torres.zugschlus.de with local (Exim 4.84)
+	(envelope-from <mh+linux-btrfs@zugschlus.de>)
+	id 1afD3V-00054j-Lo
+	for linux-btrfs@vger.kernel.org; Sun, 13 Mar 2016 21:56:05 +0100
+Date: Sun, 13 Mar 2016 21:56:05 +0100
+From: Marc Haber <mh+linux-btrfs@zugschlus.de>
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Subject: Re: New file system with same issue (was: Again, no space left on
+ device while rebalancing and recipe doesnt work)
+Message-ID: <20160313205605.GV2334@torres.zugschlus.de>
+References: <20160227211450.GS26042@torres.zugschlus.de>
+ <CAOE4rSyPvkzjKDVoQ-7U8ay5t7Pp2qeaCqh-tFg-etmgHGEOJQ@mail.gmail.com>
+ <20160305143934.GE1902@torres.zugschlus.de>
+ <CAJCQCtTw1+E=X1bbGgSB-fPHDtEPUO5amFUEs4fyPmTfK4QaGw@mail.gmail.com>
+ <20160313115809.GQ2334@torres.zugschlus.de>
+ <CAPmG0jbUJ8rUM4ttk3MvDPMjAV=fxqwa93Ce0s6kOLQb=3qm=g@mail.gmail.com>
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
- boundary="Sig_/FeB+2B8yPHJH7YGOOUKoH12"; protocol="application/pgp-signature"
+Content-Type: text/plain; charset=utf-8
+In-Reply-To: <CAPmG0jbUJ8rUM4ttk3MvDPMjAV=fxqwa93Ce0s6kOLQb=3qm=g@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
---Sig_/FeB+2B8yPHJH7YGOOUKoH12
-Content-Type: text/plain; charset=US-ASCII
-Content-Transfer-Encoding: quoted-printable
+On Sun, Mar 13, 2016 at 08:14:45PM +0100, Henk Slager wrote:
+> On Sun, Mar 13, 2016 at 12:58 PM, Marc Haber
+> <mh+linux-btrfs@zugschlus.de> wrote:
+> > Hi,
+> >
+> > On Sat, Mar 05, 2016 at 12:34:09PM -0700, Chris Murphy wrote:
+> >> The alternative if this can't be fixed, is to recreate the filesystem
+> >> because there's no practical way yet to migrate so many snapshots to a
+> >> new file system.
+> >
+> > I recreated the file system on March 7, with 200 GiB in size, using
+> > btrfs-tools 4.4. The snapshot-taking process has been running since
+> > then, but I also regularly cleaned up. The number of snapshots on the
+> > new filesystem has never exceeded 1000, with the current count being
+> > at 148.
+> 
+> Is the snapshotting still read-write?
 
-On Sun, 13 Mar 2016 14:10:47 -0600
-Chris Murphy <lists@colorremedies.com> wrote:
+Yes, I want to keep the possibility to remove huge files from
+snapshots that shouldnt have been on a snapshotted volume in the first
+place without having to ditch the entire snapshot.
 
-> I'm going to guess it's a metadata block, and the profile is single.
-> Otherwise, if it were data it'd just be a corrupt file and you'd be
-> told which one is affected. And if metadata had more than one copy,
-> then it should recover from the copy. The exact nature of the loss
-> isn't clear, a kernel message for the time of the bad block message
-> might help but I'm going to guess again that it's a 4096 byte missing
-> block of metadata. Depending on what it is, that could be a pretty
-> serious hole for any file system.
+> Also, If some part of the OS or tools scans through the snapshot dirs
+> every now and then with atime creation on, metadata grows without a
+> real need.
 
-Pretty sure the metadata is DUP on that FS.
+I mount with noatime and nodiratime anyway, and the directory the
+snapshots are mounted to (/mnt/snapshots) are excluded in
+updatedb.conf. Any other idea which tool might scan filesystems and
+that might not be noticed when it's running about a five digit number
+of snapshots?
 
-Besides, the "bad" block (only going by btrfsck's lingo here, it's not the =
-usual
-"hard disk got a bad block" problem) is not entirely missing, just 6k trans=
-ids
-older than it should be(???). I saved this from before the btrfsck passes:
+Greetings
+Marc
 
-# btrfs-debug-tree -b 7483566862336 /dev/alpha/lv1                         =
-                                          :(
-node 7483566862336 level 3 items 95 free 26 generation 404133 owner 7
-fs uuid 8cf8eff9-fd5a-4b6f-bb85-3f2df2f63c99
-chunk uuid 4688dce4-89dd-43eb-a0f4-d10900535183
-	key (EXTENT_CSUM EXTENT_CSUM 1062973087744) block 4314139631616 (105325674=
-6) gen 402032
-	key (EXTENT_CSUM EXTENT_CSUM 1091441795072) block 4314548232192 (105335650=
-2) gen 402102
-	key (EXTENT_CSUM EXTENT_CSUM 1107647541248) block 7482607947776 (182680858=
-1) gen 402791
-	key (EXTENT_CSUM EXTENT_CSUM 1176289222656) block 7482608832512 (182680879=
-7) gen 402791
-	key (EXTENT_CSUM EXTENT_CSUM 1199852232704) block 7483421888512 (182700729=
-7) gen 403882
-	key (EXTENT_CSUM EXTENT_CSUM 1252762054656) block 7483566968832 (182704271=
-7) gen 404133
-	key (EXTENT_CSUM EXTENT_CSUM 1302207705088) block 7486122131456 (182766653=
-6) gen 399086
-	key (EXTENT_CSUM EXTENT_CSUM 1342292983808) block 7486136766464 (182767010=
-9) gen 399086
-	key (EXTENT_CSUM EXTENT_CSUM 1357230608384) block 7486143053824 (182767164=
-4) gen 399088
-	key (EXTENT_CSUM EXTENT_CSUM 1374801608704) block 7486219661312 (182769034=
-7) gen 399097
-	key (EXTENT_CSUM EXTENT_CSUM 1406541111296) block 7482936365056 (182688876=
-1) gen 403108
-	key (EXTENT_CSUM EXTENT_CSUM 1425602490368) block 7482806996992 (182685717=
-7) gen 402938
-	key (EXTENT_CSUM EXTENT_CSUM 1439588401152) block 7492133109760 (182913406=
-0) gen 400631
-	key (EXTENT_CSUM EXTENT_CSUM 1471449923584) block 7486878142464 (182785110=
-9) gen 399121
-	key (EXTENT_CSUM EXTENT_CSUM 1494641868800) block 7486882181120 (182785209=
-5) gen 399121
-	key (EXTENT_CSUM EXTENT_CSUM 1511553085440) block 7492376141824 (182919339=
-4) gen 400803
-	key (EXTENT_CSUM EXTENT_CSUM 1530452836352) block 7492377698304 (182919377=
-4) gen 400803
-	key (EXTENT_CSUM EXTENT_CSUM 1557468987392) block 7544937934848 (184202586=
-3) gen 401275
-	key (EXTENT_CSUM EXTENT_CSUM 1589122428928) block 7544937947136 (184202586=
-6) gen 401275
-	key (EXTENT_CSUM EXTENT_CSUM 1623402835968) block 7544935043072 (184202515=
-7) gen 401275
-	key (EXTENT_CSUM EXTENT_CSUM 1660158967808) block 7544935292928 (184202521=
-8) gen 401275
-	key (EXTENT_CSUM EXTENT_CSUM 1686639628288) block 7544935317504 (184202522=
-4) gen 401275
-	key (EXTENT_CSUM EXTENT_CSUM 1717318074368) block 7545404669952 (184213981=
-2) gen 401300
-	key (EXTENT_CSUM EXTENT_CSUM 1755587174400) block 7544935378944 (184202523=
-9) gen 401275
-	key (EXTENT_CSUM EXTENT_CSUM 1771312803840) block 7482802622464 (182685610=
-9) gen 402938
-	key (EXTENT_CSUM EXTENT_CSUM 1792774889472) block 7545001177088 (184204130=
-3) gen 401281
-	key (EXTENT_CSUM EXTENT_CSUM 1833762066432) block 7545013350400 (184204427=
-5) gen 401278
-	key (EXTENT_CSUM EXTENT_CSUM 1848938086400) block 7545009430528 (184204331=
-8) gen 401278
-	key (EXTENT_CSUM EXTENT_CSUM 1874773962752) block 7545013170176 (184204423=
-1) gen 401278
-	key (EXTENT_CSUM EXTENT_CSUM 1912300650496) block 4309044703232 (105201286=
-7) gen 401366
-	key (EXTENT_CSUM EXTENT_CSUM 1934921564160) block 4308804886528 (105195431=
-8) gen 401354
-	key (EXTENT_CSUM EXTENT_CSUM 1951308283904) block 4310900432896 (105246592=
-6) gen 401686
-	key (EXTENT_CSUM EXTENT_CSUM 1966261223424) block 4309153787904 (105203949=
-9) gen 401376
-	key (EXTENT_CSUM EXTENT_CSUM 1985369530368) block 4311094611968 (105251333=
-3) gen 401757
-	key (EXTENT_CSUM EXTENT_CSUM 2002212573184) block 4311279501312 (105255847=
-2) gen 401766
-	key (EXTENT_CSUM EXTENT_CSUM 2031789600768) block 4311093194752 (105251298=
-7) gen 401757
-	key (EXTENT_CSUM EXTENT_CSUM 2056985681920) block 4311095111680 (105251345=
-5) gen 401757
-	key (EXTENT_CSUM EXTENT_CSUM 2086494728192) block 4310101364736 (105227084=
-1) gen 401441
-	key (EXTENT_CSUM EXTENT_CSUM 2114637971456) block 4311356846080 (105257735=
-5) gen 401773
-	key (EXTENT_CSUM EXTENT_CSUM 2138850193408) block 4313693347840 (105314779=
-0) gen 401966
-	key (EXTENT_CSUM EXTENT_CSUM 2160176660480) block 4314105159680 (105324833=
-0) gen 402026
-	key (EXTENT_CSUM EXTENT_CSUM 2191463452672) block 4313988440064 (105321983=
-4) gen 402009
-	key (EXTENT_CSUM EXTENT_CSUM 2219386761216) block 4313964060672 (105321388=
-2) gen 402005
-	key (EXTENT_CSUM EXTENT_CSUM 2277297422336) block 4314309550080 (105329823=
-0) gen 402066
-	key (EXTENT_CSUM EXTENT_CSUM 2341651099648) block 4314278002688 (105329052=
-8) gen 402058
-	key (EXTENT_CSUM EXTENT_CSUM 2385829801984) block 4314699358208 (105339339=
-8) gen 402131
-	key (EXTENT_CSUM EXTENT_CSUM 2443256795136) block 4314533724160 (105335296=
-0) gen 402102
-	key (EXTENT_CSUM EXTENT_CSUM 2473251045376) block 4314534068224 (105335304=
-4) gen 402102
-	key (EXTENT_CSUM EXTENT_CSUM 2492309962752) block 4314533797888 (105335297=
-8) gen 402102
-	key (EXTENT_CSUM EXTENT_CSUM 2541250543616) block 7491513913344 (182898288=
-9) gen 367993
-	key (EXTENT_CSUM EXTENT_CSUM 2624366092288) block 4314533789696 (105335297=
-6) gen 402102
-	key (EXTENT_CSUM EXTENT_CSUM 2661959823360) block 4314533863424 (105335299=
-4) gen 402102
-	key (EXTENT_CSUM EXTENT_CSUM 2722339299328) block 4314643193856 (105337968=
-6) gen 402118
-	key (EXTENT_CSUM EXTENT_CSUM 2769931730944) block 4314614272000 (105337262=
-5) gen 402114
-	key (EXTENT_CSUM EXTENT_CSUM 2795646136320) block 4314612932608 (105337229=
-8) gen 402114
-	key (EXTENT_CSUM EXTENT_CSUM 2843763052544) block 4314612928512 (105337229=
-7) gen 402114
-	key (EXTENT_CSUM EXTENT_CSUM 2902613557248) block 4314614157312 (105337259=
-7) gen 402114
-	key (EXTENT_CSUM EXTENT_CSUM 2968288628736) block 4314614329344 (105337263=
-9) gen 402114
-	key (EXTENT_CSUM EXTENT_CSUM 3134623027200) block 7492569567232 (182924061=
-7) gen 400840
-	key (EXTENT_CSUM EXTENT_CSUM 3384253874176) block 7268773081088 (177460280=
-3) gen 402786
-	key (EXTENT_CSUM EXTENT_CSUM 3434919317504) block 7268782407680 (177460508=
-0) gen 402786
-	key (EXTENT_CSUM EXTENT_CSUM 3589271453696) block 7482801561600 (182685585=
-0) gen 402938
-	key (EXTENT_CSUM EXTENT_CSUM 3610059431936) block 7482801238016 (182685577=
-1) gen 402938
-	key (EXTENT_CSUM EXTENT_CSUM 3632980488192) block 4310713114624 (105242019=
-4) gen 379864
-	key (EXTENT_CSUM EXTENT_CSUM 3662123552768) block 7482802126848 (182685598=
-8) gen 402938
-	key (EXTENT_CSUM EXTENT_CSUM 3693896204288) block 7482802315264 (182685603=
-4) gen 402938
-	key (EXTENT_CSUM EXTENT_CSUM 3731483045888) block 7483428696064 (182700895=
-9) gen 403882
-	key (EXTENT_CSUM EXTENT_CSUM 3890200125440) block 7483526922240 (182703294=
-0) gen 404055
-	key (EXTENT_CSUM EXTENT_CSUM 3924815777792) block 7483418935296 (182700657=
-6) gen 403882
-	key (EXTENT_CSUM EXTENT_CSUM 3953528250368) block 4314230116352 (105327883=
-7) gen 402051
-	key (EXTENT_CSUM EXTENT_CSUM 3978332045312) block 4314185465856 (105326793=
-6) gen 402046
-	key (EXTENT_CSUM EXTENT_CSUM 3999411937280) block 4314513797120 (105334809=
-5) gen 402097
-	key (EXTENT_CSUM EXTENT_CSUM 4022030766080) block 4309417017344 (105210376=
-4) gen 401401
-	key (EXTENT_CSUM EXTENT_CSUM 4328173846528) block 4314038706176 (105323210=
-6) gen 402015
-	key (EXTENT_CSUM EXTENT_CSUM 4388483334144) block 4314774265856 (105341168=
-6) gen 402142
-	key (EXTENT_CSUM EXTENT_CSUM 4492224630784) block 7483410653184 (182700455=
-4) gen 403881
-	key (EXTENT_CSUM EXTENT_CSUM 4540637818880) block 4314122088448 (105325246=
-3) gen 402032
-	key (EXTENT_CSUM EXTENT_CSUM 4614089646080) block 4314448781312 (105333222=
-2) gen 402086
-	key (EXTENT_CSUM EXTENT_CSUM 4720340647936) block 7483409018880 (182700415=
-5) gen 403881
-	key (EXTENT_CSUM EXTENT_CSUM 4736819306496) block 4310925000704 (105247192=
-4) gen 401688
-	key (EXTENT_CSUM EXTENT_CSUM 4755398365184) block 4314130493440 (105325451=
-5) gen 402030
-	key (EXTENT_CSUM EXTENT_CSUM 4774954143744) block 7492586037248 (182924463=
-8) gen 400843
-	key (EXTENT_CSUM EXTENT_CSUM 4805973180416) block 7492582633472 (182924380=
-7) gen 400842
-	key (EXTENT_CSUM EXTENT_CSUM 4837741899776) block 7492538318848 (182923298=
-8) gen 400835
-	key (EXTENT_CSUM EXTENT_CSUM 4871764180992) block 7492545794048 (182923481=
-3) gen 400836
-	key (EXTENT_CSUM EXTENT_CSUM 4919789879296) block 7492521549824 (182922889=
-4) gen 400832
-	key (EXTENT_CSUM EXTENT_CSUM 4956089876480) block 7492569387008 (182924057=
-3) gen 400840
-	key (EXTENT_CSUM EXTENT_CSUM 5004070121472) block 7268872728576 (177462713=
-1) gen 402787
-	key (EXTENT_CSUM EXTENT_CSUM 5065431572480) block 4314616324096 (105337312=
-6) gen 402114
-	key (EXTENT_CSUM EXTENT_CSUM 5090921189376) block 7492482326528 (182921931=
-8) gen 400825
-	key (EXTENT_CSUM EXTENT_CSUM 5132048932864) block 4310321446912 (105232457=
-2) gen 309501
-	key (EXTENT_CSUM EXTENT_CSUM 5180942753792) block 4310060957696 (105226097=
-6) gen 394444
-	key (EXTENT_CSUM EXTENT_CSUM 5232640884736) block 4310459052032 (105235816=
-7) gen 394446
-	key (EXTENT_CSUM EXTENT_CSUM 5270016761856) block 7492586082304 (182924464=
-9) gen 400843
-	key (EXTENT_CSUM EXTENT_CSUM 5298670948352) block 7483409063936 (182700416=
-6) gen 403881
-
-> > I'm running --init-extent-tree right now in a "what if" mode, using
-> > the copy-on-write feature of 'nbd-server' (this way the original block =
-device
-> > is not modified, and all changes are saved in a separate file).
->=20
-> So it's a Btrfs on NDB with no replication either from Btrfs or the
-> storage backing it on the server? Off hand I'd say one of them needs
-> redundancy to avoid this very problem, otherwise it's just too easy
-> for even network corruption to cause a problem (NDB or iSCSI).
-
-Its normal mode of operation is to be mounted locally, I only use NDB right=
- now in the=20
-recovery process, primarily for that nifty COW feature, and also to mount t=
-he FS on a more
-powerful machine than its local one.
-
-As for reliability, both Ethernet and TCP/IP have checksums for transferred=
- content;
-in case of AoE this might be more concerning as it can only rely on the for=
-mer, but NBD and
-iSCSI should be rather safe.
-
---=20
-With respect,
-Roman
-
---Sig_/FeB+2B8yPHJH7YGOOUKoH12
-Content-Type: application/pgp-signature
-Content-Description: OpenPGP digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2
-
-iEYEARECAAYFAlbl094ACgkQTLKSvz+PZwjyhACff4QzPGOfEaMei/LrcmL9pUEP
-gZcAn1HhxvrGdvtzmIo72qBLFB8daoyR
-=Zd6h
------END PGP SIGNATURE-----
-
---Sig_/FeB+2B8yPHJH7YGOOUKoH12--
+-- 
+-----------------------------------------------------------------------------
+Marc Haber         | "I don't trust Computers. They | Mailadresse im Header
+Leimen, Germany    |  lose things."    Winona Ryder | Fon: *49 6224 1600402
+Nordisch by Nature |  How to make an American Quilt | Fax: *49 6224 1600421

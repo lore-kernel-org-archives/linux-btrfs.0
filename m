@@ -1,203 +1,215 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wm0-f43.google.com ([74.125.82.43]:38592 "EHLO
-	mail-wm0-f43.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751124AbcCMNYT (ORCPT
+Received: from userp1040.oracle.com ([156.151.31.81]:42027 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755253AbcCNIcI (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 13 Mar 2016 09:24:19 -0400
-Received: by mail-wm0-f43.google.com with SMTP id l68so71007675wml.1
-        for <linux-btrfs@vger.kernel.org>; Sun, 13 Mar 2016 06:24:18 -0700 (PDT)
-From: Alexander Fougner <fougner89@gmail.com>
+	Mon, 14 Mar 2016 04:32:08 -0400
+From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
-Cc: Alexander Fougner <fougner89@gmail.com>
-Subject: [PATCH] btrfs-progs: docs: fix spelling errors
-Date: Sun, 13 Mar 2016 14:24:08 +0100
-Message-Id: <1457875448-6658-1-git-send-email-fougner89@gmail.com>
+Cc: dsterba@suse.cz
+Subject: [PATCH v5 2/2] btrfs-progs: Introduce device delete by devid
+Date: Mon, 14 Mar 2016 16:31:49 +0800
+Message-Id: <1457944309-448-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Signed-off-by: Alexander Fougner <fougner89@gmail.com>
----
- Documentation/btrfs-balance.asciidoc          |  4 ++--
- Documentation/btrfs-device.asciidoc           |  2 +-
- Documentation/btrfs-filesystem.asciidoc       | 10 +++++-----
- Documentation/btrfs-inspect-internal.asciidoc |  2 +-
- Documentation/btrfs-man5.asciidoc             |  6 +++---
- Documentation/btrfs-show-super.asciidoc       |  2 +-
- Documentation/btrfs.asciidoc                  |  2 +-
- Documentation/mkfs.btrfs.asciidoc             |  4 ++--
- 8 files changed, 16 insertions(+), 16 deletions(-)
+From: Anand Jain <Anand.Jain@oracle.com>
 
-diff --git a/Documentation/btrfs-balance.asciidoc b/Documentation/btrfs-balance.asciidoc
-index c840741..1629e35 100644
---- a/Documentation/btrfs-balance.asciidoc
-+++ b/Documentation/btrfs-balance.asciidoc
-@@ -93,7 +93,7 @@ moving data from single to RAID1). This functionality is accessed through the
- '-d', '-m' or '-s' options to btrfs balance start, which filter on data,
- metadata and system blocks respectively.
- 
--A filter has the following stucture: 'type'[='params'][,'type'=...]
-+A filter has the following structure: 'type'[='params'][,'type'=...]
- 
- The available types are:
- 
-@@ -106,7 +106,7 @@ are a list of profile names separated by "'|'" (pipe).
- Balances only block groups with usage under the given percentage. The
- value of 0 is allowed and will clean up completely unused block groups, this
- should not require any new work space allocated. You may want to use 'usage=0'
--in case balance is returnin ENOSPC and your filesystem is not too full.
-+in case balance is returning ENOSPC and your filesystem is not too full.
- +
- The argument may be a single value or a range. The single value 'N' means 'at
- most N percent used', equivalent to '..N' range syntax. Kernels prior to 4.4
+This patch introduces new option <devid> for the command
+
+  btrfs device delete <device_path|devid>[..]  <mnt>
+
+In a user reported issue on a 3-disk-RAID1, one disk failed with its
+SB unreadable. Now with this patch user will have a choice to delete
+the device using devid.
+
+The other method we could do, is to match the input device_path
+to the available device_paths with in the kernel. But that won't
+work in all the cases, like what if user provided mapper path
+when the path within the kernel is a non-mapper path.
+
+This patch depends on the below kernel patch for the new feature to work,
+however it will fail-back to the old interface for the kernel without the
+patch
+
+  Btrfs: Introduce device delete by devid
+
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
+[ refresh on top of current code, sync with latest kernel patches, other
+  minor changes ]
+Signed-off-by: David Sterba <dsterba@suse.com>
+---
+
+v5: as below but on devel branch
+
+v4: a. For future benefit we should check for EOPNOTSUPP errno as well.
+    b. Update the changes to be inline with kernel that is
+       BTRFS_DEVICE_SPEC_BY_ID and BTRFS_VOL_ARG_V2_FLAGS_SUPPORTED
+       naming changes. and
+    c. As I remember David Sterba renamed its_num to is_devid but in
+       the devel branch I don't see it, so add it back.
+    d. reword error string and use strerror
+
+v3: enahnced btrfs_ioctl_vol_args_v2 to accept devid instead of
+    creating a new structure. Thanks to David.
+    Changed subject from
+      btrfs-progs: device delete to accept devid
+
+v2: update the missed Documentation for delete (not just remove) as well.
+    Thanks to Goffredo.
+
+
+ Documentation/btrfs-device.asciidoc |  4 ++--
+ cmds-device.c                       | 47 ++++++++++++++++++++++++++++++-------
+ ioctl.h                             | 15 +++++++++++-
+ 3 files changed, 55 insertions(+), 11 deletions(-)
+
 diff --git a/Documentation/btrfs-device.asciidoc b/Documentation/btrfs-device.asciidoc
-index bd878f4..68dadc2 100644
+index 2827598a37f5..bd878f4c33e1 100644
 --- a/Documentation/btrfs-device.asciidoc
 +++ b/Documentation/btrfs-device.asciidoc
-@@ -78,7 +78,7 @@ force overwrite of existing filesystem on the given disk(s)
+@@ -74,10 +74,10 @@ do not perform discard by default
+ -f|--force::::
+ force overwrite of existing filesystem on the given disk(s)
+ 
+-*remove* <dev> [<dev>...] <path>::
++*remove* <dev>|<devid> [<dev>|<devid>...] <path>::
  Remove device(s) from a filesystem identified by <path>.
  
- *delete* <dev>|<devid> [<dev>|<devid>...] <path>::
--Alias of remove kept for backwards compatability
-+Alias of remove kept for backwards compatibility
+-*delete* <dev> [<dev>...] <path>::
++*delete* <dev>|<devid> [<dev>|<devid>...] <path>::
+ Alias of remove kept for backwards compatability
  
  *ready* <device>::
- Check device to see if it has all of it's devices in cache for mounting.
-diff --git a/Documentation/btrfs-filesystem.asciidoc b/Documentation/btrfs-filesystem.asciidoc
-index 2612617..eeede37 100644
---- a/Documentation/btrfs-filesystem.asciidoc
-+++ b/Documentation/btrfs-filesystem.asciidoc
-@@ -39,7 +39,7 @@ GlobalReserve, single: total=512.00MiB, used=0.00B
- ------------------------------
- +
- --
--* 'Data', 'System' and 'Metadata' are separeate block group types.
-+* 'Data', 'System' and 'Metadata' are separate block group types.
- 'GlobalReserve' is an artificial and internal emergency space, see below.
- * 'single' -- the allocation profile, defined at mkfs time
- * 'total' -- sum of space reserved for
-@@ -177,7 +177,7 @@ Show the btrfs filesystem with some additional info about devices and space
- allocation.
- +
- If no option none of 'path'/'uuid'/'device'/'label' is passed, information
--about all the BTRFS filesystems is shown, both mounted and unmounted. 
-+about all the BTRFS filesystems is shown, both mounted and unmounted.
- +
- `Options`
- +
-@@ -286,18 +286,18 @@ of IO load and the system may stall for a moment.
+diff --git a/cmds-device.c b/cmds-device.c
+index 50c1c5dfb394..c0f6e681bf40 100644
+--- a/cmds-device.c
++++ b/cmds-device.c
+@@ -157,20 +157,46 @@ static int _cmd_device_remove(int argc, char **argv,
  
- *$ btrfs filesystem defrag -v -r -f dir/*
+ 	for(i=1 ; i < argc - 1; i++ ){
+ 		struct	btrfs_ioctl_vol_args arg;
++		struct btrfs_ioctl_vol_args_v2 argv2 = {0};
++		int is_devid = 0;
+ 		int	res;
  
--Recusively defragment files under 'dir/', be verbose and wait until all blocks
-+Recursively defragment files under 'dir/', be verbose and wait until all blocks
- are flushed before processing next file. You can note slower progress of the
- output and lower IO load (proportional to currently defragmented file).
+-		if (is_block_device(argv[i]) != 1 && strcmp(argv[i], "missing")) {
++		if (string_is_numerical(argv[i])) {
++			argv2.devid = arg_strtou64(argv[i]);
++			argv2.flags = BTRFS_DEVICE_SPEC_BY_ID;
++			is_devid = 1;
++		} else if (is_block_device(argv[i]) == 1 ||
++				strcmp(argv[i], "missing") == 0) {
++			strncpy_null(argv2.name, argv[i]);
++		} else {
+ 			error("not a block device: %s", argv[i]);
+ 			ret++;
+ 			continue;
+ 		}
+-		memset(&arg, 0, sizeof(arg));
+-		strncpy_null(arg.name, argv[i]);
++
+ 		/*
+ 		 * Positive values are from BTRFS_ERROR_DEV_*,
+ 		 * otherwise it's a generic error, one of errnos
+ 		 */
+-		res = ioctl(fdmnt, BTRFS_IOC_RM_DEV, &arg);
++		res = ioctl(fdmnt, BTRFS_IOC_RM_DEV_V2, &argv2);
++
++		/*
++		 * if BTRFS_IOC_RM_DEV_V2 is not supported we get ENOTTY and if
++		 * argv2.flags includes a flag which kernel don't understand then
++		 * we shall get EOPNOTSUPP
++		 */
++		if (res < 0 && (errno == ENOTTY || errno == EOPNOTSUPP)) {
++			if (is_devid) {
++				error("device delete by id failed: %s",
++							strerror(errno));
++				ret++;
++				continue;
++			}
++			memset(&arg, 0, sizeof(arg));
++			strncpy_null(arg.name, argv[i]);
++			res = ioctl(fdmnt, BTRFS_IOC_RM_DEV, &arg);
++		}
++
+ 		if (res) {
+ 			const char *msg;
  
- *$ btrfs filesystem defrag -v -r -f -clzo dir/*
+@@ -178,8 +204,13 @@ static int _cmd_device_remove(int argc, char **argv,
+ 				msg = btrfs_err_str(res);
+ 			else
+ 				msg = strerror(errno);
+-			error("error removing device '%s': %s",
+-				argv[i], msg);
++			if (is_devid) {
++				error("error removing devid %llu: %s",
++					(unsigned long long)argv2.devid, msg);
++			} else {
++				error("error removing device '%s': %s",
++					argv[i], msg);
++			}
+ 			ret++;
+ 		}
+ 	}
+@@ -189,7 +220,7 @@ static int _cmd_device_remove(int argc, char **argv,
+ }
  
--Recusively defragment files under 'dir/', be verbose, wait until all blocks are
-+Recursively defragment files under 'dir/', be verbose, wait until all blocks are
- flushed and force file compression.
+ static const char * const cmd_device_remove_usage[] = {
+-	"btrfs device remove <device> [<device>...] <path>",
++	"btrfs device remove <device>|<devid> [<device>|<devid>...] <path>",
+ 	"Remove a device from a filesystem",
+ 	NULL
+ };
+@@ -200,7 +231,7 @@ static int cmd_device_remove(int argc, char **argv)
+ }
  
- *$ btrfs filesystem defrag -v -r -t 64M dir/*
+ static const char * const cmd_device_delete_usage[] = {
+-	"btrfs device delete <device> [<device>...] <path>",
++	"btrfs device delete <device>|<devid> [<device>|<devid>...] <path>",
+ 	"Remove a device from a filesystem",
+ 	NULL
+ };
+diff --git a/ioctl.h b/ioctl.h
+index 771da23160f3..cab9ec2d5501 100644
+--- a/ioctl.h
++++ b/ioctl.h
+@@ -45,6 +45,14 @@ struct btrfs_ioctl_vol_args {
+ #define BTRFS_SUBVOL_CREATE_ASYNC	(1ULL << 0)
+ #define BTRFS_SUBVOL_RDONLY		(1ULL << 1)
+ #define BTRFS_SUBVOL_QGROUP_INHERIT	(1ULL << 2)
++#define BTRFS_DEVICE_SPEC_BY_ID		(1ULL << 3)
++
++#define BTRFS_VOL_ARG_V2_FLAGS_SUPPORTED		\
++			(BTRFS_SUBVOL_CREATE_ASYNC |	\
++			BTRFS_SUBVOL_RDONLY |		\
++			BTRFS_SUBVOL_QGROUP_INHERIT |	\
++			BTRFS_DEVICE_SPEC_BY_ID)
++
+ #define BTRFS_FSID_SIZE 16
+ #define BTRFS_UUID_SIZE 16
  
--Recusively defragment files under 'dir/', be verbose and try to merge extents
-+Recursively defragment files under 'dir/', be verbose and try to merge extents
- to be about 64MiB. As stated above, the success rate depends on actual free
- space fragmentation and the final result is not guaranteed to meet the target
- even if run repeatedly.
-diff --git a/Documentation/btrfs-inspect-internal.asciidoc b/Documentation/btrfs-inspect-internal.asciidoc
-index bbbbc59..3018967 100644
---- a/Documentation/btrfs-inspect-internal.asciidoc
-+++ b/Documentation/btrfs-inspect-internal.asciidoc
-@@ -120,7 +120,7 @@ If several '-i <super_mirror>' are given, only the last one is valid.
- Attempt to print the superblock even if no superblock magic is found.  May end
- badly.
- -s <bytenr>::::
--specifiy offset to a superblock in a non-standard location at 'bytenr', useful
-+specify offset to a superblock in a non-standard location at 'bytenr', useful
- for debugging (disables the '-f' option)
+@@ -84,7 +92,10 @@ struct btrfs_ioctl_vol_args_v2 {
+ 		};
+ 		__u64 unused[4];
+ 	};
+-	char name[BTRFS_SUBVOL_NAME_MAX + 1];
++	union {
++		char name[BTRFS_SUBVOL_NAME_MAX + 1];
++		u64 devid;
++	};
+ };
  
- *subvolid-resolve* <subvolid> <path>::
-diff --git a/Documentation/btrfs-man5.asciidoc b/Documentation/btrfs-man5.asciidoc
-index d432391..6580866 100644
---- a/Documentation/btrfs-man5.asciidoc
-+++ b/Documentation/btrfs-man5.asciidoc
-@@ -35,7 +35,7 @@ Debugging option to force all block allocations above a certain
- byte threshold on each block device.  The value is specified in
- bytes, optionally with a K, M, or G suffix (case insensitive).
- +
--This option was used for testing and has not practial use, it's slated to be
-+This option was used for testing and has no practical use, it's slated to be
- removed in the future.
- 
- *autodefrag*::
-@@ -72,7 +72,7 @@ The write flushes incur a slight hit and also prevent the IO block
- scheduler to reorder requests in more effective way. Disabling barriers gets
- rid of that penalty but will most certainly lead to a corrupted filesystem in
- case of a crash or power loss. The ordinary metadata blocks could be yet
--unwrittent at the time the new superblock is stored permanently, expecting that
-+unwritten at the time the new superblock is stored permanently, expecting that
- the block pointers to metadata were stored permanently before.
- +
- On a device with a volatile battery-backed write-back cache, the 'nobarrier'
-@@ -167,7 +167,7 @@ system at that point.
- Enable discarding of freed file blocks using TRIM operation.  This is useful
- for SSD devices, thinly provisioned LUNs or virtual machine images where the
- backing device understands the operation. Depending on support of the
--underlying device, the operation may severly hurt performance in case the TRIM
-+underlying device, the operation may severely hurt performance in case the TRIM
- operation is synchronous (eg. with SATA devices up to revision 3.0).
- +
- If discarding is not necessary to be done at the block freeing time, there's
-diff --git a/Documentation/btrfs-show-super.asciidoc b/Documentation/btrfs-show-super.asciidoc
-index 8866c94..87ed578 100644
---- a/Documentation/btrfs-show-super.asciidoc
-+++ b/Documentation/btrfs-show-super.asciidoc
-@@ -41,7 +41,7 @@ Attempt to print the superblock even if no superblock magic is found.  May end
- badly.
- 
- -s <bytenr>::
--specifiy offset to a superblock in a non-standard location at 'bytenr', useful
-+specify offset to a superblock in a non-standard location at 'bytenr', useful
- for debugging (disables the '-f' option)
- 
- EXIT STATUS
-diff --git a/Documentation/btrfs.asciidoc b/Documentation/btrfs.asciidoc
-index abf1ff8..6a77a85 100644
---- a/Documentation/btrfs.asciidoc
-+++ b/Documentation/btrfs.asciidoc
-@@ -15,7 +15,7 @@ The *btrfs* utility is a toolbox for managing btrfs filesystems.  There are
- command groups to work with subvolumes, devices, for whole filesystem or other
- specific actions. See section *COMMANDS*.
- 
--COMMAND SYTNAX
-+COMMAND SYNTAX
- --------------
- 
- Any command name can be shortened as far as it stays unambiguous,
-diff --git a/Documentation/mkfs.btrfs.asciidoc b/Documentation/mkfs.btrfs.asciidoc
-index 6a49265..0c43a79 100644
---- a/Documentation/mkfs.btrfs.asciidoc
-+++ b/Documentation/mkfs.btrfs.asciidoc
-@@ -230,7 +230,7 @@ Other terms commonly used:
- *block group*::
- *chunk*::
- a logical range of space of a given profile, stores data, metadata or both;
--sometimes the terms are used interchangably
-+sometimes the terms are used interchangeably
- +
- A typical size of metadata block group is 256MiB (filesystem smaller than
- 50GiB) and 1GiB (larger than 50GiB), for data it's 1GiB. The system block group
-@@ -274,7 +274,7 @@ the logical blocks to 2 physical locations. Whether there are really 2
- physical copies highly depends on the underlying device type.
- 
- For example, a SSD drive can remap the blocks internally to a single copy thus
--deduplicating them. This negates the purpose of increased redunancy and just
-+deduplicating them. This negates the purpose of increased redundancy and just
- wastes space.
- 
- The duplicated data/metadata may still be useful to statistically improve the
+ /*
+@@ -709,6 +720,8 @@ static inline char *btrfs_err_str(enum btrfs_err_code err_code)
+                                   struct btrfs_ioctl_feature_flags[2])
+ #define BTRFS_IOC_GET_SUPPORTED_FEATURES _IOR(BTRFS_IOCTL_MAGIC, 57, \
+                                   struct btrfs_ioctl_feature_flags[3])
++#define BTRFS_IOC_RM_DEV_V2	_IOW(BTRFS_IOCTL_MAGIC, 58, \
++				   struct btrfs_ioctl_vol_args_v2)
+ #ifdef __cplusplus
+ }
+ #endif
 -- 
-2.7.3
+2.7.0
 

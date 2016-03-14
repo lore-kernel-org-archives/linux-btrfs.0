@@ -1,67 +1,69 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:33376 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:35809 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1758753AbcCDJQT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 4 Mar 2016 04:16:19 -0500
-Date: Fri, 4 Mar 2016 10:16:02 +0100
+	id S1755585AbcCNMFk (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 14 Mar 2016 08:05:40 -0400
+Date: Mon, 14 Mar 2016 13:05:15 +0100
 From: David Sterba <dsterba@suse.cz>
-To: Marc Kleine-Budde <mkl@pengutronix.de>
-Cc: Will Deacon <will.deacon@arm.com>, Chris Mason <clm@fb.com>,
-        Josef Bacik <jbacik@fb.com>,
-        "linux-arm-kernel@lists.infradead.org"
-	<linux-arm-kernel@lists.infradead.org>,
-        linux-btrfs@vger.kernel.org
-Subject: Re: btrfs_get_token_64() alignment problem on ARM (was: Re: DWord
- alignment on ARMv7)
-Message-ID: <20160304091602.GH29310@suse.cz>
+To: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH 4/4] btrfs-progs: "device ready" accepts just one device
+Message-ID: <20160314120515.GZ18908@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <56D8BA3F.7050508@pengutronix.de>
- <20160303235426.GA11237@arm.com>
- <56D940E8.2030202@pengutronix.de>
+References: <56E5FF9A.4020609@jp.fujitsu.com>
+ <56E6056A.4020307@jp.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <56D940E8.2030202@pengutronix.de>
+In-Reply-To: <56E6056A.4020307@jp.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Mar 04, 2016 at 09:01:44AM +0100, Marc Kleine-Budde wrote:
-> Hello,
+On Mon, Mar 14, 2016 at 09:27:22AM +0900, Satoru Takeuchi wrote:
+> * actual result
 > 
-> On 03/04/2016 12:54 AM, Will Deacon wrote:
-> > Hi Marc,
-> > 
-> > On Thu, Mar 03, 2016 at 11:27:11PM +0100, Marc Kleine-Budde wrote:
-> >> I'm using btrfs on am ARMv7 and it turns out, that the kernel has to
-> >> fixup a lot of kernel originated alignment issues.
-> >>
-> >> See /proc/cpu/alignment (~4h of uptime):
-> >>> System: 22304815 (btrfs_get_token_64+0x13c/0x148 [btrfs])
-> >>
-> >> For example, when compiling the kernel on a btrfs volume the counter
-> >> increases by 100...1000 per second.
-> >>
-> >> The function shown "btrfs_get_token_64()" is defined here:
-> >>> http://lxr.free-electrons.com/source/fs/btrfs/struct-funcs.c#L53
-> >> ...it already uses get_unaligned_leXX accessors.
-> >>
-> >> Quoting a comment in arch/arm/mm/alignment.c:
-> >>
-> >>          * ARMv6 and later CPUs can perform unaligned accesses for
-> >>          * most single load and store instructions up to word size.
-> >>          * LDM, STM, LDRD and STRD still need to be handled.
-> >>
-> >> But on a 32bit ARMv7 64bits are not word-sized.
-> >>
-> >> Is the exception and fixup overhead neglectable? Do we have to introduce
-> >> something like HAVE_EFFICIENT_UNALIGNED_64BIT_ACCESS?
-> > 
-> > Ouch, that trap/emulate is certainly going to have an effect on your
-> > performance. I doubt that HAVE_EFFICIENT_UNALIGNED_ACCESS applies to
-> > types bigger than the native word size on many architectures, so my
-> > hunch is that the btrfs code should be checking BITS_PER_LONG or similar
-> > to establish whether or not to break the access up into word accesses.
+>   =======================================
+>   # ./btrfs device ready /dev/sdb foo
+>   #
+>   =======================================
 > 
-> I've added the btrfs maintainers on Cc.
+> * expecting result
+> 
+>   =======================================
+>   # ./btrfs device ready /dev/sdb foo
+>   btrfs device ready: too many arguments
+>   usage: btrfs device ready <device>
+> 
+>       Check device to see if it has all of its devices in cache for mounting
+> 
+>   #
+>   =======================================
+> 
+> Signed-off-by: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
+> ---
+>  cmds-device.c | 2 +-
+>  1 file changed, 1 insertion(+), 1 deletion(-)
+> 
+> diff --git a/cmds-device.c b/cmds-device.c
+> index 33da2ce..23656c3 100644
+> --- a/cmds-device.c
+> +++ b/cmds-device.c
+> @@ -326,7 +326,7 @@ static int cmd_device_ready(int argc, char **argv)
+> 
+>  	clean_args_no_options(argc, argv, cmd_device_ready_usage);
+> 
+> -	if (check_argc_min(argc - optind, 1))
+> +	if (check_argc_exact(argc - optind, 1))
 
-Can this be done transparently via the the get_unaligned_le* helpers?
-This seems to be too arch-specific to fix it in btrfs.
+This silently changes the semantics, so far it accepts multiple values
+though it contradicts the documentation. I'm not yet sure how to resolve
+that.
+
+>  		usage(cmd_device_ready_usage);
+> 
+>  	fd = open("/dev/btrfs-control", O_RDWR);
+> -- 
+> 2.7.0
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

@@ -1,57 +1,94 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mgwym01.jp.fujitsu.com ([211.128.242.40]:13232 "EHLO
-	mgwym01.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756636AbcCDChZ (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 3 Mar 2016 21:37:25 -0500
-Received: from m3050.s.css.fujitsu.com (msm.b.css.fujitsu.com [10.134.21.208])
-	by yt-mxauth.gw.nic.fujitsu.com (Postfix) with ESMTP id B52E9AC0A39
-	for <linux-btrfs@vger.kernel.org>; Fri,  4 Mar 2016 11:37:15 +0900 (JST)
-To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-From: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
-Subject: [PATCH] Show a warning message if one of highest objectid reaches its
- max value
-Message-ID: <56D8F4CF.20604@jp.fujitsu.com>
-Date: Fri, 4 Mar 2016 11:37:03 +0900
+Received: from cn.fujitsu.com ([59.151.112.132]:47538 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1754813AbcCNH5C (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 14 Mar 2016 03:57:02 -0400
+Subject: Re: [PATCH v4 0/6] Btrfs in-band de-duplication test cases
+To: <fstests@vger.kernel.org>, <linux-btrfs@vger.kernel.org>
+References: <1457512424-9215-1-git-send-email-quwenruo@cn.fujitsu.com>
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Message-ID: <56E66EBF.8000105@cn.fujitsu.com>
+Date: Mon, 14 Mar 2016 15:56:47 +0800
 MIME-Version: 1.0
-Content-Type: text/plain; charset=iso-2022-jp
+In-Reply-To: <1457512424-9215-1-git-send-email-quwenruo@cn.fujitsu.com>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-- It's better to show a warning message for the exceptional case
-  that one of highest objectid (in most case, inode number)
-  reaches its max value, BTRFS_LAST_FREE_OBJECTID. Show this
-  message only once to avoid filling dmesg with it.
-- EOVERFLOW is more proper return value for this case.
-  ENOSPC is for "No space left on device" case and objectid isn't
-  related to any device.
+Please don't merge this patchset.
 
-Signed-off-by: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
----
-This patch can be applied to v4.5-rc6
----
- fs/btrfs/inode-map.c | 6 ++++--
- 1 file changed, 4 insertions(+), 2 deletions(-)
+As the there is some naming undecided recently.
 
-diff --git a/fs/btrfs/inode-map.c b/fs/btrfs/inode-map.c
-index e50316c..a4860fd 100644
---- a/fs/btrfs/inode-map.c
-+++ b/fs/btrfs/inode-map.c
-@@ -555,8 +555,10 @@ int btrfs_find_free_objectid(struct btrfs_root *root, u64 *objectid)
- 	int ret;
- 	mutex_lock(&root->objectid_mutex);
+The abbreviation 'dedup' may be changed to 'dedupe'.
+I'll update them when all related parts is settled down.
 
--	if (unlikely(root->highest_objectid >= BTRFS_LAST_FREE_OBJECTID)) {
--		ret = -ENOSPC;
-+	if (WARN_ONCE(root->highest_objectid >= BTRFS_LAST_FREE_OBJECTID,
-+		      "BTRFS: The highest objectid reaches its max value %llu.\n",
-+		      BTRFS_LAST_FREE_OBJECTID)) {
-+		ret = -EOVERFLOW;
- 		goto out;
- 	}
+Thanks,
+Qu
 
--- 
-2.5.0
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-
+
+Qu Wenruo wrote on 2016/03/09 16:33 +0800:
+> Since we are push btrfs in-band de-duplication for v4.6, it's better to
+> add test cases for this new feature.
+>
+> Except the first basic function test, the rest are all regression test
+> which we found during the development.
+> We also found some bugs from the generic test, but we need some fstests
+> option allowing us to enable dedup for any test case.
+> (We did it by hack _scratch_mount and _test_mount to enable dedup for
+> any test case)
+>
+> Use the sequence number starts from 200 to avoid any possible conflicts.
+> The './new' script returns some hole number which is not proper for
+> such related test case set.
+> Hopes it's not too hard for maintainer to modify the sequence number.
+>
+> v1:
+>    Btrfs mail list internal use only
+> v2:
+>    Add test case 203 to test balance race
+> v3:
+>    Follow Dave's comment to use more existing fstest infrastructure.
+>    Also fix a small bug in the 1st which forgot to remove old macros
+> v4:
+>    Enhance test 203 to cover both dedup backend
+>    Add new test 204, a specific regression test for balance and dedup.
+>
+> Qu Wenruo (6):
+>    fstests: rename _require_btrfs to _require_btrfs_subcommand
+>    fstests: btrfs: Add basic test for btrfs in-band de-duplication
+>    fstests: btrfs: Add testcase for btrfs dedup enable disable race test
+>    fstests: btrfs: Add per inode dedup flag test
+>    fstests: btrfs: Test inband dedup with balance.
+>    fstests: btrfs: Test for btrfs dedup tree balance bug
+>
+>   common/defrag       |  13 +++++++
+>   common/rc           |   2 +-
+>   tests/btrfs/004     |   2 +-
+>   tests/btrfs/048     |   2 +-
+>   tests/btrfs/059     |   2 +-
+>   tests/btrfs/200     | 109 ++++++++++++++++++++++++++++++++++++++++++++++++++++
+>   tests/btrfs/200.out |  21 ++++++++++
+>   tests/btrfs/201     |  98 ++++++++++++++++++++++++++++++++++++++++++++++
+>   tests/btrfs/201.out |   2 +
+>   tests/btrfs/202     | 108 +++++++++++++++++++++++++++++++++++++++++++++++++++
+>   tests/btrfs/202.out |  15 ++++++++
+>   tests/btrfs/203     | 109 ++++++++++++++++++++++++++++++++++++++++++++++++++++
+>   tests/btrfs/203.out |   5 +++
+>   tests/btrfs/204     |  74 +++++++++++++++++++++++++++++++++++
+>   tests/btrfs/204.out |   2 +
+>   tests/btrfs/group   |   5 +++
+>   16 files changed, 565 insertions(+), 4 deletions(-)
+>   create mode 100755 tests/btrfs/200
+>   create mode 100644 tests/btrfs/200.out
+>   create mode 100755 tests/btrfs/201
+>   create mode 100644 tests/btrfs/201.out
+>   create mode 100755 tests/btrfs/202
+>   create mode 100644 tests/btrfs/202.out
+>   create mode 100755 tests/btrfs/203
+>   create mode 100644 tests/btrfs/203.out
+>   create mode 100755 tests/btrfs/204
+>   create mode 100644 tests/btrfs/204.out
+>
+
+

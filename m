@@ -1,85 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mgwym03.jp.fujitsu.com ([211.128.242.42]:26312 "EHLO
-	mgwym03.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932426AbcCNAQQ (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 13 Mar 2016 20:16:16 -0400
-Received: from m3051.s.css.fujitsu.com (m3051.s.css.fujitsu.com [10.134.21.209])
-	by yt-mxauth.gw.nic.fujitsu.com (Postfix) with ESMTP id 7BC70AC050B
-	for <linux-btrfs@vger.kernel.org>; Mon, 14 Mar 2016 09:16:10 +0900 (JST)
-Subject: [PATCH 3/4] btrfs-progs: Fix a regression that btrfs filesystem label
- doesn't work
-To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Received: from mx2.suse.de ([195.135.220.15]:39748 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S964890AbcCNMXk (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 14 Mar 2016 08:23:40 -0400
+Date: Mon, 14 Mar 2016 13:23:15 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH 2/4] btrfs-progs: fix a reression that "property" with -t
+ option doesn't work
+Message-ID: <20160314122315.GB18908@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
 References: <56E5FF9A.4020609@jp.fujitsu.com>
-From: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
-Message-ID: <56E602AE.7080203@jp.fujitsu.com>
-Date: Mon, 14 Mar 2016 09:15:42 +0900
+ <56E601F4.9070908@jp.fujitsu.com>
 MIME-Version: 1.0
-In-Reply-To: <56E5FF9A.4020609@jp.fujitsu.com>
-Content-Type: text/plain; charset=iso-2022-jp
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <56E601F4.9070908@jp.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The number of arguments which is allowed to pass became wrong
-from the following commit.
+On Mon, Mar 14, 2016 at 09:12:36AM +0900, Satoru Takeuchi wrote:
+> --- a/cmds-property.c
+> +++ b/cmds-property.c
+> @@ -379,9 +379,7 @@ static int cmd_property_get(int argc, char **argv)
+>  	char *name = NULL;
+>  	int types = 0;
+> 
+> -	clean_args_no_options(argc, argv, cmd_property_get_usage);
+> -
+> -	if (check_argc_min(argc, 2) || check_argc_max(argc, 5))
+> +	if (check_argc_min(argc, 2))
+>  		usage(cmd_property_get_usage);
+> 
+>  	parse_args(argc, argv, cmd_property_get_usage, &types, &object, &name,
 
-commit 176aeca9a148c5e29de0 ("btrfs-progs: add getopt stubs where needed")
+We still need to check the number of non-option arguments here, when the
+optind is set from parse_args.
 
-* actual result
+> @@ -415,9 +413,7 @@ static int cmd_property_set(int argc, char **argv)
+> -	if (check_argc_min(argc, 4) || check_argc_max(argc, 6))
+> +	if (check_argc_min(argc, 4))
+>  		usage(cmd_property_set_usage);
 
-  ===========================================================
-  # ./btrfs prop get /btrfs label
-  label=foo
-  # ./btrfs fi label /btrfs
-  btrfs filesystem label: too few arguments
-  usage: btrfs filesystem label [<device>|<mount_point>] [<newlabel>]
+...
 
-      Get or change the label of a filesystem
+>  	parse_args(argc, argv, cmd_property_set_usage, &types,
+> @@ -446,9 +442,7 @@ static int cmd_property_list(int argc, char **argv)
+> -	if (check_argc_min(argc, 2) || check_argc_max(argc, 4))
+> +	if (check_argc_min(argc, 2))
 
-      With one argument, get the label of filesystem on <device>.
-      If <newlabel> is passed, set the filesystem label to <newlabel>.
-
-  # ./btrfs fi label /btrfs bar
-  foo
-  # ./btrfs prop get /btrfs label
-  label=foo
-  ===========================================================
-
-* expected result
-
-  ===========================================================
-  # ./btrfs prop get /btrfs label
-  label=foo
-  # ./btrfs fi label /btrfs
-  foo
-  # ./btrfs fi label /btrfs bar
-  # ./btrfs prop get /btrfs label
-  label=bar
-  ===========================================================
-
-Signed-off-by: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
----
- cmds-filesystem.c | 6 +++---
- 1 file changed, 3 insertions(+), 3 deletions(-)
-
-diff --git a/cmds-filesystem.c b/cmds-filesystem.c
-index 7e74e1b..45c16d2 100644
---- a/cmds-filesystem.c
-+++ b/cmds-filesystem.c
-@@ -1255,11 +1255,11 @@ static int cmd_filesystem_label(int argc, char **argv)
- {
- 	clean_args_no_options(argc, argv, cmd_filesystem_label_usage);
-
--	if (check_argc_min(argc - optind, 2) ||
--			check_argc_max(argc - optind, 3))
-+	if (check_argc_min(argc - optind, 1) ||
-+			check_argc_max(argc - optind, 2))
- 		usage(cmd_filesystem_label_usage);
-
--	if (argc - optind > 2) {
-+	if (argc - optind > 1) {
- 		return set_label(argv[optind], argv[optind + 1]);
- 	} else {
- 		char label[BTRFS_LABEL_SIZE];
--- 
-2.7.0
+...

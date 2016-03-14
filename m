@@ -1,78 +1,71 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lb0-f181.google.com ([209.85.217.181]:36810 "EHLO
-	mail-lb0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754499AbcCNAAP (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 13 Mar 2016 20:00:15 -0400
-Received: by mail-lb0-f181.google.com with SMTP id x1so218321218lbj.3
-        for <linux-btrfs@vger.kernel.org>; Sun, 13 Mar 2016 17:00:14 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <20160313205605.GV2334@torres.zugschlus.de>
+Received: from plane.gmane.org ([80.91.229.3]:49319 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S932513AbcCNBFz (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 13 Mar 2016 21:05:55 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+	id 1afGxC-0001dp-75
+	for linux-btrfs@vger.kernel.org; Mon, 14 Mar 2016 02:05:50 +0100
+Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Mon, 14 Mar 2016 02:05:50 +0100
+Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Mon, 14 Mar 2016 02:05:50 +0100
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: New file system with same issue (was: Again, no space left on
+ device while rebalancing and recipe doesnt work)
+Date: Mon, 14 Mar 2016 01:05:39 +0000 (UTC)
+Message-ID: <pan$4099$d134b7c1$fa33147d$c2943157@cox.net>
 References: <20160227211450.GS26042@torres.zugschlus.de>
 	<CAOE4rSyPvkzjKDVoQ-7U8ay5t7Pp2qeaCqh-tFg-etmgHGEOJQ@mail.gmail.com>
 	<20160305143934.GE1902@torres.zugschlus.de>
 	<CAJCQCtTw1+E=X1bbGgSB-fPHDtEPUO5amFUEs4fyPmTfK4QaGw@mail.gmail.com>
 	<20160313115809.GQ2334@torres.zugschlus.de>
-	<CAPmG0jbUJ8rUM4ttk3MvDPMjAV=fxqwa93Ce0s6kOLQb=3qm=g@mail.gmail.com>
-	<20160313205605.GV2334@torres.zugschlus.de>
-Date: Mon, 14 Mar 2016 01:00:13 +0100
-Message-ID: <CAPmG0jYJgwenu-9n5qi=S+f1D7xVQv=jRhwMAfoaeOjBkysM4w@mail.gmail.com>
-Subject: Re: New file system with same issue (was: Again, no space left on
- device while rebalancing and recipe doesnt work)
-From: Henk Slager <eye1tm@gmail.com>
-To: Marc Haber <mh+linux-btrfs@zugschlus.de>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+	<pan$9abbc$75454df4$bbede296$bf2d7878@cox.net>
+	<20160313210537.GW2334@torres.zugschlus.de>
+Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Mar 13, 2016 at 9:56 PM, Marc Haber <mh+linux-btrfs@zugschlus.de> wrote:
-> On Sun, Mar 13, 2016 at 08:14:45PM +0100, Henk Slager wrote:
->> On Sun, Mar 13, 2016 at 12:58 PM, Marc Haber
->> <mh+linux-btrfs@zugschlus.de> wrote:
->> > Hi,
->> >
->> > On Sat, Mar 05, 2016 at 12:34:09PM -0700, Chris Murphy wrote:
->> >> The alternative if this can't be fixed, is to recreate the filesystem
->> >> because there's no practical way yet to migrate so many snapshots to a
->> >> new file system.
->> >
->> > I recreated the file system on March 7, with 200 GiB in size, using
->> > btrfs-tools 4.4. The snapshot-taking process has been running since
->> > then, but I also regularly cleaned up. The number of snapshots on the
->> > new filesystem has never exceeded 1000, with the current count being
->> > at 148.
->>
->> Is the snapshotting still read-write?
->
-> Yes, I want to keep the possibility to remove huge files from
-> snapshots that shouldnt have been on a snapshotted volume in the first
-> place without having to ditch the entire snapshot.
+Marc Haber posted on Sun, 13 Mar 2016 22:05:37 +0100 as excerpted:
 
-You could do ro snapshotting and in case you want to modify something
-inside a snapshot/subvolume:
-# btrfs property set <subvolume> ro false
-# rm <subvolume>/<somefile>
-# btrfs property set <subvolume> ro true
+> On Sun, Mar 13, 2016 at 05:12:35PM +0000, Duncan wrote:
+>> Marc Haber posted on Sun, 13 Mar 2016 12:58:10 +0100 as excerpted:
+>> > I see the same metadata spread as with the old filesystem in btrfs fi
+>> > df,
+>> > totl at 23 and used at 2.38 GiB. What I find strange is that this
+>> > filesystem has Data, System and Metadata in "single" profile, is this
+>> > the new default for a 200 GiB file system?
+>> 
+>> Single is default for data.  Metadata (and system) will normally
+>> default to dup on a single device, raid1 on multi-device, EXCEPT on
+>> detected SSDs, where it defaults to single as well, because the
+>> firmware on some ssds will dedup it in any case.  If you know your ssd
+>> isn't one of the deduping ones (as I do, here), you can of course
+>> overrule that by specifying modes at mkfs.btrfs time.
+> 
+> It was both times the same Samsung 840 EVO. Has this SSD detection been
+> added recently, or did older versions of mkfs.btrfs not detect an SSD
+> through a crypto layer, maybe?
 
->> Also, If some part of the OS or tools scans through the snapshot dirs
->> every now and then with atime creation on, metadata grows without a
->> real need.
->
-> I mount with noatime and nodiratime anyway, and the directory the
-> snapshots are mounted to (/mnt/snapshots) are excluded in
-> updatedb.conf. Any other idea which tool might scan filesystems and
-> that might not be noticed when it's running about a five digit number
-> of snapshots?
+Btrfs' ssd detection has been there for quite some time now (for 
+userspace, since well before the releases synced to kernel version with 
+3.12 or so, which effectively makes it ancient history in btrfs terms).
 
-Maybe baloo or so if you use KDE. Someone else reporting on this
-maillist was searching snapshots dirs for latest before creating new
-snapshot. That was more related to fs performance rather then the
-metadata issue you experience.
+But according to the mkfs.btrfs manpage, the detection is based on 
+/sys/block/DEV/queue/rotational (with DEV substituted appropriately), and 
+various layers got support for correctly passing that thru at various 
+times, some before btrfs, some after.  So that's very likely why btrfs 
+didn't detect it originally, if it was on top of crypto and/or some other 
+layer that might not have been passing that thru.
 
-The rw vs. ro snapshotting is the only think I can think of in order
-to stop having the issue. I'm using both snapper and my own
-scripts+btrfspogs since 2+ years on various small and big filesystems
-with 100-1500 snapshots per fs without any metadata issues or so, but
-it is all ro snapshots. And actually, if I want some modification
-(rarely), I create another rw snapshot of the particular snapshot.
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

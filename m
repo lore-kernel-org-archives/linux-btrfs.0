@@ -1,59 +1,51 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail02.iobjects.de ([188.40.134.68]:49478 "EHLO
-	mail02.iobjects.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750793AbcCOKwd (ORCPT
+Received: from mail-lb0-f175.google.com ([209.85.217.175]:34811 "EHLO
+	mail-lb0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S934695AbcCOMPu (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 15 Mar 2016 06:52:33 -0400
-Subject: Re: New file system with same issue
-To: Marc Haber <mh+linux-btrfs@zugschlus.de>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-References: <20160227211450.GS26042@torres.zugschlus.de>
- <CAOE4rSyPvkzjKDVoQ-7U8ay5t7Pp2qeaCqh-tFg-etmgHGEOJQ@mail.gmail.com>
- <20160305143934.GE1902@torres.zugschlus.de>
- <CAJCQCtTw1+E=X1bbGgSB-fPHDtEPUO5amFUEs4fyPmTfK4QaGw@mail.gmail.com>
- <20160313115809.GQ2334@torres.zugschlus.de>
- <20160314120703.GD2334@torres.zugschlus.de> <56E6B312.30903@googlemail.com>
- <20160314201306.GH2334@torres.zugschlus.de>
-From: =?UTF-8?Q?Holger_Hoffst=c3=a4tte?=
-	<holger.hoffstaette@googlemail.com>
-Message-ID: <56E7E96E.6080301@googlemail.com>
-Date: Tue, 15 Mar 2016 11:52:30 +0100
+	Tue, 15 Mar 2016 08:15:50 -0400
+Received: by mail-lb0-f175.google.com with SMTP id k12so19896020lbb.1
+        for <linux-btrfs@vger.kernel.org>; Tue, 15 Mar 2016 05:15:34 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <20160314201306.GH2334@torres.zugschlus.de>
-Content-Type: text/plain; charset=utf-8
+In-Reply-To: <20160315071611.GL2334@torres.zugschlus.de>
+References: <CAOE4rSyPvkzjKDVoQ-7U8ay5t7Pp2qeaCqh-tFg-etmgHGEOJQ@mail.gmail.com>
+	<20160305143934.GE1902@torres.zugschlus.de>
+	<CAJCQCtTw1+E=X1bbGgSB-fPHDtEPUO5amFUEs4fyPmTfK4QaGw@mail.gmail.com>
+	<20160313115809.GQ2334@torres.zugschlus.de>
+	<20160314120703.GD2334@torres.zugschlus.de>
+	<CAPmG0jbwDjf6L1-9VPCwwzqj44Th9ZHaGVcY-PhoQF=eHo5hnA@mail.gmail.com>
+	<20160314200546.GG2334@torres.zugschlus.de>
+	<CAPmG0jYfEnvLEHskv8uy+FjnRtv4yY8HA7bqMqZ8ScqVuAHatA@mail.gmail.com>
+	<CAJCQCtQHZsvQyAfWO4HGY7Jr+PGdW5L=LUTqM+5E=ys0+Ypzqw@mail.gmail.com>
+	<CAPmG0jaf7TaU2Nt3ULRm3651ByiwW-2PdYart318ceLDN7JqbQ@mail.gmail.com>
+	<20160315071611.GL2334@torres.zugschlus.de>
+Date: Tue, 15 Mar 2016 13:15:33 +0100
+Message-ID: <CAPmG0jb1QMCqG9HdouzTntgwzKbcLmZtNmRSAN876x5-kT9Chg@mail.gmail.com>
+Subject: Re: New file system with same issue (was: Again, no space left on
+ device while rebalancing and recipe doesnt work)
+From: Henk Slager <eye1tm@gmail.com>
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 03/14/16 21:13, Marc Haber wrote:
-> On Mon, Mar 14, 2016 at 01:48:18PM +0100, Holger Hoffstätte wrote:
->> did you ever try to clear the free-space cache via -o clear_cache
->> on mount?
-> 
-> This was not asked, and I didn't try. Since this is an encrypted root
-> filesystem, is it a workable way to add clear_cache to /etc/fstab,
-> rebuild initramfs and reboot? Or do you recommend using a rescue system?
+On Tue, Mar 15, 2016 at 8:16 AM, Marc Haber <mh+linux-btrfs@zugschlus.de> wrote:
+> On Tue, Mar 15, 2016 at 12:22:00AM +0100, Henk Slager wrote:
+>> The other question is: What is mounted on /media/tempdisk/  ?
+>
+> The "old" btrfs filesystem "ofanbtr", formerly 417 GB in size, now
+> resized to 300 GB. Does it need to be umounted to be checked?
 
-If you can do it via a rescue system that might be easiest, but adding
-it to fstab and rebooting once has the same effect. Whatever you know
-how to do safely.
+Yes, that's the whole point
 
->> Give it a try, let it run for a while and then try balancing
->> again.
-> 
-> Do I need to wait for clear_cache to finish, like until I see disk
-> usage dropping?
+>> At least I think a check of the current 200GiB fs is needed. As it is
+>> a rootfs and encrypted, some work is needed to make that happen.
+>
+> You suggested a btrfs check after looking at the image of "ofanbtr".
+> Do you want me to check the new "fanbtr" also?
 
-The cache isn't that big, so you won't see a huge drop. Just use the
-disk normally for a few minutes, after some time the cache will be
-written out again.
-
->> _Someone_ is lying to btrfs in terms of device size and/or allocated
->> chunks, otherwise you wouldn't get the ENOSPC.
-> 
-> Which properties does a block device report other than size?
-
-Well..at least all you can find in /sys/block/sdX/*. However, reading
-the other subthread about the mismatching image size I'm now none the
-wiser what else to suggest. :/
-
--h
+I was not sure if 'ofanbtr' is an image created by btrfs-image or a
+extra dd created image you might have locally. Both 'ofanbtr' and
+'fanbtr' have the same balance issue, but 'fanbtr' is created with
+newer and known kernel+tools version I assume, so that's why the
+suggestion.

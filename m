@@ -1,51 +1,68 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:45800 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:45807 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S932440AbcCOK24 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 15 Mar 2016 06:28:56 -0400
-Date: Tue, 15 Mar 2016 11:28:54 +0100 (CET)
+	id S932440AbcCOK3B (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 15 Mar 2016 06:29:01 -0400
+Date: Tue, 15 Mar 2016 11:28:59 +0100 (CET)
 From: Jiri Kosina <jkosina@suse.cz>
 To: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
         David Sterba <dsterba@suse.com>
 cc: linux-btrfs@vger.kernel.org, linux-btrfs@vger.kernel.org, jack@suse.cz,
         mhocko@suse.cz
-Subject: [PATCH 1/2] btrfs: cleaner_kthread() doesn't need explicit freeze
-Message-ID: <alpine.LNX.2.00.1603151126080.3656@cbobk.fhfr.pm>
+Subject: [PATCH 2/2] btrfs: transaction_kthread() is not freezable
+In-Reply-To: <alpine.LNX.2.00.1603151126080.3656@cbobk.fhfr.pm>
+Message-ID: <alpine.LNX.2.00.1603151127560.3656@cbobk.fhfr.pm>
+References: <alpine.LNX.2.00.1603151126080.3656@cbobk.fhfr.pm>
 MIME-Version: 1.0
 Content-Type: TEXT/PLAIN; charset=US-ASCII
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-cleaner_kthread() is not marked freezable, and therefore calling 
-try_to_freeze() in its context is a pointless no-op.
+transaction_kthread() is calling try_to_freeze(), but that's just an 
+expeinsive no-op given the fact that the thread is not marked freezable.
 
-In addition to that, as has been clearly demonstrated by 80ad623edd2d 
-("Revert "btrfs: clear PF_NOFREEZE in cleaner_kthread()"), it's perfectly 
-valid / legal for cleaner_kthread() to stay scheduled out in an arbitrary 
-place during suspend (in that particular example that was waiting for 
-reading of extent pages), so there is no need to leave any traces of 
-freezer in this kthread.
+After removing this, disk-io.c is now independent on freezer API.
 
-Fixes: 80ad623edd2d ("Revert "btrfs: clear PF_NOFREEZE in cleaner_kthread()")
-Fixes: 696249132158 ("btrfs: clear PF_NOFREEZE in cleaner_kthread()")
 Signed-off-by: Jiri Kosina <jkosina@suse.cz>
 ---
- fs/btrfs/disk-io.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ fs/btrfs/disk-io.c | 15 ++++++---------
+ 1 file changed, 6 insertions(+), 9 deletions(-)
 
 diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 4545e2e..d8d68af 100644
+index d8d68af..4c7361a 100644
 --- a/fs/btrfs/disk-io.c
 +++ b/fs/btrfs/disk-io.c
-@@ -1830,7 +1830,7 @@ static int cleaner_kthread(void *arg)
- 		 */
- 		btrfs_delete_unused_bgs(root->fs_info);
- sleep:
--		if (!try_to_freeze() && !again) {
-+		if (!again) {
- 			set_current_state(TASK_INTERRUPTIBLE);
- 			if (!kthread_should_stop())
- 				schedule();
+@@ -25,7 +25,6 @@
+ #include <linux/buffer_head.h>
+ #include <linux/workqueue.h>
+ #include <linux/kthread.h>
+-#include <linux/freezer.h>
+ #include <linux/slab.h>
+ #include <linux/migrate.h>
+ #include <linux/ratelimit.h>
+@@ -1920,14 +1919,12 @@ sleep:
+ 		if (unlikely(test_bit(BTRFS_FS_STATE_ERROR,
+ 				      &root->fs_info->fs_state)))
+ 			btrfs_cleanup_transaction(root);
+-		if (!try_to_freeze()) {
+-			set_current_state(TASK_INTERRUPTIBLE);
+-			if (!kthread_should_stop() &&
+-			    (!btrfs_transaction_blocked(root->fs_info) ||
+-			     cannot_commit))
+-				schedule_timeout(delay);
+-			__set_current_state(TASK_RUNNING);
+-		}
++		set_current_state(TASK_INTERRUPTIBLE);
++		if (!kthread_should_stop() &&
++				(!btrfs_transaction_blocked(root->fs_info) ||
++				 cannot_commit))
++			schedule_timeout(delay);
++		__set_current_state(TASK_RUNNING);
+ 	} while (!kthread_should_stop());
+ 	return 0;
+ }
+
 -- 
 Jiri Kosina
 SUSE Labs
+

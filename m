@@ -1,87 +1,85 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:33624 "EHLO
-	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932803AbcCOWGO (ORCPT
+Received: from userp1040.oracle.com ([156.151.31.81]:27279 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932815AbcCOWTs (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 15 Mar 2016 18:06:14 -0400
-Date: Tue, 15 Mar 2016 22:06:11 +0000
-From: Hugo Mills <hugo@carfax.org.uk>
-To: Andreas Grosse <andig.listen@aol.com>
-Cc: linux-btrfs@vger.kernel.org
+	Tue, 15 Mar 2016 18:19:48 -0400
 Subject: Re: Incompat features: raid56 ... when creating a RAID6?
-Message-ID: <20160315220611.GL17196@carfax.org.uk>
+To: Andreas Grosse <andig.listen@aol.com>
 References: <16570443.SxVegaKaET@andilaptop>
+From: Anand Jain <anand.jain@oracle.com>
+Cc: linux-btrfs@vger.kernel.org
+Message-ID: <56E88A7C.1010801@oracle.com>
+Date: Wed, 16 Mar 2016 06:19:40 +0800
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="Osvg0bgWkLaeQPMj"
 In-Reply-To: <16570443.SxVegaKaET@andilaptop>
+Content-Type: text/plain; charset=windows-1252; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---Osvg0bgWkLaeQPMj
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
 
-On Tue, Mar 15, 2016 at 10:42:29PM +0100, Andreas Grosse wrote:
+On 03/16/2016 05:42 AM, Andreas Grosse wrote:
 > Hello everyone!
-> 
+>
 > I just wanted to create a RAID6 and got the following output:
-> 
-> > # mkfs.btrfs -d raid6 -m raid6 -L slowPool /dev/sd[cdefgh]
-[snip]
-> > Incompat features:  extref, raid56, skinny-metadata
-[snip]
-> And then the line saying "Incompat features: ... raid56" came to my eyes. 
+>
+>> # mkfs.btrfs -d raid6 -m raid6 -L slowPool /dev/sd[cdefgh]
+>> btrfs-progs v4.4.1
+>> See http://btrfs.wiki.kernel.org for more information.
+>>
+>> Label:              slowPool
+>> UUID:               85ddf6a7-51f1-4cc0-b6cd-d472277b0e86
+>> Node size:          16384
+>> Sector size:        4096
+>> Filesystem size:    27.29TiB
+>>
+>> Block group profiles:
+>>    Data:             RAID6             4.01GiB
+>>    Metadata:         RAID6             4.01GiB
+>>    System:           RAID6            14.50MiB
+>>
+>> SSD detected:       no
+>> Incompat features:  extref, raid56, skinny-metadata
+>> Number of devices:  6
+>>
+>> Devices:
+>>     ID        SIZE  PATH
+>>
+>>      1     4.55TiB  /dev/sdc
+>>      2     4.55TiB  /dev/sdd
+>>      3     4.55TiB  /dev/sde
+>>      4     4.55TiB  /dev/sdf
+>>      5     4.55TiB  /dev/sdg
+>>      6     4.55TiB  /dev/sdh
+>
+> And then the line saying "Incompat features: ... raid56" came to my eyes.
 > Reading the corresponding manpage, it says:
-> > raid56
-> >     extended format for RAID5/6, also enabled if raid5 or raid6 block groups
-> >     are selected
-> So why is raid56 marked as incompatible if I just created a file system with 
-> multiple disks using the RAID6 profile? Have I misunderstood something there? 
+>> raid56
+>>      extended format for RAID5/6, also enabled if raid5 or raid6 block groups
+>>      are selected
+>
+> So why is raid56 marked as incompatible if I just created a file system with
+> multiple disks using the RAID6 profile? Have I misunderstood something there?
 > I am confused. Can somebody here lighten this up?
 
-   It's a safety thing.
+  Those messages are indeed confusing. It just indicates the
+  FS may fail to mount on certain older kernels. Not necessarily
+  the kernel in the system on which you ran btrfs-progs. Sorry
+  that it not very obvious at the moment, but there are patches
+  to make this part better.
 
-   The incompat flags are markers set in the filesystem to indicate
-which features that particular FS uses. Each kernel version has a list
-of features it can handle, and if it's asked to mount a filesystem
-with a feature that it doesn't recognise, it'll refuse to do so.
+  To check features that your running kernel supports you could use
+   ls /sys/fs/btrfs/features
 
-   So, you've created a filesystem with the RAID5/6 feature, it's
-marked as such in the FS (with the incompat flag "raid56"), and
-attempting to mount that FS on a kernel that doesn't know about parity
-RAID (earlier than 3.14, IIRC) will fail safely because the kernel
-can't handle it.
+  But note: Some of the names used by sys/fs/..features don't
+  exactly match with the names used by btrfs-progs: incompatible..
+  (a bug, which is also fixed in the patch).
 
-   Hugo.
+Thanks, Anand
 
--- 
-Hugo Mills             | Alert status upwards vermilion: High probability of
-hugo@... carfax.org.uk | flash photography. Avoid wearing brogues.
-http://carfax.org.uk/  |
-PGP: E2AB1DE4          |
 
---Osvg0bgWkLaeQPMj
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-
-iQIcBAEBAgAGBQJW6IdTAAoJEFheFHXiqx3ktlMP/2WTa52EmbE9iKIZagU/1Oqs
-GQhrzSNRJnAeSUSSy+Uhdxaak3w6aKHBXa4yh89B/grndYzMTKd98yBn0DRvavNm
-zI74VjgM+rQ4C7SFIHH9B/jbcPUxQHixJfWt3foKpYOv1hhmjykF2K9r3IN48s5d
-a9ABNBre5jHnJINtd1R0FF9PS2Cd3SjRiL1t+e0jDbc0X63VoIl4cwpH2+2ExAMI
-HD4MREdwOmWUDCDicHX5yZtIDILoTLcDMgYIIJObe5pYxYZ+r2luR8BzmTHAjhMJ
-xixc+QRjHTXxo0HoiZtdRBP+pdPO2fEs2vinpX6UuEURqmmM+dlOwjJkU0woJi+6
-eLSksI3lhvT8+Cv+9U4OtJ4UhWaVMWBgQMSQcePo2NRaL9kD3MXcTuL6SdI/y0gt
-mJNceSJG9at9I2m6Nuy/Z48L6QQEvcFNFge3yjuKHl2AkpNYP0tE59gcCe4vXpN1
-z9MRJ+gW8gtVU2PnJuSQPm35q8PSift0V//U0vSL3eeR3keDBXioZWXEW1ooaalX
-dwvN/OetQXEhzW+3YtXHchZiIQF+vfAmsNUzHg74goxHDMbZZtA4uBoFSd9PPsVU
-XdPgWF+EG2tdOq+b1+3ns7/pOLi+gI0ufnIaMei5Fx9zr9xOzI6E26fpxs/ZT+AL
-MVjTWKZqyXmDICcDGWjL
-=BGi1
------END PGP SIGNATURE-----
-
---Osvg0bgWkLaeQPMj--
+> (If important: Gentoo Linux with kernel 4.5.0, btrfs-progs v4.4.1)
+>
+> AndiN‹§²æìr¸›yúèšØb²X¬¶Ç§vØ^–)Þº{.nÇ+‰·¥Š{±nÚß²)í…æèw*jg¬±¨¶‰šŽŠÝ¢j/êäz¹Þ–Šà2ŠÞ™¨è­Ú&¢)ß¡«a¶Úþø®G«éh®æj:+v‰¨Šwè†Ù¥
+>

@@ -1,126 +1,438 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:36156 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751087AbcCPAXT (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:41493 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932665AbcCOT0N (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 15 Mar 2016 20:23:19 -0400
-Subject: Re: [Hit return to continue]
-To: linux-btrfs@vger.kernel.org
-References: <1458083583-8445-1-git-send-email-anand.jain@oracle.com>
-Cc: dsterba@suse.cz
-From: Anand Jain <anand.jain@oracle.com>
-Message-ID: <56E8A76E.5020901@oracle.com>
-Date: Wed, 16 Mar 2016 08:23:10 +0800
+	Tue, 15 Mar 2016 15:26:13 -0400
+Date: Tue, 15 Mar 2016 12:25:37 -0700
+From: "Darrick J. Wong" <darrick.wong@oracle.com>
+To: david@fromorbit.com
+Cc: linux-ext4@vger.kernel.org, linux-btrfs@vger.kernel.org,
+        fstests@vger.kernel.org, xfs@oss.sgi.com,
+        Christoph Hellwig <hch@infradead.org>
+Subject: [PATCH v2 12/12] block: test fallocate for block devices
+Message-ID: <20160315192537.GB5818@birch.djwong.org>
+References: <20160305003717.28738.98818.stgit@birch.djwong.org>
+ <20160305003837.28738.49794.stgit@birch.djwong.org>
 MIME-Version: 1.0
-In-Reply-To: <1458083583-8445-1-git-send-email-anand.jain@oracle.com>
-Content-Type: text/plain; charset=windows-1252; format=flowed
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20160305003837.28738.49794.stgit@birch.djwong.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Now that we're wiring up fallocate's PUNCH_HOLE and ZERO_RANGE
+features for block devices, add some tests to make sure they
+work correctly.
 
-  Uh! Where that title came from. Sorry about the title.
-  I am resending.
+v2: Update tests to reflect EOD clamping suggested by Linus.
 
--Anand
+Signed-off-by: Darrick J. Wong <darrick.wong@oracle.com>
+---
+ common/scsi_debug     |    6 ++
+ tests/generic/705     |   77 ++++++++++++++++++++++++++++++++
+ tests/generic/705.out |   11 +++++
+ tests/generic/706     |   74 +++++++++++++++++++++++++++++++
+ tests/generic/706.out |   10 ++++
+ tests/generic/707     |  118 +++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/generic/707.out |   32 +++++++++++++
+ tests/generic/group   |    3 +
+ 8 files changed, 330 insertions(+), 1 deletion(-)
+ create mode 100755 tests/generic/705
+ create mode 100644 tests/generic/705.out
+ create mode 100755 tests/generic/706
+ create mode 100644 tests/generic/706.out
+ create mode 100755 tests/generic/707
+ create mode 100644 tests/generic/707.out
 
-On 03/16/2016 07:13 AM, Anand Jain wrote:
-> For the matter of completeness we need to check if the device
-> being scanned has features that are known to the kernel. As of
-> now if it doesn't - the mount will fails, then what is the point
-> in having those devices added to the btrfs_fs_devices list at
-> device_list_add().
->
-> So block those devices at scan. Which means the original block at
-> open_ctee() won't reach in case of device with unsupported feature.
-> But I am leaving that code as it is, without deleting.
->
-> Unit testing:
-> Create progs with the following changes and mkfs.
-> --------------------------------------------------
-> diff --git a/ctree.h b/ctree.h
-> index 5ab0f4a45a15..a8d86facc045 100644
-> --- a/ctree.h
-> +++ b/ctree.h
-> @@ -480,6 +480,7 @@ struct btrfs_super_block {
->   #define BTRFS_FEATURE_INCOMPAT_RAID56          (1ULL << 7)
->   #define BTRFS_FEATURE_INCOMPAT_SKINNY_METADATA (1ULL << 8)
->   #define BTRFS_FEATURE_INCOMPAT_NO_HOLES                (1ULL << 9)
-> +#define BTRFS_FEATURE_INCOMPAT_TEST            (1ULL << 10)
->
->   #define BTRFS_FEATURE_COMPAT_SUPP              0ULL
->
-> @@ -495,7 +496,8 @@ struct btrfs_super_block {
->           BTRFS_FEATURE_INCOMPAT_RAID56 |                \
->           BTRFS_FEATURE_INCOMPAT_MIXED_GROUPS |          \
->           BTRFS_FEATURE_INCOMPAT_SKINNY_METADATA |       \
-> -        BTRFS_FEATURE_INCOMPAT_NO_HOLES)
-> +        BTRFS_FEATURE_INCOMPAT_NO_HOLES |              \
-> +        BTRFS_FEATURE_INCOMPAT_TEST)
->
->   /*
->    * A leaf is full of items. offset and size tell us where to find
-> diff --git a/mkfs.c b/mkfs.c
-> index ea584042db16..f3665a93364b 100644
-> --- a/mkfs.c
-> +++ b/mkfs.c
-> @@ -1368,7 +1368,7 @@ int main(int ac, char **av)
->          int dev_cnt = 0;
->          int saved_optind;
->          char fs_uuid[BTRFS_UUID_UNPARSED_SIZE] = { 0 };
-> -       u64 features = BTRFS_MKFS_DEFAULT_FEATURES;
-> +       u64 features = BTRFS_MKFS_DEFAULT_FEATURES | BTRFS_FEATURE_INCOMPAT_TEST;
->          struct mkfs_allocation allocation = { 0 };
->          struct btrfs_mkfs_config mkfs_cfg;
-> ------------------------------------------------------------
->
-> Results..
->
-> btrfs dev scan /dev/sdc
-> Scanning for Btrfs filesystems in '/dev/sdc'
-> ERROR: device scan failed '/dev/sdc' - Protocol family not supported
->
-> btrfs dev ready /dev/sdc
-> ERROR: unable to determine if device '/dev/sdc' is ready for mount: Protocol family not supported
->
-> mount /dev/sdc /btrfs
-> mount: mount /dev/sdc on /btrfs failed: Protocol family not supported
->
-> Signed-off-by: Anand Jain <anand.jain@oracle.com>
-> ---
->   fs/btrfs/volumes.c | 8 ++++++++
->   1 file changed, 8 insertions(+)
->
-> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-> index 6f7873e401ac..8ca3b0d3f1ef 100644
-> --- a/fs/btrfs/volumes.c
-> +++ b/fs/btrfs/volumes.c
-> @@ -1071,6 +1071,7 @@ int btrfs_scan_one_device(const char *path, fmode_t flags, void *holder,
->   	u64 transid;
->   	u64 total_devices;
->   	u64 bytenr;
-> +	u64 features;
->
->   	/*
->   	 * we would like to check all the supers, but that would make
-> @@ -1091,6 +1092,12 @@ int btrfs_scan_one_device(const char *path, fmode_t flags, void *holder,
->   	if (btrfs_read_disk_super(bdev, bytenr, &page, &disk_super))
->   		goto error_bdev_put;
->
-> +	features = btrfs_super_incompat_flags(disk_super) &
-> +				~BTRFS_FEATURE_INCOMPAT_SUPP;
-> +	if (features) {
-> +		ret = -EPFNOSUPPORT;
-> +		goto error_disk_super;
-> +	}
->   	devid = btrfs_stack_device_id(&disk_super->dev_item);
->   	transid = btrfs_super_generation(disk_super);
->   	total_devices = btrfs_super_num_devices(disk_super);
-> @@ -1105,6 +1112,7 @@ int btrfs_scan_one_device(const char *path, fmode_t flags, void *holder,
->   	if (!ret && fs_devices_ret)
->   		(*fs_devices_ret)->total_devices = total_devices;
->
-> +error_disk_super:
->   	btrfs_release_disk_super(page);
->
->   error_bdev_put:
->
+diff --git a/common/scsi_debug b/common/scsi_debug
+index eb08126..74c3802 100644
+--- a/common/scsi_debug
++++ b/common/scsi_debug
+@@ -40,13 +40,17 @@ _get_scsi_debug_dev()
+ 	logical=${2-512}
+ 	unaligned=${3-0}
+ 	size=${4-128}
++	test -n "$4" && shift
++	test -n "$3" && shift
++	test -n "$2" && shift
++	test -n "$1" && shift
+ 
+ 	phys_exp=0
+ 	while [ $logical -lt $physical ]; do
+ 		let physical=physical/2
+ 		let phys_exp=phys_exp+1
+ 	done
+-	opts="sector_size=$logical physblk_exp=$phys_exp lowest_aligned=$unaligned dev_size_mb=$size"
++	opts="sector_size=$logical physblk_exp=$phys_exp lowest_aligned=$unaligned dev_size_mb=$size $@"
+ 	echo "scsi_debug options $opts" >> $seqres.full
+ 	modprobe scsi_debug $opts
+ 	[ $? -eq 0 ] || _fail "scsi_debug modprobe failed"
+diff --git a/tests/generic/705 b/tests/generic/705
+new file mode 100755
+index 0000000..4bb8752
+--- /dev/null
++++ b/tests/generic/705
+@@ -0,0 +1,77 @@
++#! /bin/bash
++# FS QA Test No. 705
++#
++# Test fallocate(ZERO_RANGE) on a block device, which should be able to
++# WRITE SAME (or equivalent) the range.
++#
++#-----------------------------------------------------------------------
++# Copyright (c) 2016 Oracle, Inc.  All Rights Reserved.
++#
++# This program is free software; you can redistribute it and/or
++# modify it under the terms of the GNU General Public License as
++# published by the Free Software Foundation.
++#
++# This program is distributed in the hope that it would be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write the Free Software Foundation,
++# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++#-----------------------------------------------------------------------
++#
++
++seq=`basename $0`
++seqres=$RESULT_DIR/$seq
++echo "QA output created by $seq"
++
++here=`pwd`
++tmp=/tmp/$$
++status=1	# failure is the default!
++trap "_cleanup; exit \$status" 0 1 2 3 7 15
++
++_cleanup()
++{
++    cd /
++    rm -rf $tmp.*
++}
++
++# get standard environment, filters and checks
++. ./common/rc
++. ./common/filter
++. ./common/scsi_debug
++
++# real QA test starts here
++_supported_os Linux
++_require_scsi_debug
++_require_xfs_io_command "fzero"
++
++echo "Create and format"
++dev=$(_get_scsi_debug_dev 512 512 0 4 "lbpws=1 lbpws10=1")
++_pwrite_byte 0x62 0 4m $dev >> $seqres.full
++
++echo "Zero range"
++$XFS_IO_PROG -c "fzero -k 512k 1m" $dev
++
++echo "Zero range without keep_size"
++$XFS_IO_PROG -c "fzero 384k 64k" $dev
++
++echo "Zero range past EOD"
++$XFS_IO_PROG -c "fzero -k 3m 4m" $dev
++
++echo "Check contents"
++md5sum $dev | sed -e "s|$dev|SCSI_DEBUG_DEV|g"
++
++echo "Zero range to EOD"
++$XFS_IO_PROG -c "fzero -k 0 9223372036854775807" $dev
++
++echo "Check contents"
++md5sum $dev | sed -e "s|$dev|SCSI_DEBUG_DEV|g"
++
++echo "Destroy device"
++_put_scsi_debug_dev
++
++# success, all done
++status=0
++exit
+diff --git a/tests/generic/705.out b/tests/generic/705.out
+new file mode 100644
+index 0000000..ccbda23
+--- /dev/null
++++ b/tests/generic/705.out
+@@ -0,0 +1,11 @@
++QA output created by 705
++Create and format
++Zero range
++Zero range without keep_size
++Zero range past EOD
++Check contents
++f0cb9070c098aa347f664bead3a219d9  SCSI_DEBUG_DEV
++Zero range to EOD
++Check contents
++b5cfa9d6c8febd618f91ac2843d50a1c  SCSI_DEBUG_DEV
++Destroy device
+diff --git a/tests/generic/706 b/tests/generic/706
+new file mode 100755
+index 0000000..184dbc2
+--- /dev/null
++++ b/tests/generic/706
+@@ -0,0 +1,74 @@
++#! /bin/bash
++# FS QA Test No. 706
++#
++# Test fallocate(PUNCH_HOLE) on a block device, which should be able to
++# zero-TRIM (or equivalent) the range.
++#
++#-----------------------------------------------------------------------
++# Copyright (c) 2016 Oracle, Inc.  All Rights Reserved.
++#
++# This program is free software; you can redistribute it and/or
++# modify it under the terms of the GNU General Public License as
++# published by the Free Software Foundation.
++#
++# This program is distributed in the hope that it would be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write the Free Software Foundation,
++# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++#-----------------------------------------------------------------------
++#
++
++seq=`basename $0`
++seqres=$RESULT_DIR/$seq
++echo "QA output created by $seq"
++
++here=`pwd`
++tmp=/tmp/$$
++status=1	# failure is the default!
++trap "_cleanup; exit \$status" 0 1 2 3 7 15
++
++_cleanup()
++{
++    cd /
++    rm -rf $tmp.*
++}
++
++# get standard environment, filters and checks
++. ./common/rc
++. ./common/filter
++. ./common/scsi_debug
++
++# real QA test starts here
++_supported_os Linux
++_require_scsi_debug
++_require_xfs_io_command "fpunch"
++
++echo "Create and format"
++dev=$(_get_scsi_debug_dev 512 512 0 4 "lbpws=1 lbpws10=1")
++_pwrite_byte 0x62 0 4m $dev >> $seqres.full
++
++echo "Zero punch"
++$XFS_IO_PROG -c "fpunch 512k 1m" $dev
++
++echo "Punch range past EOD"
++$XFS_IO_PROG -c "fpunch 3m 4m" $dev
++
++echo "Check contents"
++md5sum $dev | sed -e "s|$dev|SCSI_DEBUG_DEV|g"
++
++echo "Punch to EOD"
++$XFS_IO_PROG -c "fpunch 0 9223372036854775807" $dev
++
++echo "Check contents"
++md5sum $dev | sed -e "s|$dev|SCSI_DEBUG_DEV|g"
++
++echo "Destroy device"
++_put_scsi_debug_dev
++
++# success, all done
++status=0
++exit
+diff --git a/tests/generic/706.out b/tests/generic/706.out
+new file mode 100644
+index 0000000..53a09ae
+--- /dev/null
++++ b/tests/generic/706.out
+@@ -0,0 +1,10 @@
++QA output created by 706
++Create and format
++Zero punch
++Punch range past EOD
++Check contents
++8c6a3fd51601141b56eaebbab3746156  SCSI_DEBUG_DEV
++Punch to EOD
++Check contents
++b5cfa9d6c8febd618f91ac2843d50a1c  SCSI_DEBUG_DEV
++Destroy device
+diff --git a/tests/generic/707 b/tests/generic/707
+new file mode 100755
+index 0000000..fab997f
+--- /dev/null
++++ b/tests/generic/707
+@@ -0,0 +1,118 @@
++#! /bin/bash
++# FS QA Test No. 707
++#
++# Test the unsupported fallocate flags on a block device.  No collapse
++# or insert range, no regular fallocate, no forgetting keep-space on
++# zero range, no punching past EOD, no requests that aren't aligned
++# with the logicalsector size, and make sure the fallbacks work for
++# devices that don't support write_same or discard.
++#
++#-----------------------------------------------------------------------
++# Copyright (c) 2016 Oracle, Inc.  All Rights Reserved.
++#
++# This program is free software; you can redistribute it and/or
++# modify it under the terms of the GNU General Public License as
++# published by the Free Software Foundation.
++#
++# This program is distributed in the hope that it would be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write the Free Software Foundation,
++# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++#-----------------------------------------------------------------------
++#
++
++seq=`basename $0`
++seqres=$RESULT_DIR/$seq
++echo "QA output created by $seq"
++
++here=`pwd`
++tmp=/tmp/$$
++status=1	# failure is the default!
++trap "_cleanup; exit \$status" 0 1 2 3 7 15
++
++_cleanup()
++{
++    cd /
++    rm -rf $tmp.*
++}
++
++# get standard environment, filters and checks
++. ./common/rc
++. ./common/filter
++. ./common/scsi_debug
++
++# real QA test starts here
++_supported_os Linux
++_require_scsi_debug
++_require_xfs_io_command "falloc"
++_require_xfs_io_command "finsert"
++_require_xfs_io_command "fcollapse"
++_require_xfs_io_command "fzero"
++_require_xfs_io_command "fpunch"
++
++
++echo "Create and format"
++dev=$(_get_scsi_debug_dev 4096 4096 0 4 "lbpws=1 lbpws10=1")
++_pwrite_byte 0x62 0 4m $dev >> $seqres.full
++$XFS_IO_PROG -c "fsync" $dev
++
++echo "Regular fallocate"
++$XFS_IO_PROG -c "falloc 64k 64k" $dev
++
++echo "Insert range"
++$XFS_IO_PROG -c "finsert 128k 64k" $dev
++
++echo "Collapse range"
++$XFS_IO_PROG -c "fcollapse 256k 64k" $dev
++
++echo "Unaligned zero range"
++$XFS_IO_PROG -c "fzero -k 512 512" $dev
++
++echo "Unaligned punch"
++$XFS_IO_PROG -c "fpunch 512 512" $dev
++
++echo "Zero range toobig keep size"
++$XFS_IO_PROG -c "fzero -k 512k 9223372036854775807" $dev
++
++echo "Zero range toobig"
++$XFS_IO_PROG -c "fzero 512k 9223372036854775807" $dev
++
++echo "Zero range to EOD fail w/o keepsize"
++$XFS_IO_PROG -c "fzero 0 9223372036854775807" $dev
++
++echo "Zero range starts past EOD"
++$XFS_IO_PROG -c "fzero -k 900m 1m" $dev
++
++echo "Punch starts past EOD"
++$XFS_IO_PROG -c "fpunch 900m 1m" $dev
++
++echo "Check contents"
++md5sum $dev | sed -e "s|$dev|SCSI_DEBUG_DEV|g"
++
++echo "Destroy device"
++_put_scsi_debug_dev
++
++echo "Create w/o unmap or writesame and format"
++dev=$(_get_scsi_debug_dev 512 512 0 4 "lbpws=0 lbpws10=0 lbpu=0 write_same_length=0 unmap_max_blocks=0")
++_pwrite_byte 0x62 0 4m $dev >> $seqres.full
++$XFS_IO_PROG -c "fsync" $dev
++
++echo "Zero punch, no fallback available"
++$XFS_IO_PROG -c "fpunch 512k 512k" $dev
++
++echo "Zero range, write fallback"
++$XFS_IO_PROG -c "fzero -k 1536k 512k" $dev
++
++echo "Check contents"
++md5sum $dev | sed -e "s|$dev|SCSI_DEBUG_DEV|g"
++
++echo "Destroy device"
++_put_scsi_debug_dev
++
++# success, all done
++status=0
++exit
+diff --git a/tests/generic/707.out b/tests/generic/707.out
+new file mode 100644
+index 0000000..050c70c
+--- /dev/null
++++ b/tests/generic/707.out
+@@ -0,0 +1,32 @@
++QA output created by 707
++Create and format
++Regular fallocate
++fallocate: Operation not supported
++Insert range
++fallocate: Operation not supported
++Collapse range
++fallocate: Operation not supported
++Unaligned zero range
++fallocate: Invalid argument
++Unaligned punch
++fallocate: Invalid argument
++Zero range toobig keep size
++fallocate: File too large
++Zero range toobig
++fallocate: File too large
++Zero range to EOD fail w/o keepsize
++fallocate: Invalid argument
++Zero range starts past EOD
++fallocate: Invalid argument
++Punch starts past EOD
++fallocate: Invalid argument
++Check contents
++b83f9394092e15bdcda585cd8e776dc6  SCSI_DEBUG_DEV
++Destroy device
++Create w/o unmap or writesame and format
++Zero punch, no fallback available
++fallocate: Operation not supported
++Zero range, write fallback
++Check contents
++0fc6bc93cd0cd97e3cde5ea39ea1185d  SCSI_DEBUG_DEV
++Destroy device
+diff --git a/tests/generic/group b/tests/generic/group
+index 727648c..51a2d63 100644
+--- a/tests/generic/group
++++ b/tests/generic/group
+@@ -340,3 +340,6 @@
+ 335 auto quick metadata
+ 336 auto quick metadata
+ 337 auto quick metadata
++705 blockdev quick rw
++706 blockdev quick rw
++707 blockdev quick rw

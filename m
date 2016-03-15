@@ -1,73 +1,60 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wm0-f66.google.com ([74.125.82.66]:34590 "EHLO
-	mail-wm0-f66.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S935251AbcCJLKY (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 10 Mar 2016 06:10:24 -0500
-Received: by mail-wm0-f66.google.com with SMTP id p65so3150112wmp.1
-        for <linux-btrfs@vger.kernel.org>; Thu, 10 Mar 2016 03:10:24 -0800 (PST)
-From: Alex Lyakas <alex.bolshoy@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Cc: fdmanana@kernel.org, Alex Lyakas <alex@zadarastorage.com>
-Subject: [PATCH 2/2] btrfs: do not write corrupted metadata blocks to disk
-Date: Thu, 10 Mar 2016 13:10:15 +0200
-Message-Id: <1457608215-18089-1-git-send-email-alex@zadarastorage.com>
+Received: from mx2.suse.de ([195.135.220.15]:35319 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751537AbcCONHZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 15 Mar 2016 09:07:25 -0400
+Date: Tue, 15 Mar 2016 14:07:23 +0100 (CET)
+From: Jiri Kosina <jkosina@suse.cz>
+To: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
+        David Sterba <dsterba@suse.com>
+cc: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org, jack@suse.cz,
+        mhocko@suse.cz
+Subject: Re: [PATCH 1/2] btrfs: cleaner_kthread() doesn't need explicit
+ freeze
+In-Reply-To: <alpine.LNX.2.00.1603151126080.3656@cbobk.fhfr.pm>
+Message-ID: <alpine.LNX.2.00.1603151400460.3656@cbobk.fhfr.pm>
+References: <alpine.LNX.2.00.1603151126080.3656@cbobk.fhfr.pm>
+MIME-Version: 1.0
+Content-Type: TEXT/PLAIN; charset=US-ASCII
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-csum_dirty_buffer was issuing a warning in case the extent buffer
-did not look alright, but was still returning success.
-Let's return error in this case, and also add an additional sanity
-check on the extent buffer header.
-The caller up the chain may BUG_ON on this, for example flush_epd_write_bio will,
-but it is better than to have a silent metadata corruption on disk.
+On Tue, 15 Mar 2016, Jiri Kosina wrote:
 
-Signed-off-by: Alex Lyakas <alex@zadarastorage.com>
----
- fs/btrfs/disk-io.c | 15 +++++++++++++--
- 1 file changed, 13 insertions(+), 2 deletions(-)
+> cleaner_kthread() is not marked freezable, and therefore calling 
+> try_to_freeze() in its context is a pointless no-op.
+> 
+> In addition to that, as has been clearly demonstrated by 80ad623edd2d 
+> ("Revert "btrfs: clear PF_NOFREEZE in cleaner_kthread()"), it's perfectly 
+> valid / legal for cleaner_kthread() to stay scheduled out in an arbitrary 
+> place during suspend (in that particular example that was waiting for 
+> reading of extent pages), so there is no need to leave any traces of 
+> freezer in this kthread.
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 4420ab2..cf85714 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -506,23 +506,34 @@ static int btree_read_extent_buffer_pages(struct btrfs_root *root,
- 
- static int csum_dirty_buffer(struct btrfs_fs_info *fs_info, struct page *page)
- {
- 	u64 start = page_offset(page);
- 	u64 found_start;
- 	struct extent_buffer *eb;
- 
- 	eb = (struct extent_buffer *)page->private;
- 	if (page != eb->pages[0])
- 		return 0;
-+
- 	found_start = btrfs_header_bytenr(eb);
--	if (WARN_ON(found_start != start || !PageUptodate(page)))
--		return 0;
-+	/*
-+	 * Please do not consolidate these warnings into a single if.
-+	 * It is useful to know what went wrong.
-+	 */
-+	if (WARN_ON(found_start != start))
-+		return -EUCLEAN;
-+	if (WARN_ON(!PageUptodate(page)))
-+		return -EUCLEAN;
-+
-+	ASSERT(memcmp_extent_buffer(eb, fs_info->fsid,
-+			btrfs_header_fsid(), BTRFS_FSID_SIZE) == 0);
-+
- 	return csum_tree_block(fs_info, eb, 0);
- }
- 
- static int check_tree_block_fsid(struct btrfs_fs_info *fs_info,
- 				 struct extent_buffer *eb)
- {
- 	struct btrfs_fs_devices *fs_devices = fs_info->fs_devices;
- 	u8 fsid[BTRFS_UUID_SIZE];
- 	int ret = 1;
- 
+Given some questions I've received offline, let me clarify a little bit 
+more here.
+
+Currently, the try_to_freeze() call is completely useless here, because it 
+will never actually try to freeze the kthread (as it's PF_NOFREEZE).
+
+When attempted to make the kthread properly freezable, it turned out (see 
+e.g. 80ad623edd2d) that it's actually sleeping in various places during 
+suspend for long periods of time (my guess would be that it doesn't really 
+matter whether the cleaning happens before or after suspend, but this'd be 
+something I'd like to have clarified from btrfs folks).
+
+So in a nutshell, this patch (a) doesn't make things worse, as it's an 
+equivalent code transformation (b) brings more sanity to how the kthread 
+freezing API is used throughout the kernel.
+It might very well be that the code was broken before; but it's not more 
+broken after this patch, and the API usage is sane.
+
+The ultimate goal is first to bring some sanity into how the freezer API 
+is used throughout the kernel, and then eventually get rid of it 
+completely in favor of fs freezing (currently it's not even possible to 
+analyze all the uses in the kernel, as there are way too many and most of 
+them are totally broken).
+
 -- 
-1.9.1
-
+Jiri Kosina
+SUSE Labs

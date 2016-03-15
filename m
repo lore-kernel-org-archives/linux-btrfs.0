@@ -1,70 +1,59 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from torres.zugschlus.de ([85.214.131.164]:38176 "EHLO
-	torres.zugschlus.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932077AbcCOHUp (ORCPT
+Received: from mail02.iobjects.de ([188.40.134.68]:49478 "EHLO
+	mail02.iobjects.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750793AbcCOKwd (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 15 Mar 2016 03:20:45 -0400
-Received: from mh by torres.zugschlus.de with local (Exim 4.84)
-	(envelope-from <mh+linux-btrfs@zugschlus.de>)
-	id 1afjHX-0000Ts-AN
-	for linux-btrfs@vger.kernel.org; Tue, 15 Mar 2016 08:20:43 +0100
-Date: Tue, 15 Mar 2016 08:20:43 +0100
-From: Marc Haber <mh+linux-btrfs@zugschlus.de>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Subject: Re: New file system with same issue (was: Again, no space left on
- device while rebalancing and recipe doesnt work)
-Message-ID: <20160315072043.GM2334@torres.zugschlus.de>
+	Tue, 15 Mar 2016 06:52:33 -0400
+Subject: Re: New file system with same issue
+To: Marc Haber <mh+linux-btrfs@zugschlus.de>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 References: <20160227211450.GS26042@torres.zugschlus.de>
  <CAOE4rSyPvkzjKDVoQ-7U8ay5t7Pp2qeaCqh-tFg-etmgHGEOJQ@mail.gmail.com>
  <20160305143934.GE1902@torres.zugschlus.de>
  <CAJCQCtTw1+E=X1bbGgSB-fPHDtEPUO5amFUEs4fyPmTfK4QaGw@mail.gmail.com>
  <20160313115809.GQ2334@torres.zugschlus.de>
- <CAPmG0jbUJ8rUM4ttk3MvDPMjAV=fxqwa93Ce0s6kOLQb=3qm=g@mail.gmail.com>
- <20160313205605.GV2334@torres.zugschlus.de>
- <CAPmG0jYJgwenu-9n5qi=S+f1D7xVQv=jRhwMAfoaeOjBkysM4w@mail.gmail.com>
+ <20160314120703.GD2334@torres.zugschlus.de> <56E6B312.30903@googlemail.com>
+ <20160314201306.GH2334@torres.zugschlus.de>
+From: =?UTF-8?Q?Holger_Hoffst=c3=a4tte?=
+	<holger.hoffstaette@googlemail.com>
+Message-ID: <56E7E96E.6080301@googlemail.com>
+Date: Tue, 15 Mar 2016 11:52:30 +0100
 MIME-Version: 1.0
+In-Reply-To: <20160314201306.GH2334@torres.zugschlus.de>
 Content-Type: text/plain; charset=utf-8
-In-Reply-To: <CAPmG0jYJgwenu-9n5qi=S+f1D7xVQv=jRhwMAfoaeOjBkysM4w@mail.gmail.com>
-To: unlisted-recipients:; (no To-header on input)
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Mar 14, 2016 at 01:00:13AM +0100, Henk Slager wrote:
-> On Sun, Mar 13, 2016 at 9:56 PM, Marc Haber <mh+linux-btrfs@zugschlus.de> wrote:
-> > Yes, I want to keep the possibility to remove huge files from
-> > snapshots that shouldnt have been on a snapshotted volume in the first
-> > place without having to ditch the entire snapshot.
+On 03/14/16 21:13, Marc Haber wrote:
+> On Mon, Mar 14, 2016 at 01:48:18PM +0100, Holger Hoffstätte wrote:
+>> did you ever try to clear the free-space cache via -o clear_cache
+>> on mount?
 > 
-> You could do ro snapshotting and in case you want to modify something
-> inside a snapshot/subvolume:
-> # btrfs property set <subvolume> ro false
-> # rm <subvolume>/<somefile>
-> # btrfs property set <subvolume> ro true
+> This was not asked, and I didn't try. Since this is an encrypted root
+> filesystem, is it a workable way to add clear_cache to /etc/fstab,
+> rebuild initramfs and reboot? Or do you recommend using a rescue system?
 
-I was not aware that it is possible to fiddle with the ro property of
-an already existing snapshot. I am not yet sure whether I love or hate
-this.
+If you can do it via a rescue system that might be easiest, but adding
+it to fstab and rebooting once has the same effect. Whatever you know
+how to do safely.
 
-> >> Also, If some part of the OS or tools scans through the snapshot dirs
-> >> every now and then with atime creation on, metadata grows without a
-> >> real need.
-> >
-> > I mount with noatime and nodiratime anyway, and the directory the
-> > snapshots are mounted to (/mnt/snapshots) are excluded in
-> > updatedb.conf. Any other idea which tool might scan filesystems and
-> > that might not be noticed when it's running about a five digit number
-> > of snapshots?
+>> Give it a try, let it run for a while and then try balancing
+>> again.
 > 
-> Maybe baloo or so if you use KDE.
+> Do I need to wait for clear_cache to finish, like until I see disk
+> usage dropping?
 
-I usually do those tests via ssh without even being logged in to a
-local desktop.
+The cache isn't that big, so you won't see a huge drop. Just use the
+disk normally for a few minutes, after some time the cache will be
+written out again.
 
-Greetings
-Marc
+>> _Someone_ is lying to btrfs in terms of device size and/or allocated
+>> chunks, otherwise you wouldn't get the ENOSPC.
+> 
+> Which properties does a block device report other than size?
 
--- 
------------------------------------------------------------------------------
-Marc Haber         | "I don't trust Computers. They | Mailadresse im Header
-Leimen, Germany    |  lose things."    Winona Ryder | Fon: *49 6224 1600402
-Nordisch by Nature |  How to make an American Quilt | Fax: *49 6224 1600421
+Well..at least all you can find in /sys/block/sdX/*. However, reading
+the other subthread about the mismatching image size I'm now none the
+wiser what else to suggest. :/
+
+-h

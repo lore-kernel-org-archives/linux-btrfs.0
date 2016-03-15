@@ -1,52 +1,31 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:39665 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S964844AbcCNNwj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 14 Mar 2016 09:52:39 -0400
-Date: Mon, 14 Mar 2016 14:52:15 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Ashish Samant <ashish.samant@oracle.com>
-Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz
-Subject: Re: [PATCH V3] btrfs: Print Warning only if ENOSPC_DEBUG is enabled
-Message-ID: <20160314135215.GF18908@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1457736845-27783-1-git-send-email-ashish.samant@oracle.com>
+Received: from userp1040.oracle.com ([156.151.31.81]:39843 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755032AbcCOHCu (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 15 Mar 2016 03:02:50 -0400
+Subject: Re: [PATCH v2] btrfs: move btrfs_compression_type to compression.h
+To: dsterba@suse.cz, linux-btrfs@vger.kernel.org
+References: <1457585397-6499-1-git-send-email-anand.jain@oracle.com>
+ <1457602019-11025-1-git-send-email-anand.jain@oracle.com>
+ <20160311161111.GW18908@twin.jikos.cz>
+From: Anand Jain <anand.jain@oracle.com>
+Message-ID: <56E7B394.5040301@oracle.com>
+Date: Tue, 15 Mar 2016 15:02:44 +0800
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1457736845-27783-1-git-send-email-ashish.samant@oracle.com>
+In-Reply-To: <20160311161111.GW18908@twin.jikos.cz>
+Content-Type: text/plain; charset=windows-1252; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Mar 11, 2016 at 02:54:05PM -0800, Ashish Samant wrote:
-> Dont print warning for ENOSPC error unless ENOSPC_DEBUG is enabled. Use 
-> btrfs_debug if it is enabled.
-> 
-> Signed-off-by: Ashish Samant <ashish.samant@oracle.com>
-> 
-> V3:
->  - Use btrfs_debug() instead of WARN() per David Sterba's comment.
-> V2:
->  - Add a commit message.
-> ---
->  fs/btrfs/delayed-inode.c | 5 ++++-
->  1 file changed, 4 insertions(+), 1 deletion(-)
-> 
-> diff --git a/fs/btrfs/delayed-inode.c b/fs/btrfs/delayed-inode.c
-> index b57daa8..b7e44cc 100644
-> --- a/fs/btrfs/delayed-inode.c
-> +++ b/fs/btrfs/delayed-inode.c
-> @@ -651,9 +651,12 @@ static int btrfs_delayed_inode_reserve_metadata(
->  			goto out;
->  
->  		ret = btrfs_block_rsv_migrate(src_rsv, dst_rsv, num_bytes);
-> -		if (!WARN_ON(ret))
-> +		if (!ret)
->  			goto out;
->  
-> +		if (btrfs_test_opt(root, ENOSPC_DEBUG))
-> +			btrfs_debug(root->fs_info,
-> +				    "block rsv migrate returned %d\n", ret);
 
-the message helpers do not need \n, I'll fix it here.
 
-Reviewed-by: David Sterba <dsterba@suse.com>
+On 03/12/2016 12:11 AM, David Sterba wrote:
+> On Thu, Mar 10, 2016 at 05:26:59PM +0800, Anand Jain wrote:
+>> So that its better organized.
+>>
+>> Signed-off-by: Anand Jain <anand.jain@oracle.com>
+>
+> Reviewed-by: David Sterba <dsterba@suse.com>
+
+Thanks.

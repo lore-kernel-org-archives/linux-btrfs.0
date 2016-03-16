@@ -1,58 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:26468 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753998AbcCQCbH (ORCPT
+Received: from userp1040.oracle.com ([156.151.31.81]:44054 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S934980AbcCPIoO (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 16 Mar 2016 22:31:07 -0400
-Subject: Re: [PATCH] btrfs: rename save_error_info to set_fs_error
-To: dsterba@suse.cz, linux-btrfs@vger.kernel.org, clm@fb.com
-References: <1458117788-840-1-git-send-email-anand.jain@oracle.com>
- <20160316100535.GH21722@twin.jikos.cz> <56E962B3.2000700@oracle.com>
- <20160316154943.GN21722@suse.cz>
+	Wed, 16 Mar 2016 04:44:14 -0400
 From: Anand Jain <anand.jain@oracle.com>
-Message-ID: <56EA16DD.5010708@oracle.com>
-Date: Thu, 17 Mar 2016 10:30:53 +0800
-MIME-Version: 1.0
-In-Reply-To: <20160316154943.GN21722@suse.cz>
-Content-Type: text/plain; charset=windows-1252; format=flowed
+To: linux-btrfs@vger.kernel.org
+Cc: dsterba@suse.cz, clm@fb.com
+Subject: [PATCH] btrfs: rename save_error_info to set_fs_error
+Date: Wed, 16 Mar 2016 16:43:05 +0800
+Message-Id: <1458117788-840-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Actually save_error_info() is setting the FS state to error.
+So rename is more appropriate.
 
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
+---
+ fs/btrfs/super.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-On 03/16/2016 11:49 PM, David Sterba wrote:
-> On Wed, Mar 16, 2016 at 09:42:11PM +0800, Anand Jain wrote:
->> On 03/16/2016 06:05 PM, David Sterba wrote:
->>> On Wed, Mar 16, 2016 at 04:43:05PM +0800, Anand Jain wrote:
->>>> @@ -171,7 +171,7 @@ void __btrfs_std_error(struct btrfs_fs_info *fs_info, const char *function,
->>>>    #endif
->>>>
->>>>    	/* Don't go through full error handling during mount */
->>>> -	save_error_info(fs_info);
->>>> +	set_fs_error(fs_info);
->>>
->>> The helper is too trivial, can you please drop it and replace by the
->>> it's code here
->> In fact I was thinking that too, but comments below stop me doing that,
->> potentially this function might provision persistent FS state.
->
-> Yeah I saw it too of course, but the whole feature "save error state on
-> disk"  would need more work, the helper does not seem too useful. The
-> comment can be moved as well to keep it as a reminder.
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index 63a74303da9e..a11823b317ac 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -97,7 +97,7 @@ const char *btrfs_decode_error(int errno)
+ 	return errstr;
+ }
+ 
+-static void save_error_info(struct btrfs_fs_info *fs_info)
++static void set_fs_error(struct btrfs_fs_info *fs_info)
+ {
+ 	/*
+ 	 * today we only save the error info into ram.  Long term we'll
+@@ -171,7 +171,7 @@ void __btrfs_std_error(struct btrfs_fs_info *fs_info, const char *function,
+ #endif
+ 
+ 	/* Don't go through full error handling during mount */
+-	save_error_info(fs_info);
++	set_fs_error(fs_info);
+ 	if (sb->s_flags & MS_BORN)
+ 		btrfs_handle_error(fs_info);
+ }
+-- 
+2.7.0
 
-  Great. Thanks for confirming. V2 is out.
-
-- Anand
-
->>
->> ----
->>           /*
->>            * today we only save the error info into ram.  Long term we'll
->>            * also send it down to the disk
->>            */
->> -----
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->

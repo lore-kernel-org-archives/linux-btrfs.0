@@ -1,85 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qk0-f181.google.com ([209.85.220.181]:35643 "EHLO
-	mail-qk0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752750AbcCPLkh (ORCPT
+Received: from mail-qk0-f179.google.com ([209.85.220.179]:34013 "EHLO
+	mail-qk0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932430AbcCPLyr (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 16 Mar 2016 07:40:37 -0400
-Received: by mail-qk0-f181.google.com with SMTP id o6so19372148qkc.2
-        for <linux-btrfs@vger.kernel.org>; Wed, 16 Mar 2016 04:40:36 -0700 (PDT)
-Subject: Re: Snapshots slowing system
-To: Peter Chant <pete@petezilla.co.uk>, linux-btrfs@vger.kernel.org
-References: <201603142303.u2EN3qo3011695@phoenix.vfire>
- <pan$a0d0a$9f23433a$f19e4b84$b275dc3f@cox.net>
- <56E88CB2.6020300@petezilla.co.uk>
+	Wed, 16 Mar 2016 07:54:47 -0400
+Received: by mail-qk0-f179.google.com with SMTP id x1so19454225qkc.1
+        for <linux-btrfs@vger.kernel.org>; Wed, 16 Mar 2016 04:54:46 -0700 (PDT)
+Subject: Re: Major HDD performance degradation on btrfs receive
+To: Chris Murphy <lists@colorremedies.com>,
+        Nazar Mokrynskyi <nazar@mokrynskyi.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+References: <a55e81de-412b-c269-775d-3f8e0d96d7a9@mokrynskyi.com>
+ <72cb240a-fdb2-c38b-adb1-2b72847ab29a@mokrynskyi.com>
+ <CAPmG0jZvioaxdr4FNHRQJTDZwuxq5EwUTay+VB=c+hKAzdDGYg@mail.gmail.com>
+ <ce805cd7-422c-ab6a-fbf8-18a304aa640d@mokrynskyi.com>
+ <CAPmG0jbRmWeHvL4cUzhPBAfA=_Ue03uC-pLE4O-u5bzFF_kzEQ@mail.gmail.com>
+ <5240211f-27b7-2c87-41e7-c10953374921@mokrynskyi.com>
+ <CAPmG0jZwapQ1=V-dHMEEwMYQUjb4+1M102eo96XQeJQV1JoxeQ@mail.gmail.com>
+ <1557fe0b-bbcc-c125-5220-46a56e936590@mokrynskyi.com>
+ <CAJCQCtTNO_BydLdKcZh_Ebv5ie2=mRfkosUTHH+ZSu003zwq+A@mail.gmail.com>
+ <d50653c9-fe10-b97f-279b-d3e24625f064@mokrynskyi.com>
+ <CAJCQCtRuLPBH5ELvVS5aP+gww5ZXrWN-inj_dgV4se+Jr4NJCg@mail.gmail.com>
 From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <56E945E9.1050005@gmail.com>
-Date: Wed, 16 Mar 2016 07:39:21 -0400
+Message-ID: <56E94934.4030306@gmail.com>
+Date: Wed, 16 Mar 2016 07:53:24 -0400
 MIME-Version: 1.0
-In-Reply-To: <56E88CB2.6020300@petezilla.co.uk>
+In-Reply-To: <CAJCQCtRuLPBH5ELvVS5aP+gww5ZXrWN-inj_dgV4se+Jr4NJCg@mail.gmail.com>
 Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2016-03-15 18:29, Peter Chant wrote:
-> On 03/15/2016 03:52 PM, Duncan wrote:
->> Tho even with autodefrag, given the previous relatime and snapshotting,
->> it could be that the free-space in existing chunks is fragmented, which
->> over time and continued usage would force higher file fragmentation
->> despite the autodefrag, since there simply aren't any large contiguous
->> free-space areas left in which to write files.
+On 2016-03-16 02:51, Chris Murphy wrote:
+> On Tue, Mar 15, 2016 at 10:23 PM, Nazar Mokrynskyi <nazar@mokrynskyi.com> wrote:
+>> Sounds like a really good idea!
 >>
+>> I'll try to implement in in my backup tool, but it might take some time to
+>> see real benefit from it (or no benefit:)).
 >
-> Hmm. The following returns instantly as if it were a null operation.
-> btrfs fi defrag /
-That should return almost immediately, as defrag isn't recursive by 
-default, and / should only have at most about 16-20 directory entries.
->
-> I thought though that btrfs fi defrag <name> would only defrag the one
-> file or directory?
-It does, it's just not recursive unless you tell it to be.
->
-> btrfs fi defrag /srv/photos/
-> Is considerably slower, it is still running.  Disk light is on solid.
-> Processes kworker and btrfs-transacti are pretty busy according to iotop.
-If you have a lot of items in /srv/photos/ (be it either lots of 
-individual files, or lots of directories at the top level), then this is 
-normal, if not, then you may have found a bug.
->>
->> Boot is an exception to the usual btrfs raid1, with a separate working
->> boot partition on one device and its backup on the other, so I can point
->> the BIOS at and boot either one.  It's btrfs mixed-bg mode dup, 256 MiB
->> for each of working and backup, which because it's dup means 128 MiB
->> capacity.  That's actually a bit small, and why I'll be shrinking the log
->> partition the next time I repartition.  Making it 384 MiB dup, for 192
->> MiB capacity, would be much better, and since I can shrink the log
->> partition by that and still keep the main partitions GiB aligned, it all
->> works out.
->>
->
-> Slackware uses lilo so I need a separate /boot with something that is
-> supported by lilo.
-I would like to point out that just because the distribution prefers one 
-package doesn't mean you can't use another, it's just not quite as easy. 
-  It's worth noting that I do similarly to Duncan in this respect 
-though, although I provisioned 512MiB when I set things up (and stuck 
-the BIOS boot partition (because I use GPT on everything these days) in 
-the unaligned slack space between the partition table and /boot).  It 
-also has the advantage that I can fall back to old versions of the 
-kernel and initrd if need be when an upgrade fails to boot for some reason.
->
-> <snip>
->
->> If I had 500 GiB SSDs like the one you're getting, I could put the media
->> partition on SSDs and be rid of the spinning rust entirely.  But I seem
->> to keep finding higher priorities for the money I'd spend on a pair of
->> them...
->
->
-> I'm getting one, not two, so the system is raid0.  Data is more
-> important (and backed up).
-If you don't need the full terabyte of space, I would seriously suggest 
-using raid1 instead of raid0.  If you're using SSD's, then you won't get 
-much performance gain from BTRFS raid0 (because the I/O dispatching is 
-not particularly smart), and it also makes it more likely that you will 
-need to rebuild from scratch.
-
+> There is a catch. I'm not sure how much testing deleting 100
+> subvolumes at once gets. It should work. I haven't looked in xfstests
+> to see how much of this is being tested. So it's possible you're
+> testing it. So be ready.
+I've actually tested bulk removal of large numbers of snapshots multiple 
+times before (it's actually one of the things that isn't in xfstests 
+that I check when testing patches, I usually test power of two groups 
+from 16 up to 256 at a time).  It works, but it may tie up most of the 
+disk bandwidth for a while depending on what type of storage you're using.

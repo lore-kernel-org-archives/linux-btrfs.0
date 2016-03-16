@@ -1,72 +1,123 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wm0-f41.google.com ([74.125.82.41]:34904 "EHLO
-	mail-wm0-f41.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932517AbcCaUtd convert rfc822-to-8bit (ORCPT
+Received: from userp1040.oracle.com ([156.151.31.81]:38713 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751368AbcCPAcw (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 31 Mar 2016 16:49:33 -0400
-Received: by mail-wm0-f41.google.com with SMTP id 191so139270960wmq.0
-        for <linux-btrfs@vger.kernel.org>; Thu, 31 Mar 2016 13:49:32 -0700 (PDT)
-Received: from rabbit.myhome.local ([2.28.97.250])
-        by smtp.gmail.com with ESMTPSA id j18sm26687292wmd.2.2016.03.31.13.49.30
-        for <linux-btrfs@vger.kernel.org>
-        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Thu, 31 Mar 2016 13:49:30 -0700 (PDT)
-Received: from elephant.myhome.local ([192.168.12.5])
-	by rabbit.myhome.local with esmtp (Exim 4.84)
-	(envelope-from <chrismurray84@gmail.com>)
-	id 1aljWz-0005x1-QI
-	for linux-btrfs@vger.kernel.org; Thu, 31 Mar 2016 21:49:29 +0100
-MIME-Version: 1.0
-Content-Type: text/plain;
-	charset="us-ascii"
-Subject: "/tmp/mnt.", and not honouring compression
-Date: Thu, 31 Mar 2016 21:49:29 +0100
-Message-ID: <E30C9D57EC226049B1226989BABB2728418CE4@elephant.myhome.local>
-From: "Chris Murray" <chrismurray84@gmail.com>
-To: <linux-btrfs@vger.kernel.org>
+	Tue, 15 Mar 2016 20:32:52 -0400
+From: Anand Jain <anand.jain@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Cc: dsterba@suse.cz, clm@fb.com
+Subject: [PATCH v2] btrfs: block incompatible optional features at scan
+Date: Wed, 16 Mar 2016 08:32:35 +0800
+Message-Id: <1458088355-513-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+For the matter of completeness we need to check if the device
+being scanned has features that are known to the kernel. As of
+now if it doesn't - the mount will fails, then what is the point
+in having those devices added to the btrfs_fs_devices list at
+device_list_add().
 
-I'm trying to troubleshoot a ceph cluster which doesn't seem to be
-honouring BTRFS compression on some OSDs. Can anyone offer some help? Is
-it likely to be a ceph issue or a BTRFS one? Or something else? I've
-asked on ceph-users already, but not received a response yet.
+So block those devices at scan. Which means the original block at
+open_ctee() won't reach in case of device with unsupported feature.
+But I am leaving that code as it is, without deleting.
 
-Config is set to mount with "noatime,nodiratime,compress-force=lzo"
+Unit testing:
+Create progs with the following changes and mkfs.
+--------------------------------------------------
+diff --git a/ctree.h b/ctree.h
+index 5ab0f4a45a15..a8d86facc045 100644
+--- a/ctree.h
++++ b/ctree.h
+@@ -480,6 +480,7 @@ struct btrfs_super_block {
+ #define BTRFS_FEATURE_INCOMPAT_RAID56          (1ULL << 7)
+ #define BTRFS_FEATURE_INCOMPAT_SKINNY_METADATA (1ULL << 8)
+ #define BTRFS_FEATURE_INCOMPAT_NO_HOLES                (1ULL << 9)
++#define BTRFS_FEATURE_INCOMPAT_TEST            (1ULL << 10)
 
-Some OSDs have been getting much more full than others though, which I
-think is something to do with these 'tmp' mounts e.g. below:
+ #define BTRFS_FEATURE_COMPAT_SUPP              0ULL
 
-/dev/sdc1 on /var/lib/ceph/tmp/mnt.AywYKY type btrfs
-(rw,noatime,space_cache,user_subvol_rm_allowed,subvolid=5,subvol=/)
-/dev/sdd1 on /var/lib/ceph/osd/ceph-16 type btrfs
-(rw,noatime,nodiratime,compress-force=lzo,space_cache,subvolid=5,subvol=
-/)
-/dev/sdc1 on /var/lib/ceph/osd/ceph-15 type btrfs
-(rw,noatime,nodiratime,space_cache,user_subvol_rm_allowed,subvolid=5,sub
-vol=/)
-/dev/sdb1 on /var/lib/ceph/osd/ceph-20 type btrfs
-(rw,noatime,nodiratime,compress-force=lzo,space_cache,subvolid=5,subvol=
-/)
+@@ -495,7 +496,8 @@ struct btrfs_super_block {
+         BTRFS_FEATURE_INCOMPAT_RAID56 |                \
+         BTRFS_FEATURE_INCOMPAT_MIXED_GROUPS |          \
+         BTRFS_FEATURE_INCOMPAT_SKINNY_METADATA |       \
+-        BTRFS_FEATURE_INCOMPAT_NO_HOLES)
++        BTRFS_FEATURE_INCOMPAT_NO_HOLES |              \
++        BTRFS_FEATURE_INCOMPAT_TEST)
 
-After a reboot, it's moved to another drive:
+ /*
+  * A leaf is full of items. offset and size tell us where to find
+diff --git a/mkfs.c b/mkfs.c
+index ea584042db16..f3665a93364b 100644
+--- a/mkfs.c
++++ b/mkfs.c
+@@ -1368,7 +1368,7 @@ int main(int ac, char **av)
+        int dev_cnt = 0;
+        int saved_optind;
+        char fs_uuid[BTRFS_UUID_UNPARSED_SIZE] = { 0 };
+-       u64 features = BTRFS_MKFS_DEFAULT_FEATURES;
++       u64 features = BTRFS_MKFS_DEFAULT_FEATURES | BTRFS_FEATURE_INCOMPAT_TEST;
+        struct mkfs_allocation allocation = { 0 };
+        struct btrfs_mkfs_config mkfs_cfg;
+------------------------------------------------------------
 
-/dev/sdd1 on /var/lib/ceph/tmp/mnt.kWh2NA type btrfs
-(rw,noatime,space_cache,user_subvol_rm_allowed,subvolid=5,subvol=/)
-/dev/sdd1 on /var/lib/ceph/osd/ceph-16 type btrfs
-(rw,noatime,nodiratime,space_cache,user_subvol_rm_allowed,subvolid=5,sub
-vol=/)
-/dev/sdc1 on /var/lib/ceph/osd/ceph-15 type btrfs
-(rw,noatime,nodiratime,compress-force=lzo,space_cache,subvolid=5,subvol=
-/)
-/dev/sdb1 on /var/lib/ceph/osd/ceph-20 type btrfs
-(rw,noatime,nodiratime,compress-force=lzo,space_cache,subvolid=5,subvol=
-/)
+Results..
 
-I'm using Proxmox, based on Debian. Kernel version 4.2.8-1-pve. Btrfs
-v3.17.
+btrfs dev scan /dev/sdc
+Scanning for Btrfs filesystems in '/dev/sdc'
+ERROR: device scan failed '/dev/sdc' - Protocol family not supported
 
-Thank you,
-Chris
+btrfs dev ready /dev/sdc
+ERROR: unable to determine if device '/dev/sdc' is ready for mount: Protocol family not supported
+
+mount /dev/sdc /btrfs
+mount: mount /dev/sdc on /btrfs failed: Protocol family not supported
+
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
+---
+
+v2: Commit update with unit test case and its results.
+    Remove the printk the error to system log, thats not required.
+    Return -EPFNOSUPPORT instead of -ENOSUPPORT, thats more appropriate
+	when device with incompatible feature is found during device scan.
+
+ fs/btrfs/volumes.c | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 6f7873e401ac..8ca3b0d3f1ef 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -1071,6 +1071,7 @@ int btrfs_scan_one_device(const char *path, fmode_t flags, void *holder,
+ 	u64 transid;
+ 	u64 total_devices;
+ 	u64 bytenr;
++	u64 features;
+ 
+ 	/*
+ 	 * we would like to check all the supers, but that would make
+@@ -1091,6 +1092,12 @@ int btrfs_scan_one_device(const char *path, fmode_t flags, void *holder,
+ 	if (btrfs_read_disk_super(bdev, bytenr, &page, &disk_super))
+ 		goto error_bdev_put;
+ 
++	features = btrfs_super_incompat_flags(disk_super) &
++				~BTRFS_FEATURE_INCOMPAT_SUPP;
++	if (features) {
++		ret = -EPFNOSUPPORT;
++		goto error_disk_super;
++	}
+ 	devid = btrfs_stack_device_id(&disk_super->dev_item);
+ 	transid = btrfs_super_generation(disk_super);
+ 	total_devices = btrfs_super_num_devices(disk_super);
+@@ -1105,6 +1112,7 @@ int btrfs_scan_one_device(const char *path, fmode_t flags, void *holder,
+ 	if (!ret && fs_devices_ret)
+ 		(*fs_devices_ret)->total_devices = total_devices;
+ 
++error_disk_super:
+ 	btrfs_release_disk_super(page);
+ 
+ error_bdev_put:
+-- 
+2.7.0
+

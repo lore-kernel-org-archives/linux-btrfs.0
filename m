@@ -1,69 +1,31 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from meiko.romanrm.net ([195.154.92.155]:45258 "EHLO
-	meiko.romanrm.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S933401AbcCPJBR (ORCPT
+Received: from wp216.webpack.hosteurope.de ([80.237.132.223]:51055 "EHLO
+	wp216.webpack.hosteurope.de" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1751795AbcCPJMu (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 16 Mar 2016 05:01:17 -0400
-Date: Wed, 16 Mar 2016 14:01:09 +0500
-From: Roman Mamedov <rm@romanrm.net>
-To: =?UTF-8?B?0JzQuNGF0LDQuNC7INCT0LDQstGA0LjQu9C+0LI=?=
-	<mikhail.v.gavrilov@gmail.com>
-Cc: Liu Bo <bo.li.liu@oracle.com>, Chris Murphy <lists@colorremedies.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Subject: Re: task btrfs-cleaner:770 blocked for more than 120 seconds.
-Message-ID: <20160316140109.3497dfa6@natsu>
-In-Reply-To: <CABXGCsOVeEBn9A=Wj6VtAEsban6LKj6B958gN8JqK9omLjDt9A@mail.gmail.com>
-References: <CAJCQCtRjCixev=Mt=jaL1ZytYaxj7Fa-AViLYGB-ALufyL98VA@mail.gmail.com>
-	<CAJCQCtRtVjyjvSfT=BCZZwfaSvbD4YVxEBezfAx+-q7cwMHmRQ@mail.gmail.com>
-	<CABXGCsNivrLgTEE+HZOLHXA-kpLVQOUv9L_nTw96nvy+DHodZg@mail.gmail.com>
-	<CAJCQCtTrcnwvumgt-bOx+9wX+f50S9ja5rDrnYAsuuN1aDTsZA@mail.gmail.com>
-	<20160211191741.GA4762@localhost.localdomain>
-	<CABXGCsPN3MOLkU68gpw=TsnZLODEkYZ66ZHgUxMyeqbdNME9Sw@mail.gmail.com>
-	<20160212032226.GA10542@localhost.localdomain>
-	<CABXGCsNjHq4M8TBibeWQLyK+Of0cu++P3QQ=+e=TUuZjaPMLtA@mail.gmail.com>
-	<20160212203426.GA24399@localhost.localdomain>
-	<CABXGCsMMkcMmEH8=d3TqJksB8uc_OVrRqfjX7E1RO+4R94O=Ug@mail.gmail.com>
-	<20160214213224.GB28882@localhost.localdomain>
-	<20160215034219.2f0df0ce@natsu>
-	<CABXGCsOVeEBn9A=Wj6VtAEsban6LKj6B958gN8JqK9omLjDt9A@mail.gmail.com>
+	Wed, 16 Mar 2016 05:12:50 -0400
+From: Andreas Grosse <andig.listen@aol.com>
+To: linux-btrfs@vger.kernel.org
+Subject: Re: Incompat features: raid56 ... when creating a RAID6?
+Date: Wed, 16 Mar 2016 10:12:47 +0100
+Message-ID: <1770754.bSus6jR0QL@andilaptop>
+In-Reply-To: <56E8AE64.2090704@oracle.com>
+References: <16570443.SxVegaKaET@andilaptop> <2241137.7FlY2XkjWK@andilaptop> <56E8AE64.2090704@oracle.com>
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
- boundary="Sig_/3xaYW.e5xr_OEbUqBiXH=ku"; protocol="application/pgp-signature"
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
---Sig_/3xaYW.e5xr_OEbUqBiXH=ku
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: quoted-printable
+Am Mittwoch, 16. MÃ¤rz 2016, 08:52:52 CET schrieb Anand Jain:
+>   Yes looks like. As it was there when I read your posting.
+> 
+> 
+> >>> AndiNâ€¹Â§Â²Ã¦Ã¬rÂ¸â€ºyÃºÃ¨Å¡Ã˜bÂ²XÂ¬Â¶Ã‡Â§vÃ˜^â€“)ÃÂº{.nÃ‡+â€°Â·Â¥Å {Â±nÃšÃŸÂ²)Ã­â€¦Ã¦Ã¨w*jgÂ¬Â±Â¨Â¶â€°Å¡Å½Å ÃÂ¢j/ÂÃª
+> >>> Ã¤z
+> >>> Â¹Ãâ€“Å Ã 2Å Ãâ„¢Â¨Ã¨Â­Ãš&Â¢)ÃŸÂ¡Â«aÂ¶ÃšÃ¾Ã¸Â®GÂ«ÂÃ©hÂ®Ã¦j:+vâ€°Â¨Å wÃ¨â€ Ã™Â¥
 
-On Tue, 15 Mar 2016 09:18:14 +0500
-=D0=9C=D0=B8=D1=85=D0=B0=D0=B8=D0=BB =D0=93=D0=B0=D0=B2=D1=80=D0=B8=D0=BB=
-=D0=BE=D0=B2 <mikhail.v.gavrilov@gmail.com> wrote:
+I'll have a look at this. I have no idea where this came from. But it seems 
+this stuff is invisible on the list archives on the web on my initial 
+message...
 
-> Yesterday btrfs again hangs on kernel 4.4.5
-> It's the same or another problem?
-
-Seems different to me, as there's also defrag involved. Try removing and not
-using the defrag mount option.
-
-> This messages say that restore failed?
-
-So you can't mount the FS anymore? Did you try btrfsck, what does it report?
-
---=20
-With respect,
-Roman
-
---Sig_/3xaYW.e5xr_OEbUqBiXH=ku
-Content-Type: application/pgp-signature
-Content-Description: OpenPGP digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2
-
-iEYEARECAAYFAlbpINcACgkQTLKSvz+PZwjXDwCePM3qwLWAPgFoaaGFL5olOhAV
-zsIAn14DWY6yINYrm12q5ZEVboa1yPsY
-=08qW
------END PGP SIGNATURE-----
-
---Sig_/3xaYW.e5xr_OEbUqBiXH=ku--
+ÿôèº{.nÇ+‰·Ÿ®‰­†+%ŠËÿ±éİ¶¥Šwÿº{.nÇ+‰·¥Š{±ı»k~ÏâØ^n‡r¡ö¦zËëh™¨è­Ú&£ûàz¿äz¹Ş—ú+€Ê+zf£¢·hšˆ§~†­†Ûiÿÿïêÿ‘êçz_è®æj:+v‰¨ş)ß£øm

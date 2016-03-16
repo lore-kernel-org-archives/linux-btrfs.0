@@ -1,91 +1,63 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from postfix.iai.uni-bonn.de ([131.220.8.4]:62609 "EHLO
-	postfix.iai.uni-bonn.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932444AbcCPSzn (ORCPT
+Received: from mail-wm0-f44.google.com ([74.125.82.44]:38654 "EHLO
+	mail-wm0-f44.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S933996AbcCPTzA (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 16 Mar 2016 14:55:43 -0400
-Received: from [192.168.0.88] (p5B0A1C58.dip0.t-ipconnect.de [91.10.28.88])
-	by postfix.iai.uni-bonn.de (Postfix) with ESMTP id 3E62B5C452
-	for <linux-btrfs@vger.kernel.org>; Wed, 16 Mar 2016 19:49:31 +0100 (MET)
-	(envelope-from ochmann@informatik.uni-bonn.de)
-	(envelope-to linux-btrfs@vger.kernel.org) (1)
-	(internal use: ta=1, tu=1, te=1, am=P, au=ochmann)
-To: linux-btrfs@vger.kernel.org
-From: Sebastian Ochmann <ochmann@informatik.uni-bonn.de>
-Subject: Mounting RAID1 degraded+rw only works once
-Message-ID: <56E9AAB9.6070408@informatik.uni-bonn.de>
-Date: Wed, 16 Mar 2016 19:49:29 +0100
+	Wed, 16 Mar 2016 15:55:00 -0400
+Received: by mail-wm0-f44.google.com with SMTP id l68so88018923wml.1
+        for <linux-btrfs@vger.kernel.org>; Wed, 16 Mar 2016 12:54:59 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8; format=flowed
+In-Reply-To: <20160316140109.3497dfa6@natsu>
+References: <CAJCQCtRjCixev=Mt=jaL1ZytYaxj7Fa-AViLYGB-ALufyL98VA@mail.gmail.com>
+ <CAJCQCtRtVjyjvSfT=BCZZwfaSvbD4YVxEBezfAx+-q7cwMHmRQ@mail.gmail.com>
+ <CABXGCsNivrLgTEE+HZOLHXA-kpLVQOUv9L_nTw96nvy+DHodZg@mail.gmail.com>
+ <CAJCQCtTrcnwvumgt-bOx+9wX+f50S9ja5rDrnYAsuuN1aDTsZA@mail.gmail.com>
+ <20160211191741.GA4762@localhost.localdomain> <CABXGCsPN3MOLkU68gpw=TsnZLODEkYZ66ZHgUxMyeqbdNME9Sw@mail.gmail.com>
+ <20160212032226.GA10542@localhost.localdomain> <CABXGCsNjHq4M8TBibeWQLyK+Of0cu++P3QQ=+e=TUuZjaPMLtA@mail.gmail.com>
+ <20160212203426.GA24399@localhost.localdomain> <CABXGCsMMkcMmEH8=d3TqJksB8uc_OVrRqfjX7E1RO+4R94O=Ug@mail.gmail.com>
+ <20160214213224.GB28882@localhost.localdomain> <20160215034219.2f0df0ce@natsu>
+ <CABXGCsOVeEBn9A=Wj6VtAEsban6LKj6B958gN8JqK9omLjDt9A@mail.gmail.com> <20160316140109.3497dfa6@natsu>
+From: =?UTF-8?B?0JzQuNGF0LDQuNC7INCT0LDQstGA0LjQu9C+0LI=?=
+	<mikhail.v.gavrilov@gmail.com>
+Date: Thu, 17 Mar 2016 00:54:44 +0500
+Message-ID: <CABXGCsOuopUNy6p3S69Fsbu6OROx9pgo7S5w3R-o11RoL4vJMg@mail.gmail.com>
+Subject: Re: task btrfs-cleaner:770 blocked for more than 120 seconds.
+To: Roman Mamedov <rm@romanrm.net>
+Cc: Liu Bo <bo.li.liu@oracle.com>, Chris Murphy <lists@colorremedies.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
+2016-03-16 14:01 GMT+05:00 Roman Mamedov <rm@romanrm.net>:
+> On Tue, 15 Mar 2016 09:18:14 +0500
+> Mikhail Gavrilov <mikhail.v.gavrilov@gmail.com> wrote:
+>
+>> Yesterday btrfs again hangs on kernel 4.4.5
+>> It's the same or another problem?
+>
+> Seems different to me, as there's also defrag involved. Try removing and not
+> using the defrag mount option.
 
-I'm trying to understand how to correctly handle and recover from 
-degraded RAID1 setups in btrfs. In particular, I don't understand a 
-behavior I'm seeing which somehow takes part of the advantage away from 
-the idea of having a RAID for me.
+How then defragment FS?
 
-The main issue I have is as follows. I can mount a RAID1 with missing 
-devices using the "degraded" option. So far so good. I know I should add 
-another device at that point, but let's say I don't have a device ready 
-but need to keep my system running. The problem is that once I write 
-some data to the device and unmount it, I cannot mount it degraded+rw 
-again but only degraded+ro. And at that point I can't make changes such 
-as adding new devices and rebalancing as far as I see, rendering the 
-degraded RAID useless for me for keeping the system running.
+>
+>> This messages say that restore failed?
+>
+> So you can't mount the FS anymore? Did you try btrfsck, what does it report?
+>
 
-Example:
+FS is mounted, but after failure mount takes a long time (more than 4
+min) and Fedora  stops boot  by timeout (system suggest enter under
+root for maintance) after reboot again all fine.
 
-- Create RAID1 (data+metadata) with 2 devices
+I'm just afraid of losing data after this messages:
+[  449.949206] BTRFS warning (device sdc1): failed to load free space
+cache for block group 2286562574336, rebuilding it now
+[  452.619318] BTRFS: open_ctree failed
 
-- mount the filesystem
+or it does not mean anything terrible?
 
-- btrfs fi df /something:
-
-Data, RAID1: total=112.00MiB, used=40.76MiB
-System, RAID1: total=8.00MiB, used=16.00KiB
-Metadata, RAID1: total=32.00MiB, used=768.00KiB
-GlobalReserve, single: total=16.00MiB, used=0.00B
-
-- unmount
-
-- Destroy one of the devices (dd over it or whatever)
-
-- mount with "-o degraded"
-
-- Write some data to the device (not sure if this is strictly necessary).
-
-- unmount the filesystem
-
-- Try to mount with "-o degraded" again. It doesn't allow you to do so 
-(if it does, try to unmount and mount again, sometimes it needs two 
-tries). dmesg says "missing devices(1) exceeds the limit(0), writable 
-mount is not allowed"
-
-- mounting with "-o degraded,ro" works.
-
-- btrfs fi df [dev]:
-
-Data, RAID1: total=112.00MiB, used=40.76MiB
-System, RAID1: total=8.00MiB, used=16.00KiB
-System, single: total=8.00MiB, used=0.00B
-Metadata, RAID1: total=32.00MiB, used=768.00KiB
-Metadata, single: total=28.00MiB, used=80.00KiB
-GlobalReserve, single: total=16.00MiB, used=0.00B
-
-Now there is some RAID1 and some single data. Which could make sense 
-since writing to the device in degraded mode could only be done on the 
-single device. Still, I cannot make changes to the filesystem now and 
-can "only" recover the data from it, but that's not really the idea of a 
-RAID1 in my opinion.
-
-Any advice?
-
-Versions:
-- Kernel 4.4.5-1-ARCH
-- btrfs-progs 4.4.1
-
-Best regards
-Sebastian
+--
+Best Regards,
+Mike Gavrilov.

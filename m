@@ -1,81 +1,60 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from resqmta-ch2-11v.sys.comcast.net ([69.252.207.43]:53480 "EHLO
-	resqmta-ch2-11v.sys.comcast.net" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1754569AbcCPGk1 (ORCPT
+Received: from mail-ig0-f173.google.com ([209.85.213.173]:36267 "EHLO
+	mail-ig0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S965719AbcCPGvC (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 16 Mar 2016 02:40:27 -0400
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-From: Robert White <rwhite@pobox.com>
-Subject: Stupid (?) Idea about extent lifetimes.
-Message-ID: <56E8FDE5.90401@pobox.com>
-Date: Tue, 15 Mar 2016 23:32:05 -0700
+	Wed, 16 Mar 2016 02:51:02 -0400
+Received: by mail-ig0-f173.google.com with SMTP id nk17so85053896igb.1
+        for <linux-btrfs@vger.kernel.org>; Tue, 15 Mar 2016 23:51:01 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8; format=flowed
+In-Reply-To: <d50653c9-fe10-b97f-279b-d3e24625f064@mokrynskyi.com>
+References: <a55e81de-412b-c269-775d-3f8e0d96d7a9@mokrynskyi.com>
+	<72cb240a-fdb2-c38b-adb1-2b72847ab29a@mokrynskyi.com>
+	<CAPmG0jZvioaxdr4FNHRQJTDZwuxq5EwUTay+VB=c+hKAzdDGYg@mail.gmail.com>
+	<ce805cd7-422c-ab6a-fbf8-18a304aa640d@mokrynskyi.com>
+	<CAPmG0jbRmWeHvL4cUzhPBAfA=_Ue03uC-pLE4O-u5bzFF_kzEQ@mail.gmail.com>
+	<5240211f-27b7-2c87-41e7-c10953374921@mokrynskyi.com>
+	<CAPmG0jZwapQ1=V-dHMEEwMYQUjb4+1M102eo96XQeJQV1JoxeQ@mail.gmail.com>
+	<1557fe0b-bbcc-c125-5220-46a56e936590@mokrynskyi.com>
+	<CAJCQCtTNO_BydLdKcZh_Ebv5ie2=mRfkosUTHH+ZSu003zwq+A@mail.gmail.com>
+	<d50653c9-fe10-b97f-279b-d3e24625f064@mokrynskyi.com>
+Date: Wed, 16 Mar 2016 00:51:00 -0600
+Message-ID: <CAJCQCtRuLPBH5ELvVS5aP+gww5ZXrWN-inj_dgV4se+Jr4NJCg@mail.gmail.com>
+Subject: Re: Major HDD performance degradation on btrfs receive
+From: Chris Murphy <lists@colorremedies.com>
+To: Nazar Mokrynskyi <nazar@mokrynskyi.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-It occurs to me that it would be desirable to mark extents as "least 
-favoured nations" and so all new writes would like to not be written 
-there and any data written there would have a desire to be somewhere else.
+On Tue, Mar 15, 2016 at 10:23 PM, Nazar Mokrynskyi <nazar@mokrynskyi.com> wrote:
+> Sounds like a really good idea!
+>
+> I'll try to implement in in my backup tool, but it might take some time to
+> see real benefit from it (or no benefit:)).
 
-So lets say the wholly unallocated space has a natural status of 100.
+There is a catch. I'm not sure how much testing deleting 100
+subvolumes at once gets. It should work. I haven't looked in xfstests
+to see how much of this is being tested. So it's possible you're
+testing it. So be ready.
 
-Allocated blocks would normally have statuses less than that by a 
-trivial amount, such as 99.
+Also since it's batched, consider doing it at night when it's not
+used. The cleaner task will always slow things down because it has to
+decrement reference counts and then find out what to actually delete
+and then update metadata to reflect it. You could also add in a 5
+minute delay after subvolume deletes then issue sysrq+w in case
+there's significant blocked tasks, the logs will have extra debug
+info.
 
-One could then marks blocks with higher numbers for being less favoured, 
-or lower numbers for being more favoured as desired.
+Another idea is maybe graphically modeling (seekwatcher) the normal
+write pattern, and see how it changes when even a single subvolume is
+deleted (the current every 15 minute method). That might give an idea
+how significantly cleaner tasks affect your particular workload. The
+results might support batching not only to avoid fragmentation by
+getting larger contiguous free space, but to avoid the IOPS hit during
+the day time from too aggressive (?) of a cleaner task.
 
-Basically this would create a gravity map of sorts that would be 
-factored into allocation decisions.
 
-So say you just converted an ext4 to btrfs. It's got all those oddly 
-sized and placed extents. You could give them all higher numbers in 
-hopes that the data would naturally migrate away. Say just number them 
-really large with no two numbers the same. Now the largest number would 
-naturally become vacant and likely to be freed.
-
-Likewise you could weight your data to migrate spindle-ward or such in 
-the weeks before a reorg.
-
-Similarly changes in geometry could simply mark segments as ill-favoured 
-where the old geometry doesn't match the new and data would migrate 
-under pressure.
-
-One could reverse the age induced entropy of a file system by just 
-periodically increasing the disfavour values of all the blocks, causing 
-the oldest blocks to be the least favoured of all, and so creating a 
-slowly rolling pattern.
-
-So say new blocks start life as 50s by default. And empty space is 100. 
-And every so often every block gets an increment (say 3 so that 100 is 
-naturally skipped over.
-
-Young blocks are now very magnetic. As they age they lose favour. 
-Eventually they pass the value for unallocated space. Then they start 
-losing data and eventually, in a system with 100 percent turnover the 
-blocks get deallocated.
-
-defragging and occasional balancing take care of the files that "never" 
-change.
-
-Very high numbers could also be reserved for pinning. Specially flagged 
-files would have reverse gravity. A desire to stay put. So say a NOCOW 
-files or Swap Files might have reverse gravity and one could use some 
-tool to allocate blocks at the cold end of the disk with those sorts of 
-numbers. Effectively segregating the the static from the churning data.
-
-Fresh files would thereby tend to vacate extents full of snapshot data 
-and freeing static (Read only) snapshot data would tend to release 
-contiguous space.
-
-As the disk runs out of space the system naturally breaks down into the 
-existing best-fit allocation.
-
-It's less than a defrag or autodefrag, or balance, and it would tend to 
-be more like digestive peristalsis, at the extreme end (where people are 
-taking way too many snapshots) it becomes an elevator sort by extent age.
-
-(If this is a tired idea, my apologies. I took cough medicine a little 
-while ago and this thought that's been rattling around in my head for 
-months bubbled out of its cauldron.)
+-- 
+Chris Murphy

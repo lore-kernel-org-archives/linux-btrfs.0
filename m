@@ -1,60 +1,74 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:52830 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1755819AbcCRPDb (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 18 Mar 2016 11:03:31 -0400
-Date: Fri, 18 Mar 2016 16:03:03 +0100
-From: David Sterba <dsterba@suse.cz>
-To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Cc: Qu Wenruo <quwenruo@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs-progs: add stat check in open_ctree_fs_info
-Message-ID: <20160318150303.GZ21722@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1458141971-56355-1-git-send-email-ahferroin7@gmail.com>
- <56EA7314.2080104@cn.fujitsu.com>
- <56EA935C.1040408@gmail.com>
- <56EB4E09.6090703@cn.fujitsu.com>
- <56EBE3C1.6060009@gmail.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <56EBE3C1.6060009@gmail.com>
+Received: from mail-qg0-f51.google.com ([209.85.192.51]:35380 "EHLO
+	mail-qg0-f51.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S935174AbcCPP0Z (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 16 Mar 2016 11:26:25 -0400
+Received: by mail-qg0-f51.google.com with SMTP id y89so46212684qge.2
+        for <linux-btrfs@vger.kernel.org>; Wed, 16 Mar 2016 08:26:25 -0700 (PDT)
+From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Cc: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Subject: [PATCH] btrfs-progs: add stat check in open_ctree_fs_info
+Date: Wed, 16 Mar 2016 11:26:11 -0400
+Message-Id: <1458141971-56355-1-git-send-email-ahferroin7@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Mar 18, 2016 at 07:17:21AM -0400, Austin S. Hemmelgarn wrote:
-> >>> This one seems to be too restrict.
-> >>>
-> >>> I prefer to block char/pipe/dir and some other obvious wrong ones other
-> >>> than only allowing regular and block ones.
-> >> Running against a directory gives a cryptic error about the superblock
-> >> having bad info.  Running against a pipe is nonsensical, as it can't
-> >> contain a filesystem.  Running against a character device is potentially
-> >> dangerous (read operations are not guaranteed to be idempotent on
-> >> character devices, depending on what hardware it is connected to, you
-> >> could cause all kinds of odd things to happen).
-> >>
-> >> Everything this function gets called on is trying to get info from a
-> >> unmounted filesystem image, which means that it only makes sense to try
-> >> to parse things that can contain a unmounted filesystem image.
-> >
-> > Yes, I understand what you are doing.
-> >
-> > Just as I alreayd mentioned, the problem is, your current patch only
-> > allowing regular and block device and will block valid soft link.
-> > Just as Duncan mentioned, soft link should be allowed too.
-> Symbolic links are allowed though.  stat(2) follows symlinks and returns 
-> information on their target, not the link itself.  I also tested it on 
-> symlinks, and it still works to run `btrfs check` on a link to a block 
-> device containing a BTRFS filesystem
-> >
-> > I mean to *block/prevent* char/pipe/dir instead of *only allowing*
-> > regular/block device.
-> I apologize for the misunderstanding, I misread your original message.
-> 
-> As to blacklisting invalid types instead of whitelisting valid ones, I'd 
-> personally would prefer whitelisting in this particular case, as it 
-> results in both a smaller conditional, and makes the intent of only 
-> allowing things that can contain a BTRFS filesystem  more clear (at 
-> least, it does to me).
+Currently, open_ctree_fs_info will open whatever path you pass it and
+try to interpret it as a BTRFS filesystem.  While this is not
+nessecarily dangerous (except possibly if done on a character device),
+it does result in some rather cryptic and non-sensical error messages
+when trying to run certain commands in ways they weren't intended to be
+run.  Add a check using stat(2) to verify that the path we've been
+passed is in fact a regular file or a block device.
 
-I agree with your reasoning.
+This causes the following commands to provide a helpful error message
+when run on a FIFO, directory, character device, or socket:
+    * btrfs check
+    * btrfs restore
+    * btrfs-image
+    * btrfs-find-root
+    * btrfs-debug-tree
+
+Signed-off-by: Austin S. Hemmelgarn <ahferroin7@gmail.com>
+---
+This has been build and runtime tested on an x86-64 system with glibc.
+It has been build tested on x86-64 with uclibc.
+It has not been tested on Android or with musl, although it should work
+there also.
+
+There are other tools that have similarly bad behavior when called
+incorrectly (btrfs rescue immediately comes to mind), but they don't
+use open_ctree_fs_info, so this doesn't affect them.  I may do followup
+patches to fix those too if I have the time.
+
+open_ctree_fs_info is also used in cmds-filesystem.c, although I'm not
+at all sure what exactly is going on there, and btrfs filesystem appears
+from my testing to behave exactly the same with this change, so I don't
+think this will have any effect on any of the btrfs filesystem commands.
+
+ disk-io.c | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/disk-io.c b/disk-io.c
+index e520d80..d35153d 100644
+--- a/disk-io.c
++++ b/disk-io.c
+@@ -1310,6 +1310,13 @@ struct btrfs_fs_info *open_ctree_fs_info(const char *filename,
+ 	int fp;
+ 	struct btrfs_fs_info *info;
+ 	int oflags = O_CREAT | O_RDWR;
++	struct stat sb;
++
++	stat(filename, &sb);
++	if (!(((sb.st_mode & S_IFMT) == S_IFREG) || ((sb.st_mode & S_IFMT) == S_IFBLK))) {
++		fprintf (stderr, "%s is not a regular file or block device\n", filename);
++		return NULL;
++	}
+ 
+ 	if (!(flags & OPEN_CTREE_WRITES))
+ 		oflags = O_RDONLY;
+-- 
+2.7.3
+

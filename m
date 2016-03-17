@@ -1,90 +1,138 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:35653 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752158AbcCQD2v (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:44906 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1752042AbcCQGFI (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 16 Mar 2016 23:28:51 -0400
-Subject: Re: [PATCH v2 RESEND] btrfs: maintain consistency in logging to help
- debugging
-To: dsterba@suse.cz, linux-btrfs@vger.kernel.org
-References: <1457583778-4042-1-git-send-email-anand.jain@oracle.com>
- <20160316161852.GO21722@twin.jikos.cz>
-From: Anand Jain <anand.jain@oracle.com>
-Message-ID: <56EA246C.3090400@oracle.com>
-Date: Thu, 17 Mar 2016 11:28:44 +0800
+	Thu, 17 Mar 2016 02:05:08 -0400
+Subject: Re: Mounting RAID1 degraded+rw only works once
+To: Anand Jain <anand.jain@oracle.com>,
+        Sebastian Ochmann <ochmann@informatik.uni-bonn.de>,
+        <linux-btrfs@vger.kernel.org>
+References: <56E9AAB9.6070408@informatik.uni-bonn.de>
+ <56EA0F60.9020806@oracle.com>
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Message-ID: <56EA4907.4060904@cn.fujitsu.com>
+Date: Thu, 17 Mar 2016 14:04:55 +0800
 MIME-Version: 1.0
-In-Reply-To: <20160316161852.GO21722@twin.jikos.cz>
-Content-Type: text/plain; charset=windows-1252; format=flowed
+In-Reply-To: <56EA0F60.9020806@oracle.com>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
 
-
-On 03/17/2016 12:18 AM, David Sterba wrote:
-> On Thu, Mar 10, 2016 at 12:22:58PM +0800, Anand Jain wrote:
->> Optional Label may or may not be set, or it might be set at some time
->> later. However while debugging to search through the kernel logs the
->> scripts would need the logs to be consistent, so logs search key words
->> shouldn't depend on the optional variables, instead fsid is better.
+Anand Jain wrote on 2016/03/17 09:58 +0800:
 >
-> I think the label is a useful information, as it's set by the user. So
-> if I'm looking to the log, I'll recognize the labels, not the device or
-> fsid.
 >
-> It would be better to show all of them, ie. label, fsid, device and
-> transid. The line will get longer, but I hope it's ok.
 >
-> Proposed order of the fields:
-> - device PATH
-> - devid ID
-> - fsid UUID
-> - transid TID
+>> In particular, I don't understand a
+>> behavior I'm seeing which somehow takes part of the advantage away from
+>> the idea of having a RAID for me.
+>
+>   Yep. Very true. I am trying fix them.
+>
+>   Generally, a storage/volume-manager need to match the Enterprise
+>   storage data center requirements, and I do understand the reliability,
+>   availability, serviceability (RAS) gaps in the current btrfs volume
+>   manager.
+>
+>> The main issue I have is as follows. I can mount a RAID1 with missing
+>> devices using the "degraded" option. So far so good. I know I should add
+>> another device at that point, but let's say I don't have a device ready
+>> but need to keep my system running. The problem is that once I write
+>> some data to the device and unmount it, I cannot mount it degraded+rw
+>> again but only degraded+ro.
+>
+>   A known issue and a critical (in the enterprise storage standard) bug.
+>   There is a patch set to fix.
+>      'btrfs: Hot spare and Auto replace'
+>   I hoped it got reviewed/merged sooner.
 
-(I am not too particular about the below but just my opinion.)
+IHMO, splitting them into per-chunk-degraded-mount and 
+hot-spare-auto-replace part will make things much easier to get merged.
 
-The patch titled in the ML:
-   Btrfs: fix fs logging for multi device
+Thanks,
+Qu
 
-Would prefix
-   BTRFS: <fsid>:
-to most of the logs in dmesg.
-
-So I guess if we have following then
-   BTRFS: <fsid>: <devid ID> (<device UUID>*) <transid> <device PATH>
-is better.
-
-For end users, I hope we provide all those requisites through
-btrfs-progs cli, and they wouldn't have to review dmesg. Further,
-'btrfs fi show' provides the FSID to label mapping. So I hope the
-next set of targeted community, the troubleshooters will be familiar
-with the FSID, and they could do
-
-  dmesg | grep "BTRFS: <fsid>:"
-
-To filter to get logs of one btrfs which they want to troubleshoot.
-(as there may be more than one btrfs in the system).
-
-[*] May be in future.
-  (There is a bug that we might fails to know / assemble right set
-  devices as per last assembled-volume and to fix this, its better
-  create a new device UUID for the replace target device instead of
-  copying the device UUID of source device (bit vague of now). If
-  this is successful, then device UUID will be useful to printk here).
-
-Thanks, Anand
-
->> -		if (disk_super->label[0]) {
->> -			printk(KERN_INFO "BTRFS: device label %s ", disk_super->label);
->> -		} else {
->> -			printk(KERN_INFO "BTRFS: device fsid %pU ", disk_super->fsid);
->> -		}
->> -
->> -		printk(KERN_CONT "devid %llu transid %llu %s\n", devid, transid, path);
->> +		printk(KERN_INFO "BTRFS: device fsid %pU devid %llu transid %llu %s\n",
->> +						disk_super->fsid, devid, transid, path);
+>
+>   As I am getting couple of other private request for the hot spare
+>   patch set, also of latest I see there are some critical changes in
+>   the replace part of the code, looks like its time to revive them.
+>   Thanks for asking. I shall find some time in the early next week
+>   for this.
+>
+>> And at that point I can't make changes such
+>> as adding new devices and rebalancing as far as I see, rendering the
+>> degraded RAID useless for me for keeping the system running.
+>>
+>> Example:
+>>
+>> - Create RAID1 (data+metadata) with 2 devices
+>>
+>> - mount the filesystem
+>>
+>> - btrfs fi df /something:
+>>
+>> Data, RAID1: total=112.00MiB, used=40.76MiB
+>> System, RAID1: total=8.00MiB, used=16.00KiB
+>> Metadata, RAID1: total=32.00MiB, used=768.00KiB
+>> GlobalReserve, single: total=16.00MiB, used=0.00B
+>>
+>> - unmount
+>>
+>> - Destroy one of the devices (dd over it or whatever)
+>>
+>> - mount with "-o degraded"
+>>
+>> - Write some data to the device (not sure if this is strictly necessary).
+>>
+>> - unmount the filesystem
+>>
+>> - Try to mount with "-o degraded" again. It doesn't allow you to do so
+>> (if it does, try to unmount and mount again, sometimes it needs two
+>> tries). dmesg says "missing devices(1) exceeds the limit(0), writable
+>> mount is not allowed"
+>>
+>> - mounting with "-o degraded,ro" works.
+>>
+>> - btrfs fi df [dev]:
+>>
+>> Data, RAID1: total=112.00MiB, used=40.76MiB
+>> System, RAID1: total=8.00MiB, used=16.00KiB
+>> System, single: total=8.00MiB, used=0.00B
+>> Metadata, RAID1: total=32.00MiB, used=768.00KiB
+>> Metadata, single: total=28.00MiB, used=80.00KiB
+>> GlobalReserve, single: total=16.00MiB, used=0.00B
+>>
+>> Now there is some RAID1 and some single data. Which could make sense
+>> since writing to the device in degraded mode could only be done on the
+>> single device. Still, I cannot make changes to the filesystem now and
+>> can "only" recover the data from it, but that's not really the idea of a
+>> RAID1 in my opinion.
+>>
+>> Any advice?
+>
+>    Fix is in the hot-spare patch set. And it should mount RW with that.
+>
+>    Any test results will help.
+>
+> Thanks, Anand
+>
+>> Versions:
+>> - Kernel 4.4.5-1-ARCH
+>> - btrfs-progs 4.4.1
+>>
+>> Best regards
+>> Sebastian
+>> --
+>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>> the body of a message to majordomo@vger.kernel.org
+>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 > --
 > To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
 > the body of a message to majordomo@vger.kernel.org
 > More majordomo info at  http://vger.kernel.org/majordomo-info.html
 >
+>
+
+

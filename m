@@ -1,52 +1,31 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pa0-f68.google.com ([209.85.220.68]:33424 "EHLO
-	mail-pa0-f68.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753971AbcC2VRw (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 29 Mar 2016 17:17:52 -0400
-Received: by mail-pa0-f68.google.com with SMTP id q6so3775547pav.0
-        for <linux-btrfs@vger.kernel.org>; Tue, 29 Mar 2016 14:17:52 -0700 (PDT)
-From: Yauhen Kharuzhy <yauhen.kharuzhy@zavadatar.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Yauhen Kharuzhy <yauhen.kharuzhy@zavadatar.com>
-Subject: [PATCH] btrfs: Reset IO error counters before start of device replacing
-Date: Tue, 29 Mar 2016 14:17:48 -0700
-Message-Id: <1459286268-16461-1-git-send-email-yauhen.kharuzhy@zavadatar.com>
+Received: from mx2.suse.de ([195.135.220.15]:45314 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S932876AbcCQKs7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 17 Mar 2016 06:48:59 -0400
+Date: Thu, 17 Mar 2016 11:48:32 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Anand Jain <anand.jain@oracle.com>
+Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz
+Subject: Re: [PATCH v2] btrfs: remove save_error_info()
+Message-ID: <20160317104832.GS21722@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1458182337-3841-1-git-send-email-anand.jain@oracle.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1458182337-3841-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-If device replace entry was found on disk at mounting and its num_write_errors
-stats counter has non-NULL value, then replace operation will never be
-finished and -EIO error will be reported by btrfs_scrub_dev() because
-this counter is never reset.
+On Thu, Mar 17, 2016 at 10:38:57AM +0800, Anand Jain wrote:
+> Actually save_error_info() sets the FS state to error
+> and nothing else. Further the word save doesn't induce
+> caffeine when compared to the word set in what actually
+> it does.
+> 
+> So to make it better understandable move save_error_info()
+> code to its only consumer itself.
+> 
+> Signed-off-by: Anand Jain <anand.jain@oracle.com>
 
- # mount -o degraded /media/a4fb5c0a-21c5-4fe7-8d0e-fdd87d5f71ee/
- # btrfs replace status /media/a4fb5c0a-21c5-4fe7-8d0e-fdd87d5f71ee/
- Started on 25.Mar 07:28:00, canceled on 25.Mar 07:28:01 at 0.0%, 40 write errs, 0 uncorr. read errs
- # btrfs replace start -B 4 /dev/sdg /media/a4fb5c0a-21c5-4fe7-8d0e-fdd87d5f71ee/
- ERROR: ioctl(DEV_REPLACE_START) failed on "/media/a4fb5c0a-21c5-4fe7-8d0e-fdd87d5f71ee/": Input/output error, no error
-
-Reset num_write_errors and num_uncorrectable_read_errors counters in the
-dev_replace structure before start of replacing.
-
-Signed-off-by: Yauhen Kharuzhy <yauhen.kharuzhy@zavadatar.com>
----
- fs/btrfs/dev-replace.c | 2 ++
- 1 file changed, 2 insertions(+)
-
-diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
-index 08d629d..94b12d1 100644
---- a/fs/btrfs/dev-replace.c
-+++ b/fs/btrfs/dev-replace.c
-@@ -394,6 +394,8 @@ int btrfs_dev_replace_start(struct btrfs_root *root,
- 	dev_replace->cursor_right = 0;
- 	dev_replace->is_valid = 1;
- 	dev_replace->item_needs_writeback = 1;
-+	atomic64_set(&dev_replace->num_write_errors, 0);
-+	atomic64_set(&dev_replace->num_uncorrectable_read_errors, 0);
- 	args->result = BTRFS_IOCTL_DEV_REPLACE_RESULT_NO_ERROR;
- 	btrfs_dev_replace_unlock(dev_replace, 1);
- 
--- 
-2.5.0
-
+Reviewed-by: David Sterba <dsterba@suse.com>

@@ -1,102 +1,118 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:6136 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1756468AbcCQBgU (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:17957 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751942AbcCQB7d (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 16 Mar 2016 21:36:20 -0400
-Subject: Re: qgroup code slowing down rebalance
-To: Dave Hansen <dave@sr71.net>, <linux-btrfs@vger.kernel.org>,
-        Chris Mason <clm@fb.com>
-References: <56E9C7BB.7060509@sr71.net>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <56EA0A0F.8070008@cn.fujitsu.com>
-Date: Thu, 17 Mar 2016 09:36:15 +0800
+	Wed, 16 Mar 2016 21:59:33 -0400
+Subject: Re: Mounting RAID1 degraded+rw only works once
+To: Sebastian Ochmann <ochmann@informatik.uni-bonn.de>,
+        linux-btrfs@vger.kernel.org
+References: <56E9AAB9.6070408@informatik.uni-bonn.de>
+From: Anand Jain <anand.jain@oracle.com>
+Message-ID: <56EA0F60.9020806@oracle.com>
+Date: Thu, 17 Mar 2016 09:58:56 +0800
 MIME-Version: 1.0
-In-Reply-To: <56E9C7BB.7060509@sr71.net>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+In-Reply-To: <56E9AAB9.6070408@informatik.uni-bonn.de>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
 
-Dave Hansen wrote on 2016/03/16 13:53 -0700:
-> I have a medium-sized multi-device btrfs filesystem (4 disks, 16TB
-> total) running under 4.5.0-rc5.  I recently added a disk and needed to
-> rebalance.  I started a rebalance operation three days ago.  It was on
-> the order of 20% done after those three days. :)
+
+> In particular, I don't understand a
+> behavior I'm seeing which somehow takes part of the advantage away from
+> the idea of having a RAID for me.
+
+  Yep. Very true. I am trying fix them.
+
+  Generally, a storage/volume-manager need to match the Enterprise
+  storage data center requirements, and I do understand the reliability,
+  availability, serviceability (RAS) gaps in the current btrfs volume
+  manager.
+
+> The main issue I have is as follows. I can mount a RAID1 with missing
+> devices using the "degraded" option. So far so good. I know I should add
+> another device at that point, but let's say I don't have a device ready
+> but need to keep my system running. The problem is that once I write
+> some data to the device and unmount it, I cannot mount it degraded+rw
+> again but only degraded+ro.
+
+  A known issue and a critical (in the enterprise storage standard) bug.
+  There is a patch set to fix.
+     'btrfs: Hot spare and Auto replace'
+  I hoped it got reviewed/merged sooner.
+
+  As I am getting couple of other private request for the hot spare
+  patch set, also of latest I see there are some critical changes in
+  the replace part of the code, looks like its time to revive them.
+  Thanks for asking. I shall find some time in the early next week
+  for this.
+
+> And at that point I can't make changes such
+> as adding new devices and rebalancing as far as I see, rendering the
+> degraded RAID useless for me for keeping the system running.
 >
-> During this rebalance, the disks were pretty lightly used.  I would see
-> a small burst of tens of MB/s, then it would go back to no activity for
-> a few minutes, small burst, no activity, etc...  During the quiet times
-> (for the disk) one processor would be pegged inside the kernel and would
-> have virtually no I/O wait time.  Also during this time, the filesystem
-> was pretty unbearably slow.  An ls of a small directory would hang for
-> minutes.
+> Example:
 >
-> A perf profile shows 92% of the cpu time is being spend in
-> btrfs_find_all_roots(), called under this call path:
+> - Create RAID1 (data+metadata) with 2 devices
 >
-> 	btrfs_commit_transaction
-> 	 -> btrfs_qgroup_prepare_account_extents
-> 	   -> btrfs_find_all_roots
+> - mount the filesystem
 >
-> So I tried disabling quotas by doing:
+> - btrfs fi df /something:
 >
-> 	btrfs quota disable /mnt/foo
+> Data, RAID1: total=112.00MiB, used=40.76MiB
+> System, RAID1: total=8.00MiB, used=16.00KiB
+> Metadata, RAID1: total=32.00MiB, used=768.00KiB
+> GlobalReserve, single: total=16.00MiB, used=0.00B
 >
-> which took a few minutes to complete, but once it did, the disks went
-> back up to doing ~200MB/s, the kernel time went down to ~20%, and the
-> system now has lots of I/O wait time.  It looks to be behaving nicely.
+> - unmount
 >
-> Is this expected?  From my perspective, it makes quotas pretty much
-> unusable at least during a rebalance.  I have a full 'perf record'
-> profile with call graphs if it would be helpful.
+> - Destroy one of the devices (dd over it or whatever)
 >
+> - mount with "-o degraded"
 >
-Thanks for the report.
+> - Write some data to the device (not sure if this is strictly necessary).
+>
+> - unmount the filesystem
+>
+> - Try to mount with "-o degraded" again. It doesn't allow you to do so
+> (if it does, try to unmount and mount again, sometimes it needs two
+> tries). dmesg says "missing devices(1) exceeds the limit(0), writable
+> mount is not allowed"
+>
+> - mounting with "-o degraded,ro" works.
+>
+> - btrfs fi df [dev]:
+>
+> Data, RAID1: total=112.00MiB, used=40.76MiB
+> System, RAID1: total=8.00MiB, used=16.00KiB
+> System, single: total=8.00MiB, used=0.00B
+> Metadata, RAID1: total=32.00MiB, used=768.00KiB
+> Metadata, single: total=28.00MiB, used=80.00KiB
+> GlobalReserve, single: total=16.00MiB, used=0.00B
+>
+> Now there is some RAID1 and some single data. Which could make sense
+> since writing to the device in degraded mode could only be done on the
+> single device. Still, I cannot make changes to the filesystem now and
+> can "only" recover the data from it, but that's not really the idea of a
+> RAID1 in my opinion.
+>
+> Any advice?
 
-Again balance, the devil is again(always) in the balance.
-To be honest, balance itself is already complicated enough, and not a 
-friendly neighborhood for a lot of function.
-(Yeah, a lot of dedupe bugs are and can only be triggered by balance, 
-and I can't hate it any more)
+   Fix is in the hot-spare patch set. And it should mount RW with that.
 
+   Any test results will help.
 
-Perf record profile will help a lot.
-Please upload it if it's OK for you.
+Thanks, Anand
 
-Also, the following data would help a lot:
-1) btrfs fi df output
-    To determine the metadata/data ratio
-    Balancing metadata should be quite slow.
-
-2) btrfs subvolume list output
-    To determine how many tree blocks are shared against each other
-    More shared tree blocks, slower quota routing is.
-
-    Feel free to mask the output to avoid information leaking.
-
-3) perf record for balancing metadata and data respectively
-    Although this is optional. Just to prove some assumption.
-
-btrfs_find_all_roots() is quite a slow operation, and in its worst case
-(tree blocks are shared by a lot of trees) it may be near O(2^n).
-
-For normal operation, it's pretty hard to trigger so many extents 
-creation/deletion/reference.
-Even such case happens, it will cause much much much more IO, making the 
-most time waiting IO other than doing quota accounting.
-
-But for balance, especially for metadata balancing, IO is small but 
-amount of extents is very high, making most the time consumed by 
-find_all_roots().
-
-
-I can try to make balance to bypass quota routine, but I'm not sure if 
-such operation will open another hole to make quota crazy again, and 
-only much much much more tests can prove it. :(
-
-Thanks,
-Qu
-
-
+> Versions:
+> - Kernel 4.4.5-1-ARCH
+> - btrfs-progs 4.4.1
+>
+> Best regards
+> Sebastian
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

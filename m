@@ -1,98 +1,108 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:37505 "EHLO plane.gmane.org"
+Received: from plane.gmane.org ([80.91.229.3]:39344 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752728AbcCQHAc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 17 Mar 2016 03:00:32 -0400
+	id S1752954AbcCQHzL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 17 Mar 2016 03:55:11 -0400
 Received: from list by plane.gmane.org with local (Exim 4.69)
 	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1agRv3-0001j9-Lk
-	for linux-btrfs@vger.kernel.org; Thu, 17 Mar 2016 08:00:29 +0100
+	id 1agSlu-0001jd-Qg
+	for linux-btrfs@vger.kernel.org; Thu, 17 Mar 2016 08:55:07 +0100
 Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
         by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 17 Mar 2016 08:00:29 +0100
+        for <linux-btrfs@vger.kernel.org>; Thu, 17 Mar 2016 08:55:06 +0100
 Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 17 Mar 2016 08:00:29 +0100
+        for <linux-btrfs@vger.kernel.org>; Thu, 17 Mar 2016 08:55:06 +0100
 To: linux-btrfs@vger.kernel.org
 From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: Major HDD performance degradation on btrfs receive
-Date: Thu, 17 Mar 2016 07:00:23 +0000 (UTC)
-Message-ID: <pan$993a$3e6653ed$790f69a1$c396ece4@cox.net>
-References: <a55e81de-412b-c269-775d-3f8e0d96d7a9@mokrynskyi.com>
-	<72cb240a-fdb2-c38b-adb1-2b72847ab29a@mokrynskyi.com>
-	<CAPmG0jZvioaxdr4FNHRQJTDZwuxq5EwUTay+VB=c+hKAzdDGYg@mail.gmail.com>
-	<ce805cd7-422c-ab6a-fbf8-18a304aa640d@mokrynskyi.com>
-	<CAPmG0jbRmWeHvL4cUzhPBAfA=_Ue03uC-pLE4O-u5bzFF_kzEQ@mail.gmail.com>
-	<5240211f-27b7-2c87-41e7-c10953374921@mokrynskyi.com>
-	<CAPmG0jZwapQ1=V-dHMEEwMYQUjb4+1M102eo96XQeJQV1JoxeQ@mail.gmail.com>
-	<1557fe0b-bbcc-c125-5220-46a56e936590@mokrynskyi.com>
+Subject: Re: Incompat features: raid56 ... when creating a RAID6?
+Date: Thu, 17 Mar 2016 07:55:01 +0000 (UTC)
+Message-ID: <pan$1be34$8fa35fd6$fbfff80f$41034782@cox.net>
+References: <16570443.SxVegaKaET@andilaptop>
+	<2241137.7FlY2XkjWK@andilaptop> <56E8AE64.2090704@oracle.com>
+	<1770754.bSus6jR0QL@andilaptop>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Nazar Mokrynskyi posted on Wed, 16 Mar 2016 05:37:02 +0200 as excerpted:
+Andreas Grosse posted on Wed, 16 Mar 2016 10:12:47 +0100 as excerpted:
 
-> I'm not sure what you mean exactly by searching. My first SSD died
-> during waking up from suspend mode, it worked perfectly till last
-> moment. It was not used for critical data at that time, but now I
-> understand clearly that SSD failure can happen at any time. Having RAID0
-> of 2 SSDs it 2 times more risky, so I'm not ready to lose anything
-> beyond 15 minutes threshold. I'd rather end up having another HDD purely
-> for backup purposes.
-
-I understand the raid0 N times the danger part, which is why I only ever 
-used raid0 on stuff like the distro packages cache that I could easily 
-redownload from the net, here.
-
-But seriously, what are you doing that you can't lose more than 15 
-minutes of?  Couldn't it be even 20 minutes, or a half-hour or an hour 
-with 15 minute snapshots only on the ssds (yes, I know the raid0 factor, 
-but the question still applies)?
-
-What /would/ you do if you lost a whole hour's worth of work?  Surely you 
-could duplicate it in the next hour?  Or are you doing securities trading 
-or something, where you /can't/ recover work at all, because by then the 
-market and your world have moved on?  But in that case...
-
-And perhaps more importantly for your data, btrfs is still considered 
-"stabilizing, not fully stable and mature".  Use without backups is 
-highly discouraged, but I'd suggest that btrfs in its current state might 
-not be what you're looking for if you can't deal with loss of more than 
-15 minutes worth of changes anyway.
-
-Be that as it may...
-
-Btrfs is definitely not yet optimized.  In many cases it reads or writes 
-only one device at a time, for instance, even in RaidN configuration.  
-And there are definitely snapshot scaling issues altho at your newer 500 
-snapshots total that shouldn't be /too/ bad.
-
-Dealing with reality, regardless of how or why, you currently have a 
-situation of intolerably slow receives that needs addressed.  From a 
-practical perspective you said an ssd for backups is ridiculous and I 
-can't disagree, but there's another "throw hardware at it" solution that 
-might be a bit more reasonable...
-
-Spinning rust hard drives are cheap.  What about getting another one, and 
-alternating your backup receives between them?  That would halve the load 
-to one every thirty minutes, without changing your 15-minute snapshot and 
-backup policy at all. =:^)
-
-So that gives you two choices for halving the load to the spinning rust.  
-Either decide you really can live with half-hour loss of data, or throw 
-only a relatively small amount of money (well, as long as you have room 
-to plug in another sata device anyway, otherwise...) at it for a second 
-backup device, and alternate between them.
+> Am Mittwoch, 16. MÃ€rz 2016, 08:52:52 CET schrieb Anand Jain:
+>>   Yes looks like. As it was there when I read your posting.
+>> 
+>> 
+>> >>> AndiNâ¹Â§Â²ÃŠÃ¬rÂžâºyÃºÃšÅ¡ÃbÂ²XÂ¬Â¶ÃÂ§vÃ^â)ÃÂº
+{.nÃ+â°Â·Â¥Å {Â±nÃÃÂ²)Ã­âŠÃŠÃšw*jgÂ¬Â±ÂšÂ¶â°Å¡ÅœÅ ÃÂ¢j/
+ÂÃª
+>> >>> Ã€z
+>> >>> Â¹ÃâÅ Ã 2Å Ãâ¢ÂšÃšÂ­Ã&Â¢)ÃÂ
+¡Â«aÂ¶ÃÃŸÃžÂ®GÂ«ÂÃ©hÂ®ÃŠj:+vâ°ÂšÅ wÃšâ ÃÂ¥
+> 
+> I'll have a look at this. I have no idea where this came from. But it
+> seems this stuff is invisible on the list archives on the web on my
+> initial message...
+> 
+> N§²æìržyúèØb²X¬¶Ç§vØ^)Þº{.nÇ+·¥{±nÚß²)íæèw*jg¬
+±š¶Ý¢j/êäz¹Þà2Þšè­Ú&¢)ß¡«a¶Úþø®G«éh®æj:
++všwèÙ¥
 
 
-OTOH, since you mentioned possible coding, optimization might not be a 
-bad thing, if you're willing to put in the time necessary to get up to 
-speed with the code and can work with the other devs in terms of timing, 
-etc.  But that will definitely take significant time even if you do it, 
-and the alternating backup solution can be put to use as soon as you can 
-get another device plugged in and setup. =:^)
+FWIW, your posting as it appeared on gmane's news (nntp, which I use for 
+this list) and web archives was truncated.  Hugo evidently got a better 
+copy than gmane did, as he quoted text that wasn't there for me.
+
+Here's (one of) the gmane web link(s) to your post on the web archive:
+
+http://permalink.gmane.org/gmane.comp.file-systems.btrfs/54108
+
+As you can see, it's truncated there, tho the web interface doesn't let 
+you see the raw message.
+
+The nntp/news archive does better at letting you at the raw message.  I 
+use pan as my nntp client, and fetched the raw message file itself from 
+cache after getting the messageID from the pan GUI.  Unfortunately, not a 
+lot of web or mail clients know what to do with links like...
+
+nntp://news.gmane.org/gmane.comp.file-systems.btrfs
+
+... and I don't remember how to add the specific article to the link.  So 
+you may have trouble getting the article from news.
+
+Tho AFAIK lynx, the text-mode browser, can handle news.  You might try 
+that.
+
+
+I could send you personally a copy of the message file, however, if you 
+like.  Selected headers say:
+
+User-Agent: KMail/ (Linux/4.5.0-gentoo; KDE/5.20.0; x86_64; ; )
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: base64
+
+
+With the base64 encoding, of course the raw message body is just a big 
+block of ASCII chars encoding the base64 ... notably, with the list 
+footer/signature appended below in plain 7-bit ASCII.  I wonder if some 
+clients (including pan, it would appear, tho gmane's web interface 
+displayed the same body I saw in pan) can't handle the mix of base64 
+encoding and plain 7-bit ASCII?, in a message the headers clearly state 
+as base64 encoded?  Certainly, the listserv shouldn't just add a plain-
+text blob of text to a message body that is base64 encoded like that, 
+instead making it multi-part and putting the sig in a 7-bit ascii or 
+whatever encoding, if need be, or decoding the base64, appending the text 
+blob, and recoding, but regardless, if that's all the "corruption" is, 
+clients should handle it better than trucating and/or corrupting.
+
+I didn't try to manually decode the block of base64 either using uudeview 
+or the like or fully manually, to see if it stopped at the same spot, or 
+included the corruption, or something else, but I do have the full raw 
+message file as downloaded via gmane using pan, and can mail it to you 
+privately if you'd like.  Tho if you're familiar at all with news and 
+have a client to use on news.gmane.org, or simply have lynx around and 
+can follow the link above in it, you can find and grab the news article 
+for yourself.
 
 -- 
 Duncan - List replies preferred.   No HTML msgs.

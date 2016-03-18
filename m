@@ -1,44 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:36380 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1758413AbcCVKEH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 22 Mar 2016 06:04:07 -0400
-Date: Tue, 22 Mar 2016 11:03:37 +0100
-From: David Sterba <dsterba@suse.cz>
-To: David Sterba <dsterba@suse.com>
-Cc: clm@fb.com, linux-btrfs@vger.kernel.org
-Subject: Re: [PULL] Btrfs, misc for 4.6
-Message-ID: <20160322100337.GH8095@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <cover.1458585064.git.dsterba@suse.com>
+Received: from mail-qg0-f66.google.com ([209.85.192.66]:33260 "EHLO
+	mail-qg0-f66.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753114AbcCRRvs (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 18 Mar 2016 13:51:48 -0400
+Received: by mail-qg0-f66.google.com with SMTP id y89so7923033qge.0
+        for <linux-btrfs@vger.kernel.org>; Fri, 18 Mar 2016 10:51:47 -0700 (PDT)
+Subject: Re: [PATCH v2] btrfs-progs: add stat check in open_ctree_fs_info
+To: dsterba@suse.cz, linux-btrfs@vger.kernel.org
+References: <1458309822-5550-1-git-send-email-ahferroin7@gmail.com>
+ <20160318151714.GA21722@twin.jikos.cz>
+Cc: clm@fb.com
+From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Message-ID: <56EC3FE4.5090608@gmail.com>
+Date: Fri, 18 Mar 2016 13:50:28 -0400
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <cover.1458585064.git.dsterba@suse.com>
+In-Reply-To: <20160318151714.GA21722@twin.jikos.cz>
+Content-Type: text/plain; charset=windows-1252; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Mar 21, 2016 at 07:42:09PM +0100, David Sterba wrote:
-> Hi,
-> 
-> a few low-risk patches that appeared after I sent my main pull for 4.6. I think
-> they still apply to 4.6, the freezer patches help the livepatch to clean up the
-> mis-use of the freezer API, the rest makes sure we don't miss an error during
-> writing checksums.
-> 
-> I've removed Liu Bo's patch fixing the writeback_index, IMO needs moe review
-> and can be merged in some later rc.
-> 
-> ----------------------------------------------------------------
-> The following changes since commit 5e33a2bd7ca7fa687fb0965869196eea6815d1f3:
->   Btrfs: do not collect ordered extents when logging that inode exists (2016-03-01 08:23:47 -0800)
-> 
-> are available in the git repository at:
-> 
->   git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git for-chris-4.6
-> 
-> for you to fetch changes up to 45147cbef21305b512a5b263e9e52f832a0df7b2:
-> 
->   btrfs: transaction_kthread() is not freezable (2016-03-21 19:02:34 +0100)
+On 2016-03-18 11:17, David Sterba wrote:
+> On Fri, Mar 18, 2016 at 10:03:42AM -0400, Austin S. Hemmelgarn wrote:
+>> There are other tools that have similarly poor error behavior when
+>> called incorrectly (btrfs rescue immediately comes to mind), but they
+>> don't use open_ctree_fs_info, so this doesn't affect them.  I may do
+>> followup patches to fix those too if I have the time.
+>
+> Yeah, it would be good to fix all.
+I had a bit of spare time over lunch, and decided to take a cursory 
+look.  I hadn't realized that open_ctree uses open_ctree_fs_info, and it 
+looks like almost everything that doesn't call open_ctree_fs_info calls 
+open_ctree, which means this actually added error checking to a lot more 
+than I realized, possibly everything that expects a filesystem image to 
+operate on.  I've checked btrfs rescue now, and with this change, it now 
+gives a nice error for something other than a a file or block device. 
+It looks like a follow up patch may not be necessary after all, I'll try 
+and double check the rest of the commands that I haven't checked already 
+over the weekend, and hopefully have something by Monday or Tuesday if 
+there's anything else that needs this check added.
 
-FYI, I've added Filipe's reviewed-by, the top commit is now
-ce63f891e1a87ae79c4325dad5f512e8d6a8a78e

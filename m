@@ -1,50 +1,61 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qg0-f41.google.com ([209.85.192.41]:36559 "EHLO
-	mail-qg0-f41.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1757542AbcCURxj (ORCPT
+Received: from userp1040.oracle.com ([156.151.31.81]:18378 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753228AbcCRFhV (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 21 Mar 2016 13:53:39 -0400
-Received: by mail-qg0-f41.google.com with SMTP id u110so158269732qge.3
-        for <linux-btrfs@vger.kernel.org>; Mon, 21 Mar 2016 10:53:39 -0700 (PDT)
-Subject: Re: [PATCH] btrfs-progs: fix fi du so it works in more cases
-To: dsterba@suse.cz, linux-btrfs@vger.kernel.org
-References: <1458562991-6882-1-git-send-email-ahferroin7@gmail.com>
- <20160321174039.GB8095@twin.jikos.cz>
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <56F03512.4050708@gmail.com>
-Date: Mon, 21 Mar 2016 13:53:22 -0400
+	Fri, 18 Mar 2016 01:37:21 -0400
+Received: from userv0022.oracle.com (userv0022.oracle.com [156.151.31.74])
+	by userp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id u2I5bKiU023181
+	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Fri, 18 Mar 2016 05:37:20 GMT
+Received: from userv0122.oracle.com (userv0122.oracle.com [156.151.31.75])
+	by userv0022.oracle.com (8.14.4/8.13.8) with ESMTP id u2I5bKvH031231
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=FAIL)
+	for <linux-btrfs@vger.kernel.org>; Fri, 18 Mar 2016 05:37:20 GMT
+Received: from abhmp0004.oracle.com (abhmp0004.oracle.com [141.146.116.10])
+	by userv0122.oracle.com (8.14.4/8.14.4) with ESMTP id u2I5bJxW015233
+	for <linux-btrfs@vger.kernel.org>; Fri, 18 Mar 2016 05:37:20 GMT
+Date: Fri, 18 Mar 2016 08:37:13 +0300
+From: Dan Carpenter <dan.carpenter@oracle.com>
+To: bo.li.liu@oracle.com
+Cc: linux-btrfs@vger.kernel.org
+Subject: re: Btrfs: fix up read_tree_block to return proper error
+Message-ID: <20160318053713.GA2111@mwanda>
 MIME-Version: 1.0
-In-Reply-To: <20160321174039.GB8095@twin.jikos.cz>
-Content-Type: text/plain; charset=windows-1252; format=flowed
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2016-03-21 13:40, David Sterba wrote:
-> On Mon, Mar 21, 2016 at 08:23:11AM -0400, Austin S. Hemmelgarn wrote:
->> Currently, btrfs fi du uses open_file_or_dir(), which tries to open
->> it's argument with o_RDWR.  Because of POSIX semantics, this fails for
->> non-root users when the file is read-only or is an executable that
->> is being run currently, or for all users (including root) when the
->> filesystem is read-only.  THis results in a somewhat confusing 'Unknown
->> error -1' message when trying to check such files.  Switch to using
->> open_file_or_dir3() with O_RDONLY passed in the flags, as this avoids
->> the limitations listed above, and we have no need to write to the files
->> anyway (and thus shouldn't be opening them writable).
->>
->> Signed-off-by: Austin S. Hemmelgarn <ahferroin7@gmail.com>
->
-> Applied, thanks.
->
->> ---
->> Build and runtime tested on x86-64 with glibc.
->>
->> I intend to take the time at some point this week to audit all users of
->> open_file_or_dir() and similarly change any that don't need to write
->> to what they're opening, possibly adding a helper function to do a
->> read-only open.
->
-> Thanks. I think using open_file_or_dir3(path, &dirstream, O_RDONLY) is
-> ok, no need for a helper.
->
-Agreed, especially since this appears to be the only place that used 
-open_file_or_dir() that doesn't potentially need write access.
+Hello Liu Bo,
+
+The patch 64c043de466d: "Btrfs: fix up read_tree_block to return
+proper error" from May 25, 2015, leads to the following static
+checker warning:
+
+	fs/btrfs/relocation.c:1858 replace_path()
+	error: 'eb' dereferencing possible ERR_PTR()
+
+fs/btrfs/relocation.c
+  1850                          eb = read_tree_block(dest, old_bytenr, old_ptr_gen);
+  1851                          if (IS_ERR(eb)) {
+                                    ^^^^^^^^^^
+
+  1852                                  ret = PTR_ERR(eb);
+
+Missing break or continue?
+
+  1853                          } else if (!extent_buffer_uptodate(eb)) {
+  1854                                  ret = -EIO;
+  1855                                  free_extent_buffer(eb);
+  1856                                  break;
+  1857                          }
+  1858                          btrfs_tree_lock(eb);
+                                                ^^
+Dereference.
+
+  1859                          if (cow) {
+  1860                                  ret = btrfs_cow_block(trans, dest, eb, parent,
+  1861                                                        slot, &eb);
+
+regards,
+dan carpenter

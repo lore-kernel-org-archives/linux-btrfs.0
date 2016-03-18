@@ -1,213 +1,78 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:43036 "EHLO
+Received: from frost.carfax.org.uk ([85.119.82.111]:43049 "EHLO
 	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751119AbcCRSCL (ORCPT
+	with ESMTP id S1751024AbcCRSDb (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 18 Mar 2016 14:02:11 -0400
-Date: Fri, 18 Mar 2016 18:02:07 +0000
+	Fri, 18 Mar 2016 14:03:31 -0400
+Date: Fri, 18 Mar 2016 18:03:29 +0000
 From: Hugo Mills <hugo@carfax.org.uk>
-To: Marcin Solecki <solo@alfazone.pl>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: recovery problem raid5
-Message-ID: <20160318180207.GA1802@carfax.org.uk>
-References: <56EC3DCC.6060101@alfazone.pl>
+To: dsterba@suse.cz, Btrfs mailing list <linux-btrfs@vger.kernel.org>
+Subject: Re: The *right* algorithm for determining the amount of free space
+Message-ID: <20160318180329.GB1802@carfax.org.uk>
+References: <20160311221703.GJ17196@carfax.org.uk>
+ <20160318175802.GE21722@twin.jikos.cz>
 MIME-Version: 1.0
 Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="qDbXVdCdHGoSgWSk"
-In-Reply-To: <56EC3DCC.6060101@alfazone.pl>
+	protocol="application/pgp-signature"; boundary="gj572EiMnwbLXET9"
+In-Reply-To: <20160318175802.GE21722@twin.jikos.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---qDbXVdCdHGoSgWSk
+--gj572EiMnwbLXET9
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
 
-   The main thing you haven't tried here is mount -o degraded, which
-is the thing to do if you have a missing device in your array.
+On Fri, Mar 18, 2016 at 06:58:02PM +0100, David Sterba wrote:
+> On Fri, Mar 11, 2016 at 10:17:03PM +0000, Hugo Mills wrote:
+> >    I know I promised this a while ago and didn't get round to it, but
+> > Henk's tinkering reminded me of it. I note specifically that the
+> > algorithm used to give the free space to plain old df gives incorrect
+> > results -- probably because it's not using the algorithm below.
+> 
+> So the algorithm is supposed to implement btrfs_calc_avail_data_space,
+> the raid5/6 parts are missing from there, otherwise the structure of the
+> function follows the proposed algorithm.
 
-   Also, that kernel's not really all that good for a parity RAID
-array -- it's the very first one that had the scrub and replace
-implementation, so it's rather less stable with parity RAID than the
-later 4.x kernels. That's probably not the issue here, though.
+   Well, the current code gets the free space estimation wrong even
+with RAID-1. It's not usually *very* wrong, but it's still not right,
+somewhere.
+
+> >    There is an algorithm that (seems to) give the correct number of
+> > block groups which can be allocated, given a current allocation state
+> > of the FS. I haven't been able to prove it correct, but it seems to
+> > work. Here's some pseudocode for it:
+> 
+> It does sound correct to me. Thanks for writing it up.
 
    Hugo.
 
-On Fri, Mar 18, 2016 at 06:41:32PM +0100, Marcin Solecki wrote:
-> Hello all,
-> I give up for this problem at restore my data
-> 
-> 
-> # uname -a
-> Linux jarvis.home 4.5.0-1.el7.elrepo.x86_64
-> 
-> # btrfs --version
-> btrfs-progs v3.19.1
-> 
-> # btrfs fi show
-> warning, device 4 is missing
-> bytenr mismatch, want=21020672, have=21217280
-> Couldn't read chunk root
-> Label: none  uuid: 27ef2638-b50a-4243-80ed-40c3733ec11d
->         Total devices 4 FS bytes used 2.50TiB
->         devid    1 size 931.51GiB used 899.71GiB path /dev/sdd
->         devid    2 size 931.51GiB used 899.69GiB path /dev/sdb
->         devid    3 size 931.51GiB used 899.69GiB path /dev/sdc
->         *** Some devices missing
-> 
-> # mount  -o recovery /dev/sda /srv/
-> mount: wrong fs type, bad option, bad superblock on /dev/sda,
->        missing codepage or helper program, or other error
-> 
->        In some cases useful info is found in syslog - try
->        dmesg | tail or so.
-> 
-> dmesg after :
-> [ 4886.521315] BTRFS info (device sdc): enabling auto recovery
-> [ 4886.521320] BTRFS info (device sdc): disk space caching is enabled
-> [ 4886.522853] BTRFS: failed to read chunk tree on sdc
-> [ 4886.528789] BTRFS: open_ctree failed
-> 
-> #btrfs check --repair /dev/sda
-> enabling repair mode
-> warning, device 4 is missing
-> bytenr mismatch, want=21020672, have=21217280
-> Couldn't read chunk root
-> Couldn't open file system
-> 
-> # btrfs rescue chunk-recover -v /dev/sda
-> All Devices:
->         Device: id = 3, name = /dev/sdc
->         Device: id = 2, name = /dev/sdb
->         Device: id = 1, name = /dev/sda
-> 
-> [ 5164.468272] btrfs[3653]: segfault at 7f454014172e ip
-> 0000000000423479 sp 00007f4482cec880 error 4 in btrfs[400000+83000]
-> [ 5168.928317] btrfs[3657]: segfault at 7fd18c14172e ip
-> 0000000000423479 sp 00007fd0d5858880 error 4 in btrfs[400000+83000]
-> [ 5173.812457] btrfs[3662]: segfault at 7fd76c14172e ip
-> 0000000000423479 sp 00007fd6b0e59880 error 4 in btrfs[400000+83000]
-> 
-> # btrfs rescue super-recover -v /dev/sda
-> All Devices:
->         Device: id = 3, name = /dev/sdc
->         Device: id = 2, name = /dev/sdb
->         Device: id = 1, name = /dev/sda
-> 
-> Before Recovering:
->         [All good supers]:
->                 device name = /dev/sdc
->                 superblock bytenr = 65536
-> 
->                 device name = /dev/sdc
->                 superblock bytenr = 67108864
-> 
->                 device name = /dev/sdc
->                 superblock bytenr = 274877906944
-> 
->                 device name = /dev/sdb
->                 superblock bytenr = 65536
-> 
->                 device name = /dev/sdb
->                 superblock bytenr = 67108864
-> 
->                 device name = /dev/sdb
->                 superblock bytenr = 274877906944
-> 
->                 device name = /dev/sda
->                 superblock bytenr = 65536
-> 
->                 device name = /dev/sda
->                 superblock bytenr = 67108864
-> 
->                 device name = /dev/sda
->                 superblock bytenr = 274877906944
-> 
->         [All bad supers]:
-> 
-> All supers are valid, no need to recover
-> 
-> # btrfs-show-super /dev/sda
-> superblock: bytenr=65536, device=/dev/sda
-> ---------------------------------------------------------
-> csum                    0x61b509bb [match]
-> bytenr                  65536
-> flags                   0x1
-> magic                   _BHRfS_M [match]
-> fsid                    27ef2638-b50a-4243-80ed-40c3733ec11d
-> label
-> generation              69462
-> root                    1648640000
-> sys_array_size          290
-> chunk_root_generation   48545
-> root_level              1
-> chunk_root              21020672
-> chunk_root_level        1
-> log_root                0
-> log_root_transid        0
-> log_root_level          0
-> total_bytes             4000819544064
-> bytes_used              2743528714240
-> sectorsize              4096
-> nodesize                16384
-> leafsize                16384
-> stripesize              4096
-> root_dir                6
-> num_devices             4
-> compat_flags            0x0
-> compat_ro_flags         0x0
-> incompat_flags          0xe1
->                         ( MIXED_BACKREF |
->                           BIG_METADATA |
->                           EXTENDED_IREF |
->                           RAID56 )
-> csum_type               0
-> csum_size               4
-> cache_generation        69462
-> uuid_tree_generation    69462
-> dev_item.uuid           70f4650c-e01d-4613-bd7a-a6834c1c44bb
-> dev_item.fsid           27ef2638-b50a-4243-80ed-40c3733ec11d [match]
-> dev_item.type           0
-> dev_item.total_bytes    1000204886016
-> dev_item.bytes_used     966057263104
-> dev_item.io_align       4096
-> dev_item.io_width       4096
-> dev_item.sector_size    4096
-> dev_item.devid          1
-> dev_item.dev_group      0
-> dev_item.seek_speed     0
-> dev_item.bandwidth      0
-> dev_item.generation     0
-> 
-> thx for helps
-> 
-
 -- 
-Hugo Mills             | You can't expect a boy to be vicious until he's gone
-hugo@... carfax.org.uk | to a good school.
+Hugo Mills             | Great films about cricket: The Umpire Strikes Back
+hugo@... carfax.org.uk |
 http://carfax.org.uk/  |
-PGP: E2AB1DE4          |                                                  Saki
+PGP: E2AB1DE4          |
 
---qDbXVdCdHGoSgWSk
+--gj572EiMnwbLXET9
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: Digital signature
 
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.12 (GNU/Linux)
 
-iQIcBAEBAgAGBQJW7EKfAAoJEFheFHXiqx3kWnQP/RQJDMQjNCQN6rVNr5et4m8l
-gKjfSyNVKskR+0TOXi5MQS7pjndytAy3idB/KgXDjJgSJ6mcNaAXlpLbJJGeNlZi
-5Vtmj7HkmgOhZnrlmV6uo36sxW1bay+mnuQpnJTNsqy317kKcPt+7zFPyDTvxH5+
-beC351BTA9DThmblA97f0OC6J5dOefA9K/r6EkvYwyAYz8rFPeWXAO61jXgL5ixZ
-xaleyMEz88KNgRw8UBoHY9VPp8K8XAXzwuJ4Txt1G/k8ssco5lYE2L+Zq8GpmPOs
-rDngQMrl4mZpKuOHvqAKrI2244y4GXjcs3L4Yn53Ki31Olu8GYcuEtVk54LDLXo9
-G/5fru6kJHpaBHWb0XJ6UGWF2QwXpQoL6qKgiSFL3mX+TTUMiZV9/3CHnatuZVXq
-bsO47bnEre6clf6y1E/P6at+0np4de4+VuqLBAoNAcbUH8E3CeFl3Hjsu1aNOEP2
-41gM1qfdyt9M6BjNybGpijww91YW7dIaiqyNREgVPQ/cq5YtnkhvacmIIFskZUYT
-SwpRKWCJ1AK1ki3SY7iKoFo+9AOGZSseXRYGc0SVrwG7Arhe1UbH3uxQYf1SKNXo
-UapWgXULFLhFNBClDXrc04Qo8L0pM7rKbWBPtPKkYnUv+D0IgK9NeYDnLc2CxHk+
-h51WCLgddaju1CL2M031
-=k0Ia
+iQIcBAEBAgAGBQJW7ELxAAoJEFheFHXiqx3kvXIP/iaphyafLvnYRSYybiciVv6D
+st0FUG3Ej5Jl0BA/b9lHouGLP2k3lFDMXhCAXhPJRxQ8+ECjwPfdjbSEcALo8ltx
+ghLzoGIwkk54n6hOU8toDFWbtcxv2fngxq7MJ9NkonRtAJNyRXASDtvua+evRq//
+KKPDhDXv1AYuSP/Ng0qtaUJv2sE87ZchppEk6tCWoLgDZAo7vp33IALassFhpJw7
+gwK85nkCqx0+XGwgfhljlKjPxgr8nbkq1Bhx9JajEuwh3l/9y4HAV+Yvvic6IBC5
+IiRvGvl822+Ijq4VEdLFJL1eiYntGKS5AjGim8G3PLPmD5sej24zN/8CIhKdYWTo
+OQ7l/6R9EbtkI0JIEbpvTqOPKw6NhJCMGenmoHJ9G7RmFGuKUKoGRw8HChugDjH9
+HNT+xnBwHpcsPwbYY3Sn9DMimDlUHeV4MX83orQgec/TF59YFnGpeIVzgyqcjtfY
+cqqoRHcpC+xL4huBCXNMfD2Nn51LL9URjOsQse3x00q60xhqKncz30JonLQCTIVn
+irqNqpnKfMZhsppmAd3OMWnZS2mRrB/VOTFSUqg86xGFWRAwoGZXzhyH/1d8c+j9
+YPBxO4aoEZwcZR45YGOgyr3nonXJ84vBoouLqbBb1zoxdL0Y3fSD02Y+VN9SqC1R
+Gkg5oH/U/RzB7sNHARBy
+=7Jnc
 -----END PGP SIGNATURE-----
 
---qDbXVdCdHGoSgWSk--
+--gj572EiMnwbLXET9--

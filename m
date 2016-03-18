@@ -1,51 +1,114 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f177.google.com ([209.85.213.177]:35856 "EHLO
-	mail-ig0-f177.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752704AbcCRXkP (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 18 Mar 2016 19:40:15 -0400
-Received: by mail-ig0-f177.google.com with SMTP id nk17so33836150igb.1
-        for <linux-btrfs@vger.kernel.org>; Fri, 18 Mar 2016 16:40:15 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <CAJCQCtQyyk3XnyCBW0vij1RSypYXF7yEAhBqaztzmXMvMU=0ng@mail.gmail.com>
-References: <56EC3DCC.6060101@alfazone.pl>
-	<20160318180207.GA1802@carfax.org.uk>
-	<CAJCQCtQyyk3XnyCBW0vij1RSypYXF7yEAhBqaztzmXMvMU=0ng@mail.gmail.com>
-Date: Fri, 18 Mar 2016 17:40:14 -0600
-Message-ID: <CAJCQCtT_AHeRDV27eVm9VM8reT7HjvSorPJW6D5cv1Lh4cY5cg@mail.gmail.com>
-Subject: Re: recovery problem raid5
-From: Chris Murphy <lists@colorremedies.com>
-To: Chris Murphy <lists@colorremedies.com>
-Cc: Hugo Mills <hugo@carfax.org.uk>, Marcin Solecki <solo@alfazone.pl>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Received: from plane.gmane.org ([80.91.229.3]:44983 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753385AbcCRXsB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 18 Mar 2016 19:48:01 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+	id 1ah47a-0007Hv-6H
+	for linux-btrfs@vger.kernel.org; Sat, 19 Mar 2016 00:47:58 +0100
+Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sat, 19 Mar 2016 00:47:58 +0100
+Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sat, 19 Mar 2016 00:47:58 +0100
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: btrfs error
+Date: Fri, 18 Mar 2016 23:47:52 +0000 (UTC)
+Message-ID: <pan$55f1$cb4951f4$138c0630$19661418@cox.net>
+References: <CABxShh-vwxqU5wq+Ouhn8H6ye=7wV4VgNx+fL2JM30H7=i0rWg@mail.gmail.com>
+	<CABxShh8W8A4PjdT9uUQvmxo_N0VLMc+D-eYyJ3a0N64UoQzXjw@mail.gmail.com>
+Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Mar 18, 2016 at 5:31 PM, Chris Murphy <lists@colorremedies.com> wrote:
-> On Fri, Mar 18, 2016 at 12:02 PM, Hugo Mills <hugo@carfax.org.uk> wrote:
->>    The main thing you haven't tried here is mount -o degraded, which
->> is the thing to do if you have a missing device in your array.
->>
->>    Also, that kernel's not really all that good for a parity RAID
->> array -- it's the very first one that had the scrub and replace
->> implementation, so it's rather less stable with parity RAID than the
->> later 4.x kernels. That's probably not the issue here, though.
->
->
-> It's a 4.5.0 kernel with 3.19 progs. I'd update the progs even though
+Paul Harrison posted on Fri, 18 Mar 2016 10:25:44 +0000 as excerpted:
 
-And actually I'm wrong because it's possible progs 4.4.1 might help
-fix things. But really the problem is that -o degraded isn't work for
-the volume with a single missing device and I can't tell you why. It
-might be a bug, but it might be that progs 3.19 --repair wasn't a good
-idea to do on a volume with one missing device.
+> Anyone? Would really appreciate a pointer or two!
 
-I'm really skeptical of any sorts of repairs being allowed without a
-scary warning and requiring a force flag on volumes that are degraded.
-I know this is possible with ext4 and XFS, but that's only because
-they have no idea when the underlying raid is degraded.
+I was hoping someone, presumably a dev with understanding of the code, 
+would reply here, as I'm just an admin-level list regular who uses btrfs 
+on my own machines and helps with the relatively simpler (non-dev) 
+questions here when I can, and this one's really beyond me.
 
+However, given no other replies, maybe extremely limited help is better 
+than none.  At least you'll know the post got thru, that way, and maybe 
+the limited help will be enough.
+
+You mention SuSE Linux Enterprise 11 SP4 64-bit, but this isn't a SUSE 
+list, it's a distro agnostic btrfs Linux filesystem related list, and 
+that SuSE (the form I still use tho I know it's dated) information means 
+little to for instance, Gentoo users such as myself.
+
+More helpful here is information about your kernel and btrfs userspace 
+versions.
+
+In particular, because the list considers btrfs still stabilizing, not 
+yet fully stable and mature, the recommendation here is to run much more 
+current code than enterprise distros in particular tend to run.
+
+For the kernel, two tracks are recognized as supported, upstream (Linus/
+mainline) current releases, and mainline LTS track.  For current track, 
+the last two kernels are typically considered supported, so with 4.5 just 
+out, 4.4 and 4.5, with 4.3 users expected to be upgrading by now.
+
+For kernel LTS series track, 4.4 is the most recent LTS, with 4.1 before 
+that, and 3.18 previous to that.  Until 4.4, the recommendation was again 
+to keep to the latest two LTS kernel series, but as btrfs has matured and 
+because 3.18 actually turned out to be reasonably stable btrfs-wise, 
+we're still supporting it to some degree now as well, tho upgrade to at 
+least 4.1 is still recommended.
+
+For userspace, in normal runtime conditions, most userspace commands 
+simply call the appropriate kernel code to do the real work, so userspace 
+version doesn't tend to be as critical, as long as it doesn't get so old 
+that it's difficult to map its commands and output to more current 
+versions.  However, once things go wrong, the userspace version becomes 
+far more critical as it's userspace code that helps you repair or restore 
+files from the broken filesystem, and only newer versions have the latest 
+bug fixes, etc, and thus are best equipped to help you repair or recover 
+files from the damaged filesystem.  Userspace releases version releases 
+are synced to the kernel cycle and developed in the same current bug 
+context as the kernel series of the same major.minor number.
+
+As a result, a reasonable rule of thumb is to run at least a userspace of 
+a version similar to that of your kernel, tho newer is fine as well.  As 
+long as you're following kernel version recommendations, that will ensure 
+that your userspace doesn't get /too/ old.
+
+Of course we do recognize that various distros, including enterprise 
+distros that prefer ancient code, offer support for btrfs.  However, we 
+don't track what patches they may or may not have backported to their 
+nominally ancient kernel numbers on this list, as the list is in general 
+focused on the mainline kernel.  As a result, we're not in a very good 
+position to support those older versions, tho we do the best we can.  
+What that means in practice is that if you choose to use that sort of 
+distro support, you really should be getting your support from them, as 
+they know what they've backported and what they've not and are better 
+equipped to provide that support.  As I said, we still do the best we 
+can, but often, that's asking you to upgrade to a more current kernel and/
+or userspace and try again, reporting the results there if you still have 
+problems.
+
+So you didn't report the version numbers we'd need for this list, but 
+given the enterprise distro you did report running, there's a good chance 
+that your kernel and/or userspace is older than what the list can provide 
+best support for, so your first step would be to either upgrade to a 
+supported version as described above and try there, reporting appropriate 
+version numbers if the problem still exists, or ask your distro for the 
+support it offers on btrfs on older code, if indeed it does offer that 
+support.
+
+As I said, only extremely limited and general help, not specific to your 
+problem at all, but it's the best I can do, in the absence of replies 
+from others.  Hope it's at least of some help.
 
 -- 
-Chris Murphy
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

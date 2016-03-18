@@ -1,49 +1,81 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:45254 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S932876AbcCQKrr (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 17 Mar 2016 06:47:47 -0400
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id 2FC67AB12
-	for <linux-btrfs@vger.kernel.org>; Thu, 17 Mar 2016 10:47:45 +0000 (UTC)
-From: David Sterba <dsterba@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.com>
-Subject: [PATCH] btrfs-progs: subvol sync: fix memory corruption, undersized array
-Date: Thu, 17 Mar 2016 11:47:19 +0100
-Message-Id: <1458211640-13106-1-git-send-email-dsterba@suse.com>
+Received: from mgwkm01.jp.fujitsu.com ([202.219.69.168]:63446 "EHLO
+	mgwkm01.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750912AbcCRB0c (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 17 Mar 2016 21:26:32 -0400
+Received: from m3051.s.css.fujitsu.com (m3051.s.css.fujitsu.com [10.134.21.209])
+	by kw-mxq.gw.nic.fujitsu.com (Postfix) with ESMTP id 12BF0AC0418
+	for <linux-btrfs@vger.kernel.org>; Fri, 18 Mar 2016 10:26:23 +0900 (JST)
+Subject: [PATCH 1/5] btrfs-progs: "sub get-default" doesn't work
+To: dsterba@suse.cz, linux-btrfs@vger.kernel.org, clm@fb.com
+From: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
+Message-ID: <56EB5937.8070208@jp.fujitsu.com>
+Date: Fri, 18 Mar 2016 10:26:15 +0900
+MIME-Version: 1.0
+Content-Type: text/plain; charset=windows-1252; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The subvol sync command crashed randomly at the end with
+On 2016/03/17 3:29, David Sterba wrote:
+> Hi,
+>
+> btrfs-progs 4.5-rc1 have been released. The ETA for final release is this
+> Friday, so please test and report if you find problems. Small fixes or
+> documentation updates are welcome.
 
-*** glibc detected *** btrfs: double free or corruption (out): 0x00000000006ab040 ***
+Please apply this patchset. Especially [1/5]~[4/5] fix
+the regressions caused by the following commit.
 
-This is caused by running out of the ids array in case there are more
-than 128 subvolumes. The array is increased in steps but does not
-account the size of the item, so there was room for 1024 / 8 = 128
-subvolume ids.
+commit 176aeca9a148 ("btrfs-progs: add getopt stubs where needed")
 
-Fixes: c9f885ec8963 ("btrfs-progs: subvol: let sync check only current deletions")
-Signed-off-by: David Sterba <dsterba@suse.com>
+I read whole this commit carefully and probably fixed
+all problems in this commit by 1a521af, c742deb,
+and this patchset.
+
+Satoru
+
 ---
- cmds-subvolume.c | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+"sub get-default" does't work from the following commit.
+
+commit 176aeca9a148 ("btrfs-progs: add getopt stubs where needed")
+
+* actual result
+
+   ==================================================
+   # ./btrfs sub get-default /btrfs
+   btrfs subvolume get-default: too few arguments
+   usage: btrfs subvolume get-default <path>
+
+       Get the default subvolume of a filesystem
+   ==================================================
+
+* expected result
+
+   ==================================================
+   # btrfs sub get-default /btrfs
+   ID 5 (FS_TREE)
+   ==================================================
+
+Signed-off-by: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
+---
+This patch can be applied to devel branch (commit: 40dc7c504cf0)
+---
+  cmds-subvolume.c | 2 +-
+  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/cmds-subvolume.c b/cmds-subvolume.c
-index 02e1dec18ed2..32caaa5db9ec 100644
+index 32caaa5..3953d7c 100644
 --- a/cmds-subvolume.c
 +++ b/cmds-subvolume.c
-@@ -1204,7 +1204,8 @@ static int enumerate_dead_subvols(int fd, u64 **ids)
- 					u64 *newids;
- 
- 					count += SUBVOL_ID_BATCH;
--					newids = (u64*)realloc(*ids, count);
-+					newids = (u64*)realloc(*ids,
-+							count * sizeof(u64));
- 					if (!newids)
- 						return -ENOMEM;
- 					*ids = newids;
--- 
-2.7.1
+@@ -790,7 +790,7 @@ static int cmd_subvol_get_default(int argc, char **argv)
 
+  	clean_args_no_options(argc, argv, cmd_subvol_get_default_usage);
+
+-	if (check_argc_exact(argc - optind, 2))
++	if (check_argc_exact(argc - optind, 1))
+  		usage(cmd_subvol_get_default_usage);
+
+  	subvol = argv[1];
+-- 
+2.7.0

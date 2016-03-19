@@ -1,71 +1,65 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:45596 "EHLO plane.gmane.org"
+Received: from plane.gmane.org ([80.91.229.3]:46030 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751482AbcCRX64 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 18 Mar 2016 19:58:56 -0400
+	id S1751202AbcCSANo (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 18 Mar 2016 20:13:44 -0400
 Received: from list by plane.gmane.org with local (Exim 4.69)
 	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1ah4I9-0005Q0-8v
-	for linux-btrfs@vger.kernel.org; Sat, 19 Mar 2016 00:58:53 +0100
+	id 1ah4WR-0004yD-Bj
+	for linux-btrfs@vger.kernel.org; Sat, 19 Mar 2016 01:13:39 +0100
 Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
         by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sat, 19 Mar 2016 00:58:53 +0100
+        for <linux-btrfs@vger.kernel.org>; Sat, 19 Mar 2016 01:13:39 +0100
 Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sat, 19 Mar 2016 00:58:53 +0100
+        for <linux-btrfs@vger.kernel.org>; Sat, 19 Mar 2016 01:13:39 +0100
 To: linux-btrfs@vger.kernel.org
 From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: Snapshots slowing system
-Date: Fri, 18 Mar 2016 23:58:47 +0000 (UTC)
-Message-ID: <pan$9214$e77e0ea$9e58bc49$a0b72fea@cox.net>
-References: <201603142303.u2EN3qo3011695@phoenix.vfire>
-	<pan$a0d0a$9f23433a$f19e4b84$b275dc3f@cox.net>
-	<56E88CB2.6020300@petezilla.co.uk> <56E945E9.1050005@gmail.com>
-	<56EB1CC7.2000602@petezilla.co.uk>
-	<pan$24d34$c6dcbaed$b9940b06$c8b4f058@cox.net>
-	<56EBE8B5.4090705@gmail.com>
+Subject: Re: Blocks changed since previous snapshot of subvolume
+Date: Sat, 19 Mar 2016 00:13:34 +0000 (UTC)
+Message-ID: <pan$7e7ac$bd9bc70$d69021d4$d407b0e8@cox.net>
+References: <1458211640-13106-1-git-send-email-dsterba@suse.com>
+	<loom.20160317T145003-730@post.gmane.org>
+	<loom.20160317T213216-965@post.gmane.org>
+	<loom.20160318T133531-909@post.gmane.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Austin S. Hemmelgarn posted on Fri, 18 Mar 2016 07:38:29 -0400 as
-excerpted:
+sri posted on Fri, 18 Mar 2016 13:36:50 +0000 as excerpted:
 
->>> 188 Command_Timeout         0x0032   100   099   000    Old_age  
->>> Always
->>>        -       8590065669
->>
->> Again, a non-zero raw value indicating command timeouts, probably due
->> to those bad seeks.  It'll have to retry those commands, and that'll
->> definitely mean slowdowns.
->>
->> Tho there's no threshold, but 99 worst-value cooked isn't horrible.
->>
->> FWIW, on my spinning rust device this value actually shows a worst of
->> 001, here (100 current cooked value, tho), with a threshold of zero,
->> however.  But as I've experienced no problems with it I'd guess that's
->> an aberration.  I haven't the foggiest why/how/when it got that 001
->> worst.
+> Henk Slager <eye1tm <at> gmail.com> writes:
+> 
+>> sri <toyours_sridhar <at> yahoo.co.in> writes:
+>> > 
+>> > I Would like to know between 2 snapshots of a subvolume, can we
+>> > identify what all blocks modified particular to that subvolume ?
+>> > 
+>> > there can be many subvolume and snapshots present on the btrfs but i
+>> > want only blocks modified since first snapshot for the specific
+>> > subvolume.  blocks should include metadata and data blocks.
+>> 
+>> Not directly diff blocks, rather files, you could do something like
+>> this:
+>> 
+>> btrfs subvolume find-new [...]
+>> 
+>> 
+> Thank you. As I checked only blocks related to file are shown.
+> 
+> is there a way to get other blocks modified such as meta data such as
+> inodes blocks modified and corresponding directory inode blocks along
+> with files?
 
-> Such an occurrence is actually not unusual when you have particularly
-> bad sectors on a 'desktop' rated HDD, as they will keep retrying for an
-> insanely long time to read the bad sector before giving up.
-
-Which is why it's mystifying to me how it could be reporting a worst-
-value 1, when the device seems to be working just fine, and I don't 
-recall even one event of waiting "an insanely long time", or even 
-anything out of the ordinary, for anything on that device, ever.
-
-Tho I suppose it's within reason that whatever it was froze up the system 
-bad enough that I rebooted, and I attributed the one-off to something 
-else.  But with no other attributes indicating issues, I remain clueless 
-as to what might have happened and why that 1-worst, particularly so 
-given the 0 threshold for that attribute and that it's an old-age 
-indicator rather than a fail indicator, but the device is neither that 
-old, nor as I said, in any other way indicating anything close to what 
-that 1-worst value for just that single attribute implies.
+This would include the change data itself as well, and I'm not sure if 
+the format once the actual binary level changes themselves are removed is 
+practically consumable by humans or not, but it occurs to me that this is 
+precisely the information that btrfs send -p provides.  If you can strip 
+the changes themselves out and what's left is either human readable or 
+can be processed to human readable, then it should be exactly what you're 
+after, the changed blocks, for data and metadata both.
 
 -- 
 Duncan - List replies preferred.   No HTML msgs.

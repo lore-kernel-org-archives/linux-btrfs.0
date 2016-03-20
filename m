@@ -1,110 +1,118 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.20]:62351 "EHLO mout.gmx.net"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753168AbcCTJS3 convert rfc822-to-8bit (ORCPT
+Received: from mondschein.lichtvoll.de ([194.150.191.11]:57842 "EHLO
+	mail.lichtvoll.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754117AbcCTLYS convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 20 Mar 2016 05:18:29 -0400
+	Sun, 20 Mar 2016 07:24:18 -0400
+Received: from merkaba.localnet (ppp-93-104-49-192.dynamic.mnet-online.de [93.104.49.192])
+	(using TLSv1 with cipher ECDHE-RSA-AES256-SHA (256/256 bits))
+	(No client certificate requested)
+	by mail.lichtvoll.de (Postfix) with ESMTPSA id 870D310F
+	for <linux-btrfs@vger.kernel.org>; Sun, 20 Mar 2016 12:24:15 +0100 (CET)
+From: Martin Steigerwald <martin@lichtvoll.de>
+To: BTRFS <linux-btrfs@vger.kernel.org>
+Subject: kworker threads may be working saner now instead of using 100% of a CPU core for minutes (Re: Still not production ready)
+Date: Sun, 20 Mar 2016 12:24:14 +0100
+Message-ID: <2314143.TOm3LuQPV3@merkaba>
+In-Reply-To: <8336788.myI8ELqtIK@merkaba>
+References: <8336788.myI8ELqtIK@merkaba>
 MIME-Version: 1.0
-Message-ID: <trinity-864ec27a-d0e1-4c15-a29b-6eb23d63f8f5-1458465506167@3capp-gmx-bs14>
-From: "Patrick Tschackert" <Killing-Time@gmx.de>
-To: lists@colorremedies.com
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: unable to mount btrfs partition, please help :(
-Content-Type: text/plain; charset=UTF-8
-Date: Sun, 20 Mar 2016 10:18:26 +0100
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Thanks for answering again!
-So, first of all I installed a newer kernel from the backports as per Nicholas D Steeves suggestion:
+On Sonntag, 13. Dezember 2015 23:35:08 CET Martin Steigerwald wrote:
+> Hi!
+> 
+> For me it is still not production ready. Again I ran into:
+> 
+> btrfs kworker thread uses up 100% of a Sandybridge core for minutes on
+> random write into big file
+> https://bugzilla.kernel.org/show_bug.cgi?id=90401
 
-$ apt-get install -t jessie-backports linux-image-4.3.0-0.bpo.1-amd64
+I think I saw this up to kernel 4.3. I think I didn´t see this with 4.4 
+anymore and definately not with 4.5.
 
-After rebooting:
-$ uname -a
-Linux vmhost 4.3.0-0.bpo.1-amd64 #1 SMP Debian 4.3.5-1~bpo8+1 (2016-02-23) x86_64 GNU/Linux
+So it may be fixed.
 
-But the problem with mounting the filesystem persists :(
+Did anyone else see kworker threads using 100% of a core for minutes with 4.4 
+/ 4.5?
 
-> OK I went back and read this again: host is managing the md raid5, the
-> guest is writing Btrfs to an "encrypted container" but what is that? A
-> LUKS encrypted LVM LV that's directly used by Virtual Box as a raw
-> device? It's hard to say what layer broke this. But the VM crashing is
-> in effect like a power failure, and it's an open question (for me) how
-> this setup deals with barriers. A shutdown -r now should still cleanly
-> stop the array so I wouldn't expect there to be an array problem but
-> then you also report a device failure. Bad luck.
- 
-The host is managing an md raid 6 (/dev/md0), and I had an encrypted volume (via cryptsetup) on top of that device.
-The host mounted the btrfs filesystem contained in that volume, and the VM wrote to the filesystem as well using a virtualbox shared folder.
-The vm then crashed, but I shut down the host with "shutdown -r now".
-After the reboot, one disk of the array was no longer present, but I managed to rebuild/restore using a spare disk. The RAID now seems to be healthy.
 
-> I think in retrospect the safe way to do these kinds of Virtual Box
-> updates, which require kernel module updates, would have been to
-> shutdown the VM and stop the array. *shrug*
- 
-After this, I think I'll just do away with the virtual machine on this host, as the app contained in that vm can also run on the host.
-I tried to be fancy, and it seems to needlessly complicate things.
- 
-> These drives are technically not suitable for use in any kind of raid
-> except linear and raid 0 (which have no redundancy so they aren't
-> really raid). You'd have to dig up drive specs, assuming they're
-> published, to see what the recovery times are for the drive models
-> when a bad sector is encountered. But it's typical for such drives to
-> exceed 30 seconds for recovery, with some drives reported to have 2+
-> minute recoveries. To properly configure them, you'll have to increase
-> the kernel's SCSI comment timer to at least 120 to make sure there's
-> sufficient time to wait for the drive to explicitly spit back a read
-> error to the kernel. Otherwise, the kernel gives up after 30 seconds,
-> and resets the link to the drive, and any possibility of fixing up the
-> bad sector via the raid read error fixup mechanism is thwarted. It's
-> really common, the linux-raid@ list has many of these kinds of threads
-> with this misconfiguration as the source problem.
- 
-> For the first listing of drives yes. And 120 second delays might be
-> too long for your use case, but that's the reality.
+For me this would be a big step forward. And yes, I am aware some people have 
+new and other issues, but well for me a non working balance – it may also be 
+broken here with "no space left on device", it errored out often enough here – 
+is still something different than having to switch off the device hard unless 
+you want to give it a ton of time to eventually shutdown which is not an 
+option if you just want to work with your system.
 
-> You should change the command timer for the drives that do not support
-> configurable SCT ERC. And then do a scrub check. And then check both
-> cat /sys/block/mdX/md/mismatch_cnt, which ideally should be 0, and
-> also check kernel messages for libata read errors.
 
-So I did this:
- 
-$ cat /sys/block/md0/md/mismatch_cnt
-0
+In any case many thanks to all the developers working on improving BTRFS, and 
+especially those who bring in bug fixes. I do think BTRFS still needs more 
+stability work when I read through the recent mailing list threads.
 
-$ for i in /sys/class/scsi_generic/*/device/timeout; do echo 120 > "$i"; done
-(I know this isn't persistent across reboots...)
+Thanks,
+Martin
 
-$ echo check > /sys/block/md0/md/sync_action
+> No matter whether SLES 12 uses it as default for root, no matter whether
+> Fujitsu and Facebook use it: I will not let this onto any customer machine
+> without lots and lots of underprovisioning and rigorous free space
+> monitoring. Actually I will renew my recommendations in my trainings to be
+> careful with BTRFS.
+> 
+> From my experience the monitoring would check for:
+> 
+> merkaba:~> btrfs fi show /home
+> Label: 'home'  uuid: […]
+>         Total devices 2 FS bytes used 156.31GiB
+>         devid    1 size 170.00GiB used 164.13GiB path /dev/mapper/msata-home
+> devid    2 size 170.00GiB used 164.13GiB path /dev/mapper/sata-home
+> 
+> If "used" is same as "size" then make big fat alarm. It is not sufficient
+> for it to happen. It can run for quite some time just fine without any
+> issues, but I never have seen a kworker thread using 100% of one core for
+> extended period of time blocking everything else on the fs without this
+> condition being met.
+> 
+> 
+> In addition to that last time I tried it aborts scrub any of my BTRFS
+> filesstems. Reported in another thread here that got completely ignored so
+> far. I think I could go back to 4.2 kernel to make this work.
+> 
+> 
+> I am not going to bother to go into more detail on any on this, as I get the
+> impression that my bug reports and feedback get ignored. So I spare myself
+> the time to do this work for now.
+> 
+> 
+> Only thing I wonder now whether this all could be cause my /home is already
+> more than one and a half year old. Maybe newly created filesystems are
+> created in a way that prevents these issues? But it already has a nice
+> global reserve:
+> 
+> merkaba:~> btrfs fi df /
+> Data, RAID1: total=27.98GiB, used=24.07GiB
+> System, RAID1: total=19.00MiB, used=16.00KiB
+> Metadata, RAID1: total=2.00GiB, used=536.80MiB
+> GlobalReserve, single: total=192.00MiB, used=0.00B
+> 
+> 
+> Actually when I see that this free space thing is still not fixed for good I
+> wonder whether it is fixable at all. Is this an inherent issue of BTRFS or
+> more generally COW filesystem design?
+> 
+> I think it got somewhat better. It took much longer to come into that state
+> again than last time, but still, blocking like this is *no* option for a
+> *production ready* filesystem.
+> 
+> 
+> 
+> I am seriously consider to switch to XFS for my production laptop again.
+> Cause I never saw any of these free space issues with any of the XFS or
+> Ext4 filesystems I used in the last 10 years.
+> 
+> Thanks,
 
-$ cat /proc/mdstat
-Personalities : [raid6] [raid5] [raid4] 
-md0 : active raid6 sda[0] sdf[12](S) sdg[11](S) sdj[9] sdh[7] sdi[6] sdk[10] sde[4] sdd[3] sdc[2] sdb[1]
-      20510948416 blocks super 1.2 level 6, 64k chunk, algorithm 2 [9/9] [UUUUUUUUU]
-      [>....................]  check =  1.0% (30812476/2930135488) finish=340.6min speed=141864K/sec
-      
-unused devices: <none>
 
-So the raid is currently doing a scrub, which will take a few hours.
-
-> Hmm not good. See this similar thread.
-> http://www.spinics.net/lists/linux-btrfs/msg51711.html
-
-> backups in all superblocks have the same chunk_root, no alternative
-> chunk root to try.
-
-> So at the moment I think it's worth trying a newer kernel version and
-> mounting normally; then mounting with -o recovery; then - recovery,ro.
-
-> If that doesn't work, you're best off waiting for a developer to give
-> advice on the next step;  'btrfs rescue chunk-recover' seems most
-> appropriate but again someone else a while back had success with
-> zero-log, but it's hard to say if the two cases are really similar and
-> maybe that person just got lucky. Both of those change the file system
-> in irreversible ways, that's why I suggest waiting or asking on IRC.
-
-Thanks again for taking the time to answer. I'll wait while my RAID is doing the scrub, maybe a dev will answer (like you said).
-The friendly people on IRC couldn't help and sent me here.
+-- 
+Martin

@@ -1,58 +1,67 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from c.mail.sonic.net ([64.142.111.80]:53047 "EHLO c.mail.sonic.net"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751177AbcCTQ6O (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 20 Mar 2016 12:58:14 -0400
-Received: from mail-vk0-f53.google.com (mail-vk0-f53.google.com [209.85.213.53])
-	(authenticated bits=0)
-	by c.mail.sonic.net (8.15.1/8.15.1) with ESMTPSA id u2KGwBs8026785
-	(version=TLSv1.2 cipher=DHE-RSA-AES128-SHA bits=128 verify=NOT)
-	for <linux-btrfs@vger.kernel.org>; Sun, 20 Mar 2016 09:58:12 -0700
-Received: by mail-vk0-f53.google.com with SMTP id q138so100537786vkb.3
-        for <linux-btrfs@vger.kernel.org>; Sun, 20 Mar 2016 09:58:12 -0700 (PDT)
+Received: from mail-ig0-f179.google.com ([209.85.213.179]:36614 "EHLO
+	mail-ig0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750739AbcCTTNS (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 20 Mar 2016 15:13:18 -0400
+Received: by mail-ig0-f179.google.com with SMTP id nk17so57578760igb.1
+        for <linux-btrfs@vger.kernel.org>; Sun, 20 Mar 2016 12:13:18 -0700 (PDT)
 MIME-Version: 1.0
-Date: Sun, 20 Mar 2016 09:58:11 -0700
-Message-ID: <CAPF83mscZt5SZMbweptCc_s5Fe6w9T=3Via0UZsoCiL-=ApbDg@mail.gmail.com>
-Subject: WARNING: quotas may be inconsistent, rescan needed
-From: Suman Chakravartula <suman@rockstor.com>
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
+In-Reply-To: <trinity-864ec27a-d0e1-4c15-a29b-6eb23d63f8f5-1458465506167@3capp-gmx-bs14>
+References: <trinity-864ec27a-d0e1-4c15-a29b-6eb23d63f8f5-1458465506167@3capp-gmx-bs14>
+Date: Sun, 20 Mar 2016 13:13:17 -0600
+Message-ID: <CAJCQCtToig8o1rLzBX2Tva2V6C6aam63s2DmcHYyF_r69yZ3kA@mail.gmail.com>
+Subject: Re: unable to mount btrfs partition, please help :(
+From: Chris Murphy <lists@colorremedies.com>
+To: Patrick Tschackert <Killing-Time@gmx.de>
+Cc: Chris Murphy <lists@colorremedies.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello my dear upstream heroes,
+On Sun, Mar 20, 2016 at 3:18 AM, Patrick Tschackert <Killing-Time@gmx.de> wrote:
+> Thanks for answering again!
+> So, first of all I installed a newer kernel from the backports as per Nicholas D Steeves suggestion:
+>
+> $ apt-get install -t jessie-backports linux-image-4.3.0-0.bpo.1-amd64
+>
+> After rebooting:
+> $ uname -a
+> Linux vmhost 4.3.0-0.bpo.1-amd64 #1 SMP Debian 4.3.5-1~bpo8+1 (2016-02-23) x86_64 GNU/Linux
+>
+> But the problem with mounting the filesystem persists :(
+>
+>> OK I went back and read this again: host is managing the md raid5, the
+>> guest is writing Btrfs to an "encrypted container" but what is that? A
+>> LUKS encrypted LVM LV that's directly used by Virtual Box as a raw
+>> device? It's hard to say what layer broke this. But the VM crashing is
+>> in effect like a power failure, and it's an open question (for me) how
+>> this setup deals with barriers. A shutdown -r now should still cleanly
+>> stop the array so I wouldn't expect there to be an array problem but
+>> then you also report a device failure. Bad luck.
+>
+> The host is managing an md raid 6 (/dev/md0), and I had an encrypted volume (via cryptsetup) on top of that device.
+> The host mounted the btrfs filesystem contained in that volume, and the VM wrote to the filesystem as well using a virtualbox shared folder.
 
-We are using progs v4.4.1 and kernel 4.4.5 in Rockstor and sometimes
-this warning is displayed while assigning a qgroup. Here's a sample
-output.
+OK well to me the VM doesn't seem related off hand. Ultimately its
+only the host writing to the filesystem, even for the shared folder.
+The guest VM has no direct access to do Btrfs writes, it's something
+like a network-like shared folder.
 
-/sbin/btrfs qgroup assign 0/408 2015/6 /mnt2/<btrfs_pool>
-WARNING: quotas may be inconsistent, rescan needed
 
-2015/6 is the qgroup of a subvolume(/mnt2/<btrfs_name>/<subvol_name>)
-created much earlier.
+> After this, I think I'll just do away with the virtual machine on this host, as the app contained in that vm can also run on the host.
+> I tried to be fancy, and it seems to needlessly complicate things.
 
-This started happening since progs v4.2. There are three scenarios I've tested.
+virt-manager or gnome-boxes work better, although you lose shared
+folder, you'll have to come up with a work around, like using NFS.
 
-1. Just ignore the warning and check if the qgroup assignment
-succeeded with a "qgroup show" command. In most cases, the assignment
-shows up immediately. But it could take a bit in some cases. Is there
-any self/auto consistency check that is triggered by default? If so
-can someone explain how that works?
 
-2. Add a --rescan option to to the "qgroup assign" command above to
-auto schedule a rescan as per the man page. Is this safe to do? What
-are pros and cons?
+> $ for i in /sys/class/scsi_generic/*/device/timeout; do echo 120 > "$i"; done
+> (I know this isn't persistent across reboots...)
 
-3. Execute a "quata rescan" separately if the warning is displayed. Is
-this any different from (2)?
+Correct.
 
-Thanks for reading!
 
 -- 
-Suman Chakravartula
-Founder @ Rockstor
-
-http://rockstor.com
-http://rockstor.com/blog
-http://forum.rockstor.com
+Chris Murphy

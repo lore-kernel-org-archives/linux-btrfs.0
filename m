@@ -1,66 +1,58 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wm0-f49.google.com ([74.125.82.49]:38408 "EHLO
-	mail-wm0-f49.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751919AbcCTQw0 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 20 Mar 2016 12:52:26 -0400
-Received: by mail-wm0-f49.google.com with SMTP id l68so96084061wml.1
-        for <linux-btrfs@vger.kernel.org>; Sun, 20 Mar 2016 09:52:26 -0700 (PDT)
+Received: from c.mail.sonic.net ([64.142.111.80]:53047 "EHLO c.mail.sonic.net"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751177AbcCTQ6O (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 20 Mar 2016 12:58:14 -0400
+Received: from mail-vk0-f53.google.com (mail-vk0-f53.google.com [209.85.213.53])
+	(authenticated bits=0)
+	by c.mail.sonic.net (8.15.1/8.15.1) with ESMTPSA id u2KGwBs8026785
+	(version=TLSv1.2 cipher=DHE-RSA-AES128-SHA bits=128 verify=NOT)
+	for <linux-btrfs@vger.kernel.org>; Sun, 20 Mar 2016 09:58:12 -0700
+Received: by mail-vk0-f53.google.com with SMTP id q138so100537786vkb.3
+        for <linux-btrfs@vger.kernel.org>; Sun, 20 Mar 2016 09:58:12 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <CAJ5QZU0kDKb3HENM9qZa1ebnJRVXwtwOJ_dR=jgYvUOvMTn5jQ@mail.gmail.com>
-References: <CAC7HdqknOJAK+FcE53xO38G__gc42GR0GQW+chbGbDxXBt7HFA@mail.gmail.com>
- <CAJ5QZU0kDKb3HENM9qZa1ebnJRVXwtwOJ_dR=jgYvUOvMTn5jQ@mail.gmail.com>
-From: Ryan Erato <rerato@gmail.com>
-Date: Sun, 20 Mar 2016 09:52:05 -0700
-Message-ID: <CAC7HdqmQj_sPxZmEAE3nRcAQWOqg+aySQd06=cJNX=EOgjEhjA@mail.gmail.com>
-Subject: Re: moving btrfs subvolumes to new disk
-To: Phantom Guy <no.real.person@gmail.com>
-Cc: linux-btrfs@vger.kernel.org
+Date: Sun, 20 Mar 2016 09:58:11 -0700
+Message-ID: <CAPF83mscZt5SZMbweptCc_s5Fe6w9T=3Via0UZsoCiL-=ApbDg@mail.gmail.com>
+Subject: WARNING: quotas may be inconsistent, rescan needed
+From: Suman Chakravartula <suman@rockstor.com>
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I do plan on physically replacing the current drive with the new one
-and my fstab/boot comands use device. I never could get UUID or labels
-to work, but that's another project.
+Hello my dear upstream heroes,
 
-However, this still leaves me unable to take advantage of btrfs
-features for implementing an incremental backup solution to another
-disk.
-Ryan Erato
-C. 414.630.5295
-rerato@gmail.com
-http://www.linkedin.com/in/ryanerato
+We are using progs v4.4.1 and kernel 4.4.5 in Rockstor and sometimes
+this warning is displayed while assigning a qgroup. Here's a sample
+output.
 
+/sbin/btrfs qgroup assign 0/408 2015/6 /mnt2/<btrfs_pool>
+WARNING: quotas may be inconsistent, rescan needed
 
-On Sun, Mar 20, 2016 at 1:55 AM, Phantom Guy <no.real.person@gmail.com> wrote:
-> You tried to hard.
->
-> Build the new media If you need encryption or meets devices.
->
->
-> Then add the new media to the whole filesystem.
->
->
-> Then remove the old media from the filesystem.
->
->
-> # btrfs device add /dev/sdb1 /mountpoint
->
-> # btrfs device del /dev/sda1 /mountpoint
->
-> Then sync the filesystem and wait.
->
-> Once the old device ID no longer part of the filesystem it's done.
->
-> When the sync finishes, the /dev/sda1 device is nill.
->
-> If you've designed your fstsb and boot commands correctly the label or UUID
-> has migrated so as long as you've prepped the disk with grub of whatever
-> then you can move the disks with impunity.
->
-> You don't even need to be in any sort of maintenance mode.
->
->
->>
->
+2015/6 is the qgroup of a subvolume(/mnt2/<btrfs_name>/<subvol_name>)
+created much earlier.
+
+This started happening since progs v4.2. There are three scenarios I've tested.
+
+1. Just ignore the warning and check if the qgroup assignment
+succeeded with a "qgroup show" command. In most cases, the assignment
+shows up immediately. But it could take a bit in some cases. Is there
+any self/auto consistency check that is triggered by default? If so
+can someone explain how that works?
+
+2. Add a --rescan option to to the "qgroup assign" command above to
+auto schedule a rescan as per the man page. Is this safe to do? What
+are pros and cons?
+
+3. Execute a "quata rescan" separately if the warning is displayed. Is
+this any different from (2)?
+
+Thanks for reading!
+
+-- 
+Suman Chakravartula
+Founder @ Rockstor
+
+http://rockstor.com
+http://rockstor.com/blog
+http://forum.rockstor.com

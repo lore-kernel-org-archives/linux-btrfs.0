@@ -1,112 +1,67 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:20274 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752124AbcCUHVW (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:39021 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752593AbcCUHV0 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 21 Mar 2016 03:21:22 -0400
+	Mon, 21 Mar 2016 03:21:26 -0400
 From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
 Cc: dsterba@suse.cz
-Subject: [PATCH 2/6] btrfs-progs: move test_issubvolume() to utils.c
-Date: Mon, 21 Mar 2016 15:21:01 +0800
-Message-Id: <1458544865-16467-3-git-send-email-anand.jain@oracle.com>
+Subject: [PATCH 3/6] btrfs-progs: remove duplicate function __is_subvol()
+Date: Mon, 21 Mar 2016 15:21:02 +0800
+Message-Id: <1458544865-16467-4-git-send-email-anand.jain@oracle.com>
 In-Reply-To: <1458544865-16467-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 References: <1458544865-16467-1-git-send-email-anand.jain@oracle.com>
 
+The function test_issubvolume() provides the same check, and
+has better logic.
+
 Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
- cmds-subvolume.c | 27 ---------------------------
- utils.c          | 27 +++++++++++++++++++++++++++
- utils.h          |  1 +
- 3 files changed, 28 insertions(+), 27 deletions(-)
+ utils.c | 21 +--------------------
+ 1 file changed, 1 insertion(+), 20 deletions(-)
 
-diff --git a/cmds-subvolume.c b/cmds-subvolume.c
-index 3953d7c060a2..f62ab9584ce7 100644
---- a/cmds-subvolume.c
-+++ b/cmds-subvolume.c
-@@ -224,33 +224,6 @@ out:
- 	return retval;
- }
- 
--/*
-- * Test if path is a subvolume
-- * Returns:
-- *   0 - path exists but it is not a subvolume
-- *   1 - path exists and it is  a subvolume
-- * < 0 - error
-- */
--int test_issubvolume(const char *path)
--{
--	struct stat	st;
--	struct statfs stfs;
--	int		res;
--
--	res = stat(path, &st);
--	if (res < 0)
--		return -errno;
--
--	if (st.st_ino != BTRFS_FIRST_FREE_OBJECTID || !S_ISDIR(st.st_mode))
--		return 0;
--
--	res = statfs(path, &stfs);
--	if (res < 0)
--		return -errno;
--
--	return (int)stfs.f_type == BTRFS_SUPER_MAGIC;
--}
--
- static int wait_for_commit(int fd)
- {
- 	int ret;
 diff --git a/utils.c b/utils.c
-index fb549ee923c7..046ddf8eef19 100644
+index 046ddf8eef19..110a4badb764 100644
 --- a/utils.c
 +++ b/utils.c
-@@ -3148,3 +3148,30 @@ int test_issubvolname(const char *name)
- 	return name[0] != '\0' && !strchr(name, '/') &&
- 		strcmp(name, ".") && strcmp(name, "..");
+@@ -1864,25 +1864,6 @@ int set_label(const char *btrfs_dev, const char *label)
  }
-+
-+/*
-+ * Test if path is a subvolume
-+ * Returns:
-+ *   0 - path exists but it is not a subvolume
-+ *   1 - path exists and it is  a subvolume
-+ * < 0 - error
-+ */
-+int test_issubvolume(const char *path)
-+{
-+	struct stat	st;
-+	struct statfs stfs;
-+	int		res;
-+
-+	res = stat(path, &st);
-+	if (res < 0)
-+		return -errno;
-+
-+	if (st.st_ino != BTRFS_FIRST_FREE_OBJECTID || !S_ISDIR(st.st_mode))
-+		return 0;
-+
-+	res = statfs(path, &stfs);
-+	if (res < 0)
-+		return -errno;
-+
-+	return (int)stfs.f_type == BTRFS_SUPER_MAGIC;
-+}
-diff --git a/utils.h b/utils.h
-index a4e55bf58914..32bb02005719 100644
---- a/utils.h
-+++ b/utils.h
-@@ -194,6 +194,7 @@ const char* group_profile_str(u64 flags);
- 
- int test_minimum_size(const char *file, u32 leafsize);
- int test_issubvolname(const char *name);
-+int test_issubvolume(const char *path);
- int test_isdir(const char *path);
  
  /*
+- * Unsafe subvolume check.
+- *
+- * This only checks ino == BTRFS_FIRST_FREE_OBJECTID, even it is not in a
+- * btrfs mount point.
+- * Must use together with other reliable method like btrfs ioctl.
+- */
+-static int __is_subvol(const char *path)
+-{
+-	struct stat st;
+-	int ret;
+-
+-	ret = lstat(path, &st);
+-	if (ret < 0)
+-		return ret;
+-
+-	return st.st_ino == BTRFS_FIRST_FREE_OBJECTID;
+-}
+-
+-/*
+  * A not-so-good version fls64. No fascinating optimization since
+  * no one except parse_size use it
+  */
+@@ -2002,7 +1983,7 @@ u64 parse_qgroupid(const char *p)
+ 
+ path:
+ 	/* Path format like subv at 'my_subvol' is the fallback case */
+-	ret = __is_subvol(p);
++	ret = test_issubvolume(p);
+ 	if (ret < 0 || !ret)
+ 		goto err;
+ 	fd = open(p, O_RDONLY);
 -- 
 2.7.0
 

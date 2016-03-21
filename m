@@ -1,144 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.136]:53184 "EHLO mail.kernel.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1757314AbcCURud (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 21 Mar 2016 13:50:33 -0400
-From: fdmanana@kernel.org
-To: fstests@vger.kernel.org
-Cc: linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH v2] fstests: test fsync on overlayfs merged directory
-Date: Mon, 21 Mar 2016 17:50:25 +0000
-Message-Id: <1458582625-22039-1-git-send-email-fdmanana@kernel.org>
-In-Reply-To: <1458581952-18638-1-git-send-email-fdmanana@kernel.org>
-References: <1458581952-18638-1-git-send-email-fdmanana@kernel.org>
+Received: from mail-qg0-f41.google.com ([209.85.192.41]:36559 "EHLO
+	mail-qg0-f41.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1757542AbcCURxj (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 21 Mar 2016 13:53:39 -0400
+Received: by mail-qg0-f41.google.com with SMTP id u110so158269732qge.3
+        for <linux-btrfs@vger.kernel.org>; Mon, 21 Mar 2016 10:53:39 -0700 (PDT)
+Subject: Re: [PATCH] btrfs-progs: fix fi du so it works in more cases
+To: dsterba@suse.cz, linux-btrfs@vger.kernel.org
+References: <1458562991-6882-1-git-send-email-ahferroin7@gmail.com>
+ <20160321174039.GB8095@twin.jikos.cz>
+From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Message-ID: <56F03512.4050708@gmail.com>
+Date: Mon, 21 Mar 2016 13:53:22 -0400
+MIME-Version: 1.0
+In-Reply-To: <20160321174039.GB8095@twin.jikos.cz>
+Content-Type: text/plain; charset=windows-1252; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Filipe Manana <fdmanana@suse.com>
-
-Test that calling fsync against a file using the merged directory does
-not result in a crash nor fails unexpectedly.
-
-This is motivated by a change in overlayfs that resulted in a crash
-(invalid memory access) when the lower or upper directory belonged to
-a btrfs file system. The overlayfs change came in commit 4bacc9c9234
-(overlayfs: Make f_path always point to the overlay and f_inode to the
-underlay). At the moment there are two patches in the linux-fsdevel
-and linux-btrfs mailing lists to fix this problem:
-
-  * vfs: add file_dentry()
-  * Btrfs: fix crash/invalid memory access on fsync when using overlayfs
-
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
-
-V2: Removed leftover comment from debugging.
-
- tests/overlay/002     | 74 +++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/overlay/002.out |  3 +++
- tests/overlay/group   |  1 +
- 3 files changed, 78 insertions(+)
- create mode 100755 tests/overlay/002
- create mode 100644 tests/overlay/002.out
-
-diff --git a/tests/overlay/002 b/tests/overlay/002
-new file mode 100755
-index 0000000..e5aa610
---- /dev/null
-+++ b/tests/overlay/002
-@@ -0,0 +1,74 @@
-+#! /bin/bash
-+# FS QA Test 002
-+#
-+# Test that calling fsync against a file using the merged directory does not
-+# result in a crash nor fails unexpectedly.
-+#
-+# This is motivated by a change in overlayfs that resulted in a crash (invalid
-+# memory access) when the lower or upper directory belonged to a btrfs file
-+# system.
-+#
-+#-----------------------------------------------------------------------
-+#
-+# Copyright (C) 2016 SUSE Linux Products GmbH. All Rights Reserved.
-+# Author: Filipe Manana <fdmanana@suse.com>
-+#
-+# This program is free software; you can redistribute it and/or
-+# modify it under the terms of the GNU General Public License as
-+# published by the Free Software Foundation.
-+#
-+# This program is distributed in the hope that it would be useful,
-+# but WITHOUT ANY WARRANTY; without even the implied warranty of
-+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+# GNU General Public License for more details.
-+#
-+# You should have received a copy of the GNU General Public License
-+# along with this program; if not, write the Free Software Foundation,
-+# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-+#-----------------------------------------------------------------------
-+#
-+
-+seq=`basename $0`
-+seqres=$RESULT_DIR/$seq
-+echo "QA output created by $seq"
-+
-+here=`pwd`
-+tmp=/tmp/$$
-+status=1	# failure is the default!
-+trap "_cleanup; exit \$status" 0 1 2 3 15
-+
-+_cleanup()
-+{
-+	cd /
-+	rm -f $tmp.*
-+}
-+
-+# get standard environment, filters and checks
-+. ./common/rc
-+. ./common/filter
-+
-+# remove previous $seqres.full before test
-+rm -f $seqres.full
-+
-+# real QA test starts here
-+_supported_fs generic
-+_supported_os Linux
-+_require_scratch
-+
-+# Remove all files from previous tests
-+_scratch_mkfs
-+
-+# Create our test file.
-+lowerdir=$SCRATCH_DEV/$OVERLAY_LOWER_DIR
-+mkdir -p $lowerdir
-+touch $lowerdir/foobar
-+
-+_scratch_mount
-+
-+# Write some data to our file and fsync it, using the merged directory path.
-+# This should work and not result in a crash.
-+$XFS_IO_PROG -c "pwrite 0 64k" -c "fsync" $SCRATCH_MNT/foobar | _filter_xfs_io
-+
-+# success, all done
-+status=0
-+exit
-diff --git a/tests/overlay/002.out b/tests/overlay/002.out
-new file mode 100644
-index 0000000..666e61e
---- /dev/null
-+++ b/tests/overlay/002.out
-@@ -0,0 +1,3 @@
-+QA output created by 002
-+wrote 65536/65536 bytes at offset 0
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-diff --git a/tests/overlay/group b/tests/overlay/group
-index 5056c3b..84d164e 100644
---- a/tests/overlay/group
-+++ b/tests/overlay/group
-@@ -4,3 +4,4 @@
- # - comment line before each group is "new" description
- #
- 001 auto quick copyup
-+002 auto quick metadata
--- 
-2.7.0.rc3
-
+On 2016-03-21 13:40, David Sterba wrote:
+> On Mon, Mar 21, 2016 at 08:23:11AM -0400, Austin S. Hemmelgarn wrote:
+>> Currently, btrfs fi du uses open_file_or_dir(), which tries to open
+>> it's argument with o_RDWR.  Because of POSIX semantics, this fails for
+>> non-root users when the file is read-only or is an executable that
+>> is being run currently, or for all users (including root) when the
+>> filesystem is read-only.  THis results in a somewhat confusing 'Unknown
+>> error -1' message when trying to check such files.  Switch to using
+>> open_file_or_dir3() with O_RDONLY passed in the flags, as this avoids
+>> the limitations listed above, and we have no need to write to the files
+>> anyway (and thus shouldn't be opening them writable).
+>>
+>> Signed-off-by: Austin S. Hemmelgarn <ahferroin7@gmail.com>
+>
+> Applied, thanks.
+>
+>> ---
+>> Build and runtime tested on x86-64 with glibc.
+>>
+>> I intend to take the time at some point this week to audit all users of
+>> open_file_or_dir() and similarly change any that don't need to write
+>> to what they're opening, possibly adding a helper function to do a
+>> read-only open.
+>
+> Thanks. I think using open_file_or_dir3(path, &dirstream, O_RDONLY) is
+> ok, no need for a helper.
+>
+Agreed, especially since this appears to be the only place that used 
+open_file_or_dir() that doesn't potentially need write access.

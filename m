@@ -1,119 +1,258 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:47600 "EHLO mx1.redhat.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752124AbcCUHYW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 21 Mar 2016 03:24:22 -0400
-From: Eryu Guan <eguan@redhat.com>
+Received: from e28smtp04.in.ibm.com ([125.16.236.4]:51154 "EHLO
+	e28smtp04.in.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751623AbcCUHkY (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 21 Mar 2016 03:40:24 -0400
+Received: from localhost
+	by e28smtp04.in.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
+	for <linux-btrfs@vger.kernel.org> from <chandan@linux.vnet.ibm.com>;
+	Mon, 21 Mar 2016 13:10:20 +0530
+From: Chandan Rajendra <chandan@linux.vnet.ibm.com>
 To: fstests@vger.kernel.org
-Cc: linux-btrfs@vger.kernel.org, Eryu Guan <eguan@redhat.com>
-Subject: [PATCH] fstests: _fail the tests if _scratch_mount failed to avoid fully filling root fs
-Date: Mon, 21 Mar 2016 15:23:41 +0800
-Message-Id: <1458545021-23285-1-git-send-email-eguan@redhat.com>
+Cc: Chandan Rajendra <chandan@linux.vnet.ibm.com>, linux-btrfs@vger.kernel.org,
+        chandan@mykolab.com, eguan@redhat.com
+Subject: [PATCH V2] _btrfs_stress_subvolume: Fix race condition by making 'subvolume stress' task to exit gracefully
+Date: Mon, 21 Mar 2016 13:09:52 +0530
+Message-Id: <1458545992-32114-1-git-send-email-chandan@linux.vnet.ibm.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-btrfs failed to mount small fs on ppc64 host with error ENOSPC, even
-creating such small fs succeeded, then generic/027 consumed all free
-space on root fs not on SCRATCH_DEV and test harness cannot create tmp
-files and continue other tests.
+The following scenario can occur when running btrfs/066,
 
-Though I think it's a btrfs bug, it's still worth preventing this
-situation from happening in the harness, as such tests usually aim to
-exercise fs on ENOSPC conditions, there's no point to continue if the
-small fs is not mounted.
+  Task A                                Task B                     Task C
 
-So I went through all tests that call _scratch_mkfs_sized && could
-consume all free space on $SCRATCH_MNT, _fail the test if _scratch_mount
-failed.
+  run_test()
+  - Execute _btrfs_stress_subvolume()
+    in a background shell.
+                                        _btrfs_stress_subvolme()
+                                          ...
+                                        - fork & exec "mount"
+                                               	      		   Mount subvolume on directory in $TEST_DIR
+  - Wait for fsstress to finish                                    do_mount()
+  - kill shell process executing                                   - btrfs_mount()
+    _btrfs_stress_subvolume()
+    i.e. Task B.
+  - Init process becomes the parent
+    of "subvolume mount" task
+    i.e. Task C.
+  - In case subvolume is mounted
+    (which is not the case),
+    unmount it.
+                                                                   - Complete mounting subvolume
 
-Signed-off-by: Eryu Guan <eguan@redhat.com>
+Hence on the completion of one iteration of run_test(), the subvolume
+created inside the filesystem on $SCRATCH_DEV continues to be mounted on
+$TEST_DIR/$seq.mnt. Subsequent invocations of run_test() (called for
+remaining Btrfs profile configs) fail during _scratch_pool_mkfs.
+
+Instead of killing the 'subvolume stress' task this commit makes
+_btrfs_stress_subvolume() to break out of the loop when a file exists
+on the filesystem. The commit also makes relevant changes to other
+users of _btrfs_stress_subvolume() i.e. btrfs/060, btrfs/065,
+btrfs/067 & btrfs/068.
+
+Suggested-by: Eryu Guan <eguan@redhat.com>
+Signed-off-by: Chandan Rajendra <chandan@linux.vnet.ibm.com>
 ---
- tests/generic/027 | 2 +-
- tests/generic/269 | 2 +-
- tests/generic/270 | 2 +-
- tests/generic/274 | 2 +-
- tests/generic/275 | 2 +-
- tests/generic/300 | 2 +-
- 6 files changed, 6 insertions(+), 6 deletions(-)
+Changelog:
 
-diff --git a/tests/generic/027 b/tests/generic/027
-index d2e59d6..e5fdbe9 100755
---- a/tests/generic/027
-+++ b/tests/generic/027
-@@ -66,7 +66,7 @@ rm -f $seqres.full
- echo "Silence is golden"
+V1->V2: Instead of named pipes, Use a file to let 'subvolume stress' task know
+that it should break from the while loop.
+
+ common/rc       | 3 ++-
+ tests/btrfs/060 | 8 ++++++--
+ tests/btrfs/065 | 8 ++++++--
+ tests/btrfs/066 | 8 ++++++--
+ tests/btrfs/067 | 8 ++++++--
+ tests/btrfs/068 | 8 ++++++--
+ 6 files changed, 32 insertions(+), 11 deletions(-)
+
+diff --git a/common/rc b/common/rc
+index 16f5a43..7d971ea 100644
+--- a/common/rc
++++ b/common/rc
+@@ -3280,9 +3280,10 @@ _btrfs_stress_subvolume()
+ 	local btrfs_mnt=$2
+ 	local subvol_name=$3
+ 	local subvol_mnt=$4
++	local stop_file=$stop_file
  
- _scratch_mkfs_sized $((256 * 1024 * 1024)) >>$seqres.full 2>&1
--_scratch_mount
-+_scratch_mount || _fail "mount failed"
+ 	mkdir -p $subvol_mnt
+-	while true; do
++	while [ ! -e $stop_file ]; do
+ 		$BTRFS_UTIL_PROG subvolume create $btrfs_mnt/$subvol_name
+ 		$MOUNT_PROG -o subvol=$subvol_name $btrfs_dev $subvol_mnt
+ 		$UMOUNT_PROG $subvol_mnt
+diff --git a/tests/btrfs/060 b/tests/btrfs/060
+index 8ef0e7f..6b6a480 100755
+--- a/tests/btrfs/060
++++ b/tests/btrfs/060
+@@ -56,6 +56,7 @@ run_test()
+ {
+ 	local mkfs_opts=$1
+ 	local subvol_mnt=$TEST_DIR/$seq.mnt
++	local stop_file=$TEST_DIR/$seq.stop.$$
  
- echo "Reserve 2M space" >>$seqres.full
- $XFS_IO_PROG -f -c "pwrite 0 2m" $SCRATCH_MNT/testfile >>$seqres.full 2>&1
-diff --git a/tests/generic/269 b/tests/generic/269
-index ee353a5..adc766f 100755
---- a/tests/generic/269
-+++ b/tests/generic/269
-@@ -68,7 +68,7 @@ _require_scratch
+ 	echo "Test $mkfs_opts" >>$seqres.full
  
- rm -f $seqres.full
- _scratch_mkfs_sized $((512 * 1024 * 1024)) >> $seqres.full 2>&1
--_scratch_mount
-+_scratch_mount || _fail "mount failed"
+@@ -77,15 +78,18 @@ run_test()
+ 	balance_pid=$!
+ 	echo "$balance_pid" >>$seqres.full
  
- if ! _workout; then
- 	_scratch_unmount 2>/dev/null
-diff --git a/tests/generic/270 b/tests/generic/270
-index e6874c9..b0164be 100755
---- a/tests/generic/270
-+++ b/tests/generic/270
-@@ -82,7 +82,7 @@ _require_scratch
++	# make sure the stop sign is not there
++	rm -f $stop_file
+ 	echo -n "Start subvolume worker: " >>$seqres.full
+-	_btrfs_stress_subvolume $SCRATCH_DEV $SCRATCH_MNT subvol_$$ $subvol_mnt >/dev/null 2>&1 &
++	_btrfs_stress_subvolume $SCRATCH_DEV $SCRATCH_MNT subvol_$$ $subvol_mnt $stop_file >/dev/null 2>&1 &
+ 	subvol_pid=$!
+ 	echo "$subvol_pid" >>$seqres.full
  
- rm -f $seqres.full
- _scratch_mkfs_sized $((512 * 1024 * 1024)) >> $seqres.full 2>&1
--_scratch_mount "-o usrquota,grpquota"
-+_scratch_mount "-o usrquota,grpquota" || _fail "mount failed"
- chmod 777 $SCRATCH_MNT
- quotacheck -u -g $SCRATCH_MNT 2>/dev/null
- quotaon -u -g $SCRATCH_MNT 2>/dev/null
-diff --git a/tests/generic/274 b/tests/generic/274
-index 61ab220..7feca5c 100755
---- a/tests/generic/274
-+++ b/tests/generic/274
-@@ -58,7 +58,7 @@ rm -f $seqres.full
+ 	echo "Wait for fsstress to exit and kill all background workers" >>$seqres.full
+ 	wait $fsstress_pid
  
- _scratch_unmount 2>/dev/null
- _scratch_mkfs_sized $((2 * 1024 * 1024 * 1024)) >>$seqres.full 2>&1
--_scratch_mount
-+_scratch_mount || _fail "mount failed"
+-	kill $balance_pid $subvol_pid
++	touch $stop_file
++	kill $balance_pid
+ 	wait
+ 	# wait for the balance operation to finish
+ 	while ps aux | grep "balance start" | grep -qv grep; do
+diff --git a/tests/btrfs/065 b/tests/btrfs/065
+index 7d8249b..a4afe73 100755
+--- a/tests/btrfs/065
++++ b/tests/btrfs/065
+@@ -58,6 +58,7 @@ run_test()
+ 	local mkfs_opts=$1
+ 	local saved_scratch_dev_pool=$SCRATCH_DEV_POOL
+ 	local subvol_mnt=$TEST_DIR/$seq.mnt
++	local stop_file=$TEST_DIR/$seq.stop.$$
  
- # Create a 4k file and Allocate 4M past EOF on that file
- $XFS_IO_PROG -f -c "pwrite 0 4k" -c "falloc -k 4k 4m" $SCRATCH_MNT/test \
-diff --git a/tests/generic/275 b/tests/generic/275
-index 955c4ac..3e5940a 100755
---- a/tests/generic/275
-+++ b/tests/generic/275
-@@ -55,7 +55,7 @@ rm -f $seqres.full
+ 	echo "Test $mkfs_opts" >>$seqres.full
  
- _scratch_unmount 2>/dev/null
- _scratch_mkfs_sized $((2 * 1024 * 1024 * 1024)) >>$seqres.full 2>&1
--_scratch_mount
-+_scratch_mount || _fail "mount failed"
+@@ -80,8 +81,10 @@ run_test()
+ 	$FSSTRESS_PROG $args >/dev/null 2>&1 &
+ 	fsstress_pid=$!
  
- # this file will get removed to create 256k of free space after ENOSPC
- # conditions are created.
-diff --git a/tests/generic/300 b/tests/generic/300
-index c187f43..0b2463d 100755
---- a/tests/generic/300
-+++ b/tests/generic/300
-@@ -143,7 +143,7 @@ _workout()
- _require_fio $fio_config
++	# make sure the stop sign is not there
++	rm -f $stop_file
+ 	echo -n "Start subvolume worker: " >>$seqres.full
+-	_btrfs_stress_subvolume $SCRATCH_DEV $SCRATCH_MNT subvol_$$ $subvol_mnt >/dev/null 2>&1 &
++	_btrfs_stress_subvolume $SCRATCH_DEV $SCRATCH_MNT subvol_$$ $subvol_mnt $stop_file >/dev/null 2>&1 &
+ 	subvol_pid=$!
+ 	echo "$subvol_pid" >>$seqres.full
  
- _scratch_mkfs_sized $FS_SIZE >> $seqres.full 2>&1
--_scratch_mount
-+_scratch_mount || _fail "mount failed"
+@@ -93,7 +96,8 @@ run_test()
+ 	echo "Wait for fsstress to exit and kill all background workers" >>$seqres.full
+ 	wait $fsstress_pid
  
- if ! _workout; then
- 	_scratch_unmount 2>/dev/null
+-	kill $subvol_pid $replace_pid
++	touch $stop_file
++	kill $replace_pid
+ 	wait
+ 	# wait for the replace operation to finish
+ 	while ps aux | grep "replace start" | grep -qv grep; do
+diff --git a/tests/btrfs/066 b/tests/btrfs/066
+index 2d9a1d2..cf4dd0d 100755
+--- a/tests/btrfs/066
++++ b/tests/btrfs/066
+@@ -56,6 +56,7 @@ run_test()
+ {
+ 	local mkfs_opts=$1
+ 	local subvol_mnt=$TEST_DIR/$seq.mnt
++	local stop_file=$TEST_DIR/$seq.stop.$$
+ 
+ 	echo "Test $mkfs_opts" >>$seqres.full
+ 
+@@ -72,8 +73,10 @@ run_test()
+ 	$FSSTRESS_PROG $args >/dev/null 2>&1 &
+ 	fsstress_pid=$!
+ 
++	# make sure the stop sign is not there
++	rm -f $stop_file
+ 	echo -n "Start subvolume worker: " >>$seqres.full
+-	_btrfs_stress_subvolume $SCRATCH_DEV $SCRATCH_MNT subvol_$$ $subvol_mnt >/dev/null 2>&1 &
++	_btrfs_stress_subvolume $SCRATCH_DEV $SCRATCH_MNT subvol_$$ $subvol_mnt $stop_file >/dev/null 2>&1 &
+ 	subvol_pid=$!
+ 	echo "$subvol_pid" >>$seqres.full
+ 
+@@ -85,7 +88,8 @@ run_test()
+ 	echo "Wait for fsstress to exit and kill all background workers" >>$seqres.full
+ 	wait $fsstress_pid
+ 
+-	kill $subvol_pid $scrub_pid
++	touch $stop_file
++	kill $scrub_pid
+ 	wait
+ 	# wait for the scrub operation to finish
+ 	while ps aux | grep "scrub start" | grep -qv grep; do
+diff --git a/tests/btrfs/067 b/tests/btrfs/067
+index 2c1e284..b76f5ec 100755
+--- a/tests/btrfs/067
++++ b/tests/btrfs/067
+@@ -57,6 +57,7 @@ run_test()
+ 	local mkfs_opts=$1
+ 	local with_compress=$2
+ 	local subvol_mnt=$TEST_DIR/$seq.mnt
++	local stop_file=$TEST_DIR/$seq.stop.$$
+ 
+ 	echo "Test $mkfs_opts with $with_compress" >>$seqres.full
+ 
+@@ -73,8 +74,10 @@ run_test()
+ 	$FSSTRESS_PROG $args >/dev/null 2>&1 &
+ 	fsstress_pid=$!
+ 
++	# make sure the stop sign is not there
++	rm -f $stop_file
+ 	echo -n "Start subvolume worker: " >>$seqres.full
+-	_btrfs_stress_subvolume $SCRATCH_DEV $SCRATCH_MNT subvol_$$ $subvol_mnt >/dev/null 2>&1 &
++	_btrfs_stress_subvolume $SCRATCH_DEV $SCRATCH_MNT subvol_$$ $subvol_mnt $stop_file >/dev/null 2>&1 &
+ 	subvol_pid=$!
+ 	echo "$subvol_pid" >>$seqres.full
+ 
+@@ -86,7 +89,8 @@ run_test()
+ 	echo "Wait for fsstress to exit and kill all background workers" >>$seqres.full
+ 	wait $fsstress_pid
+ 
+-	kill $subvol_pid $defrag_pid
++	touch $stop_file
++	kill $defrag_pid
+ 	wait
+ 	# wait for btrfs defrag process to exit, otherwise it will block umount
+ 	while ps aux | grep "btrfs filesystem defrag" | grep -qv grep; do
+diff --git a/tests/btrfs/068 b/tests/btrfs/068
+index 3126ec2..534aee6 100755
+--- a/tests/btrfs/068
++++ b/tests/btrfs/068
+@@ -57,6 +57,7 @@ run_test()
+ {
+ 	local mkfs_opts=$1
+ 	local subvol_mnt=$TEST_DIR/$seq.mnt
++	local stop_file=$TEST_DIR/$seq.stop.$$
+ 
+ 	echo "Test $mkfs_opts with $with_compress" >>$seqres.full
+ 
+@@ -73,8 +74,10 @@ run_test()
+ 	$FSSTRESS_PROG $args >/dev/null 2>&1 &
+ 	fsstress_pid=$!
+ 
++	# make sure the stop sign is not there
++	rm -f $stop_file
+ 	echo -n "Start subvolume worker: " >>$seqres.full
+-	_btrfs_stress_subvolume $SCRATCH_DEV $SCRATCH_MNT subvol_$$ $subvol_mnt >/dev/null 2>&1 &
++	_btrfs_stress_subvolume $SCRATCH_DEV $SCRATCH_MNT subvol_$$ $subvol_mnt $stop_file >/dev/null 2>&1 &
+ 	subvol_pid=$!
+ 	echo "$subvol_pid" >>$seqres.full
+ 
+@@ -86,7 +89,8 @@ run_test()
+ 	echo "Wait for fsstress to exit and kill all background workers" >>$seqres.full
+ 	wait $fsstress_pid
+ 
+-	kill $subvol_pid $remount_pid
++	touch $stop_file
++	kill $remount_pid
+ 	wait
+ 	# wait for the remount loop process to finish
+ 	while ps aux | grep "mount.*$SCRATCH_MNT" | grep -qv grep; do
 -- 
-2.5.0
+2.1.0
 

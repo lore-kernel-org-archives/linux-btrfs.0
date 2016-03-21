@@ -1,109 +1,117 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from sender163-mail.zoho.com ([74.201.84.163]:24325 "EHLO
-	sender163-mail.zoho.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752204AbcCUEdx (ORCPT
+Received: from mail-wm0-f44.google.com ([74.125.82.44]:35150 "EHLO
+	mail-wm0-f44.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750949AbcCUEfI (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 21 Mar 2016 00:33:53 -0400
-From: "James Johnston" <johnstonj.public@codenest.com>
-To: "'Chris Murphy'" <lists@colorremedies.com>
-Cc: "'Btrfs BTRFS'" <linux-btrfs@vger.kernel.org>
-References: <000c01d18300$93b757c0$bb260740$@codenest.com> <CAJCQCtQWC8g5v61aAKeH4Zwer6xF=etiEfu5SAfnO-v0zcK+Jg@mail.gmail.com>
-In-Reply-To: <CAJCQCtQWC8g5v61aAKeH4Zwer6xF=etiEfu5SAfnO-v0zcK+Jg@mail.gmail.com>
-Subject: RE: kernel BUG at fs/btrfs/volumes.c:5519 when hot-removing device in RAID-1
-Date: Mon, 21 Mar 2016 04:33:47 -0000
-Message-ID: <000d01d1832a$dd3fb520$97bf1f60$@codenest.com>
+	Mon, 21 Mar 2016 00:35:08 -0400
+Received: by mail-wm0-f44.google.com with SMTP id l68so94841553wml.0
+        for <linux-btrfs@vger.kernel.org>; Sun, 20 Mar 2016 21:35:07 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain;
-	charset="utf-8"
+In-Reply-To: <CAJCQCtQ=_iE3m6P-jH1VjzycBXXRv5QZUS2SPNeH7ZJ_ukWM-A@mail.gmail.com>
+References: <CAC7HdqknOJAK+FcE53xO38G__gc42GR0GQW+chbGbDxXBt7HFA@mail.gmail.com>
+ <CAJCQCtQ=_iE3m6P-jH1VjzycBXXRv5QZUS2SPNeH7ZJ_ukWM-A@mail.gmail.com>
+From: Ryan Erato <rerato@gmail.com>
+Date: Sun, 20 Mar 2016 21:34:47 -0700
+Message-ID: <CAC7HdqmzhHwJFgpDAjwF9gjL_+vEm7A8sBBsGwQEmTE_BGoeqQ@mail.gmail.com>
+Subject: Re: moving btrfs subvolumes to new disk
+To: Chris Murphy <lists@colorremedies.com>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+Here's an example of what I've been trying:
 
-Thanks for the quick response.
+" mount new ssd
+root / # mount /dev/sdb6 /mnt/ssd/
 
-> There are a number of things missing from multiple device support,
-> including any concept of a device becoming faulty (i.e. persistent
-> failures rather than transient which Btrfs seems to handle OK for the
-> most part), and then also getting it to go degraded automatically, and
-> finally hot spare support. There are patches that could use testing.
+" snapshot ROOT sub-volume mounted at /
+root / # btrfs subvol snapshot -r / /ROOT.snap
+Create a readonly snapshot of '/' in '//ROOT.snap'
 
-I also noticed that it just seemed to be treated as a bunch of transient
-errors, and assumed it to just be a limitation of btrfs.
+root / # btrfs filesystem sync /
+FSSync '/'
 
-Never-the-less, I should expect it to gracefully continue to handle the
-"transient" I/O errors (even though they are really permanent), and not
-explode on an I/O error at random.  Or am I misunderstanding this?
+root / # btrfs subvol list /
+ID 257 gen 747906 top level 5 path ROOT
+ID 258 gen 747906 top level 257 path home
+ID 487 gen 747893 top level 257 path ROOT.snap
 
-The hot spare feature is a "nice-to-have" but not one I'm currently
-looking to use; I just want a two-drive RAID-1 that works.  If it gets
-stuck on I/O errors and doesn't take the drive offline ("automatic
-degrading"), that's also ok for my use as long as (1) data is not
-corrupted (even if the drive temporarily came back online), (2) the
-kernel doesn't oops or panic like it does now.  I would notice the I/O
-errors soon enough and be able to cleanly power down the system and
-replace a drive.
+root / # btrfs send /ROOT.snap/ | btrfs receive /mnt/ssd/
+At subvol /ROOT.snap/
+At subvol ROOT.snap
 
-> 
-> https://www.spinics.net/lists/linux-btrfs/msg52084.html
-> http://www.spinics.net/lists/linux-btrfs/msg53048.html
+" snapshot home subvolume at /home
+root / # btrfs subvol snapshot -r /home/ /home/home.snap
+Create a readonly snapshot of '/home/' in '/home/home.snap'
 
-So I have a question: should I expect these patches to fix the issue -
-do they fix the root cause of this crash?  Or will they just mask it,
-most of the time, by just taking down the failing device sooner rather
-than later?
+root / # btrfs filesystem sync /home
+FSSync '/home'
 
-To put another way: skimming through the patches, it sounds like if
-there is a write error, the drive is marked as failed and the array
-is degraded.  Now, the log I sent in my last e-mail shows btrfs
-logging several write errors, before the kernel crashed.  That is,
-most I/O errors did not crash the kernel.  Will this patch merely
-mask the issue, say, 95% (or more) of the time, with 5% of the time
-being the one I/O that crashes the kernel (with potential data
-loss?)? - i.e. where you are unlucky and the first I/O is the one that
-makes the kernel die, before the patches can degrade the array? 
+root / # btrfs subvol list /
+ID 257 gen 747944 top level 5 path ROOT
+ID 258 gen 747944 top level 257 path home
+ID 487 gen 747893 top level 257 path ROOT.snap
+ID 488 gen 747942 top level 258 path home/home.snap
 
-In order to try them, I guess I'll have to build a kernel; I'm not
-currently set up to do that - unless someone has one prebuilt?
+root / # btrfs send /home/home.snap/ | btrfs receive /mnt/ssd/
+At subvol /home/home.snap/
+At subvol home.snap
+ERROR: send ioctl failed with -2: No such file or directory
+ERROR: unexpected EOF in stream.
 
-> I think when testing, it's simpler to not use any additional device
-> mapper layers. Yes those should work, but it has to work with Btrfs on
-> the raw partition or device first. Then add additional layers one at a
-> time as the use case requires, testing in between the additions.
-> Otherwise it makes it harder to isolate.
+root / # btrfs subvol list /mnt/ssd/
+ID 257 gen 57 top level 5 path ROOT.snap
+ID 285 gen 62 top level 5 path home.snap
 
-You are right, I was hoping there would be an easy answer before I went
-to the trouble of doing that.
+I have also attempted to mount /dev/sdb6 with mount option
+"subvol=ROOT" like I do in my system fstab for the current drive. I
+have also tried saving the snapshot in "/" and "/home", with the same
+results.
 
-I went on ahead and eliminated LVM/dm-crypt.  The problem still
-reproduces.  My procedure was to add a new, temporary disk, use dd from
-a bootable DVD to clone the LVM/dm-crypt volumes to regular GPT
-partitions on the new disk, destroy the LVM volume group, repartition
-the original drives, dd the data back, and most importantly, destroy
-the temporary drive before mounting to avoid having the duplicate
-btrfs partitions around.
+Sending "home.snap" to "/mnt/ssd" results in the -2 error. What is
+peculiar, or possibly a red herring, is that it seems to fail at the
+same point each time, at 4.39GB in to the transfer. Using verbose
+output on receive it seems to process the files in the same order as
+again, I see the same set of files just before it fails each and every
+time.
 
-In other words, the system has the same bit-for-bit partitions that were
-on LVM/dm-crypt, but now just on simple GPT partitions with no
-LVM/dmcrypt.  I'm still getting the same crash when hot-removing, on the
-same line of code in volume.c.
-
-I've also attempted to reproduce the issue on a brand-new virtual machine
-with LVM/dm-crypt, but I've been unsuccessful in doing so.  The original
-VM wasn't set up this way originally; it was originally not LVM and I
-transitioned it to that via a series of btrfs device adds/removes/balance/
-conversions, and repartitioning with LVM/dm-crypt along the way.  I also
-tried to reproduce that sequence in the second VM, but again - I'm
-forgetting some step along the way or some critical detail because I
-haven't had much luck outside the original VM.  IIRC nothing particularly
-anomalous happened during this conversion (e.g. scary errors/warnings).
-
-There's something about the file system on the original VM that is making
-the btrfs driver die very badly, but I don't know what.  btrfs scrub says
-there are no errors...
-
-Best regards,
-
-James Johnston
+I setup my system according to gentoo documentation, so I'm not sure
+if I did something wrong with the initial btrfs partition setup that
+is making this more difficult.
 
 
+On Sun, Mar 20, 2016 at 12:31 PM, Chris Murphy <lists@colorremedies.com> wrote:
+> On Sat, Mar 19, 2016 at 4:58 PM, Ryan Erato <rerato@gmail.com> wrote:
+>> I'm having quite the time trying to move my current Gentoo install to
+>> an SSD. I first attempted Clonezilla, but that failed while cloning
+>> the btrfs partition. I then realized I could use btrfs send/receive.
+>>
+>> The partition has 2 subvolumes ROOT and ROOT/home. ROOT snapshots and
+>> sends without hitch, but /home consistently errors at the same point
+>> (from -vv output on btrfs send). btrfs send returns -2, no such file
+>> or directory, unexpected EOF in stream.
+>
+> What's the exact command you're using for btrfs send receive for ROOT and home?
+>
+>
+>>
+>> # cat /etc/fstab
+>> /dev/sda4 /boot vfat noauto,noatime 1 2
+>> /dev/sda6 / btrfs defaults,noatime,compress=lzo,autodefrag,subvol=ROOT 0 0
+>> /dev/sda5 none swap sw 0 0
+>>
+>> # btrfs su l /
+>> ID 257 gen 745235 top level 5 path ROOT
+>> ID 258 gen 745235 top level 257 path home
+>> ID 498 gen 744743 top level 5 path ROOT.snap
+>> ID 501 gen 745043 top level 258 path home/home.snap
+>
+> Nested subvolumes makes this more complicated in my opinion. You might
+> have better luck mounting subvolid=5 to /mnt and using a fully
+> qualified pathname for send.
+>
+>
+>
+> --
+> Chris Murphy

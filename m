@@ -1,167 +1,158 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:37138 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751190AbcCTXyA (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 20 Mar 2016 19:54:00 -0400
-Date: Mon, 21 Mar 2016 00:53:30 +0100
-From: David Sterba <dsterba@suse.cz>
-To: linux-btrfs@vger.kernel.org
-Cc: clm@fb.com
-Subject: Btrfs progs release 4.5
-Message-ID: <20160320235330.GG21722@suse.cz>
-Reply-To: dsterba@suse.cz
+Received: from cn.fujitsu.com ([59.151.112.132]:34663 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1751485AbcCUAPA (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 20 Mar 2016 20:15:00 -0400
+Subject: Re: [PATCH] btrfs-progs: add stat check in open_ctree_fs_info
+To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>,
+        <linux-btrfs@vger.kernel.org>
+References: <1458141971-56355-1-git-send-email-ahferroin7@gmail.com>
+ <56EA7314.2080104@cn.fujitsu.com> <56EA935C.1040408@gmail.com>
+ <56EB4E09.6090703@cn.fujitsu.com> <56EBE3C1.6060009@gmail.com>
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Message-ID: <56EF3CF8.50807@cn.fujitsu.com>
+Date: Mon, 21 Mar 2016 08:14:48 +0800
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <56EBE3C1.6060009@gmail.com>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
 
-btrfs-progs 4.5 have been released.
 
-There's a new command 'btrfs filesystem du' that mimics the 'du' utility but
-reports the shared extents among files and in the group defined by the
-commandline arguments.
+Austin S. Hemmelgarn wrote on 2016/03/18 07:17 -0400:
+> On 2016-03-17 20:38, Qu Wenruo wrote:
+>>
+>>
+>> Austin S. Hemmelgarn wrote on 2016/03/17 07:22 -0400:
+>>> On 2016-03-17 05:04, Qu Wenruo wrote:
+>>>>
+>>>>
+>>>> Austin S. Hemmelgarn wrote on 2016/03/16 11:26 -0400:
+>>>>> Currently, open_ctree_fs_info will open whatever path you pass it and
+>>>>> try to interpret it as a BTRFS filesystem.  While this is not
+>>>>> nessecarily dangerous (except possibly if done on a character device),
+>>>>> it does result in some rather cryptic and non-sensical error messages
+>>>>> when trying to run certain commands in ways they weren't intended
+>>>>> to be
+>>>>> run.  Add a check using stat(2) to verify that the path we've been
+>>>>> passed is in fact a regular file or a block device.
+>>>>>
+>>>>> This causes the following commands to provide a helpful error message
+>>>>> when run on a FIFO, directory, character device, or socket:
+>>>>>      * btrfs check
+>>>>>      * btrfs restore
+>>>>>      * btrfs-image
+>>>>>      * btrfs-find-root
+>>>>>      * btrfs-debug-tree
+>>>>>
+>>>>> Signed-off-by: Austin S. Hemmelgarn <ahferroin7@gmail.com>
+>>>>> ---
+>>>>> This has been build and runtime tested on an x86-64 system with glibc.
+>>>>> It has been build tested on x86-64 with uclibc.
+>>>>> It has not been tested on Android or with musl, although it should
+>>>>> work
+>>>>> there also.
+>>>>>
+>>>>> There are other tools that have similarly bad behavior when called
+>>>>> incorrectly (btrfs rescue immediately comes to mind), but they don't
+>>>>> use open_ctree_fs_info, so this doesn't affect them.  I may do
+>>>>> followup
+>>>>> patches to fix those too if I have the time.
+>>>>>
+>>>>> open_ctree_fs_info is also used in cmds-filesystem.c, although I'm not
+>>>>> at all sure what exactly is going on there, and btrfs filesystem
+>>>>> appears
+>>>>> from my testing to behave exactly the same with this change, so I
+>>>>> don't
+>>>>> think this will have any effect on any of the btrfs filesystem
+>>>>> commands.
+>>>>>
+>>>>>   disk-io.c | 7 +++++++
+>>>>>   1 file changed, 7 insertions(+)
+>>>>>
+>>>>> diff --git a/disk-io.c b/disk-io.c
+>>>>> index e520d80..d35153d 100644
+>>>>> --- a/disk-io.c
+>>>>> +++ b/disk-io.c
+>>>>> @@ -1310,6 +1310,13 @@ struct btrfs_fs_info *open_ctree_fs_info(const
+>>>>> char *filename,
+>>>>>       int fp;
+>>>>>       struct btrfs_fs_info *info;
+>>>>>       int oflags = O_CREAT | O_RDWR;
+>>>>> +    struct stat sb;
+>>>>> +
+>>>>> +    stat(filename, &sb);
+>>>>> +    if (!(((sb.st_mode & S_IFMT) == S_IFREG) || ((sb.st_mode &
+>>>>> S_IFMT) == S_IFBLK))) {
+>>>>> +        fprintf (stderr, "%s is not a regular file or block
+>>>>> device\n", filename);
+>>>>> +        return NULL;
+>>>>> +    }
+>>>>
+>>>> This one seems to be too restrict.
+>>>>
+>>>> I prefer to block char/pipe/dir and some other obvious wrong ones other
+>>>> than only allowing regular and block ones.
+>>> Running against a directory gives a cryptic error about the superblock
+>>> having bad info.  Running against a pipe is nonsensical, as it can't
+>>> contain a filesystem.  Running against a character device is potentially
+>>> dangerous (read operations are not guaranteed to be idempotent on
+>>> character devices, depending on what hardware it is connected to, you
+>>> could cause all kinds of odd things to happen).
+>>>
+>>> Everything this function gets called on is trying to get info from a
+>>> unmounted filesystem image, which means that it only makes sense to try
+>>> to parse things that can contain a unmounted filesystem image.
+>>
+>> Yes, I understand what you are doing.
+>>
+>> Just as I alreayd mentioned, the problem is, your current patch only
+>> allowing regular and block device and will block valid soft link.
+>> Just as Duncan mentioned, soft link should be allowed too.
+> Symbolic links are allowed though.  stat(2) follows symlinks and returns
+> information on their target, not the link itself.  I also tested it on
+> symlinks, and it still works to run `btrfs check` on a link to a block
+> device containing a BTRFS filesystem
 
-The standalone tools are starting the deprecation period, but they'll
-stay for a long time due to compatibility, so there's not even a warning
-about deprecation yet.
+Then I'm completely OK with current implementation.
 
-Changes:
+Thanks,
+Qu
+>>
+>> I mean to *block/prevent* char/pipe/dir instead of *only allowing*
+>> regular/block device.
+> I apologize for the misunderstanding, I misread your original message.
+>
+> As to blacklisting invalid types instead of whitelisting valid ones, I'd
+> personally would prefer whitelisting in this particular case, as it
+> results in both a smaller conditional, and makes the intent of only
+> allowing things that can contain a BTRFS filesystem  more clear (at
+> least, it does to me).
+>>
+>> Thanks,
+>> Qu
+>>>>
+>>>> Thanks,
+>>>> Qu
+>>>>>
+>>>>>       if (!(flags & OPEN_CTREE_WRITES))
+>>>>>           oflags = O_RDONLY;
+>>>>>
+>>>>
+>>>>
+>>>
+>>>
+>>>
+>>
+>>
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>
+>
 
-* new/moved commands
-  * btrfs-show-super -> btrfs inspect-internal dump-super
-  * btrfs-debug-tree -> btrfs inspect-internal dump-tree
-* new commands
-  * btrfs fi du - calculate disk usage, including shared extents
-* enhancements
-  * device delete - delete by id (needs kernel support, not merged to 4.6)
-  * check - new option to specify chunk root
-  * debug-tree/dump-tree - option -t understands human readable name of the
-    tree (along numerical ids)
-  * btrfs-debugfs - can dump block group information
-* bugfixes
-  * all commands should accept the option separator "--"
-  * several fixes in device scan
-  * restore works on filesystems with sectorsize > 4k
-  * debug-tree/dump-tree - print compression type as string
-  * subvol sync: fix crash, memory corruption
-  * argument parsing fixes: subvol get-default, qgroup create/destroy/assign,
-    inspect subvolid-resolve
-  * check for block device or regular file in several commands
-* other
-  * documentation updates
-  * manual pages for the moved tools now point to btrfs-filesystem
-  * testsuite updates
-
-Tarballs: https://www.kernel.org/pub/linux/kernel/people/kdave/btrfs-progs/
-Git: git://git.kernel.org/pub/scm/linux/kernel/git/kdave/btrfs-progs.git
-
-Shortlog:
-
-Alexander Fougner (7):
-      btrfs-progs: copy functionality of btrfs-debug-tree to inspect-internal subcommand
-      btrfs-progs: update docs and completion for inspect-internal dump-tree
-      btrfs-progs: introduce inspect-internal dump-super
-      btrfs-progs: update docs for inspect-internal dump-super
-      btrfs-progs: docs: add note about resizing to max after device replace
-      btrfs-progs: docs: fix spelling errors
-      btrfs-progs: fi du: fix incorrect column order
-
-Anand Jain (1):
-      btrfs-progs: Introduce device delete by devid
-
-Austin S. Hemmelgarn (1):
-      btrfs-progs: add stat check in open_ctree_fs_info
-
-David Sterba (44):
-      btrfs-progs: build: extend per-binary objects
-      btrfs-progs: fi du: switch to u64
-      btrfs-progs: fi du: add long options for units
-      btrfs-progs: add getopt stubs where needed
-      btrfs-progs: rename commandline helpers
-      btrfs-progs: unify naming of argc and argv
-      btrfs-progs: unify argc min/max checking
-      btrfs-progs: inspect: remove unnecessary helpers
-      btrfs-progs: tests: fix misc/005-long-device-name-for-ssd
-      btrfs-progs: switch more error messages to common helpers
-      btrfs-progs: restore: update error messages
-      btrfs-progs: don't print message for a missing device
-      btrfs-progs: tests: add image for bko#96971 (bad checksum type)
-      btrfs-progs: unify argc min/max checking, a few more
-      btrfs-progs: check: drop short option for --chunk-tree
-      btrfs-progs: docs: update check options
-      btrfs-progs: check: unify naming of long option values
-      btrfs-progs: dump-tree: print tree keys with -e
-      btrfs-progs: dump-tree: print version information earlier
-      btrfs-progs: docs: update dump-tree
-      btrfs-progs: dump-tree: let --tree understand name of the tree
-      btrfs-progs: remove btrfs-debug-tree manual page and point to inspect-internal
-      btrfs-progs: docs: fix more typos and spelling errors
-      btrfs-progs: improve error messages after failed wiping
-      btrfs-progs: utils: switch more error messages to common helpers
-      btrfs-progs: fix resource leak during device scanning
-      btrfs-progs: dump-super: switch to getopt_long
-      btrfs-progs: dump-super: add more long options
-      btrfs-progs: docs: rename and move dump-super
-      btrfs-progs: docs: update dump-super
-      btrfs-progs: remove btrfs-show-super manual page and point to inspect-internal
-      btrfs-progs: docs: add filesystem du
-      btrfs-progs: fi du: update help text
-      btrfs-progs: fi du: make the output more aligned
-      btrfs-progs: mkfs: also parse raid0 profile case-insensitive
-      btrfs-progs: docs: fi defrag, make some paragraphs more visible
-      Btrfs progs v4.5-rc1
-      btrfs-progs: subvol sync: fix memory corruption, undersized array
-      btrfs-progs: tests: add 013-subvolume-sync-crash
-      btrfs-progs: docs: man5, add space_cache=v2
-      btrfs-progs: handle stat errors in open_ctree_fs_info
-      btrfs-progs: switch to common message helpers in open_ctree_fs_info
-      btrfs-progs: tests: enumerate RWX in convert tests
-      Btrfs progs v4.5
-
-Feifei Xu (1):
-      btrfs-progs: Replace hardcoded PAGE_CACHE_SIZE with sectorsize.
-
-Lakshmipathi.G (1):
-      btrfs-progs: tests: populate fs with small dataset for convert tests
-
-Liu Bo (1):
-      btrfs-progs: btrfs-debugfs: fetch block group information
-
-Lu Fengqi (1):
-      btrfs-progs: Add new option for specify chunk root bytenr
-
-Mark Fasheh (2):
-      btrfs-progs: filesystem: add 'du' command
-      btrfs-progs: fi du: Calculate space shared by each directory arguments file set
-
-Ondrej Kozina (1):
-      btrfs-progs: libbtrfs: remove max/min macros from API
-
-Qu Wenruo (1):
-      btrfs-progs: util: Fix a wrong unit of pretty_size
-
-Satoru Takeuchi (11):
-      btrfs-progs: Describe device scan -d is a deprecated option in manpage
-      btrfs-progs: Fix device scan to interpret its argument properly
-      btrfs-progs: Fix a regression that btrfs filesystem label doesn't work
-      btrfs-progs: Avoid interpreting options after "--" when getting unit mode
-      btrfs-progs: Describe optarg of -m option in the manpage of receive
-      btrfs-progs: fix a regression that "property" with -t option doesn't work
-      btrfs-progs: subvol get-default: fix argument parsing
-      btrfs-progs: qgroup create/destroy: fix argument parsing
-      btrfs-progs: inspect subvolid-resolve: fix argument parsing
-      btrfs-progs: qgroup assign: can't handle options
-      btrfs-progs: qgroup assign: handle --no-rescan option
-
-Vytas Dauksa (1):
-      btrfs-progs: convert: document -O|--features flag
-
-Wang Xiaoguang (1):
-      btrfs-progs: print-tree: show the compression method string
-
-Yauhen Kharuzhy (2):
-      btrfs-progs: fix broken 'device scan' arguments parsing
-      btrfs-progs: Dont' stop scanning of devices at first failed device
 

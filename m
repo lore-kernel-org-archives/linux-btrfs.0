@@ -1,116 +1,99 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:37419 "EHLO mx1.redhat.com"
+Received: from mail.kernel.org ([198.145.29.136]:52171 "EHLO mail.kernel.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1758198AbcCVDA0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 21 Mar 2016 23:00:26 -0400
-Date: Tue, 22 Mar 2016 11:00:23 +0800
-From: Eryu Guan <eguan@redhat.com>
-To: fdmanana@kernel.org
-Cc: fstests@vger.kernel.org, linux-btrfs@vger.kernel.org,
-        Filipe Manana <fdmanana@suse.com>
-Subject: Re: [PATCH v2] fstests: test fsync on overlayfs merged directory
-Message-ID: <20160322030023.GF11419@eguan.usersys.redhat.com>
-References: <1458581952-18638-1-git-send-email-fdmanana@kernel.org>
- <1458582625-22039-1-git-send-email-fdmanana@kernel.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1458582625-22039-1-git-send-email-fdmanana@kernel.org>
+	id S932128AbcCURiw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 21 Mar 2016 13:38:52 -0400
+From: fdmanana@kernel.org
+To: linux-btrfs@vger.kernel.org
+Cc: miklos@szeredi.hu
+Subject: [PATCH] Btrfs: fix crash/invalid memory access on fsync when using overlayfs
+Date: Mon, 21 Mar 2016 17:38:44 +0000
+Message-Id: <1458581924-18589-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Mar 21, 2016 at 05:50:25PM +0000, fdmanana@kernel.org wrote:
-> From: Filipe Manana <fdmanana@suse.com>
-> 
-> Test that calling fsync against a file using the merged directory does
-> not result in a crash nor fails unexpectedly.
-> 
-> This is motivated by a change in overlayfs that resulted in a crash
-> (invalid memory access) when the lower or upper directory belonged to
-> a btrfs file system. The overlayfs change came in commit 4bacc9c9234
-> (overlayfs: Make f_path always point to the overlay and f_inode to the
-> underlay). At the moment there are two patches in the linux-fsdevel
-> and linux-btrfs mailing lists to fix this problem:
-> 
->   * vfs: add file_dentry()
->   * Btrfs: fix crash/invalid memory access on fsync when using overlayfs
-> 
-> Signed-off-by: Filipe Manana <fdmanana@suse.com>
-> ---
-> 
-> V2: Removed leftover comment from debugging.
-> 
->  tests/overlay/002     | 74 +++++++++++++++++++++++++++++++++++++++++++++++++++
->  tests/overlay/002.out |  3 +++
->  tests/overlay/group   |  1 +
->  3 files changed, 78 insertions(+)
->  create mode 100755 tests/overlay/002
->  create mode 100644 tests/overlay/002.out
-> 
-> diff --git a/tests/overlay/002 b/tests/overlay/002
-> new file mode 100755
-> index 0000000..e5aa610
-> --- /dev/null
-> +++ b/tests/overlay/002
-> @@ -0,0 +1,74 @@
-> +#! /bin/bash
-> +# FS QA Test 002
-> +#
-> +# Test that calling fsync against a file using the merged directory does not
-> +# result in a crash nor fails unexpectedly.
-> +#
-> +# This is motivated by a change in overlayfs that resulted in a crash (invalid
-> +# memory access) when the lower or upper directory belonged to a btrfs file
-> +# system.
-> +#
-> +#-----------------------------------------------------------------------
-> +#
-> +# Copyright (C) 2016 SUSE Linux Products GmbH. All Rights Reserved.
-> +# Author: Filipe Manana <fdmanana@suse.com>
-> +#
-> +# This program is free software; you can redistribute it and/or
-> +# modify it under the terms of the GNU General Public License as
-> +# published by the Free Software Foundation.
-> +#
-> +# This program is distributed in the hope that it would be useful,
-> +# but WITHOUT ANY WARRANTY; without even the implied warranty of
-> +# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-> +# GNU General Public License for more details.
-> +#
-> +# You should have received a copy of the GNU General Public License
-> +# along with this program; if not, write the Free Software Foundation,
-> +# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-> +#-----------------------------------------------------------------------
-> +#
-> +
-> +seq=`basename $0`
-> +seqres=$RESULT_DIR/$seq
-> +echo "QA output created by $seq"
-> +
-> +here=`pwd`
-> +tmp=/tmp/$$
-> +status=1	# failure is the default!
-> +trap "_cleanup; exit \$status" 0 1 2 3 15
-> +
-> +_cleanup()
-> +{
-> +	cd /
-> +	rm -f $tmp.*
-> +}
-> +
-> +# get standard environment, filters and checks
-> +. ./common/rc
-> +. ./common/filter
-> +
-> +# remove previous $seqres.full before test
-> +rm -f $seqres.full
-> +
-> +# real QA test starts here
-> +_supported_fs generic
+From: Filipe Manana <fdmanana@suse.com>
 
-The supported fs should be "overlay"? overlay/001 has the same issue
-though.
+If the lower or upper directory of an overlayfs mount belong to a btrfs
+file system and we fsync the file through the overlayfs' merged directory
+we ended up accessing an inode that didn't belong to btrfs as if it were
+a btrfs inode at btrfs_sync_file() resulting in a crash like the following:
 
-Looks good to me otherwise, test passed with XFS as underlying fs and
-test crashed v4.5 kernel with btrfs as underlying fs, as expected.
+[ 7782.588845] BUG: unable to handle kernel NULL pointer dereference at 0000000000000544
+[ 7782.590624] IP: [<ffffffffa030b7ab>] btrfs_sync_file+0x11b/0x3e9 [btrfs]
+[ 7782.591931] PGD 4d954067 PUD 1e878067 PMD 0
+[ 7782.592016] Oops: 0002 [#6] PREEMPT SMP DEBUG_PAGEALLOC
+[ 7782.592016] Modules linked in: btrfs overlay ppdev crc32c_generic evdev xor raid6_pq psmouse pcspkr sg serio_raw acpi_cpufreq parport_pc parport tpm_tis i2c_piix4 tpm i2c_core processor button loop autofs4 ext4 crc16 mbcache jbd2 sr_mod cdrom sd_mod ata_generic virtio_scsi ata_piix virtio_pci libata virtio_ring virtio scsi_mod e1000 floppy [last unloaded: btrfs]
+[ 7782.592016] CPU: 10 PID: 16437 Comm: xfs_io Tainted: G      D         4.5.0-rc6-btrfs-next-26+ #1
+[ 7782.592016] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS by qemu-project.org 04/01/2014
+[ 7782.592016] task: ffff88001b8d40c0 ti: ffff880137488000 task.ti: ffff880137488000
+[ 7782.592016] RIP: 0010:[<ffffffffa030b7ab>]  [<ffffffffa030b7ab>] btrfs_sync_file+0x11b/0x3e9 [btrfs]
+[ 7782.592016] RSP: 0018:ffff88013748be40  EFLAGS: 00010286
+[ 7782.592016] RAX: 0000000080000000 RBX: ffff880133b30c88 RCX: 0000000000000001
+[ 7782.592016] RDX: 0000000000000001 RSI: ffffffff8148fec0 RDI: 00000000ffffffff
+[ 7782.592016] RBP: ffff88013748bec0 R08: 0000000000000001 R09: 0000000000000000
+[ 7782.624248] R10: ffff88013748be40 R11: 0000000000000246 R12: 0000000000000000
+[ 7782.624248] R13: 0000000000000000 R14: 00000000009305a0 R15: ffff880015e3be40
+[ 7782.624248] FS:  00007fa83b9cb700(0000) GS:ffff88023ed40000(0000) knlGS:0000000000000000
+[ 7782.624248] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+[ 7782.624248] CR2: 0000000000000544 CR3: 00000001fa652000 CR4: 00000000000006e0
+[ 7782.624248] Stack:
+[ 7782.624248]  ffffffff8108b5cc ffff88013748bec0 0000000000000246 ffff8800b005ded0
+[ 7782.624248]  ffff880133b30d60 8000000000000000 7fffffffffffffff 0000000000000246
+[ 7782.624248]  0000000000000246 ffffffff81074f9b ffffffff8104357c ffff880015e3be40
+[ 7782.624248] Call Trace:
+[ 7782.624248]  [<ffffffff8108b5cc>] ? arch_local_irq_save+0x9/0xc
+[ 7782.624248]  [<ffffffff81074f9b>] ? ___might_sleep+0xce/0x217
+[ 7782.624248]  [<ffffffff8104357c>] ? __do_page_fault+0x3c0/0x43a
+[ 7782.624248]  [<ffffffff811a2351>] vfs_fsync_range+0x8c/0x9e
+[ 7782.624248]  [<ffffffff811a237f>] vfs_fsync+0x1c/0x1e
+[ 7782.624248]  [<ffffffff811a24d6>] do_fsync+0x31/0x4a
+[ 7782.624248]  [<ffffffff811a2700>] SyS_fsync+0x10/0x14
+[ 7782.624248]  [<ffffffff81493617>] entry_SYSCALL_64_fastpath+0x12/0x6b
+[ 7782.624248] Code: 85 c0 0f 85 e2 02 00 00 48 8b 45 b0 31 f6 4c 29 e8 48 ff c0 48 89 45 a8 48 8d 83 d8 00 00 00 48 89 c7 48 89 45 a0 e8 fc 43 18 e1 <f0> 41 ff 84 24 44 05 00 00 48 8b 83 58 ff ff ff 48 c1 e8 07 83
+[ 7782.624248] RIP  [<ffffffffa030b7ab>] btrfs_sync_file+0x11b/0x3e9 [btrfs]
+[ 7782.624248]  RSP <ffff88013748be40>
+[ 7782.624248] CR2: 0000000000000544
+[ 7782.661994] ---[ end trace 721e14960eb939bc ]---
 
-Reviewed-by: Eryu Guan <eguan@redhat.com>
+This started happening since commit 4bacc9c9234 (overlayfs: Make f_path
+always point to the overlay and f_inode to the underlay) and even though
+after this change we could still access the btrfs inode through
+struct file->f_mapping->host or struct file->f_inode, we would end up
+resulting in more similar issues later on at check_parent_dirs_for_sync()
+because the dentry we got (from struct file->f_path.dentry) was from
+overlayfs and not from btrfs, that is, we had no way of getting the dentry
+that belonged to btrfs (we always got the dentry that belonged to
+overlayfs).
+
+The new patch from Miklos Szeredi, titled "vfs: add file_dentry()" and
+recently submitted to linux-fsdevel, adds a file_dentry() API that allows
+us to get the btrfs dentry from the input file and therefore being able
+to fsync when the upper and lower directories belong to btrfs filesystems.
+
+This issue has been reported several times by users in the mailing list
+and bugzilla. A test case for xfstests is being submitted as well.
+
+Bugzilla: https://bugzilla.kernel.org/show_bug.cgi?id=101951
+Bugzilla: https://bugzilla.kernel.org/show_bug.cgi?id=109791
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+ fs/btrfs/file.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index 15a09cb..2f40482 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -1905,7 +1905,7 @@ static int start_ordered_ops(struct inode *inode, loff_t start, loff_t end)
+  */
+ int btrfs_sync_file(struct file *file, loff_t start, loff_t end, int datasync)
+ {
+-	struct dentry *dentry = file->f_path.dentry;
++	struct dentry *dentry = file_dentry(file);
+ 	struct inode *inode = d_inode(dentry);
+ 	struct btrfs_root *root = BTRFS_I(inode)->root;
+ 	struct btrfs_trans_handle *trans;
+-- 
+2.7.0.rc3
+

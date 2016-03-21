@@ -1,62 +1,141 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from e28smtp04.in.ibm.com ([125.16.236.4]:38952 "EHLO
-	e28smtp04.in.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756751AbcCURCn (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 21 Mar 2016 13:02:43 -0400
-Received: from localhost
-	by e28smtp04.in.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
-	for <linux-btrfs@vger.kernel.org> from <chandan@linux.vnet.ibm.com>;
-	Mon, 21 Mar 2016 22:32:40 +0530
-Received: from d28av01.in.ibm.com (d28av01.in.ibm.com [9.184.220.63])
-	by d28relay05.in.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id u2LH25ig61407316
-	for <linux-btrfs@vger.kernel.org>; Mon, 21 Mar 2016 22:32:06 +0530
-Received: from d28av01.in.ibm.com (localhost [127.0.0.1])
-	by d28av01.in.ibm.com (8.14.4/8.14.4/NCO v10.0 AVout) with ESMTP id u2LMVHPQ017933
-	for <linux-btrfs@vger.kernel.org>; Tue, 22 Mar 2016 04:01:18 +0530
-From: Chandan Rajendra <chandan@linux.vnet.ibm.com>
-To: Chris Mason <clm@fb.com>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] btrfs: make sure we stay inside the bvec during __btrfs_lookup_bio_sums
-Date: Mon, 21 Mar 2016 22:32:33 +0530
-Message-ID: <10889043.sdhK3zvePA@localhost.localdomain>
-In-Reply-To: <20160321150014.hod3ktlnpaxbx2u7@floor.thefacebook.com>
-References: <20160321150014.hod3ktlnpaxbx2u7@floor.thefacebook.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Received: from mail.kernel.org ([198.145.29.136]:52306 "EHLO mail.kernel.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1756906AbcCURkP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 21 Mar 2016 13:40:15 -0400
+From: fdmanana@kernel.org
+To: fstests@vger.kernel.org
+Cc: linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@suse.com>
+Subject: [PATCH] fstests: test fsync on overlayfs merged directory
+Date: Mon, 21 Mar 2016 17:39:12 +0000
+Message-Id: <1458581952-18638-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Monday 21 Mar 2016 11:00:14 Chris Mason wrote:
-> Hi everyone,
-> 
-> I realized last week that CONFIG_DEBUG_PAGEALLOC had dropped out of my
-> config, and hit a crash inside __btrfs_lookup_bio_sums once I enabled it
-> again.  It's hard for this bug to cause problems because Chandan's inner
-> loop is always done at the same time the outer loop is done.  Without my
-> goto, it's just exiting normally, but only after reading bvec->bv_len
-> (which isn't valid).
-> 
-> I have this on top of my integration-4.6.  Once things pass I'll
-> send a pull later today or Tuesday morning:
-> 
-> Commit c40a3d38aff4e1c (Btrfs: Compute and look up csums based on
-> sectorsized blocks) changes around how we walk the bios while looking up
-> crcs.  There's an inner loop that is jumping to the next bvec based on
-> sectors and before it derefs the next bvec, it needs to make sure we're
-> still in the bio.
-> 
-> In this case, the outer loop would have decided to stop moving forward
-> too, and the bvec deref is never actually used for anything.  But
-> CONFIG_DEBUG_PAGEALLOC catches it because we're outside our bio.
->
+From: Filipe Manana <fdmanana@suse.com>
 
-Chris, Thanks for finding the issue and fixing it. From now onwards, I will
-make sure that I have CONFIG_DEBUG_PAGEALLOC enabled on my test kernel build
-config.
+Test that calling fsync against a file using the merged directory does
+not result in a crash nor fails unexpectedly.
 
-Reviewed-by: Chandan Rajendra <chandan@linux.vnet.ibm.com>
+This is motivated by a change in overlayfs that resulted in a crash
+(invalid memory access) when the lower or upper directory belonged to
+a btrfs file system. The overlayfs change came in commit 4bacc9c9234
+(overlayfs: Make f_path always point to the overlay and f_inode to the
+underlay). At the moment there are two patches in the linux-fsdevel
+and linux-btrfs mailing lists to fix this problem:
 
+  * vfs: add file_dentry()
+  * Btrfs: fix crash/invalid memory access on fsync when using overlayfs
+
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+ tests/overlay/002     | 76 +++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/overlay/002.out |  3 ++
+ tests/overlay/group   |  1 +
+ 3 files changed, 80 insertions(+)
+ create mode 100755 tests/overlay/002
+ create mode 100644 tests/overlay/002.out
+
+diff --git a/tests/overlay/002 b/tests/overlay/002
+new file mode 100755
+index 0000000..4f82f60
+--- /dev/null
++++ b/tests/overlay/002
+@@ -0,0 +1,76 @@
++#! /bin/bash
++# FS QA Test 002
++#
++# Test that calling fsync against a file using the merged directory does not
++# result in a crash nor fails unexpectedly.
++#
++# This is motivated by a change in overlayfs that resulted in a crash (invalid
++# memory access) when the lower or upper directory belonged to a btrfs file
++# system.
++#
++#-----------------------------------------------------------------------
++#
++# Copyright (C) 2016 SUSE Linux Products GmbH. All Rights Reserved.
++# Author: Filipe Manana <fdmanana@suse.com>
++#
++# This program is free software; you can redistribute it and/or
++# modify it under the terms of the GNU General Public License as
++# published by the Free Software Foundation.
++#
++# This program is distributed in the hope that it would be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write the Free Software Foundation,
++# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++#-----------------------------------------------------------------------
++#
++
++seq=`basename $0`
++seqres=$RESULT_DIR/$seq
++echo "QA output created by $seq"
++
++here=`pwd`
++tmp=/tmp/$$
++status=1	# failure is the default!
++trap "_cleanup; exit \$status" 0 1 2 3 15
++
++_cleanup()
++{
++	cd /
++	rm -f $tmp.*
++}
++
++# get standard environment, filters and checks
++. ./common/rc
++. ./common/filter
++
++# remove previous $seqres.full before test
++rm -f $seqres.full
++
++# real QA test starts here
++_supported_fs generic
++_supported_os Linux
++_require_scratch
++
++# Remove all files from previous tests
++_scratch_mkfs
++
++# Create our test file.
++#lowerdir=$SCRATCH_DEV/$OVERLAY_LOWER_DIR
++lowerdir=$SCRATCH_DEV/$OVERLAY_UPPER_DIR
++mkdir -p $lowerdir
++touch $lowerdir/foobar
++sync
++
++_scratch_mount
++
++# Write some data to our file and fsync it, using the merged directory path.
++# This should work and not result in a crash.
++$XFS_IO_PROG -c "pwrite 0 64k" -c "fsync" $SCRATCH_MNT/foobar | _filter_xfs_io
++
++# success, all done
++status=0
++exit
+diff --git a/tests/overlay/002.out b/tests/overlay/002.out
+new file mode 100644
+index 0000000..666e61e
+--- /dev/null
++++ b/tests/overlay/002.out
+@@ -0,0 +1,3 @@
++QA output created by 002
++wrote 65536/65536 bytes at offset 0
++XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
+diff --git a/tests/overlay/group b/tests/overlay/group
+index 5056c3b..84d164e 100644
+--- a/tests/overlay/group
++++ b/tests/overlay/group
+@@ -4,3 +4,4 @@
+ # - comment line before each group is "new" description
+ #
+ 001 auto quick copyup
++002 auto quick metadata
 -- 
-chandan
+2.7.0.rc3
 

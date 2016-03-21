@@ -1,67 +1,41 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:32893 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932113AbcCHAyI (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 7 Mar 2016 19:54:08 -0500
-From: Liu Bo <bo.li.liu@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Cc: =?UTF-8?q?Holger=20Hoffst=C3=A4tte?=
-	<holger.hoffstaette@googlemail.com>
-Subject: [PATCH 2/2] Btrfs: cleanup error handling in extent_write_cached_pages
-Date: Mon,  7 Mar 2016 16:56:22 -0800
-Message-Id: <1457398582-12606-2-git-send-email-bo.li.liu@oracle.com>
-In-Reply-To: <1457398582-12606-1-git-send-email-bo.li.liu@oracle.com>
-References: <1457398582-12606-1-git-send-email-bo.li.liu@oracle.com>
+Received: from mx2.suse.de ([195.135.220.15]:54350 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1756851AbcCURto (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 21 Mar 2016 13:49:44 -0400
+Date: Mon, 21 Mar 2016 18:49:14 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Dan Fuhry <dan@fuhry.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] Add support for RENAME_{EXCHANGE,WHITEOUT}
+Message-ID: <20160321174914.GC8095@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <CAO8L9g6EpXMNjWVunz2A-EPwGHBo=18T_a+3xovqMbHux3aHsw@mail.gmail.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <CAO8L9g6EpXMNjWVunz2A-EPwGHBo=18T_a+3xovqMbHux3aHsw@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Now that we bail out immediately if ->writepage() returns an error,
-we don't need an extra error to retain the error code.
+On Thu, Jan 28, 2016 at 10:52:28AM -0500, Dan Fuhry wrote:
+> Add support for the RENAME_WHITEOUT and RENAME_EXCHANGE flags in
+> renameat2(). This brings us pretty close to having btrfs ready to be
+> an upper layer for overlayfs. (The last remaining issue is in
+> btrfs_sync_file, which I'm looking at next if I have time.)
 
-Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
----
- fs/btrfs/extent_io.c | 7 ++-----
- 1 file changed, 2 insertions(+), 5 deletions(-)
+The sync_file issue should be fixed by filipes' fix from today.
 
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 1dfcffe..08282ea 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -3922,7 +3922,6 @@ static int extent_write_cache_pages(struct extent_io_tree *tree,
- 	struct inode *inode = mapping->host;
- 	int ret = 0;
- 	int done = 0;
--	int err = 0;
- 	int nr_to_write_done = 0;
- 	struct pagevec pvec;
- 	int nr_pages;
-@@ -4015,8 +4014,6 @@ retry:
- 				unlock_page(page);
- 				ret = 0;
- 			}
--			if (!err && ret < 0)
--				err = ret;
- 			if (ret < 0) {
- 				/*
- 				 * done_index is set past this page,
-@@ -4042,7 +4039,7 @@ retry:
- 		pagevec_release(&pvec);
- 		cond_resched();
- 	}
--	if (!scanned && !done && !err) {
-+	if (!scanned && !done) {
- 		/*
- 		 * We hit the last page and there is more work to be done: wrap
- 		 * back to the start of the file
-@@ -4056,7 +4053,7 @@ retry:
- 		mapping->writeback_index = done_index;
- 
- 	btrfs_add_delayed_iput(inode);
--	return err;
-+	return ret;
- }
- 
- static void flush_epd_write_bio(struct extent_page_data *epd)
--- 
-2.5.0
+> This includes Davide Italiano's implementation of RENAME_EXCHANGE. I
+> quickly pinged him on github [1] last week to confirm resubmission of
+> his patch which originally went to this list on 2 April 2015 and
+> didn't make it in.
+> 
+> This is my first time submitting a kernel patch, I think I've covered
+> all the style recommendations, and also addressed Filipe David
+> Manana's review notes [2] on Davide Italiano's patch. Certainly let me
+> know if there's anything else that should be cleaned up. Thanks!
 
+The patch style looks, I've briefly tested it in fstests and it blows
+very quickly, the stacktraces are unreadable. So I could mismerge it or
+there's another reason. Anyway, I'm going to pick this patch for 4.7 and
+will add it to my for-next after the crashes are resolved.

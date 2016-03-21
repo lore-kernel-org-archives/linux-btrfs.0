@@ -1,67 +1,43 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pf0-f171.google.com ([209.85.192.171]:36028 "EHLO
-	mail-pf0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756561AbcCVKkl (ORCPT
+Received: from mail-qg0-f49.google.com ([209.85.192.49]:36354 "EHLO
+	mail-qg0-f49.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755146AbcCUOQV (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 22 Mar 2016 06:40:41 -0400
-Received: by mail-pf0-f171.google.com with SMTP id u190so306145685pfb.3
-        for <linux-btrfs@vger.kernel.org>; Tue, 22 Mar 2016 03:40:41 -0700 (PDT)
-From: Petros Angelatos <petrosagg@gmail.com>
+	Mon, 21 Mar 2016 10:16:21 -0400
+Received: by mail-qg0-f49.google.com with SMTP id u110so152856034qge.3
+        for <linux-btrfs@vger.kernel.org>; Mon, 21 Mar 2016 07:16:20 -0700 (PDT)
+From: Noah Massey <nmassey@kmbs.konicaminolta.us>
 To: linux-btrfs@vger.kernel.org
-Cc: Petros Angelatos <petrosagg@gmail.com>
-Subject: [PATCH] btrfs-progs: utils: make sure set_label_mounted uses correct length buffers
-Date: Tue, 22 Mar 2016 03:40:29 -0700
-Message-Id: <1458643229-25209-1-git-send-email-petrosagg@gmail.com>
+Cc: David Sterba <dsterba@suse.com>, Noah Massey <noah.massey@gmail.com>
+Subject: [PATCH] btrfs-progs: build: fix static standalone utilities
+Date: Mon, 21 Mar 2016 10:16:07 -0400
+Message-Id: <1458569767-6432-1-git-send-email-noah.massey@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When `btrfs filesystem label /foo bar` command is invoked, it will pass
-the buffer allocated in the argv array directly to set_label_mounted()
-and then to the BTRFS_IOC_SET_FSLABEL ioctl.
+commit b5e7979 "btrfs-progs: build: extend per-binary objects" allows
+the standalone utilities to link against object files shared with the
+main binary. However, the btrfs-*.static targets need to be adjusted
+to build against the static versions of the common files.
 
-However, the kernel code handling the ioctl will always try to copy
-BTRFS_LABEL_SIZE bytes[1] from the userland pointer. Under certain
-conditions and when the label is small enough, the command will fail
-with:
-
-    [root@localhost /]# btrfs filesystem label /mnt f
-    ERROR: unable to set label Bad address
-
-Fix this by making sure we pass a BTRFS_LABEL_SIZE sized buffer to the
-ioctl containing the desired label.
-
-[1] https://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/tree/fs/btrfs/ioctl.c?id=refs/tags/v4.5#n5231
-
-Signed-off-by: Petros Angelatos <petrosagg@gmail.com>
+Signed-off-by: Noah Massey <noah.massey@gmail.com>
 ---
- utils.c | 5 ++++-
- 1 file changed, 4 insertions(+), 1 deletion(-)
+ Makefile.in | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/utils.c b/utils.c
-index c0c564e..ec6c613 100644
---- a/utils.c
-+++ b/utils.c
-@@ -1755,9 +1755,10 @@ static int set_label_unmounted(const char *dev, const char *label)
- 	return 0;
- }
+diff --git a/Makefile.in b/Makefile.in
+index dd30686..c553c5f 100644
+--- a/Makefile.in
++++ b/Makefile.in
+@@ -254,7 +254,7 @@ $(lib_links):
+ btrfs-%.static: $(static_objects) btrfs-%.static.o $(static_libbtrfs_objects)
+ 	@echo "    [LD]     $@"
+ 	$(Q)$(CC) $(STATIC_CFLAGS) -o $@ $@.o $(static_objects) \
+-		$($(subst -,_,$(subst .static,,$@)-objects)) \
++		$(patsubst %.o, %.static.o, $($(subst -,_,$(subst .static,,$@)-objects))) \
+ 		$(static_libbtrfs_objects) $(STATIC_LDFLAGS) \
+ 		$($(subst -,_,$(subst .static,,$@)-libs)) $(STATIC_LIBS)
  
--static int set_label_mounted(const char *mount_path, const char *label)
-+static int set_label_mounted(const char *mount_path, const char *labelp)
- {
- 	int fd;
-+	char label[BTRFS_LABEL_SIZE];
- 
- 	fd = open(mount_path, O_RDONLY | O_NOATIME);
- 	if (fd < 0) {
-@@ -1765,6 +1766,8 @@ static int set_label_mounted(const char *mount_path, const char *label)
- 		return -1;
- 	}
- 
-+	memset(label, '\0', sizeof(label));
-+	strncpy(label, labelp, sizeof(label));
- 	if (ioctl(fd, BTRFS_IOC_SET_FSLABEL, label) < 0) {
- 		fprintf(stderr, "ERROR: unable to set label %s\n",
- 			strerror(errno));
 -- 
-2.7.2
+2.7.0
 

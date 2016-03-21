@@ -1,64 +1,40 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f175.google.com ([209.85.213.175]:34964 "EHLO
-	mail-ig0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750797AbcCUFml (ORCPT
+Received: from mail-io0-f171.google.com ([209.85.223.171]:35455 "EHLO
+	mail-io0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756461AbcCUPVq (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 21 Mar 2016 01:42:41 -0400
-Received: by mail-ig0-f175.google.com with SMTP id cl4so24997323igb.0
-        for <linux-btrfs@vger.kernel.org>; Sun, 20 Mar 2016 22:42:41 -0700 (PDT)
+	Mon, 21 Mar 2016 11:21:46 -0400
+Received: by mail-io0-f171.google.com with SMTP id o5so128804517iod.2
+        for <linux-btrfs@vger.kernel.org>; Mon, 21 Mar 2016 08:21:46 -0700 (PDT)
+Date: Mon, 21 Mar 2016 09:21:44 -0600
+From: Tycho Andersen <tycho.andersen@canonical.com>
+To: linux-btrfs@vger.kernel.org
+Cc: linux-kernel@vger.kernel.org
+Subject: confusing mountinfo output when bind-mounting files
+Message-ID: <20160321152144.GL8544@smitten>
 MIME-Version: 1.0
-In-Reply-To: <CAC7HdqmzhHwJFgpDAjwF9gjL_+vEm7A8sBBsGwQEmTE_BGoeqQ@mail.gmail.com>
-References: <CAC7HdqknOJAK+FcE53xO38G__gc42GR0GQW+chbGbDxXBt7HFA@mail.gmail.com>
-	<CAJCQCtQ=_iE3m6P-jH1VjzycBXXRv5QZUS2SPNeH7ZJ_ukWM-A@mail.gmail.com>
-	<CAC7HdqmzhHwJFgpDAjwF9gjL_+vEm7A8sBBsGwQEmTE_BGoeqQ@mail.gmail.com>
-Date: Sun, 20 Mar 2016 23:42:40 -0600
-Message-ID: <CAJCQCtTnGyMBwGwDowm7+4DFN89YtEJx=hmi_K4gpogx3gFanQ@mail.gmail.com>
-Subject: Re: moving btrfs subvolumes to new disk
-From: Chris Murphy <lists@colorremedies.com>
-To: Ryan Erato <rerato@gmail.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Mar 20, 2016 at 10:34 PM, Ryan Erato <rerato@gmail.com> wrote:
-.
->
-> Sending "home.snap" to "/mnt/ssd" results in the -2 error. What is
-> peculiar, or possibly a red herring, is that it seems to fail at the
-> same point each time, at 4.39GB in to the transfer.
+Hi all,
 
+I'm seeing some strange behavior when bind mounting files from a btrfs
+subvolume. Consider the output below:
 
+root@criu2:/tmp# mount -o loop /tmp/tester.btrfs /tmp/dir1
+root@criu2:/tmp# touch dir1/file
+root@criu2:/tmp# sudo mount --bind dir1/file dir2/file
+root@criu2:/tmp# grep "/tmp/dir" /proc/self/mountinfo 
+128 24 0:45 / /tmp/dir1 rw,relatime shared:107 - btrfs /dev/loop0 rw,space_cache,subvolid=5,subvol=/
+129 24 0:45 /file /tmp/dir2/file rw,relatime shared:107 - btrfs /dev/loop0 rw,space_cache,subvolid=5,subvol=/file
+root@criu2:/tmp# btrfs --version
+btrfs-progs v4.4
+root@criu2:/tmp# uname -a
+Linux criu2 4.4.0-8-generic #23-Ubuntu SMP Wed Feb 24 20:45:30 UTC 2016 x86_64 x86_64 x86_64 GNU/Linux
 
-That's pretty suspicious. I didn't realize from the first description
-that the command is doing something for a while before failing. I
-thought it was failing immediately.
+The issue here is that the "subvol=" mount option for the target of the bind
+mount is "/file" when no such subvolume actually exists. Is this
+intended? It's confusing to say the least, but seems like a bug to me.
 
-Try this:
-
-btrfs send -vvv --no-data -f homesnap.btr home.snapshot
-
-That will write out metadata only to a file, no receive. See if the
-error still happens and if the extra v gives more info.
-
-If it still fails with no more useful information then what I'd try
-next is a btrfs check with the most recent btrfs-progs you can find.
-If you're in need of a suggestion, this has btrfs-progs 4.4.1, I've
-tested that it boots, it's got a published sha256 hash, and is served
-over https. Yes, it's not even an alpha, but all you're doing is a
-check, not a --repair, and no need to mount it (although that's
-probably safe also, I've been doing it most of the weekend).
-https://dl.fedoraproject.org/pub/alt/stage/24_Alpha-1.6/Workstation/x86_64/iso/
-dd that iso file to a USB stick, it will destroy all data on the
-stick, and then boot the computer, and switch to tty2 (control-alt-f2)
-to get to a shell.
-
-I think 'btrfs check > btrfscheck.txt' will output most of the results
-to a text file. Often it misses the first few lines for whatever
-reason. You can either 'fpaste <filename>' and then note the URL and
-post it here, or you can scp the file elsewhere, if you have wired
-ethernet connected.
-
-
--- 
-Chris Murphy
+Tycho

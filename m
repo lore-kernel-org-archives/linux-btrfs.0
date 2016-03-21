@@ -1,158 +1,119 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:34663 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751485AbcCUAPA (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 20 Mar 2016 20:15:00 -0400
-Subject: Re: [PATCH] btrfs-progs: add stat check in open_ctree_fs_info
-To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>,
-        <linux-btrfs@vger.kernel.org>
-References: <1458141971-56355-1-git-send-email-ahferroin7@gmail.com>
- <56EA7314.2080104@cn.fujitsu.com> <56EA935C.1040408@gmail.com>
- <56EB4E09.6090703@cn.fujitsu.com> <56EBE3C1.6060009@gmail.com>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <56EF3CF8.50807@cn.fujitsu.com>
-Date: Mon, 21 Mar 2016 08:14:48 +0800
-MIME-Version: 1.0
-In-Reply-To: <56EBE3C1.6060009@gmail.com>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+Received: from mx1.redhat.com ([209.132.183.28]:47600 "EHLO mx1.redhat.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752124AbcCUHYW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 21 Mar 2016 03:24:22 -0400
+From: Eryu Guan <eguan@redhat.com>
+To: fstests@vger.kernel.org
+Cc: linux-btrfs@vger.kernel.org, Eryu Guan <eguan@redhat.com>
+Subject: [PATCH] fstests: _fail the tests if _scratch_mount failed to avoid fully filling root fs
+Date: Mon, 21 Mar 2016 15:23:41 +0800
+Message-Id: <1458545021-23285-1-git-send-email-eguan@redhat.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+btrfs failed to mount small fs on ppc64 host with error ENOSPC, even
+creating such small fs succeeded, then generic/027 consumed all free
+space on root fs not on SCRATCH_DEV and test harness cannot create tmp
+files and continue other tests.
 
+Though I think it's a btrfs bug, it's still worth preventing this
+situation from happening in the harness, as such tests usually aim to
+exercise fs on ENOSPC conditions, there's no point to continue if the
+small fs is not mounted.
 
-Austin S. Hemmelgarn wrote on 2016/03/18 07:17 -0400:
-> On 2016-03-17 20:38, Qu Wenruo wrote:
->>
->>
->> Austin S. Hemmelgarn wrote on 2016/03/17 07:22 -0400:
->>> On 2016-03-17 05:04, Qu Wenruo wrote:
->>>>
->>>>
->>>> Austin S. Hemmelgarn wrote on 2016/03/16 11:26 -0400:
->>>>> Currently, open_ctree_fs_info will open whatever path you pass it and
->>>>> try to interpret it as a BTRFS filesystem.  While this is not
->>>>> nessecarily dangerous (except possibly if done on a character device),
->>>>> it does result in some rather cryptic and non-sensical error messages
->>>>> when trying to run certain commands in ways they weren't intended
->>>>> to be
->>>>> run.  Add a check using stat(2) to verify that the path we've been
->>>>> passed is in fact a regular file or a block device.
->>>>>
->>>>> This causes the following commands to provide a helpful error message
->>>>> when run on a FIFO, directory, character device, or socket:
->>>>>      * btrfs check
->>>>>      * btrfs restore
->>>>>      * btrfs-image
->>>>>      * btrfs-find-root
->>>>>      * btrfs-debug-tree
->>>>>
->>>>> Signed-off-by: Austin S. Hemmelgarn <ahferroin7@gmail.com>
->>>>> ---
->>>>> This has been build and runtime tested on an x86-64 system with glibc.
->>>>> It has been build tested on x86-64 with uclibc.
->>>>> It has not been tested on Android or with musl, although it should
->>>>> work
->>>>> there also.
->>>>>
->>>>> There are other tools that have similarly bad behavior when called
->>>>> incorrectly (btrfs rescue immediately comes to mind), but they don't
->>>>> use open_ctree_fs_info, so this doesn't affect them.  I may do
->>>>> followup
->>>>> patches to fix those too if I have the time.
->>>>>
->>>>> open_ctree_fs_info is also used in cmds-filesystem.c, although I'm not
->>>>> at all sure what exactly is going on there, and btrfs filesystem
->>>>> appears
->>>>> from my testing to behave exactly the same with this change, so I
->>>>> don't
->>>>> think this will have any effect on any of the btrfs filesystem
->>>>> commands.
->>>>>
->>>>>   disk-io.c | 7 +++++++
->>>>>   1 file changed, 7 insertions(+)
->>>>>
->>>>> diff --git a/disk-io.c b/disk-io.c
->>>>> index e520d80..d35153d 100644
->>>>> --- a/disk-io.c
->>>>> +++ b/disk-io.c
->>>>> @@ -1310,6 +1310,13 @@ struct btrfs_fs_info *open_ctree_fs_info(const
->>>>> char *filename,
->>>>>       int fp;
->>>>>       struct btrfs_fs_info *info;
->>>>>       int oflags = O_CREAT | O_RDWR;
->>>>> +    struct stat sb;
->>>>> +
->>>>> +    stat(filename, &sb);
->>>>> +    if (!(((sb.st_mode & S_IFMT) == S_IFREG) || ((sb.st_mode &
->>>>> S_IFMT) == S_IFBLK))) {
->>>>> +        fprintf (stderr, "%s is not a regular file or block
->>>>> device\n", filename);
->>>>> +        return NULL;
->>>>> +    }
->>>>
->>>> This one seems to be too restrict.
->>>>
->>>> I prefer to block char/pipe/dir and some other obvious wrong ones other
->>>> than only allowing regular and block ones.
->>> Running against a directory gives a cryptic error about the superblock
->>> having bad info.  Running against a pipe is nonsensical, as it can't
->>> contain a filesystem.  Running against a character device is potentially
->>> dangerous (read operations are not guaranteed to be idempotent on
->>> character devices, depending on what hardware it is connected to, you
->>> could cause all kinds of odd things to happen).
->>>
->>> Everything this function gets called on is trying to get info from a
->>> unmounted filesystem image, which means that it only makes sense to try
->>> to parse things that can contain a unmounted filesystem image.
->>
->> Yes, I understand what you are doing.
->>
->> Just as I alreayd mentioned, the problem is, your current patch only
->> allowing regular and block device and will block valid soft link.
->> Just as Duncan mentioned, soft link should be allowed too.
-> Symbolic links are allowed though.  stat(2) follows symlinks and returns
-> information on their target, not the link itself.  I also tested it on
-> symlinks, and it still works to run `btrfs check` on a link to a block
-> device containing a BTRFS filesystem
+So I went through all tests that call _scratch_mkfs_sized && could
+consume all free space on $SCRATCH_MNT, _fail the test if _scratch_mount
+failed.
 
-Then I'm completely OK with current implementation.
+Signed-off-by: Eryu Guan <eguan@redhat.com>
+---
+ tests/generic/027 | 2 +-
+ tests/generic/269 | 2 +-
+ tests/generic/270 | 2 +-
+ tests/generic/274 | 2 +-
+ tests/generic/275 | 2 +-
+ tests/generic/300 | 2 +-
+ 6 files changed, 6 insertions(+), 6 deletions(-)
 
-Thanks,
-Qu
->>
->> I mean to *block/prevent* char/pipe/dir instead of *only allowing*
->> regular/block device.
-> I apologize for the misunderstanding, I misread your original message.
->
-> As to blacklisting invalid types instead of whitelisting valid ones, I'd
-> personally would prefer whitelisting in this particular case, as it
-> results in both a smaller conditional, and makes the intent of only
-> allowing things that can contain a BTRFS filesystem  more clear (at
-> least, it does to me).
->>
->> Thanks,
->> Qu
->>>>
->>>> Thanks,
->>>> Qu
->>>>>
->>>>>       if (!(flags & OPEN_CTREE_WRITES))
->>>>>           oflags = O_RDONLY;
->>>>>
->>>>
->>>>
->>>
->>>
->>>
->>
->>
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
->
-
+diff --git a/tests/generic/027 b/tests/generic/027
+index d2e59d6..e5fdbe9 100755
+--- a/tests/generic/027
++++ b/tests/generic/027
+@@ -66,7 +66,7 @@ rm -f $seqres.full
+ echo "Silence is golden"
+ 
+ _scratch_mkfs_sized $((256 * 1024 * 1024)) >>$seqres.full 2>&1
+-_scratch_mount
++_scratch_mount || _fail "mount failed"
+ 
+ echo "Reserve 2M space" >>$seqres.full
+ $XFS_IO_PROG -f -c "pwrite 0 2m" $SCRATCH_MNT/testfile >>$seqres.full 2>&1
+diff --git a/tests/generic/269 b/tests/generic/269
+index ee353a5..adc766f 100755
+--- a/tests/generic/269
++++ b/tests/generic/269
+@@ -68,7 +68,7 @@ _require_scratch
+ 
+ rm -f $seqres.full
+ _scratch_mkfs_sized $((512 * 1024 * 1024)) >> $seqres.full 2>&1
+-_scratch_mount
++_scratch_mount || _fail "mount failed"
+ 
+ if ! _workout; then
+ 	_scratch_unmount 2>/dev/null
+diff --git a/tests/generic/270 b/tests/generic/270
+index e6874c9..b0164be 100755
+--- a/tests/generic/270
++++ b/tests/generic/270
+@@ -82,7 +82,7 @@ _require_scratch
+ 
+ rm -f $seqres.full
+ _scratch_mkfs_sized $((512 * 1024 * 1024)) >> $seqres.full 2>&1
+-_scratch_mount "-o usrquota,grpquota"
++_scratch_mount "-o usrquota,grpquota" || _fail "mount failed"
+ chmod 777 $SCRATCH_MNT
+ quotacheck -u -g $SCRATCH_MNT 2>/dev/null
+ quotaon -u -g $SCRATCH_MNT 2>/dev/null
+diff --git a/tests/generic/274 b/tests/generic/274
+index 61ab220..7feca5c 100755
+--- a/tests/generic/274
++++ b/tests/generic/274
+@@ -58,7 +58,7 @@ rm -f $seqres.full
+ 
+ _scratch_unmount 2>/dev/null
+ _scratch_mkfs_sized $((2 * 1024 * 1024 * 1024)) >>$seqres.full 2>&1
+-_scratch_mount
++_scratch_mount || _fail "mount failed"
+ 
+ # Create a 4k file and Allocate 4M past EOF on that file
+ $XFS_IO_PROG -f -c "pwrite 0 4k" -c "falloc -k 4k 4m" $SCRATCH_MNT/test \
+diff --git a/tests/generic/275 b/tests/generic/275
+index 955c4ac..3e5940a 100755
+--- a/tests/generic/275
++++ b/tests/generic/275
+@@ -55,7 +55,7 @@ rm -f $seqres.full
+ 
+ _scratch_unmount 2>/dev/null
+ _scratch_mkfs_sized $((2 * 1024 * 1024 * 1024)) >>$seqres.full 2>&1
+-_scratch_mount
++_scratch_mount || _fail "mount failed"
+ 
+ # this file will get removed to create 256k of free space after ENOSPC
+ # conditions are created.
+diff --git a/tests/generic/300 b/tests/generic/300
+index c187f43..0b2463d 100755
+--- a/tests/generic/300
++++ b/tests/generic/300
+@@ -143,7 +143,7 @@ _workout()
+ _require_fio $fio_config
+ 
+ _scratch_mkfs_sized $FS_SIZE >> $seqres.full 2>&1
+-_scratch_mount
++_scratch_mount || _fail "mount failed"
+ 
+ if ! _workout; then
+ 	_scratch_unmount 2>/dev/null
+-- 
+2.5.0
 

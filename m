@@ -1,14 +1,16 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.136]:52306 "EHLO mail.kernel.org"
+Received: from mail.kernel.org ([198.145.29.136]:53184 "EHLO mail.kernel.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1756906AbcCURkP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 21 Mar 2016 13:40:15 -0400
+	id S1757314AbcCURud (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 21 Mar 2016 13:50:33 -0400
 From: fdmanana@kernel.org
 To: fstests@vger.kernel.org
 Cc: linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH] fstests: test fsync on overlayfs merged directory
-Date: Mon, 21 Mar 2016 17:39:12 +0000
-Message-Id: <1458581952-18638-1-git-send-email-fdmanana@kernel.org>
+Subject: [PATCH v2] fstests: test fsync on overlayfs merged directory
+Date: Mon, 21 Mar 2016 17:50:25 +0000
+Message-Id: <1458582625-22039-1-git-send-email-fdmanana@kernel.org>
+In-Reply-To: <1458581952-18638-1-git-send-email-fdmanana@kernel.org>
+References: <1458581952-18638-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
@@ -29,19 +31,22 @@ and linux-btrfs mailing lists to fix this problem:
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- tests/overlay/002     | 76 +++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/overlay/002.out |  3 ++
+
+V2: Removed leftover comment from debugging.
+
+ tests/overlay/002     | 74 +++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/overlay/002.out |  3 +++
  tests/overlay/group   |  1 +
- 3 files changed, 80 insertions(+)
+ 3 files changed, 78 insertions(+)
  create mode 100755 tests/overlay/002
  create mode 100644 tests/overlay/002.out
 
 diff --git a/tests/overlay/002 b/tests/overlay/002
 new file mode 100755
-index 0000000..4f82f60
+index 0000000..e5aa610
 --- /dev/null
 +++ b/tests/overlay/002
-@@ -0,0 +1,76 @@
+@@ -0,0 +1,74 @@
 +#! /bin/bash
 +# FS QA Test 002
 +#
@@ -103,11 +108,9 @@ index 0000000..4f82f60
 +_scratch_mkfs
 +
 +# Create our test file.
-+#lowerdir=$SCRATCH_DEV/$OVERLAY_LOWER_DIR
-+lowerdir=$SCRATCH_DEV/$OVERLAY_UPPER_DIR
++lowerdir=$SCRATCH_DEV/$OVERLAY_LOWER_DIR
 +mkdir -p $lowerdir
 +touch $lowerdir/foobar
-+sync
 +
 +_scratch_mount
 +

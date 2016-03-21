@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qg0-f44.google.com ([209.85.192.44]:32878 "EHLO
-	mail-qg0-f44.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752905AbcCULUj (ORCPT
+Received: from mail-qg0-f48.google.com ([209.85.192.48]:34342 "EHLO
+	mail-qg0-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755454AbcCUMZe (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 21 Mar 2016 07:20:39 -0400
-Received: by mail-qg0-f44.google.com with SMTP id a36so117472381qge.0
-        for <linux-btrfs@vger.kernel.org>; Mon, 21 Mar 2016 04:20:38 -0700 (PDT)
+	Mon, 21 Mar 2016 08:25:34 -0400
+Received: by mail-qg0-f48.google.com with SMTP id w104so150297355qge.1
+        for <linux-btrfs@vger.kernel.org>; Mon, 21 Mar 2016 05:25:34 -0700 (PDT)
 Subject: Re: btrfs fi du ERROR
 To: Martin Volf <martin.volf.42@gmail.com>, linux-btrfs@vger.kernel.org
 References: <CAM1AHpQgH=Zn_k_pHMTpYfdY_xdrOZxo=x8R=Wd7nZ3gcsVX3w@mail.gmail.com>
 From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <56EFD8B1.6050002@gmail.com>
-Date: Mon, 21 Mar 2016 07:19:13 -0400
+Message-ID: <56EFE820.1020407@gmail.com>
+Date: Mon, 21 Mar 2016 08:25:04 -0400
 MIME-Version: 1.0
 In-Reply-To: <CAM1AHpQgH=Zn_k_pHMTpYfdY_xdrOZxo=x8R=Wd7nZ3gcsVX3w@mail.gmail.com>
 Content-Type: text/plain; charset=utf-8; format=flowed
@@ -49,8 +49,4 @@ On 2016-03-21 02:37, Martin Volf wrote:
 >
 > Is it expected?
 >
-Given that we're apparently trying to open the file with O_RDWR, yes 
-that is expected.  What's not expected is that we're opening the file 
-writable...
-
-I'll see if I can get a patch put together some time today to fix that.
+Thanks for reporting this, I've sent a patch to fix it.

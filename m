@@ -1,43 +1,67 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:36757 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750860AbcCVPiY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 22 Mar 2016 11:38:24 -0400
-Date: Tue, 22 Mar 2016 16:37:54 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Petros Angelatos <petrosagg@gmail.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs-progs: utils: make sure set_label_mounted uses
- correct length buffers
-Message-ID: <20160322153754.GE29764@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1458643229-25209-1-git-send-email-petrosagg@gmail.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1458643229-25209-1-git-send-email-petrosagg@gmail.com>
+Received: from mail-pf0-f171.google.com ([209.85.192.171]:36028 "EHLO
+	mail-pf0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756561AbcCVKkl (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 22 Mar 2016 06:40:41 -0400
+Received: by mail-pf0-f171.google.com with SMTP id u190so306145685pfb.3
+        for <linux-btrfs@vger.kernel.org>; Tue, 22 Mar 2016 03:40:41 -0700 (PDT)
+From: Petros Angelatos <petrosagg@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Petros Angelatos <petrosagg@gmail.com>
+Subject: [PATCH] btrfs-progs: utils: make sure set_label_mounted uses correct length buffers
+Date: Tue, 22 Mar 2016 03:40:29 -0700
+Message-Id: <1458643229-25209-1-git-send-email-petrosagg@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Mar 22, 2016 at 03:40:29AM -0700, Petros Angelatos wrote:
-> When `btrfs filesystem label /foo bar` command is invoked, it will pass
-> the buffer allocated in the argv array directly to set_label_mounted()
-> and then to the BTRFS_IOC_SET_FSLABEL ioctl.
-> 
-> However, the kernel code handling the ioctl will always try to copy
-> BTRFS_LABEL_SIZE bytes[1] from the userland pointer. Under certain
-> conditions and when the label is small enough, the command will fail
-> with:
-> 
->     [root@localhost /]# btrfs filesystem label /mnt f
->     ERROR: unable to set label Bad address
+When `btrfs filesystem label /foo bar` command is invoked, it will pass
+the buffer allocated in the argv array directly to set_label_mounted()
+and then to the BTRFS_IOC_SET_FSLABEL ioctl.
 
-Good catch, I was not aware of the hidden requirement.
+However, the kernel code handling the ioctl will always try to copy
+BTRFS_LABEL_SIZE bytes[1] from the userland pointer. Under certain
+conditions and when the label is small enough, the command will fail
+with:
 
-> Fix this by making sure we pass a BTRFS_LABEL_SIZE sized buffer to the
-> ioctl containing the desired label.
-> 
-> [1] https://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/tree/fs/btrfs/ioctl.c?id=refs/tags/v4.5#n5231
-> 
-> Signed-off-by: Petros Angelatos <petrosagg@gmail.com>
+    [root@localhost /]# btrfs filesystem label /mnt f
+    ERROR: unable to set label Bad address
 
-Applied, thanks.
+Fix this by making sure we pass a BTRFS_LABEL_SIZE sized buffer to the
+ioctl containing the desired label.
+
+[1] https://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/tree/fs/btrfs/ioctl.c?id=refs/tags/v4.5#n5231
+
+Signed-off-by: Petros Angelatos <petrosagg@gmail.com>
+---
+ utils.c | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/utils.c b/utils.c
+index c0c564e..ec6c613 100644
+--- a/utils.c
++++ b/utils.c
+@@ -1755,9 +1755,10 @@ static int set_label_unmounted(const char *dev, const char *label)
+ 	return 0;
+ }
+ 
+-static int set_label_mounted(const char *mount_path, const char *label)
++static int set_label_mounted(const char *mount_path, const char *labelp)
+ {
+ 	int fd;
++	char label[BTRFS_LABEL_SIZE];
+ 
+ 	fd = open(mount_path, O_RDONLY | O_NOATIME);
+ 	if (fd < 0) {
+@@ -1765,6 +1766,8 @@ static int set_label_mounted(const char *mount_path, const char *label)
+ 		return -1;
+ 	}
+ 
++	memset(label, '\0', sizeof(label));
++	strncpy(label, labelp, sizeof(label));
+ 	if (ioctl(fd, BTRFS_IOC_SET_FSLABEL, label) < 0) {
+ 		fprintf(stderr, "ERROR: unable to set label %s\n",
+ 			strerror(errno));
+-- 
+2.7.2
+

@@ -1,146 +1,43 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.136]:56832 "EHLO mail.kernel.org"
+Received: from mx2.suse.de ([195.135.220.15]:36757 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752221AbcCVMIt (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 22 Mar 2016 08:08:49 -0400
-From: fdmanana@kernel.org
-To: fstests@vger.kernel.org
-Cc: linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH v3] fstests: test fsync on overlayfs merged directory
-Date: Tue, 22 Mar 2016 12:08:32 +0000
-Message-Id: <1458648512-4398-1-git-send-email-fdmanana@kernel.org>
-In-Reply-To: <1458581952-18638-1-git-send-email-fdmanana@kernel.org>
-References: <1458581952-18638-1-git-send-email-fdmanana@kernel.org>
+	id S1750860AbcCVPiY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 22 Mar 2016 11:38:24 -0400
+Date: Tue, 22 Mar 2016 16:37:54 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Petros Angelatos <petrosagg@gmail.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs-progs: utils: make sure set_label_mounted uses
+ correct length buffers
+Message-ID: <20160322153754.GE29764@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1458643229-25209-1-git-send-email-petrosagg@gmail.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1458643229-25209-1-git-send-email-petrosagg@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Filipe Manana <fdmanana@suse.com>
+On Tue, Mar 22, 2016 at 03:40:29AM -0700, Petros Angelatos wrote:
+> When `btrfs filesystem label /foo bar` command is invoked, it will pass
+> the buffer allocated in the argv array directly to set_label_mounted()
+> and then to the BTRFS_IOC_SET_FSLABEL ioctl.
+> 
+> However, the kernel code handling the ioctl will always try to copy
+> BTRFS_LABEL_SIZE bytes[1] from the userland pointer. Under certain
+> conditions and when the label is small enough, the command will fail
+> with:
+> 
+>     [root@localhost /]# btrfs filesystem label /mnt f
+>     ERROR: unable to set label Bad address
 
-Test that calling fsync against a file using the merged directory does
-not result in a crash nor fails unexpectedly.
+Good catch, I was not aware of the hidden requirement.
 
-This is motivated by a change in overlayfs that resulted in a crash
-(invalid memory access) when the lower or upper directory belonged to
-a btrfs file system. The overlayfs change came in commit 4bacc9c9234
-(overlayfs: Make f_path always point to the overlay and f_inode to the
-underlay). At the moment there are two patches in the linux-fsdevel
-and linux-btrfs mailing lists to fix this problem:
+> Fix this by making sure we pass a BTRFS_LABEL_SIZE sized buffer to the
+> ioctl containing the desired label.
+> 
+> [1] https://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/tree/fs/btrfs/ioctl.c?id=refs/tags/v4.5#n5231
+> 
+> Signed-off-by: Petros Angelatos <petrosagg@gmail.com>
 
-  * vfs: add file_dentry()
-  * Btrfs: fix crash/invalid memory access on fsync when using overlayfs
-
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
-Reviewed-by: Eryu Guan <eguan@redhat.com>
----
-
-V2: Removed leftover comment from debugging.
-V3: Change supperted fs type from generic to overlay.
-
- tests/overlay/002     | 74 +++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/overlay/002.out |  3 +++
- tests/overlay/group   |  1 +
- 3 files changed, 78 insertions(+)
- create mode 100755 tests/overlay/002
- create mode 100644 tests/overlay/002.out
-
-diff --git a/tests/overlay/002 b/tests/overlay/002
-new file mode 100755
-index 0000000..ec7874e
---- /dev/null
-+++ b/tests/overlay/002
-@@ -0,0 +1,74 @@
-+#! /bin/bash
-+# FS QA Test 002
-+#
-+# Test that calling fsync against a file using the merged directory does not
-+# result in a crash nor fails unexpectedly.
-+#
-+# This is motivated by a change in overlayfs that resulted in a crash (invalid
-+# memory access) when the lower or upper directory belonged to a btrfs file
-+# system.
-+#
-+#-----------------------------------------------------------------------
-+#
-+# Copyright (C) 2016 SUSE Linux Products GmbH. All Rights Reserved.
-+# Author: Filipe Manana <fdmanana@suse.com>
-+#
-+# This program is free software; you can redistribute it and/or
-+# modify it under the terms of the GNU General Public License as
-+# published by the Free Software Foundation.
-+#
-+# This program is distributed in the hope that it would be useful,
-+# but WITHOUT ANY WARRANTY; without even the implied warranty of
-+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+# GNU General Public License for more details.
-+#
-+# You should have received a copy of the GNU General Public License
-+# along with this program; if not, write the Free Software Foundation,
-+# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-+#-----------------------------------------------------------------------
-+#
-+
-+seq=`basename $0`
-+seqres=$RESULT_DIR/$seq
-+echo "QA output created by $seq"
-+
-+here=`pwd`
-+tmp=/tmp/$$
-+status=1	# failure is the default!
-+trap "_cleanup; exit \$status" 0 1 2 3 15
-+
-+_cleanup()
-+{
-+	cd /
-+	rm -f $tmp.*
-+}
-+
-+# get standard environment, filters and checks
-+. ./common/rc
-+. ./common/filter
-+
-+# remove previous $seqres.full before test
-+rm -f $seqres.full
-+
-+# real QA test starts here
-+_supported_fs overlay
-+_supported_os Linux
-+_require_scratch
-+
-+# Remove all files from previous tests
-+_scratch_mkfs
-+
-+# Create our test file.
-+lowerdir=$SCRATCH_DEV/$OVERLAY_LOWER_DIR
-+mkdir -p $lowerdir
-+touch $lowerdir/foobar
-+
-+_scratch_mount
-+
-+# Write some data to our file and fsync it, using the merged directory path.
-+# This should work and not result in a crash.
-+$XFS_IO_PROG -c "pwrite 0 64k" -c "fsync" $SCRATCH_MNT/foobar | _filter_xfs_io
-+
-+# success, all done
-+status=0
-+exit
-diff --git a/tests/overlay/002.out b/tests/overlay/002.out
-new file mode 100644
-index 0000000..666e61e
---- /dev/null
-+++ b/tests/overlay/002.out
-@@ -0,0 +1,3 @@
-+QA output created by 002
-+wrote 65536/65536 bytes at offset 0
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-diff --git a/tests/overlay/group b/tests/overlay/group
-index 5056c3b..84d164e 100644
---- a/tests/overlay/group
-+++ b/tests/overlay/group
-@@ -4,3 +4,4 @@
- # - comment line before each group is "new" description
- #
- 001 auto quick copyup
-+002 auto quick metadata
--- 
-2.7.0.rc3
-
+Applied, thanks.

@@ -1,14 +1,14 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:47035 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:40190 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1758153AbcCVBiw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 21 Mar 2016 21:38:52 -0400
+	id S1758142AbcCVBix (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 21 Mar 2016 21:38:53 -0400
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
-Subject: [PATCH v8 17/27] btrfs: dedupe: add a property handler for online dedupe
-Date: Tue, 22 Mar 2016 09:35:42 +0800
-Message-Id: <1458610552-9845-18-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH v8 18/27] btrfs: dedupe: add per-file online dedupe control
+Date: Tue, 22 Mar 2016 09:35:43 +0800
+Message-Id: <1458610552-9845-19-git-send-email-quwenruo@cn.fujitsu.com>
 In-Reply-To: <1458610552-9845-1-git-send-email-quwenruo@cn.fujitsu.com>
 References: <1458610552-9845-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -17,78 +17,46 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
 
-We use btrfs extended attribute "btrfs.dedupe" to record per-file online
-dedupe status, so add a dedupe property handler.
+Introduce inode_need_dedupe() to implement per-file online dedupe control.
 
 Signed-off-by: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
 ---
- fs/btrfs/props.c | 41 +++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 41 insertions(+)
+ fs/btrfs/inode.c | 15 ++++++++++++++-
+ 1 file changed, 14 insertions(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/props.c b/fs/btrfs/props.c
-index 3699212..a430886 100644
---- a/fs/btrfs/props.c
-+++ b/fs/btrfs/props.c
-@@ -42,6 +42,11 @@ static int prop_compression_apply(struct inode *inode,
- 				  size_t len);
- static const char *prop_compression_extract(struct inode *inode);
- 
-+static int prop_dedupe_validate(const char *value, size_t len);
-+static int prop_dedupe_apply(struct inode *inode, const char *value,
-+			     size_t len);
-+static const char *prop_dedupe_extract(struct inode *inode);
-+
- static struct prop_handler prop_handlers[] = {
- 	{
- 		.xattr_name = XATTR_BTRFS_PREFIX "compression",
-@@ -50,6 +55,13 @@ static struct prop_handler prop_handlers[] = {
- 		.extract = prop_compression_extract,
- 		.inheritable = 1
- 	},
-+	{
-+		.xattr_name = XATTR_BTRFS_PREFIX "dedupe",
-+		.validate = prop_dedupe_validate,
-+		.apply = prop_dedupe_apply,
-+		.extract = prop_dedupe_extract,
-+		.inheritable = 1
-+	},
- };
- 
- void __init btrfs_props_init(void)
-@@ -426,4 +438,33 @@ static const char *prop_compression_extract(struct inode *inode)
- 	return NULL;
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 13ae366..979811c 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -676,6 +676,18 @@ static void free_async_extent_pages(struct async_extent *async_extent)
+ 	async_extent->pages = NULL;
  }
  
-+static int prop_dedupe_validate(const char *value, size_t len)
++static inline int inode_need_dedupe(struct btrfs_fs_info *fs_info,
++				    struct inode *inode)
 +{
-+	if (!strncmp("disable", value, len))
++	if (!fs_info->dedupe_enabled)
 +		return 0;
 +
-+	return -EINVAL;
-+}
-+
-+static int prop_dedupe_apply(struct inode *inode, const char *value, size_t len)
-+{
-+	if (len == 0) {
-+		BTRFS_I(inode)->flags &= ~BTRFS_INODE_NODEDUPE;
-+		return 0;
-+	}
-+
-+	if (!strncmp("disable", value, len)) {
-+		BTRFS_I(inode)->flags |= BTRFS_INODE_NODEDUPE;
-+		return 0;
-+	}
-+
-+	return -EINVAL;
-+}
-+
-+static const char *prop_dedupe_extract(struct inode *inode)
-+{
 +	if (BTRFS_I(inode)->flags & BTRFS_INODE_NODEDUPE)
-+		return "disable";
- 
-+	return NULL;
++		return 0;
++
++	return 1;
 +}
++
+ /*
+  * phase two of compressed writeback.  This is the ordered portion
+  * of the code, which only gets called in the order the work was
+@@ -1635,7 +1647,8 @@ static int run_delalloc_range(struct inode *inode, struct page *locked_page,
+ 	} else if (BTRFS_I(inode)->flags & BTRFS_INODE_PREALLOC && !force_cow) {
+ 		ret = run_delalloc_nocow(inode, locked_page, start, end,
+ 					 page_started, 0, nr_written);
+-	} else if (!inode_need_compress(inode) && !fs_info->dedupe_enabled) {
++	} else if (!inode_need_compress(inode) &&
++		   !inode_need_dedupe(fs_info, inode)) {
+ 		ret = cow_file_range(inode, locked_page, start, end,
+ 				      page_started, nr_written, 1, NULL);
+ 	} else {
 -- 
 2.7.3
 

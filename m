@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f171.google.com ([209.85.223.171]:36134 "EHLO
+Received: from mail-io0-f171.google.com ([209.85.223.171]:33047 "EHLO
 	mail-io0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751510AbcCVVXh (ORCPT
+	with ESMTP id S1751368AbcCVWIR (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 22 Mar 2016 17:23:37 -0400
-Received: by mail-io0-f171.google.com with SMTP id 124so105826344iov.3
-        for <linux-btrfs@vger.kernel.org>; Tue, 22 Mar 2016 14:23:36 -0700 (PDT)
+	Tue, 22 Mar 2016 18:08:17 -0400
+Received: by mail-io0-f171.google.com with SMTP id c63so979009iof.0
+        for <linux-btrfs@vger.kernel.org>; Tue, 22 Mar 2016 15:08:17 -0700 (PDT)
 MIME-Version: 1.0
 In-Reply-To: <CAPmG0jbXcqfB1jG7WFriMhicdsoZ+pbD_uUBu7v9YiD-ey=jDw@mail.gmail.com>
 References: <CAAafysGTQucscr-8sTuT2c4BpdAovq0w9UbehRYDrSH71CLF-A@mail.gmail.com>
 	<CAPmG0jbXcqfB1jG7WFriMhicdsoZ+pbD_uUBu7v9YiD-ey=jDw@mail.gmail.com>
-Date: Tue, 22 Mar 2016 17:23:36 -0400
-Message-ID: <CAAafysGksGNFCRWs2NPDX_7wVL3j0_BZjh=sBa7vWArH2oztZA@mail.gmail.com>
+Date: Tue, 22 Mar 2016 18:08:16 -0400
+Message-ID: <CAAafysEhGJi5jYxHooV4h1tD3pqnc-brbB9k4prS9yK0P5PGdg@mail.gmail.com>
 Subject: Re: RAID Assembly with Missing Empty Drive
 From: John Marrett <johnf@zioncluster.ca>
 To: Henk Slager <eye1tm@gmail.com>
@@ -20,40 +20,16 @@ Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-After further discussion in #btrfs:
+Henk,
 
-I left out the raid level, it's raid1:
+> I asume you did     btrfs device add  ?
+> Or did you do this with    btrfs replace  ?
 
-ubuntu@ubuntu:~$ sudo btrfs filesystem df /mnt
-Data, RAID1: total=6.04TiB, used=5.46TiB
-System, RAID1: total=32.00MiB, used=880.00KiB
-Metadata, RAID1: total=14.00GiB, used=11.59GiB
-GlobalReserve, single: total=512.00MiB, used=0.00B
-
-It is possible to mount the filesystem with -o recover,ro
-
-It may be possible to comment out this check:
-
-https://github.com/torvalds/linux/blob/master/fs/btrfs/super.c#L1770
-
-And then to mount read/write, remove the failed drive, add a new
-drive. If there are no more interesting suggestions forthcoming I will
-try it, though to test I'll want to overlay the underlying devices and
-then export them using iSCSI, AoE or NBD in order to avoid further
-damage to my filesystem.
-
-Unfortunately I don't have nearly enough disk space available to make
-a complete copy of the data and rebuild the filesystem.
+Just realised I missed this question, sorry, I performed an add
+followed by a (failed) delete.
 
 -JohnF
 
-On Tue, Mar 22, 2016 at 5:18 PM, Henk Slager <eye1tm@gmail.com> wrote:
-> On Tue, Mar 22, 2016 at 9:19 PM, John Marrett <johnf@zioncluster.ca> wrote:
->> I recently had a drive failure in a file server running btrfs. The
->> failed drive was completely non-functional. I added a new drive to the
->
-> I asume you did     btrfs device add  ?
-> Or did you do this with    btrfs replace  ?
 >
 >> filesystem successfully, when I attempted to remove the failed drive I
 >> encountered an error. I discovered that I actually experienced a dual

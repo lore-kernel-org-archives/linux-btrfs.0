@@ -1,14 +1,14 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:40190 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:47035 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1758167AbcCVBi6 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 21 Mar 2016 21:38:58 -0400
+	id S1758157AbcCVBiz (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 21 Mar 2016 21:38:55 -0400
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
-Subject: [PATCH v8 06/27] btrfs: dedupe: Introduce function to search for an existing hash
-Date: Tue, 22 Mar 2016 09:35:31 +0800
-Message-Id: <1458610552-9845-7-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH v8 15/27] btrfs: dedupe: Add ioctl for inband dedupelication
+Date: Tue, 22 Mar 2016 09:35:40 +0800
+Message-Id: <1458610552-9845-16-git-send-email-quwenruo@cn.fujitsu.com>
 In-Reply-To: <1458610552-9845-1-git-send-email-quwenruo@cn.fujitsu.com>
 References: <1458610552-9845-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -17,220 +17,282 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
 
-Introduce static function inmem_search() to handle the job for in-memory
-hash tree.
+Add ioctl interface for inband dedupelication, which includes:
+1) enable
+2) disable
+3) status
 
-The trick is, we must ensure the delayed ref head is not being run at
-the time we search the for the hash.
-
-With inmem_search(), we can implement the btrfs_dedupe_search()
-interface.
+We will later add ioctl to disable inband dedupe for given file/dir.
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 Signed-off-by: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
 ---
- fs/btrfs/dedupe.c | 184 ++++++++++++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 184 insertions(+)
+ fs/btrfs/dedupe.c          | 48 ++++++++++++++++++++++++++++++----
+ fs/btrfs/dedupe.h          | 10 +++++++-
+ fs/btrfs/ioctl.c           | 64 ++++++++++++++++++++++++++++++++++++++++++++++
+ fs/btrfs/sysfs.c           |  2 ++
+ include/uapi/linux/btrfs.h | 25 +++++++++++++++++-
+ 5 files changed, 142 insertions(+), 7 deletions(-)
 
 diff --git a/fs/btrfs/dedupe.c b/fs/btrfs/dedupe.c
-index e44993b..0196188 100644
+index 6a80afc..294cbb5 100644
 --- a/fs/btrfs/dedupe.c
 +++ b/fs/btrfs/dedupe.c
-@@ -20,6 +20,7 @@
- #include "btrfs_inode.h"
- #include "transaction.h"
- #include "delayed-ref.h"
-+#include "qgroup.h"
- 
- struct inmem_hash {
- 	struct rb_node hash_node;
-@@ -362,3 +363,186 @@ int btrfs_dedupe_disable(struct btrfs_fs_info *fs_info)
- 	kfree(dedupe_info);
- 	return 0;
+@@ -135,12 +135,12 @@ out:
  }
-+
-+/*
-+ * Caller must ensure the corresponding ref head is not being run.
-+ */
-+static struct inmem_hash *
-+inmem_search_hash(struct btrfs_dedupe_info *dedupe_info, u8 *hash)
-+{
-+	struct rb_node **p = &dedupe_info->hash_root.rb_node;
-+	struct rb_node *parent = NULL;
-+	struct inmem_hash *entry = NULL;
-+	u16 hash_type = dedupe_info->hash_type;
-+	int hash_len = btrfs_dedupe_sizes[hash_type];
-+
-+	while (*p) {
-+		parent = *p;
-+		entry = rb_entry(parent, struct inmem_hash, hash_node);
-+
-+		if (memcmp(hash, entry->hash, hash_len) < 0) {
-+			p = &(*p)->rb_left;
-+		} else if (memcmp(hash, entry->hash, hash_len) > 0) {
-+			p = &(*p)->rb_right;
-+		} else {
-+			/* Found, need to re-add it to LRU list head */
-+			list_del(&entry->lru_list);
-+			list_add(&entry->lru_list, &dedupe_info->lru_list);
-+			return entry;
-+		}
+ 
+ int btrfs_dedupe_enable(struct btrfs_fs_info *fs_info, u16 type, u16 backend,
+-			u64 blocksize, u64 limit_nr)
++			u64 blocksize, u64 limit_nr, u64 limit_mem)
+ {
+ 	struct btrfs_dedupe_info *dedupe_info;
+ 	int create_tree;
+ 	u64 compat_ro_flag = btrfs_super_compat_ro_flags(fs_info->super_copy);
+-	u64 limit = limit_nr;
++	u64 limit;
+ 	int ret = 0;
+ 
+ 	/* Sanity check */
+@@ -153,11 +153,22 @@ int btrfs_dedupe_enable(struct btrfs_fs_info *fs_info, u16 type, u16 backend,
+ 		return -EINVAL;
+ 	if (backend >= BTRFS_DEDUPE_BACKEND_COUNT)
+ 		return -EINVAL;
++	/* Only one limit is accept */
++	if (limit_nr && limit_mem)
++		return -EINVAL;
+ 
+-	if (backend == BTRFS_DEDUPE_BACKEND_INMEMORY && limit_nr == 0)
+-		limit = BTRFS_DEDUPE_LIMIT_NR_DEFAULT;
+-	if (backend == BTRFS_DEDUPE_BACKEND_ONDISK && limit_nr != 0)
++	if (backend == BTRFS_DEDUPE_BACKEND_INMEMORY) {
++		if (!limit_nr && !limit_mem)
++			limit = BTRFS_DEDUPE_LIMIT_NR_DEFAULT;
++		else if (limit_nr)
++			limit = limit_nr;
++		else
++			limit = limit_mem / (sizeof(struct inmem_hash) +
++					btrfs_dedupe_sizes[type]);
 +	}
-+	return NULL;
-+}
++	if (backend == BTRFS_DEDUPE_BACKEND_ONDISK)
+ 		limit = 0;
 +
-+static int inmem_search(struct btrfs_dedupe_info *dedupe_info,
-+			struct inode *inode, u64 file_pos,
-+			struct btrfs_dedupe_hash *hash)
-+{
-+	int ret;
-+	struct btrfs_root *root = BTRFS_I(inode)->root;
-+	struct btrfs_trans_handle *trans;
-+	struct btrfs_delayed_ref_root *delayed_refs;
-+	struct btrfs_delayed_ref_head *head;
-+	struct btrfs_delayed_ref_head *insert_head;
-+	struct btrfs_delayed_data_ref *insert_dref;
-+	struct btrfs_qgroup_extent_record *insert_qrecord = NULL;
-+	struct inmem_hash *found_hash;
-+	int free_insert = 1;
-+	u64 bytenr;
-+	u32 num_bytes;
-+
-+	insert_head = kmem_cache_alloc(btrfs_delayed_ref_head_cachep, GFP_NOFS);
-+	if (!insert_head)
-+		return -ENOMEM;
-+	insert_head->extent_op = NULL;
-+	insert_dref = kmem_cache_alloc(btrfs_delayed_data_ref_cachep, GFP_NOFS);
-+	if (!insert_dref) {
-+		kmem_cache_free(btrfs_delayed_ref_head_cachep, insert_head);
-+		return -ENOMEM;
-+	}
-+	if (root->fs_info->quota_enabled &&
-+	    is_fstree(root->root_key.objectid)) {
-+		insert_qrecord = kmalloc(sizeof(*insert_qrecord), GFP_NOFS);
-+		if (!insert_qrecord) {
-+			kmem_cache_free(btrfs_delayed_ref_head_cachep,
-+					insert_head);
-+			kmem_cache_free(btrfs_delayed_data_ref_cachep,
-+					insert_dref);
-+			return -ENOMEM;
-+		}
-+	}
-+
-+	trans = btrfs_join_transaction(root);
-+	if (IS_ERR(trans)) {
-+		ret = PTR_ERR(trans);
-+		goto free_mem;
-+	}
-+
-+again:
-+	mutex_lock(&dedupe_info->lock);
-+	found_hash = inmem_search_hash(dedupe_info, hash->hash);
-+	/* If we don't find a duplicated extent, just return. */
-+	if (!found_hash) {
-+		ret = 0;
-+		goto out;
-+	}
-+	bytenr = found_hash->bytenr;
-+	num_bytes = found_hash->num_bytes;
-+
-+	delayed_refs = &trans->transaction->delayed_refs;
-+
-+	spin_lock(&delayed_refs->lock);
-+	head = btrfs_find_delayed_ref_head(trans, bytenr);
-+	if (!head) {
-+		/*
-+		 * We can safely insert a new delayed_ref as long as we
-+		 * hold delayed_refs->lock.
-+		 * Only need to use atomic inc_extent_ref()
-+		 */
-+		btrfs_add_delayed_data_ref_locked(root->fs_info, trans,
-+				insert_dref, insert_head, insert_qrecord,
-+				bytenr, num_bytes, 0, root->root_key.objectid,
-+				btrfs_ino(inode), file_pos, 0,
-+				BTRFS_ADD_DELAYED_REF);
-+		spin_unlock(&delayed_refs->lock);
-+
-+		/* add_delayed_data_ref_locked will free unused memory */
-+		free_insert = 0;
-+		hash->bytenr = bytenr;
-+		hash->num_bytes = num_bytes;
-+		ret = 1;
-+		goto out;
-+	}
-+
-+	/*
-+	 * We can't lock ref head with dedupe_info->lock hold or we will cause
-+	 * ABBA dead lock.
-+	 */
-+	mutex_unlock(&dedupe_info->lock);
-+	ret = btrfs_delayed_ref_lock(trans, head);
-+	spin_unlock(&delayed_refs->lock);
-+	if (ret == -EAGAIN)
-+		goto again;
-+
-+	mutex_lock(&dedupe_info->lock);
-+	/* Search again to ensure the hash is still here */
-+	found_hash = inmem_search_hash(dedupe_info, hash->hash);
-+	if (!found_hash) {
-+		ret = 0;
-+		mutex_unlock(&head->mutex);
-+		goto out;
-+	}
-+	hash->bytenr = bytenr;
-+	hash->num_bytes = num_bytes;
-+
-+	/*
-+	 * Increase the extent ref right now, to avoid delayed ref run
-+	 * Or we may increase ref on non-exist extent.
-+	 */
-+	btrfs_inc_extent_ref(trans, root, bytenr, num_bytes, 0,
-+			     root->root_key.objectid,
-+			     btrfs_ino(inode), file_pos);
-+	mutex_unlock(&head->mutex);
-+out:
-+	mutex_unlock(&dedupe_info->lock);
-+	btrfs_end_transaction(trans, root);
-+
-+free_mem:
-+	if (free_insert) {
-+		kmem_cache_free(btrfs_delayed_ref_head_cachep, insert_head);
-+		kmem_cache_free(btrfs_delayed_data_ref_cachep, insert_dref);
-+		kfree(insert_qrecord);
-+	}
-+	return ret;
-+}
-+
-+int btrfs_dedupe_search(struct btrfs_fs_info *fs_info,
-+			struct inode *inode, u64 file_pos,
-+			struct btrfs_dedupe_hash *hash)
+ 	/* Ondisk backend needs DEDUP RO compat feature */
+ 	if (!(compat_ro_flag & BTRFS_FEATURE_COMPAT_RO_DEDUPE) &&
+ 	    backend == BTRFS_DEDUPE_BACKEND_ONDISK)
+@@ -209,6 +220,33 @@ out:
+ 	return ret;
+ }
+ 
++void btrfs_dedupe_status(struct btrfs_fs_info *fs_info,
++			 struct btrfs_ioctl_dedupe_args *dargs)
 +{
 +	struct btrfs_dedupe_info *dedupe_info = fs_info->dedupe_info;
-+	int ret = -EINVAL;
 +
-+	if (!hash)
-+		return 0;
-+
-+	/*
-+	 * This function doesn't follow fs_info->dedupe_enabled as it will need
-+	 * to ensure any hashed extent to go through dedupe routine
-+	 */
-+	if (WARN_ON(dedupe_info == NULL))
-+		return -EINVAL;
-+
-+	if (WARN_ON(btrfs_dedupe_hash_hit(hash)))
-+		return -EINVAL;
-+
-+	if (dedupe_info->backend == BTRFS_DEDUPE_BACKEND_INMEMORY)
-+		ret = inmem_search(dedupe_info, inode, file_pos, hash);
-+
-+	/* It's possible hash->bytenr/num_bytenr already changed */
-+	if (ret == 0) {
-+		hash->num_bytes = 0;
-+		hash->bytenr = 0;
++	if (!fs_info->dedupe_enabled || !dedupe_info) {
++		dargs->status = 0;
++		dargs->blocksize = 0;
++		dargs->backend = 0;
++		dargs->hash_type = 0;
++		dargs->limit_nr = 0;
++		dargs->current_nr = 0;
++		return;
 +	}
++	mutex_lock(&dedupe_info->lock);
++	dargs->status = 1;
++	dargs->blocksize = dedupe_info->blocksize;
++	dargs->backend = dedupe_info->backend;
++	dargs->hash_type = dedupe_info->hash_type;
++	dargs->limit_nr = dedupe_info->limit_nr;
++	dargs->limit_mem = dedupe_info->limit_nr *
++		(sizeof(struct inmem_hash) +
++		 btrfs_dedupe_sizes[dedupe_info->hash_type]);
++	dargs->current_nr = dedupe_info->current_nr;
++	mutex_unlock(&dedupe_info->lock);
++}
++
+ int btrfs_dedupe_resume(struct btrfs_fs_info *fs_info,
+ 			struct btrfs_root *dedupe_root)
+ {
+diff --git a/fs/btrfs/dedupe.h b/fs/btrfs/dedupe.h
+index 467ddd5..60479b1 100644
+--- a/fs/btrfs/dedupe.h
++++ b/fs/btrfs/dedupe.h
+@@ -104,7 +104,15 @@ static inline struct btrfs_dedupe_hash *btrfs_dedupe_alloc_hash(u16 type)
+  * Called at dedupe enable time.
+  */
+ int btrfs_dedupe_enable(struct btrfs_fs_info *fs_info, u16 type, u16 backend,
+-			u64 blocksize, u64 limit_nr);
++			u64 blocksize, u64 limit_nr, u64 limit_mem);
++
++/*
++ * Get inband dedupe info
++ * Since it needs to access different backends' hash size, which
++ * is not exported, we need such simple function.
++ */
++void btrfs_dedupe_status(struct btrfs_fs_info *fs_info,
++			 struct btrfs_ioctl_dedupe_args *dargs);
+ 
+ /*
+  * Disable dedupe and invalidate all its dedupe data.
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 053e677..49bca5f 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -61,6 +61,7 @@
+ #include "qgroup.h"
+ #include "tree-log.h"
+ #include "compression.h"
++#include "dedupe.h"
+ 
+ #ifdef CONFIG_64BIT
+ /* If we have a 32-bit userspace and 64-bit kernel, then the UAPI
+@@ -3206,6 +3207,67 @@ ssize_t btrfs_dedupe_file_range(struct file *src_file, u64 loff, u64 olen,
+ 	return olen;
+ }
+ 
++static long btrfs_ioctl_dedupe_ctl(struct btrfs_root *root, void __user *args)
++{
++	struct btrfs_ioctl_dedupe_args *dargs;
++	struct btrfs_fs_info *fs_info = root->fs_info;
++	int ret;
++
++	if (!capable(CAP_SYS_ADMIN))
++		return -EPERM;
++
++	dargs = memdup_user(args, sizeof(*dargs));
++	if (IS_ERR(dargs)) {
++		ret = PTR_ERR(dargs);
++		return ret;
++	}
++
++	if (dargs->cmd >= BTRFS_DEDUPE_CTL_LAST) {
++		ret = -EINVAL;
++		goto out;
++	}
++	switch (dargs->cmd) {
++	case BTRFS_DEDUPE_CTL_ENABLE:
++		mutex_lock(&fs_info->dedupe_ioctl_lock);
++		ret = btrfs_dedupe_enable(fs_info, dargs->hash_type,
++					 dargs->backend, dargs->blocksize,
++					 dargs->limit_nr, dargs->limit_mem);
++		mutex_unlock(&fs_info->dedupe_ioctl_lock);
++		if (ret < 0)
++			break;
++
++		/* Also copy the result to caller for further use */
++		btrfs_dedupe_status(fs_info, dargs);
++		if (copy_to_user(args, dargs, sizeof(*dargs)))
++			ret = -EFAULT;
++		else
++			ret = 0;
++		break;
++	case BTRFS_DEDUPE_CTL_DISABLE:
++		mutex_lock(&fs_info->dedupe_ioctl_lock);
++		ret = btrfs_dedupe_disable(fs_info);
++		mutex_unlock(&fs_info->dedupe_ioctl_lock);
++		break;
++	case BTRFS_DEDUPE_CTL_STATUS:
++		btrfs_dedupe_status(fs_info, dargs);
++		if (copy_to_user(args, dargs, sizeof(*dargs)))
++			ret = -EFAULT;
++		else
++			ret = 0;
++		break;
++	default:
++		/*
++		 * Use this return value to inform progs that kernel
++		 * doesn't support such new command.
++		 */
++		ret = -EOPNOTSUPP;
++		break;
++	}
++out:
++	kfree(dargs);
 +	return ret;
 +}
++
+ static int clone_finish_inode_update(struct btrfs_trans_handle *trans,
+ 				     struct inode *inode,
+ 				     u64 endoff,
+@@ -5542,6 +5604,8 @@ long btrfs_ioctl(struct file *file, unsigned int
+ 		return btrfs_ioctl_get_fslabel(file, argp);
+ 	case BTRFS_IOC_SET_FSLABEL:
+ 		return btrfs_ioctl_set_fslabel(file, argp);
++	case BTRFS_IOC_DEDUPE_CTL:
++		return btrfs_ioctl_dedupe_ctl(root, argp);
+ 	case BTRFS_IOC_GET_SUPPORTED_FEATURES:
+ 		return btrfs_ioctl_get_supported_features(argp);
+ 	case BTRFS_IOC_GET_FEATURES:
+diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
+index 539e7b5..18686d1 100644
+--- a/fs/btrfs/sysfs.c
++++ b/fs/btrfs/sysfs.c
+@@ -203,6 +203,7 @@ BTRFS_FEAT_ATTR_INCOMPAT(raid56, RAID56);
+ BTRFS_FEAT_ATTR_INCOMPAT(skinny_metadata, SKINNY_METADATA);
+ BTRFS_FEAT_ATTR_INCOMPAT(no_holes, NO_HOLES);
+ BTRFS_FEAT_ATTR_COMPAT_RO(free_space_tree, FREE_SPACE_TREE);
++BTRFS_FEAT_ATTR_COMPAT_RO(dedupe, DEDUPE);
+ 
+ static struct attribute *btrfs_supported_feature_attrs[] = {
+ 	BTRFS_FEAT_ATTR_PTR(mixed_backref),
+@@ -215,6 +216,7 @@ static struct attribute *btrfs_supported_feature_attrs[] = {
+ 	BTRFS_FEAT_ATTR_PTR(skinny_metadata),
+ 	BTRFS_FEAT_ATTR_PTR(no_holes),
+ 	BTRFS_FEAT_ATTR_PTR(free_space_tree),
++	BTRFS_FEAT_ATTR_PTR(dedupe),
+ 	NULL
+ };
+ 
+diff --git a/include/uapi/linux/btrfs.h b/include/uapi/linux/btrfs.h
+index dea8931..de08f53 100644
+--- a/include/uapi/linux/btrfs.h
++++ b/include/uapi/linux/btrfs.h
+@@ -359,7 +359,7 @@ struct btrfs_ioctl_same_extent_info {
+ 	__u64 bytes_deduped;	/* out - total # of bytes we were able
+ 				 * to dedupe from this file */
+ 	/* status of this dedupe operation:
+-	 * 0 if dedup succeeds
++	 * 0 if dedupe succeeds
+ 	 * < 0 for error
+ 	 * == BTRFS_SAME_DATA_DIFFERS if data differs
+ 	 */
+@@ -445,6 +445,27 @@ struct btrfs_ioctl_get_dev_stats {
+ 	__u64 unused[128 - 2 - BTRFS_DEV_STAT_VALUES_MAX]; /* pad to 1k */
+ };
+ 
++/*
++ * de-duplication control modes
++ * For re-config, re-enable will handle it
++ */
++#define BTRFS_DEDUPE_CTL_ENABLE	1
++#define BTRFS_DEDUPE_CTL_DISABLE 2
++#define BTRFS_DEDUPE_CTL_STATUS	3
++#define BTRFS_DEDUPE_CTL_LAST	4
++struct btrfs_ioctl_dedupe_args {
++	__u16 cmd;		/* In: command(see above macro) */
++	__u64 blocksize;	/* In/Out: For enable/status */
++	__u64 limit_nr;		/* In/Out: For enable/status */
++	__u64 limit_mem;	/* In/Out: For enable/status */
++	__u64 current_nr;	/* Out: For status output */
++	__u16 backend;		/* In/Out: For enable/status */
++	__u16 hash_type;	/* In/Out: For enable/status */
++	u8 status;		/* Out: For status output */
++	/* pad to 512 bytes */
++	u8 __unused[473];
++};
++
+ #define BTRFS_QUOTA_CTL_ENABLE	1
+ #define BTRFS_QUOTA_CTL_DISABLE	2
+ #define BTRFS_QUOTA_CTL_RESCAN__NOTUSED	3
+@@ -653,6 +674,8 @@ static inline char *btrfs_err_str(enum btrfs_err_code err_code)
+ 				    struct btrfs_ioctl_dev_replace_args)
+ #define BTRFS_IOC_FILE_EXTENT_SAME _IOWR(BTRFS_IOCTL_MAGIC, 54, \
+ 					 struct btrfs_ioctl_same_args)
++#define BTRFS_IOC_DEDUPE_CTL	_IOWR(BTRFS_IOCTL_MAGIC, 55, \
++				      struct btrfs_ioctl_dedupe_args)
+ #define BTRFS_IOC_GET_FEATURES _IOR(BTRFS_IOCTL_MAGIC, 57, \
+ 				   struct btrfs_ioctl_feature_flags)
+ #define BTRFS_IOC_SET_FEATURES _IOW(BTRFS_IOCTL_MAGIC, 57, \
 -- 
 2.7.3
 

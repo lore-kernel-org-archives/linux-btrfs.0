@@ -1,30 +1,31 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wm0-f46.google.com ([74.125.82.46]:36636 "EHLO
-	mail-wm0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751687AbcCIKCc (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 9 Mar 2016 05:02:32 -0500
-Received: by mail-wm0-f46.google.com with SMTP id n186so170132698wmn.1
-        for <linux-btrfs@vger.kernel.org>; Wed, 09 Mar 2016 02:02:32 -0800 (PST)
+Received: from mx2.suse.de ([195.135.220.15]:49616 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1759234AbcCVLEx (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 22 Mar 2016 07:04:53 -0400
+Date: Tue, 22 Mar 2016 12:04:23 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Chandan Rajendra <chandan@linux.vnet.ibm.com>
+Cc: clm@fb.com, jbacik@fb.com, bo.li.liu@oracle.com, dsterba@suse.cz,
+        linux-btrfs@vger.kernel.org, chandan@mykolab.com
+Subject: Re: [PATCH V15 00/15] Btrfs: Subpagesize-blocksize: Allow I/O on
+ blocks whose size is less than page size
+Message-ID: <20160322110423.GI8095@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1455212873-14829-1-git-send-email-chandan@linux.vnet.ibm.com>
 MIME-Version: 1.0
-In-Reply-To: <20160308160244.GF30625@twin.jikos.cz>
-References: <CAM=f9=V-7hbjGLzWUxbynsoJdP-NexEoaTJ3GJJxn3gBYsW1BA@mail.gmail.com>
-	<20160308160244.GF30625@twin.jikos.cz>
-Date: Wed, 9 Mar 2016 11:02:31 +0100
-Message-ID: <CAM=f9=X2pRjyC1H3799WmkuZ=7DSLMNnFmv4T30TcZ2VKUg_uA@mail.gmail.com>
-Subject: Re: btrfs-progs and btrfs(8) inconsistencies
-From: Moviuro <moviuro@gmail.com>
-To: dsterba@suse.cz, Moviuro <moviuro@gmail.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1455212873-14829-1-git-send-email-chandan@linux.vnet.ibm.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Don't hesitate to drop an email here (with your Github account
-name...) to get invited into the Github group. That's because you
-can't ask to join a group on GitHub.
-At the moment, kdave and myself are administrators of the said group
-(https://github.com/btrfs8-revamp). I'm sure we can nominate David
-too, once he joined ;-)
+On Thu, Feb 11, 2016 at 11:17:38PM +0530, Chandan Rajendra wrote:
+> this patchset temporarily disables the commit
+> f82c458a2c3ffb94b431fc6ad791a79df1b3713e.
+> 
+> The commits for the Btrfs kernel module can be found at
+> https://github.com/chandanr/linux/tree/btrfs/subpagesize-blocksize.
 
-PS: I really didn't expect my first mail to cause this movement, I'm
-glad it took this shape!
+The branch does not apply cleanly to at least 4.5, I've tried to rebase
+it but there are conflicts that are not simple. Please update it on top
+of current master, ie. with the preparatory patchset merged.

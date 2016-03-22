@@ -1,53 +1,108 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lf0-f45.google.com ([209.85.215.45]:35751 "EHLO
-	mail-lf0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751041AbcCVUmJ (ORCPT
+Received: from mail-lb0-f176.google.com ([209.85.217.176]:34637 "EHLO
+	mail-lb0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751286AbcCVVSf (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 22 Mar 2016 16:42:09 -0400
-Received: by mail-lf0-f45.google.com with SMTP id d192so5307892lfg.2
-        for <linux-btrfs@vger.kernel.org>; Tue, 22 Mar 2016 13:42:08 -0700 (PDT)
+	Tue, 22 Mar 2016 17:18:35 -0400
+Received: by mail-lb0-f176.google.com with SMTP id k12so173704277lbb.1
+        for <linux-btrfs@vger.kernel.org>; Tue, 22 Mar 2016 14:18:34 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <CAJCQCtRbOa14an+UooFJYBK5JNQppYfXKHqpOfKVXHBYPAQ_Kg@mail.gmail.com>
-References: <CAJCQCtRbOa14an+UooFJYBK5JNQppYfXKHqpOfKVXHBYPAQ_Kg@mail.gmail.com>
-Date: Tue, 22 Mar 2016 21:42:07 +0100
-Message-ID: <CAPmG0jY16du77GzzMScdMMB6dNQeMvOOqBqsYQLMn0CsE5HgmQ@mail.gmail.com>
-Subject: Re: overlay file to test btrfs repairs
+In-Reply-To: <CAAafysGTQucscr-8sTuT2c4BpdAovq0w9UbehRYDrSH71CLF-A@mail.gmail.com>
+References: <CAAafysGTQucscr-8sTuT2c4BpdAovq0w9UbehRYDrSH71CLF-A@mail.gmail.com>
+Date: Tue, 22 Mar 2016 22:18:33 +0100
+Message-ID: <CAPmG0jbXcqfB1jG7WFriMhicdsoZ+pbD_uUBu7v9YiD-ey=jDw@mail.gmail.com>
+Subject: Re: RAID Assembly with Missing Empty Drive
 From: Henk Slager <eye1tm@gmail.com>
-To: Chris Murphy <lists@colorremedies.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+To: John Marrett <johnf@zioncluster.ca>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Mar 21, 2016 at 4:43 AM, Chris Murphy <lists@colorremedies.com> wrote:
-> Hi folks,
->
-> So I just ran into this:
-> https://raid.wiki.kernel.org/index.php/Recovering_a_failed_software_RAID#Making_the_harddisks_read-only_using_an_overlay_file
->
-> This is a device mapper overlay file - not overlayfs.
->
-> For the repairs that are sometimes uncertain what's next, maybe this
-> is a viable option to avoid changing the file system? I'm thinking
-> chunk-recover might take up too much space, I'm not sure how that one
-> works, if chunks are just being read or if they have to be rewritten
-> or if it's just the chunk tree? But for 'btrfs check' and 'btrfs
-> rescue super-recover/zero-log' there should be very little being
-> written so the overlay idea might be a good step?
+On Tue, Mar 22, 2016 at 9:19 PM, John Marrett <johnf@zioncluster.ca> wrote:
+> I recently had a drive failure in a file server running btrfs. The
+> failed drive was completely non-functional. I added a new drive to the
 
-I used the info via this message:
-http://permalink.gmane.org/gmane.comp.file-systems.btrfs/54178
+I asume you did     btrfs device add  ?
+Or did you do this with    btrfs replace  ?
 
-to try to fix a 4x4TB disks RAID10 (some bad metadata, some nbytes 400 errors).
-I used AoE (instead of NBD) to avoid that btrfs+kernel might get
-confused by double UUID's.
+> filesystem successfully, when I attempted to remove the failed drive I
+> encountered an error. I discovered that I actually experienced a dual
+> drive failure, the second drive only exhibited as failed when btrfs
+> tried to write to the drives in the filesystem when I removed the
+> disk.
+>
+> I shut down the array and imaged the failed drive using GNU ddrescue,
+> I was able to recover all but a few kb from the drive. Unfortunately,
+> when I imaged the drive I overwrote the drive that I had successfully
+> added to the filesystem.
+>
+> This brings me to my current state, I now have two devices missing:
+>
+>  - the completely failed drive
+>  - the empty drive that I overwrote with the second failed disks image
+>
+> Consequently I can't start the filesystem. I've discussed the issue in
+> the past with Ke and other people on the #btrfs channel, the
+> concensus; as I understood it, is that with the right patch it should
+> be possible to mount either the array with the empty drive absent or
+> to create a new btrfs fileystem on an empty drive and then manipulate
+> its UUIDs so that it believes it's the missing UUID from the existing
+> btrfs filesystem.
+>
+> Here's the info showing the current state of the filesystem:
+>
+> ubuntu@ubuntu:~$ sudo btrfs filesystem show
+> warning, device 6 is missing
+> warning devid 6 not found already
+> warning devid 7 not found already
+> Label: none  uuid: 67b4821f-16e0-436d-b521-e4ab2c7d3ab7
+>     Total devices 7 FS bytes used 5.47TiB
+>     devid    1 size 1.81TiB used 1.71TiB path /dev/sda3
+>     devid    2 size 1.81TiB used 1.71TiB path /dev/sdb3
+>     devid    3 size 1.82TiB used 1.72TiB path /dev/sdc1
+>     devid    4 size 1.82TiB used 1.72TiB path /dev/sdd1
+>     devid    5 size 2.73TiB used 2.62TiB path /dev/sde1
+>     *** Some devices missing
+> btrfs-progs v4.0
 
-I created 4x 10G sparse files for each bcached HDD. After the --repair
-action had ended (apparently successful), du reported only 50M size on
-disk for each of the sparse files. The fix operation lasted about 1.5
-hours. After a mount and umount again of the 'just repaired fs', a
-subsequent btrfs check still reported the same errors, although
-reported in another sequence.
-So the nbytes 400 errors actually did not get fixed ( while there were
-also other errors; This in accordance to what Qu once noted, but at
-that time older tools/kernel).
+The used kernel version might also give people some hints.
+
+Also, you have not stated what raid type the fs is; likely not raid6,
+but rather raid 1 or 10 or 5
+btrfs filesystem usage  will report and show this.
+
+If it is raid6, you could still fix the issue in theory. AFAIK there
+are no patches to fix a dual error in case it is other raid type or
+single. The only option is then to use   btrfs rescue   on the
+umounted array and hope to copy as much as possible off the damaged fs
+to other storage.
+
+> ubuntu@ubuntu:~$ sudo mount -o degraded /dev/sda3 /mnt
+> mount: wrong fs type, bad option, bad superblock on /dev/sda3,
+>        missing codepage or helper program, or other error
+>
+>        In some cases useful info is found in syslog - try
+>        dmesg | tail or so.
+> ubuntu@ubuntu:~$ dmesg
+> [...]
+> [  749.322385] BTRFS info (device sde1): allowing degraded mounts
+> [  749.322404] BTRFS info (device sde1): disk space caching is enabled
+> [  749.323571] BTRFS warning (device sde1): devid 6 uuid
+> f41bcb72-e88a-432f-9961-01307ec291a9 is missing
+> [  749.335543] BTRFS warning (device sde1): devid 7 uuid
+> 17f8e02a-923e-4ac3-9db2-eb1b47c1a8db missing
+> [  749.407802] BTRFS: bdev (null) errs: wr 81791613, rd 57814378,
+> flush 0, corrupt 0, gen 0
+> [  749.407808] BTRFS: bdev /dev/sde1 errs: wr 0, rd 5002, flush 0,
+> corrupt 0, gen 0
+> [  774.759717] BTRFS: too many missing devices, writeable mount is not allowed
+> [  774.804053] BTRFS: open_ctree failed
+>
+> Thank you in advance for your help,
+>
+> -JohnF
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

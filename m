@@ -1,43 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:35948 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:36380 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1755222AbcCVKAL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 22 Mar 2016 06:00:11 -0400
-Date: Tue, 22 Mar 2016 10:59:41 +0100
+	id S1758413AbcCVKEH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 22 Mar 2016 06:04:07 -0400
+Date: Tue, 22 Mar 2016 11:03:37 +0100
 From: David Sterba <dsterba@suse.cz>
-To: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: Sudip Mukherjee <sudipm.mukherjee@gmail.com>, Chris Mason <clm@fb.com>,
-        Josef Bacik <jbacik@fb.com>, David Sterba <dsterba@suse.com>,
-        "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] btrfs: fix build warning
-Message-ID: <20160322095941.GG8095@twin.jikos.cz>
+To: David Sterba <dsterba@suse.com>
+Cc: clm@fb.com, linux-btrfs@vger.kernel.org
+Subject: Re: [PULL] Btrfs, misc for 4.6
+Message-ID: <20160322100337.GH8095@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <1455609767-26992-1-git-send-email-sudipm.mukherjee@gmail.com>
- <CAMuHMdVfCP97jKauZ5j29zAnWPi0ro_hRkq=A0AS=N6jgPHdwA@mail.gmail.com>
+References: <cover.1458585064.git.dsterba@suse.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-In-Reply-To: <CAMuHMdVfCP97jKauZ5j29zAnWPi0ro_hRkq=A0AS=N6jgPHdwA@mail.gmail.com>
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <cover.1458585064.git.dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Mar 22, 2016 at 10:39:59AM +0100, Geert Uytterhoeven wrote:
-> On Tue, Feb 16, 2016 at 9:02 AM, Sudip Mukherjee
-> <sudipm.mukherjee@gmail.com> wrote:
-> > We were getting build warning about:
-> > fs/btrfs/extent-tree.c:7021:34: warning: ‘used_bg’ may be used
-> >         uninitialized in this function
-> >
-> > It is not a valid warning as used_bg is never used uninitilized since
-> > locked is initially false so we can never be in the section where
-> > 'used_bg' is used. But gcc is not able to understand that and we can
-> > initialize it while declaring to silence the warning.
-> >
-> > Signed-off-by: Sudip Mukherjee <sudip@vectorindia.org>
+On Mon, Mar 21, 2016 at 07:42:09PM +0100, David Sterba wrote:
+> Hi,
 > 
-> FWIW, I've posted an alternative patch that killed the silly locked variable
-> a while ago.
-> "[PATCH] Btrfs: Refactor btrfs_lock_cluster() to kill compiler warning"
-> https://lkml.org/lkml/2014/6/22/96
+> a few low-risk patches that appeared after I sent my main pull for 4.6. I think
+> they still apply to 4.6, the freezer patches help the livepatch to clean up the
+> mis-use of the freezer API, the rest makes sure we don't miss an error during
+> writing checksums.
+> 
+> I've removed Liu Bo's patch fixing the writeback_index, IMO needs moe review
+> and can be merged in some later rc.
+> 
+> ----------------------------------------------------------------
+> The following changes since commit 5e33a2bd7ca7fa687fb0965869196eea6815d1f3:
+>   Btrfs: do not collect ordered extents when logging that inode exists (2016-03-01 08:23:47 -0800)
+> 
+> are available in the git repository at:
+> 
+>   git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git for-chris-4.6
+> 
+> for you to fetch changes up to 45147cbef21305b512a5b263e9e52f832a0df7b2:
+> 
+>   btrfs: transaction_kthread() is not freezable (2016-03-21 19:02:34 +0100)
 
-The cleanup looks great, thanks, patch picked.
+FYI, I've added Filipe's reviewed-by, the top commit is now
+ce63f891e1a87ae79c4325dad5f512e8d6a8a78e

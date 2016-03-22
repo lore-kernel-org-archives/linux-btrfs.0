@@ -1,105 +1,203 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:35808 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:40190 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1758147AbcCVBiv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 21 Mar 2016 21:38:51 -0400
-Received: from localhost.localdomain (unknown [10.167.226.34])
-	by cn.fujitsu.com (Postfix) with ESMTP id 83B2D405641B
-	for <linux-btrfs@vger.kernel.org>; Tue, 22 Mar 2016 09:37:56 +0800 (CST)
+	id S1758145AbcCVBiw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 21 Mar 2016 21:38:52 -0400
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v8 22/27] btrfs: dedupe: Fix metadata balance error when dedupe is enabled
-Date: Tue, 22 Mar 2016 09:35:47 +0800
-Message-Id: <1458610552-9845-23-git-send-email-quwenruo@cn.fujitsu.com>
+Cc: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
+Subject: [PATCH v8 01/27] btrfs: dedupe: Introduce dedupe framework and its header
+Date: Tue, 22 Mar 2016 09:35:26 +0800
+Message-Id: <1458610552-9845-2-git-send-email-quwenruo@cn.fujitsu.com>
 In-Reply-To: <1458610552-9845-1-git-send-email-quwenruo@cn.fujitsu.com>
 References: <1458610552-9845-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-A missing branch in btrfs_get_fs_root() is making dedupe_root read from
-disk, and REF_COWS bit set.
-This makes btrfs balance treating dedupe_root as fs root, and reusing the
-old dedupe root bytenr to drop tree ref, causing the following kernel
-warning after metadata balancing:
+From: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
 
-BTRFS error (device sdb6): unable to find ref byte nr 29736960 parent 0
-root 11  owner 0 offset 0
-------------[ cut here ]------------
-WARNING: CPU: 1 PID: 19113 at fs/btrfs/extent-tree.c:6636
-__btrfs_free_extent.isra.66+0xb6d/0xd20 [btrfs]()
-BTRFS: Transaction aborted (error -2)
-Modules linked in: btrfs(O) xor zlib_deflate raid6_pq xfs [last
-unloaded: btrfs]
-CPU: 1 PID: 19113 Comm: btrfs Tainted: G        W  O    4.5.0-rc5+ #2
-Hardware name: innotek GmbH VirtualBox/VirtualBox, BIOS VirtualBox
-12/01/2006
- 0000000000000000 ffff880035b0ba18 ffffffff813771ff ffff880035b0ba60
- ffffffffa06a810a ffff880035b0ba50 ffffffff810bcb81 ffff88003c45c528
- 0000000001c5c000 00000000fffffffe ffff88003dc8c520 0000000000000000
-Call Trace:
- [<ffffffff813771ff>] dump_stack+0x67/0x98
- [<ffffffff810bcb81>] warn_slowpath_common+0x81/0xc0
- [<ffffffff810bcc07>] warn_slowpath_fmt+0x47/0x50
- [<ffffffffa06028fd>] __btrfs_free_extent.isra.66+0xb6d/0xd20 [btrfs]
- [<ffffffffa0606d4d>] __btrfs_run_delayed_refs.constprop.71+0x96d/0x1560
-[btrfs]
- [<ffffffff81202ad9>] ? cmpxchg_double_slab.isra.68+0x149/0x160
- [<ffffffff81106a1d>] ? trace_hardirqs_on+0xd/0x10
- [<ffffffffa060a5ce>] btrfs_run_delayed_refs+0x8e/0x2d0 [btrfs]
- [<ffffffffa06209fe>] btrfs_commit_transaction+0x3e/0xb50 [btrfs]
- [<ffffffffa069f26e>] ? btrfs_dedupe_disable+0x28e/0x2c0 [btrfs]
- [<ffffffff812035c3>] ? kfree+0x223/0x270
- [<ffffffffa069f27a>] btrfs_dedupe_disable+0x29a/0x2c0 [btrfs]
- [<ffffffffa065e403>] btrfs_ioctl+0x2363/0x2a40 [btrfs]
- [<ffffffff8116b12a>] ? __audit_syscall_entry+0xaa/0xf0
- [<ffffffff81137ce6>] ? current_kernel_time64+0x56/0xa0
- [<ffffffff8122080e>] do_vfs_ioctl+0x8e/0x690
- [<ffffffff8116b12a>] ? __audit_syscall_entry+0xaa/0xf0
- [<ffffffff8122c181>] ? __fget_light+0x61/0x90
- [<ffffffff81220e84>] SyS_ioctl+0x74/0x80
- [<ffffffff8180ad57>] entry_SYSCALL_64_fastpath+0x12/0x6f
----[ end trace 618d5a5bc21d6a7c ]---
+Introduce the header for btrfs online(write time) de-duplication
+framework and needed header.
 
-Fix it by adding corresponding branch for btrfs_get_fs_root().
+The new de-duplication framework is going to support 2 different dedupe
+methods and 1 dedupe hash.
 
-Reported-by: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Signed-off-by: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
 ---
- fs/btrfs/disk-io.c    | 5 +++++
- fs/btrfs/relocation.c | 3 ++-
- 2 files changed, 7 insertions(+), 1 deletion(-)
+ fs/btrfs/ctree.h   |   5 ++
+ fs/btrfs/dedupe.h  | 132 +++++++++++++++++++++++++++++++++++++++++++++++++++++
+ fs/btrfs/disk-io.c |   1 +
+ 3 files changed, 138 insertions(+)
+ create mode 100644 fs/btrfs/dedupe.h
 
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 84a6a5b..022ab61 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -1860,6 +1860,11 @@ struct btrfs_fs_info {
+ 	struct list_head pinned_chunks;
+ 
+ 	int creating_free_space_tree;
++
++	/* Inband de-duplication related structures*/
++	unsigned int dedupe_enabled:1;
++	struct btrfs_dedupe_info *dedupe_info;
++	struct mutex dedupe_ioctl_lock;
+ };
+ 
+ struct btrfs_subvolume_writers {
+diff --git a/fs/btrfs/dedupe.h b/fs/btrfs/dedupe.h
+new file mode 100644
+index 0000000..916039c
+--- /dev/null
++++ b/fs/btrfs/dedupe.h
+@@ -0,0 +1,132 @@
++/*
++ * Copyright (C) 2015 Fujitsu.  All rights reserved.
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public
++ * License v2 as published by the Free Software Foundation.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++ * General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public
++ * License along with this program; if not, write to the
++ * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
++ * Boston, MA 021110-1307, USA.
++ */
++
++#ifndef __BTRFS_DEDUPE__
++#define __BTRFS_DEDUPE__
++
++#include <linux/btrfs.h>
++#include <linux/wait.h>
++#include <crypto/hash.h>
++
++/*
++ * Dedup storage backend
++ * On disk is persist storage but overhead is large
++ * In memory is fast but will lose all its hash on umount
++ */
++#define BTRFS_DEDUPE_BACKEND_INMEMORY		0
++#define BTRFS_DEDUPE_BACKEND_ONDISK		1
++#define BTRFS_DEDUPE_BACKEND_COUNT		2
++
++/* Dedup block size limit and default value */
++#define BTRFS_DEDUPE_BLOCKSIZE_MAX	(8 * 1024 * 1024)
++#define BTRFS_DEDUPE_BLOCKSIZE_MIN	(16 * 1024)
++#define BTRFS_DEDUPE_BLOCKSIZE_DEFAULT	(128 * 1024)
++
++/* Hash algorithm, only support SHA256 yet */
++#define BTRFS_DEDUPE_HASH_SHA256		0
++
++static int btrfs_dedupe_sizes[] = { 32 };
++
++/*
++ * For caller outside of dedup.c
++ *
++ * Different dedupe backends should have their own hash structure
++ */
++struct btrfs_dedupe_hash {
++	u64 bytenr;
++	u32 num_bytes;
++
++	/* last field is a variable length array of dedupe hash */
++	u8 hash[];
++};
++
++struct btrfs_dedupe_info {
++	/* dedupe blocksize */
++	u64 blocksize;
++	u16 backend;
++	u16 hash_type;
++
++	struct crypto_shash *dedupe_driver;
++	struct mutex lock;
++
++	/* following members are only used in in-memory dedupe mode */
++	struct rb_root hash_root;
++	struct rb_root bytenr_root;
++	struct list_head lru_list;
++	u64 limit_nr;
++	u64 current_nr;
++};
++
++struct btrfs_trans_handle;
++
++static inline int btrfs_dedupe_hash_hit(struct btrfs_dedupe_hash *hash)
++{
++	return (hash && hash->bytenr);
++}
++
++int btrfs_dedupe_hash_size(u16 type);
++struct btrfs_dedupe_hash *btrfs_dedupe_alloc_hash(u16 type);
++
++/*
++ * Initial inband dedupe info
++ * Called at dedupe enable time.
++ */
++int btrfs_dedupe_enable(struct btrfs_fs_info *fs_info, u16 type, u16 backend,
++			u64 blocksize, u64 limit_nr);
++
++/*
++ * Disable dedupe and invalidate all its dedupe data.
++ * Called at dedupe disable time.
++ */
++int btrfs_dedupe_disable(struct btrfs_fs_info *fs_info);
++
++/*
++ * Calculate hash for dedup.
++ * Caller must ensure [start, start + dedupe_bs) has valid data.
++ */
++int btrfs_dedupe_calc_hash(struct btrfs_fs_info *fs_info,
++			   struct inode *inode, u64 start,
++			   struct btrfs_dedupe_hash *hash);
++
++/*
++ * Search for duplicated extents by calculated hash
++ * Caller must call btrfs_dedupe_calc_hash() first to get the hash.
++ *
++ * @inode: the inode for we are writing
++ * @file_pos: offset inside the inode
++ * As we will increase extent ref immediately after a hash match,
++ * we need @file_pos and @inode in this case.
++ *
++ * Return > 0 for a hash match, and the extent ref will be
++ * *INCREASED*, and hash->bytenr/num_bytes will record the existing
++ * extent data.
++ * Return 0 for a hash miss. Nothing is done
++ */
++int btrfs_dedupe_search(struct btrfs_fs_info *fs_info,
++			struct inode *inode, u64 file_pos,
++			struct btrfs_dedupe_hash *hash);
++
++/* Add a dedupe hash into dedupe info */
++int btrfs_dedupe_add(struct btrfs_trans_handle *trans,
++		     struct btrfs_fs_info *fs_info,
++		     struct btrfs_dedupe_hash *hash);
++
++/* Remove a dedupe hash from dedupe info */
++int btrfs_dedupe_del(struct btrfs_trans_handle *trans,
++		     struct btrfs_fs_info *fs_info, u64 bytenr);
++#endif
 diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 44d098d..ec9fff3 100644
+index c95e3ce..3cf4c11 100644
 --- a/fs/btrfs/disk-io.c
 +++ b/fs/btrfs/disk-io.c
-@@ -1679,6 +1679,11 @@ struct btrfs_root *btrfs_get_fs_root(struct btrfs_fs_info *fs_info,
- 	if (location->objectid == BTRFS_FREE_SPACE_TREE_OBJECTID)
- 		return fs_info->free_space_root ? fs_info->free_space_root :
- 						  ERR_PTR(-ENOENT);
-+	if (location->objectid == BTRFS_DEDUPE_TREE_OBJECTID) {
-+		if (fs_info->dedupe_enabled && fs_info->dedupe_info)
-+			return fs_info->dedupe_info->dedupe_root;
-+		return ERR_PTR(-ENOENT);
-+	}
- again:
- 	root = btrfs_lookup_fs_root(fs_info, location->objectid);
- 	if (root) {
-diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-index 71a5cd0..74fd5d9 100644
---- a/fs/btrfs/relocation.c
-+++ b/fs/btrfs/relocation.c
-@@ -577,7 +577,8 @@ static int is_cowonly_root(u64 root_objectid)
- 	    root_objectid == BTRFS_CSUM_TREE_OBJECTID ||
- 	    root_objectid == BTRFS_UUID_TREE_OBJECTID ||
- 	    root_objectid == BTRFS_QUOTA_TREE_OBJECTID ||
--	    root_objectid == BTRFS_FREE_SPACE_TREE_OBJECTID)
-+	    root_objectid == BTRFS_FREE_SPACE_TREE_OBJECTID ||
-+	    root_objectid == BTRFS_DEDUPE_TREE_OBJECTID)
- 		return 1;
- 	return 0;
- }
+@@ -2584,6 +2584,7 @@ int open_ctree(struct super_block *sb,
+ 	mutex_init(&fs_info->reloc_mutex);
+ 	mutex_init(&fs_info->delalloc_root_mutex);
+ 	mutex_init(&fs_info->cleaner_delayed_iput_mutex);
++	mutex_init(&fs_info->dedupe_ioctl_lock);
+ 	seqlock_init(&fs_info->profiles_lock);
+ 
+ 	INIT_LIST_HEAD(&fs_info->dirty_cowonly_roots);
 -- 
 2.7.3
 

@@ -1,79 +1,116 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1050.oracle.com ([156.151.31.82]:44802 "EHLO
-	userp1050.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750871AbcCUXYN (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 21 Mar 2016 19:24:13 -0400
-Received: from userp1040.oracle.com (userp1040.oracle.com [156.151.31.81])
-	by userp1050.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id u2LJE9DP031258
-	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Mon, 21 Mar 2016 19:14:09 GMT
-Received: from userv0022.oracle.com (userv0022.oracle.com [156.151.31.74])
-	by userp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id u2LJE8CD023461
-	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Mon, 21 Mar 2016 19:14:08 GMT
-Received: from userv0121.oracle.com (userv0121.oracle.com [156.151.31.72])
-	by userv0022.oracle.com (8.14.4/8.13.8) with ESMTP id u2LJE8Zn030051
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=FAIL)
-	for <linux-btrfs@vger.kernel.org>; Mon, 21 Mar 2016 19:14:08 GMT
-Received: from abhmp0003.oracle.com (abhmp0003.oracle.com [141.146.116.9])
-	by userv0121.oracle.com (8.13.8/8.13.8) with ESMTP id u2LJE7pU032118
-	for <linux-btrfs@vger.kernel.org>; Mon, 21 Mar 2016 19:14:07 GMT
-Date: Mon, 21 Mar 2016 12:16:28 -0700
-From: Liu Bo <bo.li.liu@oracle.com>
-To: Dan Carpenter <dan.carpenter@oracle.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: Btrfs: fix up read_tree_block to return proper error
-Message-ID: <20160321191628.GB1111@localhost.localdomain>
-Reply-To: bo.li.liu@oracle.com
-References: <20160318053713.GA2111@mwanda>
+Received: from mx1.redhat.com ([209.132.183.28]:37419 "EHLO mx1.redhat.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1758198AbcCVDA0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 21 Mar 2016 23:00:26 -0400
+Date: Tue, 22 Mar 2016 11:00:23 +0800
+From: Eryu Guan <eguan@redhat.com>
+To: fdmanana@kernel.org
+Cc: fstests@vger.kernel.org, linux-btrfs@vger.kernel.org,
+        Filipe Manana <fdmanana@suse.com>
+Subject: Re: [PATCH v2] fstests: test fsync on overlayfs merged directory
+Message-ID: <20160322030023.GF11419@eguan.usersys.redhat.com>
+References: <1458581952-18638-1-git-send-email-fdmanana@kernel.org>
+ <1458582625-22039-1-git-send-email-fdmanana@kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20160318053713.GA2111@mwanda>
+In-Reply-To: <1458582625-22039-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Dan,
+On Mon, Mar 21, 2016 at 05:50:25PM +0000, fdmanana@kernel.org wrote:
+> From: Filipe Manana <fdmanana@suse.com>
+> 
+> Test that calling fsync against a file using the merged directory does
+> not result in a crash nor fails unexpectedly.
+> 
+> This is motivated by a change in overlayfs that resulted in a crash
+> (invalid memory access) when the lower or upper directory belonged to
+> a btrfs file system. The overlayfs change came in commit 4bacc9c9234
+> (overlayfs: Make f_path always point to the overlay and f_inode to the
+> underlay). At the moment there are two patches in the linux-fsdevel
+> and linux-btrfs mailing lists to fix this problem:
+> 
+>   * vfs: add file_dentry()
+>   * Btrfs: fix crash/invalid memory access on fsync when using overlayfs
+> 
+> Signed-off-by: Filipe Manana <fdmanana@suse.com>
+> ---
+> 
+> V2: Removed leftover comment from debugging.
+> 
+>  tests/overlay/002     | 74 +++++++++++++++++++++++++++++++++++++++++++++++++++
+>  tests/overlay/002.out |  3 +++
+>  tests/overlay/group   |  1 +
+>  3 files changed, 78 insertions(+)
+>  create mode 100755 tests/overlay/002
+>  create mode 100644 tests/overlay/002.out
+> 
+> diff --git a/tests/overlay/002 b/tests/overlay/002
+> new file mode 100755
+> index 0000000..e5aa610
+> --- /dev/null
+> +++ b/tests/overlay/002
+> @@ -0,0 +1,74 @@
+> +#! /bin/bash
+> +# FS QA Test 002
+> +#
+> +# Test that calling fsync against a file using the merged directory does not
+> +# result in a crash nor fails unexpectedly.
+> +#
+> +# This is motivated by a change in overlayfs that resulted in a crash (invalid
+> +# memory access) when the lower or upper directory belonged to a btrfs file
+> +# system.
+> +#
+> +#-----------------------------------------------------------------------
+> +#
+> +# Copyright (C) 2016 SUSE Linux Products GmbH. All Rights Reserved.
+> +# Author: Filipe Manana <fdmanana@suse.com>
+> +#
+> +# This program is free software; you can redistribute it and/or
+> +# modify it under the terms of the GNU General Public License as
+> +# published by the Free Software Foundation.
+> +#
+> +# This program is distributed in the hope that it would be useful,
+> +# but WITHOUT ANY WARRANTY; without even the implied warranty of
+> +# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+> +# GNU General Public License for more details.
+> +#
+> +# You should have received a copy of the GNU General Public License
+> +# along with this program; if not, write the Free Software Foundation,
+> +# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+> +#-----------------------------------------------------------------------
+> +#
+> +
+> +seq=`basename $0`
+> +seqres=$RESULT_DIR/$seq
+> +echo "QA output created by $seq"
+> +
+> +here=`pwd`
+> +tmp=/tmp/$$
+> +status=1	# failure is the default!
+> +trap "_cleanup; exit \$status" 0 1 2 3 15
+> +
+> +_cleanup()
+> +{
+> +	cd /
+> +	rm -f $tmp.*
+> +}
+> +
+> +# get standard environment, filters and checks
+> +. ./common/rc
+> +. ./common/filter
+> +
+> +# remove previous $seqres.full before test
+> +rm -f $seqres.full
+> +
+> +# real QA test starts here
+> +_supported_fs generic
 
-On Fri, Mar 18, 2016 at 08:37:13AM +0300, Dan Carpenter wrote:
-> Hello Liu Bo,
-> 
-> The patch 64c043de466d: "Btrfs: fix up read_tree_block to return
-> proper error" from May 25, 2015, leads to the following static
-> checker warning:
-> 
-> 	fs/btrfs/relocation.c:1858 replace_path()
-> 	error: 'eb' dereferencing possible ERR_PTR()
-> 
-> fs/btrfs/relocation.c
->   1850                          eb = read_tree_block(dest, old_bytenr, old_ptr_gen);
->   1851                          if (IS_ERR(eb)) {
->                                     ^^^^^^^^^^
-> 
->   1852                                  ret = PTR_ERR(eb);
-> 
-> Missing break or continue?
-> 
->   1853                          } else if (!extent_buffer_uptodate(eb)) {
->   1854                                  ret = -EIO;
->   1855                                  free_extent_buffer(eb);
->   1856                                  break;
->   1857                          }
->   1858                          btrfs_tree_lock(eb);
->                                                 ^^
-> Dereference.
-> 
->   1859                          if (cow) {
->   1860                                  ret = btrfs_cow_block(trans, dest, eb, parent,
->   1861                                                        slot, &eb);
+The supported fs should be "overlay"? overlay/001 has the same issue
+though.
 
-Ah, thanks a lot for reporting this!
+Looks good to me otherwise, test passed with XFS as underlying fs and
+test crashed v4.5 kernel with btrfs as underlying fs, as expected.
 
-I've double checked other places in that patch, the above one is the only place
-we have such a problem.
-
-I'll cook a patch to fix it.
-
-Thanks,
-
--liubo
+Reviewed-by: Eryu Guan <eguan@redhat.com>

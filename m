@@ -1,42 +1,126 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qg0-f66.google.com ([209.85.192.66]:33260 "EHLO
-	mail-qg0-f66.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753114AbcCRRvs (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 18 Mar 2016 13:51:48 -0400
-Received: by mail-qg0-f66.google.com with SMTP id y89so7923033qge.0
-        for <linux-btrfs@vger.kernel.org>; Fri, 18 Mar 2016 10:51:47 -0700 (PDT)
-Subject: Re: [PATCH v2] btrfs-progs: add stat check in open_ctree_fs_info
-To: dsterba@suse.cz, linux-btrfs@vger.kernel.org
-References: <1458309822-5550-1-git-send-email-ahferroin7@gmail.com>
- <20160318151714.GA21722@twin.jikos.cz>
-Cc: clm@fb.com
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <56EC3FE4.5090608@gmail.com>
-Date: Fri, 18 Mar 2016 13:50:28 -0400
+Received: from mail.kernel.org ([198.145.29.136]:51804 "EHLO mail.kernel.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1759295AbcCVLHL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 22 Mar 2016 07:07:11 -0400
 MIME-Version: 1.0
-In-Reply-To: <20160318151714.GA21722@twin.jikos.cz>
-Content-Type: text/plain; charset=windows-1252; format=flowed
+In-Reply-To: <20160322030023.GF11419@eguan.usersys.redhat.com>
+References: <1458581952-18638-1-git-send-email-fdmanana@kernel.org>
+	<1458582625-22039-1-git-send-email-fdmanana@kernel.org>
+	<20160322030023.GF11419@eguan.usersys.redhat.com>
+Date: Tue, 22 Mar 2016 11:07:06 +0000
+Message-ID: <CAL3q7H6z1Ut2MQh5dRv0ALwWnuiw0n1i_OJpbz=MVh=p3GTJXw@mail.gmail.com>
+Subject: Re: [PATCH v2] fstests: test fsync on overlayfs merged directory
+From: Filipe Manana <fdmanana@kernel.org>
+To: Eryu Guan <eguan@redhat.com>
+Cc: fstests@vger.kernel.org,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        Filipe Manana <fdmanana@suse.com>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2016-03-18 11:17, David Sterba wrote:
-> On Fri, Mar 18, 2016 at 10:03:42AM -0400, Austin S. Hemmelgarn wrote:
->> There are other tools that have similarly poor error behavior when
->> called incorrectly (btrfs rescue immediately comes to mind), but they
->> don't use open_ctree_fs_info, so this doesn't affect them.  I may do
->> followup patches to fix those too if I have the time.
+On Tue, Mar 22, 2016 at 3:00 AM, Eryu Guan <eguan@redhat.com> wrote:
+> On Mon, Mar 21, 2016 at 05:50:25PM +0000, fdmanana@kernel.org wrote:
+>> From: Filipe Manana <fdmanana@suse.com>
+>>
+>> Test that calling fsync against a file using the merged directory does
+>> not result in a crash nor fails unexpectedly.
+>>
+>> This is motivated by a change in overlayfs that resulted in a crash
+>> (invalid memory access) when the lower or upper directory belonged to
+>> a btrfs file system. The overlayfs change came in commit 4bacc9c9234
+>> (overlayfs: Make f_path always point to the overlay and f_inode to the
+>> underlay). At the moment there are two patches in the linux-fsdevel
+>> and linux-btrfs mailing lists to fix this problem:
+>>
+>>   * vfs: add file_dentry()
+>>   * Btrfs: fix crash/invalid memory access on fsync when using overlayfs
+>>
+>> Signed-off-by: Filipe Manana <fdmanana@suse.com>
+>> ---
+>>
+>> V2: Removed leftover comment from debugging.
+>>
+>>  tests/overlay/002     | 74 +++++++++++++++++++++++++++++++++++++++++++++++++++
+>>  tests/overlay/002.out |  3 +++
+>>  tests/overlay/group   |  1 +
+>>  3 files changed, 78 insertions(+)
+>>  create mode 100755 tests/overlay/002
+>>  create mode 100644 tests/overlay/002.out
+>>
+>> diff --git a/tests/overlay/002 b/tests/overlay/002
+>> new file mode 100755
+>> index 0000000..e5aa610
+>> --- /dev/null
+>> +++ b/tests/overlay/002
+>> @@ -0,0 +1,74 @@
+>> +#! /bin/bash
+>> +# FS QA Test 002
+>> +#
+>> +# Test that calling fsync against a file using the merged directory does not
+>> +# result in a crash nor fails unexpectedly.
+>> +#
+>> +# This is motivated by a change in overlayfs that resulted in a crash (invalid
+>> +# memory access) when the lower or upper directory belonged to a btrfs file
+>> +# system.
+>> +#
+>> +#-----------------------------------------------------------------------
+>> +#
+>> +# Copyright (C) 2016 SUSE Linux Products GmbH. All Rights Reserved.
+>> +# Author: Filipe Manana <fdmanana@suse.com>
+>> +#
+>> +# This program is free software; you can redistribute it and/or
+>> +# modify it under the terms of the GNU General Public License as
+>> +# published by the Free Software Foundation.
+>> +#
+>> +# This program is distributed in the hope that it would be useful,
+>> +# but WITHOUT ANY WARRANTY; without even the implied warranty of
+>> +# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+>> +# GNU General Public License for more details.
+>> +#
+>> +# You should have received a copy of the GNU General Public License
+>> +# along with this program; if not, write the Free Software Foundation,
+>> +# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+>> +#-----------------------------------------------------------------------
+>> +#
+>> +
+>> +seq=`basename $0`
+>> +seqres=$RESULT_DIR/$seq
+>> +echo "QA output created by $seq"
+>> +
+>> +here=`pwd`
+>> +tmp=/tmp/$$
+>> +status=1     # failure is the default!
+>> +trap "_cleanup; exit \$status" 0 1 2 3 15
+>> +
+>> +_cleanup()
+>> +{
+>> +     cd /
+>> +     rm -f $tmp.*
+>> +}
+>> +
+>> +# get standard environment, filters and checks
+>> +. ./common/rc
+>> +. ./common/filter
+>> +
+>> +# remove previous $seqres.full before test
+>> +rm -f $seqres.full
+>> +
+>> +# real QA test starts here
+>> +_supported_fs generic
 >
-> Yeah, it would be good to fix all.
-I had a bit of spare time over lunch, and decided to take a cursory 
-look.  I hadn't realized that open_ctree uses open_ctree_fs_info, and it 
-looks like almost everything that doesn't call open_ctree_fs_info calls 
-open_ctree, which means this actually added error checking to a lot more 
-than I realized, possibly everything that expects a filesystem image to 
-operate on.  I've checked btrfs rescue now, and with this change, it now 
-gives a nice error for something other than a a file or block device. 
-It looks like a follow up patch may not be necessary after all, I'll try 
-and double check the rest of the commands that I haven't checked already 
-over the weekend, and hopefully have something by Monday or Tuesday if 
-there's anything else that needs this check added.
+> The supported fs should be "overlay"? overlay/001 has the same issue
+> though.
 
+Yeah, I copied it from 001. And that's a question I made myself but
+forgot later to investigate. Since you authored test 001, can you
+confirm if it's a mistake or is it really supposed to be 'overlay'?
+
+Thanks
+
+>
+> Looks good to me otherwise, test passed with XFS as underlying fs and
+> test crashed v4.5 kernel with btrfs as underlying fs, as expected.
+>
+> Reviewed-by: Eryu Guan <eguan@redhat.com>

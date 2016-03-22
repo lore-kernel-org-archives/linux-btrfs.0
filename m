@@ -1,64 +1,80 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:37046 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1753149AbcCVIrV (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 22 Mar 2016 04:47:21 -0400
+Received: from plane.gmane.org ([80.91.229.3]:46533 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1756105AbcCVJD6 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 22 Mar 2016 05:03:58 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+	id 1aiIEG-0006dM-2S
+	for linux-btrfs@vger.kernel.org; Tue, 22 Mar 2016 10:03:56 +0100
+Received: from ip5f5ae008.dynamic.kabel-deutschland.de ([95.90.224.8])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Tue, 22 Mar 2016 10:03:56 +0100
+Received: from hurikhan77 by ip5f5ae008.dynamic.kabel-deutschland.de with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Tue, 22 Mar 2016 10:03:56 +0100
+To: linux-btrfs@vger.kernel.org
+From: Kai Krakow <hurikhan77@gmail.com>
 Subject: Re: csum errors in VirtualBox VDI files
-To: Kai Krakow <hurikhan77@gmail.com>, <linux-btrfs@vger.kernel.org>
+Date: Tue, 22 Mar 2016 09:07:16 +0100
+Message-ID: <20160322090716.029e2840@jupiter.sol.kaishome.de>
 References: <20160322090342.595fefac@jupiter.sol.kaishome.de>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <56F1068E.6050806@cn.fujitsu.com>
-Date: Tue, 22 Mar 2016 16:47:10 +0800
-MIME-Version: 1.0
-In-Reply-To: <20160322090342.595fefac@jupiter.sol.kaishome.de>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+Mime-Version: 1.0
+Content-Type: text/plain; charset=US-ASCII
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+Am Tue, 22 Mar 2016 09:03:42 +0100
+schrieb Kai Krakow <hurikhan77@gmail.com>:
 
-Kai Krakow wrote on 2016/03/22 09:03 +0100:
 > Hello!
->
+> 
 > Since one of the last kernel updates (I don't know which exactly), I'm
 > experiencing csum errors within VDI files when running VirtualBox. A
 > side effect of this is, as soon as dmesg shows these errors, commands
 > like "du" and "df" hang until reboot.
->
+> 
 > I've now restored the file from backup but it happens over and over
 > again.
->
+> 
 > On another machine I'm also seeing errors with big files in the
 > following scenario (apparently an older kernel, 4.1.x I afair):
->
+> 
 > # ntfsclone --save /dev/md126p2 -o rescue.ntfs.img
->                     ^ big NTFS partition   ^ file on btrfs
->
+>                    ^ big NTFS partition   ^ file on btrfs
+> 
 > results in a write error and the file system goes read-only.
-
-When it goes RO, it must have some warning in kernel log.
-Would you please paste the kernel log?
-
->
+> 
 > Both systems have in common they are using btrfs on bcache with
 > compress=lzo,autodefrag,nossd,discard (mraid=1,draid=0 and
 > mraid=1,draid=single).
->
+> 
 > The system mentioned first is running Kernel 4.5.0 with Gentoo
 > patch-set. I upgraded from the last 4.4.x kernel when I first
 > experienced this problem. The first time the problem resulted in a
 > duplicate extent which btrfsck wasn't able to fix, that's when I first
-> restored from backup. But now I'm getting csum errors in this file over
-> a over again, plus when rsync has run for backup, the system no longer
-> responds to "du" and "df" commands - it just hangs.
->
+> restored from backup. But now I'm getting csum errors in this file
+> over a over again, plus when rsync has run for backup, the system no
+> longer responds to "du" and "df" commands - it just hangs.
+> 
 > Known problem? Does it help if I send debug info? If so, please
 > instruct.
->
-Does btrfs check report anything wrong?
+> 
 
-Thanks,
-Qu
+[ 3073.426785] BTRFS info (device bcache2): no csum found for inode 7528856 start 79614263296
+[ 3073.447613] BTRFS info (device bcache2): csum failed ino 7528856 extent 128363245568 csum 3730946112 wanted 0 mirror 0
+[ 3073.554746] BTRFS info (device bcache2): no csum found for inode 7528856 start 79614263296
+[ 3073.590864] BTRFS info (device bcache2): csum failed ino 7528856 extent 128363245568 csum 3730946112 wanted 0 mirror 0
+[ 3073.590930] BTRFS info (device bcache2): no csum found for inode 7528856 start 79614263296
+[ 3073.617864] BTRFS info (device bcache2): csum failed ino 7528856 extent 128363245568 csum 3730946112 wanted 0 mirror 0
+[ 3073.618057] BTRFS info (device bcache2): no csum found for inode 7528856 start 79614263296
+[ 3073.644597] BTRFS info (device bcache2): csum failed ino 7528856 extent 412938412032 csum 3730946112 wanted 0 mirror 0
 
+
+-- 
+Regards,
+Kai
+
+Replies to list-only preferred.
 

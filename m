@@ -1,71 +1,31 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:22322 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752540AbcCQCjM (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 16 Mar 2016 22:39:12 -0400
-From: Anand Jain <anand.jain@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.cz
-Subject: [PATCH v2] btrfs: remove save_error_info()
-Date: Thu, 17 Mar 2016 10:38:57 +0800
-Message-Id: <1458182337-3841-1-git-send-email-anand.jain@oracle.com>
+Received: from mx2.suse.de ([195.135.220.15]:34234 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753349AbcCVJjx (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 22 Mar 2016 05:39:53 -0400
+Date: Tue, 22 Mar 2016 10:39:23 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Liu Bo <bo.li.liu@oracle.com>
+Cc: linux-btrfs@vger.kernel.org, Dan Carpenter <dan.carpenter@oracle.com>
+Subject: Re: [PATCH] Btrfs: fix invalid reference in replace_path
+Message-ID: <20160322093923.GF8095@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1458597593-29699-1-git-send-email-bo.li.liu@oracle.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1458597593-29699-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Actually save_error_info() sets the FS state to error
-and nothing else. Further the word save doesn't induce
-caffeine when compared to the word set in what actually
-it does.
+On Mon, Mar 21, 2016 at 02:59:53PM -0700, Liu Bo wrote:
+> Dan Carpenter's static checker has found this error, it's introduced by
+> commit 64c043de466d
+> ("Btrfs: fix up read_tree_block to return proper error")
+> 
+> It's really supposed to 'break' the loop on error like others.
+> 
+> Cc: Dan Carpenter <dan.carpenter@oracle.com>
+> Reported-by: Dan Carpenter <dan.carpenter@oracle.com> 
+> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
 
-So to make it better understandable move save_error_info()
-code to its only consumer itself.
-
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
----
-v2: Title changed
-       old: btrfs: rename save_error_info to set_fs_error
-    Instead of rename to set_fs_error(), move the code to
-     its parent.
-
- fs/btrfs/super.c | 16 ++++++----------
- 1 file changed, 6 insertions(+), 10 deletions(-)
-
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 63a74303da9e..302f744b4d54 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -97,15 +97,6 @@ const char *btrfs_decode_error(int errno)
- 	return errstr;
- }
- 
--static void save_error_info(struct btrfs_fs_info *fs_info)
--{
--	/*
--	 * today we only save the error info into ram.  Long term we'll
--	 * also send it down to the disk
--	 */
--	set_bit(BTRFS_FS_STATE_ERROR, &fs_info->fs_state);
--}
--
- /* btrfs handle error by forcing the filesystem readonly */
- static void btrfs_handle_error(struct btrfs_fs_info *fs_info)
- {
-@@ -170,8 +161,13 @@ void __btrfs_std_error(struct btrfs_fs_info *fs_info, const char *function,
- 	}
- #endif
- 
-+	/*
-+	 * today we only save the error info into ram.  Long term we'll
-+	 * also send it down to the disk
-+	 */
-+	set_bit(BTRFS_FS_STATE_ERROR, &fs_info->fs_state);
-+
- 	/* Don't go through full error handling during mount */
--	save_error_info(fs_info);
- 	if (sb->s_flags & MS_BORN)
- 		btrfs_handle_error(fs_info);
- }
--- 
-2.7.0
-
+Reviewed-by: David Sterba <dsterba@suse.com>

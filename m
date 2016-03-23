@@ -1,137 +1,41 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:61618 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1754676AbcCVHVz (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 22 Mar 2016 03:21:55 -0400
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
-Subject: [PATCH v6 8/8] btrfs-progs: property: add a dedupe property
-Date: Tue, 22 Mar 2016 15:19:21 +0800
-Message-Id: <1458631161-19036-8-git-send-email-quwenruo@cn.fujitsu.com>
-In-Reply-To: <1458631161-19036-1-git-send-email-quwenruo@cn.fujitsu.com>
-References: <1458631161-19036-1-git-send-email-quwenruo@cn.fujitsu.com>
+Received: from ipmail04.adl6.internode.on.net ([150.101.137.141]:51473 "EHLO
+	ipmail04.adl6.internode.on.net" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1752819AbcCWAJL (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 22 Mar 2016 20:09:11 -0400
+Date: Wed, 23 Mar 2016 11:08:56 +1100
+From: Dave Chinner <david@fromorbit.com>
+To: Eryu Guan <eguan@redhat.com>
+Cc: fstests@vger.kernel.org, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] fstests: _fail the tests if _scratch_mount failed to
+ avoid fully filling root fs
+Message-ID: <20160323000856.GY11812@dastard>
+References: <1458545021-23285-1-git-send-email-eguan@redhat.com>
 MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1458545021-23285-1-git-send-email-eguan@redhat.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
+On Mon, Mar 21, 2016 at 03:23:41PM +0800, Eryu Guan wrote:
+> btrfs failed to mount small fs on ppc64 host with error ENOSPC, even
+> creating such small fs succeeded, then generic/027 consumed all free
+> space on root fs not on SCRATCH_DEV and test harness cannot create tmp
+> files and continue other tests.
+> 
+> Though I think it's a btrfs bug, it's still worth preventing this
+> situation from happening in the harness, as such tests usually aim to
+> exercise fs on ENOSPC conditions, there's no point to continue if the
+> small fs is not mounted.
 
-Normally if we enable online dedupe for a fs, it's filesystem wide
-de-duplication. With this property, we can explicitly disable data
-de-duplication for specified files.
+I think the btrfs bug should be fixed. At minimum, the workaround to
+see if the filesytem can be mounted should be in btrfs's
+implementation of scratch_mkfs_sized....
 
-Signed-off-by: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
----
- Documentation/btrfs-property.asciidoc |  2 +
- props.c                               | 73 +++++++++++++++++++++++++++++++++++
- 2 files changed, 75 insertions(+)
+Cheers,
 
-diff --git a/Documentation/btrfs-property.asciidoc b/Documentation/btrfs-property.asciidoc
-index 8b9b7f0..ca90035 100644
---- a/Documentation/btrfs-property.asciidoc
-+++ b/Documentation/btrfs-property.asciidoc
-@@ -44,6 +44,8 @@ label::::
- label of device
- compression::::
- compression setting for an inode: lzo, zlib, or "" (empty string)
-+dedupe::::
-+online dedupe setting for an inode: disable or "" (empty string)
- 
- *list* [-t <type>] <object>::
- Lists available properties with their descriptions for the given object.
-diff --git a/props.c b/props.c
-index 5b74932..d8f6925 100644
---- a/props.c
-+++ b/props.c
-@@ -187,6 +187,77 @@ out:
- 	return ret;
- }
- 
-+static int prop_dedupe(enum prop_object_type type, const char *object,
-+	const char *name, const char *value)
-+{
-+	int ret;
-+	ssize_t sret;
-+	int fd = -1;
-+	DIR *dirstream = NULL;
-+	char *buf = NULL;
-+	char *xattr_name = NULL;
-+	int open_flags = value ? O_RDWR : O_RDONLY;
-+
-+	fd = open_file_or_dir3(object, &dirstream, open_flags);
-+	if (fd == -1) {
-+		ret = -errno;
-+		fprintf(stderr, "ERROR: open %s failed. %s\n",
-+			object, strerror(-ret));
-+		goto out;
-+	}
-+
-+	xattr_name = malloc(XATTR_BTRFS_PREFIX_LEN + strlen(name) + 1);
-+	if (!xattr_name) {
-+		ret = -ENOMEM;
-+		goto out;
-+	}
-+	memcpy(xattr_name, XATTR_BTRFS_PREFIX, XATTR_BTRFS_PREFIX_LEN);
-+	memcpy(xattr_name + XATTR_BTRFS_PREFIX_LEN, name, strlen(name));
-+	xattr_name[XATTR_BTRFS_PREFIX_LEN + strlen(name)] = '\0';
-+
-+	if (value)
-+		sret = fsetxattr(fd, xattr_name, value, strlen(value), 0);
-+	else
-+		sret = fgetxattr(fd, xattr_name, NULL, 0);
-+	if (sret < 0) {
-+		ret = -errno;
-+		if (ret != -ENOATTR)
-+			fprintf(stderr,
-+				"ERROR: failed to %s dedupe for %s. %s\n",
-+				value ? "set" : "get", object, strerror(-ret));
-+		else
-+			ret = 0;
-+		goto out;
-+	}
-+	if (!value) {
-+		size_t len = sret;
-+
-+		buf = malloc(len);
-+		if (!buf) {
-+			ret = -ENOMEM;
-+			goto out;
-+		}
-+		sret = fgetxattr(fd, xattr_name, buf, len);
-+		if (sret < 0) {
-+			ret = -errno;
-+			fprintf(stderr,
-+				"ERROR: failed to get dedupe for %s. %s\n",
-+				object, strerror(-ret));
-+			goto out;
-+		}
-+		fprintf(stdout, "dedupe=%.*s\n", (int)len, buf);
-+	}
-+
-+	ret = 0;
-+out:
-+	free(xattr_name);
-+	free(buf);
-+	if (fd >= 0)
-+		close_file_or_dir(fd, dirstream);
-+
-+	return ret;
-+}
-+
- const struct prop_handler prop_handlers[] = {
- 	{"ro", "Set/get read-only flag of subvolume.", 0, prop_object_subvol,
- 	 prop_read_only},
-@@ -194,5 +265,7 @@ const struct prop_handler prop_handlers[] = {
- 	 prop_object_dev | prop_object_root, prop_label},
- 	{"compression", "Set/get compression for a file or directory", 0,
- 	 prop_object_inode, prop_compression},
-+	{"dedupe", "Set/get dedupe for a file or directory", 0,
-+	 prop_object_inode, prop_dedupe},
- 	{NULL, NULL, 0, 0, NULL}
- };
+Dave.
 -- 
-2.7.4
-
-
-
+Dave Chinner
+david@fromorbit.com

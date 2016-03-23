@@ -1,98 +1,89 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp149.junkemailfilter.com ([69.50.231.149]:56611 "EHLO
-	smtp149.junkemailfilter.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1753690AbcCWD2y (ORCPT
+Received: from mail-io0-f182.google.com ([209.85.223.182]:34361 "EHLO
+	mail-io0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753690AbcCWDem (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 22 Mar 2016 23:28:54 -0400
-Received: from smtp.ctyme.com ([184.105.182.178]) helo=smtp.ctyme.com
-	by retry.junkemailfilter.com with esmtps (TLSv1.2:ECDHE-RSA-AES256-GCM-SHA384:256)
-	(Exim 4.86_2)
-	id 1aiWxt-0006n3-Hn on interface=69.50.231.149
-	for linux-btrfs@vger.kernel.org; Tue, 22 Mar 2016 17:48:01 -0700
-Received: from cagate.csd.rawbw.com ([198.144.201.83] helo=[192.168.123.14]) helo=[192.168.123.14]
-	by darwin.junkemailfilter.com with esmtpsa (TLSv1.2:ECDHE-RSA-AES128-GCM-SHA256:128)
-	(Exim 4.86_2)
-	id 1aiWxq-0008Gu-A9 on interface=184.105.182.178
-	for linux-btrfs@vger.kernel.org; Tue, 22 Mar 2016 17:47:58 -0700
-To: linux-btrfs@vger.kernel.org
-Reply-To: bradtem@gmail.com
-From: Brad Templeton <bradtem@gmail.com>
-Subject: RAID-1 refuses to balance large drive
-Message-ID: <56F1E7BE.1000004@gmail.com>
-Date: Tue, 22 Mar 2016 17:47:58 -0700
+	Tue, 22 Mar 2016 23:34:42 -0400
+Received: by mail-io0-f182.google.com with SMTP id m184so13593094iof.1
+        for <linux-btrfs@vger.kernel.org>; Tue, 22 Mar 2016 20:34:42 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
+In-Reply-To: <CAC7HdqkBiH5Tx_Prj6R-W_PepTEA+N_+nKiqumHJS5kQ+s1p6A@mail.gmail.com>
+References: <CAC7HdqknOJAK+FcE53xO38G__gc42GR0GQW+chbGbDxXBt7HFA@mail.gmail.com>
+	<CAJCQCtQ=_iE3m6P-jH1VjzycBXXRv5QZUS2SPNeH7ZJ_ukWM-A@mail.gmail.com>
+	<CAC7HdqmzhHwJFgpDAjwF9gjL_+vEm7A8sBBsGwQEmTE_BGoeqQ@mail.gmail.com>
+	<CAJCQCtTnGyMBwGwDowm7+4DFN89YtEJx=hmi_K4gpogx3gFanQ@mail.gmail.com>
+	<CAC7HdqkBiH5Tx_Prj6R-W_PepTEA+N_+nKiqumHJS5kQ+s1p6A@mail.gmail.com>
+Date: Tue, 22 Mar 2016 21:34:41 -0600
+Message-ID: <CAJCQCtQtdXXJa0AJszkoB4KR36ph2LZZ7BftNv1Qk1ksqbbKvQ@mail.gmail.com>
+Subject: Re: moving btrfs subvolumes to new disk
+From: Chris Murphy <lists@colorremedies.com>
+To: Ryan Erato <rerato@gmail.com>
+Cc: Chris Murphy <lists@colorremedies.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I have a RAID 1, and was running a bit low, so replaced a 2TB drive with
-a 6TB.  The other drives are a 3TB and a 4TB.    After switching the
-drive, I did a balance and ... essentially nothing changed.  It did not
-balance clusters over to the 6TB drive off of the other 2 drives.  I
-found it odd, and wondered if it would do it as needed, but as time went
-on, the filesys got full for real.
+On Tue, Mar 22, 2016 at 7:40 PM, Ryan Erato <rerato@gmail.com> wrote:
+> Finally got around to running the suggested commands. Same error with
+> the send, but not much output to help.  The check operation did seem
+> to reveal some potential issues. Here's the play-by-play along with
+> the file output from check:
+>
+> [liveuser@localhost /]$ sudo btrfs check /dev/sda6 >
+> /home/liveuser/btrfscheck.txt
+> checking extents
+> checking free space cache
+> checking fs roots
+> root 257 inode 13324701 errors 200, dir isize wrong
+> root 258 inode 226392 errors 200, dir isize wrong
+> root 258 inode 236055 errors 2000, link count wrong
+> unresolved ref dir 226392 index 35 namelen 7 name LOG.old filetype 0
+> errors 3, no dir item, no dir index
+> root 258 inode 236273 errors 2000, link count wrong
+> root 258 inode 236276 errors 2000, link count wrong
+> unresolved ref dir 226392 index 39 namelen 15 name MANIFEST-000015
+> filetype 0 errors 3, no dir item, no dir index
+> root 258 inode 236277 errors 2000, link count wrong
+> unresolved ref dir 226392 index 41 namelen 7 name CURRENT filetype 0
+> errors 3, no dir item, no dir index
+> root 258 inode 240618 errors 2000, link count wrong
+> unresolved ref dir 226392 index 115 namelen 10 name 000089.log
+> filetype 0 errors 3, no dir item, no dir index
+> root 487 inode 13324701 errors 200, dir isize wrong
+> root 488 inode 226392 errors 200, dir isize wrong
+> root 488 inode 236055 errors 2000, link count wrong
+> unresolved ref dir 226392 index 35 namelen 7 name LOG.old filetype 0
+> errors 3, no dir item, no dir index
+> root 488 inode 236273 errors 2000, link count wrong
+> root 488 inode 236276 errors 2000, link count wrong
+> unresolved ref dir 226392 index 39 namelen 15 name MANIFEST-000015
+> filetype 0 errors 3, no dir item, no dir index
+> root 488 inode 236277 errors 2000, link count wrong
+> unresolved ref dir 226392 index 41 namelen 7 name CURRENT filetype 0
+> errors 3, no dir item, no dir index
+> root 488 inode 240618 errors 2000, link count wrong
+> unresolved ref dir 226392 index 115 namelen 10 name 000089.log
+> filetype 0 errors 3, no dir item, no dir index
 
-Making inquiries on the IRC channel, it was suggested perhaps the drives
-were too full for a balance, but they had at least 50gb free I would
-estimate, when I swapped.    As a test, I added a 4th drive, a spare
-20gb partition and did a balance.  The balance did indeed balance the 3
-small drives, so they now each have 6gb unallocated, but the big drive
-remained unchanged.   The balance reported it operated on almost all the
-clusters, though.
-
-Linux kernel 4.2.0 (Ubuntu Wiley)
-
-Label: 'butter'  uuid: a91755d4-87d8-4acd-ae08-c11e7f1f5438
-        Total devices 4 FS bytes used 3.88TiB
-        devid    1 size 3.62TiB used 3.62TiB path /dev/sdi2
-        devid    2 size 2.73TiB used 2.72TiB path /dev/sdh
-        devid    3 size 5.43TiB used 1.42TiB path /dev/sdg2
-        devid    4 size 20.00GiB used 14.00GiB path /dev/sda1
-
-btrfs fi usage /local
-
-Overall:
-    Device size:                  11.81TiB
-    Device allocated:              7.77TiB
-    Device unallocated:            4.04TiB
-    Device missing:                  0.00B
-    Used:                          7.76TiB
-    Free (estimated):              2.02TiB      (min: 2.02TiB)
-    Data ratio:                       2.00
-    Metadata ratio:                   2.00
-    Global reserve:              512.00MiB      (used: 0.00B)
-
-Data,RAID1: Size:3.87TiB, Used:3.87TiB
-   /dev/sda1      14.00GiB
-   /dev/sdg2       1.41TiB
-   /dev/sdh        2.72TiB
-   /dev/sdi2       3.61TiB
-
-Metadata,RAID1: Size:11.00GiB, Used:9.79GiB
-   /dev/sdg2       5.00GiB
-   /dev/sdh        7.00GiB
-   /dev/sdi2      10.00GiB
-
-System,RAID1: Size:32.00MiB, Used:572.00KiB
-   /dev/sdg2      32.00MiB
-   /dev/sdi2      32.00MiB
-
-Unallocated:
-   /dev/sda1       6.00GiB
-   /dev/sdg2       4.02TiB
-   /dev/sdh        5.52GiB
-   /dev/sdi2       7.36GiB
-
-----------------------
-btrfs fi df /local
-Data, RAID1: total=3.87TiB, used=3.87TiB
-System, RAID1: total=32.00MiB, used=572.00KiB
-Metadata, RAID1: total=11.00GiB, used=9.79GiB
-GlobalReserve, single: total=512.00MiB, used=0.00B
-
-I would have presumed that a balance would take blocks found on both the
-3TB and 4TB, and move one of them over to the 6TB until all had 1.3TB of
-unallocated space.  But this does not happen.  Any clues on how to make
-it happen?
+OK so now the question is if 'btrfs check --repair' can fix this, and
+what version to use? 4.4.1 or 4.5.0? Based on the changelog, you can
+probably use either version. And I think it should be safe. But, you
+should still have backups seeing as you can mount the volume.
 
 
+>
+> [liveuser@localhost /]$ sudo mount /dev/sda6 /mnt/hdd
+>
+> [liveuser@localhost /]$ sudo btrfs send -vvv --no-data -f homesnap.btr
+> /mnt/hdd/home/home.snap/
+> Mode NO_FILE_DATA enabled
+> At subvol /mnt/hdd/home/home.snap/
+> ERROR: send ioctl failed with -2: No such file or directory
+
+OK so there's something off with the metadata and it's not going to do
+a send as a result is what this sounds like to me.
+
+
+-- 
+Chris Murphy

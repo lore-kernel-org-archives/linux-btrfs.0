@@ -1,129 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:35079 "EHLO mx1.redhat.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753448AbcCWLxo (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 23 Mar 2016 07:53:44 -0400
-Date: Wed, 23 Mar 2016 19:53:38 +0800
-From: Eryu Guan <eguan@redhat.com>
-To: Liu Bo <bo.li.liu@oracle.com>
-Cc: fstests@vger.kernel.org, linux-btrfs@vger.kernel.org,
-        Dave Chinner <david@fromorbit.com>
-Subject: Re: [PATCH v2] fstest: btrfs: test single 4k extent after
- subpagesize buffered writes
-Message-ID: <20160323115338.GQ11419@eguan.usersys.redhat.com>
-References: <1457396879-30572-1-git-send-email-bo.li.liu@oracle.com>
- <1458255398-26833-1-git-send-email-bo.li.liu@oracle.com>
- <20160322040013.GH11419@eguan.usersys.redhat.com>
- <20160322221225.GA6883@localhost.localdomain>
+Received: from ipmail04.adl6.internode.on.net ([150.101.137.141]:21025 "EHLO
+	ipmail04.adl6.internode.on.net" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1753790AbcCWDlG (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 22 Mar 2016 23:41:06 -0400
+Date: Wed, 23 Mar 2016 14:40:40 +1100
+From: Dave Chinner <david@fromorbit.com>
+To: Christoph Hellwig <hch@infradead.org>
+Cc: "Darrick J. Wong" <darrick.wong@oracle.com>, linux-ext4@vger.kernel.org,
+        fstests@vger.kernel.org, linux-btrfs@vger.kernel.org, xfs@oss.sgi.com
+Subject: Re: [PATCH 06/12] xfs/030: fix output on newer filesystems
+Message-ID: <20160323034040.GA11812@dastard>
+References: <20160305003717.28738.98818.stgit@birch.djwong.org>
+ <20160305003756.28738.26362.stgit@birch.djwong.org>
+ <20160305202050.GF10245@infradead.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20160322221225.GA6883@localhost.localdomain>
+In-Reply-To: <20160305202050.GF10245@infradead.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Mar 22, 2016 at 03:12:25PM -0700, Liu Bo wrote:
-> On Tue, Mar 22, 2016 at 12:00:13PM +0800, Eryu Guan wrote:
-> > On Thu, Mar 17, 2016 at 03:56:38PM -0700, Liu Bo wrote:
-> > > This is to test if COW enabled btrfs can end up with single 4k extents
-> > > when doing subpagesize buffered writes.
-> > 
-> > What happens if btrfs is mounted with "nodatacow" option? Does it need
-> > to _notrun if cow is disabled?
+On Sat, Mar 05, 2016 at 12:20:50PM -0800, Christoph Hellwig wrote:
+> Still fails for me:
 > 
-> In my test, the test passes if mounting with "nodatacow".
-> Yes, it makes sense to have a _notrun for nodatacow.
+> --- tests/xfs/030.out	2016-03-03 07:55:58.556427678 +0000
+> +++ /root/xfstests/results//xfs/030.out.bad	2016-03-05 20:20:17.561433837 +0000
+> @@ -231,8 +231,6 @@
+>  bad agbno AGBNO in agfl, agno 0
+>  bad agbno AGBNO in agfl, agno 0
+>  bad agbno AGBNO in agfl, agno 0
+> -bad agbno AGBNO in agfl, agno 0
+> -bad agbno AGBNO in agfl, agno 0
 
-If "nodatacow" btrfs should pass the test as well, then I don't think
-_notrun is needed, so when it failed, something went wrong.
+That's because the free lists are of different lengths on the
+different fs configs. Not sure how best to handle it - maybe just
+filter then entire bad agbno in agfl line out?
 
-> 
-> > 
-> > > 
-> > > The patch to fix the problem is
-> > >   https://patchwork.kernel.org/patch/8527991/
-> > > 
-> > > Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
-> > > ---
-> > > v2: - Teach awk to know system's pagesize.
-> > >     - Add "Silence is golden" to output.
-> > >     - Use local variables to lower case.
-> > >     - Add comments to make code clear.
-> > 
-> > This should be v3, and this patch was buried in the v2 thread :)
-> 
-> Oops, thanks for pointing it out.
-> 
-> > 
-> > > 
-> > >  tests/btrfs/027     | 102 ++++++++++++++++++++++++++++++++++++++++++++++++++++
-> > >  tests/btrfs/027.out |   2 ++
-> > >  tests/btrfs/group   |   1 +
-> > >  3 files changed, 105 insertions(+)
-> > >  create mode 100755 tests/btrfs/027
-> > >  create mode 100644 tests/btrfs/027.out
-> > > 
-> > > diff --git a/tests/btrfs/027 b/tests/btrfs/027
-> > > new file mode 100755
-> > > index 0000000..19d324b
-> > > --- /dev/null
-> > > +++ b/tests/btrfs/027
-> > > @@ -0,0 +1,102 @@
-> > > +#! /bin/bash
-> > > +# FS QA Test 027
-> > > +#
-> > > +# When btrfs is using cow mode, buffered writes of sub-pagesize can end up with
-> > > +# single 4k extents.
-> > > +# Ref:
-> > > +#     "Stray 4k extents with slow buffered writes"
-> > > +#     https://www.spinics.net/lists/linux-btrfs/msg52628.html
-> > 
-> > After going through this thread, my understanding is that nodatacow
-> > btrfs should pass this test even on unpatched kernel (e.g. v4.5). But
-> > my test on v4.5 kernel failed with nodatacow mount option, pagesize
-> > extent is still found.
-> > 
-> 
-> I verified it again on my kvm box and it passed with a unpatched v4.5 kernel.
-> 
-> Can you please show me the 027.full file?
-> 
-> I can't think of a reason for this..
+I'm going to commit the change anyway, as this is a separate issue
+that needs to be solved.
 
-I'm using v4.5 kernel and v4.4 btrfs-progs, and it's not reproduced
-everytime.
+Cheers,
 
-SECTION       -- btrfs_nodatacow
-RECREATING    -- btrfs on /dev/sda5
-FSTYP         -- btrfs
-PLATFORM      -- Linux/x86_64 dhcp-66-86-11 4.5.0
-MKFS_OPTIONS  -- /dev/sda6
-MOUNT_OPTIONS -- -o nodatacow -o context=system_u:object_r:nfs_t:s0 /dev/sda6 /mnt/testarea/scratch
-
-btrfs/027 28s ... - output mismatch (see /root/xfstests/results//btrfs_nodatacow/btrfs/027.out.bad)
-    --- tests/btrfs/027.out     2016-03-23 15:39:41.562000000 +0800
-    +++ /root/xfstests/results//btrfs_nodatacow/btrfs/027.out.bad       2016-03-23 19:37:38.962000000 +0800
-    @@ -1,2 +1,3 @@
-     QA output created by 027
-     Silence is golden
-    +8
-    ...
-    (Run 'diff -u tests/btrfs/027.out /root/xfstests/results//btrfs_nodatacow/btrfs/027.out.bad'  to see the entire diff)
-Ran: btrfs/027
-Failures: btrfs/027
-Failed 1 of 1 tests
-
-And btrfs/027.full shows:
-
-/mnt/testarea/scratch/testfile:
- EXT: FILE-OFFSET      BLOCK-RANGE      TOTAL FLAGS
-   0: [0..28863]:      2154496..2183359 28864   0x0
-   1: [28864..57751]:  2183360..2212247 28888   0x0
-   2: [57752..85543]:  2212248..2240039 27792   0x0
-   3: [85544..113239]: 2240040..2267735 27696   0x0
-   4: [113240..113247]: 2267736..2267743     8   0x0
-   5: [113248..141999]: 2267744..2296495 28752   0x0
-   6: [142000..142023]: 2296496..2296519    24   0x0
-   7: [142024..159799]: 2296520..2314295 17776   0x1
-
-Thanks,
-Eryu
+Dave.
+-- 
+Dave Chinner
+david@fromorbit.com

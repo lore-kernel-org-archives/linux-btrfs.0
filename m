@@ -1,54 +1,89 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:40089 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750886AbcCUV5n (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 21 Mar 2016 17:57:43 -0400
-Received: from aserv0022.oracle.com (aserv0022.oracle.com [141.146.126.234])
-	by aserp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id u2LLvgBO008988
-	(version=TLSv1 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Mon, 21 Mar 2016 21:57:42 GMT
-Received: from userv0121.oracle.com (userv0121.oracle.com [156.151.31.72])
-	by aserv0022.oracle.com (8.13.8/8.13.8) with ESMTP id u2LLvfGL027103
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=FAIL)
-	for <linux-btrfs@vger.kernel.org>; Mon, 21 Mar 2016 21:57:42 GMT
-Received: from abhmp0001.oracle.com (abhmp0001.oracle.com [141.146.116.7])
-	by userv0121.oracle.com (8.13.8/8.13.8) with ESMTP id u2LLvf5g021495
-	for <linux-btrfs@vger.kernel.org>; Mon, 21 Mar 2016 21:57:41 GMT
-From: Liu Bo <bo.li.liu@oracle.com>
+Received: from cn.fujitsu.com ([222.73.24.84]:45349 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1752939AbcCWDku (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 22 Mar 2016 23:40:50 -0400
+Received: from localhost.localdomain (unknown [10.167.226.34])
+	by cn.fujitsu.com (Postfix) with ESMTP id 6C33A4056401
+	for <linux-btrfs@vger.kernel.org>; Wed, 23 Mar 2016 11:40:24 +0800 (CST)
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
-Cc: Dan Carpenter <dan.carpenter@oracle.com>
-Subject: [PATCH] Btrfs: fix invalid reference in replace_path
-Date: Mon, 21 Mar 2016 14:59:53 -0700
-Message-Id: <1458597593-29699-1-git-send-email-bo.li.liu@oracle.com>
+Subject: [PATCH] btrfs: Output more info for enospc_debug mount option
+Date: Wed, 23 Mar 2016 11:38:17 +0800
+Message-Id: <1458704297-21800-1-git-send-email-quwenruo@cn.fujitsu.com>
+MIME-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Dan Carpenter's static checker has found this error, it's introduced by
-commit 64c043de466d
-("Btrfs: fix up read_tree_block to return proper error")
+As one user in mail list report reproducible balance ENOSPC error, it's
+better to add more debug info for enospc_debug mount option.
 
-It's really supposed to 'break' the loop on error like others.
-
-Cc: Dan Carpenter <dan.carpenter@oracle.com>
-Reported-by: Dan Carpenter <dan.carpenter@oracle.com> 
-Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+Reported-by: Marc Haber <mh+linux-btrfs@zugschlus.de>
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- fs/btrfs/relocation.c | 1 +
- 1 file changed, 1 insertion(+)
+changelog:
+  v2: Add output for block group bytenr
+---
+ fs/btrfs/extent-tree.c | 21 +++++++++++++++++++--
+ 1 file changed, 19 insertions(+), 2 deletions(-)
 
-diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-index 2bd0011..5c806f0 100644
---- a/fs/btrfs/relocation.c
-+++ b/fs/btrfs/relocation.c
-@@ -1850,6 +1850,7 @@ again:
- 			eb = read_tree_block(dest, old_bytenr, old_ptr_gen);
- 			if (IS_ERR(eb)) {
- 				ret = PTR_ERR(eb);
-+				break;
- 			} else if (!extent_buffer_uptodate(eb)) {
- 				ret = -EIO;
- 				free_extent_buffer(eb);
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 53e1297..8507484 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -9386,15 +9386,23 @@ int btrfs_can_relocate(struct btrfs_root *root, u64 bytenr)
+ 	u64 dev_min = 1;
+ 	u64 dev_nr = 0;
+ 	u64 target;
++	int debug;
+ 	int index;
+ 	int full = 0;
+ 	int ret = 0;
+ 
++	debug = btrfs_test_opt(root, ENOSPC_DEBUG);
++
+ 	block_group = btrfs_lookup_block_group(root->fs_info, bytenr);
+ 
+ 	/* odd, couldn't find the block group, leave it alone */
+-	if (!block_group)
++	if (!block_group) {
++		if (debug)
++			btrfs_warn(root->fs_info,
++				   "can't find block group for bytenr %llu",
++				   bytenr);
+ 		return -1;
++	}
+ 
+ 	min_free = btrfs_block_group_used(&block_group->item);
+ 
+@@ -9448,8 +9456,13 @@ int btrfs_can_relocate(struct btrfs_root *root, u64 bytenr)
+ 		 * this is just a balance, so if we were marked as full
+ 		 * we know there is no space for a new chunk
+ 		 */
+-		if (full)
++		if (full) {
++			if (debug)
++				btrfs_warn(root->fs_info,
++					"no space to alloc new chunk for block group %llu",
++					block_group->key.objectid);
+ 			goto out;
++		}
+ 
+ 		index = get_block_group_index(block_group);
+ 	}
+@@ -9496,6 +9509,10 @@ int btrfs_can_relocate(struct btrfs_root *root, u64 bytenr)
+ 			ret = -1;
+ 		}
+ 	}
++	if (debug && ret == -1)
++		btrfs_warn(root->fs_info,
++			"no space to allocate a new chunk for block group %llu",
++			block_group->key.objectid);
+ 	mutex_unlock(&root->fs_info->chunk_mutex);
+ 	btrfs_end_transaction(trans, root);
+ out:
 -- 
-2.5.0
+2.7.4
+
+
 

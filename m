@@ -1,113 +1,130 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f171.google.com ([209.85.223.171]:33047 "EHLO
-	mail-io0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751368AbcCVWIR (ORCPT
+Received: from mail-wm0-f52.google.com ([74.125.82.52]:36735 "EHLO
+	mail-wm0-f52.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752628AbcCWBlO (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 22 Mar 2016 18:08:17 -0400
-Received: by mail-io0-f171.google.com with SMTP id c63so979009iof.0
-        for <linux-btrfs@vger.kernel.org>; Tue, 22 Mar 2016 15:08:17 -0700 (PDT)
+	Tue, 22 Mar 2016 21:41:14 -0400
+Received: by mail-wm0-f52.google.com with SMTP id r129so116732252wmr.1
+        for <linux-btrfs@vger.kernel.org>; Tue, 22 Mar 2016 18:41:13 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <CAPmG0jbXcqfB1jG7WFriMhicdsoZ+pbD_uUBu7v9YiD-ey=jDw@mail.gmail.com>
-References: <CAAafysGTQucscr-8sTuT2c4BpdAovq0w9UbehRYDrSH71CLF-A@mail.gmail.com>
-	<CAPmG0jbXcqfB1jG7WFriMhicdsoZ+pbD_uUBu7v9YiD-ey=jDw@mail.gmail.com>
-Date: Tue, 22 Mar 2016 18:08:16 -0400
-Message-ID: <CAAafysEhGJi5jYxHooV4h1tD3pqnc-brbB9k4prS9yK0P5PGdg@mail.gmail.com>
-Subject: Re: RAID Assembly with Missing Empty Drive
-From: John Marrett <johnf@zioncluster.ca>
-To: Henk Slager <eye1tm@gmail.com>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+In-Reply-To: <CAJCQCtTnGyMBwGwDowm7+4DFN89YtEJx=hmi_K4gpogx3gFanQ@mail.gmail.com>
+References: <CAC7HdqknOJAK+FcE53xO38G__gc42GR0GQW+chbGbDxXBt7HFA@mail.gmail.com>
+ <CAJCQCtQ=_iE3m6P-jH1VjzycBXXRv5QZUS2SPNeH7ZJ_ukWM-A@mail.gmail.com>
+ <CAC7HdqmzhHwJFgpDAjwF9gjL_+vEm7A8sBBsGwQEmTE_BGoeqQ@mail.gmail.com> <CAJCQCtTnGyMBwGwDowm7+4DFN89YtEJx=hmi_K4gpogx3gFanQ@mail.gmail.com>
+From: Ryan Erato <rerato@gmail.com>
+Date: Tue, 22 Mar 2016 18:40:52 -0700
+Message-ID: <CAC7HdqkBiH5Tx_Prj6R-W_PepTEA+N_+nKiqumHJS5kQ+s1p6A@mail.gmail.com>
+Subject: Re: moving btrfs subvolumes to new disk
+To: Chris Murphy <lists@colorremedies.com>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Henk,
+Finally got around to running the suggested commands. Same error with
+the send, but not much output to help.  The check operation did seem
+to reveal some potential issues. Here's the play-by-play along with
+the file output from check:
 
-> I asume you did     btrfs device add  ?
-> Or did you do this with    btrfs replace  ?
+[liveuser@localhost /]$ sudo btrfs check /dev/sda6 >
+/home/liveuser/btrfscheck.txt
+checking extents
+checking free space cache
+checking fs roots
+root 257 inode 13324701 errors 200, dir isize wrong
+root 258 inode 226392 errors 200, dir isize wrong
+root 258 inode 236055 errors 2000, link count wrong
+unresolved ref dir 226392 index 35 namelen 7 name LOG.old filetype 0
+errors 3, no dir item, no dir index
+root 258 inode 236273 errors 2000, link count wrong
+root 258 inode 236276 errors 2000, link count wrong
+unresolved ref dir 226392 index 39 namelen 15 name MANIFEST-000015
+filetype 0 errors 3, no dir item, no dir index
+root 258 inode 236277 errors 2000, link count wrong
+unresolved ref dir 226392 index 41 namelen 7 name CURRENT filetype 0
+errors 3, no dir item, no dir index
+root 258 inode 240618 errors 2000, link count wrong
+unresolved ref dir 226392 index 115 namelen 10 name 000089.log
+filetype 0 errors 3, no dir item, no dir index
+root 487 inode 13324701 errors 200, dir isize wrong
+root 488 inode 226392 errors 200, dir isize wrong
+root 488 inode 236055 errors 2000, link count wrong
+unresolved ref dir 226392 index 35 namelen 7 name LOG.old filetype 0
+errors 3, no dir item, no dir index
+root 488 inode 236273 errors 2000, link count wrong
+root 488 inode 236276 errors 2000, link count wrong
+unresolved ref dir 226392 index 39 namelen 15 name MANIFEST-000015
+filetype 0 errors 3, no dir item, no dir index
+root 488 inode 236277 errors 2000, link count wrong
+unresolved ref dir 226392 index 41 namelen 7 name CURRENT filetype 0
+errors 3, no dir item, no dir index
+root 488 inode 240618 errors 2000, link count wrong
+unresolved ref dir 226392 index 115 namelen 10 name 000089.log
+filetype 0 errors 3, no dir item, no dir index
 
-Just realised I missed this question, sorry, I performed an add
-followed by a (failed) delete.
 
--JohnF
+" btrfscheck.txt
+Checking filesystem on /dev/sda6
+UUID: 6bb38bce-d824-4b9c-8b03-adad460c0f97
+found 79333650514 bytes used err is 1
+total csum bytes: 60906940
+total tree bytes: 1530494976
+total fs tree bytes: 1392934912
+total extent tree bytes: 59506688
+btree space waste bytes: 343045471
+file data blocks allocated: 97137004544
+ referenced 85008084992
 
+
+[liveuser@localhost /]$ sudo mount /dev/sda6 /mnt/hdd
+
+[liveuser@localhost /]$ sudo btrfs send -vvv --no-data -f homesnap.btr
+/mnt/hdd/home/home.snap/
+Mode NO_FILE_DATA enabled
+At subvol /mnt/hdd/home/home.snap/
+ERROR: send ioctl failed with -2: No such file or directory
+
+
+
+On Sun, Mar 20, 2016 at 10:42 PM, Chris Murphy <lists@colorremedies.com> wrote:
+> On Sun, Mar 20, 2016 at 10:34 PM, Ryan Erato <rerato@gmail.com> wrote:
+> .
+>>
+>> Sending "home.snap" to "/mnt/ssd" results in the -2 error. What is
+>> peculiar, or possibly a red herring, is that it seems to fail at the
+>> same point each time, at 4.39GB in to the transfer.
 >
->> filesystem successfully, when I attempted to remove the failed drive I
->> encountered an error. I discovered that I actually experienced a dual
->> drive failure, the second drive only exhibited as failed when btrfs
->> tried to write to the drives in the filesystem when I removed the
->> disk.
->>
->> I shut down the array and imaged the failed drive using GNU ddrescue,
->> I was able to recover all but a few kb from the drive. Unfortunately,
->> when I imaged the drive I overwrote the drive that I had successfully
->> added to the filesystem.
->>
->> This brings me to my current state, I now have two devices missing:
->>
->>  - the completely failed drive
->>  - the empty drive that I overwrote with the second failed disks image
->>
->> Consequently I can't start the filesystem. I've discussed the issue in
->> the past with Ke and other people on the #btrfs channel, the
->> concensus; as I understood it, is that with the right patch it should
->> be possible to mount either the array with the empty drive absent or
->> to create a new btrfs fileystem on an empty drive and then manipulate
->> its UUIDs so that it believes it's the missing UUID from the existing
->> btrfs filesystem.
->>
->> Here's the info showing the current state of the filesystem:
->>
->> ubuntu@ubuntu:~$ sudo btrfs filesystem show
->> warning, device 6 is missing
->> warning devid 6 not found already
->> warning devid 7 not found already
->> Label: none  uuid: 67b4821f-16e0-436d-b521-e4ab2c7d3ab7
->>     Total devices 7 FS bytes used 5.47TiB
->>     devid    1 size 1.81TiB used 1.71TiB path /dev/sda3
->>     devid    2 size 1.81TiB used 1.71TiB path /dev/sdb3
->>     devid    3 size 1.82TiB used 1.72TiB path /dev/sdc1
->>     devid    4 size 1.82TiB used 1.72TiB path /dev/sdd1
->>     devid    5 size 2.73TiB used 2.62TiB path /dev/sde1
->>     *** Some devices missing
->> btrfs-progs v4.0
 >
-> The used kernel version might also give people some hints.
 >
-> Also, you have not stated what raid type the fs is; likely not raid6,
-> but rather raid 1 or 10 or 5
-> btrfs filesystem usage  will report and show this.
+> That's pretty suspicious. I didn't realize from the first description
+> that the command is doing something for a while before failing. I
+> thought it was failing immediately.
 >
-> If it is raid6, you could still fix the issue in theory. AFAIK there
-> are no patches to fix a dual error in case it is other raid type or
-> single. The only option is then to use   btrfs rescue   on the
-> umounted array and hope to copy as much as possible off the damaged fs
-> to other storage.
+> Try this:
 >
->> ubuntu@ubuntu:~$ sudo mount -o degraded /dev/sda3 /mnt
->> mount: wrong fs type, bad option, bad superblock on /dev/sda3,
->>        missing codepage or helper program, or other error
->>
->>        In some cases useful info is found in syslog - try
->>        dmesg | tail or so.
->> ubuntu@ubuntu:~$ dmesg
->> [...]
->> [  749.322385] BTRFS info (device sde1): allowing degraded mounts
->> [  749.322404] BTRFS info (device sde1): disk space caching is enabled
->> [  749.323571] BTRFS warning (device sde1): devid 6 uuid
->> f41bcb72-e88a-432f-9961-01307ec291a9 is missing
->> [  749.335543] BTRFS warning (device sde1): devid 7 uuid
->> 17f8e02a-923e-4ac3-9db2-eb1b47c1a8db missing
->> [  749.407802] BTRFS: bdev (null) errs: wr 81791613, rd 57814378,
->> flush 0, corrupt 0, gen 0
->> [  749.407808] BTRFS: bdev /dev/sde1 errs: wr 0, rd 5002, flush 0,
->> corrupt 0, gen 0
->> [  774.759717] BTRFS: too many missing devices, writeable mount is not allowed
->> [  774.804053] BTRFS: open_ctree failed
->>
->> Thank you in advance for your help,
->>
->> -JohnF
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> btrfs send -vvv --no-data -f homesnap.btr home.snapshot
+>
+> That will write out metadata only to a file, no receive. See if the
+> error still happens and if the extra v gives more info.
+>
+> If it still fails with no more useful information then what I'd try
+> next is a btrfs check with the most recent btrfs-progs you can find.
+> If you're in need of a suggestion, this has btrfs-progs 4.4.1, I've
+> tested that it boots, it's got a published sha256 hash, and is served
+> over https. Yes, it's not even an alpha, but all you're doing is a
+> check, not a --repair, and no need to mount it (although that's
+> probably safe also, I've been doing it most of the weekend).
+> https://dl.fedoraproject.org/pub/alt/stage/24_Alpha-1.6/Workstation/x86_64/iso/
+> dd that iso file to a USB stick, it will destroy all data on the
+> stick, and then boot the computer, and switch to tty2 (control-alt-f2)
+> to get to a shell.
+>
+> I think 'btrfs check > btrfscheck.txt' will output most of the results
+> to a text file. Often it misses the first few lines for whatever
+> reason. You can either 'fpaste <filename>' and then note the URL and
+> post it here, or you can scp the file elsewhere, if you have wired
+> ethernet connected.
+>
+>
+> --
+> Chris Murphy

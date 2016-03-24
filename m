@@ -1,89 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:45349 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1752939AbcCWDku (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 22 Mar 2016 23:40:50 -0400
-Received: from localhost.localdomain (unknown [10.167.226.34])
-	by cn.fujitsu.com (Postfix) with ESMTP id 6C33A4056401
-	for <linux-btrfs@vger.kernel.org>; Wed, 23 Mar 2016 11:40:24 +0800 (CST)
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs: Output more info for enospc_debug mount option
-Date: Wed, 23 Mar 2016 11:38:17 +0800
-Message-Id: <1458704297-21800-1-git-send-email-quwenruo@cn.fujitsu.com>
+Received: from mx2.suse.de ([195.135.220.15]:59620 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750926AbcCXMfy (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 24 Mar 2016 08:35:54 -0400
+Date: Thu, 24 Mar 2016 13:35:23 +0100
+From: David Sterba <dsterba@suse.cz>
+To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Cc: linux-btrfs@vger.kernel.org, dsterba@suse.com, clm@fb.com, jbacik@fb.com
+Subject: Re: [RFC][PATCH] btrfs: allow balancing to dup with multi-device
+Message-ID: <20160324123523.GO29764@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1458757379-36299-1-git-send-email-ahferroin7@gmail.com>
 MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1458757379-36299-1-git-send-email-ahferroin7@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-As one user in mail list report reproducible balance ENOSPC error, it's
-better to add more debug info for enospc_debug mount option.
+On Wed, Mar 23, 2016 at 02:22:59PM -0400, Austin S. Hemmelgarn wrote:
+> Currently, we don't allow the user to try and rebalance to a dup profile
+> on a multi-device filesystem.  In most cases, this is a perfectly sensible
+> restriction as raid1 uses the same amount of space and provides better
+> protection.
+> 
+> However, when reshaping a multi-device filesystem down to a single device
+> filesystem, this requires the user to convert metadata and system chunks
+> to single profile before deleting devices, and then convert again to dup,
+> which leaves a period of time where metadata integrity is reduced.
+> 
+> This patch removes the single-device-only restriction from converting to
+> dup profile to remove this potential data integrity reduction.
+> 
+> Signed-off-by: Austin S. Hemmelgarn <ahferroin7@gmail.com>
 
-Reported-by: Marc Haber <mh+linux-btrfs@zugschlus.de>
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
----
-changelog:
-  v2: Add output for block group bytenr
----
- fs/btrfs/extent-tree.c | 21 +++++++++++++++++++--
- 1 file changed, 19 insertions(+), 2 deletions(-)
+Ack. I did exactly same patch a week ago, the changelogs sound
+equivalent to me, so I'll drop my patch and take yours.
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 53e1297..8507484 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -9386,15 +9386,23 @@ int btrfs_can_relocate(struct btrfs_root *root, u64 bytenr)
- 	u64 dev_min = 1;
- 	u64 dev_nr = 0;
- 	u64 target;
-+	int debug;
- 	int index;
- 	int full = 0;
- 	int ret = 0;
- 
-+	debug = btrfs_test_opt(root, ENOSPC_DEBUG);
-+
- 	block_group = btrfs_lookup_block_group(root->fs_info, bytenr);
- 
- 	/* odd, couldn't find the block group, leave it alone */
--	if (!block_group)
-+	if (!block_group) {
-+		if (debug)
-+			btrfs_warn(root->fs_info,
-+				   "can't find block group for bytenr %llu",
-+				   bytenr);
- 		return -1;
-+	}
- 
- 	min_free = btrfs_block_group_used(&block_group->item);
- 
-@@ -9448,8 +9456,13 @@ int btrfs_can_relocate(struct btrfs_root *root, u64 bytenr)
- 		 * this is just a balance, so if we were marked as full
- 		 * we know there is no space for a new chunk
- 		 */
--		if (full)
-+		if (full) {
-+			if (debug)
-+				btrfs_warn(root->fs_info,
-+					"no space to alloc new chunk for block group %llu",
-+					block_group->key.objectid);
- 			goto out;
-+		}
- 
- 		index = get_block_group_index(block_group);
- 	}
-@@ -9496,6 +9509,10 @@ int btrfs_can_relocate(struct btrfs_root *root, u64 bytenr)
- 			ret = -1;
- 		}
- 	}
-+	if (debug && ret == -1)
-+		btrfs_warn(root->fs_info,
-+			"no space to allocate a new chunk for block group %llu",
-+			block_group->key.objectid);
- 	mutex_unlock(&root->fs_info->chunk_mutex);
- 	btrfs_end_transaction(trans, root);
- out:
--- 
-2.7.4
+http://repo.or.cz/linux-2.6/btrfs-unstable.git/commitdiff/d9929bfeec0abf24ae7fdbc5855914fe7f3886c9?hp=b562e44f507e863c6792946e4e1b1449fbbac85d
 
+I did the btrfs-progs side as well, that prints a warning but otherwise
+lets the user create dup on multi-dev filesystem.
 
-
+http://repo.or.cz/btrfs-progs-unstable/devel.git/commitdiff/22c67c3105c887f541d7353d79d9e11b68e70998

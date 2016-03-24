@@ -1,45 +1,59 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:33082 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754693AbcCJRlQ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 10 Mar 2016 12:41:16 -0500
-Date: Thu, 10 Mar 2016 18:40:54 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Roman Mamedov <rm@romanrm.net>
-Cc: Chris Murphy <lists@colorremedies.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Subject: Re: [bug] df returns 100% used for empty mixed block group filesystem
-Message-ID: <20160310174054.GL18908@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <CAJCQCtRzt-BeoW9KNQC3kmBXw8MoydJv7Qy8fu0HmF3hAOgFRQ@mail.gmail.com>
- <20160310133334.1528bc88@natsu>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20160310133334.1528bc88@natsu>
+Received: from aserp1040.oracle.com ([141.146.126.69]:40570 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753479AbcCXKsa (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 24 Mar 2016 06:48:30 -0400
+From: Anand Jain <anand.jain@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Cc: dsterba@suse.cz
+Subject: [PATCH 1/3] btrfs: use fs_info directly
+Date: Thu, 24 Mar 2016 18:48:12 +0800
+Message-Id: <1458816494-483-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Mar 10, 2016 at 01:33:34PM +0500, Roman Mamedov wrote:
-> On Thu, 10 Mar 2016 01:24:44 -0700
-> Chris Murphy <lists@colorremedies.com> wrote:
-> 
-> > kernel 4.5.0 rc7
-> > btrfs-progs-4.4.1-1
-> > 
-> > Summary: A new empty mixed block group "-M" filesystem shows up as
-> > 100% full with regular df (gnu coreutils 8.24). Pretty sure this is
-> > not a regression, but no regression testing done.
-> > 
-> > 
-> > https://bugzilla.kernel.org/show_bug.cgi?id=114281
-> 
-> Just guessing here, but this might be related?
-> 
->   [PATCH] btrfs: statfs: report zero available if metadata are exhausted
->   http://www.spinics.net/lists/linux-btrfs/msg48013.html
-> 
-> Maybe some maths there are wrong in case of a mixed blockgroup filesystem.
+Local variable fs_info, contains root->fs_info, use it.
 
-Yes it's caused by the referenced patch.  The statfs has been broken for
-mixed blockgroups but the 100% used on empty filesystem looks weird, so
-it's time to fix the mixed-bg case.
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
+---
+ fs/btrfs/dev-replace.c | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
+index a1d6652e0c47..d38cad37ba27 100644
+--- a/fs/btrfs/dev-replace.c
++++ b/fs/btrfs/dev-replace.c
+@@ -375,7 +375,7 @@ int btrfs_dev_replace_start(struct btrfs_root *root,
+ 	WARN_ON(!tgt_device);
+ 	dev_replace->tgtdev = tgt_device;
+ 
+-	btrfs_info_in_rcu(root->fs_info,
++	btrfs_info_in_rcu(fs_info,
+ 		      "dev_replace from %s (devid %llu) to %s started",
+ 		      src_device->missing ? "<missing disk>" :
+ 		        rcu_str_deref(src_device->name),
+@@ -399,9 +399,9 @@ int btrfs_dev_replace_start(struct btrfs_root *root,
+ 
+ 	ret = btrfs_sysfs_add_device_link(tgt_device->fs_devices, tgt_device);
+ 	if (ret)
+-		btrfs_err(root->fs_info, "kobj add dev failed %d\n", ret);
++		btrfs_err(fs_info, "kobj add dev failed %d\n", ret);
+ 
+-	btrfs_wait_ordered_roots(root->fs_info, -1);
++	btrfs_wait_ordered_roots(fs_info, -1);
+ 
+ 	/* force writing the updated state information to disk */
+ 	trans = btrfs_start_transaction(root, 0);
+@@ -419,7 +419,7 @@ int btrfs_dev_replace_start(struct btrfs_root *root,
+ 			      btrfs_device_get_total_bytes(src_device),
+ 			      &dev_replace->scrub_progress, 0, 1);
+ 
+-	ret = btrfs_dev_replace_finishing(root->fs_info, ret);
++	ret = btrfs_dev_replace_finishing(fs_info, ret);
+ 	/* don't warn if EINPROGRESS, someone else might be running scrub */
+ 	if (ret == -EINPROGRESS) {
+ 		args->result = BTRFS_IOCTL_DEV_REPLACE_RESULT_SCRUB_INPROGRESS;
+-- 
+2.7.0
+

@@ -1,173 +1,212 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:34172 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751185AbcC2CLJ (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 28 Mar 2016 22:11:09 -0400
-Date: Mon, 28 Mar 2016 19:13:20 -0700
-From: Liu Bo <bo.li.liu@oracle.com>
-To: Eryu Guan <eguan@redhat.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v2] fstest: btrfs: test single 4k extent after
- subpagesize buffered writes
-Message-ID: <20160329021320.GB32610@localhost.localdomain>
-Reply-To: bo.li.liu@oracle.com
-References: <1457396879-30572-1-git-send-email-bo.li.liu@oracle.com>
- <1458255398-26833-1-git-send-email-bo.li.liu@oracle.com>
- <20160322040013.GH11419@eguan.usersys.redhat.com>
- <20160322221225.GA6883@localhost.localdomain>
- <20160323115338.GQ11419@eguan.usersys.redhat.com>
- <20160324045221.GA10085@localhost.localdomain>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20160324045221.GA10085@localhost.localdomain>
+Received: from mail.kernel.org ([198.145.29.136]:58528 "EHLO mail.kernel.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750717AbcCXRG6 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 24 Mar 2016 13:06:58 -0400
+Received: from mail.kernel.org (localhost [127.0.0.1])
+	by mail.kernel.org (Postfix) with ESMTP id DBC5D20376
+	for <linux-btrfs@vger.kernel.org>; Thu, 24 Mar 2016 17:06:56 +0000 (UTC)
+Received: from debian3.lan (unknown [176.78.112.39])
+	(using TLSv1.2 with cipher AES128-SHA256 (128/128 bits))
+	(No client certificate requested)
+	by mail.kernel.org (Postfix) with ESMTPSA id 3FEC120351
+	for <linux-btrfs@vger.kernel.org>; Thu, 24 Mar 2016 17:06:55 +0000 (UTC)
+From: fdmanana@kernel.org
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH] Btrfs: fix unreplayable log after snapshot deletion and parent re-creation
+Date: Thu, 24 Mar 2016 17:06:51 +0000
+Message-Id: <1458839211-11600-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Mar 23, 2016 at 09:52:21PM -0700, Liu Bo wrote:
-> On Wed, Mar 23, 2016 at 07:53:38PM +0800, Eryu Guan wrote:
-> > On Tue, Mar 22, 2016 at 03:12:25PM -0700, Liu Bo wrote:
-> > > On Tue, Mar 22, 2016 at 12:00:13PM +0800, Eryu Guan wrote:
-> > > > On Thu, Mar 17, 2016 at 03:56:38PM -0700, Liu Bo wrote:
-> > > > > This is to test if COW enabled btrfs can end up with single 4k extents
-> > > > > when doing subpagesize buffered writes.
-> > > > 
-> > > > What happens if btrfs is mounted with "nodatacow" option? Does it need
-> > > > to _notrun if cow is disabled?
-> > > 
-> > > In my test, the test passes if mounting with "nodatacow".
-> > > Yes, it makes sense to have a _notrun for nodatacow.
-> > 
-> > If "nodatacow" btrfs should pass the test as well, then I don't think
-> > _notrun is needed, so when it failed, something went wrong.
-> 
-> Ok, and it should pass in theory.
-> 
-> > 
-> > > 
-> > > > 
-> > > > > 
-> > > > > The patch to fix the problem is
-> > > > >   https://patchwork.kernel.org/patch/8527991/
-> > > > > 
-> > > > > Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
-> > > > > ---
-> > > > > v2: - Teach awk to know system's pagesize.
-> > > > >     - Add "Silence is golden" to output.
-> > > > >     - Use local variables to lower case.
-> > > > >     - Add comments to make code clear.
-> > > > 
-> > > > This should be v3, and this patch was buried in the v2 thread :)
-> > > 
-> > > Oops, thanks for pointing it out.
-> > > 
-> > > > 
-> > > > > 
-> > > > >  tests/btrfs/027     | 102 ++++++++++++++++++++++++++++++++++++++++++++++++++++
-> > > > >  tests/btrfs/027.out |   2 ++
-> > > > >  tests/btrfs/group   |   1 +
-> > > > >  3 files changed, 105 insertions(+)
-> > > > >  create mode 100755 tests/btrfs/027
-> > > > >  create mode 100644 tests/btrfs/027.out
-> > > > > 
-> > > > > diff --git a/tests/btrfs/027 b/tests/btrfs/027
-> > > > > new file mode 100755
-> > > > > index 0000000..19d324b
-> > > > > --- /dev/null
-> > > > > +++ b/tests/btrfs/027
-> > > > > @@ -0,0 +1,102 @@
-> > > > > +#! /bin/bash
-> > > > > +# FS QA Test 027
-> > > > > +#
-> > > > > +# When btrfs is using cow mode, buffered writes of sub-pagesize can end up with
-> > > > > +# single 4k extents.
-> > > > > +# Ref:
-> > > > > +#     "Stray 4k extents with slow buffered writes"
-> > > > > +#     https://www.spinics.net/lists/linux-btrfs/msg52628.html
-> > > > 
-> > > > After going through this thread, my understanding is that nodatacow
-> > > > btrfs should pass this test even on unpatched kernel (e.g. v4.5). But
-> > > > my test on v4.5 kernel failed with nodatacow mount option, pagesize
-> > > > extent is still found.
-> > > > 
-> > > 
-> > > I verified it again on my kvm box and it passed with a unpatched v4.5 kernel.
-> > > 
-> > > Can you please show me the 027.full file?
-> > > 
-> > > I can't think of a reason for this..
-> > 
-> > I'm using v4.5 kernel and v4.4 btrfs-progs, and it's not reproduced
-> > everytime.
-> > 
-> > SECTION       -- btrfs_nodatacow
-> > RECREATING    -- btrfs on /dev/sda5
-> > FSTYP         -- btrfs
-> > PLATFORM      -- Linux/x86_64 dhcp-66-86-11 4.5.0
-> > MKFS_OPTIONS  -- /dev/sda6
-> > MOUNT_OPTIONS -- -o nodatacow -o context=system_u:object_r:nfs_t:s0 /dev/sda6 /mnt/testarea/scratch
-> > 
-> > btrfs/027 28s ... - output mismatch (see /root/xfstests/results//btrfs_nodatacow/btrfs/027.out.bad)
-> >     --- tests/btrfs/027.out     2016-03-23 15:39:41.562000000 +0800
-> >     +++ /root/xfstests/results//btrfs_nodatacow/btrfs/027.out.bad       2016-03-23 19:37:38.962000000 +0800
-> >     @@ -1,2 +1,3 @@
-> >      QA output created by 027
-> >      Silence is golden
-> >     +8
-> >     ...
-> >     (Run 'diff -u tests/btrfs/027.out /root/xfstests/results//btrfs_nodatacow/btrfs/027.out.bad'  to see the entire diff)
-> > Ran: btrfs/027
-> > Failures: btrfs/027
-> > Failed 1 of 1 tests
-> > 
-> > And btrfs/027.full shows:
-> > 
-> > /mnt/testarea/scratch/testfile:
-> >  EXT: FILE-OFFSET      BLOCK-RANGE      TOTAL FLAGS
-> >    0: [0..28863]:      2154496..2183359 28864   0x0
-> >    1: [28864..57751]:  2183360..2212247 28888   0x0
-> >    2: [57752..85543]:  2212248..2240039 27792   0x0
-> >    3: [85544..113239]: 2240040..2267735 27696   0x0
-> >    4: [113240..113247]: 2267736..2267743     8   0x0
-> >    5: [113248..141999]: 2267744..2296495 28752   0x0
-> >    6: [142000..142023]: 2296496..2296519    24   0x0
-> >    7: [142024..159799]: 2296520..2314295 17776   0x1
-> 
-> I can barely reproduce one in 100 runs... but anyway if it is a bug,
-> it's not a problem in this test case, I'll send a v3 version patch and
-> work on this nocow case.
+From: Filipe Manana <fdmanana@suse.com>
 
-My trace results show that it's not a bug.
+If we delete a snapshot, delete its parent directory, create a new
+directory with the same name as that parent and then fsync either that
+new directory or some file inside it, we end up with a log tree that
+is not possible to replay because the log replay procedure interprets
+the snapshot's directory item as a regular entry and not as a root
+item, resulting in the following failure and trace when mounting the
+filesystem:
 
-[0, 4096]
-[4096, 8192]
-...
-[N-4096, N]
-[N, N+4096]
-[N+4096, N+8192]
-...
+[52174.510532] BTRFS info (device dm-0): failed to delete reference to snap, inode 257 parent 257
+[52174.512570] ------------[ cut here ]------------
+[52174.513278] WARNING: CPU: 12 PID: 28024 at fs/btrfs/inode.c:3986 __btrfs_unlink_inode+0x178/0x351 [btrfs]()
+[52174.514681] BTRFS: Transaction aborted (error -2)
+[52174.515630] Modules linked in: btrfs dm_flakey dm_mod overlay crc32c_generic ppdev xor raid6_pq acpi_cpufreq parport_pc tpm_tis sg parport tpm evdev i2c_piix4 proc
+[52174.521568] CPU: 12 PID: 28024 Comm: mount Tainted: G        W       4.5.0-rc6-btrfs-next-27+ #1
+[52174.522805] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS by qemu-project.org 04/01/2014
+[52174.524053]  0000000000000000 ffff8801df2a7710 ffffffff81264e93 ffff8801df2a7758
+[52174.524053]  0000000000000009 ffff8801df2a7748 ffffffff81051618 ffffffffa03591cd
+[52174.524053]  00000000fffffffe ffff88015e6e5000 ffff88016dbc3c88 ffff88016dbc3c88
+[52174.524053] Call Trace:
+[52174.524053]  [<ffffffff81264e93>] dump_stack+0x67/0x90
+[52174.524053]  [<ffffffff81051618>] warn_slowpath_common+0x99/0xb2
+[52174.524053]  [<ffffffffa03591cd>] ? __btrfs_unlink_inode+0x178/0x351 [btrfs]
+[52174.524053]  [<ffffffff81051679>] warn_slowpath_fmt+0x48/0x50
+[52174.524053]  [<ffffffffa03591cd>] __btrfs_unlink_inode+0x178/0x351 [btrfs]
+[52174.524053]  [<ffffffff8118f5e9>] ? iput+0xb0/0x284
+[52174.524053]  [<ffffffffa0359fe8>] btrfs_unlink_inode+0x1c/0x3d [btrfs]
+[52174.524053]  [<ffffffffa038631e>] check_item_in_log+0x1fe/0x29b [btrfs]
+[52174.524053]  [<ffffffffa0386522>] replay_dir_deletes+0x167/0x1cf [btrfs]
+[52174.524053]  [<ffffffffa038739e>] fixup_inode_link_count+0x289/0x2aa [btrfs]
+[52174.524053]  [<ffffffffa038748a>] fixup_inode_link_counts+0xcb/0x105 [btrfs]
+[52174.524053]  [<ffffffffa038a5ec>] btrfs_recover_log_trees+0x258/0x32c [btrfs]
+[52174.524053]  [<ffffffffa03885b2>] ? replay_one_extent+0x511/0x511 [btrfs]
+[52174.524053]  [<ffffffffa034f288>] open_ctree+0x1dd4/0x21b9 [btrfs]
+[52174.524053]  [<ffffffffa032b753>] btrfs_mount+0x97e/0xaed [btrfs]
+[52174.524053]  [<ffffffff8108e1b7>] ? trace_hardirqs_on+0xd/0xf
+[52174.524053]  [<ffffffff8117bafa>] mount_fs+0x67/0x131
+[52174.524053]  [<ffffffff81193003>] vfs_kern_mount+0x6c/0xde
+[52174.524053]  [<ffffffffa032af81>] btrfs_mount+0x1ac/0xaed [btrfs]
+[52174.524053]  [<ffffffff8108e1b7>] ? trace_hardirqs_on+0xd/0xf
+[52174.524053]  [<ffffffff8108c262>] ? lockdep_init_map+0xb9/0x1b3
+[52174.524053]  [<ffffffff8117bafa>] mount_fs+0x67/0x131
+[52174.524053]  [<ffffffff81193003>] vfs_kern_mount+0x6c/0xde
+[52174.524053]  [<ffffffff8119590f>] do_mount+0x8a6/0x9e8
+[52174.524053]  [<ffffffff811358dd>] ? strndup_user+0x3f/0x59
+[52174.524053]  [<ffffffff81195c65>] SyS_mount+0x77/0x9f
+[52174.524053]  [<ffffffff814935d7>] entry_SYSCALL_64_fastpath+0x12/0x6b
+[52174.561288] ---[ end trace 6b53049efb1a3ea6 ]---
 
-There could be some latencies between writes against [N, N+4096] and writes against [N+4096, N+8192],
-so when writeback starts between [N-4096, N] and [N, N+4096], btrfs will
-find delayed allocation range ending at extent [N-4096, N], and then it
-creates a extent to cover that range.  Later [N, N+4096] is dirtied and
-writeback thread will continue pick up the newly dirtied page and
-allocate an extent for it, at which time the next [N+4096, N+8192] write
-has not performed.  This is how we get the single 4k extent for
-nodatacow, but it's rare.
+So when we delete a directory we need to propagate its last_unlink_trans
+value (updated on snapshot deletion) to its parent and then check at
+fsync time for it and fallback for a transaction commit.
 
-So I assume that even after fixing writeback index, we can still experience
-this case in case of cow, but that should be quite rare, too.
+A test case for fstests follows.
 
-Thanks,
+  seq=`basename $0`
+  seqres=$RESULT_DIR/$seq
+  echo "QA output created by $seq"
+  tmp=/tmp/$$
+  status=1	# failure is the default!
+  trap "_cleanup; exit \$status" 0 1 2 3 15
 
--liubo
+  _cleanup()
+  {
+      _cleanup_flakey
+      cd /
+      rm -f $tmp.*
+  }
 
-> 
-> Thanks,
-> 
-> -liubo
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+  # get standard environment, filters and checks
+  . ./common/rc
+  . ./common/filter
+  . ./common/dmflakey
+
+  # real QA test starts here
+  _supported_fs btrfs
+  _supported_os Linux
+  _require_scratch
+  _require_dm_target flakey
+  _require_metadata_journaling $SCRATCH_DEV
+
+  rm -f $seqres.full
+
+  _populate_fs()
+  {
+      _run_btrfs_util_prog subvolume snapshot $SCRATCH_MNT \
+      $SCRATCH_MNT/testdir/snap
+      _run_btrfs_util_prog subvolume delete $SCRATCH_MNT/testdir/snap
+      rmdir $SCRATCH_MNT/testdir
+      mkdir $SCRATCH_MNT/testdir
+  }
+
+  _scratch_mkfs >>$seqres.full 2>&1
+  _init_flakey
+  _mount_flakey
+
+  mkdir $SCRATCH_MNT/testdir
+  _populate_fs
+  $XFS_IO_PROG -c "fsync" $SCRATCH_MNT/testdir
+  _flakey_drop_and_remount
+
+  echo "Filesystem contents after the first log replay:"
+  ls -R $SCRATCH_MNT | _filter_scratch
+
+  # Now do the same as before but instead of doing an fsync against the directory,
+  # do an fsync against a file inside the directory.
+
+  _populate_fs
+  touch $SCRATCH_MNT/testdir/foobar
+  $XFS_IO_PROG -c "fsync" $SCRATCH_MNT/testdir/foobar
+  _flakey_drop_and_remount
+
+  echo "Filesystem contents after the second log replay:"
+  ls -R $SCRATCH_MNT | _filter_scratch
+
+  _unmount_flakey
+  status=0
+  exit
+
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+ fs/btrfs/inode.c    | 22 +++++++++++++++++++++-
+ fs/btrfs/tree-log.c |  6 +++++-
+ 2 files changed, 26 insertions(+), 2 deletions(-)
+
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 41a5688..b5c23b5 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -4173,6 +4173,7 @@ static int btrfs_rmdir(struct inode *dir, struct dentry *dentry)
+ 	int err = 0;
+ 	struct btrfs_root *root = BTRFS_I(dir)->root;
+ 	struct btrfs_trans_handle *trans;
++	u64 last_unlink_trans;
+ 
+ 	if (inode->i_size > BTRFS_EMPTY_DIR_SIZE)
+ 		return -ENOTEMPTY;
+@@ -4195,11 +4196,30 @@ static int btrfs_rmdir(struct inode *dir, struct dentry *dentry)
+ 	if (err)
+ 		goto out;
+ 
++	last_unlink_trans = BTRFS_I(inode)->last_unlink_trans;
++
+ 	/* now the directory is empty */
+ 	err = btrfs_unlink_inode(trans, root, dir, d_inode(dentry),
+ 				 dentry->d_name.name, dentry->d_name.len);
+-	if (!err)
++	if (!err) {
+ 		btrfs_i_size_write(inode, 0);
++		/*
++		 * Propagate the last_unlink_trans value of the deleted dir to
++		 * its parent directory. This is to prevent an unrecoverable
++		 * log tree in the case we do something like this:
++		 * 1) create dir foo
++		 * 2) create snapshot under dir foo
++		 * 3) delete the snapshot
++		 * 4) rmdir foo
++		 * 5) mkdir foo
++		 * 6) fsync foo or some file inside foo
++		 */
++		if (last_unlink_trans >= trans->transid) {
++			mutex_lock(&BTRFS_I(dir)->log_mutex);
++			BTRFS_I(dir)->last_unlink_trans = last_unlink_trans;
++			mutex_unlock(&BTRFS_I(dir)->log_mutex);
++		}
++	}
+ out:
+ 	btrfs_end_transaction(trans, root);
+ 	btrfs_btree_balance_dirty(root);
+diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+index 24d03c7..d3f38dd 100644
+--- a/fs/btrfs/tree-log.c
++++ b/fs/btrfs/tree-log.c
+@@ -4875,8 +4875,12 @@ static noinline int check_parent_dirs_for_sync(struct btrfs_trans_handle *trans,
+ 		if (!parent || d_really_is_negative(parent) || sb != d_inode(parent)->i_sb)
+ 			break;
+ 
+-		if (IS_ROOT(parent))
++		if (IS_ROOT(parent)) {
++			inode = d_inode(parent);
++			if (btrfs_must_commit_transaction(trans, inode))
++				ret = 1;
+ 			break;
++		}
+ 
+ 		parent = dget_parent(parent);
+ 		dput(old_parent);
+-- 
+2.7.0.rc3
+

@@ -1,120 +1,128 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:31789 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753724AbcCYRrs (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:23838 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753925AbcCYSC1 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 25 Mar 2016 13:47:48 -0400
-Date: Fri, 25 Mar 2016 10:50:00 -0700
+	Fri, 25 Mar 2016 14:02:27 -0400
+Date: Fri, 25 Mar 2016 11:04:39 -0700
 From: Liu Bo <bo.li.liu@oracle.com>
 To: Josef Bacik <jbacik@fb.com>
 Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 14/14] Btrfs: don't do nocow check unless we have to
-Message-ID: <20160325175000.GA22147@localhost.localdomain>
+Subject: Re: [PATCH 03/14] Btrfs: always reserve metadata for delalloc extents
+Message-ID: <20160325180439.GB22147@localhost.localdomain>
 Reply-To: bo.li.liu@oracle.com
 References: <1458926760-17563-1-git-send-email-jbacik@fb.com>
- <1458926760-17563-15-git-send-email-jbacik@fb.com>
+ <1458926760-17563-4-git-send-email-jbacik@fb.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1458926760-17563-15-git-send-email-jbacik@fb.com>
+In-Reply-To: <1458926760-17563-4-git-send-email-jbacik@fb.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Mar 25, 2016 at 01:26:00PM -0400, Josef Bacik wrote:
-> Before we write into prealloc/nocow space we have to make sure that there are no
-> references to the extents we are writing into, which means checking the extent
-> tree and csum tree in the case of nocow.  So we don't want to do the nocow dance
-> unless we can't reserve data space, since it's a serious drag on performance.
-> With the following sequence
-> 
-> fallocate -l10737418240 /mnt/btrfs-test/file
-> cp --reflink /mnt/btrfs-test/file /mnt/btrfs-test/link
-> fio --name=randwrite --rw=randwrite --bs=4k --filename=/mnt/btrfs-test/file \
-> 	--end_fsync=1
-> 
-> we get the worst case scenario where we have to fall back on to doing the check
-> anyway.
-> 
-> Without this patch
-> lat (usec): min=5, max=111598, avg=27.65, stdev=124.51
-> write: io=10240MB, bw=126876KB/s, iops=31718, runt= 82646msec
-> 
-> With this patch
-> lat (usec): min=3, max=91210, avg=14.09, stdev=110.62
-> write: io=10240MB, bw=212753KB/s, iops=53188, runt= 49286msec
-> 
-> We get twice the throughput, half of the runtime, and half of the average
-> latency.  Thanks,
+On Fri, Mar 25, 2016 at 01:25:49PM -0400, Josef Bacik wrote:
+> There are a few races in the metadata reservation stuff.  First we add the bytes
+> to the block_rsv well after we've set the bit on the inode saying that we have
+> space for it and after we've reserved the bytes.  So use the normal
+> btrfs_block_rsv_add helper for this case.  Secondly we can flush delalloc
+> extents when we try to reserve space for our write, which means that we could
+> have used up the space for the inode and we wouldn't know because we only check
+> before the reservation.  So instead make sure we are always reserving space for
+> the inode update, and then if we don't need it release those bytes afterward.
+> Thanks,
 
-I've submitted a similar one, but looks like this one is cleaner, I
-forgot to remove the goto reserve_metadata.
+Looks fine.
 
-Thanks,
-
--liubo
+Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
 
 > 
 > Signed-off-by: Josef Bacik <jbacik@fb.com>
 > ---
->  fs/btrfs/file.c | 44 ++++++++++++++++++++++----------------------
->  1 file changed, 22 insertions(+), 22 deletions(-)
+>  fs/btrfs/extent-tree.c | 35 +++++++++++++----------------------
+>  1 file changed, 13 insertions(+), 22 deletions(-)
 > 
-> diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-> index 0ce4bb3..7c80208 100644
-> --- a/fs/btrfs/file.c
-> +++ b/fs/btrfs/file.c
-> @@ -1534,30 +1534,30 @@ static noinline ssize_t __btrfs_buffered_write(struct file *file,
->  		reserve_bytes = round_up(write_bytes + sector_offset,
->  				root->sectorsize);
+> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+> index 06f4e7b..157a0b6 100644
+> --- a/fs/btrfs/extent-tree.c
+> +++ b/fs/btrfs/extent-tree.c
+> @@ -5653,12 +5653,12 @@ int btrfs_delalloc_reserve_metadata(struct inode *inode, u64 num_bytes)
+>  	u64 to_reserve = 0;
+>  	u64 csum_bytes;
+>  	unsigned nr_extents = 0;
+> -	int extra_reserve = 0;
+>  	enum btrfs_reserve_flush_enum flush = BTRFS_RESERVE_FLUSH_ALL;
+>  	int ret = 0;
+>  	bool delalloc_lock = true;
+>  	u64 to_free = 0;
+>  	unsigned dropped;
+> +	bool release_extra = false;
 >  
-> -		if ((BTRFS_I(inode)->flags & (BTRFS_INODE_NODATACOW |
-> -					      BTRFS_INODE_PREALLOC)) &&
-> -		    check_can_nocow(inode, pos, &write_bytes) > 0) {
-> -			/*
-> -			 * For nodata cow case, no need to reserve
-> -			 * data space.
-> -			 */
-> -			only_release_metadata = true;
-> -			/*
-> -			 * our prealloc extent may be smaller than
-> -			 * write_bytes, so scale down.
-> -			 */
-> -			num_pages = DIV_ROUND_UP(write_bytes + offset,
-> -						 PAGE_CACHE_SIZE);
-> -			reserve_bytes = round_up(write_bytes + sector_offset,
-> -					root->sectorsize);
-> -			goto reserve_metadata;
-> -		}
+>  	/* If we are a free space inode we need to not flush since we will be in
+>  	 * the middle of a transaction commit.  We also don't need the delalloc
+> @@ -5684,24 +5684,15 @@ int btrfs_delalloc_reserve_metadata(struct inode *inode, u64 num_bytes)
+>  					 BTRFS_MAX_EXTENT_SIZE - 1,
+>  					 BTRFS_MAX_EXTENT_SIZE);
+>  	BTRFS_I(inode)->outstanding_extents += nr_extents;
+> -	nr_extents = 0;
+>  
+> +	nr_extents = 0;
+>  	if (BTRFS_I(inode)->outstanding_extents >
+>  	    BTRFS_I(inode)->reserved_extents)
+> -		nr_extents = BTRFS_I(inode)->outstanding_extents -
+> +		nr_extents += BTRFS_I(inode)->outstanding_extents -
+>  			BTRFS_I(inode)->reserved_extents;
+>  
+> -	/*
+> -	 * Add an item to reserve for updating the inode when we complete the
+> -	 * delalloc io.
+> -	 */
+> -	if (!test_bit(BTRFS_INODE_DELALLOC_META_RESERVED,
+> -		      &BTRFS_I(inode)->runtime_flags)) {
+> -		nr_extents++;
+> -		extra_reserve = 1;
+> -	}
 > -
->  		ret = btrfs_check_data_free_space(inode, pos, write_bytes);
-> -		if (ret < 0)
-> -			break;
-> +		if (ret < 0) {
-> +			if ((BTRFS_I(inode)->flags & (BTRFS_INODE_NODATACOW |
-> +						      BTRFS_INODE_PREALLOC)) &&
-> +			    check_can_nocow(inode, pos, &write_bytes) > 0) {
-> +				/*
-> +				 * For nodata cow case, no need to reserve
-> +				 * data space.
-> +				 */
-> +				only_release_metadata = true;
-> +				/*
-> +				 * our prealloc extent may be smaller than
-> +				 * write_bytes, so scale down.
-> +				 */
-> +				num_pages = DIV_ROUND_UP(write_bytes + offset,
-> +							 PAGE_CACHE_SIZE);
-> +				reserve_bytes = round_up(write_bytes +
-> +							 sector_offset,
-> +							 root->sectorsize);
-> +			} else {
-> +				break;
-> +			}
-> +		}
+> -	to_reserve = btrfs_calc_trans_metadata_size(root, nr_extents);
+> +	/* We always want to reserve a slot for updating the inode. */
+> +	to_reserve = btrfs_calc_trans_metadata_size(root, nr_extents + 1);
+>  	to_reserve += calc_csum_metadata_size(inode, num_bytes, 1);
+>  	csum_bytes = BTRFS_I(inode)->csum_bytes;
+>  	spin_unlock(&BTRFS_I(inode)->lock);
+> @@ -5713,18 +5704,16 @@ int btrfs_delalloc_reserve_metadata(struct inode *inode, u64 num_bytes)
+>  			goto out_fail;
+>  	}
 >  
-> -reserve_metadata:
->  		ret = btrfs_delalloc_reserve_metadata(inode, reserve_bytes);
->  		if (ret) {
->  			if (!only_release_metadata)
+> -	ret = reserve_metadata_bytes(root, block_rsv, to_reserve, flush);
+> +	ret = btrfs_block_rsv_add(root, block_rsv, to_reserve, flush);
+>  	if (unlikely(ret)) {
+>  		btrfs_qgroup_free_meta(root, nr_extents * root->nodesize);
+>  		goto out_fail;
+>  	}
+>  
+>  	spin_lock(&BTRFS_I(inode)->lock);
+> -	if (extra_reserve) {
+> -		set_bit(BTRFS_INODE_DELALLOC_META_RESERVED,
+> -			&BTRFS_I(inode)->runtime_flags);
+> -		nr_extents--;
+> -	}
+> +	if (test_and_set_bit(BTRFS_INODE_DELALLOC_META_RESERVED,
+> +			     &BTRFS_I(inode)->runtime_flags))
+> +		release_extra = true;
+>  	BTRFS_I(inode)->reserved_extents += nr_extents;
+>  	spin_unlock(&BTRFS_I(inode)->lock);
+>  
+> @@ -5734,8 +5723,10 @@ int btrfs_delalloc_reserve_metadata(struct inode *inode, u64 num_bytes)
+>  	if (to_reserve)
+>  		trace_btrfs_space_reservation(root->fs_info, "delalloc",
+>  					      btrfs_ino(inode), to_reserve, 1);
+> -	block_rsv_add_bytes(block_rsv, to_reserve, 1);
+> -
+> +	if (release_extra)
+> +		btrfs_block_rsv_release(root, block_rsv,
+> +					btrfs_calc_trans_metadata_size(root,
+> +								       1));
+>  	return 0;
+>  
+>  out_fail:
 > -- 
 > 2.5.0
 > 

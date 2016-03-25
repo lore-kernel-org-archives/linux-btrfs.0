@@ -1,86 +1,133 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mgwym02.jp.fujitsu.com ([211.128.242.41]:56996 "EHLO
-	mgwym02.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750797AbcCYB4E (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 24 Mar 2016 21:56:04 -0400
-Received: from m3050.s.css.fujitsu.com (msm.b.css.fujitsu.com [10.134.21.208])
-	by yt-mxoi2.gw.nic.fujitsu.com (Postfix) with ESMTP id 9787DAC0292
-	for <linux-btrfs@vger.kernel.org>; Fri, 25 Mar 2016 10:55:55 +0900 (JST)
-From: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
-Subject: [PATCH] btrfs-progs: mkfs: fix an error when using DUP on multidev fs
-To: David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
-References: <1458834973-3199-1-git-send-email-dsterba@suse.com>
-Message-ID: <56F49A96.70808@jp.fujitsu.com>
-Date: Fri, 25 Mar 2016 10:55:34 +0900
+Received: from mx1.redhat.com ([209.132.183.28]:55159 "EHLO mx1.redhat.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751087AbcCYDxI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 24 Mar 2016 23:53:08 -0400
+Date: Fri, 25 Mar 2016 11:53:06 +0800
+From: Eryu Guan <eguan@redhat.com>
+To: fdmanana@kernel.org
+Cc: fstests@vger.kernel.org, linux-btrfs@vger.kernel.org,
+        Filipe Manana <fdmanana@suse.com>
+Subject: Re: [PATCH] fstests: add btrfs test for fsync after snapshot deletion
+Message-ID: <20160325035306.GX11419@eguan.usersys.redhat.com>
+References: <1458839241-12379-1-git-send-email-fdmanana@kernel.org>
 MIME-Version: 1.0
-In-Reply-To: <1458834973-3199-1-git-send-email-dsterba@suse.com>
-Content-Type: text/plain; charset=iso-2022-jp
+Content-Type: text/plain; charset=utf-8
+In-Reply-To: <1458839241-12379-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-To accept DUP on multidev fs, in addition to the following
-commit, we need to mark DUP as an allowed data/metadata
-profile.
+On Thu, Mar 24, 2016 at 05:07:21PM +0000, fdmanana@kernel.org wrote:
+> From: Filipe Manana <fdmanana@suse.com>
+> 
+> Test that if we delete a snapshot, delete its parent directory, create
+> another directory with the same name as that parent and then fsync either
+> the new directory or a file inside the new directory, the fsync succeeds,
+> the fsync log is replayable and produces a correct result.
+> 
+> This is motivated by a bug that is fixed by the following patch for
+> btrfs (linux kernel):
+> 
+>   Btrfs: fix unreplayable log after snapshot deletion and parent
+>   re-creation
 
-commit 42f1279bf8e9 ("btrfs-progs: mkfs: allow DUP on multidev fs, only warn")
+Test fails on v4.5 kernel as expected, but I failed to compile btrfs
+after applying this patch, seems btrfs_must_commit_transaction was not
+defined anywhere (I did grep it through the kernel tree, nothing showed
+up), did I miss anything?
 
-* actual result
+fs/btrfs/tree-log.c: In function ‘check_parent_dirs_for_sync’:
+fs/btrfs/tree-log.c:4836:4: error: implicit declaration of function ‘btrfs_must_commit_transaction’ [-Werror=implicit-function-declaration]
+    if (btrfs_must_commit_transaction(trans, inode))
+    ^
+cc1: some warnings being treated as errors
+make[1]: *** [fs/btrfs/tree-log.o] Error 1
+make: *** [_module_fs/btrfs] Error 2
 
-  =============================================
-  # ./mkfs.btrfs -f -m DUP -d DUP /dev/sdb1 /dev/sdb2
-  btrfs-progs v4.5-24-ga35b7e6
-  See http://btrfs.wiki.kernel.org for more information.
+> 
+> Signed-off-by: Filipe Manana <fdmanana@suse.com>
+> ---
+>  tests/btrfs/120     | 91 +++++++++++++++++++++++++++++++++++++++++++++++++++++
+>  tests/btrfs/120.out | 12 +++++++
+>  tests/btrfs/group   |  1 +
+>  3 files changed, 104 insertions(+)
+>  create mode 100755 tests/btrfs/120
+>  create mode 100644 tests/btrfs/120.out
+> 
+> diff --git a/tests/btrfs/120 b/tests/btrfs/120
+> new file mode 100755
+> index 0000000..4ede4e6
+> --- /dev/null
+> +++ b/tests/btrfs/120
+> @@ -0,0 +1,91 @@
+> +#! /bin/bash
+> +# FSQA Test No. 120
+> +#
+> +# Test that if we delete a snapshot, delete its parent directory, create
+> +# another directory with the same name as that parent and then fsync either
+> +# the new directory or a file inside the new directory, the fsync succeeds,
+> +# the fsync log is replayable and produces a correct result.
+> +#
+> +#-----------------------------------------------------------------------
+> +#
+> +# Copyright (C) 2016 SUSE Linux Products GmbH. All Rights Reserved.
+> +# Author: Filipe Manana <fdmanana@suse.com>
+> +#
+> +# This program is free software; you can redistribute it and/or
+> +# modify it under the terms of the GNU General Public License as
+> +# published by the Free Software Foundation.
+> +#
+> +# This program is distributed in the hope that it would be useful,
+> +# but WITHOUT ANY WARRANTY; without even the implied warranty of
+> +# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+> +# GNU General Public License for more details.
+> +#
+> +# You should have received a copy of the GNU General Public License
+> +# along with this program; if not, write the Free Software Foundation,
+> +# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+> +#-----------------------------------------------------------------------
+> +#
+> +
+> +seq=`basename $0`
+> +seqres=$RESULT_DIR/$seq
+> +echo "QA output created by $seq"
+> +tmp=/tmp/$$
+> +status=1	# failure is the default!
+> +trap "_cleanup; exit \$status" 0 1 2 3 15
+> +
+> +_cleanup()
+> +{
+> +	_cleanup_flakey
+> +	cd /
+> +	rm -f $tmp.*
+> +}
+> +
+> +# get standard environment, filters and checks
+> +. ./common/rc
+> +. ./common/filter
+> +. ./common/dmflakey
+> +
+> +# real QA test starts here
+> +_supported_fs btrfs
+> +_supported_os Linux
+> +_require_scratch
+> +_require_dm_target flakey
+> +_require_metadata_journaling $SCRATCH_DEV
+> +
+> +rm -f $seqres.full
+> +
+> +_populate_fs()
+> +{
+> +	_run_btrfs_util_prog subvolume snapshot $SCRATCH_MNT \
+> +		$SCRATCH_MNT/testdir/snap
+> +	_run_btrfs_util_prog subvolume delete $SCRATCH_MNT/testdir/snap
+> +	rmdir $SCRATCH_MNT/testdir
+> +	mkdir $SCRATCH_MNT/testdir
+> +}
 
-  WARNING: DUP is not recommended on filesystem with multiple devices
-  ERROR: unable to create FS with metadata profile DUP (have 2 devices but 1 devices are required)
-  =============================================
+There's already a _populate_fs function in common/rc, though this one
+could override it, I think it's better to define a different function
+name, e.g. without the leading underscore, as it's only used locally.
 
-* expected result
-
-  =============================================
-  # ./mkfs.btrfs -f -m dup -d dup /dev/sdb1 /dev/sdb2
-  WARNING: DUP is not recommended on filesystem with multiple devices
-  btrfs-progs v4.5-25-g1a10a3c
-  See http://btrfs.wiki.kernel.org for more information.
-
-  Label:              (null)
-  UUID:               010d72ff-c87c-4516-8916-5e635719d110
-  Node size:          16384
-  Sector size:        4096
-  Filesystem size:    28.87GiB
-  Block group profiles:
-    Data:             DUP               1.01GiB
-    Metadata:         DUP               1.01GiB
-    System:           DUP              12.00MiB
-  SSD detected:       no
-  Incompat features:  extref, skinny-metadata
-  Number of devices:  2
-  Devices:
-     ID        SIZE  PATH
-      1   953.00MiB  /dev/sdb1
-      2    27.94GiB  /dev/sdb2
-
-  ==================================================
-
-Signed-off-by: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
----
-This patch can be applied to devel branch (commit: a35b7e6ee122)
----
- utils.c | 1 -
- 1 file changed, 1 deletion(-)
-
-diff --git a/utils.c b/utils.c
-index 75ce6ea..7e45702 100644
---- a/utils.c
-+++ b/utils.c
-@@ -2455,7 +2455,6 @@ int test_num_disk_vs_raid(u64 metadata_profile, u64 data_profile,
- 	case 2:
- 		allowed |= BTRFS_BLOCK_GROUP_RAID0 | BTRFS_BLOCK_GROUP_RAID1 |
- 			BTRFS_BLOCK_GROUP_RAID5;
--		break;
- 	case 1:
- 		allowed |= BTRFS_BLOCK_GROUP_DUP;
- 	}
--- 
-2.5.0
+Thanks,
+Eryu

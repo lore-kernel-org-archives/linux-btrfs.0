@@ -1,21 +1,21 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:57067 "EHLO
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:63163 "EHLO
 	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1754145AbcCYR00 (ORCPT
+	by vger.kernel.org with ESMTP id S1754138AbcCYR01 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 25 Mar 2016 13:26:26 -0400
-Received: from pps.filterd (m0001303.ppops.net [127.0.0.1])
-	by m0001303.ppops.net (8.16.0.11/8.16.0.11) with SMTP id u2PHOIkf008879
+	Fri, 25 Mar 2016 13:26:27 -0400
+Received: from pps.filterd (m0001255.ppops.net [127.0.0.1])
+	by mx0b-00082601.pphosted.com (8.16.0.11/8.16.0.11) with SMTP id u2PHKUUf021302
 	for <linux-btrfs@vger.kernel.org>; Fri, 25 Mar 2016 10:26:26 -0700
 Received: from mail.thefacebook.com ([199.201.64.23])
-	by m0001303.ppops.net with ESMTP id 21vybh2pk6-1
+	by mx0b-00082601.pphosted.com with ESMTP id 21vva6jmxq-1
 	(version=TLSv1 cipher=AES128-SHA bits=128 verify=NOT)
-	for <linux-btrfs@vger.kernel.org>; Fri, 25 Mar 2016 10:26:25 -0700
+	for <linux-btrfs@vger.kernel.org>; Fri, 25 Mar 2016 10:26:26 -0700
 From: Josef Bacik <jbacik@fb.com>
 To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH 10/14] Btrfs: add tracepoints for flush events
-Date: Fri, 25 Mar 2016 13:25:56 -0400
-Message-ID: <1458926760-17563-11-git-send-email-jbacik@fb.com>
+Subject: [PATCH 11/14] Btrfs: add fsid to some tracepoints
+Date: Fri, 25 Mar 2016 13:25:57 -0400
+Message-ID: <1458926760-17563-12-git-send-email-jbacik@fb.com>
 In-Reply-To: <1458926760-17563-1-git-send-email-jbacik@fb.com>
 References: <1458926760-17563-1-git-send-email-jbacik@fb.com>
 MIME-Version: 1.0
@@ -23,185 +23,74 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We want to track when we're triggering flushing from our reservation code and
-what flushing is being done when we start flushing.  Thanks,
+When tracing enospc problems on a box with multiple file systems mounted I need
+to be able to differentiate between the two file systems.  Most of the important
+trace points I'm looking at already have an fsid, but the reserved extent trace
+points do not, so add that to make it possible to figure out which trace point
+belongs to which file system.  Thanks,
 
 Signed-off-by: Josef Bacik <jbacik@fb.com>
 ---
- fs/btrfs/ctree.h             |  9 +++++
- fs/btrfs/extent-tree.c       | 22 ++++++------
- include/trace/events/btrfs.h | 82 ++++++++++++++++++++++++++++++++++++++++++++
- 3 files changed, 103 insertions(+), 10 deletions(-)
+ include/trace/events/btrfs.h | 17 +++++++++++------
+ 1 file changed, 11 insertions(+), 6 deletions(-)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 7437c8a..55a24c5 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -3611,6 +3611,15 @@ enum btrfs_reserve_flush_enum {
- 	BTRFS_RESERVE_FLUSH_ALL,
- };
- 
-+enum btrfs_flush_state {
-+	FLUSH_DELAYED_ITEMS_NR	=	1,
-+	FLUSH_DELAYED_ITEMS	=	2,
-+	FLUSH_DELALLOC		=	3,
-+	FLUSH_DELALLOC_WAIT	=	4,
-+	ALLOC_CHUNK		=	5,
-+	COMMIT_TRANS		=	6,
-+};
-+
- int btrfs_check_data_free_space(struct inode *inode, u64 start, u64 len);
- int btrfs_alloc_data_chunk_ondemand(struct inode *inode, u64 bytes);
- void btrfs_free_reserved_data_space(struct inode *inode, u64 start, u64 len);
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 1221c07..0ecceea 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -4762,15 +4762,6 @@ commit:
- 	return btrfs_commit_transaction(trans, root);
- }
- 
--enum flush_state {
--	FLUSH_DELAYED_ITEMS_NR	=	1,
--	FLUSH_DELAYED_ITEMS	=	2,
--	FLUSH_DELALLOC		=	3,
--	FLUSH_DELALLOC_WAIT	=	4,
--	ALLOC_CHUNK		=	5,
--	COMMIT_TRANS		=	6,
--};
--
- struct reserve_ticket {
- 	u64 bytes;
- 	int error;
-@@ -4828,6 +4819,8 @@ static int flush_space(struct btrfs_root *root,
- 		break;
- 	}
- 
-+	trace_btrfs_flush_space(root->fs_info, space_info->flags, num_bytes,
-+				orig_bytes, state, ret);
- 	return ret;
- }
- 
-@@ -5105,6 +5098,10 @@ static int __reserve_metadata_bytes(struct btrfs_root *root,
- 			list_add_tail(&ticket.list, &space_info->tickets);
- 			if (!space_info->flush) {
- 				space_info->flush = 1;
-+				trace_btrfs_trigger_flush(root->fs_info,
-+							  space_info->flags,
-+							  orig_bytes, flush,
-+							  "enospc");
- 				queue_work(system_unbound_wq,
- 					   &root->fs_info->async_reclaim_work);
- 			}
-@@ -5121,9 +5118,14 @@ static int __reserve_metadata_bytes(struct btrfs_root *root,
- 		 */
- 		if (!root->fs_info->log_root_recovering &&
- 		    need_do_async_reclaim(space_info, root->fs_info, used) &&
--		    !work_busy(&root->fs_info->async_reclaim_work))
-+		    !work_busy(&root->fs_info->async_reclaim_work)) {
-+			trace_btrfs_trigger_flush(root->fs_info,
-+						  space_info->flags,
-+						  orig_bytes, flush,
-+						  "preempt");
- 			queue_work(system_unbound_wq,
- 				   &root->fs_info->async_reclaim_work);
-+		}
- 	}
- 	spin_unlock(&space_info->lock);
- 	if (!ret || flush == BTRFS_RESERVE_NO_FLUSH)
 diff --git a/include/trace/events/btrfs.h b/include/trace/events/btrfs.h
-index 3e61deb8..6c192dc 100644
+index 6c192dc..b0f555e 100644
 --- a/include/trace/events/btrfs.h
 +++ b/include/trace/events/btrfs.h
-@@ -784,6 +784,88 @@ TRACE_EVENT(btrfs_space_reservation,
- 		  __entry->bytes)
- );
+@@ -873,18 +873,21 @@ DECLARE_EVENT_CLASS(btrfs__reserved_extent,
+ 	TP_ARGS(root, start, len),
  
-+#define show_flush_action(action)						\
-+	__print_symbolic(action,						\
-+		{ BTRFS_RESERVE_NO_FLUSH,	"BTRFS_RESERVE_NO_FLUSH"},	\
-+		{ BTRFS_RESERVE_FLUSH_LIMIT,	"BTRFS_RESERVE_FLUSH_LIMIT"},	\
-+		{ BTRFS_RESERVE_FLUSH_ALL,	"BTRFS_RESERVE_FLUSH_ALL"})
-+
-+TRACE_EVENT(btrfs_trigger_flush,
-+
-+	TP_PROTO(struct btrfs_fs_info *fs_info, u64 flags, u64 bytes,
-+		 int flush, char *reason),
-+
-+	TP_ARGS(fs_info, flags, bytes, flush, reason),
-+
-+	TP_STRUCT__entry(
+ 	TP_STRUCT__entry(
+-		__field(	u64,  root_objectid		)
+-		__field(	u64,  start			)
+-		__field(	u64,  len			)
 +		__array(	u8,	fsid,	BTRFS_UUID_SIZE	)
-+		__field(	u64,	flags			)
-+		__field(	u64,	bytes			)
-+		__field(	int,	flush			)
-+		__string(	reason,	reason			)
-+	),
-+
-+	TP_fast_assign(
-+		memcpy(__entry->fsid, fs_info->fsid, BTRFS_UUID_SIZE);
-+		__entry->flags	= flags;
-+		__entry->bytes	= bytes;
-+		__entry->flush	= flush;
-+		__assign_str(reason, reason)
-+	),
-+
-+	TP_printk("%pU: %s: flush = %d(%s), flags = %llu(%s), bytes = %llu",
-+		  __entry->fsid, __get_str(reason), __entry->flush,
-+		  show_flush_action(__entry->flush),
-+		  (unsigned long long)__entry->flags,
-+		  __print_flags((unsigned long)__entry->flags, "|",
-+				BTRFS_GROUP_FLAGS),
-+		  (unsigned long long)__entry->bytes)
-+);
-+
-+#define show_flush_state(state)							\
-+	__print_symbolic(state,							\
-+		{ FLUSH_DELAYED_ITEMS_NR,	"FLUSH_DELAYED_ITEMS_NR"},	\
-+		{ FLUSH_DELAYED_ITEMS,		"FLUSH_DELAYED_ITEMS"},		\
-+		{ FLUSH_DELALLOC,		"FLUSH_DELALLOC"},		\
-+		{ FLUSH_DELALLOC_WAIT,		"FLUSH_DELALLOC_WAIT"},		\
-+		{ ALLOC_CHUNK,			"ALLOC_CHUNK"},			\
-+		{ COMMIT_TRANS,			"COMMIT_TRANS"})
-+
-+TRACE_EVENT(btrfs_flush_space,
-+
-+	TP_PROTO(struct btrfs_fs_info *fs_info, u64 flags, u64 num_bytes,
-+		 u64 orig_bytes, int state, int ret),
-+
-+	TP_ARGS(fs_info, flags, num_bytes, orig_bytes, state, ret),
-+
-+	TP_STRUCT__entry(
-+		__array(	u8,	fsid,	BTRFS_UUID_SIZE	)
-+		__field(	u64,	flags			)
-+		__field(	u64,	num_bytes		)
-+		__field(	u64,	orig_bytes		)
-+		__field(	int,	state			)
-+		__field(	int,	ret			)
-+	),
-+
-+	TP_fast_assign(
-+		memcpy(__entry->fsid, fs_info->fsid, BTRFS_UUID_SIZE);
-+		__entry->flags		=	flags;
-+		__entry->num_bytes	=	num_bytes;
-+		__entry->orig_bytes	=	orig_bytes;
-+		__entry->state		=	state;
-+		__entry->ret		=	ret;
-+	),
-+
-+	TP_printk("%pU: state = %d(%s), flags = %llu(%s), num_bytes = %llu, "
-+		  "orig_bytes = %llu, ret = %d", __entry->fsid, __entry->state,
-+		  show_flush_state(__entry->state),
-+		  (unsigned long long)__entry->flags,
-+		  __print_flags((unsigned long)__entry->flags, "|",
-+				BTRFS_GROUP_FLAGS),
-+		  (unsigned long long)__entry->num_bytes,
-+		  (unsigned long long)__entry->orig_bytes, __entry->ret)
-+);
-+
- DECLARE_EVENT_CLASS(btrfs__reserved_extent,
++		__field(	u64,	root_objectid		)
++		__field(	u64,	start			)
++		__field(	u64,	len			)
+ 	),
  
- 	TP_PROTO(struct btrfs_root *root, u64 start, u64 len),
+ 	TP_fast_assign(
++		memcpy(__entry->fsid, root->fs_info->fsid, BTRFS_UUID_SIZE);
+ 		__entry->root_objectid	= root->root_key.objectid;
+ 		__entry->start		= start;
+ 		__entry->len		= len;
+ 	),
+ 
+-	TP_printk("root = %llu(%s), start = %llu, len = %llu",
++	TP_printk("%pU: root = %llu(%s), start = %llu, len = %llu",
++		  __entry->fsid,
+ 		  show_root_type(__entry->root_objectid),
+ 		  (unsigned long long)__entry->start,
+ 		  (unsigned long long)__entry->len)
+@@ -941,6 +944,7 @@ DECLARE_EVENT_CLASS(btrfs__reserve_extent,
+ 	TP_ARGS(root, block_group, start, len),
+ 
+ 	TP_STRUCT__entry(
++		__array(	u8,	fsid,	BTRFS_UUID_SIZE	)
+ 		__field(	u64,	root_objectid		)
+ 		__field(	u64,	bg_objectid		)
+ 		__field(	u64,	flags			)
+@@ -949,6 +953,7 @@ DECLARE_EVENT_CLASS(btrfs__reserve_extent,
+ 	),
+ 
+ 	TP_fast_assign(
++		memcpy(__entry->fsid, root->fs_info->fsid, BTRFS_UUID_SIZE);
+ 		__entry->root_objectid	= root->root_key.objectid;
+ 		__entry->bg_objectid	= block_group->key.objectid;
+ 		__entry->flags		= block_group->flags;
+@@ -956,8 +961,8 @@ DECLARE_EVENT_CLASS(btrfs__reserve_extent,
+ 		__entry->len		= len;
+ 	),
+ 
+-	TP_printk("root = %Lu(%s), block_group = %Lu, flags = %Lu(%s), "
+-		  "start = %Lu, len = %Lu",
++	TP_printk("%pU: root = %Lu(%s), block_group = %Lu, flags = %Lu(%s), "
++		  "start = %Lu, len = %Lu", __entry->fsid,
+ 		  show_root_type(__entry->root_objectid), __entry->bg_objectid,
+ 		  __entry->flags, __print_flags((unsigned long)__entry->flags,
+ 						"|", BTRFS_GROUP_FLAGS),
 -- 
 2.5.0
 

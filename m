@@ -1,178 +1,124 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:40608 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755027AbcCXKsb (ORCPT
+Received: from userp1040.oracle.com ([156.151.31.81]:31789 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753724AbcCYRrs (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 24 Mar 2016 06:48:31 -0400
-From: Anand Jain <anand.jain@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.cz
-Subject: [PATCH 3/3] btrfs: refactor btrfs_dev_replace_start for reuse
-Date: Thu, 24 Mar 2016 18:48:14 +0800
-Message-Id: <1458816494-483-3-git-send-email-anand.jain@oracle.com>
-In-Reply-To: <1458816494-483-1-git-send-email-anand.jain@oracle.com>
-References: <1458816494-483-1-git-send-email-anand.jain@oracle.com>
+	Fri, 25 Mar 2016 13:47:48 -0400
+Date: Fri, 25 Mar 2016 10:50:00 -0700
+From: Liu Bo <bo.li.liu@oracle.com>
+To: Josef Bacik <jbacik@fb.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 14/14] Btrfs: don't do nocow check unless we have to
+Message-ID: <20160325175000.GA22147@localhost.localdomain>
+Reply-To: bo.li.liu@oracle.com
+References: <1458926760-17563-1-git-send-email-jbacik@fb.com>
+ <1458926760-17563-15-git-send-email-jbacik@fb.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1458926760-17563-15-git-send-email-jbacik@fb.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-A refactor patch, and avoids user input verification in the
-btrfs_dev_replace_start(), and so this function can be reused.
+On Fri, Mar 25, 2016 at 01:26:00PM -0400, Josef Bacik wrote:
+> Before we write into prealloc/nocow space we have to make sure that there are no
+> references to the extents we are writing into, which means checking the extent
+> tree and csum tree in the case of nocow.  So we don't want to do the nocow dance
+> unless we can't reserve data space, since it's a serious drag on performance.
+> With the following sequence
+> 
+> fallocate -l10737418240 /mnt/btrfs-test/file
+> cp --reflink /mnt/btrfs-test/file /mnt/btrfs-test/link
+> fio --name=randwrite --rw=randwrite --bs=4k --filename=/mnt/btrfs-test/file \
+> 	--end_fsync=1
+> 
+> we get the worst case scenario where we have to fall back on to doing the check
+> anyway.
+> 
+> Without this patch
+> lat (usec): min=5, max=111598, avg=27.65, stdev=124.51
+> write: io=10240MB, bw=126876KB/s, iops=31718, runt= 82646msec
+> 
+> With this patch
+> lat (usec): min=3, max=91210, avg=14.09, stdev=110.62
+> write: io=10240MB, bw=212753KB/s, iops=53188, runt= 49286msec
+> 
+> We get twice the throughput, half of the runtime, and half of the average
+> latency.  Thanks,
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
----
- fs/btrfs/dev-replace.c | 62 ++++++++++++++++++++++++++++++--------------------
- fs/btrfs/dev-replace.h |  4 +++-
- fs/btrfs/ioctl.c       |  2 +-
- 3 files changed, 41 insertions(+), 27 deletions(-)
+I've submitted a similar one, but looks like this one is cleaner, I
+forgot to remove the goto reserve_metadata.
 
-diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
-index 025f42ef5ab3..2b926867d136 100644
---- a/fs/btrfs/dev-replace.c
-+++ b/fs/btrfs/dev-replace.c
-@@ -305,8 +305,8 @@ void btrfs_after_dev_replace_commit(struct btrfs_fs_info *fs_info)
- 		dev_replace->cursor_left_last_write_of_item;
- }
- 
--int btrfs_dev_replace_start(struct btrfs_root *root,
--			    struct btrfs_ioctl_dev_replace_args *args)
-+int btrfs_dev_replace_start(struct btrfs_root *root, char *tgtdev_name,
-+				u64 srcdevid, char *srcdev_name, int read_src)
- {
- 	struct btrfs_trans_handle *trans;
- 	struct btrfs_fs_info *fs_info = root->fs_info;
-@@ -315,29 +315,16 @@ int btrfs_dev_replace_start(struct btrfs_root *root,
- 	struct btrfs_device *tgt_device = NULL;
- 	struct btrfs_device *src_device = NULL;
- 
--	switch (args->start.cont_reading_from_srcdev_mode) {
--	case BTRFS_IOCTL_DEV_REPLACE_CONT_READING_FROM_SRCDEV_MODE_ALWAYS:
--	case BTRFS_IOCTL_DEV_REPLACE_CONT_READING_FROM_SRCDEV_MODE_AVOID:
--		break;
--	default:
--		return -EINVAL;
--	}
--
--	if ((args->start.srcdevid == 0 && args->start.srcdev_name[0] == '\0') ||
--	    args->start.tgtdev_name[0] == '\0')
--		return -EINVAL;
--
- 	/* the disk copy procedure reuses the scrub code */
- 	mutex_lock(&fs_info->volume_mutex);
--	ret = btrfs_dev_replace_find_srcdev(root, args->start.srcdevid,
--					    args->start.srcdev_name,
--					    &src_device);
-+	ret = btrfs_dev_replace_find_srcdev(root, srcdevid,
-+					    srcdev_name, &src_device);
- 	if (ret) {
- 		mutex_unlock(&fs_info->volume_mutex);
- 		return ret;
- 	}
- 
--	ret = btrfs_init_dev_replace_tgtdev(root, args->start.tgtdev_name,
-+	ret = btrfs_init_dev_replace_tgtdev(root, tgtdev_name,
- 					    src_device, &tgt_device);
- 	mutex_unlock(&fs_info->volume_mutex);
- 	if (ret)
-@@ -364,12 +351,11 @@ int btrfs_dev_replace_start(struct btrfs_root *root,
- 		break;
- 	case BTRFS_IOCTL_DEV_REPLACE_STATE_STARTED:
- 	case BTRFS_IOCTL_DEV_REPLACE_STATE_SUSPENDED:
--		args->result = BTRFS_IOCTL_DEV_REPLACE_RESULT_ALREADY_STARTED;
-+		ret = BTRFS_IOCTL_DEV_REPLACE_RESULT_ALREADY_STARTED;
- 		goto leave;
- 	}
- 
--	dev_replace->cont_reading_from_srcdev_mode =
--		args->start.cont_reading_from_srcdev_mode;
-+	dev_replace->cont_reading_from_srcdev_mode = read_src;
- 	WARN_ON(!src_device);
- 	dev_replace->srcdev = src_device;
- 	WARN_ON(!tgt_device);
-@@ -394,7 +380,6 @@ int btrfs_dev_replace_start(struct btrfs_root *root,
- 	dev_replace->cursor_right = 0;
- 	dev_replace->is_valid = 1;
- 	dev_replace->item_needs_writeback = 1;
--	args->result = BTRFS_IOCTL_DEV_REPLACE_RESULT_NO_ERROR;
- 	btrfs_dev_replace_unlock(dev_replace, 1);
- 
- 	btrfs_wait_ordered_roots(fs_info, -1);
-@@ -416,10 +401,8 @@ int btrfs_dev_replace_start(struct btrfs_root *root,
- 			      &dev_replace->scrub_progress, 0, 1);
- 
- 	ret = btrfs_dev_replace_finishing(fs_info, ret);
--	/* don't warn if EINPROGRESS, someone else might be running scrub */
- 	if (ret == -EINPROGRESS) {
--		args->result = BTRFS_IOCTL_DEV_REPLACE_RESULT_SCRUB_INPROGRESS;
--		ret = 0;
-+		ret = BTRFS_IOCTL_DEV_REPLACE_RESULT_SCRUB_INPROGRESS;
- 	} else {
- 		WARN_ON(ret);
- 	}
-@@ -437,6 +420,35 @@ leave:
- 	return ret;
- }
- 
-+int btrfs_dev_replace_by_ioctl(struct btrfs_root *root,
-+			    struct btrfs_ioctl_dev_replace_args *args)
-+{
-+	int ret;
-+
-+	switch (args->start.cont_reading_from_srcdev_mode) {
-+	case BTRFS_IOCTL_DEV_REPLACE_CONT_READING_FROM_SRCDEV_MODE_ALWAYS:
-+	case BTRFS_IOCTL_DEV_REPLACE_CONT_READING_FROM_SRCDEV_MODE_AVOID:
-+		break;
-+	default:
-+		return -EINVAL;
-+	}
-+
-+	if ((args->start.srcdevid == 0 && args->start.srcdev_name[0] == '\0') ||
-+	    args->start.tgtdev_name[0] == '\0')
-+		return -EINVAL;
-+
-+	ret = btrfs_dev_replace_start(root, args->start.tgtdev_name,
-+					args->start.srcdevid,
-+					args->start.srcdev_name,
-+					args->start.cont_reading_from_srcdev_mode);
-+	args->result = ret;
-+	/* don't warn if EINPROGRESS, someone else might be running scrub */
-+	if (ret == BTRFS_IOCTL_DEV_REPLACE_RESULT_SCRUB_INPROGRESS)
-+		ret = 0;
-+
-+	return ret;
-+}
-+
- /*
-  * blocked until all flighting bios are finished.
-  */
-diff --git a/fs/btrfs/dev-replace.h b/fs/btrfs/dev-replace.h
-index 29e3ef5f96bd..e922b42d91df 100644
---- a/fs/btrfs/dev-replace.h
-+++ b/fs/btrfs/dev-replace.h
-@@ -25,8 +25,10 @@ int btrfs_init_dev_replace(struct btrfs_fs_info *fs_info);
- int btrfs_run_dev_replace(struct btrfs_trans_handle *trans,
- 			  struct btrfs_fs_info *fs_info);
- void btrfs_after_dev_replace_commit(struct btrfs_fs_info *fs_info);
--int btrfs_dev_replace_start(struct btrfs_root *root,
-+int btrfs_dev_replace_by_ioctl(struct btrfs_root *root,
- 			    struct btrfs_ioctl_dev_replace_args *args);
-+int btrfs_dev_replace_start(struct btrfs_root *root, char *tgtdev_name,
-+				u64 srcdevid, char *srcdev_name, int read_src);
- void btrfs_dev_replace_status(struct btrfs_fs_info *fs_info,
- 			      struct btrfs_ioctl_dev_replace_args *args);
- int btrfs_dev_replace_cancel(struct btrfs_fs_info *fs_info,
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 053e677839fe..a811089c3890 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -4376,7 +4376,7 @@ static long btrfs_ioctl_dev_replace(struct btrfs_root *root, void __user *arg)
- 			1)) {
- 			ret = BTRFS_ERROR_DEV_EXCL_RUN_IN_PROGRESS;
- 		} else {
--			ret = btrfs_dev_replace_start(root, p);
-+			ret = btrfs_dev_replace_by_ioctl(root, p);
- 			atomic_set(
- 			 &root->fs_info->mutually_exclusive_operation_running,
- 			 0);
--- 
-2.7.0
+Thanks,
 
+-liubo
+
+> 
+> Signed-off-by: Josef Bacik <jbacik@fb.com>
+> ---
+>  fs/btrfs/file.c | 44 ++++++++++++++++++++++----------------------
+>  1 file changed, 22 insertions(+), 22 deletions(-)
+> 
+> diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+> index 0ce4bb3..7c80208 100644
+> --- a/fs/btrfs/file.c
+> +++ b/fs/btrfs/file.c
+> @@ -1534,30 +1534,30 @@ static noinline ssize_t __btrfs_buffered_write(struct file *file,
+>  		reserve_bytes = round_up(write_bytes + sector_offset,
+>  				root->sectorsize);
+>  
+> -		if ((BTRFS_I(inode)->flags & (BTRFS_INODE_NODATACOW |
+> -					      BTRFS_INODE_PREALLOC)) &&
+> -		    check_can_nocow(inode, pos, &write_bytes) > 0) {
+> -			/*
+> -			 * For nodata cow case, no need to reserve
+> -			 * data space.
+> -			 */
+> -			only_release_metadata = true;
+> -			/*
+> -			 * our prealloc extent may be smaller than
+> -			 * write_bytes, so scale down.
+> -			 */
+> -			num_pages = DIV_ROUND_UP(write_bytes + offset,
+> -						 PAGE_CACHE_SIZE);
+> -			reserve_bytes = round_up(write_bytes + sector_offset,
+> -					root->sectorsize);
+> -			goto reserve_metadata;
+> -		}
+> -
+>  		ret = btrfs_check_data_free_space(inode, pos, write_bytes);
+> -		if (ret < 0)
+> -			break;
+> +		if (ret < 0) {
+> +			if ((BTRFS_I(inode)->flags & (BTRFS_INODE_NODATACOW |
+> +						      BTRFS_INODE_PREALLOC)) &&
+> +			    check_can_nocow(inode, pos, &write_bytes) > 0) {
+> +				/*
+> +				 * For nodata cow case, no need to reserve
+> +				 * data space.
+> +				 */
+> +				only_release_metadata = true;
+> +				/*
+> +				 * our prealloc extent may be smaller than
+> +				 * write_bytes, so scale down.
+> +				 */
+> +				num_pages = DIV_ROUND_UP(write_bytes + offset,
+> +							 PAGE_CACHE_SIZE);
+> +				reserve_bytes = round_up(write_bytes +
+> +							 sector_offset,
+> +							 root->sectorsize);
+> +			} else {
+> +				break;
+> +			}
+> +		}
+>  
+> -reserve_metadata:
+>  		ret = btrfs_delalloc_reserve_metadata(inode, reserve_bytes);
+>  		if (ret) {
+>  			if (!only_release_metadata)
+> -- 
+> 2.5.0
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

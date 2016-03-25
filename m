@@ -1,44 +1,43 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:45083 "EHLO mx2.suse.de"
+Received: from plane.gmane.org ([80.91.229.3]:58594 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750860AbcCVQLd (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 22 Mar 2016 12:11:33 -0400
-Date: Tue, 22 Mar 2016 17:11:03 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Anand Jain <anand.jain@oracle.com>
-Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz
-Subject: Re: [PATCH 0/6 v3] btrfs-progs: subvolume functions reorg
-Message-ID: <20160322161103.GF29764@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1458544865-16467-1-git-send-email-anand.jain@oracle.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1458544865-16467-1-git-send-email-anand.jain@oracle.com>
+	id S1751096AbcCYB7b (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 24 Mar 2016 21:59:31 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+	id 1ajH27-0001MS-Po
+	for linux-btrfs@vger.kernel.org; Fri, 25 Mar 2016 02:59:27 +0100
+Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Fri, 25 Mar 2016 02:59:27 +0100
+Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Fri, 25 Mar 2016 02:59:27 +0100
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: [PATCH] btrfs-progs: mkfs: allow DUP on multidev fs, only warn
+Date: Fri, 25 Mar 2016 01:59:20 +0000 (UTC)
+Message-ID: <pan$83413$34f18f9e$a1606444$9239e69f@cox.net>
+References: <1458834973-3199-1-git-send-email-dsterba@suse.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Mar 21, 2016 at 03:20:59PM +0800, Anand Jain wrote:
-> We need subvolume helper functions easily accessible for features
-> around subvolume. This patch set is just a cleanup of subvolume
-> functions.
-> 
-> This is tested fine with fstests group subvol and subvol hand tests.
-> 
-> v3: Separate changes into 6 commits,
->     Drops the idea of creating subvolume.c, instead update utils.c.
->     Adds 1/5 a minor func mv and 3/5 remove of a duplicate func and
->     6/6 rename of get_subvol_name as per review comment.
-> 
-> v2: Update commit log. Separate this patch from the encryption
->     patch set.
-> 
-> 
-> Anand Jain (6):
->   btrfs-progs: spatial rearrange subvolume functions together
->   btrfs-progs: move test_issubvolume() to utils.c
->   btrfs-progs: remove duplicate function __is_subvol()
->   btrfs-progs: move get_subvol_name() to utils.c
->   btrfs-progs: create get_subvol_info()
->   btrfs-progs: rename get_subvol_name() to subvol_minus_mnt()
+David Sterba posted on Thu, 24 Mar 2016 16:56:13 +0100 as excerpted:
 
-Applied, thanks.
+> The DUP profile can work on multiple filesystems, the limitation is
+> rather artificial. Let the user make the decision and print a warning.
+> 
+> Signed-off-by: David Sterba <dsterba@suse.com>
+> ---
+
+I like the change, but typo in the commit comment... What filesystems 
+other than btrfs allow DUP? =:^)  It's correct in the posting subject.
+
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

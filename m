@@ -1,21 +1,21 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:34084 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1753399AbcCYR0H (ORCPT
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:35391 "EHLO
+	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1753399AbcCYR0J (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 25 Mar 2016 13:26:07 -0400
-Received: from pps.filterd (m0044008.ppops.net [127.0.0.1])
-	by mx0a-00082601.pphosted.com (8.16.0.11/8.16.0.11) with SMTP id u2PHKiAX024622
-	for <linux-btrfs@vger.kernel.org>; Fri, 25 Mar 2016 10:26:06 -0700
+	Fri, 25 Mar 2016 13:26:09 -0400
+Received: from pps.filterd (m0089730.ppops.net [127.0.0.1])
+	by m0089730.ppops.net (8.16.0.11/8.16.0.11) with SMTP id u2PHKjbi021158
+	for <linux-btrfs@vger.kernel.org>; Fri, 25 Mar 2016 10:26:08 -0700
 Received: from mail.thefacebook.com ([199.201.64.23])
-	by mx0a-00082601.pphosted.com with ESMTP id 21w9720517-1
+	by m0089730.ppops.net with ESMTP id 21vva22wgv-1
 	(version=TLSv1 cipher=AES128-SHA bits=128 verify=NOT)
-	for <linux-btrfs@vger.kernel.org>; Fri, 25 Mar 2016 10:26:06 -0700
+	for <linux-btrfs@vger.kernel.org>; Fri, 25 Mar 2016 10:26:08 -0700
 From: Josef Bacik <jbacik@fb.com>
 To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH 01/14] Btrfs: add bytes_readonly to the spaceinfo at once
-Date: Fri, 25 Mar 2016 13:25:47 -0400
-Message-ID: <1458926760-17563-2-git-send-email-jbacik@fb.com>
+Subject: [PATCH 02/14] Btrfs: fix callers of btrfs_block_rsv_migrate
+Date: Fri, 25 Mar 2016 13:25:48 -0400
+Message-ID: <1458926760-17563-3-git-send-email-jbacik@fb.com>
 In-Reply-To: <1458926760-17563-1-git-send-email-jbacik@fb.com>
 References: <1458926760-17563-1-git-send-email-jbacik@fb.com>
 MIME-Version: 1.0
@@ -23,143 +23,207 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-For some reason we're adding bytes_readonly to the space info after we update
-the space info with the block group info.  This creates a tiny race where we
-could over-reserve space because we haven't yet taken out the bytes_readonly
-bit.  Since we already know this information at the time we call
-update_space_info, just pass it along so it can be updated all at once.  Thanks,
+So btrfs_block_rsv_migrate just unconditionally calls block_rsv_migrate_bytes.
+Not only this but it unconditionally changes the size of the block_rsv.  This
+isn't a bug strictly speaking, but it makes truncate block rsv's look funny
+because every time we migrate bytes over its size grows, even though we only
+want it to be a specific size.  So collapse this into one function that takes an
+update_size argument and make truncate and evict not update the size for
+consistency sake.  Thanks,
 
 Signed-off-by: Josef Bacik <jbacik@fb.com>
 ---
- fs/btrfs/extent-tree.c | 29 +++++++++++------------------
- 1 file changed, 11 insertions(+), 18 deletions(-)
+ fs/btrfs/ctree.h         |  4 ++--
+ fs/btrfs/delayed-inode.c |  8 ++++----
+ fs/btrfs/extent-tree.c   | 18 ++++++------------
+ fs/btrfs/file.c          |  4 ++--
+ fs/btrfs/inode.c         |  7 +++----
+ fs/btrfs/relocation.c    |  2 +-
+ 6 files changed, 18 insertions(+), 25 deletions(-)
 
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 84a6a5b..b675066 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -3646,8 +3646,8 @@ int btrfs_block_rsv_refill(struct btrfs_root *root,
+ 			   struct btrfs_block_rsv *block_rsv, u64 min_reserved,
+ 			   enum btrfs_reserve_flush_enum flush);
+ int btrfs_block_rsv_migrate(struct btrfs_block_rsv *src_rsv,
+-			    struct btrfs_block_rsv *dst_rsv,
+-			    u64 num_bytes);
++			    struct btrfs_block_rsv *dst_rsv, u64 num_bytes,
++			    int update_size);
+ int btrfs_cond_migrate_bytes(struct btrfs_fs_info *fs_info,
+ 			     struct btrfs_block_rsv *dest, u64 num_bytes,
+ 			     int min_factor);
+diff --git a/fs/btrfs/delayed-inode.c b/fs/btrfs/delayed-inode.c
+index 6cef006..d3cda0f 100644
+--- a/fs/btrfs/delayed-inode.c
++++ b/fs/btrfs/delayed-inode.c
+@@ -553,7 +553,7 @@ static int btrfs_delayed_item_reserve_metadata(struct btrfs_trans_handle *trans,
+ 	dst_rsv = &root->fs_info->delayed_block_rsv;
+ 
+ 	num_bytes = btrfs_calc_trans_metadata_size(root, 1);
+-	ret = btrfs_block_rsv_migrate(src_rsv, dst_rsv, num_bytes);
++	ret = btrfs_block_rsv_migrate(src_rsv, dst_rsv, num_bytes, 1);
+ 	if (!ret) {
+ 		trace_btrfs_space_reservation(root->fs_info, "delayed_item",
+ 					      item->key.objectid,
+@@ -649,7 +649,7 @@ static int btrfs_delayed_inode_reserve_metadata(
+ 		if (!ret)
+ 			goto out;
+ 
+-		ret = btrfs_block_rsv_migrate(src_rsv, dst_rsv, num_bytes);
++		ret = btrfs_block_rsv_migrate(src_rsv, dst_rsv, num_bytes, 1);
+ 		if (!ret)
+ 			goto out;
+ 
+@@ -663,12 +663,12 @@ static int btrfs_delayed_inode_reserve_metadata(
+ 		 * since this really shouldn't happen that often.
+ 		 */
+ 		ret = btrfs_block_rsv_migrate(&root->fs_info->global_block_rsv,
+-					      dst_rsv, num_bytes);
++					      dst_rsv, num_bytes, 1);
+ 		goto out;
+ 	}
+ 
+ migrate:
+-	ret = btrfs_block_rsv_migrate(src_rsv, dst_rsv, num_bytes);
++	ret = btrfs_block_rsv_migrate(src_rsv, dst_rsv, num_bytes, 1);
+ 
+ out:
+ 	/*
 diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 53e1297..c357c96 100644
+index c357c96..06f4e7b 100644
 --- a/fs/btrfs/extent-tree.c
 +++ b/fs/btrfs/extent-tree.c
-@@ -3843,6 +3843,7 @@ static const char *alloc_name(u64 flags)
+@@ -5192,8 +5192,9 @@ static void block_rsv_release_bytes(struct btrfs_fs_info *fs_info,
+ 	}
+ }
  
- static int update_space_info(struct btrfs_fs_info *info, u64 flags,
- 			     u64 total_bytes, u64 bytes_used,
-+			     u64 bytes_readonly,
- 			     struct btrfs_space_info **space_info)
+-static int block_rsv_migrate_bytes(struct btrfs_block_rsv *src,
+-				   struct btrfs_block_rsv *dst, u64 num_bytes)
++int btrfs_block_rsv_migrate(struct btrfs_block_rsv *src,
++			    struct btrfs_block_rsv *dst, u64 num_bytes,
++			    int update_size)
  {
- 	struct btrfs_space_info *found;
-@@ -3863,6 +3864,7 @@ static int update_space_info(struct btrfs_fs_info *info, u64 flags,
- 		found->disk_total += total_bytes * factor;
- 		found->bytes_used += bytes_used;
- 		found->disk_used += bytes_used * factor;
-+		found->bytes_readonly += bytes_readonly;
- 		if (total_bytes > 0)
- 			found->full = 0;
- 		spin_unlock(&found->lock);
-@@ -3890,7 +3892,7 @@ static int update_space_info(struct btrfs_fs_info *info, u64 flags,
- 	found->disk_used = bytes_used * factor;
- 	found->bytes_pinned = 0;
- 	found->bytes_reserved = 0;
--	found->bytes_readonly = 0;
-+	found->bytes_readonly = bytes_readonly;
- 	found->bytes_may_use = 0;
- 	found->full = 0;
- 	found->max_extent_size = 0;
-@@ -4400,7 +4402,7 @@ static int do_chunk_alloc(struct btrfs_trans_handle *trans,
- 	space_info = __find_space_info(extent_root->fs_info, flags);
- 	if (!space_info) {
- 		ret = update_space_info(extent_root->fs_info, flags,
--					0, 0, &space_info);
-+					0, 0, 0, &space_info);
- 		BUG_ON(ret); /* -ENOMEM */
- 	}
- 	BUG_ON(!space_info); /* Logic error */
-@@ -9862,7 +9864,7 @@ int btrfs_read_block_groups(struct btrfs_root *root)
- 
- 		ret = update_space_info(info, cache->flags, found_key.offset,
- 					btrfs_block_group_used(&cache->item),
--					&space_info);
-+					cache->bytes_super, &space_info);
- 		if (ret) {
- 			btrfs_remove_free_space_cache(cache);
- 			spin_lock(&info->block_group_cache_lock);
-@@ -9875,9 +9877,6 @@ int btrfs_read_block_groups(struct btrfs_root *root)
- 		}
- 
- 		cache->space_info = space_info;
--		spin_lock(&cache->space_info->lock);
--		cache->space_info->bytes_readonly += cache->bytes_super;
--		spin_unlock(&cache->space_info->lock);
- 
- 		__link_block_group(space_info, cache);
- 
-@@ -9969,7 +9968,6 @@ int btrfs_make_block_group(struct btrfs_trans_handle *trans,
  	int ret;
- 	struct btrfs_root *extent_root;
- 	struct btrfs_block_group_cache *cache;
--
- 	extent_root = root->fs_info->extent_root;
  
- 	btrfs_set_log_full_commit(root->fs_info, trans);
-@@ -10015,7 +10013,7 @@ int btrfs_make_block_group(struct btrfs_trans_handle *trans,
- 	 * assigned to our block group, but don't update its counters just yet.
- 	 * We want our bg to be added to the rbtree with its ->space_info set.
- 	 */
--	ret = update_space_info(root->fs_info, cache->flags, 0, 0,
-+	ret = update_space_info(root->fs_info, cache->flags, 0, 0, 0,
- 				&cache->space_info);
- 	if (ret) {
- 		btrfs_remove_free_space_cache(cache);
-@@ -10035,7 +10033,7 @@ int btrfs_make_block_group(struct btrfs_trans_handle *trans,
- 	 * the rbtree, update the space info's counters.
- 	 */
- 	ret = update_space_info(root->fs_info, cache->flags, size, bytes_used,
--				&cache->space_info);
-+				cache->bytes_super, &cache->space_info);
- 	if (ret) {
- 		btrfs_remove_free_space_cache(cache);
- 		spin_lock(&root->fs_info->block_group_cache_lock);
-@@ -10048,16 +10046,11 @@ int btrfs_make_block_group(struct btrfs_trans_handle *trans,
- 	}
- 	update_global_block_rsv(root->fs_info);
+@@ -5201,7 +5202,7 @@ static int block_rsv_migrate_bytes(struct btrfs_block_rsv *src,
+ 	if (ret)
+ 		return ret;
  
--	spin_lock(&cache->space_info->lock);
--	cache->space_info->bytes_readonly += cache->bytes_super;
--	spin_unlock(&cache->space_info->lock);
--
- 	__link_block_group(cache->space_info, cache);
- 
- 	list_add_tail(&cache->bg_list, &trans->new_bgs);
- 
- 	set_avail_alloc_bits(extent_root->fs_info, type);
--
+-	block_rsv_add_bytes(dst, num_bytes, 1);
++	block_rsv_add_bytes(dst, num_bytes, update_size);
  	return 0;
  }
  
-@@ -10602,21 +10595,21 @@ int btrfs_init_space_info(struct btrfs_fs_info *fs_info)
- 		mixed = 1;
- 
- 	flags = BTRFS_BLOCK_GROUP_SYSTEM;
--	ret = update_space_info(fs_info, flags, 0, 0, &space_info);
-+	ret = update_space_info(fs_info, flags, 0, 0, 0, &space_info);
- 	if (ret)
- 		goto out;
- 
- 	if (mixed) {
- 		flags = BTRFS_BLOCK_GROUP_METADATA | BTRFS_BLOCK_GROUP_DATA;
--		ret = update_space_info(fs_info, flags, 0, 0, &space_info);
-+		ret = update_space_info(fs_info, flags, 0, 0, 0, &space_info);
- 	} else {
- 		flags = BTRFS_BLOCK_GROUP_METADATA;
--		ret = update_space_info(fs_info, flags, 0, 0, &space_info);
-+		ret = update_space_info(fs_info, flags, 0, 0, 0, &space_info);
- 		if (ret)
- 			goto out;
- 
- 		flags = BTRFS_BLOCK_GROUP_DATA;
--		ret = update_space_info(fs_info, flags, 0, 0, &space_info);
-+		ret = update_space_info(fs_info, flags, 0, 0, 0, &space_info);
- 	}
- out:
+@@ -5308,13 +5309,6 @@ int btrfs_block_rsv_refill(struct btrfs_root *root,
  	return ret;
+ }
+ 
+-int btrfs_block_rsv_migrate(struct btrfs_block_rsv *src_rsv,
+-			    struct btrfs_block_rsv *dst_rsv,
+-			    u64 num_bytes)
+-{
+-	return block_rsv_migrate_bytes(src_rsv, dst_rsv, num_bytes);
+-}
+-
+ void btrfs_block_rsv_release(struct btrfs_root *root,
+ 			     struct btrfs_block_rsv *block_rsv,
+ 			     u64 num_bytes)
+@@ -5494,7 +5488,7 @@ int btrfs_orphan_reserve_metadata(struct btrfs_trans_handle *trans,
+ 	u64 num_bytes = btrfs_calc_trans_metadata_size(root, 1);
+ 	trace_btrfs_space_reservation(root->fs_info, "orphan",
+ 				      btrfs_ino(inode), num_bytes, 1);
+-	return block_rsv_migrate_bytes(src_rsv, dst_rsv, num_bytes);
++	return btrfs_block_rsv_migrate(src_rsv, dst_rsv, num_bytes, 1);
+ }
+ 
+ void btrfs_orphan_release_metadata(struct inode *inode)
+@@ -5549,7 +5543,7 @@ int btrfs_subvolume_reserve_metadata(struct btrfs_root *root,
+ 				  BTRFS_RESERVE_FLUSH_ALL);
+ 
+ 	if (ret == -ENOSPC && use_global_rsv)
+-		ret = btrfs_block_rsv_migrate(global_rsv, rsv, num_bytes);
++		ret = btrfs_block_rsv_migrate(global_rsv, rsv, num_bytes, 1);
+ 
+ 	if (ret && *qgroup_reserved)
+ 		btrfs_qgroup_free_meta(root, *qgroup_reserved);
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index 15a09cb..0ce4bb3 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -2474,7 +2474,7 @@ static int btrfs_punch_hole(struct inode *inode, loff_t offset, loff_t len)
+ 	}
+ 
+ 	ret = btrfs_block_rsv_migrate(&root->fs_info->trans_block_rsv, rsv,
+-				      min_size);
++				      min_size, 0);
+ 	BUG_ON(ret);
+ 	trans->block_rsv = rsv;
+ 
+@@ -2517,7 +2517,7 @@ static int btrfs_punch_hole(struct inode *inode, loff_t offset, loff_t len)
+ 		}
+ 
+ 		ret = btrfs_block_rsv_migrate(&root->fs_info->trans_block_rsv,
+-					      rsv, min_size);
++					      rsv, min_size, 0);
+ 		BUG_ON(ret);	/* shouldn't happen */
+ 		trans->block_rsv = rsv;
+ 
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 41a5688..723e4bb 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -5239,7 +5239,7 @@ void btrfs_evict_inode(struct inode *inode)
+ 		if (steal_from_global) {
+ 			if (!btrfs_check_space_for_delayed_refs(trans, root))
+ 				ret = btrfs_block_rsv_migrate(global_rsv, rsv,
+-							      min_size);
++							      min_size, 0);
+ 			else
+ 				ret = -ENOSPC;
+ 		}
+@@ -9072,7 +9072,7 @@ static int btrfs_truncate(struct inode *inode)
+ 
+ 	/* Migrate the slack space for the truncate to our reserve */
+ 	ret = btrfs_block_rsv_migrate(&root->fs_info->trans_block_rsv, rsv,
+-				      min_size);
++				      min_size, 0);
+ 	BUG_ON(ret);
+ 
+ 	/*
+@@ -9112,7 +9112,7 @@ static int btrfs_truncate(struct inode *inode)
+ 		}
+ 
+ 		ret = btrfs_block_rsv_migrate(&root->fs_info->trans_block_rsv,
+-					      rsv, min_size);
++					      rsv, min_size, 0);
+ 		BUG_ON(ret);	/* shouldn't happen */
+ 		trans->block_rsv = rsv;
+ 	}
+@@ -9133,7 +9133,6 @@ static int btrfs_truncate(struct inode *inode)
+ 		ret = btrfs_end_transaction(trans, root);
+ 		btrfs_btree_balance_dirty(root);
+ 	}
+-
+ out:
+ 	btrfs_free_block_rsv(root, rsv);
+ 
+diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
+index 2bd0011..61efa5f 100644
+--- a/fs/btrfs/relocation.c
++++ b/fs/btrfs/relocation.c
+@@ -4644,7 +4644,7 @@ int btrfs_reloc_post_snapshot(struct btrfs_trans_handle *trans,
+ 	if (rc->merge_reloc_tree) {
+ 		ret = btrfs_block_rsv_migrate(&pending->block_rsv,
+ 					      rc->block_rsv,
+-					      rc->nodes_relocated);
++					      rc->nodes_relocated, 1);
+ 		if (ret)
+ 			return ret;
+ 	}
 -- 
 2.5.0
 

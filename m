@@ -1,56 +1,59 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f182.google.com ([209.85.213.182]:38396 "EHLO
-	mail-ig0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751807AbcCZU6j (ORCPT
+Received: from mail-io0-f196.google.com ([209.85.223.196]:35343 "EHLO
+	mail-io0-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753466AbcCZVBo (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 26 Mar 2016 16:58:39 -0400
-Received: by mail-ig0-f182.google.com with SMTP id ig19so33061468igb.1
-        for <linux-btrfs@vger.kernel.org>; Sat, 26 Mar 2016 13:58:39 -0700 (PDT)
+	Sat, 26 Mar 2016 17:01:44 -0400
+Received: by mail-io0-f196.google.com with SMTP id 124so16119795iov.2
+        for <linux-btrfs@vger.kernel.org>; Sat, 26 Mar 2016 14:01:43 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <1459000838.655295.560259050.32AD1D24@webmail.messagingengine.com>
-References: <1458906560.3786108.559411242.3678497C@webmail.messagingengine.com>
-	<CAA7pwKNj+qEUk+RhzyceRFqThzhUkroYMxS3b3gAn_5KEyawMQ@mail.gmail.com>
-	<CAA7pwKNgDi9C8E+duwNA6H8MrT1nVEHkWAm4=JZp3GjFgAvZ1g@mail.gmail.com>
-	<1458926454.3855039.559662618.4F365498@webmail.messagingengine.com>
-	<CAA7pwKP90OTQLdOw4LHtGxZEBWhz3bZCam2E2-CHwA1p9CMdnA@mail.gmail.com>
-	<CAGGqMYR9LdCiqHfO5Rn5zY1G7_YKYjrEzkovTVVaFRXqQ7vpeQ@mail.gmail.com>
-	<56F5FD42.5010701@oracle.com>
-	<CAA7pwKMnj5+pLoBPg1z3aRQZJ-kWJefSc+Cg6JrhGSzdW4WFnQ@mail.gmail.com>
-	<1459000838.655295.560259050.32AD1D24@webmail.messagingengine.com>
-Date: Sat, 26 Mar 2016 14:58:38 -0600
-Message-ID: <CAJCQCtRhbMOV=i+Po9x7QAwVbNiPkCzxq+FU6oH-LRdaaFqATg@mail.gmail.com>
-Subject: Re: Possible Raid Bug
-From: Chris Murphy <lists@colorremedies.com>
-To: Stephen Williams <stephenw@veryfast.biz>
-Cc: Patrik Lundquist <patrik.lundquist@gmail.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+In-Reply-To: <CAJCQCtQwc4FDcTPq2mfN7wfUNp9QWEq+XTJA+FEyY4hWrHvHQQ@mail.gmail.com>
+References: <CAAafysGTQucscr-8sTuT2c4BpdAovq0w9UbehRYDrSH71CLF-A@mail.gmail.com>
+	<CAPmG0jbXcqfB1jG7WFriMhicdsoZ+pbD_uUBu7v9YiD-ey=jDw@mail.gmail.com>
+	<CAAafysEhGJi5jYxHooV4h1tD3pqnc-brbB9k4prS9yK0P5PGdg@mail.gmail.com>
+	<CAAafysEuE0CXZ2fyY2ybnff3=XLEdGirCU9BJf9mhLE0xFTTrQ@mail.gmail.com>
+	<CAJCQCtQcX+U1cWz1j3Re5E-=ruPBY+zj0SFqB1jDibgeQniSVw@mail.gmail.com>
+	<CAAafysE+5tS=k9GFoKyqwK6dJtR4g3Eqairt1cGatCfCxooXeg@mail.gmail.com>
+	<CAJCQCtTURu4OJbTfpKzQGAz4g32yaxToPaE9r8+xWt19AYJUig@mail.gmail.com>
+	<CAAafysFa8XZgKvKXQqcnZYR8DLbFe3STQA3Y++Wb71PPdf+iuw@mail.gmail.com>
+	<CAJCQCtQwc4FDcTPq2mfN7wfUNp9QWEq+XTJA+FEyY4hWrHvHQQ@mail.gmail.com>
+Date: Sat, 26 Mar 2016 17:01:43 -0400
+Message-ID: <CAAafysHw3ws3HVgyfN6YVwFN5pru_kuajKev6sQN6+_uprGiRQ@mail.gmail.com>
+Subject: Re: RAID Assembly with Missing Empty Drive
+From: John Marrett <johnf@zioncluster.ca>
+To: Chris Murphy <lists@colorremedies.com>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, Mar 26, 2016 at 8:00 AM, Stephen Williams <stephenw@veryfast.biz> wrote:
+> Well off hand it seems like the missing 2.73TB has nothing on it at
+> all, and doesn't need to be counted as missing. The other missing is
+> counted, and should have all of its data replicated elsewhere. But
+> then you're running into csum errors. So something still isn't right,
+> we just don't understand what it is.
 
-> I know this is quite a rare occurrence for home use but for Data center
-> use this is something that will happen A LOT.
-> This really should be placed in the wiki while we wait for a fix. I can
-> see a lot of sys admins crying over this.
+I'm not sure what we can do to get a better understanding of these
+errors, that said it may not be necessary if replace helps, more
+below.
 
-Maybe on the gotchas page? While it's not a data loss bug, it might be
-viewed as an uptime bug because the dataset is stuck being ro and
-hence unmodifiable, until a restore to a rw volume is complete.
+> Btrfs replace has been around for a while. 'man btrfs replace' the
+> command takes the form 'btrfs replace start' plus three required
+> pieces of information. You should be able to infer the missing devid
+> using 'btrfs show' looks like it's 6.
 
-Since we can ro mount a volume, some way to safely make it a seed
-device could be useful. All that's needed to make it rw is adding even
-a small USB stick for example, and now at least ro snapshots can be
-taken and migrate data off the volume. A larger device that's used for
-rw would allow this raid to be brought back online. And then once the
-new array is up and has most data restored, a short downtime to get
-the latest incremental changes sent over.
+I was looking under btrfs device, sorry about that. I do have the
+command. I tried replace and it seemed more promising than the last
+attempt, it wrote enough data to the new drive to overflow and break
+my overlay. I'm trying it without the overlay on the destination
+device, I'll report back later with the results.
 
-Yeah, the alternative to this is a cluster, and you just consider this
-one brick a loss and move on. But most regular users don't do
-clusters, even with big (for them) storage.
+I'm running ubuntu linux-image-4.2.0-34-generic with a patch to remove
+this check:
 
+https://github.com/torvalds/linux/blob/master/fs/btrfs/super.c#L1770
 
--- 
-Chris Murphy
+I can switch to whatever kernel though as desired. Would you prefer a
+mainline ubuntu packaged kernel? Straight from kernel.org?
+
+-JohnF

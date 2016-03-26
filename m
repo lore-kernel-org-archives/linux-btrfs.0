@@ -1,65 +1,93 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:51237 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750754AbcCZEQF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 26 Mar 2016 00:16:05 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1ajfdq-0006g3-3h
-	for linux-btrfs@vger.kernel.org; Sat, 26 Mar 2016 05:16:02 +0100
-Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sat, 26 Mar 2016 05:16:02 +0100
-Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sat, 26 Mar 2016 05:16:02 +0100
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: RAID-1 refuses to balance large drive
-Date: Sat, 26 Mar 2016 04:15:53 +0000 (UTC)
-Message-ID: <pan$859b8$22092254$6856ccb5$a6a9f4f8@cox.net>
-References: <56F1E7BE.1000004@gmail.com> <56F21510.6050707@cn.fujitsu.com>
-	<56F21FC5.50209@gmail.com>
-	<CAJCQCtR6xGMUPf3g6R8J21qv7MubideNLOVxC2X=f7bQa=CDCw@mail.gmail.com>
-	<56F22F80.501@gmail.com>
-	<CAJCQCtSiPeHE7QimeJyz4Y760saeFB7Enn2YceA3r-Z9eZmA_g@mail.gmail.com>
-	<56F2C991.9080500@gmail.com>
-	<CAJCQCtRgCvUPEMVXfQpJ+wdW_9jL3rijzuinPfiyRV3rTFEsKA@mail.gmail.com>
-	<56F2EA25.4070004@gmail.com>
-	<CAJCQCtQ7YwtBcvq9H1e1Ma8WEKB4o2ni40yOE9f1KMr0u6rX_w@mail.gmail.com>
-	<CAA7pwKNjyRRoXGV0djzjgXX7HQ2MY8mhQFj8_7TsfYeKkge-2g@mail.gmail.com>
-	<CAPmG0jbUWiDNSVjv9hMF3rpe0cm4EZWkuRKEgM_t6EuU3sPYFA@mail.gmail.com>
-Mime-Version: 1.0
+Received: from mail-lf0-f44.google.com ([209.85.215.44]:33560 "EHLO
+	mail-lf0-f44.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751173AbcCZLvh (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 26 Mar 2016 07:51:37 -0400
+Received: by mail-lf0-f44.google.com with SMTP id f67so13412127lfb.0
+        for <linux-btrfs@vger.kernel.org>; Sat, 26 Mar 2016 04:51:36 -0700 (PDT)
+MIME-Version: 1.0
+In-Reply-To: <56F5FD42.5010701@oracle.com>
+References: <1458906560.3786108.559411242.3678497C@webmail.messagingengine.com>
+ <CAA7pwKNj+qEUk+RhzyceRFqThzhUkroYMxS3b3gAn_5KEyawMQ@mail.gmail.com>
+ <CAA7pwKNgDi9C8E+duwNA6H8MrT1nVEHkWAm4=JZp3GjFgAvZ1g@mail.gmail.com>
+ <1458926454.3855039.559662618.4F365498@webmail.messagingengine.com>
+ <CAA7pwKP90OTQLdOw4LHtGxZEBWhz3bZCam2E2-CHwA1p9CMdnA@mail.gmail.com>
+ <CAGGqMYR9LdCiqHfO5Rn5zY1G7_YKYjrEzkovTVVaFRXqQ7vpeQ@mail.gmail.com> <56F5FD42.5010701@oracle.com>
+From: Patrik Lundquist <patrik.lundquist@gmail.com>
+Date: Sat, 26 Mar 2016 12:51:15 +0100
+Message-ID: <CAA7pwKMnj5+pLoBPg1z3aRQZJ-kWJefSc+Cg6JrhGSzdW4WFnQ@mail.gmail.com>
+Subject: Re: Possible Raid Bug
+To: Stephen Williams <stephenw@veryfast.biz>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Henk Slager posted on Fri, 25 Mar 2016 15:35:52 +0100 as excerpted:
+So with the lessons learned:
 
-> For the original OP situation, with chunks all filled op with extents
-> and devices all filled up with chunks, 'integrating' a new 6TB drive
-> in an 4TB+3TG+2TB raid1 array could probably be done in a bit unusual
-> way in order to avoid immediate balancing needs:
+# mkfs.btrfs -m raid10 -d raid10 /dev/sdb /dev/sdc /dev/sdd /dev/sde
 
-> - 'plug-in' the 6TB
-> - btrfs-replace  4TB by 6TB
-> - btrfs fi resize max 6TB_devID
-> - btrfs-replace  2TB by 4TB
-> - btrfs fi resize max 4TB_devID
-> - 'unplug' the 2TB
+# mount /dev/sdb /mnt; dmesg | tail
+# touch /mnt/test1; sync; btrfs device usage /mnt
 
-Way to think outside the box, Henk!  I'll have to remember this as it's
-a very clever and rather useful method-tool to have in the ol' admin
-toolbox (aka brain). =:^)
+Only raid10 profiles.
 
-I only wish I had thought of it, as it sure seems clear... now that
-you described it!
+# echo 1 >/sys/block/sde/device/delete
 
-Greatly appreciated, in any case! =:^)
+We lost a disk.
 
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+# touch /mnt/test2; sync; dmesg | tail
 
+We've got write errors.
+
+# btrfs device usage /mnt
+
+No 'single' profiles because we haven't remounted yet.
+
+# reboot
+# wipefs -a /dev/sde; reboot
+
+# mount -o degraded /dev/sdb /mnt; dmesg | tail
+# btrfs device usage /mnt
+
+Still only raid10 profiles.
+
+# touch /mnt/test3; sync; btrfs device usage /mnt
+
+Now we've got 'single' profiles. Replace now or get hosed.
+
+# btrfs replace start -B 4 /dev/sde /mnt; dmesg | tail
+
+# btrfs device stats /mnt
+
+[/dev/sde].write_io_errs   0
+[/dev/sde].read_io_errs    0
+[/dev/sde].flush_io_errs   0
+[/dev/sde].corruption_errs 0
+[/dev/sde].generation_errs 0
+
+We didn't inherit the /dev/sde error count. Is that a bug?
+
+# btrfs balance start -dconvert=raid10,soft -mconvert=raid10,soft
+-sconvert=raid10,soft -vf /mnt; dmesg | tail
+
+# btrfs device usage /mnt
+
+Back to only 'raid10' profiles.
+
+# umount /mnt; mount /dev/sdb /mnt; dmesg | tail
+
+# btrfs device stats /mnt
+
+[/dev/sde].write_io_errs   11
+[/dev/sde].read_io_errs    0
+[/dev/sde].flush_io_errs   2
+[/dev/sde].corruption_errs 0
+[/dev/sde].generation_errs 0
+
+The old counters are back. That's good, but wtf?
+
+# btrfs device stats -z /dev/sde
+
+Give /dev/sde a clean bill of health. Won't warn when mounting again.

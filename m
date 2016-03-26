@@ -1,93 +1,132 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lf0-f44.google.com ([209.85.215.44]:33560 "EHLO
-	mail-lf0-f44.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751173AbcCZLvh (ORCPT
+Received: from mail-ig0-f196.google.com ([209.85.213.196]:34720 "EHLO
+	mail-ig0-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751263AbcCZMPj (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 26 Mar 2016 07:51:37 -0400
-Received: by mail-lf0-f44.google.com with SMTP id f67so13412127lfb.0
-        for <linux-btrfs@vger.kernel.org>; Sat, 26 Mar 2016 04:51:36 -0700 (PDT)
+	Sat, 26 Mar 2016 08:15:39 -0400
+Received: by mail-ig0-f196.google.com with SMTP id av4so4341673igc.1
+        for <linux-btrfs@vger.kernel.org>; Sat, 26 Mar 2016 05:15:38 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <56F5FD42.5010701@oracle.com>
-References: <1458906560.3786108.559411242.3678497C@webmail.messagingengine.com>
- <CAA7pwKNj+qEUk+RhzyceRFqThzhUkroYMxS3b3gAn_5KEyawMQ@mail.gmail.com>
- <CAA7pwKNgDi9C8E+duwNA6H8MrT1nVEHkWAm4=JZp3GjFgAvZ1g@mail.gmail.com>
- <1458926454.3855039.559662618.4F365498@webmail.messagingengine.com>
- <CAA7pwKP90OTQLdOw4LHtGxZEBWhz3bZCam2E2-CHwA1p9CMdnA@mail.gmail.com>
- <CAGGqMYR9LdCiqHfO5Rn5zY1G7_YKYjrEzkovTVVaFRXqQ7vpeQ@mail.gmail.com> <56F5FD42.5010701@oracle.com>
-From: Patrik Lundquist <patrik.lundquist@gmail.com>
-Date: Sat, 26 Mar 2016 12:51:15 +0100
-Message-ID: <CAA7pwKMnj5+pLoBPg1z3aRQZJ-kWJefSc+Cg6JrhGSzdW4WFnQ@mail.gmail.com>
-Subject: Re: Possible Raid Bug
-To: Stephen Williams <stephenw@veryfast.biz>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+In-Reply-To: <CAJCQCtTURu4OJbTfpKzQGAz4g32yaxToPaE9r8+xWt19AYJUig@mail.gmail.com>
+References: <CAAafysGTQucscr-8sTuT2c4BpdAovq0w9UbehRYDrSH71CLF-A@mail.gmail.com>
+	<CAPmG0jbXcqfB1jG7WFriMhicdsoZ+pbD_uUBu7v9YiD-ey=jDw@mail.gmail.com>
+	<CAAafysEhGJi5jYxHooV4h1tD3pqnc-brbB9k4prS9yK0P5PGdg@mail.gmail.com>
+	<CAAafysEuE0CXZ2fyY2ybnff3=XLEdGirCU9BJf9mhLE0xFTTrQ@mail.gmail.com>
+	<CAJCQCtQcX+U1cWz1j3Re5E-=ruPBY+zj0SFqB1jDibgeQniSVw@mail.gmail.com>
+	<CAAafysE+5tS=k9GFoKyqwK6dJtR4g3Eqairt1cGatCfCxooXeg@mail.gmail.com>
+	<CAJCQCtTURu4OJbTfpKzQGAz4g32yaxToPaE9r8+xWt19AYJUig@mail.gmail.com>
+Date: Sat, 26 Mar 2016 08:15:37 -0400
+Message-ID: <CAAafysFa8XZgKvKXQqcnZYR8DLbFe3STQA3Y++Wb71PPdf+iuw@mail.gmail.com>
+Subject: Re: RAID Assembly with Missing Empty Drive
+From: John Marrett <johnf@zioncluster.ca>
+To: Chris Murphy <lists@colorremedies.com>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-So with the lessons learned:
+Chris,
 
-# mkfs.btrfs -m raid10 -d raid10 /dev/sdb /dev/sdc /dev/sdd /dev/sde
+> Post 'btrfs fi usage' for the fileystem. That may give some insight
+> what's expected to be on all the missing drives.
 
-# mount /dev/sdb /mnt; dmesg | tail
-# touch /mnt/test1; sync; btrfs device usage /mnt
+Here's the information, I believe that the missing we see in most
+entries is the failed and absent drive, only the unallocated shows two
+missing entries, the 2.73 TB is the missing but empty device. I don't
+know if there's a way to prove it however.
 
-Only raid10 profiles.
+ubuntu@btrfs-recovery:~$ sudo btrfs fi usage /mnt
+Overall:
+    Device size:          15.45TiB
+    Device allocated:          12.12TiB
+    Device unallocated:           3.33TiB
+    Device missing:           5.46TiB
+    Used:              10.93TiB
+    Free (estimated):           2.25TiB    (min: 2.25TiB)
+    Data ratio:                  2.00
+    Metadata ratio:              2.00
+    Global reserve:         512.00MiB    (used: 0.00B)
 
-# echo 1 >/sys/block/sde/device/delete
+Data,RAID1: Size:6.04TiB, Used:5.46TiB
+   /dev/sda       2.61TiB
+   /dev/sdb       1.71TiB
+   /dev/sdc       1.72TiB
+   /dev/sdd       1.72TiB
+   /dev/sdf       1.71TiB
+   missing       2.61TiB
 
-We lost a disk.
+Metadata,RAID1: Size:14.00GiB, Used:11.59GiB
+   /dev/sda       8.00GiB
+   /dev/sdb       2.00GiB
+   /dev/sdc       3.00GiB
+   /dev/sdd       4.00GiB
+   /dev/sdf       3.00GiB
+   missing       8.00GiB
 
-# touch /mnt/test2; sync; dmesg | tail
+System,RAID1: Size:32.00MiB, Used:880.00KiB
+   /dev/sda      32.00MiB
+   missing      32.00MiB
 
-We've got write errors.
+Unallocated:
+   /dev/sda     111.49GiB
+   /dev/sdb      98.02GiB
+   /dev/sdc      98.02GiB
+   /dev/sdd      98.02GiB
+   /dev/sdf      98.02GiB
+   missing     111.49GiB
+   missing       2.73TiB
 
-# btrfs device usage /mnt
+I tried to remove missing, first remove missing only removes the
+2.73TiB missing entry seen above. All the other missing entries
+remain.
 
-No 'single' profiles because we haven't remounted yet.
+I can't "replace", it's not a valid command on my btrfs tools version;
+I upgraded btrfs this morning in order to have the btrfs fi usage
+command.
 
-# reboot
-# wipefs -a /dev/sde; reboot
+ubuntu@btrfs-recovery:~$ sudo btrfs version
+btrfs-progs v4.0
+ubuntu@btrfs-recovery:~$ dpkg -l | grep btrfs
+ii  btrfs-tools                        4.0-2
+ amd64        Checksumming Copy on Write Filesystem utilities
 
-# mount -o degraded /dev/sdb /mnt; dmesg | tail
-# btrfs device usage /mnt
+For those interested in my recovery techniques, here's how I rebuild
+the overlay loop devices, be careful, these scripts make certain
+assumptions that may not be accurate for your system:
 
-Still only raid10 profiles.
+On Client:
 
-# touch /mnt/test3; sync; btrfs device usage /mnt
+sudo umount /mnt
+sudo /etc/init.d/open-iscsi stop
 
-Now we've got 'single' profiles. Replace now or get hosed.
+On Server:
 
-# btrfs replace start -B 4 /dev/sde /mnt; dmesg | tail
+/etc/init.d/iscsitarget stop
+loop_devices=$(losetup -a | grep overlay | tr ":" " " | awk ' { printf
+$1 " " } END { print "" } ')
+for fn in /dev/mapper/sd??; do dmsetup remove $fn; done
+for ln in $loop_devices; do losetup -d $ln; done
+cd /home/ubuntu
+rm sd*overlay
 
-# btrfs device stats /mnt
+for device in sda3 sdb3 sdc1 sdd1 sde1 sdf1; do
+  dev=/dev/$device
+  ovl=/home/ubuntu/$device-overlay
+  truncate -s512M $ovl
+  newdevname=$device
+  size=$(blockdev --getsize "$dev")
+  loop=$(losetup -f --show -- "$ovl")
+  echo Setting up loop for $dev using overlay $ovl on loop $loop for
+target $newdevname
+  printf '%s\n' "0 $size snapshot $dev $loop P 8" | dmsetup create "$newdevname"
+done
 
-[/dev/sde].write_io_errs   0
-[/dev/sde].read_io_errs    0
-[/dev/sde].flush_io_errs   0
-[/dev/sde].corruption_errs 0
-[/dev/sde].generation_errs 0
+Start the targets
 
-We didn't inherit the /dev/sde error count. Is that a bug?
+/etc/init.d/iscsitarget start
 
-# btrfs balance start -dconvert=raid10,soft -mconvert=raid10,soft
--sconvert=raid10,soft -vf /mnt; dmesg | tail
+On Client:
 
-# btrfs device usage /mnt
+sudo /etc/init.d/open-iscsi start
 
-Back to only 'raid10' profiles.
-
-# umount /mnt; mount /dev/sdb /mnt; dmesg | tail
-
-# btrfs device stats /mnt
-
-[/dev/sde].write_io_errs   11
-[/dev/sde].read_io_errs    0
-[/dev/sde].flush_io_errs   2
-[/dev/sde].corruption_errs 0
-[/dev/sde].generation_errs 0
-
-The old counters are back. That's good, but wtf?
-
-# btrfs device stats -z /dev/sde
-
-Give /dev/sde a clean bill of health. Won't warn when mounting again.
+-JohnF

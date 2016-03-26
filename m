@@ -1,128 +1,125 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:16135 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1750724AbcCWEQ1 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 23 Mar 2016 00:16:27 -0400
+Received: from plane.gmane.org ([80.91.229.3]:45924 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752874AbcCZTbF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 26 Mar 2016 15:31:05 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+	id 1ajtvI-0002D8-GN
+	for linux-btrfs@vger.kernel.org; Sat, 26 Mar 2016 20:31:00 +0100
+Received: from ip5f5ae008.dynamic.kabel-deutschland.de ([95.90.224.8])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sat, 26 Mar 2016 20:31:00 +0100
+Received: from hurikhan77 by ip5f5ae008.dynamic.kabel-deutschland.de with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sat, 26 Mar 2016 20:31:00 +0100
+To: linux-btrfs@vger.kernel.org
+From: Kai Krakow <hurikhan77@gmail.com>
 Subject: Re: csum errors in VirtualBox VDI files
-To: Kai Krakow <hurikhan77@gmail.com>, <linux-btrfs@vger.kernel.org>
+Date: Sat, 26 Mar 2016 20:30:35 +0100
+Message-ID: <20160326203035.4b876a04@jupiter.sol.kaishome.de>
 References: <20160322090342.595fefac@jupiter.sol.kaishome.de>
- <56F1068E.6050806@cn.fujitsu.com>
- <20160322194854.161e9c4c@jupiter.sol.kaishome.de>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <56F21898.3020101@cn.fujitsu.com>
-Date: Wed, 23 Mar 2016 12:16:24 +0800
-MIME-Version: 1.0
-In-Reply-To: <20160322194854.161e9c4c@jupiter.sol.kaishome.de>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+	<56F1068E.6050806@cn.fujitsu.com>
+	<20160322194854.161e9c4c@jupiter.sol.kaishome.de>
+	<56F21898.3020101@cn.fujitsu.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=US-ASCII
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Am Wed, 23 Mar 2016 12:16:24 +0800
+schrieb Qu Wenruo <quwenruo@cn.fujitsu.com>:
 
+> Kai Krakow wrote on 2016/03/22 19:48 +0100:
+> > Am Tue, 22 Mar 2016 16:47:10 +0800
+> > schrieb Qu Wenruo <quwenruo@cn.fujitsu.com>:
+> >  
+> >> Hi,
+> >>
+> >> Kai Krakow wrote on 2016/03/22 09:03 +0100:  
+>  [...]  
+> >>
+> >> When it goes RO, it must have some warning in kernel log.
+> >> Would you please paste the kernel log?  
+> >
+> > Apparently, that system does not boot now due to errors in bcache
+> > b-tree. That being that, it may well be some bcache error and not
+> > btrfs' fault. Apparently I couldn't catch the output, I've been in a
+> > hurry. It said "write error" and had some backtrace. I will come to
+> > this back later.
+> >
+> > Let's go to the system I currently care about (that one with the
+> > always breaking VDI file):
+> >  
+>  [...]  
+> >> Does btrfs check report anything wrong?  
+> >
+> > After the error occured?
+> >
+> > Yes, some text about the extent being compressed and btrfs repair
+> > doesn't currently handle that case (I tried --repair as I'm having a
+> > backup). I simply decided not to investigate that further at that
+> > point but delete and restore the affected file from backup.
+> > However, this is the message from dmesg (tho, I didn't catch the
+> > backtrace):
+> >
+> > btrfs_run_delayed_refs:2927: errno=-17 Object already exists  
+> 
+> That's nice, at least we have some clue.
+> 
+> It's almost sure, it's a bug either in btrfs kernel which doesn't
+> handle delayed refs well(low possibility), or, corrupted fs which
+> create something kernel can't handle(I bet that's the case).
 
-Kai Krakow wrote on 2016/03/22 19:48 +0100:
-> Am Tue, 22 Mar 2016 16:47:10 +0800
-> schrieb Qu Wenruo <quwenruo@cn.fujitsu.com>:
->
->> Hi,
->>
->> Kai Krakow wrote on 2016/03/22 09:03 +0100:
->>> Hello!
->>>
->>> Since one of the last kernel updates (I don't know which exactly),
->>> I'm experiencing csum errors within VDI files when running
->>> VirtualBox. A side effect of this is, as soon as dmesg shows these
->>> errors, commands like "du" and "df" hang until reboot.
->>>
->>> I've now restored the file from backup but it happens over and over
->>> again.
->>>
->>> On another machine I'm also seeing errors with big files in the
->>> following scenario (apparently an older kernel, 4.1.x I afair):
->>>
->>> # ntfsclone --save /dev/md126p2 -o rescue.ntfs.img
->>>                      ^ big NTFS partition   ^ file on btrfs
->>>
->>> results in a write error and the file system goes read-only.
->>
->> When it goes RO, it must have some warning in kernel log.
->> Would you please paste the kernel log?
->
-> Apparently, that system does not boot now due to errors in bcache
-> b-tree. That being that, it may well be some bcache error and not
-> btrfs' fault. Apparently I couldn't catch the output, I've been in a
-> hurry. It said "write error" and had some backtrace. I will come to
-> this back later.
->
-> Let's go to the system I currently care about (that one with the
-> always breaking VDI file):
->
->>> Both systems have in common they are using btrfs on bcache with
->>> compress=lzo,autodefrag,nossd,discard (mraid=1,draid=0 and
->>> mraid=1,draid=single).
->>>
->>> The system mentioned first is running Kernel 4.5.0 with Gentoo
->>> patch-set. I upgraded from the last 4.4.x kernel when I first
->>> experienced this problem. The first time the problem resulted in a
->>> duplicate extent which btrfsck wasn't able to fix, that's when I
->>> first restored from backup. But now I'm getting csum errors in this
->>> file over a over again, plus when rsync has run for backup, the
->>> system no longer responds to "du" and "df" commands - it just hangs.
->>>
->>> Known problem? Does it help if I send debug info? If so, please
->>> instruct.
->>>
->> Does btrfs check report anything wrong?
->
-> After the error occured?
->
-> Yes, some text about the extent being compressed and btrfs repair
-> doesn't currently handle that case (I tried --repair as I'm having a
-> backup). I simply decided not to investigate that further at that point
-> but delete and restore the affected file from backup. However, this is
-> the message from dmesg (tho, I didn't catch the backtrace):
->
-> btrfs_run_delayed_refs:2927: errno=-17 Object already exists
+[kernel 4.5.0 gentoo, btrfs-progs 4.4.1]
 
-That's nice, at least we have some clue.
+Well, this time it hit me on the USB backup drive which uses no bcache
+and no other fancy options except compress-force=zlib. Apparently, I've
+only got a (real) screenshot which I'm going to link here:
 
-It's almost sure, it's a bug either in btrfs kernel which doesn't handle 
-delayed refs well(low possibility), or, corrupted fs which create 
-something kernel can't handle(I bet that's the case).
+https://www.dropbox.com/s/9qbc7np23y8lrii/IMG_20160326_200033.jpg?dl=0
 
->
-> After this, the system went RO and I had to reboot. I ran btrfs check
-> and it told about a duplicate extent.
+The same drive has no problems except "bad metadata crossing stripe
+boundary" - but a lot of them. This drive was never converted, it was
+freshly generated several months ago.
 
-If output of btrfsck can be posted, it would help a lot to locate the 
-problem and enhance btrfsck.
+---8<---
+$ sudo btrfsck /dev/disk/by-label/usb-backup 
+Checking filesystem on /dev/disk/by-label/usb-backup
+UUID: 1318ec21-c421-4e36-a44a-7be3d41f9c3f
+checking extents
+bad metadata [156041216, 156057600) crossing stripe boundary
+bad metadata [181403648, 181420032) crossing stripe boundary
+bad metadata [392167424, 392183808) crossing stripe boundary
+bad metadata [783482880, 783499264) crossing stripe boundary
+bad metadata [784924672, 784941056) crossing stripe boundary
+bad metadata [130151612416, 130151628800) crossing stripe boundary
+bad metadata [162826813440, 162826829824) crossing stripe boundary
+bad metadata [162927083520, 162927099904) crossing stripe boundary
+bad metadata [619740659712, 619740676096) crossing stripe boundary
+bad metadata [619781947392, 619781963776) crossing stripe boundary
+bad metadata [619795644416, 619795660800) crossing stripe boundary
+bad metadata [619816091648, 619816108032) crossing stripe boundary
+bad metadata [620011388928, 620011405312) crossing stripe boundary
+bad metadata [890992459776, 890992476160) crossing stripe boundary
+bad metadata [891022737408, 891022753792) crossing stripe boundary
+bad metadata [891101773824, 891101790208) crossing stripe boundary
+bad metadata [891301199872, 891301216256) crossing stripe boundary
+[...]
+--->8---
 
-> I identified the file (using
-> btrfs inspect and the inode number) being the VDI file, and restored it.
-> Afterwards, I upgraded from latest 4.4 to 4.5. Currently, I'm now
-> watching closer since this incident, and the file becomes damaged
-> without any message in the kernel log when doing some more than usual
-> IO in VirtualBox. When my backup script then runs over the file, I get
-> errors about missing csums - the block is not readable.
+My main drive (which this thread was about) has a huge amount of
+different problems according to btrfsck. Repair doesn't work: it says
+something about overlapping extents and that it needs a careful
+thought. I wanted to catch the output when the above problem occured. So
+I'd like to defer that until later and first fix my backup drive. If I
+lose my main drive, I simply restore from backup. It is very old anyway
+(still using 4k node size). Only downside it takes 24+ hours to restore.
 
-If no other problem reported by btrfsck after your fix, --init-csum 
-would handle such case.
+-- 
+Regards,
+Kai
 
-> I now ran
-> ddrescue, and replaced the file to get a current and slightly damaged
-> VDI image back (my backup uses time rotation, so no problem). But
-> running chkdsk in VirtualBox damages the VDI again.
->
-> Regarding the other error on the other machine, I'm not completely
-> convinced bcache ain't involved in this problem.
->
-> As soon as I "produced" csum errors again, I'll run btrfs check. Or
-> should I do it now without forcing the csum error to occur?
->
->
-If it's possible, btrfsck now with all its output posted is recommended.
-
-Thanks,
-Qu
-
+Replies to list-only preferred.
 

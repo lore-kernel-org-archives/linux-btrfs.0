@@ -1,78 +1,139 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:13726 "EHLO
-	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1753925AbcCYR0I (ORCPT
+Received: from userp1040.oracle.com ([156.151.31.81]:40587 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752649AbcCZCBi (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 25 Mar 2016 13:26:08 -0400
-Received: from pps.filterd (m0001255.ppops.net [127.0.0.1])
-	by mx0b-00082601.pphosted.com (8.16.0.11/8.16.0.11) with SMTP id u2PHKUF9021303
-	for <linux-btrfs@vger.kernel.org>; Fri, 25 Mar 2016 10:26:07 -0700
-Received: from mail.thefacebook.com ([199.201.64.23])
-	by mx0b-00082601.pphosted.com with ESMTP id 21vva6jmwh-1
-	(version=TLSv1 cipher=AES128-SHA bits=128 verify=NOT)
-	for <linux-btrfs@vger.kernel.org>; Fri, 25 Mar 2016 10:26:06 -0700
-From: Josef Bacik <jbacik@fb.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH 00/14] Enospc rework
-Date: Fri, 25 Mar 2016 13:25:46 -0400
-Message-ID: <1458926760-17563-1-git-send-email-jbacik@fb.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+	Fri, 25 Mar 2016 22:01:38 -0400
+Received: from aserv0021.oracle.com (aserv0021.oracle.com [141.146.126.233])
+	by userp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id u2Q21bZT003242
+	(version=TLSv1 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Sat, 26 Mar 2016 02:01:37 GMT
+Received: from aserv0121.oracle.com (aserv0121.oracle.com [141.146.126.235])
+	by aserv0021.oracle.com (8.13.8/8.13.8) with ESMTP id u2Q21aon007046
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Sat, 26 Mar 2016 02:01:37 GMT
+Received: from abhmp0012.oracle.com (abhmp0012.oracle.com [141.146.116.18])
+	by aserv0121.oracle.com (8.13.8/8.13.8) with ESMTP id u2Q21aAi018083
+	for <linux-btrfs@vger.kernel.org>; Sat, 26 Mar 2016 02:01:36 GMT
+From: Ashish Samant <ashish.samant@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH] btrfs: Cleanup compress_file_range()
+Date: Fri, 25 Mar 2016 19:01:33 -0700
+Message-Id: <1458957693-1347-1-git-send-email-ashish.samant@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-1) Huge latency spikes.  One guy starts flushing, he doesn't wake up until the
-flushers are finished doing work and then checks to see if he can continue.
-Meanwhile everybody is backed up waiting for that guy to finish getting his
-reservation.
+Remove unnecessary checks in compress_file_range().
 
-2) The flushers flush everything.  They have no idea when to stop, so it just
-flushes all of delalloc or all of the delayed inodes.  At first they try to
-flush a little bit and hope they can get away with it, but the tighter you get
-on space the more it becomes flush the world and hope for the best.
+Signed-off-by: Ashish Samant <ashish.samant@oracle.com>
+---
+ fs/btrfs/inode.c | 79 +++++++++++++++++++++++++++-----------------------------
+ 1 file changed, 38 insertions(+), 41 deletions(-)
 
-3) Some of the flushing isn't async, yay more latency.
-
-The new approach introduces the idea of tickets for reservations.  If you cannot
-make your reservation immediately you initialize a ticket with how much space
-you need and you put yourselve on a list.  If you cannot flush anything (things
-like dirty'ing an inode) then you add yourself to the priority queue and wait
-for a little bit.  If you can flush then you add yourself to the normal queue
-and wait for flushing to happen.  Each ticket has it's own waitqueue so as we
-add space back into the system we can satisfy reservations immediately and
-immediately wake the waiters back up, which greatly reduces latencies.
-
-I've been testing these patches for a while and will be building on them from
-here, but the results are pretty excellent so far.  In the fs_mark test with all
-metadata here are the results (on an empty file system)
-
-Without Patch
-Average Files/sec:     212897.2
-p50 Files/sec: 207495
-p90 Files/sec: 196709
-p99 Files/sec: 189682
-
-Creat Max Latency in usec
-p50: 264665
-p90: 456347.2
-p99: 659489.32
-max: 1001413
-
-With Patch
-Average Files/sec:     238613.4  
-p50 Files/sec: 235764  
-p90 Files/sec: 223308  
-p99 Files/sec: 216291 
-
-Creat Max Latency in usec
-p50: 206771.5
-p90: 355430.6
-p99: 469634.98
-max: 512389
-
-So as you can see there is quite a bit better latency and better throughput
-overall.  There will be more work as I test the worst case scenarios and get
-the worst latencies down further, but this is the initial work.  Thanks,
-
-Josef
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 41a5688..a528ce7 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -581,13 +581,30 @@ cont:
+ 		 * win, compare the page count read with the blocks on disk
+ 		 */
+ 		total_in = ALIGN(total_in, PAGE_CACHE_SIZE);
+-		if (total_compressed >= total_in) {
++		if (total_compressed >= total_in)
+ 			will_compress = 0;
+-		} else {
++		else {
+ 			num_bytes = total_in;
++			*num_added += 1;
++
++			/* the async work queues will take care of doing actual
++			 * allocation on disk for these compressed pages,
++			 * and will submit them to the elevator.
++			 */
++			add_async_extent(async_cow, start, num_bytes,
++					total_compressed, pages, nr_pages_ret,
++					compress_type);
++
++			if (start + num_bytes < end) {
++				start += num_bytes;
++				pages = NULL;
++				cond_resched();
++				goto again;
++			}
++			return;
+ 		}
+ 	}
+-	if (!will_compress && pages) {
++	if (pages) {
+ 		/*
+ 		 * the compression code ran but failed to make things smaller,
+ 		 * free any pages it allocated and our page pointer array
+@@ -603,47 +620,27 @@ cont:
+ 
+ 		/* flag the file so we don't compress in the future */
+ 		if (!btrfs_test_opt(root, FORCE_COMPRESS) &&
+-		    !(BTRFS_I(inode)->force_compress)) {
++		    !(BTRFS_I(inode)->force_compress))
+ 			BTRFS_I(inode)->flags |= BTRFS_INODE_NOCOMPRESS;
+-		}
+ 	}
+-	if (will_compress) {
+-		*num_added += 1;
+-
+-		/* the async work queues will take care of doing actual
+-		 * allocation on disk for these compressed pages,
+-		 * and will submit them to the elevator.
+-		 */
+-		add_async_extent(async_cow, start, num_bytes,
+-				 total_compressed, pages, nr_pages_ret,
+-				 compress_type);
+-
+-		if (start + num_bytes < end) {
+-			start += num_bytes;
+-			pages = NULL;
+-			cond_resched();
+-			goto again;
+-		}
+-	} else {
+ cleanup_and_bail_uncompressed:
+-		/*
+-		 * No compression, but we still need to write the pages in
+-		 * the file we've been given so far.  redirty the locked
+-		 * page if it corresponds to our extent and set things up
+-		 * for the async work queue to run cow_file_range to do
+-		 * the normal delalloc dance
+-		 */
+-		if (page_offset(locked_page) >= start &&
+-		    page_offset(locked_page) <= end) {
+-			__set_page_dirty_nobuffers(locked_page);
+-			/* unlocked later on in the async handlers */
+-		}
+-		if (redirty)
+-			extent_range_redirty_for_io(inode, start, end);
+-		add_async_extent(async_cow, start, end - start + 1,
+-				 0, NULL, 0, BTRFS_COMPRESS_NONE);
+-		*num_added += 1;
+-	}
++	/*
++	 * No compression, but we still need to write the pages in
++	 * the file we've been given so far.  redirty the locked
++	 * page if it corresponds to our extent and set things up
++	 * for the async work queue to run cow_file_range to do
++	 * the normal delalloc dance
++	 */
++	if (page_offset(locked_page) >= start &&
++	    page_offset(locked_page) <= end)
++		__set_page_dirty_nobuffers(locked_page);
++		/* unlocked later on in the async handlers */
++
++	if (redirty)
++		extent_range_redirty_for_io(inode, start, end);
++	add_async_extent(async_cow, start, end - start + 1, 0, NULL, 0,
++			 BTRFS_COMPRESS_NONE);
++	*num_added += 1;
+ 
+ 	return;
+ 
+-- 
+1.9.1
 

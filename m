@@ -1,109 +1,94 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.21]:55264 "EHLO mout.gmx.net"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751640AbcC0OXn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 27 Mar 2016 10:23:43 -0400
-Subject: Re: scrub: Tree block spanning stripes, ignored
-To: Ivan P <chrnosphered@gmail.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-References: <CADzmB20WugZAaeOOBVKq6L+AuPr3Epr4WFG+LoQROaKj11r0Qg@mail.gmail.com>
- <CADzmB21y=2bpD6OyRgjCA5vxL3tu9yQ76a08MTQWWG5uXsoLoA@mail.gmail.com>
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <56F7ECE7.9070507@gmx.com>
-Date: Sun, 27 Mar 2016 22:23:35 +0800
+Received: from mail-io0-f196.google.com ([209.85.223.196]:36325 "EHLO
+	mail-io0-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751921AbcC0O7T (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 27 Mar 2016 10:59:19 -0400
+Received: by mail-io0-f196.google.com with SMTP id e3so5341775ioa.3
+        for <linux-btrfs@vger.kernel.org>; Sun, 27 Mar 2016 07:59:18 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <CADzmB21y=2bpD6OyRgjCA5vxL3tu9yQ76a08MTQWWG5uXsoLoA@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+In-Reply-To: <CAAafysGfah-O+CaX0eHKvzsyR52zCW5c6PExajOz16J8XpLzGQ@mail.gmail.com>
+References: <CAAafysGTQucscr-8sTuT2c4BpdAovq0w9UbehRYDrSH71CLF-A@mail.gmail.com>
+	<CAPmG0jbXcqfB1jG7WFriMhicdsoZ+pbD_uUBu7v9YiD-ey=jDw@mail.gmail.com>
+	<CAAafysEhGJi5jYxHooV4h1tD3pqnc-brbB9k4prS9yK0P5PGdg@mail.gmail.com>
+	<CAAafysEuE0CXZ2fyY2ybnff3=XLEdGirCU9BJf9mhLE0xFTTrQ@mail.gmail.com>
+	<CAJCQCtQcX+U1cWz1j3Re5E-=ruPBY+zj0SFqB1jDibgeQniSVw@mail.gmail.com>
+	<CAAafysE+5tS=k9GFoKyqwK6dJtR4g3Eqairt1cGatCfCxooXeg@mail.gmail.com>
+	<CAJCQCtTURu4OJbTfpKzQGAz4g32yaxToPaE9r8+xWt19AYJUig@mail.gmail.com>
+	<CAAafysFa8XZgKvKXQqcnZYR8DLbFe3STQA3Y++Wb71PPdf+iuw@mail.gmail.com>
+	<CAJCQCtQwc4FDcTPq2mfN7wfUNp9QWEq+XTJA+FEyY4hWrHvHQQ@mail.gmail.com>
+	<CAAafysHw3ws3HVgyfN6YVwFN5pru_kuajKev6sQN6+_uprGiRQ@mail.gmail.com>
+	<CAJCQCtQzu2X16L_jp7k-Sy8=+ScCekoHEACajcATX_-vMvDwUA@mail.gmail.com>
+	<CAAafysGfah-O+CaX0eHKvzsyR52zCW5c6PExajOz16J8XpLzGQ@mail.gmail.com>
+Date: Sun, 27 Mar 2016 10:59:17 -0400
+Message-ID: <CAAafysEua=5bDFa=-_Co4YG+LU_kj3B4e7HnfSrE0jox5cNmhg@mail.gmail.com>
+Subject: Re: RAID Assembly with Missing Empty Drive
+From: John Marrett <johnf@zioncluster.ca>
+To: Chris Murphy <lists@colorremedies.com>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
-
-On 03/27/2016 05:54 PM, Ivan P wrote:
-> Read the info on the wiki, here's the rest of the requested information:
+>> If you do want to use a newer one, I'd build against kernel.org, just
+>> because the developers only use that base. And use 4.4.6 or 4.5.
 >
-> # uname -r
-> 4.4.5-1-ARCH
->
-> # btrfs fi show
-> Label: 'ArchVault'  uuid: cd8a92b6-c5b5-4b19-b5e6-a839828d12d8
->         Total devices 1 FS bytes used 2.10GiB
->         devid    1 size 14.92GiB used 4.02GiB path /dev/sdc1
->
-> Label: 'Vault'  uuid: 013cda95-8aab-4cb2-acdd-2f0f78036e02
->         Total devices 2 FS bytes used 800.72GiB
->         devid    1 size 931.51GiB used 808.01GiB path /dev/sda
->         devid    2 size 931.51GiB used 808.01GiB path /dev/sdb
->
-> # btrfs fi df /mnt/vault/
-> Data, RAID1: total=806.00GiB, used=799.81GiB
-> System, RAID1: total=8.00MiB, used=128.00KiB
-> Metadata, RAID1: total=2.00GiB, used=936.20MiB
-> GlobalReserve, single: total=320.00MiB, used=0.00B
->
-> On Fri, Mar 25, 2016 at 3:16 PM, Ivan P <chrnosphered@gmail.com> wrote:
->> Hello,
->>
->> using kernel  4.4.5 and btrfs-progs 4.4.1, I today ran a scrub on my
->> 2x1Tb btrfs raid1 array and it finished with 36 unrecoverable errors
->> [1], all blaming the treeblock 741942071296. Running "btrfs check
->> --readonly" on one of the devices lists that extent as corrupted [2].
->>
->> How can I recover, how much did I really lose, and how can I prevent
->> it from happening again?
->> If you need me to provide more info, do tell.
->>
->> [1] http://cwillu.com:8080/188.110.141.36/1
+> At this point I could remove the overlays and recover the filesystem
+> permanently, however I'm also deeply indebted to the btrfs community
+> and want to give anything I can back. I've built (but not installed ;)
+> ) a straight kernel.org 4.5 w/my missing device check patch applied.
+> Is there any interest or value in attempting to switch to this kernel,
+> add/delete a device and see if I experience the same errors as before
+> I tried replace? What information should I gather if I do this?
 
-This message itself is normal, it just means a tree block is crossing 
-64K stripe boundary.
-And due to scrub limit, it can check if it's good or bad.
-But....
+I've built and installed a 4.5 straight from kernel.org with my patch.
 
->> [2] http://pastebin.com/xA5zezqw
-This one is much more meaningful, showing several strange bugs.
+I encountered the same errors in recovery when I use add/delete
+instead of using replace, here's the sequence of commands:
 
-1. corrupt extent record: key 741942071296 168 1114112
-This means, this is a EXTENT_ITEM(168), and according to the offset, it 
-means the length of the extent is, 1088K, definitely not a valid tree 
-block size.
+ubuntu@btrfs-recovery:~$ sudo mount -o degraded,ro /dev/sda /mnt
+ubuntu@btrfs-recovery:~$ sudo mount -o remount,rw /mnt
+# Remove first empty device
+ubuntu@btrfs-recovery:~$ sudo btrfs device delete missing /mnt
+# Add blank drive
+ubuntu@btrfs-recovery:~$ sudo btrfs device add /dev/sde /mnt
+# Remove second missing device with data
+ubuntu@btrfs-recovery:~$ sudo btrfs device delete missing /mnt
 
-But according to [1], kernel think it's a tree block, which is quite 
-strange.
-Normally, such mismatch only happens in fs converted from ext*.
+And the resulting error:
 
-2. Backref 741942071296 root 5 owner 71723 offset 2589392896 num_refs 0 
-not found in extent tree
+ubuntu@btrfs-recovery:~$ sudo btrfs device delete missing /mnt
+ERROR: error removing the device 'missing' - Input/output error
 
-num_refs 0, this is also strange, normal backref won't have a zero 
-refrence number.
+Here's what we see in dmesg after deleting the missing device:
 
-3. bad metadata [741942071296, 741943185408) crossing stripe boundary
-It could be a false warning fixed in latest btrfsck.
-But you're using 4.4.1, so I think that's the problem.
+[  588.231341] BTRFS info (device sdd): relocating block group
+10560347308032 flags 17
+[  664.306122] BTRFS warning (device sdd): csum failed ino 257 off
+695730176 csum 2566472073 expected csum 2706136415
+[  664.306164] BTRFS warning (device sdd): csum failed ino 257 off
+695734272 csum 2566472073 expected csum 2558511802
+[  664.306182] BTRFS warning (device sdd): csum failed ino 257 off
+695746560 csum 2566472073 expected csum 3360772439
+[  664.306191] BTRFS warning (device sdd): csum failed ino 257 off
+695750656 csum 2566472073 expected csum 1205516886
+[  664.344179] BTRFS warning (device sdd): csum failed ino 257 off
+695730176 csum 2566472073 expected csum 2706136415
+[  664.344213] BTRFS warning (device sdd): csum failed ino 257 off
+695734272 csum 2566472073 expected csum 2558511802
+[  664.344224] BTRFS warning (device sdd): csum failed ino 257 off
+695746560 csum 2566472073 expected csum 3360772439
+[  664.344233] BTRFS warning (device sdd): csum failed ino 257 off
+695750656 csum 2566472073 expected csum 1205516886
+[  664.344684] BTRFS warning (device sdd): csum failed ino 257 off
+695730176 csum 2566472073 expected csum 2706136415
+[  664.344693] BTRFS warning (device sdd): csum failed ino 257 off
+695734272 csum 2566472073 expected csum 2558511802
 
-4. bad extent [741942071296, 741943185408), type mismatch with chunk
-This seems to explain the problem, a data extent appears in a metadata 
-chunk.
-It seems that you're really using converted btrfs.
+Is there anything of value I can do here to help address this possible
+issue in btrfs itself, or should I remove the overlays, replace the
+device and move on?
 
-If so, just roll it back to ext*. Current btrfs-convert has known bug 
-but fix is still under review.
+Please let me know,
 
-If want to use btrfs, use a newly created one instead of btrfs-convert.
-
-Thanks,
-Qu
-
->>
->> Regards,
->> Soukyuu
->>
->> P.S.: please add me to CC when replying as I did not subscribe to the
->> mailing list. Majordomo won't let me use my hotmail address and I
->> don't want that much traffic on this address.
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
+-JohnF

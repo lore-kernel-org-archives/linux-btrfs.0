@@ -1,78 +1,109 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mondschein.lichtvoll.de ([194.150.191.11]:60574 "EHLO
-	mail.lichtvoll.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751881AbcC0MPh convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 27 Mar 2016 08:15:37 -0400
-From: Martin Steigerwald <martin@lichtvoll.de>
-To: Marc Haber <mh+linux-btrfs@zugschlus.de>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Subject: Re: New file system with same issue (was: Again, no space left on device while rebalancing and recipe doesnt work)
-Date: Sun, 27 Mar 2016 14:15:34 +0200
-Message-ID: <4486208.AzVcMjpYiB@merkaba>
-In-Reply-To: <20160315070722.GK2334@torres.zugschlus.de>
-References: <20160227211450.GS26042@torres.zugschlus.de> <CAPmG0jYfEnvLEHskv8uy+FjnRtv4yY8HA7bqMqZ8ScqVuAHatA@mail.gmail.com> <20160315070722.GK2334@torres.zugschlus.de>
+Received: from mout.gmx.net ([212.227.17.21]:55264 "EHLO mout.gmx.net"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751640AbcC0OXn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 27 Mar 2016 10:23:43 -0400
+Subject: Re: scrub: Tree block spanning stripes, ignored
+To: Ivan P <chrnosphered@gmail.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+References: <CADzmB20WugZAaeOOBVKq6L+AuPr3Epr4WFG+LoQROaKj11r0Qg@mail.gmail.com>
+ <CADzmB21y=2bpD6OyRgjCA5vxL3tu9yQ76a08MTQWWG5uXsoLoA@mail.gmail.com>
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Message-ID: <56F7ECE7.9070507@gmx.com>
+Date: Sun, 27 Mar 2016 22:23:35 +0800
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
+In-Reply-To: <CADzmB21y=2bpD6OyRgjCA5vxL3tu9yQ76a08MTQWWG5uXsoLoA@mail.gmail.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Dienstag, 15. März 2016 08:07:22 CEST Marc Haber wrote:
-> On Mon, Mar 14, 2016 at 09:39:51PM +0100, Henk Slager wrote:
-> > >> BTW, I restored and mounted your 20160307-fanbtr-image:
-> > >> 
-> > >> [266169.207952] BTRFS: device label fanbtr devid 1 transid 22215732
-> > >> /dev/loop0 [266203.734804] BTRFS info (device loop0): disk space
-> > >> caching is enabled [266203.734806] BTRFS: has skinny extents
-> > >> [266204.022175] BTRFS: checking UUID tree
-> > >> [266239.407249] attempt to access beyond end of device
-> > >> [266239.407252] loop0: rw=1073, want=715202688, limit=705760000
-> > >> [266239.407254] BTRFS error (device loop0): bdev /dev/loop0 errs: wr
-> > >> 1, rd 0, flush 0, corrupt 0, gen 0
-> > >> [266239.407272] attempt to access beyond end of device
-> > >> .. and 16 more
-> > >> 
-> > >> As a quick fix/workaround, I truncated the image to 1T
-> > > 
-> > > The original fs was 417 GiB in size. What size does the image claim?
-> > 
-> > ls -alFh  of the restored image showed 337G I remember.
-> > btrfs fi us showed also a number over 400G, I don't have the
-> > files/loopdev anymore.
-> 
-> sounds legit.
-> 
-> > It could some side effect of btrfs-image, I only have used it for
-> > multi-device, where dev id's are ignore, but total image size did not
-> > lead to problems.
-> 
-> The original "ofanbtr" seems to have a problem, since btrfs check
-> 
-> /media/tempdisk says:
-> > > [10/509]mh@fan:~$ sudo btrfs check /media/tempdisk/
-> > > Superblock bytenr is larger than device size
-> > > Couldn't open file system
-> > > [11/509]mh@fan:~$
-> > > 
-> > > Can this be fixed?
-> > 
-> > What I would do in order to fix it, is resize the fs to let's say
-> > 190GiB. That should write correct values to the superblocks I /hope/.
-> > And then resize back to max.
-> 
-> It doesn't:
-> [20/518]mh@fan:~$ sudo btrfs filesystem resize 300G /media/tempdisk/
-> Resize '/media/tempdisk/' of '300G'
-> [22/520]mh@fan:~$ sudo btrfs check /media/tempdisk/
-> Superblock bytenr is larger than device size
-> Couldn't open file system
-> [23/521]mh@fan:~$ df -h
 
-Are you trying the check on the *mounted* filesystem? "media/tempdisk" appears 
-to be a mount point, not a device file.
 
-Unmount it and use the / one device file of the filesystem to check.
+On 03/27/2016 05:54 PM, Ivan P wrote:
+> Read the info on the wiki, here's the rest of the requested information:
+>
+> # uname -r
+> 4.4.5-1-ARCH
+>
+> # btrfs fi show
+> Label: 'ArchVault'  uuid: cd8a92b6-c5b5-4b19-b5e6-a839828d12d8
+>         Total devices 1 FS bytes used 2.10GiB
+>         devid    1 size 14.92GiB used 4.02GiB path /dev/sdc1
+>
+> Label: 'Vault'  uuid: 013cda95-8aab-4cb2-acdd-2f0f78036e02
+>         Total devices 2 FS bytes used 800.72GiB
+>         devid    1 size 931.51GiB used 808.01GiB path /dev/sda
+>         devid    2 size 931.51GiB used 808.01GiB path /dev/sdb
+>
+> # btrfs fi df /mnt/vault/
+> Data, RAID1: total=806.00GiB, used=799.81GiB
+> System, RAID1: total=8.00MiB, used=128.00KiB
+> Metadata, RAID1: total=2.00GiB, used=936.20MiB
+> GlobalReserve, single: total=320.00MiB, used=0.00B
+>
+> On Fri, Mar 25, 2016 at 3:16 PM, Ivan P <chrnosphered@gmail.com> wrote:
+>> Hello,
+>>
+>> using kernel  4.4.5 and btrfs-progs 4.4.1, I today ran a scrub on my
+>> 2x1Tb btrfs raid1 array and it finished with 36 unrecoverable errors
+>> [1], all blaming the treeblock 741942071296. Running "btrfs check
+>> --readonly" on one of the devices lists that extent as corrupted [2].
+>>
+>> How can I recover, how much did I really lose, and how can I prevent
+>> it from happening again?
+>> If you need me to provide more info, do tell.
+>>
+>> [1] http://cwillu.com:8080/188.110.141.36/1
+
+This message itself is normal, it just means a tree block is crossing 
+64K stripe boundary.
+And due to scrub limit, it can check if it's good or bad.
+But....
+
+>> [2] http://pastebin.com/xA5zezqw
+This one is much more meaningful, showing several strange bugs.
+
+1. corrupt extent record: key 741942071296 168 1114112
+This means, this is a EXTENT_ITEM(168), and according to the offset, it 
+means the length of the extent is, 1088K, definitely not a valid tree 
+block size.
+
+But according to [1], kernel think it's a tree block, which is quite 
+strange.
+Normally, such mismatch only happens in fs converted from ext*.
+
+2. Backref 741942071296 root 5 owner 71723 offset 2589392896 num_refs 0 
+not found in extent tree
+
+num_refs 0, this is also strange, normal backref won't have a zero 
+refrence number.
+
+3. bad metadata [741942071296, 741943185408) crossing stripe boundary
+It could be a false warning fixed in latest btrfsck.
+But you're using 4.4.1, so I think that's the problem.
+
+4. bad extent [741942071296, 741943185408), type mismatch with chunk
+This seems to explain the problem, a data extent appears in a metadata 
+chunk.
+It seems that you're really using converted btrfs.
+
+If so, just roll it back to ext*. Current btrfs-convert has known bug 
+but fix is still under review.
+
+If want to use btrfs, use a newly created one instead of btrfs-convert.
 
 Thanks,
--- 
-Martin
+Qu
+
+>>
+>> Regards,
+>> Soukyuu
+>>
+>> P.S.: please add me to CC when replying as I did not subscribe to the
+>> mailing list. Majordomo won't let me use my hotmail address and I
+>> don't want that much traffic on this address.
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>

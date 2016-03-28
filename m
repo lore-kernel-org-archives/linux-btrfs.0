@@ -1,223 +1,110 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:36084 "EHLO plane.gmane.org"
+Received: from plane.gmane.org ([80.91.229.3]:37057 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753999AbcC1KKY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 28 Mar 2016 06:10:24 -0400
+	id S1753492AbcC1Keu convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 28 Mar 2016 06:34:50 -0400
 Received: from list by plane.gmane.org with local (Exim 4.69)
 	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1akU5h-000253-R7
-	for linux-btrfs@vger.kernel.org; Mon, 28 Mar 2016 12:08:10 +0200
+	id 1akUVT-0006El-Uo
+	for linux-btrfs@vger.kernel.org; Mon, 28 Mar 2016 12:34:48 +0200
 Received: from ip5f5ae008.dynamic.kabel-deutschland.de ([95.90.224.8])
         by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 28 Mar 2016 12:08:09 +0200
+        for <linux-btrfs@vger.kernel.org>; Mon, 28 Mar 2016 12:34:47 +0200
 Received: from hurikhan77 by ip5f5ae008.dynamic.kabel-deutschland.de with local (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 28 Mar 2016 12:08:09 +0200
+        for <linux-btrfs@vger.kernel.org>; Mon, 28 Mar 2016 12:34:47 +0200
 To: linux-btrfs@vger.kernel.org
 From: Kai Krakow <hurikhan77@gmail.com>
-Subject: bad metadata crossing stripe boundary (was: csum errors in
- VirtualBox VDI files)
-Date: Mon, 28 Mar 2016 12:02:03 +0200
-Message-ID: <20160328120203.1b8d79dc@jupiter.sol.kaishome.de>
+Subject: Re: csum errors in VirtualBox VDI files
+Date: Mon, 28 Mar 2016 12:30:17 +0200
+Message-ID: <20160328123017.6044e2ea@jupiter.sol.kaishome.de>
 References: <20160322090342.595fefac@jupiter.sol.kaishome.de>
 	<56F1068E.6050806@cn.fujitsu.com>
 	<20160322194854.161e9c4c@jupiter.sol.kaishome.de>
 	<56F21898.3020101@cn.fujitsu.com>
 	<20160326203035.4b876a04@jupiter.sol.kaishome.de>
-	<20160327035038.5ab6e64b@jupiter.sol.kaishome.de>
-	<56F7E65C.7020300@gmx.com>
+	<CAJCQCtSzKT2BZ15JwgR4b6Nk+n2tsHBLizwJXOqJ93Jbuv05rQ@mail.gmail.com>
+	<CAJCQCtQYkCDLks0Wvnt2nqTRMAvh6wQ5nsHB4GPD4wFA8geAsw@mail.gmail.com>
+	<20160327033032.6dce42e0@jupiter.sol.kaishome.de>
+	<CAJCQCtSOURe5Cy-ytB3Tg_s46hgWsGKLn6fXjy8vt+TBQKNucg@mail.gmail.com>
+	<20160327193105.0ba5c557@jupiter.sol.kaishome.de>
+	<CAJCQCtQZBv=Qrh+oSM4a5CQW3sTBRWVeJmYN_q0Vx0TvGZCtgg@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Changing subject to reflect the current topic...
+Am Sun, 27 Mar 2016 13:04:25 -0600
+schrieb Chris Murphy <lists@colorremedies.com>:
 
-Am Sun, 27 Mar 2016 21:55:40 +0800
-schrieb Qu Wenruo <quwenruo.btrfs@gmx.com>:
+> As for the csum errors with this one single VDI file, you're going to
+> have to come up with a way to reproduce it consistently. You'll need
+> to have a good copy on a filesystem that comes up clean with btrfs
+> check and scrub. And then reproduce the corruption somehow. One hint
+> based on the other two users with similar setups or workload is they
+> aren't using the discard mount option and you are. I'd say unless you
+> have a newer SSD that supports queued trim, it probably shouldn't be
+> used, it's known to cause the kinds of hangs you report with drives
+> that only support non-queued trim. Those drives are better off getting
+> fstrim e.g. once a week on a timer.
 
-> > I finally got copy&paste data:
-> >
-> > # before mounting let's check the FS:
-> >
-> > $ sudo btrfsck /dev/disk/by-label/usb-backup
-> > Checking filesystem on /dev/disk/by-label/usb-backup
-> > UUID: 1318ec21-c421-4e36-a44a-7be3d41f9c3f
-> > checking extents
-> > bad metadata [156041216, 156057600) crossing stripe boundary
-> > bad metadata [181403648, 181420032) crossing stripe boundary
-> > bad metadata [392167424, 392183808) crossing stripe boundary
-> > bad metadata [783482880, 783499264) crossing stripe boundary
-> > bad metadata [784924672, 784941056) crossing stripe boundary
-> > bad metadata [130151612416, 130151628800) crossing stripe boundary
-> > bad metadata [162826813440, 162826829824) crossing stripe boundary
-> > bad metadata [162927083520, 162927099904) crossing stripe boundary
-> > bad metadata [619740659712, 619740676096) crossing stripe boundary
-> > bad metadata [619781947392, 619781963776) crossing stripe boundary
-> > bad metadata [619795644416, 619795660800) crossing stripe boundary
-> > bad metadata [619816091648, 619816108032) crossing stripe boundary
-> > bad metadata [620011388928, 620011405312) crossing stripe boundary
-> > bad metadata [890992459776, 890992476160) crossing stripe boundary
-> > bad metadata [891022737408, 891022753792) crossing stripe boundary
-> > bad metadata [891101773824, 891101790208) crossing stripe boundary
-> > bad metadata [891301199872, 891301216256) crossing stripe boundary
-> > bad metadata [1012219314176, 1012219330560) crossing stripe boundary
-> > bad metadata [1017202409472, 1017202425856) crossing stripe boundary
-> > bad metadata [1017365397504, 1017365413888) crossing stripe boundary
-> > bad metadata [1020764422144, 1020764438528) crossing stripe boundary
-> > bad metadata [1251103342592, 1251103358976) crossing stripe boundary
-> > bad metadata [1251144695808, 1251144712192) crossing stripe boundary
-> > bad metadata [1251147055104, 1251147071488) crossing stripe boundary
-> > bad metadata [1259271225344, 1259271241728) crossing stripe boundary
-> > bad metadata [1266223611904, 1266223628288) crossing stripe boundary
-> > bad metadata [1304750063616, 1304750080000) crossing stripe boundary
-> > bad metadata [1304790106112, 1304790122496) crossing stripe boundary
-> > bad metadata [1304850792448, 1304850808832) crossing stripe boundary
-> > bad metadata [1304869928960, 1304869945344) crossing stripe boundary
-> > bad metadata [1305089540096, 1305089556480) crossing stripe boundary
-> > bad metadata [1309561651200, 1309561667584) crossing stripe boundary
-> > bad metadata [1309581443072, 1309581459456) crossing stripe boundary
-> > bad metadata [1309583671296, 1309583687680) crossing stripe boundary
-> > bad metadata [1309942808576, 1309942824960) crossing stripe boundary
-> > bad metadata [1310050549760, 1310050566144) crossing stripe boundary
-> > bad metadata [1313031585792, 1313031602176) crossing stripe boundary
-> > bad metadata [1313232912384, 1313232928768) crossing stripe boundary
-> > bad metadata [1555210764288, 1555210780672) crossing stripe boundary
-> > bad metadata [1555395182592, 1555395198976) crossing stripe boundary
-> > bad metadata [2050576744448, 2050576760832) crossing stripe boundary
-> > bad metadata [2050803957760, 2050803974144) crossing stripe boundary
-> > bad metadata [2050969108480, 2050969124864) crossing stripe
-> > boundary  
-> 
-> Already mentioned in another reply, this *seems* to be false alert.
-> Latest btrfs-progs would help.
+Let's get back to the csum errors later - that's only on the main drive
+which has other corruptions, too, as I found out. So the csum errors
+may well be a side effect.
 
-No, btrfs-progs 4.5 reports those, too (as far as I understood, this
-includes the fixes for bogus "bad metadata" errors, tho I thought this
-has already been fixed in 4.2.1, I used 4.4.1). There were some nbytes
-wrong errors before which I already repaired using "--repair". I think
-that's okay, I had those in the past and it looks like btrfsck can
-repair those now (and I don't have to delete and recreate the files).
-It caused problems with "du" and "df" in the past, a problem that I'm
-currently facing too. So I better fixed them.
+I'm currently trying to fix the remaining problems of the backup drive
+which uses no discard at all (it's no SSD).
 
-With that done, the backup fs now only reports "bad metadata" which
-have been there before space cache v2. Full output below.
+I'd like to help you out of the confusion, here's the output of:
 
-> > checking free space tree cache and super generation don't match,
-> > space cache will be invalidated checking fs roots  
-> Err, I found a missing '\n' before "checking fs roots".
+$ lsblk -o NAME,MODEL,FSTYPE,LABEL,MOUNTPOINT
+NAME        MODEL            FSTYPE LABEL      MOUNTPOINT
+sda         Crucial_CT128MX1
+├─sda1                       vfat   ESP        /boot
+├─sda2
+└─sda3                       bcache
+  ├─bcache0                  btrfs  system
+  ├─bcache1                  btrfs  system
+  └─bcache2                  btrfs  system     /
+sdb         SAMSUNG HD103SJ
+├─sdb1                       swap   swap0      [SWAP]
+└─sdb2                       bcache
+  └─bcache2                  btrfs  system     /
+sdc         SAMSUNG HD103SJ
+├─sdc1                       swap   swap1      [SWAP]
+└─sdc2                       bcache
+  └─bcache0                  btrfs  system
+sdd         SAMSUNG HD103UJ
+├─sdd1                       swap   swap2      [SWAP]
+└─sdd2                       bcache
+  └─bcache1                  btrfs  system
+sde         003-9VT166
+└─sde1                       btrfs  usb-backup
 
-Copy and paste problem. Claws mail pretends to be smarter than me
-- I missed to fix that one. ;-)
+(the mountpoint is pretty bogus due to multiple subvolumes, so I
+corrected it)
 
-> And it seems that fs roots and extent tree are all OK.
-> 
-> Quite surprising.
-> The only possible problem seems to be outdated space cache.
-> 
-> Maybe mount with "-o clear_cache" will help, but I don't think that's 
-> the cause.
+BTW: This discard option ran smooth for the last 12 months or so
+(apparently, the SSD drive is soon to die - smartctl lifetime counter
+is almost used up, bcache + btrfs can be pretty stressful I think). I'm
+not even sure if btrfs mount option "discard" has any effect at all if
+it is mounted through bcache.
 
-Helped, it automatically reverted the FS back to space cache v1 with
-incompat flag cleared. (I wouldn't have enabled v2 if it wasn't
-documented that this is possible)
+BTW2: Even fstrim will issue queued trim if it is supported by the
+drive and will get you in the same trouble. It needs to be disabled in
+the kernel, according to [1]. Side note: I have model MX100 with
+firmware update applied which is supposed to fix the problem. I never
+experienced the libata fault messages in dmesg.
 
-> > checking csums
-> > checking root refs
-> > found 1860217443214 bytes used err is 0
-> > total csum bytes: 1805105116
-> > total tree bytes: 11793776640
-> > total fs tree bytes: 8220835840
-> > total extent tree bytes: 1443315712
-> > btree space waste bytes: 2307850845
-> > file data blocks allocated: 2137151094784
-> >   referenced 2706830905344
-> >
-> > # now let's wait for the backup to mount the FS and look at dmesg:
-> >
-> > [21375.606479] BTRFS info (device sde1): force zlib compression
-> > [21375.606483] BTRFS info (device sde1): using free space tree  
-> 
-> Thanks to Chris Murphy, I almost ignored such line.
-> Not familiar with the new free space cache tree, sorry.
-> 
-> If "clear_cache" doesn't help, then try "nospace_cache" to disable
-> the entire space cache.
-
-It's gone now, ignore that. It's back to the situation before space
-cache v2. Minus some "nbytes wrong" errors I had and fixed.
-
-Nevertheless, I'm now using btrfs-progs 4.5. Here's the full output:
-(the lines seem to be partly out of order, probably due to the
-redirection)
-
-$ sudo btrfsck /dev/sde1 2>&1 | tee btrfsck-label-usb-backup.txt
-checking extents
-bad metadata [156041216, 156057600) crossing stripe boundary
-bad metadata [181403648, 181420032) crossing stripe boundary
-bad metadata [392167424, 392183808) crossing stripe boundary
-bad metadata [783482880, 783499264) crossing stripe boundary
-bad metadata [784924672, 784941056) crossing stripe boundary
-bad metadata [130151612416, 130151628800) crossing stripe boundary
-bad metadata [162826813440, 162826829824) crossing stripe boundary
-bad metadata [162927083520, 162927099904) crossing stripe boundary
-bad metadata [619740659712, 619740676096) crossing stripe boundary
-bad metadata [619781947392, 619781963776) crossing stripe boundary
-bad metadata [619795644416, 619795660800) crossing stripe boundary
-bad metadata [619816091648, 619816108032) crossing stripe boundary
-bad metadata [620011388928, 620011405312) crossing stripe boundary
-bad metadata [890992459776, 890992476160) crossing stripe boundary
-bad metadata [891022737408, 891022753792) crossing stripe boundary
-bad metadata [891101773824, 891101790208) crossing stripe boundary
-bad metadata [891301199872, 891301216256) crossing stripe boundary
-bad metadata [1012219314176, 1012219330560) crossing stripe boundary
-bad metadata [1017202409472, 1017202425856) crossing stripe boundary
-bad metadata [1017365397504, 1017365413888) crossing stripe boundary
-bad metadata [1020764422144, 1020764438528) crossing stripe boundary
-bad metadata [1251103342592, 1251103358976) crossing stripe boundary
-bad metadata [1251145809920, 1251145826304) crossing stripe boundary
-bad metadata [1251147055104, 1251147071488) crossing stripe boundary
-bad metadata [1259271225344, 1259271241728) crossing stripe boundary
-bad metadata [1266223611904, 1266223628288) crossing stripe boundary
-bad metadata [1304750063616, 1304750080000) crossing stripe boundary
-bad metadata [1304790106112, 1304790122496) crossing stripe boundary
-bad metadata [1304850792448, 1304850808832) crossing stripe boundary
-bad metadata [1304869928960, 1304869945344) crossing stripe boundary
-bad metadata [1305089540096, 1305089556480) crossing stripe boundary
-bad metadata [1309581443072, 1309581459456) crossing stripe boundary
-bad metadata [1309583671296, 1309583687680) crossing stripe boundary
-bad metadata [1309942808576, 1309942824960) crossing stripe boundary
-bad metadata [1310050549760, 1310050566144) crossing stripe boundary
-bad metadata [1313031585792, 1313031602176) crossing stripe boundary
-bad metadata [1313232912384, 1313232928768) crossing stripe boundary
-bad metadata [1555210764288, 1555210780672) crossing stripe boundary
-bad metadata [1555395182592, 1555395198976) crossing stripe boundary
-bad metadata [2050576744448, 2050576760832) crossing stripe boundary
-bad metadata [2050803957760, 2050803974144) crossing stripe boundary
-bad metadata [2050969108480, 2050969124864) crossing stripe boundary
-checking free space cache
-checking fs roots
-checking csums
-checking root refs
-Checking filesystem on /dev/sde1
-UUID: 1318ec21-c421-4e36-a44a-7be3d41f9c3f
-found 1860212384661 bytes used err is 0
-total csum bytes: 1805105124
-total tree bytes: 11788713984
-total fs tree bytes: 8220835840
-total extent tree bytes: 1443282944
-btree space waste bytes: 2306453698
-file data blocks allocated: 2137152151552
- referenced 2706831974400
-
-That drive was not converted so either "bad metadata" is still a false
-alert or there is something else going wrong in btrfs.
+[1]:
+http://forums.crucial.com/t5/Crucial-SSDs/M500-M5x0-QUEUED-TRIM-data-corruption-alert-mostly-for-Linux/td-p/151028
 
 -- 
 Regards,
 Kai
 
 Replies to list-only preferred.
+
 

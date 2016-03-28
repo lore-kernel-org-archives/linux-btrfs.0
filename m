@@ -1,235 +1,156 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lf0-f53.google.com ([209.85.215.53]:35865 "EHLO
-	mail-lf0-f53.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751854AbcC1Klh (ORCPT
+Received: from mail-qg0-f50.google.com ([209.85.192.50]:35341 "EHLO
+	mail-qg0-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754783AbcC1Mgb (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 28 Mar 2016 06:41:37 -0400
-Received: by mail-lf0-f53.google.com with SMTP id e133so32797762lfe.3
-        for <linux-btrfs@vger.kernel.org>; Mon, 28 Mar 2016 03:41:36 -0700 (PDT)
+	Mon, 28 Mar 2016 08:36:31 -0400
+Received: by mail-qg0-f50.google.com with SMTP id y89so107109546qge.2
+        for <linux-btrfs@vger.kernel.org>; Mon, 28 Mar 2016 05:36:30 -0700 (PDT)
+Received: from [127.0.0.1] (rrcs-70-62-41-24.central.biz.rr.com. [70.62.41.24])
+        by smtp.gmail.com with ESMTPSA id r65sm900246qki.17.2016.03.28.05.36.29
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLSv1/SSLv3 cipher=OTHER);
+        Mon, 28 Mar 2016 05:36:29 -0700 (PDT)
+Subject: Re: Raid 0 setup doubt.
+To: linux-btrfs@vger.kernel.org
+References: <56F7B77F.9050306@gmail.com>
+ <pan$8fc2c$862a26c8$c5af9279$b4bfa8ec@cox.net>
+From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Message-ID: <56F9252F.90704@gmail.com>
+Date: Mon, 28 Mar 2016 08:35:59 -0400
 MIME-Version: 1.0
-In-Reply-To: <56F8AAE7.5020201@oracle.com>
-References: <1458906560.3786108.559411242.3678497C@webmail.messagingengine.com>
- <CAA7pwKNj+qEUk+RhzyceRFqThzhUkroYMxS3b3gAn_5KEyawMQ@mail.gmail.com>
- <CAA7pwKNgDi9C8E+duwNA6H8MrT1nVEHkWAm4=JZp3GjFgAvZ1g@mail.gmail.com>
- <1458926454.3855039.559662618.4F365498@webmail.messagingengine.com>
- <CAA7pwKP90OTQLdOw4LHtGxZEBWhz3bZCam2E2-CHwA1p9CMdnA@mail.gmail.com>
- <CAGGqMYR9LdCiqHfO5Rn5zY1G7_YKYjrEzkovTVVaFRXqQ7vpeQ@mail.gmail.com>
- <56F5FD42.5010701@oracle.com> <CAA7pwKMnj5+pLoBPg1z3aRQZJ-kWJefSc+Cg6JrhGSzdW4WFnQ@mail.gmail.com>
- <56F8AAE7.5020201@oracle.com>
-From: Patrik Lundquist <patrik.lundquist@gmail.com>
-Date: Mon, 28 Mar 2016 12:41:16 +0200
-Message-ID: <CAA7pwKMPWJkVjBSMudQvyVEr8dkyyh1Ev0gGG7RMQ0TEvddLCg@mail.gmail.com>
-Subject: Re: Possible Raid Bug
-To: Anand Jain <anand.jain@oracle.com>
-Cc: Stephen Williams <stephenw@veryfast.biz>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+In-Reply-To: <pan$8fc2c$862a26c8$c5af9279$b4bfa8ec@cox.net>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 28 March 2016 at 05:54, Anand Jain <anand.jain@oracle.com> wrote:
+On 2016-03-27 20:56, Duncan wrote:
 >
-> On 03/26/2016 07:51 PM, Patrik Lundquist wrote:
->>
->> # btrfs device stats /mnt
->>
->> [/dev/sde].write_io_errs   11
->> [/dev/sde].read_io_errs    0
->> [/dev/sde].flush_io_errs   2
->> [/dev/sde].corruption_errs 0
->> [/dev/sde].generation_errs 0
->>
->> The old counters are back. That's good, but wtf?
+> But there's another option you didn't mention, that may be useful,
+> depending on your exact need and usage of that swap:
+>
+> Split your swap space in half, say (roughly, you can make one slightly
+> larger than the other to allow for the EFI on one device) 8 GiB on each
+> of the hdds.  Then, in your fstab or whatever you use to list the swap
+> options, put the option priority=100 (or whatever number you find
+> appropriate) on /both/ swap partitions.
+>
+> With an equal priority on both swaps and with both active, the kernel
+> will effectively raid0 your swap as well (until one runs out, of course),
+> which, given that on spinning rust the device speed is the definite
+> performance bottleneck for swap, should roughly double your swap
+> performance. =:^)  Given that swap on spinning rust is slower than real
+> RAM by several orders of magnitude, it'll still be far slower than real
+> RAM, but twice as fast as it would be is better than otherwise, so...
+I'm not 100% certain that it will double swap bandwidth unless you're 
+constantly swapping, and even then it would only on average double the 
+write bandwidth.  The kernel swaps pages in groups (8 pages by default, 
+which is 32k, I usually up this to 16 pages on my systems because when 
+I'm hitting swap, it usually means I'm hitting it hard), and I'm pretty 
+certain that each group of pages only goes to one swap device.  This 
+means that by default, with two devices, you would get 32k written at a 
+time to alternating devices.  However, there is no guarantee that when 
+you swap things in they will be from alternating devices, so you could 
+be reading multiple MB of data from one device without even touching the 
+other one.  Thus, for writes, this works like a raid0 setup with a large 
+stripe size, but for reads it ends up somewhere between raid0 and single 
+disk performance, depending on how lucky you are and what type of 
+workload you are dealing with.
+>
+> Tho how much RAM /do/ you have, and are you sure you really need swap at
+> all?  Many systems today have enough RAM that they don't really need swap
+> (at least as swap, see below), unless they're going to be used for
+> something extremely memory intensive, where the much lower speed of swap
+> isn't a problem.
+>
+> If you have 8 GiB of RAM or more, this may well be your situation.  With
+> 4 GiB, you probably have more than enough RAM for normal operation, but
+> it may still be useful to have at least some swap, so Linux can keep more
+> recently used files cached while swapping out some seldom used
+> application RAM, but by 8 GiB you likely have enough RAM for reasonable
+> cache AND all your apps and won't actually use swap much at all.
+>
+> Tho if you frequently edit GiB+ video files and/or work with many virtual
+> machines, 8 GiB RAM will likely be actually used, and 16 GiB may be the
+> point at which you don't use swap much at all.  And of course if you are
+> using LOTS of VMs or doing heavy 4K video editing, 16 GiB or more may
+> well still be in heavy use, but with that kind of memory-intensive usage,
+> 32 GiB of RAM or more would likely be a good investment.
+>
+> Anyway, for systems with enough memory to not need swap in /normal/
+> circumstances, in the event that something's actually leaking memory
+> badly enough that swap is needed, there's a very good chance that you'll
+> never outrun the leak with swap anyway, as if it's really leaking gigs of
+> memory, it'll just eat up whatever gigs of swap you throw at it as well
+> and /still/ run out of memory.
+>
+> Meanwhile, swap to spinning rust really is /slow/.  You're talking 16 GiB
+> of swap, and spinning rust speeds of 50 MiB/sec for swap isn't unusual.
+> That's ~20 seconds worth of swap-thrashing waiting per GiB, ~320 seconds
+> or over five minutes worth of swap thrashing to use the full 16 GiB.  OK,
+> so you take that priority= idea and raid0 over two devices, it'll still
+> be ~2:40 worth of waiting, to fully use that swap.  Is 16 GiB of swap
+> /really/ both needed and worth that sort of wait if you do actually use
+> it?
+>
+> Tho again, if you're running a half dozen VMs and only actually use a
+> couple of them once or twice a day, having enough swap to let them swap
+> out the rest of the day, so the memory they took can be used for more
+> frequently accessed applications and cached files, can be useful.  But
+> that's a somewhat limited use-case.
 >
 >
->  No. I doubt if they are old counters. The steps above didn't
->  show old error counts, but since you have created a file
->  test3 so there will be some write_io_errors, which we don;t
->  see after the balance. So I doubt if they are old counter
->  but instead they are new flush errors.
+> So swap, for its original use as slow memory at least, really isn't that
+> much used any longer, tho it can still be quite useful in specific use-
+> cases.
+I would tend to disagree here.  Using the default settings under Linux, 
+it isn't used much, but there are many people (myself included), who 
+turn off memory over-commit, and thus need reasonable amounts of swap 
+space.  Many programs will allocate huge chunks of memory that they 
+never need or even touch, either 'just in case', or because they want to 
+manage their own memory usage.  To account for this, Linux has a knob 
+for the virtual memory subsystem that controls how it handles 
+allocations beyond the system's effective memory limit (userspace 
+accessible RAM + swap space).  For specifics, you can check 
+Documentation/sysctl/vm.txt and Documentation/vm/overcommit-accounting 
+in the kernel source tree.  The general idea is that by default, the 
+kernel tries to estimate how much can be allocated safely.  This usually 
+works well until you start to get close to an OOM condition, but it 
+slows down memory allocations significantly.  There are two other 
+options for this though, just pretend there's enough memory until there 
+isn't (this is the fastest, and probably should be the default if you 
+don't have swap space), and never over-commit.  Telling the kernel to 
+never over-commit is faster than the default, and provides more 
+deterministic behavior (you can prove exactly how much needs to be 
+allocated to hit OOM), but requires swap space (because it calculates 
+the limit as swap space + some percentage of user-space accessible 
+memory).  I know a lot of people who run server systems who configure 
+the system to never over-commit memory, then just run with lots of swap 
+space.  As an example, my home server system has 16G of RAM with 64G of 
+swap space configured (16G on SSD's at a higher priority, 48G on 
+traditional HDD's).  This lets me set it to never over-commit memory, 
+while still allowing me to work with big (astronomical scale, so >10k 
+pixels on a side) images, do complex audio/video editing, and work with 
+big VCS repositories without any issues.
+>
+> But there's another more modern use-case that can be useful for many.
+> Linux's suspend-to-disk, aka hibernate (as opposed to suspend-to-RAM, aka
+> sleep or standby), functionality.  Suspend-to-disk uses swap space to
+> store the suspend image.  And that's commonly enough used that swap still
+> has a modern usage after all, just not the one it was originally designed
+> for.
+>
+> The caveat with suspend-to-disk, however, is that normally, the entire
+> suspend image must be placed on a single swap device.[1]  If you intend
+> to use your swap to store a hibernate image, then, and if you have 16 GiB
+> or more of RAM and want to save as much of it as possible in that
+> hibernate image, then you'll want to keep that 16 GiB swap on a single
+> device in ordered to let you use the full size as a hibernate image.
+The other caveat that nobody seems to mention outside of specific cases 
+is that using suspend to disks exposes you to direct attack by anyone 
+with the ability to either physically access the system, or boot an 
+alternative OS on it.  This is however not a Linux specific issue 
+(although Windows and OS X do a much better job of validating the 
+hibernation image than Linux does before resuming from it, so it's not 
+as easy to trick them into loading arbitrary data).
 
-No, /mnt/test3 doesn't generate errors, only 'single' block groups.
-The old counters seem to be cached somewhere and replace doesn't reset
-them everywhere.
-
-One more time with more device stats and I've upgraded the kernel to
-Linux debian 4.5.0-trunk-amd64 #1 SMP Debian 4.5-1~exp1 (2016-03-20)
-x86_64 GNU/Linux
-
-# mkfs.btrfs -m raid10 -d raid10 /dev/sdb /dev/sdc /dev/sdd /dev/sde
-
-# mount /dev/sdb /mnt; dmesg | tail
-# touch /mnt/test1; sync; btrfs device usage /mnt
-
-Only raid10 profiles.
-
-# echo 1 >/sys/block/sde/device/delete; dmesg | tail
-
-[  426.831037] sd 5:0:0:0: [sde] Synchronizing SCSI cache
-[  426.831517] sd 5:0:0:0: [sde] Stopping disk
-[  426.845199] ata6.00: disabled
-
-We lost a disk.
-
-# touch /mnt/test2; sync; dmesg | tail
-
-[  467.126471] BTRFS error (device sde): bdev /dev/sde errs: wr 1, rd
-0, flush 0, corrupt 0, gen 0
-[  467.127386] BTRFS error (device sde): bdev /dev/sde errs: wr 2, rd
-0, flush 0, corrupt 0, gen 0
-[  467.128125] BTRFS error (device sde): bdev /dev/sde errs: wr 3, rd
-0, flush 0, corrupt 0, gen 0
-[  467.128640] BTRFS error (device sde): bdev /dev/sde errs: wr 4, rd
-0, flush 0, corrupt 0, gen 0
-[  467.129215] BTRFS error (device sde): bdev /dev/sde errs: wr 4, rd
-0, flush 1, corrupt 0, gen 0
-[  467.129331] BTRFS warning (device sde): lost page write due to IO
-error on /dev/sde
-[  467.129334] BTRFS error (device sde): bdev /dev/sde errs: wr 5, rd
-0, flush 1, corrupt 0, gen 0
-[  467.129420] BTRFS warning (device sde): lost page write due to IO
-error on /dev/sde
-[  467.129422] BTRFS error (device sde): bdev /dev/sde errs: wr 6, rd
-0, flush 1, corrupt 0, gen 0
-
-We've got write errors on the lost disk.
-
-# btrfs device usage /mnt
-
-No 'single' profiles because we haven't remounted yet.
-
-# btrfs device stat /mnt
-
-[/dev/sde].write_io_errs   6
-[/dev/sde].read_io_errs    0
-[/dev/sde].flush_io_errs   1
-[/dev/sde].corruption_errs 0
-[/dev/sde].generation_errs 0
-
-# reboot
-# wipefs -a /dev/sde; reboot
-
-# mount -o degraded /dev/sdb /mnt; dmesg | tail
-
-[   52.876897] BTRFS info (device sdb): allowing degraded mounts
-[   52.876901] BTRFS info (device sdb): disk space caching is enabled
-[   52.876902] BTRFS: has skinny extents
-[   52.878008] BTRFS warning (device sdb): devid 4 uuid
-231d7892-3f31-40b5-8dff-baf8fec1a8aa is missing
-[   52.879057] BTRFS info (device sdb): bdev (null) errs: wr 6, rd 0,
-flush 1, corrupt 0, gen 0
-
-# btrfs device usage /mnt
-
-Still only raid10 profiles.
-
-# btrfs device stat /mnt
-
-[(null)].write_io_errs   6
-[(null)].read_io_errs    0
-[(null)].flush_io_errs   1
-[(null)].corruption_errs 0
-[(null)].generation_errs 0
-
-/dev/sde is now called "(null)". Print device id instead? E.g.
-"[devid:4].write_io_errs   6"
-
-# touch /mnt/test3; sync; btrfs device usage /mnt
-/dev/sdb, ID: 1
-   Device size:             2.00GiB
-   Data,single:           624.00MiB
-   Data,RAID10:           102.38MiB
-   Metadata,RAID10:       102.38MiB
-   System,RAID10:           4.00MiB
-   Unallocated:             1.19GiB
-
-/dev/sdc, ID: 2
-   Device size:             2.00GiB
-   Data,RAID10:           102.38MiB
-   Metadata,RAID10:       102.38MiB
-   System,single:          32.00MiB
-   System,RAID10:           4.00MiB
-   Unallocated:             1.76GiB
-
-/dev/sdd, ID: 3
-   Device size:             2.00GiB
-   Data,RAID10:           102.38MiB
-   Metadata,single:       256.00MiB
-   Metadata,RAID10:       102.38MiB
-   System,RAID10:           4.00MiB
-   Unallocated:             1.55GiB
-
-missing, ID: 4
-   Device size:               0.00B
-   Data,RAID10:           102.38MiB
-   Metadata,RAID10:       102.38MiB
-   System,RAID10:           4.00MiB
-   Unallocated:             1.80GiB
-
-Now we've got 'single' profiles on all devices except the missing one.
-Replace missing device before unmount or get stuck with a read-only
-filesystem.
-
-# btrfs device stat /mnt
-
-Same as before. Only old errors on the missing device.
-
-# btrfs replace start -B 4 /dev/sde /mnt; dmesg | tail
-
-[ 1268.598652] BTRFS info (device sdb): dev_replace from <missing
-disk> (devid 4) to /dev/sde started
-[ 1268.615601] BTRFS info (device sdb): dev_replace from <missing
-disk> (devid 4) to /dev/sde finished
-
-# btrfs device stats /mnt
-
-[/dev/sde].write_io_errs   0
-[/dev/sde].read_io_errs    0
-[/dev/sde].flush_io_errs   0
-[/dev/sde].corruption_errs 0
-[/dev/sde].generation_errs 0
-
-Device "(null)" is back to /dev/sde and the error counts have been reset.
-
-# btrfs balance start -dconvert=raid10,soft -mconvert=raid10,soft
--sconvert=raid10,soft -vf /mnt; dmesg | tail
-
-[ 1460.660739] BTRFS info (device sdb): relocating block group
-1198522368 flags 1
-[ 1460.667802] BTRFS info (device sdb): relocating block group
-1164967936 flags 2
-[ 1460.674128] BTRFS info (device sdb): relocating block group 896532480 flags 4
-
-# btrfs device usage /mnt
-
-Back to only 'raid10' profiles.
-
-# btrfs device stat /dev/sde
-[/dev/sde].write_io_errs   0
-[/dev/sde].read_io_errs    0
-[/dev/sde].flush_io_errs   0
-[/dev/sde].corruption_errs 0
-[/dev/sde].generation_errs 0
-
-No new errors after balance.
-
-# umount /mnt; mount /dev/sdb /mnt; dmesg | tail
-
-[ 1705.259074] BTRFS info (device sde): disk space caching is enabled
-[ 1705.259078] BTRFS: has skinny extents
-[ 1705.261887] BTRFS info (device sde): bdev /dev/sde errs: wr 6, rd
-0, flush 1, corrupt 0, gen 0
-
-# btrfs device stat /dev/sde
-[/dev/sde].write_io_errs   6
-[/dev/sde].read_io_errs    0
-[/dev/sde].flush_io_errs   1
-[/dev/sde].corruption_errs 0
-[/dev/sde].generation_errs 0
-
-The old device counters are back! No errors in dmesg since last
-reboot, so they are definitely old errors.
-
-# btrfs device stats -z /dev/sde
-
-Give /dev/sde a clean bill of health. Won't warn when mounting again.

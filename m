@@ -1,150 +1,241 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qk0-f173.google.com ([209.85.220.173]:34697 "EHLO
-	mail-qk0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751639AbcC1Tgb (ORCPT
+Received: from mail-wm0-f44.google.com ([74.125.82.44]:38491 "EHLO
+	mail-wm0-f44.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752562AbcC1UbA (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 28 Mar 2016 15:36:31 -0400
-Received: by mail-qk0-f173.google.com with SMTP id x64so86132496qkd.1
-        for <linux-btrfs@vger.kernel.org>; Mon, 28 Mar 2016 12:36:31 -0700 (PDT)
-Subject: Re: "bad metadata" not fixed by btrfs repair
-To: Marc Haber <mh+linux-btrfs@zugschlus.de>, linux-btrfs@vger.kernel.org
-References: <20160328143714.GZ10135@torres.zugschlus.de>
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <56F98784.8090700@gmail.com>
-Date: Mon, 28 Mar 2016 15:35:32 -0400
+	Mon, 28 Mar 2016 16:31:00 -0400
+Received: by mail-wm0-f44.google.com with SMTP id 20so31006515wmh.1
+        for <linux-btrfs@vger.kernel.org>; Mon, 28 Mar 2016 13:30:59 -0700 (PDT)
+Received: from [192.168.1.38] (166.red-83-52-1.dynamicip.rima-tde.net. [83.52.1.166])
+        by smtp.gmail.com with ESMTPSA id s66sm11627269wmb.6.2016.03.28.13.30.56
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLSv1/SSLv3 cipher=OTHER);
+        Mon, 28 Mar 2016 13:30:57 -0700 (PDT)
+Subject: Re: Raid 0 setup doubt.
+To: linux-btrfs@vger.kernel.org
+References: <56F7B77F.9050306@gmail.com>
+ <pan$8fc2c$862a26c8$c5af9279$b4bfa8ec@cox.net>
+From: Jose Otero <jose.manuel.otero@gmail.com>
+Message-ID: <56F99480.2090707@gmail.com>
+Date: Mon, 28 Mar 2016 22:30:56 +0200
 MIME-Version: 1.0
-In-Reply-To: <20160328143714.GZ10135@torres.zugschlus.de>
-Content-Type: text/plain; charset=utf-8; format=flowed
+In-Reply-To: <pan$8fc2c$862a26c8$c5af9279$b4bfa8ec@cox.net>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2016-03-28 10:37, Marc Haber wrote:
-> Hi,
->
-> I have a btrfs which btrfs check --repair doesn't fix:
->
-> # btrfs check --repair /dev/mapper/fanbtr
-> bad metadata [4425377054720, 4425377071104) crossing stripe boundary
-> bad metadata [4425380134912, 4425380151296) crossing stripe boundary
-> bad metadata [4427532795904, 4427532812288) crossing stripe boundary
-> bad metadata [4568321753088, 4568321769472) crossing stripe boundary
-> bad metadata [4568489656320, 4568489672704) crossing stripe boundary
-> bad metadata [4571474493440, 4571474509824) crossing stripe boundary
-> bad metadata [4571946811392, 4571946827776) crossing stripe boundary
-> bad metadata [4572782919680, 4572782936064) crossing stripe boundary
-> bad metadata [4573086351360, 4573086367744) crossing stripe boundary
-> bad metadata [4574221041664, 4574221058048) crossing stripe boundary
-> bad metadata [4574373412864, 4574373429248) crossing stripe boundary
-> bad metadata [4574958649344, 4574958665728) crossing stripe boundary
-> bad metadata [4575996018688, 4575996035072) crossing stripe boundary
-> bad metadata [4580376772608, 4580376788992) crossing stripe boundary
-> repaired damaged extent references
-> Fixed 0 roots.
-> checking free space cache
-> checking fs roots
-> checking csums
-> checking root refs
-> enabling repair mode
-> Checking filesystem on /dev/mapper/fanbtr
-> UUID: 90f8d728-6bae-4fca-8cda-b368ba2c008e
-> cache and super generation don't match, space cache will be invalidated
-> found 97171628230 bytes used err is 0
-> total csum bytes: 91734220
-> total tree bytes: 3021848576
-> total fs tree bytes: 2762784768
-> total extent tree bytes: 148570112
-> btree space waste bytes: 545440822
-> file data blocks allocated: 308328280064
->   referenced 177314340864
-> # btrfs check --repair /dev/mapper/fanbtr
-> checking extents
-> bad metadata [4425377054720, 4425377071104) crossing stripe boundary
-> bad metadata [4425380134912, 4425380151296) crossing stripe boundary
-> bad metadata [4427532795904, 4427532812288) crossing stripe boundary
-> bad metadata [4568321753088, 4568321769472) crossing stripe boundary
-> bad metadata [4568489656320, 4568489672704) crossing stripe boundary
-> bad metadata [4571474493440, 4571474509824) crossing stripe boundary
-> bad metadata [4571946811392, 4571946827776) crossing stripe boundary
-> bad metadata [4572782919680, 4572782936064) crossing stripe boundary
-> bad metadata [4573086351360, 4573086367744) crossing stripe boundary
-> bad metadata [4574221041664, 4574221058048) crossing stripe boundary
-> bad metadata [4574373412864, 4574373429248) crossing stripe boundary
-> bad metadata [4574958649344, 4574958665728) crossing stripe boundary
-> bad metadata [4575996018688, 4575996035072) crossing stripe boundary
-> bad metadata [4580376772608, 4580376788992) crossing stripe boundary
-> repaired damaged extent references
-> Fixed 0 roots.
-> checking free space cache
-> checking fs roots
-> checking csums
-> checking root refs
-> enabling repair mode
-> Checking filesystem on /dev/mapper/fanbtr
-> UUID: 90f8d728-6bae-4fca-8cda-b368ba2c008e
-> cache and super generation don't match, space cache will be invalidated
-> found 97171628230 bytes used err is 0
-> total csum bytes: 91734220
-> total tree bytes: 3021848576
-> total fs tree bytes: 2762784768
-> total extent tree bytes: 148570112
-> btree space waste bytes: 545440822
-> file data blocks allocated: 308328280064
->   referenced 177314340864
->
-> How do I fix this?
->
-> Does the kernel play a role in btrfs check --repair, or is this all a
-> userspace matter?
->
-> Greetings
-> Marc
->
-I had been hoping somebody with a bit more knowledge of this would 
-answer, but seeing as that hasn't happened...
+Thanks a lot Duncan, Chris Murphy, James Johnston, and Austin.
 
-Did you convert this filesystem from ext4 (or ext3)?  If so, then you 
-appear to have done so with a faulty version of btrfs-convert (I don't 
-remember when btrfs-convert started having issues, but I'm relatively 
-certain it's not completely fixed yet).  If that is the case, that's 
-probably the ultimate cause of the 'bad metadata (xxxxxxxx, xxxxxxxx) 
-crossing stripe boundary' thing.
+Thanks for the clear answer and the extra information to chew on.
 
-You hadn't mentioned what version of btrfs-progs you're using, and that 
-is somewhat important for recovery.  I'm not sure if current versions of 
-btrfs check can fix this issue, but I know for a fact that older 
-versions (prior to at least 4.1) can not fix it.
+Duncan, you are right. I have 8 GB of RAM, and the most memory intensive
+thing I'll be doing is a VM for Windows. Now I double boot, but rarely
+go into Win, only to play some game occasionally. So, I think I'll be
+better off with Linux flat out and Win in a VM.
 
-As far as what the kernel is involved with, the easy way to check is if 
-it's operating on a mounted filesystem or not.  If it only operates on 
-mounted filesystems, it almost certainly goes through the kernel, if it 
-only operates on unmounted filesystems, it's almost certainly done in 
-userspace (except dev scan and technically fi show).  The typical advice 
-is that you worry about kernel version for normal operation, and 
-userspace version for initial setup (mkfs), and recovery (check, 
-restore, recover, etc).
+I'm probably overshooting too much with the 16 GiB swap, so I may be
+ending up with 8 GiB swap. And I'll read up the splitting thing with the
+priority trick because sounds nice. Thanks for the tip.
 
-Now, slightly higher level discussion:
-1. If you converted this filesystem using an old version of 
-btrfs-convert, I would suggest recreating it from backup if possible. 
-convert often results in sub-optimal data layout, and converted 
-filesystems have (from what I've seen on the list at least) historically 
-been more prone to bugs than ones created normally.
-2. Regarding general support:  If you're using an enterprise 
-distribution (RHEL, SLES, CentOS, OEL, or something similar), you are 
-almost certainly going to get better support from your vendor than from 
-the mailing list or IRC.  They do crazy things with kernel versioning, 
-and it's pretty much impossible to know what patches have been 
-back-ported to their kernels, which means we can't know what known bugs 
-may be present.  The same somewhat applies for Ubuntu (they have a very 
-bad habit recently of picking kernel versions without long-term support 
-upstream, which means they back-port all kinds of things too), although 
-to nowhere near the same degree.  In both cases, they're essentially 
-promising to support their own versions, so they should provide support 
-for BTRFS on them too (if they include it officially).
-3. Regarding versioning: If 2 doesn't apply to you, then it is advised 
-to stay on the most recent stable upstream kernel version (currently 
-4.5), or at least something close to it or marked by kernel.org for long 
-term support (4.4 and 4.1 are the most recent LTS versions IIRC).  It 
-isn't imperative that you run the same userspace version as a kernel 
-version, but keeping the tools up to date will usually help with 
-recovery (and let you use newer features as well).
+Take care everybody,
+
+JM.
+
+
+
+On 03/28/2016 02:56 AM, Duncan wrote:
+> Jose Otero posted on Sun, 27 Mar 2016 12:35:43 +0200 as excerpted:
+> 
+>> Hello,
+>>
+>> --------------------------------------
+>> I apologize beforehand if I'm asking a too basic question for the
+>> mailing list, or if it has been already answered at nauseam.
+>> --------------------------------------
+> 
+> Actually, looks like pretty reasonable questions, to me. =:^)
+> 
+>> I have two hdd (Western Digital 750 GB approx. 700 GiB each), and I
+>> planning to set up a RAID 0 through btrfs. UEFI firmware/boot, no dual
+>> boot, only linux.
+>>
+>> My question is, given the UEFI partition plus linux swap partition, I
+>> won't have two equal sized partitions for setting up the RAID 0 array.
+>> So, I'm not quite sure how to do it. I'll have:
+>>
+>> /dev/sda:
+>>
+>>        16 KiB (GPT partition table)
+>> sda1:  512 MiB (EFI, fat32)
+>> sda2:  16 GiB (linux-swap)
+>> sda3:  rest of the disk /  (btrfs)
+>>
+>> /dev/sdb:
+>>
+>> sdb1:  (btrfs)
+>>
+>> The btrfs partitions on each hdd are not of the same size (admittedly by
+>> an small difference, but still). Even if a backup copy of the EFI
+>> partition is created in the second hdd (i.e. sdb) which it may be, not
+>> sure, because the linux-swap partion is still left out.
+>>
+>> Should I stripe both btrfs partitions together no matter the size?
+> 
+> That should work without issue.
+> 
+>> mkfs.btrfs -m raid0 -d raid0 /dev/sda3 /dev/sdb1
+>>
+>> How will btrfs manage the difference in size?
+> 
+> Btrfs raid0 requires two devices, minimum, striping each chunk across the 
+> two.  Therefore, with two devices, to the extent that one device is 
+> larger, the larger (as partitioned) device will leave the difference in 
+> space unusable, as there's no second device to stripe with.
+> 
+>> Or should I partition out the extra size of /dev/sdb for trying to match
+>> equally sized partions? in other words:
+>>
+>> /dev/sdb:
+>>
+>> sdb1:  17 GiB approx. free or for whatever I want.
+>> sdb2:  (btrfs)
+>>
+>> and then:
+>>
+>> mkfs.btrfs -m raid0 -d raid0 /dev/sda3 /dev/sdb2
+> 
+> This should work as well.
+> 
+> 
+> But there's another option you didn't mention, that may be useful, 
+> depending on your exact need and usage of that swap:
+> 
+> Split your swap space in half, say (roughly, you can make one slightly 
+> larger than the other to allow for the EFI on one device) 8 GiB on each 
+> of the hdds.  Then, in your fstab or whatever you use to list the swap 
+> options, put the option priority=100 (or whatever number you find 
+> appropriate) on /both/ swap partitions.
+> 
+> With an equal priority on both swaps and with both active, the kernel 
+> will effectively raid0 your swap as well (until one runs out, of course), 
+> which, given that on spinning rust the device speed is the definite 
+> performance bottleneck for swap, should roughly double your swap 
+> performance. =:^)  Given that swap on spinning rust is slower than real 
+> RAM by several orders of magnitude, it'll still be far slower than real 
+> RAM, but twice as fast as it would be is better than otherwise, so...
+> 
+> 
+> Tho how much RAM /do/ you have, and are you sure you really need swap at 
+> all?  Many systems today have enough RAM that they don't really need swap 
+> (at least as swap, see below), unless they're going to be used for 
+> something extremely memory intensive, where the much lower speed of swap 
+> isn't a problem.
+> 
+> If you have 8 GiB of RAM or more, this may well be your situation.  With 
+> 4 GiB, you probably have more than enough RAM for normal operation, but 
+> it may still be useful to have at least some swap, so Linux can keep more 
+> recently used files cached while swapping out some seldom used 
+> application RAM, but by 8 GiB you likely have enough RAM for reasonable 
+> cache AND all your apps and won't actually use swap much at all.
+> 
+> Tho if you frequently edit GiB+ video files and/or work with many virtual 
+> machines, 8 GiB RAM will likely be actually used, and 16 GiB may be the 
+> point at which you don't use swap much at all.  And of course if you are 
+> using LOTS of VMs or doing heavy 4K video editing, 16 GiB or more may 
+> well still be in heavy use, but with that kind of memory-intensive usage, 
+> 32 GiB of RAM or more would likely be a good investment.
+> 
+> Anyway, for systems with enough memory to not need swap in /normal/ 
+> circumstances, in the event that something's actually leaking memory 
+> badly enough that swap is needed, there's a very good chance that you'll 
+> never outrun the leak with swap anyway, as if it's really leaking gigs of 
+> memory, it'll just eat up whatever gigs of swap you throw at it as well 
+> and /still/ run out of memory.
+> 
+> Meanwhile, swap to spinning rust really is /slow/.  You're talking 16 GiB 
+> of swap, and spinning rust speeds of 50 MiB/sec for swap isn't unusual.  
+> That's ~20 seconds worth of swap-thrashing waiting per GiB, ~320 seconds 
+> or over five minutes worth of swap thrashing to use the full 16 GiB.  OK, 
+> so you take that priority= idea and raid0 over two devices, it'll still 
+> be ~2:40 worth of waiting, to fully use that swap.  Is 16 GiB of swap 
+> /really/ both needed and worth that sort of wait if you do actually use 
+> it?
+> 
+> Tho again, if you're running a half dozen VMs and only actually use a 
+> couple of them once or twice a day, having enough swap to let them swap 
+> out the rest of the day, so the memory they took can be used for more 
+> frequently accessed applications and cached files, can be useful.  But 
+> that's a somewhat limited use-case.
+> 
+> 
+> So swap, for its original use as slow memory at least, really isn't that 
+> much used any longer, tho it can still be quite useful in specific use-
+> cases.
+> 
+> But there's another more modern use-case that can be useful for many.  
+> Linux's suspend-to-disk, aka hibernate (as opposed to suspend-to-RAM, aka 
+> sleep or standby), functionality.  Suspend-to-disk uses swap space to 
+> store the suspend image.  And that's commonly enough used that swap still 
+> has a modern usage after all, just not the one it was originally designed 
+> for.
+> 
+> The caveat with suspend-to-disk, however, is that normally, the entire 
+> suspend image must be placed on a single swap device.[1]  If you intend 
+> to use your swap to store a hibernate image, then, and if you have 16 GiB 
+> or more of RAM and want to save as much of it as possible in that 
+> hibernate image, then you'll want to keep that 16 GiB swap on a single 
+> device in ordered to let you use the full size as a hibernate image.
+> 
+> Tho of course, if the corresponding space on the other hdd is going to be 
+> wasted anyway, as it will if you're doing btrfs raid0 on the big 
+> partition of each device and you don't have anything else to do with the 
+> remaining ~16 GiB on the other device, then you might still consider 
+> doing a 16 GiB swap on each and using the priority= trick to raid0 them 
+> during normal operation.  You're unlikely to actually use the full 32 GiB 
+> of swap, but since it'll be double-speed due to the raid0, if you do, 
+> it'll still be basically the same as using a single 16 GiB swap device, 
+> and at the more typical usage (if even above 0 at all) of a few MiB to a 
+> GiB or so, you'll still get the benefit of the raid0 swap.
+> 
+>> Again, I'm sorry if it's an idiotic question, but I don't have it quite
+>> clear and I would like to do it properly. So, any hint from more
+>> knowable users would be MUCH appreciate it.
+> 
+> Perhaps this was more information than you expected, but hopefully it's 
+> helpful, none-the-less.  And it's definitely better than finding out 
+> critical information /after/ you did it wrong, so while the answer here 
+> wasn't /that/ critical either way, I sure wish more people would ask 
+> before they actually deploy, and avoid problems they run into when it 
+> /was/ critical information they missed!  So you definitely have my 
+> respect as a wise and cautious administrator, taking the time to get 
+> things correct /before/ you make potential mistakes!  =:^)
+> 
+> 
+> Meanwhile, you didn't mention whether you've discovered the btrfs wiki as 
+> a resource and had read up there already or not.  So let me mention it, 
+> and recommend that if you haven't, you set aside a few hours to read up 
+> on btrfs and how it works, as well as problems you may encounter and 
+> possible solutions.  You may still have important questions like the 
+> above after reading thru the wiki, and indeed, may find reading it brings 
+> even more questions to your mind, but it's a very useful resource to read 
+> up a bit on, before starting in with btrfs.  I know it helped me quite a 
+> bit, tho I had questions after I read it, too.  But at least I knew a bit 
+> more about what questions I still needed to ask after that. =:^)
+> 
+> https://btrfs.wiki.kernel.org
+> 
+> Read up on most of the user documentation pages, anyway.  As a user not a 
+> dev, you can skip the developer pages unless like me you're simply 
+> curious and read some developer-targeted stuff anyway, even if you don't 
+> claim to actually be one.
+> 
+> ---
+> [1] Single-device suspend-image:  There are ways around this that involve 
+> complex hoop-jumping in the initr* before the image is reloaded, but at 
+> least here, I prefer to avoid that sort of complexity as it increases 
+> maintenance complexity as well, and as an admin I prefer a simpler system 
+> that I understand well enough to troubleshoot and recover from disaster, 
+> to a complex one that I don't really understand and thus can't 
+> effectively troubleshoot nor be confident I can effectively recover in a 
+> disaster situation.
+> 

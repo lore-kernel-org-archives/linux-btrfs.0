@@ -1,147 +1,224 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:34438 "EHLO plane.gmane.org"
+Received: from plane.gmane.org ([80.91.229.3]:36845 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752291AbcC0XMR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 27 Mar 2016 19:12:17 -0400
+	id S1752508AbcC1A4o (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 27 Mar 2016 20:56:44 -0400
 Received: from list by plane.gmane.org with local (Exim 4.69)
 	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1akJqw-0000ss-Je
-	for linux-btrfs@vger.kernel.org; Mon, 28 Mar 2016 01:12:14 +0200
+	id 1akLTy-0000fj-Hr
+	for linux-btrfs@vger.kernel.org; Mon, 28 Mar 2016 02:56:38 +0200
 Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
         by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 28 Mar 2016 01:12:14 +0200
+        for <linux-btrfs@vger.kernel.org>; Mon, 28 Mar 2016 02:56:38 +0200
 Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 28 Mar 2016 01:12:14 +0200
+        for <linux-btrfs@vger.kernel.org>; Mon, 28 Mar 2016 02:56:38 +0200
 To: linux-btrfs@vger.kernel.org
 From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: Again, no space left on device while rebalancing and recipe
- doesnt work
-Date: Sun, 27 Mar 2016 23:12:06 +0000 (UTC)
-Message-ID: <pan$a3a61$a4d50d7e$975a399f$abd2a6a2@cox.net>
-References: <20160227211450.GS26042@torres.zugschlus.de>
-	<CAOE4rSw_+PQEjAiHJkk03ec=J3ti9t9VCOD-zJSi=rP4dPnsjQ@mail.gmail.com>
-	<pan$a7a0b$d1f1da3$f3b73157$2f7e8e17@cox.net> <1476912.bqJXGglCVP@merkaba>
+Subject: Re: Raid 0 setup doubt.
+Date: Mon, 28 Mar 2016 00:56:28 +0000 (UTC)
+Message-ID: <pan$8fc2c$862a26c8$c5af9279$b4bfa8ec@cox.net>
+References: <56F7B77F.9050306@gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Martin Steigerwald posted on Sun, 27 Mar 2016 14:10:07 +0200 as excerpted:
+Jose Otero posted on Sun, 27 Mar 2016 12:35:43 +0200 as excerpted:
 
-> On Freitag, 4. März 2016 12:31:44 CEST Duncan wrote:
->> Dāvis Mosāns posted on Thu, 03 Mar 2016 17:39:12 +0200 as excerpted:
->> > 2016-03-03 6:57 GMT+02:00 Duncan <1i5t5.duncan@cox.net>:
->> >> You're issue isn't the same, because all your space was allocated,
->> >> leaving only 1 MiB unallocated, which isn't normally enough to
->> >> allocate a new chunk to rewrite the data or metadata from the old
->> >> chunks into.
->> >> 
->> >> That's a known issue, with known workarounds as dealt with in the
->> >> FAQ.
->> > 
->> > Ah, thanks, well it was surprising for me that balance failed with
->> > out of space when both data and metadata had not all been used and I
->> > thought it could just use space from those...
->> > 
->> > especially as from FAQ:
->> >> If there is a lot of allocated but unused data or metadata chunks,
->> >> a balance may reclaim some of that allocated space. This is the main
->> >> reason for running a balance on a single-device filesystem.
->> > 
->> > so I think regular balance should be smart enough that it could solve
->> > this on own and wouldn't need to specify any options.
->> 
->> Well it does solve the problem on its own... to the extent that it
->> eliminates empty chunks (kernel 3.17+, it didn't before that).  But if
->> there's even a single 4 KiB file block used in the (nominal 1 GiB sized
->> data) chunk, it's no longer empty and thus not eliminated by the empty
->> chunk cleanup routines.
+> Hello,
 > 
-> It could theoretically copy part of one almost empty chunk into another
-> chunk to free it up, couldn´t it? This way it can free some chunks
-> completely and then start the regular balance?
+> --------------------------------------
+> I apologize beforehand if I'm asking a too basic question for the
+> mailing list, or if it has been already answered at nauseam.
+> --------------------------------------
 
-To be clear here, as unfortunately I wasn't in the previous reply, "it" 
-in this case refers to the kernel's general btrfs handling -- IOW, the 
-kernel, since 3.17, routinely deletes entirely empty chunks.
+Actually, looks like pretty reasonable questions, to me. =:^)
 
-(Tho apparently there are cases when it misses some, as we've had a few 
-reports lately of a balance with usage=0 cleaning up more than the 
-trivial one or two chunks that could arguably have been "in transit" at 
-the time the balance was run... but that would be a bug.)
+> I have two hdd (Western Digital 750 GB approx. 700 GiB each), and I
+> planning to set up a RAID 0 through btrfs. UEFI firmware/boot, no dual
+> boot, only linux.
+> 
+> My question is, given the UEFI partition plus linux swap partition, I
+> won't have two equal sized partitions for setting up the RAID 0 array.
+> So, I'm not quite sure how to do it. I'll have:
+> 
+> /dev/sda:
+> 
+>        16 KiB (GPT partition table)
+> sda1:  512 MiB (EFI, fat32)
+> sda2:  16 GiB (linux-swap)
+> sda3:  rest of the disk /  (btrfs)
+> 
+> /dev/sdb:
+> 
+> sdb1:  (btrfs)
+> 
+> The btrfs partitions on each hdd are not of the same size (admittedly by
+> an small difference, but still). Even if a backup copy of the EFI
+> partition is created in the second hdd (i.e. sdb) which it may be, not
+> sure, because the linux-swap partion is still left out.
+> 
+> Should I stripe both btrfs partitions together no matter the size?
 
-For the kernel to routinely and automatically move content from one 
-partially filled chunk to another in ordered to free the one is a *MUCH* 
-higher level of complexity and thus a *MUCH* higher chance of serious 
-show-stopping bugs; certainly nothing /I/'d wish to touch, were I a btrfs 
-dev.  
+That should work without issue.
 
-It should be noted that btrfs is in general a COW (copy-on-write) 
-filesystem, so simply moving content from one chunk into another isn't 
-the way it works.  At the individual node level if not at the chunk 
-level, the COW nature of btrfs means that modification of the existing 
-data in both chunks would require copying the node elsewhere in ordered 
-to rewrite it to include the new/modified information, and this must be 
-handled atomically such that in the event of a crash, either the old 
-version or the new version survives, not a mix of half of one and half of 
-the other.  While btrfs is already designed from the ground up with that 
-in mind, normal file and metadata updates would handle that within single 
-chunks, and coordinating that atomicity across chunks really does add in 
-geometric proportion to the complexity of the situation.
+> mkfs.btrfs -m raid0 -d raid0 /dev/sda3 /dev/sdb1
+> 
+> How will btrfs manage the difference in size?
 
-Which means there's much more wisdom than might be first appreciated in 
-having balance simply stick to the chunk level COW that is its designed 
-scope, instead of having it try to do cross-chunk node-level COW, which 
-is what you're effectively proposing.  (Of course the complexity is in 
-fact rather higher than I'm explaining here, but the fact remains, to the 
-extent possible, keeping node level atomic operations to the node level, 
-and chunk level atomic operations to the chunk level, **GREATLY** 
-simplifies things, and deliberately crossing that level barrier where 
-it's not absolutely required is an invitation to bugs so complex and 
-severe that they could ultimately collapse the entire filesystem!)
+Btrfs raid0 requires two devices, minimum, striping each chunk across the 
+two.  Therefore, with two devices, to the extent that one device is 
+larger, the larger (as partitioned) device will leave the difference in 
+space unusable, as there's no second device to stripe with.
 
-> In either case, its unintuitive for the user to fail this. The
-> filesystem tools should allow a balance in *any* case without needing
-> special treatment by the user.
+> Or should I partition out the extra size of /dev/sdb for trying to match
+> equally sized partions? in other words:
+> 
+> /dev/sdb:
+> 
+> sdb1:  17 GiB approx. free or for whatever I want.
+> sdb2:  (btrfs)
+> 
+> and then:
+> 
+> mkfs.btrfs -m raid0 -d raid0 /dev/sda3 /dev/sdb2
 
-In fairness, there's a reason btrfs isn't claiming full stability and 
-maturity just yet -- it's stabilizing, but exactly this sort of problems 
-need to be worked out, before it can really be called fully stable.  
-Meanwhile, as the (borrowed from Latin) saying goes "caveat emptor", "let 
-the buyer beware."[1]  It remains the user's responsibility to ensure 
-that btrfs is an appropriate filesystem for their use-case, and if so and 
-once installed, that it remains within healthy operating parameters, 
-enough unallocated space is kept available to complete balances, backups 
-are kept in case some bug kills the filesystem, etc.
+This should work as well.
 
-I think what ultimately needs to and probably will happen, is they'll 
-create a new kind of global reserve that will come from unallocated space 
-(instead of already allocated metadata chunks, which is where the current 
-global reserve comes from, providing the same sort of reserve-COW-space 
-functionality to more ordinary metadata fuctions), reserving enough of it 
-to allocate at least one more full-size data chunk and one more full size 
-metadata chunk, with only balance allowed to actually use that new global 
-reserve space.  That way, balance will always have enough space to do 
-what it needs to do.
 
-Of course, it may well be necessary to let users tweak this reserve 
-space, say at mkfs.btrfs time, so users creating for instance smaller 
-mixed-data/metadata-chunk mode filesystems (like the 256 MiB /boot I have 
-on one device, with a parallel 256 MiB backup /boot on a second device) 
-can use all the space if it's more convenient for them to backup and do a 
-new mkfs.btrfs than it is to reserve additional otherwise unusable space 
-on tiny filesystems for balances they don't intend to do anyway.  
-Similarly, users at the TB scale might want to reserve say 100 GiB 
-instead of the default 1.5 GiB or so, and people doing large multi-device 
-filesystems might want to do say 20 or 50 GiB per device.  Etc.  But the 
-default reserve from unallocated would be enough for at least 1 chunk 
-each of data and metadata, two chunks for dup mode on a single device, on 
-each device.
+But there's another option you didn't mention, that may be useful, 
+depending on your exact need and usage of that swap:
+
+Split your swap space in half, say (roughly, you can make one slightly 
+larger than the other to allow for the EFI on one device) 8 GiB on each 
+of the hdds.  Then, in your fstab or whatever you use to list the swap 
+options, put the option priority=100 (or whatever number you find 
+appropriate) on /both/ swap partitions.
+
+With an equal priority on both swaps and with both active, the kernel 
+will effectively raid0 your swap as well (until one runs out, of course), 
+which, given that on spinning rust the device speed is the definite 
+performance bottleneck for swap, should roughly double your swap 
+performance. =:^)  Given that swap on spinning rust is slower than real 
+RAM by several orders of magnitude, it'll still be far slower than real 
+RAM, but twice as fast as it would be is better than otherwise, so...
+
+
+Tho how much RAM /do/ you have, and are you sure you really need swap at 
+all?  Many systems today have enough RAM that they don't really need swap 
+(at least as swap, see below), unless they're going to be used for 
+something extremely memory intensive, where the much lower speed of swap 
+isn't a problem.
+
+If you have 8 GiB of RAM or more, this may well be your situation.  With 
+4 GiB, you probably have more than enough RAM for normal operation, but 
+it may still be useful to have at least some swap, so Linux can keep more 
+recently used files cached while swapping out some seldom used 
+application RAM, but by 8 GiB you likely have enough RAM for reasonable 
+cache AND all your apps and won't actually use swap much at all.
+
+Tho if you frequently edit GiB+ video files and/or work with many virtual 
+machines, 8 GiB RAM will likely be actually used, and 16 GiB may be the 
+point at which you don't use swap much at all.  And of course if you are 
+using LOTS of VMs or doing heavy 4K video editing, 16 GiB or more may 
+well still be in heavy use, but with that kind of memory-intensive usage, 
+32 GiB of RAM or more would likely be a good investment.
+
+Anyway, for systems with enough memory to not need swap in /normal/ 
+circumstances, in the event that something's actually leaking memory 
+badly enough that swap is needed, there's a very good chance that you'll 
+never outrun the leak with swap anyway, as if it's really leaking gigs of 
+memory, it'll just eat up whatever gigs of swap you throw at it as well 
+and /still/ run out of memory.
+
+Meanwhile, swap to spinning rust really is /slow/.  You're talking 16 GiB 
+of swap, and spinning rust speeds of 50 MiB/sec for swap isn't unusual.  
+That's ~20 seconds worth of swap-thrashing waiting per GiB, ~320 seconds 
+or over five minutes worth of swap thrashing to use the full 16 GiB.  OK, 
+so you take that priority= idea and raid0 over two devices, it'll still 
+be ~2:40 worth of waiting, to fully use that swap.  Is 16 GiB of swap 
+/really/ both needed and worth that sort of wait if you do actually use 
+it?
+
+Tho again, if you're running a half dozen VMs and only actually use a 
+couple of them once or twice a day, having enough swap to let them swap 
+out the rest of the day, so the memory they took can be used for more 
+frequently accessed applications and cached files, can be useful.  But 
+that's a somewhat limited use-case.
+
+
+So swap, for its original use as slow memory at least, really isn't that 
+much used any longer, tho it can still be quite useful in specific use-
+cases.
+
+But there's another more modern use-case that can be useful for many.  
+Linux's suspend-to-disk, aka hibernate (as opposed to suspend-to-RAM, aka 
+sleep or standby), functionality.  Suspend-to-disk uses swap space to 
+store the suspend image.  And that's commonly enough used that swap still 
+has a modern usage after all, just not the one it was originally designed 
+for.
+
+The caveat with suspend-to-disk, however, is that normally, the entire 
+suspend image must be placed on a single swap device.[1]  If you intend 
+to use your swap to store a hibernate image, then, and if you have 16 GiB 
+or more of RAM and want to save as much of it as possible in that 
+hibernate image, then you'll want to keep that 16 GiB swap on a single 
+device in ordered to let you use the full size as a hibernate image.
+
+Tho of course, if the corresponding space on the other hdd is going to be 
+wasted anyway, as it will if you're doing btrfs raid0 on the big 
+partition of each device and you don't have anything else to do with the 
+remaining ~16 GiB on the other device, then you might still consider 
+doing a 16 GiB swap on each and using the priority= trick to raid0 them 
+during normal operation.  You're unlikely to actually use the full 32 GiB 
+of swap, but since it'll be double-speed due to the raid0, if you do, 
+it'll still be basically the same as using a single 16 GiB swap device, 
+and at the more typical usage (if even above 0 at all) of a few MiB to a 
+GiB or so, you'll still get the benefit of the raid0 swap.
+
+> Again, I'm sorry if it's an idiotic question, but I don't have it quite
+> clear and I would like to do it properly. So, any hint from more
+> knowable users would be MUCH appreciate it.
+
+Perhaps this was more information than you expected, but hopefully it's 
+helpful, none-the-less.  And it's definitely better than finding out 
+critical information /after/ you did it wrong, so while the answer here 
+wasn't /that/ critical either way, I sure wish more people would ask 
+before they actually deploy, and avoid problems they run into when it 
+/was/ critical information they missed!  So you definitely have my 
+respect as a wise and cautious administrator, taking the time to get 
+things correct /before/ you make potential mistakes!  =:^)
+
+
+Meanwhile, you didn't mention whether you've discovered the btrfs wiki as 
+a resource and had read up there already or not.  So let me mention it, 
+and recommend that if you haven't, you set aside a few hours to read up 
+on btrfs and how it works, as well as problems you may encounter and 
+possible solutions.  You may still have important questions like the 
+above after reading thru the wiki, and indeed, may find reading it brings 
+even more questions to your mind, but it's a very useful resource to read 
+up a bit on, before starting in with btrfs.  I know it helped me quite a 
+bit, tho I had questions after I read it, too.  But at least I knew a bit 
+more about what questions I still needed to ask after that. =:^)
+
+https://btrfs.wiki.kernel.org
+
+Read up on most of the user documentation pages, anyway.  As a user not a 
+dev, you can skip the developer pages unless like me you're simply 
+curious and read some developer-targeted stuff anyway, even if you don't 
+claim to actually be one.
 
 ---
-[1] Caveat Emptor:  https://en.wikipedia.org/wiki/Caveat_emptor
+[1] Single-device suspend-image:  There are ways around this that involve 
+complex hoop-jumping in the initr* before the image is reloaded, but at 
+least here, I prefer to avoid that sort of complexity as it increases 
+maintenance complexity as well, and as an admin I prefer a simpler system 
+that I understand well enough to troubleshoot and recover from disaster, 
+to a complex one that I don't really understand and thus can't 
+effectively troubleshoot nor be confident I can effectively recover in a 
+disaster situation.
 
 -- 
 Duncan - List replies preferred.   No HTML msgs.

@@ -1,156 +1,137 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qg0-f50.google.com ([209.85.192.50]:35341 "EHLO
-	mail-qg0-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754783AbcC1Mgb (ORCPT
+Received: from sender163-mail.zoho.com ([74.201.84.163]:24397 "EHLO
+	sender163-mail.zoho.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753285AbcC1Ofi (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 28 Mar 2016 08:36:31 -0400
-Received: by mail-qg0-f50.google.com with SMTP id y89so107109546qge.2
-        for <linux-btrfs@vger.kernel.org>; Mon, 28 Mar 2016 05:36:30 -0700 (PDT)
-Received: from [127.0.0.1] (rrcs-70-62-41-24.central.biz.rr.com. [70.62.41.24])
-        by smtp.gmail.com with ESMTPSA id r65sm900246qki.17.2016.03.28.05.36.29
-        for <linux-btrfs@vger.kernel.org>
-        (version=TLSv1/SSLv3 cipher=OTHER);
-        Mon, 28 Mar 2016 05:36:29 -0700 (PDT)
-Subject: Re: Raid 0 setup doubt.
-To: linux-btrfs@vger.kernel.org
-References: <56F7B77F.9050306@gmail.com>
- <pan$8fc2c$862a26c8$c5af9279$b4bfa8ec@cox.net>
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <56F9252F.90704@gmail.com>
-Date: Mon, 28 Mar 2016 08:35:59 -0400
+	Mon, 28 Mar 2016 10:35:38 -0400
+From: "James Johnston" <johnstonj.public@codenest.com>
+To: "'Duncan'" <1i5t5.duncan@cox.net>, <linux-btrfs@vger.kernel.org>
+References: <001b01d188ac$16740630$435c1290$@codenest.com> <pan$284e3$6ee9615a$919b0339$15e3af27@cox.net>
+In-Reply-To: <pan$284e3$6ee9615a$919b0339$15e3af27@cox.net>
+Subject: RE: Compression causes kernel crashes if there are I/O or checksum errors (was: RE: kernel BUG at fs/btrfs/volumes.c:5519 when hot-removing device in RAID-1)
+Date: Mon, 28 Mar 2016 14:34:14 -0000
+Message-ID: <003801d188fe$e8c9b920$ba5d2b60$@codenest.com>
 MIME-Version: 1.0
-In-Reply-To: <pan$8fc2c$862a26c8$c5af9279$b4bfa8ec@cox.net>
-Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Type: text/plain;
+	charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2016-03-27 20:56, Duncan wrote:
+Hi,
+
+Thanks for the corroborating report - it does sound to me like you ran into the
+same problem I've found.  (I don't suppose you ever captured any of the
+crashes?  If they assert on the same thing as me then it's even stronger
+evidence.)
+
+> The failure mode of this particular ssd was premature failure of more and
+> more sectors, about 3 MiB worth over several months based on the raw
+> count of reallocated sectors in smartctl -A, but using scrub to rewrite
+> them from the good device would normally work, forcing the firmware to
+> remap that sector to one of the spares as scrub corrected the problem.
+
+I wonder what the risk of a CRC collision was in your situation?
+
+Certainly my test of "dd if=/dev/zero of=/dev/sdb" was very abusive, and I
+wonder if the result after scrubbing is trustworthy, or if there was some
+collisions.  But I wasn't checking to see if data coming out the other end was
+OK - I was just trying to see if the kernel crashes or not (e.g. a USB stick
+holding a bad btrfs file system should not crash a system).
+
+> But /home (on an entirely separate filesystem, but a filesystem still on
+> a pair of partitions, one on each of the same two ssds) would often have
+> more, and because I have a particular program that I start with my X and
+> KDE session that reads a bunch of files into cache as it starts up, I had
+> a systemd service configured to start at boot and cat all the files in
+> that particular directory to /dev/null, thus caching them so when I later
+> started X and KDE (I don't run a *DM and thus login at the text CLI and
+> startx, with a kde session, from the CLI) and thus this program, all the
+> files it reads would already be in cache.
 >
-> But there's another option you didn't mention, that may be useful,
-> depending on your exact need and usage of that swap:
->
-> Split your swap space in half, say (roughly, you can make one slightly
-> larger than the other to allow for the EFI on one device) 8 GiB on each
-> of the hdds.  Then, in your fstab or whatever you use to list the swap
-> options, put the option priority=100 (or whatever number you find
-> appropriate) on /both/ swap partitions.
->
-> With an equal priority on both swaps and with both active, the kernel
-> will effectively raid0 your swap as well (until one runs out, of course),
-> which, given that on spinning rust the device speed is the definite
-> performance bottleneck for swap, should roughly double your swap
-> performance. =:^)  Given that swap on spinning rust is slower than real
-> RAM by several orders of magnitude, it'll still be far slower than real
-> RAM, but twice as fast as it would be is better than otherwise, so...
-I'm not 100% certain that it will double swap bandwidth unless you're 
-constantly swapping, and even then it would only on average double the 
-write bandwidth.  The kernel swaps pages in groups (8 pages by default, 
-which is 32k, I usually up this to 16 pages on my systems because when 
-I'm hitting swap, it usually means I'm hitting it hard), and I'm pretty 
-certain that each group of pages only goes to one swap device.  This 
-means that by default, with two devices, you would get 32k written at a 
-time to alternating devices.  However, there is no guarantee that when 
-you swap things in they will be from alternating devices, so you could 
-be reading multiple MB of data from one device without even touching the 
-other one.  Thus, for writes, this works like a raid0 setup with a large 
-stripe size, but for reads it ends up somewhere between raid0 and single 
-disk performance, depending on how lucky you are and what type of 
-workload you are dealing with.
->
-> Tho how much RAM /do/ you have, and are you sure you really need swap at
-> all?  Many systems today have enough RAM that they don't really need swap
-> (at least as swap, see below), unless they're going to be used for
-> something extremely memory intensive, where the much lower speed of swap
-> isn't a problem.
->
-> If you have 8 GiB of RAM or more, this may well be your situation.  With
-> 4 GiB, you probably have more than enough RAM for normal operation, but
-> it may still be useful to have at least some swap, so Linux can keep more
-> recently used files cached while swapping out some seldom used
-> application RAM, but by 8 GiB you likely have enough RAM for reasonable
-> cache AND all your apps and won't actually use swap much at all.
->
-> Tho if you frequently edit GiB+ video files and/or work with many virtual
-> machines, 8 GiB RAM will likely be actually used, and 16 GiB may be the
-> point at which you don't use swap much at all.  And of course if you are
-> using LOTS of VMs or doing heavy 4K video editing, 16 GiB or more may
-> well still be in heavy use, but with that kind of memory-intensive usage,
-> 32 GiB of RAM or more would likely be a good investment.
->
-> Anyway, for systems with enough memory to not need swap in /normal/
-> circumstances, in the event that something's actually leaking memory
-> badly enough that swap is needed, there's a very good chance that you'll
-> never outrun the leak with swap anyway, as if it's really leaking gigs of
-> memory, it'll just eat up whatever gigs of swap you throw at it as well
-> and /still/ run out of memory.
->
-> Meanwhile, swap to spinning rust really is /slow/.  You're talking 16 GiB
-> of swap, and spinning rust speeds of 50 MiB/sec for swap isn't unusual.
-> That's ~20 seconds worth of swap-thrashing waiting per GiB, ~320 seconds
-> or over five minutes worth of swap thrashing to use the full 16 GiB.  OK,
-> so you take that priority= idea and raid0 over two devices, it'll still
-> be ~2:40 worth of waiting, to fully use that swap.  Is 16 GiB of swap
-> /really/ both needed and worth that sort of wait if you do actually use
-> it?
->
-> Tho again, if you're running a half dozen VMs and only actually use a
-> couple of them once or twice a day, having enough swap to let them swap
-> out the rest of the day, so the memory they took can be used for more
-> frequently accessed applications and cached files, can be useful.  But
-> that's a somewhat limited use-case.
->
->
-> So swap, for its original use as slow memory at least, really isn't that
-> much used any longer, tho it can still be quite useful in specific use-
-> cases.
-I would tend to disagree here.  Using the default settings under Linux, 
-it isn't used much, but there are many people (myself included), who 
-turn off memory over-commit, and thus need reasonable amounts of swap 
-space.  Many programs will allocate huge chunks of memory that they 
-never need or even touch, either 'just in case', or because they want to 
-manage their own memory usage.  To account for this, Linux has a knob 
-for the virtual memory subsystem that controls how it handles 
-allocations beyond the system's effective memory limit (userspace 
-accessible RAM + swap space).  For specifics, you can check 
-Documentation/sysctl/vm.txt and Documentation/vm/overcommit-accounting 
-in the kernel source tree.  The general idea is that by default, the 
-kernel tries to estimate how much can be allocated safely.  This usually 
-works well until you start to get close to an OOM condition, but it 
-slows down memory allocations significantly.  There are two other 
-options for this though, just pretend there's enough memory until there 
-isn't (this is the fastest, and probably should be the default if you 
-don't have swap space), and never over-commit.  Telling the kernel to 
-never over-commit is faster than the default, and provides more 
-deterministic behavior (you can prove exactly how much needs to be 
-allocated to hit OOM), but requires swap space (because it calculates 
-the limit as swap space + some percentage of user-space accessible 
-memory).  I know a lot of people who run server systems who configure 
-the system to never over-commit memory, then just run with lots of swap 
-space.  As an example, my home server system has 16G of RAM with 64G of 
-swap space configured (16G on SSD's at a higher priority, 48G on 
-traditional HDD's).  This lets me set it to never over-commit memory, 
-while still allowing me to work with big (astronomical scale, so >10k 
-pixels on a side) images, do complex audio/video editing, and work with 
-big VCS repositories without any issues.
->
-> But there's another more modern use-case that can be useful for many.
-> Linux's suspend-to-disk, aka hibernate (as opposed to suspend-to-RAM, aka
-> sleep or standby), functionality.  Suspend-to-disk uses swap space to
-> store the suspend image.  And that's commonly enough used that swap still
-> has a modern usage after all, just not the one it was originally designed
-> for.
->
-> The caveat with suspend-to-disk, however, is that normally, the entire
-> suspend image must be placed on a single swap device.[1]  If you intend
-> to use your swap to store a hibernate image, then, and if you have 16 GiB
-> or more of RAM and want to save as much of it as possible in that
-> hibernate image, then you'll want to keep that 16 GiB swap on a single
-> device in ordered to let you use the full size as a hibernate image.
-The other caveat that nobody seems to mention outside of specific cases 
-is that using suspend to disks exposes you to direct attack by anyone 
-with the ability to either physically access the system, or boot an 
-alternative OS on it.  This is however not a Linux specific issue 
-(although Windows and OS X do a much better job of validating the 
-hibernation image than Linux does before resuming from it, so it's not 
-as easy to trick them into loading arbitrary data).
+> <snip> If that service was allowed to run, it would read in all
+> those files and the resulting errors would often crash the kernel.
+
+This sounds oddly familiar to how I made it crash. :)
+
+> So I quickly learned that if I powered up and the kernel crashed at that
+> point, I could reboot with the emergency kernel parameter, which would
+> tell systemd to give me a maintenance-mode root login prompt after doing
+> its normal mounts but before starting the normal post-mount services, and
+> I could run scrub from there.  That would normally repair things without
+> triggering the crash, and when I had run scrub repeatedly if necessary to
+> correct any unverified errors in the first runs, I could then exit
+> emergency mode and let systemd start the normal services, including the
+> service that read all these files off the now freshly scrubbed
+> filesystem, without further issues.
+
+That is one thing I did not test.  I only ever scrubbed after first doing the
+"cat all files to null" test.  So in the case of compression, I never got that
+far.  Probably someone should test the scrubbing more thoroughly (i.e. with
+that abusive "dd" test I did) just to be sure that it is stable to confirm your
+observations, and that the problem is only limited to ordinary file I/O on the
+file system.
+
+> And apparently the devs don't test the
+> someone less common combination of both compression and high numbers of
+> raid1 correctable checksum errors, or they would have probably detected
+> and fixed the problem from that.
+
+Well, I've only tested with RAID-1.  I don't know if:
+
+1.  The problem occurs with other RAID levels like RAID-10, RAID5/6.
+
+2.  The kernel crashes in non-duplicated levels.  In these cases, data loss is
+    inevitable since the data is missing, but these losses should be handled
+    cleanly, and not by crashing the kernel.  For example:
+
+    a.  Checksum errors in RAID-0.
+    b.  Checksum errors on a single hard drive (not multiple device array).
+
+I guess more testing is needed, but I don't have time to do this more
+exhaustive testing right now, especially for these other RAID levels I'm not
+planning to use (as I'm doing this in my limited free time).  (For now, I can
+just turn off compression & move on.)
+
+Do any devs do regular regression testing for these sorts of edge cases once
+they come up? (i.e. this problem won't come back, will it?)
+
+> So thanks for the additional tests and narrowing it down to the
+> compression on raid1 with many checksum errors case.  Now that you've
+> found out how the problem can be replicated, I'd guess we'll have a fix
+> patch in relatively short order. =:^)
+
+Hopefully!  Like I said, it might not be limited to RAID-1 though.  I only
+tested RAID-1.
+
+> That said, based on my own experience, I don't consider the problem dire
+> enough to switch off compression on my btrfs raid1s here.  After all, I
+> both figured out how to live with the problem on my failing ssd before I
+> knew all this detail, and have eliminated the symptoms for the time being
+> at least, as the devices I'm using now are currently reliable enough that
+> I don't have to deal with this issue.
+> 
+> And in the even that I do encounter the problem again, in severe enough
+> form that I can't even get a successful scrub in to fix it, possibly due
+> to catastrophic failure of a device, I should still be able to simply
+> remove that device and use degraded,ro mounts of the remaining device to
+> get access to the data in ordered to copy it to a replacement filesystem.
+
+That sounds like it would work.  Assuming this bug doesn't eat data in the
+process.  I have not tried scrubbing after encountering this bug.  The remaining
+"good" device in the array ought to still be ok.  But I have not tested.  You
+might want to test that.
+
+The most severe form might be if the drive drops off the SATA bus, which from
+what I read is not an uncommon failure mode.  In that case, you're probably
+guaranteed to encounter this in short order and the system is going to go down.
+
+I did at one point awhile back test that I could boot the system degraded after
+it went down from hot-removing a drive.  This was ultimately successful (after
+manually tweaking the boot process in grub/initramfs: unrelated issues), but I
+don't recall scrubbing it afterwards.
+
+Best regards,
+
+James Johnston
+
 

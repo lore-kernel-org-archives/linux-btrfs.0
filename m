@@ -1,212 +1,477 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-yw0-f181.google.com ([209.85.161.181]:34555 "EHLO
-	mail-yw0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1757707AbcC2RWP (ORCPT
+Received: from mail-yw0-f179.google.com ([209.85.161.179]:34437 "EHLO
+	mail-yw0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752982AbcC2RbH (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 29 Mar 2016 13:22:15 -0400
-Received: by mail-yw0-f181.google.com with SMTP id h129so27526946ywb.1
-        for <linux-btrfs@vger.kernel.org>; Tue, 29 Mar 2016 10:22:15 -0700 (PDT)
+	Tue, 29 Mar 2016 13:31:07 -0400
+Received: by mail-yw0-f179.google.com with SMTP id h129so27867521ywb.1
+        for <linux-btrfs@vger.kernel.org>; Tue, 29 Mar 2016 10:31:06 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <1458610552-9845-1-git-send-email-quwenruo@cn.fujitsu.com>
+In-Reply-To: <1458610552-9845-12-git-send-email-quwenruo@cn.fujitsu.com>
 References: <1458610552-9845-1-git-send-email-quwenruo@cn.fujitsu.com>
-Date: Tue, 29 Mar 2016 19:22:14 +0200
-Message-ID: <CAOcd+r0kVY2odm_rzNUMf3MGVCaRh8aDnHiY+Eo3ceKOLNXSyA@mail.gmail.com>
-Subject: Re: [PATCH v8 00/27][For 4.7] Btrfs: Add inband (write time)
- de-duplication framework
-From: Alex Lyakas <alex.btrfs@zadarastorage.com>
+	<1458610552-9845-12-git-send-email-quwenruo@cn.fujitsu.com>
+Date: Tue, 29 Mar 2016 19:31:06 +0200
+Message-ID: <CAOcd+r0bf7815_JJhm+5mt3+zRSXyZVS5W=z6JdtYomxUGXxEQ@mail.gmail.com>
+Subject: Re: [PATCH v8 11/27] btrfs: dedupe: Introduce interfaces to resume
+ and cleanup dedupe info
+From: Alex Lyakas <alex@zadarastorage.com>
 To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>,
+        Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Greetings Qu Wenruo,
-
-I have reviewed the dedup patchset found in the github account you
-mentioned. I have several questions. Please note that by all means I
-am not criticizing your design or code. I just want to make sure that
-my understanding of the code is proper.
-
-1) You mentioned in several emails that at some point byte-to-byte
-comparison is to be performed. However, I do not see this in the code.
-It seems that generic_search() only looks for the hash value match. If
-there is a match, it goes ahead and adds a delayed ref.
-
-2) If btrfs_dedupe_search() does not find a match, we unlock the dedup
-mutex and proceed with the normal COW. What happens if there are
-several IO streams to different files writing an identical block, but
-we don't have such block in our dedup DB? Then all
-btrfs_dedupe_search() calls will not find a match, so all streams will
-allocate space for their block (which are all identical). At some
-point, they will call insert_reserved_file_extent() and will call
-btrfs_dedupe_add(). Since there is a global mutex, the first stream
-will insert the dedup hash entries into the DB, and all other streams
-will find that such hash entry already exists. So the end result is
-that we have the hash entry in the DB, but still we have multiple
-copies of the same block allocated, due to timing issues. Is this
-correct?
-
-3) generic_search() competes with __btrfs_free_extent(). Meaning that
-generic_search() wants to add a delayed ref to an existing extent,
-whereas __btrfs_free_extent() wants to delete an entry from the dedup
-DB. The race is resolved as follows:
-- generic_search attempts to lock the delayed ref head
-- if it succeeds to lock, then __btrfs_free_extent() is not running
-right now. So we can add a delayed ref. Later, when delayed ref head
-will be run, it will figure out what needs to be done (free the extent
-or not)
-- if we fail to lock, then there is a delayed ref processing for this
-bytenr. We drop all locks and redo the search from the top. If
-__btrfs_free_extent() has deleted the dedup hash meanwhile, we will
-not find it, and proceed with normal COW.
-Is my understanding correct?
-
-I have also few nitpicks on the code, will reply to relevant patches.
-
-Thanks for doing this work,
-Alex.
-
-
+Hi Qu, Wang,
 
 On Tue, Mar 22, 2016 at 3:35 AM, Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
-> This patchset can be fetched from github:
-> https://github.com/adam900710/linux.git wang_dedupe_20160322
+> Since we will introduce a new on-disk based dedupe method, introduce new
+> interfaces to resume previous dedupe setup.
 >
-> This updated version of inband de-duplication has the following features:
-> 1) ONE unified dedup framework.
->    Most of its code is hidden quietly in dedup.c and export the minimal
->    interfaces for its caller.
->    Reviewer and further developer would benefit from the unified
->    framework.
+> And since we introduce a new tree for status, also add disable handler
+> for it.
 >
-> 2) TWO different back-end with different trade-off
->    One is the improved version of previous Fujitsu in-memory only dedup.
->    The other one is enhanced dedup implementation from Liu Bo.
->    Changed its tree structure to handle bytenr -> hash search for
->    deleting hash, without the hideous data backref hack.
+> Signed-off-by: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
+> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+> ---
+>  fs/btrfs/dedupe.c  | 269 +++++++++++++++++++++++++++++++++++++++++++++++++----
+>  fs/btrfs/dedupe.h  |  13 +++
+>  fs/btrfs/disk-io.c |  21 ++++-
+>  fs/btrfs/disk-io.h |   1 +
+>  4 files changed, 283 insertions(+), 21 deletions(-)
 >
-> 3) Support compression with dedupe
->    Now dedupe can work with compression.
->    Means that, a dedupe miss case can be compressed, and dedupe hit case
->    can also reuse compressed file extents.
+> diff --git a/fs/btrfs/dedupe.c b/fs/btrfs/dedupe.c
+> index 7ef2c37..1112fec 100644
+> --- a/fs/btrfs/dedupe.c
+> +++ b/fs/btrfs/dedupe.c
+> @@ -21,6 +21,8 @@
+>  #include "transaction.h"
+>  #include "delayed-ref.h"
+>  #include "qgroup.h"
+> +#include "disk-io.h"
+> +#include "locking.h"
 >
-> 4) Ioctl interface with persist dedup status
->    Advised by David, now we use ioctl to enable/disable dedup.
+>  struct inmem_hash {
+>         struct rb_node hash_node;
+> @@ -41,10 +43,103 @@ static inline struct inmem_hash *inmem_alloc_hash(u16 type)
+>                         GFP_NOFS);
+>  }
 >
->    And we now have dedup status, recorded in the first item of dedup
->    tree.
->    Just like quota, once enabled, no extra ioctl is needed for next
->    mount.
+> +static int init_dedupe_info(struct btrfs_dedupe_info **ret_info, u16 type,
+> +                           u16 backend, u64 blocksize, u64 limit)
+> +{
+> +       struct btrfs_dedupe_info *dedupe_info;
+> +
+> +       dedupe_info = kzalloc(sizeof(*dedupe_info), GFP_NOFS);
+> +       if (!dedupe_info)
+> +               return -ENOMEM;
+> +
+> +       dedupe_info->hash_type = type;
+> +       dedupe_info->backend = backend;
+> +       dedupe_info->blocksize = blocksize;
+> +       dedupe_info->limit_nr = limit;
+> +
+> +       /* only support SHA256 yet */
+> +       dedupe_info->dedupe_driver = crypto_alloc_shash("sha256", 0, 0);
+> +       if (IS_ERR(dedupe_info->dedupe_driver)) {
+> +               int ret;
+> +
+> +               ret = PTR_ERR(dedupe_info->dedupe_driver);
+> +               kfree(dedupe_info);
+> +               return ret;
+> +       }
+> +
+> +       dedupe_info->hash_root = RB_ROOT;
+> +       dedupe_info->bytenr_root = RB_ROOT;
+> +       dedupe_info->current_nr = 0;
+> +       INIT_LIST_HEAD(&dedupe_info->lru_list);
+> +       mutex_init(&dedupe_info->lock);
+> +
+> +       *ret_info = dedupe_info;
+> +       return 0;
+> +}
+> +
+> +static int init_dedupe_tree(struct btrfs_fs_info *fs_info,
+> +                           struct btrfs_dedupe_info *dedupe_info)
+> +{
+> +       struct btrfs_root *dedupe_root;
+> +       struct btrfs_key key;
+> +       struct btrfs_path *path;
+> +       struct btrfs_dedupe_status_item *status;
+> +       struct btrfs_trans_handle *trans;
+> +       int ret;
+> +
+> +       path = btrfs_alloc_path();
+> +       if (!path)
+> +               return -ENOMEM;
+> +
+> +       trans = btrfs_start_transaction(fs_info->tree_root, 2);
+> +       if (IS_ERR(trans)) {
+> +               ret = PTR_ERR(trans);
+> +               goto out;
+> +       }
+> +       dedupe_root = btrfs_create_tree(trans, fs_info,
+> +                                      BTRFS_DEDUPE_TREE_OBJECTID);
+> +       if (IS_ERR(dedupe_root)) {
+> +               ret = PTR_ERR(dedupe_root);
+> +               btrfs_abort_transaction(trans, fs_info->tree_root, ret);
+> +               goto out;
+> +       }
+> +       dedupe_info->dedupe_root = dedupe_root;
+> +
+> +       key.objectid = 0;
+> +       key.type = BTRFS_DEDUPE_STATUS_ITEM_KEY;
+> +       key.offset = 0;
+> +
+> +       ret = btrfs_insert_empty_item(trans, dedupe_root, path, &key,
+> +                                     sizeof(*status));
+> +       if (ret < 0) {
+> +               btrfs_abort_transaction(trans, fs_info->tree_root, ret);
+> +               goto out;
+> +       }
+> +
+> +       status = btrfs_item_ptr(path->nodes[0], path->slots[0],
+> +                               struct btrfs_dedupe_status_item);
+> +       btrfs_set_dedupe_status_blocksize(path->nodes[0], status,
+> +                                        dedupe_info->blocksize);
+> +       btrfs_set_dedupe_status_limit(path->nodes[0], status,
+> +                       dedupe_info->limit_nr);
+> +       btrfs_set_dedupe_status_hash_type(path->nodes[0], status,
+> +                       dedupe_info->hash_type);
+> +       btrfs_set_dedupe_status_backend(path->nodes[0], status,
+> +                       dedupe_info->backend);
+> +       btrfs_mark_buffer_dirty(path->nodes[0]);
+> +out:
+> +       btrfs_free_path(path);
+> +       if (ret == 0)
+> +               btrfs_commit_transaction(trans, fs_info->tree_root);
+> +       return ret;
+> +}
+> +
+>  int btrfs_dedupe_enable(struct btrfs_fs_info *fs_info, u16 type, u16 backend,
+>                         u64 blocksize, u64 limit_nr)
+>  {
+>         struct btrfs_dedupe_info *dedupe_info;
+> +       int create_tree;
+> +       u64 compat_ro_flag = btrfs_super_compat_ro_flags(fs_info->super_copy);
+>         u64 limit = limit_nr;
+>         int ret = 0;
 >
-> 5) Ability to disable dedup for given dirs/files
->    It works just like the compression prop method, by adding a new
->    xattr.
+> @@ -63,6 +158,14 @@ int btrfs_dedupe_enable(struct btrfs_fs_info *fs_info, u16 type, u16 backend,
+>                 limit = BTRFS_DEDUPE_LIMIT_NR_DEFAULT;
+>         if (backend == BTRFS_DEDUPE_BACKEND_ONDISK && limit_nr != 0)
+>                 limit = 0;
+> +       /* Ondisk backend needs DEDUP RO compat feature */
+> +       if (!(compat_ro_flag & BTRFS_FEATURE_COMPAT_RO_DEDUPE) &&
+> +           backend == BTRFS_DEDUPE_BACKEND_ONDISK)
+> +               return -EOPNOTSUPP;
+> +
+> +       /* Meaningless and unable to enable dedupe for RO fs */
+> +       if (fs_info->sb->s_flags & MS_RDONLY)
+> +               return -EROFS;
 >
-> TODO:
-> 1) Add extent-by-extent comparison for faster but more conflicting algorithm
->    Current SHA256 hash is quite slow, and for some old(5 years ago) CPU,
->    CPU may even be a bottleneck other than IO.
->    But for faster hash, it will definitely cause conflicts, so we need
->    extent comparison before we introduce new dedup algorithm.
+>         dedupe_info = fs_info->dedupe_info;
+>         if (dedupe_info) {
+> @@ -81,29 +184,71 @@ int btrfs_dedupe_enable(struct btrfs_fs_info *fs_info, u16 type, u16 backend,
+>                 return 0;
+>         }
 >
-> 2) Misc end-user related helpers
->    Like handy and easy to implement dedup rate report.
->    And method to query in-memory hash size for those "non-exist" users who
->    want to use 'dedup enable -l' option but didn't ever know how much
->    RAM they have.
+> +       dedupe_info = NULL;
+>  enable:
+> -       dedupe_info = kzalloc(sizeof(*dedupe_info), GFP_NOFS);
+> -       if (dedupe_info)
+> +       create_tree = compat_ro_flag & BTRFS_FEATURE_COMPAT_RO_DEDUPE;
+> +
+> +       ret = init_dedupe_info(&dedupe_info, type, backend, blocksize, limit);
+> +       if (ret < 0)
+> +               return ret;
+> +       if (create_tree) {
+> +               ret = init_dedupe_tree(fs_info, dedupe_info);
+> +               if (ret < 0)
+> +                       goto out;
+> +       }
+> +
+> +       fs_info->dedupe_info = dedupe_info;
+I think this leaks memory. If previously we had a valid
+fs_info->dedupe_info, it will remain allocated.
+
+
+> +       /* We must ensure dedupe_enabled is modified after dedupe_info */
+> +       smp_wmb();
+> +       fs_info->dedupe_enabled = 1;
+> +out:
+> +       if (ret < 0) {
+> +               crypto_free_shash(dedupe_info->dedupe_driver);
+> +               kfree(dedupe_info);
+> +       }
+> +       return ret;
+> +}
+> +
+> +int btrfs_dedupe_resume(struct btrfs_fs_info *fs_info,
+> +                       struct btrfs_root *dedupe_root)
+> +{
+> +       struct btrfs_dedupe_info *dedupe_info;
+> +       struct btrfs_dedupe_status_item *status;
+> +       struct btrfs_key key;
+> +       struct btrfs_path *path;
+> +       u64 blocksize;
+> +       u64 limit;
+> +       u16 type;
+> +       u16 backend;
+> +       int ret = 0;
+> +
+> +       path = btrfs_alloc_path();
+> +       if (!path)
+>                 return -ENOMEM;
 >
-> Changelog:
-> v2:
->   Totally reworked to handle multiple backends
-> v3:
->   Fix a stupid but deadly on-disk backend bug
->   Add handle for multiple hash on same bytenr corner case to fix abort
->   trans error
->   Increase dedup rate by enhancing delayed ref handler for both backend.
->   Move dedup_add() to run_delayed_ref() time, to fix abort trans error.
->   Increase dedup block size up limit to 8M.
-> v4:
->   Add dedup prop for disabling dedup for given files/dirs.
->   Merge inmem_search() and ondisk_search() into generic_search() to save
->   some code
->   Fix another delayed_ref related bug.
->   Use the same mutex for both inmem and ondisk backend.
->   Move dedup_add() back to btrfs_finish_ordered_io() to increase dedup
->   rate.
-> v5:
->   Reuse compress routine for much simpler dedup function.
->   Slightly improved performance due to above modification.
->   Fix race between dedup enable/disable
->   Fix for false ENOSPC report
-> v6:
->   Further enable/disable race window fix.
->   Minor format change according to checkpatch.
-> v7:
->   Fix one concurrency bug with balance.
->   Slightly modify return value from -EINVAL to -EOPNOTSUPP for
->   btrfs_dedup_ioctl() to allow progs to distinguish unsupported commands
->   and wrong parameter.
->   Rebased to integration-4.6.
-> v8:
->   Rename 'dedup' to 'dedupe'.
->   Add support to allow dedupe and compression work at the same time.
->   Fix several balance related bugs. Special thanks to Satoru Takeuchi,
->   who exposed most of them.
->   Small dedupe hit case performance improvement.
+> -       dedupe_info->hash_type = type;
+> -       dedupe_info->backend = backend;
+> -       dedupe_info->blocksize = blocksize;
+> -       dedupe_info->limit_nr = limit;
+> +       key.objectid = 0;
+> +       key.type = BTRFS_DEDUPE_STATUS_ITEM_KEY;
+> +       key.offset = 0;
 >
-> Qu Wenruo (12):
->   btrfs: delayed-ref: Add support for increasing data ref under spinlock
->   btrfs: dedupe: Inband in-memory only de-duplication implement
->   btrfs: dedupe: Add basic tree structure for on-disk dedupe method
->   btrfs: dedupe: Introduce interfaces to resume and cleanup dedupe info
->   btrfs: dedupe: Add support for on-disk hash search
->   btrfs: dedupe: Add support to delete hash for on-disk backend
->   btrfs: dedupe: Add support for adding hash for on-disk backend
->   btrfs: Fix a memory leak in inband dedupe hash
->   btrfs: dedupe: Fix metadata balance error when dedupe is enabled
->   btrfs: dedupe: Preparation for compress-dedupe co-work
->   btrfs: relocation: Enhance error handling to avoid BUG_ON
->   btrfs: dedupe: Fix a space cache delalloc bytes underflow bug
+> -       /* Only support SHA256 yet */
+> -       dedupe_info->dedupe_driver = crypto_alloc_shash("sha256", 0, 0);
+> -       if (IS_ERR(dedupe_info->dedupe_driver)) {
+> -               btrfs_err(fs_info, "failed to init sha256 driver");
+> -               ret = PTR_ERR(dedupe_info->dedupe_driver);
+> +       ret = btrfs_search_slot(NULL, dedupe_root, &key, path, 0, 0);
+> +       if (ret > 0) {
+> +               ret = -ENOENT;
+> +               goto out;
+> +       } else if (ret < 0) {
+>                 goto out;
+>         }
 >
-> Wang Xiaoguang (15):
->   btrfs: dedupe: Introduce dedupe framework and its header
->   btrfs: dedupe: Introduce function to initialize dedupe info
->   btrfs: dedupe: Introduce function to add hash into in-memory tree
->   btrfs: dedupe: Introduce function to remove hash from in-memory tree
->   btrfs: dedupe: Introduce function to search for an existing hash
->   btrfs: dedupe: Implement btrfs_dedupe_calc_hash interface
->   btrfs: ordered-extent: Add support for dedupe
->   btrfs: dedupe: Add ioctl for inband dedupelication
->   btrfs: dedupe: add an inode nodedupe flag
->   btrfs: dedupe: add a property handler for online dedupe
->   btrfs: dedupe: add per-file online dedupe control
->   btrfs: try more times to alloc metadata reserve space
->   btrfs: dedupe: Fix a bug when running inband dedupe with balance
->   btrfs: dedupe: Avoid submit IO for hash hit extent
->   btrfs: dedupe: Add support for compression and dedpue
+> -       dedupe_info->hash_root = RB_ROOT;
+> -       dedupe_info->bytenr_root = RB_ROOT;
+> -       dedupe_info->current_nr = 0;
+> -       INIT_LIST_HEAD(&dedupe_info->lru_list);
+> -       mutex_init(&dedupe_info->lock);
+> +       status = btrfs_item_ptr(path->nodes[0], path->slots[0],
+> +                               struct btrfs_dedupe_status_item);
+> +       blocksize = btrfs_dedupe_status_blocksize(path->nodes[0], status);
+> +       limit = btrfs_dedupe_status_limit(path->nodes[0], status);
+> +       type = btrfs_dedupe_status_hash_type(path->nodes[0], status);
+> +       backend = btrfs_dedupe_status_backend(path->nodes[0], status);
+> +
+> +       ret = init_dedupe_info(&dedupe_info, type, backend, blocksize, limit);
+> +       if (ret < 0)
+> +               goto out;
+> +       dedupe_info->dedupe_root = dedupe_root;
 >
->  fs/btrfs/Makefile            |    2 +-
->  fs/btrfs/ctree.h             |   78 ++-
->  fs/btrfs/dedupe.c            | 1188 ++++++++++++++++++++++++++++++++++++++++++
->  fs/btrfs/dedupe.h            |  181 +++++++
->  fs/btrfs/delayed-ref.c       |   30 +-
->  fs/btrfs/delayed-ref.h       |    8 +
->  fs/btrfs/disk-io.c           |   28 +-
->  fs/btrfs/disk-io.h           |    1 +
->  fs/btrfs/extent-tree.c       |   49 +-
->  fs/btrfs/inode.c             |  338 ++++++++++--
->  fs/btrfs/ioctl.c             |   70 ++-
->  fs/btrfs/ordered-data.c      |   49 +-
->  fs/btrfs/ordered-data.h      |   16 +-
->  fs/btrfs/props.c             |   41 ++
->  fs/btrfs/relocation.c        |   41 +-
->  fs/btrfs/sysfs.c             |    2 +
->  include/trace/events/btrfs.h |    3 +-
->  include/uapi/linux/btrfs.h   |   25 +-
->  18 files changed, 2073 insertions(+), 77 deletions(-)
->  create mode 100644 fs/btrfs/dedupe.c
->  create mode 100644 fs/btrfs/dedupe.h
+>         fs_info->dedupe_info = dedupe_info;
+>         /* We must ensure dedupe_enabled is modified after dedupe_info */
+> @@ -111,11 +256,36 @@ enable:
+>         fs_info->dedupe_enabled = 1;
 >
+>  out:
+> -       if (ret < 0)
+> -               kfree(dedupe_info);
+> +       btrfs_free_path(path);
+>         return ret;
+>  }
+>
+> +static void inmem_destroy(struct btrfs_dedupe_info *dedupe_info);
+> +int btrfs_dedupe_cleanup(struct btrfs_fs_info *fs_info)
+> +{
+> +       struct btrfs_dedupe_info *dedupe_info;
+> +
+> +       fs_info->dedupe_enabled = 0;
+> +
+> +       /* same as disable */
+> +       smp_wmb();
+> +       dedupe_info = fs_info->dedupe_info;
+> +       fs_info->dedupe_info = NULL;
+> +
+> +       if (!dedupe_info)
+> +               return 0;
+> +
+> +       if (dedupe_info->backend == BTRFS_DEDUPE_BACKEND_INMEMORY)
+> +               inmem_destroy(dedupe_info);
+> +       if (dedupe_info->dedupe_root) {
+> +               free_root_extent_buffers(dedupe_info->dedupe_root);
+> +               kfree(dedupe_info->dedupe_root);
+> +       }
+> +       crypto_free_shash(dedupe_info->dedupe_driver);
+> +       kfree(dedupe_info);
+> +       return 0;
+> +}
+> +
+>  static int inmem_insert_hash(struct rb_root *root,
+>                              struct inmem_hash *hash, int hash_len)
+>  {
+> @@ -325,6 +495,65 @@ static void inmem_destroy(struct btrfs_dedupe_info *dedupe_info)
+>         mutex_unlock(&dedupe_info->lock);
+>  }
+>
+> +static int remove_dedupe_tree(struct btrfs_root *dedupe_root)
+> +{
+> +       struct btrfs_trans_handle *trans;
+> +       struct btrfs_fs_info *fs_info = dedupe_root->fs_info;
+> +       struct btrfs_path *path;
+> +       struct btrfs_key key;
+> +       struct extent_buffer *node;
+> +       int ret;
+> +       int nr;
+> +
+> +       path = btrfs_alloc_path();
+> +       if (!path)
+> +               return -ENOMEM;
+> +       trans = btrfs_start_transaction(fs_info->tree_root, 2);
+> +       if (IS_ERR(trans)) {
+> +               ret = PTR_ERR(trans);
+> +               goto out;
+> +       }
+> +
+> +       path->leave_spinning = 1;
+> +       key.objectid = 0;
+> +       key.offset = 0;
+> +       key.type = 0;
+> +
+> +       while (1) {
+> +               ret = btrfs_search_slot(trans, dedupe_root, &key, path, -1, 1);
+> +               if (ret < 0)
+> +                       goto out;
+> +               node = path->nodes[0];
+> +               nr = btrfs_header_nritems(node);
+> +               if (nr == 0) {
+> +                       btrfs_release_path(path);
+> +                       break;
+> +               }
+> +               path->slots[0] = 0;
+> +               ret = btrfs_del_items(trans, dedupe_root, path, 0, nr);
+> +               if (ret)
+> +                       goto out;
+> +               btrfs_release_path(path);
+> +       }
+> +
+> +       ret = btrfs_del_root(trans, fs_info->tree_root, &dedupe_root->root_key);
+> +       if (ret)
+> +               goto out;
+> +
+> +       list_del(&dedupe_root->dirty_list);
+> +       btrfs_tree_lock(dedupe_root->node);
+> +       clean_tree_block(trans, fs_info, dedupe_root->node);
+> +       btrfs_tree_unlock(dedupe_root->node);
+> +       btrfs_free_tree_block(trans, dedupe_root, dedupe_root->node, 0, 1);
+> +       free_extent_buffer(dedupe_root->node);
+> +       free_extent_buffer(dedupe_root->commit_root);
+> +       kfree(dedupe_root);
+> +       ret = btrfs_commit_transaction(trans, fs_info->tree_root);
+> +out:
+> +       btrfs_free_path(path);
+> +       return ret;
+> +}
+> +
+>  int btrfs_dedupe_disable(struct btrfs_fs_info *fs_info)
+>  {
+>         struct btrfs_dedupe_info *dedupe_info;
+> @@ -358,10 +587,12 @@ int btrfs_dedupe_disable(struct btrfs_fs_info *fs_info)
+>         /* now we are OK to clean up everything */
+>         if (dedupe_info->backend == BTRFS_DEDUPE_BACKEND_INMEMORY)
+>                 inmem_destroy(dedupe_info);
+> +       if (dedupe_info->dedupe_root)
+> +               ret = remove_dedupe_tree(dedupe_info->dedupe_root);
+>
+>         crypto_free_shash(dedupe_info->dedupe_driver);
+>         kfree(dedupe_info);
+> -       return 0;
+> +       return ret;
+>  }
+>
+>  /*
+> diff --git a/fs/btrfs/dedupe.h b/fs/btrfs/dedupe.h
+> index 537f0b8..120e630 100644
+> --- a/fs/btrfs/dedupe.h
+> +++ b/fs/btrfs/dedupe.h
+> @@ -112,6 +112,19 @@ int btrfs_dedupe_enable(struct btrfs_fs_info *fs_info, u16 type, u16 backend,
+>   */
+>  int btrfs_dedupe_disable(struct btrfs_fs_info *fs_info);
+>
+> + /*
+> + * Restore previous dedupe setup from disk
+> + * Called at mount time
+> + */
+> +int btrfs_dedupe_resume(struct btrfs_fs_info *fs_info,
+> +                      struct btrfs_root *dedupe_root);
+> +
+> +/*
+> + * Cleanup current btrfs_dedupe_info
+> + * Called in umount time
+> + */
+> +int btrfs_dedupe_cleanup(struct btrfs_fs_info *fs_info);
+> +
+>  /*
+>   * Calculate hash for dedup.
+>   * Caller must ensure [start, start + dedupe_bs) has valid data.
+> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+> index 57ae928..44d098d 100644
+> --- a/fs/btrfs/disk-io.c
+> +++ b/fs/btrfs/disk-io.c
+> @@ -51,6 +51,7 @@
+>  #include "sysfs.h"
+>  #include "qgroup.h"
+>  #include "compression.h"
+> +#include "dedupe.h"
+>
+>  #ifdef CONFIG_X86
+>  #include <asm/cpufeature.h>
+> @@ -2156,7 +2157,7 @@ static void btrfs_stop_all_workers(struct btrfs_fs_info *fs_info)
+>         btrfs_destroy_workqueue(fs_info->extent_workers);
+>  }
+>
+> -static void free_root_extent_buffers(struct btrfs_root *root)
+> +void free_root_extent_buffers(struct btrfs_root *root)
+>  {
+>         if (root) {
+>                 free_extent_buffer(root->node);
+> @@ -2490,7 +2491,21 @@ static int btrfs_read_roots(struct btrfs_fs_info *fs_info,
+>                 fs_info->free_space_root = root;
+>         }
+>
+> -       return 0;
+> +       location.objectid = BTRFS_DEDUPE_TREE_OBJECTID;
+> +       root = btrfs_read_tree_root(tree_root, &location);
+> +       if (IS_ERR(root)) {
+> +               ret = PTR_ERR(root);
+> +               if (ret != -ENOENT)
+> +                       return ret;
+> +               return 0;
+> +       }
+> +       set_bit(BTRFS_ROOT_TRACK_DIRTY, &root->state);
+> +       ret = btrfs_dedupe_resume(fs_info, root);
+> +       if (ret < 0) {
+> +               free_root_extent_buffers(root);
+> +               kfree(root);
+> +       }
+> +       return ret;
+>  }
+>
+>  int open_ctree(struct super_block *sb,
+> @@ -3885,6 +3900,8 @@ void close_ctree(struct btrfs_root *root)
+>
+>         btrfs_free_qgroup_config(fs_info);
+>
+> +       btrfs_dedupe_cleanup(fs_info);
+> +
+>         if (percpu_counter_sum(&fs_info->delalloc_bytes)) {
+>                 btrfs_info(fs_info, "at unmount delalloc count %lld",
+>                        percpu_counter_sum(&fs_info->delalloc_bytes));
+> diff --git a/fs/btrfs/disk-io.h b/fs/btrfs/disk-io.h
+> index 8e79d00..42c4ff2 100644
+> --- a/fs/btrfs/disk-io.h
+> +++ b/fs/btrfs/disk-io.h
+> @@ -70,6 +70,7 @@ struct btrfs_root *btrfs_read_fs_root(struct btrfs_root *tree_root,
+>  int btrfs_init_fs_root(struct btrfs_root *root);
+>  int btrfs_insert_fs_root(struct btrfs_fs_info *fs_info,
+>                          struct btrfs_root *root);
+> +void free_root_extent_buffers(struct btrfs_root *root);
+>  void btrfs_free_fs_roots(struct btrfs_fs_info *fs_info);
+>
+>  struct btrfs_root *btrfs_get_fs_root(struct btrfs_fs_info *fs_info,
 > --
 > 2.7.3
 >

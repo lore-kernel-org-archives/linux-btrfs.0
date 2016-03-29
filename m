@@ -1,163 +1,173 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.136]:58566 "EHLO mail.kernel.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750724AbcCXRHg (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 24 Mar 2016 13:07:36 -0400
-From: fdmanana@kernel.org
-To: fstests@vger.kernel.org
-Cc: linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH] fstests: add btrfs test for fsync after snapshot deletion
-Date: Thu, 24 Mar 2016 17:07:21 +0000
-Message-Id: <1458839241-12379-1-git-send-email-fdmanana@kernel.org>
+Received: from userp1040.oracle.com ([156.151.31.81]:34172 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751185AbcC2CLJ (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 28 Mar 2016 22:11:09 -0400
+Date: Mon, 28 Mar 2016 19:13:20 -0700
+From: Liu Bo <bo.li.liu@oracle.com>
+To: Eryu Guan <eguan@redhat.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v2] fstest: btrfs: test single 4k extent after
+ subpagesize buffered writes
+Message-ID: <20160329021320.GB32610@localhost.localdomain>
+Reply-To: bo.li.liu@oracle.com
+References: <1457396879-30572-1-git-send-email-bo.li.liu@oracle.com>
+ <1458255398-26833-1-git-send-email-bo.li.liu@oracle.com>
+ <20160322040013.GH11419@eguan.usersys.redhat.com>
+ <20160322221225.GA6883@localhost.localdomain>
+ <20160323115338.GQ11419@eguan.usersys.redhat.com>
+ <20160324045221.GA10085@localhost.localdomain>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20160324045221.GA10085@localhost.localdomain>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Filipe Manana <fdmanana@suse.com>
+On Wed, Mar 23, 2016 at 09:52:21PM -0700, Liu Bo wrote:
+> On Wed, Mar 23, 2016 at 07:53:38PM +0800, Eryu Guan wrote:
+> > On Tue, Mar 22, 2016 at 03:12:25PM -0700, Liu Bo wrote:
+> > > On Tue, Mar 22, 2016 at 12:00:13PM +0800, Eryu Guan wrote:
+> > > > On Thu, Mar 17, 2016 at 03:56:38PM -0700, Liu Bo wrote:
+> > > > > This is to test if COW enabled btrfs can end up with single 4k extents
+> > > > > when doing subpagesize buffered writes.
+> > > > 
+> > > > What happens if btrfs is mounted with "nodatacow" option? Does it need
+> > > > to _notrun if cow is disabled?
+> > > 
+> > > In my test, the test passes if mounting with "nodatacow".
+> > > Yes, it makes sense to have a _notrun for nodatacow.
+> > 
+> > If "nodatacow" btrfs should pass the test as well, then I don't think
+> > _notrun is needed, so when it failed, something went wrong.
+> 
+> Ok, and it should pass in theory.
+> 
+> > 
+> > > 
+> > > > 
+> > > > > 
+> > > > > The patch to fix the problem is
+> > > > >   https://patchwork.kernel.org/patch/8527991/
+> > > > > 
+> > > > > Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+> > > > > ---
+> > > > > v2: - Teach awk to know system's pagesize.
+> > > > >     - Add "Silence is golden" to output.
+> > > > >     - Use local variables to lower case.
+> > > > >     - Add comments to make code clear.
+> > > > 
+> > > > This should be v3, and this patch was buried in the v2 thread :)
+> > > 
+> > > Oops, thanks for pointing it out.
+> > > 
+> > > > 
+> > > > > 
+> > > > >  tests/btrfs/027     | 102 ++++++++++++++++++++++++++++++++++++++++++++++++++++
+> > > > >  tests/btrfs/027.out |   2 ++
+> > > > >  tests/btrfs/group   |   1 +
+> > > > >  3 files changed, 105 insertions(+)
+> > > > >  create mode 100755 tests/btrfs/027
+> > > > >  create mode 100644 tests/btrfs/027.out
+> > > > > 
+> > > > > diff --git a/tests/btrfs/027 b/tests/btrfs/027
+> > > > > new file mode 100755
+> > > > > index 0000000..19d324b
+> > > > > --- /dev/null
+> > > > > +++ b/tests/btrfs/027
+> > > > > @@ -0,0 +1,102 @@
+> > > > > +#! /bin/bash
+> > > > > +# FS QA Test 027
+> > > > > +#
+> > > > > +# When btrfs is using cow mode, buffered writes of sub-pagesize can end up with
+> > > > > +# single 4k extents.
+> > > > > +# Ref:
+> > > > > +#     "Stray 4k extents with slow buffered writes"
+> > > > > +#     https://www.spinics.net/lists/linux-btrfs/msg52628.html
+> > > > 
+> > > > After going through this thread, my understanding is that nodatacow
+> > > > btrfs should pass this test even on unpatched kernel (e.g. v4.5). But
+> > > > my test on v4.5 kernel failed with nodatacow mount option, pagesize
+> > > > extent is still found.
+> > > > 
+> > > 
+> > > I verified it again on my kvm box and it passed with a unpatched v4.5 kernel.
+> > > 
+> > > Can you please show me the 027.full file?
+> > > 
+> > > I can't think of a reason for this..
+> > 
+> > I'm using v4.5 kernel and v4.4 btrfs-progs, and it's not reproduced
+> > everytime.
+> > 
+> > SECTION       -- btrfs_nodatacow
+> > RECREATING    -- btrfs on /dev/sda5
+> > FSTYP         -- btrfs
+> > PLATFORM      -- Linux/x86_64 dhcp-66-86-11 4.5.0
+> > MKFS_OPTIONS  -- /dev/sda6
+> > MOUNT_OPTIONS -- -o nodatacow -o context=system_u:object_r:nfs_t:s0 /dev/sda6 /mnt/testarea/scratch
+> > 
+> > btrfs/027 28s ... - output mismatch (see /root/xfstests/results//btrfs_nodatacow/btrfs/027.out.bad)
+> >     --- tests/btrfs/027.out     2016-03-23 15:39:41.562000000 +0800
+> >     +++ /root/xfstests/results//btrfs_nodatacow/btrfs/027.out.bad       2016-03-23 19:37:38.962000000 +0800
+> >     @@ -1,2 +1,3 @@
+> >      QA output created by 027
+> >      Silence is golden
+> >     +8
+> >     ...
+> >     (Run 'diff -u tests/btrfs/027.out /root/xfstests/results//btrfs_nodatacow/btrfs/027.out.bad'  to see the entire diff)
+> > Ran: btrfs/027
+> > Failures: btrfs/027
+> > Failed 1 of 1 tests
+> > 
+> > And btrfs/027.full shows:
+> > 
+> > /mnt/testarea/scratch/testfile:
+> >  EXT: FILE-OFFSET      BLOCK-RANGE      TOTAL FLAGS
+> >    0: [0..28863]:      2154496..2183359 28864   0x0
+> >    1: [28864..57751]:  2183360..2212247 28888   0x0
+> >    2: [57752..85543]:  2212248..2240039 27792   0x0
+> >    3: [85544..113239]: 2240040..2267735 27696   0x0
+> >    4: [113240..113247]: 2267736..2267743     8   0x0
+> >    5: [113248..141999]: 2267744..2296495 28752   0x0
+> >    6: [142000..142023]: 2296496..2296519    24   0x0
+> >    7: [142024..159799]: 2296520..2314295 17776   0x1
+> 
+> I can barely reproduce one in 100 runs... but anyway if it is a bug,
+> it's not a problem in this test case, I'll send a v3 version patch and
+> work on this nocow case.
 
-Test that if we delete a snapshot, delete its parent directory, create
-another directory with the same name as that parent and then fsync either
-the new directory or a file inside the new directory, the fsync succeeds,
-the fsync log is replayable and produces a correct result.
+My trace results show that it's not a bug.
 
-This is motivated by a bug that is fixed by the following patch for
-btrfs (linux kernel):
+[0, 4096]
+[4096, 8192]
+...
+[N-4096, N]
+[N, N+4096]
+[N+4096, N+8192]
+...
 
-  Btrfs: fix unreplayable log after snapshot deletion and parent
-  re-creation
+There could be some latencies between writes against [N, N+4096] and writes against [N+4096, N+8192],
+so when writeback starts between [N-4096, N] and [N, N+4096], btrfs will
+find delayed allocation range ending at extent [N-4096, N], and then it
+creates a extent to cover that range.  Later [N, N+4096] is dirtied and
+writeback thread will continue pick up the newly dirtied page and
+allocate an extent for it, at which time the next [N+4096, N+8192] write
+has not performed.  This is how we get the single 4k extent for
+nodatacow, but it's rare.
 
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
- tests/btrfs/120     | 91 +++++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/120.out | 12 +++++++
- tests/btrfs/group   |  1 +
- 3 files changed, 104 insertions(+)
- create mode 100755 tests/btrfs/120
- create mode 100644 tests/btrfs/120.out
+So I assume that even after fixing writeback index, we can still experience
+this case in case of cow, but that should be quite rare, too.
 
-diff --git a/tests/btrfs/120 b/tests/btrfs/120
-new file mode 100755
-index 0000000..4ede4e6
---- /dev/null
-+++ b/tests/btrfs/120
-@@ -0,0 +1,91 @@
-+#! /bin/bash
-+# FSQA Test No. 120
-+#
-+# Test that if we delete a snapshot, delete its parent directory, create
-+# another directory with the same name as that parent and then fsync either
-+# the new directory or a file inside the new directory, the fsync succeeds,
-+# the fsync log is replayable and produces a correct result.
-+#
-+#-----------------------------------------------------------------------
-+#
-+# Copyright (C) 2016 SUSE Linux Products GmbH. All Rights Reserved.
-+# Author: Filipe Manana <fdmanana@suse.com>
-+#
-+# This program is free software; you can redistribute it and/or
-+# modify it under the terms of the GNU General Public License as
-+# published by the Free Software Foundation.
-+#
-+# This program is distributed in the hope that it would be useful,
-+# but WITHOUT ANY WARRANTY; without even the implied warranty of
-+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+# GNU General Public License for more details.
-+#
-+# You should have received a copy of the GNU General Public License
-+# along with this program; if not, write the Free Software Foundation,
-+# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-+#-----------------------------------------------------------------------
-+#
-+
-+seq=`basename $0`
-+seqres=$RESULT_DIR/$seq
-+echo "QA output created by $seq"
-+tmp=/tmp/$$
-+status=1	# failure is the default!
-+trap "_cleanup; exit \$status" 0 1 2 3 15
-+
-+_cleanup()
-+{
-+	_cleanup_flakey
-+	cd /
-+	rm -f $tmp.*
-+}
-+
-+# get standard environment, filters and checks
-+. ./common/rc
-+. ./common/filter
-+. ./common/dmflakey
-+
-+# real QA test starts here
-+_supported_fs btrfs
-+_supported_os Linux
-+_require_scratch
-+_require_dm_target flakey
-+_require_metadata_journaling $SCRATCH_DEV
-+
-+rm -f $seqres.full
-+
-+_populate_fs()
-+{
-+	_run_btrfs_util_prog subvolume snapshot $SCRATCH_MNT \
-+		$SCRATCH_MNT/testdir/snap
-+	_run_btrfs_util_prog subvolume delete $SCRATCH_MNT/testdir/snap
-+	rmdir $SCRATCH_MNT/testdir
-+	mkdir $SCRATCH_MNT/testdir
-+}
-+
-+_scratch_mkfs >>$seqres.full 2>&1
-+_init_flakey
-+_mount_flakey
-+
-+mkdir $SCRATCH_MNT/testdir
-+_populate_fs
-+$XFS_IO_PROG -c "fsync" $SCRATCH_MNT/testdir
-+_flakey_drop_and_remount
-+
-+echo "Filesystem contents after the first log replay:"
-+ls -R $SCRATCH_MNT | _filter_scratch
-+
-+# Now do the same as before but instead of doing an fsync against the directory,
-+# do an fsync against a file inside the directory.
-+
-+_populate_fs
-+touch $SCRATCH_MNT/testdir/foobar
-+$XFS_IO_PROG -c "fsync" $SCRATCH_MNT/testdir/foobar
-+_flakey_drop_and_remount
-+
-+echo "Filesystem contents after the second log replay:"
-+ls -R $SCRATCH_MNT | _filter_scratch
-+
-+_unmount_flakey
-+status=0
-+exit
-diff --git a/tests/btrfs/120.out b/tests/btrfs/120.out
-new file mode 100644
-index 0000000..4210bfa
---- /dev/null
-+++ b/tests/btrfs/120.out
-@@ -0,0 +1,12 @@
-+QA output created by 120
-+Filesystem contents after the first log replay:
-+SCRATCH_MNT:
-+testdir
-+
-+SCRATCH_MNT/testdir:
-+Filesystem contents after the second log replay:
-+SCRATCH_MNT:
-+testdir
-+
-+SCRATCH_MNT/testdir:
-+foobar
-diff --git a/tests/btrfs/group b/tests/btrfs/group
-index d312874..13aa1e5 100644
---- a/tests/btrfs/group
-+++ b/tests/btrfs/group
-@@ -120,3 +120,4 @@
- 117 auto quick send clone
- 118 auto quick snapshot metadata
- 119 auto quick snapshot metadata qgroup
-+120 auto quick snapshot metadata
--- 
-2.7.0.rc3
+Thanks,
 
+-liubo
+
+> 
+> Thanks,
+> 
+> -liubo
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

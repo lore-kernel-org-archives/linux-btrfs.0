@@ -1,176 +1,112 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:42802 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756890AbcC2Oll (ORCPT
+Received: from userp1040.oracle.com ([156.151.31.81]:29504 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751540AbcC2OnG (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 29 Mar 2016 10:41:41 -0400
-From: Anand Jain <anand.jain@oracle.com>
+	Tue, 29 Mar 2016 10:43:06 -0400
 Subject: Re: Global hotspare functionality
 To: Yauhen Kharuzhy <yauhen.kharuzhy@zavadatar.com>,
         linux-btrfs@vger.kernel.org
 References: <20160318193937.GA21352@jek-Latitude-E7440>
-Message-ID: <56FA9420.8020503@oracle.com>
-Date: Tue, 29 Mar 2016 22:41:36 +0800
+ <CAKWEGV5zqsDaBtGJQQrp359mCT4gZP861xj+_LFzf8FOaevCaA@mail.gmail.com>
+From: Anand Jain <anand.jain@oracle.com>
+Message-ID: <56FA9477.4040704@oracle.com>
+Date: Tue, 29 Mar 2016 22:43:03 +0800
 MIME-Version: 1.0
-In-Reply-To: <20160318193937.GA21352@jek-Latitude-E7440>
+In-Reply-To: <CAKWEGV5zqsDaBtGJQQrp359mCT4gZP861xj+_LFzf8FOaevCaA@mail.gmail.com>
 Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
-Hi Yauhen,
 
-  Thanks ! more below..
-
-On 03/19/2016 03:39 AM, Yauhen Kharuzhy wrote:
-> Hi all,
+On 03/19/2016 09:17 AM, Yauhen Kharuzhy wrote:
+> Issue 5:
 >
-> I try to get Anand's patchset for global hotspare functionality working.
+> Race between close_ctree() and casualty_kthread():
 
-> Now it's working for me but I have met number of issues while applying
-> and patches testing.
+  This is fixed in V2, thanks for the report.
+
+- Anand
+
+> close_ctree():
+>          if (fs_info->casualty_kthread)
+>                  kthread_stop(fs_info->casualty_kthread);
 >
-> I took latest versions of patchset and its dependencies (latest at two
-> weeks ago):
->
-> 1) Anand's hotspare patchset:
-> http://thread.gmane.org/gmane.comp.file-systems.btrfs/49985
-> 2) Device delete by id series:
-> http://thread.gmane.org/gmane.comp.file-systems.btrfs/53208
-
-  V2 is sent out based on cleanups-4.6 branch. Plus preparatory
-  patch found in the ML.
-
-fc72066b27f3 btrfs: refactor btrfs_dev_replace_start for reuse
-0b2322126a95 btrfs: keep sysfs target add in the last
-3ecbc05149e0 btrfs: use fs_info directly
-
-
-> 3) Two Anand's patches about sysfs attributes (hotspare series seems to be
-> depended on it):
-> http://thread.gmane.org/gmane.comp.file-systems.btrfs/48943
-
-  The sysfs patches we need it only to see the device state or some
-  enterprise scripts may need it. But auto replace hot spare as such
-  don't depend on that.
-
-> My kernel is 4.4.5 stable version (I had tried integration-4.6 branch
-> of btrfs-next first and had same troubles as for 4.4.5).
-
-  Wiki needs an update, pls don't use btrfs-next.
-
-> So, good result: hotspare functionality works!
-
-  Thanks for testing.
-
-> Bad result: it works for me after some patching only :)
-
-  Thanks for working on it. Let me review.
-
-> General notice: we are definitely need FS-specific hotspares, because
-> common case is to have few RAID with different drives size (system root and
-> data RAIDs, for instance).
-
-  Yep.
-
-> I have published my git tree with working set of patches here:
-> https://bitbucket.org/jekhor/linux-btrfs/branch/4.4.5%2Bhotspare-without_degradable_check
-> And corresponding btrfs-progs tree:
-> https://bitbucket.org/jekhor/btrfs-progs/commits/branch/devel-hotspare
-
-  Hm, generally posting the independent patches to the ML will help.
-
-> This trees contain some RAID state monitoring related changes, just ignore
-> them (I am going to start another discussion about of RAID status monitoring
-> soon).
+> casualty_kthread():
+> out:
+>          fs_info->casualty_kthread = NULL;
 >
 >
-> Issue 1.
+> At SMP system, kthread_stop() argument can be changed to NULL after
+> check in if (). Some kind of synchronization is needed.
 >
-> First, kernel oopsed at FS mounting after unmounting. Unfortunately, I
-> don't have saved logs for this. I found that fsid_kobj was corrupted (has
-> NULL ktype field) before invocation of btrfs_sysfs_add_fsid(). I cannot
-> found the source of corruption – no 'kobject release' events before,
-> state_initialized field remains true, ktype just is cleaned
-> (btrfs_ktype.release() wasn't called before this too).
+> Oops:
 >
-> My printk-based trace looks like this but exactly place of value changing
-> was not permanent, so this is can be some kind of race condition:
+> [48878.674314] BUG: unable to handle kernel paging request at 0000000000001347
+> [48878.686252] IP: [<ffffffff810a73a4>] kthread_stop+0x54/0x280
+> [48878.687530] PGD 5f2c6067 PUD 62c63067 PMD 0
+> [48878.688780] Oops: 0002 [#1] SMP
+> [48878.689701] Modules linked in: cpuid cpufreq_powersave
+> cpufreq_stats cpufreq_userspace cpufreq_conservative softdog nfsd
+> auth_rpcgss oid_registry nfs_acl nfs lockd grace fscache sunrpc
+> ipmi_devintf ipmi_msghandler iosf_mbi crct10dif_pclmul crc32_pclmul
+> sha256_ssse3 sha256_generic hmac drbg ansi_cprng iTCO_wdt
+> iTCO_vendor_support snd_pcm snd_timer snd soundcore aesni_intel
+> aes_x86_64 lrw gf128mul glue_helper ablk_helper lpc_ich cryptd
+> mfd_core psmouse serio_raw 8250_fintek parport_pc evdev parport video
+> pcspkr ac battery acpi_cpufreq tpm_tis tpm processor i2c_piix4
+> rng_core button btrfs xor raid6_pq dm_mod raid1 md_mod sg sd_mod ahci
+> libahci libata pcnet32 crc32c_intel scsi_mod mii
+> [48879.282797] CPU: 1 PID: 24369 Comm: umount Not tainted 4.4.5-scst31x+ #16
+> [48879.283976] Hardware name: innotek GmbH VirtualBox/VirtualBox, BIOS
+> VirtualBox 12/01/2006
+> [48879.285532] task: ffff880036438440 ti: ffff88006242c000 task.ti:
+> ffff88006242c000
+> [48879.288022] RIP: 0010:[<ffffffff810a73a4>]  [<ffffffff810a73a4>]
+> kthread_stop+0x54/0x280
+> [48879.289681] RSP: 0018:ffff88006242fd78  EFLAGS: 00010206
+> [48879.290678] RAX: 0000000000000001 RBX: 00000000000013af RCX: 0000000000000003
+> [48879.291889] RDX: 0000000000000000 RSI: 0000000000001347 RDI: 0000000000000246
+> [48879.293096] RBP: ffff88006242fd90 R08: ffff88006242fd38 R09: 0000000000000000
+> [48879.449616] R10: 0000000000000000 R11: 0000000000000000 R12: ffff88002642e840
+> [48879.494970] R13: ffff880036438440 R14: 0000000000000000 R15: ffff880048b7f000
+> [48879.496219] FS:  00007f95236c27e0(0000) GS:ffff880066b00000(0000)
+> knlGS:0000000000000000
+> [48879.497767] CS:  0010 DS: 0000 ES: 0000 CR0: 000000008005003b
+> [48879.498806] CR2: 0000000000001347 CR3: 000000005ed74000 CR4: 00000000000406e0
+> [48879.500027] Stack:
+> [48879.500603]  ffff880027f4a2d0 ffff880027f48000 ffff880036438440
+> ffff88006242fdf0
+> [48879.502516]  ffffffffa016713d ffff88006242fe00 ffffffff81239ff5
+> ffff880039cf2000
+> [48879.505658]  ffff880039cf2a40 ffff880062430000 ffff880039cf2000
+> ffffffffa01edae0
+> [48879.507584] Call Trace:
+> [48879.508239]  [<ffffffffa016713d>] close_ctree+0x13d/0x390 [btrfs]
+> [48879.509328]  [<ffffffff81239ff5>] ? evict_inodes+0x165/0x180
+> [48879.510360]  [<ffffffffa0135f99>] btrfs_put_super+0x19/0x20 [btrfs]
+> [48879.511467]  [<ffffffff8121d0ff>] generic_shutdown_super+0x6f/0xf0
+> [48879.512570]  [<ffffffff8121d3f2>] kill_anon_super+0x12/0x20
+> [48879.594205]  [<ffffffffa0136a88>] btrfs_kill_super+0x18/0x120 [btrfs]
+> [48879.714563]  [<ffffffff8121d66e>] deactivate_locked_super+0x3e/0x70
+> [48879.715691]  [<ffffffff8121dabc>] deactivate_super+0x5c/0x60
+> [48879.716720]  [<ffffffff8123e07f>] cleanup_mnt+0x3f/0x90
+> [48879.717695]  [<ffffffff8123e112>] __cleanup_mnt+0x12/0x20
+> [48879.718695]  [<ffffffff810a5423>] task_work_run+0x73/0xa0
+> [48879.719692]  [<ffffffff810032ac>] exit_to_usermode_loop+0xcc/0xd0
+> [48879.720773]  [<ffffffff81003e0c>] syscall_return_slowpath+0xcc/0xe0
+> [48879.721880]  [<ffffffff81634022>] int_ret_from_sys_call+0x25/0x9f
+> [48879.722962] Code: 85 c0 0f 85 90 01 00 00 65 ff 0d 48 4b f6 7e f0
+> 41 ff 44 24 10 49 8b 9c 24 38 04 00 00 48 85 db 74 26 48 89 de 48 83
+> ee 68 74 1d <f0> 80 4b 98 02 4c 89 e7 e8 ff fe ff ff 4c 89 e7 e8 a7 ca
+> 00 00
+> [48879.891283] RIP  [<ffffffff810a73a4>] kthread_stop+0x54/0x280
+> [48880.019550]  RSP <ffff88006242fd78>
+> [48880.091281] CR2: 0000000000001347
+> [48880.133312] ---[ end trace 8f0228d92754702e ]---
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 >
-> Mar 11 01:07:31 grack12 kernel: [   33.694074] btrfs_commit_transaction:2133: fsid_kobj=ffff88001f020cd8, ktype=ffffffffa0219840
-> Mar 11 01:07:31 grack12 kernel: [   33.697967] btrfs_commit_transaction:2142: fsid_kobj=ffff88001f020cd8, ktype=ffffffffa0219840
-> Mar 11 01:07:31 grack12 kernel: [   33.697972] write_all_supers:3672: fsid_kobj=ffff88001f020cd8, ktype=ffffffffa0219840
-> Mar 11 01:07:31 grack12 kernel: [   33.697973] write_all_supers:3677: fsid_kobj=ffff88001f020cd8, ktype=ffffffffa0219840
-> Mar 11 01:07:31 grack12 kernel: [   33.697974] write_all_supers:3679: fsid_kobj=ffff88001f020cd8, ktype=ffffffffa0219840
-> Mar 11 01:07:31 grack12 kernel: [   33.702881] write_all_supers:3690: fsid_kobj=ffff88001f020cd8, ktype=          (null)
-> Mar 11 01:07:31 grack12 kernel: [   33.702884] write_all_supers:3699: fsid_kobj=ffff88001f020cd8, ktype=          (null)
-> Mar 11 01:07:31 grack12 kernel: [   33.702885] write_all_supers:3701: fsid_kobj=ffff88001f020cd8, ktype=          (null)
->
-> Bisecting pointed me to simple commit 'b0f398c btrfs: optimize
-> btrfs_check_degradable() for calls outside of barrier' but I have no idea how
-> it may cause or trigger this issue...
-
-  dev is stale here, my bad, that was a crap patch. Also we don't need
-  this patch as part of hot spare / auto replace code. I have removed it.
-
-> So, after spending some time for debugging, I decided to remove second
-> patchset entirely except of 'btrfs: create a helper function to read the disk
-> super' commit and problem had gone out.
->
->
-> Issue 2.
-> At start of autoreplacig drive by hotspare, kernel craches in transaction
-> handling code (inside of btrfs_commit_transaction() called by autoreplace initiating
-> routines). I 'fixed' this by removing of closing of bdev in btrfs_close_one_device_dont_free(), see
-> https://bitbucket.org/jekhor/linux-btrfs/commits/dfa441c9ec7b3833f6a5e4d0b6f8c678faea29bb?at=master
-> (oops text is attached also). Bdev is closed after replacing by
-> btrfs_dev_replace_finishing(), so this is safe but doesn't seem
-> to be right way.
-
-  I have sent out V2. I don't see that issue with this,
-  could you pls try ?
-
-> Issue 3.
-> btrfs_auto_replace_start() doesn't check and doesn't set the
-> fs_info->mutually_exclusive_operation_running flag as ioctl handler for
-> DEV_REPLACE_START does, this cause race conditions in some cases, see
-> https://bitbucket.org/jekhor/linux-btrfs/commits/834bebb96a2f6b5ef5856836839e5ce7830ec745?at=master
-
-  There were some fixes to the main btrfs_auto_replace_start() before,
-  (not the v2). So to avoid such a disconnect, I have sent out a patch
-  set which shall not v2 the function, instead it re-factors the original
-
-     btrfs: refactor btrfs_dev_replace_start for reuse
-
-  With this the hot spare V2 will apply nicely, and I have found it
-  to be stable.
-
-> Issue 4.
-> Autoreplacement code doesn't start replacing at mounting in degraded mode,
-> even if hotspare exists. We need this feature, so I added check for missing
-> drives also, not only for failed, to checking if replacement needed.
-
-  No. No. No please don't do that, it would lead to trouble in handing
-  slow devices. I purposely didn't do it.
-
-  Also kindly note that, in volume manage / storage context things
-  should continue to work in degraded mode automatically, and it
-  shouldn't wait for user's opinion. If it don't do that, then
-  there is no point in having a volume manager. But as of now btrfs has
-  already made degraded as non default choice. There is something else
-  new which is needed and it can be a separate RFC, not part of this
-  patch set.
-
-
-  Please try. V2 sent out.
-
-Thanks, Anand
-
-> See
-> https://bitbucket.org/jekhor/linux-btrfs/commits/4c9ddb58d979ae5a232aeaa1fbe3d26373210768?at=master
-> and
-> https://bitbucket.org/jekhor/linux-btrfs/commits/be5e2524c10f2b4047da80f9f85b54c6006d4273?at=master
-
-
-
-

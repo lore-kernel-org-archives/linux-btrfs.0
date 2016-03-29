@@ -1,183 +1,218 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:62780 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751460AbcC2BsL (ORCPT
+Received: from mail-yw0-f181.google.com ([209.85.161.181]:34555 "EHLO
+	mail-yw0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1757707AbcC2RWP (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 28 Mar 2016 21:48:11 -0400
-Subject: Re: [PATCH v8 10/27] btrfs: dedupe: Add basic tree structure for
- on-disk dedupe method
-To: Chris Mason <clm@fb.com>, Qu Wenruo <quwenruo.btrfs@gmx.com>,
-        <linux-btrfs@vger.kernel.org>, Liu Bo <bo.li.liu@oracle.com>,
-        Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
-References: <1458610552-9845-1-git-send-email-quwenruo@cn.fujitsu.com>
- <1458610552-9845-11-git-send-email-quwenruo@cn.fujitsu.com>
- <20160324205807.ctxig7c2r4rfoowp@floor.thefacebook.com>
- <56F49B8B.4000701@cn.fujitsu.com>
- <20160325151124.hhzpyymor6varucx@floor.thefacebook.com>
- <56F68A99.8010308@gmx.com>
- <20160328140952.xj63bgpizg2vfcex@floor.thefacebook.com>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <56F9DECC.4080304@cn.fujitsu.com>
-Date: Tue, 29 Mar 2016 09:47:56 +0800
+	Tue, 29 Mar 2016 13:22:15 -0400
+Received: by mail-yw0-f181.google.com with SMTP id h129so27526946ywb.1
+        for <linux-btrfs@vger.kernel.org>; Tue, 29 Mar 2016 10:22:15 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <20160328140952.xj63bgpizg2vfcex@floor.thefacebook.com>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+In-Reply-To: <1458610552-9845-1-git-send-email-quwenruo@cn.fujitsu.com>
+References: <1458610552-9845-1-git-send-email-quwenruo@cn.fujitsu.com>
+Date: Tue, 29 Mar 2016 19:22:14 +0200
+Message-ID: <CAOcd+r0kVY2odm_rzNUMf3MGVCaRh8aDnHiY+Eo3ceKOLNXSyA@mail.gmail.com>
+Subject: Re: [PATCH v8 00/27][For 4.7] Btrfs: Add inband (write time)
+ de-duplication framework
+From: Alex Lyakas <alex.btrfs@zadarastorage.com>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Greetings Qu Wenruo,
+
+I have reviewed the dedup patchset found in the github account you
+mentioned. I have several questions. Please note that by all means I
+am not criticizing your design or code. I just want to make sure that
+my understanding of the code is proper.
+
+1) You mentioned in several emails that at some point byte-to-byte
+comparison is to be performed. However, I do not see this in the code.
+It seems that generic_search() only looks for the hash value match. If
+there is a match, it goes ahead and adds a delayed ref.
+
+2) If btrfs_dedupe_search() does not find a match, we unlock the dedup
+mutex and proceed with the normal COW. What happens if there are
+several IO streams to different files writing an identical block, but
+we don't have such block in our dedup DB? Then all
+btrfs_dedupe_search() calls will not find a match, so all streams will
+allocate space for their block (which are all identical). At some
+point, they will call insert_reserved_file_extent() and will call
+btrfs_dedupe_add(). Since there is a global mutex, the first stream
+will insert the dedup hash entries into the DB, and all other streams
+will find that such hash entry already exists. So the end result is
+that we have the hash entry in the DB, but still we have multiple
+copies of the same block allocated, due to timing issues. Is this
+correct?
+
+3) generic_search() competes with __btrfs_free_extent(). Meaning that
+generic_search() wants to add a delayed ref to an existing extent,
+whereas __btrfs_free_extent() wants to delete an entry from the dedup
+DB. The race is resolved as follows:
+- generic_search attempts to lock the delayed ref head
+- if it succeeds to lock, then __btrfs_free_extent() is not running
+right now. So we can add a delayed ref. Later, when delayed ref head
+will be run, it will figure out what needs to be done (free the extent
+or not)
+- if we fail to lock, then there is a delayed ref processing for this
+bytenr. We drop all locks and redo the search from the top. If
+__btrfs_free_extent() has deleted the dedup hash meanwhile, we will
+not find it, and proceed with normal COW.
+Is my understanding correct?
+
+I have also few nitpicks on the code, will reply to relevant patches.
+
+Thanks for doing this work,
+Alex.
 
 
-Chris Mason wrote on 2016/03/28 10:09 -0400:
-> On Sat, Mar 26, 2016 at 09:11:53PM +0800, Qu Wenruo wrote:
->>
->>
->> On 03/25/2016 11:11 PM, Chris Mason wrote:
->>> On Fri, Mar 25, 2016 at 09:59:39AM +0800, Qu Wenruo wrote:
->>>>
->>>>
->>>> Chris Mason wrote on 2016/03/24 16:58 -0400:
->>>>> Are you storing the entire hash, or just the parts not represented in
->>>>> the key?  I'd like to keep the on-disk part as compact as possible for
->>>>> this part.
->>>>
->>>> Currently, it's entire hash.
->>>>
->>>> More detailed can be checked in another mail.
->>>>
->>>> Although it's OK to truncate the last duplicated 8 bytes(64bit) for me,
->>>> I still quite like current implementation, as one memcpy() is simpler.
->>>
->>> [ sorry FB makes urls look ugly, so I delete them from replys ;) ]
->>>
->>> Right, I saw that but wanted to reply to the specific patch.  One of the
->>> lessons learned from the extent allocation tree and file extent items is
->>> they are just too big.  Lets save those bytes, it'll add up.
->>
->> OK, I'll reduce the duplicated last 8 bytes.
->>
->> And also, removing the "length" member, as it can be always fetched from
->> dedupe_info->block_size.
+
+On Tue, Mar 22, 2016 at 3:35 AM, Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
+> This patchset can be fetched from github:
+> https://github.com/adam900710/linux.git wang_dedupe_20160322
 >
-> This would mean dedup_info->block_size is a write once field.  I'm ok
-> with that (just like metadata blocksize) but we should make sure the
-> ioctls etc don't allow changing it.
-
-Not a problem, current block_size change is done by completely disabling 
-dedupe(imply a sync_fs), then re-enable with new block_size.
-
-So it would be OK.
-
+> This updated version of inband de-duplication has the following features:
+> 1) ONE unified dedup framework.
+>    Most of its code is hidden quietly in dedup.c and export the minimal
+>    interfaces for its caller.
+>    Reviewer and further developer would benefit from the unified
+>    framework.
 >
->>
->> The length itself is used to verify if we are at the transaction to a new
->> dedupe size, but later we use full sync_fs(), such behavior is not needed
->> any more.
->>
->>
->>>
->>>>
->>>>>
->>>>>> +
->>>>>> +/*
->>>>>> + * Objectid: bytenr
->>>>>> + * Type: BTRFS_DEDUPE_BYTENR_ITEM_KEY
->>>>>> + * offset: Last 64 bit of the hash
->>>>>> + *
->>>>>> + * Used for bytenr <-> hash search (for free_extent)
->>>>>> + * all its content is hash.
->>>>>> + * So no special item struct is needed.
->>>>>> + */
->>>>>> +
->>>>>
->>>>> Can we do this instead with a backref from the extent?  It'll save us a
->>>>> huge amount of IO as we delete things.
->>>>
->>>> That's the original implementation from Liu Bo.
->>>>
->>>> The problem is, it changes the data backref rules(originally, only
->>>> EXTENT_DATA item can cause data backref), and will make dedupe INCOMPACT
->>>> other than current RO_COMPACT.
->>>> So I really don't like to change the data backref rule.
->>>
->>> Let me reread this part, the cost of maintaining the second index is
->>> dramatically higher than adding a backref.  I do agree that's its nice
->>> to be able to delete the dedup trees without impacting the rest, but
->>> over the long term I think we'll regret the added balances.
->>
->> Thanks for pointing the problem. Yes, I didn't even consider this fact.
->>
->> But, on the other hand. such remove only happens when we remove the *last*
->> reference of the extent.
->> So, for medium to high dedupe rate case, such routine is not that frequent,
->> which will reduce the impact.
->> (Which is quite different for non-dedupe case)
+> 2) TWO different back-end with different trade-off
+>    One is the improved version of previous Fujitsu in-memory only dedup.
+>    The other one is enhanced dedup implementation from Liu Bo.
+>    Changed its tree structure to handle bytenr -> hash search for
+>    deleting hash, without the hideous data backref hack.
 >
-> It's both addition and removal, and the efficiency hit does depend on
-> what level of sharing you're able to achieve.  But what we don't want is
-> for metadata usage to explode as people make small non-duplicate changes
-> to their FS.
->   If that happens, we'll only end up using dedup in back up
-> farms and other highly limited use cases.
-
-Right, with current dedupe-specific backref, it'll bring unavoidable 
-metadata overhead.
-
-[[People are trading-off using non-default feature]]
-Although IMHO, dedupe is not a generic feature, just like compression 
-and possible encryption, people choose them with trade-off in their mind.
-
-For example, compression can achieve quite high performance for easily 
-compressible data, but can also get quite low performance for not so 
-compressible data, like ISO file or videos.
-(In my test with 2 cores VM, virtio blk on HDD, dd ISO into btrfs file 
-will causing about 90MB/s for default mount option, while with 
-compression, it's only about 40~50MB/s)
-
-If we combine all overhead together (not only metadata overhead), almost 
-all current transparent data processing method will only benefit 
-specific use case while reducing generic performance.
-
-So increased metadata overhead is acceptable for me, especially when the 
-main overhead is CPU time spent on SHA256.
-
-And we have workaround from setting dedupe disable prop to setting 
-larger dedupe block_size to avoid small and non-dedupe writes to fill 
-dedupe tree.
-
-
+> 3) Support compression with dedupe
+>    Now dedupe can work with compression.
+>    Means that, a dedupe miss case can be compressed, and dedupe hit case
+>    can also reuse compressed file extents.
 >
-> I do agree that delayed refs are error prone, but that's a good reason
-> not fix delayed refs, not to recreate the backrefs of the extent
-> allocation tree in a new dedicated tree.
-
-[[We need an idea generic for both backends]]
-Also I want to mention is, dedupe now contains 2 different backends, so 
-we'd better choose one idea that won't break different backends into 
-different incompat/ro_compat flags.
-
-If using backref method, ondisk backend will definitely make dedupe 
-incompatible, affecting in-memory backend even it's completely 
-backward-compatible.
-
-Or, splitting dedupe flag into DEDUPE_ONDISK and DEDUPE_INMEMORY, and 
-former one is INCOMPAT, while latter is at most RO_COMPAT(if using 
-dedupe tree).
-
-
-[[Cleaner layout is less bug-prone]]
-The last point of using dedupe specific backref, is to reduce the 
-possible bug affection, which for me is more important than performance.
-
-Current implementation will limit dedupe backref bug to dedupe only.
-While a new backref bug will definitely impact almost all btrfs function.
-
-Thanks,
-Qu
-
+> 4) Ioctl interface with persist dedup status
+>    Advised by David, now we use ioctl to enable/disable dedup.
 >
-> -chris
+>    And we now have dedup status, recorded in the first item of dedup
+>    tree.
+>    Just like quota, once enabled, no extra ioctl is needed for next
+>    mount.
+>
+> 5) Ability to disable dedup for given dirs/files
+>    It works just like the compression prop method, by adding a new
+>    xattr.
+>
+> TODO:
+> 1) Add extent-by-extent comparison for faster but more conflicting algorithm
+>    Current SHA256 hash is quite slow, and for some old(5 years ago) CPU,
+>    CPU may even be a bottleneck other than IO.
+>    But for faster hash, it will definitely cause conflicts, so we need
+>    extent comparison before we introduce new dedup algorithm.
+>
+> 2) Misc end-user related helpers
+>    Like handy and easy to implement dedup rate report.
+>    And method to query in-memory hash size for those "non-exist" users who
+>    want to use 'dedup enable -l' option but didn't ever know how much
+>    RAM they have.
+>
+> Changelog:
+> v2:
+>   Totally reworked to handle multiple backends
+> v3:
+>   Fix a stupid but deadly on-disk backend bug
+>   Add handle for multiple hash on same bytenr corner case to fix abort
+>   trans error
+>   Increase dedup rate by enhancing delayed ref handler for both backend.
+>   Move dedup_add() to run_delayed_ref() time, to fix abort trans error.
+>   Increase dedup block size up limit to 8M.
+> v4:
+>   Add dedup prop for disabling dedup for given files/dirs.
+>   Merge inmem_search() and ondisk_search() into generic_search() to save
+>   some code
+>   Fix another delayed_ref related bug.
+>   Use the same mutex for both inmem and ondisk backend.
+>   Move dedup_add() back to btrfs_finish_ordered_io() to increase dedup
+>   rate.
+> v5:
+>   Reuse compress routine for much simpler dedup function.
+>   Slightly improved performance due to above modification.
+>   Fix race between dedup enable/disable
+>   Fix for false ENOSPC report
+> v6:
+>   Further enable/disable race window fix.
+>   Minor format change according to checkpatch.
+> v7:
+>   Fix one concurrency bug with balance.
+>   Slightly modify return value from -EINVAL to -EOPNOTSUPP for
+>   btrfs_dedup_ioctl() to allow progs to distinguish unsupported commands
+>   and wrong parameter.
+>   Rebased to integration-4.6.
+> v8:
+>   Rename 'dedup' to 'dedupe'.
+>   Add support to allow dedupe and compression work at the same time.
+>   Fix several balance related bugs. Special thanks to Satoru Takeuchi,
+>   who exposed most of them.
+>   Small dedupe hit case performance improvement.
+>
+> Qu Wenruo (12):
+>   btrfs: delayed-ref: Add support for increasing data ref under spinlock
+>   btrfs: dedupe: Inband in-memory only de-duplication implement
+>   btrfs: dedupe: Add basic tree structure for on-disk dedupe method
+>   btrfs: dedupe: Introduce interfaces to resume and cleanup dedupe info
+>   btrfs: dedupe: Add support for on-disk hash search
+>   btrfs: dedupe: Add support to delete hash for on-disk backend
+>   btrfs: dedupe: Add support for adding hash for on-disk backend
+>   btrfs: Fix a memory leak in inband dedupe hash
+>   btrfs: dedupe: Fix metadata balance error when dedupe is enabled
+>   btrfs: dedupe: Preparation for compress-dedupe co-work
+>   btrfs: relocation: Enhance error handling to avoid BUG_ON
+>   btrfs: dedupe: Fix a space cache delalloc bytes underflow bug
+>
+> Wang Xiaoguang (15):
+>   btrfs: dedupe: Introduce dedupe framework and its header
+>   btrfs: dedupe: Introduce function to initialize dedupe info
+>   btrfs: dedupe: Introduce function to add hash into in-memory tree
+>   btrfs: dedupe: Introduce function to remove hash from in-memory tree
+>   btrfs: dedupe: Introduce function to search for an existing hash
+>   btrfs: dedupe: Implement btrfs_dedupe_calc_hash interface
+>   btrfs: ordered-extent: Add support for dedupe
+>   btrfs: dedupe: Add ioctl for inband dedupelication
+>   btrfs: dedupe: add an inode nodedupe flag
+>   btrfs: dedupe: add a property handler for online dedupe
+>   btrfs: dedupe: add per-file online dedupe control
+>   btrfs: try more times to alloc metadata reserve space
+>   btrfs: dedupe: Fix a bug when running inband dedupe with balance
+>   btrfs: dedupe: Avoid submit IO for hash hit extent
+>   btrfs: dedupe: Add support for compression and dedpue
+>
+>  fs/btrfs/Makefile            |    2 +-
+>  fs/btrfs/ctree.h             |   78 ++-
+>  fs/btrfs/dedupe.c            | 1188 ++++++++++++++++++++++++++++++++++++++++++
+>  fs/btrfs/dedupe.h            |  181 +++++++
+>  fs/btrfs/delayed-ref.c       |   30 +-
+>  fs/btrfs/delayed-ref.h       |    8 +
+>  fs/btrfs/disk-io.c           |   28 +-
+>  fs/btrfs/disk-io.h           |    1 +
+>  fs/btrfs/extent-tree.c       |   49 +-
+>  fs/btrfs/inode.c             |  338 ++++++++++--
+>  fs/btrfs/ioctl.c             |   70 ++-
+>  fs/btrfs/ordered-data.c      |   49 +-
+>  fs/btrfs/ordered-data.h      |   16 +-
+>  fs/btrfs/props.c             |   41 ++
+>  fs/btrfs/relocation.c        |   41 +-
+>  fs/btrfs/sysfs.c             |    2 +
+>  include/trace/events/btrfs.h |    3 +-
+>  include/uapi/linux/btrfs.h   |   25 +-
+>  18 files changed, 2073 insertions(+), 77 deletions(-)
+>  create mode 100644 fs/btrfs/dedupe.c
+>  create mode 100644 fs/btrfs/dedupe.h
+>
+> --
+> 2.7.3
 >
 >
 >
-
-
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

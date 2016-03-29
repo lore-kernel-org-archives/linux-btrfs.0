@@ -1,107 +1,83 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:46683 "EHLO
+Received: from userp1040.oracle.com ([156.151.31.81]:46487 "EHLO
 	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932289AbcC2OW7 (ORCPT
+	with ESMTP id S1757079AbcC2OWp (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 29 Mar 2016 10:22:59 -0400
+	Tue, 29 Mar 2016 10:22:45 -0400
 From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
 Cc: clm@fb.com, dsterba@suse.cz
-Subject: [PATCH 10/12] btrfs: provide framework to get and put a spare device
-Date: Tue, 29 Mar 2016 22:22:27 +0800
-Message-Id: <1459261349-32206-11-git-send-email-anand.jain@oracle.com>
+Subject: [PATCH 02/12] btrfs: Do per-chunk check for mount time check
+Date: Tue, 29 Mar 2016 22:22:19 +0800
+Message-Id: <1459261349-32206-3-git-send-email-anand.jain@oracle.com>
 In-Reply-To: <1459261349-32206-1-git-send-email-anand.jain@oracle.com>
 References: <1459261349-32206-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This adds functions to get and put a spare device from the list.
-So that hot repace code can pick a spare device when needed.
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 
+Now use the btrfs_check_degraded() to do mount time degraded check.
+
+With this patch, now we can mount with the following case:
+ # mkfs.btrfs -f -m raid1 -d single /dev/sdb /dev/sdc
+ # wipefs -a /dev/sdc
+ # mount /dev/sdb /mnt/btrfs -o degraded
+ As the single data chunk is only in sdb, so it's OK to mount as degraded,
+ as missing one device is OK for RAID1.
+
+But still fail with the following case as expected:
+ # mkfs.btrfs -f -m raid1 -d single /dev/sdb /dev/sdc
+ # wipefs -a /dev/sdb
+ # mount /dev/sdc /mnt/btrfs -o degraded
+ As the data chunk is only in sdb, so it's not OK to mount it as degraded.
+
+Reported-by: Zhao Lei <zhaolei@cn.fujitsu.com>
+Reported-by: Anand Jain <anand.jain@oracle.com>
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+
+[Btrfs: use btrfs_error instead of btrfs_err during mount]
 Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
- fs/btrfs/super.c   |  9 +++++++++
- fs/btrfs/volumes.c | 37 +++++++++++++++++++++++++++++++++++++
- fs/btrfs/volumes.h |  2 ++
- 3 files changed, 48 insertions(+)
+ fs/btrfs/disk-io.c | 18 ++++++++++--------
+ 1 file changed, 10 insertions(+), 8 deletions(-)
 
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 87639fa53b10..138fca39ffbb 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -2164,6 +2164,15 @@ static int btrfs_control_open(struct inode *inode, struct file *file)
- 	return 0;
- }
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index c95e3ce9f22e..bfea0f8f6a87 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -2880,6 +2880,16 @@ int open_ctree(struct super_block *sb,
+ 		goto fail_tree_roots;
+ 	}
  
-+void btrfs_put_spare_device(char *path)
-+{
-+	struct btrfs_fs_devices *fs_devices;
-+
-+	if (btrfs_scan_one_device(path, FMODE_READ,
-+				    &btrfs_fs_type, &fs_devices))
-+		printk(KERN_INFO "failed to return spare device\n");
-+}
-+
- /*
-  * used by btrfsctl to scan devices when no FS is mounted
-  */
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 26ae4fd39ce7..308fcb55f2a1 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -7233,3 +7233,40 @@ void btrfs_force_device_close(struct btrfs_device *dev, char *why)
- 		fs_devices->num_devices, fs_devices->rw_devices,
- 		degrade_option ? "set":"unset");
- }
-+
-+int btrfs_get_spare_device(char **path)
-+{
-+	int ret = 1;
-+	struct btrfs_fs_devices *fs_devices;
-+	struct btrfs_device *device;
-+	struct list_head *fs_uuids = btrfs_get_fs_uuids();
-+
-+	mutex_lock(&uuid_mutex);
-+	list_for_each_entry(fs_devices, fs_uuids, list) {
-+		if (!fs_devices->spare)
-+			continue;
-+
-+		/* as of now there is only one device in the spare fs_devices */
-+		device = list_entry(fs_devices->devices.next,
-+					struct btrfs_device, dev_list);
-+
-+		if (!device || !device->name)
-+			continue;
-+
-+		fs_devices->spare = 0;
-+		rcu_read_lock();
-+		*path = kstrdup(device->name->str, GFP_NOFS);
-+		rcu_read_unlock();
-+		ret = 0;
-+		break;
++	ret = btrfs_check_degradable(fs_info, fs_info->sb->s_flags);
++	if (ret < 0) {
++		btrfs_err(fs_info, "degraded writable mount failed %d", ret);
++		goto fail_tree_roots;
++	} else if (ret > 0 && !btrfs_test_opt(chunk_root, DEGRADED)) {
++		btrfs_warn(fs_info,
++			"Some device missing, but still degraded mountable, please mount with -o degraded option");
++		ret = -EACCES;
++		goto fail_tree_roots;
 +	}
-+
-+	if (!ret) {
-+		btrfs_sysfs_remove_fsid(fs_devices);
-+		list_del(&fs_devices->list);
-+		free_fs_devices(fs_devices);
-+	}
-+	mutex_unlock(&uuid_mutex);
-+
-+	return ret;
-+}
-diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-index 6b3b730c2727..b9c04fdf7166 100644
---- a/fs/btrfs/volumes.h
-+++ b/fs/btrfs/volumes.h
-@@ -587,5 +587,7 @@ void btrfs_set_fs_info_ptr(struct btrfs_fs_info *fs_info);
- void btrfs_reset_fs_info_ptr(struct btrfs_fs_info *fs_info);
- int btrfs_check_degradable(struct btrfs_fs_info *fs_info, unsigned flags);
- void btrfs_force_device_close(struct btrfs_device *dev, char *why);
-+int btrfs_get_spare_device(char **path);
-+void btrfs_put_spare_device(char *path);
+ 	/*
+ 	 * keep the device that is marked to be the target device for the
+ 	 * dev_replace procedure
+@@ -2983,14 +2993,6 @@ retry_root_backup:
+ 	}
+ 	fs_info->num_tolerated_disk_barrier_failures =
+ 		btrfs_calc_num_tolerated_disk_barrier_failures(fs_info);
+-	if (fs_info->fs_devices->missing_devices >
+-	     fs_info->num_tolerated_disk_barrier_failures &&
+-	    !(sb->s_flags & MS_RDONLY)) {
+-		pr_warn("BTRFS: missing devices(%llu) exceeds the limit(%d), writeable mount is not allowed\n",
+-			fs_info->fs_devices->missing_devices,
+-			fs_info->num_tolerated_disk_barrier_failures);
+-		goto fail_sysfs;
+-	}
  
- #endif
+ 	fs_info->cleaner_kthread = kthread_run(cleaner_kthread, tree_root,
+ 					       "btrfs-cleaner");
 -- 
 2.7.0
 

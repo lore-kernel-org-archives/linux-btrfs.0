@@ -1,75 +1,122 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:46738 "EHLO
+Received: from userp1040.oracle.com ([156.151.31.81]:46555 "EHLO
 	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932309AbcC2OXB (ORCPT
+	with ESMTP id S932179AbcC2OWv (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 29 Mar 2016 10:23:01 -0400
+	Tue, 29 Mar 2016 10:22:51 -0400
 From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
 Cc: clm@fb.com, dsterba@suse.cz
-Subject: [PATCH 11/12] btrfs: introduce helper functions to perform hot replace
-Date: Tue, 29 Mar 2016 22:22:28 +0800
-Message-Id: <1459261349-32206-12-git-send-email-anand.jain@oracle.com>
+Subject: [PATCH 04/12] btrfs: Allow barrier_all_devices to do per-chunk device check
+Date: Tue, 29 Mar 2016 22:22:21 +0800
+Message-Id: <1459261349-32206-5-git-send-email-anand.jain@oracle.com>
 In-Reply-To: <1459261349-32206-1-git-send-email-anand.jain@oracle.com>
 References: <1459261349-32206-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hot replace / auto replace is important volume manager feature
-and is critical to the data center operations, so that the degraded
-volume can be brought back to a healthy state at the earliest and
-without manual intervention.
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 
-This modifies the existing replace code to suite the need of auto
-replace, in the long run I hope both the codes to be merged.
+The last user of num_tolerated_disk_barrier_failures is
+barrier_all_devices(). But it's can be easily changed to new per-chunk
+degradable check framework.
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
+Now btrfs_device will have two extra members, representing send/wait
+error, set at write_dev_flush() time. And then check it in a similar but
+more accurate behavior than old code.
+
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- fs/btrfs/dev-replace.c | 24 ++++++++++++++++++++++++
- fs/btrfs/dev-replace.h |  1 +
- 2 files changed, 25 insertions(+)
+ fs/btrfs/disk-io.c | 13 +++++--------
+ fs/btrfs/volumes.c |  6 +++++-
+ fs/btrfs/volumes.h |  4 ++++
+ 3 files changed, 14 insertions(+), 9 deletions(-)
 
-diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
-index 2b926867d136..d6b768cf121f 100644
---- a/fs/btrfs/dev-replace.c
-+++ b/fs/btrfs/dev-replace.c
-@@ -957,3 +957,27 @@ void btrfs_bio_counter_inc_blocked(struct btrfs_fs_info *fs_info)
- 				     &fs_info->fs_state));
- 	}
- }
-+
-+int btrfs_auto_replace_start(struct btrfs_root *root,
-+				struct btrfs_device *src_device)
-+{
-+	int ret;
-+	char *tgt_path;
-+
-+	if (btrfs_get_spare_device(&tgt_path)) {
-+		btrfs_err(root->fs_info,
-+			"No spare device found/configured in the kernel");
-+		return -EINVAL;
-+	}
-+
-+	ret = btrfs_dev_replace_start(root, tgt_path,
-+					src_device->devid,
-+					rcu_str_deref(src_device->name),
-+		BTRFS_IOCTL_DEV_REPLACE_CONT_READING_FROM_SRCDEV_MODE_AVOID);
-+	if (ret)
-+		btrfs_put_spare_device(tgt_path);
-+
-+	kfree(tgt_path);
-+
-+	return 0;
-+}
-diff --git a/fs/btrfs/dev-replace.h b/fs/btrfs/dev-replace.h
-index e922b42d91df..b918b9d6e5df 100644
---- a/fs/btrfs/dev-replace.h
-+++ b/fs/btrfs/dev-replace.h
-@@ -46,4 +46,5 @@ static inline void btrfs_dev_replace_stats_inc(atomic64_t *stat_value)
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index bfea0f8f6a87..85e26d62c089 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -3491,8 +3491,6 @@ static int barrier_all_devices(struct btrfs_fs_info *info)
  {
- 	atomic64_inc(stat_value);
+ 	struct list_head *head;
+ 	struct btrfs_device *dev;
+-	int errors_send = 0;
+-	int errors_wait = 0;
+ 	int ret;
+ 
+ 	/* send down all the barriers */
+@@ -3501,7 +3499,7 @@ static int barrier_all_devices(struct btrfs_fs_info *info)
+ 		if (dev->missing)
+ 			continue;
+ 		if (!dev->bdev) {
+-			errors_send++;
++			dev->err_send = 1;
+ 			continue;
+ 		}
+ 		if (!dev->in_fs_metadata || !dev->writeable)
+@@ -3509,7 +3507,7 @@ static int barrier_all_devices(struct btrfs_fs_info *info)
+ 
+ 		ret = write_dev_flush(dev, 0);
+ 		if (ret)
+-			errors_send++;
++			dev->err_send = 1;
+ 	}
+ 
+ 	/* wait for all the barriers */
+@@ -3517,7 +3515,7 @@ static int barrier_all_devices(struct btrfs_fs_info *info)
+ 		if (dev->missing)
+ 			continue;
+ 		if (!dev->bdev) {
+-			errors_wait++;
++			dev->err_wait = 1;
+ 			continue;
+ 		}
+ 		if (!dev->in_fs_metadata || !dev->writeable)
+@@ -3525,10 +3523,9 @@ static int barrier_all_devices(struct btrfs_fs_info *info)
+ 
+ 		ret = write_dev_flush(dev, 1);
+ 		if (ret)
+-			errors_wait++;
++			dev->err_wait = 1;
+ 	}
+-	if (errors_send > info->num_tolerated_disk_barrier_failures ||
+-	    errors_wait > info->num_tolerated_disk_barrier_failures)
++	if (btrfs_check_degradable(info, info->sb->s_flags) < 0)
+ 		return -EIO;
+ 	return 0;
  }
-+int btrfs_auto_replace_start(struct btrfs_root *root, struct btrfs_device *src_device);
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index dd3dc53a302a..a840d78ba127 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -7081,8 +7081,12 @@ int btrfs_check_degradable(struct btrfs_fs_info *fs_info, unsigned flags)
+ 			btrfs_get_num_tolerated_disk_barrier_failures(
+ 					map->type);
+ 		for (i = 0; i < map->num_stripes; i++) {
+-			if (map->stripes[i].dev->missing)
++			if (map->stripes[i].dev->missing ||
++			    map->stripes[i].dev->err_wait ||
++			    map->stripes[i].dev->err_send)
+ 				missing++;
++			map->stripes[i].dev->err_wait = 0;
++			map->stripes[i].dev->err_send = 0;
+ 		}
+ 		if (missing > max_tolerated) {
+ 			ret = -EIO;
+diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
+index 351431a3f5aa..48ced5cc09e4 100644
+--- a/fs/btrfs/volumes.h
++++ b/fs/btrfs/volumes.h
+@@ -76,6 +76,10 @@ struct btrfs_device {
+ 	int can_discard;
+ 	int is_tgtdev_for_dev_replace;
+ 
++	/* for barrier_all_devices() check */
++	int err_send;
++	int err_wait;
++
+ #ifdef __BTRFS_NEED_DEVICE_DATA_ORDERED
+ 	seqcount_t data_seqcount;
  #endif
 -- 
 2.7.0

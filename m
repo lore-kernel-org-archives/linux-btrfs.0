@@ -1,145 +1,225 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:56559 "EHLO plane.gmane.org"
+Received: from plane.gmane.org ([80.91.229.3]:59860 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752222AbcC2CX1 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 28 Mar 2016 22:23:27 -0400
+	id S1750742AbcC2EOT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 29 Mar 2016 00:14:19 -0400
 Received: from list by plane.gmane.org with local (Exim 4.69)
 	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1akjJQ-0000A6-Ul
-	for linux-btrfs@vger.kernel.org; Tue, 29 Mar 2016 04:23:21 +0200
+	id 1akl2l-0006vj-35
+	for linux-btrfs@vger.kernel.org; Tue, 29 Mar 2016 06:14:15 +0200
 Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
         by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 29 Mar 2016 04:23:20 +0200
+        for <linux-btrfs@vger.kernel.org>; Tue, 29 Mar 2016 06:14:15 +0200
 Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 29 Mar 2016 04:23:20 +0200
+        for <linux-btrfs@vger.kernel.org>; Tue, 29 Mar 2016 06:14:15 +0200
 To: linux-btrfs@vger.kernel.org
 From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: Compression causes kernel crashes if there are I/O or checksum
- errors (was: RE: kernel BUG at fs/btrfs/volumes.c:5519 when hot-removing
- device in RAID-1)
-Date: Tue, 29 Mar 2016 02:23:10 +0000 (UTC)
-Message-ID: <pan$8d4aa$86f9e595$a75cf83d$dda8e362@cox.net>
-References: <001b01d188ac$16740630$435c1290$@codenest.com>
-	<pan$284e3$6ee9615a$919b0339$15e3af27@cox.net>
-	<003801d188fe$e8c9b920$ba5d2b60$@codenest.com>
+Subject: Re: Raid 0 setup doubt.
+Date: Tue, 29 Mar 2016 04:14:09 +0000 (UTC)
+Message-ID: <pan$28b97$76cf6c77$cf04f1a3$9cf975d9@cox.net>
+References: <56F7B77F.9050306@gmail.com>
+	<pan$8fc2c$862a26c8$c5af9279$b4bfa8ec@cox.net>
+	<56F99480.2090707@gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-James Johnston posted on Mon, 28 Mar 2016 14:34:14 +0000 as excerpted:
+Jose Otero posted on Mon, 28 Mar 2016 22:30:56 +0200 as excerpted:
 
-> Thanks for the corroborating report - it does sound to me like you ran
-> into the same problem I've found.  (I don't suppose you ever captured
-> any of the crashes?  If they assert on the same thing as me then it's
-> even stronger evidence.)
+> Duncan, you are right. I have 8 GB of RAM, and the most memory intensive
+> thing I'll be doing is a VM for Windows. Now I double boot, but rarely
+> go into Win, only to play some game occasionally. So, I think I'll be
+> better off with Linux flat out and Win in a VM.
 
-No...  In fact, as I have compress=lzo on all my btrfs, until you found 
-out that it didn't happen in the uncompressed case, I simply considered 
-that part and parcel of btrfs not being fully stabilized and mature yet.  
-I didn't even consider it a specific bug on its own, and thus didn't 
-report it or trace it in any way, and simply worked around it, even tho I 
-certainly found it frustrating.
+LOL.  That sounds /very/ much like me, tho obviously with different 
+details given the timeframe, about 20 years ago.. and thru to this day, 
+as the following story explains.
 
->> The failure mode of this particular ssd was premature failure of more
->> and more sectors, about 3 MiB worth over several months based on the
->> raw count of reallocated sectors in smartctl -A, but using scrub to
->> rewrite them from the good device would normally work, forcing the
->> firmware to remap that sector to one of the spares as scrub corrected
->> the problem.
-> 
-> I wonder what the risk of a CRC collision was in your situation?
-> 
-> Certainly my test of "dd if=/dev/zero of=/dev/sdb" was very abusive, and
-> I wonder if the result after scrubbing is trustworthy, or if there was
-> some collisions.  But I wasn't checking to see if data coming out the
-> other end was OK - I was just trying to see if the kernel crashes or not
-> (e.g. a USB stick holding a bad btrfs file system should not crash a
-> system).
+This was in the first few years after I got my first computer of my own, 
+back in the early 90s, so well before I switched to Linux when the 
+alternative was upgrading to MS eXPrivacy, starting the weekend eXPrivacy 
+was actually released, in 2001.  So it was on MS.
 
-I had absolutely no trouble with the scrubbed data, or at least none I 
-attributed to that, tho I didn't have the data cross-hashed and cross-
-check the post-scrub result against earlier hashes or anything, so a few 
-CRC collisions could have certainly snuck thru.
+When MS Windows95 came out, I upgraded to it, and normally stayed booted 
+into it for all my usual tasks.  But I had one very favorite (to this 
+day, actually) game, Master of Orion, original DOS edition, that wouldn't 
+work in the original W95 -- I had to reboot to DOS to play it.
 
-But even were some to have done so, or even if they didn't in practice, 
-if they could have in theory, just the standard crc checks are so far 
-beyond what's built into a normal filesystem like the reiserfs that's 
-still my second (and non-btrfs) level backup.  So it's not like I'm 
-majorly concerned.  If I was paranoid, as I mentioned I could certainly 
-be doing cross-checks against multiple hashes, but I survived without any 
-sort of routine data integrity checking for years, and even a practical 
-worst-case-scenario crc-collision is already an infinite percentage 
-better than that (just as 1 is an infinite percentage of 0), so it's 
-nothing I'm going to worry about unless I actually start seeing real 
-cases of it.
+I remember what a relief it was to upgrade to 95-OSR2 and finally get the 
+ability to run it from the DOS within W95, as that finally allowed me to 
+play it without the hassle of rebooting all the time.
 
->> So I quickly learned that if I powered up and the kernel crashed at
->> that point, I could reboot with the emergency kernel parameter, which
->> would tell systemd to give me a maintenance-mode root login prompt
->> after doing its normal mounts but before starting the normal post-mount
->> services, and I could run scrub from there.  That would normally repair
->> things without triggering the crash, and when I had run scrub
->> repeatedly if necessary to correct any unverified errors in the first
->> runs, I could then exit emergency mode and let systemd start the normal
->> services, including the service that read all these files off the now
->> freshly scrubbed filesystem, without further issues.
-> 
-> That is one thing I did not test.  I only ever scrubbed after first
-> doing the "cat all files to null" test.  So in the case of compression,
-> I never got that far.  Probably someone should test the scrubbing more
-> thoroughly (i.e. with that abusive "dd" test I did) just to be sure that
-> it is stable to confirm your observations, and that the problem is only
-> limited to ordinary file I/O on the file system.
+That's the first time I realized just what a hassle rebooting to do 
+something specific was, as despite that being -- to this day -- my 
+favorite computer game ever, I really didn't reboot very often to play 
+it, when I had to actually reboot /to/ play it.
 
-I suspect that when the devs duplicate the bug and ultimately trace it 
-down, we'll know from the code-path whether scrub could have hit it or 
-not, without actually testing the scrub case on its own.
+Of course W95OSR2 was upgraded to W98 -- at the time I was actually 
+running the public betas for IE4/OE4 and was really looking forward to 
+the advances that came with the to that point IE4-addon desktop 
+integration, and I remember standing in line at midnight to get my copy 
+of W98 as soon as possible.  At the time I was volunteering in the MS IE/
+OE newsgroups, programming in VB and the MS Windows API, and on my way 
+toward MSMVP.
 
-And along with the fix it's a fair bet will be an fstests patch that will 
-verify no regressions there once fixed, as well.
+But that was the height of my MS involvement.  By the time W98 came out I 
+was already hearing about this Linux thing, and by sometime in 1999 I was 
+convinced of the soundness of the Free/Libre and Open Source approach, 
+and shortly thereafter read Eric S. Raymond's "The Cathedral and the 
+Bazaar" and related essays (in dead-tree book form), the experience of 
+which, for me, was one of repeated YES!!, EXACTLY!!, I didn't know others 
+thought that way!!, because I had come to an immature form of many of the 
+same conclusions on my own, due to my own VB programming experience, 
+which sealed the deal.
 
-Once the fstests patch is in, it should be just a small tweak to test 
-whether scrub's subject to the problem if it uses a different code-path, 
-or not, and in fact once they find and verify with a fix the problem 
-here, even if scrub doesn't use that code-path, I expect they'll be 
-verifying scrub's own code-paths as well.
+But while I was convinced of the moral and logical correctness of the 
+FLOSS way, I was loath to simply dump all the technical and developer API 
+knowledge and experience I had on MS Windows by that point, and truth be 
+told, may never have actually jumped off MS if MS themselves hadn't 
+pushed me.
 
->> And apparently the devs don't test the someone less common combination
->> of both compression and high numbers of raid1 correctable checksum
->> errors, or they would have probably detected and fixed the problem from
->> that.
-> 
-> Well, I've only tested with RAID-1.  I don't know if:
-> 
-> 1.  The problem occurs with other RAID levels like RAID-10, RAID5/6.
-> 
-> 2.  The kernel crashes in non-duplicated levels.  In these cases, data
-> loss is inevitable since the data is missing, but these losses should be
-> handled cleanly, and not by crashing the kernel.
+While I had played with Linux a bit, I quickly found that it simply 
+wasn't practical on that level, for much the same reason booting to DOS 
+to play Master of Orion wasn't practical, despite it being my favorite 
+game.  Rebooting was simply too much of a hassle, and I simply didn't do 
+it often enough in practice to get much of anywhere.
 
-Good points.  Again, I expect the extent of the bug based on its code-
-path and what actually uses it, should be readily apparent once the bug 
-is traced, and that tests will be developed to cover the other code 
-paths, once the scope of this specific affected code path is known, if 
-necessary.
+But it's at that point that MS first introduced its own malware, first 
+with Office eXPrivacy, then publishing the fact that MS Windows eXPrivacy 
+was going to be just that as well, that they were shipping activation 
+malware that would, upon upgrade of too much of the machine, demand 
+reactivation.
 
-Tho it's quite possible that testing these sorts of things will help 
-further narrow the problem space, and thus could help in actually tracing 
-down the bug, in the first place.
+To me, this abuse of the user via activation malware was both a bridge 
+too far, and 100% proof positive that MS considered itself a de-facto 
+monopoly, regardless of what it might say in court.   After all, back in 
+the day, MS Office got where it got in part because unlike the 
+competition, it didn't require clumsy hardware dongles to allow one to 
+use the software.  Their policy when trying to actually compete was that 
+they'd rather their software be pirated, if it made them the de-facto 
+standard, which it ultimately did.  That MS was now actually shipping 
+deactivation malware as part of its product was thus 100% proof positive 
+that they no longer considered anything else a serious competitive 
+threat, and thus, that they could get away with inconveniencing their 
+users via deactivation malware, since in their viewpoint they were now a 
+monopoly and the users no longer had any other practical alternative 
+/but/ MS.
 
-> Do any devs do regular regression testing for these sorts of edge cases
-> once they come up? (i.e. this problem won't come back, will it?)
+And that was all the push it took.  By the time I started what I knew by 
+then was THE switch, because MS really wasn't giving me any choice, I had 
+actually been verifying my hardware upgrades against Linux compatibility 
+for two full years, so I knew my hardware would handle Linux.  But I just 
+couldn't spend the time booted to Linux to learn how to actually /use/ 
+it, until MS gave me that push, leaving me no other viable option.  But 
+once I knew I was switching, I was dead serious about it, and asked on my 
+then ISP's newsgroup (luckily, that ISP had some SERIOUSLY knowledgeable 
+Linux and BSD folks as both ISP employees and users, one guy was one of 
+about a dozen with commit access to one of the BSDs, IDR which one, but 
+this is the level of expertise I had available to me) for book 
+recommendations to teach me Linux.  I bought the two books that were 
+recommended by multiple people on that newsgroup, O'Reilly's Running 
+Linux, which I read all 600 pages or so very nearly cover to cover, and 
+Linux in a Nutshell, a reference book that I kept at my side for years, 
+even buying a newer edition some years later.
 
-As should (now) be obvious from the above, yes, definitely.  Most patches 
-to specific bugs also include fstests (originally xfstests, I don't 
-actually know if the name has actually changed or if the fstests 
-references I see are simply using an informal generic name, now that 
-xfstest covers all sorts of other filesystems including btrfs, as well) 
-patches to ensure the same bugs or anything close enough to them to 
-trigger the same test-fails, don't get reintroduced.
+Because I knew if I didn't learn Linux well enough and fast enough for it 
+to become my default boot, and remove enough reasons for MS Windows to be 
+that default boot, it simply wasn't going to happen for me.  And with the 
+MS push off their ship highly motivating me, come hell or high water, I 
+was determined that *THIS* time, it *WAS* going to happen for me.
+
+Which it did.  I installed Linux for the last time with MS as a dual 
+boot, the same week MS Windows eXPrivacy was released.  It took some 
+intensive effort, but by three months later, I was configuring and 
+building my own kernels, configuring LILO to work the way I wanted 
+because I wasn't going to be satisfied until it either did so or I had a 
+hard reason why it couldn't do so, and configuring xf86config to handle 
+dual graphics cards and triple monitors, because I'd been using the same 
+dual card, triple monitor setup on MS Windows98, and again, I was either 
+going to get it working on Linux as well, or be able to explain precisely 
+why it couldn't (yet) be done and what efforts were under way to fix the 
+problem.  That took about six weeks.  The second six weeks of that three 
+months was spent figuring out which desktop I wanted to use (kde), 
+figuring out which of the many alternative apps fit my needs best, and 
+configuring both the desktop and those apps to behave as I wanted/needed 
+them to behave, again, with the alternatives being that they'd either do 
+it, or I'd have a very good reason why neither they, nor any of the 
+alternatives available, could do it.
+
+At first, particularly before I figured out how to get the three monitors 
+working, I was still spending most of my actual productive time on the MS 
+side, using MSIE and MSOE to search for and at times ask my ISP's 
+newsgroup for answers to why the Linux side wasn't working the way I 
+wanted and needed it to work.  Once I got the kernel configured and 
+rebuilding (necessary for the graphics cards I was running), and XFree86 
+running with the two graphics cards and three monitors, things started to 
+move faster, tho I was still rebooting to MS Windows98 to use IE/OE to 
+get answers, until I had a browser and news client config I could feel 
+comfortable with on the LInux side.
+
+By the three month mark, I had everything configured more or less to my 
+liking on the Linux side, tho of course I continued to tweak and still 
+continue to tweak, and had in fact reversed the previous situation, to 
+the point that when I'd boot to the MS side to take care of something 
+there that I couldn't do on the Linux side yet, I'd sit there afterward, 
+wondering just what else there was to do on MS, just as I had previously 
+done on Linux, when I had been simply playing with it, before MS gave me 
+that push off their ship with the eXPrivacy malware that was simply 
+beyond what I was willing to take.
+
+Within about six more months, so nine total, I had gone from booting to 
+MS every couple weeks to take care of some loose end, to every month, to 
+every couple months.  By nine months in, I had migrated the files I 
+needed over, and had uninstalled and deleted most of the one rather large 
+set of power tools addons and toys I had used on the MS side, shrinking 
+the MS partition accordingly.
+
+I basically didn't boot to the MS side at all after 9 months or so, tho I 
+kept it around, unused, another 9 months or so, until about the year and 
+a half mark, when I decided I could better use that space for something 
+else.  Still, I kept the MS Windows 98 install files, which I had copied 
+off the CD back when I was still on MS to make reinstalls faster, around 
+for awhile, and finally deleted them at about the two year mark, keeping 
+the install CD itself, as my final link to MS, around for another year or 
+so after that.
+
+But that favorite game, Master of Orion, original DOS edition?  I still 
+play it to this day, in DOSBox these days.  In fact, it's the only (non-
+firmware level) slaveryware (in the context of the quote in my sig) I 
+still have and run, tho of course DOSBox, the VM I run it in, is 
+freedomware.  While I no longer accept any EULAs or agree to waive my 
+rights regarding other slaveryware and thus couldn't legally run pretty 
+much any other slaveryware (including flash and nVidia graphics drivers, 
+for instance) even if I wanted to, I long ago accepted the EULA on Master 
+of Orion, and pretty much simply didn't ever unaccept it.  Yes, that 
+/does/ make it, and the four software freedoms and thus to my mind human 
+rights disrespecting authors that created it, my master, and me its 
+slave, it's a slavery I've not yet freed myself from... in that one 
+instance, anyway.
+
+Tho were I to have to reboot to run it, I expect I'd find myself freed of 
+that slavery rather fast, because as I said, I Just. Don't. Find. 
+Repeated. Rebooting. Practical. For any reason.
+
+Ironically, tho DOSBox may have initially helped free me from the slavery 
+of the MS platform as it gave me a way to continue to play that game on 
+Linux, these days it's helping keep me a slave to that last bit of 
+favorite game slaveryware, even after I've long since slipped the bonds 
+of all the other slaveryware.
+
+So, umm... Yeah, an MS platform VM (tho DOSBox is freedomware and I don't 
+actually run MS DOS or whatever in it, it emulates that) on which to run 
+a game or two... thus avoiding having to dual-boot to an MS platform to 
+do so... sounds rather familiar to me!
+
+Fortunately, other than the dosbox executable and *.conf file, and the 
+associated libraries, etc, plus the associated game files, this 
+particular VM and the platform emulated within, are DOS-era small, and 
+thus 100% virtualized in memory, no big VM image file to worry about and 
+get fragmented due to modification-writes on a COW-based btrfs. =:^)
 
 -- 
 Duncan - List replies preferred.   No HTML msgs.

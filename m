@@ -1,58 +1,94 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.136]:59771 "EHLO mail.kernel.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753925AbcCYTqD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 25 Mar 2016 15:46:03 -0400
-Received: from mail.kernel.org (localhost [127.0.0.1])
-	by mail.kernel.org (Postfix) with ESMTP id D4D9F20373
-	for <linux-btrfs@vger.kernel.org>; Fri, 25 Mar 2016 19:46:01 +0000 (UTC)
-Received: from mail-io0-f174.google.com (mail-io0-f174.google.com [209.85.223.174])
-	(using TLSv1.2 with cipher AES128-GCM-SHA256 (128/128 bits))
-	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPSA id E2E38201ED
-	for <linux-btrfs@vger.kernel.org>; Fri, 25 Mar 2016 19:46:00 +0000 (UTC)
-Received: by mail-io0-f174.google.com with SMTP id 124so121777612iov.3
-        for <linux-btrfs@vger.kernel.org>; Fri, 25 Mar 2016 12:46:00 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <20160325184958.pk23fotivrbhteeg@floor.thefacebook.com>
-References: <1458581924-18589-1-git-send-email-fdmanana@kernel.org>
-	<20160321175107.rseoedz5yw6ckb3q@floor.thefacebook.com>
-	<CAL3q7H4xujc7X4pPySHd_YCM50xfMZuwBH24E-0t0rdi-h9enA@mail.gmail.com>
-	<20160325184958.pk23fotivrbhteeg@floor.thefacebook.com>
-Date: Fri, 25 Mar 2016 19:46:00 +0000
-Message-ID: <CAL3q7H69tECvgsFwqLznEXXU+DxTJE=UZq9FF5KdN0-a1M_C4g@mail.gmail.com>
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:53927 "EHLO
+	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1754016AbcC2UGr (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 29 Mar 2016 16:06:47 -0400
+Date: Tue, 29 Mar 2016 16:06:39 -0400
+From: Chris Mason <clm@fb.com>
+To: <fdmanana@kernel.org>
+CC: <linux-btrfs@vger.kernel.org>, <miklos@szeredi.hu>
 Subject: Re: [PATCH] Btrfs: fix crash/invalid memory access on fsync when
  using overlayfs
-From: Filipe Manana <fdmanana@kernel.org>
-To: Chris Mason <clm@fb.com>, Filipe Manana <fdmanana@kernel.org>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        miklos@szeredi.hu
-Content-Type: text/plain; charset=UTF-8
+Message-ID: <20160329200639.ntyvi66gsfgohiwn@floor.thefacebook.com>
+References: <1458581924-18589-1-git-send-email-fdmanana@kernel.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+In-Reply-To: <1458581924-18589-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Mar 25, 2016 at 6:49 PM, Chris Mason <clm@fb.com> wrote:
-> On Mon, Mar 21, 2016 at 05:52:44PM +0000, Filipe Manana wrote:
->> On Mon, Mar 21, 2016 at 5:51 PM, Chris Mason <clm@fb.com> wrote:
->> > On Mon, Mar 21, 2016 at 05:38:44PM +0000, fdmanana@kernel.org wrote:
->> >> From: Filipe Manana <fdmanana@suse.com>
->> >>
->> >> If the lower or upper directory of an overlayfs mount belong to a btrfs
->> >> file system and we fsync the file through the overlayfs' merged directory
->> >> we ended up accessing an inode that didn't belong to btrfs as if it were
->> >> a btrfs inode at btrfs_sync_file() resulting in a crash like the following:
->> >
->> > Thanks Filipe, I'll put this in a second pull this week, even if its the
->> > only patch in it ;)
->>
->> Well we need to wait for Miklos patch to be merged first.
->
-> I'll cut this one on top of rc1 in a dedicated branch instead.  That way
-> people can still use the rest of our btrfs pull against v4.5
+On Mon, Mar 21, 2016 at 05:38:44PM +0000, fdmanana@kernel.org wrote:
+> From: Filipe Manana <fdmanana@suse.com>
+> 
+> If the lower or upper directory of an overlayfs mount belong to a btrfs
+> file system and we fsync the file through the overlayfs' merged directory
+> we ended up accessing an inode that didn't belong to btrfs as if it were
+> a btrfs inode at btrfs_sync_file() resulting in a crash like the following:
 
-At the moment, the patch it depends on it's not yet on Linus' tree.
-But it's in Miklos vfs tree:
-https://git.kernel.org/cgit/linux/kernel/git/mszeredi/vfs.git/log/?h=overlayfs-next
+Thanks Filipe, adding a sob so this can go upstream with the related
+patches.
 
->
-> -chris
+> 
+> [ 7782.588845] BUG: unable to handle kernel NULL pointer dereference at 0000000000000544
+> [ 7782.590624] IP: [<ffffffffa030b7ab>] btrfs_sync_file+0x11b/0x3e9 [btrfs]
+> [ 7782.591931] PGD 4d954067 PUD 1e878067 PMD 0
+> [ 7782.592016] Oops: 0002 [#6] PREEMPT SMP DEBUG_PAGEALLOC
+> [ 7782.592016] Modules linked in: btrfs overlay ppdev crc32c_generic evdev xor raid6_pq psmouse pcspkr sg serio_raw acpi_cpufreq parport_pc parport tpm_tis i2c_piix4 tpm i2c_core processor button loop autofs4 ext4 crc16 mbcache jbd2 sr_mod cdrom sd_mod ata_generic virtio_scsi ata_piix virtio_pci libata virtio_ring virtio scsi_mod e1000 floppy [last unloaded: btrfs]
+> [ 7782.592016] CPU: 10 PID: 16437 Comm: xfs_io Tainted: G      D         4.5.0-rc6-btrfs-next-26+ #1
+> [ 7782.592016] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS by qemu-project.org 04/01/2014
+> [ 7782.592016] task: ffff88001b8d40c0 ti: ffff880137488000 task.ti: ffff880137488000
+> [ 7782.592016] RIP: 0010:[<ffffffffa030b7ab>]  [<ffffffffa030b7ab>] btrfs_sync_file+0x11b/0x3e9 [btrfs]
+> [ 7782.592016] RSP: 0018:ffff88013748be40  EFLAGS: 00010286
+> [ 7782.592016] RAX: 0000000080000000 RBX: ffff880133b30c88 RCX: 0000000000000001
+> [ 7782.592016] RDX: 0000000000000001 RSI: ffffffff8148fec0 RDI: 00000000ffffffff
+> [ 7782.592016] RBP: ffff88013748bec0 R08: 0000000000000001 R09: 0000000000000000
+> [ 7782.624248] R10: ffff88013748be40 R11: 0000000000000246 R12: 0000000000000000
+> [ 7782.624248] R13: 0000000000000000 R14: 00000000009305a0 R15: ffff880015e3be40
+> [ 7782.624248] FS:  00007fa83b9cb700(0000) GS:ffff88023ed40000(0000) knlGS:0000000000000000
+> [ 7782.624248] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+> [ 7782.624248] CR2: 0000000000000544 CR3: 00000001fa652000 CR4: 00000000000006e0
+> [ 7782.624248] Stack:
+> [ 7782.624248]  ffffffff8108b5cc ffff88013748bec0 0000000000000246 ffff8800b005ded0
+> [ 7782.624248]  ffff880133b30d60 8000000000000000 7fffffffffffffff 0000000000000246
+> [ 7782.624248]  0000000000000246 ffffffff81074f9b ffffffff8104357c ffff880015e3be40
+> [ 7782.624248] Call Trace:
+> [ 7782.624248]  [<ffffffff8108b5cc>] ? arch_local_irq_save+0x9/0xc
+> [ 7782.624248]  [<ffffffff81074f9b>] ? ___might_sleep+0xce/0x217
+> [ 7782.624248]  [<ffffffff8104357c>] ? __do_page_fault+0x3c0/0x43a
+> [ 7782.624248]  [<ffffffff811a2351>] vfs_fsync_range+0x8c/0x9e
+> [ 7782.624248]  [<ffffffff811a237f>] vfs_fsync+0x1c/0x1e
+> [ 7782.624248]  [<ffffffff811a24d6>] do_fsync+0x31/0x4a
+> [ 7782.624248]  [<ffffffff811a2700>] SyS_fsync+0x10/0x14
+> [ 7782.624248]  [<ffffffff81493617>] entry_SYSCALL_64_fastpath+0x12/0x6b
+> [ 7782.624248] Code: 85 c0 0f 85 e2 02 00 00 48 8b 45 b0 31 f6 4c 29 e8 48 ff c0 48 89 45 a8 48 8d 83 d8 00 00 00 48 89 c7 48 89 45 a0 e8 fc 43 18 e1 <f0> 41 ff 84 24 44 05 00 00 48 8b 83 58 ff ff ff 48 c1 e8 07 83
+> [ 7782.624248] RIP  [<ffffffffa030b7ab>] btrfs_sync_file+0x11b/0x3e9 [btrfs]
+> [ 7782.624248]  RSP <ffff88013748be40>
+> [ 7782.624248] CR2: 0000000000000544
+> [ 7782.661994] ---[ end trace 721e14960eb939bc ]---
+> 
+> This started happening since commit 4bacc9c9234 (overlayfs: Make f_path
+> always point to the overlay and f_inode to the underlay) and even though
+> after this change we could still access the btrfs inode through
+> struct file->f_mapping->host or struct file->f_inode, we would end up
+> resulting in more similar issues later on at check_parent_dirs_for_sync()
+> because the dentry we got (from struct file->f_path.dentry) was from
+> overlayfs and not from btrfs, that is, we had no way of getting the dentry
+> that belonged to btrfs (we always got the dentry that belonged to
+> overlayfs).
+> 
+> The new patch from Miklos Szeredi, titled "vfs: add file_dentry()" and
+> recently submitted to linux-fsdevel, adds a file_dentry() API that allows
+> us to get the btrfs dentry from the input file and therefore being able
+> to fsync when the upper and lower directories belong to btrfs filesystems.
+> 
+> This issue has been reported several times by users in the mailing list
+> and bugzilla. A test case for xfstests is being submitted as well.
+> 
+> Bugzilla: https://bugzilla.kernel.org/show_bug.cgi?id=101951
+> Bugzilla: https://bugzilla.kernel.org/show_bug.cgi?id=109791
+> Signed-off-by: Filipe Manana <fdmanana@suse.com>
+
+Signed-off-by: Chris Mason <clm@fb.com>
+
+

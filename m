@@ -1,123 +1,370 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:38713 "EHLO
+Received: from userp1040.oracle.com ([156.151.31.81]:18498 "EHLO
 	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751368AbcCPAcw (ORCPT
+	with ESMTP id S1756892AbcC2Oba (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 15 Mar 2016 20:32:52 -0400
+	Tue, 29 Mar 2016 10:31:30 -0400
+Received: from aserv0021.oracle.com (aserv0021.oracle.com [141.146.126.233])
+	by userp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id u2TEVSnK025377
+	(version=TLSv1 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Tue, 29 Mar 2016 14:31:29 GMT
+Received: from userv0122.oracle.com (userv0122.oracle.com [156.151.31.75])
+	by aserv0021.oracle.com (8.13.8/8.13.8) with ESMTP id u2TEVS4h015420
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Tue, 29 Mar 2016 14:31:28 GMT
+Received: from abhmp0018.oracle.com (abhmp0018.oracle.com [141.146.116.24])
+	by userv0122.oracle.com (8.14.4/8.14.4) with ESMTP id u2TEVR2D007800
+	for <linux-btrfs@vger.kernel.org>; Tue, 29 Mar 2016 14:31:28 GMT
 From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.cz, clm@fb.com
-Subject: [PATCH v2] btrfs: block incompatible optional features at scan
-Date: Wed, 16 Mar 2016 08:32:35 +0800
-Message-Id: <1458088355-513-1-git-send-email-anand.jain@oracle.com>
+Subject: [PATCH] btrfs: debug: procfs-devlist: introduce procfs interface for the device list for debugging
+Date: Tue, 29 Mar 2016 22:31:20 +0800
+Message-Id: <1459261880-32336-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-For the matter of completeness we need to check if the device
-being scanned has features that are known to the kernel. As of
-now if it doesn't - the mount will fails, then what is the point
-in having those devices added to the btrfs_fs_devices list at
-device_list_add().
+From: Anand Jain <Anand.Jain@oracle.com>
 
-So block those devices at scan. Which means the original block at
-open_ctee() won't reach in case of device with unsupported feature.
-But I am leaving that code as it is, without deleting.
+This patch introduces profs interface /proc/fs/btrfs/devlist, which as of now exports all the members of kernel fs_devices.
 
-Unit testing:
-Create progs with the following changes and mkfs.
---------------------------------------------------
-diff --git a/ctree.h b/ctree.h
-index 5ab0f4a45a15..a8d86facc045 100644
---- a/ctree.h
-+++ b/ctree.h
-@@ -480,6 +480,7 @@ struct btrfs_super_block {
- #define BTRFS_FEATURE_INCOMPAT_RAID56          (1ULL << 7)
- #define BTRFS_FEATURE_INCOMPAT_SKINNY_METADATA (1ULL << 8)
- #define BTRFS_FEATURE_INCOMPAT_NO_HOLES                (1ULL << 9)
-+#define BTRFS_FEATURE_INCOMPAT_TEST            (1ULL << 10)
+The current /sys/fs/btrfs interface works when the fs is mounted, and is on the file directory hierarchy and also has the sysfs limitation max output of U64 per file.
 
- #define BTRFS_FEATURE_COMPAT_SUPP              0ULL
+Here btrfs procfs uses seq_file to export all the members of fs_devices. Also shows the contents when device is not mounted, but have registered with btrfs kernel (useful as an alternative to buggy ready ioctl)
 
-@@ -495,7 +496,8 @@ struct btrfs_super_block {
-         BTRFS_FEATURE_INCOMPAT_RAID56 |                \
-         BTRFS_FEATURE_INCOMPAT_MIXED_GROUPS |          \
-         BTRFS_FEATURE_INCOMPAT_SKINNY_METADATA |       \
--        BTRFS_FEATURE_INCOMPAT_NO_HOLES)
-+        BTRFS_FEATURE_INCOMPAT_NO_HOLES |              \
-+        BTRFS_FEATURE_INCOMPAT_TEST)
+An attempt is made to follow the some standard file format output such as ini. So that a simple warper python script will provide end user useful interfaces.
 
- /*
-  * A leaf is full of items. offset and size tell us where to find
-diff --git a/mkfs.c b/mkfs.c
-index ea584042db16..f3665a93364b 100644
---- a/mkfs.c
-+++ b/mkfs.c
-@@ -1368,7 +1368,7 @@ int main(int ac, char **av)
-        int dev_cnt = 0;
-        int saved_optind;
-        char fs_uuid[BTRFS_UUID_UNPARSED_SIZE] = { 0 };
--       u64 features = BTRFS_MKFS_DEFAULT_FEATURES;
-+       u64 features = BTRFS_MKFS_DEFAULT_FEATURES | BTRFS_FEATURE_INCOMPAT_TEST;
-        struct mkfs_allocation allocation = { 0 };
-        struct btrfs_mkfs_config mkfs_cfg;
-------------------------------------------------------------
-
-Results..
-
-btrfs dev scan /dev/sdc
-Scanning for Btrfs filesystems in '/dev/sdc'
-ERROR: device scan failed '/dev/sdc' - Protocol family not supported
-
-btrfs dev ready /dev/sdc
-ERROR: unable to determine if device '/dev/sdc' is ready for mount: Protocol family not supported
-
-mount /dev/sdc /btrfs
-mount: mount /dev/sdc on /btrfs failed: Protocol family not supported
+Further planning to add few more members to the interface such as group profile info. The long term idea is to make procfs interface a onestop btrfs application interface for the device and fs info from the kernel, where a simple python script can make
+use of it.
 
 Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
+ fs/btrfs/Makefile |   2 +-
+ fs/btrfs/ctree.h  |   4 +
+ fs/btrfs/procfs.c | 250 ++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ fs/btrfs/procfs.h |   1 +
+ fs/btrfs/super.c  |   4 +
+ 5 files changed, 260 insertions(+), 1 deletion(-)
+ create mode 100644 fs/btrfs/procfs.c
+ create mode 100644 fs/btrfs/procfs.h
 
-v2: Commit update with unit test case and its results.
-    Remove the printk the error to system log, thats not required.
-    Return -EPFNOSUPPORT instead of -ENOSUPPORT, thats more appropriate
-	when device with incompatible feature is found during device scan.
-
- fs/btrfs/volumes.c | 8 ++++++++
- 1 file changed, 8 insertions(+)
-
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 6f7873e401ac..8ca3b0d3f1ef 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -1071,6 +1071,7 @@ int btrfs_scan_one_device(const char *path, fmode_t flags, void *holder,
- 	u64 transid;
- 	u64 total_devices;
- 	u64 bytenr;
-+	u64 features;
+diff --git a/fs/btrfs/Makefile b/fs/btrfs/Makefile
+index 128ce17a80b0..019f936788cc 100644
+--- a/fs/btrfs/Makefile
++++ b/fs/btrfs/Makefile
+@@ -4,7 +4,7 @@ obj-$(CONFIG_BTRFS_FS) := btrfs.o
+ btrfs-y += super.o ctree.o extent-tree.o print-tree.o root-tree.o dir-item.o \
+ 	   file-item.o inode-item.o inode-map.o disk-io.o \
+ 	   transaction.o inode.o file.o tree-defrag.o \
+-	   extent_map.o sysfs.o struct-funcs.o xattr.o ordered-data.o \
++	   extent_map.o sysfs.o procfs.o struct-funcs.o xattr.o ordered-data.o \
+ 	   extent_io.o volumes.o async-thread.o ioctl.o locking.o orphan.o \
+ 	   export.o tree-log.o free-space-cache.o zlib.o lzo.o \
+ 	   compression.o delayed-ref.o relocation.o delayed-inode.o scrub.o \
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 36f1c29e00a0..429364a4b487 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -4593,4 +4593,8 @@ static inline int btrfs_test_is_dummy_root(struct btrfs_root *root)
+ 	return 0;
+ }
  
- 	/*
- 	 * we would like to check all the supers, but that would make
-@@ -1091,6 +1092,12 @@ int btrfs_scan_one_device(const char *path, fmode_t flags, void *holder,
- 	if (btrfs_read_disk_super(bdev, bytenr, &page, &disk_super))
- 		goto error_bdev_put;
- 
-+	features = btrfs_super_incompat_flags(disk_super) &
-+				~BTRFS_FEATURE_INCOMPAT_SUPP;
-+	if (features) {
-+		ret = -EPFNOSUPPORT;
-+		goto error_disk_super;
++/* procfs.c */
++void btrfs_exit_procfs(void);
++void btrfs_init_procfs(void);
++
+ #endif
+diff --git a/fs/btrfs/procfs.c b/fs/btrfs/procfs.c
+new file mode 100644
+index 000000000000..99edcad8a825
+--- /dev/null
++++ b/fs/btrfs/procfs.c
+@@ -0,0 +1,250 @@
++#include <linux/seq_file.h>
++#include <linux/vmalloc.h>
++#include <linux/proc_fs.h>
++#include "ctree.h"
++#include "volumes.h"
++#include "rcu-string.h"
++
++#define BTRFS_PROC_PATH		"fs/btrfs"
++#define BTRFS_PROC_DEVLIST	"devlist"
++
++struct proc_dir_entry	*btrfs_proc_root;
++
++void btrfs_print_devlist(struct seq_file *seq)
++{
++
++	/* Btrfs Procfs String Len */
++#define BPSL	256
++#define BTRFS_SEQ_PRINT(plist, arg)\
++		snprintf(str, BPSL, plist, arg);\
++		if (sprt)\
++			seq_printf(seq, "\t");\
++		seq_printf(seq, str)
++
++	char str[BPSL];
++	struct btrfs_device *device;
++	struct btrfs_fs_devices *fs_devices;
++	struct btrfs_fs_devices *cur_fs_devices;
++	struct btrfs_fs_devices *sprt; //sprout fs devices
++	struct list_head *fs_uuids = btrfs_get_fs_uuids();
++	struct list_head *cur_uuid;
++
++	seq_printf(seq, "\n#Its Experimental, parameters may change without notice.\n\n");
++
++	mutex_lock(&uuid_mutex);
++	/* Todo: there must be better way than nested locks */
++	list_for_each(cur_uuid, fs_uuids) {
++		cur_fs_devices  = list_entry(cur_uuid, struct btrfs_fs_devices, list);
++
++		mutex_lock(&cur_fs_devices->device_list_mutex);
++
++		fs_devices = cur_fs_devices;
++		sprt = NULL;
++
++again_fs_devs:
++		if (sprt) {
++			BTRFS_SEQ_PRINT("[[seed_fsid: %pU]]\n", fs_devices->fsid);
++			BTRFS_SEQ_PRINT("\tsprout_fsid:\t\t%pU\n", sprt->fsid);
++		} else {
++			BTRFS_SEQ_PRINT("[fsid: %pU]\n", fs_devices->fsid);
++		}
++		if (fs_devices->seed) {
++			BTRFS_SEQ_PRINT("\tseed_fsid:\t\t%pU\n", fs_devices->seed->fsid);
++		}
++		BTRFS_SEQ_PRINT("\tfs_devs_addr:\t\t%p\n", fs_devices);
++		BTRFS_SEQ_PRINT("\tnum_devices:\t\t%llu\n", fs_devices->num_devices);
++		BTRFS_SEQ_PRINT("\topen_devices:\t\t%llu\n", fs_devices->open_devices);
++		BTRFS_SEQ_PRINT("\trw_devices:\t\t%llu\n", fs_devices->rw_devices);
++		BTRFS_SEQ_PRINT("\tmissing_devices:\t%llu\n", fs_devices->missing_devices);
++		BTRFS_SEQ_PRINT("\ttotal_rw_devices:\t%llu\n", fs_devices->total_rw_bytes);
++		BTRFS_SEQ_PRINT("\ttotal_devices:\t\t%llu\n", fs_devices->total_devices);
++		BTRFS_SEQ_PRINT("\topened:\t\t\t%d\n", fs_devices->opened);
++		BTRFS_SEQ_PRINT("\tseeding:\t\t%d\n", fs_devices->seeding);
++		BTRFS_SEQ_PRINT("\trotating:\t\t%d\n", fs_devices->rotating);
++		BTRFS_SEQ_PRINT("\tspare:\t\t\t%d\n", fs_devices->spare);
++
++		BTRFS_SEQ_PRINT("\tfsid_kobj_state:\t%d\n", fs_devices->fsid_kobj.state_initialized);
++		BTRFS_SEQ_PRINT("\tfsid_kobj_insysfs:\t%d\n", fs_devices->fsid_kobj.state_in_sysfs);
++
++		if (fs_devices->device_dir_kobj) {
++		BTRFS_SEQ_PRINT("\tdevice_kobj_state:\t%d\n", fs_devices->device_dir_kobj->state_initialized);
++		BTRFS_SEQ_PRINT("\tdevice_kobj_insysfs:\t%d\n", fs_devices->device_dir_kobj->state_in_sysfs);
++		} else {
++		BTRFS_SEQ_PRINT("\tdevice_kobj_state:\t%s\n", "null");
++		BTRFS_SEQ_PRINT("\tdevice_kobj_insysfs:\t%s\n", "null");
++		}
++
++		list_for_each_entry(device, &fs_devices->devices, dev_list) {
++			BTRFS_SEQ_PRINT("\t[[uuid: %pU]]\n", device->uuid);
++			BTRFS_SEQ_PRINT("\t\tdev_addr:\t%p\n", device);
++			rcu_read_lock();
++			BTRFS_SEQ_PRINT("\t\tdevice:\t\t%s\n",
++				device->name ? rcu_str_deref(device->name): "(null)");
++			rcu_read_unlock();
++			BTRFS_SEQ_PRINT("\t\tdevid:\t\t%llu\n", device->devid);
++			if (device->dev_root) {
++				BTRFS_SEQ_PRINT("\t\tdev_root_fsid:\t%pU\n",
++						device->dev_root->fs_info->fsid);
++			}
++			BTRFS_SEQ_PRINT("\t\tgeneration:\t%llu\n", device->generation);
++			BTRFS_SEQ_PRINT("\t\ttotal_bytes:\t%llu\n", device->total_bytes);
++			BTRFS_SEQ_PRINT("\t\tdev_totalbytes:\t%llu\n", device->disk_total_bytes);
++			BTRFS_SEQ_PRINT("\t\tbytes_used:\t%llu\n", device->bytes_used);
++			BTRFS_SEQ_PRINT("\t\ttype:\t\t%llu\n", device->type);
++			BTRFS_SEQ_PRINT("\t\tio_align:\t%u\n", device->io_align);
++			BTRFS_SEQ_PRINT("\t\tio_width:\t%u\n", device->io_width);
++			BTRFS_SEQ_PRINT("\t\tsector_size:\t%u\n", device->sector_size);
++			BTRFS_SEQ_PRINT("\t\tmode:\t\t0x%llx\n", (u64)device->mode);
++			BTRFS_SEQ_PRINT("\t\twriteable:\t%d\n", device->writeable);
++			BTRFS_SEQ_PRINT("\t\tin_fs_metadata:\t%d\n", device->in_fs_metadata);
++			BTRFS_SEQ_PRINT("\t\tmissing:\t%d\n", device->missing);
++			BTRFS_SEQ_PRINT("\t\tfailed:\t\t%d\n", device->failed);
++			BTRFS_SEQ_PRINT("\t\toffline:\t%d\n", device->offline);
++			BTRFS_SEQ_PRINT("\t\tcan_discard:\t%d\n", device->can_discard);
++			BTRFS_SEQ_PRINT("\t\treplace_tgtdev:\t%d\n",
++								device->is_tgtdev_for_dev_replace);
++			BTRFS_SEQ_PRINT("\t\tactive_pending:\t%d\n", device->running_pending);
++			BTRFS_SEQ_PRINT("\t\tnobarriers:\t%d\n", device->nobarriers);
++			BTRFS_SEQ_PRINT("\t\tdevstats_valid:\t%d\n", device->dev_stats_valid);
++			BTRFS_SEQ_PRINT("\t\tbdev:\t\t%s\n", device->bdev ? "not_null":"null");
++		}
++
++		if (fs_devices->seed) {
++			sprt = fs_devices;
++			fs_devices = fs_devices->seed;
++			goto again_fs_devs;
++		}
++		seq_printf(seq, "\n");
++
++		mutex_unlock(&cur_fs_devices->device_list_mutex);
 +	}
- 	devid = btrfs_stack_device_id(&disk_super->dev_item);
- 	transid = btrfs_super_generation(disk_super);
- 	total_devices = btrfs_super_num_devices(disk_super);
-@@ -1105,6 +1112,7 @@ int btrfs_scan_one_device(const char *path, fmode_t flags, void *holder,
- 	if (!ret && fs_devices_ret)
- 		(*fs_devices_ret)->total_devices = total_devices;
++	mutex_unlock(&uuid_mutex);
++}
++static int btrfs_devlist_show(struct seq_file *seq, void *offset)
++{
++	btrfs_print_devlist(seq);
++	return 0;
++}
++
++static int btrfs_seq_open(struct inode *inode, struct file *file)
++{
++	return single_open(file, btrfs_devlist_show, PDE_DATA(inode));
++}
++
++static const struct file_operations btrfs_seq_fops = {
++	.owner   = THIS_MODULE,
++	.open    = btrfs_seq_open,
++	.read    = seq_read,
++	.llseek  = seq_lseek,
++	.release = single_release,
++};
++
++void btrfs_init_procfs(void)
++{
++	btrfs_proc_root = proc_mkdir(BTRFS_PROC_PATH, NULL);
++	if (btrfs_proc_root)
++		proc_create_data(BTRFS_PROC_DEVLIST, S_IRUGO, btrfs_proc_root,
++					&btrfs_seq_fops, NULL);
++	return;
++}
++
++void btrfs_exit_procfs(void)
++{
++	if (btrfs_proc_root)
++		remove_proc_entry(BTRFS_PROC_DEVLIST, btrfs_proc_root);
++	remove_proc_entry(BTRFS_PROC_PATH, NULL);
++}
++
++void btrfs_printk_fsdev(void)
++{
++	struct btrfs_device *device;
++	struct btrfs_fs_devices *fs_devices;
++	struct btrfs_fs_devices *cur_fs_devices;
++	struct btrfs_fs_devices *sprt; //sprout fs devices
++	struct list_head *fs_uuids = btrfs_get_fs_uuids();
++	struct list_head *cur_uuid;
++
++	list_for_each(cur_uuid, fs_uuids) {
++		cur_fs_devices  = list_entry(cur_uuid, struct btrfs_fs_devices, list);
++
++		fs_devices = cur_fs_devices;
++		sprt = NULL;
++
++again_fs_devs:
++		if (sprt) {
++			printk(KERN_INFO "[[seed_fsid: %pU]]\n", fs_devices->fsid);
++			printk(KERN_INFO "\tsprout_fsid:\t\t%pU\n", sprt->fsid);
++		} else {
++			printk(KERN_INFO "[fsid: %pU]\n", fs_devices->fsid);
++		}
++		if (fs_devices->seed) {
++			printk(KERN_INFO "\tseed_fsid:\t\t%pU\n", fs_devices->seed->fsid);
++		}
++		printk(KERN_INFO "\tfs_devs_addr:\t\t%p\n", fs_devices);
++		printk(KERN_INFO "\tnum_devices:\t\t%llu\n", fs_devices->num_devices);
++		printk(KERN_INFO "\topen_devices:\t\t%llu\n", fs_devices->open_devices);
++		printk(KERN_INFO "\trw_devices:\t\t%llu\n", fs_devices->rw_devices);
++		printk(KERN_INFO "\tmissing_devices:\t%llu\n", fs_devices->missing_devices);
++		printk(KERN_INFO "\ttotal_rw_devices:\t%llu\n", fs_devices->total_rw_bytes);
++		printk(KERN_INFO "\ttotal_devices:\t\t%llu\n", fs_devices->total_devices);
++		printk(KERN_INFO "\topened:\t\t\t%d\n", fs_devices->opened);
++		printk(KERN_INFO "\tseeding:\t\t%d\n", fs_devices->seeding);
++		printk(KERN_INFO "\trotating:\t\t%d\n", fs_devices->rotating);
++		printk(KERN_INFO "\tspare:\t\t\t%d\n", fs_devices->spare);
++
++		printk(KERN_INFO "\tfsid_kobj_state:\t%d\n", fs_devices->fsid_kobj.state_initialized);
++		printk(KERN_INFO "\tfsid_kobj_insysfs:\t%d\n", fs_devices->fsid_kobj.state_in_sysfs);
++
++		if (fs_devices->device_dir_kobj) {
++		printk(KERN_INFO "\tdevice_kobj_state:\t%d\n", fs_devices->device_dir_kobj->state_initialized);
++		printk(KERN_INFO "\tdevice_kobj_insysfs:\t%d\n", fs_devices->device_dir_kobj->state_in_sysfs);
++		} else {
++		printk(KERN_INFO "\tdevice_kobj_state:\t%s\n", "null");
++		printk(KERN_INFO "\tdevice_kobj_insysfs:\t%s\n", "null");
++		}
++
++		printk(KERN_INFO "\tfs_info:\t\t%pK\n", fs_devices->fs_info);
++
++		list_for_each_entry(device, &fs_devices->devices, dev_list) {
++			printk(KERN_INFO "\t[[uuid: %pU]]\n", device->uuid);
++			printk(KERN_INFO "\t\tdev_addr:\t%p\n", device);
++			rcu_read_lock();
++			printk(KERN_INFO "\t\tdevice:\t\t%s\n",
++				device->name ? rcu_str_deref(device->name): "(null)");
++			rcu_read_unlock();
++			printk(KERN_INFO "\t\tdevid:\t\t%llu\n", device->devid);
++			if (device->dev_root) {
++				printk(KERN_INFO "\t\tdev_root_fsid:\t%pU\n",
++						device->dev_root->fs_info->fsid);
++			}
++			printk(KERN_INFO "\t\tgeneration:\t%llu\n", device->generation);
++			printk(KERN_INFO "\t\ttotal_bytes:\t%llu\n", device->total_bytes);
++			printk(KERN_INFO "\t\tdev_totalbytes:\t%llu\n", device->disk_total_bytes);
++			printk(KERN_INFO "\t\tbytes_used:\t%llu\n", device->bytes_used);
++			printk(KERN_INFO "\t\ttype:\t\t%llu\n", device->type);
++			printk(KERN_INFO "\t\tio_align:\t%u\n", device->io_align);
++			printk(KERN_INFO "\t\tio_width:\t%u\n", device->io_width);
++			printk(KERN_INFO "\t\tsector_size:\t%u\n", device->sector_size);
++			printk(KERN_INFO "\t\tmode:\t\t0x%llx\n", (u64)device->mode);
++			printk(KERN_INFO "\t\twriteable:\t%d\n", device->writeable);
++			printk(KERN_INFO "\t\tin_fs_metadata:\t%d\n", device->in_fs_metadata);
++			printk(KERN_INFO "\t\tmissing:\t%d\n", device->missing);
++			printk(KERN_INFO "\t\tfailed:\t\t%d\n", device->failed);
++			printk(KERN_INFO "\t\toffline:\t%d\n", device->offline);
++			printk(KERN_INFO "\t\tcan_discard:\t%d\n", device->can_discard);
++			printk(KERN_INFO "\t\treplace_tgtdev:\t%d\n",
++								device->is_tgtdev_for_dev_replace);
++			printk(KERN_INFO "\t\tactive_pending:\t%d\n", device->running_pending);
++			printk(KERN_INFO "\t\tnobarriers:\t%d\n", device->nobarriers);
++			printk(KERN_INFO "\t\tdevstats_valid:\t%d\n", device->dev_stats_valid);
++			printk(KERN_INFO "\t\tbdev:\t\t%s\n", device->bdev ? "not_null":"null");
++		}
++
++		if (fs_devices->seed) {
++			sprt = fs_devices;
++			fs_devices = fs_devices->seed;
++			goto again_fs_devs;
++		}
++		printk(KERN_INFO "\n");
++	}
++}
+diff --git a/fs/btrfs/procfs.h b/fs/btrfs/procfs.h
+new file mode 100644
+index 000000000000..e36d2145804e
+--- /dev/null
++++ b/fs/btrfs/procfs.h
+@@ -0,0 +1 @@
++void btrfs_printk_fsdev(void);
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index 138fca39ffbb..868ad9e4cde0 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -2361,6 +2361,8 @@ static int __init init_btrfs_fs(void)
+ 	if (err)
+ 		goto free_hash;
  
-+error_disk_super:
- 	btrfs_release_disk_super(page);
++	btrfs_init_procfs();
++
+ 	btrfs_init_compress();
  
- error_bdev_put:
+ 	err = btrfs_init_cachep();
+@@ -2439,6 +2441,7 @@ free_cachep:
+ 	btrfs_destroy_cachep();
+ free_compress:
+ 	btrfs_exit_compress();
++	btrfs_exit_procfs();
+ 	btrfs_exit_sysfs();
+ free_hash:
+ 	btrfs_hash_exit();
+@@ -2458,6 +2461,7 @@ static void __exit exit_btrfs_fs(void)
+ 	btrfs_interface_exit();
+ 	btrfs_end_io_wq_exit();
+ 	unregister_filesystem(&btrfs_fs_type);
++	btrfs_exit_procfs();
+ 	btrfs_exit_sysfs();
+ 	btrfs_cleanup_fs_uuids();
+ 	btrfs_exit_compress();
 -- 
 2.7.0
 

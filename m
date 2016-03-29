@@ -1,53 +1,185 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:46618 "EHLO
+Received: from userp1040.oracle.com ([156.151.31.81]:46542 "EHLO
 	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932299AbcC2OW4 (ORCPT
+	with ESMTP id S1756186AbcC2OWu (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 29 Mar 2016 10:22:56 -0400
+	Tue, 29 Mar 2016 10:22:50 -0400
 From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
 Cc: clm@fb.com, dsterba@suse.cz
-Subject: [PATCH 07/12] btrfs: introduce BTRFS_FEATURE_INCOMPAT_SPARE_DEV
-Date: Tue, 29 Mar 2016 22:22:24 +0800
-Message-Id: <1459261349-32206-8-git-send-email-anand.jain@oracle.com>
+Subject: [PATCH 05/12] btrfs: Cleanup num_tolerated_disk_barrier_failures
+Date: Tue, 29 Mar 2016 22:22:22 +0800
+Message-Id: <1459261349-32206-6-git-send-email-anand.jain@oracle.com>
 In-Reply-To: <1459261349-32206-1-git-send-email-anand.jain@oracle.com>
 References: <1459261349-32206-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Add BTRFS_FEATURE_INCOMPAT_SPARE_DEV (400) flag to identify
-a spare device.
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 
-Along with this it checks in the mount context that a spare
-device will fail to mount.  As spare devices aren't mountable.
+As we use per-chunk degradable check, now the global
+num_tolerated_disk_barrier_failures is of no use. So cleanup it.
 
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+
+[Btrfs: resolve conflict to apply 'btrfs: Cleanup num_tolerated_disk_barrier_failures']
 Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
- fs/btrfs/ctree.h | 4 +++-
- 1 file changed, 3 insertions(+), 1 deletion(-)
+ fs/btrfs/ctree.h   |  2 --
+ fs/btrfs/disk-io.c | 56 ------------------------------------------------------
+ fs/btrfs/disk-io.h |  2 --
+ fs/btrfs/volumes.c | 17 -----------------
+ 4 files changed, 77 deletions(-)
 
 diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index e0a50f478e01..2c185a8e92f0 100644
+index 84a6a5b3384a..e0a50f478e01 100644
 --- a/fs/btrfs/ctree.h
 +++ b/fs/btrfs/ctree.h
-@@ -531,6 +531,7 @@ struct btrfs_super_block {
- #define BTRFS_FEATURE_INCOMPAT_RAID56		(1ULL << 7)
- #define BTRFS_FEATURE_INCOMPAT_SKINNY_METADATA	(1ULL << 8)
- #define BTRFS_FEATURE_INCOMPAT_NO_HOLES		(1ULL << 9)
-+#define BTRFS_FEATURE_INCOMPAT_SPARE_DEV	(1ULL << 10)
+@@ -1829,8 +1829,6 @@ struct btrfs_fs_info {
+ 	/* next backup root to be overwritten */
+ 	int backup_root_index;
  
- #define BTRFS_FEATURE_COMPAT_SUPP		0ULL
- #define BTRFS_FEATURE_COMPAT_SAFE_SET		0ULL
-@@ -551,7 +552,8 @@ struct btrfs_super_block {
- 	 BTRFS_FEATURE_INCOMPAT_RAID56 |		\
- 	 BTRFS_FEATURE_INCOMPAT_EXTENDED_IREF |		\
- 	 BTRFS_FEATURE_INCOMPAT_SKINNY_METADATA |	\
--	 BTRFS_FEATURE_INCOMPAT_NO_HOLES)
-+	 BTRFS_FEATURE_INCOMPAT_NO_HOLES |		\
-+	 BTRFS_FEATURE_INCOMPAT_SPARE_DEV)
+-	int num_tolerated_disk_barrier_failures;
+-
+ 	/* device replace state */
+ 	struct btrfs_dev_replace dev_replace;
  
- #define BTRFS_FEATURE_INCOMPAT_SAFE_SET			\
- 	(BTRFS_FEATURE_INCOMPAT_EXTENDED_IREF)
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 85e26d62c089..7f02f1766037 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -2991,8 +2991,6 @@ retry_root_backup:
+ 		printk(KERN_ERR "BTRFS: Failed to read block groups: %d\n", ret);
+ 		goto fail_sysfs;
+ 	}
+-	fs_info->num_tolerated_disk_barrier_failures =
+-		btrfs_calc_num_tolerated_disk_barrier_failures(fs_info);
+ 
+ 	fs_info->cleaner_kthread = kthread_run(cleaner_kthread, tree_root,
+ 					       "btrfs-cleaner");
+@@ -3559,60 +3557,6 @@ int btrfs_get_num_tolerated_disk_barrier_failures(u64 flags)
+ 	return min_tolerated;
+ }
+ 
+-int btrfs_calc_num_tolerated_disk_barrier_failures(
+-	struct btrfs_fs_info *fs_info)
+-{
+-	struct btrfs_ioctl_space_info space;
+-	struct btrfs_space_info *sinfo;
+-	u64 types[] = {BTRFS_BLOCK_GROUP_DATA,
+-		       BTRFS_BLOCK_GROUP_SYSTEM,
+-		       BTRFS_BLOCK_GROUP_METADATA,
+-		       BTRFS_BLOCK_GROUP_DATA | BTRFS_BLOCK_GROUP_METADATA};
+-	int i;
+-	int c;
+-	int num_tolerated_disk_barrier_failures =
+-		(int)fs_info->fs_devices->num_devices;
+-
+-	for (i = 0; i < ARRAY_SIZE(types); i++) {
+-		struct btrfs_space_info *tmp;
+-
+-		sinfo = NULL;
+-		rcu_read_lock();
+-		list_for_each_entry_rcu(tmp, &fs_info->space_info, list) {
+-			if (tmp->flags == types[i]) {
+-				sinfo = tmp;
+-				break;
+-			}
+-		}
+-		rcu_read_unlock();
+-
+-		if (!sinfo)
+-			continue;
+-
+-		down_read(&sinfo->groups_sem);
+-		for (c = 0; c < BTRFS_NR_RAID_TYPES; c++) {
+-			u64 flags;
+-
+-			if (list_empty(&sinfo->block_groups[c]))
+-				continue;
+-
+-			btrfs_get_block_group_info(&sinfo->block_groups[c],
+-						   &space);
+-			if (space.total_bytes == 0 || space.used_bytes == 0)
+-				continue;
+-			flags = space.flags;
+-
+-			num_tolerated_disk_barrier_failures = min(
+-				num_tolerated_disk_barrier_failures,
+-				btrfs_get_num_tolerated_disk_barrier_failures(
+-					flags));
+-		}
+-		up_read(&sinfo->groups_sem);
+-	}
+-
+-	return num_tolerated_disk_barrier_failures;
+-}
+-
+ static int write_all_supers(struct btrfs_root *root, int max_mirrors)
+ {
+ 	struct list_head *head;
+diff --git a/fs/btrfs/disk-io.h b/fs/btrfs/disk-io.h
+index 8e79d0070bcf..dd155621f95f 100644
+--- a/fs/btrfs/disk-io.h
++++ b/fs/btrfs/disk-io.h
+@@ -141,8 +141,6 @@ struct btrfs_root *btrfs_create_tree(struct btrfs_trans_handle *trans,
+ int btree_lock_page_hook(struct page *page, void *data,
+ 				void (*flush_fn)(void *));
+ int btrfs_get_num_tolerated_disk_barrier_failures(u64 flags);
+-int btrfs_calc_num_tolerated_disk_barrier_failures(
+-	struct btrfs_fs_info *fs_info);
+ int __init btrfs_end_io_wq_init(void);
+ void btrfs_end_io_wq_exit(void);
+ 
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index a840d78ba127..dff2deaf88d3 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -1876,9 +1876,6 @@ int btrfs_rm_device(struct btrfs_root *root, char *device_path)
+ 		free_fs_devices(cur_devices);
+ 	}
+ 
+-	root->fs_info->num_tolerated_disk_barrier_failures =
+-		btrfs_calc_num_tolerated_disk_barrier_failures(root->fs_info);
+-
+ 	/*
+ 	 * at this point, the device is zero sized.  We want to
+ 	 * remove it from the devices list and zero out the old super
+@@ -2405,8 +2402,6 @@ int btrfs_init_new_device(struct btrfs_root *root, char *device_path)
+ 				"sysfs: failed to create fsid for sprout");
+ 	}
+ 
+-	root->fs_info->num_tolerated_disk_barrier_failures =
+-		btrfs_calc_num_tolerated_disk_barrier_failures(root->fs_info);
+ 	ret = btrfs_commit_transaction(trans, root);
+ 
+ 	if (seeding_dev) {
+@@ -3757,13 +3752,6 @@ int btrfs_balance(struct btrfs_balance_control *bctl,
+ 			bctl->meta.target, bctl->data.target);
+ 	}
+ 
+-	if (bctl->sys.flags & BTRFS_BALANCE_ARGS_CONVERT) {
+-		fs_info->num_tolerated_disk_barrier_failures = min(
+-			btrfs_calc_num_tolerated_disk_barrier_failures(fs_info),
+-			btrfs_get_num_tolerated_disk_barrier_failures(
+-				bctl->sys.target));
+-	}
+-
+ 	ret = insert_balance_item(fs_info->tree_root, bctl);
+ 	if (ret && ret != -EEXIST)
+ 		goto out;
+@@ -3786,11 +3774,6 @@ int btrfs_balance(struct btrfs_balance_control *bctl,
+ 	mutex_lock(&fs_info->balance_mutex);
+ 	atomic_dec(&fs_info->balance_running);
+ 
+-	if (bctl->sys.flags & BTRFS_BALANCE_ARGS_CONVERT) {
+-		fs_info->num_tolerated_disk_barrier_failures =
+-			btrfs_calc_num_tolerated_disk_barrier_failures(fs_info);
+-	}
+-
+ 	if (bargs) {
+ 		memset(bargs, 0, sizeof(*bargs));
+ 		update_ioctl_balance_args(fs_info, 0, bargs);
 -- 
 2.7.0
 

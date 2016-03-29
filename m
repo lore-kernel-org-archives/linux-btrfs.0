@@ -1,15 +1,15 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from kolab.zavadatar.com ([46.101.124.0]:56363 "EHLO
+Received: from kolab.zavadatar.com ([46.101.124.0]:56374 "EHLO
 	kolab.zavadatar.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1757807AbcC2Tkr (ORCPT
+	with ESMTP id S1753903AbcC2Tr3 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 29 Mar 2016 15:40:47 -0400
-Date: Tue, 29 Mar 2016 22:40:40 +0300
+	Tue, 29 Mar 2016 15:47:29 -0400
+Date: Tue, 29 Mar 2016 22:47:22 +0300
 From: Yauhen Kharuzhy <yauhen.kharuzhy@zavadatar.com>
 To: Anand Jain <anand.jain@oracle.com>
 Cc: linux-btrfs@vger.kernel.org
 Subject: Re: Global hotspare functionality
-Message-ID: <20160329194040.GB27148@jeknote.loshitsa1.net>
+Message-ID: <20160329194722.GC27148@jeknote.loshitsa1.net>
 References: <20160318193937.GA21352@jek-Latitude-E7440>
  <56FA9420.8020503@oracle.com>
 MIME-Version: 1.0
@@ -18,84 +18,99 @@ In-Reply-To: <56FA9420.8020503@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi.
+On Tue, Mar 29, 2016 at 10:41:36PM +0800, Anand Jain wrote:
+> 
+> Hi Yauhen,
+> 
 
-I am testing hotspare v2 on kernel v4.4.5 (I will try latest Chris' tree later)
-now with lockdep debugging enabled. At starting of replacement, lockdep warning is displayed,
-because kstrdup() is called with GFP_NOFS inside of rcu_read_lock/unlock()
-block (GFP_NOFS can sleep).
+> >
+> >Issue 2.
+> >At start of autoreplacig drive by hotspare, kernel craches in transaction
+> >handling code (inside of btrfs_commit_transaction() called by autoreplace initiating
+> >routines). I 'fixed' this by removing of closing of bdev in btrfs_close_one_device_dont_free(), see
+> >https://bitbucket.org/jekhor/linux-btrfs/commits/dfa441c9ec7b3833f6a5e4d0b6f8c678faea29bb?at=master
+> >(oops text is attached also). Bdev is closed after replacing by
+> >btrfs_dev_replace_finishing(), so this is safe but doesn't seem
+> >to be right way.
+> 
+>  I have sent out V2. I don't see that issue with this,
+>  could you pls try ?
 
-[ 1463.470875] BTRFS critical (device sdc): Fatal error on device /dev/sdf
-[ 1463.499091] BTRFS warning (device sdc): device /dev/sdf failed, chunks degraded
-[ 1463.501394] BTRFS info (device sdc): num_devices 4 rw_devices 3 degraded-option: unset
-[ 1463.506221] 
-[ 1463.508572] ===============================
-[ 1463.512989] [ INFO: suspicious RCU usage. ]
-[ 1463.514194] 4.4.5-scst31x+ #20 Not tainted
-[ 1463.515191] -------------------------------
-[ 1463.516162] include/linux/rcupdate.h:560 Illegal context switch in RCU read-side critical section!
-[ 1463.519943] 
-[ 1463.519943] other info that might help us debug this:
-[ 1463.519943] 
-[ 1463.531515] 
-[ 1463.531515] rcu_scheduler_active = 1, debug_locks = 0
-[ 1463.541056] 3 locks held by btrfs-casualty/4702:
-[ 1463.542151]  #0:  (&fs_info->casualty_mutex){+.+...}, at: [<ffffffffa018325a>] casualty_kthread+0x6a/0x340 [btrfs]
-[ 1463.563978]  #1:  (uuid_mutex){+.+.+.}, at: [<ffffffffa01bfc65>] btrfs_get_spare_device+0x25/0x1c0 [btrfs]
-[ 1463.587380]  #2:  (rcu_read_lock){......}, at: [<ffffffffa01bfcac>] btrfs_get_spare_device+0x6c/0x1c0 [btrfs]
-[ 1463.606124] 
-[ 1463.606124] stack backtrace:
-[ 1463.612596] CPU: 0 PID: 4702 Comm: btrfs-casualty Not tainted 4.4.5-scst31x+ #20
-[ 1463.630796] Hardware name: innotek GmbH VirtualBox/VirtualBox, BIOS VirtualBox 12/01/2006
-[ 1463.649423]  0000000000000000 ffff88005e65fc60 ffffffff813529e3 ffff88005e658580
-[ 1463.685195]  0000000000000001 ffff88005e65fc90 ffffffff810d6407 0000000000000000
-[ 1463.719570]  ffffffff81a270d7 0000000000000b2d 0000000002400040 ffff88005e65fcb8
-[ 1463.735510] Call Trace:
-[ 1463.741172]  [<ffffffff813529e3>] dump_stack+0x85/0xc2
-[ 1463.751346]  [<ffffffff810d6407>] lockdep_rcu_suspicious+0xd7/0x110
-[ 1463.776423]  [<ffffffff810add27>] ___might_sleep+0xa7/0x230
-[ 1463.792409]  [<ffffffff810adef9>] __might_sleep+0x49/0x80
-[ 1463.798818]  [<ffffffffa01bfd0a>] ? btrfs_get_spare_device+0xca/0x1c0 [btrfs]
-[ 1463.814369]  [<ffffffff81200ec7>] __kmalloc_track_caller+0x227/0x5e0
-[ 1463.828477]  [<ffffffff811c0f81>] kstrdup+0x31/0x60
-[ 1463.836761]  [<ffffffffa01bfd0a>] btrfs_get_spare_device+0xca/0x1c0 [btrfs]
-[ 1463.851841]  [<ffffffffa01bfcac>] ? btrfs_get_spare_device+0x6c/0x1c0 [btrfs]
-[ 1463.867022]  [<ffffffffa02038a3>] btrfs_auto_replace_start+0x23/0xd0 [btrfs]
-[ 1463.874201]  [<ffffffffa01834ad>] casualty_kthread+0x2bd/0x340 [btrfs]
-[ 1463.891812]  [<ffffffffa01833d1>] ? casualty_kthread+0x1e1/0x340 [btrfs]
-[ 1463.908948]  [<ffffffffa01831f0>] ? btrfs_check_devices+0x1f0/0x1f0 [btrfs]
-[ 1463.920370]  [<ffffffff810a70df>] kthread+0xef/0x110
-[ 1463.936421]  [<ffffffff810dc081>] ? __raw_callee_save___pv_queued_spin_unlock+0x11/0x20
-[ 1463.949868]  [<ffffffff810a6ff0>] ? kthread_create_on_node+0x200/0x200
-[ 1463.963096]  [<ffffffff81637c2f>] ret_from_fork+0x3f/0x70
-[ 1463.973053]  [<ffffffff810a6ff0>] ? kthread_create_on_node+0x200/0x200
-[ 1463.976256] BUG: sleeping function called from invalid context at mm/slab.c:2861
-[ 1463.979936] in_atomic(): 1, irqs_disabled(): 0, pid: 4702, name: btrfs-casualty
-[ 1463.981868] INFO: lockdep is turned off.
-[ 1463.987513] CPU: 0 PID: 4702 Comm: btrfs-casualty Not tainted 4.4.5-scst31x+ #20
-[ 1463.999678] Hardware name: innotek GmbH VirtualBox/VirtualBox, BIOS VirtualBox 12/01/2006
-[ 1464.002555]  0000000000000000 ffff88005e65fc90 ffffffff813529e3 ffff88005e658580
-[ 1464.022926]  ffffffff81a270d7 ffff88005e65fcb8 ffffffff810addf9 ffffffff81a270d7
-[ 1464.055231]  0000000000000b2d 0000000000000000 ffff88005e65fce0 ffffffff810adef9
-[ 1464.066771] Call Trace:
-[ 1464.069301]  [<ffffffff813529e3>] dump_stack+0x85/0xc2
-[ 1464.074030]  [<ffffffff810addf9>] ___might_sleep+0x179/0x230
-[ 1464.076525]  [<ffffffff810adef9>] __might_sleep+0x49/0x80
-[ 1464.078372]  [<ffffffffa01bfd0a>] ? btrfs_get_spare_device+0xca/0x1c0 [btrfs]
-[ 1464.080315]  [<ffffffff81200ec7>] __kmalloc_track_caller+0x227/0x5e0
-[ 1464.083712]  [<ffffffff811c0f81>] kstrdup+0x31/0x60
-[ 1464.099224]  [<ffffffffa01bfd0a>] btrfs_get_spare_device+0xca/0x1c0 [btrfs]
-[ 1464.102570]  [<ffffffffa01bfcac>] ? btrfs_get_spare_device+0x6c/0x1c0 [btrfs]
-[ 1464.106557]  [<ffffffffa02038a3>] btrfs_auto_replace_start+0x23/0xd0 [btrfs]
-[ 1464.113009]  [<ffffffffa01834ad>] casualty_kthread+0x2bd/0x340 [btrfs]
-[ 1464.115574]  [<ffffffffa01833d1>] ? casualty_kthread+0x1e1/0x340 [btrfs]
-[ 1464.131337]  [<ffffffffa01831f0>] ? btrfs_check_devices+0x1f0/0x1f0 [btrfs]
-[ 1464.139141]  [<ffffffff810a70df>] kthread+0xef/0x110
-[ 1464.151499]  [<ffffffff810dc081>] ? __raw_callee_save___pv_queued_spin_unlock+0x11/0x20
-[ 1464.175156]  [<ffffffff810a6ff0>] ? kthread_create_on_node+0x200/0x200
-[ 1464.194352]  [<ffffffff81637c2f>] ret_from_fork+0x3f/0x70
-[ 1464.207239]  [<ffffffff810a6ff0>] ? kthread_create_on_node+0x200/0x200
+Yes, it reproduced on v4.4.5 kernel. I will try with current
+'for-linus-4.6' Chris' tree soon.
+
+To emulate a drive failure, I disconnect the drive in VirtualBox, so bdev
+can be freed by kernel after releasing of all references to it.
+
 [ 1464.232552] BTRFS info (device sdc): dev_replace from <missing disk> (devid 4) to /dev/sdg started
+[ 1464.255824] BUG: unable to handle kernel NULL pointer dereference at 0000000000000548
+[ 1464.291760] IP: [<ffffffff8131d58d>] generic_make_request_checks+0x4d/0x910
+[ 1464.309746] PGD 5c668067 PUD 5b841067 PMD 0 
+[ 1464.326143] Oops: 0000 [#1] SMP DEBUG_PAGEALLOC 
+[ 1464.340474] Modules linked in: cpufreq_powersave cpufreq_stats cpufreq_userspace cpufreq_conservative softdog nfsd auth_rpcgss oid_registry nfs_acl nfs lockd grace fscache sunrpc ipmi_devintf ipmi_msghandler iosf_mbi crct10dif_pclmul crc32_pclmul sha256_ssse3 sha256_generic hmac drbg iTCO_wdt ansi_cprng iTCO_vendor_support snd_pcm snd_timer aesni_intel snd soundcore psmouse aes_x86_64 lrw gf128mul glue_helper ablk_helper cryptd evdev serio_raw pcspkr battery acpi_cpufreq 8250_fintek parport_pc video lpc_ich parport mfd_core tpm_tis tpm ac rng_core processor button i2c_piix4 btrfs xor raid6_pq dm_mod raid1 md_mod sg sd_mod ahci libahci libata pcnet32 crc32c_intel scsi_mod mii
+[ 1464.483244] CPU: 0 PID: 4702 Comm: btrfs-casualty Not tainted 4.4.5-scst31x+ #20
+[ 1464.511300] Hardware name: innotek GmbH VirtualBox/VirtualBox, BIOS VirtualBox 12/01/2006
+[ 1464.518035] task: ffff88005e658580 ti: ffff88005e65c000 task.ti: ffff88005e65c000
+[ 1464.543072] RIP: 0010:[<ffffffff8131d58d>]  [<ffffffff8131d58d>] generic_make_request_checks+0x4d/0x910
+[ 1464.579027] RSP: 0018:ffff88005e65f498  EFLAGS: 00010283
+[ 1464.604774] RAX: 0000000000000000 RBX: ffff88005b919f28 RCX: 0000000000030b00
+[ 1464.629544] RDX: 0000000000000080 RSI: 0000000000000781 RDI: ffff88004ecd5ac0
+[ 1464.652763] RBP: ffff88005e65f500 R08: ffff88005b130ff0 R09: 0000000000010000
+[ 1464.674939] R10: ffff88005e674f28 R11: 0000000000000000 R12: 0000000000000080
+[ 1464.691478] R13: 0000000000000004 R14: ffff88004e48de00 R15: 0000000000000010
+[ 1464.714115] FS:  0000000000000000(0000) GS:ffff880066600000(0000) knlGS:0000000000000000
+[ 1464.737302] CS:  0010 DS: 0000 ES: 0000 CR0: 000000008005003b
+[ 1464.766380] CR2: 0000000000000548 CR3: 000000005723f000 CR4: 00000000000406f0
+[ 1464.804808] Stack:
+[ 1464.814950]  ffffffff813184ae 0000000000000246 0000000000000082 0000000000000000
+[ 1464.847217]  0000000000000000 0000000000000092 0000000000000000 ffff88005e65f540
+[ 1464.879147]  ffff88005b919f28 00000000ffffffff 0000000000000004 ffff88004e48de00
+[ 1464.907440] Call Trace:
+[ 1464.919293]  [<ffffffff813184ae>] ? bvec_alloc+0x5e/0x100
+[ 1464.939019]  [<ffffffff813213a4>] generic_make_request+0x24/0x290
+[ 1464.961775]  [<ffffffff81321677>] submit_bio+0x67/0x140
+[ 1464.971842]  [<ffffffffa02051b9>] finish_rmw+0x409/0x570 [btrfs]
+[ 1464.983700]  [<ffffffffa02053c5>] full_stripe_write+0xa5/0xb0 [btrfs]
+[ 1464.996554]  [<ffffffffa0206d05>] raid56_parity_write+0xf5/0x180 [btrfs]
+[ 1465.012560]  [<ffffffffa01bab95>] btrfs_map_bio+0x105/0x300 [btrfs]
+[ 1465.046907]  [<ffffffffa018f8b3>] ? btrfs_get_extent+0x83/0xb20 [btrfs]
+[ 1465.052462]  [<ffffffffa018d175>] btrfs_submit_bio_hook+0xe5/0x1b0 [btrfs]
+[ 1465.069342]  [<ffffffff810dc081>] ? __raw_callee_save___pv_queued_spin_unlock+0x11/0x20
+[ 1465.091031]  [<ffffffffa01a917d>] submit_one_bio+0x6d/0xa0 [btrfs]
+[ 1465.111233]  [<ffffffffa01ae06e>] submit_extent_page+0xee/0x230 [btrfs]
+[ 1465.126076]  [<ffffffffa01ae7f4>] __extent_writepage_io+0x444/0x490 [btrfs]
+[ 1465.132550]  [<ffffffffa01ade10>] ? end_extent_writepage+0x80/0x80 [btrfs]
+[ 1465.145490]  [<ffffffffa01aeaa5>] __extent_writepage+0x265/0x3e0 [btrfs]
+[ 1465.168445]  [<ffffffffa01aef1b>] extent_write_cache_pages.isra.32.constprop.49+0x2fb/0x3d0 [btrfs]
+[ 1465.204094]  [<ffffffffa01b009d>] extent_writepages+0x4d/0x70 [btrfs]
+[ 1465.229627]  [<ffffffffa018f830>] ? btrfs_real_readdir+0x5c0/0x5c0 [btrfs]
+[ 1465.250927]  [<ffffffffa018d5e8>] btrfs_writepages+0x28/0x30 [btrfs]
+[ 1465.274099]  [<ffffffff811afcb1>] do_writepages+0x21/0x30
+[ 1465.298275]  [<ffffffff811a10ea>] __filemap_fdatawrite_range+0xaa/0xf0
+[ 1465.324278]  [<ffffffff811a1203>] filemap_fdatawrite_range+0x13/0x20
+[ 1465.341055]  [<ffffffffa01a1490>] btrfs_fdatawrite_range+0x20/0x50 [btrfs]
+[ 1465.378952]  [<ffffffffa01d377a>] __btrfs_write_out_cache.isra.27+0x3ea/0x430 [btrfs]
+[ 1465.405760]  [<ffffffffa01d4a7f>] btrfs_write_out_cache+0x8f/0x110 [btrfs]
+[ 1465.428091]  [<ffffffffa0176128>] btrfs_write_dirty_block_groups+0x228/0x290 [btrfs]
+[ 1465.458865]  [<ffffffffa0208d6a>] commit_cowonly_roots+0x1f8/0x283 [btrfs]
+[ 1465.480450]  [<ffffffffa018b0d7>] btrfs_commit_transaction+0x577/0xb60 [btrfs]
+[ 1465.512410]  [<ffffffffa0202cf3>] btrfs_dev_replace_start+0x2e3/0x520 [btrfs]
+[ 1465.535358]  [<ffffffffa0202b6e>] ? btrfs_dev_replace_start+0x15e/0x520 [btrfs]
+[ 1465.548049]  [<ffffffffa02038d8>] btrfs_auto_replace_start+0x58/0xd0 [btrfs]
+[ 1465.551787]  [<ffffffffa01834ad>] casualty_kthread+0x2bd/0x340 [btrfs]
+[ 1465.561195]  [<ffffffffa01833d1>] ? casualty_kthread+0x1e1/0x340 [btrfs]
+[ 1465.573308]  [<ffffffffa01831f0>] ? btrfs_check_devices+0x1f0/0x1f0 [btrfs]
+[ 1465.610840]  [<ffffffff810a70df>] kthread+0xef/0x110
+[ 1465.629472]  [<ffffffff810dc081>] ? __raw_callee_save___pv_queued_spin_unlock+0x11/0x20
+[ 1465.648678]  [<ffffffff810a6ff0>] ? kthread_create_on_node+0x200/0x200
+[ 1465.660686]  [<ffffffff81637c2f>] ret_from_fork+0x3f/0x70
+[ 1465.667065]  [<ffffffff810a6ff0>] ? kthread_create_on_node+0x200/0x200
+[ 1465.676861] Code: 67 28 48 c7 c7 6b f8 a3 81 e8 40 09 d9 ff e8 3b 43 31 00 41 c1 ec 09 48 8b 7b 08 45 85 e4 0f 85 13 01 00 00 48 8b 87 f0 00 00 00 <4c> 8b b8 48 05 00 00 4d 85 ff 0f 84 d5 01 00 00 4c 8b af e0 00 
+[ 1465.750135] RIP  [<ffffffff8131d58d>] generic_make_request_checks+0x4d/0x910
+[ 1465.776005]  RSP <ffff88005e65f498>
+[ 1465.790848] CR2: 0000000000000548
+[ 1465.797370] ---[ end trace 45545495cd54e799 ]---
+
 
 
 -- 

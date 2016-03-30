@@ -1,14 +1,14 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
 Received: from cn.fujitsu.com ([222.73.24.84]:29930 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1754417AbcC3H4u (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 30 Mar 2016 03:56:50 -0400
+	id S1758645AbcC3H4w (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 30 Mar 2016 03:56:52 -0400
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
-Subject: [PATCH v9 04/19] btrfs: dedupe: Introduce function to remove hash from in-memory tree
-Date: Wed, 30 Mar 2016 15:55:59 +0800
-Message-Id: <1459324574-28063-5-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH v9 11/19] btrfs: dedupe: add an inode nodedupe flag
+Date: Wed, 30 Mar 2016 15:56:06 +0800
+Message-Id: <1459324574-28063-12-git-send-email-quwenruo@cn.fujitsu.com>
 In-Reply-To: <1459324574-28063-1-git-send-email-quwenruo@cn.fujitsu.com>
 References: <1459324574-28063-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -17,129 +17,51 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
 
-Introduce static function inmem_del() to remove hash from in-memory
-dedupe tree.
-And implement btrfs_dedupe_del() and btrfs_dedup_destroy() interfaces.
+Introduce BTRFS_INODE_NODEDUP flag, then we can explicitly disable
+online data dedupelication for specified files.
 
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 Signed-off-by: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
 ---
- fs/btrfs/dedupe.c | 105 ++++++++++++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 105 insertions(+)
+ fs/btrfs/ctree.h | 1 +
+ fs/btrfs/ioctl.c | 6 +++++-
+ 2 files changed, 6 insertions(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/dedupe.c b/fs/btrfs/dedupe.c
-index 4e8455e..a229ded 100644
---- a/fs/btrfs/dedupe.c
-+++ b/fs/btrfs/dedupe.c
-@@ -303,3 +303,108 @@ int btrfs_dedupe_add(struct btrfs_trans_handle *trans,
- 		return inmem_add(dedupe_info, hash);
- 	return -EINVAL;
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 85044bf..0e8933c 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -2381,6 +2381,7 @@ do {                                                                   \
+ #define BTRFS_INODE_NOATIME		(1 << 9)
+ #define BTRFS_INODE_DIRSYNC		(1 << 10)
+ #define BTRFS_INODE_COMPRESS		(1 << 11)
++#define BTRFS_INODE_NODEDUPE		(1 << 12)
+ 
+ #define BTRFS_INODE_ROOT_ITEM_INIT	(1 << 31)
+ 
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 2d1ed93..c48afcb 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -161,7 +161,8 @@ void btrfs_update_iflags(struct inode *inode)
+ /*
+  * Inherit flags from the parent inode.
+  *
+- * Currently only the compression flags and the cow flags are inherited.
++ * Currently only the compression flags, dedupe flags and the cow flags
++ * are inherited.
+  */
+ void btrfs_inherit_iflags(struct inode *inode, struct inode *dir)
+ {
+@@ -186,6 +187,9 @@ void btrfs_inherit_iflags(struct inode *inode, struct inode *dir)
+ 			BTRFS_I(inode)->flags |= BTRFS_INODE_NODATASUM;
+ 	}
+ 
++	if (flags & BTRFS_INODE_NODEDUPE)
++		BTRFS_I(inode)->flags |= BTRFS_INODE_NODEDUPE;
++
+ 	btrfs_update_iflags(inode);
  }
-+
-+static struct inmem_hash *
-+inmem_search_bytenr(struct btrfs_dedupe_info *dedupe_info, u64 bytenr)
-+{
-+	struct rb_node **p = &dedupe_info->bytenr_root.rb_node;
-+	struct rb_node *parent = NULL;
-+	struct inmem_hash *entry = NULL;
-+
-+	while (*p) {
-+		parent = *p;
-+		entry = rb_entry(parent, struct inmem_hash, bytenr_node);
-+
-+		if (bytenr < entry->bytenr)
-+			p = &(*p)->rb_left;
-+		else if (bytenr > entry->bytenr)
-+			p = &(*p)->rb_right;
-+		else
-+			return entry;
-+	}
-+
-+	return NULL;
-+}
-+
-+/* Delete a hash from in-memory dedupe tree */
-+static int inmem_del(struct btrfs_dedupe_info *dedupe_info, u64 bytenr)
-+{
-+	struct inmem_hash *hash;
-+
-+	mutex_lock(&dedupe_info->lock);
-+	hash = inmem_search_bytenr(dedupe_info, bytenr);
-+	if (!hash) {
-+		mutex_unlock(&dedupe_info->lock);
-+		return 0;
-+	}
-+
-+	__inmem_del(dedupe_info, hash);
-+	mutex_unlock(&dedupe_info->lock);
-+	return 0;
-+}
-+
-+/* Remove a dedupe hash from dedupe tree */
-+int btrfs_dedupe_del(struct btrfs_trans_handle *trans,
-+		     struct btrfs_fs_info *fs_info, u64 bytenr)
-+{
-+	struct btrfs_dedupe_info *dedupe_info = fs_info->dedupe_info;
-+
-+	if (!fs_info->dedupe_enabled)
-+		return 0;
-+
-+	if (WARN_ON(dedupe_info == NULL))
-+		return -EINVAL;
-+
-+	if (dedupe_info->backend == BTRFS_DEDUPE_BACKEND_INMEMORY)
-+		return inmem_del(dedupe_info, bytenr);
-+	return -EINVAL;
-+}
-+
-+static void inmem_destroy(struct btrfs_dedupe_info *dedupe_info)
-+{
-+	struct inmem_hash *entry, *tmp;
-+
-+	mutex_lock(&dedupe_info->lock);
-+	list_for_each_entry_safe(entry, tmp, &dedupe_info->lru_list, lru_list)
-+		__inmem_del(dedupe_info, entry);
-+	mutex_unlock(&dedupe_info->lock);
-+}
-+
-+int btrfs_dedupe_disable(struct btrfs_fs_info *fs_info)
-+{
-+	struct btrfs_dedupe_info *dedupe_info;
-+	int ret;
-+
-+	/* Here we don't want to increase refs of dedupe_info */
-+	fs_info->dedupe_enabled = 0;
-+
-+	dedupe_info = fs_info->dedupe_info;
-+
-+	if (!dedupe_info)
-+		return 0;
-+
-+	/* Don't allow disable status change in RO mount */
-+	if (fs_info->sb->s_flags & MS_RDONLY)
-+		return -EROFS;
-+
-+	/*
-+	 * Wait for all unfinished write to complete dedupe routine
-+	 * As disable operation is not a frequent operation, we are
-+	 * OK to use heavy but safe sync_filesystem().
-+	 */
-+	down_read(&fs_info->sb->s_umount);
-+	ret = sync_filesystem(fs_info->sb);
-+	up_read(&fs_info->sb->s_umount);
-+	if (ret < 0)
-+		return ret;
-+
-+	fs_info->dedupe_info = NULL;
-+
-+	/* now we are OK to clean up everything */
-+	if (dedupe_info->backend == BTRFS_DEDUPE_BACKEND_INMEMORY)
-+		inmem_destroy(dedupe_info);
-+
-+	crypto_free_shash(dedupe_info->dedupe_driver);
-+	kfree(dedupe_info);
-+	return 0;
-+}
+ 
 -- 
 2.7.4
 

@@ -1,38 +1,70 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from ud10.udmedia.de ([194.117.254.50]:37767 "EHLO
-	mail.ud10.udmedia.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753198AbcC1OOv (ORCPT
+Received: from mail-ig0-f193.google.com ([209.85.213.193]:34595 "EHLO
+	mail-ig0-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753066AbcC3Vs1 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 28 Mar 2016 10:14:51 -0400
-Date: Mon, 28 Mar 2016 16:14:46 +0200
-From: Markus Trippelsdorf <markus@trippelsdorf.de>
-To: Josef Bacik <jbacik@fb.com>
-Cc: Dave Jones <davej@codemonkey.org.uk>,
-        Linux Kernel <linux-kernel@vger.kernel.org>, Chris Mason <clm@fb.com>,
-        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
-Subject: Re: btrfs_destroy_inode WARN_ON.
-Message-ID: <20160328141446.GB308@x4>
-References: <20160324225411.GA1612@codemonkey.org.uk>
- <20160325082526.GA314@x4>
- <56F93A1B.2060701@fb.com>
+	Wed, 30 Mar 2016 17:48:27 -0400
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <56F93A1B.2060701@fb.com>
+Reply-To: fdmanana@gmail.com
+In-Reply-To: <1459371219-1815-2-git-send-email-luisbg@osg.samsung.com>
+References: <1459371219-1815-1-git-send-email-luisbg@osg.samsung.com>
+	<1459371219-1815-2-git-send-email-luisbg@osg.samsung.com>
+Date: Wed, 30 Mar 2016 22:48:26 +0100
+Message-ID: <CAL3q7H7fFg0UNL_hR=rUpbGmFpM2QHK+ME4_NMn3zB4vuJYMcA@mail.gmail.com>
+Subject: Re: [PATCH 2/2] btrfs: avoid overflowing f_bfree
+From: Filipe Manana <fdmanana@gmail.com>
+To: Luis de Bethencourt <luisbg@osg.samsung.com>
+Cc: "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>,
+        Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
+        David Sterba <dsterba@suse.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2016.03.28 at 10:05 -0400, Josef Bacik wrote:
-> >Mar 24 10:37:27 x4 kernel: WARNING: CPU: 3 PID: 11838 at fs/btrfs/inode.c:9261 btrfs_destroy_inode+0x22b/0x2a0
-> 
-> I saw this running some xfstests on our internal kernels but haven't been
-> able to reproduce it on my latest enospc work (which is obviously perfect).
-> What were you doing when you tripped this?  I'd like to see if I actually
-> did fix it or if I still need to run it down.  Thanks,
+On Wed, Mar 30, 2016 at 9:53 PM, Luis de Bethencourt
+<luisbg@osg.samsung.com> wrote:
+> Since mixed block groups accounting isn't byte-accurate and f_bree is an
+> unsigned integer, it could overflow. Avoid this.
+>
+> Signed-off-by: Luis de Bethencourt <luisbg@osg.samsung.com>
+> Suggested-by: David Sterba <dsterba@suse.com>
+> ---
+>  fs/btrfs/super.c | 5 +++++
+>  1 file changed, 5 insertions(+)
+>
+> diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+> index bdca79c..93376d0 100644
+> --- a/fs/btrfs/super.c
+> +++ b/fs/btrfs/super.c
+> @@ -2101,6 +2101,11 @@ static int btrfs_statfs(struct dentry *dentry, struct kstatfs *buf)
+>         /* Account global block reserve as used, it's in logical size already */
+>         spin_lock(&block_rsv->lock);
+>         buf->f_bfree -= block_rsv->size >> bits;
 
-I cannot really tell. Looking at the backtrace, both Dave and I were
-running rm. 
-This warning happened just once on my machine, so the issue is obviously
-very hard to trigger.
+You forgot to remove the line above, didn't you?
+
+> +       /* Mixed block groups accounting is not byte-accurate, avoid overflow */
+> +       if (buf->f_bfree >= block_rsv->size >> bits)
+> +               buf->f_bfree -= block_rsv->size >> bits;
+> +       else
+> +               buf->f_bfree = 0;
+>         spin_unlock(&block_rsv->lock);
+>
+>         buf->f_bavail = div_u64(total_free_data, factor);
+> --
+> 2.5.3
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+
+
 
 -- 
-Markus
+Filipe David Manana,
+
+"Reasonable men adapt themselves to the world.
+ Unreasonable men adapt the world to themselves.
+ That's why all progress depends on unreasonable men."

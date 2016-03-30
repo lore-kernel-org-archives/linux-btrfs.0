@@ -1,56 +1,83 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from kolab.zavadatar.com ([46.101.124.0]:57330 "EHLO
-	kolab.zavadatar.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1758373AbcC3AtP (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:20758 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750804AbcC3KNv (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 29 Mar 2016 20:49:15 -0400
-Date: Wed, 30 Mar 2016 03:49:07 +0300
-From: Yauhen Kharuzhy <yauhen.kharuzhy@zavadatar.com>
-To: Anand Jain <anand.jain@oracle.com>
-Cc: linux-btrfs@vger.kernel.org, clm@fb.com, dsterba@suse.cz
-Subject: Re: [PATCH 12/12] btrfs: check device for critical errors and mark
- failed
-Message-ID: <20160330004907.GA8929@jeknote.loshitsa1.net>
-References: <1459261349-32206-1-git-send-email-anand.jain@oracle.com>
- <1459261349-32206-13-git-send-email-anand.jain@oracle.com>
+	Wed, 30 Mar 2016 06:13:51 -0400
+Subject: Re: [PATCH 11/12] btrfs: introduce helper functions to perform hot
+ replace
+To: kbuild test robot <lkp@intel.com>
+References: <201603292247.9TrGyEIt%fengguang.wu@intel.com>
+Cc: kbuild-all@01.org, linux-btrfs@vger.kernel.org, clm@fb.com,
+        dsterba@suse.cz
+From: Anand Jain <anand.jain@oracle.com>
+Message-ID: <56FBA6D7.90308@oracle.com>
+Date: Wed, 30 Mar 2016 18:13:43 +0800
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1459261349-32206-13-git-send-email-anand.jain@oracle.com>
+In-Reply-To: <201603292247.9TrGyEIt%fengguang.wu@intel.com>
+Content-Type: text/plain; charset=windows-1252; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Mar 29, 2016 at 10:22:29PM +0800, Anand Jain wrote:
-> Write and Flush errors are considered as critical errors,
-> upon which the device will be brought offline and marked as
-> failed. Write and Flush errors are identified using device
-> error statistics.
-> 
-> Signed-off-by: Anand Jain <anand.jain@oracle.com>
-> 
-> btrfs: check for failed device and hot replace
-> 
-> This patch creates casualty_kthread to check for the failed
-> devices, and triggers device replace.
-> 
-> Signed-off-by: Anand Jain <anand.jain@oracle.com>
+
+
+Hi,
+
+  You are missing the patch set which includes
+    https://patchwork.kernel.org/patch/8659651/
+
+  btrfs: refactor btrfs_dev_replace_start for reuse
+
+
+Thanks, Anand
+
+
+On 03/29/2016 10:45 PM, kbuild test robot wrote:
+> Hi Anand,
+>
+> [auto build test ERROR on btrfs/next]
+> [also build test ERROR on v4.6-rc1 next-20160329]
+> [if your patch is applied to the wrong git tree, please drop us a note to help improving the system]
+>
+> url:    https://github.com/0day-ci/linux/commits/Anand-Jain/btrfs-Introduce-a-new-function-to-check-if-all-chunks-a-OK-for-degraded-mount/20160329-222724
+> base:   https://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git next
+> config: sparc64-allmodconfig (attached as .config)
+> reproduce:
+>          wget https://git.kernel.org/cgit/linux/kernel/git/wfg/lkp-tests.git/plain/sbin/make.cross -O ~/bin/make.cross
+>          chmod +x ~/bin/make.cross
+>          # save the attached .config to linux build tree
+>          make.cross ARCH=sparc64
+>
+> All error/warnings (new ones prefixed by >>):
+>
+>     fs/btrfs/dev-replace.c: In function 'btrfs_auto_replace_start':
+>>> fs/btrfs/dev-replace.c:962:8: warning: passing argument 2 of 'btrfs_dev_replace_start' from incompatible pointer type
+>       ret = btrfs_dev_replace_start(root, tgt_path,
+>             ^
+>     fs/btrfs/dev-replace.c:308:5: note: expected 'struct btrfs_ioctl_dev_replace_args *' but argument is of type 'char *'
+>      int btrfs_dev_replace_start(struct btrfs_root *root,
+>          ^
+>>> fs/btrfs/dev-replace.c:962:8: error: too many arguments to function 'btrfs_dev_replace_start'
+>       ret = btrfs_dev_replace_start(root, tgt_path,
+>             ^
+>     fs/btrfs/dev-replace.c:308:5: note: declared here
+>      int btrfs_dev_replace_start(struct btrfs_root *root,
+>          ^
+>
+> vim +/btrfs_dev_replace_start +962 fs/btrfs/dev-replace.c
+>
+>     956		if (btrfs_get_spare_device(&tgt_path)) {
+>     957			btrfs_err(root->fs_info,
+>     958				"No spare device found/configured in the kernel");
+>     959			return -EINVAL;
+>     960		}
+>     961	
+>   > 962		ret = btrfs_dev_replace_start(root, tgt_path,
+>     963						src_device->devid,
+>     964						rcu_str_deref(src_device->name),
+>     965			BTRFS_IOCTL_DEV_REPLACE_CONT_READING_FROM_SRCDEV_MODE_AVOID);
+>
 > ---
->  fs/btrfs/ctree.h   |   2 +
->  fs/btrfs/disk-io.c | 161 ++++++++++++++++++++++++++++++++++++++++++++++++++++-
->  fs/btrfs/disk-io.h |   2 +
->  fs/btrfs/volumes.c |   1 +
->  fs/btrfs/volumes.h |   4 ++
->  5 files changed, 169 insertions(+), 1 deletion(-)
-
-btrfs_check_and_handle_casualty() tries to perfom auto-replacement
-only once after each failure. If no hotspare was added in system before failure, only one
-remaining way to replace drive is to perform replace manually. This sounds
-reasonable, so just clarification: are you sure that we shouldn't start
-autoreplacement if hotspare will be added after drive failure?
-
-V1 of the patchset tried to perform autoreplace endlessly until replace
-drive is added.
-
-
-
--- 
-Yauhen Kharuzhy
+> 0-DAY kernel test infrastructure                Open Source Technology Center
+> https://lists.01.org/pipermail/kbuild-all                   Intel Corporation
+>

@@ -1,68 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from lists.s-osg.org ([54.187.51.154]:59313 "EHLO lists.s-osg.org"
+Received: from lists.s-osg.org ([54.187.51.154]:59360 "EHLO lists.s-osg.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751394AbcC3Uxs (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 30 Mar 2016 16:53:48 -0400
+	id S1755190AbcC3WSV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 30 Mar 2016 18:18:21 -0400
 From: Luis de Bethencourt <luisbg@osg.samsung.com>
 To: linux-kernel@vger.kernel.org
-Cc: clm@fb.com, jbacik@fb.com, dsterba@suse.com, linux-btrfs@vger.kernel.org,
+Cc: clm@fb.com, jbacik@fb.com, dsterba@suse.com, fdmanana@gmail.com,
+        linux-btrfs@vger.kernel.org,
         Luis de Bethencourt <luisbg@osg.samsung.com>
-Subject: [PATCH 1/2] btrfs: fix mixed block count of available space
-Date: Wed, 30 Mar 2016 21:53:38 +0100
-Message-Id: <1459371219-1815-1-git-send-email-luisbg@osg.samsung.com>
+Subject: [PATCH v2 2/2] btrfs: avoid overflowing f_bfree
+Date: Wed, 30 Mar 2016 23:18:14 +0100
+Message-Id: <1459376294-12004-1-git-send-email-luisbg@osg.samsung.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Metadata for mixed block is already accounted in total data and should not
-be counted as part of the free metadata space.
+Since mixed block groups accounting isn't byte-accurate and f_bree is an
+unsigned integer, it could overflow. Avoid this.
 
 Signed-off-by: Luis de Bethencourt <luisbg@osg.samsung.com>
-Link: https://bugzilla.kernel.org/show_bug.cgi?id=114281
+Suggested-by: David Sterba <dsterba@suse.com>
 ---
- fs/btrfs/super.c | 16 +++++++++++++---
- 1 file changed, 13 insertions(+), 3 deletions(-)
+Hi,
+
+Thanks to Filipe Manana for spotting a mistake in the first version of this
+patch.
+
+Luis
+
+ fs/btrfs/super.c | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
 
 diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 00b8f37..bdca79c 100644
+index bdca79c..fe03efb 100644
 --- a/fs/btrfs/super.c
 +++ b/fs/btrfs/super.c
-@@ -2051,6 +2051,7 @@ static int btrfs_statfs(struct dentry *dentry, struct kstatfs *buf)
- 	struct btrfs_block_rsv *block_rsv = &fs_info->global_block_rsv;
- 	int ret;
- 	u64 thresh = 0;
-+	int mixed = 0;
+@@ -2100,7 +2100,11 @@ static int btrfs_statfs(struct dentry *dentry, struct kstatfs *buf)
  
- 	/*
- 	 * holding chunk_muext to avoid allocating new chunks, holding
-@@ -2076,8 +2077,17 @@ static int btrfs_statfs(struct dentry *dentry, struct kstatfs *buf)
- 				}
- 			}
- 		}
--		if (found->flags & BTRFS_BLOCK_GROUP_METADATA)
--			total_free_meta += found->disk_total - found->disk_used;
-+
-+		/*
-+		 * Metadata in mixed block goup profiles are accounted in data
-+		 */
-+		if (!mixed && found->flags & BTRFS_BLOCK_GROUP_METADATA) {
-+			if (found->flags & BTRFS_BLOCK_GROUP_DATA)
-+				mixed = 1;
-+			else
-+				total_free_meta += found->disk_total -
-+					found->disk_used;
-+		}
+ 	/* Account global block reserve as used, it's in logical size already */
+ 	spin_lock(&block_rsv->lock);
+-	buf->f_bfree -= block_rsv->size >> bits;
++	/* Mixed block groups accounting is not byte-accurate, avoid overflow */
++	if (buf->f_bfree >= block_rsv->size >> bits)
++		buf->f_bfree -= block_rsv->size >> bits;
++	else
++		buf->f_bfree = 0;
+ 	spin_unlock(&block_rsv->lock);
  
- 		total_used += found->disk_used;
- 	}
-@@ -2115,7 +2125,7 @@ static int btrfs_statfs(struct dentry *dentry, struct kstatfs *buf)
- 	 */
- 	thresh = 4 * 1024 * 1024;
- 
--	if (total_free_meta - thresh < block_rsv->size)
-+	if (!mixed && total_free_meta - thresh < block_rsv->size)
- 		buf->f_bavail = 0;
- 
- 	buf->f_type = BTRFS_SUPER_MAGIC;
+ 	buf->f_bavail = div_u64(total_free_data, factor);
 -- 
 2.5.3
 

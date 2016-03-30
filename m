@@ -1,27 +1,182 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:55775 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:43318 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752076AbcCaQla (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 31 Mar 2016 12:41:30 -0400
-Date: Thu, 31 Mar 2016 18:40:54 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Mark Fasheh <mfasheh@suse.de>
-Cc: clm@fb.com, linux-btrfs@vger.kernel.org
-Subject: Re: [RESEND][PATCH] btrfs: Add qgroup tracing
-Message-ID: <20160331164054.GG6230@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20160330001955.GH15881@wotan.suse.de>
+	id S1751670AbcC3AT5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 29 Mar 2016 20:19:57 -0400
+Date: Tue, 29 Mar 2016 17:19:55 -0700
+From: Mark Fasheh <mfasheh@suse.de>
+To: clm@fb.com
+Cc: linux-btrfs@vger.kernel.org
+Subject: [RESEND][PATCH] btrfs: Add qgroup tracing
+Message-ID: <20160330001955.GH15881@wotan.suse.de>
+Reply-To: Mark Fasheh <mfasheh@suse.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20160330001955.GH15881@wotan.suse.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Mar 29, 2016 at 05:19:55PM -0700, Mark Fasheh wrote:
-> This patch adds tracepoints to the qgroup code on both the reporting side
-> (insert_dirty_extents) and the accounting side. Taken together it allows us
-> to see what qgroup operations have happened, and what their result was.
-> 
-> Signed-off-by: Mark Fasheh <mfasheh@suse.de>
+This patch adds tracepoints to the qgroup code on both the reporting side
+(insert_dirty_extents) and the accounting side. Taken together it allows us
+to see what qgroup operations have happened, and what their result was.
 
-Reviewed-by: David Sterba <dsterba@suse.com>
+Signed-off-by: Mark Fasheh <mfasheh@suse.de>
+---
+ fs/btrfs/qgroup.c            |  9 +++++
+ include/trace/events/btrfs.h | 89 +++++++++++++++++++++++++++++++++++++++++++-
+ 2 files changed, 97 insertions(+), 1 deletion(-)
+
+diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
+index 5279fda..994dab0 100644
+--- a/fs/btrfs/qgroup.c
++++ b/fs/btrfs/qgroup.c
+@@ -1463,6 +1463,7 @@ struct btrfs_qgroup_extent_record
+ 	u64 bytenr = record->bytenr;
+ 
+ 	assert_spin_locked(&delayed_refs->lock);
++	trace_btrfs_qgroup_insert_dirty_extent(record);
+ 
+ 	while (*p) {
+ 		parent_node = *p;
+@@ -1594,6 +1595,9 @@ static int qgroup_update_counters(struct btrfs_fs_info *fs_info,
+ 		cur_old_count = btrfs_qgroup_get_old_refcnt(qg, seq);
+ 		cur_new_count = btrfs_qgroup_get_new_refcnt(qg, seq);
+ 
++		trace_qgroup_update_counters(qg->qgroupid, cur_old_count,
++					     cur_new_count);
++
+ 		/* Rfer update part */
+ 		if (cur_old_count == 0 && cur_new_count > 0) {
+ 			qg->rfer += num_bytes;
+@@ -1683,6 +1687,9 @@ btrfs_qgroup_account_extent(struct btrfs_trans_handle *trans,
+ 		goto out_free;
+ 	BUG_ON(!fs_info->quota_root);
+ 
++	trace_btrfs_qgroup_account_extent(bytenr, num_bytes, nr_old_roots,
++					  nr_new_roots);
++
+ 	qgroups = ulist_alloc(GFP_NOFS);
+ 	if (!qgroups) {
+ 		ret = -ENOMEM;
+@@ -1752,6 +1759,8 @@ int btrfs_qgroup_account_extents(struct btrfs_trans_handle *trans,
+ 		record = rb_entry(node, struct btrfs_qgroup_extent_record,
+ 				  node);
+ 
++		trace_btrfs_qgroup_account_extents(record);
++
+ 		if (!ret) {
+ 			/*
+ 			 * Use (u64)-1 as time_seq to do special search, which
+diff --git a/include/trace/events/btrfs.h b/include/trace/events/btrfs.h
+index d866f21..467a4d2 100644
+--- a/include/trace/events/btrfs.h
++++ b/include/trace/events/btrfs.h
+@@ -23,7 +23,7 @@ struct map_lookup;
+ struct extent_buffer;
+ struct btrfs_work;
+ struct __btrfs_workqueue;
+-struct btrfs_qgroup_operation;
++struct btrfs_qgroup_extent_record;
+ 
+ #define show_ref_type(type)						\
+ 	__print_symbolic(type,						\
+@@ -1231,6 +1231,93 @@ DEFINE_EVENT(btrfs__qgroup_delayed_ref, btrfs_qgroup_free_delayed_ref,
+ 
+ 	TP_ARGS(ref_root, reserved)
+ );
++
++DECLARE_EVENT_CLASS(btrfs_qgroup_extent,
++	TP_PROTO(struct btrfs_qgroup_extent_record *rec),
++
++	TP_ARGS(rec),
++
++	TP_STRUCT__entry(
++		__field(	u64,  bytenr		)
++		__field(	u64,  num_bytes		)
++	),
++
++	TP_fast_assign(
++		__entry->bytenr		= rec->bytenr,
++		__entry->num_bytes	= rec->num_bytes;
++	),
++
++	TP_printk("bytenr = %llu, num_bytes = %llu",
++		  (unsigned long long)__entry->bytenr,
++		  (unsigned long long)__entry->num_bytes)
++);
++
++DEFINE_EVENT(btrfs_qgroup_extent, btrfs_qgroup_account_extents,
++
++	TP_PROTO(struct btrfs_qgroup_extent_record *rec),
++
++	TP_ARGS(rec)
++);
++
++DEFINE_EVENT(btrfs_qgroup_extent, btrfs_qgroup_insert_dirty_extent,
++
++	TP_PROTO(struct btrfs_qgroup_extent_record *rec),
++
++	TP_ARGS(rec)
++);
++
++TRACE_EVENT(btrfs_qgroup_account_extent,
++
++	TP_PROTO(u64 bytenr, u64 num_bytes, u64 nr_old_roots, u64 nr_new_roots),
++
++	TP_ARGS(bytenr, num_bytes, nr_old_roots, nr_new_roots),
++
++	TP_STRUCT__entry(
++		__field(	u64,  bytenr			)
++		__field(	u64,  num_bytes			)
++		__field(	u64,  nr_old_roots		)
++		__field(	u64,  nr_new_roots		)
++	),
++
++	TP_fast_assign(
++		__entry->bytenr		= bytenr;
++		__entry->num_bytes	= num_bytes;
++		__entry->nr_old_roots	= nr_old_roots;
++		__entry->nr_new_roots	= nr_new_roots;
++	),
++
++	TP_printk("bytenr = %llu, num_bytes = %llu, nr_old_roots = %llu, "
++		  "nr_new_roots = %llu",
++		  __entry->bytenr,
++		  __entry->num_bytes,
++		  __entry->nr_old_roots,
++		  __entry->nr_new_roots)
++);
++
++TRACE_EVENT(qgroup_update_counters,
++
++	TP_PROTO(u64 qgid, u64 cur_old_count, u64 cur_new_count),
++
++	TP_ARGS(qgid, cur_old_count, cur_new_count),
++
++	TP_STRUCT__entry(
++		__field(	u64,  qgid			)
++		__field(	u64,  cur_old_count		)
++		__field(	u64,  cur_new_count		)
++	),
++
++	TP_fast_assign(
++		__entry->qgid		= qgid;
++		__entry->cur_old_count	= cur_old_count;
++		__entry->cur_new_count	= cur_new_count;
++	),
++
++	TP_printk("qgid = %llu, cur_old_count = %llu, cur_new_count = %llu",
++		  __entry->qgid,
++		  __entry->cur_old_count,
++		  __entry->cur_new_count)
++);
++
+ #endif /* _TRACE_BTRFS_H */
+ 
+ /* This part must be outside protection */
+-- 
+2.1.4
+
+
+
+--
+Mark Fasheh

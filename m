@@ -1,232 +1,221 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.136]:35547 "EHLO mail.kernel.org"
+Received: from mail.kernel.org ([198.145.29.136]:34036 "EHLO mail.kernel.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751972AbcC3Jyr (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 30 Mar 2016 05:54:47 -0400
+	id S1751381AbcC3Jih (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 30 Mar 2016 05:38:37 -0400
 Received: from mail.kernel.org (localhost [127.0.0.1])
-	by mail.kernel.org (Postfix) with ESMTP id 8E28F20361
-	for <linux-btrfs@vger.kernel.org>; Wed, 30 Mar 2016 09:54:45 +0000 (UTC)
-Received: from mail-ig0-f176.google.com (mail-ig0-f176.google.com [209.85.213.176])
-	(using TLSv1.2 with cipher AES128-GCM-SHA256 (128/128 bits))
+	by mail.kernel.org (Postfix) with ESMTP id 5BAE22035D
+	for <linux-btrfs@vger.kernel.org>; Wed, 30 Mar 2016 09:38:35 +0000 (UTC)
+Received: from debian3.lan (dsl-112-39.bl26.telepac.pt [176.78.112.39])
+	(using TLSv1.2 with cipher AES128-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPSA id 439362026F
-	for <linux-btrfs@vger.kernel.org>; Wed, 30 Mar 2016 09:54:44 +0000 (UTC)
-Received: by mail-ig0-f176.google.com with SMTP id cl4so96940979igb.0
-        for <linux-btrfs@vger.kernel.org>; Wed, 30 Mar 2016 02:54:44 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <1458839211-11600-1-git-send-email-fdmanana@kernel.org>
-References: <1458839211-11600-1-git-send-email-fdmanana@kernel.org>
-Date: Wed, 30 Mar 2016 10:54:43 +0100
-Message-ID: <CAL3q7H4mJeVL_adET3tZWY5WFfJZSE02c7J2MRJnZwAD4-D7dw@mail.gmail.com>
-Subject: Re: [PATCH] Btrfs: fix unreplayable log after snapshot deletion and
- parent re-creation
-From: Filipe Manana <fdmanana@kernel.org>
-To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+	by mail.kernel.org (Postfix) with ESMTPSA id 07E8520376
+	for <linux-btrfs@vger.kernel.org>; Wed, 30 Mar 2016 09:38:33 +0000 (UTC)
+From: fdmanana@kernel.org
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH] Btrfs: fix file loss caused by fsync after rename and new inode
+Date: Wed, 30 Mar 2016 10:38:30 +0100
+Message-Id: <1459330710-3181-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Mar 24, 2016 at 5:06 PM,  <fdmanana@kernel.org> wrote:
-> From: Filipe Manana <fdmanana@suse.com>
->
-> If we delete a snapshot, delete its parent directory, create a new
-> directory with the same name as that parent and then fsync either that
-> new directory or some file inside it, we end up with a log tree that
-> is not possible to replay because the log replay procedure interprets
-> the snapshot's directory item as a regular entry and not as a root
-> item, resulting in the following failure and trace when mounting the
-> filesystem:
->
-> [52174.510532] BTRFS info (device dm-0): failed to delete reference to snap, inode 257 parent 257
-> [52174.512570] ------------[ cut here ]------------
-> [52174.513278] WARNING: CPU: 12 PID: 28024 at fs/btrfs/inode.c:3986 __btrfs_unlink_inode+0x178/0x351 [btrfs]()
-> [52174.514681] BTRFS: Transaction aborted (error -2)
-> [52174.515630] Modules linked in: btrfs dm_flakey dm_mod overlay crc32c_generic ppdev xor raid6_pq acpi_cpufreq parport_pc tpm_tis sg parport tpm evdev i2c_piix4 proc
-> [52174.521568] CPU: 12 PID: 28024 Comm: mount Tainted: G        W       4.5.0-rc6-btrfs-next-27+ #1
-> [52174.522805] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS by qemu-project.org 04/01/2014
-> [52174.524053]  0000000000000000 ffff8801df2a7710 ffffffff81264e93 ffff8801df2a7758
-> [52174.524053]  0000000000000009 ffff8801df2a7748 ffffffff81051618 ffffffffa03591cd
-> [52174.524053]  00000000fffffffe ffff88015e6e5000 ffff88016dbc3c88 ffff88016dbc3c88
-> [52174.524053] Call Trace:
-> [52174.524053]  [<ffffffff81264e93>] dump_stack+0x67/0x90
-> [52174.524053]  [<ffffffff81051618>] warn_slowpath_common+0x99/0xb2
-> [52174.524053]  [<ffffffffa03591cd>] ? __btrfs_unlink_inode+0x178/0x351 [btrfs]
-> [52174.524053]  [<ffffffff81051679>] warn_slowpath_fmt+0x48/0x50
-> [52174.524053]  [<ffffffffa03591cd>] __btrfs_unlink_inode+0x178/0x351 [btrfs]
-> [52174.524053]  [<ffffffff8118f5e9>] ? iput+0xb0/0x284
-> [52174.524053]  [<ffffffffa0359fe8>] btrfs_unlink_inode+0x1c/0x3d [btrfs]
-> [52174.524053]  [<ffffffffa038631e>] check_item_in_log+0x1fe/0x29b [btrfs]
-> [52174.524053]  [<ffffffffa0386522>] replay_dir_deletes+0x167/0x1cf [btrfs]
-> [52174.524053]  [<ffffffffa038739e>] fixup_inode_link_count+0x289/0x2aa [btrfs]
-> [52174.524053]  [<ffffffffa038748a>] fixup_inode_link_counts+0xcb/0x105 [btrfs]
-> [52174.524053]  [<ffffffffa038a5ec>] btrfs_recover_log_trees+0x258/0x32c [btrfs]
-> [52174.524053]  [<ffffffffa03885b2>] ? replay_one_extent+0x511/0x511 [btrfs]
-> [52174.524053]  [<ffffffffa034f288>] open_ctree+0x1dd4/0x21b9 [btrfs]
-> [52174.524053]  [<ffffffffa032b753>] btrfs_mount+0x97e/0xaed [btrfs]
-> [52174.524053]  [<ffffffff8108e1b7>] ? trace_hardirqs_on+0xd/0xf
-> [52174.524053]  [<ffffffff8117bafa>] mount_fs+0x67/0x131
-> [52174.524053]  [<ffffffff81193003>] vfs_kern_mount+0x6c/0xde
-> [52174.524053]  [<ffffffffa032af81>] btrfs_mount+0x1ac/0xaed [btrfs]
-> [52174.524053]  [<ffffffff8108e1b7>] ? trace_hardirqs_on+0xd/0xf
-> [52174.524053]  [<ffffffff8108c262>] ? lockdep_init_map+0xb9/0x1b3
-> [52174.524053]  [<ffffffff8117bafa>] mount_fs+0x67/0x131
-> [52174.524053]  [<ffffffff81193003>] vfs_kern_mount+0x6c/0xde
-> [52174.524053]  [<ffffffff8119590f>] do_mount+0x8a6/0x9e8
-> [52174.524053]  [<ffffffff811358dd>] ? strndup_user+0x3f/0x59
-> [52174.524053]  [<ffffffff81195c65>] SyS_mount+0x77/0x9f
-> [52174.524053]  [<ffffffff814935d7>] entry_SYSCALL_64_fastpath+0x12/0x6b
-> [52174.561288] ---[ end trace 6b53049efb1a3ea6 ]---
->
-> So when we delete a directory we need to propagate its last_unlink_trans
-> value (updated on snapshot deletion) to its parent and then check at
-> fsync time for it and fallback for a transaction commit.
->
-> A test case for fstests follows.
->
->   seq=`basename $0`
->   seqres=$RESULT_DIR/$seq
->   echo "QA output created by $seq"
->   tmp=/tmp/$$
->   status=1      # failure is the default!
->   trap "_cleanup; exit \$status" 0 1 2 3 15
->
->   _cleanup()
->   {
->       _cleanup_flakey
->       cd /
->       rm -f $tmp.*
->   }
->
->   # get standard environment, filters and checks
->   . ./common/rc
->   . ./common/filter
->   . ./common/dmflakey
->
->   # real QA test starts here
->   _supported_fs btrfs
->   _supported_os Linux
->   _require_scratch
->   _require_dm_target flakey
->   _require_metadata_journaling $SCRATCH_DEV
->
->   rm -f $seqres.full
->
->   _populate_fs()
->   {
->       _run_btrfs_util_prog subvolume snapshot $SCRATCH_MNT \
->       $SCRATCH_MNT/testdir/snap
->       _run_btrfs_util_prog subvolume delete $SCRATCH_MNT/testdir/snap
->       rmdir $SCRATCH_MNT/testdir
->       mkdir $SCRATCH_MNT/testdir
->   }
->
->   _scratch_mkfs >>$seqres.full 2>&1
->   _init_flakey
->   _mount_flakey
->
->   mkdir $SCRATCH_MNT/testdir
->   _populate_fs
->   $XFS_IO_PROG -c "fsync" $SCRATCH_MNT/testdir
->   _flakey_drop_and_remount
->
->   echo "Filesystem contents after the first log replay:"
->   ls -R $SCRATCH_MNT | _filter_scratch
->
->   # Now do the same as before but instead of doing an fsync against the directory,
->   # do an fsync against a file inside the directory.
->
->   _populate_fs
->   touch $SCRATCH_MNT/testdir/foobar
->   $XFS_IO_PROG -c "fsync" $SCRATCH_MNT/testdir/foobar
->   _flakey_drop_and_remount
->
->   echo "Filesystem contents after the second log replay:"
->   ls -R $SCRATCH_MNT | _filter_scratch
->
->   _unmount_flakey
->   status=0
->   exit
->
-> Signed-off-by: Filipe Manana <fdmanana@suse.com>
+From: Filipe Manana <fdmanana@suse.com>
 
-This patch is no longer needed. It is replaced by the following new patch:
+If we rename an inode A (be it a file or a directory), create a new
+inode B with the old name of inode A and under the same parent directory,
+at log tree replay time we end up removing inode A completely. If inode A
+is a directory then all its files are gone too.
 
-https://patchwork.kernel.org/patch/8694271/
+This is reproducible with the following steps, taken from a couple of
+test cases written for fstests which are going to be submitted upstream
+soon:
 
-Which besides fixing this problem, fixes some other much more serious.
-Thanks.
+   # Scenario 1
 
-> ---
->  fs/btrfs/inode.c    | 22 +++++++++++++++++++++-
->  fs/btrfs/tree-log.c |  6 +++++-
->  2 files changed, 26 insertions(+), 2 deletions(-)
->
-> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-> index 41a5688..b5c23b5 100644
-> --- a/fs/btrfs/inode.c
-> +++ b/fs/btrfs/inode.c
-> @@ -4173,6 +4173,7 @@ static int btrfs_rmdir(struct inode *dir, struct dentry *dentry)
->         int err = 0;
->         struct btrfs_root *root = BTRFS_I(dir)->root;
->         struct btrfs_trans_handle *trans;
-> +       u64 last_unlink_trans;
->
->         if (inode->i_size > BTRFS_EMPTY_DIR_SIZE)
->                 return -ENOTEMPTY;
-> @@ -4195,11 +4196,30 @@ static int btrfs_rmdir(struct inode *dir, struct dentry *dentry)
->         if (err)
->                 goto out;
->
-> +       last_unlink_trans = BTRFS_I(inode)->last_unlink_trans;
-> +
->         /* now the directory is empty */
->         err = btrfs_unlink_inode(trans, root, dir, d_inode(dentry),
->                                  dentry->d_name.name, dentry->d_name.len);
-> -       if (!err)
-> +       if (!err) {
->                 btrfs_i_size_write(inode, 0);
-> +               /*
-> +                * Propagate the last_unlink_trans value of the deleted dir to
-> +                * its parent directory. This is to prevent an unrecoverable
-> +                * log tree in the case we do something like this:
-> +                * 1) create dir foo
-> +                * 2) create snapshot under dir foo
-> +                * 3) delete the snapshot
-> +                * 4) rmdir foo
-> +                * 5) mkdir foo
-> +                * 6) fsync foo or some file inside foo
-> +                */
-> +               if (last_unlink_trans >= trans->transid) {
-> +                       mutex_lock(&BTRFS_I(dir)->log_mutex);
-> +                       BTRFS_I(dir)->last_unlink_trans = last_unlink_trans;
-> +                       mutex_unlock(&BTRFS_I(dir)->log_mutex);
-> +               }
-> +       }
->  out:
->         btrfs_end_transaction(trans, root);
->         btrfs_btree_balance_dirty(root);
-> diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-> index 24d03c7..d3f38dd 100644
-> --- a/fs/btrfs/tree-log.c
-> +++ b/fs/btrfs/tree-log.c
-> @@ -4875,8 +4875,12 @@ static noinline int check_parent_dirs_for_sync(struct btrfs_trans_handle *trans,
->                 if (!parent || d_really_is_negative(parent) || sb != d_inode(parent)->i_sb)
->                         break;
->
-> -               if (IS_ROOT(parent))
-> +               if (IS_ROOT(parent)) {
-> +                       inode = d_inode(parent);
-> +                       if (btrfs_must_commit_transaction(trans, inode))
-> +                               ret = 1;
->                         break;
-> +               }
->
->                 parent = dget_parent(parent);
->                 dput(old_parent);
-> --
-> 2.7.0.rc3
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+   mkfs.btrfs -f /dev/sdc
+   mount /dev/sdc /mnt
+   mkdir -p /mnt/a/x
+   echo "hello" > /mnt/a/x/foo
+   echo "world" > /mnt/a/x/bar
+   sync
+   mv /mnt/a/x /mnt/a/y
+   mkdir /mnt/a/x
+   xfs_io -c fsync /mnt/a/x
+   <power failure happens>
+
+   The next time the fs is mounted, log tree replay happens and
+   the directory "y" does not exist nor do the files "foo" and
+   "bar" exist anywhere (neither in "y" nor in "x", nor the root
+   nor anywhere).
+
+   # Scenario 2
+
+   mkfs.btrfs -f /dev/sdc
+   mount /dev/sdc /mnt
+   mkdir /mnt/a
+   echo "hello" > /mnt/a/foo
+   sync
+   mv /mnt/a/foo /mnt/a/bar
+   echo "world" > /mnt/a/foo
+   xfs_io -c fsync /mnt/a/foo
+   <power failure happens>
+
+   The next time the fs is mounted, log tree replay happens and the
+   file "bar" does not exists anymore. A file with the name "foo"
+   exists and it matches the second file we created.
+
+Fix this by forcing a transaction commit when such cases happen.
+This means we check in the commit root of the subvolume tree if there
+was any other inode with the same reference when the inode we are
+fsync'ing is a new inode (created in the current transaction).
+
+Two test cases for fstests are being submitted upstream.
+
+Cc: stable@vger.kernel.org
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+ fs/btrfs/tree-log.c | 121 ++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 121 insertions(+)
+
+diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+index 24d03c7..1142e77 100644
+--- a/fs/btrfs/tree-log.c
++++ b/fs/btrfs/tree-log.c
+@@ -4415,6 +4415,111 @@ static int btrfs_log_trailing_hole(struct btrfs_trans_handle *trans,
+ 	return ret;
+ }
+ 
++/*
++ * When we are logging a new inode X, check if it doesn't have a reference that
++ * matches the reference from some other inode Y which is a directory that was
++ * created in a past transaction and was renamed. If we don't do this, then at
++ * log replay time we can lose files inside the directory. Example:
++ *
++ * mkdir /mnt/x
++ * echo "hello world" > /mnt/x/foobar
++ * sync
++ * mv /mnt/x /mnt/y
++ * mkdir /mnt/x                 # or touch /mnt/x
++ * xfs_io -c fsync /mnt/x
++ * <power fail>
++ * mount fs, trigger log replay
++ *
++ * After the log replay procedure, we would lose the first directory and all its
++ * files.
++ * For the case where inode Y is not a directory we simply end up losing it:
++ *
++ * echo "123" > /mnt/foo
++ * sync
++ * mv /mnt/foo /mnt/bar
++ * echo "abc" > /mnt/foo
++ * xfs_io -c fsync /mnt/foo
++ * <power fail>
++ */
++static int btrfs_check_ref_name_override(struct extent_buffer *eb,
++					 const int slot,
++					 const struct btrfs_key *key,
++					 struct inode *inode)
++{
++	int ret;
++	struct btrfs_path *search_path;
++	char *name = NULL;
++	u32 name_len = 0;
++	u32 item_size = btrfs_item_size_nr(eb, slot);
++	u32 cur_offset = 0;
++	unsigned long ptr = btrfs_item_ptr_offset(eb, slot);
++
++	search_path = btrfs_alloc_path();
++	if (!search_path)
++		return -ENOMEM;
++	search_path->search_commit_root = 1;
++	search_path->skip_locking = 1;
++
++	while (cur_offset < item_size) {
++		u64 parent;
++		u32 this_name_len;
++		u32 this_len;
++		unsigned long name_ptr;
++		struct btrfs_dir_item *di;
++
++		if (key->type == BTRFS_INODE_REF_KEY) {
++			struct btrfs_inode_ref *iref;
++
++			iref = (struct btrfs_inode_ref *)(ptr + cur_offset);
++			parent = key->offset;
++			this_name_len = btrfs_inode_ref_name_len(eb, iref);
++			name_ptr = (unsigned long)(iref + 1);
++			this_len = sizeof(*iref) + this_name_len;
++		} else {
++			struct btrfs_inode_extref *extref;
++
++			extref = (struct btrfs_inode_extref *)(ptr +
++							       cur_offset);
++			parent = btrfs_inode_extref_parent(eb, extref);
++			this_name_len = btrfs_inode_extref_name_len(eb, extref);
++			name_ptr = (unsigned long)&extref->name;
++			this_len = sizeof(*extref) + this_name_len;
++		}
++
++		if (this_name_len > name_len) {
++			char *new_name;
++
++			new_name = krealloc(name, this_name_len, GFP_NOFS);
++			if (!new_name) {
++				ret = -ENOMEM;
++				goto out;
++			}
++			name_len = this_name_len;
++			name = new_name;
++		}
++
++		read_extent_buffer(eb, name, name_ptr, this_name_len);
++		di = btrfs_lookup_dir_item(NULL, BTRFS_I(inode)->root,
++					   search_path, parent,
++					   name, this_name_len, 0);
++		if (di && !IS_ERR(di)) {
++			ret = 1;
++			goto out;
++		} else if (IS_ERR(di)) {
++			ret = PTR_ERR(di);
++			goto out;
++		}
++		btrfs_release_path(search_path);
++
++		cur_offset += this_len;
++	}
++	ret = 0;
++out:
++	btrfs_free_path(search_path);
++	kfree(name);
++	return ret;
++}
++
+ /* log a single inode in the tree log.
+  * At least one parent directory for this inode must exist in the tree
+  * or be logged already.
+@@ -4602,6 +4707,22 @@ again:
+ 		if (min_key.type == BTRFS_INODE_ITEM_KEY)
+ 			need_log_inode_item = false;
+ 
++		if ((min_key.type == BTRFS_INODE_REF_KEY ||
++		     min_key.type == BTRFS_INODE_EXTREF_KEY) &&
++		    BTRFS_I(inode)->generation == trans->transid) {
++			ret = btrfs_check_ref_name_override(path->nodes[0],
++							    path->slots[0],
++							    &min_key, inode);
++			if (ret < 0) {
++				err = ret;
++				goto out_unlock;
++			} else if (ret > 0) {
++				err = 1;
++				btrfs_set_log_full_commit(root->fs_info, trans);
++				goto out_unlock;
++			}
++		}
++
+ 		/* Skip xattrs, we log them later with btrfs_log_all_xattrs() */
+ 		if (min_key.type == BTRFS_XATTR_ITEM_KEY) {
+ 			if (ins_nr == 0)
+-- 
+2.7.0.rc3
+

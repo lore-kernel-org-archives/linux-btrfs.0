@@ -1,104 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:26676 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:29930 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1758680AbcC3H4w (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 30 Mar 2016 03:56:52 -0400
-Received: from localhost.localdomain (unknown [10.167.226.34])
-	by cn.fujitsu.com (Postfix) with ESMTP id CB59E405640F
-	for <linux-btrfs@vger.kernel.org>; Wed, 30 Mar 2016 15:56:14 +0800 (CST)
+	id S1758722AbcC3H4y (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 30 Mar 2016 03:56:54 -0400
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v9 05/19] btrfs: delayed-ref: Add support for increasing data ref under spinlock
-Date: Wed, 30 Mar 2016 15:56:00 +0800
-Message-Id: <1459324574-28063-6-git-send-email-quwenruo@cn.fujitsu.com>
+Cc: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
+Subject: [PATCH v9 13/19] btrfs: dedupe: add per-file online dedupe control
+Date: Wed, 30 Mar 2016 15:56:08 +0800
+Message-Id: <1459324574-28063-14-git-send-email-quwenruo@cn.fujitsu.com>
 In-Reply-To: <1459324574-28063-1-git-send-email-quwenruo@cn.fujitsu.com>
 References: <1459324574-28063-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-For in-band dedupe, btrfs needs to increase data ref with delayed_ref
-locked, so add a new function btrfs_add_delayed_data_ref_lock() to
-increase extent ref with delayed_refs already locked.
+From: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
 
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Introduce inode_need_dedupe() to implement per-file online dedupe control.
+
+Signed-off-by: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
 ---
- fs/btrfs/delayed-ref.c | 30 +++++++++++++++++++++++-------
- fs/btrfs/delayed-ref.h |  8 ++++++++
- 2 files changed, 31 insertions(+), 7 deletions(-)
+ fs/btrfs/inode.c | 15 ++++++++++++++-
+ 1 file changed, 14 insertions(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/delayed-ref.c b/fs/btrfs/delayed-ref.c
-index 430b368..07474e8 100644
---- a/fs/btrfs/delayed-ref.c
-+++ b/fs/btrfs/delayed-ref.c
-@@ -805,6 +805,26 @@ free_ref:
- }
- 
- /*
-+ * Do real delayed data ref insert.
-+ * Caller must hold delayed_refs->lock and allocation memory
-+ * for dref,head_ref and record.
-+ */
-+void btrfs_add_delayed_data_ref_locked(struct btrfs_fs_info *fs_info,
-+			struct btrfs_trans_handle *trans,
-+			struct btrfs_delayed_data_ref *dref,
-+			struct btrfs_delayed_ref_head *head_ref,
-+			struct btrfs_qgroup_extent_record *qrecord,
-+			u64 bytenr, u64 num_bytes, u64 parent, u64 ref_root,
-+			u64 owner, u64 offset, u64 reserved, int action)
-+{
-+	head_ref = add_delayed_ref_head(fs_info, trans, &head_ref->node,
-+			qrecord, bytenr, num_bytes, ref_root, reserved,
-+			action, 1);
-+	add_delayed_data_ref(fs_info, trans, head_ref, &dref->node, bytenr,
-+			num_bytes, parent, ref_root, owner, offset, action);
-+}
-+
-+/*
-  * add a delayed data ref. it's similar to btrfs_add_delayed_tree_ref.
-  */
- int btrfs_add_delayed_data_ref(struct btrfs_fs_info *fs_info,
-@@ -849,13 +869,9 @@ int btrfs_add_delayed_data_ref(struct btrfs_fs_info *fs_info,
- 	 * insert both the head node and the new ref without dropping
- 	 * the spin lock
- 	 */
--	head_ref = add_delayed_ref_head(fs_info, trans, &head_ref->node, record,
--					bytenr, num_bytes, ref_root, reserved,
--					action, 1);
--
--	add_delayed_data_ref(fs_info, trans, head_ref, &ref->node, bytenr,
--				   num_bytes, parent, ref_root, owner, offset,
--				   action);
-+	btrfs_add_delayed_data_ref_locked(fs_info, trans, ref, head_ref, record,
-+			bytenr, num_bytes, parent, ref_root, owner, offset,
-+			reserved, action);
- 	spin_unlock(&delayed_refs->lock);
- 
- 	return 0;
-diff --git a/fs/btrfs/delayed-ref.h b/fs/btrfs/delayed-ref.h
-index c24b653..2765858 100644
---- a/fs/btrfs/delayed-ref.h
-+++ b/fs/btrfs/delayed-ref.h
-@@ -239,11 +239,19 @@ static inline void btrfs_put_delayed_ref(struct btrfs_delayed_ref_node *ref)
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 96790d0..c80fd74 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -708,6 +708,18 @@ static void end_dedupe_extent(struct inode *inode, u64 start,
  	}
  }
  
-+struct btrfs_qgroup_extent_record;
- int btrfs_add_delayed_tree_ref(struct btrfs_fs_info *fs_info,
- 			       struct btrfs_trans_handle *trans,
- 			       u64 bytenr, u64 num_bytes, u64 parent,
- 			       u64 ref_root, int level, int action,
- 			       struct btrfs_delayed_extent_op *extent_op);
-+void btrfs_add_delayed_data_ref_locked(struct btrfs_fs_info *fs_info,
-+			struct btrfs_trans_handle *trans,
-+			struct btrfs_delayed_data_ref *dref,
-+			struct btrfs_delayed_ref_head *head_ref,
-+			struct btrfs_qgroup_extent_record *qrecord,
-+			u64 bytenr, u64 num_bytes, u64 parent, u64 ref_root,
-+			u64 owner, u64 offset, u64 reserved, int action);
- int btrfs_add_delayed_data_ref(struct btrfs_fs_info *fs_info,
- 			       struct btrfs_trans_handle *trans,
- 			       u64 bytenr, u64 num_bytes,
++static inline int inode_need_dedupe(struct btrfs_fs_info *fs_info,
++				    struct inode *inode)
++{
++	if (!fs_info->dedupe_enabled)
++		return 0;
++
++	if (BTRFS_I(inode)->flags & BTRFS_INODE_NODEDUPE)
++		return 0;
++
++	return 1;
++}
++
+ /*
+  * phase two of compressed writeback.  This is the ordered portion
+  * of the code, which only gets called in the order the work was
+@@ -1680,7 +1692,8 @@ static int run_delalloc_range(struct inode *inode, struct page *locked_page,
+ 	} else if (BTRFS_I(inode)->flags & BTRFS_INODE_PREALLOC && !force_cow) {
+ 		ret = run_delalloc_nocow(inode, locked_page, start, end,
+ 					 page_started, 0, nr_written);
+-	} else if (!inode_need_compress(inode) && !fs_info->dedupe_enabled) {
++	} else if (!inode_need_compress(inode) &&
++		   !inode_need_dedupe(fs_info, inode)) {
+ 		ret = cow_file_range(inode, locked_page, start, end,
+ 				      page_started, nr_written, 1, NULL);
+ 	} else {
 -- 
 2.7.4
 

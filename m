@@ -1,72 +1,79 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from relay4.ptmail.sapo.pt ([212.55.154.24]:41802 "EHLO sapo.pt"
-	rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-	id S1751064AbcC2XiH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 29 Mar 2016 19:38:07 -0400
-Received: from unknown (HELO undercity) (as13914087@sapo.pt@[37.28.247.191])
-          (envelope-sender <ab@tevsa.net>)
-          by mta-auth02 (qmail-ptmail-1.0.0) with ESMTPA
-          for <linux-btrfs@vger.kernel.org>; 29 Mar 2016 23:31:23 -0000
-Received: from [10.5.2.101] (faraday.azeroth.net [10.5.2.101])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
-	(No client certificate requested)
-	by undercity (Postfix) with ESMTPSA id 27B72146EC32
-	for <linux-btrfs@vger.kernel.org>; Wed, 30 Mar 2016 00:31:23 +0100 (WEST)
-From: Alec Blayne <ab@tevsa.net>
-Subject: PaX: size overflow detected
+Received: from torres.zugschlus.de ([85.214.131.164]:53664 "EHLO
+	torres.zugschlus.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752268AbcC3GWE convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 30 Mar 2016 02:22:04 -0400
+Received: from mh by torres.zugschlus.de with local (Exim 4.84_2)
+	(envelope-from <mh+linux-btrfs@zugschlus.de>)
+	id 1al9Vx-0006sW-9s
+	for linux-btrfs@vger.kernel.org; Wed, 30 Mar 2016 08:22:01 +0200
+Date: Wed, 30 Mar 2016 08:22:01 +0200
+From: Marc Haber <mh+linux-btrfs@zugschlus.de>
 To: linux-btrfs@vger.kernel.org
-Message-ID: <56FB1034.8010405@tevsa.net>
-Date: Wed, 30 Mar 2016 00:31:00 +0100
+Subject: Re: "bad metadata" not fixed by btrfs repair
+Message-ID: <20160330062201.GF9342@torres.zugschlus.de>
+References: <20160328143714.GZ10135@torres.zugschlus.de>
+ <20160328184237.GA10135@torres.zugschlus.de>
+ <21f3d8f6-3447-109f-d21e-0e7a696c94e2@mokrynskyi.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=utf-8
+In-Reply-To: <21f3d8f6-3447-109f-d21e-0e7a696c94e2@mokrynskyi.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi, I got this warning on dmesg:
+On Mon, Mar 28, 2016 at 09:51:43PM +0300, Nazar Mokrynskyi wrote:
+> However, despite those messages everything seems to work fine.
 
- PAX: size overflow detected in function btrfs_get_extent
-fs/btrfs/inode.c:6690 cicus.1228_386 min, count: 104, decl: len; num: 0;
-context: extent_map;
+In my case, trying to balance the filesystem results in a the balance
+not finishing in hours, I/O performance going way down during the
+balance, and a plethora of kernel traces showing up in the syslog:
 
-Which was followed by this Call Trace:
+Mar 22 22:37:08 fan kernel: [  429.488415] ------------[ cut here ]------------
+Mar 22 22:37:08 fan kernel: [  429.488455] WARNING: CPU: 5 PID: 3899 at fs/btrfs/extent-tree.c:7897 btrfs_alloc_tree_block+0xeb/0x3d6 [btrfs]()
+Mar 22 22:37:08 fan kernel: [  429.488456] BTRFS: block rsv returned -28
+Mar 22 22:37:08 fan kernel: [  429.488458] Modules linked in: dummy ebtable_filter ebtables ip6table_filter ip6_tables cpufreq_userspace cpufreq_stats cpufreq_powersave cpufreq_conservative kvm_amd kvm irqbypass snd_hda_codec_realtek snd_hda_codec_generic amd64_edac_mod input_leds edac_mce_amd pcspkr snd_hda_codec_hdmi snd_cmipci k10temp edac_core snd_mpu401_uart snd_opl3_lib snd_rawmidi snd_hda_intel snd_seq_device snd_hda_codec i2c_piix4 snd_hda_core acpi_cpufreq asus_atk0110 snd_hwdep tpm_tis evdev sg snd_pcm_oss tpm snd_mixer_oss snd_pcm snd_timer snd soundcore shpchp processor iptable_nat nf_conntrack_ipv4 nf_defrag_ipv4 nf_nat_ipv4 nf_nat nf_conntrack ipt_REJECT nf_reject_ipv4 xt_tcpudp iptable_filter ip_tables x_tables bridge stp llc hwmon_vid autofs4 crc32c_generic btrfs xor raid6_pq ext4 crc16 mbcache jbd2 hmac sha256_ssse3 sha256_generic drbg ansi_cprng xts gf128mul algif_skcipher af_alg dm_crypt dm_mod hid_generic usbhid hid usb_storage sr_mod sd_mod cdrom ohci_pci r8169 mii xhci_pci amdkfd xhci_hcd ohci_hcd ehci_pci ehci_hcd radeon ahci i2c_algo_bit libahci ttm libata drm_kms_helper sym53c8xx scsi_transport_spi drm usbcore scsi_mod usb_common i2c_core button
+Mar 22 22:37:08 fan kernel: [  429.488507] CPU: 5 PID: 3899 Comm: btrfs Tainted: G        W       4.4.5-zgws1 #2
+Mar 22 22:37:08 fan kernel: [  429.488508] Hardware name: System manufacturer System Product Name/M5A88-V EVO, BIOS 1603    10/12/2012
+Mar 22 22:37:08 fan kernel: [  429.488510]  000000000000005b ffffffff811dd418 ffff8805f57fb890 0000000000000009
+Mar 22 22:37:08 fan kernel: [  429.488512]  ffffffff81051e21 ffffffffa04cb29f ffff8805bbf46f00 ffff8805f57fb8e8
+Mar 22 22:37:08 fan kernel: [  429.488514]  ffff8800b2390000 ffff88053c63d020 ffffffff81051e79 ffffffffa053e65b
+Mar 22 22:37:08 fan kernel: [  429.488516] Call Trace:
+Mar 22 22:37:08 fan kernel: [  429.488523]  [<ffffffff811dd418>] ? dump_stack+0x5a/0x6f
+Mar 22 22:37:08 fan kernel: [  429.488526]  [<ffffffff81051e21>] ? warn_slowpath_common+0x8e/0xa3
+Mar 22 22:37:08 fan kernel: [  429.488537]  [<ffffffffa04cb29f>] ? btrfs_alloc_tree_block+0xeb/0x3d6 [btrfs]
+Mar 22 22:37:08 fan kernel: [  429.488539]  [<ffffffff81051e79>] ? warn_slowpath_fmt+0x43/0x4b
+Mar 22 22:37:08 fan kernel: [  429.488551]  [<ffffffffa04f50e7>] ? set_extent_buffer_dirty+0x76/0x82 [btrfs]
+Mar 22 22:37:08 fan kernel: [  429.488562]  [<ffffffffa04cb29f>] ? btrfs_alloc_tree_block+0xeb/0x3d6 [btrfs]
+Mar 22 22:37:08 fan kernel: [  429.488572]  [<ffffffffa04ba93c>] ? generic_bin_search.constprop.37+0xf0/0x128 [btrfs]
+Mar 22 22:37:08 fan kernel: [  429.488581]  [<ffffffffa04b967a>] ? __btrfs_cow_block+0xdf/0x443 [btrfs]
+Mar 22 22:37:08 fan kernel: [  429.488591]  [<ffffffffa04b9b0a>] ? btrfs_cow_block+0xd9/0x143 [btrfs]
+Mar 22 22:37:08 fan kernel: [  429.488602]  [<ffffffffa0517654>] ? do_relocation+0x255/0x3ad [btrfs]
+Mar 22 22:37:08 fan kernel: [  429.488612]  [<ffffffffa04bf02b>] ? block_rsv_add_bytes+0x43/0x4a [btrfs]
+Mar 22 22:37:08 fan kernel: [  429.488622]  [<ffffffffa04ca230>] ? btrfs_block_rsv_refill+0x6e/0x7f [btrfs]
+Mar 22 22:37:08 fan kernel: [  429.488634]  [<ffffffffa05187c7>] ? relocate_tree_blocks+0x2ee/0x42c [btrfs]
+Mar 22 22:37:08 fan kernel: [  429.488645]  [<ffffffffa0519e4d>] ? relocate_block_group+0x27a/0x4ab [btrfs]
+Mar 22 22:37:08 fan kernel: [  429.488656]  [<ffffffffa051a1b0>] ? btrfs_relocate_block_group+0x132/0x25a [btrfs]
+Mar 22 22:37:08 fan kernel: [  429.488668]  [<ffffffffa04f9180>] ? btrfs_relocate_chunk.isra.35+0x3c/0xad [btrfs]
+Mar 22 22:37:08 fan kernel: [  429.488680]  [<ffffffffa04fa96c>] ? btrfs_balance+0xd23/0xd8f [btrfs]
+Mar 22 22:37:08 fan kernel: [  429.488691]  [<ffffffffa05037a6>] ? btrfs_ioctl_balance+0x233/0x2ae [btrfs]
+Mar 22 22:37:08 fan kernel: [  429.488703]  [<ffffffffa0506152>] ? btrfs_ioctl+0x1234/0x2699 [btrfs]
+Mar 22 22:37:08 fan kernel: [  429.488706]  [<ffffffff811329bc>] ? mem_cgroup_charge_statistics.isra.30+0x22/0x4f
+Mar 22 22:37:08 fan kernel: [  429.488708]  [<ffffffff811363ea>] ? mem_cgroup_commit_charge+0x8a/0xaa
+Mar 22 22:37:08 fan kernel: [  429.488711]  [<ffffffff810f56bb>] ? __lru_cache_add+0x19/0x38
+Mar 22 22:37:08 fan kernel: [  429.488713]  [<ffffffff8110a1fb>] ? set_pte_at+0x5/0x8
+Mar 22 22:37:08 fan kernel: [  429.488715]  [<ffffffff8110daf2>] ? handle_mm_fault+0x488/0xea5
+Mar 22 22:37:08 fan kernel: [  429.488717]  [<ffffffff81149d98>] ? do_vfs_ioctl+0x3ad/0x424
+Mar 22 22:37:08 fan kernel: [  429.488719]  [<ffffffff81149d98>] ? do_vfs_ioctl+0x3ad/0x424
+Mar 22 22:37:08 fan kernel: [  429.488721]  [<ffffffff81149e5c>] ? SyS_ioctl+0x4d/0x6f
+Mar 22 22:37:08 fan kernel: [  429.488724]  [<ffffffff8140dcae>] ? entry_SYSCALL_64_fastpath+0x12/0x6d
+Mar 22 22:37:08 fan kernel: [  429.488725] ---[ end trace 63ee8891bd9de879 ]---
 
-[  354.375166] Call Trace:
-[  354.375173]  [<ffffffff81421945>] ? dump_stack+0x47/0x72
-[  354.375177]  [<ffffffff811a94c5>] ? report_size_overflow+0x65/0x80
-[  354.375182]  [<ffffffff812de407>] ? btrfs_get_extent+0xd07/0xd40
-[  354.375186]  [<ffffffff81301e55>] ? __do_readpage+0x295/0xef0
-[  354.375189]  [<ffffffff812fdd1c>] ? insert_state+0x9c/0x120
-[  354.375191]  [<ffffffff812dd700>] ? btrfs_direct_IO+0x500/0x500
-[  354.375195]  [<ffffffff810b84ac>] ? get_parent_ip+0xc/0x30
-[  354.375197]  [<ffffffff81302fe6>] ?
-__extent_readpages.constprop.43+0x316/0x360
-[  354.375200]  [<ffffffff812dd700>] ? btrfs_direct_IO+0x500/0x500
-[  354.375202]  [<ffffffff81304c1d>] ? extent_readpages+0x17d/0x190
-[  354.375204]  [<ffffffff812dd700>] ? btrfs_direct_IO+0x500/0x500
-[  354.375207]  [<ffffffff81184c3f>] ? alloc_pages_current+0x7f/0x110
-[  354.375209]  [<ffffffff81147585>] ? __do_page_cache_readahead+0x1c5/0x240
-[  354.375211]  [<ffffffff811476d9>] ? ondemand_readahead+0xd9/0x300
-[  354.375214]  [<ffffffff81139965>] ? find_get_entry+0x65/0xa0
-[  354.375216]  [<ffffffff8113a172>] ? pagecache_get_page+0x22/0x1b0
-[  354.375218]  [<ffffffff8113b65d>] ? generic_file_read_iter+0x61d/0x7b0
-[  354.375220]  [<ffffffff811a179b>] ? __vfs_read+0xdb/0x100
-[  354.375222]  [<ffffffff811a22a6>] ? vfs_read+0xc6/0x250
-[  354.375224]  [<ffffffff811a37b2>] ? SyS_pread64+0x82/0xa0
-[  354.375228]  [<ffffffff818cf9d9>] ? entry_SYSCALL_64_fastpath+0x12/0x83
-[  354.375230]  [<ffffffff818cfb61>] ? int_ret_from_sys_call+0x3a/0xa4
+Greetings
+Marc
 
-
-After this a process which was writting on the disk just hanged,
-couldn't kill it etc.
-
-Thought it might interest someone.
-
-I'm running the following kernel on Gentoo:
-"Linux faraday 4.4.6-hardened #7 SMP PREEMPT Sun Mar 27 10:37:51 WEST
-2016 x86_64 Intel(R) Core(TM) i7-3770K CPU @ 3.50GHz GenuineIntel GNU/Linux"
-
-It has grsecurity patchset, as well as BFQ scheduler.
-
-The filesystem is a two partition raid 1, sitting on top of luks.
-
-Cheers.
+-- 
+-----------------------------------------------------------------------------
+Marc Haber         | "I don't trust Computers. They | Mailadresse im Header
+Leimen, Germany    |  lose things."    Winona Ryder | Fon: *49 6224 1600402
+Nordisch by Nature |  How to make an American Quilt | Fax: *49 6224 1600421

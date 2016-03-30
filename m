@@ -1,182 +1,84 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:43318 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751670AbcC3AT5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 29 Mar 2016 20:19:57 -0400
-Date: Tue, 29 Mar 2016 17:19:55 -0700
-From: Mark Fasheh <mfasheh@suse.de>
-To: clm@fb.com
+Received: from aserp1040.oracle.com ([141.146.126.69]:19648 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755139AbcC3RKu (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 30 Mar 2016 13:10:50 -0400
+Date: Wed, 30 Mar 2016 10:10:45 -0700
+From: Liu Bo <bo.li.liu@oracle.com>
+To: David Sterba <dsterba@suse.com>
 Cc: linux-btrfs@vger.kernel.org
-Subject: [RESEND][PATCH] btrfs: Add qgroup tracing
-Message-ID: <20160330001955.GH15881@wotan.suse.de>
-Reply-To: Mark Fasheh <mfasheh@suse.de>
+Subject: Re: [PATCH] btrfs: fallback to vmalloc in btrfs_compare_tree
+Message-ID: <20160330171044.GB20816@localhost.localdomain>
+Reply-To: bo.li.liu@oracle.com
+References: <1459346743-17191-1-git-send-email-dsterba@suse.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1459346743-17191-1-git-send-email-dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This patch adds tracepoints to the qgroup code on both the reporting side
-(insert_dirty_extents) and the accounting side. Taken together it allows us
-to see what qgroup operations have happened, and what their result was.
+On Wed, Mar 30, 2016 at 04:05:43PM +0200, David Sterba wrote:
+> The allocation of node could fail if the memory is too fragmented for a
+> given node size, practically observed with 64k.
 
-Signed-off-by: Mark Fasheh <mfasheh@suse.de>
----
- fs/btrfs/qgroup.c            |  9 +++++
- include/trace/events/btrfs.h | 89 +++++++++++++++++++++++++++++++++++++++++++-
- 2 files changed, 97 insertions(+), 1 deletion(-)
+It's not a critical path.  Why not use vmalloc directly?
 
-diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-index 5279fda..994dab0 100644
---- a/fs/btrfs/qgroup.c
-+++ b/fs/btrfs/qgroup.c
-@@ -1463,6 +1463,7 @@ struct btrfs_qgroup_extent_record
- 	u64 bytenr = record->bytenr;
- 
- 	assert_spin_locked(&delayed_refs->lock);
-+	trace_btrfs_qgroup_insert_dirty_extent(record);
- 
- 	while (*p) {
- 		parent_node = *p;
-@@ -1594,6 +1595,9 @@ static int qgroup_update_counters(struct btrfs_fs_info *fs_info,
- 		cur_old_count = btrfs_qgroup_get_old_refcnt(qg, seq);
- 		cur_new_count = btrfs_qgroup_get_new_refcnt(qg, seq);
- 
-+		trace_qgroup_update_counters(qg->qgroupid, cur_old_count,
-+					     cur_new_count);
-+
- 		/* Rfer update part */
- 		if (cur_old_count == 0 && cur_new_count > 0) {
- 			qg->rfer += num_bytes;
-@@ -1683,6 +1687,9 @@ btrfs_qgroup_account_extent(struct btrfs_trans_handle *trans,
- 		goto out_free;
- 	BUG_ON(!fs_info->quota_root);
- 
-+	trace_btrfs_qgroup_account_extent(bytenr, num_bytes, nr_old_roots,
-+					  nr_new_roots);
-+
- 	qgroups = ulist_alloc(GFP_NOFS);
- 	if (!qgroups) {
- 		ret = -ENOMEM;
-@@ -1752,6 +1759,8 @@ int btrfs_qgroup_account_extents(struct btrfs_trans_handle *trans,
- 		record = rb_entry(node, struct btrfs_qgroup_extent_record,
- 				  node);
- 
-+		trace_btrfs_qgroup_account_extents(record);
-+
- 		if (!ret) {
- 			/*
- 			 * Use (u64)-1 as time_seq to do special search, which
-diff --git a/include/trace/events/btrfs.h b/include/trace/events/btrfs.h
-index d866f21..467a4d2 100644
---- a/include/trace/events/btrfs.h
-+++ b/include/trace/events/btrfs.h
-@@ -23,7 +23,7 @@ struct map_lookup;
- struct extent_buffer;
- struct btrfs_work;
- struct __btrfs_workqueue;
--struct btrfs_qgroup_operation;
-+struct btrfs_qgroup_extent_record;
- 
- #define show_ref_type(type)						\
- 	__print_symbolic(type,						\
-@@ -1231,6 +1231,93 @@ DEFINE_EVENT(btrfs__qgroup_delayed_ref, btrfs_qgroup_free_delayed_ref,
- 
- 	TP_ARGS(ref_root, reserved)
- );
-+
-+DECLARE_EVENT_CLASS(btrfs_qgroup_extent,
-+	TP_PROTO(struct btrfs_qgroup_extent_record *rec),
-+
-+	TP_ARGS(rec),
-+
-+	TP_STRUCT__entry(
-+		__field(	u64,  bytenr		)
-+		__field(	u64,  num_bytes		)
-+	),
-+
-+	TP_fast_assign(
-+		__entry->bytenr		= rec->bytenr,
-+		__entry->num_bytes	= rec->num_bytes;
-+	),
-+
-+	TP_printk("bytenr = %llu, num_bytes = %llu",
-+		  (unsigned long long)__entry->bytenr,
-+		  (unsigned long long)__entry->num_bytes)
-+);
-+
-+DEFINE_EVENT(btrfs_qgroup_extent, btrfs_qgroup_account_extents,
-+
-+	TP_PROTO(struct btrfs_qgroup_extent_record *rec),
-+
-+	TP_ARGS(rec)
-+);
-+
-+DEFINE_EVENT(btrfs_qgroup_extent, btrfs_qgroup_insert_dirty_extent,
-+
-+	TP_PROTO(struct btrfs_qgroup_extent_record *rec),
-+
-+	TP_ARGS(rec)
-+);
-+
-+TRACE_EVENT(btrfs_qgroup_account_extent,
-+
-+	TP_PROTO(u64 bytenr, u64 num_bytes, u64 nr_old_roots, u64 nr_new_roots),
-+
-+	TP_ARGS(bytenr, num_bytes, nr_old_roots, nr_new_roots),
-+
-+	TP_STRUCT__entry(
-+		__field(	u64,  bytenr			)
-+		__field(	u64,  num_bytes			)
-+		__field(	u64,  nr_old_roots		)
-+		__field(	u64,  nr_new_roots		)
-+	),
-+
-+	TP_fast_assign(
-+		__entry->bytenr		= bytenr;
-+		__entry->num_bytes	= num_bytes;
-+		__entry->nr_old_roots	= nr_old_roots;
-+		__entry->nr_new_roots	= nr_new_roots;
-+	),
-+
-+	TP_printk("bytenr = %llu, num_bytes = %llu, nr_old_roots = %llu, "
-+		  "nr_new_roots = %llu",
-+		  __entry->bytenr,
-+		  __entry->num_bytes,
-+		  __entry->nr_old_roots,
-+		  __entry->nr_new_roots)
-+);
-+
-+TRACE_EVENT(qgroup_update_counters,
-+
-+	TP_PROTO(u64 qgid, u64 cur_old_count, u64 cur_new_count),
-+
-+	TP_ARGS(qgid, cur_old_count, cur_new_count),
-+
-+	TP_STRUCT__entry(
-+		__field(	u64,  qgid			)
-+		__field(	u64,  cur_old_count		)
-+		__field(	u64,  cur_new_count		)
-+	),
-+
-+	TP_fast_assign(
-+		__entry->qgid		= qgid;
-+		__entry->cur_old_count	= cur_old_count;
-+		__entry->cur_new_count	= cur_new_count;
-+	),
-+
-+	TP_printk("qgid = %llu, cur_old_count = %llu, cur_new_count = %llu",
-+		  __entry->qgid,
-+		  __entry->cur_old_count,
-+		  __entry->cur_new_count)
-+);
-+
- #endif /* _TRACE_BTRFS_H */
- 
- /* This part must be outside protection */
--- 
-2.1.4
+Thanks,
 
+-liubo
 
-
---
-Mark Fasheh
+> 
+> http://article.gmane.org/gmane.comp.file-systems.btrfs/54689
+> 
+> Reported-by: Jean-Denis Girard <jd.girard@sysnux.pf>
+> Signed-off-by: David Sterba <dsterba@suse.com>
+> ---
+>  fs/btrfs/ctree.c | 12 ++++++++----
+>  1 file changed, 8 insertions(+), 4 deletions(-)
+> 
+> diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
+> index 77592931ab4f..ec7928a27aaa 100644
+> --- a/fs/btrfs/ctree.c
+> +++ b/fs/btrfs/ctree.c
+> @@ -19,6 +19,7 @@
+>  #include <linux/sched.h>
+>  #include <linux/slab.h>
+>  #include <linux/rbtree.h>
+> +#include <linux/vmalloc.h>
+>  #include "ctree.h"
+>  #include "disk-io.h"
+>  #include "transaction.h"
+> @@ -5361,10 +5362,13 @@ int btrfs_compare_trees(struct btrfs_root *left_root,
+>  		goto out;
+>  	}
+>  
+> -	tmp_buf = kmalloc(left_root->nodesize, GFP_KERNEL);
+> +	tmp_buf = kmalloc(left_root->nodesize, GFP_KERNEL | __GFP_NOWARN);
+>  	if (!tmp_buf) {
+> -		ret = -ENOMEM;
+> -		goto out;
+> +		tmp_buf = vmalloc(left_root->nodesize);
+> +		if (!tmp_buf) {
+> +			ret = -ENOMEM;
+> +			goto out;
+> +		}
+>  	}
+>  
+>  	left_path->search_commit_root = 1;
+> @@ -5565,7 +5569,7 @@ int btrfs_compare_trees(struct btrfs_root *left_root,
+>  out:
+>  	btrfs_free_path(left_path);
+>  	btrfs_free_path(right_path);
+> -	kfree(tmp_buf);
+> +	kvfree(tmp_buf);
+>  	return ret;
+>  }
+>  
+> -- 
+> 2.7.1
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

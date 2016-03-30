@@ -1,71 +1,98 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:32503 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753026AbcC3S2Z (ORCPT
+Received: from frost.carfax.org.uk ([85.119.82.111]:56268 "EHLO
+	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752236AbcC3Sn3 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 30 Mar 2016 14:28:25 -0400
-Date: Wed, 30 Mar 2016 11:27:55 -0700
-From: "Darrick J. Wong" <darrick.wong@oracle.com>
-To: Christoph Hellwig <hch@infradead.org>
-Cc: xfs@oss.sgi.com, linux-fsdevel <linux-fsdevel@vger.kernel.org>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>, linux-api@vger.kernel.org
-Subject: fallocate mode flag for "unshare blocks"?
-Message-ID: <20160330182755.GC2236@birch.djwong.org>
-References: <20160302155007.GB7125@infradead.org>
+	Wed, 30 Mar 2016 14:43:29 -0400
+Date: Wed, 30 Mar 2016 18:43:27 +0000
+From: Hugo Mills <hugo@carfax.org.uk>
+To: sri <toyours_sridhar@yahoo.co.in>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: good documentation on btrfs internals and on disk layout
+Message-ID: <20160330184327.GO29474@carfax.org.uk>
+References: <loom.20160330T155403-473@post.gmane.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20160302155007.GB7125@infradead.org>
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="mvuFargmsA+C2jC8"
+In-Reply-To: <loom.20160330T155403-473@post.gmane.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi all,
 
-Christoph and I have been working on adding reflink and CoW support to
-XFS recently.  Since the purpose of (mode 0) fallocate is to make sure
-that future file writes cannot ENOSPC, I extended the XFS fallocate
-handler to unshare any shared blocks via the copy on write mechanism I
-built for it.  However, Christoph shared the following concerns with
-me about that interpretation:
+--mvuFargmsA+C2jC8
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-> I know that I suggested unsharing blocks on fallocate, but it turns out
-> this is causing problems.  Applications expect falloc to be a fast
-> metadata operation, and copying a potentially large number of blocks
-> is against that expextation.  This is especially bad for the NFS
-> server, which should not be blocked for a long time in a synchronous
-> operation.
+On Wed, Mar 30, 2016 at 01:58:03PM +0000, sri wrote:
+> I could find very limited documentation related to on disk layout of btrfs 
+> and how all trees are related to each other. Except wiki which has very 
+> specific top level details I couldn't able to find more details on btrfs.
 > 
-> I think we'll have to remove the unshare and just fail the fallocate
-> for a reflinked region for now.  I still think it makes sense to expose
-> an unshare operation, and we probably should make that another
-> fallocate mode.
+> FSs such as zfs, ext3/4 and XFS there are documents which explains ondisk 
+> layout of the file systems.
+> 
+> Could anybody please provide pointers for the same for better 
+> understanding of btrfs on disk layout and how each tree interacts provided 
+> multiple disks are configured for btrfs.
 
-With that in mind, how do you all think we ought to resolve this?
-Should we add a new fallocate mode flag that means "unshare the shared
-blocks"?  Obviously, this unshare flag cannot be used in conjunction
-with hole punching, zero range, insert range, or collapse range.  This
-breaks the expectation that writing to a file after fallocate won't
-ENOSPC.
+   What are you intending to do? You'll need different things
+depending on whether you are, for example, using the BTRFS_TREE_SEARCH
+ioctl online to gather high-level information, or working your way
+through the datapaths from the superblock right down to individual
+bytes of a file for offline access.
 
-Or is it ok that fallocate could block, potentially for a long time as
-we stream cows through the page cache (or however unshare works
-internally)?  Those same programs might not be expecting fallocate to
-take a long time.
+   If you're using BTRFS_TREE_SEARCH, for example, you won't need to
+know anything about the superblocks or the way that trees are
+implemented. In fact, it's a good idea if you can avoid getting into
+those details at all.
 
-Can we do better than either solution?  It occurs to me that XFS does
-unshare by reading the file data into the pagecache, marking the pages
-dirty, and flushing the dirty pages; performance could be improved by
-skipping the flush at the end.  We won't ENOSPC, because the XFS
-delalloc system is careful enough to check that there are enough free
-blocks to handle both the allocation and the metadata updates.  The
-only gap in this scheme that I can see is if we fallocate, crash, and
-upon restart the program then tries to write without retrying the
-fallocate.  Can we trade some performance for the added requirement
-that we must fallocate -> write -> fsync, and retry the trio if we
-crash before the fsync returns?  I think that's already an implicit
-requirement, so we might be ok here.
+   The high-level view of how the data model fits together is at
+[1]. Individual structures referenced in there are best examined in
+ctree.h for the details, although there's a little more detailed
+description at [2]. There's some documentation on the basic APIs used
+for reading the btrees at [3]. If you really _have_ to access trees
+yourself, the tree structure is at [4], but see my comment above about
+that. The way that the FS-tree metadata is put together to make up
+POSIX directory structures is at [5].
 
-Opinions?  I rather like the last option, though I've only just
-thought of it and have not had time to examine it thoroughly, and it's
-specific to XFS. :)
+   After all that, you're down to looking at the data structures in
+ctree.h, and grepping through the source code to see how they're used
+(which is how [1] was written in the first place).
 
---D
+   Hugo.
+
+[1] https://btrfs.wiki.kernel.org/index.php/Data_Structures
+[2] https://btrfs.wiki.kernel.org/index.php/On-disk_Format
+[3] https://btrfs.wiki.kernel.org/index.php/Code_documentation
+[4] https://btrfs.wiki.kernel.org/index.php/Btrfs_design
+[5] https://btrfs.wiki.kernel.org/index.php/Trees
+
+-- 
+Hugo Mills             | "There's more than one way to do it" is not a
+hugo@... carfax.org.uk | commandment. It is a dire warning.
+http://carfax.org.uk/  |
+PGP: E2AB1DE4          |
+
+--mvuFargmsA+C2jC8
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.12 (GNU/Linux)
+
+iQIcBAEBAgAGBQJW/B5PAAoJEFheFHXiqx3kjSgP/A0Na8FkgQuxwwYLL8+q/7Q/
+2y2aR1N6B1YWSl+8Zoe+m1gzQRmU51B9TXDzEAhFOrRgXRR3hwACBhKnnLn0IEWd
+G0nn6CbO/zyjj9DjVkFcJEiZsQZINvUBVLpeFEW+Pwn4iGSxX9+wgn9R6ZQE5tr0
+xFjM5kEEusAvcKNTlHboBwXLjMS9540Ce+WGphzh6htF//Wij4NZBGj+aW42EGKF
+4o/SPxq1pAMA8K4v9lq93UcrE6sBSxUP4YXEfP2q04tw6stAQBLn0YwL+FVV1psT
+PViTjnkPkzmfFyGT8+AnRoWPQtnqWGiEUD+H4sCeMGgo87ZWnD1tJ9dXtoFlAts4
+IGOY/MzHD7FgQ92BL8StG4+DVcc970Ff4A0TYE7YZK7y7pw3KdFNCpVR3tNMqMID
+Td6/skkdwmnNQz6YpTaBpaYTGG8Y1toPahJhJqbL2PbioQMF6jRC0bLZhTJVTlAQ
+HDByMzg2xsptaivFC+7pnbZzYLS4IzrJGpk+lNiN2F7uMF4q9KxayoS1Hvjnx3qO
+Y7Yh+oStxrAxq0n3QsOlkUkEUECRpCSx9p4Zg9SNbOTygIwJF9uyCOAXWbY/45R2
+atMQqY8dvaBqpiYcqLo2WNhcluhKZAyGPZP/2tuIU+QSkZdq5gwUpx+8Avi5lLYQ
+zbkf7uySzFaP6fi2xAHv
+=sbfD
+-----END PGP SIGNATURE-----
+
+--mvuFargmsA+C2jC8--

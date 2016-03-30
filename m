@@ -1,221 +1,174 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.136]:34036 "EHLO mail.kernel.org"
+Received: from mail.kernel.org ([198.145.29.136]:34106 "EHLO mail.kernel.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751381AbcC3Jih (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 30 Mar 2016 05:38:37 -0400
-Received: from mail.kernel.org (localhost [127.0.0.1])
-	by mail.kernel.org (Postfix) with ESMTP id 5BAE22035D
-	for <linux-btrfs@vger.kernel.org>; Wed, 30 Mar 2016 09:38:35 +0000 (UTC)
-Received: from debian3.lan (dsl-112-39.bl26.telepac.pt [176.78.112.39])
-	(using TLSv1.2 with cipher AES128-SHA256 (128/128 bits))
-	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPSA id 07E8520376
-	for <linux-btrfs@vger.kernel.org>; Wed, 30 Mar 2016 09:38:33 +0000 (UTC)
+	id S1751500AbcC3JjD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 30 Mar 2016 05:39:03 -0400
 From: fdmanana@kernel.org
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] Btrfs: fix file loss caused by fsync after rename and new inode
-Date: Wed, 30 Mar 2016 10:38:30 +0100
-Message-Id: <1459330710-3181-1-git-send-email-fdmanana@kernel.org>
+To: fstests@vger.kernel.org
+Cc: linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@suse.com>
+Subject: [PATCH 1/2] fstests: generic test for fsync after renaming directory
+Date: Wed, 30 Mar 2016 10:38:42 +0100
+Message-Id: <1459330722-3227-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Filipe Manana <fdmanana@suse.com>
 
-If we rename an inode A (be it a file or a directory), create a new
-inode B with the old name of inode A and under the same parent directory,
-at log tree replay time we end up removing inode A completely. If inode A
-is a directory then all its files are gone too.
+Test that if we rename a directory, create a new file or directory that
+has the old name of our former directory and is a child of the same
+parent directory, fsync the new inode, power fail and mount the
+filesystem, we see our first directory with the new name and no files
+under it were lost.
 
-This is reproducible with the following steps, taken from a couple of
-test cases written for fstests which are going to be submitted upstream
-soon:
+This test is motivated by an issue found in btrfs which is fixed by the
+following patch for the linux kernel:
 
-   # Scenario 1
+  "Btrfs: fix file loss caused by fsync after rename and new inode"
 
-   mkfs.btrfs -f /dev/sdc
-   mount /dev/sdc /mnt
-   mkdir -p /mnt/a/x
-   echo "hello" > /mnt/a/x/foo
-   echo "world" > /mnt/a/x/bar
-   sync
-   mv /mnt/a/x /mnt/a/y
-   mkdir /mnt/a/x
-   xfs_io -c fsync /mnt/a/x
-   <power failure happens>
-
-   The next time the fs is mounted, log tree replay happens and
-   the directory "y" does not exist nor do the files "foo" and
-   "bar" exist anywhere (neither in "y" nor in "x", nor the root
-   nor anywhere).
-
-   # Scenario 2
-
-   mkfs.btrfs -f /dev/sdc
-   mount /dev/sdc /mnt
-   mkdir /mnt/a
-   echo "hello" > /mnt/a/foo
-   sync
-   mv /mnt/a/foo /mnt/a/bar
-   echo "world" > /mnt/a/foo
-   xfs_io -c fsync /mnt/a/foo
-   <power failure happens>
-
-   The next time the fs is mounted, log tree replay happens and the
-   file "bar" does not exists anymore. A file with the name "foo"
-   exists and it matches the second file we created.
-
-Fix this by forcing a transaction commit when such cases happen.
-This means we check in the commit root of the subvolume tree if there
-was any other inode with the same reference when the inode we are
-fsync'ing is a new inode (created in the current transaction).
-
-Two test cases for fstests are being submitted upstream.
-
-Cc: stable@vger.kernel.org
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/tree-log.c | 121 ++++++++++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 121 insertions(+)
+ tests/generic/340     | 93 +++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/generic/340.out | 21 ++++++++++++
+ tests/generic/group   |  1 +
+ 3 files changed, 115 insertions(+)
+ create mode 100755 tests/generic/340
+ create mode 100644 tests/generic/340.out
 
-diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index 24d03c7..1142e77 100644
---- a/fs/btrfs/tree-log.c
-+++ b/fs/btrfs/tree-log.c
-@@ -4415,6 +4415,111 @@ static int btrfs_log_trailing_hole(struct btrfs_trans_handle *trans,
- 	return ret;
- }
- 
-+/*
-+ * When we are logging a new inode X, check if it doesn't have a reference that
-+ * matches the reference from some other inode Y which is a directory that was
-+ * created in a past transaction and was renamed. If we don't do this, then at
-+ * log replay time we can lose files inside the directory. Example:
-+ *
-+ * mkdir /mnt/x
-+ * echo "hello world" > /mnt/x/foobar
-+ * sync
-+ * mv /mnt/x /mnt/y
-+ * mkdir /mnt/x                 # or touch /mnt/x
-+ * xfs_io -c fsync /mnt/x
-+ * <power fail>
-+ * mount fs, trigger log replay
-+ *
-+ * After the log replay procedure, we would lose the first directory and all its
-+ * files.
-+ * For the case where inode Y is not a directory we simply end up losing it:
-+ *
-+ * echo "123" > /mnt/foo
-+ * sync
-+ * mv /mnt/foo /mnt/bar
-+ * echo "abc" > /mnt/foo
-+ * xfs_io -c fsync /mnt/foo
-+ * <power fail>
-+ */
-+static int btrfs_check_ref_name_override(struct extent_buffer *eb,
-+					 const int slot,
-+					 const struct btrfs_key *key,
-+					 struct inode *inode)
+diff --git a/tests/generic/340 b/tests/generic/340
+new file mode 100755
+index 0000000..6fe6ee7
+--- /dev/null
++++ b/tests/generic/340
+@@ -0,0 +1,93 @@
++#! /bin/bash
++# FSQA Test No. 340
++#
++# Test that if we rename a directory, create a new file or directory that has
++# the old name of our former directory and is a child of the same parent
++# directory, fsync the new inode, power fail and mount the filesystem, we see
++# our first directory with the new name and no files under it were lost.
++#
++#-----------------------------------------------------------------------
++#
++# Copyright (C) 2016 SUSE Linux Products GmbH. All Rights Reserved.
++# Author: Filipe Manana <fdmanana@suse.com>
++#
++# This program is free software; you can redistribute it and/or
++# modify it under the terms of the GNU General Public License as
++# published by the Free Software Foundation.
++#
++# This program is distributed in the hope that it would be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write the Free Software Foundation,
++# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++#-----------------------------------------------------------------------
++#
++
++seq=`basename $0`
++seqres=$RESULT_DIR/$seq
++echo "QA output created by $seq"
++tmp=/tmp/$$
++status=1	# failure is the default!
++trap "_cleanup; exit \$status" 0 1 2 3 15
++
++_cleanup()
 +{
-+	int ret;
-+	struct btrfs_path *search_path;
-+	char *name = NULL;
-+	u32 name_len = 0;
-+	u32 item_size = btrfs_item_size_nr(eb, slot);
-+	u32 cur_offset = 0;
-+	unsigned long ptr = btrfs_item_ptr_offset(eb, slot);
-+
-+	search_path = btrfs_alloc_path();
-+	if (!search_path)
-+		return -ENOMEM;
-+	search_path->search_commit_root = 1;
-+	search_path->skip_locking = 1;
-+
-+	while (cur_offset < item_size) {
-+		u64 parent;
-+		u32 this_name_len;
-+		u32 this_len;
-+		unsigned long name_ptr;
-+		struct btrfs_dir_item *di;
-+
-+		if (key->type == BTRFS_INODE_REF_KEY) {
-+			struct btrfs_inode_ref *iref;
-+
-+			iref = (struct btrfs_inode_ref *)(ptr + cur_offset);
-+			parent = key->offset;
-+			this_name_len = btrfs_inode_ref_name_len(eb, iref);
-+			name_ptr = (unsigned long)(iref + 1);
-+			this_len = sizeof(*iref) + this_name_len;
-+		} else {
-+			struct btrfs_inode_extref *extref;
-+
-+			extref = (struct btrfs_inode_extref *)(ptr +
-+							       cur_offset);
-+			parent = btrfs_inode_extref_parent(eb, extref);
-+			this_name_len = btrfs_inode_extref_name_len(eb, extref);
-+			name_ptr = (unsigned long)&extref->name;
-+			this_len = sizeof(*extref) + this_name_len;
-+		}
-+
-+		if (this_name_len > name_len) {
-+			char *new_name;
-+
-+			new_name = krealloc(name, this_name_len, GFP_NOFS);
-+			if (!new_name) {
-+				ret = -ENOMEM;
-+				goto out;
-+			}
-+			name_len = this_name_len;
-+			name = new_name;
-+		}
-+
-+		read_extent_buffer(eb, name, name_ptr, this_name_len);
-+		di = btrfs_lookup_dir_item(NULL, BTRFS_I(inode)->root,
-+					   search_path, parent,
-+					   name, this_name_len, 0);
-+		if (di && !IS_ERR(di)) {
-+			ret = 1;
-+			goto out;
-+		} else if (IS_ERR(di)) {
-+			ret = PTR_ERR(di);
-+			goto out;
-+		}
-+		btrfs_release_path(search_path);
-+
-+		cur_offset += this_len;
-+	}
-+	ret = 0;
-+out:
-+	btrfs_free_path(search_path);
-+	kfree(name);
-+	return ret;
++	_cleanup_flakey
++	cd /
++	rm -f $tmp.*
 +}
 +
- /* log a single inode in the tree log.
-  * At least one parent directory for this inode must exist in the tree
-  * or be logged already.
-@@ -4602,6 +4707,22 @@ again:
- 		if (min_key.type == BTRFS_INODE_ITEM_KEY)
- 			need_log_inode_item = false;
- 
-+		if ((min_key.type == BTRFS_INODE_REF_KEY ||
-+		     min_key.type == BTRFS_INODE_EXTREF_KEY) &&
-+		    BTRFS_I(inode)->generation == trans->transid) {
-+			ret = btrfs_check_ref_name_override(path->nodes[0],
-+							    path->slots[0],
-+							    &min_key, inode);
-+			if (ret < 0) {
-+				err = ret;
-+				goto out_unlock;
-+			} else if (ret > 0) {
-+				err = 1;
-+				btrfs_set_log_full_commit(root->fs_info, trans);
-+				goto out_unlock;
-+			}
-+		}
++# get standard environment, filters and checks
++. ./common/rc
++. ./common/filter
++. ./common/dmflakey
 +
- 		/* Skip xattrs, we log them later with btrfs_log_all_xattrs() */
- 		if (min_key.type == BTRFS_XATTR_ITEM_KEY) {
- 			if (ins_nr == 0)
++# real QA test starts here
++_supported_fs generic
++_supported_os Linux
++_require_scratch
++_require_dm_target flakey
++_require_metadata_journaling $SCRATCH_DEV
++
++rm -f $seqres.full
++
++_scratch_mkfs >>$seqres.full 2>&1
++_init_flakey
++_mount_flakey
++
++mkdir -p $SCRATCH_MNT/a/x
++$XFS_IO_PROG -f -c "pwrite -S 0xaf 0 32K" $SCRATCH_MNT/a/x/foo | _filter_xfs_io
++$XFS_IO_PROG -f -c "pwrite -S 0xba 0 32K" $SCRATCH_MNT/a/x/bar | _filter_xfs_io
++# Make sure everything done so far is durably persisted.
++sync
++
++echo "File digests before power failure:"
++md5sum $SCRATCH_MNT/a/x/foo | _filter_scratch
++md5sum $SCRATCH_MNT/a/x/bar | _filter_scratch
++
++# Now rename directory x to y and create a new directory that is also named x.
++# Then fsync the new directory. After a power failure, we must see directories
++# y and x and directory y has the same files (and with the same content) it had
++# before the power failure.
++mv $SCRATCH_MNT/a/x $SCRATCH_MNT/a/y
++mkdir $SCRATCH_MNT/a/x
++$XFS_IO_PROG -c "fsync" $SCRATCH_MNT/a/x
++
++# Simulate a power failure and mount again the filesystem to trigger replay of
++# its journal/log.
++_flakey_drop_and_remount
++
++echo "Directory a/ contents after log replay:"
++ls -R $SCRATCH_MNT/a | _filter_scratch
++
++echo "File digests after log replay:"
++# Must match what we got before the power failure.
++md5sum $SCRATCH_MNT/a/y/foo | _filter_scratch
++md5sum $SCRATCH_MNT/a/y/bar | _filter_scratch
++
++_unmount_flakey
++status=0
++exit
+diff --git a/tests/generic/340.out b/tests/generic/340.out
+new file mode 100644
+index 0000000..f2fe4ca
+--- /dev/null
++++ b/tests/generic/340.out
+@@ -0,0 +1,21 @@
++QA output created by 340
++wrote 32768/32768 bytes at offset 0
++XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
++wrote 32768/32768 bytes at offset 0
++XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
++File digests before power failure:
++b6ef98c3df97dfc5ff17266311c2fb9e  SCRATCH_MNT/a/x/foo
++41107c24d306bdc4fecac4007e9aa214  SCRATCH_MNT/a/x/bar
++Directory a/ contents after log replay:
++SCRATCH_MNT/a:
++x
++y
++
++SCRATCH_MNT/a/x:
++
++SCRATCH_MNT/a/y:
++bar
++foo
++File digests after log replay:
++b6ef98c3df97dfc5ff17266311c2fb9e  SCRATCH_MNT/a/y/foo
++41107c24d306bdc4fecac4007e9aa214  SCRATCH_MNT/a/y/bar
+diff --git a/tests/generic/group b/tests/generic/group
+index cd2a2b7..baaffdf 100644
+--- a/tests/generic/group
++++ b/tests/generic/group
+@@ -342,3 +342,4 @@
+ 337 auto quick metadata
+ 338 auto quick rw
+ 339 auto dir
++340 auto quick metadata
 -- 
 2.7.0.rc3
 

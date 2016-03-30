@@ -1,98 +1,91 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qg0-f46.google.com ([209.85.192.46]:33383 "EHLO
-	mail-qg0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753790AbcC3S7k (ORCPT
+Received: from kolab.zavadatar.com ([46.101.124.0]:33852 "EHLO
+	kolab.zavadatar.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752693AbcC3WRN (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 30 Mar 2016 14:59:40 -0400
-Subject: Re: fallocate mode flag for "unshare blocks"?
-To: "Darrick J. Wong" <darrick.wong@oracle.com>,
-        Christoph Hellwig <hch@infradead.org>
-References: <20160302155007.GB7125@infradead.org>
- <20160330182755.GC2236@birch.djwong.org>
-Cc: xfs@oss.sgi.com, linux-fsdevel <linux-fsdevel@vger.kernel.org>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>, linux-api@vger.kernel.org
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <56FC21DE.7090308@gmail.com>
-Date: Wed, 30 Mar 2016 14:58:38 -0400
+	Wed, 30 Mar 2016 18:17:13 -0400
+Date: Thu, 31 Mar 2016 01:17:08 +0300
+From: Yauhen Kharuzhy <yauhen.kharuzhy@zavadatar.com>
+To: Anand Jain <anand.jain@oracle.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: Global hotspare functionality
+Message-ID: <20160330221708.GA8892@jeknote.loshitsa1.net>
+References: <20160318193937.GA21352@jek-Latitude-E7440>
+ <56FA9420.8020503@oracle.com>
+ <20160329194040.GB27148@jeknote.loshitsa1.net>
 MIME-Version: 1.0
-In-Reply-To: <20160330182755.GC2236@birch.djwong.org>
-Content-Type: text/plain; charset=windows-1252; format=flowed
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20160329194040.GB27148@jeknote.loshitsa1.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2016-03-30 14:27, Darrick J. Wong wrote:
-> Hi all,
->
-> Christoph and I have been working on adding reflink and CoW support to
-> XFS recently.  Since the purpose of (mode 0) fallocate is to make sure
-> that future file writes cannot ENOSPC, I extended the XFS fallocate
-> handler to unshare any shared blocks via the copy on write mechanism I
-> built for it.  However, Christoph shared the following concerns with
-> me about that interpretation:
->
->> I know that I suggested unsharing blocks on fallocate, but it turns out
->> this is causing problems.  Applications expect falloc to be a fast
->> metadata operation, and copying a potentially large number of blocks
->> is against that expextation.  This is especially bad for the NFS
->> server, which should not be blocked for a long time in a synchronous
->> operation.
->>
->> I think we'll have to remove the unshare and just fail the fallocate
->> for a reflinked region for now.  I still think it makes sense to expose
->> an unshare operation, and we probably should make that another
->> fallocate mode.
->
-> With that in mind, how do you all think we ought to resolve this?
-> Should we add a new fallocate mode flag that means "unshare the shared
-> blocks"?  Obviously, this unshare flag cannot be used in conjunction
-> with hole punching, zero range, insert range, or collapse range.  This
-> breaks the expectation that writing to a file after fallocate won't
-> ENOSPC.
->
-> Or is it ok that fallocate could block, potentially for a long time as
-> we stream cows through the page cache (or however unshare works
-> internally)?  Those same programs might not be expecting fallocate to
-> take a long time.
-Nothing that I can find in the man-pages or API documentation for 
-Linux's fallocate explicitly says that it will be fast.  There are bits 
-that say it should be efficient, but that is not itself well defined 
-(given context, I would assume it to mean that it doesn't use as much 
-I/O as writing out that many bytes of zero data, not necessarily that it 
-will return quickly).  We may have done a lot to make it fast, but that 
-doesn't mean by any measure that we guarantee it anywhere (at least, we 
-don't guarantee it anywhere I can find).
->
-> Can we do better than either solution?  It occurs to me that XFS does
-> unshare by reading the file data into the pagecache, marking the pages
-> dirty, and flushing the dirty pages; performance could be improved by
-> skipping the flush at the end.  We won't ENOSPC, because the XFS
-> delalloc system is careful enough to check that there are enough free
-> blocks to handle both the allocation and the metadata updates.  The
-> only gap in this scheme that I can see is if we fallocate, crash, and
-> upon restart the program then tries to write without retrying the
-> fallocate.  Can we trade some performance for the added requirement
-> that we must fallocate -> write -> fsync, and retry the trio if we
-> crash before the fsync returns?  I think that's already an implicit
-> requirement, so we might be ok here.
-Most of the software I've seen that doesn't use fallocate like this is 
-either doing odd things otherwise, or is just making sure it has space 
-for temporary files, so I think it is probably safe to require this.
->
-> Opinions?  I rather like the last option, though I've only just
-> thought of it and have not had time to examine it thoroughly, and it's
-> specific to XFS. :)
-Personally I'm indifferent about how we handle it, as long as it still 
-maintains the normal semantics, and it works for reflinked ranges 
-(seemingly arbitrary failures for a range in a file should be handled 
-properly by an application, but that doesn't mean we shouldn't try to 
-reduce their occurrence).
+On Tue, Mar 29, 2016 at 10:40:40PM +0300, Yauhen Kharuzhy wrote:
+> Hi.
+> 
+> I am testing hotspare v2 on kernel v4.4.5 (I will try latest Chris' tree later)
+> now with lockdep debugging enabled. At starting of replacement, lockdep warning is displayed,
+> because kstrdup() is called with GFP_NOFS inside of rcu_read_lock/unlock()
+> block (GFP_NOFS can sleep).
 
-I would like to comment that it would be nice to have an fallocate 
-option to force a range to become unshared, but I personally feel we 
-should have that alongside the regular functionality, not in-place of it.
+Similar thing in the btrfs_auto_replace_start(): rcu_str_deref() without
+rcu_read_lock():
 
-It's probably also worth noting that reflinks technically break 
-expectations WRT FALLOC_FL_PUNCH_HOLE already.  Most apps I see that use 
-PUNCH_HOLE seem to expect it to free space, which won't happen if the 
-range is reflinked elsewhere.  There is of course nothing that says that 
-it will free space, but that doesn't change user expectations.
+int btrfs_auto_replace_start(struct btrfs_root *root,
+                                struct btrfs_device *src_device)
+{
+        int ret;
+        char *tgt_path;
+
+        if (btrfs_get_spare_device(&tgt_path)) {
+                btrfs_err(root->fs_info,
+                        "No spare device found/configured in the kernel");
+                return -EINVAL;
+        }
+
+        ret = btrfs_dev_replace_start(root, tgt_path,
+                                        src_device->devid,
+                                        rcu_str_deref(src_device->name),
+                BTRFS_IOCTL_DEV_REPLACE_CONT_READING_FROM_SRCDEV_MODE_AVOID);
+        if (ret)
+                btrfs_put_spare_device(tgt_path);
+
+        kfree(tgt_path);
+
+        return 0;
+}
+
+[  156.168133] ===============================
+[  156.168963] [ INFO: suspicious RCU usage. ]
+[  156.169822] 4.4.5-scst31x+ #20 Not tainted
+[  156.170656] -------------------------------
+[  156.171488] fs/btrfs/dev-replace.c:990 suspicious rcu_dereference_check() usage!
+[  156.172920] 
+[  156.172920] other info that might help us debug this:
+[  156.172920] 
+[  156.174825] 
+[  156.174825] rcu_scheduler_active = 1, debug_locks = 0
+[  156.176152] 1 lock held by btrfs-casualty/4807:
+[  156.181917]  #0:  (&fs_info->casualty_mutex){+.+...}, at: [<ffffffffa0165364>] casualty_kthread+0x64/0x390 [btrfs]
+[  156.193511] 
+[  156.193511] stack backtrace:
+[  156.194680] CPU: 0 PID: 4807 Comm: btrfs-casualty Not tainted 4.4.5-scst31x+ #20
+[  156.201650] Hardware name: innotek GmbH VirtualBox/VirtualBox, BIOS VirtualBox 12/01/2006
+[  156.219100]  0000000000000000 ffff88005d79fda0 ffffffff813529e3 ffff88005e19c600
+[  156.221216]  0000000000000001 ffff88005d79fdd0 ffffffff810d6407 0000000000000000
+[  156.224287]  0000000000000000 ffff88005f4a0c00 ffff88005da36000 ffff88005d79fe08
+[  156.226375] Call Trace:
+[  156.227078]  [<ffffffff813529e3>] dump_stack+0x85/0xc2
+[  156.228152]  [<ffffffff810d6407>] lockdep_rcu_suspicious+0xd7/0x110
+[  156.229418]  [<ffffffffa01e6236>] btrfs_auto_replace_start+0xa6/0xd0 [btrfs]
+[  156.230714]  [<ffffffffa01655c4>] casualty_kthread+0x2c4/0x390 [btrfs]
+[  156.231915]  [<ffffffffa016549c>] ? casualty_kthread+0x19c/0x390 [btrfs]
+[  156.233105]  [<ffffffffa0165300>] ? btrfs_check_devices+0x200/0x200 [btrfs]
+[  156.234339]  [<ffffffff810a70df>] kthread+0xef/0x110
+[  156.235309]  [<ffffffff810dc081>] ? __raw_callee_save___pv_queued_spin_unlock+0x11/0x20
+[  156.236940]  [<ffffffff810a6ff0>] ? kthread_create_on_node+0x200/0x200
+[  156.239489]  [<ffffffff81637c2f>] ret_from_fork+0x3f/0x70
+[  156.240533]  [<ffffffff810a6ff0>] ? kthread_create_on_node+0x200/0x200
+
+
+-- 
+Yauhen Kharuzhy

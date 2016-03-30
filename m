@@ -1,28 +1,28 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mga01.intel.com ([192.55.52.88]:8650 "EHLO mga01.intel.com"
+Received: from mga11.intel.com ([192.55.52.93]:49448 "EHLO mga11.intel.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750841AbcC3JqY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 30 Mar 2016 05:46:24 -0400
-Date: Wed, 30 Mar 2016 17:45:22 +0800
+	id S1751212AbcC3KLh (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 30 Mar 2016 06:11:37 -0400
+Date: Wed, 30 Mar 2016 18:10:18 +0800
 From: kbuild test robot <lkp@intel.com>
 To: Qu Wenruo <quwenruo@cn.fujitsu.com>
 Cc: kbuild-all@01.org, linux-btrfs@vger.kernel.org,
         Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
-Subject: Re: [PATCH v9 15/19] btrfs: dedupe: Introduce interfaces to resume
- and cleanup dedupe info
-Message-ID: <201603301719.XCv31jkn%fengguang.wu@intel.com>
+Subject: Re: [PATCH v9 02/19] btrfs: dedupe: Introduce function to initialize
+ dedupe info
+Message-ID: <201603301838.ISsm6oFb%fengguang.wu@intel.com>
 MIME-Version: 1.0
-Content-Type: multipart/mixed; boundary="cNdxnHkX5QqsyA0e"
-In-Reply-To: <1459324574-28063-16-git-send-email-quwenruo@cn.fujitsu.com>
+Content-Type: multipart/mixed; boundary="PNTmBPCT7hxwcZjr"
+In-Reply-To: <1459324574-28063-3-git-send-email-quwenruo@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---cNdxnHkX5QqsyA0e
+--PNTmBPCT7hxwcZjr
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
 
-Hi Qu,
+Hi Wang,
 
 [auto build test ERROR on btrfs/next]
 [also build test ERROR on v4.6-rc1 next-20160330]
@@ -35,21 +35,26 @@ reproduce:
         # save the attached .config to linux build tree
         make ARCH=i386 
 
+Note: the linux-review/Qu-Wenruo/Btrfs-dedupe-framework/20160330-160940 HEAD a69abdf2c788b7de14a7dc0c237c1df545d13175 builds fine.
+      It only hurts bisectibility.
+
 All errors (new ones prefixed by >>):
 
-   fs/built-in.o: In function `check_dedupe_parameter':
->> dedupe.c:(.text+0x3675e5): undefined reference to `__udivdi3'
+   fs/built-in.o: In function `btrfs_dedupe_enable':
+>> (.text+0x366ac1): undefined reference to `btrfs_dedupe_disable'
+   fs/built-in.o: In function `btrfs_dedupe_enable':
+   (.text+0x366b8b): undefined reference to `__udivdi3'
 
 ---
 0-DAY kernel test infrastructure                Open Source Technology Center
 https://lists.01.org/pipermail/kbuild-all                   Intel Corporation
 
---cNdxnHkX5QqsyA0e
+--PNTmBPCT7hxwcZjr
 Content-Type: application/octet-stream
 Content-Disposition: attachment; filename=".config.gz"
 Content-Transfer-Encoding: base64
 
-H4sICPWY+1YAAy5jb25maWcAjDzLcuO2svt8hWpyFzmLyfgdp255AYGghIgkOAAoyd6wHFuT
+H4sICEeh+1YAAy5jb25maWcAjDzLcuO2svt8hWpyFzmLyfgdp255AYGghIgkOAAoyd6wHFuT
 uOKxc2w5j78/3QApAmDTSTYZdTdejX6j6W+/+XbG3vbPX2/3D3e3j49/z37ZPe1ebve7+9mX
 h8fd/88yNauUnYlM2u+BuHh4evvr08Pp5cXs7Pvz748+vtxdzFa7l6fd44w/P315+OUNRj88
 P33zLVBzVeVy0V6czaWdPbzOnp73s9fd/psOvr28aE9Prv4Ofg8/ZGWsbriVqmozwVUm9IBU
@@ -553,4 +558,4 @@ wUAZBPJK1iEI/dWTJ8foKMEb3htXJldt4v/F8FNTmfuVoRicz6JoFeZ09xC76zB+dY9lRhxA
 qzKf6bOMv69XqhvcyXFbh7or/XtuKV4PpOMst+UeI2wqVmLNnwA05B9gvg4PAiZ7bvBfMsNO
 Hk2eAQA=
 
---cNdxnHkX5QqsyA0e--
+--PNTmBPCT7hxwcZjr--

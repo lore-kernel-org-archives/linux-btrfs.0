@@ -1,41 +1,35 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from torres.zugschlus.de ([85.214.131.164]:53680 "EHLO
+Received: from torres.zugschlus.de ([85.214.131.164]:53686 "EHLO
 	torres.zugschlus.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751926AbcC3G2j (ORCPT
+	with ESMTP id S1752677AbcC3GcK (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 30 Mar 2016 02:28:39 -0400
+	Wed, 30 Mar 2016 02:32:10 -0400
 Received: from mh by torres.zugschlus.de with local (Exim 4.84_2)
 	(envelope-from <mh+linux-btrfs@zugschlus.de>)
-	id 1al9cL-0006uu-Mj
-	for linux-btrfs@vger.kernel.org; Wed, 30 Mar 2016 08:28:37 +0200
-Date: Wed, 30 Mar 2016 08:28:37 +0200
+	id 1al9fk-0006wE-Bh
+	for linux-btrfs@vger.kernel.org; Wed, 30 Mar 2016 08:32:08 +0200
+Date: Wed, 30 Mar 2016 08:32:08 +0200
 From: Marc Haber <mh+linux-btrfs@zugschlus.de>
-To: linux-btrfs@vger.kernel.org
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Subject: Re: "bad metadata" not fixed by btrfs repair
-Message-ID: <20160330062837.GG9342@torres.zugschlus.de>
+Message-ID: <20160330063208.GH9342@torres.zugschlus.de>
 References: <20160328143714.GZ10135@torres.zugschlus.de>
- <56F98784.8090700@gmail.com>
- <20160329064351.GA28990@torres.zugschlus.de>
+ <20160328184237.GA10135@torres.zugschlus.de>
+ <21f3d8f6-3447-109f-d21e-0e7a696c94e2@mokrynskyi.com>
+ <CAJCQCtQ-hD54h4g+pXFXXqfjk=aoC-7T3ejfeMC4AFPw8pDyjw@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=utf-8
-In-Reply-To: <20160329064351.GA28990@torres.zugschlus.de>
+In-Reply-To: <CAJCQCtQ-hD54h4g+pXFXXqfjk=aoC-7T3ejfeMC4AFPw8pDyjw@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Mar 29, 2016 at 08:43:51AM +0200, Marc Haber wrote:
-> On Mon, Mar 28, 2016 at 03:35:32PM -0400, Austin S. Hemmelgarn wrote:
-> > As far as what the kernel is involved with, the easy way to check is if it's
-> > operating on a mounted filesystem or not.  If it only operates on mounted
-> > filesystems, it almost certainly goes through the kernel, if it only
-> > operates on unmounted filesystems, it's almost certainly done in userspace
-> > (except dev scan and technically fi show).
-> 
-> Then btrfs check is a userspace-only matter, as it wants the fs
-> unmounted, and it is irrelevant that I did btrfs check from a rescue
-> system with an older kernel, 3.16 if I recall correctly.
+On Mon, Mar 28, 2016 at 02:46:54PM -0600, Chris Murphy wrote:
+> http://git.kernel.org/cgit/linux/kernel/git/kdave/btrfs-progs.git/tree/cmds-check.c
+> line 7722 discusses this error message and it looks like there's no
+> repair function for it yet; uncertain what problems can result from
+> this.
 
-And it also means that I should not try btrfs balance from grml
-because btrfs balance goes through the kernel code.
+This basically means that I am ripe for a new mkfs.btrfs, right?
 
 Greetings
 Marc

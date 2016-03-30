@@ -1,212 +1,232 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.136]:58528 "EHLO mail.kernel.org"
+Received: from mail.kernel.org ([198.145.29.136]:35547 "EHLO mail.kernel.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750717AbcCXRG6 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 24 Mar 2016 13:06:58 -0400
+	id S1751972AbcC3Jyr (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 30 Mar 2016 05:54:47 -0400
 Received: from mail.kernel.org (localhost [127.0.0.1])
-	by mail.kernel.org (Postfix) with ESMTP id DBC5D20376
-	for <linux-btrfs@vger.kernel.org>; Thu, 24 Mar 2016 17:06:56 +0000 (UTC)
-Received: from debian3.lan (unknown [176.78.112.39])
-	(using TLSv1.2 with cipher AES128-SHA256 (128/128 bits))
+	by mail.kernel.org (Postfix) with ESMTP id 8E28F20361
+	for <linux-btrfs@vger.kernel.org>; Wed, 30 Mar 2016 09:54:45 +0000 (UTC)
+Received: from mail-ig0-f176.google.com (mail-ig0-f176.google.com [209.85.213.176])
+	(using TLSv1.2 with cipher AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPSA id 3FEC120351
-	for <linux-btrfs@vger.kernel.org>; Thu, 24 Mar 2016 17:06:55 +0000 (UTC)
-From: fdmanana@kernel.org
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] Btrfs: fix unreplayable log after snapshot deletion and parent re-creation
-Date: Thu, 24 Mar 2016 17:06:51 +0000
-Message-Id: <1458839211-11600-1-git-send-email-fdmanana@kernel.org>
+	by mail.kernel.org (Postfix) with ESMTPSA id 439362026F
+	for <linux-btrfs@vger.kernel.org>; Wed, 30 Mar 2016 09:54:44 +0000 (UTC)
+Received: by mail-ig0-f176.google.com with SMTP id cl4so96940979igb.0
+        for <linux-btrfs@vger.kernel.org>; Wed, 30 Mar 2016 02:54:44 -0700 (PDT)
+MIME-Version: 1.0
+In-Reply-To: <1458839211-11600-1-git-send-email-fdmanana@kernel.org>
+References: <1458839211-11600-1-git-send-email-fdmanana@kernel.org>
+Date: Wed, 30 Mar 2016 10:54:43 +0100
+Message-ID: <CAL3q7H4mJeVL_adET3tZWY5WFfJZSE02c7J2MRJnZwAD4-D7dw@mail.gmail.com>
+Subject: Re: [PATCH] Btrfs: fix unreplayable log after snapshot deletion and
+ parent re-creation
+From: Filipe Manana <fdmanana@kernel.org>
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Filipe Manana <fdmanana@suse.com>
+On Thu, Mar 24, 2016 at 5:06 PM,  <fdmanana@kernel.org> wrote:
+> From: Filipe Manana <fdmanana@suse.com>
+>
+> If we delete a snapshot, delete its parent directory, create a new
+> directory with the same name as that parent and then fsync either that
+> new directory or some file inside it, we end up with a log tree that
+> is not possible to replay because the log replay procedure interprets
+> the snapshot's directory item as a regular entry and not as a root
+> item, resulting in the following failure and trace when mounting the
+> filesystem:
+>
+> [52174.510532] BTRFS info (device dm-0): failed to delete reference to snap, inode 257 parent 257
+> [52174.512570] ------------[ cut here ]------------
+> [52174.513278] WARNING: CPU: 12 PID: 28024 at fs/btrfs/inode.c:3986 __btrfs_unlink_inode+0x178/0x351 [btrfs]()
+> [52174.514681] BTRFS: Transaction aborted (error -2)
+> [52174.515630] Modules linked in: btrfs dm_flakey dm_mod overlay crc32c_generic ppdev xor raid6_pq acpi_cpufreq parport_pc tpm_tis sg parport tpm evdev i2c_piix4 proc
+> [52174.521568] CPU: 12 PID: 28024 Comm: mount Tainted: G        W       4.5.0-rc6-btrfs-next-27+ #1
+> [52174.522805] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS by qemu-project.org 04/01/2014
+> [52174.524053]  0000000000000000 ffff8801df2a7710 ffffffff81264e93 ffff8801df2a7758
+> [52174.524053]  0000000000000009 ffff8801df2a7748 ffffffff81051618 ffffffffa03591cd
+> [52174.524053]  00000000fffffffe ffff88015e6e5000 ffff88016dbc3c88 ffff88016dbc3c88
+> [52174.524053] Call Trace:
+> [52174.524053]  [<ffffffff81264e93>] dump_stack+0x67/0x90
+> [52174.524053]  [<ffffffff81051618>] warn_slowpath_common+0x99/0xb2
+> [52174.524053]  [<ffffffffa03591cd>] ? __btrfs_unlink_inode+0x178/0x351 [btrfs]
+> [52174.524053]  [<ffffffff81051679>] warn_slowpath_fmt+0x48/0x50
+> [52174.524053]  [<ffffffffa03591cd>] __btrfs_unlink_inode+0x178/0x351 [btrfs]
+> [52174.524053]  [<ffffffff8118f5e9>] ? iput+0xb0/0x284
+> [52174.524053]  [<ffffffffa0359fe8>] btrfs_unlink_inode+0x1c/0x3d [btrfs]
+> [52174.524053]  [<ffffffffa038631e>] check_item_in_log+0x1fe/0x29b [btrfs]
+> [52174.524053]  [<ffffffffa0386522>] replay_dir_deletes+0x167/0x1cf [btrfs]
+> [52174.524053]  [<ffffffffa038739e>] fixup_inode_link_count+0x289/0x2aa [btrfs]
+> [52174.524053]  [<ffffffffa038748a>] fixup_inode_link_counts+0xcb/0x105 [btrfs]
+> [52174.524053]  [<ffffffffa038a5ec>] btrfs_recover_log_trees+0x258/0x32c [btrfs]
+> [52174.524053]  [<ffffffffa03885b2>] ? replay_one_extent+0x511/0x511 [btrfs]
+> [52174.524053]  [<ffffffffa034f288>] open_ctree+0x1dd4/0x21b9 [btrfs]
+> [52174.524053]  [<ffffffffa032b753>] btrfs_mount+0x97e/0xaed [btrfs]
+> [52174.524053]  [<ffffffff8108e1b7>] ? trace_hardirqs_on+0xd/0xf
+> [52174.524053]  [<ffffffff8117bafa>] mount_fs+0x67/0x131
+> [52174.524053]  [<ffffffff81193003>] vfs_kern_mount+0x6c/0xde
+> [52174.524053]  [<ffffffffa032af81>] btrfs_mount+0x1ac/0xaed [btrfs]
+> [52174.524053]  [<ffffffff8108e1b7>] ? trace_hardirqs_on+0xd/0xf
+> [52174.524053]  [<ffffffff8108c262>] ? lockdep_init_map+0xb9/0x1b3
+> [52174.524053]  [<ffffffff8117bafa>] mount_fs+0x67/0x131
+> [52174.524053]  [<ffffffff81193003>] vfs_kern_mount+0x6c/0xde
+> [52174.524053]  [<ffffffff8119590f>] do_mount+0x8a6/0x9e8
+> [52174.524053]  [<ffffffff811358dd>] ? strndup_user+0x3f/0x59
+> [52174.524053]  [<ffffffff81195c65>] SyS_mount+0x77/0x9f
+> [52174.524053]  [<ffffffff814935d7>] entry_SYSCALL_64_fastpath+0x12/0x6b
+> [52174.561288] ---[ end trace 6b53049efb1a3ea6 ]---
+>
+> So when we delete a directory we need to propagate its last_unlink_trans
+> value (updated on snapshot deletion) to its parent and then check at
+> fsync time for it and fallback for a transaction commit.
+>
+> A test case for fstests follows.
+>
+>   seq=`basename $0`
+>   seqres=$RESULT_DIR/$seq
+>   echo "QA output created by $seq"
+>   tmp=/tmp/$$
+>   status=1      # failure is the default!
+>   trap "_cleanup; exit \$status" 0 1 2 3 15
+>
+>   _cleanup()
+>   {
+>       _cleanup_flakey
+>       cd /
+>       rm -f $tmp.*
+>   }
+>
+>   # get standard environment, filters and checks
+>   . ./common/rc
+>   . ./common/filter
+>   . ./common/dmflakey
+>
+>   # real QA test starts here
+>   _supported_fs btrfs
+>   _supported_os Linux
+>   _require_scratch
+>   _require_dm_target flakey
+>   _require_metadata_journaling $SCRATCH_DEV
+>
+>   rm -f $seqres.full
+>
+>   _populate_fs()
+>   {
+>       _run_btrfs_util_prog subvolume snapshot $SCRATCH_MNT \
+>       $SCRATCH_MNT/testdir/snap
+>       _run_btrfs_util_prog subvolume delete $SCRATCH_MNT/testdir/snap
+>       rmdir $SCRATCH_MNT/testdir
+>       mkdir $SCRATCH_MNT/testdir
+>   }
+>
+>   _scratch_mkfs >>$seqres.full 2>&1
+>   _init_flakey
+>   _mount_flakey
+>
+>   mkdir $SCRATCH_MNT/testdir
+>   _populate_fs
+>   $XFS_IO_PROG -c "fsync" $SCRATCH_MNT/testdir
+>   _flakey_drop_and_remount
+>
+>   echo "Filesystem contents after the first log replay:"
+>   ls -R $SCRATCH_MNT | _filter_scratch
+>
+>   # Now do the same as before but instead of doing an fsync against the directory,
+>   # do an fsync against a file inside the directory.
+>
+>   _populate_fs
+>   touch $SCRATCH_MNT/testdir/foobar
+>   $XFS_IO_PROG -c "fsync" $SCRATCH_MNT/testdir/foobar
+>   _flakey_drop_and_remount
+>
+>   echo "Filesystem contents after the second log replay:"
+>   ls -R $SCRATCH_MNT | _filter_scratch
+>
+>   _unmount_flakey
+>   status=0
+>   exit
+>
+> Signed-off-by: Filipe Manana <fdmanana@suse.com>
 
-If we delete a snapshot, delete its parent directory, create a new
-directory with the same name as that parent and then fsync either that
-new directory or some file inside it, we end up with a log tree that
-is not possible to replay because the log replay procedure interprets
-the snapshot's directory item as a regular entry and not as a root
-item, resulting in the following failure and trace when mounting the
-filesystem:
+This patch is no longer needed. It is replaced by the following new patch:
 
-[52174.510532] BTRFS info (device dm-0): failed to delete reference to snap, inode 257 parent 257
-[52174.512570] ------------[ cut here ]------------
-[52174.513278] WARNING: CPU: 12 PID: 28024 at fs/btrfs/inode.c:3986 __btrfs_unlink_inode+0x178/0x351 [btrfs]()
-[52174.514681] BTRFS: Transaction aborted (error -2)
-[52174.515630] Modules linked in: btrfs dm_flakey dm_mod overlay crc32c_generic ppdev xor raid6_pq acpi_cpufreq parport_pc tpm_tis sg parport tpm evdev i2c_piix4 proc
-[52174.521568] CPU: 12 PID: 28024 Comm: mount Tainted: G        W       4.5.0-rc6-btrfs-next-27+ #1
-[52174.522805] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS by qemu-project.org 04/01/2014
-[52174.524053]  0000000000000000 ffff8801df2a7710 ffffffff81264e93 ffff8801df2a7758
-[52174.524053]  0000000000000009 ffff8801df2a7748 ffffffff81051618 ffffffffa03591cd
-[52174.524053]  00000000fffffffe ffff88015e6e5000 ffff88016dbc3c88 ffff88016dbc3c88
-[52174.524053] Call Trace:
-[52174.524053]  [<ffffffff81264e93>] dump_stack+0x67/0x90
-[52174.524053]  [<ffffffff81051618>] warn_slowpath_common+0x99/0xb2
-[52174.524053]  [<ffffffffa03591cd>] ? __btrfs_unlink_inode+0x178/0x351 [btrfs]
-[52174.524053]  [<ffffffff81051679>] warn_slowpath_fmt+0x48/0x50
-[52174.524053]  [<ffffffffa03591cd>] __btrfs_unlink_inode+0x178/0x351 [btrfs]
-[52174.524053]  [<ffffffff8118f5e9>] ? iput+0xb0/0x284
-[52174.524053]  [<ffffffffa0359fe8>] btrfs_unlink_inode+0x1c/0x3d [btrfs]
-[52174.524053]  [<ffffffffa038631e>] check_item_in_log+0x1fe/0x29b [btrfs]
-[52174.524053]  [<ffffffffa0386522>] replay_dir_deletes+0x167/0x1cf [btrfs]
-[52174.524053]  [<ffffffffa038739e>] fixup_inode_link_count+0x289/0x2aa [btrfs]
-[52174.524053]  [<ffffffffa038748a>] fixup_inode_link_counts+0xcb/0x105 [btrfs]
-[52174.524053]  [<ffffffffa038a5ec>] btrfs_recover_log_trees+0x258/0x32c [btrfs]
-[52174.524053]  [<ffffffffa03885b2>] ? replay_one_extent+0x511/0x511 [btrfs]
-[52174.524053]  [<ffffffffa034f288>] open_ctree+0x1dd4/0x21b9 [btrfs]
-[52174.524053]  [<ffffffffa032b753>] btrfs_mount+0x97e/0xaed [btrfs]
-[52174.524053]  [<ffffffff8108e1b7>] ? trace_hardirqs_on+0xd/0xf
-[52174.524053]  [<ffffffff8117bafa>] mount_fs+0x67/0x131
-[52174.524053]  [<ffffffff81193003>] vfs_kern_mount+0x6c/0xde
-[52174.524053]  [<ffffffffa032af81>] btrfs_mount+0x1ac/0xaed [btrfs]
-[52174.524053]  [<ffffffff8108e1b7>] ? trace_hardirqs_on+0xd/0xf
-[52174.524053]  [<ffffffff8108c262>] ? lockdep_init_map+0xb9/0x1b3
-[52174.524053]  [<ffffffff8117bafa>] mount_fs+0x67/0x131
-[52174.524053]  [<ffffffff81193003>] vfs_kern_mount+0x6c/0xde
-[52174.524053]  [<ffffffff8119590f>] do_mount+0x8a6/0x9e8
-[52174.524053]  [<ffffffff811358dd>] ? strndup_user+0x3f/0x59
-[52174.524053]  [<ffffffff81195c65>] SyS_mount+0x77/0x9f
-[52174.524053]  [<ffffffff814935d7>] entry_SYSCALL_64_fastpath+0x12/0x6b
-[52174.561288] ---[ end trace 6b53049efb1a3ea6 ]---
+https://patchwork.kernel.org/patch/8694271/
 
-So when we delete a directory we need to propagate its last_unlink_trans
-value (updated on snapshot deletion) to its parent and then check at
-fsync time for it and fallback for a transaction commit.
+Which besides fixing this problem, fixes some other much more serious.
+Thanks.
 
-A test case for fstests follows.
-
-  seq=`basename $0`
-  seqres=$RESULT_DIR/$seq
-  echo "QA output created by $seq"
-  tmp=/tmp/$$
-  status=1	# failure is the default!
-  trap "_cleanup; exit \$status" 0 1 2 3 15
-
-  _cleanup()
-  {
-      _cleanup_flakey
-      cd /
-      rm -f $tmp.*
-  }
-
-  # get standard environment, filters and checks
-  . ./common/rc
-  . ./common/filter
-  . ./common/dmflakey
-
-  # real QA test starts here
-  _supported_fs btrfs
-  _supported_os Linux
-  _require_scratch
-  _require_dm_target flakey
-  _require_metadata_journaling $SCRATCH_DEV
-
-  rm -f $seqres.full
-
-  _populate_fs()
-  {
-      _run_btrfs_util_prog subvolume snapshot $SCRATCH_MNT \
-      $SCRATCH_MNT/testdir/snap
-      _run_btrfs_util_prog subvolume delete $SCRATCH_MNT/testdir/snap
-      rmdir $SCRATCH_MNT/testdir
-      mkdir $SCRATCH_MNT/testdir
-  }
-
-  _scratch_mkfs >>$seqres.full 2>&1
-  _init_flakey
-  _mount_flakey
-
-  mkdir $SCRATCH_MNT/testdir
-  _populate_fs
-  $XFS_IO_PROG -c "fsync" $SCRATCH_MNT/testdir
-  _flakey_drop_and_remount
-
-  echo "Filesystem contents after the first log replay:"
-  ls -R $SCRATCH_MNT | _filter_scratch
-
-  # Now do the same as before but instead of doing an fsync against the directory,
-  # do an fsync against a file inside the directory.
-
-  _populate_fs
-  touch $SCRATCH_MNT/testdir/foobar
-  $XFS_IO_PROG -c "fsync" $SCRATCH_MNT/testdir/foobar
-  _flakey_drop_and_remount
-
-  echo "Filesystem contents after the second log replay:"
-  ls -R $SCRATCH_MNT | _filter_scratch
-
-  _unmount_flakey
-  status=0
-  exit
-
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
- fs/btrfs/inode.c    | 22 +++++++++++++++++++++-
- fs/btrfs/tree-log.c |  6 +++++-
- 2 files changed, 26 insertions(+), 2 deletions(-)
-
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 41a5688..b5c23b5 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -4173,6 +4173,7 @@ static int btrfs_rmdir(struct inode *dir, struct dentry *dentry)
- 	int err = 0;
- 	struct btrfs_root *root = BTRFS_I(dir)->root;
- 	struct btrfs_trans_handle *trans;
-+	u64 last_unlink_trans;
- 
- 	if (inode->i_size > BTRFS_EMPTY_DIR_SIZE)
- 		return -ENOTEMPTY;
-@@ -4195,11 +4196,30 @@ static int btrfs_rmdir(struct inode *dir, struct dentry *dentry)
- 	if (err)
- 		goto out;
- 
-+	last_unlink_trans = BTRFS_I(inode)->last_unlink_trans;
-+
- 	/* now the directory is empty */
- 	err = btrfs_unlink_inode(trans, root, dir, d_inode(dentry),
- 				 dentry->d_name.name, dentry->d_name.len);
--	if (!err)
-+	if (!err) {
- 		btrfs_i_size_write(inode, 0);
-+		/*
-+		 * Propagate the last_unlink_trans value of the deleted dir to
-+		 * its parent directory. This is to prevent an unrecoverable
-+		 * log tree in the case we do something like this:
-+		 * 1) create dir foo
-+		 * 2) create snapshot under dir foo
-+		 * 3) delete the snapshot
-+		 * 4) rmdir foo
-+		 * 5) mkdir foo
-+		 * 6) fsync foo or some file inside foo
-+		 */
-+		if (last_unlink_trans >= trans->transid) {
-+			mutex_lock(&BTRFS_I(dir)->log_mutex);
-+			BTRFS_I(dir)->last_unlink_trans = last_unlink_trans;
-+			mutex_unlock(&BTRFS_I(dir)->log_mutex);
-+		}
-+	}
- out:
- 	btrfs_end_transaction(trans, root);
- 	btrfs_btree_balance_dirty(root);
-diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index 24d03c7..d3f38dd 100644
---- a/fs/btrfs/tree-log.c
-+++ b/fs/btrfs/tree-log.c
-@@ -4875,8 +4875,12 @@ static noinline int check_parent_dirs_for_sync(struct btrfs_trans_handle *trans,
- 		if (!parent || d_really_is_negative(parent) || sb != d_inode(parent)->i_sb)
- 			break;
- 
--		if (IS_ROOT(parent))
-+		if (IS_ROOT(parent)) {
-+			inode = d_inode(parent);
-+			if (btrfs_must_commit_transaction(trans, inode))
-+				ret = 1;
- 			break;
-+		}
- 
- 		parent = dget_parent(parent);
- 		dput(old_parent);
--- 
-2.7.0.rc3
-
+> ---
+>  fs/btrfs/inode.c    | 22 +++++++++++++++++++++-
+>  fs/btrfs/tree-log.c |  6 +++++-
+>  2 files changed, 26 insertions(+), 2 deletions(-)
+>
+> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+> index 41a5688..b5c23b5 100644
+> --- a/fs/btrfs/inode.c
+> +++ b/fs/btrfs/inode.c
+> @@ -4173,6 +4173,7 @@ static int btrfs_rmdir(struct inode *dir, struct dentry *dentry)
+>         int err = 0;
+>         struct btrfs_root *root = BTRFS_I(dir)->root;
+>         struct btrfs_trans_handle *trans;
+> +       u64 last_unlink_trans;
+>
+>         if (inode->i_size > BTRFS_EMPTY_DIR_SIZE)
+>                 return -ENOTEMPTY;
+> @@ -4195,11 +4196,30 @@ static int btrfs_rmdir(struct inode *dir, struct dentry *dentry)
+>         if (err)
+>                 goto out;
+>
+> +       last_unlink_trans = BTRFS_I(inode)->last_unlink_trans;
+> +
+>         /* now the directory is empty */
+>         err = btrfs_unlink_inode(trans, root, dir, d_inode(dentry),
+>                                  dentry->d_name.name, dentry->d_name.len);
+> -       if (!err)
+> +       if (!err) {
+>                 btrfs_i_size_write(inode, 0);
+> +               /*
+> +                * Propagate the last_unlink_trans value of the deleted dir to
+> +                * its parent directory. This is to prevent an unrecoverable
+> +                * log tree in the case we do something like this:
+> +                * 1) create dir foo
+> +                * 2) create snapshot under dir foo
+> +                * 3) delete the snapshot
+> +                * 4) rmdir foo
+> +                * 5) mkdir foo
+> +                * 6) fsync foo or some file inside foo
+> +                */
+> +               if (last_unlink_trans >= trans->transid) {
+> +                       mutex_lock(&BTRFS_I(dir)->log_mutex);
+> +                       BTRFS_I(dir)->last_unlink_trans = last_unlink_trans;
+> +                       mutex_unlock(&BTRFS_I(dir)->log_mutex);
+> +               }
+> +       }
+>  out:
+>         btrfs_end_transaction(trans, root);
+>         btrfs_btree_balance_dirty(root);
+> diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+> index 24d03c7..d3f38dd 100644
+> --- a/fs/btrfs/tree-log.c
+> +++ b/fs/btrfs/tree-log.c
+> @@ -4875,8 +4875,12 @@ static noinline int check_parent_dirs_for_sync(struct btrfs_trans_handle *trans,
+>                 if (!parent || d_really_is_negative(parent) || sb != d_inode(parent)->i_sb)
+>                         break;
+>
+> -               if (IS_ROOT(parent))
+> +               if (IS_ROOT(parent)) {
+> +                       inode = d_inode(parent);
+> +                       if (btrfs_must_commit_transaction(trans, inode))
+> +                               ret = 1;
+>                         break;
+> +               }
+>
+>                 parent = dget_parent(parent);
+>                 dput(old_parent);
+> --
+> 2.7.0.rc3
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

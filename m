@@ -1,69 +1,68 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:51398 "EHLO mx2.suse.de"
+Received: from lists.s-osg.org ([54.187.51.154]:59313 "EHLO lists.s-osg.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754238AbcC3OGT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 30 Mar 2016 10:06:19 -0400
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id 1F5FEAC42
-	for <linux-btrfs@vger.kernel.org>; Wed, 30 Mar 2016 14:06:17 +0000 (UTC)
-From: David Sterba <dsterba@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.com>
-Subject: [PATCH] btrfs: fallback to vmalloc in btrfs_compare_tree
-Date: Wed, 30 Mar 2016 16:05:43 +0200
-Message-Id: <1459346743-17191-1-git-send-email-dsterba@suse.com>
+	id S1751394AbcC3Uxs (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 30 Mar 2016 16:53:48 -0400
+From: Luis de Bethencourt <luisbg@osg.samsung.com>
+To: linux-kernel@vger.kernel.org
+Cc: clm@fb.com, jbacik@fb.com, dsterba@suse.com, linux-btrfs@vger.kernel.org,
+        Luis de Bethencourt <luisbg@osg.samsung.com>
+Subject: [PATCH 1/2] btrfs: fix mixed block count of available space
+Date: Wed, 30 Mar 2016 21:53:38 +0100
+Message-Id: <1459371219-1815-1-git-send-email-luisbg@osg.samsung.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The allocation of node could fail if the memory is too fragmented for a
-given node size, practically observed with 64k.
+Metadata for mixed block is already accounted in total data and should not
+be counted as part of the free metadata space.
 
-http://article.gmane.org/gmane.comp.file-systems.btrfs/54689
-
-Reported-by: Jean-Denis Girard <jd.girard@sysnux.pf>
-Signed-off-by: David Sterba <dsterba@suse.com>
+Signed-off-by: Luis de Bethencourt <luisbg@osg.samsung.com>
+Link: https://bugzilla.kernel.org/show_bug.cgi?id=114281
 ---
- fs/btrfs/ctree.c | 12 ++++++++----
- 1 file changed, 8 insertions(+), 4 deletions(-)
+ fs/btrfs/super.c | 16 +++++++++++++---
+ 1 file changed, 13 insertions(+), 3 deletions(-)
 
-diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-index 77592931ab4f..ec7928a27aaa 100644
---- a/fs/btrfs/ctree.c
-+++ b/fs/btrfs/ctree.c
-@@ -19,6 +19,7 @@
- #include <linux/sched.h>
- #include <linux/slab.h>
- #include <linux/rbtree.h>
-+#include <linux/vmalloc.h>
- #include "ctree.h"
- #include "disk-io.h"
- #include "transaction.h"
-@@ -5361,10 +5362,13 @@ int btrfs_compare_trees(struct btrfs_root *left_root,
- 		goto out;
- 	}
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index 00b8f37..bdca79c 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -2051,6 +2051,7 @@ static int btrfs_statfs(struct dentry *dentry, struct kstatfs *buf)
+ 	struct btrfs_block_rsv *block_rsv = &fs_info->global_block_rsv;
+ 	int ret;
+ 	u64 thresh = 0;
++	int mixed = 0;
  
--	tmp_buf = kmalloc(left_root->nodesize, GFP_KERNEL);
-+	tmp_buf = kmalloc(left_root->nodesize, GFP_KERNEL | __GFP_NOWARN);
- 	if (!tmp_buf) {
--		ret = -ENOMEM;
--		goto out;
-+		tmp_buf = vmalloc(left_root->nodesize);
-+		if (!tmp_buf) {
-+			ret = -ENOMEM;
-+			goto out;
+ 	/*
+ 	 * holding chunk_muext to avoid allocating new chunks, holding
+@@ -2076,8 +2077,17 @@ static int btrfs_statfs(struct dentry *dentry, struct kstatfs *buf)
+ 				}
+ 			}
+ 		}
+-		if (found->flags & BTRFS_BLOCK_GROUP_METADATA)
+-			total_free_meta += found->disk_total - found->disk_used;
++
++		/*
++		 * Metadata in mixed block goup profiles are accounted in data
++		 */
++		if (!mixed && found->flags & BTRFS_BLOCK_GROUP_METADATA) {
++			if (found->flags & BTRFS_BLOCK_GROUP_DATA)
++				mixed = 1;
++			else
++				total_free_meta += found->disk_total -
++					found->disk_used;
 +		}
+ 
+ 		total_used += found->disk_used;
  	}
+@@ -2115,7 +2125,7 @@ static int btrfs_statfs(struct dentry *dentry, struct kstatfs *buf)
+ 	 */
+ 	thresh = 4 * 1024 * 1024;
  
- 	left_path->search_commit_root = 1;
-@@ -5565,7 +5569,7 @@ int btrfs_compare_trees(struct btrfs_root *left_root,
- out:
- 	btrfs_free_path(left_path);
- 	btrfs_free_path(right_path);
--	kfree(tmp_buf);
-+	kvfree(tmp_buf);
- 	return ret;
- }
+-	if (total_free_meta - thresh < block_rsv->size)
++	if (!mixed && total_free_meta - thresh < block_rsv->size)
+ 		buf->f_bavail = 0;
  
+ 	buf->f_type = BTRFS_SUPER_MAGIC;
 -- 
-2.7.1
+2.5.3
 

@@ -1,71 +1,71 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp-relay1.uniserve.net ([216.210.109.131]:48903 "EHLO
-	smtp-relay1.uniserve.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751367AbcC3SZx (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:32503 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753026AbcC3S2Z (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 30 Mar 2016 14:25:53 -0400
-Message-ID: <20160330111116.85832phnfo4ksddw@webmail.uniserve.com>
-Date: Wed, 30 Mar 2016 11:11:16 -0700
-From: Dave Stevens <geek@uniserve.com>
-To: bo.li.liu@oracle.com
-Cc: sri <toyours_sridhar@yahoo.co.in>, linux-btrfs@vger.kernel.org
-Subject: Re: good documentation on btrfs internals and on disk layout
-References: <loom.20160330T155403-473@post.gmane.org>
- <20160330172819.GD20816@localhost.localdomain>
-In-Reply-To: <20160330172819.GD20816@localhost.localdomain>
+	Wed, 30 Mar 2016 14:28:25 -0400
+Date: Wed, 30 Mar 2016 11:27:55 -0700
+From: "Darrick J. Wong" <darrick.wong@oracle.com>
+To: Christoph Hellwig <hch@infradead.org>
+Cc: xfs@oss.sgi.com, linux-fsdevel <linux-fsdevel@vger.kernel.org>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>, linux-api@vger.kernel.org
+Subject: fallocate mode flag for "unshare blocks"?
+Message-ID: <20160330182755.GC2236@birch.djwong.org>
+References: <20160302155007.GB7125@infradead.org>
 MIME-Version: 1.0
-Content-Type: text/plain;
- charset=ISO-8859-1;
- DelSp="Yes";
- format="flowed"
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20160302155007.GB7125@infradead.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Quoting Liu Bo <bo.li.liu@oracle.com>:
+Hi all,
 
-> On Wed, Mar 30, 2016 at 01:58:03PM +0000, sri wrote:
->> Hi,
->>
->> I could find very limited documentation related to on disk layout of btrfs
->> and how all trees are related to each other. Except wiki which has very
->> specific top level details I couldn't able to find more details on btrfs.
->>
->> FSs such as zfs, ext3/4 and XFS there are documents which explains ondisk
->> layout of the file systems.
->>
->> Could anybody please provide pointers for the same for better
->> understanding of btrfs on disk layout and how each tree interacts provided
->> multiple disks are configured for btrfs.
->
-> There is a paper[1] about btrfs filesystem which covers all the details.
->
-> [1]: BTRFS: The Linux B-Tree Filesystem
+Christoph and I have been working on adding reflink and CoW support to
+XFS recently.  Since the purpose of (mode 0) fallocate is to make sure
+that future file writes cannot ENOSPC, I extended the XFS fallocate
+handler to unshare any shared blocks via the copy on write mechanism I
+built for it.  However, Christoph shared the following concerns with
+me about that interpretation:
 
-and this is where it is:
+> I know that I suggested unsharing blocks on fallocate, but it turns out
+> this is causing problems.  Applications expect falloc to be a fast
+> metadata operation, and copying a potentially large number of blocks
+> is against that expextation.  This is especially bad for the NFS
+> server, which should not be blocked for a long time in a synchronous
+> operation.
+> 
+> I think we'll have to remove the unshare and just fail the fallocate
+> for a reflinked region for now.  I still think it makes sense to expose
+> an unshare operation, and we probably should make that another
+> fallocate mode.
 
-http://domino.watson.ibm.com/library/CyberDig.nsf/papers/6E1C5B6A1B6EDD9885257A38006B6130/$File/rj10501.pdf
+With that in mind, how do you all think we ought to resolve this?
+Should we add a new fallocate mode flag that means "unshare the shared
+blocks"?  Obviously, this unshare flag cannot be used in conjunction
+with hole punching, zero range, insert range, or collapse range.  This
+breaks the expectation that writing to a file after fallocate won't
+ENOSPC.
 
-D
+Or is it ok that fallocate could block, potentially for a long time as
+we stream cows through the page cache (or however unshare works
+internally)?  Those same programs might not be expecting fallocate to
+take a long time.
 
->
-> Thanks,
->
-> -liubo
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
+Can we do better than either solution?  It occurs to me that XFS does
+unshare by reading the file data into the pagecache, marking the pages
+dirty, and flushing the dirty pages; performance could be improved by
+skipping the flush at the end.  We won't ENOSPC, because the XFS
+delalloc system is careful enough to check that there are enough free
+blocks to handle both the allocation and the metadata updates.  The
+only gap in this scheme that I can see is if we fallocate, crash, and
+upon restart the program then tries to write without retrying the
+fallocate.  Can we trade some performance for the added requirement
+that we must fallocate -> write -> fsync, and retry the trio if we
+crash before the fsync returns?  I think that's already an implicit
+requirement, so we might be ok here.
 
+Opinions?  I rather like the last option, though I've only just
+thought of it and have not had time to examine it thoroughly, and it's
+specific to XFS. :)
 
-
--- 
-"As long as politics is the shadow cast on society by big business,
-the attenuation of the shadow will not change the substance."
-
--- John Dewey
-
-
-
-
-
+--D

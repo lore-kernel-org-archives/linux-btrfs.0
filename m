@@ -1,219 +1,338 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:15924 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:29930 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1758711AbcC3H4z (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 30 Mar 2016 03:56:55 -0400
+	id S1758732AbcC3H44 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 30 Mar 2016 03:56:56 -0400
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
-Cc: Liu Bo <bo.li.liu@oracle.com>, Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
-Subject: [PATCH v9 14/19] btrfs: dedupe: Add basic tree structure for on-disk dedupe method
-Date: Wed, 30 Mar 2016 15:56:09 +0800
-Message-Id: <1459324574-28063-15-git-send-email-quwenruo@cn.fujitsu.com>
+Cc: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
+Subject: [PATCH v9 10/19] btrfs: dedupe: Add ioctl for inband dedupelication
+Date: Wed, 30 Mar 2016 15:56:05 +0800
+Message-Id: <1459324574-28063-11-git-send-email-quwenruo@cn.fujitsu.com>
 In-Reply-To: <1459324574-28063-1-git-send-email-quwenruo@cn.fujitsu.com>
 References: <1459324574-28063-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Introduce a new tree, dedupe tree to record on-disk dedupe hash.
-As a persist hash storage instead of in-memeory only implement.
+From: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
 
-Unlike Liu Bo's implement, in this version we won't do hack for
-bytenr -> hash search, but add a new type, DEDUP_BYTENR_ITEM for such
-search case, just like in-memory backend.
+Add ioctl interface for inband dedupelication, which includes:
+1) enable
+2) disable
+3) status
 
-Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
-Signed-off-by: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
+And a pseudo RO compat flag, to imply that btrfs now supports inband
+dedup.
+However we don't add any ondisk format change, it's just a pseudo RO
+compat flag.
+
+All these ioctl interface are state-less, which means caller don't need
+to bother previous dedupe state before calling them, and only need to
+care the final desired state.
+
+For example, if user want to enable dedupe with specified block size and
+limit, just fill the ioctl structure and call enable ioctl.
+No need to check if dedupe is already running.
+
+These ioctls will handle things like re-configure or disable quite well.
+
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Signed-off-by: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
 ---
- fs/btrfs/ctree.h             | 62 +++++++++++++++++++++++++++++++++++++++++++-
- fs/btrfs/dedupe.h            |  5 ++++
- fs/btrfs/disk-io.c           |  6 +++++
- fs/btrfs/relocation.c        |  3 ++-
- include/trace/events/btrfs.h |  3 ++-
- 5 files changed, 76 insertions(+), 3 deletions(-)
+ fs/btrfs/ctree.h           |  1 +
+ fs/btrfs/dedupe.c          | 48 +++++++++++++++++++++++++++++++++
+ fs/btrfs/dedupe.h          | 15 +++++++++++
+ fs/btrfs/disk-io.c         |  3 +++
+ fs/btrfs/ioctl.c           | 66 ++++++++++++++++++++++++++++++++++++++++++++++
+ fs/btrfs/sysfs.c           |  2 ++
+ include/uapi/linux/btrfs.h | 23 ++++++++++++++++
+ 7 files changed, 158 insertions(+)
 
 diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 0e8933c..b19c1f1 100644
+index 022ab61..85044bf 100644
 --- a/fs/btrfs/ctree.h
 +++ b/fs/btrfs/ctree.h
-@@ -100,6 +100,9 @@ struct btrfs_ordered_sum;
- /* tracks free space in block groups. */
- #define BTRFS_FREE_SPACE_TREE_OBJECTID 10ULL
+@@ -508,6 +508,7 @@ struct btrfs_super_block {
+  * ones specified below then we will fail to mount
+  */
+ #define BTRFS_FEATURE_COMPAT_RO_FREE_SPACE_TREE	(1ULL << 0)
++#define BTRFS_FEATURE_COMPAT_RO_DEDUPE		(1ULL << 1)
  
-+/* on-disk dedupe tree (EXPERIMENTAL) */
-+#define BTRFS_DEDUPE_TREE_OBJECTID 11ULL
-+
- /* device stats in the device tree */
- #define BTRFS_DEV_STATS_OBJECTID 0ULL
- 
-@@ -538,7 +541,8 @@ struct btrfs_super_block {
- #define BTRFS_FEATURE_COMPAT_SAFE_CLEAR		0ULL
- 
- #define BTRFS_FEATURE_COMPAT_RO_SUPP			\
--	(BTRFS_FEATURE_COMPAT_RO_FREE_SPACE_TREE)
-+	(BTRFS_FEATURE_COMPAT_RO_FREE_SPACE_TREE |	\
-+	 BTRFS_FEATURE_COMPAT_RO_DEDUPE)
- 
- #define BTRFS_FEATURE_COMPAT_RO_SAFE_SET	0ULL
- #define BTRFS_FEATURE_COMPAT_RO_SAFE_CLEAR	0ULL
-@@ -960,6 +964,42 @@ struct btrfs_csum_item {
- 	u8 csum;
- } __attribute__ ((__packed__));
- 
-+/*
-+ * Objectid: 0
-+ * Type: BTRFS_DEDUPE_STATUS_ITEM_KEY
-+ * Offset: 0
-+ */
-+struct btrfs_dedupe_status_item {
-+	__le64 blocksize;
-+	__le64 limit_nr;
-+	__le16 hash_type;
-+	__le16 backend;
-+} __attribute__ ((__packed__));
-+
-+/*
-+ * Objectid: Last 64 bit of the hash
-+ * Type: BTRFS_DEDUPE_HASH_ITEM_KEY
-+ * Offset: Bytenr of the hash
-+ *
-+ * Used for hash <-> bytenr search
-+ */
-+struct btrfs_dedupe_hash_item {
-+	/* length of dedupe range */
-+	__le32 len;
-+
-+	/* Hash follows */
-+} __attribute__ ((__packed__));
-+
-+/*
-+ * Objectid: bytenr
-+ * Type: BTRFS_DEDUPE_BYTENR_ITEM_KEY
-+ * offset: Last 64 bit of the hash
-+ *
-+ * Used for bytenr <-> hash search (for free_extent)
-+ * all its content is hash.
-+ * So no special item struct is needed.
-+ */
-+
- struct btrfs_dev_stats_item {
- 	/*
- 	 * grow this item struct at the end for future enhancements and keep
-@@ -2168,6 +2208,13 @@ struct btrfs_ioctl_defrag_range_args {
- #define BTRFS_CHUNK_ITEM_KEY	228
- 
- /*
-+ * Dedup item and status
-+ */
-+#define BTRFS_DEDUPE_STATUS_ITEM_KEY	230
-+#define BTRFS_DEDUPE_HASH_ITEM_KEY	231
-+#define BTRFS_DEDUPE_BYTENR_ITEM_KEY	232
-+
-+/*
-  * Records the overall state of the qgroups.
-  * There's only one instance of this key present,
-  * (0, BTRFS_QGROUP_STATUS_KEY, 0)
-@@ -3265,6 +3312,19 @@ static inline unsigned long btrfs_leaf_data(struct extent_buffer *l)
- 	return offsetof(struct btrfs_leaf, items);
+ #define BTRFS_FEATURE_INCOMPAT_MIXED_BACKREF	(1ULL << 0)
+ #define BTRFS_FEATURE_INCOMPAT_DEFAULT_SUBVOL	(1ULL << 1)
+diff --git a/fs/btrfs/dedupe.c b/fs/btrfs/dedupe.c
+index bdaea3a..cfb7fea 100644
+--- a/fs/btrfs/dedupe.c
++++ b/fs/btrfs/dedupe.c
+@@ -41,6 +41,33 @@ static inline struct inmem_hash *inmem_alloc_hash(u16 type)
+ 			GFP_NOFS);
  }
  
-+/* btrfs_dedupe_status */
-+BTRFS_SETGET_FUNCS(dedupe_status_blocksize, struct btrfs_dedupe_status_item,
-+		   blocksize, 64);
-+BTRFS_SETGET_FUNCS(dedupe_status_limit, struct btrfs_dedupe_status_item,
-+		   limit_nr, 64);
-+BTRFS_SETGET_FUNCS(dedupe_status_hash_type, struct btrfs_dedupe_status_item,
-+		   hash_type, 16);
-+BTRFS_SETGET_FUNCS(dedupe_status_backend, struct btrfs_dedupe_status_item,
-+		   backend, 16);
++void btrfs_dedupe_status(struct btrfs_fs_info *fs_info,
++			 struct btrfs_ioctl_dedupe_args *dargs)
++{
++	struct btrfs_dedupe_info *dedupe_info = fs_info->dedupe_info;
 +
-+/* btrfs_dedupe_hash_item */
-+BTRFS_SETGET_FUNCS(dedupe_hash_len, struct btrfs_dedupe_hash_item, len, 32);
++	if (!fs_info->dedupe_enabled || !dedupe_info) {
++		dargs->status = 0;
++		dargs->blocksize = 0;
++		dargs->backend = 0;
++		dargs->hash_type = 0;
++		dargs->limit_nr = 0;
++		dargs->current_nr = 0;
++		return;
++	}
++	mutex_lock(&dedupe_info->lock);
++	dargs->status = 1;
++	dargs->blocksize = dedupe_info->blocksize;
++	dargs->backend = dedupe_info->backend;
++	dargs->hash_type = dedupe_info->hash_type;
++	dargs->limit_nr = dedupe_info->limit_nr;
++	dargs->limit_mem = dedupe_info->limit_nr *
++		(sizeof(struct inmem_hash) +
++		 btrfs_dedupe_sizes[dedupe_info->hash_type]);
++	dargs->current_nr = dedupe_info->current_nr;
++	mutex_unlock(&dedupe_info->lock);
++}
 +
- /* struct btrfs_file_extent_item */
- BTRFS_SETGET_FUNCS(file_extent_type, struct btrfs_file_extent_item, type, 8);
- BTRFS_SETGET_STACK_FUNCS(stack_file_extent_disk_bytenr,
+ static int init_dedupe_info(struct btrfs_dedupe_info **ret_info, u16 type,
+ 			    u16 backend, u64 blocksize, u64 limit)
+ {
+@@ -371,6 +398,27 @@ static void inmem_destroy(struct btrfs_dedupe_info *dedupe_info)
+ 	mutex_unlock(&dedupe_info->lock);
+ }
+ 
++int btrfs_dedupe_cleanup(struct btrfs_fs_info *fs_info)
++{
++	struct btrfs_dedupe_info *dedupe_info;
++
++	fs_info->dedupe_enabled = 0;
++	/* same as disable */
++	smp_wmb();
++	dedupe_info = fs_info->dedupe_info;
++	fs_info->dedupe_info = NULL;
++
++	if (!dedupe_info)
++		return 0;
++
++	if (dedupe_info->backend == BTRFS_DEDUPE_BACKEND_INMEMORY)
++		inmem_destroy(dedupe_info);
++
++	crypto_free_shash(dedupe_info->dedupe_driver);
++	kfree(dedupe_info);
++	return 0;
++}
++
+ int btrfs_dedupe_disable(struct btrfs_fs_info *fs_info)
+ {
+ 	struct btrfs_dedupe_info *dedupe_info;
 diff --git a/fs/btrfs/dedupe.h b/fs/btrfs/dedupe.h
-index f5d2b45..1ac1bcb 100644
+index e5d0d34..f5d2b45 100644
 --- a/fs/btrfs/dedupe.h
 +++ b/fs/btrfs/dedupe.h
-@@ -60,6 +60,8 @@ struct btrfs_dedupe_hash {
- 	u8 hash[];
- };
+@@ -103,6 +103,15 @@ static inline struct btrfs_dedupe_hash *btrfs_dedupe_alloc_hash(u16 type)
+ int btrfs_dedupe_enable(struct btrfs_fs_info *fs_info, u16 type, u16 backend,
+ 			u64 blocksize, u64 limit_nr, u64 limit_mem);
  
-+struct btrfs_root;
 +
- struct btrfs_dedupe_info {
- 	/* dedupe blocksize */
- 	u64 blocksize;
-@@ -75,6 +77,9 @@ struct btrfs_dedupe_info {
- 	struct list_head lru_list;
- 	u64 limit_nr;
- 	u64 current_nr;
++ /*
++ * Get inband dedupe info
++ * Since it needs to access different backends' hash size, which
++ * is not exported, we need such simple function.
++ */
++void btrfs_dedupe_status(struct btrfs_fs_info *fs_info,
++			 struct btrfs_ioctl_dedupe_args *dargs);
 +
-+	/* for persist data like dedup-hash and dedupe status */
-+	struct btrfs_root *dedupe_root;
- };
+ /*
+  * Disable dedupe and invalidate all its dedupe data.
+  * Called at dedupe disable time.
+@@ -110,6 +119,12 @@ int btrfs_dedupe_enable(struct btrfs_fs_info *fs_info, u16 type, u16 backend,
+ int btrfs_dedupe_disable(struct btrfs_fs_info *fs_info);
  
- struct btrfs_trans_handle;
+ /*
++ * Cleanup current btrfs_dedupe_info
++ * Called in umount time
++ */
++int btrfs_dedupe_cleanup(struct btrfs_fs_info *fs_info);
++
++/*
+  * Calculate hash for dedup.
+  * Caller must ensure [start, start + dedupe_bs) has valid data.
+  */
 diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index ed6a6fd..c7eda03 100644
+index 3cf4c11..ed6a6fd 100644
 --- a/fs/btrfs/disk-io.c
 +++ b/fs/btrfs/disk-io.c
-@@ -184,6 +184,7 @@ static struct btrfs_lockdep_keyset {
- 	{ .id = BTRFS_DATA_RELOC_TREE_OBJECTID,	.name_stem = "dreloc"	},
- 	{ .id = BTRFS_UUID_TREE_OBJECTID,	.name_stem = "uuid"	},
- 	{ .id = BTRFS_FREE_SPACE_TREE_OBJECTID,	.name_stem = "free-space" },
-+	{ .id = BTRFS_DEDUPE_TREE_OBJECTID,	.name_stem = "dedupe"	},
- 	{ .id = 0,				.name_stem = "tree"	},
+@@ -51,6 +51,7 @@
+ #include "sysfs.h"
+ #include "qgroup.h"
+ #include "compression.h"
++#include "dedupe.h"
+ 
+ #ifdef CONFIG_X86
+ #include <asm/cpufeature.h>
+@@ -3884,6 +3885,8 @@ void close_ctree(struct btrfs_root *root)
+ 
+ 	btrfs_free_qgroup_config(fs_info);
+ 
++	btrfs_dedupe_cleanup(fs_info);
++
+ 	if (percpu_counter_sum(&fs_info->delalloc_bytes)) {
+ 		btrfs_info(fs_info, "at unmount delalloc count %lld",
+ 		       percpu_counter_sum(&fs_info->delalloc_bytes));
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 053e677..2d1ed93 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -61,6 +61,7 @@
+ #include "qgroup.h"
+ #include "tree-log.h"
+ #include "compression.h"
++#include "dedupe.h"
+ 
+ #ifdef CONFIG_64BIT
+ /* If we have a 32-bit userspace and 64-bit kernel, then the UAPI
+@@ -3206,6 +3207,69 @@ ssize_t btrfs_dedupe_file_range(struct file *src_file, u64 loff, u64 olen,
+ 	return olen;
+ }
+ 
++static long btrfs_ioctl_dedupe_ctl(struct btrfs_root *root, void __user *args)
++{
++	struct btrfs_ioctl_dedupe_args *dargs;
++	struct btrfs_fs_info *fs_info = root->fs_info;
++	int ret;
++
++	if (!capable(CAP_SYS_ADMIN))
++		return -EPERM;
++
++	dargs = memdup_user(args, sizeof(*dargs));
++	if (IS_ERR(dargs)) {
++		ret = PTR_ERR(dargs);
++		return ret;
++	}
++
++	if (dargs->cmd >= BTRFS_DEDUPE_CTL_LAST) {
++		ret = -EINVAL;
++		goto out;
++	}
++	switch (dargs->cmd) {
++	case BTRFS_DEDUPE_CTL_ENABLE:
++		mutex_lock(&fs_info->dedupe_ioctl_lock);
++		ret = btrfs_dedupe_enable(fs_info, dargs->hash_type,
++					 dargs->backend, dargs->blocksize,
++					 dargs->limit_nr, dargs->limit_mem);
++		mutex_unlock(&fs_info->dedupe_ioctl_lock);
++		if (ret < 0)
++			break;
++
++		/* Also copy the result to caller for further use */
++		btrfs_dedupe_status(fs_info, dargs);
++		if (copy_to_user(args, dargs, sizeof(*dargs)))
++			ret = -EFAULT;
++		else
++			ret = 0;
++		break;
++	case BTRFS_DEDUPE_CTL_DISABLE:
++		mutex_lock(&fs_info->dedupe_ioctl_lock);
++		ret = btrfs_dedupe_disable(fs_info);
++		mutex_unlock(&fs_info->dedupe_ioctl_lock);
++		break;
++	case BTRFS_DEDUPE_CTL_STATUS:
++		mutex_lock(&fs_info->dedupe_ioctl_lock);
++		btrfs_dedupe_status(fs_info, dargs);
++		mutex_unlock(&fs_info->dedupe_ioctl_lock);
++		if (copy_to_user(args, dargs, sizeof(*dargs)))
++			ret = -EFAULT;
++		else
++			ret = 0;
++		break;
++	default:
++		/*
++		 * Use this return value to inform progs that kernel
++		 * doesn't support such new command.
++		 */
++		ret = -EOPNOTSUPP;
++		break;
++	}
++out:
++	kfree(dargs);
++	return ret;
++}
++
+ static int clone_finish_inode_update(struct btrfs_trans_handle *trans,
+ 				     struct inode *inode,
+ 				     u64 endoff,
+@@ -5542,6 +5606,8 @@ long btrfs_ioctl(struct file *file, unsigned int
+ 		return btrfs_ioctl_get_fslabel(file, argp);
+ 	case BTRFS_IOC_SET_FSLABEL:
+ 		return btrfs_ioctl_set_fslabel(file, argp);
++	case BTRFS_IOC_DEDUPE_CTL:
++		return btrfs_ioctl_dedupe_ctl(root, argp);
+ 	case BTRFS_IOC_GET_SUPPORTED_FEATURES:
+ 		return btrfs_ioctl_get_supported_features(argp);
+ 	case BTRFS_IOC_GET_FEATURES:
+diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
+index 539e7b5..18686d1 100644
+--- a/fs/btrfs/sysfs.c
++++ b/fs/btrfs/sysfs.c
+@@ -203,6 +203,7 @@ BTRFS_FEAT_ATTR_INCOMPAT(raid56, RAID56);
+ BTRFS_FEAT_ATTR_INCOMPAT(skinny_metadata, SKINNY_METADATA);
+ BTRFS_FEAT_ATTR_INCOMPAT(no_holes, NO_HOLES);
+ BTRFS_FEAT_ATTR_COMPAT_RO(free_space_tree, FREE_SPACE_TREE);
++BTRFS_FEAT_ATTR_COMPAT_RO(dedupe, DEDUPE);
+ 
+ static struct attribute *btrfs_supported_feature_attrs[] = {
+ 	BTRFS_FEAT_ATTR_PTR(mixed_backref),
+@@ -215,6 +216,7 @@ static struct attribute *btrfs_supported_feature_attrs[] = {
+ 	BTRFS_FEAT_ATTR_PTR(skinny_metadata),
+ 	BTRFS_FEAT_ATTR_PTR(no_holes),
+ 	BTRFS_FEAT_ATTR_PTR(free_space_tree),
++	BTRFS_FEAT_ATTR_PTR(dedupe),
+ 	NULL
  };
  
-@@ -1678,6 +1679,11 @@ struct btrfs_root *btrfs_get_fs_root(struct btrfs_fs_info *fs_info,
- 	if (location->objectid == BTRFS_FREE_SPACE_TREE_OBJECTID)
- 		return fs_info->free_space_root ? fs_info->free_space_root :
- 						  ERR_PTR(-ENOENT);
-+	if (location->objectid == BTRFS_DEDUPE_TREE_OBJECTID) {
-+		if (fs_info->dedupe_enabled && fs_info->dedupe_info)
-+			return fs_info->dedupe_info->dedupe_root;
-+		return ERR_PTR(-ENOENT);
-+	}
- again:
- 	root = btrfs_lookup_fs_root(fs_info, location->objectid);
- 	if (root) {
-diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-index 33183ce..f3be969 100644
---- a/fs/btrfs/relocation.c
-+++ b/fs/btrfs/relocation.c
-@@ -577,7 +577,8 @@ static int is_cowonly_root(u64 root_objectid)
- 	    root_objectid == BTRFS_CSUM_TREE_OBJECTID ||
- 	    root_objectid == BTRFS_UUID_TREE_OBJECTID ||
- 	    root_objectid == BTRFS_QUOTA_TREE_OBJECTID ||
--	    root_objectid == BTRFS_FREE_SPACE_TREE_OBJECTID)
-+	    root_objectid == BTRFS_FREE_SPACE_TREE_OBJECTID ||
-+	    root_objectid == BTRFS_DEDUPE_TREE_OBJECTID)
- 		return 1;
- 	return 0;
- }
-diff --git a/include/trace/events/btrfs.h b/include/trace/events/btrfs.h
-index d866f21..2c3d48a 100644
---- a/include/trace/events/btrfs.h
-+++ b/include/trace/events/btrfs.h
-@@ -47,12 +47,13 @@ struct btrfs_qgroup_operation;
- 		{ BTRFS_TREE_RELOC_OBJECTID,	"TREE_RELOC"	},	\
- 		{ BTRFS_UUID_TREE_OBJECTID,	"UUID_TREE"	},	\
- 		{ BTRFS_FREE_SPACE_TREE_OBJECTID, "FREE_SPACE_TREE" },	\
-+		{ BTRFS_DEDUPE_TREE_OBJECTID,	"DEDUPE_TREE"	},	\
- 		{ BTRFS_DATA_RELOC_TREE_OBJECTID, "DATA_RELOC_TREE" })
+diff --git a/include/uapi/linux/btrfs.h b/include/uapi/linux/btrfs.h
+index dea8931..de48414 100644
+--- a/include/uapi/linux/btrfs.h
++++ b/include/uapi/linux/btrfs.h
+@@ -445,6 +445,27 @@ struct btrfs_ioctl_get_dev_stats {
+ 	__u64 unused[128 - 2 - BTRFS_DEV_STAT_VALUES_MAX]; /* pad to 1k */
+ };
  
- #define show_root_type(obj)						\
- 	obj, ((obj >= BTRFS_DATA_RELOC_TREE_OBJECTID) ||		\
- 	      (obj >= BTRFS_ROOT_TREE_OBJECTID &&			\
--	       obj <= BTRFS_QUOTA_TREE_OBJECTID)) ? __show_root_type(obj) : "-"
-+	       obj <= BTRFS_DEDUPE_TREE_OBJECTID)) ? __show_root_type(obj) : "-"
- 
- #define BTRFS_GROUP_FLAGS	\
- 	{ BTRFS_BLOCK_GROUP_DATA,	"DATA"},	\
++/*
++ * de-duplication control modes
++ * For re-config, re-enable will handle it
++ */
++#define BTRFS_DEDUPE_CTL_ENABLE	1
++#define BTRFS_DEDUPE_CTL_DISABLE 2
++#define BTRFS_DEDUPE_CTL_STATUS	3
++#define BTRFS_DEDUPE_CTL_LAST	4
++struct btrfs_ioctl_dedupe_args {
++	__u16 cmd;		/* In: command(see above macro) */
++	__u64 blocksize;	/* In/Out: For enable/status */
++	__u64 limit_nr;		/* In/Out: For enable/status */
++	__u64 limit_mem;	/* In/Out: For enable/status */
++	__u64 current_nr;	/* Out: For status output */
++	__u16 backend;		/* In/Out: For enable/status */
++	__u16 hash_type;	/* In/Out: For enable/status */
++	u8 status;		/* Out: For status output */
++	/* pad to 512 bytes */
++	u8 __unused[473];
++};
++
+ #define BTRFS_QUOTA_CTL_ENABLE	1
+ #define BTRFS_QUOTA_CTL_DISABLE	2
+ #define BTRFS_QUOTA_CTL_RESCAN__NOTUSED	3
+@@ -653,6 +674,8 @@ static inline char *btrfs_err_str(enum btrfs_err_code err_code)
+ 				    struct btrfs_ioctl_dev_replace_args)
+ #define BTRFS_IOC_FILE_EXTENT_SAME _IOWR(BTRFS_IOCTL_MAGIC, 54, \
+ 					 struct btrfs_ioctl_same_args)
++#define BTRFS_IOC_DEDUPE_CTL	_IOWR(BTRFS_IOCTL_MAGIC, 55, \
++				      struct btrfs_ioctl_dedupe_args)
+ #define BTRFS_IOC_GET_FEATURES _IOR(BTRFS_IOCTL_MAGIC, 57, \
+ 				   struct btrfs_ioctl_feature_flags)
+ #define BTRFS_IOC_SET_FEATURES _IOW(BTRFS_IOCTL_MAGIC, 57, \
 -- 
 2.7.4
 

@@ -1,99 +1,114 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f178.google.com ([209.85.213.178]:36740 "EHLO
-	mail-ig0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751534AbcDCS3N (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 3 Apr 2016 14:29:13 -0400
-Received: by mail-ig0-f178.google.com with SMTP id f1so45114967igr.1
-        for <linux-btrfs@vger.kernel.org>; Sun, 03 Apr 2016 11:29:13 -0700 (PDT)
+Received: from mail-lb0-f174.google.com ([209.85.217.174]:34768 "EHLO
+	mail-lb0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753103AbcCaX1X convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 31 Mar 2016 19:27:23 -0400
+Received: by mail-lb0-f174.google.com with SMTP id vo2so61678238lbb.1
+        for <linux-btrfs@vger.kernel.org>; Thu, 31 Mar 2016 16:27:22 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <20160403085149.GU9342@torres.zugschlus.de>
-References: <20160326203035.4b876a04@jupiter.sol.kaishome.de>
-	<20160327035038.5ab6e64b@jupiter.sol.kaishome.de>
-	<56F7E65C.7020300@gmx.com>
-	<20160328120203.1b8d79dc@jupiter.sol.kaishome.de>
-	<56FC7E6D.8010805@cn.fujitsu.com>
-	<56FC8C15.5060002@cn.fujitsu.com>
-	<20160331210004.GZ9342@torres.zugschlus.de>
-	<20160331231630.7b4ceda9@jupiter.sol.kaishome.de>
-	<20160401055725.GA9342@torres.zugschlus.de>
-	<CAJCQCtQu=OD9bep2r5xYc1Nt7DZis-1g2aj6BkyeNThrJzD9pw@mail.gmail.com>
-	<20160403085149.GU9342@torres.zugschlus.de>
-Date: Sun, 3 Apr 2016 12:29:12 -0600
-Message-ID: <CAJCQCtQcfYQDsuZcnEUGD54W=h7VT+xyydwUwTrMkaJa0ws9uQ@mail.gmail.com>
-Subject: Re: bad metadata crossing stripe boundary
-From: Chris Murphy <lists@colorremedies.com>
-To: Marc Haber <mh+linux-btrfs@zugschlus.de>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+In-Reply-To: <20160331224452.0753d5c7@jupiter.sol.kaishome.de>
+References: <20160331224452.0753d5c7@jupiter.sol.kaishome.de>
+Date: Fri, 1 Apr 2016 01:27:21 +0200
+Message-ID: <CAPmG0jZ6hs4TA_0ozNEP4x6ucn971Nj-6+uempGi1VwTWAdCYQ@mail.gmail.com>
+Subject: Re: btrfsck: backpointer mismatch (and multiple other errors)
+From: Henk Slager <eye1tm@gmail.com>
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Apr 3, 2016 at 2:51 AM, Marc Haber <mh+linux-btrfs@zugschlus.de> wrote:
-> On Sat, Apr 02, 2016 at 01:41:53PM -0600, Chris Murphy wrote:
-
->> > I cryptsetup luksFormat'ted the partition before I mkfs.btrfs'ed it.
->> > That should do a much better job than wipefsing it, shouldnt it?
->>
->> Not really. The first btrfs super is at 64K. The second at 64M. The
->> third at 256G. While wipefs will remove the magic only on the first,
->> mkfs.btrfs will take care of all three. And luksFormat only overwrites
->> the first 132K of a block device. There's a scant chance of bugs
->> related to previous filesystems not being erased, I think this is more
->> likely when mixing and matching filesystems just because the
->> superblocks for each filesystem aren't in the same location.
+On Thu, Mar 31, 2016 at 10:44 PM, Kai Krakow <hurikhan77@gmail.com> wrote:
+> Hello!
 >
-> If I do:
+> I already reported this in another thread but it was a bit confusing by
+> intermixing multiple volumes. So let's start a new thread:
 >
-> umount /dev/mapper/foo
-> cryptsetup close /dev/mapper/foo
-> cryptsetup luksFormat /dev/mapper/pv-c_foo
-> cryptsetup open /dev/mapper/pv-c_foo foo
+> Since one of the last kernel upgrades, I'm experiencing one VDI file
+> (containing a NTFS image with Windows 7) getting damaged when running
+> the machine in VirtualBox. I got knowledge about this after
+> experiencing an error "duplicate object" and btrfs went RO. I fixed it
+> by deleting the VDI and restoring from backup - but no I get csum
+> errors as soon as some VM IO goes into the VDI file.
 >
-> and the contents of /dev/mapper/foo would randomly resemble its
-> previous contents afterwards, I would be _very_ disturbed.
-
-
-You wrote "luksFormat the partition, then mkfs.btrfs it" and then also
-"wipefs it" where in each case "it" sounded to me like you're
-referring to the same partition. But your example makes it more clear
-you're referring to mkfs.btrfs being done not on the partition, but on
-the dmcrypt device.
-
-
-
-> During the
-> luksFormat process, a new random symmetric key is created, and
-> overwrites the old random symmetric key in the LUKS header. Therefore,
-> the following crypto operations are _very_ unlikely to produce
-> something that resembles an ext4 fileystem.
-
-All the primates on the planet have a better chance of writing
-Shakespeare, this year.
-
+> The FS is still usable. One effect is, that after reading all files
+> with rsync (to copy to my backup), each call of "du" or "df" hangs, also
+> similar calls to "btrfs {sub|fi} ..." show the same effect. I guess one
+> outcome of this is, that the FS does not properly unmount during
+> shutdown.
 >
-> Even if I did:
+> Kernel is 4.5.0 by now (the FS is much much older, dates back to 3.x
+> series, and never had problems), including Gentoo patch-set r1.
+
+One possibility could be that the vbox kernel modules somehow corrupt
+btrfs kernel area since kernel 4.5.
+
+In order to make this reproducible (or an attempt to reproduce) for
+others, you could unload VirtualBox stuff and restore the VDI file
+from backup (or whatever big file) and then make pseudo-random, but
+reproducible writes to the file.
+
+It is not clear to me what 'Gentoo patch-set r1' is and does. So just
+boot a vanilla v4.5 kernel from kernel.org and see if you get csum
+errors in dmesg.
+
+Also, where does 'duplicate object' come from? dmesg ? then please
+post its surroundings, straight from dmesg.
+
+> The device layout is:
 >
-> umount /dev/mapper/foo
-> cryptsetup close /dev/mapper/foo
-> mkfs.btrfs /dev/mapper/pv-c_foo
+> $ lsblk -o NAME,MODEL,FSTYPE,LABEL,MOUNTPOINT
+> NAME        MODEL            FSTYPE LABEL      MOUNTPOINT
+> sda         Crucial_CT128MX1
+> ├─sda1                       vfat   ESP        /boot
+> ├─sda2
+> └─sda3                       bcache
+>   ├─bcache0                  btrfs  system
+>   ├─bcache1                  btrfs  system
+>   └─bcache2                  btrfs  system     /usr/src
+> sdb         SAMSUNG HD103SJ
+> ├─sdb1                       swap   swap0      [SWAP]
+> └─sdb2                       bcache
+>   └─bcache2                  btrfs  system     /usr/src
+> sdc         SAMSUNG HD103SJ
+> ├─sdc1                       swap   swap1      [SWAP]
+> └─sdc2                       bcache
+>   └─bcache1                  btrfs  system
+> sdd         SAMSUNG HD103UJ
+> ├─sdd1                       swap   swap2      [SWAP]
+> └─sdd2                       bcache
+>   └─bcache0                  btrfs  system
 >
-> (assuming I previously did cryptsetup open /dev/mapper/pv-c_foo foo)
+> Mount options are:
 >
-> I would be _very_ surprised if the kernel would find something
-> resembling and ext4 file system on /dev/mapper/pv-c_foo.
+> $ mount|fgrep btrfs
+> /dev/bcache2 on / type btrfs (rw,noatime,compress=lzo,nossd,discard,space_cache,autodefrag,subvolid=256,subvol=/gentoo/rootfs)
+>
+> The FS uses mraid=1 and draid=0.
+>
+> Output of btrfsck is:
+> (also available here:
+> https://gist.github.com/kakra/bfcce4af242f6548f4d6b45c8afb46ae)
+>
+> $ btrfsck /dev/disk/by-label/system
+> checking extents
+> ref mismatch on [10443660537856 524288] extent item 1, found 2
+This   10443660537856  number is bigger than the  1832931324360 number
+found for total bytes. AFAIK, this is already wrong.
 
-I don't follow that at all, really. It's a sequence, vaguely modified
-by a parenthetical in a way that I do not understand, with an outcome
-that can't be confirmed or denied because mkfs.ext4 isn't in your
-sequence anywhere.
+[...]
 
-If you  were to see (encrypted) writes to the LV, you could identify
-the file system being used based on the write pattern. While the
-writes themselves are ciphertext and therefore you don't know what is
-being written, the write pattern is not obfuscated by dmcrypt so you
-could infer what is doing the writing by that pattern (probably both
-application and the filesystem could be identified).
+> checking fs roots
+> root 4336 inode 4284125 errors 1000, some csum missing
+What is in this inode?
 
-
--- 
-Chris Murphy
+> Checking filesystem on /dev/disk/by-label/system
+> UUID: d2bb232a-2e8f-4951-8bcc-97e237f1b536
+> found 1832931324360 bytes used err is 1
+> total csum bytes: 1730105656
+> total tree bytes: 6494474240
+> total fs tree bytes: 3789783040
+> total extent tree bytes: 608219136
+> btree space waste bytes: 1221460063
+> file data blocks allocated: 2406059724800
+>  referenced 2040857763840

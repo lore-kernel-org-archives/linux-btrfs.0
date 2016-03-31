@@ -1,67 +1,72 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:51311 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1757134AbcCaTs5 (ORCPT
+Received: from mail-wm0-f41.google.com ([74.125.82.41]:34904 "EHLO
+	mail-wm0-f41.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932517AbcCaUtd convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 31 Mar 2016 15:48:57 -0400
-Date: Thu, 31 Mar 2016 12:52:12 -0700
-From: Liu Bo <bo.li.liu@oracle.com>
-To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Cc: "Darrick J. Wong" <darrick.wong@oracle.com>,
-        Christoph Hellwig <hch@infradead.org>, xfs@oss.sgi.com,
-        linux-fsdevel <linux-fsdevel@vger.kernel.org>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>, linux-api@vger.kernel.org
-Subject: Re: fallocate mode flag for "unshare blocks"?
-Message-ID: <20160331195212.GB1415@localhost.localdomain>
-Reply-To: bo.li.liu@oracle.com
-References: <20160302155007.GB7125@infradead.org>
- <20160330182755.GC2236@birch.djwong.org>
- <20160331003242.GA5813@localhost.localdomain>
- <56FD079F.3060606@gmail.com>
+	Thu, 31 Mar 2016 16:49:33 -0400
+Received: by mail-wm0-f41.google.com with SMTP id 191so139270960wmq.0
+        for <linux-btrfs@vger.kernel.org>; Thu, 31 Mar 2016 13:49:32 -0700 (PDT)
+Received: from rabbit.myhome.local ([2.28.97.250])
+        by smtp.gmail.com with ESMTPSA id j18sm26687292wmd.2.2016.03.31.13.49.30
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
+        Thu, 31 Mar 2016 13:49:30 -0700 (PDT)
+Received: from elephant.myhome.local ([192.168.12.5])
+	by rabbit.myhome.local with esmtp (Exim 4.84)
+	(envelope-from <chrismurray84@gmail.com>)
+	id 1aljWz-0005x1-QI
+	for linux-btrfs@vger.kernel.org; Thu, 31 Mar 2016 21:49:29 +0100
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <56FD079F.3060606@gmail.com>
+Content-Type: text/plain;
+	charset="us-ascii"
+Subject: "/tmp/mnt.", and not honouring compression
+Date: Thu, 31 Mar 2016 21:49:29 +0100
+Message-ID: <E30C9D57EC226049B1226989BABB2728418CE4@elephant.myhome.local>
+From: "Chris Murray" <chrismurray84@gmail.com>
+To: <linux-btrfs@vger.kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Mar 31, 2016 at 07:18:55AM -0400, Austin S. Hemmelgarn wrote:
-> On 2016-03-30 20:32, Liu Bo wrote:
-> >On Wed, Mar 30, 2016 at 11:27:55AM -0700, Darrick J. Wong wrote:
-> >>Hi all,
-> >>
-> >>Christoph and I have been working on adding reflink and CoW support to
-> >>XFS recently.  Since the purpose of (mode 0) fallocate is to make sure
-> >>that future file writes cannot ENOSPC, I extended the XFS fallocate
-> >>handler to unshare any shared blocks via the copy on write mechanism I
-> >>built for it.  However, Christoph shared the following concerns with
-> >>me about that interpretation:
-> >>
-> >>>I know that I suggested unsharing blocks on fallocate, but it turns out
-> >>>this is causing problems.  Applications expect falloc to be a fast
-> >>>metadata operation, and copying a potentially large number of blocks
-> >>>is against that expextation.  This is especially bad for the NFS
-> >>>server, which should not be blocked for a long time in a synchronous
-> >>>operation.
-> >>>
-> >>>I think we'll have to remove the unshare and just fail the fallocate
-> >>>for a reflinked region for now.  I still think it makes sense to expose
-> >>>an unshare operation, and we probably should make that another
-> >>>fallocate mode.
-> >
-> >I'm expecting fallocate to be fast, too.
-> >
-> >Well, btrfs fallocate doesn't allocate space if it's a shared one
-> >because it thinks the space is already allocated.  So a later overwrite
-> >over this shared extent may hit enospc errors.
-> And this _really_ should get fixed, otherwise glibc will add a check for
-> running posix_fallocate against BTRFS and force emulation, and people _will_
-> complain about performance.
+Hi,
 
-Even if glibc adds a check like that and emulates fallocate by writing
-zero to real blocks, btrfs still does cow and requests to allocate space
-for new writes, so it's not only performance, but also getting ENOSPC in
-extremely case though.
+I'm trying to troubleshoot a ceph cluster which doesn't seem to be
+honouring BTRFS compression on some OSDs. Can anyone offer some help? Is
+it likely to be a ceph issue or a BTRFS one? Or something else? I've
+asked on ceph-users already, but not received a response yet.
 
-Thanks,
+Config is set to mount with "noatime,nodiratime,compress-force=lzo"
 
--liubo
+Some OSDs have been getting much more full than others though, which I
+think is something to do with these 'tmp' mounts e.g. below:
+
+/dev/sdc1 on /var/lib/ceph/tmp/mnt.AywYKY type btrfs
+(rw,noatime,space_cache,user_subvol_rm_allowed,subvolid=5,subvol=/)
+/dev/sdd1 on /var/lib/ceph/osd/ceph-16 type btrfs
+(rw,noatime,nodiratime,compress-force=lzo,space_cache,subvolid=5,subvol=
+/)
+/dev/sdc1 on /var/lib/ceph/osd/ceph-15 type btrfs
+(rw,noatime,nodiratime,space_cache,user_subvol_rm_allowed,subvolid=5,sub
+vol=/)
+/dev/sdb1 on /var/lib/ceph/osd/ceph-20 type btrfs
+(rw,noatime,nodiratime,compress-force=lzo,space_cache,subvolid=5,subvol=
+/)
+
+After a reboot, it's moved to another drive:
+
+/dev/sdd1 on /var/lib/ceph/tmp/mnt.kWh2NA type btrfs
+(rw,noatime,space_cache,user_subvol_rm_allowed,subvolid=5,subvol=/)
+/dev/sdd1 on /var/lib/ceph/osd/ceph-16 type btrfs
+(rw,noatime,nodiratime,space_cache,user_subvol_rm_allowed,subvolid=5,sub
+vol=/)
+/dev/sdc1 on /var/lib/ceph/osd/ceph-15 type btrfs
+(rw,noatime,nodiratime,compress-force=lzo,space_cache,subvolid=5,subvol=
+/)
+/dev/sdb1 on /var/lib/ceph/osd/ceph-20 type btrfs
+(rw,noatime,nodiratime,compress-force=lzo,space_cache,subvolid=5,subvol=
+/)
+
+I'm using Proxmox, based on Debian. Kernel version 4.2.8-1-pve. Btrfs
+v3.17.
+
+Thank you,
+Chris

@@ -1,38 +1,68 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:54994 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752206AbcCaQao (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 31 Mar 2016 12:30:44 -0400
-Date: Thu, 31 Mar 2016 18:30:06 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs-progs: fsck: Fix a false metadata extent warning
-Message-ID: <20160331163006.GE6230@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1459390774-12424-1-git-send-email-quwenruo@cn.fujitsu.com>
+Received: from cn.fujitsu.com ([222.73.24.84]:31918 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1750928AbcCaCVt (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 30 Mar 2016 22:21:49 -0400
+Received: from localhost.localdomain (unknown [10.167.226.34])
+	by cn.fujitsu.com (Postfix) with ESMTP id 746684056403
+	for <linux-btrfs@vger.kernel.org>; Thu, 31 Mar 2016 10:21:34 +0800 (CST)
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH] btrfs-progs: fsck: Fix a false metadata extent warning
+Date: Thu, 31 Mar 2016 10:19:34 +0800
+Message-Id: <1459390774-12424-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1459390774-12424-1-git-send-email-quwenruo@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Mar 31, 2016 at 10:19:34AM +0800, Qu Wenruo wrote:
-> At least 2 user from mail list reported btrfsck reported false alert of
-> "bad metadata [XXXX,YYYY) crossing stripe boundary".
-> 
-> While the reported number are all inside the same 64K boundary.
-> After some check, all the false alert have the same bytenr feature,
-> which can be divided by stripe size (64K).
-> 
-> The result seems to be initial 'max_size' can be 0, causing 'start' +
-> 'max_size' - 1, to cross the stripe boundary.
-> 
-> Fix it by always update extent_record->cross_stripe when the
-> extent_record is updated, to avoid temporary false alert to be reported.
-> 
-> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+At least 2 user from mail list reported btrfsck reported false alert of
+"bad metadata [XXXX,YYYY) crossing stripe boundary".
 
-Applied, thanks.
+While the reported number are all inside the same 64K boundary.
+After some check, all the false alert have the same bytenr feature,
+which can be divided by stripe size (64K).
 
-Do you have a test image for that?
+The result seems to be initial 'max_size' can be 0, causing 'start' +
+'max_size' - 1, to cross the stripe boundary.
+
+Fix it by always update extent_record->cross_stripe when the
+extent_record is updated, to avoid temporary false alert to be reported.
+
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+---
+ cmds-check.c | 10 +++++-----
+ 1 file changed, 5 insertions(+), 5 deletions(-)
+
+diff --git a/cmds-check.c b/cmds-check.c
+index d157075..ef23ddb 100644
+--- a/cmds-check.c
++++ b/cmds-check.c
+@@ -4579,9 +4579,9 @@ static int add_extent_rec(struct cache_tree *extent_cache,
+ 		 * As now stripe_len is fixed to BTRFS_STRIPE_LEN, just check
+ 		 * it.
+ 		 */
+-		if (metadata && check_crossing_stripes(rec->start,
+-						       rec->max_size))
+-				rec->crossing_stripes = 1;
++		if (metadata)
++			rec->crossing_stripes = check_crossing_stripes(
++					rec->start, rec->max_size);
+ 		check_extent_type(rec);
+ 		maybe_free_extent_rec(extent_cache, rec);
+ 		return ret;
+@@ -4641,8 +4641,8 @@ static int add_extent_rec(struct cache_tree *extent_cache,
+ 	}
+ 
+ 	if (metadata)
+-		if (check_crossing_stripes(rec->start, rec->max_size))
+-			rec->crossing_stripes = 1;
++		rec->crossing_stripes = check_crossing_stripes(rec->start,
++				rec->max_size);
+ 	check_extent_type(rec);
+ 	return ret;
+ }
+-- 
+2.7.4
+
+
+

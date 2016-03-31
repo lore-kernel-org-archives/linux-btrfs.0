@@ -1,21 +1,21 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lf0-f50.google.com ([209.85.215.50]:33254 "EHLO
-	mail-lf0-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1757152AbcCaSXt (ORCPT
+Received: from mail-lf0-f49.google.com ([209.85.215.49]:33823 "EHLO
+	mail-lf0-f49.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752539AbcCaS2K (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 31 Mar 2016 14:23:49 -0400
-Received: by mail-lf0-f50.google.com with SMTP id p188so38202979lfd.0
-        for <linux-btrfs@vger.kernel.org>; Thu, 31 Mar 2016 11:23:48 -0700 (PDT)
+	Thu, 31 Mar 2016 14:28:10 -0400
+Received: by mail-lf0-f49.google.com with SMTP id c62so65514556lfc.1
+        for <linux-btrfs@vger.kernel.org>; Thu, 31 Mar 2016 11:28:09 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <56FC6F3B.9050602@cn.fujitsu.com>
+In-Reply-To: <56FC8A28.7070601@cn.fujitsu.com>
 References: <20160328143714.GZ10135@torres.zugschlus.de>
 	<56F98784.8090700@gmail.com>
 	<20160329064351.GA28990@torres.zugschlus.de>
 	<56FB7983.2060608@cn.fujitsu.com>
 	<CAPmG0jZ8hFfnO2NR9xbx3_W_Ot7QOCkN-J0ttn3Y=PsqzfN4KA@mail.gmail.com>
-	<56FC6F3B.9050602@cn.fujitsu.com>
-Date: Thu, 31 Mar 2016 20:23:47 +0200
-Message-ID: <CAPmG0jZkHFiJY=7or9cNWGf+seSCZ_-1hPYyKFoARoDmYgRiMg@mail.gmail.com>
+	<56FC8A28.7070601@cn.fujitsu.com>
+Date: Thu, 31 Mar 2016 20:28:08 +0200
+Message-ID: <CAPmG0jbA_uEGx+gcGqYJy0N4SYqMmQurg5p19VtmD_ifyTvxQw@mail.gmail.com>
 Subject: Re: "bad metadata" not fixed by btrfs repair
 From: Henk Slager <eye1tm@gmail.com>
 To: Qu Wenruo <quwenruo@cn.fujitsu.com>
@@ -25,7 +25,7 @@ Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Mar 31, 2016 at 2:28 AM, Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
+On Thu, Mar 31, 2016 at 4:23 AM, Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
 >
 >
 > Henk Slager wrote on 2016/03/30 16:03 +0200:
@@ -147,15 +147,51 @@ On Thu, Mar 31, 2016 at 2:28 AM, Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
 >>
 >> but still   bad metadata [ ),  crossing stripe boundary   messages,
 >> double amount compared to 2 months ago
+>>
+>> Kernel operating this fs has always been maximum 1 month behind
+>> 'Latest Stable Kernel' (kernel.org terminology)
 >
 >
-> Would you please give an example of the output?
-> So I can check if it's really crossing the boundary.
+> Would you please try the following patch?
+> https://patchwork.kernel.org/patch/8706891/
+>
+> It is based on v4.5 and I think it should fix the false alert.
 
-This is the 1st one of the 105 messages:
-bad metadata [8263437058048, 8263437062144) crossing stripe boundary
+I have applied the patch to 4.5 and ran  btrfs check  again and now no
+    bad metadata [ ),  crossing stripe boundary   messages anymore
+(and also no other errors).
+Thanks.
 
-For all ... [X,Y) ...
-X is 64K aligned and Y - X = 4K
-
-So in my case, all false alerts.
+> Thanks,
+> Qu
+>
+>
+>>
+>>> As I explained, the bug only lies in metadata, and balance will allocate
+>>> new
+>>> tree blocks, then copy old data into new locations.
+>>>
+>>> In the allocation process of recent kernel, it will avoid such cross
+>>> boundary, and to fix your problem.
+>>>
+>>> But if you are using old kernels, don't scrub your metadata.
+>>>
+>>> Thanks,
+>>> Qu
+>>>>
+>>>>
+>>>>
+>>>> Greetings
+>>>> Marc
+>>>>
+>>>
+>>>
+>>> --
+>>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>>> the body of a message to majordomo@vger.kernel.org
+>>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>>
+>>
+>>
+>
+>

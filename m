@@ -1,47 +1,58 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from demfloro.ru ([188.166.123.212]:32872 "EHLO mx.demfloro.ru"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751455AbcCaI40 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 31 Mar 2016 04:56:26 -0400
-In-Reply-To: <20160331062112.GT9342@torres.zugschlus.de>
-References: <20160331062112.GT9342@torres.zugschlus.de>
+Received: from mail-qk0-f174.google.com ([209.85.220.174]:32863 "EHLO
+	mail-qk0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754675AbcCaLOz (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 31 Mar 2016 07:14:55 -0400
+Subject: Re: fallocate mode flag for "unshare blocks"?
+To: Christoph Hellwig <hch@infradead.org>
+References: <20160302155007.GB7125@infradead.org>
+ <20160330182755.GC2236@birch.djwong.org> <56FC21DE.7090308@gmail.com>
+ <20160331075801.GC4209@infradead.org>
+Cc: "Darrick J. Wong" <darrick.wong@oracle.com>, xfs@oss.sgi.com,
+        linux-fsdevel <linux-fsdevel@vger.kernel.org>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>, linux-api@vger.kernel.org
+From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Message-ID: <56FD066E.4080204@gmail.com>
+Date: Thu, 31 Mar 2016 07:13:50 -0400
 MIME-Version: 1.0
-Content-Type: text/plain;
- charset=UTF-8
-Subject: Re: How to cancel btrfs balance on unmounted filesystem
-From: Dmitrii Tcvetkov <demfloro@demfloro.ru>
-Date: Thu, 31 Mar 2016 11:16:45 +0300
-To: Marc Haber <mh+linux-btrfs@zugschlus.de>
-CC: linux-btrfs@vger.kernel.org
-Message-ID: <97866533-957D-4FFC-A1FF-A75B4AD7B06A@demfloro.ru>
+In-Reply-To: <20160331075801.GC4209@infradead.org>
+Content-Type: text/plain; charset=windows-1252; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello.
-There is no tool to disable balance on unmounted filesystem. But you can use mount option skip_balance for this.
-
-
--------- Original Message --------
-From: Marc Haber <mh+linux-btrfs@zugschlus.de>
-Sent: March 31, 2016 9:21:12 AM GMT+03:00
-To: linux-btrfs@vger.kernel.org
-Subject: How to cancel btrfs balance on unmounted filesystem
-
-Hi,
-
-one of my problem btrfs instances went into a hung process state
-while blancing metadata. This process is recorded in the file system
-somehow and the balance restarts immediately after mounting the
-filesystem with no chance to issue a btrfs balance cancel command
-before the system hangs again.
-
-Is there any possiblity to cancel the pending balance without mounting
-the fs first?
-
-I have also filed https://bugzilla.kernel.org/show_bug.cgi?id=115581
-to adress this in a more elegant way.
-
-Greetings
-Marc
-
-
+On 2016-03-31 03:58, Christoph Hellwig wrote:
+> On Wed, Mar 30, 2016 at 02:58:38PM -0400, Austin S. Hemmelgarn wrote:
+>> Nothing that I can find in the man-pages or API documentation for Linux's
+>> fallocate explicitly says that it will be fast.  There are bits that say it
+>> should be efficient, but that is not itself well defined (given context, I
+>> would assume it to mean that it doesn't use as much I/O as writing out that
+>> many bytes of zero data, not necessarily that it will return quickly).
+>
+> And that's pretty much as narrow as an defintion we get.  But apparently
+> gfs2 already breaks that expectation :(
+GFS2 breaks other expectations as well (mostly stuff with locking) in 
+arguably more significant ways, so I would not personally consider it to 
+be precedent for breaking this on other filesystems.
+>
+>>> delalloc system is careful enough to check that there are enough free
+>>> blocks to handle both the allocation and the metadata updates.  The
+>>> only gap in this scheme that I can see is if we fallocate, crash, and
+>>> upon restart the program then tries to write without retrying the
+>>> fallocate.  Can we trade some performance for the added requirement
+>>> that we must fallocate -> write -> fsync, and retry the trio if we
+>>> crash before the fsync returns?  I think that's already an implicit
+>>> requirement, so we might be ok here.
+>> Most of the software I've seen that doesn't use fallocate like this is
+>> either doing odd things otherwise, or is just making sure it has space for
+>> temporary files, so I think it is probably safe to require this.
+>
+> posix_fallocate gurantees you that you don't get ENOSPC from the write,
+> and there is plenty of software relying on that or crashing / cause data
+> integrity problems that way.
+>
+posix_fallocate is not the same thing as the fallocate syscall.  It's 
+there for compatibility, it has less functionality, and most 
+importantly, it _can_ be slow (because at least glibc will emulate it if 
+the underlying FS doesn't support fallocate, which means it's no faster 
+than just using dd).

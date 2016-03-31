@@ -1,102 +1,161 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:25636 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1757203AbcCaSTs (ORCPT
+Received: from mail-lf0-f50.google.com ([209.85.215.50]:33254 "EHLO
+	mail-lf0-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1757152AbcCaSXt (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 31 Mar 2016 14:19:48 -0400
-Date: Thu, 31 Mar 2016 11:19:13 -0700
-From: "Darrick J. Wong" <darrick.wong@oracle.com>
-To: "J. Bruce Fields" <bfields@fieldses.org>
-Cc: Dave Chinner <david@fromorbit.com>, Christoph Hellwig <hch@infradead.org>,
-        xfs@oss.sgi.com, linux-fsdevel <linux-fsdevel@vger.kernel.org>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>, linux-api@vger.kernel.org
-Subject: Re: fallocate mode flag for "unshare blocks"?
-Message-ID: <20160331181913.GA22244@birch.djwong.org>
-References: <20160302155007.GB7125@infradead.org>
- <20160330182755.GC2236@birch.djwong.org>
- <20160331011813.GJ30721@dastard>
- <20160331075440.GA4209@infradead.org>
- <20160331111850.GP11812@dastard>
- <20160331180821.GD22462@fieldses.org>
+	Thu, 31 Mar 2016 14:23:49 -0400
+Received: by mail-lf0-f50.google.com with SMTP id p188so38202979lfd.0
+        for <linux-btrfs@vger.kernel.org>; Thu, 31 Mar 2016 11:23:48 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20160331180821.GD22462@fieldses.org>
+In-Reply-To: <56FC6F3B.9050602@cn.fujitsu.com>
+References: <20160328143714.GZ10135@torres.zugschlus.de>
+	<56F98784.8090700@gmail.com>
+	<20160329064351.GA28990@torres.zugschlus.de>
+	<56FB7983.2060608@cn.fujitsu.com>
+	<CAPmG0jZ8hFfnO2NR9xbx3_W_Ot7QOCkN-J0ttn3Y=PsqzfN4KA@mail.gmail.com>
+	<56FC6F3B.9050602@cn.fujitsu.com>
+Date: Thu, 31 Mar 2016 20:23:47 +0200
+Message-ID: <CAPmG0jZkHFiJY=7or9cNWGf+seSCZ_-1hPYyKFoARoDmYgRiMg@mail.gmail.com>
+Subject: Re: "bad metadata" not fixed by btrfs repair
+From: Henk Slager <eye1tm@gmail.com>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: Marc Haber <mh+linux-btrfs@zugschlus.de>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Mar 31, 2016 at 02:08:21PM -0400, J. Bruce Fields wrote:
-> On Thu, Mar 31, 2016 at 10:18:50PM +1100, Dave Chinner wrote:
-> > On Thu, Mar 31, 2016 at 12:54:40AM -0700, Christoph Hellwig wrote:
-> > > On Thu, Mar 31, 2016 at 12:18:13PM +1100, Dave Chinner wrote:
-> > > > On Wed, Mar 30, 2016 at 11:27:55AM -0700, Darrick J. Wong wrote:
-> > > > > Or is it ok that fallocate could block, potentially for a long time as
-> > > > > we stream cows through the page cache (or however unshare works
-> > > > > internally)?  Those same programs might not be expecting fallocate to
-> > > > > take a long time.
-> > > > 
-> > > > Yes, it's perfectly fine for fallocate to block for long periods of
-> > > > time. See what gfs2 does during preallocation of blocks - it ends up
-> > > > calling sb_issue_zerout() because it doesn't have unwritten
-> > > > extents, and hence can block for long periods of time....
-> > > 
-> > > gfs2 fallocate is an implementation that will cause all but the most
-> > > trivial users real pain.  Even the initial XFS implementation just
-> > > marking the transactions synchronous made it unusable for all kinds
-> > > of applications, and this is much worse.  E.g. a NFS ALLOCATE operation
-> > > to gfs2 will probab;ly hand your connection for extended periods of
-> > > time.
-> > > 
-> > > If we need to support something like what gfs2 does we should have a
-> > > separate flag for it.
-> > 
-> > Using fallocate() for preallocation was always intended to
-> > be a faster, more efficient method allocating zeroed space
-> > than having userspace write blocks of data. Faster, more efficient
-> > does not mean instantaneous, and gfs2 using sb_issue_zerout() means
-> > that if the hardware has zeroing offloads (deterministic trim, write
-> > same, etc) it will use them, and that will be much faster than
-> > writing zeros from userspace.
-> > 
-> > IMO, what gfs2 is definitely within the intended usage of
-> > fallocate() for accelerating the preallocation of blocks.
-> > 
-> > Yes, it may not be optimal for things like NFS servers which haven't
-> > considered that a fallocate based offload operation might take some
-> > time to execute, but that's not a problem with fallocate. i.e.
-> > that's a problem with the nfs server ALLOCATE implementation not
-> > being prepared to return NFSERR_JUKEBOX to prevent client side hangs
-> > and timeouts while the operation is run....
-> 
-> That's an interesting idea, but I don't think it's really legal.  I take
-> JUKEBOX to mean "sorry, I'm failing this operation for now, try again
-> later and it might succeed", not "OK, I'm working on it, try again and
-> you may find out I've done it".
-> 
-> So if the client gets a JUKEBOX error but the server goes ahead and does
-> the operation anyway, that'd be unexpected.
-> 
-> I suppose it's comparable to the case where a slow fallocate is
-> interrupted--would it be legal to return EINTR in that case and leave
-> the application to sort out whether some part of the allocation had
-> already happened?
+On Thu, Mar 31, 2016 at 2:28 AM, Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
+>
+>
+> Henk Slager wrote on 2016/03/30 16:03 +0200:
+>>
+>> On Wed, Mar 30, 2016 at 9:00 AM, Qu Wenruo <quwenruo@cn.fujitsu.com>
+>> wrote:
+>>>
+>>> First of all.
+>>>
+>>> The "crossing stripe boundary" error message itself is *HARMLESS* for
+>>> recent
+>>> kernels.
+>>>
+>>> It only means, that metadata extent won't be checked by scrub on recent
+>>> kernels.
+>>> Because scrub by its codes, has a limitation that, it can only check tree
+>>> blocks which are inside a 64K block.
+>>>
+>>> Old kernel won't have anything wrong, until that tree block is being
+>>> scrubbed.
+>>> When scrubbed, old kernel just BUG_ON().
+>>>
+>>> Now recent kernel will handle such limitation by checking extent
+>>> allocation
+>>> and avoid crossing boundary, so new created fs with new kernel won't
+>>> cause
+>>> such error message at all.
+>>>
+>>> But for old created fs, the problem can't be avoided, but at least, new
+>>> kernels will not BUG_ON() when you scrub these extents, they just get
+>>> ignored (not that good, but at least no BUG_ON).
+>>>
+>>> And new fsck will check such case, gives such warning.
+>>>
+>>> Overall, you're OK if you are using recent kernels.
+>>>
+>>> Marc Haber wrote on 2016/03/29 08:43 +0200:
+>>>>
+>>>>
+>>>> On Mon, Mar 28, 2016 at 03:35:32PM -0400, Austin S. Hemmelgarn wrote:
+>>>>>
+>>>>>
+>>>>> Did you convert this filesystem from ext4 (or ext3)?
+>>>>
+>>>>
+>>>>
+>>>> No.
+>>>>
+>>>>> You hadn't mentioned what version of btrfs-progs you're using, and that
+>>>>> is
+>>>>> somewhat important for recovery.  I'm not sure if current versions of
+>>>>> btrfs
+>>>>> check can fix this issue, but I know for a fact that older versions
+>>>>> (prior
+>>>>> to at least 4.1) can not fix it.
+>>>>
+>>>>
+>>>>
+>>>> 4.1 for creation and btrfs check.
+>>>
+>>>
+>>>
+>>> I assume that you have run older kernel on it, like v4.1 or v4.2.
+>>>
+>>> In those old kernels, it lacks the check to avoid such extent allocation
+>>> check.
+>>>
+>>>>
+>>>>> As far as what the kernel is involved with, the easy way to check is if
+>>>>> it's
+>>>>> operating on a mounted filesystem or not.  If it only operates on
+>>>>> mounted
+>>>>> filesystems, it almost certainly goes through the kernel, if it only
+>>>>> operates on unmounted filesystems, it's almost certainly done in
+>>>>> userspace
+>>>>> (except dev scan and technically fi show).
+>>>>
+>>>>
+>>>>
+>>>> Then btrfs check is a userspace-only matter, as it wants the fs
+>>>> unmounted, and it is irrelevant that I did btrfs check from a rescue
+>>>> system with an older kernel, 3.16 if I recall correctly.
+>>>
+>>>
+>>>
+>>> Not recommended to use older kernel to RW mount or use older fsck to do
+>>> repair.
+>>> As it's possible that older kernel/btrfsck may allocate extent that cross
+>>> the 64K boundary.
+>>>
+>>>>
+>>>>> 2. Regarding general support:  If you're using an enterprise
+>>>>> distribution
+>>>>> (RHEL, SLES, CentOS, OEL, or something similar), you are almost
+>>>>> certainly
+>>>>> going to get better support from your vendor than from the mailing list
+>>>>> or
+>>>>> IRC.
+>>>>
+>>>>
+>>>>
+>>>> My "productive" desktops (fan is one of them) run Debian unstable with
+>>>> a current vanilla kernel. At the moment, I can't use 4.5 because it
+>>>> acts up with KVM.  When I need a rescue system, I use grml, which
+>>>> unfortunately hasn't released since November 2014 and is still with
+>>>> kernel 3.16
+>>>
+>>>
+>>>
+>>> To fix your problem(make these error message just disappear, even they
+>>> are
+>>> harmless on recent kernels), the most easy one, is to balance your
+>>> metadata.
+>>
+>>
+>> I did a balance with filter -musage=100  (kernel/tools 4.5/4.5) of the
+>> filesystem mentioned in here:
+>> http://www.spinics.net/lists/linux-btrfs/msg51405.html
+>>
+>> but still   bad metadata [ ),  crossing stripe boundary   messages,
+>> double amount compared to 2 months ago
+>
+>
+> Would you please give an example of the output?
+> So I can check if it's really crossing the boundary.
 
-<shrug> The unshare component to XFS fallocate does this if something
-sends a fatal signal to the process.  There's a difference between
-shooting down a process in the middle of fallocate and fallocate
-returning EINTR out of the blue, though...
+This is the 1st one of the 105 messages:
+bad metadata [8263437058048, 8263437062144) crossing stripe boundary
 
-...the manpage for fallocate says that "EINTR == a signal was caught".
+For all ... [X,Y) ...
+X is 64K aligned and Y - X = 4K
 
-> Would it be legal to continue the fallocate under the covers even
-> after returning EINTR?
-
-It doesn't do that, however.
-
---D
-
-> But anyway my first inclination is to say that the NFS FALLOCATE
-> protocol just wasn't designed to handle long-running fallocates, and if
-> we really need that then we need to give it a way to either report
-> partial results or to report results asynchronously.
-> 
-> --b.
+So in my case, all false alerts.

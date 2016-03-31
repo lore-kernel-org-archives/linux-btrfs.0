@@ -1,158 +1,86 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:40848 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751128AbcCaA2s (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:19604 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752519AbcCaA3c (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 30 Mar 2016 20:28:48 -0400
-Subject: Re: "bad metadata" not fixed by btrfs repair
-To: Henk Slager <eye1tm@gmail.com>
-References: <20160328143714.GZ10135@torres.zugschlus.de>
- <56F98784.8090700@gmail.com> <20160329064351.GA28990@torres.zugschlus.de>
- <56FB7983.2060608@cn.fujitsu.com>
- <CAPmG0jZ8hFfnO2NR9xbx3_W_Ot7QOCkN-J0ttn3Y=PsqzfN4KA@mail.gmail.com>
-CC: Marc Haber <mh+linux-btrfs@zugschlus.de>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <56FC6F3B.9050602@cn.fujitsu.com>
-Date: Thu, 31 Mar 2016 08:28:43 +0800
+	Wed, 30 Mar 2016 20:29:32 -0400
+Date: Wed, 30 Mar 2016 17:32:42 -0700
+From: Liu Bo <bo.li.liu@oracle.com>
+To: "Darrick J. Wong" <darrick.wong@oracle.com>
+Cc: Christoph Hellwig <hch@infradead.org>, xfs@oss.sgi.com,
+        linux-fsdevel <linux-fsdevel@vger.kernel.org>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>, linux-api@vger.kernel.org
+Subject: Re: fallocate mode flag for "unshare blocks"?
+Message-ID: <20160331003242.GA5813@localhost.localdomain>
+Reply-To: bo.li.liu@oracle.com
+References: <20160302155007.GB7125@infradead.org>
+ <20160330182755.GC2236@birch.djwong.org>
 MIME-Version: 1.0
-In-Reply-To: <CAPmG0jZ8hFfnO2NR9xbx3_W_Ot7QOCkN-J0ttn3Y=PsqzfN4KA@mail.gmail.com>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20160330182755.GC2236@birch.djwong.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Wed, Mar 30, 2016 at 11:27:55AM -0700, Darrick J. Wong wrote:
+> Hi all,
+> 
+> Christoph and I have been working on adding reflink and CoW support to
+> XFS recently.  Since the purpose of (mode 0) fallocate is to make sure
+> that future file writes cannot ENOSPC, I extended the XFS fallocate
+> handler to unshare any shared blocks via the copy on write mechanism I
+> built for it.  However, Christoph shared the following concerns with
+> me about that interpretation:
+> 
+> > I know that I suggested unsharing blocks on fallocate, but it turns out
+> > this is causing problems.  Applications expect falloc to be a fast
+> > metadata operation, and copying a potentially large number of blocks
+> > is against that expextation.  This is especially bad for the NFS
+> > server, which should not be blocked for a long time in a synchronous
+> > operation.
+> > 
+> > I think we'll have to remove the unshare and just fail the fallocate
+> > for a reflinked region for now.  I still think it makes sense to expose
+> > an unshare operation, and we probably should make that another
+> > fallocate mode.
 
+I'm expecting fallocate to be fast, too.
 
-Henk Slager wrote on 2016/03/30 16:03 +0200:
-> On Wed, Mar 30, 2016 at 9:00 AM, Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
->> First of all.
->>
->> The "crossing stripe boundary" error message itself is *HARMLESS* for recent
->> kernels.
->>
->> It only means, that metadata extent won't be checked by scrub on recent
->> kernels.
->> Because scrub by its codes, has a limitation that, it can only check tree
->> blocks which are inside a 64K block.
->>
->> Old kernel won't have anything wrong, until that tree block is being
->> scrubbed.
->> When scrubbed, old kernel just BUG_ON().
->>
->> Now recent kernel will handle such limitation by checking extent allocation
->> and avoid crossing boundary, so new created fs with new kernel won't cause
->> such error message at all.
->>
->> But for old created fs, the problem can't be avoided, but at least, new
->> kernels will not BUG_ON() when you scrub these extents, they just get
->> ignored (not that good, but at least no BUG_ON).
->>
->> And new fsck will check such case, gives such warning.
->>
->> Overall, you're OK if you are using recent kernels.
->>
->> Marc Haber wrote on 2016/03/29 08:43 +0200:
->>>
->>> On Mon, Mar 28, 2016 at 03:35:32PM -0400, Austin S. Hemmelgarn wrote:
->>>>
->>>> Did you convert this filesystem from ext4 (or ext3)?
->>>
->>>
->>> No.
->>>
->>>> You hadn't mentioned what version of btrfs-progs you're using, and that
->>>> is
->>>> somewhat important for recovery.  I'm not sure if current versions of
->>>> btrfs
->>>> check can fix this issue, but I know for a fact that older versions
->>>> (prior
->>>> to at least 4.1) can not fix it.
->>>
->>>
->>> 4.1 for creation and btrfs check.
->>
->>
->> I assume that you have run older kernel on it, like v4.1 or v4.2.
->>
->> In those old kernels, it lacks the check to avoid such extent allocation
->> check.
->>
->>>
->>>> As far as what the kernel is involved with, the easy way to check is if
->>>> it's
->>>> operating on a mounted filesystem or not.  If it only operates on mounted
->>>> filesystems, it almost certainly goes through the kernel, if it only
->>>> operates on unmounted filesystems, it's almost certainly done in
->>>> userspace
->>>> (except dev scan and technically fi show).
->>>
->>>
->>> Then btrfs check is a userspace-only matter, as it wants the fs
->>> unmounted, and it is irrelevant that I did btrfs check from a rescue
->>> system with an older kernel, 3.16 if I recall correctly.
->>
->>
->> Not recommended to use older kernel to RW mount or use older fsck to do
->> repair.
->> As it's possible that older kernel/btrfsck may allocate extent that cross
->> the 64K boundary.
->>
->>>
->>>> 2. Regarding general support:  If you're using an enterprise distribution
->>>> (RHEL, SLES, CentOS, OEL, or something similar), you are almost certainly
->>>> going to get better support from your vendor than from the mailing list
->>>> or
->>>> IRC.
->>>
->>>
->>> My "productive" desktops (fan is one of them) run Debian unstable with
->>> a current vanilla kernel. At the moment, I can't use 4.5 because it
->>> acts up with KVM.  When I need a rescue system, I use grml, which
->>> unfortunately hasn't released since November 2014 and is still with
->>> kernel 3.16
->>
->>
->> To fix your problem(make these error message just disappear, even they are
->> harmless on recent kernels), the most easy one, is to balance your metadata.
->
-> I did a balance with filter -musage=100  (kernel/tools 4.5/4.5) of the
-> filesystem mentioned in here:
-> http://www.spinics.net/lists/linux-btrfs/msg51405.html
->
-> but still   bad metadata [ ),  crossing stripe boundary   messages,
-> double amount compared to 2 months ago
+Well, btrfs fallocate doesn't allocate space if it's a shared one
+because it thinks the space is already allocated.  So a later overwrite
+over this shared extent may hit enospc errors.
 
-Would you please give an example of the output?
-So I can check if it's really crossing the boundary.
+> 
+> With that in mind, how do you all think we ought to resolve this?
+> Should we add a new fallocate mode flag that means "unshare the shared
+> blocks"?  Obviously, this unshare flag cannot be used in conjunction
+> with hole punching, zero range, insert range, or collapse range.  This
+> breaks the expectation that writing to a file after fallocate won't
+> ENOSPC.
+> 
+> Or is it ok that fallocate could block, potentially for a long time as
+> we stream cows through the page cache (or however unshare works
+> internally)?  Those same programs might not be expecting fallocate to
+> take a long time.
+> 
+> Can we do better than either solution?  It occurs to me that XFS does
+> unshare by reading the file data into the pagecache, marking the pages
+> dirty, and flushing the dirty pages; performance could be improved by
+> skipping the flush at the end.  We won't ENOSPC, because the XFS
+> delalloc system is careful enough to check that there are enough free
+> blocks to handle both the allocation and the metadata updates.  The
+> only gap in this scheme that I can see is if we fallocate, crash, and
+> upon restart the program then tries to write without retrying the
+> fallocate.  Can we trade some performance for the added requirement
+> that we must fallocate -> write -> fsync, and retry the trio if we
+> crash before the fsync returns?  I think that's already an implicit
+> requirement, so we might be ok here.
+> 
+> Opinions?  I rather like the last option, though I've only just
+> thought of it and have not had time to examine it thoroughly, and it's
+> specific to XFS. :)
+
+I'd vote for another mode for 'unshare the shared blocks'.
 
 Thanks,
-Qu
->
-> Kernel operating this fs has always been maximum 1 month behind
-> 'Latest Stable Kernel' (kernel.org terminology)
->
->> As I explained, the bug only lies in metadata, and balance will allocate new
->> tree blocks, then copy old data into new locations.
->>
->> In the allocation process of recent kernel, it will avoid such cross
->> boundary, and to fix your problem.
->>
->> But if you are using old kernels, don't scrub your metadata.
->>
->> Thanks,
->> Qu
->>>
->>>
->>> Greetings
->>> Marc
->>>
->>
->>
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
->
 
-
+-liubo

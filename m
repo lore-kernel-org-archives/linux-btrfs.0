@@ -1,109 +1,135 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from fieldses.org ([173.255.197.46]:47060 "EHLO fieldses.org"
+Received: from plane.gmane.org ([80.91.229.3]:36708 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1758320AbcCaWeY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 31 Mar 2016 18:34:24 -0400
-Date: Thu, 31 Mar 2016 18:34:17 -0400
-From: "J. Bruce Fields" <bfields@fieldses.org>
-To: Dave Chinner <david@fromorbit.com>
-Cc: Andreas Dilger <adilger@dilger.ca>, Christoph Hellwig <hch@infradead.org>,
-        "Darrick J. Wong" <darrick.wong@oracle.com>, xfs@oss.sgi.com,
-        linux-fsdevel <linux-fsdevel@vger.kernel.org>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>, linux-api@vger.kernel.org
-Subject: Re: fallocate mode flag for "unshare blocks"?
-Message-ID: <20160331223417.GA24069@fieldses.org>
-References: <20160302155007.GB7125@infradead.org>
- <20160330182755.GC2236@birch.djwong.org>
- <20160331011813.GJ30721@dastard>
- <20160331075440.GA4209@infradead.org>
- <20160331111850.GP11812@dastard>
- <20160331180821.GD22462@fieldses.org>
- <779E9BCF-8224-44FE-8AAE-E0341A7B475C@dilger.ca>
- <20160331222023.GR11812@dastard>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20160331222023.GR11812@dastard>
+	id S1752206AbcCaWoB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 31 Mar 2016 18:44:01 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+	id 1allJm-0002NS-BF
+	for linux-btrfs@vger.kernel.org; Fri, 01 Apr 2016 00:43:58 +0200
+Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Fri, 01 Apr 2016 00:43:58 +0200
+Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Fri, 01 Apr 2016 00:43:58 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: "/tmp/mnt.", and not honouring compression
+Date: Thu, 31 Mar 2016 22:43:52 +0000 (UTC)
+Message-ID: <pan$49c11$be713ac2$a42c91f6$7e8f8b0d@cox.net>
+References: <E30C9D57EC226049B1226989BABB2728418CE4@elephant.myhome.local>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Apr 01, 2016 at 09:20:23AM +1100, Dave Chinner wrote:
-> On Thu, Mar 31, 2016 at 01:47:50PM -0600, Andreas Dilger wrote:
-> > On Mar 31, 2016, at 12:08 PM, J. Bruce Fields <bfields@fieldses.org> wrote:
-> > > 
-> > > On Thu, Mar 31, 2016 at 10:18:50PM +1100, Dave Chinner wrote:
-> > >> On Thu, Mar 31, 2016 at 12:54:40AM -0700, Christoph Hellwig wrote:
-> > >>> On Thu, Mar 31, 2016 at 12:18:13PM +1100, Dave Chinner wrote:
-> > >>>> On Wed, Mar 30, 2016 at 11:27:55AM -0700, Darrick J. Wong wrote:
-> > >>>>> Or is it ok that fallocate could block, potentially for a long time as
-> > >>>>> we stream cows through the page cache (or however unshare works
-> > >>>>> internally)?  Those same programs might not be expecting fallocate to
-> > >>>>> take a long time.
-> > >>>> 
-> > >>>> Yes, it's perfectly fine for fallocate to block for long periods of
-> > >>>> time. See what gfs2 does during preallocation of blocks - it ends up
-> > >>>> calling sb_issue_zerout() because it doesn't have unwritten
-> > >>>> extents, and hence can block for long periods of time....
-> > >>> 
-> > >>> gfs2 fallocate is an implementation that will cause all but the most
-> > >>> trivial users real pain.  Even the initial XFS implementation just
-> > >>> marking the transactions synchronous made it unusable for all kinds
-> > >>> of applications, and this is much worse.  E.g. a NFS ALLOCATE operation
-> > >>> to gfs2 will probab;ly hand your connection for extended periods of
-> > >>> time.
-> > >>> 
-> > >>> If we need to support something like what gfs2 does we should have a
-> > >>> separate flag for it.
-> > >> 
-> > >> Using fallocate() for preallocation was always intended to
-> > >> be a faster, more efficient method allocating zeroed space
-> > >> than having userspace write blocks of data. Faster, more efficient
-> > >> does not mean instantaneous, and gfs2 using sb_issue_zerout() means
-> > >> that if the hardware has zeroing offloads (deterministic trim, write
-> > >> same, etc) it will use them, and that will be much faster than
-> > >> writing zeros from userspace.
-> > >> 
-> > >> IMO, what gfs2 is definitely within the intended usage of
-> > >> fallocate() for accelerating the preallocation of blocks.
-> > >> 
-> > >> Yes, it may not be optimal for things like NFS servers which haven't
-> > >> considered that a fallocate based offload operation might take some
-> > >> time to execute, but that's not a problem with fallocate. i.e.
-> > >> that's a problem with the nfs server ALLOCATE implementation not
-> > >> being prepared to return NFSERR_JUKEBOX to prevent client side hangs
-> > >> and timeouts while the operation is run....
-> > > 
-> > > That's an interesting idea, but I don't think it's really legal.  I take
-> > > JUKEBOX to mean "sorry, I'm failing this operation for now, try again
-> > > later and it might succeed", not "OK, I'm working on it, try again and
-> > > you may find out I've done it".
-> > > 
-> > > So if the client gets a JUKEBOX error but the server goes ahead and does
-> > > the operation anyway, that'd be unexpected.
-> > 
-> > Well, the tape continued to be mounted in the background and/or the file
-> > restored from the tape into the filesystem...
-> 
-> Right, and SGI have been shipping a DMAPI-aware Linux NFS server for
-> many years, using the above NFSERR_JUKEBOX behaviour for operations
-> that may block for a long time due to the need to pull stuff into
-> the filesytsem from the slow backing store. Best explanation is in
-> the relevant commit in the last published XFS+DMAPI branch from SGI,
-> for example:
-> 
-> http://oss.sgi.com/cgi-bin/gitweb.cgi?p=xfs/xfs.git;a=commit;h=28b171cf2b64167826474efbb82ad9d471a05f75
+Chris Murray posted on Thu, 31 Mar 2016 21:49:29 +0100 as excerpted:
 
-I haven't looked at the code, but I assume a JUKEBOX-returning write to
-an absent file brings into cache the bits necessary to perform the
-write, but stops short of actually doing the write.  That allows
-handling the retried write quickly without doing the wrong thing in the
-case the retry never comes.
+> I'm using Proxmox, based on Debian. Kernel version 4.2.8-1-pve. Btrfs
+> v3.17.
 
-Implementing fallocate by returning JUKEBOX while still continuing the
-allocation in the background is a bit different.
+The problem itself is beyond my level, but aiming for the obvious low-
+hanging fruit...
 
-I guess it doesn't matter as much in practice, since the only way you're
-likely to notice that fallocate unexpectedly succeeded would be if it
-caused you to hit ENOSPC elsewhere.  Is that right?  Still, it seems a
-little weird.
+On this list, which is forward looking as btrfs remains stabilizing, not 
+yet fully stable and mature, kernel support comes in four tracks, 
+mainstream and btrfs development trees, mainstream current, mainstream 
+lts, and everything else.
 
---b.
+Mainstream and btrfs development trees should be obvious.  It covers 
+mainstream current git and rc kernels as well as btrfs-integration and 
+linux-next.  Generally only recommended for bleeding edge testers willing 
+to lose what they're testing.
+
+Mainstream current follows mainstream latest releases, with generally the 
+latest two kernel series being best supported.  With 4.5 out, that's 4.5 
+and 4.4.
+
+Mainstream LTS follows mainstream LTS series, and until recently, again 
+the latest two were best supported.  That's the 4.4 and 4.1 LTS series.  
+However, as btrfs has matured, the previous LTS series, 3.18, hasn't 
+turned out so bad and remains reasonably well supported as well, tho 
+depending on the issue, you may still be asked to upgrade and see if it's 
+still there in 4.1 or 4.4.
+
+Then there's "everything else", which is where a 4.2 kernel such as 
+you're running comes in.  These kernels are either long ago history 
+(pre-3.18 LTS, for instance) in btrfs terms, or out of their mainstream 
+kernel support windows, which is where 4.2 is.  While we recognize that 
+various distros claiming btrfs support may still be using these kernels, 
+because we're mainline focused we don't track what patches they may or 
+may not have backported, and thus aren't in a particularly good position 
+to support them.  If you're relying on your distro's support in such a 
+case, that's where you need to look, as they know what they've backported 
+and what they haven't and are thus in a far better position to provide 
+support.
+
+As for the list, we still do the best we can with these "everything else" 
+kernels, but unless it's a known problem recognized on-sight, that's most 
+often simply to recommend upgrading to something that's better supported 
+and trying to duplicate the problem there.
+
+Meanwhile, for long-term enterprise level stability, btrfs isn't likely 
+to be a good choice in any case, as it really is still stabilizing and 
+the expectation is that people running it will be upgrading to get the 
+newer patches.  If that's not feasible, as it may not be for the 
+enterprise-stability-level use-case, then it's very likely that btrfs 
+isn't a good match for the use-case anyway, as it's simply not to that 
+level of stability yet.  A more mature filesystem such as ext4, ext3, the 
+old reiserfs which I still use on some spinning rust here (all my btrfs 
+are on ssd), xfs, etc, is very likely to be a more appropriate choice for 
+that use-case.
+
+For kernel 4.2, that leaves you with a few choices:
+
+1) Ask your distro for btrfs support if they offer it on the out-of-
+mainline-support kernels which they've obviously chosen to use instead of 
+the LTS series that /are/ still mainline supported.
+
+2) Upgrade to the supported 4.4 LTS kernel series.
+
+3) Downgrade to the older supported 4.1 LTS kernel series.
+
+4) Decide btrfs is inappropriate for your use-case and switch to a fully 
+stable and mature filesystem.
+
+5) Continue with 4.2 and muddle thru, using our "best effort" help where 
+you can and doing without or getting it elsewhere if the opportunity 
+presents itself or you have money to buy it from a qualified provider.
+
+
+Personally I'd choose option 2, upgrading to 4.4, but that's just me.  
+The other choices may work better for you.
+
+
+As for btrfs-progs userspace, when the filesystem is working it's not as 
+critical, since other than filesystem creation with mkfs.btrfs, most 
+operational commands simply invoke kernel code to do the real work.  
+However, once problems appear, a newer version can be critical as patches 
+to deal with newly discovered problems continue to be added to tools such 
+as btrfs check (for detecting and repairing problems) and btrfs restore 
+(for recovery of files off an unmountable filesystem).  And newer 
+userspace is designed to work with older kernels, so newer isn't a 
+problem in that regard.
+
+As a result, to keep userspace from getting /too/ far behind and because 
+userspace release version numbers are synced with kernel version, a good 
+rule of thumb is to run a userspace version similar to that of your 
+kernel, or newer.  Assuming you're already following the current or LTS 
+track kernel recommendations, that will keep you reasonably current, and 
+you can always upgrade to the newest available if you're trying to fix 
+otherwise unfixable problems.
+
+Unfortunately your userspace falls well outside that recommendation as 
+well, with 3.17 userspace being before the earliest supported 3.18 LTS 
+kernel, let alone comparable to your current 4.2 kernel or the 4.4 LTS 
+upgrade or 4.1 LTS downgrade that would be recommended on the LTS track, 
+or 4.4 or 4.5 on the current track.
+
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

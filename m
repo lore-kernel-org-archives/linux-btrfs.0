@@ -1,72 +1,135 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:30468 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:1901 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1758211AbcDAGiB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 1 Apr 2016 02:38:01 -0400
-Received: from localhost.localdomain (unknown [10.167.226.34])
-	by cn.fujitsu.com (Postfix) with ESMTP id 4A8E14056407
-	for <linux-btrfs@vger.kernel.org>; Fri,  1 Apr 2016 14:37:55 +0800 (CST)
+	id S1758255AbcDAGiE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 1 Apr 2016 02:38:04 -0400
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v7 6/8] btrfs-progs: Add show-super support for new DEDUPE flag
-Date: Fri,  1 Apr 2016 14:37:48 +0800
-Message-Id: <1459492670-31596-7-git-send-email-quwenruo@cn.fujitsu.com>
+Cc: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
+Subject: [PATCH v7 8/8] btrfs-progs: property: add a dedupe property
+Date: Fri,  1 Apr 2016 14:37:50 +0800
+Message-Id: <1459492670-31596-9-git-send-email-quwenruo@cn.fujitsu.com>
 In-Reply-To: <1459492670-31596-1-git-send-email-quwenruo@cn.fujitsu.com>
 References: <1459492670-31596-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Now btrfs-show-super can handle DEDUPE ro compat flag.
+From: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
 
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Normally if we enable online dedupe for a fs, it's filesystem wide
+de-duplication. With this property, we can explicitly disable data
+de-duplication for specified files.
+
+Signed-off-by: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
 ---
- cmds-inspect-dump-super.c | 18 ++++++++++++++++++
- 1 file changed, 18 insertions(+)
+ Documentation/btrfs-property.asciidoc |  2 +
+ props.c                               | 73 +++++++++++++++++++++++++++++++++++
+ 2 files changed, 75 insertions(+)
 
-diff --git a/cmds-inspect-dump-super.c b/cmds-inspect-dump-super.c
-index 3e09ee8..6a939c9 100644
---- a/cmds-inspect-dump-super.c
-+++ b/cmds-inspect-dump-super.c
-@@ -198,6 +198,16 @@ struct readable_flag_entry {
- 	char *output;
- };
+diff --git a/Documentation/btrfs-property.asciidoc b/Documentation/btrfs-property.asciidoc
+index 8b9b7f0..ca90035 100644
+--- a/Documentation/btrfs-property.asciidoc
++++ b/Documentation/btrfs-property.asciidoc
+@@ -44,6 +44,8 @@ label::::
+ label of device
+ compression::::
+ compression setting for an inode: lzo, zlib, or "" (empty string)
++dedupe::::
++online dedupe setting for an inode: disable or "" (empty string)
  
-+#define DEF_RO_COMPAT_FLAG_ENTRY(bit_name)	\
-+	{BTRFS_FEATURE_COMPAT_RO_##bit_name, #bit_name}
-+
-+struct readable_flag_entry ro_compat_flags_array[] = {
-+	DEF_RO_COMPAT_FLAG_ENTRY(DEDUPE)
-+};
-+
-+static const int ro_compat_flags_num = sizeof(ro_compat_flags_array) /
-+				      sizeof(struct readable_flag_entry);
-+
- #define DEF_INCOMPAT_FLAG_ENTRY(bit_name)		\
- 	{BTRFS_FEATURE_INCOMPAT_##bit_name, #bit_name}
- 
-@@ -269,6 +279,13 @@ static void __print_readable_flag(u64 flag, struct readable_flag_entry *array,
- 	printf(")\n");
+ *list* [-t <type>] <object>::
+ Lists available properties with their descriptions for the given object.
+diff --git a/props.c b/props.c
+index 5b74932..d8f6925 100644
+--- a/props.c
++++ b/props.c
+@@ -187,6 +187,77 @@ out:
+ 	return ret;
  }
  
-+static void print_readable_ro_compat_flag(u64 ro_flag)
++static int prop_dedupe(enum prop_object_type type, const char *object,
++	const char *name, const char *value)
 +{
-+	return __print_readable_flag(ro_flag, ro_compat_flags_array,
-+				     ro_compat_flags_num,
-+				     BTRFS_FEATURE_COMPAT_RO_SUPP);
++	int ret;
++	ssize_t sret;
++	int fd = -1;
++	DIR *dirstream = NULL;
++	char *buf = NULL;
++	char *xattr_name = NULL;
++	int open_flags = value ? O_RDWR : O_RDONLY;
++
++	fd = open_file_or_dir3(object, &dirstream, open_flags);
++	if (fd == -1) {
++		ret = -errno;
++		fprintf(stderr, "ERROR: open %s failed. %s\n",
++			object, strerror(-ret));
++		goto out;
++	}
++
++	xattr_name = malloc(XATTR_BTRFS_PREFIX_LEN + strlen(name) + 1);
++	if (!xattr_name) {
++		ret = -ENOMEM;
++		goto out;
++	}
++	memcpy(xattr_name, XATTR_BTRFS_PREFIX, XATTR_BTRFS_PREFIX_LEN);
++	memcpy(xattr_name + XATTR_BTRFS_PREFIX_LEN, name, strlen(name));
++	xattr_name[XATTR_BTRFS_PREFIX_LEN + strlen(name)] = '\0';
++
++	if (value)
++		sret = fsetxattr(fd, xattr_name, value, strlen(value), 0);
++	else
++		sret = fgetxattr(fd, xattr_name, NULL, 0);
++	if (sret < 0) {
++		ret = -errno;
++		if (ret != -ENOATTR)
++			fprintf(stderr,
++				"ERROR: failed to %s dedupe for %s. %s\n",
++				value ? "set" : "get", object, strerror(-ret));
++		else
++			ret = 0;
++		goto out;
++	}
++	if (!value) {
++		size_t len = sret;
++
++		buf = malloc(len);
++		if (!buf) {
++			ret = -ENOMEM;
++			goto out;
++		}
++		sret = fgetxattr(fd, xattr_name, buf, len);
++		if (sret < 0) {
++			ret = -errno;
++			fprintf(stderr,
++				"ERROR: failed to get dedupe for %s. %s\n",
++				object, strerror(-ret));
++			goto out;
++		}
++		fprintf(stdout, "dedupe=%.*s\n", (int)len, buf);
++	}
++
++	ret = 0;
++out:
++	free(xattr_name);
++	free(buf);
++	if (fd >= 0)
++		close_file_or_dir(fd, dirstream);
++
++	return ret;
 +}
 +
- static void print_readable_incompat_flag(u64 flag)
- {
- 	return __print_readable_flag(flag, incompat_flags_array,
-@@ -360,6 +377,7 @@ static void dump_superblock(struct btrfs_super_block *sb, int full)
- 	       (unsigned long long)btrfs_super_compat_flags(sb));
- 	printf("compat_ro_flags\t\t0x%llx\n",
- 	       (unsigned long long)btrfs_super_compat_ro_flags(sb));
-+	print_readable_ro_compat_flag(btrfs_super_compat_ro_flags(sb));
- 	printf("incompat_flags\t\t0x%llx\n",
- 	       (unsigned long long)btrfs_super_incompat_flags(sb));
- 	print_readable_incompat_flag(btrfs_super_incompat_flags(sb));
+ const struct prop_handler prop_handlers[] = {
+ 	{"ro", "Set/get read-only flag of subvolume.", 0, prop_object_subvol,
+ 	 prop_read_only},
+@@ -194,5 +265,7 @@ const struct prop_handler prop_handlers[] = {
+ 	 prop_object_dev | prop_object_root, prop_label},
+ 	{"compression", "Set/get compression for a file or directory", 0,
+ 	 prop_object_inode, prop_compression},
++	{"dedupe", "Set/get dedupe for a file or directory", 0,
++	 prop_object_inode, prop_dedupe},
+ 	{NULL, NULL, 0, 0, NULL}
+ };
 -- 
 2.7.4
 

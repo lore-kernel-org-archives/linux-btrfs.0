@@ -1,14 +1,14 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:62526 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:12218 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1758006AbcDAGfc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 1 Apr 2016 02:35:32 -0400
+	id S1754119AbcDAGfi (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 1 Apr 2016 02:35:38 -0400
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
-Subject: [PATCH v10 01/21] btrfs: dedupe: Introduce dedupe framework and its header
-Date: Fri,  1 Apr 2016 14:34:52 +0800
-Message-Id: <1459492512-31435-2-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH v10 13/21] btrfs: dedupe: add a property handler for online dedupe
+Date: Fri,  1 Apr 2016 14:35:04 +0800
+Message-Id: <1459492512-31435-14-git-send-email-quwenruo@cn.fujitsu.com>
 In-Reply-To: <1459492512-31435-1-git-send-email-quwenruo@cn.fujitsu.com>
 References: <1459492512-31435-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -17,189 +17,78 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
 
-Introduce the header for btrfs online(write time) de-duplication
-framework and needed header.
+We use btrfs extended attribute "btrfs.dedupe" to record per-file online
+dedupe status, so add a dedupe property handler.
 
-The new de-duplication framework is going to support 2 different dedupe
-methods and 1 dedupe hash.
-
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 Signed-off-by: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
 ---
- fs/btrfs/ctree.h   |   5 ++
- fs/btrfs/dedupe.h  | 134 +++++++++++++++++++++++++++++++++++++++++++++++++++++
- fs/btrfs/disk-io.c |   1 +
- 3 files changed, 140 insertions(+)
- create mode 100644 fs/btrfs/dedupe.h
+ fs/btrfs/props.c | 41 +++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 41 insertions(+)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 84a6a5b..022ab61 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -1860,6 +1860,11 @@ struct btrfs_fs_info {
- 	struct list_head pinned_chunks;
+diff --git a/fs/btrfs/props.c b/fs/btrfs/props.c
+index 3699212..a430886 100644
+--- a/fs/btrfs/props.c
++++ b/fs/btrfs/props.c
+@@ -42,6 +42,11 @@ static int prop_compression_apply(struct inode *inode,
+ 				  size_t len);
+ static const char *prop_compression_extract(struct inode *inode);
  
- 	int creating_free_space_tree;
++static int prop_dedupe_validate(const char *value, size_t len);
++static int prop_dedupe_apply(struct inode *inode, const char *value,
++			     size_t len);
++static const char *prop_dedupe_extract(struct inode *inode);
 +
-+	/* Inband de-duplication related structures*/
-+	unsigned int dedupe_enabled:1;
-+	struct btrfs_dedupe_info *dedupe_info;
-+	struct mutex dedupe_ioctl_lock;
+ static struct prop_handler prop_handlers[] = {
+ 	{
+ 		.xattr_name = XATTR_BTRFS_PREFIX "compression",
+@@ -50,6 +55,13 @@ static struct prop_handler prop_handlers[] = {
+ 		.extract = prop_compression_extract,
+ 		.inheritable = 1
+ 	},
++	{
++		.xattr_name = XATTR_BTRFS_PREFIX "dedupe",
++		.validate = prop_dedupe_validate,
++		.apply = prop_dedupe_apply,
++		.extract = prop_dedupe_extract,
++		.inheritable = 1
++	},
  };
  
- struct btrfs_subvolume_writers {
-diff --git a/fs/btrfs/dedupe.h b/fs/btrfs/dedupe.h
-new file mode 100644
-index 0000000..40f4808
---- /dev/null
-+++ b/fs/btrfs/dedupe.h
-@@ -0,0 +1,134 @@
-+/*
-+ * Copyright (C) 2015 Fujitsu.  All rights reserved.
-+ *
-+ * This program is free software; you can redistribute it and/or
-+ * modify it under the terms of the GNU General Public
-+ * License v2 as published by the Free Software Foundation.
-+ *
-+ * This program is distributed in the hope that it will be useful,
-+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
-+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-+ * General Public License for more details.
-+ *
-+ * You should have received a copy of the GNU General Public
-+ * License along with this program; if not, write to the
-+ * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
-+ * Boston, MA 021110-1307, USA.
-+ */
-+
-+#ifndef __BTRFS_DEDUPE__
-+#define __BTRFS_DEDUPE__
-+
-+#include <linux/btrfs.h>
-+#include <linux/wait.h>
-+#include <crypto/hash.h>
-+
-+/*
-+ * Dedup storage backend
-+ * On disk is persist storage but overhead is large
-+ * In memory is fast but will lose all its hash on umount
-+ */
-+#define BTRFS_DEDUPE_BACKEND_INMEMORY		0
-+#define BTRFS_DEDUPE_BACKEND_ONDISK		1
-+
-+/* Only support inmemory yet, so count is still only 1 */
-+#define BTRFS_DEDUPE_BACKEND_COUNT		1
-+
-+/* Dedup block size limit and default value */
-+#define BTRFS_DEDUPE_BLOCKSIZE_MAX	(8 * 1024 * 1024)
-+#define BTRFS_DEDUPE_BLOCKSIZE_MIN	(16 * 1024)
-+#define BTRFS_DEDUPE_BLOCKSIZE_DEFAULT	(128 * 1024)
-+
-+/* Hash algorithm, only support SHA256 yet */
-+#define BTRFS_DEDUPE_HASH_SHA256		0
-+
-+static int btrfs_dedupe_sizes[] = { 32 };
-+
-+/*
-+ * For caller outside of dedup.c
-+ *
-+ * Different dedupe backends should have their own hash structure
-+ */
-+struct btrfs_dedupe_hash {
-+	u64 bytenr;
-+	u32 num_bytes;
-+
-+	/* last field is a variable length array of dedupe hash */
-+	u8 hash[];
-+};
-+
-+struct btrfs_dedupe_info {
-+	/* dedupe blocksize */
-+	u64 blocksize;
-+	u16 backend;
-+	u16 hash_type;
-+
-+	struct crypto_shash *dedupe_driver;
-+	struct mutex lock;
-+
-+	/* following members are only used in in-memory dedupe mode */
-+	struct rb_root hash_root;
-+	struct rb_root bytenr_root;
-+	struct list_head lru_list;
-+	u64 limit_nr;
-+	u64 current_nr;
-+};
-+
-+struct btrfs_trans_handle;
-+
-+static inline int btrfs_dedupe_hash_hit(struct btrfs_dedupe_hash *hash)
+ void __init btrfs_props_init(void)
+@@ -426,4 +438,33 @@ static const char *prop_compression_extract(struct inode *inode)
+ 	return NULL;
+ }
+ 
++static int prop_dedupe_validate(const char *value, size_t len)
 +{
-+	return (hash && hash->bytenr);
++	if (!strncmp("disable", value, len))
++		return 0;
++
++	return -EINVAL;
 +}
 +
-+int btrfs_dedupe_hash_size(u16 type);
-+struct btrfs_dedupe_hash *btrfs_dedupe_alloc_hash(u16 type);
++static int prop_dedupe_apply(struct inode *inode, const char *value, size_t len)
++{
++	if (len == 0) {
++		BTRFS_I(inode)->flags &= ~BTRFS_INODE_NODEDUPE;
++		return 0;
++	}
 +
-+/*
-+ * Initial inband dedupe info
-+ * Called at dedupe enable time.
-+ */
-+int btrfs_dedupe_enable(struct btrfs_fs_info *fs_info, u16 type, u16 backend,
-+			u64 blocksize, u64 limit_nr, u64 limit_mem);
++	if (!strncmp("disable", value, len)) {
++		BTRFS_I(inode)->flags |= BTRFS_INODE_NODEDUPE;
++		return 0;
++	}
 +
-+/*
-+ * Disable dedupe and invalidate all its dedupe data.
-+ * Called at dedupe disable time.
-+ */
-+int btrfs_dedupe_disable(struct btrfs_fs_info *fs_info);
++	return -EINVAL;
++}
 +
-+/*
-+ * Calculate hash for dedup.
-+ * Caller must ensure [start, start + dedupe_bs) has valid data.
-+ */
-+int btrfs_dedupe_calc_hash(struct btrfs_fs_info *fs_info,
-+			   struct inode *inode, u64 start,
-+			   struct btrfs_dedupe_hash *hash);
-+
-+/*
-+ * Search for duplicated extents by calculated hash
-+ * Caller must call btrfs_dedupe_calc_hash() first to get the hash.
-+ *
-+ * @inode: the inode for we are writing
-+ * @file_pos: offset inside the inode
-+ * As we will increase extent ref immediately after a hash match,
-+ * we need @file_pos and @inode in this case.
-+ *
-+ * Return > 0 for a hash match, and the extent ref will be
-+ * *INCREASED*, and hash->bytenr/num_bytes will record the existing
-+ * extent data.
-+ * Return 0 for a hash miss. Nothing is done
-+ */
-+int btrfs_dedupe_search(struct btrfs_fs_info *fs_info,
-+			struct inode *inode, u64 file_pos,
-+			struct btrfs_dedupe_hash *hash);
-+
-+/* Add a dedupe hash into dedupe info */
-+int btrfs_dedupe_add(struct btrfs_trans_handle *trans,
-+		     struct btrfs_fs_info *fs_info,
-+		     struct btrfs_dedupe_hash *hash);
-+
-+/* Remove a dedupe hash from dedupe info */
-+int btrfs_dedupe_del(struct btrfs_trans_handle *trans,
-+		     struct btrfs_fs_info *fs_info, u64 bytenr);
-+#endif
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index c95e3ce..3cf4c11 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -2584,6 +2584,7 @@ int open_ctree(struct super_block *sb,
- 	mutex_init(&fs_info->reloc_mutex);
- 	mutex_init(&fs_info->delalloc_root_mutex);
- 	mutex_init(&fs_info->cleaner_delayed_iput_mutex);
-+	mutex_init(&fs_info->dedupe_ioctl_lock);
- 	seqlock_init(&fs_info->profiles_lock);
++static const char *prop_dedupe_extract(struct inode *inode)
++{
++	if (BTRFS_I(inode)->flags & BTRFS_INODE_NODEDUPE)
++		return "disable";
  
- 	INIT_LIST_HEAD(&fs_info->dirty_cowonly_roots);
++	return NULL;
++}
 -- 
 2.7.4
 

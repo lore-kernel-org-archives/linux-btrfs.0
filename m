@@ -1,47 +1,55 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:60563 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:34090 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752392AbcD0Wmd (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 27 Apr 2016 18:42:33 -0400
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id 15536ABDD
-	for <linux-btrfs@vger.kernel.org>; Wed, 27 Apr 2016 22:42:30 +0000 (UTC)
-Date: Thu, 28 Apr 2016 00:42:20 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Jeff Mahoney <jeffm@suse.com>
-Cc: Btrfs Development List <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH 0/8] btrfs: uapi migration for user-visible API components
-Message-ID: <20160427224220.GP29353@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1459541670-4097-1-git-send-email-jeffm@suse.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+	id S1750960AbcDAUOj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 1 Apr 2016 16:14:39 -0400
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+	by mx2.suse.de (Postfix) with ESMTP id 81035AC31
+	for <linux-btrfs@vger.kernel.org>; Fri,  1 Apr 2016 20:14:37 +0000 (UTC)
+From: Jeff Mahoney <jeffm@suse.com>
+To: Btrfs Development List <linux-btrfs@vger.kernel.org>
+Cc: Jeff Mahoney <jeffm@suse.com>
+Subject: [PATCH 1/8] btrfs: uapi/linux/btrfs.h migration, move BTRFS_LABEL_SIZE
+Date: Fri,  1 Apr 2016 16:14:23 -0400
+Message-Id: <1459541670-4097-2-git-send-email-jeffm@suse.com>
 In-Reply-To: <1459541670-4097-1-git-send-email-jeffm@suse.com>
+References: <1459541670-4097-1-git-send-email-jeffm@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Apr 01, 2016 at 04:14:22PM -0400, Jeff Mahoney wrote:
-> The only part of this set that isn't just a direct cut-and-paste is
-> the last one which converts u8 and u64 values to __u8 and __u64 since
-> the former aren't exported via include/uapi.
-> 
-> The goal is that everything required to use the btrfs ioctls for a
-> particular kernel release should be made available by exporting the uapi
-> headers for that release.
-> 
-> I intend to use these for the strace ioctl decoding patch I've been
-> working on so that I don't need to duplicate of the definitions in the
-> code I send upstream as the final version of the patch.  Prior to this
-> patchset, I had to duplicate nearly 100 defines and several structures --
-> and that's without doing any item decoding at all.
-> 
-> I do expect there might be some discussion here. :)
+BTRFS_LABEL_SIZE is required to define the BTRFS_IOC_GET_FSLABEL and
+BTRFS_IOC_SET_FSLABEL ioctls.
 
-I think this is a good refactoring, although my first reaction was not
-like that. Having the defines in the same directory is convenient, as
-searching is just *.[ch], but that's something I can live without. The
-other choice was to duplicate the defines yet another time, and this
-would be 3rd place, when counting btrfs-progs.
+Signed-off-by: Jeff Mahoney <jeffm@suse.com>
+---
+ fs/btrfs/ctree.h           | 1 -
+ include/uapi/linux/btrfs.h | 1 +
+ 2 files changed, 1 insertion(+), 1 deletion(-)
 
-As Josef and Bo seem to be fine with that as well, I'll put it to a
-branch and schedule for 4.7.
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 84a6a5b..3beaa24 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -410,7 +410,6 @@ struct btrfs_header {
+  * room to translate 14 chunks with 3 stripes each.
+  */
+ #define BTRFS_SYSTEM_CHUNK_ARRAY_SIZE 2048
+-#define BTRFS_LABEL_SIZE 256
+ 
+ /*
+  * just in case we somehow lose the roots and are not able to mount,
+diff --git a/include/uapi/linux/btrfs.h b/include/uapi/linux/btrfs.h
+index dea8931..11eee34 100644
+--- a/include/uapi/linux/btrfs.h
++++ b/include/uapi/linux/btrfs.h
+@@ -23,6 +23,7 @@
+ 
+ #define BTRFS_IOCTL_MAGIC 0x94
+ #define BTRFS_VOL_NAME_MAX 255
++#define BTRFS_LABEL_SIZE 256
+ 
+ /* this should be 4k */
+ #define BTRFS_PATH_NAME_MAX 4087
+-- 
+2.7.1
+

@@ -1,16 +1,16 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:33509 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:1435 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1752422AbcDAA0z (ORCPT
+	with ESMTP id S1752210AbcDACCD (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 31 Mar 2016 20:26:55 -0400
+	Thu, 31 Mar 2016 22:02:03 -0400
 Subject: Re: [PATCH v9 00/19] Btrfs dedupe framework
 To: <dsterba@suse.cz>, <linux-btrfs@vger.kernel.org>, <clm@fb.com>
 References: <1459324574-28063-1-git-send-email-quwenruo@cn.fujitsu.com>
  <20160331161201.GD6230@twin.jikos.cz>
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <56FDC043.50902@cn.fujitsu.com>
-Date: Fri, 1 Apr 2016 08:26:43 +0800
+Message-ID: <56FDD693.2020508@cn.fujitsu.com>
+Date: Fri, 1 Apr 2016 10:01:55 +0800
 MIME-Version: 1.0
 In-Reply-To: <20160331161201.GD6230@twin.jikos.cz>
 Content-Type: text/plain; charset="utf-8"; format=flowed
@@ -36,11 +36,9 @@ David Sterba wrote on 2016/03/31 18:12 +0200:
 > until the interface is settled.
 >
 >
-Nice to hear that.
 
-I'll add BTRFS_DEBUG config then.
-
-BTW, any comment on btrfs-convert rewrite?
+BTW, don't pick them directly, as I just forgot independent 2 bug fix 
+patches.
 
 Thanks,
 Qu

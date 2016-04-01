@@ -1,329 +1,367 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:30468 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:32943 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1758211AbcDAGiE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 1 Apr 2016 02:38:04 -0400
+	id S1758809AbcDAGh5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 1 Apr 2016 02:37:57 -0400
 Received: from localhost.localdomain (unknown [10.167.226.34])
-	by cn.fujitsu.com (Postfix) with ESMTP id A70654056403
-	for <linux-btrfs@vger.kernel.org>; Fri,  1 Apr 2016 14:37:54 +0800 (CST)
+	by cn.fujitsu.com (Postfix) with ESMTP id 2854540055DC
+	for <linux-btrfs@vger.kernel.org>; Fri,  1 Apr 2016 14:37:53 +0800 (CST)
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v7 5/8] btrfs-progs: Add dedupe feature for mkfs and convert
-Date: Fri,  1 Apr 2016 14:37:47 +0800
-Message-Id: <1459492670-31596-6-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH v7 2/8] btrfs-progs: dedupe: Add enable command for dedupe command group
+Date: Fri,  1 Apr 2016 14:37:44 +0800
+Message-Id: <1459492670-31596-3-git-send-email-quwenruo@cn.fujitsu.com>
 In-Reply-To: <1459492670-31596-1-git-send-email-quwenruo@cn.fujitsu.com>
 References: <1459492670-31596-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Add new DEDUPE ro compat flag and corresponding mkfs/convert flag
-'dedupe'.
-
-Since dedupe tree is completely isolated from fs tree, so even old kernel
-could do read mount.
-So add it to RO compat flag instead of common incompat flags
+Add enable subcommand for dedupe commmand group.
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- Documentation/mkfs.btrfs.asciidoc |  9 ++++++++
- btrfs-convert.c                   | 19 +++++++++++-----
- mkfs.c                            |  8 +++++--
- utils.c                           | 47 +++++++++++++++++++++++++++++----------
- utils.h                           |  7 +++---
- 5 files changed, 67 insertions(+), 23 deletions(-)
+ Documentation/btrfs-dedupe.asciidoc | 105 +++++++++++++++++++++++-
+ btrfs-completion                    |   6 +-
+ cmds-dedupe.c                       | 155 ++++++++++++++++++++++++++++++++++++
+ ioctl.h                             |   2 +
+ 4 files changed, 266 insertions(+), 2 deletions(-)
 
-diff --git a/Documentation/mkfs.btrfs.asciidoc b/Documentation/mkfs.btrfs.asciidoc
-index e4321de..12a41c6 100644
---- a/Documentation/mkfs.btrfs.asciidoc
-+++ b/Documentation/mkfs.btrfs.asciidoc
-@@ -208,6 +208,15 @@ reduced-size metadata for extent references, saves a few percent of metadata
- improved representation of file extents where holes are not explicitly
- stored as an extent, saves a few percent of metadata if sparse files are used
+diff --git a/Documentation/btrfs-dedupe.asciidoc b/Documentation/btrfs-dedupe.asciidoc
+index 5d63c32..8ab40ab 100644
+--- a/Documentation/btrfs-dedupe.asciidoc
++++ b/Documentation/btrfs-dedupe.asciidoc
+@@ -21,7 +21,110 @@ use with caution.
  
-+*dedupe*::
-+allow btrfs to use new on-disk format designed for in-band(write time)
-+de-duplication.
+ SUBCOMMAND
+ ----------
+-Nothing yet
++*enable* [options] <path>::
++Enable in-band de-duplication for a filesystem.
 ++
-+on-disk storage backend and persist de-duplication status needs this feature.
++`Options`
 ++
-+this feature is RO compat feature, means old kernel can still mount it
-+read-only.
++-s|--storage-backend <BACKEND>::::
++Specify de-duplication hash storage backend.
++Supported backends are 'ondisk' and 'inmemory'.
++If not specified, default value is 'inmemory'.
+++
++Refer to *BACKENDS* sector for more information.
 +
- BLOCK GROUPS, CHUNKS, RAID
- --------------------------
++-b|--blocksize <BLOCKSIZE>::::
++Specify dedupe block size.
++Supported values are power of 2 from '16K' to '8M'.
++Default value is '128K'.
+++
++Refer to *BLOCKSIZE* sector for more information.
++
++-a|--hash-algorithm <HASH>::::
++Specify hash algorithm.
++Only 'sha256' is supported yet.
++
++-l|--limit-hash <LIMIT>::::
++Specify maximum number of hashes stored in memory.
++Only works for 'inmemory' backend.
++Conflicts with '-m' option.
+++
++Only positive values are valid.
++Default value is '32K'.
++
++-m|--limit-memory <LIMIT>::::
++Specify maximum memory used for hashes.
++Only works for 'inmemory' backend.
++Conflicts with '-l' option.
+++
++Only value larger than or equal to '1024' is valid.
++No default value.
+++
++NOTE: Memory limit will be rounded down to kernel internal hash size,
++so the memory limit shown in 'btrfs dedupe status' may be different
++from the <LIMIT>.
++
++WARNING: Too large value for '-l' or '-m' will easily trigger OOM.
++Please use with caution according to system memory or use 'ondisk' backend
++if memory usage is critical.
++
++BACKENDS
++--------
++Btrfs in-band de-duplication support two different backends with their own
++features.
++
++In-memory backend::
++This backend provides backward-compatibility, and more fine-tuning options.
++But hash pool is non-persistent and may exhaust kernel memory if not setup
++properly.
+++
++This backend can be used on old btrfs(without '-O dedupe' mkfs option).
++When used on old btrfs, this backend needs to be enabled manually after mount.
+++
++Designed for fast hash search speed, in-memory backend will keep all dedupe
++hashes in memory. (Although overall performance is still much the same with
++'ondisk' backend)
+++
++And only keeps limited number of hash in memory to avoid exhausting memory.
++Hashes over the limit will be dropped following Last-Recent-Use behavior.
++So this backend has a consistent overhead for given limit but can\'t ensure
++any all duplicated blocks will be de-duplicated.
+++
++After umount and mount, in-memory backend need to refill its hash pool.
++
++On-disk backend::
++This backend provides persistent hash pool, with more smart memory management
++for hash pool.
++But it\'s not backward-compatible, meaning it must be used with '-O dedupe' mkfs
++option and older kernel can\'t mount it read-write.
+++
++Designed for de-duplication rate, hash pool is stored as B+ tree on disk.
++Although this behavior may cause extra disk IO for hash search under extreme
++high memory pressure,
++under most case the overall performance should be on par with 'inmemory'
++backend.
+++
++After umount and mount, on-disk backend still has its hash on disk, no need to
++refill its dedupe hash pool.
++
++DEDUPE BLOCK SIZE
++----------------
++In-band de-duplication is done at dedupe block size.
++Any data smaller than dedupe block size won\'t go through in-band
++de-duplication.
++
++And dedupe block size affects dedupe rate and fragmentation heavily.
++
++Smaller block size will cause more fragments, but higher dedupe rate.
++
++Larger block size will cause less fragments, but lower dedupe rate.
++
++In-band de-duplication rate is highly related to the workload pattern.
++So it\'s highly recommended to align dedupe block size to the workload
++block size to make full use of de-duplication.
++
++And dedupe block size larger than 128K will cause compression unavailable, as
++compression only support maximum extent size of 128K.
  
-diff --git a/btrfs-convert.c b/btrfs-convert.c
-index 4474489..77e72f6 100644
---- a/btrfs-convert.c
-+++ b/btrfs-convert.c
-@@ -2453,7 +2453,7 @@ static int convert_open_fs(const char *devname,
+ EXIT STATUS
+ -----------
+diff --git a/btrfs-completion b/btrfs-completion
+index 3ede77b..50f7ea2 100644
+--- a/btrfs-completion
++++ b/btrfs-completion
+@@ -29,7 +29,7 @@ _btrfs()
  
- static int do_convert(const char *devname, int datacsum, int packing, int noxattr,
- 		u32 nodesize, int copylabel, const char *fslabel, int progress,
--		u64 features)
-+		u64 features, u64 ro_features)
- {
- 	int i, ret, blocks_per_node;
- 	int fd = -1;
-@@ -2504,8 +2504,9 @@ static int do_convert(const char *devname, int datacsum, int packing, int noxatt
- 		fprintf(stderr, "unable to open %s\n", devname);
- 		goto fail;
- 	}
--	btrfs_parse_features_to_string(features_buf, features);
--	if (features == BTRFS_MKFS_DEFAULT_FEATURES)
-+	btrfs_parse_features_to_string(features_buf, features, ro_features);
-+	if (features == BTRFS_MKFS_DEFAULT_FEATURES &&
-+	    ro_features == 0)
- 		strcat(features_buf, " (default)");
+ 	local cmd=${words[1]}
  
- 	printf("create btrfs filesystem:\n");
-@@ -2521,6 +2522,7 @@ static int do_convert(const char *devname, int datacsum, int packing, int noxatt
- 	mkfs_cfg.sectorsize = blocksize;
- 	mkfs_cfg.stripesize = blocksize;
- 	mkfs_cfg.features = features;
-+	mkfs_cfg.ro_features = ro_features;
+-    commands='subvolume filesystem balance device scrub check rescue restore inspect-internal property send receive quota qgroup replace help version'
++    commands='subvolume filesystem balance device scrub check rescue restore inspect-internal property send receive quota qgroup dedupe replace help version'
+     commands_subvolume='create delete list snapshot find-new get-default set-default show sync'
+     commands_filesystem='defragment sync resize show df label usage'
+     commands_balance='start pause cancel resume status'
+@@ -40,6 +40,7 @@ _btrfs()
+     commands_property='get set list'
+     commands_quota='enable disable rescan'
+     commands_qgroup='assign remove create destroy show limit'
++    commands_dedupe='enable'
+     commands_replace='start status cancel'
  
- 	ret = make_btrfs(fd, &mkfs_cfg);
- 	if (ret) {
-@@ -3071,6 +3073,7 @@ int main(int argc, char *argv[])
- 	char *file;
- 	char fslabel[BTRFS_LABEL_SIZE];
- 	u64 features = BTRFS_MKFS_DEFAULT_FEATURES;
-+	u64 ro_features = 0;
+ 	if [[ "$cur" == -* && $cword -le 3 && "$cmd" != "help" ]]; then
+@@ -94,6 +95,9 @@ _btrfs()
+             qgroup)
+                 opts="$commands_qgroup"
+                 ;;
++            dedupe)
++                opts="$commands_dedupe"
++                ;;
+             replace)
+                 opts="$commands_replace"
+                 ;;
+diff --git a/cmds-dedupe.c b/cmds-dedupe.c
+index b25b8db..d9dcb10 100644
+--- a/cmds-dedupe.c
++++ b/cmds-dedupe.c
+@@ -19,6 +19,7 @@
+ #include <getopt.h>
+ #include <unistd.h>
+ #include <sys/ioctl.h>
++#include <sys/ioctl.h>
  
- 	while(1) {
- 		enum { GETOPT_VAL_NO_PROGRESS = 256 };
-@@ -3128,7 +3131,8 @@ int main(int argc, char *argv[])
- 				char *orig = strdup(optarg);
- 				char *tmp = orig;
+ #include "ctree.h"
+ #include "ioctl.h"
+@@ -36,8 +37,162 @@ static const char * const dedupe_cmd_group_usage[] = {
+ static const char dedupe_cmd_group_info[] =
+ "manage inband(write time) de-duplication";
  
--				tmp = btrfs_parse_fs_features(tmp, &features);
-+				tmp = btrfs_parse_fs_features(tmp, &features,
-+							      &ro_features);
- 				if (tmp) {
- 					fprintf(stderr,
- 						"Unrecognized filesystem feature '%s'\n",
-@@ -3146,7 +3150,9 @@ int main(int argc, char *argv[])
- 					char buf[64];
- 
- 					btrfs_parse_features_to_string(buf,
--						features & ~BTRFS_CONVERT_ALLOWED_FEATURES);
-+						features &
-+						~BTRFS_CONVERT_ALLOWED_FEATURES,
-+						ro_features);
- 					fprintf(stderr,
- 						"ERROR: features not allowed for convert: %s\n",
- 						buf);
-@@ -3196,7 +3202,8 @@ int main(int argc, char *argv[])
- 		ret = do_rollback(file);
- 	} else {
- 		ret = do_convert(file, datacsum, packing, noxattr, nodesize,
--				copylabel, fslabel, progress, features);
-+				copylabel, fslabel, progress, features,
-+				ro_features);
- 	}
- 	if (ret)
- 		return 1;
-diff --git a/mkfs.c b/mkfs.c
-index 5e79e0b..5071060 100644
---- a/mkfs.c
-+++ b/mkfs.c
-@@ -1369,6 +1369,7 @@ int main(int argc, char **argv)
- 	int saved_optind;
- 	char fs_uuid[BTRFS_UUID_UNPARSED_SIZE] = { 0 };
- 	u64 features = BTRFS_MKFS_DEFAULT_FEATURES;
-+	u64 ro_features = 0;
- 	struct mkfs_allocation allocation = { 0 };
- 	struct btrfs_mkfs_config mkfs_cfg;
- 
-@@ -1431,7 +1432,8 @@ int main(int argc, char **argv)
- 				char *orig = strdup(optarg);
- 				char *tmp = orig;
- 
--				tmp = btrfs_parse_fs_features(tmp, &features);
-+				tmp = btrfs_parse_fs_features(tmp, &features,
-+							      &ro_features);
- 				if (tmp) {
- 					fprintf(stderr,
- 						"Unrecognized filesystem feature '%s'\n",
-@@ -1674,6 +1676,7 @@ int main(int argc, char **argv)
- 	mkfs_cfg.sectorsize = sectorsize;
- 	mkfs_cfg.stripesize = stripesize;
- 	mkfs_cfg.features = features;
-+	mkfs_cfg.ro_features = ro_features;
- 
- 	ret = make_btrfs(fd, &mkfs_cfg);
- 	if (ret) {
-@@ -1828,7 +1831,8 @@ raid_groups:
- 			btrfs_group_profile_str(metadata_profile),
- 			pretty_size(allocation.system));
- 		printf("SSD detected:       %s\n", ssd ? "yes" : "no");
--		btrfs_parse_features_to_string(features_buf, features);
-+		btrfs_parse_features_to_string(features_buf, features,
-+					       ro_features);
- 		printf("Incompat features:  %s", features_buf);
- 		printf("\n");
- 
-diff --git a/utils.c b/utils.c
-index 7e45702..fbedd8d 100644
---- a/utils.c
-+++ b/utils.c
-@@ -252,6 +252,7 @@ int make_btrfs(int fd, struct btrfs_mkfs_config *cfg)
- 	btrfs_set_super_chunk_root_generation(&super, 1);
- 	btrfs_set_super_cache_generation(&super, -1);
- 	btrfs_set_super_incompat_flags(&super, cfg->features);
-+	btrfs_set_super_compat_ro_flags(&super, cfg->ro_features);
- 	if (cfg->label)
- 		__strncpy_null(super.label, cfg->label, BTRFS_LABEL_SIZE - 1);
- 
-@@ -574,23 +575,26 @@ out:
- static const struct btrfs_fs_feature {
- 	const char *name;
- 	u64 flag;
-+	u64 ro_flag;
- 	const char *desc;
- } mkfs_features[] = {
--	{ "mixed-bg", BTRFS_FEATURE_INCOMPAT_MIXED_GROUPS,
-+	{ "mixed-bg", BTRFS_FEATURE_INCOMPAT_MIXED_GROUPS, 0,
- 		"mixed data and metadata block groups" },
--	{ "extref", BTRFS_FEATURE_INCOMPAT_EXTENDED_IREF,
-+	{ "extref", BTRFS_FEATURE_INCOMPAT_EXTENDED_IREF, 0,
- 		"increased hardlink limit per file to 65536" },
--	{ "raid56", BTRFS_FEATURE_INCOMPAT_RAID56,
-+	{ "raid56", BTRFS_FEATURE_INCOMPAT_RAID56, 0,
- 		"raid56 extended format" },
--	{ "skinny-metadata", BTRFS_FEATURE_INCOMPAT_SKINNY_METADATA,
-+	{ "skinny-metadata", BTRFS_FEATURE_INCOMPAT_SKINNY_METADATA, 0,
- 		"reduced-size metadata extent refs" },
--	{ "no-holes", BTRFS_FEATURE_INCOMPAT_NO_HOLES,
-+	{ "no-holes", BTRFS_FEATURE_INCOMPAT_NO_HOLES, 0,
- 		"no explicit hole extents for files" },
-+	{ "dedupe", 0, BTRFS_FEATURE_COMPAT_RO_DEDUPE,
-+		"support on-disk dedupe backend and persist dedupe status" },
- 	/* Keep this one last */
--	{ "list-all", BTRFS_FEATURE_LIST_ALL, NULL }
-+	{ "list-all", BTRFS_FEATURE_LIST_ALL, 0, NULL }
- };
- 
--static int parse_one_fs_feature(const char *name, u64 *flags)
-+static int parse_one_fs_feature(const char *name, u64 *flags, u64 *ro_flags)
- {
- 	int i;
- 	int found = 0;
-@@ -599,9 +603,11 @@ static int parse_one_fs_feature(const char *name, u64 *flags)
- 		if (name[0] == '^' &&
- 			!strcmp(mkfs_features[i].name, name + 1)) {
- 			*flags &= ~ mkfs_features[i].flag;
-+			*ro_flags &= ~mkfs_features[i].ro_flag;
- 			found = 1;
- 		} else if (!strcmp(mkfs_features[i].name, name)) {
- 			*flags |= mkfs_features[i].flag;
-+			*ro_flags |= mkfs_features[i].ro_flag;
- 			found = 1;
- 		}
- 	}
-@@ -609,7 +615,7 @@ static int parse_one_fs_feature(const char *name, u64 *flags)
- 	return !found;
- }
- 
--void btrfs_parse_features_to_string(char *buf, u64 flags)
-+void btrfs_parse_features_to_string(char *buf, u64 flags, u64 ro_flags)
- {
- 	int i;
- 
-@@ -621,10 +627,15 @@ void btrfs_parse_features_to_string(char *buf, u64 flags)
- 				strcat(buf, ", ");
- 			strcat(buf, mkfs_features[i].name);
- 		}
-+		if (ro_flags & mkfs_features[i].ro_flag) {
-+			if (*buf)
-+				strcat(buf, ", ");
-+			strcat(buf, mkfs_features[i].name);
++static const char * const cmd_dedupe_enable_usage[] = {
++	"btrfs dedupe enable [options] <path>",
++	"Enable in-band(write time) de-duplication of a btrfs.",
++	"",
++	"-s|--storage-backend <BACKEND>",
++	"           specify dedupe hash storage backend",
++	"           supported backend: 'ondisk', 'inmemory'",
++	"           inmemory is the default backend",
++	"-b|--blocksize <BLOCKSIZE>",
++	"           specify dedupe block size",
++	"           default value is 128K",
++	"-a|--hash-algorithm <HASH>",
++	"           specify hash algorithm",
++	"           only 'sha256' is supported yet",
++	"-l|--limit-hash <LIMIT>",
++	"           specify maximum number of hashes stored in memory",
++	"           only for 'inmemory' backend",
++	"           positive value is valid, default value is 32K",
++	"-m|--limit-mem <LIMIT>",
++	"           specify maximum memory used for hashes",
++	"           only for 'inmemory' backend",
++	"           value larger than or equal to 1024 is valid, no default",
++	"           only one of '-m' and '-l' is allowed",
++	NULL
++};
++
++static int cmd_dedupe_enable(int argc, char **argv)
++{
++	int ret;
++	int fd;
++	char *path;
++	u64 blocksize = BTRFS_DEDUPE_BLOCKSIZE_DEFAULT;
++	u16 hash_type = BTRFS_DEDUPE_HASH_SHA256;
++	u16 backend = BTRFS_DEDUPE_BACKEND_INMEMORY;
++	u64 limit_nr = 0;
++	u64 limit_mem = 0;
++	struct btrfs_ioctl_dedupe_args dargs;
++	DIR *dirstream;
++
++	while (1) {
++		int c;
++		static const struct option long_options[] = {
++			{ "storage-backend", required_argument, NULL, 's'},
++			{ "blocksize", required_argument, NULL, 'b'},
++			{ "hash-algorithm", required_argument, NULL, 'a'},
++			{ "limit-hash", required_argument, NULL, 'l'},
++			{ "limit-memory", required_argument, NULL, 'm'},
++			{ NULL, 0, NULL, 0}
++		};
++
++		c = getopt_long(argc, argv, "s:b:a:l:m:", long_options, NULL);
++		if (c < 0)
++			break;
++		switch (c) {
++		case 's':
++			if (!strcmp("ondisk", optarg))
++				backend = BTRFS_DEDUPE_BACKEND_ONDISK;
++			else if (!strcmp("inmemory", optarg))
++				backend = BTRFS_DEDUPE_BACKEND_INMEMORY;
++			else {
++				error("unsupported dedupe backend: %s", optarg);
++				exit(1);
++			}
++			break;
++		case 'b':
++			blocksize = parse_size(optarg);
++			break;
++		case 'a':
++			if (strcmp("sha256", optarg)) {
++				error("unsupported dedupe hash algorithm: %s",
++				      optarg);
++				return 1;
++			}
++			break;
++		case 'l':
++			limit_nr = parse_size(optarg);
++			if (limit_nr == 0) {
++				error("limit should be larger than 0");
++				return 1;
++			}
++			break;
++		case 'm':
++			limit_mem = parse_size(optarg);
++			/*
++			 * Make sure at least one hash is allocated
++			 * 1024 should be good enough though.
++			 */
++			if (limit_mem < 1024) {
++				error("memory limit should be larger than or equal to 1024");
++				return 1;
++			}
++			break;
 +		}
++	}
++
++	path = argv[optind];
++	if (check_argc_exact(argc - optind, 1))
++		usage(cmd_dedupe_enable_usage);
++
++	/* Validation check */
++	if (!is_power_of_2(blocksize) ||
++	    blocksize > BTRFS_DEDUPE_BLOCKSIZE_MAX ||
++	    blocksize < BTRFS_DEDUPE_BLOCKSIZE_MIN) {
++		error("invalid dedupe blocksize: %llu, not in range [%u,%u] or power of 2",
++		      blocksize, BTRFS_DEDUPE_BLOCKSIZE_MIN,
++		      BTRFS_DEDUPE_BLOCKSIZE_MAX);
++		return 1;
++	}
++	if ((limit_nr || limit_mem) && backend == BTRFS_DEDUPE_BACKEND_ONDISK) {
++		error("limit is only valid for 'inmemory' backend");
++		return 1;
++	}
++	if (limit_nr && limit_mem) {
++		error("limit-memory and limit-hash can't be given at the same time");
++		return 1;
++	}
++	/*
++	 * TODO: Add check for limit_nr/limit_mem against current system
++	 * memory to avoid wrongly set limit.
++	 */
++
++	fd = open_file_or_dir(path, &dirstream);
++	if (fd < 0) {
++		error("failed to open file or directory: %s", path);
++		return 1;
++	}
++	memset(&dargs, 0, sizeof(dargs));
++	dargs.cmd = BTRFS_DEDUPE_CTL_ENABLE;
++	dargs.blocksize = blocksize;
++	dargs.hash_type = hash_type;
++	dargs.limit_nr = limit_nr;
++	dargs.limit_mem = limit_mem;
++	dargs.backend = backend;
++
++	ret = ioctl(fd, BTRFS_IOC_DEDUPE_CTL, &dargs);
++	if (ret < 0) {
++		char *error_message = NULL;
++		/* Special case, provide better error message */
++		if (backend == BTRFS_DEDUPE_BACKEND_ONDISK &&
++		    errno == -EOPNOTSUPP)
++			error_message = "Need 'dedupe' mkfs feature to enable ondisk backend";
++		error("failed to enable inband deduplication: %s",
++		      error_message ? error_message : strerror(errno));
++		ret = 1;
++		goto out;
++	}
++	ret = 0;
++
++out:
++	close_file_or_dir(fd, dirstream);
++	return ret;
++}
++
+ const struct cmd_group dedupe_cmd_group = {
+ 	dedupe_cmd_group_usage, dedupe_cmd_group_info, {
++		{ "enable", cmd_dedupe_enable, cmd_dedupe_enable_usage, NULL, 0},
+ 		NULL_CMD_STRUCT
  	}
- }
- 
--void btrfs_process_fs_features(u64 flags)
-+void btrfs_process_fs_features(u64 flags, u64 ro_flags)
- {
- 	int i;
- 
-@@ -634,6 +645,11 @@ void btrfs_process_fs_features(u64 flags)
- 				mkfs_features[i].name,
- 				mkfs_features[i].desc);
- 		}
-+		if (ro_flags & mkfs_features[i].ro_flag) {
-+			printf("Turning ON RO compat features '%s': %s\n",
-+				mkfs_features[i].name,
-+				mkfs_features[i].desc);
-+		}
- 	}
- }
- 
-@@ -649,11 +665,18 @@ void btrfs_list_all_fs_features(u64 mask_disallowed)
- 			continue;
- 		if (mkfs_features[i].flag & BTRFS_MKFS_DEFAULT_FEATURES)
- 			is_default = ", default";
--		fprintf(stderr, "%-20s- %s (0x%llx%s)\n",
-+		if (mkfs_features[i].flag)
-+			printf("%-20s- %s (incompat flag: 0x%llx%s)\n",
- 				mkfs_features[i].name,
- 				mkfs_features[i].desc,
- 				mkfs_features[i].flag,
- 				is_default);
-+		else
-+			printf("%-20s- %s (ro compat flag: 0x%llx%s)\n",
-+				mkfs_features[i].name,
-+				mkfs_features[i].desc,
-+				mkfs_features[i].ro_flag,
-+				is_default);
- 	}
- }
- 
-@@ -661,7 +684,7 @@ void btrfs_list_all_fs_features(u64 mask_disallowed)
-  * Return NULL if all features were parsed fine, otherwise return the name of
-  * the first unparsed.
-  */
--char* btrfs_parse_fs_features(char *namelist, u64 *flags)
-+char *btrfs_parse_fs_features(char *namelist, u64 *flags, u64 *ro_flags)
- {
- 	char *this_char;
- 	char *save_ptr = NULL; /* Satisfy static checkers */
-@@ -669,7 +692,7 @@ char* btrfs_parse_fs_features(char *namelist, u64 *flags)
- 	for (this_char = strtok_r(namelist, ",", &save_ptr);
- 	     this_char != NULL;
- 	     this_char = strtok_r(NULL, ",", &save_ptr)) {
--		if (parse_one_fs_feature(this_char, flags))
-+		if (parse_one_fs_feature(this_char, flags, ro_flags))
- 			return this_char;
- 	}
- 
-diff --git a/utils.h b/utils.h
-index 9e890f9..9a64711 100644
---- a/utils.h
-+++ b/utils.h
-@@ -104,9 +104,9 @@ void units_set_mode(unsigned *units, unsigned mode);
- void units_set_base(unsigned *units, unsigned base);
- 
- void btrfs_list_all_fs_features(u64 mask_disallowed);
--char* btrfs_parse_fs_features(char *namelist, u64 *flags);
--void btrfs_process_fs_features(u64 flags);
--void btrfs_parse_features_to_string(char *buf, u64 flags);
-+char *btrfs_parse_fs_features(char *namelist, u64 *flags, u64 *ro_flags);
-+void btrfs_process_fs_features(u64 flags, u64 ro_flags);
-+void btrfs_parse_features_to_string(char *buf, u64 flags, u64 ro_flags);
- 
- struct btrfs_mkfs_config {
- 	char *label;
-@@ -121,6 +121,7 @@ struct btrfs_mkfs_config {
- 
- 	/* Super bytenr after make_btrfs */
- 	u64 super_bytenr;
-+	u64 ro_features;
  };
- 
- int make_btrfs(int fd, struct btrfs_mkfs_config *cfg);
+diff --git a/ioctl.h b/ioctl.h
+index b89160f..6bfa56c 100644
+--- a/ioctl.h
++++ b/ioctl.h
+@@ -735,6 +735,8 @@ static inline char *btrfs_err_str(enum btrfs_err_code err_code)
+ 				    struct btrfs_ioctl_dev_replace_args)
+ #define BTRFS_IOC_FILE_EXTENT_SAME _IOWR(BTRFS_IOCTL_MAGIC, 54, \
+ 					 struct btrfs_ioctl_same_args)
++#define BTRFS_IOC_DEDUPE_CTL	_IOWR(BTRFS_IOCTL_MAGIC, 55, \
++				      struct btrfs_ioctl_dedupe_args)
+ #define BTRFS_IOC_GET_FEATURES _IOR(BTRFS_IOCTL_MAGIC, 57, \
+                                   struct btrfs_ioctl_feature_flags)
+ #define BTRFS_IOC_SET_FEATURES _IOW(BTRFS_IOCTL_MAGIC, 57, \
 -- 
 2.7.4
 

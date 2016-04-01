@@ -1,74 +1,254 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from fieldses.org ([173.255.197.46]:47222 "EHLO fieldses.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752210AbcDACAI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 31 Mar 2016 22:00:08 -0400
-Date: Thu, 31 Mar 2016 22:00:05 -0400
-From: "J. Bruce Fields" <bfields@fieldses.org>
-To: Dave Chinner <david@fromorbit.com>
-Cc: Andreas Dilger <adilger@dilger.ca>, Christoph Hellwig <hch@infradead.org>,
-        "Darrick J. Wong" <darrick.wong@oracle.com>, xfs@oss.sgi.com,
-        linux-fsdevel <linux-fsdevel@vger.kernel.org>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>, linux-api@vger.kernel.org
-Subject: Re: fallocate mode flag for "unshare blocks"?
-Message-ID: <20160401020005.GA25132@fieldses.org>
-References: <20160302155007.GB7125@infradead.org>
- <20160330182755.GC2236@birch.djwong.org>
- <20160331011813.GJ30721@dastard>
- <20160331075440.GA4209@infradead.org>
- <20160331111850.GP11812@dastard>
- <20160331180821.GD22462@fieldses.org>
- <779E9BCF-8224-44FE-8AAE-E0341A7B475C@dilger.ca>
- <20160331222023.GR11812@dastard>
- <20160331223417.GA24069@fieldses.org>
- <20160401003300.GS11812@dastard>
+Received: from mail.zener.es ([62.14.230.213]:58934 "EHLO zener.es"
+	rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+	id S1752443AbcDAJ5L (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 1 Apr 2016 05:57:11 -0400
+Received: from anv_nave2 (unknown [81.172.52.101])
+	(using TLSv1 with cipher ECDHE-RSA-AES256-SHA (256/256 bits))
+	(No client certificate requested)
+	(Authenticated sender: anv@zener.es)
+	by zener.es (Postfix) with ESMTPSA id EF66D3F4B3
+	for <linux-btrfs@vger.kernel.org>; Fri,  1 Apr 2016 11:50:51 +0200 (CEST)
+From: Alejandro Vargas <anv@zener.es>
+To: linux-btrfs@vger.kernel.org
+Subject: empty disk reports full
+Date: Fri, 01 Apr 2016 11:50:50 +0200
+Message-ID: <2879842.8EgedBzSUf@anv.localdomain>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20160401003300.GS11812@dastard>
+Content-Type: multipart/mixed; boundary="nextPart2081996.hkAiWlQA7z"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Apr 01, 2016 at 11:33:00AM +1100, Dave Chinner wrote:
-> On Thu, Mar 31, 2016 at 06:34:17PM -0400, J. Bruce Fields wrote:
-> > I haven't looked at the code, but I assume a JUKEBOX-returning write to
-> > an absent file brings into cache the bits necessary to perform the
-> > write, but stops short of actually doing the write.
-> 
-> Not exactly, as all subsequent read/write/truncate requests will
-> EJUKEBOX until the absent file has been brought back onto disk. Once
-> that is done, the next operation attempt will proceed.
-> 
-> > That allows
-> > handling the retried write quickly without doing the wrong thing in the
-> > case the retry never comes.
-> 
-> Essentially. But if a retry never comes it means there's either a
-> bug in the client NFS implementation or the client crashed,
+This is a multi-part message in MIME format.
 
-NFS clients are under no obligation to retry operations after JUKEBOX.
-And I'd expect them not to in the case the calling process was
-interrupted, for example.
+--nextPart2081996.hkAiWlQA7z
+Content-Transfer-Encoding: 7Bit
+Content-Type: text/plain; charset="us-ascii"
 
-> > I guess it doesn't matter as much in practice, since the only way you're
-> > likely to notice that fallocate unexpectedly succeeded would be if it
-> > caused you to hit ENOSPC elsewhere.  Is that right?  Still, it seems a
-> > little weird.
-> 
-> s/succeeded/failed/ and that statement is right.
+I am using a 2Tb disk for incremental backups.
 
-Sorry, I didn't explain clearly.
+I use rsync for backing up to a subvolume, and each day I creates an snapshot 
+of the lastest snapshot and do rsync in this.
 
-The case I was worrying about was the case were the on-the-wire ALLOCATE
-call returns JUKEBOX, but the server allocates anyway.
+When the disk becomes nearly full (100Gb or less available) I deletes the 
+oldest subvolume (withbtrfs subvolume delete).
 
-That behavior violates the spec as I understand it.
+My problem is that *even removing ALL the subvolumes*, the free space does
+not change. It continues reporting the same size (disk is nearly full).
 
-The client therefore assumes there was no allocation, when in fact there
-was.
+I tried "btrfs balance start /mnt/backup" but it takes hours and hours.
 
-So, technically a bug, but I wondered if it's likely to bite anyone.
-One of the only ways it seems someone would notice would be if it caused
-the filesystem to run out of space earlier than I expected.  But perhaps
-that's unlikely.
+I'm using linux 4.1.15
+btrfs-progs v4.1.2
 
---b.
+
+--nextPart2081996.hkAiWlQA7z
+Content-Disposition: attachment; filename="anv_0.vcf"
+Content-Transfer-Encoding: 7Bit
+Content-Type: text/vcard; charset="utf-8"; name="anv_0.vcf"
+
+BEGIN:VCARD
+VERSION:3.0
+EMAIL:anv@zener.es
+FN:Alejandro Vargas
+N:Vargas;Alejandro;;;
+NICKNAME:anv
+PHOTO;ENCODING=b;TYPE=jpeg:/9j/4AAQSkZJRgABAQEAAQABAAD/2wBDAAgGBgcGBQgHBwcJ
+ CQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wB
+ DAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMj
+ IyMjIyMjIyMjL/wAARCAC0ALQDASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFB
+ gcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS
+ 0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd
+ 4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2u
+ Hi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAt
+ REAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYk
+ NOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYa
+ HiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6O
+ nq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwD3uiiigAqrqN19j0+4ueP3UTPz7DNWqxfFriLwtqDc/
+ wCqxwfUgUAeez/E3VQxVI7cD3QnH60q/ELXZmWOCOOSRgBkRjA9/b8a4h4HdTJIfKhHJPr7CtSz
+ VktwqgqG9TyR71E2o6msIczO/wBQ8bv9kS3tCDcbAJZsDAbHO3/GuMmeW5kaSV2Z2OSSetOSAYF
+ ThAB0rnlUbOuFOMVoUxGM0jRDPSrmAegphXtjNRdmyKRj54FNZDV3yxnpQYwRRzDMwxFvWkMBxW
+ msKnPFK0AHajmEZQgYHOKNhHJ4q+0eM8VCyU+cLDIp3iBAY7T1HrXo3gvX45oVsZpTvB+QMc8e1
+ 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
+ pJ7UUUUmWf/9k=
+TEL;TYPE=CELL:607760045
+UID:35cad3bf-1c91-4723-a002-d6646529d80f
+END:VCARD
+
+
+--nextPart2081996.hkAiWlQA7z
+Content-Disposition: attachment; filename="anv_0.vcf"
+Content-Transfer-Encoding: 7Bit
+Content-Type: text/vcard; charset="utf-8"; name="anv_0.vcf"
+
+BEGIN:VCARD
+VERSION:3.0
+EMAIL:anv@zener.es
+FN:Alejandro Vargas
+N:Vargas;Alejandro;;;
+NICKNAME:anv
+PHOTO;ENCODING=b;TYPE=jpeg:/9j/4AAQSkZJRgABAQEAAQABAAD/2wBDAAgGBgcGBQgHBwcJ
+ CQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wB
+ DAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMj
+ IyMjIyMjIyMjL/wAARCAC0ALQDASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFB
+ gcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS
+ 0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd
+ 4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2u
+ Hi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAt
+ REAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYk
+ NOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYa
+ HiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6O
+ nq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwD3uiiigAqrqN19j0+4ueP3UTPz7DNWqxfFriLwtqDc/
+ wCqxwfUgUAeez/E3VQxVI7cD3QnH60q/ELXZmWOCOOSRgBkRjA9/b8a4h4HdTJIfKhHJPr7CtSz
+ VktwqgqG9TyR71E2o6msIczO/wBQ8bv9kS3tCDcbAJZsDAbHO3/GuMmeW5kaSV2Z2OSSetOSAYF
+ ThAB0rnlUbOuFOMVoUxGM0jRDPSrmAegphXtjNRdmyKRj54FNZDV3yxnpQYwRRzDMwxFvWkMBxW
+ msKnPFK0AHajmEZQgYHOKNhHJ4q+0eM8VCyU+cLDIp3iBAY7T1HrXo3gvX45oVsZpTvB+QMc8e1
+ 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
+ pJ7UUUUmWf/9k=
+TEL;TYPE=CELL:607760045
+UID:35cad3bf-1c91-4723-a002-d6646529d80f
+END:VCARD
+
+
+--nextPart2081996.hkAiWlQA7z--
+

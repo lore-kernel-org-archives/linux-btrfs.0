@@ -1,600 +1,148 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:12218 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:33345 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1758333AbcDAGfn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 1 Apr 2016 02:35:43 -0400
+	id S1758635AbcDAGfr (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 1 Apr 2016 02:35:47 -0400
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
-Subject: [PATCH v10 09/21] btrfs: dedupe: Inband in-memory only de-duplication implement
-Date: Fri,  1 Apr 2016 14:35:00 +0800
-Message-Id: <1459492512-31435-10-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH v10 20/21] btrfs: dedupe: Add support for adding hash for on-disk backend
+Date: Fri,  1 Apr 2016 14:35:11 +0800
+Message-Id: <1459492512-31435-21-git-send-email-quwenruo@cn.fujitsu.com>
 In-Reply-To: <1459492512-31435-1-git-send-email-quwenruo@cn.fujitsu.com>
 References: <1459492512-31435-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Core implement for inband de-duplication.
-It reuse the async_cow_start() facility to do the calculate dedupe hash.
-And use dedupe hash to do inband de-duplication at extent level.
+Now on-disk backend can add hash now.
 
-The work flow is as below:
-1) Run delalloc range for an inode
-2) Calculate hash for the delalloc range at the unit of dedupe_bs
-3) For hash match(duplicated) case, just increase source extent ref
-   and insert file extent.
-   For hash mismatch case, go through the normal cow_file_range()
-   fallback, and add hash into dedupe_tree.
-   Compress for hash miss case is not supported yet.
-
-Current implement restore all dedupe hash in memory rb-tree, with LRU
-behavior to control the limit.
+Since all needed on-disk backend functions are added, also allow on-disk
+backend to be used, by changing DEDUPE_BACKEND_COUNT from 1(inmemory
+only) to 2 (inmemory + ondisk).
 
 Signed-off-by: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- fs/btrfs/extent-tree.c |  18 ++++
- fs/btrfs/inode.c       | 235 ++++++++++++++++++++++++++++++++++++++++++-------
- fs/btrfs/relocation.c  |  16 ++++
- 3 files changed, 236 insertions(+), 33 deletions(-)
+ fs/btrfs/dedupe.c | 83 +++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ fs/btrfs/dedupe.h |  3 +-
+ 2 files changed, 84 insertions(+), 2 deletions(-)
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 53e1297..dabd721 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -37,6 +37,7 @@
- #include "math.h"
- #include "sysfs.h"
- #include "qgroup.h"
-+#include "dedupe.h"
- 
- #undef SCRAMBLE_DELAYED_REFS
- 
-@@ -2399,6 +2400,8 @@ static int run_one_delayed_ref(struct btrfs_trans_handle *trans,
- 
- 	if (btrfs_delayed_ref_is_head(node)) {
- 		struct btrfs_delayed_ref_head *head;
-+		struct btrfs_fs_info *fs_info = root->fs_info;
-+
- 		/*
- 		 * we've hit the end of the chain and we were supposed
- 		 * to insert this extent into the tree.  But, it got
-@@ -2413,6 +2416,15 @@ static int run_one_delayed_ref(struct btrfs_trans_handle *trans,
- 			btrfs_pin_extent(root, node->bytenr,
- 					 node->num_bytes, 1);
- 			if (head->is_data) {
-+				/*
-+				 * If insert_reserved is given, it means
-+				 * a new extent is revered, then deleted
-+				 * in one tran, and inc/dec get merged to 0.
-+				 *
-+				 * In this case, we need to remove its dedup
-+				 * hash.
-+				 */
-+				btrfs_dedupe_del(trans, fs_info, node->bytenr);
- 				ret = btrfs_del_csums(trans, root,
- 						      node->bytenr,
- 						      node->num_bytes);
-@@ -6713,6 +6725,12 @@ static int __btrfs_free_extent(struct btrfs_trans_handle *trans,
- 		btrfs_release_path(path);
- 
- 		if (is_data) {
-+			ret = btrfs_dedupe_del(trans, info, bytenr);
-+			if (ret < 0) {
-+				btrfs_abort_transaction(trans, extent_root,
-+							ret);
-+				goto out;
-+			}
- 			ret = btrfs_del_csums(trans, root, bytenr, num_bytes);
- 			if (ret) {
- 				btrfs_abort_transaction(trans, extent_root, ret);
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 41a5688..96790d0 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -60,6 +60,7 @@
- #include "hash.h"
- #include "props.h"
- #include "qgroup.h"
-+#include "dedupe.h"
- 
- struct btrfs_iget_args {
- 	struct btrfs_key *location;
-@@ -106,7 +107,8 @@ static int btrfs_finish_ordered_io(struct btrfs_ordered_extent *ordered_extent);
- static noinline int cow_file_range(struct inode *inode,
- 				   struct page *locked_page,
- 				   u64 start, u64 end, int *page_started,
--				   unsigned long *nr_written, int unlock);
-+				   unsigned long *nr_written, int unlock,
-+				   struct btrfs_dedupe_hash *hash);
- static struct extent_map *create_pinned_em(struct inode *inode, u64 start,
- 					   u64 len, u64 orig_start,
- 					   u64 block_start, u64 block_len,
-@@ -335,6 +337,7 @@ struct async_extent {
- 	struct page **pages;
- 	unsigned long nr_pages;
- 	int compress_type;
-+	struct btrfs_dedupe_hash *hash;
- 	struct list_head list;
- };
- 
-@@ -353,7 +356,8 @@ static noinline int add_async_extent(struct async_cow *cow,
- 				     u64 compressed_size,
- 				     struct page **pages,
- 				     unsigned long nr_pages,
--				     int compress_type)
-+				     int compress_type,
-+				     struct btrfs_dedupe_hash *hash)
- {
- 	struct async_extent *async_extent;
- 
-@@ -365,6 +369,7 @@ static noinline int add_async_extent(struct async_cow *cow,
- 	async_extent->pages = pages;
- 	async_extent->nr_pages = nr_pages;
- 	async_extent->compress_type = compress_type;
-+	async_extent->hash = hash;
- 	list_add_tail(&async_extent->list, &cow->extents);
+diff --git a/fs/btrfs/dedupe.c b/fs/btrfs/dedupe.c
+index 7c5d58a..1f0178e 100644
+--- a/fs/btrfs/dedupe.c
++++ b/fs/btrfs/dedupe.c
+@@ -437,6 +437,87 @@ out:
  	return 0;
  }
-@@ -616,7 +621,7 @@ cont:
- 		 */
- 		add_async_extent(async_cow, start, num_bytes,
- 				 total_compressed, pages, nr_pages_ret,
--				 compress_type);
-+				 compress_type, NULL);
  
- 		if (start + num_bytes < end) {
- 			start += num_bytes;
-@@ -641,7 +646,7 @@ cleanup_and_bail_uncompressed:
- 		if (redirty)
- 			extent_range_redirty_for_io(inode, start, end);
- 		add_async_extent(async_cow, start, end - start + 1,
--				 0, NULL, 0, BTRFS_COMPRESS_NONE);
-+				 0, NULL, 0, BTRFS_COMPRESS_NONE, NULL);
- 		*num_added += 1;
- 	}
- 
-@@ -671,6 +676,38 @@ static void free_async_extent_pages(struct async_extent *async_extent)
- 	async_extent->pages = NULL;
- }
- 
-+static void end_dedupe_extent(struct inode *inode, u64 start,
-+			      u32 len, unsigned long page_ops)
++static int ondisk_search_bytenr(struct btrfs_trans_handle *trans,
++				struct btrfs_dedupe_info *dedupe_info,
++				struct btrfs_path *path, u64 bytenr,
++				int prepare_del);
++static int ondisk_search_hash(struct btrfs_dedupe_info *dedupe_info, u8 *hash,
++			      u64 *bytenr_ret, u32 *num_bytes_ret);
++static int ondisk_add(struct btrfs_trans_handle *trans,
++		      struct btrfs_dedupe_info *dedupe_info,
++		      struct btrfs_dedupe_hash *hash)
 +{
-+	int i;
-+	unsigned nr_pages = len / PAGE_CACHE_SIZE;
-+	struct page *page;
++	struct btrfs_path *path;
++	struct btrfs_root *dedupe_root = dedupe_info->dedupe_root;
++	struct btrfs_key key;
++	u64 hash_offset;
++	u64 bytenr;
++	u32 num_bytes;
++	int hash_len = btrfs_dedupe_sizes[dedupe_info->hash_type];
++	int ret;
 +
-+	for (i = 0; i < nr_pages; i++) {
-+		page = find_get_page(inode->i_mapping,
-+				     start >> PAGE_CACHE_SHIFT);
-+		/* page should be already locked by caller */
-+		if (WARN_ON(!page))
-+			continue;
++	if (WARN_ON(hash_len <= 8 ||
++	    !IS_ALIGNED(hash->bytenr, dedupe_root->sectorsize)))
++		return -EINVAL;
 +
-+		/* We need to do this by ourselves as we skipped IO */
-+		if (page_ops & PAGE_CLEAR_DIRTY)
-+			clear_page_dirty_for_io(page);
-+		if (page_ops & PAGE_SET_WRITEBACK)
-+			set_page_writeback(page);
++	path = btrfs_alloc_path();
++	if (!path)
++		return -ENOMEM;
 +
-+		end_extent_writepage(page, 0, start,
-+				     start + PAGE_CACHE_SIZE - 1);
-+		if (page_ops & PAGE_END_WRITEBACK)
-+			end_page_writeback(page);
-+		if (page_ops & PAGE_UNLOCK)
-+			unlock_page(page);
++	mutex_lock(&dedupe_info->lock);
 +
-+		start += PAGE_CACHE_SIZE;
-+		page_cache_release(page);
-+	}
-+}
-+
- /*
-  * phase two of compressed writeback.  This is the ordered portion
-  * of the code, which only gets called in the order the work was
-@@ -687,6 +724,7 @@ static noinline void submit_compressed_extents(struct inode *inode,
- 	struct btrfs_root *root = BTRFS_I(inode)->root;
- 	struct extent_map_tree *em_tree = &BTRFS_I(inode)->extent_tree;
- 	struct extent_io_tree *io_tree;
-+	struct btrfs_dedupe_hash *hash;
- 	int ret = 0;
- 
- again:
-@@ -696,6 +734,7 @@ again:
- 		list_del(&async_extent->list);
- 
- 		io_tree = &BTRFS_I(inode)->io_tree;
-+		hash = async_extent->hash;
- 
- retry:
- 		/* did the compression code fall back to uncompressed IO? */
-@@ -712,7 +751,8 @@ retry:
- 					     async_extent->start,
- 					     async_extent->start +
- 					     async_extent->ram_size - 1,
--					     &page_started, &nr_written, 0);
-+					     &page_started, &nr_written, 0,
-+					     hash);
- 
- 			/* JDM XXX */
- 
-@@ -722,15 +762,26 @@ retry:
- 			 * and IO for us.  Otherwise, we need to submit
- 			 * all those pages down to the drive.
- 			 */
--			if (!page_started && !ret)
--				extent_write_locked_range(io_tree,
--						  inode, async_extent->start,
--						  async_extent->start +
--						  async_extent->ram_size - 1,
--						  btrfs_get_extent,
--						  WB_SYNC_ALL);
--			else if (ret)
-+			if (!page_started && !ret) {
-+				/* Skip IO for dedupe async_extent */
-+				if (btrfs_dedupe_hash_hit(hash))
-+					end_dedupe_extent(inode,
-+						async_extent->start,
-+						async_extent->ram_size,
-+						PAGE_CLEAR_DIRTY |
-+						PAGE_SET_WRITEBACK |
-+						PAGE_END_WRITEBACK |
-+						PAGE_UNLOCK);
-+				else
-+					extent_write_locked_range(io_tree,
-+						inode, async_extent->start,
-+						async_extent->start +
-+						async_extent->ram_size - 1,
-+						btrfs_get_extent,
-+						WB_SYNC_ALL);
-+			} else if (ret)
- 				unlock_page(async_cow->locked_page);
-+			kfree(hash);
- 			kfree(async_extent);
- 			cond_resched();
- 			continue;
-@@ -856,6 +907,7 @@ retry:
- 			free_async_extent_pages(async_extent);
- 		}
- 		alloc_hint = ins.objectid + ins.offset;
-+		kfree(hash);
- 		kfree(async_extent);
- 		cond_resched();
- 	}
-@@ -872,6 +924,7 @@ out_free:
- 				     PAGE_SET_WRITEBACK | PAGE_END_WRITEBACK |
- 				     PAGE_SET_ERROR);
- 	free_async_extent_pages(async_extent);
-+	kfree(hash);
- 	kfree(async_extent);
- 	goto again;
- }
-@@ -925,7 +978,7 @@ static noinline int cow_file_range(struct inode *inode,
- 				   struct page *locked_page,
- 				   u64 start, u64 end, int *page_started,
- 				   unsigned long *nr_written,
--				   int unlock)
-+				   int unlock, struct btrfs_dedupe_hash *hash)
- {
- 	struct btrfs_root *root = BTRFS_I(inode)->root;
- 	u64 alloc_hint = 0;
-@@ -984,11 +1037,16 @@ static noinline int cow_file_range(struct inode *inode,
- 		unsigned long op;
- 
- 		cur_alloc_size = disk_num_bytes;
--		ret = btrfs_reserve_extent(root, cur_alloc_size,
-+		if (btrfs_dedupe_hash_hit(hash)) {
-+			ins.objectid = hash->bytenr;
-+			ins.offset = hash->num_bytes;
-+		} else {
-+			ret = btrfs_reserve_extent(root, cur_alloc_size,
- 					   root->sectorsize, 0, alloc_hint,
- 					   &ins, 1, 1);
--		if (ret < 0)
--			goto out_unlock;
-+			if (ret < 0)
-+				goto out_unlock;
-+		}
- 
- 		em = alloc_extent_map();
- 		if (!em) {
-@@ -1025,8 +1083,9 @@ static noinline int cow_file_range(struct inode *inode,
- 			goto out_reserve;
- 
- 		cur_alloc_size = ins.offset;
--		ret = btrfs_add_ordered_extent(inode, start, ins.objectid,
--					       ram_size, cur_alloc_size, 0);
-+		ret = btrfs_add_ordered_extent_dedupe(inode, start,
-+				ins.objectid, cur_alloc_size, ins.offset,
-+				0, hash);
- 		if (ret)
- 			goto out_drop_extent_cache;
- 
-@@ -1076,6 +1135,68 @@ out_unlock:
- 	goto out;
- }
- 
-+static int hash_file_ranges(struct inode *inode, u64 start, u64 end,
-+			    struct async_cow *async_cow, int *num_added)
-+{
-+	struct btrfs_root *root = BTRFS_I(inode)->root;
-+	struct btrfs_fs_info *fs_info = root->fs_info;
-+	struct btrfs_dedupe_info *dedupe_info = fs_info->dedupe_info;
-+	struct page *locked_page = async_cow->locked_page;
-+	u16 hash_algo;
-+	u64 actual_end;
-+	u64 isize = i_size_read(inode);
-+	u64 dedupe_bs;
-+	u64 cur_offset = start;
-+	int ret = 0;
-+
-+	actual_end = min_t(u64, isize, end + 1);
-+	/* If dedupe is not enabled, don't split extent into dedupe_bs */
-+	if (fs_info->dedupe_enabled && dedupe_info) {
-+		dedupe_bs = dedupe_info->blocksize;
-+		hash_algo = dedupe_info->hash_type;
-+	} else {
-+		dedupe_bs = SZ_128M;
-+		/* Just dummy, to avoid access NULL pointer */
-+		hash_algo = BTRFS_DEDUPE_HASH_SHA256;
-+	}
-+
-+	while (cur_offset < end) {
-+		struct btrfs_dedupe_hash *hash = NULL;
-+		u64 len;
-+
-+		len = min(end + 1 - cur_offset, dedupe_bs);
-+		if (len < dedupe_bs)
-+			goto next;
-+
-+		hash = btrfs_dedupe_alloc_hash(hash_algo);
-+		if (!hash) {
-+			ret = -ENOMEM;
-+			goto out;
-+		}
-+		ret = btrfs_dedupe_calc_hash(fs_info, inode, cur_offset, hash);
-+		if (ret < 0)
-+			goto out;
-+
-+		ret = btrfs_dedupe_search(fs_info, inode, cur_offset, hash);
-+		if (ret < 0)
-+			goto out;
++	ret = ondisk_search_bytenr(NULL, dedupe_info, path, hash->bytenr, 0);
++	if (ret < 0)
++		goto out;
++	if (ret > 0) {
 +		ret = 0;
-+
-+next:
-+		/* Redirty the locked page if it corresponds to our extent */
-+		if (page_offset(locked_page) >= start &&
-+		    page_offset(locked_page) <= end)
-+			__set_page_dirty_nobuffers(locked_page);
-+
-+		add_async_extent(async_cow, cur_offset, len, 0, NULL, 0,
-+				 BTRFS_COMPRESS_NONE, hash);
-+		cur_offset += len;
-+		(*num_added)++;
++		goto out;
 +	}
++	btrfs_release_path(path);
++
++	ret = ondisk_search_hash(dedupe_info, hash->hash, &bytenr, &num_bytes);
++	if (ret < 0)
++		goto out;
++	/* Same hash found, don't re-add to save dedupe tree space */
++	if (ret > 0) {
++		ret = 0;
++		goto out;
++	}
++
++	/* Insert hash->bytenr item */
++	memcpy(&key.objectid, hash->hash + hash_len - 8, 8);
++	key.type = BTRFS_DEDUPE_HASH_ITEM_KEY;
++	key.offset = hash->bytenr;
++
++	/* The last 8 bit will not be included into hash */
++	ret = btrfs_insert_empty_item(trans, dedupe_root, path, &key,
++				      hash_len - 8);
++	WARN_ON(ret == -EEXIST);
++	if (ret < 0)
++		goto out;
++	hash_offset = btrfs_item_ptr_offset(path->nodes[0], path->slots[0]);
++	write_extent_buffer(path->nodes[0], hash->hash,
++			    hash_offset, hash_len - 8);
++	btrfs_mark_buffer_dirty(path->nodes[0]);
++	btrfs_release_path(path);
++
++	/* Then bytenr->hash item */
++	key.objectid = hash->bytenr;
++	key.type = BTRFS_DEDUPE_BYTENR_ITEM_KEY;
++	memcpy(&key.offset, hash->hash + hash_len - 8, 8);
++
++	ret = btrfs_insert_empty_item(trans, dedupe_root, path, &key, 0);
++	WARN_ON(ret == -EEXIST);
++	if (ret < 0)
++		goto out;
++	btrfs_mark_buffer_dirty(path->nodes[0]);
++
 +out:
++	mutex_unlock(&dedupe_info->lock);
++	btrfs_free_path(path);
 +	return ret;
 +}
 +
- /*
-  * work queue call back to started compression on a file and pages
-  */
-@@ -1083,11 +1204,18 @@ static noinline void async_cow_start(struct btrfs_work *work)
- {
- 	struct async_cow *async_cow;
- 	int num_added = 0;
-+	int ret = 0;
- 	async_cow = container_of(work, struct async_cow, work);
+ int btrfs_dedupe_add(struct btrfs_trans_handle *trans,
+ 		     struct btrfs_fs_info *fs_info,
+ 		     struct btrfs_dedupe_hash *hash)
+@@ -458,6 +539,8 @@ int btrfs_dedupe_add(struct btrfs_trans_handle *trans,
  
--	compress_file_range(async_cow->inode, async_cow->locked_page,
--			    async_cow->start, async_cow->end, async_cow,
--			    &num_added);
-+	if (inode_need_compress(async_cow->inode))
-+		compress_file_range(async_cow->inode, async_cow->locked_page,
-+				    async_cow->start, async_cow->end, async_cow,
-+				    &num_added);
-+	else
-+		ret = hash_file_ranges(async_cow->inode, async_cow->start,
-+				       async_cow->end, async_cow, &num_added);
-+	WARN_ON(ret);
-+
- 	if (num_added == 0) {
- 		btrfs_add_delayed_iput(async_cow->inode);
- 		async_cow->inode = NULL;
-@@ -1136,6 +1264,8 @@ static int cow_file_range_async(struct inode *inode, struct page *locked_page,
- {
- 	struct async_cow *async_cow;
- 	struct btrfs_root *root = BTRFS_I(inode)->root;
-+	struct btrfs_fs_info *fs_info = root->fs_info;
-+	struct btrfs_dedupe_info *dedupe_info = fs_info->dedupe_info;
- 	unsigned long nr_pages;
- 	u64 cur_end;
- 	int limit = 10 * SZ_1M;
-@@ -1150,7 +1280,11 @@ static int cow_file_range_async(struct inode *inode, struct page *locked_page,
- 		async_cow->locked_page = locked_page;
- 		async_cow->start = start;
+ 	if (dedupe_info->backend == BTRFS_DEDUPE_BACKEND_INMEMORY)
+ 		return inmem_add(dedupe_info, hash);
++	if (dedupe_info->backend == BTRFS_DEDUPE_BACKEND_ONDISK)
++		return ondisk_add(trans, dedupe_info, hash);
+ 	return -EINVAL;
+ }
  
--		if (BTRFS_I(inode)->flags & BTRFS_INODE_NOCOMPRESS &&
-+		if (fs_info->dedupe_enabled && dedupe_info) {
-+			u64 len = max_t(u64, SZ_512K, dedupe_info->blocksize);
-+
-+			cur_end = min(end, start + len - 1);
-+		} else if (BTRFS_I(inode)->flags & BTRFS_INODE_NOCOMPRESS &&
- 		    !btrfs_test_opt(root, FORCE_COMPRESS))
- 			cur_end = end;
- 		else
-@@ -1407,7 +1541,7 @@ out_check:
- 		if (cow_start != (u64)-1) {
- 			ret = cow_file_range(inode, locked_page,
- 					     cow_start, found_key.offset - 1,
--					     page_started, nr_written, 1);
-+					     page_started, nr_written, 1, NULL);
- 			if (ret) {
- 				if (!nolock && nocow)
- 					btrfs_end_write_no_snapshoting(root);
-@@ -1486,7 +1620,7 @@ out_check:
+diff --git a/fs/btrfs/dedupe.h b/fs/btrfs/dedupe.h
+index bfcacd7..1573456 100644
+--- a/fs/btrfs/dedupe.h
++++ b/fs/btrfs/dedupe.h
+@@ -31,8 +31,7 @@
+ #define BTRFS_DEDUPE_BACKEND_INMEMORY		0
+ #define BTRFS_DEDUPE_BACKEND_ONDISK		1
  
- 	if (cow_start != (u64)-1) {
- 		ret = cow_file_range(inode, locked_page, cow_start, end,
--				     page_started, nr_written, 1);
-+				     page_started, nr_written, 1, NULL);
- 		if (ret)
- 			goto error;
- 	}
-@@ -1537,6 +1671,8 @@ static int run_delalloc_range(struct inode *inode, struct page *locked_page,
- {
- 	int ret;
- 	int force_cow = need_force_cow(inode, start, end);
-+	struct btrfs_root *root = BTRFS_I(inode)->root;
-+	struct btrfs_fs_info *fs_info = root->fs_info;
+-/* Only support inmemory yet, so count is still only 1 */
+-#define BTRFS_DEDUPE_BACKEND_COUNT		1
++#define BTRFS_DEDUPE_BACKEND_COUNT		2
  
- 	if (BTRFS_I(inode)->flags & BTRFS_INODE_NODATACOW && !force_cow) {
- 		ret = run_delalloc_nocow(inode, locked_page, start, end,
-@@ -1544,9 +1680,9 @@ static int run_delalloc_range(struct inode *inode, struct page *locked_page,
- 	} else if (BTRFS_I(inode)->flags & BTRFS_INODE_PREALLOC && !force_cow) {
- 		ret = run_delalloc_nocow(inode, locked_page, start, end,
- 					 page_started, 0, nr_written);
--	} else if (!inode_need_compress(inode)) {
-+	} else if (!inode_need_compress(inode) && !fs_info->dedupe_enabled) {
- 		ret = cow_file_range(inode, locked_page, start, end,
--				      page_started, nr_written, 1);
-+				      page_started, nr_written, 1, NULL);
- 	} else {
- 		set_bit(BTRFS_INODE_HAS_ASYNC_EXTENT,
- 			&BTRFS_I(inode)->runtime_flags);
-@@ -2076,7 +2212,8 @@ static int insert_reserved_file_extent(struct btrfs_trans_handle *trans,
- 				       u64 disk_bytenr, u64 disk_num_bytes,
- 				       u64 num_bytes, u64 ram_bytes,
- 				       u8 compression, u8 encryption,
--				       u16 other_encoding, int extent_type)
-+				       u16 other_encoding, int extent_type,
-+				       struct btrfs_dedupe_hash *hash)
- {
- 	struct btrfs_root *root = BTRFS_I(inode)->root;
- 	struct btrfs_file_extent_item *fi;
-@@ -2138,10 +2275,37 @@ static int insert_reserved_file_extent(struct btrfs_trans_handle *trans,
- 	ins.objectid = disk_bytenr;
- 	ins.offset = disk_num_bytes;
- 	ins.type = BTRFS_EXTENT_ITEM_KEY;
--	ret = btrfs_alloc_reserved_file_extent(trans, root,
-+
-+	/*
-+	 * Only for no-dedupe or hash miss case, we need to increase
-+	 * extent reference
-+	 * For hash hit case, reference is already increased
-+	 */
-+	if (!hash || hash->bytenr == 0)
-+		ret = btrfs_alloc_reserved_file_extent(trans, root,
- 					root->root_key.objectid,
- 					btrfs_ino(inode), file_pos,
- 					ram_bytes, &ins);
-+	if (ret < 0)
-+		goto out_qgroup;
-+
-+	/*
-+	 * Hash hit won't create a new data extent, so its reserved quota
-+	 * space won't be freed by new delayed_ref_head.
-+	 * Need to free it here.
-+	 */
-+	if (btrfs_dedupe_hash_hit(hash))
-+		btrfs_qgroup_free_data(inode, file_pos, ram_bytes);
-+
-+	/* Add missed hash into dedupe tree */
-+	if (hash && hash->bytenr == 0) {
-+		hash->bytenr = ins.objectid;
-+		hash->num_bytes = ins.offset;
-+		ret = btrfs_dedupe_add(trans, root->fs_info, hash);
-+	}
-+
-+out_qgroup:
-+
- 	/*
- 	 * Release the reserved range from inode dirty range map, as it is
- 	 * already moved into delayed_ref_head
-@@ -2918,6 +3082,9 @@ static int btrfs_finish_ordered_io(struct btrfs_ordered_extent *ordered_extent)
- 						ordered_extent->file_offset +
- 						logical_len);
- 	} else {
-+		/* Must be checked before hash modified */
-+		int hash_hit = btrfs_dedupe_hash_hit(ordered_extent->hash);
-+
- 		BUG_ON(root == root->fs_info->tree_root);
- 		ret = insert_reserved_file_extent(trans, inode,
- 						ordered_extent->file_offset,
-@@ -2925,8 +3092,10 @@ static int btrfs_finish_ordered_io(struct btrfs_ordered_extent *ordered_extent)
- 						ordered_extent->disk_len,
- 						logical_len, logical_len,
- 						compress_type, 0, 0,
--						BTRFS_FILE_EXTENT_REG);
--		if (!ret)
-+						BTRFS_FILE_EXTENT_REG,
-+						ordered_extent->hash);
-+		/* Hash hit case doesn't reserve delalloc bytes */
-+		if (!ret && !hash_hit)
- 			btrfs_release_delalloc_bytes(root,
- 						     ordered_extent->start,
- 						     ordered_extent->disk_len);
-@@ -2985,7 +3154,6 @@ out:
- 						   ordered_extent->disk_len, 1);
- 	}
- 
--
- 	/*
- 	 * This needs to be done to make sure anybody waiting knows we are done
- 	 * updating everything for this ordered extent.
-@@ -9948,7 +10116,8 @@ static int __btrfs_prealloc_file_range(struct inode *inode, int mode,
- 						  cur_offset, ins.objectid,
- 						  ins.offset, ins.offset,
- 						  ins.offset, 0, 0, 0,
--						  BTRFS_FILE_EXTENT_PREALLOC);
-+						  BTRFS_FILE_EXTENT_PREALLOC,
-+						  NULL);
- 		if (ret) {
- 			btrfs_free_reserved_extent(root, ins.objectid,
- 						   ins.offset, 0);
-diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-index 2bd0011..33183ce 100644
---- a/fs/btrfs/relocation.c
-+++ b/fs/btrfs/relocation.c
-@@ -31,6 +31,7 @@
- #include "async-thread.h"
- #include "free-space-cache.h"
- #include "inode-map.h"
-+#include "dedupe.h"
- 
- /*
-  * backref_node, mapping_node and tree_block start with this
-@@ -3909,6 +3910,7 @@ static noinline_for_stack int relocate_block_group(struct reloc_control *rc)
- 	struct btrfs_trans_handle *trans = NULL;
- 	struct btrfs_path *path;
- 	struct btrfs_extent_item *ei;
-+	struct btrfs_fs_info *fs_info = rc->extent_root->fs_info;
- 	u64 flags;
- 	u32 item_size;
- 	int ret;
-@@ -4031,6 +4033,20 @@ restart:
- 				rc->search_start = key.objectid;
- 			}
- 		}
-+		/*
-+		 * This data extent will be replaced, but normal dedupe_del()
-+		 * will only happen at run_delayed_ref() time, which is too
-+		 * late, so delete dedupe_hash early to prevent its ref get
-+		 * increased during relocation
-+		 */
-+		if (rc->stage == MOVE_DATA_EXTENTS &&
-+		    (flags & BTRFS_EXTENT_FLAG_DATA)) {
-+			ret = btrfs_dedupe_del(trans, fs_info, key.objectid);
-+			if (ret < 0) {
-+				err = ret;
-+				break;
-+			}
-+		}
- 
- 		btrfs_end_transaction_throttle(trans, rc->extent_root);
- 		btrfs_btree_balance_dirty(rc->extent_root);
+ /* Dedup block size limit and default value */
+ #define BTRFS_DEDUPE_BLOCKSIZE_MAX	(8 * 1024 * 1024)
 -- 
 2.7.4
 

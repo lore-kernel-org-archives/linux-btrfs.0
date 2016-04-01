@@ -1,94 +1,104 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
 Received: from cn.fujitsu.com ([222.73.24.84]:12218 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1754119AbcDAGfi (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 1 Apr 2016 02:35:38 -0400
+	id S1758254AbcDAGfj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 1 Apr 2016 02:35:39 -0400
+Received: from localhost.localdomain (unknown [10.167.226.34])
+	by cn.fujitsu.com (Postfix) with ESMTP id 5F55E4010D08
+	for <linux-btrfs@vger.kernel.org>; Fri,  1 Apr 2016 14:35:16 +0800 (CST)
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
-Cc: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
-Subject: [PATCH v10 13/21] btrfs: dedupe: add a property handler for online dedupe
-Date: Fri,  1 Apr 2016 14:35:04 +0800
-Message-Id: <1459492512-31435-14-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH v10 05/21] btrfs: delayed-ref: Add support for increasing data ref under spinlock
+Date: Fri,  1 Apr 2016 14:34:56 +0800
+Message-Id: <1459492512-31435-6-git-send-email-quwenruo@cn.fujitsu.com>
 In-Reply-To: <1459492512-31435-1-git-send-email-quwenruo@cn.fujitsu.com>
 References: <1459492512-31435-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
+For in-band dedupe, btrfs needs to increase data ref with delayed_ref
+locked, so add a new function btrfs_add_delayed_data_ref_lock() to
+increase extent ref with delayed_refs already locked.
 
-We use btrfs extended attribute "btrfs.dedupe" to record per-file online
-dedupe status, so add a dedupe property handler.
-
-Signed-off-by: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- fs/btrfs/props.c | 41 +++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 41 insertions(+)
+ fs/btrfs/delayed-ref.c | 30 +++++++++++++++++++++++-------
+ fs/btrfs/delayed-ref.h |  8 ++++++++
+ 2 files changed, 31 insertions(+), 7 deletions(-)
 
-diff --git a/fs/btrfs/props.c b/fs/btrfs/props.c
-index 3699212..a430886 100644
---- a/fs/btrfs/props.c
-+++ b/fs/btrfs/props.c
-@@ -42,6 +42,11 @@ static int prop_compression_apply(struct inode *inode,
- 				  size_t len);
- static const char *prop_compression_extract(struct inode *inode);
- 
-+static int prop_dedupe_validate(const char *value, size_t len);
-+static int prop_dedupe_apply(struct inode *inode, const char *value,
-+			     size_t len);
-+static const char *prop_dedupe_extract(struct inode *inode);
-+
- static struct prop_handler prop_handlers[] = {
- 	{
- 		.xattr_name = XATTR_BTRFS_PREFIX "compression",
-@@ -50,6 +55,13 @@ static struct prop_handler prop_handlers[] = {
- 		.extract = prop_compression_extract,
- 		.inheritable = 1
- 	},
-+	{
-+		.xattr_name = XATTR_BTRFS_PREFIX "dedupe",
-+		.validate = prop_dedupe_validate,
-+		.apply = prop_dedupe_apply,
-+		.extract = prop_dedupe_extract,
-+		.inheritable = 1
-+	},
- };
- 
- void __init btrfs_props_init(void)
-@@ -426,4 +438,33 @@ static const char *prop_compression_extract(struct inode *inode)
- 	return NULL;
+diff --git a/fs/btrfs/delayed-ref.c b/fs/btrfs/delayed-ref.c
+index 430b368..07474e8 100644
+--- a/fs/btrfs/delayed-ref.c
++++ b/fs/btrfs/delayed-ref.c
+@@ -805,6 +805,26 @@ free_ref:
  }
  
-+static int prop_dedupe_validate(const char *value, size_t len)
+ /*
++ * Do real delayed data ref insert.
++ * Caller must hold delayed_refs->lock and allocation memory
++ * for dref,head_ref and record.
++ */
++void btrfs_add_delayed_data_ref_locked(struct btrfs_fs_info *fs_info,
++			struct btrfs_trans_handle *trans,
++			struct btrfs_delayed_data_ref *dref,
++			struct btrfs_delayed_ref_head *head_ref,
++			struct btrfs_qgroup_extent_record *qrecord,
++			u64 bytenr, u64 num_bytes, u64 parent, u64 ref_root,
++			u64 owner, u64 offset, u64 reserved, int action)
 +{
-+	if (!strncmp("disable", value, len))
-+		return 0;
-+
-+	return -EINVAL;
++	head_ref = add_delayed_ref_head(fs_info, trans, &head_ref->node,
++			qrecord, bytenr, num_bytes, ref_root, reserved,
++			action, 1);
++	add_delayed_data_ref(fs_info, trans, head_ref, &dref->node, bytenr,
++			num_bytes, parent, ref_root, owner, offset, action);
 +}
 +
-+static int prop_dedupe_apply(struct inode *inode, const char *value, size_t len)
-+{
-+	if (len == 0) {
-+		BTRFS_I(inode)->flags &= ~BTRFS_INODE_NODEDUPE;
-+		return 0;
-+	}
-+
-+	if (!strncmp("disable", value, len)) {
-+		BTRFS_I(inode)->flags |= BTRFS_INODE_NODEDUPE;
-+		return 0;
-+	}
-+
-+	return -EINVAL;
-+}
-+
-+static const char *prop_dedupe_extract(struct inode *inode)
-+{
-+	if (BTRFS_I(inode)->flags & BTRFS_INODE_NODEDUPE)
-+		return "disable";
++/*
+  * add a delayed data ref. it's similar to btrfs_add_delayed_tree_ref.
+  */
+ int btrfs_add_delayed_data_ref(struct btrfs_fs_info *fs_info,
+@@ -849,13 +869,9 @@ int btrfs_add_delayed_data_ref(struct btrfs_fs_info *fs_info,
+ 	 * insert both the head node and the new ref without dropping
+ 	 * the spin lock
+ 	 */
+-	head_ref = add_delayed_ref_head(fs_info, trans, &head_ref->node, record,
+-					bytenr, num_bytes, ref_root, reserved,
+-					action, 1);
+-
+-	add_delayed_data_ref(fs_info, trans, head_ref, &ref->node, bytenr,
+-				   num_bytes, parent, ref_root, owner, offset,
+-				   action);
++	btrfs_add_delayed_data_ref_locked(fs_info, trans, ref, head_ref, record,
++			bytenr, num_bytes, parent, ref_root, owner, offset,
++			reserved, action);
+ 	spin_unlock(&delayed_refs->lock);
  
-+	return NULL;
-+}
+ 	return 0;
+diff --git a/fs/btrfs/delayed-ref.h b/fs/btrfs/delayed-ref.h
+index c24b653..2765858 100644
+--- a/fs/btrfs/delayed-ref.h
++++ b/fs/btrfs/delayed-ref.h
+@@ -239,11 +239,19 @@ static inline void btrfs_put_delayed_ref(struct btrfs_delayed_ref_node *ref)
+ 	}
+ }
+ 
++struct btrfs_qgroup_extent_record;
+ int btrfs_add_delayed_tree_ref(struct btrfs_fs_info *fs_info,
+ 			       struct btrfs_trans_handle *trans,
+ 			       u64 bytenr, u64 num_bytes, u64 parent,
+ 			       u64 ref_root, int level, int action,
+ 			       struct btrfs_delayed_extent_op *extent_op);
++void btrfs_add_delayed_data_ref_locked(struct btrfs_fs_info *fs_info,
++			struct btrfs_trans_handle *trans,
++			struct btrfs_delayed_data_ref *dref,
++			struct btrfs_delayed_ref_head *head_ref,
++			struct btrfs_qgroup_extent_record *qrecord,
++			u64 bytenr, u64 num_bytes, u64 parent, u64 ref_root,
++			u64 owner, u64 offset, u64 reserved, int action);
+ int btrfs_add_delayed_data_ref(struct btrfs_fs_info *fs_info,
+ 			       struct btrfs_trans_handle *trans,
+ 			       u64 bytenr, u64 num_bytes,
 -- 
 2.7.4
 

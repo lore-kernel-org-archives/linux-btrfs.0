@@ -1,64 +1,72 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:57651 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752809AbcDDPGk (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 4 Apr 2016 11:06:40 -0400
-From: David Sterba <dsterba@suse.com>
-To: clm@fb.com
-Cc: linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.com>
-Subject: [PULL] Misc fixes for 4.6, part 2
-Date: Mon,  4 Apr 2016 17:03:00 +0200
-Message-Id: <cover.1459780674.git.dsterba@suse.com>
+Received: from e23smtp04.au.ibm.com ([202.81.31.146]:39370 "EHLO
+	e23smtp04.au.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753876AbcDADWc (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 31 Mar 2016 23:22:32 -0400
+Received: from localhost
+	by e23smtp04.au.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
+	for <linux-btrfs@vger.kernel.org> from <chandan@linux.vnet.ibm.com>;
+	Fri, 1 Apr 2016 13:22:29 +1000
+Received: from d23relay07.au.ibm.com (d23relay07.au.ibm.com [9.190.26.37])
+	by d23dlp01.au.ibm.com (Postfix) with ESMTP id F2CA62CE8054
+	for <linux-btrfs@vger.kernel.org>; Fri,  1 Apr 2016 14:22:24 +1100 (EST)
+Received: from d23av03.au.ibm.com (d23av03.au.ibm.com [9.190.234.97])
+	by d23relay07.au.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id u313MGlQ3014984
+	for <linux-btrfs@vger.kernel.org>; Fri, 1 Apr 2016 14:22:24 +1100
+Received: from d23av03.au.ibm.com (localhost [127.0.0.1])
+	by d23av03.au.ibm.com (8.14.4/8.14.4/NCO v10.0 AVout) with ESMTP id u313LqBA010717
+	for <linux-btrfs@vger.kernel.org>; Fri, 1 Apr 2016 14:21:52 +1100
+From: Chandan Rajendra <chandan@linux.vnet.ibm.com>
+To: dsterba@suse.cz
+Cc: clm@fb.com, jbacik@fb.com, bo.li.liu@oracle.com,
+        linux-btrfs@vger.kernel.org, chandan@mykolab.com
+Subject: Re: [PATCH V15 00/15] Btrfs: Subpagesize-blocksize: Allow I/O on blocks whose size is less than page size
+Date: Fri, 01 Apr 2016 08:51:32 +0530
+Message-ID: <2002224.hLXqi7HKi6@localhost.localdomain>
+In-Reply-To: <20160331135911.GA6230@twin.jikos.cz>
+References: <1455212873-14829-1-git-send-email-chandan@linux.vnet.ibm.com> <20160331093106.GF27917@twin.jikos.cz> <20160331135911.GA6230@twin.jikos.cz>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+On Thursday 31 Mar 2016 15:59:11 David Sterba wrote:
+> On Thu, Mar 31, 2016 at 11:31:06AM +0200, David Sterba wrote:
+> > On Tue, Mar 22, 2016 at 06:50:32PM +0530, Chandan Rajendra wrote:
+> > > On Tuesday 22 Mar 2016 12:04:23 David Sterba wrote:
+> > > > On Thu, Feb 11, 2016 at 11:17:38PM +0530, Chandan Rajendra wrote:
+> > > > > this patchset temporarily disables the commit
+> > > > > f82c458a2c3ffb94b431fc6ad791a79df1b3713e.
+> > > > > 
+> > > > > The commits for the Btrfs kernel module can be found at
+> > > > > https://github.com/chandanr/linux/tree/btrfs/subpagesize-blocksize.
+> > > > 
+> > > > The branch does not apply cleanly to at least 4.5, I've tried to
+> > > > rebase
+> > > > it but there are conflicts that are not simple. Please update it on
+> > > > top
+> > > > of current master, ie. with the preparatory patchset merged.
+> > > 
+> > > I will rebase the branch and post the patchset soon.
+> > 
+> > JFYI, I've seen some minor compilation failures:
+> > - __do_readpage: unused variable cached
+> > - end_bio_extent_buffer_readpage: btree_readahead_hook must tak fs_info
+> > - fails build with (config) sanity checks enabled, the fs_info moved
+> > 
+> >   from eb to eb head
+> 
+> And the tests crash with my quick fixes, so I'll move the branch out of
+> next for now. Please fix it and let me know. My fixes are on top of your
+> lastest branch, chandan-subpage-latest in my development gits.
 
-please pull the following patches to 4.6. They fix some user visible problems,
-improve error handling and there are two debugging enhancements. Thanks.
+Hi David,
 
-----------------------------------------------------------------
-The following changes since commit 232cad8413a0bfbd25f11cc19fd13dfd85e1d8ad:
+After rebasing the patchset, I found a 'hard to reproduce' space
+accounting bug. I am currently figuring out the root cause of the bug. I will
+post the patchset once the issue is fixed.
 
-  Merge branch 'misc-4.6' of git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux into for-linus-4.6 (2016-03-24 17:36:13 -0700)
+-- 
+chandan
 
-are available in the git repository at:
-
-  git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git misc-4.6
-
-for you to fetch changes up to 7ccefb98ce3e5c4493cd213cd03714b7149cf0cb:
-
-  btrfs: Reset IO error counters before start of device replacing (2016-04-04 16:29:22 +0200)
-
-----------------------------------------------------------------
-David Sterba (1):
-      btrfs: fallback to vmalloc in btrfs_compare_tree
-
-Davide Italiano (1):
-      Btrfs: Improve FL_KEEP_SIZE handling in fallocate
-
-Josef Bacik (1):
-      Btrfs: don't use src fd for printk
-
-Liu Bo (1):
-      Btrfs: fix invalid reference in replace_path
-
-Mark Fasheh (2):
-      btrfs: handle non-fatal errors in btrfs_qgroup_inherit()
-      btrfs: Add qgroup tracing
-
-Qu Wenruo (1):
-      btrfs: Output more info for enospc_debug mount option
-
-Yauhen Kharuzhy (1):
-      btrfs: Reset IO error counters before start of device replacing
-
- fs/btrfs/ctree.c             | 12 ++++--
- fs/btrfs/dev-replace.c       |  2 +
- fs/btrfs/extent-tree.c       | 21 ++++++++++-
- fs/btrfs/file.c              |  9 +++--
- fs/btrfs/ioctl.c             |  2 +-
- fs/btrfs/qgroup.c            | 63 ++++++++++++++++++++-----------
- fs/btrfs/relocation.c        |  1 +
- include/trace/events/btrfs.h | 89 +++++++++++++++++++++++++++++++++++++++++++-
- 8 files changed, 166 insertions(+), 33 deletions(-)

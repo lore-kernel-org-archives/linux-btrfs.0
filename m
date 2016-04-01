@@ -1,158 +1,72 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:25245 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:30468 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1758824AbcDAGiF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 1 Apr 2016 02:38:05 -0400
+	id S1758211AbcDAGiB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 1 Apr 2016 02:38:01 -0400
 Received: from localhost.localdomain (unknown [10.167.226.34])
-	by cn.fujitsu.com (Postfix) with ESMTP id 421F94056401
-	for <linux-btrfs@vger.kernel.org>; Fri,  1 Apr 2016 14:37:53 +0800 (CST)
+	by cn.fujitsu.com (Postfix) with ESMTP id 4A8E14056407
+	for <linux-btrfs@vger.kernel.org>; Fri,  1 Apr 2016 14:37:55 +0800 (CST)
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v7 4/8] btrfs-progs: dedupe: Add status subcommand
-Date: Fri,  1 Apr 2016 14:37:46 +0800
-Message-Id: <1459492670-31596-5-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH v7 6/8] btrfs-progs: Add show-super support for new DEDUPE flag
+Date: Fri,  1 Apr 2016 14:37:48 +0800
+Message-Id: <1459492670-31596-7-git-send-email-quwenruo@cn.fujitsu.com>
 In-Reply-To: <1459492670-31596-1-git-send-email-quwenruo@cn.fujitsu.com>
 References: <1459492670-31596-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Add status subcommand for dedupe command group.
+Now btrfs-show-super can handle DEDUPE ro compat flag.
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- Documentation/btrfs-dedupe.asciidoc |  3 ++
- btrfs-completion                    |  2 +-
- cmds-dedupe.c                       | 84 +++++++++++++++++++++++++++++++++++++
- 3 files changed, 88 insertions(+), 1 deletion(-)
+ cmds-inspect-dump-super.c | 18 ++++++++++++++++++
+ 1 file changed, 18 insertions(+)
 
-diff --git a/Documentation/btrfs-dedupe.asciidoc b/Documentation/btrfs-dedupe.asciidoc
-index 28fe05f..5a5bf52 100644
---- a/Documentation/btrfs-dedupe.asciidoc
-+++ b/Documentation/btrfs-dedupe.asciidoc
-@@ -73,6 +73,9 @@ WARNING: Too large value for '-l' or '-m' will easily trigger OOM.
- Please use with caution according to system memory or use 'ondisk' backend
- if memory usage is critical.
+diff --git a/cmds-inspect-dump-super.c b/cmds-inspect-dump-super.c
+index 3e09ee8..6a939c9 100644
+--- a/cmds-inspect-dump-super.c
++++ b/cmds-inspect-dump-super.c
+@@ -198,6 +198,16 @@ struct readable_flag_entry {
+ 	char *output;
+ };
  
-+*status* <path>::
-+Show current in-band de-duplication status of a filesystem.
++#define DEF_RO_COMPAT_FLAG_ENTRY(bit_name)	\
++	{BTRFS_FEATURE_COMPAT_RO_##bit_name, #bit_name}
 +
- BACKENDS
- --------
- Btrfs in-band de-duplication support two different backends with their own
-diff --git a/btrfs-completion b/btrfs-completion
-index 9a6c73b..fbaae0c 100644
---- a/btrfs-completion
-+++ b/btrfs-completion
-@@ -40,7 +40,7 @@ _btrfs()
-     commands_property='get set list'
-     commands_quota='enable disable rescan'
-     commands_qgroup='assign remove create destroy show limit'
--    commands_dedupe='enable disable'
-+    commands_dedupe='enable disable status'
-     commands_replace='start status cancel'
- 
- 	if [[ "$cur" == -* && $cword -le 3 && "$cmd" != "help" ]]; then
-diff --git a/cmds-dedupe.c b/cmds-dedupe.c
-index 64ac0f2..8005b6e 100644
---- a/cmds-dedupe.c
-+++ b/cmds-dedupe.c
-@@ -230,11 +230,95 @@ out:
- 	return 0;
- }
- 
-+static const char * const cmd_dedupe_status_usage[] = {
-+	"btrfs dedupe status <path>",
-+	"Show current in-band(write time) de-duplication status of a btrfs.",
-+	NULL
++struct readable_flag_entry ro_compat_flags_array[] = {
++	DEF_RO_COMPAT_FLAG_ENTRY(DEDUPE)
 +};
 +
-+static int cmd_dedupe_status(int argc, char **argv)
++static const int ro_compat_flags_num = sizeof(ro_compat_flags_array) /
++				      sizeof(struct readable_flag_entry);
++
+ #define DEF_INCOMPAT_FLAG_ENTRY(bit_name)		\
+ 	{BTRFS_FEATURE_INCOMPAT_##bit_name, #bit_name}
+ 
+@@ -269,6 +279,13 @@ static void __print_readable_flag(u64 flag, struct readable_flag_entry *array,
+ 	printf(")\n");
+ }
+ 
++static void print_readable_ro_compat_flag(u64 ro_flag)
 +{
-+	struct btrfs_ioctl_dedupe_args dargs;
-+	DIR *dirstream;
-+	char *path;
-+	int fd;
-+	int ret;
-+	int print_limit = 1;
-+
-+	if (check_argc_exact(argc, 2))
-+		usage(cmd_dedupe_status_usage);
-+
-+	path = argv[1];
-+	fd = open_file_or_dir(path, &dirstream);
-+	if (fd < 0) {
-+		error("failed to open file or directory: %s", path);
-+		ret = 1;
-+		goto out;
-+	}
-+	memset(&dargs, 0, sizeof(dargs));
-+	dargs.cmd = BTRFS_DEDUPE_CTL_STATUS;
-+
-+	ret = ioctl(fd, BTRFS_IOC_DEDUPE_CTL, &dargs);
-+	if (ret < 0) {
-+		error("failed to get inband deduplication status: %s",
-+		      strerror(errno));
-+		ret = 1;
-+		goto out;
-+	}
-+	ret = 0;
-+	if (dargs.status == 0) {
-+		printf("Status: \t\t\tDisabled\n");
-+		goto out;
-+	}
-+	printf("Status:\t\t\tEnabled\n");
-+
-+	if (dargs.hash_type == BTRFS_DEDUPE_HASH_SHA256)
-+		printf("Hash algorithm:\t\tSHA-256\n");
-+	else
-+		printf("Hash algorithm:\t\tUnrecognized(%x)\n",
-+			dargs.hash_type);
-+
-+	if (dargs.backend == BTRFS_DEDUPE_BACKEND_INMEMORY) {
-+		printf("Backend:\t\tIn-memory\n");
-+		print_limit = 1;
-+	} else if (dargs.backend == BTRFS_DEDUPE_BACKEND_ONDISK) {
-+		printf("Backend:\t\tOn-disk\n");
-+		print_limit = 0;
-+	} else  {
-+		printf("Backend:\t\tUnrecognized(%x)\n",
-+			dargs.backend);
-+	}
-+
-+	printf("Dedup Blocksize:\t%llu\n", dargs.blocksize);
-+
-+	if (print_limit) {
-+		u64 cur_mem;
-+
-+		/* Limit nr may be 0 */
-+		if (dargs.limit_nr)
-+			cur_mem = dargs.current_nr * (dargs.limit_mem /
-+					dargs.limit_nr);
-+		else
-+			cur_mem = 0;
-+
-+		printf("Number of hash: \t[%llu/%llu]\n", dargs.current_nr,
-+			dargs.limit_nr);
-+		printf("Memory usage: \t\t[%s/%s]\n",
-+			pretty_size(cur_mem),
-+			pretty_size(dargs.limit_mem));
-+	}
-+out:
-+	close_file_or_dir(fd, dirstream);
-+	return ret;
++	return __print_readable_flag(ro_flag, ro_compat_flags_array,
++				     ro_compat_flags_num,
++				     BTRFS_FEATURE_COMPAT_RO_SUPP);
 +}
 +
- const struct cmd_group dedupe_cmd_group = {
- 	dedupe_cmd_group_usage, dedupe_cmd_group_info, {
- 		{ "enable", cmd_dedupe_enable, cmd_dedupe_enable_usage, NULL, 0},
- 		{ "disable", cmd_dedupe_disable, cmd_dedupe_disable_usage,
- 		  NULL, 0},
-+		{ "status", cmd_dedupe_status, cmd_dedupe_status_usage,
-+		  NULL, 0},
- 		NULL_CMD_STRUCT
- 	}
- };
+ static void print_readable_incompat_flag(u64 flag)
+ {
+ 	return __print_readable_flag(flag, incompat_flags_array,
+@@ -360,6 +377,7 @@ static void dump_superblock(struct btrfs_super_block *sb, int full)
+ 	       (unsigned long long)btrfs_super_compat_flags(sb));
+ 	printf("compat_ro_flags\t\t0x%llx\n",
+ 	       (unsigned long long)btrfs_super_compat_ro_flags(sb));
++	print_readable_ro_compat_flag(btrfs_super_compat_ro_flags(sb));
+ 	printf("incompat_flags\t\t0x%llx\n",
+ 	       (unsigned long long)btrfs_super_incompat_flags(sb));
+ 	print_readable_incompat_flag(btrfs_super_incompat_flags(sb));
 -- 
 2.7.4
 

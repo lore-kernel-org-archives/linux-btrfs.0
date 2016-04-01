@@ -1,367 +1,254 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:32943 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:1901 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1758809AbcDAGh5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 1 Apr 2016 02:37:57 -0400
+	id S1758825AbcDAGiF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 1 Apr 2016 02:38:05 -0400
 Received: from localhost.localdomain (unknown [10.167.226.34])
-	by cn.fujitsu.com (Postfix) with ESMTP id 2854540055DC
-	for <linux-btrfs@vger.kernel.org>; Fri,  1 Apr 2016 14:37:53 +0800 (CST)
+	by cn.fujitsu.com (Postfix) with ESMTP id AA1294056408
+	for <linux-btrfs@vger.kernel.org>; Fri,  1 Apr 2016 14:37:55 +0800 (CST)
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v7 2/8] btrfs-progs: dedupe: Add enable command for dedupe command group
-Date: Fri,  1 Apr 2016 14:37:44 +0800
-Message-Id: <1459492670-31596-3-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH v7 7/8] btrfs-progs: debug-tree: Add dedupe tree support
+Date: Fri,  1 Apr 2016 14:37:49 +0800
+Message-Id: <1459492670-31596-8-git-send-email-quwenruo@cn.fujitsu.com>
 In-Reply-To: <1459492670-31596-1-git-send-email-quwenruo@cn.fujitsu.com>
 References: <1459492670-31596-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Add enable subcommand for dedupe commmand group.
+Add dedupe tree support for btrfs-debug-tree.
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- Documentation/btrfs-dedupe.asciidoc | 105 +++++++++++++++++++++++-
- btrfs-completion                    |   6 +-
- cmds-dedupe.c                       | 155 ++++++++++++++++++++++++++++++++++++
- ioctl.h                             |   2 +
- 4 files changed, 266 insertions(+), 2 deletions(-)
+ cmds-inspect-dump-tree.c |   4 ++
+ ctree.h                  |   7 +++
+ print-tree.c             | 118 +++++++++++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 129 insertions(+)
 
-diff --git a/Documentation/btrfs-dedupe.asciidoc b/Documentation/btrfs-dedupe.asciidoc
-index 5d63c32..8ab40ab 100644
---- a/Documentation/btrfs-dedupe.asciidoc
-+++ b/Documentation/btrfs-dedupe.asciidoc
-@@ -21,7 +21,110 @@ use with caution.
+diff --git a/cmds-inspect-dump-tree.c b/cmds-inspect-dump-tree.c
+index 43c8b67..0c75a3c 100644
+--- a/cmds-inspect-dump-tree.c
++++ b/cmds-inspect-dump-tree.c
+@@ -496,6 +496,10 @@ again:
+ 					printf("multiple");
+ 				}
+ 				break;
++			case BTRFS_DEDUPE_TREE_OBJECTID:
++				if (!skip)
++					printf("dedupe");
++				break;
+ 			default:
+ 				if (!skip) {
+ 					printf("file");
+diff --git a/ctree.h b/ctree.h
+index 87ea684..15504b2 100644
+--- a/ctree.h
++++ b/ctree.h
+@@ -79,6 +79,9 @@ struct btrfs_free_space_ctl;
+ /* tracks free space in block groups. */
+ #define BTRFS_FREE_SPACE_TREE_OBJECTID 10ULL
  
- SUBCOMMAND
- ----------
--Nothing yet
-+*enable* [options] <path>::
-+Enable in-band de-duplication for a filesystem.
-++
-+`Options`
-++
-+-s|--storage-backend <BACKEND>::::
-+Specify de-duplication hash storage backend.
-+Supported backends are 'ondisk' and 'inmemory'.
-+If not specified, default value is 'inmemory'.
-++
-+Refer to *BACKENDS* sector for more information.
++/* on-disk dedupe tree (EXPERIMENTAL) */
++#define BTRFS_DEDUPE_TREE_OBJECTID 11ULL
 +
-+-b|--blocksize <BLOCKSIZE>::::
-+Specify dedupe block size.
-+Supported values are power of 2 from '16K' to '8M'.
-+Default value is '128K'.
-++
-+Refer to *BLOCKSIZE* sector for more information.
-+
-+-a|--hash-algorithm <HASH>::::
-+Specify hash algorithm.
-+Only 'sha256' is supported yet.
-+
-+-l|--limit-hash <LIMIT>::::
-+Specify maximum number of hashes stored in memory.
-+Only works for 'inmemory' backend.
-+Conflicts with '-m' option.
-++
-+Only positive values are valid.
-+Default value is '32K'.
-+
-+-m|--limit-memory <LIMIT>::::
-+Specify maximum memory used for hashes.
-+Only works for 'inmemory' backend.
-+Conflicts with '-l' option.
-++
-+Only value larger than or equal to '1024' is valid.
-+No default value.
-++
-+NOTE: Memory limit will be rounded down to kernel internal hash size,
-+so the memory limit shown in 'btrfs dedupe status' may be different
-+from the <LIMIT>.
-+
-+WARNING: Too large value for '-l' or '-m' will easily trigger OOM.
-+Please use with caution according to system memory or use 'ondisk' backend
-+if memory usage is critical.
-+
-+BACKENDS
-+--------
-+Btrfs in-band de-duplication support two different backends with their own
-+features.
-+
-+In-memory backend::
-+This backend provides backward-compatibility, and more fine-tuning options.
-+But hash pool is non-persistent and may exhaust kernel memory if not setup
-+properly.
-++
-+This backend can be used on old btrfs(without '-O dedupe' mkfs option).
-+When used on old btrfs, this backend needs to be enabled manually after mount.
-++
-+Designed for fast hash search speed, in-memory backend will keep all dedupe
-+hashes in memory. (Although overall performance is still much the same with
-+'ondisk' backend)
-++
-+And only keeps limited number of hash in memory to avoid exhausting memory.
-+Hashes over the limit will be dropped following Last-Recent-Use behavior.
-+So this backend has a consistent overhead for given limit but can\'t ensure
-+any all duplicated blocks will be de-duplicated.
-++
-+After umount and mount, in-memory backend need to refill its hash pool.
-+
-+On-disk backend::
-+This backend provides persistent hash pool, with more smart memory management
-+for hash pool.
-+But it\'s not backward-compatible, meaning it must be used with '-O dedupe' mkfs
-+option and older kernel can\'t mount it read-write.
-++
-+Designed for de-duplication rate, hash pool is stored as B+ tree on disk.
-+Although this behavior may cause extra disk IO for hash search under extreme
-+high memory pressure,
-+under most case the overall performance should be on par with 'inmemory'
-+backend.
-++
-+After umount and mount, on-disk backend still has its hash on disk, no need to
-+refill its dedupe hash pool.
-+
-+DEDUPE BLOCK SIZE
-+----------------
-+In-band de-duplication is done at dedupe block size.
-+Any data smaller than dedupe block size won\'t go through in-band
-+de-duplication.
-+
-+And dedupe block size affects dedupe rate and fragmentation heavily.
-+
-+Smaller block size will cause more fragments, but higher dedupe rate.
-+
-+Larger block size will cause less fragments, but lower dedupe rate.
-+
-+In-band de-duplication rate is highly related to the workload pattern.
-+So it\'s highly recommended to align dedupe block size to the workload
-+block size to make full use of de-duplication.
-+
-+And dedupe block size larger than 128K will cause compression unavailable, as
-+compression only support maximum extent size of 128K.
+ /* for storing balance parameters in the root tree */
+ #define BTRFS_BALANCE_OBJECTID -4ULL
  
- EXIT STATUS
- -----------
-diff --git a/btrfs-completion b/btrfs-completion
-index 3ede77b..50f7ea2 100644
---- a/btrfs-completion
-+++ b/btrfs-completion
-@@ -29,7 +29,7 @@ _btrfs()
+@@ -1219,6 +1222,10 @@ struct btrfs_root {
+ #define BTRFS_DEV_ITEM_KEY	216
+ #define BTRFS_CHUNK_ITEM_KEY	228
  
- 	local cmd=${words[1]}
- 
--    commands='subvolume filesystem balance device scrub check rescue restore inspect-internal property send receive quota qgroup replace help version'
-+    commands='subvolume filesystem balance device scrub check rescue restore inspect-internal property send receive quota qgroup dedupe replace help version'
-     commands_subvolume='create delete list snapshot find-new get-default set-default show sync'
-     commands_filesystem='defragment sync resize show df label usage'
-     commands_balance='start pause cancel resume status'
-@@ -40,6 +40,7 @@ _btrfs()
-     commands_property='get set list'
-     commands_quota='enable disable rescan'
-     commands_qgroup='assign remove create destroy show limit'
-+    commands_dedupe='enable'
-     commands_replace='start status cancel'
- 
- 	if [[ "$cur" == -* && $cword -le 3 && "$cmd" != "help" ]]; then
-@@ -94,6 +95,9 @@ _btrfs()
-             qgroup)
-                 opts="$commands_qgroup"
-                 ;;
-+            dedupe)
-+                opts="$commands_dedupe"
-+                ;;
-             replace)
-                 opts="$commands_replace"
-                 ;;
-diff --git a/cmds-dedupe.c b/cmds-dedupe.c
-index b25b8db..d9dcb10 100644
---- a/cmds-dedupe.c
-+++ b/cmds-dedupe.c
-@@ -19,6 +19,7 @@
- #include <getopt.h>
- #include <unistd.h>
- #include <sys/ioctl.h>
-+#include <sys/ioctl.h>
- 
- #include "ctree.h"
- #include "ioctl.h"
-@@ -36,8 +37,162 @@ static const char * const dedupe_cmd_group_usage[] = {
- static const char dedupe_cmd_group_info[] =
- "manage inband(write time) de-duplication";
- 
-+static const char * const cmd_dedupe_enable_usage[] = {
-+	"btrfs dedupe enable [options] <path>",
-+	"Enable in-band(write time) de-duplication of a btrfs.",
-+	"",
-+	"-s|--storage-backend <BACKEND>",
-+	"           specify dedupe hash storage backend",
-+	"           supported backend: 'ondisk', 'inmemory'",
-+	"           inmemory is the default backend",
-+	"-b|--blocksize <BLOCKSIZE>",
-+	"           specify dedupe block size",
-+	"           default value is 128K",
-+	"-a|--hash-algorithm <HASH>",
-+	"           specify hash algorithm",
-+	"           only 'sha256' is supported yet",
-+	"-l|--limit-hash <LIMIT>",
-+	"           specify maximum number of hashes stored in memory",
-+	"           only for 'inmemory' backend",
-+	"           positive value is valid, default value is 32K",
-+	"-m|--limit-mem <LIMIT>",
-+	"           specify maximum memory used for hashes",
-+	"           only for 'inmemory' backend",
-+	"           value larger than or equal to 1024 is valid, no default",
-+	"           only one of '-m' and '-l' is allowed",
-+	NULL
-+};
++#define BTRFS_DEDUPE_STATUS_ITEM_KEY	230
++#define BTRFS_DEDUPE_HASH_ITEM_KEY	231
++#define BTRFS_DEDUPE_BYTENR_ITEM_KEY	232
 +
-+static int cmd_dedupe_enable(int argc, char **argv)
+ #define BTRFS_BALANCE_ITEM_KEY	248
+ 
+ /*
+diff --git a/print-tree.c b/print-tree.c
+index d0f37a5..5b8b90c 100644
+--- a/print-tree.c
++++ b/print-tree.c
+@@ -25,6 +25,7 @@
+ #include "disk-io.h"
+ #include "print-tree.h"
+ #include "utils.h"
++#include "dedupe.h"
+ 
+ 
+ static void print_dir_item_type(struct extent_buffer *eb,
+@@ -687,11 +688,31 @@ static void print_key_type(u64 objectid, u8 type)
+ 	case BTRFS_UUID_KEY_RECEIVED_SUBVOL:
+ 		printf("UUID_KEY_RECEIVED_SUBVOL");
+ 		break;
++	case BTRFS_DEDUPE_STATUS_ITEM_KEY:
++		printf("DEDUPE_STATUS_ITEM");
++		break;
++	case BTRFS_DEDUPE_HASH_ITEM_KEY:
++		printf("DEDUPE_HASH_ITEM");
++		break;
++	case BTRFS_DEDUPE_BYTENR_ITEM_KEY:
++		printf("DEDUPE_BYTENR_ITEM");
++		break;
+ 	default:
+ 		printf("UNKNOWN.%d", type);
+ 	};
+ }
+ 
++static void print_64bit_hash(u64 hash)
 +{
-+	int ret;
-+	int fd;
-+	char *path;
-+	u64 blocksize = BTRFS_DEDUPE_BLOCKSIZE_DEFAULT;
-+	u16 hash_type = BTRFS_DEDUPE_HASH_SHA256;
-+	u16 backend = BTRFS_DEDUPE_BACKEND_INMEMORY;
-+	u64 limit_nr = 0;
-+	u64 limit_mem = 0;
-+	struct btrfs_ioctl_dedupe_args dargs;
-+	DIR *dirstream;
++	int i;
++	unsigned char buf[8];
 +
-+	while (1) {
-+		int c;
-+		static const struct option long_options[] = {
-+			{ "storage-backend", required_argument, NULL, 's'},
-+			{ "blocksize", required_argument, NULL, 'b'},
-+			{ "hash-algorithm", required_argument, NULL, 'a'},
-+			{ "limit-hash", required_argument, NULL, 'l'},
-+			{ "limit-memory", required_argument, NULL, 'm'},
-+			{ NULL, 0, NULL, 0}
-+		};
-+
-+		c = getopt_long(argc, argv, "s:b:a:l:m:", long_options, NULL);
-+		if (c < 0)
-+			break;
-+		switch (c) {
-+		case 's':
-+			if (!strcmp("ondisk", optarg))
-+				backend = BTRFS_DEDUPE_BACKEND_ONDISK;
-+			else if (!strcmp("inmemory", optarg))
-+				backend = BTRFS_DEDUPE_BACKEND_INMEMORY;
-+			else {
-+				error("unsupported dedupe backend: %s", optarg);
-+				exit(1);
-+			}
-+			break;
-+		case 'b':
-+			blocksize = parse_size(optarg);
-+			break;
-+		case 'a':
-+			if (strcmp("sha256", optarg)) {
-+				error("unsupported dedupe hash algorithm: %s",
-+				      optarg);
-+				return 1;
-+			}
-+			break;
-+		case 'l':
-+			limit_nr = parse_size(optarg);
-+			if (limit_nr == 0) {
-+				error("limit should be larger than 0");
-+				return 1;
-+			}
-+			break;
-+		case 'm':
-+			limit_mem = parse_size(optarg);
-+			/*
-+			 * Make sure at least one hash is allocated
-+			 * 1024 should be good enough though.
-+			 */
-+			if (limit_mem < 1024) {
-+				error("memory limit should be larger than or equal to 1024");
-+				return 1;
-+			}
-+			break;
-+		}
-+	}
-+
-+	path = argv[optind];
-+	if (check_argc_exact(argc - optind, 1))
-+		usage(cmd_dedupe_enable_usage);
-+
-+	/* Validation check */
-+	if (!is_power_of_2(blocksize) ||
-+	    blocksize > BTRFS_DEDUPE_BLOCKSIZE_MAX ||
-+	    blocksize < BTRFS_DEDUPE_BLOCKSIZE_MIN) {
-+		error("invalid dedupe blocksize: %llu, not in range [%u,%u] or power of 2",
-+		      blocksize, BTRFS_DEDUPE_BLOCKSIZE_MIN,
-+		      BTRFS_DEDUPE_BLOCKSIZE_MAX);
-+		return 1;
-+	}
-+	if ((limit_nr || limit_mem) && backend == BTRFS_DEDUPE_BACKEND_ONDISK) {
-+		error("limit is only valid for 'inmemory' backend");
-+		return 1;
-+	}
-+	if (limit_nr && limit_mem) {
-+		error("limit-memory and limit-hash can't be given at the same time");
-+		return 1;
-+	}
-+	/*
-+	 * TODO: Add check for limit_nr/limit_mem against current system
-+	 * memory to avoid wrongly set limit.
-+	 */
-+
-+	fd = open_file_or_dir(path, &dirstream);
-+	if (fd < 0) {
-+		error("failed to open file or directory: %s", path);
-+		return 1;
-+	}
-+	memset(&dargs, 0, sizeof(dargs));
-+	dargs.cmd = BTRFS_DEDUPE_CTL_ENABLE;
-+	dargs.blocksize = blocksize;
-+	dargs.hash_type = hash_type;
-+	dargs.limit_nr = limit_nr;
-+	dargs.limit_mem = limit_mem;
-+	dargs.backend = backend;
-+
-+	ret = ioctl(fd, BTRFS_IOC_DEDUPE_CTL, &dargs);
-+	if (ret < 0) {
-+		char *error_message = NULL;
-+		/* Special case, provide better error message */
-+		if (backend == BTRFS_DEDUPE_BACKEND_ONDISK &&
-+		    errno == -EOPNOTSUPP)
-+			error_message = "Need 'dedupe' mkfs feature to enable ondisk backend";
-+		error("failed to enable inband deduplication: %s",
-+		      error_message ? error_message : strerror(errno));
-+		ret = 1;
-+		goto out;
-+	}
-+	ret = 0;
-+
-+out:
-+	close_file_or_dir(fd, dirstream);
-+	return ret;
++	memcpy(buf, &hash, 8);
++	printf("0x");
++	for (i = 0; i < 8; i++)
++		printf("%02x", buf[i]);
 +}
 +
- const struct cmd_group dedupe_cmd_group = {
- 	dedupe_cmd_group_usage, dedupe_cmd_group_info, {
-+		{ "enable", cmd_dedupe_enable, cmd_dedupe_enable_usage, NULL, 0},
- 		NULL_CMD_STRUCT
+ static void print_objectid(u64 objectid, u8 type)
+ {
+ 	switch (type) {
+@@ -706,6 +727,9 @@ static void print_objectid(u64 objectid, u8 type)
+ 	case BTRFS_UUID_KEY_RECEIVED_SUBVOL:
+ 		printf("0x%016llx", (unsigned long long)objectid);
+ 		return;
++	case BTRFS_DEDUPE_HASH_ITEM_KEY:
++		print_64bit_hash(objectid);
++		return;
  	}
- };
-diff --git a/ioctl.h b/ioctl.h
-index b89160f..6bfa56c 100644
---- a/ioctl.h
-+++ b/ioctl.h
-@@ -735,6 +735,8 @@ static inline char *btrfs_err_str(enum btrfs_err_code err_code)
- 				    struct btrfs_ioctl_dev_replace_args)
- #define BTRFS_IOC_FILE_EXTENT_SAME _IOWR(BTRFS_IOCTL_MAGIC, 54, \
- 					 struct btrfs_ioctl_same_args)
-+#define BTRFS_IOC_DEDUPE_CTL	_IOWR(BTRFS_IOCTL_MAGIC, 55, \
-+				      struct btrfs_ioctl_dedupe_args)
- #define BTRFS_IOC_GET_FEATURES _IOR(BTRFS_IOCTL_MAGIC, 57, \
-                                   struct btrfs_ioctl_feature_flags)
- #define BTRFS_IOC_SET_FEATURES _IOW(BTRFS_IOCTL_MAGIC, 57, \
+ 
+ 	switch (objectid) {
+@@ -772,6 +796,9 @@ static void print_objectid(u64 objectid, u8 type)
+ 	case BTRFS_MULTIPLE_OBJECTIDS:
+ 		printf("MULTIPLE");
+ 		break;
++	case BTRFS_DEDUPE_TREE_OBJECTID:
++		printf("DEDUPE_TREE");
++		break;
+ 	case (u64)-1:
+ 		printf("-1");
+ 		break;
+@@ -807,6 +834,9 @@ void btrfs_print_key(struct btrfs_disk_key *disk_key)
+ 	case BTRFS_UUID_KEY_RECEIVED_SUBVOL:
+ 		printf(" 0x%016llx)", (unsigned long long)offset);
+ 		break;
++	case BTRFS_DEDUPE_BYTENR_ITEM_KEY:
++		print_64bit_hash(offset);
++		break;
+ 	default:
+ 		if (offset == (u64)-1)
+ 			printf(" -1)");
+@@ -835,6 +865,85 @@ static void print_uuid_item(struct extent_buffer *l, unsigned long offset,
+ 	}
+ }
+ 
++static void print_dedupe_status(struct extent_buffer *node, int slot)
++{
++	struct btrfs_dedupe_status_item *status_item;
++	u64 blocksize;
++	u64 limit;
++	u16 hash_type;
++	u16 backend;
++
++	status_item = btrfs_item_ptr(node, slot,
++			struct btrfs_dedupe_status_item);
++	blocksize = btrfs_dedupe_status_blocksize(node, status_item);
++	limit = btrfs_dedupe_status_limit(node, status_item);
++	hash_type = btrfs_dedupe_status_hash_type(node, status_item);
++	backend = btrfs_dedupe_status_backend(node, status_item);
++
++	printf("\t\tdedupe status item ");
++	if (backend == BTRFS_DEDUPE_BACKEND_INMEMORY)
++		printf("backend: inmemory\n");
++	else if (backend == BTRFS_DEDUPE_BACKEND_ONDISK)
++		printf("backend: ondisk\n");
++	else
++		printf("backend: Unrecognized(%u)\n", backend);
++
++	if (hash_type == BTRFS_DEDUPE_HASH_SHA256)
++		printf("\t\thash algorithm: SHA-256 ");
++	else
++		printf("\t\thash algorithm: Unrecognized(%u) ", hash_type);
++
++	printf("blocksize: %llu limit: %llu\n", blocksize, limit);
++}
++
++static void print_dedupe_hash(struct extent_buffer *eb, int slot,
++			      unsigned long offset)
++{
++	struct btrfs_key key;
++	u8 buf[32];
++	int i;
++
++	read_extent_buffer(eb, buf, offset, 32 - 8);
++	btrfs_item_key_to_cpu(eb, &key, slot);
++	WARN_ON(key.type != BTRFS_DEDUPE_HASH_ITEM_KEY);
++	memcpy(buf + 32 - 8, &key.objectid, 8);
++
++	printf("\t\thash: ");
++	for (i = 0; i < 32; i++) {
++		if (i == 16)
++			printf("\n\t\t      ");
++		if (i == 8 || i == 24)
++			printf("-");
++		printf("%02x", buf[i]);
++	}
++	printf("\n");
++}
++
++static void print_dedupe_hash_item(struct extent_buffer *eb, int slot)
++{
++	struct btrfs_dedupe_hash_item *hash_item;
++	char compress_str[16];
++
++	/*
++	 * Check item size first, it's possible that it contains hash only
++	 * structure which is designed for older kernels
++	 * (without compression support)
++	 */
++	if (btrfs_item_size_nr(eb, slot) == 256 / 8 - 8) {
++		print_dedupe_hash(eb, slot, btrfs_item_ptr_offset(eb, slot));
++		return;
++	}
++	hash_item = btrfs_item_ptr(eb, slot,
++			struct btrfs_dedupe_hash_item);
++	compress_type_to_str(btrfs_dedupe_hash_compression(eb, hash_item),
++			     compress_str);
++
++	printf("\t\tdedupe hash item disk_num_bytes: %u\n",
++		btrfs_dedupe_hash_disk_len(eb, hash_item));
++	printf("\t\tdedupe hash compression %s\n", compress_str);
++	print_dedupe_hash(eb, slot, (unsigned long)(hash_item + 1));
++}
++
+ void btrfs_print_leaf(struct btrfs_root *root, struct extent_buffer *l)
+ {
+ 	int i;
+@@ -856,6 +965,7 @@ void btrfs_print_leaf(struct btrfs_root *root, struct extent_buffer *l)
+ 	struct btrfs_qgroup_info_item *qg_info;
+ 	struct btrfs_qgroup_limit_item *qg_limit;
+ 	struct btrfs_qgroup_status_item *qg_status;
++
+ 	u32 nr = btrfs_header_nritems(l);
+ 	u64 objectid;
+ 	u32 type;
+@@ -1090,6 +1200,14 @@ void btrfs_print_leaf(struct btrfs_root *root, struct extent_buffer *l)
+ 		case BTRFS_DEV_STATS_KEY:
+ 			printf("\t\tdevice stats\n");
+ 			break;
++		case BTRFS_DEDUPE_STATUS_ITEM_KEY:
++			print_dedupe_status(l, i);
++			break;
++		case BTRFS_DEDUPE_HASH_ITEM_KEY:
++			print_dedupe_hash_item(l, i);
++			break;
++		case BTRFS_DEDUPE_BYTENR_ITEM_KEY:
++			break;
+ 		};
+ 		fflush(stdout);
+ 	}
 -- 
 2.7.4
 

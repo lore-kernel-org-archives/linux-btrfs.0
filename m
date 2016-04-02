@@ -1,213 +1,184 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:48450 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932359AbcDBBb2 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 1 Apr 2016 21:31:28 -0400
+Received: from aserp1040.oracle.com ([141.146.126.69]:23909 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1759504AbcDBBbR (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 1 Apr 2016 21:31:17 -0400
 From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
 Cc: yauhen.kharuzhy@zavadatar.com, dsterba@suse.cz
-Subject: [PATCH 11/13] btrfs: introduce device dynamic state transition to offline or failed
-Date: Sat,  2 Apr 2016 09:30:49 +0800
-Message-Id: <1459560651-14809-12-git-send-email-anand.jain@oracle.com>
+Subject: [PATCH 05/13] btrfs: Cleanup num_tolerated_disk_barrier_failures
+Date: Sat,  2 Apr 2016 09:30:43 +0800
+Message-Id: <1459560651-14809-6-git-send-email-anand.jain@oracle.com>
 In-Reply-To: <1459560651-14809-1-git-send-email-anand.jain@oracle.com>
 References: <1459560651-14809-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This patch provides helper functions to force a device to offline
-or failed, and we need this device states for the following reasons,
-1) a. it can be reported that device has failed when it does
-   b. close the device when it goes offline so that blocklayer can
-      cleanup
-2) identify the candidate for the auto replace
-3) avoid further commit error reported against the failing device and
-4) a device in the multi device btrfs may go offline from the system
-   (but as of now in in some system config btrfs gets unmounted in this
-    context, which is not a correct behavior)
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 
+As we use per-chunk degradable check, now the global
+num_tolerated_disk_barrier_failures is of no use. So cleanup it.
+
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+
+[Btrfs: resolve conflict to apply 'btrfs: Cleanup num_tolerated_disk_barrier_failures']
 Signed-off-by: Anand Jain <anand.jain@oracle.com>
-Tested-by: Austin S. Hemmelgarn <ahferroin7@gmail.com>
 ---
- fs/btrfs/volumes.c | 137 +++++++++++++++++++++++++++++++++++++++++++++++++++++
- fs/btrfs/volumes.h |  13 +++++
- 2 files changed, 150 insertions(+)
+ fs/btrfs/ctree.h   |  2 --
+ fs/btrfs/disk-io.c | 56 ------------------------------------------------------
+ fs/btrfs/disk-io.h |  2 --
+ fs/btrfs/volumes.c | 17 -----------------
+ 4 files changed, 77 deletions(-)
 
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 84a6a5b3384a..e0a50f478e01 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -1829,8 +1829,6 @@ struct btrfs_fs_info {
+ 	/* next backup root to be overwritten */
+ 	int backup_root_index;
+ 
+-	int num_tolerated_disk_barrier_failures;
+-
+ 	/* device replace state */
+ 	struct btrfs_dev_replace dev_replace;
+ 
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 85e26d62c089..7f02f1766037 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -2991,8 +2991,6 @@ retry_root_backup:
+ 		printk(KERN_ERR "BTRFS: Failed to read block groups: %d\n", ret);
+ 		goto fail_sysfs;
+ 	}
+-	fs_info->num_tolerated_disk_barrier_failures =
+-		btrfs_calc_num_tolerated_disk_barrier_failures(fs_info);
+ 
+ 	fs_info->cleaner_kthread = kthread_run(cleaner_kthread, tree_root,
+ 					       "btrfs-cleaner");
+@@ -3559,60 +3557,6 @@ int btrfs_get_num_tolerated_disk_barrier_failures(u64 flags)
+ 	return min_tolerated;
+ }
+ 
+-int btrfs_calc_num_tolerated_disk_barrier_failures(
+-	struct btrfs_fs_info *fs_info)
+-{
+-	struct btrfs_ioctl_space_info space;
+-	struct btrfs_space_info *sinfo;
+-	u64 types[] = {BTRFS_BLOCK_GROUP_DATA,
+-		       BTRFS_BLOCK_GROUP_SYSTEM,
+-		       BTRFS_BLOCK_GROUP_METADATA,
+-		       BTRFS_BLOCK_GROUP_DATA | BTRFS_BLOCK_GROUP_METADATA};
+-	int i;
+-	int c;
+-	int num_tolerated_disk_barrier_failures =
+-		(int)fs_info->fs_devices->num_devices;
+-
+-	for (i = 0; i < ARRAY_SIZE(types); i++) {
+-		struct btrfs_space_info *tmp;
+-
+-		sinfo = NULL;
+-		rcu_read_lock();
+-		list_for_each_entry_rcu(tmp, &fs_info->space_info, list) {
+-			if (tmp->flags == types[i]) {
+-				sinfo = tmp;
+-				break;
+-			}
+-		}
+-		rcu_read_unlock();
+-
+-		if (!sinfo)
+-			continue;
+-
+-		down_read(&sinfo->groups_sem);
+-		for (c = 0; c < BTRFS_NR_RAID_TYPES; c++) {
+-			u64 flags;
+-
+-			if (list_empty(&sinfo->block_groups[c]))
+-				continue;
+-
+-			btrfs_get_block_group_info(&sinfo->block_groups[c],
+-						   &space);
+-			if (space.total_bytes == 0 || space.used_bytes == 0)
+-				continue;
+-			flags = space.flags;
+-
+-			num_tolerated_disk_barrier_failures = min(
+-				num_tolerated_disk_barrier_failures,
+-				btrfs_get_num_tolerated_disk_barrier_failures(
+-					flags));
+-		}
+-		up_read(&sinfo->groups_sem);
+-	}
+-
+-	return num_tolerated_disk_barrier_failures;
+-}
+-
+ static int write_all_supers(struct btrfs_root *root, int max_mirrors)
+ {
+ 	struct list_head *head;
+diff --git a/fs/btrfs/disk-io.h b/fs/btrfs/disk-io.h
+index 8e79d0070bcf..dd155621f95f 100644
+--- a/fs/btrfs/disk-io.h
++++ b/fs/btrfs/disk-io.h
+@@ -141,8 +141,6 @@ struct btrfs_root *btrfs_create_tree(struct btrfs_trans_handle *trans,
+ int btree_lock_page_hook(struct page *page, void *data,
+ 				void (*flush_fn)(void *));
+ int btrfs_get_num_tolerated_disk_barrier_failures(u64 flags);
+-int btrfs_calc_num_tolerated_disk_barrier_failures(
+-	struct btrfs_fs_info *fs_info);
+ int __init btrfs_end_io_wq_init(void);
+ void btrfs_end_io_wq_exit(void);
+ 
 diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 072cefac958c..eb9f28504d3f 100644
+index a840d78ba127..dff2deaf88d3 100644
 --- a/fs/btrfs/volumes.c
 +++ b/fs/btrfs/volumes.c
-@@ -7149,3 +7149,140 @@ out:
- 	read_unlock(&map_tree->map_tree.lock);
- 	return ret;
- }
-+
-+static void __close_device(struct work_struct *work)
-+{
-+	struct btrfs_device *device;
-+
-+	device = container_of(work, struct btrfs_device, rcu_work);
-+
-+	if (device->bdev)
-+		blkdev_put(device->bdev, device->mode);
-+
-+	device->bdev = NULL;
-+}
-+
-+static void close_device(struct rcu_head *head)
-+{
-+	struct btrfs_device *device;
-+
-+	device = container_of(head, struct btrfs_device, rcu);
-+
-+	INIT_WORK(&device->rcu_work, __close_device);
-+	schedule_work(&device->rcu_work);
-+}
-+
-+void btrfs_close_one_device_dont_free(struct btrfs_device *device)
-+{
-+	struct btrfs_fs_devices *fs_devices = device->fs_devices;
-+
-+	if (device->bdev)
-+		fs_devices->open_devices--;
-+
-+	if (device->writeable &&
-+	    device->devid != BTRFS_DEV_REPLACE_DEVID) {
-+		list_del_init(&device->dev_alloc_list);
-+		fs_devices->rw_devices--;
-+	}
-+
-+	device->writeable = 0;
-+
-+	call_rcu(&device->rcu, close_device);
-+}
-+
-+void force_device_close(struct btrfs_device *device)
-+{
-+	struct btrfs_device *next_device;
-+	struct btrfs_fs_devices *fs_devices;
-+
-+	fs_devices = device->fs_devices;
-+
-+	mutex_lock(&fs_devices->device_list_mutex);
-+	lock_chunks(fs_devices->fs_info->fs_root);
-+
-+	next_device = list_entry(fs_devices->devices.next,
-+					struct btrfs_device, dev_list);
-+	if (device->bdev == fs_devices->fs_info->sb->s_bdev)
-+		fs_devices->fs_info->sb->s_bdev = next_device->bdev;
-+
-+	if (device->bdev == fs_devices->latest_bdev)
-+		fs_devices->latest_bdev = next_device->bdev;
-+
-+	btrfs_close_one_device_dont_free(device);
-+
-+	/*
-+	 * TODO: works for now, but its better to keep the state of
-+	 * missing and offline different, and update rest of the
-+	 * places where we check for only missing and not for failed
-+	 * or offline as of now.
-+	 */
-+	device->missing = 1;
-+	fs_devices->missing_devices++;
-+	device->writeable = 0;
-+
-+	rcu_barrier();
-+
-+	unlock_chunks(fs_devices->fs_info->fs_root);
-+	mutex_unlock(&fs_devices->device_list_mutex);
-+}
-+
-+void btrfs_enforce_device_state(struct btrfs_device *dev, char *why)
-+{
-+	bool degrade_option;
-+	int tolerated_fail;
-+	struct btrfs_fs_info *fs_info;
-+	struct btrfs_fs_devices *fs_devices;
-+
-+	fs_devices = dev->fs_devices;
-+	fs_info = fs_devices->fs_info;
-+	degrade_option = btrfs_test_opt(fs_info->fs_root, DEGRADED);
-+
-+	/* todo: support seed later */
-+	if (fs_devices->seeding)
-+		return;
-+
-+	/* this shouldn't be called if device is already missing */
-+	if (dev->missing || !dev->bdev)
-+		return;
-+
-+	if (dev->offline || dev->failed)
-+		return;
-+
-+	/* Only RW device is requested to force close let FS handle it*/
-+	if (fs_devices->rw_devices == 1) {
-+		btrfs_std_error(fs_info, -EIO,
-+			"force offline last RW device");
-+		return;
-+	}
-+
-+	if (!strcmp(why, "offline"))
-+		dev->offline = 1;
-+	else if (!strcmp(why, "failed"))
-+		dev->failed = 1;
-+	else
-+		return;
-+
-+	btrfs_sysfs_rm_device_link(fs_devices, dev);
-+
-+	force_device_close(dev);
-+
-+	tolerated_fail = btrfs_check_degradable(fs_info,
-+						fs_info->sb->s_flags);
-+	if (tolerated_fail > 0) {
-+		btrfs_warn_in_rcu(fs_info, "device %s %s, chunks degraded",
-+					rcu_str_deref(dev->name), why);
-+	} else if(tolerated_fail < 0) {
-+		btrfs_warn_in_rcu(fs_info,
-+		"device %s %s, chunks failed",
-+			rcu_str_deref(dev->name), why);
-+		btrfs_std_error(fs_info, -EIO, "devices below critical level");
-+	} else {
-+		btrfs_warn_in_rcu(fs_info,
-+			"device %s %s, No chunks are degraded",
-+			rcu_str_deref(dev->name), why);
-+	}
-+	btrfs_info_in_rcu(fs_info,
-+		"num_devices %llu rw_devices %llu degraded-option: %s",
-+		fs_devices->num_devices, fs_devices->rw_devices,
-+		degrade_option ? "set":"unset");
-+}
-diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-index b4308afa3097..da7d3b8ba50e 100644
---- a/fs/btrfs/volumes.h
-+++ b/fs/btrfs/volumes.h
-@@ -72,7 +72,19 @@ struct btrfs_device {
+@@ -1876,9 +1876,6 @@ int btrfs_rm_device(struct btrfs_root *root, char *device_path)
+ 		free_fs_devices(cur_devices);
+ 	}
  
- 	int writeable;
- 	int in_fs_metadata;
-+	/* missing: device wasn't found at the time of mount */
- 	int missing;
-+	/* failed: device confirmed to have experienced critical io failure */
-+	int failed;
-+	/*
-+	 * offline: system or user or block layer transport has removed
-+	 * offlined the device which was once present and without going
-+	 * through unmount. Implies an intriem communication break down
-+	 * and not necessarily a candidate for the device replace. And
-+	 * device might be online after user intervention or after
-+	 * block transport layer error recovery.
-+	 */
-+	int offline;
- 	int can_discard;
- 	int is_tgtdev_for_dev_replace;
+-	root->fs_info->num_tolerated_disk_barrier_failures =
+-		btrfs_calc_num_tolerated_disk_barrier_failures(root->fs_info);
+-
+ 	/*
+ 	 * at this point, the device is zero sized.  We want to
+ 	 * remove it from the devices list and zero out the old super
+@@ -2405,8 +2402,6 @@ int btrfs_init_new_device(struct btrfs_root *root, char *device_path)
+ 				"sysfs: failed to create fsid for sprout");
+ 	}
  
-@@ -575,5 +587,6 @@ struct list_head *btrfs_get_fs_uuids(void);
- void btrfs_set_fs_info_ptr(struct btrfs_fs_info *fs_info);
- void btrfs_reset_fs_info_ptr(struct btrfs_fs_info *fs_info);
- int btrfs_check_degradable(struct btrfs_fs_info *fs_info, unsigned flags);
-+void btrfs_enforce_device_state(struct btrfs_device *dev, char *why);
+-	root->fs_info->num_tolerated_disk_barrier_failures =
+-		btrfs_calc_num_tolerated_disk_barrier_failures(root->fs_info);
+ 	ret = btrfs_commit_transaction(trans, root);
  
- #endif
+ 	if (seeding_dev) {
+@@ -3757,13 +3752,6 @@ int btrfs_balance(struct btrfs_balance_control *bctl,
+ 			bctl->meta.target, bctl->data.target);
+ 	}
+ 
+-	if (bctl->sys.flags & BTRFS_BALANCE_ARGS_CONVERT) {
+-		fs_info->num_tolerated_disk_barrier_failures = min(
+-			btrfs_calc_num_tolerated_disk_barrier_failures(fs_info),
+-			btrfs_get_num_tolerated_disk_barrier_failures(
+-				bctl->sys.target));
+-	}
+-
+ 	ret = insert_balance_item(fs_info->tree_root, bctl);
+ 	if (ret && ret != -EEXIST)
+ 		goto out;
+@@ -3786,11 +3774,6 @@ int btrfs_balance(struct btrfs_balance_control *bctl,
+ 	mutex_lock(&fs_info->balance_mutex);
+ 	atomic_dec(&fs_info->balance_running);
+ 
+-	if (bctl->sys.flags & BTRFS_BALANCE_ARGS_CONVERT) {
+-		fs_info->num_tolerated_disk_barrier_failures =
+-			btrfs_calc_num_tolerated_disk_barrier_failures(fs_info);
+-	}
+-
+ 	if (bargs) {
+ 		memset(bargs, 0, sizeof(*bargs));
+ 		update_ioctl_balance_args(fs_info, 0, bargs);
 -- 
 2.7.0
 

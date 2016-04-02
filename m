@@ -1,53 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:23917 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932241AbcDBBbY (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 1 Apr 2016 21:31:24 -0400
+Received: from userp1040.oracle.com ([156.151.31.81]:48431 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932348AbcDBBb2 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 1 Apr 2016 21:31:28 -0400
 From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
 Cc: yauhen.kharuzhy@zavadatar.com, dsterba@suse.cz
-Subject: [PATCH 06/13] btrfs: introduce BTRFS_FEATURE_INCOMPAT_SPARE_DEV
-Date: Sat,  2 Apr 2016 09:30:44 +0800
-Message-Id: <1459560651-14809-7-git-send-email-anand.jain@oracle.com>
+Subject: [PATCH 08/13] btrfs: support btrfs dev scan for spare device
+Date: Sat,  2 Apr 2016 09:30:46 +0800
+Message-Id: <1459560651-14809-9-git-send-email-anand.jain@oracle.com>
 In-Reply-To: <1459560651-14809-1-git-send-email-anand.jain@oracle.com>
 References: <1459560651-14809-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Add BTRFS_FEATURE_INCOMPAT_SPARE_DEV (400) flag to identify
-a spare device.
+When the user or system calls the BTRFS_IOC_SCAN_DEV,
+ioctl this patch will make sure it is added to the device
+list and set it as spare.
 
-Along with this it checks in the mount context that a spare
-device will fail to mount.  As spare devices aren't mountable.
+This operation will be same when BTRFS_IOC_DEVICES_READY
+as well since BTRFS_IOC_DEVICES_READY ioctl has been doing
+that by legacy.
 
 Signed-off-by: Anand Jain <anand.jain@oracle.com>
 Tested-by: Austin S. Hemmelgarn <ahferroin7@gmail.com>
 ---
- fs/btrfs/ctree.h | 4 +++-
- 1 file changed, 3 insertions(+), 1 deletion(-)
+ fs/btrfs/volumes.c | 4 ++++
+ fs/btrfs/volumes.h | 2 ++
+ 2 files changed, 6 insertions(+)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index e0a50f478e01..2c185a8e92f0 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -531,6 +531,7 @@ struct btrfs_super_block {
- #define BTRFS_FEATURE_INCOMPAT_RAID56		(1ULL << 7)
- #define BTRFS_FEATURE_INCOMPAT_SKINNY_METADATA	(1ULL << 8)
- #define BTRFS_FEATURE_INCOMPAT_NO_HOLES		(1ULL << 9)
-+#define BTRFS_FEATURE_INCOMPAT_SPARE_DEV	(1ULL << 10)
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index dff2deaf88d3..d729539f9612 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -604,6 +604,10 @@ static noinline int device_list_add(const char *path,
+ 		if (IS_ERR(fs_devices))
+ 			return PTR_ERR(fs_devices);
  
- #define BTRFS_FEATURE_COMPAT_SUPP		0ULL
- #define BTRFS_FEATURE_COMPAT_SAFE_SET		0ULL
-@@ -551,7 +552,8 @@ struct btrfs_super_block {
- 	 BTRFS_FEATURE_INCOMPAT_RAID56 |		\
- 	 BTRFS_FEATURE_INCOMPAT_EXTENDED_IREF |		\
- 	 BTRFS_FEATURE_INCOMPAT_SKINNY_METADATA |	\
--	 BTRFS_FEATURE_INCOMPAT_NO_HOLES)
-+	 BTRFS_FEATURE_INCOMPAT_NO_HOLES |		\
-+	 BTRFS_FEATURE_INCOMPAT_SPARE_DEV)
++		if (btrfs_super_incompat_flags(disk_super) &
++				BTRFS_FEATURE_INCOMPAT_SPARE_DEV)
++			fs_devices->spare = 1;
++
+ 		list_add(&fs_devices->list, &fs_uuids);
  
- #define BTRFS_FEATURE_INCOMPAT_SAFE_SET			\
- 	(BTRFS_FEATURE_INCOMPAT_EXTENDED_IREF)
+ 		device = NULL;
+diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
+index 48ced5cc09e4..51cf716eb35b 100644
+--- a/fs/btrfs/volumes.h
++++ b/fs/btrfs/volumes.h
+@@ -263,6 +263,8 @@ struct btrfs_fs_devices {
+ 	struct kobject fsid_kobj;
+ 	struct kobject *device_dir_kobj;
+ 	struct completion kobj_unregister;
++
++	int spare;
+ };
+ 
+ #define BTRFS_BIO_INLINE_CSUM_SIZE	64
 -- 
 2.7.0
 

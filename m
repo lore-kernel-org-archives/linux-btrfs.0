@@ -1,61 +1,122 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:43144 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754145AbcDAX7S (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 1 Apr 2016 19:59:18 -0400
-Subject: Re: [PATCH 12/12] btrfs: check device for critical errors and mark
- failed
-To: Yauhen Kharuzhy <yauhen.kharuzhy@zavadatar.com>
-References: <1459261349-32206-1-git-send-email-anand.jain@oracle.com>
- <1459261349-32206-13-git-send-email-anand.jain@oracle.com>
- <20160330004907.GA8929@jeknote.loshitsa1.net>
-Cc: linux-btrfs@vger.kernel.org, clm@fb.com, dsterba@suse.cz
+Received: from userp1040.oracle.com ([156.151.31.81]:48415 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756738AbcDBBbQ (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 1 Apr 2016 21:31:16 -0400
 From: Anand Jain <anand.jain@oracle.com>
-Message-ID: <56FF0B51.3070006@oracle.com>
-Date: Sat, 2 Apr 2016 07:59:13 +0800
-MIME-Version: 1.0
-In-Reply-To: <20160330004907.GA8929@jeknote.loshitsa1.net>
-Content-Type: text/plain; charset=windows-1252; format=flowed
+To: linux-btrfs@vger.kernel.org
+Cc: yauhen.kharuzhy@zavadatar.com, dsterba@suse.cz
+Subject: [PATCH 04/13] btrfs: Allow barrier_all_devices to do per-chunk device check
+Date: Sat,  2 Apr 2016 09:30:42 +0800
+Message-Id: <1459560651-14809-5-git-send-email-anand.jain@oracle.com>
+In-Reply-To: <1459560651-14809-1-git-send-email-anand.jain@oracle.com>
+References: <1459560651-14809-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 
+The last user of num_tolerated_disk_barrier_failures is
+barrier_all_devices(). But it's can be easily changed to new per-chunk
+degradable check framework.
 
-On 03/30/2016 08:49 AM, Yauhen Kharuzhy wrote:
-> On Tue, Mar 29, 2016 at 10:22:29PM +0800, Anand Jain wrote:
->> Write and Flush errors are considered as critical errors,
->> upon which the device will be brought offline and marked as
->> failed. Write and Flush errors are identified using device
->> error statistics.
->>
->> Signed-off-by: Anand Jain <anand.jain@oracle.com>
->>
->> btrfs: check for failed device and hot replace
->>
->> This patch creates casualty_kthread to check for the failed
->> devices, and triggers device replace.
->>
->> Signed-off-by: Anand Jain <anand.jain@oracle.com>
->> ---
->>   fs/btrfs/ctree.h   |   2 +
->>   fs/btrfs/disk-io.c | 161 ++++++++++++++++++++++++++++++++++++++++++++++++++++-
->>   fs/btrfs/disk-io.h |   2 +
->>   fs/btrfs/volumes.c |   1 +
->>   fs/btrfs/volumes.h |   4 ++
->>   5 files changed, 169 insertions(+), 1 deletion(-)
->
-> btrfs_check_and_handle_casualty() tries to perfom auto-replacement
-> only once after each failure. If no hotspare was added in system before failure, only one
-> remaining way to replace drive is to perform replace manually. This sounds
-> reasonable, so just clarification: are you sure that we shouldn't start
-> autoreplacement if hotspare will be added after drive failure?
->
-> V1 of the patchset tried to perform autoreplace endlessly until replace
-> drive is added.
+Now btrfs_device will have two extra members, representing send/wait
+error, set at write_dev_flush() time. And then check it in a similar but
+more accurate behavior than old code.
 
-Yeah. I did that change purposely, but in V3 I have reverted, so
-that code is more flexible and has better design control/change.
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+---
+ fs/btrfs/disk-io.c | 13 +++++--------
+ fs/btrfs/volumes.c |  6 +++++-
+ fs/btrfs/volumes.h |  4 ++++
+ 3 files changed, 14 insertions(+), 9 deletions(-)
 
-Thanks, Anand
-
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index bfea0f8f6a87..85e26d62c089 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -3491,8 +3491,6 @@ static int barrier_all_devices(struct btrfs_fs_info *info)
+ {
+ 	struct list_head *head;
+ 	struct btrfs_device *dev;
+-	int errors_send = 0;
+-	int errors_wait = 0;
+ 	int ret;
+ 
+ 	/* send down all the barriers */
+@@ -3501,7 +3499,7 @@ static int barrier_all_devices(struct btrfs_fs_info *info)
+ 		if (dev->missing)
+ 			continue;
+ 		if (!dev->bdev) {
+-			errors_send++;
++			dev->err_send = 1;
+ 			continue;
+ 		}
+ 		if (!dev->in_fs_metadata || !dev->writeable)
+@@ -3509,7 +3507,7 @@ static int barrier_all_devices(struct btrfs_fs_info *info)
+ 
+ 		ret = write_dev_flush(dev, 0);
+ 		if (ret)
+-			errors_send++;
++			dev->err_send = 1;
+ 	}
+ 
+ 	/* wait for all the barriers */
+@@ -3517,7 +3515,7 @@ static int barrier_all_devices(struct btrfs_fs_info *info)
+ 		if (dev->missing)
+ 			continue;
+ 		if (!dev->bdev) {
+-			errors_wait++;
++			dev->err_wait = 1;
+ 			continue;
+ 		}
+ 		if (!dev->in_fs_metadata || !dev->writeable)
+@@ -3525,10 +3523,9 @@ static int barrier_all_devices(struct btrfs_fs_info *info)
+ 
+ 		ret = write_dev_flush(dev, 1);
+ 		if (ret)
+-			errors_wait++;
++			dev->err_wait = 1;
+ 	}
+-	if (errors_send > info->num_tolerated_disk_barrier_failures ||
+-	    errors_wait > info->num_tolerated_disk_barrier_failures)
++	if (btrfs_check_degradable(info, info->sb->s_flags) < 0)
+ 		return -EIO;
+ 	return 0;
+ }
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index dd3dc53a302a..a840d78ba127 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -7081,8 +7081,12 @@ int btrfs_check_degradable(struct btrfs_fs_info *fs_info, unsigned flags)
+ 			btrfs_get_num_tolerated_disk_barrier_failures(
+ 					map->type);
+ 		for (i = 0; i < map->num_stripes; i++) {
+-			if (map->stripes[i].dev->missing)
++			if (map->stripes[i].dev->missing ||
++			    map->stripes[i].dev->err_wait ||
++			    map->stripes[i].dev->err_send)
+ 				missing++;
++			map->stripes[i].dev->err_wait = 0;
++			map->stripes[i].dev->err_send = 0;
+ 		}
+ 		if (missing > max_tolerated) {
+ 			ret = -EIO;
+diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
+index 351431a3f5aa..48ced5cc09e4 100644
+--- a/fs/btrfs/volumes.h
++++ b/fs/btrfs/volumes.h
+@@ -76,6 +76,10 @@ struct btrfs_device {
+ 	int can_discard;
+ 	int is_tgtdev_for_dev_replace;
+ 
++	/* for barrier_all_devices() check */
++	int err_send;
++	int err_wait;
++
+ #ifdef __BTRFS_NEED_DEVICE_DATA_ORDERED
+ 	seqcount_t data_seqcount;
+ #endif
+-- 
+2.7.0
 

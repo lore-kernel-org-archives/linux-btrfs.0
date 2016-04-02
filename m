@@ -1,114 +1,94 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:23899 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756738AbcDBBbN (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 1 Apr 2016 21:31:13 -0400
+Received: from userp1040.oracle.com ([156.151.31.81]:48442 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932241AbcDBBb0 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 1 Apr 2016 21:31:26 -0400
 From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
 Cc: yauhen.kharuzhy@zavadatar.com, dsterba@suse.cz
-Subject: [PATCH 01/13] btrfs: Introduce a new function to check if all chunks a OK for degraded mount
-Date: Sat,  2 Apr 2016 09:30:39 +0800
-Message-Id: <1459560651-14809-2-git-send-email-anand.jain@oracle.com>
+Subject: [PATCH 10/13] btrfs: introduce helper functions to perform hot replace
+Date: Sat,  2 Apr 2016 09:30:48 +0800
+Message-Id: <1459560651-14809-11-git-send-email-anand.jain@oracle.com>
 In-Reply-To: <1459560651-14809-1-git-send-email-anand.jain@oracle.com>
 References: <1459560651-14809-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Hot replace / auto replace is important volume manager feature
+and is critical to the data center operations, so that the degraded
+volume can be brought back to a healthy state at the earliest and
+without manual intervention.
 
-Introduce a new function, btrfs_check_degradable(), to judge if all chunks
-in btrfs is OK for degraded mount.
+This modifies the existing replace code to suite the need of auto
+replace, in the long run I hope both the codes to be merged.
 
-It provides the new basis for accurate btrfs mount/remount and even
-runtime degraded mount check other than old one-size-fit-all method.
-
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
+Tested-by: Austin S. Hemmelgarn <ahferroin7@gmail.com>
 ---
- fs/btrfs/volumes.c | 63 ++++++++++++++++++++++++++++++++++++++++++++++++++++++
- fs/btrfs/volumes.h |  1 +
- 2 files changed, 64 insertions(+)
+ fs/btrfs/dev-replace.c | 43 +++++++++++++++++++++++++++++++++++++++++++
+ fs/btrfs/dev-replace.h |  1 +
+ 2 files changed, 44 insertions(+)
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index e2b54d546b7c..dd3dc53a302a 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -7042,3 +7042,66 @@ static void btrfs_close_one_device(struct btrfs_device *device)
- 
- 	call_rcu(&device->rcu, free_device);
+diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
+index 2b926867d136..ceab4c51db32 100644
+--- a/fs/btrfs/dev-replace.c
++++ b/fs/btrfs/dev-replace.c
+@@ -957,3 +957,46 @@ void btrfs_bio_counter_inc_blocked(struct btrfs_fs_info *fs_info)
+ 				     &fs_info->fs_state));
+ 	}
  }
 +
-+/*
-+ * Check if all chunks in the fs is OK for degraded mount
-+ * Caller itself should do extra check if DEGRADED mount option is given
-+ * for >0 return value.
-+ *
-+ * Return 0 if all chunks are OK.
-+ * Return >0 if all chunks are degradable but not all OK.
-+ * Return <0 if any chunk is not degradable or other bug.
-+ */
-+int btrfs_check_degradable(struct btrfs_fs_info *fs_info, unsigned flags)
++int btrfs_auto_replace_start(struct btrfs_root *root,
++				struct btrfs_device *src_device)
 +{
-+	struct btrfs_mapping_tree *map_tree = &fs_info->mapping_tree;
-+	struct extent_map *em;
-+	u64 next_start = 0;
-+	int ret = 0;
++	int ret;
++	char *tgt_path;
++	char *src_path;
++	struct btrfs_fs_info *fs_info = root->fs_info;
 +
-+	if (flags & MS_RDONLY)
-+		return 0;
++	if (fs_info->sb->s_flags & MS_RDONLY)
++		return -EROFS;
 +
-+	read_lock(&map_tree->map_tree.lock);
-+	em = lookup_extent_mapping(&map_tree->map_tree, 0, (u64)(-1));
-+	/* No any chunk? Should be a huge bug */
-+	if (!em) {
-+		ret = -ENOENT;
-+		goto out;
++	btrfs_dev_replace_lock(&fs_info->dev_replace, 0);
++	if (btrfs_dev_replace_is_ongoing(&fs_info->dev_replace)) {
++		btrfs_dev_replace_unlock(&fs_info->dev_replace, 0);
++		return -EBUSY;
++	}
++	btrfs_dev_replace_unlock(&fs_info->dev_replace, 0);
++
++	if (btrfs_get_spare_device(&tgt_path)) {
++		btrfs_err(root->fs_info,
++			"No spare device found/configured in the kernel");
++		return -EINVAL;
 +	}
 +
-+	while (em) {
-+		struct map_lookup *map;
-+		int missing = 0;
-+		int max_tolerated;
-+		int i;
-+
-+		map = (struct map_lookup *) em->bdev;
-+		max_tolerated =
-+			btrfs_get_num_tolerated_disk_barrier_failures(
-+					map->type);
-+		for (i = 0; i < map->num_stripes; i++) {
-+			if (map->stripes[i].dev->missing)
-+				missing++;
-+		}
-+		if (missing > max_tolerated) {
-+			ret = -EIO;
-+			btrfs_warn(fs_info,
-+				   "missing devices(%d) exceeds the limit(%d), writebale mount is not allowed",
-+				   missing, max_tolerated);
-+			goto out;
-+		} else if (missing)
-+			ret = 1;
-+		next_start = extent_map_end(em);
-+
-+		/*
-+		 * Alwasy search range [next_start, (u64)-1) to find the next
-+		 * chunk map
-+		 */
-+		em = lookup_extent_mapping(&map_tree->map_tree, next_start,
-+					   (u64)(-1) - next_start);
++	rcu_read_lock();
++	src_path = kstrdup(rcu_str_deref(src_device->name), GFP_ATOMIC);
++	rcu_read_unlock();
++	if (!src_path) {
++		kfree(tgt_path);
++		return -ENOMEM;
 +	}
-+out:
-+	read_unlock(&map_tree->map_tree.lock);
-+	return ret;
++	ret = btrfs_dev_replace_start(root, tgt_path,
++					src_device->devid, src_path,
++		BTRFS_IOCTL_DEV_REPLACE_CONT_READING_FROM_SRCDEV_MODE_AVOID);
++	if (ret)
++		btrfs_put_spare_device(tgt_path);
++
++	kfree(tgt_path);
++	kfree(src_path);
++
++	return 0;
 +}
-diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-index 1939ebde63df..351431a3f5aa 100644
---- a/fs/btrfs/volumes.h
-+++ b/fs/btrfs/volumes.h
-@@ -566,5 +566,6 @@ static inline void unlock_chunks(struct btrfs_root *root)
- struct list_head *btrfs_get_fs_uuids(void);
- void btrfs_set_fs_info_ptr(struct btrfs_fs_info *fs_info);
- void btrfs_reset_fs_info_ptr(struct btrfs_fs_info *fs_info);
-+int btrfs_check_degradable(struct btrfs_fs_info *fs_info, unsigned flags);
- 
+diff --git a/fs/btrfs/dev-replace.h b/fs/btrfs/dev-replace.h
+index e922b42d91df..b918b9d6e5df 100644
+--- a/fs/btrfs/dev-replace.h
++++ b/fs/btrfs/dev-replace.h
+@@ -46,4 +46,5 @@ static inline void btrfs_dev_replace_stats_inc(atomic64_t *stat_value)
+ {
+ 	atomic64_inc(stat_value);
+ }
++int btrfs_auto_replace_start(struct btrfs_root *root, struct btrfs_device *src_device);
  #endif
 -- 
 2.7.0

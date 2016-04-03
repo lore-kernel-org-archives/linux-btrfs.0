@@ -1,69 +1,72 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f175.google.com ([209.85.213.175]:37641 "EHLO
-	mail-ig0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751534AbcDBTly (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 2 Apr 2016 15:41:54 -0400
-Received: by mail-ig0-f175.google.com with SMTP id l20so28696330igf.0
-        for <linux-btrfs@vger.kernel.org>; Sat, 02 Apr 2016 12:41:53 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <20160401055725.GA9342@torres.zugschlus.de>
-References: <20160322194854.161e9c4c@jupiter.sol.kaishome.de>
-	<56F21898.3020101@cn.fujitsu.com>
-	<20160326203035.4b876a04@jupiter.sol.kaishome.de>
-	<20160327035038.5ab6e64b@jupiter.sol.kaishome.de>
-	<56F7E65C.7020300@gmx.com>
-	<20160328120203.1b8d79dc@jupiter.sol.kaishome.de>
-	<56FC7E6D.8010805@cn.fujitsu.com>
-	<56FC8C15.5060002@cn.fujitsu.com>
-	<20160331210004.GZ9342@torres.zugschlus.de>
-	<20160331231630.7b4ceda9@jupiter.sol.kaishome.de>
-	<20160401055725.GA9342@torres.zugschlus.de>
-Date: Sat, 2 Apr 2016 13:41:53 -0600
-Message-ID: <CAJCQCtQu=OD9bep2r5xYc1Nt7DZis-1g2aj6BkyeNThrJzD9pw@mail.gmail.com>
+Received: from torres.zugschlus.de ([85.214.131.164]:41924 "EHLO
+	torres.zugschlus.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752110AbcDCIjb (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 3 Apr 2016 04:39:31 -0400
+Received: from mh by torres.zugschlus.de with local (Exim 4.84_2)
+	(envelope-from <mh+linux-btrfs@zugschlus.de>)
+	id 1amdZA-0002fm-La
+	for linux-btrfs@vger.kernel.org; Sun, 03 Apr 2016 10:39:28 +0200
+Date: Sun, 3 Apr 2016 10:39:28 +0200
+From: Marc Haber <mh+linux-btrfs@zugschlus.de>
+To: linux-btrfs@vger.kernel.org
 Subject: Re: bad metadata crossing stripe boundary
-From: Chris Murphy <lists@colorremedies.com>
-To: Marc Haber <mh+linux-btrfs@zugschlus.de>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Message-ID: <20160403083928.GT9342@torres.zugschlus.de>
+References: <56F7E65C.7020300@gmx.com>
+ <20160328120203.1b8d79dc@jupiter.sol.kaishome.de>
+ <56FC7E6D.8010805@cn.fujitsu.com>
+ <56FC8C15.5060002@cn.fujitsu.com>
+ <20160331210004.GZ9342@torres.zugschlus.de>
+ <20160331231630.7b4ceda9@jupiter.sol.kaishome.de>
+ <20160401055725.GA9342@torres.zugschlus.de>
+ <20160402110353.10ae123a@jupiter.sol.kaishome.de>
+ <20160402094432.GQ9342@torres.zugschlus.de>
+ <20160402203117.4d815f13@jupiter.sol.kaishome.de>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
+In-Reply-To: <20160402203117.4d815f13@jupiter.sol.kaishome.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Mar 31, 2016 at 11:57 PM, Marc Haber
-<mh+linux-btrfs@zugschlus.de> wrote:
-> On Thu, Mar 31, 2016 at 11:16:30PM +0200, Kai Krakow wrote:
->> Am Thu, 31 Mar 2016 23:00:04 +0200
->> schrieb Marc Haber <mh+linux-btrfs@zugschlus.de>:
->> > I find it somewhere between funny and disturbing that the first call
->> > of btrfs check made my kernel log the following:
->> > Mar 31 22:45:36 fan kernel: [ 6253.178264] EXT4-fs (dm-31): mounted
->> > filesystem with ordered data mode. Opts: (null) Mar 31 22:45:38 fan
->> > kernel: [ 6255.361328] BTRFS: device label fanbtr devid 1 transid
->> > 67526 /dev/dm-31
->> >
->> > No, the filesystem was not converted, it was directly created as
->> > btrfs, and no, I didn't try mounting it.
->>
->> I suggest that your partition contained ext4 before, and you didn't run
->> wipefs before running mkfs.btrfs.
->
-> I cryptsetup luksFormat'ted the partition before I mkfs.btrfs'ed it.
-> That should do a much better job than wipefsing it, shouldnt it?
+On Sat, Apr 02, 2016 at 08:31:17PM +0200, Kai Krakow wrote:
+> Am Sat, 2 Apr 2016 11:44:32 +0200
+> schrieb Marc Haber <mh+linux-btrfs@zugschlus.de>:
+> 
+> > On Sat, Apr 02, 2016 at 11:03:53AM +0200, Kai Krakow wrote:
+> > > Am Fri, 1 Apr 2016 07:57:25 +0200
+> > > schrieb Marc Haber <mh+linux-btrfs@zugschlus.de>:  
+> > > > On Thu, Mar 31, 2016 at 11:16:30PM +0200, Kai Krakow wrote:  
+> >  [...]  
+> >  [...]  
+> >  [...]  
+> > > > 
+> > > > I cryptsetup luksFormat'ted the partition before I mkfs.btrfs'ed
+> > > > it. That should do a much better job than wipefsing it, shouldnt
+> > > > it?  
+> > > 
+> > > Not sure how luksFormat works. If it encrypts what is already on the
+> > > device, it would also encrypt orphan superblocks.  
+> > 
+> > It overwrites the LUKS metadata including the symmetric key that was
+> > used to encrypt the existing data. Short of Shor's Algorithm and
+> > Quantum Computers, after that operation it is no longer possible to
+> > even guess what was on the disk before.
+> 
+> If it was encrypted before... ;-)
 
-Not really. The first btrfs super is at 64K. The second at 64M. The
-third at 256G. While wipefs will remove the magic only on the first,
-mkfs.btrfs will take care of all three. And luksFormat only overwrites
-the first 132K of a block device. There's a scant chance of bugs
-related to previous filesystems not being erased, I think this is more
-likely when mixing and matching filesystems just because the
-superblocks for each filesystem aren't in the same location.
+First, it was.
 
-If you're concerned about traces of previous file systems, then use
-the dmcrypt device itself, rather than merely using the original block
-device where merely 132K at the beginning has been overwritten.
-Everytime you format a device, the resulting dmcrypt logical device is
-in effect full of completely random data. A new random key is
-generated each time you use luksFormat, even if you're using the same
-passphrase.
+Second, cleartext found on the block device is quite unlikely to be
+readable from the unlocked crypto device. I would be very worried if
+that were the case.
+
+I must be missing something here.
+
+Greetings
+Marc
 
 -- 
-Chris Murphy
+-----------------------------------------------------------------------------
+Marc Haber         | "I don't trust Computers. They | Mailadresse im Header
+Leimen, Germany    |  lose things."    Winona Ryder | Fon: *49 6224 1600402
+Nordisch by Nature |  How to make an American Quilt | Fax: *49 6224 1600421

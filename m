@@ -1,61 +1,90 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:54965 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751222AbcDDGJx (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 4 Apr 2016 02:09:53 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1amxhs-0007dR-Nk
-	for linux-btrfs@vger.kernel.org; Mon, 04 Apr 2016 08:09:48 +0200
-Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 04 Apr 2016 08:09:48 +0200
-Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 04 Apr 2016 08:09:48 +0200
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
+Received: from userp1040.oracle.com ([156.151.31.81]:28417 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753986AbcDDGUG (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 4 Apr 2016 02:20:06 -0400
+From: Anand Jain <anand.jain@oracle.com>
 Subject: Re: [PATCH 00/13 v3] Introduce device state 'failed', Hot spare and
  Auto replace
-Date: Mon, 4 Apr 2016 06:09:41 +0000 (UTC)
-Message-ID: <pan$64d8b$718e385e$1ef143f5$1db0a45a@cox.net>
+To: Kai Krakow <hurikhan77@gmail.com>, linux-btrfs@vger.kernel.org
 References: <1459560651-14809-1-git-send-email-anand.jain@oracle.com>
-	<20160404020043.47ad35bf@jupiter.sol.kaishome.de>
-	<pan$5fc01$c48cb58$b5aadf3d$c2af2f78@cox.net>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+ <20160404020043.47ad35bf@jupiter.sol.kaishome.de>
+Message-ID: <5702076B.3050108@oracle.com>
+Date: Mon, 4 Apr 2016 14:19:23 +0800
+MIME-Version: 1.0
+In-Reply-To: <20160404020043.47ad35bf@jupiter.sol.kaishome.de>
+Content-Type: text/plain; charset=windows-1252; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Duncan posted on Mon, 04 Apr 2016 04:45:16 +0000 as excerpted:
 
-> Kai Krakow posted on Mon, 04 Apr 2016 02:00:43 +0200 as excerpted:
-> 
->> Does this also implement "copy-back" - thus, it returns the hot-spare
->> device to global hot-spares when the failed device has been replaced?
-> 
-> I don't believe it does that in this initial implementation, anyway.
-> 
-> There's a number of issues with the initial implementation, including
-> the fact that the hot-spare is global only and can't be specifically
-> assigned to a filesystem or set of filesystems, which means, if you have
-> multiple filesystems using different sized devices, the hot-spares must
-> be sized to match the largest device they could replace,
 
-Obviously the sizes issue is problematic for the hot-spare-return 
-situation as well, since it would then be possible for an appropriately 
-large replacement device to replace a much smaller device on some 
-filesystem, which would then put the much smaller device into rotation as 
-a hot-spare where it could end up picked to replace a far larger device.  
-As there's currently no intelligence as to device sizes, etc, it just 
-picks the next device in the hot-spares list and tries to use it, oops!
+On 04/04/2016 08:00 AM, Kai Krakow wrote:
+> Am Sat,  2 Apr 2016 09:30:38 +0800
+> schrieb Anand Jain <anand.jain@oracle.com>:
+>
+>> Auto replace:
+>>   Replace happens automatically, that is when there is any write
+>>   failed or flush failed, the device will be marked as failed, which
+>>   will stop any further IO attempt to that device. And in the next
+>>   commit cycle the auto replace will pick the spare device to
+>>   replace the failed device. And so the btrfs volume is back to a
+>>   healthy state.
+>
+> Does this also implement "copy-back" - thus, it returns the hot-spare
+> device to global hot-spares when the failed device has been replaced?
 
-So hot-spare-return really will need to wait until per-filesystem hot-
-spares and/or some sizing intelligence is added.
+  Actually no. That means +1x more IO.
 
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+> Traditionally, the wording "hot spare" implies that the storage
+> system runs a copy-back operation when the failing device has been
+> replaced. The "hot spare" device then returns to its original "hot
+> spare" function: sitting and waiting to jump in place...
 
+
+
+> This also helps to keep your drives order in your storage enclosure.
+> Without copy-back, the association between member drive and storage
+> enclosure would fluctuate over time and you'd have to constantly update
+> documentation.
+> Add many identical systems, and you have a lot of
+> different system configurations over time with individual
+> documentation. This becomes confusing at best, and turns out
+> dangerously probably (when pulling the wrong drive due to confusion).
+
+   Noted and I agree, its always been very challenging in this area
+   at the data centers.
+
+   But strictly speaking its an enclosure services RFC to
+   mitigate the issue of poor SW/CLI UI with hardware slots.
+   ZFSSA HW added few more LEDs to help, I am not too sure
+   but other recent HWs should have / might have enhancements
+   in this area to help easy mapping/management.
+   Further for the reason above, we shouldn't fix the problem at
+   the wrong side, copy-back involves more IO, but.. I agree
+   naming can be better to avoid confusion as such.
+
+> Otherwise, I find "hot spare" misleading and it should be renamed.
+
+  I never thought hot spare would be narrowed to such a specifics.
+  When I wrote Solaris cpqarray (it was a very long time back
+  though) I remember some RAID+JBOD HW wanted a strict disks ordering
+  for _performance-reasons_, which made stronger reasons to have
+  copy-back.
+
+  Further in the long term what we need in btrfs is disk based tagging
+  and grouping, that is it will help to create a btrfs across mixed
+  types of JBODs, and then I hope it shall take care of narrower
+  group based spare assignments.
+
+  If there is any further reasons that copy-back should be a feature
+  I think its ok to have it as an optional feature.
+
+  About the naming.. the progs called it 'global spare' (device),
+  kernel calls is 'spare'. Sorry this email thread called it
+  hot spare. I should have paid little more attention here to maintain
+  consistency.
+
+  Thanks for the note.
+
+Anand

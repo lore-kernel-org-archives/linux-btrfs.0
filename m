@@ -1,71 +1,77 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:41946 "EHLO plane.gmane.org"
+Received: from plane.gmane.org ([80.91.229.3]:42368 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752591AbcDDUHO (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 4 Apr 2016 16:07:14 -0400
+	id S1756288AbcDDUPa (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 4 Apr 2016 16:15:30 -0400
 Received: from list by plane.gmane.org with local (Exim 4.69)
 	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1anAmG-0001kQ-0P
-	for linux-btrfs@vger.kernel.org; Mon, 04 Apr 2016 22:07:12 +0200
+	id 1anAuC-0004m9-Ed
+	for linux-btrfs@vger.kernel.org; Mon, 04 Apr 2016 22:15:24 +0200
 Received: from ip5f5ae008.dynamic.kabel-deutschland.de ([95.90.224.8])
         by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 04 Apr 2016 22:07:11 +0200
+        for <linux-btrfs@vger.kernel.org>; Mon, 04 Apr 2016 22:15:24 +0200
 Received: from hurikhan77 by ip5f5ae008.dynamic.kabel-deutschland.de with local (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 04 Apr 2016 22:07:11 +0200
+        for <linux-btrfs@vger.kernel.org>; Mon, 04 Apr 2016 22:15:24 +0200
 To: linux-btrfs@vger.kernel.org
 From: Kai Krakow <hurikhan77@gmail.com>
 Subject: Re: [PATCH 00/13 v3] Introduce device state 'failed', Hot spare and
  Auto replace
-Date: Mon, 4 Apr 2016 22:07:02 +0200
-Message-ID: <20160404220702.77518a86@jupiter.sol.kaishome.de>
+Date: Mon, 4 Apr 2016 22:15:13 +0200
+Message-ID: <20160404221513.7fd31f8f@jupiter.sol.kaishome.de>
 References: <1459560651-14809-1-git-send-email-anand.jain@oracle.com>
 	<20160404020043.47ad35bf@jupiter.sol.kaishome.de>
-	<5702076B.3050108@oracle.com>
+	<pan$5fc01$c48cb58$b5aadf3d$c2af2f78@cox.net>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=US-ASCII
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am Mon, 4 Apr 2016 14:19:23 +0800
-schrieb Anand Jain <anand.jain@oracle.com>:
+Am Mon, 4 Apr 2016 04:45:16 +0000 (UTC)
+schrieb Duncan <1i5t5.duncan@cox.net>:
 
-> > Otherwise, I find "hot spare" misleading and it should be renamed.  
+> Kai Krakow posted on Mon, 04 Apr 2016 02:00:43 +0200 as excerpted:
 > 
->   I never thought hot spare would be narrowed to such a specifics.
-[...]
->   About the naming.. the progs called it 'global spare' (device),
->   kernel calls is 'spare'. Sorry this email thread called it
->   hot spare. I should have paid little more attention here to maintain
->   consistency.
+> > Does this also implement "copy-back" - thus, it returns the
+> > hot-spare device to global hot-spares when the failed device has
+> > been replaced?  
 > 
->   Thanks for the note.
+> I don't believe it does that in this initial implementation, anyway.
+> 
+> There's a number of issues with the initial implementation, including
+> the fact that the hot-spare is global only and can't be specifically
+> assigned to a filesystem or set of filesystems, which means, if you
+> have multiple filesystems using different sized devices, the
+> hot-spares must be sized to match the largest device they could
+> replace, and thus would be mostly wasted if they ended up replacing a
+> far smaller device.  If the spares could be associated with specific
+> filesystems, then specifically sized spares could be associated
+> appropriately, avoiding that waste. Additionally, it would then be
+> possible to queue up say 20 spares on an important filesystem, with
+> no spares on another that you'd rather just go down if a device fails.
+> 
+> So obviously the initial implementation isn't seriously
+> enterprise-ready and is sub-optimal in many ways, but it's better
+> than what is currently available (no automated spare handling at
+> all), and an implementation must start somewhere, so as long as it's
+> designed to be improved and extended with the missing features over
+> time, as has been indicated, it's a reasonable first-implementation.
 
-I think that's okay. Maybe man pages / doc should put a note that
-there's no copy-back and that the spare takes a permanent replacement
-role.
+Your argument would be less important if it did copy-back, tho... ;-)
 
-Side note: When I started managing hardware RAIDs a few years back,
-"hot spare" wasn't very clear to me, and I didn't understand why there
-is a copy-back operation (given that "useless" +1x IO). But in the long
-term it keeps drive arrangement at expectations - which is good.
+It's a very welcome and good start, I didn't mean to talk it useless.
+By no way.
 
-RAID board manufacturers seem to differentiate between those two
-replacement strategies - and "hot spare" always involved copy-back for
-me: The spare drive automatically returns to its hot spare role. I
-learned to like this strategy. It has some advantages.
+But to handle it right, that point should be clear. Currently, if the
+global spare jumps in, you can always simulate "hot spare" by manually
+putting back a correctly sized drive, then remove the spare again to
+simulate copy-back, then make it global spare again.
 
-You could instead assign a replacement drive - then drives will become
-rearranged in the array. This is usually done by just onlining one
-spare disk, start a replace action, then offline the old drive and pull
-it from the array. It's not "hot" in that sense. It's been unconfigured
-good. Not sure if this could be automated - I did it this way only when
-the array hasn't been equipped with a spare inside the enclosure but
-the drive being still in its original box. Other than that, I always
-used the hot spare method.
+Since such an incident needs manual investigation anyways, it's totally
+reasonable to start with this implementation.
 
-That's why I stumbled across...
+This sort of handling could be made into a guide within the docs.
 
 -- 
 Regards,

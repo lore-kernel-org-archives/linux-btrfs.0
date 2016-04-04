@@ -1,47 +1,69 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:39773 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1750879AbcDNG3M (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 14 Apr 2016 02:29:12 -0400
-Received: from localhost.localdomain (unknown [10.167.226.34])
-	by cn.fujitsu.com (Postfix) with ESMTP id 731B9405640D
-	for <linux-btrfs@vger.kernel.org>; Thu, 14 Apr 2016 14:26:35 +0800 (CST)
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs-progs: Restrict e2fsprogs version for new convert
-Date: Thu, 14 Apr 2016 14:24:34 +0800
-Message-Id: <1460615074-2492-1-git-send-email-quwenruo@cn.fujitsu.com>
+Received: from mx2.suse.de ([195.135.220.15]:49298 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752017AbcDDNit (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 4 Apr 2016 09:38:49 -0400
+Date: Mon, 4 Apr 2016 15:35:16 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz,
+        David Sterba <dsterba@suse.com>
+Subject: Re: [PATCH v3 01/22] btrfs-progs: convert: Introduce functions to
+ read used space
+Message-ID: <20160404133516.GA3412@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1454043812-7893-1-git-send-email-quwenruo@cn.fujitsu.com>
+ <1454043812-7893-2-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1454043812-7893-2-git-send-email-quwenruo@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-New btrfs-convert is using a lot of new macro in e2fsprogs 1.42.
-Unfortunately the new compatible layer for older e2fsprogs is still
-under development.
+On Fri, Jan 29, 2016 at 01:03:11PM +0800, Qu Wenruo wrote:
+> Before we do real convert, we need to read and build up used space cache
+> tree for later data/meta separate chunk layout.
+> 
+> This patch will iterate all used blocks in ext2 filesystem and record it
+> into cctx->used cache tree, for later use.
+> 
+> This provides the very basic of later btrfs-convert rework.
+> 
+> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+> Signed-off-by: David Sterba <dsterba@suse.com>
+> ---
+>  btrfs-convert.c | 80 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+>  1 file changed, 80 insertions(+)
+> 
+> diff --git a/btrfs-convert.c b/btrfs-convert.c
+> index 4baa68e..65841bd 100644
+> --- a/btrfs-convert.c
+> +++ b/btrfs-convert.c
+> @@ -81,6 +81,7 @@ struct btrfs_convert_context;
+>  struct btrfs_convert_operations {
+>  	const char *name;
+>  	int (*open_fs)(struct btrfs_convert_context *cctx, const char *devname);
+> +	int (*read_used_space)(struct btrfs_convert_context *cctx);
+>  	int (*alloc_block)(struct btrfs_convert_context *cctx, u64 goal,
+>  			   u64 *block_ret);
+>  	int (*alloc_block_range)(struct btrfs_convert_context *cctx, u64 goal,
+> @@ -230,6 +231,73 @@ fail:
+>  	return -1;
+>  }
+>  
+> +static int __ext2_add_one_block(ext2_filsys fs, char *bitmap,
+> +				unsigned long group_nr, struct cache_tree *used)
+> +{
+> +	unsigned long offset;
+> +	unsigned i;
+> +	int ret = 0;
+> +
+> +	offset = fs->super->s_first_data_block;
+> +	offset /= EXT2FS_CLUSTER_RATIO(fs);
 
-So restrict e2fsprogs version so far to avoid complier error.
+This macro does not exist on my reference host for old distros. The
+e2fsprogs version is 1.41.14 and I'd like to keep the compatibility at
+least at that level.
 
-Reported-by: David Sterba <dsterba@suse.cz>
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
----
- configure.ac | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
-
-diff --git a/configure.ac b/configure.ac
-index fc343ea..05fdc32 100644
---- a/configure.ac
-+++ b/configure.ac
-@@ -105,7 +105,7 @@ AS_IF([test "x$enable_convert" = xyes], [DISABLE_BTRFSCONVERT=0], [DISABLE_BTRFS
- AC_SUBST([DISABLE_BTRFSCONVERT])
- 
- if test "x$enable_convert" = xyes; then
--	PKG_CHECK_MODULES(EXT2FS, [ext2fs])
-+	PKG_CHECK_MODULES(EXT2FS, [ext2fs >= 1.42])
- 	PKG_CHECK_MODULES(COM_ERR, [com_err])
- fi
- 
--- 
-2.8.0
-
-
-
+The clustering has been added in 1.42 but can we add some compatibility
+layer that will work on both version?

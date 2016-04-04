@@ -1,48 +1,35 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qk0-f193.google.com ([209.85.220.193]:36319 "EHLO
-	mail-qk0-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751226AbcDFP4r (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 Apr 2016 11:56:47 -0400
-From: Bastien Philbert <bastienphilbert@gmail.com>
-To: clm@fb.com
-Cc: jbacik@fb.com, dsterba@suse.com, linux-btrfs@vger.kernel.org,
-        linux-kernel@vger.kernel.org
-Subject: [PATCH] btrfs:Change BUG_ON to new error path in  __clear_extent_bit
-Date: Wed,  6 Apr 2016 11:56:36 -0400
-Message-Id: <1459958196-31346-1-git-send-email-bastienphilbert@gmail.com>
+Received: from mx2.suse.de ([195.135.220.15]:50647 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1755732AbcDDOAZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 4 Apr 2016 10:00:25 -0400
+Date: Mon, 4 Apr 2016 15:56:41 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Holger =?iso-8859-1?Q?Hoffst=E4tte?=
+	<holger.hoffstaette@googlemail.com>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>, Chris Mason <clm@fb.com>,
+        David Sterba <dsterba@suse.com>,
+        Dan Carpenter <dan.carpenter@oracle.com>
+Subject: Re: [PATCH] delete obsolete function btrfs_print_tree()
+Message-ID: <20160404135641.GB3412@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <56F550DD.1030200@googlemail.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=iso-8859-1
+In-Reply-To: <56F550DD.1030200@googlemail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This remove the unnessary BUG_ON if the allocation with
-alloc_extent_state_atomic fails due to this function
-failure not being unrecoverable. Instead we now change
-this BUG_ON into a new error path that jumps to the goto
-label, out from freeing previously allocated resources
-before returning the error code -ENOMEM to signal callers
-that the call to __clear_extent_bit failed due to a memory
-allocation failure.
+On Fri, Mar 25, 2016 at 03:53:17PM +0100, Holger Hoffstätte wrote:
+> Dan Carpenter's static checker recently found missing IS_ERR handling
+> in print-tree.c:btrfs_print_tree(). While looking into this I found that
+> this function is no longer called anywhere and was moved to btrfs-progs
+> long ago. It can simply be removed.
 
-Signed-off-by: Bastien Philbert <bastienphilbert@gmail.com>
----
- fs/btrfs/extent_io.c | 5 ++++-
- 1 file changed, 4 insertions(+), 1 deletion(-)
+I'm not sure, the function could be used for debugging, and it's hard to
+say if we'll ever need it.  Printing the whole tree to the system log
+would produce a lot of text so some manual filtering would be required,
+the function could serve as a template.
 
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index d247fc0..4c87b77 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -682,7 +682,10 @@ hit_next:
- 
- 	if (state->start < start) {
- 		prealloc = alloc_extent_state_atomic(prealloc);
--		BUG_ON(!prealloc);
-+		if (!prealloc) {
-+			err = -ENOMEM;
-+			goto out;
-+		}
- 		err = split_state(tree, state, prealloc, start);
- 		if (err)
- 			extent_io_tree_panic(tree, err);
--- 
-2.5.0
-
+The function is not that big that it would save bytes, but putting it
+under the debug config would help a bit.

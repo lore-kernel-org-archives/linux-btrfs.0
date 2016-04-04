@@ -1,50 +1,27 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:41528 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752471AbcDCVqd (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 3 Apr 2016 17:46:33 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1ampqn-0004Ma-3m
-	for linux-btrfs@vger.kernel.org; Sun, 03 Apr 2016 23:46:29 +0200
-Received: from 227.87.66.148.dsl.dyn.mana.pf ([148.66.87.227])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sun, 03 Apr 2016 23:46:29 +0200
-Received: from jd.girard by 227.87.66.148.dsl.dyn.mana.pf with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sun, 03 Apr 2016 23:46:29 +0200
-To: linux-btrfs@vger.kernel.org
-From: Jean-Denis Girard <jd.girard@sysnux.pf>
-Subject: Snapshots diff
-Date: Sun, 3 Apr 2016 11:46:15 -1000
-Message-ID: <nds2v8$72d$1@ger.gmane.org>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=utf-8
+Received: from mail-ig0-f172.google.com ([209.85.213.172]:37975 "EHLO
+	mail-ig0-f172.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752779AbcDDBOS (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 3 Apr 2016 21:14:18 -0400
+Received: by mail-ig0-f172.google.com with SMTP id ui10so57776844igc.1
+        for <linux-btrfs@vger.kernel.org>; Sun, 03 Apr 2016 18:14:18 -0700 (PDT)
+MIME-Version: 1.0
+Date: Sun, 3 Apr 2016 19:14:17 -0600
+Message-ID: <CAJCQCtRB1pvOpkjbGxHLV8SRQ5sAfvg=rGjYSS19QNw3ahC_8Q@mail.gmail.com>
+Subject: [bug] btrfs fi usage crash when multiple device volume contains seed device
+From: Chris Murphy <lists@colorremedies.com>
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi list,
+https://bugzilla.kernel.org/show_bug.cgi?id=115851
 
-I've written a little Python script that displays differences between
-two snapshots. It relies on btrfs send to compute the differences. You
-can get it here: https://github.com/sysnux/btrfs-snapshots-diff
+Happens with kernel-4.5.0-300.fc24.x86_64 and either btrfs-progs 4.4.1 or 4.5.1.
 
-There are no dependencies besides Python2.
-
-The stream is decoded in the Python code, and there is something wrong
-with symlinks : the action in the stream does not correspond to what is
-written in btrfs-progs/send-stream.c (BTRFS_SEND_A_INO vs
-BTRFS_SEND_A_PATH_LINK). I probably made a mistake, but can't find it:
-can someone explain that difference?
-
-I hope someone will find this useful.
+Does not happen with seed device alone. Only starts to happen once
+another device is added, whether still ro or remounting rw.
 
 
-Thanks,
 -- 
-Jean-Denis Girard
-
-SysNux                 Systèmes   Linux   en   Polynésie   française
-http://www.sysnux.pf/  Tél: +689 40.50.10.40 / GSM: +689 87.79.75.27
-
+Chris Murphy

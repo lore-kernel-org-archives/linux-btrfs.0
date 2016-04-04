@@ -1,283 +1,412 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-yw0-f169.google.com ([209.85.161.169]:33020 "EHLO
-	mail-yw0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751654AbcDCIWl (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 3 Apr 2016 04:22:41 -0400
-Received: by mail-yw0-f169.google.com with SMTP id t10so31909956ywa.0
-        for <linux-btrfs@vger.kernel.org>; Sun, 03 Apr 2016 01:22:41 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <56FB1F26.3030807@cn.fujitsu.com>
-References: <1458610552-9845-1-git-send-email-quwenruo@cn.fujitsu.com>
-	<CAOcd+r0kVY2odm_rzNUMf3MGVCaRh8aDnHiY+Eo3ceKOLNXSyA@mail.gmail.com>
-	<56FB1F26.3030807@cn.fujitsu.com>
-Date: Sun, 3 Apr 2016 10:22:40 +0200
-Message-ID: <CAOcd+r1n1tvjT3UxUr+3r3weaTOhOAp=sHq2JMZUm3G++ohg4Q@mail.gmail.com>
+Received: from mx2.suse.de ([195.135.220.15]:35497 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1754358AbcDDQ6u (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 4 Apr 2016 12:58:50 -0400
+Date: Mon, 4 Apr 2016 18:55:17 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: dsterba@suse.cz, linux-btrfs@vger.kernel.org, clm@fb.com
 Subject: Re: [PATCH v8 00/27][For 4.7] Btrfs: Add inband (write time)
  de-duplication framework
-From: Alex Lyakas <alex.btrfs@zadarastorage.com>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>,
-        Xiaoguang Wang <wangxg.fnst@cn.fujitsu.com>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Message-ID: <20160404165517.GD3412@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1458610552-9845-1-git-send-email-quwenruo@cn.fujitsu.com>
+ <20160322133812.GK8095@twin.jikos.cz>
+ <56F1FEAF.2070806@cn.fujitsu.com>
+ <20160324134217.GP29764@twin.jikos.cz>
+ <56F496AA.9000102@cn.fujitsu.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <56F496AA.9000102@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello Qu, Wang,
+On Fri, Mar 25, 2016 at 09:38:50AM +0800, Qu Wenruo wrote:
+> > Please use the newly added BTRFS_PERSISTENT_ITEM_KEY instead of a new
+> > key type. As this is the second user of that item, there's no precendent
+> > how to select the subtype. Right now 0 is for the dev stats item, but
+> > I'd like to leave some space between them, so it should be 256 at best.
+> > The space is 64bit so there's enough room but this also means defining
+> > the on-disk format.
+> 
+> After checking BTRFS_PERSISENT_ITEM_KEY, it seems that its value is 
+> larger than current DEDUPE_BYTENR/HASH_ITEM_KEY, and since the objectid 
+> of DEDUPE_HASH_ITEM_KEY, it won't be the first item of the tree.
+> 
+> Although that's not a big problem, but for user using debug-tree, it 
+> would be quite annoying to find it located among tons of other hashes.
 
-On Wed, Mar 30, 2016 at 2:34 AM, Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
->
->
-> Alex Lyakas wrote on 2016/03/29 19:22 +0200:
->>
->> Greetings Qu Wenruo,
->>
->> I have reviewed the dedup patchset found in the github account you
->> mentioned. I have several questions. Please note that by all means I
->> am not criticizing your design or code. I just want to make sure that
->> my understanding of the code is proper.
->
->
-> It's OK to criticize the design or code, and that's how review works.
->
->>
->> 1) You mentioned in several emails that at some point byte-to-byte
->> comparison is to be performed. However, I do not see this in the code.
->> It seems that generic_search() only looks for the hash value match. If
->> there is a match, it goes ahead and adds a delayed ref.
->
->
-> I mentioned byte-to-byte comparison as, "not to be implemented in any time
-> soon".
->
-> Considering the lack of facility to read out extent contents without any
-> inode structure, it's not going to be done in any time soon.
->
->>
->> 2) If btrfs_dedupe_search() does not find a match, we unlock the dedup
->> mutex and proceed with the normal COW. What happens if there are
->> several IO streams to different files writing an identical block, but
->> we don't have such block in our dedup DB? Then all
->> btrfs_dedupe_search() calls will not find a match, so all streams will
->> allocate space for their block (which are all identical). At some
->> point, they will call insert_reserved_file_extent() and will call
->> btrfs_dedupe_add(). Since there is a global mutex, the first stream
->> will insert the dedup hash entries into the DB, and all other streams
->> will find that such hash entry already exists. So the end result is
->> that we have the hash entry in the DB, but still we have multiple
->> copies of the same block allocated, due to timing issues. Is this
->> correct?
->
->
-> That's right, and that's also unavoidable for the hash initializing stage.
->
->>
->> 3) generic_search() competes with __btrfs_free_extent(). Meaning that
->> generic_search() wants to add a delayed ref to an existing extent,
->> whereas __btrfs_free_extent() wants to delete an entry from the dedup
->> DB. The race is resolved as follows:
->> - generic_search attempts to lock the delayed ref head
->> - if it succeeds to lock, then __btrfs_free_extent() is not running
->> right now. So we can add a delayed ref. Later, when delayed ref head
->> will be run, it will figure out what needs to be done (free the extent
->> or not)
->> - if we fail to lock, then there is a delayed ref processing for this
->> bytenr. We drop all locks and redo the search from the top. If
->> __btrfs_free_extent() has deleted the dedup hash meanwhile, we will
->> not find it, and proceed with normal COW.
->> Is my understanding correct?
->
->
-> Yes that's correct.
+You can alternatively store it in the tree_root, but I don't know how
+frquently it's supposed to be changed.
 
-Reviewing the code again, it seems that I still lack understanding.
-What is special about the dedup code adding a delayed data ref versus
-other places doing that? In other places, we do not insist on locking
-the delayed ref head, but in dedup we do. For example,
-__btrfs_drop_extents calls btrfs_inc_extent_ref, without locking the
-ref head. I know that one of your purposes was to draw attention to
-delayed ref processing, so you have succeeded.
+> So personally, if using PERSISTENT_ITEM_KEY, at least I prefer to keep 
+> objectid to 0, and modify DEDUPE_BYTENR/HASH_ITEM_KEY to higher value, 
+> to ensure dedupe status to be the first item of dedupe tree.
 
-Thanks,
-Alex.
+0 is unfortnuatelly taken by BTRFS_DEV_STATS_OBJECTID, but I don't see
+problem with the ordering. DEDUPE_BYTENR/HASH_ITEM_KEY store a large
+number in the objectid, either part of a hash, that's unlikely to be
+almost-all zeros and bytenr which will be larger than 1MB.
 
+> >>>> 4) Ioctl interface with persist dedup status
+> >>>
+> >>> I'd like to see the ioctl specified in more detail. So far there's
+> >>> enable, disable and status. I'd expect some way to control the in-memory
+> >>> limits, let it "forget" current hash cache, specify the dedupe chunk
+> >>> size, maybe sync of the in-memory hash cache to disk.
+> >>
+> >> So current and planned ioctl should be the following, with some details
+> >> related to your in-memory limit control concerns.
+> >>
+> >> 1) Enable
+> >>      Enable dedupe if it's not enabled already. (disabled -> enabled)
+> >
+> > Ok, so it should also take a parameter which bckend is about to be
+> > enabled.
+> 
+> It already has.
+> It also has limit_nr and limit_mem parameter for in-memory backend.
+> 
+> >
+> >>      Or change current dedupe setting to another. (re-configure)
+> >
+> > Doing that in 'enable' sounds confusing, any changes belong to a
+> > separate command.
+> 
+> This depends the aspect of view.
+> 
+> For "Enable/config/disable" case, it will introduce a state machine for 
+> end-user.
 
+Yes, that's exacly my point.
 
+> Personally, I doesn't state machine for end user. Yes, I also hate 
+> merging play and pause button together on music player.
 
->
->>
->> I have also few nitpicks on the code, will reply to relevant patches.
->
->
-> Feel free to comment.
->
-> Thanks,
-> Qu
->
->>
->> Thanks for doing this work,
->> Alex.
->>
->>
->>
->> On Tue, Mar 22, 2016 at 3:35 AM, Qu Wenruo <quwenruo@cn.fujitsu.com>
->> wrote:
->>>
->>> This patchset can be fetched from github:
->>> https://github.com/adam900710/linux.git wang_dedupe_20160322
->>>
->>> This updated version of inband de-duplication has the following features:
->>> 1) ONE unified dedup framework.
->>>     Most of its code is hidden quietly in dedup.c and export the minimal
->>>     interfaces for its caller.
->>>     Reviewer and further developer would benefit from the unified
->>>     framework.
->>>
->>> 2) TWO different back-end with different trade-off
->>>     One is the improved version of previous Fujitsu in-memory only dedup.
->>>     The other one is enhanced dedup implementation from Liu Bo.
->>>     Changed its tree structure to handle bytenr -> hash search for
->>>     deleting hash, without the hideous data backref hack.
->>>
->>> 3) Support compression with dedupe
->>>     Now dedupe can work with compression.
->>>     Means that, a dedupe miss case can be compressed, and dedupe hit case
->>>     can also reuse compressed file extents.
->>>
->>> 4) Ioctl interface with persist dedup status
->>>     Advised by David, now we use ioctl to enable/disable dedup.
->>>
->>>     And we now have dedup status, recorded in the first item of dedup
->>>     tree.
->>>     Just like quota, once enabled, no extra ioctl is needed for next
->>>     mount.
->>>
->>> 5) Ability to disable dedup for given dirs/files
->>>     It works just like the compression prop method, by adding a new
->>>     xattr.
->>>
->>> TODO:
->>> 1) Add extent-by-extent comparison for faster but more conflicting
->>> algorithm
->>>     Current SHA256 hash is quite slow, and for some old(5 years ago) CPU,
->>>     CPU may even be a bottleneck other than IO.
->>>     But for faster hash, it will definitely cause conflicts, so we need
->>>     extent comparison before we introduce new dedup algorithm.
->>>
->>> 2) Misc end-user related helpers
->>>     Like handy and easy to implement dedup rate report.
->>>     And method to query in-memory hash size for those "non-exist" users
->>> who
->>>     want to use 'dedup enable -l' option but didn't ever know how much
->>>     RAM they have.
->>>
->>> Changelog:
->>> v2:
->>>    Totally reworked to handle multiple backends
->>> v3:
->>>    Fix a stupid but deadly on-disk backend bug
->>>    Add handle for multiple hash on same bytenr corner case to fix abort
->>>    trans error
->>>    Increase dedup rate by enhancing delayed ref handler for both backend.
->>>    Move dedup_add() to run_delayed_ref() time, to fix abort trans error.
->>>    Increase dedup block size up limit to 8M.
->>> v4:
->>>    Add dedup prop for disabling dedup for given files/dirs.
->>>    Merge inmem_search() and ondisk_search() into generic_search() to save
->>>    some code
->>>    Fix another delayed_ref related bug.
->>>    Use the same mutex for both inmem and ondisk backend.
->>>    Move dedup_add() back to btrfs_finish_ordered_io() to increase dedup
->>>    rate.
->>> v5:
->>>    Reuse compress routine for much simpler dedup function.
->>>    Slightly improved performance due to above modification.
->>>    Fix race between dedup enable/disable
->>>    Fix for false ENOSPC report
->>> v6:
->>>    Further enable/disable race window fix.
->>>    Minor format change according to checkpatch.
->>> v7:
->>>    Fix one concurrency bug with balance.
->>>    Slightly modify return value from -EINVAL to -EOPNOTSUPP for
->>>    btrfs_dedup_ioctl() to allow progs to distinguish unsupported commands
->>>    and wrong parameter.
->>>    Rebased to integration-4.6.
->>> v8:
->>>    Rename 'dedup' to 'dedupe'.
->>>    Add support to allow dedupe and compression work at the same time.
->>>    Fix several balance related bugs. Special thanks to Satoru Takeuchi,
->>>    who exposed most of them.
->>>    Small dedupe hit case performance improvement.
->>>
->>> Qu Wenruo (12):
->>>    btrfs: delayed-ref: Add support for increasing data ref under spinlock
->>>    btrfs: dedupe: Inband in-memory only de-duplication implement
->>>    btrfs: dedupe: Add basic tree structure for on-disk dedupe method
->>>    btrfs: dedupe: Introduce interfaces to resume and cleanup dedupe info
->>>    btrfs: dedupe: Add support for on-disk hash search
->>>    btrfs: dedupe: Add support to delete hash for on-disk backend
->>>    btrfs: dedupe: Add support for adding hash for on-disk backend
->>>    btrfs: Fix a memory leak in inband dedupe hash
->>>    btrfs: dedupe: Fix metadata balance error when dedupe is enabled
->>>    btrfs: dedupe: Preparation for compress-dedupe co-work
->>>    btrfs: relocation: Enhance error handling to avoid BUG_ON
->>>    btrfs: dedupe: Fix a space cache delalloc bytes underflow bug
->>>
->>> Wang Xiaoguang (15):
->>>    btrfs: dedupe: Introduce dedupe framework and its header
->>>    btrfs: dedupe: Introduce function to initialize dedupe info
->>>    btrfs: dedupe: Introduce function to add hash into in-memory tree
->>>    btrfs: dedupe: Introduce function to remove hash from in-memory tree
->>>    btrfs: dedupe: Introduce function to search for an existing hash
->>>    btrfs: dedupe: Implement btrfs_dedupe_calc_hash interface
->>>    btrfs: ordered-extent: Add support for dedupe
->>>    btrfs: dedupe: Add ioctl for inband dedupelication
->>>    btrfs: dedupe: add an inode nodedupe flag
->>>    btrfs: dedupe: add a property handler for online dedupe
->>>    btrfs: dedupe: add per-file online dedupe control
->>>    btrfs: try more times to alloc metadata reserve space
->>>    btrfs: dedupe: Fix a bug when running inband dedupe with balance
->>>    btrfs: dedupe: Avoid submit IO for hash hit extent
->>>    btrfs: dedupe: Add support for compression and dedpue
->>>
->>>   fs/btrfs/Makefile            |    2 +-
->>>   fs/btrfs/ctree.h             |   78 ++-
->>>   fs/btrfs/dedupe.c            | 1188
->>> ++++++++++++++++++++++++++++++++++++++++++
->>>   fs/btrfs/dedupe.h            |  181 +++++++
->>>   fs/btrfs/delayed-ref.c       |   30 +-
->>>   fs/btrfs/delayed-ref.h       |    8 +
->>>   fs/btrfs/disk-io.c           |   28 +-
->>>   fs/btrfs/disk-io.h           |    1 +
->>>   fs/btrfs/extent-tree.c       |   49 +-
->>>   fs/btrfs/inode.c             |  338 ++++++++++--
->>>   fs/btrfs/ioctl.c             |   70 ++-
->>>   fs/btrfs/ordered-data.c      |   49 +-
->>>   fs/btrfs/ordered-data.h      |   16 +-
->>>   fs/btrfs/props.c             |   41 ++
->>>   fs/btrfs/relocation.c        |   41 +-
->>>   fs/btrfs/sysfs.c             |    2 +
->>>   include/trace/events/btrfs.h |    3 +-
->>>   include/uapi/linux/btrfs.h   |   25 +-
->>>   18 files changed, 2073 insertions(+), 77 deletions(-)
->>>   create mode 100644 fs/btrfs/dedupe.c
->>>   create mode 100644 fs/btrfs/dedupe.h
->>>
->>> --
->>> 2.7.3
->>>
->>>
->>>
->>> --
->>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->>> the body of a message to majordomo@vger.kernel.org
->>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->>
->>
->>
->
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+I don't see this reference relevant, we're not designing a music player.
+
+> If using state machine, user must ensure the dedupe is enabled before 
+> doing any configuration.
+
+For user convenience we can copy the configuration options to the dedup
+enable subcommand, but it will still do separate enable and configure
+ioctl calls.
+
+> For me, user only need to care the result of the operation. User can now 
+> configure dedupe to their need without need to know previous setting.
+>  From this aspect of view, "Enable/Disable" is much easier than 
+> "Enable/Config/Disable".
+
+Getting the usability is hard and that's why we're having this
+dicussion. What suites you does not suite others, we have different
+habits, expectations and there are existing usage patterns. We better
+stick to something that's not too surprising yet still flexible enough
+to cover broad needs. I'm leaving this open, but I strongly disagree
+with the current interface proposal.
+
+> >>      For dedupe_bs/backend/hash algorithm(only SHA256 yet) change, it
+> >>      will disable dedupe(dropping all hash) and then enable with new
+> >>      setting.
+> >>
+> >>      For in-memory backend, if only limit is different from previous
+> >>      setting, limit can be changed on the fly without dropping any hash.
+> >
+> > This is obviously misplaced in 'enable'.
+> 
+> Then, changing the 'enable' to 'configure' or other proper naming would 
+> be better.
+> 
+> The point is, user only need to care what they want to do, not previous 
+> setup.
+> 
+> >
+> >> 2) Disable
+> >>      Disable will drop all hash and delete the dedupe tree if it exists.
+> >>      Imply a full sync_fs().
+> >
+> > That is again combining too many things into one. Say I want to disable
+> > deduplication and want to enable it later. And not lose the whole state
+> > between that. Not to say deleting the dedup tree.
+> >
+> > IOW, deleting the tree belongs to a separate command, though in the
+> > userspace tools it could be done in one command, but we're talking about
+> > the kernel ioctls now.
+> >
+> > I'm not sure if the sync is required, but it's acceptable for first
+> > implementation.
+> 
+> The design is just to to reduce complexity.
+> If want to keep hash but disable dedupe, it will make dedupe only handle 
+> extent remove, but ignore any new coming write.
+> 
+> It will introduce a new state for dedupe, other than current simple 
+> enabled/disabled.
+> So I just don't allow such mode.
+> 
+> >
+> >>
+> >> 3) Status
+> >>      Output basic status of current dedupe.
+> >>      Including running status(disabled/enabled), dedupe block size, hash
+> >>      algorithm, and limit setting for in-memory backend.
+> >
+> > Agreed. So this is basically the settings and static info.
+> >
+> >> 4) (PLANNED) In-memory hash size querying
+> >>      Allowing userspace to query in-memory hash structure header size.
+> >>      Used for "btrfs dedupe enable" '-l' option to output warning if user
+> >>      specify memory size larger than 1/4 of the total memory.
+> >
+> > And this reflects the run-time status. Ok.
+> >
+> >> 5) (PLANNED) Dedeup rate statistics
+> >>      Should be handy for user to know the dedupe rate so they can further
+> >>      fine tuning their dedup setup.
+> >
+> > Similar as above, but for a different type of data. Ok.
+> >
+> >> So for your "in-memory limit control", just enable it with different limit.
+> >> For "dedupe block size change", just enable it with different dedupe_bs.
+> >> For "forget hash", just disable it.
+> >
+> > I can comment once the semantics of 'enable' are split, but basically I
+> > want an interface to control the deduplication cache.
+> 
+> So better renaming 'enable'.
+> 
+> Current 'enable' provides the interface to control the limit or dedupe hash.
+> 
+> I'm not sure further control is needed.
+> 
+> >
+> >> And for "write in-memory hash onto disk", not planned and may never do
+> >> it due to the complexity, sorry.
+> >
+> > I'm not asking you to do it, definetelly not for the initial
+> > implementation, but sync from memory to disk is IMO something that we
+> > can expect users to ask for. The percieved complexity may shift
+> > implementation to the future, but we should take it into account.
+> 
+> OK, I'll keep it in mind.
+> 
+> >
+> >>>> 5) Ability to disable dedup for given dirs/files
+> >>>
+> >>> This would be good to extend to subvolumes.
+> >>
+> >> I'm sorry that I didn't quite understand the difference.
+> >> Doesn't dir includes subvolume?
+> >
+> > If I enable deduplication on the entire subvolume, it will affect all
+> > subdirectories. Not the other way around.
+> 
+> It can be done by setting 'dedupe disable' on all other subvolumes.
+> But it it's not practical yet.
+
+Thtat's opt-in vs opt-out, we'd need a better description of the
+usecase.
+
+> So maybe introduce a new state for default dedupe behavior?
+> Current dedupe enabled default behavior is to dedup unless prohibited.
+> If dedupe default behavior can be don't dedupe unless allowed, then it 
+> will be much easier to do.
+> 
+> >
+> >> Or xattr for subvolume is only restored in its parent subvolume, and
+> >> won't be copied for its snapshot?
+> >
+> > The xattrs are copied to the snapshot.
+> >
+> >>>> TODO:
+> >>>> 1) Add extent-by-extent comparison for faster but more conflicting algorithm
+> >>>>      Current SHA256 hash is quite slow, and for some old(5 years ago) CPU,
+> >>>>      CPU may even be a bottleneck other than IO.
+> >>>>      But for faster hash, it will definitely cause conflicts, so we need
+> >>>>      extent comparison before we introduce new dedup algorithm.
+> >>>
+> >>> If sha256 is slow, we can use a less secure hash that's faster but will
+> >>> do a full byte-to-byte comparison in case of hash collision, and
+> >>> recompute sha256 when the blocks are going to disk. I haven't thought
+> >>> this through, so there are possibly details that could make unfeasible.
+> >>
+> >> Not exactly. If we are using unsafe hash, e.g MD5, we will use MD5 only
+> >> for both in-memory and on-disk backend. No SHA256 again.
+> >
+> > I'm proposing unsafe but fast, which MD5 is not. Look for xxhash or
+> > murmur. As they're both order-of-magnitutes faster than sha1/md5, we can
+> > actually hash both to reduce the collisions.
+> 
+> Don't quite like the idea to use 2 hash other than 1.
+> Yes, some program like rsync uses this method, but this also involves a 
+> lot of details, like the order to restore them on disk.
+
+I'm considering fast-but-unsafe hashes for the in-memory backend, where
+the speed matters and we cannot hide the slow sha256 calculations behind
+the IO (ie. no point to save microseconds if the IO is going to take
+milliseconds).
+
+> >> In that case, for MD5 hit case, we will do a full byte-to-byte
+> >> comparison. It may be slow or fast, depending on the cache.
+> >
+> > If the probability of hash collision is low, so the number of needed
+> > byte-to-byte comparisions is also low.
+> 
+> Considering the common use-case of dedupe, hash hit should be a common case.
+> 
+> In that case, each hash hit will lead to byte-to-byte comparison, which 
+> will significantly impact the dedupe performance.
+> 
+> On the other hand, if dedupe hit rate is low, then why use dedupe?
+
+Oh right, that would require at least 2 hashes then.
+
+> >> But at least for MD5 miss case, it should be faster than SHA256.
+> >>
+> >>> The idea is to move expensive hashing to the slow IO operations and do
+> >>> fast but not 100% safe hashing on the read/write side where performance
+> >>> matters.
+> >>
+> >> Yes, although on the read side, we don't perform hash, we only do hash
+> >> at write side.
+> >
+> > Oh, so how exactly gets the in-memory deduplication cache filled? My
+> > impression was that we can pre-fill it by reading bunch of files where we
+> > expect the shared data to exist.
+> 
+> Yes, we used to do that method aging back to the first version of 
+> in-memory implementation.
+> 
+> But that will cause a lot of CPU usage and most of them are just wasted.
+
+I think this depends on the data.
+
+> Don't forget that, in common dedupe use-case, dedupe rate should be 
+> high, I'll use 50% as an exmaple.
+> This means, 50% of your read will be pointed to a shared extents. But 
+> 100% of read will need to calculate hash, and 50% of them are already in 
+> hash pool.
+> So the CPU time are just wasted.
+
+I understand the concerns, but I don't understand the example, sorry.
+
+> > The usecase:
+> >
+> > Say there's a golden image for a virtual machine,
+> 
+> Not to nitpick, but I though VM images are not good use-case for btrfs.
+> And normally user would set nodatacow for it, which will bypass dedupe.
+
+VM on nodatacow. By bypass you mean that it cannot work together or that
+it's just not going to be implemented?
+
+> > we'll clone it and use
+> > for other VM's, with minor changes. If we first read the golden image
+> > with deduplication enabled, pre-fill the cache, any subsequent writes to
+> > the cloned images will be compared to the cached data. The estimated hit
+> > ratio is medium-to-high.
+> 
+> And performance is so low that most user would feel, and CPU usage will 
+> be so high (up to 8 cores 100% used)that almost no spare CPU time can be 
+> allocated for VM use.
+> 
+> >
+> > And this can be extended to anything, not just VMs. Without the option
+> > to fill the in-memory cache, the deduplication would seem pretty useless
+> > to me. The clear benefit is lack of maintaining the persistent storage
+> > of deduplication data.
+> 
+> I originally planned a ioctl for it to fill hash manually.
+> But now I think re-write would be good enough.
+> Maybe I could a pseudo 'dedupe fill' command in btrfs-progs, which will 
+> just read out the data and re-write it.
+
+Rewriting will take twice the IO and might even fail due to enospc
+reasons, I don't see that as a viable option.
+
+> >> And in that case, if weak hash hit, we will need to do memory
+> >> comparison, which may also be slow.
+> >> So the performance impact may still exist.
+> >
+> > Yes the performance hit is there, with statistically low probability.
+> >
+> >> The biggest challenge is, we need to read (decompressed) extent
+> >> contents, even without an inode.
+> >> (So, no address_space and all the working facilities)
+> >>
+> >> Considering the complexity and uncertain performance improvement, the
+> >> priority of introducing weak hash is quite low so far, not to mention a
+> >> lot of detail design change for it.
+> >
+> > I disagree.
+> 
+> Explained above, hash hit in dedupe use-case is common case, while we 
+> must do byte-to-byte comparison in common case routine, it's hard to 
+> ignore the overhead.
+
+So this should be solved by the double hashing, pushing the probability
+of byte-to-byte comparision low.
+
+> >> A much easier and practical enhancement is, to use SHA512.
+> >> As it's faster than SHA256 on modern 64bit machine for larger size.
+> >> For example, for hashing 8K data, SHA512 is almost 40% faster than SHA256.
+> >>
+> >>>> 2) Misc end-user related helpers
+> >>>>      Like handy and easy to implement dedup rate report.
+> >>>>      And method to query in-memory hash size for those "non-exist" users who
+> >>>>      want to use 'dedup enable -l' option but didn't ever know how much
+> >>>>      RAM they have.
+> >>>
+> >>> That's what we should try know and define in advance, that's part of the
+> >>> ioctl interface.
+> >>>
+> >>> I went through the patches, there are a lot of small things to fix, but
+> >>> first I want to be sure about the interfaces, ie. on-disk and ioctl.
+> >>
+> >> I hope such small things can be pointed out, allowing me to fix them
+> >> while rebasing.
+> >
+> > Sure, that's next after we agree on what the deduplication should
+> > actually, the ioctls interefaces are settled and the on-disk format
+> > changes are agreed on. The code is a good starting point, but pointing
+> > out minor things at this point does not justify the time spent.
+> 
+> That's OK.
+> 
+> >>> Then we can start to merge the patchset in smaller batches, the
+> >>> in-memory deduplication does not have implications on the on-disk
+> >>> format, so it's "just" the ioctl part.
+> >>
+> >> Yes, that's my original plan, first merge simple in-memory backend into
+> >> 4.5/4.6 and then adding ondisk backend into 4.7.
+> >>
+> >> But things turned out that, since we designed the two-backends API from
+> >> the beginning, on-disk backend doesn't take much time to implement.
+> >>
+> >> So this makes what you see now, a big patchset with both backend
+> >> implemented.
+> >
+> > For the discussions and review phase it's ok to see them both, but it's
+> > unrealistic to expect merging in a particular version without going
+> > through the review heat, especially for something like deduplication.
+> >
+> >
+> In fact, I didn't expect dedupe to receive such heat.
+
+Really? That surprises me :) It modifies on-disk format, adds ioctls,
+can have impact on performacne (that we even haven't measured yet), and
+from the users POV, it's been requested for a long time.
+
+> I originally expect such dedupe to be an interesting but not so 
+> practical feature, just like ZFS dedupe.
+> (I can be totally wrong, please point it out if there is some well-known 
+> use-case of ZFS dedupe)
+> 
+> I was expecting dedupe to be a good entrance to expose existing bugs, 
+> and raise attention for better delayed_ref and delalloc implementation.
+> 
+> Since it's considered as a high-profile feature, I'm OK to slow down the 
+> rush of merge and polish the interface/code further more.
+
+Yeah, as already mentioned, for exposing the bugs we can add code but
+hide the ioctls.

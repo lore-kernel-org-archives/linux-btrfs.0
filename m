@@ -1,41 +1,66 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from lists.s-osg.org ([54.187.51.154]:33026 "EHLO lists.s-osg.org"
+Received: from lists.s-osg.org ([54.187.51.154]:33081 "EHLO lists.s-osg.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753054AbcDDLAX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 4 Apr 2016 07:00:23 -0400
+	id S1755054AbcDDOXC (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 4 Apr 2016 10:23:02 -0400
 From: Luis de Bethencourt <luisbg@osg.samsung.com>
 To: linux-btrfs@vger.kernel.org
 Cc: linux-kernel@vger.kernel.org, clm@fb.com, jbacik@fb.com, dsterba@suse.com,
         Luis de Bethencourt <luisbg@osg.samsung.com>
-Subject: [PATCH v2] btrfs: fix typo in btrfs_statfs()
-Date: Mon,  4 Apr 2016 11:59:57 +0100
-Message-Id: <1459767597-10208-1-git-send-email-luisbg@osg.samsung.com>
+Subject: [PATCH v3] btrfs: fix typo in btrfs_statfs()
+Date: Mon,  4 Apr 2016 15:22:36 +0100
+Message-Id: <1459779756-5031-1-git-send-email-luisbg@osg.samsung.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Correct a typo in the chunk_mutex name.
+Correct a typo in the chunk_mutex name to make it grepable.
+
+Since it is better to fix several typos at once, fixing the 2 more in the
+same file.
 
 Signed-off-by: Luis de Bethencourt <luisbg@osg.samsung.com>
 ---
 
 Hi,
 
-I noticed this typo while fixing bug 114281 [0]. Sending a second version
-because the first one didn't ammend cleanly after the latest changes in the
-'for-next' branch.
+David recommended I look around the rest of the file for other typos to fix.
+
+These two more are all I see in the rest of the file without nitpicking.
 
 Thanks,
 Luis
 
-[0] https://bugzilla.kernel.org/show_bug.cgi?id=114281
-
- fs/btrfs/super.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ fs/btrfs/super.c | 12 ++++++------
+ 1 file changed, 6 insertions(+), 6 deletions(-)
 
 diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 7e766ffc..9c79337 100644
+index 7e766ffc..73bdfd4 100644
 --- a/fs/btrfs/super.c
 +++ b/fs/btrfs/super.c
+@@ -1484,9 +1484,9 @@ static int setup_security_options(struct btrfs_fs_info *fs_info,
+ 		memcpy(&fs_info->security_opts, sec_opts, sizeof(*sec_opts));
+ 	} else {
+ 		/*
+-		 * Since SELinux(the only one supports security_mnt_opts) does
+-		 * NOT support changing context during remount/mount same sb,
+-		 * This must be the same or part of the same security options,
++		 * Since SELinux (the only one supporting security_mnt_opts) does
++		 * NOT support changing context during remount/mount of the same sb,
++		 * this must be the same or part of the same security options,
+ 		 * just free it.
+ 		 */
+ 		security_free_mnt_opts(sec_opts);
+@@ -1665,8 +1665,8 @@ static inline void btrfs_remount_cleanup(struct btrfs_fs_info *fs_info,
+ 					 unsigned long old_opts)
+ {
+ 	/*
+-	 * We need cleanup all defragable inodes if the autodefragment is
+-	 * close or the fs is R/O.
++	 * We need to cleanup all defragable inodes if the autodefragment is
++	 * close or the filesystem is read only.
+ 	 */
+ 	if (btrfs_raw_test_opt(old_opts, AUTO_DEFRAG) &&
+ 	    (!btrfs_raw_test_opt(fs_info->mount_opt, AUTO_DEFRAG) ||
 @@ -2050,7 +2050,7 @@ static int btrfs_statfs(struct dentry *dentry, struct kstatfs *buf)
  	int mixed = 0;
  

@@ -1,132 +1,124 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lb0-f182.google.com ([209.85.217.182]:34731 "EHLO
-	mail-lb0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754176AbcDDJmb convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 4 Apr 2016 05:42:31 -0400
-Received: by mail-lb0-f182.google.com with SMTP id vo2so152290103lbb.1
-        for <linux-btrfs@vger.kernel.org>; Mon, 04 Apr 2016 02:42:30 -0700 (PDT)
+Received: from kolab.zavadatar.com ([46.101.124.0]:51595 "EHLO
+	kolab.zavadatar.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755998AbcDDTdA (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 4 Apr 2016 15:33:00 -0400
+Received: by mail-vk0-f49.google.com with SMTP id c4so68279703vkb.3
+        for <linux-btrfs@vger.kernel.org>; Mon, 04 Apr 2016 12:32:57 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <CALJXSJrdkqau4xWax72xQGBcaONDxWBeDLOn4KD7vP8NKJikDw@mail.gmail.com>
-References: <CALJXSJrdkqau4xWax72xQGBcaONDxWBeDLOn4KD7vP8NKJikDw@mail.gmail.com>
-Date: Mon, 4 Apr 2016 11:42:29 +0200
-Message-ID: <CAPmG0jaxZY1d365KGy=HL+e7WNyZ7w6jtT2VJod00KD=JBC=ng@mail.gmail.com>
-Subject: Re: csum failed on innexistent inode
-From: Henk Slager <eye1tm@gmail.com>
-To: =?UTF-8?B?SsOpcsO0bWUgUG91bGlu?= <jeromepoulin@gmail.com>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+In-Reply-To: <56FF1D4C.9030200@oracle.com>
+References: <20160318193937.GA21352@jek-Latitude-E7440>
+	<56FA9420.8020503@oracle.com>
+	<20160329194722.GC27148@jeknote.loshitsa1.net>
+	<56FF1D4C.9030200@oracle.com>
+Date: Mon, 4 Apr 2016 12:32:55 -0700
+Message-ID: <CAKWEGV7BOq-_AFaDyAaLd1hs=HVxSf+wka7++U+QG7R=diYT=w@mail.gmail.com>
+Subject: Re: Global hotspare functionality
+From: Yauhen Kharuzhy <yauhen.kharuzhy@zavadatar.com>
+To: Anand Jain <anand.jain@oracle.com>
+Cc: linux-btrfs@vger.kernel.org
+Content-Type: multipart/mixed; boundary=001a1143e9b6a72ebf052fadcb82
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Apr 4, 2016 at 9:50 AM, Jérôme Poulin <jeromepoulin@gmail.com> wrote:
-> Hi all,
->
-> I have a BTRFS on disks running in RAID10 meta+data, one of the disk
-> has been going bad and scrub was showing 18 uncorrectable errors
-> (which is weird in RAID10). I tried using --repair-sector with hdparm
-> even if it shouldn't be necessary since BTRFS would overwrite the
-> sector. Repair sector fixed the sector in SMART but BTRFS was still
-> showing 18 uncorr. errors.
->
-> I finally decided to give up this opportunity to test the error
-> correction property of BTRFS (this is a home system, backed up) and
-> installed a brand new disk in the machine. After running btrfs
-> replace, everything was fine, I decided to run btrfs scrub again and I
-> still have the same 18 uncorrectable errors.
+--001a1143e9b6a72ebf052fadcb82
+Content-Type: text/plain; charset=UTF-8
 
-You might want this patch:
-http://www.spinics.net/lists/linux-btrfs/msg53552.html
+2016-04-01 18:15 GMT-07:00 Anand Jain <anand.jain@oracle.com>:
+>>>> Issue 2.
+>>>> At start of autoreplacig drive by hotspare, kernel craches in
+>>>> transaction
+>>>> handling code (inside of btrfs_commit_transaction() called by
+>>>> autoreplace initiating
+>>>> routines). I 'fixed' this by removing of closing of bdev in
+>>>> btrfs_close_one_device_dont_free(), see
+>>>>
+>>>> https://bitbucket.org/jekhor/linux-btrfs/commits/dfa441c9ec7b3833f6a5e4d0b6f8c678faea29bb?at=master
+>>>> (oops text is attached also). Bdev is closed after replacing by
+>>>> btrfs_dev_replace_finishing(), so this is safe but doesn't seem
+>>>> to be right way.
+>>>
+>>>
+>>>   I have sent out V2. I don't see that issue with this,
+>>>   could you pls try ?
+>>
+>>
+>> Yes, it reproduced on v4.4.5 kernel. I will try with current
+>> 'for-linus-4.6' Chris' tree soon.
+>>
+>> To emulate a drive failure, I disconnect the drive in VirtualBox, so bdev
+>> can be freed by kernel after releasing of all references to it.
+>
+>
+>   So far the raid group profile would adapt to lower suitable
+>   group profile when device is missing/failed. This appears to
+>   be not happening with RAID56 OR there are stale IO which wasn't
+>   flushed out. Anyway to have this fixed I am moving the patch
+>    btrfs: introduce device dynamic state transition to offline or failed
+>   to the top in v3 for any potential changes.
+>   But firstly we need a reliable test case, or a very carefully
+>   crafted test case which can create this situation
+>
+>   Here below is the dm-error that I am using for testing, which
+>   apparently doesn't report this issue. Could you please try on V3. ?
+>   (pls note the device names are hard coded in the test script
+>   sorry about that) This would eventually be fstests script.
 
-As workaround, you can reset the counters on new/healty device with:
+Hi,
 
-btrfs device stats [-z] <path>|<device>
+I have reproduced this oops with attached script. I don't use any dm
+layer, but just detach drive at scsi layer as xfstests do (device
+management functions were copy-pasted from it).
 
-> Later on, since I had a new disk with more space, I decided to run a
-> balance to free up the new space but the balance has stopped with csum
-> errors too. Here are the output of multiple programs.
->
-> How is it possible to get rid of the referenced csum errors if they do
-> not exist? Also, the expected checksum looks suspiciously the same for
-> multiple errors. Could it be bad RAM in that case? Can I convince
-> BTRFS to update the csum?
->
-> # btrfs inspect-internal logical-resolve -v 1809149952 /mnt/btrfs/
-> ioctl ret=-1, error: No such file or directory
-> # btrfs inspect-internal inode-resolve -v 296 /mnt/btrfs/
-> ioctl ret=-1, error: No such file or directory
->
->
-> dmesg after first bad sector:
-> avr 01 18:29:52 p4.i.ticpu.net kernel: BTRFS info (device dm-43): read
-> error corrected: ino 1 off 655368716288 (dev /dev/dm-42 sector
-> 2939136)
-> avr 01 18:29:52 p4.i.ticpu.net kernel: BTRFS info (device dm-43): read
-> error corrected: ino 1 off 655368720384 (dev /dev/dm-42 sector
-> 2939144)
-> avr 01 18:29:52 p4.i.ticpu.net kernel: BTRFS info (device dm-43): read
-> error corrected: ino 1 off 655368724480 (dev /dev/dm-42 sector
-> 2939152)
-> avr 01 18:29:52 p4.i.ticpu.net kernel: BTRFS info (device dm-43): read
-> error corrected: ino 1 off 655368728576 (dev /dev/dm-42 sector
-> 2939160)
->
-> dmesg after balance:
-> [1738474.444648] BTRFS warning (device dm-40): csum failed ino 296 off
-> 1809195008 csum 1515428513 expected csum 2566472073
-> [1738474.444649] BTRFS warning (device dm-40): csum failed ino 296 off
-> 1809084416 csum 4147641019 expected csum 1755301217
-> [1738474.444702] BTRFS warning (device dm-40): csum failed ino 296 off
-> 1809199104 csum 1927504681 expected csum 2566472073
-> [1738474.444717] BTRFS warning (device dm-40): csum failed ino 296 off
-> 1809211392 csum 3086571080 expected csum 2566472073
-> [1738474.444917] BTRFS warning (device dm-40): csum failed ino 296 off
-> 1809084416 csum 4147641019 expected csum 1755301217
-> [1738474.444962] BTRFS warning (device dm-40): csum failed ino 296 off
-> 1809195008 csum 1515428513 expected csum 2566472073
-> [1738474.444998] BTRFS warning (device dm-40): csum failed ino 296 off
-> 1809199104 csum 1927504681 expected csum 2566472073
-> [1738474.445034] BTRFS warning (device dm-40): csum failed ino 296 off
-> 1809211392 csum 3086571080 expected csum 2566472073
-> [1738474.473286] BTRFS warning (device dm-40): csum failed ino 296 off
-> 1809149952 csum 3254083717 expected csum 2566472073
-> [1738474.473357] BTRFS warning (device dm-40): csum failed ino 296 off
-> 1809162240 csum 3157020538 expected csum 2566472073
->
-> btrfs check:
-> ./btrfs check /dev/mapper/luksbtrfsdata2
-> Checking filesystem on /dev/mapper/luksbtrfsdata2
-> UUID: 805f6ad7-1188-448d-aee4-8ddeeb70c8a7
-> checking extents
-> bad metadata [1453741768704, 1453741785088) crossing stripe boundary
-> bad metadata [1454487764992, 1454487781376) crossing stripe boundary
-> bad metadata [1454828552192, 1454828568576) crossing stripe boundary
-> bad metadata [1454879735808, 1454879752192) crossing stripe boundary
-> bad metadata [1455087222784, 1455087239168) crossing stripe boundary
-> bad metadata [1456269426688, 1456269443072) crossing stripe boundary
-> bad metadata [1456273227776, 1456273244160) crossing stripe boundary
-> bad metadata [1456404234240, 1456404250624) crossing stripe boundary
-> bad metadata [1456418914304, 1456418930688) crossing stripe boundary
+--001a1143e9b6a72ebf052fadcb82
+Content-Type: application/x-sh; name="test-autoreplace2-mainline.sh"
+Content-Disposition: attachment; filename="test-autoreplace2-mainline.sh"
+Content-Transfer-Encoding: base64
+X-Attachment-Id: f_imme91bl0
 
-Those are false alerts; This patch handles that:
-https://patchwork.kernel.org/patch/8706891/
-
-> checking free space cache
-> checking fs roots
-> checking csums
-> checking root refs
-> found 689292505473 bytes used err is 0
-> total csum bytes: 660112536
-> total tree bytes: 1764098048
-> total fs tree bytes: 961921024
-> total extent tree bytes: 79331328
-> btree space waste bytes: 232774315
-> file data blocks allocated: 4148513517568
->  referenced 972284129280
->
-> btrfs scrub:
-> I don't have the output handy but the dmesg output were pairs of
-> logical blocks like balance and no errors were corrected.
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+IyEvYmluL2Jhc2gKCk1OVD0kMQpzaGlmdApESVNLUz0oICRAICkKCmRldl9yZW1vdmVkPTAKcmVt
+b3ZlZF9kZXZfaHRsPSIiCgpfZmFpbCAoKSB7CgllY2hvICRACglfY2xlYW51cAoJZXhpdCAxCn0K
+CiMgYXJnIDEgaXMgZGV2IHRvIHJlbW92ZSBhbmQgaXMgb3V0cHV0IG9mIHRoZSBiZWxvdyBlZy4K
+IyBscyAtbCAvc3lzL2NsYXNzL2Jsb2NrL3NkZCB8IHJldiB8IGN1dCAtZCAiLyIgLWYgMyB8IHJl
+dgpfZGV2bWd0X3JlbW92ZSgpCnsKCWxvY2FsIGx1bj0kMQoJbG9jYWwgZGlzaz0kMgoKCWVjaG8g
+MSA+IC9zeXMvY2xhc3Mvc2NzaV9kZXZpY2UvJHtsdW59L2RldmljZS9kZWxldGUgfHwgX2ZhaWwg
+IlJlbW92ZSBkaXNrIGZhaWxlZCIKCglzdGF0ICRkaXNrID4gL2Rldi9udWxsIDI+JjEKCXdoaWxl
+IFsgJD8gLWVxIDAgXTsgZG8KCQlzbGVlcCAxCgkJc3RhdCAkZGlzayA+IC9kZXYvbnVsbCAyPiYx
+Cglkb25lCn0KCiMgYXJnIDEgaXMgZGV2IHRvIGFkZCBhbmQgaXMgb3V0cHV0IG9mIHRoZSBiZWxv
+dyBlZy4KIyBscyAtbCAvc3lzL2NsYXNzL2Jsb2NrL3NkZCB8IHJldiB8IGN1dCAtZCAiLyIgLWYg
+MyB8IHJldgpfZGV2bWd0X2FkZCgpCnsKCWxvY2FsIGgKCWxvY2FsIHRkbAoJIyBhcmcgMSB3aWxs
+IGJlIGluIGg6dDpkOmwgZm9ybWF0IG5vdyBpbiB0aGUgaCBhbmQgInQgZCBsIiBmb3JtYXQKCWg9
+YGVjaG8gJHsxfSB8IGN1dCAtZCI6IiAtZiAxYAoJdGRsPWBlY2hvICR7MX0gfCBjdXQgLWQiOiIg
+LWYgMi18c2VkICdzLzovIC9nJ2AKCgllY2hvICR7dGRsfSA+ICAvc3lzL2NsYXNzL3Njc2lfaG9z
+dC9ob3N0JHtofS9zY2FuIHx8IF9mYWlsICJBZGQgZGlzayBmYWlsZWQiCgoJIyBlbnN1cmUgdGhl
+IGRldmljZSBjb21lcyBvbmxpbmUKCWRldl9iYWNrX29uZWxpbmU9MAoJZm9yIGkgaW4gYHNlcSAx
+IDEwYDsgZG8KCQlpZiBbIC1kIC9zeXMvY2xhc3Mvc2NzaV9kZXZpY2UvJHsxfS9kZXZpY2UvYmxv
+Y2sgXTsgdGhlbgoJCQlkZXY9YGxzIC9zeXMvY2xhc3Mvc2NzaV9kZXZpY2UvJHsxfS9kZXZpY2Uv
+YmxvY2tgCgkJCWZvciBqIGluIGBzZXEgMSAxMGA7CgkJCWRvCgkJCQlzdGF0IC9kZXYvJGRldiA+
+IC9kZXYvbnVsbCAyPiYxCgkJCQlpZiBbICQ/IC1lcSAwIF07IHRoZW4KCQkJCQlkZXZfYmFja19v
+bmVsaW5lPTEKCQkJCQlicmVhawoJCQkJZmkKCQkJCXNsZWVwIDEKCQkJZG9uZQoJCQlicmVhawoJ
+CWVsc2UKCQkJc2xlZXAgMQoJCWZpCglkb25lCglpZiBbICRkZXZfYmFja19vbmVsaW5lIC1lcSAw
+IF07IHRoZW4KCQllY2hvICIvZGV2LyRkZXYgb25saW5lIGZhaWxlZCIKCWVsc2UKCQllY2hvICIv
+ZGV2LyRkZXYgaXMgYmFjayBvbmxpbmUiCglmaQp9CgoKCgp0cmFwICJfY2xlYW51cDsgZXhpdCBc
+JHN0YXR1cyIgMCAxIDIgMyAxNQoKX2NsZWFudXAoKSB7Cgl1bW91bnQgJE1OVCA+L2Rldi9udWxs
+IDI+JjEKCglpZiBbICRkZXZfcmVtb3ZlZCA9PSAxIF07IHRoZW4KCQlfZGV2bWd0X2FkZCAiJHty
+ZW1vdmVkX2Rldl9odGx9IgoJZmkKfQoKCgp3YWl0X2ZvcigpIHsKCWNtZD0kMQoJc3Vic3RyPSQy
+CglpbnRlcnZhbD0kMwoKCWlmIFsgLXogIiRpbnRlcnZhbCIgXTsgdGhlbgoJCWludGVydmFsPTEK
+CWZpCgoJZWNobyAtbiAiV2FpdGluZyBmb3IgJyRzdWJzdHInIGluIG91dHB1dCBvZiAnJGNtZCcg
+Y29tbWFuZC4uLiIKCgl3aGlsZSAhICgkY21kIHwgZ3JlcCAtcSAtZSAiJHN1YnN0ciIpOyBkbwoJ
+CVsgJGludGVydmFsIC1ndCAwIF0gJiYgc2xlZXAgJGludGVydmFsCglkb25lCgllY2hvICIgZm91
+bmQiCn0KCgppZiBbICQjIC1sdCAyIF07IHRoZW4KCWVjaG8gIlVzYWdlOiAkMCA8RlMgbW91bnRw
+b2ludD4gPGRpc2tzPiIgPiYyCglleGl0IDE7CmZpCgpuPSR7I0RJU0tTW0BdfQoKZHM9JHtESVNL
+U1tAXTowOiQoKCRuLTEpKX0KCnVtb3VudCAkTU5UID4vZGV2L251bGwgMj4mMQoKCmVjaG8gIiR7
+RElTS1NbQF19IC0+ICRNTlQiCgpmb3IgaSBpbiAke0RJU0tTW0BdfTsgZG8KCXdpcGVmcyAtYSAk
+aSA+L2Rldi9udWxsIDI+JjEKZG9uZQoKIyBDcmVhdGUgRlMKbWtmcy5idHJmcyAtZCByYWlkNSAt
+bSByYWlkNSAkZHMKCiMgQWRkIHNwYXJlIGRldgpzcGFyZT0ke0RJU0tTW0BdOiQoKG4tMSkpOjF9
+CmJ0cmZzIHNwYXJlIGFkZCAkc3BhcmUKCm1vdW50ICR7RElTS1NbMF19ICRNTlQKCmRkIGlmPS9k
+ZXYvemVybyBvZj0kTU5UL3Rlc3QuZGF0IGJzPTEwTSBjb3VudD0zMAoKZmFpbGVkX2Rpc2s9JHtE
+SVNLU1tAXTokKChuLTIpKToxfQojIHJldHJpdmUgdGhlIEhUTCBmb3IgdGhpcyBzY3NpIGRpc2sK
+ZD1gZWNobyAkZmFpbGVkX2Rpc2t8Y3V0IC1kIi8iIC1mM2AKcmVtb3ZlZF9kZXZfaHRsPWBscyAt
+bCAvc3lzL2NsYXNzL2Jsb2NrLyR7ZH0gfCByZXYgfCBjdXQgLWQgIi8iIC1mIDMgfCByZXZgCgpf
+ZGV2bWd0X3JlbW92ZSAke3JlbW92ZWRfZGV2X2h0bH0gJHtmYWlsZWRfZGlza30KZGV2X3JlbW92
+ZWQ9MQoKZGQgaWY9L2Rldi96ZXJvIG9mPSRNTlQvdGVzdDIuZGF0IGJzPTEwTSBjb3VudD0zMApz
+eW5jCgpidHJmcyBmaSBzaG93ICRNTlQKCnNsZWVwIDMwCgpidHJmcyBmaSBzaG93ICRNTlQKCgoK
+--001a1143e9b6a72ebf052fadcb82--

@@ -1,37 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:16730 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753874AbcDEHgk (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Apr 2016 03:36:40 -0400
-From: Anand Jain <anand.jain@oracle.com>
+Received: from lists.s-osg.org ([54.187.51.154]:33026 "EHLO lists.s-osg.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753054AbcDDLAX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 4 Apr 2016 07:00:23 -0400
+From: Luis de Bethencourt <luisbg@osg.samsung.com>
 To: linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.cz
-Subject: [PATCH] btrfs-progs: fix re-declared get_device_info()
-Date: Tue,  5 Apr 2016 15:36:01 +0800
-Message-Id: <1459841761-491-1-git-send-email-anand.jain@oracle.com>
+Cc: linux-kernel@vger.kernel.org, clm@fb.com, jbacik@fb.com, dsterba@suse.com,
+        Luis de Bethencourt <luisbg@osg.samsung.com>
+Subject: [PATCH v2] btrfs: fix typo in btrfs_statfs()
+Date: Mon,  4 Apr 2016 11:59:57 +0100
+Message-Id: <1459767597-10208-1-git-send-email-luisbg@osg.samsung.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The other get_device_info() is in the same file, 4 lines above.
+Correct a typo in the chunk_mutex name.
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
+Signed-off-by: Luis de Bethencourt <luisbg@osg.samsung.com>
 ---
- utils.h | 2 --
- 1 file changed, 2 deletions(-)
 
-diff --git a/utils.h b/utils.h
-index ea54692aca86..e2ff41ad4ec1 100644
---- a/utils.h
-+++ b/utils.h
-@@ -187,8 +187,6 @@ int get_device_info(int fd, u64 devid,
- 		struct btrfs_ioctl_dev_info_args *di_args);
- int test_uuid_unique(char *fs_uuid);
- u64 disk_size(const char *path);
--int get_device_info(int fd, u64 devid,
--		struct btrfs_ioctl_dev_info_args *di_args);
- u64 get_partition_size(const char *dev);
+Hi,
+
+I noticed this typo while fixing bug 114281 [0]. Sending a second version
+because the first one didn't ammend cleanly after the latest changes in the
+'for-next' branch.
+
+Thanks,
+Luis
+
+[0] https://bugzilla.kernel.org/show_bug.cgi?id=114281
+
+ fs/btrfs/super.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index 7e766ffc..9c79337 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -2050,7 +2050,7 @@ static int btrfs_statfs(struct dentry *dentry, struct kstatfs *buf)
+ 	int mixed = 0;
  
- int test_minimum_size(const char *file, u32 leafsize);
+ 	/*
+-	 * holding chunk_muext to avoid allocating new chunks, holding
++	 * holding chunk_mutex to avoid allocating new chunks, holding
+ 	 * device_list_mutex to avoid the device being removed
+ 	 */
+ 	rcu_read_lock();
 -- 
-2.7.0
+2.6.4
 

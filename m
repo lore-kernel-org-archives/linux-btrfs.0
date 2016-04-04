@@ -1,39 +1,64 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:28718 "EHLO
-	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1751771AbcDAWsS (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 1 Apr 2016 18:48:18 -0400
-Date: Fri, 1 Apr 2016 18:45:22 -0400
-From: Chris Mason <clm@fb.com>
-To: Linus Torvalds <torvalds@linux-foundation.org>,
-        Linux Kernel <linux-kernel@vger.kernel.org>,
-        <linux-btrfs@vger.kernel.org>
-Subject: [GIT PULL] Btrfs
-Message-ID: <20160401224522.phn6qtiljgt4d52f@floor.thefacebook.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Received: from mx2.suse.de ([195.135.220.15]:57651 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752809AbcDDPGk (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 4 Apr 2016 11:06:40 -0400
+From: David Sterba <dsterba@suse.com>
+To: clm@fb.com
+Cc: linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.com>
+Subject: [PULL] Misc fixes for 4.6, part 2
+Date: Mon,  4 Apr 2016 17:03:00 +0200
+Message-Id: <cover.1459780674.git.dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Linus,
+Hi,
 
-My for-linus-4.6 branch:
+please pull the following patches to 4.6. They fix some user visible problems,
+improve error handling and there are two debugging enhancements. Thanks.
 
-git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git for-linus-4.6
+----------------------------------------------------------------
+The following changes since commit 232cad8413a0bfbd25f11cc19fd13dfd85e1d8ad:
 
-Has a few fixes Dave Sterba had queued up.  These are all pretty small,
-but since they were tested I decided against waiting for more:
+  Merge branch 'misc-4.6' of git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux into for-linus-4.6 (2016-03-24 17:36:13 -0700)
 
-Alex Lyakas (2) commits (+18/-10):
-    btrfs: do not write corrupted metadata blocks to disk (+13/-2)
-    btrfs: csum_tree_block: return proper errno value (+5/-8)
+are available in the git repository at:
 
-Jiri Kosina (2) commits (+7/-10):
-    btrfs: cleaner_kthread() doesn't need explicit freeze (+1/-1)
-    btrfs: transaction_kthread() is not freezable (+6/-9)
+  git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git misc-4.6
 
-Total: (4) commits (+25/-20)
+for you to fetch changes up to 7ccefb98ce3e5c4493cd213cd03714b7149cf0cb:
 
- fs/btrfs/disk-io.c | 45 +++++++++++++++++++++++++--------------------
- 1 file changed, 25 insertions(+), 20 deletions(-)
+  btrfs: Reset IO error counters before start of device replacing (2016-04-04 16:29:22 +0200)
+
+----------------------------------------------------------------
+David Sterba (1):
+      btrfs: fallback to vmalloc in btrfs_compare_tree
+
+Davide Italiano (1):
+      Btrfs: Improve FL_KEEP_SIZE handling in fallocate
+
+Josef Bacik (1):
+      Btrfs: don't use src fd for printk
+
+Liu Bo (1):
+      Btrfs: fix invalid reference in replace_path
+
+Mark Fasheh (2):
+      btrfs: handle non-fatal errors in btrfs_qgroup_inherit()
+      btrfs: Add qgroup tracing
+
+Qu Wenruo (1):
+      btrfs: Output more info for enospc_debug mount option
+
+Yauhen Kharuzhy (1):
+      btrfs: Reset IO error counters before start of device replacing
+
+ fs/btrfs/ctree.c             | 12 ++++--
+ fs/btrfs/dev-replace.c       |  2 +
+ fs/btrfs/extent-tree.c       | 21 ++++++++++-
+ fs/btrfs/file.c              |  9 +++--
+ fs/btrfs/ioctl.c             |  2 +-
+ fs/btrfs/qgroup.c            | 63 ++++++++++++++++++++-----------
+ fs/btrfs/relocation.c        |  1 +
+ include/trace/events/btrfs.h | 89 +++++++++++++++++++++++++++++++++++++++++++-
+ 8 files changed, 166 insertions(+), 33 deletions(-)

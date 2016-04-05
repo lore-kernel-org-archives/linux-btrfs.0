@@ -1,12 +1,24 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f171.google.com ([209.85.223.171]:33029 "EHLO
-	mail-io0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751344AbcDDXJP (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 4 Apr 2016 19:09:15 -0400
-Received: by mail-io0-f171.google.com with SMTP id a129so159106119ioe.0
-        for <linux-btrfs@vger.kernel.org>; Mon, 04 Apr 2016 16:09:14 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <20160404225018.150988d2@jupiter.sol.kaishome.de>
+Received: from plane.gmane.org ([80.91.229.3]:36290 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753233AbcDEBpV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 4 Apr 2016 21:45:21 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+	id 1anG3E-0001hK-3k
+	for linux-btrfs@vger.kernel.org; Tue, 05 Apr 2016 03:45:04 +0200
+Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Tue, 05 Apr 2016 03:45:04 +0200
+Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Tue, 05 Apr 2016 03:45:04 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: btrfsck: backpointer mismatch (and multiple other errors)
+Date: Tue, 5 Apr 2016 01:44:55 +0000 (UTC)
+Message-ID: <pan$29fe9$b9ebd4f1$c02d7360$67ec3a8e@cox.net>
 References: <20160331224452.0753d5c7@jupiter.sol.kaishome.de>
 	<CAPmG0jZ6hs4TA_0ozNEP4x6ucn971Nj-6+uempGi1VwTWAdCYQ@mail.gmail.com>
 	<20160402110001.0ec354b5@jupiter.sol.kaishome.de>
@@ -16,127 +28,75 @@ References: <20160331224452.0753d5c7@jupiter.sol.kaishome.de>
 	<20160403060202.03e67651@jupiter.sol.kaishome.de>
 	<pan$2593b$f74bb320$4b6df891$663eb0b@cox.net>
 	<20160404001925.2abc2649@jupiter.sol.kaishome.de>
-	<CAJCQCtTjoQ93wiMRgzHJ+3D_GPwygK1EzGPCFyKdoi1=Mjip_w@mail.gmail.com>
-	<20160404213637.58ad33b1@jupiter.sol.kaishome.de>
-	<CAJCQCtQdGG3o9mu2u=Vjc0rN+0eLWYVXikH5KtfOap2SijjSKA@mail.gmail.com>
-	<20160404225018.150988d2@jupiter.sol.kaishome.de>
-Date: Mon, 4 Apr 2016 17:09:14 -0600
-Message-ID: <CAJCQCtSVHwx=xwzv29sYVEdQ5Y=vOjT-26iagiqbWU5mXyGkZw@mail.gmail.com>
-Subject: Re: btrfsck: backpointer mismatch (and multiple other errors)
-From: Chris Murphy <lists@colorremedies.com>
-To: Kai Krakow <hurikhan77@gmail.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+	<pan$39ed6$7954b891$6122ae15$76baf1b0@cox.net>
+	<20160404212628.14e83e37@jupiter.sol.kaishome.de>
+Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Apr 4, 2016 at 2:50 PM, Kai Krakow <hurikhan77@gmail.com> wrote:
+Kai Krakow posted on Mon, 04 Apr 2016 21:26:28 +0200 as excerpted:
 
->> Anyway the 2nd 4 is not possible. The seed is ro by definition so you
->> can't remove snapshots from the seed. If you remove them from the
->> mounted rw sprout volume, they're removed from the sprout, not the
->> seed. If you want them on the sprout, but not on the seed, you need to
->> delete snapshots only after the seed is a.) removed from the sprout
->> and b.) made no longer a seed with btrfstune -S 0 and c.) mounted rw.
->
-> If I understand right, the seed device won't change? So whatever action
-> I apply to the sprout pool, I can later remove the seed from the pool
-> and it will still be kind of untouched. Except, I'll have to return it
-> no non-seed mode (step b).
+> I'll go test the soon-to-die SSD as soon as it replaced. I think it's
+> still far from failing with bitrot. It was overprovisioned by 30% most
+> of the time, with the spare space trimmed.
 
-Correct. In a sense, making a volume a seed is like making it a
-volume-wide read-only snapshot. Any changes are applied via COW only
-to added device(s).
+Same here, FWIW.  In fact, I had expected to get ~128 GB SSDs and ended 
+up getting 256 GB, such that I was only using about 130 GiB, so depending 
+on relative to what the overprovisioning percentage is calculated 
+against, I was and am near 50% or 100% overprovisioned.
 
->
-> Why couldn't/shouldn't I remove snapshots before detaching the seed
-> device? I want to keep them on the seed but they are useless to me on
-> the sprout.
+So in my case I think the SSD was simply defective, such that the 
+overprovisioning and trim simply didn't help.  Tho the other two 
+identical brand and model devices I bought from the same store at the 
+same time, so very likely the same manufacturing lot, were and are just 
+fine (tho one is showing a trivial non-zero raw value for 5, reallocated 
+sector count, and 182, erase fail count total, but both remain at 100% 
+"cooked" value, but absolutely no issues on the other one, actually the 
+one that wasn't replaced of the original pair, at all).
 
-You can remove snapshots before or after detaching the seed device, it
-doesn't matter, but such snapshot removal only affects the sprout. You
-wrote:
+But based on that experience, while overprovisioning may help in terms of 
+normal wearout, it doesn't necessarily help at all if the device is 
+actually going bad.
 
-"remove all left-over snapshots from the seed"
+> It certainly should have a
+> lot of sectors for wear levelling. In addition, smartctl shows no sector
+> errors at all - except for one: raw_read_error_rate. I'm not sure what
+> all those sensors tell me, but that one I'm also seeing on hard disks
+> which show absolutely no data damage.
+> 
+> In fact, I see those counters for my hard disks. But dd to /dev/null of
+> the complete raw hard disk shows no sector errors. It seems good. But
+> well, counting 1+1 together: I currently see data damage. But I guess
+> that's unrelated.
+> 
+> Is there some documentation somewhere what each of those sensors
+> technically mean and how to read the raw values and thresh values?
 
-The seed is read only, you can't modify the contents of the seed device.
+Nothing user/admin level that I'm aware of.  I'm sure there's some smart 
+docs somewhere that describe them as part of the standard, but they could 
+easily be effectively unavailable for those unwilling to pay a big-
+corporate-sized consortium membership fee (as was the case with one of 
+the CompactDisc specs, Orange Book IIRC, at one point).
 
-What you should do is just delete the snapshots you don't want
-migrated over to the sprout right away before you even do the balance
--dconvert -mconvert. That way you aren't wasting time moving things
-over that you don't want. To be clear:
+I know there's some discussion by allusion in the smartctl manpage and 
+docs, but many attributes appear to be manufacturer specific and/or to 
+have been reverse-engineered by the smartctl devs, meaning even /they/ 
+don't really have access to proper documentation for at least some 
+attributes.
 
-btrfstune -S 0
-mount /dev/seed /mnt/
-btrfs dev add /dev/new1
-btrfs dev add /dev/new2
-mount -o remount,rw /mnt/
-btrfs sub del blah/ blah2/ blah3/ blah4/
-btrfs balance start -dconvert=raid1 -mconvert=raid1 /mnt/
-btrfs dev del /dev/seed /mnt/
+Which is sad, but in a majority proprietary or at best don't-care 
+market...
 
-If you're doing any backsup once remounting rw, note those backups
-will only be on the sprout. Backups will not be on the seed because
-it's read-only.
+> I'm also seeing multi_zone_error_rate on my spinning rust.
 
-
->
-> What happens to the UUIDs when I separate seed and sprout?
-
-Nothing. They remain intact and unique, per volume.
-
-
-
-
->
-> I'd now reboot into the system to see if it's working.
-
-Note you'll need to change grub.cfg, possibly fstab, and possibly the
-initramfs, all three of which may be referencing the old volume.
-
-
-> By then, it's
-> time for some cleanup (remove the previously deferred "trashes" and
-> retention snapshots), then separate the seed from the sprout. During
-> that time, I could already use my system again while it's migrating for
-> me in the background.
->
-> I'd then return the seed back to non-seed, so it can take the role of
-> my backup storage again. I'd do a rebalance now.
-
-OK? I don't know why you need to balance the seed at all, let alone
-afterward, but it seems like it might be a more efficient replication
-if you balanced before making it a seed?
-
-
->
-> During the whole process, the backup storage will still stay safe for
-> me. If something goes wrong, I could easily start over.
->
-> Did I miss something? Is it too much of an experimental kind of stuff?
-
-I'm not sure where all the bugs are. It's good to find bugs though and
-get them squashed. I have an idea of making live media use Btrfs
-instead of using a loop mounted file to back a rw lvm snapshot device
-(persistent overlay), which I think is really fragile and a lot more
-complicated in the initramfs. It's also good to take advantage of
-checksumming after having written an ISO to flash media, where users
-often don't verify or something can mount the USB stick rw and
-immediately modify the stick in such a way that media verification
-will fail anyway. So, a number of plusses, I'd like to see the seed
-device be robust.
-
-
->
-> BTW: The way it is arranged now, the backup storage is bootable by
-> setting the scratch area subvolume as the rootfs on kernel cmdline,
-> USB drivers are included in the kernel, it's tested and works. I guess,
-> this isn't possible while the backup storage acts as a seed device? But
-> I have an initrd with latest btrfs-progs on my boot device (which is an
-> UEFI ESP, so not related to btrfs at all), I should be able to use that
-> to revert changes preventing me from booting.
-
-
+> According to smartctl health check and smartctl extended selftest,
+> there's no problems at all - and the smart error log is empty. There has
+> never been an ATA error in dmesg... No relocated sectors... From my
+> naive view the drives still look good.
 
 -- 
-Chris Murphy
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

@@ -1,118 +1,98 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qk0-f178.google.com ([209.85.220.178]:36658 "EHLO
-	mail-qk0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752940AbcDENjr (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Apr 2016 09:39:47 -0400
-Received: by mail-qk0-f178.google.com with SMTP id i4so4875154qkc.3
-        for <linux-btrfs@vger.kernel.org>; Tue, 05 Apr 2016 06:39:47 -0700 (PDT)
-Subject: Re: Another ENOSPC situation
-To: Chris Murphy <lists@colorremedies.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-References: <20160401134029.GH9342@torres.zugschlus.de>
- <pan$68f59$f32b7e2a$86338be2$5ab70cec@cox.net>
- <CAJCQCtR8RNJddBXAcTsbFN51YrwEDSz2Get45oQyJsP3o6xS-w@mail.gmail.com>
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <5703C010.40204@gmail.com>
-Date: Tue, 5 Apr 2016 09:39:28 -0400
+Received: from mail-lf0-f51.google.com ([209.85.215.51]:35226 "EHLO
+	mail-lf0-f51.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1759518AbcDEReH (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Apr 2016 13:34:07 -0400
+Received: by mail-lf0-f51.google.com with SMTP id c126so15905415lfb.2
+        for <linux-btrfs@vger.kernel.org>; Tue, 05 Apr 2016 10:34:05 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <CAJCQCtR8RNJddBXAcTsbFN51YrwEDSz2Get45oQyJsP3o6xS-w@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+In-Reply-To: <pan$603b6$4c4f876d$1daf06de$ec75378d@cox.net>
+References: <CA+WRLO-vu4B8X3Td12F0gueU70G6KwjRTD07MNwDrJfodAscNA@mail.gmail.com>
+	<pan$603b6$4c4f876d$1daf06de$ec75378d@cox.net>
+Date: Tue, 5 Apr 2016 19:34:03 +0200
+Message-ID: <CAPmG0jaa6ukFBu=Mx5bd+5ix21Np+rX7dGZiadnC5mGmgHkNtA@mail.gmail.com>
+Subject: Re: Scrub priority, am I using it wrong?
+From: Henk Slager <eye1tm@gmail.com>
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2016-04-02 01:43, Chris Murphy wrote:
-> On Fri, Apr 1, 2016 at 10:55 PM, Duncan <1i5t5.duncan@cox.net> wrote:
->> Marc Haber posted on Fri, 01 Apr 2016 15:40:29 +0200 as excerpted:
+On Tue, Apr 5, 2016 at 4:37 AM, Duncan <1i5t5.duncan@cox.net> wrote:
+> Gareth Pye posted on Tue, 05 Apr 2016 09:36:48 +1000 as excerpted:
 >
->>> [4/502]mh@swivel:~$ sudo btrfs fi usage /
->>> Overall:
->>>      Device size:                 600.00GiB
->>>      Device allocated:            600.00GiB
->>>      Device unallocated:            1.00MiB
+>> I've got a btrfs file system set up on 6 drbd disks running on 2Tb
+>> spinning disks. The server is moderately loaded with various regular
+>> tasks that use a fair bit of disk IO, but I've scheduled my weekly btrfs
+>> scrub for the best quiet time in the week.
 >>
->> That's the problem right there.  The admin didn't do his job and spot the
->> near full allocation issue
->
->
-> I don't yet agree this is an admin problem. This is the 2nd or 3rd
-> case we've seen only recently where there's plenty of space in all
-> chunk types and yet ENOSPC happens, seemingly only because there's no
-> unallocated space remaining. I don't know that this is a regression
-> for sure, but it sure seems like one.
-I personally don't think it's a regression.  I've hit this myself before 
-(although I make a point not to anymore, having to jump through hoops to 
-the degree I did to get the FS working again tends to provide a pretty 
-big incentive to not let it happen again), I know a couple of other 
-people who have and never reported it here or on IRC, and I'd be willing 
-to bet that the reason we're seeing it recently is that more 'regular' 
-users (in contrast to system administrators or developers) are using 
-BTRFS, and they tend to be more likely to hit such issues (because 
-they're not as likely to know about them in the first place, let alone 
-how to avoid them).
->
->
->
->>>
->>> Data,single: Size:553.93GiB, Used:405.73GiB
->>>     /dev/mapper/swivelbtr         553.93GiB
->>>
->>> Metadata,DUP: Size:23.00GiB, Used:3.83GiB
->>>     /dev/mapper/swivelbtr          46.00GiB
->>>
->>> System,DUP: Size:32.00MiB, Used:112.00KiB
->>>     /dev/mapper/swivelbtr          64.00MiB
->>>
->>> Unallocated:
->>>     /dev/mapper/swivelbtr           1.00MiB
->>> [5/503]mh@swivel:~$
+>> The command that is run is:
+>> /usr/local/bin/btrfs scrub start -Bd -c idle /data
 >>
->> Both data and metadata have several GiB free, data ~140 GiB free, and
->> metadata isn't into global reserve, so the system isn't totally wedged,
->> only partially, due to the lack of unallocated space.
->
-> Unallocated space alone hasn't ever caused this that I can remember.
-> It's most often been totally full metadata chunks, with free space in
-> allocated data chunks, with no unallocated space out of which to
-> create another metadata chunk to write out changes.
->
-> There should be plenty of space for either a -dusage=1 or -musage=1
-> balance to free up a bunch of partially allocated chunks. Offhand I
-> don't think the profiles filter is helpful in this case.
->
-> OK so where I could be wrong is that I'm expecting balance doesn't
-> require allocated space to work. I'd expect that it can COW extents
-> from one chunk into another existing chunk (of the same type) and then
-> once that's successful, free up that chunk, i.e. revert it back to
-> unallocated. If balance can only copy into newly allocated chunks,
-> that seems like a big problem. I thought that problems had been fixed
-> a very long time ago.
-Balance has always allocated new chunks.  This is IMHO one of the big 
-issues with the current implementation of it (the other being that it 
-can't be made asynchronous without some creative userspace work).  If we 
-aren't converting chunk types and we're on a single device FS, we should 
-be tail-packing existing chunks before we try to allocate new ones.
->
-> And what we don't see from 'usage' that we will see from 'df' is the
-> GlobalReserve values. I'd like to see that.
->
-> Anyway, in the meantime there is a work around:
->
-> btrfs dev add
->
-> Just add a device, even if it's an 8GiB flash drive. But it can be a
-> spare space on a partition, or it can be a logical volume, or whatever
-> you want. That'll add some gigs of unallocated space. Now the balance
-> will work, or for absolutely sure there's a bug (and a new one because
-> this has always worked in the past). After whatever filtered or full
-> balance is done, make sure to 'btfs dev rem' and confirm it's gone
-> with 'btrfs fi show' before removing the device. It's a two device
-> volume until that device is successfully removed and is in something
-> of a fragile state until then because any loss of data on that 2nd
-> device has a good chance of face planting the file system.
-If you can ensure with a relative degree of certainty that you won't 
-lose power or crash, and you have lots of RAM, a small ramdisk (or even 
-zram) works well for this too.  I wouldn't use either personally for a 
-critical filesystem (I'd pull out the disk and hook it up internally to 
-another system with spare disk space and handle things there), but both 
-options should work fine.
+>> Which is my best attempt to try and get it to have a low impact on user
+>> operations
+>>
+>> But iotop shows me:
+>>
+>> 1765 be/4 root       14.84 M/s    0.00 B/s  0.00 % 96.65 % btrfs scrub
+>> start -Bd -c idle /data
+>>  1767 be/4 root       14.70 M/s    0.00 B/s  0.00 % 95.35 % btrfs
+>> scrub start -Bd -c idle /data
+>>  1768 be/4 root       13.47 M/s    0.00 B/s  0.00 % 92.59 % btrfs
+>> scrub start -Bd -c idle /data
+>>  1764 be/4 root       12.61 M/s    0.00 B/s  0.00 % 88.77 % btrfs
+>> scrub start -Bd -c idle /data
+>>  1766 be/4 root       11.24 M/s    0.00 B/s  0.00 % 85.18 % btrfs
+>> scrub start -Bd -c idle /data
+>>  1763 be/4 root        7.79 M/s    0.00 B/s  0.00 % 63.30 % btrfs
+>> scrub start -Bd -c idle /data
+>> 28858 be/4 root        0.00 B/s  810.50 B/s  0.00 % 61.32 % [kworker/
+> u16:25]
+>>
+>>
+>> Which doesn't look like an idle priority to me. And the system sure
+>> feels like a system with a lot of heavy io going on. Is there something
+>> I'm doing wrong?
 
+When I see the throughput numbers, it lets me think that the
+filesystem is raid5 or raid6. On single or raid1 or raid10 one easily
+gets around 100M/s without the notice/feeling of heavy IO ongoing,
+mostly independent of scrub options.
+
+> Two points:
+>
+> 1) It appears btrfs scrub start's -c option only takes numeric class, so
+> try -c3 instead of -c idle.
+
+Thanks to Duncan for pointing this out. I don't remember exactly, but
+I think I also had issues with this in the past, but did not realize
+or have a further look at it.
+
+> Works for me with the numeric class (same results as you with spelled out
+> class), tho I'm on ssd with multiple independent btrfs on partitions, the
+> biggest of which is 24 GiB, 18.something GiB used, which scrubs in all of
+> 20 seconds, so I don't need and hadn't tried the -c option at all until
+> now.
+>
+> 2) What a difference an ssd makes!
+>
+> $$ sudo btrfs scrub start -c3 /p
+> scrub started on /p, [...]
+>
+> $$ sudo iotop -obn1
+> Total DISK READ :     626.53 M/s | Total DISK WRITE :       0.00 B/s
+> Actual DISK READ:     596.93 M/s | Actual DISK WRITE:       0.00 B/s
+>  TID  PRIO  USER     DISK READ  DISK WRITE  SWAPIN      IO    COMMAND
+>  872 idle root      268.40 M/s    0.00 B/s  0.00 %  0.00 % btrfs scrub
+> start -c3 /p
+>  873 idle root      358.13 M/s    0.00 B/s  0.00 %  0.00 % btrfs scrub
+> start -c3 /p
+>
+> CPU bound, 0% IOWait even at idle IO priority, in addition to the
+> hundreds of M/s values per thread/device, here.  You OTOH are showing
+> under 20 M/s per thread/device on spinning rust, with an IOWait near 90%,
+> thus making it IO bound.
+
+This low M/s and high IOWait is the kind of behavior I noticed with 3x
+2TB raid5 when scrubbing or balancing (no bcache activated, kernel
+4.3.3).

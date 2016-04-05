@@ -1,60 +1,64 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:42388 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750719AbcDEEZb (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 5 Apr 2016 00:25:31 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1anIYS-0003gc-Id
-	for linux-btrfs@vger.kernel.org; Tue, 05 Apr 2016 06:25:28 +0200
-Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 05 Apr 2016 06:25:28 +0200
-Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 05 Apr 2016 06:25:28 +0200
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
+Received: from mail-qg0-f44.google.com ([209.85.192.44]:34066 "EHLO
+	mail-qg0-f44.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755808AbcDELpD (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Apr 2016 07:45:03 -0400
+Received: by mail-qg0-f44.google.com with SMTP id c6so7657525qga.1
+        for <linux-btrfs@vger.kernel.org>; Tue, 05 Apr 2016 04:45:02 -0700 (PDT)
+Received: from [127.0.0.1] (rrcs-70-62-41-24.central.biz.rr.com. [70.62.41.24])
+        by smtp.gmail.com with ESMTPSA id 139sm14225258qho.2.2016.04.05.04.45.01
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLSv1/SSLv3 cipher=OTHER);
+        Tue, 05 Apr 2016 04:45:01 -0700 (PDT)
 Subject: Re: Scrub priority, am I using it wrong?
-Date: Tue, 5 Apr 2016 04:25:23 +0000 (UTC)
-Message-ID: <pan$c43f6$971ba29e$d0efb8b3$80be0f78@cox.net>
+To: linux-btrfs@vger.kernel.org
 References: <CA+WRLO-vu4B8X3Td12F0gueU70G6KwjRTD07MNwDrJfodAscNA@mail.gmail.com>
-	<pan$603b6$4c4f876d$1daf06de$ec75378d@cox.net>
-	<CA+WRLO_fmgogzErEdgNpnqJL2jozDRQGHrhUPt9aFtPb43iqyw@mail.gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+ <pan$603b6$4c4f876d$1daf06de$ec75378d@cox.net>
+ <CA+WRLO_fkZWsZJFdvMQud1aMTR7kErJVxr9JT0vNpjhQrh2e2Q@mail.gmail.com>
+ <pan$1084d$87b30d83$4860fe5b$19700f4b@cox.net>
+From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Message-ID: <5703A50C.6050707@gmail.com>
+Date: Tue, 5 Apr 2016 07:44:12 -0400
+MIME-Version: 1.0
+In-Reply-To: <pan$1084d$87b30d83$4860fe5b$19700f4b@cox.net>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Gareth Pye posted on Tue, 05 Apr 2016 13:45:11 +1000 as excerpted:
+On 2016-04-05 00:19, Duncan wrote:
+> Gareth Pye posted on Tue, 05 Apr 2016 13:44:05 +1000 as excerpted:
+>
+>> On Tue, Apr 5, 2016 at 12:37 PM, Duncan <1i5t5.duncan@cox.net> wrote:
+>>> 1) It appears btrfs scrub start's -c option only takes numeric class,
+>>> so try -c3 instead of -c idle.
+>>
+>>
+>> Does it count as a bug if it silently accepts the way I was doing it?
+>>
+>> I've switched to -c3 and at least now the idle class listed in iotop is
+>> idle, so I hope that means it will be more friendly to other processes.
+>
+> I'd say yes, particularly given that the value must be the numeric class
+> isn't documented in the manpage at all.
+>
+> Whether the bug is then one of documentation (say it must be numeric) or
+> of implementation (take the class name as well) is then up for debate.
+> I'd call fixing either one a fix.  If it must be numeric, document that
+> (and optionally change the implementation to error in some way if a
+> numeric parameter isn't supplied for -c), else change the implementation
+> so the name can be taken as well (and optionally change the documentation
+> to explicitly mention that either one can be used).  Doesn't matter to me
+> which.
+>
+In general, I'd say:
+1. The documentation needs to be updated.  Even if it's intended to 
+accept class names eventually, it should match the implementation.
+2. The implementation needs error checking added.  At the very least, it 
+should say something to the effect of "Hey, this doesn't work the way 
+you appear to think it does.", and possibly bail.
 
-> On Tue, Apr 5, 2016 at 12:37 PM, Duncan <1i5t5.duncan@cox.net> wrote:
->> CPU bound, 0% IOWait even at idle IO priority, in addition to the
->> hundreds of M/s values per thread/device, here.  You OTOH are showing
->> under 20 M/s per thread/device on spinning rust, with an IOWait near
->> 90%,
->> thus making it IO bound.
-> 
-> 
-> And yes I'd love to switch to SSD, but 12 2TB drives is a bit pricey
-> still
-
-No kidding.  That's why my media partition remains spinning rust.  (Tho 
-FWIW, not btrfs, I use btrfs only on my ssds, and still use the old and 
-stable reiserfs on my spinning rust.)
-
-But my media partition is small enough, and ssd prices now low enough up 
-to the 1 TB level, that when I upgrade I'll probably switch to ssd for 
-the media partition as well, and leave spinning rust only as second or 
-third level backups.
-
-But that's because it all, including first level backups, fits in under a 
-TB (and if pressed I could do it under a half TB).  Multi-TB, as you 
-have, definitely still spinning rust, for me too.
-
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+That said, I don't think there's a huge amount of value in adding the 
+ability to accept symbolic names.  Nothing that I know of accepts them 
+on the command line, because most things pass the integer directly to 
+the syscall, thus allowing for people to use new classes (if any are 
+ever introduced) with old tools.

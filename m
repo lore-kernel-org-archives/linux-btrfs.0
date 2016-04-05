@@ -1,137 +1,106 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:14449 "EHLO
-	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1755045AbcDKVhv (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 11 Apr 2016 17:37:51 -0400
-Received: from pps.filterd (m0001255.ppops.net [127.0.0.1])
-	by mx0b-00082601.pphosted.com (8.16.0.11/8.16.0.11) with SMTP id u3BLTBq9029520
-	for <linux-btrfs@vger.kernel.org>; Mon, 11 Apr 2016 14:37:50 -0700
-Received: from mail.thefacebook.com ([199.201.64.23])
-	by mx0b-00082601.pphosted.com with ESMTP id 226wj48jhr-1
-	(version=TLSv1 cipher=AES128-SHA bits=128 verify=NOT)
-	for <linux-btrfs@vger.kernel.org>; Mon, 11 Apr 2016 14:37:50 -0700
-From: Josef Bacik <jbacik@fb.com>
-To: <linux-btrfs@vger.kernel.org>, <kernel-team@fb.com>
-Subject: [PATCH] Btrfs: track transid for delayed ref flushing
-Date: Mon, 11 Apr 2016 17:37:40 -0400
-Message-ID: <1460410660-17430-1-git-send-email-jbacik@fb.com>
+Received: from aserp1040.oracle.com ([141.146.126.69]:28016 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1757367AbcDEH5L (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Apr 2016 03:57:11 -0400
+Subject: Re: [PATCH] Btrfs: fix missing s_id setting
+To: Tsutomu Itoh <t-itoh@jp.fujitsu.com>, linux-btrfs@vger.kernel.org
+References: <201604050008.AA00001@WIN-5MHF4RKU941.jp.fujitsu.com>
+From: Anand Jain <anand.jain@oracle.com>
+Message-ID: <57036FB8.5060409@oracle.com>
+Date: Tue, 5 Apr 2016 15:56:40 +0800
 MIME-Version: 1.0
-Content-Type: text/plain
+In-Reply-To: <201604050008.AA00001@WIN-5MHF4RKU941.jp.fujitsu.com>
+Content-Type: text/plain; charset=windows-1252; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Using the offwakecputime bpf script I noticed most of our time was spent waiting
-on the delayed ref throttling.  This is what is supposed to happen, but
-sometimes the transaction can commit and then we're waiting for throttling that
-doesn't matter anymore.  So change this stuff to be a little smarter by tracking
-the transid we were in when we initiated the throttling.  If the transaction we
-get is different then we can just bail out.  This resulted in a 50% speedup in
-my fs_mark test, and reduced the amount of time spent throttling by 60 seconds
-over the entire run (which is about 30 minutes).  Thanks,
 
-Signed-off-by: Josef Bacik <jbacik@fb.com>
----
- fs/btrfs/ctree.h       |  2 +-
- fs/btrfs/extent-tree.c | 15 ++++++++++++---
- fs/btrfs/inode.c       |  1 +
- fs/btrfs/transaction.c |  3 ++-
- 4 files changed, 16 insertions(+), 5 deletions(-)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 55a24c5..4222936 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -3505,7 +3505,7 @@ void btrfs_put_block_group(struct btrfs_block_group_cache *cache);
- int btrfs_run_delayed_refs(struct btrfs_trans_handle *trans,
- 			   struct btrfs_root *root, unsigned long count);
- int btrfs_async_run_delayed_refs(struct btrfs_root *root,
--				 unsigned long count, int wait);
-+				 unsigned long count, u64 transid, int wait);
- int btrfs_lookup_data_extent(struct btrfs_root *root, u64 start, u64 len);
- int btrfs_lookup_extent_info(struct btrfs_trans_handle *trans,
- 			     struct btrfs_root *root, u64 bytenr,
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 4b5a517..f23f426 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -2839,6 +2839,7 @@ int btrfs_should_throttle_delayed_refs(struct btrfs_trans_handle *trans,
- 
- struct async_delayed_refs {
- 	struct btrfs_root *root;
-+	u64 transid;
- 	int count;
- 	int error;
- 	int sync;
-@@ -2854,9 +2855,16 @@ static void delayed_ref_async_start(struct btrfs_work *work)
- 
- 	async = container_of(work, struct async_delayed_refs, work);
- 
--	trans = btrfs_join_transaction(async->root);
-+	trans = btrfs_attach_transaction(async->root);
- 	if (IS_ERR(trans)) {
--		async->error = PTR_ERR(trans);
-+		if (PTR_ERR(trans) != -ENOENT)
-+			async->error = PTR_ERR(trans);
-+		goto done;
-+	}
-+
-+	/* Don't bother flushing if we got into a different transaction */
-+	if (trans->transid != async->transid) {
-+		btrfs_end_transaction(trans, async->root);
- 		goto done;
- 	}
- 
-@@ -2880,7 +2888,7 @@ done:
- }
- 
- int btrfs_async_run_delayed_refs(struct btrfs_root *root,
--				 unsigned long count, int wait)
-+				 unsigned long count, u64 transid, int wait)
- {
- 	struct async_delayed_refs *async;
- 	int ret;
-@@ -2892,6 +2900,7 @@ int btrfs_async_run_delayed_refs(struct btrfs_root *root,
- 	async->root = root->fs_info->tree_root;
- 	async->count = count;
- 	async->error = 0;
-+	async->transid = transid;
- 	if (wait)
- 		async->sync = 1;
- 	else
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 723e4bb..e6dd4cc 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -4534,6 +4534,7 @@ delete:
- 			BUG_ON(ret);
- 			if (btrfs_should_throttle_delayed_refs(trans, root))
- 				btrfs_async_run_delayed_refs(root,
-+							     trans->transid,
- 					trans->delayed_ref_updates * 2, 0);
- 			if (be_nice) {
- 				if (truncate_space_check(trans, root,
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index 43885e5..7c7671d 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -817,6 +817,7 @@ static int __btrfs_end_transaction(struct btrfs_trans_handle *trans,
- {
- 	struct btrfs_transaction *cur_trans = trans->transaction;
- 	struct btrfs_fs_info *info = root->fs_info;
-+	u64 transid = trans->transid;
- 	unsigned long cur = trans->delayed_ref_updates;
- 	int lock = (trans->type != TRANS_JOIN_NOLOCK);
- 	int err = 0;
-@@ -904,7 +905,7 @@ static int __btrfs_end_transaction(struct btrfs_trans_handle *trans,
- 
- 	kmem_cache_free(btrfs_trans_handle_cachep, trans);
- 	if (must_run_delayed_refs) {
--		btrfs_async_run_delayed_refs(root, cur,
-+		btrfs_async_run_delayed_refs(root, cur, transid,
- 					     must_run_delayed_refs == 1);
- 	}
- 	return err;
--- 
-2.5.0
+On 04/05/2016 08:08 AM, Tsutomu Itoh wrote:
+> When fs_devices->latest_bdev is deleted or is replaced, sb->s_id has
+> not been updated.
+> As a result, the deleted device name is displayed by btrfs_printk.
+>
+> [before fix]
+>   # btrfs dev del /dev/sdc4 /mnt2
+>   # btrfs dev add /dev/sdb6 /mnt2
+>
+>   [  217.458249] BTRFS info (device sdc4): found 1 extents
+>   [  217.695798] BTRFS info (device sdc4): disk deleted /dev/sdc4
+>   [  217.941284] BTRFS info (device sdc4): disk added /dev/sdb6
+>
+> [after fix]
+>   # btrfs dev del /dev/sdc4 /mnt2
+>   # btrfs dev add /dev/sdb6 /mnt2
+>
+>   [   83.835072] BTRFS info (device sdc4): found 1 extents
+>   [   84.080617] BTRFS info (device sdc3): disk deleted /dev/sdc4
+>   [   84.401951] BTRFS info (device sdc3): disk added /dev/sdb6
 
+
+  [PATCH 05/13] Btrfs: fix fs logging for multi device
+
+  any comments ?
+
+  We would want to maintain the logging prefix as constant, so that
+  troubleshooters with filters/scripts will find it helpful.
+
+Thanks, Anand
+
+
+> Signed-off-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
+> ---
+>   fs/btrfs/dev-replace.c |  5 ++++-
+>   fs/btrfs/volumes.c     | 11 +++++++++--
+>   2 files changed, 13 insertions(+), 3 deletions(-)
+>
+> diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
+> index a1d6652..11c4198 100644
+> --- a/fs/btrfs/dev-replace.c
+> +++ b/fs/btrfs/dev-replace.c
+> @@ -560,8 +560,11 @@ static int btrfs_dev_replace_finishing(struct btrfs_fs_info *fs_info,
+>   	tgt_device->commit_bytes_used = src_device->bytes_used;
+>   	if (fs_info->sb->s_bdev == src_device->bdev)
+>   		fs_info->sb->s_bdev = tgt_device->bdev;
+> -	if (fs_info->fs_devices->latest_bdev == src_device->bdev)
+> +	if (fs_info->fs_devices->latest_bdev == src_device->bdev) {
+>   		fs_info->fs_devices->latest_bdev = tgt_device->bdev;
+> +		snprintf(fs_info->sb->s_id, sizeof(fs_info->sb->s_id), "%pg",
+> +			 tgt_device->bdev);
+> +	}
+>   	list_add(&tgt_device->dev_alloc_list, &fs_info->fs_devices->alloc_list);
+>   	fs_info->fs_devices->rw_devices++;
+>
+> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+> index e2b54d5..a471385 100644
+> --- a/fs/btrfs/volumes.c
+> +++ b/fs/btrfs/volumes.c
+> @@ -1846,8 +1846,12 @@ int btrfs_rm_device(struct btrfs_root *root, char *device_path)
+>   				 struct btrfs_device, dev_list);
+>   	if (device->bdev == root->fs_info->sb->s_bdev)
+>   		root->fs_info->sb->s_bdev = next_device->bdev;
+> -	if (device->bdev == root->fs_info->fs_devices->latest_bdev)
+> +	if (device->bdev == root->fs_info->fs_devices->latest_bdev) {
+>   		root->fs_info->fs_devices->latest_bdev = next_device->bdev;
+> +		snprintf(root->fs_info->sb->s_id,
+> +			 sizeof(root->fs_info->sb->s_id), "%pg",
+> +			 next_device->bdev);
+> +	}
+>
+>   	if (device->bdev) {
+>   		device->fs_devices->open_devices--;
+> @@ -2034,8 +2038,11 @@ void btrfs_destroy_dev_replace_tgtdev(struct btrfs_fs_info *fs_info,
+>   				 struct btrfs_device, dev_list);
+>   	if (tgtdev->bdev == fs_info->sb->s_bdev)
+>   		fs_info->sb->s_bdev = next_device->bdev;
+> -	if (tgtdev->bdev == fs_info->fs_devices->latest_bdev)
+> +	if (tgtdev->bdev == fs_info->fs_devices->latest_bdev) {
+>   		fs_info->fs_devices->latest_bdev = next_device->bdev;
+> +		snprintf(fs_info->sb->s_id, sizeof(fs_info->sb->s_id), "%pg",
+> +			 next_device->bdev);
+> +	}
+>   	list_del_rcu(&tgtdev->dev_list);
+>
+>   	call_rcu(&tgtdev->rcu, free_device);
+>

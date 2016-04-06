@@ -1,72 +1,144 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from e23smtp04.au.ibm.com ([202.81.31.146]:39370 "EHLO
-	e23smtp04.au.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753876AbcDADWc (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 31 Mar 2016 23:22:32 -0400
-Received: from localhost
-	by e23smtp04.au.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
-	for <linux-btrfs@vger.kernel.org> from <chandan@linux.vnet.ibm.com>;
-	Fri, 1 Apr 2016 13:22:29 +1000
-Received: from d23relay07.au.ibm.com (d23relay07.au.ibm.com [9.190.26.37])
-	by d23dlp01.au.ibm.com (Postfix) with ESMTP id F2CA62CE8054
-	for <linux-btrfs@vger.kernel.org>; Fri,  1 Apr 2016 14:22:24 +1100 (EST)
-Received: from d23av03.au.ibm.com (d23av03.au.ibm.com [9.190.234.97])
-	by d23relay07.au.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id u313MGlQ3014984
-	for <linux-btrfs@vger.kernel.org>; Fri, 1 Apr 2016 14:22:24 +1100
-Received: from d23av03.au.ibm.com (localhost [127.0.0.1])
-	by d23av03.au.ibm.com (8.14.4/8.14.4/NCO v10.0 AVout) with ESMTP id u313LqBA010717
-	for <linux-btrfs@vger.kernel.org>; Fri, 1 Apr 2016 14:21:52 +1100
-From: Chandan Rajendra <chandan@linux.vnet.ibm.com>
-To: dsterba@suse.cz
-Cc: clm@fb.com, jbacik@fb.com, bo.li.liu@oracle.com,
-        linux-btrfs@vger.kernel.org, chandan@mykolab.com
-Subject: Re: [PATCH V15 00/15] Btrfs: Subpagesize-blocksize: Allow I/O on blocks whose size is less than page size
-Date: Fri, 01 Apr 2016 08:51:32 +0530
-Message-ID: <2002224.hLXqi7HKi6@localhost.localdomain>
-In-Reply-To: <20160331135911.GA6230@twin.jikos.cz>
-References: <1455212873-14829-1-git-send-email-chandan@linux.vnet.ibm.com> <20160331093106.GF27917@twin.jikos.cz> <20160331135911.GA6230@twin.jikos.cz>
+Received: from mail.kernel.org ([198.145.29.136]:50243 "EHLO mail.kernel.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752024AbcDFWLu (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 6 Apr 2016 18:11:50 -0400
+Received: from mail.kernel.org (localhost [127.0.0.1])
+	by mail.kernel.org (Postfix) with ESMTP id 047232020F
+	for <linux-btrfs@vger.kernel.org>; Wed,  6 Apr 2016 22:11:48 +0000 (UTC)
+Received: from debian3.lan (dsl-112-39.bl26.telepac.pt [176.78.112.39])
+	(using TLSv1.2 with cipher AES128-SHA256 (128/128 bits))
+	(No client certificate requested)
+	by mail.kernel.org (Postfix) with ESMTPSA id BBF5C201D3
+	for <linux-btrfs@vger.kernel.org>; Wed,  6 Apr 2016 22:11:46 +0000 (UTC)
+From: fdmanana@kernel.org
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH] Btrfs: fix for incorrect directory entries after fsync log replay
+Date: Wed,  6 Apr 2016 23:11:42 +0100
+Message-Id: <1459980702-1150-1-git-send-email-fdmanana@kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thursday 31 Mar 2016 15:59:11 David Sterba wrote:
-> On Thu, Mar 31, 2016 at 11:31:06AM +0200, David Sterba wrote:
-> > On Tue, Mar 22, 2016 at 06:50:32PM +0530, Chandan Rajendra wrote:
-> > > On Tuesday 22 Mar 2016 12:04:23 David Sterba wrote:
-> > > > On Thu, Feb 11, 2016 at 11:17:38PM +0530, Chandan Rajendra wrote:
-> > > > > this patchset temporarily disables the commit
-> > > > > f82c458a2c3ffb94b431fc6ad791a79df1b3713e.
-> > > > > 
-> > > > > The commits for the Btrfs kernel module can be found at
-> > > > > https://github.com/chandanr/linux/tree/btrfs/subpagesize-blocksize.
-> > > > 
-> > > > The branch does not apply cleanly to at least 4.5, I've tried to
-> > > > rebase
-> > > > it but there are conflicts that are not simple. Please update it on
-> > > > top
-> > > > of current master, ie. with the preparatory patchset merged.
-> > > 
-> > > I will rebase the branch and post the patchset soon.
-> > 
-> > JFYI, I've seen some minor compilation failures:
-> > - __do_readpage: unused variable cached
-> > - end_bio_extent_buffer_readpage: btree_readahead_hook must tak fs_info
-> > - fails build with (config) sanity checks enabled, the fs_info moved
-> > 
-> >   from eb to eb head
-> 
-> And the tests crash with my quick fixes, so I'll move the branch out of
-> next for now. Please fix it and let me know. My fixes are on top of your
-> lastest branch, chandan-subpage-latest in my development gits.
+From: Filipe Manana <fdmanana@suse.com>
 
-Hi David,
+If we move a directory to a new parent and later log that parent and don't
+explicitly log the old parent, when we replay the log we can end up with
+entries for the moved directory in both the old and new parent directories.
+Besides being ilegal to have directories with multiple hard links in linux,
+it also resulted in the leaving the inode item with a link count of 1.
+A similar issue also happens if we move a regular file - after the log tree
+is replayed the file has a link in both the old and new parent directories,
+when it should be only at the new directory.
 
-After rebasing the patchset, I found a 'hard to reproduce' space
-accounting bug. I am currently figuring out the root cause of the bug. I will
-post the patchset once the issue is fixed.
+Sample reproducer:
 
+  $ mkfs.btrfs -f /dev/sdc
+  $ mount /dev/sdc /mnt
+  $ mkdir /mnt/x
+  $ mkdir /mnt/y
+  $ touch /mnt/x/foo
+  $ mkdir /mnt/y/z
+  $ sync
+  $ ln /mnt/x/foo /mnt/x/bar
+  $ mv /mnt/y/z /mnt/x/z
+  < power fail >
+  $ mount /dev/sdc /mnt
+  $ ls -1Ri /mnt
+  /mnt:
+  257 x
+  258 y
+
+  /mnt/x:
+  259 bar
+  259 foo
+  260 z
+
+  /mnt/x/z:
+
+  /mnt/y:
+  260 z
+
+  /mnt/y/z:
+
+  $ umount /dev/sdc
+  $ btrfs check /dev/sdc
+  Checking filesystem on /dev/sdc
+  UUID: a67e2c4a-a4b4-4fdc-b015-9d9af1e344be
+  checking extents
+  checking free space cache
+  checking fs roots
+  root 5 inode 260 errors 2000, link count wrong
+        unresolved ref dir 257 index 4 namelen 1 name z filetype 2 errors 0
+        unresolved ref dir 258 index 2 namelen 1 name z filetype 2 errors 0
+  (...)
+
+Attempting to remove the directory becomes impossible:
+
+  $ mount /dev/sdc /mnt
+  $ rmdir /mnt/y/z
+  $ ls -lh /mnt/y
+  ls: cannot access /mnt/y/z: No such file or directory
+  total 0
+  d????????? ? ? ? ?            ? z
+  $ rmdir /mnt/x/z
+  rmdir: failed to remove ‘/mnt/x/z’: Stale file handle
+  $ ls -lh /mnt/x
+  ls: cannot access /mnt/x/z: Stale file handle
+  total 0
+  -rw-r--r-- 2 root root 0 Apr  6 18:06 bar
+  -rw-r--r-- 2 root root 0 Apr  6 18:06 foo
+  d????????? ? ?    ?    ?            ? z
+
+So make sure that on rename we set the last_unlink_trans value for our
+inode, even if it's a directory, to the value of the current transaction's
+ID and that if the new parent directory is logged that we fallback to a
+transaction commit.
+
+A test case for fstests is being submitted as well.
+
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+ fs/btrfs/tree-log.c | 13 ++++++++-----
+ 1 file changed, 8 insertions(+), 5 deletions(-)
+
+diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+index 517d0cc..4709932 100644
+--- a/fs/btrfs/tree-log.c
++++ b/fs/btrfs/tree-log.c
+@@ -5278,11 +5278,16 @@ static int btrfs_log_all_parents(struct btrfs_trans_handle *trans,
+ 			if (IS_ERR(dir_inode))
+ 				continue;
+ 
++			if (ctx)
++				ctx->log_new_dentries = false;
+ 			ret = btrfs_log_inode(trans, root, dir_inode,
+ 					      LOG_INODE_ALL, 0, LLONG_MAX, ctx);
+ 			if (!ret &&
+ 			    btrfs_must_commit_transaction(trans, dir_inode))
+ 				ret = 1;
++			if (!ret && ctx && ctx->log_new_dentries)
++				ret = log_new_dir_dentries(trans, root,
++							   dir_inode, ctx);
+ 			iput(dir_inode);
+ 			if (ret)
+ 				goto out;
+@@ -5652,11 +5657,9 @@ void btrfs_record_unlink_dir(struct btrfs_trans_handle *trans,
+ 	 * into the file.  When the file is logged we check it and
+ 	 * don't log the parents if the file is fully on disk.
+ 	 */
+-	if (S_ISREG(inode->i_mode)) {
+-		mutex_lock(&BTRFS_I(inode)->log_mutex);
+-		BTRFS_I(inode)->last_unlink_trans = trans->transid;
+-		mutex_unlock(&BTRFS_I(inode)->log_mutex);
+-	}
++	mutex_lock(&BTRFS_I(inode)->log_mutex);
++	BTRFS_I(inode)->last_unlink_trans = trans->transid;
++	mutex_unlock(&BTRFS_I(inode)->log_mutex);
+ 
+ 	/*
+ 	 * if this directory was already logged any new
 -- 
-chandan
+2.7.0.rc3
 

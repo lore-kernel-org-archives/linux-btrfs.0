@@ -1,144 +1,64 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.136]:50243 "EHLO mail.kernel.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752024AbcDFWLu (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 6 Apr 2016 18:11:50 -0400
-Received: from mail.kernel.org (localhost [127.0.0.1])
-	by mail.kernel.org (Postfix) with ESMTP id 047232020F
-	for <linux-btrfs@vger.kernel.org>; Wed,  6 Apr 2016 22:11:48 +0000 (UTC)
-Received: from debian3.lan (dsl-112-39.bl26.telepac.pt [176.78.112.39])
-	(using TLSv1.2 with cipher AES128-SHA256 (128/128 bits))
-	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPSA id BBF5C201D3
-	for <linux-btrfs@vger.kernel.org>; Wed,  6 Apr 2016 22:11:46 +0000 (UTC)
-From: fdmanana@kernel.org
+Received: from mail-qg0-f68.google.com ([209.85.192.68]:33497 "EHLO
+	mail-qg0-f68.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1760262AbcDFDqX (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Apr 2016 23:46:23 -0400
+Received: by mail-qg0-f68.google.com with SMTP id 7so435460qgj.0
+        for <linux-btrfs@vger.kernel.org>; Tue, 05 Apr 2016 20:46:22 -0700 (PDT)
+Received: from [192.168.0.11] (CPEbc4dfb2691f3-CMbc4dfb2691f0.cpe.net.cable.rogers.com. [99.231.110.121])
+        by smtp.gmail.com with ESMTPSA id 43sm469490qgh.28.2016.04.05.20.46.21
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLSv1/SSLv3 cipher=OTHER);
+        Tue, 05 Apr 2016 20:46:21 -0700 (PDT)
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] Btrfs: fix for incorrect directory entries after fsync log replay
-Date: Wed,  6 Apr 2016 23:11:42 +0100
-Message-Id: <1459980702-1150-1-git-send-email-fdmanana@kernel.org>
+From: Bastien Philbert <bastienphilbert@gmail.com>
+Subject: Possible Double Freeing of dentry in check_parent_dirs_for_sync
+Message-ID: <5704868C.9000702@gmail.com>
+Date: Tue, 5 Apr 2016 23:46:20 -0400
 MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Filipe Manana <fdmanana@suse.com>
-
-If we move a directory to a new parent and later log that parent and don't
-explicitly log the old parent, when we replay the log we can end up with
-entries for the moved directory in both the old and new parent directories.
-Besides being ilegal to have directories with multiple hard links in linux,
-it also resulted in the leaving the inode item with a link count of 1.
-A similar issue also happens if we move a regular file - after the log tree
-is replayed the file has a link in both the old and new parent directories,
-when it should be only at the new directory.
-
-Sample reproducer:
-
-  $ mkfs.btrfs -f /dev/sdc
-  $ mount /dev/sdc /mnt
-  $ mkdir /mnt/x
-  $ mkdir /mnt/y
-  $ touch /mnt/x/foo
-  $ mkdir /mnt/y/z
-  $ sync
-  $ ln /mnt/x/foo /mnt/x/bar
-  $ mv /mnt/y/z /mnt/x/z
-  < power fail >
-  $ mount /dev/sdc /mnt
-  $ ls -1Ri /mnt
-  /mnt:
-  257 x
-  258 y
-
-  /mnt/x:
-  259 bar
-  259 foo
-  260 z
-
-  /mnt/x/z:
-
-  /mnt/y:
-  260 z
-
-  /mnt/y/z:
-
-  $ umount /dev/sdc
-  $ btrfs check /dev/sdc
-  Checking filesystem on /dev/sdc
-  UUID: a67e2c4a-a4b4-4fdc-b015-9d9af1e344be
-  checking extents
-  checking free space cache
-  checking fs roots
-  root 5 inode 260 errors 2000, link count wrong
-        unresolved ref dir 257 index 4 namelen 1 name z filetype 2 errors 0
-        unresolved ref dir 258 index 2 namelen 1 name z filetype 2 errors 0
-  (...)
-
-Attempting to remove the directory becomes impossible:
-
-  $ mount /dev/sdc /mnt
-  $ rmdir /mnt/y/z
-  $ ls -lh /mnt/y
-  ls: cannot access /mnt/y/z: No such file or directory
-  total 0
-  d????????? ? ? ? ?            ? z
-  $ rmdir /mnt/x/z
-  rmdir: failed to remove ‘/mnt/x/z’: Stale file handle
-  $ ls -lh /mnt/x
-  ls: cannot access /mnt/x/z: Stale file handle
-  total 0
-  -rw-r--r-- 2 root root 0 Apr  6 18:06 bar
-  -rw-r--r-- 2 root root 0 Apr  6 18:06 foo
-  d????????? ? ?    ?    ?            ? z
-
-So make sure that on rename we set the last_unlink_trans value for our
-inode, even if it's a directory, to the value of the current transaction's
-ID and that if the new parent directory is logged that we fallback to a
-transaction commit.
-
-A test case for fstests is being submitted as well.
-
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
- fs/btrfs/tree-log.c | 13 ++++++++-----
- 1 file changed, 8 insertions(+), 5 deletions(-)
-
-diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index 517d0cc..4709932 100644
---- a/fs/btrfs/tree-log.c
-+++ b/fs/btrfs/tree-log.c
-@@ -5278,11 +5278,16 @@ static int btrfs_log_all_parents(struct btrfs_trans_handle *trans,
- 			if (IS_ERR(dir_inode))
- 				continue;
+Greetings All,
+After some tracing I am not certain if this is correct due to being newer to the btrfs 
+codebase. However if someone more experience can show me if I am missing something in
+my traces please let me known:)
+Firstly here is the bug trace or the part that matters:
+[ 7195.792492] ------------[ cut here ]------------
+[ 7195.792532] WARNING: CPU: 0 PID: 5352 at /home/kernel/COD/linux/fs/btrfs/inode.c:9261 btrfs_destroy_inode+0x247/0x2c0 [btrfs]
+[ 7195.792535] Modules linked in: bnep binfmt_misc intel_rapl x86_pkg_temp_thermal intel_powerclamp coretemp kvm_intel samsung_laptop kvm irqbypass crct10dif_pclmul crc32_pclmul btusb ghash_clmulni_intel btrtl btbcm btintel cryptd snd_hda_codec_hdmi uvcvideo bluetooth snd_hda_codec_realtek videobuf2_vmalloc snd_hda_codec_generic videobuf2_memops arc4 videobuf2_v4l2 snd_hda_intel input_leds videobuf2_core snd_hda_codec joydev snd_hda_core iwldvm serio_raw snd_hwdep videodev snd_pcm mac80211 media snd_seq_midi snd_seq_midi_event snd_rawmidi snd_seq snd_seq_device iwlwifi snd_timer cfg80211 snd lpc_ich mei_me soundcore shpchp mei dell_smo8800 mac_hid parport_pc ppdev lp parport autofs4 btrfs xor raid6_pq hid_generic usbhid hid i915 i2c_algo_bit drm_kms_helper syscopyarea sysfillrect psmouse sysimgblt fb_sys_fops
+[ 7195.792593]  drm r8169 ahci libahci mii wmi video fjes
+[ 7195.792602] CPU: 0 PID: 5352 Comm: aptitude Not tainted 4.6.0-040600rc1-generic #201603261930
+[ 7195.792604] Hardware name: SAMSUNG ELECTRONICS CO., LTD. 530U3C/530U4C/SAMSUNG_NP1234567890, BIOS P14AAJ 04/15/2013
+[ 7195.792607]  0000000000000286 00000000002cb880 ffff8800c91f3d40 ffffffff813ee833
+[ 7195.792611]  0000000000000000 0000000000000000 ffff8800c91f3d80 ffffffff8108275b
+[ 7195.792614]  0000242da71863c0 ffff8800209bca58 ffff8800209bca58 ffff880034eda000
+[ 7195.792618] Call Trace:
+[ 7195.792626]  [<ffffffff813ee833>] dump_stack+0x63/0x90
+[ 7195.792631]  [<ffffffff8108275b>] __warn+0xcb/0xf0
+[ 7195.792635]  [<ffffffff8108288d>] warn_slowpath_null+0x1d/0x20
+[ 7195.792658]  [<ffffffffc03316b7>] btrfs_destroy_inode+0x247/0x2c0 [btrfs]
+[ 7195.792663]  [<ffffffff8123b44b>] destroy_inode+0x3b/0x60
+[ 7195.792666]  [<ffffffff8123b5a6>] evict+0x136/0x1a0
+[ 7195.792670]  [<ffffffff8123b81a>] iput+0x1ba/0x240
+[ 7195.792673]  [<ffffffff81236f3d>] __dentry_kill+0x18d/0x1e0
+[ 7195.792676]  [<ffffffff812370bb>] dput+0x12b/0x220
+[ 7195.792680]  [<ffffffff81231f64>] SyS_rename+0x2f4/0x3c0
+[ 7195.792686]  [<ffffffff81839ef6>] entry_SYSCALL_64_fastpath+0x1e/0xa8
+[ 7195.792689] ---[ end trace e42100b57fd49606 ]---
+[ 7464.416637] perf: interrupt took too long (3157 > 3146), lowering kernel.perf_event_max_sample_rate to 63250
+[ 9697.609514] perf: interrupt took too long (3950 > 3946), lowering kernel.perf_event_max_sample_rate to 50500
+Firstly we start in the btrfs function for renaming btrfs_rename which in turn calls btrfs_log_new_name,which
+in turn calls check_parent_dirs_for_sync which in turn calls check_parent_dirs_for_sync. This is where I got
+confused though and wanted a more experienced viewpoint on this:
+parent = dget_parent(parent);
+                 dput(old_parent);
+                 old_parent = parent;
+                 inode = d_inode(parent);
  
-+			if (ctx)
-+				ctx->log_new_dentries = false;
- 			ret = btrfs_log_inode(trans, root, dir_inode,
- 					      LOG_INODE_ALL, 0, LLONG_MAX, ctx);
- 			if (!ret &&
- 			    btrfs_must_commit_transaction(trans, dir_inode))
- 				ret = 1;
-+			if (!ret && ctx && ctx->log_new_dentries)
-+				ret = log_new_dir_dentries(trans, root,
-+							   dir_inode, ctx);
- 			iput(dir_inode);
- 			if (ret)
- 				goto out;
-@@ -5652,11 +5657,9 @@ void btrfs_record_unlink_dir(struct btrfs_trans_handle *trans,
- 	 * into the file.  When the file is logged we check it and
- 	 * don't log the parents if the file is fully on disk.
- 	 */
--	if (S_ISREG(inode->i_mode)) {
--		mutex_lock(&BTRFS_I(inode)->log_mutex);
--		BTRFS_I(inode)->last_unlink_trans = trans->transid;
--		mutex_unlock(&BTRFS_I(inode)->log_mutex);
--	}
-+	mutex_lock(&BTRFS_I(inode)->log_mutex);
-+	BTRFS_I(inode)->last_unlink_trans = trans->transid;
-+	mutex_unlock(&BTRFS_I(inode)->log_mutex);
- 
- 	/*
- 	 * if this directory was already logged any new
--- 
-2.7.0.rc3
-
+         }
+Are we not double freeing and causing a NULL pointer deference here?
+         dput(old_parent);
+Sorry for the stupid question :(,
+Bastien

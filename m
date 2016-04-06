@@ -1,168 +1,130 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wm0-f51.google.com ([74.125.82.51]:38272 "EHLO
-	mail-wm0-f51.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753411AbcDFWIz (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 Apr 2016 18:08:55 -0400
-Received: by mail-wm0-f51.google.com with SMTP id u206so63402635wme.1
-        for <linux-btrfs@vger.kernel.org>; Wed, 06 Apr 2016 15:08:54 -0700 (PDT)
+Received: from mail-io0-f179.google.com ([209.85.223.179]:35227 "EHLO
+	mail-io0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753157AbcDFXIN (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 Apr 2016 19:08:13 -0400
+Received: by mail-io0-f179.google.com with SMTP id g185so74406998ioa.2
+        for <linux-btrfs@vger.kernel.org>; Wed, 06 Apr 2016 16:08:12 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <pan$20f45$63875276$ec725eab$c0dca8d1@cox.net>
+In-Reply-To: <CAFKQ2BsxWYejWOPMCw5JuF-SXM03-papUu6LXM5KBNKthxAPxg@mail.gmail.com>
 References: <CAFKQ2BsxWYejWOPMCw5JuF-SXM03-papUu6LXM5KBNKthxAPxg@mail.gmail.com>
-	<pan$20f45$63875276$ec725eab$c0dca8d1@cox.net>
-Date: Wed, 6 Apr 2016 18:08:53 -0400
-Message-ID: <CAFKQ2BucABTGrm9eybdC6j8fJOsfzLing7GfGaU=Jd9zUZV2wA@mail.gmail.com>
+Date: Wed, 6 Apr 2016 17:08:12 -0600
+Message-ID: <CAJCQCtQCLWca9YycOSTC8Q4c78a8AVe7uFXAoe2vqEUQVFHiNA@mail.gmail.com>
 Subject: Re: unable to mount btrfs pool even with -oro,recovery,degraded,
  unable to do 'btrfs restore'
-From: Ank Ular <ankular.anime@gmail.com>
-To: linux-btrfs@vger.kernel.org
+From: Chris Murphy <lists@colorremedies.com>
+To: Ank Ular <ankular.anime@gmail.com>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Apr 6, 2016 at 5:02 PM, Duncan <1i5t5.duncan@cox.net> wrote:
-> Ank Ular posted on Wed, 06 Apr 2016 11:34:39 -0400 as excerpted:
+On Wed, Apr 6, 2016 at 9:34 AM, Ank Ular <ankular.anime@gmail.com> wrote:
+
 >
->> I am currently unable to mount nor recover data from my btrfs storage
->> pool.
->>
-
-> With four devices behind by (fortunately only) 26 transactions, and
-> luckily all at the same transaction/generation number, you're likely
-> beyond what the recovery mount option can deal with (I believe upto three
-> transactions, tho it might be a few more in newer kernels), and obviously
-> from your results, beyond what btrfs restore can deal with automatically
-> as well.
+> From the ouput of 'dmesg', the section:
+> [   20.998071] BTRFS: device label FSgyroA devid 9 transid 625039 /dev/sdm
+> [   20.999984] BTRFS: device label FSgyroA devid 10 transid 625039 /dev/sdn
+> [   21.004127] BTRFS: device label FSgyroA devid 11 transid 625039 /dev/sds
+> [   21.011808] BTRFS: device label FSgyroA devid 12 transid 625039 /dev/sdu
 >
-> There is still hope via btrfs restore, but you have to feed it more
-> information than it can get on its own, and while it's reasonably likely
-> that you can get that information and as a result a successful restore,
-> the process of finding the information and manually verifying that it's
-> appropriately complete is definitely rather more technical than the
-> automated process.  If you're sufficiently technically inclined (not at a
-> dev level, but at an admin level, able to understand technical concepts
-> and make use of them on the command line, etc), your chances at recovery
-> are still rather good.  If you aren't... better be getting out those
-> backups.
->
-> There's a page on the wiki that describes the general process, but keep
-> in mind that the tools continue to evolve and the wiki page may not be
-> absolutely current, so what it describes might not be exactly what you
-> get, and you may have to do some translation between the current tools
-> and what's on the wiki.  (Actually, it looks like it is much more current
-> than it used to be, but I'm not sure whether all parts of the page have
-> been updated/rewritten or not.)
->
-> https://btrfs.wiki.kernel.org/index.php/Restore
->
-> You're at the "advanced usage" point as the automated method didn't work.
->
-> The general idea is to use the btrfs-find-root command to get a list of
-> previous roots, their generation number (aka transaction ID, aka transid),
-> and their corresponding byte number (bytenr).  The bytenr is the value
-> you feed to btrfs restore, via the -t option.
->
-> I'd start with the 625039 generation/transid that is the latest on the
-> four "behind" devices, hoping that the other devices still have it intact
-> as well.  Find the corresponding bytenr via btrfs-find-root, and feed it
-> to btrfs restore via -t.  But not yet in a live run!!
->
-> First, use -t and -l together, to get a list of the tree-roots available
-> at that bytenr.  You want to pick a bytenr/generation that still has its
-> tree roots intact as much as possible.  Down near the bottom of the page
-> there's a bit of an explanation of what the object-IDs mean.  The low
-> number ones are filesystem-global and are quite critical.  256 up are
-> subvolumes and snapshots.  If a few snapshots are missing no big deal,
-> tho if something critical is in a subvolume, you'll want either it or a
-> snapshot of it available to try to restore from.
->
-> Once you have a -t bytenr candidate with ideally all of the objects
-> intact, or as many as possible if not all of them, do a dry-run using the
-> -D option.  The output here will be the list of files it's trying to
-> recover and thus may be (hopefully is, with a reasonably populated
-> filesystem) quite long.  But if it looks reasonable, you can use the same
-> -t bytenr without the -D/dry-run option to do the actual restore.  Be
-> sure to use the various options restoring metadata, symlinks, extended
-> attributes, snapshots, etc, if appropriate.
->
-> Of course you'll need enough space to restore to as well.  If that's an
-> issue, you can use the --path-regex option to restore the most important
-> stuff only.  There's an example on the page.
->
->
-> If that's beyond your technical abilities or otherwise doesn't work, you
-> may be able to use some of the advanced options of btrfs check and btrfs
-> rescue to help, but I've never tried that myself and you'll be better off
-> with help from someone else, because unlike restore, which doesn't write
-> to the damaged filesystem the files are being restored from and thus
-> can't damage it further, these tools and options can destroy any
-> reasonable hope of recovery if they aren't used with appropriate
-> knowledge and care.
->
-> --
-> Duncan - List replies preferred.   No HTML msgs.
+> bothers me because the transid value of these four devices doesn't
+> match the other 16 devices in the pool {should be 625065}. In theory,
+> I believe these should all have the same transid value. These four
+> devices are all on a single USB 3.0 port and this is the link I
+> believe went down and came back up.
 
-I did read this page: https://btrfs.wiki.kernel.org/index.php/Restore
+This is effectively a 4 disk failure and raid6 only allows for 2.
 
-But, not understanding the meaning of much of the terminology, I
-didn't "get it".
+Now, a valid complaint is that as soon as Btrfs is seeing write
+failures for 3 devices, it needs to go read-only. Specifically, it
+would go read only upon 3 or more write errors affecting a single full
+raid stripe (data and parity strips combined); and that's because such
+a write is fully failed.
 
-Your explanation makes the page much clearer. I do need one
-clarification. I'm assuming
-that when I issue the command:
+Now, maybe there's a way to just retry that stripe? During heavy
+writing, there are probably multiple stripes in flight. But in real
+short order the file system I think needs to face plant (read only or
+even a graceful crash) is better than continuing to write to n-4
+drives which is a bunch of bogus data, in effect.
 
-   btrfs-find-root /dev/sdb
+I'm gonna guess the superblock on all the surviving drives is wrong,
+because it sounds like the file system didn't immediately go read only
+when the four drives vanished?
 
-it doesn't actually matter which device I use and that, in theory, any
-of the 20 devices should yield the same listing.
+However, there is probably really valuable information in the
+superblocks of the failed devices. The file system should be
+consistent as of the generation on those missing devices. If there's a
+way to roll back the file system to those supers, including using
+their trees, then it should be possible to get the file system back -
+while accepting 100% data loss between generation 625039 and 625065.
+That's already 100% data loss anyway, if it was still doing n-4 device
+writes - those are bogus generations.
 
-By the same token, when I issue the command:
+Since this is entirely COW, nothing should be lost. All the data
+necessary to go back to generation 625039 is on all drives. And none
+of the data after that is usable anyway. Possibly even 625038 is the
+last good one on every single drive.
 
-   btrfs restore -t n /dev/sdb /mnt/restore
+So what you should try to do is get supers on every drive. There are
+three super blocks per drive. And there are four backups per super. So
+that's potentially 12 slots per drive times 20 drives. That's a lot of
+data for you to look through but that's what you have to do. The top
+task would be to see if the three supers are the same on each device,
+if so, then that cuts the comparison down by 1/3. And then compare the
+supers across devices. You can get this with btrfs-show-super -fa.
 
-any of the 20 devices would work equally well.
+You might look in another thread about how to setup an overlay for 16
+of the 20 drives; making certain you obfuscate the volume UUID of the
+original, only allowing that UUID to appear via the overlay (of the
+same volume+device UUID appear to the kernel, e.g. using LVM snapshots
+of either thick or thin variety and making both visible and then
+trying to mount one of them). Others have done this I think remotely
+to make sure the local system only sees the overlay devices. Anyway,
+this allows you to make destructive changes non-destructively. What I
+can't tell you off hand is if any of the tools will let you
+specifically accept the superblocks from the four "good" devices that
+went offline abruptly, and adapt them to to the other 16, i.e. rolling
+back the 16 that went too far forward without the other 4. Make sense?
 
-I want to be clear on this because this will be the first time I
-attempt using 'btrfs restore'. While I think I understand what
-is supposed to happen now, there is nothing like experience to make
-that 'understanding' more solid. I just want to be
-sure I haven't confused myself before I do something more or less irrevocable.
+Note. You can't exactly copy the super block from one device to
+another because it contains a dev UUID. So first you need to look at a
+superblock for any two of the four "good" devices, and compare them.
+Exactly how  do they differ? They should only differ witih
+dev_item.devid, dev_item.uuid, and maybe dev_item.total_bytes and
+hopefully not but maybe dev_item.bytes_used. And then somehow adapt
+this for the other 16 drives. I'd love it if there's a tool that does
+this, maybe 'btrfs rescue super-recover' but there are no meaningful
+options with that command so I'm skeptical how it knows what's bad and
+what's good.
 
-Fortunately, I neither use sub-volumes nor snapshots since nearly all
-of the files are static in nature.
+You literally might have to splice superblocks and write them to 16
+drives in exactly 3 locations per drive (well, maybe just one of them,
+and then delete the magic from the other two, and then 'btrfs rescue
+super-recover' should then use the one good copy to fix the two bad
+copies).
 
-As far as backups go, we're talking about a home server/workstation.
-While I used to go through an excruciating budget
-battle every year on a professional level in my usually futile fight
-for disaster recovery planning funding, my personal
-budget is much, nuch more limited.
+Sigh.... maybe?
 
-Of the 53T currently in limbo, about ~6-8T are on several hundreds of
-DVDs. About 10T are on the hard drives of the
-my prior system which needs a replacement motherboard. {I had rsynced
-the data to a new build system just before imminent
- failure}. Most of the rest can be re-collected from a variety of
-still existing sources as I still have the file names and link
-locations
-on a separate file system. My 'disaster recovery plans' assume
-patience, a limited budget and knowing where everything
-came from originally. Backups are a completely different issue. My
-backup planning won't be complete for another 12
-or so since it essentially means building a duplicate system. Since my
-budget funding is limited, my duplicate system
-is happening piecemeal every other month or so.
+In theory it's possible, I just don't know the state of the tools. But
+I'm fairly sure the best chance of recovery is going to be on the 4
+drives that abruptly vanished.  Their supers will be mostly correct or
+close to it: and that's what has all the roots in it: tree, fs, chunk,
+extent and csum. And all of those states are better farther in the
+past, rather than the 16 drives that have much newer writes.
 
-I do understand both backups {having implemented real time transaction
-journal-ling to tape combined with weekly 'dd'
-copies to tape, monthly full backups with 6 month retention
-yada-yada-yada} and disaster recovery planning. Been there.
-Done that. Save my ___ multiple times.
+Of course it is possible there's corruption problems with those four
+drives having vanished while writes were incomplete. But if you're
+lucky, data write happen first, then metadata writes second, and only
+then is the super updated. So the super should point to valid metadata
+and that should point to valid data. If that order is wrong, then it's
+bad news and you have to look at backup roots. But *if* you get all
+the supers correct and on the same page, you can access the backup
+roots by using -o recovery if corruption is found with a normal mount.
 
-The crux is always funding.
 
-Naturally, using 'btrfs restore' successfully will go a long ways
-towards shortening the recovery process.
 
-It will be about a week before I can begin since I need to acquire the
-restore destination storage first.
 
-Thank you for explaining the process.
+
+-- 
+Chris Murphy

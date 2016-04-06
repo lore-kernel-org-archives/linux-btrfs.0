@@ -1,52 +1,159 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:47321 "EHLO mx2.suse.de"
+Received: from mail.kernel.org ([198.145.29.136]:50259 "EHLO mail.kernel.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752483AbcDEIrI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 5 Apr 2016 04:47:08 -0400
-Date: Tue, 5 Apr 2016 10:43:36 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs-progs: fsck: Fix a false metadata extent warning
-Message-ID: <20160405084336.GF3412@suse.cz>
-Reply-To: dsterba@suse.cz
-References: <1459390774-12424-1-git-send-email-quwenruo@cn.fujitsu.com>
- <20160331163006.GE6230@twin.jikos.cz>
- <56FDC0A2.1030909@cn.fujitsu.com>
- <20160401084418.GI6230@suse.cz>
- <56FE363E.5090202@cn.fujitsu.com>
- <20160404111852.GG9918@twin.jikos.cz>
- <570314BF.209@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <570314BF.209@cn.fujitsu.com>
+	id S1752024AbcDFWME (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 6 Apr 2016 18:12:04 -0400
+From: fdmanana@kernel.org
+To: fstests@vger.kernel.org
+Cc: linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@suse.com>
+Subject: [PATCH] fstests: generic test for fsync after adding a link and moving other inode
+Date: Wed,  6 Apr 2016 23:11:56 +0100
+Message-Id: <1459980716-4705-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Apr 05, 2016 at 09:28:31AM +0800, Qu Wenruo wrote:
-> 
-> 
-> David Sterba wrote on 2016/04/04 13:18 +0200:
-> > On Fri, Apr 01, 2016 at 04:50:06PM +0800, Qu Wenruo wrote:
-> >>> After another look, why don't we use nodesize directly? Or stripesize
-> >>> where applies. With max_size == 0 the test does not make sense, we ought
-> >>> to know the alignment.
-> >>>
-> >>>
-> >> Yes, my first though is also to use nodesize directly, which should be
-> >> always correct.
-> >>
-> >> But the problem is, the related function call stack doesn't have any
-> >> member to reach btrfs_root or btrfs_fs_info.
-> >
-> > JFYI, there's global_info avalaible, so it's not necessary to pass
-> > fs_info down the callstacks.
-> >
-> >
-> Oh, that's a good news.
-> 
-> Do I need to re-submit the patch to use fs_info->tree_root->nodesize to 
-> avoid false alert?
-> Or wait for your refactor?
+From: Filipe Manana <fdmanana@suse.com>
 
-No need to resend, the refactored code is now in devel.
+Test that if we create a hard link for a file F in some directory A,
+then move some directory or file B from its parent directory C into
+directory A, fsync file F, power fail and mount the filesystem, the
+directory/file B is located only at directory A and both links for
+file F exist.
+
+This test is motivated by an issue found in btrfs which is fixed by the
+following patch for the linux kernel:
+
+  Btrfs: fix for incorrect directory entries after fsync log replay
+
+Tested against ext3/4, xfs, reiserfs and f2fs.
+
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+ tests/generic/343     | 86 +++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/generic/343.out | 11 +++++++
+ tests/generic/group   |  1 +
+ 3 files changed, 98 insertions(+)
+ create mode 100755 tests/generic/343
+ create mode 100644 tests/generic/343.out
+
+diff --git a/tests/generic/343 b/tests/generic/343
+new file mode 100755
+index 0000000..bc7980c
+--- /dev/null
++++ b/tests/generic/343
+@@ -0,0 +1,86 @@
++#! /bin/bash
++# FSQA Test No. 343
++#
++# Test that if we create a hard link for a file F in some directory A, then move
++# some directory or file B from its parent directory C into directory A, fsync
++# file F, power fail and mount the filesystem, the directory/file B is located
++# only at directory A and both links for file F exist.
++#
++#-----------------------------------------------------------------------
++#
++# Copyright (C) 2016 SUSE Linux Products GmbH. All Rights Reserved.
++# Author: Filipe Manana <fdmanana@suse.com>
++#
++# This program is free software; you can redistribute it and/or
++# modify it under the terms of the GNU General Public License as
++# published by the Free Software Foundation.
++#
++# This program is distributed in the hope that it would be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write the Free Software Foundation,
++# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++#-----------------------------------------------------------------------
++#
++
++seq=`basename $0`
++seqres=$RESULT_DIR/$seq
++echo "QA output created by $seq"
++tmp=/tmp/$$
++status=1	# failure is the default!
++trap "_cleanup; exit \$status" 0 1 2 3 15
++
++_cleanup()
++{
++	_cleanup_flakey
++	cd /
++	rm -f $tmp.*
++}
++
++# get standard environment, filters and checks
++. ./common/rc
++. ./common/filter
++. ./common/dmflakey
++
++# real QA test starts here
++_supported_fs generic
++_supported_os Linux
++_require_scratch
++_require_dm_target flakey
++_require_metadata_journaling $SCRATCH_DEV
++
++rm -f $seqres.full
++
++_scratch_mkfs >>$seqres.full 2>&1
++_init_flakey
++_mount_flakey
++
++# Create our test directories and files.
++mkdir $SCRATCH_MNT/x
++mkdir $SCRATCH_MNT/y
++touch $SCRATCH_MNT/x/foo
++mkdir $SCRATCH_MNT/y/z
++touch $SCRATCH_MNT/y/foo2
++
++# Make sure everything is durably persisted.
++sync
++
++# Now add a link to foo at directory x, move directory z and file foo2 from
++# directory y to directory x and fsync foo's inode. We expect that after a
++# log replay we see the new link for foo's inode and that z and foo2 are only
++# located at directory x.
++ln $SCRATCH_MNT/x/foo $SCRATCH_MNT/x/bar
++mv $SCRATCH_MNT/y/z $SCRATCH_MNT/x/z
++mv $SCRATCH_MNT/y/foo2 $SCRATCH_MNT/x/foo2
++$XFS_IO_PROG -c "fsync" $SCRATCH_MNT/x/bar
++_flakey_drop_and_remount
++
++echo "Filesystem contents after log replay:"
++ls -R $SCRATCH_MNT/x $SCRATCH_MNT/y | _filter_scratch
++
++_unmount_flakey
++status=0
++exit
+diff --git a/tests/generic/343.out b/tests/generic/343.out
+new file mode 100644
+index 0000000..4c85f1f
+--- /dev/null
++++ b/tests/generic/343.out
+@@ -0,0 +1,11 @@
++QA output created by 343
++Filesystem contents after log replay:
++SCRATCH_MNT/x:
++bar
++foo
++foo2
++z
++
++SCRATCH_MNT/x/z:
++
++SCRATCH_MNT/y:
+diff --git a/tests/generic/group b/tests/generic/group
+index ef1a423..0e5a82e 100644
+--- a/tests/generic/group
++++ b/tests/generic/group
+@@ -345,3 +345,4 @@
+ 340 auto
+ 341 auto quick metadata
+ 342 auto quick metadata
++343 auto quick metadata
+-- 
+2.7.0.rc3
+

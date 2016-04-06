@@ -1,75 +1,90 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from lists.s-osg.org ([54.187.51.154]:33081 "EHLO lists.s-osg.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1755054AbcDDOXC (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 4 Apr 2016 10:23:02 -0400
-From: Luis de Bethencourt <luisbg@osg.samsung.com>
-To: linux-btrfs@vger.kernel.org
-Cc: linux-kernel@vger.kernel.org, clm@fb.com, jbacik@fb.com, dsterba@suse.com,
-        Luis de Bethencourt <luisbg@osg.samsung.com>
-Subject: [PATCH v3] btrfs: fix typo in btrfs_statfs()
-Date: Mon,  4 Apr 2016 15:22:36 +0100
-Message-Id: <1459779756-5031-1-git-send-email-luisbg@osg.samsung.com>
+Received: from mail-io0-f193.google.com ([209.85.223.193]:34366 "EHLO
+	mail-io0-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750731AbcDFQK7 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 Apr 2016 12:10:59 -0400
+MIME-Version: 1.0
+Reply-To: fdmanana@gmail.com
+In-Reply-To: <1459958196-31346-1-git-send-email-bastienphilbert@gmail.com>
+References: <1459958196-31346-1-git-send-email-bastienphilbert@gmail.com>
+Date: Wed, 6 Apr 2016 17:10:58 +0100
+Message-ID: <CAL3q7H5GLadiLA9PWBXyfamRUb4o=8vHiPd16e9XYBAbWjSKiA@mail.gmail.com>
+Subject: Re: [PATCH] btrfs:Change BUG_ON to new error path in __clear_extent_bit
+From: Filipe Manana <fdmanana@gmail.com>
+To: Bastien Philbert <bastienphilbert@gmail.com>
+Cc: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
+        David Sterba <dsterba@suse.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Correct a typo in the chunk_mutex name to make it grepable.
+On Wed, Apr 6, 2016 at 4:56 PM, Bastien Philbert
+<bastienphilbert@gmail.com> wrote:
+> This remove the unnessary BUG_ON if the allocation with
+> alloc_extent_state_atomic fails due to this function
+> failure not being unrecoverable. Instead we now change
+> this BUG_ON into a new error path that jumps to the goto
+> label, out from freeing previously allocated resources
+> before returning the error code -ENOMEM to signal callers
+> that the call to __clear_extent_bit failed due to a memory
+> allocation failure.
+>
+> Signed-off-by: Bastien Philbert <bastienphilbert@gmail.com>
+> ---
+>  fs/btrfs/extent_io.c | 5 ++++-
+>  1 file changed, 4 insertions(+), 1 deletion(-)
+>
+> diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+> index d247fc0..4c87b77 100644
+> --- a/fs/btrfs/extent_io.c
+> +++ b/fs/btrfs/extent_io.c
+> @@ -682,7 +682,10 @@ hit_next:
+>
+>         if (state->start < start) {
+>                 prealloc = alloc_extent_state_atomic(prealloc);
+> -               BUG_ON(!prealloc);
+> +               if (!prealloc) {
+> +                       err = -ENOMEM;
+> +                       goto out;
+> +               }
 
-Since it is better to fix several typos at once, fixing the 2 more in the
-same file.
+Why only in this particular place? We do this in other places in this function.
 
-Signed-off-by: Luis de Bethencourt <luisbg@osg.samsung.com>
----
+Second, setting err to -ENOMEM is not enough. Under the out label we
+always return 0, so you're not propagating the error to callers.
 
-Hi,
+Now, most importantly, you didn't check if callers handle errors from
+this function (__clear_extent_bit()) at all. A failure in this
+function is critical.
+For example, it can cause a range in an inode's io tree to become
+locked forever, blocking any other tasks that want to operate on the
+range, and we won't ever know what happened.
+So it's far from trivial to handle errors from this function and
+that's why the BUG_ON is there.
 
-David recommended I look around the rest of the file for other typos to fix.
+If you really want to get rid of the BUG_ON() calls you need to make
+sure all callers don't ignore the errors and that they deal with them
+properly.
 
-These two more are all I see in the rest of the file without nitpicking.
 
-Thanks,
-Luis
+>                 err = split_state(tree, state, prealloc, start);
+>                 if (err)
+>                         extent_io_tree_panic(tree, err);
+> --
+> 2.5.0
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 
- fs/btrfs/super.c | 12 ++++++------
- 1 file changed, 6 insertions(+), 6 deletions(-)
 
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 7e766ffc..73bdfd4 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -1484,9 +1484,9 @@ static int setup_security_options(struct btrfs_fs_info *fs_info,
- 		memcpy(&fs_info->security_opts, sec_opts, sizeof(*sec_opts));
- 	} else {
- 		/*
--		 * Since SELinux(the only one supports security_mnt_opts) does
--		 * NOT support changing context during remount/mount same sb,
--		 * This must be the same or part of the same security options,
-+		 * Since SELinux (the only one supporting security_mnt_opts) does
-+		 * NOT support changing context during remount/mount of the same sb,
-+		 * this must be the same or part of the same security options,
- 		 * just free it.
- 		 */
- 		security_free_mnt_opts(sec_opts);
-@@ -1665,8 +1665,8 @@ static inline void btrfs_remount_cleanup(struct btrfs_fs_info *fs_info,
- 					 unsigned long old_opts)
- {
- 	/*
--	 * We need cleanup all defragable inodes if the autodefragment is
--	 * close or the fs is R/O.
-+	 * We need to cleanup all defragable inodes if the autodefragment is
-+	 * close or the filesystem is read only.
- 	 */
- 	if (btrfs_raw_test_opt(old_opts, AUTO_DEFRAG) &&
- 	    (!btrfs_raw_test_opt(fs_info->mount_opt, AUTO_DEFRAG) ||
-@@ -2050,7 +2050,7 @@ static int btrfs_statfs(struct dentry *dentry, struct kstatfs *buf)
- 	int mixed = 0;
- 
- 	/*
--	 * holding chunk_muext to avoid allocating new chunks, holding
-+	 * holding chunk_mutex to avoid allocating new chunks, holding
- 	 * device_list_mutex to avoid the device being removed
- 	 */
- 	rcu_read_lock();
+
 -- 
-2.6.4
+Filipe David Manana,
 
+"Reasonable men adapt themselves to the world.
+ Unreasonable men adapt the world to themselves.
+ That's why all progress depends on unreasonable men."

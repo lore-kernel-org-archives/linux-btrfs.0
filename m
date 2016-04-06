@@ -1,96 +1,338 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wm0-f65.google.com ([74.125.82.65]:35068 "EHLO
-	mail-wm0-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751153AbcDFQqM (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 Apr 2016 12:46:12 -0400
-Received: by mail-wm0-f65.google.com with SMTP id a140so14890559wma.2
-        for <linux-btrfs@vger.kernel.org>; Wed, 06 Apr 2016 09:46:12 -0700 (PDT)
+Received: from mail-lb0-f176.google.com ([209.85.217.176]:34885 "EHLO
+	mail-lb0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752363AbcDFTkN (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 Apr 2016 15:40:13 -0400
+Received: by mail-lb0-f176.google.com with SMTP id bc4so36518116lbc.2
+        for <linux-btrfs@vger.kernel.org>; Wed, 06 Apr 2016 12:40:12 -0700 (PDT)
 MIME-Version: 1.0
-Date: Wed, 6 Apr 2016 12:46:10 -0400
-Message-ID: <CAFKQ2BsD1024hqwL4LHsaRmckYvxVhSi5gGnOHeC_Cm_-ru37g@mail.gmail.com>
-Subject: 'btrfs filesystem df /mnt/point/of/btrfs/pool' can report misleadingly
-From: Ank Ular <ankular.anime@gmail.com>
-To: linux-btrfs@vger.kernel.org
+In-Reply-To: <570070D4.80404@gmx.com>
+References: <CADzmB21iEn03C5rtP=4dGe3mS8Tvd_+VUDLtczUQMotPcDOPNg@mail.gmail.com>
+ <570070D4.80404@gmx.com>
+From: Ivan P <chrnosphered@gmail.com>
+Date: Wed, 6 Apr 2016 21:39:52 +0200
+Message-ID: <CADzmB23BwRsrvCeM7ntPt=0wz4tEVc6Vu5Gm0X7tKoQ20n_WTQ@mail.gmail.com>
+Subject: Re: scrub: Tree block spanning stripes, ignored
+To: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Cc: Qu Wenruo <quwenruo@cn.fujitsu.com>, btrfs <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When the mount point for a btrfs pool resides on an existing
-independent btrfs pool and the first btrfs pool is not mounted,
-running 'btrfs fi df /unmounted/pool' will show the btrfs df
-information of the underlying mounted btrfs pool. This is most likely
-undesirable.
+Ok, I'm cautiously optimistic: after running btrfsck
+--init-extent-tree --repair and running scrub, it finished without
+errors.
+Will run a file compare against my backup copy, but it seems the
+repair was successful.
 
-The btrfs wiki has the following:
+Here is the btrfs-image btw:
+https://dl.dropboxusercontent.com/u/19330332/image.btrfs (821Mb)
 
-What information to provide when asking a support question
+Maybe you will be able to track down whatever caused this.
 
-When reporting errors or asking for support always supply the output
-of the following commands:
-  uname -a
-  btrfs --version
-  btrfs fi show
-  btrfs fi df /home # Replace /home with the mount point of your
-btrfs-filesystem   <===
-  dmesg > dmesg.log
+Regards,
+Ivan.
 
-Real world example:
-
->From /etc/fstab - /  {root level}
-LABEL="PhoenixRootSSD" / btrfs  autodefrag,compress=lzo,space_cache,noatime 0 0
-
->From /etc/fstab - /PublicA
-LABEL="FSgyroA" /PublicA btrfs
-autodefrag,compress=lzo,space_cache,noatime,noauto 0 0
-
-# btrfs fi df /PublicA
-Data, single: total=107.00GiB, used=84.26GiB
-System, single: total=4.00MiB, used=16.00KiB
-Metadata, single: total=3.01GiB, used=1.27GiB
-GlobalReserve, single: total=448.00MiB, used=0.00B
-
-# btrfs fi df /
-Data, single: total=107.00GiB, used=84.26GiB
-System, single: total=4.00MiB, used=16.00KiB
-Metadata, single: total=3.01GiB, used=1.27GiB
-GlobalReserve, single: total=448.00MiB, used=0.00B
-
-# btrfs fi show
-Label: 'PhoenixRootSSD'  uuid: ed1790a7-87e6-466c-a68c-e375303fd99f
-        Total devices 1 FS bytes used 85.53GiB
-        devid    1 size 200.04GiB used 110.01GiB path /dev/sda5
-
-Label: 'PhoenixRoot'  uuid: 7ba4f981-c2ff-4a70-96a6-4c4b25f96e96
-        Total devices 1 FS bytes used 2.00TiB
-        devid    1 size 2.71TiB used 2.38TiB path /dev/sdg5
-
-Label: none  uuid: a7e2e4f6-e324-4cf4-8b76-33bb7dedf5d1
-        Total devices 1 FS bytes used 384.00KiB
-        devid    1 size 2.73TiB used 2.02GiB path /dev/sdab1
-
-checksum verify failed on 120890386268160 found D7319043 wanted 33D22DF5
-checksum verify failed on 120890386268160 found 50ECAB17 wanted 2D8EEBCA
-checksum verify failed on 120890386268160 found D7319043 wanted 33D22DF5
-bytenr mismatch, want=120890386268160, have=65536
-Label: 'FSgyroA'  uuid: 4dae41b0-a459-4c20-a09d-0aca9563b9ad
-        Total devices 20 FS bytes used 53.15TiB
-        devid    1 size 3.64TiB used 3.46TiB path /dev/sdb
-        devid    2 size 3.64TiB used 3.46TiB path /dev/sdd
-        devid    3 size 3.64TiB used 3.46TiB path /dev/sdc
-        devid    4 size 2.73TiB used 2.73TiB path /dev/sdh
-        devid    5 size 4.55TiB used 4.50TiB path /dev/sde
-        devid    6 size 4.55TiB used 4.50TiB path /dev/sdf
-        devid    7 size 4.55TiB used 4.49TiB path /dev/sdi
-        devid    8 size 4.55TiB used 4.50TiB path /dev/sdj
-        devid    9 size 5.46TiB used 5.19TiB path /dev/sdm
-        devid   10 size 5.46TiB used 5.19TiB path /dev/sdn
-        devid   11 size 5.46TiB used 5.19TiB path /dev/sds
-        devid   12 size 5.46TiB used 5.19TiB path /dev/sdu
-        devid   14 size 2.73TiB used 2.73TiB path /dev/sdag
-        devid   15 size 2.73TiB used 2.73TiB path /dev/sdz
-        devid   16 size 2.73TiB used 2.73TiB path /dev/sdy
-        devid   17 size 2.73TiB used 2.73TiB path /dev/sdac
-        devid   18 size 2.73TiB used 2.73TiB path /dev/sdaf
-        devid   19 size 2.73TiB used 2.73TiB path /dev/sdx
-        devid   20 size 2.73TiB used 2.73TiB path /dev/sdad
-        *** Some devices missing
+On Sun, Apr 3, 2016 at 3:24 AM, Qu Wenruo <quwenruo.btrfs@gmx.com> wrote:
+>
+>
+> On 04/03/2016 12:29 AM, Ivan P wrote:
+>>
+>> It's about 800Mb, I think I could upload that.
+>>
+>> I ran it with the -s parameter, is that enough to remove all personal
+>> info from the image?
+>> Also, I had to run it with -w because otherwise it died on the same
+>> corrupt node.
+>
+>
+> You can also use -c9 to further compress the data.
+>
+> Thanks,
+> Qu
+>
+>>
+>> On Fri, Apr 1, 2016 at 2:25 AM, Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
+>>>
+>>>
+>>>
+>>> Ivan P wrote on 2016/03/31 18:04 +0200:
+>>>>
+>>>>
+>>>> Ok, it will take a while until I can attempt repairing it, since I
+>>>> will have to order a spare HDD to copy the data to.
+>>>> Should I take some sort of debug snapshot of the fs so you can take a
+>>>> look at it? I think I read something about a snapshot that only
+>>>> contains the fs but not the data that somewhere.
+>>>
+>>>
+>>> That's btrfs-image.
+>>>
+>>> It would be good, but if your metadata is over 3G, I think it's would
+>>> take a
+>>> lot of time uploading.
+>>>
+>>> Thanks,
+>>> Qu
+>>>
+>>>>
+>>>> Regards,
+>>>> Ivan.
+>>>>
+>>>> On Tue, Mar 29, 2016 at 3:57 AM, Qu Wenruo <quwenruo@cn.fujitsu.com>
+>>>> wrote:
+>>>>>
+>>>>>
+>>>>>
+>>>>>
+>>>>> Ivan P wrote on 2016/03/28 23:21 +0200:
+>>>>>>
+>>>>>>
+>>>>>>
+>>>>>> Well, the file in this inode is fine, I was able to copy it off the
+>>>>>> disk. However, rm-ing the file causes a segmentation fault. Shortly
+>>>>>> after that, I get a kernel oops. Same thing happens if I attempt to
+>>>>>> re-run scrub.
+>>>>>>
+>>>>>> How can I delete that inode? Could deleting it destroy the filesystem
+>>>>>> beyond repair?
+>>>>>
+>>>>>
+>>>>>
+>>>>>
+>>>>> The kernel oops should protect you from completely destroying the fs.
+>>>>>
+>>>>> However it seems that the problem is beyond kernel's handle (kernel
+>>>>> oops).
+>>>>>
+>>>>> So no safe recovery method now.
+>>>>>
+>>>>>   From now on, any repair advice from me *MAY* *destroy* your fs.
+>>>>> So please do backup when you still can.
+>>>>>
+>>>>>
+>>>>> The best possible try would be "btrfsck --init-extent-tree --repair".
+>>>>>
+>>>>> If it works, then mount it and run "btrfs balance start <mnt>".
+>>>>> Lastly, umount and use btrfsck to re-check if it fixes the problem.
+>>>>>
+>>>>> Thanks,
+>>>>> Qu
+>>>>>
+>>>>>
+>>>>>>
+>>>>>> Regards,
+>>>>>> Ivan
+>>>>>>
+>>>>>> On Mon, Mar 28, 2016 at 3:10 AM, Qu Wenruo <quwenruo.btrfs@gmx.com>
+>>>>>> wrote:
+>>>>>>>
+>>>>>>>
+>>>>>>>
+>>>>>>>
+>>>>>>>
+>>>>>>> Ivan P wrote on 2016/03/27 16:31 +0200:
+>>>>>>>>
+>>>>>>>>
+>>>>>>>>
+>>>>>>>>
+>>>>>>>> Thanks for the reply,
+>>>>>>>>
+>>>>>>>> the raid1 array was created from scratch, so not converted from
+>>>>>>>> ext*.
+>>>>>>>> I used btrfs-progs version 4.2.3 on kernel 4.2.5 to create the
+>>>>>>>> array,
+>>>>>>>> btw.
+>>>>>>>
+>>>>>>>
+>>>>>>>
+>>>>>>>
+>>>>>>>
+>>>>>>> I don't remember any strange behavior after 4.0, so no clue here.
+>>>>>>>
+>>>>>>> Go to the subvolume 5 (the top-level subvolume), find inode 71723 and
+>>>>>>> try
+>>>>>>> to
+>>>>>>> remove it.
+>>>>>>> Then, use 'btrfs filesystem sync <mount point>' to sync the inode
+>>>>>>> removal.
+>>>>>>>
+>>>>>>> Finally use latest btrfs-progs to check if the problem disappears.
+>>>>>>>
+>>>>>>> This problem seems to be quite strange, so I can't locate the root
+>>>>>>> cause,
+>>>>>>> but try to remove the file and hopes kernel can handle it.
+>>>>>>>
+>>>>>>> Thanks,
+>>>>>>> Qu
+>>>>>>>>
+>>>>>>>>
+>>>>>>>>
+>>>>>>>>
+>>>>>>>>
+>>>>>>>> Is there a way to fix the current situation without taking the whole
+>>>>>>>> data off the disk?
+>>>>>>>> I'm not familiar with file systems terms, so what exactly could I
+>>>>>>>> have
+>>>>>>>> lost, if anything?
+>>>>>>>>
+>>>>>>>> Regards,
+>>>>>>>> Ivan
+>>>>>>>>
+>>>>>>>> On Sun, Mar 27, 2016 at 4:23 PM, Qu Wenruo <quwenruo.btrfs@gmx.com
+>>>>>>>> <mailto:quwenruo.btrfs@gmx.com>> wrote:
+>>>>>>>>
+>>>>>>>>
+>>>>>>>>
+>>>>>>>>        On 03/27/2016 05:54 PM, Ivan P wrote:
+>>>>>>>>
+>>>>>>>>            Read the info on the wiki, here's the rest of the
+>>>>>>>> requested
+>>>>>>>>            information:
+>>>>>>>>
+>>>>>>>>            # uname -r
+>>>>>>>>            4.4.5-1-ARCH
+>>>>>>>>
+>>>>>>>>            # btrfs fi show
+>>>>>>>>            Label: 'ArchVault'  uuid:
+>>>>>>>> cd8a92b6-c5b5-4b19-b5e6-a839828d12d8
+>>>>>>>>                     Total devices 1 FS bytes used 2.10GiB
+>>>>>>>>                     devid    1 size 14.92GiB used 4.02GiB path
+>>>>>>>> /dev/sdc1
+>>>>>>>>
+>>>>>>>>            Label: 'Vault'  uuid:
+>>>>>>>> 013cda95-8aab-4cb2-acdd-2f0f78036e02
+>>>>>>>>                     Total devices 2 FS bytes used 800.72GiB
+>>>>>>>>                     devid    1 size 931.51GiB used 808.01GiB path
+>>>>>>>> /dev/sda
+>>>>>>>>                     devid    2 size 931.51GiB used 808.01GiB path
+>>>>>>>> /dev/sdb
+>>>>>>>>
+>>>>>>>>            # btrfs fi df /mnt/vault/
+>>>>>>>>            Data, RAID1: total=806.00GiB, used=799.81GiB
+>>>>>>>>            System, RAID1: total=8.00MiB, used=128.00KiB
+>>>>>>>>            Metadata, RAID1: total=2.00GiB, used=936.20MiB
+>>>>>>>>            GlobalReserve, single: total=320.00MiB, used=0.00B
+>>>>>>>>
+>>>>>>>>            On Fri, Mar 25, 2016 at 3:16 PM, Ivan P
+>>>>>>>> <chrnosphered@gmail.com
+>>>>>>>>            <mailto:chrnosphered@gmail.com>> wrote:
+>>>>>>>>
+>>>>>>>>                Hello,
+>>>>>>>>
+>>>>>>>>                using kernel  4.4.5 and btrfs-progs 4.4.1, I today
+>>>>>>>> ran a
+>>>>>>>>                scrub on my
+>>>>>>>>                2x1Tb btrfs raid1 array and it finished with 36
+>>>>>>>>                unrecoverable errors
+>>>>>>>>                [1], all blaming the treeblock 741942071296. Running
+>>>>>>>> "btrfs
+>>>>>>>>                check
+>>>>>>>>                --readonly" on one of the devices lists that extent
+>>>>>>>> as
+>>>>>>>>                corrupted [2].
+>>>>>>>>
+>>>>>>>>                How can I recover, how much did I really lose, and
+>>>>>>>> how
+>>>>>>>> can
+>>>>>>>> I
+>>>>>>>>                prevent
+>>>>>>>>                it from happening again?
+>>>>>>>>                If you need me to provide more info, do tell.
+>>>>>>>>
+>>>>>>>>                [1] http://cwillu.com:8080/188.110.141.36/1
+>>>>>>>>
+>>>>>>>>
+>>>>>>>>        This message itself is normal, it just means a tree block is
+>>>>>>>>        crossing 64K stripe boundary.
+>>>>>>>>        And due to scrub limit, it can check if it's good or bad.
+>>>>>>>>        But....
+>>>>>>>>
+>>>>>>>>                [2] http://pastebin.com/xA5zezqw
+>>>>>>>>
+>>>>>>>>        This one is much more meaningful, showing several strange
+>>>>>>>> bugs.
+>>>>>>>>
+>>>>>>>>        1. corrupt extent record: key 741942071296 168 1114112
+>>>>>>>>        This means, this is a EXTENT_ITEM(168), and according to the
+>>>>>>>> offset,
+>>>>>>>>        it means the length of the extent is, 1088K, definitely not a
+>>>>>>>> valid
+>>>>>>>>        tree block size.
+>>>>>>>>
+>>>>>>>>        But according to [1], kernel think it's a tree block, which
+>>>>>>>> is
+>>>>>>>> quite
+>>>>>>>>        strange.
+>>>>>>>>        Normally, such mismatch only happens in fs converted from
+>>>>>>>> ext*.
+>>>>>>>>
+>>>>>>>>        2. Backref 741942071296 root 5 owner 71723 offset 2589392896
+>>>>>>>>        num_refs 0 not found in extent tree
+>>>>>>>>
+>>>>>>>>        num_refs 0, this is also strange, normal backref won't have a
+>>>>>>>> zero
+>>>>>>>>        refrence number.
+>>>>>>>>
+>>>>>>>>        3. bad metadata [741942071296, 741943185408) crossing stripe
+>>>>>>>> boundary
+>>>>>>>>        It could be a false warning fixed in latest btrfsck.
+>>>>>>>>        But you're using 4.4.1, so I think that's the problem.
+>>>>>>>>
+>>>>>>>>        4. bad extent [741942071296, 741943185408), type mismatch
+>>>>>>>> with
+>>>>>>>> chunk
+>>>>>>>>        This seems to explain the problem, a data extent appears in a
+>>>>>>>>        metadata chunk.
+>>>>>>>>        It seems that you're really using converted btrfs.
+>>>>>>>>
+>>>>>>>>        If so, just roll it back to ext*. Current btrfs-convert has
+>>>>>>>> known
+>>>>>>>>        bug but fix is still under review.
+>>>>>>>>
+>>>>>>>>        If want to use btrfs, use a newly created one instead of
+>>>>>>>> btrfs-convert.
+>>>>>>>>
+>>>>>>>>        Thanks,
+>>>>>>>>        Qu
+>>>>>>>>
+>>>>>>>>
+>>>>>>>>                Regards,
+>>>>>>>>                Soukyuu
+>>>>>>>>
+>>>>>>>>                P.S.: please add me to CC when replying as I did not
+>>>>>>>>                subscribe to the
+>>>>>>>>                mailing list. Majordomo won't let me use my hotmail
+>>>>>>>> address
+>>>>>>>>                and I
+>>>>>>>>                don't want that much traffic on this address.
+>>>>>>>>
+>>>>>>>>            --
+>>>>>>>>            To unsubscribe from this list: send the line "unsubscribe
+>>>>>>>>            linux-btrfs" in
+>>>>>>>>            the body of a message to majordomo@vger.kernel.org
+>>>>>>>>            <mailto:majordomo@vger.kernel.org>
+>>>>>>>>            More majordomo info at
+>>>>>>>> http://vger.kernel.org/majordomo-info.html
+>>>>>>>>
+>>>>>>>>
+>>>>>>>
+>>>>>> --
+>>>>>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs"
+>>>>>> in
+>>>>>> the body of a message to majordomo@vger.kernel.org
+>>>>>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>>>>>>
+>>>>>>
+>>>>>
+>>>>>
+>>>>
+>>>>
+>>>
+>>>
+>> --
+>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>> the body of a message to majordomo@vger.kernel.org
+>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>>
+>

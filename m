@@ -1,75 +1,223 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:34091 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751531AbcDAUOj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 1 Apr 2016 16:14:39 -0400
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id 82EF2AC32
-	for <linux-btrfs@vger.kernel.org>; Fri,  1 Apr 2016 20:14:37 +0000 (UTC)
-From: Jeff Mahoney <jeffm@suse.com>
-To: Btrfs Development List <linux-btrfs@vger.kernel.org>
-Cc: Jeff Mahoney <jeffm@suse.com>
-Subject: [PATCH 0/8] btrfs: uapi migration for user-visible API components
-Date: Fri,  1 Apr 2016 16:14:22 -0400
-Message-Id: <1459541670-4097-1-git-send-email-jeffm@suse.com>
+Received: from mail-io0-f180.google.com ([209.85.223.180]:36089 "EHLO
+	mail-io0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753594AbcDFJW6 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 Apr 2016 05:22:58 -0400
+Received: by mail-io0-f180.google.com with SMTP id q128so49115490iof.3
+        for <linux-btrfs@vger.kernel.org>; Wed, 06 Apr 2016 02:22:57 -0700 (PDT)
+MIME-Version: 1.0
+Reply-To: fdmanana@gmail.com
+In-Reply-To: <20160331005748.GI15881@wotan.suse.de>
+References: <20160331005748.GI15881@wotan.suse.de>
+Date: Wed, 6 Apr 2016 10:22:57 +0100
+Message-ID: <CAL3q7H6vpRsun_jfhBTCaanb3Hv8DRCR2C5+3Qm4EesL9WkbRw@mail.gmail.com>
+Subject: Re: [PATCH] btrfs: handle non-fatal errors in btrfs_qgroup_inherit()
+From: Filipe Manana <fdmanana@gmail.com>
+To: Mark Fasheh <mfasheh@suse.de>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-commit 55e301fd57a (Btrfs: move fs/btrfs/ioctl.h to
-include/uapi/linux/btrfs.h) was intended to make the ioctl definitions
-available to userspace.  Unfortunately, moving just that file wasn't
-enough and many of the ioctls aren't actually usable without the
-userspace programmer filling in the gaps.  Specifically, for the routine
-ioctls like BTRFS_IOC_SETLABEL, BTRFS_LABEL_SIZE wasn't defined so the
-ioctl definition would be incomplete.  We were also missing
-the argument structure for defrag.  Beyond that, many of the ioctl
-structures have a flags field that may or may not be independent of
-the btrfs internals.  Lastly, the SEARCH_TREE ioctl exposes all of the
-internal items of the tree to userspace programmers so the item
-structures should be exposed so that they can be parsed properly.
+On Thu, Mar 31, 2016 at 1:57 AM, Mark Fasheh <mfasheh@suse.de> wrote:
+> create_pending_snapshot() will go readonly on _any_ error return from
+> btrfs_qgroup_inherit(). If qgroups are enabled, a user can crash their fs by
+> just making a snapshot and asking it to inherit from an invalid qgroup. For
+> example:
+>
+> $ btrfs sub snap -i 1/10 /btrfs/ /btrfs/foo
+>
+> Will cause a transaction abort.
+>
+> Fix this by only throwing errors in btrfs_qgroup_inherit() when we know
+> going readonly is acceptable.
+>
+> The following xfstests test case reproduces this bug:
+>
+>   seq=`basename $0`
+>   seqres=$RESULT_DIR/$seq
+>   echo "QA output created by $seq"
+>
+>   here=`pwd`
+>   tmp=/tmp/$$
+>   status=1      # failure is the default!
+>   trap "_cleanup; exit \$status" 0 1 2 3 15
+>
+>   _cleanup()
+>   {
+>         cd /
+>         rm -f $tmp.*
+>   }
+>
+>   # get standard environment, filters and checks
+>   . ./common/rc
+>   . ./common/filter
+>
+>   # remove previous $seqres.full before test
+>   rm -f $seqres.full
+>
+>   # real QA test starts here
+>   _supported_fs btrfs
+>   _supported_os Linux
+>   _require_scratch
+>
+>   rm -f $seqres.full
+>
+>   _scratch_mkfs
+>   _scratch_mount
+>   _run_btrfs_util_prog quota enable $SCRATCH_MNT
+>   # The qgroup '1/10' does not exist and should be silently ignored
+>   _run_btrfs_util_prog subvolume snapshot -i 1/10 $SCRATCH_MNT $SCRATCH_MNT/snap1
+>
+>   _scratch_unmount
+>
+>   echo "Silence is golden"
+>
+>   status=0
+>   exit
 
-So, to make all this more convenient for consumers of these APIs, I've
-moved the flags used by the ioctl structures into btrfs.h and
-moved the item definitions, key IDs, tree root objectids, and other
-well-known objectids into a new btrfs_tree.h.  ctree.h includes this
-new header directly, so there aren't any changes to .c files at all.
+Mark, did you forgot to submit a patch with the test case for fstests,
+or is there any other reason why you didn't do it?
+Thanks.
 
-The only part of this set that isn't just a direct cut-and-paste is
-the last one which converts u8 and u64 values to __u8 and __u64 since
-the former aren't exported via include/uapi.
+>
+> Signed-off-by: Mark Fasheh <mfasheh@suse.de>
+> ---
+>  fs/btrfs/qgroup.c | 54 ++++++++++++++++++++++++++++++++----------------------
+>  1 file changed, 32 insertions(+), 22 deletions(-)
+>
+> diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
+> index 994dab0..9e11955 100644
+> --- a/fs/btrfs/qgroup.c
+> +++ b/fs/btrfs/qgroup.c
+> @@ -1851,8 +1851,10 @@ out:
+>  }
+>
+>  /*
+> - * copy the acounting information between qgroups. This is necessary when a
+> - * snapshot or a subvolume is created
+> + * Copy the acounting information between qgroups. This is necessary
+> + * when a snapshot or a subvolume is created. Throwing an error will
+> + * cause a transaction abort so we take extra care here to only error
+> + * when a readonly fs is a reasonable outcome.
+>   */
+>  int btrfs_qgroup_inherit(struct btrfs_trans_handle *trans,
+>                          struct btrfs_fs_info *fs_info, u64 srcid, u64 objectid,
+> @@ -1882,15 +1884,15 @@ int btrfs_qgroup_inherit(struct btrfs_trans_handle *trans,
+>                        2 * inherit->num_excl_copies;
+>                 for (i = 0; i < nums; ++i) {
+>                         srcgroup = find_qgroup_rb(fs_info, *i_qgroups);
+> -                       if (!srcgroup) {
+> -                               ret = -EINVAL;
+> -                               goto out;
+> -                       }
+>
+> -                       if ((srcgroup->qgroupid >> 48) <= (objectid >> 48)) {
+> -                               ret = -EINVAL;
+> -                               goto out;
+> -                       }
+> +                       /*
+> +                        * Zero out invalid groups so we can ignore
+> +                        * them later.
+> +                        */
+> +                       if (!srcgroup ||
+> +                           ((srcgroup->qgroupid >> 48) <= (objectid >> 48)))
+> +                               *i_qgroups = 0ULL;
+> +
+>                         ++i_qgroups;
+>                 }
+>         }
+> @@ -1925,17 +1927,19 @@ int btrfs_qgroup_inherit(struct btrfs_trans_handle *trans,
+>          */
+>         if (inherit) {
+>                 i_qgroups = (u64 *)(inherit + 1);
+> -               for (i = 0; i < inherit->num_qgroups; ++i) {
+> +               for (i = 0; i < inherit->num_qgroups; ++i, ++i_qgroups) {
+> +                       if (*i_qgroups == 0)
+> +                               continue;
+>                         ret = add_qgroup_relation_item(trans, quota_root,
+>                                                        objectid, *i_qgroups);
+> -                       if (ret)
+> +                       if (ret && ret != -EEXIST)
+>                                 goto out;
+>                         ret = add_qgroup_relation_item(trans, quota_root,
+>                                                        *i_qgroups, objectid);
+> -                       if (ret)
+> +                       if (ret && ret != -EEXIST)
+>                                 goto out;
+> -                       ++i_qgroups;
+>                 }
+> +               ret = 0;
+>         }
+>
+>
+> @@ -1996,17 +2000,22 @@ int btrfs_qgroup_inherit(struct btrfs_trans_handle *trans,
+>
+>         i_qgroups = (u64 *)(inherit + 1);
+>         for (i = 0; i < inherit->num_qgroups; ++i) {
+> -               ret = add_relation_rb(quota_root->fs_info, objectid,
+> -                                     *i_qgroups);
+> -               if (ret)
+> -                       goto unlock;
+> +               if (*i_qgroups) {
+> +                       ret = add_relation_rb(quota_root->fs_info, objectid,
+> +                                             *i_qgroups);
+> +                       if (ret)
+> +                               goto unlock;
+> +               }
+>                 ++i_qgroups;
+>         }
+>
+> -       for (i = 0; i <  inherit->num_ref_copies; ++i) {
+> +       for (i = 0; i <  inherit->num_ref_copies; ++i, i_qgroups += 2) {
+>                 struct btrfs_qgroup *src;
+>                 struct btrfs_qgroup *dst;
+>
+> +               if (!i_qgroups[0] || !i_qgroups[1])
+> +                       continue;
+> +
+>                 src = find_qgroup_rb(fs_info, i_qgroups[0]);
+>                 dst = find_qgroup_rb(fs_info, i_qgroups[1]);
+>
+> @@ -2017,12 +2026,14 @@ int btrfs_qgroup_inherit(struct btrfs_trans_handle *trans,
+>
+>                 dst->rfer = src->rfer - level_size;
+>                 dst->rfer_cmpr = src->rfer_cmpr - level_size;
+> -               i_qgroups += 2;
+>         }
+> -       for (i = 0; i <  inherit->num_excl_copies; ++i) {
+> +       for (i = 0; i <  inherit->num_excl_copies; ++i, i_qgroups += 2) {
+>                 struct btrfs_qgroup *src;
+>                 struct btrfs_qgroup *dst;
+>
+> +               if (!i_qgroups[0] || !i_qgroups[1])
+> +                       continue;
+> +
+>                 src = find_qgroup_rb(fs_info, i_qgroups[0]);
+>                 dst = find_qgroup_rb(fs_info, i_qgroups[1]);
+>
+> @@ -2033,7 +2044,6 @@ int btrfs_qgroup_inherit(struct btrfs_trans_handle *trans,
+>
+>                 dst->excl = src->excl + level_size;
+>                 dst->excl_cmpr = src->excl_cmpr + level_size;
+> -               i_qgroups += 2;
+>         }
+>
+>  unlock:
+> --
+> 2.1.4
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 
-The goal is that everything required to use the btrfs ioctls for a
-particular kernel release should be made available by exporting the uapi
-headers for that release.
 
-I intend to use these for the strace ioctl decoding patch I've been
-working on so that I don't need to duplicate of the definitions in the
-code I send upstream as the final version of the patch.  Prior to this
-patchset, I had to duplicate nearly 100 defines and several structures --
-and that's without doing any item decoding at all.
-
-I do expect there might be some discussion here. :)
-
--Jeff
-
-Jeff Mahoney (8):
-  btrfs: uapi/linux/btrfs.h migration, move BTRFS_LABEL_SIZE
-  btrfs: uapi/linux/btrfs.h migration, qgroup limit flags
-  btrfs: uapi/linux/btrfs.h migration, document subvol flags
-  btrfs: uapi/linux/btrfs.h migration, move feature flags
-  btrfs: uapi/linux/btrfs.h migration, move balance flags
-  btrfs: uapi/linux/btrfs.h migration, move struct
-    btrfs_ioctl_defrag_range_args
-  btrfs: uapi/linux/btrfs_tree.h migration, item types and defines
-  btrfs: uapi/linux/btrfs_tree.h, use __u8 and __u64
-
- fs/btrfs/ctree.h                | 1014 +--------------------------------------
- fs/btrfs/volumes.h              |   46 --
- include/uapi/linux/btrfs.h      |  173 ++++++-
- include/uapi/linux/btrfs_tree.h |  966 +++++++++++++++++++++++++++++++++++++
- 4 files changed, 1135 insertions(+), 1064 deletions(-)
- create mode 100644 include/uapi/linux/btrfs_tree.h
 
 -- 
-2.7.1
+Filipe David Manana,
 
+"Reasonable men adapt themselves to the world.
+ Unreasonable men adapt the world to themselves.
+ That's why all progress depends on unreasonable men."

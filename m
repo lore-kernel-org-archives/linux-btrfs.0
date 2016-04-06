@@ -1,338 +1,185 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lb0-f176.google.com ([209.85.217.176]:34885 "EHLO
-	mail-lb0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752363AbcDFTkN (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 Apr 2016 15:40:13 -0400
-Received: by mail-lb0-f176.google.com with SMTP id bc4so36518116lbc.2
-        for <linux-btrfs@vger.kernel.org>; Wed, 06 Apr 2016 12:40:12 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <570070D4.80404@gmx.com>
-References: <CADzmB21iEn03C5rtP=4dGe3mS8Tvd_+VUDLtczUQMotPcDOPNg@mail.gmail.com>
- <570070D4.80404@gmx.com>
-From: Ivan P <chrnosphered@gmail.com>
-Date: Wed, 6 Apr 2016 21:39:52 +0200
-Message-ID: <CADzmB23BwRsrvCeM7ntPt=0wz4tEVc6Vu5Gm0X7tKoQ20n_WTQ@mail.gmail.com>
-Subject: Re: scrub: Tree block spanning stripes, ignored
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Cc: Qu Wenruo <quwenruo@cn.fujitsu.com>, btrfs <linux-btrfs@vger.kernel.org>
+Received: from plane.gmane.org ([80.91.229.3]:54593 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753992AbcDFVCW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 6 Apr 2016 17:02:22 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+	id 1anuag-0001IQ-Ts
+	for linux-btrfs@vger.kernel.org; Wed, 06 Apr 2016 23:02:19 +0200
+Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Wed, 06 Apr 2016 23:02:18 +0200
+Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Wed, 06 Apr 2016 23:02:18 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: unable to mount btrfs pool even with -oro,recovery,degraded,
+ unable to do 'btrfs restore'
+Date: Wed, 6 Apr 2016 21:02:07 +0000 (UTC)
+Message-ID: <pan$20f45$63875276$ec725eab$c0dca8d1@cox.net>
+References: <CAFKQ2BsxWYejWOPMCw5JuF-SXM03-papUu6LXM5KBNKthxAPxg@mail.gmail.com>
+Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Ok, I'm cautiously optimistic: after running btrfsck
---init-extent-tree --repair and running scrub, it finished without
-errors.
-Will run a file compare against my backup copy, but it seems the
-repair was successful.
+Ank Ular posted on Wed, 06 Apr 2016 11:34:39 -0400 as excerpted:
 
-Here is the btrfs-image btw:
-https://dl.dropboxusercontent.com/u/19330332/image.btrfs (821Mb)
+> I am currently unable to mount nor recover data from my btrfs storage
+> pool.
+> 
+> To the best of my knowledge, the situation did not arise from hard disk
+> failure. I believe the sequence of events is:
+> 
+> One or possibly more of my external devices had the USB 3.0
+> communications link fail. I recall seeing the message which is generated
+> when a USB based storage device is newly connected.
+> 
+> I was near the end of a 'btrfs balance' run which included adding
+> devices and converting the pool from RAID5 to RAID6. There were
+> approximately 1000 chunks {out of 22K+ chunks} left to go.
+> I was also participating in several torrents {this means my btrfs pool
+> was active}
+> 
+> From the ouput of 'dmesg', the section:
+> [   20.998071] BTRFS: device label FSgyroA
+> devid 9 transid 625039 /dev/sdm
+> [   20.999984] BTRFS: device label FSgyroA
+> devid 10 transid 625039 /dev/sdn
+> [   21.004127] BTRFS: device label FSgyroA
+> devid 11 transid 625039 /dev/sds
+> [   21.011808] BTRFS: device label FSgyroA
+> devid 12 transid 625039 /dev/sdu
+> 
+> bothers me because the transid value of these four devices doesn't match
+> the other 16 devices in the pool {should be 625065}. In theory,
+> I believe these should all have the same transid value. These four
+> devices are all on a single USB 3.0 port and this is the link I believe
+> went down and came back up. This is an external, four drive bay case
+> with 4 6T drives in it.
 
-Maybe you will be able to track down whatever caused this.
+Unfortunately it's somewhat common to have problems with USB attached 
+devices.  On a single-device btrfs it's not so much of a problem because 
+it all dies at the same time and should be conventionally rolled back to 
+the previous transaction commit, with fsyncs beyond that replayed by the 
+log.  A pair-device raid1 mode should be easily recovered as well, as 
+while the two may be out of sync, there's only the two copies and one 
+will consistently be ahead, so the btrfs should mount and a scrub can 
+easily be used to update the device that's behind.  Any other raid than 
+raid0 should work similarly when only a single device is behind.
 
-Regards,
-Ivan.
+But with multiple devices behind, like your four, things get far more 
+complex.
 
-On Sun, Apr 3, 2016 at 3:24 AM, Qu Wenruo <quwenruo.btrfs@gmx.com> wrote:
->
->
-> On 04/03/2016 12:29 AM, Ivan P wrote:
->>
->> It's about 800Mb, I think I could upload that.
->>
->> I ran it with the -s parameter, is that enough to remove all personal
->> info from the image?
->> Also, I had to run it with -w because otherwise it died on the same
->> corrupt node.
->
->
-> You can also use -c9 to further compress the data.
->
-> Thanks,
-> Qu
->
->>
->> On Fri, Apr 1, 2016 at 2:25 AM, Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
->>>
->>>
->>>
->>> Ivan P wrote on 2016/03/31 18:04 +0200:
->>>>
->>>>
->>>> Ok, it will take a while until I can attempt repairing it, since I
->>>> will have to order a spare HDD to copy the data to.
->>>> Should I take some sort of debug snapshot of the fs so you can take a
->>>> look at it? I think I read something about a snapshot that only
->>>> contains the fs but not the data that somewhere.
->>>
->>>
->>> That's btrfs-image.
->>>
->>> It would be good, but if your metadata is over 3G, I think it's would
->>> take a
->>> lot of time uploading.
->>>
->>> Thanks,
->>> Qu
->>>
->>>>
->>>> Regards,
->>>> Ivan.
->>>>
->>>> On Tue, Mar 29, 2016 at 3:57 AM, Qu Wenruo <quwenruo@cn.fujitsu.com>
->>>> wrote:
->>>>>
->>>>>
->>>>>
->>>>>
->>>>> Ivan P wrote on 2016/03/28 23:21 +0200:
->>>>>>
->>>>>>
->>>>>>
->>>>>> Well, the file in this inode is fine, I was able to copy it off the
->>>>>> disk. However, rm-ing the file causes a segmentation fault. Shortly
->>>>>> after that, I get a kernel oops. Same thing happens if I attempt to
->>>>>> re-run scrub.
->>>>>>
->>>>>> How can I delete that inode? Could deleting it destroy the filesystem
->>>>>> beyond repair?
->>>>>
->>>>>
->>>>>
->>>>>
->>>>> The kernel oops should protect you from completely destroying the fs.
->>>>>
->>>>> However it seems that the problem is beyond kernel's handle (kernel
->>>>> oops).
->>>>>
->>>>> So no safe recovery method now.
->>>>>
->>>>>   From now on, any repair advice from me *MAY* *destroy* your fs.
->>>>> So please do backup when you still can.
->>>>>
->>>>>
->>>>> The best possible try would be "btrfsck --init-extent-tree --repair".
->>>>>
->>>>> If it works, then mount it and run "btrfs balance start <mnt>".
->>>>> Lastly, umount and use btrfsck to re-check if it fixes the problem.
->>>>>
->>>>> Thanks,
->>>>> Qu
->>>>>
->>>>>
->>>>>>
->>>>>> Regards,
->>>>>> Ivan
->>>>>>
->>>>>> On Mon, Mar 28, 2016 at 3:10 AM, Qu Wenruo <quwenruo.btrfs@gmx.com>
->>>>>> wrote:
->>>>>>>
->>>>>>>
->>>>>>>
->>>>>>>
->>>>>>>
->>>>>>> Ivan P wrote on 2016/03/27 16:31 +0200:
->>>>>>>>
->>>>>>>>
->>>>>>>>
->>>>>>>>
->>>>>>>> Thanks for the reply,
->>>>>>>>
->>>>>>>> the raid1 array was created from scratch, so not converted from
->>>>>>>> ext*.
->>>>>>>> I used btrfs-progs version 4.2.3 on kernel 4.2.5 to create the
->>>>>>>> array,
->>>>>>>> btw.
->>>>>>>
->>>>>>>
->>>>>>>
->>>>>>>
->>>>>>>
->>>>>>> I don't remember any strange behavior after 4.0, so no clue here.
->>>>>>>
->>>>>>> Go to the subvolume 5 (the top-level subvolume), find inode 71723 and
->>>>>>> try
->>>>>>> to
->>>>>>> remove it.
->>>>>>> Then, use 'btrfs filesystem sync <mount point>' to sync the inode
->>>>>>> removal.
->>>>>>>
->>>>>>> Finally use latest btrfs-progs to check if the problem disappears.
->>>>>>>
->>>>>>> This problem seems to be quite strange, so I can't locate the root
->>>>>>> cause,
->>>>>>> but try to remove the file and hopes kernel can handle it.
->>>>>>>
->>>>>>> Thanks,
->>>>>>> Qu
->>>>>>>>
->>>>>>>>
->>>>>>>>
->>>>>>>>
->>>>>>>>
->>>>>>>> Is there a way to fix the current situation without taking the whole
->>>>>>>> data off the disk?
->>>>>>>> I'm not familiar with file systems terms, so what exactly could I
->>>>>>>> have
->>>>>>>> lost, if anything?
->>>>>>>>
->>>>>>>> Regards,
->>>>>>>> Ivan
->>>>>>>>
->>>>>>>> On Sun, Mar 27, 2016 at 4:23 PM, Qu Wenruo <quwenruo.btrfs@gmx.com
->>>>>>>> <mailto:quwenruo.btrfs@gmx.com>> wrote:
->>>>>>>>
->>>>>>>>
->>>>>>>>
->>>>>>>>        On 03/27/2016 05:54 PM, Ivan P wrote:
->>>>>>>>
->>>>>>>>            Read the info on the wiki, here's the rest of the
->>>>>>>> requested
->>>>>>>>            information:
->>>>>>>>
->>>>>>>>            # uname -r
->>>>>>>>            4.4.5-1-ARCH
->>>>>>>>
->>>>>>>>            # btrfs fi show
->>>>>>>>            Label: 'ArchVault'  uuid:
->>>>>>>> cd8a92b6-c5b5-4b19-b5e6-a839828d12d8
->>>>>>>>                     Total devices 1 FS bytes used 2.10GiB
->>>>>>>>                     devid    1 size 14.92GiB used 4.02GiB path
->>>>>>>> /dev/sdc1
->>>>>>>>
->>>>>>>>            Label: 'Vault'  uuid:
->>>>>>>> 013cda95-8aab-4cb2-acdd-2f0f78036e02
->>>>>>>>                     Total devices 2 FS bytes used 800.72GiB
->>>>>>>>                     devid    1 size 931.51GiB used 808.01GiB path
->>>>>>>> /dev/sda
->>>>>>>>                     devid    2 size 931.51GiB used 808.01GiB path
->>>>>>>> /dev/sdb
->>>>>>>>
->>>>>>>>            # btrfs fi df /mnt/vault/
->>>>>>>>            Data, RAID1: total=806.00GiB, used=799.81GiB
->>>>>>>>            System, RAID1: total=8.00MiB, used=128.00KiB
->>>>>>>>            Metadata, RAID1: total=2.00GiB, used=936.20MiB
->>>>>>>>            GlobalReserve, single: total=320.00MiB, used=0.00B
->>>>>>>>
->>>>>>>>            On Fri, Mar 25, 2016 at 3:16 PM, Ivan P
->>>>>>>> <chrnosphered@gmail.com
->>>>>>>>            <mailto:chrnosphered@gmail.com>> wrote:
->>>>>>>>
->>>>>>>>                Hello,
->>>>>>>>
->>>>>>>>                using kernel  4.4.5 and btrfs-progs 4.4.1, I today
->>>>>>>> ran a
->>>>>>>>                scrub on my
->>>>>>>>                2x1Tb btrfs raid1 array and it finished with 36
->>>>>>>>                unrecoverable errors
->>>>>>>>                [1], all blaming the treeblock 741942071296. Running
->>>>>>>> "btrfs
->>>>>>>>                check
->>>>>>>>                --readonly" on one of the devices lists that extent
->>>>>>>> as
->>>>>>>>                corrupted [2].
->>>>>>>>
->>>>>>>>                How can I recover, how much did I really lose, and
->>>>>>>> how
->>>>>>>> can
->>>>>>>> I
->>>>>>>>                prevent
->>>>>>>>                it from happening again?
->>>>>>>>                If you need me to provide more info, do tell.
->>>>>>>>
->>>>>>>>                [1] http://cwillu.com:8080/188.110.141.36/1
->>>>>>>>
->>>>>>>>
->>>>>>>>        This message itself is normal, it just means a tree block is
->>>>>>>>        crossing 64K stripe boundary.
->>>>>>>>        And due to scrub limit, it can check if it's good or bad.
->>>>>>>>        But....
->>>>>>>>
->>>>>>>>                [2] http://pastebin.com/xA5zezqw
->>>>>>>>
->>>>>>>>        This one is much more meaningful, showing several strange
->>>>>>>> bugs.
->>>>>>>>
->>>>>>>>        1. corrupt extent record: key 741942071296 168 1114112
->>>>>>>>        This means, this is a EXTENT_ITEM(168), and according to the
->>>>>>>> offset,
->>>>>>>>        it means the length of the extent is, 1088K, definitely not a
->>>>>>>> valid
->>>>>>>>        tree block size.
->>>>>>>>
->>>>>>>>        But according to [1], kernel think it's a tree block, which
->>>>>>>> is
->>>>>>>> quite
->>>>>>>>        strange.
->>>>>>>>        Normally, such mismatch only happens in fs converted from
->>>>>>>> ext*.
->>>>>>>>
->>>>>>>>        2. Backref 741942071296 root 5 owner 71723 offset 2589392896
->>>>>>>>        num_refs 0 not found in extent tree
->>>>>>>>
->>>>>>>>        num_refs 0, this is also strange, normal backref won't have a
->>>>>>>> zero
->>>>>>>>        refrence number.
->>>>>>>>
->>>>>>>>        3. bad metadata [741942071296, 741943185408) crossing stripe
->>>>>>>> boundary
->>>>>>>>        It could be a false warning fixed in latest btrfsck.
->>>>>>>>        But you're using 4.4.1, so I think that's the problem.
->>>>>>>>
->>>>>>>>        4. bad extent [741942071296, 741943185408), type mismatch
->>>>>>>> with
->>>>>>>> chunk
->>>>>>>>        This seems to explain the problem, a data extent appears in a
->>>>>>>>        metadata chunk.
->>>>>>>>        It seems that you're really using converted btrfs.
->>>>>>>>
->>>>>>>>        If so, just roll it back to ext*. Current btrfs-convert has
->>>>>>>> known
->>>>>>>>        bug but fix is still under review.
->>>>>>>>
->>>>>>>>        If want to use btrfs, use a newly created one instead of
->>>>>>>> btrfs-convert.
->>>>>>>>
->>>>>>>>        Thanks,
->>>>>>>>        Qu
->>>>>>>>
->>>>>>>>
->>>>>>>>                Regards,
->>>>>>>>                Soukyuu
->>>>>>>>
->>>>>>>>                P.S.: please add me to CC when replying as I did not
->>>>>>>>                subscribe to the
->>>>>>>>                mailing list. Majordomo won't let me use my hotmail
->>>>>>>> address
->>>>>>>>                and I
->>>>>>>>                don't want that much traffic on this address.
->>>>>>>>
->>>>>>>>            --
->>>>>>>>            To unsubscribe from this list: send the line "unsubscribe
->>>>>>>>            linux-btrfs" in
->>>>>>>>            the body of a message to majordomo@vger.kernel.org
->>>>>>>>            <mailto:majordomo@vger.kernel.org>
->>>>>>>>            More majordomo info at
->>>>>>>> http://vger.kernel.org/majordomo-info.html
->>>>>>>>
->>>>>>>>
->>>>>>>
->>>>>> --
->>>>>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs"
->>>>>> in
->>>>>> the body of a message to majordomo@vger.kernel.org
->>>>>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->>>>>>
->>>>>>
->>>>>
->>>>>
->>>>
->>>>
->>>
->>>
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->>
->
+Of course the first thing to note is that with btrfs still considered 
+stabilizing, but not fully stable and mature, the sysadmin's rule of 
+backups, in simple form that anything without at least one backup is 
+defined by that lack of backup as not worth the trouble, applies even 
+stronger than it would in the mature filesystem case.  Similarly, btrfs' 
+parity-raid is fairly new and not yet at the stability of other btrfs 
+raid types (raid1 and raid10, plus of course raid0 which implies you 
+don't care about recovery after failure anyway), strengthening the 
+application of the backups rule even further.
+
+So you definitely (triple-power!) either had backups you can restore 
+from, or were defining that data as not worth the hassle.  That means 
+worst-case, you can either restore from your backups, or you considered 
+the time and resources saved in not doing them more valuable than the 
+data you were risking.  Since either way you saved what was most 
+important to you, you can be happy. =:^)
+
+But even if you had backups, there's then a tradeoff between the hassle 
+of updating them and the risk of having to revert to them, and like me, 
+while you do have backups they may not be particularly current as the 
+limited risk didn't really justify updating the backups at a higher 
+frequency, so some effort to get more current versions is justified.  
+(I've actually been in that situation a couple times with some of my 
+btrfs.  Fortunately, in both cases I was able to btrfs restore and thus 
+/was/ able to recover basically current versions of everything that 
+mattered on the filesystem.)
+
+Anyway, that does sound like where you're at, you have backups but 
+they're several weeks old and you'd prefer to recover newer versions if 
+possible.  That I can definitely understand as I've been there. =:^)
+
+
+With four devices behind by (fortunately only) 26 transactions, and 
+luckily all at the same transaction/generation number, you're likely 
+beyond what the recovery mount option can deal with (I believe upto three 
+transactions, tho it might be a few more in newer kernels), and obviously 
+from your results, beyond what btrfs restore can deal with automatically 
+as well.
+
+There is still hope via btrfs restore, but you have to feed it more 
+information than it can get on its own, and while it's reasonably likely 
+that you can get that information and as a result a successful restore, 
+the process of finding the information and manually verifying that it's 
+appropriately complete is definitely rather more technical than the 
+automated process.  If you're sufficiently technically inclined (not at a 
+dev level, but at an admin level, able to understand technical concepts 
+and make use of them on the command line, etc), your chances at recovery 
+are still rather good.  If you aren't... better be getting out those 
+backups.
+
+There's a page on the wiki that describes the general process, but keep 
+in mind that the tools continue to evolve and the wiki page may not be 
+absolutely current, so what it describes might not be exactly what you 
+get, and you may have to do some translation between the current tools 
+and what's on the wiki.  (Actually, it looks like it is much more current 
+than it used to be, but I'm not sure whether all parts of the page have 
+been updated/rewritten or not.)
+
+https://btrfs.wiki.kernel.org/index.php/Restore
+
+You're at the "advanced usage" point as the automated method didn't work.
+
+The general idea is to use the btrfs-find-root command to get a list of 
+previous roots, their generation number (aka transaction ID, aka transid), 
+and their corresponding byte number (bytenr).  The bytenr is the value 
+you feed to btrfs restore, via the -t option.
+
+I'd start with the 625039 generation/transid that is the latest on the 
+four "behind" devices, hoping that the other devices still have it intact 
+as well.  Find the corresponding bytenr via btrfs-find-root, and feed it 
+to btrfs restore via -t.  But not yet in a live run!!
+
+First, use -t and -l together, to get a list of the tree-roots available 
+at that bytenr.  You want to pick a bytenr/generation that still has its 
+tree roots intact as much as possible.  Down near the bottom of the page 
+there's a bit of an explanation of what the object-IDs mean.  The low 
+number ones are filesystem-global and are quite critical.  256 up are 
+subvolumes and snapshots.  If a few snapshots are missing no big deal, 
+tho if something critical is in a subvolume, you'll want either it or a 
+snapshot of it available to try to restore from.
+
+Once you have a -t bytenr candidate with ideally all of the objects 
+intact, or as many as possible if not all of them, do a dry-run using the 
+-D option.  The output here will be the list of files it's trying to 
+recover and thus may be (hopefully is, with a reasonably populated 
+filesystem) quite long.  But if it looks reasonable, you can use the same 
+-t bytenr without the -D/dry-run option to do the actual restore.  Be 
+sure to use the various options restoring metadata, symlinks, extended 
+attributes, snapshots, etc, if appropriate.
+
+Of course you'll need enough space to restore to as well.  If that's an 
+issue, you can use the --path-regex option to restore the most important 
+stuff only.  There's an example on the page.
+
+
+If that's beyond your technical abilities or otherwise doesn't work, you 
+may be able to use some of the advanced options of btrfs check and btrfs 
+rescue to help, but I've never tried that myself and you'll be better off 
+with help from someone else, because unlike restore, which doesn't write 
+to the damaged filesystem the files are being restored from and thus 
+can't damage it further, these tools and options can destroy any 
+reasonable hope of recovery if they aren't used with appropriate 
+knowledge and care.
+
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

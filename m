@@ -1,34 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:52156 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:52423 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753435AbcDFVah (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 6 Apr 2016 17:30:37 -0400
-Date: Wed, 6 Apr 2016 14:30:34 -0700
+	id S1753518AbcDFVjp (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 6 Apr 2016 17:39:45 -0400
+Date: Wed, 6 Apr 2016 14:39:43 -0700
 From: Mark Fasheh <mfasheh@suse.de>
 To: fstests@vger.kernel.org, linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs: test snapshot create with invalid parent qgroup
-Message-ID: <20160406213034.GF2187@wotan.suse.de>
+Subject: Re: [PATCH] btrfs: test snapshot create with invalid parent qgroup
+Message-ID: <20160406213943.GG2187@wotan.suse.de>
 Reply-To: Mark Fasheh <mfasheh@suse.de>
+References: <20160406213034.GF2187@wotan.suse.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20160406213034.GF2187@wotan.suse.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Test that an invalid parent qgroup does not cause snapshot create to
-force the FS readonly.
+On Wed, Apr 06, 2016 at 02:30:34PM -0700, Mark Fasheh wrote:
+> Test that an invalid parent qgroup does not cause snapshot create to
+> force the FS readonly.
+> 
+> In btrfs, create_pending_snapshot() will go readonly on _any_ error return from
+> btrfs_qgroup_inherit(). If qgroups are enabled, a user can crash their fs by
+> just making a snapshot and asking it to inherit from an invalid qgroup.
+> 
+> This patch does exactly that test. If the FS goes readonly that will be
+> reported and we will know that a regression was introduced.
+> 
+> The btrfs fix this patch relates to can be found at the following url:
+> http://thread.gmane.org/gmane.comp.file-systems.btrfs/54755
+> 
+> Thanks,
+> 	--Mark
+> 
+> Signed-off-by: Mark Fasheh <mfasheh@suse.de>
 
-In btrfs, create_pending_snapshot() will go readonly on _any_ error return from
-btrfs_qgroup_inherit(). If qgroups are enabled, a user can crash their fs by
-just making a snapshot and asking it to inherit from an invalid qgroup.
-
-This patch does exactly that test. If the FS goes readonly that will be
-reported and we will know that a regression was introduced.
-
-The btrfs fix this patch relates to can be found at the following url:
-http://thread.gmane.org/gmane.comp.file-systems.btrfs/54755
-
-Thanks,
+Oops, wrong patch was attached. This is a version that actually works :)
 	--Mark
+
+--
+Mark Fasheh
+
+
+[PATCH] btrfs: test snapshot create with invalid parent qgroup
 
 Signed-off-by: Mark Fasheh <mfasheh@suse.de>
 ---
@@ -41,12 +55,12 @@ Signed-off-by: Mark Fasheh <mfasheh@suse.de>
 
 diff --git a/tests/btrfs/119 b/tests/btrfs/119
 new file mode 100755
-index 0000000..1692160
+index 0000000..a48d0ed
 --- /dev/null
 +++ b/tests/btrfs/119
 @@ -0,0 +1,70 @@
 +#! /bin/bash
-+# FS QA Test No. btrfs/120
++# FS QA Test No. btrfs/119
 +#
 +# Test that an invalid parent qgroup does not cause snapshot create to
 +# force the FS readonly.
@@ -117,11 +131,11 @@ index 0000000..1692160
 +exit
 diff --git a/tests/btrfs/119.out b/tests/btrfs/119.out
 new file mode 100644
-index 0000000..8e2ee9e
+index 0000000..e7b242e
 --- /dev/null
 +++ b/tests/btrfs/119.out
 @@ -0,0 +1,2 @@
-+QA output created by 120
++QA output created by 119
 +Silence is golden
 diff --git a/tests/btrfs/group b/tests/btrfs/group
 index a2fa412..19f4910 100644

@@ -1,54 +1,63 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:55522 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751085AbcDKRfG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 11 Apr 2016 13:35:06 -0400
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id 81931AC73
-	for <linux-btrfs@vger.kernel.org>; Mon, 11 Apr 2016 17:35:02 +0000 (UTC)
-From: David Sterba <dsterba@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.com>
-Subject: [PATCH 0/6] Add more vmalloc fallbacks to memory allocations
-Date: Mon, 11 Apr 2016 19:31:27 +0200
-Message-Id: <cover.1460394967.git.dsterba@suse.com>
+Received: from mail-wm0-f43.google.com ([74.125.82.43]:36995 "EHLO
+	mail-wm0-f43.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750725AbcDFEEi (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 Apr 2016 00:04:38 -0400
+Received: by mail-wm0-f43.google.com with SMTP id n3so45511685wmn.0
+        for <linux-btrfs@vger.kernel.org>; Tue, 05 Apr 2016 21:04:37 -0700 (PDT)
+MIME-Version: 1.0
+In-Reply-To: <CAOcd+r1TmxAE__Mh0AXpiMPjR=r+5u+H_sW+jv=QU54_skt0eA@mail.gmail.com>
+References: <1457608215-18089-1-git-send-email-alex@zadarastorage.com>
+	<CAD=QJKhYurWnNrXunX+_=KYamdTqnZ2tzO7_+gFxv12c1bd1Hg@mail.gmail.com>
+	<CAOcd+r1TmxAE__Mh0AXpiMPjR=r+5u+H_sW+jv=QU54_skt0eA@mail.gmail.com>
+Date: Wed, 6 Apr 2016 00:04:36 -0400
+Message-ID: <CAD=QJKjD+CcqkyXG_J6Tq0vLSrx3QD7X1NBU2oPeCt4TmKBd7A@mail.gmail.com>
+Subject: Re: [PATCH 2/2] btrfs: do not write corrupted metadata blocks to disk
+From: Nicholas D Steeves <nsteeves@gmail.com>
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+Hi Alex,
 
-inspired by a recent fix where we tried to kmalloc a 64k nodesize buffer,
-without the vmalloc fallback, and failed. This series add the "kmalloc-first
-and vmalloc-fallback" logic to more places, namely to the buffers used during
-send.  If the memory is not fragmented, kmalloc succeeds and does not take the
-resources required for the mappings.
+On 13 March 2016 at 05:51, Alex Lyakas <alex@zadarastorage.com> wrote:
+> Nicholas,
+>
+> On Sat, Mar 12, 2016 at 12:19 AM, Nicholas D Steeves <nsteeves@gmail.com> wrote:
+>> On 10 March 2016 at 06:10, Alex Lyakas <alex.bolshoy@gmail.com> wrote:
+>> Does this mean there is a good chance that everyone has corrupted
+>> metadata?
+> No, this definitely does not.
+>
+> The code that I added prevents btrfs from writing a metadata block, if
+> it somehow got corrupted before being sent to disk. If it happens, it
+> indicates a bug somewhere in the kernel. For example, if some other
+> kernel module erroneously uses a page-cache entry, which does not
+> belong to it (and contains btrfs metadata block or part of it).
 
-----------------------------------------------------------------
-The following changes since commit 56f23fdbb600e6087db7b009775b95ce07cc3195:
+Oh wow, I didn't know that was possible.  If I understand correctly,
+this patch makes using bcache a little bit safer?  (I don't use it
+since I'm too short on free time to what is--I suspect-- something
+that radically increases the chances of having to restore from backup)
 
-  Btrfs: fix file/data loss caused by fsync after rename and new inode (2016-04-06 17:01:44 -0700)
+>> Is there any way to verify/rebuild it without wipefs+mkfs+restore from backups?
+> To verify btrfs metadata: unmount the filesystem and run "btrfs check
+> ...". Do not specify the "repair" parameter. Another way to verify is
+> to run "btrfs-debug-tree" and redirect its standard output to
+> /dev/null. It should not print anything to standard error. But "btrfs
+> check" is faster.
 
-are available in the git repository at:
+Ah, that's exactly what I was looking for!  Thank you.  It took
+forever, and brought me back to what it was like to fsck large ext2
+volumes.  Is btrfs check conceptually identical to a read-only fsck of
+a ext2 volume?  If now how does it defer?
 
-  git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git dev/kvalloc
+Are the following sort of errors still an issue?:
+Extent back ref already exists for 2148837945344 parent 0 root 257
+leaf parent key incorrect 504993210368
+bad block 504993210368
+( https://btrfs.wiki.kernel.org/index.php/Btrfsck )
 
-for you to fetch changes up to c3e3930516c4d14ed1d6d70964fbc4f3faa36844:
-
-  btrfs: clone: use vmalloc only as fallback for nodesize bufer (2016-04-11 19:06:39 +0200)
-
-----------------------------------------------------------------
-David Sterba (6):
-      btrfs: send: use vmalloc only as fallback for send_buf
-      btrfs: send: use vmalloc only as fallback for read_buf
-      btrfs: send: use temporary variable to store allocation size
-      btrfs: send: use vmalloc only as fallback for clone_roots
-      btrfs: send: use vmalloc only as fallback for clone_sources_tmp
-      btrfs: clone: use vmalloc only as fallback for nodesize bufer
-
- fs/btrfs/ioctl.c | 13 ++++++++-----
- fs/btrfs/send.c  | 56 +++++++++++++++++++++++++++++++++++---------------------
- 2 files changed, 43 insertions(+), 26 deletions(-)
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-
+Cheers,
+Nicholas

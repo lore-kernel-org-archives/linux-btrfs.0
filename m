@@ -1,115 +1,63 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oi0-f49.google.com ([209.85.218.49]:35917 "EHLO
-	mail-oi0-f49.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1760183AbcDFAA4 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Apr 2016 20:00:56 -0400
-Received: by mail-oi0-f49.google.com with SMTP id y204so37902853oie.3
-        for <linux-btrfs@vger.kernel.org>; Tue, 05 Apr 2016 17:00:56 -0700 (PDT)
+Received: from mail-wm0-f44.google.com ([74.125.82.44]:34153 "EHLO
+	mail-wm0-f44.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754093AbcDFDyN (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Apr 2016 23:54:13 -0400
+Received: by mail-wm0-f44.google.com with SMTP id l6so47326559wml.1
+        for <linux-btrfs@vger.kernel.org>; Tue, 05 Apr 2016 20:54:12 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <CAPmG0jaa6ukFBu=Mx5bd+5ix21Np+rX7dGZiadnC5mGmgHkNtA@mail.gmail.com>
-References: <CA+WRLO-vu4B8X3Td12F0gueU70G6KwjRTD07MNwDrJfodAscNA@mail.gmail.com>
-	<pan$603b6$4c4f876d$1daf06de$ec75378d@cox.net>
-	<CAPmG0jaa6ukFBu=Mx5bd+5ix21Np+rX7dGZiadnC5mGmgHkNtA@mail.gmail.com>
-Date: Wed, 6 Apr 2016 10:00:45 +1000
-Message-ID: <CA+WRLO_xLa96+fepY1d_SFkQkEn0a6vzbuydHZ13Sw9UU=-1tQ@mail.gmail.com>
-Subject: Re: Scrub priority, am I using it wrong?
-From: Gareth Pye <gareth@cerberos.id.au>
-To: Henk Slager <eye1tm@gmail.com>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+In-Reply-To: <pan$84aa7$90a27a$80294ac8$88eb3ebd@cox.net>
+References: <56B505CB.8080604@gmail.com>
+	<pan$84aa7$90a27a$80294ac8$88eb3ebd@cox.net>
+Date: Tue, 5 Apr 2016 23:54:11 -0400
+Message-ID: <CAD=QJKgQhWtrU+8fn3rDbTbe_f-H0SgMFZdJgP4UP2hmOuzVGg@mail.gmail.com>
+Subject: Re: btrfs-progs4.4 with linux-3.16.7 (with truncation of extends patch)
+From: Nicholas D Steeves <nsteeves@gmail.com>
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Yeah, RAID5. I'm now doing pause and resume on it to let it take
-multiple nights, the idle should let other processes complete in
-reasonable time.
+Dear Duncan,
 
-On Wed, Apr 6, 2016 at 3:34 AM, Henk Slager <eye1tm@gmail.com> wrote:
-> On Tue, Apr 5, 2016 at 4:37 AM, Duncan <1i5t5.duncan@cox.net> wrote:
->> Gareth Pye posted on Tue, 05 Apr 2016 09:36:48 +1000 as excerpted:
->>
->>> I've got a btrfs file system set up on 6 drbd disks running on 2Tb
->>> spinning disks. The server is moderately loaded with various regular
->>> tasks that use a fair bit of disk IO, but I've scheduled my weekly btrfs
->>> scrub for the best quiet time in the week.
->>>
->>> The command that is run is:
->>> /usr/local/bin/btrfs scrub start -Bd -c idle /data
->>>
->>> Which is my best attempt to try and get it to have a low impact on user
->>> operations
->>>
->>> But iotop shows me:
->>>
->>> 1765 be/4 root       14.84 M/s    0.00 B/s  0.00 % 96.65 % btrfs scrub
->>> start -Bd -c idle /data
->>>  1767 be/4 root       14.70 M/s    0.00 B/s  0.00 % 95.35 % btrfs
->>> scrub start -Bd -c idle /data
->>>  1768 be/4 root       13.47 M/s    0.00 B/s  0.00 % 92.59 % btrfs
->>> scrub start -Bd -c idle /data
->>>  1764 be/4 root       12.61 M/s    0.00 B/s  0.00 % 88.77 % btrfs
->>> scrub start -Bd -c idle /data
->>>  1766 be/4 root       11.24 M/s    0.00 B/s  0.00 % 85.18 % btrfs
->>> scrub start -Bd -c idle /data
->>>  1763 be/4 root        7.79 M/s    0.00 B/s  0.00 % 63.30 % btrfs
->>> scrub start -Bd -c idle /data
->>> 28858 be/4 root        0.00 B/s  810.50 B/s  0.00 % 61.32 % [kworker/
->> u16:25]
->>>
->>>
->>> Which doesn't look like an idle priority to me. And the system sure
->>> feels like a system with a lot of heavy io going on. Is there something
->>> I'm doing wrong?
->
-> When I see the throughput numbers, it lets me think that the
-> filesystem is raid5 or raid6. On single or raid1 or raid10 one easily
-> gets around 100M/s without the notice/feeling of heavy IO ongoing,
-> mostly independent of scrub options.
->
->> Two points:
->>
->> 1) It appears btrfs scrub start's -c option only takes numeric class, so
->> try -c3 instead of -c idle.
->
-> Thanks to Duncan for pointing this out. I don't remember exactly, but
-> I think I also had issues with this in the past, but did not realize
-> or have a further look at it.
->
->> Works for me with the numeric class (same results as you with spelled out
->> class), tho I'm on ssd with multiple independent btrfs on partitions, the
->> biggest of which is 24 GiB, 18.something GiB used, which scrubs in all of
->> 20 seconds, so I don't need and hadn't tried the -c option at all until
->> now.
->>
->> 2) What a difference an ssd makes!
->>
->> $$ sudo btrfs scrub start -c3 /p
->> scrub started on /p, [...]
->>
->> $$ sudo iotop -obn1
->> Total DISK READ :     626.53 M/s | Total DISK WRITE :       0.00 B/s
->> Actual DISK READ:     596.93 M/s | Actual DISK WRITE:       0.00 B/s
->>  TID  PRIO  USER     DISK READ  DISK WRITE  SWAPIN      IO    COMMAND
->>  872 idle root      268.40 M/s    0.00 B/s  0.00 %  0.00 % btrfs scrub
->> start -c3 /p
->>  873 idle root      358.13 M/s    0.00 B/s  0.00 %  0.00 % btrfs scrub
->> start -c3 /p
->>
->> CPU bound, 0% IOWait even at idle IO priority, in addition to the
->> hundreds of M/s values per thread/device, here.  You OTOH are showing
->> under 20 M/s per thread/device on spinning rust, with an IOWait near 90%,
->> thus making it IO bound.
->
-> This low M/s and high IOWait is the kind of behavior I noticed with 3x
-> 2TB raid5 when scrubbing or balancing (no bcache activated, kernel
-> 4.3.3).
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Gmail seems to have mangled the draft of my reply :-/  It's at the bottom.
 
+On 06/02/16 12:57 AM, Duncan wrote:
 
+Most of the rest of the userspace tools, in particular, btrfs scrub,
+subvolume, balance, device, filesystem, send, receive, etc, work by
+making kernel calls to do the actual work in any case, and they will
+use the old calls if they need to. The compatibility discussion,
+meanwhile, is on making mkfs.btrfs (and btrfs-convert) check the
+running kernel and taking its defaults from what that kernel supports,
+instead of choosing arbitrary defaults that may be better when
+supported, but that older kernels don't actually support. Of course
+there will still be options to set these as desired regardless of
+defaults, just as there are now, so people using for instance booted
+to an old recovery kernel for system maintenance can still choose
+whatever options that version of mkfs.btrfs supports if they know
+they'll actually be mounting with a newer kernel, but the idea is
+simply to have mkfs.btrfs act more sanely /by/ /default/ when run on
+old kernels, so those same old kernels can actually mount a filesystem
+created with defaults. Along that line, as a distro maintainer of the
+btrfs-progs package, you may wish to patch the mkfs.btrfs defaults to
+what your kernel supports.
 
--- 
-Gareth Pye - blog.cerberos.id.au
-Level 2 MTG Judge, Melbourne, Australia
+Btrfs-progs will probably ship with kernel-sensitive defaults some
+time in the future (userspace 4.5 release, probably), but it doesn't
+do so yet...
+--
+
+Thank you very much for taking the time to write such a thorough
+reply. I'm not the maintainer of Debian's btrfs-progs package, but I
+am investigating the issues preventing the addition of btrfs-progs-4.4
+to the backports repository. [ edit: sorry it took me so long to
+reply, I've been swamped with work.  In the meantime, it seems v4.4
+has made it into the backports without warnings or compatibility
+checks, so I want to get my facts straight asap and patch the package
+with some kind of a notice/alert asap, if only through the
+debian/NEWS...since there isn't currently a way to depend on a
+particular kernel series, or ever a kernel version <= 4.4.0
+
+Cheers,
+Nicholas

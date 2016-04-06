@@ -1,62 +1,115 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from kolab.zavadatar.com ([46.101.124.0]:58209 "EHLO
-	kolab.zavadatar.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752125AbcDET1E convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Apr 2016 15:27:04 -0400
-Received: by mail-vk0-f45.google.com with SMTP id k1so30864291vkb.0
-        for <linux-btrfs@vger.kernel.org>; Tue, 05 Apr 2016 12:26:59 -0700 (PDT)
+Received: from mail-oi0-f49.google.com ([209.85.218.49]:35917 "EHLO
+	mail-oi0-f49.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1760183AbcDFAA4 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Apr 2016 20:00:56 -0400
+Received: by mail-oi0-f49.google.com with SMTP id y204so37902853oie.3
+        for <linux-btrfs@vger.kernel.org>; Tue, 05 Apr 2016 17:00:56 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <57040A51.5060800@gmail.com>
-References: <loom.20160330T155403-473@post.gmane.org>
-	<20160330184327.GO29474@carfax.org.uk>
-	<CAKWEGV5tsEJHmb_Y0aQD0fsc4v3Un4rWBzS5QUUGhFz2HyTGKg@mail.gmail.com>
-	<570400A4.4090609@gmail.com>
-	<CAKWEGV4TTbC4PW=VoxbRxFL0L4DrgrCVNaEca-xroHeQDQe4Rg@mail.gmail.com>
-	<57040A51.5060800@gmail.com>
-Date: Tue, 5 Apr 2016 12:26:58 -0700
-Message-ID: <CAKWEGV7Yev9mcfDKdg6FpDXHDoyzEx6a-uOywQGZYOoXC+mc9g@mail.gmail.com>
-Subject: Re: good documentation on btrfs internals and on disk layout
-From: Yauhen Kharuzhy <yauhen.kharuzhy@zavadatar.com>
-To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Cc: linux-btrfs@vger.kernel.org
+In-Reply-To: <CAPmG0jaa6ukFBu=Mx5bd+5ix21Np+rX7dGZiadnC5mGmgHkNtA@mail.gmail.com>
+References: <CA+WRLO-vu4B8X3Td12F0gueU70G6KwjRTD07MNwDrJfodAscNA@mail.gmail.com>
+	<pan$603b6$4c4f876d$1daf06de$ec75378d@cox.net>
+	<CAPmG0jaa6ukFBu=Mx5bd+5ix21Np+rX7dGZiadnC5mGmgHkNtA@mail.gmail.com>
+Date: Wed, 6 Apr 2016 10:00:45 +1000
+Message-ID: <CA+WRLO_xLa96+fepY1d_SFkQkEn0a6vzbuydHZ13Sw9UU=-1tQ@mail.gmail.com>
+Subject: Re: Scrub priority, am I using it wrong?
+From: Gareth Pye <gareth@cerberos.id.au>
+To: Henk Slager <eye1tm@gmail.com>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-2016-04-05 11:56 GMT-07:00 Austin S. Hemmelgarn <ahferroin7@gmail.com>:
-> On 2016-04-05 14:36, Yauhen Kharuzhy wrote:
+Yeah, RAID5. I'm now doing pause and resume on it to let it take
+multiple nights, the idle should let other processes complete in
+reasonable time.
+
+On Wed, Apr 6, 2016 at 3:34 AM, Henk Slager <eye1tm@gmail.com> wrote:
+> On Tue, Apr 5, 2016 at 4:37 AM, Duncan <1i5t5.duncan@cox.net> wrote:
+>> Gareth Pye posted on Tue, 05 Apr 2016 09:36:48 +1000 as excerpted:
 >>
->> 2016-04-05 11:15 GMT-07:00 Austin S. Hemmelgarn <ahferroin7@gmail.com>:
+>>> I've got a btrfs file system set up on 6 drbd disks running on 2Tb
+>>> spinning disks. The server is moderately loaded with various regular
+>>> tasks that use a fair bit of disk IO, but I've scheduled my weekly btrfs
+>>> scrub for the best quiet time in the week.
 >>>
->>> On 2016-04-05 13:53, Yauhen Kharuzhy wrote:
-
->>> In general, it isn't allowed, but we don't explicitly disallow it either.
->>> The worst case here is that the devices both get written two separately,
->>> and
->>> you end up with data not matching for correlated generation ID's.  The
->>> second scrub in this case shows no errors because the first one corrects
->>> them (even though they are reported as uncorrectable, which is a bug as
->>> far
->>> as I can tell), and from what I can tell from reading the code, it does
->>> this
->>> by just picking the highest generation ID and dropping the data from the
->>> lower generation.
->>
->>
->> Hmm... Sounds reasonable but how to detect if filesystem should be
->> checked by scrub after mounting? There is one way as I understand — to
->> check kernel logs after mount for any btrfs errors and this is not a
->> good way for case of some kind of automatic management.
+>>> The command that is run is:
+>>> /usr/local/bin/btrfs scrub start -Bd -c idle /data
+>>>
+>>> Which is my best attempt to try and get it to have a low impact on user
+>>> operations
+>>>
+>>> But iotop shows me:
+>>>
+>>> 1765 be/4 root       14.84 M/s    0.00 B/s  0.00 % 96.65 % btrfs scrub
+>>> start -Bd -c idle /data
+>>>  1767 be/4 root       14.70 M/s    0.00 B/s  0.00 % 95.35 % btrfs
+>>> scrub start -Bd -c idle /data
+>>>  1768 be/4 root       13.47 M/s    0.00 B/s  0.00 % 92.59 % btrfs
+>>> scrub start -Bd -c idle /data
+>>>  1764 be/4 root       12.61 M/s    0.00 B/s  0.00 % 88.77 % btrfs
+>>> scrub start -Bd -c idle /data
+>>>  1766 be/4 root       11.24 M/s    0.00 B/s  0.00 % 85.18 % btrfs
+>>> scrub start -Bd -c idle /data
+>>>  1763 be/4 root        7.79 M/s    0.00 B/s  0.00 % 63.30 % btrfs
+>>> scrub start -Bd -c idle /data
+>>> 28858 be/4 root        0.00 B/s  810.50 B/s  0.00 % 61.32 % [kworker/
+>> u16:25]
+>>>
+>>>
+>>> Which doesn't look like an idle priority to me. And the system sure
+>>> feels like a system with a lot of heavy io going on. Is there something
+>>> I'm doing wrong?
 >
-> There really isn't any way that I know of.  Personally, I just scrub all my
-> filesystems shortly after mount, but I also have pretty small filesystems
-> (the biggest are 64G) on relatively fast storage.  In theory, it might be
-> possible to parse the filesystems before mounting to check the device
-> generation numbers, but that may be just as expensive as just scrubbing the
-> filesystem (and you really should be scrubbing somewhat regularly anyway).
+> When I see the throughput numbers, it lets me think that the
+> filesystem is raid5 or raid6. On single or raid1 or raid10 one easily
+> gets around 100M/s without the notice/feeling of heavy IO ongoing,
+> mostly independent of scrub options.
+>
+>> Two points:
+>>
+>> 1) It appears btrfs scrub start's -c option only takes numeric class, so
+>> try -c3 instead of -c idle.
+>
+> Thanks to Duncan for pointing this out. I don't remember exactly, but
+> I think I also had issues with this in the past, but did not realize
+> or have a further look at it.
+>
+>> Works for me with the numeric class (same results as you with spelled out
+>> class), tho I'm on ssd with multiple independent btrfs on partitions, the
+>> biggest of which is 24 GiB, 18.something GiB used, which scrubs in all of
+>> 20 seconds, so I don't need and hadn't tried the -c option at all until
+>> now.
+>>
+>> 2) What a difference an ssd makes!
+>>
+>> $$ sudo btrfs scrub start -c3 /p
+>> scrub started on /p, [...]
+>>
+>> $$ sudo iotop -obn1
+>> Total DISK READ :     626.53 M/s | Total DISK WRITE :       0.00 B/s
+>> Actual DISK READ:     596.93 M/s | Actual DISK WRITE:       0.00 B/s
+>>  TID  PRIO  USER     DISK READ  DISK WRITE  SWAPIN      IO    COMMAND
+>>  872 idle root      268.40 M/s    0.00 B/s  0.00 %  0.00 % btrfs scrub
+>> start -c3 /p
+>>  873 idle root      358.13 M/s    0.00 B/s  0.00 %  0.00 % btrfs scrub
+>> start -c3 /p
+>>
+>> CPU bound, 0% IOWait even at idle IO priority, in addition to the
+>> hundreds of M/s values per thread/device, here.  You OTOH are showing
+>> under 20 M/s per thread/device on spinning rust, with an IOWait near 90%,
+>> thus making it IO bound.
+>
+> This low M/s and high IOWait is the kind of behavior I noticed with 3x
+> 2TB raid5 when scrubbing or balancing (no bcache activated, kernel
+> 4.3.3).
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 
-Yes, size matters — we have 96TB massive and scrubbing, rebalancing,
-replacing etc. can be expensive operations :)
-In fact, I implemented some kind of filesystem status reporting in
-kernel & btrfs progs already but still have no time to prepare this to
-sending as patches for commenting. But it will be done soon, I hope.
+
+
+-- 
+Gareth Pye - blog.cerberos.id.au
+Level 2 MTG Judge, Melbourne, Australia

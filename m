@@ -1,35 +1,140 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lf0-f45.google.com ([209.85.215.45]:36169 "EHLO
-	mail-lf0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756531AbcDGPq1 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 7 Apr 2016 11:46:27 -0400
-Received: by mail-lf0-f45.google.com with SMTP id g184so60165610lfb.3
-        for <linux-btrfs@vger.kernel.org>; Thu, 07 Apr 2016 08:46:26 -0700 (PDT)
+Received: from mail-ig0-f173.google.com ([209.85.213.173]:37905 "EHLO
+	mail-ig0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756577AbcDGTcY (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 7 Apr 2016 15:32:24 -0400
+Received: by mail-ig0-f173.google.com with SMTP id ui10so79625761igc.1
+        for <linux-btrfs@vger.kernel.org>; Thu, 07 Apr 2016 12:32:24 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <CADzmB21RH8HOHzAvCrD1ueSy-abT-J=-XAhn6yrQPW6USA1EQg@mail.gmail.com>
-References: <CADzmB21iEn03C5rtP=4dGe3mS8Tvd_+VUDLtczUQMotPcDOPNg@mail.gmail.com>
- <570070D4.80404@gmx.com> <CADzmB23BwRsrvCeM7ntPt=0wz4tEVc6Vu5Gm0X7tKoQ20n_WTQ@mail.gmail.com>
- <5705B0C0.6070606@cn.fujitsu.com> <CADzmB21RH8HOHzAvCrD1ueSy-abT-J=-XAhn6yrQPW6USA1EQg@mail.gmail.com>
-From: Patrik Lundquist <patrik.lundquist@gmail.com>
-Date: Thu, 7 Apr 2016 17:46:05 +0200
-Message-ID: <CAA7pwKPENs_xaw9M2=BWzPxcVP4TzML225BxwnSHiAPupSzrKQ@mail.gmail.com>
-Subject: Re: scrub: Tree block spanning stripes, ignored
-To: Ivan P <chrnosphered@gmail.com>
-Cc: btrfs <linux-btrfs@vger.kernel.org>
+In-Reply-To: <57064231.2070201@gmail.com>
+References: <CAFKQ2BsxWYejWOPMCw5JuF-SXM03-papUu6LXM5KBNKthxAPxg@mail.gmail.com>
+	<CAJCQCtQCLWca9YycOSTC8Q4c78a8AVe7uFXAoe2vqEUQVFHiNA@mail.gmail.com>
+	<57064231.2070201@gmail.com>
+Date: Thu, 7 Apr 2016 13:32:23 -0600
+Message-ID: <CAJCQCtSAaTYYMJhTTAsEXXDUzUdLEpJARHPRfihDNZrvZtEo4Q@mail.gmail.com>
+Subject: Re: unable to mount btrfs pool even with -oro,recovery,degraded,
+ unable to do 'btrfs restore'
+From: Chris Murphy <lists@colorremedies.com>
+To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Cc: Chris Murphy <lists@colorremedies.com>, Ank Ular <ankular.anime@gmail.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 7 April 2016 at 17:33, Ivan P <chrnosphered@gmail.com> wrote:
+On Thu, Apr 7, 2016 at 5:19 AM, Austin S. Hemmelgarn
+<ahferroin7@gmail.com> wrote:
+> On 2016-04-06 19:08, Chris Murphy wrote:
+>>
+>> On Wed, Apr 6, 2016 at 9:34 AM, Ank Ular <ankular.anime@gmail.com> wrote:
+>>
+>>>
+>>>  From the ouput of 'dmesg', the section:
+>>> [   20.998071] BTRFS: device label FSgyroA devid 9 transid 625039
+>>> /dev/sdm
+>>> [   20.999984] BTRFS: device label FSgyroA devid 10 transid 625039
+>>> /dev/sdn
+>>> [   21.004127] BTRFS: device label FSgyroA devid 11 transid 625039
+>>> /dev/sds
+>>> [   21.011808] BTRFS: device label FSgyroA devid 12 transid 625039
+>>> /dev/sdu
+>>>
+>>> bothers me because the transid value of these four devices doesn't
+>>> match the other 16 devices in the pool {should be 625065}. In theory,
+>>> I believe these should all have the same transid value. These four
+>>> devices are all on a single USB 3.0 port and this is the link I
+>>> believe went down and came back up.
+>>
+>>
+>> This is effectively a 4 disk failure and raid6 only allows for 2.
+>>
+>> Now, a valid complaint is that as soon as Btrfs is seeing write
+>> failures for 3 devices, it needs to go read-only. Specifically, it
+>> would go read only upon 3 or more write errors affecting a single full
+>> raid stripe (data and parity strips combined); and that's because such
+>> a write is fully failed.
 >
-> After running btrfsck --readonly again, the output is:
->
-> ===============================
-> Checking filesystem on /dev/sdb
-> UUID: 013cda95-8aab-4cb2-acdd-2f0f78036e02
-> checking extents
-> checking free space cache
-> block group 632463294464 has wrong amount of free space
-> failed to load free space cache for block group 632463294464
+> AFAIUI, currently, BTRFS will fail that stripe, but not retry it, _but_
+> after that, it will start writing out narrower stripes across the remaining
+> disks if there are enough for it to maintain the data consistency (so if
+> there's at least 3 for raid6 (I think, I don't remember if our lower limit
+> is 3 (which is degenerate), or 4 (which isn't, but most other software won't
+> let you use it for some stupid reason))).  Based on this, if the FS does get
+> recovered, make sure to run a balance on it too, otherwise you might have
+> some sub-optimal striping for some data.
 
-Mount once with option "clear_cache" and check again.
+I can see this being happening automatically with up to 2 device
+failures, so that all subsequent writes are fully intact stripe
+writes. But the instant there's a 3rd device failure, there's a rather
+large hole in the file system that can't be reconstructed. It's an
+invalid file system. I'm not sure what can be gained by allowing
+writes to continue, other than tying off loose ends (so to speak) with
+full stripe metadata writes for the purpose of making recovery
+possible and easier, but after that metadata is written - poof, go
+read only.
+
+
+
+
+>
+>
+>
+>>
+>> You literally might have to splice superblocks and write them to 16
+>> drives in exactly 3 locations per drive (well, maybe just one of them,
+>> and then delete the magic from the other two, and then 'btrfs rescue
+>> super-recover' should then use the one good copy to fix the two bad
+>> copies).
+>>
+>> Sigh.... maybe?
+>>
+>> In theory it's possible, I just don't know the state of the tools. But
+>> I'm fairly sure the best chance of recovery is going to be on the 4
+>> drives that abruptly vanished.  Their supers will be mostly correct or
+>> close to it: and that's what has all the roots in it: tree, fs, chunk,
+>> extent and csum. And all of those states are better farther in the
+>> past, rather than the 16 drives that have much newer writes.
+>
+> FWIW, it is actually possible to do this, I've done it before myself on much
+> smaller raid1 filesystems with single drives disappearing, and once with a
+> raid6 filesystem with a double drive failure.  It is by no means easy, and
+> there's not much in the tools that helps with it, but it is possible
+> (although I sincerely hope I never have to do it again myself).
+
+I think considering the idea of Btrfs is to be more scalable than past
+storage and filesystems have been, it needs to be able to deal with
+transient failures like this. In theory all available information is
+written on all the disks. This was a temporary failure. Once all
+devices are made available again, the fs should be able to figure out
+what to do, even so far as salvaging the writes that happened after
+the 4 devices went missing if those were successful full stripe
+writes.
+
+
+
+>>
+>>
+>> Of course it is possible there's corruption problems with those four
+>> drives having vanished while writes were incomplete. But if you're
+>> lucky, data write happen first, then metadata writes second, and only
+>> then is the super updated. So the super should point to valid metadata
+>> and that should point to valid data. If that order is wrong, then it's
+>> bad news and you have to look at backup roots. But *if* you get all
+>> the supers correct and on the same page, you can access the backup
+>> roots by using -o recovery if corruption is found with a normal mount.
+>
+> This though is where the potential issue is.  -o recovery will only go back
+> so many generations before refusing to mount, and I think that may be why
+> it's not working now..
+
+It also looks like none of the tools are considering the stale supers
+on the formerly missing 4 devices. I still think those are the best
+chance to recover because even if their most current data is wrong due
+to reordered writes not making it to stable storage, one of the
+available backups in those supers should be good.
+
+
+
+
+-- 
+Chris Murphy

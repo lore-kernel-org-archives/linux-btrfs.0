@@ -1,25 +1,46 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qg0-f49.google.com ([209.85.192.49]:34314 "EHLO
-	mail-qg0-f49.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755664AbcDGLbV (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 7 Apr 2016 07:31:21 -0400
-Received: by mail-qg0-f49.google.com with SMTP id c6so59959663qga.1
-        for <linux-btrfs@vger.kernel.org>; Thu, 07 Apr 2016 04:31:21 -0700 (PDT)
-Subject: Re: unable to mount btrfs pool even with -oro,recovery,degraded,
- unable to do 'btrfs restore'
-To: Chris Murphy <lists@colorremedies.com>, Ank Ular <ankular.anime@gmail.com>
-References: <CAFKQ2BsxWYejWOPMCw5JuF-SXM03-papUu6LXM5KBNKthxAPxg@mail.gmail.com>
- <CAJCQCtQCLWca9YycOSTC8Q4c78a8AVe7uFXAoe2vqEUQVFHiNA@mail.gmail.com>
- <57064231.2070201@gmail.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <570644F8.6030102@gmail.com>
-Date: Thu, 7 Apr 2016 07:31:04 -0400
+Received: from mail-oi0-f47.google.com ([209.85.218.47]:34701 "EHLO
+	mail-oi0-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753639AbcDGBMD (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 Apr 2016 21:12:03 -0400
+Received: by mail-oi0-f47.google.com with SMTP id s79so80568506oie.1
+        for <linux-btrfs@vger.kernel.org>; Wed, 06 Apr 2016 18:12:02 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <57064231.2070201@gmail.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+Date: Wed, 6 Apr 2016 18:12:01 -0700
+Message-ID: <CADNp-0Ta+jNZGtjT0NKc-ZXaYChh=sUOyCy1asn0=ZYBSWaU7Q@mail.gmail.com>
+Subject: Volume stuck after Checking UUID tree
+From: johnathan falk <johnathan.falk@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Sorry about the almost duplicate mail, Thunderbird's 'Send' button 
-happens to be right below 'Undo' when you open the edit menu...
+The drive mounts perfectly fine when you mount RO, but when you mount
+it rw it gives this (and eventually locks up the system as I can't
+restart it cleanly):
+
+kernel: BTRFS info (device sdb1): disk space caching is enabled
+Apr 06 17:09:16 kernel: BTRFS error (device sdb1): qgroup generation
+mismatch, marked as inconsistent
+Apr 06 17:09:17 kernel: BTRFS: checking UUID tree
+Apr 06 17:12:30 kernel: INFO: task btrfs-transacti:5701 blocked for
+more than 120 seconds.
+
+Bug reported on launch pad:
+https://bugs.launchpad.net/ubuntu/+source/linux/+bug/1555828
+
+When I mount the disk in journalctl -f:
+http://pastebin.com/1p6XppRb
+
+Went through Marc Merlin's suggestions to fix my drive and the btrfsck
+-S1/2/3 never finishes and gets stuck on checking quota groups. I also
+created a btrfs-image first thing.
+
+Any suggestions would be welcome as I don't know what to do.
+
+
+
+
+-- 
+Thank You,
+Johnathan Falk

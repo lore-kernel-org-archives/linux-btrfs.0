@@ -1,130 +1,353 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f179.google.com ([209.85.223.179]:35227 "EHLO
-	mail-io0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753157AbcDFXIN (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 Apr 2016 19:08:13 -0400
-Received: by mail-io0-f179.google.com with SMTP id g185so74406998ioa.2
-        for <linux-btrfs@vger.kernel.org>; Wed, 06 Apr 2016 16:08:12 -0700 (PDT)
+Received: from cn.fujitsu.com ([59.151.112.132]:11502 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1751318AbcDGA7B (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 Apr 2016 20:59:01 -0400
+Subject: Re: scrub: Tree block spanning stripes, ignored
+To: Ivan P <chrnosphered@gmail.com>, Qu Wenruo <quwenruo.btrfs@gmx.com>
+References: <CADzmB21iEn03C5rtP=4dGe3mS8Tvd_+VUDLtczUQMotPcDOPNg@mail.gmail.com>
+ <570070D4.80404@gmx.com>
+ <CADzmB23BwRsrvCeM7ntPt=0wz4tEVc6Vu5Gm0X7tKoQ20n_WTQ@mail.gmail.com>
+CC: btrfs <linux-btrfs@vger.kernel.org>
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Message-ID: <5705B0C0.6070606@cn.fujitsu.com>
+Date: Thu, 7 Apr 2016 08:58:40 +0800
 MIME-Version: 1.0
-In-Reply-To: <CAFKQ2BsxWYejWOPMCw5JuF-SXM03-papUu6LXM5KBNKthxAPxg@mail.gmail.com>
-References: <CAFKQ2BsxWYejWOPMCw5JuF-SXM03-papUu6LXM5KBNKthxAPxg@mail.gmail.com>
-Date: Wed, 6 Apr 2016 17:08:12 -0600
-Message-ID: <CAJCQCtQCLWca9YycOSTC8Q4c78a8AVe7uFXAoe2vqEUQVFHiNA@mail.gmail.com>
-Subject: Re: unable to mount btrfs pool even with -oro,recovery,degraded,
- unable to do 'btrfs restore'
-From: Chris Murphy <lists@colorremedies.com>
-To: Ank Ular <ankular.anime@gmail.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+In-Reply-To: <CADzmB23BwRsrvCeM7ntPt=0wz4tEVc6Vu5Gm0X7tKoQ20n_WTQ@mail.gmail.com>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Apr 6, 2016 at 9:34 AM, Ank Ular <ankular.anime@gmail.com> wrote:
 
+
+Ivan P wrote on 2016/04/06 21:39 +0200:
+> Ok, I'm cautiously optimistic: after running btrfsck
+> --init-extent-tree --repair and running scrub, it finished without
+> errors.
+> Will run a file compare against my backup copy, but it seems the
+> repair was successful.
+
+Better run btrfsck again, to ensure no other problem.
+
+For backref problem, did you rw mount the fs with some old kernel like 4.2?
+IIRC, I introduced a delayed_ref regression in that version.
+Maybe it's related to the bug.
+
+Thanks,
+Qu
 >
-> From the ouput of 'dmesg', the section:
-> [   20.998071] BTRFS: device label FSgyroA devid 9 transid 625039 /dev/sdm
-> [   20.999984] BTRFS: device label FSgyroA devid 10 transid 625039 /dev/sdn
-> [   21.004127] BTRFS: device label FSgyroA devid 11 transid 625039 /dev/sds
-> [   21.011808] BTRFS: device label FSgyroA devid 12 transid 625039 /dev/sdu
+> Here is the btrfs-image btw:
+> https://dl.dropboxusercontent.com/u/19330332/image.btrfs (821Mb)
 >
-> bothers me because the transid value of these four devices doesn't
-> match the other 16 devices in the pool {should be 625065}. In theory,
-> I believe these should all have the same transid value. These four
-> devices are all on a single USB 3.0 port and this is the link I
-> believe went down and came back up.
+> Maybe you will be able to track down whatever caused this.
+>
+> Regards,
+> Ivan.
+>
+> On Sun, Apr 3, 2016 at 3:24 AM, Qu Wenruo <quwenruo.btrfs@gmx.com> wrote:
+>>
+>>
+>> On 04/03/2016 12:29 AM, Ivan P wrote:
+>>>
+>>> It's about 800Mb, I think I could upload that.
+>>>
+>>> I ran it with the -s parameter, is that enough to remove all personal
+>>> info from the image?
+>>> Also, I had to run it with -w because otherwise it died on the same
+>>> corrupt node.
+>>
+>>
+>> You can also use -c9 to further compress the data.
+>>
+>> Thanks,
+>> Qu
+>>
+>>>
+>>> On Fri, Apr 1, 2016 at 2:25 AM, Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
+>>>>
+>>>>
+>>>>
+>>>> Ivan P wrote on 2016/03/31 18:04 +0200:
+>>>>>
+>>>>>
+>>>>> Ok, it will take a while until I can attempt repairing it, since I
+>>>>> will have to order a spare HDD to copy the data to.
+>>>>> Should I take some sort of debug snapshot of the fs so you can take a
+>>>>> look at it? I think I read something about a snapshot that only
+>>>>> contains the fs but not the data that somewhere.
+>>>>
+>>>>
+>>>> That's btrfs-image.
+>>>>
+>>>> It would be good, but if your metadata is over 3G, I think it's would
+>>>> take a
+>>>> lot of time uploading.
+>>>>
+>>>> Thanks,
+>>>> Qu
+>>>>
+>>>>>
+>>>>> Regards,
+>>>>> Ivan.
+>>>>>
+>>>>> On Tue, Mar 29, 2016 at 3:57 AM, Qu Wenruo <quwenruo@cn.fujitsu.com>
+>>>>> wrote:
+>>>>>>
+>>>>>>
+>>>>>>
+>>>>>>
+>>>>>> Ivan P wrote on 2016/03/28 23:21 +0200:
+>>>>>>>
+>>>>>>>
+>>>>>>>
+>>>>>>> Well, the file in this inode is fine, I was able to copy it off the
+>>>>>>> disk. However, rm-ing the file causes a segmentation fault. Shortly
+>>>>>>> after that, I get a kernel oops. Same thing happens if I attempt to
+>>>>>>> re-run scrub.
+>>>>>>>
+>>>>>>> How can I delete that inode? Could deleting it destroy the filesystem
+>>>>>>> beyond repair?
+>>>>>>
+>>>>>>
+>>>>>>
+>>>>>>
+>>>>>> The kernel oops should protect you from completely destroying the fs.
+>>>>>>
+>>>>>> However it seems that the problem is beyond kernel's handle (kernel
+>>>>>> oops).
+>>>>>>
+>>>>>> So no safe recovery method now.
+>>>>>>
+>>>>>>    From now on, any repair advice from me *MAY* *destroy* your fs.
+>>>>>> So please do backup when you still can.
+>>>>>>
+>>>>>>
+>>>>>> The best possible try would be "btrfsck --init-extent-tree --repair".
+>>>>>>
+>>>>>> If it works, then mount it and run "btrfs balance start <mnt>".
+>>>>>> Lastly, umount and use btrfsck to re-check if it fixes the problem.
+>>>>>>
+>>>>>> Thanks,
+>>>>>> Qu
+>>>>>>
+>>>>>>
+>>>>>>>
+>>>>>>> Regards,
+>>>>>>> Ivan
+>>>>>>>
+>>>>>>> On Mon, Mar 28, 2016 at 3:10 AM, Qu Wenruo <quwenruo.btrfs@gmx.com>
+>>>>>>> wrote:
+>>>>>>>>
+>>>>>>>>
+>>>>>>>>
+>>>>>>>>
+>>>>>>>>
+>>>>>>>> Ivan P wrote on 2016/03/27 16:31 +0200:
+>>>>>>>>>
+>>>>>>>>>
+>>>>>>>>>
+>>>>>>>>>
+>>>>>>>>> Thanks for the reply,
+>>>>>>>>>
+>>>>>>>>> the raid1 array was created from scratch, so not converted from
+>>>>>>>>> ext*.
+>>>>>>>>> I used btrfs-progs version 4.2.3 on kernel 4.2.5 to create the
+>>>>>>>>> array,
+>>>>>>>>> btw.
+>>>>>>>>
+>>>>>>>>
+>>>>>>>>
+>>>>>>>>
+>>>>>>>>
+>>>>>>>> I don't remember any strange behavior after 4.0, so no clue here.
+>>>>>>>>
+>>>>>>>> Go to the subvolume 5 (the top-level subvolume), find inode 71723 and
+>>>>>>>> try
+>>>>>>>> to
+>>>>>>>> remove it.
+>>>>>>>> Then, use 'btrfs filesystem sync <mount point>' to sync the inode
+>>>>>>>> removal.
+>>>>>>>>
+>>>>>>>> Finally use latest btrfs-progs to check if the problem disappears.
+>>>>>>>>
+>>>>>>>> This problem seems to be quite strange, so I can't locate the root
+>>>>>>>> cause,
+>>>>>>>> but try to remove the file and hopes kernel can handle it.
+>>>>>>>>
+>>>>>>>> Thanks,
+>>>>>>>> Qu
+>>>>>>>>>
+>>>>>>>>>
+>>>>>>>>>
+>>>>>>>>>
+>>>>>>>>>
+>>>>>>>>> Is there a way to fix the current situation without taking the whole
+>>>>>>>>> data off the disk?
+>>>>>>>>> I'm not familiar with file systems terms, so what exactly could I
+>>>>>>>>> have
+>>>>>>>>> lost, if anything?
+>>>>>>>>>
+>>>>>>>>> Regards,
+>>>>>>>>> Ivan
+>>>>>>>>>
+>>>>>>>>> On Sun, Mar 27, 2016 at 4:23 PM, Qu Wenruo <quwenruo.btrfs@gmx.com
+>>>>>>>>> <mailto:quwenruo.btrfs@gmx.com>> wrote:
+>>>>>>>>>
+>>>>>>>>>
+>>>>>>>>>
+>>>>>>>>>         On 03/27/2016 05:54 PM, Ivan P wrote:
+>>>>>>>>>
+>>>>>>>>>             Read the info on the wiki, here's the rest of the
+>>>>>>>>> requested
+>>>>>>>>>             information:
+>>>>>>>>>
+>>>>>>>>>             # uname -r
+>>>>>>>>>             4.4.5-1-ARCH
+>>>>>>>>>
+>>>>>>>>>             # btrfs fi show
+>>>>>>>>>             Label: 'ArchVault'  uuid:
+>>>>>>>>> cd8a92b6-c5b5-4b19-b5e6-a839828d12d8
+>>>>>>>>>                      Total devices 1 FS bytes used 2.10GiB
+>>>>>>>>>                      devid    1 size 14.92GiB used 4.02GiB path
+>>>>>>>>> /dev/sdc1
+>>>>>>>>>
+>>>>>>>>>             Label: 'Vault'  uuid:
+>>>>>>>>> 013cda95-8aab-4cb2-acdd-2f0f78036e02
+>>>>>>>>>                      Total devices 2 FS bytes used 800.72GiB
+>>>>>>>>>                      devid    1 size 931.51GiB used 808.01GiB path
+>>>>>>>>> /dev/sda
+>>>>>>>>>                      devid    2 size 931.51GiB used 808.01GiB path
+>>>>>>>>> /dev/sdb
+>>>>>>>>>
+>>>>>>>>>             # btrfs fi df /mnt/vault/
+>>>>>>>>>             Data, RAID1: total=806.00GiB, used=799.81GiB
+>>>>>>>>>             System, RAID1: total=8.00MiB, used=128.00KiB
+>>>>>>>>>             Metadata, RAID1: total=2.00GiB, used=936.20MiB
+>>>>>>>>>             GlobalReserve, single: total=320.00MiB, used=0.00B
+>>>>>>>>>
+>>>>>>>>>             On Fri, Mar 25, 2016 at 3:16 PM, Ivan P
+>>>>>>>>> <chrnosphered@gmail.com
+>>>>>>>>>             <mailto:chrnosphered@gmail.com>> wrote:
+>>>>>>>>>
+>>>>>>>>>                 Hello,
+>>>>>>>>>
+>>>>>>>>>                 using kernel  4.4.5 and btrfs-progs 4.4.1, I today
+>>>>>>>>> ran a
+>>>>>>>>>                 scrub on my
+>>>>>>>>>                 2x1Tb btrfs raid1 array and it finished with 36
+>>>>>>>>>                 unrecoverable errors
+>>>>>>>>>                 [1], all blaming the treeblock 741942071296. Running
+>>>>>>>>> "btrfs
+>>>>>>>>>                 check
+>>>>>>>>>                 --readonly" on one of the devices lists that extent
+>>>>>>>>> as
+>>>>>>>>>                 corrupted [2].
+>>>>>>>>>
+>>>>>>>>>                 How can I recover, how much did I really lose, and
+>>>>>>>>> how
+>>>>>>>>> can
+>>>>>>>>> I
+>>>>>>>>>                 prevent
+>>>>>>>>>                 it from happening again?
+>>>>>>>>>                 If you need me to provide more info, do tell.
+>>>>>>>>>
+>>>>>>>>>                 [1] http://cwillu.com:8080/188.110.141.36/1
+>>>>>>>>>
+>>>>>>>>>
+>>>>>>>>>         This message itself is normal, it just means a tree block is
+>>>>>>>>>         crossing 64K stripe boundary.
+>>>>>>>>>         And due to scrub limit, it can check if it's good or bad.
+>>>>>>>>>         But....
+>>>>>>>>>
+>>>>>>>>>                 [2] http://pastebin.com/xA5zezqw
+>>>>>>>>>
+>>>>>>>>>         This one is much more meaningful, showing several strange
+>>>>>>>>> bugs.
+>>>>>>>>>
+>>>>>>>>>         1. corrupt extent record: key 741942071296 168 1114112
+>>>>>>>>>         This means, this is a EXTENT_ITEM(168), and according to the
+>>>>>>>>> offset,
+>>>>>>>>>         it means the length of the extent is, 1088K, definitely not a
+>>>>>>>>> valid
+>>>>>>>>>         tree block size.
+>>>>>>>>>
+>>>>>>>>>         But according to [1], kernel think it's a tree block, which
+>>>>>>>>> is
+>>>>>>>>> quite
+>>>>>>>>>         strange.
+>>>>>>>>>         Normally, such mismatch only happens in fs converted from
+>>>>>>>>> ext*.
+>>>>>>>>>
+>>>>>>>>>         2. Backref 741942071296 root 5 owner 71723 offset 2589392896
+>>>>>>>>>         num_refs 0 not found in extent tree
+>>>>>>>>>
+>>>>>>>>>         num_refs 0, this is also strange, normal backref won't have a
+>>>>>>>>> zero
+>>>>>>>>>         refrence number.
+>>>>>>>>>
+>>>>>>>>>         3. bad metadata [741942071296, 741943185408) crossing stripe
+>>>>>>>>> boundary
+>>>>>>>>>         It could be a false warning fixed in latest btrfsck.
+>>>>>>>>>         But you're using 4.4.1, so I think that's the problem.
+>>>>>>>>>
+>>>>>>>>>         4. bad extent [741942071296, 741943185408), type mismatch
+>>>>>>>>> with
+>>>>>>>>> chunk
+>>>>>>>>>         This seems to explain the problem, a data extent appears in a
+>>>>>>>>>         metadata chunk.
+>>>>>>>>>         It seems that you're really using converted btrfs.
+>>>>>>>>>
+>>>>>>>>>         If so, just roll it back to ext*. Current btrfs-convert has
+>>>>>>>>> known
+>>>>>>>>>         bug but fix is still under review.
+>>>>>>>>>
+>>>>>>>>>         If want to use btrfs, use a newly created one instead of
+>>>>>>>>> btrfs-convert.
+>>>>>>>>>
+>>>>>>>>>         Thanks,
+>>>>>>>>>         Qu
+>>>>>>>>>
+>>>>>>>>>
+>>>>>>>>>                 Regards,
+>>>>>>>>>                 Soukyuu
+>>>>>>>>>
+>>>>>>>>>                 P.S.: please add me to CC when replying as I did not
+>>>>>>>>>                 subscribe to the
+>>>>>>>>>                 mailing list. Majordomo won't let me use my hotmail
+>>>>>>>>> address
+>>>>>>>>>                 and I
+>>>>>>>>>                 don't want that much traffic on this address.
+>>>>>>>>>
+>>>>>>>>>             --
+>>>>>>>>>             To unsubscribe from this list: send the line "unsubscribe
+>>>>>>>>>             linux-btrfs" in
+>>>>>>>>>             the body of a message to majordomo@vger.kernel.org
+>>>>>>>>>             <mailto:majordomo@vger.kernel.org>
+>>>>>>>>>             More majordomo info at
+>>>>>>>>> http://vger.kernel.org/majordomo-info.html
+>>>>>>>>>
+>>>>>>>>>
+>>>>>>>>
+>>>>>>> --
+>>>>>>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs"
+>>>>>>> in
+>>>>>>> the body of a message to majordomo@vger.kernel.org
+>>>>>>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>>>>>>>
+>>>>>>>
+>>>>>>
+>>>>>>
+>>>>>
+>>>>>
+>>>>
+>>>>
+>>> --
+>>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>>> the body of a message to majordomo@vger.kernel.org
+>>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>>>
+>>
+>
+>
 
-This is effectively a 4 disk failure and raid6 only allows for 2.
 
-Now, a valid complaint is that as soon as Btrfs is seeing write
-failures for 3 devices, it needs to go read-only. Specifically, it
-would go read only upon 3 or more write errors affecting a single full
-raid stripe (data and parity strips combined); and that's because such
-a write is fully failed.
-
-Now, maybe there's a way to just retry that stripe? During heavy
-writing, there are probably multiple stripes in flight. But in real
-short order the file system I think needs to face plant (read only or
-even a graceful crash) is better than continuing to write to n-4
-drives which is a bunch of bogus data, in effect.
-
-I'm gonna guess the superblock on all the surviving drives is wrong,
-because it sounds like the file system didn't immediately go read only
-when the four drives vanished?
-
-However, there is probably really valuable information in the
-superblocks of the failed devices. The file system should be
-consistent as of the generation on those missing devices. If there's a
-way to roll back the file system to those supers, including using
-their trees, then it should be possible to get the file system back -
-while accepting 100% data loss between generation 625039 and 625065.
-That's already 100% data loss anyway, if it was still doing n-4 device
-writes - those are bogus generations.
-
-Since this is entirely COW, nothing should be lost. All the data
-necessary to go back to generation 625039 is on all drives. And none
-of the data after that is usable anyway. Possibly even 625038 is the
-last good one on every single drive.
-
-So what you should try to do is get supers on every drive. There are
-three super blocks per drive. And there are four backups per super. So
-that's potentially 12 slots per drive times 20 drives. That's a lot of
-data for you to look through but that's what you have to do. The top
-task would be to see if the three supers are the same on each device,
-if so, then that cuts the comparison down by 1/3. And then compare the
-supers across devices. You can get this with btrfs-show-super -fa.
-
-You might look in another thread about how to setup an overlay for 16
-of the 20 drives; making certain you obfuscate the volume UUID of the
-original, only allowing that UUID to appear via the overlay (of the
-same volume+device UUID appear to the kernel, e.g. using LVM snapshots
-of either thick or thin variety and making both visible and then
-trying to mount one of them). Others have done this I think remotely
-to make sure the local system only sees the overlay devices. Anyway,
-this allows you to make destructive changes non-destructively. What I
-can't tell you off hand is if any of the tools will let you
-specifically accept the superblocks from the four "good" devices that
-went offline abruptly, and adapt them to to the other 16, i.e. rolling
-back the 16 that went too far forward without the other 4. Make sense?
-
-Note. You can't exactly copy the super block from one device to
-another because it contains a dev UUID. So first you need to look at a
-superblock for any two of the four "good" devices, and compare them.
-Exactly how  do they differ? They should only differ witih
-dev_item.devid, dev_item.uuid, and maybe dev_item.total_bytes and
-hopefully not but maybe dev_item.bytes_used. And then somehow adapt
-this for the other 16 drives. I'd love it if there's a tool that does
-this, maybe 'btrfs rescue super-recover' but there are no meaningful
-options with that command so I'm skeptical how it knows what's bad and
-what's good.
-
-You literally might have to splice superblocks and write them to 16
-drives in exactly 3 locations per drive (well, maybe just one of them,
-and then delete the magic from the other two, and then 'btrfs rescue
-super-recover' should then use the one good copy to fix the two bad
-copies).
-
-Sigh.... maybe?
-
-In theory it's possible, I just don't know the state of the tools. But
-I'm fairly sure the best chance of recovery is going to be on the 4
-drives that abruptly vanished.  Their supers will be mostly correct or
-close to it: and that's what has all the roots in it: tree, fs, chunk,
-extent and csum. And all of those states are better farther in the
-past, rather than the 16 drives that have much newer writes.
-
-Of course it is possible there's corruption problems with those four
-drives having vanished while writes were incomplete. But if you're
-lucky, data write happen first, then metadata writes second, and only
-then is the super updated. So the super should point to valid metadata
-and that should point to valid data. If that order is wrong, then it's
-bad news and you have to look at backup roots. But *if* you get all
-the supers correct and on the same page, you can access the backup
-roots by using -o recovery if corruption is found with a normal mount.
-
-
-
-
-
--- 
-Chris Murphy

@@ -1,75 +1,106 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:40330 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750928AbcDEDCt (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 4 Apr 2016 23:02:49 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1anHGR-0007Df-Bm
-	for linux-btrfs@vger.kernel.org; Tue, 05 Apr 2016 05:02:47 +0200
-Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 05 Apr 2016 05:02:47 +0200
-Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 05 Apr 2016 05:02:47 +0200
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: [PATCH 00/13 v3] Introduce device state 'failed', Hot spare and
- Auto replace
-Date: Tue, 5 Apr 2016 03:02:41 +0000 (UTC)
-Message-ID: <pan$18bc7$19b02793$bd43daae$43f1ae98@cox.net>
+Received: from kolab.zavadatar.com ([46.101.124.0]:59620 "EHLO
+	kolab.zavadatar.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753175AbcDGUAb (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 7 Apr 2016 16:00:31 -0400
+Date: Thu, 7 Apr 2016 23:00:25 +0300
+From: Yauhen Kharuzhy <yauhen.kharuzhy@zavadatar.com>
+To: Anand Jain <anand.jain@oracle.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 10/13] btrfs: introduce helper functions to perform hot
+ replace
+Message-ID: <20160407200024.GA12278@jeknote.loshitsa1.net>
 References: <1459560651-14809-1-git-send-email-anand.jain@oracle.com>
-	<20160404020043.47ad35bf@jupiter.sol.kaishome.de>
-	<pan$5fc01$c48cb58$b5aadf3d$c2af2f78@cox.net>
-	<20160404221513.7fd31f8f@jupiter.sol.kaishome.de>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+ <1459560651-14809-11-git-send-email-anand.jain@oracle.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1459560651-14809-11-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Kai Krakow posted on Mon, 04 Apr 2016 22:15:13 +0200 as excerpted:
+On Sat, Apr 02, 2016 at 09:30:48AM +0800, Anand Jain wrote:
+> Hot replace / auto replace is important volume manager feature
+> and is critical to the data center operations, so that the degraded
+> volume can be brought back to a healthy state at the earliest and
+> without manual intervention.
+> 
+> This modifies the existing replace code to suite the need of auto
+> replace, in the long run I hope both the codes to be merged.
+> 
+> Signed-off-by: Anand Jain <anand.jain@oracle.com>
+> Tested-by: Austin S. Hemmelgarn <ahferroin7@gmail.com>
+> ---
+>  fs/btrfs/dev-replace.c | 43 +++++++++++++++++++++++++++++++++++++++++++
+>  fs/btrfs/dev-replace.h |  1 +
+>  2 files changed, 44 insertions(+)
+> 
+> diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
+> index 2b926867d136..ceab4c51db32 100644
+> --- a/fs/btrfs/dev-replace.c
+> +++ b/fs/btrfs/dev-replace.c
+> @@ -957,3 +957,46 @@ void btrfs_bio_counter_inc_blocked(struct btrfs_fs_info *fs_info)
+>  				     &fs_info->fs_state));
+>  	}
+>  }
+> +
+> +int btrfs_auto_replace_start(struct btrfs_root *root,
+> +				struct btrfs_device *src_device)
+> +{
+> +	int ret;
+> +	char *tgt_path;
+> +	char *src_path;
+> +	struct btrfs_fs_info *fs_info = root->fs_info;
+> +
+> +	if (fs_info->sb->s_flags & MS_RDONLY)
+> +		return -EROFS;
+> +
+> +	btrfs_dev_replace_lock(&fs_info->dev_replace, 0);
+> +	if (btrfs_dev_replace_is_ongoing(&fs_info->dev_replace)) {
+> +		btrfs_dev_replace_unlock(&fs_info->dev_replace, 0);
+> +		return -EBUSY;
+> +	}
+> +	btrfs_dev_replace_unlock(&fs_info->dev_replace, 0);
+> +
+> +	if (btrfs_get_spare_device(&tgt_path)) {
+> +		btrfs_err(root->fs_info,
+> +			"No spare device found/configured in the kernel");
+> +		return -EINVAL;
+> +	}
+> +
+> +	rcu_read_lock();
+> +	src_path = kstrdup(rcu_str_deref(src_device->name), GFP_ATOMIC);
+> +	rcu_read_unlock();
+> +	if (!src_path) {
 
-> Your argument would be less important if it did copy-back, tho... ;-)
+btrfs_put_spare_device(tgt_path) is needed here to put spare device
+back in list.
 
-FWIW, I completely misunderstood your description of copy-back in my 
-original reply, and didn't realize what you meant (and thus my mistaken 
-understanding) until I read some of the other replies today.
-
-What I /thought/ you meant was some totally nonsense/WTF idea of keeping 
-the newly substituted hot-spare in place, and taking the newly vacated 
-"defective" device and putting it back in the the hot-spare list.
-
-That rightly seemed stupid to me (it's a device just replaced as 
-defective, now you're putting it back as a hot-spare? WTF?), but that's 
-how I read what you were asking for and saying that other solutions did, 
-so...
-
-Of course today when I read the other replies and realized what you were 
-/actually/ describing, returning the hot-spare to hot-spare status after 
-physically replacing the actually failed drive with a new one and 
-logically replacing the hot-spare with it in the filesystem, thereby 
-making the hot-spare a spare once again, my reaction was "DUH!! NOW it 
-makes sense!"  But I was just going to let it go and go hide my original 
-misunderstanding in a hole somewhere.
-
-But now you replied to my reply, so I figured I would reply back, 
-explaining what on earth I was thinking when I wrote it, and why it must 
-have seemed rather out of left field and didn't make much sense -- 
-because what I was thinking you were suggesting /didn't/ make sense, but 
-of course that's because I totally misunderstood what you were suggesting.
-
-So now my very-much-former misunderstanding is out of the hole and posted 
-for everyone to see and have a good laugh at, and I'm much the wiser on 
-what copy-back actually entails. =:^)
-
-Tho it seems I was correct in the one aspect, currently ENotImplemented, 
-even if my idea of what you were asking to be implemented was totally and 
-completely off-the-wall wrong.
+> +		kfree(tgt_path);
+> +		return -ENOMEM;
+> +	}
+> +	ret = btrfs_dev_replace_start(root, tgt_path,
+> +					src_device->devid, src_path,
+> +		BTRFS_IOCTL_DEV_REPLACE_CONT_READING_FROM_SRCDEV_MODE_AVOID);
+> +	if (ret)
+> +		btrfs_put_spare_device(tgt_path);
+> +
+> +	kfree(tgt_path);
+> +	kfree(src_path);
+> +
+> +	return 0;
+> +}
+> diff --git a/fs/btrfs/dev-replace.h b/fs/btrfs/dev-replace.h
+> index e922b42d91df..b918b9d6e5df 100644
+> --- a/fs/btrfs/dev-replace.h
+> +++ b/fs/btrfs/dev-replace.h
+> @@ -46,4 +46,5 @@ static inline void btrfs_dev_replace_stats_inc(atomic64_t *stat_value)
+>  {
+>  	atomic64_inc(stat_value);
+>  }
+> +int btrfs_auto_replace_start(struct btrfs_root *root, struct btrfs_device *src_device);
+>  #endif
+> -- 
+> 2.7.0
 
 -- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+Yauhen Kharuzhy

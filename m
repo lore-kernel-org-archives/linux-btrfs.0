@@ -1,186 +1,83 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-vk0-f42.google.com ([209.85.213.42]:34141 "EHLO
-	mail-vk0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754902AbcDEHpM (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Apr 2016 03:45:12 -0400
-Received: by mail-vk0-f42.google.com with SMTP id e185so7446213vkb.1
-        for <linux-btrfs@vger.kernel.org>; Tue, 05 Apr 2016 00:45:11 -0700 (PDT)
+Received: from mail02.iobjects.de ([188.40.134.68]:54171 "EHLO
+	mail02.iobjects.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756821AbcDGQoX (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 7 Apr 2016 12:44:23 -0400
+Received: from tux.wizards.de (p579D0048.dip0.t-ipconnect.de [87.157.0.72])
+	by mail02.iobjects.de (Postfix) with ESMTPSA id 3C22B416015F
+	for <linux-btrfs@vger.kernel.org>; Thu,  7 Apr 2016 18:44:21 +0200 (CEST)
+Received: from [192.168.100.223] (ragnarok [192.168.100.223])
+	by tux.wizards.de (Postfix) with ESMTP id 8288E11C02AA
+	for <linux-btrfs@vger.kernel.org>; Thu,  7 Apr 2016 18:44:20 +0200 (CEST)
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+From: =?UTF-8?Q?Holger_Hoffst=c3=a4tte?=
+	<holger.hoffstaette@googlemail.com>
+Subject: WARN_ON in record_root_in_trans() when deleting freshly renamed
+ subvolume
+Message-ID: <57068E64.7000408@googlemail.com>
+Date: Thu, 7 Apr 2016 18:44:20 +0200
 MIME-Version: 1.0
-Date: Tue, 5 Apr 2016 10:45:09 +0300
-Message-ID: <CAC8ULPYz=Cj=PtE2mKVjn-WHXwCz-y2-p4s-3T+XMNtjWdF2ZA@mail.gmail.com>
-Subject: BTRFS warnings in dmesg / scrub errors - Transaction aborted ( error
- -95 )
-From: Robert Munteanu <robert.munteanu@gmail.com>
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 Hi,
 
-I have a btrfs partition which exhibits some strange behaviours:
+Looks like I just found an exciting new corner case.
+kernel 4.4.6 with btrfs ~4.6, so 4.6 should reproduce.
 
-- btrfs scrub seems to force the filesystem in read-only mode
-- transactions aborted with error -95
+Try on a fresh volume:
 
-For context, this is a partition converted from ext4 which 'survived'
-through the issues described at
+$btrfs subvolume create foo
+Create subvolume './foo'
+$sync
+$btrfs subvolume snapshot foo foo-1
+Create a snapshot of 'foo' in './foo-1'
+$sync
+$mv foo-1 foo.new
+$btrfs subvolume delete foo.new 
+Delete subvolume (no-commit): '/mnt/test/foo.new'
+$dmesg 
+[  226.923316] ------------[ cut here ]------------
+[  226.923339] WARNING: CPU: 1 PID: 5863 at fs/btrfs/transaction.c:319 record_root_in_trans+0xd6/0x100 [btrfs]()
+[  226.923340] Modules linked in: auth_rpcgss oid_registry nfsv4 btrfs xor raid6_pq loop nfs lockd grace sunrpc autofs4 sch_fq_codel radeon snd_hda_codec_realtek x86_pkg_temp_thermal snd_hda_codec_generic coretemp crc32_pclmul crc32c_intel aesni_intel i2c_algo_bit uvcvideo snd_hda_codec_hdmi aes_x86_64 drm_kms_helper videobuf2_vmalloc glue_helper videobuf2_memops syscopyarea lrw sysfillrect gf128mul videobuf2_v4l2 sysimgblt snd_usb_audio fb_sys_fops ablk_helper snd_hda_intel videobuf2_core ttm cryptd snd_hwdep v4l2_common usbhid snd_hda_codec snd_usbmidi_lib videodev snd_rawmidi drm snd_hda_core snd_seq_device i2c_i801 snd_pcm i2c_core snd_timer snd r8169 soundcore mii parport_pc parport
+[  226.923365] CPU: 1 PID: 5863 Comm: ls Not tainted 4.4.6 #1
+[  226.923366] Hardware name: Gigabyte Technology Co., Ltd. P67-DS3-B3/P67-DS3-B3, BIOS F1 05/06/2011
+[  226.923367]  0000000000000000 ffff8800da677d20 ffffffff813181a8 0000000000000000
+[  226.923368]  ffffffffa0aacdbf ffff8800da677d58 ffffffff810507b2 ffff880601e90800
+[  226.923369]  ffff8800dacf10a0 ffff880601e90800 ffff880601e909f0 0000000000000001
+[  226.923371] Call Trace:
+[  226.923374]  [<ffffffff813181a8>] dump_stack+0x4d/0x65
+[  226.923376]  [<ffffffff810507b2>] warn_slowpath_common+0x82/0xc0
+[  226.923378]  [<ffffffff810508aa>] warn_slowpath_null+0x1a/0x20
+[  226.923387]  [<ffffffffa0a2cf46>] record_root_in_trans+0xd6/0x100 [btrfs]
+[  226.923395]  [<ffffffffa0a2db24>] btrfs_record_root_in_trans+0x44/0x70 [btrfs]
+[  226.923404]  [<ffffffffa0a2fb5e>] start_transaction+0x9e/0x4c0 [btrfs]
+[  226.923412]  [<ffffffffa0a2ffd7>] btrfs_join_transaction+0x17/0x20 [btrfs]
+[  226.923421]  [<ffffffffa0a359b5>] btrfs_dirty_inode+0x35/0xd0 [btrfs]
+[  226.923430]  [<ffffffffa0a35acd>] btrfs_update_time+0x7d/0xb0 [btrfs]
+[  226.923432]  [<ffffffff81187028>] touch_atime+0x88/0xa0
+[  226.923434]  [<ffffffff8117ec9b>] iterate_dir+0xdb/0x120
+[  226.923435]  [<ffffffff8117f0c8>] SyS_getdents+0x88/0xf0
+[  226.923437]  [<ffffffff8117edb0>] ? fillonedir+0xd0/0xd0
+[  226.923439]  [<ffffffff815b8257>] entry_SYSCALL_64_fastpath+0x12/0x6a
+[  226.923440] ---[ end trace 9c78caf253e284fe ]---
 
-  http://www.spinics.net/lists/linux-btrfs/msg44660.html
+Code looks like:
 
-The errors that I receive at runtime, during regular usage are
+..
+static int record_root_in_trans(struct btrfs_trans_handle *trans,
+			       struct btrfs_root *root)
+{
+	if (test_bit(BTRFS_ROOT_REF_COWS, &root->state) &&
+	    root->last_trans < trans->transid) {
+		WARN_ON(root == root->fs_info->extent_root);
+		WARN_ON(root->commit_root != root->node);
+..
 
-[   49.297851] ------------[ cut here ]------------
-[   49.297905] WARNING: CPU: 0 PID: 72 at ../fs/btrfs/inode.c:2937
-btrfs_finish_ordered_io+0x5f5/0x650 [b
-trfs]()
-[   49.297911] BTRFS warning (device sda1):
-btrfs_finish_ordered_io:2937: Aborting unused transaction(unk
-nown).
-[   49.297916] BTRFS: Transaction aborted (error -95)
-[   49.297919] Modules linked in: bnep af_packet vboxpci(O)
-vboxnetadp(O) vboxnetflt(O) ip6t_REJECT nf_re
-ject_ipv6 nf_log_ipv6 nf_conntrack_ipv6 nf_defrag_ipv6 ip6table_raw
-ipt_REJECT nf_reject_ipv4 xt_tcpudp x
-t_pkttype nf_log_ipv4 nf_log_common xt_LOG xt_limit iptable_raw xt_CT
-iptable_filter vboxdrv(O) ip6table_
-mangle nf_conntrack_netbios_ns nf_conntrack_broadcast
-nf_conntrack_ipv4 nf_defrag_ipv4 ip_tables xt_connt
-rack nf_conntrack ip6table_filter ip6_tables x_tables msr xfs
-libcrc32c snd_hda_codec_hdmi snd_hda_codec_
-realtek snd_hda_codec_generic i915 raid1 joydev intel_rapl
-drm_kms_helper fb_sys_fops x86_pkg_temp_therma
-l syscopyarea intel_powerclamp sysfillrect sysimgblt i2c_algo_bit
-coretemp kvm_intel i2c_designware_platform snd_hda_intel
-i2c_designware_core 8250_dw md_mod ppdev kvm snd_hda_codec
-[   49.297991]  snd_hda_core irqbypass snd_seq crct10dif_pclmul
-snd_hwdep crc32_pclmul ghash_clmulni_intel aesni_intel snd_pcm
-aes_x86_64 hci_uart lrw gf128mul btbcm glue_helper ablk_helper cryptd
-snd_seq_device pcspkr r8169 btqca i2c_i801 btintel snd_timer mii
-bluetooth parport_pc dm_mod rfkill battery 8250_fintek parport snd
-idma64 virt_dma pinctrl_sunrisepoint pinctrl_intel intel_lpss_acpi
-soundcore mei_me intel_lpss_pci intel_lpss mei acpi_als mfd_core
-kfifo_buf industrialio shpchp tpm_tis thermal acpi_pad fan tpm fjes
-hid_generic hid_logitech_hidpp hid_logitech_dj usbhid btrfs xor uas
-usb_storage mxm_wmi raid6_pq crc32c_intel serio_raw nvidia_uvm(PO)
-nvidia(PO) sr_mod cdrom xhci_pci xhci_hcd usbcore usb_common drm
-i2c_hid wmi video button sg
-[   49.298081] CPU: 0 PID: 72 Comm: kworker/u8:4 Tainted: P
-O    4.5.0-2-default #1
-[   49.298084] Hardware name: MSI MS-7971/H170A PC MATE (MS-7971),
-BIOS B.60 02/23/2016
-[   49.298131] Workqueue: btrfs-endio-write btrfs_endio_write_helper [btrfs]
-[   49.298135]  0000000000000000 ffff88045b837c98 ffffffff81395921
-ffff88045b837ce0
-[   49.298142]  ffffffffa0d096be ffff88045b837cd0 ffffffff8107d912
-ffff880089ab85c8
-[   49.298147]  ffff88045b9c5000 00000000ffffffa1 ffff88045dea5690
-ffff880459efd0c0
-[   49.298153] Call Trace:
-[   49.298170]  [<ffffffff8101b175>] try_stack_unwind+0x175/0x190
-[   49.298185]  [<ffffffff8101a0c9>] dump_trace+0x69/0x3a0
-[   49.298193]  [<ffffffff8101b1db>] show_trace_log_lvl+0x4b/0x60
-[   49.298201]  [<ffffffff8101a50c>] show_stack_log_lvl+0x10c/0x180
-[   49.298208]  [<ffffffff8101b275>] show_stack+0x25/0x50
-[   49.298218]  [<ffffffff81395921>] dump_stack+0x63/0x82
-[   49.298230]  [<ffffffff8107d912>] warn_slowpath_common+0x82/0xc0
-[   49.298240]  [<ffffffff8107d99c>] warn_slowpath_fmt+0x4c/0x50
-[   49.298281]  [<ffffffffa0c8f885>] btrfs_finish_ordered_io+0x5f5/0x650 [btrfs]
-[   49.298326]  [<ffffffffa0c8fbb5>] finish_ordered_fn+0x15/0x20 [btrfs]
-[   49.298369]  [<ffffffffa0cb74bb>] btrfs_scrubparity_helper+0xcb/0x350 [btrfs]
-[   49.298413]  [<ffffffffa0cb77ce>] btrfs_endio_write_helper+0xe/0x10 [btrfs]
-[   49.298421]  [<ffffffff81095c3c>] process_one_work+0x15c/0x4b0
-[   49.298428]  [<ffffffff81095fd8>] worker_thread+0x48/0x4e0
-[   49.298436]  [<ffffffff8109beb9>] kthread+0xc9/0xe0
-[   49.298445]  [<ffffffff816cc38f>] ret_from_fork+0x3f/0x70
-[   49.302378] DWARF2 unwinder stuck at ret_from_fork+0x3f/0x70
+There's been a few journal/recovery/directory consistency patches recently,
+so maybe it's a corner case or an older problem. I'll try to bisect, but
+meanwhile wanted to report it for discussion.
 
-[   49.302383] Leftover inexact backtrace:
+Holger
 
-[   49.302392]  [<ffffffff8109bdf0>] ? kthread_worker_fn+0x180/0x180
-[   49.302488] ---[ end trace a383d63cdc6dbae3 ]---
-[   49.302502] BTRFS warning (device sda1):
-btrfs_finish_ordered_io:2937: Aborting unused transaction(unknown).
-
-I also recently got an error related to scrubbing which (IIRC) caused
-the fs to become read-only
-
-Apr 05 10:13:06 mars kernel: ------------[ cut here ]------------
-Apr 05 10:13:06 mars kernel: WARNING: CPU: 0 PID: 72 at
-../fs/btrfs/inode.c:2937 btrfs_finish_ordered_io+0x5f5/0x650 [btrfs]()
-Apr 05 10:13:06 mars kernel: BTRFS warning (device sda1):
-btrfs_finish_ordered_io:2937: Aborting unused transaction(unknown).
-Apr 05 10:13:06 mars kernel: BTRFS: Transaction aborted (error -95)
-Apr 05 10:13:06 mars kernel: Modules linked in: bnep af_packet
-vboxpci(O) vboxnetadp(O) vboxnetflt(O) ip6t_REJECT nf_reject_ipv6
-nf_log_ipv6 nf_conntrack_ipv6 nf_defrag_ipv6 ip6table_raw ipt_REJECT
-nf_reject_ipv
-Apr 05 10:13:06 mars kernel:  snd_hda_core irqbypass snd_seq
-crct10dif_pclmul snd_hwdep crc32_pclmul ghash_clmulni_intel
-aesni_intel snd_pcm aes_x86_64 hci_uart lrw gf128mul btbcm glue_helper
-ablk_helper cryptd
-Apr 05 10:13:06 mars kernel: CPU: 0 PID: 72 Comm: kworker/u8:4
-Tainted: P           O    4.5.0-2-default #1
-Apr 05 10:13:06 mars kernel: Hardware name: MSI MS-7971/H170A PC MATE
-(MS-7971), BIOS B.60 02/23/2016
-Apr 05 10:13:06 mars kernel: Workqueue: btrfs-endio-write
-btrfs_endio_write_helper [btrfs]
-Apr 05 10:13:06 mars kernel:  0000000000000000 ffff88045b837c98
-ffffffff81395921 ffff88045b837ce0
-Apr 05 10:13:06 mars kernel:  ffffffffa0d096be ffff88045b837cd0
-ffffffff8107d912 ffff880089ab85c8
-Apr 05 10:13:06 mars kernel:  ffff88045b9c5000 00000000ffffffa1
-ffff88045dea5690 ffff880459efd0c0
-Apr 05 10:13:06 mars kernel: Call Trace:
-Apr 05 10:13:06 mars kernel:  [<ffffffff8101b175>] try_stack_unwind+0x175/0x190
-Apr 05 10:13:06 mars kernel:  [<ffffffff8101a0c9>] dump_trace+0x69/0x3a0
-Apr 05 10:13:06 mars kernel:  [<ffffffff8101b1db>] show_trace_log_lvl+0x4b/0x60
-Apr 05 10:13:06 mars kernel:  [<ffffffff8101a50c>]
-show_stack_log_lvl+0x10c/0x180
-Apr 05 10:13:06 mars kernel:  [<ffffffff8101b275>] show_stack+0x25/0x50
-Apr 05 10:13:06 mars kernel:  [<ffffffff81395921>] dump_stack+0x63/0x82
-Apr 05 10:13:06 mars kernel:  [<ffffffff8107d912>]
-warn_slowpath_common+0x82/0xc0
-Apr 05 10:13:06 mars kernel:  [<ffffffff8107d99c>] warn_slowpath_fmt+0x4c/0x50
-Apr 05 10:13:06 mars kernel:  [<ffffffffa0c8f885>]
-btrfs_finish_ordered_io+0x5f5/0x650 [btrfs]
-Apr 05 10:13:06 mars kernel:  [<ffffffffa0c8fbb5>]
-finish_ordered_fn+0x15/0x20 [btrfs]
-Apr 05 10:13:06 mars kernel:  [<ffffffffa0cb74bb>]
-btrfs_scrubparity_helper+0xcb/0x350 [btrfs]
-Apr 05 10:13:06 mars kernel:  [<ffffffffa0cb77ce>]
-btrfs_endio_write_helper+0xe/0x10 [btrfs]
-Apr 05 10:13:06 mars kernel:  [<ffffffff81095c3c>] process_one_work+0x15c/0x4b0
-Apr 05 10:13:06 mars kernel:  [<ffffffff81095fd8>] worker_thread+0x48/0x4e0
-Apr 05 10:13:06 mars kernel:  [<ffffffff8109beb9>] kthread+0xc9/0xe0
-Apr 05 10:13:06 mars kernel:  [<ffffffff816cc38f>] ret_from_fork+0x3f/0x70
-Apr 05 10:13:06 mars kernel: DWARF2 unwinder stuck at ret_from_fork+0x3f/0x70
-Apr 05 10:13:06 mars kernel:
-Apr 05 10:13:06 mars kernel: Leftover inexact backtrace:
-Apr 05 10:13:06 mars kernel:  [<ffffffff8109bdf0>] ?
-kthread_worker_fn+0x180/0x180
-Apr 05 10:13:06 mars kernel: ---[ end trace a383d63cdc6dbae3 ]---
-Apr 05 10:13:06 mars kernel: BTRFS warning (device sda1):
-btrfs_finish_ordered_io:2937: Aborting unused transaction(unknown).
-
-Kernel version: 4.5.0-2 ( openSUSE Tumbleweed x86_64 )
-btrfsprogs: 4.4.1-2.1
-
-I've booted a live usb disk ( also openSUSE TW ) and run a btrfs check
-( and a second run with --repair ). I only have pictures of the output
-( http://i.imgur.com/xKr6qKj.jpg ) , but what stands out for me is:
-
-- btrfs check outputs 5 entries with 'bad metadata(...,...) crossing
-stripe boundary
-- btrfs check --repair reports 'repaired damaged extent references'
-and 'cache and super generation don't match, space cache will be
-invalidated', but that does not seem to help
-
-It would be great if anyone can suggest a workaround or provide a fix.
-
-Thanks,
-
-Robert
-
--- 
-http://robert.muntea.nu/

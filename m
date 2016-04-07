@@ -1,10 +1,10 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qk0-f174.google.com ([209.85.220.174]:32974 "EHLO
-	mail-qk0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755431AbcDGLTZ (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 7 Apr 2016 07:19:25 -0400
-Received: by mail-qk0-f174.google.com with SMTP id k135so25231848qke.0
-        for <linux-btrfs@vger.kernel.org>; Thu, 07 Apr 2016 04:19:24 -0700 (PDT)
+Received: from mail-qg0-f46.google.com ([209.85.192.46]:33985 "EHLO
+	mail-qg0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755431AbcDGL32 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 7 Apr 2016 07:29:28 -0400
+Received: by mail-qg0-f46.google.com with SMTP id c6so59922505qga.1
+        for <linux-btrfs@vger.kernel.org>; Thu, 07 Apr 2016 04:29:28 -0700 (PDT)
 Subject: Re: unable to mount btrfs pool even with -oro,recovery,degraded,
  unable to do 'btrfs restore'
 To: Chris Murphy <lists@colorremedies.com>, Ank Ular <ankular.anime@gmail.com>
@@ -12,8 +12,8 @@ References: <CAFKQ2BsxWYejWOPMCw5JuF-SXM03-papUu6LXM5KBNKthxAPxg@mail.gmail.com>
  <CAJCQCtQCLWca9YycOSTC8Q4c78a8AVe7uFXAoe2vqEUQVFHiNA@mail.gmail.com>
 Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <57064231.2070201@gmail.com>
-Date: Thu, 7 Apr 2016 07:19:13 -0400
+Message-ID: <57064487.2070302@gmail.com>
+Date: Thu, 7 Apr 2016 07:29:11 -0400
 MIME-Version: 1.0
 In-Reply-To: <CAJCQCtQCLWca9YycOSTC8Q4c78a8AVe7uFXAoe2vqEUQVFHiNA@mail.gmail.com>
 Content-Type: text/plain; charset=utf-8; format=flowed
@@ -114,9 +114,19 @@ to retry the failed stripe after narrowing it to the number of drives.
 > this for the other 16 drives. I'd love it if there's a tool that does
 > this, maybe 'btrfs rescue super-recover' but there are no meaningful
 > options with that command so I'm skeptical how it knows what's bad and
-> what's goo.
-
-
+> what's good.
+While I don't know what exactly it does currently, a roughly ideal 
+method would be:
+1. Check each SB, if it has both a valid checksum and magic number and 
+points to a valid root, mark it valid.
+2. If only one SB is valid, copy that over the other two and exit.
+3. If more than one SB is valid and two of them point to the same root, 
+copy that info to the third and exit (on all the occasions I've needed 
+super-recover, this was state of the super blocks on the filesystem in 
+question).
+4. If more than one SB is valid and none of them point to the same root, 
+or none of them are valid, pick one based on user input (command line 
+switches or a prompt).
 >
 > You literally might have to splice superblocks and write them to 16
 > drives in exactly 3 locations per drive (well, maybe just one of them,

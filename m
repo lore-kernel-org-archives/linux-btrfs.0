@@ -1,92 +1,146 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:56442 "EHLO
-	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754035AbcDHLM5 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 8 Apr 2016 07:12:57 -0400
-Date: Fri, 8 Apr 2016 11:12:54 +0000
-From: Hugo Mills <hugo@carfax.org.uk>
-To: Martin Steigerwald <martin@lichtvoll.de>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: btrfs send/receive using generation number as source
-Message-ID: <20160408111254.GU29474@carfax.org.uk>
-References: <7303236.im7zcVY3uK@merkaba>
+Received: from mail-qg0-f43.google.com ([209.85.192.43]:34527 "EHLO
+	mail-qg0-f43.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756567AbcDHL3q (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 8 Apr 2016 07:29:46 -0400
+Received: by mail-qg0-f43.google.com with SMTP id c6so87472802qga.1
+        for <linux-btrfs@vger.kernel.org>; Fri, 08 Apr 2016 04:29:45 -0700 (PDT)
+Subject: Re: unable to mount btrfs pool even with -oro,recovery,degraded,
+ unable to do 'btrfs restore'
+To: Chris Murphy <lists@colorremedies.com>
+References: <CAFKQ2BsxWYejWOPMCw5JuF-SXM03-papUu6LXM5KBNKthxAPxg@mail.gmail.com>
+ <CAJCQCtQCLWca9YycOSTC8Q4c78a8AVe7uFXAoe2vqEUQVFHiNA@mail.gmail.com>
+ <57064231.2070201@gmail.com>
+ <CAJCQCtSAaTYYMJhTTAsEXXDUzUdLEpJARHPRfihDNZrvZtEo4Q@mail.gmail.com>
+Cc: Ank Ular <ankular.anime@gmail.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Message-ID: <5707961D.6000803@gmail.com>
+Date: Fri, 8 Apr 2016 07:29:33 -0400
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="7XuS4gr/+Xj300Yp"
-In-Reply-To: <7303236.im7zcVY3uK@merkaba>
+In-Reply-To: <CAJCQCtSAaTYYMJhTTAsEXXDUzUdLEpJARHPRfihDNZrvZtEo4Q@mail.gmail.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
---7XuS4gr/+Xj300Yp
-Content-Type: text/plain; charset=utf-8
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
-
-On Fri, Apr 08, 2016 at 01:01:03PM +0200, Martin Steigerwald wrote:
-> Hello!
->=20
-> As far as I understood, for differential btrfs send/receive =E2=80=93 I d=
-idn=C2=B4t use it=20
-> yet =E2=80=93 I need to keep a snapshot on the source device to then tell=
- btrfs send=20
-> to send the differences between the snapshot and the current state.
->=20
-> Now the BTRFS filesystems on my SSDs are often quite full, thus I do not =
-keep=20
-> any snapshots except for one during rsync or borgbackup script run-time.
->=20
-> Is it possible to tell btrfs send to use generation number xyz to calcula=
-te=20
-> the difference? This way, I wouldn=C2=B4t have to keep a snapshot around,=
- I=20
-> believe.
-
-   btrfs sub find-new
-
-   BUT that will only tell you which files have been added or updated.
-It won't tell you which files have been deleted. It's also unrelated
-to send/receive, so you'd have to roll your own solution.
-
-> I bet not, at the time cause -c wants a snapshot. Ah and it wants a
-> snapshot of the same state on the destination as well. Well on the
-> destination I let the script make a snapshot after the backup so=E2=80=A6
-> what I would need is to remember the generation number of the source
-> snapshot that the script creates to backup from and then tell btrfs
-> send that generation number + the destination snapshots.
-
-> Well, or get larger SSDs or get rid of some data on them.
-
-   Those are the other options, of course.
-
-   Hugo.
-
---=20
-Hugo Mills             | The trouble with you, Ibid, is you think you know
-hugo@... carfax.org.uk | everything.
-http://carfax.org.uk/  |
-PGP: E2AB1DE4          |
-
---7XuS4gr/+Xj300Yp
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-
-iQIcBAEBAgAGBQJXB5I2AAoJEFheFHXiqx3kO/4P/iLeWfZI/kyDe7ClRNn7NZ1f
-tbFpbq6brUxwT5QhyfotEeJU8gIyVAZH1ikocJ/hR2qgmxO98VDGaoN7DwV1f8ie
-BqWYEgTipidAJlR49dWTTUQONSagazRR6VyciV+tqhjSxpOWRkJR0j4UpmXlqgUe
-YYZTTjuf6u79iZZ5UB8Hyk2Ep9Qbf3XWpb6EWzF3Gnd/Hw8F6bvxFgZ5NfJvDxK4
-1+Jtsot+nM5AIHtaiXuqSXRlRTeqwwA6bIvpAtk5r1ZGtPN63cZKEnQEx0Q5KVa+
-4ji0+0MUniRjHiTrbFX8pyjeZyTWgJFwxUS7I1mS2XiEBWlvQuEzL7VIEE4TUs1W
-moijbjnFXrEOOkdAgvTwCbtCl81LTGqzM8f79rCkp+Z4dFLKtIxooE3nTI7v1LAX
-jPz5P8hXKJFzboxBMjjbpdLbWnzXAySVTIOljkmk2wa3/WrgYwwyDOi4TJvM8oA1
-j+daSawV0bNQsFvTt+q0eS/wvxwyL71FAzwF/ELbg/wW4/vKVbzjKlEew5Gglpdu
-YkZPbHc2zJAUoxWufp1iIVf8j3WVYLDNAtCu9XFhOaVd9Hk83rDZc46hQExLybkb
-9Swm7WE12QeOGitg2P2g1g5/rm3BADeCvF/Emi+XVC5b4UL2LxP18DDpjLq5n1lb
-kY18/qVhP1ffO1qF5hSh
-=LrdR
------END PGP SIGNATURE-----
-
---7XuS4gr/+Xj300Yp--
+On 2016-04-07 15:32, Chris Murphy wrote:
+> On Thu, Apr 7, 2016 at 5:19 AM, Austin S. Hemmelgarn
+> <ahferroin7@gmail.com> wrote:
+>> On 2016-04-06 19:08, Chris Murphy wrote:
+>>>
+>>> On Wed, Apr 6, 2016 at 9:34 AM, Ank Ular <ankular.anime@gmail.com> wrote:
+>>>
+>>>>
+>>>>   From the ouput of 'dmesg', the section:
+>>>> [   20.998071] BTRFS: device label FSgyroA devid 9 transid 625039
+>>>> /dev/sdm
+>>>> [   20.999984] BTRFS: device label FSgyroA devid 10 transid 625039
+>>>> /dev/sdn
+>>>> [   21.004127] BTRFS: device label FSgyroA devid 11 transid 625039
+>>>> /dev/sds
+>>>> [   21.011808] BTRFS: device label FSgyroA devid 12 transid 625039
+>>>> /dev/sdu
+>>>>
+>>>> bothers me because the transid value of these four devices doesn't
+>>>> match the other 16 devices in the pool {should be 625065}. In theory,
+>>>> I believe these should all have the same transid value. These four
+>>>> devices are all on a single USB 3.0 port and this is the link I
+>>>> believe went down and came back up.
+>>>
+>>>
+>>> This is effectively a 4 disk failure and raid6 only allows for 2.
+>>>
+>>> Now, a valid complaint is that as soon as Btrfs is seeing write
+>>> failures for 3 devices, it needs to go read-only. Specifically, it
+>>> would go read only upon 3 or more write errors affecting a single full
+>>> raid stripe (data and parity strips combined); and that's because such
+>>> a write is fully failed.
+>>
+>> AFAIUI, currently, BTRFS will fail that stripe, but not retry it, _but_
+>> after that, it will start writing out narrower stripes across the remaining
+>> disks if there are enough for it to maintain the data consistency (so if
+>> there's at least 3 for raid6 (I think, I don't remember if our lower limit
+>> is 3 (which is degenerate), or 4 (which isn't, but most other software won't
+>> let you use it for some stupid reason))).  Based on this, if the FS does get
+>> recovered, make sure to run a balance on it too, otherwise you might have
+>> some sub-optimal striping for some data.
+>
+> I can see this being happening automatically with up to 2 device
+> failures, so that all subsequent writes are fully intact stripe
+> writes. But the instant there's a 3rd device failure, there's a rather
+> large hole in the file system that can't be reconstructed. It's an
+> invalid file system. I'm not sure what can be gained by allowing
+> writes to continue, other than tying off loose ends (so to speak) with
+> full stripe metadata writes for the purpose of making recovery
+> possible and easier, but after that metadata is written - poof, go
+> read only.
+I don't mean writing partial stripes, I mean writing full stripes with a 
+reduced width (so in an 8 device filesystem, if 3 devices fail, we can 
+still technically write a complete stripe across 5 devices, but it will 
+result in less total space we can use).  Whether or not this behavior is 
+correct is another argument, but that appears to be what we do 
+currently.  Ideally, this should be a mount option, as strictly 
+speaking, it's policy, which therefore shouldn't be in the kernel.
+>
+>>
+>>>
+>>> You literally might have to splice superblocks and write them to 16
+>>> drives in exactly 3 locations per drive (well, maybe just one of them,
+>>> and then delete the magic from the other two, and then 'btrfs rescue
+>>> super-recover' should then use the one good copy to fix the two bad
+>>> copies).
+>>>
+>>> Sigh.... maybe?
+>>>
+>>> In theory it's possible, I just don't know the state of the tools. But
+>>> I'm fairly sure the best chance of recovery is going to be on the 4
+>>> drives that abruptly vanished.  Their supers will be mostly correct or
+>>> close to it: and that's what has all the roots in it: tree, fs, chunk,
+>>> extent and csum. And all of those states are better farther in the
+>>> past, rather than the 16 drives that have much newer writes.
+>>
+>> FWIW, it is actually possible to do this, I've done it before myself on much
+>> smaller raid1 filesystems with single drives disappearing, and once with a
+>> raid6 filesystem with a double drive failure.  It is by no means easy, and
+>> there's not much in the tools that helps with it, but it is possible
+>> (although I sincerely hope I never have to do it again myself).
+>
+> I think considering the idea of Btrfs is to be more scalable than past
+> storage and filesystems have been, it needs to be able to deal with
+> transient failures like this. In theory all available information is
+> written on all the disks. This was a temporary failure. Once all
+> devices are made available again, the fs should be able to figure out
+> what to do, even so far as salvaging the writes that happened after
+> the 4 devices went missing if those were successful full stripe
+> writes.
+I entirely agree.  If the fix doesn't require any kind of decision to be 
+made other than whether to fix it or not, it should be trivially fixable 
+with the tools.  TBH though, this particular issue with devices 
+disappearing and reappearing could be fixed easier in the block layer 
+(at least, there are things that need to be fixed WRT it in the block 
+layer).
+>
+>>>
+>>> Of course it is possible there's corruption problems with those four
+>>> drives having vanished while writes were incomplete. But if you're
+>>> lucky, data write happen first, then metadata writes second, and only
+>>> then is the super updated. So the super should point to valid metadata
+>>> and that should point to valid data. If that order is wrong, then it's
+>>> bad news and you have to look at backup roots. But *if* you get all
+>>> the supers correct and on the same page, you can access the backup
+>>> roots by using -o recovery if corruption is found with a normal mount.
+>>
+>> This though is where the potential issue is.  -o recovery will only go back
+>> so many generations before refusing to mount, and I think that may be why
+>> it's not working now..
+>
+> It also looks like none of the tools are considering the stale supers
+> on the formerly missing 4 devices. I still think those are the best
+> chance to recover because even if their most current data is wrong due
+> to reordered writes not making it to stable storage, one of the
+> available backups in those supers should be good.
+>
+Depending on utilization on the other devices though, they may not point 
+to complete roots either.  In this case, they probably will because of 
+the low write frequency.  In other cases, they may not though, because 
+we try to reuse space in chunks before allocating new chunks.

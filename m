@@ -1,141 +1,106 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:53371 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S932819AbcDHTKF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 8 Apr 2016 15:10:05 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1aobn9-0000bN-EX
-	for linux-btrfs@vger.kernel.org; Fri, 08 Apr 2016 21:10:03 +0200
-Received: from google-proxy-66-249-84-141.google.com ([66.249.84.141])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 08 Apr 2016 21:10:03 +0200
-Received: from johnathan.falk by google-proxy-66-249-84-141.google.com with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 08 Apr 2016 21:10:03 +0200
-To: linux-btrfs@vger.kernel.org
-From: Johnathan Falk <johnathan.falk@gmail.com>
-Subject: Re: Volume stuck after Checking UUID tree
-Date: Fri, 8 Apr 2016 19:09:04 +0000 (UTC)
-Message-ID: <loom.20160408T210552-501@post.gmane.org>
-References: <CADNp-0Ta+jNZGtjT0NKc-ZXaYChh=sUOyCy1asn0=ZYBSWaU7Q@mail.gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Received: from mail-io0-f171.google.com ([209.85.223.171]:34893 "EHLO
+	mail-io0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1758757AbcDHTYH (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 8 Apr 2016 15:24:07 -0400
+Received: by mail-io0-f171.google.com with SMTP id g185so143424545ioa.2
+        for <linux-btrfs@vger.kernel.org>; Fri, 08 Apr 2016 12:24:07 -0700 (PDT)
+Subject: Missing device handling (was: 'unable to mount btrfs pool...')
+To: Chris Murphy <lists@colorremedies.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+References: <CAFKQ2BsxWYejWOPMCw5JuF-SXM03-papUu6LXM5KBNKthxAPxg@mail.gmail.com>
+ <CAJCQCtQCLWca9YycOSTC8Q4c78a8AVe7uFXAoe2vqEUQVFHiNA@mail.gmail.com>
+ <57064231.2070201@gmail.com>
+ <CAJCQCtSAaTYYMJhTTAsEXXDUzUdLEpJARHPRfihDNZrvZtEo4Q@mail.gmail.com>
+ <5707961D.6000803@gmail.com>
+ <CAJCQCtT1Pt__k+aYqSjNPLmcgpH7F4N+ueJ3b+z+aVTYTYtGEg@mail.gmail.com>
+From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Message-ID: <57080530.7030805@gmail.com>
+Date: Fri, 8 Apr 2016 15:23:28 -0400
+MIME-Version: 1.0
+In-Reply-To: <CAJCQCtT1Pt__k+aYqSjNPLmcgpH7F4N+ueJ3b+z+aVTYTYtGEg@mail.gmail.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-johnathan falk <johnathan.falk <at> gmail.com> writes:
+On 2016-04-08 12:17, Chris Murphy wrote:
+> On Fri, Apr 8, 2016 at 5:29 AM, Austin S. Hemmelgarn
+> <ahferroin7@gmail.com> wrote:
+>>
+>> I entirely agree.  If the fix doesn't require any kind of decision to be
+>> made other than whether to fix it or not, it should be trivially fixable
+>> with the tools.  TBH though, this particular issue with devices disappearing
+>> and reappearing could be fixed easier in the block layer (at least, there
+>> are things that need to be fixed WRT it in the block layer).
+>
+> Right. The block layer needs a way to communicate device missing to
+> Btrfs and Btrfs needs to have some tolerance for transience.
 
-> 
-> The drive mounts perfectly fine when you mount RO, but when you mount
-> it rw it gives this (and eventually locks up the system as I can't
-> restart it cleanly):
-> 
-> kernel: BTRFS info (device sdb1): disk space caching is enabled
-> Apr 06 17:09:16 kernel: BTRFS error (device sdb1): qgroup generation
-> mismatch, marked as inconsistent
-> Apr 06 17:09:17 kernel: BTRFS: checking UUID tree
-> Apr 06 17:12:30 kernel: INFO: task btrfs-transacti:5701 blocked for
-> more than 120 seconds.
-> 
-> Bug reported on launch pad:
-> https://bugs.launchpad.net/ubuntu/+source/linux/+bug/1555828
-> 
-> When I mount the disk in journalctl -f:
-> http://pastebin.com/1p6XppRb
-> 
-> Went through Marc Merlin's suggestions to fix my drive and the btrfsck
-> -S1/2/3 never finishes and gets stuck on checking quota groups. I also
-> created a btrfs-image first thing.
-> 
-> Any suggestions would be welcome as I don't know what to do.
-> 
+Being notified when a device disappears _shouldn't_ be that hard. A 
+uevent gets sent already, and we should be able to associate some kind 
+of callback with that happening for devices we have mounted. The bigger 
+issue is going to be handling the devices _reappearing_ (if we still 
+hold a reference to the device, it appears under a different 
+name/major/minor, and if it's more than one device and we have no 
+references, they may appear in a different order than they were 
+originally), and there is where we really need to fix things. A device 
+disappearing forever is bad and all, but a device losing connection and 
+reconnecting completely ruining the FS is exponentially worse.
 
-Paste of journalctl:
-kernel: Call Trace:
-Apr 02 18:55:03 theark kernel:  
-[<ffffffff81835e45>] schedule+0x35/0x80
-Apr 02 18:55:03 theark kernel:  
-[<ffffffffc03a5cd2>] 
-btrfs_commit_transaction+0x382/0xa90 [btrfs]
-Apr 02 18:55:03 theark kernel:  
-[<ffffffff810c6320>] 
-? wake_atomic_t_function+0x60/0x60
-Apr 02 18:55:03 theark kernel:  
-[<ffffffffc03a0c99>] transaction_kthread+0x229/0x240 
-[btrfs]
-Apr 02 18:55:03 theark kernel:  
-[<ffffffffc03a0a70>] ? btrfs_cleanup_transaction+0x580/0x580 [btrfs]
-Apr 02 18:55:03 theark kernel:  
-[<ffffffff810a2df8>] kthread+0xd8/0xf0
-Apr 02 18:55:03 theark kernel: 
- [<ffffffff8183a122>] ret_from_fork+0x22/0x40
-Apr 02 18:55:03 theark kernel:  [<ffffffff810a2d20>] ? 
-kthread_create_on_node+0x1a0/0x1a0
-Apr 02 18:55:03 theark kernel: INFO: task umount:4672 blocked for more than 120 
-seconds.
-Apr 02 18:55:03 theark kernel:       
-Not tainted 4.6.0-040600rc1-generic #201603261930
-Apr 02 18:55:03 theark kernel: 
-"echo 0 > /proc/sys/kernel/hung_task_timeout_secs" 
-disables this message.
-Apr 02 18:55:03 theark kernel: 
-umount          D ffff88008e323cd8     0  4672   3434 
-0x00000000
-Apr 02 18:55:03 theark kernel:  
-ffff88008e323cd8 0000000000000000 ffffffff81e0d540 
-ffff880343711c80
-Apr 02 18:55:03 theark kernel:  
-ffff88008e324000 ffff88040b4579f0 ffff88040b457800 
-ffff88040b4579f0
-Apr 02 18:55:03 theark kernel:  
-0000000000000000 ffff88008e323cf0 ffffffff81835e45 
-ffff8800bbd561b0
-Apr 02 18:55:03 theark kernel: Call Trace:
-Apr 02 18:55:03 theark kernel:  
-[<ffffffff81835e45>] schedule+0x35/0x80
-Apr 02 18:55:03 theark kernel:  
-[<ffffffffc03a4d73>] 
-wait_current_trans.isra.22+0xd3/0x120 [btrfs]
-Apr 02 18:55:03 theark kernel:  
-[<ffffffff810c6320>] ? wake_atomic_t_function+0x60/0x60
-Apr 02 18:55:03 theark kernel:  
-[<ffffffffc03a665b>] start_transaction+0x27b/0x4c0 
-[btrfs]
-Apr 02 18:55:03 theark kernel:  [<ffffffffc03a697d>] 
-btrfs_attach_transaction_barrier+0x1d/0x50 [btrfs]
-Apr 02 18:55:03 theark kernel:  
-[<ffffffffc036fb52>] btrfs_sync_fs+0x42/0x110 [btrfs]
-Apr 02 18:55:03 theark kernel:  
-[<ffffffff81253621>] sync_filesystem+0x71/0xa0
-Apr 02 18:55:03 theark kernel:  
-[<ffffffff81221ac7>] generic_shutdown_super+0x27/0x100
-Apr 02 18:55:03 theark kernel:  
-[<ffffffff81221e22>] kill_anon_super+0x12/0x20
-Apr 02 18:55:03 theark kernel:  
-[<ffffffffc0370da8>] btrfs_kill_super+0x18/0x110 [btrfs]
-Apr 02 18:55:03 theark kernel:  
-[<ffffffff81221fc3>] deactivate_locked_super+0x43/0x70
-Apr 02 18:55:03 theark kernel:  
-[<ffffffff8122249c>] deactivate_super+0x5c/0x60
-Apr 02 18:55:03 theark kernel:  
-[<ffffffff8124020f>] cleanup_mnt+0x3f/0x90
-Apr 02 18:55:03 theark kernel:  
-[<ffffffff812402a2>] __cleanup_mnt+0x12/0x20
-Apr 02 18:55:03 theark kernel:  
-[<ffffffff810a1253>] task_work_run+0x73/0x90
-Apr 02 18:55:03 theark kernel:  
-[<ffffffff81003242>] exit_to_usermode_loop+0xc2/0xd0
-Apr 02 18:55:03 theark kernel:  
-[<ffffffff81003c6e>] syscall_return_slowpath+0x4e/0x60
-Apr 02 18:55:03 theark kernel:  [<ffffffff81839f7e>] 
-entry_SYSCALL_64_fastpath+0xa6/0xa8
+Overall, to provide true reliability here, we need:
+1. Some way for userspace to disable writeback caching per-device (this 
+is needed for other reasons as well, but those are orthogonal to this 
+discussion). This then needs to be used on all removable devices by 
+default (Windows and OS X do this, it's part of why small transfers 
+appear to complete faster on Linux, and then the disk takes _forever_ to 
+unmount). This would reduce the possibility of data loss when a device 
+disappears.
+2. A way for userspace to be notified (instead of having to poll) of 
+state changes in BTRFS. Currently, the only ways for userspace to know 
+something is wrong are either parsing dmesg or polling the filesystem 
+flags (and based both personal experience, and statements I've seen here 
+and elsewhere, polling the FS flags is not reliable for this). Most 
+normal installations are going to want to trigger handlers for specific 
+state changes (be it e-mail to an admin, or some other notification 
+method, or even doing some kind of maintenance on the FS automatically), 
+and we need some kind of notification if we want to give userspace the 
+ability to properly manage things.
+3. A way to tell that a device is gone _when it happens_, not when we 
+try to write to it next, not when a write fails, but the moment the 
+block layer knows it's not there, we need to know as well. This is a 
+prerequisite for the next two items. Sadly, we're probably the only 
+thing that would directly benefit from this (LVM uses uevents and 
+monitoring daemons to handle this, we don't exactly have that luxury), 
+which means it may be hard to get something like this merged.
+4. Transparent handling of short, transient loss of a device. This goes 
+together to a certain extent with 1, if something disappears for long 
+enough that the kernel notices, but it reappears before we have any I/O 
+to do on it again, we shouldn't lose our lunch unless userspace tells us 
+to (because we told userspace that it's gone due to item 2). In theory, 
+we should be able to cache a small number of internal pending writes for 
+when it reappears (so for example, if a transaction is being committed, 
+and the USB disk disappears for a second, we should be able to pick up 
+where we left off (after verifying the last write we sent)). We should 
+also have an automatic re-sync if it's a short enough period it's gone 
+for. The max timeout here should probably be configurable, but probably 
+could just be one tunable for the whole system.
+5. Give userspace the option to handle degraded states how it wants to, 
+and keep our default of remount RO when degraded when userspace doesn't 
+want to handle it itself. This needs to be configured at run-time (not 
+stored on the media), and it needs to be per-filesystem, otherwise we 
+open up all kinds of other issues. This is a core concept in LVM and 
+many other storage management systems; namely, userspace can choose to 
+handle a degraded RAID array however the hell it wants, and we'll 
+provide a couple of sane default handlers for the common cases.
 
-
-Currently a btrfsck using btrfs-progs 4.5.1 has run for 
-3 days now and is currently using:
-pri ni virt res shr s cpu% mem% time
-20 0 22.1G 14.36G 188 D 1.9 95.5 47:16.21 btrfs check -s 2 /dev/sdb
-
-
+I would personally suggest adding a per-filesystem node in sysfs to 
+handle both 2 and 5. Having it open tells BTRFS to not automatically 
+attempt countermeasures when degraded, select/epoll on it will return 
+when state changes, reads will return (at minimum): what devices 
+comprise the FS, per disk state (is it working, failed, missing, a 
+hot-spare, etc), and what effective redundancy we have (how many devices 
+we can lose and still be mountable, so 1 for raid1, raid10, and raid5, 2 
+for raid6, and 0 for raid0/single/dup, possibly higher for n-way 
+replication (n-1), n-order parity (n), or erasure coding). This would 
+make it trivial to write a daemon to monitor the filesystem, react when 
+something happens, and handle all the policy decisions.

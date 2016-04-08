@@ -1,59 +1,49 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mondschein.lichtvoll.de ([194.150.191.11]:53585 "EHLO
-	mail.lichtvoll.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751359AbcDHNOP convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 8 Apr 2016 09:14:15 -0400
-From: Martin Steigerwald <martin@lichtvoll.de>
-To: Hugo Mills <hugo@carfax.org.uk>, linux-btrfs@vger.kernel.org
-Subject: Re: btrfs send/receive using generation number as source
-Date: Fri, 08 Apr 2016 15:14:11 +0200
-Message-ID: <4309812.MUa0uALYJp@merkaba>
-In-Reply-To: <20160408111254.GU29474@carfax.org.uk>
-References: <7303236.im7zcVY3uK@merkaba> <20160408111254.GU29474@carfax.org.uk>
+Received: from mail.virtall.com ([178.63.195.102]:46945 "EHLO mail.virtall.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1755289AbcDHNUS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 8 Apr 2016 09:20:18 -0400
 MIME-Version: 1.0
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: text/plain; charset=US-ASCII;
+ format=flowed
+Date: Fri, 08 Apr 2016 22:20:12 +0900
+From: Tomasz Chmielewski <tch@virtall.com>
+To: Roman Mamedov <rm@romanrm.net>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>, Chris Mason <clm@fb.com>,
+        Zhao Lei <zhaolei@cn.fujitsu.com>
+Subject: Re: 4.4.0 - no space left with >1.7 TB free space left
+In-Reply-To: <20160408165332.450659c4@natsu>
+References: <0c19f800da3013f22f2ab0d77d5a9efb@admin.virtall.com>
+ <20160208162410.58cb2b4a@natsu>
+ <eaeffce90cd04fa5b91284ca580b5969@admin.virtall.com>
+ <20160408165332.450659c4@natsu>
+Message-ID: <cb23a9f1ff0a46a4a4de284f3c8743a5@admin.virtall.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Freitag, 8. April 2016 11:12:54 CEST Hugo Mills wrote:
-> On Fri, Apr 08, 2016 at 01:01:03PM +0200, Martin Steigerwald wrote:
-> > Hello!
-> > 
-> > As far as I understood, for differential btrfs send/receive – I didn´t use
-> > it yet – I need to keep a snapshot on the source device to then tell
-> > btrfs send to send the differences between the snapshot and the current
-> > state.
-> > 
-> > Now the BTRFS filesystems on my SSDs are often quite full, thus I do not
-> > keep any snapshots except for one during rsync or borgbackup script
-> > run-time.
-> > 
-> > Is it possible to tell btrfs send to use generation number xyz to
-> > calculate
-> > the difference? This way, I wouldn´t have to keep a snapshot around, I
-> > believe.
+On 2016-04-08 20:53, Roman Mamedov wrote:
+
+>> > Do you snapshot the parent subvolume which holds the databases? Can you
+>> > correlate that perhaps ENOSPC occurs at the time of snapshotting? If
+>> > yes, then
+>> > you should try the patch https://patchwork.kernel.org/patch/7967161/
+>> >
+>> > (Too bad this was not included into 4.4.1.)
+>> 
+>> By the way - was it included in any later kernel? I'm running 4.4.5 on
+>> that server, but still hitting the same issue.
 > 
->    btrfs sub find-new
-> 
->    BUT that will only tell you which files have been added or updated.
-> It won't tell you which files have been deleted. It's also unrelated
-> to send/receive, so you'd have to roll your own solution.
+> It's not in 4.4.6 either. I don't know why it doesn't get included, or 
+> what
+> we need to do. Last time I asked, it was queued:
+> http://www.spinics.net/lists/linux-btrfs/msg52478.html
+> But maybe that meant 4.5 or 4.6 only? While the bug is affecting people 
+> on
+> 4.4.x today.
 
-I am aware of this one.
+Does it mean 4.5 also doesn't have it yet?
 
-> > I bet not, at the time cause -c wants a snapshot. Ah and it wants a
-> > snapshot of the same state on the destination as well. Well on the
-> > destination I let the script make a snapshot after the backup so…
-> > what I would need is to remember the generation number of the source
-> > snapshot that the script creates to backup from and then tell btrfs
-> > send that generation number + the destination snapshots.
-> > 
-> > Well, or get larger SSDs or get rid of some data on them.
-> 
->    Those are the other options, of course.
 
-Hm, I see.
+Tomasz Chmielewski
+http://wpkg.org
 
-Thanks,
--- 
-Martin

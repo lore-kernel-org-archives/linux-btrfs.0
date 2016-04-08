@@ -1,99 +1,58 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from kolab.zavadatar.com ([46.101.124.0]:36784 "EHLO
-	kolab.zavadatar.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750908AbcDHTxG (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 8 Apr 2016 15:53:06 -0400
-Date: Fri, 8 Apr 2016 22:53:00 +0300
-From: Yauhen Kharuzhy <yauhen.kharuzhy@zavadatar.com>
+Received: from plane.gmane.org ([80.91.229.3]:55513 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1758855AbcDHTx5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 8 Apr 2016 15:53:57 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+	id 1aocTa-0007gU-1Q
+	for linux-btrfs@vger.kernel.org; Fri, 08 Apr 2016 21:53:54 +0200
+Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Fri, 08 Apr 2016 21:53:54 +0200
+Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Fri, 08 Apr 2016 21:53:54 +0200
 To: linux-btrfs@vger.kernel.org
-Subject: Re: Missing device handling (was: 'unable to mount btrfs pool...')
-Message-ID: <20160408195259.GA23661@jeknote.loshitsa1.net>
-References: <CAFKQ2BsxWYejWOPMCw5JuF-SXM03-papUu6LXM5KBNKthxAPxg@mail.gmail.com>
- <CAJCQCtQCLWca9YycOSTC8Q4c78a8AVe7uFXAoe2vqEUQVFHiNA@mail.gmail.com>
- <57064231.2070201@gmail.com>
- <CAJCQCtSAaTYYMJhTTAsEXXDUzUdLEpJARHPRfihDNZrvZtEo4Q@mail.gmail.com>
- <5707961D.6000803@gmail.com>
- <CAJCQCtT1Pt__k+aYqSjNPLmcgpH7F4N+ueJ3b+z+aVTYTYtGEg@mail.gmail.com>
- <57080530.7030805@gmail.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <57080530.7030805@gmail.com>
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: 4.4.0 - no space left with >1.7 TB free space left
+Date: Fri, 8 Apr 2016 19:53:48 +0000 (UTC)
+Message-ID: <pan$caab3$faaff583$6f85afa6$6f034ed9@cox.net>
+References: <0c19f800da3013f22f2ab0d77d5a9efb@admin.virtall.com>
+	<20160208162410.58cb2b4a@natsu>
+	<eaeffce90cd04fa5b91284ca580b5969@admin.virtall.com>
+	<20160408165332.450659c4@natsu>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Apr 08, 2016 at 03:23:28PM -0400, Austin S. Hemmelgarn wrote:
-> On 2016-04-08 12:17, Chris Murphy wrote:
-> 
-> I would personally suggest adding a per-filesystem node in sysfs to handle
-> both 2 and 5. Having it open tells BTRFS to not automatically attempt
-> countermeasures when degraded, select/epoll on it will return when state
-> changes, reads will return (at minimum): what devices comprise the FS, per
-> disk state (is it working, failed, missing, a hot-spare, etc), and what
-> effective redundancy we have (how many devices we can lose and still be
-> mountable, so 1 for raid1, raid10, and raid5, 2 for raid6, and 0 for
-> raid0/single/dup, possibly higher for n-way replication (n-1), n-order
-> parity (n), or erasure coding). This would make it trivial to write a daemon
-> to monitor the filesystem, react when something happens, and handle all the
-> policy decisions.
+Roman Mamedov posted on Fri, 08 Apr 2016 16:53:32 +0500 as excerpted:
 
-Hm, good proposal. Personally I tried to use uevents for this but they
-cause locking troubles, and I didn't continue this attempt.
+> It's not in 4.4.6 either. I don't know why it doesn't get included, or
+> what we need to do. Last time I asked, it was queued:
+> http://www.spinics.net/lists/linux-btrfs/msg52478.html But maybe that
+> meant 4.5 or 4.6 only? While the bug is affecting people on 4.4.x today.
 
-In any case we need have interface for btrfs-progs to passing FS state
-information (presence and IDs of missing devices, for example,
-degraded/good state of RAID etc.).
+Patches must make it to the current development kernel before they're 
+eligible for stable.  Additionally, they need to be cced to stable as 
+well, in ordered to be queued there.
 
-For testing as first attempt I implemented following interface. It still seems
-not good for me but acceptable as a starting point. Additionally to this, I changed
-missing device name reported in btrfs_ioctl_dev_info() to 'missing' for avoiding of
-interferences with block devices inserted after closing of failed device (adding of
-'missing' field to the struct btrfs_ioctl_dev_info_args may be more right way). So,
-your opinion?
+So check 4.5 and 4.6-rc.  If it's in neither of those, it's not going to 
+be in stable yet.  Once it's in the development kernel, see if it was cced 
+to stable and if needed, ask the author and btrfs devs to cc it to stable.
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index d9b147f..f9a2fa6 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -2716,12 +2716,17 @@ static long btrfs_ioctl_fs_info(struct btrfs_root *root, void __user *arg)
- 
-        mutex_lock(&fs_devices->device_list_mutex);
-        fi_args->num_devices = fs_devices->num_devices;
-+       fi_args->missing_devices = fs_devices->missing_devices;
-+       fi_args->open_devices = fs_devices->open_devices;
-+       fi_args->rw_devices = fs_devices->rw_devices;
-+       fi_args->total_devices = fs_devices->total_devices;
-        memcpy(&fi_args->fsid, root->fs_info->fsid, sizeof(fi_args->fsid));
- 
-        list_for_each_entry(device, &fs_devices->devices, dev_list) {
-                if (device->devid > fi_args->max_id)
-                        fi_args->max_id = device->devid;
-        }
-+       fi_args->state = root->fs_info->fs_state;
-        mutex_unlock(&fs_devices->device_list_mutex);
- 
-        fi_args->nodesize = root->fs_info->super_copy->nodesize;
-diff --git a/include/uapi/linux/btrfs.h b/include/uapi/linux/btrfs.h
-index dea8931..6808bf2 100644
---- a/include/uapi/linux/btrfs.h
-+++ b/include/uapi/linux/btrfs.h
-@@ -186,8 +186,12 @@ struct btrfs_ioctl_fs_info_args {
-        __u32 nodesize;                         /* out */
-        __u32 sectorsize;                       /* out */
-        __u32 clone_alignment;                  /* out */
--       __u32 reserved32;
--       __u64 reserved[122];                    /* pad to 1k */
-+       __u32 state;                            /* out */
-+       __u64 missing_devices;                  /* out */
-+       __u64 open_devices;                     /* out */
-+       __u64 rw_devices;                       /* out */
-+       __u64 total_devices;                    /* out */
-+       __u64 reserved[118];                    /* pad to 1k */
- };
- 
- struct btrfs_ioctl_feature_flags {
+Tho sometimes stable can get a backlog as well.  I know earlier this year 
+they were dealing with one, but I follow release or development, not 
+stable, and don't know what stable's current status is.
 
-
-
+If it gets to stable, and it wasn't for a bug introduced /after/ 4.4, it 
+should eventually get into 4.4, as that's an LTS kernel.  But it might 
+take awhile, as the above discussion hints.
 
 -- 
-Yauhen Kharuzhy
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

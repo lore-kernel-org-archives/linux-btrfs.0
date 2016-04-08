@@ -1,68 +1,99 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qk0-f181.google.com ([209.85.220.181]:36298 "EHLO
-	mail-qk0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932742AbcDHT1w (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 8 Apr 2016 15:27:52 -0400
-Received: by mail-qk0-f181.google.com with SMTP id i4so48178296qkc.3
-        for <linux-btrfs@vger.kernel.org>; Fri, 08 Apr 2016 12:27:51 -0700 (PDT)
-Subject: Re: unable to mount btrfs pool even with -oro,recovery,degraded,
- unable to do 'btrfs restore'
-To: Chris Murphy <lists@colorremedies.com>
+Received: from kolab.zavadatar.com ([46.101.124.0]:36784 "EHLO
+	kolab.zavadatar.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750908AbcDHTxG (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 8 Apr 2016 15:53:06 -0400
+Date: Fri, 8 Apr 2016 22:53:00 +0300
+From: Yauhen Kharuzhy <yauhen.kharuzhy@zavadatar.com>
+To: linux-btrfs@vger.kernel.org
+Subject: Re: Missing device handling (was: 'unable to mount btrfs pool...')
+Message-ID: <20160408195259.GA23661@jeknote.loshitsa1.net>
 References: <CAFKQ2BsxWYejWOPMCw5JuF-SXM03-papUu6LXM5KBNKthxAPxg@mail.gmail.com>
  <CAJCQCtQCLWca9YycOSTC8Q4c78a8AVe7uFXAoe2vqEUQVFHiNA@mail.gmail.com>
  <57064231.2070201@gmail.com>
  <CAJCQCtSAaTYYMJhTTAsEXXDUzUdLEpJARHPRfihDNZrvZtEo4Q@mail.gmail.com>
  <5707961D.6000803@gmail.com>
- <CAJCQCtQwNDoB75XYdsdcvedbnc1ox3YOi8aaiw0DZ=1Q=21WBw@mail.gmail.com>
- <5707F602.9020504@gmail.com>
- <CAJCQCtSBX1Uk2Ojx0=tePGGO9tdS+6691cM9Gy=K7RK7HAZVoQ@mail.gmail.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <5708060A.8040105@gmail.com>
-Date: Fri, 8 Apr 2016 15:27:06 -0400
+ <CAJCQCtT1Pt__k+aYqSjNPLmcgpH7F4N+ueJ3b+z+aVTYTYtGEg@mail.gmail.com>
+ <57080530.7030805@gmail.com>
 MIME-Version: 1.0
-In-Reply-To: <CAJCQCtSBX1Uk2Ojx0=tePGGO9tdS+6691cM9Gy=K7RK7HAZVoQ@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <57080530.7030805@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2016-04-08 14:30, Chris Murphy wrote:
-> On Fri, Apr 8, 2016 at 12:18 PM, Austin S. Hemmelgarn
-> <ahferroin7@gmail.com> wrote:
->> On 2016-04-08 14:05, Chris Murphy wrote:
->>>
->>> On Fri, Apr 8, 2016 at 5:29 AM, Austin S. Hemmelgarn
->>> <ahferroin7@gmail.com> wrote:
->>>
->>>> I entirely agree.  If the fix doesn't require any kind of decision to be
->>>> made other than whether to fix it or not, it should be trivially fixable
->>>> with the tools.  TBH though, this particular issue with devices
->>>> disappearing
->>>> and reappearing could be fixed easier in the block layer (at least, there
->>>> are things that need to be fixed WRT it in the block layer).
->>>
->>>
->>> Another feature needed for transient failures with large storage, is
->>> some kind of partial scrub, along the lines of md partial resync when
->>> there's a bitmap write intent log.
->>>
->> In this case, I would think the simplest way to do this would be to have
->> scrub check if generation matches and not further verify anything that does
->> (I think we might be able to prune anything below objects whose generation
->> matches, but I'm not 100% certain about how writes cascade up the trees).  I
->> hadn't really thought about this before, but now that I do, it kind of
->> surprises me that we don't have something to do this.
->>
->
-> And I need to better qualify this: this scrub (or balance) needs to be
-> initiated automatically, perhaps have some reasonable delay after the
-> block layer informs Btrfs the missing device as reappeared. Both the
-> requirement of a full scrub as well as it being a manual scrub, are
-> pretty big gotchas.
->
-We would still ideally want some way to initiate it manually because:
-1. It would make it easier to test.
-2. We should have a way to do it on filesystems that have been 
-reassembled after a reboot, not just ones that got the device back in 
-the same boot (or it was missing on boot and then appeared).
+On Fri, Apr 08, 2016 at 03:23:28PM -0400, Austin S. Hemmelgarn wrote:
+> On 2016-04-08 12:17, Chris Murphy wrote:
+> 
+> I would personally suggest adding a per-filesystem node in sysfs to handle
+> both 2 and 5. Having it open tells BTRFS to not automatically attempt
+> countermeasures when degraded, select/epoll on it will return when state
+> changes, reads will return (at minimum): what devices comprise the FS, per
+> disk state (is it working, failed, missing, a hot-spare, etc), and what
+> effective redundancy we have (how many devices we can lose and still be
+> mountable, so 1 for raid1, raid10, and raid5, 2 for raid6, and 0 for
+> raid0/single/dup, possibly higher for n-way replication (n-1), n-order
+> parity (n), or erasure coding). This would make it trivial to write a daemon
+> to monitor the filesystem, react when something happens, and handle all the
+> policy decisions.
 
+Hm, good proposal. Personally I tried to use uevents for this but they
+cause locking troubles, and I didn't continue this attempt.
+
+In any case we need have interface for btrfs-progs to passing FS state
+information (presence and IDs of missing devices, for example,
+degraded/good state of RAID etc.).
+
+For testing as first attempt I implemented following interface. It still seems
+not good for me but acceptable as a starting point. Additionally to this, I changed
+missing device name reported in btrfs_ioctl_dev_info() to 'missing' for avoiding of
+interferences with block devices inserted after closing of failed device (adding of
+'missing' field to the struct btrfs_ioctl_dev_info_args may be more right way). So,
+your opinion?
+
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index d9b147f..f9a2fa6 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -2716,12 +2716,17 @@ static long btrfs_ioctl_fs_info(struct btrfs_root *root, void __user *arg)
+ 
+        mutex_lock(&fs_devices->device_list_mutex);
+        fi_args->num_devices = fs_devices->num_devices;
++       fi_args->missing_devices = fs_devices->missing_devices;
++       fi_args->open_devices = fs_devices->open_devices;
++       fi_args->rw_devices = fs_devices->rw_devices;
++       fi_args->total_devices = fs_devices->total_devices;
+        memcpy(&fi_args->fsid, root->fs_info->fsid, sizeof(fi_args->fsid));
+ 
+        list_for_each_entry(device, &fs_devices->devices, dev_list) {
+                if (device->devid > fi_args->max_id)
+                        fi_args->max_id = device->devid;
+        }
++       fi_args->state = root->fs_info->fs_state;
+        mutex_unlock(&fs_devices->device_list_mutex);
+ 
+        fi_args->nodesize = root->fs_info->super_copy->nodesize;
+diff --git a/include/uapi/linux/btrfs.h b/include/uapi/linux/btrfs.h
+index dea8931..6808bf2 100644
+--- a/include/uapi/linux/btrfs.h
++++ b/include/uapi/linux/btrfs.h
+@@ -186,8 +186,12 @@ struct btrfs_ioctl_fs_info_args {
+        __u32 nodesize;                         /* out */
+        __u32 sectorsize;                       /* out */
+        __u32 clone_alignment;                  /* out */
+-       __u32 reserved32;
+-       __u64 reserved[122];                    /* pad to 1k */
++       __u32 state;                            /* out */
++       __u64 missing_devices;                  /* out */
++       __u64 open_devices;                     /* out */
++       __u64 rw_devices;                       /* out */
++       __u64 total_devices;                    /* out */
++       __u64 reserved[118];                    /* pad to 1k */
+ };
+ 
+ struct btrfs_ioctl_feature_flags {
+
+
+
+
+-- 
+Yauhen Kharuzhy

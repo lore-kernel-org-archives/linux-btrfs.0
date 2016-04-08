@@ -1,78 +1,59 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from meiko.romanrm.net ([195.154.92.155]:54372 "EHLO
-	meiko.romanrm.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752633AbcDHLxi (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 8 Apr 2016 07:53:38 -0400
-Date: Fri, 8 Apr 2016 16:53:32 +0500
-From: Roman Mamedov <rm@romanrm.net>
-To: Tomasz Chmielewski <tch@virtall.com>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>, Chris Mason <clm@fb.com>,
-        Zhao Lei <zhaolei@cn.fujitsu.com>
-Subject: Re: 4.4.0 - no space left with >1.7 TB free space left
-Message-ID: <20160408165332.450659c4@natsu>
-In-Reply-To: <eaeffce90cd04fa5b91284ca580b5969@admin.virtall.com>
-References: <0c19f800da3013f22f2ab0d77d5a9efb@admin.virtall.com>
-	<20160208162410.58cb2b4a@natsu>
-	<eaeffce90cd04fa5b91284ca580b5969@admin.virtall.com>
+Received: from mondschein.lichtvoll.de ([194.150.191.11]:53585 "EHLO
+	mail.lichtvoll.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751359AbcDHNOP convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 8 Apr 2016 09:14:15 -0400
+From: Martin Steigerwald <martin@lichtvoll.de>
+To: Hugo Mills <hugo@carfax.org.uk>, linux-btrfs@vger.kernel.org
+Subject: Re: btrfs send/receive using generation number as source
+Date: Fri, 08 Apr 2016 15:14:11 +0200
+Message-ID: <4309812.MUa0uALYJp@merkaba>
+In-Reply-To: <20160408111254.GU29474@carfax.org.uk>
+References: <7303236.im7zcVY3uK@merkaba> <20160408111254.GU29474@carfax.org.uk>
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
- boundary="Sig_/VgAdFBovqyHsi=NnS60jxWX"; protocol="application/pgp-signature"
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
---Sig_/VgAdFBovqyHsi=NnS60jxWX
-Content-Type: text/plain; charset=US-ASCII
-Content-Transfer-Encoding: quoted-printable
+On Freitag, 8. April 2016 11:12:54 CEST Hugo Mills wrote:
+> On Fri, Apr 08, 2016 at 01:01:03PM +0200, Martin Steigerwald wrote:
+> > Hello!
+> > 
+> > As far as I understood, for differential btrfs send/receive – I didn´t use
+> > it yet – I need to keep a snapshot on the source device to then tell
+> > btrfs send to send the differences between the snapshot and the current
+> > state.
+> > 
+> > Now the BTRFS filesystems on my SSDs are often quite full, thus I do not
+> > keep any snapshots except for one during rsync or borgbackup script
+> > run-time.
+> > 
+> > Is it possible to tell btrfs send to use generation number xyz to
+> > calculate
+> > the difference? This way, I wouldn´t have to keep a snapshot around, I
+> > believe.
+> 
+>    btrfs sub find-new
+> 
+>    BUT that will only tell you which files have been added or updated.
+> It won't tell you which files have been deleted. It's also unrelated
+> to send/receive, so you'd have to roll your own solution.
 
-On Fri, 08 Apr 2016 20:36:26 +0900
-Tomasz Chmielewski <tch@virtall.com> wrote:
+I am aware of this one.
 
-> On 2016-02-08 20:24, Roman Mamedov wrote:
->=20
-> >> Linux 4.4.0 - btrfs is mainly used to host lots of test containers,
-> >> often snapshots, and at times, there is heavy IO in many of them for
-> >> extended periods of time. btrfs is on HDDs.
-> >>=20
-> >>=20
-> >> Every few days I'm getting "no space left" in a container running=20
-> >> mongo
-> >> 3.2.1 database. Interestingly, haven't seen this issue in containers
-> >> with MySQL. All databases have chattr +C set on their directories.
-> >=20
-> > Hello,
-> >=20
-> > Do you snapshot the parent subvolume which holds the databases? Can you
-> > correlate that perhaps ENOSPC occurs at the time of snapshotting? If=20
-> > yes, then
-> > you should try the patch https://patchwork.kernel.org/patch/7967161/
-> >=20
-> > (Too bad this was not included into 4.4.1.)
->=20
-> By the way - was it included in any later kernel? I'm running 4.4.5 on=20
-> that server, but still hitting the same issue.
+> > I bet not, at the time cause -c wants a snapshot. Ah and it wants a
+> > snapshot of the same state on the destination as well. Well on the
+> > destination I let the script make a snapshot after the backup so…
+> > what I would need is to remember the generation number of the source
+> > snapshot that the script creates to backup from and then tell btrfs
+> > send that generation number + the destination snapshots.
+> > 
+> > Well, or get larger SSDs or get rid of some data on them.
+> 
+>    Those are the other options, of course.
 
-It's not in 4.4.6 either. I don't know why it doesn't get included, or what
-we need to do. Last time I asked, it was queued:
-http://www.spinics.net/lists/linux-btrfs/msg52478.html
-But maybe that meant 4.5 or 4.6 only? While the bug is affecting people on
-4.4.x today.
+Hm, I see.
 
-Thanks
-
---=20
-With respect,
-Roman
-
---Sig_/VgAdFBovqyHsi=NnS60jxWX
-Content-Type: application/pgp-signature
-Content-Description: OpenPGP digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2
-
-iEYEARECAAYFAlcHm78ACgkQTLKSvz+PZwh/SACdG+IrBDyPr2pYo4O4NhoIavXg
-igwAn2VlngYGpJylNR9jGNGmugBgDHaJ
-=lvb1
------END PGP SIGNATURE-----
-
---Sig_/VgAdFBovqyHsi=NnS60jxWX--
+Thanks,
+-- 
+Martin

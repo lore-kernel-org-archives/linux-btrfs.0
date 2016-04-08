@@ -1,58 +1,152 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:55513 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1758855AbcDHTx5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 8 Apr 2016 15:53:57 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1aocTa-0007gU-1Q
-	for linux-btrfs@vger.kernel.org; Fri, 08 Apr 2016 21:53:54 +0200
-Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 08 Apr 2016 21:53:54 +0200
-Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 08 Apr 2016 21:53:54 +0200
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: 4.4.0 - no space left with >1.7 TB free space left
-Date: Fri, 8 Apr 2016 19:53:48 +0000 (UTC)
-Message-ID: <pan$caab3$faaff583$6f85afa6$6f034ed9@cox.net>
-References: <0c19f800da3013f22f2ab0d77d5a9efb@admin.virtall.com>
-	<20160208162410.58cb2b4a@natsu>
-	<eaeffce90cd04fa5b91284ca580b5969@admin.virtall.com>
-	<20160408165332.450659c4@natsu>
-Mime-Version: 1.0
+Received: from mail-io0-f172.google.com ([209.85.223.172]:36402 "EHLO
+	mail-io0-f172.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932870AbcDHUQs (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 8 Apr 2016 16:16:48 -0400
+Received: by mail-io0-f172.google.com with SMTP id q128so144822333iof.3
+        for <linux-btrfs@vger.kernel.org>; Fri, 08 Apr 2016 13:16:47 -0700 (PDT)
+MIME-Version: 1.0
+In-Reply-To: <5708060A.8040105@gmail.com>
+References: <CAFKQ2BsxWYejWOPMCw5JuF-SXM03-papUu6LXM5KBNKthxAPxg@mail.gmail.com>
+	<CAJCQCtQCLWca9YycOSTC8Q4c78a8AVe7uFXAoe2vqEUQVFHiNA@mail.gmail.com>
+	<57064231.2070201@gmail.com>
+	<CAJCQCtSAaTYYMJhTTAsEXXDUzUdLEpJARHPRfihDNZrvZtEo4Q@mail.gmail.com>
+	<5707961D.6000803@gmail.com>
+	<CAJCQCtQwNDoB75XYdsdcvedbnc1ox3YOi8aaiw0DZ=1Q=21WBw@mail.gmail.com>
+	<5707F602.9020504@gmail.com>
+	<CAJCQCtSBX1Uk2Ojx0=tePGGO9tdS+6691cM9Gy=K7RK7HAZVoQ@mail.gmail.com>
+	<5708060A.8040105@gmail.com>
+Date: Fri, 8 Apr 2016 14:16:41 -0600
+Message-ID: <CAJCQCtRms_q+d_O-5NQymJRU9da5VVbHAVrdKA7fm7Aez1pLEQ@mail.gmail.com>
+Subject: Re: unable to mount btrfs pool even with -oro,recovery,degraded,
+ unable to do 'btrfs restore'
+From: Chris Murphy <lists@colorremedies.com>
+To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Cc: Chris Murphy <lists@colorremedies.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Roman Mamedov posted on Fri, 08 Apr 2016 16:53:32 +0500 as excerpted:
+On Fri, Apr 8, 2016 at 1:27 PM, Austin S. Hemmelgarn
+<ahferroin7@gmail.com> wrote:
+> On 2016-04-08 14:30, Chris Murphy wrote:
+>>
+>> On Fri, Apr 8, 2016 at 12:18 PM, Austin S. Hemmelgarn
+>> <ahferroin7@gmail.com> wrote:
+>>>
+>>> On 2016-04-08 14:05, Chris Murphy wrote:
+>>>>
+>>>>
+>>>> On Fri, Apr 8, 2016 at 5:29 AM, Austin S. Hemmelgarn
+>>>> <ahferroin7@gmail.com> wrote:
+>>>>
+>>>>> I entirely agree.  If the fix doesn't require any kind of decision to
+>>>>> be
+>>>>> made other than whether to fix it or not, it should be trivially
+>>>>> fixable
+>>>>> with the tools.  TBH though, this particular issue with devices
+>>>>> disappearing
+>>>>> and reappearing could be fixed easier in the block layer (at least,
+>>>>> there
+>>>>> are things that need to be fixed WRT it in the block layer).
+>>>>
+>>>>
+>>>>
+>>>> Another feature needed for transient failures with large storage, is
+>>>> some kind of partial scrub, along the lines of md partial resync when
+>>>> there's a bitmap write intent log.
+>>>>
+>>> In this case, I would think the simplest way to do this would be to have
+>>> scrub check if generation matches and not further verify anything that
+>>> does
+>>> (I think we might be able to prune anything below objects whose
+>>> generation
+>>> matches, but I'm not 100% certain about how writes cascade up the trees).
+>>> I
+>>> hadn't really thought about this before, but now that I do, it kind of
+>>> surprises me that we don't have something to do this.
+>>>
+>>
+>> And I need to better qualify this: this scrub (or balance) needs to be
+>> initiated automatically, perhaps have some reasonable delay after the
+>> block layer informs Btrfs the missing device as reappeared. Both the
+>> requirement of a full scrub as well as it being a manual scrub, are
+>> pretty big gotchas.
+>>
+> We would still ideally want some way to initiate it manually because:
+> 1. It would make it easier to test.
+> 2. We should have a way to do it on filesystems that have been reassembled
+> after a reboot, not just ones that got the device back in the same boot (or
+> it was missing on boot and then appeared).
 
-> It's not in 4.4.6 either. I don't know why it doesn't get included, or
-> what we need to do. Last time I asked, it was queued:
-> http://www.spinics.net/lists/linux-btrfs/msg52478.html But maybe that
-> meant 4.5 or 4.6 only? While the bug is affecting people on 4.4.x today.
+I'm OK with a mount option, 'autoraidfixup' (not a proposed name!),
+that permits the mechanism to happen, but which isn't yet the default.
+However, one day I think it should be, because right now we already
+allow mounts of devices with different generations and there is no
+message indicating this at all, even though the superblocks clearly
+show a discrepancy in generation.
 
-Patches must make it to the current development kernel before they're 
-eligible for stable.  Additionally, they need to be cced to stable as 
-well, in ordered to be queued there.
+mount with one device missing
 
-So check 4.5 and 4.6-rc.  If it's in neither of those, it's not going to 
-be in stable yet.  Once it's in the development kernel, see if it was cced 
-to stable and if needed, ask the author and btrfs devs to cc it to stable.
+[264466.609093] BTRFS: has skinny extents
+[264912.547199] BTRFS info (device dm-6): disk space caching is enabled
+[264912.547267] BTRFS: has skinny extents
+[264912.606266] BTRFS: failed to read chunk tree on dm-6
+[264912.621829] BTRFS: open_ctree failed
 
-Tho sometimes stable can get a backlog as well.  I know earlier this year 
-they were dealing with one, but I follow release or development, not 
-stable, and don't know what stable's current status is.
+mount -o degraded
 
-If it gets to stable, and it wasn't for a bug introduced /after/ 4.4, it 
-should eventually get into 4.4, as that's an LTS kernel.  But it might 
-take awhile, as the above discussion hints.
+[264953.758518] BTRFS info (device dm-6): allowing degraded mounts
+[264953.758794] BTRFS info (device dm-6): disk space caching is enabled
+[264953.759055] BTRFS: has skinny extents
+
+copy 800MB file
+umount
+lvchange -ay
+mount
+
+[265082.859201] BTRFS info (device dm-6): disk space caching is enabled
+[265082.859474] BTRFS: has skinny extents
+
+btrfs scrub start
+
+[265260.024267] BTRFS error (device dm-6): bdev /dev/dm-7 errs: wr 0,
+rd 0, flush 0, corrupt 0, gen 1
+
+# btrfs scrub status /mnt/1
+scrub status for b01b3922-4012-4de1-af42-63f5b2f68fc3
+    scrub started at Fri Apr  8 14:01:41 2016 and finished after 00:00:18
+    total bytes scrubbed: 1.70GiB with 1 errors
+    error details: super=1
+    corrected errors: 0, uncorrectable errors: 0, unverified errors: 0
+
+After scrubbing and fixing everything and zeroing out the counters, if
+I fail the device again, I can no longer mount degraded:
+
+[265502.432444] BTRFS: missing devices(1) exceeds the limit(0),
+writeable mount is not allowed
+
+because of this nonsense:
+
+[root@f23s ~]# btrfs fi df /mnt/1
+Data, RAID1: total=1.00GiB, used=458.06MiB
+Data, single: total=1.00GiB, used=824.00MiB
+System, RAID1: total=64.00MiB, used=16.00KiB
+System, single: total=32.00MiB, used=0.00B
+Metadata, RAID1: total=2.00GiB, used=576.00KiB
+Metadata, single: total=256.00MiB, used=912.00KiB
+GlobalReserve, single: total=16.00MiB, used=0.00B
+
+a.) the device I'm mounting degraded contains the single chunks, it's
+not like the single chunks are actually missing
+b.) the manual scrub only fixed the supers, it did not replicate the
+newly copied data since it was placed in new single chunks rather than
+existing raid1 chunks.
+c.) this requires a manual balance convert,soft to actually get
+everything back to raid1.
+
+Very non-obvious.
 
 -- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+Chris Murphy

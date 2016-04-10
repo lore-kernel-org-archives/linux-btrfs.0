@@ -1,101 +1,58 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:34218 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1755266AbcDLAaM (ORCPT
+Received: from mail-wm0-f53.google.com ([74.125.82.53]:34164 "EHLO
+	mail-wm0-f53.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753026AbcDJOrq (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 11 Apr 2016 20:30:12 -0400
-Subject: Re: WARN_ON in record_root_in_trans() when deleting freshly renamed
- subvolume
-To: Mark Fasheh <mfasheh@suse.de>
-References: <57068E64.7000408@googlemail.com>
- <CAL3q7H6U8hDK7+BOqP-u3ogrJaKxED3U839kmT_PU6kbq9U1AA@mail.gmail.com>
- <57079B4D.8080304@googlemail.com> <5707ADCB.9090207@googlemail.com>
- <20160408191855.GK2187@wotan.suse.de> <570AF86B.2060805@cn.fujitsu.com>
- <20160411180926.GL2187@wotan.suse.de>
-CC: =?UTF-8?Q?Holger_Hoffst=c3=a4tte?=
-	<holger.hoffstaette@googlemail.com>,
-        Filipe David Manana <fdmanana@gmail.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <570C418F.40906@cn.fujitsu.com>
-Date: Tue, 12 Apr 2016 08:30:07 +0800
+	Sun, 10 Apr 2016 10:47:46 -0400
+Received: by mail-wm0-f53.google.com with SMTP id l6so115818795wml.1
+        for <linux-btrfs@vger.kernel.org>; Sun, 10 Apr 2016 07:47:45 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <20160411180926.GL2187@wotan.suse.de>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+Date: Sun, 10 Apr 2016 15:47:44 +0100
+Message-ID: <CAK1feJAqOgucajbGQmZMzrdaw=BmXV9ht=Rt16Kk+X3A7Xs_oA@mail.gmail.com>
+Subject: btrfstune -u makes filesystem unmountable
+From: Richard C <mailing-lists@racitup.com>
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hi,
 
+I'm writing a backup script that images a btrfs using btrfs-image,
+then restores to a file on a loop device. Since I had trouble mounting
+the original and copied btrfs filesystems with the same UUID on the
+same machine, I decided to try btrfstune -fu. However, this appears to
+corrupt the copied filesystem altogether making fsck and mount fail.
+Details below.
+Is this a bug?
 
-Mark Fasheh wrote on 2016/04/11 11:09 -0700:
-> On Mon, Apr 11, 2016 at 09:05:47AM +0800, Qu Wenruo wrote:
->>
->>
->> Mark Fasheh wrote on 2016/04/08 12:18 -0700:
->>> On Fri, Apr 08, 2016 at 03:10:35PM +0200, Holger Hoffstätte wrote:
->>>> [cc: Mark and Qu]
->>>>
->>>> On 04/08/16 13:51, Holger Hoffstätte wrote:
->>>>> On 04/08/16 13:14, Filipe Manana wrote:
->>>>>> Using Chris' for-linus-4.6 branch, which is 4.5-rc6 + all 4.6 btrfs
->>>>>> patches, it didn't reproduce here:
->>>>>
->>>>> Great, that's good to know (sort of :). Thanks also to Liu Bo.
->>>>>
->>>>>> Are you sure that you are not using some patches not in 4.6?
->>>>
->>>> We have a bingo!
->>>>
->>>> Reverting "qgroup: Fix qgroup accounting when creating snapshot"
->>> >from last Wednesday immediately fixes the problem.
->>>
->>> Not surprising, I had some issues testing it out too. I'm pretty sure this
->>> patch is corrupting memory, I just haven't found where yet though my
->>> educated guess is that the transaction is being reused improperly.
->>> 	--Mark
->>>
->>> --
->>> Mark Fasheh
->>>
->>>
->> Still digging the bug Mark has reported about the patch.
->>
->> Good to have another report, as I can't always reproduce the soft
->> lockup from Mark.
->>
->> It seems that the WARN_ON will bring another clue to fix it.
->>
->> BTW, the memory corruption assumption seems to be quite helpful.
->> I didn't consider in that way, but it seems to be the only reason
->> causing dead spinlock while no other thread spinning and no lockdep
->> warning.
->
-> It seems to be the call to commit_cowonly_roots() in your patch which sets
-> everything off. If I remove that call I can run all day without a crash.
->
-> Btw, I'm not convinced this fixes the qgroup numbers anyway - we are still
-> inconsistent even if I don't get a crash.
->
-> Have you tested that the actual numbers on your end are coming out ok?
-> 	--Mark
+$ uname -a
+Linux adventure 3.16.0-67-generic #87~14.04.1-Ubuntu SMP Fri Mar 11
+00:26:02 UTC 2016 x86_64 x86_64 x86_64 GNU/Linux
+$ btrfs --version
+btrfs-progs v4.4
 
-Yes, my initial test shows that the snapshot of fs tree doesn't break 
-the number anymore.
+$ btrfstune -fu /dev/loop2
+Current fsid: 36012b08-1e33-4d3c-ac23-5ccffd3295cd
+New fsid: 8f70d0af-8ffa-4c82-a817-941e6abfaf9a
+Set superblock flag CHANGING_FSID
+Change fsid in extents
+Change fsid on devices
+Clear superblock flag CHANGING_FSID
+Fsid change finished
 
-And commit_cowonly_roots() is the core of the fix, without it the bug 
-won't be fixed.
+$ btrfs check /dev/loop2
+fsid mismatch, want=36012b08-1e33-4d3c-ac23-5ccffd3295cd,
+have=8f70d0af-8ffa-4c82-a817-941e6abfaf9a
+Couldn't read chunk root
+Couldn't open file system
+$ echo $?
+251
 
-I'm still digging but it seems to be related to missing 
-switch_commit_roots() call after commit_cowonly_roots(), but still 
-uncertain, as I'm not familiar with the commit codes.
-
-Thanks,
-Qu
-
->
-> --
-> Mark Fasheh
->
->
-
-
+$ mount /dev/loop2 /mnt
+ mount: wrong fs type, bad option, bad superblock on /dev/loop2,
+       missing codepage or helper program, or other error
+       In some cases useful info is found in syslog - try
+       dmesg | tail  or so
+$ echo $?
+32

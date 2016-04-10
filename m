@@ -1,64 +1,73 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oi0-f54.google.com ([209.85.218.54]:35787 "EHLO
-	mail-oi0-f54.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753045AbcDJPeH (ORCPT
+Received: from mail-lf0-f49.google.com ([209.85.215.49]:36041 "EHLO
+	mail-lf0-f49.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754816AbcDJRZs (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 10 Apr 2016 11:34:07 -0400
-Received: by mail-oi0-f54.google.com with SMTP id p188so182755321oih.2
-        for <linux-btrfs@vger.kernel.org>; Sun, 10 Apr 2016 08:34:05 -0700 (PDT)
+	Sun, 10 Apr 2016 13:25:48 -0400
+Received: by mail-lf0-f49.google.com with SMTP id g184so129804757lfb.3
+        for <linux-btrfs@vger.kernel.org>; Sun, 10 Apr 2016 10:25:47 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <CAPmG0jaxZY1d365KGy=HL+e7WNyZ7w6jtT2VJod00KD=JBC=ng@mail.gmail.com>
+In-Reply-To: <CALJXSJpSsxES=SvtscJYCy7J1V37=rhXfWg1DjqU3XpkzJ-M6A@mail.gmail.com>
 References: <CALJXSJrdkqau4xWax72xQGBcaONDxWBeDLOn4KD7vP8NKJikDw@mail.gmail.com>
 	<CAPmG0jaxZY1d365KGy=HL+e7WNyZ7w6jtT2VJod00KD=JBC=ng@mail.gmail.com>
-Date: Sun, 10 Apr 2016 11:34:05 -0400
-Message-ID: <CALJXSJpSsxES=SvtscJYCy7J1V37=rhXfWg1DjqU3XpkzJ-M6A@mail.gmail.com>
+	<CALJXSJpSsxES=SvtscJYCy7J1V37=rhXfWg1DjqU3XpkzJ-M6A@mail.gmail.com>
+Date: Sun, 10 Apr 2016 19:25:46 +0200
+Message-ID: <CAPmG0jbYGBuDah_PvhzPVSdotqkGnO43Y3yi2ZYj94r+f9mt5w@mail.gmail.com>
 Subject: Re: csum failed on innexistent inode
-From: =?UTF-8?B?SsOpcsO0bWUgUG91bGlu?= <jeromepoulin@gmail.com>
-To: Henk Slager <eye1tm@gmail.com>
+From: Henk Slager <eye1tm@gmail.com>
+To: =?UTF-8?B?SsOpcsO0bWUgUG91bGlu?= <jeromepoulin@gmail.com>
 Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Apr 4, 2016 at 5:42 AM, Henk Slager <eye1tm@gmail.com> wrote:
+>> You might want this patch:
+>> http://www.spinics.net/lists/linux-btrfs/msg53552.html
+>>
+>> As workaround, you can reset the counters on new/healty device with:
+>>
+>> btrfs device stats [-z] <path>|<device>
+>>
 >
-> You might want this patch:
-> http://www.spinics.net/lists/linux-btrfs/msg53552.html
->
-> As workaround, you can reset the counters on new/healty device with:
->
-> btrfs device stats [-z] <path>|<device>
->
+> I did reset the stats and launched another scrub, and still, since the
+> logical blocks are the same on both devices and checksum is different,
+> is really seems like my problem was originally created when I booted
+> this computer with bad memory (maybe?), could it have been that the
+> checksum was saved on disk as bad in the first place and BTRFS doesn't
+> want to read it back?
 
-I did reset the stats and launched another scrub, and still, since the
-logical blocks are the same on both devices and checksum is different,
-is really seems like my problem was originally created when I booted
-this computer with bad memory (maybe?), could it have been that the
-checksum was saved on disk as bad in the first place and BTRFS doesn't
-want to read it back?
+It was not fully clear what the sequence of events were:
+- HW problem
+- btrfs SW problem
+- 1st scrub
+- the --repair-sector with hdparm
+- 2nd scrub
+- 3rd scrub?
 
-Is it possible to reset the checksum on those? I couldn't find what
-file or metadata the blocks were pointing too.
+There is also DM between the harddisk and btrfs and I am not sure if
+whether the hdparm action did repair or further corrupt things.
 
+How do you know for sure that the contents of the 'logical blocks' are
+the same on both devices?
 
-> >
-> > btrfs check:
-> > ./btrfs check /dev/mapper/luksbtrfsdata2
-> > Checking filesystem on /dev/mapper/luksbtrfsdata2
-> > UUID: 805f6ad7-1188-448d-aee4-8ddeeb70c8a7
-> > checking extents
-> > bad metadata [1453741768704, 1453741785088) crossing stripe boundary
-> > bad metadata [1454487764992, 1454487781376) crossing stripe boundary
-> > bad metadata [1454828552192, 1454828568576) crossing stripe boundary
-> > bad metadata [1454879735808, 1454879752192) crossing stripe boundary
-> > bad metadata [1455087222784, 1455087239168) crossing stripe boundary
-> > bad metadata [1456269426688, 1456269443072) crossing stripe boundary
-> > bad metadata [1456273227776, 1456273244160) crossing stripe boundary
-> > bad metadata [1456404234240, 1456404250624) crossing stripe boundary
-> > bad metadata [1456418914304, 1456418930688) crossing stripe boundary
->
-> Those are false alerts; This patch handles that:
-> https://patchwork.kernel.org/patch/8706891/
->
+If btrfs wants to read a diskblock and its csum doesn't match, then it
+is an I/O error, same effect as an uncorrected badsector in the old
+days. But in this case your (former/old) disk might still be OK, as
+you suggest it might be due to some other error (HW or SW) that
+content and csum don't match. It is hard to traceback based on the
+info in the email thread. It looks like replace just copied the
+problem and it seems a bottleneck now on filesystem level.
 
-Since those are fakes, I'll just ignore them for now.
+> Is it possible to reset the checksum on those? I couldn't find what
+> file or metadata the blocks were pointing too.
+
+Could it be that they in the meantime have been removed?
+It might be that you again need to run scrub in order to try to find
+the problem spot/files.
+
+Fixing individual csum's has been asked before, I don't remember if
+there are people who did fix them by own extra scripts/C-code or
+whatever. A brute force method is to recalculate and rewrite all
+csums:  btrfs check --init-csum-tree , you probably know that. But
+maybe you want a rsync -c compare with backups first. Kernel/tools
+versions and btrfs fi us output might also give some hints.

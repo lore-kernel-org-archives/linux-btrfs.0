@@ -1,178 +1,86 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:32835 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:58046 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754198AbcDYLSt (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 25 Apr 2016 07:18:49 -0400
+	id S1753109AbcDKSIM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 11 Apr 2016 14:08:12 -0400
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+	by mx2.suse.de (Postfix) with ESMTP id 5CA22ABB4
+	for <linux-btrfs@vger.kernel.org>; Mon, 11 Apr 2016 18:08:10 +0000 (UTC)
 From: David Sterba <dsterba@suse.com>
 To: linux-btrfs@vger.kernel.org
-Cc: t-itoh@jp.fujitsu.com, David Sterba <dsterba@suse.com>
-Subject: [PATCH v2] btrfs: use dynamic allocation for root item in create_subvol
-Date: Mon, 25 Apr 2016 13:18:32 +0200
-Message-Id: <1461583112-3646-1-git-send-email-dsterba@suse.com>
-In-Reply-To: <7d013acc6e07b39bd224f9c0097775c0a8e138df.1460397148.git.dsterba@suse.com>
-References: <7d013acc6e07b39bd224f9c0097775c0a8e138df.1460397148.git.dsterba@suse.com>
+Cc: David Sterba <dsterba@suse.com>
+Subject: [PATCH 2/2] btrfs: reuse existing variable in scrub_stripe, reduce stack usage
+Date: Mon, 11 Apr 2016 20:04:35 +0200
+Message-Id: <355ef15a6eafc0cafd49b049d7173040adb44f61.1460397148.git.dsterba@suse.com>
+In-Reply-To: <cover.1460397148.git.dsterba@suse.com>
+References: <cover.1460397148.git.dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The size of root item is more than 400 bytes, which is quite a lot of
-stack space. As we do IO from inside the subvolume ioctls, we should
-keep the stack usage low in case the filesystem is on top of other
-layers (NFS, device mapper, iscsi, etc).
+The key variable occupies 17 bytes, the key_start is used once, we can
+simply reuse existing 'key' for that purpose. As the key is not a simple
+type, compiler doest not do it on itself.
 
 Signed-off-by: David Sterba <dsterba@suse.com>
 ---
- fs/btrfs/ioctl.c | 65 ++++++++++++++++++++++++++++++++------------------------
- 1 file changed, 37 insertions(+), 28 deletions(-)
+ fs/btrfs/scrub.c | 19 +++++++++----------
+ 1 file changed, 9 insertions(+), 10 deletions(-)
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 053e677839fe..9a63fe07bc2e 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -439,7 +439,7 @@ static noinline int create_subvol(struct inode *dir,
- {
- 	struct btrfs_trans_handle *trans;
- 	struct btrfs_key key;
--	struct btrfs_root_item root_item;
-+	struct btrfs_root_item *root_item;
- 	struct btrfs_inode_item *inode_item;
- 	struct extent_buffer *leaf;
- 	struct btrfs_root *root = BTRFS_I(dir)->root;
-@@ -455,16 +455,22 @@ static noinline int create_subvol(struct inode *dir,
- 	u64 qgroup_reserved;
- 	uuid_le new_uuid;
+diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
+index 39dbdcbf4d13..07db452e4a15 100644
+--- a/fs/btrfs/scrub.c
++++ b/fs/btrfs/scrub.c
+@@ -3070,7 +3070,6 @@ static noinline_for_stack int scrub_stripe(struct scrub_ctx *sctx,
+ 	int slot;
+ 	u64 nstripes;
+ 	struct extent_buffer *l;
+-	struct btrfs_key key;
+ 	u64 physical;
+ 	u64 logical;
+ 	u64 logic_end;
+@@ -3079,7 +3078,7 @@ static noinline_for_stack int scrub_stripe(struct scrub_ctx *sctx,
+ 	int mirror_num;
+ 	struct reada_control *reada1;
+ 	struct reada_control *reada2;
+-	struct btrfs_key key_start;
++	struct btrfs_key key;
+ 	struct btrfs_key key_end;
+ 	u64 increment = map->stripe_len;
+ 	u64 offset;
+@@ -3158,21 +3157,21 @@ static noinline_for_stack int scrub_stripe(struct scrub_ctx *sctx,
+ 	scrub_blocked_if_needed(fs_info);
  
-+	root_item = kzalloc(sizeof(*root_item), GFP_KERNEL);
-+	if (!root_item)
-+		return -ENOMEM;
-+
- 	ret = btrfs_find_free_objectid(root->fs_info->tree_root, &objectid);
- 	if (ret)
--		return ret;
-+		goto fail_free;
+ 	/* FIXME it might be better to start readahead at commit root */
+-	key_start.objectid = logical;
+-	key_start.type = BTRFS_EXTENT_ITEM_KEY;
+-	key_start.offset = (u64)0;
++	key.objectid = logical;
++	key.type = BTRFS_EXTENT_ITEM_KEY;
++	key.offset = (u64)0;
+ 	key_end.objectid = logic_end;
+ 	key_end.type = BTRFS_METADATA_ITEM_KEY;
+ 	key_end.offset = (u64)-1;
+-	reada1 = btrfs_reada_add(root, &key_start, &key_end);
++	reada1 = btrfs_reada_add(root, &key, &key_end);
  
- 	/*
- 	 * Don't create subvolume whose level is not zero. Or qgroup will be
- 	 * screwed up since it assume subvolme qgroup's level to be 0.
- 	 */
--	if (btrfs_qgroup_level(objectid))
--		return -ENOSPC;
-+	if (btrfs_qgroup_level(objectid)) {
-+		ret = -ENOSPC;
-+		goto fail_free;
-+	}
+-	key_start.objectid = BTRFS_EXTENT_CSUM_OBJECTID;
+-	key_start.type = BTRFS_EXTENT_CSUM_KEY;
+-	key_start.offset = logical;
++	key.objectid = BTRFS_EXTENT_CSUM_OBJECTID;
++	key.type = BTRFS_EXTENT_CSUM_KEY;
++	key.offset = logical;
+ 	key_end.objectid = BTRFS_EXTENT_CSUM_OBJECTID;
+ 	key_end.type = BTRFS_EXTENT_CSUM_KEY;
+ 	key_end.offset = logic_end;
+-	reada2 = btrfs_reada_add(csum_root, &key_start, &key_end);
++	reada2 = btrfs_reada_add(csum_root, &key, &key_end);
  
- 	btrfs_init_block_rsv(&block_rsv, BTRFS_BLOCK_RSV_TEMP);
- 	/*
-@@ -474,14 +480,14 @@ static noinline int create_subvol(struct inode *dir,
- 	ret = btrfs_subvolume_reserve_metadata(root, &block_rsv,
- 					       8, &qgroup_reserved, false);
- 	if (ret)
--		return ret;
-+		goto fail_free;
- 
- 	trans = btrfs_start_transaction(root, 0);
- 	if (IS_ERR(trans)) {
- 		ret = PTR_ERR(trans);
- 		btrfs_subvolume_release_metadata(root, &block_rsv,
- 						 qgroup_reserved);
--		return ret;
-+		goto fail_free;
- 	}
- 	trans->block_rsv = &block_rsv;
- 	trans->bytes_reserved = block_rsv.size;
-@@ -509,47 +515,45 @@ static noinline int create_subvol(struct inode *dir,
- 			    BTRFS_UUID_SIZE);
- 	btrfs_mark_buffer_dirty(leaf);
- 
--	memset(&root_item, 0, sizeof(root_item));
--
--	inode_item = &root_item.inode;
-+	inode_item = &root_item->inode;
- 	btrfs_set_stack_inode_generation(inode_item, 1);
- 	btrfs_set_stack_inode_size(inode_item, 3);
- 	btrfs_set_stack_inode_nlink(inode_item, 1);
- 	btrfs_set_stack_inode_nbytes(inode_item, root->nodesize);
- 	btrfs_set_stack_inode_mode(inode_item, S_IFDIR | 0755);
- 
--	btrfs_set_root_flags(&root_item, 0);
--	btrfs_set_root_limit(&root_item, 0);
-+	btrfs_set_root_flags(root_item, 0);
-+	btrfs_set_root_limit(root_item, 0);
- 	btrfs_set_stack_inode_flags(inode_item, BTRFS_INODE_ROOT_ITEM_INIT);
- 
--	btrfs_set_root_bytenr(&root_item, leaf->start);
--	btrfs_set_root_generation(&root_item, trans->transid);
--	btrfs_set_root_level(&root_item, 0);
--	btrfs_set_root_refs(&root_item, 1);
--	btrfs_set_root_used(&root_item, leaf->len);
--	btrfs_set_root_last_snapshot(&root_item, 0);
-+	btrfs_set_root_bytenr(root_item, leaf->start);
-+	btrfs_set_root_generation(root_item, trans->transid);
-+	btrfs_set_root_level(root_item, 0);
-+	btrfs_set_root_refs(root_item, 1);
-+	btrfs_set_root_used(root_item, leaf->len);
-+	btrfs_set_root_last_snapshot(root_item, 0);
- 
--	btrfs_set_root_generation_v2(&root_item,
--			btrfs_root_generation(&root_item));
-+	btrfs_set_root_generation_v2(root_item,
-+			btrfs_root_generation(root_item));
- 	uuid_le_gen(&new_uuid);
--	memcpy(root_item.uuid, new_uuid.b, BTRFS_UUID_SIZE);
--	btrfs_set_stack_timespec_sec(&root_item.otime, cur_time.tv_sec);
--	btrfs_set_stack_timespec_nsec(&root_item.otime, cur_time.tv_nsec);
--	root_item.ctime = root_item.otime;
--	btrfs_set_root_ctransid(&root_item, trans->transid);
--	btrfs_set_root_otransid(&root_item, trans->transid);
-+	memcpy(root_item->uuid, new_uuid.b, BTRFS_UUID_SIZE);
-+	btrfs_set_stack_timespec_sec(&root_item->otime, cur_time.tv_sec);
-+	btrfs_set_stack_timespec_nsec(&root_item->otime, cur_time.tv_nsec);
-+	root_item->ctime = root_item->otime;
-+	btrfs_set_root_ctransid(root_item, trans->transid);
-+	btrfs_set_root_otransid(root_item, trans->transid);
- 
- 	btrfs_tree_unlock(leaf);
- 	free_extent_buffer(leaf);
- 	leaf = NULL;
- 
--	btrfs_set_root_dirid(&root_item, new_dirid);
-+	btrfs_set_root_dirid(root_item, new_dirid);
- 
- 	key.objectid = objectid;
- 	key.offset = 0;
- 	key.type = BTRFS_ROOT_ITEM_KEY;
- 	ret = btrfs_insert_root(trans, root->fs_info->tree_root, &key,
--				&root_item);
-+				root_item);
- 	if (ret)
- 		goto fail;
- 
-@@ -601,12 +605,13 @@ static noinline int create_subvol(struct inode *dir,
- 	BUG_ON(ret);
- 
- 	ret = btrfs_uuid_tree_add(trans, root->fs_info->uuid_root,
--				  root_item.uuid, BTRFS_UUID_KEY_SUBVOL,
-+				  root_item->uuid, BTRFS_UUID_KEY_SUBVOL,
- 				  objectid);
- 	if (ret)
- 		btrfs_abort_transaction(trans, root, ret);
- 
- fail:
-+	kfree(root_item);
- 	trans->block_rsv = NULL;
- 	trans->bytes_reserved = 0;
- 	btrfs_subvolume_release_metadata(root, &block_rsv, qgroup_reserved);
-@@ -629,6 +634,10 @@ static noinline int create_subvol(struct inode *dir,
- 		d_instantiate(dentry, inode);
- 	}
- 	return ret;
-+
-+fail_free:
-+	kfree(root_item);
-+	return ret;
- }
- 
- static void btrfs_wait_for_no_snapshoting_writes(struct btrfs_root *root)
+ 	if (!IS_ERR(reada1))
+ 		btrfs_reada_wait(reada1);
 -- 
 2.7.1
 
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-

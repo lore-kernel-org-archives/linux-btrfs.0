@@ -1,57 +1,73 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:55528 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:55531 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750971AbcDKRfL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 11 Apr 2016 13:35:11 -0400
+	id S1750971AbcDKRfO (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 11 Apr 2016 13:35:14 -0400
 Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id DE42CAC73
-	for <linux-btrfs@vger.kernel.org>; Mon, 11 Apr 2016 17:35:08 +0000 (UTC)
+	by mx2.suse.de (Postfix) with ESMTP id 3197BAC73
+	for <linux-btrfs@vger.kernel.org>; Mon, 11 Apr 2016 17:35:12 +0000 (UTC)
 From: David Sterba <dsterba@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: David Sterba <dsterba@suse.com>
-Subject: [PATCH 2/6] btrfs: send: use vmalloc only as fallback for read_buf
-Date: Mon, 11 Apr 2016 19:31:34 +0200
-Message-Id: <b004f904a3c595f5ae00b49b733f0dc008b87dd8.1460394967.git.dsterba@suse.com>
+Subject: [PATCH 3/6] btrfs: send: use temporary variable to store allocation size
+Date: Mon, 11 Apr 2016 19:31:37 +0200
+Message-Id: <2715900211c9a51f1493a2d734976d41964213fc.1460394967.git.dsterba@suse.com>
 In-Reply-To: <cover.1460394967.git.dsterba@suse.com>
 References: <cover.1460394967.git.dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+We're going to use the argument multiple times later.
+
 Signed-off-by: David Sterba <dsterba@suse.com>
 ---
- fs/btrfs/send.c | 11 +++++++----
- 1 file changed, 7 insertions(+), 4 deletions(-)
+ fs/btrfs/send.c | 14 ++++++++------
+ 1 file changed, 8 insertions(+), 6 deletions(-)
 
 diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-index 8f6f9d6d14df..fc9d7f6212c1 100644
+index fc9d7f6212c1..ab1b4d259836 100644
 --- a/fs/btrfs/send.c
 +++ b/fs/btrfs/send.c
-@@ -6031,10 +6031,13 @@ long btrfs_ioctl_send(struct file *mnt_file, void __user *arg_)
+@@ -5939,6 +5939,7 @@ long btrfs_ioctl_send(struct file *mnt_file, void __user *arg_)
+ 	u32 i;
+ 	u64 *clone_sources_tmp = NULL;
+ 	int clone_sources_to_rollback = 0;
++	unsigned alloc_size;
+ 	int sort_clone_roots = 0;
+ 	int index;
+ 
+@@ -6044,24 +6045,25 @@ long btrfs_ioctl_send(struct file *mnt_file, void __user *arg_)
+ 	sctx->waiting_dir_moves = RB_ROOT;
+ 	sctx->orphan_dirs = RB_ROOT;
+ 
+-	sctx->clone_roots = vzalloc(sizeof(struct clone_root) *
+-			(arg->clone_sources_count + 1));
++	alloc_size = sizeof(struct clone_root) * (arg->clone_sources_count + 1);
++
++	sctx->clone_roots = vzalloc(alloc_size);
+ 	if (!sctx->clone_roots) {
+ 		ret = -ENOMEM;
+ 		goto out;
+ 	}
+ 
++	alloc_size = arg->clone_sources_count * sizeof(*arg->clone_sources);
++
+ 	if (arg->clone_sources_count) {
+-		clone_sources_tmp = vmalloc(arg->clone_sources_count *
+-				sizeof(*arg->clone_sources));
++		clone_sources_tmp = vmalloc(alloc_size);
+ 		if (!clone_sources_tmp) {
+ 			ret = -ENOMEM;
+ 			goto out;
  		}
- 	}
  
--	sctx->read_buf = vmalloc(BTRFS_SEND_READ_SIZE);
-+	sctx->read_buf = kmalloc(BTRFS_SEND_READ_SIZE, GFP_KERNEL | __GFP_NOWARN);
- 	if (!sctx->read_buf) {
--		ret = -ENOMEM;
--		goto out;
-+		sctx->read_buf = vmalloc(BTRFS_SEND_READ_SIZE);
-+		if (!sctx->read_buf) {
-+			ret = -ENOMEM;
-+			goto out;
-+		}
- 	}
- 
- 	sctx->pending_dir_moves = RB_ROOT;
-@@ -6218,7 +6221,7 @@ long btrfs_ioctl_send(struct file *mnt_file, void __user *arg_)
- 
- 		vfree(sctx->clone_roots);
- 		kvfree(sctx->send_buf);
--		vfree(sctx->read_buf);
-+		kvfree(sctx->read_buf);
- 
- 		name_cache_free(sctx);
- 
+ 		ret = copy_from_user(clone_sources_tmp, arg->clone_sources,
+-				arg->clone_sources_count *
+-				sizeof(*arg->clone_sources));
++				alloc_size);
+ 		if (ret) {
+ 			ret = -EFAULT;
+ 			goto out;
 -- 
 2.7.1
 

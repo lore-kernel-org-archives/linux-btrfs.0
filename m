@@ -1,61 +1,43 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from e23smtp06.au.ibm.com ([202.81.31.148]:46162 "EHLO
-	e23smtp06.au.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751298AbcDCVYT (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 3 Apr 2016 17:24:19 -0400
-Received: from localhost
-	by e23smtp06.au.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
-	for <linux-btrfs@vger.kernel.org> from <chandan@linux.vnet.ibm.com>;
-	Mon, 4 Apr 2016 07:24:16 +1000
-Received: from d23relay06.au.ibm.com (d23relay06.au.ibm.com [9.185.63.219])
-	by d23dlp01.au.ibm.com (Postfix) with ESMTP id 0FCDE2CE8054
-	for <linux-btrfs@vger.kernel.org>; Mon,  4 Apr 2016 07:24:14 +1000 (EST)
-Received: from d23av04.au.ibm.com (d23av04.au.ibm.com [9.190.235.139])
-	by d23relay06.au.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id u33LNsCN65274030
-	for <linux-btrfs@vger.kernel.org>; Mon, 4 Apr 2016 07:24:13 +1000
-Received: from d23av04.au.ibm.com (localhost [127.0.0.1])
-	by d23av04.au.ibm.com (8.14.4/8.14.4/NCO v10.0 AVout) with ESMTP id u33LNTWs023145
-	for <linux-btrfs@vger.kernel.org>; Mon, 4 Apr 2016 07:23:29 +1000
-Received: from localhost.in.ibm.com ([9.78.198.28])
-	by d23av04.au.ibm.com (8.14.4/8.14.4/NCO v10.0 AVin) with ESMTP id u33LNSrH022956
-	for <linux-btrfs@vger.kernel.org>; Mon, 4 Apr 2016 07:23:29 +1000
-From: Chandan Rajendra <chandan@linux.vnet.ibm.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] Btrfs: __btrfs_buffered_write: Pass valid file offset when releasing delalloc space
-Date: Mon,  4 Apr 2016 02:53:06 +0530
-Message-Id: <1459718586-17569-1-git-send-email-chandan@linux.vnet.ibm.com>
+Received: from mx2.suse.de ([195.135.220.15]:45372 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753318AbcDKPFz (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 11 Apr 2016 11:05:55 -0400
+Date: Mon, 11 Apr 2016 17:02:18 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Liu Bo <bo.li.liu@oracle.com>
+Cc: linux-btrfs@vger.kernel.org, zhaolei@cn.fujitsu.com
+Subject: Re: [PATCH] Btrfs: do not create empty block group if we have
+ allocated data
+Message-ID: <20160411150218.GM3412@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1450146572-22383-1-git-send-email-bo.li.liu@oracle.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1450146572-22383-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The delalloc reserved space is calculated in terms of number of bytes
-used by an integral number of blocks. This is done by rounding down the
-value of 'pos' to the nearest multiple of sectorsize.
+On Mon, Dec 14, 2015 at 06:29:32PM -0800, Liu Bo wrote:
+> Now we force to create empty block group to keep data profile alive,
+> however, in the below example, we eventually get an empty block group
+> while we're trying to get more space for other types (metadata/system),
+> 
+> - Before,
+> block group "A": size=2G, used=1.2G
+> block group "B": size=2G, used=512M
+> 
+> - After "btrfs balance start -dusage=50 mount_point",
+> block group "A": size=2G, used=(1.2+0.5)G
+> block group "C": size=2G, used=0
+> 
+> Since there is no data in block group C, it won't be deleted
+> automatically and we have to get the unused 2G until the next mount.
+> 
+> Balance itself just moves data and doesn't remove data, so it's safe
+> to not create such a empty block group if we already have data
+>  allocated in other block groups.
+> 
+> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
 
-The file offset value held by 'pos' variable may not be aligned to
-sectorsize and hence when passing it as an argument to
-btrfs_delalloc_release_space(), we may end up releasing larger delalloc
-space than we originally had reserved.
-
-Signed-off-by: Chandan Rajendra <chandan@linux.vnet.ibm.com>
----
- fs/btrfs/file.c | 4 +++-
- 1 file changed, 3 insertions(+), 1 deletion(-)
-
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index 15a09cb..5d9f9f7 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -1696,7 +1696,9 @@ again:
- 			btrfs_end_write_no_snapshoting(root);
- 			btrfs_delalloc_release_metadata(inode, release_bytes);
- 		} else {
--			btrfs_delalloc_release_space(inode, pos, release_bytes);
-+			btrfs_delalloc_release_space(inode,
-+						round_down(pos, root->sectorsize),
-+						release_bytes);
- 		}
- 	}
- 
--- 
-2.1.0
-
+I'm adding the patch to my for-next.

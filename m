@@ -1,33 +1,111 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:45144 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751317AbcDZOc7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 26 Apr 2016 10:32:59 -0400
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id E5FFCACCA
-	for <linux-btrfs@vger.kernel.org>; Tue, 26 Apr 2016 14:32:54 +0000 (UTC)
-From: David Sterba <dsterba@suse.com>
+Received: from userp1040.oracle.com ([156.151.31.81]:48890 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932911AbcDLNgr (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 12 Apr 2016 09:36:47 -0400
+From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.com>
-Subject: [PATCH 0/3] Minor updates to sysfs
-Date: Tue, 26 Apr 2016 16:32:45 +0200
-Message-Id: <cover.1461681045.git.dsterba@suse.com>
+Cc: dsterba@suse.cz
+Subject: [PATCH 1/1] btrfs: fix lock dep warning move scratch super outside of chunk_mutex
+Date: Tue, 12 Apr 2016 21:36:16 +0800
+Message-Id: <1460468176-534-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+Move scratch super outside of the chunk lock to avoid below
+lockdep warning. The better place to scratch super is in
+the function btrfs_rm_dev_replace_free_srcdev() just before
+free_device, which is outside of the chunk lock as well.
 
-a less-than-handful set of fixes to sysfs, two sanity checks and one additional
-locking preventing a pretty rare race.
+To reproduce:
+  (fresh boot)
+  mkfs.btrfs -f -draid5 -mraid5 /dev/sdc /dev/sdd /dev/sde
+  mount /dev/sdc /btrfs
+  dd if=/dev/zero of=/btrfs/tf1 bs=4096 count=100
+  (get devmgt from https://github.com/asj/devmgt.git)
+  devmgt detach /dev/sde
+  dd if=/dev/zero of=/btrfs/tf1 bs=4096 count=100
+  sync
+  btrfs replace start -Brf 3 /dev/sdf /btrfs <--
+  devmgt attach host7
 
-David Sterba (3):
-  btrfs: add read-only check to sysfs handler of features
-  btrfs: add check to sysfs handler of label
-  btrfs: sysfs: protect reading label by lock
+======================================================
+[ INFO: possible circular locking dependency detected ]
+4.6.0-rc2asj+ #1 Not tainted
+---------------------------------------------------
 
- fs/btrfs/sysfs.c | 13 ++++++++++++-
- 1 file changed, 12 insertions(+), 1 deletion(-)
+btrfs/2174 is trying to acquire lock:
+(sb_writers){.+.+.+}, at:
+[<ffffffff812449b4>] __sb_start_write+0xb4/0xf0
 
+but task is already holding lock:
+(&fs_info->chunk_mutex){+.+.+.}, at:
+[<ffffffffa05c5f55>] btrfs_dev_replace_finishing+0x145/0x980 [btrfs]
+
+which lock already depends on the new lock.
+
+Chain exists of:
+sb_writers --> &fs_devs->device_list_mutex --> &fs_info->chunk_mutex
+Possible unsafe locking scenario:
+CPU0				CPU1
+----				----
+lock(&fs_info->chunk_mutex);
+				lock(&fs_devs->device_list_mutex);
+				lock(&fs_info->chunk_mutex);
+lock(sb_writers);
+
+*** DEADLOCK ***
+
+-> #0 (sb_writers){.+.+.+}:
+[<ffffffff810e6415>] __lock_acquire+0x1bc5/0x1ee0
+[<ffffffff810e707e>] lock_acquire+0xbe/0x210
+[<ffffffff810df49a>] percpu_down_read+0x4a/0xa0
+[<ffffffff812449b4>] __sb_start_write+0xb4/0xf0
+[<ffffffff81265534>] mnt_want_write+0x24/0x50
+[<ffffffff812508a2>] path_openat+0x952/0x1190
+[<ffffffff81252451>] do_filp_open+0x91/0x100
+[<ffffffff8123f5cc>] file_open_name+0xfc/0x140
+[<ffffffff8123f643>] filp_open+0x33/0x60
+[<ffffffffa0572bb6>] update_dev_time+0x16/0x40 [btrfs]
+[<ffffffffa057f60d>] btrfs_scratch_superblocks+0x5d/0xb0 [btrfs]
+[<ffffffffa057f70e>] btrfs_rm_dev_replace_remove_srcdev+0xae/0xd0 [btrfs]
+[<ffffffffa05c62c5>] btrfs_dev_replace_finishing+0x4b5/0x980 [btrfs]
+[<ffffffffa05c6ae8>] btrfs_dev_replace_start+0x358/0x530 [btrfs]
+
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
+---
+ fs/btrfs/volumes.c | 9 +++++----
+ 1 file changed, 5 insertions(+), 4 deletions(-)
+
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 31bd791d6506..9d72dabdddfc 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -1968,11 +1968,8 @@ void btrfs_rm_dev_replace_remove_srcdev(struct btrfs_fs_info *fs_info,
+ 	if (srcdev->missing)
+ 		fs_devices->missing_devices--;
+ 
+-	if (srcdev->writeable) {
++	if (srcdev->writeable)
+ 		fs_devices->rw_devices--;
+-		/* zero out the old super if it is writable */
+-		btrfs_scratch_superblocks(srcdev->bdev, srcdev->name->str);
+-	}
+ 
+ 	if (srcdev->bdev)
+ 		fs_devices->open_devices--;
+@@ -1983,6 +1980,10 @@ void btrfs_rm_dev_replace_free_srcdev(struct btrfs_fs_info *fs_info,
+ {
+ 	struct btrfs_fs_devices *fs_devices = srcdev->fs_devices;
+ 
++	if (srcdev->writeable) {
++		/* zero out the old super if it is writable */
++		btrfs_scratch_superblocks(srcdev->bdev, srcdev->name->str);
++	}
+ 	call_rcu(&srcdev->rcu, free_device);
+ 
+ 	/*
 -- 
-2.7.1
+2.7.0
 

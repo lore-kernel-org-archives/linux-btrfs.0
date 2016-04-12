@@ -1,114 +1,489 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:47762 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932780AbcDLOQt (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:48766 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932780AbcDLOQj (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 12 Apr 2016 10:16:49 -0400
-Subject: Re: [PATCH 10/13] btrfs: introduce helper functions to perform hot
- replace
-To: Yauhen Kharuzhy <yauhen.kharuzhy@zavadatar.com>
-References: <1459560651-14809-1-git-send-email-anand.jain@oracle.com>
- <1459560651-14809-11-git-send-email-anand.jain@oracle.com>
- <20160408220548.GA28387@jeknote.loshitsa1.net>
-Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz
+	Tue, 12 Apr 2016 10:16:39 -0400
 From: Anand Jain <anand.jain@oracle.com>
-Message-ID: <570D0333.4020506@oracle.com>
-Date: Tue, 12 Apr 2016 22:16:19 +0800
-MIME-Version: 1.0
-In-Reply-To: <20160408220548.GA28387@jeknote.loshitsa1.net>
-Content-Type: text/plain; charset=windows-1252; format=flowed
+To: linux-btrfs@vger.kernel.org
+Cc: dsterba@suse.cz, yauhen.kharuzhy@zavadatar.com
+Subject: [PATCH v4 00/13] Introduce device state 'failed', spare device and auto replace
+Date: Tue, 12 Apr 2016 22:15:50 +0800
+Message-Id: <1460470563-752-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Thanks for various comments, tests and feedback.
+
+Background: Spare device and Auto replace:
+ Spare device is predominately used to mitigate or narrow the time
+ window of a degraded raid mode, as because during which any further
+ disk failure would lead to a catastrophic data loss. Data center
+ storage generally will have couple of disks reserved as spares
+ on their storage, so that it will automatically kickin to resilver
+ the storage pool so that the pool is back to a healthy state.
+ Mainly this is an storage feature rather than a FS feature,
+ I believe people acquainted with enterprise storage use cases
+ will appreciate the need of it, and so most/all of the enterprise
+ storage has spare device feature.
+
+Btrfs device states:
+ This patch-set adds 'failed' state and makes provision to use
+ 'offline' state as two new device states. So to summarize
+ various device states and their meanings..
+
+ /* missing: device wasn't found at the time of mount */
+ int missing;
+
+ /*
+  * failed: device confirmed to have experienced critical
+  * io failure
+  */
+ int failed;
+
+ /*
+  * offline: When there is no confirmation that a disk has
+  * failed. But an interim communication breakdown
+  * and not necessarily a candidate for the device replace.
+  * Device might be online after user intervention or after
+  * block transport layer error recovery.
+  */
+ int offline;
 
 
-On 04/09/2016 06:05 AM, Yauhen Kharuzhy wrote:
-> On Sat, Apr 02, 2016 at 09:30:48AM +0800, Anand Jain wrote:
->> Hot replace / auto replace is important volume manager feature
->> and is critical to the data center operations, so that the degraded
->> volume can be brought back to a healthy state at the earliest and
->> without manual intervention.
->>
->> This modifies the existing replace code to suite the need of auto
->> replace, in the long run I hope both the codes to be merged.
->>
->> Signed-off-by: Anand Jain <anand.jain@oracle.com>
->> Tested-by: Austin S. Hemmelgarn <ahferroin7@gmail.com>
->> ---
->>   fs/btrfs/dev-replace.c | 43 +++++++++++++++++++++++++++++++++++++++++++
->>   fs/btrfs/dev-replace.h |  1 +
->>   2 files changed, 44 insertions(+)
->>
->> diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
->> index 2b926867d136..ceab4c51db32 100644
->> --- a/fs/btrfs/dev-replace.c
->> +++ b/fs/btrfs/dev-replace.c
->> @@ -957,3 +957,46 @@ void btrfs_bio_counter_inc_blocked(struct btrfs_fs_info *fs_info)
->>   				     &fs_info->fs_state));
->>   	}
->>   }
->> +
->> +int btrfs_auto_replace_start(struct btrfs_root *root,
->> +				struct btrfs_device *src_device)
->> +{
->> +	int ret;
->> +	char *tgt_path;
->> +	char *src_path;
->> +	struct btrfs_fs_info *fs_info = root->fs_info;
->> +
->> +	if (fs_info->sb->s_flags & MS_RDONLY)
->> +		return -EROFS;
->> +
->> +	btrfs_dev_replace_lock(&fs_info->dev_replace, 0);
->> +	if (btrfs_dev_replace_is_ongoing(&fs_info->dev_replace)) {
->> +		btrfs_dev_replace_unlock(&fs_info->dev_replace, 0);
->> +		return -EBUSY;
->> +	}
->> +	btrfs_dev_replace_unlock(&fs_info->dev_replace, 0);
->> +
->> +	if (btrfs_get_spare_device(&tgt_path)) {
->> +		btrfs_err(root->fs_info,
->> +			"No spare device found/configured in the kernel");
->> +		return -EINVAL;
->> +	}
->> +
->> +	rcu_read_lock();
->> +	src_path = kstrdup(rcu_str_deref(src_device->name), GFP_ATOMIC);
->> +	rcu_read_unlock();
->> +	if (!src_path) {
->> +		kfree(tgt_path);
->> +		return -ENOMEM;
->> +	}
->> +	ret = btrfs_dev_replace_start(root, tgt_path,
->> +					src_device->devid, src_path,
->> +		BTRFS_IOCTL_DEV_REPLACE_CONT_READING_FROM_SRCDEV_MODE_AVOID);
->> +	if (ret)
->> +		btrfs_put_spare_device(tgt_path);
->> +
->> +	kfree(tgt_path);
->> +	kfree(src_path);
->> +
->> +	return 0;
->> +}
->
-> Without of fs_info->mutually_exclusive_operation_running flag set in
-> btrfs_auto_replace_start(), device add/remove/balance etc. can be
-> started in parralel with autoreplace. Should this scenarios be permitted?
+Device state transition tuning and visualization:
+ Sysfs interfaces are planned to provide the required tuning for
+ device state transition, sensitivities and visualization of device
+ states. However sysfs framework which could provide such an interface
+ is being reviewed/tested and not yet ready as of now. So for the
+ testing and debug of these features here I have used an update
+ version of the procfs patch which is in the ML.
 
-  Its needs it in case of if device delete/add etc is running, added
-  in v4.  Thanks.
+  [PATCH] btrfs: debug: procfs-devlist: introduce procfs interface for
+the device list for debugging
+
+ I find the above patch very useful, easy to use (as compared to
+ sysfs to visualize the device state) and stable.
+
+This patch set does not depend on any of the sysfs patches as such.
+
+Backward compatibility:
+ Adds a new incompatibility feature flags
+ (BTRFS_FEATURE_INCOMPAT_SPARE_DEV) to manage the spare device
+ when older kernels are used. So it is tested to be work fine
+ with older kernel/prog versions.
 
 
->> diff --git a/fs/btrfs/dev-replace.h b/fs/btrfs/dev-replace.h
->> index e922b42d91df..b918b9d6e5df 100644
->> --- a/fs/btrfs/dev-replace.h
->> +++ b/fs/btrfs/dev-replace.h
->> @@ -46,4 +46,5 @@ static inline void btrfs_dev_replace_stats_inc(atomic64_t *stat_value)
->>   {
->>   	atomic64_inc(stat_value);
->>   }
->> +int btrfs_auto_replace_start(struct btrfs_root *root, struct btrfs_device *src_device);
->>   #endif
->> --
->> 2.7.0
->
+Auto replace:
+ Replace happens automatically, that is when there is any write
+ failed or flush failed, the device will be marked as failed, which
+ will stop any further IO attempt to that device. And in the next
+ commit cycle the auto replace will pick the spare device to
+ replace the failed device. And so the btrfs volume is back to a
+ healthy state.
+
+Per FSID spare vs Global spare:
+ As of now only global spare is supported, that is spare(s)
+ are for all the btrfs FS in the system. However future there will
+ be a fs_info->no_auto_replace tunable which can be tuned by the user
+ to limit the use of global spare.
+
+
+Example use case:
+ Here below is an example use case of the spare setup.
+
+ Add a spare device:
+        btrfs spare add /dev/sde -f
+
+ If there is a spare device which is already added before the,
+ just run
+
+        btrfs dev scan [/dev/sde]
+
+ Which will register the spare device to the kernel.
+
+        btrfs fi show
+         Label: none uuid: 52f170c1-725c-457d-8cfd-d57090460091
+          Total devices 2 FS bytes used 112.00KiB
+          devid 1 size 2.00GiB used 417.50MiB path /dev/sdc
+          devid 2 size 2.00GiB used 417.50MiB path /dev/sdd
+
+        Global spare
+          device size 3.00GiB path /dev/sde
+
+
+Patches:
+
+Kernel:
+ First, it needs, Qu's per chunk missing device patchset, which is
+ part of the set.
+
+ Next patches 6-9 adds support for Spare device. For kernel without
+ spare feature the spare device is kept away. And when the kernel
+ supports the spare device, it will inhibit from mounting it. Further
+ these patch set provides helper function to pick a spare device and
+ release a spare device back to the spare device pool.
+
+ Patch 10 provides helper function to auto replace.
+ Patch 11 provides helper function to bring a device to failed state.
+ Patch 12 marks a device as failed based on flush and write errors,
+  and avoids any further IO to it.
+ Last 13 triggers auto replace.
+
+Progs:
+ Needs below 4 patches which will add sub cli 'spare' to manage
+ the spare device. As of now deleting a spare device has to be
+ managed using wipefs. However in the long run we would a proper
+ btrfs command to do that job.
+
+
+v3->v4:
+Kernel:
+ a.
+  Mainly bug fixes. Thanks to Yauhen for the bug reports.
+  Fixed the issue of bdev not being null. Also fixed the
+  issue where auto replace didn't check for
+  mutually_exclusive_operation_running. In this process,
+  the function force_device_close() is changed quite a
+  bit, mainly bdev is copied and nulled within the lock
+  context, and later close on the copied bdev is called.
+ b.
+  changed the wording hot spare to spare device, as some of
+  the legacy raid setup would need a perticular device
+  order for some reasons. So the hot spare would copy
+  back the replace target to the replaced disk. However
+  we don't need such a setup in modern hw and btrfs won't
+  do that way. To avoid any confusion I won't use the term
+  hot spare here.
+
+progs:
+ No change. Same as v2.
+
+V2->V3:
+Kernel:
+  Thanks to Yauhen and Austin for the review comments.
+  Again split Patch 11 and 12 which was merged in V2 for better.
+  Patch numbers are reordered (sorry about that) but for better.
+  Fix rcu issue in btrfs_get_spare_device(), we don't need rcu
+   as its under uuid_mutex
+  Fix rcu issue and to check for replace lock at
+   btrfs_auto_replace_start()
+  Cleanup old: casualty_kthread() new: health_kthread() with
+    changes as per
+    838fe188 'btrfs: cleaner_kthread() doesn't need explicit freeze'
+    (thanks Yauhen)
+  Yauhen reported this issue:
+	When a disk is removed through the virtualbox interface.
+	BUG: unable to handle kernel NULL pointer dereference at 0000000000000548
+	IP: generic_make_request_checks+0x4d/0x910
+	::
+ 	bvec_alloc+0x5e/0x100
+	generic_make_request+0x24/0x290
+	submit_bio+0x67/0x140
+	finish_rmw+0x409/0x570 [btrfs]
+	full_stripe_write+0xa5/0xb0 [btrfs]
+	raid56_parity_write+0xf5/0x180 [btrfs]
+	btrfs_map_bio+0x105/0x300 [btrfs]
+	btrfs_get_extent+0x83/0xb20 [btrfs]
+
+	Status: So far the raid group profile would adapt to lower suitable
+	group profile when device is missing/failed. This appears to
+	be not happening with RAID56 OR there are stale IO which wasn't
+	flushed out. Anyway to have this fixed I am moving the patch
+	  btrfs: introduce device dynamic state transition to offline or failed
+	to the top in v3,
+	But firstly we need a reliable test case, or a very carefully
+	crafted test case which can create this situation.
+
+Progs:
+  No change, same as V2.
+
+V1->V2:
+Kernel:
+ (Based on tests and commets provided in the ML)
+ a. Now transition_kthread() wakes up the casualty_kthread to check
+    for device states. Instead of doing that in the transition_kthread()
+    itself. Cleaner and less pressure on transition_kthread().
+ b. Dropped
+     [PATCH 05/15] btrfs: optimize btrfs_check_degradable() for calls outside of barrier
+    as it was wrong patch and the optimization was incomplete.
+ c. Merged patches
+    btrfs: check for failed device and hot replace
+      to
+    btrfs: check device for critical errors and mark failed
+    in an effort to make the changes as in a above.
+
+Progs:
+ a. Added to call btrfs_register_one_device() when doing btrfs
+    spare add
+
+Anand Jain (8):
+  btrfs: introduce BTRFS_FEATURE_INCOMPAT_SPARE_DEV
+  btrfs: add check not to mount a spare device
+  btrfs: support btrfs dev scan for spare device
+  btrfs: provide framework to get and put a spare device
+  btrfs: introduce helper functions to perform hot replace
+  btrfs: introduce device dynamic state transition to offline or failed
+  btrfs: check device for critical errors and mark failed
+  btrfs: check for failed device and hot replace
+
+Qu Wenruo (5):
+  btrfs: Introduce a new function to check if all chunks a OK for
+    degraded mount
+  btrfs: Do per-chunk check for mount time check
+  btrfs: Do per-chunk degraded check for remount
+  btrfs: Allow barrier_all_devices to do per-chunk device check
+  btrfs: Cleanup num_tolerated_disk_barrier_failures
+
+ fs/btrfs/ctree.h       |  11 +-
+ fs/btrfs/dev-replace.c |  43 ++++++++
+ fs/btrfs/dev-replace.h |   1 +
+ fs/btrfs/disk-io.c     | 231 +++++++++++++++++++++++++++-------------
+ fs/btrfs/disk-io.h     |   2 -
+ fs/btrfs/super.c       |  16 ++-
+ fs/btrfs/volumes.c     | 280 ++++++++++++++++++++++++++++++++++++++++++++++---
+ fs/btrfs/volumes.h     |  27 +++++
+ 8 files changed, 512 insertions(+), 99 deletions(-)
+
+-- 
+2.7.0
+
+>From 05f00e7e71ce03309ea6408f7dcc507e19860be6 Mon Sep 17 00:00:00 2001
+From: Anand Jain <anand.jain@oracle.com>
+Date: Sat, 2 Apr 2016 07:08:36 +0800
+Subject: [PATCH 00/13 v3] Introduce device state 'failed', Hot spare and Auto replace
+
+Thanks for various comments, tests and feedback.
+
+Background: Hot spare and Auto replace:
+ Hot spare is predominately used to mitigate or narrow the time
+ window of a degraded mode, during which any further disk
+ failure might lead to a catastrophic data loss. Data center
+ storage generally will have couple of disks reserved as spares
+ on the storage, so that it will automatically kickin to resilver
+ the storage pool so that the pool is back to a healthy state.
+ Mainly this is an storage feature rather than a FS feature,
+ I believe people acquainted with enterprise storage use cases
+ will appreciate the need of it, and so most/all of the enterprise
+ storage has hot spare feature.
+
+Btrfs device states:
+ This patch-set adds 'failed' state and makes provision to use
+ 'offline' state as two new device states. So to summarize
+ various device states and their meanings..
+
+ /* missing: device wasn't found at the time of mount */
+ int missing;
+
+ /*
+  * failed: device confirmed to have experienced critical
+  * io failure
+  */
+ int failed;
+
+ /*
+  * offline: When there is no confirmation that a disk has
+  * failed. But an interim communication breakdown
+  * and not necessarily a candidate for the device replace.
+  * Device might be online after user intervention or after
+  * block transport layer error recovery.
+  */
+ int offline;
+
+
+Device state transition Tuning and visualization:
+ Sysfs interfaces are planned to provide the required tuning for
+ device state transition, sensitivities and visualization of device
+ states. However sysfs framework which could provide such an interface
+ is being reviewed/tested and not yet ready as of now. So for the
+ testing and debug of these features here I have used an update
+ version of the procfs patch which is in the ML.
+
+  [PATCH] btrfs: debug: procfs-devlist: introduce procfs interface for
+the device list for debugging
+
+ I find the above patch very useful, easy to use (as compared to
+ sysfs to visualize the device state) and stable.
+
+This patch set does not depend on any of the sysfs patches as such.
+
+Backward compatibility:
+ Adds a new incompatibility feature flags
+ (BTRFS_FEATURE_INCOMPAT_SPARE_DEV) to manage the spare device
+ when older kernels are used. So it is tested to be work fine
+ with older kernel/prog versions.
+
+
+Auto replace:
+ Replace happens automatically, that is when there is any write
+ failed or flush failed, the device will be marked as failed, which
+ will stop any further IO attempt to that device. And in the next
+ commit cycle the auto replace will pick the spare device to
+ replace the failed device. And so the btrfs volume is back to a
+ healthy state.
+
+Per FSID spare vs Global spare:
+ As of now only global hot spare is supported, that is hot spare(s)
+ are for all the btrfs FS in the system. However future there will
+ be a fs_info->no_auto_replace tunable which can be tuned by the user
+ to limit the use of global spare.
+
+
+Example use case:
+ Here below is an example use case of the hot spare setup.
+
+ Add a spare device:
+        btrfs spare add /dev/sde -f
+
+ If there is a spare device which is already added before the,
+ just run
+
+        btrfs dev scan [/dev/sde]
+
+ Which will register the spare device to the kernel.
+
+        btrfs fi show
+         Label: none uuid: 52f170c1-725c-457d-8cfd-d57090460091
+          Total devices 2 FS bytes used 112.00KiB
+          devid 1 size 2.00GiB used 417.50MiB path /dev/sdc
+          devid 2 size 2.00GiB used 417.50MiB path /dev/sdd
+
+        Global spare
+          device size 3.00GiB path /dev/sde
+
+
+Patches:
+
+Kernel:
+ First, it needs, Qu's per chunk missing device patchset, which is
+ part of the set.
+
+ Next patches 6-9 adds support for Spare device. For kernel without
+ spare feature the spare device is kept away. And when the kernel
+ supports the spare device, it will inhibit from mounting it. Further
+ these patch set provides helper function to pick a spare device and
+ release a spare device back to the spare device pool.
+
+ Patch 10 provides helper function to auto replace.
+ Patch 11 provides helper function to bring a device to failed state.
+ Patch 12 marks a device as failed based on flush and write errors,
+  and avoids any further IO to it.
+ Last 13 triggers auto replace.
+
+Progs:
+ Needs below 4 patches which will add sub cli 'spare' to manage
+ the spare device. As of now deleting a spare device has to be
+ managed using wipefs. However in the long run we would a proper
+ btrfs command to do that job.
+
+V2->V3:
+Kernel:
+  Thanks to Yauhen and Austin for the review comments.
+  Again split Patch 11 and 12 which was merged in V2 for better.
+  Patch numbers are reordered (sorry about that) but for better.
+  Fix rcu issue in btrfs_get_spare_device(), we don't need rcu
+   as its under uuid_mutex
+  Fix rcu issue and to check for replace lock at
+   btrfs_auto_replace_start()
+  Cleanup old: casualty_kthread() new: health_kthread() with
+    changes as per
+    838fe188 'btrfs: cleaner_kthread() doesn't need explicit freeze'
+    (thanks Yauhen)
+  Yauhen reported this issue:
+	When a disk is removed through the virtualbox interface.
+	BUG: unable to handle kernel NULL pointer dereference at 0000000000000548
+	IP: generic_make_request_checks+0x4d/0x910
+	::
+ 	bvec_alloc+0x5e/0x100
+	generic_make_request+0x24/0x290
+	submit_bio+0x67/0x140
+	finish_rmw+0x409/0x570 [btrfs]
+	full_stripe_write+0xa5/0xb0 [btrfs]
+	raid56_parity_write+0xf5/0x180 [btrfs]
+	btrfs_map_bio+0x105/0x300 [btrfs]
+	btrfs_get_extent+0x83/0xb20 [btrfs]
+
+	Status: So far the raid group profile would adapt to lower suitable
+	group profile when device is missing/failed. This appears to
+	be not happening with RAID56 OR there are stale IO which wasn't
+	flushed out. Anyway to have this fixed I am moving the patch
+	  btrfs: introduce device dynamic state transition to offline or failed
+	to the top in v3,
+	But firstly we need a reliable test case, or a very carefully
+	crafted test case which can create this situation.
+
+Progs:
+  No change, same as V2.
+
+V1->V2:
+Kernel:
+ (Based on tests and commets provided in the ML)
+ a. Now transition_kthread() wakes up the casualty_kthread to check
+    for device states. Instead of doing that in the transition_kthread()
+    itself. Cleaner and less pressure on transition_kthread().
+ b. Dropped
+     [PATCH 05/15] btrfs: optimize btrfs_check_degradable() for calls outside of barrier
+    as it was wrong patch and the optimization was incomplete.
+ c. Merged patches
+    btrfs: check for failed device and hot replace
+      to
+    btrfs: check device for critical errors and mark failed
+    in an effort to make the changes as in a above.
+
+Progs:
+ a. Added to call btrfs_register_one_device() when doing btrfs
+    spare add
+
+Anand Jain (8):
+  btrfs: introduce BTRFS_FEATURE_INCOMPAT_SPARE_DEV
+  btrfs: add check not to mount a spare device
+  btrfs: support btrfs dev scan for spare device
+  btrfs: provide framework to get and put a spare device
+  btrfs: introduce helper functions to perform hot replace
+  btrfs: introduce device dynamic state transition to offline or failed
+  btrfs: check device for critical errors and mark failed
+  btrfs: check for failed device and hot replace
+
+Qu Wenruo (5):
+  btrfs: Introduce a new function to check if all chunks a OK for
+    degraded mount
+  btrfs: Do per-chunk check for mount time check
+  btrfs: Do per-chunk degraded check for remount
+  btrfs: Allow barrier_all_devices to do per-chunk device check
+  btrfs: Cleanup num_tolerated_disk_barrier_failures
+
+ fs/btrfs/ctree.h       |  11 +-
+ fs/btrfs/dev-replace.c |  43 ++++++++
+ fs/btrfs/dev-replace.h |   1 +
+ fs/btrfs/disk-io.c     | 230 +++++++++++++++++++++++++++-------------
+ fs/btrfs/disk-io.h     |   2 -
+ fs/btrfs/super.c       |  16 ++-
+ fs/btrfs/volumes.c     | 279 ++++++++++++++++++++++++++++++++++++++++++++++---
+ fs/btrfs/volumes.h     |  26 +++++
+ 8 files changed, 509 insertions(+), 99 deletions(-)
+
+
+btrfs-progs:
+
+Anand Jain (4):
+  btrfs-progs: Introduce BTRFS_FEATURE_INCOMPAT_SPARE_DEV SB flags
+  btrfs-progs: Introduce btrfs spare subcommand
+  btrfs-progs: add fi show for spare
+  btrfs-progs: add global spare device list to filesystem show
+
+ Android.mk        |   2 +-
+ Makefile.in       |   3 +-
+ btrfs.c           |   1 +
+ cmds-filesystem.c |   9 ++
+ cmds-spare.c      | 292 ++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ commands.h        |   2 +
+ ctree.h           |   4 +-
+ utils.h           |   1 +
+ volumes.c         |   4 +
+ volumes.h         |   2 +
+ 10 files changed, 317 insertions(+), 3 deletions(-)
+ create mode 100644 cmds-spare.c
+
+-- 
+2.7.0
+

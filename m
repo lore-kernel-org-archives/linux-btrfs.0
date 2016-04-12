@@ -1,15 +1,15 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:48867 "EHLO
+Received: from aserp1040.oracle.com ([141.146.126.69]:49138 "EHLO
 	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932961AbcDLOQt (ORCPT
+	with ESMTP id S965011AbcDLOQ6 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 12 Apr 2016 10:16:49 -0400
+	Tue, 12 Apr 2016 10:16:58 -0400
 From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
 Cc: dsterba@suse.cz, yauhen.kharuzhy@zavadatar.com
-Subject: [PATCH 07/13] btrfs: add check not to mount a spare device
-Date: Tue, 12 Apr 2016 22:15:57 +0800
-Message-Id: <1460470563-752-8-git-send-email-anand.jain@oracle.com>
+Subject: [PATCH 13/13] btrfs: check for failed device and hot replace
+Date: Tue, 12 Apr 2016 22:16:03 +0800
+Message-Id: <1460470563-752-14-git-send-email-anand.jain@oracle.com>
 In-Reply-To: <1460470563-752-1-git-send-email-anand.jain@oracle.com>
 References: <1460470563-752-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -17,33 +17,84 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Anand Jain <Anand.Jain@oracle.com>
 
-Spare devices can be scanned but shouldn't be mountable.
+This patch checks for failed device and kicks out auto
+replace, if when user decided to disable auto replace
+it can be done by future sysfs or future ioctl interface
+to set fs_info->no_auto_replace parameter to 1.
 
 Signed-off-by: Anand Jain <anand.jain@oracle.com>
 Tested-by: Austin S. Hemmelgarn <ahferroin7@gmail.com>
 ---
- fs/btrfs/disk-io.c | 8 ++++++++
- 1 file changed, 8 insertions(+)
+ fs/btrfs/ctree.h   |  2 ++
+ fs/btrfs/disk-io.c | 35 +++++++++++++++++++++++++++++++++++
+ 2 files changed, 37 insertions(+)
 
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index e36200cf6ead..3262430d65a3 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -1862,6 +1862,8 @@ struct btrfs_fs_info {
+ 	struct list_head pinned_chunks;
+ 
+ 	int creating_free_space_tree;
++
++	int no_auto_replace;
+ };
+ 
+ struct btrfs_subvolume_writers {
 diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 65c9f19d8017..e9fca3bc7e42 100644
+index 1deb5714cc3a..5c5c51319bec 100644
 --- a/fs/btrfs/disk-io.c
 +++ b/fs/btrfs/disk-io.c
-@@ -2811,6 +2811,14 @@ int open_ctree(struct super_block *sb,
- 		goto fail_alloc;
- 	}
+@@ -1876,6 +1876,39 @@ sleep:
+ 	return 0;
+ }
  
-+	if (btrfs_super_incompat_flags(disk_super) &
-+			BTRFS_FEATURE_INCOMPAT_SPARE_DEV) {
-+		/*You can only scan a spare device but not mount*/
-+		printk(KERN_ERR "BTRFS: You can't mount a spare device\n");
-+		err = -ENOTSUPP;
-+		goto fail_alloc;
-+	}
++static int btrfs_recuperate(struct btrfs_root *root)
++{
++	int ret;
++	u64 failed_devid = 0;
++	struct btrfs_device *device;
++	struct btrfs_fs_devices *fs_devices;
 +
- 	/*
- 	 * Needn't use the lock because there is no other task which will
- 	 * update the flag.
++	fs_devices = root->fs_info->fs_devices;
++
++	/* fixme: does it need device_list_mutex */
++	mutex_lock(&fs_devices->device_list_mutex);
++	rcu_read_lock();
++	list_for_each_entry_rcu(device,
++			&fs_devices->devices, dev_list) {
++		if (device->failed) {
++			failed_devid = device->devid;
++			break;
++		}
++	}
++	rcu_read_unlock();
++	mutex_unlock(&fs_devices->device_list_mutex);
++
++	/*
++	 * We are using the replace code which should be interrupt-able
++	 * during unmount, and as of now there is no user land stop
++	 * request that we support and this will run until its complete
++	 */
++	if (failed_devid && !root->fs_info->no_auto_replace)
++		ret = btrfs_auto_replace_start(root, failed_devid);
++
++	return ret;
++}
++
+ /*
+  * returns:
+  * < 0 : Check didn't run, std error
+@@ -1951,6 +1984,8 @@ static int health_kthread(void *arg)
+ 		/* Check devices health */
+ 		btrfs_update_devices_health(root);
+ 
++		btrfs_recuperate(root);
++
+ 		mutex_unlock(&root->fs_info->health_mutex);
+ 
+ sleep:
 -- 
 2.7.0
 

@@ -1,56 +1,123 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:47741 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S933784AbcDLOQn (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:48793 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S933819AbcDLOQp (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 12 Apr 2016 10:16:43 -0400
+	Tue, 12 Apr 2016 10:16:45 -0400
 From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
 Cc: dsterba@suse.cz, yauhen.kharuzhy@zavadatar.com
-Subject: [PATCH 06/13] btrfs: introduce BTRFS_FEATURE_INCOMPAT_SPARE_DEV
-Date: Tue, 12 Apr 2016 22:15:56 +0800
-Message-Id: <1460470563-752-7-git-send-email-anand.jain@oracle.com>
+Subject: [PATCH 04/13] btrfs: Allow barrier_all_devices to do per-chunk device check
+Date: Tue, 12 Apr 2016 22:15:54 +0800
+Message-Id: <1460470563-752-5-git-send-email-anand.jain@oracle.com>
 In-Reply-To: <1460470563-752-1-git-send-email-anand.jain@oracle.com>
 References: <1460470563-752-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Anand Jain <Anand.Jain@oracle.com>
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 
-Add BTRFS_FEATURE_INCOMPAT_SPARE_DEV (400) flag to identify
-a spare device.
+The last user of num_tolerated_disk_barrier_failures is
+barrier_all_devices(). But it's can be easily changed to new per-chunk
+degradable check framework.
 
-Along with this it checks in the mount context that a spare
-device will fail to mount.  As spare devices aren't mountable.
+Now btrfs_device will have two extra members, representing send/wait
+error, set at write_dev_flush() time. And then check it in a similar but
+more accurate behavior than old code.
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
-Tested-by: Austin S. Hemmelgarn <ahferroin7@gmail.com>
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- fs/btrfs/ctree.h | 4 +++-
- 1 file changed, 3 insertions(+), 1 deletion(-)
+ fs/btrfs/disk-io.c | 13 +++++--------
+ fs/btrfs/volumes.c |  6 +++++-
+ fs/btrfs/volumes.h |  4 ++++
+ 3 files changed, 14 insertions(+), 9 deletions(-)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 7a6471269b34..a823ff7944f1 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -531,6 +531,7 @@ struct btrfs_super_block {
- #define BTRFS_FEATURE_INCOMPAT_RAID56		(1ULL << 7)
- #define BTRFS_FEATURE_INCOMPAT_SKINNY_METADATA	(1ULL << 8)
- #define BTRFS_FEATURE_INCOMPAT_NO_HOLES		(1ULL << 9)
-+#define BTRFS_FEATURE_INCOMPAT_SPARE_DEV	(1ULL << 10)
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 4f91a049fbca..9ad3667f5e71 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -3496,8 +3496,6 @@ static int barrier_all_devices(struct btrfs_fs_info *info)
+ {
+ 	struct list_head *head;
+ 	struct btrfs_device *dev;
+-	int errors_send = 0;
+-	int errors_wait = 0;
+ 	int ret;
  
- #define BTRFS_FEATURE_COMPAT_SUPP		0ULL
- #define BTRFS_FEATURE_COMPAT_SAFE_SET		0ULL
-@@ -551,7 +552,8 @@ struct btrfs_super_block {
- 	 BTRFS_FEATURE_INCOMPAT_RAID56 |		\
- 	 BTRFS_FEATURE_INCOMPAT_EXTENDED_IREF |		\
- 	 BTRFS_FEATURE_INCOMPAT_SKINNY_METADATA |	\
--	 BTRFS_FEATURE_INCOMPAT_NO_HOLES)
-+	 BTRFS_FEATURE_INCOMPAT_NO_HOLES |		\
-+	 BTRFS_FEATURE_INCOMPAT_SPARE_DEV)
+ 	/* send down all the barriers */
+@@ -3506,7 +3504,7 @@ static int barrier_all_devices(struct btrfs_fs_info *info)
+ 		if (dev->missing)
+ 			continue;
+ 		if (!dev->bdev) {
+-			errors_send++;
++			dev->err_send = 1;
+ 			continue;
+ 		}
+ 		if (!dev->in_fs_metadata || !dev->writeable)
+@@ -3514,7 +3512,7 @@ static int barrier_all_devices(struct btrfs_fs_info *info)
  
- #define BTRFS_FEATURE_INCOMPAT_SAFE_SET			\
- 	(BTRFS_FEATURE_INCOMPAT_EXTENDED_IREF)
+ 		ret = write_dev_flush(dev, 0);
+ 		if (ret)
+-			errors_send++;
++			dev->err_send = 1;
+ 	}
+ 
+ 	/* wait for all the barriers */
+@@ -3522,7 +3520,7 @@ static int barrier_all_devices(struct btrfs_fs_info *info)
+ 		if (dev->missing)
+ 			continue;
+ 		if (!dev->bdev) {
+-			errors_wait++;
++			dev->err_wait = 1;
+ 			continue;
+ 		}
+ 		if (!dev->in_fs_metadata || !dev->writeable)
+@@ -3530,10 +3528,9 @@ static int barrier_all_devices(struct btrfs_fs_info *info)
+ 
+ 		ret = write_dev_flush(dev, 1);
+ 		if (ret)
+-			errors_wait++;
++			dev->err_wait = 1;
+ 	}
+-	if (errors_send > info->num_tolerated_disk_barrier_failures ||
+-	    errors_wait > info->num_tolerated_disk_barrier_failures)
++	if (btrfs_check_degradable(info, info->sb->s_flags) < 0)
+ 		return -EIO;
+ 	return 0;
+ }
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index a351c5dd9e9b..d9cae4d7ba55 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -7078,8 +7078,12 @@ int btrfs_check_degradable(struct btrfs_fs_info *fs_info, unsigned flags)
+ 			btrfs_get_num_tolerated_disk_barrier_failures(
+ 					map->type);
+ 		for (i = 0; i < map->num_stripes; i++) {
+-			if (map->stripes[i].dev->missing)
++			if (map->stripes[i].dev->missing ||
++			    map->stripes[i].dev->err_wait ||
++			    map->stripes[i].dev->err_send)
+ 				missing++;
++			map->stripes[i].dev->err_wait = 0;
++			map->stripes[i].dev->err_send = 0;
+ 		}
+ 		if (missing > max_tolerated) {
+ 			ret = -EIO;
+diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
+index 351431a3f5aa..48ced5cc09e4 100644
+--- a/fs/btrfs/volumes.h
++++ b/fs/btrfs/volumes.h
+@@ -76,6 +76,10 @@ struct btrfs_device {
+ 	int can_discard;
+ 	int is_tgtdev_for_dev_replace;
+ 
++	/* for barrier_all_devices() check */
++	int err_send;
++	int err_wait;
++
+ #ifdef __BTRFS_NEED_DEVICE_DATA_ORDERED
+ 	seqcount_t data_seqcount;
+ #endif
 -- 
 2.7.0
 

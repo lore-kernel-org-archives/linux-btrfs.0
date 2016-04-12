@@ -1,67 +1,101 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:50310 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S932223AbcDLSi3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 12 Apr 2016 14:38:29 -0400
-Subject: Re: loop subsystem corrupted after mounting multiple btrfs
- sub-volumes
-To: Al Viro <viro@ZenIV.linux.org.uk>,
-        "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-References: <56CF5490.7040102@suse.cz> <56D04630.1020809@gmail.com>
- <56D0743F.9040102@suse.cz> <56D07FAF.3080605@gmail.com>
- <20160226175311.GC17997@ZenIV.linux.org.uk> <56D0A38B.3050701@suse.cz>
- <56D0B007.2050106@gmail.com> <20160226203010.GD17997@ZenIV.linux.org.uk>
-Cc: linux-kernel@vger.kernel.org, Jens Axboe <axboe@kernel.dk>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>,
-        David Sterba <dsterba@suse.cz>, Valdis.Kletnieks@vt.edu
-From: Stanislav Brabec <sbrabec@suse.cz>
-Message-ID: <570D40A2.7030209@suse.cz>
-Date: Tue, 12 Apr 2016 20:38:26 +0200
+Received: from mail-wm0-f53.google.com ([74.125.82.53]:37952 "EHLO
+	mail-wm0-f53.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S933345AbcDLTBn (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 12 Apr 2016 15:01:43 -0400
+Received: by mail-wm0-f53.google.com with SMTP id u206so40421582wme.1
+        for <linux-btrfs@vger.kernel.org>; Tue, 12 Apr 2016 12:01:42 -0700 (PDT)
+Received: from [192.168.2.105] (p4FD979C9.dip0.t-ipconnect.de. [79.217.121.201])
+        by smtp.googlemail.com with ESMTPSA id jk1sm34791508wjb.27.2016.04.12.12.01.40
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLSv1/SSLv3 cipher=OTHER);
+        Tue, 12 Apr 2016 12:01:40 -0700 (PDT)
+Subject: Re: enospace regression in 4.4
+References: <570CCCFB.5000104@googlemail.com>
+ <570D19D9.8030702@googlemail.com>
+ <CAPmG0jbOTFvQ83Qrf=ut5YiGUBtkhGMDr1nQdicB+MsVbwE2Qg@mail.gmail.com>
+From: Julian Taylor <jtaylor.debian@googlemail.com>
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Message-ID: <570D4612.2080000@googlemail.com>
+Date: Tue, 12 Apr 2016 21:01:38 +0200
 MIME-Version: 1.0
-In-Reply-To: <20160226203010.GD17997@ZenIV.linux.org.uk>
-Content-Type: text/plain; charset=windows-1252; format=flowed
+In-Reply-To: <CAPmG0jbOTFvQ83Qrf=ut5YiGUBtkhGMDr1nQdicB+MsVbwE2Qg@mail.gmail.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Feb 26, 2016 at 21:30 Al Viro wrote:
-> Sigh...  sys_mount() (mount_bdev(), actually) has no way to tell if two
-> loop devices refer to the same underlying object.  As far as it's
-> concerned, you are asking to mount a completely unrelated block device.
-> Which just happens to see the data (living in separate pagecache, even)
-> modified behind its back (with some delay) after it gets written to another
-> device.  Filesystem drivers generally don't like when something is screwing
-> the underlying data, to put it mildly...
->
+On 12.04.2016 20:09, Henk Slager wrote:
+> On Tue, Apr 12, 2016 at 5:52 PM, Julian Taylor
+> <jtaylor.debian@googlemail.com> wrote:
+>> smaller testcase that shows the immediate enospc after fallocate -> rm,
+>> though I don't know if it is really related to the full filesystem
+>> bugging out as the balance does work if you wait a few seconds after the
+>> balance.
+>> But this sequence of commands did work in 4.2.
+>>
+>>  $ sudo btrfs fi show /dev/mapper/lvm-testing
+>> Label: none  uuid: 25889ba9-a957-415a-83b0-e34a62cb3212
+>>         Total devices 1 FS bytes used 225.18MiB
+>>         devid    1 size 5.00GiB used 788.00MiB path /dev/mapper/lvm-testing
+>>
+>>  $ fallocate -l 4.4G test.dat
+>>  $ rm -f test.dat
+>>  $ sudo btrfs fi balance start -dusage=0 .
+>> ERROR: error during balancing '.': No space left on device
+>> There may be more info in syslog - try dmesg | tail
+> 
+> It seems that kernel 4.4.6 waits longer with de-allocating empty
+> chunks and the balance kicks in at a time when the 5 GiB is still
+> completely filled with chunks. As balance needs uncallocated space (on
+> device level, how much depends on profiles), this error can be
+> expected.
 
-I wrote a loop device reuse patch for mount -oloop.
+hm ok, I'll put a sleep in the script then.
+fallocate; rm; fallocate seems to work so its probably ok in normal usage.
 
-[PATCH 0/3] btrfs-safe implementation of -oloop
-http://marc.info/?l=util-linux-ng&m=146048532307963&w=2
 
-[PATCH 1/3] libmount: Re-organize is_mounted_same_loopfile()
-http://marc.info/?l=util-linux-ng&m=146048535907971&w=2
+> 
+>> On 04/12/2016 12:24 PM, Julian Taylor wrote:
+>>> hi,
+>>> I have a system with two filesystems which are both affected by the
+>>> notorious enospace bug when there is plenty of unallocated space
+>>> available. The system is a raid0 on two 900 GiB disks and an iscsi
+>>> single/dup 1.4TiB.
+>>> To deal with the problem I use a cronjob that uses fallocate to give me
+>>> an advance notice on the issue so I can apply the only workaround that
+>>> works for me, which is shrink the fs to the minimum and grow it again.
+>>> This has worked fine for a couple of month.
+>>>
+>>> I now updated from 4.2 to 4.4.6 and it appears my cronjob actually
+>>> triggers an immediate enospc in the balance after removing the
+>>> fallocated file and the shrink/resize workaround does not work anymore.
+> 
+> The filesystem itself is not resized AFAIU, correct?
 
-[PATCH 2/3] libmount: reuse existing loop device
-http://marc.info/?l=util-linux-ng&m=146048537807980&w=2
+btrfs resize -XG /mount
+so resize filesystem but not the underlying device.
 
-[PATCH 3/3] mount: Handle EROFS before calling mount() syscall
-http://marc.info/?l=util-linux-ng&m=146048542007990&w=2
+Actually the system just went into enospc again with unallocated free
+even after the revert to 4.2 and the shrink trick doesn't want to work
+anymore either ...
+Though the 4.2 running now is not the same where the shrink workaround
+work. I'll have to check the changelog to see if there are btrfs related
+changes in it.
 
-However it works for me, there are still some controversial issues
-described in [PATCH 0/3].
 
-These patches will hide corruption of kernel loop control structures
-mentioned earlier in this thread and in most cases prevent data
-corruption.
+> 
+> You could shrink a file-system by a few GiB's (without changing the
+> size of the underlying device), so that once it really gets filled up
+> and hits enospc, you resize to max again and delete files or snapshot
+> or something. Of course no option for a 24/7 unattended system, but
+> maybe for a client laptop as testing.
+> 
 
--- 
-Best Regards / S pozdravem,
+that us basically what I have been doing, I used the cronjob to see when
+the enospc issue occurred and then resize shrink to fix it. It was
+relatively rare, I had to do it maybe every two month.
 
-Stanislav Brabec
-software developer
----------------------------------------------------------------------
-SUSE LINUX, s. r. o.                         e-mail: sbrabec@suse.com
-Lihovarská 1060/12                            tel: +49 911 7405384547
-190 00 Praha 9                                 fax:  +420 284 084 001
-Czech Republic                                    http://www.suse.cz/
-PGP: 830B 40D5 9E05 35D8 5E27 6FA3 717C 209F A04F CD76
+But now for some reason that trick doesn't work anymore either, I can
+shrink it by 200G and resize it back to max and it still complains about
+no free space. So now I'm at a loss on how to keep this system working.

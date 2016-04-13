@@ -1,74 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f176.google.com ([209.85.213.176]:37478 "EHLO
-	mail-ig0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756110AbcDLT6e (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 12 Apr 2016 15:58:34 -0400
-Received: by mail-ig0-f176.google.com with SMTP id g8so31926470igr.0
-        for <linux-btrfs@vger.kernel.org>; Tue, 12 Apr 2016 12:58:33 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <CAAcrkYK=Hd5xvEXp-51JMD1_kMYfsHR9Pt3DRNoq+HTi=eTALg@mail.gmail.com>
-References: <CAAcrkYLYu7Gk8_O+vMYp3B2z+yJiktp7AyEc1mONNHtA8kpxUw@mail.gmail.com>
-	<CAJCQCtSagDUoA_tf4tTMMYK3K5bCtmHNSRjc=OLgoLYQpXw0cg@mail.gmail.com>
-	<CAAcrkYK9C41wrXWkw4pgfrpSGgUbZ3amSD1y49_06dPH8oERgw@mail.gmail.com>
-	<CAJCQCtRiTcy3OSA60G=N7LMA3xEpjeqmxv+gNyv7E+HyvG68Mg@mail.gmail.com>
-	<CAAcrkYK=Hd5xvEXp-51JMD1_kMYfsHR9Pt3DRNoq+HTi=eTALg@mail.gmail.com>
-Date: Tue, 12 Apr 2016 13:58:33 -0600
-Message-ID: <CAJCQCtQ1sJKVb2dKfF7E2+OgFQCO2nKM0gZon62xo8058JrwvA@mail.gmail.com>
-Subject: Re: KERNEL PANIC + CORRUPTED BTRFS?
-From: Chris Murphy <lists@colorremedies.com>
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Received: from plane.gmane.org ([80.91.229.3]:54694 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1756002AbcDMDNp (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 12 Apr 2016 23:13:45 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+	id 1aqBFL-0008CV-RI
+	for linux-btrfs@vger.kernel.org; Wed, 13 Apr 2016 05:13:40 +0200
+Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Wed, 13 Apr 2016 05:13:39 +0200
+Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Wed, 13 Apr 2016 05:13:39 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: enospace regression in 4.4
+Date: Wed, 13 Apr 2016 03:13:33 +0000 (UTC)
+Message-ID: <pan$43c78$d863b627$e38d5fc3$8e7a854b@cox.net>
+References: <570CCCFB.5000104@googlemail.com>
+	<570D19D9.8030702@googlemail.com>
+Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Apr 12, 2016 at 9:48 AM, lenovomi <lenovomi@gmail.com> wrote:
+Julian Taylor posted on Tue, 12 Apr 2016 17:52:57 +0200 as excerpted:
 
-> root@ubuntu:/home/ubuntu# btrfs restore -D -v  /dev/sda /mnt/usb/
-> checksum verify failed on 17802818387968 found FF45E2D3 wanted BFB02AEC
-> checksum verify failed on 17802818387968 found FF45E2D3 wanted BFB02AEC
-> checksum verify failed on 17802818387968 found FF45E2D3 wanted BFB02AEC
-> checksum verify failed on 17802818387968 found FF45E2D3 wanted BFB02AEC
-> Csum didn't match
-> Couldn't read tree root
-> Could not open root, trying backup super
-> warning, device 2 is missing
-> warning devid 2 not found already
-> warning devid 3 not found already
-> warning devid 4 not found already
-> checksum verify failed on 17802818387968 found FF45E2D3 wanted BFB02AEC
-> checksum verify failed on 17802818387968 found FF45E2D3 wanted BFB02AEC
-> Csum didn't match
-> Couldn't read tree root
-> Could not open root, trying backup super
-> warning, device 2 is missing
-> warning devid 2 not found already
-> warning devid 3 not found already
-> warning devid 4 not found already
-> checksum verify failed on 17802818387968 found FF45E2D3 wanted BFB02AEC
-> checksum verify failed on 17802818387968 found FF45E2D3 wanted BFB02AEC
-> Csum didn't match
-> Couldn't read tree root
-> Could not open root, trying backup super
->
+> $ sudo btrfs fi balance start -dusage=0 .
+> ERROR: error during balancing '.': No space left on device
 
-Why are devices 2, 3, 4 missing? I think there's a known issue where
-btrfs fi show might see drives as available that other tools won't
-see. Try 'btrfs dev scan' and then repeat the restore command with -D
-just to see if the missing device warnings go away. If devices are
-missing, it's kinda hard to do a restore.
+Not much to add, but this one really surprises me and it may be related 
+to the new problem you're seeing.
 
+I don't recall ever seeing a -dusage=0 actually error out due to ENOSPC 
+before.  It normally either works, killing some empty chunks, or runs 
+without error but also without finding any empty chunks to kill, thus 
+"doing nothing, successfully" (to borrow the one-line name and 
+description for true (1)).
 
-If these are hard drives, there should be supers 0, 1, 2 and they
-should all be the same. But they may not be the same on each drive, so
-it's worth checking:
-
-btrfs-show-super -f <eachdevice>
-
-And then also btrfs-find-root <anydevice>
-
-
-
+That even a balance with -dusage=0 is actually failing, not just 
+completing without doing anything as might be expected, is strange 
+indeed.  With a bit of luck that's a strong hint to the devs as to what 
+has actually gone wrong and how to fix it.
 
 -- 
-Chris Murphy
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

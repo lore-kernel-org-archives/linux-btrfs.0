@@ -1,45 +1,66 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lf0-f51.google.com ([209.85.215.51]:32931 "EHLO
-	mail-lf0-f51.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1031049AbcDMMDA (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 13 Apr 2016 08:03:00 -0400
-Received: by mail-lf0-f51.google.com with SMTP id e190so66409648lfe.0
-        for <linux-btrfs@vger.kernel.org>; Wed, 13 Apr 2016 05:03:00 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <570D19D9.8030702@googlemail.com>
-References: <570CCCFB.5000104@googlemail.com>
-	<570D19D9.8030702@googlemail.com>
-Date: Wed, 13 Apr 2016 13:56:16 +0200
-Message-ID: <CAPmG0jae+4LML6oVWnrFnosyamXtBkSHiO12_s==ZecMAULv5g@mail.gmail.com>
-Subject: Re: enospace regression in 4.4
-From: Henk Slager <eye1tm@gmail.com>
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Received: from voltaic.bi-co.net ([134.119.3.22]:60433 "EHLO voltaic.bi-co.net"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S932157AbcDMSzT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 13 Apr 2016 14:55:19 -0400
+Received: from bevan-thinkpad (ip-84-118-255-245.unity-media.net [84.118.255.245])
+	by voltaic.bi-co.net (Postfix) with ESMTPSA id 5BD1820347
+	for <linux-btrfs@vger.kernel.org>; Wed, 13 Apr 2016 20:48:06 +0200 (CEST)
+Message-ID: <1460573285.3688.19.camel@bi-co.net>
+Subject: Broken file system after sudden power off
+From: Michael =?ISO-8859-1?Q?La=DF?= <bevan@bi-co.net>
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Date: Wed, 13 Apr 2016 20:48:05 +0200
+Content-Type: text/plain; charset="UTF-8"
+Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Apr 12, 2016 at 5:52 PM, Julian Taylor
-<jtaylor.debian@googlemail.com> wrote:
-> smaller testcase that shows the immediate enospc after fallocate -> rm,
-> though I don't know if it is really related to the full filesystem
-> bugging out as the balance does work if you wait a few seconds after the
-> balance.
-> But this sequence of commands did work in 4.2.
->
->  $ sudo btrfs fi show /dev/mapper/lvm-testing
-> Label: none  uuid: 25889ba9-a957-415a-83b0-e34a62cb3212
->         Total devices 1 FS bytes used 225.18MiB
->         devid    1 size 5.00GiB used 788.00MiB path /dev/mapper/lvm-testing
->
->  $ fallocate -l 4.4G test.dat
->  $ rm -f test.dat
->  $ sudo btrfs fi balance start -dusage=0 .
-> ERROR: error during balancing '.': No space left on device
-> There may be more info in syslog - try dmesg | tail
+Hi,
 
-The effect is the same with kernel / progs  v4.6.0-rc3 / v4.5.1
-It also doesn't matter if   fallocate -l 4400M test.dat   or   dd
-if=/dev/zero of=test.dat bs=1M count=4400   is used to create test.dat
-(I was looking at --dig-holes and --punch-hole options earlier and was
-wondering if the use of fallocate would make a difference).
+recently I had a bit of a file system corruption after a sudden system
+power off. I could fix the file system using btrfsck but before that I
+dumped the FS to allow finding the root cause if this turns out to be a
+bug.
+
+My system is running Linux 4.5.0 and the file system lies on top of dm-
+crypt and LVM, so the hierarchy looks like the following:
+btrfs > dm-crypt > LVM LV > SINGLE PV = MBR partition > SSD
+
+After the sudden power off the issue initially showed up as a non-
+responsive system. I booted into a recovery system and issued btrfsck.
+Here's the output:
+
+checking extents
+checking free space cache
+checking fs roots
+root 259 inode 37727 errors 200, dir isize wrong
+root 259 inode 37820 errors 200, dir isize wrong
+root 259 inode 1890803 errors 1, no inode item
+	unresolved ref dir 37727 index 122063 namelen 8 name Channels filetype 1 errors 5, no dir item, no inode ref
+root 259 inode 1890826 errors 1, no inode item
+	unresolved ref dir 37820 index 95273 namelen 17 name TransportSecurity filetype 1 errors 5, no dir item, no inode ref
+found 68391559241 bytes used err is 1
+total csum bytes: 63782984
+total tree bytes: 2501541888
+total fs tree bytes: 2308063232
+total extent tree bytes: 108118016
+btree space waste bytes: 482660866
+file data blocks allocated: 693883981824
+ referenced 101900402688
+
+Both, "Channels" and "TransportSecurity", are part of a chromium
+profile and in fact the system got unresponsive as soon as chromium was
+started. A "btrfsck --repair" got rid of these errors.
+
+When mounting the image of the broken file system on another system, I
+see that "Channels" and "TransportSecurity" are listed twice in an ls
+on the corresponding directory. Also the following message appears in
+dmesg:
+init_special_inode: bogus i_mode (0) for inode loop0:1890816
+
+If you want any more information on this I've still got the image of
+the broken file system and I'd be glad to assist.
+
+Cheers,
+Michael

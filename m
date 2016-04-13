@@ -1,136 +1,102 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from kolab.zavadatar.com ([46.101.124.0]:37285 "EHLO
-	kolab.zavadatar.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752566AbcDMVVt (ORCPT
+Received: from userp1040.oracle.com ([156.151.31.81]:27321 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754726AbcDMWoG (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 13 Apr 2016 17:21:49 -0400
-Date: Thu, 14 Apr 2016 00:21:43 +0300
-From: Yauhen Kharuzhy <yauhen.kharuzhy@zavadatar.com>
-To: Anand Jain <anand.jain@oracle.com>
-Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz
+	Wed, 13 Apr 2016 18:44:06 -0400
 Subject: Re: [PATCH v4 00/13] Introduce device state 'failed', spare device
  and auto replace
-Message-ID: <20160413212143.GA28202@jeknote.loshitsa1.net>
+To: Yauhen Kharuzhy <yauhen.kharuzhy@zavadatar.com>
 References: <1460470563-752-1-git-send-email-anand.jain@oracle.com>
+ <20160412200242.GB17845@jeknote.loshitsa1.net>
+Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz
+From: Anand Jain <anand.jain@oracle.com>
+Message-ID: <570ECBA0.1060801@oracle.com>
+Date: Thu, 14 Apr 2016 06:43:44 +0800
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-In-Reply-To: <1460470563-752-1-git-send-email-anand.jain@oracle.com>
+In-Reply-To: <20160412200242.GB17845@jeknote.loshitsa1.net>
+Content-Type: text/plain; charset=windows-1252; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Apr 12, 2016 at 10:15:50PM +0800, Anand Jain wrote:
-> Thanks for various comments, tests and feedback.
-
-Hmm... I broke it :)
-
-I get kernel oops after few cycles of drive removing-insertion-replacing.
-
-My steps to reproduce:
-1) create RAID (I used RAID6)
-2) remove drive (i tested /sys interface for this and VBox storage
-management – reproduced with both bethods). Write & sync fs to detect
-falure.
-3) insert drive again
-4) wipe it
-5) replace missing device (reproduced with user-initiated replace and
-autoreplace)
-6) repeat steps 2-3
-
-At reboot, kernel oopses (see below). Sometimes more than one repeat of
-steps 2-5 needed (I am still working to localize this now).
-
-Commands from my last session:
-
-root@grack12:~# btrfs fi show
-Label: 'test'  uuid: 833fef31-5536-411c-8f58-53b527569fa5
-        Total devices 4 FS bytes used 768.00KiB
-        devid    1 size 8.00GiB used 1.41GiB path /dev/sdc
-        devid    2 size 8.00GiB used 1.41GiB path /dev/sdd
-        devid    3 size 8.00GiB used 1.41GiB path /dev/sde
-        devid    5 size 8.00GiB used 1.12GiB path /dev/sdg
-
-Global spare
-
-root@test:~# ls -l /sys/block/sdg
-lrwxrwxrwx 1 root root 0 Apr  8 20:03 /sys/block/sdg -> ../devices/pci0000:00/0000:00:1f.2/ata7/host6/target6:0:0/6:0:0:0/block/sdg
-root@test:~# echo 1 > /sys/class/scsi_device/6\:0\:0\:0/device/delete 
-root@test:~# touch /media/833fef31-5536-411c-8f58-53b527569fa5/ && btrfs fi sync /media/833fef31-5536-411c-8f58-53b527569fa5/
-FSSync '/media/833fef31-5536-411c-8f58-53b527569fa5/'
-root@test:~# echo 0 0 0 > /sys/class/scsi_host/host6/scan 
-root@test:~# wipefs -a /dev/sdg
-8 bytes were erased at offset 0x10040 (btrfs)
-they were: 5f 42 48 52 66 53 5f 4d
-root@test:~# btrfs replace start 5 /dev/sdg /media/833fef31-5536-411c-8f58-53b527569fa5/
-root@test:~# echo 1 > /sys/class/scsi_device/6\:0\:0\:0/device/delete 
-root@test:~# echo 0 0 0 > /sys/class/scsi_host/host6/scan 
-root@test:~# echo 1 > /sys/class/scsi_device/6\:0\:0\:0/device/delete 
-root@test:~# touch /media/833fef31-5536-411c-8f58-53b527569fa5/ && btrfs fi sync /media/833fef31-5536-411c-8f58-53b527569fa5/
-FSSync '/media/833fef31-5536-411c-8f58-53b527569fa5/'
-root@test:~# echo 0 0 0 > /sys/class/scsi_host/host6/scan 
-root@test:~# wipefs -a /dev/sdg
-8 bytes were erased at offset 0x10040 (btrfs)
-they were: 5f 42 48 52 66 53 5f 4d
-root@test:~# btrfs replace start 5 /dev/sdg /media/833fef31-5536-411c-8f58-53b527569fa5/
-root@test:~# echo 1 > /sys/class/scsi_device/6\:0\:0\:0/device/delete 
-root@test:~# touch /media/833fef31-5536-411c-8f58-53b527569fa5/ && btrfs fi sync /media/833fef31-5536-411c-8f58-53b527569fa5/
-FSSync '/media/833fef31-5536-411c-8f58-53b527569fa5/'
-root@test:~# echo 0 0 0 > /sys/class/scsi_host/host6/scan 
-root@test:~# wipefs -a /dev/sdg
-8 bytes were erased at offset 0x10040 (btrfs)
-they were: 5f 42 48 52 66 53 5f 4d
-root@test:~# btrfs replace start 5 /dev/sdg /media/833fef31-5536-411c-8f58-53b527569fa5/
-root@test:~# reboot
-
-Oops itself:
-
-[  349.559019] BTRFS info (device sdd): dev_replace from <missing disk> (devid 5) to /dev/sdg started
-[  349.647966] BTRFS info (device sdd): dev_replace from <missing disk> (devid 5) to /dev/sdg finished
-[  373.701691] general protection fault: 0000 [#1] SMP DEBUG_PAGEALLOC 
-[  373.731698] Modules linked in: cpufreq_powersave cpufreq_stats cpufreq_userspace cpufreq_conservative softdog nfsd a
-uth_rpcgss oid_registry nfs_acl nfs lockd grace fscache sunrpc ipmi_devintf ipmi_msghandler iosf_mbi crct10dif_pclmul c
-rc32_pclmul sha256_ssse3 sha256_generic snd_pcm snd_timer iTCO_wdt hmac drbg iTCO_vendor_support ansi_cprng snd soundco
-re aesni_intel aes_x86_64 lrw gf128mul glue_helper ablk_helper cryptd psmouse evdev serio_raw pcspkr acpi_cpufreq 8250_
-fintek lpc_ich video ac battery parport_pc tpm_tis tpm mfd_core parport button processor rng_core i2c_piix4 btrfs xor r
-aid6_pq dm_mod raid1 md_mod sg sd_mod sr_mod cdrom ata_generic ahci libahci ata_piix libata crc32c_intel scsi_mod pcnet
-32 mii
-[  373.933548] CPU: 0 PID: 3955 Comm: umount Not tainted 4.4.5-scst31x-debug+ #33
-[  373.941730] Hardware name: innotek GmbH VirtualBox/VirtualBox, BIOS VirtualBox 12/01/2006
-[  373.945337] task: ffff88005b2fe080 ti: ffff880056cbc000 task.ti: ffff880056cbc000
-[  373.951991] RIP: 0010:[<ffffffff811a1069>]  [<ffffffff811a1069>] __filemap_fdatawrite_range+0x29/0xf0
-[  373.954135] RSP: 0018:ffff880056cbfd50  EFLAGS: 00010286
-[  373.972201] RAX: 0000000000000000 RBX: ffff880056cbfd50 RCX: 0000000000000000
-[  374.003989] RDX: 7fffffffffffffff RSI: 0000000000000000 RDI: ffff880056cbfdb0
-[  374.044001] RBP: ffff880056cbfdc8 R08: 0000000000000000 R09: 0000000000000002
-[  374.099584] R10: ffffffff81d1b880 R11: ffffffff81d1b840 R12: 00441f0f0000441f
-[  374.113566] R13: ffff88005b2fe080 R14: 0000000000000000 R15: ffff88005b2fe080
-[  374.157600] FS:  00007f9281eea7e0(0000) GS:ffff880066600000(0000) knlGS:0000000000000000
-[  374.164870] CS:  0010 DS: 0000 ES: 0000 CR0: 000000008005003b
-[  374.184379] CR2: 0000000001277048 CR3: 0000000060324000 CR4: 00000000000406f0
-[  374.190320] Stack:
-[  374.201539]  0000000000000000 0000000000000000 0000000000000000 0000000000000000
-[  374.245946]  0000000000000000 0000000000000000 0000000000000000 0000000000000000
-[  374.286073]  0000000000000000 0000000000000000 0000000000000000 0000000000000000
-[  374.313913] Call Trace:
-[  374.329665]  [<ffffffff811a11ec>] filemap_flush+0x1c/0x20
-[  374.357488]  [<ffffffff812619d6>] __sync_blockdev+0x26/0x30
-[  374.389452]  [<ffffffff8125814e>] sync_filesystem+0x4e/0xa0
-[  374.425568]  [<ffffffff81220867>] generic_shutdown_super+0x27/0xf0
-[  374.457622]  [<ffffffff81220ba2>] kill_anon_super+0x12/0x20
-[  374.489572]  [<ffffffffa018ea88>] btrfs_kill_super+0x18/0x120 [btrfs]
-[  374.529552]  [<ffffffff81220e1e>] deactivate_locked_super+0x3e/0x70
-[  374.561196]  [<ffffffff8122126c>] deactivate_super+0x5c/0x60
-[  374.602015]  [<ffffffff8124182f>] cleanup_mnt+0x3f/0x90
-[  374.632955]  [<ffffffff812418c2>] __cleanup_mnt+0x12/0x20
-[  374.652292]  [<ffffffff810a5533>] task_work_run+0x73/0xa0
-[  374.662654]  [<ffffffff810032ac>] exit_to_usermode_loop+0xcc/0xd0
-[  374.672858]  [<ffffffff81003e0c>] syscall_return_slowpath+0xcc/0xe0
-[  374.702077]  [<ffffffff816379e2>] int_ret_from_sys_call+0x25/0x9f
-[  374.721467] Code: ff 90 0f 1f 44 00 00 55 31 c0 41 89 c8 b9 0c 00 00 00 48 89 e5 41 55 41 54 53 48 8d 5d 88 49 89 fc
- 48 89 df 48 83 ec 60 f3 48 ab <49> 8b 3c 24 48 b8 ff ff ff ff ff ff ff 7f 48 89 55 a0 48 89 45 
-[  374.853615] RIP  [<ffffffff811a1069>] __filemap_fdatawrite_range+0x29/0xf0
-[  374.909672]  RSP <ffff880056cbfd50>
-[  374.937941] ---[ end trace 2bbc2fd699f402ff ]---
 
 
--- 
-Yauhen Kharuzhy
+On 04/13/2016 04:02 AM, Yauhen Kharuzhy wrote:
+> On Tue, Apr 12, 2016 at 10:15:50PM +0800, Anand Jain wrote:
+>> Thanks for various comments, tests and feedback.
+>
+> Seems working for me. I have triggered OOM killer while testing this in VirtualBox but
+
+
+> I don't think that it is related to autoreplace,
+
+Yep looks like. I suggest to report those bugs separately and not as a
+review/testing reply to the patch.
+
+Thanks, Anand
+
+
+ > it seems to be scrub implementation issue:
+
+> [  449.615157] CPU: 0 PID: 1771 Comm: btrfs-health Not tainted 4.4.5-scst31x+ #25
+> [  449.621763] Hardware name: innotek GmbH VirtualBox/VirtualBox, BIOS VirtualBox 12/01/2006
+> [  449.647614]  0000000000000000 ffff8800601c7660 ffffffff813529e3 ffff8800601c7858
+> [  449.659766]  ffff88005ba66140 ffff8800601c76d0 ffffffff8121b41e ffff8800601c7680
+> [  449.683167]  ffffffff810d7ccd ffff8800601c76a0 0000000000000206 ffffffff81c6d0e0
+> [  449.700746] Call Trace:
+> [  449.705078]  [<ffffffff813529e3>] dump_stack+0x85/0xc2
+> [  449.715238]  [<ffffffff8121b41e>] dump_header+0x5a/0x21d
+> [  449.725400]  [<ffffffff810d7ccd>] ? trace_hardirqs_on+0xd/0x10
+> [  449.741261]  [<ffffffff811a3e80>] oom_kill_process+0x200/0x3d0
+> [  449.753042]  [<ffffffff811a4602>] out_of_memory+0x562/0x580
+> [  449.765923]  [<ffffffff811a4373>] ? out_of_memory+0x2d3/0x580
+> [  449.768455]  [<ffffffff811aa98c>] __alloc_pages_nodemask+0xafc/0xc80
+> [  449.770281]  [<ffffffff811f5ebb>] alloc_pages_current+0x9b/0x1c0
+> [  449.783371]  [<ffffffffa02160f5>] scrub_pages+0xb5/0x400 [btrfs]
+> [  449.804598]  [<ffffffffa0212a65>] ? scrub_find_csum+0xd5/0x110 [btrfs]
+> [  449.819145]  [<ffffffffa0216dce>] scrub_stripe+0x82e/0x1180 [btrfs]
+> [  449.829299]  [<ffffffffa0217830>] scrub_chunk+0x110/0x160 [btrfs]
+> [  449.835859]  [<ffffffffa0217afc>] scrub_enumerate_chunks+0x27c/0x560 [btrfs]
+> [  449.852805]  [<ffffffff810ceb00>] ? wake_atomic_t_function+0x30/0x70
+> [  449.867081]  [<ffffffffa021930d>] btrfs_scrub_dev+0x1cd/0x680 [btrfs]
+> [  449.876784]  [<ffffffffa022d234>] btrfs_dev_replace_start+0x334/0x540 [btrfs]
+> [  449.891503]  [<ffffffffa022def8>] btrfs_auto_replace_start+0xf8/0x140 [btrfs]
+> [  449.911958]  [<ffffffffa01ac4e6>] health_kthread+0x246/0x490 [btrfs]
+> [  449.922132]  [<ffffffffa01ac3d8>] ? health_kthread+0x138/0x490 [btrfs]
+> [  449.946273]  [<ffffffffa01ac2a0>] ? btrfs_congested_fn+0x180/0x180 [btrfs]
+> [  449.975742]  [<ffffffff810a70df>] kthread+0xef/0x110
+> [  449.994914]  [<ffffffff810dc081>] ? __raw_callee_save___pv_queued_spin_unlock+0x11/0x20
+> [  450.022306]  [<ffffffff810a6ff0>] ? kthread_create_on_node+0x200/0x200
+> [  450.036069]  [<ffffffff81637d2f>] ret_from_fork+0x3f/0x70
+> [  450.045622]  [<ffffffff810a6ff0>] ? kthread_create_on_node+0x200/0x200
+> [  450.047625] Mem-Info:
+> [  450.055195] active_anon:30 inactive_anon:71 isolated_anon:0
+> [  450.055195]  active_file:220 inactive_file:980 isolated_file:0
+> [  450.055195]  unevictable:527 dirty:41 writeback:59 unstable:0
+> [  450.055195]  slab_reclaimable:18226 slab_unreclaimable:283931
+> [  450.055195]  mapped:612 shmem:10 pagetables:1209 bounce:0
+> [  450.055195]  free:3310 free_pcp:153 free_cma:0
+> [  450.069070] Node 0 DMA free:6232kB min:48kB low:60kB high:72kB active_anon:0kB inactive_anon:0kB active_file:8kB ina
+> ctive_file:16kB unevictable:28kB isolated(anon):0kB isolated(file):0kB present:15992kB managed:15908kB mlocked:28kB dir
+> ty:4kB writeback:0kB mapped:4kB shmem:0kB slab_reclaimable:788kB slab_unreclaimable:6236kB kernel_stack:96kB pagetables
+> :48kB unstable:0kB bounce:0kB free_pcp:0kB local_pcp:0kB free_cma:0kB writeback_tmp:0kB pages_scanned:220 all_unreclaim
+> able? yes
+> [  450.161023] lowmem_reserve[]: 0 1546 1546 1546
+> [  450.181786] Node 0 DMA32 free:10620kB min:4896kB low:6120kB high:7344kB active_anon:120kB inactive_anon:176kB active
+> _file:964kB inactive_file:1132kB unevictable:2080kB isolated(anon):0kB isolated(file):0kB present:1668032kB managed:158
+> 3780kB mlocked:2080kB dirty:160kB writeback:112kB mapped:2568kB shmem:40kB slab_reclaimable:72116kB slab_unreclaimable:1129488kB kernel_stack:4192kB pagetables:4788kB unstable:0kB bounce:0kB free_pcp:740kB local_pcp:0kB free_cma:0kB writeback_tmp:0kB pages_scanned:0 all_unreclaimable? no
+> [  450.267804] lowmem_reserve[]: 0 0 0 0
+> [  450.272899] Node 0 DMA: 45*4kB (UME) 31*8kB (UME) 19*16kB (ME) 10*32kB (ME) 7*64kB (ME) 7*128kB (UME) 3*256kB (UME) 2*512kB (UM) 2*1024kB (M) 0*2048kB 0*4096kB = 6236kB
+> [  450.286381] Node 0 DMA32: 2006*4kB (UME) 453*8kB (UME) 68*16kB (UME) 15*32kB (UM) 2*64kB (UM) 1*128kB (M) 0*256kB 0*512kB 0*1024kB 0*2048kB 0*4096kB = 13472kB
+> [  450.299928] Node 0 hugepages_total=0 hugepages_free=0 hugepages_surp=0 hugepages_size=2048kB
+> [  450.304622] 985 total pagecache pages
+> [  450.306857] 111 pages in swap cache
+> [  450.308870] Swap cache stats: add 9380, delete 9269, find 113/183
+> [  450.312090] Free swap  = 381628kB
+> [  450.314188] Total swap = 418492kB
+> [  450.317644] 421006 pages RAM
+> [  450.319573] 0 pages HighMem/MovableOnly
+> [  450.322100] 21084 pages reserved
+> [  450.323853] 0 pages hwpoisoned
+> ...
+>

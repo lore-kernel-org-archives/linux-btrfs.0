@@ -1,66 +1,177 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from voltaic.bi-co.net ([134.119.3.22]:60433 "EHLO voltaic.bi-co.net"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S932157AbcDMSzT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 13 Apr 2016 14:55:19 -0400
-Received: from bevan-thinkpad (ip-84-118-255-245.unity-media.net [84.118.255.245])
-	by voltaic.bi-co.net (Postfix) with ESMTPSA id 5BD1820347
-	for <linux-btrfs@vger.kernel.org>; Wed, 13 Apr 2016 20:48:06 +0200 (CEST)
-Message-ID: <1460573285.3688.19.camel@bi-co.net>
-Subject: Broken file system after sudden power off
-From: Michael =?ISO-8859-1?Q?La=DF?= <bevan@bi-co.net>
-To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Date: Wed, 13 Apr 2016 20:48:05 +0200
-Content-Type: text/plain; charset="UTF-8"
-Mime-Version: 1.0
+Received: from relay3-d.mail.gandi.net ([217.70.183.195]:58722 "EHLO
+	relay3-d.mail.gandi.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753912AbcDNQ4h convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 14 Apr 2016 12:56:37 -0400
+Received: from mfilter33-d.gandi.net (mfilter33-d.gandi.net [217.70.178.164])
+	by relay3-d.mail.gandi.net (Postfix) with ESMTP id 86EF8A80E4
+	for <linux-btrfs@vger.kernel.org>; Thu, 14 Apr 2016 18:56:34 +0200 (CEST)
+Received: from relay3-d.mail.gandi.net ([IPv6:::ffff:217.70.183.195])
+	by mfilter33-d.gandi.net (mfilter33-d.gandi.net [::ffff:10.0.15.180]) (amavisd-new, port 10024)
+	with ESMTP id Zfnva7rk63ff for <linux-btrfs@vger.kernel.org>;
+	Thu, 14 Apr 2016 18:56:32 +0200 (CEST)
+Received: from [192.168.1.16] (AMontpellier-656-1-414-190.w92-133.abo.wanadoo.fr [92.133.202.190])
+	(Authenticated sender: swami@petaramesh.org)
+	by relay3-d.mail.gandi.net (Postfix) with ESMTPSA id 50182A80CF
+	for <linux-btrfs@vger.kernel.org>; Thu, 14 Apr 2016 18:56:32 +0200 (CEST)
+To: linux-btrfs@vger.kernel.org
+From: =?UTF-8?Q?Sw=c3=a2mi_Petaramesh?= <swami@petaramesh.org>
+Subject: Help ! "btrfs check" looping recursive
+Message-ID: <570FCBBD.2010500@petaramesh.org>
+Date: Thu, 14 Apr 2016 18:56:29 +0200
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+Hi folks,
 
-recently I had a bit of a file system corruption after a sudden system
-power off. I could fix the file system using btrfsck but before that I
-dumped the FS to allow finding the root cause if this turns out to be a
-bug.
+It seems that i have a "btrfs check" process that’s stuck in an infinite
+recursive loop…
 
-My system is running Linux 4.5.0 and the file system lies on top of dm-
-crypt and LVM, so the hierarchy looks like the following:
-btrfs > dm-crypt > LVM LV > SINGLE PV = MBR partition > SSD
+How could I end this without breaking my filesystem ?
 
-After the sudden power off the issue initially showed up as a non-
-responsive system. I booted into a recovery system and issued btrfsck.
-Here's the output:
+Help much needed & appreciated…
 
+TIA.
+
+Kind regards.
+
+
+root@PartedMagic:~# btrfs check --repair /dev/VGZ/LINUX
+enabling repair mode
+Checking filesystem on /dev/VGZ/LINUX
+UUID: 13c87f57-3a85-4daf-a4bf-ba777407c169
 checking extents
+Fixed 0 roots.
 checking free space cache
+cache and super generation don't match, space cache will be invalidated
 checking fs roots
-root 259 inode 37727 errors 200, dir isize wrong
-root 259 inode 37820 errors 200, dir isize wrong
-root 259 inode 1890803 errors 1, no inode item
-	unresolved ref dir 37727 index 122063 namelen 8 name Channels filetype 1 errors 5, no dir item, no inode ref
-root 259 inode 1890826 errors 1, no inode item
-	unresolved ref dir 37820 index 95273 namelen 17 name TransportSecurity filetype 1 errors 5, no dir item, no inode ref
-found 68391559241 bytes used err is 1
-total csum bytes: 63782984
-total tree bytes: 2501541888
-total fs tree bytes: 2308063232
-total extent tree bytes: 108118016
-btree space waste bytes: 482660866
-file data blocks allocated: 693883981824
- referenced 101900402688
+Deleting bad dir index [2188127,96,2152] root 267
+Deleting bad dir index [2188127,96,2155] root 267
+Deleting bad dir index [2188127,96,2152] root 40298
+Deleting bad dir index [2188127,96,2155] root 40298
+Deleting bad dir index [2188127,96,2152] root 40761
+Deleting bad dir index [2188127,96,2155] root 40761
+reset isize for dir 2188127 root 40815
+Trying to rebuild inode:8089093
+Can't determint the filetype for inode 8089093, assume it is a normal file
+Can't get file name for inode 8089093, using '8089093' as fallback
+Can't get file type for inode 8089093, using FILE as fallback
+Moving file '8089093' to 'lost+found' dir since it has no valid backref
+Fixed the nlink of inode 8089093
+Trying to rebuild inode:8089098
+Can't determint the filetype for inode 8089098, assume it is a normal file
+Can't get file name for inode 8089098, using '8089098' as fallback
+Can't get file type for inode 8089098, using FILE as fallback
+Moving file '8089098' to 'lost+found' dir since it has no valid backref
+Fixed the nlink of inode 8089098
+Can't get file name for inode 8089093, using '8089093' as fallback
+Moving file '8089093.8089093' to 'lost+found' dir since it has no valid
+backref
+Fixed the nlink of inode 8089093
+root 40815 inode 8089093 errors 10, odd dir item
+Can't get file name for inode 8089098, using '8089098' as fallback
+Moving file '8089098.8089098' to 'lost+found' dir since it has no valid
+backref
+Fixed the nlink of inode 8089098
+root 40815 inode 8089098 errors 10, odd dir item
+Can't get file name for inode 8089093, using '8089093' as fallback
+Moving file '8089093.8089093.8089093' to 'lost+found' dir since it has
+no valid backref
+Fixed the nlink of inode 8089093
+root 40815 inode 8089093 errors 10, odd dir item
+Can't get file name for inode 8089098, using '8089098' as fallback
+Moving file '8089098.8089098.8089098' to 'lost+found' dir since it has
+no valid backref
+Fixed the nlink of inode 8089098
+root 40815 inode 8089098 errors 10, odd dir item
+Deleting bad dir index [2188127,96,2152] root 40815
+Deleting bad dir index [2188127,96,2155] root 40815
+reset isize for dir 2188127 root 40815
+Can't get file name for inode 8089093, using '8089093' as fallback
+Moving file '8089093.8089093.8089093.8089093' to 'lost+found' dir since
+it has no valid backref
+Fixed the nlink of inode 8089093
+Can't get file name for inode 8089098, using '8089098' as fallback
+Moving file '8089098.8089098.8089098.8089098' to 'lost+found' dir since
+it has no valid backref
+Fixed the nlink of inode 8089098
+Can't get file name for inode 8089093, using '8089093' as fallback
+Moving file '8089093.8089093.8089093.8089093.8089093' to 'lost+found'
+dir since it has no valid backref
+Fixed the nlink of inode 8089093
+Can't get file name for inode 8089098, using '8089098' as fallback
+Moving file '8089098.8089098.8089098.8089098.8089098' to 'lost+found'
+dir since it has no valid backref
+Fixed the nlink of inode 8089098
+Deleting bad dir index [2188127,96,2152] root 40869
+Deleting bad dir index [2188127,96,2155] root 40869
+Can't get file name for inode 8089093, using '8089093' as fallback
+Moving file '8089093.8089093.8089093.8089093.8089093.8089093' to
+'lost+found' dir since it has no valid backref
+Fixed the nlink of inode 8089093
+Can't get file name for inode 8089098, using '8089098' as fallback
+Moving file '8089098.8089098.8089098.8089098.8089098.8089098' to
+'lost+found' dir since it has no valid backref
+Fixed the nlink of inode 8089098
+Can't get file name for inode 8089093, using '8089093' as fallback
+Moving file '8089093.8089093.8089093.8089093.8089093.8089093.8089093' to
+'lost+found' dir since it has no valid backref
+Fixed the nlink of inode 8089093
+Can't get file name for inode 8089098, using '8089098' as fallback
+Moving file '8089098.8089098.8089098.8089098.8089098.8089098.8089098' to
+'lost+found' dir since it has no valid backref
+Fixed the nlink of inode 8089098
+Can't get file name for inode 8089093, using '8089093' as fallback
+Moving file
+'8089093.8089093.8089093.8089093.8089093.8089093.8089093.8089093' to
+'lost+found' dir since it has no valid backref
+Fixed the nlink of inode 8089093
+Can't get file name for inode 8089098, using '8089098' as fallback
+Moving file
+'8089098.8089098.8089098.8089098.8089098.8089098.8089098.8089098' to
+'lost+found' dir since it has no valid backref
+Fixed the nlink of inode 8089098
+Deleting bad dir index [2188127,96,2152] root 40905
+Deleting bad dir index [2188127,96,2155] root 40905
+Can't get file name for inode 8089093, using '8089093' as fallback
+Moving file
+'8089093.8089093.8089093.8089093.8089093.8089093.8089093.8089093.8089093' to
+'lost+found' dir since it has no valid backref
+Fixed the nlink of inode 8089093
+Can't get file name for inode 8089098, using '8089098' as fallback
+Moving file
+'8089098.8089098.8089098.8089098.8089098.8089098.8089098.8089098.8089098' to
+'lost+found' dir since it has no valid backref
+Fixed the nlink of inode 8089098
+Can't get file name for inode 8089093, using '8089093' as fallback
+Moving file
+'8089093.8089093.8089093.8089093.8089093.8089093.8089093.8089093.8089093.8089093'
+to 'lost+found' dir since it has no valid backref
+Fixed the nlink of inode 8089093
+Can't get file name for inode 8089098, using '8089098' as fallback
+Moving file
+'8089098.8089098.8089098.8089098.8089098.8089098.8089098.8089098.8089098.8089098'
+to 'lost+found' dir since it has no valid backref
+Fixed the nlink of inode 8089098
+Deleting bad dir index [2188127,96,2152] root 41096
+Deleting bad dir index [2188127,96,2155] root 41096
+Can't get file name for inode 8089093, using '8089093' as fallback
+Moving file
+'8089093.8089093.8089093.8089093.8089093.8089093.8089093.8089093.8089093.8089093.8089093'
+to 'lost+found' dir since it has no valid backref
+Fixed the nlink of inode 8089093
+Can't get file name for inode 8089098, using '8089098' as fallback
+Moving file
+'8089098.8089098.8089098.8089098.8089098.8089098.8089098.8089098.8089098.8089098.8089098'
+to 'lost+found' dir since it has no valid backref
+Fixed the nlink of inode 8089098
 
-Both, "Channels" and "TransportSecurity", are part of a chromium
-profile and in fact the system got unresponsive as soon as chromium was
-started. A "btrfsck --repair" got rid of these errors.
+Ad lib…
 
-When mounting the image of the broken file system on another system, I
-see that "Channels" and "TransportSecurity" are listed twice in an ls
-on the corresponding directory. Also the following message appears in
-dmesg:
-init_special_inode: bogus i_mode (0) for inode loop0:1890816
+-- 
+Swâmi Petaramesh <swami@petaramesh.org> http://petaramesh.org PGP 9076E32E
 
-If you want any more information on this I've still got the image of
-the broken file system and I'd be glad to assist.
 
-Cheers,
-Michael

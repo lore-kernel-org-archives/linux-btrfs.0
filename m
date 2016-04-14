@@ -1,33 +1,33 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mga04.intel.com ([192.55.52.120]:64211 "EHLO mga04.intel.com"
+Received: from mga09.intel.com ([134.134.136.24]:43191 "EHLO mga09.intel.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S932317AbcDNPu0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 14 Apr 2016 11:50:26 -0400
-Date: Thu, 14 Apr 2016 23:49:42 +0800
+	id S932754AbcDNQGd (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 14 Apr 2016 12:06:33 -0400
+Date: Fri, 15 Apr 2016 00:04:44 +0800
 From: kbuild test robot <lkp@intel.com>
 To: Chandan Rajendra <chandan@linux.vnet.ibm.com>
 Cc: kbuild-all@01.org, linux-btrfs@vger.kernel.org,
         Chandan Rajendra <chandan@linux.vnet.ibm.com>, dsterba@suse.cz,
         clm@fb.com, jbacik@fb.com, chandan@mykolab.com,
         aneesh.kumar@linux.vnet.ibm.com
-Subject: Re: [PATCH V17 04/18] Btrfs: subpage-blocksize: Define
- extent_buffer_head.
-Message-ID: <201604142344.XN8Cee9Z%fengguang.wu@intel.com>
+Subject: Re: [PATCH V17 10/18] Btrfs: subpage-blocksize: btrfs_punch_hole:
+ Fix uptodate blocks check
+Message-ID: <201604150043.wEU51nQJ%fengguang.wu@intel.com>
 MIME-Version: 1.0
-Content-Type: multipart/mixed; boundary="dDRMvlgZJXvWKvBx"
-In-Reply-To: <1460641107-13834-5-git-send-email-chandan@linux.vnet.ibm.com>
+Content-Type: multipart/mixed; boundary="k+w/mQv8wyuph6w0"
+In-Reply-To: <1460641107-13834-11-git-send-email-chandan@linux.vnet.ibm.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---dDRMvlgZJXvWKvBx
+--k+w/mQv8wyuph6w0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
 
 Hi Chandan,
 
-[auto build test WARNING on tip/perf/core]
-[also build test WARNING on v4.6-rc3 next-20160414]
+[auto build test ERROR on tip/perf/core]
+[also build test ERROR on v4.6-rc3 next-20160414]
 [cannot apply to btrfs/next]
 [if your patch is applied to the wrong git tree, please drop us a note to help improving the system]
 
@@ -39,96 +39,113 @@ reproduce:
         # save the attached .config to linux build tree
         make.cross ARCH=arm 
 
-All warnings (new ones prefixed by >>):
+Note: the linux-review/Chandan-Rajendra/Allow-I-O-on-blocks-whose-size-is-less-than-page-size/20160414-214339 HEAD cb75f40d8b4d47c9133c24f3cc01b3eef831bf19 builds fine.
+      It only hurts bisectibility.
 
-   fs/btrfs/extent_io.c: In function 'alloc_test_extent_buffer':
-   fs/btrfs/extent_io.c:5037:4: error: 'struct extent_buffer' has no member named 'fs_info'
-     eb->fs_info = fs_info;
-       ^
-   In file included from include/linux/bitops.h:36:0,
-                    from fs/btrfs/extent_io.c:1:
-   fs/btrfs/extent_io.c:5055:41: error: 'struct extent_buffer' has no member named 'bflags'
-     set_bit(EXTENT_BUFFER_HEAD_IN_TREE, &eb->bflags);
-                                            ^
-   arch/arm/include/asm/bitops.h:182:45: note: in definition of macro 'ATOMIC_BITOP'
-    #define ATOMIC_BITOP(name,nr,p)  _##name(nr,p)
-                                                ^
->> fs/btrfs/extent_io.c:5055:2: note: in expansion of macro 'set_bit'
-     set_bit(EXTENT_BUFFER_HEAD_IN_TREE, &eb->bflags);
-     ^
-   In file included from include/linux/atomic.h:4:0,
-                    from include/linux/debug_locks.h:5,
-                    from include/linux/lockdep.h:23,
-                    from include/linux/spinlock_types.h:18,
-                    from include/linux/spinlock.h:81,
-                    from include/linux/mmzone.h:7,
-                    from include/linux/gfp.h:5,
-                    from include/linux/slab.h:14,
-                    from fs/btrfs/extent_io.c:2:
-   fs/btrfs/extent_io.c:5063:16: error: 'struct extent_buffer' has no member named 'refs'
-     atomic_inc(&eb->refs);
-                   ^
-   arch/arm/include/asm/atomic.h:208:38: note: in definition of macro 'atomic_inc'
-    #define atomic_inc(v)  atomic_add(1, v)
-                                         ^
-   In file included from arch/arm/include/asm/bitops.h:26:0,
-                    from include/linux/bitops.h:36,
-                    from fs/btrfs/extent_io.c:1:
-   fs/btrfs/extent_io.c: In function 'release_extent_buffer':
-   fs/btrfs/extent_io.c:5233:16: error: 'buf' undeclared (first use in this function)
-          &eb_head(buf)->bflags))) {
-                   ^
-   include/linux/compiler.h:170:42: note: in definition of macro 'unlikely'
-    # define unlikely(x) __builtin_expect(!!(x), 0)
-                                             ^
-   fs/btrfs/extent_io.c:5233:16: note: each undeclared identifier is reported only once for each function it appears in
-          &eb_head(buf)->bflags))) {
-                   ^
-   include/linux/compiler.h:170:42: note: in definition of macro 'unlikely'
-    # define unlikely(x) __builtin_expect(!!(x), 0)
-                                             ^
-   fs/btrfs/extent_io.c:5234:33: error: 'eb' undeclared (first use in this function)
-       __free_extent_buffer(eb_head(eb));
-                                    ^
+All error/warnings (new ones prefixed by >>):
 
-vim +/set_bit +5055 fs/btrfs/extent_io.c
+   fs/btrfs/file.c: In function 'btrfs_punch_hole':
+>> fs/btrfs/file.c:2435:29: error: 'PAGE_CACHE_SHIFT' undeclared (first use in this function)
+     start_index = lockstart >> PAGE_CACHE_SHIFT;
+                                ^
+   fs/btrfs/file.c:2435:29: note: each undeclared identifier is reported only once for each function it appears in
+>> fs/btrfs/file.c:2449:20: error: 'PAGE_CACHE_SIZE' undeclared (first use in this function)
+      if (lockstart & (PAGE_CACHE_SIZE - 1)) {
+                       ^
+>> fs/btrfs/file.c:2464:6: error: implicit declaration of function 'page_cache_release' [-Werror=implicit-function-declaration]
+         page_cache_release(start_page);
+         ^
+   In file included from include/linux/list.h:8:0,
+                    from include/linux/wait.h:6,
+                    from include/linux/fs.h:5,
+                    from fs/btrfs/file.c:19:
+   include/linux/kernel.h:735:17: warning: comparison of distinct pointer types lacks a cast
+     (void) (&_min1 == &_min2);  \
+                    ^
+>> fs/btrfs/file.c:2491:5: note: in expansion of macro 'min'
+        min(lockstart + PAGE_CACHE_SIZE - 1, lockend), 0)) &&
+        ^
+   cc1: some warnings being treated as errors
 
-  5039		ret = radix_tree_preload(GFP_NOFS & ~__GFP_HIGHMEM);
-  5040		if (ret)
-  5041			goto free_eb;
-  5042		spin_lock(&fs_info->buffer_lock);
-  5043		ret = radix_tree_insert(&fs_info->buffer_radix,
-  5044					start >> PAGE_SHIFT, eb);
-  5045		spin_unlock(&fs_info->buffer_lock);
-  5046		radix_tree_preload_end();
-  5047		if (ret == -EEXIST) {
-  5048			exists = find_extent_buffer(fs_info, start);
-  5049			if (exists)
-  5050				goto free_eb;
-  5051			else
-  5052				goto again;
-  5053		}
-  5054		check_buffer_tree_ref(eb);
-> 5055		set_bit(EXTENT_BUFFER_HEAD_IN_TREE, &eb->bflags);
-  5056	
-  5057		/*
-  5058		 * We will free dummy extent buffer's if they come into
-  5059		 * free_extent_buffer with a ref count of 2, but if we are using this we
-  5060		 * want the buffers to stay in memory until we're done with them, so
-  5061		 * bump the ref count again.
-  5062		 */
-  5063		atomic_inc(&eb->refs);
+vim +/PAGE_CACHE_SHIFT +2435 fs/btrfs/file.c
+
+  2429	
+  2430		if (lockend < lockstart) {
+  2431			ret = 0;
+  2432			goto out_only_mutex;
+  2433		}
+  2434	
+> 2435		start_index = lockstart >> PAGE_CACHE_SHIFT;
+  2436		end_index = lockend >> PAGE_CACHE_SHIFT;
+  2437	
+  2438		same_page = lockstart >> PAGE_CACHE_SHIFT
+  2439			== lockend >> PAGE_CACHE_SHIFT;
+  2440	
+  2441		while (1) {
+  2442			struct btrfs_ordered_extent *ordered;
+  2443			struct page *start_page = NULL;
+  2444			struct page *end_page = NULL;
+  2445			u64 nr_pages;
+  2446	
+  2447			truncate_pagecache_range(inode, lockstart, lockend);
+  2448	
+> 2449			if (lockstart & (PAGE_CACHE_SIZE - 1)) {
+  2450				start_page = find_or_create_page(mapping, start_index,
+  2451								GFP_NOFS);
+  2452				if (!start_page) {
+  2453					mutex_unlock(&inode->i_mutex);
+  2454					return -ENOMEM;
+  2455				}
+  2456			}
+  2457	
+  2458			if (!same_page && ((lockend + 1) & (PAGE_CACHE_SIZE - 1))) {
+  2459				end_page = find_or_create_page(mapping, end_index,
+  2460							GFP_NOFS);
+  2461				if (!end_page) {
+  2462					if (start_page) {
+  2463						unlock_page(start_page);
+> 2464						page_cache_release(start_page);
+  2465					}
+  2466					mutex_unlock(&inode->i_mutex);
+  2467					return -ENOMEM;
+  2468				}
+  2469			}
+  2470	
+  2471	
+  2472			lock_extent_bits(&BTRFS_I(inode)->io_tree, lockstart, lockend,
+  2473					 &cached_state);
+  2474			ordered = btrfs_lookup_first_ordered_extent(inode, lockend);
+  2475	
+  2476			/*
+  2477			 * We need to make sure we have no ordered extents in this range
+  2478			 * and nobody raced in and read a page in this range, if we did
+  2479			 * we need to try again.
+  2480			 */
+  2481			nr_pages = round_up(lockend, PAGE_CACHE_SIZE)
+  2482				- round_down(lockstart, PAGE_CACHE_SIZE);
+  2483			nr_pages >>= PAGE_CACHE_SHIFT;
+  2484	
+  2485			if ((!ordered ||
+  2486			    (ordered->file_offset + ordered->len <= lockstart ||
+  2487			     ordered->file_offset > lockend)) &&
+  2488			     (!(start_page && PagePrivate(start_page) &&
+  2489				test_page_blks_state(start_page, 1 << BLK_STATE_UPTODATE,
+  2490				 lockstart,
+> 2491				 min(lockstart + PAGE_CACHE_SIZE - 1, lockend), 0)) &&
+  2492			      !(end_page && PagePrivate(end_page) &&
+  2493				test_page_blks_state(end_page, 1 << BLK_STATE_UPTODATE,
+  2494				 page_offset(end_page), lockend, 0)) &&
 
 ---
 0-DAY kernel test infrastructure                Open Source Technology Center
 https://lists.01.org/pipermail/kbuild-all                   Intel Corporation
 
---dDRMvlgZJXvWKvBx
+--k+w/mQv8wyuph6w0
 Content-Type: application/octet-stream
 Content-Disposition: attachment; filename=".config.gz"
 Content-Transfer-Encoding: base64
 
-H4sICOG6D1cAAy5jb25maWcAjFxbl9uoln7vX+GVzMPMQ3fZ8rVmVj0ghG3aklAEsl31wnJX
+H4sICHG+D1cAAy5jb25maWcAjFxbl9uoln7vX+GVzMPMQ3fZ8rVmVj0ghG3aklAEsl31wnJX
 O2mvU5ccV6VP8u9nA5IFCDnd66yT+Nsb2MBm30D5+MvHAfr2/vp8eD89Hp6efgy+HF+O58P7
 8c/B59PT8f8GCRvkTAxIQsVvwJyeXr59vzmcnweT32a/DX89P44Hm+P55fg0wK8vn09fvkHj
 0+vLLx9/wSxf0pVEZXb3w/oh14hLvpJ4jWjeUnJCEgUnGZIpyVdi7bZSeMWJpCzLqi5JwxKl
@@ -1172,4 +1189,4 @@ S9fNdkMBPQq4DXwcwMBaxlXNPZ5HORzUbDPhXBibEtP8z9xC+MAk6OIP91ZJ0OUf7sONINRJ
 TBwJetAKmQNHJ8/t7I8js5FVk8xRKkDHkz+TiQGPR3/GYrOrUF8ycW5TfXdXODY9HtQUNawa
 L4nvOun4/wMOLgcWWJEDAA==
 
---dDRMvlgZJXvWKvBx--
+--k+w/mQv8wyuph6w0--

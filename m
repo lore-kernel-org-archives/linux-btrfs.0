@@ -1,9 +1,9 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:35558 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:64753 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1750884AbcDNBMA (ORCPT
+	with ESMTP id S1750937AbcDNBaW (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 13 Apr 2016 21:12:00 -0400
+	Wed, 13 Apr 2016 21:30:22 -0400
 Subject: Re: [PATCH v2] btrfs: qgroup: Fix qgroup accounting when creating
  snapshot
 To: <fdmanana@gmail.com>
@@ -12,8 +12,8 @@ References: <1460446522-1919-1-git-send-email-quwenruo@cn.fujitsu.com>
 CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
         Mark Fasheh <mfasheh@suse.de>
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <570EEE57.4000201@cn.fujitsu.com>
-Date: Thu, 14 Apr 2016 09:11:51 +0800
+Message-ID: <570EF2A9.8090808@cn.fujitsu.com>
+Date: Thu, 14 Apr 2016 09:30:17 +0800
 MIME-Version: 1.0
 In-Reply-To: <CAL3q7H5k_NWHFwvVQSdDLr0Gsg+ENgG3QSd_24Vi0XU3NZ-OFg@mail.gmail.com>
 Content-Type: text/plain; charset="utf-8"; format=flowed
@@ -216,25 +216,41 @@ Filipe Manana wrote on 2016/04/13 17:23 +0100:
 > switch_commit_roots().
 > Or did I miss something?
 
-You're right, in create_pending_snapshot(), we should not delete the 
-dropped roots.
+Wait a second, something seems strange.
 
-Although that's not hard to fix, we can add a new parameter to 
-switch_commit_roots() and not to delete dropped roots at 
-create_pending_snapshot().
-Only the final switch_commit_roots() will really remove dropped roots.
-(Just making the already dirty hack more ugly)
+As for normal routine, without creating any snapshot, 
+qgroup_account_extents() is always called before switch_commit_roots().
+
+That's to say, in commit_transaction(), qgroup doesn't account the roots 
+deletion, and that roots deletion is accounted in next commit_transaction().
+
+So unless I missed something, the original case seems OK.
 
 
+And so is the current patch, which just moves the root deletion 
+accounting into current transaction if we are creating snapshots.
 
-I hope to find a better method to handle such case, but still no idea yet.
-My idea was to introduce sub-transid, but that's something existed but 
-then removed, and won't really make things significantly better.
+In create_pending_snapshot() case, first btrfs_qgroup_account_extents() 
+will account all the qgroup change happens in this transaction.
+And then trigger a switch_commit_roots() which will then begin to delete 
+dropped root.
 
-If any advice can be provided it would be quite nice.
+Then we repeat create_pending_snapshot() or just return to 
+btrfs_commit_transaction().
+Either way, we will call btrfs_qgroup_account_extents() to reflect the 
+root deletion.
+
+Although there is still some difference.
+As without this patch, root deletion is always accounted in next trans, 
+while with this patch, root deletion is either accounted in current 
+trans if we have pending snapshots, or accounted in next trans.
+
+I'll still update the patch to v3 to make it behavior just as it was.
 
 Thanks,
 Qu
+
+
 
 >
 > We should have had a test case for that commit mentioned above, but

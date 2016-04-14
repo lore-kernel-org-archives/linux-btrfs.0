@@ -1,84 +1,183 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f178.google.com ([209.85.213.178]:36938 "EHLO
-	mail-ig0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754833AbcDFM01 convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 Apr 2016 08:26:27 -0400
-Received: by mail-ig0-f178.google.com with SMTP id g8so40299264igr.0
-        for <linux-btrfs@vger.kernel.org>; Wed, 06 Apr 2016 05:26:25 -0700 (PDT)
-MIME-Version: 1.0
-Reply-To: fdmanana@gmail.com
-In-Reply-To: <5704868C.9000702@gmail.com>
-References: <5704868C.9000702@gmail.com>
-Date: Wed, 6 Apr 2016 13:26:24 +0100
-Message-ID: <CAL3q7H5mcO8QWTsXjb0jT6nwe3SN3G5T1xZd3bBfG5faX=1xxg@mail.gmail.com>
-Subject: Re: Possible Double Freeing of dentry in check_parent_dirs_for_sync
-From: Filipe Manana <fdmanana@gmail.com>
-To: Bastien Philbert <bastienphilbert@gmail.com>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Received: from e28smtp06.in.ibm.com ([125.16.236.6]:57838 "EHLO
+	e28smtp06.in.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753356AbcDNIdN (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 14 Apr 2016 04:33:13 -0400
+Received: from localhost
+	by e28smtp06.in.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
+	for <linux-btrfs@vger.kernel.org> from <chandan@linux.vnet.ibm.com>;
+	Thu, 14 Apr 2016 14:03:09 +0530
+Received: from d28av04.in.ibm.com (d28av04.in.ibm.com [9.184.220.66])
+	by d28relay04.in.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id u3E8XPIc16843112
+	for <linux-btrfs@vger.kernel.org>; Thu, 14 Apr 2016 14:03:25 +0530
+Received: from d28av04.in.ibm.com (localhost [127.0.0.1])
+	by d28av04.in.ibm.com (8.14.4/8.14.4/NCO v10.0 AVout) with ESMTP id u3E8WxCt020011
+	for <linux-btrfs@vger.kernel.org>; Thu, 14 Apr 2016 14:03:03 +0530
+From: Chandan Rajendra <chandan@linux.vnet.ibm.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Chandan Rajendra <chandan@linux.vnet.ibm.com>, dsterba@suse.cz, clm@fb.com,
+        jbacik@fb.com, chandan@mykolab.com, aneesh.kumar@linux.vnet.ibm.com
+Subject: [PATCH V16 00/18] Allow I/O on blocks whose size is less than page size
+Date: Thu, 14 Apr 2016 14:02:37 +0530
+Message-Id: <1460622775-20723-1-git-send-email-chandan@linux.vnet.ibm.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Apr 6, 2016 at 4:46 AM, Bastien Philbert
-<bastienphilbert@gmail.com> wrote:
-> Greetings All,
-> After some tracing I am not certain if this is correct due to being newer to the btrfs
-> codebase. However if someone more experience can show me if I am missing something in
-> my traces please let me known:)
-> Firstly here is the bug trace or the part that matters:
-> [ 7195.792492] ------------[ cut here ]------------
-> [ 7195.792532] WARNING: CPU: 0 PID: 5352 at /home/kernel/COD/linux/fs/btrfs/inode.c:9261 btrfs_destroy_inode+0x247/0x2c0 [btrfs]
-> [ 7195.792535] Modules linked in: bnep binfmt_misc intel_rapl x86_pkg_temp_thermal intel_powerclamp coretemp kvm_intel samsung_laptop kvm irqbypass crct10dif_pclmul crc32_pclmul btusb ghash_clmulni_intel btrtl btbcm btintel cryptd snd_hda_codec_hdmi uvcvideo bluetooth snd_hda_codec_realtek videobuf2_vmalloc snd_hda_codec_generic videobuf2_memops arc4 videobuf2_v4l2 snd_hda_intel input_leds videobuf2_core snd_hda_codec joydev snd_hda_core iwldvm serio_raw snd_hwdep videodev snd_pcm mac80211 media snd_seq_midi snd_seq_midi_event snd_rawmidi snd_seq snd_seq_device iwlwifi snd_timer cfg80211 snd lpc_ich mei_me soundcore shpchp mei dell_smo8800 mac_hid parport_pc ppdev lp parport autofs4 btrfs xor raid6_pq hid_generic usbhid hid i915 i2c_algo_bit drm_kms_helper syscopyarea sysfillrect psmouse sysimgblt fb_sys_fops
-> [ 7195.792593]  drm r8169 ahci libahci mii wmi video fjes
-> [ 7195.792602] CPU: 0 PID: 5352 Comm: aptitude Not tainted 4.6.0-040600rc1-generic #201603261930
-> [ 7195.792604] Hardware name: SAMSUNG ELECTRONICS CO., LTD. 530U3C/530U4C/SAMSUNG_NP1234567890, BIOS P14AAJ 04/15/2013
-> [ 7195.792607]  0000000000000286 00000000002cb880 ffff8800c91f3d40 ffffffff813ee833
-> [ 7195.792611]  0000000000000000 0000000000000000 ffff8800c91f3d80 ffffffff8108275b
-> [ 7195.792614]  0000242da71863c0 ffff8800209bca58 ffff8800209bca58 ffff880034eda000
-> [ 7195.792618] Call Trace:
-> [ 7195.792626]  [<ffffffff813ee833>] dump_stack+0x63/0x90
-> [ 7195.792631]  [<ffffffff8108275b>] __warn+0xcb/0xf0
-> [ 7195.792635]  [<ffffffff8108288d>] warn_slowpath_null+0x1d/0x20
-> [ 7195.792658]  [<ffffffffc03316b7>] btrfs_destroy_inode+0x247/0x2c0 [btrfs]
-> [ 7195.792663]  [<ffffffff8123b44b>] destroy_inode+0x3b/0x60
-> [ 7195.792666]  [<ffffffff8123b5a6>] evict+0x136/0x1a0
-> [ 7195.792670]  [<ffffffff8123b81a>] iput+0x1ba/0x240
-> [ 7195.792673]  [<ffffffff81236f3d>] __dentry_kill+0x18d/0x1e0
-> [ 7195.792676]  [<ffffffff812370bb>] dput+0x12b/0x220
-> [ 7195.792680]  [<ffffffff81231f64>] SyS_rename+0x2f4/0x3c0
-> [ 7195.792686]  [<ffffffff81839ef6>] entry_SYSCALL_64_fastpath+0x1e/0xa8
-> [ 7195.792689] ---[ end trace e42100b57fd49606 ]---
-> [ 7464.416637] perf: interrupt took too long (3157 > 3146), lowering kernel.perf_event_max_sample_rate to 63250
-> [ 9697.609514] perf: interrupt took too long (3950 > 3946), lowering kernel.perf_event_max_sample_rate to 50500
-> Firstly we start in the btrfs function for renaming btrfs_rename which in turn calls btrfs_log_new_name,which
-> in turn calls check_parent_dirs_for_sync which in turn calls check_parent_dirs_for_sync. This is where I got
-> confused though and wanted a more experienced viewpoint on this:
-> parent = dget_parent(parent);
->                  dput(old_parent);
->                  old_parent = parent;
->                  inode = d_inode(parent);
->
->          }
-> Are we not double freeing and causing a NULL pointer deference here?
->          dput(old_parent);
+Btrfs assumes block size to be the same as the machine's page
+size. This would mean that a Btrfs instance created on a 4k page size
+machine (e.g. x86) will not be mountable on machines with larger page
+sizes (e.g. PPC64/AARCH64). This patchset aims to resolve this
+incompatibility.
 
-No we aren't. dput() ignores a NULL pointer and there's no double free anywhere.
-The warning is due to something else and it's been reported a couple
-of times against 4.6-rc1 but I don't think anyone looked at it yet.
+This patchset continues with the work posted previously at
+http://thread.gmane.org/gmane.comp.file-systems.btrfs/53073.
 
+I have reverted the upstream commit "btrfs: fix lockups from
+btrfs_clear_path_blocking" (f82c458a2c3ffb94b431fc6ad791a79df1b3713e)
+since this led to soft-lockups when the patch "Btrfs:
+subpagesize-blocksize: Prevent writes to an extent buffer when
+PG_writeback flag is set" is applied. During 2015's Vault Conference
+Btrfs meetup, Chris Mason had suggested that he will write up a
+suitable locking function to be used when writing dirty pages that map
+metadata blocks. Until we have a suitable locking function available,
+this patchset temporarily disables the commit
+f82c458a2c3ffb94b431fc6ad791a79df1b3713e.
 
-> Sorry for the stupid question :(,
-> Bastien
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+The commits for the Btrfs kernel module can be found at
+https://github.com/chandanr/linux/tree/btrfs/subpagesize-blocksize.
 
+To create a filesystem with block size < page size, a patched version
+of the Btrfs-progs package is required. The corresponding fixes for
+Btrfs-progs can be found at
+https://github.com/chandanr/btrfs-progs/tree/btrfs/subpagesize-blocksize.
 
+Fstests run status:
+1. x86_64
+   - With 4k sectorsize, all the tests that succeed with the master
+     branch at git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git
+     branch also do so with the patches applied.
+2. ppc64
+   - With 4k sectorsize, 16k nodesize and with "nospace_cache" mount
+     option, except for scrub and compression tests, all the tests
+     that succeed with the master branch at
+     git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git
+     branch also do so with the patches applied.
+   - With 64k sectorsize & nodesize, all the tests that succeed with
+     the master branch at
+     git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git
+     branch also do so with the patches applied.
+
+TODO:
+1. The selftests code needs to be fixed to work in subpage-blocksize
+   scenario.
+2. I am planning to fix Scrub & Compression via a separate patchset.
+
+Changes from V15:
+1. The invocation of cleancache_get_page() in __do_readpage() assumed
+   blocksize to be same as PAGE_SIZE. We now invoke cleancache_get_page()
+   only if blocksize is same as PAGE_SIZE. Thanks to David Sterba for
+   pointing this out.
+2. In __extent_writepage_io() we used to accumulate all the contiguous
+   dirty blocks within the page before submitting the file offset range
+   for I/O. In some cases this caused the bio to span across more than
+   a stripe. For example, With 4k block size, 64K stripe size
+   and 64K page size, assume
+   - All the blocks mapped by the page are contiguous on the logical
+     address space.
+   - The first block of the page is mapped to the second block of the
+     stripe.
+   In such a scenario, we would add all the blocks of the page to
+   bio. This would mean that we would overflow the stripe by one 4K
+   block. Hence this patchset removes the optimization and invokes
+   submit_extent_page() for every dirty 4K block.
+3. The following patches are newly added:
+   - Btrfs: subpage-blocksize: __btrfs_lookup_bio_sums: Set offset
+     when moving to a new bio_vec 
+   - Btrfs: subpage-blocksize: Make file extent relocate code subpage
+     blocksize aware 
+   - Btrfs: btrfs_clone: Flush dirty blocks of a page that do not map
+     the clone range
+
+Changes from V14:
+1. Fix usage of cleancache_get_page() in __do_readpage().
+   In filesystems which support subpage-blocksize scenario, a page can
+   map one or more blocks. Hence cleancache_get_page() should be
+   invoked only when the page maps a non-hole extent and block size
+   being used is equal to the page size. Thanks to David Sterba for
+   pointing this out.
+2. Replace page_read_complete() and page_write_complete() functions
+   with page_io_complete().
+3. Provide more documentation (as part of both commit message and code
+   comments) about the usage of the per-page
+   btrfs_page_private->io_lock.
+
+Changes from V13:
+1. Enable dedup ioctl to work in subpagesize-blocksize scenario.
+
+Changes from V12:
+1. The logic in the function btrfs_punch_hole() has been fixed to
+   check for the presence of BLK_STATE_UPTODATE flags for blocks in
+   pages which partially map the file range being punched.
+   
+Changes from V11:
+1. Addressed the review comments provided by Liu Bo for version V11.
+2. Fixed file defragmentation code to work in subpagesize-blocksize
+   scenario.
+3. Many "hard to reproduce" bugs were fixed.
+
+Chandan Rajendra (18):
+  Btrfs: subpage-blocksize: Fix whole page read.
+  Btrfs: subpage-blocksize: Fix whole page write
+  Btrfs: subpage-blocksize: Make sure delalloc range intersects with the
+    locked page's range
+  Btrfs: subpage-blocksize: Define extent_buffer_head.
+  Btrfs: subpage-blocksize: Read tree blocks whose size is <
+    PAGE_CACHE_SIZE
+  Btrfs: subpage-blocksize: Write only dirty extent buffers belonging to
+    a page
+  Btrfs: subpage-blocksize: Allow mounting filesystems where sectorsize
+    < PAGE_SIZE
+  Btrfs: subpage-blocksize: Deal with partial ordered extent
+    allocations.
+  Btrfs: subpage-blocksize: Explicitly track I/O status of blocks of an
+    ordered extent.
+  Btrfs: subpage-blocksize: btrfs_punch_hole: Fix uptodate blocks check
+  Btrfs: subpage-blocksize: Prevent writes to an extent buffer when
+    PG_writeback flag is set
+  Revert "btrfs: fix lockups from btrfs_clear_path_blocking"
+  Btrfs: subpage-blocksize: Fix file defragmentation code
+  Btrfs: subpage-blocksize: extent_clear_unlock_delalloc: Prevent page
+    from being unlocked more than once
+  Btrfs: subpage-blocksize: Enable dedupe ioctl
+  Btrfs: btrfs_clone: Flush dirty blocks of a page that do not map the
+    clone range
+  Btrfs: subpage-blocksize: Make file extent relocate code subpage
+    blocksize aware
+  Btrfs: subpage-blocksize: __btrfs_lookup_bio_sums: Set offset when
+    moving to a new bio_vec
+
+ fs/btrfs/ctree.c             |   37 +-
+ fs/btrfs/ctree.h             |    6 +-
+ fs/btrfs/disk-io.c           |  156 ++--
+ fs/btrfs/disk-io.h           |    3 +
+ fs/btrfs/extent-tree.c       |   17 +-
+ fs/btrfs/extent_io.c         | 1611 +++++++++++++++++++++++++++++-------------
+ fs/btrfs/extent_io.h         |  145 +++-
+ fs/btrfs/file-item.c         |    7 +-
+ fs/btrfs/file.c              |   82 ++-
+ fs/btrfs/inode.c             |  491 +++++++++----
+ fs/btrfs/ioctl.c             |  219 ++++--
+ fs/btrfs/locking.c           |   24 +-
+ fs/btrfs/locking.h           |    2 -
+ fs/btrfs/ordered-data.c      |   19 +
+ fs/btrfs/ordered-data.h      |    4 +
+ fs/btrfs/relocation.c        |   70 +-
+ fs/btrfs/root-tree.c         |    2 +-
+ fs/btrfs/volumes.c           |    2 +-
+ include/trace/events/btrfs.h |    2 +-
+ 19 files changed, 2050 insertions(+), 849 deletions(-)
 
 -- 
-Filipe David Manana,
+2.1.0
 
-"Reasonable men adapt themselves to the world.
- Unreasonable men adapt the world to themselves.
- That's why all progress depends on unreasonable men."

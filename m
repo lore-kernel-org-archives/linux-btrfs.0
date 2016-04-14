@@ -1,72 +1,236 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:21398 "EHLO
+Received: from aserp1040.oracle.com ([141.146.126.69]:49298 "EHLO
 	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752002AbcDNJ6E (ORCPT
+	with ESMTP id S1754551AbcDNKw1 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 14 Apr 2016 05:58:04 -0400
-Subject: Re: [PATCH v4 00/13] Introduce device state 'failed', spare device
- and auto replace
-To: Yauhen Kharuzhy <yauhen.kharuzhy@zavadatar.com>
-References: <1460470563-752-1-git-send-email-anand.jain@oracle.com>
- <20160413212143.GA28202@jeknote.loshitsa1.net> <570F5897.6090701@oracle.com>
- <20160414092246.GB17024@jeknote.loshitsa1.net>
-Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz
+	Thu, 14 Apr 2016 06:52:27 -0400
 From: Anand Jain <anand.jain@oracle.com>
-Message-ID: <570F6994.9030605@oracle.com>
-Date: Thu, 14 Apr 2016 17:57:40 +0800
-MIME-Version: 1.0
-In-Reply-To: <20160414092246.GB17024@jeknote.loshitsa1.net>
-Content-Type: text/plain; charset=utf-8; format=flowed
+To: linux-btrfs@vger.kernel.org
+Cc: dsterba@suse.cz, yauhen.kharuzhy@zavadatar.com
+Subject: [PATCH v5 11/13] btrfs: introduce device dynamic state transition to offline or failed
+Date: Thu, 14 Apr 2016 18:51:58 +0800
+Message-Id: <1460631118-7847-1-git-send-email-anand.jain@oracle.com>
+In-Reply-To: <1460470563-752-12-git-send-email-anand.jain@oracle.com>
+References: <1460470563-752-12-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+From: Anand Jain <Anand.Jain@oracle.com>
 
+This patch provides helper functions to force a device to offline
+or failed, and we need this device states for the following reasons,
+1) a. it can be reported that device has failed when it does
+   b. close the device when it goes offline so that blocklayer can
+      cleanup
+2) identify the candidate for the auto replace
+3) avoid further commit error reported against the failing device and
+4) a device in the multi device btrfs may go offline from the system
+   (but as of now in in some system config btrfs gets unmounted in this
+    context, which is not a correct behavior)
 
-On 04/14/2016 05:22 PM, Yauhen Kharuzhy wrote:
-> On Thu, Apr 14, 2016 at 04:45:11PM +0800, Anand Jain wrote:
->>
->>
->>
->> Thanks for the report ! more below..
->>
->>
->>   You may use simpler devmgt tool, https://github.com/asj/devmgt
->
-> Thanks, will try.
->
->>
->>   You are failing the replace-target, presumably when the replace is
->>   still running, however note that this patch-set does not fail the
->>   replace-target for errors (as of now I have no idea how to do that
->>   without leading to a messy situation), and so it would follow the
->>   original code as without this patch.
->>   Next, originally with-out this patch-set we won't close any device
->>   for errors. So when you delete the device at the block-layer and
->>   re-attach (scan) most probably you are having a newer device path
->>   to the block device. (which kind of defeats the idea of testing
->>   an intermittently disappearing device), so I doubt, if the test
->>   case is reliable,  and above panic is btrfs related and if its
->>   this patch-set related.
->
-> No, It is fixed by my latest patch (about of s_bdev field in
-> superblock). Actual sequence which leads to oops is:
-> 1) FS is mounted, s_bdev is NULL
-> 2) failed device is closed, s_bdev untouched
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
+Tested-by: Austin S. Hemmelgarn <ahferroin7@gmail.com>
+---
+v5:
+  Originally we had a bug as fixed in the patch
+   [PATCH] btrfs: s_bdev is not null after missing replace
+  Incorporate those changes at force close a failed device.
+  To test pls have both this patch and above patch which
+  fixes the original issue, not introduced as part of this
+  patch set.
 
+v4..v1:
+  please ref the patch set cover page
 
-> 3) missing device is replaced, s_bdev is set to non-NULL – bdev of
-> the replaced device
-> 4) at second device closing, s_bdev is "changed" to first device from
-> the device list but it is... some device because closed dev still
-> didn't delete from the list!
-> 5) after device closing, s_bdev points to invalid bdev.
-> 6) umount -> sync_filesystem() -> sync_blokdev(s_bdev) -> OOPS.
->
+ fs/btrfs/volumes.c | 139 +++++++++++++++++++++++++++++++++++++++++++++++++++++
+ fs/btrfs/volumes.h |  14 ++++++
+ 2 files changed, 153 insertions(+)
 
-  This is wrong. It should be other way around. That is s_bdev
-  should continue to be NULL. And if s_bdev continues to be NULL
-  the sync thread will fail-safe.
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index f76e2c4aac96..5b5bc48c8a98 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -7148,3 +7148,142 @@ out:
+ 	read_unlock(&map_tree->map_tree.lock);
+ 	return ret;
+ }
++
++static void __close_device(struct work_struct *work)
++{
++	struct btrfs_device *device;
++
++	device = container_of(work, struct btrfs_device, rcu_work);
++
++	if (device->closing_bdev)
++		blkdev_put(device->closing_bdev, device->mode);
++
++	device->closing_bdev = NULL;
++}
++
++static void close_device(struct rcu_head *head)
++{
++	struct btrfs_device *device;
++
++	device = container_of(head, struct btrfs_device, rcu);
++
++	INIT_WORK(&device->rcu_work, __close_device);
++	schedule_work(&device->rcu_work);
++}
++
++void device_force_close(struct btrfs_device *device)
++{
++	struct btrfs_device *next_device;
++	struct btrfs_fs_devices *fs_devices;
++
++	fs_devices = device->fs_devices;
++
++	mutex_lock(&fs_devices->device_list_mutex);
++	mutex_lock(&fs_devices->fs_info->chunk_mutex);
++	spin_lock(&fs_devices->fs_info->free_chunk_lock);
++
++	next_device = list_entry(fs_devices->devices.next,
++					struct btrfs_device, dev_list);
++	if (fs_devices->fs_info->sb->s_bdev &&
++		(fs_devices->fs_info->sb->s_bdev == device->bdev))
++		fs_devices->fs_info->sb->s_bdev = next_device->bdev;
++
++	if (device->bdev == fs_devices->latest_bdev)
++		fs_devices->latest_bdev = next_device->bdev;
++
++	if (device->bdev)
++		fs_devices->open_devices--;
++
++	if (device->writeable) {
++		list_del_init(&device->dev_alloc_list);
++		fs_devices->rw_devices--;
++	}
++	device->writeable = 0;
++
++	/*
++	 * fixme: works for now, but its better to keep the state of
++	 * missing and offline different, and update rest of the
++	 * places where we check for only missing and not for failed
++	 * or offline as of now.
++	 */
++	device->missing = 1;
++	fs_devices->missing_devices++;
++	device->closing_bdev = device->bdev;
++	device->bdev = NULL;
++
++	call_rcu(&device->rcu, close_device);
++
++	spin_unlock(&fs_devices->fs_info->free_chunk_lock);
++	mutex_unlock(&fs_devices->fs_info->chunk_mutex);
++	mutex_unlock(&fs_devices->device_list_mutex);
++
++	rcu_barrier();
++}
++
++void btrfs_device_enforce_state(struct btrfs_device *dev, char *why)
++{
++	int tolerance;
++	bool degrade_option;
++	char dev_status[10];
++	char chunk_status[25];
++	struct btrfs_fs_info *fs_info;
++	struct btrfs_fs_devices *fs_devices;
++
++	fs_devices = dev->fs_devices;
++	fs_info = fs_devices->fs_info;
++	degrade_option = btrfs_test_opt(fs_info->fs_root, DEGRADED);
++
++	/* todo: support seed later */
++	if (fs_devices->seeding)
++		return;
++
++	/* this shouldn't be called if device is already missing */
++	if (dev->missing || !dev->bdev)
++		return;
++
++	if (dev->offline || dev->failed)
++		return;
++
++	/* Only RW device is requested to force close let FS handle it*/
++	if (fs_devices->rw_devices == 1) {
++		btrfs_std_error(fs_info, -EIO,
++			"force offline last RW device");
++		return;
++	}
++
++	if (!strcmp(why, "offline"))
++		dev->offline = 1;
++	else if (!strcmp(why, "failed"))
++		dev->failed = 1;
++	else
++		return;
++
++	/*
++	 * Here after, there shouldn't any reason why can't force
++	 * close this device
++	 */
++	btrfs_sysfs_rm_device_link(fs_devices, dev);
++	device_force_close(dev);
++	strcpy(dev_status, "closed");
++
++	tolerance = btrfs_check_degradable(fs_info,
++						fs_info->sb->s_flags);
++	if (tolerance > 0) {
++		strncpy(chunk_status, "chunk(s) degraded", 25);
++	} else if(tolerance < 0) {
++		strncpy(chunk_status, "chunk(s) failed", 25);
++	} else {
++		strncpy(chunk_status, "No chunk(s) are degraded", 25);
++	}
++
++	btrfs_warn_in_rcu(fs_info, "device %s marked %s, %s, %s",
++		rcu_str_deref(dev->name), why, dev_status, chunk_status);
++	btrfs_info_in_rcu(fs_info,
++		"num_devices %llu rw_devices %llu degraded-option: %s",
++		fs_devices->num_devices, fs_devices->rw_devices,
++		degrade_option ? "set":"unset");
++
++	if (tolerance < 0)
++		btrfs_std_error(fs_info, -EIO, "devices below critical level");
++
++}
+diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
+index b4308afa3097..60eb098d8c76 100644
+--- a/fs/btrfs/volumes.h
++++ b/fs/btrfs/volumes.h
+@@ -66,13 +66,26 @@ struct btrfs_device {
+ 	struct btrfs_pending_bios pending_sync_bios;
+ 
+ 	struct block_device *bdev;
++	struct block_device *closing_bdev;
+ 
+ 	/* the mode sent to blkdev_get */
+ 	fmode_t mode;
+ 
+ 	int writeable;
+ 	int in_fs_metadata;
++	/* missing: device wasn't found at the time of mount */
+ 	int missing;
++	/* failed: device confirmed to have experienced critical io failure */
++	int failed;
++	/*
++	 * offline: system or user or block layer transport has removed
++	 * offlined the device which was once present and without going
++	 * through unmount. Implies an intriem communication break down
++	 * and not necessarily a candidate for the device replace. And
++	 * device might be online after user intervention or after
++	 * block transport layer error recovery.
++	 */
++	int offline;
+ 	int can_discard;
+ 	int is_tgtdev_for_dev_replace;
+ 
+@@ -575,5 +588,6 @@ struct list_head *btrfs_get_fs_uuids(void);
+ void btrfs_set_fs_info_ptr(struct btrfs_fs_info *fs_info);
+ void btrfs_reset_fs_info_ptr(struct btrfs_fs_info *fs_info);
+ int btrfs_check_degradable(struct btrfs_fs_info *fs_info, unsigned flags);
++void btrfs_device_enforce_state(struct btrfs_device *dev, char *why);
+ 
+ #endif
+-- 
+2.7.0
 
-  The diff sent in the other thread will fix.
-
-Thanks, Anand

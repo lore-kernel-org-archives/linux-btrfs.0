@@ -1,155 +1,439 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from e28smtp04.in.ibm.com ([125.16.236.4]:49383 "EHLO
-	e28smtp04.in.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753394AbcDNIdo (ORCPT
+Received: from e28smtp02.in.ibm.com ([125.16.236.2]:58143 "EHLO
+	e28smtp02.in.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753670AbcDNIdm (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 14 Apr 2016 04:33:44 -0400
+	Thu, 14 Apr 2016 04:33:42 -0400
 Received: from localhost
-	by e28smtp04.in.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
+	by e28smtp02.in.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
 	for <linux-btrfs@vger.kernel.org> from <chandan@linux.vnet.ibm.com>;
-	Thu, 14 Apr 2016 14:03:41 +0530
+	Thu, 14 Apr 2016 14:03:40 +0530
 Received: from d28av04.in.ibm.com (d28av04.in.ibm.com [9.184.220.66])
-	by d28relay07.in.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id u3E8Xa0O20906090
+	by d28relay01.in.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id u3E8Xapl26935358
 	for <linux-btrfs@vger.kernel.org>; Thu, 14 Apr 2016 14:03:36 +0530
 Received: from d28av04.in.ibm.com (localhost [127.0.0.1])
-	by d28av04.in.ibm.com (8.14.4/8.14.4/NCO v10.0 AVout) with ESMTP id u3E8XW6E021629
+	by d28av04.in.ibm.com (8.14.4/8.14.4/NCO v10.0 AVout) with ESMTP id u3E8XX9P021644
 	for <linux-btrfs@vger.kernel.org>; Thu, 14 Apr 2016 14:03:36 +0530
 From: Chandan Rajendra <chandan@linux.vnet.ibm.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Chandan Rajendra <chandan@linux.vnet.ibm.com>, dsterba@suse.cz, clm@fb.com,
         jbacik@fb.com, chandan@mykolab.com, aneesh.kumar@linux.vnet.ibm.com
-Subject: [PATCH V16 12/18] Revert "btrfs: fix lockups from btrfs_clear_path_blocking"
-Date: Thu, 14 Apr 2016 14:02:49 +0530
-Message-Id: <1460622775-20723-13-git-send-email-chandan@linux.vnet.ibm.com>
+Subject: [PATCH V16 13/18] Btrfs: subpage-blocksize: Fix file defragmentation code
+Date: Thu, 14 Apr 2016 14:02:50 +0530
+Message-Id: <1460622775-20723-14-git-send-email-chandan@linux.vnet.ibm.com>
 In-Reply-To: <1460622775-20723-1-git-send-email-chandan@linux.vnet.ibm.com>
 References: <1460622775-20723-1-git-send-email-chandan@linux.vnet.ibm.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The patch "Btrfs: subpage-blocksize: Prevent writes to an extent buffer
-when PG_writeback flag is set" requires btrfs_try_tree_write_lock() to
-be a true try lock w.r.t to both spinning and blocking locks. During
-2015's Vault Conference Btrfs meetup, Chris Mason had suggested that he
-will write up a suitable locking function to be used when writing dirty
-pages that map metadata blocks. Until we have a suitable locking
-function available, this patch temporarily disables the commit
-f82c458a2c3ffb94b431fc6ad791a79df1b3713e.
----
- fs/btrfs/ctree.c   | 14 ++++++++++++--
- fs/btrfs/locking.c | 24 +++---------------------
- fs/btrfs/locking.h |  2 --
- 3 files changed, 15 insertions(+), 25 deletions(-)
+This commit gets file defragmentation code to work in subpage-blocksize
+scenario. It does this by keeping track of page offsets that mark block
+boundaries and passing them as arguments to the functions that implement
+the defragmentation logic.
 
-diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-index 7d76add..4a753c9 100644
---- a/fs/btrfs/ctree.c
-+++ b/fs/btrfs/ctree.c
-@@ -81,6 +81,13 @@ noinline void btrfs_clear_path_blocking(struct btrfs_path *p,
+Signed-off-by: Chandan Rajendra <chandan@linux.vnet.ibm.com>
+---
+ fs/btrfs/ioctl.c | 193 +++++++++++++++++++++++++++++++++++++------------------
+ 1 file changed, 132 insertions(+), 61 deletions(-)
+
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 5a23806..bf79dbc 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -893,12 +893,13 @@ out_unlock:
+ static int check_defrag_in_cache(struct inode *inode, u64 offset, u32 thresh)
  {
- 	int i;
+ 	struct extent_io_tree *io_tree = &BTRFS_I(inode)->io_tree;
++	struct btrfs_root *root = BTRFS_I(inode)->root;
+ 	struct extent_map *em = NULL;
+ 	struct extent_map_tree *em_tree = &BTRFS_I(inode)->extent_tree;
+ 	u64 end;
  
-+#ifdef CONFIG_DEBUG_LOCK_ALLOC
-+	/* lockdep really cares that we take all of these spinlocks
-+	 * in the right order.  If any of the locks in the path are not
-+	 * currently blocking, it is going to complain.  So, make really
-+	 * really sure by forcing the path to blocking before we clear
-+	 * the path blocking.
-+	 */
- 	if (held) {
- 		btrfs_set_lock_blocking_rw(held, held_rw);
- 		if (held_rw == BTRFS_WRITE_LOCK)
-@@ -89,6 +96,7 @@ noinline void btrfs_clear_path_blocking(struct btrfs_path *p,
- 			held_rw = BTRFS_READ_LOCK_BLOCKING;
- 	}
- 	btrfs_set_path_blocking(p);
-+#endif
+ 	read_lock(&em_tree->lock);
+-	em = lookup_extent_mapping(em_tree, offset, PAGE_SIZE);
++	em = lookup_extent_mapping(em_tree, offset, root->sectorsize);
+ 	read_unlock(&em_tree->lock);
  
- 	for (i = BTRFS_MAX_LEVEL - 1; i >= 0; i--) {
- 		if (p->nodes[i] && p->locks[i]) {
-@@ -100,8 +108,10 @@ noinline void btrfs_clear_path_blocking(struct btrfs_path *p,
- 		}
- 	}
+ 	if (em) {
+@@ -988,7 +989,7 @@ static struct extent_map *defrag_lookup_extent(struct inode *inode, u64 start)
+ 	struct extent_map_tree *em_tree = &BTRFS_I(inode)->extent_tree;
+ 	struct extent_io_tree *io_tree = &BTRFS_I(inode)->io_tree;
+ 	struct extent_map *em;
+-	u64 len = PAGE_SIZE;
++	u64 len = BTRFS_I(inode)->root->sectorsize;
  
-+#ifdef CONFIG_DEBUG_LOCK_ALLOC
- 	if (held)
- 		btrfs_clear_lock_blocking_rw(held, held_rw);
-+#endif
- }
- 
- /* this also releases the path */
-@@ -2904,7 +2914,7 @@ cow_done:
- 					}
- 					p->locks[level] = BTRFS_WRITE_LOCK;
- 				} else {
--					err = btrfs_tree_read_lock_atomic(b);
-+					err = btrfs_try_tree_read_lock(b);
- 					if (!err) {
- 						btrfs_set_path_blocking(p);
- 						btrfs_tree_read_lock(b);
-@@ -3036,7 +3046,7 @@ again:
- 			}
- 
- 			level = btrfs_header_level(b);
--			err = btrfs_tree_read_lock_atomic(b);
-+			err = btrfs_try_tree_read_lock(b);
- 			if (!err) {
- 				btrfs_set_path_blocking(p);
- 				btrfs_tree_read_lock(b);
-diff --git a/fs/btrfs/locking.c b/fs/btrfs/locking.c
-index d13128c..8b50e60 100644
---- a/fs/btrfs/locking.c
-+++ b/fs/btrfs/locking.c
-@@ -132,26 +132,6 @@ again:
- }
- 
- /*
-- * take a spinning read lock.
-- * returns 1 if we get the read lock and 0 if we don't
-- * this won't wait for blocking writers
-- */
--int btrfs_tree_read_lock_atomic(struct extent_buffer *eb)
--{
--	if (atomic_read(&eb->blocking_writers))
--		return 0;
--
--	read_lock(&eb->lock);
--	if (atomic_read(&eb->blocking_writers)) {
--		read_unlock(&eb->lock);
--		return 0;
--	}
--	atomic_inc(&eb->read_locks);
--	atomic_inc(&eb->spinning_readers);
--	return 1;
--}
--
--/*
-  * returns 1 if we get the read lock and 0 if we don't
-  * this won't wait for blocking writers
+ 	/*
+ 	 * hopefully we have this extent in the tree already, try without
+@@ -1107,15 +1108,18 @@ out:
+  * before calling this.
   */
-@@ -182,7 +162,9 @@ int btrfs_try_tree_write_lock(struct extent_buffer *eb)
- 	    atomic_read(&eb->blocking_readers))
+ static int cluster_pages_for_defrag(struct inode *inode,
+-				    struct page **pages,
+-				    unsigned long start_index,
+-				    unsigned long num_pages)
++				struct page **pages,
++				unsigned long start_index,
++				size_t pg_offset,
++				unsigned long num_blks)
+ {
+-	unsigned long file_end;
+ 	u64 isize = i_size_read(inode);
++	u64 start_blk;
++	u64 end_blk;
+ 	u64 page_start;
+ 	u64 page_end;
+ 	u64 page_cnt;
++	u64 blk_cnt;
+ 	int ret;
+ 	int i;
+ 	int i_done;
+@@ -1124,20 +1128,25 @@ static int cluster_pages_for_defrag(struct inode *inode,
+ 	struct extent_io_tree *tree;
+ 	gfp_t mask = btrfs_alloc_write_mask(inode->i_mapping);
+ 
+-	file_end = (isize - 1) >> PAGE_SHIFT;
+-	if (!isize || start_index > file_end)
++	start_blk = (start_index << PAGE_SHIFT) + pg_offset;
++	start_blk >>= inode->i_blkbits;
++	end_blk = (isize - 1) >> inode->i_blkbits;
++	if (!isize || start_blk > end_blk)
  		return 0;
  
--	write_lock(&eb->lock);
-+	if (!write_trylock(&eb->lock))
-+		return 0;
-+
- 	if (atomic_read(&eb->blocking_writers) ||
- 	    atomic_read(&eb->blocking_readers)) {
- 		write_unlock(&eb->lock);
-diff --git a/fs/btrfs/locking.h b/fs/btrfs/locking.h
-index c44a9d5..b81e0e9 100644
---- a/fs/btrfs/locking.h
-+++ b/fs/btrfs/locking.h
-@@ -35,8 +35,6 @@ void btrfs_clear_lock_blocking_rw(struct extent_buffer *eb, int rw);
- void btrfs_assert_tree_locked(struct extent_buffer *eb);
- int btrfs_try_tree_read_lock(struct extent_buffer *eb);
- int btrfs_try_tree_write_lock(struct extent_buffer *eb);
--int btrfs_tree_read_lock_atomic(struct extent_buffer *eb);
--
+-	page_cnt = min_t(u64, (u64)num_pages, (u64)file_end - start_index + 1);
++	blk_cnt = min_t(u64, (u64)num_blks, (u64)end_blk - start_blk + 1);
  
- static inline void btrfs_tree_unlock_rw(struct extent_buffer *eb, int rw)
+ 	ret = btrfs_delalloc_reserve_space(inode,
+-			start_index << PAGE_SHIFT,
+-			page_cnt << PAGE_SHIFT);
++					start_blk << inode->i_blkbits,
++					blk_cnt << inode->i_blkbits);
+ 	if (ret)
+ 		return ret;
+ 	i_done = 0;
+ 	tree = &BTRFS_I(inode)->io_tree;
+ 
++	page_cnt = DIV_ROUND_UP(pg_offset + (blk_cnt << inode->i_blkbits),
++				PAGE_SIZE);
++
+ 	/* step one, lock all the pages */
+ 	for (i = 0; i < page_cnt; i++) {
+ 		struct page *page;
+@@ -1148,12 +1157,22 @@ again:
+ 			break;
+ 
+ 		page_start = page_offset(page);
+-		page_end = page_start + PAGE_SIZE - 1;
++
++		if (i == 0)
++			page_start += pg_offset;
++
++		if (i == page_cnt - 1) {
++			page_end = (start_index << PAGE_SHIFT) + pg_offset;
++			page_end += (blk_cnt << inode->i_blkbits) - 1;
++		} else {
++			page_end = page_offset(page) + PAGE_SIZE - 1;
++		}
++
+ 		while (1) {
+ 			lock_extent_bits(tree, page_start, page_end,
+ 					 &cached_state);
+-			ordered = btrfs_lookup_ordered_extent(inode,
+-							      page_start);
++			ordered = btrfs_lookup_ordered_range(inode, page_start,
++							page_end - page_start + 1);
+ 			unlock_extent_cached(tree, page_start, page_end,
+ 					     &cached_state, GFP_NOFS);
+ 			if (!ordered)
+@@ -1192,7 +1211,7 @@ again:
+ 		}
+ 
+ 		pages[i] = page;
+-		i_done++;
++		i_done += (page_end - page_start + 1) >> inode->i_blkbits;
+ 	}
+ 	if (!i_done || ret)
+ 		goto out;
+@@ -1204,55 +1223,76 @@ again:
+ 	 * so now we have a nice long stream of locked
+ 	 * and up to date pages, lets wait on them
+ 	 */
+-	for (i = 0; i < i_done; i++)
++	page_cnt = DIV_ROUND_UP(pg_offset + (i_done << inode->i_blkbits),
++				PAGE_SIZE);
++	for (i = 0; i < page_cnt; i++)
+ 		wait_on_page_writeback(pages[i]);
+ 
+-	page_start = page_offset(pages[0]);
+-	page_end = page_offset(pages[i_done - 1]) + PAGE_SIZE;
++	page_start = page_offset(pages[0]) + pg_offset;
++	page_end = page_start + (i_done << inode->i_blkbits) - 1;
+ 
+ 	lock_extent_bits(&BTRFS_I(inode)->io_tree,
+-			 page_start, page_end - 1, &cached_state);
++			page_start, page_end, &cached_state);
+ 	clear_extent_bit(&BTRFS_I(inode)->io_tree, page_start,
+-			  page_end - 1, EXTENT_DIRTY | EXTENT_DELALLOC |
++			  page_end, EXTENT_DIRTY | EXTENT_DELALLOC |
+ 			  EXTENT_DO_ACCOUNTING | EXTENT_DEFRAG, 0, 0,
+ 			  &cached_state, GFP_NOFS);
+ 
+-	if (i_done != page_cnt) {
++	if (i_done != blk_cnt) {
+ 		spin_lock(&BTRFS_I(inode)->lock);
+ 		BTRFS_I(inode)->outstanding_extents++;
+ 		spin_unlock(&BTRFS_I(inode)->lock);
+ 		btrfs_delalloc_release_space(inode,
+-				start_index << PAGE_SHIFT,
+-				(page_cnt - i_done) << PAGE_SHIFT);
++					start_blk << inode->i_blkbits,
++					(blk_cnt - i_done) << inode->i_blkbits);
+ 	}
+ 
+ 
+-	set_extent_defrag(&BTRFS_I(inode)->io_tree, page_start, page_end - 1,
++	set_extent_defrag(&BTRFS_I(inode)->io_tree, page_start, page_end,
+ 			  &cached_state, GFP_NOFS);
+ 
+ 	unlock_extent_cached(&BTRFS_I(inode)->io_tree,
+-			     page_start, page_end - 1, &cached_state,
++			     page_start, page_end, &cached_state,
+ 			     GFP_NOFS);
+ 
+-	for (i = 0; i < i_done; i++) {
++	for (i = 0; i < page_cnt; i++) {
+ 		clear_page_dirty_for_io(pages[i]);
+ 		ClearPageChecked(pages[i]);
+ 		set_page_extent_mapped(pages[i]);
++
++		page_start = page_offset(pages[i]);
++		if (i == 0)
++			page_start += pg_offset;
++
++		if (i == page_cnt - 1) {
++			page_end = page_offset(pages[0]) + pg_offset;
++			page_end += (i_done << inode->i_blkbits) - 1;
++		} else {
++			page_end = page_offset(pages[i]) + PAGE_SIZE - 1;
++		}
++
++		set_page_blks_state(pages[i],
++				1 << BLK_STATE_UPTODATE | 1 << BLK_STATE_DIRTY,
++				page_start, page_end);
+ 		set_page_dirty(pages[i]);
+ 		unlock_page(pages[i]);
+ 		put_page(pages[i]);
+ 	}
+ 	return i_done;
+ out:
+-	for (i = 0; i < i_done; i++) {
+-		unlock_page(pages[i]);
+-		put_page(pages[i]);
++	if (i_done) {
++		page_cnt = DIV_ROUND_UP(pg_offset + (i_done << inode->i_blkbits),
++					PAGE_SIZE);
++		for (i = 0; i < page_cnt; i++) {
++			unlock_page(pages[i]);
++			put_page(pages[i]);
++		}
+ 	}
++
+ 	btrfs_delalloc_release_space(inode,
+-			start_index << PAGE_SHIFT,
+-			page_cnt << PAGE_SHIFT);
++				start_blk << inode->i_blkbits,
++				blk_cnt << inode->i_blkbits);
+ 	return ret;
+-
+ }
+ 
+ int btrfs_defrag_file(struct inode *inode, struct file *file,
+@@ -1261,19 +1301,24 @@ int btrfs_defrag_file(struct inode *inode, struct file *file,
  {
+ 	struct btrfs_root *root = BTRFS_I(inode)->root;
+ 	struct file_ra_state *ra = NULL;
++	unsigned long first_off, last_off;
++	unsigned long first_block, last_block;
+ 	unsigned long last_index;
+ 	u64 isize = i_size_read(inode);
+ 	u64 last_len = 0;
+ 	u64 skip = 0;
+ 	u64 defrag_end = 0;
+ 	u64 newer_off = range->start;
++	u64 start;
++	u64 page_cnt;
+ 	unsigned long i;
+ 	unsigned long ra_index = 0;
++	size_t pg_offset;
+ 	int ret;
+ 	int defrag_count = 0;
+ 	int compress_type = BTRFS_COMPRESS_ZLIB;
+ 	u32 extent_thresh = range->extent_thresh;
+-	unsigned long max_cluster = SZ_256K >> PAGE_SHIFT;
++	unsigned long max_cluster = SZ_256K >> inode->i_blkbits;
+ 	unsigned long cluster = max_cluster;
+ 	u64 new_align = ~((u64)SZ_128K - 1);
+ 	struct page **pages = NULL;
+@@ -1307,8 +1352,14 @@ int btrfs_defrag_file(struct inode *inode, struct file *file,
+ 		ra = &file->f_ra;
+ 	}
+ 
+-	pages = kmalloc_array(max_cluster, sizeof(struct page *),
+-			GFP_NOFS);
++	/*
++         * In subpage-blocksize scenario the first of "max_cluster" blocks
++	 * may start on a non-zero page offset. In such scenarios we need one
++	 * page more than what would be needed in the case where the first block
++	 * maps to first block of a page.
++         */
++	page_cnt = (max_cluster >> (PAGE_SHIFT - inode->i_blkbits)) + 1;
++	pages = kmalloc_array(page_cnt, sizeof(struct page *), GFP_NOFS);
+ 	if (!pages) {
+ 		ret = -ENOMEM;
+ 		goto out_ra;
+@@ -1316,12 +1367,15 @@ int btrfs_defrag_file(struct inode *inode, struct file *file,
+ 
+ 	/* find the last page to defrag */
+ 	if (range->start + range->len > range->start) {
+-		last_index = min_t(u64, isize - 1,
+-			 range->start + range->len - 1) >> PAGE_SHIFT;
++		last_off = min_t(u64, isize - 1, range->start + range->len - 1);
+ 	} else {
+-		last_index = (isize - 1) >> PAGE_SHIFT;
++		last_off = isize - 1;
+ 	}
+ 
++	last_off = round_up(last_off, root->sectorsize) - 1;
++	last_block = last_off >> inode->i_blkbits;
++	last_index = last_off >> PAGE_SHIFT;
++
+ 	if (newer_than) {
+ 		ret = find_new_extents(root, inode, newer_than,
+ 				       &newer_off, SZ_64K);
+@@ -1331,14 +1385,20 @@ int btrfs_defrag_file(struct inode *inode, struct file *file,
+ 			 * we always align our defrag to help keep
+ 			 * the extents in the file evenly spaced
+ 			 */
+-			i = (newer_off & new_align) >> PAGE_SHIFT;
++			first_off = newer_off & new_align;
+ 		} else
+ 			goto out_ra;
+ 	} else {
+-		i = range->start >> PAGE_SHIFT;
++		first_off = range->start;
+ 	}
++
++	first_off = round_down(first_off, root->sectorsize);
++	first_block = first_off >> inode->i_blkbits;
++	i = first_off >> PAGE_SHIFT;
++	pg_offset = first_off & (PAGE_SIZE - 1);
++
+ 	if (!max_to_defrag)
+-		max_to_defrag = last_index - i + 1;
++		max_to_defrag = last_block - first_block + 1;
+ 
+ 	/*
+ 	 * make writeback starts from i, so the defrag range can be
+@@ -1362,39 +1422,50 @@ int btrfs_defrag_file(struct inode *inode, struct file *file,
+ 			break;
+ 		}
+ 
+-		if (!should_defrag_range(inode, (u64)i << PAGE_SHIFT,
+-					 extent_thresh, &last_len, &skip,
+-					 &defrag_end, range->flags &
+-					 BTRFS_DEFRAG_RANGE_COMPRESS)) {
++		start = pg_offset + ((u64)i << PAGE_SHIFT);
++		if (!should_defrag_range(inode, start,
++					extent_thresh, &last_len, &skip,
++					&defrag_end, range->flags &
++					BTRFS_DEFRAG_RANGE_COMPRESS)) {
+ 			unsigned long next;
+ 			/*
+ 			 * the should_defrag function tells us how much to skip
+ 			 * bump our counter by the suggested amount
+ 			 */
+-			next = DIV_ROUND_UP(skip, PAGE_SIZE);
+-			i = max(i + 1, next);
++			next = max(skip, start + root->sectorsize);
++			next >>= inode->i_blkbits;
++
++			first_off = next << inode->i_blkbits;
++			i = first_off >> PAGE_SHIFT;
++			pg_offset = first_off & (PAGE_SIZE - 1);
+ 			continue;
+ 		}
+ 
+ 		if (!newer_than) {
+-			cluster = (PAGE_ALIGN(defrag_end) >>
+-				   PAGE_SHIFT) - i;
++			cluster = (defrag_end >> inode->i_blkbits)
++				- (start >> inode->i_blkbits);
++
+ 			cluster = min(cluster, max_cluster);
+ 		} else {
+ 			cluster = max_cluster;
+ 		}
+ 
+-		if (i + cluster > ra_index) {
++		page_cnt = pg_offset + (cluster << inode->i_blkbits) - 1;
++		page_cnt = DIV_ROUND_UP(page_cnt, PAGE_SIZE);
++		if (i + page_cnt > ra_index) {
+ 			ra_index = max(i, ra_index);
+ 			btrfs_force_ra(inode->i_mapping, ra, file, ra_index,
+-				       cluster);
+-			ra_index += cluster;
++				       page_cnt);
++			ra_index += DIV_ROUND_UP(pg_offset +
++						(cluster << inode->i_blkbits),
++						PAGE_SIZE);
+ 		}
+ 
+ 		inode_lock(inode);
+ 		if (range->flags & BTRFS_DEFRAG_RANGE_COMPRESS)
+ 			BTRFS_I(inode)->force_compress = compress_type;
+-		ret = cluster_pages_for_defrag(inode, pages, i, cluster);
++		ret = cluster_pages_for_defrag(inode, pages, i, pg_offset,
++					cluster);
+ 		if (ret < 0) {
+ 			inode_unlock(inode);
+ 			goto out_ra;
+@@ -1408,29 +1479,29 @@ int btrfs_defrag_file(struct inode *inode, struct file *file,
+ 			if (newer_off == (u64)-1)
+ 				break;
+ 
+-			if (ret > 0)
+-				i += ret;
+-
+ 			newer_off = max(newer_off + 1,
+-					(u64)i << PAGE_SHIFT);
++					start + (ret << inode->i_blkbits));
+ 
+ 			ret = find_new_extents(root, inode, newer_than,
+ 					       &newer_off, SZ_64K);
+ 			if (!ret) {
+ 				range->start = newer_off;
+-				i = (newer_off & new_align) >> PAGE_SHIFT;
++				first_off = newer_off & new_align;
+ 			} else {
+ 				break;
+ 			}
+ 		} else {
+ 			if (ret > 0) {
+-				i += ret;
+-				last_len += ret << PAGE_SHIFT;
++				first_off = start + (ret << inode->i_blkbits);
++				last_len += ret << inode->i_blkbits;
+ 			} else {
+-				i++;
++				first_off = start + root->sectorsize;
+ 				last_len = 0;
+ 			}
+ 		}
++		first_off = round_down(first_off, root->sectorsize);
++		i = first_off >> PAGE_SHIFT;
++		pg_offset = first_off & (PAGE_SIZE - 1);
+ 	}
+ 
+ 	if ((range->flags & BTRFS_DEFRAG_RANGE_START_IO)) {
 -- 
 2.1.0
 

@@ -1,60 +1,88 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:54604 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753164AbcDOLUk (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 15 Apr 2016 07:20:40 -0400
-Date: Fri, 15 Apr 2016 13:20:36 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Yauhen Kharuzhy <yauhen.kharuzhy@zavadatar.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs-progs: Check if the FSID was seen by comparing
- full UUID
-Message-ID: <20160415112036.GE28775@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1460672471-12433-1-git-send-email-yauhen.kharuzhy@zavadatar.com>
+Received: from cn.fujitsu.com ([59.151.112.132]:9029 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1752423AbcDNFev (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 14 Apr 2016 01:34:51 -0400
+Subject: Re: [PATCH] Btrfs: fix loading of orphan roots leading to BUG_ON
+To: <fdmanana@gmail.com>, Duncan <1i5t5.duncan@cox.net>
+References: <1456933778-7944-1-git-send-email-fdmanana@kernel.org>
+ <pan$91701$3af360aa$c931211b$9c451328@cox.net>
+ <CAL3q7H7zawdrwbnnwr4nRg5PTj3BqRjDpZJo+idxCANMs185LA@mail.gmail.com>
+CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        Chris Mason <clm@fb.com>, David Sterba <dsterba@suse.com>
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Message-ID: <570F2BF0.2060409@cn.fujitsu.com>
+Date: Thu, 14 Apr 2016 13:34:40 +0800
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1460672471-12433-1-git-send-email-yauhen.kharuzhy@zavadatar.com>
+In-Reply-To: <CAL3q7H7zawdrwbnnwr4nRg5PTj3BqRjDpZJo+idxCANMs185LA@mail.gmail.com>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Apr 14, 2016 at 03:21:11PM -0700, Yauhen Kharuzhy wrote:
-> is_seen_fsid() uses simple hash to check if FS was seen before at
-> walking on FS list in 'filesystem show' command: hash key is first byte
-> of the UUID. This function doesn't check full UUID then, so, if there
-> are two FS with same first byte in UUIDs exist, only one will be shown:
-> 
-> root@test:~# btrfs fi show
-> Label: 'System'  uuid: 688cb918-7bac-4c8e-9b11-8d047eb14cf4
->         Total devices 2 FS bytes used 1.76GiB
->         devid    1 size 3.46TiB used 4.01GiB path /dev/sda2
->         devid    2 size 6.91TiB used 4.01GiB path /dev/sdb2
-> 
-> Global spare
-> 
-> root@test:~# grep btrfs /proc/mounts
-> /dev/sda2 / btrfs rw,relatime,space_cache,subvolid=256,subvol=/root 0 0
-> /dev/sdc /media/688cb918-7bac-4c8e-9b11-8d047eb14cf4 btrfs rw,relatime,space_cache,subvolid=5,subvol=/ 0 0
-> 
-> root@test:~# btrfs fi show --all-devices
-> Label: 'System'  uuid: 688cb918-7bac-4c8e-9b11-8d047eb14cf4
->         Total devices 2 FS bytes used 1.76GiB
->         devid    1 size 3.46TiB used 4.03GiB path /dev/sda2
->         devid    2 size 6.91TiB used 4.01GiB path /dev/sdb2
-> 
-> Label: 'test'  uuid: 683b1a80-ca7f-4c4d-b87b-7155401a4d18
->         Total devices 7 FS bytes used 2.06MiB
->         devid    1 size 7.28TiB used 1.57GiB path /dev/sdc
->         devid    2 size 7.28TiB used 1.57GiB path /dev/sdd
->         devid    3 size 7.28TiB used 1.57GiB path /dev/sde
->         devid    4 size 7.28TiB used 1.57GiB path /dev/sdf
->         devid    5 size 7.28TiB used 1.57GiB path /dev/sdg
->         devid    6 size 7.28TiB used 1.57GiB path /dev/sdh
->         devid    7 size 7.28TiB used 1.57GiB path /dev/sdi
-> 
-> To resolve this collision, search for full FSID in the list of seen
-> filesystems.
-> 
-> Signed-off-by: Yauhen Kharuzhy <yauhen.kharuzhy@zavadatar.com>
+Ping?
 
-Applied, thanks.
+Cc: Chris and David
+
+It seems that this fix is missing in 4.6 merge window.
+Or did I miss something?
+
+Thanks,
+Qu
+
+Filipe Manana wrote on 2016/03/03 09:10 +0000:
+> On Thu, Mar 3, 2016 at 4:31 AM, Duncan <1i5t5.duncan@cox.net> wrote:
+>> fdmanana posted on Wed, 02 Mar 2016 15:49:38 +0000 as excerpted:
+>>
+>>> When looking for orphan roots during mount we can end up hitting a
+>>> BUG_ON() (at root-item.c:btrfs_find_orphan_roots()) if a log tree is
+>>> replayed and qgroups are enabled.
+>>
+>> This should hit 4.6, right?  Will it hit 4.5 before release?
+>
+> It's not the first time you do a similar question, and if it's
+> targeted at me, all I can tell you is I don't know. It's the
+> maintainers (Chris, Josef, David)  who decide when to pick patches and
+> for which releases.
+>
+>>
+>> Because I wasn't sure of current quota functionality status, but this bug
+>> obviously resets the counter on my ongoing "two kernel cycles with no
+>> known quota bugs before you try to use quotas" recommendation.
+>
+> You shouldn't spread such affirmation with such a level of certainty
+> every time a user reports a problem.
+> There are many bugs affecting the last 2 to 3 releases, but there are
+> also many bugs present since btrfs was added to the linux kernel tree,
+> and many others present for 2+ years, etc.
+>
+>>
+>> Meanwhile, what /is/ current quota feature status?  Other than this bug,
+>> is it now considered known bug free, or is more quota reworking and/or
+>> bug fixing known to be needed for 4.6 and beyond?
+>>
+>> IOW, given that two release cycles no known bugs counter, are we
+>> realistically looking at that being 4.8, or are we now looking at 4.9 or
+>> beyond for reasonable quota stability?
+>
+> I don't know. I generally don't look actively look at qgroups, and I'm
+> not a user either.
+> You can only take conclusions based on user bug reports. Probably
+> there aren't more bugs for qgroups than there are for send/receive or
+> even non-btrfs specific features for example.
+>
+>>
+>> --
+>> Duncan - List replies preferred.   No HTML msgs.
+>> "Every nonfree program has a lord, a master --
+>> and if you use the program, he is your master."  Richard Stallman
+>>
+>> --
+>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>> the body of a message to majordomo@vger.kernel.org
+>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>
+>
+>
+
+

@@ -1,70 +1,33 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:54368 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752406AbcDOAYa (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 14 Apr 2016 20:24:30 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1aqrYh-000491-Uo
-	for linux-btrfs@vger.kernel.org; Fri, 15 Apr 2016 02:24:28 +0200
-Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 15 Apr 2016 02:24:27 +0200
-Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 15 Apr 2016 02:24:27 +0200
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: Help ! "btrfs check" looping recursive
-Date: Fri, 15 Apr 2016 00:24:21 +0000 (UTC)
-Message-ID: <pan$9e5b6$4adde6c7$caa17ba5$f91d4445@cox.net>
-References: <570FCBBD.2010500@petaramesh.org>
-Mime-Version: 1.0
+Received: from mail-ig0-f171.google.com ([209.85.213.171]:36016 "EHLO
+	mail-ig0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751030AbcDOBzT (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 14 Apr 2016 21:55:19 -0400
+Received: by mail-ig0-f171.google.com with SMTP id f1so8683536igr.1
+        for <linux-btrfs@vger.kernel.org>; Thu, 14 Apr 2016 18:55:18 -0700 (PDT)
+MIME-Version: 1.0
+Date: Thu, 14 Apr 2016 19:55:17 -0600
+Message-ID: <CAJCQCtSUj0fcsH7AUREnm7KzdDZiL2pW9MpSkKiQBcV9-J9nXQ@mail.gmail.com>
+Subject: RFE: btrfs subvolume list -t, include marker for snapshots, and
+ whether they are ro
+From: Chris Murphy <lists@colorremedies.com>
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Swâmi Petaramesh posted on Thu, 14 Apr 2016 18:56:29 +0200 as excerpted:
+Hi,
 
-> It seems that i have a "btrfs check" process that’s stuck in an infinite
-> recursive loop…
-> 
-> How could I end this without breaking my filesystem ?
+I'm realizing instead of doing 'btrfs subvolume -t' and then 'btrfs
+subvolume -tr' and comparing, it would be better if -t just had a
+column for whether a subvolume is ro. And maybe it's useful to know if
+a subvolume is a snapshot or not (?). I'm not super picky about the
+last one. But being able to see if it's ro or not is a nice to have.
 
-...
-
-> root@PartedMagic:~# btrfs check --repair /dev/VGZ/LINUX
-> enabling repair mode [...]
-
-
-[Just a btrfs user and list regular myself, not a btrfs dev and not at a 
-level to specifically answer the question.]
-
-Given the prompt above, you're running from parted-magic, but that 
-doesn't tell us the btrfs-progs or kernel versions unless we look it up.
-
-So kernel and btrfs-progs version?  Also, btrfs filesystem show output 
-might be useful.
-
-(Tho in this specific context, kernel version isn't as useful as normal, 
-since unlike many btrfs commands that simply call kernel code to do the 
-real work, check code is all userspace.  But it's can't hurt to post it.  
-Similarly, btrfs fi df to compliment btrfs fi show, or btrfs fi usage to 
-output the same information as both, would in other contexts be useful, 
-but they require a mounted filesystem, not something you can really even 
-try with check running.)
-
-Btrfs-progs version in particular, since the recursive nature of this 
-loop is very obviously a bug.  If it's a current progs version, the bug 
-may have been recently introduced.  If it's a dated version, the bug may 
-have already been fixed.  (Either way, it may be that someone else will 
-recognize the bug and tell you to try a later/earlier version, or if not, 
-you very well may prompt a new patch, possibly after some further 
-debugging.)
+In particular on openSUSE with snapper where there's a prolific amount
+of snapshots, and the naming convention doesn't indicate whether
+something is ro or not.
 
 -- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+Chris Murphy

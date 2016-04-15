@@ -1,116 +1,85 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from slow1-d.mail.gandi.net ([217.70.178.86]:56459 "EHLO
-	slow1-d.mail.gandi.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753714AbcDOJRl (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:60387 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1753579AbcDOJap (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 15 Apr 2016 05:17:41 -0400
-Subject: Re: Help ! "btrfs check" looping recursive
-References: <570FCBBD.2010500@petaramesh.org>
- <pan$9e5b6$4adde6c7$caa17ba5$f91d4445@cox.net>
-To: linux-btrfs@vger.kernel.org
-From: =?UTF-8?Q?Sw=c3=a2mi_Petaramesh?= <swami@petaramesh.org>
-Message-ID: <5710B0A9.1030800@petaramesh.org>
-Date: Fri, 15 Apr 2016 11:13:13 +0200
+	Fri, 15 Apr 2016 05:30:45 -0400
+Subject: Re: Uncorrectable errors after rebooting with Magic Sysrq Keys
+To: =?UTF-8?Q?Niccol=c3=b2_Belli?= <darkbasic@linuxsystems.it>,
+        <linux-btrfs@vger.kernel.org>
+References: <b4f09d8b-baac-4182-81b1-1ba9f5e4195b@linuxsystems.it>
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Message-ID: <5710B4B8.9020002@cn.fujitsu.com>
+Date: Fri, 15 Apr 2016 17:30:32 +0800
 MIME-Version: 1.0
-In-Reply-To: <pan$9e5b6$4adde6c7$caa17ba5$f91d4445@cox.net>
-Content-Type: text/plain; charset=utf-8
+In-Reply-To: <b4f09d8b-baac-4182-81b1-1ba9f5e4195b@linuxsystems.it>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi there,
+Would you please run "btrfs check --readonly <your dm0>" and paste the 
+output?
 
-Thanks for your reply Duncan !
+The dmesg seems very impossible:
 
-Le 15/04/2016 02:24, Duncan wrote :
-> Swâmi Petaramesh posted on Thu, 14 Apr 2016 18:56:29 +0200 as excerpted:
-> 
->> It seems that i have a "btrfs check" process that’s stuck in an infinite
->> recursive loop…
+ > BTRFS error (device dm-0): bad tree block start 245497856 245498111
 
-> Given the prompt above, you're running from parted-magic, but that 
-> doesn't tell us the btrfs-progs or kernel versions unless we look it up.
+The later one is not even aligned to 2.
 
-True, I forgot to specify this.
+But you system still seems mountable as you succeeded in running btrfs 
+scrub.
 
-This FS is from a machine that currently runs : 4.5.0-1-ARCH
+So I assume either the tree block is not a critical one or the copy 
+saved you.
 
-As I had a couple of "dead" files (KDE session files in
-~/.config/session) that showed "????" for all their attributes and
-couldn’t be accessed nor deleted, I ran "btrfs check" from a reasonably
-recent live Parted Magic, which has :
+Thanks,
+Qu
 
-- Kernel : 4.3.2
-- BTRFS tools : 4.1.2
-
-> So kernel and btrfs-progs version?  Also, btrfs filesystem show output 
-> might be useful.
-
-Taken from the currently running machine (as I in the end choosed to
-abort the "btrfs check" using ^C) :
-
-# btrfs fi sh
-Label: 'LINUX'  uuid: 13c87f57-3a85-4daf-a4bf-ba777407c169
-        Total devices 1 FS bytes used 268.07GiB
-        devid    1 size 334.50GiB used 294.54GiB path /dev/mapper/VGZ-LINUX
-
-
-# btrfs fi df /
-Data, single: total=289.46GiB, used=264.17GiB
-System, DUP: total=32.00MiB, used=56.00KiB
-Metadata, single: total=5.01GiB, used=3.90GiB
-GlobalReserve, single: total=512.00MiB, used=0.00B
-
-
-# btrfs fi us /
-Overall:
-    Device size:                 334.50GiB
-    Device allocated:            294.54GiB
-    Device unallocated:           39.96GiB
-    Device missing:                  0.00B
-    Used:                        268.07GiB
-    Free (estimated):             65.26GiB      (min: 45.28GiB)
-    Data ratio:                       1.00
-    Metadata ratio:                   1.00
-    Global reserve:              512.00MiB      (used: 0.00B)
-
-
-
-
-
-Data,single: Size:289.46GiB, Used:264.17GiB
-
-
-   /dev/mapper/VGZ-LINUX         289.46GiB
-
-
+Niccolò Belli wrote on Fri Apr 15 2016 16:21:00 GMT+0800 (CST):
+> Hi,
+> Unfortunately because of buggy upstream support for my hardware (Dell
+> XPS 13 9343) I often have to force reboot using Magic Sysrq Keys
+> (REISUB). In fact I have quite a few hangs, also the majority of times I
+> am not able to shutdown without relying on REISUB. There are obviously
+> times when even REISUB do not work (kernel is completely unresponsive),
+> but the vast majority of times it works. What I do not understand is why
+> Magic Sysrq Keys leave me with a damaged filesystem: shouldn't an
+> emergency SYNC + read only remount be enough to secure my data? After
+> rebooting with REISUB my system often complains about "read only" files
+> and if I "stat" them I get "weird file". I often loose some of my
+> desktop settings like the plasmoids I had on the desktop or my favourite
+> applicatios I had in the menu, but what's even stranger is that I often
+> magically recover them later, while doing exactly NOTHING to recover
+> them. This behaviour scares me so much that I'm thinking about switching
+> to another fs if I will not find a solution very soon.
+>
+> The disk seems fine: https://bpaste.net/show/822d4b4ff902
+>
+> dmesg: http://paste.pound-python.org/show/wVyHXXOw4emWmWFfVJHQ/
+>
+> $ sudo btrfs scrub status /
+> [sudo] password di niko: scrub status for
+> 28443ff1-5325-45f6-b879-dad895fcdcfb
+>         scrub started at Fri Apr 15 09:38:09 2016 and finished after
+> 00:08:41
+>         total bytes scrubbed: 133.94GiB with 10 errors
+>         error details: csum=10
+>         corrected errors: 0, uncorrectable errors: 10, unverified errors: 0
+>
+> (yesterday there were 4 uncorrectable errors, but after today's reboot
+> with Magic Sysrq Keys it is now 10)
+>
+> Distro is Arch Linux, kernel is 4.6.0-rc3.
+> $ btrfs --version
+> btrfs-progs v4.4.1
+>
+> Greetings,
+> Niccolò
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>
+>
 
 
-
-Metadata,single: Size:5.01GiB, Used:3.90GiB
-
-
-   /dev/mapper/VGZ-LINUX           5.01GiB
-
-System,DUP: Size:32.00MiB, Used:56.00KiB
-   /dev/mapper/VGZ-LINUX          64.00MiB
-
-Unallocated:
-   /dev/mapper/VGZ-LINUX          39.96GiB
-
-
-# df -h /
-Sys. de fichiers      Taille Utilisé Dispo Uti% Monté sur
-/dev/mapper/VGZ-LINUX   335G    269G   66G  81% /
-
-> Btrfs-progs version in particular, since the recursive nature of this 
-> loop is very obviously a bug.
-
-
-I hope I gave all the necessary information now.
-
-TIA and best regards.
-
-ॐ
-
--- 
-Swâmi Petaramesh <swami@petaramesh.org> PGP 9076E32E

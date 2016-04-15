@@ -1,100 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:50172 "EHLO
-	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750768AbcDOMtM (ORCPT
+Received: from mail-io0-f175.google.com ([209.85.223.175]:35801 "EHLO
+	mail-io0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751304AbcDOP2u (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 15 Apr 2016 08:49:12 -0400
-Date: Fri, 15 Apr 2016 12:49:10 +0000
-From: Hugo Mills <hugo@carfax.org.uk>
-To: sri <toyours_sridhar@yahoo.co.in>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: btrfs-image and btrfs send related queries
-Message-ID: <20160415124910.GD30971@carfax.org.uk>
+	Fri, 15 Apr 2016 11:28:50 -0400
+Received: by mail-io0-f175.google.com with SMTP id g185so138042004ioa.2
+        for <linux-btrfs@vger.kernel.org>; Fri, 15 Apr 2016 08:28:49 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="fWddYNRDgTk9wQGZ"
-In-Reply-To: <loom.20160415T142724-462@post.gmane.org>
+Date: Fri, 15 Apr 2016 09:28:49 -0600
+Message-ID: <CAJCQCtSKDunrKyU8+wmh8qLp9zEgP06Ej58Xj4_24PUk8v5Yqg@mail.gmail.com>
+Subject: BUG at fs/btrfs/inode.c:1828! RIP: btrfs_merge_bio_hook+0x8b/0xa0 [btrfs]
+From: Chris Murphy <lists@colorremedies.com>
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
-References: <loom.20160415T142724-462@post.gmane.org>
 
+Note this is a testing VM, no user data is at risk
 
---fWddYNRDgTk9wQGZ
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+https://bugzilla.kernel.org/show_bug.cgi?id=116331
 
-On Fri, Apr 15, 2016 at 12:41:36PM +0000, sri wrote:
-> Hi,
-> 
-> I have couple of queries related to btrfs-image, btrfs send and with 
-> combination of two.
-> 1)
-> I would like to know if a btrfs source file system is spread across more 
-> than 1 disks, does btrfs-image require same number of disks to create 
-> empty file system without files content??
+Gist is this is a new Btrfs file system, and while -o recovery,ro
+permits mount, it can't be repaired, and btrfs-image fails also. A
+normal mount results in a call trace, which is what the subject is set
+to, and the bug contains the complete dmesg for that.
 
-   I don't _think_ you need as many devices as there were originally.
+File system starts as:
+openSUSE-Tumbleweed-GNOME-Live-x86_64-Snapshot20160307-Media.iso
+Creation time btrfs-progs 4.4.1, kernel 4.4.3.
 
-> 2) would btrfs-image can be modified to keep only given subvolume foot 
-> print and related meta data to bring back file system live on destination 
-> disk?
-> 
->    To elaborate more on this, Lets say I have 5 subvolumes on source btrfs 
-> and i run btrfs-image written to destination disk say /dev/sdd. In this 
-> process, can btrfs-image modified to just have only 1 subvolume and skipp 
-> other 4 subvolumes and write to destination i.. /dev/sdd so that when I 
-> mount /dev/sdd , I will have btrfs with only 1 subvolume with no data.
+Very light usage for several weeks, but includes scrubs and balance
+with no errors. Today, while using YaST2 to remove packages, there was
+a complete system hang. After 30 minutes I force quit the VM.
+Subsequent boots fail.
 
-   For a first approximation, you could just drop any FS tree from the
-image which wasn't the target one. After that, it turns into a
-complicated accounting exercise to drop all of the back-refs to the
-missing FS trees, and to drop all the extent records for the
-non-shared data and the metadata for the missing FS trees.
+I then moved to booting Fedora 24 (prerelease) for troubleshooting, to
+use kernel 4.5.0 and progs 4.5.1.
 
-   It's probably going to be complicated, and will basically involve
-rewriting most of the image to avoid the metadata you didn't want.
+mount fails/crashes, with trace
+mount -o recovery fails/crashes, with trace
+mount -o recovery,ro works (!) and I can dig up the journals from the
+YaST2 hang which includes some Btrfs csum errors, I think during the
+hang.
 
-> 3) If 3 can successful, can btrfs-image further changed to include data of 
-> selected subvolume which gives files data also written to /dev/sdd which 
-> would be kind of a backup of a subvolume taken out of a btrfs file system 
-> which is having more than 1 subvolumes.
+btrfs-image fails
+btrfs-debug-tree mostly works, the bug report contains a URL for that file
 
-   If you're going to do all the hard work of (2), then (3) is a
-reasonable logical(?) extension.
+btrfs check --repair finds but doesn't fix the problem,
+--init-extent-tree crashes
 
-   On the other hand, what's wrong with simply using send/receive? It
-gives you a data structure (a FAR-format send stream) which contains
-everything you need to reconstruct a subvolume on a btrfs different
-to the original.
-
-   Hugo.
+So it's pretty messy fixing wise. But so far -o recovery,ro is letting
+me extract important things like the journal.
 
 -- 
-Hugo Mills             | Mary had a little lamb
-hugo@... carfax.org.uk | You've heard this tale before
-http://carfax.org.uk/  | But did you know she passed her plate
-PGP: E2AB1DE4          | And had a little more?
-
---fWddYNRDgTk9wQGZ
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-
-iQIcBAEBAgAGBQJXEONFAAoJEFheFHXiqx3kcXQQAKWer80UzUVBjdLUMdhcAFKW
-oFFntnErbu7EB8/kkjr/QJXS1dmMhMiQmF81IGDcFqJKzCcc+7FcOWmivD/IcTyf
-o+LBnD1nlo3DZB9aF9RtjBB+iS4gpE6Lq2rxoTaRQHQWIvd0KCyJhLmdgRlwH0Mh
-6llxt1B7deK1vq5BfK7C5UflqoYwcoFP7BlP935friZVu0L6Oy48zRcHTqnmZUCu
-7jLtm0mrponxNh+9EKhjxBPP4XXggK9kA8qm86KmJtu2Mqj+Rval6Ozqp0lVVFL4
-bgfTUkaW406l9p0LnhdNEm34uahNTNmOLfNQpcN6P8HbcenWLdyFHqeoVETTsIpc
-b/RgRpsOEOtL0ACP8VehxRnd3iLorDZxdpX/+KTgsA6LoPygazkfdN8lHxXS+Gda
-z2tcZ8aKMgK4g4dpOdcQRpamSKK4zLB11DxZX1brAYRixjiSGzThds2W/NPuwePC
-SgwN/jOn7qAkm//+XK5rqc/+3jOM1pWZYXfoQ+eSlNsqNybSzbHIvsk4Gesj4Lg3
-x5Hm0bIPWPG1LIzePoyByvAtgfb/6JzmZNyzpQ5yyP0HNeShGZT+rjGXRfhnoGFI
-jWGrfkvSQQxPAnNAs4m4r2djSbwo3x7sIoazesaNpy/q4PATpUp7UzZ2lfFspTAK
-F6qIQ0YjAazjAICAxoLX
-=2Xf4
------END PGP SIGNATURE-----
-
---fWddYNRDgTk9wQGZ--
+Chris Murphy

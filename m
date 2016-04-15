@@ -1,9 +1,9 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:34462 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:18254 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1753370AbcDOBAe (ORCPT
+	with ESMTP id S1750957AbcDOBMJ (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 14 Apr 2016 21:00:34 -0400
+	Thu, 14 Apr 2016 21:12:09 -0400
 Subject: Re: [PATCH v3] btrfs: qgroup: Fix qgroup accounting when creating
  snapshot
 To: Mark Fasheh <mfasheh@suse.de>
@@ -11,8 +11,8 @@ References: <1460612320-19199-1-git-send-email-quwenruo@cn.fujitsu.com>
  <20160414214208.GM2187@wotan.suse.de>
 CC: <linux-btrfs@vger.kernel.org>, Filipe Manana <fdmanana@suse.com>
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <57103D16.2050100@cn.fujitsu.com>
-Date: Fri, 15 Apr 2016 09:00:06 +0800
+Message-ID: <57103FE3.4030200@cn.fujitsu.com>
+Date: Fri, 15 Apr 2016 09:12:03 +0800
 MIME-Version: 1.0
 In-Reply-To: <20160414214208.GM2187@wotan.suse.de>
 Content-Type: text/plain; charset="utf-8"; format=flowed
@@ -61,6 +61,9 @@ Mark Fasheh wrote on 2016/04/14 14:42 -0700:
 > Can you please CC me on this patch when you send it out? FYI it's customary
 > to CC anyone listed here as well as significant reviewers of your patch
 > (such as Filipe).
+
+I'll add CC into the patch tag.
+
 >
 >
 >> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
@@ -80,6 +83,40 @@ Mark Fasheh wrote on 2016/04/14 14:42 -0700:
 > This still corrupts the qgroup numbers if you do anything significant to the
 > source subvolume. For example, this script shows a 16K difference. My guess
 > is that we're missing accounting of some metadata somewhere?
+
+After further investigation, the trigger is the level of the source 
+subvolume.
+
+And problem happens when cowing the leaf, which is not accounting 
+correctly: (I also verified btrfs-debug-tree output, to exclude the 
+possibility of rescan error)
+------
+qgroupid         rfer         excl     max_rfer     max_excl parent  child
+--------         ----         ----     --------     -------- ------  -----
+0/5          16.00KiB     16.00KiB         none         none ---     ---
+populating '/mnt/test' with 8 inline files, 2K size
+populating '/mnt/test' with 16 normal files, 1M size
+sync
+Create a snapshot of '/mnt/test' in '/mnt/test/snap1'
+Create a snapshot of '/mnt/test' in '/mnt/test/snap2'
+Create a snapshot of '/mnt/test' in '/mnt/test/snap3'
+qgroupid         rfer         excl     max_rfer     max_excl parent  child
+--------         ----         ----     --------     -------- ------  -----
+0/5          16826368        16384         none         none ---     ---
+0/258        16826368        16384         none         none ---     ---
+0/259        16826368        16384         none         none ---     ---
+0/260        16826368        16384         none         none ---     ---
+quota rescan started
+qgroupid         rfer         excl     max_rfer     max_excl parent  child
+--------         ----         ----     --------     -------- ------  -----
+0/5          16826368        32768         none         none ---     ---
+0/258        16826368        32768         none         none ---     ---
+0/259        16826368        32768         none         none ---     ---
+0/260        16826368        32768         none         none ---     ---
+------
+
+I'll try to update the patch to v4 to fix this problem.
+
 >
 >
 > #!/bin/bash
@@ -163,81 +200,10 @@ Mark Fasheh wrote on 2016/04/14 14:42 -0700:
 > extent buffer leak: start 30965760 len 16384
 > extent buffer leak: start 30998528 len 16384
 > extent buffer leak: start 31014912 len 16384
-
-I recently found btrfsck --qgroup-report itself is not stable.
-
-So here I prefer to do the accounting check by qgroup rescan, and 
-compare the binary output.
 >
 >
 >
 > How are you testing this on your end?
-
-Much like yours, but with smaller fs size, about 16M.
-
-The result shows pretty good:
-(As I didn't believe btrfsck --qgroup-report now, I use rescan to check 
-the result)
-------
-qgroupid         rfer         excl     max_rfer     max_excl parent  child
---------         ----         ----     --------     -------- ------  -----
-0/5          16.00KiB     16.00KiB         none         none ---     ---
-populating '/mnt/test' with 16 normal files, 1M size
-sync
-Create a snapshot of '/mnt/test' in '/mnt/test/snap1'
-Create a snapshot of '/mnt/test' in '/mnt/test/snap2'
-Create a snapshot of '/mnt/test' in '/mnt/test/snap3'
-qgroupid         rfer         excl     max_rfer     max_excl parent  child
---------         ----         ----     --------     -------- ------  -----
-0/5          16793600        16384         none         none ---     ---
-0/258        16793600        16384         none         none ---     ---
-0/259        16793600        16384         none         none ---     ---
-0/260        16793600        16384         none         none ---     ---
-quota rescan started
-qgroupid         rfer         excl     max_rfer     max_excl parent  child
---------         ----         ----     --------     -------- ------  -----
-0/5          16793600        16384         none         none ---     ---
-0/258        16793600        16384         none         none ---     ---
-0/259        16793600        16384         none         none ---     ---
-0/260        16793600        16384         none         none ---     ---
-------
-
-And yes, even after rescan, btrfsck --qgroup-report seems to report 
-false alert.
-------
-Counts for qgroup id: 5
-our:		referenced 16793600 referenced compressed 16793600
-disk:		referenced 16793600 referenced compressed 16793600
-our:		exclusive 16384 exclusive compressed 16384
-disk:		exclusive 16384 exclusive compressed 16384
-Counts for qgroup id: 258
-our:		referenced 16793600 referenced compressed 16793600
-disk:		referenced 16793600 referenced compressed 16793600
-our:		exclusive 16384 exclusive compressed 16384
-disk:		exclusive 16384 exclusive compressed 16384
-Counts for qgroup id: 259
-our:		referenced 16793600 referenced compressed 16793600
-disk:		referenced 16793600 referenced compressed 16793600
-our:		exclusive 16384 exclusive compressed 16384
-disk:		exclusive 16384 exclusive compressed 16384
-Counts for qgroup id: 260
-our:		referenced 16793600 referenced compressed 16793600
-disk:		referenced 16793600 referenced compressed 16793600
-our:		exclusive 16384 exclusive compressed 16384
-disk:		exclusive 16384 exclusive compressed 16384
-extent buffer leak: start 30130176 len 16384
-extent buffer leak: start 29884416 len 16384
-extent buffer leak: start 30015488 len 16384
-extent buffer leak: start 30146560 len 16384
-------
-
-Anyway, there is something wrong with either btrfsck or kernel qgroup.
-
-Thanks,
-Qu
-
-
-
 >
 >
 >> ---
@@ -316,6 +282,11 @@ Qu
 > create_pending_snapshot() is too big as it is - could we please put this
 > code in a separate function?
 > 	--Mark
+
+Not a problem.
+
+Thanks,
+Qu
 >
 > --
 > Mark Fasheh

@@ -1,38 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f171.google.com ([209.85.213.171]:38789 "EHLO
-	mail-ig0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752806AbcDOLTU (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 15 Apr 2016 07:19:20 -0400
-Received: by mail-ig0-f171.google.com with SMTP id ui10so19156472igc.1
-        for <linux-btrfs@vger.kernel.org>; Fri, 15 Apr 2016 04:19:19 -0700 (PDT)
-Subject: Re: RFE: btrfs subvolume list -t, include marker for snapshots, and
- whether they are ro
-To: Chris Murphy <lists@colorremedies.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-References: <CAJCQCtSUj0fcsH7AUREnm7KzdDZiL2pW9MpSkKiQBcV9-J9nXQ@mail.gmail.com>
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <5710CE23.3060107@gmail.com>
-Date: Fri, 15 Apr 2016 07:18:59 -0400
-MIME-Version: 1.0
-In-Reply-To: <CAJCQCtSUj0fcsH7AUREnm7KzdDZiL2pW9MpSkKiQBcV9-J9nXQ@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+Received: from plane.gmane.org ([80.91.229.3]:60589 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751345AbcDOMl6 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 15 Apr 2016 08:41:58 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+	id 1ar34D-0004cV-AD
+	for linux-btrfs@vger.kernel.org; Fri, 15 Apr 2016 14:41:55 +0200
+Received: from 168.159.160.57 ([168.159.160.57])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Fri, 15 Apr 2016 14:41:45 +0200
+Received: from toyours_sridhar by 168.159.160.57 with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Fri, 15 Apr 2016 14:41:45 +0200
+To: linux-btrfs@vger.kernel.org
+From: sri <toyours_sridhar@yahoo.co.in>
+Subject: btrfs-image and btrfs send related queries
+Date: Fri, 15 Apr 2016 12:41:36 +0000 (UTC)
+Message-ID: <loom.20160415T142724-462@post.gmane.org>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2016-04-14 21:55, Chris Murphy wrote:
-> Hi,
->
-> I'm realizing instead of doing 'btrfs subvolume -t' and then 'btrfs
-> subvolume -tr' and comparing, it would be better if -t just had a
-> column for whether a subvolume is ro. And maybe it's useful to know if
-> a subvolume is a snapshot or not (?). I'm not super picky about the
-> last one. But being able to see if it's ro or not is a nice to have.
-If you're just wanting info about one subvolume, just use 'subvol show'. 
-  As far as 'subvol list', that was mentioned in discussion on github of 
-future changes for btrfs-progs (although I don't think that's gone 
-anywhere).
+Hi,
 
-Checking if something is a snapshot is easy though, do 'btrfs subvolume 
-show -qt', if the Parent UUID column is a -, it's a regular subvolume, 
-if not, it was created as a snapshot.
+I have couple of queries related to btrfs-image, btrfs send and with 
+combination of two.
+1)
+I would like to know if a btrfs source file system is spread across more 
+than 1 disks, does btrfs-image require same number of disks to create 
+empty file system without files content??
+
+
+2) would btrfs-image can be modified to keep only given subvolume foot 
+print and related meta data to bring back file system live on destination 
+disk?
+
+   To elaborate more on this, Lets say I have 5 subvolumes on source btrfs 
+and i run btrfs-image written to destination disk say /dev/sdd. In this 
+process, can btrfs-image modified to just have only 1 subvolume and skipp 
+other 4 subvolumes and write to destination i.. /dev/sdd so that when I 
+mount /dev/sdd , I will have btrfs with only 1 subvolume with no data.
+
+3) If 3 can successful, can btrfs-image further changed to include data of 
+selected subvolume which gives files data also written to /dev/sdd which 
+would be kind of a backup of a subvolume taken out of a btrfs file system 
+which is having more than 1 subvolumes.
+
+
+

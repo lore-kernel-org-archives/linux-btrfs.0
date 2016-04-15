@@ -1,85 +1,38 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:60387 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1753579AbcDOJap (ORCPT
+Received: from mail-ig0-f171.google.com ([209.85.213.171]:38789 "EHLO
+	mail-ig0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752806AbcDOLTU (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 15 Apr 2016 05:30:45 -0400
-Subject: Re: Uncorrectable errors after rebooting with Magic Sysrq Keys
-To: =?UTF-8?Q?Niccol=c3=b2_Belli?= <darkbasic@linuxsystems.it>,
-        <linux-btrfs@vger.kernel.org>
-References: <b4f09d8b-baac-4182-81b1-1ba9f5e4195b@linuxsystems.it>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <5710B4B8.9020002@cn.fujitsu.com>
-Date: Fri, 15 Apr 2016 17:30:32 +0800
+	Fri, 15 Apr 2016 07:19:20 -0400
+Received: by mail-ig0-f171.google.com with SMTP id ui10so19156472igc.1
+        for <linux-btrfs@vger.kernel.org>; Fri, 15 Apr 2016 04:19:19 -0700 (PDT)
+Subject: Re: RFE: btrfs subvolume list -t, include marker for snapshots, and
+ whether they are ro
+To: Chris Murphy <lists@colorremedies.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+References: <CAJCQCtSUj0fcsH7AUREnm7KzdDZiL2pW9MpSkKiQBcV9-J9nXQ@mail.gmail.com>
+From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Message-ID: <5710CE23.3060107@gmail.com>
+Date: Fri, 15 Apr 2016 07:18:59 -0400
 MIME-Version: 1.0
-In-Reply-To: <b4f09d8b-baac-4182-81b1-1ba9f5e4195b@linuxsystems.it>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+In-Reply-To: <CAJCQCtSUj0fcsH7AUREnm7KzdDZiL2pW9MpSkKiQBcV9-J9nXQ@mail.gmail.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Would you please run "btrfs check --readonly <your dm0>" and paste the 
-output?
-
-The dmesg seems very impossible:
-
- > BTRFS error (device dm-0): bad tree block start 245497856 245498111
-
-The later one is not even aligned to 2.
-
-But you system still seems mountable as you succeeded in running btrfs 
-scrub.
-
-So I assume either the tree block is not a critical one or the copy 
-saved you.
-
-Thanks,
-Qu
-
-Niccolò Belli wrote on Fri Apr 15 2016 16:21:00 GMT+0800 (CST):
+On 2016-04-14 21:55, Chris Murphy wrote:
 > Hi,
-> Unfortunately because of buggy upstream support for my hardware (Dell
-> XPS 13 9343) I often have to force reboot using Magic Sysrq Keys
-> (REISUB). In fact I have quite a few hangs, also the majority of times I
-> am not able to shutdown without relying on REISUB. There are obviously
-> times when even REISUB do not work (kernel is completely unresponsive),
-> but the vast majority of times it works. What I do not understand is why
-> Magic Sysrq Keys leave me with a damaged filesystem: shouldn't an
-> emergency SYNC + read only remount be enough to secure my data? After
-> rebooting with REISUB my system often complains about "read only" files
-> and if I "stat" them I get "weird file". I often loose some of my
-> desktop settings like the plasmoids I had on the desktop or my favourite
-> applicatios I had in the menu, but what's even stranger is that I often
-> magically recover them later, while doing exactly NOTHING to recover
-> them. This behaviour scares me so much that I'm thinking about switching
-> to another fs if I will not find a solution very soon.
 >
-> The disk seems fine: https://bpaste.net/show/822d4b4ff902
->
-> dmesg: http://paste.pound-python.org/show/wVyHXXOw4emWmWFfVJHQ/
->
-> $ sudo btrfs scrub status /
-> [sudo] password di niko: scrub status for
-> 28443ff1-5325-45f6-b879-dad895fcdcfb
->         scrub started at Fri Apr 15 09:38:09 2016 and finished after
-> 00:08:41
->         total bytes scrubbed: 133.94GiB with 10 errors
->         error details: csum=10
->         corrected errors: 0, uncorrectable errors: 10, unverified errors: 0
->
-> (yesterday there were 4 uncorrectable errors, but after today's reboot
-> with Magic Sysrq Keys it is now 10)
->
-> Distro is Arch Linux, kernel is 4.6.0-rc3.
-> $ btrfs --version
-> btrfs-progs v4.4.1
->
-> Greetings,
-> Niccolò
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
->
+> I'm realizing instead of doing 'btrfs subvolume -t' and then 'btrfs
+> subvolume -tr' and comparing, it would be better if -t just had a
+> column for whether a subvolume is ro. And maybe it's useful to know if
+> a subvolume is a snapshot or not (?). I'm not super picky about the
+> last one. But being able to see if it's ro or not is a nice to have.
+If you're just wanting info about one subvolume, just use 'subvol show'. 
+  As far as 'subvol list', that was mentioned in discussion on github of 
+future changes for btrfs-progs (although I don't think that's gone 
+anywhere).
 
-
+Checking if something is a snapshot is easy though, do 'btrfs subvolume 
+show -qt', if the Parent UUID column is a -, it's a regular subvolume, 
+if not, it was created as a snapshot.

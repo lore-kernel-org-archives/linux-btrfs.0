@@ -1,75 +1,88 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:17194 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751366AbcDPAHU (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 15 Apr 2016 20:07:20 -0400
-Date: Fri, 15 Apr 2016 17:07:58 -0700
-From: Liu Bo <bo.li.liu@oracle.com>
-To: Chris Murphy <lists@colorremedies.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Subject: Re: BUG at fs/btrfs/inode.c:1828! RIP:
- btrfs_merge_bio_hook+0x8b/0xa0 [btrfs]
-Message-ID: <20160416000758.GD7369@localhost.localdomain>
-Reply-To: bo.li.liu@oracle.com
-References: <CAJCQCtSKDunrKyU8+wmh8qLp9zEgP06Ej58Xj4_24PUk8v5Yqg@mail.gmail.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CAJCQCtSKDunrKyU8+wmh8qLp9zEgP06Ej58Xj4_24PUk8v5Yqg@mail.gmail.com>
+Received: from plane.gmane.org ([80.91.229.3]:40051 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751079AbcDPHiG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 16 Apr 2016 03:38:06 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+	id 1arKns-0004hx-8e
+	for linux-btrfs@vger.kernel.org; Sat, 16 Apr 2016 09:38:04 +0200
+Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sat, 16 Apr 2016 09:38:04 +0200
+Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sat, 16 Apr 2016 09:38:04 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: RAID6, errors at missing device replacement
+Date: Sat, 16 Apr 2016 07:37:48 +0000 (UTC)
+Message-ID: <pan$8aea5$883c2a2a$18248a42$c1560bd9@cox.net>
+References: <CAKWEGV65rRmpuRnUejCqVpdS+S5nbzrQnFAdy+y3X5EYZJgqpw@mail.gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Apr 15, 2016 at 09:28:49AM -0600, Chris Murphy wrote:
-> Note this is a testing VM, no user data is at risk
-> 
-> https://bugzilla.kernel.org/show_bug.cgi?id=116331
+Yauhen Kharuzhy posted on Fri, 15 Apr 2016 12:49:36 -0700 as excerpted:
 
->From the call stack we can tell that btrfs_root_bytenr() returns 0
-somehow.  And this comes from btrfs_recover_relocation() reading
-the root on which reloc_root is snapshoted, and it's not the FS tree,
-might be a snapshot root or subvolume root.
+> I have discovered case when replacement of missing devices causes
+> metadata corruption. Does anybody know anything about this?
+> 
+> I use 4.4.5 kernel with latest global spare patches.
+> 
+> If we have RAID6 (may be reproducible on RAID5 too) and try to replace
+> one missing drive by other and after this try to remove another drive
+> and replace it, plenty of errors are shown in the log:
 
-Looks like our COW fails for that root.
+I know you're working on testing the global spare patches, and thanks for 
+that, you've already helped catch bugs that otherwise might conceivably 
+have made it into the first release with the feature, such that they 
+would likely have had to be fixed later, keeping the feature from 
+stabilizing for some time.
 
-Thanks,
+Unfortunately, that seems to be what happened to the raid56 mode
+recovery/repair/reshape/scrub patches, despite the long development time 
+after the basic parity-writing "partial raid56 support" went in.  Unlike 
+the global-spare patches, I don't recall the raid56 recover/... patches 
+getting posted a kernel and userspace release cycle or more in advance 
+and getting the type of independent review and testing that you're doing 
+for global-spare, leading to multiple public revisions as issues were 
+found and corrected.  Arguably, that only happened once (nominally) full 
+functionality was in mainline, with the result being a kernel cycle and a 
+half before raid56 was really working at all for recovery, and there 
+still being issues over five cycles later.
 
--liubo
-> 
-> Gist is this is a new Btrfs file system, and while -o recovery,ro
-> permits mount, it can't be repaired, and btrfs-image fails also. A
-> normal mount results in a call trace, which is what the subject is set
-> to, and the bug contains the complete dmesg for that.
-> 
-> File system starts as:
-> openSUSE-Tumbleweed-GNOME-Live-x86_64-Snapshot20160307-Media.iso
-> Creation time btrfs-progs 4.4.1, kernel 4.4.3.
-> 
-> Very light usage for several weeks, but includes scrubs and balance
-> with no errors. Today, while using YaST2 to remove packages, there was
-> a complete system hang. After 30 minutes I force quit the VM.
-> Subsequent boots fail.
-> 
-> I then moved to booting Fedora 24 (prerelease) for troubleshooting, to
-> use kernel 4.5.0 and progs 4.5.1.
-> 
-> mount fails/crashes, with trace
-> mount -o recovery fails/crashes, with trace
-> mount -o recovery,ro works (!) and I can dig up the journals from the
-> YaST2 hang which includes some Btrfs csum errors, I think during the
-> hang.
-> 
-> btrfs-image fails
-> btrfs-debug-tree mostly works, the bug report contains a URL for that file
-> 
-> btrfs check --repair finds but doesn't fix the problem,
-> --init-extent-tree crashes
-> 
-> So it's pretty messy fixing wise. But so far -o recovery,ro is letting
-> me extract important things like the journal.
-> 
-> -- 
-> Chris Murphy
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+And arguably, with patches for global-spare posted to the list and your 
+well beyond cursory independent testing, global-spare should be far more 
+mature on mainlining, with your efforts very possibly helping it avoid 
+the same sort of issues.
+
+Tho in all fairness, btrfs itself is maturing, and it may well be that 
+either the raid56 experience directly led to the tougher but ultimately 
+better process for global-spare, or the btrfs process itself is simply 
+mature enough now that the raid56 situation wouldn't happen were it to be 
+introduced now, either.
+
+So two main points:
+
+1) Due to raid56 mode itself still being somewhat immature, it may not be 
+appropriate to use as a platform for testing further new features (like 
+global spare) just yet -- global-spare testing with raid56 may either 
+have to wait (i.e. skip it for now), or someone who's intimately familiar 
+with the current known raid56 problems and able to recognize them on 
+sight might need to do that testing, if it is to be done at this stage.
+
+2) That's very much for your work testing global-spare, and of course to 
+Anand Jain for posting the patches so you can. =:^)  Your work is 
+directly contributing to it being more mature at mainline feature 
+release, so that (unlike raid56) hopefully it can fast-stabilize once 
+released, because of all the testing and work that is going in now, 
+before mainlining and release. =:^)
+
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

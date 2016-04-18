@@ -1,15 +1,15 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:24910 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752424AbcDRLcO (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:21870 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752460AbcDRLcS (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 18 Apr 2016 07:32:14 -0400
+	Mon, 18 Apr 2016 07:32:18 -0400
 From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
 Cc: dsterba@suse.cz, yauhen.kharuzhy@zavadatar.com
-Subject: [PATCH 01/13] btrfs: Introduce a new function to check if all chunks a OK for degraded mount
-Date: Mon, 18 Apr 2016 19:31:32 +0800
-Message-Id: <1460979104-27497-2-git-send-email-anand.jain@oracle.com>
+Subject: [PATCH 04/13] btrfs: Allow barrier_all_devices to do per-chunk device check
+Date: Mon, 18 Apr 2016 19:31:35 +0800
+Message-Id: <1460979104-27497-5-git-send-email-anand.jain@oracle.com>
 In-Reply-To: <1460979104-27497-1-git-send-email-anand.jain@oracle.com>
 References: <1460979104-27497-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -17,103 +17,106 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 
-Introduce a new function, btrfs_check_degradable(), to judge if all chunks
-in btrfs is OK for degraded mount.
+The last user of num_tolerated_disk_barrier_failures is
+barrier_all_devices(). But it's can be easily changed to new per-chunk
+degradable check framework.
 
-It provides the new basis for accurate btrfs mount/remount and even
-runtime degraded mount check other than old one-size-fit-all method.
+Now btrfs_device will have two extra members, representing send/wait
+error, set at write_dev_flush() time. And then check it in a similar but
+more accurate behavior than old code.
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- fs/btrfs/volumes.c | 67 ++++++++++++++++++++++++++++++++++++++++++++++++++++++
- fs/btrfs/volumes.h |  1 +
- 2 files changed, 68 insertions(+)
+ fs/btrfs/disk-io.c | 13 +++++--------
+ fs/btrfs/volumes.c |  6 +++++-
+ fs/btrfs/volumes.h |  4 ++++
+ 3 files changed, 14 insertions(+), 9 deletions(-)
 
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 4f91a049fbca..9ad3667f5e71 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -3496,8 +3496,6 @@ static int barrier_all_devices(struct btrfs_fs_info *info)
+ {
+ 	struct list_head *head;
+ 	struct btrfs_device *dev;
+-	int errors_send = 0;
+-	int errors_wait = 0;
+ 	int ret;
+ 
+ 	/* send down all the barriers */
+@@ -3506,7 +3504,7 @@ static int barrier_all_devices(struct btrfs_fs_info *info)
+ 		if (dev->missing)
+ 			continue;
+ 		if (!dev->bdev) {
+-			errors_send++;
++			dev->err_send = 1;
+ 			continue;
+ 		}
+ 		if (!dev->in_fs_metadata || !dev->writeable)
+@@ -3514,7 +3512,7 @@ static int barrier_all_devices(struct btrfs_fs_info *info)
+ 
+ 		ret = write_dev_flush(dev, 0);
+ 		if (ret)
+-			errors_send++;
++			dev->err_send = 1;
+ 	}
+ 
+ 	/* wait for all the barriers */
+@@ -3522,7 +3520,7 @@ static int barrier_all_devices(struct btrfs_fs_info *info)
+ 		if (dev->missing)
+ 			continue;
+ 		if (!dev->bdev) {
+-			errors_wait++;
++			dev->err_wait = 1;
+ 			continue;
+ 		}
+ 		if (!dev->in_fs_metadata || !dev->writeable)
+@@ -3530,10 +3528,9 @@ static int barrier_all_devices(struct btrfs_fs_info *info)
+ 
+ 		ret = write_dev_flush(dev, 1);
+ 		if (ret)
+-			errors_wait++;
++			dev->err_wait = 1;
+ 	}
+-	if (errors_send > info->num_tolerated_disk_barrier_failures ||
+-	    errors_wait > info->num_tolerated_disk_barrier_failures)
++	if (btrfs_check_degradable(info, info->sb->s_flags) < 0)
+ 		return -EIO;
+ 	return 0;
+ }
 diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 4ff716d9b16c..f5fa5f88263c 100644
+index f5fa5f88263c..639ae20cc5e6 100644
 --- a/fs/btrfs/volumes.c
 +++ b/fs/btrfs/volumes.c
-@@ -7065,3 +7065,70 @@ static void btrfs_close_one_device(struct btrfs_device *device)
- 
- 	call_rcu(&device->rcu, free_device);
- }
-+
-+/*
-+ * Check if all chunks in the fs is OK for degraded mount
-+ * Caller itself should do extra check if DEGRADED mount option is given
-+ * for >0 return value.
-+ *
-+ * Return 0 if all chunks are OK.
-+ * Return >0 if all chunks are degradable but not all OK.
-+ * Return <0 if any chunk is not degradable or other bug.
-+ */
-+int btrfs_check_degradable(struct btrfs_fs_info *fs_info, unsigned flags)
-+{
-+	struct btrfs_mapping_tree *map_tree = &fs_info->mapping_tree;
-+	struct extent_map *em;
-+	u64 next_start = 0;
-+	int ret = 0;
-+
-+	if (flags & MS_RDONLY)
-+		return 0;
-+
-+	read_lock(&map_tree->map_tree.lock);
-+	em = lookup_extent_mapping(&map_tree->map_tree, 0, (u64)(-1));
-+	read_unlock(&map_tree->map_tree.lock);
-+	/* No any chunk? Should be a huge bug */
-+	if (!em) {
-+		ret = -ENOENT;
-+		goto out;
-+	}
-+
-+	while (em) {
-+		struct map_lookup *map;
-+		int missing = 0;
-+		int max_tolerated;
-+		int i;
-+
-+		map = (struct map_lookup *) em->bdev;
-+		max_tolerated =
-+			btrfs_get_num_tolerated_disk_barrier_failures(
-+					map->type);
-+		for (i = 0; i < map->num_stripes; i++) {
-+			if (map->stripes[i].dev->missing)
-+				missing++;
-+		}
-+		if (missing > max_tolerated) {
-+			ret = -EIO;
-+			btrfs_warn(fs_info,
-+				   "missing devices(%d) exceeds the limit(%d), writeable mount is not allowed",
-+				   missing, max_tolerated);
-+			goto out;
-+		} else if (missing)
-+			ret = 1;
-+		next_start = extent_map_end(em);
-+
-+		/*
-+		 * Alwasy search range [next_start, (u64)-1) to find the next
-+		 * chunk map
-+		 */
-+		free_extent_map(em);
-+		read_lock(&map_tree->map_tree.lock);
-+		em = lookup_extent_mapping(&map_tree->map_tree, next_start,
-+					   (u64)(-1) - next_start);
-+		read_unlock(&map_tree->map_tree.lock);
-+	}
-+out:
-+	free_extent_map(em);
-+	return ret;
-+}
+@@ -7105,8 +7105,12 @@ int btrfs_check_degradable(struct btrfs_fs_info *fs_info, unsigned flags)
+ 			btrfs_get_num_tolerated_disk_barrier_failures(
+ 					map->type);
+ 		for (i = 0; i < map->num_stripes; i++) {
+-			if (map->stripes[i].dev->missing)
++			if (map->stripes[i].dev->missing ||
++			    map->stripes[i].dev->err_wait ||
++			    map->stripes[i].dev->err_send)
+ 				missing++;
++			map->stripes[i].dev->err_wait = 0;
++			map->stripes[i].dev->err_send = 0;
+ 		}
+ 		if (missing > max_tolerated) {
+ 			ret = -EIO;
 diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-index 93e0a2560366..ae9d552c93bf 100644
+index ae9d552c93bf..101e5db2dd63 100644
 --- a/fs/btrfs/volumes.h
 +++ b/fs/btrfs/volumes.h
-@@ -568,5 +568,6 @@ static inline void unlock_chunks(struct btrfs_root *root)
- struct list_head *btrfs_get_fs_uuids(void);
- void btrfs_set_fs_info_ptr(struct btrfs_fs_info *fs_info);
- void btrfs_reset_fs_info_ptr(struct btrfs_fs_info *fs_info);
-+int btrfs_check_degradable(struct btrfs_fs_info *fs_info, unsigned flags);
+@@ -76,6 +76,10 @@ struct btrfs_device {
+ 	int can_discard;
+ 	int is_tgtdev_for_dev_replace;
  
++	/* for barrier_all_devices() check */
++	int err_send;
++	int err_wait;
++
+ #ifdef __BTRFS_NEED_DEVICE_DATA_ORDERED
+ 	seqcount_t data_seqcount;
  #endif
 -- 
 2.7.0

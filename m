@@ -1,83 +1,98 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:24961 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752426AbcDRLcS (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:21984 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752501AbcDRLc3 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 18 Apr 2016 07:32:18 -0400
+	Mon, 18 Apr 2016 07:32:29 -0400
 From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
 Cc: dsterba@suse.cz, yauhen.kharuzhy@zavadatar.com
-Subject: [PATCH 02/13] btrfs: Do per-chunk check for mount time check
-Date: Mon, 18 Apr 2016 19:31:33 +0800
-Message-Id: <1460979104-27497-3-git-send-email-anand.jain@oracle.com>
+Subject: [PATCH 10/13] btrfs: introduce helper functions to perform hot replace
+Date: Mon, 18 Apr 2016 19:31:41 +0800
+Message-Id: <1460979104-27497-11-git-send-email-anand.jain@oracle.com>
 In-Reply-To: <1460979104-27497-1-git-send-email-anand.jain@oracle.com>
 References: <1460979104-27497-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+From: Anand Jain <Anand.Jain@oracle.com>
 
-Now use the btrfs_check_degraded() to do mount time degraded check.
+Hot replace / auto replace is important volume manager feature
+and is critical to the data center operations, so that the degraded
+volume can be brought back to a healthy state at the earliest and
+without manual intervention.
 
-With this patch, now we can mount with the following case:
- # mkfs.btrfs -f -m raid1 -d single /dev/sdb /dev/sdc
- # wipefs -a /dev/sdc
- # mount /dev/sdb /mnt/btrfs -o degraded
- As the single data chunk is only in sdb, so it's OK to mount as degraded,
- as missing one device is OK for RAID1.
+This modifies the existing replace code to suite the need of auto
+replace, in the long run I hope both the codes to be merged.
 
-But still fail with the following case as expected:
- # mkfs.btrfs -f -m raid1 -d single /dev/sdb /dev/sdc
- # wipefs -a /dev/sdb
- # mount /dev/sdc /mnt/btrfs -o degraded
- As the data chunk is only in sdb, so it's not OK to mount it as degraded.
-
-Reported-by: Zhao Lei <zhaolei@cn.fujitsu.com>
-Reported-by: Anand Jain <anand.jain@oracle.com>
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
-
-[Btrfs: use btrfs_error instead of btrfs_err during mount]
 Signed-off-by: Anand Jain <anand.jain@oracle.com>
+Tested-by: Austin S. Hemmelgarn <ahferroin7@gmail.com>
 ---
- fs/btrfs/disk-io.c | 18 ++++++++++--------
- 1 file changed, 10 insertions(+), 8 deletions(-)
+ fs/btrfs/dev-replace.c | 43 +++++++++++++++++++++++++++++++++++++++++++
+ fs/btrfs/dev-replace.h |  1 +
+ 2 files changed, 44 insertions(+)
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index d01f89d130e0..4f91a049fbca 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -2885,6 +2885,16 @@ int open_ctree(struct super_block *sb,
- 		goto fail_tree_roots;
+diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
+index be0958de9f2d..db323f2bb1ef 100644
+--- a/fs/btrfs/dev-replace.c
++++ b/fs/btrfs/dev-replace.c
+@@ -956,3 +956,46 @@ void btrfs_bio_counter_inc_blocked(struct btrfs_fs_info *fs_info)
+ 				     &fs_info->fs_state));
  	}
- 
-+	ret = btrfs_check_degradable(fs_info, fs_info->sb->s_flags);
-+	if (ret < 0) {
-+		btrfs_err(fs_info, "degraded writable mount failed %d", ret);
-+		goto fail_tree_roots;
-+	} else if (ret > 0 && !btrfs_test_opt(chunk_root, DEGRADED)) {
-+		btrfs_warn(fs_info,
-+			"Some device missing, but still degraded mountable, please mount with -o degraded option");
-+		ret = -EACCES;
-+		goto fail_tree_roots;
+ }
++
++int btrfs_auto_replace_start(struct btrfs_root *root, u64 src_devid)
++{
++	int ret;
++	char *tgt_path;
++	struct btrfs_fs_info *fs_info = root->fs_info;
++
++	if (!src_devid)
++		return -EINVAL;
++
++	if (fs_info->sb->s_flags & MS_RDONLY)
++		return -EROFS;
++
++	btrfs_dev_replace_lock(&fs_info->dev_replace, 0);
++	if (btrfs_dev_replace_is_ongoing(&fs_info->dev_replace)) {
++		btrfs_dev_replace_unlock(&fs_info->dev_replace, 0);
++		return -EBUSY;
 +	}
- 	/*
- 	 * keep the device that is marked to be the target device for the
- 	 * dev_replace procedure
-@@ -2988,14 +2998,6 @@ retry_root_backup:
- 	}
- 	fs_info->num_tolerated_disk_barrier_failures =
- 		btrfs_calc_num_tolerated_disk_barrier_failures(fs_info);
--	if (fs_info->fs_devices->missing_devices >
--	     fs_info->num_tolerated_disk_barrier_failures &&
--	    !(sb->s_flags & MS_RDONLY)) {
--		pr_warn("BTRFS: missing devices(%llu) exceeds the limit(%d), writeable mount is not allowed\n",
--			fs_info->fs_devices->missing_devices,
--			fs_info->num_tolerated_disk_barrier_failures);
--		goto fail_sysfs;
--	}
- 
- 	fs_info->cleaner_kthread = kthread_run(cleaner_kthread, tree_root,
- 					       "btrfs-cleaner");
++	btrfs_dev_replace_unlock(&fs_info->dev_replace, 0);
++
++	if (btrfs_get_spare_device(&tgt_path)) {
++		btrfs_err(root->fs_info,
++			"No spare device found/configured in the kernel");
++		return -EINVAL;
++	}
++
++	if (atomic_xchg(
++		&root->fs_info->mutually_exclusive_operation_running, 1)) {
++		ret = BTRFS_ERROR_DEV_EXCL_RUN_IN_PROGRESS;
++	} else {
++		ret = btrfs_dev_replace_start(root, tgt_path, src_devid, NULL,
++		BTRFS_IOCTL_DEV_REPLACE_CONT_READING_FROM_SRCDEV_MODE_ALWAYS);
++		atomic_set(
++			&root->fs_info->mutually_exclusive_operation_running, 0);
++	}
++
++	if (ret)
++		btrfs_put_spare_device(tgt_path);
++
++	kfree(tgt_path);
++
++	return ret;
++}
+diff --git a/fs/btrfs/dev-replace.h b/fs/btrfs/dev-replace.h
+index e922b42d91df..54b0812c8ba4 100644
+--- a/fs/btrfs/dev-replace.h
++++ b/fs/btrfs/dev-replace.h
+@@ -46,4 +46,5 @@ static inline void btrfs_dev_replace_stats_inc(atomic64_t *stat_value)
+ {
+ 	atomic64_inc(stat_value);
+ }
++int btrfs_auto_replace_start(struct btrfs_root *root, u64 src_devid);
+ #endif
 -- 
 2.7.0
 

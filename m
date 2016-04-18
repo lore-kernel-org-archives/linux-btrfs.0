@@ -1,174 +1,83 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:42093 "EHLO
+Received: from aserp1040.oracle.com ([141.146.126.69]:36845 "EHLO
 	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751515AbcDRIys (ORCPT
+	with ESMTP id S1753046AbcDRKvF (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 18 Apr 2016 04:54:48 -0400
-Subject: Re: [PATCH v4 00/13] Introduce device state 'failed', spare device
- and auto replace
+	Mon, 18 Apr 2016 06:51:05 -0400
+Subject: Re: [PATCH v5 11/13] btrfs: introduce device dynamic state transition
+ to offline or failed
 To: Yauhen Kharuzhy <yauhen.kharuzhy@zavadatar.com>
-References: <1460470563-752-1-git-send-email-anand.jain@oracle.com>
- <20160414230932.GA9264@jeknote.loshitsa1.net>
-Cc: linux-btrfs@vger.kernel.org
+References: <1460470563-752-12-git-send-email-anand.jain@oracle.com>
+ <1460631118-7847-1-git-send-email-anand.jain@oracle.com>
+ <20160414165644.GA28722@jeknote.loshitsa1.net>
+Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz
 From: Anand Jain <anand.jain@oracle.com>
-Message-ID: <5714A0C4.2000305@oracle.com>
-Date: Mon, 18 Apr 2016 16:54:28 +0800
+Message-ID: <5714BBFF.1090304@oracle.com>
+Date: Mon, 18 Apr 2016 18:50:39 +0800
 MIME-Version: 1.0
-In-Reply-To: <20160414230932.GA9264@jeknote.loshitsa1.net>
+In-Reply-To: <20160414165644.GA28722@jeknote.loshitsa1.net>
 Content-Type: text/plain; charset=windows-1252; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
 
-On 04/15/2016 07:09 AM, Yauhen Kharuzhy wrote:
-> On Tue, Apr 12, 2016 at 10:15:50PM +0800, Anand Jain wrote:
->> Thanks for various comments, tests and feedback.
+On 04/15/2016 12:56 AM, Yauhen Kharuzhy wrote:
+> On Thu, Apr 14, 2016 at 06:51:58PM +0800, Anand Jain wrote:
+>> From: Anand Jain <Anand.Jain@oracle.com>
+>>
+>> This patch provides helper functions to force a device to offline
+>> or failed, and we need this device states for the following reasons,
+>> 1) a. it can be reported that device has failed when it does
+>>     b. close the device when it goes offline so that blocklayer can
+>>        cleanup
+>> 2) identify the candidate for the auto replace
+>> 3) avoid further commit error reported against the failing device and
+>> 4) a device in the multi device btrfs may go offline from the system
+>>     (but as of now in in some system config btrfs gets unmounted in this
+>>      context, which is not a correct behavior)
+>>
+>> Signed-off-by: Anand Jain <anand.jain@oracle.com>
+>> Tested-by: Austin S. Hemmelgarn <ahferroin7@gmail.com>
+>> ---
+>> v5:
+>>    Originally we had a bug as fixed in the patch
+>>     [PATCH] btrfs: s_bdev is not null after missing replace
+>>    Incorporate those changes at force close a failed device.
+>>    To test pls have both this patch and above patch which
+>>    fixes the original issue, not introduced as part of this
+>>    patch set.
 >
-> Hmm... Yet another lockdep warning, appeared when I removed target drive
-> during of replacing:
+> ...
+>
+>> +void device_force_close(struct btrfs_device *device)
+>> +{
+>> +	struct btrfs_device *next_device;
+>> +	struct btrfs_fs_devices *fs_devices;
+>> +
+>> +	fs_devices = device->fs_devices;
+>> +
+>> +	mutex_lock(&fs_devices->device_list_mutex);
+>> +	mutex_lock(&fs_devices->fs_info->chunk_mutex);
+>> +	spin_lock(&fs_devices->fs_info->free_chunk_lock);
+>> +
+>> +	next_device = list_entry(fs_devices->devices.next,
+>> +					struct btrfs_device, dev_list);
+>> +	if (fs_devices->fs_info->sb->s_bdev &&
+>> +		(fs_devices->fs_info->sb->s_bdev == device->bdev))
+>> +		fs_devices->fs_info->sb->s_bdev = next_device->bdev;
+>> +
+>> +	if (device->bdev == fs_devices->latest_bdev)
+>> +		fs_devices->latest_bdev = next_device->bdev;
+>
+> latest_bdev can point to invalid bdev here if next_device is the same as
+> closing device.
 
-  Thanks for the report.
-
-  This is not introduce in this patch set, its in the original
-  set, I have sent out
-
-   btrfs: fix lock dep warning, move scratch dev out of 
-device_list_mutex and uuid_mutex
-
-  to fix this.
+  As mentioned a wrapper helper function is better for this,
+  (I thought you will do it, as I didn't the patch) I just sent out
+    [PATCH] btrfs: cleanup assigning next active device with a check
 
 Thanks, Anand
 
 
-> [ 5375.718844]
-> [ 5375.718845] ======================================================
-> [ 5375.718846] [ INFO: possible circular locking dependency detected ]
-> [ 5375.718849] 4.4.5-scst31x-debug-11+ #40 Not tainted
-> [ 5375.718849] -------------------------------------------------------
-> [ 5375.718851] btrfs-health/4662 is trying to acquire lock:
-> [ 5375.718861]  (sb_writers){.+.+.+}, at: [<ffffffff812214f7>] __sb_start_write+0xb7/0xf0
-> [ 5375.718862]
-> [ 5375.718862] but task is already holding lock:
-> [ 5375.718907]  (&fs_devs->device_list_mutex){+.+.+.}, at: [<ffffffffa028263c>] btrfs_destroy_dev_replace_tgtdev+0x3c/0x150 [btrfs]
-> [ 5375.718907]
-> [ 5375.718907] which lock already depends on the new lock.
-> [ 5375.718907]
-> [ 5375.718908]
-> [ 5375.718908] the existing dependency chain (in reverse order) is:
-> [ 5375.718911]
-> [ 5375.718911] -> #3 (&fs_devs->device_list_mutex){+.+.+.}:
-> [ 5375.718917]        [<ffffffff810da4be>] lock_acquire+0xce/0x1e0
-> [ 5375.718921]        [<ffffffff81633949>] mutex_lock_nested+0x69/0x3c0
-> [ 5375.718940]        [<ffffffffa0219bf6>] btrfs_show_devname+0x36/0x210 [btrfs]
-> [ 5375.718945]        [<ffffffff81267079>] show_vfsmnt+0x49/0x150
-> [ 5375.718948]        [<ffffffff81240b07>] m_show+0x17/0x20
-> [ 5375.718951]        [<ffffffff81246868>] seq_read+0x2d8/0x3b0
-> [ 5375.718955]        [<ffffffff8121df28>] __vfs_read+0x28/0xd0
-> [ 5375.718959]        [<ffffffff8121e806>] vfs_read+0x86/0x130
-> [ 5375.718962]        [<ffffffff8121f4c9>] SyS_read+0x49/0xa0
-> [ 5375.718966]        [<ffffffff81637976>] entry_SYSCALL_64_fastpath+0x16/0x7a
-> [ 5375.718968]
-> [ 5375.718968] -> #2 (namespace_sem){+++++.}:
-> [ 5375.718971]        [<ffffffff810da4be>] lock_acquire+0xce/0x1e0
-> [ 5375.718974]        [<ffffffff81635199>] down_write+0x49/0x80
-> [ 5375.718977]        [<ffffffff81243593>] lock_mount+0x43/0x1c0
-> [ 5375.718979]        [<ffffffff81243c13>] do_add_mount+0x23/0xd0
-> [ 5375.718982]        [<ffffffff81244afb>] do_mount+0x27b/0xe30
-> [ 5375.718985]        [<ffffffff812459dc>] SyS_mount+0x8c/0xd0
-> [ 5375.718988]        [<ffffffff81637976>] entry_SYSCALL_64_fastpath+0x16/0x7a
-> [ 5375.718991]
-> [ 5375.718991] -> #1 (&sb->s_type->i_mutex_key#5){+.+.+.}:
-> [ 5375.718994]        [<ffffffff810da4be>] lock_acquire+0xce/0x1e0
-> [ 5375.718996]        [<ffffffff81633949>] mutex_lock_nested+0x69/0x3c0
-> [ 5375.719001]        [<ffffffff8122d608>] path_openat+0x468/0x1360
-> [ 5375.719004]        [<ffffffff8122f86e>] do_filp_open+0x7e/0xe0
-> [ 5375.719007]        [<ffffffff8121da7b>] do_sys_open+0x12b/0x210
-> [ 5375.719010]        [<ffffffff8121db7e>] SyS_open+0x1e/0x20
-> [ 5375.719013]        [<ffffffff81637976>] entry_SYSCALL_64_fastpath+0x16/0x7a
-> [ 5375.719015]
-> [ 5375.719015] -> #0 (sb_writers){.+.+.+}:
-> [ 5375.719018]        [<ffffffff810d97ca>] __lock_acquire+0x17ba/0x1ae0
-> [ 5375.719021]        [<ffffffff810da4be>] lock_acquire+0xce/0x1e0
-> [ 5375.719026]        [<ffffffff810d3bef>] percpu_down_read+0x4f/0xa0
-> [ 5375.719028]        [<ffffffff812214f7>] __sb_start_write+0xb7/0xf0
-> [ 5375.719031]        [<ffffffff81242eb4>] mnt_want_write+0x24/0x50
-> [ 5375.719035]        [<ffffffff8122ded2>] path_openat+0xd32/0x1360
-> [ 5375.719037]        [<ffffffff8122f86e>] do_filp_open+0x7e/0xe0
-> [ 5375.719040]        [<ffffffff8121d8a4>] file_open_name+0xe4/0x130
-> [ 5375.719043]        [<ffffffff8121d923>] filp_open+0x33/0x60
-> [ 5375.719073]        [<ffffffffa02776a6>] update_dev_time+0x16/0x40 [btrfs]
-> [ 5375.719099]        [<ffffffffa02825be>] btrfs_scratch_superblocks+0x4e/0x90 [btrfs]
-> [ 5375.719123]        [<ffffffffa0282665>] btrfs_destroy_dev_replace_tgtdev+0x65/0x150 [btrfs]
-> [ 5375.719150]        [<ffffffffa02c6c80>] btrfs_dev_replace_finishing+0x6b0/0x990 [btrfs]
-> [ 5375.719175]        [<ffffffffa02c729e>] btrfs_dev_replace_start+0x33e/0x540 [btrfs]
-> [ 5375.719199]        [<ffffffffa02c7f58>] btrfs_auto_replace_start+0xf8/0x140 [btrfs]
-> [ 5375.719222]        [<ffffffffa02464e6>] health_kthread+0x246/0x490 [btrfs]
-> [ 5375.719225]        [<ffffffff810a70df>] kthread+0xef/0x110
-> [ 5375.719229]        [<ffffffff81637d2f>] ret_from_fork+0x3f/0x70
-> [ 5375.719230]
-> [ 5375.719230] other info that might help us debug this:
-> [ 5375.719230]
-> [ 5375.719233] Chain exists of:
-> [ 5375.719233]   sb_writers --> namespace_sem --> &fs_devs->device_list_mutex
-> [ 5375.719233]
-> [ 5375.719234]  Possible unsafe locking scenario:
-> [ 5375.719234]
-> [ 5375.719234]        CPU0                    CPU1
-> [ 5375.719235]        ----                    ----
-> [ 5375.719236]   lock(&fs_devs->device_list_mutex);
-> [ 5375.719238]                                lock(namespace_sem);
-> [ 5375.719239]                                lock(&fs_devs->device_list_mutex);
-> [ 5375.719241]   lock(sb_writers);
-> [ 5375.719241]
-> [ 5375.719241]  *** DEADLOCK ***
-> [ 5375.719241]
-> [ 5375.719243] 4 locks held by btrfs-health/4662:
-> [ 5375.719266]  #0:  (&fs_info->health_mutex){+.+.+.}, at: [<ffffffffa0246303>] health_kthread+0x63/0x490 [btrfs]
-> [ 5375.719293]  #1:  (&fs_info->dev_replace.lock_finishing_cancel_unmount){+.+.+.}, at: [<ffffffffa02c6611>] btrfs_dev_replace_finishing+0x41/0x990 [btrfs]
-> [ 5375.719319]  #2:  (uuid_mutex){+.+.+.}, at: [<ffffffffa0282620>] btrfs_destroy_dev_replace_tgtdev+0x20/0x150 [btrfs]
-> [ 5375.719343]  #3:  (&fs_devs->device_list_mutex){+.+.+.}, at: [<ffffffffa028263c>] btrfs_destroy_dev_replace_tgtdev+0x3c/0x150 [btrfs]
-> [ 5375.719343]
-> [ 5375.719343] stack backtrace:
-> [ 5375.719347] CPU: 2 PID: 4662 Comm: btrfs-health Not tainted 4.4.5-scst31x-debug-11+ #40
-> [ 5375.719348] Hardware name: Supermicro SYS-6018R-WTRT/X10DRW-iT, BIOS 1.0c 01/07/2015
-> [ 5375.719352]  0000000000000000 ffff880856f73880 ffffffff813529e3 ffffffff826182a0
-> [ 5375.719354]  ffffffff8260c090 ffff880856f738c0 ffffffff810d667c ffff880856f73930
-> [ 5375.719357]  ffff880861f32b40 ffff880861f32b68 0000000000000003 0000000000000004
-> [ 5375.719357] Call Trace:
-> [ 5375.719363]  [<ffffffff813529e3>] dump_stack+0x85/0xc2
-> [ 5375.719366]  [<ffffffff810d667c>] print_circular_bug+0x1ec/0x260
-> [ 5375.719369]  [<ffffffff810d97ca>] __lock_acquire+0x17ba/0x1ae0
-> [ 5375.719373]  [<ffffffff810f606d>] ? debug_lockdep_rcu_enabled+0x1d/0x20
-> [ 5375.719376]  [<ffffffff810da4be>] lock_acquire+0xce/0x1e0
-> [ 5375.719378]  [<ffffffff812214f7>] ? __sb_start_write+0xb7/0xf0
-> [ 5375.719383]  [<ffffffff810d3bef>] percpu_down_read+0x4f/0xa0
-> [ 5375.719385]  [<ffffffff812214f7>] ? __sb_start_write+0xb7/0xf0
-> [ 5375.719387]  [<ffffffff812214f7>] __sb_start_write+0xb7/0xf0
-> [ 5375.719389]  [<ffffffff81242eb4>] mnt_want_write+0x24/0x50
-> [ 5375.719393]  [<ffffffff8122ded2>] path_openat+0xd32/0x1360
-> [ 5375.719415]  [<ffffffffa02462a0>] ? btrfs_congested_fn+0x180/0x180 [btrfs]
-> [ 5375.719418]  [<ffffffff810f606d>] ? debug_lockdep_rcu_enabled+0x1d/0x20
-> [ 5375.719420]  [<ffffffff8122f86e>] do_filp_open+0x7e/0xe0
-> [ 5375.719423]  [<ffffffff810f615d>] ? rcu_read_lock_sched_held+0x6d/0x80
-> [ 5375.719426]  [<ffffffff81201a9b>] ? kmem_cache_alloc+0x26b/0x5d0
-> [ 5375.719430]  [<ffffffff8122e7d4>] ? getname_kernel+0x34/0x120
-> [ 5375.719433]  [<ffffffff8121d8a4>] file_open_name+0xe4/0x130
-> [ 5375.719436]  [<ffffffff8121d923>] filp_open+0x33/0x60
-> [ 5375.719462]  [<ffffffffa02776a6>] update_dev_time+0x16/0x40 [btrfs]
-> [ 5375.719485]  [<ffffffffa02825be>] btrfs_scratch_superblocks+0x4e/0x90 [btrfs]
-> [ 5375.719506]  [<ffffffffa0282665>] btrfs_destroy_dev_replace_tgtdev+0x65/0x150 [btrfs]
-> [ 5375.719530]  [<ffffffffa02c6c80>] btrfs_dev_replace_finishing+0x6b0/0x990 [btrfs]
-> [ 5375.719554]  [<ffffffffa02c6b23>] ? btrfs_dev_replace_finishing+0x553/0x990 [btrfs]
-> [ 5375.719576]  [<ffffffffa02c729e>] btrfs_dev_replace_start+0x33e/0x540 [btrfs]
-> [ 5375.719598]  [<ffffffffa02c7f58>] btrfs_auto_replace_start+0xf8/0x140 [btrfs]
-> [ 5375.719621]  [<ffffffffa02464e6>] health_kthread+0x246/0x490 [btrfs]
-> [ 5375.719641]  [<ffffffffa02463d8>] ? health_kthread+0x138/0x490 [btrfs]
-> [ 5375.719661]  [<ffffffffa02462a0>] ? btrfs_congested_fn+0x180/0x180 [btrfs]
-> [ 5375.719663]  [<ffffffff810a70df>] kthread+0xef/0x110
-> [ 5375.719666]  [<ffffffff810a6ff0>] ? kthread_create_on_node+0x200/0x200
-> [ 5375.719669]  [<ffffffff81637d2f>] ret_from_fork+0x3f/0x70
-> [ 5375.719672]  [<ffffffff810a6ff0>] ? kthread_create_on_node+0x200/0x200
-> [ 5375.719697] ------------[ cut here ]------------
->
->
+

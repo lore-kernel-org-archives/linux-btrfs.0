@@ -1,45 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from ns.bouton.name ([109.74.195.142]:40375 "EHLO mail.bouton.name"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752011AbcDROLd (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 18 Apr 2016 10:11:33 -0400
-Subject: Re: RAID5 Unable to remove Failing HD
-To: Anand Jain <anand.jain@oracle.com>, Rene Castberg <rene@castberg.org>,
-        linux-btrfs@vger.kernel.org
-References: <CAKUFzr8gm-yN01CY=H_j6jdEXJL5b0A_vS6gJ5iH1YN1+ZJAvg@mail.gmail.com>
- <56BAFC15.6080106@oracle.com> <5714A1F7.3050509@bouton.name>
-From: Lionel Bouton <lionel-subscription@bouton.name>
-Message-ID: <5714EB12.5060103@bouton.name>
-Date: Mon, 18 Apr 2016 16:11:30 +0200
+Received: from mail-lf0-f46.google.com ([209.85.215.46]:36347 "EHLO
+	mail-lf0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751936AbcDRONa (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 18 Apr 2016 10:13:30 -0400
+Received: by mail-lf0-f46.google.com with SMTP id g184so218267036lfb.3
+        for <linux-btrfs@vger.kernel.org>; Mon, 18 Apr 2016 07:13:29 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <5714A1F7.3050509@bouton.name>
-Content-Type: text/plain; charset=utf-8
+In-Reply-To: <loom.20160418T092105-74@post.gmane.org>
+Date: Mon, 18 Apr 2016 16:13:28 +0200
+Message-ID: <CAPmG0jbDDG+aLHn+ymBT1Mbd2UZg17rDiwYXu8AYoxb666GXMA@mail.gmail.com>
+Subject: Re: btrfs-image and btrfs send related queries
+From: Henk Slager <eye1tm@gmail.com>
+To: sri <toyours_sridhar@yahoo.co.in>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
+References: <loom.20160415T142724-462@post.gmane.org>
+ <20160415124910.GD30971@carfax.org.uk>
+ <CAPmG0jbp15p6shXq2GtVude_AKTcN2xRDwki0M5m-iiC_Wh51g@mail.gmail.com>
+ <loom.20160418T092105-74@post.gmane.org>
 
-Le 18/04/2016 10:59, Lionel Bouton a écrit :
-> [...]
-> So the obvious thing to do in this circumstance is to delete the drive,
-> forcing the filesystem to create the missing replicas in the process and
-> only reboot if needed (no hotplug). Unfortunately I'm not sure of the
-> conditions where this is possible (which kernel version supports this if
-> any ?). If there is a minimum kernel version where device delete works,
-> can https://btrfs.wiki.kernel.org/index.php/Gotchas be updated ? I don't
-> have a wiki account yet but I'm willing to do it myself if I can get
-> reliable information.
+(your email keeps ending up in gmail spam folder)
 
-Note that whatever the best course of action is I think the wiki should
-probably be updated with clear instructions on that. I'm willing to
-document this myself and probably other Gotchas (like how to fix a
-4-device RAID10 filesystem when one of them fails based on the recent
-discussion I've seen here) but I'm not sure I know all the details and
-wouldn't want to put incomplete information in the wiki so I'll wait for
-answers before starting to work on this.
+On Mon, Apr 18, 2016 at 9:24 AM, sri <toyours_sridhar@yahoo.co.in> wrote:
+> I tried btrfs-image and created image file and ran btrfs-image -r to a
+> different disk. Once recovered and mounted, I can able to see data is
+> not zeroed out as mentioned in btrfs-image man page.
 
-The data on this filesystem isn't critical and I have backups for the
-most important files so I can live with a "degraded" state for a while
-until I'm sure of the best way to proceed.
+"different disk"  you mention, that is important info. If you doe the
+restore to a image file, that image file is sparse and all data blocks
+are read as zeros.
 
-Best regards,
+However, if you restore to a block device, then you can assume it just
+writes the device blocks for metadata and leaves the rest untouched.
+So trim whole device first or brute-force overwrite completely with
+zeros.
 
-Lionel Bouton
+So maybe the man pages needs some correction / extra notes.
+
+> I tried on same machine.
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

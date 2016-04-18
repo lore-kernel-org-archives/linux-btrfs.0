@@ -1,31 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f172.google.com ([209.85.223.172]:34276 "EHLO
-	mail-io0-f172.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751620AbcDRCBg (ORCPT
+Received: from mail-yw0-f195.google.com ([209.85.161.195]:33244 "EHLO
+	mail-yw0-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751306AbcDRFWf (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 17 Apr 2016 22:01:36 -0400
-Received: by mail-io0-f172.google.com with SMTP id 2so182730135ioy.1
-        for <linux-btrfs@vger.kernel.org>; Sun, 17 Apr 2016 19:01:36 -0700 (PDT)
+	Mon, 18 Apr 2016 01:22:35 -0400
+Received: by mail-yw0-f195.google.com with SMTP id o63so22333020ywe.0
+        for <linux-btrfs@vger.kernel.org>; Sun, 17 Apr 2016 22:22:35 -0700 (PDT)
 MIME-Version: 1.0
-Date: Sun, 17 Apr 2016 20:01:35 -0600
-Message-ID: <CAJCQCtSENroAomPKwpRe1aHRcgaRERek8VVpdtTN0EoETPQrdQ@mail.gmail.com>
-Subject: WARN: volumes.c:2376 btrfs_init_new_device+0xcd8/0xed0 RIP: btrfs_show_devname+0x4b/0xd0
-From: Chris Murphy <lists@colorremedies.com>
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Date: Mon, 18 Apr 2016 13:22:34 +0800
+Message-ID: <CALq5X_gB0YkRMZx7Af+gAYdYRhojiKSCV9r3g8YPG6_8YR+9DQ@mail.gmail.com>
+Subject: Install to or Recover RAID Array Subvolume Root?
+From: David Alcorn <nroclaed@gmail.com>
+To: linux-btrfs@vger.kernel.org
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-https://bugzilla.kernel.org/show_bug.cgi?id=116601
+Debian's default installer (1) can not create a BTRFS raid array
+during installation, and (2) installs to the default subvol of the
+BTRFS target.  The default subvol is 5 (BTRFS root) unless (i) prior
+to installation a BTRFS file-system was created, (ii) the default
+subvol is set to something other than 5, and (iii) you do not format
+the installation target during install. This perspective benefits from
+https://aykevl.nl/2015/11/debian-btrfs-subvolume.
 
-Call traces attached to the bug.
+Can Debian install BTRFS to a pre-existing BTRFS RAID 6 array?  If the
+array's default is set to ,say subvolid 257, can I install to array
+subvolume 257?  The goal is to install to a subvolume on the array
+without disturbing date on other array subvolumes.
 
-The short version is that after (accidentally) adding a 256K 2nd
-device to an existing Btrfs (seed) volume, there's a warning then an
-oops and then the system becomes unstable and needs to be rebooted
-soon thereafter.
+I erred and shutdown my NAS during a balance.  Grub lost track of my
+root.  Root was on RAID 6 array subvolid 257.  I can boot a different
+root from a USB flash drive but neither update-grub not install-grub
+sees my old root on array subvolid 257.  I am happy to either recover
+or lose array subvolid 257 but do not want to lose data on other array
+subvol's.  I prefer to have my root on the array rather than a flash
+drive.  The balance completed successfully after I booted from the
+flash drive.
 
-kernel 4.5.0
+I am running a debian back-ported 4.4.0 kernel with btrfs-progs v4.4
+on both my flash drive and array subvolid 257.  Both installs are
+UEFI.  df -h reports:
 
--- 
-Chris Murphy
+Filesystem      Size  Used Avail Use% Mounted on
+udev             10M     0   10M   0% /dev
+tmpfs           790M  8.6M  781M   2% /run
+/dev/sdb3       3.8G  1.1G  2.4G  31% /
+tmpfs           2.0G     0  2.0G   0% /dev/shm
+tmpfs           5.0M     0  5.0M   0% /run/lock
+tmpfs           2.0G     0  2.0G   0% /sys/fs/cgroup
+/dev/sdb1        93M  311K   93M   1% /boot/efi
+/dev/sde         22T  4.9T   13T  29% /lit

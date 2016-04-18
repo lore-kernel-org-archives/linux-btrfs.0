@@ -1,53 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-yw0-f195.google.com ([209.85.161.195]:33244 "EHLO
-	mail-yw0-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751306AbcDRFWf (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 18 Apr 2016 01:22:35 -0400
-Received: by mail-yw0-f195.google.com with SMTP id o63so22333020ywe.0
-        for <linux-btrfs@vger.kernel.org>; Sun, 17 Apr 2016 22:22:35 -0700 (PDT)
-MIME-Version: 1.0
-Date: Mon, 18 Apr 2016 13:22:34 +0800
-Message-ID: <CALq5X_gB0YkRMZx7Af+gAYdYRhojiKSCV9r3g8YPG6_8YR+9DQ@mail.gmail.com>
-Subject: Install to or Recover RAID Array Subvolume Root?
-From: David Alcorn <nroclaed@gmail.com>
+Received: from plane.gmane.org ([80.91.229.3]:33872 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751354AbcDRFaI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 18 Apr 2016 01:30:08 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+	id 1as1l5-000082-Fk
+	for linux-btrfs@vger.kernel.org; Mon, 18 Apr 2016 07:30:03 +0200
+Received: from p50908ba1.dip0.t-ipconnect.de ([80.144.139.161])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Mon, 18 Apr 2016 07:30:03 +0200
+Received: from matthias by p50908ba1.dip0.t-ipconnect.de with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Mon, 18 Apr 2016 07:30:03 +0200
 To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+From: Matthias Bodenbinder <matthias@bodenbinder.de>
+Subject: Question: raid1 behaviour on failure
+Date: Mon, 18 Apr 2016 07:06:27 +0200
+Message-ID: <nf1q0j$ug4$1@ger.gmane.org>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Debian's default installer (1) can not create a BTRFS raid array
-during installation, and (2) installs to the default subvol of the
-BTRFS target.  The default subvol is 5 (BTRFS root) unless (i) prior
-to installation a BTRFS file-system was created, (ii) the default
-subvol is set to something other than 5, and (iii) you do not format
-the installation target during install. This perspective benefits from
-https://aykevl.nl/2015/11/debian-btrfs-subvolume.
+Hi,
 
-Can Debian install BTRFS to a pre-existing BTRFS RAID 6 array?  If the
-array's default is set to ,say subvolid 257, can I install to array
-subvolume 257?  The goal is to install to a subvolume on the array
-without disturbing date on other array subvolumes.
+I have a raid1 with 3 drives: 698, 465 and 232 GB. I copied 1,7 GB data to that raid1, balanced the filesystem and then removed the bigger drive (hotplug). 
 
-I erred and shutdown my NAS during a balance.  Grub lost track of my
-root.  Root was on RAID 6 array subvolid 257.  I can boot a different
-root from a USB flash drive but neither update-grub not install-grub
-sees my old root on array subvolid 257.  I am happy to either recover
-or lose array subvolid 257 but do not want to lose data on other array
-subvol's.  I prefer to have my root on the array rather than a flash
-drive.  The balance completed successfully after I booted from the
-flash drive.
+The data was still available. Now I copied the /root directory to the raid1. It showed up via ls -l. Then I plugged in the missing hard drive again (hotplug). After a few seconds "btrfs fi show" is giving output as usual:
 
-I am running a debian back-ported 4.4.0 kernel with btrfs-progs v4.4
-on both my flash drive and array subvolid 257.  Both installs are
-UEFI.  df -h reports:
+Label: none  uuid: 16d5891f-5d52-4b29-8591-588ddf11e73d
+	Total devices 3 FS bytes used 1.60GiB
+	devid    1 size 698.64GiB used 4.03GiB path /dev/sdg
+	devid    2 size 465.76GiB used 4.03GiB path /dev/sdh
+	devid    3 size 232.88GiB used 0.00B path /dev/sdi
 
-Filesystem      Size  Used Avail Use% Mounted on
-udev             10M     0   10M   0% /dev
-tmpfs           790M  8.6M  781M   2% /run
-/dev/sdb3       3.8G  1.1G  2.4G  31% /
-tmpfs           2.0G     0  2.0G   0% /dev/shm
-tmpfs           5.0M     0  5.0M   0% /run/lock
-tmpfs           2.0G     0  2.0G   0% /sys/fs/cgroup
-/dev/sdb1        93M  311K   93M   1% /boot/efi
-/dev/sde         22T  4.9T   13T  29% /lit
+The /root is still showing up, but the raid1 is now mounted in *read-only* mode. 
+
+I umounted it and mounted it again. Now the /root directory on the raid1 is no longer available. Its gone.
+
+I guess I missed some important step to recover the degraded raid1 before umounting it.
+
+What is it that I missed?
+
+Matthias
+

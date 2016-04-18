@@ -1,78 +1,64 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from ns.bouton.name ([109.74.195.142]:44738 "EHLO mail.bouton.name"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751681AbcDRI7h (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 18 Apr 2016 04:59:37 -0400
-Subject: Re: RAID5 Unable to remove Failing HD
-To: Anand Jain <anand.jain@oracle.com>, Rene Castberg <rene@castberg.org>,
-        linux-btrfs@vger.kernel.org
-References: <CAKUFzr8gm-yN01CY=H_j6jdEXJL5b0A_vS6gJ5iH1YN1+ZJAvg@mail.gmail.com>
- <56BAFC15.6080106@oracle.com>
-From: Lionel Bouton <lionel-subscription@bouton.name>
-Message-ID: <5714A1F7.3050509@bouton.name>
-Date: Mon, 18 Apr 2016 10:59:35 +0200
+Received: from mail-io0-f194.google.com ([209.85.223.194]:33841 "EHLO
+	mail-io0-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751216AbcDRMOx (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 18 Apr 2016 08:14:53 -0400
+Received: by mail-io0-f194.google.com with SMTP id z133so22947812iod.1
+        for <linux-btrfs@vger.kernel.org>; Mon, 18 Apr 2016 05:14:52 -0700 (PDT)
+Subject: Re: btrfrs send ... | ... receive ... stores files sparsely?
+To: Nicholas D Steeves <nsteeves@gmail.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+References: <CAD=QJKjqh_yyfwGdjbBFp-UF0-szpr3xKGV2Bfvnbzc7kVgndA@mail.gmail.com>
+From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Message-ID: <5714CF85.6020201@gmail.com>
+Date: Mon, 18 Apr 2016 08:13:57 -0400
 MIME-Version: 1.0
-In-Reply-To: <56BAFC15.6080106@oracle.com>
-Content-Type: text/plain; charset=utf-8
+In-Reply-To: <CAD=QJKjqh_yyfwGdjbBFp-UF0-szpr3xKGV2Bfvnbzc7kVgndA@mail.gmail.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
-
-Le 10/02/2016 10:00, Anand Jain a écrit :
+On 2016-04-15 18:04, Nicholas D Steeves wrote:
+> Hi,
 >
+> I happened to notice this when checking free space of my backup and
+> primary system.  I'll use an example of a file that won't have any
+> private or confidential information.  For du -hc
+> ./var/tmp/kdecache-kdmtjNM8H/icon-cache.kcache; ls -alh
+> ./var/tmp/kdecache-kdmtjNM8H/icon-cache.kcache; sha512sum
+> ./var/tmp/kdecache-kdmtjNM8H/icon-cache.kcache
 >
-> Rene,
+> On the sending system:
+> 11M     ./var/tmp/kdecache-kdmtjNM8H/icon-cache.kcache
+> 11M     total
+> -rw-r--r-- 1 kdm nogroup 11M Apr  2 18:00
+> ./var/tmp/kdecache-kdmtjNM8H/icon-cache.kcache
+> 0ba53df610f35ef5170fe33fda4304456f4df2e9944447fa06467f8f6cfc89adc7da1698a1882929df56ce6be0e0846380cccfa411b4c7857f10a5c23d7797cb
+>   ./var/tmp/kdecache-kdmtjNM8H/icon-cache.kcache
 >
-> Thanks for the report. Fixes are in the following patch sets
+> On the receiving system:
+> 64K     ./var/tmp/kdecache-kdmtjNM8H/icon-cache.kcache
+> 64K     total
+> -rw-r--r-- 1 114 nogroup 11M Apr  2 18:00
+> ./var/tmp/kdecache-kdmtjNM8H/icon-cache.kcache
+> 0ba53df610f35ef5170fe33fda4304456f4df2e9944447fa06467f8f6cfc89adc7da1698a1882929df56ce6be0e0846380cccfa411b4c7857f10a5c23d7797cb
+>   ./var/tmp/kdecache-kdmtjNM8H/icon-cache.kcache
 >
->  concern1:
->  Btrfs to fail/offline a device for write/flush error:
->    [PATCH 00/15] btrfs: Hot spare and Auto replace
->
->  concern2:
->  User should be able to delete a device when device has failed:
->    [PATCH 0/7] Introduce device delete by devid
->
->  If you were able to tryout these patches, pls lets know.
+> The only thing I can think of is that something in btrfs send ... |
+> ... receive ... is converting to sparse storage.  Is this intentional?
+>   I suppose with a COW filesystem preallocating empty space to prevent
+> fragmentation doesn't work, because as soon as that
+> cache/database/whatever_file changes the filesystem COWs the changes
+> to a location that will almost certainly require a seek...  That said,
+> will the way btrfs-progs is doing it cause similar issues with
+> converting to sparse storage that I've observed with tar and rsync?
+That does appear to be the case, which is slightly surprising to me, as 
+I would have expected it to replicate the extent layout also (or at 
+least, replicate what parts of the file were allocated and which were 
+unwritten extents).
 
-Just found out this thread after digging for a problem similar to mine.
+As far as 'similar issues with converting to sparse storage', I'm not 
+entirely sure what you might mean, so I can't really say if it will or 
+won't cause issues.
 
-I just got the same error when trying to delete a failed hard drive on a
-RAID1 filesystem with a total of 4 devices.
-
-# btrfs device delete 3 /mnt/store/
-ERROR: device delete by id failed: Inappropriate ioctl for device
-
-Were the patch sets above for btrfs-progs or for the kernel ?
-Currently the kernel is 4.1.15-r1 from Gentoo. I used btrfs-progs-4.3.1
-(the Gentoo stable version) but it didn't support delete by devid so I
-upgraded to btrfs-progs-4.5.1 which supports it but got the same
-"inappropriate ioctl for device" error when I used the devid.
-
-I don't have any drive available right now for replacing this one (so no
-btrfs dev replace possible right now). The filesystem's data could fit
-on only 2 of the 4 drives (in fact I just added 2 old drives that were
-previously used with md and rebalanced, which is most probably what
-triggered one of the new drives failure). So I can't use replace and
-would prefer not to lose redundancy while waiting for new drives to get
-there.
-
-So the obvious thing to do in this circumstance is to delete the drive,
-forcing the filesystem to create the missing replicas in the process and
-only reboot if needed (no hotplug). Unfortunately I'm not sure of the
-conditions where this is possible (which kernel version supports this if
-any ?). If there is a minimum kernel version where device delete works,
-can https://btrfs.wiki.kernel.org/index.php/Gotchas be updated ? I don't
-have a wiki account yet but I'm willing to do it myself if I can get
-reliable information.
-
-I can reboot this system and I expect the current drive to appear
-missing (it doesn't even respond to smartctl) and I suppose "device
-delete missing" will work then. But should I/must I upgrade the kernel
-to avoid this problem in the future and if yes which version(s)
-support(s) failed device delete?
-
-Best regards,
-
-Lionel

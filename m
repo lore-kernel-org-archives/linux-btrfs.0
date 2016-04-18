@@ -1,77 +1,90 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from meiko.romanrm.net ([195.154.92.155]:37608 "EHLO
-	meiko.romanrm.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751981AbcDRO0Z (ORCPT
+Received: from mail-io0-f176.google.com ([209.85.223.176]:36525 "EHLO
+	mail-io0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752680AbcDRPMw (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 18 Apr 2016 10:26:25 -0400
-Date: Mon, 18 Apr 2016 19:26:19 +0500
-From: Roman Mamedov <rm@romanrm.net>
-To: Henk Slager <eye1tm@gmail.com>
-Cc: sri <toyours_sridhar@yahoo.co.in>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: btrfs-image and btrfs send related queries
-Message-ID: <20160418192619.4749bc17@natsu>
-In-Reply-To: <CAPmG0jbDDG+aLHn+ymBT1Mbd2UZg17rDiwYXu8AYoxb666GXMA@mail.gmail.com>
+	Mon, 18 Apr 2016 11:12:52 -0400
+Received: by mail-io0-f176.google.com with SMTP id u185so197577394iod.3
+        for <linux-btrfs@vger.kernel.org>; Mon, 18 Apr 2016 08:12:52 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
- boundary="Sig_/dLv5kR0+8j04DBEKF_Cx18W"; protocol="application/pgp-signature"
+In-Reply-To: <5714D39B.90402@gmail.com>
+References: <CALq5X_gB0YkRMZx7Af+gAYdYRhojiKSCV9r3g8YPG6_8YR+9DQ@mail.gmail.com>
+	<5714D39B.90402@gmail.com>
+Date: Mon, 18 Apr 2016 09:12:51 -0600
+Message-ID: <CAJCQCtRQ_1-peN6QVd53P63xQUqxfvmth4aEbwXrpaCyjVds=Q@mail.gmail.com>
+Subject: Re: Install to or Recover RAID Array Subvolume Root?
+From: Chris Murphy <lists@colorremedies.com>
+To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Cc: David Alcorn <nroclaed@gmail.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
-References: <loom.20160415T142724-462@post.gmane.org>
- <20160415124910.GD30971@carfax.org.uk>
- <CAPmG0jbp15p6shXq2GtVude_AKTcN2xRDwki0M5m-iiC_Wh51g@mail.gmail.com>
- <loom.20160418T092105-74@post.gmane.org>
- <CAPmG0jbDDG+aLHn+ymBT1Mbd2UZg17rDiwYXu8AYoxb666GXMA@mail.gmail.com>
 
---Sig_/dLv5kR0+8j04DBEKF_Cx18W
-Content-Type: text/plain; charset=US-ASCII
-Content-Transfer-Encoding: quoted-printable
+On Mon, Apr 18, 2016 at 6:31 AM, Austin S. Hemmelgarn
+<ahferroin7@gmail.com> wrote:
+> On 2016-04-18 01:22, David Alcorn wrote:
+>>
+>> Debian's default installer (1) can not create a BTRFS raid array
+>> during installation, and (2) installs to the default subvol of the
+>> BTRFS target.  The default subvol is 5 (BTRFS root) unless (i) prior
+>> to installation a BTRFS file-system was created, (ii) the default
+>> subvol is set to something other than 5, and (iii) you do not format
+>> the installation target during install. This perspective benefits from
+>> https://aykevl.nl/2015/11/debian-btrfs-subvolume.
+>>
+>> Can Debian install BTRFS to a pre-existing BTRFS RAID 6 array?  If the
+>> array's default is set to ,say subvolid 257, can I install to array
+>> subvolume 257?  The goal is to install to a subvolume on the array
+>> without disturbing date on other array subvolumes.
+>
+> This is really something you should be asking on the Debian mailing list, or
+> on one of their IRC channels.   That said,  based on my limited knowledge of
+> the current state of the Debian installer, I think it should work, but I"m
+> not certain.  I don't really use Debian much anymore except on a couple of
+> Raspberry Pi's at work, so I really can't give a much better answer
+> (Ironically, limitations like this in the installer are part of why I
+> switched to Gentoo).
+>>
+>>
+>> I erred and shutdown my NAS during a balance.  Grub lost track of my
+>> root.  Root was on RAID 6 array subvolid 257.  I can boot a different
+>> root from a USB flash drive but neither update-grub not install-grub
+>> sees my old root on array subvolid 257.  I am happy to either recover
+>> or lose array subvolid 257 but do not want to lose data on other array
+>> subvol's.  I prefer to have my root on the array rather than a flash
+>> drive.  The balance completed successfully after I booted from the
+>> flash drive.
+>>
+>> I am running a debian back-ported 4.4.0 kernel with btrfs-progs v4.4
+>> on both my flash drive and array subvolid 257.  Both installs are
+>> UEFI.
+>
+> It's rather refreshing to see somebody using an up to date kernel and
+> userspace for once.  The issue with GRUB is however likely an issue with
+> GRUB itself though (or possibly with something it uses for detecting
+> filesystems), which brings up the question: How recent is the version of
+> GRUB you're trying to install?  I would not be surprised if their current
+> support for BTRFS raid5 and raid6 is not particularly good, especially
+> considering that their support for BTRFS raid1 was kind of shoddy at first
+> (and it still has occasional issues, like not working right half the time if
+> one of the devices is missing).
 
-On Mon, 18 Apr 2016 16:13:28 +0200
-Henk Slager <eye1tm@gmail.com> wrote:
+I can't tell if this setup is Btrfs on md/mdadm raid6, or if it's
+Btrfs raid6? GRUB has supported mdadm raid6 for a long time, but I
+don't think it understands Btrfs raid56 at all.
 
-> (your email keeps ending up in gmail spam folder)
->=20
-> On Mon, Apr 18, 2016 at 9:24 AM, sri <toyours_sridhar@yahoo.co.in> wrote:
-> > I tried btrfs-image and created image file and ran btrfs-image -r to a
-> > different disk. Once recovered and mounted, I can able to see data is
-> > not zeroed out as mentioned in btrfs-image man page.
->=20
-> "different disk"  you mention, that is important info. If you doe the
-> restore to a image file, that image file is sparse and all data blocks
-> are read as zeros.
->=20
-> However, if you restore to a block device, then you can assume it just
-> writes the device blocks for metadata and leaves the rest untouched.
-> So trim whole device first or brute-force overwrite completely with
-> zeros.
->=20
-> So maybe the man pages needs some correction / extra notes.
->=20
-> > I tried on same machine.
+The only GUI installer I know that explicitly permits installation of
+an OS to an existing Btrfs is Anaconda (mainly Red Hat and Fedora).
+There's a bug in the storage backend that prevents this from working
+in Fedora 23, exposed by a Btrfs change disallowing simultaneous use
+of subvolid and subvol, resulting in mount failure, which in turn
+causes the installer to crash. But it works in Fedora 22, and it will
+work in Fedora 24. On the other hand, no Fedora supports Btrfs for
+/boot, it has to be separate and it has to be ext4 or XFS (and maybe
+FAT).
 
-Does btrfs-image store/restore the FS UUID? If it does, then potentially bo=
-th
-the source FS and the restored one were visible at the same time to the ker=
-nel
-with identical UUIDs, and maybe it was actually accessing/mounting the sour=
-ce
-one.
 
---=20
-With respect,
-Roman
 
---Sig_/dLv5kR0+8j04DBEKF_Cx18W
-Content-Type: application/pgp-signature
-Content-Description: OpenPGP digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2
-
-iEYEARECAAYFAlcU7o4ACgkQTLKSvz+PZwjehQCfUDiZb9RW7hnFMzgkgftfckT/
-qAsAn3DSRZnLOb5IRqv3T/esL45mHhQd
-=HzLC
------END PGP SIGNATURE-----
-
---Sig_/dLv5kR0+8j04DBEKF_Cx18W--
+-- 
+Chris Murphy

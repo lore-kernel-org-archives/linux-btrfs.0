@@ -1,49 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:36535 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751968AbcDSIPi (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 19 Apr 2016 04:15:38 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1asQor-0006Oh-AE
-	for linux-btrfs@vger.kernel.org; Tue, 19 Apr 2016 10:15:37 +0200
-Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 19 Apr 2016 10:15:37 +0200
-Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 19 Apr 2016 10:15:37 +0200
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: [resend] btrfs-send -c fails: reproduction case
-Date: Tue, 19 Apr 2016 08:15:30 +0000 (UTC)
-Message-ID: <pan$b45bb$cc2503a6$7ae51219$d3903fd2@cox.net>
-References: <CAC8+__7+ALM5WK-+aCkH0Nc1GUTV5v=7R0SB9LFFE48YM3NLeg@mail.gmail.com>
-	<CAJCQCtTh_nDmjf+5MMkHoi6oe4wM51o709m24xZpagT5PMWuQw@mail.gmail.com>
-	<CAC8+__7sEnSjtpSSG+Wu+J-582bE4guSwP3L3ZUU8N0r-9ATVg@mail.gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Received: from aserp1040.oracle.com ([141.146.126.69]:30448 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753168AbcDSJNU (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 19 Apr 2016 05:13:20 -0400
+Subject: Re: RAID5 Unable to remove Failing HD
+To: Duncan <1i5t5.duncan@cox.net>, linux-btrfs@vger.kernel.org
+References: <CAKUFzr8gm-yN01CY=H_j6jdEXJL5b0A_vS6gJ5iH1YN1+ZJAvg@mail.gmail.com>
+ <56BAFC15.6080106@oracle.com> <5714A1F7.3050509@bouton.name>
+ <pan$d96e4$2cb56bbb$1d5f6612$721cfc21@cox.net>
+From: Anand Jain <anand.jain@oracle.com>
+Message-ID: <5715F6A0.7030707@oracle.com>
+Date: Tue, 19 Apr 2016 17:13:04 +0800
+MIME-Version: 1.0
+In-Reply-To: <pan$d96e4$2cb56bbb$1d5f6612$721cfc21@cox.net>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Zachary Vance posted on Sun, 17 Apr 2016 18:46:13 -0700 as excerpted:
 
-> I was already making sure all -c references were both present and
-> unmodified, I think the confusion is mostly around whether the parent
-> required to use -c, and whether it's an implicit reference volume in
-> particular. If it's required, it's impossible to preserve de-duplication
-> after deleting the original parent which would be really bad.
+>> # btrfs device delete 3 /mnt/store/
+>> ERROR: device delete by id failed: Inappropriate ioctl for device
+>>
+>> Were the patch sets above for btrfs-progs or for the kernel ?
+>
+> Looks like you're primarily interested in the concern2 patches, device
+> delete by devid.
+>
+> A quick search of the list back-history reveals that an updated patch
+> set, 00/15 now (look for [PATCH 00/15] Device delete by id ), was posted
+> by dserba on the 15th of February.  It was the kernel patches and was
+> slated for the kernel 4.6 dev cycle.  However, the patch set was pulled
+> at that time due to test failures, tho they were suspected to actually be
+> from something else.
 
-AFAIK, send -c does require a parent, but if there's clones and no parent 
-given, it will try to pick its own from the list of clones given.
+  Thanks Duncan. Yep the reported issue did not point to any
+  of the patch in that set. But I am keeping a tab open for
+  new users /test cases, anything that is found will help.
 
-Which explains the error complaining about being unable to find a parent, 
-when given only clone sources that (based on your reproducer) had nothing 
-in common with the snapshots listed as clones.
+  By the way, For Lionel issue, delete missing should work ?
+  which does not need any additional patch.
 
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+Thanks, Anand
 

@@ -1,79 +1,65 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:41599 "EHLO plane.gmane.org"
+Received: from ns.bouton.name ([109.74.195.142]:58787 "EHLO mail.bouton.name"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752536AbcDSJqP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 19 Apr 2016 05:46:15 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1asSES-0000W1-On
-	for linux-btrfs@vger.kernel.org; Tue, 19 Apr 2016 11:46:08 +0200
-Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 19 Apr 2016 11:46:08 +0200
-Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 19 Apr 2016 11:46:08 +0200
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
+	id S1752544AbcDSKtr (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 19 Apr 2016 06:49:47 -0400
 Subject: Re: RAID5 Unable to remove Failing HD
-Date: Tue, 19 Apr 2016 09:45:59 +0000 (UTC)
-Message-ID: <pan$15255$6fcb2fe6$40daca28$6df14af1@cox.net>
+To: Anand Jain <anand.jain@oracle.com>, Duncan <1i5t5.duncan@cox.net>,
+        linux-btrfs@vger.kernel.org
 References: <CAKUFzr8gm-yN01CY=H_j6jdEXJL5b0A_vS6gJ5iH1YN1+ZJAvg@mail.gmail.com>
-	<56BAFC15.6080106@oracle.com> <5714A1F7.3050509@bouton.name>
-	<pan$d96e4$2cb56bbb$1d5f6612$721cfc21@cox.net>
-	<5715F6A0.7030707@oracle.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+ <56BAFC15.6080106@oracle.com> <5714A1F7.3050509@bouton.name>
+ <pan$d96e4$2cb56bbb$1d5f6612$721cfc21@cox.net> <5715F6A0.7030707@oracle.com>
+From: Lionel Bouton <lionel-subscription@bouton.name>
+Message-ID: <57160D47.8030300@bouton.name>
+Date: Tue, 19 Apr 2016 12:49:43 +0200
+MIME-Version: 1.0
+In-Reply-To: <5715F6A0.7030707@oracle.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Anand Jain posted on Tue, 19 Apr 2016 17:13:04 +0800 as excerpted:
+Hi,
 
+Le 19/04/2016 11:13, Anand Jain a écrit :
+>
 >>> # btrfs device delete 3 /mnt/store/
 >>> ERROR: device delete by id failed: Inappropriate ioctl for device
 >>>
 >>> Were the patch sets above for btrfs-progs or for the kernel ?
->>
->> Looks like you're primarily interested in the concern2 patches, device
->> delete by devid.
->>
->> A quick search of the list back-history reveals that an updated patch
->> set, 00/15 now (look for [PATCH 00/15] Device delete by id ), was
->> posted by dserba on the 15th of February.  It was the kernel patches
->> and was slated for the kernel 4.6 dev cycle.  However, the patch set
->> was pulled at that time due to test failures, tho they were suspected
->> to actually be from something else.
-> 
->   Thanks Duncan. Yep the reported issue did not point to any of the
->   patch in that set. But I am keeping a tab open for new users /test
->   cases, anything that is found will help.
-> 
->   By the way, For Lionel issue, delete missing should work ?
->   which does not need any additional patch.
+>> [...]
+>
+>  By the way, For Lionel issue, delete missing should work ?
+>  which does not need any additional patch.
 
-Were the issues with btrfs delete missing fixed?  There were some issues 
-with it actually trying to delete a device literally named "missing" or 
-something the like, and of course not finding it to delete, a kernel 
-cycle or two ago, and AFAIK delete by ID was originally proposed as a fix 
-for that.  If I was reading the comments correctly, however, I think the 
-problem there was introduced with the switch to libblockdev or some such, 
-however, so he might be able to get around that by using older releases, 
-as long as the filesystem isn't using newer features that would block 
-that.
+Delete missing works with 4.1.15 and btrfs-progs 4.5.1 (see later), but
+the device can't be marked missing online so there's no way to maintain
+redundancy without downtime. I was a little surprised: I half-expected
+something like this because reading this list, RAID recovery seems to
+still be a pain point but this isn't documented anywhere and after
+looking around the relevant information seems to only be in this thread
+(and many come from md and don't read this list, so won't expect this
+behavior at all).
+While I was waiting for directions the system crashed with a kernel
+panic (clearly linked to IO errors according to the kernel panic but I
+couldn't get all the stacktrace) and the system wasn't able to boot
+properly (kernel panic shortly after the system mounted the filesystem
+on each boot) until I removed the faulty drive (apparently it was
+somehow readable enough to be recognized, but not enough to be usable).
+After removing the faulty drive delete missing worked and a balance is
+currently running (by the way it seems the drive bay was faulty: the
+drive was not firmly fixed and it's cage could move a bit around in the
+chassis and it was the only one, I didn't expect this and from
+experience it's probably a factor in the hardware failure).
 
-So delete missing may or may not work now, I've lost track.  But he was 
-reluctant to unmount and reboot, and of course with btrfs not yet 
-offlining failed devices, it doesn't know it's actually missing, yet.  So 
-even if delete missing does work for him, it's not going to work until a 
-reboot and remount degraded, and he was hoping to avoid that with the 
-delete by ID.
+There may have been fixes since 4.1.15 to prevent the kernel panic
+(there was only one device with IO errors, so ideally it shouldn't be
+able to bring down the kernel) so it may not be worth further analysis.
+That said I'll have 2 new drives next week (one replacement, one spare)
+and I have a chassis lying around where I could try to replicate
+failures with various kernels on a RAID1 filesystem built with a brand
+new drive and the faulty drive (until the faulty drive completely dies
+which they usually do in my experience) so if someone wants some tests
+done with 4.6-rcX or even 4.6-rcX + patches I can spend some time on it
+next week.
 
-
-
-
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+Lionel

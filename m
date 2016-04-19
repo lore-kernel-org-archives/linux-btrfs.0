@@ -1,55 +1,49 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f196.google.com ([209.85.223.196]:34322 "EHLO
-	mail-io0-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752186AbcDSLOl (ORCPT
+Received: from mail-lf0-f42.google.com ([209.85.215.42]:36239 "EHLO
+	mail-lf0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753192AbcDSLa2 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 19 Apr 2016 07:14:41 -0400
-Received: by mail-io0-f196.google.com with SMTP id z133so2102317iod.1
-        for <linux-btrfs@vger.kernel.org>; Tue, 19 Apr 2016 04:14:40 -0700 (PDT)
-Subject: Re: Install to or Recover RAID Array Subvolume Root?
-To: Nicholas D Steeves <nsteeves@gmail.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-References: <CALq5X_gB0YkRMZx7Af+gAYdYRhojiKSCV9r3g8YPG6_8YR+9DQ@mail.gmail.com>
- <5714D39B.90402@gmail.com>
- <CAJCQCtRQ_1-peN6QVd53P63xQUqxfvmth4aEbwXrpaCyjVds=Q@mail.gmail.com>
- <5714FA2F.6010207@gmail.com>
- <CAJCQCtTSdnD+n9UR7hWtqLdBzjb6WQXF71XKTgKJNgZPcdA3fg@mail.gmail.com>
- <571502B4.2050401@gmail.com>
- <CAD=QJKjhYoMOKkB1GA5EWONHifeBUpVH9-WgL9R_PozS+o+PLw@mail.gmail.com>
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <5716130F.9050006@gmail.com>
-Date: Tue, 19 Apr 2016 07:14:23 -0400
+	Tue, 19 Apr 2016 07:30:28 -0400
+Received: by mail-lf0-f42.google.com with SMTP id g184so14988512lfb.3
+        for <linux-btrfs@vger.kernel.org>; Tue, 19 Apr 2016 04:30:27 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <CAD=QJKjhYoMOKkB1GA5EWONHifeBUpVH9-WgL9R_PozS+o+PLw@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+In-Reply-To: <526644665.2251591.1461058513616.JavaMail.yahoo@mail.yahoo.com>
+References: <CAPmG0jb0e5L=BYbO7k-4qh+o4qNqEjDqLe1=04+QMSWyhk0hFg@mail.gmail.com>
+	<526644665.2251591.1461058513616.JavaMail.yahoo@mail.yahoo.com>
+Date: Tue, 19 Apr 2016 13:30:25 +0200
+Message-ID: <CAPmG0jbrupUYFdem2yAkFvSLwt9TL1e3pAv-0itGtGMD2AJATQ@mail.gmail.com>
+Subject: Re: btrfs-image and btrfs send related queries
+From: Henk Slager <eye1tm@gmail.com>
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2016-04-18 16:34, Nicholas D Steeves wrote:
-> On 18 April 2016 at 11:52, Austin S. Hemmelgarn <ahferroin7@gmail.com> wrote:
->> On 2016-04-18 11:39, Chris Murphy wrote:
->>>
->>> On Mon, Apr 18, 2016 at 9:15 AM, Austin S. Hemmelgarn
->>> <ahferroin7@gmail.com> wrote:
->> Like I said in one of my earlier e-mails though, these kind of limitations
->> are part of why I switched to Gentoo, there's no GUI installer, but you can
->> put the system together however the hell you want (which is especially nice
->> with BTRFS, because none of the installers out there will let you use BTRFS
->> on top of LVM, which is useful for things like BTRFS raid1 on top of
->> DM-RAID0).
+> I have /dev/sdb , /dev/sdc. Using wipefs -fa I cleared both devices and
+> created btrfs on /dev/sdb. Mounted and written some files and unmounted it.
 >
-> Limitations?  ;-)  Debian has a variety of bootstrapping methods,
-> though I forget if they're more analogous to starting a Gentoo
-> installation from stage2 or stage3...I haven't used Gentoo since 2002.
-> Please consult the following doc for one of the methods:
-> https://www.debian.org/releases/stable/amd64/apds03.html.en
-The closest I've ever seen for Debian to a Gentoo stage3 installation 
-(the developers discourage usage of stage2 installs these days unless 
-you're bootstrapping _everything_ yourself) is debbootstrap, and I could 
-never get that to work reliably.
+> Then I ran btrfs-image /dev/sdc /img1.img and got the dump.
 
-FWIW, the installer wasn't the only reason I switched to Gentoo, the two 
-bigger ones for me were wanting newer software versions and needing 
-different sets of features enabled on packages than the default builds, 
-I ended up switching at the point that I was building more locally than 
-I was installing from the repositories.
+It looks like you imaged the wrong device, that might clarify the IO
+errors later on
+
+> Once image created I again ran wipefs -fa /dev/sdb.
+>
+> Then I ran btrfs-image -r /img1.img /dev/sdc and mounted /dev/sdc.
+>
+> ls to dumped filesystem shows the file size as original and no file content.
+> I guess btrfs-image doesn't modify files stat so i feel it is showing size
+> as original.
+>
+> However running cat on some of files give i/o error
+>
+> qd67:/btrfs1 # cat shadow.h
+> cat: shadow.h: Input/output error
+>
+> These errors are not on all files on other files, since dump doesn't
+> contains any data it just prompts for cat as below.
+>
+> qd67:/btrfs1 # cat stab.h
+> qd67:/btrfs1 # cat stdio_ext.h
+>
+> Not sure why i/o errors are coming.

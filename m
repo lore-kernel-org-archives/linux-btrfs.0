@@ -1,16 +1,15 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:49933 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:55103 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751508AbcDUX6j (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 21 Apr 2016 19:58:39 -0400
-Date: Thu, 21 Apr 2016 16:58:37 -0700
+	id S1752407AbcDSWZg (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 19 Apr 2016 18:25:36 -0400
+Date: Tue, 19 Apr 2016 15:25:30 -0700
 From: Mark Fasheh <mfasheh@suse.de>
 To: fstests@vger.kernel.org, linux-btrfs@vger.kernel.org
-Cc: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>,
-        Qu Wenruo <quwenruo@cn.fujitsu.com>
-Subject: [PATCH v2] btrfs: Test that qgroup counts are valid after snapshot
+Cc: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Subject: [PATCH] btrfs: Test that qgroup counts are valid after snapshot
  creation
-Message-ID: <20160421235837.GX2187@wotan.suse.de>
+Message-ID: <20160419222530.GU2187@wotan.suse.de>
 Reply-To: Mark Fasheh <mfasheh@suse.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
@@ -21,22 +20,16 @@ This has been broken since Linux v4.1. We may have worked out a solution on
 the btrfs list but in the meantime sending a test to expose the issue seems
 like a good idea.
 
-Changes from v1-v2:
- - cleanups
- - added 122.out
-
 Signed-off-by: Mark Fasheh <mfasheh@suse.de>
 ---
- tests/btrfs/122     | 88 +++++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/122.out |  1 +
- tests/btrfs/group   |  1 +
- 3 files changed, 90 insertions(+)
+ tests/btrfs/122   | 88 +++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/group |  1 +
+ 2 files changed, 89 insertions(+)
  create mode 100755 tests/btrfs/122
- create mode 100644 tests/btrfs/122.out
 
 diff --git a/tests/btrfs/122 b/tests/btrfs/122
 new file mode 100755
-index 0000000..82252ab
+index 0000000..b7e9e4b
 --- /dev/null
 +++ b/tests/btrfs/122
 @@ -0,0 +1,88 @@
@@ -111,8 +104,8 @@ index 0000000..82252ab
 +# snapshots.
 +mkdir "$SCRATCH_MNT/data"
 +for i in `seq 0 640`; do
-+	$XFS_IO_PROG -f -c "pwrite 0 1M" "$SCRATCH_MNT/data/file$i" > /dev/null 2>&1
-+done
++    $XFS_IO_PROG -f -c "pwrite 0 1M" "$SCRATCH_MNT/data/file$i" > /dev/null 2>&1
++done;
 +
 +# Snapshot twice.
 +_run_btrfs_util_prog subvolume snapshot $SCRATCH_MNT "$SCRATCH_MNT/snaps/snap1"
@@ -128,13 +121,6 @@ index 0000000..82252ab
 +fi
 +
 +exit
-diff --git a/tests/btrfs/122.out b/tests/btrfs/122.out
-new file mode 100644
-index 0000000..2b1890e
---- /dev/null
-+++ b/tests/btrfs/122.out
-@@ -0,0 +1 @@
-+QA output created by 122
 diff --git a/tests/btrfs/group b/tests/btrfs/group
 index 9403daa..f7e8cff 100644
 --- a/tests/btrfs/group

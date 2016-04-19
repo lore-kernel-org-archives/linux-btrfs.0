@@ -1,65 +1,55 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from ns.bouton.name ([109.74.195.142]:58787 "EHLO mail.bouton.name"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752544AbcDSKtr (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 19 Apr 2016 06:49:47 -0400
-Subject: Re: RAID5 Unable to remove Failing HD
-To: Anand Jain <anand.jain@oracle.com>, Duncan <1i5t5.duncan@cox.net>,
-        linux-btrfs@vger.kernel.org
-References: <CAKUFzr8gm-yN01CY=H_j6jdEXJL5b0A_vS6gJ5iH1YN1+ZJAvg@mail.gmail.com>
- <56BAFC15.6080106@oracle.com> <5714A1F7.3050509@bouton.name>
- <pan$d96e4$2cb56bbb$1d5f6612$721cfc21@cox.net> <5715F6A0.7030707@oracle.com>
-From: Lionel Bouton <lionel-subscription@bouton.name>
-Message-ID: <57160D47.8030300@bouton.name>
-Date: Tue, 19 Apr 2016 12:49:43 +0200
+Received: from mail-io0-f196.google.com ([209.85.223.196]:34322 "EHLO
+	mail-io0-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752186AbcDSLOl (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 19 Apr 2016 07:14:41 -0400
+Received: by mail-io0-f196.google.com with SMTP id z133so2102317iod.1
+        for <linux-btrfs@vger.kernel.org>; Tue, 19 Apr 2016 04:14:40 -0700 (PDT)
+Subject: Re: Install to or Recover RAID Array Subvolume Root?
+To: Nicholas D Steeves <nsteeves@gmail.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+References: <CALq5X_gB0YkRMZx7Af+gAYdYRhojiKSCV9r3g8YPG6_8YR+9DQ@mail.gmail.com>
+ <5714D39B.90402@gmail.com>
+ <CAJCQCtRQ_1-peN6QVd53P63xQUqxfvmth4aEbwXrpaCyjVds=Q@mail.gmail.com>
+ <5714FA2F.6010207@gmail.com>
+ <CAJCQCtTSdnD+n9UR7hWtqLdBzjb6WQXF71XKTgKJNgZPcdA3fg@mail.gmail.com>
+ <571502B4.2050401@gmail.com>
+ <CAD=QJKjhYoMOKkB1GA5EWONHifeBUpVH9-WgL9R_PozS+o+PLw@mail.gmail.com>
+From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Message-ID: <5716130F.9050006@gmail.com>
+Date: Tue, 19 Apr 2016 07:14:23 -0400
 MIME-Version: 1.0
-In-Reply-To: <5715F6A0.7030707@oracle.com>
-Content-Type: text/plain; charset=utf-8
+In-Reply-To: <CAD=QJKjhYoMOKkB1GA5EWONHifeBUpVH9-WgL9R_PozS+o+PLw@mail.gmail.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
-
-Le 19/04/2016 11:13, Anand Jain a écrit :
->
->>> # btrfs device delete 3 /mnt/store/
->>> ERROR: device delete by id failed: Inappropriate ioctl for device
+On 2016-04-18 16:34, Nicholas D Steeves wrote:
+> On 18 April 2016 at 11:52, Austin S. Hemmelgarn <ahferroin7@gmail.com> wrote:
+>> On 2016-04-18 11:39, Chris Murphy wrote:
 >>>
->>> Were the patch sets above for btrfs-progs or for the kernel ?
->> [...]
+>>> On Mon, Apr 18, 2016 at 9:15 AM, Austin S. Hemmelgarn
+>>> <ahferroin7@gmail.com> wrote:
+>> Like I said in one of my earlier e-mails though, these kind of limitations
+>> are part of why I switched to Gentoo, there's no GUI installer, but you can
+>> put the system together however the hell you want (which is especially nice
+>> with BTRFS, because none of the installers out there will let you use BTRFS
+>> on top of LVM, which is useful for things like BTRFS raid1 on top of
+>> DM-RAID0).
 >
->  By the way, For Lionel issue, delete missing should work ?
->  which does not need any additional patch.
+> Limitations?  ;-)  Debian has a variety of bootstrapping methods,
+> though I forget if they're more analogous to starting a Gentoo
+> installation from stage2 or stage3...I haven't used Gentoo since 2002.
+> Please consult the following doc for one of the methods:
+> https://www.debian.org/releases/stable/amd64/apds03.html.en
+The closest I've ever seen for Debian to a Gentoo stage3 installation 
+(the developers discourage usage of stage2 installs these days unless 
+you're bootstrapping _everything_ yourself) is debbootstrap, and I could 
+never get that to work reliably.
 
-Delete missing works with 4.1.15 and btrfs-progs 4.5.1 (see later), but
-the device can't be marked missing online so there's no way to maintain
-redundancy without downtime. I was a little surprised: I half-expected
-something like this because reading this list, RAID recovery seems to
-still be a pain point but this isn't documented anywhere and after
-looking around the relevant information seems to only be in this thread
-(and many come from md and don't read this list, so won't expect this
-behavior at all).
-While I was waiting for directions the system crashed with a kernel
-panic (clearly linked to IO errors according to the kernel panic but I
-couldn't get all the stacktrace) and the system wasn't able to boot
-properly (kernel panic shortly after the system mounted the filesystem
-on each boot) until I removed the faulty drive (apparently it was
-somehow readable enough to be recognized, but not enough to be usable).
-After removing the faulty drive delete missing worked and a balance is
-currently running (by the way it seems the drive bay was faulty: the
-drive was not firmly fixed and it's cage could move a bit around in the
-chassis and it was the only one, I didn't expect this and from
-experience it's probably a factor in the hardware failure).
-
-There may have been fixes since 4.1.15 to prevent the kernel panic
-(there was only one device with IO errors, so ideally it shouldn't be
-able to bring down the kernel) so it may not be worth further analysis.
-That said I'll have 2 new drives next week (one replacement, one spare)
-and I have a chassis lying around where I could try to replicate
-failures with various kernels on a RAID1 filesystem built with a brand
-new drive and the faulty drive (until the faulty drive completely dies
-which they usually do in my experience) so if someone wants some tests
-done with 4.6-rcX or even 4.6-rcX + patches I can spend some time on it
-next week.
-
-Lionel
+FWIW, the installer wasn't the only reason I switched to Gentoo, the two 
+bigger ones for me were wanting newer software versions and needing 
+different sets of features enabled on packages than the default builds, 
+I ended up switching at the point that I was building more locally than 
+I was installing from the repositories.

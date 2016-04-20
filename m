@@ -1,64 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:34783 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754351AbcDYL7r (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 25 Apr 2016 07:59:47 -0400
-Date: Mon, 25 Apr 2016 13:59:35 +0200
-From: David Sterba <dsterba@suse.cz>
-To: dsterba@suse.cz, Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH 4/4] btrfs-progs: "device ready" accepts just one device
-Message-ID: <20160425115935.GE23222@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <56E5FF9A.4020609@jp.fujitsu.com>
- <56E6056A.4020307@jp.fujitsu.com>
- <20160314120515.GZ18908@twin.jikos.cz>
+Received: from mgwkm02.jp.fujitsu.com ([202.219.69.169]:47267 "EHLO
+	mgwkm02.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752966AbcDTGdj (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 20 Apr 2016 02:33:39 -0400
+Received: from m3050.s.css.fujitsu.com (msm.b.css.fujitsu.com [10.134.21.208])
+	by kw-mxq.gw.nic.fujitsu.com (Postfix) with ESMTP id 5E4DCAC00ED
+	for <linux-btrfs@vger.kernel.org>; Wed, 20 Apr 2016 15:33:32 +0900 (JST)
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+From: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
+Subject: [PATCH] btrfs-progs: prop: remove an unnecessary condition on
+ parse_args
+Message-ID: <57172290.1030005@jp.fujitsu.com>
+Date: Wed, 20 Apr 2016 15:32:48 +0900
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20160314120515.GZ18908@twin.jikos.cz>
+Content-Type: text/plain; charset=iso-2022-jp
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Mar 14, 2016 at 01:05:15PM +0100, David Sterba wrote:
-> On Mon, Mar 14, 2016 at 09:27:22AM +0900, Satoru Takeuchi wrote:
-> > * actual result
-> > 
-> >   =======================================
-> >   # ./btrfs device ready /dev/sdb foo
-> >   #
-> >   =======================================
-> > 
-> > * expecting result
-> > 
-> >   =======================================
-> >   # ./btrfs device ready /dev/sdb foo
-> >   btrfs device ready: too many arguments
-> >   usage: btrfs device ready <device>
-> > 
-> >       Check device to see if it has all of its devices in cache for mounting
-> > 
-> >   #
-> >   =======================================
-> > 
-> > Signed-off-by: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
-> > ---
-> >  cmds-device.c | 2 +-
-> >  1 file changed, 1 insertion(+), 1 deletion(-)
-> > 
-> > diff --git a/cmds-device.c b/cmds-device.c
-> > index 33da2ce..23656c3 100644
-> > --- a/cmds-device.c
-> > +++ b/cmds-device.c
-> > @@ -326,7 +326,7 @@ static int cmd_device_ready(int argc, char **argv)
-> > 
-> >  	clean_args_no_options(argc, argv, cmd_device_ready_usage);
-> > 
-> > -	if (check_argc_min(argc - optind, 1))
-> > +	if (check_argc_exact(argc - optind, 1))
-> 
-> This silently changes the semantics, so far it accepts multiple values
-> though it contradicts the documentation. I'm not yet sure how to resolve
-> that.
+>From commit c742debab11f ('btrfs-progs: fix a regression that
+"property" with -t option doesn't work'), the number of arguments
+is checked strictly. So the following condition never be
+satisfied.
 
-More than one argument did not work before, so I think it's ok to expect
-just one device. Applied.
+Signed-off-by: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
+---
+ cmds-property.c | 5 -----
+ 1 file changed, 5 deletions(-)
+
+diff --git a/cmds-property.c b/cmds-property.c
+index eed5f4a..48a8945 100644
+--- a/cmds-property.c
++++ b/cmds-property.c
+@@ -352,11 +352,6 @@ static void parse_args(int argc, char **argv,
+ 	if (value && optind < argc)
+ 		*value = argv[optind++];
+
+-	if (optind != argc) {
+-		error("unexpected agruments found");
+-		usage(usage_str);
+-	}
+-
+ 	if (!*types && object && *object) {
+ 		ret = autodetect_object_types(*object, types);
+ 		if (ret < 0) {
+-- 
+2.5.5

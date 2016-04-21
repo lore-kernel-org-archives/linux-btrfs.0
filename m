@@ -1,191 +1,185 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from corp-mailer.zoner.com ([217.198.120.77]:39910 "EHLO
-	corp-mailer.zoner.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751654AbcDUNBs (ORCPT
+Received: from mail-wm0-f53.google.com ([74.125.82.53]:34695 "EHLO
+	mail-wm0-f53.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752189AbcDUOnH (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 21 Apr 2016 09:01:48 -0400
-Received: from imap33.zoner.com (imap33.zoner.com [217.198.123.6])
-	(using TLSv1.2 with cipher AECDH-AES256-SHA (256/256 bits))
-	(No client certificate requested)
-	by corp-mailer.zoner.com (Postfix) with ESMTPS id A975D1E850
-	for <linux-btrfs@vger.kernel.org>; Thu, 21 Apr 2016 14:53:42 +0200 (CEST)
-Received: from [10.1.0.143] (gw-sady.zoner.com [217.198.112.101])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
-	(No client certificate requested)
-	(Authenticated sender: martin.svec@zoner.com)
-	by imap33.zoner.com (Postfix) with ESMTPSA id A3F89180059F06
-	for <linux-btrfs@vger.kernel.org>; Thu, 21 Apr 2016 14:53:42 +0200 (CEST)
-From: Martin Svec <martin.svec@zoner.cz>
-Subject: btrfs forced readonly + errno=-28 No space left
-To: linux-btrfs@vger.kernel.org
-Message-ID: <022276ed-577c-5616-abc0-3e1a7644f31e@zoner.cz>
-Date: Thu, 21 Apr 2016 14:53:40 +0200
-MIME-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-2
+	Thu, 21 Apr 2016 10:43:07 -0400
+Received: by mail-wm0-f53.google.com with SMTP id l6so4133176wml.1
+        for <linux-btrfs@vger.kernel.org>; Thu, 21 Apr 2016 07:43:05 -0700 (PDT)
+Message-ID: <1461249744.2125.5.camel@evolution>
+Subject: Re: "/tmp/mnt.", and not honouring compression
+From: Chris Murray <chrismurray84@gmail.com>
+To: Duncan <1i5t5.duncan@cox.net>
+Cc: linux-btrfs@vger.kernel.org
+Date: Thu, 21 Apr 2016 15:42:24 +0100
+In-Reply-To: <pan$49c11$be713ac2$a42c91f6$7e8f8b0d@cox.net>
+References: <E30C9D57EC226049B1226989BABB2728418CE4@elephant.myhome.local>
+	 <pan$49c11$be713ac2$a42c91f6$7e8f8b0d@cox.net>
+Content-Type: text/plain; charset="UTF-8"
+Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
+On Thu, 2016-03-31 at 23:43 +0100, Duncan wrote:
+> Chris Murray posted on Thu, 31 Mar 2016 21:49:29 +0100 as excerpted:
+> 
+> > I'm using Proxmox, based on Debian. Kernel version 4.2.8-1-pve.
+> Btrfs
+> > v3.17.
+> 
+> The problem itself is beyond my level, but aiming for the obvious low-
+> hanging fruit...
+> 
+> On this list, which is forward looking as btrfs remains stabilizing,
+> not
+> yet fully stable and mature, kernel support comes in four tracks,
+> mainstream and btrfs development trees, mainstream current, mainstream
+> lts, and everything else.
+> 
+> Mainstream and btrfs development trees should be obvious.  It covers
+> mainstream current git and rc kernels as well as btrfs-integration and
+> linux-next.  Generally only recommended for bleeding edge testers
+> willing
+> to lose what they're testing.
+> 
+> Mainstream current follows mainstream latest releases, with generally
+> the
+> latest two kernel series being best supported.  With 4.5 out, that's
+> 4.5
+> and 4.4.
+> 
+> Mainstream LTS follows mainstream LTS series, and until recently,
+> again
+> the latest two were best supported.  That's the 4.4 and 4.1 LTS
+> series. 
+> However, as btrfs has matured, the previous LTS series, 3.18, hasn't
+> turned out so bad and remains reasonably well supported as well, tho
+> depending on the issue, you may still be asked to upgrade and see if
+> it's
+> still there in 4.1 or 4.4.
+> 
+> Then there's "everything else", which is where a 4.2 kernel such as
+> you're running comes in.  These kernels are either long ago history
+> (pre-3.18 LTS, for instance) in btrfs terms, or out of their
+> mainstream
+> kernel support windows, which is where 4.2 is.  While we recognize
+> that
+> various distros claiming btrfs support may still be using these
+> kernels,
+> because we're mainline focused we don't track what patches they may or
+> may not have backported, and thus aren't in a particularly good
+> position
+> to support them.  If you're relying on your distro's support in such a
+> case, that's where you need to look, as they know what they've
+> backported
+> and what they haven't and are thus in a far better position to provide
+> support.
+> 
+> As for the list, we still do the best we can with these "everything
+> else"
+> kernels, but unless it's a known problem recognized on-sight, that's
+> most
+> often simply to recommend upgrading to something that's better
+> supported
+> and trying to duplicate the problem there.
+> 
+> Meanwhile, for long-term enterprise level stability, btrfs isn't
+> likely
+> to be a good choice in any case, as it really is still stabilizing and
+> the expectation is that people running it will be upgrading to get the
+> newer patches.  If that's not feasible, as it may not be for the
+> enterprise-stability-level use-case, then it's very likely that btrfs
+> isn't a good match for the use-case anyway, as it's simply not to that
+> level of stability yet.  A more mature filesystem such as ext4, ext3,
+> the
+> old reiserfs which I still use on some spinning rust here (all my
+> btrfs
+> are on ssd), xfs, etc, is very likely to be a more appropriate choice
+> for
+> that use-case.
+> 
+> For kernel 4.2, that leaves you with a few choices:
+> 
+> 1) Ask your distro for btrfs support if they offer it on the out-of-
+> mainline-support kernels which they've obviously chosen to use instead
+> of
+> the LTS series that /are/ still mainline supported.
+> 
+> 2) Upgrade to the supported 4.4 LTS kernel series.
+> 
+> 3) Downgrade to the older supported 4.1 LTS kernel series.
+> 
+> 4) Decide btrfs is inappropriate for your use-case and switch to a
+> fully
+> stable and mature filesystem.
+> 
+> 5) Continue with 4.2 and muddle thru, using our "best effort" help
+> where
+> you can and doing without or getting it elsewhere if the opportunity
+> presents itself or you have money to buy it from a qualified provider.
+> 
+> 
+> Personally I'd choose option 2, upgrading to 4.4, but that's just me. 
+> The other choices may work better for you.
+> 
+> 
+> As for btrfs-progs userspace, when the filesystem is working it's not
+> as
+> critical, since other than filesystem creation with mkfs.btrfs, most
+> operational commands simply invoke kernel code to do the real work. 
+> However, once problems appear, a newer version can be critical as
+> patches
+> to deal with newly discovered problems continue to be added to tools
+> such
+> as btrfs check (for detecting and repairing problems) and btrfs
+> restore
+> (for recovery of files off an unmountable filesystem).  And newer
+> userspace is designed to work with older kernels, so newer isn't a
+> problem in that regard.
+> 
+> As a result, to keep userspace from getting /too/ far behind and
+> because
+> userspace release version numbers are synced with kernel version, a
+> good
+> rule of thumb is to run a userspace version similar to that of your
+> kernel, or newer.  Assuming you're already following the current or
+> LTS
+> track kernel recommendations, that will keep you reasonably current,
+> and
+> you can always upgrade to the newest available if you're trying to fix
+> otherwise unfixable problems.
+> 
+> Unfortunately your userspace falls well outside that recommendation as
+> well, with 3.17 userspace being before the earliest supported 3.18 LTS
+> kernel, let alone comparable to your current 4.2 kernel or the 4.4 LTS
+> upgrade or 4.1 LTS downgrade that would be recommended on the LTS
+> track,
+> or 4.4 or 4.5 on the current track.
+> 
+> --
+> Duncan - List replies preferred.   No HTML msgs.
+> "Every nonfree program has a lord, a master --
+> and if you use the program, he is your master."  Richard Stallman
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs"
+> in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
+Duncan, many thanks for that comprehensive response.
 
-we use btrfs subvolumes for rsync-based backups. During backups btrfs often fails with "No space
-left" error and goes to readonly mode (dmesg output is below) while there's still plenty of
-unallocated space:
+I was hoping for an "ah-ha, I've seen that!" from someone, but can now
+see the position I'm in and the options available. I see there's
+probably little to be gained in trying to support my ageing kernel and
+btrfs-progs, so I'm happy to leave it at that and not waste anyone's
+time.
 
-$ btrfs fi df /backup
-Data, single: total=15.75TiB, used=15.72TiB
-System, DUP: total=8.00MiB, used=1.91MiB
-Metadata, DUP: total=148.00GiB, used=146.20GiB
-GlobalReserve, single: total=512.00MiB, used=0.00B
+My workaround for now is to reweight CEPH OSDs to cater for the
+'missing' compression on these "/tmp/mnt." mounts - some disks will be
+compressed, and some won't, but overall there are at least *some*
+savings.
 
-$ btrfs fi show /dev/md2
-Label: none  uuid: 32892e65-f78d-45a3-a7c4-980fedc14e63
-        Total devices 1 FS bytes used 15.86TiB
-        devid    1 size 21.83TiB used 16.03TiB path /dev/md2
-
-$ btrfs file usage /backup
-Overall:
-    Device size:                  21.83TiB
-    Device allocated:             16.02TiB
-    Device unallocated:            5.81TiB
-    Device missing:                  0.00B
-    Used:                         15.94TiB
-    Free (estimated):              5.89TiB      (min: 2.98TiB)
-    Data ratio:                       1.00
-    Metadata ratio:                   2.00
-    Global reserve:              512.00MiB      (used: 296.64MiB)
-Data,single: Size:15.73TiB, Used:15.65TiB
-   /dev/md2       15.73TiB
-Metadata,DUP: Size:148.00GiB, Used:146.07GiB
-   /dev/md2      296.00GiB
-System,DUP: Size:8.00MiB, Used:1.91MiB
-   /dev/md2       16.00MiB
-Unallocated:
-   /dev/md2        5.81TiB
-
-It usually helps to rebalance 100% of metadata but the error reappears again after few days or
-weeks. I also tried "btrfs check --repair" but it requires approx. 45 GB of RAM/swap and crashes
-after several days of swapping.
-
-Btrfs runs on top of a single MD RAID1 device and is mounted with the following options:
-
-$ cat /proc/mounts
-/dev/md2 /backup btrfs
-rw,noatime,compress=lzo,space_cache,clear_cache,enospc_debug,subvolid=5,subvol=/ 0 0
-
-Kernel version: 4.3.0-0.bpo.1-amd64 #1 SMP Debian 4.3.3-7~bpo8+1 (2016-01-19) x86_64 GNU/Linux
-(jessie-backports)
-
-[2151517.510044] BTRFS info (device md2): disk space caching is enabled
-[2151517.510047] BTRFS: has skinny extents
-[2266753.904426] use_block_rsv: 307 callbacks suppressed
-[2266753.904430] ------------[ cut here ]------------
-[2266753.904453] WARNING: CPU: 7 PID: 17513 at
-/build/linux-kTc2b3/linux-4.3.3/fs/btrfs/extent-tree.c:7637 btrfs_alloc_tree_block+0x107/0x480 [btrfs]()
-[2266753.904481] BTRFS: block rsv returned -28
-[2266753.904483] Modules linked in: binfmt_misc xt_comment xt_tcpudp nf_conntrack_ipv6
-nf_defrag_ipv6 iptable_filter xt_conntrack iptable_raw iptable_nat nf_conntrack_ipv4 nf_defrag_ipv4
-nf_nat_ipv4 nf_nat nf_conntrack ip6table_filter ip6table_mangle ip6table_raw iptable_mangle
-ip6_tables ip_tables x_tables nfsd auth_rpcgss oid_registry nfs_acl nfs lockd grace fscache sunrpc
-intel_powerc lamp coretemp kvm_intel kvm crct10dif_pclmul crc32_pclmul iTCO_wdt iTCO_vendor_support
-sha256_ssse3 sha256_generic hmac drbg ansi_cprng aesni_intel aes_x86_64 lrw gf128mul glue_helper
-ablk_helper cryptd ast ttm drm_kms_helper drm i2c_ismt i2c_i801 joydev evdev tpm_tis ipmi_si tpm
-serio_raw acpi_cpufreq ipmi_msghandler 8250_fintek lpc_ich mfd_core shpchp pcspkr processor button
-autofs4 xfs libcrc32c btrfs xor raid6_pq dm_mod
-[2266753.904552]  raid10 raid1 hid_generic usbhid hid md_mod sg sd_mod ahci libahci crc32c_intel
-ehci_pci mpt2sas ehci_hcd raid_class libata scsi_transport_sas igb i2c_algo_bit usbcore dca ptp
-usb_common scsi_mod pps_core
-[2266753.904574] CPU: 7 PID: 17513 Comm: kworker/u16:10 Tainted: G        W      
-4.3.0-0.bpo.1-amd64 #1 Debian 4.3.3-7~bpo8+1
-[2266753.904576] Hardware name: Supermicro SSG-5018A-AR12L/A1SA7, BIOS 1.0a 07/09/2014
-[2266753.904597] Workqueue: btrfs-extent-refs btrfs_extent_refs_helper [btrfs]
-[2266753.904600]  0000000000000000 00000000071448ef ffffffff812e1889 ffff880003637868
-[2266753.904604]  ffffffff81074451 ffff880265c3e000 ffff8800036378c0 0000000000004000
-[2266753.904608]  ffff880339498970 0000000000000001 ffffffff810744dc ffffffffa0341c18
-[2266753.904612] Call Trace:
-[2266753.904620]  [<ffffffff812e1889>] ? dump_stack+0x40/0x57
-[2266753.904625]  [<ffffffff81074451>] ? warn_slowpath_common+0x81/0xb0
-[2266753.904629]  [<ffffffff810744dc>] ? warn_slowpath_fmt+0x5c/0x80
-[2266753.904643]  [<ffffffffa02b06d7>] ? btrfs_alloc_tree_block+0x107/0x480 [btrfs]
-[2266753.904649]  [<ffffffff8101472c>] ? __switch_to+0x25c/0x590
-[2266753.904662]  [<ffffffffa0298645>] ? __btrfs_cow_block+0x145/0x5e0 [btrfs]
-[2266753.904674]  [<ffffffffa0298c6f>] ? btrfs_cow_block+0x10f/0x1b0 [btrfs]
-[2266753.904687]  [<ffffffffa029c86d>] ? btrfs_search_slot+0x1fd/0xa30 [btrfs]
-[2266753.904705]  [<ffffffffa02deefd>] ? insert_state+0xbd/0x130 [btrfs]
-[2266753.904718]  [<ffffffffa02a2f5e>] ? lookup_inline_extent_backref+0xee/0x650 [btrfs]
-[2266753.904723]  [<ffffffff8116b801>] ? __set_page_dirty_nobuffers+0xe1/0x140
-[2266753.904728]  [<ffffffff811b76dc>] ? kmem_cache_alloc+0x21c/0x440
-[2266753.904741]  [<ffffffffa02a5bcd>] ? __btrfs_free_extent.isra.66+0x11d/0xd60 [btrfs]
-[2266753.904754]  [<ffffffffa02a5887>] ? update_block_group.isra.65+0x127/0x350 [btrfs]
-[2266753.904773]  [<ffffffffa030bde6>] ? btrfs_merge_delayed_refs+0x66/0x5e0 [btrfs]
-[2266753.904787]  [<ffffffffa02a9e31>] ? __btrfs_run_delayed_refs+0x8b1/0x1080 [btrfs]
-[2266753.904801]  [<ffffffffa02ad2c8>] ? btrfs_run_delayed_refs+0x78/0x2b0 [btrfs]
-[2266753.904815]  [<ffffffffa02ad532>] ? delayed_ref_async_start+0x32/0x80 [btrfs]
-[2266753.904833]  [<ffffffffa02f288c>] ? normal_work_helper+0xbc/0x240 [btrfs]
-[2266753.904837]  [<ffffffff8108c53a>] ? process_one_work+0x14a/0x3d0
-[2266753.904841]  [<ffffffff8108cf75>] ? worker_thread+0x65/0x460
-[2266753.904844]  [<ffffffff8108cf10>] ? rescuer_thread+0x310/0x310
-[2266753.904847]  [<ffffffff8109222f>] ? kthread+0xdf/0x100
-[2266753.904851]  [<ffffffff81092150>] ? kthread_park+0x50/0x50
-[2266753.904856]  [<ffffffff8158a79f>] ? ret_from_fork+0x3f/0x70
-[2266753.904860]  [<ffffffff81092150>] ? kthread_park+0x50/0x50
-[2266753.904862] ---[ end trace 42f58946d98c8b1f ]---
-[2266753.904870] ------------[ cut here ]------------
-[2266753.904884] WARNING: CPU: 7 PID: 17513 at
-/build/linux-kTc2b3/linux-4.3.3/fs/btrfs/extent-tree.c:6362 __btrfs_free_extent.isra.66+0x15b/0xd60
-[btrfs]()
-[2266753.904886] BTRFS: Transaction aborted (error -28)
-[2266753.904888] Modules linked in: binfmt_misc
-[2266753.904894] BTRFS: error (device md2) in __btrfs_free_extent:6362: errno=-28 No space left
-[2266753.904898] BTRFS info (device md2): forced readonly
-[2266753.904900] BTRFS: error (device md2) in btrfs_run_delayed_refs:2858: errno=-28 No space left
-[2266753.905033]  xt_comment xt_tcpudp nf_conntrack_ipv6 nf_defrag_ipv6 iptable_filter xt_conntrack
-iptable_raw iptable_nat nf_conntrack_ipv4 nf_defrag_ipv4 nf_nat_ipv4 nf_nat nf_conntrack
-ip6table_filter ip6table_mangle ip6table_raw iptable_mangle ip6_tables ip_tables x_tables nfsd
-auth_rpcgss oid_registry nfs_acl nfs lockd grace fscache sunrpc intel_powerclamp coretemp kvm_intel
-kvm cr ct10dif_pclmul crc32_pclmul iTCO_wdt iTCO_vendor_support sha256_ssse3 sha256_generic hmac
-drbg ansi_cprng aesni_intel aes_x86_64 lrw gf128mul glue_helper ablk_helper cryptd ast ttm
-drm_kms_helper drm i2c_ismt i2c_i801 joydev evdev tpm_tis ipmi_si tpm serio_raw acpi_cpufreq
-ipmi_msghandler 8250_fintek lpc_ich mfd_core shpchp pcspkr processor button autofs4 xfs libcrc32c
-btrfs xor raid6_pq dm_mod raid10 raid1 hid_generic
-[2266753.905083]  usbhid hid md_mod sg sd_mod ahci libahci crc32c_intel ehci_pci mpt2sas ehci_hcd
-raid_class libata scsi_transport_sas igb i2c_algo_bit usbcore dca ptp usb_common scsi_mod pps_core
-[2266753.905098] CPU: 7 PID: 17513 Comm: kworker/u16:10 Tainted: G        W      
-4.3.0-0.bpo.1-amd64 #1 Debian 4.3.3-7~bpo8+1
-[2266753.905101] Hardware name: Supermicro SSG-5018A-AR12L/A1SA7, BIOS 1.0a 07/09/2014
-[2266753.905119] Workqueue: btrfs-extent-refs btrfs_extent_refs_helper [btrfs]
-[2266753.905121]  0000000000000000 00000000071448ef ffffffff812e1889 ffff880003637b20
-[2266753.905125]  ffffffff81074451 00000eed78f28000 ffff880003637b78 ffff880265c3e000
-[2266753.905129]  ffff880468aa2000 0000000000000000 ffffffff810744dc ffffffffa03417e8
-[2266753.905133] Call Trace:
-[2266753.905137]  [<ffffffff812e1889>] ? dump_stack+0x40/0x57
-[2266753.905140]  [<ffffffff81074451>] ? warn_slowpath_common+0x81/0xb0
-[2266753.905144]  [<ffffffff810744dc>] ? warn_slowpath_fmt+0x5c/0x80
-[2266753.905158]  [<ffffffffa02a5c0b>] ? __btrfs_free_extent.isra.66+0x15b/0xd60 [btrfs]
-[2266753.905171]  [<ffffffffa02a5887>] ? update_block_group.isra.65+0x127/0x350 [btrfs]
-[2266753.905189]  [<ffffffffa030bde6>] ? btrfs_merge_delayed_refs+0x66/0x5e0 [btrfs]
-[2266753.905203]  [<ffffffffa02a9e31>] ? __btrfs_run_delayed_refs+0x8b1/0x1080 [btrfs]
-[2266753.905217]  [<ffffffffa02ad2c8>] ? btrfs_run_delayed_refs+0x78/0x2b0 [btrfs]
-[2266753.905231]  [<ffffffffa02ad532>] ? delayed_ref_async_start+0x32/0x80 [btrfs]
-[2266753.905249]  [<ffffffffa02f288c>] ? normal_work_helper+0xbc/0x240 [btrfs]
-[2266753.905253]  [<ffffffff8108c53a>] ? process_one_work+0x14a/0x3d0
-[2266753.905256]  [<ffffffff8108cf75>] ? worker_thread+0x65/0x460
-[2266753.905259]  [<ffffffff8108cf10>] ? rescuer_thread+0x310/0x310
-[2266753.905263]  [<ffffffff8109222f>] ? kthread+0xdf/0x100
-[2266753.905266]  [<ffffffff81092150>] ? kthread_park+0x50/0x50
-[2266753.905270]  [<ffffffff8158a79f>] ? ret_from_fork+0x3f/0x70
-[2266753.905273]  [<ffffffff81092150>] ? kthread_park+0x50/0x50
-[2266753.905276] ---[ end trace 42f58946d98c8b20 ]---
-[2266753.905280] BTRFS: error (device md2) in __btrfs_free_extent:6362: errno=-28 No space left
-[2266753.905348] BTRFS: error (device md2) in btrfs_run_delayed_refs:2858: errno=-28 No space left
-[2266766.878029] pending csums is 786432
-
-The same or similar error seems to be reported multiple times:
-https://www.mail-archive.com/linux-btrfs%40vger.kernel.org/msg48061.html
-https://www.mail-archive.com/linux-btrfs%40vger.kernel.org/msg47355.html
-
-
-Best regards
-
-Martin Svec
-
+Thanks again,
+Chris
 

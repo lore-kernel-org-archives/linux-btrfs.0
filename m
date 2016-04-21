@@ -1,77 +1,136 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from arcturus.aphlor.org ([188.246.204.175]:46034 "EHLO
-	arcturus.aphlor.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751325AbcDTWJT (ORCPT
+Received: from userp1040.oracle.com ([156.151.31.81]:47855 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751407AbcDUDpc (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 20 Apr 2016 18:09:19 -0400
-Date: Wed, 20 Apr 2016 18:09:11 -0400
-From: Dave Jones <davej@codemonkey.org.uk>
-To: Linux Kernel <linux-kernel@vger.kernel.org>, Chris Mason <clm@fb.com>,
-        Josef Bacik <jbacik@fb.com>, David Sterba <dsterba@suse.com>,
-        linux-btrfs@vger.kernel.org
-Subject: BTRFS: assertion failed: num_extents, file: fs/btrfs/extent-tree.c,
- line: 5584
-Message-ID: <20160420220911.GA10235@codemonkey.org.uk>
+	Wed, 20 Apr 2016 23:45:32 -0400
+Date: Wed, 20 Apr 2016 20:45:24 -0700
+From: Liu Bo <bo.li.liu@oracle.com>
+To: Dmitry Katsubo <dmitry.katsubo@gmail.com>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: Kernel crash if both devices in raid1 are failing
+Message-ID: <20160421034524.GA26182@localhost.localdomain>
+Reply-To: bo.li.liu@oracle.com
+References: <570FFDFE.3050305@gmail.com>
+ <571419C7.6070709@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <571419C7.6070709@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Don't think I've reported this one before. It's on the same box I've been
-seeing the btrfs_destroy_inode WARN_ON's on though.
+On Mon, Apr 18, 2016 at 01:18:31AM +0200, Dmitry Katsubo wrote:
+> On 2016-04-14 22:30, Dmitry Katsubo wrote:
+> > Dear btrfs community,
+> > 
+> > I have the following setup:
+> > 
+> > # btrfs fi show /home
+> > Label: none  uuid: 865f8cf9-27be-41a0-85a4-6cb4d1658ce3
+> > 	Total devices 3 FS bytes used 55.68GiB
+> > 	devid    1 size 52.91GiB used 0.00B path /dev/sdd2
+> > 	devid    2 size 232.89GiB used 59.03GiB path /dev/sda
+> > 	devid    3 size 111.79GiB used 59.03GiB path /dev/sdc1
+> > 
+> > btrfs volume was created in raid1 mode both for data and metadata and mounted
+> > with compress=lzo option.
+> > 
+> > Unfortunately, two drives (sda and sdc1) started to fail at the same time. This
+> > leads to system crash if I start the system in runlevel 3 (see crash1.log).
+> > 
+> > After I have started the system in single mode, volume can be mounted in rw
+> > mode and I can write some data into it. Unfortunately when I tried to read
+> > a certain file, the system crashed (see crash2.log).
+> > 
+> > I have started scrub on the volume and here is the report:
+> > 
+> > # btrfs scrub status /home
+> > scrub status for 865f8cf9-27be-41a0-85a4-6cb4d1658ce3
+> > 	scrub started at Tue Apr 12 20:39:20 2016 and finished after 02:40:09
+> > 	total bytes scrubbed: 55.68GiB with 1767 errors
+> > 	error details: verify=175 csum=1592
+> > 	corrected errors: 1110, uncorrectable errors: 657, unverified errors: 0
+> > 
+> > Obviously, some data is lost. However due to above crash, I cannot just copy
+> > the data from the volume. I would assume that I still can access the data, but
+> > the files for which data is lost, should result I/O error (I would then recover
+> > them from my backup).
+> > 
+> > I have decided to attach another drive and remove failing devices one-by-one.
+> > However that does not work:
+> > 
+> > # btrfs dev delete /dev/sda /home
+> > [  168.680057] ata3.00: exception Emask 0x0 SAct 0x0 SErr 0x0 action 0x0
+> > [  168.684236] ata3.00: BMDMA stat 0x25
+> > [  168.688464] ata3.00: failed command: READ DMA
+> > [  168.692681] ata3.00: cmd c8/00:08:68:4b:84/00:00:00:00:00/e7 tag 0 dma 4096 in
+> > [  168.692681]          res 51/40:08:68:4b:84/40:08:07:00:00/e7 Emask 0x9 (media error)
+> > [  168.701281] ata3.00: status: { DRDY ERR }
+> > [  168.705600] ata3.00: error: { UNC }
+> > [  168.724446] blk_update_request: I/O error, dev sda, sector 126110568
+> > [  168.728860] BTRFS error (device sdc1): bdev /dev/sda errs: wr 0, rd 43, flush 0, corrupt 0, gen 0
+> > [  172.824043] ata3.00: exception Emask 0x0 SAct 0x0 SErr 0x0 action 0x0
+> > [  172.828651] ata3.00: BMDMA stat 0x25
+> > [  172.833281] ata3.00: failed command: READ DMA
+> > [  172.837876] ata3.00: cmd c8/00:08:50:4b:84/00:00:00:00:00/e7 tag 0 dma 4096 in
+> > [  172.837876]          res 51/40:08:50:4b:84/40:08:07:00:00/e7 Emask 0x9 (media error)
+> > [  172.847296] ata3.00: status: { DRDY ERR }
+> > [  172.852054] ata3.00: error: { UNC }
+> > [  172.872404] blk_update_request: I/O error, dev sda, sector 126110544
+> > [  172.877241] BTRFS error (device sdc1): bdev /dev/sda errs: wr 0, rd 44, flush 0, corrupt 0, gen 0
+> > ERROR: error removing device '/dev/sda': Input/output error
+> > 
+> > The same happens when I try to delete /dev/sdc1 from the volume. Is there any
+> > btrfs "force" option so that btrfs balances only chunks that are accessible? I
+> > can potentially physically disconnect /dev/sda, but the loss will be greater
+> > I believe.
+> > 
+> > How can I proceed except btrfs restore?
+> > 
+> > During scrub operation the following was recorded in the logs:
+> > 
+> > [Tue Apr 12 23:10:20 2016] BTRFS warning (device sdc1): checksum error at logical 126952947712 on dev /dev/sdc1, sector 126150176, root 258, inode 879324, offset 308256768, length 4096, links 1 (path: lib/mysql/ibdata1)
+> > 
+> > If I collect all the messages like this, will it give a full picture of damaged files?
+> > 
+> > Many thanks in advance.
+> > 
+> > P.S. Linux kernel v4.4.2, btrfs-progs v4.4.
+> 
+> I have decided to try "btrfs restore". Actually I have discovered two usability
+> points about it:
+> 
+> 1. I cannot run this utility as following:
+> 
+> btrfs -i restore /dev/sda /mnt/usb &> log
+> 
+> because this command is interactive and may read something from the terminal.
+> It would be nice if there is a flag -y (answer "yes" to all questions) so that
+> no input is required from user. The example of the question is:
+> 
+> We seem to be looping a lot on ..., do you want to keep going on? [y/N/a]
+> 
+> In general this question puzzles me. What does it mean? As far as I understood
+> it prevents btrfs restore from looping forever. Should I consider those files
+> as lost? I have also hit the same problem as discussed in [1]: answer
+> "a" (always) still causes the questions to be asked.
+> 
+> 2. btrfs restore does not print a final statistics: how many files are
+> successfully restored, and how many have failed.
 
-	Dave
+Thanks for trying 'restore', but I was wondering, does btrfsck work for you?
 
-BTRFS: assertion failed: num_extents, file: fs/btrfs/extent-tree.c, line: 5584
-------------[ cut here ]------------
-kernel BUG at fs/btrfs/ctree.h:4320!
-invalid opcode: 0000 [#1] SMP DEBUG_PAGEALLOC KASAN
-CPU: 1 PID: 9320 Comm: trinity-c21 Not tainted 4.6.0-rc4-think+ #5
-task: ffff880453bdb7c0 ti: ffff880458930000 task.ti: ffff880458930000
-RIP: 0010:[<ffffffffc0429078>]  [<ffffffffc0429078>] assfail.constprop.88+0x1c/0x1e [btrfs]
-RSP: 0000:ffff880458937860  EFLAGS: 00010282
-RAX: 000000000000004e RBX: 0000000000000000 RCX: 0000000000000000
-RDX: 0000000000000000 RSI: 0000000000000001 RDI: ffffed008b126f02
-RBP: ffff880458937860 R08: 0000000000000001 R09: 0000000000000001
-R10: 0000000000000003 R11: 0000000000000001 R12: ffff88045ef14548
-R13: ffff88045066e048 R14: ffff88045066dc58 R15: 000000000000008f
-FS:  00007f6465c7b700(0000) GS:ffff880468800000(0000) knlGS:0000000000000000
-CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
-CR2: 00007f6465c81000 CR3: 0000000454e05000 CR4: 00000000001406e0
-Stack:
- ffff8804589378a0 ffffffffc02407f3 000000000000008f 0000000000000000
- ffff88045ef14548 ffff88045066e048 ffff88045066dc58 000000000000008f
- ffff8804589378f0 ffffffffc0253a3c ffff880453bdc048 ffff880453bdb7c0
-Call Trace:
- [<ffffffffc02407f3>] drop_outstanding_extent+0x153/0x1a0 [btrfs]
- [<ffffffffc0253a3c>] btrfs_delalloc_release_metadata+0x9c/0x5d0 [btrfs]
- [<ffffffffc0253f8f>] btrfs_delalloc_release_space+0x1f/0x50 [btrfs]
- [<ffffffffc02de9f5>] __btrfs_buffered_write+0xb05/0xea0 [btrfs]
- [<ffffffffc02ddef0>] ? btrfs_dirty_pages+0x2d0/0x2d0 [btrfs]
- [<ffffffff931bfdbc>] ? local_clock+0x1c/0x20
- [<ffffffff931bfdbc>] ? local_clock+0x1c/0x20
- [<ffffffff9325eb17>] ? debug_lockdep_rcu_enabled+0x77/0x90
- [<ffffffffc02e8297>] ? btrfs_file_write_iter+0xa07/0x1570 [btrfs]
- [<ffffffffc02e7ec1>] btrfs_file_write_iter+0x631/0x1570 [btrfs]
- [<ffffffff934c3826>] ? __might_fault+0x166/0x1b0
- [<ffffffff934c378b>] ? __might_fault+0xcb/0x1b0
- [<ffffffff935641c4>] do_iter_readv_writev+0x134/0x230
- [<ffffffff93564090>] ? vfs_iter_read+0x260/0x260
- [<ffffffff93268418>] ? rcu_sync_lockdep_assert+0x78/0xb0
- [<ffffffff9321841c>] ? percpu_down_read+0x5c/0xa0
- [<ffffffff9356e9a4>] ? __sb_start_write+0xb4/0xf0
- [<ffffffff93566d1c>] do_readv_writev+0x39c/0x6a0
- [<ffffffffc02e7890>] ? btrfs_sync_file+0xd00/0xd00 [btrfs]
- [<ffffffff93566980>] ? vfs_write+0x4a0/0x4a0
- [<ffffffff931bfdbc>] ? local_clock+0x1c/0x20
- [<ffffffff93437e12>] ? __context_tracking_exit.part.6+0x52/0x220
- [<ffffffff930052c0>] ? enter_from_user_mode+0x50/0x50
- [<ffffffff935675d5>] vfs_writev+0x75/0xb0
- [<ffffffff93567a5a>] do_pwritev+0x12a/0x170
- [<ffffffff9356aea0>] ? SyS_pwritev+0x20/0x20
- [<ffffffff9356aeb7>] SyS_pwritev2+0x17/0x30
- [<ffffffff9300627b>] do_syscall_64+0x19b/0x4a0
- [<ffffffff9300301b>] ? trace_hardirqs_on_thunk+0x1b/0x1d
- [<ffffffff9496039a>] entry_SYSCALL64_slow_path+0x25/0x25
-Code: d3 0f 0b 55 48 89 e5 0f 0b 55 48 89 e5 0f 0b 55 89 f1 48 c7 c2 e0 c0 43 c0 48 89 fe 48 89 e5 48 c7 c7 20 c4 43 c0 e8 92 06 01 d3 <0f> 0b 55 48 89 e5 41 57 41 56 41 55 41 54 53 48 83 ec 18 48 89 
+Thanks,
 
+-liubo
+
+> 
+> [1] https://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg36458.html
+> 
+> -- 
+> With best regards,
+> Dmitry
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

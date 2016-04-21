@@ -1,60 +1,130 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:58871 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751282AbcDUFWx (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 21 Apr 2016 01:22:53 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1at74j-0006yP-OL
-	for linux-btrfs@vger.kernel.org; Thu, 21 Apr 2016 07:22:49 +0200
-Received: from p50908ea2.dip0.t-ipconnect.de ([80.144.142.162])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 21 Apr 2016 07:22:49 +0200
-Received: from matthias by p50908ea2.dip0.t-ipconnect.de with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 21 Apr 2016 07:22:49 +0200
-To: linux-btrfs@vger.kernel.org
-From: Matthias Bodenbinder <matthias@bodenbinder.de>
-Subject: Re: Question: raid1 behaviour on failure
-Date: Thu, 21 Apr 2016 07:22:42 +0200
-Message-ID: <nf9o32$7r4$1@ger.gmane.org>
-References: <nf1q0j$ug4$1@ger.gmane.org> <57148B2E.6010904@cn.fujitsu.com>
- <nf73cv$7vh$1@ger.gmane.org>
- <9ade4472-c99d-82a8-27c9-704b75bd87ab@cn.fujitsu.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-In-Reply-To: <9ade4472-c99d-82a8-27c9-704b75bd87ab@cn.fujitsu.com>
+Received: from aserp1040.oracle.com ([141.146.126.69]:41463 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751282AbcDUF1T (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 21 Apr 2016 01:27:19 -0400
+Date: Wed, 20 Apr 2016 22:27:06 -0700
+From: Liu Bo <bo.li.liu@oracle.com>
+To: lenovomi <lenovomi@gmail.com>
+Cc: Chris Murphy <lists@colorremedies.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Subject: Re: KERNEL PANIC + CORRUPTED BTRFS?
+Message-ID: <20160421052706.GB26182@localhost.localdomain>
+Reply-To: bo.li.liu@oracle.com
+References: <CAAcrkYLYu7Gk8_O+vMYp3B2z+yJiktp7AyEc1mONNHtA8kpxUw@mail.gmail.com>
+ <CAJCQCtSagDUoA_tf4tTMMYK3K5bCtmHNSRjc=OLgoLYQpXw0cg@mail.gmail.com>
+ <CAAcrkYK9C41wrXWkw4pgfrpSGgUbZ3amSD1y49_06dPH8oERgw@mail.gmail.com>
+ <CAJCQCtRiTcy3OSA60G=N7LMA3xEpjeqmxv+gNyv7E+HyvG68Mg@mail.gmail.com>
+ <CAAcrkYK=Hd5xvEXp-51JMD1_kMYfsHR9Pt3DRNoq+HTi=eTALg@mail.gmail.com>
+ <CAJCQCtQ1sJKVb2dKfF7E2+OgFQCO2nKM0gZon62xo8058JrwvA@mail.gmail.com>
+ <CAAcrkYJObUr_yUw1emfy2v3eBYLOkY_5VsTdYZ3cCJ7KoxWvTA@mail.gmail.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <CAAcrkYJObUr_yUw1emfy2v3eBYLOkY_5VsTdYZ3cCJ7KoxWvTA@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am 20.04.2016 um 09:25 schrieb Qu Wenruo:
+On Wed, Apr 20, 2016 at 10:09:07PM +0200, lenovomi wrote:
+> Hi Chris,
+> 
+> please find below attached the complete log while executing all the
+> brtrfs commands, all of them failed.
+> 
+> ;-(
+> 
+> 
+> https://bpaste.net/show/4d8877a49b80
+> https://bpaste.net/show/7e2e5aa30741
+> https://bpaste.net/show/482e91b25fc5
+> https://bpaste.net/show/5093cc3daa5a
+> https://bpaste.net/show/a24935eb5a1b
+
+It's not that easy to corrupt both of metadata copies which are located
+in two different drives by an unclean shutdown because we always do COW.
+
+>From what I can tell from the above results, the two copies of raid1
+remain consistent and indentical, but somehow there are some problems in
+checksum field. 
+
+---------------------------------------------------------------------
+root@heap-unreal:/home/heap/btrfs-progs# ./btrfs check --readonly /dev/sda
+checksum verify failed on 17802818387968 found FF45E2D3 wanted BFB02AEC, dev bytenr 2972268003328, devid 2
+checksum verify failed on 17802818387968 found FF45E2D3 wanted BFB02AEC, dev bytenr 2972268003328, devid 2
+checksum verify failed on 17802818387968 found FF45E2D3 wanted BFB02AEC, dev bytenr 2973311336448, devid 1
+checksum verify failed on 17802818387968 found FF45E2D3 wanted BFB02AEC, dev bytenr 2972268003328, devid 2
+---------------------------------------------------------------------
+
+In order to verify that, please follow this and show us what you get.
+
+1. dd if=/dev/sdb of=/tmp/corrupt-dev2.txt bs=1 skip=2972268003327 count=16384
+2. dd if=/dev/sdd of=/tmp/corrupt-dev1.txt bs=1 skip=2973311336447 count=16384
+3. od -x /tmp/corrupt-dev2.txt
+4. od -x /tmp/corrupt-dev1.txt
+
+Thanks,
+
+-liubo
 
 > 
-> Unfortunately, this is the designed behavior.
+> Thanks
 > 
-> The fs is rw just because it doesn't hit any critical problem.
-> 
-> If you try to touch a file and then sync the fs, btrfs will become RO immediately.
-> 
-....
-
-> Btrfs fails to read space cache, nor make a new dir.
-> 
-> The failure on cow_block in mkdir is ciritical, and btrfs become RO.
-> 
-> All expected behavior so far.
-> 
-> You may try use degraded mount option, but AFAIK it may not handle case like yours.
-
-This really scares me. "Expected bevahour"? 
-So you are saying: If one of the drives in the raid1 is going dead without noticing btrfs, the redundancy is lost. 
-
-Lets say, the power unit of a disc is going dead. This disc will disappear from the raid1 pretty much as suddenly as in my test case here. No difference.
-
-You are saying that in this case, btrfs should exactly behave like this? If that is the case I eventually need to rethink my interpretation of redundancy.
-
-Matthias
-
-
-
+> On Tue, Apr 12, 2016 at 9:58 PM, Chris Murphy <lists@colorremedies.com> wrote:
+> > On Tue, Apr 12, 2016 at 9:48 AM, lenovomi <lenovomi@gmail.com> wrote:
+> >
+> >> root@ubuntu:/home/ubuntu# btrfs restore -D -v  /dev/sda /mnt/usb/
+> >> checksum verify failed on 17802818387968 found FF45E2D3 wanted BFB02AEC
+> >> checksum verify failed on 17802818387968 found FF45E2D3 wanted BFB02AEC
+> >> checksum verify failed on 17802818387968 found FF45E2D3 wanted BFB02AEC
+> >> checksum verify failed on 17802818387968 found FF45E2D3 wanted BFB02AEC
+> >> Csum didn't match
+> >> Couldn't read tree root
+> >> Could not open root, trying backup super
+> >> warning, device 2 is missing
+> >> warning devid 2 not found already
+> >> warning devid 3 not found already
+> >> warning devid 4 not found already
+> >> checksum verify failed on 17802818387968 found FF45E2D3 wanted BFB02AEC
+> >> checksum verify failed on 17802818387968 found FF45E2D3 wanted BFB02AEC
+> >> Csum didn't match
+> >> Couldn't read tree root
+> >> Could not open root, trying backup super
+> >> warning, device 2 is missing
+> >> warning devid 2 not found already
+> >> warning devid 3 not found already
+> >> warning devid 4 not found already
+> >> checksum verify failed on 17802818387968 found FF45E2D3 wanted BFB02AEC
+> >> checksum verify failed on 17802818387968 found FF45E2D3 wanted BFB02AEC
+> >> Csum didn't match
+> >> Couldn't read tree root
+> >> Could not open root, trying backup super
+> >>
+> >
+> > Why are devices 2, 3, 4 missing? I think there's a known issue where
+> > btrfs fi show might see drives as available that other tools won't
+> > see. Try 'btrfs dev scan' and then repeat the restore command with -D
+> > just to see if the missing device warnings go away. If devices are
+> > missing, it's kinda hard to do a restore.
+> >
+> >
+> > If these are hard drives, there should be supers 0, 1, 2 and they
+> > should all be the same. But they may not be the same on each drive, so
+> > it's worth checking:
+> >
+> > btrfs-show-super -f <eachdevice>
+> >
+> > And then also btrfs-find-root <anydevice>
+> >
+> >
+> >
+> >
+> > --
+> > Chris Murphy
+> > --
+> > To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> > the body of a message to majordomo@vger.kernel.org
+> > More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

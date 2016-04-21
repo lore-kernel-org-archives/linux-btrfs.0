@@ -1,511 +1,191 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.15.18]:53596 "EHLO mout.gmx.net"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751172AbcDUL6s (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 21 Apr 2016 07:58:48 -0400
-Subject: Re: Question: raid1 behaviour on failure
-To: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>,
-        Matthias Bodenbinder <matthias@bodenbinder.de>,
-        linux-btrfs@vger.kernel.org
-References: <nf1q0j$ug4$1@ger.gmane.org> <57148B2E.6010904@cn.fujitsu.com>
- <nf73cv$7vh$1@ger.gmane.org> <571871FC.2010101@jp.fujitsu.com>
- <57188534.1070408@jp.fujitsu.com>
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <5718C068.8080508@gmx.com>
-Date: Thu, 21 Apr 2016 19:58:32 +0800
+Received: from corp-mailer.zoner.com ([217.198.120.77]:39910 "EHLO
+	corp-mailer.zoner.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751654AbcDUNBs (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 21 Apr 2016 09:01:48 -0400
+Received: from imap33.zoner.com (imap33.zoner.com [217.198.123.6])
+	(using TLSv1.2 with cipher AECDH-AES256-SHA (256/256 bits))
+	(No client certificate requested)
+	by corp-mailer.zoner.com (Postfix) with ESMTPS id A975D1E850
+	for <linux-btrfs@vger.kernel.org>; Thu, 21 Apr 2016 14:53:42 +0200 (CEST)
+Received: from [10.1.0.143] (gw-sady.zoner.com [217.198.112.101])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+	(No client certificate requested)
+	(Authenticated sender: martin.svec@zoner.com)
+	by imap33.zoner.com (Postfix) with ESMTPSA id A3F89180059F06
+	for <linux-btrfs@vger.kernel.org>; Thu, 21 Apr 2016 14:53:42 +0200 (CEST)
+From: Martin Svec <martin.svec@zoner.cz>
+Subject: btrfs forced readonly + errno=-28 No space left
+To: linux-btrfs@vger.kernel.org
+Message-ID: <022276ed-577c-5616-abc0-3e1a7644f31e@zoner.cz>
+Date: Thu, 21 Apr 2016 14:53:40 +0200
 MIME-Version: 1.0
-In-Reply-To: <57188534.1070408@jp.fujitsu.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Type: text/plain; charset=iso-8859-2
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hello,
+
+we use btrfs subvolumes for rsync-based backups. During backups btrfs often fails with "No space
+left" error and goes to readonly mode (dmesg output is below) while there's still plenty of
+unallocated space:
+
+$ btrfs fi df /backup
+Data, single: total=15.75TiB, used=15.72TiB
+System, DUP: total=8.00MiB, used=1.91MiB
+Metadata, DUP: total=148.00GiB, used=146.20GiB
+GlobalReserve, single: total=512.00MiB, used=0.00B
+
+$ btrfs fi show /dev/md2
+Label: none  uuid: 32892e65-f78d-45a3-a7c4-980fedc14e63
+        Total devices 1 FS bytes used 15.86TiB
+        devid    1 size 21.83TiB used 16.03TiB path /dev/md2
+
+$ btrfs file usage /backup
+Overall:
+    Device size:                  21.83TiB
+    Device allocated:             16.02TiB
+    Device unallocated:            5.81TiB
+    Device missing:                  0.00B
+    Used:                         15.94TiB
+    Free (estimated):              5.89TiB      (min: 2.98TiB)
+    Data ratio:                       1.00
+    Metadata ratio:                   2.00
+    Global reserve:              512.00MiB      (used: 296.64MiB)
+Data,single: Size:15.73TiB, Used:15.65TiB
+   /dev/md2       15.73TiB
+Metadata,DUP: Size:148.00GiB, Used:146.07GiB
+   /dev/md2      296.00GiB
+System,DUP: Size:8.00MiB, Used:1.91MiB
+   /dev/md2       16.00MiB
+Unallocated:
+   /dev/md2        5.81TiB
+
+It usually helps to rebalance 100% of metadata but the error reappears again after few days or
+weeks. I also tried "btrfs check --repair" but it requires approx. 45 GB of RAM/swap and crashes
+after several days of swapping.
+
+Btrfs runs on top of a single MD RAID1 device and is mounted with the following options:
+
+$ cat /proc/mounts
+/dev/md2 /backup btrfs
+rw,noatime,compress=lzo,space_cache,clear_cache,enospc_debug,subvolid=5,subvol=/ 0 0
+
+Kernel version: 4.3.0-0.bpo.1-amd64 #1 SMP Debian 4.3.3-7~bpo8+1 (2016-01-19) x86_64 GNU/Linux
+(jessie-backports)
+
+[2151517.510044] BTRFS info (device md2): disk space caching is enabled
+[2151517.510047] BTRFS: has skinny extents
+[2266753.904426] use_block_rsv: 307 callbacks suppressed
+[2266753.904430] ------------[ cut here ]------------
+[2266753.904453] WARNING: CPU: 7 PID: 17513 at
+/build/linux-kTc2b3/linux-4.3.3/fs/btrfs/extent-tree.c:7637 btrfs_alloc_tree_block+0x107/0x480 [btrfs]()
+[2266753.904481] BTRFS: block rsv returned -28
+[2266753.904483] Modules linked in: binfmt_misc xt_comment xt_tcpudp nf_conntrack_ipv6
+nf_defrag_ipv6 iptable_filter xt_conntrack iptable_raw iptable_nat nf_conntrack_ipv4 nf_defrag_ipv4
+nf_nat_ipv4 nf_nat nf_conntrack ip6table_filter ip6table_mangle ip6table_raw iptable_mangle
+ip6_tables ip_tables x_tables nfsd auth_rpcgss oid_registry nfs_acl nfs lockd grace fscache sunrpc
+intel_powerc lamp coretemp kvm_intel kvm crct10dif_pclmul crc32_pclmul iTCO_wdt iTCO_vendor_support
+sha256_ssse3 sha256_generic hmac drbg ansi_cprng aesni_intel aes_x86_64 lrw gf128mul glue_helper
+ablk_helper cryptd ast ttm drm_kms_helper drm i2c_ismt i2c_i801 joydev evdev tpm_tis ipmi_si tpm
+serio_raw acpi_cpufreq ipmi_msghandler 8250_fintek lpc_ich mfd_core shpchp pcspkr processor button
+autofs4 xfs libcrc32c btrfs xor raid6_pq dm_mod
+[2266753.904552]  raid10 raid1 hid_generic usbhid hid md_mod sg sd_mod ahci libahci crc32c_intel
+ehci_pci mpt2sas ehci_hcd raid_class libata scsi_transport_sas igb i2c_algo_bit usbcore dca ptp
+usb_common scsi_mod pps_core
+[2266753.904574] CPU: 7 PID: 17513 Comm: kworker/u16:10 Tainted: G        W      
+4.3.0-0.bpo.1-amd64 #1 Debian 4.3.3-7~bpo8+1
+[2266753.904576] Hardware name: Supermicro SSG-5018A-AR12L/A1SA7, BIOS 1.0a 07/09/2014
+[2266753.904597] Workqueue: btrfs-extent-refs btrfs_extent_refs_helper [btrfs]
+[2266753.904600]  0000000000000000 00000000071448ef ffffffff812e1889 ffff880003637868
+[2266753.904604]  ffffffff81074451 ffff880265c3e000 ffff8800036378c0 0000000000004000
+[2266753.904608]  ffff880339498970 0000000000000001 ffffffff810744dc ffffffffa0341c18
+[2266753.904612] Call Trace:
+[2266753.904620]  [<ffffffff812e1889>] ? dump_stack+0x40/0x57
+[2266753.904625]  [<ffffffff81074451>] ? warn_slowpath_common+0x81/0xb0
+[2266753.904629]  [<ffffffff810744dc>] ? warn_slowpath_fmt+0x5c/0x80
+[2266753.904643]  [<ffffffffa02b06d7>] ? btrfs_alloc_tree_block+0x107/0x480 [btrfs]
+[2266753.904649]  [<ffffffff8101472c>] ? __switch_to+0x25c/0x590
+[2266753.904662]  [<ffffffffa0298645>] ? __btrfs_cow_block+0x145/0x5e0 [btrfs]
+[2266753.904674]  [<ffffffffa0298c6f>] ? btrfs_cow_block+0x10f/0x1b0 [btrfs]
+[2266753.904687]  [<ffffffffa029c86d>] ? btrfs_search_slot+0x1fd/0xa30 [btrfs]
+[2266753.904705]  [<ffffffffa02deefd>] ? insert_state+0xbd/0x130 [btrfs]
+[2266753.904718]  [<ffffffffa02a2f5e>] ? lookup_inline_extent_backref+0xee/0x650 [btrfs]
+[2266753.904723]  [<ffffffff8116b801>] ? __set_page_dirty_nobuffers+0xe1/0x140
+[2266753.904728]  [<ffffffff811b76dc>] ? kmem_cache_alloc+0x21c/0x440
+[2266753.904741]  [<ffffffffa02a5bcd>] ? __btrfs_free_extent.isra.66+0x11d/0xd60 [btrfs]
+[2266753.904754]  [<ffffffffa02a5887>] ? update_block_group.isra.65+0x127/0x350 [btrfs]
+[2266753.904773]  [<ffffffffa030bde6>] ? btrfs_merge_delayed_refs+0x66/0x5e0 [btrfs]
+[2266753.904787]  [<ffffffffa02a9e31>] ? __btrfs_run_delayed_refs+0x8b1/0x1080 [btrfs]
+[2266753.904801]  [<ffffffffa02ad2c8>] ? btrfs_run_delayed_refs+0x78/0x2b0 [btrfs]
+[2266753.904815]  [<ffffffffa02ad532>] ? delayed_ref_async_start+0x32/0x80 [btrfs]
+[2266753.904833]  [<ffffffffa02f288c>] ? normal_work_helper+0xbc/0x240 [btrfs]
+[2266753.904837]  [<ffffffff8108c53a>] ? process_one_work+0x14a/0x3d0
+[2266753.904841]  [<ffffffff8108cf75>] ? worker_thread+0x65/0x460
+[2266753.904844]  [<ffffffff8108cf10>] ? rescuer_thread+0x310/0x310
+[2266753.904847]  [<ffffffff8109222f>] ? kthread+0xdf/0x100
+[2266753.904851]  [<ffffffff81092150>] ? kthread_park+0x50/0x50
+[2266753.904856]  [<ffffffff8158a79f>] ? ret_from_fork+0x3f/0x70
+[2266753.904860]  [<ffffffff81092150>] ? kthread_park+0x50/0x50
+[2266753.904862] ---[ end trace 42f58946d98c8b1f ]---
+[2266753.904870] ------------[ cut here ]------------
+[2266753.904884] WARNING: CPU: 7 PID: 17513 at
+/build/linux-kTc2b3/linux-4.3.3/fs/btrfs/extent-tree.c:6362 __btrfs_free_extent.isra.66+0x15b/0xd60
+[btrfs]()
+[2266753.904886] BTRFS: Transaction aborted (error -28)
+[2266753.904888] Modules linked in: binfmt_misc
+[2266753.904894] BTRFS: error (device md2) in __btrfs_free_extent:6362: errno=-28 No space left
+[2266753.904898] BTRFS info (device md2): forced readonly
+[2266753.904900] BTRFS: error (device md2) in btrfs_run_delayed_refs:2858: errno=-28 No space left
+[2266753.905033]  xt_comment xt_tcpudp nf_conntrack_ipv6 nf_defrag_ipv6 iptable_filter xt_conntrack
+iptable_raw iptable_nat nf_conntrack_ipv4 nf_defrag_ipv4 nf_nat_ipv4 nf_nat nf_conntrack
+ip6table_filter ip6table_mangle ip6table_raw iptable_mangle ip6_tables ip_tables x_tables nfsd
+auth_rpcgss oid_registry nfs_acl nfs lockd grace fscache sunrpc intel_powerclamp coretemp kvm_intel
+kvm cr ct10dif_pclmul crc32_pclmul iTCO_wdt iTCO_vendor_support sha256_ssse3 sha256_generic hmac
+drbg ansi_cprng aesni_intel aes_x86_64 lrw gf128mul glue_helper ablk_helper cryptd ast ttm
+drm_kms_helper drm i2c_ismt i2c_i801 joydev evdev tpm_tis ipmi_si tpm serio_raw acpi_cpufreq
+ipmi_msghandler 8250_fintek lpc_ich mfd_core shpchp pcspkr processor button autofs4 xfs libcrc32c
+btrfs xor raid6_pq dm_mod raid10 raid1 hid_generic
+[2266753.905083]  usbhid hid md_mod sg sd_mod ahci libahci crc32c_intel ehci_pci mpt2sas ehci_hcd
+raid_class libata scsi_transport_sas igb i2c_algo_bit usbcore dca ptp usb_common scsi_mod pps_core
+[2266753.905098] CPU: 7 PID: 17513 Comm: kworker/u16:10 Tainted: G        W      
+4.3.0-0.bpo.1-amd64 #1 Debian 4.3.3-7~bpo8+1
+[2266753.905101] Hardware name: Supermicro SSG-5018A-AR12L/A1SA7, BIOS 1.0a 07/09/2014
+[2266753.905119] Workqueue: btrfs-extent-refs btrfs_extent_refs_helper [btrfs]
+[2266753.905121]  0000000000000000 00000000071448ef ffffffff812e1889 ffff880003637b20
+[2266753.905125]  ffffffff81074451 00000eed78f28000 ffff880003637b78 ffff880265c3e000
+[2266753.905129]  ffff880468aa2000 0000000000000000 ffffffff810744dc ffffffffa03417e8
+[2266753.905133] Call Trace:
+[2266753.905137]  [<ffffffff812e1889>] ? dump_stack+0x40/0x57
+[2266753.905140]  [<ffffffff81074451>] ? warn_slowpath_common+0x81/0xb0
+[2266753.905144]  [<ffffffff810744dc>] ? warn_slowpath_fmt+0x5c/0x80
+[2266753.905158]  [<ffffffffa02a5c0b>] ? __btrfs_free_extent.isra.66+0x15b/0xd60 [btrfs]
+[2266753.905171]  [<ffffffffa02a5887>] ? update_block_group.isra.65+0x127/0x350 [btrfs]
+[2266753.905189]  [<ffffffffa030bde6>] ? btrfs_merge_delayed_refs+0x66/0x5e0 [btrfs]
+[2266753.905203]  [<ffffffffa02a9e31>] ? __btrfs_run_delayed_refs+0x8b1/0x1080 [btrfs]
+[2266753.905217]  [<ffffffffa02ad2c8>] ? btrfs_run_delayed_refs+0x78/0x2b0 [btrfs]
+[2266753.905231]  [<ffffffffa02ad532>] ? delayed_ref_async_start+0x32/0x80 [btrfs]
+[2266753.905249]  [<ffffffffa02f288c>] ? normal_work_helper+0xbc/0x240 [btrfs]
+[2266753.905253]  [<ffffffff8108c53a>] ? process_one_work+0x14a/0x3d0
+[2266753.905256]  [<ffffffff8108cf75>] ? worker_thread+0x65/0x460
+[2266753.905259]  [<ffffffff8108cf10>] ? rescuer_thread+0x310/0x310
+[2266753.905263]  [<ffffffff8109222f>] ? kthread+0xdf/0x100
+[2266753.905266]  [<ffffffff81092150>] ? kthread_park+0x50/0x50
+[2266753.905270]  [<ffffffff8158a79f>] ? ret_from_fork+0x3f/0x70
+[2266753.905273]  [<ffffffff81092150>] ? kthread_park+0x50/0x50
+[2266753.905276] ---[ end trace 42f58946d98c8b20 ]---
+[2266753.905280] BTRFS: error (device md2) in __btrfs_free_extent:6362: errno=-28 No space left
+[2266753.905348] BTRFS: error (device md2) in btrfs_run_delayed_refs:2858: errno=-28 No space left
+[2266766.878029] pending csums is 786432
+
+The same or similar error seems to be reported multiple times:
+https://www.mail-archive.com/linux-btrfs%40vger.kernel.org/msg48061.html
+https://www.mail-archive.com/linux-btrfs%40vger.kernel.org/msg47355.html
 
 
-On 04/21/2016 03:45 PM, Satoru Takeuchi wrote:
-> On 2016/04/21 15:23, Satoru Takeuchi wrote:
->> On 2016/04/20 14:17, Matthias Bodenbinder wrote:
->>> Am 18.04.2016 um 09:22 schrieb Qu Wenruo:
->>>> BTW, it would be better to post the dmesg for better debug.
->>>
->>> So here we. I did the same test again. Here is a full log of what i
->>> did. It seems to be mean like a bug in btrfs.
->>> Sequenz of events:
->>> 1. mount the raid1 (2 disc with different size)
->>> 2. unplug the biggest drive (hotplug)
->>> 3. try to copy something to the degraded raid1
->>> 4. plugin the device again (hotplug)
->>>
->>> This scenario does not work. The disc array is NOT redundant! I can
->>> not work with it while a drive is missing and I can not reattach the
->>> device so that everything works again.
->>>
->>> The btrfs module crashes during the test.
->>>
->>> I am using LMDE2 with backports:
->>> btrfs-tools 4.4-1~bpo8+1
->>> linux-image-4.4.0-0.bpo.1-amd64
->>>
->>> Matthias
->>>
->>>
->>> rakete - root - /root
->>> 1# mount /mnt/raid1/
->>>
->>> Journal:
->>>
->>> Apr 20 07:01:16 rakete kernel: BTRFS info (device sdi): enabling auto
->>> defrag
->>> Apr 20 07:01:16 rakete kernel: BTRFS info (device sdi): disk space
->>> caching is enabled
->>> Apr 20 07:01:16 rakete kernel: BTRFS: has skinny extents
->>>
->>> rakete - root - /mnt/raid1
->>> 3# ll
->>> insgesamt 0
->>> drwxrwxr-x 1 root root   36 Nov 14  2014 AfterShot2(64-bit)
->>> drwxrwxr-x 1 root root 5082 Apr 17 09:06 etc
->>> drwxr-xr-x 1 root root  108 Mär 24 07:31 var
->>>
->>> 4# btrfs fi show
->>> Label: none  uuid: 16d5891f-5d52-4b29-8591-588ddf11e73d
->>>     Total devices 3 FS bytes used 1.60GiB
->>>     devid    1 size 698.64GiB used 3.03GiB path /dev/sdg
->>>     devid    2 size 465.76GiB used 3.03GiB path /dev/sdh
->>>     devid    3 size 232.88GiB used 0.00B path /dev/sdi
->>>
->>> ####
->>> unplug device sdg:
->>>
->>> Apr 20 07:03:05 rakete kernel: Buffer I/O error on dev sdf1, logical
->>> block 243826688, lost sync page write
->>> Apr 20 07:03:05 rakete kernel: JBD2: Error -5 detected when updating
->>> journal superblock for sdf1-8.
->>> Apr 20 07:03:05 rakete kernel: Aborting journal on device sdf1-8.
->>> Apr 20 07:03:05 rakete kernel: Buffer I/O error on dev sdf1, logical
->>> block 243826688, lost sync page write
->>> Apr 20 07:03:05 rakete kernel: JBD2: Error -5 detected when updating
->>> journal superblock for sdf1-8.
->>> Apr 20 07:03:05 rakete umount[16405]: umount: /mnt/raid1: target is busy
->>> Apr 20 07:03:05 rakete umount[16405]: (In some cases useful info
->>> about processes that
->>> Apr 20 07:03:05 rakete umount[16405]: use the device is found by
->>> lsof(8) or fuser(1).)
->>> Apr 20 07:03:05 rakete systemd[1]: mnt-raid1.mount mount process
->>> exited, code=exited status=32
->>> Apr 20 07:03:05 rakete systemd[1]: Failed unmounting /mnt/raid1.
->>> Apr 20 07:03:24 rakete kernel: usb 3-1: new SuperSpeed USB device
->>> number 3 using xhci_hcd
->>> Apr 20 07:03:24 rakete kernel: usb 3-1: New USB device found,
->>> idVendor=152d, idProduct=0567
->>> Apr 20 07:03:24 rakete kernel: usb 3-1: New USB device strings:
->>> Mfr=10, Product=11, SerialNumber=5
->>> Apr 20 07:03:24 rakete kernel: usb 3-1: Product: USB to ATA/ATAPI Bridge
->>> Apr 20 07:03:24 rakete kernel: usb 3-1: Manufacturer: JMicron
->>> Apr 20 07:03:24 rakete kernel: usb 3-1: SerialNumber: 152D00539000
->>> Apr 20 07:03:24 rakete kernel: usb-storage 3-1:1.0: USB Mass Storage
->>> device detected
->>> Apr 20 07:03:24 rakete kernel: usb-storage 3-1:1.0: Quirks match for
->>> vid 152d pid 0567: 5000000
->>> Apr 20 07:03:24 rakete kernel: scsi host9: usb-storage 3-1:1.0
->>> Apr 20 07:03:24 rakete mtp-probe[16424]: checking bus 3, device 3:
->>> "/sys/devices/pci0000:00/0000:00:1c.5/0000:04:00.0/usb3/3-1"
->>> Apr 20 07:03:24 rakete mtp-probe[16424]: bus: 3, device: 3 was not an
->>> MTP device
->>> Apr 20 07:03:25 rakete kernel: scsi 9:0:0:0: Direct-Access     WDC
->>> WD20 02FAEX-007BA0    0125 PQ: 0 ANSI: 6
->>> Apr 20 07:03:25 rakete kernel: scsi 9:0:0:1: Direct-Access     WDC
->>> WD50 01AALS-00L3B2    0125 PQ: 0 ANSI: 6
->>> Apr 20 07:03:25 rakete kernel: scsi 9:0:0:2: Direct-Access
->>> SAMSUNG  SP2504C          0125 PQ: 0 ANSI: 6
->>> Apr 20 07:03:25 rakete kernel: sd 9:0:0:0: Attached scsi generic sg6
->>> type 0
->>> Apr 20 07:03:25 rakete kernel: sd 9:0:0:1: Attached scsi generic sg7
->>> type 0
->>> Apr 20 07:03:25 rakete kernel: sd 9:0:0:0: [sdf] 3907029168 512-byte
->>> logical blocks: (2.00 TB/1.82 TiB)
->>> Apr 20 07:03:25 rakete kernel: sd 9:0:0:0: [sdf] Write Protect is off
->>> Apr 20 07:03:25 rakete kernel: sd 9:0:0:0: [sdf] Mode Sense: 67 00 10 08
->>> Apr 20 07:03:25 rakete kernel: sd 9:0:0:2: Attached scsi generic sg8
->>> type 0
->>> Apr 20 07:03:25 rakete kernel: sd 9:0:0:1: [sdj] 976773168 512-byte
->>> logical blocks: (500 GB/466 GiB)
->>> Apr 20 07:03:25 rakete kernel: sd 9:0:0:0: [sdf] No Caching mode page
->>> found
->>> Apr 20 07:03:25 rakete kernel: sd 9:0:0:0: [sdf] Assuming drive
->>> cache: write through
->>> Apr 20 07:03:25 rakete kernel: sd 9:0:0:1: [sdj] Write Protect is off
->>> Apr 20 07:03:25 rakete kernel: sd 9:0:0:1: [sdj] Mode Sense: 67 00 10 08
->>> Apr 20 07:03:25 rakete kernel: sd 9:0:0:2: [sdk] 488395055 512-byte
->>> logical blocks: (250 GB/233 GiB)
->>> Apr 20 07:03:25 rakete kernel: sd 9:0:0:1: [sdj] No Caching mode page
->>> found
->>> Apr 20 07:03:25 rakete kernel: sd 9:0:0:1: [sdj] Assuming drive
->>> cache: write through
->>> Apr 20 07:03:25 rakete kernel: sd 9:0:0:2: [sdk] Write Protect is off
->>> Apr 20 07:03:25 rakete kernel: sd 9:0:0:2: [sdk] Mode Sense: 67 00 10 08
->>> Apr 20 07:03:25 rakete kernel: sd 9:0:0:2: [sdk] No Caching mode page
->>> found
->>> Apr 20 07:03:25 rakete kernel: sd 9:0:0:2: [sdk] Assuming drive
->>> cache: write through
->>> Apr 20 07:03:25 rakete kernel:  sdf: sdf1
->>> Apr 20 07:03:25 rakete kernel: sd 9:0:0:0: [sdf] Attached SCSI disk
->>> Apr 20 07:03:25 rakete kernel: sd 9:0:0:1: [sdj] Attached SCSI disk
->>> Apr 20 07:03:25 rakete kernel: sd 9:0:0:2: [sdk] Attached SCSI disk
->>> Apr 20 07:03:25 rakete kernel: EXT4-fs (sdf1): recovery complete
->>> Apr 20 07:03:25 rakete kernel: EXT4-fs (sdf1): mounted filesystem
->>> with ordered data mode. Opts: (null)
->>> Apr 20 07:03:25 rakete udisksd[3671]: Error statting /dev/sdg: No
->>> such file or directory
->>>
->>>
->>> ####
->>> 5# btrfs fi show
->>> Label: none  uuid: 16d5891f-5d52-4b29-8591-588ddf11e73d
->>>     Total devices 3 FS bytes used 1.60GiB
->>>     devid    2 size 465.76GiB used 3.03GiB path /dev/sdj
->>>     devid    3 size 232.88GiB used 0.00B path /dev/sdk
->>>     *** Some devices missing
->>> ####
->>
->> Here the names of *online* devices are changed
->> (/dev/sdh => /dev/sdj, /dev/sdi => /dev/sdk) after just
->> offlining a device (/dev/sdf). It's odd regardless of
->> whether Btrfs works fine or not.
->>
->> Can anyone explain this behavior?
->
-> FYI,
->
-> I tried to reproduce this problem on VM.
-> Here USB storages are /dev/sd{a,b,c}.
->
-> Step to reproduce:
->
->   1. create a fs on /dev/sd{a,b,c}
->   2. mount this fs
->   3. Surprise unplug /dev/sdc
->   4. Write to this fs till ENOSPC happens
->
-> Then, although there are I/O errors about /dev/sdc,
-> device names didn't change and ro remount didn't happen.
->
-> command log:
-> =================================
-> # mkfs.btrfs -f -m raid1 -d raid1 /dev/sd{a,b,c}
-> btrfs-progs v4.5.1-41-g8202204-dirty
-> See http://btrfs.wiki.kernel.org for more information.
->
-> Label:              (null)
-> UUID:               16a54915-c807-42cf-8365-82c0780c5ab5
-> Node size:          16384
-> Sector size:        4096
-> Filesystem size:    15.00GiB
-> Block group profiles:
->    Data:             RAID1             1.01GiB
->    Metadata:         RAID1             1.01GiB
->    System:           RAID1            12.00MiB
-> SSD detected:       no
-> Incompat features:  extref, skinny-metadata
-> Number of devices:  3
-> Devices:
->     ID        SIZE  PATH
->      1     5.00GiB  /dev/sda
->      2     5.00GiB  /dev/sdb
->      3     5.00GiB  /dev/sdc
->
-> # mount /dev/sda /scratch_mnt/
-> # btrfs fi show /scratch_mnt/
-> Label: none  uuid: 16a54915-c807-42cf-8365-82c0780c5ab5
->          Total devices 3 FS bytes used 640.00KiB
->          devid    1 size 5.00GiB used 2.00GiB path /dev/sda
->          devid    2 size 5.00GiB used 1.01GiB path /dev/sdb
->          devid    3 size 5.00GiB used 1.01GiB path /dev/sdc
->
-> #
-> # # *** surprise unplug happens here ***
-> #
-> # btrfs fi show /scratch_mnt/
+Best regards
 
-Would you please post the output of "btrfs-debug-tree -t 3"?
+Martin Svec
 
-I guess the case would be that, there is not raid1 stripe in device 3, 
-so all data/metadata allocation/cow happens without problem.
-"btrfs-debug-tree -t 3" output would verify my guess.
 
-Thanks,
-Qu
-> Label: none  uuid: 16a54915-c807-42cf-8365-82c0780c5ab5
->          Total devices 3 FS bytes used 1.81GiB
->          devid    1 size 5.00GiB used 2.00GiB path /dev/sda
->          devid    2 size 5.00GiB used 2.01GiB path /dev/sdb
->          *** Some devices missing
->
-> # cp -a linux /scratch_mnt/
-> # cp -a linux /scratch_mnt/linux.2
-> # cp -a linux /scratch_mnt/linux.3
-> cp: error writing ‘/scratch_mnt/linux.3/drivers/scsi/lpfc/lpfc_els.c’:
-> No space left on device
-> ...
-> # mount | grep scratch
-> /dev/sda on /scratch_mnt type btrfs
-> (rw,relatime,seclabel,space_cache,subvolid=5,subvol=/)
-> # dmesg | tail
-> [ 1400.778705] BTRFS warning (device sdc): lost page write due to IO
-> error on /dev/sdc
-> [ 1438.604796] btrfs_dev_stat_print_on_error: 174 callbacks suppressed
-> [ 1438.604803] BTRFS error (device sdc): bdev /dev/sdc errs: wr 125633,
-> rd 1, flush 276, corrupt 0, gen 0
-> [ 1438.609782] BTRFS error (device sdc): bdev /dev/sdc errs: wr 125634,
-> rd 1, flush 276, corrupt 0, gen 0
-> [ 1438.613331] BTRFS error (device sdc): bdev /dev/sdc errs: wr 125634,
-> rd 1, flush 277, corrupt 0, gen 0
-> [ 1438.669090] btrfs_end_buffer_write_sync: 52 callbacks suppressed
-> [ 1438.669095] BTRFS warning (device sdc): lost page write due to IO
-> error on /dev/sdc
-> [ 1438.669098] BTRFS error (device sdc): bdev /dev/sdc errs: wr 125635,
-> rd 1, flush 277, corrupt 0, gen 0
-> [ 1438.672621] BTRFS warning (device sdc): lost page write due to IO
-> error on /dev/sdc
-> [ 1438.672626] BTRFS error (device sdc): bdev /dev/sdc errs: wr 125636,
-> rd 1, flush 277, corrupt 0, gen 0
-> =================================
->
-> Thanks,
-> Satoru
->
->>
->> Thanks,
->> Satoru
->>
->>> still mounted in rw mode:
->>> /dev/sdg on /mnt/raid1 type btrfs
->>> (rw,noatime,space_cache,autodefrag,subvolid=5,subvol=/)
->>> ####
->>> 7# cp -r /root/ .
->>> cp: das Verzeichnis „./root“ kann nicht angelegt werden:
->>> Eingabe-/Ausgabefehler
->>> Apr 20 07:05:37 rakete kernel: BTRFS error (device sdi): bdev
->>> /dev/sdg errs: wr 0, rd 1, flush 0, corrupt 0, gen 0
->>> Apr 20 07:05:37 rakete kernel: BTRFS error (device sdi): bdev
->>> /dev/sdg errs: wr 0, rd 2, flush 0, corrupt 0, gen 0
->>> Apr 20 07:05:37 rakete kernel: BTRFS error (device sdi): bdev
->>> /dev/sdg errs: wr 0, rd 3, flush 0, corrupt 0, gen 0
->>> Apr 20 07:05:37 rakete kernel: BTRFS error (device sdi): bdev
->>> /dev/sdg errs: wr 0, rd 4, flush 0, corrupt 0, gen 0
->>> Apr 20 07:05:37 rakete kernel: BTRFS error (device sdi): bdev
->>> /dev/sdg errs: wr 0, rd 5, flush 0, corrupt 0, gen 0
->>> Apr 20 07:05:37 rakete kernel: BTRFS error (device sdi): bdev
->>> /dev/sdg errs: wr 0, rd 6, flush 0, corrupt 0, gen 0
->>> Apr 20 07:05:37 rakete kernel: BTRFS error (device sdi): bdev
->>> /dev/sdg errs: wr 0, rd 7, flush 0, corrupt 0, gen 0
->>> Apr 20 07:05:37 rakete kernel: BTRFS error (device sdi): bdev
->>> /dev/sdg errs: wr 0, rd 8, flush 0, corrupt 0, gen 0
->>> Apr 20 07:05:37 rakete kernel: BTRFS error (device sdi): bdev
->>> /dev/sdg errs: wr 0, rd 9, flush 0, corrupt 0, gen 0
->>> Apr 20 07:05:37 rakete kernel: BTRFS error (device sdi): bdev
->>> /dev/sdg errs: wr 0, rd 10, flush 0, corrupt 0, gen 0
->>> Apr 20 07:05:37 rakete kernel: BTRFS error (device sdi): error
->>> reading free space cache
->>> Apr 20 07:05:37 rakete kernel: BTRFS warning (device sdi): failed to
->>> load free space cache for block group 20497563648, rebuilding it now
->>> Apr 20 07:05:37 rakete kernel: ------------[ cut here ]------------
->>> Apr 20 07:05:37 rakete kernel: WARNING: CPU: 7 PID: 16738 at
->>> /build/linux-H3jpF0/linux-4.4.6/fs/btrfs/ctree.c:1156
->>> __btrfs_cow_block+0x56f/0x5e0 [btrfs]()
->>> Apr 20 07:05:37 rakete kernel: BTRFS: Transaction aborted (error -5)
->>> Apr 20 07:05:37 rakete kernel: Modules linked in: uas usb_storage
->>> pci_stub vboxpci(O) vboxnetadp(O) vboxnetflt(O) binfmt_misc dvb_ttpci
->>> saa7146_vv ttpci_eeprom saa7146 videobuf_dma_sg videobuf_core
->>> dvb_core v4l2_common videodev media cfg80211 vboxdrv(O)
->>> cpufreq_powersave cpufreq_conservative cpufreq_userspace
->>> cpufreq_stats snd_hda_codec_hdmi intel_rapl iosf_mbi
->>> x86_pkg_temp_thermal intel_powerclamp coretemp kvm_intel kvm
->>> irqbypass crct10dif_pclmul crc32_pclmul eeepc_wmi asus_wmi joydev
->>> sparse_keymap drbg iTCO_wdt iTCO_vendor_support snd_hda_codec_realtek
->>> rfkill ansi_cprng snd_hda_codec_generic nvidia(PO) aesni_intel
->>> aes_x86_64 lrw gf128mul snd_hda_intel glue_helper ablk_helper
->>> snd_hda_codec cryptd snd_hda_core serio_raw pcspkr snd_hwdep snd_pcm
->>> i2c_i801 snd_timer snd lpc_ich soundcore 8250_fintek mei_me shpchp mei
->>> Apr 20 07:05:37 rakete kernel:  mfd_core battery tpm_tis tpm evdev
->>> processor drm fuse ecryptfs cbc sha256_ssse3 sha256_generic hmac
->>> encrypted_keys parport_pc ppdev lp parport autofs4 ext4 crc16 mbcache
->>> jbd2 btrfs raid456 async_raid6_recov async_memcpy async_pq async_xor
->>> async_tx xor hid_generic usbhid hid raid6_pq libcrc32c crc32c_generic
->>> md_mod dm_mirror dm_region_hash dm_log dm_mod sr_mod sg cdrom sd_mod
->>> ata_generic ahci libahci pata_via xhci_pci ehci_pci crc32c_intel
->>> xhci_hcd ehci_hcd libata psmouse scsi_mod atl1c usbcore usb_common
->>> fjes video wmi fan thermal button
->>> Apr 20 07:05:37 rakete kernel: CPU: 7 PID: 16738 Comm: cp Tainted:
->>> P           O    4.4.0-0.bpo.1-amd64 #1 Debian 4.4.6-1~bpo8+1
->>> Apr 20 07:05:37 rakete kernel: Hardware name: System manufacturer
->>> System Product Name/P8H67-V, BIOS 3707 07/12/2013
->>> Apr 20 07:05:37 rakete kernel:  0000000000000286 000000006a1407c8
->>> ffffffff812ed425 ffff88016b6dfb90
->>> Apr 20 07:05:37 rakete kernel:  ffffffffa03817b8 ffffffff81077ea1
->>> ffff88018e7fcd30 ffff88016b6dfbe8
->>> Apr 20 07:05:37 rakete kernel:  ffff88005d863e88 ffff8801cde7a980
->>> ffff88018e7fce48 ffffffff81077f2c
->>> Apr 20 07:05:37 rakete kernel: Call Trace:
->>> Apr 20 07:05:37 rakete kernel:  [<ffffffff812ed425>] ?
->>> dump_stack+0x5c/0x77
->>> Apr 20 07:05:37 rakete kernel:  [<ffffffff81077ea1>] ?
->>> warn_slowpath_common+0x81/0xb0
->>> Apr 20 07:05:37 rakete kernel:  [<ffffffff81077f2c>] ?
->>> warn_slowpath_fmt+0x5c/0x80
->>> Apr 20 07:05:37 rakete kernel:  [<ffffffffa02d74af>] ?
->>> __btrfs_cow_block+0x56f/0x5e0 [btrfs]
->>> Apr 20 07:05:37 rakete kernel:  [<ffffffffa02d76af>] ?
->>> btrfs_cow_block+0x10f/0x1d0 [btrfs]
->>> Apr 20 07:05:37 rakete kernel:  [<ffffffffa02db2cd>] ?
->>> btrfs_search_slot+0x1fd/0xa30 [btrfs]
->>> Apr 20 07:05:37 rakete kernel:  [<ffffffffa02dd3f1>] ?
->>> btrfs_insert_empty_items+0x71/0xc0 [btrfs]
->>> Apr 20 07:05:37 rakete kernel:  [<ffffffff811f4d92>] ?
->>> insert_inode_locked4+0xa2/0x1c0
->>> Apr 20 07:05:37 rakete kernel:  [<ffffffffa030ee5d>] ?
->>> btrfs_new_inode+0x1cd/0x590 [btrfs]
->>> Apr 20 07:05:37 rakete kernel:  [<ffffffffa0310a77>] ?
->>> btrfs_mkdir+0x107/0x1f0 [btrfs]
->>> Apr 20 07:05:37 rakete kernel:  [<ffffffff811e80b0>] ?
->>> vfs_mkdir+0xb0/0x140
->>> Apr 20 07:05:37 rakete kernel:  [<ffffffff811e9d3e>] ?
->>> SyS_mkdir+0xce/0x110
->>> Apr 20 07:05:37 rakete kernel:  [<ffffffff81592736>] ?
->>> system_call_fast_compare_end+0xc/0x6b
->>> Apr 20 07:05:37 rakete kernel: ---[ end trace 025eb0e83ffed96f ]---
->>> Apr 20 07:05:37 rakete kernel: BTRFS: error (device sdi) in
->>> __btrfs_cow_block:1156: errno=-5 IO failure
->>> Apr 20 07:05:37 rakete kernel: BTRFS info (device sdi): forced readonly
->>>
->>> ####
->>> Try to copy again:
->>> 11# cp -r /root/ .
->>> cp: cannot create directory './root': Read-only file system
->>> ####
->>> /dev/sdg on /mnt/raid1 type btrfs
->>> (ro,noatime,space_cache,autodefrag,subvolid=5,subvol=/)
->>> ####
->>> plugin device sdg again:
->>>
->>> Apr 20 07:07:39 rakete udisksd[3671]: Cleaning up mount point
->>> /media/matthias/BACKUP (device 8:81 no longer exist)
->>> Apr 20 07:07:39 rakete kernel: usb 3-1: USB disconnect, device number 3
->>> Apr 20 07:07:39 rakete udisksd[3671]: Error statting /dev/sdg: No
->>> such file or directory
->>> Apr 20 07:07:39 rakete umount[16807]: umount: /mnt/raid1: target is busy
->>> Apr 20 07:07:39 rakete umount[16807]: (In some cases useful info
->>> about processes that
->>> Apr 20 07:07:39 rakete umount[16807]: use the device is found by
->>> lsof(8) or fuser(1).)
->>> Apr 20 07:07:39 rakete systemd[1]: mnt-raid1.mount mount process
->>> exited, code=exited status=32
->>> Apr 20 07:07:39 rakete systemd[1]: Failed unmounting /mnt/raid1.
->>> Apr 20 07:08:01 rakete kernel: usb 3-1: new SuperSpeed USB device
->>> number 4 using xhci_hcd
->>> Apr 20 07:08:01 rakete kernel: usb 3-1: New USB device found,
->>> idVendor=152d, idProduct=0567
->>> Apr 20 07:08:01 rakete kernel: usb 3-1: New USB device strings:
->>> Mfr=10, Product=11, SerialNumber=5
->>> Apr 20 07:08:01 rakete kernel: usb 3-1: Product: USB to ATA/ATAPI Bridge
->>> Apr 20 07:08:01 rakete kernel: usb 3-1: Manufacturer: JMicron
->>> Apr 20 07:08:01 rakete kernel: usb 3-1: SerialNumber: 152D00539000
->>> Apr 20 07:08:01 rakete kernel: usb-storage 3-1:1.0: USB Mass Storage
->>> device detected
->>> Apr 20 07:08:01 rakete kernel: usb-storage 3-1:1.0: Quirks match for
->>> vid 152d pid 0567: 5000000
->>> Apr 20 07:08:01 rakete kernel: scsi host10: usb-storage 3-1:1.0
->>> Apr 20 07:08:01 rakete mtp-probe[16826]: checking bus 3, device 4:
->>> "/sys/devices/pci0000:00/0000:00:1c.5/0000:04:00.0/usb3/3-1"
->>> Apr 20 07:08:01 rakete mtp-probe[16826]: bus: 3, device: 4 was not an
->>> MTP device
->>> Apr 20 07:08:02 rakete kernel: scsi 10:0:0:0: Direct-Access     WDC
->>> WD20 02FAEX-007BA0    0125 PQ: 0 ANSI: 6
->>> Apr 20 07:08:02 rakete kernel: scsi 10:0:0:1: Direct-Access     WDC
->>> WD75 00AACS-00C7B0    0125 PQ: 0 ANSI: 6
->>> Apr 20 07:08:02 rakete kernel: scsi 10:0:0:2: Direct-Access     WDC
->>> WD50 01AALS-00L3B2    0125 PQ: 0 ANSI: 6
->>> Apr 20 07:08:02 rakete kernel: scsi 10:0:0:3: Direct-Access
->>> SAMSUNG  SP2504C          0125 PQ: 0 ANSI: 6
->>> Apr 20 07:08:02 rakete kernel: sd 10:0:0:0: Attached scsi generic sg6
->>> type 0
->>> Apr 20 07:08:02 rakete kernel: sd 10:0:0:0: [sdf] 3907029168 512-byte
->>> logical blocks: (2.00 TB/1.82 TiB)
->>> Apr 20 07:08:02 rakete kernel: sd 10:0:0:0: [sdf] Write Protect is off
->>> Apr 20 07:08:02 rakete kernel: sd 10:0:0:0: [sdf] Mode Sense: 67 00
->>> 10 08
->>> Apr 20 07:08:02 rakete kernel: sd 10:0:0:1: Attached scsi generic sg7
->>> type 0
->>> Apr 20 07:08:02 rakete kernel: sd 10:0:0:0: [sdf] No Caching mode
->>> page found
->>> Apr 20 07:08:02 rakete kernel: sd 10:0:0:0: [sdf] Assuming drive
->>> cache: write through
->>> Apr 20 07:08:02 rakete kernel: sd 10:0:0:1: [sdj] 1465149168 512-byte
->>> logical blocks: (750 GB/699 GiB)
->>> Apr 20 07:08:02 rakete kernel: sd 10:0:0:2: Attached scsi generic sg8
->>> type 0
->>> Apr 20 07:08:02 rakete kernel: sd 10:0:0:1: [sdj] Write Protect is off
->>> Apr 20 07:08:02 rakete kernel: sd 10:0:0:1: [sdj] Mode Sense: 67 00
->>> 10 08
->>> Apr 20 07:08:02 rakete kernel: sd 10:0:0:3: Attached scsi generic sg9
->>> type 0
->>> Apr 20 07:08:02 rakete kernel: sd 10:0:0:2: [sdk] 976773168 512-byte
->>> logical blocks: (500 GB/466 GiB)
->>> Apr 20 07:08:02 rakete kernel: sd 10:0:0:1: [sdj] No Caching mode
->>> page found
->>> Apr 20 07:08:02 rakete kernel: sd 10:0:0:1: [sdj] Assuming drive
->>> cache: write through
->>> Apr 20 07:08:02 rakete kernel: sd 10:0:0:2: [sdk] Write Protect is off
->>> Apr 20 07:08:02 rakete kernel: sd 10:0:0:2: [sdk] Mode Sense: 67 00
->>> 10 08
->>> Apr 20 07:08:02 rakete kernel: sd 10:0:0:3: [sdl] 488395055 512-byte
->>> logical blocks: (250 GB/233 GiB)
->>> Apr 20 07:08:02 rakete kernel: sd 10:0:0:2: [sdk] No Caching mode
->>> page found
->>> Apr 20 07:08:02 rakete kernel: sd 10:0:0:2: [sdk] Assuming drive
->>> cache: write through
->>> Apr 20 07:08:02 rakete kernel: sd 10:0:0:3: [sdl] Write Protect is off
->>> Apr 20 07:08:02 rakete kernel: sd 10:0:0:3: [sdl] Mode Sense: 67 00
->>> 10 08
->>> Apr 20 07:08:02 rakete kernel: sd 10:0:0:3: [sdl] No Caching mode
->>> page found
->>> Apr 20 07:08:02 rakete kernel: sd 10:0:0:3: [sdl] Assuming drive
->>> cache: write through
->>> Apr 20 07:08:02 rakete kernel: sd 10:0:0:0: [sdf] Attached SCSI disk
->>> Apr 20 07:08:02 rakete kernel: sd 10:0:0:1: [sdj] Attached SCSI disk
->>> Apr 20 07:08:02 rakete kernel: sd 10:0:0:2: [sdk] Attached SCSI disk
->>> Apr 20 07:08:02 rakete kernel: sd 10:0:0:3: [sdl] Attached SCSI disk
->>> Apr 20 07:08:02 rakete kernel: EXT4-fs (sdf1): recovery complete
->>> Apr 20 07:08:02 rakete kernel: EXT4-fs (sdf1): mounted filesystem
->>> with ordered data mode. Opts: (null)
->>>
->>> ####
->>> still ro mode
->>> /dev/sdj on /mnt/raid1 type btrfs
->>> (ro,noatime,space_cache,autodefrag,subvolid=5,subvol=/)
->>> ####
->>> 14# btrfs fi show
->>> Label: none  uuid: 16d5891f-5d52-4b29-8591-588ddf11e73d
->>>     Total devices 3 FS bytes used 1.60GiB
->>>     devid    1 size 698.64GiB used 3.03GiB path /dev/sdj
->>>     devid    2 size 465.76GiB used 3.03GiB path /dev/sdk
->>>     devid    3 size 232.88GiB used 0.00B path /dev/sdl
->>> ####
->>>
->>>
->>>
->>>
->>>
->>> --
->>> To unsubscribe from this list: send the line "unsubscribe
->>> linux-btrfs" in
->>> the body of a message to majordomo@vger.kernel.org
->>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->>>
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html

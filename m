@@ -1,136 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:47855 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751407AbcDUDpc (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 20 Apr 2016 23:45:32 -0400
-Date: Wed, 20 Apr 2016 20:45:24 -0700
-From: Liu Bo <bo.li.liu@oracle.com>
-To: Dmitry Katsubo <dmitry.katsubo@gmail.com>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: Kernel crash if both devices in raid1 are failing
-Message-ID: <20160421034524.GA26182@localhost.localdomain>
-Reply-To: bo.li.liu@oracle.com
-References: <570FFDFE.3050305@gmail.com>
- <571419C7.6070709@gmail.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <571419C7.6070709@gmail.com>
+Received: from plane.gmane.org ([80.91.229.3]:58575 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751680AbcDUFP4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 21 Apr 2016 01:15:56 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+	id 1at6y2-0001oM-31
+	for linux-btrfs@vger.kernel.org; Thu, 21 Apr 2016 07:15:54 +0200
+Received: from p50908ea2.dip0.t-ipconnect.de ([80.144.142.162])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Thu, 21 Apr 2016 07:15:54 +0200
+Received: from matthias by p50908ea2.dip0.t-ipconnect.de with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Thu, 21 Apr 2016 07:15:54 +0200
+To: linux-btrfs@vger.kernel.org
+From: Matthias Bodenbinder <matthias@bodenbinder.de>
+Subject: Re: Question: raid1 behaviour on failure
+Date: Thu, 21 Apr 2016 07:15:48 +0200
+Message-ID: <nf9nm4$204$1@ger.gmane.org>
+References: <nf1q0j$ug4$1@ger.gmane.org> <57148B2E.6010904@cn.fujitsu.com>
+ <nf73cv$7vh$1@ger.gmane.org> <571784DF.3060800@oracle.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=utf-8
+In-Reply-To: <571784DF.3060800@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Apr 18, 2016 at 01:18:31AM +0200, Dmitry Katsubo wrote:
-> On 2016-04-14 22:30, Dmitry Katsubo wrote:
-> > Dear btrfs community,
-> > 
-> > I have the following setup:
-> > 
-> > # btrfs fi show /home
-> > Label: none  uuid: 865f8cf9-27be-41a0-85a4-6cb4d1658ce3
-> > 	Total devices 3 FS bytes used 55.68GiB
-> > 	devid    1 size 52.91GiB used 0.00B path /dev/sdd2
-> > 	devid    2 size 232.89GiB used 59.03GiB path /dev/sda
-> > 	devid    3 size 111.79GiB used 59.03GiB path /dev/sdc1
-> > 
-> > btrfs volume was created in raid1 mode both for data and metadata and mounted
-> > with compress=lzo option.
-> > 
-> > Unfortunately, two drives (sda and sdc1) started to fail at the same time. This
-> > leads to system crash if I start the system in runlevel 3 (see crash1.log).
-> > 
-> > After I have started the system in single mode, volume can be mounted in rw
-> > mode and I can write some data into it. Unfortunately when I tried to read
-> > a certain file, the system crashed (see crash2.log).
-> > 
-> > I have started scrub on the volume and here is the report:
-> > 
-> > # btrfs scrub status /home
-> > scrub status for 865f8cf9-27be-41a0-85a4-6cb4d1658ce3
-> > 	scrub started at Tue Apr 12 20:39:20 2016 and finished after 02:40:09
-> > 	total bytes scrubbed: 55.68GiB with 1767 errors
-> > 	error details: verify=175 csum=1592
-> > 	corrected errors: 1110, uncorrectable errors: 657, unverified errors: 0
-> > 
-> > Obviously, some data is lost. However due to above crash, I cannot just copy
-> > the data from the volume. I would assume that I still can access the data, but
-> > the files for which data is lost, should result I/O error (I would then recover
-> > them from my backup).
-> > 
-> > I have decided to attach another drive and remove failing devices one-by-one.
-> > However that does not work:
-> > 
-> > # btrfs dev delete /dev/sda /home
-> > [  168.680057] ata3.00: exception Emask 0x0 SAct 0x0 SErr 0x0 action 0x0
-> > [  168.684236] ata3.00: BMDMA stat 0x25
-> > [  168.688464] ata3.00: failed command: READ DMA
-> > [  168.692681] ata3.00: cmd c8/00:08:68:4b:84/00:00:00:00:00/e7 tag 0 dma 4096 in
-> > [  168.692681]          res 51/40:08:68:4b:84/40:08:07:00:00/e7 Emask 0x9 (media error)
-> > [  168.701281] ata3.00: status: { DRDY ERR }
-> > [  168.705600] ata3.00: error: { UNC }
-> > [  168.724446] blk_update_request: I/O error, dev sda, sector 126110568
-> > [  168.728860] BTRFS error (device sdc1): bdev /dev/sda errs: wr 0, rd 43, flush 0, corrupt 0, gen 0
-> > [  172.824043] ata3.00: exception Emask 0x0 SAct 0x0 SErr 0x0 action 0x0
-> > [  172.828651] ata3.00: BMDMA stat 0x25
-> > [  172.833281] ata3.00: failed command: READ DMA
-> > [  172.837876] ata3.00: cmd c8/00:08:50:4b:84/00:00:00:00:00/e7 tag 0 dma 4096 in
-> > [  172.837876]          res 51/40:08:50:4b:84/40:08:07:00:00/e7 Emask 0x9 (media error)
-> > [  172.847296] ata3.00: status: { DRDY ERR }
-> > [  172.852054] ata3.00: error: { UNC }
-> > [  172.872404] blk_update_request: I/O error, dev sda, sector 126110544
-> > [  172.877241] BTRFS error (device sdc1): bdev /dev/sda errs: wr 0, rd 44, flush 0, corrupt 0, gen 0
-> > ERROR: error removing device '/dev/sda': Input/output error
-> > 
-> > The same happens when I try to delete /dev/sdc1 from the volume. Is there any
-> > btrfs "force" option so that btrfs balances only chunks that are accessible? I
-> > can potentially physically disconnect /dev/sda, but the loss will be greater
-> > I believe.
-> > 
-> > How can I proceed except btrfs restore?
-> > 
-> > During scrub operation the following was recorded in the logs:
-> > 
-> > [Tue Apr 12 23:10:20 2016] BTRFS warning (device sdc1): checksum error at logical 126952947712 on dev /dev/sdc1, sector 126150176, root 258, inode 879324, offset 308256768, length 4096, links 1 (path: lib/mysql/ibdata1)
-> > 
-> > If I collect all the messages like this, will it give a full picture of damaged files?
-> > 
-> > Many thanks in advance.
-> > 
-> > P.S. Linux kernel v4.4.2, btrfs-progs v4.4.
+Am 20.04.2016 um 15:32 schrieb Anand Jain:
+>> 1. mount the raid1 (2 disc with different size)
 > 
-> I have decided to try "btrfs restore". Actually I have discovered two usability
-> points about it:
+>> 2. unplug the biggest drive (hotplug)
 > 
-> 1. I cannot run this utility as following:
-> 
-> btrfs -i restore /dev/sda /mnt/usb &> log
-> 
-> because this command is interactive and may read something from the terminal.
-> It would be nice if there is a flag -y (answer "yes" to all questions) so that
-> no input is required from user. The example of the question is:
-> 
-> We seem to be looping a lot on ..., do you want to keep going on? [y/N/a]
-> 
-> In general this question puzzles me. What does it mean? As far as I understood
-> it prevents btrfs restore from looping forever. Should I consider those files
-> as lost? I have also hit the same problem as discussed in [1]: answer
-> "a" (always) still causes the questions to be asked.
-> 
-> 2. btrfs restore does not print a final statistics: how many files are
-> successfully restored, and how many have failed.
+>   Btrfs won't know that you have plugged-out a disk.
+>   Though it experiences IO failures, it won't close the bdev.
 
-Thanks for trying 'restore', but I was wondering, does btrfsck work for you?
+Well, as far as I can tell mdadm can handle this use case. I tested that. I have an mdadm raid5 running. I accidentially unplugged a sata cable from one of the devices and the raid still worked. I did not even notice that the cable was unplugged until a few hours later. Then I plugged in the cable agaib and that was it. mdadm recovered the raid5 without any problem. -> This is redunancy!
 
-Thanks,
-
--liubo
 
 > 
-> [1] https://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg36458.html
+>> 3. try to copy something to the degraded raid1
 > 
-> -- 
-> With best regards,
-> Dmitry
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>   This will work as long as you do _not_ run unmount/mount.
+ 
+I did not umount the raid1 when I tried to copy something. As you can see from the sequence of events: I removed the drive and immdiately afterwards tried to copy something to the degraded array. This copy failed with a crash of the btrfs module. -> This is NOT redundancy.
+
+The ummount and mount operations are coming afterwards.
+
+In a nutshell I have to say that the btrfs behaviour is by no means compliant with my understanding of redundancy.
+
+
+Matthias
+
+
+

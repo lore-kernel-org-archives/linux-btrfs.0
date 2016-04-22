@@ -1,50 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wm0-f44.google.com ([74.125.82.44]:36741 "EHLO
-	mail-wm0-f44.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751254AbcDVVAL (ORCPT
+Received: from mail-wm0-f46.google.com ([74.125.82.46]:37047 "EHLO
+	mail-wm0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751554AbcDVWgW (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 22 Apr 2016 17:00:11 -0400
-Received: by mail-wm0-f44.google.com with SMTP id v188so34457077wme.1
-        for <linux-btrfs@vger.kernel.org>; Fri, 22 Apr 2016 14:00:10 -0700 (PDT)
+	Fri, 22 Apr 2016 18:36:22 -0400
+Received: by mail-wm0-f46.google.com with SMTP id n3so46573482wmn.0
+        for <linux-btrfs@vger.kernel.org>; Fri, 22 Apr 2016 15:36:21 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <CAJCQCtRUtwY8zcRMoq2xCVgm=_rTeU5zxvM4_=1VrYtva7m6iw@mail.gmail.com>
-References: <022276ed-577c-5616-abc0-3e1a7644f31e@zoner.cz>
-	<CAJCQCtRUtwY8zcRMoq2xCVgm=_rTeU5zxvM4_=1VrYtva7m6iw@mail.gmail.com>
-Date: Fri, 22 Apr 2016 17:00:09 -0400
-Message-ID: <CAD=QJKhDJ+OgwJXUv3Rizzs4jFtzt=4HwD9b7E6y324fd_vVHQ@mail.gmail.com>
-Subject: Re: btrfs forced readonly + errno=-28 No space left
+In-Reply-To: <5704FACD.9040304@gmail.com>
+References: <CAD=QJKi-3PJQViAaRmGoz3_w6RQbRehDL9vXs14+CSHsG3ipTg@mail.gmail.com>
+	<CAD=QJKg6xFSFjJdDyD+v0Rd2afeB-ZRRy2SncC1Db5fyT3cf9A@mail.gmail.com>
+	<20160310023627.2e915667@natsu>
+	<pan$9dde$acf9ba51$bb837cb8$8c954a04@cox.net>
+	<CAD=QJKjkzh4U5Gmp=PJMiR8w3by12BVCDZ+MN2S+Ekk_EksjAg@mail.gmail.com>
+	<CAD=QJKi7=R92UP4PKH4UAYH1HUB0Pr8DwO+MsyLNamKryYuZVA@mail.gmail.com>
+	<CAJCQCtR60t=XN1vXaRoMA_YBAy=jje6ns9EoUO1wG_+Zk02LZw@mail.gmail.com>
+	<CAD=QJKgrBXCXjP4vEzsGtO9oYN7LQ1titFatCYhmLbZea8_W0w@mail.gmail.com>
+	<5704FACD.9040304@gmail.com>
+Date: Fri, 22 Apr 2016 18:36:19 -0400
+Message-ID: <CAD=QJKgpB83cjS-+_DYxdjAnONXa=UpqFEp0mKQPrg7-Zdt_1A@mail.gmail.com>
+Subject: Re: dstat shows unexpected result for two disk RAID1
 From: Nicholas D Steeves <nsteeves@gmail.com>
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Cc: Chris Murphy <lists@colorremedies.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 21 April 2016 at 18:44, Chris Murphy <lists@colorremedies.com> wrote:
-> On Thu, Apr 21, 2016 at 6:53 AM, Martin Svec <martin.svec@zoner.cz> wrote:
->> Hello,
->>
->> we use btrfs subvolumes for rsync-based backups. During backups btrfs often fails with "No space
->> left" error and goes to readonly mode (dmesg output is below) while there's still plenty of
->> unallocated space:
->
-> Are you snapshotting near the time of enospc? If so it's a known
-> problem that's been around for a while. There are some suggestions in
-> the archives but I think the main thing is to back off on the workload
-> momentarily, take the snapshot, and then resume the workload. I don't
-> think it has to come to a complete stop but it's a lot more
-> reproducible with heavy writes.
+Everyone, thank you very much for helping me to learn more.  Getting
+up to speed takes forever!  I posted an idea relating to this thread,
+but it's more read latency rather than throughput related, but I'm not
+sure what the right way to link overlapping threads is, so here is how
+to find it:
 
-Is this known problem specific to heavy writes + take a snapshot + -o
-compress (either zlib or lzo), or does this enospc also affect the
-more simple heavy writes + take a snapshot case?  Is there a greater
-likelyhood of running into it if using compression?
+Date: Fri, 22 Apr 2016 18:14:00 -0400
+Message-ID: <CAD=QJKgJ9JAgZAOSivJTL-bcLbdkP6UqGb0i6g=fS9j6XKtcLA@mail.gmail.com>
+Subject: Re: [PATCH v8 00/27][For 4.7] Btrfs: Add inband (write time)
+ de-duplication framework
 
-As for a workaround...is there a command like batch that can be used
-to schedule things for periods of low IO?  Can a sync, btrfs fi sync
-/mountpoint, or btrfs sub sync /sub_mountpoint before taking a
-snapshot prevent it?  If the answer to all of these is no, which of
-the following would be a good candidate for adding this support to:
-http://gnqs.sourceforge.net/docs/starter_pack/alternatives/index.html
+WRT the original AG balanced IO optimisation problem, should I spend
+most of my time reading disk-io.c while looking for opportunities to
+optimize multi-device reads, while consulting xfs_file.c and
+xfs_super.c, or just xfs_super.c?
 
-Best regards,
+Thanks,
 Nicholas

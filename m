@@ -1,203 +1,89 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.21]:56584 "EHLO mout.gmx.net"
+Received: from mx2.suse.de ([195.135.220.15]:41692 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752216AbcDVNSs (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 22 Apr 2016 09:18:48 -0400
-Received: from thetick.localnet ([93.181.44.247]) by mail.gmx.com (mrgmx102)
- with ESMTPSA (Nemesis) id 0MC7em-1b2MPE35bk-008qla for
- <linux-btrfs@vger.kernel.org>; Fri, 22 Apr 2016 15:18:44 +0200
-From: Marc Joliet <marcec@gmx.de>
-To: linux-btrfs@vger.kernel.org
-Subject: Re: random i/o error without error in dmesg
-Date: Fri, 22 Apr 2016 15:17:57 +0200
-Message-ID: <1892242.Gv7fI7HlO2@thetick>
-In-Reply-To: <5339076.FcC2BAjqs5@thetick>
-References: <562E0D31.2080003@dblaci.hu> <5339076.FcC2BAjqs5@thetick>
+	id S932132AbcDVRqQ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 22 Apr 2016 13:46:16 -0400
+Date: Fri, 22 Apr 2016 10:46:13 -0700
+From: Mark Fasheh <mfasheh@suse.de>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: About fi du and reflink/dedupe
+Message-ID: <20160422174613.GY2187@wotan.suse.de>
+Reply-To: Mark Fasheh <mfasheh@suse.de>
+References: <0e9b715e-0cb3-c7a3-e40e-36c9be1f53bd@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: multipart/signed; boundary="nextPart1538400.1KA1ySMAlU"; micalg="pgp-sha256"; protocol="application/pgp-signature"
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <0e9b715e-0cb3-c7a3-e40e-36c9be1f53bd@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
---nextPart1538400.1KA1ySMAlU
-Content-Transfer-Encoding: quoted-printable
-Content-Type: text/plain; charset="utf-8"
+On Fri, Apr 22, 2016 at 10:57:29AM +0800, Qu Wenruo wrote:
+> Hi Mark,
+> 
+> Thanks for your contribution to btrfs-filesystem-du command.
+> 
+> However there seems to be some strange behavior related to
+> reflinke(and further in-band dedupe).
+> (And the root cause is lying quite deep into kernel backref resolving codes)
+> 
+> ["Exclusive" value not really exclsuive]
+> When a file with 2 file extents, and the 2nd file extent points to
+> the 1st one, the fi du gives wrong answer
+> 
+> The following command can create such file easily.
+> 
+> # mkfs.btrfs -f /dev/sdb5
+> # mount /dev/sdb5 /mnt/test
+> # xfs_io -f -c "pwrite 0 128K" /mnt/test/tmp
+> # xfs_io -c "reflink /mnt/test/tmp 0 128K 128K" /mnt/test/tmp
+> # btrfs fi du /mnt/test
+>      Total   Exclusive  Set shared  Filename
+>  256.00KiB   256.00KiB           -  /mnt/test//tmp
+>  256.00KiB   256.00KiB       0.00B  /mnt/test/
+> 
+> Total seems to be OK, while I am confused of the exclusive value.
+> 
+> As the above method will only create one real data extent, which
+> takes 128K, and if following the qgroup definition, its exclusive
+> should be 128K other than 256K.
 
-Am Friday 22 April 2016
-schrieb Marc Joliet <marcec@gmx.de>
+Ok that's a bug in how we're counting these. We already record extent start
+offsets so it's easy enough to see when we have the same extent in a file
+while we fiemap it. Thanks for reporting this I'll take a look at a fix.
 
->Hi
->
->FWIW, this sounds like what I've been seeing with dovecot.  In case it=
-'s
->relevant, I'll try to explain.
->
->After some uptime, I'll see log messages like this:
->
->Okt 26 12:05:46 thetick dovecot[467]: imap(marcec): Error: pread() fai=
-led
->with file /home/marcec/.mdbox/mailboxes/BTRFS/dbox-Mails/dovecot.index=
-.log:
->Input/output error
->
->Occasionally they go away by themselves, but usually I have to reboot =
-to make
->them go away.  This happens when getmail attempts to fetch mail, which=
- fails
->due to the above error.  After the reboot getmail succeeds again.
->
->As in Szalma's case, btrfs-scrub never reports anything wrong.
 
-FWIW, this still happens.  I tried various things, in order:
+> And what's more, if we modify btrfs_check_shared() to return SHARED
+> flag for such case, we will get 0 exclusive value for it.
+> Which is quite strang. (I assume the exclusive should be 128K)
+> 
+> [Slow btrfs_check_shared() performance]
+> In above case, btrfs fi du returns very fast.
+> But when the file is in-band deduped and size goes to 1G.
+> btrfs_check_shared() will take a lot of time to return, as it will
+> do backref walk through.
+> 
+> This would be a super huge problem for inband dedupe.
+> 
+> 
+> [Possible solution]
+> Would you please consider to judge shared extent in user space?
+> And don't rely on the SHARED flag from fiemap.
 
-=2D set mmap_disable=3Dyes (as mentioned in [0] and [1]),
-=2D stop mounting with compress=3Dlzo, and
-=2D upgrade dovecot 2.2.19 to 2.2.23,
+_Absoletely Not_
 
-none of which helped.
+We don't ask userspace to modify their applications if there's a peformance
+problem in fiemap, we fix the performance problem in fiemap. Off the top of
+my head I can think of at least TWO other applications which rely on fiemap
+heavily. You will have very little luck in asking them to modify their
+applications.
 
-I found very little on the web: [0] (in German) is fairly recent, but t=
-he=20
-error apparently just went away.  [1] is pretty old (2007) and the repo=
-rter=20
-was using unionfs.  I also found a russian forum entry [2], which relat=
-es to=20
-btrfs again, but if Google Translate is accurate enough, the user "solv=
-ed" the=20
-problem by using XFS instead.
+If btrfs fiemap is broken, we fix that full stop.
 
-My current attempt is to use the maildir mailbox format (instead of mdb=
-ox) in=20
-the hope that it doesn't trigger this bug, while reverting the changes =
-above=20
-(except for the dovecot upgrade).  It's "just" a home server, so I don'=
-t=20
-expect any major differences in performance (also since KMail probably =
-uses=20
-akonadi for searching).
+More specifically, If in-band dedupe is causing fiemap to go out to lunch
+'for a year', we need to address the core problem in in-band dedupe. If it's
+a general problem in btrfs fiemap when we need to track it down before users
+start yelling at us.
+	--Mark
 
-[...]
->Anyway, the current state of the system is:
->
-># uname -r
->4.1.9-gentoo-r1
-># btrfs filesystem show /
->Label: 'MARCEC_ROOT'  uuid: 0267d8b3-a074-460a-832d-5d5fd36bae64
->        Total devices 1 FS bytes used 74.40GiB
->        devid    1 size 107.79GiB used 105.97GiB path /dev/sda1
->
->btrfs-progs v4.2.2
-># btrfs filesystem df /
->Data, single: total=3D98.94GiB, used=3D72.30GiB
->System, single: total=3D32.00MiB, used=3D20.00KiB
->Metadata, single: total=3D7.00GiB, used=3D2.10GiB
->GlobalReserve, single: total=3D512.00MiB, used=3D0.00B
->
->The filesystem is mounted as (leaving out subvolume mounts which use t=
-he same
->mount options):
->/dev/sda1 on / type btrfs (rw,noatime,compress=3Dlzo,ssd,discard,space=
-_cache)
-
-I have since obtained an old Mac Mini and have been using it as a home =
-server=20
-since early April, onto which I moved dovecot (using doveadm-sync(1)). =
- Its=20
-current state is:
-
-diefledermaus etc # uname -r
-4.4.8-gentoo
-diefledermaus etc # btrfs --version
-btrfs-progs v4.5.1
-diefledermaus etc # btrfs fi show
-Label: 'MACROOT'  uuid: 8b2b0242-5816-4529-9e88-6c82ffff2eaf
-        Total devices 1 FS bytes used 12.29GiB
-        devid    1 size 251.20GiB used 15.09GiB path /dev/sda3
-
-Label: 'MARCEC_BACKUP'  uuid: f97b3cda-15e8-418b-bb9b-235391ef2a38
-        Total devices 1 FS bytes used 797.14GiB
-        devid    1 size 976.56GiB used 819.12GiB path /dev/sdb2
-
-diefledermaus etc # btrfs fi df /
-Data, single: total=3D12.01GiB, used=3D11.38GiB
-System, DUP: total=3D40.00MiB, used=3D16.00KiB
-Metadata, DUP: total=3D1.50GiB, used=3D926.77MiB
-GlobalReserve, single: total=3D288.00MiB, used=3D0.00B
-diefledermaus etc # mount | grep root
-/dev/sda3 on / type btrfs=20
-(rw,noatime,compress=3Dlzo,space_cache,autodefrag,subvolid=3D257,subvol=
-=3D/rootfs)
-/dev/sda3 on /mnt/rootfs type btrfs=20
-(rw,noatime,compress=3Dlzo,space_cache,autodefrag,subvolid=3D5,subvol=3D=
-/)
-
-Note that the file system was *freshly* created using btrfs-progs 4.3.1=
- and=20
-gentoo-sources 4.1.15-r1 (the current stable versions in Gentoo; -r1 is=
- a=20
-Gentoo-specific revision number).
-
-References:
-
-[0] https://debianforum.de/forum/viewtopic.php?f=3D27&t=3D157374
-[1] http://www.dovecot.org/list/dovecot/2007-November/026551.html
-[2] https://www.linux.org.ru/forum/general/11598803
-
-=2D----------------------------------------------------------
-
-I'd like to add that dovecot is the *only* software I use that has this=
- sort=20
-of problem with btrfs -- and it's *only* the transaction *.log files; t=
-he few=20
-times the index files had problems, they were automatically fixed.  How=
-ever,=20
-once the problem shows up, no other software can read the files, either=
- (e.g.,=20
-cat fails).  Furthermore, restarting dovecot doesn't help, only rebooti=
-ng,=20
-i.e., unmounting the entire file system, not just the subvolume the mai=
-lbox=20
-resides on (as discussed previously in this sub-thread).  So I'm not su=
-re=20
-what, exactly, is at fault here: dovecot, btrfs, or both?
-
-So given all the above, does anybody have any further suggestions on ho=
-w to=20
-proceed?  Because regardless of whether the switch to maildir ends up=20=
-
-resolving the issue for me, something is going wrong.  I'm thinking of =
-filing=20
-a bug report with dovecot; perhaps none of their devs test with btrfs?
-
-Greetings
-=2D-=20
-Marc Joliet
-=2D-
-"People who think they know everything really annoy those of us who kno=
-w we
-don't" - Bjarne Stroustrup
-
---nextPart1538400.1KA1ySMAlU
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: This is a digitally signed message part.
-Content-Transfer-Encoding: 7Bit
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2
-
-iQIcBAABCAAGBQJXGiSzAAoJEL/Q5oYsiHj0Y68P/jRkqIdiVyc8F1t4v/FtiRx9
-R6VkhD+1rGbGnCVXCc3iskrwbbLB/1DlOF32X2cLnP2zVKby9oEoOXshp2q6BIXW
-UvflpvUe/VDiwg9YNM3q34iHMNEcljA3eZArcxNhfYgfyLhwGVZKodzBJdi4azvG
-HIOfBOvkC1ZZKNeNzszO6uXWAZiMH+N12BlGi6c4zdfYqucj3oPzs/MSxFSvIOrR
-AImVHm5Cn/VCeAUPvPEjzveIDDclJPf18itvX/aMOEXdgc2peWtRukzDml6JsrrW
-QVstquidZHpoX2oF3vTz9qiOffaukCO/gUcLtys8IysKxrDw8f5BAYNH2iaaRi5h
-ocw/VrTUi9Z+C+oDe9Vi6CSnznzkoORSks9UoeHAsx7l5z0r505XMqaXr1jE8ioO
-gtnBKHT//YdGB26CdZ7gdO/5+zw5s97DP+lCWSZyiVuE5JrbarhUPOOR/731tJcV
-ZqbN2JOlPqAzGtOYrZ8TDbL6Fjy7EkElU5UV0J1PxNeiZzXhHZaXcw75NVR/DBHc
-uujuw3RudvD+EzL+87y4kGwbFBKmLVJYuWolJqz/DkRmjozoANfVSTBSFqxghFpp
-L1iNMHaAacTxmF3eVgCJUndo3FrQDpubIwnK+mIGGnsHV5lwuLAWFonHI4teG3p3
-ehf8opZgM6gBF8X+eyVo
-=VKbV
------END PGP SIGNATURE-----
-
---nextPart1538400.1KA1ySMAlU--
-
+--
+Mark Fasheh

@@ -1,155 +1,149 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-yw0-f175.google.com ([209.85.161.175]:34322 "EHLO
-	mail-yw0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751885AbcDVI2Z (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 22 Apr 2016 04:28:25 -0400
-Received: by mail-yw0-f175.google.com with SMTP id j74so101470718ywg.1
-        for <linux-btrfs@vger.kernel.org>; Fri, 22 Apr 2016 01:28:25 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <20151229201907.rzbaxqiyjfwpqxwp@ret.masoncoding.com>
-References: <cover.1443583874.git.osandov@osandov.com>
-	<3319d371e22491b6901af33842b57db37b77c52c.1443583874.git.osandov@osandov.com>
-	<20151229201907.rzbaxqiyjfwpqxwp@ret.masoncoding.com>
-Date: Fri, 22 Apr 2016 11:28:24 +0300
-Message-ID: <CAOcd+r2wCqcfbub6AKoDwyPB4XS7MDUuqeJOziw-g8vn+mM+gw@mail.gmail.com>
-Subject: Re: [PATCH v4 6/9] Btrfs: implement the free space B-tree
-From: Alex Lyakas <alex.btrfs@zadarastorage.com>
-To: Chris Mason <clm@fb.com>, Omar Sandoval <osandov@osandov.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Received: from mx1.redhat.com ([209.132.183.28]:40933 "EHLO mx1.redhat.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751724AbcDVUgu (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 22 Apr 2016 16:36:50 -0400
+From: Andreas Gruenbacher <agruenba@redhat.com>
+To: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
+        David Sterba <dsterba@suse.com>, Filipe Manana <fdmanana@suse.com>
+Cc: Andreas Gruenbacher <agruenba@redhat.com>, linux-btrfs@vger.kernel.org,
+        Alexander Viro <viro@zeniv.linux.org.uk>,
+        linux-fsdevel@vger.kernel.org
+Subject: [PATCH] btrfs: Switch to generic xattr handlers
+Date: Fri, 22 Apr 2016 22:36:44 +0200
+Message-Id: <1461357404-28350-1-git-send-email-agruenba@redhat.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Omar, Chris,
+The btrfs_{set,remove}xattr inode operations check for a read-only root
+(btrfs_root_readonly) before calling into generic_{set,remove}xattr.  If
+this check is moved into __btrfs_setxattr, we can get rid of
+btrfs_{set,remove}xattr.
 
-I have reviewed the free-space-tree code. It is a very nice feature.
+This patch applies to mainline, I would like to keep it together with
+the other xattr cleanups if possible, though.  Could you please review?
 
-However, I have a basic understanding question.
-
-Let's say we are running a delayed ref which inserts a new EXTENT_ITEM
-into the extent tree, e.g., we are in alloc_reserved_file_extent. At
-this point we call remove_from_free_space_tree(), which updates the
-free-space-tree about the allocated space. But this requires to COW
-the free-space-tree itself. So we allocate a new tree block for the
-free-space tree, and insert a new delayed ref, which will update the
-extent tree about the new tree block allocation. We also insert a
-delayed ref to free the previous copy of the free-space-tree block.
-
-At some point we run these new delayed refs, so we insert/remove
-EXTENT_ITEMs from the extent tree, and this in turn requires us to
-update the free-space-tree again. So we need again to COW
-free-space-tree blocks, generating more delayed refs.
-
-At which point this recursion stops?
-
-Do we assume that at some point all needed free-space tree blocks have
-been COW'ed already, and we do not COW a tree block more than once per
-transaction (unless it was written to disk due to memory pressure)?
-
-Thanks!
-Alex.
+Thanks,
+Andreas
 
 
-On Tue, Dec 29, 2015 at 11:19 PM, Chris Mason <clm@fb.com> wrote:
-> On Tue, Sep 29, 2015 at 08:50:35PM -0700, Omar Sandoval wrote:
->> From: Omar Sandoval <osandov@fb.com>
->>
->> The free space cache has turned out to be a scalability bottleneck on
->> large, busy filesystems. When the cache for a lot of block groups needs
->> to be written out, we can get extremely long commit times; if this
->> happens in the critical section, things are especially bad because we
->> block new transactions from happening.
->>
->> The main problem with the free space cache is that it has to be written
->> out in its entirety and is managed in an ad hoc fashion. Using a B-tree
->> to store free space fixes this: updates can be done as needed and we get
->> all of the benefits of using a B-tree: checksumming, RAID handling,
->> well-understood behavior.
->>
->> With the free space tree, we get commit times that are about the same as
->> the no cache case with load times slower than the free space cache case
->> but still much faster than the no cache case. Free space is represented
->> with extents until it becomes more space-efficient to use bitmaps,
->> giving us similar space overhead to the free space cache.
->>
->> The operations on the free space tree are: adding and removing free
->> space, handling the creation and deletion of block groups, and loading
->> the free space for a block group. We can also create the free space tree
->> by walking the extent tree and clear the free space tree.
->>
->> Signed-off-by: Omar Sandoval <osandov@fb.com>
->
->> +int btrfs_create_free_space_tree(struct btrfs_fs_info *fs_info)
->> +{
->> +     struct btrfs_trans_handle *trans;
->> +     struct btrfs_root *tree_root = fs_info->tree_root;
->> +     struct btrfs_root *free_space_root;
->> +     struct btrfs_block_group_cache *block_group;
->> +     struct rb_node *node;
->> +     int ret;
->> +
->> +     trans = btrfs_start_transaction(tree_root, 0);
->> +     if (IS_ERR(trans))
->> +             return PTR_ERR(trans);
->> +
->> +     free_space_root = btrfs_create_tree(trans, fs_info,
->> +                                         BTRFS_FREE_SPACE_TREE_OBJECTID);
->> +     if (IS_ERR(free_space_root)) {
->> +             ret = PTR_ERR(free_space_root);
->> +             goto abort;
->> +     }
->> +     fs_info->free_space_root = free_space_root;
->> +
->> +     node = rb_first(&fs_info->block_group_cache_tree);
->> +     while (node) {
->> +             block_group = rb_entry(node, struct btrfs_block_group_cache,
->> +                                    cache_node);
->> +             ret = populate_free_space_tree(trans, fs_info, block_group);
->> +             if (ret)
->> +                     goto abort;
->> +             node = rb_next(node);
->> +     }
->> +
->> +     btrfs_set_fs_compat_ro(fs_info, FREE_SPACE_TREE);
->> +
->> +     ret = btrfs_commit_transaction(trans, tree_root);
->> +     if (ret)
->> +             return ret;
->> +
->> +     return 0;
->> +
->> +abort:
->> +     btrfs_abort_transaction(trans, tree_root, ret);
->> +     btrfs_end_transaction(trans, tree_root);
->> +     return ret;
->> +}
->> +
->
-> Hi Omar,
->
-> The only problem I've hit testing this stuff is where we create the tree
-> on existing filesystems.  There are a few different problems here:
->
-> 1) The populate code happens after resuming balance operations.  The
-> balancing code could be changing these block groups while we scan them.
-> I fixed this by moving the scan up earlier.
->
-> 2) Delayed references may be run, which will also change the extent tree
-> as we're scanning it.
->
-> 3) We might need to commit the transaction to reclaim space.
->
-> For now I'm ignoring #3 and adding a flag in fs_info that will make us
-> skip delayed references.  This really isn't a good long term solution,
-> we need to be able to do this on a per block group basis and make
-> forward progress without pinning the delayed refs in ram.
->
-> But for now, it'll do to get this into the tree for more testing.
->
-> -chris
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Signed-off-by: Andreas Gruenbacher <agruenba@redhat.com>
+---
+ fs/btrfs/inode.c | 16 ++++++++--------
+ fs/btrfs/xattr.c | 22 +++-------------------
+ fs/btrfs/xattr.h |  3 ---
+ 3 files changed, 11 insertions(+), 30 deletions(-)
+
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 41a5688..0077b3b 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -10160,10 +10160,10 @@ static const struct inode_operations btrfs_dir_inode_operations = {
+ 	.symlink	= btrfs_symlink,
+ 	.setattr	= btrfs_setattr,
+ 	.mknod		= btrfs_mknod,
+-	.setxattr	= btrfs_setxattr,
++	.setxattr	= generic_setxattr,
+ 	.getxattr	= generic_getxattr,
+ 	.listxattr	= btrfs_listxattr,
+-	.removexattr	= btrfs_removexattr,
++	.removexattr	= generic_removexattr,
+ 	.permission	= btrfs_permission,
+ 	.get_acl	= btrfs_get_acl,
+ 	.set_acl	= btrfs_set_acl,
+@@ -10237,10 +10237,10 @@ static const struct address_space_operations btrfs_symlink_aops = {
+ static const struct inode_operations btrfs_file_inode_operations = {
+ 	.getattr	= btrfs_getattr,
+ 	.setattr	= btrfs_setattr,
+-	.setxattr	= btrfs_setxattr,
++	.setxattr	= generic_setxattr,
+ 	.getxattr	= generic_getxattr,
+ 	.listxattr      = btrfs_listxattr,
+-	.removexattr	= btrfs_removexattr,
++	.removexattr	= generic_removexattr,
+ 	.permission	= btrfs_permission,
+ 	.fiemap		= btrfs_fiemap,
+ 	.get_acl	= btrfs_get_acl,
+@@ -10251,10 +10251,10 @@ static const struct inode_operations btrfs_special_inode_operations = {
+ 	.getattr	= btrfs_getattr,
+ 	.setattr	= btrfs_setattr,
+ 	.permission	= btrfs_permission,
+-	.setxattr	= btrfs_setxattr,
++	.setxattr	= generic_setxattr,
+ 	.getxattr	= generic_getxattr,
+ 	.listxattr	= btrfs_listxattr,
+-	.removexattr	= btrfs_removexattr,
++	.removexattr	= generic_removexattr,
+ 	.get_acl	= btrfs_get_acl,
+ 	.set_acl	= btrfs_set_acl,
+ 	.update_time	= btrfs_update_time,
+@@ -10265,10 +10265,10 @@ static const struct inode_operations btrfs_symlink_inode_operations = {
+ 	.getattr	= btrfs_getattr,
+ 	.setattr	= btrfs_setattr,
+ 	.permission	= btrfs_permission,
+-	.setxattr	= btrfs_setxattr,
++	.setxattr	= generic_setxattr,
+ 	.getxattr	= generic_getxattr,
+ 	.listxattr	= btrfs_listxattr,
+-	.removexattr	= btrfs_removexattr,
++	.removexattr	= generic_removexattr,
+ 	.update_time	= btrfs_update_time,
+ };
+ 
+diff --git a/fs/btrfs/xattr.c b/fs/btrfs/xattr.c
+index 03224b0..3bfb252 100644
+--- a/fs/btrfs/xattr.c
++++ b/fs/btrfs/xattr.c
+@@ -237,6 +237,9 @@ int __btrfs_setxattr(struct btrfs_trans_handle *trans,
+ 	struct btrfs_root *root = BTRFS_I(inode)->root;
+ 	int ret;
+ 
++	if (btrfs_root_readonly(root))
++		return -EROFS;
++
+ 	if (trans)
+ 		return do_setxattr(trans, inode, name, value, size, flags);
+ 
+@@ -432,25 +435,6 @@ const struct xattr_handler *btrfs_xattr_handlers[] = {
+ 	NULL,
+ };
+ 
+-int btrfs_setxattr(struct dentry *dentry, const char *name, const void *value,
+-		   size_t size, int flags)
+-{
+-	struct btrfs_root *root = BTRFS_I(d_inode(dentry))->root;
+-
+-	if (btrfs_root_readonly(root))
+-		return -EROFS;
+-	return generic_setxattr(dentry, name, value, size, flags);
+-}
+-
+-int btrfs_removexattr(struct dentry *dentry, const char *name)
+-{
+-	struct btrfs_root *root = BTRFS_I(d_inode(dentry))->root;
+-
+-	if (btrfs_root_readonly(root))
+-		return -EROFS;
+-	return generic_removexattr(dentry, name);
+-}
+-
+ static int btrfs_initxattrs(struct inode *inode,
+ 			    const struct xattr *xattr_array, void *fs_info)
+ {
+diff --git a/fs/btrfs/xattr.h b/fs/btrfs/xattr.h
+index 96807b3..15fc474 100644
+--- a/fs/btrfs/xattr.h
++++ b/fs/btrfs/xattr.h
+@@ -28,9 +28,6 @@ extern ssize_t __btrfs_getxattr(struct inode *inode, const char *name,
+ extern int __btrfs_setxattr(struct btrfs_trans_handle *trans,
+ 			    struct inode *inode, const char *name,
+ 			    const void *value, size_t size, int flags);
+-extern int btrfs_setxattr(struct dentry *dentry, const char *name,
+-		const void *value, size_t size, int flags);
+-extern int btrfs_removexattr(struct dentry *dentry, const char *name);
+ 
+ extern int btrfs_xattr_security_init(struct btrfs_trans_handle *trans,
+ 				     struct inode *inode, struct inode *dir,
+-- 
+2.5.5
+

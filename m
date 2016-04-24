@@ -1,50 +1,51 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:39852 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751219AbcDWHR5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 23 Apr 2016 03:17:57 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1atrpC-0001eR-F2
-	for linux-btrfs@vger.kernel.org; Sat, 23 Apr 2016 09:17:54 +0200
-Received: from p5090971f.dip0.t-ipconnect.de ([80.144.151.31])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sat, 23 Apr 2016 09:17:54 +0200
-Received: from matthias by p5090971f.dip0.t-ipconnect.de with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sat, 23 Apr 2016 09:17:54 +0200
-To: linux-btrfs@vger.kernel.org
-From: Matthias Bodenbinder <matthias@bodenbinder.de>
-Subject: Re: Question: raid1 behaviour on failure
-Date: Sat, 23 Apr 2016 09:17:48 +0200
-Message-ID: <nff7is$13g$1@ger.gmane.org>
-References: <nf1q0j$ug4$1@ger.gmane.org> <57148B2E.6010904@cn.fujitsu.com>
- <nf73cv$7vh$1@ger.gmane.org>
- <9ade4472-c99d-82a8-27c9-704b75bd87ab@cn.fujitsu.com>
- <nf9o32$7r4$1@ger.gmane.org>
- <180d89ae-32cf-ad59-2b6e-56ed82e9f439@cn.fujitsu.com>
- <nfb39q$iv0$1@ger.gmane.org>
- <1772508d-40b5-5303-8edb-29b5504216aa@cn.fujitsu.com>
- <nff6vr$odm$1@ger.gmane.org>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-In-Reply-To: <nff6vr$odm$1@ger.gmane.org>
+Received: from mail-ig0-f174.google.com ([209.85.213.174]:34945 "EHLO
+	mail-ig0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752575AbcDXMLd convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 24 Apr 2016 08:11:33 -0400
+Received: by mail-ig0-f174.google.com with SMTP id bi2so45884720igb.0
+        for <linux-btrfs@vger.kernel.org>; Sun, 24 Apr 2016 05:11:33 -0700 (PDT)
+MIME-Version: 1.0
+From: lenovomi <lenovomi@gmail.com>
+Date: Sun, 24 Apr 2016 14:11:03 +0200
+Message-ID: <CAAcrkY+i1QW0dW5y3=szq9vJh8946shAvCehefbRKW4xqv_zBA@mail.gmail.com>
+Subject: restore is failing
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am 23.04.2016 um 09:07 schrieb Matthias Bodenbinder:
-> 14# mount /mnt/raid1/
-> mount: wrong fs type, bad option, bad superblock on /dev/sdh,
->        missing codepage or helper program, or other error
-> 
->        In some cases useful info is found in syslog - try
->        dmesg | tail or so.
-> ####
+hi,
 
-My /etc/fstab has the following entry for the raid1:
+i run restore command and it restored around 300GB of data from 11TB
+but failed here
 
-UUID=16d5891f-5d52-4b29-8591-588ddf11e73d /mnt/raid1 btrfs    noauto,noatime,autodefrag  1   2
 
-Matthias
 
+Skipping existing file
+/mnt/u/backups/huszi-drive/cubox-rescue/home/alarm/etc/hosts
+Restoring /mnt/u/backups/huszi-drive/cubox-rescue/home/alarm/etc/idmapd.conf�.bkp
+Error creating /mnt/u/backups/huszi-drive/cubox-rescue/home/alarm/etc/idmapd.conf�.bkp:
+22
+Error searching
+/mnt/u/backups/huszi-drive/cubox-rescue/home/alarm/etc/idmapd.conf�.bkp
+Error searching
+/mnt/u/backups/huszi-drive/cubox-rescue/home/alarm/etc/idmapd.conf�.bkp
+Error searching
+/mnt/u/backups/huszi-drive/cubox-rescue/home/alarm/etc/idmapd.conf�.bkp
+Error searching
+/mnt/u/backups/huszi-drive/cubox-rescue/home/alarm/etc/idmapd.conf�.bkp
+Error searching
+/mnt/u/backups/huszi-drive/cubox-rescue/home/alarm/etc/idmapd.conf�.bkp
+Error searching
+/mnt/u/backups/huszi-drive/cubox-rescue/home/alarm/etc/idmapd.conf�.bkp
+extent buffer leak: start 17802812047360 len 16384
+
+
+Any idea why? is it because of the <?> character?
+
+my target directory /mnt/restore is nfs mount point.
+
+
+thanks

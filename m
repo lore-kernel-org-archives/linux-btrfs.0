@@ -1,98 +1,172 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f170.google.com ([209.85.213.170]:37343 "EHLO
-	mail-ig0-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932174AbcDYNCj (ORCPT
+Received: from mail.zener.es ([62.14.230.213]:33170 "EHLO zener.es"
+	rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+	id S1751750AbcDYODX convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 25 Apr 2016 09:02:39 -0400
-Received: by mail-ig0-f170.google.com with SMTP id g8so72988896igr.0
-        for <linux-btrfs@vger.kernel.org>; Mon, 25 Apr 2016 06:02:39 -0700 (PDT)
-Received: from [127.0.0.1] (rrcs-70-62-41-24.central.biz.rr.com. [70.62.41.24])
-        by smtp.gmail.com with ESMTPSA id e101sm11385705iod.29.2016.04.25.06.02.37
-        for <linux-btrfs@vger.kernel.org>
-        (version=TLSv1/SSLv3 cipher=OTHER);
-        Mon, 25 Apr 2016 06:02:38 -0700 (PDT)
-Subject: Re: Add device while rebalancing
-To: linux-btrfs@vger.kernel.org
-References: <CAHaPQf0-qh0sLpUotSdESi8W6dnMOBQPXVJvBP8f2sEj2MC9EA@mail.gmail.com>
- <pan$c3f48$4829429e$7ab0117b$7d124f52@cox.net> <571DFCF2.6050604@gmail.com>
- <pan$193a9$b381fd2b$1c0f329f$7b14e34b@cox.net>
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <571E154C.9060604@gmail.com>
-Date: Mon, 25 Apr 2016 09:02:04 -0400
+	Mon, 25 Apr 2016 10:03:23 -0400
+From: Alejandro Vargas <anv@zener.es>
+To: Hugo Mills <hugo@carfax.org.uk>, linux-btrfs@vger.kernel.org
+Subject: Re: empty disk reports full
+Date: Mon, 25 Apr 2016 16:03:14 +0200
+Message-ID: <2288281.DWWvr4SJAK@anv.localdomain>
+In-Reply-To: <20160401100507.GP29474@carfax.org.uk>
+References: <2879842.8EgedBzSUf@anv.localdomain> <20160401100507.GP29474@carfax.org.uk>
 MIME-Version: 1.0
-In-Reply-To: <pan$193a9$b381fd2b$1c0f329f$7b14e34b@cox.net>
-Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Type: text/plain; charset="ISO-8859-1"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2016-04-25 08:43, Duncan wrote:
-> Austin S. Hemmelgarn posted on Mon, 25 Apr 2016 07:18:10 -0400 as
-> excerpted:
->
->> On 2016-04-23 01:38, Duncan wrote:
->>>
->>> And again with snapshotting operations.  Making a snapshot is normally
->>> nearly instantaneous, but there's a scaling issue if you have too many
->>> per filesystem (try to keep it under 2000 snapshots per filesystem
->>> total, if possible, and definitely keep it under 10K or some operations
->>> will slow down substantially), and deleting snapshots is more work, so
->>> while you should ordinarily automatically thin down snapshots if you're
->>> automatically making them quite frequently (say daily or more
->>> frequently), you may want to put the snapshot deletion, at least, on
->>> hold while you scrub or balance or device delete or replace.
->
->> I would actually recommend putting all snapshot operations on hold, as
->> well as most writes to the filesystem, while doing a balance or device
->> deletion.  The more writes you have while doing those, the longer they
->> take, and the less likely that you end up with a good on-disk layout of
->> the data.
->
-> The thing with snapshot writing is that all snapshot creation effectively
-> does is a bit of metadata writing.  What snapshots primarily do is lock
-> existing extents in place (down within their chunk, with the higher chunk
-> level being the scope at which balance works), that would otherwise be
-> COWed elsewhere with the existing extent deleted on change, or simply
-> deleted on on file delete.  A snapshot simply adds a reference to the
-> current version, so that deletion, either directly or from the COW, never
-> happens, and to do that simply requires a relatively small metadata write.
-Unless I'm mistaken about the internals of BTRFS (which might be the 
-case), creating a snapshot has to update reference counts on every 
-single extent in every single file in the snapshot.  For something small 
-this isn't much, but if you are snapshotting something big (say, 
-snapshotting an entire system with all the data in one subvolume), it 
-can amount to multiple MB of writes, and it gets even worse if you have 
-no shared extents to begin with (which is still pretty typical).  On 
-some of the systems I work with at work, snapshotting a terabyte of data 
-can end up resulting in 10-20 MB of writes to disk (in this case, that 
-figure came from a partition containing mostly small files that were 
-just big enough that they didn't fit in-line in the metadata blocks).
+El Viernes, 1 de abril de 2016 10:05:07 Hugo Mills escribió:
+> On Fri, Apr 01, 2016 at 11:50:50AM +0200, Alejandro Vargas wrote:
+> > I am using a 2Tb disk for incremental backups.
+> > 
+> > I use rsync for backing up to a subvolume, and each day I creates an
+> > snapshot of the lastest snapshot and do rsync in this.
+> > 
+> > When the disk becomes nearly full (100Gb or less available) I deletes the
+> > oldest subvolume (withbtrfs subvolume delete).
+> > 
+> > My problem is that *even removing ALL the subvolumes*, the free space does
+> > not change. It continues reporting the same size (disk is nearly full).
+> > 
+> > I tried "btrfs balance start /mnt/backup" but it takes hours and hours.
+> > 
+> > I'm using linux 4.1.15
+> > btrfs-progs v4.1.2
+> 
+>    Can you show us the output of both "sudo btrfs fi show" and "btrfs
+> fi df /mnt/backup", please?
 
-This is of course still significantly faster than copying everything, 
-but it's not free either.
->
-> So while I agree in general that more writes means balances taking
-> longer, snapshot creation writes are pretty tiny in the scheme of things,
-> and won't affect the balance much, compared to larger writes you'll very
-> possibly still be doing unless you really do suspend pretty much all
-> write operations to that filesystem during the balance.
-In general, yes, except that there's the case of running with mostly 
-full metadata chunks, where it might result in a further chunk 
-allocation, which in turn can throw off the balanced layout.  Balance 
-always allocates new chunks, and doesn't write into existing ones, so if 
-you're writing enough to allocate a new chunk while a balance is happening:
-1. That chunk may or may not get considered by the balance code (I'm not 
-100% certain about this, but I believe it will be ignored by any balance 
-running at the time it gets allocated).
-2. You run the risk of ending up with a chunk with almost nothing in it 
-which could be packed into another existing chunk.
-Snapshots are not likely to trigger this, but it is still possible, 
-especially if you're taking lots of snapshots in a short period of time.
->
-> But as I said, snapshot deletions are an entirely different story, as
-> then all those previously locked in place extents are potentially freed,
-> and the filesystem must do a lot of work to figure out which ones it can
-> actually free and free them, vs. ones that still have other references
-> which therefore cannot yet be freed.
-Most of the issue here with balance is that you end up potentially doing 
-an amount of unnecessary work which is unquantifiable before it's done.
+Before deleting subvolumes:
+
+[root@backups ~]# df /mnt/backup
+S.ficheros     Tamaño Usados  Disp Uso% Montado en
+/dev/sdb1        1,9T   1,9T  5,0M 100% /mnt/backup
+
+
+[root@backups ~]# ls -l /mnt/backup
+total 0
+drwxr-xr-x 1 root root 86 mar 20 16:23 back20160318/
+drwxr-xr-x 1 root root 86 mar 20 16:23 back20160328/
+drwxr-xr-x 1 root root 86 mar 20 16:23 back20160330/
+drwxr-xr-x 1 root root 86 mar 20 16:23 back20160401/
+drwxr-xr-x 1 root root 86 mar 20 16:23 back20160404/
+drwxr-xr-x 1 root root 86 mar 20 16:23 back20160406/
+drwxr-xr-x 1 root root 86 mar 20 16:23 back20160408/
+
+
+[root@backups ~]# btrfs fi show
+Label: 'disco_backup'  uuid: cbfe8735-9f53-46f5-be7e-40f6a61a5506
+        Total devices 1 FS bytes used 1.80TiB
+        devid    1 size 1.82TiB used 1.82TiB path /dev/sdb1
+
+btrfs-progs v4.1.2
+
+[root@backups ~]# btrfs fi df /mnt/backup
+Data, single: total=1.79TiB, used=1.79TiB
+System, DUP: total=32.00MiB, used=240.00KiB
+Metadata, DUP: total=17.00GiB, used=15.83GiB
+GlobalReserve, single: total=512.00MiB, used=0.00B
+
+
+Now I remove the oldest subvolume:
+
+
+[root@backups ~]# btrfs subvolume delete /mnt/backup/back20160318/
+Delete subvolume (no-commit): '/mnt/backup/back20160318'
+
+[root@backups ~]# df  /mnt/backup
+S.ficheros     Tamaño Usados  Disp Uso% Montado en
+/dev/sdb1        1,9T   1,9T   22M 100% /mnt/backup
+
+[root@backups ~]# btrfs fi show
+Label: 'disco_backup'  uuid: cbfe8735-9f53-46f5-be7e-40f6a61a5506
+        Total devices 1 FS bytes used 1.80TiB
+        devid    1 size 1.82TiB used 1.82TiB path /dev/sdb1
+
+[root@backups ~]# btrfs fi show
+Label: 'disco_backup'  uuid: cbfe8735-9f53-46f5-be7e-40f6a61a5506
+        Total devices 1 FS bytes used 1.80TiB
+        devid    1 size 1.82TiB used 1.82TiB path /dev/sdb1
+
+btrfs-progs v4.1.2
+[root@backups ~]# btrfs fi df /mnt/backup
+Data, single: total=1.79TiB, used=1.79TiB
+System, DUP: total=32.00MiB, used=240.00KiB
+Metadata, DUP: total=17.00GiB, used=15.83GiB
+GlobalReserve, single: total=512.00MiB, used=102.53MiB
+
+
+
+Now I remove 2 more subvolumes:
+
+[root@backups ~]# btrfs subvolume delete /mnt/backup/back20160328/
+Delete subvolume (no-commit): '/mnt/backup/back20160328'
+[root@backups ~]# btrfs subvolume delete /mnt/backup/back20160330/
+Delete subvolume (no-commit): '/mnt/backup/back20160330'
+
+[root@backups ~]# df /mnt/backup/
+S.ficheros     Tamaño Usados  Disp Uso% Montado en
+/dev/sdb1        1,9T   1,9T  348M 100% /mnt/backup
+
+[root@backups ~]# btrfs fi show
+Label: 'disco_backup'  uuid: cbfe8735-9f53-46f5-be7e-40f6a61a5506
+        Total devices 1 FS bytes used 1.80TiB
+        devid    1 size 1.82TiB used 1.82TiB path /dev/sdb1
+
+btrfs-progs v4.1.2
+
+Data, single: total=1.79TiB, used=1.79TiB
+System, DUP: total=32.00MiB, used=240.00KiB
+Metadata, DUP: total=17.00GiB, used=15.83GiB
+GlobalReserve, single: total=512.00MiB, used=98.94MiB
+
+
+[root@backups ~]# ls -l /mnt/backup/
+total 0
+drwxr-xr-x 1 root root 86 mar 20 16:23 back20160401/
+drwxr-xr-x 1 root root 86 mar 20 16:23 back20160404/
+drwxr-xr-x 1 root root 86 mar 20 16:23 back20160406/
+drwxr-xr-x 1 root root 86 mar 20 16:23 back20160408/
+
+
+Now I will remove the resting subvolumes
+
+[root@backups ~]# btrfs subvolume delete /mnt/backup/back20160401/
+Delete subvolume (no-commit): '/mnt/backup/back20160401'
+[root@backups ~]# btrfs subvolume delete /mnt/backup/back20160404/
+Delete subvolume (no-commit): '/mnt/backup/back20160404'
+[root@backups ~]# btrfs subvolume delete /mnt/backup/back20160406/
+Delete subvolume (no-commit): '/mnt/backup/back20160406'
+[root@backups ~]# btrfs subvolume delete /mnt/backup/back20160408/
+Delete subvolume (no-commit): '/mnt/backup/back20160408'
+
+[root@backups ~]# ls -l /mnt/backup/
+total 0
+
+[root@backups ~]# df /mnt/backup/
+S.ficheros     Tamaño Usados  Disp Uso% Montado en
+/dev/sdb1        1,9T   1,9T  4,6G 100% /mnt/backup
+[root@backups ~]# btrfs fi show
+Label: 'disco_backup'  uuid: cbfe8735-9f53-46f5-be7e-40f6a61a5506
+        Total devices 1 FS bytes used 1.80TiB
+        devid    1 size 1.82TiB used 1.82TiB path /dev/sdb1
+
+btrfs-progs v4.1.2
+
+[root@backups ~]# btrfs fi df /mnt/backup
+Data, single: total=1.79TiB, used=1.78TiB
+System, DUP: total=32.00MiB, used=240.00KiB
+Metadata, DUP: total=17.00GiB, used=15.55GiB
+GlobalReserve, single: total=512.00MiB, used=37.72MiB
+
+
+
+My mount options are this:
+
+[root@backups ~]# cat /etc/fstab |grep backup
+LABEL=disco_backup /mnt/backup btrfs  noauto,compress=zlib,compress-
+force=zlib,commit=60,noatime 0 0
+
+
 

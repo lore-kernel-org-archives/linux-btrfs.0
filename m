@@ -1,194 +1,153 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from e28smtp04.in.ibm.com ([125.16.236.4]:40425 "EHLO
-	e28smtp04.in.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750843AbcDZNXn (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 26 Apr 2016 09:23:43 -0400
-Received: from localhost
-	by e28smtp04.in.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
-	for <linux-btrfs@vger.kernel.org> from <chandan@linux.vnet.ibm.com>;
-	Tue, 26 Apr 2016 18:53:39 +0530
-Received: from d28av05.in.ibm.com (d28av05.in.ibm.com [9.184.220.67])
-	by d28relay07.in.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id u3QDNa8T36765706
-	for <linux-btrfs@vger.kernel.org>; Tue, 26 Apr 2016 18:53:36 +0530
-Received: from d28av05.in.ibm.com (localhost [127.0.0.1])
-	by d28av05.in.ibm.com (8.14.4/8.14.4/NCO v10.0 AVout) with ESMTP id u3QDNWv1022860
-	for <linux-btrfs@vger.kernel.org>; Tue, 26 Apr 2016 18:53:35 +0530
-From: Chandan Rajendra <chandan@linux.vnet.ibm.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Chandan Rajendra <chandan@linux.vnet.ibm.com>, dsterba@suse.cz, clm@fb.com,
-        jbacik@fb.com, chandan@mykolab.com
-Subject: [PATCH 00/18] Allow I/O on blocks whose size is less than page size
-Date: Tue, 26 Apr 2016 18:53:04 +0530
-Message-Id: <1461677002-7021-1-git-send-email-chandan@linux.vnet.ibm.com>
+Received: from mail.kernel.org ([198.145.29.136]:41332 "EHLO mail.kernel.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751363AbcDZOEQ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 26 Apr 2016 10:04:16 -0400
+From: fdmanana@kernel.org
+To: fstests@vger.kernel.org
+Cc: linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@suse.com>
+Subject: [PATCH] fstests: test creating a symlink and then fsync its parent directory
+Date: Mon, 25 Apr 2016 05:26:23 +0100
+Message-Id: <1461558383-32254-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Btrfs assumes block size to be the same as the machine's page
-size. This would mean that a Btrfs instance created on a 4k page size
-machine (e.g. x86) will not be mountable on machines with larger page
-sizes (e.g. PPC64/AARCH64). This patchset aims to resolve this
-incompatibility.
+From: Filipe Manana <fdmanana@suse.com>
 
-This patchset continues with the work posted previously at
-http://thread.gmane.org/gmane.comp.file-systems.btrfs/55257.
+Test creating a symlink, fsync its parent directory, power fail and mount
+again the filesystem. After these steps the symlink should exist and its
+content must match what we specified when we created it (must not be
+empty or point to something else).
 
-I have reverted the upstream commit "btrfs: fix lockups from
-btrfs_clear_path_blocking" (f82c458a2c3ffb94b431fc6ad791a79df1b3713e)
-since this led to soft-lockups when the patch "Btrfs:
-subpagesize-blocksize: Prevent writes to an extent buffer when
-PG_writeback flag is set" is applied. During 2015's Vault Conference
-Btrfs meetup, Chris Mason had suggested that he will write up a
-suitable locking function to be used when writing dirty pages that map
-metadata blocks. Until we have a suitable locking function available,
-this patchset temporarily disables the commit
-f82c458a2c3ffb94b431fc6ad791a79df1b3713e.
+This is motivated by an issue in btrfs where after the log replay happens
+we get empty symlinks, which not only does not make much sense from a
+user's point of view, it's also not valid to have empty links in linux
+(wgich is explicitly forbidden by the symlink(2) system call).
 
-The commits for the Btrfs kernel module can be found at
-https://github.com/chandanr/linux/tree/btrfs/subpagesize-blocksize.
+The issue in btrfs is fixed by the following patch for the linux kernel:
 
-To create a filesystem with block size < page size, a patched version
-of the Btrfs-progs package is required. The corresponding fixes for
-Btrfs-progs can be found at
-https://github.com/chandanr/btrfs-progs/tree/btrfs/subpagesize-blocksize.
+  "Btrfs: fix empty symlink after creating symlink and fsync parent dir"
 
-Fstests run status:
-1. x86_64
-   - With 4k sectorsize, all the tests that succeed with the master
-     branch at git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git
-     branch also do so with the patches applied.
-2. ppc64
-   - With 4k sectorsize, 16k nodesize and with "nospace_cache" mount
-     option, except for scrub and compression tests, all the tests
-     that succeed with the master branch at
-     git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git
-     branch also do so with the patches applied.
-   - With 64k sectorsize & nodesize, all the tests that succeed with
-     the master branch at
-     git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git
-     branch also do so with the patches applied.
+Tested against ext3, ext4, xfs, f2fs, reiserfs and nilfs2.
 
-TODO:
-1. The selftests code needs to be fixed to work in subpage-blocksize
-   scenario. I have currently disabled self-tests from my kernel
-   configuration. We can expect an email from kbuild indicating a
-   build failure for self-tests code.
-2. I am planning to fix Scrub & Compression via a separate patchset.
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+ tests/generic/344     | 84 +++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/generic/344.out |  4 +++
+ tests/generic/group   |  1 +
+ 3 files changed, 89 insertions(+)
+ create mode 100755 tests/generic/344
+ create mode 100644 tests/generic/344.out
 
-Changes from V17:
-1. Due to mistakes made during git rebase operations, fixes ended up
-   in incorrect patches. This patchset gets the fixes in the right
-   patches.
-
-Changes from V16:
-1. The V15 patchset consisted of patches obtained from an incorrect
-   git branch. Apologies for the mistake. All the entries listed under
-   "Changes from V15" hold good for V16.
-
-Changes from V15:
-1. The invocation of cleancache_get_page() in __do_readpage() assumed
-   blocksize to be same as PAGE_SIZE. We now invoke cleancache_get_page()
-   only if blocksize is same as PAGE_SIZE. Thanks to David Sterba for
-   pointing this out.
-2. In __extent_writepage_io() we used to accumulate all the contiguous
-   dirty blocks within the page before submitting the file offset range
-   for I/O. In some cases this caused the bio to span across more than
-   a stripe. For example, With 4k block size, 64K stripe size
-   and 64K page size, assume
-   - All the blocks mapped by the page are contiguous on the logical
-     address space.
-   - The first block of the page is mapped to the second block of the
-     stripe.
-   In such a scenario, we would add all the blocks of the page to
-   bio. This would mean that we would overflow the stripe by one 4K
-   block. Hence this patchset removes the optimization and invokes
-   submit_extent_page() for every dirty 4K block.
-3. The following patches are newly added:
-   - Btrfs: subpage-blocksize: __btrfs_lookup_bio_sums: Set offset
-     when moving to a new bio_vec 
-   - Btrfs: subpage-blocksize: Make file extent relocate code subpage
-     blocksize aware 
-   - Btrfs: btrfs_clone: Flush dirty blocks of a page that do not map
-     the clone range
-
-Changes from V14:
-1. Fix usage of cleancache_get_page() in __do_readpage().
-   In filesystems which support subpage-blocksize scenario, a page can
-   map one or more blocks. Hence cleancache_get_page() should be
-   invoked only when the page maps a non-hole extent and block size
-   being used is equal to the page size. Thanks to David Sterba for
-   pointing this out.
-2. Replace page_read_complete() and page_write_complete() functions
-   with page_io_complete().
-3. Provide more documentation (as part of both commit message and code
-   comments) about the usage of the per-page
-   btrfs_page_private->io_lock.
-
-Changes from V13:
-1. Enable dedup ioctl to work in subpagesize-blocksize scenario.
-
-Changes from V12:
-1. The logic in the function btrfs_punch_hole() has been fixed to
-   check for the presence of BLK_STATE_UPTODATE flags for blocks in
-   pages which partially map the file range being punched.
-   
-Changes from V11:
-1. Addressed the review comments provided by Liu Bo for version V11.
-2. Fixed file defragmentation code to work in subpagesize-blocksize
-   scenario.
-3. Many "hard to reproduce" bugs were fixed.
-
-Chandan Rajendra (18):
-  Btrfs: subpage-blocksize: Fix whole page read.
-  Btrfs: subpage-blocksize: Fix whole page write
-  Btrfs: subpage-blocksize: Make sure delalloc range intersects with the
-    locked page's range
-  Btrfs: subpage-blocksize: Define extent_buffer_head.
-  Btrfs: subpage-blocksize: Read tree blocks whose size is < PAGE_SIZE
-  Btrfs: subpage-blocksize: Write only dirty extent buffers belonging to
-    a page
-  Btrfs: subpage-blocksize: Allow mounting filesystems where sectorsize
-    < PAGE_SIZE
-  Btrfs: subpage-blocksize: Deal with partial ordered extent
-    allocations.
-  Btrfs: subpage-blocksize: Explicitly track I/O status of blocks of an
-    ordered extent.
-  Btrfs: subpage-blocksize: btrfs_punch_hole: Fix uptodate blocks check
-  Btrfs: subpage-blocksize: Prevent writes to an extent buffer when
-    PG_writeback flag is set
-  Revert "btrfs: fix lockups from btrfs_clear_path_blocking"
-  Btrfs: subpage-blocksize: Fix file defragmentation code
-  Btrfs: subpage-blocksize: extent_clear_unlock_delalloc: Prevent page
-    from being unlocked more than once
-  Btrfs: subpage-blocksize: Enable dedupe ioctl
-  Btrfs: btrfs_clone: Flush dirty blocks of a page that do not map the
-    clone range
-  Btrfs: subpage-blocksize: Make file extent relocate code subpage
-    blocksize aware
-  Btrfs: subpage-blocksize: __btrfs_lookup_bio_sums: Set offset when
-    moving to a new bio_vec
-
- fs/btrfs/ctree.c             |   37 +-
- fs/btrfs/ctree.h             |    6 +-
- fs/btrfs/disk-io.c           |  156 ++--
- fs/btrfs/disk-io.h           |    3 +
- fs/btrfs/extent-tree.c       |   17 +-
- fs/btrfs/extent_io.c         | 1611 +++++++++++++++++++++++++++++-------------
- fs/btrfs/extent_io.h         |  145 +++-
- fs/btrfs/file-item.c         |    7 +-
- fs/btrfs/file.c              |   82 ++-
- fs/btrfs/inode.c             |  491 +++++++++----
- fs/btrfs/ioctl.c             |  219 ++++--
- fs/btrfs/locking.c           |   24 +-
- fs/btrfs/locking.h           |    2 -
- fs/btrfs/ordered-data.c      |   19 +
- fs/btrfs/ordered-data.h      |    4 +
- fs/btrfs/relocation.c        |   70 +-
- fs/btrfs/root-tree.c         |    2 +-
- fs/btrfs/volumes.c           |    2 +-
- include/trace/events/btrfs.h |    2 +-
- 19 files changed, 2050 insertions(+), 849 deletions(-)
-
+diff --git a/tests/generic/344 b/tests/generic/344
+new file mode 100755
+index 0000000..5dcf130
+--- /dev/null
++++ b/tests/generic/344
+@@ -0,0 +1,84 @@
++#! /bin/bash
++# FSQA Test No. 344
++#
++# Test creating a symlink, fsync its parent directory, power fail and mount
++# again the filesystem. After these steps the symlink should exist and its
++# content must match what we specified when we created it (must not be empty
++# or point to something else).
++#
++#-----------------------------------------------------------------------
++#
++# Copyright (C) 2016 SUSE Linux Products GmbH. All Rights Reserved.
++# Author: Filipe Manana <fdmanana@suse.com>
++#
++# This program is free software; you can redistribute it and/or
++# modify it under the terms of the GNU General Public License as
++# published by the Free Software Foundation.
++#
++# This program is distributed in the hope that it would be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write the Free Software Foundation,
++# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++#-----------------------------------------------------------------------
++#
++
++seq=`basename $0`
++seqres=$RESULT_DIR/$seq
++echo "QA output created by $seq"
++tmp=/tmp/$$
++status=1	# failure is the default!
++trap "_cleanup; exit \$status" 0 1 2 3 15
++
++_cleanup()
++{
++	_cleanup_flakey
++	cd /
++	rm -f $tmp.*
++}
++
++# get standard environment, filters and checks
++. ./common/rc
++. ./common/filter
++. ./common/dmflakey
++
++# real QA test starts here
++_supported_fs generic
++_supported_os Linux
++_require_scratch
++_require_dm_target flakey
++_require_metadata_journaling $SCRATCH_DEV
++
++rm -f $seqres.full
++
++_scratch_mkfs >>$seqres.full 2>&1
++_init_flakey
++_mount_flakey
++
++mkdir $SCRATCH_MNT/testdir1
++# Make sure it's durably persisted.
++sync
++
++# Create our symlinks and fsync their parent directories.
++# We test both the case where the parent directory is new (not yet durably
++# persisted) and where the parent existed long time before.
++ln -s $SCRATCH_MNT/foo1 $SCRATCH_MNT/testdir1/bar1
++$XFS_IO_PROG -c fsync $SCRATCH_MNT/testdir1
++mkdir $SCRATCH_MNT/testdir2
++ln -s $SCRATCH_MNT/foo2 $SCRATCH_MNT/testdir2/bar2
++$XFS_IO_PROG -c fsync $SCRATCH_MNT/testdir2
++
++# After a power failure and mounting again the filesystem, we expect to see the
++# symlinks and we expect them to point to foo1 and foo2.
++_flakey_drop_and_remount
++
++echo "Symlink contents after log replay:"
++readlink $SCRATCH_MNT/testdir1/bar1 | _filter_scratch
++readlink $SCRATCH_MNT/testdir2/bar2 | _filter_scratch
++
++_unmount_flakey
++status=0
++exit
+diff --git a/tests/generic/344.out b/tests/generic/344.out
+new file mode 100644
+index 0000000..0468b9c
+--- /dev/null
++++ b/tests/generic/344.out
+@@ -0,0 +1,4 @@
++QA output created by 344
++Symlink contents after log replay:
++SCRATCH_MNT/foo1
++SCRATCH_MNT/foo2
+diff --git a/tests/generic/group b/tests/generic/group
+index 0e5a82e..7ec82db 100644
+--- a/tests/generic/group
++++ b/tests/generic/group
+@@ -346,3 +346,4 @@
+ 341 auto quick metadata
+ 342 auto quick metadata
+ 343 auto quick metadata
++344 auto quick metadata
 -- 
-2.1.0
+2.7.0.rc3
 

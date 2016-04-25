@@ -1,46 +1,34 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:39685 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756983AbcDMGlO (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 13 Apr 2016 02:41:14 -0400
-Date: Wed, 13 Apr 2016 09:40:59 +0300
-From: Dan Carpenter <dan.carpenter@oracle.com>
-To: Chris Mason <clm@fb.com>
-Cc: Josef Bacik <jbacik@fb.com>, David Sterba <dsterba@suse.com>,
-        linux-btrfs@vger.kernel.org, kernel-janitors@vger.kernel.org
-Subject: [patch] btrfs: send: silence an integer overflow warning
-Message-ID: <20160413064059.GB8092@mwanda>
+Received: from mx2.suse.de ([195.135.220.15]:48578 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751750AbcDYPJZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 25 Apr 2016 11:09:25 -0400
+Date: Mon, 25 Apr 2016 17:09:08 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Anand Jain <anand.jain@oracle.com>
+Cc: linux-btrfs@vger.kernel.org, yauhen.kharuzhy@zavadatar.com
+Subject: Re: [PATCH] btrfs: fix lock dep warning, move scratch dev out of
+ device_list_mutex and uuid_mutex
+Message-ID: <20160425150908.GB29353@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1460969483-7500-1-git-send-email-anand.jain@oracle.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1460969483-7500-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The "sizeof(*arg->clone_sources) * arg->clone_sources_count" expression
-can overflow.  It causes several static checker warnings.  It's all
-under CAP_SYS_ADMIN so it's not that serious but lets silence the
-warnings.
+On Mon, Apr 18, 2016 at 04:51:23PM +0800, Anand Jain wrote:
+> When the replace target fails, the target device will be taken
+> out of fs device list, scratch + update_dev_time and freed. However
+> we could do the scratch  + update_dev_time and free part after the
+> device has been taken out of device list, so that we don't have to
+> hold the device_list_mutex and uuid_mutex locks.
+> 
+> Reported issue:
+[...]
+> 
+> Signed-off-by: Anand Jain <anand.jain@oracle.com>
+> Reported-by: Yauhen Kharuzhy <yauhen.kharuzhy@zavadatar.com>
 
-Signed-off-by: Dan Carpenter <dan.carpenter@oracle.com>
-
-diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-index 73dd5d6..6a8c860 100644
---- a/fs/btrfs/send.c
-+++ b/fs/btrfs/send.c
-@@ -5979,6 +5979,12 @@ long btrfs_ioctl_send(struct file *mnt_file, void __user *arg_)
- 		goto out;
- 	}
- 
-+	if (arg->clone_sources_count >
-+	    ULLONG_MAX / sizeof(*arg->clone_sources)) {
-+		ret = -EINVAL;
-+		goto out;
-+	}
-+
- 	if (!access_ok(VERIFY_READ, arg->clone_sources,
- 			sizeof(*arg->clone_sources) *
- 			arg->clone_sources_count)) {
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-
+Reviewed-by: David Sterba <dsterba@suse.com>

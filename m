@@ -1,153 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.136]:41332 "EHLO mail.kernel.org"
+Received: from mail.kernel.org ([198.145.29.136]:54152 "EHLO mail.kernel.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751363AbcDZOEQ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 26 Apr 2016 10:04:16 -0400
+	id S1751060AbcDZKjD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 26 Apr 2016 06:39:03 -0400
+Received: from mail.kernel.org (localhost [127.0.0.1])
+	by mail.kernel.org (Postfix) with ESMTP id 5F0AB20123
+	for <linux-btrfs@vger.kernel.org>; Tue, 26 Apr 2016 10:39:02 +0000 (UTC)
+Received: from debian3.lan (bl12-226-64.dsl.telepac.pt [85.245.226.64])
+	(using TLSv1.2 with cipher AES128-SHA256 (128/128 bits))
+	(No client certificate requested)
+	by mail.kernel.org (Postfix) with ESMTPSA id 4ABD220107
+	for <linux-btrfs@vger.kernel.org>; Tue, 26 Apr 2016 10:39:01 +0000 (UTC)
 From: fdmanana@kernel.org
-To: fstests@vger.kernel.org
-Cc: linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH] fstests: test creating a symlink and then fsync its parent directory
-Date: Mon, 25 Apr 2016 05:26:23 +0100
-Message-Id: <1461558383-32254-1-git-send-email-fdmanana@kernel.org>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH 0/3] Fixes for races in relocation and avoid start and wait for unrelated IO
+Date: Mon, 25 Apr 2016 02:01:09 +0100
+Message-Id: <1461546072-11154-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Filipe Manana <fdmanana@suse.com>
 
-Test creating a symlink, fsync its parent directory, power fail and mount
-again the filesystem. After these steps the symlink should exist and its
-content must match what we specified when we created it (must not be
-empty or point to something else).
+The following patches fix 2 hard to hit races in relocation that make its
+first phase (MOVE_DATA_EXTENTS) miss extents, triggers a warning in the
+second phase (UPDATE_DATA_PTRS) and leaves metadata in an invalid state
+(file extent items pointing to areas corresponding to the deleted block
+group), leading to a BUG_ON() when attempting to read those extents after
+the relocation finishes.
+Patches 1 and 3 fix those races, patch 2 is an optimization that makes
+the relocation no longer wait for ordered extents against other groups
+and patch 3 besides fixing a race also makes relocation only wait for
+tasks that started delalloc flushing and allocated already an extent
+from the block group we are relocating, instead of flushing all delalloc
+regions.
 
-This is motivated by an issue in btrfs where after the log replay happens
-we get empty symlinks, which not only does not make much sense from a
-user's point of view, it's also not valid to have empty links in linux
-(wgich is explicitly forbidden by the symlink(2) system call).
+Filipe Manana (3):
+  Btrfs: fix race in relocation that makes us miss extents
+  Btrfs: don't wait for unrelated IO to finish before relocation
+  Btrfs: don't do unnecessary delalloc flushes when relocating
 
-The issue in btrfs is fixed by the following patch for the linux kernel:
+ fs/btrfs/ctree.h        | 14 ++++++++++
+ fs/btrfs/dev-replace.c  |  4 +--
+ fs/btrfs/extent-tree.c  | 69 ++++++++++++++++++++++++++++++++++++++++++++-----
+ fs/btrfs/inode.c        |  8 ++++++
+ fs/btrfs/ioctl.c        |  2 +-
+ fs/btrfs/ordered-data.c | 30 ++++++++++++++++-----
+ fs/btrfs/ordered-data.h |  6 +++--
+ fs/btrfs/relocation.c   | 30 +++++++++++++++++----
+ fs/btrfs/super.c        |  2 +-
+ fs/btrfs/transaction.c  |  2 +-
+ 10 files changed, 142 insertions(+), 25 deletions(-)
 
-  "Btrfs: fix empty symlink after creating symlink and fsync parent dir"
-
-Tested against ext3, ext4, xfs, f2fs, reiserfs and nilfs2.
-
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
- tests/generic/344     | 84 +++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/generic/344.out |  4 +++
- tests/generic/group   |  1 +
- 3 files changed, 89 insertions(+)
- create mode 100755 tests/generic/344
- create mode 100644 tests/generic/344.out
-
-diff --git a/tests/generic/344 b/tests/generic/344
-new file mode 100755
-index 0000000..5dcf130
---- /dev/null
-+++ b/tests/generic/344
-@@ -0,0 +1,84 @@
-+#! /bin/bash
-+# FSQA Test No. 344
-+#
-+# Test creating a symlink, fsync its parent directory, power fail and mount
-+# again the filesystem. After these steps the symlink should exist and its
-+# content must match what we specified when we created it (must not be empty
-+# or point to something else).
-+#
-+#-----------------------------------------------------------------------
-+#
-+# Copyright (C) 2016 SUSE Linux Products GmbH. All Rights Reserved.
-+# Author: Filipe Manana <fdmanana@suse.com>
-+#
-+# This program is free software; you can redistribute it and/or
-+# modify it under the terms of the GNU General Public License as
-+# published by the Free Software Foundation.
-+#
-+# This program is distributed in the hope that it would be useful,
-+# but WITHOUT ANY WARRANTY; without even the implied warranty of
-+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+# GNU General Public License for more details.
-+#
-+# You should have received a copy of the GNU General Public License
-+# along with this program; if not, write the Free Software Foundation,
-+# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-+#-----------------------------------------------------------------------
-+#
-+
-+seq=`basename $0`
-+seqres=$RESULT_DIR/$seq
-+echo "QA output created by $seq"
-+tmp=/tmp/$$
-+status=1	# failure is the default!
-+trap "_cleanup; exit \$status" 0 1 2 3 15
-+
-+_cleanup()
-+{
-+	_cleanup_flakey
-+	cd /
-+	rm -f $tmp.*
-+}
-+
-+# get standard environment, filters and checks
-+. ./common/rc
-+. ./common/filter
-+. ./common/dmflakey
-+
-+# real QA test starts here
-+_supported_fs generic
-+_supported_os Linux
-+_require_scratch
-+_require_dm_target flakey
-+_require_metadata_journaling $SCRATCH_DEV
-+
-+rm -f $seqres.full
-+
-+_scratch_mkfs >>$seqres.full 2>&1
-+_init_flakey
-+_mount_flakey
-+
-+mkdir $SCRATCH_MNT/testdir1
-+# Make sure it's durably persisted.
-+sync
-+
-+# Create our symlinks and fsync their parent directories.
-+# We test both the case where the parent directory is new (not yet durably
-+# persisted) and where the parent existed long time before.
-+ln -s $SCRATCH_MNT/foo1 $SCRATCH_MNT/testdir1/bar1
-+$XFS_IO_PROG -c fsync $SCRATCH_MNT/testdir1
-+mkdir $SCRATCH_MNT/testdir2
-+ln -s $SCRATCH_MNT/foo2 $SCRATCH_MNT/testdir2/bar2
-+$XFS_IO_PROG -c fsync $SCRATCH_MNT/testdir2
-+
-+# After a power failure and mounting again the filesystem, we expect to see the
-+# symlinks and we expect them to point to foo1 and foo2.
-+_flakey_drop_and_remount
-+
-+echo "Symlink contents after log replay:"
-+readlink $SCRATCH_MNT/testdir1/bar1 | _filter_scratch
-+readlink $SCRATCH_MNT/testdir2/bar2 | _filter_scratch
-+
-+_unmount_flakey
-+status=0
-+exit
-diff --git a/tests/generic/344.out b/tests/generic/344.out
-new file mode 100644
-index 0000000..0468b9c
---- /dev/null
-+++ b/tests/generic/344.out
-@@ -0,0 +1,4 @@
-+QA output created by 344
-+Symlink contents after log replay:
-+SCRATCH_MNT/foo1
-+SCRATCH_MNT/foo2
-diff --git a/tests/generic/group b/tests/generic/group
-index 0e5a82e..7ec82db 100644
---- a/tests/generic/group
-+++ b/tests/generic/group
-@@ -346,3 +346,4 @@
- 341 auto quick metadata
- 342 auto quick metadata
- 343 auto quick metadata
-+344 auto quick metadata
 -- 
 2.7.0.rc3
 

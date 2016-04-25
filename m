@@ -1,45 +1,64 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:34708 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:34783 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750996AbcDOJj0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 15 Apr 2016 05:39:26 -0400
-Date: Fri, 15 Apr 2016 11:39:22 +0200
+	id S1754351AbcDYL7r (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 25 Apr 2016 07:59:47 -0400
+Date: Mon, 25 Apr 2016 13:59:35 +0200
 From: David Sterba <dsterba@suse.cz>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Cc: fdmanana@gmail.com, Duncan <1i5t5.duncan@cox.net>,
-        Chris Mason <clm@fb.com>,
+To: dsterba@suse.cz, Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>,
         "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] Btrfs: fix loading of orphan roots leading to BUG_ON
-Message-ID: <20160415093922.GC28775@suse.cz>
+Subject: Re: [PATCH 4/4] btrfs-progs: "device ready" accepts just one device
+Message-ID: <20160425115935.GE23222@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <1456933778-7944-1-git-send-email-fdmanana@kernel.org>
- <pan$91701$3af360aa$c931211b$9c451328@cox.net>
- <CAL3q7H7zawdrwbnnwr4nRg5PTj3BqRjDpZJo+idxCANMs185LA@mail.gmail.com>
- <570F2BF0.2060409@cn.fujitsu.com>
- <CAL3q7H53zyb2QGE6__9eHmaah31ikZvUO9L78cK1eJ2bfD4nyQ@mail.gmail.com>
- <5710413D.6030505@cn.fujitsu.com>
+References: <56E5FF9A.4020609@jp.fujitsu.com>
+ <56E6056A.4020307@jp.fujitsu.com>
+ <20160314120515.GZ18908@twin.jikos.cz>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <5710413D.6030505@cn.fujitsu.com>
+In-Reply-To: <20160314120515.GZ18908@twin.jikos.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Apr 15, 2016 at 09:17:49AM +0800, Qu Wenruo wrote:
+On Mon, Mar 14, 2016 at 01:05:15PM +0100, David Sterba wrote:
+> On Mon, Mar 14, 2016 at 09:27:22AM +0900, Satoru Takeuchi wrote:
+> > * actual result
+> > 
+> >   =======================================
+> >   # ./btrfs device ready /dev/sdb foo
+> >   #
+> >   =======================================
+> > 
+> > * expecting result
+> > 
+> >   =======================================
+> >   # ./btrfs device ready /dev/sdb foo
+> >   btrfs device ready: too many arguments
+> >   usage: btrfs device ready <device>
+> > 
+> >       Check device to see if it has all of its devices in cache for mounting
+> > 
+> >   #
+> >   =======================================
+> > 
+> > Signed-off-by: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
+> > ---
+> >  cmds-device.c | 2 +-
+> >  1 file changed, 1 insertion(+), 1 deletion(-)
+> > 
+> > diff --git a/cmds-device.c b/cmds-device.c
+> > index 33da2ce..23656c3 100644
+> > --- a/cmds-device.c
+> > +++ b/cmds-device.c
+> > @@ -326,7 +326,7 @@ static int cmd_device_ready(int argc, char **argv)
+> > 
+> >  	clean_args_no_options(argc, argv, cmd_device_ready_usage);
+> > 
+> > -	if (check_argc_min(argc - optind, 1))
+> > +	if (check_argc_exact(argc - optind, 1))
 > 
-> 
-> Filipe Manana wrote on 2016/04/14 10:21 +0100:
-> > On Thu, Apr 14, 2016 at 6:34 AM, Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
-> >> Ping?
-> >>
-> >> Cc: Chris and David
-> >>
-> >> It seems that this fix is missing in 4.6 merge window.
-> >> Or did I miss something?
-> >
-> > 4.5-rc7:  https://lkml.org/lkml/2016/3/4/695
-> 
-> Strangely, not in integration-4.6.
-> 
-> This makes me wonder which branch I should use now...
+> This silently changes the semantics, so far it accepts multiple values
+> though it contradicts the documentation. I'm not yet sure how to resolve
+> that.
 
-for-linus-4.6
+More than one argument did not work before, so I think it's ok to expect
+just one device. Applied.

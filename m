@@ -1,102 +1,29 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:36890 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1752049AbcDRC3v (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 17 Apr 2016 22:29:51 -0400
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-To: linux-btrfs@vger.kernel.org, mfasheh@suse.de
-Subject: [PATCH 3/3] btrfs-progs: Read qgroup status for qgroup verify
-Date: Mon, 18 Apr 2016 10:27:09 +0800
-Message-Id: <1460946429-578-3-git-send-email-quwenruo@cn.fujitsu.com>
-In-Reply-To: <1460946429-578-1-git-send-email-quwenruo@cn.fujitsu.com>
+Received: from mx2.suse.de ([195.135.220.15]:35624 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1754372AbcDYMKC (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 25 Apr 2016 08:10:02 -0400
+Date: Mon, 25 Apr 2016 14:09:50 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org, mfasheh@suse.de
+Subject: Re: [PATCH 1/3] btrfs-progs: Fix return value bug of qgroups check
+Message-ID: <20160425120950.GG23222@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
 References: <1460946429-578-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1460946429-578-1-git-send-email-quwenruo@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Read qgroup status for its flags like QGROUP_STATUS_FLAG_RESCAN and
-QGROUP_STATUS_FLAG_INCONSISTENT.
+On Mon, Apr 18, 2016 at 10:27:07AM +0800, Qu Wenruo wrote:
+> Before this patch, although btrfsck will check qgroups if quota is
+> enabled, it always return 0 even qgroup numbers are corrupted.
+> 
+> Fix it by allowing return value from report_qgroups function (formally
+> defined as print_qgroup_difference).
+> 
+> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 
-This will help to avoid false alert for case like qgroup rescan is still
-running when un-mounted.
-
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
----
- qgroup-verify.c | 33 +++++++++++++++++++++++++++++++--
- 1 file changed, 31 insertions(+), 2 deletions(-)
-
-diff --git a/qgroup-verify.c b/qgroup-verify.c
-index 48e4d22..e2b8be3 100644
---- a/qgroup-verify.c
-+++ b/qgroup-verify.c
-@@ -59,6 +59,8 @@ struct qgroup_count {
- static struct counts_tree {
- 	struct rb_root		root;
- 	unsigned int		num_groups;
-+	unsigned int		rescan_running:1;
-+	unsigned int		qgroup_inconsist:1;
- } counts = { .root = RB_ROOT };
- 
- static struct rb_root by_bytenr = RB_ROOT;
-@@ -700,6 +702,19 @@ static void add_bytes(u64 root_objectid, u64 num_bytes, int exclusive)
- 	}
- }
- 
-+static void read_qgroup_status(struct btrfs_path *path,
-+			      struct counts_tree *counts)
-+{
-+	struct btrfs_qgroup_status_item *status_item;
-+	u64 flags;
-+
-+	status_item = btrfs_item_ptr(path->nodes[0], path->slots[0],
-+				     struct btrfs_qgroup_status_item);
-+	flags = btrfs_qgroup_status_flags(path->nodes[0], status_item);
-+	counts->qgroup_inconsist = flags & BTRFS_QGROUP_STATUS_FLAG_INCONSISTENT;
-+	counts->rescan_running = flags & BTRFS_QGROUP_STATUS_FLAG_RESCAN;
-+}
-+
- static int load_quota_info(struct btrfs_fs_info *info)
- {
- 	int ret;
-@@ -734,13 +749,17 @@ static int load_quota_info(struct btrfs_fs_info *info)
- 			btrfs_item_key(leaf, &disk_key, i);
- 			btrfs_disk_key_to_cpu(&key, &disk_key);
- 
-+			if (key.type == BTRFS_QGROUP_STATUS_KEY) {
-+				read_qgroup_status(&path, &counts);
-+				continue;
-+			}
- 			if (key.type == BTRFS_QGROUP_RELATION_KEY)
- 				printf("Ignoring qgroup relation key %llu\n",
- 				       key.objectid);
- 
- 			/*
--			 * Ignore: BTRFS_QGROUP_STATUS_KEY,
--			 * BTRFS_QGROUP_LIMIT_KEY, BTRFS_QGROUP_RELATION_KEY
-+			 * Ignore: BTRFS_QGROUP_LIMIT_KEY,
-+			 * 	   BTRFS_QGROUP_RELATION_KEY
- 			 */
- 			if (key.type != BTRFS_QGROUP_INFO_KEY)
- 				continue;
-@@ -1055,6 +1074,16 @@ int report_qgroups(int all)
- 	struct qgroup_count *c;
- 	int ret = 0;
- 
-+	if (counts.rescan_running) {
-+		if (all)
-+			printf("Qgroup rescan is running, qgroup counts difference is expected\n");
-+		else {
-+			printf("Qgroup rescan is running, ignore qgroup check\n");
-+			return ret;
-+		}
-+	}
-+	if (counts.qgroup_inconsist && !counts.rescan_running)
-+		fprintf(stderr, "Qgroup is already inconsistent before checking\n");
- 	node = rb_first(&counts.root);
- 	while (node) {
- 		c = rb_entry(node, struct qgroup_count, rb_node);
--- 
-2.8.0
-
-
-
+All three applied, thanks.

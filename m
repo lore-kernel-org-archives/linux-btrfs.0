@@ -1,40 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mgwkm01.jp.fujitsu.com ([202.219.69.168]:51870 "EHLO
+Received: from mgwkm01.jp.fujitsu.com ([202.219.69.168]:25765 "EHLO
 	mgwkm01.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752686AbcDLAPi (ORCPT
+	with ESMTP id S1751582AbcDZASs (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 11 Apr 2016 20:15:38 -0400
-Received: from m3050.s.css.fujitsu.com (msm.b.css.fujitsu.com [10.134.21.208])
-	by kw-mxq.gw.nic.fujitsu.com (Postfix) with ESMTP id 55AA6AC01B7
-	for <linux-btrfs@vger.kernel.org>; Tue, 12 Apr 2016 09:15:33 +0900 (JST)
-Subject: Re: [PATCH 1/2] btrfs: use dynamic allocation for root item in
+	Mon, 25 Apr 2016 20:18:48 -0400
+Received: from m3051.s.css.fujitsu.com (m3051.s.css.fujitsu.com [10.134.21.209])
+	by kw-mxoi2.gw.nic.fujitsu.com (Postfix) with ESMTP id D85A8AC00FE
+	for <linux-btrfs@vger.kernel.org>; Tue, 26 Apr 2016 09:18:40 +0900 (JST)
+Subject: Re: [PATCH v2] btrfs: use dynamic allocation for root item in
  create_subvol
 To: David Sterba <dsterba@suse.com>
-References: <cover.1460397148.git.dsterba@suse.com>
- <7d013acc6e07b39bd224f9c0097775c0a8e138df.1460397148.git.dsterba@suse.com>
+References: <7d013acc6e07b39bd224f9c0097775c0a8e138df.1460397148.git.dsterba@suse.com>
+ <1461583112-3646-1-git-send-email-dsterba@suse.com>
 Cc: linux-btrfs@vger.kernel.org
 From: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
-Message-ID: <570C3E09.6070001@jp.fujitsu.com>
-Date: Tue, 12 Apr 2016 09:15:05 +0900
+Message-ID: <571EB3BD.6010703@jp.fujitsu.com>
+Date: Tue, 26 Apr 2016 09:18:05 +0900
 MIME-Version: 1.0
-In-Reply-To: <7d013acc6e07b39bd224f9c0097775c0a8e138df.1460397148.git.dsterba@suse.com>
+In-Reply-To: <1461583112-3646-1-git-send-email-dsterba@suse.com>
 Content-Type: text/plain; charset=iso-2022-jp
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2016/04/12 3:04, David Sterba wrote:
+On 2016/04/25 20:18, David Sterba wrote:
 > The size of root item is more than 400 bytes, which is quite a lot of
 > stack space. As we do IO from inside the subvolume ioctls, we should
 > keep the stack usage low in case the filesystem is on top of other
 > layers (NFS, device mapper, iscsi, etc).
 > 
 > Signed-off-by: David Sterba <dsterba@suse.com>
+
+Looks good to me.
+
+Reviewed-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
+
 > ---
->   fs/btrfs/ioctl.c | 49 ++++++++++++++++++++++++++-----------------------
->   1 file changed, 26 insertions(+), 23 deletions(-)
+>   fs/btrfs/ioctl.c | 65 ++++++++++++++++++++++++++++++++------------------------
+>   1 file changed, 37 insertions(+), 28 deletions(-)
 > 
 > diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-> index 053e677839fe..0be13b9c53d9 100644
+> index 053e677839fe..9a63fe07bc2e 100644
 > --- a/fs/btrfs/ioctl.c
 > +++ b/fs/btrfs/ioctl.c
 > @@ -439,7 +439,7 @@ static noinline int create_subvol(struct inode *dir,
@@ -46,7 +51,7 @@ On 2016/04/12 3:04, David Sterba wrote:
 >   	struct btrfs_inode_item *inode_item;
 >   	struct extent_buffer *leaf;
 >   	struct btrfs_root *root = BTRFS_I(dir)->root;
-> @@ -455,6 +455,10 @@ static noinline int create_subvol(struct inode *dir,
+> @@ -455,16 +455,22 @@ static noinline int create_subvol(struct inode *dir,
 >   	u64 qgroup_reserved;
 >   	uuid_le new_uuid;
 >   
@@ -56,14 +61,40 @@ On 2016/04/12 3:04, David Sterba wrote:
 > +
 >   	ret = btrfs_find_free_objectid(root->fs_info->tree_root, &objectid);
 >   	if (ret)
->   		return ret;
-
-'kfree(root_item)' is necessary here and other 'return'.
-
-Thanks,
-Tsutomu
-
-> @@ -509,47 +513,45 @@ static noinline int create_subvol(struct inode *dir,
+> -		return ret;
+> +		goto fail_free;
+>   
+>   	/*
+>   	 * Don't create subvolume whose level is not zero. Or qgroup will be
+>   	 * screwed up since it assume subvolme qgroup's level to be 0.
+>   	 */
+> -	if (btrfs_qgroup_level(objectid))
+> -		return -ENOSPC;
+> +	if (btrfs_qgroup_level(objectid)) {
+> +		ret = -ENOSPC;
+> +		goto fail_free;
+> +	}
+>   
+>   	btrfs_init_block_rsv(&block_rsv, BTRFS_BLOCK_RSV_TEMP);
+>   	/*
+> @@ -474,14 +480,14 @@ static noinline int create_subvol(struct inode *dir,
+>   	ret = btrfs_subvolume_reserve_metadata(root, &block_rsv,
+>   					       8, &qgroup_reserved, false);
+>   	if (ret)
+> -		return ret;
+> +		goto fail_free;
+>   
+>   	trans = btrfs_start_transaction(root, 0);
+>   	if (IS_ERR(trans)) {
+>   		ret = PTR_ERR(trans);
+>   		btrfs_subvolume_release_metadata(root, &block_rsv,
+>   						 qgroup_reserved);
+> -		return ret;
+> +		goto fail_free;
+>   	}
+>   	trans->block_rsv = &block_rsv;
+>   	trans->bytes_reserved = block_rsv.size;
+> @@ -509,47 +515,45 @@ static noinline int create_subvol(struct inode *dir,
 >   			    BTRFS_UUID_SIZE);
 >   	btrfs_mark_buffer_dirty(leaf);
 >   
@@ -130,7 +161,7 @@ Tsutomu
 >   	if (ret)
 >   		goto fail;
 >   
-> @@ -601,12 +603,13 @@ static noinline int create_subvol(struct inode *dir,
+> @@ -601,12 +605,13 @@ static noinline int create_subvol(struct inode *dir,
 >   	BUG_ON(ret);
 >   
 >   	ret = btrfs_uuid_tree_add(trans, root->fs_info->uuid_root,
@@ -145,5 +176,16 @@ Tsutomu
 >   	trans->block_rsv = NULL;
 >   	trans->bytes_reserved = 0;
 >   	btrfs_subvolume_release_metadata(root, &block_rsv, qgroup_reserved);
+> @@ -629,6 +634,10 @@ static noinline int create_subvol(struct inode *dir,
+>   		d_instantiate(dentry, inode);
+>   	}
+>   	return ret;
+> +
+> +fail_free:
+> +	kfree(root_item);
+> +	return ret;
+>   }
+>   
+>   static void btrfs_wait_for_no_snapshoting_writes(struct btrfs_root *root)
 > 
 

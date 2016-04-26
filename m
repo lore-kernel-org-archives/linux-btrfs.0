@@ -1,199 +1,219 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:24705 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:39542 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1752374AbcD2HUB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 29 Apr 2016 03:20:01 -0400
+	id S1752054AbcDZDtl (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 25 Apr 2016 23:49:41 -0400
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-To: jbacik@fb.com, linux-btrfs@vger.kernel.org
-Cc: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
-Subject: [PATCH RFC v2 16/16] btrfs-progs: fsck: Introduce low memory mode
-Date: Fri, 29 Apr 2016 15:19:10 +0800
-Message-Id: <1461914350-19875-17-git-send-email-quwenruo@cn.fujitsu.com>
-In-Reply-To: <1461914350-19875-1-git-send-email-quwenruo@cn.fujitsu.com>
-References: <1461914350-19875-1-git-send-email-quwenruo@cn.fujitsu.com>
+To: linux-btrfs@vger.kernel.org
+Cc: dsterba@suse.cz, Lu Fengqi <lufq.fnst@cn.fujitsu.com>
+Subject: [PATCH RFC 01/16] btrfs-progs: fsck: Introduce function to check tree block backref in extent tree
+Date: Tue, 26 Apr 2016 11:48:48 +0800
+Message-Id: <1461642543-4621-2-git-send-email-quwenruo@cn.fujitsu.com>
+In-Reply-To: <1461642543-4621-1-git-send-email-quwenruo@cn.fujitsu.com>
+References: <1461642543-4621-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
 
-Introduce a new fsck mode: low memory mode.
+Introduce function check_tree_block_ref() to check whether a tree block
+has correct backref in extent tree.
 
-Old btrfsck is doing a quite efficient but uses some memory for each
-extent item.
-Old method will ensure extents are only iterated once at extent/chunk
-tree check process.
+Unlike old extent tree check method, we only use search_slot() to search
+reference, no extra structure will be allocated in heap to record what we
+have checked.
 
-But since it uses a little memory for each extent item, for large fs
-with several TB metadata, this can easily eat up memory and cause OOM.
-
-To handle such limitation and improve scalability, the new low-memory
-mode will not use any heap memory to record which extent is checked.
-Instead it will use extent backref to avoid most of uneeded check on
-shared fs/subvolume tree blocks.
-And with the use forward and backward reference cross check, we can also
-ensure every tree block is at least checked once.
+This method may cause a little more IO, but should work for super large
+fs without triggering OOM.
 
 Signed-off-by: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- Documentation/btrfs-check.asciidoc |  2 +
- cmds-check.c                       | 80 +++++++++++++++++++++++++++++++++++++-
- 2 files changed, 80 insertions(+), 2 deletions(-)
+ cmds-check.c | 163 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 163 insertions(+)
 
-diff --git a/Documentation/btrfs-check.asciidoc b/Documentation/btrfs-check.asciidoc
-index 7371a23..96eadc8 100644
---- a/Documentation/btrfs-check.asciidoc
-+++ b/Documentation/btrfs-check.asciidoc
-@@ -35,6 +35,8 @@ run in read-only mode (default)
- create a new CRC tree and recalculate all checksums
- --init-extent-tree::
- create a new extent tree
-+--low-memory::
-+check fs in low memory usage mode(experimental)
- --check-data-csum::
- verify checksums of data blocks
- -p|--progress::
 diff --git a/cmds-check.c b/cmds-check.c
-index 637a4c1..9811ffc 100644
+index d59968b..27fc26f 100644
 --- a/cmds-check.c
 +++ b/cmds-check.c
-@@ -71,6 +71,7 @@ static int repair = 0;
- static int no_holes = 0;
- static int init_extent_tree = 0;
- static int check_data_csum = 0;
-+static int low_memory = 0;
- static struct btrfs_fs_info *global_info;
- static struct task_ctx ctx = { 0 };
- static struct cache_tree *roots_info_cache = NULL;
-@@ -9790,6 +9791,63 @@ static int traversal_tree_block(struct btrfs_root *root,
- 	return err;
+@@ -313,6 +313,16 @@ struct root_item_info {
+ 	struct cache_extent cache_extent;
+ };
+ 
++/*
++ * Error bit for low memory mode check.
++ * Return value should be - (ERR_BIT1 | ERR_BIT2 | ...)
++ *
++ * Current no caller cares about it yet.
++ * Just as an internal use error classification
++ */
++#define MISSING_BACKREF	(1 << 0) /* Completely no backref in extent tree */
++#define BAD_BACKREF	(1 << 1) /* Backref mismatch */
++
+ static void *print_status_check(void *p)
+ {
+ 	struct task_ctx *priv = p;
+@@ -8402,6 +8412,159 @@ loop:
+ 	goto again;
  }
  
 +/*
-+ * Low memory usage version check_chunks_and_extents.
++ * Check backrefs of a tree block given by @bytenr or @eb.
++ *
++ * @root:	the root containin the @bytenr or @eb
++ * @eb:		tree block extent buffer, can be NULL
++ * @bytenr:	bytenr of the tree block to search
++ * @level:	tree level of the tree block
++ * @owner:	owner of the tree block
++ *
++ * Return < 0 for any error found and output error message
++ * Return 0 for no error found
 + */
-+static int check_chunks_and_extents_v2(struct btrfs_root *root)
++static int check_tree_block_ref(struct btrfs_root *root,
++				struct extent_buffer *eb, u64 bytenr,
++				int level, u64 owner)
 +{
-+	struct btrfs_path path;
 +	struct btrfs_key key;
-+	struct btrfs_root *root1;
-+	struct btrfs_root *cur_root;
++	struct btrfs_key found_key;
++	struct btrfs_root *extent_root = root->fs_info->extent_root;
++	struct btrfs_path path;
++	struct btrfs_extent_item *ei;
++	struct btrfs_extent_inline_ref *iref;
++	struct extent_buffer *leaf;
++	unsigned long end;
++	unsigned long ptr;
++	int slot;
++	int skinny_level;
++	int type;
++	u32 nodesize = root->nodesize;
++	u32 item_size;
++	u64 offset;
++	int found_ref = 0;
 +	int err = 0;
 +	int ret;
 +
-+	root1 = root->fs_info->chunk_root;
-+	ret = traversal_tree_block(root1, root1->node);
-+	err |= ret;
-+
-+	root1 = root->fs_info->tree_root;
-+	ret = traversal_tree_block(root1, root1->node);
-+	err |= ret;
-+
 +	btrfs_init_path(&path);
-+	key.objectid = BTRFS_EXTENT_TREE_OBJECTID;
-+	key.offset = 0;
-+	key.type = BTRFS_ROOT_ITEM_KEY;
++	key.objectid = bytenr;
++	if (btrfs_fs_incompat(root->fs_info,
++			      BTRFS_FEATURE_INCOMPAT_SKINNY_METADATA))
++		key.type = BTRFS_METADATA_ITEM_KEY;
++	else
++		key.type = BTRFS_EXTENT_ITEM_KEY;
++	key.offset = (u64)-1;
 +
-+	ret = btrfs_search_slot(NULL, root1, &key, &path, 0, 0);
++	/* Search for the backref in extent tree */
++	ret = btrfs_search_slot(NULL, extent_root, &key, &path, 0, 0);
++	if (ret < 0) {
++		err = MISSING_BACKREF;
++		goto out;
++	}
++	ret = btrfs_previous_extent_item(extent_root, &path, bytenr);
 +	if (ret) {
-+		error("couldn't find extent_tree_root from tree_root");
++		err = MISSING_BACKREF;
 +		goto out;
 +	}
 +
-+	while (1) {
-+		btrfs_item_key_to_cpu(path.nodes[0], &key, path.slots[0]);
-+		if (key.type != BTRFS_ROOT_ITEM_KEY)
-+			goto next;
-+		key.offset = (u64)-1;
++	leaf = path.nodes[0];
++	slot = path.slots[0];
++	btrfs_item_key_to_cpu(leaf, &found_key, slot);
 +
-+		cur_root = btrfs_read_fs_root(root->fs_info, &key);
-+		if (IS_ERR(cur_root) || !cur_root) {
-+			error("Fail to read tree: %lld", key.objectid);
-+			goto next;
-+		}
++	ei = btrfs_item_ptr(leaf, slot, struct btrfs_extent_item);
 +
-+		ret = traversal_tree_block(cur_root, cur_root->node);
-+		err |= ret;
++	if (btrfs_key_type(&found_key) == BTRFS_METADATA_ITEM_KEY) {
++		skinny_level = (int)found_key.offset;
++		iref = (struct btrfs_extent_inline_ref *)(ei + 1);
++	} else {
++		struct btrfs_tree_block_info *info;
 +
-+next:
-+		ret = btrfs_next_item(root1, &path);
-+		if (ret)
-+			goto out;
++		info = (struct btrfs_tree_block_info *)(ei + 1);
++		skinny_level = btrfs_tree_block_level(leaf, info);
++		iref = (struct btrfs_extent_inline_ref *)(info + 1);
 +	}
 +
++	if (eb) {
++		u64 header_gen;
++		u64 extent_gen;
++
++		if (!(btrfs_extent_flags(leaf, ei) &
++		      BTRFS_EXTENT_FLAG_TREE_BLOCK)) {
++			error("Extent[%llu %u] backref type mismatch, missing bit: %llx",
++			      found_key.objectid, nodesize,
++			      BTRFS_EXTENT_FLAG_TREE_BLOCK);
++			err = BAD_BACKREF;
++		}
++		header_gen = btrfs_header_generation(eb);
++		extent_gen = btrfs_extent_generation(leaf, ei);
++		if (header_gen != extent_gen) {
++			error("Extent[%llu %u] backref generation mismatch, wanted: %llu, have: %llu",
++			      found_key.objectid, nodesize, header_gen,
++			      extent_gen);
++			err = BAD_BACKREF;
++		}
++		if (level != skinny_level) {
++			error("Extent[%llu %u] level mismatch, wanted: %u, have: %u",
++			      found_key.objectid, nodesize, level, skinny_level);
++			err = BAD_BACKREF;
++		}
++		if (!is_fstree(owner) && btrfs_extent_refs(leaf, ei) != 1) {
++			error("Extent[%llu %u] is referred by other roots than %llu",
++			      found_key.objectid, nodesize, root->objectid);
++			err = BAD_BACKREF;
++		}
++	}
++
++	/*
++	 * Iterate the extent/metadata item to find the exact backref
++	 */
++	item_size = btrfs_item_size_nr(leaf, slot);
++	ptr = (unsigned long)iref;
++	end = (unsigned long)ei + item_size;
++	while (ptr < end) {
++		iref = (struct btrfs_extent_inline_ref *)ptr;
++		type = btrfs_extent_inline_ref_type(leaf, iref);
++		offset = btrfs_extent_inline_ref_offset(leaf, iref);
++
++		if (type == BTRFS_TREE_BLOCK_REF_KEY &&
++			(offset == root->objectid || offset == owner)) {
++			found_ref = 1;
++		} else if (type == BTRFS_SHARED_BLOCK_REF_KEY) {
++			/* Check if the backref points to valid referencer */
++			found_ref = !check_tree_block_ref(root, NULL, offset,
++							  level + 1, owner);
++		}
++
++		if (found_ref)
++			break;
++		ptr += btrfs_extent_inline_ref_size(type);
++	}
++
++	/*
++	 * Inlined extent item doesn't have what we need, check
++	 * TREE_BLOCK_REF_KEY
++	 */
++	if (!found_ref) {
++		btrfs_release_path(&path);
++		key.objectid = bytenr;
++		key.type = BTRFS_TREE_BLOCK_REF_KEY;
++		key.offset = root->objectid;
++
++		ret = btrfs_search_slot(NULL, extent_root, &key, &path, 0, 0);
++		if (!ret)
++			found_ref = 1;
++	}
++	if (!found_ref)
++		err |= MISSING_BACKREF;
 +out:
 +	btrfs_release_path(&path);
-+	return err;
++	if (eb && (err & MISSING_BACKREF))
++		error("Extent[%llu %u] backret lost(owner: %llu, level: %u)",
++		      bytenr, nodesize, owner, level);
++	return -err;
 +}
 +
  static int btrfs_fsck_reinit_root(struct btrfs_trans_handle *trans,
  			   struct btrfs_root *root, int overwrite)
  {
-@@ -10906,6 +10964,7 @@ const char * const cmd_check_usage[] = {
- 	"--readonly                  run in read-only mode (default)",
- 	"--init-csum-tree            create a new CRC tree",
- 	"--init-extent-tree          create a new extent tree",
-+	"--low-memory                check in low memory usage mode(experimental)",
- 	"--check-data-csum           verify checkums of data blocks",
- 	"-Q|--qgroup-report           print a report on qgroup consistency",
- 	"-E|--subvol-extents <subvolid>",
-@@ -10937,7 +10996,8 @@ int cmd_check(int argc, char **argv)
- 		int c;
- 		enum { GETOPT_VAL_REPAIR = 257, GETOPT_VAL_INIT_CSUM,
- 			GETOPT_VAL_INIT_EXTENT, GETOPT_VAL_CHECK_CSUM,
--			GETOPT_VAL_READONLY, GETOPT_VAL_CHUNK_TREE };
-+			GETOPT_VAL_READONLY, GETOPT_VAL_CHUNK_TREE,
-+			GETOPT_VAL_LOW_MEMORY };
- 		static const struct option long_options[] = {
- 			{ "super", required_argument, NULL, 's' },
- 			{ "repair", no_argument, NULL, GETOPT_VAL_REPAIR },
-@@ -10955,6 +11015,8 @@ int cmd_check(int argc, char **argv)
- 			{ "chunk-root", required_argument, NULL,
- 				GETOPT_VAL_CHUNK_TREE },
- 			{ "progress", no_argument, NULL, 'p' },
-+			{ "low-memory", no_argument, NULL,
-+				GETOPT_VAL_LOW_MEMORY },
- 			{ NULL, 0, NULL, 0}
- 		};
- 
-@@ -11019,6 +11081,9 @@ int cmd_check(int argc, char **argv)
- 			case GETOPT_VAL_CHECK_CSUM:
- 				check_data_csum = 1;
- 				break;
-+			case GETOPT_VAL_LOW_MEMORY:
-+				low_memory = 1;
-+				break;
- 		}
- 	}
- 
-@@ -11036,6 +11101,14 @@ int cmd_check(int argc, char **argv)
- 		exit(1);
- 	}
- 
-+	/*
-+	 * Not supported yet
-+	 */
-+	if (repair && low_memory) {
-+		error("Low memory mode doesn't support repair yet");
-+		exit(1);
-+	}
-+
- 	radix_tree_init();
- 	cache_tree_init(&root_cache);
- 
-@@ -11159,7 +11232,10 @@ int cmd_check(int argc, char **argv)
- 
- 	if (!ctx.progress_enabled)
- 		fprintf(stderr, "checking extents\n");
--	ret = check_chunks_and_extents(root);
-+	if (low_memory)
-+		ret = check_chunks_and_extents_v2(root);
-+	else
-+		ret = check_chunks_and_extents(root);
- 	if (ret)
- 		fprintf(stderr, "Errors found in extent allocation tree or chunk allocation\n");
- 
 -- 
 2.8.0
 

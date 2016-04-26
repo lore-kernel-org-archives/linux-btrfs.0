@@ -1,67 +1,80 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from e28smtp02.in.ibm.com ([125.16.236.2]:60352 "EHLO
-	e28smtp02.in.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752290AbcDZPTH (ORCPT
+Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:48079 "EHLO
+	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1752351AbcDZPWa (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 26 Apr 2016 11:19:07 -0400
-Received: from localhost
-	by e28smtp02.in.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
-	for <linux-btrfs@vger.kernel.org> from <chandan@linux.vnet.ibm.com>;
-	Tue, 26 Apr 2016 20:49:04 +0530
-Received: from d28av05.in.ibm.com (d28av05.in.ibm.com [9.184.220.67])
-	by d28relay09.in.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id u3QFJ24a8912940
-	for <linux-btrfs@vger.kernel.org>; Tue, 26 Apr 2016 20:49:02 +0530
-Received: from d28av05.in.ibm.com (localhost [127.0.0.1])
-	by d28av05.in.ibm.com (8.14.4/8.14.4/NCO v10.0 AVout) with ESMTP id u3QFItsM022915
-	for <linux-btrfs@vger.kernel.org>; Tue, 26 Apr 2016 20:49:01 +0530
-From: Chandan Rajendra <chandan@linux.vnet.ibm.com>
-To: fdmanana@gmail.com
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        "dsterba@suse.cz" <dsterba@suse.cz>, Chris Mason <clm@fb.com>,
-        Josef Bacik <jbacik@fb.com>, chandan@mykolab.com
-Subject: Re: [PATCH V18 00/18] Allow I/O on blocks whose size is less than page size
-Date: Tue, 26 Apr 2016 20:48:49 +0530
-Message-ID: <1812092.vCqY3YhCNW@localhost.localdomain>
-In-Reply-To: <CAL3q7H4+SOxG88RAGAdt+npPJ6nhehwmVySGdGD-dVv9u-h_zQ@mail.gmail.com>
-References: <1461677237-7703-1-git-send-email-chandan@linux.vnet.ibm.com> <CAL3q7H4+SOxG88RAGAdt+npPJ6nhehwmVySGdGD-dVv9u-h_zQ@mail.gmail.com>
+	Tue, 26 Apr 2016 11:22:30 -0400
+Subject: Re: [PATCH V18 00/18] Allow I/O on blocks whose size is less than
+ page size
+To: Chandan Rajendra <chandan@linux.vnet.ibm.com>,
+        <linux-btrfs@vger.kernel.org>
+References: <1461677237-7703-1-git-send-email-chandan@linux.vnet.ibm.com>
+CC: <dsterba@suse.cz>, <clm@fb.com>, <chandan@mykolab.com>
+From: Josef Bacik <jbacik@fb.com>
+Message-ID: <e8e4fc53-93ee-cd46-474d-02fe935802ea@fb.com>
+Date: Tue, 26 Apr 2016 11:22:14 -0400
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+In-Reply-To: <1461677237-7703-1-git-send-email-chandan@linux.vnet.ibm.com>
+Content-Type: text/plain; charset="windows-1252"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tuesday 26 Apr 2016 14:54:46 Filipe Manana wrote:
-
-> Hi Chandan,
-> 
-> What does it mean the tests don't pass? Is there absolutely no code
-> changes for scrub and compression, or there is but still needs more
-> working, or what?
+On 04/26/2016 09:26 AM, Chandan Rajendra wrote:
+> Btrfs assumes block size to be the same as the machine's page
+> size. This would mean that a Btrfs instance created on a 4k page size
+> machine (e.g. x86) will not be mountable on machines with larger page
+> sizes (e.g. PPC64/AARCH64). This patchset aims to resolve this
+> incompatibility.
+>
+> This patchset continues with the work posted previously at
+> https://urldefense.proofpoint.com/v2/url?u=http-3A__thread.gmane.org_gmane.comp.file-2Dsystems.btrfs_55257&d=CwIBAg&c=5VD0RTtNlTh3ycd41b3MUw&r=sDzg6MvHymKOUgI8SFIm4Q&m=HOo9J04GyB-3WnF7O0oScGWuin-MaYuh9OMQrAFNE-0&s=ZGXiVRRSCQha83XunflDOkpffSfDEy8OKzFHRud6oXw&e= .
+>
+> I have reverted the upstream commit "btrfs: fix lockups from
+> btrfs_clear_path_blocking" (f82c458a2c3ffb94b431fc6ad791a79df1b3713e)
+> since this led to soft-lockups when the patch "Btrfs:
+> subpagesize-blocksize: Prevent writes to an extent buffer when
+> PG_writeback flag is set" is applied. During 2015's Vault Conference
+> Btrfs meetup, Chris Mason had suggested that he will write up a
+> suitable locking function to be used when writing dirty pages that map
+> metadata blocks. Until we have a suitable locking function available,
+> this patchset temporarily disables the commit
+> f82c458a2c3ffb94b431fc6ad791a79df1b3713e.
+>
+> The commits for the Btrfs kernel module can be found at
+> https://github.com/chandanr/linux/tree/btrfs/subpagesize-blocksize.
+>
+> To create a filesystem with block size < page size, a patched version
+> of the Btrfs-progs package is required. The corresponding fixes for
+> Btrfs-progs can be found at
+> https://github.com/chandanr/btrfs-progs/tree/btrfs/subpagesize-blocksize.
+>
+> Fstests run status:
+> 1. x86_64
+>    - With 4k sectorsize, all the tests that succeed with the master
+>      branch at git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git
+>      branch also do so with the patches applied.
+> 2. ppc64
+>    - With 4k sectorsize, 16k nodesize and with "nospace_cache" mount
+>      option, except for scrub and compression tests, all the tests
+>      that succeed with the master branch at
+>      git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git
+>      branch also do so with the patches applied.
+>    - With 64k sectorsize & nodesize, all the tests that succeed with
+>      the master branch at
+>      git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git
+>      branch also do so with the patches applied.
+>
+> TODO:
+> 1. The selftests code needs to be fixed to work in subpage-blocksize
+>    scenario. I have currently disabled self-tests from my kernel
+>    configuration. We can expect an mail from kbuild indicating a
+>    build failure for self-tests code.
+> 2. I am planning to fix Scrub & Compression via a separate patchset.
 >
 
-Hi Filipe,
+The selftests need to pass, I don't want to have to deal with kbuild 
+failures and have to remember it's because selftests don't work right 
+with sub page blocksizes.  Thanks,
 
-The patches that have been sent have no changes made with respect to either
-scrub or compression.
-
-> What happens if, when one is using block size < page size, and enables
-> compression on a single file (i.e. fs not mounted with -o compress or
-> force-compress), we start writing and read to the file? Does it result
-> in the syscalls failing with -EIO or some other error, does it result
-> in crashes (BUG_ON(), etc), dues it result in transparently falling
-> back to non compression mode, or what happens exactly?
-
-With the current patchset, reading/writing to a compressed file in
-(block size == page size) scenario works fine. However reading/writing to a
-compressed file in (block size < page size) results in crashes.
-
-> 
-> Same kind of question regarding scrub.
->
-
-Scrub works fine for (block size == page size) scenario. However, Scrub ioctl
-returns -EINVAL for the case where block size != page size. Without the block
-size check, scrub might result in crashes.
-
--- 
-chandan
+Josef
 

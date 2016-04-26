@@ -1,68 +1,125 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:31991 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1752725AbcD0Ary (ORCPT
+Received: from mail-wm0-f68.google.com ([74.125.82.68]:34160 "EHLO
+	mail-wm0-f68.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752696AbcDZL4Z (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 26 Apr 2016 20:47:54 -0400
-Subject: Re: [PATCH] btrfs-progs: fsck: Fix found bytes accounting error
-To: <dsterba@suse.cz>, <linux-btrfs@vger.kernel.org>
-References: <1461638989-5048-1-git-send-email-quwenruo@cn.fujitsu.com>
- <20160426100643.GF29353@twin.jikos.cz>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <f4cde0b3-ff26-bbb7-4ff3-8dc1974553ff@cn.fujitsu.com>
-Date: Wed, 27 Apr 2016 08:47:40 +0800
-MIME-Version: 1.0
-In-Reply-To: <20160426100643.GF29353@twin.jikos.cz>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+	Tue, 26 Apr 2016 07:56:25 -0400
+From: Michal Hocko <mhocko@kernel.org>
+To: <linux-mm@kvack.org>, <linux-fsdevel@vger.kernel.org>
+Cc: Andrew Morton <akpm@linux-foundation.org>,
+        Dave Chinner <david@fromorbit.com>, "Theodore Ts'o" <tytso@mit.edu>,
+        Chris Mason <clm@fb.com>, Jan Kara <jack@suse.cz>,
+        ceph-devel@vger.kernel.org, cluster-devel@redhat.com,
+        linux-nfs@vger.kernel.org, logfs@logfs.org, xfs@oss.sgi.com,
+        linux-ext4@vger.kernel.org, linux-btrfs@vger.kernel.org,
+        linux-mtd@lists.infradead.org, reiserfs-devel@vger.kernel.org,
+        linux-ntfs-dev@lists.sourceforge.net,
+        linux-f2fs-devel@lists.sourceforge.net, linux-afs@lists.infradead.org,
+        LKML <linux-kernel@vger.kernel.org>, Michal Hocko <mhocko@suse.com>
+Subject: [PATCH 2/2] mm, debug: report when GFP_NO{FS,IO} is used explicitly from memalloc_no{fs,io}_{save,restore} context
+Date: Tue, 26 Apr 2016 13:56:12 +0200
+Message-Id: <1461671772-1269-3-git-send-email-mhocko@kernel.org>
+In-Reply-To: <1461671772-1269-1-git-send-email-mhocko@kernel.org>
+References: <1461671772-1269-1-git-send-email-mhocko@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+From: Michal Hocko <mhocko@suse.com>
 
+THIS PATCH IS FOR TESTING ONLY AND NOT MEANT TO HIT LINUS TREE
 
-David Sterba wrote on 2016/04/26 12:06 +0200:
-> On Tue, Apr 26, 2016 at 10:49:49AM +0800, Qu Wenruo wrote:
->> In the new add_extent_rec_nolookup() function, we add bytes_used to
->> update found bytes accounting.
->>
->> However there is a typo that we used tmpl->nr, which should be rec->nr.
->> This will make us to add 1 for data backref, instead the correct size.
->
-> I'm not able to trace that back to the original code, the value template
-> is just filled from the parameters and I don't see where bytes_used
-> would get set from the rec->nr value.
+It is desirable to reduce the direct GFP_NO{FS,IO} usage at minimum and
+prefer scope usage defined by memalloc_no{fs,io}_{save,restore} API.
 
-Then it would be a very old bug.
+Let's help this process and add a debugging tool to catch when an
+explicit allocation request for GFP_NO{FS,IO} is done from the scope
+context. The printed stacktrace should help to identify the caller
+and evaluate whether it can be changed to use a wider context or whether
+it is called from another potentially dangerous context which needs
+a scope protection as well.
 
-When iteration extent tree, when btrfsck found a data backref, it will 
-fill tmpl->nr with 1 and max_size with real size.
+The checks have to be enabled explicitly by debug_scope_gfp kernel
+command line parameter.
 
-And if following that code, we increase bytes_used by 1, not max_size.
+Signed-off-by: Michal Hocko <mhocko@suse.com>
+---
+ mm/page_alloc.c | 56 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 56 insertions(+)
 
-This makes the final "Found XXX bytes" unaligned to sectorsize.
-While not much people will check such output, until we introduce the new 
-low-memory mode, and compare the output, finding the difference.
-
-If checked manually (by adding all metadata and extent size from 
-debug-tree output), one would find the result is always smaller than 
-expected.
-
->
->> --- a/cmds-check.c
->> +++ b/cmds-check.c
->> @@ -4550,7 +4550,7 @@ static int add_extent_rec_nolookup(struct cache_tree *extent_cache,
->>  	rec->cache.size = tmpl->nr;
->>  	ret = insert_cache_extent(extent_cache, &rec->cache);
->>  	BUG_ON(ret);
->> -	bytes_used += tmpl->nr;
->> +	bytes_used += rec->nr;
->
-> ie. this would be just 'nr' before the refactoring.
->
->
-Yes, I also checked v4.2 code, it is indeed "nr", so it's a long 
-standing bug.
-
-Thanks,
-Qu
-
+diff --git a/mm/page_alloc.c b/mm/page_alloc.c
+index 86bb5d6ddd7d..085d00280496 100644
+--- a/mm/page_alloc.c
++++ b/mm/page_alloc.c
+@@ -3750,6 +3750,61 @@ __alloc_pages_slowpath(gfp_t gfp_mask, unsigned int order,
+ 	return page;
+ }
+ 
++static bool debug_scope_gfp;
++
++static int __init enable_debug_scope_gfp(char *unused)
++{
++	debug_scope_gfp = true;
++	return 0;
++}
++
++/*
++ * spit the stack trace if the given gfp_mask clears flags which are context
++ * wide cleared. Such a caller can remove special flags clearing and rely on
++ * the context wide mask.
++ */
++static inline void debug_scope_gfp_context(gfp_t gfp_mask)
++{
++	gfp_t restrict_mask;
++
++	if (likely(!debug_scope_gfp))
++		return;
++
++	/* both NOFS, NOIO are irrelevant when direct reclaim is disabled */
++	if (!(gfp_mask & __GFP_DIRECT_RECLAIM))
++		return;
++
++	if (current->flags & PF_MEMALLOC_NOIO)
++		restrict_mask = __GFP_IO;
++	else if ((current->flags & PF_MEMALLOC_NOFS) && (gfp_mask & __GFP_IO))
++		restrict_mask = __GFP_FS;
++	else
++		return;
++
++	if ((gfp_mask & restrict_mask) != restrict_mask) {
++		/*
++		 * If you see this this warning then the code does:
++		 * memalloc_no{fs,io}_save()
++		 * ...
++		 *    foo()
++		 *      alloc_page(GFP_NO{FS,IO})
++		 * ...
++		 * memalloc_no{fs,io}_restore()
++		 *
++		 * allocation which is unnecessary because the scope gfp
++		 * context will do that for all allocation requests already.
++		 * If foo() is called from multiple contexts then make sure other
++		 * contexts are safe wrt. GFP_NO{FS,IO} semantic and either add
++		 * scope protection into particular paths or change the gfp mask
++		 * to GFP_KERNEL.
++		 */
++		pr_info("Unnecesarily specific gfp mask:%#x(%pGg) for the %s task wide context\n", gfp_mask, &gfp_mask,
++				(current->flags & PF_MEMALLOC_NOIO)?"NOIO":"NOFS");
++		dump_stack();
++	}
++}
++early_param("debug_scope_gfp", enable_debug_scope_gfp);
++
+ /*
+  * This is the 'heart' of the zoned buddy allocator.
+  */
+@@ -3796,6 +3851,7 @@ __alloc_pages_nodemask(gfp_t gfp_mask, unsigned int order,
+ 				ac.nodemask);
+ 
+ 	/* First allocation attempt */
++	debug_scope_gfp_context(gfp_mask);
+ 	page = get_page_from_freelist(alloc_mask, order, alloc_flags, &ac);
+ 	if (likely(page))
+ 		goto out;
+-- 
+2.8.0.rc3
 

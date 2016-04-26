@@ -1,206 +1,227 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from e28smtp08.in.ibm.com ([125.16.236.8]:48131 "EHLO
-	e28smtp08.in.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751919AbcDZN2N (ORCPT
+Received: from mail-io0-f193.google.com ([209.85.223.193]:36613 "EHLO
+	mail-io0-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750843AbcDZNyr (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 26 Apr 2016 09:28:13 -0400
-Received: from localhost
-	by e28smtp08.in.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
-	for <linux-btrfs@vger.kernel.org> from <chandan@linux.vnet.ibm.com>;
-	Tue, 26 Apr 2016 18:58:10 +0530
-Received: from d28av02.in.ibm.com (d28av02.in.ibm.com [9.184.220.64])
-	by d28relay08.in.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id u3QDS7CJ27656262
-	for <linux-btrfs@vger.kernel.org>; Tue, 26 Apr 2016 18:58:07 +0530
-Received: from d28av02.in.ibm.com (localhost [127.0.0.1])
-	by d28av02.in.ibm.com (8.14.4/8.14.4/NCO v10.0 AVout) with ESMTP id u3QDS4ZZ009836
-	for <linux-btrfs@vger.kernel.org>; Tue, 26 Apr 2016 18:58:06 +0530
-From: Chandan Rajendra <chandan@linux.vnet.ibm.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Chandan Rajendra <chandan@linux.vnet.ibm.com>, dsterba@suse.cz, clm@fb.com,
-        jbacik@fb.com, chandan@mykolab.com
-Subject: [PATCH V18 08/18] Btrfs: subpage-blocksize: Deal with partial ordered extent allocations.
-Date: Tue, 26 Apr 2016 18:57:07 +0530
-Message-Id: <1461677237-7703-9-git-send-email-chandan@linux.vnet.ibm.com>
+	Tue, 26 Apr 2016 09:54:47 -0400
+Received: by mail-io0-f193.google.com with SMTP id k129so2186668iof.3
+        for <linux-btrfs@vger.kernel.org>; Tue, 26 Apr 2016 06:54:47 -0700 (PDT)
+MIME-Version: 1.0
+Reply-To: fdmanana@gmail.com
 In-Reply-To: <1461677237-7703-1-git-send-email-chandan@linux.vnet.ibm.com>
 References: <1461677237-7703-1-git-send-email-chandan@linux.vnet.ibm.com>
+Date: Tue, 26 Apr 2016 14:54:46 +0100
+Message-ID: <CAL3q7H4+SOxG88RAGAdt+npPJ6nhehwmVySGdGD-dVv9u-h_zQ@mail.gmail.com>
+Subject: Re: [PATCH V18 00/18] Allow I/O on blocks whose size is less than
+ page size
+From: Filipe Manana <fdmanana@gmail.com>
+To: Chandan Rajendra <chandan@linux.vnet.ibm.com>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        "dsterba@suse.cz" <dsterba@suse.cz>, Chris Mason <clm@fb.com>,
+        Josef Bacik <jbacik@fb.com>, chandan@mykolab.com
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-In subpage-blocksize scenario, extent allocations for only some of the
-dirty blocks of a page can succeed, while allocation for rest of the
-blocks can fail. This patch allows I/O against such pages to be
-submitted.
+On Tue, Apr 26, 2016 at 2:26 PM, Chandan Rajendra
+<chandan@linux.vnet.ibm.com> wrote:
+> Btrfs assumes block size to be the same as the machine's page
+> size. This would mean that a Btrfs instance created on a 4k page size
+> machine (e.g. x86) will not be mountable on machines with larger page
+> sizes (e.g. PPC64/AARCH64). This patchset aims to resolve this
+> incompatibility.
+>
+> This patchset continues with the work posted previously at
+> http://thread.gmane.org/gmane.comp.file-systems.btrfs/55257.
+>
+> I have reverted the upstream commit "btrfs: fix lockups from
+> btrfs_clear_path_blocking" (f82c458a2c3ffb94b431fc6ad791a79df1b3713e)
+> since this led to soft-lockups when the patch "Btrfs:
+> subpagesize-blocksize: Prevent writes to an extent buffer when
+> PG_writeback flag is set" is applied. During 2015's Vault Conference
+> Btrfs meetup, Chris Mason had suggested that he will write up a
+> suitable locking function to be used when writing dirty pages that map
+> metadata blocks. Until we have a suitable locking function available,
+> this patchset temporarily disables the commit
+> f82c458a2c3ffb94b431fc6ad791a79df1b3713e.
+>
+> The commits for the Btrfs kernel module can be found at
+> https://github.com/chandanr/linux/tree/btrfs/subpagesize-blocksize.
+>
+> To create a filesystem with block size < page size, a patched version
+> of the Btrfs-progs package is required. The corresponding fixes for
+> Btrfs-progs can be found at
+> https://github.com/chandanr/btrfs-progs/tree/btrfs/subpagesize-blocksize.
+>
+> Fstests run status:
+> 1. x86_64
+>    - With 4k sectorsize, all the tests that succeed with the master
+>      branch at git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git
+>      branch also do so with the patches applied.
+> 2. ppc64
+>    - With 4k sectorsize, 16k nodesize and with "nospace_cache" mount
+>      option, except for scrub and compression tests, all the tests
+>      that succeed with the master branch at
+>      git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git
+>      branch also do so with the patches applied.
 
-Signed-off-by: Chandan Rajendra <chandan@linux.vnet.ibm.com>
----
- fs/btrfs/extent_io.c | 27 ++++++++++++++-------------
- fs/btrfs/inode.c     | 39 ++++++++++++++++++++++++++-------------
- 2 files changed, 40 insertions(+), 26 deletions(-)
+Hi Chandan,
 
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index bbf5841..e14bcef 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -1851,17 +1851,23 @@ void extent_clear_unlock_delalloc(struct inode *inode, u64 start, u64 end,
- 			if (page_ops & PAGE_SET_PRIVATE2)
- 				SetPagePrivate2(pages[i]);
- 
-+			if (page_ops & PAGE_SET_ERROR)
-+				SetPageError(pages[i]);
-+
- 			if (pages[i] == locked_page) {
- 				put_page(pages[i]);
- 				continue;
- 			}
--			if (page_ops & PAGE_CLEAR_DIRTY)
-+
-+			if ((page_ops & PAGE_CLEAR_DIRTY)
-+				&& !PagePrivate2(pages[i]))
- 				clear_page_dirty_for_io(pages[i]);
--			if (page_ops & PAGE_SET_WRITEBACK)
-+			if ((page_ops & PAGE_SET_WRITEBACK)
-+				&& !PagePrivate2(pages[i]))
- 				set_page_writeback(pages[i]);
--			if (page_ops & PAGE_SET_ERROR)
--				SetPageError(pages[i]);
--			if (page_ops & PAGE_END_WRITEBACK)
-+
-+			if ((page_ops & PAGE_END_WRITEBACK)
-+				&& !PagePrivate2(pages[i]))
- 				end_page_writeback(pages[i]);
- 			if (page_ops & PAGE_UNLOCK)
- 				unlock_page(pages[i]);
-@@ -2539,7 +2545,7 @@ void end_extent_writepage(struct page *page, int err, u64 start, u64 end)
- 			uptodate = 0;
- 	}
- 
--	if (!uptodate) {
-+	if (!uptodate || PageError(page)) {
- 		ClearPageUptodate(page);
- 		SetPageError(page);
- 		ret = ret < 0 ? ret : -EIO;
-@@ -3357,7 +3363,6 @@ static noinline_for_stack int writepage_delalloc(struct inode *inode,
- 					       nr_written);
- 		/* File system has been set read-only */
- 		if (ret) {
--			SetPageError(page);
- 			/* fill_delalloc should be return < 0 for error
- 			 * but just in case, we use > 0 here meaning the
- 			 * IO is started, so we don't want to return > 0
-@@ -3577,7 +3582,6 @@ static int __extent_writepage(struct page *page, struct writeback_control *wbc,
- 	struct inode *inode = page->mapping->host;
- 	struct extent_page_data *epd = data;
- 	u64 start = page_offset(page);
--	u64 page_end = start + PAGE_SIZE - 1;
- 	int ret;
- 	int nr = 0;
- 	size_t pg_offset = 0;
-@@ -3622,7 +3626,7 @@ static int __extent_writepage(struct page *page, struct writeback_control *wbc,
- 	ret = writepage_delalloc(inode, page, wbc, epd, start, &nr_written);
- 	if (ret == 1)
- 		goto done_unlocked;
--	if (ret)
-+	if (ret && !PagePrivate2(page))
- 		goto done;
- 
- 	ret = __extent_writepage_io(inode, page, wbc, epd,
-@@ -3636,10 +3640,7 @@ done:
- 		set_page_writeback(page);
- 		end_page_writeback(page);
- 	}
--	if (PageError(page)) {
--		ret = ret < 0 ? ret : -EIO;
--		end_extent_writepage(page, ret, start, page_end);
--	}
-+
- 	unlock_page(page);
- 	return ret;
- 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index c333099..519ac44 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -940,6 +940,8 @@ static noinline int cow_file_range(struct inode *inode,
- 	struct btrfs_key ins;
- 	struct extent_map *em;
- 	struct extent_map_tree *em_tree = &BTRFS_I(inode)->extent_tree;
-+	struct btrfs_ordered_extent *ordered;
-+	unsigned long page_ops, extent_ops;
- 	int ret = 0;
- 
- 	if (btrfs_is_free_space_inode(inode)) {
-@@ -984,8 +986,6 @@ static noinline int cow_file_range(struct inode *inode,
- 	btrfs_drop_extent_cache(inode, start, start + num_bytes - 1, 0);
- 
- 	while (disk_num_bytes > 0) {
--		unsigned long op;
--
- 		cur_alloc_size = disk_num_bytes;
- 		ret = btrfs_reserve_extent(root, cur_alloc_size,
- 					   root->sectorsize, 0, alloc_hint,
-@@ -1038,7 +1038,7 @@ static noinline int cow_file_range(struct inode *inode,
- 			ret = btrfs_reloc_clone_csums(inode, start,
- 						      cur_alloc_size);
- 			if (ret)
--				goto out_drop_extent_cache;
-+				goto out_remove_ordered_extent;
- 		}
- 
- 		if (disk_num_bytes < cur_alloc_size)
-@@ -1051,13 +1051,12 @@ static noinline int cow_file_range(struct inode *inode,
- 		 * Do set the Private2 bit so we know this page was properly
- 		 * setup for writepage
- 		 */
--		op = unlock ? PAGE_UNLOCK : 0;
--		op |= PAGE_SET_PRIVATE2;
--
-+		page_ops = unlock ? PAGE_UNLOCK : 0;
-+		page_ops |= PAGE_SET_PRIVATE2;
-+		extent_ops = EXTENT_LOCKED | EXTENT_DELALLOC;
- 		extent_clear_unlock_delalloc(inode, start,
--					     start + ram_size - 1, locked_page,
--					     EXTENT_LOCKED | EXTENT_DELALLOC,
--					     op);
-+					start + ram_size - 1, locked_page,
-+					extent_ops, page_ops);
- 		disk_num_bytes -= cur_alloc_size;
- 		num_bytes -= cur_alloc_size;
- 		alloc_hint = ins.objectid + ins.offset;
-@@ -1066,16 +1065,30 @@ static noinline int cow_file_range(struct inode *inode,
- out:
- 	return ret;
- 
-+out_remove_ordered_extent:
-+	ordered = btrfs_lookup_ordered_extent(inode, start);
-+	BUG_ON(!ordered);
-+	btrfs_remove_ordered_extent(inode, ordered);
-+	/* once for us */
-+	btrfs_put_ordered_extent(ordered);
-+	/* once for the tree */
-+	btrfs_put_ordered_extent(ordered);
-+
- out_drop_extent_cache:
- 	btrfs_drop_extent_cache(inode, start, start + ram_size - 1, 0);
-+
- out_reserve:
- 	btrfs_free_reserved_extent(root, ins.objectid, ins.offset, 1);
-+
- out_unlock:
-+	page_ops = unlock ? PAGE_UNLOCK : 0;
-+	page_ops |= PAGE_CLEAR_DIRTY | PAGE_SET_WRITEBACK | PAGE_END_WRITEBACK
-+		| PAGE_SET_ERROR;
-+	extent_ops = EXTENT_LOCKED | EXTENT_DELALLOC | EXTENT_DO_ACCOUNTING
-+		| EXTENT_DEFRAG;
-+
- 	extent_clear_unlock_delalloc(inode, start, end, locked_page,
--				     EXTENT_LOCKED | EXTENT_DO_ACCOUNTING |
--				     EXTENT_DELALLOC | EXTENT_DEFRAG,
--				     PAGE_UNLOCK | PAGE_CLEAR_DIRTY |
--				     PAGE_SET_WRITEBACK | PAGE_END_WRITEBACK);
-+				extent_ops, page_ops);
- 	goto out;
- }
- 
+What does it mean the tests don't pass? Is there absolutely no code
+changes for scrub and compression, or there is but still needs more
+working, or what?
+
+What happens if, when one is using block size < page size, and enables
+compression on a single file (i.e. fs not mounted with -o compress or
+force-compress), we start writing and read to the file? Does it result
+in the syscalls failing with -EIO or some other error, does it result
+in crashes (BUG_ON(), etc), dues it result in transparently falling
+back to non compression mode, or what happens exactly?
+
+Same kind of question regarding scrub.
+
+thanks
+
+
+>    - With 64k sectorsize & nodesize, all the tests that succeed with
+>      the master branch at
+>      git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git
+>      branch also do so with the patches applied.
+>
+> TODO:
+> 1. The selftests code needs to be fixed to work in subpage-blocksize
+>    scenario. I have currently disabled self-tests from my kernel
+>    configuration. We can expect an mail from kbuild indicating a
+>    build failure for self-tests code.
+> 2. I am planning to fix Scrub & Compression via a separate patchset.
+>
+> Changes from V17:
+> 1. Due to mistakes made during git rebase operations, fixes ended up
+>    in incorrect patches. This patchset gets the fixes in the right
+>    patches.
+>
+> Changes from V16:
+> 1. The V15 patchset consisted of patches obtained from an incorrect
+>    git branch. Apologies for the mistake. All the entries listed under
+>    "Changes from V15" hold good for V16.
+>
+> Changes from V15:
+> 1. The invocation of cleancache_get_page() in __do_readpage() assumed
+>    blocksize to be same as PAGE_SIZE. We now invoke cleancache_get_page()
+>    only if blocksize is same as PAGE_SIZE. Thanks to David Sterba for
+>    pointing this out.
+> 2. In __extent_writepage_io() we used to accumulate all the contiguous
+>    dirty blocks within the page before submitting the file offset range
+>    for I/O. In some cases this caused the bio to span across more than
+>    a stripe. For example, With 4k block size, 64K stripe size
+>    and 64K page size, assume
+>    - All the blocks mapped by the page are contiguous on the logical
+>      address space.
+>    - The first block of the page is mapped to the second block of the
+>      stripe.
+>    In such a scenario, we would add all the blocks of the page to
+>    bio. This would mean that we would overflow the stripe by one 4K
+>    block. Hence this patchset removes the optimization and invokes
+>    submit_extent_page() for every dirty 4K block.
+> 3. The following patches are newly added:
+>    - Btrfs: subpage-blocksize: __btrfs_lookup_bio_sums: Set offset
+>      when moving to a new bio_vec
+>    - Btrfs: subpage-blocksize: Make file extent relocate code subpage
+>      blocksize aware
+>    - Btrfs: btrfs_clone: Flush dirty blocks of a page that do not map
+>      the clone range
+>
+> Changes from V14:
+> 1. Fix usage of cleancache_get_page() in __do_readpage().
+>    In filesystems which support subpage-blocksize scenario, a page can
+>    map one or more blocks. Hence cleancache_get_page() should be
+>    invoked only when the page maps a non-hole extent and block size
+>    being used is equal to the page size. Thanks to David Sterba for
+>    pointing this out.
+> 2. Replace page_read_complete() and page_write_complete() functions
+>    with page_io_complete().
+> 3. Provide more documentation (as part of both commit message and code
+>    comments) about the usage of the per-page
+>    btrfs_page_private->io_lock.
+>
+> Changes from V13:
+> 1. Enable dedup ioctl to work in subpagesize-blocksize scenario.
+>
+> Changes from V12:
+> 1. The logic in the function btrfs_punch_hole() has been fixed to
+>    check for the presence of BLK_STATE_UPTODATE flags for blocks in
+>    pages which partially map the file range being punched.
+>
+> Changes from V11:
+> 1. Addressed the review comments provided by Liu Bo for version V11.
+> 2. Fixed file defragmentation code to work in subpagesize-blocksize
+>    scenario.
+> 3. Many "hard to reproduce" bugs were fixed.
+>
+> Chandan Rajendra (18):
+>   Btrfs: subpage-blocksize: Fix whole page read.
+>   Btrfs: subpage-blocksize: Fix whole page write
+>   Btrfs: subpage-blocksize: Make sure delalloc range intersects with the
+>     locked page's range
+>   Btrfs: subpage-blocksize: Define extent_buffer_head.
+>   Btrfs: subpage-blocksize: Read tree blocks whose size is < PAGE_SIZE
+>   Btrfs: subpage-blocksize: Write only dirty extent buffers belonging to
+>     a page
+>   Btrfs: subpage-blocksize: Allow mounting filesystems where sectorsize
+>     < PAGE_SIZE
+>   Btrfs: subpage-blocksize: Deal with partial ordered extent
+>     allocations.
+>   Btrfs: subpage-blocksize: Explicitly track I/O status of blocks of an
+>     ordered extent.
+>   Btrfs: subpage-blocksize: btrfs_punch_hole: Fix uptodate blocks check
+>   Btrfs: subpage-blocksize: Prevent writes to an extent buffer when
+>     PG_writeback flag is set
+>   Revert "btrfs: fix lockups from btrfs_clear_path_blocking"
+>   Btrfs: subpage-blocksize: Fix file defragmentation code
+>   Btrfs: subpage-blocksize: extent_clear_unlock_delalloc: Prevent page
+>     from being unlocked more than once
+>   Btrfs: subpage-blocksize: Enable dedupe ioctl
+>   Btrfs: btrfs_clone: Flush dirty blocks of a page that do not map the
+>     clone range
+>   Btrfs: subpage-blocksize: Make file extent relocate code subpage
+>     blocksize aware
+>   Btrfs: subpage-blocksize: __btrfs_lookup_bio_sums: Set offset when
+>     moving to a new bio_vec
+>
+>  fs/btrfs/ctree.c             |   37 +-
+>  fs/btrfs/ctree.h             |    6 +-
+>  fs/btrfs/disk-io.c           |  156 ++--
+>  fs/btrfs/disk-io.h           |    3 +
+>  fs/btrfs/extent-tree.c       |   17 +-
+>  fs/btrfs/extent_io.c         | 1611 +++++++++++++++++++++++++++++-------------
+>  fs/btrfs/extent_io.h         |  145 +++-
+>  fs/btrfs/file-item.c         |    7 +-
+>  fs/btrfs/file.c              |   82 ++-
+>  fs/btrfs/inode.c             |  491 +++++++++----
+>  fs/btrfs/ioctl.c             |  219 ++++--
+>  fs/btrfs/locking.c           |   24 +-
+>  fs/btrfs/locking.h           |    2 -
+>  fs/btrfs/ordered-data.c      |   19 +
+>  fs/btrfs/ordered-data.h      |    4 +
+>  fs/btrfs/relocation.c        |   70 +-
+>  fs/btrfs/root-tree.c         |    2 +-
+>  fs/btrfs/volumes.c           |    2 +-
+>  include/trace/events/btrfs.h |    2 +-
+>  19 files changed, 2050 insertions(+), 849 deletions(-)
+>
+> --
+> 2.1.0
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+
+
+
 -- 
-2.1.0
+Filipe David Manana,
 
+"Reasonable men adapt themselves to the world.
+ Unreasonable men adapt the world to themselves.
+ That's why all progress depends on unreasonable men."

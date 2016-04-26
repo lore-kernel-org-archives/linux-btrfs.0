@@ -1,14 +1,14 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:39542 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:22441 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1751060AbcDZDti (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 25 Apr 2016 23:49:38 -0400
+	id S1751060AbcDZDtf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 25 Apr 2016 23:49:35 -0400
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
 Cc: dsterba@suse.cz, Lu Fengqi <lufq.fnst@cn.fujitsu.com>
-Subject: [PATCH RFC 12/16] btrfs-progs: fsck: Introduce function to check chunk item
-Date: Tue, 26 Apr 2016 11:48:59 +0800
-Message-Id: <1461642543-4621-13-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH RFC 13/16] btrfs-progs: fsck: Introduce hub function for later fsck
+Date: Tue, 26 Apr 2016 11:49:00 +0800
+Message-Id: <1461642543-4621-14-git-send-email-quwenruo@cn.fujitsu.com>
 In-Reply-To: <1461642543-4621-1-git-send-email-quwenruo@cn.fujitsu.com>
 References: <1461642543-4621-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -17,131 +17,103 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
 
-Introduce function check_chunk_item() to check a chunk item.
-It will check all chunk stripes with dev extents and the corresponding
-block group item.
+Introduce a hub function, check_items() to check all known/valuable
+items and update related accounting like total_bytes and csum_bytes.
 
 Signed-off-by: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- cmds-check.c | 109 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 109 insertions(+)
+ cmds-check.c | 82 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 82 insertions(+)
 
 diff --git a/cmds-check.c b/cmds-check.c
-index b9fbb02..a02db07 100644
+index a02db07..db6fc8e 100644
 --- a/cmds-check.c
 +++ b/cmds-check.c
-@@ -9363,6 +9363,115 @@ out:
+@@ -9472,6 +9472,88 @@ out:
  	return -err;
  }
  
 +/*
-+ * Check a chunk item.
-+ * Including checking all referred dev_extents and block group
++ * Hub function to check known items and update related accounting info
 + */
-+static int check_chunk_item(struct btrfs_fs_info *fs_info,
-+			    struct extent_buffer *eb, int slot)
++static int check_leaf_items(struct btrfs_root *root, struct extent_buffer *eb)
 +{
-+	struct btrfs_root *extent_root = fs_info->extent_root;
-+	struct btrfs_root *dev_root = fs_info->dev_root;
-+	struct btrfs_path path;
++	struct btrfs_fs_info *fs_info = root->fs_info;
 +	struct btrfs_key key;
-+	struct btrfs_key found_key;
-+	struct btrfs_chunk *chunk;
-+	struct extent_buffer *leaf;
-+	struct btrfs_block_group_item *bi;
-+	struct btrfs_block_group_item bg_item;
-+	struct btrfs_dev_extent *ptr;
-+	u32 sectorsize = btrfs_super_sectorsize(fs_info->super_copy);
-+	u64 length;
-+	u64 type;
-+	u64 profile;
-+	int num_stripes;
-+	u64 offset;
-+	u64 objectid;
-+	int i;
++	int slot = 0;
++	int type;
++	int metadata;
++	struct btrfs_extent_data_ref *dref;
 +	int ret;
 +	int err = 0;
 +
-+	btrfs_item_key_to_cpu(eb, &found_key, slot);
-+	chunk = btrfs_item_ptr(eb, slot, struct btrfs_chunk);
-+	length = btrfs_chunk_length(eb, chunk);
-+	if (!IS_ALIGNED(length, sectorsize)) {
-+		error("Chunk[%llu %llu] length %llu not aligned to %u",
-+		      found_key.objectid, found_key.offset,
-+		      length, sectorsize);
-+		err |= UNALIGNED_BYTES;
-+		goto out;
++next:
++	btrfs_item_key_to_cpu(eb, &key, slot);
++	type = btrfs_key_type(&key);
++
++	switch (type) {
++	case BTRFS_EXTENT_DATA_KEY:
++		ret = check_extent_data_item(root, eb, slot);
++		err |= -ret;
++		break;
++	case BTRFS_BLOCK_GROUP_ITEM_KEY:
++		ret = check_block_group_item(fs_info, eb, slot);
++		err |= -ret;
++		break;
++	case BTRFS_DEV_ITEM_KEY:
++		ret = check_dev_item(fs_info, eb, slot);
++		err |= -ret;
++		break;
++	case BTRFS_CHUNK_ITEM_KEY:
++		ret = check_chunk_item(fs_info, eb, slot);
++		err |= -ret;
++		break;
++	case BTRFS_DEV_EXTENT_KEY:
++		ret = check_dev_extent_item(fs_info, eb, slot);
++		err |= -ret;
++		break;
++	case BTRFS_EXTENT_ITEM_KEY:
++	case BTRFS_METADATA_ITEM_KEY:
++		metadata = type == BTRFS_METADATA_ITEM_KEY;
++		ret = check_extent_item(fs_info, eb, slot, metadata);
++		err |= -ret;
++		break;
++	case BTRFS_EXTENT_CSUM_KEY:
++		total_csum_bytes += btrfs_item_size_nr(eb, slot);
++		break;
++	case BTRFS_TREE_BLOCK_REF_KEY:
++		ret = check_tree_block_backref(fs_info, key.offset,
++					       key.objectid, -1);
++		err |= -ret;
++		break;
++	case BTRFS_EXTENT_DATA_REF_KEY:
++		dref = btrfs_item_ptr(eb, slot, struct btrfs_extent_data_ref);
++		ret = check_extent_data_backref(fs_info,
++				btrfs_extent_data_ref_root(eb, dref),
++				btrfs_extent_data_ref_objectid(eb, dref),
++				btrfs_extent_data_ref_offset(eb, dref),
++				key.objectid, 0);
++		err |= -ret;
++		break;
++	case BTRFS_SHARED_BLOCK_REF_KEY:
++		ret = check_shared_block_backref(fs_info, key.offset,
++						 key.objectid, -1);
++		err |= -ret;
++		break;
++	case BTRFS_SHARED_DATA_REF_KEY:
++		ret = check_shared_data_backref(fs_info, key.offset,
++						key.objectid);
++		err |= -ret;
++		break;
++	default:
++		break;
 +	}
 +
-+	type = btrfs_chunk_type(eb, chunk);
-+	profile = type & BTRFS_BLOCK_GROUP_PROFILE_MASK;
-+	if (!(type & BTRFS_BLOCK_GROUP_TYPE_MASK)) {
-+		error("Chunk[%llu %llu] has no chunk type",
-+		      found_key.objectid, found_key.offset);
-+		err |= UNKNOWN_TYPE;
-+	}
-+	if (profile && (profile & (profile - 1))) {
-+		error("Chunk[%llu %llu] multiple profiled detected",
-+		      found_key.objectid, found_key.offset);
-+		err |= UNKNOWN_TYPE;
-+	}
++	if (++slot < btrfs_header_nritems(eb))
++		goto next;
 +
-+	key.objectid = found_key.offset;
-+	btrfs_set_key_type(&key, BTRFS_BLOCK_GROUP_ITEM_KEY);
-+	key.offset = length;
-+
-+	btrfs_init_path(&path);
-+	ret = btrfs_search_slot(NULL, extent_root, &key, &path, 0, 0);
-+	if (ret) {
-+		error("Chunk[%llu %llu] didn't find the releative block group item",
-+		      found_key.objectid, found_key.offset);
-+		err |= MISSING_REFERENCER;
-+	} else{
-+		leaf = path.nodes[0];
-+		bi = btrfs_item_ptr(leaf, path.slots[0],
-+				    struct btrfs_block_group_item);
-+		read_extent_buffer(leaf, &bg_item, (unsigned long)bi,
-+				   sizeof(bg_item));
-+		if (btrfs_block_group_flags(&bg_item) != type) {
-+			error("Chunk[%llu %llu] releative block group item flags mismatch, wanted: %llu, have: %llu",
-+			      found_key.objectid, found_key.offset, type,
-+			      btrfs_block_group_flags(&bg_item));
-+			err |= MISSING_REFERENCER;
-+		}
-+	}
-+
-+	num_stripes = btrfs_chunk_num_stripes(eb, chunk);
-+	for (i = 0; i < num_stripes; i++) {
-+		btrfs_release_path(&path);
-+		btrfs_init_path(&path);
-+		key.objectid = btrfs_stripe_devid_nr(eb, chunk, i);
-+		btrfs_set_key_type(&key, BTRFS_DEV_EXTENT_KEY);
-+		key.offset = btrfs_stripe_offset_nr(eb, chunk, i);
-+
-+		ret = btrfs_search_slot(NULL, dev_root, &key, &path, 0, 0);
-+		if (ret)
-+			goto not_match_dev;
-+
-+		leaf = path.nodes[0];
-+		ptr = btrfs_item_ptr(leaf, path.slots[0],
-+				     struct btrfs_dev_extent);
-+		objectid = btrfs_dev_extent_chunk_objectid(leaf, ptr);
-+		offset = btrfs_dev_extent_chunk_offset(leaf, ptr);
-+		if (objectid != found_key.objectid ||
-+		    offset != found_key.offset ||
-+		    btrfs_dev_extent_length(leaf, ptr) != length)
-+			goto not_match_dev;
-+		continue;
-+not_match_dev:
-+		err |= MISSING_BACKREF;
-+		error("Chunk[%llu %llu] stripe %d didn't find the releative dev extent",
-+		      found_key.objectid, found_key.offset, i);
-+		continue;
-+	}
-+	btrfs_release_path(&path);
-+out:
-+	return -err;
++	return err;
 +}
 +
  static int btrfs_fsck_reinit_root(struct btrfs_trans_handle *trans,

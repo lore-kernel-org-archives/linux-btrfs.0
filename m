@@ -1,14 +1,14 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
 Received: from cn.fujitsu.com ([222.73.24.84]:22441 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1751101AbcDZDtj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 25 Apr 2016 23:49:39 -0400
+	id S1751974AbcDZDtm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 25 Apr 2016 23:49:42 -0400
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
 Cc: dsterba@suse.cz, Lu Fengqi <lufq.fnst@cn.fujitsu.com>
-Subject: [PATCH RFC 09/16] btrfs-progs: fsck: Introduce function to check dev extent item
-Date: Tue, 26 Apr 2016 11:48:56 +0800
-Message-Id: <1461642543-4621-10-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH RFC 10/16] btrfs-progs: fsck: Introduce function to check dev used space
+Date: Tue, 26 Apr 2016 11:48:57 +0800
+Message-Id: <1461642543-4621-11-git-send-email-quwenruo@cn.fujitsu.com>
 In-Reply-To: <1461642543-4621-1-git-send-email-quwenruo@cn.fujitsu.com>
 References: <1461642543-4621-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -17,75 +17,90 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
 
-Introduce function check_dev_extent_item() to find its referencer chunk.
+Introduce function check_dev_item() to check used space with dev extent
+items.
 
 Signed-off-by: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- cmds-check.c | 57 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 57 insertions(+)
+ cmds-check.c | 64 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 64 insertions(+)
 
 diff --git a/cmds-check.c b/cmds-check.c
-index 7f9f848..92c254f 100644
+index 92c254f..e2d1ebf 100644
 --- a/cmds-check.c
 +++ b/cmds-check.c
-@@ -9126,6 +9126,63 @@ out:
- 	return -err;
+@@ -328,6 +328,7 @@ struct root_item_info {
+ #define CROSSING_STRIPE_BOUNDARY (1 << 4) /* For kernel scrub workaround */
+ #define BAD_ITEM_SIZE	(1 << 5) /* Bad item size */
+ #define UNKNOWN_TYPE	(1 << 6) /* Unknown type */
++#define ACCOUNTING_MISMATCH (1 << 7) /* Used space accounting error */
+ 
+ static void *print_status_check(void *p)
+ {
+@@ -9183,6 +9184,69 @@ out:
+ 	return 0;
  }
  
 +/*
-+ * Check if a dev extent item is referred correctly by its chunk
++ * Check the used space is correct with the dev item
 + */
-+static int check_dev_extent_item(struct btrfs_fs_info *fs_info,
-+				 struct extent_buffer *eb, int slot)
++static int check_dev_item(struct btrfs_fs_info *fs_info,
++			  struct extent_buffer *eb, int slot)
 +{
-+	struct btrfs_root *chunk_root = fs_info->chunk_root;
-+	struct btrfs_dev_extent *ptr;
++	struct btrfs_root *dev_root = fs_info->dev_root;
++	struct btrfs_dev_item *dev_item;
 +	struct btrfs_path path;
 +	struct btrfs_key key;
-+	struct btrfs_key found_key;
-+	struct btrfs_chunk *chunk;
-+	struct extent_buffer *l;
-+	int num_stripes;
-+	u64 length;
-+	int i;
-+	int found_chunk = 0;
++	struct btrfs_dev_extent *ptr;
++	u64 dev_id;
++	u64 used;
++	u64 total = 0;
 +	int ret;
 +
-+	btrfs_item_key_to_cpu(eb, &found_key, slot);
-+	ptr = btrfs_item_ptr(eb, slot, struct btrfs_dev_extent);
-+	length = btrfs_dev_extent_length(eb, ptr);
++	dev_item = btrfs_item_ptr(eb, slot, struct btrfs_dev_item);
++	dev_id = btrfs_device_id(eb, dev_item);
++	used = btrfs_device_bytes_used(eb, dev_item);
 +
-+	key.objectid = btrfs_dev_extent_chunk_objectid(eb, ptr);
-+	key.type = BTRFS_CHUNK_ITEM_KEY;
-+	key.offset = btrfs_dev_extent_chunk_offset(eb, ptr);
++	key.objectid = dev_id;
++	key.type = BTRFS_DEV_EXTENT_KEY;
++	key.offset = 0;
 +
 +	btrfs_init_path(&path);
-+	ret = btrfs_search_slot(NULL, chunk_root, &key, &path, 0, 0);
-+	if (ret)
-+		goto out;
-+
-+	l = path.nodes[0];
-+	chunk = btrfs_item_ptr(l, path.slots[0], struct btrfs_chunk);
-+	if (btrfs_chunk_length(l, chunk) != length)
-+		goto out;
-+
-+	num_stripes = btrfs_chunk_num_stripes(l, chunk);
-+	for (i = 0; i < num_stripes; i++) {
-+		u64 devid = btrfs_stripe_devid_nr(l, chunk, i);
-+		u64 offset = btrfs_stripe_offset_nr(l, chunk, i);
-+
-+		if (devid == found_key.objectid && offset == found_key.offset) {
-+			found_chunk= 1;
-+			break;
-+		}
-+	}
-+out:
-+	btrfs_release_path(&path);
-+	if (!found_chunk) {
-+		error("Device extent[%llu, %llu, %llu] didn't find the relative chunk",
-+		       found_key.objectid, found_key.offset, length);
++	ret = btrfs_search_slot(NULL, dev_root, &key, &path, 0, 0);
++	if (ret < 0) {
++		btrfs_item_key_to_cpu(eb, &key, slot);
++		error("Couldn't find any releative dev extent for dev[%llu, %u, %llu]",
++		      key.objectid, key.type, key.offset);
++		btrfs_release_path(&path);
 +		return -MISSING_REFERENCER;
++	}
++
++	/* Iterate dev_extents to calculate the used space of a device */
++	while (1) {
++		btrfs_item_key_to_cpu(path.nodes[0], &key, path.slots[0]);
++
++		if (key.objectid > dev_id)
++			break;
++		if (key.type != BTRFS_DEV_EXTENT_KEY || key.objectid != dev_id)
++			goto next;
++
++		ptr = btrfs_item_ptr(path.nodes[0], path.slots[0],
++				     struct btrfs_dev_extent);
++		total += btrfs_dev_extent_length(path.nodes[0], ptr);
++next:
++		ret = btrfs_next_item(dev_root, &path);
++		if (ret)
++			break;
++	}
++	btrfs_release_path(&path);
++
++	if (used != total) {
++		btrfs_item_key_to_cpu(eb, &key, slot);
++		error("Dev extent's total-byte(%llu) is not equal to byte-used(%llu) in dev[%llu, %u, %llu]",
++		      total, used, BTRFS_ROOT_TREE_OBJECTID,
++		      BTRFS_DEV_EXTENT_KEY, dev_id);
++		return -ACCOUNTING_MISMATCH;
 +	}
 +	return 0;
 +}

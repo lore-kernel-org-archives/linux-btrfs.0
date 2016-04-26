@@ -1,154 +1,206 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from e28smtp01.in.ibm.com ([125.16.236.1]:50781 "EHLO
-	e28smtp01.in.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751915AbcDZN2N (ORCPT
+Received: from e28smtp08.in.ibm.com ([125.16.236.8]:48131 "EHLO
+	e28smtp08.in.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751919AbcDZN2N (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
 	Tue, 26 Apr 2016 09:28:13 -0400
 Received: from localhost
-	by e28smtp01.in.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
+	by e28smtp08.in.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
 	for <linux-btrfs@vger.kernel.org> from <chandan@linux.vnet.ibm.com>;
 	Tue, 26 Apr 2016 18:58:10 +0530
 Received: from d28av02.in.ibm.com (d28av02.in.ibm.com [9.184.220.64])
-	by d28relay08.in.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id u3QDS8J227656264
-	for <linux-btrfs@vger.kernel.org>; Tue, 26 Apr 2016 18:58:08 +0530
+	by d28relay08.in.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id u3QDS7CJ27656262
+	for <linux-btrfs@vger.kernel.org>; Tue, 26 Apr 2016 18:58:07 +0530
 Received: from d28av02.in.ibm.com (localhost [127.0.0.1])
-	by d28av02.in.ibm.com (8.14.4/8.14.4/NCO v10.0 AVout) with ESMTP id u3QDS69T009895
-	for <linux-btrfs@vger.kernel.org>; Tue, 26 Apr 2016 18:58:08 +0530
+	by d28av02.in.ibm.com (8.14.4/8.14.4/NCO v10.0 AVout) with ESMTP id u3QDS4ZZ009836
+	for <linux-btrfs@vger.kernel.org>; Tue, 26 Apr 2016 18:58:06 +0530
 From: Chandan Rajendra <chandan@linux.vnet.ibm.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Chandan Rajendra <chandan@linux.vnet.ibm.com>, dsterba@suse.cz, clm@fb.com,
         jbacik@fb.com, chandan@mykolab.com
-Subject: [PATCH V18 10/18] Btrfs: subpage-blocksize: btrfs_punch_hole: Fix uptodate blocks check
-Date: Tue, 26 Apr 2016 18:57:09 +0530
-Message-Id: <1461677237-7703-11-git-send-email-chandan@linux.vnet.ibm.com>
+Subject: [PATCH V18 08/18] Btrfs: subpage-blocksize: Deal with partial ordered extent allocations.
+Date: Tue, 26 Apr 2016 18:57:07 +0530
+Message-Id: <1461677237-7703-9-git-send-email-chandan@linux.vnet.ibm.com>
 In-Reply-To: <1461677237-7703-1-git-send-email-chandan@linux.vnet.ibm.com>
 References: <1461677237-7703-1-git-send-email-chandan@linux.vnet.ibm.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-In case of subpage-blocksize, the file blocks to be punched may map only
-part of a page. For file blocks inside such pages, we need to check for
-the presence of BLK_STATE_UPTODATE flag.
+In subpage-blocksize scenario, extent allocations for only some of the
+dirty blocks of a page can succeed, while allocation for rest of the
+blocks can fail. This patch allows I/O against such pages to be
+submitted.
 
 Signed-off-by: Chandan Rajendra <chandan@linux.vnet.ibm.com>
 ---
- fs/btrfs/file.c | 66 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++-
- 1 file changed, 65 insertions(+), 1 deletion(-)
+ fs/btrfs/extent_io.c | 27 ++++++++++++++-------------
+ fs/btrfs/inode.c     | 39 ++++++++++++++++++++++++++-------------
+ 2 files changed, 40 insertions(+), 26 deletions(-)
 
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index e2f0968..8d35c47 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -2321,6 +2321,8 @@ static int btrfs_punch_hole(struct inode *inode, loff_t offset, loff_t len)
- 	struct btrfs_path *path;
- 	struct btrfs_block_rsv *rsv;
- 	struct btrfs_trans_handle *trans;
-+	struct address_space *mapping = inode->i_mapping;
-+	pgoff_t start_index, end_index;
- 	u64 lockstart;
- 	u64 lockend;
- 	u64 tail_start;
-@@ -2333,6 +2335,7 @@ static int btrfs_punch_hole(struct inode *inode, loff_t offset, loff_t len)
- 	int err = 0;
- 	unsigned int rsv_count;
- 	bool same_block;
-+	bool same_page;
- 	bool no_holes = btrfs_fs_incompat(root->fs_info, NO_HOLES);
- 	u64 ino_size;
- 	bool truncated_block = false;
-@@ -2429,11 +2432,43 @@ static int btrfs_punch_hole(struct inode *inode, loff_t offset, loff_t len)
- 		goto out_only_mutex;
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index bbf5841..e14bcef 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -1851,17 +1851,23 @@ void extent_clear_unlock_delalloc(struct inode *inode, u64 start, u64 end,
+ 			if (page_ops & PAGE_SET_PRIVATE2)
+ 				SetPagePrivate2(pages[i]);
+ 
++			if (page_ops & PAGE_SET_ERROR)
++				SetPageError(pages[i]);
++
+ 			if (pages[i] == locked_page) {
+ 				put_page(pages[i]);
+ 				continue;
+ 			}
+-			if (page_ops & PAGE_CLEAR_DIRTY)
++
++			if ((page_ops & PAGE_CLEAR_DIRTY)
++				&& !PagePrivate2(pages[i]))
+ 				clear_page_dirty_for_io(pages[i]);
+-			if (page_ops & PAGE_SET_WRITEBACK)
++			if ((page_ops & PAGE_SET_WRITEBACK)
++				&& !PagePrivate2(pages[i]))
+ 				set_page_writeback(pages[i]);
+-			if (page_ops & PAGE_SET_ERROR)
+-				SetPageError(pages[i]);
+-			if (page_ops & PAGE_END_WRITEBACK)
++
++			if ((page_ops & PAGE_END_WRITEBACK)
++				&& !PagePrivate2(pages[i]))
+ 				end_page_writeback(pages[i]);
+ 			if (page_ops & PAGE_UNLOCK)
+ 				unlock_page(pages[i]);
+@@ -2539,7 +2545,7 @@ void end_extent_writepage(struct page *page, int err, u64 start, u64 end)
+ 			uptodate = 0;
  	}
  
-+	start_index = lockstart >> PAGE_SHIFT;
-+	end_index = lockend >> PAGE_SHIFT;
-+
-+	same_page = lockstart >> PAGE_SHIFT
-+		== lockend >> PAGE_SHIFT;
-+
- 	while (1) {
- 		struct btrfs_ordered_extent *ordered;
-+		struct page *start_page = NULL;
-+		struct page *end_page = NULL;
-+		u64 nr_pages;
- 
- 		truncate_pagecache_range(inode, lockstart, lockend);
- 
-+		if (lockstart & (PAGE_SIZE - 1)) {
-+			start_page = find_or_create_page(mapping, start_index,
-+							GFP_NOFS);
-+			if (!start_page) {
-+				mutex_unlock(&inode->i_mutex);
-+				return -ENOMEM;
-+			}
-+		}
-+
-+		if (!same_page && ((lockend + 1) & (PAGE_SIZE - 1))) {
-+			end_page = find_or_create_page(mapping, end_index,
-+						GFP_NOFS);
-+			if (!end_page) {
-+				if (start_page) {
-+					unlock_page(start_page);
-+					put_page(start_page);
-+				}
-+				mutex_unlock(&inode->i_mutex);
-+				return -ENOMEM;
-+			}
-+		}
-+
-+
- 		lock_extent_bits(&BTRFS_I(inode)->io_tree, lockstart, lockend,
- 				 &cached_state);
- 		ordered = btrfs_lookup_first_ordered_extent(inode, lockend);
-@@ -2443,18 +2478,47 @@ static int btrfs_punch_hole(struct inode *inode, loff_t offset, loff_t len)
- 		 * and nobody raced in and read a page in this range, if we did
- 		 * we need to try again.
- 		 */
-+		nr_pages = round_up(lockend, PAGE_SIZE)
-+			- round_down(lockstart, PAGE_SIZE);
-+		nr_pages >>= PAGE_SHIFT;
-+
- 		if ((!ordered ||
- 		    (ordered->file_offset + ordered->len <= lockstart ||
- 		     ordered->file_offset > lockend)) &&
--		     !btrfs_page_exists_in_range(inode, lockstart, lockend)) {
-+		     (!(start_page && PagePrivate(start_page) &&
-+			test_page_blks_state(start_page, 1 << BLK_STATE_UPTODATE,
-+			 lockstart,
-+			 min(lockstart + PAGE_SIZE - 1, lockend), 0)) &&
-+		      !(end_page && PagePrivate(end_page) &&
-+			test_page_blks_state(end_page, 1 << BLK_STATE_UPTODATE,
-+			 page_offset(end_page), lockend, 0)) &&
-+		      !(nr_pages > 2 && btrfs_page_exists_in_range(inode,
-+					 round_up(lockstart, PAGE_SIZE),
-+					 round_down(lockend, PAGE_SIZE) - 1)))) {
- 			if (ordered)
- 				btrfs_put_ordered_extent(ordered);
-+			if (end_page) {
-+				unlock_page(end_page);
-+				put_page(end_page);
-+			}
-+			if (start_page) {
-+				unlock_page(start_page);
-+				put_page(start_page);
-+			}
- 			break;
- 		}
- 		if (ordered)
- 			btrfs_put_ordered_extent(ordered);
- 		unlock_extent_cached(&BTRFS_I(inode)->io_tree, lockstart,
- 				     lockend, &cached_state, GFP_NOFS);
-+		if (end_page) {
-+			unlock_page(end_page);
-+			put_page(end_page);
-+		}
-+		if (start_page) {
-+			unlock_page(start_page);
-+			put_page(start_page);
-+		}
- 		ret = btrfs_wait_ordered_range(inode, lockstart,
- 					       lockend - lockstart + 1);
+-	if (!uptodate) {
++	if (!uptodate || PageError(page)) {
+ 		ClearPageUptodate(page);
+ 		SetPageError(page);
+ 		ret = ret < 0 ? ret : -EIO;
+@@ -3357,7 +3363,6 @@ static noinline_for_stack int writepage_delalloc(struct inode *inode,
+ 					       nr_written);
+ 		/* File system has been set read-only */
  		if (ret) {
+-			SetPageError(page);
+ 			/* fill_delalloc should be return < 0 for error
+ 			 * but just in case, we use > 0 here meaning the
+ 			 * IO is started, so we don't want to return > 0
+@@ -3577,7 +3582,6 @@ static int __extent_writepage(struct page *page, struct writeback_control *wbc,
+ 	struct inode *inode = page->mapping->host;
+ 	struct extent_page_data *epd = data;
+ 	u64 start = page_offset(page);
+-	u64 page_end = start + PAGE_SIZE - 1;
+ 	int ret;
+ 	int nr = 0;
+ 	size_t pg_offset = 0;
+@@ -3622,7 +3626,7 @@ static int __extent_writepage(struct page *page, struct writeback_control *wbc,
+ 	ret = writepage_delalloc(inode, page, wbc, epd, start, &nr_written);
+ 	if (ret == 1)
+ 		goto done_unlocked;
+-	if (ret)
++	if (ret && !PagePrivate2(page))
+ 		goto done;
+ 
+ 	ret = __extent_writepage_io(inode, page, wbc, epd,
+@@ -3636,10 +3640,7 @@ done:
+ 		set_page_writeback(page);
+ 		end_page_writeback(page);
+ 	}
+-	if (PageError(page)) {
+-		ret = ret < 0 ? ret : -EIO;
+-		end_extent_writepage(page, ret, start, page_end);
+-	}
++
+ 	unlock_page(page);
+ 	return ret;
+ 
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index c333099..519ac44 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -940,6 +940,8 @@ static noinline int cow_file_range(struct inode *inode,
+ 	struct btrfs_key ins;
+ 	struct extent_map *em;
+ 	struct extent_map_tree *em_tree = &BTRFS_I(inode)->extent_tree;
++	struct btrfs_ordered_extent *ordered;
++	unsigned long page_ops, extent_ops;
+ 	int ret = 0;
+ 
+ 	if (btrfs_is_free_space_inode(inode)) {
+@@ -984,8 +986,6 @@ static noinline int cow_file_range(struct inode *inode,
+ 	btrfs_drop_extent_cache(inode, start, start + num_bytes - 1, 0);
+ 
+ 	while (disk_num_bytes > 0) {
+-		unsigned long op;
+-
+ 		cur_alloc_size = disk_num_bytes;
+ 		ret = btrfs_reserve_extent(root, cur_alloc_size,
+ 					   root->sectorsize, 0, alloc_hint,
+@@ -1038,7 +1038,7 @@ static noinline int cow_file_range(struct inode *inode,
+ 			ret = btrfs_reloc_clone_csums(inode, start,
+ 						      cur_alloc_size);
+ 			if (ret)
+-				goto out_drop_extent_cache;
++				goto out_remove_ordered_extent;
+ 		}
+ 
+ 		if (disk_num_bytes < cur_alloc_size)
+@@ -1051,13 +1051,12 @@ static noinline int cow_file_range(struct inode *inode,
+ 		 * Do set the Private2 bit so we know this page was properly
+ 		 * setup for writepage
+ 		 */
+-		op = unlock ? PAGE_UNLOCK : 0;
+-		op |= PAGE_SET_PRIVATE2;
+-
++		page_ops = unlock ? PAGE_UNLOCK : 0;
++		page_ops |= PAGE_SET_PRIVATE2;
++		extent_ops = EXTENT_LOCKED | EXTENT_DELALLOC;
+ 		extent_clear_unlock_delalloc(inode, start,
+-					     start + ram_size - 1, locked_page,
+-					     EXTENT_LOCKED | EXTENT_DELALLOC,
+-					     op);
++					start + ram_size - 1, locked_page,
++					extent_ops, page_ops);
+ 		disk_num_bytes -= cur_alloc_size;
+ 		num_bytes -= cur_alloc_size;
+ 		alloc_hint = ins.objectid + ins.offset;
+@@ -1066,16 +1065,30 @@ static noinline int cow_file_range(struct inode *inode,
+ out:
+ 	return ret;
+ 
++out_remove_ordered_extent:
++	ordered = btrfs_lookup_ordered_extent(inode, start);
++	BUG_ON(!ordered);
++	btrfs_remove_ordered_extent(inode, ordered);
++	/* once for us */
++	btrfs_put_ordered_extent(ordered);
++	/* once for the tree */
++	btrfs_put_ordered_extent(ordered);
++
+ out_drop_extent_cache:
+ 	btrfs_drop_extent_cache(inode, start, start + ram_size - 1, 0);
++
+ out_reserve:
+ 	btrfs_free_reserved_extent(root, ins.objectid, ins.offset, 1);
++
+ out_unlock:
++	page_ops = unlock ? PAGE_UNLOCK : 0;
++	page_ops |= PAGE_CLEAR_DIRTY | PAGE_SET_WRITEBACK | PAGE_END_WRITEBACK
++		| PAGE_SET_ERROR;
++	extent_ops = EXTENT_LOCKED | EXTENT_DELALLOC | EXTENT_DO_ACCOUNTING
++		| EXTENT_DEFRAG;
++
+ 	extent_clear_unlock_delalloc(inode, start, end, locked_page,
+-				     EXTENT_LOCKED | EXTENT_DO_ACCOUNTING |
+-				     EXTENT_DELALLOC | EXTENT_DEFRAG,
+-				     PAGE_UNLOCK | PAGE_CLEAR_DIRTY |
+-				     PAGE_SET_WRITEBACK | PAGE_END_WRITEBACK);
++				extent_ops, page_ops);
+ 	goto out;
+ }
+ 
 -- 
 2.1.0
 

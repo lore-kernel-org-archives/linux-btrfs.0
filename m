@@ -1,81 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from lists.s-osg.org ([54.187.51.154]:33099 "EHLO lists.s-osg.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1755594AbcDDObk (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 4 Apr 2016 10:31:40 -0400
-From: Luis de Bethencourt <luisbg@osg.samsung.com>
+Received: from cn.fujitsu.com ([222.73.24.84]:34331 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1750843AbcDZCud (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 25 Apr 2016 22:50:33 -0400
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
-Cc: linux-kernel@vger.kernel.org, clm@fb.com, jbacik@fb.com, dsterba@suse.com,
-        Luis de Bethencourt <luisbg@osg.samsung.com>
-Subject: [PATCH v4] btrfs: fix typo in btrfs_statfs()
-Date: Mon,  4 Apr 2016 15:31:22 +0100
-Message-Id: <1459780282-6381-1-git-send-email-luisbg@osg.samsung.com>
+Cc: dsterba@suse.cz
+Subject: [PATCH] btrfs-progs: fsck: Fix found bytes accounting error
+Date: Tue, 26 Apr 2016 10:49:49 +0800
+Message-Id: <1461638989-5048-1-git-send-email-quwenruo@cn.fujitsu.com>
+MIME-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Correct a typo in the chunk_mutex name to make it grepable.
+In the new add_extent_rec_nolookup() function, we add bytes_used to
+update found bytes accounting.
 
-Since it is better to fix several typos at once, fixing the 2 more in the
-same file.
+However there is a typo that we used tmpl->nr, which should be rec->nr.
+This will make us to add 1 for data backref, instead the correct size.
 
-Signed-off-by: Luis de Bethencourt <luisbg@osg.samsung.com>
+Reported-by: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
+ cmds-check.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-Hi,
-
-Sorry for sending again. Previous version had a line over 80 characters.
-
-Explanation from previous patch:
-David recommended I look around the rest of the file for other typos to fix.
-
-These two more are all I see in the rest of the file without nitpicking.
-
-Thanks and apologies for sending v3 without thoroughly checking,
-Luis
-
-
- fs/btrfs/super.c | 14 +++++++-------
- 1 file changed, 7 insertions(+), 7 deletions(-)
-
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 7e766ffc..bc060cf 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -1484,10 +1484,10 @@ static int setup_security_options(struct btrfs_fs_info *fs_info,
- 		memcpy(&fs_info->security_opts, sec_opts, sizeof(*sec_opts));
- 	} else {
- 		/*
--		 * Since SELinux(the only one supports security_mnt_opts) does
--		 * NOT support changing context during remount/mount same sb,
--		 * This must be the same or part of the same security options,
--		 * just free it.
-+		 * Since SELinux (the only one supporting security_mnt_opts)
-+		 * does NOT support changing context during remount/mount of
-+		 * the same sb, this must be the same or part of the same
-+		 * security options, just free it.
- 		 */
- 		security_free_mnt_opts(sec_opts);
- 	}
-@@ -1665,8 +1665,8 @@ static inline void btrfs_remount_cleanup(struct btrfs_fs_info *fs_info,
- 					 unsigned long old_opts)
- {
- 	/*
--	 * We need cleanup all defragable inodes if the autodefragment is
--	 * close or the fs is R/O.
-+	 * We need to cleanup all defragable inodes if the autodefragment is
-+	 * close or the filesystem is read only.
- 	 */
- 	if (btrfs_raw_test_opt(old_opts, AUTO_DEFRAG) &&
- 	    (!btrfs_raw_test_opt(fs_info->mount_opt, AUTO_DEFRAG) ||
-@@ -2050,7 +2050,7 @@ static int btrfs_statfs(struct dentry *dentry, struct kstatfs *buf)
- 	int mixed = 0;
+diff --git a/cmds-check.c b/cmds-check.c
+index d59968b..b207f8e 100644
+--- a/cmds-check.c
++++ b/cmds-check.c
+@@ -4550,7 +4550,7 @@ static int add_extent_rec_nolookup(struct cache_tree *extent_cache,
+ 	rec->cache.size = tmpl->nr;
+ 	ret = insert_cache_extent(extent_cache, &rec->cache);
+ 	BUG_ON(ret);
+-	bytes_used += tmpl->nr;
++	bytes_used += rec->nr;
  
- 	/*
--	 * holding chunk_muext to avoid allocating new chunks, holding
-+	 * holding chunk_mutex to avoid allocating new chunks, holding
- 	 * device_list_mutex to avoid the device being removed
- 	 */
- 	rcu_read_lock();
+ 	if (tmpl->metadata)
+ 		rec->crossing_stripes = check_crossing_stripes(rec->start,
 -- 
-2.6.4
+2.8.0
+
+
 

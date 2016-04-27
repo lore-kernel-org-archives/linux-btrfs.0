@@ -1,88 +1,58 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lf0-f54.google.com ([209.85.215.54]:36074 "EHLO
-	mail-lf0-f54.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752468AbcD0P6G (ORCPT
+Received: from mail02.iobjects.de ([188.40.134.68]:53712 "EHLO
+	mail02.iobjects.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753717AbcD0Q3x (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 27 Apr 2016 11:58:06 -0400
-Received: by mail-lf0-f54.google.com with SMTP id u64so55047469lff.3
-        for <linux-btrfs@vger.kernel.org>; Wed, 27 Apr 2016 08:58:05 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <5720A0E8.5000407@gmail.com>
-References: <CAHaPQf0-qh0sLpUotSdESi8W6dnMOBQPXVJvBP8f2sEj2MC9EA@mail.gmail.com>
-	<pan$c3f48$4829429e$7ab0117b$7d124f52@cox.net>
-	<571DFCF2.6050604@gmail.com>
-	<pan$193a9$b381fd2b$1c0f329f$7b14e34b@cox.net>
-	<571E154C.9060604@gmail.com>
-	<CAHaPQf03yMAxMZRa=zr3Fjh_B+-ggwwuzRFwDsUyK3t=jW2WFw@mail.gmail.com>
-	<571F4CD0.9050004@gmail.com>
-	<CAHaPQf39H-JRhQmCssmgJ98RCxL_36poE_kObAmgmH6nkn4xoA@mail.gmail.com>
-	<CAJCQCtQbCbR9V7z4jZCejbKLJyhBbtrZJmcQBkX=VnxReBf46g@mail.gmail.com>
-	<5720A0E8.5000407@gmail.com>
-Date: Wed, 27 Apr 2016 09:58:03 -0600
-Message-ID: <CAHaPQf3cR4jXKziSCqp0CnrB6oKQoO=2kywsKuo7BLqHqBjBRw@mail.gmail.com>
+	Wed, 27 Apr 2016 12:29:53 -0400
+Received: from tux.wizards.de (pD953EFF0.dip0.t-ipconnect.de [217.83.239.240])
+	by mail02.iobjects.de (Postfix) with ESMTPSA id 18AAA41601A6
+	for <linux-btrfs@vger.kernel.org>; Wed, 27 Apr 2016 18:29:51 +0200 (CEST)
+Received: from [192.168.100.223] (ragnarok [192.168.100.223])
+	by tux.wizards.de (Postfix) with ESMTP id AECC311C01D9
+	for <linux-btrfs@vger.kernel.org>; Wed, 27 Apr 2016 18:29:50 +0200 (CEST)
 Subject: Re: Add device while rebalancing
-From: Juan Alberto Cirez <jacirez@rdcsafety.com>
-To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Cc: Chris Murphy <lists@colorremedies.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+References: <CAHaPQf0-qh0sLpUotSdESi8W6dnMOBQPXVJvBP8f2sEj2MC9EA@mail.gmail.com>
+ <pan$c3f48$4829429e$7ab0117b$7d124f52@cox.net> <571DFCF2.6050604@gmail.com>
+ <pan$193a9$b381fd2b$1c0f329f$7b14e34b@cox.net> <571E154C.9060604@gmail.com>
+ <CAHaPQf03yMAxMZRa=zr3Fjh_B+-ggwwuzRFwDsUyK3t=jW2WFw@mail.gmail.com>
+ <571F4CD0.9050004@gmail.com>
+ <CAHaPQf39H-JRhQmCssmgJ98RCxL_36poE_kObAmgmH6nkn4xoA@mail.gmail.com>
+ <CAJCQCtQbCbR9V7z4jZCejbKLJyhBbtrZJmcQBkX=VnxReBf46g@mail.gmail.com>
+ <5720A0E8.5000407@gmail.com>
+ <CAHaPQf3cR4jXKziSCqp0CnrB6oKQoO=2kywsKuo7BLqHqBjBRw@mail.gmail.com>
+From: =?UTF-8?Q?Holger_Hoffst=c3=a4tte?=
+	<holger.hoffstaette@googlemail.com>
+Message-ID: <5720E8FE.2000407@googlemail.com>
+Date: Wed, 27 Apr 2016 18:29:50 +0200
+MIME-Version: 1.0
+In-Reply-To: <CAHaPQf3cR4jXKziSCqp0CnrB6oKQoO=2kywsKuo7BLqHqBjBRw@mail.gmail.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-WOW!
-Correct me if I'm wrong but the sum total of the above seems to
-suggest (at first glance) that BRTFS add several layers of complexity,
-but for little real benefit (at least in the case use of btrfs at the
-brick layer with a distributed filesystem on top)...
+On 04/27/16 17:58, Juan Alberto Cirez wrote:
+> Correct me if I'm wrong but the sum total of the above seems to
+> suggest (at first glance) that BRTFS add several layers of complexity,
+> but for little real benefit (at least in the case use of btrfs at the
+> brick layer with a distributed filesystem on top)...
 
-"...I've always though it'd be neat in a Btrfs + GlusterFS, if it were
-possible for Btrfs to inform Gluster FS of "missing/corrupt" files,
-and then for Btrfs to drop reference for those files, instead of
-either rebuilding or remaining degraded. And then let GlusterFS deal
-with replication of those files to maintain redundancy. i.e. the Btrfs
-volumes would be single profile for data, and raid1 for metadata. When
-there's n-way raid1, each drive can have a copy of the file system,
-and it'd tolerate in effect n-1 drive failures and the file system
-could at least still inform Gluster (or Ceph) of the missing data, the
-file system still remains valid, only briefly degraded, and can still
-be expanded when new drives become available..."
+This may come as a surprise, but the same can be said for every other
+(common) filesystem (+ device management stack) that can be used
+standalone.
 
-That in my n00b opinion would be brilliant in a real world use case.
+Jeff Darcy (of GlusterFS) just wrote a really nice blog post why
+current filesystems and their historically grown requirements (mostly
+as they relate to the POSIX interface standard) are in many ways
+just not a good fit for scale-out/redundant storage:
+http://pl.atyp.us/2016-05-updating-posix.html
 
+Quite a few of the capabilities & features which are useful or
+necessary in standalone operation (regardless of single- or multi-
+device setup) are *actively unhelpful* in a distributed context, which
+is why e.g. Ceph will soon do away with the on-disk filesystem for
+data, and manage metadata exclusively by itself.
 
-On Wed, Apr 27, 2016 at 5:22 AM, Austin S. Hemmelgarn
-<ahferroin7@gmail.com> wrote:
-> On 2016-04-26 20:58, Chris Murphy wrote:
->>
->> On Tue, Apr 26, 2016 at 5:44 AM, Juan Alberto Cirez
->> <jacirez@rdcsafety.com> wrote:
->>>
->>>
->>> With GlusterFS as a distributed volume, the files are already spread
->>> among the servers causing file I/O to be spread fairly evenly among
->>> them as well, thus probably providing the benefit one might expect
->>> with stripe (RAID10).
->>
->>
->> Yes, the raid1 of Btrfs is just so you don't have to rebuild volumes
->> if you lose a drive. But since raid1 is not n-way copies, and only
->> means two copies, you don't really want the file systems getting that
->> big or you increase the chances of a double failure.
->>
->> I've always though it'd be neat in a Btrfs + GlusterFS, if it were
->> possible for Btrfs to inform Gluster FS of "missing/corrupt" files,
->> and then for Btrfs to drop reference for those files, instead of
->> either rebuilding or remaining degraded. And then let GlusterFS deal
->> with replication of those files to maintain redundancy. i.e. the Btrfs
->> volumes would be single profile for data, and raid1 for metadata. When
->> there's n-way raid1, each drive can have a copy of the file system,
->> and it'd tolerate in effect n-1 drive failures and the file system
->> could at least still inform Gluster (or Ceph) of the missing data, the
->> file system still remains valid, only briefly degraded, and can still
->> be expanded when new drives become available.
->
-> FWIW, I _think_ this can be done with the scrubbing code in GlusterFS. It's
-> designed to repair data mismatches, but I'm not sure how it handles missing
-> copies of data.  However, in the current state, there's no way without
-> external scripts to handle re-shaping of the storage bricks if part of them
-> fails.
+cheers,
+Holger
+

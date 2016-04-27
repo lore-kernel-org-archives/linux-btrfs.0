@@ -1,79 +1,74 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:45031 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752041AbcD1DGn (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 27 Apr 2016 23:06:43 -0400
-From: Anand Jain <anand.jain@oracle.com>
+Received: from mx2.suse.de ([195.135.220.15]:45401 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752786AbcD0POv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 27 Apr 2016 11:14:51 -0400
+From: David Sterba <dsterba@suse.com>
 To: linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.cz, clm@fb.com
-Subject: [PATCH 2/2] revert: Btrfs: don't consider the missing device when allocating new chunks
-Date: Thu, 28 Apr 2016 11:06:20 +0800
-Message-Id: <1461812780-538-3-git-send-email-anand.jain@oracle.com>
-In-Reply-To: <1461812780-538-1-git-send-email-anand.jain@oracle.com>
-References: <1461812780-538-1-git-send-email-anand.jain@oracle.com>
+Cc: clm@fb.com, David Sterba <dsterba@suse.com>, stable@vger.kernel.org
+Subject: [PATCH] btrfs: do not return EBUSY on concurrent subvolume mounts
+Date: Wed, 27 Apr 2016 17:14:36 +0200
+Message-Id: <1461770076-13000-1-git-send-email-dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This patch reverts the commit
- 95669976bd7d30ae265db938ecb46a6b7f8cb893
- Btrfs: don't consider the missing device when allocating new chunks
+A user reported mount failures with EBUSY during boot, there's root
+partition and many subvolumes, mounted via /etc/fstab.
 
-Original code was correct as in the deleted comments
-/*
- * we add in the count of missing devices because we want
- * to make sure that any RAID levels on a degraded FS
- * continue to be honored.
- */
+The failure depends on timing, when multiple subvolumes reach the code
+between superblock creation in RO mode, while the subvolumes are RW.
+This discrepancy leads to EBUSY and the code has been there since ages.
 
-The following RFC patch will take care of the original bug
-  btrfs: create degraded-RAID1 chunks
+If the subvolumes are mounted after a short delay, there's no EBUSY.
+There's no missing locking, the supreblock creation is atomic and the
+error code seems to be just artificial. We support different RO/RW
+mounts in mount_subvol and do the relevant adjustments if the flags do
+not match.
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
+There are no apparent problems if the check and EBUSY are dropped, no
+wrong refcounting, umount works etc.
+
+Reproducer:
+
+mkdir -p mnt $(eval echo mnt{1..10})
+mkfs.btrfs -f /dev/sdx
+mount /dev/sdx mnt
+for i in `seq 10`; do btrfs subvol create subv$i; done
+loops=0
+while [ $loops -lt 10 ]; do
+  umount mnt*
+  mount -o ro /dev/sdx mnt &
+  for i in `seq 10`; do
+    mount -o subvol=subv$i /dev/sdx mnt$i || \
+      echo "FAIL: mnt$i, loop $loops" > log-$i-$loops &
+    fi
+  done
+  wait
+  : $((loops++))
+done
+
+Do 10 iterations, try to run subvolume mounts concurrently, log mount
+failures to files, the actual EBUSY errors are on screen.
+
+CC: stable@vger.kernel.org
+Signed-off-by: David Sterba <dsterba@suse.com>
 ---
- fs/btrfs/extent-tree.c | 17 +++++++++++++++--
- 1 file changed, 15 insertions(+), 2 deletions(-)
+ fs/btrfs/super.c | 2 --
+ 1 file changed, 2 deletions(-)
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 53e12977bfd0..bf60da1020b7 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -3968,12 +3968,19 @@ static u64 get_restripe_target(struct btrfs_fs_info *fs_info, u64 flags)
-  */
- static u64 btrfs_reduce_alloc_profile(struct btrfs_root *root, u64 flags)
- {
--	u64 num_devices = root->fs_info->fs_devices->rw_devices;
-+	u64 num_devices;
- 	u64 target;
- 	u64 raid_type;
- 	u64 allowed = 0;
- 
- 	/*
-+	 * we add in the count of missing devices because we want
-+	 * to make sure that any RAID levels on a degraded FS
-+	 * continue to be honored.
-+	 */
-+	num_devices = root->fs_info->fs_devices->rw_devices +
-+			root->fs_info->fs_devices->missing_devices;
-+	/*
- 	 * see if restripe for this chunk_type is in progress, if so
- 	 * try to reduce to the target profile
- 	 */
-@@ -9146,7 +9153,13 @@ static u64 update_block_group_flags(struct btrfs_root *root, u64 flags)
- 	if (stripped)
- 		return extended_to_chunk(stripped);
- 
--	num_devices = root->fs_info->fs_devices->rw_devices;
-+	/*
-+	 * we add in the count of missing devices because we want
-+	 * to make sure that any RAID levels on a degraded FS
-+	 * continue to be honored.
-+	 */
-+	num_devices = root->fs_info->fs_devices->rw_devices +
-+			root->fs_info->fs_devices->missing_devices;
- 
- 	stripped = BTRFS_BLOCK_GROUP_RAID0 |
- 		BTRFS_BLOCK_GROUP_RAID5 | BTRFS_BLOCK_GROUP_RAID6 |
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index 00b8f37cc306..0c398643d2a1 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -1588,8 +1588,6 @@ static struct dentry *btrfs_mount(struct file_system_type *fs_type, int flags,
+ 	if (s->s_root) {
+ 		btrfs_close_devices(fs_devices);
+ 		free_fs_info(fs_info);
+-		if ((flags ^ s->s_flags) & MS_RDONLY)
+-			error = -EBUSY;
+ 	} else {
+ 		snprintf(s->s_id, sizeof(s->s_id), "%pg", bdev);
+ 		btrfs_sb(s)->bdev_holder = fs_type;
 -- 
-2.7.0
+2.7.1
 

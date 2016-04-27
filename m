@@ -1,68 +1,64 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from tartarus.angband.pl ([89.206.35.136]:33847 "EHLO
-	tartarus.angband.pl" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750817AbcDZCG3 (ORCPT
+Received: from e06smtp13.uk.ibm.com ([195.75.94.109]:44567 "EHLO
+	e06smtp13.uk.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750973AbcD0M0C (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 25 Apr 2016 22:06:29 -0400
-Date: Tue, 26 Apr 2016 03:40:35 +0200
-From: Adam Borowski <kilobyte@angband.pl>
-To: Markus Trippelsdorf <markus@trippelsdorf.de>
-Cc: Josef Bacik <jbacik@fb.com>, Dave Jones <davej@codemonkey.org.uk>,
-        Chris Mason <clm@fb.com>, David Sterba <dsterba@suse.com>,
-        linux-btrfs@vger.kernel.org
-Subject: Re: btrfs_destroy_inode WARN_ON.
-Message-ID: <20160426014035.GA11882@angband.pl>
-References: <20160324225411.GA1612@codemonkey.org.uk>
- <20160325082526.GA314@x4>
- <56F93A1B.2060701@fb.com>
- <20160328141446.GB308@x4>
+	Wed, 27 Apr 2016 08:26:02 -0400
+Received: from localhost
+	by e06smtp13.uk.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
+	for <linux-btrfs@vger.kernel.org> from <borntraeger@de.ibm.com>;
+	Wed, 27 Apr 2016 13:26:00 +0100
+To: linux-btrfs@vger.kernel.org
+From: Christian Borntraeger <borntraeger@de.ibm.com>
+Subject: 4.6.0-rc3+: WARNING: CPU: 16 PID: 17257 at fs/btrfs/inode.c:9261
+ btrfs_destroy_inode
+Cc: linux-kernel@vger.kernel.org
+Message-ID: <5720AFCE.7060302@de.ibm.com>
+Date: Wed, 27 Apr 2016 14:25:50 +0200
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20160328141446.GB308@x4>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Mar 28, 2016 at 04:14:46PM +0200, Markus Trippelsdorf wrote:
-> On 2016.03.28 at 10:05 -0400, Josef Bacik wrote:
-> > >Mar 24 10:37:27 x4 kernel: WARNING: CPU: 3 PID: 11838 at fs/btrfs/inode.c:9261 btrfs_destroy_inode+0x22b/0x2a0
-> > 
-> > I saw this running some xfstests on our internal kernels but haven't been
-> > able to reproduce it on my latest enospc work (which is obviously perfect).
-> > What were you doing when you tripped this?  I'd like to see if I actually
-> > did fix it or if I still need to run it down.  Thanks,
-> 
-> I cannot really tell. Looking at the backtrace, both Dave and I were
-> running rm. 
-> This warning happened just once on my machine, so the issue is obviously
-> very hard to trigger.
+Folks,
 
-On the other hand, it seems to be triggering really often (on the order of
-~10 mins of light use) on my box.  I understandably ran away from 4.6-rc to
-stable kernels (no one likes to risk data loss), but even in that little
-time it triggered 328 times (over ~20ish boots).
+I can sometimes trigger the following bug
 
-Despite all of these WARNs, there's no data loss yet on the disk in
-question, and the filesystem appears consistent.
+[  244.493534] ------------[ cut here ]------------
+[  244.493624] WARNING: CPU: 16 PID: 17257 at fs/btrfs/inode.c:9261 btrfs_destroy_inode+0x288/0x2b0 [btrfs]
+[  244.493626] Kernel panic - not syncing: panic_on_warn set ...
 
-Call stacks show a variety of callers of btrfs_destroy_inode, originating
-from do_unlinkat, SyS_rename, btrfs_ioctl_snap_destroy, shrink_zone, or
-task_work_run, direct callers being:
+[  244.493629] CPU: 16 PID: 17257 Comm: dwz Not tainted 4.6.0-rc3+ #56
+[  244.493631]        000000fb3d8a3790 000000fb3d8a3820 0000000000000002 0000000000000000 
+       000000fb3d8a38c0 000000fb3d8a3838 000000fb3d8a3838 0000000000239364 
+       0000000000528488 000000000080e46e 00000000007f02c8 000000000000000b 
+       000000fb3d8a3880 000000fb3d8a3820 0000000000000000 0000000000000000 
+       040003ff8185a39e 0000000000113c1e 000000fb3d8a3820 000000fb3d8a3880 
+[  244.493641] Call Trace:
+[  244.493646] ([<0000000000113b0a>] show_trace+0x62/0x78)
+[  244.493647] ([<0000000000113bd2>] show_stack+0x72/0xf0)
+[  244.493650] ([<000000000040a8ca>] dump_stack+0x9a/0xd8)
+[  244.493652] ([<0000000000238b9e>] panic+0xf6/0x230)
+[  244.493656] ([<00000000001398e2>] __warn+0x11a/0x120)
+[  244.493657] ([<000000000040a010>] report_bug+0x90/0xf8)
+[  244.493658] ([<0000000000100a4a>] do_report_trap+0xea/0x108)
+[  244.493660] ([<0000000000100bcc>] illegal_op+0xd4/0x150)
+[  244.493662] ([<000000000067b760>] pgm_check_handler+0x15c/0x1a4)
+[  244.493678] ([<000003ff817d0ff0>] btrfs_destroy_inode+0x288/0x2b0 [btrfs])
+[  244.493680] ([<000000fb42aff1c8>] 0xfb42aff1c8)
+[  244.493683] ([<00000000002de5b6>] __dentry_kill+0x1c6/0x238)
+[  244.493684] ([<00000000002de7fc>] dput+0x1d4/0x298)
+[  244.493687] ([<00000000002c6d24>] __fput+0x144/0x1e8)
+[  244.493689] ([<000000000015a806>] task_work_run+0xc6/0xe8)
+[  244.493714] ([<000000000010923a>] do_notify_resume+0x5a/0x60)
+[  244.493715] ([<000000000067b45c>] system_call+0xdc/0x24c)
 
-do_unlinkat
+The WARN_ON is
+        WARN_ON(BTRFS_I(inode)->csum_bytes);
 
-__dentry_kill
-dput
+The file system is shared on 4 multipath target on scsi disks.
+In seem to be able to reproduce it on kvm/next (4.6.0-rc3+) but 4.5.0 seems fine.
+Any ideas?
 
-__dentry_kill
-shrink_dentry_list
+Christian
 
-dispose_list
-prune_icache_sb
-
-
-Just tried 4.6-rc5, it's still there.
-
-Any way I could help debug this?
-
--- 
-A tit a day keeps the vet away.

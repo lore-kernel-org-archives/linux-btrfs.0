@@ -1,30 +1,49 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lf0-f45.google.com ([209.85.215.45]:35368 "EHLO
-	mail-lf0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752641AbcD0US3 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 27 Apr 2016 16:18:29 -0400
-Received: by mail-lf0-f45.google.com with SMTP id c126so70707936lfb.2
-        for <linux-btrfs@vger.kernel.org>; Wed, 27 Apr 2016 13:18:28 -0700 (PDT)
+Received: from mx2.suse.de ([195.135.220.15]:33620 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752945AbcD0WzZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 27 Apr 2016 18:55:25 -0400
+Date: Thu, 28 Apr 2016 00:55:10 +0200
+From: David Sterba <dsterba@suse.cz>
+To: dsterba@suse.cz, Roman Mamedov <rm@romanrm.net>,
+        Chris Murphy <lists@colorremedies.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>, luisbg@osg.samsung.com
+Subject: Re: [bug] df returns 100% used for empty mixed block group filesystem
+Message-ID: <20160427225510.GQ29353@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <CAJCQCtRzt-BeoW9KNQC3kmBXw8MoydJv7Qy8fu0HmF3hAOgFRQ@mail.gmail.com>
+ <20160310133334.1528bc88@natsu>
+ <20160310174054.GL18908@twin.jikos.cz>
 MIME-Version: 1.0
-Date: Wed, 27 Apr 2016 14:18:27 -0600
-Message-ID: <CAHaPQf1sJpO6bDWUQFp=XEEwuV8P8-qY7bT0UgZEdbazUUWNTg@mail.gmail.com>
-Subject: ...in the matter of partition size
-From: Juan Alberto Cirez <jacirez@rdcsafety.com>
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20160310174054.GL18908@twin.jikos.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Quick question: Supposed I have n-number of storage pods (physical
-servers with n-number of physical hhds). The end deployment will be
-btrfs at the brick/block level with a distributed file system on top.
-Keeping in mind that my overriding goal is to have high availability
-and the mechanism whereby the lost of a drive or multiple drives in a
-single pod will not jeopardize data.
->>>>>Question<<<<<
-Does partitioning the physical drives and creating btrfs filesystem on
-each partition, then configuring each partition as individual
-bricks/blocks offer ANY added benefits over grouping the entire pod
-into a drive pool and using that pool as a single block/brick to
-expose to the distributed filesystem?
+On Thu, Mar 10, 2016 at 06:40:54PM +0100, David Sterba wrote:
+> On Thu, Mar 10, 2016 at 01:33:34PM +0500, Roman Mamedov wrote:
+> > On Thu, 10 Mar 2016 01:24:44 -0700
+> > Chris Murphy <lists@colorremedies.com> wrote:
+> > 
+> > > kernel 4.5.0 rc7
+> > > btrfs-progs-4.4.1-1
+> > > 
+> > > Summary: A new empty mixed block group "-M" filesystem shows up as
+> > > 100% full with regular df (gnu coreutils 8.24). Pretty sure this is
+> > > not a regression, but no regression testing done.
+> > > 
+> > > 
+> > > https://bugzilla.kernel.org/show_bug.cgi?id=114281
+> > 
+> > Just guessing here, but this might be related?
+> > 
+> >   [PATCH] btrfs: statfs: report zero available if metadata are exhausted
+> >   http://www.spinics.net/lists/linux-btrfs/msg48013.html
+> > 
+> > Maybe some maths there are wrong in case of a mixed blockgroup filesystem.
+> 
+> Yes it's caused by the referenced patch.  The statfs has been broken for
+> mixed blockgroups but the 100% used on empty filesystem looks weird, so
+> it's time to fix the mixed-bg case.
+
+JFYI, fixed by Luis de Bethencourt and patches queued for 4.7

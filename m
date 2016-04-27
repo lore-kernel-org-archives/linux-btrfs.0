@@ -1,83 +1,69 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:36845 "EHLO
+Received: from aserp1040.oracle.com ([141.146.126.69]:46100 "EHLO
 	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753046AbcDRKvF (ORCPT
+	with ESMTP id S1752888AbcD0TWs (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 18 Apr 2016 06:51:05 -0400
-Subject: Re: [PATCH v5 11/13] btrfs: introduce device dynamic state transition
- to offline or failed
-To: Yauhen Kharuzhy <yauhen.kharuzhy@zavadatar.com>
-References: <1460470563-752-12-git-send-email-anand.jain@oracle.com>
- <1460631118-7847-1-git-send-email-anand.jain@oracle.com>
- <20160414165644.GA28722@jeknote.loshitsa1.net>
-Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz
-From: Anand Jain <anand.jain@oracle.com>
-Message-ID: <5714BBFF.1090304@oracle.com>
-Date: Mon, 18 Apr 2016 18:50:39 +0800
+	Wed, 27 Apr 2016 15:22:48 -0400
+Date: Wed, 27 Apr 2016 12:23:22 -0700
+From: Liu Bo <bo.li.liu@oracle.com>
+To: Jeff Mahoney <jeffm@suse.com>
+Cc: Btrfs Development List <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH 1/8] btrfs: uapi/linux/btrfs.h migration, move
+ BTRFS_LABEL_SIZE
+Message-ID: <20160427192322.GD15822@localhost.localdomain>
+Reply-To: bo.li.liu@oracle.com
+References: <1459541670-4097-1-git-send-email-jeffm@suse.com>
+ <1459541670-4097-2-git-send-email-jeffm@suse.com>
 MIME-Version: 1.0
-In-Reply-To: <20160414165644.GA28722@jeknote.loshitsa1.net>
-Content-Type: text/plain; charset=windows-1252; format=flowed
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1459541670-4097-2-git-send-email-jeffm@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Fri, Apr 01, 2016 at 04:14:23PM -0400, Jeff Mahoney wrote:
+> BTRFS_LABEL_SIZE is required to define the BTRFS_IOC_GET_FSLABEL and
+> BTRFS_IOC_SET_FSLABEL ioctls.
 
+Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
 
-On 04/15/2016 12:56 AM, Yauhen Kharuzhy wrote:
-> On Thu, Apr 14, 2016 at 06:51:58PM +0800, Anand Jain wrote:
->> From: Anand Jain <Anand.Jain@oracle.com>
->>
->> This patch provides helper functions to force a device to offline
->> or failed, and we need this device states for the following reasons,
->> 1) a. it can be reported that device has failed when it does
->>     b. close the device when it goes offline so that blocklayer can
->>        cleanup
->> 2) identify the candidate for the auto replace
->> 3) avoid further commit error reported against the failing device and
->> 4) a device in the multi device btrfs may go offline from the system
->>     (but as of now in in some system config btrfs gets unmounted in this
->>      context, which is not a correct behavior)
->>
->> Signed-off-by: Anand Jain <anand.jain@oracle.com>
->> Tested-by: Austin S. Hemmelgarn <ahferroin7@gmail.com>
->> ---
->> v5:
->>    Originally we had a bug as fixed in the patch
->>     [PATCH] btrfs: s_bdev is not null after missing replace
->>    Incorporate those changes at force close a failed device.
->>    To test pls have both this patch and above patch which
->>    fixes the original issue, not introduced as part of this
->>    patch set.
->
-> ...
->
->> +void device_force_close(struct btrfs_device *device)
->> +{
->> +	struct btrfs_device *next_device;
->> +	struct btrfs_fs_devices *fs_devices;
->> +
->> +	fs_devices = device->fs_devices;
->> +
->> +	mutex_lock(&fs_devices->device_list_mutex);
->> +	mutex_lock(&fs_devices->fs_info->chunk_mutex);
->> +	spin_lock(&fs_devices->fs_info->free_chunk_lock);
->> +
->> +	next_device = list_entry(fs_devices->devices.next,
->> +					struct btrfs_device, dev_list);
->> +	if (fs_devices->fs_info->sb->s_bdev &&
->> +		(fs_devices->fs_info->sb->s_bdev == device->bdev))
->> +		fs_devices->fs_info->sb->s_bdev = next_device->bdev;
->> +
->> +	if (device->bdev == fs_devices->latest_bdev)
->> +		fs_devices->latest_bdev = next_device->bdev;
->
-> latest_bdev can point to invalid bdev here if next_device is the same as
-> closing device.
+Thanks,
 
-  As mentioned a wrapper helper function is better for this,
-  (I thought you will do it, as I didn't the patch) I just sent out
-    [PATCH] btrfs: cleanup assigning next active device with a check
-
-Thanks, Anand
-
-
-
+-liubo
+> 
+> Signed-off-by: Jeff Mahoney <jeffm@suse.com>
+> ---
+>  fs/btrfs/ctree.h           | 1 -
+>  include/uapi/linux/btrfs.h | 1 +
+>  2 files changed, 1 insertion(+), 1 deletion(-)
+> 
+> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+> index 84a6a5b..3beaa24 100644
+> --- a/fs/btrfs/ctree.h
+> +++ b/fs/btrfs/ctree.h
+> @@ -410,7 +410,6 @@ struct btrfs_header {
+>   * room to translate 14 chunks with 3 stripes each.
+>   */
+>  #define BTRFS_SYSTEM_CHUNK_ARRAY_SIZE 2048
+> -#define BTRFS_LABEL_SIZE 256
+>  
+>  /*
+>   * just in case we somehow lose the roots and are not able to mount,
+> diff --git a/include/uapi/linux/btrfs.h b/include/uapi/linux/btrfs.h
+> index dea8931..11eee34 100644
+> --- a/include/uapi/linux/btrfs.h
+> +++ b/include/uapi/linux/btrfs.h
+> @@ -23,6 +23,7 @@
+>  
+>  #define BTRFS_IOCTL_MAGIC 0x94
+>  #define BTRFS_VOL_NAME_MAX 255
+> +#define BTRFS_LABEL_SIZE 256
+>  
+>  /* this should be 4k */
+>  #define BTRFS_PATH_NAME_MAX 4087
+> -- 
+> 2.7.1
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

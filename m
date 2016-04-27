@@ -1,9 +1,9 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pf0-f193.google.com ([209.85.192.193]:34231 "EHLO
-	mail-pf0-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751848AbcD0Dvl (ORCPT
+Received: from mail-pf0-f196.google.com ([209.85.192.196]:33074 "EHLO
+	mail-pf0-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752904AbcD0Dvv (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 26 Apr 2016 23:51:41 -0400
+	Tue, 26 Apr 2016 23:51:51 -0400
 From: Ming Lei <ming.lei@canonical.com>
 To: Jens Axboe <axboe@fb.com>, linux-kernel@vger.kernel.org
 Cc: linux-block@vger.kernel.org, Christoph Hellwig <hch@infradead.org>,
@@ -11,38 +11,41 @@ Cc: linux-block@vger.kernel.org, Christoph Hellwig <hch@infradead.org>,
         Alexander Viro <viro@zeniv.linux.org.uk>,
         linux-fsdevel@vger.kernel.org (open list:FILESYSTEMS (VFS and
 	infrastructure))
-Subject: [PATCH v2 1/3] fs: direct-io: handle error in dio_end_io()
-Date: Wed, 27 Apr 2016 11:51:34 +0800
-Message-Id: <1461729094-22898-1-git-send-email-ming.lei@canonical.com>
+Subject: [PATCH v2 2/3] fs: direct-io: call .bi_end_io via bio_endio()
+Date: Wed, 27 Apr 2016 11:51:46 +0800
+Message-Id: <1461729106-22944-1-git-send-email-ming.lei@canonical.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 In-Reply-To: <1461729047-22837-1-git-send-email-ming.lei@canonical.com>
 
-If error is passed to dio_end_io(), it should have been
-dealt with. Unfortunately current code just ignores that
-silently.
-
-Only btrfs uses dio_end_io().
+bio_endio() is the graceful way to complete one bio.
 
 Signed-off-by: Ming Lei <ming.lei@canonical.com>
 ---
- fs/direct-io.c | 3 +++
- 1 file changed, 3 insertions(+)
+ fs/direct-io.c | 7 +------
+ 1 file changed, 1 insertion(+), 6 deletions(-)
 
 diff --git a/fs/direct-io.c b/fs/direct-io.c
-index 4720377..a8dd60a 100644
+index a8dd60a..0a35e51 100644
 --- a/fs/direct-io.c
 +++ b/fs/direct-io.c
-@@ -352,6 +352,9 @@ void dio_end_io(struct bio *bio, int error)
+@@ -350,15 +350,10 @@ static void dio_bio_end_io(struct bio *bio)
+  */
+ void dio_end_io(struct bio *bio, int error)
  {
- 	struct dio *dio = bio->bi_private;
+-	struct dio *dio = bio->bi_private;
+-
+ 	if (!bio->bi_error)
+ 		bio->bi_error = error;
  
-+	if (!bio->bi_error)
-+		bio->bi_error = error;
-+
- 	if (dio->is_async)
- 		dio_bio_end_aio(bio);
- 	else
+-	if (dio->is_async)
+-		dio_bio_end_aio(bio);
+-	else
+-		dio_bio_end_io(bio);
++	bio_endio(bio);
+ }
+ EXPORT_SYMBOL_GPL(dio_end_io);
+ 
 -- 
 1.9.1
 

@@ -1,83 +1,73 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lf0-f43.google.com ([209.85.215.43]:33481 "EHLO
-	mail-lf0-f43.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751550AbcD0QkJ convert rfc822-to-8bit (ORCPT
+Received: from mail02.iobjects.de ([188.40.134.68]:53785 "EHLO
+	mail02.iobjects.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753103AbcD0RXZ (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 27 Apr 2016 12:40:09 -0400
-Received: by mail-lf0-f43.google.com with SMTP id y84so56402962lfc.0
-        for <linux-btrfs@vger.kernel.org>; Wed, 27 Apr 2016 09:40:08 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <CAHaPQf1vpOqcXwM41_0U-vh9njtserYhydZHC9phCemiCptVPA@mail.gmail.com>
-References: <CAHaPQf0-qh0sLpUotSdESi8W6dnMOBQPXVJvBP8f2sEj2MC9EA@mail.gmail.com>
-	<pan$c3f48$4829429e$7ab0117b$7d124f52@cox.net>
-	<571DFCF2.6050604@gmail.com>
-	<pan$193a9$b381fd2b$1c0f329f$7b14e34b@cox.net>
-	<571E154C.9060604@gmail.com>
-	<CAHaPQf03yMAxMZRa=zr3Fjh_B+-ggwwuzRFwDsUyK3t=jW2WFw@mail.gmail.com>
-	<571F4CD0.9050004@gmail.com>
-	<CAHaPQf39H-JRhQmCssmgJ98RCxL_36poE_kObAmgmH6nkn4xoA@mail.gmail.com>
-	<CAJCQCtQbCbR9V7z4jZCejbKLJyhBbtrZJmcQBkX=VnxReBf46g@mail.gmail.com>
-	<5720A0E8.5000407@gmail.com>
-	<CAHaPQf3cR4jXKziSCqp0CnrB6oKQoO=2kywsKuo7BLqHqBjBRw@mail.gmail.com>
-	<5720E8FE.2000407@googlemail.com>
-	<CAHaPQf1vpOqcXwM41_0U-vh9njtserYhydZHC9phCemiCptVPA@mail.gmail.com>
-Date: Wed, 27 Apr 2016 10:40:07 -0600
-Message-ID: <CAHaPQf1=rGHLTR17Q5e08X195KsErDrnjX38VOVPQw3jJY8kbQ@mail.gmail.com>
+	Wed, 27 Apr 2016 13:23:25 -0400
 Subject: Re: Add device while rebalancing
-From: Juan Alberto Cirez <jacirez@rdcsafety.com>
-To: =?UTF-8?Q?Holger_Hoffst=C3=A4tte?=
-	<holger.hoffstaette@googlemail.com>
+To: Juan Alberto Cirez <jacirez@rdcsafety.com>
+References: <CAHaPQf0-qh0sLpUotSdESi8W6dnMOBQPXVJvBP8f2sEj2MC9EA@mail.gmail.com>
+ <pan$c3f48$4829429e$7ab0117b$7d124f52@cox.net> <571DFCF2.6050604@gmail.com>
+ <pan$193a9$b381fd2b$1c0f329f$7b14e34b@cox.net> <571E154C.9060604@gmail.com>
+ <CAHaPQf03yMAxMZRa=zr3Fjh_B+-ggwwuzRFwDsUyK3t=jW2WFw@mail.gmail.com>
+ <571F4CD0.9050004@gmail.com>
+ <CAHaPQf39H-JRhQmCssmgJ98RCxL_36poE_kObAmgmH6nkn4xoA@mail.gmail.com>
+ <CAJCQCtQbCbR9V7z4jZCejbKLJyhBbtrZJmcQBkX=VnxReBf46g@mail.gmail.com>
+ <5720A0E8.5000407@gmail.com>
+ <CAHaPQf3cR4jXKziSCqp0CnrB6oKQoO=2kywsKuo7BLqHqBjBRw@mail.gmail.com>
+ <5720E8FE.2000407@googlemail.com>
+ <CAHaPQf1vpOqcXwM41_0U-vh9njtserYhydZHC9phCemiCptVPA@mail.gmail.com>
+ <CAHaPQf1=rGHLTR17Q5e08X195KsErDrnjX38VOVPQw3jJY8kbQ@mail.gmail.com>
 Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+From: =?UTF-8?Q?Holger_Hoffst=c3=a4tte?=
+	<holger.hoffstaette@googlemail.com>
+Message-ID: <5720F58A.40904@googlemail.com>
+Date: Wed, 27 Apr 2016 19:23:22 +0200
+MIME-Version: 1.0
+In-Reply-To: <CAHaPQf1=rGHLTR17Q5e08X195KsErDrnjX38VOVPQw3jJY8kbQ@mail.gmail.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Holger,
-If this is so, then it leaves even confused. I was under the
-impression that the driving imperative for the creation of btrfs was
-to address the shortcomings of current filesystems (within the context
-of distributed data). That the idea was to create a low level
-filesystem that would be the primary choice as a block/brick layer for a
-scale-out, distributed data storage...
-
-On Wed, Apr 27, 2016 at 10:38 AM, Juan Alberto Cirez
-<jacirez@rdcsafety.com> wrote:
-> Holger,
-> If this is so, then it leaves with even confused. I was under the
+On 04/27/16 18:40, Juan Alberto Cirez wrote:
+> If this is so, then it leaves even confused. I was under the
 > impression that the driving imperative for the creation of btrfs was
-> to address the shortcomings of current filesystem within the context
-> of distributed data. That the idea was to create a low level
-> filesystem that would the primary choice as a block/brick layer for a
+> to address the shortcomings of current filesystems (within the context
+> of distributed data). That the idea was to create a low level
+> filesystem that would be the primary choice as a block/brick layer for a
 > scale-out, distributed data storage...
->
-> On Wed, Apr 27, 2016 at 10:29 AM, Holger Hoffstätte
-> <holger.hoffstaette@googlemail.com> wrote:
->> On 04/27/16 17:58, Juan Alberto Cirez wrote:
->>> Correct me if I'm wrong but the sum total of the above seems to
->>> suggest (at first glance) that BRTFS add several layers of complexity,
->>> but for little real benefit (at least in the case use of btrfs at the
->>> brick layer with a distributed filesystem on top)...
->>
->> This may come as a surprise, but the same can be said for every other
->> (common) filesystem (+ device management stack) that can be used
->> standalone.
->>
->> Jeff Darcy (of GlusterFS) just wrote a really nice blog post why
->> current filesystems and their historically grown requirements (mostly
->> as they relate to the POSIX interface standard) are in many ways
->> just not a good fit for scale-out/redundant storage:
->> http://pl.atyp.us/2016-05-updating-posix.html
->>
->> Quite a few of the capabilities & features which are useful or
->> necessary in standalone operation (regardless of single- or multi-
->> device setup) are *actively unhelpful* in a distributed context, which
->> is why e.g. Ceph will soon do away with the on-disk filesystem for
->> data, and manage metadata exclusively by itself.
->>
->> cheers,
->> Holger
->>
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+
+I can't speak for who was or is motivated by what. Btrfs was a necessary
+reaction to ZFS, and AFAIK this had nothing to do with distributed storage
+but rather growing concerns around reliability (checksumming), scalability
+and operational ease: snapshotting, growing/shrinking etc.
+
+It's true that some of btrfs' capabilities make it look like a a good
+candidate, and e.g. Ceph started out using it. For many reasons that
+didn't work out (AFAIK btrfs maturity + extensibility) - but it also
+did not address a fundamental mismatch in requirements, which other
+filesystems (ext4, xfs) could not address either. btrfs simply
+does "too much" because it has to; you cannot remove or turn off half
+of what makes a kernel-based filesystem a usable filesystem. This is
+kind of sad because at its core btrfs *is* an object store with
+various trees for metadata handling and whatnot - but there's no
+easy way to turn off all the "Unix is stupid" stuff.
+
+AFAIK Gluster will soon also start managing xattrs differently,
+so this is not limited to Ceph.
+
+I've been following this saga for several years now and it's
+absolutely *astounding* how many bugs and performance problems
+Ceph has unearthed in existing filesystems, simply because it
+stresses them in ways they never have been stressed before..only to
+create the illusion of a distributed key/value store, badly.
+I don't want to argue about details, you can read more about some
+of the reasons in [1].
+
+[grumble grumble exokernels and composable things in userland grumble]
+
+cheers
+Holger
+
+[1] http://www.slideshare.net/sageweil1/ceph-and-rocksdb
+

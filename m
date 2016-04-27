@@ -1,60 +1,58 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:48517 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752159AbcD0LDw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 27 Apr 2016 07:03:52 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1avNG2-0001dO-Ji
-	for linux-btrfs@vger.kernel.org; Wed, 27 Apr 2016 13:03:50 +0200
-Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 27 Apr 2016 13:03:50 +0200
-Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 27 Apr 2016 13:03:50 +0200
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: empty disk reports full
-Date: Wed, 27 Apr 2016 11:03:42 +0000 (UTC)
-Message-ID: <pan$3f1aa$2c4fda9$62d32937$323cb4c7@cox.net>
-References: <2879842.8EgedBzSUf@anv.localdomain>
-	<2288281.DWWvr4SJAK@anv.localdomain>
-	<CAJCQCtTdL-AxGRpW3ZmGr4weYz3BUks0FR0NLmV-hsR88tNwvw@mail.gmail.com>
-	<17848457.cMlg96Ju9J@anv.localdomain>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Received: from mail-ig0-f170.google.com ([209.85.213.170]:35204 "EHLO
+	mail-ig0-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752448AbcD0LWu (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 27 Apr 2016 07:22:50 -0400
+Received: by mail-ig0-f170.google.com with SMTP id bi2so124480450igb.0
+        for <linux-btrfs@vger.kernel.org>; Wed, 27 Apr 2016 04:22:50 -0700 (PDT)
+Subject: Re: Add device while rebalancing
+To: Chris Murphy <lists@colorremedies.com>,
+        Juan Alberto Cirez <jacirez@rdcsafety.com>
+References: <CAHaPQf0-qh0sLpUotSdESi8W6dnMOBQPXVJvBP8f2sEj2MC9EA@mail.gmail.com>
+ <pan$c3f48$4829429e$7ab0117b$7d124f52@cox.net> <571DFCF2.6050604@gmail.com>
+ <pan$193a9$b381fd2b$1c0f329f$7b14e34b@cox.net> <571E154C.9060604@gmail.com>
+ <CAHaPQf03yMAxMZRa=zr3Fjh_B+-ggwwuzRFwDsUyK3t=jW2WFw@mail.gmail.com>
+ <571F4CD0.9050004@gmail.com>
+ <CAHaPQf39H-JRhQmCssmgJ98RCxL_36poE_kObAmgmH6nkn4xoA@mail.gmail.com>
+ <CAJCQCtQbCbR9V7z4jZCejbKLJyhBbtrZJmcQBkX=VnxReBf46g@mail.gmail.com>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Message-ID: <5720A0E8.5000407@gmail.com>
+Date: Wed, 27 Apr 2016 07:22:16 -0400
+MIME-Version: 1.0
+In-Reply-To: <CAJCQCtQbCbR9V7z4jZCejbKLJyhBbtrZJmcQBkX=VnxReBf46g@mail.gmail.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Alejandro Vargas posted on Wed, 27 Apr 2016 11:29:31 +0200 as excerpted:
-
->> Also there are two compress mount options that conflict with each
->> other, is this intentional?
-> 
-> I did not thought that compress and compress-force are incompatible...
-> The intention is to force it to compress the data for using lower disk
-> space. Compress-force should be enough?
-
-Yes.  Compress-force simply forces the compression instead of quick-
-testing whether the file seems easily/effectively compressed first (tho I 
-think it still tests compressed block size and stores it uncompressed if 
-the "compressed" block is actually larger, I don't believe it forces 
-"compression" in /that/ case).  It will result in better compression when 
-the first 4k (I believe that's what the quick-test tests on) of a file 
-doesn't compress well but much of the rest will.
-
-The problem with having both compress and compress-force in mount options 
-is that I believe it's order-dependent which one ends up being applied, 
-and unless you're a mount options guru, remembering whether it's the 
-first or the last one that gets applied, or a special case where one 
-overrules the other, is hard.  So it's best just to use just the option 
-you want and not confuse people, at least others trying to make sense of 
-things even if you yourself know which one gets applied, with both.
-
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+On 2016-04-26 20:58, Chris Murphy wrote:
+> On Tue, Apr 26, 2016 at 5:44 AM, Juan Alberto Cirez
+> <jacirez@rdcsafety.com> wrote:
+>>
+>> With GlusterFS as a distributed volume, the files are already spread
+>> among the servers causing file I/O to be spread fairly evenly among
+>> them as well, thus probably providing the benefit one might expect
+>> with stripe (RAID10).
+>
+> Yes, the raid1 of Btrfs is just so you don't have to rebuild volumes
+> if you lose a drive. But since raid1 is not n-way copies, and only
+> means two copies, you don't really want the file systems getting that
+> big or you increase the chances of a double failure.
+>
+> I've always though it'd be neat in a Btrfs + GlusterFS, if it were
+> possible for Btrfs to inform Gluster FS of "missing/corrupt" files,
+> and then for Btrfs to drop reference for those files, instead of
+> either rebuilding or remaining degraded. And then let GlusterFS deal
+> with replication of those files to maintain redundancy. i.e. the Btrfs
+> volumes would be single profile for data, and raid1 for metadata. When
+> there's n-way raid1, each drive can have a copy of the file system,
+> and it'd tolerate in effect n-1 drive failures and the file system
+> could at least still inform Gluster (or Ceph) of the missing data, the
+> file system still remains valid, only briefly degraded, and can still
+> be expanded when new drives become available.
+FWIW, I _think_ this can be done with the scrubbing code in GlusterFS. 
+It's designed to repair data mismatches, but I'm not sure how it handles 
+missing copies of data.  However, in the current state, there's no way 
+without external scripts to handle re-shaping of the storage bricks if 
+part of them fails.

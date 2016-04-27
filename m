@@ -1,80 +1,101 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oi0-f66.google.com ([209.85.218.66]:32913 "EHLO
-	mail-oi0-f66.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751907AbcD0XTe (ORCPT
+Received: from userp1040.oracle.com ([156.151.31.81]:21815 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751038AbcD0XVo (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 27 Apr 2016 19:19:34 -0400
-Received: by mail-oi0-f66.google.com with SMTP id f63so10037802oig.0
-        for <linux-btrfs@vger.kernel.org>; Wed, 27 Apr 2016 16:19:34 -0700 (PDT)
+	Wed, 27 Apr 2016 19:21:44 -0400
+Date: Wed, 27 Apr 2016 16:22:17 -0700
+From: Liu Bo <bo.li.liu@oracle.com>
+To: David Sterba <dsterba@suse.com>
+Cc: linux-btrfs@vger.kernel.org, clm@fb.com, stable@vger.kernel.org
+Subject: Re: [PATCH] btrfs: do not return EBUSY on concurrent subvolume mounts
+Message-ID: <20160427232217.GL15822@localhost.localdomain>
+Reply-To: bo.li.liu@oracle.com
+References: <1461770076-13000-1-git-send-email-dsterba@suse.com>
 MIME-Version: 1.0
-In-Reply-To: <5720A0E8.5000407@gmail.com>
-References: <CAHaPQf0-qh0sLpUotSdESi8W6dnMOBQPXVJvBP8f2sEj2MC9EA@mail.gmail.com>
-	<pan$c3f48$4829429e$7ab0117b$7d124f52@cox.net>
-	<571DFCF2.6050604@gmail.com>
-	<pan$193a9$b381fd2b$1c0f329f$7b14e34b@cox.net>
-	<571E154C.9060604@gmail.com>
-	<CAHaPQf03yMAxMZRa=zr3Fjh_B+-ggwwuzRFwDsUyK3t=jW2WFw@mail.gmail.com>
-	<571F4CD0.9050004@gmail.com>
-	<CAHaPQf39H-JRhQmCssmgJ98RCxL_36poE_kObAmgmH6nkn4xoA@mail.gmail.com>
-	<CAJCQCtQbCbR9V7z4jZCejbKLJyhBbtrZJmcQBkX=VnxReBf46g@mail.gmail.com>
-	<5720A0E8.5000407@gmail.com>
-Date: Wed, 27 Apr 2016 17:19:33 -0600
-Message-ID: <CAJCQCtThbwkDQUNFT_Xuao1=HnktFYHebSTruXAJWZOGExBdxA@mail.gmail.com>
-Subject: Re: Add device while rebalancing
-From: Chris Murphy <lists@colorremedies.com>
-To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Cc: Chris Murphy <lists@colorremedies.com>,
-        Juan Alberto Cirez <jacirez@rdcsafety.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1461770076-13000-1-git-send-email-dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Apr 27, 2016 at 5:22 AM, Austin S. Hemmelgarn
-<ahferroin7@gmail.com> wrote:
-> On 2016-04-26 20:58, Chris Murphy wrote:
->>
->> On Tue, Apr 26, 2016 at 5:44 AM, Juan Alberto Cirez
->> <jacirez@rdcsafety.com> wrote:
->>>
->>>
->>> With GlusterFS as a distributed volume, the files are already spread
->>> among the servers causing file I/O to be spread fairly evenly among
->>> them as well, thus probably providing the benefit one might expect
->>> with stripe (RAID10).
->>
->>
->> Yes, the raid1 of Btrfs is just so you don't have to rebuild volumes
->> if you lose a drive. But since raid1 is not n-way copies, and only
->> means two copies, you don't really want the file systems getting that
->> big or you increase the chances of a double failure.
->>
->> I've always though it'd be neat in a Btrfs + GlusterFS, if it were
->> possible for Btrfs to inform Gluster FS of "missing/corrupt" files,
->> and then for Btrfs to drop reference for those files, instead of
->> either rebuilding or remaining degraded. And then let GlusterFS deal
->> with replication of those files to maintain redundancy. i.e. the Btrfs
->> volumes would be single profile for data, and raid1 for metadata. When
->> there's n-way raid1, each drive can have a copy of the file system,
->> and it'd tolerate in effect n-1 drive failures and the file system
->> could at least still inform Gluster (or Ceph) of the missing data, the
->> file system still remains valid, only briefly degraded, and can still
->> be expanded when new drives become available.
->
-> FWIW, I _think_ this can be done with the scrubbing code in GlusterFS. It's
-> designed to repair data mismatches, but I'm not sure how it handles missing
-> copies of data.  However, in the current state, there's no way without
-> external scripts to handle re-shaping of the storage bricks if part of them
-> fails.
+On Wed, Apr 27, 2016 at 05:14:36PM +0200, David Sterba wrote:
+> A user reported mount failures with EBUSY during boot, there's root
+> partition and many subvolumes, mounted via /etc/fstab.
+> 
+> The failure depends on timing, when multiple subvolumes reach the code
+> between superblock creation in RO mode, while the subvolumes are RW.
+> This discrepancy leads to EBUSY and the code has been there since ages.
+> 
+> If the subvolumes are mounted after a short delay, there's no EBUSY.
+> There's no missing locking, the supreblock creation is atomic and the
+> error code seems to be just artificial. We support different RO/RW
+> mounts in mount_subvol and do the relevant adjustments if the flags do
+> not match.
 
-Yeah I haven't tried doing a scrub, parsing dmesg for busted file
-paths, and feeling those paths into rm to see what happens. Will they
-get deleted without additional errors? If so good, then scrub again
-should be clean. And then btrfs dev missing to get rid of the broken
-device *and* cause missing metadata to be replicated again and now in
-theory the fs should be back to normal. But it'd have to be tested
-with a umount followed by mount to see if -o degraded is still
-required.
+Looks good to me.
 
--- 
-Chris Murphy
+Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
+
+But What I'm worrying about is that mount_subvol() will help subvolume
+mounting get correct mount flags by calling btrfs_remount(), and
+btrfs_remount() can remove sb->s_flags's MS_RDONLY.  In all syscall cases
+it's ok as we have mnt->mnt_flags, but for btrfs's add_dev ioctl, we
+don't check mnt_want_write_file() while btrfs's rm_dev ioctl does the
+check, should we add that for add_dev ioctl?
+
+Thanks,
+
+-liubo
+
+> 
+> There are no apparent problems if the check and EBUSY are dropped, no
+> wrong refcounting, umount works etc.
+> 
+> Reproducer:
+> 
+> mkdir -p mnt $(eval echo mnt{1..10})
+> mkfs.btrfs -f /dev/sdx
+> mount /dev/sdx mnt
+> for i in `seq 10`; do btrfs subvol create subv$i; done
+> loops=0
+> while [ $loops -lt 10 ]; do
+>   umount mnt*
+>   mount -o ro /dev/sdx mnt &
+>   for i in `seq 10`; do
+>     mount -o subvol=subv$i /dev/sdx mnt$i || \
+>       echo "FAIL: mnt$i, loop $loops" > log-$i-$loops &
+>     fi
+>   done
+>   wait
+>   : $((loops++))
+> done
+> 
+> Do 10 iterations, try to run subvolume mounts concurrently, log mount
+> failures to files, the actual EBUSY errors are on screen.
+> 
+> CC: stable@vger.kernel.org
+> Signed-off-by: David Sterba <dsterba@suse.com>
+> ---
+>  fs/btrfs/super.c | 2 --
+>  1 file changed, 2 deletions(-)
+> 
+> diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+> index 00b8f37cc306..0c398643d2a1 100644
+> --- a/fs/btrfs/super.c
+> +++ b/fs/btrfs/super.c
+> @@ -1588,8 +1588,6 @@ static struct dentry *btrfs_mount(struct file_system_type *fs_type, int flags,
+>  	if (s->s_root) {
+>  		btrfs_close_devices(fs_devices);
+>  		free_fs_info(fs_info);
+> -		if ((flags ^ s->s_flags) & MS_RDONLY)
+> -			error = -EBUSY;
+>  	} else {
+>  		snprintf(s->s_id, sizeof(s->s_id), "%pg", bdev);
+>  		btrfs_sb(s)->bdev_holder = fs_type;
+> -- 
+> 2.7.1
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

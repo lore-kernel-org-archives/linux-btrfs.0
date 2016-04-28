@@ -1,64 +1,36 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from meiko.romanrm.net ([195.154.92.155]:47092 "EHLO
-	meiko.romanrm.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752286AbcD1Odt (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 28 Apr 2016 10:33:49 -0400
-Received: from natsu (unknown [IPv6:fd39::e9:9eff:fe8f:1bcf])
-	by meiko.romanrm.net (Postfix) with SMTP id 61DEC13F9E0
-	for <linux-btrfs@vger.kernel.org>; Thu, 28 Apr 2016 14:33:46 +0000 (UTC)
-Date: Thu, 28 Apr 2016 19:33:39 +0500
-From: Roman Mamedov <rm@romanrm.net>
-To: linux-btrfs@vger.kernel.org
-Subject: Checking if two files share extents
-Message-ID: <20160428193339.6eb251cd@natsu>
+Received: from mx2.suse.de ([195.135.220.15]:36208 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752656AbcD1QSL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 28 Apr 2016 12:18:11 -0400
+Date: Thu, 28 Apr 2016 18:17:57 +0200
+From: David Sterba <dsterba@suse.cz>
+To: David Sterba <dsterba@suse.com>
+Cc: linux-btrfs@vger.kernel.org, clm@fb.com, stable@vger.kernel.org
+Subject: Re: [PATCH] btrfs: do not return EBUSY on concurrent subvolume mounts
+Message-ID: <20160428161757.GV29353@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1461770076-13000-1-git-send-email-dsterba@suse.com>
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
- boundary="Sig_/E_gPacQ1wUYwDenBKkCb.XV"; protocol="application/pgp-signature"
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1461770076-13000-1-git-send-email-dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
---Sig_/E_gPacQ1wUYwDenBKkCb.XV
-Content-Type: text/plain; charset=US-ASCII
-Content-Transfer-Encoding: quoted-printable
+On Wed, Apr 27, 2016 at 05:14:36PM +0200, David Sterba wrote:
+> --- a/fs/btrfs/super.c
+> +++ b/fs/btrfs/super.c
+> @@ -1588,8 +1588,6 @@ static struct dentry *btrfs_mount(struct file_system_type *fs_type, int flags,
+>  	if (s->s_root) {
+>  		btrfs_close_devices(fs_devices);
+>  		free_fs_info(fs_info);
+> -		if ((flags ^ s->s_flags) & MS_RDONLY)
+> -			error = -EBUSY;
 
-Hello,
+And this is a wrong fix. It will break the existing semantics of mixed
+ro/rw mounts. With this change, it's not possible to mount the first
+subvol ro and the rest with rw. The mount succeeds, but does not lead to
+the right result.
 
-I'm writing a simple custom deduplication script, and faced a problem with =
-how
-to make it skip already deduped files. E.g., if I do
-
-  cp -a --reflink fileA fileB
-
-...after this, how to check if fileA and fileB refer to the same extents on
-disk? I tried comparing the outputs of "filefrag -e", but this doesn't seem=
- to
-be very reliable (and e.g. instantly after such copying and until some time
-later, the extent maps WILL differ).
-
-The script I'm writing is in a scripting language, so ideally this should be
-obtainable via some command-line text based tool, without kernel API calls =
-or
-the like.
-
-Perhaps ideally something that would print a list of a given file's extents
-with their absolute block numbers. Looked at what's available in "btrfs
-inspect", but there doesn't seem to be any command of that sort.
-
---=20
-With respect,
-Roman
-
---Sig_/E_gPacQ1wUYwDenBKkCb.XV
-Content-Type: application/pgp-signature
-Content-Description: OpenPGP digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2
-
-iEYEARECAAYFAlciH0kACgkQTLKSvz+PZwinhACgkf7yPFPzEeOu9uxH9jrm3g6G
-/e4AnRHdslWT60bNUyDvEA9rSUQNA20A
-=/dHj
------END PGP SIGNATURE-----
-
---Sig_/E_gPacQ1wUYwDenBKkCb.XV--
+At least now I have a better idea where the race happens, btrfs_subvol
+between vfs_kern_mount and the remount.

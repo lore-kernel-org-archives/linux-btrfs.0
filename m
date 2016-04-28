@@ -1,147 +1,102 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:51386 "EHLO
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:7998 "EHLO
 	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1752392AbcD1Oby (ORCPT
+	by vger.kernel.org with ESMTP id S1752377AbcD1OdQ (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 28 Apr 2016 10:31:54 -0400
-Subject: Re: [PATCH RFC 04/16] btrfs-progs: fsck: Introduce function to check
- referencer of a backref
+	Thu, 28 Apr 2016 10:33:16 -0400
+Subject: Re: [PATCH RFC 00/16] Introduce low memory usage btrfsck mode
 To: Qu Wenruo <quwenruo@cn.fujitsu.com>, <linux-btrfs@vger.kernel.org>
 References: <1461642543-4621-1-git-send-email-quwenruo@cn.fujitsu.com>
- <1461642543-4621-5-git-send-email-quwenruo@cn.fujitsu.com>
-CC: <dsterba@suse.cz>, Lu Fengqi <lufq.fnst@cn.fujitsu.com>
+CC: <dsterba@suse.cz>
 From: Josef Bacik <jbacik@fb.com>
-Message-ID: <6a88b2b4-8bc4-71f5-2cd9-c5454f0ed02d@fb.com>
-Date: Thu, 28 Apr 2016 10:31:38 -0400
+Message-ID: <4635a8ca-0b56-223d-479c-0177ae7d197c@fb.com>
+Date: Thu, 28 Apr 2016 10:32:59 -0400
 MIME-Version: 1.0
-In-Reply-To: <1461642543-4621-5-git-send-email-quwenruo@cn.fujitsu.com>
+In-Reply-To: <1461642543-4621-1-git-send-email-quwenruo@cn.fujitsu.com>
 Content-Type: text/plain; charset="windows-1252"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 On 04/25/2016 11:48 PM, Qu Wenruo wrote:
-> From: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
+> The branch can be fetched from my github:
+> https://github.com/adam900710/btrfs-progs.git low_mem_fsck_rebasing
 >
-> Introduce a new function check_tree_block_backref() to check if a
-> backref points to correct referencer.
+> Original btrfsck checks extent tree in a very efficient method, by
+> recording every checked extent in extent record tree to ensure every
+> extent will be iterated for at most 2 times.
 >
-> Signed-off-by: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
-> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
-> ---
->  cmds-check.c | 95 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
->  1 file changed, 95 insertions(+)
+> However extent records are all stored in heap memory, and consider how
+> large a btrfs file system can be, it can easily eat up all memory and
+> cause OOM for TB-sized metadata.
 >
-> diff --git a/cmds-check.c b/cmds-check.c
-> index 6633b6e..81dd4f3 100644
-> --- a/cmds-check.c
-> +++ b/cmds-check.c
-> @@ -323,6 +323,8 @@ struct root_item_info {
->  #define MISSING_BACKREF	(1 << 0) /* Completely no backref in extent tree */
->  #define BAD_BACKREF	(1 << 1) /* Backref mismatch */
->  #define UNALIGNED_BYTES	(1 << 2) /* Some bytes are not aligned */
-> +#define MISSING_REFERENCER (1 << 3) /* Referencer not found */
-> +#define BAD_REFERENCER	(1 << 4) /* Referencer found, but not mismatch */
+> Instead of such heap memory usage, we introduce low memory usage fsck
+> mode.
 >
->  static void *print_status_check(void *p)
->  {
-> @@ -8736,6 +8738,99 @@ out:
->  	return ret;
->  }
+> In this mode, we will use btrfs_search_slot() only and avoid any heap
+> memory allocation.
 >
-> +/*
-> + * Check if a tree block backref is valid (points to valid tree block)
-> + * if level == -1, level will be resolved
-> + */
-> +static int check_tree_block_backref(struct btrfs_fs_info *fs_info, u64 root_id,
-> +				    u64 bytenr, int level)
-> +{
-> +	struct btrfs_root *root;
-> +	struct btrfs_key key;
-> +	struct btrfs_path path;
-> +	struct extent_buffer *eb;
-> +	struct extent_buffer *node;
-> +	u32 nodesize = btrfs_super_nodesize(fs_info->super_copy);
-> +	int err = 0;
-> +	int ret;
-> +
-> +	/* Query level for level == -1 special case */
-> +	if (level == -1)
-> +		level = query_tree_block_level(fs_info, bytenr);
-> +	if (level < 0) {
-> +		err = MISSING_REFERENCER;
-> +		goto out;
-> +	}
-> +
-> +	key.objectid = root_id;
-> +	key.type = BTRFS_ROOT_ITEM_KEY;
-> +	key.offset = (u64)-1;
-> +
-> +	root = btrfs_read_fs_root(fs_info, &key);
-> +	if (IS_ERR(root)) {
-> +		err |= MISSING_REFERENCER;
-> +		goto out;
-> +	}
-> +
-> +	/* Read out the tree block to get item/node key */
-> +	eb = read_tree_block(root, bytenr, root->nodesize, 0);
-> +	/* Impossible, as tree block query has read out the tree block */
-> +	if (!extent_buffer_uptodate(eb)) {
-> +		err |= MISSING_REFERENCER;
-> +		free_extent_buffer(eb);
-> +		goto out;
-> +	}
-> +
-> +	/* Empty tree, no need to check key */
-> +	if (!btrfs_header_nritems(eb) && !level) {
-> +		free_extent_buffer(eb);
-> +		goto out;
-> +	}
-> +
-> +	if (level)
-> +		btrfs_node_key_to_cpu(eb, &key, 0);
-> +	else
-> +		btrfs_item_key_to_cpu(eb, &key, 0);
-> +
-> +	free_extent_buffer(eb);
-> +
-> +	btrfs_init_path(&path);
-> +	/* Search with the first key, to ensure we can reach it */
-> +	ret = btrfs_search_slot(NULL, root, &key, &path, 0, 0);
-> +	if (ret) {
-> +		err |= MISSING_REFERENCER;
-> +		goto release_out;
-> +	}
-> +
-> +	node = path.nodes[level];
-> +	if (btrfs_header_bytenr(node) != bytenr) {
-> +		error("Extent [%llu %d] referencer bytenr mismatch, wanted: %llu, have: %llu",
-> +		      bytenr, nodesize, bytenr,
-> +		      btrfs_header_bytenr(node));
-> +		err |= BAD_REFERENCER;
-> +	}
-> +	if (btrfs_header_level(node) != level) {
-> +		error("Extent [%llu %d] referencer level mismatch, wanted: %d, have: %d",
-> +		      bytenr, nodesize, level,
-> +		      btrfs_header_level(node));
-> +		err |= BAD_REFERENCER;
-> +	}
-> +
-> +release_out:
-> +	btrfs_release_path(&path);
-> +out:
-> +	if (err & MISSING_REFERENCER) {
-> +		if (level < 0)
-> +			error("Extent [%llu %d] lost referencer(owner: %llu)",
-> +			       bytenr, nodesize, root_id);
-> +		else
-> +			error("Extent [%llu %d] lost referencer(owner: %llu, level: %u)",
-> +			       bytenr, nodesize, root_id, level);
-> +	}
-> +
-> +	return -err;
+> The work flow is:
+> 1) Iterate extent tree (backref check)
+>    And check whether the referencer of every backref exists.
+>
+> 2) Iterate other trees (forward ref check)
+>    And check whether the backref of every tree block/data exists in
+>    extent tree.
+>
+> So in theory, every extent is iterated twice just as original one.
+> But since we don't have extent record, but use btrfs_search_slot() every
+> time we check, it will cause extra IO.
+>
+> I assume the extra IO is reasonable and should make btrfsck able to
+> handle super large fs.
+>
+> TODO features:
+> 1) Repair
+>    Repair should be the same as old btrfsck, but still need to determine
+>    the repair principle.
+>    Current repair sometimes uses backref to repair data extent,
+>    sometimes uses data extent to fix backref.
+>    We need a consistent principle, or we will screw things up.
+>
+> 2) Replace current fsck code
+>    We assume the low memory mode has less lines of code, and may be
+>    easier for review and expand.
+>
+>    If low memory mode is stable enough, we will consider to replace
+>    current extent and chunk tree check codes to free a lot of lines.
+>
+> 3) Further code refining
+>    Reduce duplicated codes
+>
+> 4) Unify output
+>    Make the output of low-memory mode same as the normal one.
+>
+> Lu Fengqi (16):
+>   btrfs-progs: fsck: Introduce function to check tree block backref in
+>     extent tree
+>   btrfs-progs: fsck: Introduce function to check data backref in extent
+>     tree
+>   btrfs-progs: fsck: Introduce function to query tree block level
+>   btrfs-progs: fsck: Introduce function to check referencer of a backref
+>   btrfs-progs: fsck: Introduce function to check shared block ref
+>   btrfs-progs: fsck: Introduce function to check referencer for data
+>     backref
+>   btrfs-progs: fsck: Introduce function to check shared data backref
+>   btrfs-progs: fsck: Introduce function to check an extent
+>   btrfs-progs: fsck: Introduce function to check dev extent item
+>   btrfs-progs: fsck: Introduce function to check dev used space
+>   btrfs-progs: fsck: Introduce function to check block group item
+>   btrfs-progs: fsck: Introduce function to check chunk item
+>   btrfs-progs: fsck: Introduce hub function for later fsck
+>   btrfs-progs: fsck: Introduce function to speed up fs tree check
+>   btrfs-progs: fsck: Introduce traversal function for fsck
+>   btrfs-progs: fsck: Introduce low memory mode
+>
 
-Sigh I missed this at first, if you are doing flags don't return 
-negative numbers.  Fix this and then you can add my reviewed-by.  Thanks,
+I made it halfway through before I realized you are returning negative 
+values for flag related errors.  Please don't do that.  Once you fix 
+that up I'll review the rest of the series, and don't put my Reviewed-by 
+tags on anything until you fix up the negative return value thing.  Thanks,
 
 Josef
 

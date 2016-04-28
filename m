@@ -1,93 +1,149 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from youngberry.canonical.com ([91.189.89.112]:53838 "EHLO
-	youngberry.canonical.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752424AbcD1QMr (ORCPT
+Received: from mail-pa0-f42.google.com ([209.85.220.42]:35853 "EHLO
+	mail-pa0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753346AbcD1Rdu (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 28 Apr 2016 12:12:47 -0400
-MIME-Version: 1.0
-In-Reply-To: <alpine.LRH.2.02.1604281157180.6220@file01.intranet.prod.int.rdu2.redhat.com>
-References: <1461805789-3632-1-git-send-email-ming.lei@canonical.com>
-	<1461805789-3632-3-git-send-email-ming.lei@canonical.com>
-	<alpine.LRH.2.02.1604281127130.14065@file01.intranet.prod.int.rdu2.redhat.com>
-	<CACVXFVPgPh3snp-B6=G9fShzJwwKz2NyQETSnMJBGp=HzTL_-w@mail.gmail.com>
-	<alpine.LRH.2.02.1604281157180.6220@file01.intranet.prod.int.rdu2.redhat.com>
-Date: Fri, 29 Apr 2016 00:12:44 +0800
-Message-ID: <CACVXFVN7bE3tFs9KVGX-M3LCvOr0WuCMwyoGiW4qu5G4h8EzhA@mail.gmail.com>
-Subject: Re: [PATCH v3 3/3] block: avoid to call .bi_end_io() recursively
-From: Ming Lei <ming.lei@canonical.com>
-To: Mikulas Patocka <mpatocka@redhat.com>
-Cc: Jens Axboe <axboe@fb.com>,
-        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
-        linux-block@vger.kernel.org, Christoph Hellwig <hch@infradead.org>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>,
-        Shaun Tancheff <shaun.tancheff@seagate.com>,
-        Alan Cox <alan@linux.intel.com>, Neil Brown <neilb@suse.de>,
-        Liu Bo <bo.li.liu@oracle.com>, Jens Axboe <axboe@kernel.dk>
-Content-Type: text/plain; charset=UTF-8
+	Thu, 28 Apr 2016 13:33:50 -0400
+Received: by mail-pa0-f42.google.com with SMTP id bt5so34515909pac.3
+        for <linux-btrfs@vger.kernel.org>; Thu, 28 Apr 2016 10:33:50 -0700 (PDT)
+From: Omar Sandoval <osandov@osandov.com>
+To: fstests@vger.kernel.org, linux-btrfs@vger.kernel.org
+Cc: kernel-team@fb.com, Omar Sandoval <osandov@fb.com>
+Subject: [PATCH v2 1/2] btrfs: add replace missing and replace RAID 5/6 to profile configs
+Date: Thu, 28 Apr 2016 10:33:36 -0700
+Message-Id: <776782f53c3639730a9813a91babb6da57530ab0.1461864695.git.osandov@fb.com>
+In-Reply-To: <cover.1461864695.git.osandov@fb.com>
+References: <cover.1461864695.git.osandov@fb.com>
+In-Reply-To: <cover.1461864695.git.osandov@fb.com>
+References: <cover.1461864695.git.osandov@fb.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Apr 28, 2016 at 11:58 PM, Mikulas Patocka <mpatocka@redhat.com> wrote:
->
->
-> On Thu, 28 Apr 2016, Ming Lei wrote:
->
->> Hi Mikulas,
->>
->> On Thu, Apr 28, 2016 at 11:29 PM, Mikulas Patocka <mpatocka@redhat.com> wrote:
->> >
->> >
->> > On Thu, 28 Apr 2016, Ming Lei wrote:
->> >
->> >> There were reports about heavy stack use by recursive calling
->> >> .bi_end_io()([1][2][3]). For example, more than 16K stack is
->> >> consumed in a single bio complete path[3], and in [2] stack
->> >> overflow can be triggered if 20 nested dm-crypt is used.
->> >>
->> >> Also patches[1] [2] [3] were posted for addressing the issue,
->> >> but never be merged. And the idea in these patches is basically
->> >> similar, all serializes the recursive calling of .bi_end_io() by
->> >> percpu list.
->> >>
->> >> This patch still takes the same idea, but uses bio_list to
->> >> implement it, which turns out more simple and the code becomes
->> >> more readable meantime.
->> >>
->> >> One corner case which wasn't covered before is that
->> >> bi_endio() may be scheduled to run in process context(such
->> >> as btrfs), and this patch just bypasses the optimizing for
->> >> that case because one new context should have enough stack space,
->> >> and this approach isn't capable of optimizing it too because
->> >> there isn't easy way to get a per-task linked list head.
->> >
->> > Hi
->> >
->> > You could use preempt_disable() and then you could use per-cpu list even
->> > in the process context.
->>
->> Image why the .bi_end_io() is scheduled to process context, and the only
->> workable/simple way I thought of is to use per-task list because it may sleep.
->
-> The bi_end_io callback should not sleep, even if it is called from the
-> process context.
+From: Omar Sandoval <osandov@fb.com>
 
-If it shouldn't sleep, why is it scheduled to run in process context by paying
-extra context switch cost?
+Replacing and scrubbing RAID 5/6 is now supported on Btrfs. Enable it in
+_btrfs_get_profile_configs while making it more generic to also support
+replace missing.
 
-And you can find that btrfs_subio_endio_read() does sleep for checksum stuff.
+Reviewed-by: Eryu Guan <eguan@redhat.com>
+Signed-off-by: Omar Sandoval <osandov@fb.com>
+---
+ common/rc | 95 ++++++++++++++++++++++++++++++++-------------------------------
+ 1 file changed, 48 insertions(+), 47 deletions(-)
 
-Thanks,
-Ming
+diff --git a/common/rc b/common/rc
+index 8bec836805c6..91e8f1c8e693 100644
+--- a/common/rc
++++ b/common/rc
+@@ -3207,60 +3207,61 @@ _btrfs_get_profile_configs()
+ 		return
+ 	fi
+ 
+-	# no user specified btrfs profile configs, export the default configs
+ 	if [ -z "$BTRFS_PROFILE_CONFIGS" ]; then
+-		# default configs
+-		_btrfs_profile_configs=(
+-			"-m single -d single"
+-			"-m dup -d single"
+-			"-m raid0 -d raid0"
+-			"-m raid1 -d raid0"
+-			"-m raid1 -d raid1"
+-			"-m raid10 -d raid10"
+-			"-m raid5 -d raid5"
+-			"-m raid6 -d raid6"
++		# Default configurations to test.
++		local configs=(
++			"single:single"
++			"dup:single"
++			"raid0:raid0"
++			"raid1:raid0"
++			"raid1:raid1"
++			"raid10:raid10"
++			"raid5:raid5"
++			"raid6:raid6"
+ 		)
++	else
++		# User-provided configurations.
++		local configs=(${BTRFS_PROFILE_CONFIGS[@]})
++	fi
+ 
+-		# remove dup/raid5/raid6 profiles if we're doing device replace
+-		# dup profile indicates only one device being used (SCRATCH_DEV),
+-		# but we don't want to replace SCRATCH_DEV, which will be used in
+-		# _scratch_mount/_check_scratch_fs etc.
+-		# and raid5/raid6 doesn't support replace yet
++	_btrfs_profile_configs=()
++	for cfg in "${configs[@]}"; do
++		local supported=true
++		local profiles=(${cfg/:/ })
+ 		if [ "$1" == "replace" ]; then
+-			_btrfs_profile_configs=(
+-				"-m single -d single"
+-				"-m raid0 -d raid0"
+-				"-m raid1 -d raid0"
+-				"-m raid1 -d raid1"
+-				"-m raid10 -d raid10"
+-				# add these back when raid5/6 is working with replace
+-				#"-m raid5 -d raid5"
+-				#"-m raid6 -d raid6"
++			# We can't do replace with these profiles because they
++			# imply only one device ($SCRATCH_DEV), and we need to
++			# keep $SCRATCH_DEV around for _scratch_mount
++			# and _check_scratch_fs.
++			local unsupported=(
++				"dup"
+ 			)
++		elif [ "$1" == "replace-missing" ]; then
++			# We can't replace missing devices with these profiles
++			# because there isn't enough redundancy.
++			local unsupported=(
++				"single"
++				"dup"
++				"raid0"
++			)
++		else
++			local unsupported=()
+ 		fi
+-		export _btrfs_profile_configs
+-		return
+-	fi
+-
+-	# parse user specified btrfs profile configs
+-	local i=0
+-	local cfg=""
+-	for cfg in $BTRFS_PROFILE_CONFIGS; do
+-		# turn "metadata:data" format to "-m metadata -d data"
+-		# and assign it to _btrfs_profile_configs array
+-		cfg=`echo "$cfg" | sed -e 's/^/-m /' -e 's/:/ -d /'`
+-		_btrfs_profile_configs[$i]="$cfg"
+-		let i=i+1
+-	done
+-
+-	if [ "$1" == "replace" ]; then
+-		if echo ${_btrfs_profile_configs[*]} | grep -q raid[56]; then
+-			_notrun "RAID5/6 doesn't support btrfs device replace yet"
+-		fi
+-		if echo ${_btrfs_profile_configs[*]} | grep -q dup; then
+-			_notrun "Do not set dup profile in btrfs device replace test"
++		for unsupp in "${unsupported[@]}"; do
++			if [ "${profiles[0]}" == "$unsupp" -o "${profiles[1]}" == "$unsupp" ]; then
++			     if [ -z "$BTRFS_PROFILE_CONFIGS" ]; then
++				     # For the default config, just omit it.
++				     supported=false
++			     else
++				     # For user-provided config, don't run the test.
++				     _notrun "Profile $unsupp not supported for $1"
++			     fi
++			fi
++		done
++		if "$supported"; then
++			_btrfs_profile_configs+=("-m ${profiles[0]} -d ${profiles[1]}")
+ 		fi
+-	fi
++	done
+ 	export _btrfs_profile_configs
+ }
+ 
+-- 
+2.8.0
 
->
->> Given new context should have enough stack and only btrfs has this kind of
->> usage as far as I see, so don't think that is worth of the optimization.
->>
->> Thanks,
->> Ming
->
-> Mikulas
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-block" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html

@@ -1,64 +1,99 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from lists.s-osg.org ([54.187.51.154]:46878 "EHLO lists.s-osg.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753691AbcD1J6e (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 28 Apr 2016 05:58:34 -0400
-Message-ID: <5721DEAD.6000505@osg.samsung.com>
-Date: Thu, 28 Apr 2016 10:58:05 +0100
-From: Luis de Bethencourt <luisbg@osg.samsung.com>
+Received: from mail-io0-f193.google.com ([209.85.223.193]:35704 "EHLO
+	mail-io0-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753424AbcD1KBz (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 28 Apr 2016 06:01:55 -0400
 MIME-Version: 1.0
-To: dsterba@suse.cz, Roman Mamedov <rm@romanrm.net>,
-        Chris Murphy <lists@colorremedies.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Subject: Re: [bug] df returns 100% used for empty mixed block group filesystem
-References: <CAJCQCtRzt-BeoW9KNQC3kmBXw8MoydJv7Qy8fu0HmF3hAOgFRQ@mail.gmail.com> <20160310133334.1528bc88@natsu> <20160310174054.GL18908@twin.jikos.cz> <20160427225510.GQ29353@twin.jikos.cz>
-In-Reply-To: <20160427225510.GQ29353@twin.jikos.cz>
-Content-Type: text/plain; charset=windows-1252
+Reply-To: fdmanana@gmail.com
+In-Reply-To: <1461770076-13000-1-git-send-email-dsterba@suse.com>
+References: <1461770076-13000-1-git-send-email-dsterba@suse.com>
+Date: Thu, 28 Apr 2016 11:01:54 +0100
+Message-ID: <CAL3q7H5bJqYy-T6Hz71ZeDW9Fx=60KVoOWmmY8u_wAWcb1o+sw@mail.gmail.com>
+Subject: Re: [PATCH] btrfs: do not return EBUSY on concurrent subvolume mounts
+From: Filipe Manana <fdmanana@gmail.com>
+To: David Sterba <dsterba@suse.com>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        Chris Mason <clm@fb.com>, stable@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 27/04/16 23:55, David Sterba wrote:
-> On Thu, Mar 10, 2016 at 06:40:54PM +0100, David Sterba wrote:
->> On Thu, Mar 10, 2016 at 01:33:34PM +0500, Roman Mamedov wrote:
->>> On Thu, 10 Mar 2016 01:24:44 -0700
->>> Chris Murphy <lists@colorremedies.com> wrote:
->>>
->>>> kernel 4.5.0 rc7
->>>> btrfs-progs-4.4.1-1
->>>>
->>>> Summary: A new empty mixed block group "-M" filesystem shows up as
->>>> 100% full with regular df (gnu coreutils 8.24). Pretty sure this is
->>>> not a regression, but no regression testing done.
->>>>
->>>>
->>>> https://bugzilla.kernel.org/show_bug.cgi?id=114281
->>>
->>> Just guessing here, but this might be related?
->>>
->>>   [PATCH] btrfs: statfs: report zero available if metadata are exhausted
->>>   http://www.spinics.net/lists/linux-btrfs/msg48013.html
->>>
->>> Maybe some maths there are wrong in case of a mixed blockgroup filesystem.
->>
->> Yes it's caused by the referenced patch.  The statfs has been broken for
->> mixed blockgroups but the 100% used on empty filesystem looks weird, so
->> it's time to fix the mixed-bg case.
-> 
-> JFYI, fixed by Luis de Bethencourt and patches queued for 4.7
-> 
+On Wed, Apr 27, 2016 at 4:14 PM, David Sterba <dsterba@suse.com> wrote:
+> A user reported mount failures with EBUSY during boot, there's root
+> partition and many subvolumes, mounted via /etc/fstab.
+>
+> The failure depends on timing, when multiple subvolumes reach the code
+> between superblock creation in RO mode, while the subvolumes are RW.
+> This discrepancy leads to EBUSY and the code has been there since ages.
+>
+> If the subvolumes are mounted after a short delay, there's no EBUSY.
+> There's no missing locking, the supreblock creation is atomic and the
+> error code seems to be just artificial. We support different RO/RW
+> mounts in mount_subvol and do the relevant adjustments if the flags do
+> not match.
+>
+> There are no apparent problems if the check and EBUSY are dropped, no
+> wrong refcounting, umount works etc.
+>
+> Reproducer:
+>
+> mkdir -p mnt $(eval echo mnt{1..10})
+> mkfs.btrfs -f /dev/sdx
+> mount /dev/sdx mnt
+> for i in `seq 10`; do btrfs subvol create subv$i; done
+> loops=0
+> while [ $loops -lt 10 ]; do
+>   umount mnt*
+>   mount -o ro /dev/sdx mnt &
+>   for i in `seq 10`; do
+>     mount -o subvol=subv$i /dev/sdx mnt$i || \
+>       echo "FAIL: mnt$i, loop $loops" > log-$i-$loops &
+>     fi
+>   done
+>   wait
+>   : $((loops++))
+> done
+>
+> Do 10 iterations, try to run subvolume mounts concurrently, log mount
+> failures to files, the actual EBUSY errors are on screen.
 
-Good to know the issue was important to some people :)
-It was fun to fix.
+This is easy to reproduce, can you please make a test case for xfstests?
+Thanks.
 
-David,
-I have been travelling the last week. I will continue with my second bug this
-weekend. [0] Sorry for the delay on this.
+>
+> CC: stable@vger.kernel.org
+> Signed-off-by: David Sterba <dsterba@suse.com>
+> ---
+>  fs/btrfs/super.c | 2 --
+>  1 file changed, 2 deletions(-)
+>
+> diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+> index 00b8f37cc306..0c398643d2a1 100644
+> --- a/fs/btrfs/super.c
+> +++ b/fs/btrfs/super.c
+> @@ -1588,8 +1588,6 @@ static struct dentry *btrfs_mount(struct file_system_type *fs_type, int flags,
+>         if (s->s_root) {
+>                 btrfs_close_devices(fs_devices);
+>                 free_fs_info(fs_info);
+> -               if ((flags ^ s->s_flags) & MS_RDONLY)
+> -                       error = -EBUSY;
+>         } else {
+>                 snprintf(s->s_id, sizeof(s->s_id), "%pg", bdev);
+>                 btrfs_sb(s)->bdev_holder = fs_type;
+> --
+> 2.7.1
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 
-Thanks,
-Luis
 
 
-[0] btrfs fi usage crash when multiple device volume contains seed device
-https://bugzilla.kernel.org/show_bug.cgi?id=115851
+-- 
+Filipe David Manana,
 
-
+"Reasonable men adapt themselves to the world.
+ Unreasonable men adapt the world to themselves.
+ That's why all progress depends on unreasonable men."

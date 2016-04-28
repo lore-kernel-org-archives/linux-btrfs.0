@@ -1,47 +1,64 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:35082 "EHLO mx2.suse.de"
+Received: from lists.s-osg.org ([54.187.51.154]:46878 "EHLO lists.s-osg.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753510AbcD1JMf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 28 Apr 2016 05:12:35 -0400
-Date: Thu, 28 Apr 2016 11:12:20 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Liu Bo <bo.li.liu@oracle.com>
-Cc: clm@fb.com, linux-btrfs@vger.kernel.org, stable@vger.kernel.org
-Subject: Re: [PATCH] btrfs: do not return EBUSY on concurrent subvolume mounts
-Message-ID: <20160428091220.GT29353@suse.cz>
-Reply-To: dsterba@suse.cz
-References: <1461770076-13000-1-git-send-email-dsterba@suse.com>
- <20160427232217.GL15822@localhost.localdomain>
+	id S1753691AbcD1J6e (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 28 Apr 2016 05:58:34 -0400
+Message-ID: <5721DEAD.6000505@osg.samsung.com>
+Date: Thu, 28 Apr 2016 10:58:05 +0100
+From: Luis de Bethencourt <luisbg@osg.samsung.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20160427232217.GL15822@localhost.localdomain>
+To: dsterba@suse.cz, Roman Mamedov <rm@romanrm.net>,
+        Chris Murphy <lists@colorremedies.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Subject: Re: [bug] df returns 100% used for empty mixed block group filesystem
+References: <CAJCQCtRzt-BeoW9KNQC3kmBXw8MoydJv7Qy8fu0HmF3hAOgFRQ@mail.gmail.com> <20160310133334.1528bc88@natsu> <20160310174054.GL18908@twin.jikos.cz> <20160427225510.GQ29353@twin.jikos.cz>
+In-Reply-To: <20160427225510.GQ29353@twin.jikos.cz>
+Content-Type: text/plain; charset=windows-1252
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Apr 27, 2016 at 04:22:17PM -0700, Liu Bo wrote:
-> On Wed, Apr 27, 2016 at 05:14:36PM +0200, David Sterba wrote:
-> > A user reported mount failures with EBUSY during boot, there's root
-> > partition and many subvolumes, mounted via /etc/fstab.
-> > 
-> > The failure depends on timing, when multiple subvolumes reach the code
-> > between superblock creation in RO mode, while the subvolumes are RW.
-> > This discrepancy leads to EBUSY and the code has been there since ages.
-> > 
-> > If the subvolumes are mounted after a short delay, there's no EBUSY.
-> > There's no missing locking, the supreblock creation is atomic and the
-> > error code seems to be just artificial. We support different RO/RW
-> > mounts in mount_subvol and do the relevant adjustments if the flags do
-> > not match.
+On 27/04/16 23:55, David Sterba wrote:
+> On Thu, Mar 10, 2016 at 06:40:54PM +0100, David Sterba wrote:
+>> On Thu, Mar 10, 2016 at 01:33:34PM +0500, Roman Mamedov wrote:
+>>> On Thu, 10 Mar 2016 01:24:44 -0700
+>>> Chris Murphy <lists@colorremedies.com> wrote:
+>>>
+>>>> kernel 4.5.0 rc7
+>>>> btrfs-progs-4.4.1-1
+>>>>
+>>>> Summary: A new empty mixed block group "-M" filesystem shows up as
+>>>> 100% full with regular df (gnu coreutils 8.24). Pretty sure this is
+>>>> not a regression, but no regression testing done.
+>>>>
+>>>>
+>>>> https://bugzilla.kernel.org/show_bug.cgi?id=114281
+>>>
+>>> Just guessing here, but this might be related?
+>>>
+>>>   [PATCH] btrfs: statfs: report zero available if metadata are exhausted
+>>>   http://www.spinics.net/lists/linux-btrfs/msg48013.html
+>>>
+>>> Maybe some maths there are wrong in case of a mixed blockgroup filesystem.
+>>
+>> Yes it's caused by the referenced patch.  The statfs has been broken for
+>> mixed blockgroups but the 100% used on empty filesystem looks weird, so
+>> it's time to fix the mixed-bg case.
 > 
-> Looks good to me.
+> JFYI, fixed by Luis de Bethencourt and patches queued for 4.7
 > 
-> Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
-> 
-> But What I'm worrying about is that mount_subvol() will help subvolume
-> mounting get correct mount flags by calling btrfs_remount(), and
-> btrfs_remount() can remove sb->s_flags's MS_RDONLY.  In all syscall cases
-> it's ok as we have mnt->mnt_flags, but for btrfs's add_dev ioctl, we
-> don't check mnt_want_write_file() while btrfs's rm_dev ioctl does the
-> check, should we add that for add_dev ioctl?
 
-That's right, I have patches to fix that and will send them.
+Good to know the issue was important to some people :)
+It was fun to fix.
+
+David,
+I have been travelling the last week. I will continue with my second bug this
+weekend. [0] Sorry for the delay on this.
+
+Thanks,
+Luis
+
+
+[0] btrfs fi usage crash when multiple device volume contains seed device
+https://bugzilla.kernel.org/show_bug.cgi?id=115851
+
+

@@ -1,20 +1,20 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:44671 "EHLO
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:51386 "EHLO
 	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1751411AbcD1O3y (ORCPT
+	by vger.kernel.org with ESMTP id S1752392AbcD1Oby (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 28 Apr 2016 10:29:54 -0400
-Subject: Re: [PATCH RFC 10/16] btrfs-progs: fsck: Introduce function to check
- dev used space
+	Thu, 28 Apr 2016 10:31:54 -0400
+Subject: Re: [PATCH RFC 04/16] btrfs-progs: fsck: Introduce function to check
+ referencer of a backref
 To: Qu Wenruo <quwenruo@cn.fujitsu.com>, <linux-btrfs@vger.kernel.org>
 References: <1461642543-4621-1-git-send-email-quwenruo@cn.fujitsu.com>
- <1461642543-4621-11-git-send-email-quwenruo@cn.fujitsu.com>
+ <1461642543-4621-5-git-send-email-quwenruo@cn.fujitsu.com>
 CC: <dsterba@suse.cz>, Lu Fengqi <lufq.fnst@cn.fujitsu.com>
 From: Josef Bacik <jbacik@fb.com>
-Message-ID: <9c0e11e1-8870-957d-5f82-8901e24d0a27@fb.com>
-Date: Thu, 28 Apr 2016 10:29:35 -0400
+Message-ID: <6a88b2b4-8bc4-71f5-2cd9-c5454f0ed02d@fb.com>
+Date: Thu, 28 Apr 2016 10:31:38 -0400
 MIME-Version: 1.0
-In-Reply-To: <1461642543-4621-11-git-send-email-quwenruo@cn.fujitsu.com>
+In-Reply-To: <1461642543-4621-5-git-send-email-quwenruo@cn.fujitsu.com>
 Content-Type: text/plain; charset="windows-1252"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
@@ -22,94 +22,126 @@ List-ID: <linux-btrfs.vger.kernel.org>
 On 04/25/2016 11:48 PM, Qu Wenruo wrote:
 > From: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
 >
-> Introduce function check_dev_item() to check used space with dev extent
-> items.
+> Introduce a new function check_tree_block_backref() to check if a
+> backref points to correct referencer.
 >
 > Signed-off-by: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
 > Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 > ---
->  cmds-check.c | 64 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
->  1 file changed, 64 insertions(+)
+>  cmds-check.c | 95 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+>  1 file changed, 95 insertions(+)
 >
 > diff --git a/cmds-check.c b/cmds-check.c
-> index 92c254f..e2d1ebf 100644
+> index 6633b6e..81dd4f3 100644
 > --- a/cmds-check.c
 > +++ b/cmds-check.c
-> @@ -328,6 +328,7 @@ struct root_item_info {
->  #define CROSSING_STRIPE_BOUNDARY (1 << 4) /* For kernel scrub workaround */
->  #define BAD_ITEM_SIZE	(1 << 5) /* Bad item size */
->  #define UNKNOWN_TYPE	(1 << 6) /* Unknown type */
-> +#define ACCOUNTING_MISMATCH (1 << 7) /* Used space accounting error */
+> @@ -323,6 +323,8 @@ struct root_item_info {
+>  #define MISSING_BACKREF	(1 << 0) /* Completely no backref in extent tree */
+>  #define BAD_BACKREF	(1 << 1) /* Backref mismatch */
+>  #define UNALIGNED_BYTES	(1 << 2) /* Some bytes are not aligned */
+> +#define MISSING_REFERENCER (1 << 3) /* Referencer not found */
+> +#define BAD_REFERENCER	(1 << 4) /* Referencer found, but not mismatch */
 >
 >  static void *print_status_check(void *p)
 >  {
-> @@ -9183,6 +9184,69 @@ out:
->  	return 0;
+> @@ -8736,6 +8738,99 @@ out:
+>  	return ret;
 >  }
 >
 > +/*
-> + * Check the used space is correct with the dev item
+> + * Check if a tree block backref is valid (points to valid tree block)
+> + * if level == -1, level will be resolved
 > + */
-> +static int check_dev_item(struct btrfs_fs_info *fs_info,
-> +			  struct extent_buffer *eb, int slot)
+> +static int check_tree_block_backref(struct btrfs_fs_info *fs_info, u64 root_id,
+> +				    u64 bytenr, int level)
 > +{
-> +	struct btrfs_root *dev_root = fs_info->dev_root;
-> +	struct btrfs_dev_item *dev_item;
-> +	struct btrfs_path path;
+> +	struct btrfs_root *root;
 > +	struct btrfs_key key;
-> +	struct btrfs_dev_extent *ptr;
-> +	u64 dev_id;
-> +	u64 used;
-> +	u64 total = 0;
+> +	struct btrfs_path path;
+> +	struct extent_buffer *eb;
+> +	struct extent_buffer *node;
+> +	u32 nodesize = btrfs_super_nodesize(fs_info->super_copy);
+> +	int err = 0;
 > +	int ret;
 > +
-> +	dev_item = btrfs_item_ptr(eb, slot, struct btrfs_dev_item);
-> +	dev_id = btrfs_device_id(eb, dev_item);
-> +	used = btrfs_device_bytes_used(eb, dev_item);
+> +	/* Query level for level == -1 special case */
+> +	if (level == -1)
+> +		level = query_tree_block_level(fs_info, bytenr);
+> +	if (level < 0) {
+> +		err = MISSING_REFERENCER;
+> +		goto out;
+> +	}
 > +
-> +	key.objectid = dev_id;
-> +	key.type = BTRFS_DEV_EXTENT_KEY;
-> +	key.offset = 0;
+> +	key.objectid = root_id;
+> +	key.type = BTRFS_ROOT_ITEM_KEY;
+> +	key.offset = (u64)-1;
+> +
+> +	root = btrfs_read_fs_root(fs_info, &key);
+> +	if (IS_ERR(root)) {
+> +		err |= MISSING_REFERENCER;
+> +		goto out;
+> +	}
+> +
+> +	/* Read out the tree block to get item/node key */
+> +	eb = read_tree_block(root, bytenr, root->nodesize, 0);
+> +	/* Impossible, as tree block query has read out the tree block */
+> +	if (!extent_buffer_uptodate(eb)) {
+> +		err |= MISSING_REFERENCER;
+> +		free_extent_buffer(eb);
+> +		goto out;
+> +	}
+> +
+> +	/* Empty tree, no need to check key */
+> +	if (!btrfs_header_nritems(eb) && !level) {
+> +		free_extent_buffer(eb);
+> +		goto out;
+> +	}
+> +
+> +	if (level)
+> +		btrfs_node_key_to_cpu(eb, &key, 0);
+> +	else
+> +		btrfs_item_key_to_cpu(eb, &key, 0);
+> +
+> +	free_extent_buffer(eb);
 > +
 > +	btrfs_init_path(&path);
-> +	ret = btrfs_search_slot(NULL, dev_root, &key, &path, 0, 0);
-> +	if (ret < 0) {
-> +		btrfs_item_key_to_cpu(eb, &key, slot);
-> +		error("Couldn't find any releative dev extent for dev[%llu, %u, %llu]",
-> +		      key.objectid, key.type, key.offset);
-> +		btrfs_release_path(&path);
-> +		return -MISSING_REFERENCER;
-
-Eh?  These are flags, not return values, lets not do negative numbers here.
-
+> +	/* Search with the first key, to ensure we can reach it */
+> +	ret = btrfs_search_slot(NULL, root, &key, &path, 0, 0);
+> +	if (ret) {
+> +		err |= MISSING_REFERENCER;
+> +		goto release_out;
 > +	}
 > +
-> +	/* Iterate dev_extents to calculate the used space of a device */
-> +	while (1) {
-> +		btrfs_item_key_to_cpu(path.nodes[0], &key, path.slots[0]);
-> +
-> +		if (key.objectid > dev_id)
-> +			break;
-> +		if (key.type != BTRFS_DEV_EXTENT_KEY || key.objectid != dev_id)
-> +			goto next;
-> +
-> +		ptr = btrfs_item_ptr(path.nodes[0], path.slots[0],
-> +				     struct btrfs_dev_extent);
-> +		total += btrfs_dev_extent_length(path.nodes[0], ptr);
-> +next:
-> +		ret = btrfs_next_item(dev_root, &path);
-> +		if (ret)
-> +			break;
+> +	node = path.nodes[level];
+> +	if (btrfs_header_bytenr(node) != bytenr) {
+> +		error("Extent [%llu %d] referencer bytenr mismatch, wanted: %llu, have: %llu",
+> +		      bytenr, nodesize, bytenr,
+> +		      btrfs_header_bytenr(node));
+> +		err |= BAD_REFERENCER;
 > +	}
+> +	if (btrfs_header_level(node) != level) {
+> +		error("Extent [%llu %d] referencer level mismatch, wanted: %d, have: %d",
+> +		      bytenr, nodesize, level,
+> +		      btrfs_header_level(node));
+> +		err |= BAD_REFERENCER;
+> +	}
+> +
+> +release_out:
 > +	btrfs_release_path(&path);
+> +out:
+> +	if (err & MISSING_REFERENCER) {
+> +		if (level < 0)
+> +			error("Extent [%llu %d] lost referencer(owner: %llu)",
+> +			       bytenr, nodesize, root_id);
+> +		else
+> +			error("Extent [%llu %d] lost referencer(owner: %llu, level: %u)",
+> +			       bytenr, nodesize, root_id, level);
+> +	}
 > +
-> +	if (used != total) {
-> +		btrfs_item_key_to_cpu(eb, &key, slot);
-> +		error("Dev extent's total-byte(%llu) is not equal to byte-used(%llu) in dev[%llu, %u, %llu]",
-> +		      total, used, BTRFS_ROOT_TREE_OBJECTID,
-> +		      BTRFS_DEV_EXTENT_KEY, dev_id);
-> +		return -ACCOUNTING_MISMATCH;
+> +	return -err;
 
-Same here.  Thanks,
+Sigh I missed this at first, if you are doing flags don't return 
+negative numbers.  Fix this and then you can add my reviewed-by.  Thanks,
 
 Josef
+

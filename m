@@ -1,53 +1,90 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pa0-f53.google.com ([209.85.220.53]:35847 "EHLO
-	mail-pa0-f53.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753321AbcD1Rds (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 28 Apr 2016 13:33:48 -0400
-Received: by mail-pa0-f53.google.com with SMTP id bt5so34515665pac.3
-        for <linux-btrfs@vger.kernel.org>; Thu, 28 Apr 2016 10:33:48 -0700 (PDT)
-From: Omar Sandoval <osandov@osandov.com>
-To: fstests@vger.kernel.org, linux-btrfs@vger.kernel.org
-Cc: kernel-team@fb.com, Omar Sandoval <osandov@fb.com>
-Subject: [PATCH v2 0/2] fstests: btrfs: the lost levels
-Date: Thu, 28 Apr 2016 10:33:35 -0700
-Message-Id: <cover.1461864695.git.osandov@fb.com>
+Received: from mx1.redhat.com ([209.132.183.28]:58409 "EHLO mx1.redhat.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753245AbcD1Q7q (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 28 Apr 2016 12:59:46 -0400
+Date: Thu, 28 Apr 2016 12:59:43 -0400 (EDT)
+From: Mikulas Patocka <mpatocka@redhat.com>
+To: Ming Lei <ming.lei@canonical.com>
+cc: Jens Axboe <axboe@fb.com>,
+        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
+        linux-block@vger.kernel.org, Christoph Hellwig <hch@infradead.org>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>,
+        Shaun Tancheff <shaun.tancheff@seagate.com>,
+        Alan Cox <alan@linux.intel.com>, Neil Brown <neilb@suse.de>,
+        Liu Bo <bo.li.liu@oracle.com>, Jens Axboe <axboe@kernel.dk>
+Subject: Re: [PATCH v3 3/3] block: avoid to call .bi_end_io() recursively
+In-Reply-To: <CACVXFVN7bE3tFs9KVGX-M3LCvOr0WuCMwyoGiW4qu5G4h8EzhA@mail.gmail.com>
+Message-ID: <alpine.LRH.2.02.1604281218180.10827@file01.intranet.prod.int.rdu2.redhat.com>
+References: <1461805789-3632-1-git-send-email-ming.lei@canonical.com> <1461805789-3632-3-git-send-email-ming.lei@canonical.com> <alpine.LRH.2.02.1604281127130.14065@file01.intranet.prod.int.rdu2.redhat.com> <CACVXFVPgPh3snp-B6=G9fShzJwwKz2NyQETSnMJBGp=HzTL_-w@mail.gmail.com>
+ <alpine.LRH.2.02.1604281157180.6220@file01.intranet.prod.int.rdu2.redhat.com> <CACVXFVN7bE3tFs9KVGX-M3LCvOr0WuCMwyoGiW4qu5G4h8EzhA@mail.gmail.com>
+MIME-Version: 1.0
+Content-Type: TEXT/PLAIN; charset=US-ASCII
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Omar Sandoval <osandov@fb.com>
 
-Changes since v1:
 
-- Fixed _supported_fs and _supported_os in patch 2
-- Added Josef's Reviewed-by
+On Fri, 29 Apr 2016, Ming Lei wrote:
 
-Original cover letter below:
+> On Thu, Apr 28, 2016 at 11:58 PM, Mikulas Patocka <mpatocka@redhat.com> wrote:
+> >
+> >
+> > On Thu, 28 Apr 2016, Ming Lei wrote:
+> >
+> >> Hi Mikulas,
+> >>
+> >> On Thu, Apr 28, 2016 at 11:29 PM, Mikulas Patocka <mpatocka@redhat.com> wrote:
+> >> >
+> >> >
+> >> > On Thu, 28 Apr 2016, Ming Lei wrote:
+> >> >
+> >> >> There were reports about heavy stack use by recursive calling
+> >> >> .bi_end_io()([1][2][3]). For example, more than 16K stack is
+> >> >> consumed in a single bio complete path[3], and in [2] stack
+> >> >> overflow can be triggered if 20 nested dm-crypt is used.
+> >> >>
+> >> >> Also patches[1] [2] [3] were posted for addressing the issue,
+> >> >> but never be merged. And the idea in these patches is basically
+> >> >> similar, all serializes the recursive calling of .bi_end_io() by
+> >> >> percpu list.
+> >> >>
+> >> >> This patch still takes the same idea, but uses bio_list to
+> >> >> implement it, which turns out more simple and the code becomes
+> >> >> more readable meantime.
+> >> >>
+> >> >> One corner case which wasn't covered before is that
+> >> >> bi_endio() may be scheduled to run in process context(such
+> >> >> as btrfs), and this patch just bypasses the optimizing for
+> >> >> that case because one new context should have enough stack space,
+> >> >> and this approach isn't capable of optimizing it too because
+> >> >> there isn't easy way to get a per-task linked list head.
+> >> >
+> >> > Hi
+> >> >
+> >> > You could use preempt_disable() and then you could use per-cpu list even
+> >> > in the process context.
+> >>
+> >> Image why the .bi_end_io() is scheduled to process context, and the only
+> >> workable/simple way I thought of is to use per-task list because it may sleep.
+> >
+> > The bi_end_io callback should not sleep, even if it is called from the
+> > process context.
+> 
+> If it shouldn't sleep, why is it scheduled to run in process context by paying
+> extra context switch cost?
 
-Inspired by a conversation a few of us had at LSF about forgotten
-fstests, I went back and checked if I had let any tests disappear into
-the ether. Turns out that I did, so here are the tests for Btrfs replace
-missing that I never got merged, updated with everyone's comments from
-last time around ([1], [2]). Patch 1/3 in that original series did get
-merged but the last two didn't fare so well.
+Some device mapper (and other) drivers use a worker thread to process 
+bios. So the bio may be finished from the worker thread. It would be 
+advantageous to prevent stack overflow even in this case.
 
-Thanks!
+> And you can find that btrfs_subio_endio_read() does sleep for checksum stuff.
 
-1: https://patchwork.kernel.org/patch/6856101/
-2: https://patchwork.kernel.org/patch/6856051/
+I'm not an expert on btrfs. What happens if it is called from an 
+interrupt? Do you have an actual stracktrace when this function is called 
+from bio_endio and when it sleeps?
 
-Omar Sandoval (2):
-  btrfs: add replace missing and replace RAID 5/6 to profile configs
-  btrfs: add test for replacing a missing device
+> Thanks,
+> Ming
 
- common/rc           |  95 ++++++++++++++++++++---------------------
- tests/btrfs/027     | 119 ++++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/027.out |   2 +
- tests/btrfs/group   |   1 +
- 4 files changed, 170 insertions(+), 47 deletions(-)
- create mode 100755 tests/btrfs/027
- create mode 100644 tests/btrfs/027.out
-
--- 
-2.8.0
-
+Mikulas

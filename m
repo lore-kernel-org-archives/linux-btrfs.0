@@ -1,81 +1,67 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f174.google.com ([209.85.213.174]:36979 "EHLO
-	mail-ig0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752454AbcD1LVm (ORCPT
+Received: from mail-ig0-f171.google.com ([209.85.213.171]:34979 "EHLO
+	mail-ig0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752541AbcD1L1B (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 28 Apr 2016 07:21:42 -0400
-Received: by mail-ig0-f174.google.com with SMTP id s8so17926289ign.0
-        for <linux-btrfs@vger.kernel.org>; Thu, 28 Apr 2016 04:21:41 -0700 (PDT)
-Subject: Re: Add device while rebalancing
-To: Chris Murphy <lists@colorremedies.com>
-References: <CAHaPQf0-qh0sLpUotSdESi8W6dnMOBQPXVJvBP8f2sEj2MC9EA@mail.gmail.com>
- <pan$c3f48$4829429e$7ab0117b$7d124f52@cox.net> <571DFCF2.6050604@gmail.com>
- <pan$193a9$b381fd2b$1c0f329f$7b14e34b@cox.net> <571E154C.9060604@gmail.com>
- <CAHaPQf03yMAxMZRa=zr3Fjh_B+-ggwwuzRFwDsUyK3t=jW2WFw@mail.gmail.com>
- <571F4CD0.9050004@gmail.com>
- <CAHaPQf39H-JRhQmCssmgJ98RCxL_36poE_kObAmgmH6nkn4xoA@mail.gmail.com>
- <CAJCQCtQbCbR9V7z4jZCejbKLJyhBbtrZJmcQBkX=VnxReBf46g@mail.gmail.com>
- <5720A0E8.5000407@gmail.com>
- <CAJCQCtThbwkDQUNFT_Xuao1=HnktFYHebSTruXAJWZOGExBdxA@mail.gmail.com>
-Cc: Juan Alberto Cirez <jacirez@rdcsafety.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
+	Thu, 28 Apr 2016 07:27:01 -0400
+Received: by mail-ig0-f171.google.com with SMTP id bi2so155571644igb.0
+        for <linux-btrfs@vger.kernel.org>; Thu, 28 Apr 2016 04:27:00 -0700 (PDT)
+Subject: Re: ...in the matter of partition size
+To: Chris Murphy <lists@colorremedies.com>,
+        Juan Alberto Cirez <jacirez@rdcsafety.com>
+References: <CAHaPQf1sJpO6bDWUQFp=XEEwuV8P8-qY7bT0UgZEdbazUUWNTg@mail.gmail.com>
+ <CAJCQCtT3tQ=1SopXjbrAp7650z7H9-SpurgpUooCG6A5Kxk-hw@mail.gmail.com>
+ <CAJCQCtRXv3AwyvCceO8KX-7HrFyuuysRNH5D_-6ssnJ-rEh_zw@mail.gmail.com>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
 From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <fa235582-dda6-455e-7c8d-80cfe3414fb9@gmail.com>
-Date: Thu, 28 Apr 2016 07:21:14 -0400
+Message-ID: <69e441ed-a7f5-cea8-21a8-824c77f68018@gmail.com>
+Date: Thu, 28 Apr 2016 07:26:28 -0400
 MIME-Version: 1.0
-In-Reply-To: <CAJCQCtThbwkDQUNFT_Xuao1=HnktFYHebSTruXAJWZOGExBdxA@mail.gmail.com>
+In-Reply-To: <CAJCQCtRXv3AwyvCceO8KX-7HrFyuuysRNH5D_-6ssnJ-rEh_zw@mail.gmail.com>
 Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2016-04-27 19:19, Chris Murphy wrote:
-> On Wed, Apr 27, 2016 at 5:22 AM, Austin S. Hemmelgarn
-> <ahferroin7@gmail.com> wrote:
->> On 2016-04-26 20:58, Chris Murphy wrote:
->>>
->>> On Tue, Apr 26, 2016 at 5:44 AM, Juan Alberto Cirez
->>> <jacirez@rdcsafety.com> wrote:
->>>>
->>>>
->>>> With GlusterFS as a distributed volume, the files are already spread
->>>> among the servers causing file I/O to be spread fairly evenly among
->>>> them as well, thus probably providing the benefit one might expect
->>>> with stripe (RAID10).
->>>
->>>
->>> Yes, the raid1 of Btrfs is just so you don't have to rebuild volumes
->>> if you lose a drive. But since raid1 is not n-way copies, and only
->>> means two copies, you don't really want the file systems getting that
->>> big or you increase the chances of a double failure.
->>>
->>> I've always though it'd be neat in a Btrfs + GlusterFS, if it were
->>> possible for Btrfs to inform Gluster FS of "missing/corrupt" files,
->>> and then for Btrfs to drop reference for those files, instead of
->>> either rebuilding or remaining degraded. And then let GlusterFS deal
->>> with replication of those files to maintain redundancy. i.e. the Btrfs
->>> volumes would be single profile for data, and raid1 for metadata. When
->>> there's n-way raid1, each drive can have a copy of the file system,
->>> and it'd tolerate in effect n-1 drive failures and the file system
->>> could at least still inform Gluster (or Ceph) of the missing data, the
->>> file system still remains valid, only briefly degraded, and can still
->>> be expanded when new drives become available.
+On 2016-04-27 22:55, Chris Murphy wrote:
+> On Wed, Apr 27, 2016 at 8:51 PM, Chris Murphy <lists@colorremedies.com> wrote:
+>> On Wed, Apr 27, 2016 at 2:18 PM, Juan Alberto Cirez
+>> <jacirez@rdcsafety.com> wrote:
+>>> Quick question: Supposed I have n-number of storage pods (physical
+>>> servers with n-number of physical hhds). The end deployment will be
+>>> btrfs at the brick/block level with a distributed file system on top.
+>>> Keeping in mind that my overriding goal is to have high availability
+>>> and the mechanism whereby the lost of a drive or multiple drives in a
+>>> single pod will not jeopardize data.
+>>>>>>>> Question<<<<<
+>>> Does partitioning the physical drives and creating btrfs filesystem on
+>>> each partition, then configuring each partition as individual
+>>> bricks/blocks offer ANY added benefits over grouping the entire pod
+>>> into a drive pool and using that pool as a single block/brick to
+>>> expose to the distributed filesystem?
 >>
->> FWIW, I _think_ this can be done with the scrubbing code in GlusterFS. It's
->> designed to repair data mismatches, but I'm not sure how it handles missing
->> copies of data.  However, in the current state, there's no way without
->> external scripts to handle re-shaping of the storage bricks if part of them
->> fails.
+>> No.
+>>
+>> Distros typically have libblkid, so 'blkid' command will show you
+>> Btrfs is on the drive regardless of partitioning. If the drive might
+>> ever see Windows or OS X, then a partition will tell those OS's the
+>> drive isn't empty, as they will not recognize Btrfs, but will see the
+>> GPT.
+>>
+>> Since you mention HA, you need to use something other than Btrfs only.
+>> The device failure notification right now is slim to none with Btrfs,
+>> it's limited really to just kernel messages. So you should looking at
+>> hardware raid, or mdadm, or LVM raid, plus XFS. While XFS does not
+>> offer data checksumming or snapshotting it does offer metadata
+>> checksums in the most recent V5 metadata format.
 >
-> Yeah I haven't tried doing a scrub, parsing dmesg for busted file
-> paths, and feeling those paths into rm to see what happens. Will they
-> get deleted without additional errors? If so good, then scrub again
-> should be clean. And then btrfs dev missing to get rid of the broken
-> device *and* cause missing metadata to be replicated again and now in
-> theory the fs should be back to normal. But it'd have to be tested
-> with a umount followed by mount to see if -o degraded is still
-> required.
+> GlusterFS does have its own checksumming but it's a different
+> implementation than ZFS and Btrfs. And it also supports snapshotting.
 >
-I'm not entirely certain, although I had been planning on adding a test 
-to check this to my usual testing before the system I use for it went 
-offline, I just haven't had the time to get it working again.  If I find 
-the time in the near future, I may just test it on my laptop in a VM.
+> So it's worth considering bricks be primarily XFS on hardware or mdadm
+> raid. And just a smaller set of Btrfs bricks.
+>
+Actually, if you want to use the snapshotting in GlusterFS (at least 
+last I knew), you need to be running on top of LVM, which in turn means 
+you _can't_ safely use BTRFS (and possibly the same applies for XFS too) 
+in such a situation, because of the UUID issues.
+

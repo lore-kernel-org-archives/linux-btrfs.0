@@ -1,20 +1,20 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:54152 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1752194AbcD1OR5 (ORCPT
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:34259 "EHLO
+	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1752159AbcD1OTc (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 28 Apr 2016 10:17:57 -0400
-Subject: Re: [PATCH RFC 04/16] btrfs-progs: fsck: Introduce function to check
- referencer of a backref
+	Thu, 28 Apr 2016 10:19:32 -0400
+Subject: Re: [PATCH RFC 05/16] btrfs-progs: fsck: Introduce function to check
+ shared block ref
 To: Qu Wenruo <quwenruo@cn.fujitsu.com>, <linux-btrfs@vger.kernel.org>
 References: <1461642543-4621-1-git-send-email-quwenruo@cn.fujitsu.com>
- <1461642543-4621-5-git-send-email-quwenruo@cn.fujitsu.com>
+ <1461642543-4621-6-git-send-email-quwenruo@cn.fujitsu.com>
 CC: <dsterba@suse.cz>, Lu Fengqi <lufq.fnst@cn.fujitsu.com>
 From: Josef Bacik <jbacik@fb.com>
-Message-ID: <1d696d31-da61-7e99-6639-692c7b05240f@fb.com>
-Date: Thu, 28 Apr 2016 10:17:48 -0400
+Message-ID: <732e994b-df98-eb28-5d03-a9c90a3eb0e5@fb.com>
+Date: Thu, 28 Apr 2016 10:19:15 -0400
 MIME-Version: 1.0
-In-Reply-To: <1461642543-4621-5-git-send-email-quwenruo@cn.fujitsu.com>
+In-Reply-To: <1461642543-4621-6-git-send-email-quwenruo@cn.fujitsu.com>
 Content-Type: text/plain; charset="windows-1252"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
@@ -22,84 +22,15 @@ List-ID: <linux-btrfs.vger.kernel.org>
 On 04/25/2016 11:48 PM, Qu Wenruo wrote:
 > From: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
 >
-> Introduce a new function check_tree_block_backref() to check if a
-> backref points to correct referencer.
+> Introduce function check_shared_block_backref() to check shared block
+> ref.
 >
 > Signed-off-by: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
 > Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 > ---
->  cmds-check.c | 95 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
->  1 file changed, 95 insertions(+)
->
-> diff --git a/cmds-check.c b/cmds-check.c
-> index 6633b6e..81dd4f3 100644
-> --- a/cmds-check.c
-> +++ b/cmds-check.c
-> @@ -323,6 +323,8 @@ struct root_item_info {
->  #define MISSING_BACKREF	(1 << 0) /* Completely no backref in extent tree */
->  #define BAD_BACKREF	(1 << 1) /* Backref mismatch */
->  #define UNALIGNED_BYTES	(1 << 2) /* Some bytes are not aligned */
-> +#define MISSING_REFERENCER (1 << 3) /* Referencer not found */
-> +#define BAD_REFERENCER	(1 << 4) /* Referencer found, but not mismatch */
->
->  static void *print_status_check(void *p)
->  {
-> @@ -8736,6 +8738,99 @@ out:
->  	return ret;
->  }
->
-> +/*
-> + * Check if a tree block backref is valid (points to valid tree block)
-> + * if level == -1, level will be resolved
-> + */
-> +static int check_tree_block_backref(struct btrfs_fs_info *fs_info, u64 root_id,
-> +				    u64 bytenr, int level)
-> +{
-> +	struct btrfs_root *root;
-> +	struct btrfs_key key;
-> +	struct btrfs_path path;
-> +	struct extent_buffer *eb;
-> +	struct extent_buffer *node;
-> +	u32 nodesize = btrfs_super_nodesize(fs_info->super_copy);
-> +	int err = 0;
-> +	int ret;
-> +
-> +	/* Query level for level == -1 special case */
-> +	if (level == -1)
-> +		level = query_tree_block_level(fs_info, bytenr);
-> +	if (level < 0) {
-> +		err = MISSING_REFERENCER;
-> +		goto out;
-> +	}
-> +
-> +	key.objectid = root_id;
-> +	key.type = BTRFS_ROOT_ITEM_KEY;
-> +	key.offset = (u64)-1;
-> +
-> +	root = btrfs_read_fs_root(fs_info, &key);
-> +	if (IS_ERR(root)) {
-> +		err |= MISSING_REFERENCER;
-> +		goto out;
-> +	}
-> +
-> +	/* Read out the tree block to get item/node key */
-> +	eb = read_tree_block(root, bytenr, root->nodesize, 0);
-> +	/* Impossible, as tree block query has read out the tree block */
-> +	if (!extent_buffer_uptodate(eb)) {
-> +		err |= MISSING_REFERENCER;
-> +		free_extent_buffer(eb);
-> +		goto out;
-> +	}
-> +
-> +	/* Empty tree, no need to check key */
-> +	if (!btrfs_header_nritems(eb) && !level) {
-> +		free_extent_buffer(eb);
-> +		goto out;
-> +	}
 
-Actually this is interesting, because we don't actually catch where we 
-would have btrfs_header_nritems(eb) == 0 and !level.  So maybe integrate 
-that check into check_block, to make sure we have items in node level 
-extent buffers.  Thanks,
+Reviewed-by: Josef Bacik <jbacik@fb.com>
+
+Thanks,
 
 Josef

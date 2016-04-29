@@ -1,37 +1,220 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:13350 "EHLO
-	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1753816AbcD2Nyy (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 29 Apr 2016 09:54:54 -0400
-Subject: Re: [PATCH RFC v2 00/16] Introduce low memory usage btrfsck mode
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>, <linux-btrfs@vger.kernel.org>
+Received: from cn.fujitsu.com ([222.73.24.84]:24705 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1752686AbcD2HUL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 29 Apr 2016 03:20:11 -0400
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+To: jbacik@fb.com, linux-btrfs@vger.kernel.org
+Cc: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
+Subject: [PATCH RFC v2 01/16] btrfs-progs: fsck: Introduce function to check tree block backref in extent tree
+Date: Fri, 29 Apr 2016 15:18:55 +0800
+Message-Id: <1461914350-19875-2-git-send-email-quwenruo@cn.fujitsu.com>
+In-Reply-To: <1461914350-19875-1-git-send-email-quwenruo@cn.fujitsu.com>
 References: <1461914350-19875-1-git-send-email-quwenruo@cn.fujitsu.com>
- <56c6051d-74fd-6152-c5cc-65e1a9595b00@cn.fujitsu.com>
-From: Josef Bacik <jbacik@fb.com>
-Message-ID: <c7584cf8-fb09-5a7d-6b99-1238932550bf@fb.com>
-Date: Fri, 29 Apr 2016 09:54:47 -0400
 MIME-Version: 1.0
-In-Reply-To: <56c6051d-74fd-6152-c5cc-65e1a9595b00@cn.fujitsu.com>
-Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 04/29/2016 03:27 AM, Qu Wenruo wrote:
-> Hi Josef,
->
-> Thanks for your previous review.
->
-> I'd like to add your reviewed-by tag only after we have settled down the
-> main part of the patchset and get rid of the "RFC" tag.
->
-> Will it be OK for you?
+From: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
 
-That's fine with me, but I think having a non-caching version is 
-valuable for low-memory situations so I don't really have a problem with 
-the idea overall.  I'll reserve final judgment until after I've made it 
-through the whole series but I feel pretty confident this is a good 
-approach overall.  Thanks,
+Introduce function check_tree_block_ref() to check whether a tree block
+has correct backref in extent tree.
 
-Josef
+Unlike old extent tree check method, we only use search_slot() to search
+reference, no extra structure will be allocated in heap to record what we
+have checked.
+
+This method may cause a little more IO, but should work for super large
+fs without triggering OOM.
+
+Signed-off-by: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+---
+ cmds-check.c | 162 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 162 insertions(+)
+
+diff --git a/cmds-check.c b/cmds-check.c
+index d59968b..6c64086 100644
+--- a/cmds-check.c
++++ b/cmds-check.c
+@@ -313,6 +313,15 @@ struct root_item_info {
+ 	struct cache_extent cache_extent;
+ };
+ 
++/*
++ * Error bit for low memory mode check.
++ *
++ * Current no caller cares about it yet.
++ * Just as an internal use error classification
++ */
++#define BACKREF_MISSING		(1 << 0) /* Backref missing in extent tree */
++#define BACKREF_MISMATCH	(1 << 1) /* Backref exists but mismatch */
++
+ static void *print_status_check(void *p)
+ {
+ 	struct task_ctx *priv = p;
+@@ -8402,6 +8411,159 @@ loop:
+ 	goto again;
+ }
+ 
++/*
++ * Check backrefs of a tree block given by @bytenr or @eb.
++ *
++ * @root:	the root containin the @bytenr or @eb
++ * @eb:		tree block extent buffer, can be NULL
++ * @bytenr:	bytenr of the tree block to search
++ * @level:	tree level of the tree block
++ * @owner:	owner of the tree block
++ *
++ * Return >0 for any error found and output error message
++ * Return 0 for no error found
++ */
++static int check_tree_block_ref(struct btrfs_root *root,
++				struct extent_buffer *eb, u64 bytenr,
++				int level, u64 owner)
++{
++	struct btrfs_key key;
++	struct btrfs_key found_key;
++	struct btrfs_root *extent_root = root->fs_info->extent_root;
++	struct btrfs_path path;
++	struct btrfs_extent_item *ei;
++	struct btrfs_extent_inline_ref *iref;
++	struct extent_buffer *leaf;
++	unsigned long end;
++	unsigned long ptr;
++	int slot;
++	int skinny_level;
++	int type;
++	u32 nodesize = root->nodesize;
++	u32 item_size;
++	u64 offset;
++	int found_ref = 0;
++	int err = 0;
++	int ret;
++
++	btrfs_init_path(&path);
++	key.objectid = bytenr;
++	if (btrfs_fs_incompat(root->fs_info,
++			      BTRFS_FEATURE_INCOMPAT_SKINNY_METADATA))
++		key.type = BTRFS_METADATA_ITEM_KEY;
++	else
++		key.type = BTRFS_EXTENT_ITEM_KEY;
++	key.offset = (u64)-1;
++
++	/* Search for the backref in extent tree */
++	ret = btrfs_search_slot(NULL, extent_root, &key, &path, 0, 0);
++	if (ret < 0) {
++		err |= BACKREF_MISSING;
++		goto out;
++	}
++	ret = btrfs_previous_extent_item(extent_root, &path, bytenr);
++	if (ret) {
++		err |= BACKREF_MISSING;
++		goto out;
++	}
++
++	leaf = path.nodes[0];
++	slot = path.slots[0];
++	btrfs_item_key_to_cpu(leaf, &found_key, slot);
++
++	ei = btrfs_item_ptr(leaf, slot, struct btrfs_extent_item);
++
++	if (btrfs_key_type(&found_key) == BTRFS_METADATA_ITEM_KEY) {
++		skinny_level = (int)found_key.offset;
++		iref = (struct btrfs_extent_inline_ref *)(ei + 1);
++	} else {
++		struct btrfs_tree_block_info *info;
++
++		info = (struct btrfs_tree_block_info *)(ei + 1);
++		skinny_level = btrfs_tree_block_level(leaf, info);
++		iref = (struct btrfs_extent_inline_ref *)(info + 1);
++	}
++
++	if (eb) {
++		u64 header_gen;
++		u64 extent_gen;
++
++		if (!(btrfs_extent_flags(leaf, ei) &
++		      BTRFS_EXTENT_FLAG_TREE_BLOCK)) {
++			error("Extent[%llu %u] backref type mismatch, missing bit: %llx",
++			      found_key.objectid, nodesize,
++			      BTRFS_EXTENT_FLAG_TREE_BLOCK);
++			err = BACKREF_MISMATCH;
++		}
++		header_gen = btrfs_header_generation(eb);
++		extent_gen = btrfs_extent_generation(leaf, ei);
++		if (header_gen != extent_gen) {
++			error("Extent[%llu %u] backref generation mismatch, wanted: %llu, have: %llu",
++			      found_key.objectid, nodesize, header_gen,
++			      extent_gen);
++			err = BACKREF_MISMATCH;
++		}
++		if (level != skinny_level) {
++			error("Extent[%llu %u] level mismatch, wanted: %u, have: %u",
++			      found_key.objectid, nodesize, level, skinny_level);
++			err = BACKREF_MISMATCH;
++		}
++		if (!is_fstree(owner) && btrfs_extent_refs(leaf, ei) != 1) {
++			error("Extent[%llu %u] is referred by other roots than %llu",
++			      found_key.objectid, nodesize, root->objectid);
++			err = BACKREF_MISMATCH;
++		}
++	}
++
++	/*
++	 * Iterate the extent/metadata item to find the exact backref
++	 */
++	item_size = btrfs_item_size_nr(leaf, slot);
++	ptr = (unsigned long)iref;
++	end = (unsigned long)ei + item_size;
++	while (ptr < end) {
++		iref = (struct btrfs_extent_inline_ref *)ptr;
++		type = btrfs_extent_inline_ref_type(leaf, iref);
++		offset = btrfs_extent_inline_ref_offset(leaf, iref);
++
++		if (type == BTRFS_TREE_BLOCK_REF_KEY &&
++			(offset == root->objectid || offset == owner)) {
++			found_ref = 1;
++		} else if (type == BTRFS_SHARED_BLOCK_REF_KEY) {
++			/* Check if the backref points to valid referencer */
++			found_ref = !check_tree_block_ref(root, NULL, offset,
++							  level + 1, owner);
++		}
++
++		if (found_ref)
++			break;
++		ptr += btrfs_extent_inline_ref_size(type);
++	}
++
++	/*
++	 * Inlined extent item doesn't have what we need, check
++	 * TREE_BLOCK_REF_KEY
++	 */
++	if (!found_ref) {
++		btrfs_release_path(&path);
++		key.objectid = bytenr;
++		key.type = BTRFS_TREE_BLOCK_REF_KEY;
++		key.offset = root->objectid;
++
++		ret = btrfs_search_slot(NULL, extent_root, &key, &path, 0, 0);
++		if (!ret)
++			found_ref = 1;
++	}
++	if (!found_ref)
++		err |= BACKREF_MISSING;
++out:
++	btrfs_release_path(&path);
++	if (eb && (err & BACKREF_MISSING))
++		error("Extent[%llu %u] backret lost(owner: %llu, level: %u)",
++		      bytenr, nodesize, owner, level);
++	return err;
++}
++
+ static int btrfs_fsck_reinit_root(struct btrfs_trans_handle *trans,
+ 			   struct btrfs_root *root, int overwrite)
+ {
+-- 
+2.8.0
+
+
 

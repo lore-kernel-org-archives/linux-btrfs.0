@@ -1,61 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:38022 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:41077 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752363AbcD2Qhm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 29 Apr 2016 12:37:42 -0400
-Date: Fri, 29 Apr 2016 18:37:27 +0200
+	id S1751693AbcD2Qmt (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 29 Apr 2016 12:42:49 -0400
+Date: Fri, 29 Apr 2016 18:42:34 +0200
 From: David Sterba <dsterba@suse.cz>
 To: Anand Jain <anand.jain@oracle.com>
 Cc: linux-btrfs@vger.kernel.org, clm@fb.com
-Subject: Re: [PATCH 0/2] [RFC] btrfs: create degraded-RAID1 chunks
-Message-ID: <20160429163727.GD29353@suse.cz>
+Subject: Re: [PATCH 1/2] btrfs: create degraded-RAID1 chunks
+Message-ID: <20160429164234.GE29353@suse.cz>
 Reply-To: dsterba@suse.cz
 References: <1461812780-538-1-git-send-email-anand.jain@oracle.com>
+ <1461812780-538-2-git-send-email-anand.jain@oracle.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1461812780-538-1-git-send-email-anand.jain@oracle.com>
+In-Reply-To: <1461812780-538-2-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Apr 28, 2016 at 11:06:18AM +0800, Anand Jain wrote:
-> From the comments that commit[1] deleted
+On Thu, Apr 28, 2016 at 11:06:19AM +0800, Anand Jain wrote:
+> When RAID1 is degraded, newer chunks should be degraded-RAID1
+> chunks instead of single chunks.
 > 
-> - /*
-> - * we add in the count of missing devices because we want
-> - * to make sure that any RAID levels on a degraded FS
-> - * continue to be honored.
-> - *
+> The bug is because the devs_min for raid1 was wrong it should
+> be 1, instead of 2.
 > 
-> appear to me that automatic reduced-chunk-allocation
-> when RAID1 is degraded wasn't in the original design.
+> Signed-off-by: Anand Jain <anand.jain@oracle.com>
+> ---
+>  fs/btrfs/volumes.c | 38 +++++++++++++++++++++++++++++++++-----
+>  1 file changed, 33 insertions(+), 5 deletions(-)
 > 
-> which also introduced unpleasant things like automatically
-> allocating single chunks when RAID1 is mounted in degraded
-> mode, which will hinder further RAID1 mount in degraded
-> mode.
+> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+> index e2b54d546b7c..8b87ed6eb381 100644
+> --- a/fs/btrfs/volumes.c
+> +++ b/fs/btrfs/volumes.c
+> @@ -56,7 +56,7 @@ const struct btrfs_raid_attr btrfs_raid_array[BTRFS_NR_RAID_TYPES] = {
+>  		.sub_stripes	= 1,
+>  		.dev_stripes	= 1,
+>  		.devs_max	= 2,
+> -		.devs_min	= 2,
+> +		.devs_min	= 1,
 
-Agreed. As the automatic conversion cannot be turned off, it causes some
-surprises. We've opposed against such things in the past, so I'm for
-not doing the 'single' allocations. Independly, I got a feedback from a
-user who liked the proposed change.
+I think we should introduce another way how to determine the lower limit
+for the degraded mounts. We need the proper raidX constraints and use
+the degraded limits only if in case of the degraded mount.
 
-> And now to fix the original issue that is - chunk allocation
-> fails when RAID1 is degraded, The reason for the problem
-> seems to be that we had the devs_min attribute for RAID1
-> set wrongly. Correcting this also means that its time to
-> fix the RAID1 fixmes in the functions __btrfs_alloc_chunk()
-> patch [2] does that, and is for review.
+>  		.tolerated_failures = 1,
 
-This means we'd allow full writes to a degraded raid1 filesystem. This
-can bring surprises as well. The question is what to do if the device
-pops out, some writes happen, and then is added.
+Which is exactly the tolerated_failures:
 
-One option is to set some bit in the degraded filesystem that degraded
-writes happened. After that, mounting the whole filesystem would
-recommend running scrub before dropping the bit. Forcing a read-only
-mount here would be similar to read-only degraded mount, so I guess we'd
-have to somehow deal with the missing writes.
+  degraded_devs_min == devs_min - tolerated_failures
 
-I haven't thought about all details, the raid1 auto-repair can handle
-corrupted data, I think missing metadata should be handled as well and
-repaired.
+which works for all raid levels with redundancy.
+
+>  		.devs_increment	= 2,
+>  		.ncopies	= 2,

@@ -1,75 +1,94 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:58122 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:58133 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751043AbcD2JUl (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 29 Apr 2016 05:20:41 -0400
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id DFF27AD78
-	for <linux-btrfs@vger.kernel.org>; Fri, 29 Apr 2016 09:20:39 +0000 (UTC)
+	id S1751847AbcD2JUo (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 29 Apr 2016 05:20:44 -0400
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+	by mx2.suse.de (Postfix) with ESMTP id 40E4CAD78
+	for <linux-btrfs@vger.kernel.org>; Fri, 29 Apr 2016 09:20:43 +0000 (UTC)
 From: David Sterba <dsterba@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: David Sterba <dsterba@suse.com>
-Subject: [PATCH 04/16] btrfs: sink gfp parameter to clear_extent_dirty
-Date: Fri, 29 Apr 2016 11:20:27 +0200
-Message-Id: <af6f8f604d44e05f98ed45a69830547ed133adf8.1461920675.git.dsterba@suse.com>
+Subject: [PATCH 05/16] btrfs: sink gfp parameter to set_extent_delalloc
+Date: Fri, 29 Apr 2016 11:20:30 +0200
+Message-Id: <7cd8c7527cb3ad3b397fecfa1bdc8eec9fa33dd8.1461920675.git.dsterba@suse.com>
 In-Reply-To: <cover.1461920675.git.dsterba@suse.com>
 References: <cover.1461920675.git.dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Callers pass GFP_NOFS. No need to pass the flags around.
+Callers pass GFP_NOFS and tests pass GFP_KERNEL, but using NOFS there
+does not hurt. No need to pass the flags around.
 
 Signed-off-by: David Sterba <dsterba@suse.com>
 ---
- fs/btrfs/disk-io.c     | 2 +-
- fs/btrfs/extent-tree.c | 2 +-
- fs/btrfs/extent_io.h   | 4 ++--
- 3 files changed, 4 insertions(+), 4 deletions(-)
+ fs/btrfs/extent_io.h             | 4 ++--
+ fs/btrfs/inode.c                 | 2 +-
+ fs/btrfs/tests/extent-io-tests.c | 6 +++---
+ 3 files changed, 6 insertions(+), 6 deletions(-)
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 3bc88b4b0032..263823f28ba4 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -4392,7 +4392,7 @@ static int btrfs_destroy_pinned_extent(struct btrfs_root *root,
- 		if (ret)
- 			break;
- 
--		clear_extent_dirty(unpin, start, end, GFP_NOFS);
-+		clear_extent_dirty(unpin, start, end);
- 		btrfs_error_unpin_extent_range(root, start, end);
- 		cond_resched();
- 	}
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index b1c6d7634e88..61b3dd25ba4c 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -6408,7 +6408,7 @@ int btrfs_finish_extent_commit(struct btrfs_trans_handle *trans,
- 			ret = btrfs_discard_extent(root, start,
- 						   end + 1 - start, NULL);
- 
--		clear_extent_dirty(unpin, start, end, GFP_NOFS);
-+		clear_extent_dirty(unpin, start, end);
- 		unpin_extent_range(root, start, end, true);
- 		mutex_unlock(&fs_info->unused_bg_unpin_mutex);
- 		cond_resched();
 diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
-index b7c258c9fa2d..9e987ee03361 100644
+index 9e987ee03361..e99a6befdbf5 100644
 --- a/fs/btrfs/extent_io.h
 +++ b/fs/btrfs/extent_io.h
-@@ -279,11 +279,11 @@ static inline int set_extent_dirty(struct extent_io_tree *tree, u64 start,
- }
+@@ -291,11 +291,11 @@ int convert_extent_bit(struct extent_io_tree *tree, u64 start, u64 end,
+ 		       struct extent_state **cached_state, gfp_t mask);
  
- static inline int clear_extent_dirty(struct extent_io_tree *tree, u64 start,
--		u64 end, gfp_t mask)
-+		u64 end)
+ static inline int set_extent_delalloc(struct extent_io_tree *tree, u64 start,
+-		u64 end, struct extent_state **cached_state, gfp_t mask)
++		u64 end, struct extent_state **cached_state)
  {
- 	return clear_extent_bit(tree, start, end,
- 				EXTENT_DIRTY | EXTENT_DELALLOC |
--				EXTENT_DO_ACCOUNTING, 0, 0, NULL, mask);
-+				EXTENT_DO_ACCOUNTING, 0, 0, NULL, GFP_NOFS);
+ 	return set_extent_bit(tree, start, end,
+ 			      EXTENT_DELALLOC | EXTENT_UPTODATE,
+-			      NULL, cached_state, mask);
++			      NULL, cached_state, GFP_NOFS);
  }
  
- int convert_extent_bit(struct extent_io_tree *tree, u64 start, u64 end,
+ static inline int set_extent_defrag(struct extent_io_tree *tree, u64 start,
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index d37997f4eb98..1a4bd193962c 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -1962,7 +1962,7 @@ int btrfs_set_extent_delalloc(struct inode *inode, u64 start, u64 end,
+ {
+ 	WARN_ON((end & (PAGE_SIZE - 1)) == 0);
+ 	return set_extent_delalloc(&BTRFS_I(inode)->io_tree, start, end,
+-				   cached_state, GFP_NOFS);
++				   cached_state);
+ }
+ 
+ /* see btrfs_writepage_start_hook for details on why this is required */
+diff --git a/fs/btrfs/tests/extent-io-tests.c b/fs/btrfs/tests/extent-io-tests.c
+index 88e28e5d2c38..c190d2a520d1 100644
+--- a/fs/btrfs/tests/extent-io-tests.c
++++ b/fs/btrfs/tests/extent-io-tests.c
+@@ -113,7 +113,7 @@ static int test_find_delalloc(void)
+ 	 * |--- delalloc ---|
+ 	 * |---  search  ---|
+ 	 */
+-	set_extent_delalloc(&tmp, 0, 4095, NULL, GFP_KERNEL);
++	set_extent_delalloc(&tmp, 0, 4095, NULL);
+ 	start = 0;
+ 	end = 0;
+ 	found = find_lock_delalloc_range(inode, &tmp, locked_page, &start,
+@@ -144,7 +144,7 @@ static int test_find_delalloc(void)
+ 		test_msg("Couldn't find the locked page\n");
+ 		goto out_bits;
+ 	}
+-	set_extent_delalloc(&tmp, 4096, max_bytes - 1, NULL, GFP_KERNEL);
++	set_extent_delalloc(&tmp, 4096, max_bytes - 1, NULL);
+ 	start = test_start;
+ 	end = 0;
+ 	found = find_lock_delalloc_range(inode, &tmp, locked_page, &start,
+@@ -199,7 +199,7 @@ static int test_find_delalloc(void)
+ 	 *
+ 	 * We are re-using our test_start from above since it works out well.
+ 	 */
+-	set_extent_delalloc(&tmp, max_bytes, total_dirty - 1, NULL, GFP_KERNEL);
++	set_extent_delalloc(&tmp, max_bytes, total_dirty - 1, NULL);
+ 	start = test_start;
+ 	end = 0;
+ 	found = find_lock_delalloc_range(inode, &tmp, locked_page, &start,
 -- 
 2.7.1
 

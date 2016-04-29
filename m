@@ -1,61 +1,101 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:26323 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752315AbcD0Ayq (ORCPT
+Received: from mail-io0-f196.google.com ([209.85.223.196]:34950 "EHLO
+	mail-io0-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751225AbcD2KAf (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 26 Apr 2016 20:54:46 -0400
-From: Liu Bo <bo.li.liu@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.com
-Subject: [PATCH] Btrfs: fix divide error upon chunk's stripe_len
-Date: Tue, 26 Apr 2016 17:53:31 -0700
-Message-Id: <1461718411-809-1-git-send-email-bo.li.liu@oracle.com>
+	Fri, 29 Apr 2016 06:00:35 -0400
+Received: by mail-io0-f196.google.com with SMTP id u185so16848181iod.2
+        for <linux-btrfs@vger.kernel.org>; Fri, 29 Apr 2016 03:00:35 -0700 (PDT)
+MIME-Version: 1.0
+Reply-To: fdmanana@gmail.com
+In-Reply-To: <06663d10e04cd3016ec41987c2e7275ca21ce80c.1461920675.git.dsterba@suse.com>
+References: <cover.1461920675.git.dsterba@suse.com>
+	<06663d10e04cd3016ec41987c2e7275ca21ce80c.1461920675.git.dsterba@suse.com>
+Date: Fri, 29 Apr 2016 11:00:34 +0100
+Message-ID: <CAL3q7H6aeH7TcDmFo9tpcV-uKAUQv3AiEkL0bRsXXRUQ_CwGUQ@mail.gmail.com>
+Subject: Re: [PATCH 13/16] btrfs: __set_extent_bit, try preallocation out of
+ locked section with lighter gfp flags
+From: Filipe Manana <fdmanana@gmail.com>
+To: David Sterba <dsterba@suse.com>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The struct 'map_lookup' uses type int for @stripe_len, while
-btrfs_chunk_stripe_len() can return a u64 value, and it may end up with
-@stripe_len being undefined value and it can lead to 'divide error' in
- __btrfs_map_block().
+On Fri, Apr 29, 2016 at 10:20 AM, David Sterba <dsterba@suse.com> wrote:
+> In __set_extent_bit we allocate with GFP_ATOMIC with the tree lock
+> held, this takes away allocator opportunities to satisfy the allocation.
+> In some cases we leave the locked section and we could repeat the
+> preallocation with less strict flags. It could lead to unnecessary
+> allocation, but we won't fail until we really need it.
+>
+> Signed-off-by: David Sterba <dsterba@suse.com>
+> ---
+>  fs/btrfs/extent_io.c | 7 +++++++
+>  1 file changed, 7 insertions(+)
+>
+> diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+> index 8707bcc615ff..06ad442f6c03 100644
+> --- a/fs/btrfs/extent_io.c
+> +++ b/fs/btrfs/extent_io.c
+> @@ -1049,6 +1049,13 @@ __set_extent_bit(struct extent_io_tree *tree, u64 start, u64 end,
+>         spin_unlock(&tree->lock);
+>         if (gfpflags_allow_blocking(mask))
+>                 cond_resched();
+> +       /*
+> +        * If we used the preallocated state, try again here out of the
+> +        * locked section so we can avoid GFP_ATOMIC. No error checking
+> +        * as we might not need it in the end.
+> +        */
+> +       if (!prealloc)
+> +               prealloc = alloc_extent_state(mask);
 
-This changes 'map_lookup' to use type u64 for stripe_len, also right now
-we only use BTRFS_STRIPE_LEN for stripe_len, so this adds a valid checker for
-BTRFS_STRIPE_LEN.
+Under the again label we already try to allocate in non atomic mode
+(gfpflags_allow_blocking() returns us true for GFP_NOFS), and some
+other patch in the series removes the BUG_ON() there.
+So this extra allocation attempt seems unnecessary to me. Or did I
+miss something?
 
-Reported-by: Vegard Nossum <vegard.nossum@oracle.com>
-Reported-by: Quentin Casasnovas <quentin.casasnovas@oracle.com>
-Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
----
- fs/btrfs/volumes.c | 2 +-
- fs/btrfs/volumes.h | 2 +-
- 2 files changed, 2 insertions(+), 2 deletions(-)
+At least I'm seeing the following in 4.5's gfp.h:
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index e2b54d5..b5cb859 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -6242,7 +6242,7 @@ static int read_one_chunk(struct btrfs_root *root, struct btrfs_key *key,
- 			"invalid chunk length %llu", length);
- 		return -EIO;
- 	}
--	if (!is_power_of_2(stripe_len)) {
-+	if (!is_power_of_2(stripe_len) || stripe_len != BTRFS_STRIPE_LEN) {
- 		btrfs_err(root->fs_info, "invalid chunk stripe length: %llu",
- 			  stripe_len);
- 		return -EIO;
-diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-index 1939ebd..7507be7 100644
---- a/fs/btrfs/volumes.h
-+++ b/fs/btrfs/volumes.h
-@@ -347,7 +347,7 @@ struct map_lookup {
- 	u64 type;
- 	int io_align;
- 	int io_width;
--	int stripe_len;
-+	u64 stripe_len;
- 	int sector_size;
- 	int num_stripes;
- 	int sub_stripes;
+#define __GFP_DIRECT_RECLAIM ((__force gfp_t)___GFP_DIRECT_RECLAIM) /*
+Caller can reclaim */
+#define __GFP_RECLAIM ((__force
+gfp_t)(___GFP_DIRECT_RECLAIM|___GFP_KSWAPD_RECLAIM))
+#define GFP_NOFS (__GFP_RECLAIM | __GFP_IO)
+
+static inline bool gfpflags_allow_blocking(const gfp_t gfp_flags)
+{
+     return !!(gfp_flags & __GFP_DIRECT_RECLAIM);
+}
+
+So:
+
+GFP_NOFS == ___GFP_DIRECT_RECLAIM | ___GFP_KSWAPD_RECLAIM | __GFP_IO
+__GFP_DIRECT_RECLAIM == ___GFP_DIRECT_RECLAIM
+
+So, as we always use GFP_NOFS for the gfp flags value...
+
+Some comment goes for the other similar patches.
+
+
+
+>         goto again;
+>
+>  out:
+> --
+> 2.7.1
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+
+
+
 -- 
-2.5.0
+Filipe David Manana,
 
+"Reasonable men adapt themselves to the world.
+ Unreasonable men adapt the world to themselves.
+ That's why all progress depends on unreasonable men."

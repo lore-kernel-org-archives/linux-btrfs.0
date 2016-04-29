@@ -1,119 +1,138 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from ipmail04.adl6.internode.on.net ([150.101.137.141]:26577 "EHLO
-	ipmail04.adl6.internode.on.net" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1751019AbcD0WzU (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 27 Apr 2016 18:55:20 -0400
-Date: Thu, 28 Apr 2016 08:55:14 +1000
-From: Dave Chinner <david@fromorbit.com>
-To: Michal Hocko <mhocko@kernel.org>
-Cc: linux-mm@kvack.org, linux-fsdevel@vger.kernel.org,
-        Andrew Morton <akpm@linux-foundation.org>,
-        "Theodore Ts'o" <tytso@mit.edu>, Chris Mason <clm@fb.com>,
-        Jan Kara <jack@suse.cz>, ceph-devel@vger.kernel.org,
-        cluster-devel@redhat.com, linux-nfs@vger.kernel.org, logfs@logfs.org,
-        xfs@oss.sgi.com, linux-ext4@vger.kernel.org,
-        linux-btrfs@vger.kernel.org, linux-mtd@lists.infradead.org,
-        reiserfs-devel@vger.kernel.org, linux-ntfs-dev@lists.sourceforge.net,
+Received: from neil.brown.name ([103.29.64.221]:35314 "EHLO neil.brown.name"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752636AbcD2GM5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 29 Apr 2016 02:12:57 -0400
+From: NeilBrown <mr@neil.brown.name>
+To: Michal Hocko <mhocko@kernel.org>, linux-mm@kvack.org,
+        linux-fsdevel@vger.kernel.org
+Date: Fri, 29 Apr 2016 15:35:42 +1000
+Cc: Andrew Morton <akpm@linux-foundation.org>,
+        Dave Chinner <david@fromorbit.com>, "Theodore Ts'o" <tytso@mit.edu>,
+        Chris Mason <clm@fb.com>, Jan Kara <jack@suse.cz>,
+        ceph-devel@vger.kernel.org, cluster-devel@redhat.com,
+        linux-nfs@vger.kernel.org, logfs@logfs.org, xfs@oss.sgi.com,
+        linux-ext4@vger.kernel.org, linux-btrfs@vger.kernel.org,
+        linux-mtd@lists.infradead.org, reiserfs-devel@vger.kernel.org,
+        linux-ntfs-dev@lists.sourceforge.net,
         linux-f2fs-devel@lists.sourceforge.net, linux-afs@lists.infradead.org,
         LKML <linux-kernel@vger.kernel.org>
-Subject: Re: [PATCH 2/2] mm, debug: report when GFP_NO{FS,IO} is used
- explicitly from memalloc_no{fs,io}_{save,restore} context
-Message-ID: <20160427225514.GJ26977@dastard>
+Subject: Re: [PATCH 0/2] scop GFP_NOFS api
+In-Reply-To: <1461671772-1269-1-git-send-email-mhocko@kernel.org>
 References: <1461671772-1269-1-git-send-email-mhocko@kernel.org>
- <1461671772-1269-3-git-send-email-mhocko@kernel.org>
- <20160426225845.GF26977@dastard>
- <20160427080311.GC2179@dhcp22.suse.cz>
+Message-ID: <8737q5ugcx.fsf@notabene.neil.brown.name>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20160427080311.GC2179@dhcp22.suse.cz>
+Content-Type: multipart/signed; boundary="=-=-=";
+	micalg=pgp-sha256; protocol="application/pgp-signature"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Apr 27, 2016 at 10:03:11AM +0200, Michal Hocko wrote:
-> On Wed 27-04-16 08:58:45, Dave Chinner wrote:
-> > On Tue, Apr 26, 2016 at 01:56:12PM +0200, Michal Hocko wrote:
-> > > From: Michal Hocko <mhocko@suse.com>
-> > > 
-> > > THIS PATCH IS FOR TESTING ONLY AND NOT MEANT TO HIT LINUS TREE
-> > > 
-> > > It is desirable to reduce the direct GFP_NO{FS,IO} usage at minimum and
-> > > prefer scope usage defined by memalloc_no{fs,io}_{save,restore} API.
-> > > 
-> > > Let's help this process and add a debugging tool to catch when an
-> > > explicit allocation request for GFP_NO{FS,IO} is done from the scope
-> > > context. The printed stacktrace should help to identify the caller
-> > > and evaluate whether it can be changed to use a wider context or whether
-> > > it is called from another potentially dangerous context which needs
-> > > a scope protection as well.
-> > 
-> > You're going to get a large number of these from XFS. There are call
-> > paths in XFs that get called both inside and outside transaction
-> > context, and many of them are marked with GFP_NOFS to prevent issues
-> > that have cropped up in the past.
-> > 
-> > Often these are to silence lockdep warnings (e.g. commit b17cb36
-> > ("xfs: fix missing KM_NOFS tags to keep lockdep happy")) because
-> > lockdep gets very unhappy about the same functions being called with
-> > different reclaim contexts. e.g.  directory block mapping might
-> > occur from readdir (no transaction context) or within transactions
-> > (create/unlink). hence paths like this are tagged with GFP_NOFS to
-> > stop lockdep emitting false positive warnings....
-> 
-> I would much rather see lockdep being fixed than abusing GFP_NOFS to
-> workaround its limitations. GFP_NOFS has a real consequences to the
-> memory reclaim. I will go and check the commit you mentioned and try
-> to understand why that is a problem. From what you described above
-> I would like to get rid of exactly this kind of usage which is not
-> really needed for the recursion protection.
+--=-=-=
+Content-Type: text/plain
 
-The problem is that every time we come across this, the answer is
-"use lockdep annotations". Our lockdep annotations are freakin'
-complex because of this, and more often than not lockdep false
-positives occur due to bugs in the annotations. e.g. see
-fs/xfs/xfs_inode.h for all the inode locking annotations we have to
-use and the hoops we have to jump through because we are limited to
-8 subclasses and we have to be able to annotate nested inode locks
-5 deep in places (RENAME_WHITEOUT, thanks).
+On Tue, Apr 26 2016, Michal Hocko wrote:
 
-At one point, we had to reset lockdep classes for inodes in reclaim
-so that they didn't throw lockdep false positives the moment an
-inode was locked in a memory reclaim context. We had to change
-locking to remove that problem (commit 4f59af7 ("xfs: remove iolock
-lock classes"). Then there were all the problems with reclaim
-triggering lockdep warnings on directory inodes - we had to add a
-separate directory inode class for them, and even then we still need
-GFP_NOFS in places to minimise reclaim noise (as per the above
-commit).
+> Hi,
+> we have discussed this topic at LSF/MM this year. There was a general
+> interest in the scope GFP_NOFS allocation context among some FS
+> developers. For those who are not aware of the discussion or the issue
+> I am trying to sort out (or at least start in that direction) please
+> have a look at patch 1 which adds memalloc_nofs_{save,restore} api
+> which basically copies what we have for the scope GFP_NOIO allocation
+> context. I haven't converted any of the FS myself because that is way
+> beyond my area of expertise but I would be happy to help with further
+> changes on the MM front as well as in some more generic code paths.
+>
+> Dave had an idea on how to further improve the reclaim context to be
+> less all-or-nothing wrt. GFP_NOFS. In short he was suggesting an opaque
+> and FS specific cookie set in the FS allocation context and consumed
+> by the FS reclaim context to allow doing some provably save actions
+> that would be skipped due to GFP_NOFS normally.  I like this idea and
+> I believe we can go that direction regardless of the approach taken here.
+> Many filesystems simply need to cleanup their NOFS usage first before
+> diving into a more complex changes.>
 
-Put simply: we've had to resort to designing locking and allocation
-strategies around the limitations of lockdep annotations, as opposed
-to what is actually possible or even optimal. i.e. when the choice
-is a 2 minute fix to add GFP_NOFS in cases like this, versus another
-week long effort to rewrite the inode annotations (again) like this
-one last year:
+This strikes me as over-engineering to work around an unnecessarily
+burdensome interface.... but without details it is hard to be certain.
 
-commit 0952c8183c1575a78dc416b5e168987ff98728bb
-Author: Dave Chinner <dchinner@redhat.com>
-Date:   Wed Aug 19 10:32:49 2015 +1000
+Exactly what things happen in "FS reclaim context" which may, or may
+not, be safe depending on the specific FS allocation context?  Do they
+need to happen at all?
 
-    xfs: clean up inode lockdep annotations
-    
-    Lockdep annotations are a maintenance nightmare. Locking has to be
-    modified to suit the limitations of the annotations, and we're
-    always having to fix the annotations because they are unable to
-    express the complexity of locking heirarchies correctly.
-.....
+My research suggests that for most filesystems the only thing that
+happens in reclaim context that is at all troublesome is the final
+'evict()' on an inode.  This needs to flush out dirty pages and sync the
+inode to storage.  Some time ago we moved most dirty-page writeout out
+of the reclaim context and into kswapd.  I think this was an excellent
+advance in simplicity.
+If we could similarly move evict() into kswapd (and I believe we can)
+then most file systems would do nothing in reclaim context that
+interferes with allocation context.
 
-It's a no-brainer to see why GFP_NOFS will be added to the
-allocation in question. I've been saying for years that I consider
-lockdep harmful - if you want to get rid of GFP_NOFS, then you're
-going to need to sort out the lockdep reclaim annotation mess at the
-same time...
+The exceptions include:
+ - nfs and any filesystem using fscache can block for up to 1 second
+   in ->releasepage().  They used to block waiting for some IO, but that
+   caused deadlocks and wasn't really needed.  I left the timeout because
+   it seemed likely that some throttling would help.  I suspect that a
+   careful analysis will show that there is sufficient throttling
+   elsewhere.
 
-Cheers,
+ - xfs_qm_shrink_scan is nearly unique among shrinkers in that it waits
+   for IO so it can free some quotainfo things.  If it could be changed
+   to just schedule the IO without waiting for it then I think this
+   would be safe to be called in any FS allocation context.  It already
+   uses a 'trylock' in xfs_dqlock_nowait() to avoid deadlocking
+   if the lock is held.
 
-Dave.
--- 
-Dave Chinner
-david@fromorbit.com
+I think you/we would end up with a much simpler system if instead of
+focussing on the places where GFP_NOFS is used, we focus on places where
+__GFP_FS is tested, and try to remove them.  If we get rid of enough of
+them the remainder could just use __GFP_IO.
+
+> The patch 2 is a debugging aid which warns about explicit allocation
+> requests from the scope context. This is should help to reduce the
+> direct usage of the NOFS flags to bare minimum in favor of the scope
+> API. It is not aimed to be merged upstream. I would hope Andrew took it
+> into mmotm tree to give it linux-next exposure and allow developers to
+> do further cleanups.  There is a new kernel command line parameter which
+> has to be used for the debugging to be enabled.
+>
+> I think the GFP_NOIO should be seeing the same clean up.
+
+I think you are suggesting that use of GFP_NOIO should (largely) be
+deprecated in favour of memalloc_noio_save().  I think I agree.
+Could we go a step further and deprecate GFP_ATOMIC in favour of some
+in_atomic() test?  Maybe that is going too far.
+
+Thanks,
+NeilBrown
+
+>
+> Any feedback is highly appreciated.
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+
+--=-=-=
+Content-Type: application/pgp-signature; name="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2
+
+iQIcBAEBCAAGBQJXIvKuAAoJEDnsnt1WYoG5yYcQALVBjDFPD7k40UTzmu/EpZtF
+q5uzTpP8A/Uhy4k8kJnHF9JhXwHlKXxKiFSTavyZqxE8LjmJwZOyB3hdg5boVQ1C
+43ZKUpSd2i8BwIBZ1Ld37W9UEtT1owibqaY9KyOxetBk8wsZQoXks7XLQ+i8SMp1
+lGQJwbykXBPfLzlBTV02QstA++bpwdFqFyxL9DTtYF8e9BbhC3iwFS2t/dwj17Uo
+3WNu8OaXzYvf71uYTs2khlrKx3PQvKuUBLG30XGy1Lk/SF+lYlGtnrT0+wyWpSlR
+gzU7KXJjF1Mw7snb/JncOARDJJvHC3IUaaJy9GG8cLBY6j9sPAnoAGeKEtEXeSUC
+B2CUXkPS3n1Ejr0r5WhrLl8jO5oMIV6vZ/kDRFhEQt/gj0H5Zv0heQtp/DkgtFox
+mvBUH7cf2sqb9gabXGcm+5M9/yyqU1NzNR+8f+QCm2PrX9kzYKNExYc7Yx23KpWc
+BzT6Nzf62/nkhDHOzD50MMFFf5jWS0jWDS4uHx4KiG1JvKjRL6MW5GG1qNxQ+D8a
+kuzPKy/mMh7uppGOV4gxCdOQ04zyWfabzzcU5jM9WJeaXeZoDb6mOTJ6NSueUTBf
+nd3LnYoXc9LVTr4q9C4IerVNsjU2ZNTE/Nw2Sb+RLqEEBh5QpOITGYITS0aPK9fT
+AHBilQxky11eQicGLpS3
+=gouN
+-----END PGP SIGNATURE-----
+--=-=-=--

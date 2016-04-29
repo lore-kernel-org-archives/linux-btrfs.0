@@ -1,118 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:4043 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:49294 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1752346AbcD2AZ0 (ORCPT
+	with ESMTP id S1752225AbcD2DfQ (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 28 Apr 2016 20:25:26 -0400
-Subject: Re: [PATCH RFC 00/16] Introduce low memory usage btrfsck mode
+	Thu, 28 Apr 2016 23:35:16 -0400
+Subject: Re: [PATCH RFC 03/16] btrfs-progs: fsck: Introduce function to query
+ tree block level
 To: Josef Bacik <jbacik@fb.com>, <linux-btrfs@vger.kernel.org>
 References: <1461642543-4621-1-git-send-email-quwenruo@cn.fujitsu.com>
- <4635a8ca-0b56-223d-479c-0177ae7d197c@fb.com>
-CC: <dsterba@suse.cz>
+ <1461642543-4621-4-git-send-email-quwenruo@cn.fujitsu.com>
+ <ed7323de-cc1d-603c-0064-9e016f026f1b@fb.com>
+CC: <dsterba@suse.cz>, Lu Fengqi <lufq.fnst@cn.fujitsu.com>
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <ce0b67c3-ba49-973e-7184-5453c606ce89@cn.fujitsu.com>
-Date: Fri, 29 Apr 2016 08:25:12 +0800
+Message-ID: <e197cac6-fc53-c007-28c0-facfe65e3754@cn.fujitsu.com>
+Date: Fri, 29 Apr 2016 11:35:09 +0800
 MIME-Version: 1.0
-In-Reply-To: <4635a8ca-0b56-223d-479c-0177ae7d197c@fb.com>
+In-Reply-To: <ed7323de-cc1d-603c-0064-9e016f026f1b@fb.com>
 Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
 
-Josef Bacik wrote on 2016/04/28 10:32 -0400:
+Josef Bacik wrote on 2016/04/28 10:13 -0400:
 > On 04/25/2016 11:48 PM, Qu Wenruo wrote:
->> The branch can be fetched from my github:
->> https://github.com/adam900710/btrfs-progs.git low_mem_fsck_rebasing
+>> From: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
 >>
->> Original btrfsck checks extent tree in a very efficient method, by
->> recording every checked extent in extent record tree to ensure every
->> extent will be iterated for at most 2 times.
+>> Introduce function query_tree_block_level() to resolve tree block level
+>> by reading out the tree block.
 >>
->> However extent records are all stored in heap memory, and consider how
->> large a btrfs file system can be, it can easily eat up all memory and
->> cause OOM for TB-sized metadata.
->>
->> Instead of such heap memory usage, we introduce low memory usage fsck
->> mode.
->>
->> In this mode, we will use btrfs_search_slot() only and avoid any heap
->> memory allocation.
->>
->> The work flow is:
->> 1) Iterate extent tree (backref check)
->>    And check whether the referencer of every backref exists.
->>
->> 2) Iterate other trees (forward ref check)
->>    And check whether the backref of every tree block/data exists in
->>    extent tree.
->>
->> So in theory, every extent is iterated twice just as original one.
->> But since we don't have extent record, but use btrfs_search_slot() every
->> time we check, it will cause extra IO.
->>
->> I assume the extra IO is reasonable and should make btrfsck able to
->> handle super large fs.
->>
->> TODO features:
->> 1) Repair
->>    Repair should be the same as old btrfsck, but still need to determine
->>    the repair principle.
->>    Current repair sometimes uses backref to repair data extent,
->>    sometimes uses data extent to fix backref.
->>    We need a consistent principle, or we will screw things up.
->>
->> 2) Replace current fsck code
->>    We assume the low memory mode has less lines of code, and may be
->>    easier for review and expand.
->>
->>    If low memory mode is stable enough, we will consider to replace
->>    current extent and chunk tree check codes to free a lot of lines.
->>
->> 3) Further code refining
->>    Reduce duplicated codes
->>
->> 4) Unify output
->>    Make the output of low-memory mode same as the normal one.
->>
->> Lu Fengqi (16):
->>   btrfs-progs: fsck: Introduce function to check tree block backref in
->>     extent tree
->>   btrfs-progs: fsck: Introduce function to check data backref in extent
->>     tree
->>   btrfs-progs: fsck: Introduce function to query tree block level
->>   btrfs-progs: fsck: Introduce function to check referencer of a backref
->>   btrfs-progs: fsck: Introduce function to check shared block ref
->>   btrfs-progs: fsck: Introduce function to check referencer for data
->>     backref
->>   btrfs-progs: fsck: Introduce function to check shared data backref
->>   btrfs-progs: fsck: Introduce function to check an extent
->>   btrfs-progs: fsck: Introduce function to check dev extent item
->>   btrfs-progs: fsck: Introduce function to check dev used space
->>   btrfs-progs: fsck: Introduce function to check block group item
->>   btrfs-progs: fsck: Introduce function to check chunk item
->>   btrfs-progs: fsck: Introduce hub function for later fsck
->>   btrfs-progs: fsck: Introduce function to speed up fs tree check
->>   btrfs-progs: fsck: Introduce traversal function for fsck
->>   btrfs-progs: fsck: Introduce low memory mode
->>
+>> Signed-off-by: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
+>> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+>> ---
 >
-> I made it halfway through before I realized you are returning negative
-> values for flag related errors.  Please don't do that.  Once you fix
-> that up I'll review the rest of the series, and don't put my Reviewed-by
-> tags on anything until you fix up the negative return value thing.  Thanks,
+> This skips the check_tree_block if the transid passes, but we could have
+> a matching transid but a corrupt item.  You need to fix
+> read_tree_block_fs_info to always call check_block so we can be sure
+> that our btrfs_header_level() is valid here.  Thanks,
 >
 > Josef
 >
 >
->
-Thanks for the review.
+read_tree_block_fs_info(or read_tree_block) will call check_tree_block() 
+and verify_parent_transid() if it doesn't find a cached extent buffer.
 
-Oh, it seems that I'm too restricted on that any error should cause 
-minus return value.
+So I don't think we need to do further modification to 
+read_tree_block_fs_info().
 
-OK, I'll change them into normal >0 return value and apply the comment 
-you pointed out.
+But your comment reminds me that, we did miss the generation check, as 
+we can get generation from backref, and when we can, we should also 
+check transid.
+
+We will add transid check from metadata backref.
 
 Thanks,
 Qu

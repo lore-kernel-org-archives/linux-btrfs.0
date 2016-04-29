@@ -1,120 +1,70 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:58210 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:58089 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752223AbcD2JVV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 29 Apr 2016 05:21:21 -0400
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id F1404AD6E
-	for <linux-btrfs@vger.kernel.org>; Fri, 29 Apr 2016 09:21:19 +0000 (UTC)
+	id S1752657AbcD2JU1 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 29 Apr 2016 05:20:27 -0400
 From: David Sterba <dsterba@suse.com>
 To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.com>
-Subject: [PATCH 16/16] btrfs: sink gfp parameter to convert_extent_bit
-Date: Fri, 29 Apr 2016 11:21:07 +0200
-Message-Id: <5c73331ee86270cf6316a58136c17deb49455ccd.1461920675.git.dsterba@suse.com>
-In-Reply-To: <cover.1461920675.git.dsterba@suse.com>
-References: <cover.1461920675.git.dsterba@suse.com>
+Cc: David Sterba <dsterba@suse.com>, clm@fb.com
+Subject: [PATCH 00/16] Minor cleanups in GFP_NOFS flags use
+Date: Fri, 29 Apr 2016 11:20:13 +0200
+Message-Id: <cover.1461920675.git.dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Single caller passes GFP_NOFS. We can get rid of the
-gfpflags_allow_blocking checks as NOFS can block but does not recurse to
-filesystem through reclaim.
+Hi,
 
-Signed-off-by: David Sterba <dsterba@suse.com>
----
- fs/btrfs/extent_io.c   | 14 +++++++-------
- fs/btrfs/extent_io.h   |  2 +-
- fs/btrfs/transaction.c |  2 +-
- 3 files changed, 9 insertions(+), 9 deletions(-)
+the first part of patchset mostly moves the GFP_NOFS flags from several
+callsites into the callers. The point is to move all GFP_NOFS to the actual
+point of use. If all the callers pass the same flag, there's no point in doing
+that, which as a small benefit saves a few bytes on the stack.
 
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 092f697470d8..58483f928000 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -1092,17 +1092,18 @@ int set_extent_bit(struct extent_io_tree *tree, u64 start, u64 end,
-  * @bits:	the bits to set in this range
-  * @clear_bits:	the bits to clear in this range
-  * @cached_state:	state that we're going to cache
-- * @mask:	the allocation mask
-  *
-  * This will go through and set bits for the given range.  If any states exist
-  * already in this range they are set with the given bit and cleared of the
-  * clear_bits.  This is only meant to be used by things that are mergeable, ie
-  * converting from say DELALLOC to DIRTY.  This is not meant to be used with
-  * boundary bits like LOCK.
-+ *
-+ * All allocations are done with GFP_NOFS.
-  */
- int convert_extent_bit(struct extent_io_tree *tree, u64 start, u64 end,
- 		       unsigned bits, unsigned clear_bits,
--		       struct extent_state **cached_state, gfp_t mask)
-+		       struct extent_state **cached_state)
- {
- 	struct extent_state *state;
- 	struct extent_state *prealloc = NULL;
-@@ -1117,7 +1118,7 @@ int convert_extent_bit(struct extent_io_tree *tree, u64 start, u64 end,
- 	btrfs_debug_check_extent_io_range(tree, start, end);
- 
- again:
--	if (!prealloc && gfpflags_allow_blocking(mask)) {
-+	if (!prealloc) {
- 		/*
- 		 * Best effort, don't worry if extent state allocation fails
- 		 * here for the first iteration. We might have a cached state
-@@ -1125,7 +1126,7 @@ int convert_extent_bit(struct extent_io_tree *tree, u64 start, u64 end,
- 		 * extent state allocations are needed. We'll only know this
- 		 * after locking the tree.
- 		 */
--		prealloc = alloc_extent_state(mask);
-+		prealloc = alloc_extent_state(GFP_NOFS);
- 		if (!prealloc && !first_iteration)
- 			return -ENOMEM;
- 	}
-@@ -1286,15 +1287,14 @@ int convert_extent_bit(struct extent_io_tree *tree, u64 start, u64 end,
- 	if (start > end)
- 		goto out;
- 	spin_unlock(&tree->lock);
--	if (gfpflags_allow_blocking(mask))
--		cond_resched();
-+	cond_resched();
- 	/*
- 	 * If we used the preallocated state, try again here out of the
- 	 * locked section so we can avoid GFP_ATOMIC. No error checking
- 	 * as we might not need it in the end.
- 	 */
- 	if (!prealloc)
--		prealloc = alloc_extent_state(mask);
-+		prealloc = alloc_extent_state(GFP_NOFS);
- 	first_iteration = false;
- 	goto again;
- 
-diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
-index 94b376446042..9c1f160c5984 100644
---- a/fs/btrfs/extent_io.h
-+++ b/fs/btrfs/extent_io.h
-@@ -287,7 +287,7 @@ static inline int clear_extent_dirty(struct extent_io_tree *tree, u64 start,
- 
- int convert_extent_bit(struct extent_io_tree *tree, u64 start, u64 end,
- 		       unsigned bits, unsigned clear_bits,
--		       struct extent_state **cached_state, gfp_t mask);
-+		       struct extent_state **cached_state);
- 
- static inline int set_extent_delalloc(struct extent_io_tree *tree, u64 start,
- 		u64 end, struct extent_state **cached_state)
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index 43885e51b882..98b93d9c6213 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -943,7 +943,7 @@ int btrfs_write_marked_extents(struct btrfs_root *root,
- 
- 		err = convert_extent_bit(dirty_pages, start, end,
- 					 EXTENT_NEED_WAIT,
--					 mark, &cached_state, GFP_NOFS);
-+					 mark, &cached_state);
- 		/*
- 		 * convert_extent_bit can return -ENOMEM, which is most of the
- 		 * time a temporary error. So when it happens, ignore the error
+The second part tries to improve extent_state preallocation logic in the
+set/clear/convert functions. Depending on the internal state, we might not need
+the allocation at all, the actual failure is left to the place where we really
+need the memory, that's done in a locked section with GFP_ATOMIC. If we leave this
+section, we speculatively try to allocate new extent state unless we already have
+one spare.
+
+I'd like to get this to 4.7, the patchset has low functionality impact but helps
+me to continue in the NOFS crusade. 
+
+David Sterba (16):
+  btrfs: sink gfp parameter to set_extent_bits
+  btrfs: sink gfp parameter to clear_extent_bits
+  btrfs: sink gfp parameter to clear_record_extent_bits
+  btrfs: sink gfp parameter to clear_extent_dirty
+  btrfs: sink gfp parameter to set_extent_delalloc
+  btrfs: sink gfp parameter to set_extent_defrag
+  btrfs: sink gfp parameter to set_extent_new
+  btrfs: sink gfp parameter to set_record_extent_bits
+  btrfs: untangle gotos a bit in __set_extent_bit
+  btrfs: untangle gotos a bit in __clear_extent_bit
+  btrfs: untangle gotos a bit in convert_extent_bit
+  btrfs: make state preallocation more speculative in __set_extent_bit
+  btrfs: __set_extent_bit, try preallocation out of locked section with
+    lighter gfp flags
+  btrfs: __clear_extent_bit, try preallocation out of locked section
+    with lighter gfp flags
+  btrfs: convert_extent_bit, try preallocation out of locked section
+    with lighter gfp flags
+  btrfs: sink gfp parameter to convert_extent_bit
+
+ fs/btrfs/disk-io.c               |   4 +-
+ fs/btrfs/extent-tree.c           |  16 +++---
+ fs/btrfs/extent_io.c             | 105 +++++++++++++++++++++++----------------
+ fs/btrfs/extent_io.h             |  34 ++++++-------
+ fs/btrfs/file-item.c             |   2 +-
+ fs/btrfs/inode.c                 |   5 +-
+ fs/btrfs/ioctl.c                 |   2 +-
+ fs/btrfs/qgroup.c                |   8 ++-
+ fs/btrfs/relocation.c            |   7 ++-
+ fs/btrfs/scrub.c                 |   4 +-
+ fs/btrfs/tests/extent-io-tests.c |   8 +--
+ fs/btrfs/transaction.c           |   2 +-
+ fs/btrfs/tree-log.c              |   2 +-
+ 13 files changed, 108 insertions(+), 91 deletions(-)
+
 -- 
 2.7.1
 

@@ -1,71 +1,65 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oi0-f68.google.com ([209.85.218.68]:35877 "EHLO
-	mail-oi0-f68.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751132AbcEDT2p (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 4 May 2016 15:28:45 -0400
-Received: by mail-oi0-f68.google.com with SMTP id i2so10362704oib.3
-        for <linux-btrfs@vger.kernel.org>; Wed, 04 May 2016 12:28:45 -0700 (PDT)
+Received: from mail-wm0-f68.google.com ([74.125.82.68]:33598 "EHLO
+	mail-wm0-f68.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754839AbcEDWWD (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 4 May 2016 18:22:03 -0400
+Received: by mail-wm0-f68.google.com with SMTP id r12so13441520wme.0
+        for <linux-btrfs@vger.kernel.org>; Wed, 04 May 2016 15:22:01 -0700 (PDT)
+Date: Sat, 30 Apr 2016 12:33:57 -0400
+From: Sanidhya Solanki <lkml.page@gmail.com> (by way of Sanidhya Solanki
+	<lkml.page@gmail.com>)
+To: Ashish Samant <ashish.samant@oracle.com>
+Cc: linux-btrfs-owner@vger.kernel.org
+Message-ID: <20160430123357.060e5db1@jpage>
+In-Reply-To: <1461980039-25200-1-git-send-email-ashish.samant@oracle.com>
+References: <1461980039-25200-1-git-send-email-ashish.samant@oracle.com>
 MIME-Version: 1.0
-In-Reply-To: <pan$b7a2d$25647256$6ea52b4$e3976a4a@cox.net>
-References: <79249c4d-eab0-43fa-a6ae-b670699891dc@linuxsystems.it>
-	<pan$7b1b$2e968d2f$7ddc7045$1ba7386@cox.net>
-	<f8233c24-e336-4d31-a4cb-f3b0f97d1305@linuxsystems.it>
-	<CAJCQCtQ5q_VUw0rCWWRZBFo=Lhx0ouYeuCDMxDLxcWKowUwbUw@mail.gmail.com>
-	<pan$b7a2d$25647256$6ea52b4$e3976a4a@cox.net>
-Date: Wed, 4 May 2016 13:28:44 -0600
-Message-ID: <CAJCQCtRYsPanTSbtaDHOpm-+upb+=Xqxtk7KNxwndzcEvgF47Q@mail.gmail.com>
-Subject: Re: /etc/fstab rootfs options vs grub2 rootflags cmdline
-From: Chris Murphy <lists@colorremedies.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
-To: unlisted-recipients:; (no To-header on input)
+Content-Type: text/plain; charset=US-ASCII
+Subject: Re: [PATCH] btrfs: Fix BUG_ON condition in
+ scrub_setup_recheck_block()
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, May 4, 2016 at 12:34 PM, Duncan <1i5t5.duncan@cox.net> wrote:
-> Chris Murphy posted on Wed, 04 May 2016 12:07:39 -0600 as excerpted:
->
->> If you think it's worth the hassle, then you have to directly modify the
->> grub.cfg to include an expanded rootflags parameter. Right now
->> grub-mkconfig logic doesn't not include all options in fstab for
->> rootflags.
->
-> And...
->
-> That might explain why his grub2 behavior didn't match what I expected.
->
-> Here, I entirely did away with the high-level grub config machinery like
-> grub-mkconfig (to the point I install-mask some of the files so they
-> don't get installed and thus can't accidentally be run, by some third
-> party configuration script or something, and mess up my direct config)
-> and I strictly do direct editing of the actual grub.cfg (and included
-> files) in grub's native shell-like script.
->
-> I tend to forget that grub has this entire higher level config machinery
-> that most people use, but that wasn't configuring grub the way I wanted,
-> and that I'd have to learn IN ADDITION to the low-level scripting in
-> ordered to get grub to do what I wanted, if I was to continue to use the
-> high-level stuff at all.  Problem solved locally by simply deleting and
-> masking the high-level stuff so it doesn't install, so I had to learn
-> only the low-level script config, but that doesn't help me remember that
-> few others will be doing that, and that the high-level stuff even exists.
+On Fri, 29 Apr 2016 18:33:59 -0700
+Ashish Samant <ashish.samant@oracle.com> wrote:
 
-Well this is a major reason why grubby is still used to modify
-grub.cfg on Fedora/CentOS/RHEL rather than obliterate the grub.cfg in
-favor of an entirely new one made from scratch using the baked in
-logic of grub-mkconfig.
+> pagev array in scrub_block{} is of size SCRUB_MAX_PAGES_PER_BLOCK.
+> page_index should be checked with the same to trigger BUG_ON().
+> 
+> Signed-off-by: Ashish Samant <ashish.samant@oracle.com>
+> ---
+>  fs/btrfs/scrub.c | 2 +-
+>  1 file changed, 1 insertion(+), 1 deletion(-)
+> 
+> diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
+> index 4678f03..376a6dd 100644
+> --- a/fs/btrfs/scrub.c
+> +++ b/fs/btrfs/scrub.c
+> @@ -1350,7 +1350,7 @@ static int scrub_setup_recheck_block(struct scrub_block *original_sblock,
+>  		recover->bbio = bbio;
+>  		recover->map_length = mapped_length;
+>  
+> -		BUG_ON(page_index >= SCRUB_PAGES_PER_RD_BIO);
+> +		BUG_ON(page_index >= SCRUB_MAX_PAGES_PER_BLOCK);
+>  
+>  		nmirrors = min(scrub_nr_raid_mirrors(bbio), BTRFS_MAX_MIRRORS);
+>  
 
-The problem is, grubby is crusty and resists modification itself, so
-while its templating of a previous boot entry, parsing it, then making
-a new boot entry that uses everything it doesn't understand or care
-about in the template, only changing the things that it knows need
-changing (pretty much just the path to kernel and initramfs), while
-applying sanity tests, it also doesn't understand Btrfs subvolumes. So
-right now /boot can't be on a Btrfs subvolume, it has to be at the top
-level, as a consequence.
+Hello
 
-So, booting is hard.
+I am trying to implement a user-space IOCTL option to change the RAID Stripe Size.
+I have run into an issue in the code included here, specifically in line 64 of scrub.c. 
 
+#define SCRUB_MAX_PAGES_PER_BLOCK      16      /* 64k per node/leaf/sector */
 
--- 
-Chris Murphy
+This line should become a user-space variable if SCRUB_MAX_PAGES_PER_BLOCK is
+related in any way to the definition of BTrFS Stripe Length (defined in
+volume.h)  being equal to a product of Super_blk and RAID Stripe Length, as it was
+before mid-December before the patch
+"http://article.gmane.org/gmane.comp.file-systems.btrfs/51221/" modified it. If 
+SCRUB_MAX_PAGES_PER_BLOCK is related to Super_blk, then it too will need to be
+changed from a macro to something that is runtime configurable.
+
+Could those more familiar with the code base let me know.
+
+Thanks

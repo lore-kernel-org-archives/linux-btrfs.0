@@ -1,19 +1,19 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lf0-f54.google.com ([209.85.215.54]:34566 "EHLO
-	mail-lf0-f54.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751357AbcD3K1D (ORCPT
+Received: from mail-lf0-f45.google.com ([209.85.215.45]:36233 "EHLO
+	mail-lf0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751403AbcD3K2g (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 30 Apr 2016 06:27:03 -0400
-Received: by mail-lf0-f54.google.com with SMTP id j11so162848071lfb.1
-        for <linux-btrfs@vger.kernel.org>; Sat, 30 Apr 2016 03:27:01 -0700 (PDT)
+	Sat, 30 Apr 2016 06:28:36 -0400
+Received: by mail-lf0-f45.google.com with SMTP id u64so142964178lff.3
+        for <linux-btrfs@vger.kernel.org>; Sat, 30 Apr 2016 03:28:35 -0700 (PDT)
 MIME-Version: 1.0
 In-Reply-To: <CAJCQCtRk+V0vhdCsyi-3aoNDimV0E4XJjQc9Us35uO59HpjSAQ@mail.gmail.com>
 References: <CAGGqMYQPVQoKDcuDqp0D=3BCD+oTghew0fyzqo58BSLFrmrEJQ@mail.gmail.com>
 	<CAJCQCtTG68BicgFwoyYgM0OzphsVbstgWTNybF3CeBo1VCJhNg@mail.gmail.com>
 	<CAGGqMYTso0XNjgfmWfY8g3Xs9xym5gHFcTizzAq1_Y-mMTTx0w@mail.gmail.com>
 	<CAJCQCtRk+V0vhdCsyi-3aoNDimV0E4XJjQc9Us35uO59HpjSAQ@mail.gmail.com>
-Date: Sat, 30 Apr 2016 12:27:00 +0200
-Message-ID: <CAGGqMYQ-ibDZdke0PdPGyJ=jm90Z-zpVtUUJUyZnn0PqE7Jw2Q@mail.gmail.com>
+Date: Sat, 30 Apr 2016 12:28:34 +0200
+Message-ID: <CAGGqMYSZ8P=ZVSgL4zWJKi7uuYLxRMZh=XEzPYpT2PykQD58oQ@mail.gmail.com>
 Subject: Re: receive snapshot, complains about missing file
 From: Alexander Fougner <fougner89@gmail.com>
 To: Chris Murphy <lists@colorremedies.com>
@@ -21,6 +21,8 @@ Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
+
+Heh, sorry about the noise!
 
 2016-04-29 22:28 GMT+02:00 Chris Murphy <lists@colorremedies.com>:
 > On Fri, Apr 29, 2016 at 2:20 PM, Alexander Fougner <fougner89@gmail.com> wrote:
@@ -78,22 +80,37 @@ List-ID: <linux-btrfs.vger.kernel.org>
 >>>>
 >>>
 >>> Do scrub and btrfs check (no repair) complete without errors?
+
+Send side
+
+sudo btrfs check /dev/sda1
+Checking filesystem on /dev/sda1
+UUID: 2deed283-bc4e-4d8b-bc6c-9ca035d90342
+checking extents
+checking free space cache
+checking fs roots
+checking csums
+checking root refs
+found 106157568114 bytes used err is 0
+total csum bytes: 102001828
+total tree bytes: 1585774592
+total fs tree bytes: 1387134976
+total extent tree bytes: 74448896
+btree space waste bytes: 348106294
+file data blocks allocated: 272060542976
+ referenced 190188584960
+
+Receive side only outputs this:
+sudo btrfs check -p /dev/sdc
+Couldn't open file system
+
+
+Scrub completes without errors on both FS.
+
 >>>
 >> Scrub does, don't know about btrfs check yet. Will run check and report back.
 >
-
-The receive-side FS outputs
-sudo btrfs check /dev/sde
-Couldn't open file system
-
-The send side
-
-
-
 > And actually it applies to both source and destination file systems.
-
-Yep, both have 0 errors for scrub.
-
 > Chances are it's the receive one that has the problem, but better to
 > be certain. Maybe send is sending something (?) that receive isn't
 > expecting and the problem is actually there?

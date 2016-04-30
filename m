@@ -1,25 +1,25 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wm0-f68.google.com ([74.125.82.68]:33687 "EHLO
-	mail-wm0-f68.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752176AbcD2MEW (ORCPT
+Received: from ipmail06.adl6.internode.on.net ([150.101.137.145]:53234 "EHLO
+	ipmail06.adl6.internode.on.net" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1752203AbcD3ALq (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 29 Apr 2016 08:04:22 -0400
-Date: Fri, 29 Apr 2016 14:04:18 +0200
-From: Michal Hocko <mhocko@kernel.org>
+	Fri, 29 Apr 2016 20:11:46 -0400
+Date: Sat, 30 Apr 2016 10:11:38 +1000
+From: Dave Chinner <david@fromorbit.com>
 To: NeilBrown <mr@neil.brown.name>
-Cc: linux-mm@kvack.org, linux-fsdevel@vger.kernel.org,
+Cc: Michal Hocko <mhocko@kernel.org>, linux-mm@kvack.org,
+        linux-fsdevel@vger.kernel.org,
         Andrew Morton <akpm@linux-foundation.org>,
-        Dave Chinner <david@fromorbit.com>, "Theodore Ts'o" <tytso@mit.edu>,
-        Chris Mason <clm@fb.com>, Jan Kara <jack@suse.cz>,
-        ceph-devel@vger.kernel.org, cluster-devel@redhat.com,
-        linux-nfs@vger.kernel.org, logfs@logfs.org, xfs@oss.sgi.com,
-        linux-ext4@vger.kernel.org, linux-btrfs@vger.kernel.org,
-        linux-mtd@lists.infradead.org, reiserfs-devel@vger.kernel.org,
-        linux-ntfs-dev@lists.sourceforge.net,
+        "Theodore Ts'o" <tytso@mit.edu>, Chris Mason <clm@fb.com>,
+        Jan Kara <jack@suse.cz>, ceph-devel@vger.kernel.org,
+        cluster-devel@redhat.com, linux-nfs@vger.kernel.org, logfs@logfs.org,
+        xfs@oss.sgi.com, linux-ext4@vger.kernel.org,
+        linux-btrfs@vger.kernel.org, linux-mtd@lists.infradead.org,
+        reiserfs-devel@vger.kernel.org, linux-ntfs-dev@lists.sourceforge.net,
         linux-f2fs-devel@lists.sourceforge.net, linux-afs@lists.infradead.org,
         LKML <linux-kernel@vger.kernel.org>
 Subject: Re: [PATCH 0/2] scop GFP_NOFS api
-Message-ID: <20160429120418.GK21977@dhcp22.suse.cz>
+Message-ID: <20160430001138.GO26977@dastard>
 References: <1461671772-1269-1-git-send-email-mhocko@kernel.org>
  <8737q5ugcx.fsf@notabene.neil.brown.name>
 MIME-Version: 1.0
@@ -28,7 +28,7 @@ In-Reply-To: <8737q5ugcx.fsf@notabene.neil.brown.name>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri 29-04-16 15:35:42, NeilBrown wrote:
+On Fri, Apr 29, 2016 at 03:35:42PM +1000, NeilBrown wrote:
 > On Tue, Apr 26 2016, Michal Hocko wrote:
 > 
 > > Hi,
@@ -53,52 +53,39 @@ On Fri 29-04-16 15:35:42, NeilBrown wrote:
 > 
 > This strikes me as over-engineering to work around an unnecessarily
 > burdensome interface.... but without details it is hard to be certain.
->
+> 
 > Exactly what things happen in "FS reclaim context" which may, or may
 > not, be safe depending on the specific FS allocation context?  Do they
 > need to happen at all?
-
-Let me quote Dave Chinner from one of the emails discussed at LSFMM
-mailing list:
-: IMO, making GFP_NOFS "better" cannot be done with context-less flags
-: being passed through reclaim. If we want to prevent the recursive
-: self-deadlock case in an optimal manner, then we need to be able to
-: pass state down to reclaim so that page writeback and the shrinkers
-: can determine if they are likely to deadlock.
-: 
-: IOWs, I think we should stop thinking of GFP_NOFS as a *global*
-: directive to avoid recursion under any circumstance and instead
-: start thinking about it as a mechanism to avoid recursion in
-: specific reclaim contexts.
-: 
-: Something as simple as adding an opaque cookie (e.g. can hold a
-: superblock or inode pointer) to check against in writeback and
-: subsystem shrinkers would result in the vast majority of GFP_NOFS
-: contexts being able to reclaim from everything but the one context
-: that we *might* deadlock against.
-: 
-: e.g, if we then also check the PF_FSTRANS flag in XFS, we'll
-: still be able to reclaim clean inodes, buffers and write back
-: dirty pages that don't require transactions to complete under "don't
-: recurse" situations because we know it's transactions that we could
-: deadlock on in the direct reclaim context.
-: 
-: Note that this information could be added to the writeback_control
-: for page writeback, and it could be passed directly to shrinkers
-: in the shrink_control structures. The allocation paths might be a
-: little harder, but I suspect using the task struct for passing this
-: information into direct reclaim might be the easiest approach...
-
+> 
 > My research suggests that for most filesystems the only thing that
 > happens in reclaim context that is at all troublesome is the final
 > 'evict()' on an inode.  This needs to flush out dirty pages and sync the
 > inode to storage.  Some time ago we moved most dirty-page writeout out
 > of the reclaim context and into kswapd.  I think this was an excellent
 > advance in simplicity.
+
+No, we didn't move dirty page writeout to kswapd - we moved it back
+to the background writeback threads where it can be done
+efficiently.  kswapd should almost never do single page writeback
+because of how inefficient it is from an IO perspective, even though
+it can. i.e. if we are doing any significant amount of dirty page
+writeback from memory reclaim (direct, kswapd or otherwise) then
+we've screwed something up.
+
 > If we could similarly move evict() into kswapd (and I believe we can)
 > then most file systems would do nothing in reclaim context that
 > interferes with allocation context.
-> 
+
+When lots of GFP_NOFS allocation is being done, this already
+happens. The shrinkers that can't run due to context accumulate the
+work on the shrinker structure, and when the shrinker can next run
+(e.g. run from kswapd) it runs all the deferred work from GFP_NOFS
+reclaim contexts.
+
+IOWs, we already move shrinker work from direct reclaim to kswapd
+when appropriate.
+
 > The exceptions include:
 >  - nfs and any filesystem using fscache can block for up to 1 second
 >    in ->releasepage().  They used to block waiting for some IO, but that
@@ -108,58 +95,68 @@ mailing list:
 >    elsewhere.
 > 
 >  - xfs_qm_shrink_scan is nearly unique among shrinkers in that it waits
->    for IO so it can free some quotainfo things.  If it could be changed
+>    for IO so it can free some quotainfo things. 
+
+No it's not. evict() can block on IO - waiting for data or inode
+writeback to complete, or even for filesystems to run transactions
+on the inode. Hence the superblock shrinker can and does block in
+inode cache reclaim.
+
+Indeed, blocking the superblock shrinker in reclaim is a key part of
+balancing inode cache pressure in XFS. If the shrinker starts
+hitting dirty inodes, it blocks on cleaning them, thereby slowing
+the rate of allocation to that which inodes can be cleaned and
+reclaimed. There are also background threads that walk ahead freeing
+clean inodes, but we have to throttle direct reclaim in this manner
+otherwise the allocation pressure vastly outweighs the ability to
+reclaim inodes. if we don't balance this, inode allocation triggers
+the OOM killer because reclaim keeps reporting "no progress being
+made" because dirty inodes are skipped. BY blocking on such inodes,
+the shrinker makes progress (slowly) and reclaim sees that memory is
+being freed and so continues without invoking the OOM killer...
+
+>    If it could be changed
 >    to just schedule the IO without waiting for it then I think this
 >    would be safe to be called in any FS allocation context.  It already
 >    uses a 'trylock' in xfs_dqlock_nowait() to avoid deadlocking
 >    if the lock is held.
-> 
+
+We could, but then we have the same problem as the inode cache -
+there's no indication of progress going back to the memory reclaim
+subsystem, nor is reclaim able to throttle memory allocation back to
+the rate at which reclaim is making progress.
+
+There's feedback loops all throughout the XFS reclaim code - it's
+designed specifically that way - I made changes to the shrinker
+infrastructure years ago to enable this. It's no different to the
+dirty page throttling that was done at roughly the same time -
+that's also one big feedback loop controlled by the rate at which
+pages can be cleaned. Indeed, it was designed was based on the same
+premise as all the XFS shrinker code: in steady state conditions
+we can't allocate a resource faster than we can reclaim it, so we
+need to make reclaim as efficient at possible...
+
 > I think you/we would end up with a much simpler system if instead of
 > focussing on the places where GFP_NOFS is used, we focus on places where
-> __GFP_FS is tested, and try to remove them.
+> __GFP_FS is tested, and try to remove them.  If we get rid of enough of
+> them the remainder could just use __GFP_IO.
 
-One think I have learned is that shrinkers can be really complex and
-getting rid of GFP_NOFS will be really hard so I would really like to
-start the easiest way possible and remove the direct usage and replace
-it by scope one which would at least _explain_ why it is needed. I think
-this is a reasonable _first_ step and a large step ahead because we have
-a good chance to get rid of a large number of those which were used
-"just because I wasn't sure and this should be safe, right?". I wouldn't
-be surprised if we end up with a very small number of both scope and
-direct usage in the end.
+The problem with this is that a single kswapd thread can't keep up
+with all of the allocation pressure that occurs. e.g. a 20-core
+intel CPU with local memory will be seen as a single node and so
+will have a single kswapd thread to do reclaim. There's a massive
+imbalance between maximum reclaim rate and maximum allocation rate
+in situations like this. If we want memory reclaim to run faster,
+we to be able to do more work *now*, not defer it to a context with
+limited execution resources.
 
-I would also like to revisit generic inode/dentry shrinker and see
-whether it could be more __GFP_FS friendly. As you say many FS might
-even not depend on some FS internal locks so pushing GFP_FS check down
-the layers might make a lot of sense and allow to clean some [id]cache
-even for __GFP_FS context.
+i.e. IMO deferring more work to a single reclaim thread per node is
+going to limit memory reclaim scalability and performance, not
+improve it.
 
-> If we get rid of enough of them the remainder could just use __GFP_IO.
-> 
-> > The patch 2 is a debugging aid which warns about explicit allocation
-> > requests from the scope context. This is should help to reduce the
-> > direct usage of the NOFS flags to bare minimum in favor of the scope
-> > API. It is not aimed to be merged upstream. I would hope Andrew took it
-> > into mmotm tree to give it linux-next exposure and allow developers to
-> > do further cleanups.  There is a new kernel command line parameter which
-> > has to be used for the debugging to be enabled.
-> >
-> > I think the GFP_NOIO should be seeing the same clean up.
-> 
-> I think you are suggesting that use of GFP_NOIO should (largely) be
-> deprecated in favour of memalloc_noio_save().  I think I agree.
+Cheers,
 
-Yes that was the idea.
-
-> Could we go a step further and deprecate GFP_ATOMIC in favour of some
-> in_atomic() test?  Maybe that is going too far.
-
-I am not really sure we need that and some GFP_NOWAIT usage is deliberate
-to perform an optimistic allocation with another fallback (e.g. higher order
-for performance reasons with single page fallback). So I think that nowait
-is a slightly different thing.
-
-Thanks!
+Dave.
 -- 
-Michal Hocko
-SUSE Labs
+Dave Chinner
+david@fromorbit.com

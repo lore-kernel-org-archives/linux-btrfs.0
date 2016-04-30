@@ -1,273 +1,103 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:52661 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750800AbcD3BZf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 29 Apr 2016 21:25:35 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1awJf2-0001F8-Dy
-	for linux-btrfs@vger.kernel.org; Sat, 30 Apr 2016 03:25:32 +0200
-Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sat, 30 Apr 2016 03:25:32 +0200
-Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sat, 30 Apr 2016 03:25:32 +0200
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: recovery problem raid5
-Date: Sat, 30 Apr 2016 01:25:27 +0000 (UTC)
-Message-ID: <pan$b939a$5be842ed$a7dd852d$165642d6@cox.net>
-References: <CAEr_6SvhqyiyHiyU9CwSP9stN__6SwT-KbF2MXhr8EvFTVyjjQ@mail.gmail.com>
-Mime-Version: 1.0
+Received: from mail-lf0-f54.google.com ([209.85.215.54]:34566 "EHLO
+	mail-lf0-f54.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751357AbcD3K1D (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 30 Apr 2016 06:27:03 -0400
+Received: by mail-lf0-f54.google.com with SMTP id j11so162848071lfb.1
+        for <linux-btrfs@vger.kernel.org>; Sat, 30 Apr 2016 03:27:01 -0700 (PDT)
+MIME-Version: 1.0
+In-Reply-To: <CAJCQCtRk+V0vhdCsyi-3aoNDimV0E4XJjQc9Us35uO59HpjSAQ@mail.gmail.com>
+References: <CAGGqMYQPVQoKDcuDqp0D=3BCD+oTghew0fyzqo58BSLFrmrEJQ@mail.gmail.com>
+	<CAJCQCtTG68BicgFwoyYgM0OzphsVbstgWTNybF3CeBo1VCJhNg@mail.gmail.com>
+	<CAGGqMYTso0XNjgfmWfY8g3Xs9xym5gHFcTizzAq1_Y-mMTTx0w@mail.gmail.com>
+	<CAJCQCtRk+V0vhdCsyi-3aoNDimV0E4XJjQc9Us35uO59HpjSAQ@mail.gmail.com>
+Date: Sat, 30 Apr 2016 12:27:00 +0200
+Message-ID: <CAGGqMYQ-ibDZdke0PdPGyJ=jm90Z-zpVtUUJUyZnn0PqE7Jw2Q@mail.gmail.com>
+Subject: Re: receive snapshot, complains about missing file
+From: Alexander Fougner <fougner89@gmail.com>
+To: Chris Murphy <lists@colorremedies.com>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Pierre-Matthieu anglade posted on Fri, 29 Apr 2016 11:24:12 +0000 as
-excerpted:
+2016-04-29 22:28 GMT+02:00 Chris Murphy <lists@colorremedies.com>:
+> On Fri, Apr 29, 2016 at 2:20 PM, Alexander Fougner <fougner89@gmail.com> wrote:
+>> 2016-04-29 22:17 GMT+02:00 Chris Murphy <lists@colorremedies.com>:
+>>> On Fri, Apr 29, 2016 at 2:01 PM, Alexander Fougner <fougner89@gmail.com> wrote:
+>>>> Hello,
+>>>>
+>>>> Kernel 4.4.x and progs 4.5.1 on both client/host.
+>>>>
+>>>> As the topic says, I noticed that my automatic backus stopped working
+>>>> a while back. The cause seems to be related to snapshot
+>>>> inconsistencies.
+>>>>
+>>>> WARNING: [btrfs send/receive]
+>>>> (send=/mnt/btrfs_pool/__snapshots/@home.20160404,
+>>>> receive=/srv/backup/optimus) At subvol
+>>>> /mnt/btrfs_pool/__snapshots/@home.20160404
+>>>> WARNING: [btrfs send/receive]
+>>>> (send=/mnt/btrfs_pool/__snapshots/@home.20160404,
+>>>> receive=/srv/backup/optimus) At snapshot @home.20160404
+>>>> ERROR: cannot open
+>>>> srv/backup/optimus/@home.20160403/alex/Android/LNU/Ass1/.gradle/2.8/taskArtifacts/taskArtifacts.bin:
+>>>> No such file or directory
+>>>> ERROR: Failed to send/receive btrfs subvolume:
+>>>> /mnt/btrfs_pool/__snapshots/@home.20160404
+>>>> [/mnt/btrfs_pool/__snapshots/@home.20160403] ->
+>>>> fractal:/srv/backup/optimus
+>>>> WARNING: Deleted partially received (garbled) subvolume:
+>>>> fractal:/srv/backup/optimus/@home.20160404
+>>>> ERROR: Error while resuming backups, aborting
+>>>>
+>>>> However, the file exists in all relevant places.
+>>>>
+>>>> This is the relevant part from btrfs receive -vvv, before it stops working.
+>>>>
+>>>> rename o1283816-161574-0 -> alex/Android/LNU/Ass1
+>>>> (kopia)/.gradle/2.8/taskArtifacts/cache.properties
+>>>> utimes alex/Android/LNU/Ass1 (kopia)/.gradle/2.8/taskArtifacts
+>>>> truncate alex/Android/LNU/Ass1
+>>>> (kopia)/.gradle/2.8/taskArtifacts/cache.properties size=30
+>>>> chown alex/Android/LNU/Ass1
+>>>> (kopia)/.gradle/2.8/taskArtifacts/cache.properties - uid=1000,
+>>>> gid=1000
+>>>> chmod alex/Android/LNU/Ass1
+>>>> (kopia)/.gradle/2.8/taskArtifacts/cache.properties - mode=0664
+>>>> utimes alex/Android/LNU/Ass1 (kopia)/.gradle/2.8/taskArtifacts/cache.properties
+>>>> mkfile o1283817-161574-0
+>>>> rename o1283817-161574-0 -> alex/Android/LNU/Ass1
+>>>> (kopia)/.gradle/2.8/taskArtifacts/taskArtifacts.bin
+>>>> utimes alex/Android/LNU/Ass1 (kopia)/.gradle/2.8/taskArtifacts
+>>>> ERROR: cannot open
+>>>> srv/backup/optimus/@home.20160403/alex/Android/LNU/Ass1/.gradle/2.8/taskArtifacts/taskArtifacts.bin:
+>>>> No such file or directory
+>>>>
+>>>>
+>>>
+>>> Do scrub and btrfs check (no repair) complete without errors?
+>>>
+>> Scrub does, don't know about btrfs check yet. Will run check and report back.
+>
 
-> Setting up and then testing a system I've stumbled upon something that
-> looks exactly similar to the behaviour depicted by Marcin Solecki here
-> https://www.spinics.net/lists/linux-btrfs/msg53119.html.
-> 
-> Maybe unlike Martin I still have all my disk working nicely. So the Raid
-> array is OK, the system running on it is ok. But If I remove one of the
-> drive and try to mount in degraded mode, mounting the filesystem, and
-> then recovering fails.
-> 
-> More precisely, the situation is the following :
-> # uname -a
-> Linux ubuntu 4.4.0-21-generic #37-Ubuntu SMP Mon Apr 18
-> 18:33:37 UTC 2016 x86_64 x86_64 x86_64 GNU/Linu
-> 
-> # btrfs --version btrfs-progs v4.4
+The receive-side FS outputs
+sudo btrfs check /dev/sde
+Couldn't open file system
 
-4.4 kernel and progs.  You are to be commended. =:^)
+The send side
 
-Unfortunately too many people report way old versions here, apparently 
-not taking into account that btrfs in general is still stabilizing, not 
-fully stable and mature, and that as a result what they're running is 
-many kernels and fixed bugs ago.
 
-And FWIW, btrfs parity-raid, aka raid56 mode, is newer still, and while 
-nominally complete for a year with the release of 4.4 (original nominal 
-completion in 3.19), still remains less stable than redundancy-raid, aka 
-raid1 or raid10 modes.  In fact, there's still known bugs in raid56 mode 
-in the current 4.5, and presumably in the upcoming 4.6 as well, as I've 
-not seen discussion indicating they've actually fully traced the bugs and 
-been able to fix them just yet.
 
-So while btrfs in general, being still not yet fully stable, isn't yet 
-really recommended unless you're using data you can afford to lose, 
-either because it's backed up, or because it really is data you can 
-afford to lose, for raid56 that's *DEFINITELY* the case, because (as 
-you've nicely demonstrated) there are known bugs that can affect raid56 
-recovery from degraded, to the point it's known that btrfs raid56 can't 
-always be relied upon, so you *better* either have backups and be 
-prepared to use them, or simply not put anything on the btrfs raid56 that 
-you're not willing to lose in the first place.
+> And actually it applies to both source and destination file systems.
 
-That's the general picture.  Btrfs raid56 is strongly negatively-
-recommended for anything but testing usage, at this point, as there are 
-still known bugs that can affect degraded recovery.
+Yep, both have 0 errors for scrub.
 
-There's a bit more specific suggestions and detail below.
-
-> # btrfs fi show
-> warning, device 1 is missing
-> warning, device 1 is missing
-> warning devid 1 not found already
-> bytenr mismatch, want=125903568896, have=125903437824
-> Couldn't read tree root Label: none
->  uuid: 26220e12-d6bd-48b2-89bc-e5df29062484
->     Total devices 4 FS bytes used 162.48GiB
->     devid    2 size 2.71TiB used 64.38GiB path /dev/sdb2
->     devid    3 size 2.71TiB used 64.91GiB path /dev/sdc2
->     devid    4 size 2.71TiB used 64.91GiB path /dev/sdd2
->     *** Some devices missing
-
-Unfortunately you can't get it if the filesystem won't mount, but a btrfs 
-fi usage (newer, should work with 4.4) or btrfs fi df (should work with 
-pretty much any btrfs-tools, going back a very long way, but needs to be 
-combined with btrfs fi show output as well to interpret) would have been 
-very helpful, here.  Nothing you can do about it when you can't mount, 
-but if you had saved the output before the first device removal/replace 
-and again before the second, that would have been useful information to 
-have.
-
-> # mount -o degraded /dev/sdb2 /mnt
-> mount: /dev/sdb2: can't read superblock
-> 
-> # dmesg |tail
-> [12852.044823] BTRFS info (device sdd2): allowing degraded mounts
-> [12852.044829] BTRFS info (device sdd2): disk space caching is enabled
-> [12852.044831] BTRFS: has skinny extents
-> [12852.073746] BTRFS error (device sdd2): bad tree block
-> start 196608 125257826304
-> [12852.121589] BTRFS: open_ctree failed
-
-FWIW, tho you may already have known/gathered this, open ctree failed is 
-the generic btrfs mount failure message.  The bad tree block error does 
-tell you what block failed to read, but that's more an aid to developer 
-debugging than help at the machine admin level.
- 
-> ----------------
-> In case it may help I came there the following way :
-> 1) *I've installed ubuntu on a single btrfs partition.
-> * Then I have added 3 other partitions
-> * convert the whole thing to a raid5 array
-> * play with the system and shut-down
-
-Presumably you used btrfs device add and then btrfs balance to do the 
-convert.  Do you perhaps remember the balance command you used?
-
-Or more precisely, were you sure to balance-convert both data AND 
-metadata to raid5?
-
-Here's where the output of btrfs fi df and/or btrfs fi usage would have 
-helped, since that would have displayed exactly what chunk formats were 
-actually being used.
-
-> 2) * Removed drive sdb and replaced it with a new drive
-> * restored the whole thing (using a livecd, and btrfs replace)
-> * reboot
-> * checked that the system is still working
-> * shut-down
-
-> 3) *removed drive sda and replaced it with a new one
-> * tried to perform the exact same operations I did when replacing sdb.
-> * It fails with some messages (not quite sure they were the same as
-> above).
-> * shutdown
-
-> 4) * put back sda
-> * check that I don't get any error message with my btrfs raid
-
-> 5. So I'm sure nothings looks like being corrupted
-> * shut-down
-
-> 5) * tried again step 3.
-> * get the messages shown above.
-> 
-> I guess I can still put back my drive sda and get my btrfs working.
-> I'd be quite grateful for any comment or help.
-> I'm wondering if in my case the problem is not comming from the fact the
-> tree root (or something of that kind living only on sda) has not been
-> replicated when setting up the raid array ?
-
-Summary to ensure I'm getting it right:
-
-a) You had a working btrfs raid5
-b) You replaced one drive, which _appeared_ to work fine.
-c) Reboot. (So it can't be a simple problem of btrfs getting confused 
-with the device changes in memory)
-d) You tried to replace a second and things fell apart.
-
-Unfortunately, an as yet not fully traced bug with exactly this sort of 
-serial replace is actually one of the known bug's they're still 
-investigating.  It's one of at least two known bugs that are severe 
-enough to keep raid56 mode from stabilizing to the general level of the 
-rest of btrfs and to continue to force that strongly negative-
-recommendation on anything but testing usage with data that can be safely 
-lost, either because it's fully backed up or because it really is trivial 
-testing data the loss of which is no big deal.
-
-Btrfs fi usage after the first replace may or may not have displayed a 
-problem.  Similarly, btrfs scrub may or may not have detected and/or 
-fixed a problem.  And again with btrfs check.  The problem right now is 
-that while we have lots of reports of the serial replace bug, we don't 
-have enough people confirmably doing these things after the first replace 
-and reporting the results to know if they detect and possibly fix the 
-issue, allowing the second replace to work fine if fixed, or not.
-
-In terms of a fix, I'm not a dev, just a btrfs user (raid1 and dup 
-modes), and not sure of the current status based on list discussion.  But 
-I do know it has been multi-reported by enough sources to be considered a 
-known bug so the devs are looking into it, and that it's considered bad 
-enough to keep btrfs parity raid from being considered anything close to 
-the stability of btrfs in general, until such time as a fix is merged.  
-
-I'd suggest waiting until at least 4.8 (better 4.9) before 
-reconsideration for your own use, however, as it doesn't look like the 
-fixes will make 4.6, and even if they hit 4.7, a couple of releases 
-without any critical bugs before considering it usable won't hurt.
-
-Recommended alternatives? Btrfs raid1 and raid10 modes are considered to 
-be at the same stability level as btrfs in general and I use btrfs raid1 
-myself.  Because btrfs redundant-raid modes are all exactly two copy, 
-four devices (assuming same-size) will give you two devices worth of 
-usable space in either raid1 or raid10 mode.  That's down from the three 
-devices worth of usable space you'd get with raid5, but unlike btrfs 
-raid5, btrfs raid1 and raid10 are actually usably stable and generally 
-recoverable from single-device-loss, tho with btrfs itself still 
-considered stabilizing, not fully stable and mature, backups are still 
-strongly recommended.
-
-Of course there's also mdraid and dmraid, on top of which you can run 
-btrfs as well as other filesystems, but neither of those raid 
-alternatives do the routine data integrity checks that btrfs does (when 
-it's working correctly, of course), and btrfs, seeing a single device, 
-will still do them and detect damage, but won't be able to actually fix 
-it as it does in btrfs raid1/10 and does when working in raid56 mode.  
-Unless you use btrfs dup mode on the single-device upper layer of course, 
-but in that case it would be more efficient to use btrfs raid1 on the 
-lower layers.
-
-Another possible alternative is btrfs raid1, on a pair of mdraid0s (or 
-dmraid if you prefer).  This still gets the data integrity and repair at 
-the btrfs raid1 level, while the underlying md/dmraid0s help speed things 
-up a bit compared to the not yet optimized btrfs raid10.
-
-Of course you can and may in fact wish to return to older and more mature 
-filesystems like ext4, or the reiserfs I use here, possibly on top of md/
-dmraid, but of course neither of them actually do the normal mode 
-checksumming and verification that btrfs does, only using their 
-redundancy or parity in recovery situations.
-
-And of course there's zfs, most directly comparable to btrfs' feature set 
-and much more mature, but with hardware and licensing issues.  Hardware-
-wise, on Linux it requires relatively huge amounts of ECC-RAM, compared 
-to btrfs.  (Its data integrity verification depends far more on error-
-free memory than btrfs, and without ECC-RAM, if there is a memory error, 
-it can corrupt zfs, where btrfs would simply trigger an error.  So ECC-
-RAM is very strongly recommended and AFAIK no guarantees are made with 
-regard to running it without ECC-RAM.)  But for zfs on Linux, if you're 
-looking at existing hardware that lacks ECC-memory capacities, it's 
-almost certainly cheaper to simply get another couple drives if you 
-really need that third drive's space worth and do btrfs raid1 or raid10, 
-than to switch to ECC-memory compatible hardware.
-
-As for zfs licensing issues you may or may not care, and apparently 
-Ubuntu considers them minor enough to ship zfs now, but I'll just say 
-they make zfs a non-option for me.
-
-Of course you can always switch to one of the bsds with zfs support if 
-you're more comfortable with than than running zfs on linux.
-
-But regardless of all the above, zfs remains the most directly btrfs 
-comparable actually stable and mature filesystem solution out there, so 
-if that's your priority above all the other things, you'll probably find 
-a way to run it.
-
-(FWIW, the other severe known raid56 bug has to do with (sometimes, not 
-always, thus complicating tracing the bug) extremely slow balances in 
-ordered to restripe to more or less devices, as one might do instead of 
-failed device replacement or simply to change the number of devices in 
-the array, to the point that completion could take weeks, so long that 
-the chance of a device death during the balance is non-trivial, which 
-means while the process technically works, in practice it's not actually 
-usable.  Given that similar to the bug you came across, the ability to do 
-this sort of thing is one of the traditional uses of parity-raid, being 
-so slow as to be practically unusable makes this bug a blocker in terms 
-of btrfs raid56 stability and ability to recommend it for use.  Both 
-these bugs will need to be fixed, with no others at the same level 
-showing up, before btrfs raid56 mode can be properly recommended for 
-anything but testing use.)
-
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+> Chances are it's the receive one that has the problem, but better to
+> be certain. Maybe send is sending something (?) that receive isn't
+> expecting and the problem is actually there?
+>
+>
+> --
+> Chris Murphy

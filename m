@@ -1,50 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:37504 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752088AbcEAU54 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 1 May 2016 16:57:56 -0400
-Subject: Re: [PATCH 2/3] btrfs: keep sysfs target add in the last
-To: dsterba@suse.cz, linux-btrfs@vger.kernel.org
-References: <1458816494-483-1-git-send-email-anand.jain@oracle.com>
- <1458816494-483-2-git-send-email-anand.jain@oracle.com>
- <20160425162358.GD29353@twin.jikos.cz>
-From: Anand Jain <anand.jain@oracle.com>
-Message-ID: <57266DCF.3050205@oracle.com>
-Date: Mon, 2 May 2016 04:57:51 +0800
-MIME-Version: 1.0
-In-Reply-To: <20160425162358.GD29353@twin.jikos.cz>
-Content-Type: text/plain; charset=windows-1252; format=flowed
+Received: from plane.gmane.org ([80.91.229.3]:41134 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752352AbcEAXQu (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 1 May 2016 19:16:50 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+	id 1ax0bX-0006Wz-P3
+	for linux-btrfs@vger.kernel.org; Mon, 02 May 2016 01:16:47 +0200
+Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Mon, 02 May 2016 01:16:47 +0200
+Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Mon, 02 May 2016 01:16:47 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: commands like "du", "df", and "btrfs fs sync" hang
+Date: Sun, 1 May 2016 23:16:41 +0000 (UTC)
+Message-ID: <pan$d1f0f$8ccdf372$96201635$9cec331b@cox.net>
+References: <20160501090046.638fc2c6@jupiter.sol.kaishome.de>
+	<pan$1c3f$713ccc59$ba5354e3$ceefdfd6@cox.net>
+	<CAMU1PDj99OSwFy7Ep9g43uezNLEGoziqPn3kzhUUqeEMRNTWgg@mail.gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Mike Fleetwood posted on Sun, 01 May 2016 14:54:44 +0100 as excerpted:
 
+> On 1 May 2016 at 13:47, Duncan <1i5t5.duncan@cox.net> wrote:
+>> Direct from that section of my /etc/sysctl.conf:
+>>
+>> ################################################################################
+>> # Virtual-machine: swap, write-cache
+> 
+> Hi Duncan,
+> 
+> You mean virtual memory.
 
-On 04/26/2016 12:23 AM, David Sterba wrote:
-> On Thu, Mar 24, 2016 at 06:48:13PM +0800, Anand Jain wrote:
->> Sysfs create context should come in the last, so that we
->> don't have to undo sysfs operation for the reason that any
->> other operation has failed.
->
-> Moving the sysfs call will make a visible change: in the old code, the
-> sysfs node exists during the whole replace process, while in the new
-> code it appears only after it finishes.
+Yes, thanks for catching that.  I had figured that out at some point, but the
+virtual-machine comment was from before that and I guess I never changed it.
+Additionally, I'm used to VM in the machine not memory context, so still slip
+up and write machine even when I'm talking about memory from time to time.
+=:^( )
 
-> While this is not necessarily a
-> problem, I'd like to check that his is an intended change, as it's not
-> mentioned in the changelog.
+I'll change that comment as soon as I send this, and hopefully the specific
+discussion will tune my sensitivity to it enough that I quit making that
+mistake in discussion from now on, as well.  So thanks again. =:^)
 
-  Ah. I missed this point.
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 
-> Besides, the sysfs node seems to be added unconditionally, so if the
-> scrub is running in parallel (checked a few lines above the new code),
-> we'll happily add the target device although no replace happened.
-
-Replace may take a long time, We definitely need devid 0 shown at
-sysfs. Apparently we don't have the undo-sysfs part in the original
-code, which this patch tried to mitigate, but it needs a deeper fix.
-I have to pull this patch out and leave the original bug as is for now.
-
-Further we need to handle fail return of btrfs_dev_replace_finishing()
-which seeks sysfs and rest of the stuff un-done as well.
-
-Thanks, Anand

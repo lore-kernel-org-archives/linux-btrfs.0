@@ -1,102 +1,240 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from james.kirk.hungrycats.org ([174.142.39.145]:34084 "EHLO
-	james.kirk.hungrycats.org" rhost-flags-OK-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1756896AbcEDBTj (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 3 May 2016 21:19:39 -0400
-Date: Tue, 3 May 2016 21:10:09 -0400
-From: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
+Received: from mx2.suse.de ([195.135.220.15]:51783 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753263AbcEBIdV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 2 May 2016 04:33:21 -0400
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+	by mx2.suse.de (Postfix) with ESMTP id B1D8CAB08
+	for <linux-btrfs@vger.kernel.org>; Mon,  2 May 2016 08:33:19 +0000 (UTC)
+From: David Sterba <dsterba@suse.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH, maybe WRONG] btrfs: don't let btrfs_recover_relocation get
- stuck waiting for cleaner_kthread to delete a snapshot
-Message-ID: <20160504011009.GB15597@hungrycats.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Cc: David Sterba <dsterba@suse.com>
+Subject: [PATCH] btrfs-progs: add safety delay before starting full balance
+Date: Mon,  2 May 2016 10:33:04 +0200
+Message-Id: <1462177984-23980-1-git-send-email-dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is one way to fix a long hang during mounts.  There's probably a
-better way, but this is the one I've used to get my filesystems up
-and running.
+A short delay with a warning before starting a full balance should
+improve usability. We have been getting reports from people who run full
+balance after following some random advice and then get surprised by the
+performance impact.
 
-We start the cleaner kthread first because the transaction kthread wants
-to wake up the cleaner kthread.  We start the transaction kthread next
-because everything in btrfs wants transactions.  We do reloc recovery
-once the transaction kthread is running.  This means that the cleaner
-kthread could already be running when reloc recovery happens (e.g. if a
-snapshot delete was started before a crash).
+The countdown is done even when run from scripts, but as the whole
+balance takes significanly more time, this shouldn't be an issue.
 
-Reloc recovery does not play well with the cleaner kthread, so a mutex
-was added in commit 5f3164813b90f7dbcb5c3ab9006906222ce471b7 "Btrfs:
-fix race between balance recovery and root deletion" to prevent both
-from running at the same time.
-
-The cleaner kthread could already be holding the mutex by the time we
-get to btrfs_recover_relocation, and if it is, the mount will be blocked
-until at least one snapshot is deleted (possibly more if the mount process
-doesn't get the lock right away).  During this time (which could be an
-arbitrarily long time on a large/slow filesystem), the mount process is
-stuck and the filesystem is unnecessarily inaccessible.
-
-Fix this by locking cleaner_mutex before we start the cleaner_kthread,
-and unlocking it when we have finished with it in the mount function.
-This allows the mount to proceed to completion before resuming snapshot
-deletion.  I'm not sure about the error cases, and the asymmetrical
-pthread_mutex_lock/unlocks are just ugly.  Other than that, this patch
-works.
-
-An alternative (and possibly better) solution would be to add an extra
-check in btrfs_need_cleaner_sleep() for a flag that would be set at the
-end of mounting.  This should keep cleaner_kthread sleeping until just
-before mount is finished.
-
-
+Signed-off-by: David Sterba <dsterba@suse.com>
 ---
- fs/btrfs/disk-io.c | 9 +++++++--
- 1 file changed, 7 insertions(+), 2 deletions(-)
+ Documentation/btrfs-balance.asciidoc |  6 ++++
+ cmds-balance.c                       | 65 ++++++++++++++++++++++++++++++------
+ 2 files changed, 60 insertions(+), 11 deletions(-)
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 07c1ad6..af5ea1d 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -2927,6 +2927,10 @@ retry_root_backup:
- 			"too many missing devices, writeable mount should not be allowed\n");
- 	}
+diff --git a/Documentation/btrfs-balance.asciidoc b/Documentation/btrfs-balance.asciidoc
+index 8b5df96ad41f..7df40b9c6f49 100644
+--- a/Documentation/btrfs-balance.asciidoc
++++ b/Documentation/btrfs-balance.asciidoc
+@@ -67,6 +67,12 @@ resume interrupted balance
+ start the balance operation according to the specified filters, no filters
+ will rewrite the entire filesystem. The process runs in the foreground.
+ +
++NOTE: the balance command without filters will basically rewrite everything
++in the filesystem. The run time is potentially very long, depending on the
++filesystem size. To prevent starting a full balance by accident, the user is
++warned and has a few seconds to cancel the operation before it starts. The
++warning and delay can be skipped with '--full-balance' option.
+++
+ `Options`
+ +
+ -d[<filters>]::::
+diff --git a/cmds-balance.c b/cmds-balance.c
+index 33f91e41134e..5f05f603d4c8 100644
+--- a/cmds-balance.c
++++ b/cmds-balance.c
+@@ -417,8 +417,13 @@ static int do_balance_v1(int fd)
+ 	return ret;
+ }
  
-+	/* Hold the cleaner_mutex thread here so that we don't block
-+	 * on btrfs_recover_relocation later on.  cleaner_kthread
-+	 * blocks on us instead. */
-+	mutex_lock(&fs_info->cleaner_mutex);
- 	fs_info->cleaner_kthread = kthread_run(cleaner_kthread, tree_root,
- 					       "btrfs-cleaner");
- 	if (IS_ERR(fs_info->cleaner_kthread))
-@@ -2986,9 +2990,8 @@ retry_root_backup:
- 		if (ret)
- 			goto fail_qgroup;
++enum {
++	BALANCE_START_FILTERS = 1 << 0,
++	BALANCE_START_NOWARN  = 1 << 1
++};
++
+ static int do_balance(const char *path, struct btrfs_ioctl_balance_args *args,
+-		      int nofilters)
++		      unsigned flags)
+ {
+ 	int fd;
+ 	int ret;
+@@ -429,6 +434,24 @@ static int do_balance(const char *path, struct btrfs_ioctl_balance_args *args,
+ 	if (fd < 0)
+ 		return 1;
  
--		mutex_lock(&fs_info->cleaner_mutex);
-+		/* We grabbed this mutex before we created the cleaner_kthread */
- 		ret = btrfs_recover_relocation(tree_root);
--		mutex_unlock(&fs_info->cleaner_mutex);
- 		if (ret < 0) {
- 			printk(KERN_WARNING
- 			       "BTRFS: failed to recover relocation\n");
-@@ -2996,6 +2999,7 @@ retry_root_backup:
- 			goto fail_qgroup;
++	if (!(flags & BALANCE_START_FILTERS) && !(flags & BALANCE_START_NOWARN)) {
++		int delay = 10;
++
++		printf("WARNING:\n\n");
++		printf("\tFull balance without filters requested. This operation is very\n");
++		printf("\tintense and takes potentially very long. It is recommended to\n");
++		printf("\tuse the balance filters to narrow down the balanced data.\n");
++		printf("\tUse 'btrfs balance start --full-balance' option to skip this\n");
++		printf("\twarning. The operation will start in %d seconds.\n", delay);
++		printf("\tUse Ctrl-C to stop it.\n");
++		while (delay) {
++			sleep(1);
++			printf("%2d", delay--);
++			fflush(stdout);
++		}
++		printf("\nStarting balance without any filters.\n");
++	}
++
+ 	ret = ioctl(fd, BTRFS_IOC_BALANCE_V2, args);
+ 	e = errno;
+ 
+@@ -438,7 +461,7 @@ static int do_balance(const char *path, struct btrfs_ioctl_balance_args *args,
+ 		 * old one.  But, the old one doesn't know any filters, so
+ 		 * don't fall back if they tried to use the fancy new things
+ 		 */
+-		if (e == ENOTTY && nofilters) {
++		if (e == ENOTTY && !(flags & BALANCE_START_FILTERS)) {
+ 			ret = do_balance_v1(fd);
+ 			if (ret == 0)
+ 				goto out;
+@@ -477,13 +500,16 @@ static const char * const cmd_balance_start_usage[] = {
+ 	"passed all filters in a comma-separated list of filters for a",
+ 	"particular chunk type.  If filter list is not given balance all",
+ 	"chunks of that type.  In case none of the -d, -m or -s options is",
+-	"given balance all chunks in a filesystem.",
++	"given balance all chunks in a filesystem. This is potentially",
++	"long operation and the user is warned before this start, with",
++	"a delay to stop it.",
+ 	"",
+ 	"-d[filters]    act on data chunks",
+ 	"-m[filters]    act on metadata chunks",
+ 	"-s[filters]    act on system chunks (only under -f)",
+ 	"-v             be verbose",
+ 	"-f             force reducing of metadata integrity",
++	"--full-balance do not print warning and do not delay start",
+ 	NULL
+ };
+ 
+@@ -494,19 +520,22 @@ static int cmd_balance_start(int argc, char **argv)
+ 						&args.meta, NULL };
+ 	int force = 0;
+ 	int verbose = 0;
+-	int nofilters = 1;
++	unsigned start_flags = 0;
+ 	int i;
+ 
+ 	memset(&args, 0, sizeof(args));
+ 
+ 	optind = 1;
+ 	while (1) {
++		enum { GETOPT_VAL_FULL_BALANCE = 256 };
+ 		static const struct option longopts[] = {
+ 			{ "data", optional_argument, NULL, 'd'},
+ 			{ "metadata", optional_argument, NULL, 'm' },
+ 			{ "system", optional_argument, NULL, 's' },
+ 			{ "force", no_argument, NULL, 'f' },
+ 			{ "verbose", no_argument, NULL, 'v' },
++			{ "full-balance", no_argument, NULL,
++				GETOPT_VAL_FULL_BALANCE },
+ 			{ NULL, 0, NULL, 0 }
+ 		};
+ 
+@@ -516,21 +545,21 @@ static int cmd_balance_start(int argc, char **argv)
+ 
+ 		switch (opt) {
+ 		case 'd':
+-			nofilters = 0;
++			start_flags |= BALANCE_START_FILTERS;
+ 			args.flags |= BTRFS_BALANCE_DATA;
+ 
+ 			if (parse_filters(optarg, &args.data))
+ 				return 1;
+ 			break;
+ 		case 's':
+-			nofilters = 0;
++			start_flags |= BALANCE_START_FILTERS;
+ 			args.flags |= BTRFS_BALANCE_SYSTEM;
+ 
+ 			if (parse_filters(optarg, &args.sys))
+ 				return 1;
+ 			break;
+ 		case 'm':
+-			nofilters = 0;
++			start_flags |= BALANCE_START_FILTERS;
+ 			args.flags |= BTRFS_BALANCE_METADATA;
+ 
+ 			if (parse_filters(optarg, &args.meta))
+@@ -542,6 +571,9 @@ static int cmd_balance_start(int argc, char **argv)
+ 		case 'v':
+ 			verbose = 1;
+ 			break;
++		case GETOPT_VAL_FULL_BALANCE:
++			start_flags |= BALANCE_START_NOWARN;
++			break;
+ 		default:
+ 			usage(cmd_balance_start_usage);
  		}
+@@ -567,7 +599,7 @@ static int cmd_balance_start(int argc, char **argv)
+ 			sizeof(struct btrfs_balance_args));
  	}
-+	mutex_unlock(&fs_info->cleaner_mutex);
  
- 	location.objectid = BTRFS_FS_TREE_OBJECTID;
- 	location.type = BTRFS_ROOT_ITEM_KEY;
-@@ -3079,6 +3083,7 @@ fail_cleaner:
- 	filemap_write_and_wait(fs_info->btree_inode->i_mapping);
+-	if (nofilters) {
++	if (!(start_flags & BALANCE_START_FILTERS)) {
+ 		/* relocate everything - no filters */
+ 		args.flags |= BTRFS_BALANCE_TYPE_MASK;
+ 	}
+@@ -595,7 +627,7 @@ static int cmd_balance_start(int argc, char **argv)
+ 	if (verbose)
+ 		dump_ioctl_balance_args(&args);
  
- fail_sysfs:
-+	mutex_unlock(&fs_info->cleaner_mutex);
- 	btrfs_sysfs_remove_one(fs_info);
+-	return do_balance(argv[optind], &args, nofilters);
++	return do_balance(argv[optind], &args, start_flags);
+ }
  
- fail_block_groups:
+ static const char * const cmd_balance_pause_usage[] = {
+@@ -833,6 +865,16 @@ static int cmd_balance_status(int argc, char **argv)
+ 	return 1;
+ }
+ 
++static int cmd_balance_full(int argc, char **argv)
++{
++	struct btrfs_ioctl_balance_args args;
++
++	memset(&args, 0, sizeof(args));
++	args.flags |= BTRFS_BALANCE_TYPE_MASK;
++
++	return do_balance(argv[1], &args, BALANCE_START_NOWARN);
++}
++
+ static const char balance_cmd_group_info[] =
+ "balance data accross devices, or change block groups using filters";
+ 
+@@ -843,20 +885,21 @@ const struct cmd_group balance_cmd_group = {
+ 		{ "cancel", cmd_balance_cancel, cmd_balance_cancel_usage, NULL, 0 },
+ 		{ "resume", cmd_balance_resume, cmd_balance_resume_usage, NULL, 0 },
+ 		{ "status", cmd_balance_status, cmd_balance_status_usage, NULL, 0 },
++		{ "--full-balance", cmd_balance_full, NULL, NULL, 1 },
+ 		NULL_CMD_STRUCT
+ 	}
+ };
+ 
+ int cmd_balance(int argc, char **argv)
+ {
+-	if (argc == 2) {
++	if (argc == 2 && strcmp("start", argv[1]) != 0) {
+ 		/* old 'btrfs filesystem balance <path>' syntax */
+ 		struct btrfs_ioctl_balance_args args;
+ 
+ 		memset(&args, 0, sizeof(args));
+ 		args.flags |= BTRFS_BALANCE_TYPE_MASK;
+ 
+-		return do_balance(argv[1], &args, 1);
++		return do_balance(argv[1], &args, 0);
+ 	}
+ 
+ 	return handle_command_group(&balance_cmd_group, argc, argv);
 -- 
-2.1.4
+2.7.1
 

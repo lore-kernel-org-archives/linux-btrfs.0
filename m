@@ -1,66 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pa0-f51.google.com ([209.85.220.51]:35911 "EHLO
-	mail-pa0-f51.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754390AbcEBVzE (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 2 May 2016 17:55:04 -0400
-Received: by mail-pa0-f51.google.com with SMTP id bt5so574968pac.3
-        for <linux-btrfs@vger.kernel.org>; Mon, 02 May 2016 14:55:04 -0700 (PDT)
-Date: Mon, 2 May 2016 14:55:01 -0700
-From: Omar Sandoval <osandov@osandov.com>
-To: Alex Lyakas <alex.btrfs@zadarastorage.com>
-Cc: Chris Mason <clm@fb.com>, linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH v4 6/9] Btrfs: implement the free space B-tree
-Message-ID: <20160502215501.GA24432@vader.DHCP.thefacebook.com>
-References: <cover.1443583874.git.osandov@osandov.com>
- <3319d371e22491b6901af33842b57db37b77c52c.1443583874.git.osandov@osandov.com>
- <20151229201907.rzbaxqiyjfwpqxwp@ret.masoncoding.com>
- <CAOcd+r2wCqcfbub6AKoDwyPB4XS7MDUuqeJOziw-g8vn+mM+gw@mail.gmail.com>
+Received: from mail-ig0-f178.google.com ([209.85.213.178]:37329 "EHLO
+	mail-ig0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750836AbcEBQWM (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 2 May 2016 12:22:12 -0400
+Received: by mail-ig0-f178.google.com with SMTP id s8so78260331ign.0
+        for <linux-btrfs@vger.kernel.org>; Mon, 02 May 2016 09:22:11 -0700 (PDT)
+Subject: Re: [PATCH v3 3/3] block: avoid to call .bi_end_io() recursively
+To: Ming Lei <ming.lei@canonical.com>, Jens Axboe <axboe@fb.com>,
+        linux-kernel@vger.kernel.org
+References: <1461805789-3632-1-git-send-email-ming.lei@canonical.com>
+ <1461805789-3632-3-git-send-email-ming.lei@canonical.com>
+Cc: linux-block@vger.kernel.org, Christoph Hellwig <hch@infradead.org>,
+        linux-btrfs@vger.kernel.org,
+        Shaun Tancheff <shaun.tancheff@seagate.com>,
+        Mikulas Patocka <mpatocka@redhat.com>, Alan Cox <alan@linux.intel.com>,
+        Neil Brown <neilb@suse.de>, Liu Bo <bo.li.liu@oracle.com>
+From: Jens Axboe <axboe@kernel.dk>
+Message-ID: <57277EB0.5060408@kernel.dk>
+Date: Mon, 2 May 2016 10:22:08 -0600
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CAOcd+r2wCqcfbub6AKoDwyPB4XS7MDUuqeJOziw-g8vn+mM+gw@mail.gmail.com>
+In-Reply-To: <1461805789-3632-3-git-send-email-ming.lei@canonical.com>
+Content-Type: text/plain; charset=windows-1252; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Apr 22, 2016 at 11:28:24AM +0300, Alex Lyakas wrote:
-> Hi Omar, Chris,
-> 
-> I have reviewed the free-space-tree code. It is a very nice feature.
-> 
-> However, I have a basic understanding question.
-> 
-> Let's say we are running a delayed ref which inserts a new EXTENT_ITEM
-> into the extent tree, e.g., we are in alloc_reserved_file_extent. At
-> this point we call remove_from_free_space_tree(), which updates the
-> free-space-tree about the allocated space. But this requires to COW
-> the free-space-tree itself. So we allocate a new tree block for the
-> free-space tree, and insert a new delayed ref, which will update the
-> extent tree about the new tree block allocation. We also insert a
-> delayed ref to free the previous copy of the free-space-tree block.
-> 
-> At some point we run these new delayed refs, so we insert/remove
-> EXTENT_ITEMs from the extent tree, and this in turn requires us to
-> update the free-space-tree again. So we need again to COW
-> free-space-tree blocks, generating more delayed refs.
-> 
-> At which point this recursion stops?
-> 
-> Do we assume that at some point all needed free-space tree blocks have
-> been COW'ed already, and we do not COW a tree block more than once per
-> transaction (unless it was written to disk due to memory pressure)?
-> 
-> Thanks!
-> Alex.
+On 04/27/2016 07:09 PM, Ming Lei wrote:
+> There were reports about heavy stack use by recursive calling
+> .bi_end_io()([1][2][3]). For example, more than 16K stack is
+> consumed in a single bio complete path[3], and in [2] stack
+> overflow can be triggered if 20 nested dm-crypt is used.
+>
+> Also patches[1] [2] [3] were posted for addressing the issue,
+> but never be merged. And the idea in these patches is basically
+> similar, all serializes the recursive calling of .bi_end_io() by
+> percpu list.
+>
+> This patch still takes the same idea, but uses bio_list to
+> implement it, which turns out more simple and the code becomes
+> more readable meantime.
+>
+> One corner case which wasn't covered before is that
+> bi_endio() may be scheduled to run in process context(such
+> as btrfs), and this patch just bypasses the optimizing for
+> that case because one new context should have enough stack space,
+> and this approach isn't capable of optimizing it too because
+> there isn't easy way to get a per-task linked list head.
+>
+> xfstests(-g auto) is run with this patch and no regression is
+> found on ext4, xfs and btrfs.
 
-Hi, Alex,
+I don't like this at all, it's going about fixing this the completely 
+wrong way. For the fast path, single device, we don't have an issue. Yet 
+this patch slows down that part unnecessarily.
 
-Your understanding is correct, we'll only COW a tree block once during a
-transaction, so the recursion stops once all of the free space items we
-need to add/remove don't require rebalancing the tree or allocating or
-freeing a block. Same thing goes for extent items in the extent tree.
-Since the extent tree and free space tree items are much smaller than a
-tree block, this doesn't turn out to be a problem in practice.
-
-Thanks for taking a look :)
+Fix this for the fat dm/md stacks, and don't add unwarranted fat in the 
+normal fast path. The dm/md stacks won't notice a bit of extra overhead, 
+whereas the core path is pretty well optimized.
 
 -- 
-Omar
+Jens Axboe
+

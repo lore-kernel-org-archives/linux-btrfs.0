@@ -1,62 +1,36 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:37093 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751214AbcEDO7v (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 4 May 2016 10:59:51 -0400
-Date: Wed, 4 May 2016 16:59:33 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Liu Bo <bo.li.liu@oracle.com>
-Cc: linux-btrfs@vger.kernel.org, master.b.at.raven@chefmail.de
-Subject: Re: [PATCH] Btrfs: fix unexpected balance crash due to BUG_ON
-Message-ID: <20160504145933.GX29353@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1462230062-8053-1-git-send-email-bo.li.liu@oracle.com>
+Received: from aserp1040.oracle.com ([141.146.126.69]:40647 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751398AbcEBBcm (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 1 May 2016 21:32:42 -0400
+Subject: Re: [PATCH v5 00/13] Introduce device state 'failed', spare device
+ and auto replace
+To: Yauhen Kharuzhy <yauhen.kharuzhy@zavadatar.com>
+References: <1460979104-27497-1-git-send-email-anand.jain@oracle.com>
+ <20160428121010.GA19558@jeknote.loshitsa1.net>
+Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz
+From: Anand Jain <anand.jain@oracle.com>
+Message-ID: <5726AE33.9030201@oracle.com>
+Date: Mon, 2 May 2016 09:32:35 +0800
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1462230062-8053-1-git-send-email-bo.li.liu@oracle.com>
+In-Reply-To: <20160428121010.GA19558@jeknote.loshitsa1.net>
+Content-Type: text/plain; charset=windows-1252; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, May 02, 2016 at 04:01:02PM -0700, Liu Bo wrote:
-> --- a/fs/btrfs/volumes.c
-> +++ b/fs/btrfs/volumes.c
-> @@ -3418,13 +3418,25 @@ static int __btrfs_balance(struct btrfs_fs_info *fs_info)
->  		ret = btrfs_shrink_device(device, old_size - size_to_free);
->  		if (ret == -ENOSPC)
->  			break;
-> -		BUG_ON(ret);
-> +		if (ret) {
-> +			/* btrfs_shrink_device never returns ret > 0 */
-> +			WARN_ON_ONCE(ret > 0);
-> +			goto error;
-> +		}
->  
->  		trans = btrfs_start_transaction(dev_root, 0);
-> -		BUG_ON(IS_ERR(trans));
-> +		if (IS_ERR(trans)) {
-> +			ret = PTR_ERR(trans);
-> +			goto error;
-> +		}
->  
->  		ret = btrfs_grow_device(trans, device, old_size);
-> -		BUG_ON(ret);
-> +		if (ret) {
-> +			btrfs_end_transaction(trans, dev_root);
-> +			/* btrfs_grow_device never returns ret > 0 */
-> +			WARN_ON_ONCE(ret > 0);
-> +			goto error;
-> +		}
 
-The "shrink then grow" trick seems to be necessary to make the workspace
-for balance. I'm thinking what could be the intermediate result when it
-succeeds only partially that we should worry about. (This also means
-partial success on several devices only.)
+Thanks!  for report.
 
-If just shrink succeeds, then there is a smaller device that the user
-did not ask for. This is effectively no change from the current
-behaviour, now we fail more gracefully.
+> Sequense was:
+> 1) create FS (RAID5), mount, write 40 MB file, sync
+> 2) detach drive
+> 3) start replace detached (but still not closed) drive by another
+> 4) touch mount point, call 'btrfs fi sync' (I use udev script to initiate write immediately after drive removal)
+> 4) <device is closed here> -> oops.
 
-My idea is to print the at least original size of the device if
-transaction start or grow phase fails.
+  Right. It didn't handle this case. Now I have fixed this locally.
+  But not sent yet, as I am also waiting to base this patch set on
+  top of my recent patches.
+    [PATCH 0/2] [RFC] btrfs: create degraded-RAID1 chunks
 
-Otherwise patch looks ok.
+- Anand

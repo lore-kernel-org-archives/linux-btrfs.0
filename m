@@ -1,49 +1,73 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-sg2apc01on0057.outbound.protection.outlook.com ([104.47.125.57]:18272
-	"EHLO APC01-SG2-obe.outbound.protection.outlook.com"
-	rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-	id S1750783AbcECEiY convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 3 May 2016 00:38:24 -0400
-From: Paul Jones <paul@pauljones.id.au>
-To: Omar Sandoval <osandov@osandov.com>
-CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: RE: btrfs goes readonly + No space left on 4.3
-Date: Tue, 3 May 2016 04:06:05 +0000
-Message-ID: <SYXPR01MB0367444E819E17AD264710969E7A0@SYXPR01MB0367.ausprd01.prod.outlook.com>
-References: <561B5AA6.7040704@profihost.ag> <5723C88F.30903@profihost.ag>
- <20160502220549.GB24432@vader.DHCP.thefacebook.com>
-In-Reply-To: <20160502220549.GB24432@vader.DHCP.thefacebook.com>
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
+Received: from plane.gmane.org ([80.91.229.3]:38629 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750732AbcECGov (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 3 May 2016 02:44:51 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+	id 1axU4a-0001SM-Ik
+	for linux-btrfs@vger.kernel.org; Tue, 03 May 2016 08:44:44 +0200
+Received: from ip5f5ae06c.dynamic.kabel-deutschland.de ([95.90.224.108])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Tue, 03 May 2016 08:44:44 +0200
+Received: from hurikhan77 by ip5f5ae06c.dynamic.kabel-deutschland.de with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Tue, 03 May 2016 08:44:44 +0200
+To: linux-btrfs@vger.kernel.org
+From: Kai Krakow <hurikhan77@gmail.com>
+Subject: Re: commands like "du", "df", and "btrfs fs sync" hang
+Date: Tue, 3 May 2016 08:44:28 +0200
+Message-ID: <20160503084428.2e51a2e1@jupiter.sol.kaishome.de>
+References: <20160501090046.638fc2c6@jupiter.sol.kaishome.de>
+	<pan$1c3f$713ccc59$ba5354e3$ceefdfd6@cox.net>
+	<20160501185418.5a148cdd@jupiter.sol.kaishome.de>
+	<pan$cd18$90efec60$149cab40$cd3d9864@cox.net>
+	<e3286f17-fc34-9b48-0256-cbc7dafe576a@gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=US-ASCII
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-> -----Original Message-----
-> From: linux-btrfs-owner@vger.kernel.org [mailto:linux-btrfs-
-> owner@vger.kernel.org] On Behalf Of Omar Sandoval
-> Sent: Tuesday, 3 May 2016 8:06 AM
-> To: Stefan Priebe <s.priebe@profihost.ag>
-> Cc: linux-btrfs@vger.kernel.org
-> Subject: Re: btrfs goes readonly + No space left on 4.3
-> 
-> On Fri, Apr 29, 2016 at 10:48:15PM +0200, Stefan Priebe wrote:
-> > just want to drop a note that all those ENOSPC msg are gone with v4.5
-> > and space_cache=v2. Any plans to make space_cache=v2 default?
+Am Mon, 2 May 2016 09:19:13 -0400
+schrieb "Austin S. Hemmelgarn" <ahferroin7@gmail.com>:
+
+> On 2016-05-01 19:49, Duncan wrote:
+> > Kai Krakow posted on Sun, 01 May 2016 18:54:18 +0200 as excerpted:
+> >  
+> >> It affects all file systems. The "btrfs fi sync" is used to finish
+> >> my rsync backup and ensure everything is written before I'm trying
+> >> to unmount it or the system goes back to sleep.
+> >>
+> >> "df" and friends also freeze on tmp (ramdisk) fs and vfat fs (my
+> >> EFI boot partition).  
 > >
-> > Greets,
-> > Stefan
-> 
-> Yup, we want to make space_cache=v2 the default at some point. I'm
-> running it on my own machines and testing it here at Facebook and haven't
-> run into any issues yet. Besides stability, I also want to make sure there
-> aren't any performance regressions versus the old free space cache that we
-> haven't thought about yet.
-> 
-> Thanks for trying it out :)
+> > That's just weird, there.  df on tmpfs triggers a stall as well?
+> > Weird to the point I wonder if you're seeing a general block layer
+> > bug... only involving btrfs if btrfs is somehow fowling up the
+> > block layer for everyone else as well.  Whatever it is, it's
+> > obviously far different than my first guess, which now looks
+> > ridiculously wrong.  Oh, well...  
+> The question is: is it actually on a ramdisk (with a separate
+> filesystem on top of that), or is it on tmpfs?  The ramdisk method is
+> used by some people because it lets you do some more interesting
+> things, but tmpfs is much more efficient (in terms of both processing
+> time, and RAM usage). If it's on a ramdisk, then it may be a block
+> layer bug, but if it's on tmpfs, then it's a VFS layer bug instead.
 
-I have also been testing it and have had no problems.
+Sorry for the confusion: It's actually tmpfs - NOT ramdisk.
 
-One question I have about it: I use Grub2 to boot my systems directly from a BTRFS root partition (i.e. no separate /boot), I assume Grub shouldn't need to care about free space tree/cache as it's only reading data? I don't know enough about either to know if it's an issue or not.
+> That said, if something i8n BTRFS is causing stalls in the block
+> layer, that would definately explain what is going on, as that can
+> cause all I/O to stall across the whole system.
 
-Thanks,
-Paul.
+It seems to be triggered by access to btrfs for me, tho I don't use
+tmpfs that much, so this assumption is more or less bogus.
+
+
+-- 
+Regards,
+Kai
+
+Replies to list-only preferred.
+

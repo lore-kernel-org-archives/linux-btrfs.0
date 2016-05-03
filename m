@@ -1,69 +1,115 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from x1-6-a4-2b-8c-8c-bd-da.cpe.webspeed.dk ([2.104.2.239]:56250
-	"EHLO mail.musikcheck.dk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932756AbcECSiU (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 3 May 2016 14:38:20 -0400
-Subject: Re: Subvolumes cannot be mounted after raid1 conversion
-To: Duncan <1i5t5.duncan@cox.net>, linux-btrfs@vger.kernel.org
-References: <983F0471-51E8-47EC-B5A0-FBA9040F634B@hagenjohansen.dk>
- <20160503095515.GM7228@carfax.org.uk>
- <B66776EA-68EA-490F-862E-C49A1D51FCE5@hagenjohansen.dk>
- <20160503102746.GN7228@carfax.org.uk>
- <pan$53532$8cf28e4d$10d40c2$bb30f4bb@cox.net>
- <2a657997-6da8-a190-6057-7b5dcb5d70b1@hagenjohansen.dk>
-From: hasse@hagenjohansen.dk
-Message-ID: <e0f52464-e153-9961-57df-b45c3513ccf8@hagenjohansen.dk>
-Date: Tue, 3 May 2016 20:38:14 +0200
+Received: from mail-lf0-f48.google.com ([209.85.215.48]:33282 "EHLO
+	mail-lf0-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S933754AbcECTAT (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 3 May 2016 15:00:19 -0400
+Received: by mail-lf0-f48.google.com with SMTP id y84so33663098lfc.0
+        for <linux-btrfs@vger.kernel.org>; Tue, 03 May 2016 12:00:18 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <2a657997-6da8-a190-6057-7b5dcb5d70b1@hagenjohansen.dk>
-Content-Type: text/plain; charset=utf-8
+In-Reply-To: <pan$6f3dc$4726806a$a5dc5eab$10f59711@cox.net>
+References: <CAGGqMYQPVQoKDcuDqp0D=3BCD+oTghew0fyzqo58BSLFrmrEJQ@mail.gmail.com>
+	<CAJCQCtTG68BicgFwoyYgM0OzphsVbstgWTNybF3CeBo1VCJhNg@mail.gmail.com>
+	<CAGGqMYTso0XNjgfmWfY8g3Xs9xym5gHFcTizzAq1_Y-mMTTx0w@mail.gmail.com>
+	<CAJCQCtRk+V0vhdCsyi-3aoNDimV0E4XJjQc9Us35uO59HpjSAQ@mail.gmail.com>
+	<CAGGqMYSZ8P=ZVSgL4zWJKi7uuYLxRMZh=XEzPYpT2PykQD58oQ@mail.gmail.com>
+	<pan$e4ba4$a250943d$4b67b01a$4a6c9e1c@cox.net>
+	<CAGGqMYQH7h4-atS+ecBzngBMLu7iRe4-CehjavUAcJMje+v=wA@mail.gmail.com>
+	<pan$6f3dc$4726806a$a5dc5eab$10f59711@cox.net>
+Date: Tue, 3 May 2016 21:00:17 +0200
+Message-ID: <CAGGqMYRzhDCsZ+DhB4pgcskuRd0+Y97tA+=Mm-V-Pj8scwTQ8g@mail.gmail.com>
+Subject: Re: receive snapshot, complains about missing file
+From: Alexander Fougner <fougner89@gmail.com>
+To: Duncan <1i5t5.duncan@cox.net>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Den 03/05/16 kl. 20:31 skrev hasse@hagenjohansen.dk:
-> Den 03/05/16 kl. 18:30 skrev Duncan:
->> Hugo Mills posted on Tue, 03 May 2016 10:27:46 +0000 as excerpted:
->>
->>> Given those symptoms (mount doesn't report errors, but no mount
->>> happens), I would guess that your problem is with systemd. It has a bug
->>> where it sometimes unmounts things immediately after you've mounted
->>> them.
->>
->> FWIW, I have some personal experience with that "bug" myself.  But I 
->> suspect the systemd devs might call it a "feature", not a bug.  Based on 
->> my own experience and understanding...
-.
-.
-.
-
-> Thanks for the very extensive explanation. I did find out systemd did
-> the umount by looking in /var/log/syslog. Now I wil try to fixup systemd
-> unit files and I will try not boot in either rescue or emergency mode. I
-> believe it is fixable without it. It seems systemd thinks it is my old
-> LVM setup(which now are moved to btrfs) which should be used and
-> immediately unmounts the filesystem again because it cannot find the
-> "LVM device". But I must say I find it a little bit stupid that systemd
-> doesn't monitor /etc/fstab now that it behind the users back are
-> generating its own unit files (I have actually seen the mount.xxx units
-> etc when looking at running units...but have never looked into how it
-> works...so I would now have to study that)
+2016-04-30 13:28 GMT+02:00 Duncan <1i5t5.duncan@cox.net>:
+> Alexander Fougner posted on Sat, 30 Apr 2016 12:55:06 +0200 as excerpted:
 >
-I have found the easy solution. From
-https://bbs.archlinux.org/viewtopic.php?id=192991
+>>>> Receive side only outputs this:
+>>>> sudo btrfs check -p /dev/sdc Couldn't open file system
+>>>
+>>> It wasn't mounted at the time, right?
+>>
+>> Nope
+>>
+>>
+>>> Cuz btrfs check won't work with a mounted filesystem.
+>>>
+>>> Of course you'll need to be root to access the device as well,
+>>> but that's pretty much a given.
+>>
+>> I think sudo should do that, right?
+>
+> Yes.
+>
+> I wonder then why it couldn't access it?
+>
+Me too!
 
-    First:
+It worked with a liveusb though. Btrfs-progs 4.4
 
-    # systemctl daemon-reload
+sudo btrfs check /dev/sdc
+Checking filesystem on /dev/sdc
+UUID: 666172ff-0adb-45e8-8640-4feed682f378
+checking extents
+checking free space cache
+checking fs roots
+checking csums
+checking root refs
+found 2334784469221 bytes used err is 0
+total csum bytes: 2243595764
+total tree bytes: 8267939840
+total fs tree bytes: 5431869440
+total extent tree bytes: 271794176
+btree space waste bytes: 1221110549
+file data blocks allocated: 146702044540928
+ referenced 2388234321920
 
-    followed by:
+Looks good to me.
 
-    # systemctl restart remote-fs.target
+Also, it works to resend the complete chain of snapshots to a new FS.
+However, deleting the complete chain of snapshots on the trouble-FS
+and resending everything still results in the same error.
 
-    or
+> Just to be sure, since I didn't think to ask the first time and with
+> subvolumes it's possible to mount other subvolumes and possibly forget
+> that they're actually part of the same filesystem, you didn't have /any/
+> subvolumes of that filesystem mounted, right?
 
-    # systemctl restart local-fs.target
+I'm pretty sure nothing else was mounted. Besides, that should output
+a different error message, warning us about the mounted FS.
 
-    depending on filesystem type
+>
+> What does btrfs fi show say about the filesystem?
+>
+Label: 'storage'  uuid: 666172ff-0adb-45e8-8640-4feed682f378
+        Total devices 2 FS bytes used 2.12TiB
+        devid    3 size 2.73TiB used 2.23TiB path /dev/sde
+        devid    4 size 2.73TiB used 2.23TiB path /dev/sdc
 
-I still think it is pretty stupid that systemd doesn't monitor
-/etc/fstab (when choosing to create it own secret files) :)
+
+> I'm assuming it's mountable.  Does a mount and umount then let it be
+> btrfs checked?  On the other end of things, what about a reboot and btrfs
+> device scan, then btrfs check?
+>
+> If it's not the low-hanging fruit like that, perhaps check is keying off
+> the same error that receive is, but I haven't the foggiest what the
+> problem would be.
+>
+> I guess another possibility would be that btrfs check is violating some
+> sort of security policy such as selinux.  I don't run anything of that
+> nature here so know little more about it beyond the possibility, but from
+> previous posts I think Chris Murphy has at some experience in that area.
+>
+> --
+> Duncan - List replies preferred.   No HTML msgs.
+> "Every nonfree program has a lord, a master --
+> and if you use the program, he is your master."  Richard Stallman
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

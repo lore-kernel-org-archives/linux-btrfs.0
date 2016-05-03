@@ -1,106 +1,128 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:47370 "EHLO plane.gmane.org"
+Received: from plane.gmane.org ([80.91.229.3]:35594 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S932828AbcECPJT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 3 May 2016 11:09:19 -0400
+	id S933156AbcECQao (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 3 May 2016 12:30:44 -0400
 Received: from list by plane.gmane.org with local (Exim 4.69)
 	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1axbwr-0002kK-1k
-	for linux-btrfs@vger.kernel.org; Tue, 03 May 2016 17:09:17 +0200
+	id 1axdDU-0000FD-Q4
+	for linux-btrfs@vger.kernel.org; Tue, 03 May 2016 18:30:32 +0200
 Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
         by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 03 May 2016 17:09:17 +0200
+        for <linux-btrfs@vger.kernel.org>; Tue, 03 May 2016 18:30:32 +0200
 Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 03 May 2016 17:09:17 +0200
+        for <linux-btrfs@vger.kernel.org>; Tue, 03 May 2016 18:30:32 +0200
 To: linux-btrfs@vger.kernel.org
 From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: commands like "du", "df", and "btrfs fs sync" hang
-Date: Tue, 3 May 2016 15:09:07 +0000 (UTC)
-Message-ID: <pan$91ed1$9e1cfbb6$39479d0e$5d5c9013@cox.net>
-References: <20160501090046.638fc2c6@jupiter.sol.kaishome.de>
-	<pan$1c3f$713ccc59$ba5354e3$ceefdfd6@cox.net>
-	<13265330-f402-8c50-4bb0-5ae41d3ca8cb@gmail.com>
+Subject: Re: Subvolumes cannot be mounted after raid1 conversion
+Date: Tue, 3 May 2016 16:30:20 +0000 (UTC)
+Message-ID: <pan$53532$8cf28e4d$10d40c2$bb30f4bb@cox.net>
+References: <983F0471-51E8-47EC-B5A0-FBA9040F634B@hagenjohansen.dk>
+	<20160503095515.GM7228@carfax.org.uk>
+	<B66776EA-68EA-490F-862E-C49A1D51FCE5@hagenjohansen.dk>
+	<20160503102746.GN7228@carfax.org.uk>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Austin S. Hemmelgarn posted on Mon, 02 May 2016 09:13:41 -0400 as
-excerpted:
+Hugo Mills posted on Tue, 03 May 2016 10:27:46 +0000 as excerpted:
 
->> Direct from that section of my /etc/sysctl.conf:
->>
->>
->> # write-cache, foreground/background flushing 
->> # vm.dirty_ratio = 10 (% of RAM)
->> # make it 3% of 16G ~ half a gig 
->> vm.dirty_ratio = 3 
->> # vm.dirty_bytes = 0
->>
->> # vm.dirty_background_ratio = 5 (% of RAM)
->> # make it 1% of 16G ~ 160 M
->> vm.dirty_background_ratio = 1
->> # vm.dirty_background_bytes = 0
->>
->> The commented values are normal defaults.  Either ratio, percentage of
->> RAM, or direct bytes can be set.  Setting one clears (zeros) the other.
->>  While the ratio isn't of total RAM but of available RAM, total RAM's a
->> reasonable approximation on most modern systems.
->>
->> Taking the foreground, vm.dirty_ratio setting first:
->> [I] set that to 3%, which with 16 gigs of RAM is ~half a gig, or about
->> 16 seconds worth of writeback at 30 MB/sec.  That's only about half the
->> 30 second time expiry and isn't /too/ bad to wait, tho you'll probably
->> notice if it takes that full 16 seconds.  But it's reasonable, and
->> given the integer setting and that we want background set lower, 3% is
->> getting about as low as practical.  (Obviously if I upped to 32 GiB
->> RAM, I'd want to switch to the bytes setting for this very reason.)
->>
->> The background vm.dirty_background_ratio setting is where the lower
->> priority background writeback kicks in, so with luck the higher
->> priority foreground limit is never reached, tho it obviously will be
->> for something doing a lot of writing, like rsync often will.  So this
->> should be lower than foreground.
->>
->> With foreground set to 3%, that doesn't leave much room for background,
->> but 1% is still reasonable.  That's about 160 MB or 5 seconds worth of
->> writeback at 30 MB/sec, so it's reasonable.
+> Given those symptoms (mount doesn't report errors, but no mount
+> happens), I would guess that your problem is with systemd. It has a bug
+> where it sometimes unmounts things immediately after you've mounted
+> them.
 
-> I think you've got things a bit confused here (at least, what you are
-> saying doesn't match the documentation, and also doesn't match my
-> (limited) understanding of the code).  The background values are
-> system-wide values, while the unlabeled ones (what you call foreground)
-> are per-process.  IOW, the background value provides an upper bound for
-> the whole system, while the foreground ones provide an upper bound for
-> each individual process.  As a result, it is actually somewhat
-> nonsensical to use a background value that is lower than the foreground
-> value unless you don't want to limit things per-process as well as
-> system wide.
+FWIW, I have some personal experience with that "bug" myself.  But I 
+suspect the systemd devs might call it a "feature", not a bug.  Based on 
+my own experience and understanding...
 
-Why is the background value lower (5% background compared to 10% 
-unlabeled/foreground) by default, then?
+The mount does actually happen.  It's just that, as Hugo says, systemd 
+immediately unmounts it, because...
 
-AFAIK, you're partially but not entirely correct.  The values are both 
-global, and it's the kernel via the various block and filesystem drivers 
-(well, except for fuse, etc, in userspace) that's actually doing the 
-writing.  Where processes come into the picture with the unlabeled/
-foreground value is that above that value, the kernel charges writes to 
-the processes dirtying even more memory, effectively throttling them as 
-more of their timeslice is spent by the kernel writing stuff out, leaving 
-less of it to actually dirty even more cache pages, until a process can't 
-dirty memory any faster than that memory can be written to backing store.
+While mount (the command) itself is not a systemd command, and it works 
+by making the appropriate kernel calls to accomplish the mount with the 
+specified options, so systemd can't directly stop the actual mount...
 
-So while writeback with dirty memory above the unlabeled/foreground value 
-is indeed happening in process context, because the kernel is charging 
-write time to individual processes at that point (the part you got 
-right), the value is still global and it's still actually the kernel 
-doing the writing -- it's just charging the process for it at that point, 
-whereas when the dirty memory drops below the unlabeled/foreground value, 
-processes don't get penalized for dirtying memory -- handling the dirty 
-memory is then simply a service provided by the kernel with no penalty in 
-terms of process timeslice.
+The systemd perspective looks rather different...
+
+Systemd actually uses its own mount units (*.mount files) to track 
+mounts, generating them dynamically from fstab for entries found there.  
+As with all systemd unit files, there's documentation; start with 
+systemd.mount.  If you're not familiar with systemd units, systemd.unit,  
+systemd-fstab-generator and systemd.device manpages, among others listed 
+in systemd.mount's SEE ALSO section, will certainly help.
+
+If you look in /run/systemd/generator/ (where /run is a tmpfs mounted by 
+systemd itself, so these files are actually in memory only), you will see 
+the mount units the systemd generator creates dynamically.  These files 
+follow the format documented in the manpages discussed above, and it can 
+be quite educational to read a few of these files and compare them to the 
+fstab entries they were generated from to get some insights on how it all 
+fits together.
+
+So far so good.  But where things get interesting is in the device units 
+(*.device files) and how they interact with mounts and with udev.
+
+The problem turns out to be that between udev and systemd, sometimes 
+systemd doesn't see the required devices available that it believes are 
+required by a particular mount unit.  The kernel of course has its own 
+idea of what devices are available, and will mount or fail to mount the 
+filesystem based on that, which is why the mount actually succeeds.  But 
+if systemd thinks those devices aren't there, it will immediately unmount 
+the filesystem on its own, fast enough that the only way you can 
+generally tell it was mounted is by noting that mount didn't return an 
+error and by dmesg output such as the skinny extents notation that will 
+normally be printed if the filesystem was created with half-current btrfs-
+progs on a half-current kernel.  Otherwise, it looks as if the filesystem 
+was never mounted at all, because systemd umounts it so fast.
+
+So the trick is to convince systemd (via udev) that all the devices are 
+actually there, after which it will leave the filesystem mounted.
+
+Here's where my experience breaks down a bit, as in my case, I was trying 
+to boot to systemd rescue mode, to work on these filesystems, and found 
+out that in rescue mode (the rescue target) systemd hadn't started some 
+of the udev services, etc, and thus thought devices were missing, so it 
+wouldn't mount the filesystems.  However, by booting to emergency mode 
+(the emergency target), systemd would run the necessary pre-filesystem 
+udev, etc services and do the mounts in fstab, and then I could umount 
+and mount just fine, because udev was running and tracking the devices, 
+so systemd knew they were there and would let manual mounts and umounts 
+work properly.
+
+What I have /not/ specifically figured out, however, is which specific 
+services that emergency mode runs that rescue mode doesn't, are involved, 
+other than I'm quite sure that udev's involved, and of course from there 
+I've only a vague idea how the specific device dependencies are worked 
+out.
+
+It's this last bit that will likely need tweaked a bit to get systemd 
+aware of what device units need to be available for that mount unit, and 
+aware that they /are/ actually available.
+
+So yeah, as I said, from systemd's perspective, it's arguably a feature, 
+not a bug.  You "just" need to adjust the udev, mount unit and device 
+unit configuration, so that systemd via udev knows what devices are 
+required and actually knows they're available, and all _should_ be well.
+
+But the trick is in that "just"... which isn't likely to be quite so 
+simple, especially if you have little existing knowledge and experience 
+of systemd unit basics and how they work on for example the service and 
+target unit levels.  As I already have some experience at that level, 
+once I figured out that the mounts were actually happening and systemd 
+was immediately umounting, I already had a reasonable idea as to why, and 
+what sort of thing I needed to do to fix it.  In my case, it was simply 
+that I needed to boot to emergency instead of rescue mode for my 
+"singleuser mode", and I haven't bothered looking into it further, but 
+I'd have a head-start on it if I did as I'm already used to doing custom 
+service, target and timer units.  Without that information, it'd 
+definitely take awhile longer to figure it all out, and I expect many 
+people will simply give up and find some other solution that works for 
+them, instead of trying to figure out why this one isn't, and fixing it 
+so it does.
 
 -- 
 Duncan - List replies preferred.   No HTML msgs.

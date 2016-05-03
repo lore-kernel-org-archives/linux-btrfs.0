@@ -1,60 +1,58 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pf0-f179.google.com ([209.85.192.179]:35133 "EHLO
-	mail-pf0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932270AbcECSDP (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 3 May 2016 14:03:15 -0400
-Received: by mail-pf0-f179.google.com with SMTP id 77so13532632pfv.2
-        for <linux-btrfs@vger.kernel.org>; Tue, 03 May 2016 11:03:15 -0700 (PDT)
-Date: Tue, 3 May 2016 11:03:11 -0700
-From: Omar Sandoval <osandov@osandov.com>
-To: Paul Jones <paul@pauljones.id.au>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: btrfs goes readonly + No space left on 4.3
-Message-ID: <20160503180311.GA7090@vader.DHCP.thefacebook.com>
-References: <561B5AA6.7040704@profihost.ag>
- <5723C88F.30903@profihost.ag>
- <20160502220549.GB24432@vader.DHCP.thefacebook.com>
- <SYXPR01MB0367444E819E17AD264710969E7A0@SYXPR01MB0367.ausprd01.prod.outlook.com>
+Received: from x1-6-a4-2b-8c-8c-bd-da.cpe.webspeed.dk ([2.104.2.239]:56014
+	"EHLO mail.musikcheck.dk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932270AbcECSHH (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 3 May 2016 14:07:07 -0400
+Subject: Re: Subvolumes cannot be mounted after raid1 conversion
+To: Hugo Mills <hugo@carfax.org.uk>
+References: <983F0471-51E8-47EC-B5A0-FBA9040F634B@hagenjohansen.dk>
+ <20160503095515.GM7228@carfax.org.uk>
+ <B66776EA-68EA-490F-862E-C49A1D51FCE5@hagenjohansen.dk>
+ <20160503102746.GN7228@carfax.org.uk>
+ <DF5803A5-7C03-461B-B72C-A374FE57ABBF@hagenjohansen.dk>
+Cc: linux-btrfs@vger.kernel.org
+From: hasse@hagenjohansen.dk
+Message-ID: <1f7be96f-1f87-51bd-f9bc-cf3fb95d582e@hagenjohansen.dk>
+Date: Tue, 3 May 2016 20:06:57 +0200
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <SYXPR01MB0367444E819E17AD264710969E7A0@SYXPR01MB0367.ausprd01.prod.outlook.com>
+In-Reply-To: <DF5803A5-7C03-461B-B72C-A374FE57ABBF@hagenjohansen.dk>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, May 03, 2016 at 04:06:05AM +0000, Paul Jones wrote:
-> > -----Original Message-----
-> > From: linux-btrfs-owner@vger.kernel.org [mailto:linux-btrfs-
-> > owner@vger.kernel.org] On Behalf Of Omar Sandoval
-> > Sent: Tuesday, 3 May 2016 8:06 AM
-> > To: Stefan Priebe <s.priebe@profihost.ag>
-> > Cc: linux-btrfs@vger.kernel.org
-> > Subject: Re: btrfs goes readonly + No space left on 4.3
-> > 
-> > On Fri, Apr 29, 2016 at 10:48:15PM +0200, Stefan Priebe wrote:
-> > > just want to drop a note that all those ENOSPC msg are gone with v4.5
-> > > and space_cache=v2. Any plans to make space_cache=v2 default?
-> > >
-> > > Greets,
-> > > Stefan
-> > 
-> > Yup, we want to make space_cache=v2 the default at some point. I'm
-> > running it on my own machines and testing it here at Facebook and haven't
-> > run into any issues yet. Besides stability, I also want to make sure there
-> > aren't any performance regressions versus the old free space cache that we
-> > haven't thought about yet.
-> > 
-> > Thanks for trying it out :)
-> 
-> I have also been testing it and have had no problems.
-> 
-> One question I have about it: I use Grub2 to boot my systems directly from a BTRFS root partition (i.e. no separate /boot), I assume Grub shouldn't need to care about free space tree/cache as it's only reading data? I don't know enough about either to know if it's an issue or not.
-> 
-> Thanks,
-> Paul.
+Den 03/05/16 kl. 13:13 skrev Hasse Hagen Johansen:
 
-Yeah, the free space tree doesn't make a difference when the filesystem
-is used read-only. In fact, you can mount a filesystem with
-space_cache=v2 enabled read-only on older kernel versions.
+>>>
+>>> The exact thing I did was having the subvols mounted. Then mounted
+>> top-level volume on /mbt/temp. And then ran balance to convert to
+>> raid1.. When finished I umounted /mnt/temp (the top-level) and then my
+>> 3 subvolumes was unmounted and a cannot mount them at the same
+>> mountpoints again... No errors and it says that it is not mounted when
+>> trying to umount them. So it seems they don't get mounted at all and
+>> without throwing an error
+>>>
+>>> I will look into it more thoroughly now that I can at least mount the
+>> subvols on other mountpoints than the original 
+>>
+>>   Given those symptoms (mount doesn't report errors, but no mount
+>> happens), I would guess that your problem is with systemd. It has a
+>> bug where it sometimes unmounts things immediately after you've
+>> mounted them.
+>>
 
--- 
-Omar
+You were right. Looking more into it (home at my computer and not my
+phone) I found this in /var/log/syslog:
+
+May  3 19:57:23 pris systemd[1]: books.mount: Unit is bound to inactive
+unit dev-Data\x2dVG-books.
+device. Stopping, too.
+May  3 19:57:23 pris systemd[1]: Unmounting /books...
+May  3 19:57:25 pris systemd[1]: Unmounted /books.
+May  3 19:57:25 pris systemd[1]: books.mount: Unit entered failed state.
+
+So it is indeed systemd...great...seems it is confused because the
+mountpoints which I have now moved to btrfs was earlier using lvm. I
+will try telling systemd to forget that old unit
+
+Thanks for the help
+

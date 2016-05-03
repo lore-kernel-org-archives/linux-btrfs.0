@@ -1,83 +1,87 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:16702 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S932137AbcE2MVc (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 29 May 2016 08:21:32 -0400
-Date: Sun, 29 May 2016 08:21:03 -0400
-From: Chris Mason <clm@fb.com>
-To: Anand Jain <anand.jain@oracle.com>
-CC: <dsterba@suse.cz>, David Sterba <dsterba@suse.com>,
-        <linux-btrfs@vger.kernel.org>
-Subject: Re: [PULL] Btrfs for 4.7, part 2
-Message-ID: <20160529122103.GA8726@clm-mbp.masoncoding.com>
-References: <cover.1464254502.git.dsterba@suse.com>
- <20160527001414.opeu5ffezblckpd4@floor.thefacebook.com>
- <20160527111822.GV29147@twin.jikos.cz>
- <20160527143527.bctpuav5la3vchu4@floor.thefacebook.com>
- <20160527154210.illgoqxoyjhj7dbp@floor.thefacebook.com>
- <57492925.7070000@oracle.com>
+Received: from mail-ob0-f193.google.com ([209.85.214.193]:35964 "EHLO
+	mail-ob0-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756537AbcECXO2 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 3 May 2016 19:14:28 -0400
+Received: by mail-ob0-f193.google.com with SMTP id ds10so1484122obb.3
+        for <linux-btrfs@vger.kernel.org>; Tue, 03 May 2016 16:14:27 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"; format=flowed
-In-Reply-To: <57492925.7070000@oracle.com>
+In-Reply-To: <1462230062-8053-1-git-send-email-bo.li.liu@oracle.com>
+References: <1462230062-8053-1-git-send-email-bo.li.liu@oracle.com>
+Date: Wed, 4 May 2016 01:14:27 +0200
+Message-ID: <CAHji150s7Ha05biMeNyMSuBRh7eMxj5SR7ezck2D2-PfJTL=WQ@mail.gmail.com>
+Subject: Re: [PATCH] Btrfs: fix unexpected balance crash due to BUG_ON
+From: =?UTF-8?Q?Holger_Hoffst=C3=A4tte?=
+	<holger.hoffstaette@googlemail.com>
+To: Liu Bo <bo.li.liu@oracle.com>
+Cc: linux-btrfs@vger.kernel.org, master.b.at.raven@chefmail.de
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, May 28, 2016 at 01:14:13PM +0800, Anand Jain wrote:
+On Tue, May 3, 2016 at 1:01 AM, Liu Bo <bo.li.liu@oracle.com> wrote:
+> Mounting a btrfs can resume previous balance operations asynchronously.
+> An user got a crash when one drive has some corrupt sectors.
 >
+> Since balance can cancel itself in case of any error, we can gracefully
+> return errors to upper layers and let balance do the cancel job.
 >
->On 05/27/2016 11:42 PM, Chris Mason wrote:
->>>I'm getting errors from btrfs fi show -d, after the very last round of
->>>device replaces.  A little extra debugging:
->>>
->>>bytenr mismatch, want=4332716032, have=0
->>>ERROR: cannot read chunk root
->>>ERROR reading /dev/vdh
->>>failed /dev/vdh
->>>
->>>Which is cute because the very next command we run fscks /dev/vdh and
->>>succeeds.
+> Reported-by: sash <master.b.at.raven@chefmail.de>
+> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+> ---
+>  fs/btrfs/volumes.c | 18 +++++++++++++++---
+>  1 file changed, 15 insertions(+), 3 deletions(-)
 >
->Checked the code paths both btrfs fi show -d and btrfs check,
->both are calling flush during relative open_ctree in progs.
+> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+> index bd0f45f..5aed2e2 100644
+> --- a/fs/btrfs/volumes.c
+> +++ b/fs/btrfs/volumes.c
+> @@ -3418,13 +3418,25 @@ static int __btrfs_balance(struct btrfs_fs_info *fs_info)
+>                 ret = btrfs_shrink_device(device, old_size - size_to_free);
+>                 if (ret == -ENOSPC)
+>                         break;
+> -               BUG_ON(ret);
+> +               if (ret) {
+> +                       /* btrfs_shrink_device never returns ret > 0 */
+> +                       WARN_ON_ONCE(ret > 0);
+> +                       goto error;
+> +               }
 >
->However the flush is called after we have read superblock. That
->means the read_superblock during 'show' cli (only) will read superblock
->without flush, and 'check' won't, because 011 calls 'check' after
->'show'. But it still does not explain the above error, which is
->during open_ctree not at read superblock. Remains strange case as
->of now.
+>                 trans = btrfs_start_transaction(dev_root, 0);
+> -               BUG_ON(IS_ERR(trans));
+> +               if (IS_ERR(trans)) {
+> +                       ret = PTR_ERR(trans);
+> +                       goto error;
+> +               }
+>
+>                 ret = btrfs_grow_device(trans, device, old_size);
+> -               BUG_ON(ret);
+> +               if (ret) {
+> +                       btrfs_end_transaction(trans, dev_root);
+> +                       /* btrfs_grow_device never returns ret > 0 */
+> +                       WARN_ON_ONCE(ret > 0);
+> +                       goto error;
+> +               }
+>
+>                 btrfs_end_transaction(trans, dev_root);
+>         }
 
-It's because we're just not done writing it out yet when btrfs fi show is run.
-I think replace is special here.
+Just a heads up that this seems to introduce a valid warning, since it now
+can goto error before the first initializing use of path:
 
->
->Also. I can't reproduce.
->
+fs/btrfs/volumes.c: In function 'btrfs_balance':
+fs/btrfs/volumes.c:3601:2: warning: 'path' may be used uninitialized
+in this function [-Wmaybe-uninitialized]
+  btrfs_free_path(path);
+  ^
+fs/btrfs/volumes.c:3385:21: note: 'path' was declared here
+  struct btrfs_path *path;
+                     ^
+(it's really in __btrfs_balance which got inlined, so gcc thinks it's
+at the call site).
 
-I'm in a relatively new test rig using kvm, which probably explains why
-I haven't seen it before.  You can probably make it easier by adding
-a sleep inside the actual __free_device() func.
+Simply setting path = NULL at the beginning of __btrfs_balance fixes it, since
+btrfs_free_path allows NULL values.
 
->>>So the page cache is stale and this isn't related to any of our patches.
->>
->>close_ctree() calls into btrfs_close_devices(), which calls
->>btrfs_close_one_device(), which uses:
->>
->>call_rcu(&device->rcu, free_device);
->>
->>close_ctree() also does an rcu_barrier() to make sure and wait for
->>free_device() to finish.
->>
->>But, free_device() just puts the work into schedule_work(), so we don't
->>know for sure the blkdev_put is done when we exit.
->
-> Right, saw that before. Any idea why its like that ? Or if it
-> should be fixed?
-
-It's just trying to limit the work that is done from call_rcu, and it should
-definitely be fixed.  It might cause EBUSY or other problems.  Probably
-easiest to add a counter or completion object that gets changed by the
-__free_device function.
-
--chris
+cheers
+Holger

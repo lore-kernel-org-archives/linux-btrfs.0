@@ -1,61 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:34968 "EHLO mx1.redhat.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753355AbcEDSEu (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 4 May 2016 14:04:50 -0400
-Subject: Re: [PATCH 00/42] v7: separate operations from flags in the
- bio/request structs
-To: Jeff Moyer <jmoyer@redhat.com>
-References: <1460747777-8479-1-git-send-email-mchristi@redhat.com>
- <x49d1p2c1nx.fsf@segfault.boston.devel.redhat.com>
- <572A36BF.3070208@redhat.com>
- <x49a8k5aen2.fsf@segfault.boston.devel.redhat.com>
-Cc: linux-f2fs-devel@lists.sourceforge.net, linux-ext4@vger.kernel.org,
-        konrad.wilk@oracle.com, drbd-dev@lists.linbit.com,
-        philipp.reisner@linbit.com, lars.ellenberg@linbit.com,
-        linux-raid@vger.kernel.org, dm-devel@redhat.com,
-        linux-fsdevel@vger.kernel.org, linux-bcache@vger.kernel.org,
-        linux-block@vger.kernel.org, linux-kernel@vger.kernel.org,
-        linux-scsi@vger.kernel.org, linux-mtd@lists.infradead.org,
-        target-devel@vger.kernel.org, linux-btrfs@vger.kernel.org,
-        osd-dev@open-osd.org, xfs@oss.sgi.com, ocfs2-devel@oss.oracle.com
-From: Mike Christie <mchristi@redhat.com>
-Message-ID: <572A39BD.8020405@redhat.com>
-Date: Wed, 4 May 2016 13:04:45 -0500
-MIME-Version: 1.0
-In-Reply-To: <x49a8k5aen2.fsf@segfault.boston.devel.redhat.com>
-Content-Type: text/plain; charset=windows-1252
+Received: from mail-qk0-f170.google.com ([209.85.220.170]:36588 "EHLO
+	mail-qk0-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751155AbcEDTnj (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 4 May 2016 15:43:39 -0400
+Received: by mail-qk0-f170.google.com with SMTP id x7so31811441qkd.3
+        for <linux-btrfs@vger.kernel.org>; Wed, 04 May 2016 12:43:38 -0700 (PDT)
+From: Noah Massey <noah.massey@gmail.com>
+To: David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
+Cc: Noah Massey <noah.massey@gmail.com>
+Subject: [PATCH] btrfs-progs: Adjust timing of safety delay countdown
+Date: Wed,  4 May 2016 15:43:26 -0400
+Message-Id: <1462391006-4057-1-git-send-email-noah.massey@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 05/04/2016 12:58 PM, Jeff Moyer wrote:
-> Mike Christie <mchristi@redhat.com> writes:
-> 
->> On 05/03/2016 03:44 PM, Jeff Moyer wrote:
->>> Hi, Mike,
->>>
->>> That git tree doesn't seem to exist.  I did manage to apply your patch
->>> set on top of next-20160415, though.
->>>
->>> So... what testing did you do? ;-) I ran into the following problems
->>
->> I normally run xfstests and run it on my daily workstation and laptop. I
->> did not do this for every FS this time and hit a regression.
->>
->> What FS were you using?
-> 
-> I'm using xfs, scsi disk, no blk-mq, no dm.
-> 
->>> - git clone fails
->>> - yum segfaults
->>
->> In v7/v6, I missed a new submit_bio call, so I hit issues like the two
->> above. I have this fixed in the next version.
-> 
-> OK, does this mean you're posting another version, or you already did
-> and I somehow missed it?
-> 
+When printing the countdown in the safety delay, the number should
+correspond to the number of seconds remaining to wait at the time the
+delay is printed.
 
-I did not repost yet. I am still testing. Jens had me add some wrappers
-around the operation access, so because of my last screw up and the
-wrapper change affected all my patches I am redoing all my testing.
+In other words, there should be a one second sleep after printing '1'.
+
+Signed-off-by: Noah Massey <noah.massey@gmail.com>
+---
+ cmds-balance.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/cmds-balance.c b/cmds-balance.c
+index 5f05f60..8f3bf5b 100644
+--- a/cmds-balance.c
++++ b/cmds-balance.c
+@@ -445,9 +445,9 @@ static int do_balance(const char *path, struct btrfs_ioctl_balance_args *args,
+ 		printf("\twarning. The operation will start in %d seconds.\n", delay);
+ 		printf("\tUse Ctrl-C to stop it.\n");
+ 		while (delay) {
+-			sleep(1);
+ 			printf("%2d", delay--);
+ 			fflush(stdout);
++			sleep(1);
+ 		}
+ 		printf("\nStarting balance without any filters.\n");
+ 	}
+-- 
+2.8.1
+

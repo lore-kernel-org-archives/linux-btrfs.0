@@ -1,29 +1,49 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:34378 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1756536AbcEEIRM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 5 May 2016 04:17:12 -0400
-Date: Thu, 5 May 2016 10:16:54 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Noah Massey <noah.massey@gmail.com>
-Cc: David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs-progs: Adjust timing of safety delay countdown
-Message-ID: <20160505081654.GZ29353@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1462391006-4057-1-git-send-email-noah.massey@gmail.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1462391006-4057-1-git-send-email-noah.massey@gmail.com>
+Received: from mail-lf0-f50.google.com ([209.85.215.50]:34942 "EHLO
+	mail-lf0-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750825AbcEDNgr (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 4 May 2016 09:36:47 -0400
+Received: by mail-lf0-f50.google.com with SMTP id j8so59941302lfd.2
+        for <linux-btrfs@vger.kernel.org>; Wed, 04 May 2016 06:36:47 -0700 (PDT)
+From: Marek Rusinowski <marekrusinowski@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Marek Rusinowski <marekrusinowski@gmail.com>
+Subject: [PATCH] btrfs-progs: subvolume sync: fix handling of -s option
+Date: Wed,  4 May 2016 15:36:35 +0200
+Message-Id: <1462368995-24542-1-git-send-email-marekrusinowski@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, May 04, 2016 at 03:43:26PM -0400, Noah Massey wrote:
-> When printing the countdown in the safety delay, the number should
-> correspond to the number of seconds remaining to wait at the time the
-> delay is printed.
-> 
-> In other words, there should be a one second sleep after printing '1'.
-> 
-> Signed-off-by: Noah Massey <noah.massey@gmail.com>
+Setting check interval for subvolume sync resulted
+in picking wrong element from argv for it's value:
 
-Applied, thanks.
+  $ btrfs subvolume sync -s 10 ./dir
+  ERROR: invalid sleep interval ./dir
+  $ btrfs subvolume sync ./dir -s 10
+  Segmentation fault
+
+Signed-off-by: Marek Rusinowski <marekrusinowski@gmail.com>
+---
+ cmds-subvolume.c | 5 ++---
+ 1 file changed, 2 insertions(+), 3 deletions(-)
+
+diff --git a/cmds-subvolume.c b/cmds-subvolume.c
+index 2319684..c444617 100644
+--- a/cmds-subvolume.c
++++ b/cmds-subvolume.c
+@@ -1194,10 +1194,9 @@ static int cmd_subvol_sync(int argc, char **argv)
+ 
+ 		switch (c) {
+ 		case 's':
+-			sleep_interval = atoi(argv[optind]);
++			sleep_interval = atoi(optarg);
+ 			if (sleep_interval < 1) {
+-				error("invalid sleep interval %s",
+-					argv[optind]);
++				error("invalid sleep interval %s", optarg);
+ 				ret = 1;
+ 				goto out;
+ 			}
+-- 
+2.8.1
+

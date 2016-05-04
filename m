@@ -1,64 +1,103 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:36163 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:46031 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751559AbcEDJcY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 4 May 2016 05:32:24 -0400
+	id S1757182AbcEDJqd (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 4 May 2016 05:46:33 -0400
 Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id 4D69AABB4
-	for <linux-btrfs@vger.kernel.org>; Wed,  4 May 2016 09:32:23 +0000 (UTC)
+	by mx2.suse.de (Postfix) with ESMTP id 5E609ABB4
+	for <linux-btrfs@vger.kernel.org>; Wed,  4 May 2016 09:46:31 +0000 (UTC)
 From: David Sterba <dsterba@suse.com>
 To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.cz>, David Sterba <dsterba@suse.com>
-Subject: [PATCH] btrfs: add write protection to SET_FEATURES ioctl
-Date: Wed,  4 May 2016 11:32:00 +0200
-Message-Id: <1462354320-17526-1-git-send-email-dsterba@suse.com>
+Cc: David Sterba <dsterba@suse.com>
+Subject: [PATCH] btrfs: kill unused writepage_io_hook callback
+Date: Wed,  4 May 2016 11:46:10 +0200
+Message-Id: <1462355170-18469-1-git-send-email-dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: David Sterba <dsterba@suse.cz>
+It seems to be long time unused, since 2008 and
+6885f308b5570 ("Btrfs: Misc 2.6.25 updates").
 
-Perform the want_write check if we get far enough to do any writes.
+Propagating the removal touches some code but has no functional effect.
 
 Signed-off-by: David Sterba <dsterba@suse.com>
 ---
- fs/btrfs/ioctl.c | 16 +++++++++++++---
- 1 file changed, 13 insertions(+), 3 deletions(-)
+ fs/btrfs/extent_io.c | 39 ++++++++++++++++-----------------------
+ fs/btrfs/extent_io.h |  1 -
+ 2 files changed, 16 insertions(+), 24 deletions(-)
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 5a23806ae418..e3239272fa61 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -5394,9 +5394,15 @@ static int btrfs_ioctl_set_features(struct file *file, void __user *arg)
- 	if (ret)
- 		return ret;
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index d247fc0eea19..d22b0777c7e0 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -3368,6 +3368,8 @@ static noinline_for_stack int __extent_writepage_io(struct inode *inode,
  
-+	ret = mnt_want_write_file(file);
-+	if (ret)
-+		return ret;
+ 	while (cur <= end) {
+ 		u64 em_end;
++		unsigned long max_nr;
 +
- 	trans = btrfs_start_transaction(root, 0);
--	if (IS_ERR(trans))
--		return PTR_ERR(trans);
-+	if (IS_ERR(trans)) {
-+		ret = PTR_ERR(trans);
-+		goto out_drop_write;
-+	}
+ 		if (cur >= i_size) {
+ 			if (tree->ops && tree->ops->writepage_end_io_hook)
+ 				tree->ops->writepage_end_io_hook(page, cur,
+@@ -3423,32 +3425,23 @@ static noinline_for_stack int __extent_writepage_io(struct inode *inode,
+ 			continue;
+ 		}
  
- 	spin_lock(&root->fs_info->super_lock);
- 	newflags = btrfs_super_compat_flags(super_block);
-@@ -5415,7 +5421,11 @@ static int btrfs_ioctl_set_features(struct file *file, void __user *arg)
- 	btrfs_set_super_incompat_flags(super_block, newflags);
- 	spin_unlock(&root->fs_info->super_lock);
- 
--	return btrfs_commit_transaction(trans, root);
-+	ret = btrfs_commit_transaction(trans, root);
-+out_drop_write:
-+	mnt_drop_write_file(file);
+-		if (tree->ops && tree->ops->writepage_io_hook) {
+-			ret = tree->ops->writepage_io_hook(page, cur,
+-						cur + iosize - 1);
+-		} else {
+-			ret = 0;
++		max_nr = (i_size >> PAGE_SHIFT) + 1;
 +
-+	return ret;
- }
++		set_range_writeback(tree, cur, cur + iosize - 1);
++		if (!PageWriteback(page)) {
++			btrfs_err(BTRFS_I(inode)->root->fs_info,
++				   "page %lu not writeback, cur %llu end %llu",
++			       page->index, cur, end);
+ 		}
+-		if (ret) {
+-			SetPageError(page);
+-		} else {
+-			unsigned long max_nr = (i_size >> PAGE_SHIFT) + 1;
  
- long btrfs_ioctl(struct file *file, unsigned int
+-			set_range_writeback(tree, cur, cur + iosize - 1);
+-			if (!PageWriteback(page)) {
+-				btrfs_err(BTRFS_I(inode)->root->fs_info,
+-					   "page %lu not writeback, cur %llu end %llu",
+-				       page->index, cur, end);
+-			}
++		ret = submit_extent_page(write_flags, tree, wbc, page,
++					 sector, iosize, pg_offset,
++					 bdev, &epd->bio, max_nr,
++					 end_bio_extent_writepage,
++					 0, 0, 0, false);
++		if (ret)
++			SetPageError(page);
+ 
+-			ret = submit_extent_page(write_flags, tree, wbc, page,
+-						 sector, iosize, pg_offset,
+-						 bdev, &epd->bio, max_nr,
+-						 end_bio_extent_writepage,
+-						 0, 0, 0, false);
+-			if (ret)
+-				SetPageError(page);
+-		}
+ 		cur = cur + iosize;
+ 		pg_offset += iosize;
+ 		nr++;
+diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
+index b5e0ade90e88..981f402bf754 100644
+--- a/fs/btrfs/extent_io.h
++++ b/fs/btrfs/extent_io.h
+@@ -71,7 +71,6 @@ struct extent_io_ops {
+ 			     u64 start, u64 end, int *page_started,
+ 			     unsigned long *nr_written);
+ 	int (*writepage_start_hook)(struct page *page, u64 start, u64 end);
+-	int (*writepage_io_hook)(struct page *page, u64 start, u64 end);
+ 	extent_submit_bio_hook_t *submit_bio_hook;
+ 	int (*merge_bio_hook)(int rw, struct page *page, unsigned long offset,
+ 			      size_t size, struct bio *bio,
 -- 
 2.7.1
 

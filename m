@@ -1,70 +1,49 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:40582 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752627AbcEDSec (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 4 May 2016 14:34:32 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1ay1cx-0004Vs-Jy
-	for linux-btrfs@vger.kernel.org; Wed, 04 May 2016 20:34:27 +0200
-Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 04 May 2016 20:34:27 +0200
-Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 04 May 2016 20:34:27 +0200
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
+Received: from mail-ig0-f175.google.com ([209.85.213.175]:37907 "EHLO
+	mail-ig0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752437AbcEDS4w (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 4 May 2016 14:56:52 -0400
+Received: by mail-ig0-f175.google.com with SMTP id m9so56534381ige.1
+        for <linux-btrfs@vger.kernel.org>; Wed, 04 May 2016 11:56:52 -0700 (PDT)
 Subject: Re: /etc/fstab rootfs options vs grub2 rootflags cmdline
-Date: Wed, 4 May 2016 18:34:19 +0000 (UTC)
-Message-ID: <pan$b7a2d$25647256$6ea52b4$e3976a4a@cox.net>
+To: Chris Murphy <lists@colorremedies.com>,
+        =?UTF-8?Q?Niccol=c3=b2_Belli?= <darkbasic@linuxsystems.it>
 References: <79249c4d-eab0-43fa-a6ae-b670699891dc@linuxsystems.it>
-	<pan$7b1b$2e968d2f$7ddc7045$1ba7386@cox.net>
-	<f8233c24-e336-4d31-a4cb-f3b0f97d1305@linuxsystems.it>
-	<CAJCQCtQ5q_VUw0rCWWRZBFo=Lhx0ouYeuCDMxDLxcWKowUwbUw@mail.gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+ <pan$7b1b$2e968d2f$7ddc7045$1ba7386@cox.net>
+ <f8233c24-e336-4d31-a4cb-f3b0f97d1305@linuxsystems.it>
+ <CAJCQCtQ5q_VUw0rCWWRZBFo=Lhx0ouYeuCDMxDLxcWKowUwbUw@mail.gmail.com>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Message-ID: <09be130c-b0db-8419-fb8c-53a7e2d8e8e5@gmail.com>
+Date: Wed, 4 May 2016 14:56:41 -0400
+MIME-Version: 1.0
+In-Reply-To: <CAJCQCtQ5q_VUw0rCWWRZBFo=Lhx0ouYeuCDMxDLxcWKowUwbUw@mail.gmail.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Chris Murphy posted on Wed, 04 May 2016 12:07:39 -0600 as excerpted:
-
-> If you think it's worth the hassle, then you have to directly modify the
-> grub.cfg to include an expanded rootflags parameter. Right now
-> grub-mkconfig logic doesn't not include all options in fstab for
-> rootflags.
-
-And...
-
-That might explain why his grub2 behavior didn't match what I expected.
-
-Here, I entirely did away with the high-level grub config machinery like 
-grub-mkconfig (to the point I install-mask some of the files so they 
-don't get installed and thus can't accidentally be run, by some third 
-party configuration script or something, and mess up my direct config) 
-and I strictly do direct editing of the actual grub.cfg (and included 
-files) in grub's native shell-like script.
-
-I tend to forget that grub has this entire higher level config machinery 
-that most people use, but that wasn't configuring grub the way I wanted, 
-and that I'd have to learn IN ADDITION to the low-level scripting in 
-ordered to get grub to do what I wanted, if I was to continue to use the 
-high-level stuff at all.  Problem solved locally by simply deleting and 
-masking the high-level stuff so it doesn't install, so I had to learn 
-only the low-level script config, but that doesn't help me remember that 
-few others will be doing that, and that the high-level stuff even exists.
-
-So, umm, yeah, I was envisioning editing the low-level grub.cfg script 
-file directly.  If he's editing the higher level config and running grub-
-mkconfig or whatever to attempt to apply it to the lower level, then yes, 
-that high level machinery could apply something entirely different than 
-what I envisioned at the lower level, that of course being the major 
-reason I use exclusively the lower level scripting language config stuff, 
-here.
-
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+On 2016-05-04 14:07, Chris Murphy wrote:
+> On Wed, May 4, 2016 at 7:52 AM, Niccolò Belli <darkbasic@linuxsystems.it> wrote:
+>
+>
+>> I tried to add rootflags=noatime,compress=lzo,discard,autodefrag to
+>> GRUB_CMDLINE_LINUX in /etc/default/grub as you suggested but my system
+>> didn't manage to boot, probably because grub automatically adds
+>> rootflags=subvol=@ and only a single rootflags can be taken into account. Do
+>> you have any suggestion?
+>
+> Well, strictly speaking none of these options are necessary as
+> rootflags at boot time because ostensibly on most distros the file
+> system is read only until it reads fstab and then remounts rw with all
+> of your options. So it doesn't matter that some of them are missing.
+> If your distro immediately mounts btrfs rw (I think Ubuntu does?) then
+> it's a small problem for a small number of files that get touched
+> during startup. I don't think it's worth the hassle.
+For what it's worth:
+1. This only applies on systems using an initramfs.  IF you're using 
+systemd, you're using an initramfs, but it's still worth remembering.
+2. Some options can't be set in rootflags (the lazytime mount option for 
+example, as well as some of the FS specific ones).
+3. Some options can't be changed during a remount from ro to rw (mostly 
+FS specific ones, I don't know of any right now for BTRFS that can't be 
+changed though.

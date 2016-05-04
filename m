@@ -1,160 +1,84 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:24092 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755270AbcECJox (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 3 May 2016 05:44:53 -0400
-From: Anand Jain <anand.jain@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.cz
-Subject: [PATCH] btrfs: cleanup assigning next active device with a check
-Date: Tue,  3 May 2016 17:44:43 +0800
-Message-Id: <1462268683-10039-1-git-send-email-anand.jain@oracle.com>
-In-Reply-To: <1460978752-27375-1-git-send-email-anand.jain@oracle.com>
-References: <1460978752-27375-1-git-send-email-anand.jain@oracle.com>
+Received: from mx2.suse.de ([195.135.220.15]:57006 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750823AbcEDJP6 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 4 May 2016 05:15:58 -0400
+Date: Wed, 4 May 2016 11:15:40 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Anand Jain <anand.jain@oracle.com>
+Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz
+Subject: Re: [PATCH 1/1] btrfs: fix lock dep warning move scratch super
+ outside of chunk_mutex
+Message-ID: <20160504091540.GP29353@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1460468176-534-1-git-send-email-anand.jain@oracle.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1460468176-534-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Creates helper fucntion as needed by the device delete
-and replace operations. Also now it checks if the next
-device being assigned is an active device.
+On Tue, Apr 12, 2016 at 09:36:16PM +0800, Anand Jain wrote:
+> Move scratch super outside of the chunk lock to avoid below
+> lockdep warning. The better place to scratch super is in
+> the function btrfs_rm_dev_replace_free_srcdev() just before
+> free_device, which is outside of the chunk lock as well.
+> 
+> To reproduce:
+>   (fresh boot)
+>   mkfs.btrfs -f -draid5 -mraid5 /dev/sdc /dev/sdd /dev/sde
+>   mount /dev/sdc /btrfs
+>   dd if=/dev/zero of=/btrfs/tf1 bs=4096 count=100
+>   (get devmgt from https://github.com/asj/devmgt.git)
+>   devmgt detach /dev/sde
+>   dd if=/dev/zero of=/btrfs/tf1 bs=4096 count=100
+>   sync
+>   btrfs replace start -Brf 3 /dev/sdf /btrfs <--
+>   devmgt attach host7
+> 
+> ======================================================
+> [ INFO: possible circular locking dependency detected ]
+> 4.6.0-rc2asj+ #1 Not tainted
+> ---------------------------------------------------
+> 
+> btrfs/2174 is trying to acquire lock:
+> (sb_writers){.+.+.+}, at:
+> [<ffffffff812449b4>] __sb_start_write+0xb4/0xf0
+> 
+> but task is already holding lock:
+> (&fs_info->chunk_mutex){+.+.+.}, at:
+> [<ffffffffa05c5f55>] btrfs_dev_replace_finishing+0x145/0x980 [btrfs]
+> 
+> which lock already depends on the new lock.
+> 
+> Chain exists of:
+> sb_writers --> &fs_devs->device_list_mutex --> &fs_info->chunk_mutex
+> Possible unsafe locking scenario:
+> CPU0				CPU1
+> ----				----
+> lock(&fs_info->chunk_mutex);
+> 				lock(&fs_devs->device_list_mutex);
+> 				lock(&fs_info->chunk_mutex);
+> lock(sb_writers);
+> 
+> *** DEADLOCK ***
+> 
+> -> #0 (sb_writers){.+.+.+}:
+> [<ffffffff810e6415>] __lock_acquire+0x1bc5/0x1ee0
+> [<ffffffff810e707e>] lock_acquire+0xbe/0x210
+> [<ffffffff810df49a>] percpu_down_read+0x4a/0xa0
+> [<ffffffff812449b4>] __sb_start_write+0xb4/0xf0
+> [<ffffffff81265534>] mnt_want_write+0x24/0x50
+> [<ffffffff812508a2>] path_openat+0x952/0x1190
+> [<ffffffff81252451>] do_filp_open+0x91/0x100
+> [<ffffffff8123f5cc>] file_open_name+0xfc/0x140
+> [<ffffffff8123f643>] filp_open+0x33/0x60
+> [<ffffffffa0572bb6>] update_dev_time+0x16/0x40 [btrfs]
+> [<ffffffffa057f60d>] btrfs_scratch_superblocks+0x5d/0xb0 [btrfs]
+> [<ffffffffa057f70e>] btrfs_rm_dev_replace_remove_srcdev+0xae/0xd0 [btrfs]
+> [<ffffffffa05c62c5>] btrfs_dev_replace_finishing+0x4b5/0x980 [btrfs]
+> [<ffffffffa05c6ae8>] btrfs_dev_replace_start+0x358/0x530 [btrfs]
+> 
+> Signed-off-by: Anand Jain <anand.jain@oracle.com>
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
----
- v3: fix compile warning, use ASSERT, minor comment update, based on for-next
- v2: added comments, and BUG_ON if we can't find next_device.
-
- fs/btrfs/dev-replace.c |  8 +++----
- fs/btrfs/volumes.c     | 60 ++++++++++++++++++++++++++++++++++++--------------
- fs/btrfs/volumes.h     |  2 ++
- 3 files changed, 48 insertions(+), 22 deletions(-)
-
-diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
-index 9706e8bf5f7c..5ec7fa860391 100644
---- a/fs/btrfs/dev-replace.c
-+++ b/fs/btrfs/dev-replace.c
-@@ -569,11 +569,9 @@ static int btrfs_dev_replace_finishing(struct btrfs_fs_info *fs_info,
- 	ASSERT(list_empty(&src_device->resized_list));
- 	tgt_device->commit_total_bytes = src_device->commit_total_bytes;
- 	tgt_device->commit_bytes_used = src_device->bytes_used;
--	if (fs_info->sb->s_bdev &&
--		(fs_info->sb->s_bdev == src_device->bdev))
--		fs_info->sb->s_bdev = tgt_device->bdev;
--	if (fs_info->fs_devices->latest_bdev == src_device->bdev)
--		fs_info->fs_devices->latest_bdev = tgt_device->bdev;
-+
-+	btrfs_assign_next_active_device(fs_info, src_device, tgt_device);
-+
- 	list_add(&tgt_device->dev_alloc_list, &fs_info->fs_devices->alloc_list);
- 	fs_info->fs_devices->rw_devices++;
- 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index c401ad4998fc..1bf382f8f88d 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -1756,10 +1756,49 @@ static int btrfs_check_raid_min_devices(struct btrfs_fs_info *fs_info,
- 	return 0;
- }
- 
-+struct btrfs_device *btrfs_find_next_active_device(struct btrfs_fs_devices *fs_devs,
-+					struct btrfs_device *device)
-+{
-+	struct btrfs_device *next_device;
-+
-+	list_for_each_entry(next_device, &fs_devs->devices, dev_list) {
-+		if (next_device != device &&
-+			!next_device->missing && next_device->bdev)
-+			return next_device;
-+	}
-+	return NULL;
-+}
-+
-+/*
-+ * Helper function to check if the given device is part of
-+ * s_bdev / latest_bdev and replace it with the provided or
-+ * the next active device, in the context where this function
-+ * called, there should be always be another device (or this_dev)
-+ * which is active.
-+ */
-+void btrfs_assign_next_active_device(struct btrfs_fs_info *fs_info,
-+		struct btrfs_device *device, struct btrfs_device *this_dev)
-+{
-+	struct btrfs_device *next_device;
-+
-+	if (this_dev)
-+		next_device = this_dev;
-+	else
-+		next_device = btrfs_find_next_active_device(fs_info->fs_devices,
-+								device);
-+	ASSERT(next_device);
-+
-+	if (fs_info->sb->s_bdev &&
-+			(fs_info->sb->s_bdev == device->bdev))
-+		fs_info->sb->s_bdev = next_device->bdev;
-+
-+	if (fs_info->fs_devices->latest_bdev == device->bdev)
-+		fs_info->fs_devices->latest_bdev = next_device->bdev;
-+}
-+
- int btrfs_rm_device(struct btrfs_root *root, char *device_path, u64 devid)
- {
- 	struct btrfs_device *device;
--	struct btrfs_device *next_device;
- 	struct btrfs_fs_devices *cur_devices;
- 	u64 num_devices;
- 	int ret = 0;
-@@ -1846,13 +1885,7 @@ int btrfs_rm_device(struct btrfs_root *root, char *device_path, u64 devid)
- 	if (device->missing)
- 		device->fs_devices->missing_devices--;
- 
--	next_device = list_entry(root->fs_info->fs_devices->devices.next,
--				 struct btrfs_device, dev_list);
--	if (root->fs_info->sb->s_bdev &&
--		(root->fs_info->sb->s_bdev == device->bdev))
--		root->fs_info->sb->s_bdev = next_device->bdev;
--	if (device->bdev == root->fs_info->fs_devices->latest_bdev)
--		root->fs_info->fs_devices->latest_bdev = next_device->bdev;
-+	btrfs_assign_next_active_device(root->fs_info, device, NULL);
- 
- 	if (device->bdev) {
- 		device->fs_devices->open_devices--;
-@@ -1982,8 +2015,6 @@ void btrfs_rm_dev_replace_free_srcdev(struct btrfs_fs_info *fs_info,
- void btrfs_destroy_dev_replace_tgtdev(struct btrfs_fs_info *fs_info,
- 				      struct btrfs_device *tgtdev)
- {
--	struct btrfs_device *next_device;
--
- 	mutex_lock(&uuid_mutex);
- 	WARN_ON(!tgtdev);
- 	mutex_lock(&fs_info->fs_devices->device_list_mutex);
-@@ -1995,13 +2026,8 @@ void btrfs_destroy_dev_replace_tgtdev(struct btrfs_fs_info *fs_info,
- 
- 	fs_info->fs_devices->num_devices--;
- 
--	next_device = list_entry(fs_info->fs_devices->devices.next,
--				 struct btrfs_device, dev_list);
--	if (fs_info->sb->s_bdev &&
--		(tgtdev->bdev == fs_info->sb->s_bdev))
--		fs_info->sb->s_bdev = next_device->bdev;
--	if (tgtdev->bdev == fs_info->fs_devices->latest_bdev)
--		fs_info->fs_devices->latest_bdev = next_device->bdev;
-+	btrfs_assign_next_active_device(fs_info, tgtdev, NULL);
-+
- 	list_del_rcu(&tgtdev->dev_list);
- 
- 	mutex_unlock(&fs_info->fs_devices->device_list_mutex);
-diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-index 762d21996be1..0ac90f8d85bd 100644
---- a/fs/btrfs/volumes.h
-+++ b/fs/btrfs/volumes.h
-@@ -399,6 +399,8 @@ int btrfs_scan_one_device(const char *path, fmode_t flags, void *holder,
- 			  struct btrfs_fs_devices **fs_devices_ret);
- int btrfs_close_devices(struct btrfs_fs_devices *fs_devices);
- void btrfs_close_extra_devices(struct btrfs_fs_devices *fs_devices, int step);
-+void btrfs_assign_next_active_device(struct btrfs_fs_info *fs_info,
-+		struct btrfs_device *device, struct btrfs_device *this_dev);
- int btrfs_find_device_missing_or_by_path(struct btrfs_root *root,
- 					 char *device_path,
- 					 struct btrfs_device **device);
--- 
-2.7.0
-
+Added to for-next.

@@ -1,63 +1,71 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from x1-6-a4-2b-8c-8c-bd-da.cpe.webspeed.dk ([2.104.2.239]:51548
-	"EHLO mail.musikcheck.dk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751746AbcEDTAQ (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 4 May 2016 15:00:16 -0400
-Subject: Re: Subvolumes cannot be mounted after raid1 conversion
-To: Chris Murphy <lists@colorremedies.com>
-References: <983F0471-51E8-47EC-B5A0-FBA9040F634B@hagenjohansen.dk>
- <20160503095515.GM7228@carfax.org.uk>
- <B66776EA-68EA-490F-862E-C49A1D51FCE5@hagenjohansen.dk>
- <CAJCQCtQ3TRcQb4CBoxG1z5X4=ivP+22_RzECx9DM18cCJvvWgQ@mail.gmail.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-From: Hasse Hagen Johansen <hasse@hagenjohansen.dk>
-Message-ID: <ba85d2fe-f780-3597-ec37-7bb64176088e@hagenjohansen.dk>
-Date: Wed, 4 May 2016 21:00:08 +0200
+Received: from mail-oi0-f68.google.com ([209.85.218.68]:35877 "EHLO
+	mail-oi0-f68.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751132AbcEDT2p (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 4 May 2016 15:28:45 -0400
+Received: by mail-oi0-f68.google.com with SMTP id i2so10362704oib.3
+        for <linux-btrfs@vger.kernel.org>; Wed, 04 May 2016 12:28:45 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <CAJCQCtQ3TRcQb4CBoxG1z5X4=ivP+22_RzECx9DM18cCJvvWgQ@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8
+In-Reply-To: <pan$b7a2d$25647256$6ea52b4$e3976a4a@cox.net>
+References: <79249c4d-eab0-43fa-a6ae-b670699891dc@linuxsystems.it>
+	<pan$7b1b$2e968d2f$7ddc7045$1ba7386@cox.net>
+	<f8233c24-e336-4d31-a4cb-f3b0f97d1305@linuxsystems.it>
+	<CAJCQCtQ5q_VUw0rCWWRZBFo=Lhx0ouYeuCDMxDLxcWKowUwbUw@mail.gmail.com>
+	<pan$b7a2d$25647256$6ea52b4$e3976a4a@cox.net>
+Date: Wed, 4 May 2016 13:28:44 -0600
+Message-ID: <CAJCQCtRYsPanTSbtaDHOpm-+upb+=Xqxtk7KNxwndzcEvgF47Q@mail.gmail.com>
+Subject: Re: /etc/fstab rootfs options vs grub2 rootflags cmdline
+From: Chris Murphy <lists@colorremedies.com>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
+To: unlisted-recipients:; (no To-header on input)
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Den 04/05/16 kl. 20:12 skrev Chris Murphy:
-> On Tue, May 3, 2016 at 4:24 AM, Hasse Hagen Johansen
-> <hasse@hagenjohansen.dk> wrote:
->> Ok.  I can mount it manually just fine now using this command : sudo mount -t btrfs -o subvol=music /dev/sde /mnt/temp
->>
->> But somehow I cannot mount it at /music anymore(and I just found out that is what has been tricking me)
->>
->> I have also tried with this in fstab
->>
->> /dev/sde  /music          btrfs device=/dev/sdd,device=/dev/sde,subvol=music          0       2
-> 
-> I suggest you use volume UUID, and not /dev/ designation for anything,
-> it's not reliable so for all we know you're forcing systemd to
-> explicitly mount the wrong devices because their /dev/ letters are
-> different. Then you can drop device= and then you can also make
-> fs_passno 0 instead of 2, since it doesn't apply and just makes
-> systemd run fsck.btrfs which then does nothing.
-> 
-> If that doesn't work then you should add boot parameter
-> systemd.log_level=debug and then after startup put the output from
-> 'journalctl -b -o short-monotonic > journal.log' up somewhere for
-> others to look at. It will be much larger than usual and will make it
-> easier to find out where things are getting confused.
-> 
-> 
-> 
-Hi
+On Wed, May 4, 2016 at 12:34 PM, Duncan <1i5t5.duncan@cox.net> wrote:
+> Chris Murphy posted on Wed, 04 May 2016 12:07:39 -0600 as excerpted:
+>
+>> If you think it's worth the hassle, then you have to directly modify the
+>> grub.cfg to include an expanded rootflags parameter. Right now
+>> grub-mkconfig logic doesn't not include all options in fstab for
+>> rootflags.
+>
+> And...
+>
+> That might explain why his grub2 behavior didn't match what I expected.
+>
+> Here, I entirely did away with the high-level grub config machinery like
+> grub-mkconfig (to the point I install-mask some of the files so they
+> don't get installed and thus can't accidentally be run, by some third
+> party configuration script or something, and mess up my direct config)
+> and I strictly do direct editing of the actual grub.cfg (and included
+> files) in grub's native shell-like script.
+>
+> I tend to forget that grub has this entire higher level config machinery
+> that most people use, but that wasn't configuring grub the way I wanted,
+> and that I'd have to learn IN ADDITION to the low-level scripting in
+> ordered to get grub to do what I wanted, if I was to continue to use the
+> high-level stuff at all.  Problem solved locally by simply deleting and
+> masking the high-level stuff so it doesn't install, so I had to learn
+> only the low-level script config, but that doesn't help me remember that
+> few others will be doing that, and that the high-level stuff even exists.
 
-Actually I did change it back from using the UUID to /dev/sde when it
-didn't work. The problem was systemd unmounting right after manually
-mounting because it does that when you have changed devices used for the
-mountpoint - because it only reads /etc/fstab at boot to recreate its
-unit files (ex. the music.mount unit).
+Well this is a major reason why grubby is still used to modify
+grub.cfg on Fedora/CentOS/RHEL rather than obliterate the grub.cfg in
+favor of an entirely new one made from scratch using the baked in
+logic of grub-mkconfig.
 
-I also removed the device= entries, but this was a configuration I knew
-worked earlier so I reverted to it when I had problems mounting(or
-actually problems with systemd unmounting it right after I manually
-mounted it)
+The problem is, grubby is crusty and resists modification itself, so
+while its templating of a previous boot entry, parsing it, then making
+a new boot entry that uses everything it doesn't understand or care
+about in the template, only changing the things that it knows need
+changing (pretty much just the path to kernel and initramfs), while
+applying sanity tests, it also doesn't understand Btrfs subvolumes. So
+right now /boot can't be on a Btrfs subvolume, it has to be at the top
+level, as a consequence.
 
-So the problem has been solved and is somewhat a misbehaviour in
-systemd. I agree that the fs_passno 2 doesn't make sense with btrfs. It
-is a leftover from the ext4 which was mountet earlier on that mountpoint
+So, booting is hard.
+
+
+-- 
+Chris Murphy

@@ -1,44 +1,71 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from fallback1.mail.ru ([94.100.181.184]:44804 "EHLO
-	fallback1.mail.ru" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753452AbcEDXZK (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 4 May 2016 19:25:10 -0400
-Received: from smtp48.i.mail.ru (smtp48.i.mail.ru [94.100.177.108])
-	by fallback1.mail.ru (mPOP.Fallback_MX) with ESMTP id 195CA70B44B6
-	for <linux-btrfs@vger.kernel.org>; Thu,  5 May 2016 02:18:15 +0300 (MSK)
-Received: from 77-173-215-182.ip.telfort.nl ([77.173.215.182]:43972 helo=centurion)
-	by smtp48.i.mail.ru with esmtpa (envelope-from <dma_k@mail.ru>)
-	id 1ay63Y-0000K1-Da
-	for linux-btrfs@vger.kernel.org; Thu, 05 May 2016 02:18:13 +0300
-Received: from [192.168.1.85] (Furia.home [192.168.1.85])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
-	(No client certificate requested)
-	by centurion (Postfix) with ESMTPSA id 99D4CA6350
-	for <linux-btrfs@vger.kernel.org>; Thu,  5 May 2016 01:18:09 +0200 (CEST)
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-From: Dmitry Katsubo <dma_k@mail.ru>
-Subject: Spare volumes and hot auto-replacement feature
-Message-ID: <572A8337.1030505@mail.ru>
-Date: Thu, 5 May 2016 01:18:15 +0200
+Received: from mail-oi0-f44.google.com ([209.85.218.44]:36674 "EHLO
+	mail-oi0-f44.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752822AbcEEBHi convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 4 May 2016 21:07:38 -0400
+Received: by mail-oi0-f44.google.com with SMTP id x201so86577069oif.3
+        for <linux-btrfs@vger.kernel.org>; Wed, 04 May 2016 18:07:38 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
+In-Reply-To: <3bf4a554-e3b8-44e2-b8e7-d08889dcffed@linuxsystems.it>
+References: <3bf4a554-e3b8-44e2-b8e7-d08889dcffed@linuxsystems.it>
+Date: Wed, 4 May 2016 19:07:37 -0600
+Message-ID: <CAJCQCtRAqxREr8ToorSkbsnYKKk_NPy+1oSHP6WMOnpLe=9T1g@mail.gmail.com>
+Subject: Re: btrfs ate my data in just two days, after a fresh install. ram
+ and disk are ok. it still mounts, but I cannot repair
+From: Chris Murphy <lists@colorremedies.com>
+To: =?UTF-8?Q?Niccol=C3=B2_Belli?= <darkbasic@linuxsystems.it>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Dear btrfs community,
+On Wed, May 4, 2016 at 5:21 PM, Niccolò Belli <darkbasic@linuxsystems.it> wrote:
 
-I am interested in spare volumes and hot auto-replacement feature [1]. I have a couple of questions:
+> rw,noatime,compress=lzo,ssd,discard,space_cache,autodefrag,subvolid=257,subvol=/@
 
-* Which kernel version this feature will be included?
-* The description says that replacement happens automatically when there is any write failed or flush failed. Is it possible to control the ratio / number of such failures? (e.g. in case it was one-time accidental failure)
-* What happens if spare device is smaller then the (failing) device to be replaced?
-* What happens if during the replacement the spare device fails (write error)?
-* Is it possible for root to be notified in case if drive replacement (successful or unsuccessful) took place? Actually this question is actual for me for overall write/flush failures on btrfs volume (btrfs monitor).
+I suggest using defaults for starters. The only thing in that list
+that needs be there is either subvolid or subvold, not both. Add in
+the non-default options once you've proven the defaults are working,
+and add them one at a time.
 
-Many thanks!
 
-[1] https://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg48209.html
+
+> I have the whole rootfs encrypted, including boot. I followed these steps:
+> https://wiki.archlinux.org/index.php/Dm-crypt/Encrypting_an_entire_system#Btrfs_subvolumes_with_swap
+>
+> Disk is a SAMSUNG SSD PM851 M.2 2280 256GB (Firmware Version: EXT25D0Q).
+
+The firmware is old if I understand the naming scheme used by Dell. It
+says EXT49D0Q is current.
+
+http://www.dell.com/support/home/al/en/aldhs1/Drivers/DriversDetails?driverId=0NXHH
+
+If you need to update, you may be best off doing a whole device trim,
+which is easiest done with mkfs.btrfs pointed at the whole device. I
+wouldn't trust any data on the drive after a firmware update so I'd
+start over entirely from scratch, new partition map, new everything.
+So the way to do this is:
+
+mkfs.btrfs /dev/sda
+wipefs -a /dev/sda
+
+That way the btrfs magic is removed, and now you can partition it,
+setup dmcrypt, etc. I advice using all defaults for everything for
+now, otherwise it's anyone's guess what you're running into.
+
+
+Off topic, but at least gmail users see your posts go to spam because
+your domain is configured to disallow relaying. Most mail services
+ignore this request by the domain but google honors it so no amount of
+training will make your email not spam. This is what's in your emails
+that's causing the problem:
+
+       dmarc=fail (p=QUARANTINE dis=NONE) header.from=linuxsystems.it
+
+http://webmasters.stackexchange.com/questions/76765/sent-emails-pass-spf-and-dkim-but-fail-dmarc-when-received-by-gmail
+http://www.pcworld.com/article/2141120/yahoo-email-antispoofing-policy-breaks-mailing-lists.html
+
+
 
 -- 
-With best regards,
-Dmitry
+Chris Murphy

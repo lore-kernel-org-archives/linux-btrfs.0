@@ -1,40 +1,229 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f181.google.com ([209.85.223.181]:36354 "EHLO
-	mail-io0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751203AbcEELXU (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 5 May 2016 07:23:20 -0400
-Received: by mail-io0-f181.google.com with SMTP id u185so93546184iod.3
-        for <linux-btrfs@vger.kernel.org>; Thu, 05 May 2016 04:23:20 -0700 (PDT)
-Subject: Re: Spare volumes and hot auto-replacement feature
-To: Dmitry Katsubo <dma_k@mail.ru>, linux-btrfs <linux-btrfs@vger.kernel.org>
-References: <572A8337.1030505@mail.ru>
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <008f1f81-df20-796f-a609-78075ddd9837@gmail.com>
-Date: Thu, 5 May 2016 07:23:11 -0400
+Received: from cn.fujitsu.com ([222.73.24.84]:55842 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1752239AbcEEHv2 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 5 May 2016 03:51:28 -0400
+Received: from adam-work.localdomain (unknown [10.167.226.34])
+	by cn.fujitsu.com (Postfix) with ESMTP id 6337E4056404
+	for <linux-btrfs@vger.kernel.org>; Thu,  5 May 2016 15:51:20 +0800 (CST)
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH RFC] btrfs: Slightly speedup btrfs_read_block_groups
+Date: Thu,  5 May 2016 15:51:13 +0800
+Message-Id: <1462434673-8395-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-In-Reply-To: <572A8337.1030505@mail.ru>
-Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2016-05-04 19:18, Dmitry Katsubo wrote:
-> Dear btrfs community,
->
-> I am interested in spare volumes and hot auto-replacement feature [1]. I have a couple of questions:
->
-> * Which kernel version this feature will be included?
-Probably 4.7.  I would not suggest using it in production for at least a 
-few cycles though (probably 4.9).
-> * The description says that replacement happens automatically when there is any write failed or flush failed. Is it possible to control the ratio / number of such failures? (e.g. in case it was one-time accidental failure)
-As far as I know, no, it just happens.
-> * What happens if spare device is smaller then the (failing) device to be replaced?
-I'm pretty sure that it doesn't get replaced.
-> * What happens if during the replacement the spare device fails (write error)?
-I'm not certain about this one.
-> * Is it possible for root to be notified in case if drive replacement (successful or unsuccessful) took place? Actually this question is actual for me for overall write/flush failures on btrfs volume (btrfs monitor).
-There isn't any built-in monitoring in BTRFS that I know of, there are a 
-couple of options though for monitoring.  The simplest and probably most 
-reliable is to write a script to poll for changes in the error counts. 
-You can also check the filesystem mount options (without the hot-spare 
-functionality, if there's an error, the filesystem will (usually) get 
-remounted read-only, and this also works for most other filesystems too).
+Btrfs_read_block_groups() function is the most time consuming function
+if the whole fs is filled with small extents.
+
+For a btrfs filled with all 16K sized files, and when 2T space is used,
+mount the fs needs 10 to 12 seconds.
+
+While ftrace shows that, btrfs_read_block_groups() takes about 9
+seconds, while btrfs_read_chunk_tree() only takes 14ms.
+In theory, btrfs_read_chunk_tree() and btrfs_read_block_groups() should
+take the same time, as chunk and block groups are 1:1 mapped.
+
+However, considering block group items are spread across the large
+extent tree, it takes a lot of time to search btree.
+
+And furthermore, find_first_block_group() function used by
+btrfs_read_block_groups() is using a very bad method to locate block
+group item, by searching and then checking slot by slot.
+
+In kernel space, checking slot by slot is a little time consuming, as
+for next_leaf() case, kernel need to do extra locking.
+
+This patch will fix the slot by slot checking, as when we call
+btrfs_read_block_groups(), we have already read out all chunks and save
+them into map_tree.
+
+So we use map_tree to get exact block group start and length, then do
+exact btrfs_search_slot(), without slot by slot check, to speedup the
+mount.
+
+With this patch, time spent on btrfs_read_block_groups() is reduced to
+7.56s, compared to old 8.94s.
+
+Reported-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+
+---
+The further fix would change the mount process from reading out all
+block groups to reading out block group on demand.
+
+But according to the btrfs_read_chunk_tree() calling time, the real
+problem is the on-disk format and btree locking.
+
+If block group items are arranged like chunks, in a dedicated tree,
+btrfs_read_block_groups() should take the same time as
+btrfs_read_chunk_tree().
+
+And further more, if we can split current huge extent tree into
+something like per-chunk extent tree, a lot of current code like
+delayed_refs can be removed, as extent tree operation will be much
+faster.
+---
+ fs/btrfs/extent-tree.c | 61 ++++++++++++++++++++------------------------------
+ fs/btrfs/extent_map.c  |  1 +
+ fs/btrfs/extent_map.h  | 22 ++++++++++++++++++
+ 3 files changed, 47 insertions(+), 37 deletions(-)
+
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 8507484..9fa7728 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -9520,39 +9520,20 @@ out:
+ 	return ret;
+ }
+ 
+-static int find_first_block_group(struct btrfs_root *root,
+-		struct btrfs_path *path, struct btrfs_key *key)
++int find_block_group(struct btrfs_root *root,
++				   struct btrfs_path *path,
++				   struct extent_map *chunk_em)
+ {
+ 	int ret = 0;
+-	struct btrfs_key found_key;
+-	struct extent_buffer *leaf;
+-	int slot;
+-
+-	ret = btrfs_search_slot(NULL, root, key, path, 0, 0);
+-	if (ret < 0)
+-		goto out;
++	struct btrfs_key key;
+ 
+-	while (1) {
+-		slot = path->slots[0];
+-		leaf = path->nodes[0];
+-		if (slot >= btrfs_header_nritems(leaf)) {
+-			ret = btrfs_next_leaf(root, path);
+-			if (ret == 0)
+-				continue;
+-			if (ret < 0)
+-				goto out;
+-			break;
+-		}
+-		btrfs_item_key_to_cpu(leaf, &found_key, slot);
++	key.objectid = chunk_em->start;
++	key.offset = chunk_em->len;
++	key.type = BTRFS_BLOCK_GROUP_ITEM_KEY;
+ 
+-		if (found_key.objectid >= key->objectid &&
+-		    found_key.type == BTRFS_BLOCK_GROUP_ITEM_KEY) {
+-			ret = 0;
+-			goto out;
+-		}
+-		path->slots[0]++;
+-	}
+-out:
++	ret = btrfs_search_slot(NULL, root, &key, path, 0, 0);
++	if (ret > 0)
++		ret = -ENOENT;
+ 	return ret;
+ }
+ 
+@@ -9771,16 +9752,14 @@ int btrfs_read_block_groups(struct btrfs_root *root)
+ 	struct btrfs_block_group_cache *cache;
+ 	struct btrfs_fs_info *info = root->fs_info;
+ 	struct btrfs_space_info *space_info;
+-	struct btrfs_key key;
++	struct btrfs_mapping_tree *map_tree = &root->fs_info->mapping_tree;
++	struct extent_map *chunk_em;
+ 	struct btrfs_key found_key;
+ 	struct extent_buffer *leaf;
+ 	int need_clear = 0;
+ 	u64 cache_gen;
+ 
+ 	root = info->extent_root;
+-	key.objectid = 0;
+-	key.offset = 0;
+-	key.type = BTRFS_BLOCK_GROUP_ITEM_KEY;
+ 	path = btrfs_alloc_path();
+ 	if (!path)
+ 		return -ENOMEM;
+@@ -9793,10 +9772,16 @@ int btrfs_read_block_groups(struct btrfs_root *root)
+ 	if (btrfs_test_opt(root, CLEAR_CACHE))
+ 		need_clear = 1;
+ 
++	/* Here we don't lock the map tree, as we are the only reader */
++	chunk_em = first_extent_mapping(&map_tree->map_tree);
++	/* Not really possible */
++	if (!chunk_em) {
++		ret = -ENOENT;
++		goto error;
++	}
++
+ 	while (1) {
+-		ret = find_first_block_group(root, path, &key);
+-		if (ret > 0)
+-			break;
++		ret = find_block_group(root, path, chunk_em);
+ 		if (ret != 0)
+ 			goto error;
+ 
+@@ -9830,7 +9815,6 @@ int btrfs_read_block_groups(struct btrfs_root *root)
+ 				   sizeof(cache->item));
+ 		cache->flags = btrfs_block_group_flags(&cache->item);
+ 
+-		key.objectid = found_key.objectid + found_key.offset;
+ 		btrfs_release_path(path);
+ 
+ 		/*
+@@ -9911,6 +9895,9 @@ int btrfs_read_block_groups(struct btrfs_root *root)
+ 			}
+ 			spin_unlock(&info->unused_bgs_lock);
+ 		}
++		chunk_em = next_extent_mapping(chunk_em);
++		if (!chunk_em)
++			break;
+ 	}
+ 
+ 	list_for_each_entry_rcu(space_info, &root->fs_info->space_info, list) {
+diff --git a/fs/btrfs/extent_map.c b/fs/btrfs/extent_map.c
+index 318b048..7e781e7 100644
+--- a/fs/btrfs/extent_map.c
++++ b/fs/btrfs/extent_map.c
+@@ -453,3 +453,4 @@ void replace_extent_mapping(struct extent_map_tree *tree,
+ 
+ 	setup_extent_mapping(tree, new, modified);
+ }
++
+diff --git a/fs/btrfs/extent_map.h b/fs/btrfs/extent_map.h
+index eb8b8fa..9358e3e 100644
+--- a/fs/btrfs/extent_map.h
++++ b/fs/btrfs/extent_map.h
+@@ -90,4 +90,26 @@ int unpin_extent_cache(struct extent_map_tree *tree, u64 start, u64 len, u64 gen
+ void clear_em_logging(struct extent_map_tree *tree, struct extent_map *em);
+ struct extent_map *search_extent_mapping(struct extent_map_tree *tree,
+ 					 u64 start, u64 len);
++
++static inline struct extent_map *
++first_extent_mapping(struct extent_map_tree *tree)
++{
++	struct rb_node *node;
++
++	node = rb_first(&tree->map);
++	if (!node)
++		return NULL;
++	return rb_entry(node, struct extent_map, rb_node);
++}
++
++static inline struct extent_map *
++next_extent_mapping(struct extent_map *map)
++{
++	struct rb_node *node;
++
++	node = rb_next(&map->rb_node);
++	if (!node)
++		return NULL;
++	return rb_entry(node, struct extent_map, rb_node);
++}
+ #endif
+-- 
+2.8.2
+
+
+

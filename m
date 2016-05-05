@@ -1,104 +1,135 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from james.kirk.hungrycats.org ([174.142.39.145]:37261 "EHLO
-	james.kirk.hungrycats.org" rhost-flags-OK-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1750733AbcEEEcW (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 5 May 2016 00:32:22 -0400
-From: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
+Received: from mx2.suse.de ([195.135.220.15]:45804 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1755626AbcEEQgc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 5 May 2016 12:36:32 -0400
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+	by mx2.suse.de (Postfix) with ESMTP id 1181DAC60
+	for <linux-btrfs@vger.kernel.org>; Thu,  5 May 2016 16:36:31 +0000 (UTC)
+From: David Sterba <dsterba@suse.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs: don't force mounts to wait for cleaner_kthread to delete one or more subvolumes
-Date: Thu,  5 May 2016 00:23:49 -0400
-Message-Id: <1462422229-23797-1-git-send-email-ce3g8jdj@umail.furryterror.org>
+Cc: David Sterba <dsterba@suse.com>
+Subject: [PATCH 1/4] btrfs: rename and document compression workspace members
+Date: Thu,  5 May 2016 18:36:13 +0200
+Message-Id: <b7bde4178a61a6855e1afebb60db4358dbbb6830.1462460924.git.dsterba@suse.com>
+In-Reply-To: <cover.1462460924.git.dsterba@suse.com>
+References: <cover.1462460924.git.dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-During a mount, we start the cleaner kthread first because the transaction
-kthread wants to wake up the cleaner kthread.  We start the transaction
-kthread next because everything in btrfs wants transactions.  We do reloc
-recovery in the thread that was doing the original mount call once the
-transaction kthread is running.  This means that the cleaner kthread
-could already be running when reloc recovery happens (e.g. if a snapshot
-delete was started before a crash).
+The names are confusing, pick more fitting names and add comments.
 
-Relocation does not play well with the cleaner kthread, so a mutex was
-added in commit 5f3164813b90f7dbcb5c3ab9006906222ce471b7 "Btrfs: fix
-race between balance recovery and root deletion" to prevent both from
-being active at the same time.
-
-If the cleaner kthread is already holding the mutex by the time we get
-to btrfs_recover_relocation, the mount will be blocked until at least
-one deleted subvolume is cleaned (possibly more if the mount process
-doesn't get the lock right away).  During this time (which could be an
-arbitrarily long time on a large/slow filesystem), the mount process is
-stuck and the filesystem is unnecessarily inaccessible.
-
-Fix this by locking cleaner_mutex before we start cleaner_kthread, and
-unlocking the mutex after mount no longer requires it.  This ensures
-that the mounting process will not be blocked by the cleaner kthread.
-The cleaner kthread is already prepared for mutex contention and will
-just go to sleep until the mutex is available.
+Signed-off-by: David Sterba <dsterba@suse.com>
 ---
- fs/btrfs/disk-io.c | 18 +++++++++++++++---
- 1 file changed, 15 insertions(+), 3 deletions(-)
+ fs/btrfs/compression.c | 35 +++++++++++++++++++----------------
+ 1 file changed, 19 insertions(+), 16 deletions(-)
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index d8d68af..7c8f435 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -2509,6 +2509,7 @@ int open_ctree(struct super_block *sb,
- 	int num_backups_tried = 0;
- 	int backup_index = 0;
- 	int max_active;
-+	bool cleaner_mutex_locked = false;
+diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
+index ff61a41ac90b..4d5cd9624bb3 100644
+--- a/fs/btrfs/compression.c
++++ b/fs/btrfs/compression.c
+@@ -743,8 +743,11 @@ int btrfs_submit_compressed_read(struct inode *inode, struct bio *bio,
+ static struct {
+ 	struct list_head idle_ws;
+ 	spinlock_t ws_lock;
+-	int num_ws;
+-	atomic_t alloc_ws;
++	/* Number of free workspaces */
++	int free_ws;
++	/* Total number of allocated workspaces */
++	atomic_t total_ws;
++	/* Waiters for a free workspace */
+ 	wait_queue_head_t ws_wait;
+ } btrfs_comp_ws[BTRFS_COMPRESS_TYPES];
  
- 	tree_root = fs_info->tree_root = btrfs_alloc_root(fs_info);
- 	chunk_root = fs_info->chunk_root = btrfs_alloc_root(fs_info);
-@@ -2988,6 +2989,13 @@ retry_root_backup:
- 		goto fail_sysfs;
+@@ -760,7 +763,7 @@ void __init btrfs_init_compress(void)
+ 	for (i = 0; i < BTRFS_COMPRESS_TYPES; i++) {
+ 		INIT_LIST_HEAD(&btrfs_comp_ws[i].idle_ws);
+ 		spin_lock_init(&btrfs_comp_ws[i].ws_lock);
+-		atomic_set(&btrfs_comp_ws[i].alloc_ws, 0);
++		atomic_set(&btrfs_comp_ws[i].total_ws, 0);
+ 		init_waitqueue_head(&btrfs_comp_ws[i].ws_wait);
  	}
+ }
+@@ -777,35 +780,35 @@ static struct list_head *find_workspace(int type)
  
-+	/*
-+	 * Hold the cleaner_mutex thread here so that we don't block
-+	 * for a long time on btrfs_recover_relocation.  cleaner_kthread
-+	 * will wait for us to finish mounting the filesystem.
-+	 */
-+	mutex_lock(&fs_info->cleaner_mutex);
-+	cleaner_mutex_locked = true;
- 	fs_info->cleaner_kthread = kthread_run(cleaner_kthread, tree_root,
- 					       "btrfs-cleaner");
- 	if (IS_ERR(fs_info->cleaner_kthread))
-@@ -3046,10 +3054,8 @@ retry_root_backup:
- 		ret = btrfs_cleanup_fs_roots(fs_info);
- 		if (ret)
- 			goto fail_qgroup;
--
--		mutex_lock(&fs_info->cleaner_mutex);
-+		/* We locked cleaner_mutex before creating cleaner_kthread. */
- 		ret = btrfs_recover_relocation(tree_root);
--		mutex_unlock(&fs_info->cleaner_mutex);
- 		if (ret < 0) {
- 			printk(KERN_WARNING
- 			       "BTRFS: failed to recover relocation\n");
-@@ -3057,6 +3063,8 @@ retry_root_backup:
- 			goto fail_qgroup;
+ 	struct list_head *idle_ws	= &btrfs_comp_ws[idx].idle_ws;
+ 	spinlock_t *ws_lock		= &btrfs_comp_ws[idx].ws_lock;
+-	atomic_t *alloc_ws		= &btrfs_comp_ws[idx].alloc_ws;
++	atomic_t *total_ws		= &btrfs_comp_ws[idx].total_ws;
+ 	wait_queue_head_t *ws_wait	= &btrfs_comp_ws[idx].ws_wait;
+-	int *num_ws			= &btrfs_comp_ws[idx].num_ws;
++	int *free_ws			= &btrfs_comp_ws[idx].free_ws;
+ again:
+ 	spin_lock(ws_lock);
+ 	if (!list_empty(idle_ws)) {
+ 		workspace = idle_ws->next;
+ 		list_del(workspace);
+-		(*num_ws)--;
++		(*free_ws)--;
+ 		spin_unlock(ws_lock);
+ 		return workspace;
+ 
+ 	}
+-	if (atomic_read(alloc_ws) > cpus) {
++	if (atomic_read(total_ws) > cpus) {
+ 		DEFINE_WAIT(wait);
+ 
+ 		spin_unlock(ws_lock);
+ 		prepare_to_wait(ws_wait, &wait, TASK_UNINTERRUPTIBLE);
+-		if (atomic_read(alloc_ws) > cpus && !*num_ws)
++		if (atomic_read(total_ws) > cpus && !*free_ws)
+ 			schedule();
+ 		finish_wait(ws_wait, &wait);
+ 		goto again;
+ 	}
+-	atomic_inc(alloc_ws);
++	atomic_inc(total_ws);
+ 	spin_unlock(ws_lock);
+ 
+ 	workspace = btrfs_compress_op[idx]->alloc_workspace();
+ 	if (IS_ERR(workspace)) {
+-		atomic_dec(alloc_ws);
++		atomic_dec(total_ws);
+ 		wake_up(ws_wait);
+ 	}
+ 	return workspace;
+@@ -820,21 +823,21 @@ static void free_workspace(int type, struct list_head *workspace)
+ 	int idx = type - 1;
+ 	struct list_head *idle_ws	= &btrfs_comp_ws[idx].idle_ws;
+ 	spinlock_t *ws_lock		= &btrfs_comp_ws[idx].ws_lock;
+-	atomic_t *alloc_ws		= &btrfs_comp_ws[idx].alloc_ws;
++	atomic_t *total_ws		= &btrfs_comp_ws[idx].total_ws;
+ 	wait_queue_head_t *ws_wait	= &btrfs_comp_ws[idx].ws_wait;
+-	int *num_ws			= &btrfs_comp_ws[idx].num_ws;
++	int *free_ws			= &btrfs_comp_ws[idx].free_ws;
+ 
+ 	spin_lock(ws_lock);
+-	if (*num_ws < num_online_cpus()) {
++	if (*free_ws < num_online_cpus()) {
+ 		list_add(workspace, idle_ws);
+-		(*num_ws)++;
++		(*free_ws)++;
+ 		spin_unlock(ws_lock);
+ 		goto wake;
+ 	}
+ 	spin_unlock(ws_lock);
+ 
+ 	btrfs_compress_op[idx]->free_workspace(workspace);
+-	atomic_dec(alloc_ws);
++	atomic_dec(total_ws);
+ wake:
+ 	/*
+ 	 * Make sure counter is updated before we wake up waiters.
+@@ -857,7 +860,7 @@ static void free_workspaces(void)
+ 			workspace = btrfs_comp_ws[i].idle_ws.next;
+ 			list_del(workspace);
+ 			btrfs_compress_op[i]->free_workspace(workspace);
+-			atomic_dec(&btrfs_comp_ws[i].alloc_ws);
++			atomic_dec(&btrfs_comp_ws[i].total_ws);
  		}
  	}
-+	mutex_unlock(&fs_info->cleaner_mutex);
-+	cleaner_mutex_locked = false;
- 
- 	location.objectid = BTRFS_FS_TREE_OBJECTID;
- 	location.type = BTRFS_ROOT_ITEM_KEY;
-@@ -3164,6 +3172,10 @@ fail_cleaner:
- 	filemap_write_and_wait(fs_info->btree_inode->i_mapping);
- 
- fail_sysfs:
-+	if (cleaner_mutex_locked) {
-+		mutex_unlock(&fs_info->cleaner_mutex);
-+		cleaner_mutex_locked = false;
-+	}
- 	btrfs_sysfs_remove_mounted(fs_info);
- 
- fail_fsdev_sysfs:
+ }
 -- 
-2.1.4
+2.7.1
 

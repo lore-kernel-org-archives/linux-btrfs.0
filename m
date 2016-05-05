@@ -1,97 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:45818 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:45822 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1757642AbcEEQgj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 5 May 2016 12:36:39 -0400
+	id S1757718AbcEEQgm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 5 May 2016 12:36:42 -0400
 Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id 9A03DAC60
-	for <linux-btrfs@vger.kernel.org>; Thu,  5 May 2016 16:36:37 +0000 (UTC)
+	by mx2.suse.de (Postfix) with ESMTP id DE670AC60
+	for <linux-btrfs@vger.kernel.org>; Thu,  5 May 2016 16:36:40 +0000 (UTC)
 From: David Sterba <dsterba@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: David Sterba <dsterba@suse.com>
-Subject: [PATCH 3/4] btrfs: make find_workspace always succeed
-Date: Thu,  5 May 2016 18:36:20 +0200
-Message-Id: <3b501d18aa4f75fe23af5b0bf592d62fd82cca5b.1462460924.git.dsterba@suse.com>
+Subject: [PATCH 4/4] btrfs: make find_workspace warn if there are no workspaces
+Date: Thu,  5 May 2016 18:36:23 +0200
+Message-Id: <ae55b9ec7ac117c05ff866500425fe8b4accfebe.1462460924.git.dsterba@suse.com>
 In-Reply-To: <cover.1462460924.git.dsterba@suse.com>
 References: <cover.1462460924.git.dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-With just one preallocated workspace we can guarantee forward progress
-even if there's no memory available for new workspaces. The cost is more
-waiting but we also get rid of several error paths.
-
-On average, there will be several idle workspaces, so the waiting
-penalty won't be so bad.
-
-In the worst case, all cpus will compete for one workspace until there's
-some memory. Attempts to allocate a new one are done each time the
-waiters are woken up.
+Be verbose if there are no workspaces at all, ie. the module init time
+preallocation failed.
 
 Signed-off-by: David Sterba <dsterba@suse.com>
 ---
- fs/btrfs/compression.c | 20 ++++++++++++--------
- 1 file changed, 12 insertions(+), 8 deletions(-)
+ fs/btrfs/compression.c | 14 ++++++++++++++
+ 1 file changed, 14 insertions(+)
 
 diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
-index 38c058bcf359..c70625560265 100644
+index c70625560265..658c39b70fba 100644
 --- a/fs/btrfs/compression.c
 +++ b/fs/btrfs/compression.c
-@@ -785,8 +785,10 @@ void __init btrfs_init_compress(void)
- }
- 
- /*
-- * this finds an available workspace or allocates a new one
-- * ERR_PTR is returned if things go bad.
-+ * This finds an available workspace or allocates a new one.
-+ * If it's not possible to allocate a new one, waits until there's one.
-+ * Preallocation makes a forward progress guarantees and we do not return
-+ * errors.
-  */
- static struct list_head *find_workspace(int type)
- {
-@@ -826,6 +828,14 @@ static struct list_head *find_workspace(int type)
- 	if (IS_ERR(workspace)) {
- 		atomic_dec(total_ws);
- 		wake_up(ws_wait);
+@@ -834,7 +834,21 @@ static struct list_head *find_workspace(int type)
+ 		 * workspace preallocated for each type and the compression
+ 		 * time is bounded so we get to a workspace eventually. This
+ 		 * makes our caller's life easier.
++		 *
++		 * To prevent silent and low-probability deadlocks (when the
++		 * initial preallocation fails), check if there are any
++		 * workspaces at all.
+ 		 */
++		if (atomic_read(total_ws) == 0) {
++			static DEFINE_RATELIMIT_STATE(_rs,
++					/* once per minute */ 60 * HZ,
++					/* no burst */ 1);
 +
-+		/*
-+		 * Do not return the error but go back to waiting. There's a
-+		 * workspace preallocated for each type and the compression
-+		 * time is bounded so we get to a workspace eventually. This
-+		 * makes our caller's life easier.
-+		 */
-+		goto again;
++			if (__ratelimit(&_rs)) {
++				printk(KERN_WARNING
++			    "no compression workspaces, low memory, retrying");
++			}
++		}
+ 		goto again;
  	}
  	return workspace;
- }
-@@ -913,8 +923,6 @@ int btrfs_compress_pages(int type, struct address_space *mapping,
- 	int ret;
- 
- 	workspace = find_workspace(type);
--	if (IS_ERR(workspace))
--		return PTR_ERR(workspace);
- 
- 	ret = btrfs_compress_op[type-1]->compress_pages(workspace, mapping,
- 						      start, len, pages,
-@@ -949,8 +957,6 @@ static int btrfs_decompress_biovec(int type, struct page **pages_in,
- 	int ret;
- 
- 	workspace = find_workspace(type);
--	if (IS_ERR(workspace))
--		return PTR_ERR(workspace);
- 
- 	ret = btrfs_compress_op[type-1]->decompress_biovec(workspace, pages_in,
- 							 disk_start,
-@@ -971,8 +977,6 @@ int btrfs_decompress(int type, unsigned char *data_in, struct page *dest_page,
- 	int ret;
- 
- 	workspace = find_workspace(type);
--	if (IS_ERR(workspace))
--		return PTR_ERR(workspace);
- 
- 	ret = btrfs_compress_op[type-1]->decompress(workspace, data_in,
- 						  dest_page, start_byte,
 -- 
 2.7.1
 

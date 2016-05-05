@@ -1,56 +1,43 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:45822 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:45800 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1757718AbcEEQgm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 5 May 2016 12:36:42 -0400
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id DE670AC60
-	for <linux-btrfs@vger.kernel.org>; Thu,  5 May 2016 16:36:40 +0000 (UTC)
+	id S1755626AbcEEQg3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 5 May 2016 12:36:29 -0400
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+	by mx2.suse.de (Postfix) with ESMTP id CCA11AC60
+	for <linux-btrfs@vger.kernel.org>; Thu,  5 May 2016 16:36:27 +0000 (UTC)
 From: David Sterba <dsterba@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: David Sterba <dsterba@suse.com>
-Subject: [PATCH 4/4] btrfs: make find_workspace warn if there are no workspaces
-Date: Thu,  5 May 2016 18:36:23 +0200
-Message-Id: <ae55b9ec7ac117c05ff866500425fe8b4accfebe.1462460924.git.dsterba@suse.com>
-In-Reply-To: <cover.1462460924.git.dsterba@suse.com>
-References: <cover.1462460924.git.dsterba@suse.com>
+Subject: [PATCH 0/4] Improve compression workspaces memory management
+Date: Thu,  5 May 2016 18:36:10 +0200
+Message-Id: <cover.1462460924.git.dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Be verbose if there are no workspaces at all, ie. the module init time
-preallocation failed.
+Hi,
 
-Signed-off-by: David Sterba <dsterba@suse.com>
----
- fs/btrfs/compression.c | 14 ++++++++++++++
- 1 file changed, 14 insertions(+)
+the compression workspaces are allocated as needed an this could fail if
+there's no free memory. Moreover, as we might be flushing data from the
+restricted contexts we should try our best not to fail.
 
-diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
-index c70625560265..658c39b70fba 100644
---- a/fs/btrfs/compression.c
-+++ b/fs/btrfs/compression.c
-@@ -834,7 +834,21 @@ static struct list_head *find_workspace(int type)
- 		 * workspace preallocated for each type and the compression
- 		 * time is bounded so we get to a workspace eventually. This
- 		 * makes our caller's life easier.
-+		 *
-+		 * To prevent silent and low-probability deadlocks (when the
-+		 * initial preallocation fails), check if there are any
-+		 * workspaces at all.
- 		 */
-+		if (atomic_read(total_ws) == 0) {
-+			static DEFINE_RATELIMIT_STATE(_rs,
-+					/* once per minute */ 60 * HZ,
-+					/* no burst */ 1);
-+
-+			if (__ratelimit(&_rs)) {
-+				printk(KERN_WARNING
-+			    "no compression workspaces, low memory, retrying");
-+			}
-+		}
- 		goto again;
- 	}
- 	return workspace;
+This patchset preallocates one workspace for each compression type at module
+load time (and tries to get one if that fails later). If any further request
+for new workspace fails, there's still that one to make progress. IOW workspace
+allocation will not fail at writeback time.
+
+I have tested this by instrumenting the code to limit the number of workspaces
+to one and did some stress tests.
+
+David Sterba (4):
+  btrfs: rename and document compression workspace members
+  btrfs: preallocate compression workspaces
+  btrfs: make find_workspace always succeed
+  btrfs: make find_workspace warn if there are no workspaces
+
+ fs/btrfs/compression.c | 85 ++++++++++++++++++++++++++++++++++++--------------
+ 1 file changed, 61 insertions(+), 24 deletions(-)
+
 -- 
 2.7.1
 

@@ -1,71 +1,244 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oi0-f44.google.com ([209.85.218.44]:36674 "EHLO
-	mail-oi0-f44.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752822AbcEEBHi convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 4 May 2016 21:07:38 -0400
-Received: by mail-oi0-f44.google.com with SMTP id x201so86577069oif.3
-        for <linux-btrfs@vger.kernel.org>; Wed, 04 May 2016 18:07:38 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <3bf4a554-e3b8-44e2-b8e7-d08889dcffed@linuxsystems.it>
-References: <3bf4a554-e3b8-44e2-b8e7-d08889dcffed@linuxsystems.it>
-Date: Wed, 4 May 2016 19:07:37 -0600
-Message-ID: <CAJCQCtRAqxREr8ToorSkbsnYKKk_NPy+1oSHP6WMOnpLe=9T1g@mail.gmail.com>
+Received: from cn.fujitsu.com ([59.151.112.132]:36163 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1750696AbcEEEMi (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 5 May 2016 00:12:38 -0400
 Subject: Re: btrfs ate my data in just two days, after a fresh install. ram
  and disk are ok. it still mounts, but I cannot repair
-From: Chris Murphy <lists@colorremedies.com>
-To: =?UTF-8?Q?Niccol=C3=B2_Belli?= <darkbasic@linuxsystems.it>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+To: =?UTF-8?Q?Niccol=c3=b2_Belli?= <darkbasic@linuxsystems.it>,
+        <linux-btrfs@vger.kernel.org>
+References: <3bf4a554-e3b8-44e2-b8e7-d08889dcffed@linuxsystems.it>
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Message-ID: <40dd4f90-0083-2d53-7f8d-dbaef8f87e79@cn.fujitsu.com>
+Date: Thu, 5 May 2016 12:12:28 +0800
+MIME-Version: 1.0
+In-Reply-To: <3bf4a554-e3b8-44e2-b8e7-d08889dcffed@linuxsystems.it>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, May 4, 2016 at 5:21 PM, Niccolò Belli <darkbasic@linuxsystems.it> wrote:
 
+
+Niccolò Belli wrote on 2016/05/05 01:21 +0200:
+> I really need your help, because it's the second time btrfs ate my data
+> in a couple of days and I can't use my laptop if I don't find the culprit.
+>
+> This was the mail I sent a couple of days ago:
+> https://www.spinics.net/lists/linux-btrfs/msg54754.html
+
+Output in that mail shows obvious tree block corruption:
+checksum verify failed on 245498111 found C7652CC3 wanted 00000000
+checksum verify failed on 245498111 found C7652CC3 wanted 00000000
+checksum verify failed on 245498111 found C7652CC3 wanted 00000000
+checksum verify failed on 245498111 found C7652CC3 wanted 00000000
+bytenr mismatch, want=245498111, have=8454382400481263616
+
+That's the root cause of following tons of error.
+I assume it maybe the same cause this time.
+
+> I previously thought the culprit was a bug in kernel 4.6-rc, but I was
+> wrong.
+>
+> Then I reinstalled the whole system (Arch Linux) from scratch, and after
+> just two days I lost some of my data, again. Once again btrfs check
+> --repair got stuck in an infinite loop and I can't repair my fs. The
+> system has always been shutdown properly, except for a single time when
+> I had to forcedly power it off just after the boot because I didn't see
+> any signal on the screen.
+>
+> First the obvious things:
+>
+> - memory is ok
+> (https://drive.google.com/open?id=0Bwe9Wtc-5xF1VnJ0SE9fT1FZMTg)
+> - disk is ok
+> (https://drive.google.com/open?id=0Bwe9Wtc-5xF1NGRhd2daVDRJVGc)
+> - tlp has SATA_LINKPWR_ON_BAT=max_performance
+> (https://drive.google.com/open?id=0Bwe9Wtc-5xF1dFAwUE5ETVpNWGM)
+> - rootfs mount options:
 > rw,noatime,compress=lzo,ssd,discard,space_cache,autodefrag,subvolid=257,subvol=/@
-
-I suggest using defaults for starters. The only thing in that list
-that needs be there is either subvolid or subvold, not both. Add in
-the non-default options once you've proven the defaults are working,
-and add them one at a time.
-
-
-
-> I have the whole rootfs encrypted, including boot. I followed these steps:
+>
+> - Command line: BOOT_IMAGE=/@/boot/vmlinuz-linux
+> root=UUID=4fc2278e-f6e8-4a21-8876-cabbf885bb2e rw rootflags=subvol=@
+> cryptdevice=/dev/disk/by-uuid/c7c8f501-507c-4bd2-a80a-8c7360651f02:cryptroot:allow-discards
+> quiet
+> - scrub didn't find any error:
+> $ sudo btrfs scrub status /
+> scrub status for 4fc2278e-f6e8-4a21-8876-cabbf885bb2e
+>        scrub started at Thu May  5 00:57:30 2016 and finished after
+> 00:00:45
+>        total bytes scrubbed: 22.26GiB with 0 errors
+>
+> I have the whole rootfs encrypted, including boot. I followed these
+> steps:
 > https://wiki.archlinux.org/index.php/Dm-crypt/Encrypting_an_entire_system#Btrfs_subvolumes_with_swap
 >
+
+Would it be OK for you to test your btrfs on a plain ssd, without 
+encryption?
+
+I know this suggestion is quite rude, but this would hugely reduce the 
+possible layers we need to investigate.
+
+And just as Chris Murphy said, reducing mount option is also a pretty 
+good debugging start point.
+
+>
 > Disk is a SAMSUNG SSD PM851 M.2 2280 256GB (Firmware Version: EXT25D0Q).
+> Laptop is a Dell XPS 13 9343 QHD+.
+> Distro is Arch Linux, kernel version is 4.5.1. btrfs-progs is 4.5.2.
+>
+> After two days from the previous data loss I finished reinstalling my
+> distro from scratch, then I decided to do a full backup from a snapshot
+> using tar. This is what I got while trying to backup my data:
+>
+> tar: usr/share/kig/icons/hicolor/32x32/actions/test.png: errore di
+> lettura al byte 0 leggendo 810 byte: Errore di input/output
+> tar: usr/share/kig/icons/hicolor/32x32/actions/circlebpd.png: funzione
+> "stat" non riuscita: Stale file handle
+> tar: usr/share/kig/icons/hicolor/32x32/actions/pointOnLine.png: funzione
+> "stat" non riuscita: Stale file handle
+> tar: usr/share/kig/icons/hicolor/32x32/actions/bezierN.png: funzione
+> "stat" non riuscita: Stale file handle
+> tar: usr/share/kig/icons/hicolor/32x32/actions/convexhull.png: funzione
+> "stat" non riuscita: Stale file handle
+> tar: usr/share/kig/icons/hicolor/32x32/actions/centerofcurvature.png:
+> funzione "stat" non riuscita: Stale file handle
+> tar: usr/share/kig/icons/hicolor/32x32/actions/en.png: funzione "stat"
+> non riuscita: Stale file handle
+> tar: usr/share/kig/icons/hicolor/32x32/actions/circlebps.png: funzione
+> "stat" non riuscita: Stale file handle
+> tar: usr/share/kig/icons/hicolor/32x32/actions/directrix.png: funzione
+> "stat" non riuscita: Stale file handle
+> tar: usr/share/kig/icons/hicolor/32x32/actions/beziercurves.png:
+> funzione "stat" non riuscita: Stale file handle
+> tar: usr/share/kig/icons/hicolor/32x32/actions/segment_midpoint.png:
+> funzione "stat" non riuscita: Stale file handle
+> tar: usr/share/kig/icons/hicolor/32x32/actions/distance.png: funzione
+> "stat" non riuscita: Stale file handle
+> tar: usr/share/kig/icons/hicolor/32x32/actions/circlebcl.png: funzione
+> "stat" non riuscita: Stale file handle
+> tar: usr/share/kig/icons/hicolor/32x32/actions/conicb5p.png: funzione
+> "stat" non riuscita: Stale file handle
+> tar: usr/share/kig/icons/hicolor/32x32/actions/kig_polygon.png: funzione
+> "stat" non riuscita: Stale file handle
+> tar: usr/share/kig/icons/hicolor/32x32/actions/conicasymptotes.png:
+> funzione "stat" non riuscita: Stale file handle
+> tar: usr/share/kig/icons/hicolor/32x32/actions/pointxy.png: funzione
+> "stat" non riuscita: Stale file handle
+> tar: usr/share/kig/icons/hicolor/32x32/actions/attacher.png: funzione
+> "stat" non riuscita: Stale file handle
+> tar:
+> usr/share/kig/icons/hicolor/32x32/actions/coniclineintersection.png:
+> funzione "stat" non riuscita: Stale file handle
+> tar: usr/share/kig/icons/hicolor/32x32/actions/vectorsum.png: funzione
+> "stat" non riuscita: Stale file handle
+> tar: usr/share/kig/icons/hicolor/32x32/actions/rbezier4.png: funzione
+> "stat" non riuscita: Stale file handle
+> tar: usr/share/kig/icons/hicolor/32x32/actions/ellipsebffp.png: funzione
+> "stat" non riuscita: Stale file handle
+> tar: usr/share/kig/icons/hicolor/32x32/actions/angle.png: funzione
+> "stat" non riuscita: Stale file handle
+> tar: usr/share/kig/icons/hicolor/32x32/actions/kig_text.png: funzione
+> "stat" non riuscita: Stale file handle
+> tar: usr/share/kig/icons/hicolor/32x32/actions/vectordifference.png:
+> funzione "stat" non riuscita: Stale file handle
+> tar: usr/share/kig/icons/hicolor/32x32/actions/segmentaxis.png: funzione
+> "stat" non riuscita: Stale file handle
+> tar: usr/share/kig/icons/hicolor/32x32/actions/radicalline.png: funzione
+> "stat" non riuscita: Stale file handle
+> tar: usr/share/kig/icons/hicolor/32x32/actions/polygonsides.png:
+> funzione "stat" non riuscita: Stale file handle
+> tar: usr/share/kig/icons/hicolor/32x32/actions/projection.png: funzione
+> "stat" non riuscita: Stale file handle
+> tar: usr/share/kig/icons/hicolor/32x32/actions/inversion.png: funzione
+> "stat" non riuscita: Stale file handle
+> tar: usr/share/kig/icons/hicolor/32x32/actions/bezier4.png: funzione
+> "stat" non riuscita: Stale file handle
+> tar:
+> usr/share/kig/icons/hicolor/32x32/actions/equilateralhyperbolab4p.png:
+> funzione "stat" non riuscita: Stale file handle
+> tar: usr/share/kig/icons/hicolor/32x32/actions/areaCircle.png: funzione
+> "stat" non riuscita: Stale file handle
+> tar: var/lib/samba/private/msg.sock/666: socket ignorato
+> tar: Uscita con stato di fallimento in base agli errori precedenti
+>
+>
+> [ 3057.008185] BTRFS error (device dm-0): parent transid verify failed
+> on 528089088 wanted 3458764513820541211 found 283
 
-The firmware is old if I understand the naming scheme used by Dell. It
-says EXT49D0Q is current.
+Tree blocks are again heavily damaged.
+Wanted transid is super large, definitely not sane.
 
-http://www.dell.com/support/home/al/en/aldhs1/Drivers/DriversDetails?driverId=0NXHH
-
-If you need to update, you may be best off doing a whole device trim,
-which is easiest done with mkfs.btrfs pointed at the whole device. I
-wouldn't trust any data on the drive after a firmware update so I'd
-start over entirely from scratch, new partition map, new everything.
-So the way to do this is:
-
-mkfs.btrfs /dev/sda
-wipefs -a /dev/sda
-
-That way the btrfs magic is removed, and now you can partition it,
-setup dmcrypt, etc. I advice using all defaults for everything for
-now, otherwise it's anyone's guess what you're running into.
+So parent node is already corrupted.
+Although the child transid, 283 seems quite valid.
 
 
-Off topic, but at least gmail users see your posts go to spam because
-your domain is configured to disallow relaying. Most mail services
-ignore this request by the domain but google honors it so no amount of
-training will make your email not spam. This is what's in your emails
-that's causing the problem:
+> [ 3057.008195] BTRFS error (device dm-0): error loading props for ino
+> 183988 (root 505): -5
+> [ 3057.008417] BTRFS error (device dm-0): parent transid verify failed
+> on 528089088 wanted 3458764513820541211 found 283
+> [ 3057.008631] BTRFS error (device dm-0): parent transid verify failed
+> on 528089088 wanted 3458764513820541211 found 283
+> [ 3057.009165] BTRFS error (device dm-0): parent transid verify failed
+> on 528089088 wanted 3458764513820541211 found 283
+> [ 3057.009389] BTRFS error (device dm-0): parent transid verify failed
+> on 528089088 wanted 3458764513820541211 found 283
+> [ 3057.009734] BTRFS error (device dm-0): parent transid verify failed
+> on 528089088 wanted 3458764513820541211 found 283
+> [ 3057.009960] BTRFS error (device dm-0): parent transid verify failed
+> on 528089088 wanted 3458764513820541211 found 283
+> [ 3057.010664] BTRFS error (device dm-0): parent transid verify failed
+> on 528089088 wanted 3458764513820541211 found 283
+> [ 3057.010888] BTRFS error (device dm-0): parent transid verify failed
+> on 528089088 wanted 3458764513820541211 found 283
+> [ 3057.011201] BTRFS error (device dm-0): parent transid verify failed
+> on 528089088 wanted 3458764513820541211 found 283
+> [ 3331.795474] verify_parent_transid: 57 callbacks suppressed
+> [ 3331.795480] BTRFS error (device dm-0): parent transid verify failed
+> on 528089088 wanted 3458764513820541211 found 283
+> [ 3331.795776] BTRFS error (device dm-0): parent transid verify failed
+> on 528089088 wanted 3458764513820541211 found 283
+>
+> I made a copy of /dev/mapper/cryptroot with dd on an external drive and
+> I run btrfs check on it (btrfs-progs 4.5.2):
+> https://drive.google.com/open?id=0Bwe9Wtc-5xF1SjJacXpMMU5mems (37MB)
 
-       dmarc=fail (p=QUARANTINE dis=NONE) header.from=linuxsystems.it
+Checked, but seems the output is truncated?
 
-http://webmasters.stackexchange.com/questions/76765/sent-emails-pass-spf-and-dkim-but-fail-dmarc-when-received-by-gmail
-http://www.pcworld.com/article/2141120/yahoo-email-antispoofing-policy-breaks-mailing-lists.html
+Thanks,
+Qu
+
+>
+> Then I tried to run btrfs check --repair on it but once again it got
+> stuck in an infinite loop like this one
+> (https://www.spinics.net/lists/linux-btrfs/msg54146.html) and after an
+> hour of looping and several hundreds of MBs of logs I had to kill it.
+> Here is the log, truncated to 30MB:
+> https://drive.google.com/open?id=0Bwe9Wtc-5xF1SmRuVUlfeGRES3M
+>
+> They are probably not needed but here is snapper -c @ list:
+> https://drive.google.com/open?id=0Bwe9Wtc-5xF1N0llOFpfVXVwNVk
+> and btrfs subvolume list -p /:
+> https://drive.google.com/open?id=0Bwe9Wtc-5xF1andCdWZzeV9VbDg
+>
+> This is the link to the whole gdrive directory with all the logs:
+> https://drive.google.com/open?id=0Bwe9Wtc-5xF1UFltcXhtRmt4YjA
+>
+> I really don't know what may be the problem, maybe discard? I can't
+> think about switching back to ext4 and losing snapshots, transactions,
+> compression, incremental send/receive backups etc.
+> I would really love being able to do something to fix it, but I don't
+> have the slightest idea about what's the problem. Hopefully someone here
+> will be smarter than me and find the problem, otherwise I will have to
+> switch to ext4 because I need my laptop to work.
+>
+> Thanks,
+> Niccolò
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>
+>
 
 
-
--- 
-Chris Murphy

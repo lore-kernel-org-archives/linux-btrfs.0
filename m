@@ -1,229 +1,86 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:36559 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:29817 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1755672AbcEEBDc (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 4 May 2016 21:03:32 -0400
-Subject: Re: [PATCH 2/2] Btrfs: add valid checks for chunk loading
-To: <bo.li.liu@oracle.com>
+	with ESMTP id S1754654AbcEEBI7 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 4 May 2016 21:08:59 -0400
+Subject: Re: [PATCH 1/2] Btrfs: add more valid checks for superblock
+To: <bo.li.liu@oracle.com>, <dsterba@suse.cz>, <linux-btrfs@vger.kernel.org>,
+        <vegard.nossum@oracle.com>, <sterba@suse.com>
 References: <1462212951-28113-1-git-send-email-bo.li.liu@oracle.com>
- <1462212951-28113-2-git-send-email-bo.li.liu@oracle.com>
- <42231399-bac4-1c41-bb43-f2c7b4d1a0a0@cn.fujitsu.com>
- <20160503233625.GG21008@localhost.localdomain>
-CC: <linux-btrfs@vger.kernel.org>, <vegard.nossum@oracle.com>,
-        <sterba@suse.com>
+ <9fa04dd7-13c4-6c24-dddc-4521eccea65c@cn.fujitsu.com>
+ <20160504132329.GT29353@twin.jikos.cz>
+ <20160504174436.GB14909@localhost.localdomain>
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <4f3bf340-ac00-1830-fb02-ffafa1121ff1@cn.fujitsu.com>
-Date: Thu, 5 May 2016 09:03:22 +0800
+Message-ID: <a7811da3-06f5-2ff2-06e4-19be9fd31410@cn.fujitsu.com>
+Date: Thu, 5 May 2016 09:08:54 +0800
 MIME-Version: 1.0
-In-Reply-To: <20160503233625.GG21008@localhost.localdomain>
+In-Reply-To: <20160504174436.GB14909@localhost.localdomain>
 Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
 
-Liu Bo wrote on 2016/05/03 16:36 -0700:
-> On Tue, May 03, 2016 at 09:12:01AM +0800, Qu Wenruo wrote:
->>
->>
->> Liu Bo wrote on 2016/05/02 11:15 -0700:
->>> To prevent fuzz filesystem images from panic the whole system,
->>> we need various validation checks to refuse to mount such an image
->>> if btrfs finds any invalid value during loading chunks, including
->>> both sys_array and regular chunks.
+Liu Bo wrote on 2016/05/04 10:44 -0700:
+> On Wed, May 04, 2016 at 03:23:29PM +0200, David Sterba wrote:
+>> On Tue, May 03, 2016 at 09:02:56AM +0800, Qu Wenruo wrote:
 >>>
->>> Note that these checks may not be sufficient to cover all corner cases,
->>> feel free to add more checks.
+>>>
+>>> Liu Bo wrote on 2016/05/02 11:15 -0700:
+>>>> This adds valid checks for super_total_bytes, super_bytes_used and
+>>>> super_stripesize.
+>>>>
+>>>> Reported-by: Vegard Nossum <vegard.nossum@oracle.com>
+>>>> Reported-by: Quentin Casasnovas <quentin.casasnovas@oracle.com>
+>>>> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+>>>> ---
+>>>>  fs/btrfs/disk-io.c | 14 ++++++++++++++
+>>>>  1 file changed, 14 insertions(+)
+>>>>
+>>>> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+>>>> index 4e47849..988d03f 100644
+>>>> --- a/fs/btrfs/disk-io.c
+>>>> +++ b/fs/btrfs/disk-io.c
+>>>> @@ -4120,6 +4120,20 @@ static int btrfs_check_super_valid(struct btrfs_fs_info *fs_info,
+>>>>  	 * Hint to catch really bogus numbers, bitflips or so, more exact checks are
+>>>>  	 * done later
+>>>>  	 */
+>>>> +	if (btrfs_super_total_bytes(sb) == 0) {
+>>>> +		printk(KERN_ERR "BTRFS: total bytes is zero\n");
+>>>> +		ret = -EINVAL;
+>>>> +	}
+>>>
+>>> Would it be better if using "6 * nodesize"?
+>>>
+>>> I'd like to use a precious low limit on total bytes, but we don't have
+>>> such value, so 6 nodesize would be good.
 >>
->> Looks good for me.
->>
->> But would you mind to do extra check on some minor members like owner,
->> io_align, io_width and sub_stripes?
->> Since we have a dedicated function now, if not too hard, it's never a bad
->> idea to check every member for best robust.
+>> An early check can compare against some reasonable value, but the
+>> total_bytes value must be equal to the sum of all device sizes
+>> (disk_total_bytes). I'm not sure if we have enough information to verify
+>> that at this point though.
 >
-> OK.
+> That's what I had in mind, the problem is that only the first device information is recorded in superblock.
 >
->>
->> Especially sub_stripes, as it seems to be used by division in
->> btrfs_rmap_block().
->
-> It makes sense to check sub_stripes, but io_align/width are not used at
-> this moment, I'd leave it for the future.
->
-> What do you think?
+> At this moment We have device_num but we don't know the size of other devices.
 >
 > Thanks,
 >
 > -liubo
 >
+>
+What about error out if we found sb->total_bytes < 
+sb->dev_item->total_bytes?
 
-I'm OK if io_align/width is not used yet.
-It's just a personal favor.
+As we are just doing early check, no need to be comprehensive, but spot 
+obvious problem.
 
-Adding such check when we really use io_align/width may be a better idea.
+For exact device_num and sb->total_bytes, we may do post check when 
+device tree are loaded?
+Splitting early_check() and post_check() seems valid for me.
+(Also I prefer post_check() just warning, not forced exit)
 
 Thanks,
 Qu
-
->>
->> Thanks,
->> Qu
->>>
->>> Reported-by: Vegard Nossum <vegard.nossum@oracle.com>
->>> Reported-by: Quentin Casasnovas <quentin.casasnovas@oracle.com>
->>> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
->>> ---
->>> fs/btrfs/volumes.c | 84 +++++++++++++++++++++++++++++++++++++++++++-----------
->>> 1 file changed, 68 insertions(+), 16 deletions(-)
->>>
->>> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
->>> index bd0f45f..1075573 100644
->>> --- a/fs/btrfs/volumes.c
->>> +++ b/fs/btrfs/volumes.c
->>> @@ -6206,27 +6206,23 @@ struct btrfs_device *btrfs_alloc_device(struct btrfs_fs_info *fs_info,
->>> 	return dev;
->>> }
->>>
->>> -static int read_one_chunk(struct btrfs_root *root, struct btrfs_key *key,
->>> -			  struct extent_buffer *leaf,
->>> -			  struct btrfs_chunk *chunk)
->>> +/* Return -EIO if any error, otherwise return 0. */
->>> +static int btrfs_check_chunk_valid(struct btrfs_root *root,
->>> +				   struct extent_buffer *leaf,
->>> +				   struct btrfs_chunk *chunk, u64 logical)
->>> {
->>> -	struct btrfs_mapping_tree *map_tree = &root->fs_info->mapping_tree;
->>> -	struct map_lookup *map;
->>> -	struct extent_map *em;
->>> -	u64 logical;
->>> 	u64 length;
->>> 	u64 stripe_len;
->>> -	u64 devid;
->>> -	u8 uuid[BTRFS_UUID_SIZE];
->>> -	int num_stripes;
->>> -	int ret;
->>> -	int i;
->>> +	u16 num_stripes;
->>> +	u16 sub_stripes;
->>> +	u64 type;
->>>
->>> -	logical = key->offset;
->>> 	length = btrfs_chunk_length(leaf, chunk);
->>> 	stripe_len = btrfs_chunk_stripe_len(leaf, chunk);
->>> 	num_stripes = btrfs_chunk_num_stripes(leaf, chunk);
->>> -	/* Validation check */
->>> +	sub_stripes = btrfs_chunk_sub_stripes(leaf, chunk);
->>> +	type = btrfs_chunk_type(leaf, chunk);
->>> +
->>> 	if (!num_stripes) {
->>> 		btrfs_err(root->fs_info, "invalid chunk num_stripes: %u",
->>> 			  num_stripes);
->>> @@ -6237,24 +6233,70 @@ static int read_one_chunk(struct btrfs_root *root, struct btrfs_key *key,
->>> 			  "invalid chunk logical %llu", logical);
->>> 		return -EIO;
->>> 	}
->>> +	if (btrfs_chunk_sector_size(leaf, chunk) != root->sectorsize) {
->>> +		btrfs_err(root->fs_info, "invalid chunk sectorsize %llu",
->>> +			  (unsigned long long)btrfs_chunk_sector_size(leaf,
->>> +								      chunk));
->>> +		return -EIO;
->>> +	}
->>> 	if (!length || !IS_ALIGNED(length, root->sectorsize)) {
->>> 		btrfs_err(root->fs_info,
->>> 			"invalid chunk length %llu", length);
->>> 		return -EIO;
->>> 	}
->>> -	if (!is_power_of_2(stripe_len)) {
->>> +	if (stripe_len != BTRFS_STRIPE_LEN) {
->>> 		btrfs_err(root->fs_info, "invalid chunk stripe length: %llu",
->>> 			  stripe_len);
->>> 		return -EIO;
->>> 	}
->>> 	if (~(BTRFS_BLOCK_GROUP_TYPE_MASK | BTRFS_BLOCK_GROUP_PROFILE_MASK) &
->>> -	    btrfs_chunk_type(leaf, chunk)) {
->>> +	    type) {
->>> 		btrfs_err(root->fs_info, "unrecognized chunk type: %llu",
->>> 			  ~(BTRFS_BLOCK_GROUP_TYPE_MASK |
->>> 			    BTRFS_BLOCK_GROUP_PROFILE_MASK) &
->>> 			  btrfs_chunk_type(leaf, chunk));
->>> 		return -EIO;
->>> 	}
->>> +	if ((type & BTRFS_BLOCK_GROUP_RAID10 && sub_stripes == 0) ||
->>> +	    (type & BTRFS_BLOCK_GROUP_RAID1 && num_stripes < 1) ||
->>> +	    (type & BTRFS_BLOCK_GROUP_RAID5 && num_stripes < 2) ||
->>> +	    (type & BTRFS_BLOCK_GROUP_RAID5 && num_stripes < 3) ||
->>> +	    (type & BTRFS_BLOCK_GROUP_DUP && num_stripes > 2) ||
->>> +	    ((type & BTRFS_BLOCK_GROUP_PROFILE_MASK) == 0 &&
->>> +	     num_stripes != 1)) {
->>> +		btrfs_err(root->fs_info, "Invalid num_stripes:sub_stripes %u:%u for profile %llu",
->>> +			  num_stripes, sub_stripes,
->>> +			  type & BTRFS_BLOCK_GROUP_PROFILE_MASK);
->>> +		return -EIO;
->>> +	}
->>> +
->>> +	return 0;
->>> +}
->>> +
->>> +static int read_one_chunk(struct btrfs_root *root, struct btrfs_key *key,
->>> +			  struct extent_buffer *leaf,
->>> +			  struct btrfs_chunk *chunk)
->>> +{
->>> +	struct btrfs_mapping_tree *map_tree = &root->fs_info->mapping_tree;
->>> +	struct map_lookup *map;
->>> +	struct extent_map *em;
->>> +	u64 logical;
->>> +	u64 length;
->>> +	u64 stripe_len;
->>> +	u64 devid;
->>> +	u8 uuid[BTRFS_UUID_SIZE];
->>> +	int num_stripes;
->>> +	int ret;
->>> +	int i;
->>> +
->>> +	logical = key->offset;
->>> +	length = btrfs_chunk_length(leaf, chunk);
->>> +	stripe_len = btrfs_chunk_stripe_len(leaf, chunk);
->>> +	num_stripes = btrfs_chunk_num_stripes(leaf, chunk);
->>> +	/* Validation check */
->>> +	ret = btrfs_check_chunk_valid(root, leaf, chunk, logical);
->>> +	if (ret)
->>> +		return ret;
->>>
->>> 	read_lock(&map_tree->map_tree.lock);
->>> 	em = lookup_extent_mapping(&map_tree->map_tree, logical, 1);
->>> @@ -6502,6 +6544,7 @@ int btrfs_read_sys_array(struct btrfs_root *root)
->>> 	u32 array_size;
->>> 	u32 len = 0;
->>> 	u32 cur_offset;
->>> +	u64 type;
->>> 	struct btrfs_key key;
->>>
->>> 	ASSERT(BTRFS_SUPER_INFO_SIZE <= root->nodesize);
->>> @@ -6568,6 +6611,15 @@ int btrfs_read_sys_array(struct btrfs_root *root)
->>> 				break;
->>> 			}
->>>
->>> +			type = btrfs_chunk_type(sb, chunk);
->>> +			if ((type & BTRFS_BLOCK_GROUP_SYSTEM) == 0) {
->>> +				printk(KERN_ERR
->>> +	    "BTRFS: invalid chunk type %llu in sys_array at offset %u\n",
->>> +					type, cur_offset);
->>> +				ret = -EIO;
->>> +				break;
->>> +			}
->>> +
->>> 			len = btrfs_chunk_item_size(num_stripes);
->>> 			if (cur_offset + len > array_size)
->>> 				goto out_short_read;
->>>
->>
->>
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
->
 
 

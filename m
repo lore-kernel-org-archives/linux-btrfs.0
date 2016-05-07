@@ -1,76 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from tartarus.angband.pl ([89.206.35.136]:58376 "EHLO
-	tartarus.angband.pl" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751081AbcEGXLZ (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 7 May 2016 19:11:25 -0400
-Date: Sun, 8 May 2016 01:11:18 +0200
-From: Adam Borowski <kilobyte@angband.pl>
-To: linux-btrfs@vger.kernel.org, Duncan <1i5t5.duncan@cox.net>
-Subject: Re: apt taints kernel - btrfs destroys inode
-Message-ID: <20160507231118.GA19573@angband.pl>
+Received: from mail-ob0-f194.google.com ([209.85.214.194]:34346 "EHLO
+	mail-ob0-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751114AbcEGXfS convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 7 May 2016 19:35:18 -0400
+Received: by mail-ob0-f194.google.com with SMTP id n2so8575386obo.1
+        for <linux-btrfs@vger.kernel.org>; Sat, 07 May 2016 16:35:17 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-In-Reply-To: <pan$a8e59$e73b6bd3$47d0e1e7$4518553f@cox.net>
+In-Reply-To: <2cd5aca36f853f3c9cf1d46c2f133aa3@linuxsystems.it>
+References: <3bf4a554-e3b8-44e2-b8e7-d08889dcffed@linuxsystems.it>
+	<CAJCQCtRAqxREr8ToorSkbsnYKKk_NPy+1oSHP6WMOnpLe=9T1g@mail.gmail.com>
+	<c9bde2c9-c0f3-4bd2-a9ac-81fe0250edcc@linuxsystems.it>
+	<20160505174854.GA1012@vader.dhcp.thefacebook.com>
+	<585760e0-7d18-4fa0-9974-62a3d7561aee@linuxsystems.it>
+	<2cd5aca36f853f3c9cf1d46c2f133aa3@linuxsystems.it>
+Date: Sat, 7 May 2016 17:35:16 -0600
+Message-ID: <CAJCQCtSO2mbtUxW=d+hvEWrPhbMhNEK70ndAno-+jMgDUrpQeA@mail.gmail.com>
+Subject: Re: btrfs ate my data in just two days, after a fresh install. ram
+ and disk are ok. it still mounts, but I cannot repair
+From: Chris Murphy <lists@colorremedies.com>
+To: =?UTF-8?Q?Niccol=C3=B2_Belli?= <darkbasic@linuxsystems.it>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>,
+        Chris Murphy <lists@colorremedies.com>,
+        Qu Wenruo <quwenruo@cn.fujitsu.com>,
+        Omar Sandoval <osandov@osandov.com>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Duncan wrote:
-> > btrfs_destroy_inode
+On Sat, May 7, 2016 at 9:45 AM, Niccolò Belli <darkbasic@linuxsystems.it> wrote:
+> btrfs + dmcrypt + compress=lzo + autodefrag = corruption at first boot
+> So discard is not the culprit. Will try to remove compress=lzo and
+> autodefrag and see if it still happens.
 
-> That's a known apparent false-positive warning on current 4.6-rc kernel 
-> btrfs.  The destroy-inode bit is related to a file deletion happening in 
-> the normal order of things, where this warning code is run, and 
-> apparently triggers even under normal operations.
+You're making the troubleshooting unnecessarily difficult by
+continuing to use non-default options. *shrug*
 
-Are you guys reasonably certain it's false-positive?  If so, you _really_
-want to disable the warning for 4.6, less than a week from now.  Any
-reasonable user of a stable kernel who notices such a warning and stack
-dumps will assume something is broken, rightfully panic and consider the
-filesystem unsound.
-
-> It's related to some btrfs feature (I think either snapshotting or 
-> quotas, but don't recall which) I don't use here so I don't seem the 
-> warnings, but there's several threads where people have reported the 
-> warnings, so it's apparently quite commonly triggered, but nobody has 
-> reported any further problems even where the warnings are coming in the 
-> hundreds due to their use-case, so as I said, apparently a false-positive 
-> induced by normal operations.
-
-A data point: I've been running for a week with this WARN_ON replaced by a
-printk:
-
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -9258,7 +9258,8 @@ void btrfs_destroy_inode(struct inode *inode)
-        WARN_ON(BTRFS_I(inode)->outstanding_extents);
-        WARN_ON(BTRFS_I(inode)->reserved_extents);
-        WARN_ON(BTRFS_I(inode)->delalloc_bytes);
--       WARN_ON(BTRFS_I(inode)->csum_bytes);
-+       if (BTRFS_I(inode)->csum_bytes)
-+               printk("btrfs: btrfs_destroy_inode: WARN csum_bytes\n");
-        WARN_ON(BTRFS_I(inode)->defrag_bytes);
- 
-        /*
-
-and no data loss or anything suspicious so far.  This box has a SSD
-(moderate use) and HDD (light use), no RAID, no quotas, compress=lzo, many
-subvolumes, 20ish snapshots daily (mostly sbuild for Debian packages).
-
-[~]$ dmesg|grep btrfs_destroy_inode|wc -l
-50
-[~]$ uptime
- 00:17:47 up 1 day, 18:44, 19 users,  load average: 0.23, 0.35, 0.61
-[~]$ cat /proc/version 
-Linux version 4.6.0-rc6-debug+ (kilobyte@umbar) (gcc version 6.1.1 20160430 (Debian 6.1.1-1) ) #1 SMP Fri May 6 00:33:44 CEST 2016
-
-> I'd expect the warning to be either fixed to only warn when there's an 
-> actual issue, or be silenced, by 4.6 release.
-
-In order to get to 4.6 such a commit would need to hit Linus about right
-now...
+Every single layer you add complicates the setup and troubleshooting.
+Of course all of it should work together, many people do. But you're
+the one having the problem so in order to demonstrate whether this is
+a software bug or hardware problem, you need to test it with the most
+basic setup possible --> btrfs on plain partitions and default mount
+options.
 
 
-Meow!
+
 -- 
-How to exploit the Bible for weight loss:
-Pr28:25: he that putteth his trust in the ʟᴏʀᴅ shall be made fat.
+Chris Murphy

@@ -1,138 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:56406 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751080AbcEHGbS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 8 May 2016 02:31:18 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1azIFD-0007Os-Qc
-	for linux-btrfs@vger.kernel.org; Sun, 08 May 2016 08:31:11 +0200
-Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sun, 08 May 2016 08:31:11 +0200
-Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sun, 08 May 2016 08:31:11 +0200
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: apt taints kernel - btrfs destroys inode
-Date: Sun, 8 May 2016 06:31:06 +0000 (UTC)
-Message-ID: <pan$7224d$b81b322a$77a59ede$7de4ae18@cox.net>
-References: <pan$a8e59$e73b6bd3$47d0e1e7$4518553f@cox.net>
-	<20160507231118.GA19573@angband.pl>
-Mime-Version: 1.0
+Received: from mail-wm0-f52.google.com ([74.125.82.52]:35852 "EHLO
+	mail-wm0-f52.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751129AbcEHHKv (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 8 May 2016 03:10:51 -0400
+Received: by mail-wm0-f52.google.com with SMTP id n129so101357121wmn.1
+        for <linux-btrfs@vger.kernel.org>; Sun, 08 May 2016 00:10:51 -0700 (PDT)
+MIME-Version: 1.0
+From: =?UTF-8?B?0JzQuNGF0LDQuNC7INCT0LDQstGA0LjQu9C+0LI=?=
+	<mikhail.v.gavrilov@gmail.com>
+Date: Sun, 8 May 2016 12:10:35 +0500
+Message-ID: <CABXGCsMnqD1kSDipKzq3FN6+mE0Zct6r3HsCpZMO7qDr6aRi2g@mail.gmail.com>
+Subject: block group xxx has wrong amount of free space
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Adam Borowski posted on Sun, 08 May 2016 01:11:18 +0200 as excerpted:
-
-> Duncan wrote:
->> > btrfs_destroy_inode
-> 
->> That's a known apparent false-positive warning on current 4.6-rc kernel
->> btrfs.  The destroy-inode bit is related to a file deletion happening
->> in the normal order of things, where this warning code is run, and
->> apparently triggers even under normal operations.
-> 
-> Are you guys reasonably certain it's false-positive?
-
-I don't personally know.  I'm just a btrfs user and list regular myself, 
-not a dev, and I personally haven't seen this bug, but then my use-case 
-doesn't require either snapshots or quotas, so I don't use either, and 
-wouldn't be _expected_ to see this bug.
-
-But all reported evidence suggests that it's a false-positive, as even 
-the people hitting it extremely frequently haven't seen any real problems 
-from it.
-
-> If so, you _really_
-> want to disable the warning for 4.6, less than a week from now.  Any
-> reasonable user of a stable kernel who notices such a warning and stack
-> dumps will assume something is broken, rightfully panic and consider the
-> filesystem unsound.
-
-I can't disagree.  But I'm a user, not a dev...
-
-However, based on my own tracking of pre-release kernels, reverts or 
-(temporarily?) silenced warnings for exactly this sort of appeared-over-
-the-release-cycle issue that they had hoped to actually track down and 
-fix during the cycle, but simply didn't get there in time, do tend to 
-come in at about this time, as it becomes apparent the trace-down, fix, 
-and full testing, simply can't be completed in the cycle in which the 
-problem was introduced or at least exposed, so the wise action is to 
-simply revert or paper over for at least the one release, with the 
-appropriate fix very likely to then hit the next kernel, either the 
-initial commit window, or in any case before rc3 or so when people like 
-me often start testing.
-
-What worries me is that I've seen no on-list indication that this 
-particular bug has been traced even to a point that a specific revert can 
-be done, or alternatively, that there's enough code-level confidence that 
-it's a false-positive to silence the warning.  However, it should be 
-noted that particularly if it's a simple revert, there may in fact be no 
-such on-list discussion as there's not necessarily anything to discuss, 
-only a final decision by the project lead (or occasionally Linus himself) 
-to revert or simply let it ride.
-
->> It's related to some btrfs feature (I think either snapshotting or
->> quotas, but don't recall which) I don't use here so I don't seem the
->> warnings, but there's several threads where people have reported the
->> warnings, so it's apparently quite commonly triggered, but nobody has
->> reported any further problems even where the warnings are coming in the
->> hundreds due to their use-case, so as I said, apparently a
->> false-positive induced by normal operations.
-> 
-> A data point: I've been running for a week with this WARN_ON replaced by
-> a printk:
-> 
-> --- a/fs/btrfs/inode.c +++ b/fs/btrfs/inode.c @@ -9258,7 +9258,8 @@ void
-> btrfs_destroy_inode(struct inode *inode)
->         WARN_ON(BTRFS_I(inode)->outstanding_extents);
->         WARN_ON(BTRFS_I(inode)->reserved_extents);
->         WARN_ON(BTRFS_I(inode)->delalloc_bytes);
-> -       WARN_ON(BTRFS_I(inode)->csum_bytes);
-> +       if (BTRFS_I(inode)->csum_bytes)
-> +               printk("btrfs: btrfs_destroy_inode: WARN csum_bytes\n");
->         WARN_ON(BTRFS_I(inode)->defrag_bytes);
->  
->         /*
-> 
-> and no data loss or anything suspicious so far.  This box has a SSD
-> (moderate use) and HDD (light use), no RAID, no quotas, compress=lzo,
-> many subvolumes, 20ish snapshots daily (mostly sbuild for Debian
-> packages).
-
-That's nearly identical to what others have noted, as well, thus my 
-describing it as an apparent false-positive, because despite many 
-triggered warnings among the several reporters, no tragedy has seemed to 
-strike as a result.
+$ journalctl -b -1 --no-pager | grep BTRFS
+May 08 01:28:23 localhost kernel: BTRFS: device fsid
+a22dd8bc-24ef-4f97-bb62-01fcd7c3f11c devid 1 transid 25 /dev/sda4
+May 08 01:28:23 localhost kernel: BTRFS: device fsid
+eaa531cd-25f4-4e00-b31f-22665faa9768 devid 1 transid 333 /dev/sdb
+May 08 01:28:23 localhost kernel: BTRFS: device label home devid 1
+transid 2326870 /dev/sdc1
+May 08 01:28:26 localhost.localdomain kernel: BTRFS info (device
+sdc1): disk space caching is enabled
+May 08 01:28:26 localhost.localdomain kernel: BTRFS info (device
+sdc1): bdev /dev/sdc1 errs: wr 0, rd 14, flush 0, corrupt 0, gen 0
+May 08 01:28:39 localhost.localdomain kernel: BTRFS error (device
+sdc1): could not find root 8
+May 08 01:40:30 localhost.localdomain kernel: BTRFS warning (device
+sdc1): block group 2286562574336 has wrong amount of free space
+May 08 01:40:30 localhost.localdomain kernel: BTRFS warning (device
+sdc1): failed to load free space cache for block group 2286562574336,
+rebuilding it now
+May 08 02:06:09 localhost.localdomain kernel: BTRFS warning (device
+sdc1): block group 3844117364736 has wrong amount of free space
+May 08 02:06:09 localhost.localdomain kernel: BTRFS warning (device
+sdc1): failed to load free space cache for block group 3844117364736,
+rebuilding it now
 
 
-> [~]$ dmesg|grep btrfs_destroy_inode|wc -l
-> 50
-> [~]$ uptime
->  00:17:47 up 1 day, 18:44, 19 users,  load average: 0.23, 0.35, 0.61
-> [~]$ cat /proc/version
-> Linux version 4.6.0-rc6-debug+ (kilobyte@umbar)
-> (gcc version 6.1.1 20160430 (Debian 6.1.1-1) )
-> #1 SMP Fri May 6 00:33:44 CEST 2016
-> 
->> I'd expect the warning to be either fixed to only warn when there's an
->> actual issue, or be silenced, by 4.6 release.
-> 
-> In order to get to 4.6 such a commit would need to hit Linus about right
-> now...
+These messages appear on every boot.
+That they means? And how fix it?
 
-Agreed.  (Matter of fact, I'm about to git pull and git log check what's 
-new over the last couple days, as I write this, before I continue 
-checking the new messages here.  As you say, it's gotta be real soon now 
-if it's going to happen.  Maybe it's either in-kernel or at least in a 
-list-announced pull ready for Linus as I write...)
+$ uname -r
+4.5.3-300.fc24.x86_64
 
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+--
+Best Regards,
+Mike Gavrilov.

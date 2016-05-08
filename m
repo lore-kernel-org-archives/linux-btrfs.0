@@ -1,48 +1,51 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ob0-f194.google.com ([209.85.214.194]:34346 "EHLO
-	mail-ob0-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751114AbcEGXfS convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 7 May 2016 19:35:18 -0400
-Received: by mail-ob0-f194.google.com with SMTP id n2so8575386obo.1
-        for <linux-btrfs@vger.kernel.org>; Sat, 07 May 2016 16:35:17 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <2cd5aca36f853f3c9cf1d46c2f133aa3@linuxsystems.it>
-References: <3bf4a554-e3b8-44e2-b8e7-d08889dcffed@linuxsystems.it>
-	<CAJCQCtRAqxREr8ToorSkbsnYKKk_NPy+1oSHP6WMOnpLe=9T1g@mail.gmail.com>
-	<c9bde2c9-c0f3-4bd2-a9ac-81fe0250edcc@linuxsystems.it>
-	<20160505174854.GA1012@vader.dhcp.thefacebook.com>
-	<585760e0-7d18-4fa0-9974-62a3d7561aee@linuxsystems.it>
-	<2cd5aca36f853f3c9cf1d46c2f133aa3@linuxsystems.it>
-Date: Sat, 7 May 2016 17:35:16 -0600
-Message-ID: <CAJCQCtSO2mbtUxW=d+hvEWrPhbMhNEK70ndAno-+jMgDUrpQeA@mail.gmail.com>
-Subject: Re: btrfs ate my data in just two days, after a fresh install. ram
- and disk are ok. it still mounts, but I cannot repair
-From: Chris Murphy <lists@colorremedies.com>
-To: =?UTF-8?Q?Niccol=C3=B2_Belli?= <darkbasic@linuxsystems.it>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>,
-        Chris Murphy <lists@colorremedies.com>,
-        Qu Wenruo <quwenruo@cn.fujitsu.com>,
-        Omar Sandoval <osandov@osandov.com>
+Received: from plane.gmane.org ([80.91.229.3]:53173 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751155AbcEHAzE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 7 May 2016 20:55:04 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+	id 1azCzs-0000fQ-RF
+	for linux-btrfs@vger.kernel.org; Sun, 08 May 2016 02:55:00 +0200
+Received: from cpc80685-stap13-2-0-cust475.12-2.cable.virginm.net ([86.9.3.220])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sun, 08 May 2016 02:55:00 +0200
+Received: from m_btrfs by cpc80685-stap13-2-0-cust475.12-2.cable.virginm.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sun, 08 May 2016 02:55:00 +0200
+To: linux-btrfs@vger.kernel.org
+From: Martin <m_btrfs@ml1.co.uk>
+Subject: Re: btrfs-tools: missing device delete/remove cancel option on disk
+ failure
+Date: Sun, 08 May 2016 01:54:54 +0100
+Message-ID: <ngm2ou$he4$1@ger.gmane.org>
+References: <1ba2f46d66b988069f861df8526e4cba@email.freenet.de>
+Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
+In-Reply-To: <1ba2f46d66b988069f861df8526e4cba@email.freenet.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, May 7, 2016 at 9:45 AM, Niccolò Belli <darkbasic@linuxsystems.it> wrote:
-> btrfs + dmcrypt + compress=lzo + autodefrag = corruption at first boot
-> So discard is not the culprit. Will try to remove compress=lzo and
-> autodefrag and see if it still happens.
+On 07/05/16 10:39, g6094199@freenet.de wrote:
+> a brand new disk which has an upcounting raw error rate
 
-You're making the troubleshooting unnecessarily difficult by
-continuing to use non-default options. *shrug*
+Note that is the "raw error rate".
 
-Every single layer you add complicates the setup and troubleshooting.
-Of course all of it should work together, many people do. But you're
-the one having the problem so in order to demonstrate whether this is
-a software bug or hardware problem, you need to test it with the most
-basic setup possible --> btrfs on plain partitions and default mount
-options.
+For a brand new disk being run for the first time at maximum data
+writes, the "raw error rate" may well be expected to increase. Hard
+disks deliberately make use of error correction for normal operation.
+
+More importantly, what do the other smart values show?
+
+For myself, my concern would only be raised for sector failures.
 
 
+And... A very good test for a new disk is to first run "badblocks" to
+test the disk surface. Read the man page first. (Hint: Non-destructive
+is slow, destructive write is fast...)
 
--- 
-Chris Murphy
+Good luck,
+Martin
+
+

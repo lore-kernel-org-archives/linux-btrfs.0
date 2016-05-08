@@ -1,91 +1,33 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oi0-f54.google.com ([209.85.218.54]:35491 "EHLO
-	mail-oi0-f54.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750824AbcEHPfW (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 8 May 2016 11:35:22 -0400
-Received: by mail-oi0-f54.google.com with SMTP id x19so186962997oix.2
-        for <linux-btrfs@vger.kernel.org>; Sun, 08 May 2016 08:35:21 -0700 (PDT)
+Received: from mail-lf0-f67.google.com ([209.85.215.67]:35783 "EHLO
+	mail-lf0-f67.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750887AbcEHS2R convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 8 May 2016 14:28:17 -0400
+Received: by mail-lf0-f67.google.com with SMTP id u64so18906834lff.2
+        for <linux-btrfs@vger.kernel.org>; Sun, 08 May 2016 11:28:16 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <fb65d9d2-3ac9-a155-af13-62fe8d41a49b@chefmail.de>
-References: <1ba2f46d66b988069f861df8526e4cba@email.freenet.de>
-	<ngm2ou$he4$1@ger.gmane.org>
-	<fb65d9d2-3ac9-a155-af13-62fe8d41a49b@chefmail.de>
-Date: Sun, 8 May 2016 09:35:20 -0600
-Message-ID: <CAJCQCtRzyZK3jhN=LdMLNS9DZOwuX4qchx_mAthySq1FEDRpdw@mail.gmail.com>
-Subject: Re: btrfs-tools: missing device delete/remove cancel option on disk failure
-From: Chris Murphy <lists@colorremedies.com>
-To: g6094199@freenet.de
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+In-Reply-To: <f1dd07efb34a0a110f62566979530944@linuxsystems.it>
+References: <3bf4a554-e3b8-44e2-b8e7-d08889dcffed@linuxsystems.it>
+ <CAJCQCtRAqxREr8ToorSkbsnYKKk_NPy+1oSHP6WMOnpLe=9T1g@mail.gmail.com>
+ <c9bde2c9-c0f3-4bd2-a9ac-81fe0250edcc@linuxsystems.it> <20160505174854.GA1012@vader.dhcp.thefacebook.com>
+ <585760e0-7d18-4fa0-9974-62a3d7561aee@linuxsystems.it> <2cd5aca36f853f3c9cf1d46c2f133aa3@linuxsystems.it>
+ <CAFvQSYTQ1yZqPYyv0dmd+JuHRWfKm-RtZLdbKXQeHiWMthnyLw@mail.gmail.com> <f1dd07efb34a0a110f62566979530944@linuxsystems.it>
+From: Patrik Lundquist <patrik.lundquist@gmail.com>
+Date: Sun, 8 May 2016 20:27:55 +0200
+Message-ID: <CAA7pwKNEwFvktQbpjAPE2TZzT4nYfapNbLSR+rgyrUmyJhvsWw@mail.gmail.com>
+Subject: Re: btrfs ate my data in just two days, after a fresh install. ram
+ and disk are ok. it still mounts, but I cannot repair
+To: =?UTF-8?Q?Niccol=C3=B2_Belli?= <darkbasic@linuxsystems.it>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, May 8, 2016 at 5:53 AM,  <g6094199@freenet.de> wrote:
+On 7 May 2016 at 18:11, Niccolò Belli <darkbasic@linuxsystems.it> wrote:
 
->
-> i guess this log is out of diskussion:
->
-> [44388.089321] sd 8:0:0:0: [sdf] tag#0 FAILED Result:
-> hostbyte=DID_TIME_OUT driverbyte=DRIVER_OK
-> [44388.089334] sd 8:0:0:0: [sdf] tag#0 CDB: Read(10) 28 00 00 43 1c 48
-> 00 00 08 00
-> [44388.089340] blk_update_request: I/O error, dev sdf, sector 35185216
->
-> ...
->
-> May  7 06:39:31 NAS-Sash kernel: [35777.520490] sd 8:0:0:0: [sdf] tag#0
-> FAILED Result: hostbyte=DID_OK driverbyte=DRIVER_SENSE
-> May  7 06:39:31 NAS-Sash kernel: [35777.520500] sd 8:0:0:0: [sdf] tag#0
-> Sense Key : Medium Error [current]
-> May  7 06:39:31 NAS-Sash kernel: [35777.520508] sd 8:0:0:0: [sdf] tag#0
-> Add. Sense: Unrecovered read error
-> May  7 06:39:31 NAS-Sash kernel: [35777.520516] sd 8:0:0:0: [sdf] tag#0
-> CDB: Read(10) 28 00 03 84 ee 30 00 00 04 00
-> May  7 06:39:31 NAS-Sash kernel: [35777.520522] blk_update_request:
-> critical medium error, dev sdf, sector 472347008
-> May  7 06:39:35 NAS-Sash kernel: [35781.364117] sd 8:0:0:0: [sdf] tag#0
-> FAILED Result: hostbyte=DID_OK driverbyte=DRIVER_SENSE
-> May  7 06:39:35 NAS-Sash kernel: [35781.364138] sd 8:0:0:0: [sdf] tag#0
-> Sense Key : Medium Error [current]
-> May  7 06:39:35 NAS-Sash kernel: [35781.364146] sd 8:0:0:0: [sdf] tag#0
-> Add. Sense: Unrecovered read error
-> May  7 06:39:35 NAS-Sash kernel: [35781.364154] sd 8:0:0:0: [sdf] tag#0
-> CDB: Read(10) 28 00 03 84 ee 30 00 00 04 00
-
-What drive is this? Is it one of the new drives? It's very unusual
-that this new drive which should be getting mostly writes (what is
-there to read?) during a 'dev delete' or 'replace' operation, but in
-particular to have a read error this soon after data has been written.
-I suspect maybe it's some other drive.
-
->
-> and different vendors use the raw error rate differently. some count up
-> constantly, some do only log real destructive errors.
->
-> but i had the luck that the system froze completely. not even an log
-> entry. now the file system is broken.....arg!
+> Which kind of hardware issue? I did a full memtest86 check, a full smartmontools extended check and even a badblocks -wsv.
+> If this is really an hardware issue that we can identify I would be more than happy because Dell will replace my laptop and this nightmare will be finally over. I'm open to suggestions.
 
 
-
-
->
-> now i need some advice what to do next....best practice wise? try to
-> mount degraded and copy off all data? then i will net at least 9TB of
-> new storage... :-(
-
-If you don't have a backup already, you're kinda twice behind best
-practices, aren't you? One you should have one anyway, two you should
-have one before doing anything risky like growing the array or doing
-device replacements.
-
-The best practice at this point would be to mount with -o degraded,ro
-I wouldn't even do rw mounts. The less you change things the better
-off the file system is. And then copy the data to a new array before
-making any changes to the original volume. And hopefully mounting
-degraded,ro works, if not then it's btrfs restore (offline scrape)
-time.
-
-
-
--- 
-Chris Murphy
+Well, your hardware differs from a lot of successful installations.
+Are you using any power management tweaks?

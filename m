@@ -1,111 +1,107 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:37467 "EHLO
-	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750698AbcEHJLt (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 8 May 2016 05:11:49 -0400
-Date: Sun, 8 May 2016 09:11:46 +0000
-From: Hugo Mills <hugo@carfax.org.uk>
-To: =?utf-8?B?0JzQuNGF0LDQuNC7INCT0LDQstGA0LjQu9C+0LI=?=
-	<mikhail.v.gavrilov@gmail.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Subject: Re: block group xxx has wrong amount of free space
-Message-ID: <20160508091146.GU7228@carfax.org.uk>
-References: <CABXGCsMnqD1kSDipKzq3FN6+mE0Zct6r3HsCpZMO7qDr6aRi2g@mail.gmail.com>
+Received: from mout0.freenet.de ([195.4.92.90]:55107 "EHLO mout0.freenet.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750716AbcEHLzs (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 8 May 2016 07:55:48 -0400
+Received: from [195.4.92.142] (helo=mjail2.freenet.de)
+	by mout0.freenet.de with esmtpa (ID master.b.at.raven@chefmail.de) (port 25) (Exim 4.85 #1)
+	id 1azNJJ-0007Cb-SH
+	for linux-btrfs@vger.kernel.org; Sun, 08 May 2016 13:55:45 +0200
+Received: from localhost ([::1]:44280 helo=mjail2.freenet.de)
+	by mjail2.freenet.de with esmtpa (ID master.b.at.raven@chefmail.de) (Exim 4.85 #1)
+	id 1azNJJ-0000xA-OL
+	for linux-btrfs@vger.kernel.org; Sun, 08 May 2016 13:55:45 +0200
+Received: from mx0.freenet.de ([195.4.92.10]:47164)
+	by mjail2.freenet.de with esmtpa (ID master.b.at.raven@chefmail.de) (Exim 4.85 #1)
+	id 1azNHK-0004yr-9t
+	for linux-btrfs@vger.kernel.org; Sun, 08 May 2016 13:53:42 +0200
+Received: from ppp-88-217-11-137.dynamic.mnet-online.de ([88.217.11.137]:33476 helo=[192.168.1.217])
+	by mx0.freenet.de with esmtpsa (ID master.b.at.raven@chefmail.de) (TLSv1.2:DHE-RSA-AES128-SHA:128) (port 465) (Exim 4.85 #1)
+	id 1azNHK-0006zb-4O
+	for linux-btrfs@vger.kernel.org; Sun, 08 May 2016 13:53:42 +0200
+Subject: Re: btrfs-tools: missing device delete/remove cancel option on disk
+ failure
+References: <1ba2f46d66b988069f861df8526e4cba@email.freenet.de>
+ <ngm2ou$he4$1@ger.gmane.org>
+To: linux-btrfs@vger.kernel.org
+From: g6094199@freenet.de
+Message-ID: <fb65d9d2-3ac9-a155-af13-62fe8d41a49b@chefmail.de>
+Date: Sun, 8 May 2016 13:53:41 +0200
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="Sosn/fv6aiTyEgxl"
-In-Reply-To: <CABXGCsMnqD1kSDipKzq3FN6+mE0Zct6r3HsCpZMO7qDr6aRi2g@mail.gmail.com>
+In-Reply-To: <ngm2ou$he4$1@ger.gmane.org>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Am 08.05.2016 um 02:54 schrieb Martin:
+> On 07/05/16 10:39, g6094199@freenet.de wrote:
+>> a brand new disk which has an upcounting raw error rate
+> Note that is the "raw error rate".
+>
+> For a brand new disk being run for the first time at maximum data
+> writes, the "raw error rate" may well be expected to increase. Hard
+> disks deliberately make use of error correction for normal operation.
+>
+> More importantly, what do the other smart values show?
+>
+> For myself, my concern would only be raised for sector failures.
+>
+>
+> And... A very good test for a new disk is to first run "badblocks" to
+> test the disk surface. Read the man page first. (Hint: Non-destructive
+> is slow, destructive write is fast...)
+>
+> Good luck,
+> Martin
+>
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 
---Sosn/fv6aiTyEgxl
-Content-Type: text/plain; charset=utf-8
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+i guess this log is out of diskussion:
 
-On Sun, May 08, 2016 at 12:10:35PM +0500, =D0=9C=D0=B8=D1=85=D0=B0=D0=B8=D0=
-=BB =D0=93=D0=B0=D0=B2=D1=80=D0=B8=D0=BB=D0=BE=D0=B2 wrote:
-> $ journalctl -b -1 --no-pager | grep BTRFS
-> May 08 01:28:23 localhost kernel: BTRFS: device fsid
-> a22dd8bc-24ef-4f97-bb62-01fcd7c3f11c devid 1 transid 25 /dev/sda4
-> May 08 01:28:23 localhost kernel: BTRFS: device fsid
-> eaa531cd-25f4-4e00-b31f-22665faa9768 devid 1 transid 333 /dev/sdb
-> May 08 01:28:23 localhost kernel: BTRFS: device label home devid 1
-> transid 2326870 /dev/sdc1
-> May 08 01:28:26 localhost.localdomain kernel: BTRFS info (device
-> sdc1): disk space caching is enabled
+[44388.089321] sd 8:0:0:0: [sdf] tag#0 FAILED Result:
+hostbyte=DID_TIME_OUT driverbyte=DRIVER_OK
+[44388.089334] sd 8:0:0:0: [sdf] tag#0 CDB: Read(10) 28 00 00 43 1c 48
+00 00 08 00
+[44388.089340] blk_update_request: I/O error, dev sdf, sector 35185216
 
-   All perfectly normal.
+...
 
-> May 08 01:28:26 localhost.localdomain kernel: BTRFS info (device
-> sdc1): bdev /dev/sdc1 errs: wr 0, rd 14, flush 0, corrupt 0, gen 0
+May  7 06:39:31 NAS-Sash kernel: [35777.520490] sd 8:0:0:0: [sdf] tag#0
+FAILED Result: hostbyte=DID_OK driverbyte=DRIVER_SENSE
+May  7 06:39:31 NAS-Sash kernel: [35777.520500] sd 8:0:0:0: [sdf] tag#0
+Sense Key : Medium Error [current]
+May  7 06:39:31 NAS-Sash kernel: [35777.520508] sd 8:0:0:0: [sdf] tag#0
+Add. Sense: Unrecovered read error
+May  7 06:39:31 NAS-Sash kernel: [35777.520516] sd 8:0:0:0: [sdf] tag#0
+CDB: Read(10) 28 00 03 84 ee 30 00 00 04 00
+May  7 06:39:31 NAS-Sash kernel: [35777.520522] blk_update_request:
+critical medium error, dev sdf, sector 472347008
+May  7 06:39:35 NAS-Sash kernel: [35781.364117] sd 8:0:0:0: [sdf] tag#0
+FAILED Result: hostbyte=DID_OK driverbyte=DRIVER_SENSE
+May  7 06:39:35 NAS-Sash kernel: [35781.364138] sd 8:0:0:0: [sdf] tag#0
+Sense Key : Medium Error [current]
+May  7 06:39:35 NAS-Sash kernel: [35781.364146] sd 8:0:0:0: [sdf] tag#0
+Add. Sense: Unrecovered read error
+May  7 06:39:35 NAS-Sash kernel: [35781.364154] sd 8:0:0:0: [sdf] tag#0
+CDB: Read(10) 28 00 03 84 ee 30 00 00 04 00
 
-   As long as the number after "rd" doesn't change, you're OK. This
-records all errors that the FS has encountered. You can reset the
-values with btrfs dev stat -z.
+and different vendors use the raw error rate differently. some count up
+constantly, some do only log real destructive errors.
 
-> May 08 01:28:39 localhost.localdomain kernel: BTRFS error (device
-> sdc1): could not find root 8
+but i had the luck that the system froze completely. not even an log
+entry. now the file system is broken.....arg!
 
-   This is harmless -- the FS is reporting that something (usually
-systemd) was probing to find out if quotas are enabled, and they
-aren't.
+now i need some advice what to do next....best practice wise? try to
+mount degraded and copy off all data? then i will net at least 9TB of
+new storage... :-(
 
-> May 08 01:40:30 localhost.localdomain kernel: BTRFS warning (device
-> sdc1): block group 2286562574336 has wrong amount of free space
-> May 08 01:40:30 localhost.localdomain kernel: BTRFS warning (device
-> sdc1): failed to load free space cache for block group 2286562574336,
-> rebuilding it now
-> May 08 02:06:09 localhost.localdomain kernel: BTRFS warning (device
-> sdc1): block group 3844117364736 has wrong amount of free space
-> May 08 02:06:09 localhost.localdomain kernel: BTRFS warning (device
-> sdc1): failed to load free space cache for block group 3844117364736,
-> rebuilding it now
 
-   These report that there's a problem with the free space cache. This
-is not likely to be damaging, but could impact performance. It will
-probably take some time (possibly on the scale of hours, depending on
-the size of the FS) for the cache to rebuild, so leave the machine up
-for a while. If the cache messages persist, clear it manually by
-mounting once with -oclear_cache, then mount again once with
--ospace_cache, and again wait for it to rebuild.
+sash
 
-   Hugo.
 
-> These messages appear on every boot.
-> That they means? And how fix it?
->=20
-> $ uname -r
-> 4.5.3-300.fc24.x86_64
->=20
 
---=20
-Hugo Mills             | Two things came out of Berkeley in the 1960s: LSD
-hugo@... carfax.org.uk | and Unix. This is not a coincidence.
-http://carfax.org.uk/  |
-PGP: E2AB1DE4          |
 
---Sosn/fv6aiTyEgxl
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-
-iQIcBAEBAgAGBQJXLwLSAAoJEFheFHXiqx3keQ0P/i87N8djog0QTkOg+y9went9
-6E7vw7x9PCz5qi/pkz1E73T0QimUI9JA3UsfaIC6tT5IBmUkiXz0YpcIS4HDVRRf
-WugqXx95aX05eqrLyW25fwuYmTRts42II/5aHa1vDJXPPwRGBAcMB9hWp81qQNSa
-kJUCaNak5XQUKvKwwzH8mkRJCF5o4hm7SgHzajCsrSbU9lfSRBStcaQICy05DtfE
-dd58MXPVoHQp1E6dEVsrV+Klw3ci9HIJcySnlDJv44ZL6tyNIoQdqxmVuiASzPPw
-8dd7RBcTo5B29iD6fYQU4u6+Pn3SdBa+WLuPTyh7r6JIIEVJcKDav2MgJkwGhIbn
-+xPRkehpe/OiVYhipD79V3NAzz1Lsu9i8WIYRrqSe/F6qklgfCd0oGOwP+sij5T6
-QDmeKi0E0IJzA565zAV3sTrZ5vcILxOhYZ7ppm8r5H/tcLceU1XGrZFHBU9FKdqH
-nu0M336IomMJi8RwXVfs1oW/jvr3uNsmG8wqF5x/aC4dBFTYJ/x9znHYcuDxNgNi
-h2vI24oognGRvKSGN3ofmYwW+j+WtWCfJkn+49z1NsnIc72nyJide74u+ucPF3Ha
-f1c9oufwJkFLyTAvNdLs94tiZ02Z+ozX+pZ+FF6BfTTdA99ScUYw9nMyoyC1ZnRL
-YdFWpARbziAazf0PJlvP
-=gOqa
------END PGP SIGNATURE-----
-
---Sosn/fv6aiTyEgxl--

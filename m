@@ -1,84 +1,59 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:48623 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750822AbcEHViK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 8 May 2016 17:38:10 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1azWOq-0004kh-Ud
-	for linux-btrfs@vger.kernel.org; Sun, 08 May 2016 23:38:05 +0200
-Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sun, 08 May 2016 23:38:04 +0200
-Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sun, 08 May 2016 23:38:04 +0200
+Received: from out5-smtp.messagingengine.com ([66.111.4.29]:48415 "EHLO
+	out5-smtp.messagingengine.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1750894AbcEHWSm convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 8 May 2016 18:18:42 -0400
+Received: from compute2.internal (compute2.nyi.internal [10.202.2.42])
+	by mailout.nyi.internal (Postfix) with ESMTP id 60767208BA
+	for <linux-btrfs@vger.kernel.org>; Sun,  8 May 2016 18:18:41 -0400 (EDT)
+Received: from ebox.rath.org (ebox.rath.org [45.79.69.51])
+	by mail.messagingengine.com (Postfix) with ESMTPA id 1A1B8C00012
+	for <linux-btrfs@vger.kernel.org>; Sun,  8 May 2016 18:18:41 -0400 (EDT)
+Received: from vostro.rath.org (vostro [192.168.12.4])
+	by ebox.rath.org (Postfix) with ESMTPS id 36E7829ACB7
+	for <linux-btrfs@vger.kernel.org>; Sun,  8 May 2016 22:18:40 +0000 (UTC)
+From: Nikolaus Rath <Nikolaus@rath.org>
 To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: btrfs-tools: missing device delete/remove cancel option on disk
- failure
-Date: Sun, 8 May 2016 21:37:59 +0000 (UTC)
-Message-ID: <pan$43d44$2d1fc8ff$93e7f634$4b47af35@cox.net>
-References: <1ba2f46d66b988069f861df8526e4cba@email.freenet.de>
-	<ngm2ou$he4$1@ger.gmane.org>
-	<fb65d9d2-3ac9-a155-af13-62fe8d41a49b@chefmail.de>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Subject: Input/output error on newly created file
+Date: Sun, 08 May 2016 15:18:38 -0700
+Message-ID: <8760uoqjlt.fsf@vostro.rath.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-g6094199 posted on Sun, 08 May 2016 13:53:41 +0200 as excerpted:
+Hello,
 
-> now i need some advice what to do next....best practice wise? try to
-> mount degraded and copy off all data? then i will net at least 9TB of
-> new storage... :-(
+I just created an innocent 10 MB on a btrfs file system, yet my attempt
+to read it a few seconds later (and ever since), just gives:
 
-Well, even in general, regardless of the filesystem or what it's stored 
-on, the sysadmin's rule of backups, in simple form, says if it's not 
-backed up to at least one level, you are by your lack of backup defining 
-the data as worth less than the time, trouble and resources necessary to 
-do that backup.
+$ ls -l in-progress/mysterious-io-error 
+-rw-rw-r-- 1 nikratio nikratio 10485760 May  8 14:41 in-progress/mysterious-io-error
+$ cat in-progress/mysterious-io-error 
+cat: in-progress/mysterious-io-error: Input/output error
 
-And btrfs, being still stabilizing, not yet fully stable, reinforces that 
-rule.  I know nobody around here that would recommend usage of btrfs in 
-any mode without backups, unless the data on it is truly of trivial 
-value, testing only and not worth backing up.
+I was hoping the kernel might tell me a little more about this, but:
 
-And btrfs parity-raid, raid56 mode, which you're using as you reported 
-raid5 (I'm assuming btrfs raid5 here), is new and not yet as stable as 
-btrfs is in general, with at least two known bugs related to recovery 
-from loss of device, making it for purposes of recovery planning raid0.  
-Nobody I know is even recommending that for production use even with 
-backups at this point.  It's recommended only for testing, not for in-use 
-deployment unless you really /are/ prepared to be scrapping it and 
-starting over more or less constantly.
-
-And of course the only way you couldn't know that before starting is if 
-you didn't care enough about the stability of your data to do your 
-research on the filesystem you were choosing in the first place, which 
-would again point to the data simply not being worth enough to care about.
+$ dmesg | tail -3
+[   48.982851] wlan0: RX AssocResp from 00:1f:33:be:9a:c4 (capab=0x411 status=0 aid=3)
+[   48.983757] wlan0: associated
+[ 2770.464505] kvm: zapping shadow pages for mmio generation wraparound
 
 
-Which means if that data wasn't already backed up, you were already 
-defining it as trivial testing data, and the only reason you may have for 
-trying to recover it is to test the recovery procedures.  Otherwise, 
-consider it a loss and blow it away with a new badblocks or mkfs, ready 
-for a new test, as you were already declaring the data as testing data, 
-not worth trying to recover, by storing it on btrfs parity raid, which is 
-known to be recommended only for testing with already backed up or 
-trivial value data you plan on losing, at this point.
+How can I find out the reason for the error? Is it a bug in BTRFS,
+or somewhere else in the kernel ? Is my hardware broken?
+
+Kernel is Debian's 4.5.0-0.bpo.1-amd64. This is a btrfs file system on a
+LVM LV backed by a bcache array with two backing devices and one caching
+device.
 
 
-So you don't need 9 TB of new storage, because either you already have it 
-available and are using it for the backup you already have, or you had 
-already demonstrated in multiple different ways that the data was really 
-of only trivial value to you, so you can simply blow away the existing 
-broken filesystem and simply start over with a new test.  Words can claim 
-otherwise, but actions don't lie.  8^0
+Best,
+-Nikolaus
 
 -- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+GPG encrypted emails preferred. Key id: 0xD113FCAC3C4E599F
+Fingerprint: ED31 791B 2C5C 1613 AF38 8B8A D113 FCAC 3C4E 599F
 
+             »Time flies like an arrow, fruit flies like a Banana.«

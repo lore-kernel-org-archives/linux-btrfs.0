@@ -1,77 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:34223 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:53249 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752177AbcEIMOM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 9 May 2016 08:14:12 -0400
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id D72E3AAEF
-	for <linux-btrfs@vger.kernel.org>; Mon,  9 May 2016 12:14:10 +0000 (UTC)
-From: David Sterba <dsterba@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.com>
-Subject: [PATCH] btrfs: GFP_NOFS does not GFP_HIGHMEM
-Date: Mon,  9 May 2016 14:13:49 +0200
-Message-Id: <1462796029-24456-1-git-send-email-dsterba@suse.com>
+	id S1751261AbcEIRcn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 9 May 2016 13:32:43 -0400
+Date: Mon, 9 May 2016 19:32:20 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Scott Talbert <scott.talbert@hgst.com>
+Cc: linux-btrfs@vger.kernel.org, Zhao Lei <zhaolei@cn.fujitsu.com>
+Subject: Re: [PATCH] btrfs: fix memory leak during RAID 5/6 device replacement
+Message-ID: <20160509173220.GO29353@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1462799668-26910-1-git-send-email-scott.talbert@hgst.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1462799668-26910-1-git-send-email-scott.talbert@hgst.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Masking HIGHMEM out of NOFS does not make sense.
+CC Zhao Lei <zhaolei@cn.fujitsu.com>
 
-Signed-off-by: David Sterba <dsterba@suse.com>
----
- fs/btrfs/delayed-inode.c | 2 +-
- fs/btrfs/disk-io.c       | 2 +-
- fs/btrfs/extent_io.c     | 4 ++--
- 3 files changed, 4 insertions(+), 4 deletions(-)
-
-diff --git a/fs/btrfs/delayed-inode.c b/fs/btrfs/delayed-inode.c
-index 6cef0062f929..61561c2a3f96 100644
---- a/fs/btrfs/delayed-inode.c
-+++ b/fs/btrfs/delayed-inode.c
-@@ -134,7 +134,7 @@ static struct btrfs_delayed_node *btrfs_get_or_create_delayed_node(
- 	/* cached in the btrfs inode and can be accessed */
- 	atomic_add(2, &node->refs);
- 
--	ret = radix_tree_preload(GFP_NOFS & ~__GFP_HIGHMEM);
-+	ret = radix_tree_preload(GFP_NOFS);
- 	if (ret) {
- 		kmem_cache_free(delayed_node_cache, node);
- 		return ERR_PTR(ret);
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 4e47849d7427..7e062464a8bd 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -1640,7 +1640,7 @@ int btrfs_insert_fs_root(struct btrfs_fs_info *fs_info,
- {
- 	int ret;
- 
--	ret = radix_tree_preload(GFP_NOFS & ~__GFP_HIGHMEM);
-+	ret = radix_tree_preload(GFP_NOFS);
- 	if (ret)
- 		return ret;
- 
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index d247fc0eea19..f64824810d78 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -4822,7 +4822,7 @@ struct extent_buffer *alloc_test_extent_buffer(struct btrfs_fs_info *fs_info,
- 		return NULL;
- 	eb->fs_info = fs_info;
- again:
--	ret = radix_tree_preload(GFP_NOFS & ~__GFP_HIGHMEM);
-+	ret = radix_tree_preload(GFP_NOFS);
- 	if (ret)
- 		goto free_eb;
- 	spin_lock(&fs_info->buffer_lock);
-@@ -4923,7 +4923,7 @@ struct extent_buffer *alloc_extent_buffer(struct btrfs_fs_info *fs_info,
- 	if (uptodate)
- 		set_bit(EXTENT_BUFFER_UPTODATE, &eb->bflags);
- again:
--	ret = radix_tree_preload(GFP_NOFS & ~__GFP_HIGHMEM);
-+	ret = radix_tree_preload(GFP_NOFS);
- 	if (ret)
- 		goto free_eb;
- 
--- 
-2.7.1
-
+On Mon, May 09, 2016 at 09:14:28AM -0400, Scott Talbert wrote:
+> A 'struct bio' is allocated in scrub_missing_raid56_pages(), but it was never
+> freed anywhere.
+> 
+> Signed-off-by: Scott Talbert <scott.talbert@hgst.com>
+> ---
+>  fs/btrfs/scrub.c | 2 ++
+>  1 file changed, 2 insertions(+)
+> 
+> diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
+> index 82bedf9..607cc6e 100644
+> --- a/fs/btrfs/scrub.c
+> +++ b/fs/btrfs/scrub.c
+> @@ -2130,6 +2130,8 @@ static void scrub_missing_raid56_end_io(struct bio *bio)
+>  	if (bio->bi_error)
+>  		sblock->no_io_error_seen = 0;
+>  
+> +	bio_put(bio);
+> +
+>  	btrfs_queue_work(fs_info->scrub_workers, &sblock->work);
+>  }
+>  
+> -- 
+> 1.9.1
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

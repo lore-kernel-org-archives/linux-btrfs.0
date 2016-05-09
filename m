@@ -1,57 +1,66 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:47431 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1758209AbcEFOkE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 6 May 2016 10:40:04 -0400
-Date: Fri, 6 May 2016 16:39:44 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Liu Bo <bo.li.liu@oracle.com>
-Cc: dsterba@suse.cz, linux-btrfs@vger.kernel.org, vegard.nossum@oracle.com
+Received: from cn.fujitsu.com ([59.151.112.132]:61741 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1750948AbcEIBbo (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 8 May 2016 21:31:44 -0400
 Subject: Re: [PATCH 1/2] Btrfs: add more valid checks for superblock
-Message-ID: <20160506143944.GE29353@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
+To: <dsterba@suse.cz>, <bo.li.liu@oracle.com>, <linux-btrfs@vger.kernel.org>,
+        <vegard.nossum@oracle.com>, <dsterba@suse.com>
 References: <1462212951-28113-1-git-send-email-bo.li.liu@oracle.com>
- <20160504132935.GU29353@twin.jikos.cz>
- <20160504174001.GA14909@localhost.localdomain>
+ <9fa04dd7-13c4-6c24-dddc-4521eccea65c@cn.fujitsu.com>
+ <20160504132329.GT29353@twin.jikos.cz>
+ <20160504174436.GB14909@localhost.localdomain>
+ <a7811da3-06f5-2ff2-06e4-19be9fd31410@cn.fujitsu.com>
+ <20160506143529.GD29353@twin.jikos.cz>
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Message-ID: <47023701-8dd4-6c38-b242-230a372890e7@cn.fujitsu.com>
+Date: Mon, 9 May 2016 09:31:37 +0800
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20160504174001.GA14909@localhost.localdomain>
+In-Reply-To: <20160506143529.GD29353@twin.jikos.cz>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, May 04, 2016 at 10:40:02AM -0700, Liu Bo wrote:
-> > > +		printk(KERN_ERR "BTRFS: bytes_used is too small %llu\n",
-> > > +		       btrfs_super_bytes_used(sb));
-> > > +		ret = -EINVAL;
-> > > +	}
-> > > +	if (btrfs_super_stripesize(sb) != 4096) {
-> > 
-> > This is too strict. The stripesize is unused, but we not force it to be
-> > 4k, a multiple of nodesize/sectorsize should be enough.
-> 
-> Hmm, in fact stripesize is used in find_free_extent(),
-> 
-> find_free_extent() {
-> 	...
-> 	search_start = ALIGN(offset, root->stripesize);
-> 	...
-> }
-> 
-> and in open_ctree(),
-> 
-> open_ctree() {
-> 	...
-> 	stripesize = btrfs_super_stripesize(disk_super);
-> 	...
-> 	tree_root->stripesize = stripesize;
-> 	...
-> }
-> 
-> btrfs_read_roots() {
-> 	...
-> 	btrfs_read_tree_root()  --> __setup_root(..., tree_root->stripesize, ...)
-> }
-> 
-> Thus, this stripesize has to be sectorsize at least.
 
-Yes, and must be power of two because of ALIGN for now.
+
+David Sterba wrote on 2016/05/06 16:35 +0200:
+> On Thu, May 05, 2016 at 09:08:54AM +0800, Qu Wenruo wrote:
+>>>> An early check can compare against some reasonable value, but the
+>>>> total_bytes value must be equal to the sum of all device sizes
+>>>> (disk_total_bytes). I'm not sure if we have enough information to verify
+>>>> that at this point though.
+>>>
+>>> That's what I had in mind, the problem is that only the first device information is recorded in superblock.
+>>>
+>>> At this moment We have device_num but we don't know the size of other devices.
+>>>
+>>> Thanks,
+>>>
+>>> -liubo
+>>>
+>>>
+>> What about error out if we found sb->total_bytes <
+>> sb->dev_item->total_bytes?
+>>
+>> As we are just doing early check, no need to be comprehensive, but spot
+>> obvious problem.
+>
+> Ok.
+>
+>> For exact device_num and sb->total_bytes, we may do post check when
+>> device tree are loaded?
+>> Splitting early_check() and post_check() seems valid for me.
+>> (Also I prefer post_check() just warning, not forced exit)
+>
+> Why just warning? Superblock total_bytes and device sizes must be
+> correct, otherwise all sorts of operations can fail randomly.
+>
+>
+Because if we exit, we can't even do fsck.
+
+Maybe we need a new flag to control whether exit or warn at post_check().
+
+Thanks,
+Qu
+
+

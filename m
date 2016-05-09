@@ -1,51 +1,58 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oi0-f66.google.com ([209.85.218.66]:35091 "EHLO
-	mail-oi0-f66.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751628AbcEIVaq convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 9 May 2016 17:30:46 -0400
-Received: by mail-oi0-f66.google.com with SMTP id w198so28360158oiw.2
-        for <linux-btrfs@vger.kernel.org>; Mon, 09 May 2016 14:30:46 -0700 (PDT)
+Received: from mail-oi0-f65.google.com ([209.85.218.65]:32910 "EHLO
+	mail-oi0-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752242AbcEIVva convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 9 May 2016 17:51:30 -0400
+Received: by mail-oi0-f65.google.com with SMTP id f63so28414025oig.0
+        for <linux-btrfs@vger.kernel.org>; Mon, 09 May 2016 14:51:30 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <52f0c710-d695-443d-b6d5-266e3db634f8@linuxsystems.it>
-References: <3bf4a554-e3b8-44e2-b8e7-d08889dcffed@linuxsystems.it>
-	<CAJCQCtRAqxREr8ToorSkbsnYKKk_NPy+1oSHP6WMOnpLe=9T1g@mail.gmail.com>
-	<c9bde2c9-c0f3-4bd2-a9ac-81fe0250edcc@linuxsystems.it>
-	<20160505174854.GA1012@vader.dhcp.thefacebook.com>
-	<585760e0-7d18-4fa0-9974-62a3d7561aee@linuxsystems.it>
-	<2cd5aca36f853f3c9cf1d46c2f133aa3@linuxsystems.it>
-	<CAFvQSYTQ1yZqPYyv0dmd+JuHRWfKm-RtZLdbKXQeHiWMthnyLw@mail.gmail.com>
-	<f1dd07efb34a0a110f62566979530944@linuxsystems.it>
-	<799cf552-4612-56c5-b44d-59458119e2b0@gmail.com>
-	<52f0c710-d695-443d-b6d5-266e3db634f8@linuxsystems.it>
-Date: Mon, 9 May 2016 15:30:45 -0600
-Message-ID: <CAJCQCtSbLVuvnyLFM7mj=Kx=mC1X1n4azRyo1pFVv3VBzJephA@mail.gmail.com>
-Subject: Re: btrfs ate my data in just two days, after a fresh install. ram
- and disk are ok. it still mounts, but I cannot repair
+In-Reply-To: <1757853.p9qfQBkHmV@anv.localdomain>
+References: <2879842.8EgedBzSUf@anv.localdomain>
+	<2288281.DWWvr4SJAK@anv.localdomain>
+	<CAJCQCtTdL-AxGRpW3ZmGr4weYz3BUks0FR0NLmV-hsR88tNwvw@mail.gmail.com>
+	<1757853.p9qfQBkHmV@anv.localdomain>
+Date: Mon, 9 May 2016 15:51:29 -0600
+Message-ID: <CAJCQCtQpjqrUf-4HqDZhCFyt5Y6EeNPS7czkV4KF3K-et9CyZw@mail.gmail.com>
+Subject: Re: empty disk reports full
 From: Chris Murphy <lists@colorremedies.com>
-To: =?UTF-8?Q?Niccol=C3=B2_Belli?= <darkbasic@linuxsystems.it>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>,
-        Clemens Eisserer <linuxhippy@gmail.com>,
-        "Austin S. Hemmelgarn" <ahferroin7@gmail.com>,
-        Patrik Lundquist <patrik.lundquist@gmail.com>,
-        Chris Murphy <lists@colorremedies.com>,
-        Qu Wenruo <quwenruo@cn.fujitsu.com>,
-        Omar Sandoval <osandov@osandov.com>
+To: Alejandro Vargas <anv@zener.es>
+Cc: Chris Murphy <lists@colorremedies.com>, Hugo Mills <hugo@carfax.org.uk>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, May 9, 2016 at 8:53 AM, Niccolò Belli <darkbasic@linuxsystems.it> wrote:
+On Mon, May 9, 2016 at 4:56 AM, Alejandro Vargas <anv@zener.es> wrote:
+> El Martes, 26 de abril de 2016 00:08:49 Chris Murphy escribió:
+>> On Mon, Apr 25, 2016 at 8:03 AM, Alejandro Vargas <anv@zener.es> wrote:
+>
+>> I suggest unmounting and running 'btrfs check' (without repair) and
+>> see if that gives any new information.
+>
+> I tried btrfs check but... see the result:
+>
+> # btrfs check /dev/sdb1
+> Checking filesystem on /dev/sdb1
+> UUID: cbfe8735-9f53-46f5-be7e-40f6a61a5506
+> checking extents
+> Killed
+>
+>
+> I tried it several times with the same result.
 
-> I cannot manage to survive such annoying workflow for long, so I really hope
-> someone will manage to track the bug down soon.
+If this is btrfs-progs 4.5.2 it's worth filing a bug. You can
+trivially use 'strace btrfs check /dev/sdb1' and attach the entire
+output to the bug report as a file (pasting it in the bug will be
+messy).
 
-I suggest perseverance :) despite how tedious this is. Btrfs is more
-aware of its state than other file systems, so if you give up and go
-to ext4 it's entirely possible corruption is still happening but you
-won't know it until there's a lot more damage. At the least if you
-have to give up I'd suggest XFS and make sure you're using not older
-than xfsprogs 3.2.3 which will make a V5 file system that uses
-metadata checksumming by default.
+More advanced would be to use something like valgrind on it, but only
+a dev would be able to tell you if it's helpful, I can't:
+
+valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes
+-v btrfs check /dev/sdb1
+
+If it's not progs v.4.5.2 then I suggest upgrading and see if the
+problem still happens.
 
 
 -- 

@@ -1,264 +1,427 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:18710 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752242AbcEIW5s (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 9 May 2016 18:57:48 -0400
-Date: Mon, 9 May 2016 15:59:33 -0700
+Received: from userp1040.oracle.com ([156.151.31.81]:18635 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751147AbcEIXy7 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 9 May 2016 19:54:59 -0400
+Date: Mon, 9 May 2016 16:56:45 -0700
 From: Liu Bo <bo.li.liu@oracle.com>
 To: fdmanana@kernel.org
 Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 2/3] Btrfs: don't wait for unrelated IO to finish before
- relocation
-Message-ID: <20160509225933.GF4954@localhost.localdomain>
+Subject: Re: [PATCH 3/3] Btrfs: don't do unnecessary delalloc flushes when
+ relocating
+Message-ID: <20160509235645.GG4954@localhost.localdomain>
 Reply-To: bo.li.liu@oracle.com
 References: <1461546072-11154-1-git-send-email-fdmanana@kernel.org>
- <1461546072-11154-3-git-send-email-fdmanana@kernel.org>
+ <1461546072-11154-4-git-send-email-fdmanana@kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1461546072-11154-3-git-send-email-fdmanana@kernel.org>
+In-Reply-To: <1461546072-11154-4-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Apr 25, 2016 at 02:01:11AM +0100, fdmanana@kernel.org wrote:
+On Mon, Apr 25, 2016 at 02:01:12AM +0100, fdmanana@kernel.org wrote:
 > From: Filipe Manana <fdmanana@suse.com>
 > 
-> Before the relocation process of a block group starts, it sets the block
-> group to readonly mode, then flushes all delalloc writes and then finally
-> it waits for all ordered extents to complete. This last step includes
-> waiting for ordered extents destinated at extents allocated in other block
-> groups, making us waste unecessary time.
+> Before we start the actual relocation process of a block group, we do
+> calls to flush delalloc of all inodes and then wait for ordered extents
+> to complete. However we do these flush calls just to make sure we don't
+> race with concurrent tasks that have actually already started to run
+> delalloc and have allocated an extent from the block group we want to
+> relocate, right before we set it to readonly mode, but have not yet
+> created the respective ordered extents. The flush calls make us wait
+> for such concurrent tasks because they end up calling
+> filemap_fdatawrite_range() (through btrfs_start_delalloc_roots() ->
+> __start_delalloc_inodes() -> btrfs_alloc_delalloc_work() ->
+> btrfs_run_delalloc_work()) which ends up serializing us with those tasks
+> due to attempts to lock the same pages (and the delalloc flush procedure
+> calls the allocator and creates the ordered extents before unlocking the
+> pages).
 > 
-> So fix this by waiting only for ordered extents that fall into the block
-> group's range.
+> These flushing calls not only make us waste time (cpu, IO) but also reduce
+> the chances of writing larger extents (applications might be writing to
+> contiguous ranges and we flush before they finish dirtying the whole
+> ranges).
+> 
+> So make sure we don't flush delalloc and just wait for concurrent tasks
+> that have already started flushing delalloc and have allocated an extent
+> from the block group we are about to relocate.
+> 
+> This change also ends up fixing a race with direct IO writes that makes
+> relocation not wait for direct IO ordered extents. This race is
+> illustrated by the following diagram:
+> 
+>         CPU 1                                       CPU 2
+> 
+>  btrfs_relocate_block_group(bg X)
+> 
+>                                            starts direct IO write,
+>                                            target inode currently has no
+>                                            ordered extents ongoing nor
+>                                            dirty pages (delalloc regions),
+>                                            therefore the root for our inode
+>                                            is not in the list
+>                                            fs_info->ordered_roots
+> 
+>                                            btrfs_direct_IO()
+>                                              __blockdev_direct_IO()
+>                                                btrfs_get_blocks_direct()
+>                                                  btrfs_lock_extent_direct()
+>                                                    locks range in the io tree
+>                                                  btrfs_new_extent_direct()
+>                                                    btrfs_reserve_extent()
+>                                                      --> extent allocated
+>                                                          from bg X
+> 
+>  btrfs_inc_block_group_ro(bg X)
+> 
+>  btrfs_start_delalloc_roots()
+>    __start_delalloc_inodes()
+>      --> does nothing, no dealloc ranges
+>          in the inode's io tree so the
+>          inode's root is not in the list
+>          fs_info->delalloc_roots
+> 
+>  btrfs_wait_ordered_roots()
+>    --> does not find the inode's root in the list
+>        fs_info->ordered_roots
+> 
+>    --> ends up not waiting for the direct IO
+>        write started by the task at CPU 2
+> 
+>  relocate_block_group()
+> 
+>                                                    btrfs_add_ordered_extent_dio()
+>                                                      --> now a ordered extent is
+>                                                          created and added to the
+>                                                          list root->ordered_extents
+>                                                          and the root added to the
+>                                                          list fs_info->ordered_roots
+>                                                      --> this is too late and the
+>                                                          task at CPU 1 already
+>                                                          started the relocation
+> 
+> The consequence is the same as described in the patch titled
+> "Btrfs: fix race in relocation that makes us miss extents". When we hit
+> it, the relocation process produces the following message:
+> 
+> [ 7260.832836] ------------[ cut here ]------------
+> [ 7260.834653] WARNING: CPU: 5 PID: 6765 at fs/btrfs/relocation.c:4318 btrfs_relocate_block_group+0x245/0x2a1 [btrfs]()
+> [ 7260.838268] Modules linked in: btrfs crc32c_generic xor ppdev raid6_pq psmouse sg acpi_cpufreq evdev i2c_piix4 tpm_tis serio_raw tpm i2c_core pcspkr parport_pc
+> [ 7260.850935] CPU: 5 PID: 6765 Comm: btrfs Not tainted 4.5.0-rc6-btrfs-next-28+ #1
+> [ 7260.852998] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS by qemu-project.org 04/01/2014
+> [ 7260.852998]  0000000000000000 ffff88020bf57bc0 ffffffff812648b3 0000000000000000
+> [ 7260.852998]  0000000000000009 ffff88020bf57bf8 ffffffff81051608 ffffffffa03c1b2d
+> [ 7260.852998]  ffff8800b2bbb800 0000000000000000 ffff8800b17bcc58 ffff8800399dd000
+> [ 7260.852998] Call Trace:
+> [ 7260.852998]  [<ffffffff812648b3>] dump_stack+0x67/0x90
+> [ 7260.852998]  [<ffffffff81051608>] warn_slowpath_common+0x99/0xb2
+> [ 7260.852998]  [<ffffffffa03c1b2d>] ? btrfs_relocate_block_group+0x245/0x2a1 [btrfs]
+> [ 7260.852998]  [<ffffffff810516d4>] warn_slowpath_null+0x1a/0x1c
+> [ 7260.852998]  [<ffffffffa03c1b2d>] btrfs_relocate_block_group+0x245/0x2a1 [btrfs]
+> [ 7260.852998]  [<ffffffffa039d9de>] btrfs_relocate_chunk.isra.29+0x66/0xdb [btrfs]
+> [ 7260.852998]  [<ffffffffa039f314>] btrfs_balance+0xde1/0xe4e [btrfs]
+> [ 7260.852998]  [<ffffffff8127d671>] ? debug_smp_processor_id+0x17/0x19
+> [ 7260.852998]  [<ffffffffa03a9583>] btrfs_ioctl_balance+0x255/0x2d3 [btrfs]
+> [ 7260.852998]  [<ffffffffa03ac96a>] btrfs_ioctl+0x11e0/0x1dff [btrfs]
+> [ 7260.852998]  [<ffffffff811451df>] ? handle_mm_fault+0x443/0xd63
+> [ 7260.852998]  [<ffffffff81491817>] ? _raw_spin_unlock+0x31/0x44
+> [ 7260.852998]  [<ffffffff8108b36a>] ? arch_local_irq_save+0x9/0xc
+> [ 7260.852998]  [<ffffffff811876ab>] vfs_ioctl+0x18/0x34
+> [ 7260.852998]  [<ffffffff81187cb2>] do_vfs_ioctl+0x550/0x5be
+> [ 7260.852998]  [<ffffffff81190c30>] ? __fget_light+0x4d/0x71
+> [ 7260.852998]  [<ffffffff81187d77>] SyS_ioctl+0x57/0x79
+> [ 7260.852998]  [<ffffffff81492017>] entry_SYSCALL_64_fastpath+0x12/0x6b
+> [ 7260.893268] ---[ end trace eb7803b24ebab8ad ]---
+> 
+> It is triggered because after the first stage of the relocation (rc->stage
+> == MOVE_DATA_EXTENTS), we commit the current transaction and then the
+> second time we call relocate_block_group() (rc->stage == UPDATE_DATA_PTRS),
+> we have flushed and waited for delalloc on the relocation inode, but since
+> we didn't find and move the extent in the first stage, the block group
+> still has a non zero number of used bytes and therefore it triggers a
+> warning at the end of btrfs_relocate_block_group().
+> 
+> Later on when trying to read the extent contents from disk we hit a
+> BUG_ON() due to the inability to map a block with a logical address that
+> belongs to the block group we relocated and is no longer valid, resulting
+> in the following trace:
+> 
+> [ 7344.885290] BTRFS critical (device sdi): unable to find logical 12845056 len 4096
+> [ 7344.887518] ------------[ cut here ]------------
+> [ 7344.888431] kernel BUG at fs/btrfs/inode.c:1833!
+> [ 7344.888431] invalid opcode: 0000 [#1] PREEMPT SMP DEBUG_PAGEALLOC
+> [ 7344.888431] Modules linked in: btrfs crc32c_generic xor ppdev raid6_pq psmouse sg acpi_cpufreq evdev i2c_piix4 tpm_tis serio_raw tpm i2c_core pcspkr parport_pc
+> [ 7344.888431] CPU: 0 PID: 6831 Comm: od Tainted: G        W       4.5.0-rc6-btrfs-next-28+ #1
+> [ 7344.888431] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS by qemu-project.org 04/01/2014
+> [ 7344.888431] task: ffff880215818600 ti: ffff880204684000 task.ti: ffff880204684000
+> [ 7344.888431] RIP: 0010:[<ffffffffa037c88c>]  [<ffffffffa037c88c>] btrfs_merge_bio_hook+0x54/0x6b [btrfs]
+> [ 7344.888431] RSP: 0018:ffff8802046878f0  EFLAGS: 00010282
+> [ 7344.888431] RAX: 00000000ffffffea RBX: 0000000000001000 RCX: 0000000000000001
+> [ 7344.888431] RDX: ffff88023ec0f950 RSI: ffffffff8183b638 RDI: 00000000ffffffff
+> [ 7344.888431] RBP: ffff880204687908 R08: 0000000000000001 R09: 0000000000000000
+> [ 7344.888431] R10: ffff880204687770 R11: ffffffff82f2d52d R12: 0000000000001000
+> [ 7344.888431] R13: ffff88021afbfee8 R14: 0000000000006208 R15: ffff88006cd199b0
+> [ 7344.888431] FS:  00007f1f9e1d6700(0000) GS:ffff88023ec00000(0000) knlGS:0000000000000000
+> [ 7344.888431] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+> [ 7344.888431] CR2: 00007f1f9dc8cb60 CR3: 000000023e3b6000 CR4: 00000000000006f0
+> [ 7344.888431] Stack:
+> [ 7344.888431]  0000000000001000 0000000000001000 ffff880204687b98 ffff880204687950
+> [ 7344.888431]  ffffffffa0395c8f ffffea0004d64d48 0000000000000000 0000000000001000
+> [ 7344.888431]  ffffea0004d64d48 0000000000001000 0000000000000000 0000000000000000
+> [ 7344.888431] Call Trace:
+> [ 7344.888431]  [<ffffffffa0395c8f>] submit_extent_page+0xf5/0x16f [btrfs]
+> [ 7344.888431]  [<ffffffffa03970ac>] __do_readpage+0x4a0/0x4f1 [btrfs]
+> [ 7344.888431]  [<ffffffffa039680d>] ? btrfs_create_repair_bio+0xcb/0xcb [btrfs]
+> [ 7344.888431]  [<ffffffffa037eeb4>] ? btrfs_writepage_start_hook+0xbc/0xbc [btrfs]
+> [ 7344.888431]  [<ffffffff8108df55>] ? trace_hardirqs_on+0xd/0xf
+> [ 7344.888431]  [<ffffffffa039728c>] __do_contiguous_readpages.constprop.26+0xc2/0xe4 [btrfs]
+> [ 7344.888431]  [<ffffffffa037eeb4>] ? btrfs_writepage_start_hook+0xbc/0xbc [btrfs]
+> [ 7344.888431]  [<ffffffffa039739b>] __extent_readpages.constprop.25+0xed/0x100 [btrfs]
+> [ 7344.888431]  [<ffffffff81129d24>] ? lru_cache_add+0xe/0x10
+> [ 7344.888431]  [<ffffffffa0397ea8>] extent_readpages+0x160/0x1aa [btrfs]
+> [ 7344.888431]  [<ffffffffa037eeb4>] ? btrfs_writepage_start_hook+0xbc/0xbc [btrfs]
+> [ 7344.888431]  [<ffffffff8115daad>] ? alloc_pages_current+0xa9/0xcd
+> [ 7344.888431]  [<ffffffffa037cdc9>] btrfs_readpages+0x1f/0x21 [btrfs]
+> [ 7344.888431]  [<ffffffff81128316>] __do_page_cache_readahead+0x168/0x1fc
+> [ 7344.888431]  [<ffffffff811285a0>] ondemand_readahead+0x1f6/0x207
+> [ 7344.888431]  [<ffffffff811285a0>] ? ondemand_readahead+0x1f6/0x207
+> [ 7344.888431]  [<ffffffff8111cf34>] ? pagecache_get_page+0x2b/0x154
+> [ 7344.888431]  [<ffffffff8112870e>] page_cache_sync_readahead+0x3d/0x3f
+> [ 7344.888431]  [<ffffffff8111dbf7>] generic_file_read_iter+0x197/0x4e1
+> [ 7344.888431]  [<ffffffff8117773a>] __vfs_read+0x79/0x9d
+> [ 7344.888431]  [<ffffffff81178050>] vfs_read+0x8f/0xd2
+> [ 7344.888431]  [<ffffffff81178a38>] SyS_read+0x50/0x7e
+> [ 7344.888431]  [<ffffffff81492017>] entry_SYSCALL_64_fastpath+0x12/0x6b
+> [ 7344.888431] Code: 8d 4d e8 45 31 c9 45 31 c0 48 8b 00 48 c1 e2 09 48 8b 80 80 fc ff ff 4c 89 65 e8 48 8b b8 f0 01 00 00 e8 1d 42 02 00 85 c0 79 02 <0f> 0b 4c 0
+> [ 7344.888431] RIP  [<ffffffffa037c88c>] btrfs_merge_bio_hook+0x54/0x6b [btrfs]
+> [ 7344.888431]  RSP <ffff8802046878f0>
+> [ 7344.970544] ---[ end trace eb7803b24ebab8ae ]---
 > 
 > Signed-off-by: Filipe Manana <fdmanana@suse.com>
 > ---
->  fs/btrfs/dev-replace.c  |  4 ++--
->  fs/btrfs/extent-tree.c  | 11 +++++++----
->  fs/btrfs/ioctl.c        |  2 +-
->  fs/btrfs/ordered-data.c | 26 +++++++++++++++++++-------
->  fs/btrfs/ordered-data.h |  6 ++++--
->  fs/btrfs/relocation.c   |  4 +++-
->  fs/btrfs/super.c        |  2 +-
->  fs/btrfs/transaction.c  |  2 +-
->  8 files changed, 38 insertions(+), 19 deletions(-)
+>  fs/btrfs/ctree.h       | 14 ++++++++++++
+>  fs/btrfs/extent-tree.c | 58 ++++++++++++++++++++++++++++++++++++++++++++++++--
+>  fs/btrfs/inode.c       |  8 +++++++
+>  fs/btrfs/relocation.c  |  6 +-----
+>  4 files changed, 79 insertions(+), 7 deletions(-)
 > 
-> diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
-> index a1d6652..a0c1016 100644
-> --- a/fs/btrfs/dev-replace.c
-> +++ b/fs/btrfs/dev-replace.c
-> @@ -401,7 +401,7 @@ int btrfs_dev_replace_start(struct btrfs_root *root,
->  	if (ret)
->  		btrfs_err(root->fs_info, "kobj add dev failed %d\n", ret);
+> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+> index 84a6a5b..90e70e2 100644
+> --- a/fs/btrfs/ctree.h
+> +++ b/fs/btrfs/ctree.h
+> @@ -1408,6 +1408,17 @@ struct btrfs_block_group_cache {
 >  
-> -	btrfs_wait_ordered_roots(root->fs_info, -1);
-> +	btrfs_wait_ordered_roots(root->fs_info, -1, 0, (u64)-1);
+>  	struct btrfs_io_ctl io_ctl;
 >  
->  	/* force writing the updated state information to disk */
->  	trans = btrfs_start_transaction(root, 0);
-> @@ -493,7 +493,7 @@ static int btrfs_dev_replace_finishing(struct btrfs_fs_info *fs_info,
->  		mutex_unlock(&dev_replace->lock_finishing_cancel_unmount);
->  		return ret;
->  	}
-> -	btrfs_wait_ordered_roots(root->fs_info, -1);
-> +	btrfs_wait_ordered_roots(root->fs_info, -1, 0, (u64)-1);
+> +	/*
+> +	 * Incremented when doing extent allocations and holding a read lock
+> +	 * on the space_info's groups_sem semaphore.
+> +	 * Decremented when an ordered extent that represents an IO against this
+> +	 * block group's range is created (after it's added to its inode's
+> +	 * root's list of ordered extents) or immediately after the allocation
+> +	 * if it's a metadata extent or fallocate extent (for these cases we
+> +	 * don't create ordered extents).
+> +	 */
+> +	atomic_t reservations;
+> +
+>  	/* Lock for free space tree operations. */
+>  	struct mutex free_space_lock;
 >  
->  	trans = btrfs_start_transaction(root, 0);
->  	if (IS_ERR(trans)) {
+> @@ -3499,6 +3510,9 @@ int btrfs_should_throttle_delayed_refs(struct btrfs_trans_handle *trans,
+>  				       struct btrfs_root *root);
+>  int btrfs_check_space_for_delayed_refs(struct btrfs_trans_handle *trans,
+>  				       struct btrfs_root *root);
+> +void btrfs_dec_block_group_reservations(struct btrfs_fs_info *fs_info,
+> +					 const u64 start);
+> +void btrfs_wait_block_group_reservations(struct btrfs_block_group_cache *bg);
+>  void btrfs_put_block_group(struct btrfs_block_group_cache *cache);
+>  int btrfs_run_delayed_refs(struct btrfs_trans_handle *trans,
+>  			   struct btrfs_root *root, unsigned long count);
 > diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-> index 53e1297..0544f70 100644
+> index 0544f70..35e3ea9 100644
 > --- a/fs/btrfs/extent-tree.c
 > +++ b/fs/btrfs/extent-tree.c
-> @@ -4141,7 +4141,7 @@ commit_trans:
->  
->  			if (need_commit > 0) {
->  				btrfs_start_delalloc_roots(fs_info, 0, -1);
-> -				btrfs_wait_ordered_roots(fs_info, -1);
-> +				btrfs_wait_ordered_roots(fs_info, -1, 0, (u64)-1);
->  			}
->  
->  			trans = btrfs_join_transaction(root);
-> @@ -4583,7 +4583,8 @@ static void btrfs_writeback_inodes_sb_nr(struct btrfs_root *root,
->  		 */
->  		btrfs_start_delalloc_roots(root->fs_info, 0, nr_items);
->  		if (!current->journal_info)
-> -			btrfs_wait_ordered_roots(root->fs_info, nr_items);
-> +			btrfs_wait_ordered_roots(root->fs_info, nr_items,
-> +						 0, (u64)-1);
->  	}
+> @@ -6175,6 +6175,57 @@ int btrfs_exclude_logged_extents(struct btrfs_root *log,
+>  	return 0;
 >  }
 >  
-> @@ -4632,7 +4633,8 @@ static void shrink_delalloc(struct btrfs_root *root, u64 to_reclaim, u64 orig,
->  		if (trans)
->  			return;
->  		if (wait_ordered)
-> -			btrfs_wait_ordered_roots(root->fs_info, items);
-> +			btrfs_wait_ordered_roots(root->fs_info, items,
-> +						 0, (u64)-1);
->  		return;
->  	}
+> +static void
+> +btrfs_inc_block_group_reservations(struct btrfs_block_group_cache *bg)
+> +{
+> +	atomic_inc(&bg->reservations);
+> +}
+> +
+> +void btrfs_dec_block_group_reservations(struct btrfs_fs_info *fs_info,
+> +					const u64 start)
+> +{
+> +	struct btrfs_block_group_cache *bg;
+> +
+> +	bg = btrfs_lookup_block_group(fs_info, start);
+> +	BUG_ON(!bg);
+> +	if (atomic_dec_and_test(&bg->reservations))
+> +		wake_up_atomic_t(&bg->reservations);
+> +	btrfs_put_block_group(bg);
+> +}
+> +
+> +static int btrfs_wait_bg_reservations_atomic_t(atomic_t *a)
+> +{
+> +	schedule();
+> +	return 0;
+> +}
+> +
+> +void btrfs_wait_block_group_reservations(struct btrfs_block_group_cache *bg)
+> +{
+> +	struct btrfs_space_info *space_info = bg->space_info;
+> +
+> +	ASSERT(bg->ro);
+> +
+> +	if (!(bg->flags & BTRFS_BLOCK_GROUP_DATA))
+> +		return;
+> +
+> +	/*
+> +	 * Our block group is read only but before we set it to read only,
+> +	 * some task might have had allocated an extent from it already, but it
+> +	 * has not yet created a respective ordered extent (and added it to a
+> +	 * root's list of ordered extents).
+> +	 * Therefore wait for any task currently allocating extents, since the
+> +	 * block group's reservations counter is incremented while a read lock
+> +	 * on the groups' semaphore is held and decremented after releasing
+> +	 * the read access on that semaphore and creating the ordered extent.
+> +	 */
+> +	down_write(&space_info->groups_sem);
+> +	up_write(&space_info->groups_sem);
+> +
+> +	wait_on_atomic_t(&bg->reservations,
+> +			 btrfs_wait_bg_reservations_atomic_t,
+> +			 TASK_UNINTERRUPTIBLE);
+> +}
+> +
+>  /**
+>   * btrfs_update_reserved_bytes - update the block_group and space info counters
+>   * @cache:	The cache we are manipulating
+> @@ -7434,6 +7485,7 @@ checks:
+>  			btrfs_add_free_space(block_group, offset, num_bytes);
+>  			goto loop;
+>  		}
+> +		btrfs_inc_block_group_reservations(block_group);
 >  
-> @@ -4671,7 +4673,8 @@ skip_async:
->  
->  		loops++;
->  		if (wait_ordered && !trans) {
-> -			btrfs_wait_ordered_roots(root->fs_info, items);
-> +			btrfs_wait_ordered_roots(root->fs_info, items,
-> +						 0, (u64)-1);
->  		} else {
->  			time_left = schedule_timeout_killable(1);
->  			if (time_left)
-> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-> index 053e677..4d71273 100644
-> --- a/fs/btrfs/ioctl.c
-> +++ b/fs/btrfs/ioctl.c
-> @@ -681,7 +681,7 @@ static int create_snapshot(struct btrfs_root *root, struct inode *dir,
->  	if (ret)
->  		goto dec_and_free;
->  
-> -	btrfs_wait_ordered_extents(root, -1);
-> +	btrfs_wait_ordered_extents(root, -1, 0, (u64)-1);
->  
->  	btrfs_init_block_rsv(&pending_snapshot->block_rsv,
->  			     BTRFS_BLOCK_RSV_TEMP);
-> diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
-> index 41101b2..86c1cbb 100644
-> --- a/fs/btrfs/ordered-data.c
-> +++ b/fs/btrfs/ordered-data.c
-> @@ -661,14 +661,15 @@ static void btrfs_run_ordered_extent_work(struct btrfs_work *work)
->   * wait for all the ordered extents in a root.  This is done when balancing
->   * space between drives.
->   */
-> -int btrfs_wait_ordered_extents(struct btrfs_root *root, int nr)
-> +int btrfs_wait_ordered_extents(struct btrfs_root *root, int nr,
-> +			       const u64 range_start, const u64 range_len)
->  {
-> -	struct list_head splice, works;
-> +	LIST_HEAD(splice);
-> +	LIST_HEAD(skipped);
-> +	LIST_HEAD(works);
->  	struct btrfs_ordered_extent *ordered, *next;
->  	int count = 0;
+>  		/* we are all good, lets return */
+>  		ins->objectid = search_start;
+> @@ -7615,8 +7667,10 @@ again:
+>  	WARN_ON(num_bytes < root->sectorsize);
+>  	ret = find_free_extent(root, num_bytes, empty_size, hint_byte, ins,
+>  			       flags, delalloc);
 > -
-> -	INIT_LIST_HEAD(&splice);
-> -	INIT_LIST_HEAD(&works);
-> +	const u64 range_end = range_start + range_len;
+> -	if (ret == -ENOSPC) {
+> +	if (!ret && !is_data) {
+> +		btrfs_dec_block_group_reservations(root->fs_info,
+> +						   ins->objectid);
+> +	} else if (ret == -ENOSPC) {
+>  		if (!final_tried && ins->offset) {
+>  			num_bytes = min(num_bytes >> 1, ins->offset);
+>  			num_bytes = round_down(num_bytes, root->sectorsize);
+> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+> index 41a5688..0085899 100644
+> --- a/fs/btrfs/inode.c
+> +++ b/fs/btrfs/inode.c
+> @@ -824,6 +824,7 @@ retry:
+>  						async_extent->ram_size - 1, 0);
+>  			goto out_free_reserve;
+>  		}
+> +		btrfs_dec_block_group_reservations(root->fs_info, ins.objectid);
 >  
->  	mutex_lock(&root->ordered_extent_mutex);
->  	spin_lock(&root->ordered_extent_lock);
-> @@ -676,6 +677,14 @@ int btrfs_wait_ordered_extents(struct btrfs_root *root, int nr)
->  	while (!list_empty(&splice) && nr) {
->  		ordered = list_first_entry(&splice, struct btrfs_ordered_extent,
->  					   root_extent_list);
-> +
-> +		if (range_end <= ordered->start ||
-> +		    ordered->start + ordered->disk_len <= range_start) {
-> +			list_move_tail(&ordered->root_extent_list, &skipped);
-> +			cond_resched_lock(&root->ordered_extent_lock);
-> +			continue;
-> +		}
-> +
->  		list_move_tail(&ordered->root_extent_list,
->  			       &root->ordered_extents);
->  		atomic_inc(&ordered->refs);
-> @@ -694,6 +703,7 @@ int btrfs_wait_ordered_extents(struct btrfs_root *root, int nr)
->  			nr--;
->  		count++;
+>  		/*
+>  		 * clear dirty, set writeback and unlock the pages.
+> @@ -861,6 +862,7 @@ retry:
 >  	}
-> +	list_splice_tail(&skipped, &root->ordered_extents);
+>  	return;
+>  out_free_reserve:
+> +	btrfs_dec_block_group_reservations(root->fs_info, ins.objectid);
+>  	btrfs_free_reserved_extent(root, ins.objectid, ins.offset, 1);
+>  out_free:
+>  	extent_clear_unlock_delalloc(inode, async_extent->start,
+> @@ -1038,6 +1040,8 @@ static noinline int cow_file_range(struct inode *inode,
+>  				goto out_drop_extent_cache;
+>  		}
+>  
+> +		btrfs_dec_block_group_reservations(root->fs_info, ins.objectid);
+> +
+>  		if (disk_num_bytes < cur_alloc_size)
+>  			break;
+>  
+> @@ -1066,6 +1070,7 @@ out:
+>  out_drop_extent_cache:
+>  	btrfs_drop_extent_cache(inode, start, start + ram_size - 1, 0);
+>  out_reserve:
+> +	btrfs_dec_block_group_reservations(root->fs_info, ins.objectid);
+>  	btrfs_free_reserved_extent(root, ins.objectid, ins.offset, 1);
+>  out_unlock:
+>  	extent_clear_unlock_delalloc(inode, start, end, locked_page,
+> @@ -7162,6 +7167,8 @@ static struct extent_map *btrfs_new_extent_direct(struct inode *inode,
+>  		return ERR_PTR(ret);
+>  	}
+>  
+> +	btrfs_dec_block_group_reservations(root->fs_info, ins.objectid);
+> +
+>  	em = create_pinned_em(inode, start, ins.offset, start, ins.objectid,
+>  			      ins.offset, ins.offset, ins.offset, 0);
+>  	if (IS_ERR(em)) {
+> @@ -9942,6 +9949,7 @@ static int __btrfs_prealloc_file_range(struct inode *inode, int mode,
+>  				btrfs_end_transaction(trans, root);
+>  			break;
+>  		}
+> +		btrfs_dec_block_group_reservations(root->fs_info, ins.objectid);
+>  
+>  		last_alloc = ins.offset;
+>  		ret = insert_reserved_file_extent(trans, inode,
+> diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
+> index d768364..fb4dfd0 100644
+> --- a/fs/btrfs/relocation.c
+> +++ b/fs/btrfs/relocation.c
+> @@ -4253,11 +4253,7 @@ int btrfs_relocate_block_group(struct btrfs_root *extent_root, u64 group_start)
+>  	btrfs_info(extent_root->fs_info, "relocating block group %llu flags %llu",
+>  	       rc->block_group->key.objectid, rc->block_group->flags);
+>  
+> -	ret = btrfs_start_delalloc_roots(fs_info, 0, -1);
+> -	if (ret < 0) {
+> -		err = ret;
+> -		goto out;
+> -	}
+> +	btrfs_wait_block_group_reservations(rc->block_group);
 
-It seems that 'skipped' is not necessary, we don't have to keep the
-order or something, however it's not a big deal.
+Hi Filipe,
 
-Others look sane to me.
+What a nice race.
 
-Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
+How about using existing functions like btrfs_update_reserved_bytes() to fix it?
+
+btrfs_update_reserved_bytes(struct block_group * cache)
+{
+	spin_lock(&cache->lock);
+	...
+	if (cache->ro)
+		ret = -EAGAIN;
+	else { 
+		cache->reserved += num_bytes;
+		...
+	}
+	spin_unlock(&cache->lock);
+}
+
+If directIO see cache->ro, then it will return -EAGAIN, if not,
+cache->reserved is recorded, and we can wait on this to be zero.
+Because both directIO and fallocate are sychronous operations,
+relocate_block_group won't wait on (cache->reserved == 0) too long.
+
+What do you think?
 
 Thanks,
 
 -liubo
 
->  	list_splice_tail(&splice, &root->ordered_extents);
->  	spin_unlock(&root->ordered_extent_lock);
->  
-> @@ -708,7 +718,8 @@ int btrfs_wait_ordered_extents(struct btrfs_root *root, int nr)
->  	return count;
->  }
->  
-> -int btrfs_wait_ordered_roots(struct btrfs_fs_info *fs_info, int nr)
-> +int btrfs_wait_ordered_roots(struct btrfs_fs_info *fs_info, int nr,
-> +			     const u64 range_start, const u64 range_len)
->  {
->  	struct btrfs_root *root;
->  	struct list_head splice;
-> @@ -729,7 +740,8 @@ int btrfs_wait_ordered_roots(struct btrfs_fs_info *fs_info, int nr)
->  			       &fs_info->ordered_roots);
->  		spin_unlock(&fs_info->ordered_root_lock);
->  
-> -		done = btrfs_wait_ordered_extents(root, nr);
-> +		done = btrfs_wait_ordered_extents(root, nr,
-> +						  range_start, range_len);
->  		btrfs_put_fs_root(root);
->  		total_done += done;
->  
-> diff --git a/fs/btrfs/ordered-data.h b/fs/btrfs/ordered-data.h
-> index f29e08e..82c011b 100644
-> --- a/fs/btrfs/ordered-data.h
-> +++ b/fs/btrfs/ordered-data.h
-> @@ -197,8 +197,10 @@ int btrfs_ordered_update_i_size(struct inode *inode, u64 offset,
->  				struct btrfs_ordered_extent *ordered);
->  int btrfs_find_ordered_sum(struct inode *inode, u64 offset, u64 disk_bytenr,
->  			   u32 *sum, int len);
-> -int btrfs_wait_ordered_extents(struct btrfs_root *root, int nr);
-> -int btrfs_wait_ordered_roots(struct btrfs_fs_info *fs_info, int nr);
-> +int btrfs_wait_ordered_extents(struct btrfs_root *root, int nr,
-> +			       const u64 range_start, const u64 range_len);
-> +int btrfs_wait_ordered_roots(struct btrfs_fs_info *fs_info, int nr,
-> +			     const u64 range_start, const u64 range_len);
->  void btrfs_get_logged_extents(struct inode *inode,
->  			      struct list_head *logged_list,
->  			      const loff_t start,
-> diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-> index f689be2..d768364 100644
-> --- a/fs/btrfs/relocation.c
-> +++ b/fs/btrfs/relocation.c
-> @@ -4258,7 +4258,9 @@ int btrfs_relocate_block_group(struct btrfs_root *extent_root, u64 group_start)
->  		err = ret;
->  		goto out;
->  	}
-> -	ret = btrfs_wait_ordered_roots(fs_info, -1);
-> +	ret = btrfs_wait_ordered_roots(fs_info, -1,
-> +				       rc->block_group->key.objectid,
-> +				       rc->block_group->key.offset);
->  	/*
->  	 * We might have waited for an ordered extent to complete which was
->  	 * destined at an extent allocated from our block group. The extent item
-> diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-> index 00b8f37..89d1347 100644
-> --- a/fs/btrfs/super.c
-> +++ b/fs/btrfs/super.c
-> @@ -1160,7 +1160,7 @@ int btrfs_sync_fs(struct super_block *sb, int wait)
->  		return 0;
->  	}
->  
-> -	btrfs_wait_ordered_roots(fs_info, -1);
-> +	btrfs_wait_ordered_roots(fs_info, -1, 0, (u64)-1);
->  
->  	trans = btrfs_attach_transaction_barrier(root);
->  	if (IS_ERR(trans)) {
-> diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-> index 43885e5..f0bb54a 100644
-> --- a/fs/btrfs/transaction.c
-> +++ b/fs/btrfs/transaction.c
-> @@ -1821,7 +1821,7 @@ static inline int btrfs_start_delalloc_flush(struct btrfs_fs_info *fs_info)
->  static inline void btrfs_wait_delalloc_flush(struct btrfs_fs_info *fs_info)
->  {
->  	if (btrfs_test_opt(fs_info->tree_root, FLUSHONCOMMIT))
-> -		btrfs_wait_ordered_roots(fs_info, -1);
-> +		btrfs_wait_ordered_roots(fs_info, -1, 0, (u64)-1);
->  }
->  
->  static inline void
+>  	ret = btrfs_wait_ordered_roots(fs_info, -1,
+>  				       rc->block_group->key.objectid,
+>  				       rc->block_group->key.offset);
 > -- 
 > 2.7.0.rc3
 > 

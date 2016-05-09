@@ -1,44 +1,77 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from tartarus.angband.pl ([89.206.35.136]:60558 "EHLO
-	tartarus.angband.pl" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750941AbcEHNIj (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 8 May 2016 09:08:39 -0400
-From: Adam Borowski <kilobyte@angband.pl>
-To: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
-        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
-Cc: Adam Borowski <kilobyte@angband.pl>
-Date: Sun,  8 May 2016 15:08:00 +0200
-Message-Id: <1462712880-29392-1-git-send-email-kilobyte@angband.pl>
-Subject: [PATCH] btrfs: fix int32 overflow in shrink_delalloc().
+Received: from mx2.suse.de ([195.135.220.15]:34223 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752177AbcEIMOM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 9 May 2016 08:14:12 -0400
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+	by mx2.suse.de (Postfix) with ESMTP id D72E3AAEF
+	for <linux-btrfs@vger.kernel.org>; Mon,  9 May 2016 12:14:10 +0000 (UTC)
+From: David Sterba <dsterba@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: David Sterba <dsterba@suse.com>
+Subject: [PATCH] btrfs: GFP_NOFS does not GFP_HIGHMEM
+Date: Mon,  9 May 2016 14:13:49 +0200
+Message-Id: <1462796029-24456-1-git-send-email-dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-UBSAN: Undefined behaviour in fs/btrfs/extent-tree.c:4623:21
-signed integer overflow:
-10808 * 262144 cannot be represented in type 'int [8]'
+Masking HIGHMEM out of NOFS does not make sense.
 
-If 8192<=items<16384, we request a writeback of an insane number of pages
-which is benign (everything will be written).  But if items>=16384, the
-space reservation won't be enough.
-
-Signed-off-by: Adam Borowski <kilobyte@angband.pl>
+Signed-off-by: David Sterba <dsterba@suse.com>
 ---
- fs/btrfs/extent-tree.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ fs/btrfs/delayed-inode.c | 2 +-
+ fs/btrfs/disk-io.c       | 2 +-
+ fs/btrfs/extent_io.c     | 4 ++--
+ 3 files changed, 4 insertions(+), 4 deletions(-)
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 84e060e..391f576 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -4620,7 +4620,7 @@ static void shrink_delalloc(struct btrfs_root *root, u64 to_reclaim, u64 orig,
+diff --git a/fs/btrfs/delayed-inode.c b/fs/btrfs/delayed-inode.c
+index 6cef0062f929..61561c2a3f96 100644
+--- a/fs/btrfs/delayed-inode.c
++++ b/fs/btrfs/delayed-inode.c
+@@ -134,7 +134,7 @@ static struct btrfs_delayed_node *btrfs_get_or_create_delayed_node(
+ 	/* cached in the btrfs inode and can be accessed */
+ 	atomic_add(2, &node->refs);
  
- 	/* Calc the number of the pages we need flush for space reservation */
- 	items = calc_reclaim_items_nr(root, to_reclaim);
--	to_reclaim = items * EXTENT_SIZE_PER_ITEM;
-+	to_reclaim = (u64)items * EXTENT_SIZE_PER_ITEM;
+-	ret = radix_tree_preload(GFP_NOFS & ~__GFP_HIGHMEM);
++	ret = radix_tree_preload(GFP_NOFS);
+ 	if (ret) {
+ 		kmem_cache_free(delayed_node_cache, node);
+ 		return ERR_PTR(ret);
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 4e47849d7427..7e062464a8bd 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -1640,7 +1640,7 @@ int btrfs_insert_fs_root(struct btrfs_fs_info *fs_info,
+ {
+ 	int ret;
  
- 	trans = (struct btrfs_trans_handle *)current->journal_info;
- 	block_rsv = &root->fs_info->delalloc_block_rsv;
+-	ret = radix_tree_preload(GFP_NOFS & ~__GFP_HIGHMEM);
++	ret = radix_tree_preload(GFP_NOFS);
+ 	if (ret)
+ 		return ret;
+ 
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index d247fc0eea19..f64824810d78 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -4822,7 +4822,7 @@ struct extent_buffer *alloc_test_extent_buffer(struct btrfs_fs_info *fs_info,
+ 		return NULL;
+ 	eb->fs_info = fs_info;
+ again:
+-	ret = radix_tree_preload(GFP_NOFS & ~__GFP_HIGHMEM);
++	ret = radix_tree_preload(GFP_NOFS);
+ 	if (ret)
+ 		goto free_eb;
+ 	spin_lock(&fs_info->buffer_lock);
+@@ -4923,7 +4923,7 @@ struct extent_buffer *alloc_extent_buffer(struct btrfs_fs_info *fs_info,
+ 	if (uptodate)
+ 		set_bit(EXTENT_BUFFER_UPTODATE, &eb->bflags);
+ again:
+-	ret = radix_tree_preload(GFP_NOFS & ~__GFP_HIGHMEM);
++	ret = radix_tree_preload(GFP_NOFS);
+ 	if (ret)
+ 		goto free_eb;
+ 
 -- 
-2.8.1
+2.7.1
 

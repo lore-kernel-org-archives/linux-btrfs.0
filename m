@@ -1,76 +1,92 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:35772 "EHLO plane.gmane.org"
+Received: from plane.gmane.org ([80.91.229.3]:35813 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751210AbcEIST5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 9 May 2016 14:19:57 -0400
+	id S1751320AbcEISUc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 9 May 2016 14:20:32 -0400
 Received: from list by plane.gmane.org with local (Exim 4.69)
 	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1azpmc-0001sg-Sd
-	for linux-btrfs@vger.kernel.org; Mon, 09 May 2016 20:19:55 +0200
-Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
+	id 1azpn9-0002Tv-WD
+	for linux-btrfs@vger.kernel.org; Mon, 09 May 2016 20:20:28 +0200
+Received: from ip5f5ae06c.dynamic.kabel-deutschland.de ([95.90.224.108])
         by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 09 May 2016 20:19:54 +0200
-Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        for <linux-btrfs@vger.kernel.org>; Mon, 09 May 2016 20:20:27 +0200
+Received: from hurikhan77 by ip5f5ae06c.dynamic.kabel-deutschland.de with local (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 09 May 2016 20:19:54 +0200
+        for <linux-btrfs@vger.kernel.org>; Mon, 09 May 2016 20:20:27 +0200
 To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: btrfs goes readonly + No space left on 4.3
-Date: Mon, 9 May 2016 18:19:46 +0000 (UTC)
-Message-ID: <pan$606ae$7c2ddacd$8669ab01$40a7c124@cox.net>
-References: <561B5AA6.7040704@profihost.ag> <5723C88F.30903@profihost.ag>
-	<20160502220549.GB24432@vader.DHCP.thefacebook.com>
-	<573089AD.6090108@profihost.ag>
+From: Kai Krakow <hurikhan77@gmail.com>
+Subject: Re: commands like "du", "df", and "btrfs fs sync" hang
+Date: Mon, 9 May 2016 20:20:15 +0200
+Message-ID: <20160509202015.1ed10049@jupiter.sol.kaishome.de>
+References: <20160501090046.638fc2c6@jupiter.sol.kaishome.de>
+	<CAD=QJKiQb0Ryedw+52pfZ-Tp0W9O0jPqxgGqxhY7b=U+2eP3wg@mail.gmail.com>
+	<20160503084814.3e355f56@jupiter.sol.kaishome.de>
+	<20160505083537.0811b46f@jupiter.sol.kaishome.de>
+	<20160507134010.08e50734@jupiter.sol.kaishome.de>
+	<CAD=QJKjfmpb9_b3s6kh6CaAOKLRLZkD5pRryxC3R7iiuA8rvAQ@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=US-ASCII
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Stefan Priebe - Profihost AG posted on Mon, 09 May 2016 14:59:25 +0200 as
-excerpted:
+Am Mon, 9 May 2016 13:13:53 -0400
+schrieb Nicholas D Steeves <nsteeves@gmail.com>:
 
-> Am 03.05.2016 um 00:05 schrieb Omar Sandoval:
->> On Fri, Apr 29, 2016 at 10:48:15PM +0200, Stefan Priebe wrote:
->>> just want to drop a note that all those ENOSPC msg are gone with v4.5
->>> and space_cache=v2. Any plans to make space_cache=v2 default?
->>>
->> Yup, we want to make space_cache=v2 the default at some point. I'm
->> running it on my own machines and testing it here at Facebook and
->> haven't run into any issues yet. Besides stability, I also want to make
->> sure there aren't any performance regressions versus the old free space
->> cache that we haven't thought about yet.
->> 
->> Thanks for trying it out :)
+> On May 7, 2016 7:43 AM, "Kai Krakow" <hurikhan77@gmail.com> wrote:
+> >
+> > Am Thu, 5 May 2016 08:35:37 +0200
+> > schrieb Kai Krakow <hurikhan77@gmail.com>:
+> >  
+> > > Am Tue, 3 May 2016 08:48:14 +0200
+> > > schrieb Kai Krakow <hurikhan77@gmail.com>:
+> > >  
+>  [...]  
+>  [...]  
+> > >  [...]  
+>  [...]  
+>  [...]  
+> > >
+> > > With the snapshot and sync related bits disabled in my script, I
+> > > no longer experience freezing df/du/... commands.  
+> >
+> > Ah well, I still do - it just triggers much less often.
+> >
+> > But I can track it down to the automounter now: As soon as I stop
+> > the automounter of my backup device, du/df/etc no longer hang.
+> > Still I'm not sure if the problem is originating from btrfs or
+> > autofs itself. 
 > 
-> Can i patch v2 as a default for me? I just looked at the code but didn't
-> find an easy way to make v2 the default.
+> Hi Kai,
+> 
+> If it's anything like what I've encountered it can be worked around
+> with careful use of sleep, sync, btrfs sub sync and/or btrfs fi sync.
+> Also, if it's a similar issue to my own then from what I've read on
+> this list it's a timing or race issue (or maybe a locking issue).
+> There's a Debian bug where someone is testing out different
+> values/strategies.  The values/strategy I use can be found in
+> btrfs-borg on github.  If I'm correct, you'll probably also need to
+> script in delays to things time to settle with your automounter.
+> 
+> Of course, ideally someone will one day spend the time debugging
+> what's actually going on.
 
-Based on previous posts, space_cache=v2 will rewrite the cache to tree 
-form, and it'll stay that way (thus your default) until you specifically 
-use the clear-cache option.
+Thanks for the pointer... Maybe I could just remove the idle timeout of
+the automount unit, so it never tries to automatically unmount once
+mounted. Tho, I prefer if it did that. I don't want the backup FS being
+online all of the time.
 
-IOW, the code detects existing v1 or v2 and continues to use it until a 
-clear-cache mount and no v2 set on the mount after, to switch back to v1, 
-or a space_cache=v2 to switch to it.
+Maybe such a race results from btrfs still doing background work (like
+removing snapshots) while there is no longer a user of the mount point
+running (processes terminated) - and now, when systemd's automounter
+tries to unmount, it doesn't work and autofs hangs.
 
-IOW, the space_cache option doesn't need set more than once (and for v1, 
-it doesn't actually need set at all, except perhaps after a clear_cache, 
-I've never specifically set space_cache here, but it's always listed in 
-the mount output and /proc/self/mounts).  After that it carries on the 
-way it was.
-
-Or did you mean that you're creating enough new btrfs that using 
-space_cache=v2 even once is difficult, and you'd like to patch it to use 
-v2 from the get-go?  Presumably that can indeed be patched in, but not 
-being a dev, even if I could figure out a patch that worked for it, 
-there's a fair chance it would be more a hack than proper code.  (As an 
-admin I have a patch that switches the normal relatime default to noatime, 
-so I don't have to have it in all my fstab entries, etc, and it works, 
-but it's clearly a hack compared to what a proper dev would code.)
+If I know experience hanging processes, I can simply "systemctl restart
+mnt-usbdevice.automount" and the hanging processes start to work again.
 
 -- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+Regards,
+Kai
+
+Replies to list-only preferred.
 

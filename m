@@ -1,83 +1,76 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wm0-f46.google.com ([74.125.82.46]:35504 "EHLO
-	mail-wm0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751270AbcEIRNz (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 9 May 2016 13:13:55 -0400
-Received: by mail-wm0-f46.google.com with SMTP id e201so146259910wme.0
-        for <linux-btrfs@vger.kernel.org>; Mon, 09 May 2016 10:13:54 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <20160507134010.08e50734@jupiter.sol.kaishome.de>
-References: <20160501090046.638fc2c6@jupiter.sol.kaishome.de>
-	<CAD=QJKiQb0Ryedw+52pfZ-Tp0W9O0jPqxgGqxhY7b=U+2eP3wg@mail.gmail.com>
-	<20160503084814.3e355f56@jupiter.sol.kaishome.de>
-	<20160505083537.0811b46f@jupiter.sol.kaishome.de>
-	<20160507134010.08e50734@jupiter.sol.kaishome.de>
-Date: Mon, 9 May 2016 13:13:53 -0400
-Message-ID: <CAD=QJKjfmpb9_b3s6kh6CaAOKLRLZkD5pRryxC3R7iiuA8rvAQ@mail.gmail.com>
-Subject: Re: commands like "du", "df", and "btrfs fs sync" hang
-From: Nicholas D Steeves <nsteeves@gmail.com>
-To: Kai Krakow <hurikhan77@gmail.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Received: from plane.gmane.org ([80.91.229.3]:35772 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751210AbcEIST5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 9 May 2016 14:19:57 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+	id 1azpmc-0001sg-Sd
+	for linux-btrfs@vger.kernel.org; Mon, 09 May 2016 20:19:55 +0200
+Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Mon, 09 May 2016 20:19:54 +0200
+Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Mon, 09 May 2016 20:19:54 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: btrfs goes readonly + No space left on 4.3
+Date: Mon, 9 May 2016 18:19:46 +0000 (UTC)
+Message-ID: <pan$606ae$7c2ddacd$8669ab01$40a7c124@cox.net>
+References: <561B5AA6.7040704@profihost.ag> <5723C88F.30903@profihost.ag>
+	<20160502220549.GB24432@vader.DHCP.thefacebook.com>
+	<573089AD.6090108@profihost.ag>
+Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On May 7, 2016 7:43 AM, "Kai Krakow" <hurikhan77@gmail.com> wrote:
->
-> Am Thu, 5 May 2016 08:35:37 +0200
-> schrieb Kai Krakow <hurikhan77@gmail.com>:
->
-> > Am Tue, 3 May 2016 08:48:14 +0200
-> > schrieb Kai Krakow <hurikhan77@gmail.com>:
-> >
-> > > Am Sun, 1 May 2016 20:39:31 -0400
-> > > schrieb Nicholas D Steeves <nsteeves@gmail.com>:
-> > >
-> > > > On 1 May 2016 at 03:00, Kai Krakow <hurikhan77@gmail.com>
-> > > > wrote:
-> >  [...]
-> > > >
-> > > > Out of curiosity, does this occur if you don't create or delete
-> > > > snapshots, or if your backup script doesn't create or delete
-> > > > snapshots?  And when it occurs, are you able to go to another
-> > > > terminal and run a command that you don't use often, that
-> > > > definitely had to be read from disk, but that doesn't query any
-> > > > filesystem properties (eg: whois)?
-> > >
-> > > I only create snapshots in the destination device, not on the
-> > > source. I could try disabling the snapshotting and see if it
-> > > changes things.
-> > >
-> > > It seems from my observation, that only programs querying disk free
-> > > or disk usage status hang, especially all of the btrfs subcommands
-> > > doing it hang, in addition to traditional programs like du and df.
-> > > I think also "btrfs sub delete" and friends hang. So your guess may
-> > > very well go into the right direction. Let me try. Coming back
-> > > later...
-> >
-> > With the snapshot and sync related bits disabled in my script, I no
-> > longer experience freezing df/du/... commands.
->
-> Ah well, I still do - it just triggers much less often.
->
-> But I can track it down to the automounter now: As soon as I stop the
-> automounter of my backup device, du/df/etc no longer hang. Still I'm
-> not sure if the problem is originating from btrfs or autofs itself.
->
+Stefan Priebe - Profihost AG posted on Mon, 09 May 2016 14:59:25 +0200 as
+excerpted:
 
-Hi Kai,
+> Am 03.05.2016 um 00:05 schrieb Omar Sandoval:
+>> On Fri, Apr 29, 2016 at 10:48:15PM +0200, Stefan Priebe wrote:
+>>> just want to drop a note that all those ENOSPC msg are gone with v4.5
+>>> and space_cache=v2. Any plans to make space_cache=v2 default?
+>>>
+>> Yup, we want to make space_cache=v2 the default at some point. I'm
+>> running it on my own machines and testing it here at Facebook and
+>> haven't run into any issues yet. Besides stability, I also want to make
+>> sure there aren't any performance regressions versus the old free space
+>> cache that we haven't thought about yet.
+>> 
+>> Thanks for trying it out :)
+> 
+> Can i patch v2 as a default for me? I just looked at the code but didn't
+> find an easy way to make v2 the default.
 
-If it's anything like what I've encountered it can be worked around
-with careful use of sleep, sync, btrfs sub sync and/or btrfs fi sync.
-Also, if it's a similar issue to my own then from what I've read on
-this list it's a timing or race issue (or maybe a locking issue).
-There's a Debian bug where someone is testing out different
-values/strategies.  The values/strategy I use can be found in
-btrfs-borg on github.  If I'm correct, you'll probably also need to
-script in delays to things time to settle with your automounter.
+Based on previous posts, space_cache=v2 will rewrite the cache to tree 
+form, and it'll stay that way (thus your default) until you specifically 
+use the clear-cache option.
 
-Of course, ideally someone will one day spend the time debugging
-what's actually going on.
+IOW, the code detects existing v1 or v2 and continues to use it until a 
+clear-cache mount and no v2 set on the mount after, to switch back to v1, 
+or a space_cache=v2 to switch to it.
 
-Cheers,
-Nick
+IOW, the space_cache option doesn't need set more than once (and for v1, 
+it doesn't actually need set at all, except perhaps after a clear_cache, 
+I've never specifically set space_cache here, but it's always listed in 
+the mount output and /proc/self/mounts).  After that it carries on the 
+way it was.
+
+Or did you mean that you're creating enough new btrfs that using 
+space_cache=v2 even once is difficult, and you'd like to patch it to use 
+v2 from the get-go?  Presumably that can indeed be patched in, but not 
+being a dev, even if I could figure out a patch that worked for it, 
+there's a fair chance it would be more a hack than proper code.  (As an 
+admin I have a patch that switches the normal relatime default to noatime, 
+so I don't have to have it in all my fstab entries, etc, and it works, 
+but it's clearly a hack compared to what a proper dev would code.)
+
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

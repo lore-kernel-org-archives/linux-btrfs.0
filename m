@@ -1,108 +1,122 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:1327 "EHLO
-	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S932100AbcEKPqj (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 11 May 2016 11:46:39 -0400
-Subject: Re: [PATCH 2/2] Btrfs: fix race between block group relocation and
- nocow writes
-To: <fdmanana@kernel.org>, <linux-btrfs@vger.kernel.org>
-References: <1462802524-2822-1-git-send-email-fdmanana@kernel.org>
-From: Josef Bacik <jbacik@fb.com>
-Message-ID: <e08e4f65-3418-f0f5-84bc-37e23ec60b26@fb.com>
-Date: Wed, 11 May 2016 08:46:25 -0700
-MIME-Version: 1.0
-In-Reply-To: <1462802524-2822-1-git-send-email-fdmanana@kernel.org>
-Content-Type: text/plain; charset="windows-1252"; format=flowed
+Received: from mail.kernel.org ([198.145.29.136]:34038 "EHLO mail.kernel.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751341AbcEIOCB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 9 May 2016 10:02:01 -0400
+Received: from mail.kernel.org (localhost [127.0.0.1])
+	by mail.kernel.org (Postfix) with ESMTP id 577DD2010B
+	for <linux-btrfs@vger.kernel.org>; Mon,  9 May 2016 14:01:56 +0000 (UTC)
+Received: from debian3.lan (bl12-226-64.dsl.telepac.pt [85.245.226.64])
+	(using TLSv1.2 with cipher AES128-SHA256 (128/128 bits))
+	(No client certificate requested)
+	by mail.kernel.org (Postfix) with ESMTPSA id 11FEC2011E
+	for <linux-btrfs@vger.kernel.org>; Mon,  9 May 2016 14:01:54 +0000 (UTC)
+From: fdmanana@kernel.org
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH 1/2] Btrfs: fix race between fsync and direct IO writes for prealloc extents
+Date: Mon,  9 May 2016 15:01:49 +0100
+Message-Id: <1462802509-1974-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 05/09/2016 07:02 AM, fdmanana@kernel.org wrote:
-> From: Filipe Manana <fdmanana@suse.com>
->
-> Relocation of a block group waits for all existing tasks flushing
-> dellaloc, starting direct IO writes and any ordered extents before
-> starting the relocation process. However for direct IO writes that end
-> up doing nocow (inode either has the flag nodatacow set or the write is
-> against a prealloc extent) we have a short time window that allows for a
-> race that makes relocation proceed without waiting for the direct IO
-> write to complete first, resulting in data loss after the relocation
-> finishes. This is illustrated by the following diagram:
->
->            CPU 1                                     CPU 2
->
->  btrfs_relocate_block_group(bg X)
->
->                                                direct IO write starts against
->                                                an extent in block group X
->                                                using nocow mode (inode has the
->                                                nodatacow flag or the write is
->                                                for a prealloc extent)
->
->                                                btrfs_direct_IO()
->                                                  btrfs_get_blocks_direct()
->                                                    --> can_nocow_extent() returns 1
->
->    btrfs_inc_block_group_ro(bg X)
->      --> turns block group into RO mode
->
->    btrfs_wait_ordered_roots()
->      --> returns and does not know about
->          the DIO write happening at CPU 2
->          (the task there has not created
->           yet an ordered extent)
->
->    relocate_block_group(bg X)
->      --> rc->stage == MOVE_DATA_EXTENTS
->
->      find_next_extent()
->        --> returns extent that the DIO
->            write is going to write to
->
->      relocate_data_extent()
->
->        relocate_file_extent_cluster()
->
->          --> reads the extent from disk into
->              pages belonging to the relocation
->              inode and dirties them
->
->                                                    --> creates DIO ordered extent
->
->                                                  btrfs_submit_direct()
->                                                    --> submits bio against a location
->                                                        on disk obtained from an extent
->                                                        map before the relocation started
->
->    btrfs_wait_ordered_range()
->      --> writes all the pages read before
->          to disk (belonging to the
->          relocation inode)
->
->    relocation finishes
->
->                                                  bio completes and wrote new data
->                                                  to the old location of the block
->                                                  group
->
-> So fix this by tracking the number of nocow writers for a block group and
-> make sure relocation waits for that number to go down to 0 before starting
-> to move the extents.
->
-> The same race can also happen with buffered writes in nocow mode since the
-> patch I recently made titled "Btrfs: don't do unnecessary delalloc flushes
-> when relocating", because we are no longer flushing all delalloc which
-> served as a synchonization mechanism (due to page locking) and ensured
-> the ordered extents for nocow buffered writes were created before we
-> called btrfs_wait_ordered_roots(). The race with direct IO writes in nocow
-> mode existed before that patch (no pages are locked or used during direct
-> IO) and that fixed only races with direct IO writes that do cow.
->
-> Signed-off-by: Filipe Manana <fdmanana@suse.com>
+From: Filipe Manana <fdmanana@suse.com>
 
-Reviewed-by: Josef Bacik <jbacik@fb.com>
+When we do a direct IO write against a preallocated extent (fallocate)
+that does not go beyond the i_size of the inode, we do the write operation
+without holding the inode's i_mutex (an optimization that landed in
+commit 38851cc19adb ("Btrfs: implement unlocked dio write")). This allows
+for a very tiny time window where a race can happen with a concurrent
+fsync using the fast code path, as the direct IO write path creates first
+a new extent map (no longer flagged as a prealloc extent) and then it
+creates the ordered extent, while the fast fsync path first collects
+ordered extents and then it collects extent maps. This allows for the
+possibility of the fast fsync path to collect the new extent map without
+collecting the new ordered extent, and therefore logging an extent item
+based on the extent map without waiting for the ordered extent to be
+created and complete. This can result in a situation where after a log
+replay we end up with an extent not marked anymore as prealloc but it was
+only partially written (or not written at all), exposing random, stale or
+garbage data corresponding to the unwritten pages and without any
+checksums in the csum tree covering the extent's range.
 
-Thanks,
+This is an extension of what was done in commit de0ee0edb21f ("Btrfs: fix
+race between fsync and lockless direct IO writes").
 
-Josef
+So fix this by creating first the ordered extent and then the extent
+map, so that this way if the fast fsync patch collects the new extent
+map it also collects the corresponding ordered extent.
+
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+ fs/btrfs/inode.c | 43 +++++++++++++++++++++++++++++++++++++------
+ 1 file changed, 37 insertions(+), 6 deletions(-)
+
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index c8d30ef..5372268 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -7658,6 +7658,25 @@ static int btrfs_get_blocks_direct(struct inode *inode, sector_t iblock,
+ 
+ 		if (can_nocow_extent(inode, start, &len, &orig_start,
+ 				     &orig_block_len, &ram_bytes) == 1) {
++
++			/*
++			 * Create the ordered extent before the extent map. This
++			 * is to avoid races with the fast fsync path because it
++			 * collects ordered extents into a local list and then
++			 * collects all the new extent maps, so we must create
++			 * the ordered extent first and make sure the fast fsync
++			 * path collects any new ordered extents after
++			 * collecting new extent maps as well. The fsync path
++			 * simply can not rely on inode_dio_wait() because it
++			 * causes deadlock with AIO.
++			 */
++			ret = btrfs_add_ordered_extent_dio(inode, start,
++					   block_start, len, len, type);
++			if (ret) {
++				free_extent_map(em);
++				goto unlock_err;
++			}
++
+ 			if (type == BTRFS_ORDERED_PREALLOC) {
+ 				free_extent_map(em);
+ 				em = create_pinned_em(inode, start, len,
+@@ -7666,17 +7685,29 @@ static int btrfs_get_blocks_direct(struct inode *inode, sector_t iblock,
+ 						       orig_block_len,
+ 						       ram_bytes, type);
+ 				if (IS_ERR(em)) {
++					struct btrfs_ordered_extent *oe;
++
+ 					ret = PTR_ERR(em);
++					oe = btrfs_lookup_ordered_extent(inode,
++									 start);
++					ASSERT(oe);
++					if (WARN_ON(!oe))
++						goto unlock_err;
++					set_bit(BTRFS_ORDERED_IOERR,
++						&oe->flags);
++					set_bit(BTRFS_ORDERED_IO_DONE,
++						&oe->flags);
++					btrfs_remove_ordered_extent(inode, oe);
++					/*
++					 * Once for our lookup and once for the
++					 * ordered extents tree.
++					 */
++					btrfs_put_ordered_extent(oe);
++					btrfs_put_ordered_extent(oe);
+ 					goto unlock_err;
+ 				}
+ 			}
+ 
+-			ret = btrfs_add_ordered_extent_dio(inode, start,
+-					   block_start, len, len, type);
+-			if (ret) {
+-				free_extent_map(em);
+-				goto unlock_err;
+-			}
+ 			goto unlock;
+ 		}
+ 	}
+-- 
+2.7.0.rc3
 

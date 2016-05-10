@@ -1,15 +1,15 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:28565 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752594AbcEJOCL (ORCPT
+Received: from userp1040.oracle.com ([156.151.31.81]:46639 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752196AbcEJOCO (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 10 May 2016 10:02:11 -0400
+	Tue, 10 May 2016 10:02:14 -0400
 From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
 Cc: dsterba@suse.cz, yauhen.kharuzhy@zavadatar.com
-Subject: [PATCH 08/13] btrfs: support btrfs dev scan for spare device
-Date: Tue, 10 May 2016 22:01:46 +0800
-Message-Id: <1462888911-5227-10-git-send-email-anand.jain@oracle.com>
+Subject: [PATCH 1/1] btrfs: introduce helper functions to perform hot replace
+Date: Tue, 10 May 2016 22:01:48 +0800
+Message-Id: <1462888911-5227-12-git-send-email-anand.jain@oracle.com>
 In-Reply-To: <1462888911-5227-1-git-send-email-anand.jain@oracle.com>
 References: <1462888911-5227-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -17,50 +17,85 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Anand Jain <Anand.Jain@oracle.com>
 
-When the user or system calls the BTRFS_IOC_SCAN_DEV,
-ioctl this patch will make sure it is added to the device
-list and set it as spare.
+Hot replace / auto replace is important volume manager feature
+and is critical to the data center operations, so that the degraded
+volume can be brought back to a healthy state at the earliest and
+without manual intervention.
 
-This operation will be same when BTRFS_IOC_DEVICES_READY
-as well since BTRFS_IOC_DEVICES_READY ioctl has been doing
-that by legacy.
+This modifies the existing replace code to suite the need of auto
+replace, in the long run I hope both the codes to be merged.
 
 Signed-off-by: Anand Jain <anand.jain@oracle.com>
 Tested-by: Austin S. Hemmelgarn <ahferroin7@gmail.com>
 Tested-by: Yauhen Kharuzhy <yauhen.kharuzhy@zavadatar.com>
 ---
- fs/btrfs/volumes.c | 4 ++++
- fs/btrfs/volumes.h | 2 ++
- 2 files changed, 6 insertions(+)
+v6: update the printk for space device error to ratelimit
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index cf0d65dd443b..fdbad75506df 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -605,6 +605,10 @@ static noinline int device_list_add(const char *path,
- 		if (IS_ERR(fs_devices))
- 			return PTR_ERR(fs_devices);
- 
-+		if (btrfs_super_incompat_flags(disk_super) &
-+				BTRFS_FEATURE_INCOMPAT_SPARE_DEV)
-+			fs_devices->spare = 1;
+ fs/btrfs/dev-replace.c | 43 +++++++++++++++++++++++++++++++++++++++++++
+ fs/btrfs/dev-replace.h |  1 +
+ 2 files changed, 44 insertions(+)
+
+diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
+index 5ec7fa860391..83af64907547 100644
+--- a/fs/btrfs/dev-replace.c
++++ b/fs/btrfs/dev-replace.c
+@@ -937,3 +937,46 @@ void btrfs_bio_counter_inc_blocked(struct btrfs_fs_info *fs_info)
+ 				     &fs_info->fs_state));
+ 	}
+ }
 +
- 		list_add(&fs_devices->list, &fs_uuids);
- 
- 		device = NULL;
-diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-index 101e5db2dd63..65a1d8a45c2d 100644
---- a/fs/btrfs/volumes.h
-+++ b/fs/btrfs/volumes.h
-@@ -263,6 +263,8 @@ struct btrfs_fs_devices {
- 	struct kobject fsid_kobj;
- 	struct kobject *device_dir_kobj;
- 	struct completion kobj_unregister;
++int btrfs_auto_replace_start(struct btrfs_root *root, u64 src_devid)
++{
++	int ret;
++	char *tgt_path;
++	struct btrfs_fs_info *fs_info = root->fs_info;
 +
-+	int spare;
- };
- 
- #define BTRFS_BIO_INLINE_CSUM_SIZE	64
++	if (!src_devid)
++		return -EINVAL;
++
++	if (fs_info->sb->s_flags & MS_RDONLY)
++		return -EROFS;
++
++	btrfs_dev_replace_lock(&fs_info->dev_replace, 0);
++	if (btrfs_dev_replace_is_ongoing(&fs_info->dev_replace)) {
++		btrfs_dev_replace_unlock(&fs_info->dev_replace, 0);
++		return -EBUSY;
++	}
++	btrfs_dev_replace_unlock(&fs_info->dev_replace, 0);
++
++	if (btrfs_get_spare_device(&tgt_path)) {
++		btrfs_info_rl(root->fs_info,
++			"No spare device found/configured in the kernel");
++		return -EINVAL;
++	}
++
++	if (atomic_xchg(
++		&root->fs_info->mutually_exclusive_operation_running, 1)) {
++		ret = BTRFS_ERROR_DEV_EXCL_RUN_IN_PROGRESS;
++	} else {
++		ret = btrfs_dev_replace_start(root, tgt_path, src_devid, NULL,
++		BTRFS_IOCTL_DEV_REPLACE_CONT_READING_FROM_SRCDEV_MODE_ALWAYS);
++		atomic_set(
++			&root->fs_info->mutually_exclusive_operation_running, 0);
++	}
++
++	if (ret)
++		btrfs_put_spare_device(tgt_path);
++
++	kfree(tgt_path);
++
++	return ret;
++}
+diff --git a/fs/btrfs/dev-replace.h b/fs/btrfs/dev-replace.h
+index e922b42d91df..54b0812c8ba4 100644
+--- a/fs/btrfs/dev-replace.h
++++ b/fs/btrfs/dev-replace.h
+@@ -46,4 +46,5 @@ static inline void btrfs_dev_replace_stats_inc(atomic64_t *stat_value)
+ {
+ 	atomic64_inc(stat_value);
+ }
++int btrfs_auto_replace_start(struct btrfs_root *root, u64 src_devid);
+ #endif
 -- 
 2.7.0
 

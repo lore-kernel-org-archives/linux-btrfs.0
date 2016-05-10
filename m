@@ -1,39 +1,35 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from sjc00mx1.hgst.com ([199.255.44.36]:52723 "EHLO
-	sjc00mx1.hgst.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751393AbcEINPU (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 9 May 2016 09:15:20 -0400
-From: Scott Talbert <scott.talbert@hgst.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] btrfs: fix memory leak during RAID 5/6 device replacement
-Date: Mon, 9 May 2016 09:14:28 -0400
-Message-ID: <1462799668-26910-1-git-send-email-scott.talbert@hgst.com>
+Received: from mx2.suse.de ([195.135.220.15]:47145 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751410AbcEJNkU (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 10 May 2016 09:40:20 -0400
+Date: Tue, 10 May 2016 15:39:56 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Vincent =?iso-8859-1?Q?Stehl=E9?= <vincent.stehle@intel.com>
+Cc: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
+        Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
+        David Sterba <dsterba@suse.com>
+Subject: Re: [PATCH] Btrfs: fix fspath error deallocation
+Message-ID: <20160510133956.GT29353@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1462884980-10052-1-git-send-email-vincent.stehle@intel.com>
 MIME-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain; charset=iso-8859-1
+In-Reply-To: <1462884980-10052-1-git-send-email-vincent.stehle@intel.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-A 'struct bio' is allocated in scrub_missing_raid56_pages(), but it was never
-freed anywhere.
+On Tue, May 10, 2016 at 02:56:20PM +0200, Vincent Stehlé wrote:
+> Make sure to deallocate fspath with vfree() in case of error in
+> init_ipath().
+> 
+> fspath is allocated with vmalloc() in init_data_container() since
+> commit 425d17a290c0 ("Btrfs: use larger limit for translation of logical to
+> inode").
+> 
+> Signed-off-by: Vincent Stehlé <vincent.stehle@intel.com>
+> Cc: Chris Mason <clm@fb.com>
+> Cc: Josef Bacik <jbacik@fb.com>
+> Cc: David Sterba <dsterba@suse.com>
 
-Signed-off-by: Scott Talbert <scott.talbert@hgst.com>
----
- fs/btrfs/scrub.c | 2 ++
- 1 file changed, 2 insertions(+)
-
-diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index 82bedf9..607cc6e 100644
---- a/fs/btrfs/scrub.c
-+++ b/fs/btrfs/scrub.c
-@@ -2130,6 +2130,8 @@ static void scrub_missing_raid56_end_io(struct bio *bio)
- 	if (bio->bi_error)
- 		sblock->no_io_error_seen = 0;
- 
-+	bio_put(bio);
-+
- 	btrfs_queue_work(fs_info->scrub_workers, &sblock->work);
- }
- 
--- 
-1.9.1
-
+Reviewed-by: David Sterba <dsterba@suse.com>

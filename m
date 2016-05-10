@@ -1,107 +1,54 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from out5-smtp.messagingengine.com ([66.111.4.29]:42350 "EHLO
-	out5-smtp.messagingengine.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1752937AbcEJD3X convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 9 May 2016 23:29:23 -0400
-Received: from compute3.internal (compute3.nyi.internal [10.202.2.43])
-	by mailout.nyi.internal (Postfix) with ESMTP id B93A8219E9
-	for <linux-btrfs@vger.kernel.org>; Mon,  9 May 2016 23:29:21 -0400 (EDT)
-Received: from ebox.rath.org (ebox.rath.org [45.79.69.51])
-	by mail.messagingengine.com (Postfix) with ESMTPA id 7C9CBC00014
-	for <linux-btrfs@vger.kernel.org>; Mon,  9 May 2016 23:29:21 -0400 (EDT)
-Received: from vostro.rath.org (vostro [192.168.12.4])
-	by ebox.rath.org (Postfix) with ESMTPS id 8983629D93F
-	for <linux-btrfs@vger.kernel.org>; Tue, 10 May 2016 03:29:20 +0000 (UTC)
-From: Nikolaus Rath <Nikolaus@rath.org>
-To: linux-btrfs@vger.kernel.org
-Subject: Re: Input/output error on newly created file
-References: <8760uoqjlt.fsf@vostro.rath.org>
-	<CAL3q7H4opJabDo6mBoQb3P8NeGS31=-5F3e4m8qWLs2fn6jL+Q@mail.gmail.com>
-Date: Mon, 09 May 2016 20:29:20 -0700
-In-Reply-To: <CAL3q7H4opJabDo6mBoQb3P8NeGS31=-5F3e4m8qWLs2fn6jL+Q@mail.gmail.com>
-	(Filipe Manana's message of "Mon, 9 May 2016 16:46:29 +0100")
-Message-ID: <878tzilhf3.fsf@vostro.rath.org>
+Received: from mx2.suse.de ([195.135.220.15]:54918 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750953AbcEJHmZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 10 May 2016 03:42:25 -0400
+Date: Tue, 10 May 2016 09:42:03 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Anand Jain <anand.jain@oracle.com>
+Cc: David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs: switch to common message helpers in open_ctree,
+ adjust messages
+Message-ID: <20160510074203.GP29353@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1462786798-15247-1-git-send-email-dsterba@suse.com>
+ <573148AB.6080800@oracle.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <573148AB.6080800@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On May 09 2016, Filipe Manana <fdmanana@gmail.com> wrote:
-> On Sun, May 8, 2016 at 11:18 PM, Nikolaus Rath <Nikolaus@rath.org> wrote:
->> Hello,
->>
->> I just created an innocent 10 MB on a btrfs file system, yet my attempt
->> to read it a few seconds later (and ever since), just gives:
->>
->> $ ls -l in-progress/mysterious-io-error
->> -rw-rw-r-- 1 nikratio nikratio 10485760 May  8 14:41 in-progress/mysterious-io-error
->> $ cat in-progress/mysterious-io-error
->> cat: in-progress/mysterious-io-error: Input/output error
->
-> If you unmount and mount again the filesystem, does it happen again?
+On Tue, May 10, 2016 at 10:34:19AM +0800, Anand Jain wrote:
+> On 05/09/2016 05:39 PM, David Sterba wrote:
+> > Currently we lack the identification of the filesystem in most if not
+> > all mount messages, done via printk/pr_* functions. We can use the
+> > btrfs_* helpers in open_ctree, as the fs_info <-> sb link is established
+> > at the beginning of the function.
+> 
+>   While here I also recommend to pass fs_devices instead of fs_info
+>   to btrfs_printk(). That's mainly because before the fs is mounted
+>   we don't have fs_info, however fs_devices exists in both the mounted
+>   and unmount context.  If you agree, I could send a patch on top of
+>   your patch.
 
-After rebooting, the previously unaccessible file can now be read. But I
-cannot tell if it contains the right data.
+Yeah, before we mount we don't have fs_info. My idea was to provide
+another set of functions that would take something else than fs_info to
+print the filesystem identifier.
 
-However, I just encountered the same problem with another, freshly
-created file.
+Switching btrfs_err & others to fs_devices everywhere would be too
+invasive.
 
-> How did you create the file?
+In more detail:
 
-In Python 3. The equivalent code is more or less:
+* introduce _btrfs_printk that takes a string pointer as 1st argument
+  (this could be used for messages before fs_info exists)
+* _btrfs_printk(NULL, ...) will be valid
+* then btrfs_printk(fs_info, ...) will become a wrapper
+  _btrfs_printk(btrfs_sb(fs_info)->s_id, ...)
+* _btrfs_err & others do not need to be introduced, we can use the
+  standard KERN_ERR
 
-with open('file.dat', 'wb+') as fh:
-     for buf in generate_data():
-         fh.write(buf) # bufsize is about 128 kB
+>   Otherwise the rest below looks fine.
 
-
-However, I should note that there is a lot of activity in this
-file system (it contains my home directory), so the above alone will
-probably not reproduce the problem.
-
-That said, so far both the problematic files were created by the same
-application (S3QL, of which luckily I am also the maintainer).
-
-
-> Does fsck reports any issues?
-
-Do you mean btrfsck? It actually has a lot to say:
-
-checking extents
-checking free space cache
-checking fs roots
-root 5 inode 3149867 errors 400, nbytes wrong
-root 5 inode 3150237 errors 400, nbytes wrong
-root 5 inode 3150238 errors 400, nbytes wrong
-root 5 inode 3150242 errors 400, nbytes wrong
-root 5 inode 3150260 errors 400, nbytes wrong
-[...]
-root 5 inode 15595011 errors 400, nbytes wrong
-root 5 inode 15595016 errors 400, nbytes wrong
-Checking filesystem on /dev/mapper/vg0-nikratio_crypt
-UUID: 8742472d-a9b0-4ab6-b67a-5d21f14f7a38
-found 263648960636 bytes used err is 1
-total csum bytes: 395314372
-total tree bytes: 908644352
-total fs tree bytes: 352735232
-total extent tree bytes: 95039488
-btree space waste bytes: 156301160
-file data blocks allocated: 675209801728
- referenced 410351722496
-Btrfs v3.17
-
-However, the inode of the problematic file (16186241) is not
-mentioned. But I guess this is not surprising, because also for this
-file, I can read the contents after remounting.
-
-
-Best,
--Nikolaus
-
-
--- 
-GPG encrypted emails preferred. Key id: 0xD113FCAC3C4E599F
-Fingerprint: ED31 791B 2C5C 1613 AF38 8B8A D113 FCAC 3C4E 599F
-
-             »Time flies like an arrow, fruit flies like a Banana.«
+Thnaks.

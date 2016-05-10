@@ -1,15 +1,15 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:36085 "EHLO
+Received: from aserp1040.oracle.com ([141.146.126.69]:36132 "EHLO
 	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752458AbcEJOJr (ORCPT
+	with ESMTP id S1752458AbcEJOJt (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 10 May 2016 10:09:47 -0400
+	Tue, 10 May 2016 10:09:49 -0400
 From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
 Cc: dsterba@suse.cz, yauhen.kharuzhy@zavadatar.com
-Subject: [PATCH 06/13] btrfs: introduce BTRFS_FEATURE_INCOMPAT_SPARE_DEV
-Date: Tue, 10 May 2016 22:09:25 +0800
-Message-Id: <1462889372-5274-8-git-send-email-anand.jain@oracle.com>
+Subject: [PATCH 09/13] btrfs: provide framework to get and put a spare device
+Date: Tue, 10 May 2016 22:09:28 +0800
+Message-Id: <1462889372-5274-11-git-send-email-anand.jain@oracle.com>
 In-Reply-To: <1462889372-5274-1-git-send-email-anand.jain@oracle.com>
 References: <1462889372-5274-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -17,48 +17,124 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Anand Jain <Anand.Jain@oracle.com>
 
-Add BTRFS_FEATURE_INCOMPAT_SPARE_DEV (400) flag to identify
-a spare device.
-
-Along with this it checks in the mount context that a spare
-device will fail to mount.  As spare devices aren't mountable.
+This adds functions to get and put a spare device from the list.
+So that hot repace code can pick a spare device when needed.
 
 Signed-off-by: Anand Jain <anand.jain@oracle.com>
 Tested-by: Austin S. Hemmelgarn <ahferroin7@gmail.com>
 Tested-by: Yauhen Kharuzhy <yauhen.kharuzhy@zavadatar.com>
 ---
-V6: rebase on for-next
-
- fs/btrfs/ctree.h           | 3 ++-
- include/uapi/linux/btrfs.h | 1 +
- 2 files changed, 3 insertions(+), 1 deletion(-)
+ fs/btrfs/ctree.h   |  1 +
+ fs/btrfs/super.c   |  5 +++++
+ fs/btrfs/volumes.c | 53 +++++++++++++++++++++++++++++++++++++++++++++++++++++
+ fs/btrfs/volumes.h |  2 ++
+ 4 files changed, 61 insertions(+)
 
 diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 92e689787cae..728712baf5d5 100644
+index 2c185a8e92f0..aa693cfdc9f0 100644
 --- a/fs/btrfs/ctree.h
 +++ b/fs/btrfs/ctree.h
-@@ -279,7 +279,8 @@ struct btrfs_super_block {
- 	 BTRFS_FEATURE_INCOMPAT_RAID56 |		\
- 	 BTRFS_FEATURE_INCOMPAT_EXTENDED_IREF |		\
- 	 BTRFS_FEATURE_INCOMPAT_SKINNY_METADATA |	\
--	 BTRFS_FEATURE_INCOMPAT_NO_HOLES)
-+	 BTRFS_FEATURE_INCOMPAT_NO_HOLES |		\
-+	 BTRFS_FEATURE_INCOMPAT_SPARE_DEV)
+@@ -4185,6 +4185,7 @@ void btrfs_sysfs_remove_mounted(struct btrfs_fs_info *fs_info);
+ ssize_t btrfs_listxattr(struct dentry *dentry, char *buffer, size_t size);
  
- #define BTRFS_FEATURE_INCOMPAT_SAFE_SET			\
- 	(BTRFS_FEATURE_INCOMPAT_EXTENDED_IREF)
-diff --git a/include/uapi/linux/btrfs.h b/include/uapi/linux/btrfs.h
-index 23c6960e94a4..c9ff6734e734 100644
---- a/include/uapi/linux/btrfs.h
-+++ b/include/uapi/linux/btrfs.h
-@@ -263,6 +263,7 @@ struct btrfs_ioctl_fs_info_args {
- #define BTRFS_FEATURE_INCOMPAT_RAID56		(1ULL << 7)
- #define BTRFS_FEATURE_INCOMPAT_SKINNY_METADATA	(1ULL << 8)
- #define BTRFS_FEATURE_INCOMPAT_NO_HOLES		(1ULL << 9)
-+#define BTRFS_FEATURE_INCOMPAT_SPARE_DEV 	(1ULL << 10)
+ /* super.c */
++struct file_system_type *btrfs_get_fs_type(void);
+ int btrfs_parse_options(struct btrfs_root *root, char *options,
+ 			unsigned long new_flags);
+ int btrfs_sync_fs(struct super_block *sb, int wait);
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index 87639fa53b10..49ba899b2d36 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -69,6 +69,11 @@ static struct file_system_type btrfs_fs_type;
  
- struct btrfs_ioctl_feature_flags {
- 	__u64 compat_flags;
+ static int btrfs_remount(struct super_block *sb, int *flags, char *data);
+ 
++struct file_system_type *btrfs_get_fs_type()
++{
++	return &btrfs_fs_type;
++}
++
+ const char *btrfs_decode_error(int errno)
+ {
+ 	char *errstr = "unknown";
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index fdbad75506df..86f4efbf2374 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -525,6 +525,59 @@ static void pending_bios_fn(struct btrfs_work *work)
+ 	run_scheduled_bios(device);
+ }
+ 
++int btrfs_get_spare_device(char **path)
++{
++	int ret = 1;
++	struct btrfs_fs_devices *fs_devices;
++	struct btrfs_device *device;
++	struct list_head *fs_uuids = btrfs_get_fs_uuids();
++
++	mutex_lock(&uuid_mutex);
++	list_for_each_entry(fs_devices, fs_uuids, list) {
++		if (!fs_devices->spare)
++			continue;
++
++		/* as of now there is only one device in the spare fs_devices */
++		device = list_entry(fs_devices->devices.next,
++					struct btrfs_device, dev_list);
++
++		if (!device || !device->name)
++			continue;
++
++		fs_devices->spare = 0;
++		/*
++		 * Its under uuid_mutex and there is one spare per fsid
++		 * so rcu lock is actually not required
++		 */
++		*path = kstrdup(device->name->str, GFP_KERNEL);
++		if (*path)
++			ret = 0;
++		else
++			ret = -ENOMEM;
++		break;
++	}
++
++	if (!ret) {
++		btrfs_sysfs_remove_fsid(fs_devices);
++		list_del(&fs_devices->list);
++		free_fs_devices(fs_devices);
++	}
++	mutex_unlock(&uuid_mutex);
++
++	return ret;
++}
++
++void btrfs_put_spare_device(char *path)
++{
++	struct file_system_type *btrfs_fs_type;
++	struct btrfs_fs_devices *fs_devices;
++
++	btrfs_fs_type = btrfs_get_fs_type();
++
++	if (btrfs_scan_one_device(path, FMODE_READ,
++				    btrfs_fs_type, &fs_devices))
++		printk(KERN_INFO "failed to return spare device\n");
++}
+ 
+ void btrfs_free_stale_device(struct btrfs_device *cur_dev)
+ {
+diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
+index 65a1d8a45c2d..12e08261b4c8 100644
+--- a/fs/btrfs/volumes.h
++++ b/fs/btrfs/volumes.h
+@@ -471,6 +471,8 @@ int btrfs_init_new_device(struct btrfs_root *root, char *path);
+ int btrfs_init_dev_replace_tgtdev(struct btrfs_root *root, char *device_path,
+ 				  struct btrfs_device *srcdev,
+ 				  struct btrfs_device **device_out);
++int btrfs_get_spare_device(char **path);
++void btrfs_put_spare_device(char *path);
+ int btrfs_balance(struct btrfs_balance_control *bctl,
+ 		  struct btrfs_ioctl_balance_args *bargs);
+ int btrfs_resume_balance_async(struct btrfs_fs_info *fs_info);
 -- 
 2.7.0
 

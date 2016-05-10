@@ -1,78 +1,33 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:51471 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753283AbcEDMLH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 4 May 2016 08:11:07 -0400
-From: David Sterba <dsterba@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: fdmanana@gmail.com, David Sterba <dsterba@suse.cz>,
-        David Sterba <dsterba@suse.com>
-Subject: [PATCH v2] btrfs: ioctl: reorder exclusive op check in RM_DEV
-Date: Wed,  4 May 2016 14:10:47 +0200
-Message-Id: <1462363847-25665-1-git-send-email-dsterba@suse.com>
-In-Reply-To: <1462354346-17654-1-git-send-email-dsterba@suse.com>
-References: <1462354346-17654-1-git-send-email-dsterba@suse.com>
+Received: from cn.fujitsu.com ([59.151.112.132]:12693 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1751737AbcEJBQP (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 9 May 2016 21:16:15 -0400
+To: David Sterba <dsterba@suse.com>, Mark Fasheh <mfasheh@suse.de>
+CC: btrfs <linux-btrfs@vger.kernel.org>
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Subject: Idea on compatibility for old distributions
+Message-ID: <d527a25c-c1f5-1329-1ed7-c84229a50251@cn.fujitsu.com>
+Date: Tue, 10 May 2016 09:16:04 +0800
+MIME-Version: 1.0
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: David Sterba <dsterba@suse.cz>
+Hi David, Mark,
 
-Move the op exclusivity check before the other code (same as in
-ADD_DEV).
+In the recent test for new btrfs-convert backward compatibility, I found 
+that cmds-fi-du.c uses FIEMAP_EXTENT_SHARED bits, which is not present 
+in kernel of old distributions like RHEL6 (Sorry, didn't test on 
+openSUSE equivalent).
 
-Signed-off-by: David Sterba <dsterba@suse.com>
----
- fs/btrfs/ioctl.c | 23 +++++++++++------------
- 1 file changed, 11 insertions(+), 12 deletions(-)
+Unlike e2fsprogs, we can check its version with pkgconfig, any idea to 
+avoid such compiling error?
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 5a23806ae418..70e9687f1d59 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -2680,32 +2680,31 @@ static long btrfs_ioctl_rm_dev(struct file *file, void __user *arg)
- 	if (ret)
- 		return ret;
- 
--	vol_args = memdup_user(arg, sizeof(*vol_args));
--	if (IS_ERR(vol_args)) {
--		ret = PTR_ERR(vol_args);
--		goto err_drop;
--	}
--
--	vol_args->name[BTRFS_PATH_NAME_MAX] = '\0';
--
- 	if (atomic_xchg(&root->fs_info->mutually_exclusive_operation_running,
- 			1)) {
- 		ret = BTRFS_ERROR_DEV_EXCL_RUN_IN_PROGRESS;
-+		goto out_drop_write;
-+	}
-+
-+	vol_args = memdup_user(arg, sizeof(*vol_args));
-+	if (IS_ERR(vol_args)) {
-+		ret = PTR_ERR(vol_args);
- 		goto out;
- 	}
- 
-+	vol_args->name[BTRFS_PATH_NAME_MAX] = '\0';
- 	mutex_lock(&root->fs_info->volume_mutex);
- 	ret = btrfs_rm_device(root, vol_args->name);
- 	mutex_unlock(&root->fs_info->volume_mutex);
--	atomic_set(&root->fs_info->mutually_exclusive_operation_running, 0);
- 
- 	if (!ret)
- 		btrfs_info(root->fs_info, "disk deleted %s",vol_args->name);
--
--out:
- 	kfree(vol_args);
--err_drop:
-+out:
-+	atomic_set(&root->fs_info->mutually_exclusive_operation_running, 0);
-+out_drop_write:
- 	mnt_drop_write_file(file);
-+
- 	return ret;
- }
- 
--- 
-2.7.1
+And further more, without kernel support for FIEMAP_EXTENT_SHARED, will 
+fi-du work anymore?
+
+Thanks,
+Qu
+
 

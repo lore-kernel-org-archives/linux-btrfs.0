@@ -1,362 +1,107 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:26605 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751131AbcEJCeQ (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 9 May 2016 22:34:16 -0400
-Subject: Re: [PATCH] btrfs: switch to common message helpers in open_ctree,
- adjust messages
-To: David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
-References: <1462786798-15247-1-git-send-email-dsterba@suse.com>
-From: Anand Jain <anand.jain@oracle.com>
-Message-ID: <573148AB.6080800@oracle.com>
-Date: Tue, 10 May 2016 10:34:19 +0800
+Received: from out5-smtp.messagingengine.com ([66.111.4.29]:42350 "EHLO
+	out5-smtp.messagingengine.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1752937AbcEJD3X convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 9 May 2016 23:29:23 -0400
+Received: from compute3.internal (compute3.nyi.internal [10.202.2.43])
+	by mailout.nyi.internal (Postfix) with ESMTP id B93A8219E9
+	for <linux-btrfs@vger.kernel.org>; Mon,  9 May 2016 23:29:21 -0400 (EDT)
+Received: from ebox.rath.org (ebox.rath.org [45.79.69.51])
+	by mail.messagingengine.com (Postfix) with ESMTPA id 7C9CBC00014
+	for <linux-btrfs@vger.kernel.org>; Mon,  9 May 2016 23:29:21 -0400 (EDT)
+Received: from vostro.rath.org (vostro [192.168.12.4])
+	by ebox.rath.org (Postfix) with ESMTPS id 8983629D93F
+	for <linux-btrfs@vger.kernel.org>; Tue, 10 May 2016 03:29:20 +0000 (UTC)
+From: Nikolaus Rath <Nikolaus@rath.org>
+To: linux-btrfs@vger.kernel.org
+Subject: Re: Input/output error on newly created file
+References: <8760uoqjlt.fsf@vostro.rath.org>
+	<CAL3q7H4opJabDo6mBoQb3P8NeGS31=-5F3e4m8qWLs2fn6jL+Q@mail.gmail.com>
+Date: Mon, 09 May 2016 20:29:20 -0700
+In-Reply-To: <CAL3q7H4opJabDo6mBoQb3P8NeGS31=-5F3e4m8qWLs2fn6jL+Q@mail.gmail.com>
+	(Filipe Manana's message of "Mon, 9 May 2016 16:46:29 +0100")
+Message-ID: <878tzilhf3.fsf@vostro.rath.org>
 MIME-Version: 1.0
-In-Reply-To: <1462786798-15247-1-git-send-email-dsterba@suse.com>
-Content-Type: text/plain; charset=windows-1252; format=flowed
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On May 09 2016, Filipe Manana <fdmanana@gmail.com> wrote:
+> On Sun, May 8, 2016 at 11:18 PM, Nikolaus Rath <Nikolaus@rath.org> wrote:
+>> Hello,
+>>
+>> I just created an innocent 10 MB on a btrfs file system, yet my attempt
+>> to read it a few seconds later (and ever since), just gives:
+>>
+>> $ ls -l in-progress/mysterious-io-error
+>> -rw-rw-r-- 1 nikratio nikratio 10485760 May  8 14:41 in-progress/mysterious-io-error
+>> $ cat in-progress/mysterious-io-error
+>> cat: in-progress/mysterious-io-error: Input/output error
+>
+> If you unmount and mount again the filesystem, does it happen again?
+
+After rebooting, the previously unaccessible file can now be read. But I
+cannot tell if it contains the right data.
+
+However, I just encountered the same problem with another, freshly
+created file.
+
+> How did you create the file?
+
+In Python 3. The equivalent code is more or less:
+
+with open('file.dat', 'wb+') as fh:
+     for buf in generate_data():
+         fh.write(buf) # bufsize is about 128 kB
 
 
+However, I should note that there is a lot of activity in this
+file system (it contains my home directory), so the above alone will
+probably not reproduce the problem.
+
+That said, so far both the problematic files were created by the same
+application (S3QL, of which luckily I am also the maintainer).
 
 
-On 05/09/2016 05:39 PM, David Sterba wrote:
-> Currently we lack the identification of the filesystem in most if not
-> all mount messages, done via printk/pr_* functions. We can use the
-> btrfs_* helpers in open_ctree, as the fs_info <-> sb link is established
-> at the beginning of the function.
+> Does fsck reports any issues?
 
-  While here I also recommend to pass fs_devices instead of fs_info
-  to btrfs_printk(). That's mainly because before the fs is mounted
-  we don't have fs_info, however fs_devices exists in both the mounted
-  and unmount context.  If you agree, I could send a patch on top of
-  your patch.
+Do you mean btrfsck? It actually has a lot to say:
 
-  Otherwise the rest below looks fine.
+checking extents
+checking free space cache
+checking fs roots
+root 5 inode 3149867 errors 400, nbytes wrong
+root 5 inode 3150237 errors 400, nbytes wrong
+root 5 inode 3150238 errors 400, nbytes wrong
+root 5 inode 3150242 errors 400, nbytes wrong
+root 5 inode 3150260 errors 400, nbytes wrong
+[...]
+root 5 inode 15595011 errors 400, nbytes wrong
+root 5 inode 15595016 errors 400, nbytes wrong
+Checking filesystem on /dev/mapper/vg0-nikratio_crypt
+UUID: 8742472d-a9b0-4ab6-b67a-5d21f14f7a38
+found 263648960636 bytes used err is 1
+total csum bytes: 395314372
+total tree bytes: 908644352
+total fs tree bytes: 352735232
+total extent tree bytes: 95039488
+btree space waste bytes: 156301160
+file data blocks allocated: 675209801728
+ referenced 410351722496
+Btrfs v3.17
 
-Thanks, Anand.
-
-> The messages have been updated at the same time to be more consistent:
->
-> * dropped sb->s_id, as it's not available via btrfs_*
-> * added %d for return code where appropriate
-> * wording changed
-> * %Lx replaced by %llx
+However, the inode of the problematic file (16186241) is not
+mentioned. But I guess this is not surprising, because also for this
+file, I can read the contents after remounting.
 
 
+Best,
+-Nikolaus
 
-> Signed-off-by: David Sterba <dsterba@suse.com>
-> ---
->   fs/btrfs/disk-io.c | 102 ++++++++++++++++++++++++++---------------------------
->   1 file changed, 50 insertions(+), 52 deletions(-)
->
-> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-> index 4e47849d7427..cc8aee26d17b 100644
-> --- a/fs/btrfs/disk-io.c
-> +++ b/fs/btrfs/disk-io.c
-> @@ -2713,7 +2713,7 @@ int open_ctree(struct super_block *sb,
->   	 * Pass the whole disk block of size BTRFS_SUPER_INFO_SIZE (4k).
->   	 */
->   	if (btrfs_check_super_csum(bh->b_data)) {
-> -		printk(KERN_ERR "BTRFS: superblock checksum mismatch\n");
-> +		btrfs_err(fs_info, "superblock checksum mismatch");
->   		err = -EINVAL;
->   		brelse(bh);
->   		goto fail_alloc;
-> @@ -2733,7 +2733,7 @@ int open_ctree(struct super_block *sb,
->
->   	ret = btrfs_check_super_valid(fs_info, sb->s_flags & MS_RDONLY);
->   	if (ret) {
-> -		printk(KERN_ERR "BTRFS: superblock contains fatal errors\n");
-> +		btrfs_err(fs_info, "superblock contains fatal errors");
->   		err = -EINVAL;
->   		goto fail_alloc;
->   	}
-> @@ -2768,9 +2768,9 @@ int open_ctree(struct super_block *sb,
->   	features = btrfs_super_incompat_flags(disk_super) &
->   		~BTRFS_FEATURE_INCOMPAT_SUPP;
->   	if (features) {
-> -		printk(KERN_ERR "BTRFS: couldn't mount because of "
-> -		       "unsupported optional features (%Lx).\n",
-> -		       features);
-> +		btrfs_err(fs_info,
-> +		    "cannot mount because of unsupported optional features (%llx)",
-> +		    features);
->   		err = -EINVAL;
->   		goto fail_alloc;
->   	}
-> @@ -2781,7 +2781,7 @@ int open_ctree(struct super_block *sb,
->   		features |= BTRFS_FEATURE_INCOMPAT_COMPRESS_LZO;
->
->   	if (features & BTRFS_FEATURE_INCOMPAT_SKINNY_METADATA)
-> -		printk(KERN_INFO "BTRFS: has skinny extents\n");
-> +		btrfs_info(fs_info, "has skinny extents");
->
->   	/*
->   	 * flag our filesystem as having big metadata blocks if
-> @@ -2789,7 +2789,8 @@ int open_ctree(struct super_block *sb,
->   	 */
->   	if (btrfs_super_nodesize(disk_super) > PAGE_SIZE) {
->   		if (!(features & BTRFS_FEATURE_INCOMPAT_BIG_METADATA))
-> -			printk(KERN_INFO "BTRFS: flagging fs with big metadata feature\n");
-> +			btrfs_info(fs_info,
-> +				"flagging fs with big metadata feature");
->   		features |= BTRFS_FEATURE_INCOMPAT_BIG_METADATA;
->   	}
->
-> @@ -2805,9 +2806,9 @@ int open_ctree(struct super_block *sb,
->   	 */
->   	if ((features & BTRFS_FEATURE_INCOMPAT_MIXED_GROUPS) &&
->   	    (sectorsize != nodesize)) {
-> -		printk(KERN_ERR "BTRFS: unequal leaf/node/sector sizes "
-> -				"are not allowed for mixed block groups on %s\n",
-> -				sb->s_id);
-> +		btrfs_err(fs_info,
-> +"unequal nodesize/sectorsize (%u != %u) are not allowed for mixed block groups",
-> +			nodesize, sectorsize);
->   		goto fail_alloc;
->   	}
->
-> @@ -2820,8 +2821,8 @@ int open_ctree(struct super_block *sb,
->   	features = btrfs_super_compat_ro_flags(disk_super) &
->   		~BTRFS_FEATURE_COMPAT_RO_SUPP;
->   	if (!(sb->s_flags & MS_RDONLY) && features) {
-> -		printk(KERN_ERR "BTRFS: couldn't mount RDWR because of "
-> -		       "unsupported option features (%Lx).\n",
-> +		btrfs_err(fs_info,
-> +	"cannot mount read-write because of unsupported optional features (%llx)",
->   		       features);
->   		err = -EINVAL;
->   		goto fail_alloc;
-> @@ -2850,8 +2851,7 @@ int open_ctree(struct super_block *sb,
->   	ret = btrfs_read_sys_array(tree_root);
->   	mutex_unlock(&fs_info->chunk_mutex);
->   	if (ret) {
-> -		printk(KERN_ERR "BTRFS: failed to read the system "
-> -		       "array on %s\n", sb->s_id);
-> +		btrfs_err(fs_info, "failed to read the system array: %d", ret);
->   		goto fail_sb_buffer;
->   	}
->
-> @@ -2865,8 +2865,7 @@ int open_ctree(struct super_block *sb,
->   					   generation);
->   	if (IS_ERR(chunk_root->node) ||
->   	    !extent_buffer_uptodate(chunk_root->node)) {
-> -		printk(KERN_ERR "BTRFS: failed to read chunk root on %s\n",
-> -		       sb->s_id);
-> +		btrfs_err(fs_info, "failed to read chunk root");
->   		if (!IS_ERR(chunk_root->node))
->   			free_extent_buffer(chunk_root->node);
->   		chunk_root->node = NULL;
-> @@ -2880,8 +2879,7 @@ int open_ctree(struct super_block *sb,
->
->   	ret = btrfs_read_chunk_tree(chunk_root);
->   	if (ret) {
-> -		printk(KERN_ERR "BTRFS: failed to read chunk tree on %s\n",
-> -		       sb->s_id);
-> +		btrfs_err(fs_info, "failed to read chunk tree: %d", ret);
->   		goto fail_tree_roots;
->   	}
->
-> @@ -2892,8 +2890,7 @@ int open_ctree(struct super_block *sb,
->   	btrfs_close_extra_devices(fs_devices, 0);
->
->   	if (!fs_devices->latest_bdev) {
-> -		printk(KERN_ERR "BTRFS: failed to read devices on %s\n",
-> -		       sb->s_id);
-> +		btrfs_err(fs_info, "failed to read devices");
->   		goto fail_tree_roots;
->   	}
->
-> @@ -2905,8 +2902,7 @@ int open_ctree(struct super_block *sb,
->   					  generation);
->   	if (IS_ERR(tree_root->node) ||
->   	    !extent_buffer_uptodate(tree_root->node)) {
-> -		printk(KERN_WARNING "BTRFS: failed to read tree root on %s\n",
-> -		       sb->s_id);
-> +		btrfs_warn(fs_info, "failed to read tree root");
->   		if (!IS_ERR(tree_root->node))
->   			free_extent_buffer(tree_root->node);
->   		tree_root->node = NULL;
-> @@ -2938,20 +2934,19 @@ int open_ctree(struct super_block *sb,
->
->   	ret = btrfs_recover_balance(fs_info);
->   	if (ret) {
-> -		printk(KERN_ERR "BTRFS: failed to recover balance\n");
-> +		btrfs_err(fs_info, "failed to recover balance: %d", ret);
->   		goto fail_block_groups;
->   	}
->
->   	ret = btrfs_init_dev_stats(fs_info);
->   	if (ret) {
-> -		printk(KERN_ERR "BTRFS: failed to init dev_stats: %d\n",
-> -		       ret);
-> +		btrfs_err(fs_info, "failed to init dev_stats: %d", ret);
->   		goto fail_block_groups;
->   	}
->
->   	ret = btrfs_init_dev_replace(fs_info);
->   	if (ret) {
-> -		pr_err("BTRFS: failed to init dev_replace: %d\n", ret);
-> +		btrfs_err(fs_info, "failed to init dev_replace: %d", ret);
->   		goto fail_block_groups;
->   	}
->
-> @@ -2959,31 +2954,33 @@ int open_ctree(struct super_block *sb,
->
->   	ret = btrfs_sysfs_add_fsid(fs_devices, NULL);
->   	if (ret) {
-> -		pr_err("BTRFS: failed to init sysfs fsid interface: %d\n", ret);
-> +		btrfs_err(fs_info, "failed to init sysfs fsid interface: %d",
-> +				ret);
->   		goto fail_block_groups;
->   	}
->
->   	ret = btrfs_sysfs_add_device(fs_devices);
->   	if (ret) {
-> -		pr_err("BTRFS: failed to init sysfs device interface: %d\n", ret);
-> +		btrfs_err(fs_info, "failed to init sysfs device interface: %d",
-> +				ret);
->   		goto fail_fsdev_sysfs;
->   	}
->
->   	ret = btrfs_sysfs_add_mounted(fs_info);
->   	if (ret) {
-> -		pr_err("BTRFS: failed to init sysfs interface: %d\n", ret);
-> +		btrfs_err(fs_info, "failed to init sysfs interface: %d", ret);
->   		goto fail_fsdev_sysfs;
->   	}
->
->   	ret = btrfs_init_space_info(fs_info);
->   	if (ret) {
-> -		printk(KERN_ERR "BTRFS: Failed to initial space info: %d\n", ret);
-> +		btrfs_err(fs_info, "failed to initialize space info: %d", ret);
->   		goto fail_sysfs;
->   	}
->
->   	ret = btrfs_read_block_groups(fs_info->extent_root);
->   	if (ret) {
-> -		printk(KERN_ERR "BTRFS: Failed to read block groups: %d\n", ret);
-> +		btrfs_err(fs_info, "failed to read block groups: %d", ret);
->   		goto fail_sysfs;
->   	}
->   	fs_info->num_tolerated_disk_barrier_failures =
-> @@ -2991,7 +2988,8 @@ int open_ctree(struct super_block *sb,
->   	if (fs_info->fs_devices->missing_devices >
->   	     fs_info->num_tolerated_disk_barrier_failures &&
->   	    !(sb->s_flags & MS_RDONLY)) {
-> -		pr_warn("BTRFS: missing devices(%llu) exceeds the limit(%d), writeable mount is not allowed\n",
-> +		btrfs_warn(fs_info,
-> +"missing devices (%llu) exceeds the limit (%d), writeable mount is not allowed",
->   			fs_info->fs_devices->missing_devices,
->   			fs_info->num_tolerated_disk_barrier_failures);
->   		goto fail_sysfs;
-> @@ -3011,8 +3009,7 @@ int open_ctree(struct super_block *sb,
->   	if (!btrfs_test_opt(tree_root, SSD) &&
->   	    !btrfs_test_opt(tree_root, NOSSD) &&
->   	    !fs_info->fs_devices->rotating) {
-> -		printk(KERN_INFO "BTRFS: detected SSD devices, enabling SSD "
-> -		       "mode\n");
-> +		btrfs_info(fs_info, "detected SSD devices, enabling SSD mode");
->   		btrfs_set_opt(fs_info->mount_opt, SSD);
->   	}
->
-> @@ -3030,8 +3027,9 @@ int open_ctree(struct super_block *sb,
->   				    1 : 0,
->   				    fs_info->check_integrity_print_mask);
->   		if (ret)
-> -			printk(KERN_WARNING "BTRFS: failed to initialize"
-> -			       " integrity check module %s\n", sb->s_id);
-> +			btrfs_warn(fs_info,
-> +				"failed to initialize integrity check module: %d",
-> +				ret);
->   	}
->   #endif
->   	ret = btrfs_read_qgroup_config(fs_info);
-> @@ -3061,8 +3059,8 @@ int open_ctree(struct super_block *sb,
->   		ret = btrfs_recover_relocation(tree_root);
->   		mutex_unlock(&fs_info->cleaner_mutex);
->   		if (ret < 0) {
-> -			printk(KERN_WARNING
-> -			       "BTRFS: failed to recover relocation\n");
-> +			btrfs_warn(fs_info, "failed to recover relocation: %d",
-> +					ret);
->   			err = -EINVAL;
->   			goto fail_qgroup;
->   		}
-> @@ -3083,11 +3081,11 @@ int open_ctree(struct super_block *sb,
->
->   	if (btrfs_test_opt(tree_root, FREE_SPACE_TREE) &&
->   	    !btrfs_fs_compat_ro(fs_info, FREE_SPACE_TREE)) {
-> -		pr_info("BTRFS: creating free space tree\n");
-> +		btrfs_info(fs_info, "creating free space tree");
->   		ret = btrfs_create_free_space_tree(fs_info);
->   		if (ret) {
-> -			pr_warn("BTRFS: failed to create free space tree %d\n",
-> -				ret);
-> +			btrfs_warn(fs_info,
-> +				"failed to create free space tree: %d", ret);
->   			close_ctree(tree_root);
->   			return ret;
->   		}
-> @@ -3104,14 +3102,14 @@ int open_ctree(struct super_block *sb,
->
->   	ret = btrfs_resume_balance_async(fs_info);
->   	if (ret) {
-> -		printk(KERN_WARNING "BTRFS: failed to resume balance\n");
-> +		btrfs_warn(fs_info, "failed to resume balance: %d", ret);
->   		close_ctree(tree_root);
->   		return ret;
->   	}
->
->   	ret = btrfs_resume_dev_replace_async(fs_info);
->   	if (ret) {
-> -		pr_warn("BTRFS: failed to resume dev_replace\n");
-> +		btrfs_warn(fs_info, "failed to resume device replace: %d", ret);
->   		close_ctree(tree_root);
->   		return ret;
->   	}
-> @@ -3120,33 +3118,33 @@ int open_ctree(struct super_block *sb,
->
->   	if (btrfs_test_opt(tree_root, CLEAR_CACHE) &&
->   	    btrfs_fs_compat_ro(fs_info, FREE_SPACE_TREE)) {
-> -		pr_info("BTRFS: clearing free space tree\n");
-> +		btrfs_info(fs_info, "clearing free space tree");
->   		ret = btrfs_clear_free_space_tree(fs_info);
->   		if (ret) {
-> -			pr_warn("BTRFS: failed to clear free space tree %d\n",
-> -				ret);
-> +			btrfs_warn(fs_info,
-> +				"failed to clear free space tree: %d", ret);
->   			close_ctree(tree_root);
->   			return ret;
->   		}
->   	}
->
->   	if (!fs_info->uuid_root) {
-> -		pr_info("BTRFS: creating UUID tree\n");
-> +		btrfs_info(fs_info, "creating UUID tree");
->   		ret = btrfs_create_uuid_tree(fs_info);
->   		if (ret) {
-> -			pr_warn("BTRFS: failed to create the UUID tree %d\n",
-> -				ret);
-> +			btrfs_warn(fs_info,
-> +				"failed to create the UUID tree: %d", ret);
->   			close_ctree(tree_root);
->   			return ret;
->   		}
->   	} else if (btrfs_test_opt(tree_root, RESCAN_UUID_TREE) ||
->   		   fs_info->generation !=
->   				btrfs_super_uuid_tree_generation(disk_super)) {
-> -		pr_info("BTRFS: checking UUID tree\n");
-> +		btrfs_info(fs_info, "checking UUID tree");
->   		ret = btrfs_check_uuid_tree(fs_info);
->   		if (ret) {
-> -			pr_warn("BTRFS: failed to check the UUID tree %d\n",
-> -				ret);
-> +			btrfs_warn(fs_info,
-> +				"failed to check the UUID tree: %d", ret);
->   			close_ctree(tree_root);
->   			return ret;
->   		}
->
+
+-- 
+GPG encrypted emails preferred. Key id: 0xD113FCAC3C4E599F
+Fingerprint: ED31 791B 2C5C 1613 AF38 8B8A D113 FCAC 3C4E 599F
+
+             »Time flies like an arrow, fruit flies like a Banana.«

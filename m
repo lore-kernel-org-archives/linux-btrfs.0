@@ -1,57 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:28464 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752594AbcEJOCI (ORCPT
+Received: from userp1040.oracle.com ([156.151.31.81]:46565 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752491AbcEJOCK (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 10 May 2016 10:02:08 -0400
+	Tue, 10 May 2016 10:02:10 -0400
 From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
 Cc: dsterba@suse.cz, yauhen.kharuzhy@zavadatar.com
-Subject: [PATCH 03/13] btrfs: Do per-chunk degraded check for remount
-Date: Tue, 10 May 2016 22:01:41 +0800
-Message-Id: <1462888911-5227-5-git-send-email-anand.jain@oracle.com>
+Subject: [PATCH 07/13] btrfs: add check not to mount a spare device
+Date: Tue, 10 May 2016 22:01:45 +0800
+Message-Id: <1462888911-5227-9-git-send-email-anand.jain@oracle.com>
 In-Reply-To: <1462888911-5227-1-git-send-email-anand.jain@oracle.com>
 References: <1462888911-5227-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+From: Anand Jain <Anand.Jain@oracle.com>
 
-Just the same for mount time check, use new btrfs_check_degraded() to do
-per chunk check.
-
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
-
-Btrfs: use btrfs_error instead of btrfs_err during remount
+Spare devices can be scanned but shouldn't be mountable.
 
 Signed-off-by: Anand Jain <anand.jain@oracle.com>
+Tested-by: Austin S. Hemmelgarn <ahferroin7@gmail.com>
+Tested-by: Yauhen Kharuzhy <yauhen.kharuzhy@zavadatar.com>
 ---
- fs/btrfs/super.c | 11 +++++++----
- 1 file changed, 7 insertions(+), 4 deletions(-)
+ fs/btrfs/disk-io.c | 8 ++++++++
+ 1 file changed, 8 insertions(+)
 
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 00b8f37cc306..87639fa53b10 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -1767,11 +1767,14 @@ static int btrfs_remount(struct super_block *sb, int *flags, char *data)
- 			goto restore;
- 		}
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 65c9f19d8017..e9fca3bc7e42 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -2811,6 +2811,14 @@ int open_ctree(struct super_block *sb,
+ 		goto fail_alloc;
+ 	}
  
--		if (fs_info->fs_devices->missing_devices >
--		     fs_info->num_tolerated_disk_barrier_failures &&
--		    !(*flags & MS_RDONLY)) {
-+		ret = btrfs_check_degradable(fs_info, *flags);
-+		if (ret < 0) {
-+			btrfs_err(fs_info,
-+				"degraded writable remount failed %d", ret);
-+			goto restore;
-+		} else if (ret > 0 && !btrfs_test_opt(root, DEGRADED)) {
- 			btrfs_warn(fs_info,
--				"too many missing devices, writeable remount is not allowed");
-+				"some device missing, but still degraded mountable, please remount with -o degraded option");
- 			ret = -EACCES;
- 			goto restore;
- 		}
++	if (btrfs_super_incompat_flags(disk_super) &
++			BTRFS_FEATURE_INCOMPAT_SPARE_DEV) {
++		/*You can only scan a spare device but not mount*/
++		printk(KERN_ERR "BTRFS: You can't mount a spare device\n");
++		err = -ENOTSUPP;
++		goto fail_alloc;
++	}
++
+ 	/*
+ 	 * Needn't use the lock because there is no other task which will
+ 	 * update the flag.
 -- 
 2.7.0
 

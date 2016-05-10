@@ -1,15 +1,15 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:35859 "EHLO
+Received: from aserp1040.oracle.com ([141.146.126.69]:35812 "EHLO
 	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751894AbcEJOJl (ORCPT
+	with ESMTP id S1751566AbcEJOJi (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 10 May 2016 10:09:41 -0400
+	Tue, 10 May 2016 10:09:38 -0400
 From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
 Cc: dsterba@suse.cz, yauhen.kharuzhy@zavadatar.com
-Subject: [PATCH 04/13] btrfs: Allow barrier_all_devices to do per-chunk device check
-Date: Tue, 10 May 2016 22:09:23 +0800
-Message-Id: <1462889372-5274-6-git-send-email-anand.jain@oracle.com>
+Subject: [PATCH 02/13] btrfs: Do per-chunk check for mount time check
+Date: Tue, 10 May 2016 22:09:21 +0800
+Message-Id: <1462889372-5274-4-git-send-email-anand.jain@oracle.com>
 In-Reply-To: <1462889372-5274-1-git-send-email-anand.jain@oracle.com>
 References: <1462889372-5274-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -17,107 +17,67 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 
-The last user of num_tolerated_disk_barrier_failures is
-barrier_all_devices(). But it's can be easily changed to new per-chunk
-degradable check framework.
+Now use the btrfs_check_degraded() to do mount time degraded check.
 
-Now btrfs_device will have two extra members, representing send/wait
-error, set at write_dev_flush() time. And then check it in a similar but
-more accurate behavior than old code.
+With this patch, now we can mount with the following case:
+ # mkfs.btrfs -f -m raid1 -d single /dev/sdb /dev/sdc
+ # wipefs -a /dev/sdc
+ # mount /dev/sdb /mnt/btrfs -o degraded
+ As the single data chunk is only in sdb, so it's OK to mount as degraded,
+ as missing one device is OK for RAID1.
 
+But still fail with the following case as expected:
+ # mkfs.btrfs -f -m raid1 -d single /dev/sdb /dev/sdc
+ # wipefs -a /dev/sdb
+ # mount /dev/sdc /mnt/btrfs -o degraded
+ As the data chunk is only in sdb, so it's not OK to mount it as degraded.
+
+Reported-by: Zhao Lei <zhaolei@cn.fujitsu.com>
+Reported-by: Anand Jain <anand.jain@oracle.com>
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+
+[Btrfs: use btrfs_error instead of btrfs_err during mount]
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
- fs/btrfs/disk-io.c | 13 +++++--------
- fs/btrfs/volumes.c |  6 +++++-
- fs/btrfs/volumes.h |  4 ++++
- 3 files changed, 14 insertions(+), 9 deletions(-)
+ fs/btrfs/disk-io.c | 18 ++++++++++--------
+ 1 file changed, 10 insertions(+), 8 deletions(-)
 
 diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 4f91a049fbca..9ad3667f5e71 100644
+index d01f89d130e0..4f91a049fbca 100644
 --- a/fs/btrfs/disk-io.c
 +++ b/fs/btrfs/disk-io.c
-@@ -3496,8 +3496,6 @@ static int barrier_all_devices(struct btrfs_fs_info *info)
- {
- 	struct list_head *head;
- 	struct btrfs_device *dev;
--	int errors_send = 0;
--	int errors_wait = 0;
- 	int ret;
- 
- 	/* send down all the barriers */
-@@ -3506,7 +3504,7 @@ static int barrier_all_devices(struct btrfs_fs_info *info)
- 		if (dev->missing)
- 			continue;
- 		if (!dev->bdev) {
--			errors_send++;
-+			dev->err_send = 1;
- 			continue;
- 		}
- 		if (!dev->in_fs_metadata || !dev->writeable)
-@@ -3514,7 +3512,7 @@ static int barrier_all_devices(struct btrfs_fs_info *info)
- 
- 		ret = write_dev_flush(dev, 0);
- 		if (ret)
--			errors_send++;
-+			dev->err_send = 1;
+@@ -2885,6 +2885,16 @@ int open_ctree(struct super_block *sb,
+ 		goto fail_tree_roots;
  	}
  
- 	/* wait for all the barriers */
-@@ -3522,7 +3520,7 @@ static int barrier_all_devices(struct btrfs_fs_info *info)
- 		if (dev->missing)
- 			continue;
- 		if (!dev->bdev) {
--			errors_wait++;
-+			dev->err_wait = 1;
- 			continue;
- 		}
- 		if (!dev->in_fs_metadata || !dev->writeable)
-@@ -3530,10 +3528,9 @@ static int barrier_all_devices(struct btrfs_fs_info *info)
- 
- 		ret = write_dev_flush(dev, 1);
- 		if (ret)
--			errors_wait++;
-+			dev->err_wait = 1;
++	ret = btrfs_check_degradable(fs_info, fs_info->sb->s_flags);
++	if (ret < 0) {
++		btrfs_err(fs_info, "degraded writable mount failed %d", ret);
++		goto fail_tree_roots;
++	} else if (ret > 0 && !btrfs_test_opt(chunk_root, DEGRADED)) {
++		btrfs_warn(fs_info,
++			"Some device missing, but still degraded mountable, please mount with -o degraded option");
++		ret = -EACCES;
++		goto fail_tree_roots;
++	}
+ 	/*
+ 	 * keep the device that is marked to be the target device for the
+ 	 * dev_replace procedure
+@@ -2988,14 +2998,6 @@ retry_root_backup:
  	}
--	if (errors_send > info->num_tolerated_disk_barrier_failures ||
--	    errors_wait > info->num_tolerated_disk_barrier_failures)
-+	if (btrfs_check_degradable(info, info->sb->s_flags) < 0)
- 		return -EIO;
- 	return 0;
- }
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index f5fa5f88263c..639ae20cc5e6 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -7105,8 +7105,12 @@ int btrfs_check_degradable(struct btrfs_fs_info *fs_info, unsigned flags)
- 			btrfs_get_num_tolerated_disk_barrier_failures(
- 					map->type);
- 		for (i = 0; i < map->num_stripes; i++) {
--			if (map->stripes[i].dev->missing)
-+			if (map->stripes[i].dev->missing ||
-+			    map->stripes[i].dev->err_wait ||
-+			    map->stripes[i].dev->err_send)
- 				missing++;
-+			map->stripes[i].dev->err_wait = 0;
-+			map->stripes[i].dev->err_send = 0;
- 		}
- 		if (missing > max_tolerated) {
- 			ret = -EIO;
-diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-index ae9d552c93bf..101e5db2dd63 100644
---- a/fs/btrfs/volumes.h
-+++ b/fs/btrfs/volumes.h
-@@ -76,6 +76,10 @@ struct btrfs_device {
- 	int can_discard;
- 	int is_tgtdev_for_dev_replace;
+ 	fs_info->num_tolerated_disk_barrier_failures =
+ 		btrfs_calc_num_tolerated_disk_barrier_failures(fs_info);
+-	if (fs_info->fs_devices->missing_devices >
+-	     fs_info->num_tolerated_disk_barrier_failures &&
+-	    !(sb->s_flags & MS_RDONLY)) {
+-		pr_warn("BTRFS: missing devices(%llu) exceeds the limit(%d), writeable mount is not allowed\n",
+-			fs_info->fs_devices->missing_devices,
+-			fs_info->num_tolerated_disk_barrier_failures);
+-		goto fail_sysfs;
+-	}
  
-+	/* for barrier_all_devices() check */
-+	int err_send;
-+	int err_wait;
-+
- #ifdef __BTRFS_NEED_DEVICE_DATA_ORDERED
- 	seqcount_t data_seqcount;
- #endif
+ 	fs_info->cleaner_kthread = kthread_run(cleaner_kthread, tree_root,
+ 					       "btrfs-cleaner");
 -- 
 2.7.0
 

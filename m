@@ -1,66 +1,120 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:36068 "EHLO
+Received: from aserp1040.oracle.com ([141.146.126.69]:28337 "EHLO
 	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752469AbcEJOJq (ORCPT
+	with ESMTP id S1751773AbcEJOB6 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 10 May 2016 10:09:46 -0400
+	Tue, 10 May 2016 10:01:58 -0400
 From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
 Cc: dsterba@suse.cz, yauhen.kharuzhy@zavadatar.com
-Subject: [PATCH 08/13] btrfs: support btrfs dev scan for spare device
-Date: Tue, 10 May 2016 22:09:27 +0800
-Message-Id: <1462889372-5274-10-git-send-email-anand.jain@oracle.com>
-In-Reply-To: <1462889372-5274-1-git-send-email-anand.jain@oracle.com>
-References: <1462889372-5274-1-git-send-email-anand.jain@oracle.com>
+Subject: [PATCH 01/13] btrfs: Introduce a new function to check if all chunks a OK for degraded mount
+Date: Tue, 10 May 2016 22:01:38 +0800
+Message-Id: <1462888911-5227-2-git-send-email-anand.jain@oracle.com>
+In-Reply-To: <1462888911-5227-1-git-send-email-anand.jain@oracle.com>
+References: <1462888911-5227-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Anand Jain <Anand.Jain@oracle.com>
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 
-When the user or system calls the BTRFS_IOC_SCAN_DEV,
-ioctl this patch will make sure it is added to the device
-list and set it as spare.
+Introduce a new function, btrfs_check_degradable(), to judge if all chunks
+in btrfs is OK for degraded mount.
 
-This operation will be same when BTRFS_IOC_DEVICES_READY
-as well since BTRFS_IOC_DEVICES_READY ioctl has been doing
-that by legacy.
+It provides the new basis for accurate btrfs mount/remount and even
+runtime degraded mount check other than old one-size-fit-all method.
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
-Tested-by: Austin S. Hemmelgarn <ahferroin7@gmail.com>
-Tested-by: Yauhen Kharuzhy <yauhen.kharuzhy@zavadatar.com>
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- fs/btrfs/volumes.c | 4 ++++
- fs/btrfs/volumes.h | 2 ++
- 2 files changed, 6 insertions(+)
+ fs/btrfs/volumes.c | 67 ++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ fs/btrfs/volumes.h |  1 +
+ 2 files changed, 68 insertions(+)
 
 diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index cf0d65dd443b..fdbad75506df 100644
+index 4ff716d9b16c..f5fa5f88263c 100644
 --- a/fs/btrfs/volumes.c
 +++ b/fs/btrfs/volumes.c
-@@ -605,6 +605,10 @@ static noinline int device_list_add(const char *path,
- 		if (IS_ERR(fs_devices))
- 			return PTR_ERR(fs_devices);
+@@ -7065,3 +7065,70 @@ static void btrfs_close_one_device(struct btrfs_device *device)
  
-+		if (btrfs_super_incompat_flags(disk_super) &
-+				BTRFS_FEATURE_INCOMPAT_SPARE_DEV)
-+			fs_devices->spare = 1;
+ 	call_rcu(&device->rcu, free_device);
+ }
 +
- 		list_add(&fs_devices->list, &fs_uuids);
- 
- 		device = NULL;
++/*
++ * Check if all chunks in the fs is OK for degraded mount
++ * Caller itself should do extra check if DEGRADED mount option is given
++ * for >0 return value.
++ *
++ * Return 0 if all chunks are OK.
++ * Return >0 if all chunks are degradable but not all OK.
++ * Return <0 if any chunk is not degradable or other bug.
++ */
++int btrfs_check_degradable(struct btrfs_fs_info *fs_info, unsigned flags)
++{
++	struct btrfs_mapping_tree *map_tree = &fs_info->mapping_tree;
++	struct extent_map *em;
++	u64 next_start = 0;
++	int ret = 0;
++
++	if (flags & MS_RDONLY)
++		return 0;
++
++	read_lock(&map_tree->map_tree.lock);
++	em = lookup_extent_mapping(&map_tree->map_tree, 0, (u64)(-1));
++	read_unlock(&map_tree->map_tree.lock);
++	/* No any chunk? Should be a huge bug */
++	if (!em) {
++		ret = -ENOENT;
++		goto out;
++	}
++
++	while (em) {
++		struct map_lookup *map;
++		int missing = 0;
++		int max_tolerated;
++		int i;
++
++		map = (struct map_lookup *) em->bdev;
++		max_tolerated =
++			btrfs_get_num_tolerated_disk_barrier_failures(
++					map->type);
++		for (i = 0; i < map->num_stripes; i++) {
++			if (map->stripes[i].dev->missing)
++				missing++;
++		}
++		if (missing > max_tolerated) {
++			ret = -EIO;
++			btrfs_warn(fs_info,
++				   "missing devices(%d) exceeds the limit(%d), writeable mount is not allowed",
++				   missing, max_tolerated);
++			goto out;
++		} else if (missing)
++			ret = 1;
++		next_start = extent_map_end(em);
++
++		/*
++		 * Alwasy search range [next_start, (u64)-1) to find the next
++		 * chunk map
++		 */
++		free_extent_map(em);
++		read_lock(&map_tree->map_tree.lock);
++		em = lookup_extent_mapping(&map_tree->map_tree, next_start,
++					   (u64)(-1) - next_start);
++		read_unlock(&map_tree->map_tree.lock);
++	}
++out:
++	free_extent_map(em);
++	return ret;
++}
 diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-index 101e5db2dd63..65a1d8a45c2d 100644
+index 93e0a2560366..ae9d552c93bf 100644
 --- a/fs/btrfs/volumes.h
 +++ b/fs/btrfs/volumes.h
-@@ -263,6 +263,8 @@ struct btrfs_fs_devices {
- 	struct kobject fsid_kobj;
- 	struct kobject *device_dir_kobj;
- 	struct completion kobj_unregister;
-+
-+	int spare;
- };
+@@ -568,5 +568,6 @@ static inline void unlock_chunks(struct btrfs_root *root)
+ struct list_head *btrfs_get_fs_uuids(void);
+ void btrfs_set_fs_info_ptr(struct btrfs_fs_info *fs_info);
+ void btrfs_reset_fs_info_ptr(struct btrfs_fs_info *fs_info);
++int btrfs_check_degradable(struct btrfs_fs_info *fs_info, unsigned flags);
  
- #define BTRFS_BIO_INLINE_CSUM_SIZE	64
+ #endif
 -- 
 2.7.0
 

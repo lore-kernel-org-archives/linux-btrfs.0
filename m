@@ -1,45 +1,64 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:4707 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751011AbcEJHT6 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 10 May 2016 03:19:58 -0400
-To: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
-        David Sterba <dsterba@suse.com>
-CC: btrfs <linux-btrfs@vger.kernel.org>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Subject: About in-band dedupe for v4.7
-Message-ID: <aae84f04-cb64-46f3-79ea-f2d84d79a3ba@cn.fujitsu.com>
-Date: Tue, 10 May 2016 15:19:52 +0800
+Received: from mx2.suse.de ([195.135.220.15]:38248 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751913AbcEJWLV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 10 May 2016 18:11:21 -0400
+Date: Tue, 10 May 2016 15:11:19 -0700
+From: Mark Fasheh <mfasheh@suse.de>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
+        David Sterba <dsterba@suse.com>, btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: About in-band dedupe for v4.7
+Message-ID: <20160510221119.GD7633@wotan.suse.de>
+Reply-To: Mark Fasheh <mfasheh@suse.de>
+References: <aae84f04-cb64-46f3-79ea-f2d84d79a3ba@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"; format=flowed
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <aae84f04-cb64-46f3-79ea-f2d84d79a3ba@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi, Chris, Josef and David,
+On Tue, May 10, 2016 at 03:19:52PM +0800, Qu Wenruo wrote:
+> Hi, Chris, Josef and David,
+> 
+> As merge window for v4.7 is coming, it would be good to hear your
+> ideas about the inband dedupe.
+> 
+> We are addressing the ENOSPC problem which Josef pointed out, and we
+> believe the final fix patch would come out at the beginning of the
+> merge window.(Next week)
 
-As merge window for v4.7 is coming, it would be good to hear your ideas 
-about the inband dedupe.
+How about the fiemap performance problem you referenced before? My guess is
+that it happens because you don't coalesce writes into anything larger than
+a page so you're stuck deduping at some silly size like 4k. This in turn
+fragments the files so much that fiemap has a hard time walking backrefs.
 
-We are addressing the ENOSPC problem which Josef pointed out, and we 
-believe the final fix patch would come out at the beginning of the merge 
-window.(Next week)
-
-
-If it's fine, would you please consider to merge the in-memory backend 
-patchset for v4.7 as an experimental feature?
-
-
-Most of the patch won't be changed from v10 patchset, only ENOSPC fix 
-will be updated, and ioctl patchset will introduce a new Kconfig option 
-of "btrfs experimental features" for inband dedupe.
-(With explain about unstable ioctl/on-disk format for experimental features)
-
-
-If you are all OK to merge inband dedupe in-memory backend, I'll prepare 
-the new v11 patchset for this merge.
-
-Thanks,
-Qu
+I have to check the patches to be sure but perhaps you can tell me whether
+my hunch is correct or not.
 
 
+In fact, I actually asked privately for time to review your dedupe patches,
+but I've been literally so busy cleaning up after the mess you left in your
+last qgroups rewrite I haven't had time.
+
+You literally broke qgroups in almost every spot that matters. In some cases
+(drop_snapshot) you tore out working code and left in a /* TODO */ comment
+for someone else to complete.  Snapshot create was so trivially and
+completely broken by your changes that weeks later, I'm still hunting a
+solution which doesn't involve adding an extra _commit_ to our commit.  This
+is a MASSIVE regression from where we were before.
+
+IMHO, you should not be trusted with large features or rewrites until you  
+can demonstrate:
+
+ - A willingness to *completely* solve the problem you are trying to 'fix',
+   not do half the job which someone else will have to complete for you.
+
+ - Actual testing. The snapshot bug I reference above exists purely because
+   nobody created a snapshot inside of one and checked the qgroup numbers!  
+
+Sorry to be so harsh.
+   --Mark
+
+--
+Mark Fasheh

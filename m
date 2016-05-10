@@ -1,29 +1,24 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qk0-f195.google.com ([209.85.220.195]:36711 "EHLO
-	mail-qk0-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753538AbcEJAOD (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 9 May 2016 20:14:03 -0400
-Received: by mail-qk0-f195.google.com with SMTP id l68so13167406qkf.3
-        for <linux-btrfs@vger.kernel.org>; Mon, 09 May 2016 17:14:02 -0700 (PDT)
-From: Nicholas D Steeves <nsteeves@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Nicholas D Steeves <nsteeves@gmail.com>
-Subject: [PATCH] Trivial fix for typos in comments.
-Date: Mon,  9 May 2016 20:13:29 -0400
-Message-Id: <1462839210-10040-1-git-send-email-nsteeves@gmail.com>
+Received: from mx2.suse.de ([195.135.220.15]:46875 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751654AbcEJNeX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 10 May 2016 09:34:23 -0400
+Date: Tue, 10 May 2016 15:33:59 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Nicholas D Steeves <nsteeves@gmail.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] Trivial fix for typos in comments.
+Message-ID: <20160510133359.GS29353@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1462839210-10040-1-git-send-email-nsteeves@gmail.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1462839210-10040-1-git-send-email-nsteeves@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Trivial fix for typos in comments; I hope this patch isn't a nuisance!
+On Mon, May 09, 2016 at 08:13:29PM -0400, Nicholas D Steeves wrote:
+> Trivial fix for typos in comments; I hope this patch isn't a nuisance!
 
-Nicholas D Steeves (1):
-  Trivial fix for typos in comments.
-
- fs/btrfs/disk-io.c     | 2 +-
- fs/btrfs/extent-tree.c | 2 +-
- fs/btrfs/file.c        | 2 +-
- 3 files changed, 3 insertions(+), 3 deletions(-)
-
--- 
-2.1.4
-
+No, but I don't see the typos in any of the branches (master or the
+for-next snapshots).

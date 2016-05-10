@@ -1,54 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:59229 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1752103AbcELRhH (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:4707 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1751011AbcEJHT6 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 12 May 2016 13:37:07 -0400
-Subject: Re: [PATCH 1/2] Btrfs: fix race between fsync and direct IO writes
- for prealloc extents
-To: <fdmanana@kernel.org>, <linux-btrfs@vger.kernel.org>
-References: <1462802509-1974-1-git-send-email-fdmanana@kernel.org>
-From: Josef Bacik <jbacik@fb.com>
-Message-ID: <1fe5a1ca-f0ce-6443-23cd-2b82d9c94bea@fb.com>
-Date: Thu, 12 May 2016 10:36:47 -0700
+	Tue, 10 May 2016 03:19:58 -0400
+To: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
+        David Sterba <dsterba@suse.com>
+CC: btrfs <linux-btrfs@vger.kernel.org>
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Subject: About in-band dedupe for v4.7
+Message-ID: <aae84f04-cb64-46f3-79ea-f2d84d79a3ba@cn.fujitsu.com>
+Date: Tue, 10 May 2016 15:19:52 +0800
 MIME-Version: 1.0
-In-Reply-To: <1462802509-1974-1-git-send-email-fdmanana@kernel.org>
-Content-Type: text/plain; charset="windows-1252"; format=flowed
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 05/09/2016 07:01 AM, fdmanana@kernel.org wrote:
-> From: Filipe Manana <fdmanana@suse.com>
->
-> When we do a direct IO write against a preallocated extent (fallocate)
-> that does not go beyond the i_size of the inode, we do the write operation
-> without holding the inode's i_mutex (an optimization that landed in
-> commit 38851cc19adb ("Btrfs: implement unlocked dio write")). This allows
-> for a very tiny time window where a race can happen with a concurrent
-> fsync using the fast code path, as the direct IO write path creates first
-> a new extent map (no longer flagged as a prealloc extent) and then it
-> creates the ordered extent, while the fast fsync path first collects
-> ordered extents and then it collects extent maps. This allows for the
-> possibility of the fast fsync path to collect the new extent map without
-> collecting the new ordered extent, and therefore logging an extent item
-> based on the extent map without waiting for the ordered extent to be
-> created and complete. This can result in a situation where after a log
-> replay we end up with an extent not marked anymore as prealloc but it was
-> only partially written (or not written at all), exposing random, stale or
-> garbage data corresponding to the unwritten pages and without any
-> checksums in the csum tree covering the extent's range.
->
-> This is an extension of what was done in commit de0ee0edb21f ("Btrfs: fix
-> race between fsync and lockless direct IO writes").
->
-> So fix this by creating first the ordered extent and then the extent
-> map, so that this way if the fast fsync patch collects the new extent
-> map it also collects the corresponding ordered extent.
->
-> Signed-off-by: Filipe Manana <fdmanana@suse.com>
+Hi, Chris, Josef and David,
 
-Reviewed-by: Josef Bacik <jbacik@fb.com>
+As merge window for v4.7 is coming, it would be good to hear your ideas 
+about the inband dedupe.
+
+We are addressing the ENOSPC problem which Josef pointed out, and we 
+believe the final fix patch would come out at the beginning of the merge 
+window.(Next week)
+
+
+If it's fine, would you please consider to merge the in-memory backend 
+patchset for v4.7 as an experimental feature?
+
+
+Most of the patch won't be changed from v10 patchset, only ENOSPC fix 
+will be updated, and ioctl patchset will introduce a new Kconfig option 
+of "btrfs experimental features" for inband dedupe.
+(With explain about unstable ioctl/on-disk format for experimental features)
+
+
+If you are all OK to merge inband dedupe in-memory backend, I'll prepare 
+the new v11 patchset for this merge.
 
 Thanks,
+Qu
 
-Josef
+

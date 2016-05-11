@@ -1,70 +1,110 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.136]:60363 "EHLO mail.kernel.org"
+Received: from mail.kernel.org ([198.145.29.136]:47970 "EHLO mail.kernel.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1757191AbcEDJxj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 4 May 2016 05:53:39 -0400
+	id S1751382AbcEKJJ5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 11 May 2016 05:09:57 -0400
 Received: from mail.kernel.org (localhost [127.0.0.1])
-	by mail.kernel.org (Postfix) with ESMTP id B51F32038F
-	for <linux-btrfs@vger.kernel.org>; Wed,  4 May 2016 09:53:38 +0000 (UTC)
-Received: from debian3.lan (bl12-226-64.dsl.telepac.pt [85.245.226.64])
-	(using TLSv1.2 with cipher AES128-SHA256 (128/128 bits))
+	by mail.kernel.org (Postfix) with ESMTP id 0F515200D0
+	for <linux-btrfs@vger.kernel.org>; Wed, 11 May 2016 09:09:55 +0000 (UTC)
+Received: from mail-io0-f181.google.com (mail-io0-f181.google.com [209.85.223.181])
+	(using TLSv1.2 with cipher AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPSA id 998C22038D
-	for <linux-btrfs@vger.kernel.org>; Wed,  4 May 2016 09:53:37 +0000 (UTC)
-From: fdmanana@kernel.org
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 2/2] Btrfs: pin log earlier when renaming
-Date: Wed,  4 May 2016 02:50:06 +0100
-Message-Id: <1462326606-12460-1-git-send-email-fdmanana@kernel.org>
+	by mail.kernel.org (Postfix) with ESMTPSA id A265920142
+	for <linux-btrfs@vger.kernel.org>; Wed, 11 May 2016 09:09:52 +0000 (UTC)
+Received: by mail-io0-f181.google.com with SMTP id d62so46434119iof.2
+        for <linux-btrfs@vger.kernel.org>; Wed, 11 May 2016 02:09:52 -0700 (PDT)
+MIME-Version: 1.0
+Date: Wed, 11 May 2016 10:09:52 +0100
+Message-ID: <CAL3q7H6R=Sii-Qn3G7ZL5d4vT33jj-MZOF92fH7T-QHjHSNtow@mail.gmail.com>
+Subject: Device replace issues and disabling it until they are solved
+From: Filipe Manana <fdmanana@kernel.org>
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Cc: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
+        David Sterba <dsterba@suse.com>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Filipe Manana <fdmanana@suse.com>
+Hi,
 
-We were pinning the log right after the first step in the rename operation
-(inserting inode ref for the new name in the destination directory)
-instead of doing it before. This behaviour was introduced in 2009 for some
-reason that was not mentioned neither on the changelog nor any comment,
-with the drawback of a small time window where concurrent log writers can
-end up logging the new inode reference for the inode we are renaming while
-the rename operation is in progress (so that we can end up with a log
-containing both the new and old references). As of today there's no reason
-to not pin the log before that first step anymore, so just fix this.
+I've noticed some time ago that our device replace implementation is
+unreliable. Basically under several situations it ends up not copying
+extents (both data and metadata) from the old device to the new device
+(I briefly talked about some of the problems with Josef at LSF).
 
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
- fs/btrfs/inode.c | 11 ++---------
- 1 file changed, 2 insertions(+), 9 deletions(-)
+Essentially it operates by iterating all the extents of the old device
+using the device tree's commit root, and for each device extent found,
+does a direct copy of it into the new device (it does not use the
+regular write paths). While it's doing this no extents can be
+allocated from the new device, this is only possible once it finishes
+copying all device extents and replaces the old device with the new
+device in the list of devices available for allocations.
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index f6d7d9b..7b4fb70 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -9479,6 +9479,8 @@ static int btrfs_rename(struct inode *old_dir, struct dentry *old_dentry,
- 		/* force full log commit if subvolume involved. */
- 		btrfs_set_log_full_commit(root->fs_info, trans);
- 	} else {
-+		btrfs_pin_log_trans(root);
-+		log_pinned = true;
- 		ret = btrfs_insert_inode_ref(trans, dest,
- 					     new_dentry->d_name.name,
- 					     new_dentry->d_name.len,
-@@ -9486,15 +9488,6 @@ static int btrfs_rename(struct inode *old_dir, struct dentry *old_dentry,
- 					     btrfs_ino(new_dir), index);
- 		if (ret)
- 			goto out_fail;
--		/*
--		 * this is an ugly little race, but the rename is required
--		 * to make sure that if we crash, the inode is either at the
--		 * old name or the new one.  pinning the log transaction lets
--		 * us make sure we don't allow a log commit to come in after
--		 * we unlink the name but before we add the new name back in.
--		 */
--		btrfs_pin_log_trans(root);
--		log_pinned = true;
- 	}
- 
- 	inode_inc_iversion(old_dir);
--- 
-2.7.0.rc3
+There are 4 main flaws with the implementation:
 
+1) It processes each device extent only once. Clearly after it
+processes (copies) a device extent it's possible for future data and
+metadata writes to allocate extents from the corresponding block
+group, so any new extents are not copied into the new device.
+
+2) Before it copies a device extent, it sets the corresponding block
+group to RO mode (as of commit [1], which sadly does not really fix an
+issue nor does it explain how the problem it claims to fix happens) to
+prevent new allocations from allocating extents from the block group
+while we are processing it, and once we finish processing it, it sets
+the block group back to RW mode. This is flawed too, as when it sets
+the block group to RO mode, some concurrent task might have just
+allocated an extent from the block group and ends up writing to it
+while or after we process the device extent.
+
+3) Since it iterates over the device tree in an ascending fashion, it
+never considers the possibility for new device extents with an offset
+lower then the current search offset from being allocated for new
+block groups (just take a look at the while loop at
+scrub_enumerate_chunks() to see how flawed it is). So it totally
+ignores that device holes can be used while we are doing the replace
+and never looks back to check for any and copy the respective device
+extent into the new device. This is much more likely to happen
+nowadays since empty block groups are automatically removed by the
+cleaner kthread, while in the past this could only happen through
+balance operations triggered from userspace.
+
+4) When we finish iterating "all" device extents, we call
+btrfs_dev_replace_finishing(), which flushes all delalloc, commits the
+current transaction, replaces the old device in all extent mappings
+with the new device, removes old device from the list of available
+devices for allocation and adds the new device to that list. So when
+flushing dellaloc more extents are allocated from existing block
+groups and new block groups might be allocated, with all the
+corresponding bios writing to the old device and not the new one, and
+after this flushing we surely don't copy all new or changed extents to
+the new device.
+
+These are the 4 major issues I see with device replace. Issue number 2
+is trivial to solve but it's pointless to do so without addressing the
+other issues.
+
+Solving this isn't easy, not without some trade offs at least. We can
+keep in memory structures to track which new block groups are
+allocated while we are doing the replace and which new extents are
+allocated from existing block groups. Besides the needed
+synchronization between the allocator and the device replace code
+(which would bring yet more complexity), this can imply using a lot of
+memory if there's a significant number of writes happening all the
+time and ending up in an endless copy loop. Maybe some sort of write
+throttling would work out. There's also a bit of a chicken and the egg
+problem, as while the replace operation is ongoing we update a
+progress item in the devices tree (btrfs_run_dev_replace()) which in
+turn results in allocating new metadata extents.
+
+Anyway, I'm just hoping someone tells me that I'm completely wrong and
+misunderstood the current implementation we have. If not, and given
+how serious this is (affecting both data and metadata, and defeating
+the main purpose of raid), shouldn't we disable this feature, like we
+did for snapshot aware defrag a couple years ago, until we have these
+issues solved?
+
+thanks
+
+
+[1] - https://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/commit/?id=55e3a601c81cdca4497bf855fa4d331f8e830744

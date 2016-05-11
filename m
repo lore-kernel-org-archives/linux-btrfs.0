@@ -1,280 +1,108 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.136]:34083 "EHLO mail.kernel.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751026AbcEIOCP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 9 May 2016 10:02:15 -0400
-Received: from mail.kernel.org (localhost [127.0.0.1])
-	by mail.kernel.org (Postfix) with ESMTP id 04F492010B
-	for <linux-btrfs@vger.kernel.org>; Mon,  9 May 2016 14:02:14 +0000 (UTC)
-Received: from debian3.lan (bl12-226-64.dsl.telepac.pt [85.245.226.64])
-	(using TLSv1.2 with cipher AES128-SHA256 (128/128 bits))
-	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPSA id 3CA1020142
-	for <linux-btrfs@vger.kernel.org>; Mon,  9 May 2016 14:02:07 +0000 (UTC)
-From: fdmanana@kernel.org
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 2/2] Btrfs: fix race between block group relocation and nocow writes
-Date: Mon,  9 May 2016 15:02:04 +0100
-Message-Id: <1462802524-2822-1-git-send-email-fdmanana@kernel.org>
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:1327 "EHLO
+	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S932100AbcEKPqj (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 11 May 2016 11:46:39 -0400
+Subject: Re: [PATCH 2/2] Btrfs: fix race between block group relocation and
+ nocow writes
+To: <fdmanana@kernel.org>, <linux-btrfs@vger.kernel.org>
+References: <1462802524-2822-1-git-send-email-fdmanana@kernel.org>
+From: Josef Bacik <jbacik@fb.com>
+Message-ID: <e08e4f65-3418-f0f5-84bc-37e23ec60b26@fb.com>
+Date: Wed, 11 May 2016 08:46:25 -0700
+MIME-Version: 1.0
+In-Reply-To: <1462802524-2822-1-git-send-email-fdmanana@kernel.org>
+Content-Type: text/plain; charset="windows-1252"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Filipe Manana <fdmanana@suse.com>
+On 05/09/2016 07:02 AM, fdmanana@kernel.org wrote:
+> From: Filipe Manana <fdmanana@suse.com>
+>
+> Relocation of a block group waits for all existing tasks flushing
+> dellaloc, starting direct IO writes and any ordered extents before
+> starting the relocation process. However for direct IO writes that end
+> up doing nocow (inode either has the flag nodatacow set or the write is
+> against a prealloc extent) we have a short time window that allows for a
+> race that makes relocation proceed without waiting for the direct IO
+> write to complete first, resulting in data loss after the relocation
+> finishes. This is illustrated by the following diagram:
+>
+>            CPU 1                                     CPU 2
+>
+>  btrfs_relocate_block_group(bg X)
+>
+>                                                direct IO write starts against
+>                                                an extent in block group X
+>                                                using nocow mode (inode has the
+>                                                nodatacow flag or the write is
+>                                                for a prealloc extent)
+>
+>                                                btrfs_direct_IO()
+>                                                  btrfs_get_blocks_direct()
+>                                                    --> can_nocow_extent() returns 1
+>
+>    btrfs_inc_block_group_ro(bg X)
+>      --> turns block group into RO mode
+>
+>    btrfs_wait_ordered_roots()
+>      --> returns and does not know about
+>          the DIO write happening at CPU 2
+>          (the task there has not created
+>           yet an ordered extent)
+>
+>    relocate_block_group(bg X)
+>      --> rc->stage == MOVE_DATA_EXTENTS
+>
+>      find_next_extent()
+>        --> returns extent that the DIO
+>            write is going to write to
+>
+>      relocate_data_extent()
+>
+>        relocate_file_extent_cluster()
+>
+>          --> reads the extent from disk into
+>              pages belonging to the relocation
+>              inode and dirties them
+>
+>                                                    --> creates DIO ordered extent
+>
+>                                                  btrfs_submit_direct()
+>                                                    --> submits bio against a location
+>                                                        on disk obtained from an extent
+>                                                        map before the relocation started
+>
+>    btrfs_wait_ordered_range()
+>      --> writes all the pages read before
+>          to disk (belonging to the
+>          relocation inode)
+>
+>    relocation finishes
+>
+>                                                  bio completes and wrote new data
+>                                                  to the old location of the block
+>                                                  group
+>
+> So fix this by tracking the number of nocow writers for a block group and
+> make sure relocation waits for that number to go down to 0 before starting
+> to move the extents.
+>
+> The same race can also happen with buffered writes in nocow mode since the
+> patch I recently made titled "Btrfs: don't do unnecessary delalloc flushes
+> when relocating", because we are no longer flushing all delalloc which
+> served as a synchonization mechanism (due to page locking) and ensured
+> the ordered extents for nocow buffered writes were created before we
+> called btrfs_wait_ordered_roots(). The race with direct IO writes in nocow
+> mode existed before that patch (no pages are locked or used during direct
+> IO) and that fixed only races with direct IO writes that do cow.
+>
+> Signed-off-by: Filipe Manana <fdmanana@suse.com>
 
-Relocation of a block group waits for all existing tasks flushing
-dellaloc, starting direct IO writes and any ordered extents before
-starting the relocation process. However for direct IO writes that end
-up doing nocow (inode either has the flag nodatacow set or the write is
-against a prealloc extent) we have a short time window that allows for a
-race that makes relocation proceed without waiting for the direct IO
-write to complete first, resulting in data loss after the relocation
-finishes. This is illustrated by the following diagram:
+Reviewed-by: Josef Bacik <jbacik@fb.com>
 
-           CPU 1                                     CPU 2
+Thanks,
 
- btrfs_relocate_block_group(bg X)
-
-                                               direct IO write starts against
-                                               an extent in block group X
-                                               using nocow mode (inode has the
-                                               nodatacow flag or the write is
-                                               for a prealloc extent)
-
-                                               btrfs_direct_IO()
-                                                 btrfs_get_blocks_direct()
-                                                   --> can_nocow_extent() returns 1
-
-   btrfs_inc_block_group_ro(bg X)
-     --> turns block group into RO mode
-
-   btrfs_wait_ordered_roots()
-     --> returns and does not know about
-         the DIO write happening at CPU 2
-         (the task there has not created
-          yet an ordered extent)
-
-   relocate_block_group(bg X)
-     --> rc->stage == MOVE_DATA_EXTENTS
-
-     find_next_extent()
-       --> returns extent that the DIO
-           write is going to write to
-
-     relocate_data_extent()
-
-       relocate_file_extent_cluster()
-
-         --> reads the extent from disk into
-             pages belonging to the relocation
-             inode and dirties them
-
-                                                   --> creates DIO ordered extent
-
-                                                 btrfs_submit_direct()
-                                                   --> submits bio against a location
-                                                       on disk obtained from an extent
-                                                       map before the relocation started
-
-   btrfs_wait_ordered_range()
-     --> writes all the pages read before
-         to disk (belonging to the
-         relocation inode)
-
-   relocation finishes
-
-                                                 bio completes and wrote new data
-                                                 to the old location of the block
-                                                 group
-
-So fix this by tracking the number of nocow writers for a block group and
-make sure relocation waits for that number to go down to 0 before starting
-to move the extents.
-
-The same race can also happen with buffered writes in nocow mode since the
-patch I recently made titled "Btrfs: don't do unnecessary delalloc flushes
-when relocating", because we are no longer flushing all delalloc which
-served as a synchonization mechanism (due to page locking) and ensured
-the ordered extents for nocow buffered writes were created before we
-called btrfs_wait_ordered_roots(). The race with direct IO writes in nocow
-mode existed before that patch (no pages are locked or used during direct
-IO) and that fixed only races with direct IO writes that do cow.
-
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
- fs/btrfs/ctree.h       | 13 +++++++++++++
- fs/btrfs/extent-tree.c | 53 ++++++++++++++++++++++++++++++++++++++++++++++++++
- fs/btrfs/inode.c       | 15 +++++++++++++-
- fs/btrfs/relocation.c  |  1 +
- 4 files changed, 81 insertions(+), 1 deletion(-)
-
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 90e70e2..7ae7586 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -1419,6 +1419,16 @@ struct btrfs_block_group_cache {
- 	 */
- 	atomic_t reservations;
- 
-+	/*
-+	 * Incremented while holding the spinlock *lock* by a task checking if
-+	 * it can perform a nocow write (incremented if the value for the *ro*
-+	 * field is 0). Decremented by such tasks once they create an ordered
-+	 * extent or before that if some error happens before reaching that step.
-+	 * This is to prevent races between block group relocation and nocow
-+	 * writes through direct IO.
-+	 */
-+	atomic_t nocow_writers;
-+
- 	/* Lock for free space tree operations. */
- 	struct mutex free_space_lock;
- 
-@@ -3513,6 +3523,9 @@ int btrfs_check_space_for_delayed_refs(struct btrfs_trans_handle *trans,
- void btrfs_dec_block_group_reservations(struct btrfs_fs_info *fs_info,
- 					 const u64 start);
- void btrfs_wait_block_group_reservations(struct btrfs_block_group_cache *bg);
-+bool btrfs_inc_nocow_writers(struct btrfs_fs_info *fs_info, u64 bytenr);
-+void btrfs_dec_nocow_writers(struct btrfs_fs_info *fs_info, u64 bytenr);
-+void btrfs_wait_nocow_writers(struct btrfs_block_group_cache *bg);
- void btrfs_put_block_group(struct btrfs_block_group_cache *cache);
- int btrfs_run_delayed_refs(struct btrfs_trans_handle *trans,
- 			   struct btrfs_root *root, unsigned long count);
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 1e009bc..f11ecb1 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -3824,6 +3824,59 @@ int btrfs_extent_readonly(struct btrfs_root *root, u64 bytenr)
- 	return readonly;
- }
- 
-+bool btrfs_inc_nocow_writers(struct btrfs_fs_info *fs_info, u64 bytenr)
-+{
-+	struct btrfs_block_group_cache *bg;
-+	bool ret = true;
-+
-+	bg = btrfs_lookup_block_group(fs_info, bytenr);
-+	if (!bg)
-+		return false;
-+
-+	spin_lock(&bg->lock);
-+	if (bg->ro)
-+		ret = false;
-+	else
-+		atomic_inc(&bg->nocow_writers);
-+	spin_unlock(&bg->lock);
-+
-+	/* no put on block group, done by btrfs_dec_nocow_writers */
-+	if (!ret)
-+		btrfs_put_block_group(bg);
-+
-+	return ret;
-+
-+}
-+
-+void btrfs_dec_nocow_writers(struct btrfs_fs_info *fs_info, u64 bytenr)
-+{
-+	struct btrfs_block_group_cache *bg;
-+
-+	bg = btrfs_lookup_block_group(fs_info, bytenr);
-+	ASSERT(bg);
-+	if (atomic_dec_and_test(&bg->nocow_writers))
-+		wake_up_atomic_t(&bg->nocow_writers);
-+	/*
-+	 * Once for our lookup and once for the lookup done by a previous call
-+	 * to btrfs_inc_nocow_writers()
-+	 */
-+	btrfs_put_block_group(bg);
-+	btrfs_put_block_group(bg);
-+}
-+
-+static int btrfs_wait_nocow_writers_atomic_t(atomic_t *a)
-+{
-+	schedule();
-+	return 0;
-+}
-+
-+void btrfs_wait_nocow_writers(struct btrfs_block_group_cache *bg)
-+{
-+	wait_on_atomic_t(&bg->nocow_writers,
-+			 btrfs_wait_nocow_writers_atomic_t,
-+			 TASK_UNINTERRUPTIBLE);
-+}
-+
- static const char *alloc_name(u64 flags)
- {
- 	switch (flags) {
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 5372268..5065ac2 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -1382,6 +1382,9 @@ next_slot:
- 			 */
- 			if (csum_exist_in_range(root, disk_bytenr, num_bytes))
- 				goto out_check;
-+			if (!btrfs_inc_nocow_writers(root->fs_info,
-+						     disk_bytenr))
-+				goto out_check;
- 			nocow = 1;
- 		} else if (extent_type == BTRFS_FILE_EXTENT_INLINE) {
- 			extent_end = found_key.offset +
-@@ -1396,6 +1399,9 @@ out_check:
- 			path->slots[0]++;
- 			if (!nolock && nocow)
- 				btrfs_end_write_no_snapshoting(root);
-+			if (nocow)
-+				btrfs_dec_nocow_writers(root->fs_info,
-+							disk_bytenr);
- 			goto next_slot;
- 		}
- 		if (!nocow) {
-@@ -1416,6 +1422,9 @@ out_check:
- 			if (ret) {
- 				if (!nolock && nocow)
- 					btrfs_end_write_no_snapshoting(root);
-+				if (nocow)
-+					btrfs_dec_nocow_writers(root->fs_info,
-+								disk_bytenr);
- 				goto error;
- 			}
- 			cow_start = (u64)-1;
-@@ -1458,6 +1467,8 @@ out_check:
- 
- 		ret = btrfs_add_ordered_extent(inode, cur_offset, disk_bytenr,
- 					       num_bytes, num_bytes, type);
-+		if (nocow)
-+			btrfs_dec_nocow_writers(root->fs_info, disk_bytenr);
- 		BUG_ON(ret); /* -ENOMEM */
- 
- 		if (root->root_key.objectid ==
-@@ -7657,7 +7668,8 @@ static int btrfs_get_blocks_direct(struct inode *inode, sector_t iblock,
- 		block_start = em->block_start + (start - em->start);
- 
- 		if (can_nocow_extent(inode, start, &len, &orig_start,
--				     &orig_block_len, &ram_bytes) == 1) {
-+				     &orig_block_len, &ram_bytes) == 1 &&
-+		    btrfs_inc_nocow_writers(root->fs_info, block_start)) {
- 
- 			/*
- 			 * Create the ordered extent before the extent map. This
-@@ -7672,6 +7684,7 @@ static int btrfs_get_blocks_direct(struct inode *inode, sector_t iblock,
- 			 */
- 			ret = btrfs_add_ordered_extent_dio(inode, start,
- 					   block_start, len, len, type);
-+			btrfs_dec_nocow_writers(root->fs_info, block_start);
- 			if (ret) {
- 				free_extent_map(em);
- 				goto unlock_err;
-diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-index 2aed15c..d2083ac 100644
---- a/fs/btrfs/relocation.c
-+++ b/fs/btrfs/relocation.c
-@@ -4254,6 +4254,7 @@ int btrfs_relocate_block_group(struct btrfs_root *extent_root, u64 group_start)
- 	       rc->block_group->key.objectid, rc->block_group->flags);
- 
- 	btrfs_wait_block_group_reservations(rc->block_group);
-+	btrfs_wait_nocow_writers(rc->block_group);
- 	btrfs_wait_ordered_roots(fs_info, -1,
- 				 rc->block_group->key.objectid,
- 				 rc->block_group->key.offset);
--- 
-2.7.0.rc3
+Josef
 

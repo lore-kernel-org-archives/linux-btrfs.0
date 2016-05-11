@@ -1,125 +1,92 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:32920 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751400AbcEKL44 (ORCPT
+Received: from mail-lf0-f46.google.com ([209.85.215.46]:32920 "EHLO
+	mail-lf0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751448AbcEKSgZ (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 11 May 2016 07:56:56 -0400
-Subject: Re: [PATCH] btrfs: switch to common message helpers in open_ctree,
- adjust messages
-To: dsterba@suse.cz, David Sterba <dsterba@suse.com>,
-        linux-btrfs@vger.kernel.org
-References: <1462786798-15247-1-git-send-email-dsterba@suse.com>
- <573148AB.6080800@oracle.com> <20160510074203.GP29353@twin.jikos.cz>
- <57319541.7000300@oracle.com> <20160510082120.GQ29353@twin.jikos.cz>
- <57319E9A.8070003@oracle.com> <20160510142856.GV29353@twin.jikos.cz>
- <5731F771.2060509@oracle.com> <20160511105619.GZ29353@twin.jikos.cz>
-From: Anand Jain <anand.jain@oracle.com>
-Message-ID: <57331DCD.2090600@oracle.com>
-Date: Wed, 11 May 2016 19:55:57 +0800
+	Wed, 11 May 2016 14:36:25 -0400
+Received: by mail-lf0-f46.google.com with SMTP id y84so59203088lfc.0
+        for <linux-btrfs@vger.kernel.org>; Wed, 11 May 2016 11:36:24 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <20160511105619.GZ29353@twin.jikos.cz>
-Content-Type: text/plain; charset=windows-1252; format=flowed
+Date: Wed, 11 May 2016 13:36:23 -0500
+Message-ID: <CACTfMoQmco=yBP+e8tn0MoTVZsMauw0_=N1yc42NVNM9Krqv7A@mail.gmail.com>
+Subject: BTRFS Data at Rest File Corruption
+From: Richard Lochner <lochner@clone1.com>
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hello,
 
+I have encountered a data corruption error with BTRFS which may or may
+not be of interest to your developers.
 
+The problem is that an unmodified file on a RAID-1 volume that had
+been scrubbed successfully is now corrupt.  The details follow.
 
-On 05/11/2016 06:56 PM, David Sterba wrote:
-> On Tue, May 10, 2016 at 11:00:01PM +0800, Anand Jain wrote:
->>>>     If there is something that works simple, better. I am fine.
->>>>
->>>>     Generally servers may have more than one fs mounted. So filter
->>>>     by fsid comes handy. Without worrying about when it was labeled,
->>>>     and troubleshooting scripts to fail.
->>>
->>> The idea is:
->>>
->>>     mount -o log=fsid /dev/sda /mnt/path
->>
->>
->>    This makes life of a 3rd party troubleshooter more difficult. As it
->>    needs to be understood what mount option was used, and if its not
->>    changed in between by the customer, and if the logs by filter won't
->>    show some of the critical logs, would lead to a wrong analysis of
->>    the issue.
->>
->>    But whats the concern for print FSID by default (without having to
->>    come through the -o log=fsid) ?
->
-> Concerns as I see them:
+The volume was formatted as btrfs with raid1 data and raid1 metadata
+on two new 4T hard drives (WD Data Center Re WD4000FYYZ) .
 
+A large binary file was copied to the volume (~76 GB) on December 27,
+2015.  Soon after copying the file, a btrfs scrub was run. There were
+no errors.  Multiple scrubs have also been run over the past several
+months.
 
-> * current default is to print the device name -- so this would mean a
->    forced change in defaults
-> * the FSID is not very human friendly. I can remember several device
->    names and I'll probably know which filesystem is on which
-> * the FSID is very long, consumes half of the line before the actual
->    message starts
+Recently, a scrub returned an unrecoverable error on that file.
+Again, the file has not been modified since it was originally copied
+and has the time stamp from December.  Furthermore, SMART tests (long)
+for both drives do not indicate any errors (Current_Pending_Sector or
+otherwise).
 
-   Yes, indeed. I think we discussed that there isn't any other
-   alternative as well. Also I was thinking something like in
-   the 'git log --online' output but that might conflict in some
-   cases ? (recently there was a progs patch which fixed the short fsid
-   hash conflict).
+I should note that the system does not have ECC memory.
 
-> I understand the benefits of automated filtering by FSID, but we have
-> conflicting interests here. If you're going to deploy automated log
-> scanning, you probably have automated the filesystem mkfs & mount, so
-> it's a matter of configuration to get it done and in one place.
+It would be interesting to me to know if:
 
-   Makes sense.
+a) The primary and secondary data blocks match (I suspect they do), and
+b) The primary and secondary checksums for the block match (I suspect
+they do as well).
 
-   Actually automated scripts wasn't in my discussion, I was thinking
-   of support engineers debugging customer issues using hand written
-   scripts.
+Unfortunately, I do not have the skills to do such a verification.
 
-   Probably we could taken an experimental project, to have these
-   logs in cvs format, and use external scripts to monitor and
-   debug. Make something like splunk.com an easy job.
+If you have any thoughts or suggestions, I would be most interested.
+I was hoping that I could trust the integrity of "data at rest" in a
+RAID-1 setting under BTRFS, but this appears not to be the case.
 
+Thank you,
 
->>    Just my understanding:
->>    For real end users we need to provide everything at the cli output.
->>    That is without asking them to refer to dmesg in the cli out put. IMO.
->>    (I could be wrong). Troubleshooters are the people looking at dmesg.
->>    So finding the FSID can be expected ?
->
-> I don't think that looking up device names is making troubleshooting
-> significantly harder and never found it to be a problem in my past
-> experienes.
->
-> Besides, errors from lower layers report the device names, so bad
-> sectors or failed writes pop up very quickly in the searches.
+R. Lochner
 
-  Right. FSID won't provide that advantage.
+#uname -a
+Linux vmh001.clone1.com 4.4.6-300.fc23.x86_64 #1 SMP Wed Mar 16
+22:10:37 UTC 2016 x86_64 x86_64 x86_64 GNU/Linux
 
-> Either way, I'm willing to make it configurable so it addresses all
-> usecases.
+# btrfs --version
+btrfs-progs v4.4.1
 
+# btrfs fi show
+Label: 'raid_pool'  uuid: d397ff55-e5c8-4d31-966e-d65694997451
+    Total devices 2 FS bytes used 2.32TiB
+    devid    1 size 3.00TiB used 2.32TiB path /dev/sdb1
+    devid    2 size 3.00TiB used 2.32TiB path /dev/sdc1
 
-> Another way came to my mind: make it a module parameter, so
-> even the mount option or sysfs settings is not needed and the defaults
-> are system-wide.
+# btrfs fi df /mnt
+Data, RAID1: total=2.32TiB, used=2.31TiB
+System, RAID1: total=40.00MiB, used=384.00KiB
+Metadata, RAID1: total=7.00GiB, used=5.42GiB
+GlobalReserve, single: total=512.00MiB, used=0.00B
 
-  Yep. This helps.
-  I was thinking from the angle of support engineers, who would
-  solve customers issues (it happens at most of the Linux vendors),
-  They would write/run scripts on their own to understand the problem
-  from the kernel logs. So now it can be assured that logs format
-  would remain same per distribution/vendor.
+Dmesg:
 
-Thanks for taking time to explain.
+[2027323.705035] BTRFS warning (device sdc1): checksum error at
+logical 3037444042752 on dev /dev/sdc1, sector 4988750584, root 259,
+inode 1437377, offset 75754369024, length 4096, links 1 (path:
+Rick/sda4.img)
+[2027323.705056] BTRFS error (device sdc1): bdev /dev/sdc1 errs: wr 0,
+rd 13, flush 0, corrupt 3, gen 0
+[2027323.718869] BTRFS error (device sdc1): unable to fixup (regular)
+error at logical 3037444042752 on dev /dev/sdc1
 
-- Anand
+ls:
 
-
->>    Further there is nothing avoids user not to label two FS with the
->>    same label.
->
-> That's true and users' responsibility not to shoot themselves.
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
+#ls -l /mnt/backup/Rick/sda4.img
+-rw-r--r--. 1 root root 75959197696 Dec 27 10:36 /mnt/backup/Rick/sda4.img

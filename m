@@ -1,79 +1,340 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.136]:45361 "EHLO mail.kernel.org"
+Received: from mail.kernel.org ([198.145.29.136]:34039 "EHLO mail.kernel.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752990AbcEMQhD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 13 May 2016 12:37:03 -0400
+	id S1752169AbcELR01 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 12 May 2016 13:26:27 -0400
 From: fdmanana@kernel.org
 To: linux-btrfs@vger.kernel.org
-Cc: clm@fb.com, Filipe Manana <fdmanana@suse.com>
-Subject: [GIT PULL] Btrfs fixes for 4.7
-Date: Fri, 13 May 2016 17:36:40 +0100
-Message-Id: <1463157400-27379-1-git-send-email-fdmanana@kernel.org>
+Cc: jbacik@fb.com, Filipe Manana <fdmanana@suse.com>
+Subject: [PATCH] Btrfs: add semaphore to synchronize direct IO writes with fsync
+Date: Thu, 12 May 2016 18:26:12 +0100
+Message-Id: <1463073972-8225-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Filipe Manana <fdmanana@suse.com>
 
-Hi Chris,
+Due to the optimization of lockless direct IO writes (the inode's i_mutex
+is not held) introduced in commit 38851cc19adb ("Btrfs: implement unlocked
+dio write"), we started having races between such writes with concurrent
+fsync operations that use the fast fsync path. These races were addressed
+in the patches titled "Btrfs: fix race between fsync and lockless direct
+IO writes" and "Btrfs: fix race between fsync and direct IO writes for
+prealloc extents". The races happened because the direct IO path, like
+every other write path, does create extent maps followed by the
+corresponding ordered extents while the fast fsync path collected first
+ordered extents and then it collected extent maps. This made it possible
+to log file extent items (based on the collected extent maps) without
+waiting for the corresponding ordered extents to complete (get their IO
+done). The two fixes mentioned before added a solution that consists of
+making the direct IO path create first the ordered extents and then the
+extent maps, while the fsync path attempts to collect any new ordered
+extents once it collects the extent maps. This was simple and did not
+require adding any synchonization primitive to any data structure (struct
+btrfs_inode for example) but it makes things more fragile for future
+development endeavours and adds an exceptional approach compared to the
+other write paths.
 
-Please consider the following changes for the merge window for 4.7.
-There's an implementation for the rename exchange and rename whiteout
-operations, from Dan Fuhry, which was originally in David's integration
-branches and linux-next but then we agreed to move it into my branches
-since I made a few fixes on top of it. Other than that, there's just the
-usual set of bug fixes, in particular races between direct IO writes and
-fsync and between direct IO writes and balance, which lead to data loss
-and metadata corruption issues.
-These were recently rebased just to add Reviewed-by tags from Josef and
-Liu Bo, but otherwise unchanged and have been in testing for quite some
-time here.
+This change adds a read-write semaphore to the btrfs inode structure and
+makes the direct IO path create the extent maps and the ordered extents
+while holding read access on that semaphore, while the fast fsync path
+collects extent maps and ordered extents while holding write access on
+that semaphore. The logic for direct IO write path is encapsulated in a
+new helper function that is used both for cow and nocow direct IO writes.
 
-Thanks.
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+ fs/btrfs/btrfs_inode.h |  10 ++++
+ fs/btrfs/inode.c       | 134 +++++++++++++++++++------------------------------
+ fs/btrfs/tree-log.c    |  51 ++++++-------------
+ 3 files changed, 77 insertions(+), 118 deletions(-)
 
-The following changes since commit 44549e8f5eea4e0a41b487b63e616cb089922b99:
-
-  Linux 4.6-rc7 (2016-05-08 14:38:32 -0700)
-
-are available in the git repository at:
-
-  git://git.kernel.org/pub/scm/linux/kernel/git/fdmanana/linux.git for-chris-4.7
-
-for you to fetch changes up to 5f9a8a51d8b95505d8de8b7191ae2ed8c504d4af:
-
-  Btrfs: add semaphore to synchronize direct IO writes with fsync (2016-05-13 01:59:36 +0100)
-
-----------------------------------------------------------------
-Dan Fuhry (1):
-      btrfs: add support for RENAME_EXCHANGE and RENAME_WHITEOUT
-
-Filipe Manana (13):
-      Btrfs: fix for incorrect directory entries after fsync log replay
-      Btrfs: fix empty symlink after creating symlink and fsync parent dir
-      Btrfs: don't wait for unrelated IO to finish before relocation
-      Btrfs: don't do unnecessary delalloc flushes when relocating
-      Btrfs: unpin log if rename operation fails
-      Btrfs: pin log earlier when renaming
-      Btrfs: fix inode leak on failure to setup whiteout inode in rename
-      Btrfs: unpin logs if rename exchange operation fails
-      Btrfs: pin logs earlier when doing a rename exchange operation
-      Btrfs: fix number of transaction units for renames with whiteout
-      Btrfs: fix race between fsync and direct IO writes for prealloc extents
-      Btrfs: fix race between block group relocation and nocow writes
-      Btrfs: add semaphore to synchronize direct IO writes with fsync
-
- fs/btrfs/btrfs_inode.h  |  10 +++
- fs/btrfs/ctree.h        |  27 ++++++++
- fs/btrfs/dev-replace.c  |   4 +-
- fs/btrfs/extent-tree.c  | 122 +++++++++++++++++++++++++++++++++--
- fs/btrfs/inode.c        | 464 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++-------------------
- fs/btrfs/ioctl.c        |   2 +-
- fs/btrfs/ordered-data.c |  26 +++++---
- fs/btrfs/ordered-data.h |   6 +-
- fs/btrfs/relocation.c   |  11 ++--
- fs/btrfs/super.c        |   2 +-
- fs/btrfs/transaction.c  |   2 +-
- fs/btrfs/tree-log.c     |  66 +++++++------------
- 12 files changed, 608 insertions(+), 134 deletions(-)
+diff --git a/fs/btrfs/btrfs_inode.h b/fs/btrfs/btrfs_inode.h
+index 61205e3..1da5753 100644
+--- a/fs/btrfs/btrfs_inode.h
++++ b/fs/btrfs/btrfs_inode.h
+@@ -196,6 +196,16 @@ struct btrfs_inode {
+ 	struct list_head delayed_iput;
+ 	long delayed_iput_count;
+ 
++	/*
++	 * To avoid races between lockless (i_mutex not held) direct IO writes
++	 * and concurrent fsync requests. Direct IO writes must acquire read
++	 * access on this semaphore for creating an extent map and its
++	 * corresponding ordered extent. The fast fsync path must acquire write
++	 * access on this semaphore before it collects ordered extents and
++	 * extent maps.
++	 */
++	struct rw_semaphore dio_sem;
++
+ 	struct inode vfs_inode;
+ };
+ 
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 5065ac2..c483bd21 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -7145,6 +7145,43 @@ out:
+ 	return em;
+ }
+ 
++static struct extent_map *btrfs_create_dio_extent(struct inode *inode,
++						  const u64 start,
++						  const u64 len,
++						  const u64 orig_start,
++						  const u64 block_start,
++						  const u64 block_len,
++						  const u64 orig_block_len,
++						  const u64 ram_bytes,
++						  const int type)
++{
++	struct extent_map *em = NULL;
++	int ret;
++
++	down_read(&BTRFS_I(inode)->dio_sem);
++	if (type != BTRFS_ORDERED_NOCOW) {
++		em = create_pinned_em(inode, start, len, orig_start,
++				      block_start, block_len, orig_block_len,
++				      ram_bytes, type);
++		if (IS_ERR(em))
++			goto out;
++	}
++	ret = btrfs_add_ordered_extent_dio(inode, start, block_start,
++					   len, block_len, type);
++	if (ret) {
++		if (em) {
++			free_extent_map(em);
++			btrfs_drop_extent_cache(inode, start,
++						start + len - 1, 0);
++		}
++		em = ERR_PTR(ret);
++	}
++ out:
++	up_read(&BTRFS_I(inode)->dio_sem);
++
++	return em;
++}
++
+ static struct extent_map *btrfs_new_extent_direct(struct inode *inode,
+ 						  u64 start, u64 len)
+ {
+@@ -7160,43 +7197,13 @@ static struct extent_map *btrfs_new_extent_direct(struct inode *inode,
+ 	if (ret)
+ 		return ERR_PTR(ret);
+ 
+-	/*
+-	 * Create the ordered extent before the extent map. This is to avoid
+-	 * races with the fast fsync path that would lead to it logging file
+-	 * extent items that point to disk extents that were not yet written to.
+-	 * The fast fsync path collects ordered extents into a local list and
+-	 * then collects all the new extent maps, so we must create the ordered
+-	 * extent first and make sure the fast fsync path collects any new
+-	 * ordered extents after collecting new extent maps as well.
+-	 * The fsync path simply can not rely on inode_dio_wait() because it
+-	 * causes deadlock with AIO.
+-	 */
+-	ret = btrfs_add_ordered_extent_dio(inode, start, ins.objectid,
+-					   ins.offset, ins.offset, 0);
+-	if (ret) {
+-		btrfs_free_reserved_extent(root, ins.objectid, ins.offset, 1);
+-		return ERR_PTR(ret);
+-	}
+-
++	em = btrfs_create_dio_extent(inode, start, ins.offset, start,
++				     ins.objectid, ins.offset, ins.offset,
++				     ins.offset, 0);
+ 	btrfs_dec_block_group_reservations(root->fs_info, ins.objectid);
+-
+-	em = create_pinned_em(inode, start, ins.offset, start, ins.objectid,
+-			      ins.offset, ins.offset, ins.offset, 0);
+-	if (IS_ERR(em)) {
+-		struct btrfs_ordered_extent *oe;
+-
++	if (IS_ERR(em))
+ 		btrfs_free_reserved_extent(root, ins.objectid, ins.offset, 1);
+-		oe = btrfs_lookup_ordered_extent(inode, start);
+-		ASSERT(oe);
+-		if (WARN_ON(!oe))
+-			return em;
+-		set_bit(BTRFS_ORDERED_IOERR, &oe->flags);
+-		set_bit(BTRFS_ORDERED_IO_DONE, &oe->flags);
+-		btrfs_remove_ordered_extent(inode, oe);
+-		/* Once for our lookup and once for the ordered extents tree. */
+-		btrfs_put_ordered_extent(oe);
+-		btrfs_put_ordered_extent(oe);
+-	}
++
+ 	return em;
+ }
+ 
+@@ -7670,57 +7677,21 @@ static int btrfs_get_blocks_direct(struct inode *inode, sector_t iblock,
+ 		if (can_nocow_extent(inode, start, &len, &orig_start,
+ 				     &orig_block_len, &ram_bytes) == 1 &&
+ 		    btrfs_inc_nocow_writers(root->fs_info, block_start)) {
++			struct extent_map *em2;
+ 
+-			/*
+-			 * Create the ordered extent before the extent map. This
+-			 * is to avoid races with the fast fsync path because it
+-			 * collects ordered extents into a local list and then
+-			 * collects all the new extent maps, so we must create
+-			 * the ordered extent first and make sure the fast fsync
+-			 * path collects any new ordered extents after
+-			 * collecting new extent maps as well. The fsync path
+-			 * simply can not rely on inode_dio_wait() because it
+-			 * causes deadlock with AIO.
+-			 */
+-			ret = btrfs_add_ordered_extent_dio(inode, start,
+-					   block_start, len, len, type);
++			em2 = btrfs_create_dio_extent(inode, start, len,
++						      orig_start, block_start,
++						      len, orig_block_len,
++						      ram_bytes, type);
+ 			btrfs_dec_nocow_writers(root->fs_info, block_start);
+-			if (ret) {
+-				free_extent_map(em);
+-				goto unlock_err;
+-			}
+-
+ 			if (type == BTRFS_ORDERED_PREALLOC) {
+ 				free_extent_map(em);
+-				em = create_pinned_em(inode, start, len,
+-						       orig_start,
+-						       block_start, len,
+-						       orig_block_len,
+-						       ram_bytes, type);
+-				if (IS_ERR(em)) {
+-					struct btrfs_ordered_extent *oe;
+-
+-					ret = PTR_ERR(em);
+-					oe = btrfs_lookup_ordered_extent(inode,
+-									 start);
+-					ASSERT(oe);
+-					if (WARN_ON(!oe))
+-						goto unlock_err;
+-					set_bit(BTRFS_ORDERED_IOERR,
+-						&oe->flags);
+-					set_bit(BTRFS_ORDERED_IO_DONE,
+-						&oe->flags);
+-					btrfs_remove_ordered_extent(inode, oe);
+-					/*
+-					 * Once for our lookup and once for the
+-					 * ordered extents tree.
+-					 */
+-					btrfs_put_ordered_extent(oe);
+-					btrfs_put_ordered_extent(oe);
+-					goto unlock_err;
+-				}
++				em = em2;
++			}
++			if (em2 && IS_ERR(em2)) {
++				ret = PTR_ERR(em2);
++				goto unlock_err;
+ 			}
+-
+ 			goto unlock;
+ 		}
+ 	}
+@@ -9281,6 +9252,7 @@ struct inode *btrfs_alloc_inode(struct super_block *sb)
+ 	INIT_LIST_HEAD(&ei->delalloc_inodes);
+ 	INIT_LIST_HEAD(&ei->delayed_iput);
+ 	RB_CLEAR_NODE(&ei->rb_node);
++	init_rwsem(&ei->dio_sem);
+ 
+ 	return inode;
+ }
+diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+index a24a0ba..003a826 100644
+--- a/fs/btrfs/tree-log.c
++++ b/fs/btrfs/tree-log.c
+@@ -4141,6 +4141,7 @@ static int btrfs_log_changed_extents(struct btrfs_trans_handle *trans,
+ 
+ 	INIT_LIST_HEAD(&extents);
+ 
++	down_write(&BTRFS_I(inode)->dio_sem);
+ 	write_lock(&tree->lock);
+ 	test_gen = root->fs_info->last_trans_committed;
+ 
+@@ -4169,13 +4170,20 @@ static int btrfs_log_changed_extents(struct btrfs_trans_handle *trans,
+ 	}
+ 
+ 	list_sort(NULL, &extents, extent_cmp);
++	btrfs_get_logged_extents(inode, logged_list, start, end);
+ 	/*
+-	 * Collect any new ordered extents within the range. This is to
+-	 * prevent logging file extent items without waiting for the disk
+-	 * location they point to being written. We do this only to deal
+-	 * with races against concurrent lockless direct IO writes.
++	 * Some ordered extents started by fsync might have completed
++	 * before we could collect them into the list logged_list, which
++	 * means they're gone, not in our logged_list nor in the inode's
++	 * ordered tree. We want the application/user space to know an
++	 * error happened while attempting to persist file data so that
++	 * it can take proper action. If such error happened, we leave
++	 * without writing to the log tree and the fsync must report the
++	 * file data write error and not commit the current transaction.
+ 	 */
+-	btrfs_get_logged_extents(inode, logged_list, start, end);
++	ret = btrfs_inode_check_errors(inode);
++	if (ret)
++		ctx->io_err = ret;
+ process:
+ 	while (!list_empty(&extents)) {
+ 		em = list_entry(extents.next, struct extent_map, list);
+@@ -4202,6 +4210,7 @@ process:
+ 	}
+ 	WARN_ON(!list_empty(&extents));
+ 	write_unlock(&tree->lock);
++	up_write(&BTRFS_I(inode)->dio_sem);
+ 
+ 	btrfs_release_path(path);
+ 	return ret;
+@@ -4623,23 +4632,6 @@ static int btrfs_log_inode(struct btrfs_trans_handle *trans,
+ 	mutex_lock(&BTRFS_I(inode)->log_mutex);
+ 
+ 	/*
+-	 * Collect ordered extents only if we are logging data. This is to
+-	 * ensure a subsequent request to log this inode in LOG_INODE_ALL mode
+-	 * will process the ordered extents if they still exists at the time,
+-	 * because when we collect them we test and set for the flag
+-	 * BTRFS_ORDERED_LOGGED to prevent multiple log requests to process the
+-	 * same ordered extents. The consequence for the LOG_INODE_ALL log mode
+-	 * not processing the ordered extents is that we end up logging the
+-	 * corresponding file extent items, based on the extent maps in the
+-	 * inode's extent_map_tree's modified_list, without logging the
+-	 * respective checksums (since the may still be only attached to the
+-	 * ordered extents and have not been inserted in the csum tree by
+-	 * btrfs_finish_ordered_io() yet).
+-	 */
+-	if (inode_only == LOG_INODE_ALL)
+-		btrfs_get_logged_extents(inode, &logged_list, start, end);
+-
+-	/*
+ 	 * a brute force approach to making sure we get the most uptodate
+ 	 * copies of everything.
+ 	 */
+@@ -4846,21 +4838,6 @@ log_extents:
+ 			goto out_unlock;
+ 	}
+ 	if (fast_search) {
+-		/*
+-		 * Some ordered extents started by fsync might have completed
+-		 * before we collected the ordered extents in logged_list, which
+-		 * means they're gone, not in our logged_list nor in the inode's
+-		 * ordered tree. We want the application/user space to know an
+-		 * error happened while attempting to persist file data so that
+-		 * it can take proper action. If such error happened, we leave
+-		 * without writing to the log tree and the fsync must report the
+-		 * file data write error and not commit the current transaction.
+-		 */
+-		err = btrfs_inode_check_errors(inode);
+-		if (err) {
+-			ctx->io_err = err;
+-			goto out_unlock;
+-		}
+ 		ret = btrfs_log_changed_extents(trans, root, inode, dst_path,
+ 						&logged_list, ctx, start, end);
+ 		if (ret) {
 -- 
 2.7.0.rc3
 

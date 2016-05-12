@@ -1,69 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:62317 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751497AbcELBeT (ORCPT
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:63418 "EHLO
+	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1751628AbcELQaT (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 11 May 2016 21:34:19 -0400
-Subject: Re: [PATCH] fstests: btrfs: Test fiemap ioctl on completely deduped
- file
-To: Dave Chinner <david@fromorbit.com>
-References: <1462869581-19227-1-git-send-email-quwenruo@cn.fujitsu.com>
- <CAL3q7H5Mn2561cxK49vis3+XW1eTzx_j9h-iQpUJQ6qEGMczvQ@mail.gmail.com>
- <55ce1c42-fda3-520f-ebb1-11048df8799f@cn.fujitsu.com>
- <20160512002318.GA6621@birch.djwong.org>
- <622d94a3-307f-0a3d-a38f-a2127c3bc8cb@cn.fujitsu.com>
- <20160512011955.GM26977@dastard>
-CC: "Darrick J. Wong" <darrick.wong@oracle.com>, <fdmanana@gmail.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        <fstests@vger.kernel.org>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <d868ad8e-5896-5113-b4db-8ce198fde006@cn.fujitsu.com>
-Date: Thu, 12 May 2016 09:34:10 +0800
+	Thu, 12 May 2016 12:30:19 -0400
+Subject: Re: [PATCH] fstests: test creating a symlink and then fsync its
+ parent directory
+To: <fdmanana@kernel.org>, <fstests@vger.kernel.org>
+References: <1461558383-32254-1-git-send-email-fdmanana@kernel.org>
+CC: <linux-btrfs@vger.kernel.org>, Filipe Manana <fdmanana@suse.com>
+From: Josef Bacik <jbacik@fb.com>
+Message-ID: <44801ab1-ebe0-418a-0979-a90c2c6167d3@fb.com>
+Date: Thu, 12 May 2016 09:30:01 -0700
 MIME-Version: 1.0
-In-Reply-To: <20160512011955.GM26977@dastard>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+In-Reply-To: <1461558383-32254-1-git-send-email-fdmanana@kernel.org>
+Content-Type: text/plain; charset="windows-1252"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On 04/24/2016 09:26 PM, fdmanana@kernel.org wrote:
+> From: Filipe Manana <fdmanana@suse.com>
+>
+> Test creating a symlink, fsync its parent directory, power fail and mount
+> again the filesystem. After these steps the symlink should exist and its
+> content must match what we specified when we created it (must not be
+> empty or point to something else).
+>
+> This is motivated by an issue in btrfs where after the log replay happens
+> we get empty symlinks, which not only does not make much sense from a
+> user's point of view, it's also not valid to have empty links in linux
+> (wgich is explicitly forbidden by the symlink(2) system call).
+>
+> The issue in btrfs is fixed by the following patch for the linux kernel:
+>
+>   "Btrfs: fix empty symlink after creating symlink and fsync parent dir"
+>
+> Tested against ext3, ext4, xfs, f2fs, reiserfs and nilfs2.
+>
+> Signed-off-by: Filipe Manana <fdmanana@suse.com>
 
-
-Dave Chinner wrote on 2016/05/12 11:19 +1000:
-> On Thu, May 12, 2016 at 08:46:41AM +0800, Qu Wenruo wrote:
->>> Filesystem type is: 58465342
->>> File size of a is 262144 (64 blocks of 4096 bytes)
->>> ext:     logical_offset:        physical_offset: length:   expected: flags:
->>>   0:        0..      31:         24..        55:     32:             shared
->>>   1:       32..      63:         24..        55:     32:         56: last,shared,eof
->>
->> Also the "shared" flag is different from btrfs, where btrfs is
->> wrong, and the btrfs routine to check shared extent caused the soft
->> lockup.
->>
->> I originally planned to check "shared" flag, but the soft lockup is
->> more important, and 8000+ output seems not suitable as golden
->> output.
->
-> If that's what the test produces for correct behaviour, then there
-> isn't any problem with having golden output that large. e.g.
-> tests/xfs/136.out has 7800 lines in its golden output file. There
-> are quite a few tests with large amounts of output:
->
-> $ find . -name *.out -exec ls -s {} \; |sort -nr |head -5
-> 144 ./tests/xfs/136.out
-> 124 ./tests/generic/324.out
-> 120 ./tests/xfs/165.out
-> 116 ./tests/xfs/107.out
-> 92 ./tests/btrfs/034.out
-> $
->
-> Cheers,
->
-> Dave.
->
-Great, now the test case can check not only the btrfs soft lockup but 
-also shared flags.
+Reviewed-by: Josef Bacik <jbacik@fb.com>
 
 Thanks,
-Qu
 
+Josef
 

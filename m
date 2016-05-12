@@ -1,47 +1,46 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:63418 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1751628AbcELQaT (ORCPT
+Received: from mail-wm0-f67.google.com ([74.125.82.67]:36361 "EHLO
+	mail-wm0-f67.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752073AbcELU4s (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 12 May 2016 12:30:19 -0400
-Subject: Re: [PATCH] fstests: test creating a symlink and then fsync its
- parent directory
-To: <fdmanana@kernel.org>, <fstests@vger.kernel.org>
-References: <1461558383-32254-1-git-send-email-fdmanana@kernel.org>
-CC: <linux-btrfs@vger.kernel.org>, Filipe Manana <fdmanana@suse.com>
-From: Josef Bacik <jbacik@fb.com>
-Message-ID: <44801ab1-ebe0-418a-0979-a90c2c6167d3@fb.com>
-Date: Thu, 12 May 2016 09:30:01 -0700
+	Thu, 12 May 2016 16:56:48 -0400
+Received: by mail-wm0-f67.google.com with SMTP id w143so18048481wmw.3
+        for <linux-btrfs@vger.kernel.org>; Thu, 12 May 2016 13:56:47 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <1461558383-32254-1-git-send-email-fdmanana@kernel.org>
-Content-Type: text/plain; charset="windows-1252"; format=flowed
+In-Reply-To: <20160512112916.GN29353@twin.jikos.cz>
+References: <1463010636-18514-1-git-send-email-nsteeves@gmail.com>
+	<20160512112916.GN29353@twin.jikos.cz>
+Date: Thu, 12 May 2016 16:56:46 -0400
+Message-ID: <CAD=QJKhQHeL5JnA+X1=e2DPqHS5UXVyPsDgaGMoTM15CyyCpLQ@mail.gmail.com>
+Subject: Re: [PATCH 0/1] btrfs-progs: Typo review of strings and comments
+From: Nicholas D Steeves <nsteeves@gmail.com>
+To: dsterba@suse.cz, Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 04/24/2016 09:26 PM, fdmanana@kernel.org wrote:
-> From: Filipe Manana <fdmanana@suse.com>
+On 12 May 2016 at 07:29, David Sterba <dsterba@suse.cz> wrote:
+> On Wed, May 11, 2016 at 07:50:35PM -0400, Nicholas D Steeves wrote:
+>> There were a couple of instances where I wasn't sure what to do; I've
+>> annotated them, and they are long lines now.  To find them, search or
+>> grep the diff for 'Steeves'.
 >
-> Test creating a symlink, fsync its parent directory, power fail and mount
-> again the filesystem. After these steps the symlink should exist and its
-> content must match what we specified when we created it (must not be
-> empty or point to something else).
->
-> This is motivated by an issue in btrfs where after the log replay happens
-> we get empty symlinks, which not only does not make much sense from a
-> user's point of view, it's also not valid to have empty links in linux
-> (wgich is explicitly forbidden by the symlink(2) system call).
->
-> The issue in btrfs is fixed by the following patch for the linux kernel:
->
->   "Btrfs: fix empty symlink after creating symlink and fsync parent dir"
->
-> Tested against ext3, ext4, xfs, f2fs, reiserfs and nilfs2.
->
-> Signed-off-by: Filipe Manana <fdmanana@suse.com>
+> Found and updated, most of them real typos, 'strtoull' is name of a C
+> library functioon.
 
-Reviewed-by: Josef Bacik <jbacik@fb.com>
+Hi David,
 
-Thanks,
+Thank you for reviewing this patch.  Sorry for missing the context of
+the strtoull comment; I should have been able to infer that and am
+embarrassed that I failed to.  Also, embarrassed because I think I've
+used it in some C++ code!
 
-Josef
+I learned how to use git rebase and git reset today, and can submit a
+v2 patch diffed against master at your earliest convenience.  My only
+remaining question is this:
 
+mkfs.c: printf:("Incompatible features:  %s", features_buf)
+  * Should this be left as "Imcompat features"?
+
+Regards,
+Nicholas

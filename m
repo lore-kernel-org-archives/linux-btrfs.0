@@ -1,68 +1,67 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from out5-smtp.messagingengine.com ([66.111.4.29]:48599 "EHLO
-	out5-smtp.messagingengine.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1751400AbcEKVLC convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 11 May 2016 17:11:02 -0400
-Received: from compute3.internal (compute3.nyi.internal [10.202.2.43])
-	by mailout.nyi.internal (Postfix) with ESMTP id F2D5E20DD6
-	for <linux-btrfs@vger.kernel.org>; Wed, 11 May 2016 17:10:55 -0400 (EDT)
-Received: from ebox.rath.org (ebox.rath.org [45.79.69.51])
-	by mail.messagingengine.com (Postfix) with ESMTPA id B8B076801D9
-	for <linux-btrfs@vger.kernel.org>; Wed, 11 May 2016 17:10:55 -0400 (EDT)
-Received: from thinkpad.rath.org (thinkpad [192.168.12.2])
-	by ebox.rath.org (Postfix) with ESMTPS id D48422A1D04
-	for <linux-btrfs@vger.kernel.org>; Wed, 11 May 2016 21:10:54 +0000 (UTC)
-From: Nikolaus Rath <Nikolaus@rath.org>
-To: linux-btrfs@vger.kernel.org
-Subject: fsck: to repair or not to repair
-Date: Wed, 11 May 2016 14:10:54 -0700
-Message-ID: <87y47g1esh.fsf@thinkpad.rath.org>
+Received: from mail.virtall.com ([178.63.195.102]:46221 "EHLO mail.virtall.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751632AbcELGEA (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 12 May 2016 02:04:00 -0400
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain; charset=US-ASCII;
+ format=flowed
+Date: Thu, 12 May 2016 15:03:55 +0900
+From: Tomasz Chmielewski <tch@virtall.com>
+To: Roman Mamedov <rm@romanrm.net>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>, Chris Mason <clm@fb.com>,
+        Zhao Lei <zhaolei@cn.fujitsu.com>
+Subject: Re: 4.4.0 - no space left with >1.7 TB free space left
+In-Reply-To: <20160408165332.450659c4@natsu>
+References: <0c19f800da3013f22f2ab0d77d5a9efb@admin.virtall.com>
+ <20160208162410.58cb2b4a@natsu>
+ <eaeffce90cd04fa5b91284ca580b5969@admin.virtall.com>
+ <20160408165332.450659c4@natsu>
+Message-ID: <ba2a8fca73f02c328d94d541ff53a94b@admin.virtall.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
+On 2016-04-08 20:53, Roman Mamedov wrote:
 
-I recently ran btrfsck on one of my file systems, and got the following
-messages:
+>> > Do you snapshot the parent subvolume which holds the databases? Can you
+>> > correlate that perhaps ENOSPC occurs at the time of snapshotting? If
+>> > yes, then
+>> > you should try the patch https://patchwork.kernel.org/patch/7967161/
+>> >
+>> > (Too bad this was not included into 4.4.1.)
+>> 
+>> By the way - was it included in any later kernel? I'm running 4.4.5 on
+>> that server, but still hitting the same issue.
+> 
+> It's not in 4.4.6 either. I don't know why it doesn't get included, or 
+> what
+> we need to do. Last time I asked, it was queued:
+> http://www.spinics.net/lists/linux-btrfs/msg52478.html
+> But maybe that meant 4.5 or 4.6 only? While the bug is affecting people 
+> on
+> 4.4.x today.
 
-checking extents
-checking free space cache
-checking fs roots
-root 5 inode 3149867 errors 400, nbytes wrong
-root 5 inode 3150237 errors 400, nbytes wrong
-root 5 inode 3150238 errors 400, nbytes wrong
-root 5 inode 3150242 errors 400, nbytes wrong
-root 5 inode 3150260 errors 400, nbytes wrong
-[ lots of similar message with different inode numbers ]
-root 5 inode 15595011 errors 400, nbytes wrong
-root 5 inode 15595016 errors 400, nbytes wrong
-Checking filesystem on /dev/mapper/vg0-nikratio_crypt
-UUID: 8742472d-a9b0-4ab6-b67a-5d21f14f7a38
-found 263648960636 bytes used err is 1
-total csum bytes: 395314372
-total tree bytes: 908644352
-total fs tree bytes: 352735232
-total extent tree bytes: 95039488
-btree space waste bytes: 156301160
-file data blocks allocated: 675209801728
- referenced 410351722496
-Btrfs v3.17
+FYI, I'm still getting this with 4.5.3, which probably means the fix was 
+not yet included ("No space left" at snapshot time):
+
+/var/log/postgresql/postgresql-9.3-main.log:2016-05-11 06:06:10 UTC LOG: 
+  could not close temporary statistics file "pg_stat_tmp/db_0.tmp": No 
+space left on device
+/var/log/postgresql/postgresql-9.3-main.log:2016-05-11 06:06:10 UTC LOG: 
+  could not close temporary statistics file "pg_stat_tmp/global.tmp": No 
+space left on device
+/var/log/postgresql/postgresql-9.3-main.log:2016-05-11 06:06:10 UTC LOG: 
+  could not close temporary statistics file "pg_stat_tmp/db_0.tmp": No 
+space left on device
+/var/log/postgresql/postgresql-9.3-main.log:2016-05-11 06:06:10 UTC LOG: 
+  could not close temporary statistics file "pg_stat_tmp/global.tmp": No 
+space left on device
+
+
+I've tried mounting with space_cache=v2, but it didn't help.
 
 
 
-Can someone explain to me the risk that I run by attempting a repair,
-and (conversely) what I put at stake when continuing to use this file
-system as-is?
+Tomasz Chmielewski
+http://wpkg.org
 
-
-Best,
--Nikolaus
-
--- 
-GPG encrypted emails preferred. Key id: 0xD113FCAC3C4E599F
-Fingerprint: ED31 791B 2C5C 1613 AF38 8B8A D113 FCAC 3C4E 599F
-
-             »Time flies like an arrow, fruit flies like a Banana.«

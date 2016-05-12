@@ -1,137 +1,159 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:42299 "EHLO
+Received: from userp1040.oracle.com ([156.151.31.81]:20515 "EHLO
 	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750725AbcELF43 (ORCPT
+	with ESMTP id S1751434AbcELAXj (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 12 May 2016 01:56:29 -0400
-Date: Wed, 11 May 2016 22:55:45 -0700
+	Wed, 11 May 2016 20:23:39 -0400
+Date: Wed, 11 May 2016 17:23:18 -0700
 From: "Darrick J. Wong" <darrick.wong@oracle.com>
 To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Cc: linux-btrfs@vger.kernel.org, fstests@vger.kernel.org, david@fromorbit.com,
-        hch@infradead.org
-Subject: Re: [PATCH] fstests: generic: Test reserved extent map search
- routine on deduped file
-Message-ID: <20160512055545.GD6648@birch.djwong.org>
-References: <1463028695-7806-1-git-send-email-quwenruo@cn.fujitsu.com>
- <20160512050118.GC6648@birch.djwong.org>
- <bc0a6bba-b39e-b1f4-2aab-d3a10c6d36d7@cn.fujitsu.com>
+Cc: fdmanana@gmail.com,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        fstests@vger.kernel.org
+Subject: Re: [PATCH] fstests: btrfs: Test fiemap ioctl on completely deduped
+ file
+Message-ID: <20160512002318.GA6621@birch.djwong.org>
+References: <1462869581-19227-1-git-send-email-quwenruo@cn.fujitsu.com>
+ <CAL3q7H5Mn2561cxK49vis3+XW1eTzx_j9h-iQpUJQ6qEGMczvQ@mail.gmail.com>
+ <55ce1c42-fda3-520f-ebb1-11048df8799f@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <bc0a6bba-b39e-b1f4-2aab-d3a10c6d36d7@cn.fujitsu.com>
+In-Reply-To: <55ce1c42-fda3-520f-ebb1-11048df8799f@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, May 12, 2016 at 01:44:01PM +0800, Qu Wenruo wrote:
+On Wed, May 11, 2016 at 10:14:42AM +0800, Qu Wenruo wrote:
 > 
 > 
-> Darrick J. Wong wrote on 2016/05/11 22:01 -0700:
-> >On Thu, May 12, 2016 at 12:51:35PM +0800, Qu Wenruo wrote:
-> >>For fully dedupe file, which means all its file exntents are pointing to
-> >>the same bytenr, btrfs can cause soft lockup when calling fiemap ioctl
-> >>on that file, like the following output:
-> >>------
-> >>CPU: 1 PID: 7500 Comm: xfs_io Not tainted 4.5.0-rc6+ #2
-> >>Hardware name: XXXXXXXXXXXXXXXXXXXXXXXXXXX
-> >>task: ffff880027681b40 ti: ffff8800276e0000 task.ti: ffff8800276e0000
-> >>RIP: 0010:[<ffffffffa02583e4>]  [<ffffffffa02583e4>]
-> >>__merge_refs+0x34/0x120 [btrfs]
-> >>RSP: 0018:ffff8800276e3c08  EFLAGS: 00000202
-> >>RAX: ffff8800269cc330 RBX: ffff8800269cdb18 RCX: 0000000000000007
-> >>RDX: 00000000000061b0 RSI: ffff8800269cc4c8 RDI: ffff8800276e3c88
-> >>RBP: ffff8800276e3c20 R08: 0000000000000000 R09: 0000000000000001
-> >>R10: 0000000000000000 R11: 0000000000000000 R12: ffff880026ea3cb0
-> >>R13: ffff8800276e3c88 R14: ffff880027132a50 R15: ffff880027430000
-> >>FS:  00007f10201df700(0000) GS:ffff88003fa00000(0000)
-> >>knlGS:0000000000000000
-> >>CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
-> >>CR2: 00007f10201ec000 CR3: 0000000027603000 CR4: 00000000000406e0
-> >>Stack:
-> >> 0000000000000000 0000000000000000 0000000000000000 ffff8800276e3ce8
-> >> ffffffffa0259f38 0000000000000005 ffff8800274c6870 ffff8800274c7d88
-> >> 0000000000c10000 0000000000000000 0000000000000001 0000000027431190
-> >>Call Trace:
-> >> [<ffffffffa0259f38>] find_parent_nodes+0x448/0x740 [btrfs]
-> >> [<ffffffffa025a4f2>] btrfs_check_shared+0x102/0x1b0 [btrfs]
-> >> [<ffffffff811fdcad>] ? __might_fault+0x4d/0xa0
-> >> [<ffffffffa021899c>] extent_fiemap+0x2ac/0x550 [btrfs]
-> >> [<ffffffff811ce156>] ? __filemap_fdatawait_range+0x96/0x160
-> >> [<ffffffffa01f8ee0>] ? btrfs_get_extent+0xb30/0xb30 [btrfs]
-> >> [<ffffffffa01f5da5>] btrfs_fiemap+0x45/0x50 [btrfs]
-> >> [<ffffffff81246bb8>] do_vfs_ioctl+0x498/0x670
-> >> [<ffffffff81246e09>] SyS_ioctl+0x79/0x90
-> >> [<ffffffff8184e997>] entry_SYSCALL_64_fastpath+0x12/0x6f
-> >>Code: 41 55 41 54 53 4c 8b 27 4c 39 e7 0f 84 e9 00 00 00 49 89 fd 49 8b
-> >>34 24 49 39 f5 48 8b 1e 75 17 e9 d5 00 00 00 49 39 dd 48 8b 03 <48> 89
-> >>de 0f 84 b9 00 00 00 48 89 c3 8b 46 2c 41 39 44 24 2c 75
-> >>------
+> Filipe Manana wrote on 2016/05/10 11:01 +0100:
+> >On Tue, May 10, 2016 at 9:39 AM, Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
+> >>For a completely deduped file, which means all its file extent are
+> >>pointing to one bytenr, if calling fiemap on it, btrfs will cause soft
+> >>hang up or just takes years long.
 > >>
-> >>Also btrfs will return wrong flag for all these extents, they should
-> >>have SHARED(0x2000) flag, while btrfs still consider them as exclusive
-> >>extents.
+> >>This bug can be reproduced even without any in-band or out-of-band
+> >>dedupe, normal clone_file_range() call can create such situation.
 > >>
-> >>On the other hand, with unmerged xfs reflink patches, xfs can handle it
-> >>without problem, and for patched btrfs, it can also handle it well.
-> >>
-> >>This test case will create a large fully deduped file to check if the fs
-> >>can handle the fiemap ioctl and return correct SHARED flag for any fs
-> >>which support reflink.
+> >>This test case will detect it.
+> >
+> >Why isn't this a generic test?
+> >There's nothing btrfs specific anymore...
+> >
+> >Thanks.
+> 
+> I'm OK to move it to generic, just as original planned.
+
+Thank you!
+
+> BTW, does other fs support reflink file range?
+
+As Christoph said, future-XFS and NFS.
+
+> I found a lot xfs test cases using reflink, but I still can't reflink a file
+> range inside the same inode
+> ---
+> $ xfs_io -c "reflink test.file 0 128k 128k" test.file
+> XFS_IOC_CLONE_RANGE: Operation not supported
+
+<shrug> It should work...
+
+...and currently works for me (4.6-rc7) on both btrfs and xfs:
+
+# rm -rf a ; dd if=/dev/zero of=a bs=131072 count=1 ; xfs_io -c 'reflink a 0 128k 128k' a ; filefrag -v a ; grep $PWD /proc/mounts
+1+0 records in
+1+0 records out
+131072 bytes (131 kB, 128 KiB) copied, 0.000539818 s, 243 MB/s
+linked 131072/131072 bytes at offset 131072
+128 KiB, 1 ops; 0.0000 sec (120.077 MiB/sec and 960.6148 ops/sec)
+Filesystem type is: 9123683e
+File size of a is 262144 (64 blocks of 4096 bytes)
+ ext:     logical_offset:        physical_offset: length:   expected: flags:
+   0:        0..      31:       3088..      3119:     32:            
+   1:       32..      63:       3088..      3119:     32:       3120: last,eof
+a: 2 extents found
+/dev/sda /mnt btrfs rw,relatime,space_cache,subvolid=5,subvol=/ 0 0
+# cd /opt
+# rm -rf a ; dd if=/dev/zero of=a bs=131072 count=1 ; xfs_io -c 'reflink a 0 128k 128k' a ; filefrag -v a ; grep $PWD /proc/mounts
+1+0 records in
+1+0 records out
+131072 bytes (131 kB, 128 KiB) copied, 0.00237377 s, 55.2 MB/s
+linked 131072/131072 bytes at offset 131072
+128 KiB, 1 ops; 0.0000 sec (87.047 MiB/sec and 696.3788 ops/sec)
+Filesystem type is: 58465342
+File size of a is 262144 (64 blocks of 4096 bytes)
+ ext:     logical_offset:        physical_offset: length:   expected: flags:
+   0:        0..      31:         24..        55:     32:             shared
+   1:       32..      63:         24..        55:     32:         56: last,shared,eof
+a: 2 extents found
+/dev/sdb /opt xfs rw,relatime,attr2,inode64,noquota 0 0
+
+That said, I haven't checked with latest xfsprogs master.
+
+--D
+
+> ---
+> 
+> >
 > >>
 > >>Reported-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
 > >>Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 > >>---
-> >> common/punch          | 17 +++++++++++
-> >> tests/generic/352     | 82 +++++++++++++++++++++++++++++++++++++++++++++++++++
-> >> tests/generic/352.out |  5 ++++
-> >> tests/generic/group   |  1 +
-> >> 4 files changed, 105 insertions(+)
-> >> create mode 100755 tests/generic/352
-> >> create mode 100644 tests/generic/352.out
+> >> tests/btrfs/028     | 78 +++++++++++++++++++++++++++++++++++++++++++++++++++++
+> >> tests/btrfs/028.out |  3 +++
+> >> tests/btrfs/group   |  1 +
+> >> 3 files changed, 82 insertions(+)
+> >> create mode 100755 tests/btrfs/028
+> >> create mode 100644 tests/btrfs/028.out
 > >>
-> >>diff --git a/common/punch b/common/punch
-> >>index 43f04c2..44c6e1c 100644
-> >>--- a/common/punch
-> >>+++ b/common/punch
-> >>@@ -218,6 +218,23 @@ _filter_fiemap()
-> >> 	_coalesce_extents
-> >> }
-> >>
-> >>+_filter_fiemap_flags()
-> >>+{
-> >>+	$AWK_PROG '
-> >>+		$3 ~ /hole/ {
-> >>+			print $1, $2, $3;
-> >>+			next;
-> >>+		}
-> >>+		$5 ~ /0x[[:xdigit:]]*8[[:xdigit:]][[:xdigit:]]/ {
-> >>+			print $1, $2, "unwritten";
-> >>+			next;
-> >>+		}
-> >>+		$5 ~ /0x[[:xdigit:]]+/ {
-> >>+			print $1, $2, $5;
-> >>+		}' |
-> >>+	_coalesce_extents
-> >>+}
-> >>+
-> >> # Filters fiemap output to only print the
-> >> # file offset column and whether or not
-> >> # it is an extent or a hole
-> >>diff --git a/tests/generic/352 b/tests/generic/352
+> >>diff --git a/tests/btrfs/028 b/tests/btrfs/028
 > >>new file mode 100755
-> >>index 0000000..83f24ec
+> >>index 0000000..62bcc9d
 > >>--- /dev/null
-> >>+++ b/tests/generic/352
-> >>@@ -0,0 +1,82 @@
+> >>+++ b/tests/btrfs/028
+> >>@@ -0,0 +1,78 @@
 > >>+#! /bin/bash
-> >>+# FS QA Test 352
+> >>+# FS QA Test 028
 > >>+#
-> >>+# Test fiemap ioctl on heavily deduped file
+> >>+# Test fiemap ioctl on heavily deduped file.
 > >>+#
-> >>+# This test case will check if extent backref search goes
-> >>+# without problem and return correct SHARED flag.
-> >>+# Which btrfs will soft lock up and return wrong shared flag.
+> >>+# This test will cause btrfs to soft hang up or takes years long to finish
+> >
+> >Haven't tried it, but I doubt it will take years...
+> >Are you sure that the soft lookup, which is what makes the test fail
+> >due to the dmesg warning, is triggered on very fast machines as well?
+> >I.e. this may not be reliable on better hardware.
+> 
+> On a fast test server too, using the same test case, but your concern is
+> valid.
+> 
+> The reporter initially triggered the bug on a even faster server with
+> similar file layout with 100% possibility, but with nr set to 8192.
+> 
+> I reduced the nr from 8192 (which is always reproducible) to 4096 to save
+> some time creating file, but considering the scale of loops, considering the
+> loop scale (at least n^3), the halved nr seems to hugely reduce the time.
+> 
+> The know loop scale is n^3 ~ n^4:
+> 1. Loop all file extents (* 4096)
+> 2. Loop all backrefs of one extent (* 4096)
+> 3. Loop each backref in __merge_refs(list_for_each_entry_safe_continue) (*
+> 4096)
+> 4. Loop to the list end in "while(eie & eie->next) {eie=eie->next}" (*4096)
+> 
+> What about change nr to (8192 * $LOAD_FACTOR)?
+> 
+> Thanks,
+> Qu
+> 
+> 
+> Thanks,
+> Qu
+> 
+> >
+> >
 > >>+#
 > >>+#-----------------------------------------------------------------------
-> >>+# Copyright (c) 2016 Fujitsu.  All Rights Reserved.
+> >>+# Copyright (c) 2016 Fujitsu. All Rights Reserved.
 > >>+#
 > >>+# This program is free software; you can redistribute it and/or
 > >>+# modify it under the terms of the GNU General Public License as
@@ -154,20 +176,19 @@ On Thu, May 12, 2016 at 01:44:01PM +0800, Qu Wenruo wrote:
 > >>+
 > >>+here=`pwd`
 > >>+tmp=/tmp/$$
-> >>+status=1	# failure is the default!
+> >>+status=1       # failure is the default!
 > >>+trap "_cleanup; exit \$status" 0 1 2 3 15
 > >>+
 > >>+_cleanup()
 > >>+{
-> >>+	cd /
-> >>+	rm -f $tmp.*
+> >>+       cd /
+> >>+       rm -f $tmp.*
 > >>+}
 > >>+
 > >>+# get standard environment, filters and checks
 > >>+. ./common/rc
 > >>+. ./common/filter
 > >>+. ./common/reflink
-> >>+. ./common/punch
 > >>+
 > >>+# remove previous $seqres.full before test
 > >>+rm -f $seqres.full
@@ -175,16 +196,16 @@ On Thu, May 12, 2016 at 01:44:01PM +0800, Qu Wenruo wrote:
 > >>+# real QA test starts here
 > >>+
 > >>+# Modify as appropriate.
-> >>+_supported_fs generic
+> >>+_supported_fs btrfs
 > >>+_supported_os Linux
 > >>+_require_scratch_reflink
 > >>+
-> >>+_scratch_mkfs > /dev/null 2>&1
-> >>+_scratch_mount
-> >>+
-> >>+nr=$((8192 * $LOAD_FACTOR))
-> >>+blocksize=$((128 * 1024))
+> >>+blocksize=$(( 128 * 1024 ))
+> >>+nr=4096
 > >>+file="$SCRATCH_MNT/tmp"
+> >>+
+> >>+_scratch_mkfs
+> >>+_scratch_mount
 > >>+
 > >>+# write the initial block for later reflink
 > >>+$XFS_IO_PROG -f -c "pwrite 0 $blocksize" -c "fsync" $file | _filter_xfs_io
@@ -192,84 +213,52 @@ On Thu, May 12, 2016 at 01:44:01PM +0800, Qu Wenruo wrote:
 > >>+# use reflink to create the rest of the file, whose all extents are all
 > >>+# pointing to the first extent
 > >>+for i in $(seq 1 $nr); do
-> >>+	$XFS_IO_PROG -c "reflink $file 0 $(($i * $blocksize)) $blocksize" \
-> >>+		$file > /dev/null
-> >
-> >FYI, there's a _reflink_range helper for this now.
-> >
-> >(There's also a _pwrite_byte helper.)
-> 
-> Thanks, I'll use the new helper in next version.
-> 
-> >
+> >>+       $XFS_IO_PROG -c "reflink $file 0 $(( $i * $blocksize )) $blocksize" \
+> >>+               $SCRATCH_MNT/tmp > /dev/null || _fail "reflink failed"
 > >>+done
 > >>+
-> >>+# then call fiemap on that file to test both the shared flag and if
-> >>+# reserved extent mapping search will cause soft lockup
-> >>+$XFS_IO_PROG -c "fiemap -v" $file | _filter_fiemap_flags
-> >
-> >I think this test needs _require_fiemap or else it'll fail on things
-> >that don't support fiemap, like NFS.
-> >
-> >PS: How well does btrfs handle generic/17[56]?
-> 
-> Handles well, but very slow. (I bet it's slower than xfs)
-> 175 takes me about 10min(579s) to finish the test case, and even more time
-> to umount and run btrfsck.
-
-Yeah.  I don't know if your recent patches make that better? <shrug>
-
-> As long as the test cases only involve reflink operation, btrfs won't cause
-> too many problems except the slow metadata operation speed.
-> 
-> BTW, during that test, even I'm testing btrfs only, xfs reports lockdep
-> problem (the test machine is running xfs as root).
-> The kernel is for-dave-4.6 branch, and I'll report it in another mail.
-
-FWIW for-dave-for-4.6 is ancient.  You might try #djwong-devel for newer
-(and hopefully more stable?) code.
-
-Wait, *lockdep*?  Yeah, XFS and lockdep have problems.
-
---D
-
-> 
-> Thanks,
-> Qu
-> 
-> >
-> >--D
-> >
+> >>+# then call fiemap on that file, which shouldn't hang the fs by all means
+> >>+$XFS_IO_PROG -c "fiemap" $file >> $seqres.full
 > >>+
 > >>+# success, all done
 > >>+status=0
 > >>+exit
-> >>diff --git a/tests/generic/352.out b/tests/generic/352.out
+> >>diff --git a/tests/btrfs/028.out b/tests/btrfs/028.out
 > >>new file mode 100644
-> >>index 0000000..a87c507
+> >>index 0000000..2b5a9a5
 > >>--- /dev/null
-> >>+++ b/tests/generic/352.out
-> >>@@ -0,0 +1,5 @@
-> >>+QA output created by 352
+> >>+++ b/tests/btrfs/028.out
+> >>@@ -0,0 +1,3 @@
+> >>+QA output created by 028
 > >>+wrote 131072/131072 bytes at offset 0
 > >>+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-> >>+0: [0..2097151]: 0x2000
-> >>+1: [2097152..2097407]: 0x2001
-> >>diff --git a/tests/generic/group b/tests/generic/group
-> >>index 36fb759..3f00386 100644
-> >>--- a/tests/generic/group
-> >>+++ b/tests/generic/group
-> >>@@ -354,3 +354,4 @@
-> >> 349 blockdev quick rw
-> >> 350 blockdev quick rw
-> >> 351 blockdev quick rw
-> >>+352 auto clone
+> >>diff --git a/tests/btrfs/group b/tests/btrfs/group
+> >>index da0e27f..8f6f877 100644
+> >>--- a/tests/btrfs/group
+> >>+++ b/tests/btrfs/group
+> >>@@ -30,6 +30,7 @@
+> >> 025 auto quick send clone
+> >> 026 auto quick compress prealloc
+> >> 027 auto replace
+> >>+028 auto clone
+> >> 029 auto quick clone
+> >> 030 auto quick send
+> >> 031 auto quick subvol clone
 > >>--
-> >>2.8.2
+> >>2.5.5
 > >>
 > >>
 > >>
+> >>--
+> >>To unsubscribe from this list: send the line "unsubscribe fstests" in
+> >>the body of a message to majordomo@vger.kernel.org
+> >>More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> >
 > >
 > >
 > 
 > 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

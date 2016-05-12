@@ -1,97 +1,34 @@
-Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:51440 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751139AbcEMLv4 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 13 May 2016 07:51:56 -0400
-From: Anand Jain <anand.jain@oracle.com>
-To: fstests@vger.kernel.org
-Cc: linux-btrfs@vger.kernel.org
-Subject: [PATCH 3/3] fstests: btrfs: 027 make use of new device get and put helper functions
-Date: Fri, 13 May 2016 19:21:14 +0800
-Message-Id: <1463138474-15990-3-git-send-email-anand.jain@oracle.com>
-In-Reply-To: <1463138474-15990-1-git-send-email-anand.jain@oracle.com>
-References: <1463138474-15990-1-git-send-email-anand.jain@oracle.com>
-Sender: linux-btrfs-owner@vger.kernel.org
+Return-Path: <quwenruo@cn.fujitsu.com>
+Subject: Re: Idea on compatibility for old distributions
+To: <dsterba@suse.cz>, Eric Sandeen <sandeen@redhat.com>, MarkFasheh
+	<mfasheh@suse.de>, btrfs <linux-btrfs@vger.kernel.org>
+References: <d527a25c-c1f5-1329-1ed7-c84229a50251@cn.fujitsu.com>
+ <ff2d7c7e-26c7-46dd-1372-b40e79f53b88@redhat.com>
+ <15f7b634-f173-d73f-5c17-8d9294f1efd7@cn.fujitsu.com>
+ <20160512083755.GJ29353@suse.cz>
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Message-ID: <b746cf06-bafc-25e8-a684-710f481ff337@cn.fujitsu.com>
+Date: Thu, 12 May 2016 16:51:22 +0800
+MIME-Version: 1.0
+In-Reply-To: <20160512083755.GJ29353@suse.cz>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Below patches added helper function to get the requested
-number of devices for scratch and spare device
+David Sterba wrote on 2016/05/12 10:37 +0200:
+> On Thu, May 12, 2016 at 08:57:47AM +0800, Qu Wenruo wrote:
+>> Thanks for the info.
+>>
+>> I also read the phoronix news yesterday.
+>> So for RHEL6 that's meaningless.
+>>
+>> But I'm not sure whether it's still meaningless for OpenSUSE, maybe
+>> David has some plan on it?
+>
+> No plans.
+>
+>
+So the compatible layer patch is just to allow btrfs-progs to be 
+compiled on old distros?
 
-fstest: btrfs: add functions to get and put a device for replace target
-fstests: btrfs: add functions to set and reset required number of SCRATCH_DEV_POOL
-
-This patch makes use of them.
-
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
----
- tests/btrfs/027 | 24 ++++++++++++++++--------
- 1 file changed, 16 insertions(+), 8 deletions(-)
-
-diff --git a/tests/btrfs/027 b/tests/btrfs/027
-index f0844a14f8e6..905dc0ebaa27 100755
---- a/tests/btrfs/027
-+++ b/tests/btrfs/027
-@@ -57,17 +57,22 @@ _require_command "$WIPEFS_PROG" wipefs
- run_test()
- {
- 	local mkfs_opts=$1
--	local saved_scratch_dev_pool=$SCRATCH_DEV_POOL
--	local replace_dev=`echo $SCRATCH_DEV_POOL | awk '{print $NF}'`
-+	local ndevs=`echo $SCRATCH_DEV_POOL | wc -w`
-+
-+	# reserve one for replace target
-+	((ndevs--))
-+
-+	_scratch_dev_pool_get $ndevs
-+	_spare_dev_get
- 
- 	echo "Test $mkfs_opts" >>$seqres.full
- 
--	SCRATCH_DEV_POOL=`echo $SCRATCH_DEV_POOL | sed -e "s# *$replace_dev *##"`
- 	_scratch_pool_mkfs $mkfs_opts >>$seqres.full 2>&1
- 	# make sure we created btrfs with desired options
- 	if [ $? -ne 0 ]; then
- 		echo "mkfs $mkfs_opts failed"
--		SCRATCH_DEV_POOL=$saved_scratch_dev_pool
-+		_spare_dev_put
-+		_scratch_dev_pool_put
- 		return
- 	fi
- 	_scratch_mount >>$seqres.full 2>&1
-@@ -89,17 +94,19 @@ run_test()
- 	_scratch_mount -o degraded >>$seqres.full 2>&1
- 
- 	# replace $missing_dev with $replace_dev and scrub it to double-check
--	$BTRFS_UTIL_PROG replace start -B -r $missing_dev_id $replace_dev \
-+	$BTRFS_UTIL_PROG replace start -B -r $missing_dev_id $SPARE_DEV \
- 		$SCRATCH_MNT -f >>$seqres.full 2>&1
- 	if [ $? -ne 0 ]; then
- 		echo "btrfs replace failed"
--		SCRATCH_DEV_POOL=$saved_scratch_dev_pool
-+		_spare_dev_put
-+		_scratch_dev_pool_put
- 		return
- 	fi
- 	$BTRFS_UTIL_PROG scrub start -B $SCRATCH_MNT >>$seqres.full 2>&1
- 	if [ $? -ne 0 ]; then
- 		echo "btrfs scrub failed"
--		SCRATCH_DEV_POOL=$saved_scratch_dev_pool
-+		_spare_dev_put
-+		_scratch_dev_pool_put
- 		return
- 	fi
- 
-@@ -107,7 +114,8 @@ run_test()
- 	# we called _require_scratch_nocheck instead of _require_scratch
- 	# do check after test for each profile config
- 	_check_scratch_fs
--	SCRATCH_DEV_POOL=$saved_scratch_dev_pool
-+	_spare_dev_put
-+	_scratch_dev_pool_put
- }
- 
- echo "Silence is golden"
--- 
-2.7.0
-
+Thanks,
+Qu

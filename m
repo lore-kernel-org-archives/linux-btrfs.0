@@ -1,87 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:33086 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752088AbcELRzh (ORCPT
+Received: from mail-pf0-f182.google.com ([209.85.192.182]:33322 "EHLO
+	mail-pf0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752303AbcELS0Q (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 12 May 2016 13:55:37 -0400
-Reply-To: ashish.samant@oracle.com
-Subject: Re: fsck: to repair or not to repair
-References: <87y47g1esh.fsf@thinkpad.rath.org>
- <CAPmG0jYDw8Sid2jORVtfwNLpeZPAqtH429EQsraz9GzNdK1aUQ@mail.gmail.com>
- <878tzf18oq.fsf@thinkpad.rath.org>
-To: Nikolaus Rath <Nikolaus@rath.org>, linux-btrfs@vger.kernel.org
-From: Ashish Samant <ashish.samant@oracle.com>
-Message-ID: <5734C38D.8050503@oracle.com>
-Date: Thu, 12 May 2016 10:55:25 -0700
-MIME-Version: 1.0
-In-Reply-To: <878tzf18oq.fsf@thinkpad.rath.org>
-Content-Type: text/plain; charset=utf-8; format=flowed
+	Thu, 12 May 2016 14:26:16 -0400
+Received: by mail-pf0-f182.google.com with SMTP id 206so33516308pfu.0
+        for <linux-btrfs@vger.kernel.org>; Thu, 12 May 2016 11:26:15 -0700 (PDT)
+Message-ID: <1463077564.3636.65.camel@clone1.com>
+Subject: Re: BTRFS Data at Rest File Corruption
+From: "Richard A. Lochner" <lochner@clone1.com>
+To: andrew.j.wade@gmail.com
+Cc: linux-btrfs@vger.kernel.org
+Date: Thu, 12 May 2016 13:26:04 -0500
+In-Reply-To: <CAAuLxcaQ1Uo+pff9AtD74UwUvo5yYKBuNLwKzjVMWV1kt2DcRQ@mail.gmail.com>
+References: <CACTfMoQmco=yBP+e8tn0MoTVZsMauw0_=N1yc42NVNM9Krqv7A@mail.gmail.com>
+	 <CAAuLxcaQ1Uo+pff9AtD74UwUvo5yYKBuNLwKzjVMWV1kt2DcRQ@mail.gmail.com>
+Content-Type: text/plain; charset="UTF-8"
+Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Andrew,
 
+I agree with your supposition about the metadata and corrupted RAM.  
 
-On 05/12/2016 10:35 AM, Nikolaus Rath wrote:
-> On May 12 2016, Henk Slager <eye1tm@gmail.com> wrote:
->> On Wed, May 11, 2016 at 11:10 PM, Nikolaus Rath <Nikolaus@rath.org> wrote:
->>> Hello,
->>>
->>> I recently ran btrfsck on one of my file systems, and got the following
->>> messages:
->>>
->>> checking extents
->>> checking free space cache
->>> checking fs roots
->>> root 5 inode 3149867 errors 400, nbytes wrong
->>> root 5 inode 3150237 errors 400, nbytes wrong
->>> root 5 inode 3150238 errors 400, nbytes wrong
->>> root 5 inode 3150242 errors 400, nbytes wrong
->>> root 5 inode 3150260 errors 400, nbytes wrong
->>> [ lots of similar message with different inode numbers ]
->>> root 5 inode 15595011 errors 400, nbytes wrong
->>> root 5 inode 15595016 errors 400, nbytes wrong
->>> Checking filesystem on /dev/mapper/vg0-nikratio_crypt
->>> UUID: 8742472d-a9b0-4ab6-b67a-5d21f14f7a38
->>> found 263648960636 bytes used err is 1
->>> total csum bytes: 395314372
->>> total tree bytes: 908644352
->>> total fs tree bytes: 352735232
->>> total extent tree bytes: 95039488
->>> btree space waste bytes: 156301160
->>> file data blocks allocated: 675209801728
->>>   referenced 410351722496
->>> Btrfs v3.17
->>>
->>>
->>>
->>> Can someone explain to me the risk that I run by attempting a repair,
->>> and (conversely) what I put at stake when continuing to use this file
->>> system as-is?
->> It has once been mentioned in this mail-list, that if the 'errors 400,
->> nbytes wrong' is the only error on an fs, btrfs check --repair can fix
->> them ( was around time of tools release 4.4 , by Qu AFAIK).
->> I had /(have?) about 7 of those errors in small files on an fs that is
->> 2.5 years old and has quite some older ro snapshots. I once tried to
->> fix them with 4.5.0 + some patches tools, but actually they did not
->> get fixed. At least with 4.5.2 or 4.5.3 tools it should be possible to
->> fix them in your case. Maybe you first want to test it on an overlay
->> of the device or copy the whole fs with dd. It depends on how much
->> time you can allow the fs to be offline etc, it is up to you.
->>
->> In my case, I recreated the files in the working subvol, but as long
-> [...]
->
-> How did you determine which files were affected? Is there a way to map
-> inodes to paths?
-  btrfs inspect-internal inode-resolve <inode> <path>.
+I verified that the data blocks on both devices are equal (see my reply
+to Austin for the commands I used.  I believe that they correctly prove
+that the blocks are, in fact, equal.
 
-This resolves the <inode> in subvol <path> to its fs paths
+I am not sure I have the skills to "walk the checksum tree manually" as
+you described.  I would also like to verify that the checksum blocks
+agree as I expect they do, but I may have to "bone up" on my tree
+walking skills first.
 
-Thanks,
-Ashish
->
->
-> Thanks!
-> -Nikolaus
->
+Thanks for your help.
 
+Rick Lochner
+
+On Wed, 2016-05-11 at 21:16 -0400, Andrew Wade wrote:
+> 
+> I would expect the "data at rest" to be good too. But perhaps
+> something happened to the metadata (checksum). If the checksum was
+> corrupted in RAM it could be written back to the disks due to updates
+> elsewhere in the metadata node.
+> If this is what happened I would expect the metadata node containing
+> the checksum to have a recent generation number.
+> I'm not actually a BTRFS developer myself, but you might be able to
+> find the generation by using btrfs-debug-tree from btrfs-tools.
+> btrfs-debug-tree -r /dev/sdc1 will give you the block number of the
+> checksum tree root, which you can then feed into btrfs-debug-tree -b
+> #### /dev/sdc1 and walk the tree manually. You're looking for the
+> largest key before 3037444042752. 
+> For dumping the data and metadata blocks I think btrfs-map-logical is
+> what you need, though to be honest I've never used this tool myself.
+> Even if the file data is still good I don't know of a simple way to
+> tell BTRFS to ignore the checksums for a file. It is possible to
+> regenerate the checksum tree for the entire filesystem, but I
+> personally wouldn't do that unless you really need the file.
+> regards,
+> Andrew
+> 

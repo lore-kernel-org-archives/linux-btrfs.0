@@ -1,55 +1,36 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from out5-smtp.messagingengine.com ([66.111.4.29]:51832 "EHLO
-	out5-smtp.messagingengine.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1752912AbcEMP2V convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 13 May 2016 11:28:21 -0400
-Received: from compute7.internal (compute7.nyi.internal [10.202.2.47])
-	by mailout.nyi.internal (Postfix) with ESMTP id 20080205A8
-	for <linux-btrfs@vger.kernel.org>; Fri, 13 May 2016 11:28:20 -0400 (EDT)
-Received: from ebox.rath.org (ebox.rath.org [45.79.69.51])
-	by mail.messagingengine.com (Postfix) with ESMTPA id CA122C00013
-	for <linux-btrfs@vger.kernel.org>; Fri, 13 May 2016 11:28:19 -0400 (EDT)
-Received: from vostro.rath.org (vostro [192.168.12.4])
-	by ebox.rath.org (Postfix) with ESMTPS id DDE622A6091
-	for <linux-btrfs@vger.kernel.org>; Fri, 13 May 2016 15:28:18 +0000 (UTC)
-From: Nikolaus Rath <Nikolaus@rath.org>
-To: linux-btrfs@vger.kernel.org
-Subject: Re: fsck: to repair or not to repair
-References: <87y47g1esh.fsf@thinkpad.rath.org>
-	<CAPmG0jYDw8Sid2jORVtfwNLpeZPAqtH429EQsraz9GzNdK1aUQ@mail.gmail.com>
-	<pan$14f07$a448b38$b8e37f4a$116d54ce@cox.net>
-Date: Fri, 13 May 2016 08:28:18 -0700
-In-Reply-To: <pan$14f07$a448b38$b8e37f4a$116d54ce@cox.net> (Duncan's message
-	of "Fri, 13 May 2016 06:36:45 +0000 (UTC)")
-Message-ID: <87vb2ij7u5.fsf@vostro.rath.org>
+Received: from smtp-16.italiaonline.it ([212.48.25.144]:58600 "EHLO libero.it"
+	rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+	id S1752684AbcEMQ2x (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 13 May 2016 12:28:53 -0400
+Reply-To: kreijack@inwind.it
+Subject: Re: BTRFS Data at Rest File Corruption
+References: <CACTfMoQmco=yBP+e8tn0MoTVZsMauw0_=N1yc42NVNM9Krqv7A@mail.gmail.com>
+ <97b8a0bd-3707-c7d6-4138-c8fe81937b72@gmail.com>
+To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>,
+        Richard Lochner <lochner@clone1.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+From: Goffredo Baroncelli <kreijack@inwind.it>
+Message-ID: <573600C1.5020602@inwind.it>
+Date: Fri, 13 May 2016 18:28:49 +0200
 MIME-Version: 1.0
+In-Reply-To: <97b8a0bd-3707-c7d6-4138-c8fe81937b72@gmail.com>
 Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On May 13 2016, Duncan <1i5t5.duncan@cox.net> wrote:
-> Because btrfs can be multi-device, it needs some way to track which 
-> devices belong to each filesystem, and it uses filesystem UUID for this 
-> purpose.
->
-> If you clone a filesystem (for instance using dd or lvm snapshotting, 
-> doesn't matter how) and then trigger a btrfs device scan, say by plugging 
-> in some other device with btrfs on it so udev triggers a scan, and the 
-> kernel sees multiple devices with the same filesystem UUID as a result, 
-> and one of those happens to be mounted, you can corrupt both copies as 
-> the kernel btrfs won't be able to tell them apart and may write updates 
-> to the wrong one.
+On 2016-05-11 21:26, Austin S. Hemmelgarn wrote:
+> (although it can't tell the difference between a corrupted checksum and a corrupted block of data).
 
-That seems like a rather odd design. Why isn't btrfs refusing to mount
-in this situation? In the face of ambiguity, guessing is generally bad
-idea (at least for a computer program).
+I don't think so. The data checksums are stored in metadata blocks, and as metadata block, these have their checksums. So btrfs know if the checksum is correct or none, despite the fact that the data is correct or none. Of course if the checksum is wrong, btrfs can't tell if the data is correct.
 
+The only exception should be the inline data: in this case the data is stored in the metadata block, and this block is protected by only one checksum.
 
-Best,
--Nikolaus
+I know that I am pedantic :_)  but after reading your comment I looked at the btrfs data structure to refresh my memory, so I want to share these information.
+
+BR
+G.Baroncelli
+
 -- 
-GPG encrypted emails preferred. Key id: 0xD113FCAC3C4E599F
-Fingerprint: ED31 791B 2C5C 1613 AF38 8B8A D113 FCAC 3C4E 599F
-
-             »Time flies like an arrow, fruit flies like a Banana.«
+gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
+Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5

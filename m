@@ -1,114 +1,116 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:59822 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752208AbcELUy2 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 12 May 2016 16:54:28 -0400
-Date: Thu, 12 May 2016 13:54:26 -0700
-From: Mark Fasheh <mfasheh@suse.de>
-To: dsterba@suse.cz, Qu Wenruo <quwenruo@cn.fujitsu.com>,
-        Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
-        btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: About in-band dedupe for v4.7
-Message-ID: <20160512205426.GL7633@wotan.suse.de>
-Reply-To: Mark Fasheh <mfasheh@suse.de>
-References: <aae84f04-cb64-46f3-79ea-f2d84d79a3ba@cn.fujitsu.com>
- <20160510221119.GD7633@wotan.suse.de>
- <23ec14b4-deb3-4294-348c-1f0e4a7db169@cn.fujitsu.com>
- <20160511025211.GF7633@wotan.suse.de>
- <20160511173659.GI29353@suse.cz>
+Received: from mail-lb0-f195.google.com ([209.85.217.195]:36189 "EHLO
+	mail-lb0-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752208AbcEMDNU (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 12 May 2016 23:13:20 -0400
+Received: by mail-lb0-f195.google.com with SMTP id le2so2514825lbc.3
+        for <linux-btrfs@vger.kernel.org>; Thu, 12 May 2016 20:13:19 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20160511173659.GI29353@suse.cz>
+In-Reply-To: <20160510221119.GD7633@wotan.suse.de>
+References: <aae84f04-cb64-46f3-79ea-f2d84d79a3ba@cn.fujitsu.com>
+	<20160510221119.GD7633@wotan.suse.de>
+Date: Fri, 13 May 2016 11:13:18 +0800
+Message-ID: <CAP9B-Qkw065zATZqhMefPcsNBAKPDuaGj6wzN2XMmYZd20fP+Q@mail.gmail.com>
+Subject: Re: About in-band dedupe for v4.7
+From: Wang Shilong <wangshilong1991@gmail.com>
+To: Mark Fasheh <mfasheh@suse.de>
+Cc: Qu Wenruo <quwenruo@cn.fujitsu.com>, Chris Mason <clm@fb.com>,
+        Josef Bacik <jbacik@fb.com>, David Sterba <dsterba@suse.com>,
+        btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, May 11, 2016 at 07:36:59PM +0200, David Sterba wrote:
-> On Tue, May 10, 2016 at 07:52:11PM -0700, Mark Fasheh wrote:
-> > Taking your history with qgroups out of this btw, my opinion does not
-> > change.
-> > 
-> > With respect to in-memory only dedupe, it is my honest opinion that such a
-> > limited feature is not worth the extra maintenance work. In particular
-> > there's about 800 lines of code in the userspace patches which I'm sure
-> > you'd want merged, because how could we test this then?
-> 
-> I like the in-memory dedup backend. It's lightweight, only a heuristic,
-> does not need any IO or persistent storage. OTOH I consider it a subpart
-> of the in-band deduplication that does all the persistency etc. So I
-> treat the ioctl interface from a broader aspect.
+Hello Guys,
 
-Those are all nice qualities, but what do they all get us?
+        I am commenting not because of Qu's patch, of course, Qu and Mark Fasheh
+Do a really good thing for Btrfs contributions.
 
-For example, my 'large' duperemove test involves about 750 gigabytes of
-general purpose data - quite literally /home off my workstation.
+        Just my two cents!
 
-After the run I'm usually seeing between 65-75 gigabytes saved for a total
-of only 10% duplicated data. I would expect this to be fairly 'average' -
-/home on my machine has the usual stuff - documents, source code, media,
-etc.
+1) I think Currently, we should really focus on Btrfs stability, there
+are still many
+bugs hidden inside Btrfs, please See Filipe flighting patches here and
+there. Unfortunately,
+I have not seen Btrfs's Bug is reducing for these two years even we
+have frozen new features here.
+we are adopting Btrfs internally sometime before, but it is really
+unstable unfortunately.
 
-So if you were writing your whole fs out you could expect about the same
-from inline dedupe - 10%-ish. Let's be generous and go with that number
-though as a general 'this is how much dedupe we get'.
+So Why not sit down and make it stable firstly?
 
-What the memory backend is doing then is providing a cache of sha256/block
-calculations. This cache is very expensive to fill, and every written block
-must go through it. On top of that, the cache does not persist between
-mounts, and has items regularly removed from it when we run low on memory.
-All of this will drive down the amount of duplicated data we can find.
+2)I am not against new feature, but for a new feature, I think we
+should be really
+careful now,  Especially if a new feature affect normal write/read
+path, I think following things can
+be done to make things better:
 
-So our best case savings is probably way below 10% - let's be _really_ nice
-and say 5%.
+    ->Give your design and documents(maybe put it in wiki or somewhere
+else) So that
+other guys can really review your design instead of looking a bunch of
+codes firstly. And we really
+need understand pros and cons of design, also if there is TODO, please
+do clarity out how we
+can solve this problem(or it is possible?).
 
-Now ask yourself the question - would you accept a write cache which is
-expensive to fill and would only have a hit rate of less than 5%?
+   ->We need reallly a lot of testing and benchmarking if it affects
+normal write/read path.
 
-Oh and there's 800 lines of userspace we'd merge to manage this cache too,
-kernel ioctls which would have to be finalized, etc.
+   ->I think Chris is nice to merge patches, but I really argue next
+time if we want to merge new feautres
+Please make sure at least two other guys review for patches.
 
 
-> A usecase I find interesting is to keep the in-memory dedup cache and
-> then flush it to disk on demand, compared to automatically synced dedup
-> (eg. at commit time).
+Thank you!
+Shilong
 
-What's the benefit here? We're still going to be hashing blocks on the way
-in, and if we're not deduping them at write time then we're just have to
-remove the extents and dedupe them later.
-
-
-> > A couple examples sore points in my review so far:
-> > 
-> > - Internally you're using a mutex (instead of a spinlock) to lock out queries
-> >  to the in-memory hash, which I can see becoming a performance problem in the
-> >  write path.
-> > 
-> > - Also, we're doing SHA256 in the write path which I expect will
-> >  slow it down even more dramatically. Given that all the work done gets
-> >  thrown out every time we fill the hash (or remount), I just don't see much
-> >  benefit to the user with this.
-> 
-> I had some ideas to use faster hashes and do sha256 when it's going to
-> be stored on disk, but there were some concerns. The objection against
-> speed and performance hit at write time is valid. But we'll need to
-> verify that in real performance tests, which haven't happend yet up to
-> my knowledge.
-
-This is the type of thing that IMHO absolutely must be provided with each
-code drop of the feature. Dedupe is nice but _nobody_ will use it if it's
-slow. I know this from experience. I personally feel that btrfs has had
-enough of 'cute' and 'almost working' features. If we want inline dedupe we
-should do it correctly and with the right metrics from the beginning.
-
-
-This is slightly unrelated to our discussion but my other unsolicited
-opinion: As a kernel developer and maintainer of a file system for well over
-a decade I will say that balancing the number of out of tree patches is
-necessary but we should never be accepting of large features just because
-'they've been out for a long time'. Again I mention this because other parts
-of the discussion felt like they were going in that direction.
-
-Thanks,
-	--Mark
-
---
-Mark Fasheh
+On Wed, May 11, 2016 at 6:11 AM, Mark Fasheh <mfasheh@suse.de> wrote:
+> On Tue, May 10, 2016 at 03:19:52PM +0800, Qu Wenruo wrote:
+>> Hi, Chris, Josef and David,
+>>
+>> As merge window for v4.7 is coming, it would be good to hear your
+>> ideas about the inband dedupe.
+>>
+>> We are addressing the ENOSPC problem which Josef pointed out, and we
+>> believe the final fix patch would come out at the beginning of the
+>> merge window.(Next week)
+>
+> How about the fiemap performance problem you referenced before? My guess is
+> that it happens because you don't coalesce writes into anything larger than
+> a page so you're stuck deduping at some silly size like 4k. This in turn
+> fragments the files so much that fiemap has a hard time walking backrefs.
+>
+> I have to check the patches to be sure but perhaps you can tell me whether
+> my hunch is correct or not.
+>
+>
+> In fact, I actually asked privately for time to review your dedupe patches,
+> but I've been literally so busy cleaning up after the mess you left in your
+> last qgroups rewrite I haven't had time.
+>
+> You literally broke qgroups in almost every spot that matters. In some cases
+> (drop_snapshot) you tore out working code and left in a /* TODO */ comment
+> for someone else to complete.  Snapshot create was so trivially and
+> completely broken by your changes that weeks later, I'm still hunting a
+> solution which doesn't involve adding an extra _commit_ to our commit.  This
+> is a MASSIVE regression from where we were before.
+>
+> IMHO, you should not be trusted with large features or rewrites until you
+> can demonstrate:
+>
+>  - A willingness to *completely* solve the problem you are trying to 'fix',
+>    not do half the job which someone else will have to complete for you.
+>
+>  - Actual testing. The snapshot bug I reference above exists purely because
+>    nobody created a snapshot inside of one and checked the qgroup numbers!
+>
+> Sorry to be so harsh.
+>    --Mark
+>
+> --
+> Mark Fasheh
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

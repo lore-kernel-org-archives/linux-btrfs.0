@@ -1,88 +1,69 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from james.kirk.hungrycats.org ([174.142.39.145]:40560 "EHLO
-	james.kirk.hungrycats.org" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1751104AbcEMGBF (ORCPT
+Received: from james.kirk.hungrycats.org ([174.142.39.145]:41308 "EHLO
+	james.kirk.hungrycats.org" rhost-flags-OK-FAIL-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1750918AbcEMGVs (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 13 May 2016 02:01:05 -0400
-Date: Fri, 13 May 2016 02:01:03 -0400
+	Fri, 13 May 2016 02:21:48 -0400
+Date: Fri, 13 May 2016 02:21:42 -0400
 From: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
-To: dsterba@suse.cz, Mark Fasheh <mfasheh@suse.de>,
-        Qu Wenruo <quwenruo@cn.fujitsu.com>, Chris Mason <clm@fb.com>,
-        Josef Bacik <jbacik@fb.com>, btrfs <linux-btrfs@vger.kernel.org>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: Wang Shilong <wangshilong1991@gmail.com>, Chris Mason <clm@fb.com>,
+        Josef Bacik <jbacik@fb.com>, David Sterba <dsterba@suse.com>,
+        btrfs <linux-btrfs@vger.kernel.org>
 Subject: Re: About in-band dedupe for v4.7
-Message-ID: <20160513060103.GE15597@hungrycats.org>
+Message-ID: <20160513062142.GF15597@hungrycats.org>
 References: <aae84f04-cb64-46f3-79ea-f2d84d79a3ba@cn.fujitsu.com>
  <20160510221119.GD7633@wotan.suse.de>
- <23ec14b4-deb3-4294-348c-1f0e4a7db169@cn.fujitsu.com>
- <20160511025211.GF7633@wotan.suse.de>
- <20160511173659.GI29353@suse.cz>
+ <CAP9B-Qkw065zATZqhMefPcsNBAKPDuaGj6wzN2XMmYZd20fP+Q@mail.gmail.com>
+ <4b7f7a0e-2fc4-8a08-c391-54be1d26ec51@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="Sr1nOIr3CvdE5hEN"
-In-Reply-To: <20160511173659.GI29353@suse.cz>
+	protocol="application/pgp-signature"; boundary="yudcn1FV7Hsu/q59"
+In-Reply-To: <4b7f7a0e-2fc4-8a08-c391-54be1d26ec51@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---Sr1nOIr3CvdE5hEN
+--yudcn1FV7Hsu/q59
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
 Content-Transfer-Encoding: quoted-printable
 
-On Wed, May 11, 2016 at 07:36:59PM +0200, David Sterba wrote:
-> I like the in-memory dedup backend. It's lightweight, only a heuristic,
-> does not need any IO or persistent storage. OTOH I consider it a subpart
-> of the in-band deduplication that does all the persistency etc. So I
-> treat the ioctl interface from a broader aspect.
+On Fri, May 13, 2016 at 11:44:40AM +0800, Qu Wenruo wrote:
+> Although maybe out of your expectation, inband de-dedupe did exposed some
+> existing bugs we didn't ever found before.
+> And they are all reproducible without inband dedupe.
 >=20
-> A usecase I find interesting is to keep the in-memory dedup cache and
-> then flush it to disk on demand, compared to automatically synced dedup
-> (eg. at commit time).
+> Some examples:
+> [...]
+> 3) Slow backref walk.
+>    Already in the comment of backref.c from ancient days, but we didn't
+>    put much concern until inband dedupe/heavily reflink work load.
 
-The tradeoff depends on a lot of parameters, like your expected dup rate,
-memory size, and seek latency.  If the dup rate is high (say 40%) and
-your seek latency is high (low-cost spinning rust) and you don't have
-enough RAM to load the whole hash table into memory, then an on-disk
-dedup cache _itself_ creates an unusable I/O load.  Hash table lookups
-generate random I/O, and at 40% dup rate every other block you write
-requires a performance-crippling disk seek to read the half of the cache
-that isn't in RAM.
+Out-of-band dedup definitely hits that.  Most blocks are duplicated only
+a few times, but a few common blocks are _really_ common.  I have some
+filesystems where some extents have a few tens of thousands of references
+by dedup, then a dozen snapshots are created to increase the ref count by
+another order of magnitude.  'btrfs ins logical' takes hours to run on
+these blocks--assuming the host doesn't run out of RAM and crash before
+giving an answer.
 
-I looked at my parameters and concluded that an in-memory cache (with
-persistence by saving the data at regular intervals) was the *only*
-kind of cache I'd ever be able to use with any dedup implementation.
+Try doing a balance on a filesystem where some extents have a million+
+references on a machine with 2G of RAM.  I _dare_ you.
 
-If the dup rate is lower or you're using SSD then you might trade some
-IOs for more free RAM and consider an on-disk hash table with some sort of
-paging scheme.  If you have huge amounts of RAM you don't need an on-disk
-scheme at all--you can add persistence e.g. by trickle-writing the data
-over the space of an hour to avoid adding a lot of latency or memory
-pressure at once.
+It would be nice to get the bug fixes in sooner, whether or not the
+upper layers of the in-band dedup feature are ready.
 
-> > Users can get better dedupe via the ioctl today than with what
-> > you propose go in as an experimental feature so I don't see many people
-> > caring to test it. IMHO you would have to provide a more compelling rea=
-son
-> > to include this code.
->=20
-> I see it as a complementary feature in the deduplication capabilities,
-> covering more usecases.
-
-If you have unlimited amounts of RAM, fast CPU, and slow disks, then it
-certainly makes sense, even with the SHA256 hash.  That seems to be the
-use case ZFS was designed for.
-
-
---Sr1nOIr3CvdE5hEN
+--yudcn1FV7Hsu/q59
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: Digital signature
 
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1
 
-iEYEARECAAYFAlc1bZ8ACgkQgfmLGlazG5wXxwCgy1MarhSUpJMEFE5JwWNP+4tL
-+1YAn0ZHghfcsH/QRaQS2O/W13TiruhX
-=rzMH
+iEYEARECAAYFAlc1cnYACgkQgfmLGlazG5ynTwCfaFmXheYwz/+QkAaFI/N1gcwY
+oBQAoLfTsLs2gyzXdDL9Zbpeg3K+RBi+
+=Ud8k
 -----END PGP SIGNATURE-----
 
---Sr1nOIr3CvdE5hEN--
+--yudcn1FV7Hsu/q59--

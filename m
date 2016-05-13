@@ -1,59 +1,55 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail2.linuxsystems.it ([2.119.245.46]:33272 "EHLO
-	mail2.linuxsystems.it" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751510AbcEMMKK convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 13 May 2016 08:10:10 -0400
-From: =?iso-8859-1?Q?Niccol=F2_Belli?= <darkbasic@linuxsystems.it>
-To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Cc: <linux-btrfs@vger.kernel.org>, Clemens Eisserer <linuxhippy@gmail.com>,
-        Patrik Lundquist <patrik.lundquist@gmail.com>,
-        Chris Murphy <lists@colorremedies.com>,
-        Qu Wenruo <quwenruo@cn.fujitsu.com>,
-        Omar Sandoval <osandov@osandov.com>,
-        Zygo Blaxell <ce3g8jdj@umail.furryterror.org>, <1i5t5.duncan@cox.net>
-Subject: Re: btrfs ate my data in just two days, after a fresh install. ram =?iso-8859-1?Q?and_disk_are_ok._it_still_mounts,_but_I_cannot_repair?=
-Date: Fri, 13 May 2016 14:10:04 +0200
+Received: from out5-smtp.messagingengine.com ([66.111.4.29]:51832 "EHLO
+	out5-smtp.messagingengine.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1752912AbcEMP2V convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 13 May 2016 11:28:21 -0400
+Received: from compute7.internal (compute7.nyi.internal [10.202.2.47])
+	by mailout.nyi.internal (Postfix) with ESMTP id 20080205A8
+	for <linux-btrfs@vger.kernel.org>; Fri, 13 May 2016 11:28:20 -0400 (EDT)
+Received: from ebox.rath.org (ebox.rath.org [45.79.69.51])
+	by mail.messagingengine.com (Postfix) with ESMTPA id CA122C00013
+	for <linux-btrfs@vger.kernel.org>; Fri, 13 May 2016 11:28:19 -0400 (EDT)
+Received: from vostro.rath.org (vostro [192.168.12.4])
+	by ebox.rath.org (Postfix) with ESMTPS id DDE622A6091
+	for <linux-btrfs@vger.kernel.org>; Fri, 13 May 2016 15:28:18 +0000 (UTC)
+From: Nikolaus Rath <Nikolaus@rath.org>
+To: linux-btrfs@vger.kernel.org
+Subject: Re: fsck: to repair or not to repair
+References: <87y47g1esh.fsf@thinkpad.rath.org>
+	<CAPmG0jYDw8Sid2jORVtfwNLpeZPAqtH429EQsraz9GzNdK1aUQ@mail.gmail.com>
+	<pan$14f07$a448b38$b8e37f4a$116d54ce@cox.net>
+Date: Fri, 13 May 2016 08:28:18 -0700
+In-Reply-To: <pan$14f07$a448b38$b8e37f4a$116d54ce@cox.net> (Duncan's message
+	of "Fri, 13 May 2016 06:36:45 +0000 (UTC)")
+Message-ID: <87vb2ij7u5.fsf@vostro.rath.org>
 MIME-Version: 1.0
-Message-ID: <218bfc1b-a136-45cf-b5d0-8d4c5937efbf@linuxsystems.it>
-In-Reply-To: <994b4fa5-c7ef-27e1-2fc2-386ab62a16c0@gmail.com>
-References: <3bf4a554-e3b8-44e2-b8e7-d08889dcffed@linuxsystems.it>
- <CAJCQCtRAqxREr8ToorSkbsnYKKk_NPy+1oSHP6WMOnpLe=9T1g@mail.gmail.com>
- <c9bde2c9-c0f3-4bd2-a9ac-81fe0250edcc@linuxsystems.it>
- <20160505174854.GA1012@vader.dhcp.thefacebook.com>
- <585760e0-7d18-4fa0-9974-62a3d7561aee@linuxsystems.it>
- <2cd5aca36f853f3c9cf1d46c2f133aa3@linuxsystems.it>
- <CAFvQSYTQ1yZqPYyv0dmd+JuHRWfKm-RtZLdbKXQeHiWMthnyLw@mail.gmail.com>
- <f1dd07efb34a0a110f62566979530944@linuxsystems.it>
- <799cf552-4612-56c5-b44d-59458119e2b0@gmail.com>
- <52f0c710-d695-443d-b6d5-266e3db634f8@linuxsystems.it>
- <20160509162940.GC15597@hungrycats.org>
- <c5fa6a35-f6bd-4546-8297-7f6225696157@linuxsystems.it>
- <a3a4e412-221d-c12b-284b-af53e4738211@gmail.com>
- <ef2e08cf-587c-4569-9600-9ad7bc45aab2@linuxsystems.it>
- <994b4fa5-c7ef-27e1-2fc2-386ab62a16c0@gmail.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On venerdì 13 maggio 2016 13:35:01 CEST, Austin S. Hemmelgarn wrote:
-> The fact that you're getting an OOPS involving core kernel 
-> threads (kswapd) is a pretty good indication that either there's 
-> a bug elsewhere in the kernel, or that something is wrong with 
-> your hardware.  it's really difficult to be certain if you don't 
-> have a reliable test case though.
+On May 13 2016, Duncan <1i5t5.duncan@cox.net> wrote:
+> Because btrfs can be multi-device, it needs some way to track which 
+> devices belong to each filesystem, and it uses filesystem UUID for this 
+> purpose.
+>
+> If you clone a filesystem (for instance using dd or lvm snapshotting, 
+> doesn't matter how) and then trigger a btrfs device scan, say by plugging 
+> in some other device with btrfs on it so udev triggers a scan, and the 
+> kernel sees multiple devices with the same filesystem UUID as a result, 
+> and one of those happens to be mounted, you can corrupt both copies as 
+> the kernel btrfs won't be able to tell them apart and may write updates 
+> to the wrong one.
 
-Talking about reliable test cases, I forgot to say that I definitely found 
-an interesting one. It doesn't lead to OOPS but perhaps something even more 
-interesting. While running countless stress tests I tried running some 
-games to stress the system in different ways. I chosed openmw (an open 
-source engine for Morrowind) and I played it for a while on my second 
-external monitor (while I watched at some monitoring tools on my first 
-monitor). I noticed that after playing a while I *always* lose internet 
-connection (I use an USB3 Gigabit Ethernet adapter). This isn't the only 
-thing which happens: even if the game keeps running flawlessly and the 
-system *seems* to work fine (I can drag windows, open the terminal...) lots 
-of commands simply stall (for example mounting a partition, unmounting it, 
-rebooting...). I can reliably reproduce it, it ALWAYS happens.
+That seems like a rather odd design. Why isn't btrfs refusing to mount
+in this situation? In the face of ambiguity, guessing is generally bad
+idea (at least for a computer program).
 
-Niccolò
+
+Best,
+-Nikolaus
+-- 
+GPG encrypted emails preferred. Key id: 0xD113FCAC3C4E599F
+Fingerprint: ED31 791B 2C5C 1613 AF38 8B8A D113 FCAC 3C4E 599F
+
+             »Time flies like an arrow, fruit flies like a Banana.«

@@ -1,162 +1,93 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.15.18]:56727 "EHLO mout.gmx.net"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753168AbcEMO0X (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 13 May 2016 10:26:23 -0400
-Subject: Re: About in-band dedupe for v4.7
-To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>, dsterba@suse.cz,
+Received: from james.kirk.hungrycats.org ([174.142.39.145]:45027 "EHLO
+	james.kirk.hungrycats.org" rhost-flags-OK-FAIL-OK-OK)
+	by vger.kernel.org with ESMTP id S1752974AbcEMQhD (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 13 May 2016 12:37:03 -0400
+Date: Fri, 13 May 2016 12:37:01 -0400
+From: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
+To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Cc: Mark Fasheh <mfasheh@suse.de>, dsterba@suse.cz,
         Qu Wenruo <quwenruo@cn.fujitsu.com>, Chris Mason <clm@fb.com>,
         Josef Bacik <jbacik@fb.com>, btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: About in-band dedupe for v4.7
+Message-ID: <20160513163701.GG15597@hungrycats.org>
 References: <aae84f04-cb64-46f3-79ea-f2d84d79a3ba@cn.fujitsu.com>
  <20160510221119.GD7633@wotan.suse.de>
  <23ec14b4-deb3-4294-348c-1f0e4a7db169@cn.fujitsu.com>
- <20160511025211.GF7633@wotan.suse.de> <20160511173659.GI29353@suse.cz>
+ <20160511025211.GF7633@wotan.suse.de>
+ <20160511173659.GI29353@suse.cz>
  <20160512205426.GL7633@wotan.suse.de>
  <eb0c315c-cea0-276c-d9bb-d83883cd01a4@gmail.com>
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <1fab9f95-766b-25c2-53c0-1af0e79b1bea@gmx.com>
-Date: Fri, 13 May 2016 22:25:24 +0800
 MIME-Version: 1.0
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="h56sxpGKRmy85csR"
 In-Reply-To: <eb0c315c-cea0-276c-d9bb-d83883cd01a4@gmail.com>
-Content-Type: text/plain; charset=windows-1252; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
+--h56sxpGKRmy85csR
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-On 05/13/2016 08:14 PM, Austin S. Hemmelgarn wrote:
+On Fri, May 13, 2016 at 08:14:10AM -0400, Austin S. Hemmelgarn wrote:
 > On 2016-05-12 16:54, Mark Fasheh wrote:
->> On Wed, May 11, 2016 at 07:36:59PM +0200, David Sterba wrote:
->>> On Tue, May 10, 2016 at 07:52:11PM -0700, Mark Fasheh wrote:
->>>> Taking your history with qgroups out of this btw, my opinion does not
->>>> change.
->>>>
->>>> With respect to in-memory only dedupe, it is my honest opinion that
->>>> such a
->>>> limited feature is not worth the extra maintenance work. In particular
->>>> there's about 800 lines of code in the userspace patches which I'm sure
->>>> you'd want merged, because how could we test this then?
->>>
->>> I like the in-memory dedup backend. It's lightweight, only a heuristic,
->>> does not need any IO or persistent storage. OTOH I consider it a subpart
->>> of the in-band deduplication that does all the persistency etc. So I
->>> treat the ioctl interface from a broader aspect.
->>
->> Those are all nice qualities, but what do they all get us?
->>
->> For example, my 'large' duperemove test involves about 750 gigabytes of
->> general purpose data - quite literally /home off my workstation.
->>
->> After the run I'm usually seeing between 65-75 gigabytes saved for a
->> total
->> of only 10% duplicated data. I would expect this to be fairly 'average' -
->> /home on my machine has the usual stuff - documents, source code, media,
->> etc.
->>
->> So if you were writing your whole fs out you could expect about the same
->> from inline dedupe - 10%-ish. Let's be generous and go with that number
->> though as a general 'this is how much dedupe we get'.
->>
->> What the memory backend is doing then is providing a cache of
->> sha256/block
->> calculations. This cache is very expensive to fill, and every written
->> block
->> must go through it. On top of that, the cache does not persist between
->> mounts, and has items regularly removed from it when we run low on
->> memory.
->> All of this will drive down the amount of duplicated data we can find.
->>
->> So our best case savings is probably way below 10% - let's be _really_
->> nice
->> and say 5%.
->>
->> Now ask yourself the question - would you accept a write cache which is
->> expensive to fill and would only have a hit rate of less than 5%?
-> In-band deduplication is a feature that is not used by typical desktop
-> users or even many developers because it's computationally expensive,
-> but it's used _all the time_ by big data-centers and similar places
-> where processor time is cheap and storage efficiency is paramount.
-> Deduplication is more useful in general the more data you have.  5% of 1
-> TB is 20 GB, which is not much.  5% of 1 PB is 20 TB, which is at least
-> 3-5 disks, which can then be used for storing more data, or providing
-> better resiliency against failures.
->
-> To look at it another way, deduplicating an individual's home directory
-> will almost never get you decent space savings, the majority of shared
-> data is usually file headers and nothing more, which can't be
-> deduplicated efficiently because of block size requirements.
-> Deduplicating all the home directories on a terminal server with 500
-> users usually will get you decent space savings, as there very likely
-> are a number of files that multiple people have exact copies of, but
-> most of them are probably not big files.  Deduplicating the entirety of
-> a multi-petabyte file server used for storing VM disk images will
-> probably save you a very significant amount of space, because the
-> probability of having data that can be deduplicated goes up as you store
-> more data, and there is likely to be a lot of data shared between the
-> disk images.
->
-> This is exactly why I don't use deduplication on any of my personal
-> systems.  On my laptop, the space saved is just not worth the time spent
-> doing it, as I fall pretty solidly into the first case (most of the data
-> duplication on my systems is in file headers).  On my home server, I'm
-> not storing enough data with sufficient internal duplication that it
-> would save more than 10-20 GB, which doesn't matter for me given that
-> I'm using roughly half of the 2.2 TB of effective storage space I have.
-> However, once we (eventually) get all the file servers where I work
-> moved over to Linux systems running BTRFS, we will absolutely be using
-> deduplication there, as we have enough duplication in our data that it
-> will probably cut our storage requirements by around 20% on average.
-> --
+> >Now ask yourself the question - would you accept a write cache which is
+> >expensive to fill and would only have a hit rate of less than 5%?
+> In-band deduplication is a feature that is not used by typical desktop users
+> or even many developers because it's computationally expensive, but it's
+> used _all the time_ by big data-centers and similar places where processor
+> time is cheap and storage efficiency is paramount. Deduplication is more
+> useful in general the more data you have.  5% of 1 TB is 20 GB, which is not
+> much.  5% of 1 PB is 20 TB, which is at least 3-5 disks, which can then be
+> used for storing more data, or providing better resiliency against failures.
 
-Nice to hear that.
+There's also a big cost difference between a 5-drive and 6-drive array
+when all your servers are built with 5-drive cages.  Delay that expansion
+for six months, and you can buy 5 larger drives for the same price.
 
-Although the feature is not going to be merged soon, but there is some 
-info which may help anyone interested with inband dedupe to plan their 
-usage or tests.
+I have laptops with filesystems that are _just_ over 512GB before dedup.
+SSDs seem to come in 512GB and 1TB sizes with nothing in between, so
+saving even a few dozen MB can translate into hundreds of dollars per
+user (not to mention the bureaucratic hardware provisioning side-effects
+which easily triple that cost).
 
-1) CPU core number
-    Since currently in-band dedupe balance all SHA256 calculation using
-    async-thread, for default thread_pool number, it's
-    max(nr_cpu + 2, 8).
-    So if using default thread_pool number, and the system doesn't have
-    more than 8 cores, all CPU can be easily eaten up by dedupe.
+Working on big software integration projects can generate 60% duplication
+rates.  Think checkout of entire OS + disk images + embedded media,
+build + install trees with copied data, long build times so there are
+multiple working directories, multiple active branches of the same
+project, and oh yeah it's all in SVN, which stores a complete second
+copy of everything on disk just because wasting space is cool.
 
-    So either use dedupe with default thread_pool setting when you have
-    more  than 8 cores, or tunning thread_pool to nr_cpu - 1 or 2.
+> To look at it another way, deduplicating an individual's home directory will
+> almost never get you decent space savings, the majority of shared data is
+> usually file headers and nothing more, which can't be deduplicated
+> efficiently because of block size requirements. Deduplicating all the home
+> directories on a terminal server with 500 users usually will get you decent
+> space savings, as there very likely are a number of files that multiple
+> people have exact copies of, but most of them are probably not big files.
+> Deduplicating the entirety of a multi-petabyte file server used for storing
+> VM disk images will probably save you a very significant amount of space,
+> because the probability of having data that can be deduplicated goes up as
+> you store more data, and there is likely to be a lot of data shared between
+> the disk images.
 
-    Or your system will be less responsive then running delalloc
-    (fsync/sync).
+Mail stores benefit from this too.  For some reason, Microsoft Office
+users seem to enjoy emailing multi-megabyte runs of MIME-encoded zeros
+to each other.  ;)
 
-2) Dedupe speed.
-    In our internal 1 core test. It's about the same speed compared to
-    compress=lzo mount option or a little faster, when the data doesn't
-    have a quite good compress ratio (80~100% compression ratio).
 
-    We will do more completely performance btests ased on file contents
-    (compress ratio and dedupe ratio), core numbers, and more different
-    settings like dedupe bs, when writing all these things into wiki.
+--h56sxpGKRmy85csR
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
 
-    But personally I recommend to think twice before choosing compress
-    with dedupe.
-    It's really dependent on the file contents.
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
 
-3) Per-file/dir control.
-    Same as compression, don't forget such useful flag (although will be
-    delayed even further). It would save a lot of CPU time.
+iEYEARECAAYFAlc2Aq0ACgkQgfmLGlazG5ygdwCfR7hE0d6j5fIGuu3efoHA5+lR
+HogAn2Ob90q7G1kJ1IffvLc5Kzm0w2AT
+=3gPK
+-----END PGP SIGNATURE-----
 
-    So if tuned well (admin knows the dedupe hotspot), the space save
-    can go up to 40% for specific dirs, while doesn't spend any extra CPU
-    for other data.
-
-To conclude, this feature is not intended to be used without any 
-thinking/reading/checking/tuning, and not for everyone.
-
-Although any one can try dedupe very easy on existing btrfs with patched 
-kernel, and then mount it back with stable kernel after the trial.
-
-Just as Austin said, it's some useful feature for large storage server 
-where CPU time is relative cheap compared to storage or the data is 
-specially patterned for dedupe.
-
-Thanks,
-Qu
+--h56sxpGKRmy85csR--

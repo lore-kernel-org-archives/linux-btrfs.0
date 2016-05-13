@@ -1,119 +1,108 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pa0-f43.google.com ([209.85.220.43]:35911 "EHLO
-	mail-pa0-f43.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750763AbcEMEtc (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 13 May 2016 00:49:32 -0400
-Received: by mail-pa0-f43.google.com with SMTP id bt5so36313072pac.3
-        for <linux-btrfs@vger.kernel.org>; Thu, 12 May 2016 21:49:32 -0700 (PDT)
-Message-ID: <1463114957.3636.140.camel@clone1.com>
-Subject: Re: BTRFS Data at Rest File Corruption
-From: "Richard A. Lochner" <lochner@clone1.com>
-To: Chris Murphy <lists@colorremedies.com>
-Cc: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Date: Thu, 12 May 2016 23:49:17 -0500
-In-Reply-To: <CAJCQCtSSbv5dAC-uBN9RnYKKRMtr04KmLZVzhvAh7=Xq3ej7dQ@mail.gmail.com>
-References: <CACTfMoQmco=yBP+e8tn0MoTVZsMauw0_=N1yc42NVNM9Krqv7A@mail.gmail.com>
-	 <97b8a0bd-3707-c7d6-4138-c8fe81937b72@gmail.com>
-	 <1463075341.3636.56.camel@clone1.com>
-	 <CAJCQCtSSbv5dAC-uBN9RnYKKRMtr04KmLZVzhvAh7=Xq3ej7dQ@mail.gmail.com>
-Content-Type: text/plain; charset="UTF-8"
+Received: from plane.gmane.org ([80.91.229.3]:47277 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750750AbcEMGLl (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 13 May 2016 02:11:41 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+	id 1b16K0-0007iK-TI
+	for linux-btrfs@vger.kernel.org; Fri, 13 May 2016 08:11:37 +0200
+Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Fri, 13 May 2016 08:11:36 +0200
+Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Fri, 13 May 2016 08:11:36 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: Amount of scrubbed data goes from 15.90GiB to 26.66GiB after
+ defragment -r -v -clzo on a fs always mounted with compress=lzo
+Date: Fri, 13 May 2016 06:11:27 +0000 (UTC)
+Message-ID: <pan$106d2$20dff0d0$cff8ba20$86e58020@cox.net>
+References: <264486fb-94ce-4040-a436-e9db5de9a203@linuxsystems.it>
+	<pan$331b6$43ad41cc$c9aa5858$e14154bc@cox.net>
+	<60018ed4-023e-4ca6-8f74-e19b8849de65@linuxsystems.it>
 Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Chris,
+Niccolò Belli posted on Thu, 12 May 2016 15:56:20 +0200 as excerpted:
 
-See notes inline.
+> Thanks for the detailed explanation, hopefully in the future someone
+> will be able to make defrag snapshot/reflink aware in a scalable manner.
 
-On Thu, 2016-05-12 at 19:41 -0600, Chris Murphy wrote:
-> On Thu, May 12, 2016 at 11:49 AM, Richard A. Lochner <lochner@clone1.
-> com> wrote:
-> 
-> > 
-> > I suspected, and I still suspect that the error occurred upon a
-> > metadata update that corrupted the checksum for the file, probably
-> > due
-> > to silent memory corruption.  If the checksum was silently
-> > corrupted,
-> > it would be simply written to both drives causing this type of
-> > error.
-> Metadata is checksummed independently of data. So if the data isn't
-> updated, its checksum doesn't change, only metadata checksum is
-> changed.
-> > 
-> > 
-> > btrfs dmesg(s):
-> > 
-> > [16510.334020] BTRFS warning (device sdb1): checksum error at
-> > logical
-> > 3037444042752 on dev /dev/sdb1, sector 4988789496, root 259, inode
-> > 1437377, offset 75754369024, length 4096, links 1 (path:
-> > Rick/sda4.img)
-> > [16510.334043] BTRFS error (device sdb1): bdev /dev/sdb1 errs: wr
-> > 0, rd
-> > 0, flush 0, corrupt 5, gen 0
-> > [16510.345662] BTRFS error (device sdb1): unable to fixup (regular)
-> > error at logical 3037444042752 on dev /dev/sdb1
-> > 
-> > [17606.978439] BTRFS warning (device sdb1): checksum error at
-> > logical
-> > 3037444042752 on dev /dev/sdc1, sector 4988750584, root 259, inode
-> > 1437377, offset 75754369024, length 4096, links 1 (path:
-> > Rick/sda4.img)
-> > [17606.978460] BTRFS error (device sdb1): bdev /dev/sdc1 errs: wr
-> > 0, rd
-> > 13, flush 0, corrupt 4, gen 0
-> > [17606.989497] BTRFS error (device sdb1): unable to fixup (regular)
-> > error at logical 3037444042752 on dev /dev/sdc1
-> This is confusing. Are these the same boot? The later time has a
-> lower
-> corrupt count. Can you just 'dd if=sda4.img of=/dev/null' and report
-> all (new) messages in dmesg? It seems to me there should be pretty
-> much all the same monotonic-time for the problem with both devices.
+It's still planned, AFAIK, but one of the scaling issues in particular, 
+quotas, have turned out to be a particularly challenging thing to even 
+actually get working correctly.  They've rewritten the quota code twice 
+(so they're on their third attempted solution), and it's still broken in 
+certain corner-cases ATM, to the point that while they're still actually 
+trying to get the existing third try to work in the tough corner-cases as 
+well, they're already talking about an eventual third rewrite (4th 
+attempt, having scrapped three) once they actually have the corner-cases 
+working, to try to bring better performance once they know the tough 
+corner-cases and can actually design a solution with both them and 
+performance in mind from the beginning.
 
-My apologies, they were from different boots.  After the dd, I get
-these:
+So in practice an actually scalable snapshot-aware defrag is likely to be 
+years out, as it's going to need actually working and scalable quota 
+code, and even then, that's only part of the full scalable snapshot/
+reflink-aware defrag solution.
 
-[109479.550836] BTRFS warning (device sdb1): csum failed ino 1437377
-off 75754369024 csum 1689728329 expected csum 2165338402
-[109479.596626] BTRFS warning (device sdb1): csum failed ino 1437377
-off 75754369024 csum 1689728329 expected csum 2165338402
-[109479.601969] BTRFS warning (device sdb1): csum failed ino 1437377
-off 75754369024 csum 1689728329 expected csum 2165338402
-[109479.602189] BTRFS warning (device sdb1): csum failed ino 1437377
-off 75754369024 csum 1689728329 expected csum 2165338402
-[109479.602323] BTRFS warning (device sdb1): csum failed ino 1437377
-off 75754369024 csum 1689728329 expected csum 2165338402
-> 
-> Also what do you get for these for each device:
-> 
-> smartctl scterc -l /dev/sdX
-> cat /sys/block/sdX/device/timeout
-> 
-# smartctl -l scterc  /dev/sdb
-sartctl 6.4 2015-06-04 r4109 [x86_64-linux-4.4.8-300.fc23.x86_64]
-(local build)
-Copyright (C) 2002-15, Bruce Allen, Christian Franke, www.smartmontools
-.org
+The good news is that while there's still work to be done, progress has 
+been healthy in other areas, so once the quota code both actually works 
+and is scalable, the other aspects should hopefully fall into place 
+relatively fast, as they've already been maturing on their own, 
+separately.
 
-SCT Error Recovery Control:
-           Read:     70 (7.0 seconds)
-          Write:     70 (7.0 seconds)
+> I will not use use defrag anymore, but what do you suggest me to do to
+> reclaim the lost space? Get rid of my current snapshots or maybe simply
+> running bedup?
 
-# smartctl -l scterc  /dev/sdc
-smartctl 6.4 2015-06-04 r4109 [x86_64-linux-4.4.8-300.fc23.x86_64]
-(local build)
-Copyright (C) 2002-15, Bruce Allen, Christian Franke, www.smartmontools
-.org
+Neither snapshots nor dedup are one of my direct use-cases so my 
+practical knowledge there is limited, but removing the snapshots should 
+indeed clear the space (but you'll likely have to remove all of them 
+covering a specific subvolume in ordered to free the space) as in doing 
+so you'll be removing all references locking the old extents in place.  
+If you already have them backed up (using send/receive, for instance) 
+elsewhere or don't actually need them, however, it's a viable alternative.
 
-SCT Error Recovery Control:
-           Read:     70 (7.0 seconds)
-          Write:     70 (7.0 seconds)
+In theory the various btrfs dedup solutions out there should work as 
+well, while letting you keep the snapshots (at least to the extent 
+they're either writable snapshots so can be reflink modified, or a single 
+read-only snapshot that the others including the freshly defragged 
+working copy can be reflinked to), since that's their mechanism of 
+operation -- finding identical block sequences and reflinking them so 
+there's only one actual copy on the filesystem, with the rest being 
+reflinks to it -- so in effect it should undo the reflink-breaking you 
+did with the defrag.  *But*, without any personal experience with them, I 
+have no idea either how effective they are in practice in a situation 
+like this, or how practical vs. convoluted the commandlines are going to 
+be to actually accomplish your goal.  Best-case, it's a simple and fast 
+command to run and it not only undoes the defrag reflink breakage, but 
+actually finds enough duplication in the dataset to reduce usage even 
+further than before, worst-case it's multiple complex commands that take 
+a week or longer to run and don't actually help much.
 
-# cat /sys/block/sdb/device/timeout
-30
-# cat /sys/block/sdc/device/timeout
-30
-> 
+So in practice, you have a choice between EITHER deleting all the 
+snapshots and along with them everything locking down the old extents, 
+thus leaving you with only the new, fresh copy (which by itself should be 
+smaller than before), but at the expense of losing your snapshots, OR the 
+at least from my knowledge relative unknown of the various btrfs dedup 
+solutions, which in theory should work well, but in practice... I simply 
+don't know.
+
+AND of course you have the option of basically doing nothing, leaving 
+things as they are.  However, given the context of this thread, it seems 
+you don't consider that a viable longer term option as apparently you 
+were trying to clear space, not use MORE of it, and presumably you 
+actually need that space for something else, and that precludes just 
+letting things be, unless of course you can afford to simply buy your way 
+out of the problem with more storage devices.
+
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

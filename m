@@ -1,39 +1,69 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:39502 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751120AbcERNzF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 18 May 2016 09:55:05 -0400
-Date: Wed, 18 May 2016 15:54:37 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Liu Bo <bo.li.liu@oracle.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 5/7] Btrfs: replace BUG_ON with WARN in merge_bio
-Message-ID: <20160518135437.GA511@suse.cz>
-Reply-To: dsterba@suse.cz
+Received: from userp1040.oracle.com ([156.151.31.81]:39580 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932368AbcENAF0 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 13 May 2016 20:05:26 -0400
+Received: from aserv0022.oracle.com (aserv0022.oracle.com [141.146.126.234])
+	by userp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id u4E05Ojr018025
+	(version=TLSv1 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Sat, 14 May 2016 00:05:25 GMT
+Received: from userv0122.oracle.com (userv0122.oracle.com [156.151.31.75])
+	by aserv0022.oracle.com (8.13.8/8.13.8) with ESMTP id u4E05O92000323
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Sat, 14 May 2016 00:05:24 GMT
+Received: from abhmp0007.oracle.com (abhmp0007.oracle.com [141.146.116.13])
+	by userv0122.oracle.com (8.14.4/8.14.4) with ESMTP id u4E05OmZ008376
+	for <linux-btrfs@vger.kernel.org>; Sat, 14 May 2016 00:05:24 GMT
+From: Liu Bo <bo.li.liu@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH 5/7] Btrfs: replace BUG_ON with WARN in merge_bio
+Date: Fri, 13 May 2016 17:07:00 -0700
+Message-Id: <1463184422-13584-5-git-send-email-bo.li.liu@oracle.com>
+In-Reply-To: <1463184422-13584-1-git-send-email-bo.li.liu@oracle.com>
 References: <1463184422-13584-1-git-send-email-bo.li.liu@oracle.com>
- <1463184422-13584-5-git-send-email-bo.li.liu@oracle.com>
- <20160516084438.GB511@twin.jikos.cz>
- <20160516172400.GA11100@localhost.localdomain>
- <20160517095519.GI511@twin.jikos.cz>
- <20160517173047.GA8522@localhost.localdomain>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20160517173047.GA8522@localhost.localdomain>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, May 17, 2016 at 10:30:47AM -0700, Liu Bo wrote:
-> > If merge_bio gets rid of the BUG_ON, the calles must explicitly handle
-> > 'ret < 0' unless it's provably not a problem.
-> 
-> If merge_bio() returns < 0, then it must be __btrfs_map_block() returns < 0,
-> so even if we continue with submiting this bio, it'd fail at
-> __btrfs_map_block() again because merge_bio and submit_bio are using the
-> same bio.  Because of that we don't bother to submit it, instead we can
-> just return in case of (ret < 0), this applies to both
-> submit_extent_page() and btrfs_submit_compressed_read/write().
-> 
-> What do you think?
+We have two BUG_ON in merge_bio, but since it can gracefully return errors
+to callers, use WARN_ONCE to give error information and don't leave a
+possible panic.
 
-Makes sense to me. All the partial processing (allocations and bios)
-need to be cleaned up, which does not seem trivial from the first look.
+Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+---
+ fs/btrfs/extent_io.c | 1 -
+ fs/btrfs/inode.c     | 6 ++++--
+ 2 files changed, 4 insertions(+), 3 deletions(-)
+
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index e601e0f..99286d1 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -2746,7 +2746,6 @@ static int merge_bio(int rw, struct extent_io_tree *tree, struct page *page,
+ 	if (tree->ops && tree->ops->merge_bio_hook)
+ 		ret = tree->ops->merge_bio_hook(rw, page, offset, size, bio,
+ 						bio_flags);
+-	BUG_ON(ret < 0);
+ 	return ret;
+ 
+ }
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 5874562..3a989e3 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -1827,8 +1827,10 @@ int btrfs_merge_bio_hook(int rw, struct page *page, unsigned long offset,
+ 	map_length = length;
+ 	ret = btrfs_map_block(root->fs_info, rw, logical,
+ 			      &map_length, NULL, 0);
+-	/* Will always return 0 with map_multi == NULL */
+-	BUG_ON(ret < 0);
++	if (ret < 0) {
++		WARN_ONCE(ret < 0, KERN_ERR "ret = %d\n", ret);
++		return ret;
++	}
+ 	if (map_length < length + size)
+ 		return 1;
+ 	return 0;
+-- 
+2.5.5
+

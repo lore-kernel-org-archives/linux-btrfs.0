@@ -1,37 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:32767 "EHLO
+Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:59839 "EHLO
 	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1751391AbcEKUR5 (ORCPT
+	by vger.kernel.org with ESMTP id S1751201AbcENA4k (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 11 May 2016 16:17:57 -0400
-Subject: Re: [PATCH for 4.6] btrfs: disable a spurious WARN_ON in
- btrfs_destroy_inode.
-To: Adam Borowski <kilobyte@angband.pl>, Chris Mason <clm@fb.com>,
-        <linux-btrfs@vger.kernel.org>, Eric Biggers <ebiggers3@gmail.com>
-References: <20160510235758.3ow2wdumtisauw4n@floor.thefacebook.com>
- <20160511182514.GA6423@angband.pl> <20160511182947.GB6423@angband.pl>
-CC: David Sterba <dsterba@suse.com>
-From: Josef Bacik <jbacik@fb.com>
-Message-ID: <f235f5f8-fe4c-d8e6-9e8d-1e4c0d829f49@fb.com>
-Date: Wed, 11 May 2016 13:17:28 -0700
+	Fri, 13 May 2016 20:56:40 -0400
+Date: Fri, 13 May 2016 20:56:34 -0400
+From: Chris Mason <clm@fb.com>
+To: Eric Biggers <ebiggers3@gmail.com>
+CC: <linux-btrfs@vger.kernel.org>
+Subject: Re: WARNING at fs/btrfs/inode.c:9261 btrfs_destroy_inode()
+Message-ID: <20160514005634.GB93143@clm-mbp.thefacebook.com>
+References: <20160510231920.GA938@zzz>
 MIME-Version: 1.0
-In-Reply-To: <20160511182947.GB6423@angband.pl>
-Content-Type: text/plain; charset="windows-1252"; format=flowed
+Content-Type: text/plain; charset="us-ascii"
+In-Reply-To: <20160510231920.GA938@zzz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 05/11/2016 11:29 AM, Adam Borowski wrote:
-> This happens a lot on real-world loads.  The issue is apparently benign,
-> as unsaved pending checksums are moot when the ship^Winode is going down
-> anyway.  Thus, no need to cause panic in users.
->
-> I've retained the warning in CONFIG_BTRFS_ASSERT builds, as this shouldn't
-> happen.  I've replaced the no longer helpful register+stack dump with a
-> printk that mentions the device affected.
->
+On Tue, May 10, 2016 at 06:19:20PM -0500, Eric Biggers wrote:
+> Hello,
+> 
+> The following warning has been triggering for me since about v4.6-rc3:
+> 
+> 	WARN_ON(BTRFS_I(inode)->csum_bytes);
+> 
+> On one machine the warning has occurred 657 times since v4.6-rc5.  On another it
+> has occurred 3 times since v4.6-rc3.  Both are now on v4.6-rc7, where I have
+> still observed the warning.  The warnings occur in groups, and do_unlinkat() and
+> evict() are always in the call stack.
+> 
+> Is this a known issue?  Here is the first occurrence:
 
-Chris is working on fixing the problem, and these are real issues, we 
-need to not hide them behind config options.  Thanks,
+Finally tracked this down today, it's a bug in how we deal with page
+faults in the middle of a write.  We're testing the fix here and I'll
+have a patch on Monday.
 
-Josef
+Strictly speaking this is a regression in one of Chandan's setup patches
+for PAGE_SIZE > sectorsize, but the code was much much too subtle to blame
+him.  It should be possible to trigger with a non-aligned multi-page
+write, I'm trying to nail down a reliable test program so we don't make
+the same mistake again.
 
+-chris

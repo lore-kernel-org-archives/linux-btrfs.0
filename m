@@ -1,83 +1,60 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:28412 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752282AbcEJOCF (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 10 May 2016 10:02:05 -0400
-From: Anand Jain <anand.jain@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.cz, yauhen.kharuzhy@zavadatar.com
-Subject: [PATCH 02/13] btrfs: Do per-chunk check for mount time check
-Date: Tue, 10 May 2016 22:01:40 +0800
-Message-Id: <1462888911-5227-4-git-send-email-anand.jain@oracle.com>
-In-Reply-To: <1462888911-5227-1-git-send-email-anand.jain@oracle.com>
-References: <1462888911-5227-1-git-send-email-anand.jain@oracle.com>
+Received: from mout.gmx.net ([212.227.15.19]:60073 "EHLO mout.gmx.net"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751968AbcENKmd (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 14 May 2016 06:42:33 -0400
+Subject: Re: [PATCH 1/7] Btrfs: replace BUG() with WARN_ONCE in raid56
+To: Liu Bo <bo.li.liu@oracle.com>, linux-btrfs@vger.kernel.org
+References: <1463184422-13584-1-git-send-email-bo.li.liu@oracle.com>
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Message-ID: <33302071-6932-471f-2c1f-b923c1420347@gmx.com>
+Date: Sat, 14 May 2016 18:42:22 +0800
+MIME-Version: 1.0
+In-Reply-To: <1463184422-13584-1-git-send-email-bo.li.liu@oracle.com>
+Content-Type: text/plain; charset=gbk; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 
-Now use the btrfs_check_degraded() to do mount time degraded check.
 
-With this patch, now we can mount with the following case:
- # mkfs.btrfs -f -m raid1 -d single /dev/sdb /dev/sdc
- # wipefs -a /dev/sdc
- # mount /dev/sdb /mnt/btrfs -o degraded
- As the single data chunk is only in sdb, so it's OK to mount as degraded,
- as missing one device is OK for RAID1.
+On 05/14/2016 08:06 AM, Liu Bo wrote:
+> This BUG() has been triggered by a fuzz testing image, but in fact
+> btrfs can handle this gracefully by returning -EIO.
+>
+> Thus, use WARN_ONCE for warning purpose and don't leave a possible
+> kernel panic.
+>
+> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+> ---
+>  fs/btrfs/raid56.c | 2 +-
+>  1 file changed, 1 insertion(+), 1 deletion(-)
+>
+> diff --git a/fs/btrfs/raid56.c b/fs/btrfs/raid56.c
+> index 0b7792e..863f7fe 100644
+> --- a/fs/btrfs/raid56.c
+> +++ b/fs/btrfs/raid56.c
+> @@ -2139,7 +2139,7 @@ int raid56_parity_recover(struct btrfs_root *root, struct bio *bio,
+>
+>  	rbio->faila = find_logical_bio_stripe(rbio, bio);
+>  	if (rbio->faila == -1) {
+> -		BUG();
+> +		WARN_ONCE(1, KERN_WARNING "rbio->faila is -1\n");
 
-But still fail with the following case as expected:
- # mkfs.btrfs -f -m raid1 -d single /dev/sdb /dev/sdc
- # wipefs -a /dev/sdb
- # mount /dev/sdc /mnt/btrfs -o degraded
- As the data chunk is only in sdb, so it's not OK to mount it as degraded.
+Just a personal idea, it would be much better if we can use 
+btrfs_info/error/warn() to output the warning message.
+This would help to locate the fs causing the problem, if there are 
+several btrfs mounted.
 
-Reported-by: Zhao Lei <zhaolei@cn.fujitsu.com>
-Reported-by: Anand Jain <anand.jain@oracle.com>
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Like:
+        btrfs_warn(root->fs_info, "rbio->faia is -1");
+        WARN_ON(1);
 
-[Btrfs: use btrfs_error instead of btrfs_err during mount]
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
----
- fs/btrfs/disk-io.c | 18 ++++++++++--------
- 1 file changed, 10 insertions(+), 8 deletions(-)
+Or adds a new helper like btrfs_dump_warn()?
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index d01f89d130e0..4f91a049fbca 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -2885,6 +2885,16 @@ int open_ctree(struct super_block *sb,
- 		goto fail_tree_roots;
- 	}
- 
-+	ret = btrfs_check_degradable(fs_info, fs_info->sb->s_flags);
-+	if (ret < 0) {
-+		btrfs_err(fs_info, "degraded writable mount failed %d", ret);
-+		goto fail_tree_roots;
-+	} else if (ret > 0 && !btrfs_test_opt(chunk_root, DEGRADED)) {
-+		btrfs_warn(fs_info,
-+			"Some device missing, but still degraded mountable, please mount with -o degraded option");
-+		ret = -EACCES;
-+		goto fail_tree_roots;
-+	}
- 	/*
- 	 * keep the device that is marked to be the target device for the
- 	 * dev_replace procedure
-@@ -2988,14 +2998,6 @@ retry_root_backup:
- 	}
- 	fs_info->num_tolerated_disk_barrier_failures =
- 		btrfs_calc_num_tolerated_disk_barrier_failures(fs_info);
--	if (fs_info->fs_devices->missing_devices >
--	     fs_info->num_tolerated_disk_barrier_failures &&
--	    !(sb->s_flags & MS_RDONLY)) {
--		pr_warn("BTRFS: missing devices(%llu) exceeds the limit(%d), writeable mount is not allowed\n",
--			fs_info->fs_devices->missing_devices,
--			fs_info->num_tolerated_disk_barrier_failures);
--		goto fail_sysfs;
--	}
- 
- 	fs_info->cleaner_kthread = kthread_run(cleaner_kthread, tree_root,
- 					       "btrfs-cleaner");
--- 
-2.7.0
+Thanks,
+Qu
 
+>  		if (generic_io)
+>  			btrfs_put_bbio(bbio);
+>  		kfree(rbio);
+>

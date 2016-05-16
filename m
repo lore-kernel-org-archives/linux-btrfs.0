@@ -1,88 +1,151 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:34478 "EHLO mx1.redhat.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750787AbcEPMqk (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 16 May 2016 08:46:40 -0400
-From: Pino Toscano <ptoscano@redhat.com>
-To: Martin Steigerwald <martin@lichtvoll.de>
-Cc: "Richard W.M. Jones" <rjones@redhat.com>, linux-btrfs@vger.kernel.org
-Subject: Re: RFE: 'btrfs' tools machine readable output
-Date: Mon, 16 May 2016 14:46:30 +0200
-Message-ID: <1813228.1JtXuEvnc4@pendragon.usersys.redhat.com>
-In-Reply-To: <3271754.bqNJ5v1fWK@merkaba>
-References: <20160516121456.GA16970@redhat.com> <3271754.bqNJ5v1fWK@merkaba>
-MIME-Version: 1.0
-Content-Type: multipart/signed; boundary="nextPart5230763.zYmKH3r3t6"; micalg="pgp-sha256"; protocol="application/pgp-signature"
+Received: from mail-pa0-f45.google.com ([209.85.220.45]:33149 "EHLO
+	mail-pa0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750785AbcEPVUl (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 16 May 2016 17:20:41 -0400
+Received: by mail-pa0-f45.google.com with SMTP id xk12so68859692pac.0
+        for <linux-btrfs@vger.kernel.org>; Mon, 16 May 2016 14:20:40 -0700 (PDT)
+Message-ID: <1463433626.3278.31.camel@clone1.com>
+Subject: Re: BTRFS Data at Rest File Corruption
+From: "Richard A. Lochner" <lochner@clone1.com>
+To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>,
+        Chris Murphy <lists@colorremedies.com>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Date: Mon, 16 May 2016 16:20:26 -0500
+In-Reply-To: <41b097af-d565-6cd7-2ed8-cb66b9ae8ecc@gmail.com>
+References: <CACTfMoQmco=yBP+e8tn0MoTVZsMauw0_=N1yc42NVNM9Krqv7A@mail.gmail.com>
+	 <97b8a0bd-3707-c7d6-4138-c8fe81937b72@gmail.com>
+	 <1463075341.3636.56.camel@clone1.com>
+	 <CAJCQCtSSbv5dAC-uBN9RnYKKRMtr04KmLZVzhvAh7=Xq3ej7dQ@mail.gmail.com>
+	 <1463114957.3636.140.camel@clone1.com>
+	 <CAJCQCtSNwpaPs6jWFxzoHdUFJUyUZFjX6vocYf7RCWc=f_n5Hg@mail.gmail.com>
+	 <1463337834.4626.14.camel@clone1.com>
+	 <CAJCQCtSYgfhmNYFE4ffxFy20B=trkh+P=hhdbrq71ysZSm_FEA@mail.gmail.com>
+	 <41b097af-d565-6cd7-2ed8-cb66b9ae8ecc@gmail.com>
+Content-Type: text/plain; charset="UTF-8"
+Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
---nextPart5230763.zYmKH3r3t6
-Content-Transfer-Encoding: quoted-printable
-Content-Type: text/plain; charset="us-ascii"
+Chris/Austin,
 
-On Monday 16 May 2016 14:21:07 Martin Steigerwald wrote:
-> Hello Richard,
->=20
-> On Montag, 16. Mai 2016 13:14:56 CEST Richard W.M. Jones wrote:
-> > I don't have time to implement this right now, so I'm just posting
-> > this as a suggestion/request ...
-> >=20
-> > It would be really helpful if the btrfs tools had a machine-readabl=
-e
-> > output.
-> >=20
-> > Libguestfs parses btrfs tools output in a number of places, eg:
-> > https://github.com/libguestfs/libguestfs/blob/master/daemon/btrfs.c=
+Thank you both for your help.
 
-> > This is a massive PITA because each time a new release of btrfs-pro=
-gs
-> > comes along it changes the output slightly, and we end up having
-> > to add all sorts of hacks.
-> >=20
-> > With machine-readable output, there'd be a flag which would
-> > change the output.  eg:
->=20
-> I wonder whether parsing a text based output is really the most elega=
-nt method=20
-> here.
->=20
-> How about a libbtrfs so that other tools can benefit from btrfs tools=
-=20
-> functionality?
+The sequence of events described by Austin is the only sequence that
+seems to be plausible, given what I have been seen in the data (other
+than an outright bug which I think extremely unlikely).
 
-btrfs-progs is GPL v2 only, and that may be an issue for consumers
-(the libguestfs daemon, the component interacting with devices and
-filesystems inside the libguestfs appliance, is GPL v2+ for example).
+I will be moving these drives soon to a new system with ECC memory.  I
+will definitely let you both know if I encounter this problem again
+after that.  I do not expect to.
 
-> Of course it would likely me more effort than to implement structured=
- output.
+If I was really adventurous, I would modify the code to attempt to
+detect this and run the patched version on my system to see if it is
+possible to detect (and maybe even correct) it as it happens.
+ Unfortunately, that does not appear to be a trivial exercise.
 
-There's this of course, which is not entirely negligible.
+Rick Lochner
 
-=2D-=20
-Pino Toscano
---nextPart5230763.zYmKH3r3t6
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: This is a digitally signed message part.
-Content-Transfer-Encoding: 7Bit
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2
-
-iQIcBAABCAAGBQJXOcEmAAoJEMPRTC2YZDfNB2sP/isw/P2MD0BjGEwbKhaJKPFC
-19fwsxbGowv6krEi9MUEgTawKQRDyZSa3uKZpjEm6RBev+/6yfo66wY5lzHaBwhv
-tN+nuOsRhfFNNTc5+Dx9bHTYXzed0ZSBx8r9jFYLW7vZ07D+CaE8zzcouo8x1KsP
-yjRODi2qnszgzXfBEkTThDJLdScPwqt4MkhGJSpb3dbmbbPvgyY8yiWWHJ0lappM
-0qYk2hLCA4tjW4RkSRSJtIOcQojxLY57InvZk3EQIO5t237rxmYjdSxzR824m8ww
-0G71zqpV4rdZYBTyHTNNM7oX7EdgVAnV+TRUD9nVfReZD+hR9FuReNNe5MAry6vv
-2Kfz7vWRiOjS067SFkAcFgFZTwJM1P13pBWvF7t35h/6KusA1sEBx/I3f1Y5h65i
-yhuImcsar67c+oQZIpsIgDGvF3Kw5lhWvrLfrGf26UwCLTQjFjQ7Opcaej2AwWgw
-fnsgjr3Hm4RVnoMHDdzN5E8yuoreKkxaPbnXgIkeHoLdz5QNss5r0mzTn466Xul4
-Q+BHgzJsf6+2qwG30FLXHVnNjjHsmRnikXX/fI+o3qp/ChqJhzO/H41cD8+4EKQP
-3RkgvhYM88Rm701Hm3jS35STTVyXZ5NLGQpbnOoviI31v2WTNAG7kNZZ+6jvuLPz
-OQtiC8AucHrFFfFqY+25
-=P574
------END PGP SIGNATURE-----
-
---nextPart5230763.zYmKH3r3t6--
-
+On Mon, 2016-05-16 at 07:33 -0400, Austin S. Hemmelgarn wrote:
+> On 2016-05-16 02:07, Chris Murphy wrote:
+> > 
+> > Current hypothesis
+> >  "I suspected, and I still suspect that the error occurred upon a
+> > metadata update that corrupted the checksum for the file, probably
+> > due
+> > to silent memory corruption.  If the checksum was silently
+> > corrupted,
+> > it would be simply written to both drives causing this type of
+> > error."
+> > 
+> > A metadata update alone will not change the data checksums.
+> > 
+> > But let's ignore that. If there's corrupt extent csum in a node
+> > that
+> > itself has a valid csum, this is functionally identical to e.g.
+> > nerfing 100 bytes of a file's extent data (both copies,
+> > identically).
+> > The fs doesn't know the difference. All it knows is the node csum
+> > is
+> > valid, therefore the data extent csum is valid, and that's why it
+> > assumes the data is wrong and hence you get an I/O error. And I can
+> > reproduce most of your results by nerfing file data.
+> > 
+> > The entire dmesg for scrub looks like this:
+> > 
+> > 
+> > May 15 23:29:46 f23s.localdomain kernel: BTRFS warning (device dm-
+> > 6):
+> > checksum error at logical 5566889984 on dev /dev/dm-6, sector
+> > 8540160,
+> > root 5, inode 258, offset 0, length 4096, links 1 (path:
+> > openSUSE-Tumbleweed-NET-x86_64-Current.iso)
+> > May 15 23:29:46 f23s.localdomain kernel: BTRFS error (device dm-6):
+> > bdev /dev/dm-6 errs: wr 0, rd 0, flush 0, corrupt 1, gen 0
+> > May 15 23:29:46 f23s.localdomain kernel: BTRFS error (device dm-6):
+> > unable to fixup (regular) error at logical 5566889984 on dev
+> > /dev/dm-6
+> > May 15 23:29:46 f23s.localdomain kernel: BTRFS warning (device dm-
+> > 6):
+> > checksum error at logical 5566889984 on dev /dev/mapper/VG-b1,
+> > sector
+> > 8579072, root 5, inode 258, offset 0, length 4096, links 1 (path:
+> > openSUSE-Tumbleweed-NET-x86_64-Current.iso)
+> > May 15 23:29:46 f23s.localdomain kernel: BTRFS error (device dm-6):
+> > bdev /dev/mapper/VG-b1 errs: wr 0, rd 0, flush 0, corrupt 1, gen 0
+> > May 15 23:29:46 f23s.localdomain kernel: BTRFS error (device dm-6):
+> > unable to fixup (regular) error at logical 5566889984 on dev
+> > /dev/mapper/VG-b1
+> > 
+> > And the entire dmesg for running sha256sum on the file is
+> > 
+> > May 15 23:33:41 f23s.localdomain kernel: __readpage_endio_check: 22
+> > callbacks suppressed
+> > May 15 23:33:41 f23s.localdomain kernel: BTRFS warning (device dm-
+> > 6):
+> > csum failed ino 258 off 0 csum 3634944209 expected csum 1334657141
+> > May 15 23:33:41 f23s.localdomain kernel: BTRFS warning (device dm-
+> > 6):
+> > csum failed ino 258 off 0 csum 3634944209 expected csum 1334657141
+> > May 15 23:33:41 f23s.localdomain kernel: BTRFS warning (device dm-
+> > 6):
+> > csum failed ino 258 off 0 csum 3634944209 expected csum 1334657141
+> > May 15 23:33:41 f23s.localdomain kernel: BTRFS warning (device dm-
+> > 6):
+> > csum failed ino 258 off 0 csum 3634944209 expected csum 1334657141
+> > May 15 23:33:41 f23s.localdomain kernel: BTRFS warning (device dm-
+> > 6):
+> > csum failed ino 258 off 0 csum 3634944209 expected csum 1334657141
+> > 
+> > 
+> > And I do get an i/o error for sha256sum and no hash is computed.
+> > 
+> > But there's two important differences:
+> > 1. I have two unable to fixup messages, one for each device, at the
+> > exact same time.
+> > 2. I altered both copies of extent data.
+> > 
+> > It's a mystery to me how your file data has not changed, but
+> > somehow
+> > the extent csum was changed but also the node csum was recomputed
+> > correctly. That's a bit odd.
+> I would think this would be perfectly possible if some other file
+> that 
+> had a checksum in that node changed, thus forcing the node's checksum
+> to 
+> be updated.  Theoretical sequence of events:
+> 1. Some file which has a checksum in node A gets written to.
+> 2. Node A is loaded into memory to update the checksum.
+> 3. The new checksum for the changed extent in the file gets updated
+> in 
+> the in-memory copy of node A.
+> 4. Node A has it's own checksum recomputed based on the new data,
+> and 
+> then gets saved to disk.
+> If something happened after 2 but before 4 that caused one of the
+> other 
+> checksums to go bad, then the checksum computed in 4 will have been
+> with 
+> the corrupted data.
+> 

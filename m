@@ -1,97 +1,85 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oi0-f65.google.com ([209.85.218.65]:32937 "EHLO
-	mail-oi0-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750729AbcEPGHD (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:5648 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1750729AbcEPGUP (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 16 May 2016 02:07:03 -0400
-Received: by mail-oi0-f65.google.com with SMTP id t140so14300468oie.0
-        for <linux-btrfs@vger.kernel.org>; Sun, 15 May 2016 23:07:02 -0700 (PDT)
+	Mon, 16 May 2016 02:20:15 -0400
+Subject: Re: problems with free space cache
+To: Duncan <1i5t5.duncan@cox.net>, <linux-btrfs@vger.kernel.org>
+References: <CAD=QJKjop2j+K16nPcAU-bXiCVqm_aGK0g7WxjvTpBvXar+fQQ@mail.gmail.com>
+ <85030f6b-b149-ccd2-ea87-42135b9ccd46@cn.fujitsu.com>
+ <pan$d4fda$1f29731$4540c768$ab93bd6f@cox.net>
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Message-ID: <03a7da5b-e1e2-81a6-9d0c-ca80c1f52a63@cn.fujitsu.com>
+Date: Mon, 16 May 2016 14:20:01 +0800
 MIME-Version: 1.0
-In-Reply-To: <1463337834.4626.14.camel@clone1.com>
-References: <CACTfMoQmco=yBP+e8tn0MoTVZsMauw0_=N1yc42NVNM9Krqv7A@mail.gmail.com>
-	<97b8a0bd-3707-c7d6-4138-c8fe81937b72@gmail.com>
-	<1463075341.3636.56.camel@clone1.com>
-	<CAJCQCtSSbv5dAC-uBN9RnYKKRMtr04KmLZVzhvAh7=Xq3ej7dQ@mail.gmail.com>
-	<1463114957.3636.140.camel@clone1.com>
-	<CAJCQCtSNwpaPs6jWFxzoHdUFJUyUZFjX6vocYf7RCWc=f_n5Hg@mail.gmail.com>
-	<1463337834.4626.14.camel@clone1.com>
-Date: Mon, 16 May 2016 00:07:01 -0600
-Message-ID: <CAJCQCtSYgfhmNYFE4ffxFy20B=trkh+P=hhdbrq71ysZSm_FEA@mail.gmail.com>
-Subject: Re: BTRFS Data at Rest File Corruption
-From: Chris Murphy <lists@colorremedies.com>
-To: "Richard A. Lochner" <lochner@clone1.com>
-Cc: Chris Murphy <lists@colorremedies.com>,
-        "Austin S. Hemmelgarn" <ahferroin7@gmail.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+In-Reply-To: <pan$d4fda$1f29731$4540c768$ab93bd6f@cox.net>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Current hypothesis
- "I suspected, and I still suspect that the error occurred upon a
-metadata update that corrupted the checksum for the file, probably due
-to silent memory corruption.  If the checksum was silently corrupted,
-it would be simply written to both drives causing this type of error."
-
-A metadata update alone will not change the data checksums.
-
-But let's ignore that. If there's corrupt extent csum in a node that
-itself has a valid csum, this is functionally identical to e.g.
-nerfing 100 bytes of a file's extent data (both copies, identically).
-The fs doesn't know the difference. All it knows is the node csum is
-valid, therefore the data extent csum is valid, and that's why it
-assumes the data is wrong and hence you get an I/O error. And I can
-reproduce most of your results by nerfing file data.
-
-The entire dmesg for scrub looks like this:
 
 
-May 15 23:29:46 f23s.localdomain kernel: BTRFS warning (device dm-6):
-checksum error at logical 5566889984 on dev /dev/dm-6, sector 8540160,
-root 5, inode 258, offset 0, length 4096, links 1 (path:
-openSUSE-Tumbleweed-NET-x86_64-Current.iso)
-May 15 23:29:46 f23s.localdomain kernel: BTRFS error (device dm-6):
-bdev /dev/dm-6 errs: wr 0, rd 0, flush 0, corrupt 1, gen 0
-May 15 23:29:46 f23s.localdomain kernel: BTRFS error (device dm-6):
-unable to fixup (regular) error at logical 5566889984 on dev /dev/dm-6
-May 15 23:29:46 f23s.localdomain kernel: BTRFS warning (device dm-6):
-checksum error at logical 5566889984 on dev /dev/mapper/VG-b1, sector
-8579072, root 5, inode 258, offset 0, length 4096, links 1 (path:
-openSUSE-Tumbleweed-NET-x86_64-Current.iso)
-May 15 23:29:46 f23s.localdomain kernel: BTRFS error (device dm-6):
-bdev /dev/mapper/VG-b1 errs: wr 0, rd 0, flush 0, corrupt 1, gen 0
-May 15 23:29:46 f23s.localdomain kernel: BTRFS error (device dm-6):
-unable to fixup (regular) error at logical 5566889984 on dev
-/dev/mapper/VG-b1
+Duncan wrote on 2016/05/16 05:59 +0000:
+> Qu Wenruo posted on Mon, 16 May 2016 10:24:23 +0800 as excerpted:
+>
+>> IIRC clear_cache option is fs level option.
+>> So the first mount with clear_cache, then all subvolume will have
+>> clear_cache.
+>
+> Question:  Does clear_cache work with a read-only mount?
+Good question.
 
-And the entire dmesg for running sha256sum on the file is
+But easy to check.
+I just checked it and found even that's possible, it doesn't work.
 
-May 15 23:33:41 f23s.localdomain kernel: __readpage_endio_check: 22
-callbacks suppressed
-May 15 23:33:41 f23s.localdomain kernel: BTRFS warning (device dm-6):
-csum failed ino 258 off 0 csum 3634944209 expected csum 1334657141
-May 15 23:33:41 f23s.localdomain kernel: BTRFS warning (device dm-6):
-csum failed ino 258 off 0 csum 3634944209 expected csum 1334657141
-May 15 23:33:41 f23s.localdomain kernel: BTRFS warning (device dm-6):
-csum failed ino 258 off 0 csum 3634944209 expected csum 1334657141
-May 15 23:33:41 f23s.localdomain kernel: BTRFS warning (device dm-6):
-csum failed ino 258 off 0 csum 3634944209 expected csum 1334657141
-May 15 23:33:41 f23s.localdomain kernel: BTRFS warning (device dm-6):
-csum failed ino 258 off 0 csum 3634944209 expected csum 1334657141
+Free space cache inode bytenr doesn't change and no generation change.
+While without ro, it did rebuild free space cache for *SOME* chunks, not 
+*ALL* chunks.
+
+And that's the problem I'm just chasing today.
 
 
-And I do get an i/o error for sha256sum and no hash is computed.
+Short conclude: clear_cache mount option will only rebuild free space 
+cache for chunks which we allocated space from, during the mount time of 
+clear_cache.
+(Maybe I'm just out-of-date and some other devs may already know that)
 
-But there's two important differences:
-1. I have two unable to fixup messages, one for each device, at the
-exact same time.
-2. I altered both copies of extent data.
+And kernel fix for that is a little tricky, as we don't really read out 
+all free space cache, but only when we are going to allocate space from 
+them.
+For any free space cache we didn't read out, they won't be rebuilt.
 
-It's a mystery to me how your file data has not changed, but somehow
-the extent csum was changed but also the node csum was recomputed
-correctly. That's a bit odd.
+You can find my reproducer in my just submitted 
+patch(https://patchwork.kernel.org/patch/9098431/).
+
+That behavior makes things a little confusing, which users may continue 
+hitting annoying free space cache warning from kernel, even they try to 
+use clear_cache mount option.
 
 
+Anyway, I'll add ability for manually wipe out all/given free space 
+cache to btrfsck, at least creating a solution to really rebuild all v1 
+free space cache.
+
+Thanks,
+Qu
+>
+> I could see it being like the log replay and being done even on ro
+> mounts, particularly since unlike the log replay, clear_cache is a
+> specific mount option so could be seen as specifically requested even if
+> otherwise ro.  Or not.  So I don't know.
+>
+> He mentioned root, which is normally mounted read-only first.  That's
+> what got me thinking about it.  Does that complicate things?
+>
+> If root is mounted ro without clear_cache by the initr*, will a
+> subsequent remount,rw,clear_cache do it?
+>
+> And for those like me who keep root mounted ro by default, would
+> clear_cache work at all, or would it not work until such time as I
+> mounted root, or some other subvolume (which I don't have here to worry
+> about, but for those who do...) writable?
+>
 
 
-Chris Murphy

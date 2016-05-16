@@ -1,42 +1,244 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:45226 "EHLO
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:65179 "EHLO
 	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1753433AbcESPGQ (ORCPT
+	by vger.kernel.org with ESMTP id S1751014AbcEPVHW (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 19 May 2016 11:06:16 -0400
-Received: from pps.filterd (m0001255.ppops.net [127.0.0.1])
-	by mx0b-00082601.pphosted.com (8.16.0.11/8.16.0.11) with SMTP id u4JF2uZi023227
-	for <linux-btrfs@vger.kernel.org>; Thu, 19 May 2016 08:06:14 -0700
-Received: from mail.thefacebook.com ([199.201.64.23])
-	by mx0b-00082601.pphosted.com with ESMTP id 230vd9e9kf-1
-	(version=TLSv1 cipher=ECDHE-RSA-AES256-SHA bits=256 verify=NOT)
-	for <linux-btrfs@vger.kernel.org>; Thu, 19 May 2016 08:06:14 -0700
-Date: Thu, 19 May 2016 11:06:01 -0400
+	Mon, 16 May 2016 17:07:22 -0400
+Date: Mon, 16 May 2016 17:06:55 -0400
 From: Chris Mason <clm@fb.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: Re: Crash after WARN_ON(BTRFS_I(inode)->csum_bytes)
-Message-ID: <20160519150601.ivpfwwqiyz2jziol@floor.thefacebook.com>
-References: <20160519102553.GA4164@invalid>
+To: <linux-btrfs@vger.kernel.org>, <dsj@fb.com>
+CC: Jakob =?iso-8859-1?Q?Sch=FCrz?= <wertstoffe@nurfuerspam.de>,
+        "Christian Borntraeger" <borntraeger@de.ibm.com>,
+        Adam Borowski <kilobyte@angband.pl>,
+        Markus Trippelsdorf <markus@trippelsdorf.de>
+Subject: [PATCH] Btrfs: fix handling of faults from btrfs_copy_from_user
+Message-ID: <20160516210655.sfsjtj5oleeksaxq@floor.thefacebook.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
-In-Reply-To: <20160519102553.GA4164@invalid>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, May 19, 2016 at 12:25:53PM +0200, M G Berberich wrote:
-> Hello,
-> 
-> a near total system crash (reboot via magic-sysreq-keys was possible)
-> which seems to be associated to btrfs.
-> 
-> btrfs check (v 4.5.2) does not find any problem with any filesystems
-> on the system.
-> 
-> Kernel is stock 4.6, booting without initramfs, system is Debian
-> stretch (testing).
+Hi everyone,
 
-This patch should fix things:
+I've tried to cc most of the recent reports of this warning.  It was
+pretty hard to track down, but I've got a test program for it now.  My
+goal is to change xfs_io to add the madvise loop under
+--do-horrible-things, instead of adding yet another special doio.c
+function to xfstests.
 
-https://patchwork.kernel.org/patch/9106001/
+I've run this through both my test case, and Dave's trinity code.
 
--chris
+And now for the patch:
+
+When btrfs_copy_from_user isn't able to copy all of the pages, we need
+to adjust our accounting to reflect the work that was actually done.
+
+Commit 2e78c927d79 changed around the decisions a little and we ended up
+skipping the accounting adjustments some of the time.  This commit makes
+sure that when we don't copy anything at all, we still hop into
+the adjustments, and switches to release_bytes instead of write_bytes,
+since write_bytes isn't aligned.
+
+The accounting errors led to warnings during btrfs_destroy_inode:
+
+[   70.847532] WARNING: CPU: 10 PID: 514 at fs/btrfs/inode.c:9350 btrfs_destroy_inode+0x2b3/0x2c0
+[   70.847536] Modules linked in: i2c_piix4 virtio_net i2c_core input_leds button led_class serio_raw acpi_cpufreq sch_fq_codel autofs4 virtio_blk
+[   70.847538] CPU: 10 PID: 514 Comm: umount Tainted: G        W 4.6.0-rc6_00062_g2997da1-dirty #23
+[   70.847539] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS 1.9.0-1.fc24 04/01/2014
+[   70.847542]  0000000000000000 ffff880ff5cafab8 ffffffff8149d5e9 0000000000000202
+[   70.847543]  0000000000000000 0000000000000000 0000000000000000 ffff880ff5cafb08
+[   70.847547]  ffffffff8107bdfd ffff880ff5cafaf8 000024868120013d ffff880ff5cafb28
+[   70.847547] Call Trace:
+[   70.847550]  [<ffffffff8149d5e9>] dump_stack+0x51/0x78
+[   70.847551]  [<ffffffff8107bdfd>] __warn+0xfd/0x120
+[   70.847553]  [<ffffffff8107be3d>] warn_slowpath_null+0x1d/0x20
+[   70.847555]  [<ffffffff8139c9e3>] btrfs_destroy_inode+0x2b3/0x2c0
+[   70.847556]  [<ffffffff812003a1>] ? __destroy_inode+0x71/0x140
+[   70.847558]  [<ffffffff812004b3>] destroy_inode+0x43/0x70
+[   70.847559]  [<ffffffff810b7b5f>] ? wake_up_bit+0x2f/0x40
+[   70.847560]  [<ffffffff81200c68>] evict+0x148/0x1d0
+[   70.847562]  [<ffffffff81398ade>] ? start_transaction+0x3de/0x460
+[   70.847564]  [<ffffffff81200d49>] dispose_list+0x59/0x80
+[   70.847565]  [<ffffffff81201ba0>] evict_inodes+0x180/0x190
+[   70.847566]  [<ffffffff812191ff>] ? __sync_filesystem+0x3f/0x50
+[   70.847568]  [<ffffffff811e95f8>] generic_shutdown_super+0x48/0x100
+[   70.847569]  [<ffffffff810b75c0>] ? woken_wake_function+0x20/0x20
+[   70.847571]  [<ffffffff811e9796>] kill_anon_super+0x16/0x30
+[   70.847573]  [<ffffffff81365cde>] btrfs_kill_super+0x1e/0x130
+[   70.847574]  [<ffffffff811e99be>] deactivate_locked_super+0x4e/0x90
+[   70.847576]  [<ffffffff811e9e61>] deactivate_super+0x51/0x70
+[   70.847577]  [<ffffffff8120536f>] cleanup_mnt+0x3f/0x80
+[   70.847579]  [<ffffffff81205402>] __cleanup_mnt+0x12/0x20
+[   70.847581]  [<ffffffff81098358>] task_work_run+0x68/0xa0
+[   70.847582]  [<ffffffff810022b6>] exit_to_usermode_loop+0xd6/0xe0
+[   70.847583]  [<ffffffff81002e1d>] do_syscall_64+0xbd/0x170
+[   70.847586]  [<ffffffff817d4dbc>] entry_SYSCALL64_slow_path+0x25/0x25
+
+This is the test program I used to force short returns from
+btrfs_copy_from_user
+
+void *dontneed(void *arg)
+{
+	char *p = arg;
+	int ret;
+
+	while(1) {
+		ret = madvise(p, BUFSIZE/4, MADV_DONTNEED);
+		if (ret) {
+			perror("madvise");
+			exit(1);
+		}
+	}
+}
+
+int main(int ac, char **av) {
+	int ret;
+	int fd;
+	char *filename;
+	unsigned long offset;
+	char *buf;
+	int i;
+	pthread_t tid;
+
+	if (ac != 2) {
+		fprintf(stderr, "usage: dammitdave filename\n");
+		exit(1);
+	}
+
+	buf = mmap(NULL, BUFSIZE, PROT_READ|PROT_WRITE,
+		   MAP_PRIVATE|MAP_ANONYMOUS, -1, 0);
+	if (buf == MAP_FAILED) {
+		perror("mmap");
+		exit(1);
+	}
+	memset(buf, 'a', BUFSIZE);
+	filename = av[1];
+
+	ret = pthread_create(&tid, NULL, dontneed, buf);
+	if (ret) {
+		fprintf(stderr, "error %d from pthread_create\n", ret);
+		exit(1);
+	}
+
+	ret = pthread_detach(tid);
+	if (ret) {
+		fprintf(stderr, "pthread detach failed %d\n", ret);
+		exit(1);
+	}
+
+	while (1) {
+		fd = open(filename, O_RDWR | O_CREAT, 0600);
+		if (fd < 0) {
+			perror("open");
+			exit(1);
+		}
+
+		for (i = 0; i < ROUNDS; i++) {
+			int this_write = BUFSIZE;
+
+			offset = rand() % MAXSIZE;
+			ret = pwrite(fd, buf, this_write, offset);
+			if (ret < 0) {
+				perror("pwrite");
+				exit(1);
+			} else if (ret != this_write) {
+				fprintf(stderr, "short write to %s offset %lu ret %d\n",
+					filename, offset, ret);
+				exit(1);
+			}
+			if (i == ROUNDS - 1) {
+				ret = sync_file_range(fd, offset, 4096,
+				    SYNC_FILE_RANGE_WRITE);
+				if (ret < 0) {
+					perror("sync_file_range");
+					exit(1);
+				}
+			}
+		}
+		ret = ftruncate(fd, 0);
+		if (ret < 0) {
+			perror("ftruncate");
+			exit(1);
+		}
+		ret = close(fd);
+		if (ret) {
+			perror("close");
+			exit(1);
+		}
+		ret = unlink(filename);
+		if (ret) {
+			perror("unlink");
+			exit(1);
+		}
+
+	}
+	return 0;
+}
+
+Signed-off-by: Chris Mason <clm@fb.com>
+Reported-by: Dave Jones <dsj@fb.com>
+Fixes: 2e78c927d79333f299a8ac81c2fd2952caeef335
+cc: stable@vger.kernel.org # v4.6
+---
+ fs/btrfs/file.c | 27 +++++++++++++++++----------
+ 1 file changed, 17 insertions(+), 10 deletions(-)
+
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index 3ed795e..ab7c70e 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -1597,6 +1597,13 @@ again:
+ 
+ 		copied = btrfs_copy_from_user(pos, write_bytes, pages, i);
+ 
++		num_sectors = BTRFS_BYTES_TO_BLKS(root->fs_info,
++						reserve_bytes);
++		dirty_sectors = round_up(copied + sector_offset,
++					root->sectorsize);
++		dirty_sectors = BTRFS_BYTES_TO_BLKS(root->fs_info,
++						dirty_sectors);
++
+ 		/*
+ 		 * if we have trouble faulting in the pages, fall
+ 		 * back to one page at a time
+@@ -1606,6 +1613,7 @@ again:
+ 
+ 		if (copied == 0) {
+ 			force_page_uptodate = true;
++			dirty_sectors = 0;
+ 			dirty_pages = 0;
+ 		} else {
+ 			force_page_uptodate = false;
+@@ -1616,20 +1624,19 @@ again:
+ 		/*
+ 		 * If we had a short copy we need to release the excess delaloc
+ 		 * bytes we reserved.  We need to increment outstanding_extents
+-		 * because btrfs_delalloc_release_space will decrement it, but
++		 * because btrfs_delalloc_release_space and
++		 * btrfs_delalloc_release_metadata will decrement it, but
+ 		 * we still have an outstanding extent for the chunk we actually
+ 		 * managed to copy.
+ 		 */
+-		num_sectors = BTRFS_BYTES_TO_BLKS(root->fs_info,
+-						reserve_bytes);
+-		dirty_sectors = round_up(copied + sector_offset,
+-					root->sectorsize);
+-		dirty_sectors = BTRFS_BYTES_TO_BLKS(root->fs_info,
+-						dirty_sectors);
+-
+ 		if (num_sectors > dirty_sectors) {
+-			release_bytes = (write_bytes - copied)
+-				& ~((u64)root->sectorsize - 1);
++			/*
++			 * we round down because we don't want to count
++			 * any partial blocks actually send through the
++			 * IO machines
++			 */
++			release_bytes = round_down(release_bytes - copied,
++				      root->sectorsize);
+ 			if (copied > 0) {
+ 				spin_lock(&BTRFS_I(inode)->lock);
+ 				BTRFS_I(inode)->outstanding_extents++;
+-- 
+2.8.0.rc2
+

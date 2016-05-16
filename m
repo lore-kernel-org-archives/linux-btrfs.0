@@ -1,220 +1,199 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.15.18]:55288 "EHLO mout.gmx.net"
+Received: from mx2.suse.de ([195.135.220.15]:36941 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751501AbcENAtc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 13 May 2016 20:49:32 -0400
-Subject: Re: [PATCH] fstests: generic: Test SHARED flag about fiemap ioctl
- before and after sync
-To: "Darrick J. Wong" <darrick.wong@oracle.com>,
-        Qu Wenruo <quwenruo@cn.fujitsu.com>
-References: <1463104372-10533-1-git-send-email-quwenruo@cn.fujitsu.com>
- <20160513051751.GB6621@birch.djwong.org>
-Cc: linux-btrfs@vger.kernel.org, fstests@vger.kernel.org
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <12385467-520e-25db-b71b-9dc060fe8ba3@gmx.com>
-Date: Sat, 14 May 2016 08:49:13 +0800
+	id S1753099AbcEPOOv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 16 May 2016 10:14:51 -0400
+From: David Sterba <dsterba@suse.com>
+To: clm@fb.com
+Cc: linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.com>
+Subject: [PULL] Btrfs for 4.7
+Date: Mon, 16 May 2016 16:14:23 +0200
+Message-Id: <cover.1463406792.git.dsterba@suse.com>
 MIME-Version: 1.0
-In-Reply-To: <20160513051751.GB6621@birch.djwong.org>
-Content-Type: text/plain; charset=windows-1252; format=flowed
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hi,
 
+please queue the following branch to 4.7.
 
-On 05/13/2016 01:17 PM, Darrick J. Wong wrote:
-> On Fri, May 13, 2016 at 09:52:52AM +0800, Qu Wenruo wrote:
->> The test case will check SHARED flag returned by fiemap ioctl on
->> reflinked files before and after sync.
->>
->> Normally SHARED flag won't change just due to a normal sync operation.
->>
->> But btrfs doesn't handle SHARED flag well, and this time it won't check
->> any delayed extent tree(reverse extent searching tree) modification, but
->> only metadata already committed to disk.
->>
->> So btrfs will not return correct SHARED flag on reflinked files if there
->> is no sync to commit all metadata.
->>
->> This testcase will just check it.
->>
->> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
->> ------
->> And of course, xfs handles it quite well. Nice work Darrick.
->> Also the test case needs the new infrastructure introduced in previous
->> generic/352 test case.
->> ---
->>  tests/generic/353     | 86 +++++++++++++++++++++++++++++++++++++++++++++++++++
->>  tests/generic/353.out |  9 ++++++
->>  tests/generic/group   |  1 +
->>  3 files changed, 96 insertions(+)
->>  create mode 100755 tests/generic/353
->>  create mode 100644 tests/generic/353.out
->>
->> diff --git a/tests/generic/353 b/tests/generic/353
->> new file mode 100755
->> index 0000000..1e9117e
->> --- /dev/null
->> +++ b/tests/generic/353
->> @@ -0,0 +1,86 @@
->> +#! /bin/bash
->> +# FS QA Test 353
->> +#
->> +# Check if fiemap ioctl returns correct SHARED flag on reflinked file
->> +# before and after sync the fs
->> +#
->> +# Btrfs has a bug in checking shared extent, which can only handle metadata
->> +# already committed to disk, but not delayed extent tree modification.
->> +# This caused SHARED flag only occurs after sync.
->
-> I noticed this a while ago, but figured it was just btrfs being btrfs.  Ho hum.
->
-> Thanks for writing a test and getting the problem fixed.
->
->> +#
->> +#-----------------------------------------------------------------------
->> +# Copyright (c) 2016 Fujitsu. All Rights Reserved.
->> +#
->> +# This program is free software; you can redistribute it and/or
->> +# modify it under the terms of the GNU General Public License as
->> +# published by the Free Software Foundation.
->> +#
->> +# This program is distributed in the hope that it would be useful,
->> +# but WITHOUT ANY WARRANTY; without even the implied warranty of
->> +# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
->> +# GNU General Public License for more details.
->> +#
->> +# You should have received a copy of the GNU General Public License
->> +# along with this program; if not, write the Free Software Foundation,
->> +# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
->> +#-----------------------------------------------------------------------
->> +#
->> +
->> +seq=`basename $0`
->> +seqres=$RESULT_DIR/$seq
->> +echo "QA output created by $seq"
->> +
->> +here=`pwd`
->> +tmp=/tmp/$$
->> +status=1	# failure is the default!
->> +trap "_cleanup; exit \$status" 0 1 2 3 15
->> +
->> +_cleanup()
->> +{
->> +	cd /
->> +	rm -f $tmp.*
->
-> tmp isn't used for anything in this testcase.
+New features or user-visible changes:
+* device delete by id, a v2 ioctl for device deletion (this was held back from
+  4.6 pull due to possibly related crashes that haven't appeared for a long
+  time)
+* DUP allowed on multiple-device filesystem (help in case we want to go to
+  SINGLE from RAID1/.. but do not want to lose all redundancy while converting)
+* GETFLAGS/SETFLAGS/GETVERSION ioctls work on 32bit
 
-That's from template, and does no harm.
+Developer-visible changes:
+* definitions that are shared with userspace are moved to the uapi directory
 
->
->> +}
->> +
->> +# get standard environment, filters and checks
->> +. ./common/rc
->> +. ./common/filter
->> +. ./common/reflink
->> +. ./common/punch
->> +
->> +# remove previous $seqres.full before test
->> +rm -f $seqres.full
->> +
->> +# real QA test starts here
->> +
->> +# Modify as appropriate.
->> +_supported_fs generic
->> +_supported_os Linux
->> +_require_scratch_reflink
->> +_require_fiemap
->> +
->> +_scratch_mkfs > /dev/null 2>&1
->> +_scratch_mount
->> +
->> +blocksize=64k
->> +file1="$SCRATCH_MNT/file1"
->> +file2="$SCRATCH_MNT/file2"
->> +
->> +# write the initial file
->> +_pwrite_byte 0xcdcdcdcd 0 $blocksize $file1 | _filter_xfs_io
->> +
->> +# reflink initial file
->> +_reflink_range $file1 0 $file2 0 $blocksize | _filter_xfs_io
->> +
->> +# check their fiemap to make sure it's correct
->> +$XFS_IO_PROG -c "fiemap -v" $file1 | _filter_fiemap_flags
->> +$XFS_IO_PROG -c "fiemap -v" $file2 | _filter_fiemap_flags
->> +
->> +# sync and recheck, to make sure the fiemap doesn't change just
->> +# due to sync
->> +sync
->> +$XFS_IO_PROG -c "fiemap -v" $file1 | _filter_fiemap_flags
->> +$XFS_IO_PROG -c "fiemap -v" $file2 | _filter_fiemap_flags
->
-> Nowadays, when I write a test that prints similar output one after the other I
-> will also write a comment to the output to distinguish the two cases, e.g.:
->
-> +XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-> fiemap before sync
-> +0: [0..127]: 0x2001
-> +0: [0..127]: 0x2001
-> fiemap after sync
-> +0: [0..127]: 0x2001
-> +0: [0..127]: 0x2001
->
-> This way when a bunch of tests regress some months later it's easier
-> for me to relearn what's going on.
+Other:
+* assorted bugfixes and cleanups
 
-Yes, that's pretty nice, I'll also add filename to the output, in case
-the reflinked or original file layout changes.
+The branch is merged from several topic branches, grouped by functionality
+or purpose. The patches have been in for-next, most of them for a few weeks at
+least, tested together with Filipe's branch.
 
-Thanks for the review.
-Qu
->
-> (I wasn't always good at doing that.)
->
-> Otherwise, everything looks ok.
->
-> --D
->
->> +
->> +# success, all done
->> +status=0
->> +exit
->> diff --git a/tests/generic/353.out b/tests/generic/353.out
->> new file mode 100644
->> index 0000000..0cd8981
->> --- /dev/null
->> +++ b/tests/generic/353.out
->> @@ -0,0 +1,9 @@
->> +QA output created by 353
->> +wrote 65536/65536 bytes at offset 0
->> +XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
->> +linked 65536/65536 bytes at offset 0
->> +XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
->> +0: [0..127]: 0x2001
->> +0: [0..127]: 0x2001
->> +0: [0..127]: 0x2001
->> +0: [0..127]: 0x2001
->> diff --git a/tests/generic/group b/tests/generic/group
->> index 3f00386..0392d4d 100644
->> --- a/tests/generic/group
->> +++ b/tests/generic/group
->> @@ -355,3 +355,4 @@
->>  350 blockdev quick rw
->>  351 blockdev quick rw
->>  352 auto clone
->> +353 auto quick clone
->> --
->> 2.5.5
->>
->>
->>
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
+Thanks.
+
+----------------------------------------------------------------
+The following changes since commit 02da2d72174c61988eb4456b53f405e3ebdebce4:
+
+  Linux 4.6-rc5 (2016-04-24 16:17:05 -0700)
+
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git for-chris-4.7
+
+for you to fetch changes up to 680834ca0ad4e9827048d4bda1e38db69c3dd1e4:
+
+  Merge branch 'foreign/jeffm/uapi' into for-chris-4.7-20160516 (2016-05-16 15:46:29 +0200)
+
+----------------------------------------------------------------
+Adam Borowski (1):
+      btrfs: fix int32 overflow in shrink_delalloc().
+
+Anand Jain (20):
+      btrfs: rename btrfs_std_error to btrfs_handle_fs_error
+      btrfs: remove unused function btrfs_assert()
+      btrfs: move error handling code together in ctree.h
+      btrfs: remove save_error_info()
+      btrfs: create a helper function to read the disk super
+      btrfs: create helper function __check_raid_min_devices()
+      btrfs: clean up and optimize __check_raid_min_device()
+      btrfs: create helper btrfs_find_device_by_user_input()
+      btrfs: make use of btrfs_find_device_by_user_input()
+      btrfs: enhance btrfs_find_device_by_user_input() to check device path
+      btrfs: make use of btrfs_scratch_superblocks() in btrfs_rm_device()
+      btrfs: introduce device delete by devid
+      btrfs: optimize check for stale device
+      btrfs: use fs_info directly
+      btrfs: refactor btrfs_dev_replace_start for reuse
+      btrfs: pass the right error code to the btrfs_std_error
+      btrfs: s_bdev is not null after missing replace
+      btrfs: cleanup assigning next active device with a check
+      btrfs: fix lock dep warning, move scratch dev out of device_list_mutex and uuid_mutex
+      btrfs: fix lock dep warning move scratch super outside of chunk_mutex
+
+Ashish Samant (1):
+      btrfs: Fix BUG_ON condition in scrub_setup_recheck_block()
+
+Austin S. Hemmelgarn (1):
+      btrfs: allow balancing to dup with multi-device
+
+Chandan Rajendra (1):
+      Btrfs: __btrfs_buffered_write: Pass valid file offset when releasing delalloc space
+
+Dan Carpenter (1):
+      btrfs: send: silence an integer overflow warning
+
+David Sterba (32):
+      btrfs: rename __check_raid_min_devices
+      btrfs: pass number of devices to btrfs_check_raid_min_devices
+      btrfs: introduce raid-type to error-code table, for minimum device constraint
+      btrfs: use existing device constraints table btrfs_raid_array
+      btrfs: rename btrfs_find_device_by_user_input
+      btrfs: rename flags for vol args v2
+      btrfs: kill unused writepage_io_hook callback
+      btrfs: ioctl: reorder exclusive op check in RM_DEV
+      btrfs: send: use vmalloc only as fallback for send_buf
+      btrfs: send: use vmalloc only as fallback for read_buf
+      btrfs: send: use temporary variable to store allocation size
+      btrfs: send: use vmalloc only as fallback for clone_roots
+      btrfs: send: use vmalloc only as fallback for clone_sources_tmp
+      btrfs: clone: use vmalloc only as fallback for nodesize bufer
+      btrfs: use dynamic allocation for root item in create_subvol
+      btrfs: reuse existing variable in scrub_stripe, reduce stack usage
+      btrfs: add read-only check to sysfs handler of features
+      btrfs: add check to sysfs handler of label
+      btrfs: sysfs: protect reading label by lock
+      btrfs: add write protection to SET_FEATURES ioctl
+      btrfs: ioctl: reorder exclusive op check in RM_DEV
+      btrfs: switch to common message helpers in open_ctree, adjust messages
+      btrfs: GFP_NOFS does not GFP_HIGHMEM
+      btrfs: rename and document compression workspace members
+      btrfs: preallocate compression workspaces
+      btrfs: make find_workspace always succeed
+      btrfs: make find_workspace warn if there are no workspaces
+      btrfs: build fixup for qgroup_account_snapshot
+      Merge branch 'misc-4.7' into for-chris-4.7-20160516
+      Merge branch 'cleanups-4.7' into for-chris-4.7-20160516
+      Merge branch 'foreign/anand/dev-del-by-id-ext' into for-chris-4.7-20160516
+      Merge branch 'foreign/jeffm/uapi' into for-chris-4.7-20160516
+
+Geert Uytterhoeven (1):
+      Btrfs: Refactor btrfs_lock_cluster() to kill compiler warning
+
+Jeff Mahoney (8):
+      btrfs: uapi/linux/btrfs.h migration, move BTRFS_LABEL_SIZE
+      btrfs: uapi/linux/btrfs.h migration, qgroup limit flags
+      btrfs: uapi/linux/btrfs.h migration, document subvol flags
+      btrfs: uapi/linux/btrfs.h migration, move feature flags
+      btrfs: uapi/linux/btrfs.h migration, move balance flags
+      btrfs: uapi/linux/btrfs.h migration, move struct btrfs_ioctl_defrag_range_args
+      btrfs: uapi/linux/btrfs_tree.h migration, item types and defines
+      btrfs: uapi/linux/btrfs_tree.h, use __u8 and __u64
+
+Josef Bacik (1):
+      Btrfs: remove BUG_ON()'s in btrfs_map_block
+
+Liu Bo (4):
+      Btrfs: make mapping->writeback_index point to the last written page
+      Btrfs: cleanup error handling in extent_write_cached_pages
+      Btrfs: do not create empty block group if we have allocated data
+      Btrfs: fix divide error upon chunk's stripe_len
+
+Luis de Bethencourt (3):
+      btrfs: fix typos in comments
+      btrfs: fix mixed block count of available space
+      btrfs: avoid overflowing f_bfree
+
+Luke Dashjr (1):
+      btrfs: bugfix: handle FS_IOC32_{GETFLAGS,SETFLAGS,GETVERSION} in btrfs_ioctl
+
+Qu Wenruo (1):
+      btrfs: qgroup: Fix qgroup accounting when creating snapshot
+
+Satoru Takeuchi (1):
+      btrfs: Simplify conditions about compress while mapping btrfs flags to inode flags
+
+Scott Talbert (1):
+      btrfs: fix memory leak during RAID 5/6 device replacement
+
+Vincent Stehlé (1):
+      Btrfs: fix fspath error deallocation
+
+Zygo Blaxell (1):
+      btrfs: don't force mounts to wait for cleaner_kthread to delete one or more subvolumes
+
+ fs/btrfs/backref.c              |    2 +-
+ fs/btrfs/compression.c          |   85 ++-
+ fs/btrfs/ctree.c                |    6 +-
+ fs/btrfs/ctree.h                | 1096 ++-------------------------------------
+ fs/btrfs/delayed-inode.c        |    2 +-
+ fs/btrfs/dev-replace.c          |   99 ++--
+ fs/btrfs/dev-replace.h          |    4 +-
+ fs/btrfs/disk-io.c              |  130 ++---
+ fs/btrfs/extent-tree.c          |   45 +-
+ fs/btrfs/extent_io.c            |   82 +--
+ fs/btrfs/extent_io.h            |    1 -
+ fs/btrfs/file.c                 |    6 +-
+ fs/btrfs/inode-item.c           |    2 +-
+ fs/btrfs/inode.c                |    2 +-
+ fs/btrfs/ioctl.c                |  196 +++++--
+ fs/btrfs/relocation.c           |    2 +-
+ fs/btrfs/root-tree.c            |    4 +-
+ fs/btrfs/scrub.c                |   25 +-
+ fs/btrfs/send.c                 |   62 ++-
+ fs/btrfs/super.c                |   58 ++-
+ fs/btrfs/sysfs.c                |   14 +-
+ fs/btrfs/transaction.c          |  136 ++++-
+ fs/btrfs/tree-log.c             |    8 +-
+ fs/btrfs/volumes.c              |  454 ++++++++--------
+ fs/btrfs/volumes.h              |   57 +-
+ include/uapi/linux/btrfs.h      |  188 ++++++-
+ include/uapi/linux/btrfs_tree.h |  966 ++++++++++++++++++++++++++++++++++
+ 27 files changed, 2071 insertions(+), 1661 deletions(-)
+ create mode 100644 include/uapi/linux/btrfs_tree.h

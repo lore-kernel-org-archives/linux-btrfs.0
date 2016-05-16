@@ -1,61 +1,55 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f180.google.com ([209.85.223.180]:35798 "EHLO
-	mail-io0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751895AbcEPLRU (ORCPT
+Received: from mail-io0-f176.google.com ([209.85.223.176]:35718 "EHLO
+	mail-io0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753160AbcEPLZO (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 16 May 2016 07:17:20 -0400
-Received: by mail-io0-f180.google.com with SMTP id d62so205304498iof.2
-        for <linux-btrfs@vger.kernel.org>; Mon, 16 May 2016 04:17:08 -0700 (PDT)
-Subject: Re: fsck: to repair or not to repair
-To: Chris Murphy <lists@colorremedies.com>, Nikolaus Rath <Nikolaus@rath.org>
-References: <87y47g1esh.fsf@thinkpad.rath.org>
- <CAPmG0jYDw8Sid2jORVtfwNLpeZPAqtH429EQsraz9GzNdK1aUQ@mail.gmail.com>
- <pan$14f07$a448b38$b8e37f4a$116d54ce@cox.net>
- <87vb2ij7u5.fsf@vostro.rath.org>
- <CAJCQCtRs6VhRDFT6PvD4LkKYvtMero7UBs6Gd-XtjHLqwBe-5Q@mail.gmail.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+	Mon, 16 May 2016 07:25:14 -0400
+Received: by mail-io0-f176.google.com with SMTP id d62so205504932iof.2
+        for <linux-btrfs@vger.kernel.org>; Mon, 16 May 2016 04:25:14 -0700 (PDT)
+Subject: Re: Hot data tracking / hybrid storage
+To: Ferry Toth <ftoth@exalondelft.nl>, linux-btrfs@vger.kernel.org
+References: <nh9p2p$cns$1@ger.gmane.org>
 From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <60824d00-56c4-8f83-34e2-07fc99ca3c8b@gmail.com>
-Date: Mon, 16 May 2016 07:17:04 -0400
+Message-ID: <796f1fb5-8e96-39e1-7149-eb67b9d4847f@gmail.com>
+Date: Mon, 16 May 2016 07:25:09 -0400
 MIME-Version: 1.0
-In-Reply-To: <CAJCQCtRs6VhRDFT6PvD4LkKYvtMero7UBs6Gd-XtjHLqwBe-5Q@mail.gmail.com>
+In-Reply-To: <nh9p2p$cns$1@ger.gmane.org>
 Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2016-05-13 17:35, Chris Murphy wrote:
-> On Fri, May 13, 2016 at 9:28 AM, Nikolaus Rath <Nikolaus@rath.org> wrote:
->> On May 13 2016, Duncan <1i5t5.duncan@cox.net> wrote:
->>> Because btrfs can be multi-device, it needs some way to track which
->>> devices belong to each filesystem, and it uses filesystem UUID for this
->>> purpose.
->>>
->>> If you clone a filesystem (for instance using dd or lvm snapshotting,
->>> doesn't matter how) and then trigger a btrfs device scan, say by plugging
->>> in some other device with btrfs on it so udev triggers a scan, and the
->>> kernel sees multiple devices with the same filesystem UUID as a result,
->>> and one of those happens to be mounted, you can corrupt both copies as
->>> the kernel btrfs won't be able to tell them apart and may write updates
->>> to the wrong one.
->>
->> That seems like a rather odd design. Why isn't btrfs refusing to mount
->> in this situation? In the face of ambiguity, guessing is generally bad
->> idea (at least for a computer program).
+On 2016-05-15 08:12, Ferry Toth wrote:
+> Is there anything going on in this area?
 >
-> The logic  you describe requires code. It's the absence of code rather
-> than an intentional design that's the cause of the current behavior.
-> And yes, it'd be nice if Btrfs weren't stepping on its own tail in
-> this situation. It could be as simple as refusing to mount anytime
-> there's an ambiguity, but that's sorta user hostile if there isn't a
-> message that goes along with it to help the user figure out a way to
-> resolve the problem. And that too could be fraught with peril if the
-> user makes a mistake. So, really what's the right way to do this is
-> part of the problem but I agree it's better to be hostile and refuse
-> to mount a given volume UUID at all when too many devices are found,
-> than corrupt the file system.
+> We have btrfs in RAID10 using 4 HDD's for many years now with a rotating
+> scheme of snapshots for easy backup. <10% files (bytes) change between
+> oldest snapshot and the current state.
 >
-FWIW, the behavior I'd expect from a sysadmin perspective would be:
-1. If and only if a correct number of device= options have been passed 
-to mount, use those devices (and only those devices), and log a warning 
-if extra devices are detected.
-2. Otherwise, refuse to mount and log a warning.
+> However, the filesystem seems to become very slow, probably due to the
+> RAID10 and the snapshots.
+While it's not exactly what you're thinking of, have you tried running 
+BTRFS in raid1 mode on top of two DM/MD RAID0 volumes?  This provides 
+the same degree of data integrity that BTRFS raid10 does, but gets 
+measurably better performance.
+>
+> It would be fantastic if we could just add 4 SSD's to the pool and btrfs
+> would just magically prefer to put often accessed files there and move
+> older or less popular files to the HDD's.
+>
+> In my simple mind this can not be done easily using bcache as that would
+> require completely rebuilding the file system on top of bcache (can not
+> just add a few SSD's to the pool), while implementing a cache inside btrfs
+> is probably a complex thing with lots of overhead.
+You may want to look into dm-cache, as that doesn't require reformatting 
+the source device.  It doesn't quite get the same performance as bcache, 
+but for me at least, the lower performance is a reasonable trade-off for 
+being able to easily convert a device to use it, and being able to 
+easily convert away from it if need be.
+>
+> Simply telling the allocator to prefer new files to go to the ssd and
+> move away unpopular stuff to hdd during balance should do the trick, or am
+> I wrong?
+In theory this would work as a first implementation, but it would need 
+to have automatic data migration as an option to be considered 
+practical, and that's not as easy to do correctly.
+

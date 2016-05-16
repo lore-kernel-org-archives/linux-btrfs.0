@@ -1,55 +1,106 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f176.google.com ([209.85.223.176]:35718 "EHLO
-	mail-io0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753160AbcEPLZO (ORCPT
+Received: from mail-ig0-f171.google.com ([209.85.213.171]:36730 "EHLO
+	mail-ig0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752802AbcEPLdy (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 16 May 2016 07:25:14 -0400
-Received: by mail-io0-f176.google.com with SMTP id d62so205504932iof.2
-        for <linux-btrfs@vger.kernel.org>; Mon, 16 May 2016 04:25:14 -0700 (PDT)
-Subject: Re: Hot data tracking / hybrid storage
-To: Ferry Toth <ftoth@exalondelft.nl>, linux-btrfs@vger.kernel.org
-References: <nh9p2p$cns$1@ger.gmane.org>
+	Mon, 16 May 2016 07:33:54 -0400
+Received: by mail-ig0-f171.google.com with SMTP id qe5so47690253igc.1
+        for <linux-btrfs@vger.kernel.org>; Mon, 16 May 2016 04:33:54 -0700 (PDT)
+Subject: Re: BTRFS Data at Rest File Corruption
+To: Chris Murphy <lists@colorremedies.com>,
+        "Richard A. Lochner" <lochner@clone1.com>
+References: <CACTfMoQmco=yBP+e8tn0MoTVZsMauw0_=N1yc42NVNM9Krqv7A@mail.gmail.com>
+ <97b8a0bd-3707-c7d6-4138-c8fe81937b72@gmail.com>
+ <1463075341.3636.56.camel@clone1.com>
+ <CAJCQCtSSbv5dAC-uBN9RnYKKRMtr04KmLZVzhvAh7=Xq3ej7dQ@mail.gmail.com>
+ <1463114957.3636.140.camel@clone1.com>
+ <CAJCQCtSNwpaPs6jWFxzoHdUFJUyUZFjX6vocYf7RCWc=f_n5Hg@mail.gmail.com>
+ <1463337834.4626.14.camel@clone1.com>
+ <CAJCQCtSYgfhmNYFE4ffxFy20B=trkh+P=hhdbrq71ysZSm_FEA@mail.gmail.com>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <796f1fb5-8e96-39e1-7149-eb67b9d4847f@gmail.com>
-Date: Mon, 16 May 2016 07:25:09 -0400
+Message-ID: <41b097af-d565-6cd7-2ed8-cb66b9ae8ecc@gmail.com>
+Date: Mon, 16 May 2016 07:33:50 -0400
 MIME-Version: 1.0
-In-Reply-To: <nh9p2p$cns$1@ger.gmane.org>
+In-Reply-To: <CAJCQCtSYgfhmNYFE4ffxFy20B=trkh+P=hhdbrq71ysZSm_FEA@mail.gmail.com>
 Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2016-05-15 08:12, Ferry Toth wrote:
-> Is there anything going on in this area?
+On 2016-05-16 02:07, Chris Murphy wrote:
+> Current hypothesis
+>  "I suspected, and I still suspect that the error occurred upon a
+> metadata update that corrupted the checksum for the file, probably due
+> to silent memory corruption.  If the checksum was silently corrupted,
+> it would be simply written to both drives causing this type of error."
 >
-> We have btrfs in RAID10 using 4 HDD's for many years now with a rotating
-> scheme of snapshots for easy backup. <10% files (bytes) change between
-> oldest snapshot and the current state.
+> A metadata update alone will not change the data checksums.
 >
-> However, the filesystem seems to become very slow, probably due to the
-> RAID10 and the snapshots.
-While it's not exactly what you're thinking of, have you tried running 
-BTRFS in raid1 mode on top of two DM/MD RAID0 volumes?  This provides 
-the same degree of data integrity that BTRFS raid10 does, but gets 
-measurably better performance.
+> But let's ignore that. If there's corrupt extent csum in a node that
+> itself has a valid csum, this is functionally identical to e.g.
+> nerfing 100 bytes of a file's extent data (both copies, identically).
+> The fs doesn't know the difference. All it knows is the node csum is
+> valid, therefore the data extent csum is valid, and that's why it
+> assumes the data is wrong and hence you get an I/O error. And I can
+> reproduce most of your results by nerfing file data.
 >
-> It would be fantastic if we could just add 4 SSD's to the pool and btrfs
-> would just magically prefer to put often accessed files there and move
-> older or less popular files to the HDD's.
+> The entire dmesg for scrub looks like this:
 >
-> In my simple mind this can not be done easily using bcache as that would
-> require completely rebuilding the file system on top of bcache (can not
-> just add a few SSD's to the pool), while implementing a cache inside btrfs
-> is probably a complex thing with lots of overhead.
-You may want to look into dm-cache, as that doesn't require reformatting 
-the source device.  It doesn't quite get the same performance as bcache, 
-but for me at least, the lower performance is a reasonable trade-off for 
-being able to easily convert a device to use it, and being able to 
-easily convert away from it if need be.
 >
-> Simply telling the allocator to prefer new files to go to the ssd and
-> move away unpopular stuff to hdd during balance should do the trick, or am
-> I wrong?
-In theory this would work as a first implementation, but it would need 
-to have automatic data migration as an option to be considered 
-practical, and that's not as easy to do correctly.
+> May 15 23:29:46 f23s.localdomain kernel: BTRFS warning (device dm-6):
+> checksum error at logical 5566889984 on dev /dev/dm-6, sector 8540160,
+> root 5, inode 258, offset 0, length 4096, links 1 (path:
+> openSUSE-Tumbleweed-NET-x86_64-Current.iso)
+> May 15 23:29:46 f23s.localdomain kernel: BTRFS error (device dm-6):
+> bdev /dev/dm-6 errs: wr 0, rd 0, flush 0, corrupt 1, gen 0
+> May 15 23:29:46 f23s.localdomain kernel: BTRFS error (device dm-6):
+> unable to fixup (regular) error at logical 5566889984 on dev /dev/dm-6
+> May 15 23:29:46 f23s.localdomain kernel: BTRFS warning (device dm-6):
+> checksum error at logical 5566889984 on dev /dev/mapper/VG-b1, sector
+> 8579072, root 5, inode 258, offset 0, length 4096, links 1 (path:
+> openSUSE-Tumbleweed-NET-x86_64-Current.iso)
+> May 15 23:29:46 f23s.localdomain kernel: BTRFS error (device dm-6):
+> bdev /dev/mapper/VG-b1 errs: wr 0, rd 0, flush 0, corrupt 1, gen 0
+> May 15 23:29:46 f23s.localdomain kernel: BTRFS error (device dm-6):
+> unable to fixup (regular) error at logical 5566889984 on dev
+> /dev/mapper/VG-b1
+>
+> And the entire dmesg for running sha256sum on the file is
+>
+> May 15 23:33:41 f23s.localdomain kernel: __readpage_endio_check: 22
+> callbacks suppressed
+> May 15 23:33:41 f23s.localdomain kernel: BTRFS warning (device dm-6):
+> csum failed ino 258 off 0 csum 3634944209 expected csum 1334657141
+> May 15 23:33:41 f23s.localdomain kernel: BTRFS warning (device dm-6):
+> csum failed ino 258 off 0 csum 3634944209 expected csum 1334657141
+> May 15 23:33:41 f23s.localdomain kernel: BTRFS warning (device dm-6):
+> csum failed ino 258 off 0 csum 3634944209 expected csum 1334657141
+> May 15 23:33:41 f23s.localdomain kernel: BTRFS warning (device dm-6):
+> csum failed ino 258 off 0 csum 3634944209 expected csum 1334657141
+> May 15 23:33:41 f23s.localdomain kernel: BTRFS warning (device dm-6):
+> csum failed ino 258 off 0 csum 3634944209 expected csum 1334657141
+>
+>
+> And I do get an i/o error for sha256sum and no hash is computed.
+>
+> But there's two important differences:
+> 1. I have two unable to fixup messages, one for each device, at the
+> exact same time.
+> 2. I altered both copies of extent data.
+>
+> It's a mystery to me how your file data has not changed, but somehow
+> the extent csum was changed but also the node csum was recomputed
+> correctly. That's a bit odd.
+I would think this would be perfectly possible if some other file that 
+had a checksum in that node changed, thus forcing the node's checksum to 
+be updated.  Theoretical sequence of events:
+1. Some file which has a checksum in node A gets written to.
+2. Node A is loaded into memory to update the checksum.
+3. The new checksum for the changed extent in the file gets updated in 
+the in-memory copy of node A.
+4. Node A has it's own checksum recomputed based on the new data, and 
+then gets saved to disk.
+If something happened after 2 but before 4 that caused one of the other 
+checksums to go bad, then the checksum computed in 4 will have been with 
+the corrupted data.
 

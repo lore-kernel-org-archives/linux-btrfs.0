@@ -1,75 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:37089 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751895AbcEOXai (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 15 May 2016 19:30:38 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1b25UP-0001v3-7v
-	for linux-btrfs@vger.kernel.org; Mon, 16 May 2016 01:30:25 +0200
-Received: from ip5f5ae06c.dynamic.kabel-deutschland.de ([95.90.224.108])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 16 May 2016 01:30:25 +0200
-Received: from hurikhan77 by ip5f5ae06c.dynamic.kabel-deutschland.de with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 16 May 2016 01:30:25 +0200
-To: linux-btrfs@vger.kernel.org
-From: Kai Krakow <hurikhan77@gmail.com>
-Subject: Re: btrfs RAID-1 vs md RAID-1?
-Date: Mon, 16 May 2016 01:29:59 +0200
-Message-ID: <20160516012959.2768c42c@jupiter.sol.kaishome.de>
-References: <83719f27dd5cdc406fd3fd24e7b82a9f@admin.virtall.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+Received: from mail-wm0-f43.google.com ([74.125.82.43]:38611 "EHLO
+	mail-wm0-f43.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751895AbcEPCL3 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 15 May 2016 22:11:29 -0400
+Received: by mail-wm0-f43.google.com with SMTP id g17so113753951wme.1
+        for <linux-btrfs@vger.kernel.org>; Sun, 15 May 2016 19:11:28 -0700 (PDT)
+MIME-Version: 1.0
+Date: Sun, 15 May 2016 22:11:27 -0400
+Message-ID: <CAD=QJKjop2j+K16nPcAU-bXiCVqm_aGK0g7WxjvTpBvXar+fQQ@mail.gmail.com>
+Subject: problems with free space cache
+From: Nicholas D Steeves <nsteeves@gmail.com>
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am Sun, 15 May 2016 19:24:47 +0900
-schrieb Tomasz Chmielewski <mangoo@wpkg.org>:
+The volume was created with btrfs-progs-4.4.41; I upgraded to
+linux-4.4.10 today, and here is what I grepped from my dmesg:
 
-> I'm trying to read two large files in parallel from a 2-disk RAID-1 
-> btrfs setup (using kernel 4.5.3).
-> 
-> According to iostat, one of the disks is 100% saturated, while the
-> other disk is around 0% busy.
-> 
-> Is it expected?
-> 
-> With two readers from the same disk, each file is being read with ~50 
-> MB/s from disk (with just one reader from disk, the speed goes up to 
-> around ~150 MB/s).
-> 
-> 
-> In md RAID, with many readers, it will try to distribute the reads - 
-> after md manual on http://linux.die.net/man/4/md:
-> 
->      Raid1
->      (...)
->      Data is read from any one device. The driver attempts to
-> distribute read requests across all devices
->      to maximise performance.
-> 
->      Raid5
->      (...)
->      This also allows more parallelism when reading, as read requests
-> are distributed over all the devices
->      in the array instead of all but one.
-> 
-> 
-> Are there any plans to improve this is btrfs?
-> 
-> 
-> Tomasz Chmielewski
-> http://wpkg.org
+[  +0.002613] Btrfs loaded
+[  +0.080621] BTRFS: device label Red devid 1 transid 108234 /dev/sda3
+[  +0.000106] BTRFS: device label Red devid 2 transid 108234 /dev/sdb2
+[  +0.011888] BTRFS info (device sdb2): disk space caching is enabled
+[  +0.000001] BTRFS: has skinny extents
+[  +0.063532] BTRFS info (device sdb2): disk space caching is enabled
+[  +3.615389] BTRFS warning (device sdb2): block group 183639212032
+has wrong amount of free space
+[  +0.000002] BTRFS warning (device sdb2): failed to load free space
+cache for block group 183639212032, rebuilding it now
+[  +1.718348] BTRFS warning (device sdb2): block group 859022819328
+has wrong amount of free space
+[  +0.000003] BTRFS warning (device sdb2): failed to load free space
+cache for block group 859022819328, rebuilding it now
+[  +4.357965] BTRFS info (device sdb2): The free space cache file
+(1082361118720) is invalid. skip it
+[  +0.026489] BTRFS info (device sdb2): The free space cache file
+(1094172278784) is invalid. skip it
+[  +0.740340] BTRFS info (device sdb2): The free space cache file
+(1183292850176) is invalid. skip it
+[  +0.610161] BTRFS info (device sdb2): The free space cache file
+(1248791101440) is invalid. skip it
+[  +0.353670] BTRFS info (device sdb2): The free space cache file
+(1284224581632) is invalid. skip it
 
-Here is an idea that could need improvement:
-http://permalink.gmane.org/gmane.comp.file-systems.btrfs/17985
+What is the standard procedure for fixing the cache?  Rootfs is a
+subvolume and the first entry in fstab.  Second entry is /btrfs-admin,
+which is where I mount the whole volume.  Is it sufficient to add the
+clear_cache option to the rootfs entry, or does the /btrfs-admin entry
+also need it?
 
+>From what I've read in the documentation one modifies fstab, reboots,
+removes modification from fstab, and it's fixed.
 
--- 
-Regards,
-Kai
-
-Replies to list-only preferred.
-
+Cheers,
+Nicholas

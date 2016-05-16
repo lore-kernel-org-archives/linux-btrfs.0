@@ -1,50 +1,81 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mondschein.lichtvoll.de ([194.150.191.11]:36504 "EHLO
-	mail.lichtvoll.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752846AbcEPMbF (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 16 May 2016 08:31:05 -0400
-From: Martin Steigerwald <martin@lichtvoll.de>
-To: "Richard W.M. Jones" <rjones@redhat.com>
+Received: from mx1.redhat.com ([209.132.183.28]:32902 "EHLO mx1.redhat.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750787AbcEPMjC (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 16 May 2016 08:39:02 -0400
+Date: Mon, 16 May 2016 13:39:00 +0100
+From: "Richard W.M. Jones" <rjones@redhat.com>
+To: Martin Steigerwald <martin@lichtvoll.de>
 Cc: linux-btrfs@vger.kernel.org, ptoscano@redhat.com
 Subject: Re: RFE: 'btrfs' tools machine readable output
-Date: Mon, 16 May 2016 14:21:07 +0200
-Message-ID: <3271754.bqNJ5v1fWK@merkaba>
-In-Reply-To: <20160516121456.GA16970@redhat.com>
+Message-ID: <20160516123859.GP1683@redhat.com>
 References: <20160516121456.GA16970@redhat.com>
+ <3271754.bqNJ5v1fWK@merkaba>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <3271754.bqNJ5v1fWK@merkaba>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello Richard,
 
-On Montag, 16. Mai 2016 13:14:56 CEST Richard W.M. Jones wrote:
-> I don't have time to implement this right now, so I'm just posting
-> this as a suggestion/request ...
+On Mon, May 16, 2016 at 02:21:07PM +0200, Martin Steigerwald wrote:
+> Hello Richard,
 > 
-> It would be really helpful if the btrfs tools had a machine-readable
-> output.
+> On Montag, 16. Mai 2016 13:14:56 CEST Richard W.M. Jones wrote:
+> > I don't have time to implement this right now, so I'm just posting
+> > this as a suggestion/request ...
+> > 
+> > It would be really helpful if the btrfs tools had a machine-readable
+> > output.
+> > 
+> > Libguestfs parses btrfs tools output in a number of places, eg:
+> > https://github.com/libguestfs/libguestfs/blob/master/daemon/btrfs.c
+> > This is a massive PITA because each time a new release of btrfs-progs
+> > comes along it changes the output slightly, and we end up having
+> > to add all sorts of hacks.
+> > 
+> > With machine-readable output, there'd be a flag which would
+> > change the output.  eg:
 > 
-> Libguestfs parses btrfs tools output in a number of places, eg:
-> https://github.com/libguestfs/libguestfs/blob/master/daemon/btrfs.c
-> This is a massive PITA because each time a new release of btrfs-progs
-> comes along it changes the output slightly, and we end up having
-> to add all sorts of hacks.
+> I wonder whether parsing a text based output is really the most elegant method 
+> here.
 > 
-> With machine-readable output, there'd be a flag which would
-> change the output.  eg:
+> How about a libbtrfs so that other tools can benefit from btrfs tools 
+> functionality? This was also desktop environments wishing to make use of 
+> snapshot functionality or advanced disk usage reporting for example can easily 
+> make use of it without calling external commands.
+> 
+> Of course it would likely me more effort than to implement structured output.
 
-I wonder whether parsing a text based output is really the most elegant method 
-here.
+Yes, a similar situation happened with qemu actually.  We've been
+talking for over half a decade about putting the qemu block layer into
+a library, and it's still not happened.  But we got `qemu-img info' to
+have JSON output in a few weeks, and that is now how we query the
+properties of VM disk images:
 
-How about a libbtrfs so that other tools can benefit from btrfs tools 
-functionality? This was also desktop environments wishing to make use of 
-snapshot functionality or advanced disk usage reporting for example can easily 
-make use of it without calling external commands.
+$ qemu-img info --output=json ./builder/fedora.qcow2
+{
+    "virtual-size": 1073741824,
+    "filename": "./builder/fedora.qcow2",
+    "cluster-size": 65536,
+    "format": "qcow2",
+    "actual-size": 7933952,
+    "format-specific": {
+        "type": "qcow2",
+        "data": {
+            "compat": "1.1",
+            "lazy-refcounts": false,
+            "refcount-bits": 16,
+            "corrupt": false
+        }
+    },
+    "dirty-flag": false
+}
 
-Of course it would likely me more effort than to implement structured output.
+Rich.
 
-Thanks,
 -- 
-Martin
+Richard Jones, Virtualization Group, Red Hat http://people.redhat.com/~rjones
+Read my programming and virtualization blog: http://rwmj.wordpress.com
+virt-builder quickly builds VMs from scratch
+http://libguestfs.org/virt-builder.1.html

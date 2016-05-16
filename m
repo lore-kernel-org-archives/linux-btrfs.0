@@ -1,133 +1,61 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout1.freenet.de ([195.4.92.91]:35754 "EHLO mout1.freenet.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751973AbcEPAOl (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 15 May 2016 20:14:41 -0400
-Received: from [195.4.92.141] (helo=mjail1.freenet.de)
-	by mout1.freenet.de with esmtpa (ID master.b.at.raven@chefmail.de) (port 25) (Exim 4.85 #1)
-	id 1b26BD-0008Fs-0e
-	for linux-btrfs@vger.kernel.org; Mon, 16 May 2016 02:14:39 +0200
-Received: from localhost ([::1]:38253 helo=mjail1.freenet.de)
-	by mjail1.freenet.de with esmtpa (ID master.b.at.raven@chefmail.de) (Exim 4.85 #1)
-	id 1b26BC-00035m-T7
-	for linux-btrfs@vger.kernel.org; Mon, 16 May 2016 02:14:39 +0200
-Received: from mx13.freenet.de ([195.4.92.23]:55640)
-	by mjail1.freenet.de with esmtpa (ID master.b.at.raven@chefmail.de) (Exim 4.85 #1)
-	id 1b268t-0006uU-8r
-	for linux-btrfs@vger.kernel.org; Mon, 16 May 2016 02:12:15 +0200
-Received: from ppp-88-217-14-247.dynamic.mnet-online.de ([88.217.14.247]:54884 helo=[192.168.1.209])
-	by mx13.freenet.de with esmtpsa (ID master.b.at.raven@chefmail.de) (TLSv1.2:DHE-RSA-AES128-SHA:128) (port 465) (Exim 4.85 #1)
-	id 1b268t-0006Jp-5f
-	for linux-btrfs@vger.kernel.org; Mon, 16 May 2016 02:12:15 +0200
-To: linux-btrfs@vger.kernel.org
-From: g6094199@freenet.de
-Subject: Re: Re: [PATCH] btrfs-progs: add always option to restore's looping
- prompt
-Message-ID: <4f8afda5-6a8e-937b-f38b-881ddf1c075d@chefmail.de>
-Date: Mon, 16 May 2016 02:12:16 +0200
+Received: from mail-io0-f180.google.com ([209.85.223.180]:35798 "EHLO
+	mail-io0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751895AbcEPLRU (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 16 May 2016 07:17:20 -0400
+Received: by mail-io0-f180.google.com with SMTP id d62so205304498iof.2
+        for <linux-btrfs@vger.kernel.org>; Mon, 16 May 2016 04:17:08 -0700 (PDT)
+Subject: Re: fsck: to repair or not to repair
+To: Chris Murphy <lists@colorremedies.com>, Nikolaus Rath <Nikolaus@rath.org>
+References: <87y47g1esh.fsf@thinkpad.rath.org>
+ <CAPmG0jYDw8Sid2jORVtfwNLpeZPAqtH429EQsraz9GzNdK1aUQ@mail.gmail.com>
+ <pan$14f07$a448b38$b8e37f4a$116d54ce@cox.net>
+ <87vb2ij7u5.fsf@vostro.rath.org>
+ <CAJCQCtRs6VhRDFT6PvD4LkKYvtMero7UBs6Gd-XtjHLqwBe-5Q@mail.gmail.com>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Message-ID: <60824d00-56c4-8f83-34e2-07fc99ca3c8b@gmail.com>
+Date: Mon, 16 May 2016 07:17:04 -0400
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
+In-Reply-To: <CAJCQCtRs6VhRDFT6PvD4LkKYvtMero7UBs6Gd-XtjHLqwBe-5Q@mail.gmail.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-He Guys,
-
-i'm doing some restore right now. In fakt about 8TB.
-I saw Justin sending the patch below in 2014 adding the "all" option when hitting the looping promt.
-It would be nice to have this as command switch to, because if you have to recover the amount of data as i do atm, you probably get hundreds of looping promts
-where you have to inactivly apply the "a" every time. This gets annoying after a while.
-I also saw a similar request by Karl Richter some time ago (https://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg36458.html)
-
-
-So please for all users that will have similar probs in the future the option *btrfs restore -a* (or similar).
-
-
-
-regads
-Sash
-
-
-
-
-
-Hi Justin,
-
-Thanks for the patch first, comment inlined below.
--------- Original Message --------
-Subject: [PATCH] btrfs-progs: add always option to restore's looping prompt
-From: Justin Maggard <jmaggard10 <at> gmail.com>
-To: <linux-btrfs <at> vger.kernel.org>
-Date: 2014年07月29日 08:03
-> If you are using btrfs restore to try to recover a very large or
-> fragmented file, you may encounter __lots__ of prompts requiring
-> you to press 'y' to continue because we are looping a lot.
+On 2016-05-13 17:35, Chris Murphy wrote:
+> On Fri, May 13, 2016 at 9:28 AM, Nikolaus Rath <Nikolaus@rath.org> wrote:
+>> On May 13 2016, Duncan <1i5t5.duncan@cox.net> wrote:
+>>> Because btrfs can be multi-device, it needs some way to track which
+>>> devices belong to each filesystem, and it uses filesystem UUID for this
+>>> purpose.
+>>>
+>>> If you clone a filesystem (for instance using dd or lvm snapshotting,
+>>> doesn't matter how) and then trigger a btrfs device scan, say by plugging
+>>> in some other device with btrfs on it so udev triggers a scan, and the
+>>> kernel sees multiple devices with the same filesystem UUID as a result,
+>>> and one of those happens to be mounted, you can corrupt both copies as
+>>> the kernel btrfs won't be able to tell them apart and may write updates
+>>> to the wrong one.
+>>
+>> That seems like a rather odd design. Why isn't btrfs refusing to mount
+>> in this situation? In the face of ambiguity, guessing is generally bad
+>> idea (at least for a computer program).
 >
-> Add the option to press 'a', to supress these prompts for the rest
-> of the file.
-> ---
->   cmds-restore.c | 17 +++++++++++------
->   1 file changed, 11 insertions(+), 6 deletions(-)
+> The logic  you describe requires code. It's the absence of code rather
+> than an intentional design that's the cause of the current behavior.
+> And yes, it'd be nice if Btrfs weren't stepping on its own tail in
+> this situation. It could be as simple as refusing to mount anytime
+> there's an ambiguity, but that's sorta user hostile if there isn't a
+> message that goes along with it to help the user figure out a way to
+> resolve the problem. And that too could be fraught with peril if the
+> user makes a mistake. So, really what's the right way to do this is
+> part of the problem but I agree it's better to be hostile and refuse
+> to mount a given volume UUID at all when too many devices are found,
+> than corrupt the file system.
 >
-> diff --git a/cmds-restore.c b/cmds-restore.c
-> index 96b97e1..ae95d5a 100644
-> --- a/cmds-restore.c
-> +++ b/cmds-restore.c
->  <at>  <at>  -410,17 +410,19  <at>  <at>  static int ask_to_continue(const char *file)
->   	char *ret;
->   
->   	printf("We seem to be looping a lot on %s, do you want to keep going "
-> -	       "on ? (y/N): ", file);
-> +	       "on ? (y/N/a): ", file);
->   again:
->   	ret = fgets(buf, 2, stdin);
->   	if (*ret == '\n' || tolower(*ret) == 'n')
-> -		return 1;
-> +		return 0;
-> +	if (tolower(*ret) == 'a')
-> +		return 2;
->   	if (tolower(*ret) != 'y') {
->   		printf("Please enter either 'y' or 'n': ");
-Since option 'a' is added, it would be better to change the prompt and 
-add 'a' to it.
->   		goto again;
->   	}
->   
-> -	return 0;
-> +	return 1;
->   }
-If add any comment or change the return value from immediate number to 
-more meaningful defined number,
-it would be much more easier to understand and expend.
-Especially when the return value has difference meaning with original one.
->   
->   
->  <at>  <at>  -588,11 +590,14  <at>  <at>  static int copy_file(struct btrfs_root *root, int fd, struct btrfs_key *key,
->   	}
->   
->   	while (1) {
-> -		if (loops++ >= 1024) {
-> +		if (loops >= 0 && loops++ >= 1024) {
->   			ret = ask_to_continue(file);
-> -			if (ret)
-> +			if (ret == 0)
->   				break;
-> -			loops = 0;
-> +			else if (ret == 1)
-> +				loops = 0;
-> +			else if (ret == 2)
-> +				loops = -1;
->   		}
->   		if (path->slots[0] >= btrfs_header_nritems(leaf)) {
->   			do {
-Also, just a suggestion and you can ignore it without any problem,
-utils.c provide ask_to_continue() function to provide similar behavior, 
-what about improve the one in utils.c
-and reuse the ask_to_continue() function?
-
-Thanks,
-Qu
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-the body of a message to majordomo <at> vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
-
+FWIW, the behavior I'd expect from a sysadmin perspective would be:
+1. If and only if a correct number of device= options have been passed 
+to mount, use those devices (and only those devices), and log a warning 
+if extra devices are detected.
+2. Otherwise, refuse to mount and log a warning.

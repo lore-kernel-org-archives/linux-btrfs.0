@@ -1,14 +1,14 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:18565 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:4492 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1755522AbcEQJjK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 17 May 2016 05:39:10 -0400
+	id S1755440AbcEQJjI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 17 May 2016 05:39:08 -0400
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org, dsterba@suse.cz, jbacik@fb.com
 Cc: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
-Subject: [RFC PATCH v2.1 14/16] btrfs-progs: fsck: Introduce function to speed up fs tree check
-Date: Tue, 17 May 2016 17:38:48 +0800
-Message-Id: <1463477930-3925-15-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [RFC PATCH v2.1 15/16] btrfs-progs: fsck: Introduce traversal function for fsck
+Date: Tue, 17 May 2016 17:38:49 +0800
+Message-Id: <1463477930-3925-16-git-send-email-quwenruo@cn.fujitsu.com>
 In-Reply-To: <1463477930-3925-1-git-send-email-quwenruo@cn.fujitsu.com>
 References: <1463477930-3925-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -17,119 +17,98 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
 
-Introduce function should_check() to reduced duplicated tree block check
-for fs/subvolume tree.
-
-The idea is, we only check the fs/subvolue tree block if we have the
-highest referencer rootid, according to extent tree.
-
-In that case, we can skip a lot of fs/subvolume tree block check if
-there are a lot of snapshots.
-
-Although we will do a lot of extent tree search for it.
+Introduce a new function traversal_tree_block() to do pre-order
+traversal, to co-operate with new fs/subvolume tree skip function.
 
 Signed-off-by: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- cmds-check.c | 90 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 90 insertions(+)
+ cmds-check.c | 77 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 77 insertions(+)
 
 diff --git a/cmds-check.c b/cmds-check.c
-index 7735ff3..c12d9c9 100644
+index c12d9c9..6a49f07 100644
 --- a/cmds-check.c
 +++ b/cmds-check.c
-@@ -9628,6 +9628,96 @@ next:
- 	return err;
+@@ -9718,6 +9718,83 @@ need_check:
+ 	return 1;
  }
  
 +/*
-+ * Helper function for later fs/subvol tree check.
-+ * To determine if a tree block should be checked.
-+ * This function will ensure only the directly referencer with lowest
-+ * rootid to check a fs/subvolume tree block.
-+ *
-+ * Backref check at extent tree would detect error like missing subvolume
-+ * tree, so we can do aggressive judgement to reduce duplicated check.
++ * Traversal function for tree block.
++ * We will do
++ * 1) Skip shared fs/subvolume tree blocks
++ * 2) Update related bytes accounting
++ * 3) Pre-order traversal
 + */
-+static int should_check(struct btrfs_root *root, struct extent_buffer *eb)
++static int traversal_tree_block(struct btrfs_root *root,
++				struct extent_buffer *node)
 +{
-+	struct btrfs_root *extent_root = root->fs_info->extent_root;
-+	struct btrfs_key key;
-+	struct btrfs_path path;
-+	struct extent_buffer *leaf;
-+	int slot;
-+	struct btrfs_extent_item *ei;
-+	unsigned long ptr;
-+	unsigned long end;
-+	int type;
-+	u32 item_size;
-+	u64 offset;
-+	struct btrfs_extent_inline_ref *iref;
++	struct extent_buffer *eb;
++	int level;
++	u64 nr;
++	int i;
++	int err = 0;
 +	int ret;
 +
-+	btrfs_init_path(&path);
-+	key.objectid = btrfs_header_bytenr(eb);
-+	key.type = BTRFS_METADATA_ITEM_KEY;
-+	key.offset = (u64)-1;
-+
 +	/*
-+	 * Any failure in backref resolving means we can't determine
-+	 * who the tree block belongs to.
-+	 * So in that case, we need to check that tree block
++	 * Skip shared fs/subvolume tree block, in that case they will
++	 * be checked by referencer with lowest rootid
 +	 */
-+	ret = btrfs_search_slot(NULL, extent_root, &key, &path, 0, 0);
-+	if (ret < 0)
-+		goto need_check;
++	if (is_fstree(root->objectid) && !should_check(root, node))
++		return 0;
 +
-+	ret = btrfs_previous_extent_item(extent_root, &path,
-+					 btrfs_header_bytenr(eb));
-+	if (ret)
-+		goto need_check;
++	/* Update bytes accounting */
++	total_btree_bytes += node->len;
++	if (fs_root_objectid(btrfs_header_owner(node)))
++		total_fs_tree_bytes += node->len;
++	if (btrfs_header_owner(node) == BTRFS_EXTENT_TREE_OBJECTID)
++		total_extent_tree_bytes += node->len;
++	if (!found_old_backref &&
++	    btrfs_header_owner(node) == BTRFS_TREE_RELOC_OBJECTID &&
++	    btrfs_header_backref_rev(node) == BTRFS_MIXED_BACKREF_REV &&
++	    !btrfs_header_flag(node, BTRFS_HEADER_FLAG_RELOC))
++		found_old_backref = 1;
 +
-+	leaf = path.nodes[0];
-+	slot = path.slots[0];
-+	btrfs_item_key_to_cpu(leaf, &key, slot);
-+	ei = btrfs_item_ptr(leaf, slot, struct btrfs_extent_item);
++	/* pre-order tranversal, check itself first */
++	level = btrfs_header_level(node);
++	ret = check_tree_block_ref(root, node, btrfs_header_bytenr(node),
++				   btrfs_header_level(node),
++				   btrfs_header_owner(node));
++	err |= ret;
++	if (err)
++		error("check %s failed root %llu bytenr %llu level %d, force continue check",
++		      level ? "node":"leaf", root->objectid,
++		      btrfs_header_bytenr(node), btrfs_header_level(node));
 +
-+	if (key.type == BTRFS_METADATA_ITEM_KEY) {
-+		iref = (struct btrfs_extent_inline_ref *)(ei + 1);
-+	} else {
-+		struct btrfs_tree_block_info *info;
-+
-+		info = (struct btrfs_tree_block_info *)(ei + 1);
-+		iref = (struct btrfs_extent_inline_ref *)(info + 1);
++	if (!level) {
++		btree_space_waste += btrfs_leaf_free_space(root, node);
++		ret = check_leaf_items(root, node);
++		err |= ret;
++		return err;
 +	}
 +
-+	item_size = btrfs_item_size_nr(leaf, slot);
-+	ptr = (unsigned long)iref;
-+	end = (unsigned long)ei + item_size;
-+	while (ptr < end) {
-+		iref = (struct btrfs_extent_inline_ref *)ptr;
-+		type = btrfs_extent_inline_ref_type(leaf, iref);
-+		offset = btrfs_extent_inline_ref_offset(leaf, iref);
++	nr = btrfs_header_nritems(node);
++	btree_space_waste += (BTRFS_NODEPTRS_PER_BLOCK(root) - nr) *
++		sizeof(struct btrfs_key_ptr);
++
++	/* Then check all its children */
++	for (i = 0; i < nr; i++) {
++		u64 blocknr = btrfs_node_blockptr(node, i);
 +
 +		/*
-+		 * We only check the tree block if current root is
-+		 * the lowest referencer of it.
++		 * As a btrfs tree has most 8 levels(0~7), so it's quite
++		 * safe to call the function itself.
 +		 */
-+		if (type == BTRFS_TREE_BLOCK_REF_KEY &&
-+		    offset < root->objectid) {
-+			btrfs_release_path(&path);
-+			return 0;
++		eb = read_tree_block(root, blocknr, root->nodesize, 0);
++		if (extent_buffer_uptodate(eb)) {
++			ret = traversal_tree_block(root, eb);
++			err |= ret;
 +		}
-+
-+		ptr += btrfs_extent_inline_ref_size(type);
++		free_extent_buffer(eb);
 +	}
-+	/*
-+	 * Normally we should also check keyed tree block ref,
-+	 * but that may be very time consuming.
-+	 * Inlined ref should already make us skip a lot of refs now.
-+	 * So skip search keyed tree block ref.
-+	 */
 +
-+need_check:
-+	btrfs_release_path(&path);
-+	return 1;
++	return err;
 +}
 +
  static int btrfs_fsck_reinit_root(struct btrfs_trans_handle *trans,

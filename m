@@ -1,82 +1,69 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oi0-f68.google.com ([209.85.218.68]:33757 "EHLO
-	mail-oi0-f68.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754185AbcEQDm6 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 16 May 2016 23:42:58 -0400
-Received: by mail-oi0-f68.google.com with SMTP id t140so804303oie.0
-        for <linux-btrfs@vger.kernel.org>; Mon, 16 May 2016 20:42:58 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <1463442292.3278.61.camel@clone1.com>
-References: <CACTfMoQmco=yBP+e8tn0MoTVZsMauw0_=N1yc42NVNM9Krqv7A@mail.gmail.com>
-	<97b8a0bd-3707-c7d6-4138-c8fe81937b72@gmail.com>
-	<1463075341.3636.56.camel@clone1.com>
-	<CAJCQCtSSbv5dAC-uBN9RnYKKRMtr04KmLZVzhvAh7=Xq3ej7dQ@mail.gmail.com>
-	<1463114957.3636.140.camel@clone1.com>
-	<CAJCQCtSNwpaPs6jWFxzoHdUFJUyUZFjX6vocYf7RCWc=f_n5Hg@mail.gmail.com>
-	<1463337834.4626.14.camel@clone1.com>
-	<CAJCQCtSYgfhmNYFE4ffxFy20B=trkh+P=hhdbrq71ysZSm_FEA@mail.gmail.com>
-	<41b097af-d565-6cd7-2ed8-cb66b9ae8ecc@gmail.com>
-	<CAJCQCtSmmm-2aCUQvG4QNYvLHCo0LPcYKbSkmcxE1m5JqTL9zQ@mail.gmail.com>
-	<1463442292.3278.61.camel@clone1.com>
-Date: Mon, 16 May 2016 21:42:57 -0600
-Message-ID: <CAJCQCtQE4apgSw+5mX+4h050opH1Jw3MYXk5jUfab1DzS1f-+Q@mail.gmail.com>
-Subject: Re: BTRFS Data at Rest File Corruption
-From: Chris Murphy <lists@colorremedies.com>
-To: "Richard A. Lochner" <lochner@clone1.com>
-Cc: Chris Murphy <lists@colorremedies.com>,
-        "Austin S. Hemmelgarn" <ahferroin7@gmail.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Received: from plane.gmane.org ([80.91.229.3]:47683 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752809AbcEQG1b (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 17 May 2016 02:27:31 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+	id 1b2YTU-0001yC-29
+	for linux-btrfs@vger.kernel.org; Tue, 17 May 2016 08:27:24 +0200
+Received: from 145.132.48.198 ([145.132.48.198])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Tue, 17 May 2016 08:27:24 +0200
+Received: from ftoth by 145.132.48.198 with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Tue, 17 May 2016 08:27:24 +0200
+To: linux-btrfs@vger.kernel.org
+From: Ferry Toth <ftoth@exalondelft.nl>
+Subject: Re: Hot data tracking / hybrid storage
+Date: Tue, 17 May 2016 06:27:14 +0000 (UTC)
+Message-ID: <nhedk2$dpq$1@ger.gmane.org>
+References: <nh9p2p$cns$1@ger.gmane.org>
+	<pan$ae8c7$965ff694$cf73d90e$9e134691@cox.net>
+	<20160516010524.7e208f96@jupiter.sol.kaishome.de>
+Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, May 16, 2016 at 5:44 PM, Richard A. Lochner <lochner@clone1.com> wrote:
-> Chris,
->
-> It has actually happened to me three times that I know of in ~7mos.,
-> but your point about the "larger footprint" for data corruption is a
-> good one.  No doubt I have silently experienced that too.
+Op Mon, 16 May 2016 01:05:24 +0200, schreef Kai Krakow:
 
-I dunno three is a lot to have the exact same corruption only in
-memory then written out into two copies with valid node checksums; and
-yet not have other problems, like a node item, or uuid, or xattr or
-any number of other item or object types all of which get checksummed.
-I suppose if the file system contains large files, the % of metadata
-that's csums could be the 2nd largest footprint. But still.
+> Am Sun, 15 May 2016 21:11:11 +0000 (UTC)
+> schrieb Duncan <1i5t5.duncan@cox.net>:
+> 
+>> Ferry Toth posted on Sun, 15 May 2016 12:12:09 +0000 as excerpted:
+>> 
+<snip>
+> 
+> You can go there with only one additional HDD as temporary storage. Just
+> connect it, format as bcache, then do a "btrfs dev replace". Now wipe
+> that "free" HDD (use wipefs), format as bcache, then... well, you get
+> the point. At the last step, remove the remaining HDD. Now add your
+> SSDs, format as caching device, and attach each individual HDD backing
+> bcache to each SSD caching bcache.
+> 
+> Devices don't need to be formatted and created at the same time. I'd
+> also recommend to add all SSDs only in the last step to not wear them
+> early with writes during device replacement.
+> 
+> If you want, you can add one additional step to get the temporary hard
+> disk back. But why not simply replace the oldest hard disk with the
+> newest. Take a look at smartctl to see which is the best candidate.
+> 
+> I went a similar route but without one extra HDD. I had three HDDs in
+> mraid1/draid0 and enough spare space. I just removed one HDD, prepared
+> it for bcache, then added it back and removed the next.
+> 
+That's what I mean, a lot of work. And it's still a cache, with 
+unnecessary copying from the ssd to the hdd.
 
-Three times in 7 months, if it's really the same vector, is just short
-of almost reproducible. Ha. It seems like if you merely balanced this
-file system a few times, you'd eventually stumble on this. And if
-that's true, then it's time for debug options and see if it can be
-caught in action, and whether there's a hardware or software
-explanation for it.
+And what happens when either a hdd or ssd starts failing?
 
-
-> And, as you
-> suggest, there is no way to prevent those errors.  If the memory to be
-> written to disk gets corrupted before its checksum is calculated, the
-> data will be silently corrupted, period.
-
-Well, no way in the present design, maybe.
-
-
-
->
-> Clearly, I won't rely on this machine to produce any data directly that
-> I would consider important at this point.
->
-> One odd thing to me is that if this is really due to undetected memory
-> errors, I'd think this system would crash fairly often due to detected
-> "parity errors."  This system rarely crashes.  It often runs for
-> several months without an indication of problems.
-
-I think you'd have other problems. Only data csums are being corrupt
-after they're read in, but before the node csum is computed? Three
-times?  Pretty wonky.
+> --
+> Regards,
+> Kai
+> 
+> Replies to list-only preferred.
 
 
-
-
--- 
-Chris Murphy

@@ -1,69 +1,70 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:47683 "EHLO plane.gmane.org"
+Received: from plane.gmane.org ([80.91.229.3]:48200 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752809AbcEQG1b (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 17 May 2016 02:27:31 -0400
+	id S1751553AbcEQGjX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 17 May 2016 02:39:23 -0400
 Received: from list by plane.gmane.org with local (Exim 4.69)
 	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1b2YTU-0001yC-29
-	for linux-btrfs@vger.kernel.org; Tue, 17 May 2016 08:27:24 +0200
-Received: from 145.132.48.198 ([145.132.48.198])
+	id 1b2Yf3-00075j-6K
+	for linux-btrfs@vger.kernel.org; Tue, 17 May 2016 08:39:21 +0200
+Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
         by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 17 May 2016 08:27:24 +0200
-Received: from ftoth by 145.132.48.198 with local (Gmexim 0.1 (Debian))
+        for <linux-btrfs@vger.kernel.org>; Tue, 17 May 2016 08:39:21 +0200
+Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 17 May 2016 08:27:24 +0200
+        for <linux-btrfs@vger.kernel.org>; Tue, 17 May 2016 08:39:21 +0200
 To: linux-btrfs@vger.kernel.org
-From: Ferry Toth <ftoth@exalondelft.nl>
-Subject: Re: Hot data tracking / hybrid storage
-Date: Tue, 17 May 2016 06:27:14 +0000 (UTC)
-Message-ID: <nhedk2$dpq$1@ger.gmane.org>
-References: <nh9p2p$cns$1@ger.gmane.org>
-	<pan$ae8c7$965ff694$cf73d90e$9e134691@cox.net>
-	<20160516010524.7e208f96@jupiter.sol.kaishome.de>
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: Scrub status regression (repost kinda)
+Date: Tue, 17 May 2016 06:39:13 +0000 (UTC)
+Message-ID: <pan$6d12d$fd423a5a$1e7bec76$feebee26@cox.net>
+References: <loom.20160517T032830-349@post.gmane.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Op Mon, 16 May 2016 01:05:24 +0200, schreef Kai Krakow:
+al posted on Tue, 17 May 2016 01:40:19 +0000 as excerpted:
 
-> Am Sun, 15 May 2016 21:11:11 +0000 (UTC)
-> schrieb Duncan <1i5t5.duncan@cox.net>:
+> I'm still getting this regression on scrub. Scrub status no longer
+> reports the progress of the scrub. It always used to.
 > 
->> Ferry Toth posted on Sun, 15 May 2016 12:12:09 +0000 as excerpted:
->> 
-<snip>
+> The scrub itself proceeds normally and using '-B' returns the usual and
+> complete output.
 > 
-> You can go there with only one additional HDD as temporary storage. Just
-> connect it, format as bcache, then do a "btrfs dev replace". Now wipe
-> that "free" HDD (use wipefs), format as bcache, then... well, you get
-> the point. At the last step, remove the remaining HDD. Now add your
-> SSDs, format as caching device, and attach each individual HDD backing
-> bcache to each SSD caching bcache.
+> # btrfs scrub start /
+> scrub started on /, fsid fdd6a335-6edf-4a74-a909-03c8102cc8f5 (pid=4111)
 > 
-> Devices don't need to be formatted and created at the same time. I'd
-> also recommend to add all SSDs only in the last step to not wear them
-> early with writes during device replacement.
+> <reasonable time passes>
 > 
-> If you want, you can add one additional step to get the temporary hard
-> disk back. But why not simply replace the oldest hard disk with the
-> newest. Take a look at smartctl to see which is the best candidate.
-> 
-> I went a similar route but without one extra HDD. I had three HDDs in
-> mraid1/draid0 and enough spare space. I just removed one HDD, prepared
-> it for bcache, then added it back and removed the next.
-> 
-That's what I mean, a lot of work. And it's still a cache, with 
-unnecessary copying from the ssd to the hdd.
+> # btrfs scrub status /
+> scrub status for fdd6a335-6edf-4a74-a909-03c8102cc8f5
+> 	no stats available total bytes scrubbed: 0.00B with 0 errors
 
-And what happens when either a hdd or ssd starts failing?
 
-> --
-> Regards,
-> Kai
-> 
-> Replies to list-only preferred.
+That's almost certainly due to the state of the location where btrfs 
+stores scrub status information, /var/lib/btrfs, which should be a 
+directory that's both writable by btrfs during the scrub, and readable at 
+the time btrfs scrub status is run.
 
+It appears that (as expected for such commands) you're running btrfs as 
+root, so normal file permissions shouldn't matter.
+
+However, if you have that filesystem mounted read-only at the time, or if 
+you or your distro has configured additional security restrictions like 
+SE Linux and they're preventing access to that dir, that would explain 
+the problem.
+
+Additionally, I'm not sure whether btrfs scrub will create that directory 
+(and its parents /var/lib and /var) dynamically if needed, or if the 
+package is supposed to do that at installation, so btrfs scrub itself 
+doesn't do it.  In the latter case, if the directory simply doesn't 
+exist, that would prevent the status files from being written, and thus 
+read, as well.
+
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 

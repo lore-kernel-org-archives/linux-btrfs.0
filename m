@@ -1,109 +1,108 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:39113 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752305AbcEQSdw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 17 May 2016 14:33:52 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1b2joT-0003L8-0w
-	for linux-btrfs@vger.kernel.org; Tue, 17 May 2016 20:33:49 +0200
-Received: from ip5f5ae06c.dynamic.kabel-deutschland.de ([95.90.224.108])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 17 May 2016 20:33:49 +0200
-Received: from hurikhan77 by ip5f5ae06c.dynamic.kabel-deutschland.de with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 17 May 2016 20:33:49 +0200
-To: linux-btrfs@vger.kernel.org
-From: Kai Krakow <hurikhan77@gmail.com>
-Subject: Re: Hot data tracking / hybrid storage
-Date: Tue, 17 May 2016 20:33:35 +0200
-Message-ID: <20160517203335.5ff99a05@jupiter.sol.kaishome.de>
-References: <nh9p2p$cns$1@ger.gmane.org>
-	<pan$ae8c7$965ff694$cf73d90e$9e134691@cox.net>
-	<20160516010524.7e208f96@jupiter.sol.kaishome.de>
-	<nhedk2$dpq$1@ger.gmane.org>
-	<0d68f988-e117-4b61-cb9b-d18a26e2b909@gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+Received: from mail-oi0-f42.google.com ([209.85.218.42]:34029 "EHLO
+	mail-oi0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750758AbcEQTwa (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 17 May 2016 15:52:30 -0400
+Received: by mail-oi0-f42.google.com with SMTP id k142so42837730oib.1
+        for <linux-btrfs@vger.kernel.org>; Tue, 17 May 2016 12:52:29 -0700 (PDT)
+MIME-Version: 1.0
+In-Reply-To: <CABt16=EDFKFj4duaWJ0qCS_SO9TE2jn8UMCx5e_u+X+M328yeA@mail.gmail.com>
+References: <CABt16=EDFKFj4duaWJ0qCS_SO9TE2jn8UMCx5e_u+X+M328yeA@mail.gmail.com>
+Date: Tue, 17 May 2016 13:52:29 -0600
+Message-ID: <CAJCQCtSJgGXpvFAqOZx5VsAMkcxjpUTexWab4o-983uOYTLfEA@mail.gmail.com>
+Subject: Re: Corrupted system due to imbalanced metadata chunks
+From: Chris Murphy <lists@colorremedies.com>
+To: Peter Kese <peter.kese@viidea.com>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am Tue, 17 May 2016 07:32:11 -0400
-schrieb "Austin S. Hemmelgarn" <ahferroin7@gmail.com>:
+On Tue, May 17, 2016 at 9:45 AM, Peter Kese <peter.kese@viidea.com> wrote:
+> I've been using btrfs on my main system for a few months. I know btrfs
+> is a little bit beta, but I thought not using any fancy features like
+> quotas, snapshotting, raid, etc. would keep me on the safe side.
+>
+> Then I tried a software upgrade (Ubuntu 15.10 -> 16.04) and it turned
+> out that while there was more than 100 GB (45%) of free disk space,
+> the upgrade process broke down somewhere in the middle reporting IO
+> errors and lack of free disk space.
 
-> On 2016-05-17 02:27, Ferry Toth wrote:
-> > Op Mon, 16 May 2016 01:05:24 +0200, schreef Kai Krakow:
-> >  
-> >> Am Sun, 15 May 2016 21:11:11 +0000 (UTC)
-> >> schrieb Duncan <1i5t5.duncan@cox.net>:
-> >>  
->  [...]  
-> > <snip>  
-> >>
-> >> You can go there with only one additional HDD as temporary
-> >> storage. Just connect it, format as bcache, then do a "btrfs dev
-> >> replace". Now wipe that "free" HDD (use wipefs), format as bcache,
-> >> then... well, you get the point. At the last step, remove the
-> >> remaining HDD. Now add your SSDs, format as caching device, and
-> >> attach each individual HDD backing bcache to each SSD caching
-> >> bcache.
-> >>
-> >> Devices don't need to be formatted and created at the same time.
-> >> I'd also recommend to add all SSDs only in the last step to not
-> >> wear them early with writes during device replacement.
-> >>
-> >> If you want, you can add one additional step to get the temporary
-> >> hard disk back. But why not simply replace the oldest hard disk
-> >> with the newest. Take a look at smartctl to see which is the best
-> >> candidate.
-> >>
-> >> I went a similar route but without one extra HDD. I had three HDDs
-> >> in mraid1/draid0 and enough spare space. I just removed one HDD,
-> >> prepared it for bcache, then added it back and removed the next.
-> >>  
-> > That's what I mean, a lot of work. And it's still a cache, with
-> > unnecessary copying from the ssd to the hdd.  
-> On the other hand, it's actually possible to do this all online with 
-> BTRFS because of the reshaping and device replacement tools.
-> 
-> In fact, I've done even more complex reprovisioning online before
-> (for example, my home server system has 2 SSD's and 4 HDD's, running
-> BTRFS on top of LVM, I've at least twice completely recreated the LVM
-> layer online without any data loss and minimal performance
-> degradation).
-> >
-> > And what happens when either a hdd or ssd starts failing?  
-> I have absolutely no idea how bcache handles this, but I doubt it's
-> any better than BTRFS.
+Yeah it's a weak area still that only completely unused data chunks
+become unallocated free space again, from which metadata chunks can be
+allocated. I think general consumption of Btrfs is difficult until
+there's better behavior; maybe a trigger that can happen before such
+enospc that causes the equivalent of filtered balance, e.g. -dusage=5,
+which should be quite fast even on HDD, and free up a lot of space or
+at least enough to allocate a metadata chunk in order to complete
+something like an OS upgrade.
 
-Bcache should in theory fall back to write-through as soon as an error
-counter exceeds a threshold. This is adjustable with sysfs
-io_error_halftime and io_error_limit. Tho I never tried what actually
-happens when either the HDD (in bcache writeback-mode) or the SSD
-fails. Actually, btrfs should be able to handle this (tho, according to
-list reports, it doesn't handle errors very well at this point).
 
-BTW: Unnecessary copying from SSD to HDD doesn't take place in bcache
-default mode: It only copies from HDD to SSD in writeback mode (data
-is written to the cache first, then persisted to HDD in the background).
-You can also use "write through" (data is written to SSD and persisted
-to HDD at the same time, reporting persistence to the application only
-when both copies were written) and "write around" mode (data is written
-to HDD only, and only reads are written to the SSD cache device).
 
-If you want bcache behave as a huge IO scheduler for writes, use
-writeback mode. If you have write-intensive applications, you may want
-to choose write-around to not wear out the SSDs early. If you want
-writes to be cached for later reads, you can choose write-through mode.
-The latter two modes will ensure written data is always persisted to
-HDD with the same guaranties you had without bcache. The last mode is
-default and should not change behavior of btrfs if the HDD fails, and
-if the SSD fails bcache would simply turn off and fall back to HDD.
+> As I have learned later on, my problem was lack of available metadata
+> blocks and a couple of tries at btrfs-balance remedied the space
+> problem, but I nevertheless ended up with a broken Ubuntu distribution
+> (there were broken packages and apt-get/dpkg hacking failed to fix the
+> problem).
+>
+> So there wasn't any major data loss (apart from some .deb packages
+> missing some files, my personal data is intact). But I'd still
+> consider this a major loss, because I'll end up having to reinstall
+> the whole system.
+
+The criticism is valid. But there is more than one valid criticism.
+The non-atomic upgrade process is also a problem that needs
+improvement for a very long time now.
+
+Ironically a snapshot would probably have helped because then worst
+case scenario  you could 'btrfs dev add' some small device like even a
+2G USB stick to get out of the no space situation, and then delete the
+subvolume(s) containing the failed upgrade, then later delete the
+unneeded USB stick. So Btrfs can help give OS upgrades a more modern
+atomic way of doing updates and upgrades, almost for free, so that a
+failure can be rolled back to a known good point.
+
+But there are other reasons why updates can fail, other than running
+out of space, and that's why they need to be better designed to be
+fail safe.
+
+
+
+
+>
+> Now here's what I think:
+>  1) I may have been a bit unfortunate to experience this particular
+> issue but there's a large audience of people who might get bitten as
+> well,
+>  2) I find it hard to blame it on Ubuntu's upgrade process, as it does
+> check for free space availability before starting the upgrade,
+>  3) A file system should not refuse to store files (during system
+> upgrade or any other time), when there is 100 GB of free disk space
+> available,
+>  4) Not anywhere in any btrfs documentation (not even in btrfs
+> Gotchas) did I read any bold text saying *If installing btrfs, you
+> should always keep an eye on free space for metadata and perform
+> regular balances or otherwise you may corrupt your system.*
+
+1 Definitely.
+2 Dual blame.
+3 It's technically not free disk space, it's unused but allocated
+space, and it's allocated for a specific purpose (data chunk or
+metadata chunk) and right now there's no automatic migration (balance)
+of extents in order to repurpose that space as needed. So, yeah Btrfs
+needs to get better in this area for sure but it's a difficult problem
+or it'd already be solved by now.
+4 Technically the file system itself is not corrupt, it's just that
+upon enospc the updater face plants and I guess has some recovery
+problems identifying the system's in-between state and ability to fix
+it. I agree with the part that the user shouldn't need to know about
+keeping an eye on data vs metadata balancing act for a stable and
+production recommended fs.
+
+But at least as much we need better behavior in updaters. Quite a lot
+of them it seems make excessive use of fsync for probably no longer
+very good reasons.
 
 -- 
-Regards,
-Kai
-
-Replies to list-only preferred.
-
+Chris Murphy

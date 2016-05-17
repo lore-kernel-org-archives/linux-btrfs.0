@@ -1,14 +1,14 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:18565 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:40177 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1754984AbcEQJjN (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 17 May 2016 05:39:13 -0400
+	id S1755552AbcEQJjP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 17 May 2016 05:39:15 -0400
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org, dsterba@suse.cz, jbacik@fb.com
 Cc: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
-Subject: [RFC PATCH v2.1 05/16] btrfs-progs: fsck: Introduce function to check shared block ref
-Date: Tue, 17 May 2016 17:38:39 +0800
-Message-Id: <1463477930-3925-6-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [RFC PATCH v2.1 06/16] btrfs-progs: fsck: Introduce function to check referencer for data backref
+Date: Tue, 17 May 2016 17:38:40 +0800
+Message-Id: <1463477930-3925-7-git-send-email-quwenruo@cn.fujitsu.com>
 In-Reply-To: <1463477930-3925-1-git-send-email-quwenruo@cn.fujitsu.com>
 References: <1463477930-3925-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -17,60 +17,118 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
 
-Introduce function check_shared_block_backref() to check shared block
-ref.
+Introduce new function check_extent_data_backref() to search referencer
+for a given data backref.
 
 Signed-off-by: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- cmds-check.c | 42 ++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 42 insertions(+)
+ cmds-check.c | 100 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 100 insertions(+)
 
 diff --git a/cmds-check.c b/cmds-check.c
-index 443b337..6ca84f5 100644
+index 6ca84f5..6b59397 100644
 --- a/cmds-check.c
 +++ b/cmds-check.c
-@@ -8886,6 +8886,48 @@ out:
- 	return err;
+@@ -8928,6 +8928,106 @@ out:
+ 	return 0;
  }
  
 +/*
-+ * Check referencer for shared block backref
-+ * If level == -1, this function will resolve the level.
++ * Check referencer for normal(inlined) data ref
++ * If len == 0, it will be resolved by searching in extent tree
 + */
-+static int check_shared_block_backref(struct btrfs_fs_info *fs_info,
-+				     u64 parent, u64 bytenr, int level)
++static int check_extent_data_backref(struct btrfs_fs_info *fs_info,
++				     u64 root_id, u64 objectid, u64 offset,
++				     u64 bytenr, u64 len, u32 count)
 +{
-+	struct extent_buffer *eb;
-+	u32 nodesize = btrfs_super_nodesize(fs_info->super_copy);
-+	u32 nr;
-+	int found_parent = 0;
-+	int i;
++	struct btrfs_root *root;
++	struct btrfs_root *extent_root = fs_info->extent_root;
++	struct btrfs_key key;
++	struct btrfs_path path;
++	struct extent_buffer *leaf;
++	struct btrfs_file_extent_item *fi;
++	u32 found_count = 0;
++	int slot;
++	int ret = 0;
 +
-+	eb = read_tree_block_fs_info(fs_info, parent, nodesize, 0);
-+	if (!extent_buffer_uptodate(eb))
++	if (!len) {
++		key.objectid = bytenr;
++		key.type = BTRFS_EXTENT_ITEM_KEY;
++		key.offset = (u64)-1;
++
++		btrfs_init_path(&path);
++		ret = btrfs_search_slot(NULL, extent_root, &key, &path, 0, 0);
++		if (ret < 0)
++			goto out;
++		ret = btrfs_previous_extent_item(extent_root, &path, bytenr);
++		if (ret)
++			goto out;
++		btrfs_item_key_to_cpu(path.nodes[0], &key, path.slots[0]);
++		if (key.objectid != bytenr ||
++		    key.type != BTRFS_EXTENT_ITEM_KEY)
++			goto out;
++		len = key.offset;
++		btrfs_release_path(&path);
++	}
++	key.objectid = root_id;
++	btrfs_set_key_type(&key, BTRFS_ROOT_ITEM_KEY);
++	key.offset = (u64)-1;
++
++	root = btrfs_read_fs_root(fs_info, &key);
++	if (IS_ERR(root))
 +		goto out;
 +
-+	if (level == -1)
-+		level = query_tree_block_level(fs_info, bytenr);
-+	if (level < 0)
++	btrfs_init_path(&path);
++	key.objectid = objectid;
++	key.type = BTRFS_EXTENT_DATA_KEY;
++	/*
++	 * It can be nasty as data backref offset is
++	 * file offset - file extent offset, which is smaller or
++	 * equal to original backref offset.
++	 * The only special case is overflow.
++	 * So we need to special judgement and do further search
++	 */
++	key.offset = offset & (1ULL << 63) ? 0 : offset;
++
++	ret = btrfs_search_slot(NULL, root, &key, &path, 0, 0);
++	if (ret < 0)
 +		goto out;
 +
-+	if (level + 1 != btrfs_header_level(eb))
-+		goto out;
++	/*
++	 * Search afterwards to get correct one
++	 * NOTE: As we must do a comprehensive check on the data backref to
++	 * make sure the dref count also match, we must iterate all file
++	 * extents for that inode.
++	 */
++	while (1) {
++		leaf = path.nodes[0];
++		slot = path.slots[0];
 +
-+	nr = btrfs_header_nritems(eb);
-+	for (i = 0; i < nr; i++) {
-+		if (bytenr == btrfs_node_blockptr(eb, i)) {
-+			found_parent = 1;
++		btrfs_item_key_to_cpu(leaf, &key, slot);
++		if (key.objectid != objectid || key.type != BTRFS_EXTENT_DATA_KEY)
 +			break;
-+		}
++		fi = btrfs_item_ptr(leaf, slot, struct btrfs_file_extent_item);
++		/*
++		 * Except normal disk bytenr and disk num bytes, we still
++		 * need to do extra check on dbackref offset as
++		 * dbackref offset = file_offset - file_extent_offset
++		 */
++		if (btrfs_file_extent_disk_bytenr(leaf, fi) == bytenr &&
++		    btrfs_file_extent_disk_num_bytes(leaf, fi) == len &&
++		    (u64)(key.offset - btrfs_file_extent_offset(leaf, fi)) ==
++		    offset)
++			found_count++;
++
++		ret = btrfs_next_item(root, &path);
++		if (ret)
++			break;
 +	}
 +out:
-+	free_extent_buffer(eb);
-+	if (!found_parent) {
-+		error("Shared extent[%llu %u] lost its parent(parent: %llu, level: %u)",
-+		      bytenr, nodesize, parent, level);
++	btrfs_release_path(&path);
++	if (found_count != count) {
++		error("Extent[%llu, %llu] referencer count mismatch(root: %llu, owner: %llu, offset: %llu) wanted: %u, have: %u",
++		      bytenr, len, root_id, objectid, offset, count, found_count);
 +		return REFERENCER_MISSING;
 +	}
 +	return 0;

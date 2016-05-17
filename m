@@ -1,14 +1,14 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
 Received: from cn.fujitsu.com ([222.73.24.84]:18565 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1752521AbcEQJjD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 17 May 2016 05:39:03 -0400
+	id S1755523AbcEQJjM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 17 May 2016 05:39:12 -0400
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org, dsterba@suse.cz, jbacik@fb.com
 Cc: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
-Subject: [RFC PATCH v2.1 03/16] btrfs-progs: fsck: Introduce function to query tree block level
-Date: Tue, 17 May 2016 17:38:37 +0800
-Message-Id: <1463477930-3925-4-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [RFC PATCH v2.1 04/16] btrfs-progs: fsck: Introduce function to check referencer of a backref
+Date: Tue, 17 May 2016 17:38:38 +0800
+Message-Id: <1463477930-3925-5-git-send-email-quwenruo@cn.fujitsu.com>
 In-Reply-To: <1463477930-3925-1-git-send-email-quwenruo@cn.fujitsu.com>
 References: <1463477930-3925-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -17,102 +17,123 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
 
-Introduce function query_tree_block_level() to resolve tree block level
-by the following method:
-1) tree block backref level
-2) tree block header level
-
-And only when header level == backref level, and transid matches, it will
-return the tree block level.
+Introduce a new function check_tree_block_backref() to check if a
+backref points to correct referencer.
 
 Signed-off-by: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- cmds-check.c | 76 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 76 insertions(+)
+ cmds-check.c | 95 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 95 insertions(+)
 
 diff --git a/cmds-check.c b/cmds-check.c
-index 66437f4..c301ea1 100644
+index c301ea1..443b337 100644
 --- a/cmds-check.c
 +++ b/cmds-check.c
-@@ -8715,6 +8715,82 @@ error:
- 	return err;
+@@ -322,6 +322,8 @@ struct root_item_info {
+ #define BACKREF_MISSING		(1 << 0) /* Backref missing in extent tree */
+ #define BACKREF_MISMATCH	(1 << 1) /* Backref exists but mismatch */
+ #define BYTES_UNALIGNED		(1 << 2) /* Some bytes are not aligned */
++#define REFERENCER_MISSING	(1 << 3) /* Referencer not found */
++#define REFERENCER_MISMATCH	(1 << 4) /* Referenceer found but mismatch */
+ 
+ static void *print_status_check(void *p)
+ {
+@@ -8791,6 +8793,99 @@ release_out:
+ 	return ret;
  }
  
 +/*
-+ * Get real tree block level for case like shared block
-+ * Return >= 0 as tree level
-+ * Return <0 for error
++ * Check if a tree block backref is valid (points to valid tree block)
++ * if level == -1, level will be resolved
++ * Return >0 for any error found and output error message
 + */
-+static int query_tree_block_level(struct btrfs_fs_info *fs_info, u64 bytenr)
++static int check_tree_block_backref(struct btrfs_fs_info *fs_info, u64 root_id,
++				    u64 bytenr, int level)
 +{
-+	struct extent_buffer *eb;
-+	struct btrfs_path path;
++	struct btrfs_root *root;
 +	struct btrfs_key key;
-+	struct btrfs_extent_item *ei;
-+	u64 flags;
-+	u64 transid;
++	struct btrfs_path path;
++	struct extent_buffer *eb;
++	struct extent_buffer *node;
 +	u32 nodesize = btrfs_super_nodesize(fs_info->super_copy);
-+	u8 backref_level;
-+	u8 header_level;
++	int err = 0;
 +	int ret;
 +
-+	/* Search extent tree for extent generation and level */
-+	key.objectid = bytenr;
-+	key.type = BTRFS_METADATA_ITEM_KEY;
++	/* Query level for level == -1 special case */
++	if (level == -1)
++		level = query_tree_block_level(fs_info, bytenr);
++	if (level < 0) {
++		err |= REFERENCER_MISSING;
++		goto out;
++	}
++
++	key.objectid = root_id;
++	key.type = BTRFS_ROOT_ITEM_KEY;
 +	key.offset = (u64)-1;
 +
-+	btrfs_init_path(&path);
-+	ret = btrfs_search_slot(NULL, fs_info->extent_root, &key, &path, 0, 0);
-+	if (ret < 0)
-+		goto release_out;
-+	ret = btrfs_previous_extent_item(fs_info->extent_root, &path, bytenr);
-+	if (ret < 0)
-+		goto release_out;
-+	if (ret > 0) {
-+		ret = -ENOENT;
-+		goto release_out;
++	root = btrfs_read_fs_root(fs_info, &key);
++	if (IS_ERR(root)) {
++		err |= REFERENCER_MISSING;
++		goto out;
 +	}
 +
-+	btrfs_item_key_to_cpu(path.nodes[0], &key, path.slots[0]);
-+	ei = btrfs_item_ptr(path.nodes[0], path.slots[0],
-+			    struct btrfs_extent_item);
-+	flags = btrfs_extent_flags(path.nodes[0], ei);
-+	if (!(flags & BTRFS_EXTENT_FLAG_TREE_BLOCK)) {
-+		ret = -ENOENT;
-+		goto release_out;
-+	}
-+
-+	/* Get transid for later read_tree_block() check */
-+	transid = btrfs_extent_generation(path.nodes[0], ei);
-+
-+	/* Get backref level as one source */
-+	if (key.type == BTRFS_METADATA_ITEM_KEY) {
-+		backref_level = key.offset;
-+	} else {
-+		struct btrfs_tree_block_info *info;
-+
-+		info = (struct btrfs_tree_block_info *)(ei + 1);
-+		backref_level = btrfs_tree_block_level(path.nodes[0], info);
-+	}
-+	btrfs_release_path(&path);
-+
-+	/* Get level from tree block as alternative source */
-+	eb = read_tree_block_fs_info(fs_info, bytenr, nodesize, transid);
++	/* Read out the tree block to get item/node key */
++	eb = read_tree_block(root, bytenr, root->nodesize, 0);
 +	if (!extent_buffer_uptodate(eb)) {
++		err |= REFERENCER_MISSING;
 +		free_extent_buffer(eb);
-+		return -EIO;
++		goto out;
 +	}
-+	header_level = btrfs_header_level(eb);
++
++	/* Empty tree, no need to check key */
++	if (!btrfs_header_nritems(eb) && !level) {
++		free_extent_buffer(eb);
++		goto out;
++	}
++
++	if (level)
++		btrfs_node_key_to_cpu(eb, &key, 0);
++	else
++		btrfs_item_key_to_cpu(eb, &key, 0);
++
 +	free_extent_buffer(eb);
 +
-+	if (header_level != backref_level)
-+		return -EIO;
-+	return header_level;
++	btrfs_init_path(&path);
++	/* Search with the first key, to ensure we can reach it */
++	ret = btrfs_search_slot(NULL, root, &key, &path, 0, 0);
++	if (ret) {
++		err |= REFERENCER_MISSING;
++		goto release_out;
++	}
++
++	node = path.nodes[level];
++	if (btrfs_header_bytenr(node) != bytenr) {
++		error("Extent [%llu %d] referencer bytenr mismatch, wanted: %llu, have: %llu",
++		      bytenr, nodesize, bytenr,
++		      btrfs_header_bytenr(node));
++		err |= REFERENCER_MISMATCH;
++	}
++	if (btrfs_header_level(node) != level) {
++		error("Extent [%llu %d] referencer level mismatch, wanted: %d, have: %d",
++		      bytenr, nodesize, level,
++		      btrfs_header_level(node));
++		err |= REFERENCER_MISMATCH;
++	}
 +
 +release_out:
 +	btrfs_release_path(&path);
-+	return ret;
++out:
++	if (err & REFERENCER_MISSING) {
++		if (level < 0)
++			error("Extent [%llu %d] lost referencer(owner: %llu)",
++			       bytenr, nodesize, root_id);
++		else
++			error("Extent [%llu %d] lost referencer(owner: %llu, level: %u)",
++			       bytenr, nodesize, root_id, level);
++	}
++
++	return err;
 +}
 +
  static int btrfs_fsck_reinit_root(struct btrfs_trans_handle *trans,

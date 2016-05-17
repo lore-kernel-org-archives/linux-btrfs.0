@@ -1,110 +1,109 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wm0-f48.google.com ([74.125.82.48]:38235 "EHLO
-	mail-wm0-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751370AbcEQSRj (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 17 May 2016 14:17:39 -0400
-Received: by mail-wm0-f48.google.com with SMTP id g17so44955428wme.1
-        for <linux-btrfs@vger.kernel.org>; Tue, 17 May 2016 11:17:38 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <9c5605c0-1382-334b-3b6e-9c87b6738164@gmail.com>
-References: <CAD=QJKjop2j+K16nPcAU-bXiCVqm_aGK0g7WxjvTpBvXar+fQQ@mail.gmail.com>
-	<85030f6b-b149-ccd2-ea87-42135b9ccd46@cn.fujitsu.com>
-	<pan$d4fda$1f29731$4540c768$ab93bd6f@cox.net>
-	<03a7da5b-e1e2-81a6-9d0c-ca80c1f52a63@cn.fujitsu.com>
-	<9c5605c0-1382-334b-3b6e-9c87b6738164@gmail.com>
-Date: Tue, 17 May 2016 14:17:37 -0400
-Message-ID: <CAD=QJKgT0PQb-77FwNW-nq7O=ZtgoUmFMs6yvqE22KkTWtFQVA@mail.gmail.com>
-Subject: Re: problems with free space cache
-From: Nicholas D Steeves <nsteeves@gmail.com>
-To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Cc: Qu Wenruo <quwenruo@cn.fujitsu.com>, Duncan <1i5t5.duncan@cox.net>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Received: from plane.gmane.org ([80.91.229.3]:39113 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752305AbcEQSdw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 17 May 2016 14:33:52 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+	id 1b2joT-0003L8-0w
+	for linux-btrfs@vger.kernel.org; Tue, 17 May 2016 20:33:49 +0200
+Received: from ip5f5ae06c.dynamic.kabel-deutschland.de ([95.90.224.108])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Tue, 17 May 2016 20:33:49 +0200
+Received: from hurikhan77 by ip5f5ae06c.dynamic.kabel-deutschland.de with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Tue, 17 May 2016 20:33:49 +0200
+To: linux-btrfs@vger.kernel.org
+From: Kai Krakow <hurikhan77@gmail.com>
+Subject: Re: Hot data tracking / hybrid storage
+Date: Tue, 17 May 2016 20:33:35 +0200
+Message-ID: <20160517203335.5ff99a05@jupiter.sol.kaishome.de>
+References: <nh9p2p$cns$1@ger.gmane.org>
+	<pan$ae8c7$965ff694$cf73d90e$9e134691@cox.net>
+	<20160516010524.7e208f96@jupiter.sol.kaishome.de>
+	<nhedk2$dpq$1@ger.gmane.org>
+	<0d68f988-e117-4b61-cb9b-d18a26e2b909@gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=US-ASCII
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 16 May 2016 at 07:36, Austin S. Hemmelgarn <ahferroin7@gmail.com> wrote:
-> On 2016-05-16 02:20, Qu Wenruo wrote:
->>
->>
->>
->> Duncan wrote on 2016/05/16 05:59 +0000:
->>>
->>> Qu Wenruo posted on Mon, 16 May 2016 10:24:23 +0800 as excerpted:
->>>
->>>> IIRC clear_cache option is fs level option.
->>>> So the first mount with clear_cache, then all subvolume will have
->>>> clear_cache.
->>>
->>>
->>> Question:  Does clear_cache work with a read-only mount?
->>
->> Good question.
->>
->> But easy to check.
->> I just checked it and found even that's possible, it doesn't work.
+Am Tue, 17 May 2016 07:32:11 -0400
+schrieb "Austin S. Hemmelgarn" <ahferroin7@gmail.com>:
 
-+1  I had to use my USB flash rescue disk to mount with clear_cache.
+> On 2016-05-17 02:27, Ferry Toth wrote:
+> > Op Mon, 16 May 2016 01:05:24 +0200, schreef Kai Krakow:
+> >  
+> >> Am Sun, 15 May 2016 21:11:11 +0000 (UTC)
+> >> schrieb Duncan <1i5t5.duncan@cox.net>:
+> >>  
+>  [...]  
+> > <snip>  
+> >>
+> >> You can go there with only one additional HDD as temporary
+> >> storage. Just connect it, format as bcache, then do a "btrfs dev
+> >> replace". Now wipe that "free" HDD (use wipefs), format as bcache,
+> >> then... well, you get the point. At the last step, remove the
+> >> remaining HDD. Now add your SSDs, format as caching device, and
+> >> attach each individual HDD backing bcache to each SSD caching
+> >> bcache.
+> >>
+> >> Devices don't need to be formatted and created at the same time.
+> >> I'd also recommend to add all SSDs only in the last step to not
+> >> wear them early with writes during device replacement.
+> >>
+> >> If you want, you can add one additional step to get the temporary
+> >> hard disk back. But why not simply replace the oldest hard disk
+> >> with the newest. Take a look at smartctl to see which is the best
+> >> candidate.
+> >>
+> >> I went a similar route but without one extra HDD. I had three HDDs
+> >> in mraid1/draid0 and enough spare space. I just removed one HDD,
+> >> prepared it for bcache, then added it back and removed the next.
+> >>  
+> > That's what I mean, a lot of work. And it's still a cache, with
+> > unnecessary copying from the ssd to the hdd.  
+> On the other hand, it's actually possible to do this all online with 
+> BTRFS because of the reshaping and device replacement tools.
+> 
+> In fact, I've done even more complex reprovisioning online before
+> (for example, my home server system has 2 SSD's and 4 HDD's, running
+> BTRFS on top of LVM, I've at least twice completely recreated the LVM
+> layer online without any data loss and minimal performance
+> degradation).
+> >
+> > And what happens when either a hdd or ssd starts failing?  
+> I have absolutely no idea how bcache handles this, but I doubt it's
+> any better than BTRFS.
 
->> Free space cache inode bytenr doesn't change and no generation change.
->> While without ro, it did rebuild free space cache for *SOME* chunks, not
->> *ALL* chunks.
->>
->> And that's the problem I'm just chasing today.
+Bcache should in theory fall back to write-through as soon as an error
+counter exceeds a threshold. This is adjustable with sysfs
+io_error_halftime and io_error_limit. Tho I never tried what actually
+happens when either the HDD (in bcache writeback-mode) or the SSD
+fails. Actually, btrfs should be able to handle this (tho, according to
+list reports, it doesn't handle errors very well at this point).
 
-+1  Unfortunately, it didn't fix the affected free space cache files.
+BTW: Unnecessary copying from SSD to HDD doesn't take place in bcache
+default mode: It only copies from HDD to SSD in writeback mode (data
+is written to the cache first, then persisted to HDD in the background).
+You can also use "write through" (data is written to SSD and persisted
+to HDD at the same time, reporting persistence to the application only
+when both copies were written) and "write around" mode (data is written
+to HDD only, and only reads are written to the SSD cache device).
 
->> Short conclude: clear_cache mount option will only rebuild free space
->> cache for chunks which we allocated space from, during the mount time of
->> clear_cache.
->> (Maybe I'm just out-of-date and some other devs may already know that)
+If you want bcache behave as a huge IO scheduler for writes, use
+writeback mode. If you have write-intensive applications, you may want
+to choose write-around to not wear out the SSDs early. If you want
+writes to be cached for later reads, you can choose write-through mode.
+The latter two modes will ensure written data is always persisted to
+HDD with the same guaranties you had without bcache. The last mode is
+default and should not change behavior of btrfs if the HDD fails, and
+if the SSD fails bcache would simply turn off and fall back to HDD.
 
-Does this mean creating a huge file filled with zeros, while mounted
-with clear_cache would solve this?  I think that would be faster than
-a full rebalance, but I'm not convinced it would work, because of #1
-(see below).
+-- 
+Regards,
+Kai
 
-One of the following might have caused this situation:
+Replies to list-only preferred.
 
-1) I created a new subvolume, and tested a full restore from
-(non-btrfs aware) backups to this subvolume; some time later,
-verification (rsync -c with other options) completed, and the backup
-was confirmed to be usable; I deleted the subvolume and watched the
-cleaner get to work and reduce the allocated space, remembering a time
-a balance was necessary.  If this is what caused it, cloud there be a
-bug in the cleaner and/or cleaner<->space_cache interaction?
-
-2) The same week I reorganised several hundred gigabytes of short term
-backups, moving them from one subvolume to another.  I used cp -ar
---reflink=always from within /btrfs-admin, which is where I mount the
-whole volume, because / is subvol=rootfs.  After the copy I removed
-the source, then used the checksums I keep in my short-term backup
-directory to verify everything was ok (I could have restored from a
-fresh long-term backup if this failed).  As expected, everything was
-ok.  If this is what caused the free space cache bug, then could there
-be a bug in the intersubvolume reflink code?
-
->> That behavior makes things a little confusing, which users may continue
->> hitting annoying free space cache warning from kernel, even they try to
->> use clear_cache mount option.
-
-So this warning is totally harmless and will not cause future problems?
-
->> Anyway, I'll add ability for manually wipe out all/given free space
->> cache to btrfsck, at least creating a solution to really rebuild all v1
->> free space cache.
-
-Nice!  Am I correct in understanding that this is as safe as a full
-balance, and not dangerous like btrfs check --repair?  Is it likely
-that the v2 free space cache will be default by linux-4.10?
-
-> FWIW, I think it's possible to do this by mounting with clear_cache and then
-> running a full balance on the filesystem.  Having an option to do this on an
-> unmounted FS would be preferred of course, as that would almost certainly
-> be more efficient on any reasonably sized filesystem.
-
-I'm running a balance now, like it's 2015! ;-)
-
-Thank you,
-Nicholas

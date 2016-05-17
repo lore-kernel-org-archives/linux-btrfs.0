@@ -1,108 +1,110 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:34118 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751291AbcEQMmr (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 17 May 2016 08:42:47 -0400
-Date: Tue, 17 May 2016 14:42:18 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Anand Jain <anand.jain@oracle.com>
-Cc: dsterba@suse.cz, David Sterba <dsterba@suse.com>,
-        linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs: switch to common message helpers in open_ctree,
- adjust messages
-Message-ID: <20160517124218.GK511@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1462786798-15247-1-git-send-email-dsterba@suse.com>
- <573148AB.6080800@oracle.com>
- <20160510074203.GP29353@twin.jikos.cz>
- <57319541.7000300@oracle.com>
- <20160510082120.GQ29353@twin.jikos.cz>
- <57319E9A.8070003@oracle.com>
- <20160510142856.GV29353@twin.jikos.cz>
- <5731F771.2060509@oracle.com>
- <20160511105619.GZ29353@twin.jikos.cz>
- <57331DCD.2090600@oracle.com>
+Received: from mail-io0-f195.google.com ([209.85.223.195]:35480 "EHLO
+	mail-io0-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750940AbcEQMqN (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 17 May 2016 08:46:13 -0400
+Received: by mail-io0-f195.google.com with SMTP id i75so3204819ioa.2
+        for <linux-btrfs@vger.kernel.org>; Tue, 17 May 2016 05:46:13 -0700 (PDT)
+Subject: Re: [RCF - PATCH] btrfs: do not ignore errors from primary superblock
+To: Alex Lyakas <alex@zadarastorage.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+References: <7AF66DC0FE0640D1A4E007C4DAC16AC4@alyakaslap>
+Cc: Ron Mandel <ron@zadarastorage.com>, Yair Hershko <yair@zadarastorage.com>,
+        Shyam Kaushik <shyam@zadarastorage.com>,
+        Lev Vainblat <lev@zadarastorage.com>,
+        Yaron Presente <yaron@zadarastorage.com>
+From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Message-ID: <b361ded3-c5fe-0020-35d3-856c1b9d46de@gmail.com>
+Date: Tue, 17 May 2016 08:46:09 -0400
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <57331DCD.2090600@oracle.com>
+In-Reply-To: <7AF66DC0FE0640D1A4E007C4DAC16AC4@alyakaslap>
+Content-Type: text/plain; charset=windows-1252; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, May 11, 2016 at 07:55:57PM +0800, Anand Jain wrote:
-> > * current default is to print the device name -- so this would mean a
-> >    forced change in defaults
-> > * the FSID is not very human friendly. I can remember several device
-> >    names and I'll probably know which filesystem is on which
-> > * the FSID is very long, consumes half of the line before the actual
-> >    message starts
-> 
->    Yes, indeed. I think we discussed that there isn't any other
->    alternative as well. Also I was thinking something like in
->    the 'git log --online' output but that might conflict in some
->    cases ? (recently there was a progs patch which fixed the short fsid
->    hash conflict).
+On 2016-05-17 07:24, Alex Lyakas wrote:
+> RFC: This patch not for merging, but only for review and discussion.
+>
+> When mounting, we consider only the primary superblock on each device.
+> But when writing the superblocks, we might silently ignore errors
+> from the primary superblock, if we succeeded to write secondary
+> superblocks. In such case, the primary superblock was not updated
+> properly, and if we crash at this point, later mount will use
+> an out-of-date superblock.
+>
+> This patch changes the behavior to NOT IGNORING any errors on the
+> primary superblock,
+> and IGNORING any errors on secondary superblocks. This way, we always
+> insist on having
+> an up-to-date primary superblock.
+I don't entirely agree with this reasoning.  We absolutely should not be 
+ignoring errors when writing to the primary superblock, but there is no 
+reason we should be ignoring them when writing backup superblocks 
+either.  Ideally, all superblocks should be up-to-date and consistent 
+with each other, as we can't be certain which (if any) of them will be 
+readable without errors the next time we mount the filesystem.  We can't 
+really provide this consistency guarantee though, because of how modern 
+storage devices work (we can't atomically update all three superblocks 
+at the same time), but that doesn't mean we shouldn't retry writing a 
+backup superblock if there's an error doing so the first time.
+>
+> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+> index 4e47849..0ae9f7c 100644
+> --- a/fs/btrfs/disk-io.c
+> +++ b/fs/btrfs/disk-io.c
+> @@ -3357,11 +3357,13 @@ static int write_dev_supers(struct btrfs_device
+> *device,
+>             bh = __find_get_block(device->bdev, bytenr / 4096,
+>                           BTRFS_SUPER_INFO_SIZE);
+>             if (!bh) {
+> -                errors++;
+> +                /* we only care about primary superblock errors */
+> +                if (i == 0)
+> +                    errors++;
+>                 continue;
+>             }
+>             wait_on_buffer(bh);
+> -            if (!buffer_uptodate(bh))
+> +            if (!buffer_uptodate(bh) && i == 0)
+>                 errors++;
+>
+>             /* drop our reference */
+> @@ -3388,9 +3390,10 @@ static int write_dev_supers(struct btrfs_device
+> *device,
+>                       BTRFS_SUPER_INFO_SIZE);
+>             if (!bh) {
+>                 btrfs_err(device->dev_root->fs_info,
+> -                    "couldn't get super buffer head for bytenr %llu",
+> -                    bytenr);
+> -                errors++;
+> +                    "couldn't get super buffer head for bytenr %llu (sb
+> copy %d)",
+> +                    bytenr, i);
+> +                if (i == 0)
+> +                    errors++;
+>                 continue;
+>             }
+>
+> @@ -3413,10 +3416,10 @@ static int write_dev_supers(struct btrfs_device
+> *device,
+>             ret = btrfsic_submit_bh(WRITE_FUA, bh);
+>         else
+>             ret = btrfsic_submit_bh(WRITE_SYNC, bh);
+> -        if (ret)
+> +        if (ret && i == 0)
+>             errors++;
+>     }
+> -    return errors < i ? 0 : -1;
+> +    return errors ? -1 : 0;
+> }
+>
+> /*
+>
+>
+> P.S.: when reviewing the code of write_dev_supers(), I also noticed that
+> when wait==0 and we hit an error in one __getblk(), then the caller
+> (write_all_supers) will not properly wait for submitted buffer-heads to
+> complete, and we won't do the additional "brelse(bh);", which wait==0
+> case does. Is this a problem?
 
-You mean a shorter UUID? The first four bytes (8 hexa digits) seem
-unique enough. That can be optinal I think.
-
-> > I understand the benefits of automated filtering by FSID, but we have
-> > conflicting interests here. If you're going to deploy automated log
-> > scanning, you probably have automated the filesystem mkfs & mount, so
-> > it's a matter of configuration to get it done and in one place.
-> 
->    Makes sense.
-> 
->    Actually automated scripts wasn't in my discussion, I was thinking
->    of support engineers debugging customer issues using hand written
->    scripts.
-
-I'm not sure how far should we forsee problems that somebody else may
-theoretically encounter. Providing grounds for easy navigation and
-searchability in the logs is on our side, but if somebody does not know
-how to properly look for them, that's not our problem.
-
->    Probably we could taken an experimental project, to have these
->    logs in cvs format, and use external scripts to monitor and
->    debug. Make something like splunk.com an easy job.
-
-As far as the format stays parseable, everybody should be ok. CSV does
-not sound like a good idea to me though.
-
-> >>    Just my understanding:
-> >>    For real end users we need to provide everything at the cli output.
-> >>    That is without asking them to refer to dmesg in the cli out put. IMO.
-> >>    (I could be wrong). Troubleshooters are the people looking at dmesg.
-> >>    So finding the FSID can be expected ?
-> >
-> > I don't think that looking up device names is making troubleshooting
-> > significantly harder and never found it to be a problem in my past
-> > experienes.
-> >
-> > Besides, errors from lower layers report the device names, so bad
-> > sectors or failed writes pop up very quickly in the searches.
-> 
->   Right. FSID won't provide that advantage.
-> 
-> > Either way, I'm willing to make it configurable so it addresses all
-> > usecases.
-> 
-> 
-> > Another way came to my mind: make it a module parameter, so
-> > even the mount option or sysfs settings is not needed and the defaults
-> > are system-wide.
-> 
->   Yep. This helps.
->   I was thinking from the angle of support engineers, who would
->   solve customers issues (it happens at most of the Linux vendors),
->   They would write/run scripts on their own to understand the problem
->   from the kernel logs. So now it can be assured that logs format
->   would remain same per distribution/vendor.
-
-I was working in support for a few years and have an experience with
-digging in the logs. There was a lot of custom scripting and grepping
-needed as the problem reports were mostly unique. Some tasks were common
-so one script doing an initial analysis could be reused without
-modifications, but otherwise it's not like running a script that would
-do all the work.  Anyway, this is getting too abstract, I'd like to
-address specific problems. I'm fine with adding the configurable logging
-options.

@@ -1,39 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:48554 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:41131 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751317AbcEQPAR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 17 May 2016 11:00:17 -0400
-Date: Tue, 17 May 2016 16:59:47 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Ben Hutchings <ben@decadent.org.uk>
-Cc: Alexander Viro <viro@zeniv.linux.org.uk>, linux-fsdevel@vger.kernel.org,
-        linux-btrfs@vger.kernel.org, linux-cifs@vger.kernel.org,
-        linux-ext4@vger.kernel.org, linux-f2fs-devel@lists.sourceforge.net,
-        linux-nfs@vger.kernel.org
-Subject: Re: [PATCH] fs: Add MODULE_SOFTDEP declarations for hard-coded
- crypto drivers
-Message-ID: <20160517145947.GT511@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20160517133631.GF7555@decadent.org.uk>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20160517133631.GF7555@decadent.org.uk>
+	id S1751243AbcEQOcN (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 17 May 2016 10:32:13 -0400
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+	by mx2.suse.de (Postfix) with ESMTP id 75D15ACAE
+	for <linux-btrfs@vger.kernel.org>; Tue, 17 May 2016 14:32:07 +0000 (UTC)
+From: David Sterba <dsterba@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: David Sterba <dsterba@suse.com>
+Subject: [PATCH] btrfs-progs: device usage: report slack space
+Date: Tue, 17 May 2016 16:31:40 +0200
+Message-Id: <1463495500-14983-1-git-send-email-dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, May 17, 2016 at 02:36:31PM +0100, Ben Hutchings wrote:
-> This helps initramfs builders and other tools to find the full
-> dependencies of a module.
-> 
-> References: https://bugs.debian.org/819725
-> Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
-> ---
-> --- a/fs/btrfs/super.c
-> +++ b/fs/btrfs/super.c
-> @@ -2456,3 +2456,4 @@ late_initcall(init_btrfs_fs);
->  module_exit(exit_btrfs_fs)
->  
->  MODULE_LICENSE("GPL");
-> +MODULE_SOFTDEP("pre: crypto-crc32c");
+The total filesystem space on a given device might be smaller than the
+device size. We should report that space as well. The original idea was
+to report the 'occupied' size but the term was not all clear, so the
+logic was reversed to report the slack space.
 
-Acked-by: David Sterba <dsterba@suse.com>
+Signed-off-by: David Sterba <dsterba@suse.com>
+---
+ cmds-fi-usage.c | 13 ++++---------
+ 1 file changed, 4 insertions(+), 9 deletions(-)
+
+diff --git a/cmds-fi-usage.c b/cmds-fi-usage.c
+index 23820066ce26..b26ece1d2ece 100644
+--- a/cmds-fi-usage.c
++++ b/cmds-fi-usage.c
+@@ -1024,13 +1024,8 @@ void print_device_sizes(int fd, struct device_info *devinfo, unsigned unit_mode)
+ 	printf("   Device size: %*s%10s\n",
+ 		(int)(20 - strlen("Device size")), "",
+ 		pretty_size_mode(devinfo->device_size, unit_mode));
+-#if 0
+-	/*
+-	 * The term has not seen an agreement and we don't want to change it
+-	 * once it's in non-development branches or even released.
+-	 */
+-	printf("   FS occupied: %*s%10s\n",
+-		(int)(20 - strlen("FS occupied")), "",
+-		pretty_size_mode(devinfo->size, unit_mode));
+-#endif
++	printf("   Device slack: %*s%10s\n",
++		(int)(20 - strlen("Device slack")), "",
++		pretty_size_mode(devinfo->device_size - devinfo->size,
++			unit_mode));
+ }
+-- 
+2.7.1
+

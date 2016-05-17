@@ -1,85 +1,110 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f172.google.com ([209.85.213.172]:36817 "EHLO
-	mail-ig0-f172.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751958AbcEQSDh (ORCPT
+Received: from mail-wm0-f48.google.com ([74.125.82.48]:38235 "EHLO
+	mail-wm0-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751370AbcEQSRj (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 17 May 2016 14:03:37 -0400
-Received: by mail-ig0-f172.google.com with SMTP id qe5so74857614igc.1
-        for <linux-btrfs@vger.kernel.org>; Tue, 17 May 2016 11:03:36 -0700 (PDT)
-Subject: Re: Corrupted system due to imbalanced metadata chunks
-To: Peter Kese <peter.kese@viidea.com>, linux-btrfs@vger.kernel.org
-References: <CABt16=EDFKFj4duaWJ0qCS_SO9TE2jn8UMCx5e_u+X+M328yeA@mail.gmail.com>
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <4218ab2f-def8-6541-427d-49091f70e342@gmail.com>
-Date: Tue, 17 May 2016 14:03:32 -0400
+	Tue, 17 May 2016 14:17:39 -0400
+Received: by mail-wm0-f48.google.com with SMTP id g17so44955428wme.1
+        for <linux-btrfs@vger.kernel.org>; Tue, 17 May 2016 11:17:38 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <CABt16=EDFKFj4duaWJ0qCS_SO9TE2jn8UMCx5e_u+X+M328yeA@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+In-Reply-To: <9c5605c0-1382-334b-3b6e-9c87b6738164@gmail.com>
+References: <CAD=QJKjop2j+K16nPcAU-bXiCVqm_aGK0g7WxjvTpBvXar+fQQ@mail.gmail.com>
+	<85030f6b-b149-ccd2-ea87-42135b9ccd46@cn.fujitsu.com>
+	<pan$d4fda$1f29731$4540c768$ab93bd6f@cox.net>
+	<03a7da5b-e1e2-81a6-9d0c-ca80c1f52a63@cn.fujitsu.com>
+	<9c5605c0-1382-334b-3b6e-9c87b6738164@gmail.com>
+Date: Tue, 17 May 2016 14:17:37 -0400
+Message-ID: <CAD=QJKgT0PQb-77FwNW-nq7O=ZtgoUmFMs6yvqE22KkTWtFQVA@mail.gmail.com>
+Subject: Re: problems with free space cache
+From: Nicholas D Steeves <nsteeves@gmail.com>
+To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Cc: Qu Wenruo <quwenruo@cn.fujitsu.com>, Duncan <1i5t5.duncan@cox.net>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2016-05-17 11:45, Peter Kese wrote:
-> I've been using btrfs on my main system for a few months. I know btrfs
-> is a little bit beta, but I thought not using any fancy features like
-> quotas, snapshotting, raid, etc. would keep me on the safe side.
->
-> Then I tried a software upgrade (Ubuntu 15.10 -> 16.04) and it turned
-> out that while there was more than 100 GB (45%) of free disk space,
-> the upgrade process broke down somewhere in the middle reporting IO
-> errors and lack of free disk space.
->
-> As I have learned later on, my problem was lack of available metadata
-> blocks and a couple of tries at btrfs-balance remedied the space
-> problem, but I nevertheless ended up with a broken Ubuntu distribution
-> (there were broken packages and apt-get/dpkg hacking failed to fix the
-> problem).
->
-> So there wasn't any major data loss (apart from some .deb packages
-> missing some files, my personal data is intact). But I'd still
-> consider this a major loss, because I'll end up having to reinstall
-> the whole system.
->
-> Now here's what I think:
->  1) I may have been a bit unfortunate to experience this particular
-> issue but there's a large audience of people who might get bitten as
-> well,
->  2) I find it hard to blame it on Ubuntu's upgrade process, as it does
-> check for free space availability before starting the upgrade,
-The upgrade process is also naive and only checks what df says about 
-free space.  It could stand to be taught to pay better attention and 
-check repeatedly throughout the process.
->  3) A file system should not refuse to store files (during system
-> upgrade or any other time), when there is 100 GB of free disk space
-> available,
-If you're checking just df, then that is by no means the full story.  In 
-BTRFS and some other filesystems, df is advisory, not authoritative, and 
-it doesn't provide any way to say things like 'you have a bunch of free 
-space, but can only store lots of really small files right now', which 
-is exactly the situation you were in.
->  4) Not anywhere in any btrfs documentation (not even in btrfs
-> Gotchas) did I read any bold text saying *If installing btrfs, you
-> should always keep an eye on free space for metadata and perform
-> regular balances or otherwise you may corrupt your system.*
->
-> And finally my question:
->
->  Is there a plan to detect such situation and perform an automatic
-> inline rebalance rather than reporting out-of-disk-space when there's
-> actually lots of free disk space available?
-There are some things already in place to try and prevent this on recent 
-kernels (for example, completely empty chunks are automatically 
-deallocated), but it's not easy to solve completely without making 
-performance absolutely horrible.  Installing large numbers of packages 
-at once (like a distro upgrade) is a particularly bad case for this, 
-because most package managers unpack to a temporary location on-disk 
-before copying the files in, and that tends to leave a lot of free space 
-fragmentation within the chunks.  Ideally, this free space gets 
-back-filled by new data, but that may not happen depending on numerous 
-factors.
+On 16 May 2016 at 07:36, Austin S. Hemmelgarn <ahferroin7@gmail.com> wrote:
+> On 2016-05-16 02:20, Qu Wenruo wrote:
+>>
+>>
+>>
+>> Duncan wrote on 2016/05/16 05:59 +0000:
+>>>
+>>> Qu Wenruo posted on Mon, 16 May 2016 10:24:23 +0800 as excerpted:
+>>>
+>>>> IIRC clear_cache option is fs level option.
+>>>> So the first mount with clear_cache, then all subvolume will have
+>>>> clear_cache.
+>>>
+>>>
+>>> Question:  Does clear_cache work with a read-only mount?
+>>
+>> Good question.
+>>
+>> But easy to check.
+>> I just checked it and found even that's possible, it doesn't work.
 
-One thing I would suggest in the future though is to run a full balance 
-just before doing the upgrade.  It's not very likely that just the 
-upgrade was fully responsible for this, which would mean that the 
-problem existed at least partially before the upgrade.  As such, running 
-a full balance just before the upgrade should help prevent this from 
-happening.
++1  I had to use my USB flash rescue disk to mount with clear_cache.
+
+>> Free space cache inode bytenr doesn't change and no generation change.
+>> While without ro, it did rebuild free space cache for *SOME* chunks, not
+>> *ALL* chunks.
+>>
+>> And that's the problem I'm just chasing today.
+
++1  Unfortunately, it didn't fix the affected free space cache files.
+
+>> Short conclude: clear_cache mount option will only rebuild free space
+>> cache for chunks which we allocated space from, during the mount time of
+>> clear_cache.
+>> (Maybe I'm just out-of-date and some other devs may already know that)
+
+Does this mean creating a huge file filled with zeros, while mounted
+with clear_cache would solve this?  I think that would be faster than
+a full rebalance, but I'm not convinced it would work, because of #1
+(see below).
+
+One of the following might have caused this situation:
+
+1) I created a new subvolume, and tested a full restore from
+(non-btrfs aware) backups to this subvolume; some time later,
+verification (rsync -c with other options) completed, and the backup
+was confirmed to be usable; I deleted the subvolume and watched the
+cleaner get to work and reduce the allocated space, remembering a time
+a balance was necessary.  If this is what caused it, cloud there be a
+bug in the cleaner and/or cleaner<->space_cache interaction?
+
+2) The same week I reorganised several hundred gigabytes of short term
+backups, moving them from one subvolume to another.  I used cp -ar
+--reflink=always from within /btrfs-admin, which is where I mount the
+whole volume, because / is subvol=rootfs.  After the copy I removed
+the source, then used the checksums I keep in my short-term backup
+directory to verify everything was ok (I could have restored from a
+fresh long-term backup if this failed).  As expected, everything was
+ok.  If this is what caused the free space cache bug, then could there
+be a bug in the intersubvolume reflink code?
+
+>> That behavior makes things a little confusing, which users may continue
+>> hitting annoying free space cache warning from kernel, even they try to
+>> use clear_cache mount option.
+
+So this warning is totally harmless and will not cause future problems?
+
+>> Anyway, I'll add ability for manually wipe out all/given free space
+>> cache to btrfsck, at least creating a solution to really rebuild all v1
+>> free space cache.
+
+Nice!  Am I correct in understanding that this is as safe as a full
+balance, and not dangerous like btrfs check --repair?  Is it likely
+that the v2 free space cache will be default by linux-4.10?
+
+> FWIW, I think it's possible to do this by mounting with clear_cache and then
+> running a full balance on the filesystem.  Having an option to do this on an
+> unmounted FS would be preferred of course, as that would almost certainly
+> be more efficient on any reasonably sized filesystem.
+
+I'm running a balance now, like it's 2015! ;-)
+
+Thank you,
+Nicholas

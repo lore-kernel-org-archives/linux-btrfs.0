@@ -1,124 +1,154 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:49246 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S932573AbcEQJzr (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 17 May 2016 05:55:47 -0400
-Date: Tue, 17 May 2016 11:55:19 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Liu Bo <bo.li.liu@oracle.com>
-Cc: dsterba@suse.cz, linux-btrfs@vger.kernel.org
+Received: from aserp1040.oracle.com ([141.146.126.69]:34074 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751974AbcEQR3K (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 17 May 2016 13:29:10 -0400
+Date: Tue, 17 May 2016 10:30:47 -0700
+From: Liu Bo <bo.li.liu@oracle.com>
+To: dsterba@suse.cz, linux-btrfs@vger.kernel.org
 Subject: Re: [PATCH 5/7] Btrfs: replace BUG_ON with WARN in merge_bio
-Message-ID: <20160517095519.GI511@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
+Message-ID: <20160517173047.GA8522@localhost.localdomain>
+Reply-To: bo.li.liu@oracle.com
 References: <1463184422-13584-1-git-send-email-bo.li.liu@oracle.com>
  <1463184422-13584-5-git-send-email-bo.li.liu@oracle.com>
  <20160516084438.GB511@twin.jikos.cz>
  <20160516172400.GA11100@localhost.localdomain>
+ <20160517095519.GI511@twin.jikos.cz>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20160516172400.GA11100@localhost.localdomain>
+In-Reply-To: <20160517095519.GI511@twin.jikos.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, May 16, 2016 at 10:24:01AM -0700, Liu Bo wrote:
-> On Mon, May 16, 2016 at 10:44:38AM +0200, David Sterba wrote:
-> > On Fri, May 13, 2016 at 05:07:00PM -0700, Liu Bo wrote:
-> > > We have two BUG_ON in merge_bio, but since it can gracefully return errors
-> > > to callers, use WARN_ONCE to give error information and don't leave a
-> > > possible panic.
+On Tue, May 17, 2016 at 11:55:19AM +0200, David Sterba wrote:
+> On Mon, May 16, 2016 at 10:24:01AM -0700, Liu Bo wrote:
+> > On Mon, May 16, 2016 at 10:44:38AM +0200, David Sterba wrote:
+> > > On Fri, May 13, 2016 at 05:07:00PM -0700, Liu Bo wrote:
+> > > > We have two BUG_ON in merge_bio, but since it can gracefully return errors
+> > > > to callers, use WARN_ONCE to give error information and don't leave a
+> > > > possible panic.
+> > > > 
+> > > > Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+> > > > ---
+> > > >  fs/btrfs/extent_io.c | 1 -
+> > > >  fs/btrfs/inode.c     | 6 ++++--
+> > > >  2 files changed, 4 insertions(+), 3 deletions(-)
+> > > > 
+> > > > diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+> > > > index e601e0f..99286d1 100644
+> > > > --- a/fs/btrfs/extent_io.c
+> > > > +++ b/fs/btrfs/extent_io.c
+> > > > @@ -2746,7 +2746,6 @@ static int merge_bio(int rw, struct extent_io_tree *tree, struct page *page,
+> > > >  	if (tree->ops && tree->ops->merge_bio_hook)
+> > > >  		ret = tree->ops->merge_bio_hook(rw, page, offset, size, bio,
+> > > >  						bio_flags);
+> > > > -	BUG_ON(ret < 0);
+> > > >  	return ret;
+> > > >  
+> > > >  }
+> > > > diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+> > > > index 5874562..3a989e3 100644
+> > > > --- a/fs/btrfs/inode.c
+> > > > +++ b/fs/btrfs/inode.c
+> > > > @@ -1827,8 +1827,10 @@ int btrfs_merge_bio_hook(int rw, struct page *page, unsigned long offset,
+> > > >  	map_length = length;
+> > > >  	ret = btrfs_map_block(root->fs_info, rw, logical,
+> > > >  			      &map_length, NULL, 0);
+> > > > -	/* Will always return 0 with map_multi == NULL */
+> > > > -	BUG_ON(ret < 0);
+> > > > +	if (ret < 0) {
+> > > > +		WARN_ONCE(ret < 0, KERN_ERR "ret = %d\n", ret);
 > > > 
-> > > Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
-> > > ---
-> > >  fs/btrfs/extent_io.c | 1 -
-> > >  fs/btrfs/inode.c     | 6 ++++--
-> > >  2 files changed, 4 insertions(+), 3 deletions(-)
+> > > btrfs_map_block is quite verbose about the errors so it's not needed to
+> > > print it here.
+> > 
+> > OK.
+> > 
 > > > 
-> > > diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-> > > index e601e0f..99286d1 100644
-> > > --- a/fs/btrfs/extent_io.c
-> > > +++ b/fs/btrfs/extent_io.c
-> > > @@ -2746,7 +2746,6 @@ static int merge_bio(int rw, struct extent_io_tree *tree, struct page *page,
-> > >  	if (tree->ops && tree->ops->merge_bio_hook)
-> > >  		ret = tree->ops->merge_bio_hook(rw, page, offset, size, bio,
-> > >  						bio_flags);
-> > > -	BUG_ON(ret < 0);
-> > >  	return ret;
-> > >  
-> > >  }
-> > > diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-> > > index 5874562..3a989e3 100644
-> > > --- a/fs/btrfs/inode.c
-> > > +++ b/fs/btrfs/inode.c
-> > > @@ -1827,8 +1827,10 @@ int btrfs_merge_bio_hook(int rw, struct page *page, unsigned long offset,
-> > >  	map_length = length;
-> > >  	ret = btrfs_map_block(root->fs_info, rw, logical,
-> > >  			      &map_length, NULL, 0);
-> > > -	/* Will always return 0 with map_multi == NULL */
-> > > -	BUG_ON(ret < 0);
-> > > +	if (ret < 0) {
-> > > +		WARN_ONCE(ret < 0, KERN_ERR "ret = %d\n", ret);
+> > > Otherwise I'm not sure if all paths that go through the merge hook
+> > > handle errors, eg. in btrfs_submit_compressed_read or _write. Some code
+> > > is skipped if merge hook returns nonzero. But, the code expects either 0
+> > > or 1, and when the BUG_ON(ret < 0) is removed suddenly the 'ret < 0' can
+> > > be returned. Unexpected.
 > > 
-> > btrfs_map_block is quite verbose about the errors so it's not needed to
-> > print it here.
+> > Right now btrfs_merge_bio_hook() only returns 1 or 0 and marks (ret < 0) as
+> >  BUG_ON.
 > 
-> OK.
+> IOW, "ret < 0" never leaves btrfs_merge_bio_hook in current code.
+
+OK.
+
 > 
+> > But compress code is ready to handle the error,
 > > 
-> > Otherwise I'm not sure if all paths that go through the merge hook
-> > handle errors, eg. in btrfs_submit_compressed_read or _write. Some code
-> > is skipped if merge hook returns nonzero. But, the code expects either 0
-> > or 1, and when the BUG_ON(ret < 0) is removed suddenly the 'ret < 0' can
-> > be returned. Unexpected.
+> > btrfs_submit_compressed_read/write() {
+> > 	...
+> > 	ret = merge_bio_hook()
+> > 	if (ret || bio_add_page()) {
 > 
-> Right now btrfs_merge_bio_hook() only returns 1 or 0 and marks (ret < 0) as
->  BUG_ON.
+> This code expects 0 or 1, < 0 is not expected here and has to be
+> considered after the change in merge_bio_hook.
 
-IOW, "ret < 0" never leaves btrfs_merge_bio_hook in current code.
+OK.
 
-> But compress code is ready to handle the error,
 > 
-> btrfs_submit_compressed_read/write() {
-> 	...
-> 	ret = merge_bio_hook()
-> 	if (ret || bio_add_page()) {
-
-This code expects 0 or 1, < 0 is not expected here and has to be
-considered after the change in merge_bio_hook.
-
-> 		ret = btrfs_map_bio();
-> 		BUG_ON(ret);
-> 		...
-> 	}
-> 	...
-> }
+> > 		ret = btrfs_map_bio();
+> > 		BUG_ON(ret);
+> > 		...
+> > 	}
+> > 	...
+> > }
+> > 
+> > So ret < 0 is handled, if there's any errors from merge_bio_hook(), it submits
+> >  the current bio, so the way is sane to me.
 > 
-> So ret < 0 is handled, if there's any errors from merge_bio_hook(), it submits
->  the current bio, so the way is sane to me.
+> Well, that's what I don't call 'handled'. 'ret < 0' will get to the 'if'
+> but the question is whether the code really expects to see < 0 there and
+> if it does the right thing then.
 
-Well, that's what I don't call 'handled'. 'ret < 0' will get to the 'if'
-but the question is whether the code really expects to see < 0 there and
-if it does the right thing then.
+OK.
 
-> The other consumer of merge_bio is submit_extent_page(), where it's OK
-> to return errors and callers are ready to handle them.
-
-Same argument.
-
-'if (... || merge_bio() || ...)'
-
-returns 1 "we can merge, continue with submit_bio" 
-returns <0 "there was an error, we cannot continue" ... yet will still
-try to do submit_bio.
-
-> > It's IMO better to push up the BUG_ON error handling only one caller at
-> > a time. That way it's easier to review the callgraph and call paths.
 > 
-> merge_bio() is a wrapper for tree->ops->merge_bio_hook(), which is the
-> same thing with btrfs_merge_bio_hook().  It makes no sense if we just
-> look at BUG_ON in btrfs_merge_bio_hook but keep BUG_ON() in merge_bio().
+> > The other consumer of merge_bio is submit_extent_page(), where it's OK
+> > to return errors and callers are ready to handle them.
+> 
+> Same argument.
+> 
+> 'if (... || merge_bio() || ...)'
+> 
+> returns 1 "we can merge, continue with submit_bio" 
 
-So, looking at the code again: the BUG_ON in btrfs_merge_bio_hook can be
-replaced by return ret (no warning needed IMO).
+return 1 means "we _cannot_ merge" ;-)
 
-If merge_bio gets rid of the BUG_ON, the calles must explicitly handle
-'ret < 0' unless it's provably not a problem.
+> returns <0 "there was an error, we cannot continue" ... yet will still
+> try to do submit_bio.
+> 
+> > > It's IMO better to push up the BUG_ON error handling only one caller at
+> > > a time. That way it's easier to review the callgraph and call paths.
+> > 
+> > merge_bio() is a wrapper for tree->ops->merge_bio_hook(), which is the
+> > same thing with btrfs_merge_bio_hook().  It makes no sense if we just
+> > look at BUG_ON in btrfs_merge_bio_hook but keep BUG_ON() in merge_bio().
+> 
+> So, looking at the code again: the BUG_ON in btrfs_merge_bio_hook can be
+> replaced by return ret (no warning needed IMO).
+
+OK.
+
+> 
+> If merge_bio gets rid of the BUG_ON, the calles must explicitly handle
+> 'ret < 0' unless it's provably not a problem.
+
+If merge_bio() returns < 0, then it must be __btrfs_map_block() returns < 0,
+so even if we continue with submiting this bio, it'd fail at
+__btrfs_map_block() again because merge_bio and submit_bio are using the
+same bio.  Because of that we don't bother to submit it, instead we can
+just return in case of (ret < 0), this applies to both
+submit_extent_page() and btrfs_submit_compressed_read/write().
+
+What do you think?
+
+Thanks,
+
+-liubo

@@ -1,110 +1,65 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f195.google.com ([209.85.223.195]:35480 "EHLO
-	mail-io0-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750940AbcEQMqN (ORCPT
+Received: from mail-io0-f173.google.com ([209.85.223.173]:36611 "EHLO
+	mail-io0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750758AbcEQNFm (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 17 May 2016 08:46:13 -0400
-Received: by mail-io0-f195.google.com with SMTP id i75so3204819ioa.2
-        for <linux-btrfs@vger.kernel.org>; Tue, 17 May 2016 05:46:13 -0700 (PDT)
-Subject: Re: [RCF - PATCH] btrfs: do not ignore errors from primary superblock
-To: Alex Lyakas <alex@zadarastorage.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-References: <7AF66DC0FE0640D1A4E007C4DAC16AC4@alyakaslap>
-Cc: Ron Mandel <ron@zadarastorage.com>, Yair Hershko <yair@zadarastorage.com>,
-        Shyam Kaushik <shyam@zadarastorage.com>,
-        Lev Vainblat <lev@zadarastorage.com>,
-        Yaron Presente <yaron@zadarastorage.com>
+	Tue, 17 May 2016 09:05:42 -0400
+Received: by mail-io0-f173.google.com with SMTP id i75so21941833ioa.3
+        for <linux-btrfs@vger.kernel.org>; Tue, 17 May 2016 06:05:42 -0700 (PDT)
+Subject: Re: RFE: 'btrfs' tools machine readable output
+To: dsterba@suse.cz, "Richard W.M. Jones" <rjones@redhat.com>,
+        linux-btrfs@vger.kernel.org, ptoscano@redhat.com
+References: <20160516121456.GA16970@redhat.com>
+ <20160517093307.GG511@twin.jikos.cz>
+ <c7d51f53-d3f9-d95f-cb4d-c320ced4ca9b@gmail.com>
+ <20160517122326.GJ511@twin.jikos.cz>
 From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <b361ded3-c5fe-0020-35d3-856c1b9d46de@gmail.com>
-Date: Tue, 17 May 2016 08:46:09 -0400
+Message-ID: <b9136e93-2099-245e-46a0-941d72279e1f@gmail.com>
+Date: Tue, 17 May 2016 09:05:38 -0400
 MIME-Version: 1.0
-In-Reply-To: <7AF66DC0FE0640D1A4E007C4DAC16AC4@alyakaslap>
+In-Reply-To: <20160517122326.GJ511@twin.jikos.cz>
 Content-Type: text/plain; charset=windows-1252; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2016-05-17 07:24, Alex Lyakas wrote:
-> RFC: This patch not for merging, but only for review and discussion.
+On 2016-05-17 08:23, David Sterba wrote:
+> On Tue, May 17, 2016 at 07:14:12AM -0400, Austin S. Hemmelgarn wrote:
+>>>> By this example I don't mean that JSON has to be the format -- in fact
+>>>> it's a terrible format with all sorts of problems -- any format which
+>>>> is parseable with C libraries would do for us.
+>>>
+>>> My ideas was to allow multiple formats, with slight change to the
+>>> syntax:
+>>>
+>>> $ btrfs --format=json ...
+>>> $ btrfs --format=plain ...
+>>> $ btrfs --format=yaml ...
+>> I like this idea, with one specific caveat, it would be _really_ nice to
+>> be able to control at compile time what formats are supported.
+>> Somebody's eventually going to want XML support, and I'd rather not have
+>> to depend on expat or something similar in a tool that I regularly build
+>> statically (I'm willing to tolerate YAML because that's what I'd use,
+>> but I would probably compile out the JSON support too).
 >
-> When mounting, we consider only the primary superblock on each device.
-> But when writing the superblocks, we might silently ignore errors
-> from the primary superblock, if we succeeded to write secondary
-> superblocks. In such case, the primary superblock was not updated
-> properly, and if we crash at this point, later mount will use
-> an out-of-date superblock.
+> I hope we can avoid any 3rd party library dependencies, we're just
+> generating the output not parsing it. Either copy a version of the
+> libraries or copy the quoting code, the rest can be simply implemented as
+> a printf with enhanced format stings.
 >
-> This patch changes the behavior to NOT IGNORING any errors on the
-> primary superblock,
-> and IGNORING any errors on secondary superblocks. This way, we always
-> insist on having
-> an up-to-date primary superblock.
-I don't entirely agree with this reasoning.  We absolutely should not be 
-ignoring errors when writing to the primary superblock, but there is no 
-reason we should be ignoring them when writing backup superblocks 
-either.  Ideally, all superblocks should be up-to-date and consistent 
-with each other, as we can't be certain which (if any) of them will be 
-readable without errors the next time we mount the filesystem.  We can't 
-really provide this consistency guarantee though, because of how modern 
-storage devices work (we can't atomically update all three superblocks 
-at the same time), but that doesn't mean we shouldn't retry writing a 
-backup superblock if there's an error doing so the first time.
->
-> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-> index 4e47849..0ae9f7c 100644
-> --- a/fs/btrfs/disk-io.c
-> +++ b/fs/btrfs/disk-io.c
-> @@ -3357,11 +3357,13 @@ static int write_dev_supers(struct btrfs_device
-> *device,
->             bh = __find_get_block(device->bdev, bytenr / 4096,
->                           BTRFS_SUPER_INFO_SIZE);
->             if (!bh) {
-> -                errors++;
-> +                /* we only care about primary superblock errors */
-> +                if (i == 0)
-> +                    errors++;
->                 continue;
->             }
->             wait_on_buffer(bh);
-> -            if (!buffer_uptodate(bh))
-> +            if (!buffer_uptodate(bh) && i == 0)
->                 errors++;
->
->             /* drop our reference */
-> @@ -3388,9 +3390,10 @@ static int write_dev_supers(struct btrfs_device
-> *device,
->                       BTRFS_SUPER_INFO_SIZE);
->             if (!bh) {
->                 btrfs_err(device->dev_root->fs_info,
-> -                    "couldn't get super buffer head for bytenr %llu",
-> -                    bytenr);
-> -                errors++;
-> +                    "couldn't get super buffer head for bytenr %llu (sb
-> copy %d)",
-> +                    bytenr, i);
-> +                if (i == 0)
-> +                    errors++;
->                 continue;
->             }
->
-> @@ -3413,10 +3416,10 @@ static int write_dev_supers(struct btrfs_device
-> *device,
->             ret = btrfsic_submit_bh(WRITE_FUA, bh);
->         else
->             ret = btrfsic_submit_bh(WRITE_SYNC, bh);
-> -        if (ret)
-> +        if (ret && i == 0)
->             errors++;
->     }
-> -    return errors < i ? 0 : -1;
-> +    return errors ? -1 : 0;
-> }
->
-> /*
->
->
-> P.S.: when reviewing the code of write_dev_supers(), I also noticed that
-> when wait==0 and we hit an error in one __getblk(), then the caller
-> (write_all_supers) will not properly wait for submitted buffer-heads to
-> complete, and we won't do the additional "brelse(bh);", which wait==0
-> case does. Is this a problem?
+As much as I hate the possibility of having 3rd party library 
+dependencies in btrfs-progs, I'm a lot more nervous about having the 
+equivalent stuff open-coded or having a local copy of the library, as 
+both have significant potential for bugs.  A significant majority of 
+Linux systems have Python, and therefore have at least some XML library 
+(I forget which one Python prefers to use).  Many also have at least one 
+JSON library too.  If we make such dependencies optional, and also only 
+load the library if we need it at runtime (so we would only load the 
+JSON library if we are asked to print JSON output), then we could still 
+avoid the overhead for most people.
 
+The other possibility would be to just pick one output format, open code 
+that, and be done with it.  It's not hard to write s simple script to 
+convert between YAML, JSON, and other similar formats.  If we do go this 
+way, I'd still suggest YAML as it's more human friendly, a lot easier to 
+parse using scripts due to the line oriented nature of it, and is also 
+probably easier to code without any external dependencies.

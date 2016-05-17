@@ -1,94 +1,97 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:49601 "EHLO
+Received: from aserp1040.oracle.com ([141.146.126.69]:49700 "EHLO
 	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932358AbcEQOc0 (ORCPT
+	with ESMTP id S932358AbcEQOca (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 17 May 2016 10:32:26 -0400
+	Tue, 17 May 2016 10:32:30 -0400
 From: Anand Jain <anand.jain@oracle.com>
 To: fstests@vger.kernel.org
 Cc: linux-btrfs@vger.kernel.org, Anand Jain <anand.jain@oracle.com>
-Subject: [PATCH 1/6] fstests: btrfs: add functions to set and reset required number of SCRATCH_DEV_POOL
-Date: Tue, 17 May 2016 22:32:05 +0800
-Message-Id: <1463495530-425-1-git-send-email-anand.jain@oracle.com>
+Subject: [PATCH 3/6] fstests: btrfs: 027 make use of new device get and put helper functions
+Date: Tue, 17 May 2016 22:32:07 +0800
+Message-Id: <1463495530-425-3-git-send-email-anand.jain@oracle.com>
+In-Reply-To: <1463495530-425-1-git-send-email-anand.jain@oracle.com>
+References: <1463495530-425-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This patch provides functions
- _scratch_dev_pool_get()
- _scratch_dev_pool_put()
+Below patches added helper function to get the requested
+number of devices for scratch and spare device
 
-Which will help to set/reset SCRATCH_DEV_POOL with the required
-number of devices. SCRATCH_DEV_POOL_SAVED will hold all the devices.
+fstest: btrfs: add functions to get and put a device for replace target
+fstests: btrfs: add functions to set and reset required number of SCRATCH_DEV_POOL
 
-Usage:
-  _scratch_dev_pool_get() <ndevs>
-  :: do stuff
-
-  _scratch_dev_pool_put()
+This patch makes use of them.
 
 Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
- common/rc | 47 +++++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 47 insertions(+)
+ tests/btrfs/027 | 24 ++++++++++++++++--------
+ 1 file changed, 16 insertions(+), 8 deletions(-)
 
-diff --git a/common/rc b/common/rc
-index 91e8f1c8e693..33632fd8e4a3 100644
---- a/common/rc
-+++ b/common/rc
-@@ -786,6 +786,53 @@ _scratch_mkfs()
-     esac
+diff --git a/tests/btrfs/027 b/tests/btrfs/027
+index f0844a14f8e6..905dc0ebaa27 100755
+--- a/tests/btrfs/027
++++ b/tests/btrfs/027
+@@ -57,17 +57,22 @@ _require_command "$WIPEFS_PROG" wipefs
+ run_test()
+ {
+ 	local mkfs_opts=$1
+-	local saved_scratch_dev_pool=$SCRATCH_DEV_POOL
+-	local replace_dev=`echo $SCRATCH_DEV_POOL | awk '{print $NF}'`
++	local ndevs=`echo $SCRATCH_DEV_POOL | wc -w`
++
++	# reserve one for replace target
++	((ndevs--))
++
++	_scratch_dev_pool_get $ndevs
++	_spare_dev_get
+ 
+ 	echo "Test $mkfs_opts" >>$seqres.full
+ 
+-	SCRATCH_DEV_POOL=`echo $SCRATCH_DEV_POOL | sed -e "s# *$replace_dev *##"`
+ 	_scratch_pool_mkfs $mkfs_opts >>$seqres.full 2>&1
+ 	# make sure we created btrfs with desired options
+ 	if [ $? -ne 0 ]; then
+ 		echo "mkfs $mkfs_opts failed"
+-		SCRATCH_DEV_POOL=$saved_scratch_dev_pool
++		_spare_dev_put
++		_scratch_dev_pool_put
+ 		return
+ 	fi
+ 	_scratch_mount >>$seqres.full 2>&1
+@@ -89,17 +94,19 @@ run_test()
+ 	_scratch_mount -o degraded >>$seqres.full 2>&1
+ 
+ 	# replace $missing_dev with $replace_dev and scrub it to double-check
+-	$BTRFS_UTIL_PROG replace start -B -r $missing_dev_id $replace_dev \
++	$BTRFS_UTIL_PROG replace start -B -r $missing_dev_id $SPARE_DEV \
+ 		$SCRATCH_MNT -f >>$seqres.full 2>&1
+ 	if [ $? -ne 0 ]; then
+ 		echo "btrfs replace failed"
+-		SCRATCH_DEV_POOL=$saved_scratch_dev_pool
++		_spare_dev_put
++		_scratch_dev_pool_put
+ 		return
+ 	fi
+ 	$BTRFS_UTIL_PROG scrub start -B $SCRATCH_MNT >>$seqres.full 2>&1
+ 	if [ $? -ne 0 ]; then
+ 		echo "btrfs scrub failed"
+-		SCRATCH_DEV_POOL=$saved_scratch_dev_pool
++		_spare_dev_put
++		_scratch_dev_pool_put
+ 		return
+ 	fi
+ 
+@@ -107,7 +114,8 @@ run_test()
+ 	# we called _require_scratch_nocheck instead of _require_scratch
+ 	# do check after test for each profile config
+ 	_check_scratch_fs
+-	SCRATCH_DEV_POOL=$saved_scratch_dev_pool
++	_spare_dev_put
++	_scratch_dev_pool_put
  }
  
-+#
-+# $1 Number of the scratch devs required
-+#
-+_scratch_dev_pool_get()
-+{
-+	if [ $# != 1 ]; then
-+		_fail "Usage: _scratch_dev_pool_get ndevs"
-+	fi
-+
-+	local test_ndevs=$1
-+	local config_ndevs=`echo $SCRATCH_DEV_POOL| wc -w`
-+	local devs[]="( $SCRATCH_DEV_POOL )"
-+
-+	typeset -p config_ndevs >/dev/null 2>&1
-+	if [ $? != 0 ]; then
-+		_fail "Bug: unset val, must call _scratch_dev_pool_get before _scratch_dev_pool_put"
-+	fi
-+
-+	# _require_scratch_dev_pool $test_ndevs
-+	# must have already checked the min required devices
-+	# but just in case, trap here for any potential bugs
-+	# perpetuating any further
-+	if [ $config_ndevs -lt $test_ndevs ]; then
-+		_notrun "Need at least test requested number of ndevs $test_ndevs"
-+	fi
-+
-+	SCRATCH_DEV_POOL_SAVED=${SCRATCH_DEV_POOL}
-+	export SCRATCH_DEV_POOL_SAVED
-+	SCRATCH_DEV_POOL=${devs[@]:0:$test_ndevs}
-+	export SCRATCH_DEV_POOL
-+}
-+
-+_scratch_dev_pool_put()
-+{
-+	typeset -p SCRATCH_DEV_POOL_SAVED >/dev/null 2>&1
-+	if [ $? != 0 ]; then
-+		_fail "Bug: unset val, must call _scratch_dev_pool_get before _scratch_dev_pool_put"
-+	fi
-+
-+	if [ -z "$SCRATCH_DEV_POOL_SAVED" ]; then
-+		_fail "Bug: str empty, must call _scratch_dev_pool_get before _scratch_dev_pool_put"
-+	fi
-+
-+	export SCRATCH_DEV_POOL=$SCRATCH_DEV_POOL_SAVED
-+	export SCRATCH_DEV_POOL_SAVED=""
-+}
-+
- _scratch_pool_mkfs()
- {
-     case $FSTYP in
+ echo "Silence is golden"
 -- 
 2.7.0
 

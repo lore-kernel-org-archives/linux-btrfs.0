@@ -1,65 +1,101 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f174.google.com ([209.85.213.174]:38226 "EHLO
-	mail-ig0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751443AbcEQLcP (ORCPT
+Received: from mail-wm0-f47.google.com ([74.125.82.47]:35133 "EHLO
+	mail-wm0-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750792AbcEQLZc (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 17 May 2016 07:32:15 -0400
-Received: by mail-ig0-f174.google.com with SMTP id m9so7942482ige.1
-        for <linux-btrfs@vger.kernel.org>; Tue, 17 May 2016 04:32:15 -0700 (PDT)
-Subject: Re: Hot data tracking / hybrid storage
-To: Ferry Toth <ftoth@exalondelft.nl>, linux-btrfs@vger.kernel.org
-References: <nh9p2p$cns$1@ger.gmane.org>
- <pan$ae8c7$965ff694$cf73d90e$9e134691@cox.net>
- <20160516010524.7e208f96@jupiter.sol.kaishome.de>
- <nhedk2$dpq$1@ger.gmane.org>
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <0d68f988-e117-4b61-cb9b-d18a26e2b909@gmail.com>
-Date: Tue, 17 May 2016 07:32:11 -0400
+	Tue, 17 May 2016 07:25:32 -0400
+Received: by mail-wm0-f47.google.com with SMTP id e201so135534558wme.0
+        for <linux-btrfs@vger.kernel.org>; Tue, 17 May 2016 04:25:32 -0700 (PDT)
+Message-ID: <7AF66DC0FE0640D1A4E007C4DAC16AC4@alyakaslap>
+From: "Alex Lyakas" <alex@zadarastorage.com>
+To: "linux-btrfs" <linux-btrfs@vger.kernel.org>
+Cc: "Ron Mandel" <ron@zadarastorage.com>,
+        "Yair Hershko" <yair@zadarastorage.com>,
+        "Shyam Kaushik" <shyam@zadarastorage.com>,
+        "Lev Vainblat" <lev@zadarastorage.com>,
+        "Yaron Presente" <yaron@zadarastorage.com>
+Subject: [RCF - PATCH] btrfs: do not ignore errors from primary superblock
+Date: Tue, 17 May 2016 14:24:15 +0300
 MIME-Version: 1.0
-In-Reply-To: <nhedk2$dpq$1@ger.gmane.org>
-Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Type: text/plain;
+	format=flowed;
+	charset="iso-8859-1";
+	reply-type=original
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2016-05-17 02:27, Ferry Toth wrote:
-> Op Mon, 16 May 2016 01:05:24 +0200, schreef Kai Krakow:
->
->> Am Sun, 15 May 2016 21:11:11 +0000 (UTC)
->> schrieb Duncan <1i5t5.duncan@cox.net>:
->>
->>> Ferry Toth posted on Sun, 15 May 2016 12:12:09 +0000 as excerpted:
->>>
-> <snip>
->>
->> You can go there with only one additional HDD as temporary storage. Just
->> connect it, format as bcache, then do a "btrfs dev replace". Now wipe
->> that "free" HDD (use wipefs), format as bcache, then... well, you get
->> the point. At the last step, remove the remaining HDD. Now add your
->> SSDs, format as caching device, and attach each individual HDD backing
->> bcache to each SSD caching bcache.
->>
->> Devices don't need to be formatted and created at the same time. I'd
->> also recommend to add all SSDs only in the last step to not wear them
->> early with writes during device replacement.
->>
->> If you want, you can add one additional step to get the temporary hard
->> disk back. But why not simply replace the oldest hard disk with the
->> newest. Take a look at smartctl to see which is the best candidate.
->>
->> I went a similar route but without one extra HDD. I had three HDDs in
->> mraid1/draid0 and enough spare space. I just removed one HDD, prepared
->> it for bcache, then added it back and removed the next.
->>
-> That's what I mean, a lot of work. And it's still a cache, with
-> unnecessary copying from the ssd to the hdd.
-On the other hand, it's actually possible to do this all online with 
-BTRFS because of the reshaping and device replacement tools.
+RFC: This patch not for merging, but only for review and discussion.
 
-In fact, I've done even more complex reprovisioning online before (for 
-example, my home server system has 2 SSD's and 4 HDD's, running BTRFS on 
-top of LVM, I've at least twice completely recreated the LVM layer 
-online without any data loss and minimal performance degradation).
->
-> And what happens when either a hdd or ssd starts failing?
-I have absolutely no idea how bcache handles this, but I doubt it's any 
-better than BTRFS.
+When mounting, we consider only the primary superblock on each device.
+But when writing the superblocks, we might silently ignore errors
+from the primary superblock, if we succeeded to write secondary
+superblocks. In such case, the primary superblock was not updated
+properly, and if we crash at this point, later mount will use
+an out-of-date superblock.
+
+This patch changes the behavior to NOT IGNORING any errors on the primary 
+superblock,
+and IGNORING any errors on secondary superblocks. This way, we always insist 
+on having
+an up-to-date primary superblock.
+
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 4e47849..0ae9f7c 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -3357,11 +3357,13 @@ static int write_dev_supers(struct btrfs_device 
+*device,
+             bh = __find_get_block(device->bdev, bytenr / 4096,
+                           BTRFS_SUPER_INFO_SIZE);
+             if (!bh) {
+-                errors++;
++                /* we only care about primary superblock errors */
++                if (i == 0)
++                    errors++;
+                 continue;
+             }
+             wait_on_buffer(bh);
+-            if (!buffer_uptodate(bh))
++            if (!buffer_uptodate(bh) && i == 0)
+                 errors++;
+
+             /* drop our reference */
+@@ -3388,9 +3390,10 @@ static int write_dev_supers(struct btrfs_device 
+*device,
+                       BTRFS_SUPER_INFO_SIZE);
+             if (!bh) {
+                 btrfs_err(device->dev_root->fs_info,
+-                    "couldn't get super buffer head for bytenr %llu",
+-                    bytenr);
+-                errors++;
++                    "couldn't get super buffer head for bytenr %llu (sb 
+copy %d)",
++                    bytenr, i);
++                if (i == 0)
++                    errors++;
+                 continue;
+             }
+
+@@ -3413,10 +3416,10 @@ static int write_dev_supers(struct btrfs_device 
+*device,
+             ret = btrfsic_submit_bh(WRITE_FUA, bh);
+         else
+             ret = btrfsic_submit_bh(WRITE_SYNC, bh);
+-        if (ret)
++        if (ret && i == 0)
+             errors++;
+     }
+-    return errors < i ? 0 : -1;
++    return errors ? -1 : 0;
+}
+
+/*
+
+
+P.S.: when reviewing the code of write_dev_supers(), I also noticed that 
+when wait==0 and we hit an error in one __getblk(), then the caller 
+(write_all_supers) will not properly wait for submitted buffer-heads to 
+complete, and we won't do the additional "brelse(bh);", which wait==0 case 
+does. Is this a problem?
+
+

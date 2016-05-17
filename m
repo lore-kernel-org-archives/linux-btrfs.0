@@ -1,93 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:31634 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751329AbcEKCYI (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 10 May 2016 22:24:08 -0400
-Subject: Re: [PATCH v10 02/21] btrfs: dedupe: Introduce function to initialize
- dedupe info
-To: Mark Fasheh <mfasheh@suse.de>
-References: <1459492512-31435-3-git-send-email-quwenruo@cn.fujitsu.com>
- <201604011730.6UVg1lC7%fengguang.wu@intel.com>
- <20160511000053.GE7633@wotan.suse.de>
- <d3a920c7-d1df-5697-7a9d-c7163197986d@cn.fujitsu.com>
-CC: <linux-btrfs@vger.kernel.org>, Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <1e2e1789-edc0-0759-5401-d960a2da6817@cn.fujitsu.com>
-Date: Wed, 11 May 2016 10:24:04 +0800
+Received: from mx2.suse.de ([195.135.220.15]:46919 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750792AbcEQNOr (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 17 May 2016 09:14:47 -0400
+Date: Tue, 17 May 2016 15:14:20 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org, Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>,
+        David Sterba <dsterba@suse.com>
+Subject: Re: [PATCH v10 11/21] btrfs: dedupe: Add ioctl for inband
+ dedupelication
+Message-ID: <20160517131420.GO511@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1459492512-31435-1-git-send-email-quwenruo@cn.fujitsu.com>
+ <1459492512-31435-12-git-send-email-quwenruo@cn.fujitsu.com>
+ <8321f238-764e-d833-969f-e3d09723371a@cn.fujitsu.com>
 MIME-Version: 1.0
-In-Reply-To: <d3a920c7-d1df-5697-7a9d-c7163197986d@cn.fujitsu.com>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <8321f238-764e-d833-969f-e3d09723371a@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Wed, Apr 27, 2016 at 09:29:29AM +0800, Qu Wenruo wrote:
+> > @@ -5542,6 +5606,10 @@ long btrfs_ioctl(struct file *file, unsigned int
+> >  		return btrfs_ioctl_get_fslabel(file, argp);
+> >  	case BTRFS_IOC_SET_FSLABEL:
+> >  		return btrfs_ioctl_set_fslabel(file, argp);
+> 
+> Would you mind me to add a new kernel config "Btrfs experimental 
+> features-> dedupe ioctl" for case like dedupe and further experimental 
+> btrfs features?
+> 
+> The BTRFS_DEBUG seems quite odd for me.
+> Although in-band dedupe is quite good at exposing bugs of 
+> backref/qgroup/delayed_refs, but I still think it's not a debug tool.
+> 
+> So I hope to use "BTRFS_EXPERIMENTAL_DEDUPE_IOCTL" and add corresponding 
+> Kconfig interfaces.
 
-
-Qu Wenruo wrote on 2016/05/11 08:21 +0800:
->
->
-> Mark Fasheh wrote on 2016/05/10 17:00 -0700:
->> On Fri, Apr 01, 2016 at 05:59:13PM +0800, kbuild test robot wrote:
->>> Hi Wang,
->>>
->>> [auto build test ERROR on btrfs/next]
->>> [also build test ERROR on v4.6-rc1 next-20160401]
->>> [if your patch is applied to the wrong git tree, please drop us a
->>> note to help improving the system]
->>>
->>> url:
->>> https://github.com/0day-ci/linux/commits/Qu-Wenruo/Btrfs-dedupe-framework/20160401-143937
->>>
->>> base:
->>> https://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git
->>> next
->>> config: x86_64-rhel (attached as .config)
->>> reproduce:
->>>         # save the attached .config to linux build tree
->>>         make ARCH=x86_64
->>>
->>> Note: the
->>> linux-review/Qu-Wenruo/Btrfs-dedupe-framework/20160401-143937 HEAD
->>> 0a445f5009c064ee1d3fc966e41bb75627594afe builds fine.
->>>       It only hurts bisectibility.
->>>
->>> All errors (new ones prefixed by >>):
->>>
->>>>> ERROR: "btrfs_dedupe_disable" [fs/btrfs/btrfs.ko] undefined!
->>>
->>> ---
->>> 0-DAY kernel test infrastructure                Open Source
->>> Technology Center
->>> https://lists.01.org/pipermail/kbuild-all                   Intel
->>> Corporation
->>
->> Please correct this, we need to be able to bisect a kernel without random
->> patches breaking the build.
->>     --Mark
->>
->> --
->> Mark Fasheh
->>
->>
-> The build bot is just using wrong branch.
->
-> We're using integration-4.6, which is not in their build bot branching.
->
-> Thanks,
-> Qu
-
-Oh, my fault, I just get confused it with old days when it uses wrong 
-branch.
-
-Will fix it in v11 patchset.
-
-Thanks,
-Qu
->
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-
-
+The point was not to add new config options, but if you find _DEBUG odd
+we can rethink the "hide it under config option" approach. The alternate
+way is to get the code into a good shape and add it to for-next. I don't
+want to track yet another set of branches with the too experimental
+stuff.

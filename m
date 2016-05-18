@@ -1,125 +1,77 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:48987 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751169AbcERHid (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 18 May 2016 03:38:33 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1b2w3n-0002wP-3L
-	for linux-btrfs@vger.kernel.org; Wed, 18 May 2016 09:38:27 +0200
-Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 18 May 2016 09:38:22 +0200
-Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 18 May 2016 09:38:22 +0200
+Received: from zaphod.cobb.me.uk ([213.138.97.131]:35603 "EHLO
+	zaphod.cobb.me.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750790AbcERNhY (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 18 May 2016 09:37:24 -0400
+Received: from black.home.cobb.me.uk (unknown [192.168.0.205])
+	by zaphod.cobb.me.uk (Postfix) with ESMTP id 657709B8E1
+	for <linux-btrfs@vger.kernel.org>; Wed, 18 May 2016 14:29:44 +0100 (BST)
+Received: from [192.168.0.211] (novatech.home.cobb.me.uk [192.168.0.211])
+	by black.home.cobb.me.uk (Postfix) with ESMTPS id 428EA5FB88
+	for <linux-btrfs@vger.kernel.org>; Wed, 18 May 2016 14:29:44 +0100 (BST)
 To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: BTRFS RAID 1 broken: Mounted drive(s) basically empty after
- repair attempt
-Date: Wed, 18 May 2016 07:38:16 +0000 (UTC)
-Message-ID: <pan$7ed1$38076faf$e144173d$221ccbc0@cox.net>
-References: <CAEwOqv5fDHNVe7Q_+PH_k+W-WRPMt3W3psjzh2vjYfEKq-XWPw@mail.gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+From: Graham Cobb <g.btrfs@cobb.uk.net>
+Subject: Reducing impact of periodic btrfs balance
+Message-ID: <573C6E47.2080109@cobb.uk.net>
+Date: Wed, 18 May 2016 14:29:43 +0100
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Quanttek Jonas posted on Tue, 17 May 2016 10:00:41 -0400 as excerpted:
+Hi,
 
-> So, the question is: How can I recover from this? How do I get my data
-> back, after foolishly using "btrfsck --repair"?
+I have a 6TB btrfs filesystem I created last year (about 60% used).  It
+is my main data disk for my home server so it gets a lot of usage
+(particularly mail). I do frequent snapshots (using btrbk) so I have a
+lot of snapshots (about 1500 now, although it was about double that
+until I cut back the retention times recently).
 
-First, let me note that I'm a list regular and btrfs user, not a dev, and 
-that as such, much of your post was beyond my tech understanding level.  
-Thus I snipped it above.  For a technical take perhaps one of the devs 
-will help, and other user and general dev but not btrfs dev will likely 
-post their thoughts as well.
+A while ago I had a "no space" problem (despite fi df, fi show and fi
+usage all agreeing I had over 1TB free).  But this email isn't about that.
 
-But here I'd probably declare the filesystem beyond full repair and focus 
-on getting any files off it I could using the below described method, and 
-restoring what I couldn't get from the damaged filesystem from backup
+As part of fixing that problem, I tried to do a "balance -dusage=20" on
+the disk.  I was expecting it to have system impact, but it was a major
+disaster.  The balance didn't just run for a long time, it locked out
+all activity on the disk for hours.  A simple "touch" command to create
+one file took over an hour.
 
-It's worth pausing to note that this point the sysadmin's rule of 
-backups, which in simplest form simply states that if you don't have at 
-least one level of backup, you are by choosing not to do that backup, 
-defining your data as worth less than the trouble and resources necessary 
-to do that backup.  Thus, by definition, you /always/ save what was of 
-most importance to you, either the data, if you decided it was worth 
-making that backup, or if by your actions you defined the time and 
-resources that would otherwise be spent in making that backup as more 
-valuable than the data, then you saved your valuable time and resource, 
-even if you lost what you had defined to be of lower value, that being 
-your data.
+More seriously, because of that, mail was being lost: all mail delivery
+timed out and the timeout error was interpreted as a fatal delivery
+error causing mail to be discarded, mailing lists to cancel
+subscriptions, etc. The balance never completed, of course.  I
+eventually got it cancelled.
 
-And that rule applies in normal conditions, using fully mature and long-
-term stable filesystems such as ext3/4, xfs, or (the one I still use on 
-my spinning rust, I only use btrfs on my ssds) reiserfs.  Btrfs, while 
-stabilizing, is not yet fully stable and mature, definitely not to the 
-level of the above filesystems, so the rule applies even more strongly 
-there (a less simple form of the rule takes into account varying levels 
-of risk and varying data value, along with multiple levels of backup, 100 
-levels of backup with some offsite in other locations may not be enough 
-for extremely high value data).
+I have since managed to complete the "balance -dusage=20" by running it
+repeatedly with "limit=N" (for small N).  I wrote a script to automate
+that process, and rerun it every week.  If anyone is interested, the
+script is on GitHub: https://github.com/GrahamCobb/btrfs-balance-slowly
 
-So I'll assume that much like me you keep backups where the data is 
-valuable enough to warrant it, but you may not always have /current/ 
-backups, because the value of the data in the delta between the last 
-backup and current simply doesn't warrant the hassle of refreshing the 
-backup, yet, given the limited risk of /future/ loss.  However, once the 
-potential loss happens, the question changes.  Now it's a matter of 
-whether the hassle of further recovery efforts is justified, vs. the 
-known loss of the data in that delta between the last backup and the last 
-"good" state before things started going bad.
+Out of that experience, I have a couple of thoughts about how to
+possibly make balance more friendly.
 
-As it happens, btrfs has this really useful tool called btrfs restore, 
-that can often help you recover your data at very close to the last good 
-state, or at least to a state beyond that of your last backup.  It has 
-certainly helped me recover this from-last-backup-delta data a couple 
-times here, allowing me to use it instead of having to fall back to the 
-older and more stale backup.  One nice thing about btrfs restore is that 
-it's read-only with respect to the damaged filesystem, so you can safely 
-use it on a filesystem to restore what you can, before trying more 
-dangerous things that might cause even more damage.  Since it's a purely 
-read-only operation, it won't cause further damage. =:^)
+1) It looks like the balance process seems to (effectively) lock all
+file (extent?) creation for long periods of time.  Would it be possible
+for balance to make more effort to yield locks to allow other
+processes/threads to get in to continue to create/write files while it
+is running?
 
-There's a page on the wiki that describes this process in more detail, 
-but be aware, once you get beyond where automatic mode can help and you 
-have to try manual, it gets quite technical, and a lot of folks find they 
-need some additional help from a human, beyond the wiki.
+2) btrfs scrub has options to set ionice options.  Could balance have
+something similar?  Or would reducing the IO priority make things worse
+because locks would be held for longer?
 
-Before I link the wiki page, here's an introduction...
+3) My btrfs-balance-slowly script would work better if there was a
+time-based limit filter for balance, not just the current count-based
+filter.  I would like to be able to say, for example, run balance for no
+more than 10 minutes (completing the operation in progress, of course)
+then return.
 
-Btrfs restore works on the /unmounted/ filesystem, writing any files it 
-recovers to some other filesystem, which of course means that you need 
-enough space on that other filesystem to store whatever you wish to 
-recover.  By default it will write them as root, using root's umask, with 
-current timestamps, and will skip writing symlinks or restoring extended 
-attributes, but there are options that will restore ownership/perms/
-timestamps, extended attributes, and symlinks, if desired.
+4) My btrfs-balance-slowly script would be more reliable if there was a
+way to get an indication of whether there was more work to be done,
+instead of parsing the output for the number of relocations.
 
-Normally, btrfs restore will use a mechanism similar to the recovery 
-mount option to try to find a copy of the root tree of the filesystem 
-within a few commits (which are 30-seconds apart by default) of what the 
-superblocks say is current.
+Any thoughts about these?  Or other things I could be doing to reduce
+the impact on my services?
 
-If that works, great.  If not, you have to use a much more manual mode, 
-telling btrfs restore what root to try, while using btrfs-find-root to 
-find older roots (by generation, aka transid), then feeding the addresses 
-found to btrfs restore -t, first with the -l option to list the other 
-trees available from that root, then if it finds all the critical trees, 
-using it with --dry-run to see if it seems to find most of the expected 
-files, before trying the real restore if things look good.
-
-With that, here's the wiki page link.  Try the normal mode first.  If it 
-fails and you need further help with the advanced usage stuff, you can 
-ask more questions then.
-
-https://btrfs.wiki.kernel.org/index.php/Restore
-
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+Graham

@@ -1,72 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:21231 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752180AbcEIVbu (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 9 May 2016 17:31:50 -0400
-Date: Mon, 9 May 2016 14:33:37 -0700
-From: Liu Bo <bo.li.liu@oracle.com>
-To: Josef Bacik <jbacik@fb.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 12/14] Btrfs: fix release reserved extents trace points
-Message-ID: <20160509213337.GC4954@localhost.localdomain>
-Reply-To: bo.li.liu@oracle.com
-References: <1458926760-17563-1-git-send-email-jbacik@fb.com>
- <1458926760-17563-13-git-send-email-jbacik@fb.com>
+Received: from mail-ig0-f194.google.com ([209.85.213.194]:35399 "EHLO
+	mail-ig0-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752008AbcERLYv (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 18 May 2016 07:24:51 -0400
+Received: by mail-ig0-f194.google.com with SMTP id jn6so4264275igb.2
+        for <linux-btrfs@vger.kernel.org>; Wed, 18 May 2016 04:24:50 -0700 (PDT)
+Subject: Re: [PATCH V2] Btrfs: introduce ticketed enospc infrastructure
+To: Josef Bacik <jbacik@fb.com>, linux-btrfs@vger.kernel.org
+References: <1458926760-17563-8-git-send-email-jbacik@fb.com>
+ <1463506255-15918-1-git-send-email-jbacik@fb.com>
+From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Message-ID: <1ff146f2-c8e6-1f84-bb03-1f73cc716177@gmail.com>
+Date: Wed, 18 May 2016 07:24:46 -0400
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1458926760-17563-13-git-send-email-jbacik@fb.com>
+In-Reply-To: <1463506255-15918-1-git-send-email-jbacik@fb.com>
+Content-Type: text/plain; charset=windows-1252; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Mar 25, 2016 at 01:25:58PM -0400, Josef Bacik wrote:
-> We were doing trace_btrfs_release_reserved_extent() in pin_down_extent which
-> isn't quite right because we will go through and free that extent later when we
-> unpin, so it messes up apps that are accounting for the reservation space.  We
-> were also unconditionally doing it in __btrfs_free_reserved_extent(), when we
-> only actually free the reservation instead of pinning the extent.  Thanks,
-
-Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
-
-Thanks,
-
--liubo
-> 
+On 2016-05-17 13:30, Josef Bacik wrote:
+> Our enospc flushing sucks.  It is born from a time where we were early
+> enospc'ing constantly because multiple threads would race in for the same
+> reservation and randomly starve other ones out.  So I came up with this solution
+> to block any other reservations from happening while one guy tried to flush
+> stuff to satisfy his reservation.  This gives us pretty good correctness, but
+> completely crap latency.
+>
+> The solution I've come up with is ticketed reservations.  Basically we try to
+> make our reservation, and if we can't we put a ticket on a list in order and
+> kick off an async flusher thread.  This async flusher thread does the same old
+> flushing we always did, just asynchronously.  As space is freed and added back
+> to the space_info it checks and sees if we have any tickets that need
+> satisfying, and adds space to the tickets and wakes up anything we've satisfied.
+>
+> Once the flusher thread stops making progress it wakes up all the current
+> tickets and tells them to take a hike.
+>
+> There is a priority list for things that can't flush, since the async flusher
+> could do anything we need to avoid deadlocks.  These guys get priority for
+> having their reservation made, and will still do manual flushing themselves in
+> case the async flusher isn't running.
+>
+> This patch gives us significantly better latencies.  Thanks,
+>
 > Signed-off-by: Josef Bacik <jbacik@fb.com>
-> ---
->  fs/btrfs/extent-tree.c | 6 +-----
->  1 file changed, 1 insertion(+), 5 deletions(-)
-> 
-> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-> index 0ecceea..273e18d 100644
-> --- a/fs/btrfs/extent-tree.c
-> +++ b/fs/btrfs/extent-tree.c
-> @@ -6253,8 +6253,6 @@ static int pin_down_extent(struct btrfs_root *root,
->  				      cache->space_info->flags, num_bytes, 1);
->  	set_extent_dirty(root->fs_info->pinned_extents, bytenr,
->  			 bytenr + num_bytes - 1, GFP_NOFS | __GFP_NOFAIL);
-> -	if (reserved)
-> -		trace_btrfs_reserved_extent_free(root, bytenr, num_bytes);
->  	return 0;
->  }
->  
-> @@ -7877,12 +7875,10 @@ static int __btrfs_free_reserved_extent(struct btrfs_root *root,
->  			ret = btrfs_discard_extent(root, start, len, NULL);
->  		btrfs_add_free_space(cache, start, len);
->  		btrfs_update_reserved_bytes(cache, len, RESERVE_FREE, delalloc);
-> +		trace_btrfs_reserved_extent_free(root, start, len);
->  	}
->  
->  	btrfs_put_block_group(cache);
-> -
-> -	trace_btrfs_reserved_extent_free(root, start, len);
-> -
->  	return ret;
->  }
->  
-> -- 
-> 2.5.0
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+I've had this running on my test system (which is _finally_ working 
+again) for about 16 hours now, nothing is breaking, and a number of the 
+tests are actually completing marginally faster, so you can add:
+
+Tested-by: Austin S. Hemmelgarn <ahferroin7@gmail.com>

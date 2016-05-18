@@ -1,61 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:11698 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1754836AbcEQJlJ (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 17 May 2016 05:41:09 -0400
-Received: from G08CNEXCHPEKD03.g08.fujitsu.local (unknown [10.167.33.85])
-	by cn.fujitsu.com (Postfix) with ESMTP id 4652D489F960
-	for <linux-btrfs@vger.kernel.org>; Tue, 17 May 2016 17:41:00 +0800 (CST)
-From: Zhao Lei <zhaolei@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-CC: Zhao Lei <zhaolei@cn.fujitsu.com>
-Subject: [PATCH] btrfs: scrub: Set bbio to NULL before calling btrfs_map_block
-Date: Tue, 17 May 2016 17:37:38 +0800
-Message-ID: <f8f418a78c2a31b805fb2a7cdbaa90292b4317f0.1463477847.git.zhaolei@cn.fujitsu.com>
+Received: from mx2.suse.de ([195.135.220.15]:34478 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750790AbcERJld (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 18 May 2016 05:41:33 -0400
+Date: Wed, 18 May 2016 11:41:05 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Liu Bo <bo.li.liu@oracle.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] Btrfs: fix unexpected return value of fiemap
+Message-ID: <20160518094105.GY511@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1463530908-23545-1-git-send-email-bo.li.liu@oracle.com>
 MIME-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1463530908-23545-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We usually call btrfs_put_bbio() when btrfs_map_block() failed,
-btrfs_put_bbio() works right whether bbio is a valid value, or NULL.
+On Tue, May 17, 2016 at 05:21:48PM -0700, Liu Bo wrote:
+> btrfs's fiemap is supposed to return 0 on success and
+>  return < 0 on error, however, ret becomes 1 after looking
+> up the last file extent, and if the offset is beyond EOF,
+> we can return 1.
+> 
+> This may confuse applications using ioctl(FIEL_IOC_FIEMAP).
+> 
+> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
 
-But there is a exception, in some case, btrfs_map_block() will return
-fail without touching *bbio(keeping its original value), and if bbio
-was not initialized yet, invalid memory accessing will happened.
+Reviewed-by: David Sterba <dsterba@suse.com>
 
-Above case is in scrub_missing_raid56_pages(), and similar case in
-scrub_raid56_parity().
+> ---
+>  fs/btrfs/extent_io.c | 6 +++++-
+>  1 file changed, 5 insertions(+), 1 deletion(-)
+> 
+> diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+> index d247fc0..16ece52 100644
+> --- a/fs/btrfs/extent_io.c
+> +++ b/fs/btrfs/extent_io.c
+> @@ -4379,8 +4379,12 @@ int extent_fiemap(struct inode *inode, struct fiemap_extent_info *fieinfo,
+>  	if (ret < 0) {
+>  		btrfs_free_path(path);
+>  		return ret;
+> +	} else {
+> +		WARN_ON(!ret);
+> +		if (ret == 1)
+> +			ret = 0;
+>  	}
 
-Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
----
- fs/btrfs/scrub.c | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
-
-diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index 4678f03..d285d76 100644
---- a/fs/btrfs/scrub.c
-+++ b/fs/btrfs/scrub.c
-@@ -2179,7 +2179,7 @@ static void scrub_missing_raid56_pages(struct scrub_block *sblock)
- 	struct btrfs_fs_info *fs_info = sctx->dev_root->fs_info;
- 	u64 length = sblock->page_count * PAGE_SIZE;
- 	u64 logical = sblock->pagev[0]->logical;
--	struct btrfs_bio *bbio;
-+	struct btrfs_bio *bbio = NULL;
- 	struct bio *bio;
- 	struct btrfs_raid_bio *rbio;
- 	int ret;
-@@ -2980,6 +2980,7 @@ again:
- 						       extent_len);
- 
- 			mapped_length = extent_len;
-+			bbio = NULL;
- 			ret = btrfs_map_block(fs_info, READ, extent_logical,
- 					      &mapped_length, &bbio, 0);
- 			if (!ret) {
--- 
-1.8.5.1
-
-
-
+So, ret == 1 can end up here from btrfs_lookup_file_extent ->
+btrfs_search_slot(..., ins_len=0, cow=0) and the offset does not exist,
+we'll get path pointed to the slot where it would be inserted and ret is 1.

@@ -1,57 +1,82 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:19196 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932339AbcENAF1 (ORCPT
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:18874 "EHLO
+	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1752518AbcERTio (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 13 May 2016 20:05:27 -0400
-Received: from aserv0022.oracle.com (aserv0022.oracle.com [141.146.126.234])
-	by aserp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id u4E05QUD028141
-	(version=TLSv1 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Sat, 14 May 2016 00:05:26 GMT
-Received: from aserv0122.oracle.com (aserv0122.oracle.com [141.146.126.236])
-	by aserv0022.oracle.com (8.13.8/8.13.8) with ESMTP id u4E05Q4x000432
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Sat, 14 May 2016 00:05:26 GMT
-Received: from abhmp0007.oracle.com (abhmp0007.oracle.com [141.146.116.13])
-	by aserv0122.oracle.com (8.13.8/8.13.8) with ESMTP id u4E05Naw022444
-	for <linux-btrfs@vger.kernel.org>; Sat, 14 May 2016 00:05:24 GMT
-From: Liu Bo <bo.li.liu@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 3/7] Btrfs: check if extent buffer is aligned to sectorsize
-Date: Fri, 13 May 2016 17:06:58 -0700
-Message-Id: <1463184422-13584-3-git-send-email-bo.li.liu@oracle.com>
-In-Reply-To: <1463184422-13584-1-git-send-email-bo.li.liu@oracle.com>
+	Wed, 18 May 2016 15:38:44 -0400
+Subject: Re: [PATCH 6/7] Btrfs: fix eb memory leak due to readpage failure
+To: Liu Bo <bo.li.liu@oracle.com>, <linux-btrfs@vger.kernel.org>
 References: <1463184422-13584-1-git-send-email-bo.li.liu@oracle.com>
+ <1463184422-13584-6-git-send-email-bo.li.liu@oracle.com>
+From: Josef Bacik <jbacik@fb.com>
+Message-ID: <97b7a496-9cb5-13bc-010f-f126d272c35e@fb.com>
+Date: Wed, 18 May 2016 15:38:29 -0400
+MIME-Version: 1.0
+In-Reply-To: <1463184422-13584-6-git-send-email-bo.li.liu@oracle.com>
+Content-Type: text/plain; charset="windows-1252"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Thanks to fuzz testing, we can pass an invalid bytenr to extent buffer
-via alloc_extent_buffer().  An unaligned eb can have more pages than it
-should have, which ends up extent buffer's leak or some corrupted content
-in extent buffer.
+On 05/13/2016 08:07 PM, Liu Bo wrote:
+> eb->io_pages is set in read_extent_buffer_pages().
+>
+> In case of readpage failure, for pages that have been added to bio,
+> it calls bio_endio and later readpage_io_failed_hook() does the work.
+>
+> When this eb's page (couldn't be the 1st page) fails to add itself to bio
+> due to failure in merge_bio(), it cannot decrease eb->io_pages via bio_endio,
+>  and ends up with a memory leak eventually.
+>
+> This adds the 'atomic_dec(&eb->io_pages)' to the readpage error handling.
 
-This adds a warning to let us quickly know what was happening.
+Wait why can't this be done in
+>
+> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+> ---
+>  fs/btrfs/extent_io.c | 24 ++++++++++++++++++++++++
+>  1 file changed, 24 insertions(+)
+>
+> diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+> index 99286d1..2327200 100644
+> --- a/fs/btrfs/extent_io.c
+> +++ b/fs/btrfs/extent_io.c
+> @@ -3069,6 +3069,30 @@ static int __do_readpage(struct extent_io_tree *tree,
+>  			*bio_flags = this_bio_flag;
+>  		} else {
+>  			SetPageError(page);
+> +			/*
+> +			 * Only metadata io request has this issue, for data it
+> +			 * just unlocks extent and releases page's lock.
+> +			 *
+> +			 * eb->io_pages is set in read_extent_buffer_pages().
+> +			 *
+> +			 * When this eb's page fails to add itself to bio,
+> +			 * it cannot decrease eb->io_pages via bio_endio, and
+> +			 * ends up with extent_buffer_under_io() always being
+> +			 * true, because of that, eb won't be freed and we have
+> +			 * a memory leak eventually.
+> +			 *
+> +			 * Here we still hold this page's lock, and other tasks
+> +			 * who're also reading this eb are blocked.
+> +			 */
+> +			if (rw & REQ_META) {
+> +				struct extent_buffer *eb;
+> +
+> +				WARN_ON_ONCE(!PagePrivate(page));
+> +				eb = (struct extent_buffer *)page->private;
+> +
+> +				WARN_ON_ONCE(atomic_read(&eb->io_pages) < 1);
+> +				atomic_dec(&eb->io_pages);
+> +			}
+>  			unlock_extent(tree, cur, cur + iosize - 1);
+>  		}
+>  		cur = cur + iosize;
+>
 
-Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
----
- fs/btrfs/extent_io.c | 4 ++++
- 1 file changed, 4 insertions(+)
+This isn't the right way to do this.  It looks like we don't propagate 
+up errors from __do_readpage, which we need to in order to clean up 
+properly.  So do that and then change the error stuff to decrement the 
+io_pages for the remaining, you can see write_one_eb for how to deal 
+with that properly.  Thanks,
 
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index d247fc0..e601e0f 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -4868,6 +4868,10 @@ struct extent_buffer *alloc_extent_buffer(struct btrfs_fs_info *fs_info,
- 	int uptodate = 1;
- 	int ret;
- 
-+	WARN_ONCE(!IS_ALIGNED(start, fs_info->tree_root->sectorsize),
-+		  KERN_WARNING "eb->start(%llu) is not aligned to root->sectorsize(%u)\n",
-+		  start, fs_info->tree_root->sectorsize);
-+
- 	eb = find_extent_buffer(fs_info, start);
- 	if (eb)
- 		return eb;
--- 
-2.5.5
-
+Josef

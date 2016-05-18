@@ -1,60 +1,58 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:60053 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752205AbcEWMML (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 23 May 2016 08:12:11 -0400
-Date: Mon, 23 May 2016 14:11:39 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Liu Bo <bo.li.liu@oracle.com>
-Cc: dsterba@suse.cz, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs: fix unexpected return value of fiemap
-Message-ID: <20160523121139.GL29147@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1463530908-23545-1-git-send-email-bo.li.liu@oracle.com>
- <20160518094105.GY511@twin.jikos.cz>
- <20160518175225.GA7227@localhost.localdomain>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20160518175225.GA7227@localhost.localdomain>
+Received: from userp1040.oracle.com ([156.151.31.81]:20804 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752670AbcERAUG (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 17 May 2016 20:20:06 -0400
+Received: from userv0022.oracle.com (userv0022.oracle.com [156.151.31.74])
+	by userp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id u4I0K4xe012784
+	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Wed, 18 May 2016 00:20:05 GMT
+Received: from userv0121.oracle.com (userv0121.oracle.com [156.151.31.72])
+	by userv0022.oracle.com (8.14.4/8.13.8) with ESMTP id u4I0K4DP013980
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Wed, 18 May 2016 00:20:04 GMT
+Received: from abhmp0009.oracle.com (abhmp0009.oracle.com [141.146.116.15])
+	by userv0121.oracle.com (8.13.8/8.13.8) with ESMTP id u4I0K3LG003309
+	for <linux-btrfs@vger.kernel.org>; Wed, 18 May 2016 00:20:04 GMT
+From: Liu Bo <bo.li.liu@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH] Btrfs: fix unexpected return value of fiemap
+Date: Tue, 17 May 2016 17:21:48 -0700
+Message-Id: <1463530908-23545-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, May 18, 2016 at 10:52:25AM -0700, Liu Bo wrote:
-> On Wed, May 18, 2016 at 11:41:05AM +0200, David Sterba wrote:
-> > On Tue, May 17, 2016 at 05:21:48PM -0700, Liu Bo wrote:
-> > > btrfs's fiemap is supposed to return 0 on success and
-> > >  return < 0 on error, however, ret becomes 1 after looking
-> > > up the last file extent, and if the offset is beyond EOF,
-> > > we can return 1.
-> > > 
-> > > This may confuse applications using ioctl(FIEL_IOC_FIEMAP).
-> > > 
-> > > Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
-> > 
-> > Reviewed-by: David Sterba <dsterba@suse.com>
-> > 
-> > > ---
-> > >  fs/btrfs/extent_io.c | 6 +++++-
-> > >  1 file changed, 5 insertions(+), 1 deletion(-)
-> > > 
-> > > diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-> > > index d247fc0..16ece52 100644
-> > > --- a/fs/btrfs/extent_io.c
-> > > +++ b/fs/btrfs/extent_io.c
-> > > @@ -4379,8 +4379,12 @@ int extent_fiemap(struct inode *inode, struct fiemap_extent_info *fieinfo,
-> > >  	if (ret < 0) {
-> > >  		btrfs_free_path(path);
-> > >  		return ret;
-> > > +	} else {
-> > > +		WARN_ON(!ret);
-> > > +		if (ret == 1)
-> > > +			ret = 0;
-> > >  	}
-> > 
-> > So, ret == 1 can end up here from btrfs_lookup_file_extent ->
-> > btrfs_search_slot(..., ins_len=0, cow=0) and the offset does not exist,
-> > we'll get path pointed to the slot where it would be inserted and ret is 1.
-> 
-> Sounds better than the commit log, would you like me to update it?
+btrfs's fiemap is supposed to return 0 on success and
+ return < 0 on error, however, ret becomes 1 after looking
+up the last file extent, and if the offset is beyond EOF,
+we can return 1.
 
-Done.
+This may confuse applications using ioctl(FIEL_IOC_FIEMAP).
+
+Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+---
+ fs/btrfs/extent_io.c | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index d247fc0..16ece52 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -4379,8 +4379,12 @@ int extent_fiemap(struct inode *inode, struct fiemap_extent_info *fieinfo,
+ 	if (ret < 0) {
+ 		btrfs_free_path(path);
+ 		return ret;
++	} else {
++		WARN_ON(!ret);
++		if (ret == 1)
++			ret = 0;
+ 	}
+-	WARN_ON(!ret);
++
+ 	path->slots[0]--;
+ 	btrfs_item_key_to_cpu(path->nodes[0], &found_key, path->slots[0]);
+ 	found_type = found_key.type;
+-- 
+2.5.5
+

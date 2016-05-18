@@ -1,52 +1,41 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:41131 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751243AbcEQOcN (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 17 May 2016 10:32:13 -0400
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id 75D15ACAE
-	for <linux-btrfs@vger.kernel.org>; Tue, 17 May 2016 14:32:07 +0000 (UTC)
-From: David Sterba <dsterba@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.com>
-Subject: [PATCH] btrfs-progs: device usage: report slack space
-Date: Tue, 17 May 2016 16:31:40 +0200
-Message-Id: <1463495500-14983-1-git-send-email-dsterba@suse.com>
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:1807 "EHLO
+	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1752763AbcERVLY (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 18 May 2016 17:11:24 -0400
+Date: Wed, 18 May 2016 17:10:43 -0400
+From: Chris Mason <clm@fb.com>
+To: Stephen Rothwell <sfr@canb.auug.org.au>,
+        LKML <linux-kernel@vger.kernel.org>,
+        btrfs <linux-btrfs@vger.kernel.org>
+CC: David Sterba <dsterba@suse.com>, Filipe Manana <fdmanana@suse.com>
+Subject: incoming merge conflict to linux-next
+Message-ID: <20160518211043.qqzesbrmbbr7xba2@floor.thefacebook.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The total filesystem space on a given device might be smaller than the
-device size. We should report that space as well. The original idea was
-to report the 'occupied' size but the term was not all clear, so the
-logic was reversed to report the slack space.
+Hi Stephen,
 
-Signed-off-by: David Sterba <dsterba@suse.com>
----
- cmds-fi-usage.c | 13 ++++---------
- 1 file changed, 4 insertions(+), 9 deletions(-)
+Dave Sterba's tree in linux-next has a few btrfs patches that we're not
+sending yet into Linus.  We've got an update for Josef's enospc work
+that'll get sent in next week.
 
-diff --git a/cmds-fi-usage.c b/cmds-fi-usage.c
-index 23820066ce26..b26ece1d2ece 100644
---- a/cmds-fi-usage.c
-+++ b/cmds-fi-usage.c
-@@ -1024,13 +1024,8 @@ void print_device_sizes(int fd, struct device_info *devinfo, unsigned unit_mode)
- 	printf("   Device size: %*s%10s\n",
- 		(int)(20 - strlen("Device size")), "",
- 		pretty_size_mode(devinfo->device_size, unit_mode));
--#if 0
--	/*
--	 * The term has not seen an agreement and we don't want to change it
--	 * once it's in non-development branches or even released.
--	 */
--	printf("   FS occupied: %*s%10s\n",
--		(int)(20 - strlen("FS occupied")), "",
--		pretty_size_mode(devinfo->size, unit_mode));
--#endif
-+	printf("   Device slack: %*s%10s\n",
-+		(int)(20 - strlen("Device slack")), "",
-+		pretty_size_mode(devinfo->device_size - devinfo->size,
-+			unit_mode));
- }
--- 
-2.7.1
+So he prepped a pull for me that merged up a number of his branches but
+didn't include Josef's new code.  It has all been in -next for some
+time, and then I put some fixes from Filipe on top.
+
+Long story short, you'll get a merge conflict from my next branch:
+
+https://git.kernel.org/cgit/linux/kernel/git/mason/linux-btrfs.git next
+
+I've got the sample resolution in next-merge:
+
+https://git.kernel.org/cgit/linux/kernel/git/mason/linux-btrfs.git next-merge
+
+Please let us know if you have any problems.
+
+-chris
 

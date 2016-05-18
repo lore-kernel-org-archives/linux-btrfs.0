@@ -1,172 +1,95 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:31922 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751895AbcERBXW (ORCPT
+Received: from mail-oi0-f67.google.com ([209.85.218.67]:36361 "EHLO
+	mail-oi0-f67.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751817AbcERDyP (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 17 May 2016 21:23:22 -0400
-Subject: Re: problems with free space cache
-To: Nicholas D Steeves <nsteeves@gmail.com>,
-        "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-References: <CAD=QJKjop2j+K16nPcAU-bXiCVqm_aGK0g7WxjvTpBvXar+fQQ@mail.gmail.com>
- <85030f6b-b149-ccd2-ea87-42135b9ccd46@cn.fujitsu.com>
- <pan$d4fda$1f29731$4540c768$ab93bd6f@cox.net>
- <03a7da5b-e1e2-81a6-9d0c-ca80c1f52a63@cn.fujitsu.com>
- <9c5605c0-1382-334b-3b6e-9c87b6738164@gmail.com>
- <CAD=QJKgT0PQb-77FwNW-nq7O=ZtgoUmFMs6yvqE22KkTWtFQVA@mail.gmail.com>
-CC: Duncan <1i5t5.duncan@cox.net>, Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <a8e8bf58-39ce-fd27-fd6b-d319fd1ceb33@cn.fujitsu.com>
-Date: Wed, 18 May 2016 09:23:08 +0800
+	Tue, 17 May 2016 23:54:15 -0400
+Received: by mail-oi0-f67.google.com with SMTP id i2so7350119oib.3
+        for <linux-btrfs@vger.kernel.org>; Tue, 17 May 2016 20:54:14 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <CAD=QJKgT0PQb-77FwNW-nq7O=ZtgoUmFMs6yvqE22KkTWtFQVA@mail.gmail.com>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+In-Reply-To: <CAJVJNe6wp-dhDKB2u6x73fk3OQ0KOVozkOEJ-feZn8RT5wOecw@mail.gmail.com>
+References: <CABt16=EDFKFj4duaWJ0qCS_SO9TE2jn8UMCx5e_u+X+M328yeA@mail.gmail.com>
+	<4218ab2f-def8-6541-427d-49091f70e342@gmail.com>
+	<CAJCQCtRCFTEHoGxDMccJx7CLSPwLqSiqhd6--niCzrQ1FtJ+Bg@mail.gmail.com>
+	<CAJVJNe4Ek8UR3Qq+p9fAu3bU-2dCdDcothgR=S6CsQKOo6zKFg@mail.gmail.com>
+	<CAJCQCtTKDoZEKovqm4k=pPNDenDVAiFDGZDMvns4T9DD4tJsZw@mail.gmail.com>
+	<CAJVJNe6wp-dhDKB2u6x73fk3OQ0KOVozkOEJ-feZn8RT5wOecw@mail.gmail.com>
+Date: Tue, 17 May 2016 21:54:13 -0600
+Message-ID: <CAJCQCtT2UxsP+DWbpOyiedFu-GJt0B7Raosjn-oapzagm9MxuA@mail.gmail.com>
+Subject: Re: Corrupted system due to imbalanced metadata chunks
+From: Chris Murphy <lists@colorremedies.com>
+To: Goni Zahavy <goni1993@gmail.com>
+Cc: Chris Murphy <lists@colorremedies.com>,
+        "Austin S. Hemmelgarn" <ahferroin7@gmail.com>,
+        Peter Kese <peter.kese@viidea.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
-
-Nicholas D Steeves wrote on 2016/05/17 14:17 -0400:
-> On 16 May 2016 at 07:36, Austin S. Hemmelgarn <ahferroin7@gmail.com> wrote:
->> On 2016-05-16 02:20, Qu Wenruo wrote:
->>>
->>>
->>>
->>> Duncan wrote on 2016/05/16 05:59 +0000:
->>>>
->>>> Qu Wenruo posted on Mon, 16 May 2016 10:24:23 +0800 as excerpted:
->>>>
->>>>> IIRC clear_cache option is fs level option.
->>>>> So the first mount with clear_cache, then all subvolume will have
->>>>> clear_cache.
->>>>
->>>>
->>>> Question:  Does clear_cache work with a read-only mount?
->>>
->>> Good question.
->>>
->>> But easy to check.
->>> I just checked it and found even that's possible, it doesn't work.
+On Tue, May 17, 2016 at 3:58 PM, Goni Zahavy <goni1993@gmail.com> wrote:
+> On 5/18/16, Chris Murphy <lists@colorremedies.com> wrote:
+>> On Tue, May 17, 2016 at 2:27 PM, Goni Zahavy <goni1993@gmail.com> wrote:
+>>> Guys, just remember that this crappy-installer behavior works
+>>> "as-expected"
+>>> on every other filesystem.
+>>
+>> It also fails as expected on every other file system if the upgrade is
+>> interrupted for reasons that have nothing to do with the file system;
+>> what's in common is the lack of a fail safe upgrade design. And this
+>> is not a ding on Ubuntu, it's a widespread and well recognized risk.
+>> All that's happening here is Btrfs has one more vector to expose that
+>> deficiency.
 >
-> +1  I had to use my USB flash rescue disk to mount with clear_cache.
->
->>> Free space cache inode bytenr doesn't change and no generation change.
->>> While without ro, it did rebuild free space cache for *SOME* chunks, not
->>> *ALL* chunks.
->>>
->>> And that's the problem I'm just chasing today.
->
-> +1  Unfortunately, it didn't fix the affected free space cache files.
->
->>> Short conclude: clear_cache mount option will only rebuild free space
->>> cache for chunks which we allocated space from, during the mount time of
->>> clear_cache.
->>> (Maybe I'm just out-of-date and some other devs may already know that)
->
-> Does this mean creating a huge file filled with zeros, while mounted
-> with clear_cache would solve this?  I think that would be faster than
-> a full rebalance, but I'm not convinced it would work, because of #1
-> (see below).
+> I fully agree, but I talked about the "many small files unpacked to
+> temp on disk location then copied.." which is just plain badness
 
-No, it won't work, or at least won't work for all chunks.
+I think the idea is that if it's overwriting in the live tree as it
+unpacks, there's a long time where it can be interrupted and any
+interruption puts the system in an ambiguous state with a mix of old
+and new binaries.
 
-Even you create a large file which would take up, for example, 50% of 
-your total btrfs space.
+Where if the unpacking happens elsewhere and is then moved, it's not
+committed until fsync of files and containing directory. While it can
+still be interrupted the time frame for this is much smaller so
+there's a better chance you get all old files or all updated files,
+and not some in between state.
 
-It's still very possible that a lot of existing data chunk won't be 
-modified, and their space cache is not not updated.
-
-Not to mention that the large file won't cause too much metadata 
-pressure to modify many metadata block group.
-
-So without the new fsck method to offline clean space cache, either full 
-balance with clear_cache mount option, or change kernel to do super slow 
-mount to clean all free space cache.
-
->
-> One of the following might have caused this situation:
->
-> 1) I created a new subvolume, and tested a full restore from
-> (non-btrfs aware) backups to this subvolume; some time later,
-> verification (rsync -c with other options) completed, and the backup
-> was confirmed to be usable; I deleted the subvolume and watched the
-> cleaner get to work and reduce the allocated space, remembering a time
-> a balance was necessary.  If this is what caused it, cloud there be a
-> bug in the cleaner and/or cleaner<->space_cache interaction?
-
-Unforunately, not sure, as I'm not familiar with btrfs cleaner thread.
-But as long as fsck doesn't complain anything other than free space 
-cache, cleaner thread is at least not causing big problem.
-
->
-> 2) The same week I reorganised several hundred gigabytes of short term
-> backups, moving them from one subvolume to another.  I used cp -ar
-> --reflink=always from within /btrfs-admin, which is where I mount the
-> whole volume, because / is subvol=rootfs.  After the copy I removed
-> the source, then used the checksums I keep in my short-term backup
-> directory to verify everything was ok (I could have restored from a
-> fresh long-term backup if this failed).  As expected, everything was
-> ok.  If this is what caused the free space cache bug, then could there
-> be a bug in the intersubvolume reflink code?
->
->>> That behavior makes things a little confusing, which users may continue
->>> hitting annoying free space cache warning from kernel, even they try to
->>> use clear_cache mount option.
->
-> So this warning is totally harmless and will not cause future problems?
-
-Yes, at least for end-user. (despite the possible allocation performance 
-impact)
-
-For developer, this may means there is something wrong preventing us 
-from commit free space cache to disk.
-
->
->>> Anyway, I'll add ability for manually wipe out all/given free space
->>> cache to btrfsck, at least creating a solution to really rebuild all v1
->>> free space cache.
->
-> Nice!  Am I correct in understanding that this is as safe as a full
-> balance, and not dangerous like btrfs check --repair?  Is it likely
-> that the v2 free space cache will be default by linux-4.10?
-
-I'm not certain about how safe full balance is.
-(Common problem like ENOSPC will still prevent you from real *full* balance)
-However, as balance is long tested and reviewed function, I assume it's 
-still safer than current "btrfsck --clear-space-cache".
-
-But at least, a little less dangerous than --repair.
-If specifying to clear space cache, it will override the --repair 
-option, and only to clear space cache.
-So even carelessly typed "--clear-space-cache --repair", it will only 
-clear cache.
-
-And we designed the behavior to use transaction to protect most operation.
-Every space cache inode deletion is in one transaction.
-If bad things happened half way, only operation successfully done will 
-be write to disk.
+It might be a case of necessity rather than preferred design.
 
 
-BUT! as the patchset has not been fully reviewed, it can still cause 
-problem, and further more, for some extreme case, like the whole tree 
-root already contains corrupted data, it may still cause problems.
+> It's great that we have workarounds for the user/distribution to
+> apply. And If this is a known issue, I would expect that Peter Kese
+> would be answered here with "it's a known issue, here is how you can
+> work around it the next time. And it was written in underlined bold
+> warning on this wiki page. Stay tuned.".
+
+Known issue yes.
+
+https://btrfs.wiki.kernel.org/index.php/FAQ#Help.21_Btrfs_claims_I.27m_out_of_space.2C_but_it_looks_like_I_should_have_lots_left.21
+
+But it can be triggered by different workloads and it may not always
+be that the fs can't allocate a new metadata chunk. It's a tricky
+problem. And it doesn't always happen.
 
 
-So currently, it's still dangerous than read-only fsck, but IMHO less 
-dangerous than --repair/--init-extent-tree.
+> In addition, I would expect bugs like this one that hit even simple
+> single-mode setups to be prioritized way way higher then any new
+> feature or even some existing advanced feature enhancements.
 
-Thans,
-Qu
->
->> FWIW, I think it's possible to do this by mounting with clear_cache and then
->> running a full balance on the filesystem.  Having an option to do this on an
->> unmounted FS would be preferred of course, as that would almost certainly
->> be more efficient on any reasonably sized filesystem.
->
-> I'm running a balance now, like it's 2015! ;-)
->
-> Thank you,
-> Nicholas
->
->
+Well I know at least one of the three upstream maintainers has been
+working on the enospc problem since at least 2009, until at least
+March of this year when his "Enospc rework" patches for review popped
+up on the list. That work is in linux-next right now, so it looks like
+it appears in kernel 4.7.
+
+But that's maybe orthogonal to the trickiness of getting df to report
+something both semi-sane and consistently so, for the inevitable and
+enduring apps that'll remain naive, as Austin aptly puts it, about the
+actual space available on the file system. The problem there is that
+there are in effect two free spaces on Btrfs depending on what and how
+much is going to get written.
 
 
+-- 
+Chris Murphy

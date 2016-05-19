@@ -1,130 +1,124 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:27406 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751297AbcESBda (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 18 May 2016 21:33:30 -0400
+Received: from plane.gmane.org ([80.91.229.3]:38020 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750790AbcESEJp (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 19 May 2016 00:09:45 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+	id 1b3FHK-0006pl-A7
+	for linux-btrfs@vger.kernel.org; Thu, 19 May 2016 06:09:42 +0200
+Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Thu, 19 May 2016 06:09:42 +0200
+Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Thu, 19 May 2016 06:09:42 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
 Subject: Re: Reducing impact of periodic btrfs balance
-To: Graham Cobb <g.btrfs@cobb.uk.net>, <linux-btrfs@vger.kernel.org>
+Date: Thu, 19 May 2016 04:09:31 +0000 (UTC)
+Message-ID: <pan$549b5$526f9b98$5d8778de$5121c19f@cox.net>
 References: <573C6E47.2080109@cobb.uk.net>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <d40d8fc7-3766-1ccc-3253-9f870a0f4f85@cn.fujitsu.com>
-Date: Thu, 19 May 2016 09:33:19 +0800
-MIME-Version: 1.0
-In-Reply-To: <573C6E47.2080109@cobb.uk.net>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+	<d40d8fc7-3766-1ccc-3253-9f870a0f4f85@cn.fujitsu.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Qu Wenruo posted on Thu, 19 May 2016 09:33:19 +0800 as excerpted:
+
+> Graham Cobb wrote on 2016/05/18 14:29 +0100:
+>> Hi,
+>>
+>> I have a 6TB btrfs filesystem I created last year (about 60% used).  It
+>> is my main data disk for my home server so it gets a lot of usage
+>> (particularly mail). I do frequent snapshots (using btrbk) so I have a
+>> lot of snapshots (about 1500 now, although it was about double that
+>> until I cut back the retention times recently).
+> 
+> Even at 1500, it's still quite large, especially when they are all
+> snapshots.
+> 
+> The biggest problem of large amount of snapshots is, it will make any
+> backref walk operation very slow. (O(n^3)~O(n^4))
+> This includes: btrfs qgroup and balance, even fiemap (recently submitted
+> patch will solve fiemap problem though)
+> 
+> The btrfs design ensures snapshot creation fast, but that comes with the
+> cost of backref walk.
+> 
+> 
+> So, unless some super huge rework, I would prefer to keep the number of
+> snapshots to a small amount, or avoid balance/qgroup.
+
+Qu and Graham,
+
+As you may have seen on my previous posts, my normal snapshots 
+recommendation is to try to keep under 250-300 per subvolume, and 
+definitely under 3000 max, 2000 preferably, and 1000 if being 
+conservative, per filesystem, thus allowing snapshotting of 6-8 
+subvolumes per filesystem before hitting the filesystem cap, due to 
+scaling issues like the above that are directly related to number of 
+snapshots.  
+
+Also, recognizing that the btrfs quota code dramatically compounds the 
+scaling issues, as well as because of the btrfs quota functionality still 
+never actually working fully correctly on btrfs, I recommend turning it 
+off unless it's definitely and specifically known to be needed, and if 
+it's actually needed, I recommend strong consideration be given to use of 
+a more mature filesystem where quotas are known to work reliably without 
+the scaling issues they present on btrfs.
 
 
-Graham Cobb wrote on 2016/05/18 14:29 +0100:
-> Hi,
->
-> I have a 6TB btrfs filesystem I created last year (about 60% used).  It
-> is my main data disk for my home server so it gets a lot of usage
-> (particularly mail). I do frequent snapshots (using btrbk) so I have a
-> lot of snapshots (about 1500 now, although it was about double that
-> until I cut back the retention times recently).
+So to Graham, are these 1.5K snapshots all of the same subvolume, or 
+split into snapshots of several subvolumes?  If it's all of the same 
+subvolume or of only 2-3 subvolumes, you still have some work to do in 
+terms of getting down to recommended snapshot levels.  Also, if you have 
+quotas on and don't specifically need them, try turning them off and see 
+if that alone makes it workable.
 
-Even at 1500, it's still quite large, especially when they are all 
-snapshots.
+It's worth noting that a reasonable snapshot thinning program can help 
+quite a bit here, letting you still keep a reasonable retention, and that 
+250-300 snapshots per subvolume fits very well within that model.  
+Consider, if you're starting with say hourly snapshots, a year or even 
+three months out, are you really going to care what specific hourly 
+snapshot you retrieve a file from, or would daily or weekly snapshots do 
+just as well and actually make finding an appropriate snapshot easier as 
+there's less to go thru?
 
-The biggest problem of large amount of snapshots is, it will make any 
-backref walk operation very slow. (O(n^3)~O(n^4))
-This includes: btrfs qgroup and balance, even fiemap (recently submitted 
-patch will solve fiemap problem though)
+Generally speaking, most people starting with hourly snapshots can delete 
+every other snapshot, thinning by at least half, within a day or two, and 
+those doing snapshots even more frequently can thin down to at least 
+hourly within hours even, since if you haven't noticed a mistaken 
+deletion or whatever within a few hours, chances are good that recovery 
+from hourly snapshots is more than practical, and if you haven't noticed 
+it within a day or two, recovery from say two-hourly or six-hourly 
+snapshots will be fine.  Similarly, a week out, most people can thin to 
+twice-daily or daily snapshots, and by 4 weeks out, perhaps to Monday/
+Wednesday/Friday snapshots.  By 13 weeks (one quarter) out, weekly 
+snapshots are often fine, and by six months (26 weeks) out, thinning to 
+quarterly (13-week) snapshots may be practical.  If not, it certainly 
+should be within a year, tho well before a year is out, backups to 
+separate media should have taken over allowing the oldest snapshots be 
+dropped, finally reclaiming the space they were keeping locked up.
 
-The btrfs design ensures snapshot creation fast, but that comes with the 
-cost of backref walk.
 
+And primarily to Qu...
 
-So, unless some super huge rework, I would prefer to keep the number of 
-snapshots to a small amount, or avoid balance/qgroup.
+Is that 2K snapshots overall filesystem cap recommendation still too 
+high, even if per-subvolume snapshots are limited to 300-ish?  Or is the 
+real problem per-subvolume snapshots, and as long as snapshots are 
+limited to 300ish per subvolume, for people who have gone subvolume mad 
+and have say 50 separate subvolumes being snapshotted (perhaps not too 
+unreasonable in a VM context with each VM on its own subvolume), if a 
+300ish cap per subvolume is maintained, the 15K total snapshots per 
+filesystem should still work reasonably well, so I should be able to drop 
+the overall filesystem cap recommendation and simply recommend a per-
+subvolume snapshot cap of a few hundred?
 
->
-> A while ago I had a "no space" problem (despite fi df, fi show and fi
-> usage all agreeing I had over 1TB free).  But this email isn't about that.
->
-> As part of fixing that problem, I tried to do a "balance -dusage=20" on
-> the disk.  I was expecting it to have system impact, but it was a major
-> disaster.  The balance didn't just run for a long time, it locked out
-> all activity on the disk for hours.  A simple "touch" command to create
-> one file took over an hour.
-
-It seems that balance blocked a transaction for a long time, which makes 
-your touch operation to wait for that transaction to end.
-
->
-> More seriously, because of that, mail was being lost: all mail delivery
-> timed out and the timeout error was interpreted as a fatal delivery
-> error causing mail to be discarded, mailing lists to cancel
-> subscriptions, etc. The balance never completed, of course.  I
-> eventually got it cancelled.
->
-> I have since managed to complete the "balance -dusage=20" by running it
-> repeatedly with "limit=N" (for small N).  I wrote a script to automate
-> that process, and rerun it every week.  If anyone is interested, the
-> script is on GitHub: https://github.com/GrahamCobb/btrfs-balance-slowly
->
-> Out of that experience, I have a couple of thoughts about how to
-> possibly make balance more friendly.
->
-> 1) It looks like the balance process seems to (effectively) lock all
-> file (extent?) creation for long periods of time.  Would it be possible
-> for balance to make more effort to yield locks to allow other
-> processes/threads to get in to continue to create/write files while it
-> is running?
-
-Balance doesn't really lock the whole file system, and in fact itself 
-will only lock(mark readonly) one block group (normally in 1G size).
-
-But unfortunately, balance will hold one transaction for one block 
-group, and that's the whole fs level, may blocks unrelated write operation.
-
->
-> 2) btrfs scrub has options to set ionice options.  Could balance have
-> something similar?  Or would reducing the IO priority make things worse
-> because locks would be held for longer?
-
-IMHO The problem is not about IO.
-If using iotop, you would find that the IO active not that high, while 
-CPU usage would be near 100% for one core.
-
->
-> 3) My btrfs-balance-slowly script would work better if there was a
-> time-based limit filter for balance, not just the current count-based
-> filter.  I would like to be able to say, for example, run balance for no
-> more than 10 minutes (completing the operation in progress, of course)
-> then return.
-
-As btrfs balance is done in block group unit, I'm afraid such thing 
-would be a little tricky to implement.
-
->
-> 4) My btrfs-balance-slowly script would be more reliable if there was a
-> way to get an indication of whether there was more work to be done,
-> instead of parsing the output for the number of relocations.
->
-> Any thoughts about these?  Or other things I could be doing to reduce
-> the impact on my services?
-
-Would you try to remove unneeded snapshots and disable qgroup if you're 
-using it?
-
-If it's possible, it's better to remove *ALL* snapshots to minimize the 
-backref walk pressure and then retry the balance.
-
-Thanks,
-Qu
-
->
-> Graham
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
->
-
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 

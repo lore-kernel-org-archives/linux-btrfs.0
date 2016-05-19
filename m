@@ -1,54 +1,249 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oi0-f53.google.com ([209.85.218.53]:35259 "EHLO
-	mail-oi0-f53.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932632AbcERR1R (ORCPT
+Received: from mail-ig0-f196.google.com ([209.85.213.196]:34061 "EHLO
+	mail-ig0-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753908AbcESLBh (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 18 May 2016 13:27:17 -0400
-Received: by mail-oi0-f53.google.com with SMTP id x19so87979051oix.2
-        for <linux-btrfs@vger.kernel.org>; Wed, 18 May 2016 10:27:17 -0700 (PDT)
+	Thu, 19 May 2016 07:01:37 -0400
+Received: by mail-ig0-f196.google.com with SMTP id kj7so7102564igb.1
+        for <linux-btrfs@vger.kernel.org>; Thu, 19 May 2016 04:01:36 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <2111761.fDjS2Kou6B@localhost.localdomain>
-References: <CAPvkgC0RavB6JrfVrnM0EZGxyy4r1vBCUNAtWKfguvBSBK-JOw@mail.gmail.com>
-	<2111761.fDjS2Kou6B@localhost.localdomain>
-Date: Wed, 18 May 2016 18:27:16 +0100
-Message-ID: <CAPvkgC1b0nL-bdEwQnfavBFsno+G83zw4y1eOxxQSDWkCneKWA@mail.gmail.com>
-Subject: Re: btrfs self tests fail on arm64, kernel 4.6
-From: Steve Capper <steve.capper@linaro.org>
-To: Chandan Rajendra <chandan@linux.vnet.ibm.com>
-Cc: linux-btrfs@vger.kernel.org, Catalin Marinas <catalin.marinas@arm.com>,
-        Will Deacon <will.deacon@arm.com>
+Reply-To: fdmanana@gmail.com
+In-Reply-To: <1463654949-8295-1-git-send-email-wangxg.fnst@cn.fujitsu.com>
+References: <1463654949-8295-1-git-send-email-wangxg.fnst@cn.fujitsu.com>
+Date: Thu, 19 May 2016 12:01:35 +0100
+Message-ID: <CAL3q7H67C_6N8vBLs7uQ49aXNL6ek6hJ=C5-_8QG6geOS4U4gg@mail.gmail.com>
+Subject: Re: [RFC PATCH] btrfs: correct inode's outstanding_extents computation
+From: Filipe Manana <fdmanana@gmail.com>
+To: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 18 May 2016 at 17:58, Chandan Rajendra <chandan@linux.vnet.ibm.com> wrote:
-> On Wednesday 18 May 2016 16:46:49 Steve Capper wrote:
->> Hello,
->> I am running into issues running the btrfs self tests from 4.6 on an
->> arm64 system with PAGE_SIZE=64K.
->> Poking around in recalculate_thresholds(), I got the following values:
->> size = 1073741824
->> ctl->unit = 4096
->> bytes_per_bg = 2147483648
->> max_bitmaps = 1
->>
->> I am not sure where the problem is as I'm not familiar with btrfs.
->>
->> A panic log can be found below.
->>
->> Is this a known problem?
->>
->> Are there any more diagnostics I could perform, that would be helpful?
->>
+On Thu, May 19, 2016 at 11:49 AM, Wang Xiaoguang
+<wangxg.fnst@cn.fujitsu.com> wrote:
+> This issue was revealed by modifing BTRFS_MAX_EXTENT_SIZE(128MB) to 64KB,
+> When modifing BTRFS_MAX_EXTENT_SIZE(128MB) to 64KB, fsstress test often gets
+> these warnings from btrfs_destroy_inode():
+>         WARN_ON(BTRFS_I(inode)->outstanding_extents);
+>         WARN_ON(BTRFS_I(inode)->reserved_extents);
 >
-> Hi Steve,
+> Simple test program below can reproduce this issue steadily.
+>         #include <string.h>
+>         #include <unistd.h>
+>         #include <sys/types.h>
+>         #include <sys/stat.h>
+>         #include <fcntl.h>
 >
-> The fixes for selftests with respect to 64K block size will be posted soon. I
-> am currently testing the changes that have been made.
+>         int main(void)
+>         {
+>                 int fd;
+>                 char buf[1024*1024];
+>
+>                 memset(buf, 0, 1024 * 1024);
+>                 fd = open("testfile", O_CREAT | O_EXCL | O_RDWR);
+>                 pwrite(fd, buf, 69954, 693581);
+>                 return;
+>         }
+>
+> Assume the BTRFS_MAX_EXTENT_SIZE is 64KB, and data range is:
+> 692224                                                                             765951
+> |----------------------------------------------------------------------------------|
+>                          len(73728)
+> 1) for the above data range, btrfs_delalloc_reserve_metadata() will reserve
+> metadata and BTRFS_I(inode)->outstanding_extents will be 2.
+> (73728 + 65535) / 65536 == 2
+>
+> 2) then btrfs_dirty_page() will be called to dirty pages and set EXTENT_DELALLOC
+> flag. In this case, btrfs_set_bit_hook will be called 3 times. For first call,
+> there will be such extent io map.
+> 692224                 696319 696320                                                765951
+> |----------------------|      |-----------------------------------------------------|
+>        len(4096)                                len(69632)
+>     have EXTENT_DELALLOC
+> and because of having EXTENT_FIRST_DELALLOC, btrfs_set_bit_hook() won't change
+> BTRFS_I(inode)->outstanding_extents, still be 2. see code logic in btrfs_set_bit_hook();
+>
+> 3) second btrfs_set_bit_hook() call.
+> Because of EXTENT_FIRST_DELALLOC have been unset by previous btrfs_set_bit_hook(),
+> btrfs_set_bit_hook will increase BTRFS_I(inode)->outstanding_extents by one, so now
+> BTRFS_I(inode)->outstanding_extents, sitll is 3. There will be such extent_io map:
+> 692224               696319 696320                761855 761856                     765951
+> |--------------------|      |---------------------|      |--------------------------|
+>     len(4096)                     len(65536)                     len(4096)
+>     have EXTENT_DELALLOC      have EXTENT_DELALLOC
+>
+> And because (692224, 696319) and (696320, 761855) is adjacent, btrfs_merge_extent_hook()
+> will merge them into one delalloc extent, but according to the compulation logic in
+> btrfs_merge_extent_hook(), BTRFS_I(inode)->outstanding_extents will still be 3.
+> After merge, tehre will bu such extent_io map:
+> 692224                                            761855 761856                     765951
+> |-------------------------------------------------|      |--------------------------|
+>                len(69632)                                         len(4096)
+>           have EXTENT_DELALLOC
+>
+> 4) third btrfs_set_bit_hook() call.
+> Also because of EXTENT_FIRST_DELALLOC have not been set, btrfs_set_bit_hook will increase
+> BTRFS_I(inode)->outstanding_extents by one, so now BTRFS_I(inode)->outstanding_extents is 4.
+> The extent io map is:
+> 692224                                            761855 761856                     765951
+> |-------------------------------------------------|      |--------------------------|
+>                len(69632)                                         len(4096)
+>           have EXTENT_DELALLOC                                have EXTENT_DELALLOC
+>
+> Also because (692224, 761855) and (761856, 765951) is adjacent, btrfs_merge_extent_hook()
+> will merge them into one delalloc extent, according to the compulation logic in
+> btrfs_merge_extent_hook(), BTRFS_I(inode)->outstanding_extents will decrease by one, be 3.
+> so after merge, tehre will bu such extent_io map:
+> 692224                                                                              765951
+> |-----------------------------------------------------------------------------------|
+>                                      len(73728)
+>                                have EXTENT_DELALLOC
+>
+> But indeed for original data range(start:692224 end:765951 len:73728), we just should
+> have 2 outstanding extents, so it will trigger the above WARNINGs.
+>
+> The root casue is that btrfs_delalloc_reserve_metadata() will always add needed outstanding
+> extents first, and if later btrfs_set_extent_delalloc call multiple btrfs_set_bit_hook(),
+> it may wrongly update BTRFS_I(inode)->outstanding_extents, This patch choose to also add
+> BTRFS_I(inode)->outstanding_extents in btrfs_set_bit_hook() according to the data range length,
+> and the added value is the correct number of outstanding_extents for this data range, then
+> decrease the value which was added in btrfs_delalloc_reserve_metadata().
+>
+> As for why BTRFS_MAX_EXTENT_SIZE(128M) does not trigger above WARNINGs, this is because
+> __btrfs_buffered_write() internally have write limits for every iteration(it seems 2MB),
+> so btrfs_dirty_pages() will always make data range into one outstanding extent.
+>
+> Signed-off-by: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
 
-Ahh okay, thanks Chandan.
-Please cc me in the fixes and I can give them a quick test here too.
+I haven't reviewed the code nor the the changelog, but from reading
+the test program and regardless of your fix, this should be trivial to
+test with xfs_io and make a test case for xfstests.
+So please write and submit a testcase for xfstests (taking into
+account the extent splitting happens at 128Mb of course).
 
-Cheers,
---
-Steve
+Thanks.
+
+> ---
+>  fs/btrfs/ctree.h |  2 ++
+>  fs/btrfs/inode.c | 47 ++++++++++++++++++++++++++++++++++++++++++-----
+>  fs/btrfs/ioctl.c |  5 ++---
+>  3 files changed, 46 insertions(+), 8 deletions(-)
+>
+> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+> index 84a6a5b..da9ee24 100644
+> --- a/fs/btrfs/ctree.h
+> +++ b/fs/btrfs/ctree.h
+> @@ -4072,6 +4072,8 @@ int btrfs_start_delalloc_roots(struct btrfs_fs_info *fs_info, int delay_iput,
+>                                int nr);
+>  int btrfs_set_extent_delalloc(struct inode *inode, u64 start, u64 end,
+>                               struct extent_state **cached_state);
+> +int btrfs_set_extent_defrag(struct inode *inode, u64 start, u64 end,
+> +                           struct extent_state **cached_state);
+>  int btrfs_create_subvol_root(struct btrfs_trans_handle *trans,
+>                              struct btrfs_root *new_root,
+>                              struct btrfs_root *parent_root,
+> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+> index 41a5688..5144f45 100644
+> --- a/fs/btrfs/inode.c
+> +++ b/fs/btrfs/inode.c
+> @@ -1713,13 +1713,16 @@ static void btrfs_set_bit_hook(struct inode *inode,
+>         if (!(state->state & EXTENT_DELALLOC) && (*bits & EXTENT_DELALLOC)) {
+>                 struct btrfs_root *root = BTRFS_I(inode)->root;
+>                 u64 len = state->end + 1 - state->start;
+> +               u64 num_extents = div64_u64(len + BTRFS_MAX_EXTENT_SIZE - 1,
+> +                                           BTRFS_MAX_EXTENT_SIZE);
+>                 bool do_list = !btrfs_is_free_space_inode(inode);
+>
+> -               if (*bits & EXTENT_FIRST_DELALLOC) {
+> +               if (*bits & EXTENT_FIRST_DELALLOC)
+>                         *bits &= ~EXTENT_FIRST_DELALLOC;
+> -               } else {
+> +
+> +               if (root != root->fs_info->tree_root) {
+>                         spin_lock(&BTRFS_I(inode)->lock);
+> -                       BTRFS_I(inode)->outstanding_extents++;
+> +                       BTRFS_I(inode)->outstanding_extents += num_extents;
+>                         spin_unlock(&BTRFS_I(inode)->lock);
+>                 }
+>
+> @@ -1960,9 +1963,43 @@ static noinline int add_pending_csums(struct btrfs_trans_handle *trans,
+>  int btrfs_set_extent_delalloc(struct inode *inode, u64 start, u64 end,
+>                               struct extent_state **cached_state)
+>  {
+> +       int ret;
+> +       struct btrfs_root *root = BTRFS_I(inode)->root;
+> +       u64 num_extents = div64_u64(end - start + BTRFS_MAX_EXTENT_SIZE,
+> +                                   BTRFS_MAX_EXTENT_SIZE);
+> +
+> +       WARN_ON((end & (PAGE_CACHE_SIZE - 1)) == 0);
+> +       ret = set_extent_delalloc(&BTRFS_I(inode)->io_tree, start, end,
+> +                                 cached_state, GFP_NOFS);
+> +
+> +       if (root != root->fs_info->tree_root) {
+> +               spin_lock(&BTRFS_I(inode)->lock);
+> +               BTRFS_I(inode)->outstanding_extents -= num_extents;
+> +               spin_unlock(&BTRFS_I(inode)->lock);
+> +       }
+> +
+> +       return ret;
+> +}
+> +
+> +int btrfs_set_extent_defrag(struct inode *inode, u64 start, u64 end,
+> +                           struct extent_state **cached_state)
+> +{
+> +       int ret;
+> +       struct btrfs_root *root = BTRFS_I(inode)->root;
+> +       u64 num_extents = div64_u64(end - start + BTRFS_MAX_EXTENT_SIZE,
+> +                                   BTRFS_MAX_EXTENT_SIZE);
+> +
+>         WARN_ON((end & (PAGE_CACHE_SIZE - 1)) == 0);
+> -       return set_extent_delalloc(&BTRFS_I(inode)->io_tree, start, end,
+> -                                  cached_state, GFP_NOFS);
+> +       ret = set_extent_defrag(&BTRFS_I(inode)->io_tree, start, end,
+> +                               cached_state, GFP_NOFS);
+> +
+> +       if (root != root->fs_info->tree_root) {
+> +               spin_lock(&BTRFS_I(inode)->lock);
+> +               BTRFS_I(inode)->outstanding_extents -= num_extents;
+> +               spin_unlock(&BTRFS_I(inode)->lock);
+> +       }
+> +
+> +       return ret;
+>  }
+>
+>  /* see btrfs_writepage_start_hook for details on why this is required */
+> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+> index 21423dd..149d11e 100644
+> --- a/fs/btrfs/ioctl.c
+> +++ b/fs/btrfs/ioctl.c
+> @@ -1227,9 +1227,8 @@ again:
+>         }
+>
+>
+> -       set_extent_defrag(&BTRFS_I(inode)->io_tree, page_start, page_end - 1,
+> -                         &cached_state, GFP_NOFS);
+> -
+> +       btrfs_set_extent_defrag(inode, page_start,
+> +                               page_end - 1, &cached_state);
+>         unlock_extent_cached(&BTRFS_I(inode)->io_tree,
+>                              page_start, page_end - 1, &cached_state,
+>                              GFP_NOFS);
+> --
+> 1.8.3.1
+>
+>
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+
+
+
+-- 
+Filipe David Manana,
+
+"Reasonable men adapt themselves to the world.
+ Unreasonable men adapt the world to themselves.
+ That's why all progress depends on unreasonable men."

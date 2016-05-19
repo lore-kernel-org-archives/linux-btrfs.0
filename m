@@ -1,27 +1,35 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oi0-f66.google.com ([209.85.218.66]:32977 "EHLO
-	mail-oi0-f66.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753864AbcESIhH (ORCPT
+Received: from mail-wm0-f43.google.com ([74.125.82.43]:38580 "EHLO
+	mail-wm0-f43.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752061AbcESJFY (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 19 May 2016 04:37:07 -0400
-Received: by mail-oi0-f66.google.com with SMTP id t140so14884621oie.0
-        for <linux-btrfs@vger.kernel.org>; Thu, 19 May 2016 01:37:07 -0700 (PDT)
-MIME-Version: 1.0
-Date: Thu, 19 May 2016 10:20:13 +0200
-Message-ID: <CAJfpeguD-S=CEogqcDOYAYJBzfyJG=MMKyFfpMo55bQk7d0_TQ@mail.gmail.com>
-Subject: sharing page cache pages between multiple mappings
-From: Miklos Szeredi <miklos@szeredi.hu>
-To: linux-mm@kvack.org, linux-fsdevel@vger.kernel.org,
+	Thu, 19 May 2016 05:05:24 -0400
+Date: Thu, 19 May 2016 11:05:21 +0200
+From: Michal Hocko <mhocko@kernel.org>
+To: Miklos Szeredi <miklos@szeredi.hu>
+Cc: linux-mm@kvack.org, linux-fsdevel@vger.kernel.org,
         linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+Subject: Re: sharing page cache pages between multiple mappings
+Message-ID: <20160519090521.GA26114@dhcp22.suse.cz>
+References: <CAJfpeguD-S=CEogqcDOYAYJBzfyJG=MMKyFfpMo55bQk7d0_TQ@mail.gmail.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <CAJfpeguD-S=CEogqcDOYAYJBzfyJG=MMKyFfpMo55bQk7d0_TQ@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Has anyone thought about sharing pages between multiple files?
+On Thu 19-05-16 10:20:13, Miklos Szeredi wrote:
+> Has anyone thought about sharing pages between multiple files?
+> 
+> The obvious application is for COW filesytems where there are
+> logically distinct files that physically share data and could easily
+> share the cache as well if there was infrastructure for it.
 
-The obvious application is for COW filesytems where there are
-logically distinct files that physically share data and could easily
-share the cache as well if there was infrastructure for it.
+FYI this has been discussed at LSFMM this year[1]. I wasn't at the
+session so cannot tell you any details but the LWN article covers it at
+least briefly.
 
-Thanks,
-Miklos
+[1] https://lwn.net/Articles/684826/
+-- 
+Michal Hocko
+SUSE Labs

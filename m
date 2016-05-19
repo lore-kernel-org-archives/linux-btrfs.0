@@ -1,83 +1,91 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:37899 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1750867AbcEQWCI (ORCPT
+Received: from ipmail07.adl2.internode.on.net ([150.101.137.131]:49277 "EHLO
+	ipmail07.adl2.internode.on.net" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1754951AbcESXsV (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 17 May 2016 18:02:08 -0400
-Date: Tue, 17 May 2016 18:01:43 -0400
-From: Chris Mason <clm@fb.com>
-To: Adam Borowski <kilobyte@angband.pl>
-CC: <linux-btrfs@vger.kernel.org>, <dsj@fb.com>,
-        Jakob =?iso-8859-1?Q?Sch=FCrz?= <wertstoffe@nurfuerspam.de>,
-        Christian Borntraeger <borntraeger@de.ibm.com>,
-        Markus Trippelsdorf <markus@trippelsdorf.de>
-Subject: Re: [PATCH] Btrfs: fix handling of faults from btrfs_copy_from_user
-Message-ID: <20160517220143.hboszkdhfioxkbpy@floor.thefacebook.com>
-References: <20160516210655.sfsjtj5oleeksaxq@floor.thefacebook.com>
- <20160517151451.GA3882@angband.pl>
- <20160517162344.3znjdtgvfke2ouke@floor.thefacebook.com>
- <20160517204726.GA4851@angband.pl>
- <20160517210049.cjqryttwjxgsszkv@floor.thefacebook.com>
- <20160517215707.GA9430@angband.pl>
+	Thu, 19 May 2016 19:48:21 -0400
+Date: Fri, 20 May 2016 09:48:15 +1000
+From: Dave Chinner <david@fromorbit.com>
+To: Miklos Szeredi <miklos@szeredi.hu>
+Cc: Michal Hocko <mhocko@kernel.org>, linux-mm@kvack.org,
+        linux-fsdevel@vger.kernel.org, linux-kernel@vger.kernel.org,
+        linux-btrfs@vger.kernel.org,
+        "Darrick J. Wong" <darrick.wong@oracle.com>
+Subject: Re: sharing page cache pages between multiple mappings
+Message-ID: <20160519234815.GH21200@dastard>
+References: <CAJfpeguD-S=CEogqcDOYAYJBzfyJG=MMKyFfpMo55bQk7d0_TQ@mail.gmail.com>
+ <20160519090521.GA26114@dhcp22.suse.cz>
+ <CAJfpegvqPrP=AtaOSwMX1s=-oVAEE97NMwEHUkg93dBWvOykHw@mail.gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-In-Reply-To: <20160517215707.GA9430@angband.pl>
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <CAJfpegvqPrP=AtaOSwMX1s=-oVAEE97NMwEHUkg93dBWvOykHw@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, May 17, 2016 at 11:57:07PM +0200, Adam Borowski wrote:
-> On Tue, May 17, 2016 at 05:00:49PM -0400, Chris Mason wrote:
-> > On Tue, May 17, 2016 at 10:47:27PM +0200, Adam Borowski wrote:
-> > > > Hmmm, some of your traces mentioned compression, do you have compression
-> > > > enabled?
-> > > 
-> > > Yeah, I mount with noatime,compress=lzo.
-> > > 
-> > > > Also, if you can gdb your vmlinux (or btrfs.ko) and find this line:
-> > > > 
-> > > > gdb> list *__btrfs_buffered_write+0x748
-> > > 
-> > > 0xffffffff8152eb78 is in __btrfs_buffered_write (fs/btrfs/file.c:1564).
-> > > 1559	
-> > > 1560	reserve_metadata:
-> > > 1561			ret = btrfs_delalloc_reserve_metadata(inode, reserve_bytes);
-> > > 1562			if (ret) {
-> > > 1563				if (!only_release_metadata)
-> > > 1564					btrfs_free_reserved_data_space(inode, pos,
-> > > 1565								       write_bytes);
-> > > 1566				else
-> > > 1567					btrfs_end_write_no_snapshoting(root);
-> > > 1568				break;
-> > > 
-> > 
-> > Aha, so you're getting an enospc with compression on and the accounting
-> > doesn't line up.  I should be able to trigger this.
+On Thu, May 19, 2016 at 12:17:14PM +0200, Miklos Szeredi wrote:
+> On Thu, May 19, 2016 at 11:05 AM, Michal Hocko <mhocko@kernel.org> wrote:
+> > On Thu 19-05-16 10:20:13, Miklos Szeredi wrote:
+> >> Has anyone thought about sharing pages between multiple files?
+> >>
+> >> The obvious application is for COW filesytems where there are
+> >> logically distinct files that physically share data and could easily
+> >> share the cache as well if there was infrastructure for it.
+> >
+> > FYI this has been discussed at LSFMM this year[1]. I wasn't at the
+> > session so cannot tell you any details but the LWN article covers it at
+> > least briefly.
 > 
-> This partition was fully balanced just a few days ago so I didn't even think
-> to look at df.
-> 
-> [~]# df -h
-> /dev/sda1       216G  161G   53G  76% /
-> 
-> [~]# btrfs files df /
-> Data, single: total=209.12GiB, used=156.46GiB
-> System, single: total=32.00MiB, used=48.00KiB
-> Metadata, single: total=6.00GiB, used=3.51GiB
-> GlobalReserve, single: total=512.00MiB, used=0.00B
-> 
-> However, after partially balancing it a bit:
-> 
-> [~]# btrfs files df /
-> Data, single: total=172.00GiB, used=156.03GiB
-> System, single: total=32.00MiB, used=48.00KiB
-> Metadata, single: total=5.00GiB, used=3.50GiB
-> GlobalReserve, single: total=512.00MiB, used=0.00B
-> 
-> I can't reproduce the failure anymore.
+> Cool, so it's not such a crazy idea.
 
-Yeah, I'm not sure yet if this is related to the page faulting problem,
-but Dave Jones triggered this error back in v4.4.  I'll still fix it, it
-should be an alignment issue with write_bytes.
+Oh, it most certainly is crazy. :P
 
--chris
+> Darrick, would you mind briefly sharing your ideas regarding this?
 
+The current line of though is that we'll only attempt this in XFS on
+inodes that are known to share underlying physical extents. i.e.
+files that have blocks that have been reflinked or deduped.  That
+way we can overload the breaking of reflink blocks (via copy on
+write) with unsharing the pages in the page cache for that inode.
+i.e. shared pages can propagate upwards in overlay if it uses
+reflink for copy-up and writes will then break the sharing with the
+underlying source without overlay having to do anything special.
+
+Right now I'm not sure what mechanism we will use - we want to
+support files that have a mix of private and shared pages, so that
+implies we are not going to be sharing mappings but sharing pages
+instead.  However, we've been looking at this as being completely
+encapsulated within the filesystem because it's tightly linked to
+changes in the physical layout of the filesystem, not as general
+"share this mapping between two unrelated inodes" infrastructure.
+That may change as we dig deeper into it...
+
+> The use case I have is fixing overlayfs weird behavior. The following
+> may result in "buf" not matching "data":
+> 
+>     int fr = open("foo", O_RDONLY);
+>     int fw = open("foo", O_RDWR);
+>     write(fw, data, sizeof(data));
+>     read(fr, buf, sizeof(data));
+> 
+> The reason is that "foo" is on a read-only layer, and opening it for
+> read-write triggers copy-up into a read-write layer.  However the old,
+> read-only open still refers to the unmodified file.
+>
+> Fixing this properly requires that when opening a file, we don't
+> delegate operations fully to the underlying file, but rather allow
+> sharing of pages from underlying file until the file is copied up.  At
+> that point we switch to sharing pages with the read-write copy.
+
+Unless I'm missing something here (quite possible!), I'm not sure
+we can fix that problem with page cache sharing or reflink. It
+implies we are sharing pages in a downwards direction - private
+overlay pages/mappings from multiple inodes would need to be shared
+with a single underlying shared read-only inode, and I lack the
+imagination to see how that works...
+
+Cheers,
+
+Dave.
+-- 
+Dave Chinner
+david@fromorbit.com

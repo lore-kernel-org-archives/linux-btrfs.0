@@ -1,86 +1,1146 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wm0-f65.google.com ([74.125.82.65]:35556 "EHLO
-	mail-wm0-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753942AbcETABP (ORCPT
+Received: from mail-qk0-f180.google.com ([209.85.220.180]:33405 "EHLO
+	mail-qk0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932326AbcESXNP (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 19 May 2016 20:01:15 -0400
-Received: by mail-wm0-f65.google.com with SMTP id s63so10528707wme.2
-        for <linux-btrfs@vger.kernel.org>; Thu, 19 May 2016 17:01:14 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <CAD=QJKh-wUK8RYFhDRjwowHyLhZ422Z33F=zcnRW9c4MuhvwwQ@mail.gmail.com>
-References: <1463699581-12416-1-git-send-email-nsteeves@gmail.com>
-	<CAD=QJKh-wUK8RYFhDRjwowHyLhZ422Z33F=zcnRW9c4MuhvwwQ@mail.gmail.com>
-Date: Thu, 19 May 2016 20:01:13 -0400
-Message-ID: <CAD=QJKjWwL+yJGKq=VWtnU5+HSQ4WgcRiim4v6JxTTPbE0eP1w@mail.gmail.com>
-Subject: Re: [PATCH 0/1] String and comment review: Fix typos; fix a couple of
- mandatory grammatical issues for clarity.
+	Thu, 19 May 2016 19:13:15 -0400
+Received: by mail-qk0-f180.google.com with SMTP id n63so57517927qkf.0
+        for <linux-btrfs@vger.kernel.org>; Thu, 19 May 2016 16:13:15 -0700 (PDT)
 From: Nicholas D Steeves <nsteeves@gmail.com>
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+To: linux-btrfs@vger.kernel.org
 Cc: Nicholas D Steeves <nsteeves@gmail.com>
-Content-Type: text/plain; charset=UTF-8
+Subject: [PATCH 1/1] String and comment review: Fix typos; fix a couple of mandatory grammatical issues for clarity.
+Date: Thu, 19 May 2016 19:13:01 -0400
+Message-Id: <1463699581-12416-2-git-send-email-nsteeves@gmail.com>
+In-Reply-To: <1463699581-12416-1-git-send-email-nsteeves@gmail.com>
+References: <1463699581-12416-1-git-send-email-nsteeves@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 19 May 2016 at 19:47, Nicholas D Steeves <nsteeves@gmail.com> wrote:
-> On 19 May 2016 at 19:13, Nicholas D Steeves <nsteeves@gmail.com> wrote:
->> Nicholas D Steeves (1):
->>   String and comment review: Fix typos; fix a couple of mandatory
->>     grammatical issues for clarity.
->>
->>  fs/btrfs/backref.c                |  2 +-
->>  fs/btrfs/btrfs_inode.h            |  2 +-
->>  fs/btrfs/check-integrity.c        |  2 +-
->>  fs/btrfs/ctree.c                  | 14 +++++++-------
->>  fs/btrfs/ctree.h                  | 10 +++++-----
->>  fs/btrfs/delayed-ref.h            |  2 +-
->>  fs/btrfs/dev-replace.c            |  2 +-
->>  fs/btrfs/disk-io.c                | 10 +++++-----
->>  fs/btrfs/extent-tree.c            | 34 +++++++++++++++++-----------------
->>  fs/btrfs/extent_io.c              |  4 ++--
->>  fs/btrfs/extent_map.c             |  2 +-
->>  fs/btrfs/file.c                   |  4 ++--
->>  fs/btrfs/free-space-cache.c       |  2 +-
->>  fs/btrfs/free-space-cache.h       |  2 +-
->>  fs/btrfs/inode.c                  | 22 +++++++++++-----------
->>  fs/btrfs/ioctl.c                  | 10 +++++-----
->>  fs/btrfs/ordered-data.h           |  2 +-
->>  fs/btrfs/qgroup.c                 | 16 ++++++++--------
->>  fs/btrfs/raid56.c                 |  6 +++---
->>  fs/btrfs/relocation.c             | 12 ++++++------
->>  fs/btrfs/root-tree.c              |  4 ++--
->>  fs/btrfs/scrub.c                  |  4 ++--
->>  fs/btrfs/send.c                   |  6 +++---
->>  fs/btrfs/struct-funcs.c           |  2 +-
->>  fs/btrfs/super.c                  | 10 +++++-----
->>  fs/btrfs/sysfs.c                  |  2 +-
->>  fs/btrfs/tests/extent-io-tests.c  |  2 +-
->>  fs/btrfs/tests/free-space-tests.c |  7 ++++---
->>  fs/btrfs/tests/inode-tests.c      |  2 +-
->>  fs/btrfs/tests/qgroup-tests.c     |  2 +-
->>  fs/btrfs/transaction.h            |  2 +-
->>  fs/btrfs/tree-log.c               |  8 ++++----
->>  fs/btrfs/ulist.c                  |  2 +-
->>  fs/btrfs/volumes.c                |  8 ++++----
->>  34 files changed, 111 insertions(+), 110 deletions(-)
->>
->> --
->> 2.1.4
->>
->
-> Argh.  I'm sorry, I wasn't quite careful enough, and was working off
-> of master rather than for-next.  Please disregard this patch.
->
-> Sincerely,
-> Nicholas
+Signed-off-by: Nicholas D Steeves <nsteeves@gmail.com>
+---
+ fs/btrfs/backref.c                |  2 +-
+ fs/btrfs/btrfs_inode.h            |  2 +-
+ fs/btrfs/check-integrity.c        |  2 +-
+ fs/btrfs/ctree.c                  | 14 +++++++-------
+ fs/btrfs/ctree.h                  | 10 +++++-----
+ fs/btrfs/delayed-ref.h            |  2 +-
+ fs/btrfs/dev-replace.c            |  2 +-
+ fs/btrfs/disk-io.c                | 10 +++++-----
+ fs/btrfs/extent-tree.c            | 34 +++++++++++++++++-----------------
+ fs/btrfs/extent_io.c              |  4 ++--
+ fs/btrfs/extent_map.c             |  2 +-
+ fs/btrfs/file.c                   |  4 ++--
+ fs/btrfs/free-space-cache.c       |  2 +-
+ fs/btrfs/free-space-cache.h       |  2 +-
+ fs/btrfs/inode.c                  | 22 +++++++++++-----------
+ fs/btrfs/ioctl.c                  | 10 +++++-----
+ fs/btrfs/ordered-data.h           |  2 +-
+ fs/btrfs/qgroup.c                 | 16 ++++++++--------
+ fs/btrfs/raid56.c                 |  6 +++---
+ fs/btrfs/relocation.c             | 12 ++++++------
+ fs/btrfs/root-tree.c              |  4 ++--
+ fs/btrfs/scrub.c                  |  4 ++--
+ fs/btrfs/send.c                   |  6 +++---
+ fs/btrfs/struct-funcs.c           |  2 +-
+ fs/btrfs/super.c                  | 10 +++++-----
+ fs/btrfs/sysfs.c                  |  2 +-
+ fs/btrfs/tests/extent-io-tests.c  |  2 +-
+ fs/btrfs/tests/free-space-tests.c |  7 ++++---
+ fs/btrfs/tests/inode-tests.c      |  2 +-
+ fs/btrfs/tests/qgroup-tests.c     |  2 +-
+ fs/btrfs/transaction.h            |  2 +-
+ fs/btrfs/tree-log.c               |  8 ++++----
+ fs/btrfs/ulist.c                  |  2 +-
+ fs/btrfs/volumes.c                |  8 ++++----
+ 34 files changed, 111 insertions(+), 110 deletions(-)
 
-Oh my, rebasing off of for-next includes everyone else's patches too!
-Maybe I did it correctly by using master after all?  There were only a
-couple of minor rejects affecting the following: ctree.h,
-extent-tree.c, and super.c.
+diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
+index 80e8472..b8b5987 100644
+--- a/fs/btrfs/backref.c
++++ b/fs/btrfs/backref.c
+@@ -1939,7 +1939,7 @@ static int inode_to_path(u64 inum, u32 name_len, unsigned long name_off,
+  * from ipath->fspath->val[i].
+  * when it returns, there are ipath->fspath->elem_cnt number of paths available
+  * in ipath->fspath->val[]. when the allocated space wasn't sufficient, the
+- * number of missed paths in recored in ipath->fspath->elem_missed, otherwise,
++ * number of missed paths is recorded in ipath->fspath->elem_missed, otherwise,
+  * it's zero. ipath->fspath->bytes_missing holds the number of bytes that would
+  * have been needed to return all paths.
+  */
+diff --git a/fs/btrfs/btrfs_inode.h b/fs/btrfs/btrfs_inode.h
+index 61205e3..c0a2018 100644
+--- a/fs/btrfs/btrfs_inode.h
++++ b/fs/btrfs/btrfs_inode.h
+@@ -303,7 +303,7 @@ struct btrfs_dio_private {
+ 	struct bio *dio_bio;
+ 
+ 	/*
+-	 * The original bio may be splited to several sub-bios, this is
++	 * The original bio may be split to several sub-bios, this is
+ 	 * done during endio of sub-bios
+ 	 */
+ 	int (*subio_endio)(struct inode *, struct btrfs_io_bio *, int);
+diff --git a/fs/btrfs/check-integrity.c b/fs/btrfs/check-integrity.c
+index 516e19d..b677a6e 100644
+--- a/fs/btrfs/check-integrity.c
++++ b/fs/btrfs/check-integrity.c
+@@ -1939,7 +1939,7 @@ again:
+ 		/*
+ 		 * Clear all references of this block. Do not free
+ 		 * the block itself even if is not referenced anymore
+-		 * because it still carries valueable information
++		 * because it still carries valuable information
+ 		 * like whether it was ever written and IO completed.
+ 		 */
+ 		list_for_each_entry_safe(l, tmp, &block->ref_to_list,
+diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
+index ec7928a..6487c9c 100644
+--- a/fs/btrfs/ctree.c
++++ b/fs/btrfs/ctree.c
+@@ -156,7 +156,7 @@ struct extent_buffer *btrfs_root_node(struct btrfs_root *root)
+ 
+ 		/*
+ 		 * RCU really hurts here, we could free up the root node because
+-		 * it was cow'ed but we may not get the new root node yet so do
++		 * it was COWed but we may not get the new root node yet so do
+ 		 * the inc_not_zero dance and if it doesn't work then
+ 		 * synchronize_rcu and try again.
+ 		 */
+@@ -955,7 +955,7 @@ int btrfs_block_can_be_shared(struct btrfs_root *root,
+ 			      struct extent_buffer *buf)
+ {
+ 	/*
+-	 * Tree blocks not in refernece counted trees and tree roots
++	 * Tree blocks not in reference counted trees and tree roots
+ 	 * are never shared. If a block was allocated after the last
+ 	 * snapshot and the block was not allocated by tree relocation,
+ 	 * we know the block is not shared.
+@@ -1270,7 +1270,7 @@ __tree_mod_log_oldest_root(struct btrfs_fs_info *fs_info,
+ 
+ /*
+  * tm is a pointer to the first operation to rewind within eb. then, all
+- * previous operations will be rewinded (until we reach something older than
++ * previous operations will be rewound (until we reach something older than
+  * time_seq).
+  */
+ static void
+@@ -1345,7 +1345,7 @@ __tree_mod_log_rewind(struct btrfs_fs_info *fs_info, struct extent_buffer *eb,
+ }
+ 
+ /*
+- * Called with eb read locked. If the buffer cannot be rewinded, the same buffer
++ * Called with eb read locked. If the buffer cannot be rewound, the same buffer
+  * is returned. If rewind operations happen, a fresh buffer is returned. The
+  * returned buffer is always read-locked. If the returned buffer is not the
+  * input buffer, the lock on the input buffer is released and the input buffer
+@@ -1516,7 +1516,7 @@ static inline int should_cow_block(struct btrfs_trans_handle *trans,
+ 	 * 3) the root is not forced COW.
+ 	 *
+ 	 * What is forced COW:
+-	 *    when we create snapshot during commiting the transaction,
++	 *    when we create snapshot during committing the transaction,
+ 	 *    after we've finished coping src root, we must COW the shared
+ 	 *    block to ensure the metadata consistency.
+ 	 */
+@@ -1531,7 +1531,7 @@ static inline int should_cow_block(struct btrfs_trans_handle *trans,
+ 
+ /*
+  * cows a single block, see __btrfs_cow_block for the real work.
+- * This version of it has extra checks so that a block isn't cow'd more than
++ * This version of it has extra checks so that a block isn't COWed more than
+  * once per transaction, as long as it hasn't been written yet
+  */
+ noinline int btrfs_cow_block(struct btrfs_trans_handle *trans,
+@@ -2986,7 +2986,7 @@ again:
+ 		btrfs_unlock_up_safe(p, level + 1);
+ 
+ 		/*
+-		 * Since we can unwind eb's we want to do a real search every
++		 * Since we can unwind ebs [ <- orig="eb's" Is this more clear as plural, or as singular possessive? -- Nicholas D Steeves ] we want to do a real search every
+ 		 * time.
+ 		 */
+ 		prev_cmp = -1;
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 84a6a5b..83a480b 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -106,7 +106,7 @@ struct btrfs_ordered_sum;
+ /* for storing balance parameters in the root tree */
+ #define BTRFS_BALANCE_OBJECTID -4ULL
+ 
+-/* orhpan objectid for tracking unlinked/truncated files */
++/* orphan objectid for tracking unlinked/truncated files */
+ #define BTRFS_ORPHAN_OBJECTID -5ULL
+ 
+ /* does write ahead logging to speed up fsyncs */
+@@ -186,7 +186,7 @@ static const int btrfs_csum_sizes[] = { 4 };
+ /* four bytes for CRC32 */
+ #define BTRFS_EMPTY_DIR_SIZE 0
+ 
+-/* spefic to btrfs_map_block(), therefore not in include/linux/blk_types.h */
++/* specific to btrfs_map_block(), therefore not in include/linux/blk_types.h */
+ #define REQ_GET_READ_MIRRORS	(1 << 30)
+ 
+ #define BTRFS_FT_UNKNOWN	0
+@@ -1221,7 +1221,7 @@ struct btrfs_space_info {
+ 	 * bytes_pinned does not reflect the bytes that will be pinned once the
+ 	 * delayed refs are flushed, so this counter is inc'ed every time we
+ 	 * call btrfs_free_extent so it is a realtime count of what will be
+-	 * freed once the transaction is committed.  It will be zero'ed every
++	 * freed once the transaction is committed.  It will be zeroed every
+ 	 * time the transaction commits.
+ 	 */
+ 	struct percpu_counter total_bytes_pinned;
+@@ -2224,7 +2224,7 @@ struct btrfs_ioctl_defrag_range_args {
+ #define BTRFS_PERSISTENT_ITEM_KEY	249
+ 
+ /*
+- * Persistantly stores the device replace state in the device tree.
++ * Persistently stores the device replace state in the device tree.
+  * The key is built like this: (0, BTRFS_DEV_REPLACE_KEY, 0).
+  */
+ #define BTRFS_DEV_REPLACE_KEY	250
+@@ -2392,7 +2392,7 @@ static inline void btrfs_init_map_token (struct btrfs_map_token *token)
+ 	token->kaddr = NULL;
+ }
+ 
+-/* some macros to generate set/get funcs for the struct fields.  This
++/* some macros to generate set/get functions for the struct fields.  This
+  * assumes there is a lefoo_to_cpu for every type, so lets make a simple
+  * one for u8:
+  */
+diff --git a/fs/btrfs/delayed-ref.h b/fs/btrfs/delayed-ref.h
+index c24b653..5fca953 100644
+--- a/fs/btrfs/delayed-ref.h
++++ b/fs/btrfs/delayed-ref.h
+@@ -188,7 +188,7 @@ struct btrfs_delayed_ref_root {
+ 
+ 	/*
+ 	 * To make qgroup to skip given root.
+-	 * This is for snapshot, as btrfs_qgroup_inherit() will manully
++	 * This is for snapshot, as btrfs_qgroup_inherit() will manually
+ 	 * modify counters for snapshot and its source, so we should skip
+ 	 * the snapshot in new_root/old_roots or it will get calculated twice
+ 	 */
+diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
+index 26bcb48..0584b6c 100644
+--- a/fs/btrfs/dev-replace.c
++++ b/fs/btrfs/dev-replace.c
+@@ -441,7 +441,7 @@ leave:
+ }
+ 
+ /*
+- * blocked until all flighting bios are finished.
++ * blocked until all in-flight bios operations are finished.
+  */
+ static void btrfs_rm_dev_replace_blocked(struct btrfs_fs_info *fs_info)
+ {
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 4e47849..7b3331e 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -384,7 +384,7 @@ static int verify_parent_transid(struct extent_io_tree *io_tree,
+ 	/*
+ 	 * Things reading via commit roots that don't have normal protection,
+ 	 * like send, can have a really old block in cache that may point at a
+-	 * block that has been free'd and re-allocated.  So don't clear uptodate
++	 * block that has been freed and re-allocated.  So don't clear uptodate
+ 	 * if we find an eb that is under IO (dirty/writeback) because we could
+ 	 * end up reading in the stale data and then writing it back out and
+ 	 * making everybody very sad.
+@@ -418,7 +418,7 @@ static int btrfs_check_super_csum(char *raw_disk_sb)
+ 		/*
+ 		 * The super_block structure does not span the whole
+ 		 * BTRFS_SUPER_INFO_SIZE range, we expect that the unused space
+-		 * is filled with zeros and is included in the checkum.
++		 * is filled with zeros and is included in the checksum.
+ 		 */
+ 		crc = btrfs_csum_data(raw_disk_sb + BTRFS_CSUM_SIZE,
+ 				crc, BTRFS_SUPER_INFO_SIZE - BTRFS_CSUM_SIZE);
+@@ -600,7 +600,7 @@ static noinline int check_leaf(struct btrfs_root *root,
+ 
+ 		/*
+ 		 * Check to make sure that we don't point outside of the leaf,
+-		 * just incase all the items are consistent to eachother, but
++		 * just in case all the items are consistent to each other, but
+ 		 * all point outside of the leaf.
+ 		 */
+ 		if (btrfs_item_end_nr(leaf, slot) >
+@@ -3017,7 +3017,7 @@ retry_root_backup:
+ 	}
+ 
+ 	/*
+-	 * Mount does not set all options immediatelly, we can do it now and do
++	 * Mount does not set all options immediately, we can do it now and do
+ 	 * not have to wait for transaction commit
+ 	 */
+ 	btrfs_apply_pending_changes(fs_info);
+@@ -3245,7 +3245,7 @@ static void btrfs_end_buffer_write_sync(struct buffer_head *bh, int uptodate)
+ 		btrfs_warn_rl_in_rcu(device->dev_root->fs_info,
+ 				"lost page write due to IO error on %s",
+ 					  rcu_str_deref(device->name));
+-		/* note, we dont' set_buffer_write_io_error because we have
++		/* note, we don't set_buffer_write_io_error because we have
+ 		 * our own ways of dealing with the IO errors
+ 		 */
+ 		clear_buffer_uptodate(bh);
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 84e060e..66d7b85 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -980,7 +980,7 @@ out_free:
+  * event that tree block loses its owner tree's reference and do the
+  * back refs conversion.
+  *
+- * When a tree block is COW'd through a tree, there are four cases:
++ * When a tree block is COWed through a tree, there are four cases:
+  *
+  * The reference count of the block is one and the tree is the block's
+  * owner tree. Nothing to do in this case.
+@@ -2595,7 +2595,7 @@ static noinline int __btrfs_run_delayed_refs(struct btrfs_trans_handle *trans,
+ 			}
+ 
+ 			/*
+-			 * Need to drop our head ref lock and re-aqcuire the
++			 * Need to drop our head ref lock and re-acquire the
+ 			 * delayed ref lock and then re-check to make sure
+ 			 * nobody got added.
+ 			 */
+@@ -2747,7 +2747,7 @@ static inline u64 heads_to_leaves(struct btrfs_root *root, u64 heads)
+ 
+ 	/*
+ 	 * We don't ever fill up leaves all the way so multiply by 2 just to be
+-	 * closer to what we're really going to want to ouse.
++	 * closer to what we're really going to want to use.
+ 	 */
+ 	return div_u64(num_bytes, BTRFS_LEAF_DATA_SIZE(root));
+ }
+@@ -2851,7 +2851,7 @@ static void delayed_ref_async_start(struct btrfs_work *work)
+ 	}
+ 
+ 	/*
+-	 * trans->sync means that when we call end_transaciton, we won't
++	 * trans->sync means that when we call end_transaction, we won't
+ 	 * wait on delayed refs
+ 	 */
+ 	trans->sync = true;
+@@ -4243,7 +4243,7 @@ void btrfs_free_reserved_data_space_noquota(struct inode *inode, u64 start,
+  * Called if we need to clear a data reservation for this inode
+  * Normally in a error case.
+  *
+- * This one will handle the per-indoe data rsv map for accurate reserved
++ * This one will handle the per-inode data rsv map for accurate reserved
+  * space framework.
+  */
+ void btrfs_free_reserved_data_space(struct inode *inode, u64 start, u64 len)
+@@ -4911,7 +4911,7 @@ void btrfs_init_async_reclaim_work(struct work_struct *work)
+  * @orig_bytes - the number of bytes we want
+  * @flush - whether or not we can flush to make our reservation
+  *
+- * This will reserve orgi_bytes number of bytes from the space info associated
++ * This will reserve orig_bytes number of bytes from the space info associated
+  * with the block_rsv.  If there is not enough space it will make an attempt to
+  * flush out space to make room.  It will do this by flushing delalloc if
+  * possible or committing the transaction.  If flush is 0 then no attempts to
+@@ -4977,7 +4977,7 @@ again:
+ 		} else {
+ 			/*
+ 			 * Ok set num_bytes to orig_bytes since we aren't
+-			 * overocmmitted, this way we only try and reclaim what
++			 * overcommitted, this way we only try and reclaim what
+ 			 * we need.
+ 			 */
+ 			num_bytes = orig_bytes;
+@@ -5516,7 +5516,7 @@ void btrfs_orphan_release_metadata(struct inode *inode)
+  * common file/directory operations, they change two fs/file trees
+  * and root tree, the number of items that the qgroup reserves is
+  * different with the free space reservation. So we can not use
+- * the space reseravtion mechanism in start_transaction().
++ * the space reservation mechanism in start_transaction().
+  */
+ int btrfs_subvolume_reserve_metadata(struct btrfs_root *root,
+ 				     struct btrfs_block_rsv *rsv,
+@@ -5565,7 +5565,7 @@ void btrfs_subvolume_release_metadata(struct btrfs_root *root,
+ /**
+  * drop_outstanding_extent - drop an outstanding extent
+  * @inode: the inode we're dropping the extent for
+- * @num_bytes: the number of bytes we're relaseing.
++ * @num_bytes: the number of bytes we're releasing.
+  *
+  * This is called when we are freeing up an outstanding extent, either called
+  * after an error or after an extent is written.  This will return the number of
+@@ -5591,7 +5591,7 @@ static unsigned drop_outstanding_extent(struct inode *inode, u64 num_bytes)
+ 		drop_inode_space = 1;
+ 
+ 	/*
+-	 * If we have more or the same amount of outsanding extents than we have
++	 * If we have more or the same amount of outstanding extents than we have
+ 	 * reserved then we need to leave the reserved extents count alone.
+ 	 */
+ 	if (BTRFS_I(inode)->outstanding_extents >=
+@@ -5605,8 +5605,8 @@ static unsigned drop_outstanding_extent(struct inode *inode, u64 num_bytes)
+ }
+ 
+ /**
+- * calc_csum_metadata_size - return the amount of metada space that must be
+- *	reserved/free'd for the given bytes.
++ * calc_csum_metadata_size - return the amount of metadata space that must be
++ *	reserved/freed for the given bytes.
+  * @inode: the inode we're manipulating
+  * @num_bytes: the number of bytes in question
+  * @reserve: 1 if we are reserving space, 0 if we are freeing space
+@@ -5758,7 +5758,7 @@ out_fail:
+ 
+ 		/*
+ 		 * This is tricky, but first we need to figure out how much we
+-		 * free'd from any free-ers that occurred during this
++		 * freed from any free-ers that occurred during this
+ 		 * reservation, so we reset ->csum_bytes to the csum_bytes
+ 		 * before we dropped our lock, and then call the free for the
+ 		 * number of bytes that were freed while we were trying our
+@@ -5780,7 +5780,7 @@ out_fail:
+ 
+ 		/*
+ 		 * Now reset ->csum_bytes to what it should be.  If bytes is
+-		 * more than to_free then we would have free'd more space had we
++		 * more than to_free then we would have freed more space had we
+ 		 * not had an artificially high ->csum_bytes, so we need to free
+ 		 * the remainder.  If bytes is the same or less then we don't
+ 		 * need to do anything, the other free-ers did the correct
+@@ -7471,7 +7471,7 @@ loop:
+ 		if (loop == LOOP_CACHING_NOWAIT) {
+ 			/*
+ 			 * We want to skip the LOOP_CACHING_WAIT step if we
+-			 * don't have any unached bgs and we've alrelady done a
++			 * don't have any uncached bgs and we've already done a
+ 			 * full search through.
+ 			 */
+ 			if (orig_have_caching_bg || !full_search)
+@@ -7873,7 +7873,7 @@ int btrfs_alloc_logged_file_extent(struct btrfs_trans_handle *trans,
+ 
+ 	/*
+ 	 * Mixed block groups will exclude before processing the log so we only
+-	 * need to do the exlude dance if this fs isn't mixed.
++	 * need to do the exclude dance if this fs isn't mixed.
+ 	 */
+ 	if (!btrfs_fs_incompat(root->fs_info, MIXED_GROUPS)) {
+ 		ret = __exclude_logged_extent(root, ins->objectid, ins->offset);
+@@ -9317,7 +9317,7 @@ u64 btrfs_account_ro_block_groups_free_space(struct btrfs_space_info *sinfo)
+ 	u64 free_bytes = 0;
+ 	int factor;
+ 
+-	/* It's df, we don't care if it's racey */
++	/* It's df, we don't care if it's racy */
+ 	if (list_empty(&sinfo->ro_bgs))
+ 		return 0;
+ 
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index d247fc0..397bae0 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -4591,7 +4591,7 @@ static void btrfs_release_extent_buffer_page(struct extent_buffer *eb)
+ 		if (mapped)
+ 			spin_unlock(&page->mapping->private_lock);
+ 
+-		/* One for when we alloced the page */
++		/* One for when we allocated the page */
+ 		put_page(page);
+ 	} while (index != 0);
+ }
+@@ -5751,7 +5751,7 @@ int try_release_extent_buffer(struct page *page)
+ 	struct extent_buffer *eb;
+ 
+ 	/*
+-	 * We need to make sure noboody is attaching this page to an eb right
++	 * We need to make sure nobody is attaching this page to an eb right
+ 	 * now.
+ 	 */
+ 	spin_lock(&page->mapping->private_lock);
+diff --git a/fs/btrfs/extent_map.c b/fs/btrfs/extent_map.c
+index 318b048..e0715fc 100644
+--- a/fs/btrfs/extent_map.c
++++ b/fs/btrfs/extent_map.c
+@@ -62,7 +62,7 @@ struct extent_map *alloc_extent_map(void)
+ 
+ /**
+  * free_extent_map - drop reference count of an extent_map
+- * @em:		extent map being releasead
++ * @em:		extent map being released
+  *
+  * Drops the reference out on @em by one and free the structure
+  * if the reference count hits zero.
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index 8d7b5a4..50dac40 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -2024,7 +2024,7 @@ int btrfs_sync_file(struct file *file, loff_t start, loff_t end, int datasync)
+ 	     BTRFS_I(inode)->last_trans
+ 	     <= root->fs_info->last_trans_committed)) {
+ 		/*
+-		 * We'v had everything committed since the last time we were
++		 * We've had everything committed since the last time we were
+ 		 * modified so clear this flag in case it was set for whatever
+ 		 * reason, it's no longer relevant.
+ 		 */
+@@ -2372,7 +2372,7 @@ static int btrfs_punch_hole(struct inode *inode, loff_t offset, loff_t len)
+ 
+ 	/* Check the aligned pages after the first unaligned page,
+ 	 * if offset != orig_start, which means the first unaligned page
+-	 * including serveral following pages are already in holes,
++	 * including several following pages are already in holes,
+ 	 * the extra check can be skipped */
+ 	if (offset == orig_start) {
+ 		/* after truncate page, check hole again */
+diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
+index 5e6062c..c6dc118 100644
+--- a/fs/btrfs/free-space-cache.c
++++ b/fs/btrfs/free-space-cache.c
+@@ -1983,7 +1983,7 @@ static bool use_bitmap(struct btrfs_free_space_ctl *ctl,
+ 		/*
+ 		 * If this block group has some small extents we don't want to
+ 		 * use up all of our free slots in the cache with them, we want
+-		 * to reserve them to larger extents, however if we have plent
++		 * to reserve them to larger extents, however if we have plenty
+ 		 * of cache left then go ahead an dadd them, no sense in adding
+ 		 * the overhead of a bitmap if we don't have to.
+ 		 */
+diff --git a/fs/btrfs/free-space-cache.h b/fs/btrfs/free-space-cache.h
+index 33178c4..3af651c 100644
+--- a/fs/btrfs/free-space-cache.h
++++ b/fs/btrfs/free-space-cache.h
+@@ -123,7 +123,7 @@ int btrfs_return_cluster_to_free_space(
+ int btrfs_trim_block_group(struct btrfs_block_group_cache *block_group,
+ 			   u64 *trimmed, u64 start, u64 end, u64 minlen);
+ 
+-/* Support functions for runnint our sanity tests */
++/* Support functions for running our sanity tests */
+ #ifdef CONFIG_BTRFS_FS_RUN_SANITY_TESTS
+ int test_add_free_space_entry(struct btrfs_block_group_cache *cache,
+ 			      u64 offset, u64 bytes, bool bitmap);
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 2aaba58..9d3c3a5 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -455,7 +455,7 @@ again:
+ 
+ 	/*
+ 	 * skip compression for a small file range(<=blocksize) that
+-	 * isn't an inline extent, since it dosen't save disk space at all.
++	 * isn't an inline extent, since it doesn't save disk space at all.
+ 	 */
+ 	if (total_compressed <= blocksize &&
+ 	   (start > 0 || end + 1 < BTRFS_I(inode)->disk_i_size))
+@@ -3706,7 +3706,7 @@ cache_index:
+ 	 * and doesn't have an inode ref with the name "bar" anymore.
+ 	 *
+ 	 * Setting last_unlink_trans to last_trans is a pessimistic approach,
+-	 * but it guarantees correctness at the expense of ocassional full
++	 * but it guarantees correctness at the expense of occasional full
+ 	 * transaction commits on fsync if our inode is a directory, or if our
+ 	 * inode is not a directory, logging its parent unnecessarily.
+ 	 */
+@@ -4962,7 +4962,7 @@ static int btrfs_setsize(struct inode *inode, struct iattr *attr)
+ 		 * be instantly completed which will give us extents that need
+ 		 * to be truncated.  If we fail to get an orphan inode down we
+ 		 * could have left over extents that were never meant to live,
+-		 * so we need to garuntee from this point on that everything
++		 * so we need to guarantee from this point on that everything
+ 		 * will be consistent.
+ 		 */
+ 		ret = btrfs_orphan_add(trans, inode);
+@@ -5232,7 +5232,7 @@ void btrfs_evict_inode(struct inode *inode)
+ 		}
+ 
+ 		/*
+-		 * We can't just steal from the global reserve, we need tomake
++		 * We can't just steal from the global reserve, we need to make
+ 		 * sure there is room to do it, if not we need to commit and try
+ 		 * again.
+ 		 */
+@@ -7408,7 +7408,7 @@ static int lock_extent_direct(struct inode *inode, u64 lockstart, u64 lockend,
+ 				 cached_state);
+ 		/*
+ 		 * We're concerned with the entire range that we're going to be
+-		 * doing DIO to, so we need to make sure theres no ordered
++		 * doing DIO to, so we need to make sure there's no ordered
+ 		 * extents in this range.
+ 		 */
+ 		ordered = btrfs_lookup_ordered_range(inode, lockstart,
+@@ -7570,7 +7570,7 @@ static int btrfs_get_blocks_direct(struct inode *inode, sector_t iblock,
+ 	if (current->journal_info) {
+ 		/*
+ 		 * Need to pull our outstanding extents and set journal_info to NULL so
+-		 * that anything that needs to check if there's a transction doesn't get
++		 * that anything that needs to check if there's a transaction doesn't get
+ 		 * confused.
+ 		 */
+ 		dio_data = current->journal_info;
+@@ -7603,7 +7603,7 @@ static int btrfs_get_blocks_direct(struct inode *inode, sector_t iblock,
+ 	 * decompress it, so there will be buffering required no matter what we
+ 	 * do, so go ahead and fallback to buffered.
+ 	 *
+-	 * We return -ENOTBLK because thats what makes DIO go ahead and go back
++	 * We return -ENOTBLK because that's what makes DIO go ahead and go back
+ 	 * to buffered IO.  Don't blame me, this is the price we pay for using
+ 	 * the generic code.
+ 	 */
+@@ -9019,7 +9019,7 @@ static int btrfs_truncate(struct inode *inode)
+ 		return ret;
+ 
+ 	/*
+-	 * Yes ladies and gentelment, this is indeed ugly.  The fact is we have
++	 * Yes ladies and gentlemen, this is indeed ugly.  The fact is we have
+ 	 * 3 things going on here
+ 	 *
+ 	 * 1) We need to reserve space for our orphan item and the space to
+@@ -9033,15 +9033,15 @@ static int btrfs_truncate(struct inode *inode)
+ 	 * space reserved in case it uses space during the truncate (thank you
+ 	 * very much snapshotting).
+ 	 *
+-	 * And we need these to all be seperate.  The fact is we can use alot of
++	 * And we need these to all be separate.  The fact is we can use a lot of
+ 	 * space doing the truncate, and we have no earthly idea how much space
+-	 * we will use, so we need the truncate reservation to be seperate so it
++	 * we will use, so we need the truncate reservation to be separate so it
+ 	 * doesn't end up using space reserved for updating the inode or
+ 	 * removing the orphan item.  We also need to be able to stop the
+ 	 * transaction and start a new one, which means we need to be able to
+ 	 * update the inode several times, and we have no idea of knowing how
+ 	 * many times that will be, so we can't just reserve 1 item for the
+-	 * entirety of the opration, so that has to be done seperately as well.
++	 * entirety of the operation, so that has to be done separately as well.
+ 	 * Then there is the orphan item, which does indeed need to be held on
+ 	 * to for the whole operation, and we need nobody to touch this reserved
+ 	 * space except the orphan code.
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 5a23806..0f4fa63 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -296,7 +296,7 @@ static int btrfs_ioctl_setflags(struct file *file, void __user *arg)
+ 		}
+ 	} else {
+ 		/*
+-		 * Revert back under same assuptions as above
++		 * Revert back under same assumptions as above
+ 		 */
+ 		if (S_ISREG(mode)) {
+ 			if (inode->i_size == 0)
+@@ -461,7 +461,7 @@ static noinline int create_subvol(struct inode *dir,
+ 
+ 	/*
+ 	 * Don't create subvolume whose level is not zero. Or qgroup will be
+-	 * screwed up since it assume subvolme qgroup's level to be 0.
++	 * screwed up since it assumes subvolume qgroup's level to be 0.
+ 	 */
+ 	if (btrfs_qgroup_level(objectid))
+ 		return -ENOSPC;
+@@ -771,7 +771,7 @@ free_pending:
+  *	a. be owner of dir, or
+  *	b. be owner of victim, or
+  *	c. have CAP_FOWNER capability
+- *  6. If the victim is append-only or immutable we can't do antyhing with
++ *  6. If the victim is append-only or immutable we can't do anything with
+  *     links pointing to it.
+  *  7. If we were asked to remove a directory and victim isn't one - ENOTDIR.
+  *  8. If we were asked to remove a non-directory and victim isn't one - EISDIR.
+@@ -4585,7 +4585,7 @@ again:
+ 	}
+ 
+ 	/*
+-	 * mut. excl. ops lock is locked.  Three possibilites:
++	 * mut. excl. ops lock is locked.  Three possibilities:
+ 	 *   (1) some other op is running
+ 	 *   (2) balance is running
+ 	 *   (3) balance is paused -- special case (think resume)
+@@ -5490,7 +5490,7 @@ long btrfs_ioctl(struct file *file, unsigned int
+ 		ret = btrfs_sync_fs(file_inode(file)->i_sb, 1);
+ 		/*
+ 		 * The transaction thread may want to do more work,
+-		 * namely it pokes the cleaner ktread that will start
++		 * namely it pokes the cleaner kthread that will start
+ 		 * processing uncleaned subvols.
+ 		 */
+ 		wake_up_process(root->fs_info->transaction_kthread);
+diff --git a/fs/btrfs/ordered-data.h b/fs/btrfs/ordered-data.h
+index 23c9605..ae068bb 100644
+--- a/fs/btrfs/ordered-data.h
++++ b/fs/btrfs/ordered-data.h
+@@ -58,7 +58,7 @@ struct btrfs_ordered_sum {
+ 
+ #define BTRFS_ORDERED_COMPRESSED 3 /* writing a zlib compressed extent */
+ 
+-#define BTRFS_ORDERED_PREALLOC 4 /* set when writing to prealloced extent */
++#define BTRFS_ORDERED_PREALLOC 4 /* set when writing to preallocated extent */
+ 
+ #define BTRFS_ORDERED_DIRECT 5 /* set when we're doing DIO with this extent */
+ 
+diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
+index 9e11955..a7677ae 100644
+--- a/fs/btrfs/qgroup.c
++++ b/fs/btrfs/qgroup.c
+@@ -85,7 +85,7 @@ struct btrfs_qgroup {
+ 
+ 	/*
+ 	 * temp variables for accounting operations
+-	 * Refer to qgroup_shared_accouting() for details.
++	 * Refer to qgroup_shared_accounting() for details.
+ 	 */
+ 	u64 old_refcnt;
+ 	u64 new_refcnt;
+@@ -499,7 +499,7 @@ void btrfs_free_qgroup_config(struct btrfs_fs_info *fs_info)
+ 	}
+ 	/*
+ 	 * we call btrfs_free_qgroup_config() when umounting
+-	 * filesystem and disabling quota, so we set qgroup_ulit
++	 * filesystem and disabling quota, so we set qgroup_ulist
+ 	 * to be null here to avoid double free.
+ 	 */
+ 	ulist_free(fs_info->qgroup_ulist);
+@@ -1036,7 +1036,7 @@ static void qgroup_dirty(struct btrfs_fs_info *fs_info,
+ 
+ /*
+  * The easy accounting, if we are adding/removing the only ref for an extent
+- * then this qgroup and all of the parent qgroups get their refrence and
++ * then this qgroup and all of the parent qgroups get their reference and
+  * exclusive counts adjusted.
+  *
+  * Caller should hold fs_info->qgroup_lock.
+@@ -1436,7 +1436,7 @@ int btrfs_qgroup_prepare_account_extents(struct btrfs_trans_handle *trans,
+ 
+ 	/*
+ 	 * No need to do lock, since this function will only be called in
+-	 * btrfs_commmit_transaction().
++	 * btrfs_commit_transaction().
+ 	 */
+ 	node = rb_first(&delayed_refs->dirty_extent_root);
+ 	while (node) {
+@@ -1557,7 +1557,7 @@ static int qgroup_update_refcnt(struct btrfs_fs_info *fs_info,
+  * A:	cur_old_roots < nr_old_roots	(not exclusive before)
+  * !A:	cur_old_roots == nr_old_roots	(possible exclusive before)
+  * B:	cur_new_roots < nr_new_roots	(not exclusive now)
+- * !B:	cur_new_roots == nr_new_roots	(possible exclsuive now)
++ * !B:	cur_new_roots == nr_new_roots	(possible exclusive now)
+  *
+  * Results:
+  * +: Possible sharing -> exclusive	-: Possible exclusive -> sharing
+@@ -1851,7 +1851,7 @@ out:
+ }
+ 
+ /*
+- * Copy the acounting information between qgroups. This is necessary
++ * Copy the accounting information between qgroups. This is necessary
+  * when a snapshot or a subvolume is created. Throwing an error will
+  * cause a transaction abort so we take extra care here to only error
+  * when a readonly fs is a reasonable outcome.
+@@ -2340,7 +2340,7 @@ out:
+ 	mutex_unlock(&fs_info->qgroup_rescan_lock);
+ 
+ 	/*
+-	 * only update status, since the previous part has alreay updated the
++	 * only update status, since the previous part has already updated the
+ 	 * qgroup info.
+ 	 */
+ 	trans = btrfs_start_transaction(fs_info->quota_root, 1);
+@@ -2672,7 +2672,7 @@ void btrfs_qgroup_free_meta(struct btrfs_root *root, int num_bytes)
+ }
+ 
+ /*
+- * Check qgroup reserved space leaking, normally at destory inode
++ * Check qgroup reserved space leaking, normally at destroy inode
+  * time
+  */
+ void btrfs_qgroup_check_reserved_leak(struct inode *inode)
+diff --git a/fs/btrfs/raid56.c b/fs/btrfs/raid56.c
+index 0b7792e..ed5fca6 100644
+--- a/fs/btrfs/raid56.c
++++ b/fs/btrfs/raid56.c
+@@ -576,7 +576,7 @@ static int rbio_can_merge(struct btrfs_raid_bio *last,
+ 	 * we can't merge with cached rbios, since the
+ 	 * idea is that when we merge the destination
+ 	 * rbio is going to run our IO for us.  We can
+-	 * steal from cached rbio's though, other functions
++	 * steal from cached rbios [ <- this seems like a plural and not a posessive; change for clarity; alternatively, should be both plural and posessive -> rbios' -- Nicholas D Steeves ] though, other functions
+ 	 * handle that.
+ 	 */
+ 	if (test_bit(RBIO_CACHE_BIT, &last->flags) ||
+@@ -2368,7 +2368,7 @@ static noinline void finish_parity_scrub(struct btrfs_raid_bio *rbio,
+ 			run_xor(pointers + 1, nr_data - 1, PAGE_SIZE);
+ 		}
+ 
+-		/* Check scrubbing pairty and repair it */
++		/* Check scrubbing parity and repair it */
+ 		p = rbio_stripe_page(rbio, rbio->scrubp, pagenr);
+ 		parity = kmap(p);
+ 		if (memcmp(parity, pointers[rbio->scrubp], PAGE_SIZE))
+@@ -2493,7 +2493,7 @@ static void validate_rbio_for_parity_scrub(struct btrfs_raid_bio *rbio)
+ 		/*
+ 		 * Here means we got one corrupted data stripe and one
+ 		 * corrupted parity on RAID6, if the corrupted parity
+-		 * is scrubbing parity, luckly, use the other one to repair
++		 * is scrubbing parity, luckily, use the other one to repair
+ 		 * the data, or we can not repair the data stripe.
+ 		 */
+ 		if (failp != rbio->scrubp)
+diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
+index 08ef890..660c51c 100644
+--- a/fs/btrfs/relocation.c
++++ b/fs/btrfs/relocation.c
+@@ -668,8 +668,8 @@ int find_inline_backref(struct extent_buffer *leaf, int slot,
+  * roots of b-trees that reference the tree block.
+  *
+  * the basic idea of this function is check backrefs of a given block
+- * to find upper level blocks that refernece the block, and then check
+- * bakcrefs of these upper level blocks recursively. the recursion stop
++ * to find upper level blocks that reference the block, and then check
++ * backrefs of these upper level blocks recursively. the recursion stop
+  * when tree root is reached or backrefs for the block is cached.
+  *
+  * NOTE: if we find backrefs for a block are cached, we know backrefs
+@@ -1160,7 +1160,7 @@ out:
+ 			if (!RB_EMPTY_NODE(&upper->rb_node))
+ 				continue;
+ 
+-			/* Add this guy's upper edges to the list to proces */
++			/* Add this guy's upper edges to the list to process */
+ 			list_for_each_entry(edge, &upper->upper, list[LOWER])
+ 				list_add_tail(&edge->list[UPPER], &list);
+ 			if (list_empty(&upper->upper))
+@@ -2396,7 +2396,7 @@ again:
+ 		}
+ 
+ 		/*
+-		 * we keep the old last snapshod transid in rtranid when we
++		 * we keep the old last snapshot transid in rtranid when we
+ 		 * created the relocation tree.
+ 		 */
+ 		last_snap = btrfs_root_rtransid(&reloc_root->root_item);
+@@ -2616,7 +2616,7 @@ static int reserve_metadata_space(struct btrfs_trans_handle *trans,
+ 			 * only one thread can access block_rsv at this point,
+ 			 * so we don't need hold lock to protect block_rsv.
+ 			 * we expand more reservation size here to allow enough
+-			 * space for relocation and we will return eailer in
++			 * space for relocation and we will return earlier in
+ 			 * enospc case.
+ 			 */
+ 			rc->block_rsv->size = tmp + rc->extent_root->nodesize *
+@@ -4592,7 +4592,7 @@ int btrfs_reloc_cow_block(struct btrfs_trans_handle *trans,
+ 
+ /*
+  * called before creating snapshot. it calculates metadata reservation
+- * requried for relocating tree blocks in the snapshot
++ * required for relocating tree blocks in the snapshot
+  */
+ void btrfs_reloc_pre_snapshot(struct btrfs_pending_snapshot *pending,
+ 			      u64 *bytes_to_reserve)
+diff --git a/fs/btrfs/root-tree.c b/fs/btrfs/root-tree.c
+index 9fcd6df..654f7a4 100644
+--- a/fs/btrfs/root-tree.c
++++ b/fs/btrfs/root-tree.c
+@@ -71,9 +71,9 @@ static void btrfs_read_root_item(struct extent_buffer *eb, int slot,
+  * search_key: the key to search
+  * path: the path we search
+  * root_item: the root item of the tree we look for
+- * root_key: the reak key of the tree we look for
++ * root_key: the reak [ what should "reak" be?  -- Nicholas D Steeves ] key of the tree we look for
+  *
+- * If ->offset of 'seach_key' is -1ULL, it means we are not sure the offset
++ * If ->offset of 'search_key' is -1ULL, it means we are not sure the offset
+  * of the search key, just lookup the root with the highest offset for a
+  * given objectid.
+  *
+diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
+index 4678f03..320cde1c 100644
+--- a/fs/btrfs/scrub.c
++++ b/fs/btrfs/scrub.c
+@@ -1044,7 +1044,7 @@ nodatasum_case:
+ 
+ 		/*
+ 		 * !is_metadata and !have_csum, this means that the data
+-		 * might not be COW'ed, that it might be modified
++		 * might not be COWed, that it might be modified
+ 		 * concurrently. The general strategy to work on the
+ 		 * commit root does not help in the case when COW is not
+ 		 * used.
+@@ -1125,7 +1125,7 @@ nodatasum_case:
+ 	 * the 2nd page of mirror #1 faces I/O errors, and the 2nd page
+ 	 * of mirror #2 is readable but the final checksum test fails,
+ 	 * then the 2nd page of mirror #3 could be tried, whether now
+-	 * the final checksum succeedes. But this would be a rare
++	 * the final checksum succeeds. But this would be a rare
+ 	 * exception and is therefore not implemented. At least it is
+ 	 * avoided that the good copy is overwritten.
+ 	 * A more useful improvement would be to pick the sectors
+diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
+index 8d358c5..e9710f4 100644
+--- a/fs/btrfs/send.c
++++ b/fs/btrfs/send.c
+@@ -1831,7 +1831,7 @@ static int will_overwrite_ref(struct send_ctx *sctx, u64 dir, u64 dir_gen,
+ 
+ 	/*
+ 	 * If we have a parent root we need to verify that the parent dir was
+-	 * not delted and then re-created, if it was then we have no overwrite
++	 * not deleted and then re-created, if it was then we have no overwrite
+ 	 * and we can just unlink this entry.
+ 	 */
+ 	if (sctx->parent_root) {
+@@ -4192,9 +4192,9 @@ static int __process_new_xattr(int num, struct btrfs_key *di_key,
+ 		return -ENOMEM;
+ 
+ 	/*
+-	 * This hack is needed because empty acl's are stored as zero byte
++	 * This hack is needed because empty acls are stored as zero byte
+ 	 * data in xattrs. Problem with that is, that receiving these zero byte
+-	 * acl's will fail later. To fix this, we send a dummy acl list that
++	 * acls will fail later. To fix this, we send a dummy acl list that
+ 	 * only contains the version number and no entries.
+ 	 */
+ 	if (!strncmp(name, XATTR_NAME_POSIX_ACL_ACCESS, name_len) ||
+diff --git a/fs/btrfs/struct-funcs.c b/fs/btrfs/struct-funcs.c
+index e05619f..875c757 100644
+--- a/fs/btrfs/struct-funcs.c
++++ b/fs/btrfs/struct-funcs.c
+@@ -36,7 +36,7 @@ static inline void put_unaligned_le8(u8 val, void *p)
+  *
+  * The end result is that anyone who #includes ctree.h gets a
+  * declaration for the btrfs_set_foo functions and btrfs_foo functions,
+- * which are wappers of btrfs_set_token_#bits functions and
++ * which are wrappers of btrfs_set_token_#bits functions and
+  * btrfs_get_token_#bits functions, which are defined in this file.
+  *
+  * These setget functions do all the extent_buffer related mapping
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index 00b8f37..eb8a810 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -121,7 +121,7 @@ static void btrfs_handle_error(struct btrfs_fs_info *fs_info)
+ 		 * Note that a running device replace operation is not
+ 		 * canceled here although there is no way to update
+ 		 * the progress. It would add the risk of a deadlock,
+-		 * therefore the canceling is ommited. The only penalty
++		 * therefore the canceling is omitted. The only penalty
+ 		 * is that some I/O remains active until the procedure
+ 		 * completes. The next time when the filesystem is
+ 		 * mounted writeable again, the device replace
+@@ -132,7 +132,7 @@ static void btrfs_handle_error(struct btrfs_fs_info *fs_info)
+ 
+ /*
+  * __btrfs_std_error decodes expected errors from the caller and
+- * invokes the approciate error response.
++ * invokes the appropriate error response.
+  */
+ __cold
+ void __btrfs_std_error(struct btrfs_fs_info *fs_info, const char *function,
+@@ -1881,7 +1881,7 @@ static int btrfs_calc_avail_data_space(struct btrfs_root *root, u64 *free_bytes)
+ 	int ret;
+ 
+ 	/*
+-	 * We aren't under the device list lock, so this is racey-ish, but good
++	 * We aren't under the device list lock, so this is racy-ish, but good
+ 	 * enough for our purposes.
+ 	 */
+ 	nr_devices = fs_info->fs_devices->open_devices;
+@@ -1900,7 +1900,7 @@ static int btrfs_calc_avail_data_space(struct btrfs_root *root, u64 *free_bytes)
+ 	if (!devices_info)
+ 		return -ENOMEM;
+ 
+-	/* calc min stripe number for data space alloction */
++	/* calc min stripe number for data space allocation */
+ 	type = btrfs_get_alloc_profile(root, 1);
+ 	if (type & BTRFS_BLOCK_GROUP_RAID0) {
+ 		min_stripes = 2;
+@@ -1936,7 +1936,7 @@ static int btrfs_calc_avail_data_space(struct btrfs_root *root, u64 *free_bytes)
+ 		avail_space *= BTRFS_STRIPE_LEN;
+ 
+ 		/*
+-		 * In order to avoid overwritting the superblock on the drive,
++		 * In order to avoid overwriting the superblock on the drive,
+ 		 * btrfs starts at an offset of at least 1MB when doing chunk
+ 		 * allocation.
+ 		 */
+diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
+index 539e7b5..ec9f4e4 100644
+--- a/fs/btrfs/sysfs.c
++++ b/fs/btrfs/sysfs.c
+@@ -145,7 +145,7 @@ static ssize_t btrfs_feature_attr_store(struct kobject *kobj,
+ 	if ((val && !(set & fa->feature_bit)) ||
+ 	    (!val && !(clear & fa->feature_bit))) {
+ 		btrfs_info(fs_info,
+-			"%sabling feature %s on mounted fs is not supported.",
++			"%sabling [ <- Already OK?  Nicholas D Steeves ] feature %s on mounted fs is not supported.",
+ 			val ? "En" : "Dis", fa->kobj_attr.attr.name);
+ 		return -EPERM;
+ 	}
+diff --git a/fs/btrfs/tests/extent-io-tests.c b/fs/btrfs/tests/extent-io-tests.c
+index 70948b1..99e9dba 100644
+--- a/fs/btrfs/tests/extent-io-tests.c
++++ b/fs/btrfs/tests/extent-io-tests.c
+@@ -176,7 +176,7 @@ static int test_find_delalloc(void)
+ 	locked_page = find_lock_page(inode->i_mapping, test_start >>
+ 				     PAGE_SHIFT);
+ 	if (!locked_page) {
+-		test_msg("Could'nt find the locked page\n");
++		test_msg("Couldn't find the locked page\n");
+ 		goto out_bits;
+ 	}
+ 	start = test_start;
+diff --git a/fs/btrfs/tests/free-space-tests.c b/fs/btrfs/tests/free-space-tests.c
+index 5142475..0eeb8f3 100644
+--- a/fs/btrfs/tests/free-space-tests.c
++++ b/fs/btrfs/tests/free-space-tests.c
+@@ -25,7 +25,7 @@
+ #define BITS_PER_BITMAP		(PAGE_SIZE * 8)
+ 
+ /*
+- * This test just does basic sanity checking, making sure we can add an exten
++ * This test just does basic sanity checking, making sure we can add an extent
+  * entry and remove space from either end and the middle, and make sure we can
+  * remove space that covers adjacent extent entries.
+  */
+@@ -396,8 +396,9 @@ static int check_cache_empty(struct btrfs_block_group_cache *cache)
+  * wasn't optimal as they could be spread all over the block group while under
+  * concurrency (extra overhead and fragmentation).
+  *
+- * This stealing approach is benefical, since we always prefer to allocate from
+- * extent entries, both for clustered and non-clustered allocation requests.
++ * This stealing approach is beneficial, since we always prefer to allocate
++ * from extent entries, both for clustered and non-clustered allocation
++ * requests.
+  */
+ static int
+ test_steal_space_from_bitmap_to_extent(struct btrfs_block_group_cache *cache)
+diff --git a/fs/btrfs/tests/inode-tests.c b/fs/btrfs/tests/inode-tests.c
+index 863a6a3..8a25fe8 100644
+--- a/fs/btrfs/tests/inode-tests.c
++++ b/fs/btrfs/tests/inode-tests.c
+@@ -264,7 +264,7 @@ static noinline int test_btrfs_get_extent(void)
+ 
+ 	/*
+ 	 * We will just free a dummy node if it's ref count is 2 so we need an
+-	 * extra ref so our searches don't accidently release our page.
++	 * extra ref so our searches don't accidentally release our page.
+ 	 */
+ 	extent_buffer_get(root->node);
+ 	btrfs_set_header_nritems(root->node, 0);
+diff --git a/fs/btrfs/tests/qgroup-tests.c b/fs/btrfs/tests/qgroup-tests.c
+index 8ea5d34..8aa4ded3 100644
+--- a/fs/btrfs/tests/qgroup-tests.c
++++ b/fs/btrfs/tests/qgroup-tests.c
+@@ -234,7 +234,7 @@ static int test_no_shared_qgroup(struct btrfs_root *root)
+ 	}
+ 
+ 	/*
+-	 * Since the test trans doesn't havee the complicated delayed refs,
++	 * Since the test trans doesn't have the complicated delayed refs,
+ 	 * we can only call btrfs_qgroup_account_extent() directly to test
+ 	 * quota.
+ 	 */
+diff --git a/fs/btrfs/transaction.h b/fs/btrfs/transaction.h
+index 72be51f..9fe0ec2 100644
+--- a/fs/btrfs/transaction.h
++++ b/fs/btrfs/transaction.h
+@@ -144,7 +144,7 @@ struct btrfs_pending_snapshot {
+ 	/* block reservation for the operation */
+ 	struct btrfs_block_rsv block_rsv;
+ 	u64 qgroup_reserved;
+-	/* extra metadata reseration for relocation */
++	/* extra metadata reservation for relocation */
+ 	int error;
+ 	bool readonly;
+ 	struct list_head list;
+diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+index 517d0cc..1ce9941 100644
+--- a/fs/btrfs/tree-log.c
++++ b/fs/btrfs/tree-log.c
+@@ -2330,7 +2330,7 @@ static int replay_one_buffer(struct btrfs_root *log, struct extent_buffer *eb,
+ 				break;
+ 
+ 			/* for regular files, make sure corresponding
+-			 * orhpan item exist. extents past the new EOF
++			 * orphan item exist. extents past the new EOF
+ 			 * will be truncated later by orphan cleanup.
+ 			 */
+ 			if (S_ISREG(mode)) {
+@@ -4937,7 +4937,7 @@ out_unlock:
+  * the actual unlink operation, so if we do this check before a concurrent task
+  * sets last_unlink_trans it means we've logged a consistent version/state of
+  * all the inode items, otherwise we are not sure and must do a transaction
+- * commit (the concurrent task migth have only updated last_unlink_trans before
++ * commit (the concurrent task might have only updated last_unlink_trans before
+  * we logged the inode or it might have also done the unlink).
+  */
+ static bool btrfs_must_commit_transaction(struct btrfs_trans_handle *trans,
+@@ -4996,7 +4996,7 @@ static noinline int check_parent_dirs_for_sync(struct btrfs_trans_handle *trans,
+ 	while (1) {
+ 		/*
+ 		 * If we are logging a directory then we start with our inode,
+-		 * not our parents inode, so we need to skipp setting the
++		 * not our parents' [ Should this be plural or singular possessive? -- Nicholas D Steeves ] inode, so we need to skip setting the
+ 		 * logged_trans so that further down in the log code we don't
+ 		 * think this inode has already been logged.
+ 		 */
+@@ -5375,7 +5375,7 @@ static int btrfs_log_inode_parent(struct btrfs_trans_handle *trans,
+ 		log_dentries = true;
+ 
+ 	/*
+-	 * On unlink we must make sure all our current and old parent directores
++	 * On unlink we must make sure all our current and old parent directory
+ 	 * inodes are fully logged. This is to prevent leaving dangling
+ 	 * directory index entries in directories that were our parents but are
+ 	 * not anymore. Not doing this results in old parent directory being
+diff --git a/fs/btrfs/ulist.c b/fs/btrfs/ulist.c
+index 91feb2b..b1434bb 100644
+--- a/fs/btrfs/ulist.c
++++ b/fs/btrfs/ulist.c
+@@ -28,7 +28,7 @@
+  * }
+  * ulist_free(ulist);
+  *
+- * This assumes the graph nodes are adressable by u64. This stems from the
++ * This assumes the graph nodes are addressable by u64. This stems from the
+  * usage for tree enumeration in btrfs, where the logical addresses are
+  * 64 bit.
+  *
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index bd0f45f..7b115c0 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -2165,7 +2165,7 @@ static int btrfs_prepare_sprout(struct btrfs_root *root)
+ }
+ 
+ /*
+- * strore the expected generation for seed devices in device items.
++ * strore [ <- seems like it should be "store" -- Nicholas D Steeves ] the expected generation for seed devices in device items.
+  */
+ static int btrfs_finish_sprout(struct btrfs_trans_handle *trans,
+ 			       struct btrfs_root *root)
+@@ -3362,7 +3362,7 @@ static int should_balance_chunk(struct btrfs_root *root,
+ 	} else if ((bargs->flags & BTRFS_BALANCE_ARGS_LIMIT_RANGE)) {
+ 		/*
+ 		 * Same logic as the 'limit' filter; the minimum cannot be
+-		 * determined here because we do not have the global informatoin
++		 * determined here because we do not have the global information
+ 		 * about the count of all chunks that satisfy the filters.
+ 		 */
+ 		if (bargs->limit_max == 0)
+@@ -6032,7 +6032,7 @@ static void bbio_error(struct btrfs_bio *bbio, struct bio *bio, u64 logical)
+ {
+ 	atomic_inc(&bbio->error);
+ 	if (atomic_dec_and_test(&bbio->stripes_pending)) {
+-		/* Shoud be the original bio. */
++		/* Should be the original bio. */
+ 		WARN_ON(bio != bbio->orig_bio);
+ 
+ 		btrfs_io_bio(bio)->mirror_num = bbio->mirror_num;
+@@ -6516,7 +6516,7 @@ int btrfs_read_sys_array(struct btrfs_root *root)
+ 	set_extent_buffer_uptodate(sb);
+ 	btrfs_set_buffer_lockdep_class(root->root_key.objectid, sb, 0);
+ 	/*
+-	 * The sb extent buffer is artifical and just used to read the system array.
++	 * The sb extent buffer is artificial and just used to read the system array.
+ 	 * set_extent_buffer_uptodate() call does not properly mark all it's
+ 	 * pages up-to-date when the page is larger: extent does not cover the
+ 	 * whole page and consequently check_page_uptodate does not find all
+-- 
+2.1.4
 
-Or is it preferred that I delete all patches excepting my cover letter
-and 0119-For-linux-next-String-and-comment-review-Fix-typos-f.patch,
-and then git send-email?
-
-Best regards,
-Nicholas

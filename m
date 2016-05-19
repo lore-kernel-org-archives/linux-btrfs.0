@@ -1,47 +1,37 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:40800 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751761AbcESFNf (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 19 May 2016 01:13:35 -0400
-From: Anand Jain <anand.jain@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.cz, Anand Jain <anand.jain@oracle.com>
-Subject: [PATCH 3/3] btrfs-progs: clean up commands.h
-Date: Thu, 19 May 2016 13:13:14 +0800
-Message-Id: <1463634794-591-4-git-send-email-anand.jain@oracle.com>
-In-Reply-To: <1463634794-591-1-git-send-email-anand.jain@oracle.com>
+Received: from mx2.suse.de ([195.135.220.15]:51943 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1754464AbcESMBB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 19 May 2016 08:01:01 -0400
+Date: Thu, 19 May 2016 14:00:32 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Anand Jain <anand.jain@oracle.com>
+Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz
+Subject: Re: [PATCH 1/3] btrfs-progs: fix make install failure
+Message-ID: <20160519120032.GB29147@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
 References: <1463634794-591-1-git-send-email-anand.jain@oracle.com>
+ <1463634794-591-2-git-send-email-anand.jain@oracle.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
+In-Reply-To: <1463634794-591-2-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This function is declared in utils.h so remove it
-from commands.h
-int test_issubvolume(const char *path);
+On Thu, May 19, 2016 at 01:13:12PM +0800, Anand Jain wrote:
+> /usr/bin/install -c -m644 -d 64-btrfs-dm.rules /usr/lib/udev/rules.d
+> /usr/bin/install: cannot create directory ‘64-btrfs-dm.rules’: File exists
+> Makefile:400: recipe for target 'install' failed
+> make: *** [install] Error 1
+> 
+> fixes: btrfs-progs: udev: add rules for dm devices
 
-This function does not exists delete the declaration
-get_subvol_name(char *mnt, char *full_path);
+>  ifneq ($(udevdir),)
+> -	$(INSTALL) -m644 -d $(udev_rules) $(DESTDIR)$(udevruledir)
+> +	$(INSTALL) -m644 $(udev_rules) $(DESTDIR)$(udevruledir)
+>  endif
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
----
- commands.h | 6 ------
- 1 file changed, 6 deletions(-)
-
-diff --git a/commands.h b/commands.h
-index 2da093bf81a3..94229c112bc0 100644
---- a/commands.h
-+++ b/commands.h
-@@ -125,10 +125,4 @@ int cmd_dump_super(int argc, char **argv);
- int cmd_debug_tree(int argc, char **argv);
- int cmd_rescue(int argc, char **argv);
- 
--/* subvolume exported functions */
--int test_issubvolume(const char *path);
--
--/* send.c */
--char *get_subvol_name(char *mnt, char *full_path);
--
- #endif
--- 
-2.7.0
+We have to conditionally create the directory, so extra -d on the
+udevrule or -D is needed. Looking at the patch we have in openSUSE, it
+does the former. I'll update the patch.
 

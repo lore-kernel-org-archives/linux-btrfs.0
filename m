@@ -1,46 +1,27 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from ozlabs.org ([103.22.144.67]:35172 "EHLO ozlabs.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750752AbcESAT1 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 18 May 2016 20:19:27 -0400
-Date: Thu, 19 May 2016 10:19:21 +1000
-From: Stephen Rothwell <sfr@canb.auug.org.au>
-To: Chris Mason <clm@fb.com>
-Cc: LKML <linux-kernel@vger.kernel.org>, btrfs <linux-btrfs@vger.kernel.org>,
-        David Sterba <dsterba@suse.com>, Filipe Manana <fdmanana@suse.com>
-Subject: Re: incoming merge conflict to linux-next
-Message-ID: <20160519101921.3a45e559@canb.auug.org.au>
-In-Reply-To: <20160518211043.qqzesbrmbbr7xba2@floor.thefacebook.com>
-References: <20160518211043.qqzesbrmbbr7xba2@floor.thefacebook.com>
+Received: from mail-oi0-f66.google.com ([209.85.218.66]:32977 "EHLO
+	mail-oi0-f66.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753864AbcESIhH (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 19 May 2016 04:37:07 -0400
+Received: by mail-oi0-f66.google.com with SMTP id t140so14884621oie.0
+        for <linux-btrfs@vger.kernel.org>; Thu, 19 May 2016 01:37:07 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+Date: Thu, 19 May 2016 10:20:13 +0200
+Message-ID: <CAJfpeguD-S=CEogqcDOYAYJBzfyJG=MMKyFfpMo55bQk7d0_TQ@mail.gmail.com>
+Subject: sharing page cache pages between multiple mappings
+From: Miklos Szeredi <miklos@szeredi.hu>
+To: linux-mm@kvack.org, linux-fsdevel@vger.kernel.org,
+        linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Chris,
+Has anyone thought about sharing pages between multiple files?
 
-On Wed, 18 May 2016 17:10:43 -0400 Chris Mason <clm@fb.com> wrote:
->
-> Dave Sterba's tree in linux-next has a few btrfs patches that we're not
-> sending yet into Linus.  We've got an update for Josef's enospc work
-> that'll get sent in next week.
-> 
-> So he prepped a pull for me that merged up a number of his branches but
-> didn't include Josef's new code.  It has all been in -next for some
-> time, and then I put some fixes from Filipe on top.
-> 
-> Long story short, you'll get a merge conflict from my next branch:
-> 
-> https://git.kernel.org/cgit/linux/kernel/git/mason/linux-btrfs.git next
-> 
-> I've got the sample resolution in next-merge:
-> 
-> https://git.kernel.org/cgit/linux/kernel/git/mason/linux-btrfs.git next-merge
-> 
-> Please let us know if you have any problems.
+The obvious application is for COW filesytems where there are
+logically distinct files that physically share data and could easily
+share the cache as well if there was infrastructure for it.
 
-A bit of a mess, but I sorted it out, thanks for the test merge.
-
--- 
-Cheers,
-Stephen Rothwell
+Thanks,
+Miklos

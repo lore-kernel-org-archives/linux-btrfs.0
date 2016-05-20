@@ -1,35 +1,172 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:47283 "EHLO mx2.suse.de"
+Received: from mail.kernel.org ([198.145.29.136]:42660 "EHLO mail.kernel.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S932171AbcEWLAH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 23 May 2016 07:00:07 -0400
-Date: Mon, 23 May 2016 12:59:30 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Josef Bacik <josef@toxicpanda.com>
-Cc: fdmanana@kernel.org,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH 1/6] Btrfs: fix race between readahead and device
- replace/removal
-Message-ID: <20160523105930.GI29147@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1463719450-30601-1-git-send-email-fdmanana@kernel.org>
- <CAEzrpqdTitp=RXyV8VF5bvvg0b5_wojyTCsTrEn1JcrbBRYC0w@mail.gmail.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CAEzrpqdTitp=RXyV8VF5bvvg0b5_wojyTCsTrEn1JcrbBRYC0w@mail.gmail.com>
+	id S1752568AbcETPIO (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 20 May 2016 11:08:14 -0400
+Received: from mail.kernel.org (localhost [127.0.0.1])
+	by mail.kernel.org (Postfix) with ESMTP id 6228220357
+	for <linux-btrfs@vger.kernel.org>; Fri, 20 May 2016 15:08:08 +0000 (UTC)
+Received: from debian3.lan (bl12-226-64.dsl.telepac.pt [85.245.226.64])
+	(using TLSv1.2 with cipher AES128-SHA256 (128/128 bits))
+	(No client certificate requested)
+	by mail.kernel.org (Postfix) with ESMTPSA id 9B01120379
+	for <linux-btrfs@vger.kernel.org>; Fri, 20 May 2016 15:08:06 +0000 (UTC)
+From: fdmanana@kernel.org
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH 2/6] Btrfs: fix race between device replace and block group removal
+Date: Fri, 20 May 2016 05:44:27 +0100
+Message-Id: <1463719467-32083-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, May 20, 2016 at 11:11:57AM -0400, Josef Bacik wrote:
-> On Fri, May 20, 2016 at 12:44 AM,  <fdmanana@kernel.org> wrote:
-> > So fix this by taking the device_list_mutex in the readahead code. We
-> > can't use here the lighter approach of using a rcu_read_lock() and
-> > rcu_read_unlock() pair together with a list_for_each_entry_rcu() call
-> > because we end up doing calls to sleeping functions (kzalloc()) in the
-> > respective code path.
-> 
-> I think it might be time to change this to a rwsem as well as we use
-> it in a bunch of places that are read only like statfs and readahead.
-> But this works for now.
+From: Filipe Manana <fdmanana@suse.com>
 
-Sounds good to me.
+When it's finishing, the device replace code iterates all extent maps
+representing block group and for each one that has a stripe that refers
+to the source device, it replaces its device with the target device.
+However when it replaces the source device with the target device it,
+the target device still has an ID of 0ULL (BTRFS_DEV_REPLACE_DEVID),
+only after its ID is changed to match the one from the source device.
+This leads to races with the chunk removal code that can temporarly see
+a device with an ID of 0ULL and then attempt to use that ID to remove
+items from the device tree and fail, causing a transaction abort:
+
+[ 9238.594364] BTRFS info (device sdf): dev_replace from /dev/sdf (devid 3) to /dev/sde finished
+[ 9238.594377] ------------[ cut here ]------------
+[ 9238.594402] WARNING: CPU: 14 PID: 21566 at fs/btrfs/volumes.c:2771 btrfs_remove_chunk+0x2e5/0x793 [btrfs]
+[ 9238.594403] BTRFS: Transaction aborted (error 1)
+[ 9238.594416] Modules linked in: btrfs crc32c_generic acpi_cpufreq xor tpm_tis tpm raid6_pq ppdev parport_pc processor psmouse parport i2c_piix4 evdev sg i2c_core se
+rio_raw pcspkr button loop autofs4 ext4 crc16 jbd2 mbcache sr_mod cdrom sd_mod ata_generic virtio_scsi ata_piix virtio_pci libata virtio_ring virtio e1000 scsi_mod fl
+oppy [last unloaded: btrfs]
+[ 9238.594418] CPU: 14 PID: 21566 Comm: btrfs-cleaner Not tainted 4.6.0-rc7-btrfs-next-29+ #1
+[ 9238.594419] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS by qemu-project.org 04/01/2014
+[ 9238.594421]  0000000000000000 ffff88017f1dbc60 ffffffff8126b42c ffff88017f1dbcb0
+[ 9238.594422]  0000000000000000 ffff88017f1dbca0 ffffffff81052b14 00000ad37f1dbd18
+[ 9238.594423]  0000000000000001 ffff88018068a558 ffff88005c4b9c00 ffff880233f60db0
+[ 9238.594424] Call Trace:
+[ 9238.594428]  [<ffffffff8126b42c>] dump_stack+0x67/0x90
+[ 9238.594430]  [<ffffffff81052b14>] __warn+0xc2/0xdd
+[ 9238.594432]  [<ffffffff81052b7a>] warn_slowpath_fmt+0x4b/0x53
+[ 9238.594434]  [<ffffffff8116c311>] ? kmem_cache_free+0x128/0x188
+[ 9238.594450]  [<ffffffffa04d43f5>] btrfs_remove_chunk+0x2e5/0x793 [btrfs]
+[ 9238.594452]  [<ffffffff8108e456>] ? arch_local_irq_save+0x9/0xc
+[ 9238.594464]  [<ffffffffa04a26fa>] btrfs_delete_unused_bgs+0x317/0x382 [btrfs]
+[ 9238.594476]  [<ffffffffa04a961d>] cleaner_kthread+0x1ad/0x1c7 [btrfs]
+[ 9238.594489]  [<ffffffffa04a9470>] ? btree_invalidatepage+0x8e/0x8e [btrfs]
+[ 9238.594490]  [<ffffffff8106f403>] kthread+0xd4/0xdc
+[ 9238.594494]  [<ffffffff8149e242>] ret_from_fork+0x22/0x40
+[ 9238.594495]  [<ffffffff8106f32f>] ? kthread_stop+0x286/0x286
+[ 9238.594496] ---[ end trace 183efbe50275f059 ]---
+
+The sequence of steps leading to this is like the following:
+
+              CPU 1                                           CPU 2
+
+ btrfs_dev_replace_finishing()
+
+   at this point
+   dev_replace->tgtdev->devid ==
+   BTRFS_DEV_REPLACE_DEVID (0ULL)
+
+   ...
+
+   btrfs_start_transaction()
+   btrfs_commit_transaction()
+
+                                                     btrfs_delete_unused_bgs()
+                                                       btrfs_remove_chunk()
+
+                                                         looks up for the extent map
+                                                         corresponding to the chunk
+
+                                                         lock_chunks() (chunk_mutex)
+                                                         check_system_chunk()
+                                                         unlock_chunks() (chunk_mutex)
+
+   locks fs_info->chunk_mutex
+
+   btrfs_dev_replace_update_device_in_mapping_tree()
+     --> iterates fs_info->mapping_tree and
+         replaces the device in every extent
+         map's map->stripes[] with
+         dev_replace->tgtdev, which still has
+         an id of 0ULL (BTRFS_DEV_REPLACE_DEVID)
+
+                                                         iterates over all stripes from
+                                                         the extent map
+
+                                                           --> calls btrfs_free_dev_extent()
+                                                               passing it the target device
+                                                               that still has an ID of 0ULL
+
+                                                           --> btrfs_free_dev_extent() fails
+                                                             --> aborts current transaction
+
+   finishes setting up the target device,
+   namely it sets tgtdev->devid to the value
+   of srcdev->devid (which is necessarily > 0)
+
+   frees the srcdev
+
+   unlocks fs_info->chunk_mutex
+
+So fix this by taking the device list mutex while processing the stripes
+for the chunk's extent map. This is similar to the race between device
+replace and block group creation that was fixed by commit 50460e37186a
+("Btrfs: fix race when finishing dev replace leading to transaction abort").
+
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+ fs/btrfs/volumes.c | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
+
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index bd0f45f..683e2bd 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -2736,6 +2736,7 @@ int btrfs_remove_chunk(struct btrfs_trans_handle *trans,
+ 	u64 dev_extent_len = 0;
+ 	u64 chunk_objectid = BTRFS_FIRST_CHUNK_TREE_OBJECTID;
+ 	int i, ret = 0;
++	struct btrfs_fs_devices *fs_devices = root->fs_info->fs_devices;
+ 
+ 	/* Just in case */
+ 	root = root->fs_info->chunk_root;
+@@ -2762,12 +2763,19 @@ int btrfs_remove_chunk(struct btrfs_trans_handle *trans,
+ 	check_system_chunk(trans, extent_root, map->type);
+ 	unlock_chunks(root->fs_info->chunk_root);
+ 
++	/*
++	 * Take the device list mutex to prevent races with the final phase of
++	 * a device replace operation that replaces the device object associated
++	 * with map stripes (dev-replace.c:btrfs_dev_replace_finishing()).
++	 */
++	mutex_lock(&fs_devices->device_list_mutex);
+ 	for (i = 0; i < map->num_stripes; i++) {
+ 		struct btrfs_device *device = map->stripes[i].dev;
+ 		ret = btrfs_free_dev_extent(trans, device,
+ 					    map->stripes[i].physical,
+ 					    &dev_extent_len);
+ 		if (ret) {
++			mutex_unlock(&fs_devices->device_list_mutex);
+ 			btrfs_abort_transaction(trans, root, ret);
+ 			goto out;
+ 		}
+@@ -2786,11 +2794,14 @@ int btrfs_remove_chunk(struct btrfs_trans_handle *trans,
+ 		if (map->stripes[i].dev) {
+ 			ret = btrfs_update_device(trans, map->stripes[i].dev);
+ 			if (ret) {
++				mutex_unlock(&fs_devices->device_list_mutex);
+ 				btrfs_abort_transaction(trans, root, ret);
+ 				goto out;
+ 			}
+ 		}
+ 	}
++	mutex_unlock(&fs_devices->device_list_mutex);
++
+ 	ret = btrfs_free_chunk(trans, root, chunk_objectid, chunk_offset);
+ 	if (ret) {
+ 		btrfs_abort_transaction(trans, root, ret);
+-- 
+2.7.0.rc3
+

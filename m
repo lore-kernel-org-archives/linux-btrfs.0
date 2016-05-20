@@ -1,223 +1,97 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:7102 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1754181AbcESKtz (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 19 May 2016 06:49:55 -0400
-Received: from G08CNEXCHPEKD01.g08.fujitsu.local (unknown [10.167.33.80])
-	by cn.fujitsu.com (Postfix) with ESMTP id 70C97489F960
-	for <linux-btrfs@vger.kernel.org>; Thu, 19 May 2016 18:49:49 +0800 (CST)
-From: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-CC: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
-Subject: [RFC PATCH] btrfs: correct inode's outstanding_extents computation
-Date: Thu, 19 May 2016 18:49:09 +0800
-Message-ID: <1463654949-8295-1-git-send-email-wangxg.fnst@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+Received: from mail.kernel.org ([198.145.29.136]:42591 "EHLO mail.kernel.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1755224AbcETPHy (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 20 May 2016 11:07:54 -0400
+Received: from mail.kernel.org (localhost [127.0.0.1])
+	by mail.kernel.org (Postfix) with ESMTP id 665E120364
+	for <linux-btrfs@vger.kernel.org>; Fri, 20 May 2016 15:07:53 +0000 (UTC)
+Received: from debian3.lan (bl12-226-64.dsl.telepac.pt [85.245.226.64])
+	(using TLSv1.2 with cipher AES128-SHA256 (128/128 bits))
+	(No client certificate requested)
+	by mail.kernel.org (Postfix) with ESMTPSA id 1DFF720357
+	for <linux-btrfs@vger.kernel.org>; Fri, 20 May 2016 15:07:51 +0000 (UTC)
+From: fdmanana@kernel.org
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH 1/6] Btrfs: fix race between readahead and device replace/removal
+Date: Fri, 20 May 2016 05:44:10 +0100
+Message-Id: <1463719450-30601-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This issue was revealed by modifing BTRFS_MAX_EXTENT_SIZE(128MB) to 64KB,
-When modifing BTRFS_MAX_EXTENT_SIZE(128MB) to 64KB, fsstress test often gets
-these warnings from btrfs_destroy_inode():
-	WARN_ON(BTRFS_I(inode)->outstanding_extents);
-	WARN_ON(BTRFS_I(inode)->reserved_extents);
+From: Filipe Manana <fdmanana@suse.com>
 
-Simple test program below can reproduce this issue steadily.
-	#include <string.h>
-	#include <unistd.h>
-	#include <sys/types.h>
-	#include <sys/stat.h>
-	#include <fcntl.h>
+The list of devices is protected by the device_list_mutex and the device
+replace code, in its finishing phase correctly takes that mutex before
+removing the source device from that list. However the readahead code was
+iterating that list without acquiring the respective mutex leading to
+crashes later on due to invalid memory accesses:
 
-	int main(void)
-	{
-		int fd;
-		char buf[1024*1024];
+[125671.831036] general protection fault: 0000 [#1] PREEMPT SMP
+[125671.832129] Modules linked in: btrfs dm_flakey dm_mod crc32c_generic xor raid6_pq acpi_cpufreq tpm_tis tpm ppdev evdev parport_pc psmouse sg parport
+processor ser
+[125671.834973] CPU: 10 PID: 19603 Comm: kworker/u32:19 Tainted: G        W       4.6.0-rc7-btrfs-next-29+ #1
+[125671.834973] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS by qemu-project.org 04/01/2014
+[125671.834973] Workqueue: btrfs-readahead btrfs_readahead_helper [btrfs]
+[125671.834973] task: ffff8801ac520540 ti: ffff8801ac918000 task.ti: ffff8801ac918000
+[125671.834973] RIP: 0010:[<ffffffff81270479>]  [<ffffffff81270479>] __radix_tree_lookup+0x6a/0x105
+[125671.834973] RSP: 0018:ffff8801ac91bc28  EFLAGS: 00010206
+[125671.834973] RAX: 0000000000000000 RBX: 6b6b6b6b6b6b6b6a RCX: 0000000000000000
+[125671.834973] RDX: 0000000000000000 RSI: 00000000000c1bff RDI: ffff88002ebd62a8
+[125671.834973] RBP: ffff8801ac91bc70 R08: 0000000000000001 R09: 0000000000000000
+[125671.834973] R10: ffff8801ac91bc70 R11: 0000000000000000 R12: ffff88002ebd62a8
+[125671.834973] R13: 0000000000000000 R14: 0000000000000000 R15: 00000000000c1bff
+[125671.834973] FS:  0000000000000000(0000) GS:ffff88023fd40000(0000) knlGS:0000000000000000
+[125671.834973] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+[125671.834973] CR2: 000000000073cae4 CR3: 00000000b7723000 CR4: 00000000000006e0
+[125671.834973] Stack:
+[125671.834973]  0000000000000000 ffff8801422d5600 ffff8802286bbc00 0000000000000000
+[125671.834973]  0000000000000001 ffff8802286bbc00 00000000000c1bff 0000000000000000
+[125671.834973]  ffff88002e639eb8 ffff8801ac91bc80 ffffffff81270541 ffff8801ac91bcb0
+[125671.834973] Call Trace:
+[125671.834973]  [<ffffffff81270541>] radix_tree_lookup+0xd/0xf
+[125671.834973]  [<ffffffffa04ae6a6>] reada_peer_zones_set_lock+0x3e/0x60 [btrfs]
+[125671.834973]  [<ffffffffa04ae8b9>] reada_pick_zone+0x29/0x103 [btrfs]
+[125671.834973]  [<ffffffffa04af42f>] reada_start_machine_worker+0x129/0x2d3 [btrfs]
+[125671.834973]  [<ffffffffa04880be>] btrfs_scrubparity_helper+0x185/0x3aa [btrfs]
+[125671.834973]  [<ffffffffa0488341>] btrfs_readahead_helper+0xe/0x10 [btrfs]
+[125671.834973]  [<ffffffff81069691>] process_one_work+0x271/0x4e9
+[125671.834973]  [<ffffffff81069dda>] worker_thread+0x1eb/0x2c9
+[125671.834973]  [<ffffffff81069bef>] ? rescuer_thread+0x2b3/0x2b3
+[125671.834973]  [<ffffffff8106f403>] kthread+0xd4/0xdc
+[125671.834973]  [<ffffffff8149e242>] ret_from_fork+0x22/0x40
+[125671.834973]  [<ffffffff8106f32f>] ? kthread_stop+0x286/0x286
 
-		memset(buf, 0, 1024 * 1024);
-		fd = open("testfile", O_CREAT | O_EXCL | O_RDWR);
-		pwrite(fd, buf, 69954, 693581);
-		return;
-	}
+So fix this by taking the device_list_mutex in the readahead code. We
+can't use here the lighter approach of using a rcu_read_lock() and
+rcu_read_unlock() pair together with a list_for_each_entry_rcu() call
+because we end up doing calls to sleeping functions (kzalloc()) in the
+respective code path.
 
-Assume the BTRFS_MAX_EXTENT_SIZE is 64KB, and data range is:
-692224                                                                             765951
-|----------------------------------------------------------------------------------|
-                         len(73728)
-1) for the above data range, btrfs_delalloc_reserve_metadata() will reserve
-metadata and BTRFS_I(inode)->outstanding_extents will be 2.
-(73728 + 65535) / 65536 == 2
-
-2) then btrfs_dirty_page() will be called to dirty pages and set EXTENT_DELALLOC
-flag. In this case, btrfs_set_bit_hook will be called 3 times. For first call,
-there will be such extent io map.
-692224                 696319 696320                                                765951
-|----------------------|      |-----------------------------------------------------|
-       len(4096)                                len(69632)
-    have EXTENT_DELALLOC
-and because of having EXTENT_FIRST_DELALLOC, btrfs_set_bit_hook() won't change
-BTRFS_I(inode)->outstanding_extents, still be 2. see code logic in btrfs_set_bit_hook();
-
-3) second btrfs_set_bit_hook() call.
-Because of EXTENT_FIRST_DELALLOC have been unset by previous btrfs_set_bit_hook(),
-btrfs_set_bit_hook will increase BTRFS_I(inode)->outstanding_extents by one, so now
-BTRFS_I(inode)->outstanding_extents, sitll is 3. There will be such extent_io map:
-692224               696319 696320                761855 761856                     765951
-|--------------------|      |---------------------|      |--------------------------|
-    len(4096)                     len(65536)                     len(4096)
-    have EXTENT_DELALLOC      have EXTENT_DELALLOC
-
-And because (692224, 696319) and (696320, 761855) is adjacent, btrfs_merge_extent_hook()
-will merge them into one delalloc extent, but according to the compulation logic in
-btrfs_merge_extent_hook(), BTRFS_I(inode)->outstanding_extents will still be 3.
-After merge, tehre will bu such extent_io map:
-692224                                            761855 761856                     765951
-|-------------------------------------------------|      |--------------------------|
-               len(69632)                                         len(4096)
-          have EXTENT_DELALLOC
-
-4) third btrfs_set_bit_hook() call.
-Also because of EXTENT_FIRST_DELALLOC have not been set, btrfs_set_bit_hook will increase
-BTRFS_I(inode)->outstanding_extents by one, so now BTRFS_I(inode)->outstanding_extents is 4.
-The extent io map is:
-692224                                            761855 761856                     765951
-|-------------------------------------------------|      |--------------------------|
-               len(69632)                                         len(4096)
-          have EXTENT_DELALLOC                                have EXTENT_DELALLOC
-
-Also because (692224, 761855) and (761856, 765951) is adjacent, btrfs_merge_extent_hook()
-will merge them into one delalloc extent, according to the compulation logic in
-btrfs_merge_extent_hook(), BTRFS_I(inode)->outstanding_extents will decrease by one, be 3.
-so after merge, tehre will bu such extent_io map:
-692224                                                                              765951
-|-----------------------------------------------------------------------------------|
-                                     len(73728)
-                               have EXTENT_DELALLOC
-
-But indeed for original data range(start:692224 end:765951 len:73728), we just should
-have 2 outstanding extents, so it will trigger the above WARNINGs.
-
-The root casue is that btrfs_delalloc_reserve_metadata() will always add needed outstanding
-extents first, and if later btrfs_set_extent_delalloc call multiple btrfs_set_bit_hook(),
-it may wrongly update BTRFS_I(inode)->outstanding_extents, This patch choose to also add
-BTRFS_I(inode)->outstanding_extents in btrfs_set_bit_hook() according to the data range length,
-and the added value is the correct number of outstanding_extents for this data range, then
-decrease the value which was added in btrfs_delalloc_reserve_metadata().
-
-As for why BTRFS_MAX_EXTENT_SIZE(128M) does not trigger above WARNINGs, this is because
-__btrfs_buffered_write() internally have write limits for every iteration(it seems 2MB),
-so btrfs_dirty_pages() will always make data range into one outstanding extent.
-
-Signed-off-by: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/ctree.h |  2 ++
- fs/btrfs/inode.c | 47 ++++++++++++++++++++++++++++++++++++++++++-----
- fs/btrfs/ioctl.c |  5 ++---
- 3 files changed, 46 insertions(+), 8 deletions(-)
+ fs/btrfs/reada.c | 2 ++
+ 1 file changed, 2 insertions(+)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 84a6a5b..da9ee24 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -4072,6 +4072,8 @@ int btrfs_start_delalloc_roots(struct btrfs_fs_info *fs_info, int delay_iput,
- 			       int nr);
- int btrfs_set_extent_delalloc(struct inode *inode, u64 start, u64 end,
- 			      struct extent_state **cached_state);
-+int btrfs_set_extent_defrag(struct inode *inode, u64 start, u64 end,
-+			    struct extent_state **cached_state);
- int btrfs_create_subvol_root(struct btrfs_trans_handle *trans,
- 			     struct btrfs_root *new_root,
- 			     struct btrfs_root *parent_root,
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 41a5688..5144f45 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -1713,13 +1713,16 @@ static void btrfs_set_bit_hook(struct inode *inode,
- 	if (!(state->state & EXTENT_DELALLOC) && (*bits & EXTENT_DELALLOC)) {
- 		struct btrfs_root *root = BTRFS_I(inode)->root;
- 		u64 len = state->end + 1 - state->start;
-+		u64 num_extents = div64_u64(len + BTRFS_MAX_EXTENT_SIZE - 1,
-+					    BTRFS_MAX_EXTENT_SIZE);
- 		bool do_list = !btrfs_is_free_space_inode(inode);
+diff --git a/fs/btrfs/reada.c b/fs/btrfs/reada.c
+index 298631ea..8428db7 100644
+--- a/fs/btrfs/reada.c
++++ b/fs/btrfs/reada.c
+@@ -761,12 +761,14 @@ static void __reada_start_machine(struct btrfs_fs_info *fs_info)
  
--		if (*bits & EXTENT_FIRST_DELALLOC) {
-+		if (*bits & EXTENT_FIRST_DELALLOC)
- 			*bits &= ~EXTENT_FIRST_DELALLOC;
--		} else {
-+
-+		if (root != root->fs_info->tree_root) {
- 			spin_lock(&BTRFS_I(inode)->lock);
--			BTRFS_I(inode)->outstanding_extents++;
-+			BTRFS_I(inode)->outstanding_extents += num_extents;
- 			spin_unlock(&BTRFS_I(inode)->lock);
+ 	do {
+ 		enqueued = 0;
++		mutex_lock(&fs_devices->device_list_mutex);
+ 		list_for_each_entry(device, &fs_devices->devices, dev_list) {
+ 			if (atomic_read(&device->reada_in_flight) <
+ 			    MAX_IN_FLIGHT)
+ 				enqueued += reada_start_machine_dev(fs_info,
+ 								    device);
  		}
++		mutex_unlock(&fs_devices->device_list_mutex);
+ 		total += enqueued;
+ 	} while (enqueued && total < 10000);
  
-@@ -1960,9 +1963,43 @@ static noinline int add_pending_csums(struct btrfs_trans_handle *trans,
- int btrfs_set_extent_delalloc(struct inode *inode, u64 start, u64 end,
- 			      struct extent_state **cached_state)
- {
-+	int ret;
-+	struct btrfs_root *root = BTRFS_I(inode)->root;
-+	u64 num_extents = div64_u64(end - start + BTRFS_MAX_EXTENT_SIZE,
-+				    BTRFS_MAX_EXTENT_SIZE);
-+
-+	WARN_ON((end & (PAGE_CACHE_SIZE - 1)) == 0);
-+	ret = set_extent_delalloc(&BTRFS_I(inode)->io_tree, start, end,
-+				  cached_state, GFP_NOFS);
-+
-+	if (root != root->fs_info->tree_root) {
-+		spin_lock(&BTRFS_I(inode)->lock);
-+		BTRFS_I(inode)->outstanding_extents -= num_extents;
-+		spin_unlock(&BTRFS_I(inode)->lock);
-+	}
-+
-+	return ret;
-+}
-+
-+int btrfs_set_extent_defrag(struct inode *inode, u64 start, u64 end,
-+			    struct extent_state **cached_state)
-+{
-+	int ret;
-+	struct btrfs_root *root = BTRFS_I(inode)->root;
-+	u64 num_extents = div64_u64(end - start + BTRFS_MAX_EXTENT_SIZE,
-+				    BTRFS_MAX_EXTENT_SIZE);
-+
- 	WARN_ON((end & (PAGE_CACHE_SIZE - 1)) == 0);
--	return set_extent_delalloc(&BTRFS_I(inode)->io_tree, start, end,
--				   cached_state, GFP_NOFS);
-+	ret = set_extent_defrag(&BTRFS_I(inode)->io_tree, start, end,
-+				cached_state, GFP_NOFS);
-+
-+	if (root != root->fs_info->tree_root) {
-+		spin_lock(&BTRFS_I(inode)->lock);
-+		BTRFS_I(inode)->outstanding_extents -= num_extents;
-+		spin_unlock(&BTRFS_I(inode)->lock);
-+	}
-+
-+	return ret;
- }
- 
- /* see btrfs_writepage_start_hook for details on why this is required */
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 21423dd..149d11e 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -1227,9 +1227,8 @@ again:
- 	}
- 
- 
--	set_extent_defrag(&BTRFS_I(inode)->io_tree, page_start, page_end - 1,
--			  &cached_state, GFP_NOFS);
--
-+	btrfs_set_extent_defrag(inode, page_start,
-+				page_end - 1, &cached_state);
- 	unlock_extent_cached(&BTRFS_I(inode)->io_tree,
- 			     page_start, page_end - 1, &cached_state,
- 			     GFP_NOFS);
 -- 
-1.8.3.1
-
-
+2.7.0.rc3
 

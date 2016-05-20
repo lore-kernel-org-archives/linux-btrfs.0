@@ -1,122 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-vk0-f46.google.com ([209.85.213.46]:34388 "EHLO
-	mail-vk0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751009AbcETVbp (ORCPT
+Received: from mail-oi0-f43.google.com ([209.85.218.43]:34526 "EHLO
+	mail-oi0-f43.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750893AbcETVxI (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 20 May 2016 17:31:45 -0400
-Received: by mail-vk0-f46.google.com with SMTP id c189so159756314vkb.1
-        for <linux-btrfs@vger.kernel.org>; Fri, 20 May 2016 14:31:45 -0700 (PDT)
+	Fri, 20 May 2016 17:53:08 -0400
+Received: by mail-oi0-f43.google.com with SMTP id b65so55388253oia.1
+        for <linux-btrfs@vger.kernel.org>; Fri, 20 May 2016 14:53:08 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <9bde1aa8-fac5-34c4-dffc-0bf15d86c008@gmail.com>
-References: <nh9p2p$cns$1@ger.gmane.org>
-	<pan$ae8c7$965ff694$cf73d90e$9e134691@cox.net>
-	<20160516010524.7e208f96@jupiter.sol.kaishome.de>
-	<nhedk2$dpq$1@ger.gmane.org>
-	<0d68f988-e117-4b61-cb9b-d18a26e2b909@gmail.com>
-	<20160517203335.5ff99a05@jupiter.sol.kaishome.de>
-	<nhir96$8n4$1@ger.gmane.org>
-	<20160519200926.0a2b5dcf@jupiter.sol.kaishome.de>
-	<e8ff591f-751b-ac56-45bb-98cdc7b206e7@gmail.com>
-	<CAPmG0jYi+gCO3Ps4Xi1ahE4qoqMt6ZmLMrxT_URDHdaA_cZCLg@mail.gmail.com>
-	<1c1358af-4549-618a-c408-b93832d33225@gmail.com>
-	<nhnfu8$igq$1@ger.gmane.org>
-	<9bde1aa8-fac5-34c4-dffc-0bf15d86c008@gmail.com>
-Date: Fri, 20 May 2016 23:31:43 +0200
-Message-ID: <CAPmG0ja4UVHH0VkjAM3iobjz69Gi5DbxkwzzTzbKkH6Ddf4uUQ@mail.gmail.com>
-Subject: Re: Hot data tracking / hybrid storage
-From: Henk Slager <eye1tm@gmail.com>
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
+In-Reply-To: <CAJCQCtS0b9Boh6VwGgXTh38f0tJqGWjTh2SMRUkYUtCwW3PSpQ@mail.gmail.com>
+References: <6BBAAABC-616F-48A6-BDF2-70B23B8E0D72@me.com>
+	<CAJCQCtSh-OqADqPZU1s8HjbvOBmoGB+swHNAS3FanQr5WQoyzw@mail.gmail.com>
+	<1D45DF48-1D90-42AA-9F4F-70931A655F6D@me.com>
+	<CAJCQCtSbLVrU-OLa8hr6P2zgwz9-8qoV3tqjC5WM0KCnneDptA@mail.gmail.com>
+	<428B0808-F5BD-4B29-BF6C-C2F3188C0F9A@me.com>
+	<CAJCQCtRk7scbGRqtfWMf-jyV4vq3wDEEKVi+SmtzzDKSj_+NRw@mail.gmail.com>
+	<D3BB243E-5F60-4633-9966-398E0A0F5329@me.com>
+	<CAJCQCtS0b9Boh6VwGgXTh38f0tJqGWjTh2SMRUkYUtCwW3PSpQ@mail.gmail.com>
+Date: Fri, 20 May 2016 15:53:07 -0600
+Message-ID: <CAJCQCtQrr47GtJAxgQ79ECfuU2NTnGR65HZc8QH+z6poHk62wQ@mail.gmail.com>
+Subject: Re: btrfs restore fails because of NO SPACE
+From: Chris Murphy <lists@colorremedies.com>
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Cc: Wolf Bublitz <wolf.bublitz@me.com>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, May 20, 2016 at 7:59 PM, Austin S. Hemmelgarn
-<ahferroin7@gmail.com> wrote:
-> On 2016-05-20 13:02, Ferry Toth wrote:
->>
->> We have 4 1TB drives in MBR, 1MB free at the beginning, grub on all 4,
->> then 8GB swap, then all the rest btrfs (no LVM used). The 4 btrfs
->> partitions are in the same pool, which is in btrfs RAID10 format. /boot
->> is in subvolume @boot.
->
-> If you have GRUB installed on all 4, then you don't actually have the full
-> 2047 sectors between the MBR and the partition free, as GRUB is embedded in
-> that space.  I forget exactly how much space it takes up, but I know it's
-> not the whole 1023.5K  I would not suggest risking usage of the final 8k
-> there though.  You could however convert to raid1 temporarily, and then for
-> each device, delete it, reformat for bcache, then re-add it to the FS.  This
-> may take a while, but should be safe (of course, it's only an option if
-> you're already using a kernel with bcache support).
+>btrfs fi show
+>Label: none  uuid: 93000933-e46d-403b-80d7-60475855e3f3
+ >       Total devices 2 FS bytes used 2.56TiB
+  >      devid    1 size 2.73TiB used 2.71TiB path /dev/sda
+   >     devid    4 size 2.73TiB used 2.71TiB path /dev/sdb
 
-There is more then enough space in that 2047 sectors area for
-inserting a bcache SB, but initially I also found it risky and was not
-so sure. I anyhow don't want GRUB in the MBR, but in the filesystem/OS
-partition that it should boot, otherwise multi-OS on the same SSD or
-HDD gets into trouble.
 
-For the described system, assuming a few minutes offline or
-'maintenance' mode is acceptable, I personally would just shrink the
-swap by 8KiB, lower its end-sector by 16 and also lower the
-start-sector of the btrfs partition by 16 and then add bcache. The
-location of GRUB should not matter actually.
+OK so why does it only list two devices? This is a three drive or four
+drive raid10? This is Btrfs raid10 specifically? I'm confused now
+about the setup and why btrfs fi show isn't saying there are missing
+devices, there is no such thing as two drive btrfs raid10.
 
->> In this configuration nothing would beat btrfs if I could just add 2
->> SSD's to the pool that would be clever enough to be paired in RAID1 and
->> would be preferred for small (<1GB) file writes. Then balance should be
->> able to move not often used files to the HDD.
->>
->> None of the methods mentioned here sound easy or quick to do, or even
->> well tested.
 
-I agree that all the methods are actually quite complicated,
-especially if compared to ZFS and its tools. Adding an ARC is as
-simple and easy as you want and describe.
-
-The statement I wanted make is that adding bcache for a (btrfs)
-file-system can be done without touching the FS itself, provided that
-one can allow some offline time for the FS.
-
-> It really depends on what you're used to.  I would consider most of the
-> options easy, but one of the areas I'm strongest with is storage management,
-> and I've repaired damaged filesystems and partition tables by hand with a
-> hex editor before, so I'm not necessarily a typical user.  If I was going to
-> suggest something specifically, it would be dm-cache, because it requires no
-> modification to the backing store at all, but that would require running on
-> LVM if you want it to be easy to set up (it's possible to do it without LVM,
-> but you need something to call dmsetup before mounting the filesystem, which
-> is not easy to configure correctly), and if you're on an enterprise distro,
-> it may not be supported.
->
-> If you wanted to, it's possible, and not all that difficult, to convert a
-> BTRFS system to BTRFS on top of LVM online, but you would probably have to
-> split out the boot subvolume to a separate partition (depends on which
-> distro you're on, some have working LVM support in GRUB, some don't).  If
-> you're on a distro which does have LVM support in GRUB, the procedure would
-> be:
-> 1. Convert the BTRFS array to raid1. This lets you run with only 3 disks
-> instead of 4.
-> 2. Delete one of the disks from the array.
-> 3. Convert the disk you deleted from the array to a LVM PV and add it to a
-> VG.
-> 4. Create a new logical volume occupying almost all of the PV you just added
-> (having a little slack space is usually a good thing).
-> 5. Add use btrfs replace to add the LV to the BTRFS array while deleting one
-> of the others.
-> 6. Repeat from step 3-5 for each disk, but stop at step 4 when you have
-> exactly one disk that isn't on LVM (so for four disks, stop at step four
-> when you have 2 with BTRFS+LVM, one with just the LVM logical volume, and
-> one with just BTRFS).
-> 7. Reinstall GRUB (it should pull in LVM support now).
-> 8. Use BTRFS replace to move the final BTRFS disk to the empty LVM volume.
-> 9. Convert the now empty final disk to LVM using steps 3-4
-> 10. Add the LV to the BTRFS array and rebalance to raid10.
-> 11. Reinstall GRUB again (just to be certain).
->
-> I've done essentially the same thing on numerous occasions when
-> reprovisioning for various reasons, and it's actually one of the things
-> outside of the xfstests that I check with my regression testing (including
-> simulating a couple of the common failure modes).  It takes a while
-> (especially for big arrays with lots of data), but it works, and is
-> relatively safe (you are guaranteed to be able to rebuild a raid1 array of 3
-> disks from just 2, so losing the disk in the process of copying it will not
-> result in data loss unless you hit a kernel bug).
+Chris Murphy

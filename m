@@ -1,64 +1,123 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:35264 "EHLO plane.gmane.org"
+Received: from plane.gmane.org ([80.91.229.3]:36716 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751582AbcEUCbq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 20 May 2016 22:31:46 -0400
+	id S1751725AbcEUDOh (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 20 May 2016 23:14:37 -0400
 Received: from list by plane.gmane.org with local (Exim 4.69)
 	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1b3whc-0008KT-7d
-	for linux-btrfs@vger.kernel.org; Sat, 21 May 2016 04:31:44 +0200
+	id 1b3xN5-0008HL-8t
+	for linux-btrfs@vger.kernel.org; Sat, 21 May 2016 05:14:35 +0200
 Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
         by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sat, 21 May 2016 04:31:44 +0200
+        for <linux-btrfs@vger.kernel.org>; Sat, 21 May 2016 05:14:35 +0200
 Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sat, 21 May 2016 04:31:44 +0200
+        for <linux-btrfs@vger.kernel.org>; Sat, 21 May 2016 05:14:35 +0200
 To: linux-btrfs@vger.kernel.org
 From: Duncan <1i5t5.duncan@cox.net>
 Subject: Re: btrfs restore fails because of NO SPACE
-Date: Sat, 21 May 2016 02:31:36 +0000 (UTC)
-Message-ID: <pan$60140$c7109ea3$9788fa1f$d541b797@cox.net>
+Date: Sat, 21 May 2016 03:14:29 +0000 (UTC)
+Message-ID: <pan$b35ce$da195d1e$651148ec$9ea8b2cf@cox.net>
 References: <6BBAAABC-616F-48A6-BDF2-70B23B8E0D72@me.com>
-	<CAJCQCtSh-OqADqPZU1s8HjbvOBmoGB+swHNAS3FanQr5WQoyzw@mail.gmail.com>
-	<1D45DF48-1D90-42AA-9F4F-70931A655F6D@me.com>
-	<CAJCQCtSbLVrU-OLa8hr6P2zgwz9-8qoV3tqjC5WM0KCnneDptA@mail.gmail.com>
-	<428B0808-F5BD-4B29-BF6C-C2F3188C0F9A@me.com>
-	<CAJCQCtRk7scbGRqtfWMf-jyV4vq3wDEEKVi+SmtzzDKSj_+NRw@mail.gmail.com>
-	<D3BB243E-5F60-4633-9966-398E0A0F5329@me.com>
-	<CAJCQCtS0b9Boh6VwGgXTh38f0tJqGWjTh2SMRUkYUtCwW3PSpQ@mail.gmail.com>
-	<CAJCQCtQrr47GtJAxgQ79ECfuU2NTnGR65HZc8QH+z6poHk62wQ@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Chris Murphy posted on Fri, 20 May 2016 15:53:07 -0600 as excerpted:
+Wolf Bublitz posted on Fri, 20 May 2016 19:38:55 +0200 as excerpted:
 
->>btrfs fi show Label: none  uuid: 93000933-e46d-403b-80d7-60475855e3f3
->>         Total devices 2 FS bytes used 2.56TiB
->>         devid    1 size 2.73TiB used 2.71TiB path /dev/sda
->>         devid    4 size 2.73TiB used 2.71TiB path /dev/sdb
+> Hallo,
 > 
+> I have a confusing problem with my btrfs raid. Currently I am using the
+> following setup:
 > 
-> OK so why does it only list two devices? This is a three drive or four
-> drive raid10? This is Btrfs raid10 specifically? I'm confused now about
-> the setup and why btrfs fi show isn't saying there are missing devices,
-> there is no such thing as two drive btrfs raid10.
+> btrfs fi show
+> Label: none  uuid: 93000933-e46d-403b-80d7-60475855e3f3
+> 	Total devices 2 FS bytes used 2.56TiB
+>       devid    1 size 2.73TiB used 2.71TiB path /dev/sda
+>       devid    4 size 2.73TiB used 2.71TiB path /dev/sdb
+> 
+> As you can see both disks are full.
+> 
+> Actually I cannot mount my raid, even with recovery options enabled:
+> 
+> mount /dev/sda /mnt/Data -t btrfs
+> -onospace_cache,clear_cache,enospc_debug,nodatacow
 
-I'm confused about where you got that it was a raid10?  I don't see it in 
-anything he posted, that got here to gmane, at least.  In fact, I see 
-only his initial thread-root post, and it doesn't mention raid10 at all 
-that I can see.
+[generic mount error]
 
-So given that fi show says two devices, none missing, I'd say it can't be 
-a raid10, and further, given that he didn't specify the raid type, the 
-btrfs default for a two-device btrfs must be assumed, which is raid1 
-system and metadata, single mode data.
+> dmesg shows:
+> 
+> [ 1066.243813] BTRFS error (device sda): parent transid verify
+> failed on 9676657786880 wanted 242139 found 0
+[...]
+> [ 1066.273234] BTRFS: failed to read chunk root on sda
 
-But I think that's beside the point in terms of the original question.  I 
-think the problem is with his understanding of restore.  See the reply 
-directly to his post, that I'll be making after this one.
+None of those options are likely to help, there.
+
+What /might/ help is the "usebackuproot" mount option, if your kernel is 
+reasonably current, or the "recovery" mount option, if it's a bit older.  
+Btrfs mount options are documented in the btrfs (5) manpage (not the 
+btrfs (8) manpage, specify the 5), tho again, usebackuproot will only 
+appear in the manpage if you're running a reasonably current btrfs-progs 
+version (recovery should be listed in both new and old, but it's listed 
+as deprecated in new, referring readers to the usebackuproot entry).  Or 
+alternatively to the manpage, you can check the mount options listing on 
+the wiki.
+
+> After spending some time with Google I found a possible solution for my
+> problem by running:
+> 
+> btrfs restore -v /dev/sda /mnt/Data
+> 
+> Actually this operation fails silently (computer freezes). After examine
+> the kernel logs I have found out that the operations fails because of
+> „NO SPACE LEFT ON DEVICE“. Can anybody please give me a solution for
+> this problem?
+
+You don't explicitly say what you expect btrfs restore to do, but given 
+the specific command you use, I suspect that you misunderstand what it 
+does, and it's actually working, but you are running out of space as a 
+result of using restore incorrectly, because of that misunderstanding.
+
+What btrfs restore does is provide you a read-only method to try to 
+restore your files from a filesystem that won't mount, by rewriting what 
+it can recover to an entirely different location on an entirely 
+different, mounted, filesystem, which of course must contain enough space 
+to hold a new copy of all those restored files.
+
+And if the filesystem in question isn't mounted to its usual mountpoint,
+/mnt/Data, that means you're trying to write all the recovered files to 
+whatever filesystem actually contains the mountpoint itself, almost 
+certainly the root filesystem (/), in this case.
+
+And I'll place money on a bet that whatever your root filesystem is, it 
+doesn't have the terabytes of free space that are likely to be necessary 
+to restore all of that multi-device multi-TB per device btrfs!  
+Otherwise, you /likely/ wouldn't be running the separate btrfs in the 
+first place, but storing it on your main filesystem, instead.  So when 
+btrfs restore runs out of room on / ... everything freezes.
+
+
+IOW, in ordered to successfully use btrfs restore, you have to have a 
+filesystem with enough free space available mounted somewhere in ordered 
+to write the files to that btrfs restore is restoring!  If you don't, 
+yes, you /will/ run into problems! =:^)
+
+That said, it is possible to use pattern matching to tell btrfs restore 
+to only restore say one directory at a time, and by using that if you 
+don't have enough space for everything but are willing to give up some of 
+what was stored, you can tell btrfs restore to only restore the vitally 
+important stuff that will fit, and not bother trying to restore the less 
+important stuff that won't fit.  Again, see the btrfs-restore manpage, 
+for that and other details.
+
+And, unless you want those restored files all written as root, you'll 
+probably want to use the restore metadata option as well, to restore 
+timestamps and owner/perms information.  Similarly, there's an option to 
+restore symlinks as well, without which they'll be missing.  So you 
+probably do want to check that manpage.  Just sayin'. =:^)
 
 -- 
 Duncan - List replies preferred.   No HTML msgs.

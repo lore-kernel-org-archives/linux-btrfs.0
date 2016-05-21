@@ -1,132 +1,67 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-vk0-f42.google.com ([209.85.213.42]:36563 "EHLO
-	mail-vk0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750782AbcETW0y (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 20 May 2016 18:26:54 -0400
-Received: by mail-vk0-f42.google.com with SMTP id y2so90083036vka.3
-        for <linux-btrfs@vger.kernel.org>; Fri, 20 May 2016 15:26:54 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <1c1358af-4549-618a-c408-b93832d33225@gmail.com>
-References: <nh9p2p$cns$1@ger.gmane.org>
-	<pan$ae8c7$965ff694$cf73d90e$9e134691@cox.net>
-	<20160516010524.7e208f96@jupiter.sol.kaishome.de>
-	<nhedk2$dpq$1@ger.gmane.org>
-	<0d68f988-e117-4b61-cb9b-d18a26e2b909@gmail.com>
-	<20160517203335.5ff99a05@jupiter.sol.kaishome.de>
-	<nhir96$8n4$1@ger.gmane.org>
-	<20160519200926.0a2b5dcf@jupiter.sol.kaishome.de>
-	<e8ff591f-751b-ac56-45bb-98cdc7b206e7@gmail.com>
-	<CAPmG0jYi+gCO3Ps4Xi1ahE4qoqMt6ZmLMrxT_URDHdaA_cZCLg@mail.gmail.com>
-	<1c1358af-4549-618a-c408-b93832d33225@gmail.com>
-Date: Sat, 21 May 2016 00:26:53 +0200
-Message-ID: <CAPmG0jbjdWf+98wr-NaL622wVAkfMJdHEij7feM9OK=AwZw68A@mail.gmail.com>
-Subject: Re: Hot data tracking / hybrid storage
-From: Henk Slager <eye1tm@gmail.com>
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Received: from plane.gmane.org ([80.91.229.3]:35264 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751582AbcEUCbq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 20 May 2016 22:31:46 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+	id 1b3whc-0008KT-7d
+	for linux-btrfs@vger.kernel.org; Sat, 21 May 2016 04:31:44 +0200
+Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sat, 21 May 2016 04:31:44 +0200
+Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sat, 21 May 2016 04:31:44 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: btrfs restore fails because of NO SPACE
+Date: Sat, 21 May 2016 02:31:36 +0000 (UTC)
+Message-ID: <pan$60140$c7109ea3$9788fa1f$d541b797@cox.net>
+References: <6BBAAABC-616F-48A6-BDF2-70B23B8E0D72@me.com>
+	<CAJCQCtSh-OqADqPZU1s8HjbvOBmoGB+swHNAS3FanQr5WQoyzw@mail.gmail.com>
+	<1D45DF48-1D90-42AA-9F4F-70931A655F6D@me.com>
+	<CAJCQCtSbLVrU-OLa8hr6P2zgwz9-8qoV3tqjC5WM0KCnneDptA@mail.gmail.com>
+	<428B0808-F5BD-4B29-BF6C-C2F3188C0F9A@me.com>
+	<CAJCQCtRk7scbGRqtfWMf-jyV4vq3wDEEKVi+SmtzzDKSj_+NRw@mail.gmail.com>
+	<D3BB243E-5F60-4633-9966-398E0A0F5329@me.com>
+	<CAJCQCtS0b9Boh6VwGgXTh38f0tJqGWjTh2SMRUkYUtCwW3PSpQ@mail.gmail.com>
+	<CAJCQCtQrr47GtJAxgQ79ECfuU2NTnGR65HZc8QH+z6poHk62wQ@mail.gmail.com>
+Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
->>>> bcache protective superblocks is a one-time procedure which can be done
->>>> online. The bcache devices act as normal HDD if not attached to a
->>>> caching SSD. It's really less pain than you may think. And it's a
->>>> solution available now. Converting back later is easy: Just detach the
->>>> HDDs from the SSDs and use them for some other purpose if you feel so
->>>> later. Having the bcache protective superblock still in place doesn't
->>>> hurt then. Bcache is a no-op without caching device attached.
->>>
->>>
->>> No, bcache is _almost_ a no-op without a caching device.  From a
->>> userspace
->>> perspective, it does nothing, but it is still another layer of
->>> indirection
->>> in the kernel, which does have a small impact on performance.  The same
->>> is
->>> true of using LVM with a single volume taking up the entire partition, it
->>> looks almost no different from just using the partition, but it will
->>> perform
->>> worse than using the partition directly.  I've actually done profiling of
->>> both to figure out base values for the overhead, and while bcache with no
->>> cache device is not as bad as the LVM example, it can still be a roughly
->>> 0.5-2% slowdown (it gets more noticeable the faster your backing storage
->>> is).
->>>
->>> You also lose the ability to mount that filesystem directly on a kernel
->>> without bcache support (this may or may not be an issue for you).
->>
->>
->> The bcache (protective) superblock is in an 8KiB block in front of the
->> file system device. In case the current, non-bcached HDD's use modern
->> partitioning, you can do a 5-minute remove or add of bcache, without
->> moving/copying filesystem data. So in case you have a bcache-formatted
->> HDD that had just 1 primary partition (512 byte logical sectors), the
->> partition start is at sector 2048 and the filesystem start is at 2064.
->> Hard removing bcache (so making sure the module is not
->> needed/loaded/used the next boot) can be done done by changing the
->> start-sector of the partition from 2048 to 2064. In gdisk one has to
->> change the alignment to 16 first, otherwise this it refuses. And of
->> course, also first flush+stop+de-register bcache for the HDD.
->>
->> The other way around is also possible, i.e. changing the start-sector
->> from 2048 to 2032. So that makes adding bcache to an existing
->> filesystem a 5 minute action and not a GBs- or TBs copy action. It is
->> not online of course, but just one reboot is needed (or just umount,
->> gdisk, partprobe, add bcache etc).
->> For RAID setups, one could just do 1 HDD first.
->
-> My argument about the overhead was not about the superblock, it was about
-> the bcache layer itself.  It isn't practical to just access the data
-> directly if you plan on adding a cache device, because then you couldn't do
-> so online unless you're going through bcache.  This extra layer of
-> indirection in the kernel does add overhead, regardless of the on-disk
-> format.
+Chris Murphy posted on Fri, 20 May 2016 15:53:07 -0600 as excerpted:
 
-Yes, sorry, I took some shortcut in the discussion and jumped to a
-method for avoiding this 0.5-2% slowdown that you mention. (Or a
-kernel crashing in bcache code due to corrupt SB on a backing device
-or corrupted caching device contents).
-I am actually bit surprised that there is a measurable slowdown,
-considering that it is basically just one 8KiB offset on a certain
-layer in the kernel stack, but I haven't looked at that code.
+>>btrfs fi show Label: none  uuid: 93000933-e46d-403b-80d7-60475855e3f3
+>>         Total devices 2 FS bytes used 2.56TiB
+>>         devid    1 size 2.73TiB used 2.71TiB path /dev/sda
+>>         devid    4 size 2.73TiB used 2.71TiB path /dev/sdb
+> 
+> 
+> OK so why does it only list two devices? This is a three drive or four
+> drive raid10? This is Btrfs raid10 specifically? I'm confused now about
+> the setup and why btrfs fi show isn't saying there are missing devices,
+> there is no such thing as two drive btrfs raid10.
 
-> Secondarily, having a HDD with just one partition is not a typical use case,
-> and that argument about the slack space resulting from the 1M alignment only
-> holds true if you're using an MBR instead of a GPT layout (or for that
-> matter, almost any other partition table format), and you're not booting
-> from that disk (because GRUB embeds itself there). It's also fully possible
-> to have an MBR formatted disk which doesn't have any spare space there too
-> (which is how most flash drives get formatted).
+I'm confused about where you got that it was a raid10?  I don't see it in 
+anything he posted, that got here to gmane, at least.  In fact, I see 
+only his initial thread-root post, and it doesn't mention raid10 at all 
+that I can see.
 
-I don't know other tables than MBR and GPT, but this bcache SB
-'insertion' works with both. Indeed, if GRUB is involved, it can get
-complicated, I have avoided that. If there is less than 8KiB slack
-space on a HDD, I would worry about alignment/performance first, then
-there is likely a reason to fully rewrite the HDD with a standard 1M
-alingment.
-If there is more partitions and the partition in front of the one you
-would like to be bcached, I personally would shrink it by 8KiB (like
-NTFS or swap or ext4 ) if that saves me TeraBytes of datatransfers.
+So given that fi show says two devices, none missing, I'd say it can't be 
+a raid10, and further, given that he didn't specify the raid type, the 
+btrfs default for a two-device btrfs must be assumed, which is raid1 
+system and metadata, single mode data.
 
-> This also doesn't change the fact that without careful initial formatting
-> (it is possible on some filesystems to embed the bcache SB at the beginning
-> of the FS itself, many of them have some reserved space at the beginning of
-> the partition for bootloaders, and this space doesn't have to exist when
-> mounting the FS) or manual alteration of the partition, it's not possible to
-> mount the FS on a system without bcache support.
+But I think that's beside the point in terms of the original question.  I 
+think the problem is with his understanding of restore.  See the reply 
+directly to his post, that I'll be making after this one.
 
-If we consider a non-bootable single HDD btrfs FS, are you then
-suggesting that the bcache SB could be placed in the first 64KiB where
-also GRUB stores its code if the FS would need booting ?
-That would be interesting, it would mean that also for btrfs on raw
-device (and also multi-device) there is no extra exclusive 8KiB space
-needed in front.
-Is there someone who has this working? I think it would lead to issues
-on the blocklayer, but I have currently no clue about that.
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 
->> There is also a tool doing the conversion in-place (I haven't used it
->> myself, my python(s) had trouble; I could do the partition table edit
->> much faster/easier):
->> https://github.com/g2p/blocks#bcache-conversion
->>
-> I actually hadn't known about this tool, thanks for mentioning it.

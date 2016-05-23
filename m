@@ -1,82 +1,35 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oi0-f67.google.com ([209.85.218.67]:36282 "EHLO
-	mail-oi0-f67.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751517AbcETPL6 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 20 May 2016 11:11:58 -0400
-Received: by mail-oi0-f67.google.com with SMTP id g16so10553785oib.3
-        for <linux-btrfs@vger.kernel.org>; Fri, 20 May 2016 08:11:58 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <1463719450-30601-1-git-send-email-fdmanana@kernel.org>
+Received: from mx2.suse.de ([195.135.220.15]:47283 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S932171AbcEWLAH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 23 May 2016 07:00:07 -0400
+Date: Mon, 23 May 2016 12:59:30 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Josef Bacik <josef@toxicpanda.com>
+Cc: fdmanana@kernel.org,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH 1/6] Btrfs: fix race between readahead and device
+ replace/removal
+Message-ID: <20160523105930.GI29147@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
 References: <1463719450-30601-1-git-send-email-fdmanana@kernel.org>
-Date: Fri, 20 May 2016 11:11:57 -0400
-Message-ID: <CAEzrpqdTitp=RXyV8VF5bvvg0b5_wojyTCsTrEn1JcrbBRYC0w@mail.gmail.com>
-Subject: Re: [PATCH 1/6] Btrfs: fix race between readahead and device replace/removal
-From: Josef Bacik <josef@toxicpanda.com>
-To: fdmanana@kernel.org
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+ <CAEzrpqdTitp=RXyV8VF5bvvg0b5_wojyTCsTrEn1JcrbBRYC0w@mail.gmail.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <CAEzrpqdTitp=RXyV8VF5bvvg0b5_wojyTCsTrEn1JcrbBRYC0w@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, May 20, 2016 at 12:44 AM,  <fdmanana@kernel.org> wrote:
-> From: Filipe Manana <fdmanana@suse.com>
->
-> The list of devices is protected by the device_list_mutex and the device
-> replace code, in its finishing phase correctly takes that mutex before
-> removing the source device from that list. However the readahead code was
-> iterating that list without acquiring the respective mutex leading to
-> crashes later on due to invalid memory accesses:
->
-> [125671.831036] general protection fault: 0000 [#1] PREEMPT SMP
-> [125671.832129] Modules linked in: btrfs dm_flakey dm_mod crc32c_generic xor raid6_pq acpi_cpufreq tpm_tis tpm ppdev evdev parport_pc psmouse sg parport
-> processor ser
-> [125671.834973] CPU: 10 PID: 19603 Comm: kworker/u32:19 Tainted: G        W       4.6.0-rc7-btrfs-next-29+ #1
-> [125671.834973] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS by qemu-project.org 04/01/2014
-> [125671.834973] Workqueue: btrfs-readahead btrfs_readahead_helper [btrfs]
-> [125671.834973] task: ffff8801ac520540 ti: ffff8801ac918000 task.ti: ffff8801ac918000
-> [125671.834973] RIP: 0010:[<ffffffff81270479>]  [<ffffffff81270479>] __radix_tree_lookup+0x6a/0x105
-> [125671.834973] RSP: 0018:ffff8801ac91bc28  EFLAGS: 00010206
-> [125671.834973] RAX: 0000000000000000 RBX: 6b6b6b6b6b6b6b6a RCX: 0000000000000000
-> [125671.834973] RDX: 0000000000000000 RSI: 00000000000c1bff RDI: ffff88002ebd62a8
-> [125671.834973] RBP: ffff8801ac91bc70 R08: 0000000000000001 R09: 0000000000000000
-> [125671.834973] R10: ffff8801ac91bc70 R11: 0000000000000000 R12: ffff88002ebd62a8
-> [125671.834973] R13: 0000000000000000 R14: 0000000000000000 R15: 00000000000c1bff
-> [125671.834973] FS:  0000000000000000(0000) GS:ffff88023fd40000(0000) knlGS:0000000000000000
-> [125671.834973] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
-> [125671.834973] CR2: 000000000073cae4 CR3: 00000000b7723000 CR4: 00000000000006e0
-> [125671.834973] Stack:
-> [125671.834973]  0000000000000000 ffff8801422d5600 ffff8802286bbc00 0000000000000000
-> [125671.834973]  0000000000000001 ffff8802286bbc00 00000000000c1bff 0000000000000000
-> [125671.834973]  ffff88002e639eb8 ffff8801ac91bc80 ffffffff81270541 ffff8801ac91bcb0
-> [125671.834973] Call Trace:
-> [125671.834973]  [<ffffffff81270541>] radix_tree_lookup+0xd/0xf
-> [125671.834973]  [<ffffffffa04ae6a6>] reada_peer_zones_set_lock+0x3e/0x60 [btrfs]
-> [125671.834973]  [<ffffffffa04ae8b9>] reada_pick_zone+0x29/0x103 [btrfs]
-> [125671.834973]  [<ffffffffa04af42f>] reada_start_machine_worker+0x129/0x2d3 [btrfs]
-> [125671.834973]  [<ffffffffa04880be>] btrfs_scrubparity_helper+0x185/0x3aa [btrfs]
-> [125671.834973]  [<ffffffffa0488341>] btrfs_readahead_helper+0xe/0x10 [btrfs]
-> [125671.834973]  [<ffffffff81069691>] process_one_work+0x271/0x4e9
-> [125671.834973]  [<ffffffff81069dda>] worker_thread+0x1eb/0x2c9
-> [125671.834973]  [<ffffffff81069bef>] ? rescuer_thread+0x2b3/0x2b3
-> [125671.834973]  [<ffffffff8106f403>] kthread+0xd4/0xdc
-> [125671.834973]  [<ffffffff8149e242>] ret_from_fork+0x22/0x40
-> [125671.834973]  [<ffffffff8106f32f>] ? kthread_stop+0x286/0x286
->
-> So fix this by taking the device_list_mutex in the readahead code. We
-> can't use here the lighter approach of using a rcu_read_lock() and
-> rcu_read_unlock() pair together with a list_for_each_entry_rcu() call
-> because we end up doing calls to sleeping functions (kzalloc()) in the
-> respective code path.
->
-> Signed-off-by: Filipe Manana <fdmanana@suse.com>
+On Fri, May 20, 2016 at 11:11:57AM -0400, Josef Bacik wrote:
+> On Fri, May 20, 2016 at 12:44 AM,  <fdmanana@kernel.org> wrote:
+> > So fix this by taking the device_list_mutex in the readahead code. We
+> > can't use here the lighter approach of using a rcu_read_lock() and
+> > rcu_read_unlock() pair together with a list_for_each_entry_rcu() call
+> > because we end up doing calls to sleeping functions (kzalloc()) in the
+> > respective code path.
+> 
+> I think it might be time to change this to a rwsem as well as we use
+> it in a bunch of places that are read only like statfs and readahead.
+> But this works for now.
 
-I think it might be time to change this to a rwsem as well as we use
-it in a bunch of places that are read only like statfs and readahead.
-But this works for now.
-
-Reviewed-by: Josef Bacik <jbacik@fb.com>
-
-Thanks,
-
-Josef
+Sounds good to me.

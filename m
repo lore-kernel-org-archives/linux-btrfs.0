@@ -1,198 +1,242 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:55727 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1751209AbcEUOSI (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 21 May 2016 10:18:08 -0400
-Date: Sat, 21 May 2016 10:18:00 -0400
-From: Chris Mason <clm@fb.com>
-To: Linus Torvalds <torvalds@linux-foundation.org>,
-        LKML <linux-kernel@vger.kernel.org>,
-        btrfs <linux-btrfs@vger.kernel.org>
-Subject: [GIT PULL] Btrfs
-Message-ID: <20160521141800.ltid3ll6m6ligy4h@floor.thefacebook.com>
+Received: from cn.fujitsu.com ([222.73.24.84]:17623 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1752084AbcEWJQt (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 23 May 2016 05:16:49 -0400
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+To: fstests@vger.kernel.org, linux-btrfs@vger.kernel.org
+Cc: david@fromorbit.com, hch@infradead.org, eguan@redhat.com,
+        darrick.wong@oracle.com
+Subject: [PATCH v3] fstests: generic: Test reserved extent map search routine on dedupe file
+Date: Mon, 23 May 2016 17:16:21 +0800
+Message-Id: <1463994981-14957-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Linus,
+For fully dedupe file, which means all its file exntents are pointing to
+the same bytenr, btrfs can cause soft lockup when calling fiemap ioctl
+on that file, like the following output:
+------
+CPU: 1 PID: 7500 Comm: xfs_io Not tainted 4.5.0-rc6+ #2
+Hardware name: innotek GmbH VirtualBox/VirtualBox, BIOS VirtualBox
+12/01/2006
+task: ffff880027681b40 ti: ffff8800276e0000 task.ti: ffff8800276e0000
+RIP: 0010:[<ffffffffa02583e4>]  [<ffffffffa02583e4>]
+__merge_refs+0x34/0x120 [btrfs]
+RSP: 0018:ffff8800276e3c08  EFLAGS: 00000202
+RAX: ffff8800269cc330 RBX: ffff8800269cdb18 RCX: 0000000000000007
+RDX: 00000000000061b0 RSI: ffff8800269cc4c8 RDI: ffff8800276e3c88
+RBP: ffff8800276e3c20 R08: 0000000000000000 R09: 0000000000000001
+R10: 0000000000000000 R11: 0000000000000000 R12: ffff880026ea3cb0
+R13: ffff8800276e3c88 R14: ffff880027132a50 R15: ffff880027430000
+FS:  00007f10201df700(0000) GS:ffff88003fa00000(0000)
+knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007f10201ec000 CR3: 0000000027603000 CR4: 00000000000406e0
+Stack:
+ 0000000000000000 0000000000000000 0000000000000000 ffff8800276e3ce8
+ ffffffffa0259f38 0000000000000005 ffff8800274c6870 ffff8800274c7d88
+ 0000000000c10000 0000000000000000 0000000000000001 0000000027431190
+Call Trace:
+ [<ffffffffa0259f38>] find_parent_nodes+0x448/0x740 [btrfs]
+ [<ffffffffa025a4f2>] btrfs_check_shared+0x102/0x1b0 [btrfs]
+ [<ffffffff811fdcad>] ? __might_fault+0x4d/0xa0
+ [<ffffffffa021899c>] extent_fiemap+0x2ac/0x550 [btrfs]
+ [<ffffffff811ce156>] ? __filemap_fdatawait_range+0x96/0x160
+ [<ffffffffa01f8ee0>] ? btrfs_get_extent+0xb30/0xb30 [btrfs]
+ [<ffffffffa01f5da5>] btrfs_fiemap+0x45/0x50 [btrfs]
+ [<ffffffff81246bb8>] do_vfs_ioctl+0x498/0x670
+ [<ffffffff81246e09>] SyS_ioctl+0x79/0x90
+ [<ffffffff8184e997>] entry_SYSCALL_64_fastpath+0x12/0x6f
+Code: 41 55 41 54 53 4c 8b 27 4c 39 e7 0f 84 e9 00 00 00 49 89 fd 49 8b
+34 24 49 39 f5 48 8b 1e 75 17 e9 d5 00 00 00 49 39 dd 48 8b 03 <48> 89
+de 0f 84 b9 00 00 00 48 89 c3 8b 46 2c 41 39 44 24 2c 75
+------
 
-My for-linus-4.7 branch:
+Also btrfs will return wrong flag for all these extents, they should
+have SHARED(0x2000) flags, while btrfs still consider them as exclusive
+extents.
 
-git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git for-linus-4.7
+On the other hand, with unmerged xfs reflink patches, xfs can handle it
+without problem, and for patched btrfs, it can also handle it.
 
-Has our merge window series of cleanups and fixes.  These target a wide
-range of issues, but do include some important fixes for qgroups,
-O_DIRECT, and fsync handling.   Jeff Mahoney moved around a few
-definitions to make them easier for userland to consume.
+This test case will create a large fully deduped file to check if the fs
+can handle the fiemap ioctl and return correct SHARED flag for any fs
+which support reflink.
 
-Also whiteout support is included now that issues with overlayfs have
-been cleared up.
+Reported-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+---
+v2:
+  Use more wrapper of xfs_io
+  Add fiemap requirement
+  Refactor output to match golden output if LOAD_FACTOR is not 1
+v3:
+  Fix a bug that temporary file is not removed.
+---
+ common/punch          | 17 +++++++++
+ tests/generic/352     | 98 +++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/generic/352.out |  5 +++
+ tests/generic/group   |  1 +
+ 4 files changed, 121 insertions(+)
+ create mode 100755 tests/generic/352
+ create mode 100644 tests/generic/352.out
 
-I have one more fix pending for page faults during btrfs_copy_from_user,
-but I wanted to get this bulk out the door first.
+diff --git a/common/punch b/common/punch
+index 43f04c2..44c6e1c 100644
+--- a/common/punch
++++ b/common/punch
+@@ -218,6 +218,23 @@ _filter_fiemap()
+ 	_coalesce_extents
+ }
+ 
++_filter_fiemap_flags()
++{
++	$AWK_PROG '
++		$3 ~ /hole/ {
++			print $1, $2, $3;
++			next;
++		}
++		$5 ~ /0x[[:xdigit:]]*8[[:xdigit:]][[:xdigit:]]/ {
++			print $1, $2, "unwritten";
++			next;
++		}
++		$5 ~ /0x[[:xdigit:]]+/ {
++			print $1, $2, $5;
++		}' |
++	_coalesce_extents
++}
++
+ # Filters fiemap output to only print the 
+ # file offset column and whether or not
+ # it is an extent or a hole
+diff --git a/tests/generic/352 b/tests/generic/352
+new file mode 100755
+index 0000000..70e43fb
+--- /dev/null
++++ b/tests/generic/352
+@@ -0,0 +1,98 @@
++#! /bin/bash
++# FS QA Test 352
++#
++# Test fiemap ioctl on heavily deduped file
++#
++# This test case will check if reserved extent map searching go
++# without problem and return correct SHARED flag.
++# Which btrfs will soft lock up and return wrong shared flag.
++#
++#-----------------------------------------------------------------------
++# Copyright (c) 2016 Fujitsu.  All Rights Reserved.
++#
++# This program is free software; you can redistribute it and/or
++# modify it under the terms of the GNU General Public License as
++# published by the Free Software Foundation.
++#
++# This program is distributed in the hope that it would be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write the Free Software Foundation,
++# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++#-----------------------------------------------------------------------
++#
++
++seq=`basename $0`
++seqres=$RESULT_DIR/$seq
++echo "QA output created by $seq"
++
++here=`pwd`
++tmp=/tmp/$$
++status=1	# failure is the default!
++trap "_cleanup; exit \$status" 0 1 2 3 15
++
++_cleanup()
++{
++	cd /
++	rm -f $tmp.*
++}
++
++# get standard environment, filters and checks
++. ./common/rc
++. ./common/filter
++. ./common/reflink
++. ./common/punch
++
++# remove previous $seqres.full before test
++rm -f $seqres.full
++
++# real QA test starts here
++
++# Modify as appropriate.
++_supported_fs generic
++_supported_os Linux
++_require_scratch_reflink
++_require_fiemap
++
++_scratch_mkfs > /dev/null 2>&1
++_scratch_mount
++
++blocksize=$((128 * 1024))
++file="$SCRATCH_MNT/tmp"
++
++# Golden output is for $LOAD_FACTOR == 1 case
++orig_nr=8192
++orig_last_extent=$(($orig_nr * $blocksize / 512))
++orig_end=$(($orig_last_extent + $blocksize / 512 - 1))
++
++# Real output
++nr=$(($orig_nr * $LOAD_FACTOR))
++last_extent=$(($nr * $blocksize / 512))
++end=$(($last_extent + $blocksize / 512 - 1))
++
++# write the initial block for later reflink
++_pwrite_byte 0xcdcdcdcd 0 $blocksize $file | _filter_xfs_io
++
++# use reflink to create the rest of the file, whose all extents are all
++# pointing to the first extent
++for i in $(seq 1 $nr); do
++	_reflink_range $file 0 $file $(($i * $blocksize)) $blocksize > /dev/null
++done
++
++# then call fiemap on that file to test both the shared flag and if
++# reserved extent mapping search will cause soft lockup
++$XFS_IO_PROG -c "fiemap -v" $file | _filter_fiemap_flags > $tmp.out
++cat $tmp.out >> $seqres.full
++
++# refact the $LOAD_FACTOR to 1 to match the golden output
++sed -i -e "s/$(($last_extent - 1))/$(($orig_last_extent - 1))/" \
++	-e "s/$last_extent/$orig_last_extent/" \
++	-e "s/$end/$orig_end/" $tmp.out
++cat $tmp.out
++
++# success, all done
++status=0
++exit
+diff --git a/tests/generic/352.out b/tests/generic/352.out
+new file mode 100644
+index 0000000..a87c507
+--- /dev/null
++++ b/tests/generic/352.out
+@@ -0,0 +1,5 @@
++QA output created by 352
++wrote 131072/131072 bytes at offset 0
++XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
++0: [0..2097151]: 0x2000
++1: [2097152..2097407]: 0x2001
+diff --git a/tests/generic/group b/tests/generic/group
+index 36fb759..3f00386 100644
+--- a/tests/generic/group
++++ b/tests/generic/group
+@@ -354,3 +354,4 @@
+ 349 blockdev quick rw
+ 350 blockdev quick rw
+ 351 blockdev quick rw
++352 auto clone
+-- 
+2.5.5
 
-David Sterba (28) commits (+343/-247):
-    btrfs: introduce raid-type to error-code table, for minimum device constraint (+16/-1)
-    btrfs: switch to common message helpers in open_ctree, adjust messages (+50/-52)
-    btrfs: reuse existing variable in scrub_stripe, reduce stack usage (+9/-10)
-    btrfs: send: use vmalloc only as fallback for clone_sources_tmp (+8/-5)
-    btrfs: pass number of devices to btrfs_check_raid_min_devices (+20/-15)
-    btrfs: use dynamic allocation for root item in create_subvol (+37/-28)
-    btrfs: use existing device constraints table btrfs_raid_array (+9/-14)
-    btrfs: clone: use vmalloc only as fallback for nodesize bufer (+8/-5)
-    btrfs: send: use temporary variable to store allocation size (+8/-6)
-    btrfs: make find_workspace warn if there are no workspaces (+14/-0)
-    btrfs: rename and document compression workspace members (+19/-16)
-    btrfs: send: use vmalloc only as fallback for clone_roots (+7/-4)
-    btrfs: add read-only check to sysfs handler of features (+3/-0)
-    btrfs: send: use vmalloc only as fallback for read_buf (+7/-4)
-    btrfs: send: use vmalloc only as fallback for send_buf (+7/-4)
-    btrfs: ioctl: reorder exclusive op check in RM_DEV (+11/-12)
-    btrfs: ioctl: reorder exclusive op check in RM_DEV (+11/-12)
-    btrfs: add write protection to SET_FEATURES ioctl (+13/-3)
-    btrfs: kill unused writepage_io_hook callback (+16/-24)
-    btrfs: rename btrfs_find_device_by_user_input (+13/-10)
-    btrfs: build fixup for qgroup_account_snapshot (+5/-0)
-    btrfs: sysfs: protect reading label by lock (+7/-1)
-    btrfs: make find_workspace always succeed (+12/-8)
-    btrfs: preallocate compression workspaces (+16/-0)
-    btrfs: add check to sysfs handler of label (+3/-0)
-    btrfs: rename __check_raid_min_devices (+2/-2)
-    btrfs: GFP_NOFS does not GFP_HIGHMEM (+4/-4)
-    btrfs: rename flags for vol args v2 (+8/-7)
 
-Anand Jain (20) commits (+449/-381):
-    btrfs: fix lock dep warning, move scratch dev out of device_list_mutex and uuid_mutex (+12/-5)
-    btrfs: fix lock dep warning move scratch super outside of chunk_mutex (+5/-4)
-    btrfs: make use of btrfs_scratch_superblocks() in btrfs_rm_device() (+13/-64)
-    btrfs: enhance btrfs_find_device_by_user_input() to check device path (+3/-4)
-    btrfs: cleanup assigning next active device with a check (+48/-22)
-    btrfs: create helper function __check_raid_min_devices() (+32/-19)
-    btrfs: create helper btrfs_find_device_by_user_input() (+23/-23)
-    btrfs: clean up and optimize __check_raid_min_device() (+19/-24)
-    btrfs: create a helper function to read the disk super (+52/-35)
-    btrfs: rename btrfs_std_error to btrfs_handle_fs_error (+31/-31)
-    btrfs: pass the right error code to the btrfs_std_error (+2/-2)
-    btrfs: make use of btrfs_find_device_by_user_input() (+37/-63)
-    btrfs: move error handling code together in ctree.h (+40/-38)
-    btrfs: refactor btrfs_dev_replace_start for reuse (+41/-23)
-    btrfs: s_bdev is not null after missing replace (+6/-3)
-    btrfs: remove unused function btrfs_assert() (+0/-1)
-    btrfs: introduce device delete by devid (+73/-5)
-    btrfs: optimize check for stale device (+2/-1)
-    btrfs: remove save_error_info() (+6/-10)
-    btrfs: use fs_info directly (+4/-4)
 
-Filipe Manana (13) commits (+404/-180):
-    Btrfs: fix race between fsync and direct IO writes for prealloc extents (+37/-6)
-    Btrfs: fix empty symlink after creating symlink and fsync parent dir (+1/-1)
-    Btrfs: add semaphore to synchronize direct IO writes with fsync (+77/-118)
-    Btrfs: fix inode leak on failure to setup whiteout inode in rename (+6/-6)
-    Btrfs: fix for incorrect directory entries after fsync log replay (+8/-5)
-    Btrfs: fix race between block group relocation and nocow writes (+81/-1)
-    Btrfs: fix number of transaction units for renames with whiteout (+8/-1)
-    Btrfs: don't wait for unrelated IO to finish before relocation (+38/-19)
-    Btrfs: pin logs earlier when doing a rename exchange operation (+4/-4)
-    Btrfs: don't do unnecessary delalloc flushes when relocating (+79/-7)
-    Btrfs: unpin logs if rename exchange operation fails (+36/-2)
-    Btrfs: unpin log if rename operation fails (+27/-1)
-    Btrfs: pin log earlier when renaming (+2/-9)
-
-Jeff Mahoney (8) commits (+1161/-1090):
-    btrfs: uapi/linux/btrfs.h migration, move struct btrfs_ioctl_defrag_range_args (+37/-32)
-    btrfs: uapi/linux/btrfs_tree.h migration, item types and defines (+967/-948)
-    btrfs: uapi/linux/btrfs.h migration, document subvol flags (+14/-3)
-    btrfs: uapi/linux/btrfs.h migration, move BTRFS_LABEL_SIZE (+1/-1)
-    btrfs: uapi/linux/btrfs.h migration, move balance flags (+64/-46)
-    btrfs: uapi/linux/btrfs.h migration, move feature flags (+31/-25)
-    btrfs: uapi/linux/btrfs.h migration, qgroup limit flags (+21/-9)
-    btrfs: uapi/linux/btrfs_tree.h, use __u8 and __u64 (+26/-26)
-
-Liu Bo (4) commits (+39/-15):
-    Btrfs: make mapping->writeback_index point to the last written page (+26/-6)
-    Btrfs: do not create empty block group if we have allocated data (+8/-1)
-    Btrfs: cleanup error handling in extent_write_cached_pages (+2/-5)
-    Btrfs: fix divide error upon chunk's stripe_len (+3/-3)
-
-Luis de Bethencourt (3) commits (+25/-11):
-    btrfs: fix mixed block count of available space (+13/-3)
-    btrfs: avoid overflowing f_bfree (+5/-1)
-    btrfs: fix typos in comments (+7/-7)
-
-Scott Talbert (1) commits (+2/-0):
-    btrfs: fix memory leak during RAID 5/6 device replacement
-
-Adam Borowski (1) commits (+1/-1):
-    btrfs: fix int32 overflow in shrink_delalloc().
-
-Luke Dashjr (1) commits (+24/-2):
-    btrfs: bugfix: handle FS_IOC32_{GETFLAGS,SETFLAGS,GETVERSION} in btrfs_ioctl
-
-Satoru Takeuchi (1) commits (+3/-3):
-    btrfs: Simplify conditions about compress while mapping btrfs flags to inode flags
-
-Ashish Samant (1) commits (+1/-1):
-    btrfs: Fix BUG_ON condition in scrub_setup_recheck_block()
-
-Zygo Blaxell (1) commits (+15/-3):
-    btrfs: don't force mounts to wait for cleaner_kthread to delete one or more subvolumes
-
-Vincent Stehlé (1) commits (+1/-1):
-    Btrfs: fix fspath error deallocation
-
-Qu Wenruo (1) commits (+105/-24):
-    btrfs: qgroup: Fix qgroup accounting when creating snapshot
-
-Dan Carpenter (1) commits (+6/-0):
-    btrfs: send: silence an integer overflow warning
-
-Geert Uytterhoeven (1) commits (+20/-21):
-    Btrfs: Refactor btrfs_lock_cluster() to kill compiler warning
-
-Josef Bacik (1) commits (+16/-2):
-    Btrfs: remove BUG_ON()'s in btrfs_map_block
-
-Chandan Rajendra (1) commits (+3/-1):
-    Btrfs: __btrfs_buffered_write: Pass valid file offset when releasing delalloc space
-
-Dan Fuhry (1) commits (+257/-7):
-    btrfs: add support for RENAME_EXCHANGE and RENAME_WHITEOUT
-
-Austin S. Hemmelgarn (1) commits (+2/-4):
-    btrfs: allow balancing to dup with multi-device
-
-Total: (90) commits (+2877/-1994)
-
- fs/btrfs/backref.c              |    2 +-
- fs/btrfs/btrfs_inode.h          |   10 +
- fs/btrfs/compression.c          |   85 ++-
- fs/btrfs/ctree.c                |    6 +-
- fs/btrfs/ctree.h                | 1123 +++------------------------------------
- fs/btrfs/delayed-inode.c        |    2 +-
- fs/btrfs/dev-replace.c          |  101 ++--
- fs/btrfs/dev-replace.h          |    4 +-
- fs/btrfs/disk-io.c              |  130 ++---
- fs/btrfs/extent-tree.c          |  167 +++++-
- fs/btrfs/extent_io.c            |   82 +--
- fs/btrfs/extent_io.h            |    1 -
- fs/btrfs/file.c                 |    6 +-
- fs/btrfs/inode-item.c           |    2 +-
- fs/btrfs/inode.c                |  466 +++++++++++++---
- fs/btrfs/ioctl.c                |  198 +++++--
- fs/btrfs/ordered-data.c         |   26 +-
- fs/btrfs/ordered-data.h         |    6 +-
- fs/btrfs/relocation.c           |   13 +-
- fs/btrfs/root-tree.c            |    4 +-
- fs/btrfs/scrub.c                |   25 +-
- fs/btrfs/send.c                 |   62 ++-
- fs/btrfs/super.c                |   60 ++-
- fs/btrfs/sysfs.c                |   14 +-
- fs/btrfs/transaction.c          |  138 ++++-
- fs/btrfs/tree-log.c             |   74 +--
- fs/btrfs/volumes.c              |  454 +++++++++-------
- fs/btrfs/volumes.h              |   57 +-
- include/uapi/linux/btrfs.h      |  188 ++++++-
- include/uapi/linux/btrfs_tree.h |  966 +++++++++++++++++++++++++++++++++
- 30 files changed, 2678 insertions(+), 1794 deletions(-)

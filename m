@@ -1,109 +1,85 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:58667 "EHLO
-	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751429AbcEWTTw (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:35054 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1751280AbcEXDT0 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 23 May 2016 15:19:52 -0400
-Date: Mon, 23 May 2016 19:19:45 +0000
-From: Hugo Mills <hugo@carfax.org.uk>
-To: Zoiled <zoiled@online.no>
-Cc: Marco Lorenzo Crociani <marcoc@prismatelecomtesting.com>,
-        linux-btrfs@vger.kernel.org
-Subject: Re: btrfs filesystem usage - Wrong Unallocated indications - RAID10
-Message-ID: <20160523191945.GE16712@carfax.org.uk>
-References: <574306CC.3070906@prismatelecomtesting.com>
- <574350A0.80101@online.no>
+	Mon, 23 May 2016 23:19:26 -0400
+Subject: Re: [RFC PATCH v2.1 16/16] btrfs-progs: fsck: Introduce low memory
+ mode
+To: <dsterba@suse.cz>, Josef Bacik <jbacik@fb.com>,
+        <linux-btrfs@vger.kernel.org>, Lu Fengqi <lufq.fnst@cn.fujitsu.com>
+References: <1463477930-3925-1-git-send-email-quwenruo@cn.fujitsu.com>
+ <1463477930-3925-17-git-send-email-quwenruo@cn.fujitsu.com>
+ <fa6160a4-64d2-9ce6-1c0d-eaf6069ca2c5@fb.com>
+ <827a9e93-f525-4a8b-edb1-a0ac90175716@cn.fujitsu.com>
+ <20160519145112.GF29147@twin.jikos.cz>
+ <23d061e0-06e8-3e81-7595-4fc76a5353a2@cn.fujitsu.com>
+ <20160523110844.GJ29147@twin.jikos.cz>
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Message-ID: <9717767e-9c6a-2aaf-9ac8-0e213646ba0a@cn.fujitsu.com>
+Date: Tue, 24 May 2016 11:19:13 +0800
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="jKBxcB1XkHIR0Eqt"
-In-Reply-To: <574350A0.80101@online.no>
+In-Reply-To: <20160523110844.GJ29147@twin.jikos.cz>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---jKBxcB1XkHIR0Eqt
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
 
-On Mon, May 23, 2016 at 08:49:04PM +0200, Zoiled wrote:
-[snip]
-> For what it's worth...  I have a 8 disk (7x 300GB + 1x 500GB) data
-> raid10, metadata raid1 setup and I get the following output of
-> btrfs...
-> 
-> Label: 'xxyyzz'  uuid: 12345678-9abc-def1-2345-6789abcdef01
->         Total devices 8 FS bytes used 1.05TiB
->         devid    1 size 268.05GiB used 265.94GiB path /dev/sda1
->         devid    2 size 279.40GiB used 277.22GiB path /dev/sdb
->         devid    3 size 279.40GiB used 277.32GiB path /dev/sdc
->         devid    4 size 279.40GiB used 278.73GiB path /dev/sdd
->         devid    5 size 279.40GiB used 277.72GiB path /dev/sde
->         devid    6 size 279.40GiB used 278.61GiB path /dev/sdf
->         devid    7 size 279.40GiB used 278.82GiB path /dev/sdg
->         devid    8 size 465.76GiB used 230.99GiB path /dev/sdh
-> 
-> # btrfs filesystem usage -T /
-> Overall:
->     Device size:                   2.35TiB
->     Device allocated:              2.11TiB
->     Device unallocated:          244.83GiB
->     Device missing:                  0.00B
->     Used:                          2.11TiB
->     Free (estimated):            122.57GiB      (min: 122.57GiB)
->     Data ratio:                       2.00
->     Metadata ratio:                   2.00
->     Global reserve:              512.00MiB      (used: 0.00B)
-> 
->              Data       Data      Metadata System
-> Id Path      RAID1      RAID10    RAID1    RAID1 Unallocated
-> -- --------- ---------- --------- -------- --------- -----------
->  1 /dev/sda1          - 132.97GiB        -         - 135.08GiB
->  2 /dev/sdb           - 138.61GiB        -         - 140.79GiB
->  3 /dev/sdc           - 138.66GiB        -         - 140.74GiB
->  4 /dev/sdd           - 138.87GiB  1.00GiB         - 139.53GiB
->  5 /dev/sde     1.00GiB 137.86GiB  1.00GiB         - 139.53GiB
->  6 /dev/sdf           - 138.81GiB  1.00GiB         - 139.59GiB
->  7 /dev/sdg     1.00GiB 138.38GiB  1.00GiB  64.00MiB 138.96GiB
->  8 /dev/sdh           - 113.46GiB  4.00GiB  64.00MiB 348.24GiB
-> -- --------- ---------- --------- -------- --------- -----------
->    Total        1.00GiB   1.05TiB  4.00GiB  64.00MiB 1.29TiB
-> Used      1007.30MiB   1.05TiB  1.66GiB 400.00KiB
-> 
-> What I don't get is... how can I have 244.8 GB unallocated when the
-> table below clearly shows that there is as much as 1.29TiB
-> unallocated.... does not appear to make sense to me at least...
+David Sterba wrote on 2016/05/23 13:08 +0200:
+> On Fri, May 20, 2016 at 10:33:55AM +0800, Qu Wenruo wrote:
+>> We'll enrich the test cases for current low memory mode.
+>
+> I started something to add optional default options for a few basic
+> commands (mkfs, fsck, convert) to extend the coverage. I'm not finished,
+> the idea is to call the commands via some wrapper that will grab the
+> defaults from a file or from environment.
+>
+>
+Thank you a lot.
 
-   This is exactly the issue. The Unallocated value(s) from btrfs fi
-usage on at least RAID-10 are simply wrong, any way you look at it.
+But that's still not enough for low memory fsck yet.
 
-   Hugo.
+Even we can add --low-memory option for btrfsck to run on that images, 
+we still have the following problems:
 
--- 
-Hugo Mills             | Great films about cricket: The Third Man
-hugo@... carfax.org.uk |
-http://carfax.org.uk/  |
-PGP: E2AB1DE4          |
+1) Lack of support for repair
+    Repair support for low memory is quite tricky, as we need to do a
+    lot of record work other than just calling btrfs_previous/next_item()
 
---jKBxcB1XkHIR0Eqt
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+    This won't be implemented in a short time. And this will make almost
+    all repair function test fails for low memory backend.
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
+2) btrfs-image bug causing missing chunk stripe
+    We're actively working on this before low memory mode for fs tree
+    check.
 
-iQIcBAEBAgAGBQJXQ1fRAAoJEFheFHXiqx3kYgIP/Rru4SDATkMIUIIB9vHHE2g0
-hW/R5v5zS7N17IVIdFhGRBIUEVuwY2494mZKwszxfhcHmeI0/i4OdmgEZh1AGuWu
-Gf0rmdnHtrQcr2Jh/cYBR9kppEo/vNr86wkY4vxRJrUFhh0xQDE1p14wCfitbrTG
-D+GiYRZLI/5Fs5ZYmRqJwuMtKBxxhyV4AARuLNmTNiWjqs3XPX3dSfc/tJuHbZuX
-qEex/4U03kEGw8Vw19XBZWdl1/TiBogcRamMJMeYC2cSqG+TIszid/V/oLa12col
-8luA928y+K6kfQyRHk1qSmzdHgSsPSlFgGhB1C6lUnpzcyiD9KCvS571IeEx1rOE
-W0fzxe2yfx+YIkHHeUmIRuoiJxESa8E8dtBhEIiSBuwV+MWD0aDlv84M/j0sR17E
-o4/kYuwFQ5RqfX1jlMXEek8qZR67vJlmcFdfdje608fRgCpkFkZRefkjGM644qPV
-Gn4Zt1ANg2ekMxAxbG84S10GphLvSzjorSgL2Z+2lz29pClq/++ySr15ivsQfQ7O
-eP6UlNLz74YuSf4eenOkhkWhisgHmsHLAZrl3l/Ds+MWGQYyFH1fJAgNCoilwDW1
-hjL5cAxhQP2cSr0jB3jhzqwitGPWMB3v++D59zmf7ZydbDGPPQ0nbTgfVmU6BeU8
-Yok3jjewIh4wJczo0Kkq
-=xwax
------END PGP SIGNATURE-----
+    In fact the problem is already here for a long time, and another bug
+    in btrfsck, which will ignore the error returned from dev_extent
+    check, makes btrfsck can pass the fsck test images.
 
---jKBxcB1XkHIR0Eqt--
+    Unfortunately (or fortunately?) low memory mode won't ignore such
+    error and always report missing chunk for dev_extent.
+
+    Unless we fix btrfs-image (only restore part is affected), low
+    memory mode will always report error on btrfs-image restored image.
+
+3) Extra images
+    During the development of low memory mode, we found that current
+    test images are all for some special fix case.
+
+    No check on health images, not to mention test on all possible extent
+    backrefs.
+
+    We have build such images for internal low memory mode tests, and
+    hopes to push it into current test.
+
+    But since we don't have such check only test cases infrastructure
+    and due to the bug of 2), we still needs some work for this.
+
+So we still have to some work to do.
+
+Thanks,
+Qu
+
+

@@ -1,145 +1,158 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:48961 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750924AbcEYTDq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 25 May 2016 15:03:46 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1b5e5n-0003TX-Et
-	for linux-btrfs@vger.kernel.org; Wed, 25 May 2016 21:03:43 +0200
-Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 25 May 2016 21:03:43 +0200
-Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 25 May 2016 21:03:43 +0200
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: Some ideas for improvements
-Date: Wed, 25 May 2016 19:03:32 +0000 (UTC)
-Message-ID: <pan$4409c$50898a15$4d9b8e7d$2537805b@cox.net>
-References: <45a47ee4db4cc92248f91f1d00e8ed03@www.centurion.link>
-Mime-Version: 1.0
+Received: from mail-io0-f172.google.com ([209.85.223.172]:36423 "EHLO
+	mail-io0-f172.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751403AbcEYUOv convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 25 May 2016 16:14:51 -0400
+Received: by mail-io0-f172.google.com with SMTP id f8so39672488ioe.3
+        for <linux-btrfs@vger.kernel.org>; Wed, 25 May 2016 13:14:50 -0700 (PDT)
+MIME-Version: 1.0
+In-Reply-To: <574306CC.3070906@prismatelecomtesting.com>
+References: <574306CC.3070906@prismatelecomtesting.com>
+Date: Wed, 25 May 2016 22:14:49 +0200
+Message-ID: <CAPmG0jYufpnNHAg6YzqE3i_ShJzXB=ZM5ct=tjjrJ_8Toc0Pzw@mail.gmail.com>
+Subject: Re: btrfs filesystem usage - Wrong Unallocated indications - RAID10
+From: Henk Slager <eye1tm@gmail.com>
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Dmitry Katsubo posted on Wed, 25 May 2016 16:45:41 +0200 as excerpted:
+There is a division by 2 missing in the code. With that added, the
+RAID10 numbers make more sense. See also:
+http://permalink.gmane.org/gmane.comp.file-systems.btrfs/53989
 
-> Dear btrfs community,
-> 
-> I hope btrfs developers are open for suggestions.
-> 
-> btrfs-scrub:
-> 
-> * Would be nice if 'btrfs scrub status' shows estimated finishing time
-> (ETA) and throughput (in Mb/s).
+More detail in here:
+https://www.spinics.net/lists/linux-btrfs/msg52882.html
 
-That might not be so easy to implement.  (Caveat, I'm not a dev, just a 
-btrfs user and list regular, so if a dev says different...)
+And if you want to look at allocation in a different way, this might
+be interesting:
+https://github.com/knorrie/btrfs-heatmap/blob/master/show_usage.py
 
-Currently, a running scrub simply outputs progress to a file (/var/lib/
-btrfs/scrub.status.<UUID>), and scrub status is simply a UI to pretty-
-print that file.  Note that there's nothing in there which lists the 
-total number of extents or bytes to go -- that's not calculated ahead of 
-time.
-
-So implementing some form of percentage done or eta is likely to increase 
-the processing time dramatically, as it could involve doing a dry-run 
-first, in ordered to get the total figures against which to calculate 
-percentage done.
-
-> * Not possible to start scrub for all devices in the volume without
-> mounting it.
-
-Interesting.  It's news to me that you can scrub individual devices 
-without mounting.  But given that, this would indeed be a useful feature, 
-and given that btrfs filesystem show can get the information, scrub 
-should be able to get and make use of it as well. =:^)
-
-So (again not a dev, but...) this one's probably just a matter of coding 
-it up.  Tho there's lots of ideas and only a comparatively few devs 
-working on them, so unless it happens to strike someone's fancy as a nice 
-short project, it could be awhile before it's implemented.
-
-> btrfs-restore:
-> 
-> * It does not restore special files like named pipes and devices.
-> * Hard-linked files are not correctly restored (they all turn into
-> independent replicas).
-> * If the file cannot be read / recovered, it is still created with zero
-> size (I would expect that the file is not created).
-> * I think that the options '-xmS' should be enabled by default
-> (shouldn't it be a goal to restore as much as possible?).
-> * Option that applies (y) to all questions (completely unattended
-> recovery) is missing.
-
-That latter point is a known sore spot that a lot of people have 
-complained about.  So it'll almost certainly be addressed eventually, but 
-it's a matter of this project vying with all the others so it could be 
-awhile.
-
-As for the other points, restore has rather evolved over time.  Those 
-optional features were added on one or two at a time and were at first 
-non-default options because as new features there was a non-zero chance 
-they could disrupt the entire restore, regressing restore as a useful 
-disaster recovery tool.
-
-It's also useful to remember that btrfs is still considered by its devs 
-to be very much still stabilizing, not fully stable and mature, and many 
-of its tools, including restore, /do/ continue to evolve.  Once the 
-general feature set is reasonably full and stable, it's likely some of 
-these non-default options will be made default, for a final stable-form 
-command-set.  I'd consider it quite likely that some of the restore 
-options will indeed be made the default, in final-form btrfs restore.
-
-Meanwhile, that unfinished evolution is most likely behind the zero-sized 
-(non-)restore of some files, the missing special files, etc.  Those 
-issues will likely be addressed at some point.
-
-In fact, it was someone wanting timestamp restoration for his own use, 
-that happened to be a dev that could actually write the code, that 
-contributed the metadata restoration option, scratching his own itch.  
-And when I saw that, I immediately asked about symlink restoration, as 
-that was an itch I had when using restore myself, tho not being a dev I 
-couldn't just code up the solution to scratch it as he did.  But I was 
-lucky and he had the time and patience to do it while he was working with 
-the code, so the symlinks restoration option was added a release or two 
-after the metadata restoration option.
-
-But I guess nobody has had and made known an itch for other special file 
-restoration yet -- I wasn't even aware they weren't restored, here, as it 
-hadn't occurred to me to check.  So it'll probably happen, but having 
-missed the opportunity I took advantage of to request symlink restoration 
-support while he was working on the metadata support, again, it could be 
-awhile until someone actually codes up the special file restoration 
-support.
-
-I am, however, not sure how practical hardlink (and of course the btrfs 
-specific reflink) restoration, maintaining the link as opposed to 
-breaking the link and restoring as separate files actually is, and if 
-it's complicated at all, the priority is likely to be quite low.  Because 
-after all, btrfs restore isn't intended for routine use, but as a 
-disaster recovery tool.  In theory, people should be recovering from 
-their backups (and any good sysadmin knows the first rule of backups in 
-simple form is that if you don't have at least one level of backup, you 
-are by lack thereof declaring the data to be worth less than the time and 
-resources necessary to do that backup), and shouldn't really be depending 
-on btrfs restore anyway.  As such, just restoring the files at all is 
-arguably enough, and all these options like restoring metadata are 
-arguably gravy on top already.  If restoring hard-links, and if the 
-restore is to btrfs, possibly reflinks as well, as links not independent 
-files, isn't too complex, then yeah, restoring them as an option is 
-fine.  But if it's adding serious additional complexity, as I suspect it 
-might, yes, the option might still be added at some point, but the 
-priority to do it will be pretty low, which means the point at which it's 
-actually added is likely to be out there five years or more, simply 
-because there's so many other ideas at a higher priority to implement as 
-well.
-
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+On Mon, May 23, 2016 at 3:34 PM, Marco Lorenzo Crociani
+<marcoc@prismatelecomtesting.com> wrote:
+> Hi,
+> as I wrote today in IRCI experienced an issue with 'btrfs filesystem usage'.
+> I have a 4 partitions RAID10 btrfs filesystem almost full.
+> 'btrfs filesystem usage' reports wrong "Unallocated" indications.
+>
+> Linux 4.5.3
+> btrfs-progs v4.5.3
+>
+>
+> # btrfs fi usage /data/
+>
+> Overall:
+>     Device size:          13.93TiB
+>     Device allocated:          13.77TiB
+>     Device unallocated:         167.54GiB
+>     Device missing:             0.00B
+>     Used:              13.44TiB
+>     Free (estimated):         244.39GiB    (min: 244.39GiB)
+>     Data ratio:                  2.00
+>     Metadata ratio:              2.00
+>     Global reserve:         512.00MiB    (used: 0.00B)
+>
+> Data,single: Size:8.00MiB, Used:0.00B
+>    /dev/sda4       8.00MiB
+>
+> Data,RAID10: Size:6.87TiB, Used:6.71TiB
+>    /dev/sda4       1.72TiB
+>    /dev/sdb3       1.72TiB
+>    /dev/sdc3       1.72TiB
+>    /dev/sdd3       1.72TiB
+>
+> Metadata,single: Size:8.00MiB, Used:0.00B
+>    /dev/sda4       8.00MiB
+>
+> Metadata,RAID10: Size:19.00GiB, Used:14.15GiB
+>    /dev/sda4       4.75GiB
+>    /dev/sdb3       4.75GiB
+>    /dev/sdc3       4.75GiB
+>    /dev/sdd3       4.75GiB
+>
+> System,single: Size:4.00MiB, Used:0.00B
+>    /dev/sda4       4.00MiB
+>
+> System,RAID10: Size:16.00MiB, Used:768.00KiB
+>    /dev/sda4       4.00MiB
+>    /dev/sdb3       4.00MiB
+>    /dev/sdc3       4.00MiB
+>    /dev/sdd3       4.00MiB
+>
+> Unallocated:
+>    /dev/sda4       1.76TiB
+>    /dev/sdb3       1.76TiB
+>    /dev/sdc3       1.76TiB
+>    /dev/sdd3       1.76TiB
+>
+> ----------------------------------------------------------------------------------
+> # btrfs fi show /data/
+> Label: 'data'  uuid: df6639d5-3ef2-4ff6-a871-9ede440e2dae
+>     Total devices 4 FS bytes used 6.72TiB
+>     devid    1 size 3.48TiB used 3.44TiB path /dev/sda4
+>     devid    2 size 3.48TiB used 3.44TiB path /dev/sdb3
+>     devid    3 size 3.48TiB used 3.44TiB path /dev/sdc3
+>     devid    4 size 3.48TiB used 3.44TiB path /dev/sdd3
+>
+> ----------------------------------------------------------------------------------
+> # btrfs fi df /data/
+> Data, RAID10: total=6.87TiB, used=6.71TiB
+> Data, single: total=8.00MiB, used=0.00B
+> System, RAID10: total=16.00MiB, used=768.00KiB
+> System, single: total=4.00MiB, used=0.00B
+> Metadata, RAID10: total=19.00GiB, used=14.15GiB
+> Metadata, single: total=8.00MiB, used=0.00B
+> GlobalReserve, single: total=512.00MiB, used=0.00B
+>
+> ----------------------------------------------------------------------------------
+> # df -h
+> /dev/sda4                     7,0T  6,8T    245G  97% /data
+>
+> Regards,
+>
+> --
+> Marco Crociani
+> Prisma Telecom Testing S.r.l.
+> via Petrocchi, 4  20127 MILANO  ITALY
+> Phone:  +39 02 26113507
+> Fax:  +39 02 26113597
+> e-mail:  marcoc@prismatelecomtesting.com
+> web:  http://www.prismatelecomtesting.com
+>
+> Questa email (e I suoi allegati) costituisce informazione riservata e
+> confidenziale e può essere soggetto a legal privilege. Può essere utilizzata
+> esclusivamente dai suoi destinatari legittimi.  Se avete ricevuto questa
+> email per errore, siete pregati di informarne immediatamente il mittente e
+> quindi cancellarla.  A meno che non siate stati a ciò espressamente
+> autorizzati, la diffusione o la riproduzione di questa email o del suo
+> contenuto non sono consentiti.
+>
+>  Salvo che questa email sia espressamente qualificata come offerta o
+> accettazione contrattuale, il mittente non intende con questa email dare
+> vita ad un vincolo giuridico e questa email non può essere interpretata
+> quale offerta o accettazione che possa dare vita ad un contratto. Qualsiasi
+> opinione manifestata in questa email è un'opinione personale del mittente,
+> salvo che il mittente dichiari espressamente che si tratti di un'opinione di
+> Prisma Engineering.
+>
+>
+> *******************************************************************************
+>
+>  This e-mail (including any attachments) is private and confidential, and
+> may be privileged.  It is for the exclusive use of the intended
+> recipient(s).  If you have received this email in error, please inform the
+> sender immediately and then delete this email.  Unless you have been given
+> specific permission to do so, please do not distribute or copy this email or
+> its contents.
+>  Unless the text of this email specifically states that it is a contractual
+> offer or acceptance, the sender does not intend to create a legal
+> relationship and this email shall not constitute an offer or acceptance
+> which could give rise to a contract. Any views expressed in this
+> communication are those of the individual sender, except where the sender
+> specifically states them to be the views of Prisma Engineering.
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

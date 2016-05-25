@@ -1,121 +1,154 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:50826 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1755480AbcE0AlO (ORCPT
+Received: from mail-qg0-f68.google.com ([209.85.192.68]:36774 "EHLO
+	mail-qg0-f68.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752847AbcEYQQO (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 26 May 2016 20:41:14 -0400
-Subject: Re: R: Re: [PATCH 1/2] btrfs-progs: utils: Introduce new pseudo
- random API
-To: "kreijack@inwind.it" <kreijack@inwind.it>
-References: <254003815.145831464260911184.JavaMail.defaultUser@defaultHost>
-CC: <linux-btrfs@vger.kernel.org>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <47ab8242-7ff0-9bec-6ff2-ed2029a8cb16@cn.fujitsu.com>
-Date: Fri, 27 May 2016 08:41:05 +0800
+	Wed, 25 May 2016 12:16:14 -0400
+Received: by mail-qg0-f68.google.com with SMTP id l75so4121285qgd.3
+        for <linux-btrfs@vger.kernel.org>; Wed, 25 May 2016 09:16:14 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <254003815.145831464260911184.JavaMail.defaultUser@defaultHost>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+In-Reply-To: <1464149645-4308-1-git-send-email-quwenruo@cn.fujitsu.com>
+References: <1464149645-4308-1-git-send-email-quwenruo@cn.fujitsu.com>
+From: Noah Massey <noah.massey@gmail.com>
+Date: Wed, 25 May 2016 12:15:34 -0400
+Message-ID: <CADfjVrgxsgEOF4R5nuTXt8ujkjpWvnW5PNSis+a4LugLvZ49PQ@mail.gmail.com>
+Subject: Re: [PATCH 1/2] btrfs-progs: utils: Introduce new pseudo random API
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>, David Sterba <dsterba@suse.cz>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
-
-kreijack@inwind.it wrote on 2016/05/26 13:08 +0200:
+On Wed, May 25, 2016 at 12:14 AM, Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
+> David has reported some quite chaos usage of pseudo random numbers.
+> Like using static srand seed, or even calling rand() without setting
+> seed correctly.
 >
+> The new pseudo random API will initialize the random seed on its first
+> calling and use uniformly distributed pseudo random number generator as
+> backend.
 >
+> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+> ---
+>  utils.c | 36 ++++++++++++++++++++++++++++++++++++
+>  utils.h | 36 ++++++++++++++++++++++++++++++++++++
+>  2 files changed, 72 insertions(+)
 >
->> ----Messaggio originale----
->> Da: "Qu Wenruo" <quwenruo@cn.fujitsu.com>
->> Data: 26/05/2016 2.38
->> A: <kreijack@inwind.it>
->> Ogg: Re: [PATCH 1/2] btrfs-progs: utils: Introduce new pseudo random API
->>
->>
->>
->> Goffredo Baroncelli wrote on 2016/05/25 18:15 +0200:
->>> On 2016-05-25 06:14, Qu Wenruo wrote:
->>>> +void rand_seed(u64 seed)
->>>> +{
->>>> +	int i;
->>>> +	/* only use the last 48 bits */
->>>> +	for (i = 0; i < 3; i++) {
->>>> +		seeds[i] = (unsigned short)(seed ^ (unsigned short)(-1));
->>>> +		seed >>= 16;
->>>> +	}
->>>> +	seed_initlized = 1;
->>>> +}
->>>> +
->>>> +u32 rand_u32(void)
->>>> +{
->>>> +	struct timeval tv;
->>>> +
->>>> +	if (seed_initlized)
->>>> +		return nrand48(seeds);
->>>> +
->>>> +	/*
->>>> +	 * It's possible to use /dev/random, but we don't need that true
->>>> +	 * random number nor want to wait for entropy,
->>>> +	 * since we're only using random API to do corruption to test.
->>>> +	 * Time and pid/ppid based seed would be good enough, and won't
->>>> +	 * cause sleep for entropy pool.
->>>> +	 */
->>>> +	gettimeofday(&tv, 0);
->>>> +	seeds[0] = getpid() ^ (tv.tv_sec & 0xFFFF);
->>>> +	seeds[1] = getppid() ^ (tv.tv_usec & 0xFFFF);
->>>> +	seeds[2] = (tv.tv_sec ^ tv.tv_usec) >> 16;
->>>> +	seed_initlized = 1;
->>>> +
->>>> +	return (u32)nrand48(seeds);
->>>> +}
->>>
->>>
->>> Just for my curiosity, which is the advantage of rand48() respect to rand()
-> if we utilize only the
->>> lower 32 bit ? It wouldn't be more simple to use:
->>
->> Of course rand() is my first candidate.
->>
->> However a quick check on manpage of rand(3) shows, the up limit of
->> RAND_MAX, is not always the same.
->>
->> In my system, RAND_MAX is 2^31 -1, while example code from rand(3)
->> assumes the up limit is 32767.
+> diff --git a/utils.c b/utils.c
+> index 7761165..c0e860a 100644
+> --- a/utils.c
+> +++ b/utils.c
+> @@ -54,9 +54,11 @@
+>  #define BLKDISCARD     _IO(0x12,119)
+>  #endif
 >
-> In glibc RAND_MAX is always ~2^31: http://www.gnu.
-> org/software/libc/manual/html_node/ISO-Random.html
-
-Thanks for the reference on RAND_MAX is alwasy 2^31 - 1.
-
-However, that's still not enough, for 2^31 - 1 case, the highest(sign) 
-bit is always 0.
-
-This doesn't fully use the 32 bits. It's OK for u16 and u8, but not u32 
-or u64.
-
-On the other hand, jrand48() can return signed result, in range [- 2^31, 
-2^31).
-Which fully uses all the 32bits.
-
-Thanks,
-Qu
-
+> +static int seed_initlized = 0;
+>  static int btrfs_scan_done = 0;
 >
-> If it is true for glibc, it should be true also for the others linux libc
-> (dietlibc[1], musl[2]);  I think that assuming in linux RAND_MAX  = 2^31-1
-> should be safe.
+>  static char argv0_buf[ARGV0_BUF_SIZE] = "btrfs";
+> +static unsigned short seeds[3];
 >
-> BR
-> Goffredo
+>  const char *get_argv0_buf(void)
+>  {
+> @@ -4051,3 +4053,37 @@ out:
 >
-> [1] https://github.com/ensc/dietlibc/blob/master/include/stdlib.h#L101
-> [2] https://github.com/cloudius-systems/musl/blob/master/include/stdlib.h#L81
+>         return ret;
+>  }
+> +
+> +void rand_seed(u64 seed)
+> +{
+> +       int i;
+> +       /* only use the last 48 bits */
+> +       for (i = 0; i < 3; i++) {
+> +               seeds[i] = (unsigned short)(seed ^ (unsigned short)(-1));
+> +               seed >>= 16;
+> +       }
+> +       seed_initlized = 1;
+> +}
+> +
+> +u32 rand_u32(void)
+> +{
+> +       struct timeval tv;
+> +
+> +       if (seed_initlized)
+> +               return nrand48(seeds);
+> +
+
+Missing a (u32) cast.
+
+> +       /*
+> +        * It's possible to use /dev/random, but we don't need that true
+> +        * random number nor want to wait for entropy,
+
+Sounds like a good candidate for /dev/urandom, then?
+
+> +        * since we're only using random API to do corruption to test.
+> +        * Time and pid/ppid based seed would be good enough, and won't
+> +        * cause sleep for entropy pool.
+> +        */
+> +       gettimeofday(&tv, 0);
+> +       seeds[0] = getpid() ^ (tv.tv_sec & 0xFFFF);
+> +       seeds[1] = getppid() ^ (tv.tv_usec & 0xFFFF);
+> +       seeds[2] = (tv.tv_sec ^ tv.tv_usec) >> 16;
+> +       seed_initlized = 1;
+> +
+> +       return (u32)nrand48(seeds);
+> +}
+> diff --git a/utils.h b/utils.h
+> index ebe6d61..0977262 100644
+> --- a/utils.h
+> +++ b/utils.h
+> @@ -362,4 +362,40 @@ static inline int error_on(int condition, const char *fmt, ...)
+>         return 1;
+>  }
+>
+> +/* pseudo random number generator wrappers */
+> +u32 rand_u32(void);
+> +
+> +static inline int rand_int(void)
+> +{
+> +       return (int)(rand_u32());
+> +}
+> +
+> +static inline u64 rand_u64(void)
+> +{
+> +       u64 ret = 0;
+> +
+> +       ret += rand_u32();
+> +       ret <<= 32;
+> +       ret += rand_u32();
+> +       return ret;
+> +}
+> +
+> +static inline u16 rand_u16(void)
+> +{
+> +       return (u16)(rand_u32());
+> +}
+> +
+> +static inline u8 rand_u8(void)
+> +{
+> +       return (u8)(rand_u32());
+> +}
+> +
+> +/* Return random number in range [0, limit) */
+> +static inline unsigned int rand_range(unsigned int up)
+> +{
+> +       return (unsigned int)(rand_u32() % up);
+> +}
+
+Wouldn't distribution be more uniform if you took the full 48 bits
+from nrand64(), and only downcast after the mod?
+
+> +
+> +/* Also allow setting seeds manually */
+> +void rand_seed(u64 seed);
+>  #endif
+> --
+> 2.8.2
+>
 >
 >
 > --
 > To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
 > the body of a message to majordomo@vger.kernel.org
 > More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
->
-
-

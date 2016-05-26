@@ -1,51 +1,33 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from bombadil.infradead.org ([198.137.202.9]:36349 "EHLO
+Received: from bombadil.infradead.org ([198.137.202.9]:39946 "EHLO
 	bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753520AbcEZIEZ (ORCPT
+	with ESMTP id S1750977AbcEZIIg (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 26 May 2016 04:04:25 -0400
-Date: Thu, 26 May 2016 01:04:24 -0700
+	Thu, 26 May 2016 04:08:36 -0400
+Date: Thu, 26 May 2016 01:08:35 -0700
 From: Christoph Hellwig <hch@infradead.org>
 To: "Darrick J. Wong" <darrick.wong@oracle.com>
 Cc: david@fromorbit.com, linux-btrfs@vger.kernel.org, fstests@vger.kernel.org,
         xfs@oss.sgi.com
-Subject: Re: [PATCH 6/7] xfs: test rmap behavior when multiple bmbt records
- map to a single rmapbt record
-Message-ID: <20160526080424.GA8469@infradead.org>
+Subject: Re: [PATCH 1/7] xfs/104: don't enospc when ag metadata overhead grows
+Message-ID: <20160526080835.GB20307@infradead.org>
 References: <146424222237.6278.4174636124436241002.stgit@birch.djwong.org>
- <146424226290.6278.15051221437554845000.stgit@birch.djwong.org>
+ <146424222875.6278.15144771781299434088.stgit@birch.djwong.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <146424226290.6278.15051221437554845000.stgit@birch.djwong.org>
+In-Reply-To: <146424222875.6278.15144771781299434088.stgit@birch.djwong.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-> --- a/src/t_immutable.c
-> +++ b/src/t_immutable.c
-> @@ -38,10 +38,10 @@
->  #include <libgen.h>
->  #include <sys/acl.h>
->  #include <attr/xattr.h>
-> +#include <linux/fs.h>
->  #include <xfs/xfs.h>
->  #include <xfs/handle.h>
->  #include <xfs/jdm.h>
-> -#include <linux/fs.h>
->  #include <linux/magic.h>
->  
->  #ifndef XFS_SUPER_MAGIC
+> +for i in `seq 125 -1 90`; do
+> +	fillsize=`expr $i \* 1048576`
+> +	out="$(_fill_scratch $fillsize 2>&1)"
+> +	echo "$out" | grep -q 'No space left on device' && continue
+> +	test -n "${out}" && echo "$out"
+> +	break
+> +done
 
-How does this belong into the patch?
+That's a bit of an odd loop, and it would seem an inverted grep
+would seem more obvious.  But otherwise this looks fine to me:
 
-> diff --git a/tests/xfs/group b/tests/xfs/group
-> index f0ca410..0e34f9a 100644
-> --- a/tests/xfs/group
-> +++ b/tests/xfs/group
-> @@ -288,3 +288,4 @@
->  853 auto quick clone
->  854 auto quick clone
->  855 auto clone
-> +856 auto clone rmap reflink
-
-This is the only test in the reflink group, how is this group different
-from the clone one?
+Reviewed-by: Christoph Hellwig <hch@lst.de>

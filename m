@@ -1,14 +1,14 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:8178 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:17060 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1750854AbcEZHGL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 26 May 2016 03:06:11 -0400
+	id S1750762AbcEZHBt (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 26 May 2016 03:01:49 -0400
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
 Cc: fdmanana@kernel.org, fdmanana@suse.com
-Subject: [PATCH v2] btrfs: Add debug warning for new block group reservations
-Date: Thu, 26 May 2016 15:06:08 +0800
-Message-Id: <20160526070608.10837-1-quwenruo@cn.fujitsu.com>
+Subject: [PATCH] btrfs: Add debug warning for new block group reservations
+Date: Thu, 26 May 2016 15:01:25 +0800
+Message-Id: <20160526070125.6850-1-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
@@ -28,23 +28,18 @@ provides good enough clue for later debug.
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
-v2:
-   Fix compile error
-   Change to WARN_ON_ONCE(), as when it underflows, it will always under
-   flow
----
  fs/btrfs/extent-tree.c | 1 +
  1 file changed, 1 insertion(+)
 
 diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 9424864..47ce96b 100644
+index 9424864..3639b44 100644
 --- a/fs/btrfs/extent-tree.c
 +++ b/fs/btrfs/extent-tree.c
 @@ -6243,6 +6243,7 @@ void btrfs_dec_block_group_reservations(struct btrfs_fs_info *fs_info,
  	ASSERT(bg);
  	if (atomic_dec_and_test(&bg->reservations))
  		wake_up_atomic_t(&bg->reservations);
-+	WARN_ON_ONCE(atomic_read(&bg->reservations) < 0);
++	WARN_ON(atomic_read(&bg->reservations) < 0)
  	btrfs_put_block_group(bg);
  }
  

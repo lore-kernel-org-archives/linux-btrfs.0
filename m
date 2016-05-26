@@ -1,100 +1,69 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:60504 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751386AbcEYWF6 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 25 May 2016 18:05:58 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1b5gw8-0000YI-LM
-	for linux-btrfs@vger.kernel.org; Thu, 26 May 2016 00:05:56 +0200
-Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 26 May 2016 00:05:56 +0200
-Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 26 May 2016 00:05:56 +0200
+Received: from james.kirk.hungrycats.org ([174.142.39.145]:48111 "EHLO
+	james.kirk.hungrycats.org" rhost-flags-OK-FAIL-OK-OK)
+	by vger.kernel.org with ESMTP id S1753900AbcEZQTx (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 26 May 2016 12:19:53 -0400
+Date: Thu, 26 May 2016 12:19:52 -0400
+From: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
 To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: Some ideas for improvements
-Date: Wed, 25 May 2016 22:05:49 +0000 (UTC)
-Message-ID: <pan$330ec$c3352766$623387a5$1e8558db@cox.net>
-References: <45a47ee4db4cc92248f91f1d00e8ed03@www.centurion.link>
-	<pan$4409c$50898a15$4d9b8e7d$2537805b@cox.net>
-	<CAD=QJKjfrtBN+nyhOK3mRxv2qkPMhx8Gf1MuuFqzkOYYv2RT=g@mail.gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Cc: Filipe Manana <fdmanana@gmail.com>
+Subject: mixed inline, non-inline extents leading to EIO when reading small
+ files
+Message-ID: <20160526161952.GH15597@hungrycats.org>
+MIME-Version: 1.0
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="kR3zbvD4cgoYnS/6"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Nicholas D Steeves posted on Wed, 25 May 2016 16:36:13 -0400 as excerpted:
 
-> On 25 May 2016 at 15:03, Duncan <1i5t5.duncan@cox.net> wrote:
->> Dmitry Katsubo posted on Wed, 25 May 2016 16:45:41 +0200 as excerpted:
+--kR3zbvD4cgoYnS/6
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
->>> btrfs-restore [needs an o]ption that applies (y) to all questions
->>> (completely unattended recovery)
->>
->> That['s] a known sore spot that a lot of people have complained
->> about.
+I frequently see these in /etc/lvm/backup/*.  Something that LVM does
+when it writes these files triggers the problem.  This problem occurs
+in kernels 3.18..4.4.11 (i.e. all the kernels I've tested).
 
-> I'm surprised no one has mentioned, in any of these discussions, what I
-> believe is the standard method of providing this functionality:
-> yes | btrfs-restore -options /dev/disk
+btrfs-debug-tree finds this:
 
-Good point.
+        item 26 key (2702988 INODE_ITEM 0) itemoff 12632 itemsize 160
+                inode generation 49642 transid 49799 size 7856 nbytes 8192
+                block group 0 mode 100644 links 1 uid 0 gid 0
+                rdev 0 flags 0x0
+        item 27 key (2702988 INODE_REF 2799) itemoff 12617 itemsize 15
+                inode ref index 4 namelen 5 name: volgr
+        item 28 key (2702988 EXTENT_DATA 0) itemoff 11247 itemsize 1370
+                inline extent data size 1349 ram 4096 compress(zlib)
+        item 29 key (2702988 EXTENT_DATA 4096) itemoff 11194 itemsize 53
+                extent data disk byte 1161560064 nr 4096
+                extent data offset 0 nr 4096 ram 4096
+                extent compression(none)
 
-I didn't bring it up because while I've used btrfs restore a few times, 
-my btrfs are all on relatively small SSD partitions, so I both needed 
-less y's, and the total time per restore is a few minutes, not hours, so 
-it wasn't a big deal.  As a result, while I know of yes, I didn't need to 
-think about automation, and as I never used it, it didn't occur to me to 
-suggest it for others.
+When the problem occurs it usually affects all files in /etc/lvm/backup.
+I have seen it randomly in other parts of the filesystem but it's much
+rarer elsewhere.
 
-Had I needed to use it, however, I expect I would have reached for yes, 
-myself, so good point indeed, pointing out its use to others.  I just 
-wish I'd thought of mentioning it, now.  =:^)
+Attempts to read this file return EIO.  There are no errors reported in
+scrub or kmesg.
 
-> And if you need it in your initrd on a Debian-like system, put the
-> following in /etc/initramfs-tools/hooks/yes.hook :
-> 
-> #!/bin/sh
-> 
-> . /usr/share/initramfs-tools/hook-functions
-> 
-> if command -v /usr/bin/yes >/dev/null 2>&1; then
->     copy_exec /usr/bin/yes usr/bin/yes copy_exec /usr/bin/yes
->     usr/bin/yes
-> fi
-> 
-> I haven't tested this, but it seems like it would do the trick.
+Filesystem is mounted with options:
 
-FWIW, for those using a dracut-based initr* (which should be fedora/rh-
-based distros as well as those like arch and gentoo, where it'd be an 
-option, the recommended option in at least gentoo's case), it's a simple 
-config file edit, with dracut taking care of the rest, including pulling 
-in libraries for non-static binaries.  I've not used it for yes, but I've 
-used it for a few other binaries.
+	noatime,compress-force=zlib,flushoncommit,space_cache,skip_balance,commit=300
 
-I use the /etc/dracut.conf.d/* style of config here, and here's what I 
-have in my specific installitems.conf file in that dir:
+Am I missing anything?
 
-install_items+="
-	/bin/most
-	/bin/nano
-"
+--kR3zbvD4cgoYnS/6
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
 
-(I don't have less, which dracut uses by default, on my system, 
-preferring most.  And nano is a tiny but useful text editor that doesn't 
-require the esoteric pre-use knowledge of something like vi/vim-minimal, 
-tho I prefer the larger mc/mcedit in a less size constrained environment.)
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
 
-Obviously I'd just need to include one more line there to pull in 
-/bin/yes, if I wanted/needed it.  (Tho I've not checked, for all I know 
-dracut pulls it in on its own or via some other module I'm already using.)
+iEYEARECAAYFAldHIigACgkQgfmLGlazG5zm/wCbBJKHM5VKms1bEl9jctgmz0B8
+Hk8AniF67LBNXOz5MLRSQV59gBhRMri3
+=LJdO
+-----END PGP SIGNATURE-----
 
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+--kR3zbvD4cgoYnS/6--

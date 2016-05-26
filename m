@@ -1,121 +1,78 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f193.google.com ([209.85.213.193]:34676 "EHLO
-	mail-ig0-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753637AbcEZRzS (ORCPT
+Received: from zaphod.cobb.me.uk ([213.138.97.131]:53295 "EHLO
+	zaphod.cobb.me.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754849AbcEZWMr (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 26 May 2016 13:55:18 -0400
-Received: by mail-ig0-f193.google.com with SMTP id b4so2510713igl.1
-        for <linux-btrfs@vger.kernel.org>; Thu, 26 May 2016 10:55:17 -0700 (PDT)
-Received: from whitehead.beowulf.uwo.ca ([2620:123:7001:1:76d4:35ff:fee4:a114])
-        by smtp.gmail.com with ESMTPSA id s1sm1399576igh.19.2016.05.26.10.55.16
-        for <linux-btrfs@vger.kernel.org>
-        (version=TLSv1/SSLv3 cipher=OTHER);
-        Thu, 26 May 2016 10:55:16 -0700 (PDT)
-From: Tyson Whitehead <twhitehead@gmail.com>
+	Thu, 26 May 2016 18:12:47 -0400
+Received: from black.home.cobb.me.uk (unknown [192.168.0.205])
+	by zaphod.cobb.me.uk (Postfix) with ESMTP id C7F189B928
+	for <linux-btrfs@vger.kernel.org>; Thu, 26 May 2016 23:12:43 +0100 (BST)
+Received: from [192.168.0.211] (novatech.home.cobb.me.uk [192.168.0.211])
+	by black.home.cobb.me.uk (Postfix) with ESMTPS id 9F3045FB89
+	for <linux-btrfs@vger.kernel.org>; Thu, 26 May 2016 23:12:43 +0100 (BST)
+Subject: Re: Reducing impact of periodic btrfs balance
 To: linux-btrfs@vger.kernel.org
-Subject: Scrub aborts on newer kernels
-Date: Thu, 26 May 2016 13:55:16 -0400
-Message-ID: <1970914.zjZ5YKPDft@whitehead.beowulf.uwo.ca>
+References: <573C6E47.2080109@cobb.uk.net>
+ <d40d8fc7-3766-1ccc-3253-9f870a0f4f85@cn.fujitsu.com>
+From: Graham Cobb <g.btrfs@cobb.uk.net>
+Message-ID: <574774DB.4020507@cobb.uk.net>
+Date: Thu, 26 May 2016 23:12:43 +0100
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+In-Reply-To: <d40d8fc7-3766-1ccc-3253-9f870a0f4f85@cn.fujitsu.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Under the last several kernels versions (4.6 and I believe 4.4 and, 4.5) btrfs scrub aborts before completing.
+On 19/05/16 02:33, Qu Wenruo wrote:
+> 
+> 
+> Graham Cobb wrote on 2016/05/18 14:29 +0100:
+>> A while ago I had a "no space" problem (despite fi df, fi show and fi
+>> usage all agreeing I had over 1TB free).  But this email isn't about
+>> that.
+>>
+>> As part of fixing that problem, I tried to do a "balance -dusage=20" on
+>> the disk.  I was expecting it to have system impact, but it was a major
+>> disaster.  The balance didn't just run for a long time, it locked out
+>> all activity on the disk for hours.  A simple "touch" command to create
+>> one file took over an hour.
+> 
+> It seems that balance blocked a transaction for a long time, which makes
+> your touch operation to wait for that transaction to end.
 
-If I boot back into an older kernel (4.1 or 4.3, not sure about 4.2) then it runs to completion without any issues.
+I have been reading volumes.c.  But I don't have a feel for which
+transactions are likely to be the things blocking for a really long time
+(hours).
 
-Steps to reproduce:
+If this can occur, I think the warnings to users about balance need to
+be extended to include this issue.  Currently the user mode code warns
+users that unfiltered balances may take a long time, but it doesn't warn
+that the disk may be unusable during that time.
 
-1 - make a raid1 system
-2 - run with only one disk for awhile to introduce inconsistency
-3 - add the other disk back and run btrfs scrub
+>> 3) My btrfs-balance-slowly script would work better if there was a
+>> time-based limit filter for balance, not just the current count-based
+>> filter.  I would like to be able to say, for example, run balance for no
+>> more than 10 minutes (completing the operation in progress, of course)
+>> then return.
+> 
+> As btrfs balance is done in block group unit, I'm afraid such thing
+> would be a little tricky to implement.
 
-The newer kernels will get part way through the scrub and then die.  For example, with 4.6
+It would be really easy to add a jiffies-based limit into the checks in
+should_balance_chunk.  Of course, this would only test the limit in
+between block groups but that is what I was looking for -- a time-based
+version of the current limit filter.
 
-# btrfs scrub status -dR /
-scrub status for 61267e7b-e8e3-43e1-99f3-40cb2b004a6a
-scrub device /dev/sda3 (id 1) history
-        scrub started at Thu May 26 10:59:31 2016 and was aborted after 00:02:23
-        data_extents_scrubbed: 256140
-        tree_extents_scrubbed: 35016
-        data_bytes_scrubbed: 14865694720
-        tree_bytes_scrubbed: 573702144
-        read_errors: 0
-        csum_errors: 0
-        verify_errors: 0
-        no_csum: 2032
-        csum_discards: 0
-        super_errors: 0
-        malloc_errors: 0
-        uncorrectable_errors: 0
-        unverified_errors: 0
-        corrected_errors: 0
-        last_physical: 16004874240
-scrub device /dev/sdb3 (id 2) history
-        scrub started at Thu May 26 10:59:31 2016 and was aborted after 00:02:35
-        data_extents_scrubbed: 256139
-        tree_extents_scrubbed: 35016
-        data_bytes_scrubbed: 14865690624
-        tree_bytes_scrubbed: 573702144
-        read_errors: 0
-        csum_errors: 205
-        verify_errors: 24
-        no_csum: 2032
-        csum_discards: 0
-        super_errors: 0
-        malloc_errors: 0
-        uncorrectable_errors: 0
-        unverified_errors: 0
-        corrected_errors: 229
-        last_physical: 15984951296
+On the other hand, the time limit could just be added into the user mode
+code: after the timer expires it could issue a "balance pause".  Would
+the effect be identical in terms of timing, resources required, etc?
 
-The kernel logs show nothing other than the standard "no csum found for inode ..." and "parent transid verify failed ..." messages
+Would it be better to do a "balance pause" or a "balance cancel"?  The
+goal would be to suspend balance processing and allow the system to do
+something else for a while (say 20 minutes) and then go back to doing
+more balance later.  What is the difference between resuming a paused
+balance compared to starting a new balance? Bearing in mind that this is
+a heavily used disk so we can expect lots of transactions to have
+happened in the meantime (otherwise we wouldn't need this capability)?
 
-Then booting back into 4.3 and rerunning the scrub.
-
-# btrfs scrub start -BdR /
-scrub device /dev/sda3 (id 1) done
-        scrub started at Thu May 26 11:43:00 2016 and finished after 00:56:25
-        data_extents_scrubbed: 6939254
-        tree_extents_scrubbed: 68269
-        data_bytes_scrubbed: 426809974784
-        tree_bytes_scrubbed: 1118519296
-        read_errors: 0
-        csum_errors: 0
-        verify_errors: 0
-        no_csum: 62895
-        csum_discards: 0
-        super_errors: 0
-        malloc_errors: 0
-        uncorrectable_errors: 0
-        unverified_errors: 0
-        corrected_errors: 0
-        last_physical: 482390048768
-scrub device /dev/sdb3 (id 2) done
-        scrub started at Thu May 26 11:43:00 2016 and finished after 00:58:41
-        data_extents_scrubbed: 6939240
-        tree_extents_scrubbed: 68118                                                                                             
-        data_bytes_scrubbed: 426809335808                                                                                        
-        tree_bytes_scrubbed: 1116045312                                                                                          
-        read_errors: 0                                                                                                           
-        csum_errors: 1051510                                                                                                     
-        verify_errors: 0                                                                                                         
-        no_csum: 62767                                                                                                           
-        csum_discards: 0                                                                                                         
-        super_errors: 0                                                                                                          
-        malloc_errors: 0                                                                                                         
-        uncorrectable_errors: 0                                                                                                  
-        unverified_errors: 0                                                                                                     
-        corrected_errors: 1051510                                                                                                
-        last_physical: 482390048768                                                                                              
-WARNING: errors detected during scrubbing, corrected                                                                             
-
-Cheers!  -Tyson
-
-PS:  This is with version 4.4 of the btrfs progs and Debian kernel release 4.1, 4.3, 4.4, 4.5, and 4.6.
-
--- 
- Tyson Whitehead
- HPC Programming Specialist
- Compute Canada (SHARCNET)
+Graham

@@ -1,106 +1,121 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:55489 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1752431AbcEZR1E (ORCPT
+Received: from mail-ig0-f193.google.com ([209.85.213.193]:34676 "EHLO
+	mail-ig0-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753637AbcEZRzS (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 26 May 2016 13:27:04 -0400
-Date: Thu, 26 May 2016 13:26:28 -0400
-From: Chris Mason <clm@fb.com>
-To: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
-CC: <linux-btrfs@vger.kernel.org>, Filipe Manana <fdmanana@gmail.com>
-Subject: Re: mixed inline, non-inline extents leading to EIO when reading
- small files
-Message-ID: <20160526172628.pd6ps5ieuxbxwno7@floor.thefacebook.com>
-References: <20160526161952.GH15597@hungrycats.org>
+	Thu, 26 May 2016 13:55:18 -0400
+Received: by mail-ig0-f193.google.com with SMTP id b4so2510713igl.1
+        for <linux-btrfs@vger.kernel.org>; Thu, 26 May 2016 10:55:17 -0700 (PDT)
+Received: from whitehead.beowulf.uwo.ca ([2620:123:7001:1:76d4:35ff:fee4:a114])
+        by smtp.gmail.com with ESMTPSA id s1sm1399576igh.19.2016.05.26.10.55.16
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLSv1/SSLv3 cipher=OTHER);
+        Thu, 26 May 2016 10:55:16 -0700 (PDT)
+From: Tyson Whitehead <twhitehead@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Subject: Scrub aborts on newer kernels
+Date: Thu, 26 May 2016 13:55:16 -0400
+Message-ID: <1970914.zjZ5YKPDft@whitehead.beowulf.uwo.ca>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
-In-Reply-To: <20160526161952.GH15597@hungrycats.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, May 26, 2016 at 12:19:52PM -0400, Zygo Blaxell wrote:
-> I frequently see these in /etc/lvm/backup/*.  Something that LVM does
-> when it writes these files triggers the problem.  This problem occurs
-> in kernels 3.18..4.4.11 (i.e. all the kernels I've tested).
-> 
-> btrfs-debug-tree finds this:
-> 
->         item 26 key (2702988 INODE_ITEM 0) itemoff 12632 itemsize 160
->                 inode generation 49642 transid 49799 size 7856 nbytes 8192
->                 block group 0 mode 100644 links 1 uid 0 gid 0
->                 rdev 0 flags 0x0
->         item 27 key (2702988 INODE_REF 2799) itemoff 12617 itemsize 15
->                 inode ref index 4 namelen 5 name: volgr
->         item 28 key (2702988 EXTENT_DATA 0) itemoff 11247 itemsize 1370
->                 inline extent data size 1349 ram 4096 compress(zlib)
->         item 29 key (2702988 EXTENT_DATA 4096) itemoff 11194 itemsize 53
->                 extent data disk byte 1161560064 nr 4096
->                 extent data offset 0 nr 4096 ram 4096
->                 extent compression(none)
-> 
-> When the problem occurs it usually affects all files in /etc/lvm/backup.
-> I have seen it randomly in other parts of the filesystem but it's much
-> rarer elsewhere.
-> 
-> Attempts to read this file return EIO.  There are no errors reported in
-> scrub or kmesg.
-> 
-> Filesystem is mounted with options:
-> 
-> 	noatime,compress-force=zlib,flushoncommit,space_cache,skip_balance,commit=300
-> 
-> Am I missing anything?
+Under the last several kernels versions (4.6 and I believe 4.4 and, 4.5) btrfs scrub aborts before completing.
 
-I've got this queued up to send out.  We hit this with holes instead of
-extents, and without compression, but its a similar problem:
+If I boot back into an older kernel (4.1 or 4.3, not sure about 4.2) then it runs to completion without any issues.
 
-Btrfs: deal with duplciates during extent_map insertion in btrfs_get_extent
+Steps to reproduce:
 
-When dealing with inline extents, btrfs_get_extent will incorrectly try
-to insert a duplicate extent_map.  The dup hits -EEXIST from
-add_extent_map, but then we try to merge with the existing one and end
-up trying to insert a zero length extent_map.
+1 - make a raid1 system
+2 - run with only one disk for awhile to introduce inconsistency
+3 - add the other disk back and run btrfs scrub
 
-This actually works most of the time, except when there are extent maps
-past the end of the inline extent.  rocksdb will trigger this sometimes
-because it preallocates an extent and then truncates down.
+The newer kernels will get part way through the scrub and then die.  For example, with 4.6
 
-Josef made a script to trigger with xfs_io:
+# btrfs scrub status -dR /
+scrub status for 61267e7b-e8e3-43e1-99f3-40cb2b004a6a
+scrub device /dev/sda3 (id 1) history
+        scrub started at Thu May 26 10:59:31 2016 and was aborted after 00:02:23
+        data_extents_scrubbed: 256140
+        tree_extents_scrubbed: 35016
+        data_bytes_scrubbed: 14865694720
+        tree_bytes_scrubbed: 573702144
+        read_errors: 0
+        csum_errors: 0
+        verify_errors: 0
+        no_csum: 2032
+        csum_discards: 0
+        super_errors: 0
+        malloc_errors: 0
+        uncorrectable_errors: 0
+        unverified_errors: 0
+        corrected_errors: 0
+        last_physical: 16004874240
+scrub device /dev/sdb3 (id 2) history
+        scrub started at Thu May 26 10:59:31 2016 and was aborted after 00:02:35
+        data_extents_scrubbed: 256139
+        tree_extents_scrubbed: 35016
+        data_bytes_scrubbed: 14865690624
+        tree_bytes_scrubbed: 573702144
+        read_errors: 0
+        csum_errors: 205
+        verify_errors: 24
+        no_csum: 2032
+        csum_discards: 0
+        super_errors: 0
+        malloc_errors: 0
+        uncorrectable_errors: 0
+        unverified_errors: 0
+        corrected_errors: 229
+        last_physical: 15984951296
 
-#!/bin/bash
+The kernel logs show nothing other than the standard "no csum found for inode ..." and "parent transid verify failed ..." messages
 
-xfs_io -f -c "pwrite 0 1000" inline
-xfs_io -c "falloc -k 4k 1M" inline
-xfs_io -c "pread 0 1000" -c "fadvise -d 0 1000" -c "pread 0 1000" inline
-xfs_io -c "fadvise -d 0 1000" inline
-cat inline
+Then booting back into 4.3 and rerunning the scrub.
 
-You'll get EIOs trying to read inline after this because add_extent_map
-is returning EEXIST
+# btrfs scrub start -BdR /
+scrub device /dev/sda3 (id 1) done
+        scrub started at Thu May 26 11:43:00 2016 and finished after 00:56:25
+        data_extents_scrubbed: 6939254
+        tree_extents_scrubbed: 68269
+        data_bytes_scrubbed: 426809974784
+        tree_bytes_scrubbed: 1118519296
+        read_errors: 0
+        csum_errors: 0
+        verify_errors: 0
+        no_csum: 62895
+        csum_discards: 0
+        super_errors: 0
+        malloc_errors: 0
+        uncorrectable_errors: 0
+        unverified_errors: 0
+        corrected_errors: 0
+        last_physical: 482390048768
+scrub device /dev/sdb3 (id 2) done
+        scrub started at Thu May 26 11:43:00 2016 and finished after 00:58:41
+        data_extents_scrubbed: 6939240
+        tree_extents_scrubbed: 68118                                                                                             
+        data_bytes_scrubbed: 426809335808                                                                                        
+        tree_bytes_scrubbed: 1116045312                                                                                          
+        read_errors: 0                                                                                                           
+        csum_errors: 1051510                                                                                                     
+        verify_errors: 0                                                                                                         
+        no_csum: 62767                                                                                                           
+        csum_discards: 0                                                                                                         
+        super_errors: 0                                                                                                          
+        malloc_errors: 0                                                                                                         
+        uncorrectable_errors: 0                                                                                                  
+        unverified_errors: 0                                                                                                     
+        corrected_errors: 1051510                                                                                                
+        last_physical: 482390048768                                                                                              
+WARNING: errors detected during scrubbing, corrected                                                                             
 
-Signed-off-by: Chris Mason <clm@fb.com>
+Cheers!  -Tyson
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 98a3ba2..4352589 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -6914,7 +6914,18 @@ insert:
- 		 * existing will always be non-NULL, since there must be
- 		 * extent causing the -EEXIST.
- 		 */
--		if (start >= extent_map_end(existing) ||
-+		if (existing->start == em->start &&
-+		    extent_map_end(existing) == extent_map_end(em) &&
-+		    em->block_start == existing->block_start) {
-+			/*
-+			 * these two extents are the same, it happens
-+			 * with inlines especially
-+			 */
-+			free_extent_map(em);
-+			em = existing;
-+			err = 0;
-+
-+		} else if (start >= extent_map_end(existing) ||
- 		    start <= existing->start) {
- 			/*
- 			 * The existing extent map is the one nearest to
+PS:  This is with version 4.4 of the btrfs progs and Debian kernel release 4.1, 4.3, 4.4, 4.5, and 4.6.
+
+-- 
+ Tyson Whitehead
+ HPC Programming Specialist
+ Compute Canada (SHARCNET)

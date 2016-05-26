@@ -1,31 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:38694 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754592AbcEaQpU (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 31 May 2016 12:45:20 -0400
-Date: Tue, 31 May 2016 18:44:41 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Cc: dsterba@suse.com, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs-progs: convert: Add support to rollback new
- convert image
-Message-ID: <20160531164441.GK29147@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20160531024600.11382-1-quwenruo@cn.fujitsu.com>
+Received: from cn.fujitsu.com ([222.73.24.84]:55161 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1752740AbcEZCgR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 25 May 2016 22:36:17 -0400
+Received: from adam-work.localdomain (unknown [10.167.226.34])
+	by cn.fujitsu.com (Postfix) with ESMTP id D94B74056403
+	for <linux-btrfs@vger.kernel.org>; Thu, 26 May 2016 10:36:02 +0800 (CST)
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH] btrfs-progs: corrupt-block: Add support to corrupt extent for skinny metadata
+Date: Thu, 26 May 2016 10:36:02 +0800
+Message-Id: <1464230162-7657-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20160531024600.11382-1-quwenruo@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, May 31, 2016 at 10:46:00AM +0800, Qu Wenruo wrote:
-> For new btrfs-convert, it's less restrict for metadata chunk allocation.
-> While the may_rollback() function is still following the restrict 1:1
-> mapping check for all chunks, it will not allow some new convert image
-> to be rolled back.
-> 
-> Add new per extent check for new convert to allow it to be rolled back.
-> 
-> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+For skinny metadata case, btrfs-corrupt-block can't corrupt a metadata
+extent due to the type judgment doesn't include BTRFS_METADATA_ITEM_KEY.
 
-Applied with some minor adjustments, convert tests pass, thanks.
+Fix it.
+
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+---
+ btrfs-corrupt-block.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/btrfs-corrupt-block.c b/btrfs-corrupt-block.c
+index 2cc9704..020afab 100644
+--- a/btrfs-corrupt-block.c
++++ b/btrfs-corrupt-block.c
+@@ -210,6 +210,7 @@ static int corrupt_extent(struct btrfs_trans_handle *trans,
+ 			break;
+ 
+ 		if (key.type != BTRFS_EXTENT_ITEM_KEY &&
++		    key.type != BTRFS_METADATA_ITEM_KEY &&
+ 		    key.type != BTRFS_TREE_BLOCK_REF_KEY &&
+ 		    key.type != BTRFS_EXTENT_DATA_REF_KEY &&
+ 		    key.type != BTRFS_EXTENT_REF_V0_KEY &&
+-- 
+2.8.2
+
+
+

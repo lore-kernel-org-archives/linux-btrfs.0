@@ -1,44 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-vk0-f48.google.com ([209.85.213.48]:33866 "EHLO
-	mail-vk0-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755099AbcEZWm2 (ORCPT
+Received: from tartarus.angband.pl ([89.206.35.136]:42490 "EHLO
+	tartarus.angband.pl" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755099AbcEZW5V (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 26 May 2016 18:42:28 -0400
-Received: by mail-vk0-f48.google.com with SMTP id c189so121373864vkb.1
-        for <linux-btrfs@vger.kernel.org>; Thu, 26 May 2016 15:42:27 -0700 (PDT)
+	Thu, 26 May 2016 18:57:21 -0400
+Date: Fri, 27 May 2016 00:57:01 +0200
+From: Adam Borowski <kilobyte@angband.pl>
+To: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
+        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org,
+        linux-fsdevel@vger.kernel.org
+Subject: Re: [PATCH] btrfs,vfs: allow FILE_EXTENT_SAME on a file opened ro
+Message-ID: <20160526225701.GA22924@angband.pl>
+References: <1463715912-8005-1-git-send-email-kilobyte@angband.pl>
 MIME-Version: 1.0
-From: Diego Torres <diego.torres@gmail.com>
-Date: Fri, 27 May 2016 00:42:07 +0200
-Message-ID: <CAKg6aQzTx7NLjC6gZxKUKkuACo313N3ZqxQ0SXO4WXEwGPFNkg@mail.gmail.com>
-Subject: btrfs stability
-To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1463715912-8005-1-git-send-email-kilobyte@angband.pl>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi there,
+On Fri, May 20, 2016 at 05:45:12AM +0200, Adam Borowski wrote:
+> (Only btrfs currently implements dedupe_file_range.)
+> 
+> Instead of checking the mode of the file descriptor, let's check whether
+> it could have been opened rw.  This allows fixing failures when deduping
+> a live system: anyone trying to exec a file currently being deduped gets
+> ETXTBSY.
+> 
+> Issuing this ioctl on a ro file was already allowed for root/cap.
 
-I've been using btrfs with a raid5 configuration with 3 disks for 6
-months, and then with 4 disks for a couple of months more. I run a
-weekly scrub, and a monthly balance. Btrfs is the only fs that can add
-drives one by one to an existing raid setup, and use the new space
-inmediately, without replacing all the drives. For me, this is one of
-the strongest points.
+>  fs/read_write.c | 2 +-
 
-And, as far as I understand, If I keep and eye on the free space
-available, and no drives fail, the filesystem would last indefinitely.
-However, the code to replace a failed/missing drive is not yet final,
-as I have discovered reading some wikis and this mailing list. Maybe
-I'm wrong.
+I'm unsure whom to bother with this patch.  I've sent it to -btrfs as it's
+relevant only to btrfs (at least currently), but technically the file
+changed belongs to vfs.  Was CCing -fsdevel enough or should I
+retarget/resend the patch?
 
-I haven't been able to find a timeline/roadmap about when the replace
-command will be stable/ready for use.
 
-Is this someone's priority? Is it planned for the next one,two or
-three years coming?
-
-Thanks in advance.
-
+Apologies for a newbish question.
+Meow!
 -- 
--- Use of a keyboard or mouse may be linked to serious injuries or disorders.
-diego dot torres at gmail dot com - Madrid / Spain
+An imaginary friend squared is a real enemy.

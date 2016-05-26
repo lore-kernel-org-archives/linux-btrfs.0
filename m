@@ -1,33 +1,24 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from bombadil.infradead.org ([198.137.202.9]:39946 "EHLO
+Received: from bombadil.infradead.org ([198.137.202.9]:40901 "EHLO
 	bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750977AbcEZIIg (ORCPT
+	with ESMTP id S1750977AbcEZIJt (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 26 May 2016 04:08:36 -0400
-Date: Thu, 26 May 2016 01:08:35 -0700
+	Thu, 26 May 2016 04:09:49 -0400
+Date: Thu, 26 May 2016 01:09:48 -0700
 From: Christoph Hellwig <hch@infradead.org>
 To: "Darrick J. Wong" <darrick.wong@oracle.com>
 Cc: david@fromorbit.com, linux-btrfs@vger.kernel.org, fstests@vger.kernel.org,
         xfs@oss.sgi.com
-Subject: Re: [PATCH 1/7] xfs/104: don't enospc when ag metadata overhead grows
-Message-ID: <20160526080835.GB20307@infradead.org>
+Subject: Re: [PATCH 2/7] tests: don't put loop control files on the scratch
+ mount
+Message-ID: <20160526080948.GC20307@infradead.org>
 References: <146424222237.6278.4174636124436241002.stgit@birch.djwong.org>
- <146424222875.6278.15144771781299434088.stgit@birch.djwong.org>
+ <146424223512.6278.15231849939938178494.stgit@birch.djwong.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <146424222875.6278.15144771781299434088.stgit@birch.djwong.org>
+In-Reply-To: <146424223512.6278.15231849939938178494.stgit@birch.djwong.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-> +for i in `seq 125 -1 90`; do
-> +	fillsize=`expr $i \* 1048576`
-> +	out="$(_fill_scratch $fillsize 2>&1)"
-> +	echo "$out" | grep -q 'No space left on device' && continue
-> +	test -n "${out}" && echo "$out"
-> +	break
-> +done
-
-That's a bit of an odd loop, and it would seem an inverted grep
-would seem more obvious.  But otherwise this looks fine to me:
-
-Reviewed-by: Christoph Hellwig <hch@lst.de>
+Shouldn't these tests also add a _require_test now?  But we probably
+should just move them to /tmp instead?

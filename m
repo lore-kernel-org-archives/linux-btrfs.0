@@ -1,68 +1,92 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-001b2d01.pphosted.com ([148.163.158.5]:49943 "EHLO
-	mx0a-001b2d01.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1161330AbcE3QQj (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 30 May 2016 12:16:39 -0400
-Received: from pps.filterd (m0075420.ppops.net [127.0.0.1])
-	by mx0a-001b2d01.pphosted.com (8.16.0.11/8.16.0.11) with SMTP id u4UGDnZI031399
-	for <linux-btrfs@vger.kernel.org>; Mon, 30 May 2016 12:16:38 -0400
-Message-Id: <201605301616.u4UGDnZI031399@mx0a-001b2d01.pphosted.com>
-Received: from e28smtp06.in.ibm.com (e28smtp06.in.ibm.com [125.16.236.6])
-	by mx0a-001b2d01.pphosted.com with ESMTP id 238j3ysxve-1
-	(version=TLSv1.2 cipher=AES256-SHA bits=256 verify=NOT)
-	for <linux-btrfs@vger.kernel.org>; Mon, 30 May 2016 12:16:37 -0400
-Received: from localhost
-	by e28smtp06.in.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
-	for <linux-btrfs@vger.kernel.org> from <xufeifei@linux.vnet.ibm.com>;
-	Mon, 30 May 2016 21:46:33 +0530
-Received: from d28relay05.in.ibm.com (d28relay05.in.ibm.com [9.184.220.62])
-	by d28dlp03.in.ibm.com (Postfix) with ESMTP id 27D3C1258063
-	for <linux-btrfs@vger.kernel.org>; Mon, 30 May 2016 21:48:50 +0530 (IST)
-Received: from d28av01.in.ibm.com (d28av01.in.ibm.com [9.184.220.63])
-	by d28relay05.in.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id u4UGGAV021168488
-	for <linux-btrfs@vger.kernel.org>; Mon, 30 May 2016 21:46:10 +0530
-Received: from d28av01.in.ibm.com (localhost [127.0.0.1])
-	by d28av01.in.ibm.com (8.14.4/8.14.4/NCO v10.0 AVout) with ESMTP id u4UGGPHN023378
-	for <linux-btrfs@vger.kernel.org>; Mon, 30 May 2016 21:46:28 +0530
-Subject: Re: [PATCH 3/5] Btrfs: self-tests: Support non-4k page size
-To: dsterba@suse.cz, Fei Fei Xu <feifeixu.sh@gmail.com>,
-        linux-btrfs@vger.kernel.org, steve.capper@linaro.org,
-        chandan@mykolab.com, jbacik@fb.com, dsterba@suse.com,
-        Chandan Rajendra <chandan@linux.vnet.ibm.com>
-References: <201605270701.u4R6xXUw031405@mx0a-001b2d01.pphosted.com>
- <201605270701.u4R6xPFu036351@mx0a-001b2d01.pphosted.com>
- <20160527192915.GX29147@twin.jikos.cz> <574A7B6E.2020904@gmail.com>
- <20160530135514.GA29147@twin.jikos.cz>
-From: Feifei Xu <xufeifei@linux.vnet.ibm.com>
-Date: Tue, 31 May 2016 00:16:17 +0800
+Received: from smtp-16.italiaonline.it ([212.48.25.144]:60358 "EHLO libero.it"
+	rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+	id S1753354AbcEZLIe (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 26 May 2016 07:08:34 -0400
+Message-ID: <254003815.145831464260911184.JavaMail.defaultUser@defaultHost>
+Date: Thu, 26 May 2016 13:08:31 +0200 (CEST)
+From: "kreijack@inwind.it" <kreijack@inwind.it>
+Reply-To: "kreijack@inwind.it" <kreijack@inwind.it>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Subject: R: Re: [PATCH 1/2] btrfs-progs: utils: Introduce new pseudo random
+ API
+Cc: linux-btrfs@vger.kernel.org
 MIME-Version: 1.0
-In-Reply-To: <20160530135514.GA29147@twin.jikos.cz>
-Content-Type: text/plain; charset=windows-1252; format=flowed
+Content-Type: text/plain;charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
 
-On 2016/5/30 21:55, David Sterba wrote:
-> On Sun, May 29, 2016 at 01:17:34PM +0800, Fei Fei Xu wrote:
->>> There are more instances of the pointed style issues, please fix all of
->>> them. As the changes do not affect functionality I'll add the paches to
->>> for-next, but I'm expecting a v2.
->> Thanks, I will send out v2 soon according to all above comments.
-> What's the base of the patchset? Does not apply cleanly on the current
-> integration (ie. what's in master).
+
+>----Messaggio originale----
+>Da: "Qu Wenruo" <quwenruo@cn.fujitsu.com>
+>Data: 26/05/2016 2.38
+>A: <kreijack@inwind.it>
+>Ogg: Re: [PATCH 1/2] btrfs-progs: utils: Introduce new pseudo random API
 >
-It is based on branch master commit 2f7c3a18a2dc79ddf7b , which is not 
-up-to-date already.
-I will send out a v2 soon to fix this.
+>
+>
+>Goffredo Baroncelli wrote on 2016/05/25 18:15 +0200:
+>> On 2016-05-25 06:14, Qu Wenruo wrote:
+>>> +void rand_seed(u64 seed)
+>>> +{
+>>> +	int i;
+>>> +	/* only use the last 48 bits */
+>>> +	for (i = 0; i < 3; i++) {
+>>> +		seeds[i] = (unsigned short)(seed ^ (unsigned short)(-1));
+>>> +		seed >>= 16;
+>>> +	}
+>>> +	seed_initlized = 1;
+>>> +}
+>>> +
+>>> +u32 rand_u32(void)
+>>> +{
+>>> +	struct timeval tv;
+>>> +
+>>> +	if (seed_initlized)
+>>> +		return nrand48(seeds);
+>>> +
+>>> +	/*
+>>> +	 * It's possible to use /dev/random, but we don't need that true
+>>> +	 * random number nor want to wait for entropy,
+>>> +	 * since we're only using random API to do corruption to test.
+>>> +	 * Time and pid/ppid based seed would be good enough, and won't
+>>> +	 * cause sleep for entropy pool.
+>>> +	 */
+>>> +	gettimeofday(&tv, 0);
+>>> +	seeds[0] = getpid() ^ (tv.tv_sec & 0xFFFF);
+>>> +	seeds[1] = getppid() ^ (tv.tv_usec & 0xFFFF);
+>>> +	seeds[2] = (tv.tv_sec ^ tv.tv_usec) >> 16;
+>>> +	seed_initlized = 1;
+>>> +
+>>> +	return (u32)nrand48(seeds);
+>>> +}
+>>
+>>
+>> Just for my curiosity, which is the advantage of rand48() respect to rand() 
+if we utilize only the
+>> lower 32 bit ? It wouldn't be more simple to use:
+>
+>Of course rand() is my first candidate.
+>
+>However a quick check on manpage of rand(3) shows, the up limit of 
+>RAND_MAX, is not always the same.
+>
+>In my system, RAND_MAX is 2^31 -1, while example code from rand(3) 
+>assumes the up limit is 32767.
 
-Thanks
-Feifei
+In glibc RAND_MAX is always ~2^31: http://www.gnu.
+org/software/libc/manual/html_node/ISO-Random.html
 
+If it is true for glibc, it should be true also for the others linux libc 
+(dietlibc[1], musl[2]);  I think that assuming in linux RAND_MAX  = 2^31-1 
+should be safe.
 
+BR
+Goffredo
 
-
-
+[1] https://github.com/ensc/dietlibc/blob/master/include/stdlib.h#L101
+[2] https://github.com/cloudius-systems/musl/blob/master/include/stdlib.h#L81
 
 

@@ -1,66 +1,169 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:29384 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1161860AbcEaAie (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 30 May 2016 20:38:34 -0400
-Subject: Re: [PATCH] btrfs: fix check_shared for fiemap ioctl
-To: <dsterba@suse.cz>, Lu Fengqi <lufq.fnst@cn.fujitsu.com>,
-        <linux-btrfs@vger.kernel.org>
-References: <1463369030-15434-1-git-send-email-lufq.fnst@cn.fujitsu.com>
- <d228d748-2947-a934-8bc1-afd53127e796@cn.fujitsu.com>
- <20160530151528.GB29147@twin.jikos.cz>
+Received: from cn.fujitsu.com ([222.73.24.84]:62491 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1753048AbcEZC5A (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 25 May 2016 22:57:00 -0400
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <b91c1b77-39ee-1a75-a530-4618f7765bd6@cn.fujitsu.com>
-Date: Tue, 31 May 2016 08:38:25 +0800
+To: linux-btrfs@vger.kernel.org
+Cc: noah.massey@gmail.com, dsterba@suse.cz, ahferroin7@gmail.com,
+        hugo@carfax.org.uk
+Subject: [PATCH v2 1/2] btrfs-progs: utils: Introduce new pseudo random API
+Date: Thu, 26 May 2016 10:56:50 +0800
+Message-Id: <1464231411-13261-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-In-Reply-To: <20160530151528.GB29147@twin.jikos.cz>
-Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+David has reported some quite chaos usage of pseudo random numbers.
+Like using static srand seed, or even calling rand() without setting
+seed correctly.
 
+The new pseudo random API will initialize the random seed on its first
+calling and use uniformly distributed pseudo random number generator as
+backend.
 
-David Sterba wrote on 2016/05/30 17:15 +0200:
-> On Fri, May 27, 2016 at 09:39:53AM +0800, Qu Wenruo wrote:
->> Any comment?
->>
->> This patch does not fix the submitted generic/352[1] and generic/353[2]
->> test cases, but also introduce a much better structure and design for
->> later backref walk use.
->>
->> Instead of a list and do a O(n^3)~O(n^4) iteration for fiemap ioctl on a
->> reflinked(deduped) file, it's now only O(n)~O(nlogn) for SHARED flag
->> check to pass generic/352.
->
-> This is a good improvement, though there's potentially hidden cost in
-> the allocations and maintaining the temporary structures. Do you have
-> actual performance numbers?
->
->
-Test case generic/352 is already the proof.
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+---
+changelog:
+v2:
+  Use jrand48() to make all 32bits random. nrand48() will leave the highest
+  bit 0.
 
-For a 1G file whose all file extents are pointing to the same 128K file 
-extent, fiemap will just soft lockup for backref walk.
+  Minor fixes from Noah Massey
 
-Even for case(*) it doesn't hang, it takes about 3~4 seconds to do 
-check_shared() for one extent.
+  Use urandom as primary seed, with time/pid/ppid as fallback.
 
+  Split rand_range() to fully use all 32bits to mod.
 
-With this patch, chech_shared() returned immediately, if found any other 
-delayed ref/extent ref, making the whole fiemap ioctl super fast for 
-deduped file case.
+---
+ utils.c | 62 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ utils.h | 33 +++++++++++++++++++++++++++++++++
+ 2 files changed, 95 insertions(+)
 
-*: Two 1G file, inside the same subvolume, pointing to the same 128K 
-file extent will not cause soft lockup.
+diff --git a/utils.c b/utils.c
+index 7761165..2cfecfb 100644
+--- a/utils.c
++++ b/utils.c
+@@ -54,9 +54,11 @@
+ #define BLKDISCARD	_IO(0x12,119)
+ #endif
+ 
++static int seed_initlized = 0;
+ static int btrfs_scan_done = 0;
+ 
+ static char argv0_buf[ARGV0_BUF_SIZE] = "btrfs";
++static unsigned short seeds[3];
+ 
+ const char *get_argv0_buf(void)
+ {
+@@ -4051,3 +4053,63 @@ out:
+ 
+ 	return ret;
+ }
++
++void rand_seed(u64 seed)
++{
++	int i;
++
++	/* only use the last 48 bits */
++	for (i = 0; i < 3; i++) {
++		seeds[i] = (unsigned short)(seed ^ (unsigned short)(-1));
++		seed >>= 16;
++	}
++	seed_initlized = 1;
++}
++
++static void init_seeds(void)
++{
++	struct timeval tv;
++	int ret;
++	int fd;
++
++	if(seed_initlized)
++		return;
++	/* Use urandom as primary seed source. */
++	fd = open("/dev/urandom", O_RDONLY);
++	if (fd >= 0) {
++		ret = read(fd, seeds, sizeof(seeds));
++		close(fd);
++		if (ret < sizeof(seeds))
++			goto fallback;
++	} else {
++fallback:
++		/* Use time and pid as fallback seed */
++		warning("failed to read /dev/urandom, use time and pid as random seed");
++		gettimeofday(&tv, 0);
++		seeds[0] = getpid() ^ (tv.tv_sec & 0xFFFF);
++		seeds[1] = getppid() ^ (tv.tv_usec & 0xFFFF);
++		seeds[2] = (tv.tv_sec ^ tv.tv_usec) >> 16;
++	}
++	seed_initlized = 1;
++}
++
++u32 rand_u32(void)
++{
++	init_seeds();
++	/*
++	 * Don't use nrand48, its range is [0,2^31)
++	 * The highest bit will alwasy be 0.
++	 * Use jrand48 to include the highest bit.
++	 */
++	return (u32)jrand48(seeds);
++}
++
++unsigned int rand_range(unsigned int up)
++{
++	init_seeds();
++	/*
++	 * Use the full 48bits to mod, which would be more uniformly
++	 * distributed
++	 */
++	return (unsigned int)(jrand48(seeds) % up);
++}
+diff --git a/utils.h b/utils.h
+index ebe6d61..6ceeac5 100644
+--- a/utils.h
++++ b/utils.h
+@@ -362,4 +362,37 @@ static inline int error_on(int condition, const char *fmt, ...)
+ 	return 1;
+ }
+ 
++/* pseudo random number generator wrappers */
++u32 rand_u32(void);
++
++static inline int rand_int(void)
++{
++	return (int)(rand_u32());
++}
++
++static inline u64 rand_u64(void)
++{
++	u64 ret = 0;
++
++	ret += rand_u32();
++	ret <<= 32;
++	ret += rand_u32();
++	return ret;
++}
++
++static inline u16 rand_u16(void)
++{
++	return (u16)(rand_u32());
++}
++
++static inline u8 rand_u8(void)
++{
++	return (u8)(rand_u32());
++}
++
++/* Return random number in range [0, limit) */
++unsigned int rand_range(unsigned int up);
++
++/* Also allow setting seeds manually */
++void rand_seed(u64 seed);
+ #endif
+-- 
+2.8.2
 
-
-We can use such patch to rework current backref walk code, which does 
-unneeded list iteration instead of faster rb tree search, but it's too 
-aggressive, and we want to do it step by step, starting from these bugs 
-exposed by inband dedupe.
-
-Thanks,
-Qu
 
 

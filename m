@@ -1,111 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:34319 "EHLO
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:23191 "EHLO
 	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1754539AbcE0Q6o (ORCPT
+	by vger.kernel.org with ESMTP id S1756222AbcE0RBd (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 27 May 2016 12:58:44 -0400
-Received: from pps.filterd (m0089730.ppops.net [127.0.0.1])
-	by m0089730.ppops.net (8.16.0.11/8.16.0.11) with SMTP id u4RGtnmY003508
-	for <linux-btrfs@vger.kernel.org>; Fri, 27 May 2016 09:58:43 -0700
-Received: from maileast.thefacebook.com ([199.201.65.23])
-	by m0089730.ppops.net with ESMTP id 236rfagx01-1
-	(version=TLSv1 cipher=ECDHE-RSA-AES256-SHA bits=256 verify=NOT)
-	for <linux-btrfs@vger.kernel.org>; Fri, 27 May 2016 09:58:43 -0700
+	Fri, 27 May 2016 13:01:33 -0400
+Received: from pps.filterd (m0001255.ppops.net [127.0.0.1])
+	by mx0b-00082601.pphosted.com (8.16.0.11/8.16.0.11) with SMTP id u4RGwlbk031057
+	for <linux-btrfs@vger.kernel.org>; Fri, 27 May 2016 10:01:32 -0700
+Received: from mail.thefacebook.com ([199.201.64.23])
+	by mx0b-00082601.pphosted.com with ESMTP id 2369pg4yex-2
+	(version=TLSv1 cipher=AES128-SHA bits=128 verify=NOT)
+	for <linux-btrfs@vger.kernel.org>; Fri, 27 May 2016 10:01:32 -0700
 From: Josef Bacik <jbacik@fb.com>
 To: <linux-btrfs@vger.kernel.org>, <kernel-team@fb.com>
-Subject: [PATCH V2] Btrfs: change how we calculate the global block rsv
-Date: Fri, 27 May 2016 12:58:35 -0400
-Message-ID: <1464368315-3046-1-git-send-email-jbacik@fb.com>
+Subject: [PATCH] Btrfs: always use trans->block_rsv for orphans
+Date: Fri, 27 May 2016 13:01:08 -0400
+Message-ID: <1464368468-3256-1-git-send-email-jbacik@fb.com>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Traditionally we've calculated the global block rsv by guessing how much of the
-metadata used amount was the extent tree, and then taking the data size and
-figuring out how large the csum tree would have to be to hold that much data.
-
-This is imprecise and falls down on MIXED file systems as we can't trust the
-data used amount.  This resulted in failures for xfstests generic/333 because it
-creates lots of clones, which explodes out the extent tree.  Our global reserve
-calculations were woefully inaccurate in this case which meant we got into a
-situation where we did not have enough reserved to do our work.
-
-We know we only use the global block rsv for the extent, csum, and root trees,
-so just get the bytes used for these trees and use that as the basis of our
-global reserve.  Since these are not reference counted trees the bytes_used
-value will be accurate.  This fixed the transaction aborts seen with
-generic/333.  Thanks,
+This is the case all the time anyway except for relocation which could be doing
+a reloc root for a non ref counted root, in which case we'd end up with some
+random block rsv rather than the one we have our reservation in.  If there isn't
+enough space in the block rsv we are trying to steal from we'll BUG() because we
+expect there to be space for the orphan to make its reservation.  Thanks,
 
 Signed-off-by: Josef Bacik <jbacik@fb.com>
 ---
-V1->V2: Make sure to set a minimum global rsv size.
-
- fs/btrfs/extent-tree.c | 45 +++++++++------------------------------------
- 1 file changed, 9 insertions(+), 36 deletions(-)
+ fs/btrfs/extent-tree.c | 8 +++++++-
+ 1 file changed, 7 insertions(+), 1 deletion(-)
 
 diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 1213a59..43bc9f5 100644
+index 43bc9f5..528b9a8 100644
 --- a/fs/btrfs/extent-tree.c
 +++ b/fs/btrfs/extent-tree.c
-@@ -5550,48 +5550,21 @@ void btrfs_block_rsv_release(struct btrfs_root *root,
- 				num_bytes);
- }
- 
--/*
-- * helper to calculate size of global block reservation.
-- * the desired value is sum of space used by extent tree,
-- * checksum tree and root tree
-- */
--static u64 calc_global_metadata_size(struct btrfs_fs_info *fs_info)
--{
--	struct btrfs_space_info *sinfo;
--	u64 num_bytes;
--	u64 meta_used;
--	u64 data_used;
--	int csum_size = btrfs_super_csum_size(fs_info->super_copy);
--
--	sinfo = __find_space_info(fs_info, BTRFS_BLOCK_GROUP_DATA);
--	spin_lock(&sinfo->lock);
--	data_used = sinfo->bytes_used;
--	spin_unlock(&sinfo->lock);
--
--	sinfo = __find_space_info(fs_info, BTRFS_BLOCK_GROUP_METADATA);
--	spin_lock(&sinfo->lock);
--	if (sinfo->flags & BTRFS_BLOCK_GROUP_DATA)
--		data_used = 0;
--	meta_used = sinfo->bytes_used;
--	spin_unlock(&sinfo->lock);
--
--	num_bytes = (data_used >> fs_info->sb->s_blocksize_bits) *
--		    csum_size * 2;
--	num_bytes += div_u64(data_used + meta_used, 50);
--
--	if (num_bytes * 3 > meta_used)
--		num_bytes = div_u64(meta_used, 3);
--
--	return ALIGN(num_bytes, fs_info->extent_root->nodesize << 10);
--}
--
- static void update_global_block_rsv(struct btrfs_fs_info *fs_info)
+@@ -5679,7 +5679,13 @@ int btrfs_orphan_reserve_metadata(struct btrfs_trans_handle *trans,
+ 				  struct inode *inode)
  {
- 	struct btrfs_block_rsv *block_rsv = &fs_info->global_block_rsv;
- 	struct btrfs_space_info *sinfo = block_rsv->space_info;
- 	u64 num_bytes;
- 
--	num_bytes = calc_global_metadata_size(fs_info);
+ 	struct btrfs_root *root = BTRFS_I(inode)->root;
+-	struct btrfs_block_rsv *src_rsv = get_block_rsv(trans, root);
 +	/*
-+	 * The global block rsv is based on the size of the extent tree, the
-+	 * checksum tree and the root tree.  If the fs is empty we want to set
-+	 * it to a minimal amount for safety.
++	 * We always use trans->block_rsv here as we will have reserved space
++	 * for our orphan when starting the transaction, using get_block_rsv()
++	 * here will sometimes make us choose the wrong block rsv as we could be
++	 * doing a reloc inode for a non refcounted root.
 +	 */
-+	num_bytes = btrfs_root_used(&fs_info->extent_root->root_item) +
-+		btrfs_root_used(&fs_info->csum_root->root_item) +
-+		btrfs_root_used(&fs_info->tree_root->root_item);
-+	num_bytes = max_t(u64, num_bytes, SZ_16M);
++	struct btrfs_block_rsv *src_rsv = trans->block_rsv;
+ 	struct btrfs_block_rsv *dst_rsv = root->orphan_block_rsv;
  
- 	spin_lock(&sinfo->lock);
- 	spin_lock(&block_rsv->lock);
+ 	/*
 -- 
 1.8.3.1
 

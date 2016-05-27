@@ -1,485 +1,262 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:40602 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932168AbcE0D2j (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:36999 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932168AbcE0D3Y (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 26 May 2016 23:28:39 -0400
-Date: Thu, 26 May 2016 20:28:05 -0700
+	Thu, 26 May 2016 23:29:24 -0400
+Date: Thu, 26 May 2016 20:28:51 -0700
 From: "Darrick J. Wong" <darrick.wong@oracle.com>
 To: david@fromorbit.com
 Cc: linux-btrfs@vger.kernel.org, fstests@vger.kernel.org, xfs@oss.sgi.com,
         hch@infradead.org
-Subject: [PATCH v2 2/7] tests: don't put loop control files on the scratch
- mount
-Message-ID: <20160527032804.GA9418@birch.djwong.org>
+Subject: [PATCH v2 6/7] xfs: test rmap behavior when multiple bmbt records
+ map to a single rmapbt record
+Message-ID: <20160527032851.GB9418@birch.djwong.org>
 References: <146424222237.6278.4174636124436241002.stgit@birch.djwong.org>
- <146424223512.6278.15231849939938178494.stgit@birch.djwong.org>
+ <146424226290.6278.15051221437554845000.stgit@birch.djwong.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <146424223512.6278.15231849939938178494.stgit@birch.djwong.org>
+In-Reply-To: <146424226290.6278.15051221437554845000.stgit@birch.djwong.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-If we're doing write/overwrite/snapshot/resource exhaustion tests on
-the scratch device, use the test directory to hold the loop
-termination signal files.  This way we don't run infinitely because we
-can't create the flag due to ENOSPC.
+Make sure that we can handle multiple bmbt records mapping to a
+single rmapbt record.  This can happen if you fallocate more than
+2^21 contiguous blocks to a file.
 
-v2: put the control files in /tmp, not $TEST_DIR
+(Also add some helpers that can create huge devices with some dm-zero
+and dm-snapshot fakery.)
+
+v2: remove irrelevant t_immutable changes, put test in correct group
 
 Signed-off-by: Darrick J. Wong <darrick.wong@oracle.com>
 ---
- tests/generic/162 |    8 +++++---
- tests/generic/163 |    8 +++++---
- tests/generic/164 |    8 +++++---
- tests/generic/165 |    8 +++++---
- tests/generic/166 |    8 +++++---
- tests/generic/167 |    8 +++++---
- tests/generic/168 |    8 +++++---
- tests/generic/170 |    8 +++++---
- tests/generic/333 |   20 ++++++++++++--------
- tests/generic/334 |   20 ++++++++++++--------
- 10 files changed, 64 insertions(+), 40 deletions(-)
+ common/dmhugedisk |   61 +++++++++++++++++++++++++++
+ tests/xfs/856     |  119 +++++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/xfs/856.out |   13 ++++++
+ tests/xfs/group   |    1 
+ 4 files changed, 194 insertions(+)
+ create mode 100644 common/dmhugedisk
+ create mode 100755 tests/xfs/856
+ create mode 100644 tests/xfs/856.out
 
-diff --git a/tests/generic/162 b/tests/generic/162
-index 5ff2ee2..61cf463 100755
---- a/tests/generic/162
-+++ b/tests/generic/162
-@@ -33,7 +33,7 @@ trap "_cleanup; exit \$status" 0 1 2 3 7 15
- _cleanup()
- {
-     cd /
--    rm -rf $tmp.*
-+    rm -rf $tmp.* $finished_file
-     wait
- }
- 
-@@ -51,6 +51,8 @@ _scratch_mkfs > $seqres.full 2>&1
- _scratch_mount >> $seqres.full 2>&1
- 
- testdir=$SCRATCH_MNT/test-$seq
-+finished_file=/tmp/finished
-+rm -rf $finished_file
- mkdir $testdir
- 
- loops=512
-@@ -64,7 +66,7 @@ _pwrite_byte 0x61 0 $((loops * blksz)) $testdir/file2 >> $seqres.full
- _scratch_cycle_mount
- 
- overwrite() {
--	while [ ! -e $testdir/finished ]; do
-+	while [ ! -e $finished_file ]; do
- 		seq $nr_loops -1 0 | while read i; do
- 			_pwrite_byte 0x61 $((i * blksz)) $blksz $testdir/file2 >> $seqres.full
- 		done
-@@ -81,7 +83,7 @@ for i in `seq 1 2`; do
- 	done
- done
- echo "Finished dedupeing"
--touch $testdir/finished
-+touch $finished_file
- wait
- 
- # success, all done
-diff --git a/tests/generic/163 b/tests/generic/163
-index fcba677..e2c6042 100755
---- a/tests/generic/163
-+++ b/tests/generic/163
-@@ -33,7 +33,7 @@ trap "_cleanup; exit \$status" 0 1 2 3 7 15
- _cleanup()
- {
-     cd /
--    rm -rf $tmp.*
-+    rm -rf $tmp.* $finished_file
-     wait
- }
- 
-@@ -51,6 +51,8 @@ _scratch_mkfs > $seqres.full 2>&1
- _scratch_mount >> $seqres.full 2>&1
- 
- testdir=$SCRATCH_MNT/test-$seq
-+finished_file=/tmp/finished
-+rm -rf $finished_file
- mkdir $testdir
- 
- loops=512
-@@ -64,7 +66,7 @@ _pwrite_byte 0x61 0 $((loops * blksz)) $testdir/file2 >> $seqres.full
- _scratch_cycle_mount
- 
- overwrite() {
--	while [ ! -e $testdir/finished ]; do
-+	while [ ! -e $finished_file ]; do
- 		seq $nr_loops -1 0 | while read i; do
- 			_pwrite_byte 0x61 $((i * blksz)) $blksz $testdir/file1 >> $seqres.full
- 		done
-@@ -81,7 +83,7 @@ for i in `seq 1 2`; do
- 	done
- done
- echo "Finished dedupeing"
--touch $testdir/finished
-+touch $finished_file
- wait
- 
- # success, all done
-diff --git a/tests/generic/164 b/tests/generic/164
-index acacb7f..78ea787 100755
---- a/tests/generic/164
-+++ b/tests/generic/164
-@@ -34,7 +34,7 @@ trap "_cleanup; exit \$status" 0 1 2 3 7 15
- _cleanup()
- {
-     cd /
--    rm -rf $tmp.*
-+    rm -rf $tmp.* $finished_file
-     wait
- }
- 
-@@ -53,6 +53,8 @@ _scratch_mkfs > $seqres.full 2>&1
- _scratch_mount >> $seqres.full 2>&1
- 
- testdir=$SCRATCH_MNT/test-$seq
-+finished_file=/tmp/finished
-+rm -rf $finished_file
- mkdir $testdir
- 
- loops=512
-@@ -71,7 +73,7 @@ fbytes() {
- }
- 
- reader() {
--	while [ ! -e $testdir/finished ]; do
-+	while [ ! -e $finished_file ]; do
- 		_read_range $testdir/file3 0 $((loops * blksz)) | fbytes
- 	done
- }
-@@ -91,7 +93,7 @@ for i in `seq 1 2`; do
- 	done
- done
- echo "Finished reflinking"
--touch $testdir/finished
-+touch $finished_file
- wait
- 
- # success, all done
-diff --git a/tests/generic/165 b/tests/generic/165
-index b742d19..ca11e1e 100755
---- a/tests/generic/165
-+++ b/tests/generic/165
-@@ -34,7 +34,7 @@ trap "_cleanup; exit \$status" 0 1 2 3 7 15
- _cleanup()
- {
-     cd /
--    rm -rf $tmp.*
-+    rm -rf $tmp.* $finished_file
-     wait
- }
- 
-@@ -54,6 +54,8 @@ _scratch_mkfs > $seqres.full 2>&1
- _scratch_mount >> $seqres.full 2>&1
- 
- testdir=$SCRATCH_MNT/test-$seq
-+finished_file=/tmp/finished
-+rm -rf $finished_file
- mkdir $testdir
- 
- loops=512
-@@ -72,7 +74,7 @@ fbytes() {
- }
- 
- reader() {
--	while [ ! -e $testdir/finished ]; do
-+	while [ ! -e $finished_file ]; do
- 		_read_range $testdir/file3 0 $((loops * blksz)) -d | fbytes
- 	done
- }
-@@ -92,7 +94,7 @@ for i in `seq 1 2`; do
- 	done
- done
- echo "Finished reflinking"
--touch $testdir/finished
-+touch $finished_file
- wait
- 
- # success, all done
-diff --git a/tests/generic/166 b/tests/generic/166
-index 0e31f2e..8600a13 100755
---- a/tests/generic/166
-+++ b/tests/generic/166
-@@ -34,7 +34,7 @@ trap "_cleanup; exit \$status" 0 1 2 3 7 15
- _cleanup()
- {
-     cd /
--    rm -rf $tmp.*
-+    rm -rf $tmp.* $finished_file
-     wait
- }
- 
-@@ -54,6 +54,8 @@ _scratch_mkfs > $seqres.full 2>&1
- _scratch_mount >> $seqres.full 2>&1
- 
- testdir=$SCRATCH_MNT/test-$seq
-+finished_file=/tmp/finished
-+rm -rf $finished_file
- mkdir $testdir
- 
- loops=1024
-@@ -68,7 +70,7 @@ _scratch_cycle_mount
- # Snapshot creator...
- snappy() {
- 	n=0
--	while [ ! -e $testdir/finished ]; do
-+	while [ ! -e $finished_file ]; do
- 		out="$(_cp_reflink $testdir/file1 $testdir/snap_$n 2>&1)"
- 		res=$?
- 		echo "$out" | grep -q "No space left" && break
-@@ -83,7 +85,7 @@ snappy &
- seq $nr_loops -1 0 | while read i; do
- 	_pwrite_byte 0x63 $((i * blksz)) $blksz -d $testdir/file1 >> $seqres.full
- done
--touch $testdir/finished
-+touch $finished_file
- wait
- 
- # success, all done
-diff --git a/tests/generic/167 b/tests/generic/167
-index b2d6c87..261506b 100755
---- a/tests/generic/167
-+++ b/tests/generic/167
-@@ -34,7 +34,7 @@ trap "_cleanup; exit \$status" 0 1 2 3 7 15
- _cleanup()
- {
-     cd /
--    rm -rf $tmp.*
-+    rm -rf $tmp.* $finished_file
-     wait
- }
- 
-@@ -53,6 +53,8 @@ _scratch_mkfs > $seqres.full 2>&1
- _scratch_mount >> $seqres.full 2>&1
- 
- testdir=$SCRATCH_MNT/test-$seq
-+finished_file=/tmp/finished
-+rm -rf $finished_file
- mkdir $testdir
- 
- loops=1024
-@@ -67,7 +69,7 @@ _scratch_cycle_mount
- # Snapshot creator...
- snappy() {
- 	n=0
--	while [ ! -e $testdir/finished ]; do
-+	while [ ! -e $finished_file ]; do
- 		out="$(_cp_reflink $testdir/file1 $testdir/snap_$n 2>&1)"
- 		res=$?
- 		echo "$out" | grep -q "No space left" && break
-@@ -82,7 +84,7 @@ snappy &
- seq $nr_loops -1 0 | while read i; do
- 	_pwrite_byte 0x63 $((i * blksz)) $blksz $testdir/file1 >> $seqres.full
- done
--touch $testdir/finished
-+touch $finished_file
- wait
- 
- # success, all done
-diff --git a/tests/generic/168 b/tests/generic/168
-index 7047d10..ceee264 100755
---- a/tests/generic/168
-+++ b/tests/generic/168
-@@ -34,7 +34,7 @@ trap "_cleanup; exit \$status" 0 1 2 3 7 15
- _cleanup()
- {
-     cd /
--    rm -rf $tmp.*
-+    rm -rf $tmp.* $finished_file
-     wait
- }
- 
-@@ -52,6 +52,8 @@ _scratch_mkfs > $seqres.full 2>&1
- _scratch_mount >> $seqres.full 2>&1
- 
- testdir=$SCRATCH_MNT/test-$seq
-+finished_file=/tmp/finished
-+rm -rf $finished_file
- mkdir $testdir
- 
- loops=1024
-@@ -66,7 +68,7 @@ _scratch_cycle_mount
- 
- # Direct I/O overwriter...
- overwrite() {
--	while [ ! -e $testdir/finished ]; do
-+	while [ ! -e $finished_file ]; do
- 		seq $nr_loops -1 0 | while read i; do
- 			_pwrite_byte 0x63 $((i * blksz)) $blksz $testdir/file2 >> $seqres.full
- 		done
-@@ -82,7 +84,7 @@ seq 1 10 | while read j; do
- 		[ $? -ne 0 ] && exit
- 	done
- done
--touch $testdir/finished
-+touch $finished_file
- wait
- 
- # success, all done
-diff --git a/tests/generic/170 b/tests/generic/170
-index 4861052..6559243 100755
---- a/tests/generic/170
-+++ b/tests/generic/170
-@@ -34,7 +34,7 @@ trap "_cleanup; exit \$status" 0 1 2 3 7 15
- _cleanup()
- {
-     cd /
--    rm -rf $tmp.*
-+    rm -rf $tmp.* $finished_file
-     wait
- }
- 
-@@ -53,6 +53,8 @@ _scratch_mkfs > $seqres.full 2>&1
- _scratch_mount >> $seqres.full 2>&1
- 
- testdir=$SCRATCH_MNT/test-$seq
-+finished_file=/tmp/finished
-+rm -rf $finished_file
- mkdir $testdir
- 
- loops=1024
-@@ -67,7 +69,7 @@ _scratch_cycle_mount
- 
- # Direct I/O overwriter...
- overwrite() {
--	while [ ! -e $testdir/finished ]; do
-+	while [ ! -e $finished_file ]; do
- 		seq $nr_loops -1 0 | while read i; do
- 			_pwrite_byte 0x63 $((i * blksz)) $blksz -d $testdir/file2 >> $seqres.full
- 		done
-@@ -83,7 +85,7 @@ seq 1 10 | while read j; do
- 		[ $? -ne 0 ] && exit
- 	done
- done
--touch $testdir/finished
-+touch $finished_file
- wait
- 
- # success, all done
-diff --git a/tests/generic/333 b/tests/generic/333
-index 8db86e3..3d874d7 100755
---- a/tests/generic/333
-+++ b/tests/generic/333
-@@ -34,7 +34,7 @@ trap "_cleanup; exit \$status" 0 1 2 3 7 15
- _cleanup()
- {
-     cd /
--    rm -rf $tmp.*
-+    rm -rf $tmp.* $finished_file $abort_file
-     wait
- }
- 
-@@ -54,6 +54,10 @@ _scratch_mkfs_sized $((400 * 1048576)) > $seqres.full 2>&1
- _scratch_mount >> $seqres.full 2>&1
- 
- testdir=$SCRATCH_MNT/test-$seq
-+finished_file=/tmp/finished
-+rm -rf $finished_file
-+abort_file=/tmp/abort
-+rm -rf $abort_file
- mkdir $testdir
- 
- loops=1024
-@@ -68,7 +72,7 @@ _scratch_cycle_mount
- # Snapshot creator...
- snappy() {
- 	n=0
--	while [ ! -e $testdir/finished ]; do
-+	while [ ! -e $finished_file ]; do
- 		out="$(_cp_reflink $testdir/file1 $testdir/snap_$n 2>&1)"
- 		res=$?
- 		echo $out | grep -q "No space left" && break
-@@ -76,7 +80,7 @@ snappy() {
- 		test $res -ne 0 && break
- 		n=$((n + 1))
- 	done
--	touch $testdir/abort
-+	touch $abort_file
- }
- 
- echo "Snapshot a file undergoing directio rewrite"
-@@ -85,13 +89,13 @@ seq 1 1000 | while read j; do
- 	seq $nr_loops -1 0 | while read i; do
- 		out="$(_pwrite_byte 0x63 $((i * blksz)) $blksz -d $testdir/file1 2>&1)"
- 		echo $out >> $seqres.full
--		echo $out | grep -q "No space left" && touch $testdir/abort
--		echo $out | grep -qi "error" && touch $testdir/abort
--		test -e $testdir/abort && break
-+		echo $out | grep -q "No space left" && touch $abort_file
-+		echo $out | grep -qi "error" && touch $abort_file
-+		test -e $abort_file && break
- 	done
--	test -e $testdir/abort && break
-+	test -e $abort_file && break
- done
--touch $testdir/finished
-+touch $finished_file
- wait
- 
- # success, all done
-diff --git a/tests/generic/334 b/tests/generic/334
-index 5714125..fb21d4f 100755
---- a/tests/generic/334
-+++ b/tests/generic/334
-@@ -34,7 +34,7 @@ trap "_cleanup; exit \$status" 0 1 2 3 7 15
- _cleanup()
- {
-     cd /
--    rm -rf $tmp.*
-+    rm -rf $tmp.* $finished_file $abort_file
-     wait
- }
- 
-@@ -53,6 +53,10 @@ _scratch_mkfs_sized $((400 * 1048576)) > $seqres.full 2>&1
- _scratch_mount >> $seqres.full 2>&1
- 
- testdir=$SCRATCH_MNT/test-$seq
-+finished_file=/tmp/finished
-+rm -rf $finished_file
-+abort_file=/tmp/abort
-+rm -rf $abort_file
- mkdir $testdir
- 
- loops=1024
-@@ -67,7 +71,7 @@ _scratch_cycle_mount
- # Snapshot creator...
- snappy() {
- 	n=0
--	while [ ! -e $testdir/finished ]; do
-+	while [ ! -e $finished_file ]; do
- 		out="$(_cp_reflink $testdir/file1 $testdir/snap_$n 2>&1)"
- 		res=$?
- 		echo $out | grep -q "No space left" && break
-@@ -75,7 +79,7 @@ snappy() {
- 		test $res -ne 0 && break
- 		n=$((n + 1))
- 	done
--	touch $testdir/abort
-+	touch $abort_file
- }
- 
- echo "Snapshot a file undergoing buffered rewrite"
-@@ -84,13 +88,13 @@ seq 1 1000 | while read j; do
- 	seq $nr_loops -1 0 | while read i; do
- 		out="$(_pwrite_byte 0x63 $((i * blksz)) $blksz $testdir/file1 2>&1)"
- 		echo $out >> $seqres.full
--		echo $out | grep -q "No space left" && touch $testdir/abort
--		echo $out | grep -qi "error" && touch $testdir/abort
--		test -e $testdir/abort && break
-+		echo $out | grep -q "No space left" && touch $abort_file
-+		echo $out | grep -qi "error" && touch $abort_file
-+		test -e $abort_file && break
- 	done
--	test -e $testdir/abort && break
-+	test -e $abort_file && break
- done
--touch $testdir/finished
-+touch $finished_file
- wait
- 
- # success, all done
+diff --git a/common/dmhugedisk b/common/dmhugedisk
+new file mode 100644
+index 0000000..9c3c7d5
+--- /dev/null
++++ b/common/dmhugedisk
+@@ -0,0 +1,61 @@
++##/bin/bash
++# Routines for creating huge (fake) disks
++#-----------------------------------------------------------------------
++#  Copyright (c) 2016 Oracle.  All Rights Reserved.
++#  This program is free software; you can redistribute it and/or modify
++#  it under the terms of the GNU General Public License as published by
++#  the Free Software Foundation; either version 2 of the License, or
++#  (at your option) any later version.
++#
++#  This program is distributed in the hope that it will be useful,
++#  but WITHOUT ANY WARRANTY; without even the implied warranty of
++#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++#  GNU General Public License for more details.
++#
++#  You should have received a copy of the GNU General Public License
++#  along with this program; if not, write to the Free Software
++#  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307
++#  USA
++#
++#  Contact information: Oracle Corporation, 500 Oracle Parkway,
++#  Redwood Shores, CA 94065, USA, or: http://www.oracle.com/
++#-----------------------------------------------------------------------
++
++_require_dmhugedisk()
++{
++	_require_dm_target zero
++	_require_dm_target snapshot
++}
++
++_dmhugedisk_init()
++{
++	test -z "$1" && _fatal "must specify sector count to _dmhugedisk_init"
++	local dm_backing_dev=$SCRATCH_DEV
++
++	$DMSETUP_PROG remove huge-test > /dev/null 2>&1
++	$DMSETUP_PROG remove huge-test-zero > /dev/null 2>&1
++
++	local blk_dev_size=$1
++
++	DMHUGEDISK_ZERO='/dev/mapper/huge-test-zero'
++	DMHUGEDISK_DEV='/dev/mapper/huge-test'
++
++	DMHUGEDISK_ZERO_TABLE="0 $blk_dev_size zero"
++	DMHUGEDISK_DEV_TABLE="0 $blk_dev_size snapshot $DMHUGEDISK_ZERO $SCRATCH_DEV N 512"
++
++	$DMSETUP_PROG create huge-test-zero --table "$DMHUGEDISK_ZERO_TABLE" || \
++		_fatal "failed to create dm huge zero device"
++	$DMSETUP_PROG create huge-test --table "$DMHUGEDISK_DEV_TABLE" || \
++		_fatal "failed to create dm huge device"
++}
++
++_dmhugedisk_cleanup()
++{
++	$UMOUNT_PROG $SCRATCH_MNT > /dev/null 2>&1
++	# wait for device to be fully settled so that 'dmsetup remove' doesn't
++	# fail due to EBUSY
++	$UDEV_SETTLE_PROG >/dev/null 2>&1
++	$DMSETUP_PROG remove huge-test > /dev/null 2>&1
++	$DMSETUP_PROG remove huge-test-zero > /dev/null 2>&1
++}
++
+diff --git a/tests/xfs/856 b/tests/xfs/856
+new file mode 100755
+index 0000000..9186278
+--- /dev/null
++++ b/tests/xfs/856
+@@ -0,0 +1,119 @@
++#! /bin/bash
++# FS QA Test No. 856
++#
++# Create a file with more than 2^21 extents (the max length of a bmbt record).
++#
++#-----------------------------------------------------------------------
++# Copyright (c) 2016, Oracle and/or its affiliates.  All Rights Reserved.
++#
++# This program is free software; you can redistribute it and/or
++# modify it under the terms of the GNU General Public License as
++# published by the Free Software Foundation.
++#
++# This program is distributed in the hope that it would be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write the Free Software Foundation,
++# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++#-----------------------------------------------------------------------
++
++seq=`basename $0`
++seqres=$RESULT_DIR/$seq
++echo "QA output created by $seq"
++
++here=`pwd`
++tmp=/tmp/$$
++status=1    # failure is the default!
++trap "_cleanup; exit \$status" 0 1 2 3 15
++
++_cleanup()
++{
++    cd /
++    umount $SCRATCH_MNT > /dev/null 2>&1
++    _dmhugedisk_cleanup
++    rm -rf $tmp.*
++    _scratch_mkfs >/dev/null 2>&1
++}
++
++# get standard environment, filters and checks
++. ./common/rc
++. ./common/filter
++. ./common/dmhugedisk
++
++# real QA test starts here
++_supported_os Linux
++_supported_fs xfs
++_require_scratch
++_require_xfs_io_command "falloc"
++
++rm -f $seqres.full
++
++# Figure out block size
++echo "Figure out block size"
++_scratch_mkfs >/dev/null 2>&1
++_scratch_mount >> $seqres.full
++
++is_rmap=$(xfs_info $SCRATCH_MNT | grep -c "rmapbt=1")
++test $is_rmap -gt 0 || _notrun "rmap not supported on scratch fs"
++
++testdir=$SCRATCH_MNT/test-$seq
++blksz="$(stat -f $SCRATCH_MNT -c '%S')"
++
++umount $SCRATCH_MNT
++
++echo "Format huge device"
++_dmhugedisk_init $((blksz * 2 * 4400))	# a little over 2^22 blocks
++_mkfs_dev -d agcount=2 $DMHUGEDISK_DEV
++_mount $DMHUGEDISK_DEV $SCRATCH_MNT 
++xfs_info $SCRATCH_MNT >> $seqres.full
++
++echo "Create the original file blocks"
++mkdir $testdir
++blksz="$(stat -f $testdir -c '%S')"
++nr_blks=2100000	# 2^21 plus a little more
++$XFS_IO_PROG -f -c "falloc 0 $((nr_blks * blksz))" $testdir/file1 >> $seqres.full
++
++echo "Check extent count"
++xfs_bmap -l -p -v $testdir/file1 | grep '^[[:space:]]*1:' -q && xfs_bmap -l -p -v $testdir/file1
++inum=$(stat -c '%i' $testdir/file1)
++umount $SCRATCH_MNT
++
++echo "Check bmap count"
++nr_bmaps=$(xfs_db -c "inode $inum" -c "bmap" $DMHUGEDISK_DEV | grep 'data offset' | wc -l)
++test $nr_bmaps -gt 1 || xfs_db -c "inode $inum" -c "bmap" $DMHUGEDISK_DEV
++#xfs_db -c "agf 0" -c p -c "inode $inum" -c "bmap" $DMHUGEDISK_DEV
++
++echo "Check rmap count"
++nr_rmaps=$(xfs_db -c 'agf 0' -c 'addr rmaproot' -c 'p' $DMHUGEDISK_DEV | grep ",$inum,[0-9]*,1,0,0" | wc -l)
++test $nr_rmaps -eq 1 || xfs_db -c 'agf 0' -c 'addr rmaproot' -c 'p' $DMHUGEDISK_DEV | grep ",$inum,[0-9]*,1,0,0"
++
++echo "Check and fake-repair huge filesystem" | tee -a $seqres.full
++$XFS_DB_PROG -c 'check' $DMHUGEDISK_DEV
++$XFS_REPAIR_PROG -n $DMHUGEDISK_DEV >> $seqres.full 2>&1
++test $? -eq 0 || echo "xfs_repair -n failed, see $seqres.full"
++
++echo "Real repair huge filesystem" | tee -a $seqres.full
++$XFS_REPAIR_PROG $DMHUGEDISK_DEV >> $seqres.full 2>&1
++test $? -eq 0 || echo "xfs_repair failed, see $seqres.full"
++
++echo "Check bmap count again"
++nr_bmaps=$(xfs_db -c "inode $inum" -c "bmap" $DMHUGEDISK_DEV | grep 'data offset' | wc -l)
++test $nr_bmaps -gt 1 || xfs_db -c "inode $inum" -c "bmap" $DMHUGEDISK_DEV
++
++echo "Check rmap count again"
++nr_rmaps=$(xfs_db -c 'agf 0' -c 'addr rmaproot' -c 'p' $DMHUGEDISK_DEV | grep ",$inum,[0-9]*,1,0,0" | wc -l)
++test $nr_rmaps -eq 1 || xfs_db -c 'agf 0' -c 'addr rmaproot' -c 'p' $DMHUGEDISK_DEV | grep ",$inum,[0-9]*,1,0,0"
++
++echo "Check and fake-repair huge filesystem again" | tee -a $seqres.full
++$XFS_DB_PROG -c 'check' $DMHUGEDISK_DEV
++$XFS_REPAIR_PROG -n $DMHUGEDISK_DEV >> $seqres.full 2>&1
++_dmhugedisk_cleanup
++
++echo "Done"
++
++# success, all done
++status=0
++exit
+diff --git a/tests/xfs/856.out b/tests/xfs/856.out
+new file mode 100644
+index 0000000..b24ebf2
+--- /dev/null
++++ b/tests/xfs/856.out
+@@ -0,0 +1,13 @@
++QA output created by 856
++Figure out block size
++Format huge device
++Create the original file blocks
++Check extent count
++Check bmap count
++Check rmap count
++Check and fake-repair huge filesystem
++Real repair huge filesystem
++Check bmap count again
++Check rmap count again
++Check and fake-repair huge filesystem again
++Done
+diff --git a/tests/xfs/group b/tests/xfs/group
+index f0ca410..6ff24d9 100644
+--- a/tests/xfs/group
++++ b/tests/xfs/group
+@@ -288,3 +288,4 @@
+ 853 auto quick clone
+ 854 auto quick clone
+ 855 auto clone
++856 auto clone rmap

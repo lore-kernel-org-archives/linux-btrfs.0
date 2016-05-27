@@ -1,29 +1,43 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:17252 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:33105 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751119AbcEXDmj (ORCPT
+	with ESMTP id S1755869AbcE0BkA (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 23 May 2016 23:42:39 -0400
-Received: from G08CNEXCHPEKD03.g08.fujitsu.local (unknown [10.167.33.85])
-	by cn.fujitsu.com (Postfix) with ESMTP id 6A1FD42B66F1
-	for <linux-btrfs@vger.kernel.org>; Tue, 24 May 2016 11:42:31 +0800 (CST)
+	Thu, 26 May 2016 21:40:00 -0400
+Received: from G08CNEXCHPEKD02.g08.fujitsu.local (unknown [10.167.33.83])
+	by cn.fujitsu.com (Postfix) with ESMTP id B9F0A489F98B
+	for <linux-btrfs@vger.kernel.org>; Fri, 27 May 2016 09:39:54 +0800 (CST)
 Subject: Re: [PATCH] btrfs: fix check_shared for fiemap ioctl
-To: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
+To: Lu Fengqi <lufq.fnst@cn.fujitsu.com>, <linux-btrfs@vger.kernel.org>
 References: <1463369030-15434-1-git-send-email-lufq.fnst@cn.fujitsu.com>
-CC: <linux-btrfs@vger.kernel.org>
-From: luke <lufq.fnst@cn.fujitsu.com>
-Message-ID: <f972d2e8-8654-cb9e-0bdf-9112b8cd0192@cn.fujitsu.com>
-Date: Tue, 24 May 2016 11:42:30 +0800
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Message-ID: <d228d748-2947-a934-8bc1-afd53127e796@cn.fujitsu.com>
+Date: Fri, 27 May 2016 09:39:53 +0800
 MIME-Version: 1.0
 In-Reply-To: <1463369030-15434-1-git-send-email-lufq.fnst@cn.fujitsu.com>
-Content-Type: text/plain; charset="gbk"; format=flowed
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Does anyone have interest in this patch?
+Any comment?
 
+This patch does not fix the submitted generic/352[1] and generic/353[2] 
+test cases, but also introduce a much better structure and design for 
+later backref walk use.
 
-在 2016年05月16日 11:23, Lu Fengqi 写道:
+Instead of a list and do a O(n^3)~O(n^4) iteration for fiemap ioctl on a 
+reflinked(deduped) file, it's now only O(n)~O(nlogn) for SHARED flag 
+check to pass generic/352.
+
+And also do delayed_refs check to handle generic/353 test case.
+
+[1]: https://patchwork.kernel.org/patch/9131373/
+[2]: https://patchwork.kernel.org/patch/9097801/
+
+Thanks,
+Qu
+
+Lu Fengqi wrote on 2016/05/16 11:23 +0800:
 > Only in the case of different root_id or different object_id, check_shared
 > identified extent as the shared. However, If a extent was referred by
 > different offset of same file, it should also be identified as shared.
@@ -40,26 +54,26 @@ Does anyone have interest in this patch?
 > Reported-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
 > Signed-off-by: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
 > ---
->   fs/btrfs/backref.c   | 348 +++++++++++++++++++++++++++++++++++++++++++++++++--
->   fs/btrfs/extent_io.c |  18 ++-
->   2 files changed, 356 insertions(+), 10 deletions(-)
+>  fs/btrfs/backref.c   | 348 +++++++++++++++++++++++++++++++++++++++++++++++++--
+>  fs/btrfs/extent_io.c |  18 ++-
+>  2 files changed, 356 insertions(+), 10 deletions(-)
 >
 > diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
 > index 80e8472..1118c76 100644
 > --- a/fs/btrfs/backref.c
 > +++ b/fs/btrfs/backref.c
 > @@ -17,6 +17,7 @@
->    */
->   
->   #include <linux/vmalloc.h>
+>   */
+>
+>  #include <linux/vmalloc.h>
 > +#include <linux/rbtree.h>
->   #include "ctree.h"
->   #include "disk-io.h"
->   #include "backref.h"
+>  #include "ctree.h"
+>  #include "disk-io.h"
+>  #include "backref.h"
 > @@ -34,6 +35,249 @@ struct extent_inode_elem {
->   	struct extent_inode_elem *next;
->   };
->   
+>  	struct extent_inode_elem *next;
+>  };
+>
 > +/*
 > + * ref_root is used as the root of the ref tree that hold a collection
 > + * of unique references.
@@ -303,21 +317,21 @@ Does anyone have interest in this patch?
 > +	return 0;
 > +}
 > +
->   static int check_extent_in_eb(struct btrfs_key *key, struct extent_buffer *eb,
->   				struct btrfs_file_extent_item *fi,
->   				u64 extent_item_pos,
+>  static int check_extent_in_eb(struct btrfs_key *key, struct extent_buffer *eb,
+>  				struct btrfs_file_extent_item *fi,
+>  				u64 extent_item_pos,
 > @@ -699,6 +943,7 @@ static int __add_delayed_refs(struct btrfs_delayed_ref_head *head, u64 seq,
->   static int __add_inline_refs(struct btrfs_fs_info *fs_info,
->   			     struct btrfs_path *path, u64 bytenr,
->   			     int *info_level, struct list_head *prefs,
+>  static int __add_inline_refs(struct btrfs_fs_info *fs_info,
+>  			     struct btrfs_path *path, u64 bytenr,
+>  			     int *info_level, struct list_head *prefs,
 > +			     struct ref_root *ref_tree,
->   			     u64 *total_refs, u64 inum)
->   {
->   	int ret = 0;
+>  			     u64 *total_refs, u64 inum)
+>  {
+>  	int ret = 0;
 > @@ -766,6 +1011,14 @@ static int __add_inline_refs(struct btrfs_fs_info *fs_info,
->   			count = btrfs_shared_data_ref_count(leaf, sdref);
->   			ret = __add_prelim_ref(prefs, 0, NULL, 0, offset,
->   					       bytenr, count, GFP_NOFS);
+>  			count = btrfs_shared_data_ref_count(leaf, sdref);
+>  			ret = __add_prelim_ref(prefs, 0, NULL, 0, offset,
+>  					       bytenr, count, GFP_NOFS);
 > +			if (ref_tree) {
 > +				if (!ret)
 > +					ret = ref_tree_add(ref_tree, 0, 0, 0,
@@ -326,13 +340,13 @@ Does anyone have interest in this patch?
 > +				if (!ret && ref_tree->unique_refs > 1)
 > +					ret = BACKREF_FOUND_SHARED;
 > +			}
->   			break;
->   		}
->   		case BTRFS_TREE_BLOCK_REF_KEY:
+>  			break;
+>  		}
+>  		case BTRFS_TREE_BLOCK_REF_KEY:
 > @@ -793,6 +1046,15 @@ static int __add_inline_refs(struct btrfs_fs_info *fs_info,
->   			root = btrfs_extent_data_ref_root(leaf, dref);
->   			ret = __add_prelim_ref(prefs, root, &key, 0, 0,
->   					       bytenr, count, GFP_NOFS);
+>  			root = btrfs_extent_data_ref_root(leaf, dref);
+>  			ret = __add_prelim_ref(prefs, root, &key, 0, 0,
+>  					       bytenr, count, GFP_NOFS);
 > +			if (ref_tree) {
 > +				if (!ret)
 > +					ret = ref_tree_add(ref_tree, root,
@@ -342,23 +356,23 @@ Does anyone have interest in this patch?
 > +				if (!ret && ref_tree->unique_refs > 1)
 > +					ret = BACKREF_FOUND_SHARED;
 > +			}
->   			break;
->   		}
->   		default:
+>  			break;
+>  		}
+>  		default:
 > @@ -811,7 +1073,8 @@ static int __add_inline_refs(struct btrfs_fs_info *fs_info,
->    */
->   static int __add_keyed_refs(struct btrfs_fs_info *fs_info,
->   			    struct btrfs_path *path, u64 bytenr,
+>   */
+>  static int __add_keyed_refs(struct btrfs_fs_info *fs_info,
+>  			    struct btrfs_path *path, u64 bytenr,
 > -			    int info_level, struct list_head *prefs, u64 inum)
 > +			    int info_level, struct list_head *prefs,
 > +			    struct ref_root *ref_tree, u64 inum)
->   {
->   	struct btrfs_root *extent_root = fs_info->extent_root;
->   	int ret;
+>  {
+>  	struct btrfs_root *extent_root = fs_info->extent_root;
+>  	int ret;
 > @@ -854,6 +1117,14 @@ static int __add_keyed_refs(struct btrfs_fs_info *fs_info,
->   			count = btrfs_shared_data_ref_count(leaf, sdref);
->   			ret = __add_prelim_ref(prefs, 0, NULL, 0, key.offset,
->   						bytenr, count, GFP_NOFS);
+>  			count = btrfs_shared_data_ref_count(leaf, sdref);
+>  			ret = __add_prelim_ref(prefs, 0, NULL, 0, key.offset,
+>  						bytenr, count, GFP_NOFS);
 > +			if (ref_tree) {
 > +				if (!ret)
 > +					ret = ref_tree_add(ref_tree, 0, 0, 0,
@@ -367,13 +381,13 @@ Does anyone have interest in this patch?
 > +				if (!ret && ref_tree->unique_refs > 1)
 > +					ret = BACKREF_FOUND_SHARED;
 > +			}
->   			break;
->   		}
->   		case BTRFS_TREE_BLOCK_REF_KEY:
+>  			break;
+>  		}
+>  		case BTRFS_TREE_BLOCK_REF_KEY:
 > @@ -882,6 +1153,15 @@ static int __add_keyed_refs(struct btrfs_fs_info *fs_info,
->   			root = btrfs_extent_data_ref_root(leaf, dref);
->   			ret = __add_prelim_ref(prefs, root, &key, 0, 0,
->   					       bytenr, count, GFP_NOFS);
+>  			root = btrfs_extent_data_ref_root(leaf, dref);
+>  			ret = __add_prelim_ref(prefs, root, &key, 0, 0,
+>  					       bytenr, count, GFP_NOFS);
 > +			if (ref_tree) {
 > +				if (!ret)
 > +					ret = ref_tree_add(ref_tree, root,
@@ -383,39 +397,39 @@ Does anyone have interest in this patch?
 > +				if (!ret && ref_tree->unique_refs > 1)
 > +					ret = BACKREF_FOUND_SHARED;
 > +			}
->   			break;
->   		}
->   		default:
+>  			break;
+>  		}
+>  		default:
 > @@ -908,13 +1188,16 @@ static int __add_keyed_refs(struct btrfs_fs_info *fs_info,
->    * commit root.
->    * The special case is for qgroup to search roots in commit_transaction().
->    *
+>   * commit root.
+>   * The special case is for qgroup to search roots in commit_transaction().
+>   *
 > + * If check_shared is set to 1, any extent has more than one ref item, will
 > + * be returned BACKREF_FOUND_SHARED immediately.
 > + *
->    * FIXME some caching might speed things up
->    */
->   static int find_parent_nodes(struct btrfs_trans_handle *trans,
->   			     struct btrfs_fs_info *fs_info, u64 bytenr,
->   			     u64 time_seq, struct ulist *refs,
->   			     struct ulist *roots, const u64 *extent_item_pos,
+>   * FIXME some caching might speed things up
+>   */
+>  static int find_parent_nodes(struct btrfs_trans_handle *trans,
+>  			     struct btrfs_fs_info *fs_info, u64 bytenr,
+>  			     u64 time_seq, struct ulist *refs,
+>  			     struct ulist *roots, const u64 *extent_item_pos,
 > -			     u64 root_objectid, u64 inum)
 > +			     u64 root_objectid, u64 inum, int check_shared)
->   {
->   	struct btrfs_key key;
->   	struct btrfs_path *path;
+>  {
+>  	struct btrfs_key key;
+>  	struct btrfs_path *path;
 > @@ -926,6 +1209,7 @@ static int find_parent_nodes(struct btrfs_trans_handle *trans,
->   	struct list_head prefs;
->   	struct __prelim_ref *ref;
->   	struct extent_inode_elem *eie = NULL;
+>  	struct list_head prefs;
+>  	struct __prelim_ref *ref;
+>  	struct extent_inode_elem *eie = NULL;
 > +	struct ref_root *ref_tree = NULL;
->   	u64 total_refs = 0;
->   
->   	INIT_LIST_HEAD(&prefs);
+>  	u64 total_refs = 0;
+>
+>  	INIT_LIST_HEAD(&prefs);
 > @@ -957,6 +1241,18 @@ static int find_parent_nodes(struct btrfs_trans_handle *trans,
->   again:
->   	head = NULL;
->   
+>  again:
+>  	head = NULL;
+>
 > +	if (check_shared) {
 > +		if (!ref_tree) {
 > +			ref_tree = ref_root_alloc(GFP_NOFS);
@@ -428,13 +442,13 @@ Does anyone have interest in this patch?
 > +		}
 > +	}
 > +
->   	ret = btrfs_search_slot(trans, fs_info->extent_root, &key, path, 0, 0);
->   	if (ret < 0)
->   		goto out;
+>  	ret = btrfs_search_slot(trans, fs_info->extent_root, &key, path, 0, 0);
+>  	if (ret < 0)
+>  		goto out;
 > @@ -1001,6 +1297,37 @@ again:
->   		} else {
->   			spin_unlock(&delayed_refs->lock);
->   		}
+>  		} else {
+>  			spin_unlock(&delayed_refs->lock);
+>  		}
 > +
 > +		if (check_shared && !list_empty(&prefs_delayed)) {
 > +			/*
@@ -466,88 +480,88 @@ Does anyone have interest in this patch?
 > +			}
 > +
 > +		}
->   	}
->   
->   	if (path->slots[0]) {
+>  	}
+>
+>  	if (path->slots[0]) {
 > @@ -1016,11 +1343,13 @@ again:
->   		     key.type == BTRFS_METADATA_ITEM_KEY)) {
->   			ret = __add_inline_refs(fs_info, path, bytenr,
->   						&info_level, &prefs,
+>  		     key.type == BTRFS_METADATA_ITEM_KEY)) {
+>  			ret = __add_inline_refs(fs_info, path, bytenr,
+>  						&info_level, &prefs,
 > -						&total_refs, inum);
 > +						ref_tree, &total_refs,
 > +						inum);
->   			if (ret)
->   				goto out;
->   			ret = __add_keyed_refs(fs_info, path, bytenr,
+>  			if (ret)
+>  				goto out;
+>  			ret = __add_keyed_refs(fs_info, path, bytenr,
 > -					       info_level, &prefs, inum);
 > +					       info_level, &prefs,
 > +					       ref_tree, inum);
->   			if (ret)
->   				goto out;
->   		}
+>  			if (ret)
+>  				goto out;
+>  		}
 > @@ -1105,6 +1434,7 @@ again:
->   
->   out:
->   	btrfs_free_path(path);
+>
+>  out:
+>  	btrfs_free_path(path);
 > +	ref_root_free(ref_tree);
->   	while (!list_empty(&prefs)) {
->   		ref = list_first_entry(&prefs, struct __prelim_ref, list);
->   		list_del(&ref->list);
+>  	while (!list_empty(&prefs)) {
+>  		ref = list_first_entry(&prefs, struct __prelim_ref, list);
+>  		list_del(&ref->list);
 > @@ -1158,8 +1488,8 @@ static int btrfs_find_all_leafs(struct btrfs_trans_handle *trans,
->   	if (!*leafs)
->   		return -ENOMEM;
->   
+>  	if (!*leafs)
+>  		return -ENOMEM;
+>
 > -	ret = find_parent_nodes(trans, fs_info, bytenr,
 > -				time_seq, *leafs, NULL, extent_item_pos, 0, 0);
 > +	ret = find_parent_nodes(trans, fs_info, bytenr, time_seq,
 > +				*leafs, NULL, extent_item_pos, 0, 0, 0);
->   	if (ret < 0 && ret != -ENOENT) {
->   		free_leaf_list(*leafs);
->   		return ret;
+>  	if (ret < 0 && ret != -ENOENT) {
+>  		free_leaf_list(*leafs);
+>  		return ret;
 > @@ -1201,8 +1531,8 @@ static int __btrfs_find_all_roots(struct btrfs_trans_handle *trans,
->   
->   	ULIST_ITER_INIT(&uiter);
->   	while (1) {
+>
+>  	ULIST_ITER_INIT(&uiter);
+>  	while (1) {
 > -		ret = find_parent_nodes(trans, fs_info, bytenr,
 > -					time_seq, tmp, *roots, NULL, 0, 0);
 > +		ret = find_parent_nodes(trans, fs_info, bytenr, time_seq,
 > +					tmp, *roots, NULL, 0, 0, 0);
->   		if (ret < 0 && ret != -ENOENT) {
->   			ulist_free(tmp);
->   			ulist_free(*roots);
+>  		if (ret < 0 && ret != -ENOENT) {
+>  			ulist_free(tmp);
+>  			ulist_free(*roots);
 > @@ -1272,7 +1602,7 @@ int btrfs_check_shared(struct btrfs_trans_handle *trans,
->   	ULIST_ITER_INIT(&uiter);
->   	while (1) {
->   		ret = find_parent_nodes(trans, fs_info, bytenr, elem.seq, tmp,
+>  	ULIST_ITER_INIT(&uiter);
+>  	while (1) {
+>  		ret = find_parent_nodes(trans, fs_info, bytenr, elem.seq, tmp,
 > -					roots, NULL, root_objectid, inum);
 > +					roots, NULL, root_objectid, inum, 1);
->   		if (ret == BACKREF_FOUND_SHARED) {
->   			/* this is the only condition under which we return 1 */
->   			ret = 1;
+>  		if (ret == BACKREF_FOUND_SHARED) {
+>  			/* this is the only condition under which we return 1 */
+>  			ret = 1;
 > diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
 > index 76a0c85..a242e37 100644
 > --- a/fs/btrfs/extent_io.c
 > +++ b/fs/btrfs/extent_io.c
 > @@ -20,6 +20,7 @@
->   #include "locking.h"
->   #include "rcu-string.h"
->   #include "backref.h"
+>  #include "locking.h"
+>  #include "rcu-string.h"
+>  #include "backref.h"
 > +#include "transaction.h"
->   
->   static struct kmem_cache *extent_state_cache;
->   static struct kmem_cache *extent_buffer_cache;
+>
+>  static struct kmem_cache *extent_state_cache;
+>  static struct kmem_cache *extent_buffer_cache;
 > @@ -4471,21 +4472,36 @@ int extent_fiemap(struct inode *inode, struct fiemap_extent_info *fieinfo,
->   			flags |= (FIEMAP_EXTENT_DELALLOC |
->   				  FIEMAP_EXTENT_UNKNOWN);
->   		} else if (fieinfo->fi_extents_max) {
+>  			flags |= (FIEMAP_EXTENT_DELALLOC |
+>  				  FIEMAP_EXTENT_UNKNOWN);
+>  		} else if (fieinfo->fi_extents_max) {
 > +			struct btrfs_trans_handle *trans;
 > +
->   			u64 bytenr = em->block_start -
->   				(em->start - em->orig_start);
->   
->   			disko = em->block_start + offset_in_extent;
->   
->   			/*
+>  			u64 bytenr = em->block_start -
+>  				(em->start - em->orig_start);
+>
+>  			disko = em->block_start + offset_in_extent;
+>
+>  			/*
 > +			 * We need a trans handle to get delayed refs
 > +			 */
 > +			trans = btrfs_join_transaction(root);
@@ -559,21 +573,21 @@ Does anyone have interest in this patch?
 > +				trans = NULL;
 > +
 > +			/*
->   			 * As btrfs supports shared space, this information
->   			 * can be exported to userspace tools via
->   			 * flag FIEMAP_EXTENT_SHARED.  If fi_extents_max == 0
->   			 * then we're just getting a count and we can skip the
->   			 * lookup stuff.
->   			 */
+>  			 * As btrfs supports shared space, this information
+>  			 * can be exported to userspace tools via
+>  			 * flag FIEMAP_EXTENT_SHARED.  If fi_extents_max == 0
+>  			 * then we're just getting a count and we can skip the
+>  			 * lookup stuff.
+>  			 */
 > -			ret = btrfs_check_shared(NULL, root->fs_info,
 > +			ret = btrfs_check_shared(trans, root->fs_info,
->   						 root->objectid,
->   						 btrfs_ino(inode), bytenr);
+>  						 root->objectid,
+>  						 btrfs_ino(inode), bytenr);
 > +			if (trans)
 > +				btrfs_end_transaction(trans, root);
->   			if (ret < 0)
->   				goto out_free;
->   			if (ret)
-
+>  			if (ret < 0)
+>  				goto out_free;
+>  			if (ret)
+>
 
 

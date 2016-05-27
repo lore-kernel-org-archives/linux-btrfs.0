@@ -1,34 +1,66 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:43536 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751137AbcE3NoT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 30 May 2016 09:44:19 -0400
-Date: Mon, 30 May 2016 15:43:41 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs-progs: tests: add 020-extent-ref-cases
-Message-ID: <20160530134341.GZ29147@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1464577093-12877-1-git-send-email-lufq.fnst@cn.fujitsu.com>
+Received: from cn.fujitsu.com ([59.151.112.132]:25659 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1755823AbcE0BiQ (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 26 May 2016 21:38:16 -0400
+Subject: Re: [PATCH 1/2] Btrfs-progs: make convert to allocate space from the
+ desired type of block group
+To: Liu Bo <bo.li.liu@oracle.com>, <linux-btrfs@vger.kernel.org>
+References: <1464312410-10999-1-git-send-email-bo.li.liu@oracle.com>
+CC: <dsterba@suse.cz>
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Message-ID: <7cdcb731-ef9a-a967-0218-31476d40c8d3@cn.fujitsu.com>
+Date: Fri, 27 May 2016 09:38:09 +0800
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1464577093-12877-1-git-send-email-lufq.fnst@cn.fujitsu.com>
+In-Reply-To: <1464312410-10999-1-git-send-email-bo.li.liu@oracle.com>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, May 30, 2016 at 10:58:13AM +0800, Lu Fengqi wrote:
-> In order to confirm that btrfsck supports to check a variety of
-> refs, add the
-> following cases:
-> * keyed_block_ref
-> * keyed_data_ref
-> * shared_block_ref
-> * shared_data_ref
-> * no_inline_ref (a extent item without inline ref)
-> * no_skinny_ref
-> 
-> Signed-off-by: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
+Hi Liu,
 
-Applied, thanks. The tests currently fail even in 'devel', which patches
-are supposed to address the errors?
+Since btrfs-convert has been reworked to use a completely new method to 
+do such allocation, now it doesn't need any custom_alloc_extent() function.
+
+And its new chunk lay out is designed to only put metadata chunk into 
+large enough unused space, and data chunks will cover all used space.
+
+So there is no need for such patch AFAIK.
+
+And the new convert is already in devel branch.
+
+Thanks,
+Qu
+
+Liu Bo wrote on 2016/05/26 18:26 -0700:
+> During btrfs-convert, it can allocate space from METADATA block
+> group for data, which is not supposed to be correct, although it
+> doesn't cause any serious problem except eating METADATA space
+>  more quickly.
+>
+> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+> ---
+>  btrfs-convert.c | 6 ++++++
+>  1 file changed, 6 insertions(+)
+>
+> diff --git a/btrfs-convert.c b/btrfs-convert.c
+> index b49775c..550aa8f 100644
+> --- a/btrfs-convert.c
+> +++ b/btrfs-convert.c
+> @@ -364,6 +364,12 @@ static int custom_alloc_extent(struct btrfs_root *root, u64 num_bytes,
+>  			continue;
+>  		}
+>
+> +		if ((!!metadata) !=
+> +		    (!!(cache->flags & BTRFS_BLOCK_GROUP_METADATA))) {
+> +			last = cache->key.objectid + cache->key.offset;
+> +			continue;
+> +		}
+> +
+>  		if (metadata) {
+>  			BUG_ON(num_bytes != root->nodesize);
+>  			if (check_crossing_stripes(start, num_bytes)) {
+>
+
+

@@ -1,66 +1,38 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:42491 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755769AbcE0BZP (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 26 May 2016 21:25:15 -0400
-From: Liu Bo <bo.li.liu@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.cz
-Subject: [PATCH 2/2] Btrfs-progs: convert: add hint bytenr when allocating free space
-Date: Thu, 26 May 2016 18:26:50 -0700
-Message-Id: <1464312410-10999-2-git-send-email-bo.li.liu@oracle.com>
-In-Reply-To: <1464312410-10999-1-git-send-email-bo.li.liu@oracle.com>
+Received: from mx2.suse.de ([195.135.220.15]:34451 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750728AbcE0Kzh (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 27 May 2016 06:55:37 -0400
+Date: Fri, 27 May 2016 12:55:02 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: Liu Bo <bo.li.liu@oracle.com>, linux-btrfs@vger.kernel.org,
+        dsterba@suse.cz
+Subject: Re: [PATCH 1/2] Btrfs-progs: make convert to allocate space from the
+ desired type of block group
+Message-ID: <20160527105502.GT29147@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
 References: <1464312410-10999-1-git-send-email-bo.li.liu@oracle.com>
+ <7cdcb731-ef9a-a967-0218-31476d40c8d3@cn.fujitsu.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <7cdcb731-ef9a-a967-0218-31476d40c8d3@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Without proper hint, btrfs-convert always starts searching
-from the very first available block which usually belongs
-to SYSTEM block group, but we're not allowed to use any
-block in SYSTEM block group for metadata/data.
+On Fri, May 27, 2016 at 09:38:09AM +0800, Qu Wenruo wrote:
+> Since btrfs-convert has been reworked to use a completely new method to 
+> do such allocation, now it doesn't need any custom_alloc_extent() function.
+> 
+> And its new chunk lay out is designed to only put metadata chunk into 
+> large enough unused space, and data chunks will cover all used space.
+> 
+> So there is no need for such patch AFAIK.
 
-This adds hint to make convert smarter.
+I agree, and I think that the motivation for the convert rewrite was the
+same problem that these patches address.
 
-Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
----
- btrfs-convert.c | 7 +++++--
- 1 file changed, 5 insertions(+), 2 deletions(-)
+> And the new convert is already in devel branch.
 
-diff --git a/btrfs-convert.c b/btrfs-convert.c
-index 550aa8f..fd807ef 100644
---- a/btrfs-convert.c
-+++ b/btrfs-convert.c
-@@ -1399,6 +1399,7 @@ static int create_image(struct btrfs_convert_context *cctx,
- 	u64 total_bytes;
- 	u64 flags = BTRFS_INODE_READONLY;
- 	u32 sectorsize = root->sectorsize;
-+	u64 hint = 0;
- 
- 	total_bytes = btrfs_super_total_bytes(fs_info->super_copy);
- 	first_free =  BTRFS_SUPER_INFO_OFFSET + sectorsize * 2 - 1;
-@@ -1427,9 +1428,11 @@ static int create_image(struct btrfs_convert_context *cctx,
- 	 * special, we can't rely on relocate_extents_range to relocate it.
- 	 */
- 	for (last_byte = 0; last_byte < first_free; last_byte += sectorsize) {
--		ret = custom_alloc_extent(root, sectorsize, 0, &key, 0);
-+		ret = custom_alloc_extent(root, sectorsize, hint, &key, 0);
- 		if (ret)
- 			goto fail;
-+
-+		hint = key.objectid;
- 		ret = copy_disk_extent(root, key.objectid, last_byte,
- 				       sectorsize);
- 		if (ret)
-@@ -2085,7 +2088,7 @@ static int relocate_one_reference(struct btrfs_trans_handle *trans,
- 			ret = get_state_private(reloc_tree, bytenr, &new_pos);
- 			BUG_ON(ret);
- 		} else {
--			ret = custom_alloc_extent(root, sectorsize, 0, &key, 0);
-+			ret = custom_alloc_extent(root, sectorsize, new_pos, &key, 0);
- 			if (ret)
- 				goto fail;
- 			new_pos = key.objectid;
--- 
-2.5.0
-
+The plan is to release 4.6 with this patchset, I'm still not decided
+about the low-mem mode for checker.

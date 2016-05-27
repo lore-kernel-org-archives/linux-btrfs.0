@@ -1,84 +1,60 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:14222 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1751206AbcE0PoO (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 27 May 2016 11:44:14 -0400
-Subject: Re: [PATCH 1/5] Btrfs: test_check_exists: Fix infinite loop when
- searching for free space entries
-To: Feifei Xu <xufeifei@linux.vnet.ibm.com>, <linux-btrfs@vger.kernel.org>
-References: <1464332438-19119-1-git-send-email-xufeifei@linux.vnet.ibm.com>
- <201605270750.u4R7n6to033453@mx0a-001b2d01.pphosted.com>
-CC: <steve.capper@linaro.org>, <chandan@mykolab.com>, <dsterba@suse.com>,
-        <feifeixu.sh@gmail.com>
-From: Josef Bacik <jbacik@fb.com>
-Message-ID: <0b4d85f8-d981-39a9-8b6b-329d0e648fce@fb.com>
-Date: Fri, 27 May 2016 11:43:55 -0400
+Received: from mx2.suse.de ([195.135.220.15]:44647 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753676AbcE0S40 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 27 May 2016 14:56:26 -0400
+Date: Fri, 27 May 2016 20:55:49 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Feifei Xu <xufeifei@linux.vnet.ibm.com>
+Cc: linux-btrfs@vger.kernel.org, steve.capper@linaro.org, chandan@mykolab.com,
+        jbacik@fb.com, dsterba@suse.com, feifeixu.sh@gmail.com
+Subject: Re: [PATCH 5/5] Btrfs: self-test: fix extent buffer bitmap test fail
+ on BE system
+Message-ID: <20160527185549.GW29147@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <201605270701.u4R6xXUw031405@mx0a-001b2d01.pphosted.com>
+ <201605270701.u4R6xUai016007@mx0a-001b2d01.pphosted.com>
 MIME-Version: 1.0
-In-Reply-To: <201605270750.u4R7n6to033453@mx0a-001b2d01.pphosted.com>
-Content-Type: text/plain; charset="windows-1252"; format=flowed
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <201605270701.u4R6xUai016007@mx0a-001b2d01.pphosted.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 05/27/2016 03:00 AM, Feifei Xu wrote:
-> On a ppc64 machine using 64K as the block size, assume that the RB
-> tree at btrfs_free_space_ctl->free_space_offset contains following
-> two entries:
->
-> 1. A bitmap entry having an offset value of 0 and having the bits
->    corresponding to the address range [128M+512K, 128M+768K] set.
-> 2. An extent entry corresponding to the address range
->    [128M-256K, 128M-128K]
->
-> In such a scenario, test_check_exists() invoked for checking the
-> existence of address range [128M+768K, 256M] can lead to an
-> infinite loop as explained below:
->
-> - Checking for the extent entry fails.
-> - Checking for a bitmap entry results in the free space info in
->   range [128M+512K, 128M+768K] beng returned.
-> - rb_prev(info) returns NULL because the bitmap entry starting from
->   offset 0 comes first in the RB tree.
-> - current_node = bitmap node.
-> - while (current_node)
->     tmp = rb_next(bitmap_node);/*tmp is extent based free space entry*/
->     Since extent based free space entry's last address is smaller
->     than the address being searched for (i.e. 128M+768K) we
->     incorrectly again obtain the extent node as the "next right node"
->     of the RB tree and thus end up looping infinitely.
->
-> This patch fixes the issue by updating "info" variable to point to
-> the most recently searched free space node.
->
+On Fri, May 27, 2016 at 03:00:38PM +0800, Feifei Xu wrote:
+> In __test_eb_bitmaps(), we write random data to a bitmap. Then copy
+> the bitmap to another bitmap that resides inside an extent buffer.
+> Later we verify the values of corresponding bits in the bitmap and the
+> bitmap inside the extent buffer. However, extent_buffer_test_bit()
+> reads in byte granularity while test_bit() reads in unsigned long
+> granularity. Hence we end up comparing wrong bits on big-endian
+> systems such as ppc64. This commit fixes the issue by reading the
+> bitmap in byte granularity.
+> 
 > Reviewed-by: Chandan Rajendra <chandan@linux.vnet.ibm.com>
 > Signed-off-by: Feifei Xu <xufeifei@linux.vnet.ibm.com>
 > ---
->  fs/btrfs/free-space-cache.c | 2 ++
->  1 file changed, 2 insertions(+)
->
-> diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
-> index 5e6062c..05c9ef8 100644
-> --- a/fs/btrfs/free-space-cache.c
-> +++ b/fs/btrfs/free-space-cache.c
-> @@ -3662,6 +3662,7 @@ have_info:
->  			if (tmp->offset + tmp->bytes < offset)
->  				break;
->  			if (offset + bytes < tmp->offset) {
-> +				info = tmp;
->  				n = rb_prev(&info->offset_index);
->  				continue;
->  			}
-> @@ -3676,6 +3677,7 @@ have_info:
->  			if (offset + bytes < tmp->offset)
->  				break;
->  			if (tmp->offset + tmp->bytes < offset) {
-> +				info = tmp;
->  				n = rb_next(&info->offset_index);
->  				continue;
->  			}
->
+>  fs/btrfs/tests/extent-io-tests.c | 12 +++++++++++-
+>  1 file changed, 11 insertions(+), 1 deletion(-)
+> 
+> diff --git a/fs/btrfs/tests/extent-io-tests.c b/fs/btrfs/tests/extent-io-tests.c
+> index b06b13a..d33f28f 100644
+> --- a/fs/btrfs/tests/extent-io-tests.c
+> +++ b/fs/btrfs/tests/extent-io-tests.c
+> @@ -275,6 +275,16 @@ out:
+>  	return ret;
+>  }
+>  
+> +/**
+> + * test_bit_in_byte - Determine whether a bit is set in a byte
+> + * @nr: bit number to test
+> + * @addr: Address to start counting from
+> + */
+> +static inline int test_bit_in_byte(int nr, const u8 *addr)
+> +{
+> +	return 1UL & (addr[nr/BITS_PER_BYTE] >> (nr & (BITS_PER_BYTE-1)));
 
-Just make it rb_next(&tmp->offset_index)/rb_prev(&tmp->offset_index) 
-instead of doing the info = tmp thing.  Thanks,
+minor nit:
 
-Josef
+	return 1UL & (addr[nr / BITS_PER_BYTE] >> (nr & (BITS_PER_BYTE - 1)));
+
+otherwise looks ok.

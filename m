@@ -1,135 +1,71 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from james.kirk.hungrycats.org ([174.142.39.145]:46842 "EHLO
-	james.kirk.hungrycats.org" rhost-flags-OK-FAIL-OK-OK)
-	by vger.kernel.org with ESMTP id S1751634AbcE1B7Y (ORCPT
+Received: from mail-lf0-f43.google.com ([209.85.215.43]:33967 "EHLO
+	mail-lf0-f43.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750798AbcE1Uck (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 27 May 2016 21:59:24 -0400
-Date: Fri, 27 May 2016 21:59:22 -0400
-From: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
-To: Mark Fasheh <mfasheh@suse.de>
-Cc: Adam Borowski <kilobyte@angband.pl>, Chris Mason <clm@fb.com>,
-        Josef Bacik <jbacik@fb.com>, David Sterba <dsterba@suse.com>,
-        linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org
-Subject: Re: [PATCH] btrfs,vfs: allow FILE_EXTENT_SAME on a file opened ro
-Message-ID: <20160528015922.GI15597@hungrycats.org>
-References: <1463715912-8005-1-git-send-email-kilobyte@angband.pl>
- <20160527000401.GW7633@wotan.suse.de>
+	Sat, 28 May 2016 16:32:40 -0400
+Received: by mail-lf0-f43.google.com with SMTP id k98so58424375lfi.1
+        for <linux-btrfs@vger.kernel.org>; Sat, 28 May 2016 13:32:39 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="kadn00tgSopKmJ1H"
-In-Reply-To: <20160527000401.GW7633@wotan.suse.de>
+Date: Sat, 28 May 2016 22:32:38 +0200
+Message-ID: <CAEtw4r2aknnz=+FCGq2ysSQT3K3ZHmZqnbPpyvr+C7QD6TyEAQ@mail.gmail.com>
+Subject: Resize doesnt work as expected
+From: Peter Becker <floyd.net@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hello, i have found a small issue but i doesn't know if this is intended.
 
---kadn00tgSopKmJ1H
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
-
-On Thu, May 26, 2016 at 05:04:01PM -0700, Mark Fasheh wrote:
-> On Fri, May 20, 2016 at 05:45:12AM +0200, Adam Borowski wrote:
-> > (Only btrfs currently implements dedupe_file_range.)
-> >=20
-> > Instead of checking the mode of the file descriptor, let's check whether
-> > it could have been opened rw.  This allows fixing failures when deduping
-> > a live system: anyone trying to exec a file currently being deduped gets
-> > ETXTBSY.
-
-Isn't there another copy of this check in fs/btrfs/ioctl.c?
-
-> > Issuing this ioctl on a ro file was already allowed for root/cap.
-> >=20
-> > Signed-off-by: Adam Borowski <kilobyte@angband.pl>
->=20
-> Hi Adam, this patch seems reasonable to me but I have to admit to being
-> worried about 'unintended consequences'. I poked around the code in fs/ f=
-or
-> a bit and saw mostly checks against file open mode. It might be that dedu=
-pe
-> is a special case due to the potential for longer running operations,=20
-
-The length of the operation is irrelevant.
-
-If dedup is run over frequently executed files (e.g. /bin/sh), opening
-the files in write mode will randomly disrupt some normal execution no
-matter how quickly the dedup agent opens and closes the files.
-
-The interference works both ways, too:  if a file is already being
-executed, it can't be opened with write access.   Executables often
-run for extended periods of time, effectively preventing them from ever
-being deduped by non-root users.
-
-Executables are often really good candidates for dedup, so we don't want
-to avoid them.  Executable files on build servers are often duplicated
-several times over in various .o and .a files and install/packaging trees.
-
-> theoretically you'd see the same problem if trying to exec against a file
-> being cloned too, correct? If that's the case then I wonder how this issue
-> gets solved for other ioctls.
-
-Clone could be used to change the content of the destination file, so
-it is right to insist on having the file opened for writing in that case.
-
-Dedupe is an unusual case because it will never change the content of
-the destination file even if it is opened *with* write access.  The
-defrag ioctl is similar in this respect.
-
-Opening either dedup or defrag to non-root O_RDONLY access does have
-some concerns.  It could be used to create a lot of extra I/O load,
-particularly write load, that might otherwise be denied to an unprivileged
-user...but then, so can repeatedly calling sync(), so maybe this isn't
-a real problem.
-
-There is a potential risk of exposing bugs in other parts of the system
-(e.g. the various recently fixed dedup races) but whatever those bugs are,
-we had them already without changing the permission checks.
-
-I wonder if there is a risk of damaging files like this:
-
-	open A O_RDWR
-
-	open B O_RDONLY
-
-	copy B to A
-
-	do _not_ call fsync() here
-
-	dedup(A, B)
-
-	do _not_ call fsync() here either
-
-	some time passes
-
-	power fail
-
-If A's extent isn't flushed to disk, what happens to B?  Does dedup imply
-fsync or data ordering such that A is written to disk before the extent
-ref in B is updated, or can the content of B change?  If root is running
-dedup, we can assume that whoever authorized root code execution also made
-sure that this case never arises (e.g. by ensuring the dedup agent always
-calls fsync, or otherwise ensuring that the extent at A is stable on disk
-before calling dedup).  If we allow non-root to do this then we have no
-such assurance--but on the other hand maybe the assurance is weak and
-bad things can happen here already even if we require root privilege.
-
-I also wonder what happens if an executable that has called
-mlockall(MCL_FUTURE) gets its pages replaced by a deduped extent while
-it's running...do the replaced pages become un-mlockall-ed?  Is the VFS
-smart enough to swap in the new pages?  Am I just silly and insane for
-expecting shared mmap() to have meaningful real-time properties on btrfs?
+Starting with a RAID 1 setup with 3 x 4GB devices.
+If you replace one of this devices with a 2GB device and run "resize
+max" nothing happens.
+Only if you resize with the device-ID the additional GB will be usable.
+Loop at this demo:
+(its my first try with  loopback devices :))
 
 
---kadn00tgSopKmJ1H
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+[ -f /tmp_resize ] && rm -f /tmp_resize
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
+mkdir /tmp_resize
+dd if=/dev/zero of=/tmp_resize/btrfs-vol1.img bs=1G count=1
+dd if=/dev/zero of=/tmp_resize/btrfs-vol2.img bs=1G count=1
+dd if=/dev/zero of=/tmp_resize/btrfs-vol3.img bs=1G count=1
+dd if=/dev/zero of=/tmp_resize/btrfs-vol4.img bs=1G count=1
+dd if=/dev/zero of=/tmp_resize/btrfs-vol5.img bs=2G count=1
 
-iEYEARECAAYFAldI+3oACgkQgfmLGlazG5yzPACgpVjM8zymqvuhv+CLVOgMcRsS
-IQMAn13PmR7BoNKY0Ebc4tdiPfMUfS3e
-=gCiK
------END PGP SIGNATURE-----
+losetup /dev/loop1 /tmp_resize/btrfs-vol1.img
+losetup /dev/loop2 /tmp_resize/btrfs-vol2.img
+losetup /dev/loop3 /tmp_resize/btrfs-vol3.img
+losetup /dev/loop4 /tmp_resize/btrfs-vol4.img
+losetup /dev/loop5 /tmp_resize/btrfs-vol5.img
 
---kadn00tgSopKmJ1H--
+mkfs.btrfs -d raid1 /dev/loop1 /dev/loop2 /dev/loop3 /dev/loop4
+
+btrfs filesystem show /dev/loop2
+
+mkdir /media/test
+
+mount /dev/loop3 /media/test
+
+echo "Vorher"
+btrfs fi sh
+
+echo "Replace 1G device with 2G device"
+btrfs repl start /dev/loop4 /dev/loop5 /media/test
+
+echo "After replace, still 1GB usable"
+btrfs fi sh
+
+echo "Resize"
+btrfs fi res max /media/test
+
+echo "After resize, still 1GB usable !!!!"
+btrfs fi sh
+
+echo "Resize with device id"
+btrfs fi res 4:max /media/test
+
+echo "!!! now 2GB usable !!!!"
+btrfs fi sh

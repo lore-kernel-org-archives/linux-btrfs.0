@@ -1,49 +1,63 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail02.iobjects.de ([188.40.134.68]:40228 "EHLO
-	mail02.iobjects.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932282AbcE2SDV (ORCPT
+Received: from mail-lf0-f52.google.com ([209.85.215.52]:36551 "EHLO
+	mail-lf0-f52.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932331AbcE2SQS (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 29 May 2016 14:03:21 -0400
-Received: from tux.wizards.de (p4FF5801B.dip0.t-ipconnect.de [79.245.128.27])
-	by mail02.iobjects.de (Postfix) with ESMTPSA id A2AFB4160166
-	for <linux-btrfs@vger.kernel.org>; Sun, 29 May 2016 20:03:18 +0200 (CEST)
-Received: from [192.168.100.223] (ragnarok [192.168.100.223])
-	by tux.wizards.de (Postfix) with ESMTP id 2A31411C01E1
-	for <linux-btrfs@vger.kernel.org>; Sun, 29 May 2016 20:03:18 +0200 (CEST)
-Subject: Re: Hot data tracking / hybrid storage
-References: <nh9p2p$cns$1@ger.gmane.org>
- <pan$ae8c7$965ff694$cf73d90e$9e134691@cox.net>
- <20160516010524.7e208f96@jupiter.sol.kaishome.de>
- <nhedk2$dpq$1@ger.gmane.org> <0d68f988-e117-4b61-cb9b-d18a26e2b909@gmail.com>
- <20160517203335.5ff99a05@jupiter.sol.kaishome.de>
- <nhir96$8n4$1@ger.gmane.org>
- <20160519200926.0a2b5dcf@jupiter.sol.kaishome.de>
- <e8ff591f-751b-ac56-45bb-98cdc7b206e7@gmail.com>
- <CAPmG0jYi+gCO3Ps4Xi1ahE4qoqMt6ZmLMrxT_URDHdaA_cZCLg@mail.gmail.com>
- <1c1358af-4549-618a-c408-b93832d33225@gmail.com> <nhnfu8$igq$1@ger.gmane.org>
- <9bde1aa8-fac5-34c4-dffc-0bf15d86c008@gmail.com> <574A8AFF.7020606@gmail.com>
- <CAJCQCtRnLekmARtLNySDofJah12CpKO0VpKygwf7NfQJzS8URg@mail.gmail.com>
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-From: =?UTF-8?Q?Holger_Hoffst=c3=a4tte?= <holger@applied-asynchrony.com>
-Message-ID: <574B2EE6.6080402@applied-asynchrony.com>
-Date: Sun, 29 May 2016 20:03:18 +0200
+	Sun, 29 May 2016 14:16:18 -0400
+Received: by mail-lf0-f52.google.com with SMTP id b73so41633115lfb.3
+        for <linux-btrfs@vger.kernel.org>; Sun, 29 May 2016 11:16:17 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <CAJCQCtRnLekmARtLNySDofJah12CpKO0VpKygwf7NfQJzS8URg@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8
+In-Reply-To: <CAJCQCtTpnr6OLg=0pcovK8aYUAgPLDAsYv5sam9AzWSfOBzZcA@mail.gmail.com>
+References: <CAEtw4r2aknnz=+FCGq2ysSQT3K3ZHmZqnbPpyvr+C7QD6TyEAQ@mail.gmail.com>
+	<CAGGqMYS_SLn9RY8Gtgf5nkwyXnOr57ehtYSH=HugiEeA8D_chw@mail.gmail.com>
+	<CAEtw4r2mtxyz=_OfsgFSpGvUsYbdEqhOjOc-Dpvdd=aOwpeQ-Q@mail.gmail.com>
+	<CAJCQCtTpnr6OLg=0pcovK8aYUAgPLDAsYv5sam9AzWSfOBzZcA@mail.gmail.com>
+Date: Sun, 29 May 2016 20:16:16 +0200
+Message-ID: <CAEtw4r0nEFwj_rFzXTbyeCRNFc7bA3N7i7=nBze_67r+wO1J3w@mail.gmail.com>
+Subject: Re: Resize doesnt work as expected
+From: Peter Becker <floyd.net@gmail.com>
+To: Chris Murphy <lists@colorremedies.com>
+Cc: Alexander Fougner <fougner89@gmail.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 05/29/16 19:53, Chris Murphy wrote:
-> But I'm skeptical of bcache using a hidden area historically for the
-> bootloader, to put its device metadata. I didn't realize that was the
-> case. Imagine if LVM were to stuff metadata into the MBR gap, or
-> mdadm. Egads.
+2016-05-29 19:11 GMT+02:00 Chris Murphy <lists@colorremedies.com>:
+> On Sat, May 28, 2016 at 3:42 PM, Peter Becker <floyd.net@gmail.com> wrote:
+>> Thanks for the clarification. I've probably overlooked this.
+>>
+>> But should "resize max" does not do what you expect instead of falling
+>> back on an "invisible" 1?
+>
+> How does it know what the user expects?
 
-On the matter of bcache in general this seems noteworthy:
+Then simply remove the default deviceid und let the user choise what the want.
+IMHO its a bad think to choise automaticly a option if its not clear
+what the user wants. And in spezial there is no hint in the output of
+the deviceid who is used.
+The output is:
 
-https://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/commit/?id=4d1034eb7c2f5e32d48ddc4dfce0f1a723d28667
+"Resize '/mnt' of 'max'" .. no hint the this only affect the deviceid
+1. The suggestion for me is that the whole pool is resized to max.
 
-bummer..
+Possible solutions:
+1. remove the default deviceid
+2. resize without deviceid affects the whole pool
+3. improve the output of the resize command by adding the deviceid
+4. remove the inconsitent between add+remove and replace by triggering
+resize max after replace is finished.
 
-Holger
-
+> I think the issue is not with the resize command, but rather the
+> replace command does not include the resize max operation. Presumably
+> the user intends the entire block device provided as the target for
+> replacement to be used.
+>
+> So I think the mistake is replace assumes the user wants to use the
+> same amount of space as the former block device. I think if the user
+> wanted to use the former block device size on the new block device,
+> they'd partition it and use the partition as the target.
+>
+>
+> --
+> Chris Murphy

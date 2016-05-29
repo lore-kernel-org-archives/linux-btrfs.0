@@ -1,50 +1,63 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lf0-f45.google.com ([209.85.215.45]:35767 "EHLO
-	mail-lf0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752066AbcE2GYD (ORCPT
+Received: from mail-lf0-f66.google.com ([209.85.215.66]:35572 "EHLO
+	mail-lf0-f66.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752363AbcE2GyD (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 29 May 2016 02:24:03 -0400
-Received: by mail-lf0-f45.google.com with SMTP id w16so48422916lfd.2
-        for <linux-btrfs@vger.kernel.org>; Sat, 28 May 2016 23:24:02 -0700 (PDT)
-Subject: Re: Hot data tracking / hybrid storage
-To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>,
-        Ferry Toth <ftoth@exalondelft.nl>, linux-btrfs@vger.kernel.org
-References: <nh9p2p$cns$1@ger.gmane.org>
- <pan$ae8c7$965ff694$cf73d90e$9e134691@cox.net>
- <20160516010524.7e208f96@jupiter.sol.kaishome.de>
- <nhedk2$dpq$1@ger.gmane.org> <0d68f988-e117-4b61-cb9b-d18a26e2b909@gmail.com>
- <20160517203335.5ff99a05@jupiter.sol.kaishome.de>
- <nhir96$8n4$1@ger.gmane.org>
- <20160519200926.0a2b5dcf@jupiter.sol.kaishome.de>
- <e8ff591f-751b-ac56-45bb-98cdc7b206e7@gmail.com>
- <CAPmG0jYi+gCO3Ps4Xi1ahE4qoqMt6ZmLMrxT_URDHdaA_cZCLg@mail.gmail.com>
- <1c1358af-4549-618a-c408-b93832d33225@gmail.com> <nhnfu8$igq$1@ger.gmane.org>
- <9bde1aa8-fac5-34c4-dffc-0bf15d86c008@gmail.com>
+	Sun, 29 May 2016 02:54:03 -0400
+Subject: Re: [PATCH] btrfs,vfs: allow FILE_EXTENT_SAME on a file opened ro
+To: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>,
+        Adam Borowski <kilobyte@angband.pl>
+References: <1463715912-8005-1-git-send-email-kilobyte@angband.pl>
+ <20160527000401.GW7633@wotan.suse.de> <20160528015922.GI15597@hungrycats.org>
+ <20160529002103.GA31105@angband.pl> <20160529005639.GA3576@hungrycats.org>
+Cc: Mark Fasheh <mfasheh@suse.de>, Chris Mason <clm@fb.com>,
+        Josef Bacik <jbacik@fb.com>, David Sterba <dsterba@suse.com>,
+        linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org
 From: Andrei Borzenkov <arvidjaar@gmail.com>
-Message-ID: <574A8AFF.7020606@gmail.com>
-Date: Sun, 29 May 2016 09:23:59 +0300
+Message-ID: <574A91FF.8010704@gmail.com>
+Date: Sun, 29 May 2016 09:53:51 +0300
 MIME-Version: 1.0
-In-Reply-To: <9bde1aa8-fac5-34c4-dffc-0bf15d86c008@gmail.com>
-Content-Type: text/plain; charset=utf-8
+In-Reply-To: <20160529005639.GA3576@hungrycats.org>
+Content-Type: multipart/signed; micalg=pgp-sha1;
+ protocol="application/pgp-signature";
+ boundary="QJ80FsmQOfIJh8469UEvvQ4TU69Rfjhf9"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-20.05.2016 20:59, Austin S. Hemmelgarn пишет:
-> On 2016-05-20 13:02, Ferry Toth wrote:
->> We have 4 1TB drives in MBR, 1MB free at the beginning, grub on all 4,
->> then 8GB swap, then all the rest btrfs (no LVM used). The 4 btrfs
->> partitions are in the same pool, which is in btrfs RAID10 format. /boot
->> is in subvolume @boot.
-> If you have GRUB installed on all 4, then you don't actually have the
-> full 2047 sectors between the MBR and the partition free, as GRUB is
-> embedded in that space.  I forget exactly how much space it takes up,
-> but I know it's not the whole 1023.5K  I would not suggest risking usage
-> of the final 8k there though.
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--QJ80FsmQOfIJh8469UEvvQ4TU69Rfjhf9
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: quoted-printable
 
-If you mean grub2, required space is variable and depends on where
-/boot/grub is located (i.e. which drivers it needs to access it).
-Assuming plain btrfs on legacy BIOS MBR, required space is around 40-50KB.
+29.05.2016 03:56, Zygo Blaxell =D0=BF=D0=B8=D1=88=D0=B5=D1=82:
+>>
+>> I don't think this can happen on btrfs: the superblock is updated only=
+ after
+>> a barrier when both the data and extent refs are already on the disk.
+>=20
+> If and only if the filesystem is mounted with the flushoncommit option,=
 
-Note that grub2 detects some post-MBR gap software signatures and skips
-over them (space need not be contiguous). It is entirely possible to add
-bcache detection if enough demand exists.
+> that's true.  This is not the default, though, and I lost a fair amount=
+
+> of time and data before I discovered this.
+>=20
+
+According to wiki, this is default on "reasonably recent kernels";
+unfortunately it does say what kernel is recent enough. I am surprised
+it can be disabled at all.
+
+
+--QJ80FsmQOfIJh8469UEvvQ4TU69Rfjhf9
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.22 (GNU/Linux)
+
+iEYEARECAAYFAldKkgYACgkQR6LMutpd94x9SwCeIpI70m+EyGdCnWuvwUbO7IkQ
+N0IAn1S+O43i4RYKkHgp4ald84HQCGCI
+=BXpk
+-----END PGP SIGNATURE-----
+
+--QJ80FsmQOfIJh8469UEvvQ4TU69Rfjhf9--

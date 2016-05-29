@@ -1,97 +1,83 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:20603 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750858AbcE1FO7 (ORCPT
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:16702 "EHLO
+	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
+	by vger.kernel.org with ESMTP id S932137AbcE2MVc (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 28 May 2016 01:14:59 -0400
+	Sun, 29 May 2016 08:21:32 -0400
+Date: Sun, 29 May 2016 08:21:03 -0400
+From: Chris Mason <clm@fb.com>
+To: Anand Jain <anand.jain@oracle.com>
+CC: <dsterba@suse.cz>, David Sterba <dsterba@suse.com>,
+        <linux-btrfs@vger.kernel.org>
 Subject: Re: [PULL] Btrfs for 4.7, part 2
-To: Chris Mason <clm@fb.com>, dsterba@suse.cz, David Sterba <dsterba@suse.com>,
-        linux-btrfs@vger.kernel.org
+Message-ID: <20160529122103.GA8726@clm-mbp.masoncoding.com>
 References: <cover.1464254502.git.dsterba@suse.com>
  <20160527001414.opeu5ffezblckpd4@floor.thefacebook.com>
  <20160527111822.GV29147@twin.jikos.cz>
  <20160527143527.bctpuav5la3vchu4@floor.thefacebook.com>
  <20160527154210.illgoqxoyjhj7dbp@floor.thefacebook.com>
-From: Anand Jain <anand.jain@oracle.com>
-Message-ID: <57492925.7070000@oracle.com>
-Date: Sat, 28 May 2016 13:14:13 +0800
+ <57492925.7070000@oracle.com>
 MIME-Version: 1.0
-In-Reply-To: <20160527154210.illgoqxoyjhj7dbp@floor.thefacebook.com>
-Content-Type: text/plain; charset=windows-1252; format=flowed
+Content-Type: text/plain; charset="us-ascii"; format=flowed
+In-Reply-To: <57492925.7070000@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
-
-On 05/27/2016 11:42 PM, Chris Mason wrote:
-> On Fri, May 27, 2016 at 10:35:27AM -0400, Chris Mason wrote:
->> On Fri, May 27, 2016 at 01:18:22PM +0200, David Sterba wrote:
->>> On Thu, May 26, 2016 at 08:14:14PM -0400, Chris Mason wrote:
->>>> On Thu, May 26, 2016 at 11:27:06AM +0200, David Sterba wrote:
->>>>> Hi,
->>>>>
->>>>> please pull a few more patches that did not go to pull #1 for 4.7, minor
->>>>> cleanups and fixes. Thanks.
->>>>
->>>> Thanks Dave!  Trying to figure out why we're failing btrfs/011, but I
->>>> don't see how it could be related to this bunch.  I'll nail it down.
+On Sat, May 28, 2016 at 01:14:13PM +0800, Anand Jain wrote:
+>
+>
+>On 05/27/2016 11:42 PM, Chris Mason wrote:
+>>>I'm getting errors from btrfs fi show -d, after the very last round of
+>>>device replaces.  A little extra debugging:
 >>>
->>> 011 passes here, there are some unrelated soft-failures (mismatching
->>> output with new progs). I'm now testing a branch without "btrfs: scrub:
->>> Set bbio to NULL before calling btrfs_map_block", that seems to be the
->>> only likely offender.
+>>>bytenr mismatch, want=4332716032, have=0
+>>>ERROR: cannot read chunk root
+>>>ERROR reading /dev/vdh
+>>>failed /dev/vdh
+>>>
+>>>Which is cute because the very next command we run fscks /dev/vdh and
+>>>succeeds.
+>
+>Checked the code paths both btrfs fi show -d and btrfs check,
+>both are calling flush during relative open_ctree in progs.
+>
+>However the flush is called after we have read superblock. That
+>means the read_superblock during 'show' cli (only) will read superblock
+>without flush, and 'check' won't, because 011 calls 'check' after
+>'show'. But it still does not explain the above error, which is
+>during open_ctree not at read superblock. Remains strange case as
+>of now.
+
+It's because we're just not done writing it out yet when btrfs fi show is run.
+I think replace is special here.
+
+>
+>Also. I can't reproduce.
+>
+
+I'm in a relatively new test rig using kvm, which probably explains why
+I haven't seen it before.  You can probably make it easier by adding
+a sleep inside the actual __free_device() func.
+
+>>>So the page cache is stale and this isn't related to any of our patches.
 >>
->> I'm getting errors from btrfs fi show -d, after the very last round of
->> device replaces.  A little extra debugging:
+>>close_ctree() calls into btrfs_close_devices(), which calls
+>>btrfs_close_one_device(), which uses:
 >>
->> bytenr mismatch, want=4332716032, have=0
->> ERROR: cannot read chunk root
->> ERROR reading /dev/vdh
->> failed /dev/vdh
- >>
->> Which is cute because the very next command we run fscks /dev/vdh and
->> succeeds.
-
-Checked the code paths both btrfs fi show -d and btrfs check,
-both are calling flush during relative open_ctree in progs.
-
-However the flush is called after we have read superblock. That
-means the read_superblock during 'show' cli (only) will read superblock
-without flush, and 'check' won't, because 011 calls 'check' after
-'show'. But it still does not explain the above error, which is
-during open_ctree not at read superblock. Remains strange case as
-of now.
-
-Also. I can't reproduce.
-
->> So the page cache is stale and this isn't related to any of our patches.
+>>call_rcu(&device->rcu, free_device);
+>>
+>>close_ctree() also does an rcu_barrier() to make sure and wait for
+>>free_device() to finish.
+>>
+>>But, free_device() just puts the work into schedule_work(), so we don't
+>>know for sure the blkdev_put is done when we exit.
 >
-> close_ctree() calls into btrfs_close_devices(), which calls
-> btrfs_close_one_device(), which uses:
->
-> call_rcu(&device->rcu, free_device);
->
-> close_ctree() also does an rcu_barrier() to make sure and wait for
-> free_device() to finish.
->
-> But, free_device() just puts the work into schedule_work(), so we don't
-> know for sure the blkdev_put is done when we exit.
+> Right, saw that before. Any idea why its like that ? Or if it
+> should be fixed?
 
-  Right, saw that before. Any idea why its like that ? Or if it
-  should be fixed?
+It's just trying to limit the work that is done from call_rcu, and it should
+definitely be fixed.  It might cause EBUSY or other problems.  Probably
+easiest to add a counter or completion object that gets changed by the
+__free_device function.
 
-> It's been this way for a while, so its not holding up my pull request to
-> Linus.  But I'll fix it up.
-
-  Yes. Its been like that.
-
-Thanks, Anand
-
-
-> -chris
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
+-chris

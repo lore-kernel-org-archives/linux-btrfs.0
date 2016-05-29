@@ -1,55 +1,151 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oi0-f65.google.com ([209.85.218.65]:33384 "EHLO
-	mail-oi0-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752826AbcE2SdH convert rfc822-to-8bit (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:18553 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932325AbcE2TsR (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 29 May 2016 14:33:07 -0400
-Received: by mail-oi0-f65.google.com with SMTP id m198so21902794oig.0
-        for <linux-btrfs@vger.kernel.org>; Sun, 29 May 2016 11:33:07 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <574B2EE6.6080402@applied-asynchrony.com>
-References: <nh9p2p$cns$1@ger.gmane.org>
-	<pan$ae8c7$965ff694$cf73d90e$9e134691@cox.net>
-	<20160516010524.7e208f96@jupiter.sol.kaishome.de>
-	<nhedk2$dpq$1@ger.gmane.org>
-	<0d68f988-e117-4b61-cb9b-d18a26e2b909@gmail.com>
-	<20160517203335.5ff99a05@jupiter.sol.kaishome.de>
-	<nhir96$8n4$1@ger.gmane.org>
-	<20160519200926.0a2b5dcf@jupiter.sol.kaishome.de>
-	<e8ff591f-751b-ac56-45bb-98cdc7b206e7@gmail.com>
-	<CAPmG0jYi+gCO3Ps4Xi1ahE4qoqMt6ZmLMrxT_URDHdaA_cZCLg@mail.gmail.com>
-	<1c1358af-4549-618a-c408-b93832d33225@gmail.com>
-	<nhnfu8$igq$1@ger.gmane.org>
-	<9bde1aa8-fac5-34c4-dffc-0bf15d86c008@gmail.com>
-	<574A8AFF.7020606@gmail.com>
-	<CAJCQCtRnLekmARtLNySDofJah12CpKO0VpKygwf7NfQJzS8URg@mail.gmail.com>
-	<574B2EE6.6080402@applied-asynchrony.com>
-Date: Sun, 29 May 2016 12:33:06 -0600
-Message-ID: <CAJCQCtQpCkTP0uPc9TTLn0S+pQpLsAgBodKZvsYKm9vTuFv=Kg@mail.gmail.com>
-Subject: Re: Hot data tracking / hybrid storage
-From: Chris Murphy <lists@colorremedies.com>
-To: =?UTF-8?Q?Holger_Hoffst=C3=A4tte?= <holger@applied-asynchrony.com>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+	Sun, 29 May 2016 15:48:17 -0400
+Received: from userv0021.oracle.com (userv0021.oracle.com [156.151.31.71])
+	by aserp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id u4TJmGtZ018417
+	(version=TLSv1 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Sun, 29 May 2016 19:48:16 GMT
+Received: from aserv0122.oracle.com (aserv0122.oracle.com [141.146.126.236])
+	by userv0021.oracle.com (8.13.8/8.13.8) with ESMTP id u4TJmFQi021931
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Sun, 29 May 2016 19:48:15 GMT
+Received: from abhmp0006.oracle.com (abhmp0006.oracle.com [141.146.116.12])
+	by aserv0122.oracle.com (8.13.8/8.13.8) with ESMTP id u4TJmBNk003583
+	for <linux-btrfs@vger.kernel.org>; Sun, 29 May 2016 19:48:12 GMT
+From: Anand Jain <anand.jain@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH] fstests: btrfs: test case to make sure seed FS is writable after device add
+Date: Mon, 30 May 2016 03:48:18 +0800
+Message-Id: <1464551298-11291-3-git-send-email-anand.jain@oracle.com>
+In-Reply-To: <1464551298-11291-1-git-send-email-anand.jain@oracle.com>
+References: <1464551298-11291-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, May 29, 2016 at 12:03 PM, Holger Hoffstätte
-<holger@applied-asynchrony.com> wrote:
-> On 05/29/16 19:53, Chris Murphy wrote:
->> But I'm skeptical of bcache using a hidden area historically for the
->> bootloader, to put its device metadata. I didn't realize that was the
->> case. Imagine if LVM were to stuff metadata into the MBR gap, or
->> mdadm. Egads.
->
-> On the matter of bcache in general this seems noteworthy:
->
-> https://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/commit/?id=4d1034eb7c2f5e32d48ddc4dfce0f1a723d28667
->
-> bummer..
+Originally when the device is added to a seed FS, the mount point
+converts to writeable. However there appears to be a regression
+that in 4.6 the sprouted FS still remains read-only. Traced back
+untill 3.8 and still there is regression.
 
-Well it doesn't mean no one will take it, just that no one has taken
-it yet. But the future of SSD caching may only be with LVM.
+Seed sprout btrfs feature is one of the unique feature of btrfs
+and interesting solutions can be developed using this feature.
 
+So this test case makes sure that original expected output is
+preserved.
+---
+ tests/btrfs/125     | 81 +++++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/125.out |  1 +
+ tests/btrfs/group   |  1 +
+ 3 files changed, 83 insertions(+)
+ create mode 100755 tests/btrfs/125
+ create mode 100644 tests/btrfs/125.out
+
+diff --git a/tests/btrfs/125 b/tests/btrfs/125
+new file mode 100755
+index 000000000000..189d30614ad0
+--- /dev/null
++++ b/tests/btrfs/125
+@@ -0,0 +1,81 @@
++#! /bin/bash
++# FS QA Test No. btrfs/123
++#
++# Test BTRFS seed device add
++#
++# Steps:
++#   Create seed FS and mount
++#   Device add
++#   Check if the FS is now RW-able
++#
++#-----------------------------------------------------------------------
++# Copyright (c) 2016 Oracle.  All Rights Reserved.
++#
++# This program is free software; you can redistribute it and/or
++# modify it under the terms of the GNU General Public License as
++# published by the Free Software Foundation.
++#
++# This program is distributed in the hope that it would be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write the Free Software Foundation,
++# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++#
++#-----------------------------------------------------------------------
++#
++
++seq=`basename $0`
++seqres=$RESULT_DIR/$seq
++echo "QA output created by $seq"
++
++here=`pwd`
++tmp=/tmp/$$
++status=1	# failure is the default!
++trap "_cleanup; exit \$status" 0 1 2 3 15
++
++_cleanup()
++{
++	cd /
++	rm -f $tmp.*
++}
++
++# get standard environment, filters and checks
++. ./common/rc
++. ./common/filter
++
++# real QA test starts here
++_supported_fs btrfs
++_supported_os Linux
++_require_scratch_nocheck
++_require_scratch_dev_pool 2
++
++rm -f $seqres.full
++
++_scratch_dev_pool_get 1
++_spare_dev_get
++
++_scratch_pool_mkfs >> $seqres.full 2>&1
++
++btrfstune -S 1 $SCRATCH_DEV_POOL || \
++	_fail "btrfstune failed to mark '$SCRATCH_DEV_POOL' as seed"
++
++_scratch_mount >> $seqres.full 2>&1
++
++_run_btrfs_util_prog filesystem show -m
++
++_run_btrfs_util_prog device add $SPARE_DEV "$SCRATCH_MNT"
++
++_run_btrfs_util_prog filesystem show -m
++
++touch "$SCRATCH_MNT"/tf1 || _fail "FS not Writeable"
++
++_scratch_unmount
++_spare_dev_put
++_scratch_dev_pool_put
++
++echo "Silence is golden"
++status=0
++exit
+diff --git a/tests/btrfs/125.out b/tests/btrfs/125.out
+new file mode 100644
+index 000000000000..4f22ab0cb5e9
+--- /dev/null
++++ b/tests/btrfs/125.out
+@@ -0,0 +1 @@
++QA output created by 125
+diff --git a/tests/btrfs/group b/tests/btrfs/group
+index 1866b17aa6df..0afc82940f61 100644
+--- a/tests/btrfs/group
++++ b/tests/btrfs/group
+@@ -126,3 +126,4 @@
+ 122 auto quick snapshot qgroup
+ 123 auto replace
+ 124 auto replace
++125 auto replace
 -- 
-Chris Murphy
+2.7.0
+

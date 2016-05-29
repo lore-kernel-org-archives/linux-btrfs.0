@@ -1,76 +1,55 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:39417 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752857AbcE2UpY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 29 May 2016 16:45:24 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1b77aL-0008Pk-Us
-	for linux-btrfs@vger.kernel.org; Sun, 29 May 2016 22:45:22 +0200
-Received: from 145.132.48.198 ([145.132.48.198])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sun, 29 May 2016 22:45:21 +0200
-Received: from ftoth by 145.132.48.198 with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sun, 29 May 2016 22:45:21 +0200
-To: linux-btrfs@vger.kernel.org
-From: Ferry Toth <ftoth@exalondelft.nl>
-Subject: Re: Hot data tracking / hybrid storage
-Date: Sun, 29 May 2016 20:45:16 +0000 (UTC)
-Message-ID: <nifkcs$ovp$1@ger.gmane.org>
-References: <nh9p2p$cns$1@ger.gmane.org>
-	<pan$ae8c7$965ff694$cf73d90e$9e134691@cox.net>
-	<20160516010524.7e208f96@jupiter.sol.kaishome.de>
-	<nhedk2$dpq$1@ger.gmane.org>
-	<0d68f988-e117-4b61-cb9b-d18a26e2b909@gmail.com>
-	<20160517203335.5ff99a05@jupiter.sol.kaishome.de>
-	<nhir96$8n4$1@ger.gmane.org>
-	<20160519200926.0a2b5dcf@jupiter.sol.kaishome.de>
-	<e8ff591f-751b-ac56-45bb-98cdc7b206e7@gmail.com>
-	<CAPmG0jYi+gCO3Ps4Xi1ahE4qoqMt6ZmLMrxT_URDHdaA_cZCLg@mail.gmail.com>
-	<1c1358af-4549-618a-c408-b93832d33225@gmail.com>
-	<nhnfu8$igq$1@ger.gmane.org>
-	<9bde1aa8-fac5-34c4-dffc-0bf15d86c008@gmail.com>
-	<574A8AFF.7020606@gmail.com>
-	<CAJCQCtRnLekmARtLNySDofJah12CpKO0VpKygwf7NfQJzS8URg@mail.gmail.com>
-	<574B2EE6.6080402@applied-asynchrony.com>
-	<CAJCQCtQpCkTP0uPc9TTLn0S+pQpLsAgBodKZvsYKm9vTuFv=Kg@mail.gmail.com>
-Mime-Version: 1.0
+Received: from mail-oi0-f46.google.com ([209.85.218.46]:36735 "EHLO
+	mail-oi0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752862AbcE2VEH (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 29 May 2016 17:04:07 -0400
+Received: by mail-oi0-f46.google.com with SMTP id j1so244978360oih.3
+        for <linux-btrfs@vger.kernel.org>; Sun, 29 May 2016 14:04:01 -0700 (PDT)
+MIME-Version: 1.0
+In-Reply-To: <1464551298-11291-1-git-send-email-anand.jain@oracle.com>
+References: <1464551298-11291-1-git-send-email-anand.jain@oracle.com>
+Date: Sun, 29 May 2016 15:04:00 -0600
+Message-ID: <CAJCQCtS3hG8nQ39bAnKpSz-9kBhiPY6wFM2t3g5Ek-RNnx1DFA@mail.gmail.com>
+Subject: Re: [regression] make sure seed is writeable sprout after device add
+From: Chris Murphy <lists@colorremedies.com>
+To: Anand Jain <anand.jain@oracle.com>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Op Sun, 29 May 2016 12:33:06 -0600, schreef Chris Murphy:
+On Sun, May 29, 2016 at 1:48 PM, Anand Jain <anand.jain@oracle.com> wrote:
+> Originally a seed FS becomes a writeable sprout FS after a
+> device is added to it, however as at 4.6 I don't see this
+> behavior anymore.
 
-> On Sun, May 29, 2016 at 12:03 PM, Holger Hoffstätte
-> <holger@applied-asynchrony.com> wrote:
->> On 05/29/16 19:53, Chris Murphy wrote:
->>> But I'm skeptical of bcache using a hidden area historically for the
->>> bootloader, to put its device metadata. I didn't realize that was the
->>> case. Imagine if LVM were to stuff metadata into the MBR gap, or
->>> mdadm. Egads.
->>
->> On the matter of bcache in general this seems noteworthy:
->>
->> https://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/
-commit/?id=4d1034eb7c2f5e32d48ddc4dfce0f1a723d28667
->>
->> bummer..
-> 
-> Well it doesn't mean no one will take it, just that no one has taken it
-> yet. But the future of SSD caching may only be with LVM.
-> 
-> --
-> Chris Murphy
+I think the old behavior where it's possible to use -o remount,rw is
+actually confusing.
 
-I think all the above posts underline exacly my point: 
+Strictly speaking what is mounted is the seed volume with that
+particular volume UUID. Doing a remount to effectively cause a behind
+the scene umount then a mount of a different volume and volume UUID is
+not obvious. What if there's more than one sprout? It seems really
+ambiguous what the user wants with an -o remount so I'm wondering if
+this operation should fail instead?
 
-Instead of using a ssd cache (be it bcache or dm-cache) it would be much 
-better to have the btrfs allocator be aware of ssd's in the pool and 
-prioritize allocations to the ssd to maximize performance.
+>From mount man page:
 
-This will allow to easily add more ssd's or replace worn out ones, 
-without the mentioned headaches. After all adding/replacing drives to a 
-pool is one of btrfs's biggest advantages. 
+       remount
+              Attempt to remount an already-mounted filesystem.  This
+is commonly used to change the mount flags for a filesystem,
+especially to make a readonly filesystem writable.  It does not change
+device or mount point.
 
+Two problems: 1. the seed and sprout are two filesystems, and one of
+them is not already mounted. So remount should not mean switch from a
+mounted filesystem to an unmounted one. 2. The former remount behavior
+did change device, from that of the seed to that of the sprout.
+
+So both of those seem to depart from the remount definition rather
+significantly.
+
+
+-- 
+Chris Murphy

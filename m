@@ -1,56 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-vk0-f52.google.com ([209.85.213.52]:33119 "EHLO
-	mail-vk0-f52.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752721AbcE2QeK (ORCPT
+Received: from mail-oi0-f43.google.com ([209.85.218.43]:35935 "EHLO
+	mail-oi0-f43.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752782AbcE2RLE (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 29 May 2016 12:34:10 -0400
-Received: by mail-vk0-f52.google.com with SMTP id r140so198264815vkf.0
-        for <linux-btrfs@vger.kernel.org>; Sun, 29 May 2016 09:34:09 -0700 (PDT)
+	Sun, 29 May 2016 13:11:04 -0400
+Received: by mail-oi0-f43.google.com with SMTP id j1so240825802oih.3
+        for <linux-btrfs@vger.kernel.org>; Sun, 29 May 2016 10:11:03 -0700 (PDT)
 MIME-Version: 1.0
-From: Chris Johnson <hittingsmoke@gmail.com>
-Date: Sun, 29 May 2016 09:33:49 -0700
-Message-ID: <CAMbyGONFW7kRJvNRu3X5p9B0RqTNRzSBYE+XCu=KcaL8KK3n0w@mail.gmail.com>
-Subject: Functional difference between "replace" vs "add" then "delete
- missing" with a missing disk in a RAID56 array
-To: linux-btrfs@vger.kernel.org
+In-Reply-To: <CAEtw4r2mtxyz=_OfsgFSpGvUsYbdEqhOjOc-Dpvdd=aOwpeQ-Q@mail.gmail.com>
+References: <CAEtw4r2aknnz=+FCGq2ysSQT3K3ZHmZqnbPpyvr+C7QD6TyEAQ@mail.gmail.com>
+	<CAGGqMYS_SLn9RY8Gtgf5nkwyXnOr57ehtYSH=HugiEeA8D_chw@mail.gmail.com>
+	<CAEtw4r2mtxyz=_OfsgFSpGvUsYbdEqhOjOc-Dpvdd=aOwpeQ-Q@mail.gmail.com>
+Date: Sun, 29 May 2016 11:11:02 -0600
+Message-ID: <CAJCQCtTpnr6OLg=0pcovK8aYUAgPLDAsYv5sam9AzWSfOBzZcA@mail.gmail.com>
+Subject: Re: Resize doesnt work as expected
+From: Chris Murphy <lists@colorremedies.com>
+To: Peter Becker <floyd.net@gmail.com>
+Cc: Alexander Fougner <fougner89@gmail.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Situation: A six disk RAID5/6 array with a completely failed disk. The
-failed disk is removed and an identical replacement drive is plugged
-in.
+On Sat, May 28, 2016 at 3:42 PM, Peter Becker <floyd.net@gmail.com> wrote:
+> Thanks for the clarification. I've probably overlooked this.
+>
+> But should "resize max" does not do what you expect instead of falling
+> back on an "invisible" 1?
 
-Here I have two options for replacing the disk, assuming the old drive
-is device 6 in the superblock and the replacement disk is /dev/sda.
+How does it know what the user expects?
 
-'btrfs replace start 6 /dev/sda /mnt'
-This will start a rebuild of the array using the new drive, copying
-data that would have been on device 6 to the new drive from the parity
-data.
+I think the issue is not with the resize command, but rather the
+replace command does not include the resize max operation. Presumably
+the user intends the entire block device provided as the target for
+replacement to be used.
 
-btrfs add /dev/sda /mnt && btrfs device delete missing /mnt
-This adds a new device (the replacement disk) to the array and dev
-delete missing appears to trigger a rebalance before deleting the
-missing disk from the array. The end result appears to be identical to
-option 1.
+So I think the mistake is replace assumes the user wants to use the
+same amount of space as the former block device. I think if the user
+wanted to use the former block device size on the new block device,
+they'd partition it and use the partition as the target.
 
-A few weeks back I recovered an array with a failed drive using
-'delete missing' because 'replace' caused a kernel panic. I later
-discovered that this was not (just) a failed drive but some other
-failed hardware that I've yet to start diagnosing. Either motherboard
-or HBA. The drives are in a new server now and I am currently
-rebuilding the array with 'replace', which is believe is the "more
-correct" way to replace a bad drive in an array.
 
-Both work, but 'replace' seems to be slower so I'm curious what the
-functional differences are between the two. I thought the replace
-would be faster as I assumed it would need to read fewer blocks since
-instead of a complete rebalance it's just rebuilding a drive from
-parity data.
-
-What are the differences between the two under the hood? The only
-obvious difference I could see is that when I ran `replace` the space
-on the replacement drive was instantly allocated under 'filesystem
-show' while when I used 'device delete' the drive usage slowly crept
-up through the course of the rebalance.
+-- 
+Chris Murphy

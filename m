@@ -1,118 +1,203 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:48524 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753336AbcE1D3z (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 27 May 2016 23:29:55 -0400
-Date: Fri, 27 May 2016 20:30:28 -0700
-From: Liu Bo <bo.li.liu@oracle.com>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Received: from mout.gmx.net ([212.227.15.18]:58458 "EHLO mout.gmx.net"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S932132AbcE2KxI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 29 May 2016 06:53:08 -0400
+Subject: Re: [PATCH v3 05/22] btrfs-progs: Introduce function to setup
+ temporary superblock
+To: bo.li.liu@oracle.com, Qu Wenruo <quwenruo@cn.fujitsu.com>
+References: <1454043812-7893-1-git-send-email-quwenruo@cn.fujitsu.com>
+ <1454043812-7893-6-git-send-email-quwenruo@cn.fujitsu.com>
+ <20160528030459.GA31255@localhost.localdomain>
 Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz,
         David Sterba <dsterba@suse.com>
-Subject: Re: [PATCH v3 21/22] btrfs-progs: convert: Strictly avoid meta or
- system chunk allocation
-Message-ID: <20160528033028.GD31255@localhost.localdomain>
-Reply-To: bo.li.liu@oracle.com
-References: <1454043812-7893-1-git-send-email-quwenruo@cn.fujitsu.com>
- <1454043812-7893-22-git-send-email-quwenruo@cn.fujitsu.com>
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Message-ID: <9cd7dc82-184b-e5f0-0b7e-d359820202d2@gmx.com>
+Date: Sun, 29 May 2016 18:52:41 +0800
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1454043812-7893-22-git-send-email-quwenruo@cn.fujitsu.com>
+In-Reply-To: <20160528030459.GA31255@localhost.localdomain>
+Content-Type: text/plain; charset=windows-1252; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Jan 29, 2016 at 01:03:31PM +0800, Qu Wenruo wrote:
-> Before this patch, btrfs-convert only rely on large enough initial
-> system/metadata chunk size to ensure no newer system/meta chunk will be
-> created.
-> 
-> But that's not safe enough. So add two new members in fs_info,
-> avoid_sys/meta_chunk_alloc flags to prevent any newer system or meta
-> chunks to be created before init_btrfs_v2().
-> 
-> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
-> Signed-off-by: David Sterba <dsterba@suse.com>
-> ---
->  btrfs-convert.c |  9 +++++++++
->  ctree.h         |  3 +++
->  extent-tree.c   | 10 ++++++++++
->  3 files changed, 22 insertions(+)
-> 
-> diff --git a/btrfs-convert.c b/btrfs-convert.c
-> index efa3b02..333f413 100644
-> --- a/btrfs-convert.c
-> +++ b/btrfs-convert.c
-> @@ -2322,6 +2322,13 @@ static int init_btrfs_v2(struct btrfs_mkfs_config *cfg, struct btrfs_root *root,
->  	struct btrfs_fs_info *fs_info = root->fs_info;
->  	int ret;
->  
-> +	/*
-> +	 * Don't alloc any metadata/system chunk, as we don't want
-> +	 * any meta/sys chunk allcated before all data chunks are inserted.
-> +	 * Or we screw up the chunk layout just like the old implement.
-> +	 */
 
-I don't get this, with this patch set, we can allocate data from DATA chunk,
-allocate metadata from METADATA chunk, but then we're not allowed to allocate new chunks?
+
+On 05/28/2016 11:04 AM, Liu Bo wrote:
+> On Fri, Jan 29, 2016 at 01:03:15PM +0800, Qu Wenruo wrote:
+>> Introduce a new function, setup_temp_super(), to setup temporary super
+>> for make_btrfs_v2().
+>>
+>> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+>> Signed-off-by: David Sterba <dsterba@suse.com>
+>> ---
+>>  utils.c | 117 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+>>  1 file changed, 117 insertions(+)
+>>
+>> diff --git a/utils.c b/utils.c
+>> index bc10293..ed5476d 100644
+>> --- a/utils.c
+>> +++ b/utils.c
+>> @@ -212,6 +212,98 @@ static int reserve_free_space(struct cache_tree *free_tree, u64 len,
+>>  	return 0;
+>>  }
+>>
+>> +static inline int write_temp_super(int fd, struct btrfs_super_block *sb,
+>> +				   u64 sb_bytenr)
+>> +{
+>> +	u32 crc = ~(u32)0;
+>> +	int ret;
+>> +
+>> +	crc = btrfs_csum_data(NULL, (char *)sb + BTRFS_CSUM_SIZE, crc,
+>> +			      BTRFS_SUPER_INFO_SIZE - BTRFS_CSUM_SIZE);
+>> +	btrfs_csum_final(crc, (char *)&sb->csum[0]);
+>> +	ret = pwrite(fd, sb, BTRFS_SUPER_INFO_SIZE, sb_bytenr);
+>> +	if (ret < BTRFS_SUPER_INFO_SIZE)
+>> +		ret = (ret < 0 ? -errno : -EIO);
+>> +	else
+>> +		ret = 0;
+>> +	return ret;
+>> +}
+>> +
+>> +/*
+>> + * Setup temporary superblock at cfg->super_bynter
+>> + * Needed info are extracted from cfg, and root_bytenr, chunk_bytenr
+>> + *
+>> + * For now sys chunk array will be empty and dev_item is empty
+>> + * too.
+>> + * They will be re-initialized at temp chunk tree setup.
+>> + */
+>> +static int setup_temp_super(int fd, struct btrfs_mkfs_config *cfg,
+>> +			    u64 root_bytenr, u64 chunk_bytenr)
+>> +{
+>> +	unsigned char chunk_uuid[BTRFS_UUID_SIZE];
+>> +	char super_buf[BTRFS_SUPER_INFO_SIZE];
+>> +	struct btrfs_super_block *super = (struct btrfs_super_block *)super_buf;
+>> +	int ret;
+>> +
+>> +	/*
+>> +	 * We rely on cfg->chunk_uuid and cfg->fs_uuid to pass uuid
+>> +	 * for other functions.
+>> +	 * Caller must allocation space for them
+>> +	 */
+>> +	BUG_ON(!cfg->chunk_uuid || !cfg->fs_uuid);
+>> +	memset(super_buf, 0, BTRFS_SUPER_INFO_SIZE);
+>> +	cfg->num_bytes = round_down(cfg->num_bytes, cfg->sectorsize);
+>> +
+>> +	if (cfg->fs_uuid && *cfg->fs_uuid) {
+>> +		if (uuid_parse(cfg->fs_uuid, super->fsid) != 0) {
+>> +			error("cound not parse UUID: %s", cfg->fs_uuid);
+>> +			ret = -EINVAL;
+>> +			goto out;
+>> +		}
+>> +		if (!test_uuid_unique(cfg->fs_uuid)) {
+>> +			error("non-unique UUID: %s", cfg->fs_uuid);
+>> +			ret = -EINVAL;
+>> +			goto out;
+>> +		}
+>> +	} else {
+>> +		uuid_generate(super->fsid);
+>> +		uuid_unparse(super->fsid, cfg->fs_uuid);
+>> +	}
+>> +	uuid_generate(chunk_uuid);
+>> +	uuid_unparse(chunk_uuid, cfg->chunk_uuid);
+>> +
+>> +	btrfs_set_super_bytenr(super, cfg->super_bytenr);
+>> +	btrfs_set_super_num_devices(super, 1);
+>> +	btrfs_set_super_magic(super, BTRFS_MAGIC);
+>> +	btrfs_set_super_generation(super, 1);
+>> +	btrfs_set_super_root(super, root_bytenr);
+>> +	btrfs_set_super_chunk_root(super, chunk_bytenr);
+>> +	btrfs_set_super_total_bytes(super, cfg->num_bytes);
+>> +	/*
+>> +	 * Temporary btrfs will only has 6 tree roots:
+>> +	 * chunk tree, root tree, extent_tree, device tree, fs tree
+>> +	 * and csum tree.
+>> +	 */
+>> +	btrfs_set_super_bytes_used(super, 6 * cfg->nodesize);
+>> +	btrfs_set_super_sectorsize(super, cfg->sectorsize);
+>> +	btrfs_set_super_leafsize(super, cfg->nodesize);
+>> +	btrfs_set_super_nodesize(super, cfg->nodesize);
+>> +	btrfs_set_super_stripesize(super, cfg->stripesize);
+>> +	btrfs_set_super_csum_type(super, BTRFS_CSUM_TYPE_CRC32);
+>> +	btrfs_set_super_chunk_root(super, chunk_bytenr);
+>> +	btrfs_set_super_cache_generation(super, -1);
+>> +	btrfs_set_super_incompat_flags(super, cfg->features);
+>> +	if (cfg->label)
+>> +		strncpy(super->label, cfg->label, BTRFS_LABEL_SIZE - 1);
+>
+> Why not use __strncpy_null?
+>
+> Thanks,
+>
+> -liubo
+
+Good idea, I'll add new patch to use it.
 
 Thanks,
-
--liubo
-> +	fs_info->avoid_sys_chunk_alloc = 1;
-> +	fs_info->avoid_meta_chunk_alloc = 1;
->  	trans = btrfs_start_transaction(root, 1);
->  	BUG_ON(!trans);
->  	ret = btrfs_fix_block_accounting(trans, root);
-> @@ -2359,6 +2366,8 @@ static int init_btrfs_v2(struct btrfs_mkfs_config *cfg, struct btrfs_root *root,
->  		goto err;
->  
->  	ret = btrfs_commit_transaction(trans, root);
-> +	fs_info->avoid_sys_chunk_alloc = 0;
-> +	fs_info->avoid_meta_chunk_alloc = 0;
->  err:
->  	return ret;
->  }
-> diff --git a/ctree.h b/ctree.h
-> index 1443746..187bd27 100644
-> --- a/ctree.h
-> +++ b/ctree.h
-> @@ -1030,6 +1030,9 @@ struct btrfs_fs_info {
->  	unsigned int quota_enabled:1;
->  	unsigned int suppress_check_block_errors:1;
->  	unsigned int ignore_fsid_mismatch:1;
-> +	unsigned int avoid_meta_chunk_alloc:1;
-> +	unsigned int avoid_sys_chunk_alloc:1;
-> +
->  
->  	int (*free_extent_hook)(struct btrfs_trans_handle *trans,
->  				struct btrfs_root *root,
-> diff --git a/extent-tree.c b/extent-tree.c
-> index 93b1945..e7c61b1 100644
-> --- a/extent-tree.c
-> +++ b/extent-tree.c
-> @@ -1904,6 +1904,16 @@ static int do_chunk_alloc(struct btrfs_trans_handle *trans,
->  	    thresh)
->  		return 0;
->  
-> +	/*
-> +	 * Avoid allocating given chunk type
-> +	 */
-> +	if (extent_root->fs_info->avoid_meta_chunk_alloc &&
-> +	    (flags & BTRFS_BLOCK_GROUP_METADATA))
-> +		return 0;
-> +	if (extent_root->fs_info->avoid_sys_chunk_alloc &&
-> +	    (flags & BTRFS_BLOCK_GROUP_SYSTEM))
-> +		return 0;
-> +
->  	ret = btrfs_alloc_chunk(trans, extent_root, &start, &num_bytes,
->  	                        space_info->flags);
->  	if (ret == -ENOSPC) {
-> -- 
-> 2.7.0
-> 
-> 
-> 
+Qu
+>
+>> +
+>> +	/* Sys chunk array will be re-initialized at chunk tree init time */
+>> +	super->sys_chunk_array_size = 0;
+>> +
+>> +	ret = write_temp_super(fd, super, cfg->super_bytenr);
+>> +out:
+>> +	return ret;
+>> +}
+>> +
+>>  /*
+>>   * Improved version of make_btrfs().
+>>   *
+>> @@ -230,6 +322,10 @@ static int make_convert_btrfs(int fd, struct btrfs_mkfs_config *cfg,
+>>  	struct cache_tree *used = &cctx->used;
+>>  	u64 sys_chunk_start;
+>>  	u64 meta_chunk_start;
+>> +	/* chunk tree bytenr, in system chunk */
+>> +	u64 chunk_bytenr;
+>> +	/* metadata trees bytenr, in metadata chunk */
+>> +	u64 root_bytenr;
+>>  	int ret;
+>>
+>>  	/* Shouldn't happen */
+>> @@ -260,6 +356,27 @@ static int make_convert_btrfs(int fd, struct btrfs_mkfs_config *cfg,
+>>  	if (ret < 0)
+>>  		goto out;
+>>
+>> +	/*
+>> +	 * Inside the allocate metadata chunk, its layout will be:
+>> +	 *  | offset		| contents	|
+>> +	 *  -------------------------------------
+>> +	 *  | +0		| tree root	|
+>> +	 *  | +nodesize		| extent root	|
+>> +	 *  | +nodesize * 2	| device root	|
+>> +	 *  | +nodesize * 3	| fs tree	|
+>> +	 *  | +nodesize * 4	| csum tree	|
+>> +	 *  -------------------------------------
+>> +	 * Inside the allocated system chunk, its layout will be:
+>> +	 *  | offset		| contents	|
+>> +	 *  -------------------------------------
+>> +	 *  | +0		| chunk root	|
+>> +	 *  -------------------------------------
+>> +	 */
+>> +	chunk_bytenr = sys_chunk_start;
+>> +	root_bytenr = meta_chunk_start;
+>> +	ret = setup_temp_super(fd, cfg, root_bytenr, chunk_bytenr);
+>> +	if (ret < 0)
+>> +		goto out;
+>>  out:
+>>  	return ret;
+>>  }
+>> --
+>> 2.7.0
+>>
+>>
+>>
+>> --
+>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>> the body of a message to majordomo@vger.kernel.org
+>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 > --
 > To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
 > the body of a message to majordomo@vger.kernel.org
 > More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>

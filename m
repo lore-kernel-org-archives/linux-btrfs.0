@@ -1,119 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from james.kirk.hungrycats.org ([174.142.39.145]:36181 "EHLO
-	james.kirk.hungrycats.org" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1750936AbcE2A4l (ORCPT
+Received: from mail-lf0-f45.google.com ([209.85.215.45]:35767 "EHLO
+	mail-lf0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752066AbcE2GYD (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 28 May 2016 20:56:41 -0400
-Date: Sat, 28 May 2016 20:56:39 -0400
-From: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
-To: Adam Borowski <kilobyte@angband.pl>
-Cc: Mark Fasheh <mfasheh@suse.de>, Chris Mason <clm@fb.com>,
-        Josef Bacik <jbacik@fb.com>, David Sterba <dsterba@suse.com>,
-        linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org
-Subject: Re: [PATCH] btrfs,vfs: allow FILE_EXTENT_SAME on a file opened ro
-Message-ID: <20160529005639.GA3576@hungrycats.org>
-References: <1463715912-8005-1-git-send-email-kilobyte@angband.pl>
- <20160527000401.GW7633@wotan.suse.de>
- <20160528015922.GI15597@hungrycats.org>
- <20160529002103.GA31105@angband.pl>
+	Sun, 29 May 2016 02:24:03 -0400
+Received: by mail-lf0-f45.google.com with SMTP id w16so48422916lfd.2
+        for <linux-btrfs@vger.kernel.org>; Sat, 28 May 2016 23:24:02 -0700 (PDT)
+Subject: Re: Hot data tracking / hybrid storage
+To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>,
+        Ferry Toth <ftoth@exalondelft.nl>, linux-btrfs@vger.kernel.org
+References: <nh9p2p$cns$1@ger.gmane.org>
+ <pan$ae8c7$965ff694$cf73d90e$9e134691@cox.net>
+ <20160516010524.7e208f96@jupiter.sol.kaishome.de>
+ <nhedk2$dpq$1@ger.gmane.org> <0d68f988-e117-4b61-cb9b-d18a26e2b909@gmail.com>
+ <20160517203335.5ff99a05@jupiter.sol.kaishome.de>
+ <nhir96$8n4$1@ger.gmane.org>
+ <20160519200926.0a2b5dcf@jupiter.sol.kaishome.de>
+ <e8ff591f-751b-ac56-45bb-98cdc7b206e7@gmail.com>
+ <CAPmG0jYi+gCO3Ps4Xi1ahE4qoqMt6ZmLMrxT_URDHdaA_cZCLg@mail.gmail.com>
+ <1c1358af-4549-618a-c408-b93832d33225@gmail.com> <nhnfu8$igq$1@ger.gmane.org>
+ <9bde1aa8-fac5-34c4-dffc-0bf15d86c008@gmail.com>
+From: Andrei Borzenkov <arvidjaar@gmail.com>
+Message-ID: <574A8AFF.7020606@gmail.com>
+Date: Sun, 29 May 2016 09:23:59 +0300
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="HlL+5n6rz5pIUxbD"
-In-Reply-To: <20160529002103.GA31105@angband.pl>
+In-Reply-To: <9bde1aa8-fac5-34c4-dffc-0bf15d86c008@gmail.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+20.05.2016 20:59, Austin S. Hemmelgarn пишет:
+> On 2016-05-20 13:02, Ferry Toth wrote:
+>> We have 4 1TB drives in MBR, 1MB free at the beginning, grub on all 4,
+>> then 8GB swap, then all the rest btrfs (no LVM used). The 4 btrfs
+>> partitions are in the same pool, which is in btrfs RAID10 format. /boot
+>> is in subvolume @boot.
+> If you have GRUB installed on all 4, then you don't actually have the
+> full 2047 sectors between the MBR and the partition free, as GRUB is
+> embedded in that space.  I forget exactly how much space it takes up,
+> but I know it's not the whole 1023.5K  I would not suggest risking usage
+> of the final 8k there though.
 
---HlL+5n6rz5pIUxbD
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+If you mean grub2, required space is variable and depends on where
+/boot/grub is located (i.e. which drivers it needs to access it).
+Assuming plain btrfs on legacy BIOS MBR, required space is around 40-50KB.
 
-On Sun, May 29, 2016 at 02:21:03AM +0200, Adam Borowski wrote:
-> On Fri, May 27, 2016 at 09:59:22PM -0400, Zygo Blaxell wrote:
-> > I wonder if there is a risk of damaging files like this:
-> >=20
-> > 	open A O_RDWR
-> >=20
-> > 	open B O_RDONLY
-> >=20
-> > 	copy B to A
-> >=20
-> > 	do _not_ call fsync() here
-> >=20
-> > 	dedup(A, B)
-> >=20
-> > 	do _not_ call fsync() here either
-> >=20
-> > 	some time passes
-> >=20
-> > 	power fail
-> >=20
-> > If A's extent isn't flushed to disk, what happens to B?  Does dedup imp=
-ly
-> > fsync or data ordering such that A is written to disk before the extent
-> > ref in B is updated, or can the content of B change?  If root is running
-> > dedup, we can assume that whoever authorized root code execution also m=
-ade
-> > sure that this case never arises (e.g. by ensuring the dedup agent alwa=
-ys
-> > calls fsync, or otherwise ensuring that the extent at A is stable on di=
-sk
-> > before calling dedup).  If we allow non-root to do this then we have no
-> > such assurance--but on the other hand maybe the assurance is weak and
-> > bad things can happen here already even if we require root privilege.
->=20
-> I don't think this can happen on btrfs: the superblock is updated only af=
-ter
-> a barrier when both the data and extent refs are already on the disk.
-
-If and only if the filesystem is mounted with the flushoncommit option,
-that's true.  This is not the default, though, and I lost a fair amount
-of time and data before I discovered this.
-
-> > I also wonder what happens if an executable that has called
-> > mlockall(MCL_FUTURE) gets its pages replaced by a deduped extent while
-> > it's running...do the replaced pages become un-mlockall-ed?  Is the VFS
-> > smart enough to swap in the new pages?  Am I just silly and insane for
-> > expecting shared mmap() to have meaningful real-time properties on btrf=
-s?
->=20
-> mmap() has currently no relation to extents, even entirely identical files
-> don't share any pages:
->=20
-> dd if=3D/dev/urandom of=3Da bs=3D1048576 count=3D1024  # 1GB of junk
-> cp --reflink a b
-> time cat a >/dev/null  # all in page cache -- fast
-> time cat b >/dev/null  # every extent is shared with a, but...
-
-That's precisely my point.  If we've called mlockall(MCL_FUTURE), the
-executable pages are locked into RAM.  If we then replace the underlying
-physical pages, this would normally invalidate the page cache for the
-replaced extent; however mlockall(MCL_FUTURE) and the exec() DENYWRITE
-lock combined mean that such an invalidation should not be possible.
-So what happens?
-
-(now that I think of it, whatever happens would be the same thing that happ=
-ens
-during device delete or balance, so it's probably OK, maybe)
-
-> In any case, this patch doesn't introduce any cases not already triggerab=
-le
-> by root.
-
-It allows non-root to trigger cases that previously could only be
-triggered by root.
-
---HlL+5n6rz5pIUxbD
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
-
-iEYEARECAAYFAldKPkcACgkQgfmLGlazG5xS3ACgnt0ZZBgwsUhZ0A9dIBBZk+AW
-QCAAoIZywtQsny+rb133kZrezjwmUJAq
-=0aix
------END PGP SIGNATURE-----
-
---HlL+5n6rz5pIUxbD--
+Note that grub2 detects some post-MBR gap software signatures and skips
+over them (space need not be contiguous). It is entirely possible to add
+bcache detection if enough demand exists.

@@ -1,233 +1,305 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:48907 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1756948AbcEaJ2c (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 31 May 2016 05:28:32 -0400
-Subject: Re: [PATCH] fstests: btrfs: add test for qgroup handle de-refer
-To: <fdmanana@gmail.com>
-References: <1464660234-14562-1-git-send-email-lufq.fnst@cn.fujitsu.com>
- <CAL3q7H7N029j8Vqqu+11j2PtVgS7zc+PCz8UdF3sHo1VSc9kRg@mail.gmail.com>
- <14be2210-cf79-56c1-d549-2fd5ccae86e2@cn.fujitsu.com>
- <CAL3q7H7NWCPxje8YyXTQmoteuUtCn7E7eiZt0O7JR3gbDSf0yw@mail.gmail.com>
-CC: <fstests@vger.kernel.org>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-From: luke <lufq.fnst@cn.fujitsu.com>
-Message-ID: <85fa8063-8a95-5510-eabf-333a068c0b69@cn.fujitsu.com>
-Date: Tue, 31 May 2016 17:28:21 +0800
+Received: from mx2.suse.de ([195.135.220.15]:55333 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1161668AbcE3Qpz (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 30 May 2016 12:45:55 -0400
+Date: Mon, 30 May 2016 18:45:18 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs-progs: make btrfs-image restore to support dup
+Message-ID: <20160530164518.GE29147@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1464255780-14429-1-git-send-email-lufq.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
-In-Reply-To: <CAL3q7H7NWCPxje8YyXTQmoteuUtCn7E7eiZt0O7JR3gbDSf0yw@mail.gmail.com>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1464255780-14429-1-git-send-email-lufq.fnst@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Thu, May 26, 2016 at 05:43:00PM +0800, Lu Fengqi wrote:
+> Previously btrfs-image restore would set the chunk items to have 1 stripe,
+> even if the chunk is dup. If you use btrfsck on the restored file system,
+> some dev_extent will not find any relative chunk stripe, and the
+> bytes-used of dev_item will not equal to the dev_extents's total_bytes.
+> This patch store a additional physical just for the dup case when build
+> the in-memory chunk-tree.
+> Currently btrfsck on the restored file system, only single and dup is no
+> problem. raid* support should be added in the future.
+> 
+> Signed-off-by: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
+> ---
+>  btrfs-image.c | 143 +++++++++++++++++++++++++++++++++++++++-------------------
+>  1 file changed, 97 insertions(+), 46 deletions(-)
+> 
+> diff --git a/btrfs-image.c b/btrfs-image.c
+> index 8a1b799..d121951 100644
+> --- a/btrfs-image.c
+> +++ b/btrfs-image.c
+> @@ -68,6 +68,12 @@ struct meta_cluster {
+>  struct fs_chunk {
+>  	u64 logical;
+>  	u64 physical;
+> +	/* physical_dup only store additonal physical for BTRFS_BLOCK_GROUP_DUP
+> +	 * currently restore only support single and dup
+> +	 * TODO: modify this structure and the function related to this
+> +	 * structure for support raid*
 
+What does it do in case of RAID? Can we do runtime checks and report
+potential problems? btrfs-image on multiple device was always somehow
+tricky so I'll merge the patch.
 
-
-At 05/31/2016 05:18 PM, Filipe Manana wrote:
-> On Tue, May 31, 2016 at 10:08 AM, luke <lufq.fnst@cn.fujitsu.com> wrote:
->>
->>
->>
->> At 05/31/2016 03:39 PM, Filipe Manana wrote:
->>
->> On Tue, May 31, 2016 at 3:03 AM, Lu Fengqi <lufq.fnst@cn.fujitsu.com> wrote:
->>
->> Test if qgroup can handle de-reference reallocation.
->>
->> What is "de-reference reallocation"?
->>
->>
->>   Sorry, I'm not good at English. I mean "extent de-reference during
->> reallocation".
-> Well that's still not clear. It's not so much an English problem but
-> rather what do you mean with that concept.
-> Is is reading an extent (as a result of read or pread syscall for
-> e.g.), freeing an extent, or what?
->
-> thanks
-freeing an extent,to be exactly thanks
->
->> Although current
->> qgroup can handle it, we still need to prevent any regression which may
->> break current qgroup.
->>
->> Signed-off-by: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
->> ---
->>   common/rc           |  4 +--
->>   tests/btrfs/028     | 91
->> +++++++++++++++++++++++++++++++++++++++++++++++++++++
->>   tests/btrfs/028.out |  2 ++
->>   tests/btrfs/group   |  1 +
->>   4 files changed, 96 insertions(+), 2 deletions(-)
->>   create mode 100755 tests/btrfs/028
->>   create mode 100644 tests/btrfs/028.out
->>
->> diff --git a/common/rc b/common/rc
->> index 51092a0..650d198 100644
->> --- a/common/rc
->> +++ b/common/rc
->> @@ -3284,9 +3284,9 @@ _btrfs_get_profile_configs()
->>   # stress btrfs by running balance operation in a loop
->>   _btrfs_stress_balance()
->>   {
->> -       local btrfs_mnt=$1
->> +       local options=$@
->>          while true; do
->> -               $BTRFS_UTIL_PROG balance start $btrfs_mnt
->> +               $BTRFS_UTIL_PROG balance start $options
->>          done
->>   }
->>
->> diff --git a/tests/btrfs/028 b/tests/btrfs/028
->> new file mode 100755
->> index 0000000..6e0ad36
->> --- /dev/null
->> +++ b/tests/btrfs/028
->> @@ -0,0 +1,91 @@
->> +#! /bin/bash
->> +# FS QA Test 028
->>
->> Missing a short description here of what the test does (what it tests).
->>
->> OK, I'll add this description.
->>
->>
->> +#
->> +#-----------------------------------------------------------------------
->> +# Copyright (c) 2016 Fujitsu. All Rights Reserved.
->> +#
->> +# This program is free software; you can redistribute it and/or
->> +# modify it under the terms of the GNU General Public License as
->> +# published by the Free Software Foundation.
->> +#
->> +# This program is distributed in the hope that it would be useful,
->> +# but WITHOUT ANY WARRANTY; without even the implied warranty of
->> +# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
->> +# GNU General Public License for more details.
->> +#
->> +# You should have received a copy of the GNU General Public License
->> +# along with this program; if not, write the Free Software Foundation,
->> +# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
->> +#-----------------------------------------------------------------------
->> +#
->> +
->> +seq=`basename $0`
->> +seqres=$RESULT_DIR/$seq
->> +echo "QA output created by $seq"
->> +
->> +here=`pwd`
->> +tmp=/tmp/$$
->> +status=1       # failure is the default!
->> +trap "_cleanup; exit \$status" 0 1 2 3 15
->> +
->> +_cleanup()
->> +{
->> +       cd /
->> +       rm -f $tmp.*
->> +}
->> +
->> +# get standard environment, filters and checks
->> +. ./common/rc
->> +. ./common/filter
->> +
->> +# remove previous $seqres.full before test
->> +rm -f $seqres.full
->> +
->> +# real QA test starts here
->> +_supported_fs btrfs
->> +_supported_os Linux
->> +_require_scratch
->> +
->> +# Currently in btrfs the node/leaf size can not be smaller than the page
->> +# size (but it can be greater than the page size). So use the largest
->> +# supported node/leaf size (64Kb) so that the test can run on any platform
->> +# that Linux supports.
->> +_scratch_mkfs "--nodesize 64k"
->> +_scratch_mount
->> +
->> +_run_btrfs_util_prog quota enable $SCRATCH_MNT
->> +_run_btrfs_util_prog quota rescan -w $SCRATCH_MNT
->> +
->> +# Increase the probability of generating de-refer extent, and decrease
->> +# other.
->>
->> Again, what is a "de-refer extent"? I've never seen this expression
->> before (and I don't others will understand it).
->>
->> thanks
->>
->> Ditto.
->>
->>
->> +args=`_scale_fsstress_args -z \
->> +       -f write=10 -f unlink=10 \
->> +       -f creat=10 -f fsync=10 \
->> +       -f fsync=10 -n 100000 -p 2 \
->> +       -d $SCRATCH_MNT/stress_dir`
->> +echo "Run fsstress $args" >>$seqres.full
->> +$FSSTRESS_PROG $args >/dev/null 2>&1 &
->> +fsstress_pid=$!
->> +
->> +echo "Start balance" >>$seqres.full
->> +_btrfs_stress_balance -d $SCRATCH_MNT >/dev/null 2>&1 &
->> +balance_pid=$!
->> +
->> +# 30s is enough to trigger bug
->> +sleep $((30*$TIME_FACTOR))
->> +kill $fsstress_pid $balance_pid
->> +wait
->> +
->> +# kill _btrfs_stress_balance can't end balance, so call btrfs balance
->> cancel
->> +# to cancel running or paused balance.
->> +$BTRFS_UTIL_PROG balance cancel $SCRATCH_MNT &> /dev/null
->> +
->> +rm -rf $SCRATCH_MNT/*
->> +_run_btrfs_util_prog filesystem sync $SCRATCH_MNT
->> +units=`_btrfs_qgroup_units`
->> +$BTRFS_UTIL_PROG qgroup show $units $SCRATCH_MNT | $SED_PROG -n '/[0-9]/p'
->> | \
->> +       $AWK_PROG '{print $2" "$3}'
->> +
->> +# success, all done
->> +status=0
->> +exit
->> diff --git a/tests/btrfs/028.out b/tests/btrfs/028.out
->> new file mode 100644
->> index 0000000..69b68bf
->> --- /dev/null
->> +++ b/tests/btrfs/028.out
->> @@ -0,0 +1,2 @@
->> +QA output created by 028
->> +65536 65536
->> diff --git a/tests/btrfs/group b/tests/btrfs/group
->> index da0e27f..35ecf59 100644
->> --- a/tests/btrfs/group
->> +++ b/tests/btrfs/group
->> @@ -30,6 +30,7 @@
->>   025 auto quick send clone
->>   026 auto quick compress prealloc
->>   027 auto replace
->> +028 auto qgroup balance
->>   029 auto quick clone
->>   030 auto quick send
->>   031 auto quick subvol clone
->> --
->> 2.5.5
->>
->>
->>
->> --
->> To unsubscribe from this list: send the line "unsubscribe fstests" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->>
->>
->> Thanks,
->> Lu
->
->
-
-
-
+> +	 */
+> +	u64 physical_dup;
+>  	u64 bytes;
+>  	struct rb_node l;
+>  	struct rb_node p;
+> @@ -290,7 +296,8 @@ static struct rb_node *tree_search(struct rb_root *root,
+>  	return NULL;
+>  }
+>  
+> -static u64 logical_to_physical(struct mdrestore_struct *mdres, u64 logical, u64 *size)
+> +static u64 logical_to_physical(struct mdrestore_struct *mdres, u64 logical,
+> +			       u64 *size, u64 *physical_dup)
+>  {
+>  	struct fs_chunk *fs_chunk;
+>  	struct rb_node *entry;
+> @@ -312,6 +319,14 @@ static u64 logical_to_physical(struct mdrestore_struct *mdres, u64 logical, u64
+>  		BUG();
+>  	offset = search.logical - fs_chunk->logical;
+>  
+> +	if (physical_dup) {
+> +		/* only in dup case, physical_dup is not equal to 0 */
+> +		if (fs_chunk->physical_dup)
+> +			*physical_dup = fs_chunk->physical_dup + offset;
+> +		else
+> +			*physical_dup = 0;
+> +	}
+> +
+>  	*size = min(*size, fs_chunk->bytes + fs_chunk->logical - logical);
+>  	return fs_chunk->physical + offset;
+>  }
+> @@ -1451,20 +1466,26 @@ static int update_super(struct mdrestore_struct *mdres, u8 *buffer)
+>  		cur += sizeof(*disk_key);
+>  
+>  		if (key.type == BTRFS_CHUNK_ITEM_KEY) {
+> -			u64 physical, size = 0;
+> +			u64 type, physical, physical_dup, size = 0;
+>  
+>  			chunk = (struct btrfs_chunk *)ptr;
+>  			old_num_stripes = btrfs_stack_chunk_num_stripes(chunk);
+>  			chunk = (struct btrfs_chunk *)write_ptr;
+>  
+>  			memmove(write_ptr, ptr, sizeof(*chunk));
+> -			btrfs_set_stack_chunk_num_stripes(chunk, 1);
+>  			btrfs_set_stack_chunk_sub_stripes(chunk, 0);
+> -			btrfs_set_stack_chunk_type(chunk,
+> -						   BTRFS_BLOCK_GROUP_SYSTEM);
+> +			type = btrfs_stack_chunk_type(chunk);
+> +			if (type & BTRFS_BLOCK_GROUP_DUP) {
+> +				new_array_size += sizeof(struct btrfs_stripe);
+> +				write_ptr += sizeof(struct btrfs_stripe);
+> +			} else {
+> +				btrfs_set_stack_chunk_num_stripes(chunk, 1);
+> +				btrfs_set_stack_chunk_type(chunk,
+> +						BTRFS_BLOCK_GROUP_SYSTEM);
+> +			}
+>  			chunk->stripe.devid = super->dev_item.devid;
+>  			physical = logical_to_physical(mdres, key.offset,
+> -						       &size);
+> +						       &size, &physical_dup);
+>  			if (size != (u64)-1)
+>  				btrfs_set_stack_stripe_offset(&chunk->stripe,
+>  							      physical);
+> @@ -1573,41 +1594,47 @@ static int fixup_chunk_tree_block(struct mdrestore_struct *mdres,
+>  			goto next;
+>  
+>  		for (i = 0; i < btrfs_header_nritems(eb); i++) {
+> -			struct btrfs_chunk chunk;
+> +			struct btrfs_chunk *chunk;
+>  			struct btrfs_key key;
+> -			u64 type, physical, size = (u64)-1;
+> +			u64 type, physical, physical_dup, size = (u64)-1;
+>  
+>  			btrfs_item_key_to_cpu(eb, &key, i);
+>  			if (key.type != BTRFS_CHUNK_ITEM_KEY)
+>  				continue;
+> -			truncate_item(eb, i, sizeof(chunk));
+> -			read_extent_buffer(eb, &chunk,
+> -					   btrfs_item_ptr_offset(eb, i),
+> -					   sizeof(chunk));
+>  
+>  			size = 0;
+>  			physical = logical_to_physical(mdres, key.offset,
+> -						       &size);
+> +						       &size, &physical_dup);
+> +
+> +			if (!physical_dup)
+> +				truncate_item(eb, i, sizeof(*chunk));
+> +			chunk = btrfs_item_ptr(eb, i, struct btrfs_chunk);
+> +
+>  
+>  			/* Zero out the RAID profile */
+> -			type = btrfs_stack_chunk_type(&chunk);
+> +			type = btrfs_chunk_type(eb, chunk);
+>  			type &= (BTRFS_BLOCK_GROUP_DATA |
+>  				 BTRFS_BLOCK_GROUP_SYSTEM |
+>  				 BTRFS_BLOCK_GROUP_METADATA |
+>  				 BTRFS_BLOCK_GROUP_DUP);
+> -			btrfs_set_stack_chunk_type(&chunk, type);
+> +			btrfs_set_chunk_type(eb, chunk, type);
+>  
+> -			btrfs_set_stack_chunk_num_stripes(&chunk, 1);
+> -			btrfs_set_stack_chunk_sub_stripes(&chunk, 0);
+> -			btrfs_set_stack_stripe_devid(&chunk.stripe, mdres->devid);
+> +			if (!physical_dup)
+> +				btrfs_set_chunk_num_stripes(eb, chunk, 1);
+> +			btrfs_set_chunk_sub_stripes(eb, chunk, 0);
+> +			btrfs_set_stripe_devid_nr(eb, chunk, 0, mdres->devid);
+>  			if (size != (u64)-1)
+> -				btrfs_set_stack_stripe_offset(&chunk.stripe,
+> -							      physical);
+> -			memcpy(chunk.stripe.dev_uuid, mdres->uuid,
+> -			       BTRFS_UUID_SIZE);
+> -			write_extent_buffer(eb, &chunk,
+> -					    btrfs_item_ptr_offset(eb, i),
+> -					    sizeof(chunk));
+> +				btrfs_set_stripe_offset_nr(eb, chunk, 0,
+> +							   physical);
+> +			/* update stripe 2 offset */
+> +			if (physical_dup)
+> +				btrfs_set_stripe_offset_nr(eb, chunk, 1,
+> +							   physical_dup);
+> +
+> +			write_extent_buffer(eb, mdres->uuid,
+> +					(unsigned long)btrfs_stripe_dev_uuid_nr(
+> +						chunk, 0),
+> +					BTRFS_UUID_SIZE);
+>  		}
+>  		memcpy(buffer, eb->data, eb->len);
+>  		csum_block(buffer, eb->len);
+> @@ -1680,7 +1707,7 @@ static void *restore_worker(void *data)
+>  	}
+>  
+>  	while (1) {
+> -		u64 bytenr;
+> +		u64 bytenr, physical_dup;
+>  		off_t offset = 0;
+>  		int err = 0;
+>  
+> @@ -1732,27 +1759,37 @@ static void *restore_worker(void *data)
+>  				u64 chunk_size = size;
+>  				if (!mdres->multi_devices && !mdres->old_restore)
+>  					bytenr = logical_to_physical(mdres,
+> -								     async->start + offset,
+> -								     &chunk_size);
+> +						     async->start + offset,
+> +						     &chunk_size,
+> +						     &physical_dup);
+>  				else
+>  					bytenr = async->start + offset;
+>  
+>  				ret = pwrite64(outfd, outbuf+offset, chunk_size,
+>  					       bytenr);
+> -				if (ret != chunk_size) {
+> -					if (ret < 0) {
+> -						fprintf(stderr, "Error writing to "
+> -							"device %d\n", errno);
+> -						err = errno;
+> -						break;
+> -					} else {
+> -						fprintf(stderr, "Short write\n");
+> -						err = -EIO;
+> -						break;
+> -					}
+> -				}
+> +				if (ret != chunk_size)
+> +					goto error;
+> +
+> +				if (physical_dup)
+> +					ret = pwrite64(outfd, outbuf+offset,
+> +						       chunk_size,
+> +						       physical_dup);
+> +				if (ret != chunk_size)
+> +					goto error;
+> +
+>  				size -= chunk_size;
+>  				offset += chunk_size;
+> +				continue;
+> +
+> +error:
+> +				if (ret < 0) {
+> +					fprintf(stderr, "Error writing to device %d\n",
+> +							errno);
+> +					err = errno;
+> +				} else {
+> +					fprintf(stderr, "Short write\n");
+> +					err = -EIO;
+> +				}
+>  			}
+>  		} else if (async->start != BTRFS_SUPER_INFO_OFFSET) {
+>  			ret = write_data_to_disk(mdres->info, outbuf, async->start, size, 0);
+> @@ -2017,9 +2054,10 @@ static int read_chunk_block(struct mdrestore_struct *mdres, u8 *buffer,
+>  	}
+>  
+>  	for (i = 0; i < btrfs_header_nritems(eb); i++) {
+> -		struct btrfs_chunk chunk;
+> +		struct btrfs_chunk *chunk;
+>  		struct fs_chunk *fs_chunk;
+>  		struct btrfs_key key;
+> +		u64 type;
+>  
+>  		if (btrfs_header_level(eb)) {
+>  			u64 blockptr = btrfs_node_blockptr(eb, i);
+> @@ -2043,12 +2081,11 @@ static int read_chunk_block(struct mdrestore_struct *mdres, u8 *buffer,
+>  			break;
+>  		}
+>  		memset(fs_chunk, 0, sizeof(*fs_chunk));
+> -		read_extent_buffer(eb, &chunk, btrfs_item_ptr_offset(eb, i),
+> -				   sizeof(chunk));
+> +		chunk = btrfs_item_ptr(eb, i, struct btrfs_chunk);
+>  
+>  		fs_chunk->logical = key.offset;
+> -		fs_chunk->physical = btrfs_stack_stripe_offset(&chunk.stripe);
+> -		fs_chunk->bytes = btrfs_stack_chunk_length(&chunk);
+> +		fs_chunk->physical = btrfs_stripe_offset_nr(eb, chunk, 0);
+> +		fs_chunk->bytes = btrfs_chunk_length(eb, chunk);
+>  		INIT_LIST_HEAD(&fs_chunk->list);
+>  		if (tree_search(&mdres->physical_tree, &fs_chunk->p,
+>  				physical_cmp, 1) != NULL)
+> @@ -2056,11 +2093,25 @@ static int read_chunk_block(struct mdrestore_struct *mdres, u8 *buffer,
+>  		else
+>  			tree_insert(&mdres->physical_tree, &fs_chunk->p,
+>  				    physical_cmp);
+> -		if (fs_chunk->physical + fs_chunk->bytes >
+> +
+> +		type = btrfs_chunk_type(eb, chunk);
+> +		if (type & BTRFS_BLOCK_GROUP_DUP) {
+> +			fs_chunk->physical_dup =
+> +					btrfs_stripe_offset_nr(eb, chunk, 1);
+> +		}
+> +
+> +		if (fs_chunk->physical_dup + fs_chunk->bytes >
+> +		    mdres->last_physical_offset)
+> +			mdres->last_physical_offset = fs_chunk->physical_dup +
+> +				fs_chunk->bytes;
+> +		else if (fs_chunk->physical + fs_chunk->bytes >
+>  		    mdres->last_physical_offset)
+>  			mdres->last_physical_offset = fs_chunk->physical +
+>  				fs_chunk->bytes;
+>  		mdres->alloced_chunks += fs_chunk->bytes;
+> +		/* in dup case, fs_chunk->bytes should add twice */
+> +		if (fs_chunk->physical_dup)
+> +			mdres->alloced_chunks += fs_chunk->bytes;
+>  		tree_insert(&mdres->chunk_tree, &fs_chunk->l, chunk_cmp);
+>  	}
+>  out:
+> -- 
+> 2.5.5
+> 
+> 
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

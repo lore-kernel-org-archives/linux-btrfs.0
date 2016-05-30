@@ -1,44 +1,140 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from tartarus.angband.pl ([89.206.35.136]:35526 "EHLO
-	tartarus.angband.pl" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752561AbcE3MZM (ORCPT
+Received: from mail-vk0-f41.google.com ([209.85.213.41]:35682 "EHLO
+	mail-vk0-f41.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1161557AbcE3SsX (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 30 May 2016 08:25:12 -0400
-Date: Mon, 30 May 2016 14:24:57 +0200
-From: Adam Borowski <kilobyte@angband.pl>
-To: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
-Cc: Mark Fasheh <mfasheh@suse.de>, Chris Mason <clm@fb.com>,
-        Josef Bacik <jbacik@fb.com>, David Sterba <dsterba@suse.com>,
-        linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org
-Subject: Re: [PATCH] btrfs,vfs: allow FILE_EXTENT_SAME on a file opened ro
-Message-ID: <20160530122457.GA28316@angband.pl>
-References: <1463715912-8005-1-git-send-email-kilobyte@angband.pl>
- <20160527000401.GW7633@wotan.suse.de>
- <20160528015922.GI15597@hungrycats.org>
- <20160529002103.GA31105@angband.pl>
- <20160529005639.GA3576@hungrycats.org>
+	Mon, 30 May 2016 14:48:23 -0400
+Received: by mail-vk0-f41.google.com with SMTP id d127so71537435vkh.2
+        for <linux-btrfs@vger.kernel.org>; Mon, 30 May 2016 11:48:23 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20160529005639.GA3576@hungrycats.org>
+From: Chris Johnson <hittingsmoke@gmail.com>
+Date: Mon, 30 May 2016 11:48:02 -0700
+Message-ID: <CAMbyGOMdgMKK=ttSR0NujhdbnitMwU+4+ebH6z5YW4U=zxnxtQ@mail.gmail.com>
+Subject: Runaway SLAB usage by 'bio' during 'device replace'
+To: linux-btrfs@vger.kernel.org
+Content-Type: multipart/mixed; boundary=94eb2c11b96464a539053413b332
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, May 28, 2016 at 08:56:39PM -0400, Zygo Blaxell wrote:
-> On Sun, May 29, 2016 at 02:21:03AM +0200, Adam Borowski wrote:
-> > In any case, this patch doesn't introduce any cases not already triggerable
-> > by root.
-> 
-> It allows non-root to trigger cases that previously could only be
-> triggered by root.
+--94eb2c11b96464a539053413b332
+Content-Type: text/plain; charset=UTF-8
 
-Only the proposed "ro is enough" variant does.  The patch, as written,
-requires write permission on the inode, thus alleviating your concerns:
-* mangling the contents of dstfile: the user has rw access so he can do that
-  already
-* triggering a bug: the user could have opened dstfile rw (like duperemove
-  currently does)
+I have a RAID6 array that had a failed HDD. The drive failed
+completely and has been removed from the system. I'm running a 'device
+replace' operation with a new disk. The array is ~20TB so this will
+take a few days.
 
+Yesterday the system crashed hard with OOM errors about 24 hours into
+the replace. Rebooting after the crash and remounting the array
+automatically resumed the replace where it left off.
 
-Meow!
--- 
-An imaginary friend squared is a real enemy.
+Today I kept a close eye on it and have watched the memory usage creep
+up slowly.
+
+htop says this is user process memory (green bar) but shows no user
+processes using this much memory
+
+free says this is almost entirely cached/buffered memory that is
+taking up the space.
+
+slabtop reveals that there is a highly unusual amount of SLAB going to
+'bio' which has to do with block allocation apparently. slabtop output
+is attached.
+
+'sync && echo 3 > /proc/sys/vm/drop_caches' clears the high usage
+(~4GB) from dentry but 'bio' does not release any (11GB) memory and
+continues to grow slowly.
+
+This is running the Rockstor distro based on CentOS. The system has 16GB of RAM.
+
+Kernel: 4.4.5-1.el7.elrepo.x86_64
+btrfs-progs: 4.4.1
+
+Kernel messages aren't showing anything of note during the replace
+until it starts throwing out OOM errors.
+
+I would like to collect enough information for a useful bug report
+here, but I also can't babysit this rebuild during the work week and
+reboot it once a day for OOM crashes. Should I cancel the replace
+operation and use 'dev delete missing' instead? Will using 'delete
+missing' cause any problem if it's done after a partially completed
+and canceled replace?
+
+--94eb2c11b96464a539053413b332
+Content-Type: text/plain; charset=US-ASCII; name="FWbn3S3C.txt"
+Content-Disposition: attachment; filename="FWbn3S3C.txt"
+Content-Transfer-Encoding: base64
+X-Attachment-Id: f_ioud9u660
+
+IyBzbGFidG9wIC1vIC1zPWENCiBBY3RpdmUgLyBUb3RhbCBPYmplY3RzICglIHVzZWQpICAgIDog
+MzM0MzE0MzIgLyAzMzY2NDE2MCAoOTkuMyUpDQogQWN0aXZlIC8gVG90YWwgU2xhYnMgKCUgdXNl
+ZCkgICAgICA6IDEzNDY3MzYgLyAxMzQ2NzM2ICgxMDAuMCUpDQogQWN0aXZlIC8gVG90YWwgQ2Fj
+aGVzICglIHVzZWQpICAgICA6IDc4IC8gMTE0ICg2OC40JSkNCiBBY3RpdmUgLyBUb3RhbCBTaXpl
+ICglIHVzZWQpICAgICAgIDogMTA1MTIxMzYuMTlLIC8gMTA3Mzc3MDEuODBLICg5Ny45JSkNCiBN
+aW5pbXVtIC8gQXZlcmFnZSAvIE1heGltdW0gT2JqZWN0IDogMC4wMUsgLyAwLjMySyAvIDE1LjYy
+Sw0KDQogIE9CSlMgQUNUSVZFICBVU0UgT0JKIFNJWkUgIFNMQUJTIE9CSi9TTEFCIENBQ0hFIFNJ
+WkUgTkFNRSAgICAgICAgICAgICAgICAgICANCjMyNDkzNjUwIDMyNDkyNzc1ICA5OSUgICAgMC4z
+MUsgMTI5OTc0NiAgICAgICAyNSAgMTAzOTc5NjhLIGJpby0xICAgICAgICAgICAgICAgICAgDQoz
+MjM1MDUgMzIzNDQ3ICA5OSUgICAgMC4xOUsgIDE1NDA1ICAgICAgIDIxICAgICA2MTYyMEsgZGVu
+dHJ5ICAgICAgICAgICAgICAgICANCjE3NjY4MCAxNzY2ODAgMTAwJSAgICAwLjA3SyAgIDMxNTUg
+ICAgICAgNTYgICAgIDEyNjIwSyBidHJmc19mcmVlX3NwYWNlICAgICAgIA0KMTE4MjA4ICA0MTI4
+OCAgMzQlICAgIDAuMTJLICAgMzY5NCAgICAgICAzMiAgICAgMTQ3NzZLIGttYWxsb2MtMTI4ICAg
+ICAgICAgICAgDQogOTQ1MjggIDQzMzc4ICA0NSUgICAgMC4yNUsgICAyOTU0ICAgICAgIDMyICAg
+ICAyMzYzMksga21hbGxvYy0yNTYgICAgICAgICAgICANCiA5MTg3MiAgNDE2ODIgIDQ1JSAgICAw
+LjUwSyAgIDI4NzEgICAgICAgMzIgICAgIDQ1OTM2SyBrbWFsbG9jLTUxMiAgICAgICAgICAgIA0K
+IDgzMDQ4ICAzOTAzMSAgNDYlICAgIDQuMDBLICAxMDM4MSAgICAgICAgOCAgICAzMzIxOTJLIGtt
+YWxsb2MtNDA5NiAgICAgICAgICAgDQogNjkwNDkgIDY5MDQ5IDEwMCUgICAgMC4yN0sgICAyMzgx
+ICAgICAgIDI5ICAgICAxOTA0OEsgYnRyZnNfZXh0ZW50X2J1ZmZlciAgICANCiA0Njg3MiAgNDYz
+ODUgIDk4JSAgICAwLjU3SyAgIDE2NzQgICAgICAgMjggICAgIDI2Nzg0SyByYWRpeF90cmVlX25v
+ZGUgICAgICAgIA0KIDIzNDYwICAyMzQ2MCAxMDAlICAgIDAuMTJLICAgIDY5MCAgICAgICAzNCAg
+ICAgIDI3NjBLIGtlcm5mc19ub2RlX2NhY2hlICAgICAgDQogMTc1MzYgIDE3NTM2IDEwMCUgICAg
+MC45OEsgICAgNTQ4ICAgICAgIDMyICAgICAxNzUzNksgYnRyZnNfaW5vZGUgICAgICAgICAgICAN
+CiAxNjM4MCAgMTYwMDcgIDk3JSAgICAwLjE0SyAgICA1ODUgICAgICAgMjggICAgICAyMzQwSyBi
+dHJmc19wYXRoICAgICAgICAgICAgIA0KIDEyNDQ0ICAxMTYzNSAgOTMlICAgIDAuMDhLICAgIDI0
+NCAgICAgICA1MSAgICAgICA5NzZLIEFjcGktU3RhdGUgICAgICAgICAgICAgDQogMTI0MDQgIDEy
+NDA0IDEwMCUgICAgMC41NUsgICAgNDQzICAgICAgIDI4ICAgICAgNzA4OEsgaW5vZGVfY2FjaGUg
+ICAgICAgICAgICANCiAxMTY0OCAgMTA4NTEgIDkzJSAgICAwLjA2SyAgICAxODIgICAgICAgNjQg
+ICAgICAgNzI4SyBrbWFsbG9jLTY0ICAgICAgICAgICAgIA0KIDEwNDA0ICAgNTcxNiAgNTQlICAg
+IDAuMDhLICAgIDIwNCAgICAgICA1MSAgICAgICA4MTZLIGJ0cmZzX2V4dGVudF9zdGF0ZSAgICAg
+DQogIDg5NTQgICA4NzAzICA5NyUgICAgMC4xOEsgICAgNDA3ICAgICAgIDIyICAgICAgMTYyOEsg
+dm1fYXJlYV9zdHJ1Y3QgICAgICAgICANCiAgNTg4OCAgIDQ5NDYgIDg0JSAgICAwLjAzSyAgICAg
+NDYgICAgICAxMjggICAgICAgMTg0SyBrbWFsbG9jLTMyICAgICAgICAgICAgIA0KICA1NjMyICAg
+NTYzMiAxMDAlICAgIDAuMDFLICAgICAxMSAgICAgIDUxMiAgICAgICAgNDRLIGttYWxsb2MtOCAg
+ICAgICAgICAgICAgDQogIDUwNDkgICA0OTA1ICA5NyUgICAgMC4wOEsgICAgIDk5ICAgICAgIDUx
+ICAgICAgIDM5NksgYW5vbl92bWEgICAgICAgICAgICAgICANCiAgNDM1MiAgIDQzNTIgMTAwJSAg
+ICAwLjAySyAgICAgMTcgICAgICAyNTYgICAgICAgIDY4SyBrbWFsbG9jLTE2ICAgICAgICAgICAg
+IA0KICAzNzIzICAgMzcyMyAxMDAlICAgIDAuMDVLICAgICA1MSAgICAgICA3MyAgICAgICAyMDRL
+IEFjcGktUGFyc2UgICAgICAgICAgICAgDQogIDMyMzAgICAzMjMwIDEwMCUgICAgMC4wNUsgICAg
+IDM4ICAgICAgIDg1ICAgICAgIDE1MksgZnRyYWNlX2V2ZW50X2ZpZWxkICAgICANCiAgMzIxMyAg
+IDI5NDkgIDkxJSAgICAwLjE5SyAgICAxNTMgICAgICAgMjEgICAgICAgNjEySyBrbWFsbG9jLTE5
+MiAgICAgICAgICAgIA0KICAzMTIwICAgMzA5MCAgOTklICAgIDAuNjFLICAgIDEyMCAgICAgICAy
+NiAgICAgIDE5MjBLIHByb2NfaW5vZGVfY2FjaGUgICAgICAgDQogIDI4MTQgICAyODE0IDEwMCUg
+ICAgMC4wOUsgICAgIDY3ICAgICAgIDQyICAgICAgIDI2OEsga21hbGxvYy05NiAgICAgICAgICAg
+ICANCiAgMTk4NCAgIDE1MTAgIDc2JSAgICAxLjAwSyAgICAgNjIgICAgICAgMzIgICAgICAxOTg0
+SyBrbWFsbG9jLTEwMjQgICAgICAgICAgIA0KICAxOTA0ICAgMTkwNCAxMDAlICAgIDAuMDdLICAg
+ICAzNCAgICAgICA1NiAgICAgICAxMzZLIEFjcGktT3BlcmFuZCAgICAgICAgICAgDQogIDE0NzIg
+ICAxNDcyIDEwMCUgICAgMC4wOUsgICAgIDMyICAgICAgIDQ2ICAgICAgIDEyOEsgdHJhY2VfZXZl
+bnRfZmlsZSAgICAgICANCiAgMTIyNCAgIDEyMjQgMTAwJSAgICAwLjA0SyAgICAgMTIgICAgICAx
+MDIgICAgICAgIDQ4SyBBY3BpLU5hbWVzcGFjZSAgICAgICAgIA0KICAxMTUyICAgMTE1MiAxMDAl
+ICAgIDAuNjRLICAgICA0OCAgICAgICAyNCAgICAgICA3NjhLIHNobWVtX2lub2RlX2NhY2hlICAg
+ICAgDQogICA1OTIgICAgNTgxICA5OCUgICAgMi4wMEsgICAgIDM3ICAgICAgIDE2ICAgICAgMTE4
+NEsga21hbGxvYy0yMDQ4ICAgICAgICAgICANCiAgIDUyOCAgICA0NTcgIDg2JSAgICAwLjM2SyAg
+ICAgMjQgICAgICAgMjIgICAgICAgMTkySyBibGtkZXZfcmVxdWVzdHMgICAgICAgIA0KICAgNDYy
+ICAgIDM1NSAgNzYlICAgIDAuMzhLICAgICAyMiAgICAgICAyMSAgICAgICAxNzZLIG1udF9jYWNo
+ZSAgICAgICAgICAgICAgDQogICA0NTAgICAgNDMzICA5NiUgICAgMS4wNksgICAgIDE1ICAgICAg
+IDMwICAgICAgIDQ4MEsgc2lnbmFsX2NhY2hlICAgICAgICAgICANCiAgIDQyOSAgICA0MjkgMTAw
+JSAgICAwLjIwSyAgICAgMTEgICAgICAgMzkgICAgICAgIDg4SyBidHJmc19kZWxheWVkX3JlZl9o
+ZWFkIA0KICAgNDIwICAgIDQyMCAxMDAlICAgIDIuMDVLICAgICAyOCAgICAgICAxNSAgICAgICA4
+OTZLIGlkcl9sYXllcl9jYWNoZSAgICAgICAgDQogICA0MDggICAgNDA4IDEwMCUgICAgMC4wNEsg
+ICAgICA0ICAgICAgMTAyICAgICAgICAxNksgYnRyZnNfZGVsYXllZF9leHRlbnRfb3ANCiAgIDQw
+MCAgICA0MDAgMTAwJSAgICAwLjYySyAgICAgMTYgICAgICAgMjUgICAgICAgMjU2SyBzb2NrX2lu
+b2RlX2NhY2hlICAgICAgIA0KICAgMzY0ICAgIDM2NCAxMDAlICAgIDAuMzBLICAgICAxNCAgICAg
+ICAyNiAgICAgICAxMTJLIGJ0cmZzX2RlbGF5ZWRfbm9kZSAgICAgDQogICAzNTEgICAgMzUxIDEw
+MCUgICAgMC4xMEsgICAgICA5ICAgICAgIDM5ICAgICAgICAzNksgYnVmZmVyX2hlYWQgICAgICAg
+ICAgICANCiAgIDM0NSAgICAzMTIgIDkwJSAgICAyLjA2SyAgICAgMjMgICAgICAgMTUgICAgICAg
+NzM2SyBzaWdoYW5kX2NhY2hlICAgICAgICAgIA0KICAgMzE4ICAgIDI5OCAgOTMlICAgIDUuMjVL
+ICAgICA1MyAgICAgICAgNiAgICAgIDE2OTZLIHRhc2tfc3RydWN0ICAgICAgICAgICAgDQogICAy
+NTYgICAgMjU2IDEwMCUgICAgMC4wNksgICAgICA0ICAgICAgIDY0ICAgICAgICAxNksga21lbV9j
+YWNoZV9ub2RlICAgICAgICANCiAgIDI1NiAgICAyNTYgMTAwJSAgICAwLjAySyAgICAgIDEgICAg
+ICAyNTYgICAgICAgICA0SyBqYmQyX3Jldm9rZV90YWJsZV9z
+--94eb2c11b96464a539053413b332--

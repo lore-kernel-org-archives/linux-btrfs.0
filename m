@@ -1,39 +1,253 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:36983 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750714AbcE0LPr (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 27 May 2016 07:15:47 -0400
-Date: Fri, 27 May 2016 13:15:11 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Cc: dsterba@suse.cz, Qu Wenruo <quwenruo@cn.fujitsu.com>,
-        Liu Bo <bo.li.liu@oracle.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 1/2] Btrfs-progs: make convert to allocate space from the
- desired type of block group
-Message-ID: <20160527111511.GU29147@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1464312410-10999-1-git-send-email-bo.li.liu@oracle.com>
- <7cdcb731-ef9a-a967-0218-31476d40c8d3@cn.fujitsu.com>
- <20160527105502.GT29147@twin.jikos.cz>
- <357a411f-e4b5-0f1d-5ee9-6074acdd5b87@gmx.com>
+Received: from cn.fujitsu.com ([59.151.112.132]:34528 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1751137AbcE3HsX (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 30 May 2016 03:48:23 -0400
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Subject: Re: [PATCH] Improve balance performance when qgroups are turned on
+To: Mark Fasheh <mfasheh@suse.de>, <linux-btrfs@vger.kernel.org>
+References: <20160527001806.GX7633@wotan.suse.de>
+CC: David Sterba <dsterba@suse.com>, Josef Bacik <jbacik@fb.com>
+Message-ID: <f65fce82-4985-8fc5-604d-399fbc7b5e3c@cn.fujitsu.com>
+Date: Mon, 30 May 2016 15:48:14 +0800
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <357a411f-e4b5-0f1d-5ee9-6074acdd5b87@gmx.com>
+In-Reply-To: <20160527001806.GX7633@wotan.suse.de>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, May 27, 2016 at 07:04:42PM +0800, Qu Wenruo wrote:
-> > The plan is to release 4.6 with this patchset, I'm still not decided
-> > about the low-mem mode for checker.
-> 
-> For low memory mode, at least we're not that eager to see it merged into 
-> 4.6.
 
-I still need to test it on some large filesystems.
 
-> Although if it could be merged, it would make us free from rebasing it 
-> again and again.
+Mark Fasheh wrote on 2016/05/26 17:18 -0700:
+> The btrfs balance operation is significantly slower when qgroups are
+> enabled. To the best of my knowledge, a balance shouldn't have an effect on
+> qgroups counts (extents are not changing between subvolumes), so we don't
+> need to actually run the qgroup code when we balance.
 
-As it's in devel now, it's on me to rebase and refresh it. It's going to
-stay here, a release branch is usually a set of cherry-picked patches
-from devel.
+This assumption is questionable.
+
+When balancing, it's true we will set the chunk to ro, so new 
+*allocation* won't happen in that chunk.
+
+However we can still de-refer an extent during balance.
+
+If that happens and we skipped the qgroup accounting, corruption happens.
+As the extent before and after balance won't go through qgroup, so it's 
+de-reference won't be accounted.
+
+The following quick test script has already spot the problem:
+------
+#!/bin/bash
+
+dev=/dev/sdb5
+mnt=/mnt/test
+fsstress=/home/adam/xfstests/ltp/fsstress
+
+fsstress_work() {
+	$fsstress -d $mnt -n 100000 -p 2 \
+		-z -f write=10 -f unlink=10 -f creat=10 \
+		-f fsync=20 -f sync=20
+}
+
+balance_work() {
+	while true; do
+		btrfs balance start -d $mnt &> /dev/null
+	done
+}
+
+umount $dev &> /dev/null
+mkfs.btrfs -f $dev
+mount $dev $mnt
+
+btrfs quota en $mnt
+btrfs quota rescan -w $mnt
+
+fsstress_work &
+fsstress_pid=$!
+
+balance_work &
+balance_pid=$!
+
+sleep 30
+
+kill $fsstress_pid
+killall fsstress
+kill $balance_pid &> /dev/null
+
+wait
+
+btrfs balance cancel $mnt &> /dev/null
+
+rm $mnt/* -rf
+sync
+btrfs sub sync $mnt
+btrfs qgroup show -prce $mnt
+------
+
+The result is not stable with your patch.
+Sometimes several kilobytes is shown, as explained above.
+
+While without your patch, the final qgroup is stable with 16KiB.
+
+The xfstest case will follow soon.
+
+Qu
+
+>
+> Since there's only one thread doing balance at a time, it's easy to recored
+> that thread on the fs_info and check it inside qgroup_insert_dirty_extent().
+> If we're the balance thread, we drop the qgroup record instead of inserting
+> it.
+>
+> Here are some sample numbers before and after this patch. The example fs
+> below is 22 gigabytes in size and was creating by copying /usr and /boot
+> from my test machine (a few times).
+>
+> Balance with qgroups enabled, before patch:
+> 	# time btrfs balance start --full-balance /btrfs
+> 	Done, had to relocate 26 out of 26 chunks
+>
+> 	real    3m7.515s
+> 	user    0m0.002s
+> 	sys     2m0.852s
+>
+> Balance with qgroups enabeld, after patch:
+> 	# time btrfs balance start --full-balance /btrfs
+> 	Done, had to relocate 26 out of 26 chunks
+>
+> 	real    2m2.806s
+> 	user    0m0.000s
+> 	sys     0m54.174s
+>
+> Signed-off-by: Mark Fasheh <mfasheh@suse.de>
+> ---
+>  fs/btrfs/ctree.h       | 1 +
+>  fs/btrfs/delayed-ref.c | 2 +-
+>  fs/btrfs/disk-io.c     | 1 +
+>  fs/btrfs/extent-tree.c | 2 +-
+>  fs/btrfs/qgroup.c      | 6 +++++-
+>  fs/btrfs/qgroup.h      | 3 ++-
+>  fs/btrfs/volumes.c     | 4 ++++
+>  7 files changed, 15 insertions(+), 4 deletions(-)
+>
+> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+> index bfe4a33..994f19a 100644
+> --- a/fs/btrfs/ctree.h
+> +++ b/fs/btrfs/ctree.h
+> @@ -1748,6 +1748,7 @@ struct btrfs_fs_info {
+>  	atomic_t balance_cancel_req;
+>  	struct btrfs_balance_control *balance_ctl;
+>  	wait_queue_head_t balance_wait_q;
+> +	struct task_struct *balance_thread;
+>
+>  	unsigned data_chunk_allocations;
+>  	unsigned metadata_ratio;
+> diff --git a/fs/btrfs/delayed-ref.c b/fs/btrfs/delayed-ref.c
+> index 914ac13..81e9b92 100644
+> --- a/fs/btrfs/delayed-ref.c
+> +++ b/fs/btrfs/delayed-ref.c
+> @@ -606,7 +606,7 @@ add_delayed_ref_head(struct btrfs_fs_info *fs_info,
+>  		qrecord->num_bytes = num_bytes;
+>  		qrecord->old_roots = NULL;
+>
+> -		qexisting = btrfs_qgroup_insert_dirty_extent(delayed_refs,
+> +		qexisting = btrfs_qgroup_insert_dirty_extent(fs_info, delayed_refs,
+>  							     qrecord);
+>  		if (qexisting)
+>  			kfree(qrecord);
+> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+> index 4545e2e..0bbdf808 100644
+> --- a/fs/btrfs/disk-io.c
+> +++ b/fs/btrfs/disk-io.c
+> @@ -2236,6 +2236,7 @@ static void btrfs_init_balance(struct btrfs_fs_info *fs_info)
+>  	atomic_set(&fs_info->balance_cancel_req, 0);
+>  	fs_info->balance_ctl = NULL;
+>  	init_waitqueue_head(&fs_info->balance_wait_q);
+> +	fs_info->balance_thread = NULL;
+>  }
+>
+>  static void btrfs_init_btree_inode(struct btrfs_fs_info *fs_info,
+> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+> index e2287c7..33c784c 100644
+> --- a/fs/btrfs/extent-tree.c
+> +++ b/fs/btrfs/extent-tree.c
+> @@ -8195,7 +8195,7 @@ static int record_one_subtree_extent(struct btrfs_trans_handle *trans,
+>
+>  	delayed_refs = &trans->transaction->delayed_refs;
+>  	spin_lock(&delayed_refs->lock);
+> -	if (btrfs_qgroup_insert_dirty_extent(delayed_refs, qrecord))
+> +	if (btrfs_qgroup_insert_dirty_extent(root->fs_info, delayed_refs, qrecord))
+>  		kfree(qrecord);
+>  	spin_unlock(&delayed_refs->lock);
+>
+> diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
+> index 6541d56..994ccb2 100644
+> --- a/fs/btrfs/qgroup.c
+> +++ b/fs/btrfs/qgroup.c
+> @@ -1454,7 +1454,8 @@ int btrfs_qgroup_prepare_account_extents(struct btrfs_trans_handle *trans,
+>  }
+>
+>  struct btrfs_qgroup_extent_record
+> -*btrfs_qgroup_insert_dirty_extent(struct btrfs_delayed_ref_root *delayed_refs,
+> +*btrfs_qgroup_insert_dirty_extent(struct btrfs_fs_info *fs_info,
+> +				  struct btrfs_delayed_ref_root *delayed_refs,
+>  				  struct btrfs_qgroup_extent_record *record)
+>  {
+>  	struct rb_node **p = &delayed_refs->dirty_extent_root.rb_node;
+> @@ -1462,6 +1463,9 @@ struct btrfs_qgroup_extent_record
+>  	struct btrfs_qgroup_extent_record *entry;
+>  	u64 bytenr = record->bytenr;
+>
+> +	if (fs_info->balance_thread == current)
+> +		return record;
+> +
+>  	assert_spin_locked(&delayed_refs->lock);
+>  	trace_btrfs_qgroup_insert_dirty_extent(record);
+>
+> diff --git a/fs/btrfs/qgroup.h b/fs/btrfs/qgroup.h
+> index ecb2c14..74e683d 100644
+> --- a/fs/btrfs/qgroup.h
+> +++ b/fs/btrfs/qgroup.h
+> @@ -64,7 +64,8 @@ struct btrfs_delayed_extent_op;
+>  int btrfs_qgroup_prepare_account_extents(struct btrfs_trans_handle *trans,
+>  					 struct btrfs_fs_info *fs_info);
+>  struct btrfs_qgroup_extent_record
+> -*btrfs_qgroup_insert_dirty_extent(struct btrfs_delayed_ref_root *delayed_refs,
+> +*btrfs_qgroup_insert_dirty_extent(struct btrfs_fs_info *fs_info,
+> +				  struct btrfs_delayed_ref_root *delayed_refs,
+>  				  struct btrfs_qgroup_extent_record *record);
+>  int
+>  btrfs_qgroup_account_extent(struct btrfs_trans_handle *trans,
+> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+> index 366b335..ef40d58 100644
+> --- a/fs/btrfs/volumes.c
+> +++ b/fs/btrfs/volumes.c
+> @@ -3685,6 +3685,8 @@ int btrfs_balance(struct btrfs_balance_control *bctl,
+>  		}
+>  	}
+>
+> +	fs_info->balance_thread = current;
+> +
+>  	num_devices = fs_info->fs_devices->num_devices;
+>  	btrfs_dev_replace_lock(&fs_info->dev_replace);
+>  	if (btrfs_dev_replace_is_ongoing(&fs_info->dev_replace)) {
+> @@ -3802,6 +3804,7 @@ int btrfs_balance(struct btrfs_balance_control *bctl,
+>
+>  	wake_up(&fs_info->balance_wait_q);
+>
+> +	fs_info->balance_thread = NULL;
+>  	return ret;
+>  out:
+>  	if (bctl->flags & BTRFS_BALANCE_RESUME)
+> @@ -3810,6 +3813,7 @@ out:
+>  		kfree(bctl);
+>  		atomic_set(&fs_info->mutually_exclusive_operation_running, 0);
+>  	}
+> +	fs_info->balance_thread = NULL;
+>  	return ret;
+>  }
+>
+>
+
+

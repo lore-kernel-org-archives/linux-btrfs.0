@@ -1,26 +1,39 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:52435 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:52270 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1161499AbcE3P5d (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 30 May 2016 11:57:33 -0400
-Date: Mon, 30 May 2016 17:56:56 +0200
-From: David Sterba <dsterba@suse.cz>
-To: quwenruo@cn.fujitsu.com
-Cc: David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs-progs: tests: run rollback after conversion
-Message-ID: <20160530155656.GD29147@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1464623554-5119-1-git-send-email-dsterba@suse.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1464623554-5119-1-git-send-email-dsterba@suse.com>
+	id S933116AbcE3PxM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 30 May 2016 11:53:12 -0400
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+	by mx2.suse.de (Postfix) with ESMTP id 792CAAB43
+	for <linux-btrfs@vger.kernel.org>; Mon, 30 May 2016 15:53:11 +0000 (UTC)
+From: David Sterba <dsterba@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: David Sterba <dsterba@suse.com>
+Subject: [PATCH] btrfs-progs: tests: run rollback after conversion
+Date: Mon, 30 May 2016 17:52:34 +0200
+Message-Id: <1464623554-5119-1-git-send-email-dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Qu,
+Signed-off-by: David Sterba <dsterba@suse.com>
+---
+ tests/convert-tests.sh | 3 +++
+ 1 file changed, 3 insertions(+)
 
-the convert patchset does not pass a rollback test, fails in the case of
-32k nodesize. Thre's not much info why, just 'rollback failed'.
+diff --git a/tests/convert-tests.sh b/tests/convert-tests.sh
+index 3fce8915f94a..2806b921544b 100755
+--- a/tests/convert-tests.sh
++++ b/tests/convert-tests.sh
+@@ -138,6 +138,9 @@ convert_test() {
+ 	run_check_stdout $SUDO_HELPER md5sum -c $CHECKSUMTMP |
+ 		grep -q 'FAILED' && _fail "file validation failed."
+ 	run_check_umount_test_dev
++
++	run_check $TOP/btrfs-convert --rollback $TEST_DEV
++	run_check fsck -n -t ext2,ext3,ext4 $TEST_DEV
+ }
+ 
+ if ! [ -z "$TEST" ]; then
+-- 
+2.7.1
 
-The branch that passes is 'test-rollback', it's current devel without
-the convert and low-mem fsck patchsets.

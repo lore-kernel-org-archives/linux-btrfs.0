@@ -1,68 +1,43 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:46010 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:34577 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752309AbcEBPO4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 2 May 2016 11:14:56 -0400
-Date: Mon, 2 May 2016 17:14:40 +0200
+	id S933064AbcE3MQB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 30 May 2016 08:16:01 -0400
+Date: Mon, 30 May 2016 14:15:23 +0200
 From: David Sterba <dsterba@suse.cz>
-To: Anand Jain <anand.jain@oracle.com>
-Cc: dsterba@suse.cz, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH V2 RESEND] btrfs: pass the error code to the
- btrfs_std_error and log ret
-Message-ID: <20160502151440.GJ29353@twin.jikos.cz>
+To: Nicholas D Steeves <nsteeves@gmail.com>
+Cc: dsterba@suse.cz, Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Subject: Re: [1/1 v2] String and comment review: Fix typos; fix a couple of
+ mandatory grammatical issues for clarity.
+Message-ID: <20160530121523.GY29147@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <1457583735-3925-1-git-send-email-anand.jain@oracle.com>
- <20160316131019.GM21722@twin.jikos.cz>
- <57268BF5.7010408@oracle.com>
+References: <1463707125-21899-1-git-send-email-nsteeves@gmail.com>
+ <1463707125-21899-2-git-send-email-nsteeves@gmail.com>
+ <CAD=QJKgZE8Dz_GgNpC5U85nd-FD5P_2k=UJwCMBhqFzL2H+DHA@mail.gmail.com>
+ <20160523170123.GM29147@twin.jikos.cz>
+ <CAD=QJKg-+=YXJH6koQ+f-xRWfHp0N9B3m_ObxrtmNhKSfer_Yg@mail.gmail.com>
+ <20160524105034.GO29147@twin.jikos.cz>
+ <CAD=QJKhw35h=mC0m02Bx9+q=VJMrSem1s-Y7gB4zEtFbdfQ+Vg@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <57268BF5.7010408@oracle.com>
+In-Reply-To: <CAD=QJKhw35h=mC0m02Bx9+q=VJMrSem1s-Y7gB4zEtFbdfQ+Vg@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, May 02, 2016 at 07:06:29AM +0800, Anand Jain wrote:
-> > It's just logging an error, but it should really fail, without a
-> > message. The error code will tell what went wrong. Assigning existing
-> > qgroups is eg. EEXIST, if either doesn't exist then ENOENT. There's a
-> > FIXME a few lines above that should be addressed.
+On Fri, May 27, 2016 at 07:13:35AM -0400, Nicholas D Steeves wrote:
+> On 24 May 2016 at 06:50, David Sterba <dsterba@suse.cz> wrote:
+> > Sending typo fixes for all user visible text is OK and welcome anytime.
 > >
-> > I'd like to avoid the message in this case because it should be handled
-> > by the ioctl caller, otherwise it could be just flooding the system log.
+> >> if I find any, and a strings &
+> >> comments review for both -progs and kernel twice a year, where one
+> >> review is part of preparing for an LTS kernel.
 > >
-> >> +
-> >>   	/* update qgroup status and info */
-> >>   	err = btrfs_run_qgroups(trans, root->fs_info);
-> >>   	if (err < 0)
-> >> -		btrfs_std_error(root->fs_info, ret,
-> >> +		btrfs_std_error(root->fs_info, err,
+> > Typos in comments can be done once in a year I think.
 > 
->   This patch is missing in the 'dev-del-by-id' branch. I agree with your
->   the above comments, however the key intention of this patch was to get
->   the correct parameter passed to the btrfs_std_error(). And the above
->   btrfs_err() log should still help/motivate to get the part you
->   mentioned corrected.
+> Thank you for the clarification.  When would be the best time?  While
+> preparing for an LTS kernel, or a certain amount of time before one?
+> Would you like me to skip 4.10 this year and stick to doing it in the
+> month of May?
 
-Committed as
-
-    btrfs: pass the right error code to the btrfs_std_error
-
-    Also drop the newline from the message.
-
-    Signed-off-by: Anand Jain <anand.jain@oracle.com>
-    Signed-off-by: David Sterba <dsterba@suse.com>
-
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 798f58e7338e..40c62e1a4a23 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -4859,8 +4859,8 @@ static long btrfs_ioctl_qgroup_assign(struct file *file, void __user *arg)
-        /* update qgroup status and info */
-        err = btrfs_run_qgroups(trans, root->fs_info);
-        if (err < 0)
--               btrfs_std_error(root->fs_info, ret,
--                           "failed to update qgroup status and info\n");
-+               btrfs_std_error(root->fs_info, err,
-+                           "failed to update qgroup status and info");
-        err = btrfs_end_transaction(trans, root);
-        if (err && !ret)
-                ret = err;
+Tough question :) I think anything post 2017 is ok, but I also hope there
+won't be many typos.

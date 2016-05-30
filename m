@@ -1,140 +1,148 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-vk0-f41.google.com ([209.85.213.41]:35682 "EHLO
-	mail-vk0-f41.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1161557AbcE3SsX (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 30 May 2016 14:48:23 -0400
-Received: by mail-vk0-f41.google.com with SMTP id d127so71537435vkh.2
-        for <linux-btrfs@vger.kernel.org>; Mon, 30 May 2016 11:48:23 -0700 (PDT)
-MIME-Version: 1.0
-From: Chris Johnson <hittingsmoke@gmail.com>
-Date: Mon, 30 May 2016 11:48:02 -0700
-Message-ID: <CAMbyGOMdgMKK=ttSR0NujhdbnitMwU+4+ebH6z5YW4U=zxnxtQ@mail.gmail.com>
-Subject: Runaway SLAB usage by 'bio' during 'device replace'
+Received: from plane.gmane.org ([80.91.229.3]:43855 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1161635AbcE3Tzi (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 30 May 2016 15:55:38 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+	id 1b7THj-0000XI-Ot
+	for linux-btrfs@vger.kernel.org; Mon, 30 May 2016 21:55:35 +0200
+Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Mon, 30 May 2016 21:55:35 +0200
+Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Mon, 30 May 2016 21:55:35 +0200
 To: linux-btrfs@vger.kernel.org
-Content-Type: multipart/mixed; boundary=94eb2c11b96464a539053413b332
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: btrfs filesystem keeps allocating new chunks for no apparent
+ reason
+Date: Mon, 30 May 2016 19:55:17 +0000 (UTC)
+Message-ID: <pan$ec157$35290f6a$2662f654$78485165@cox.net>
+References: <572D0C8B.8010404@mendix.com> <574C1EEE.2030507@mendix.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
---94eb2c11b96464a539053413b332
-Content-Type: text/plain; charset=UTF-8
+Hans van Kranenburg posted on Mon, 30 May 2016 13:07:26 +0200 as
+excerpted:
 
-I have a RAID6 array that had a failed HDD. The drive failed
-completely and has been removed from the system. I'm running a 'device
-replace' operation with a new disk. The array is ~20TB so this will
-take a few days.
+[Please don't post "upside down".  Reply in context under the quoted 
+point, here the whole post, you're replying to.  It makes further replies 
+in context far easier. =:^)  I've pasted your update at the bottom here.]
 
-Yesterday the system crashed hard with OOM errors about 24 hours into
-the replace. Rebooting after the crash and remounting the array
-automatically resumed the replace where it left off.
+> On 05/06/2016 11:28 PM, Hans van Kranenburg wrote:
+>>
+>> I've got a mostly inactive btrfs filesystem inside a virtual machine
+>> somewhere that shows interesting behaviour: while no interesting disk
+>> activity is going on, btrfs keeps allocating new chunks, a GiB at a
+>> time.
+>>
+>> A picture, telling more than 1000 words:
+>> https://syrinx.knorrie.org/~knorrie/btrfs/keep/btrfs_usage_ichiban.png
+>> (when the amount of allocated/unused goes down, I did a btrfs balance)
 
-Today I kept a close eye on it and have watched the memory usage creep
-up slowly.
+Agreed, that shows something strange going on.
 
-htop says this is user process memory (green bar) but shows no user
-processes using this much memory
+>> Linux ichiban 4.5.0-0.bpo.1-amd64 #1 SMP Debian 4.5.1-1~bpo8+1
+>> (2016-04-20) x86_64 GNU/Linux
 
-free says this is almost entirely cached/buffered memory that is
-taking up the space.
+So the kernel is/was current...
 
-slabtop reveals that there is a highly unusual amount of SLAB going to
-'bio' which has to do with block allocation apparently. slabtop output
-is attached.
+>> # btrfs fi show /
+>> Label: none  uuid: 9881fc30-8f69-4069-a8c8-c057b842b0c4
+>>      Total devices 1 FS bytes used 6.17GiB
+>>      devid    1 size 20.00GiB used 16.54GiB path /dev/xvda
+>>
+>> # btrfs fi df /
+>> Data, single: total=15.01GiB, used=5.16GiB
+>> System, single: total=32.00MiB, used=16.00KiB
+>> Metadata, single: total=1.50GiB, used=1.01GiB
+>> GlobalReserve, single: total=144.00MiB, used=0.00B
+>>
+>> I'm a bit puzzled, since I haven't seen this happening on other
+>> filesystems that use 4.4 or 4.5 kernels.
 
-'sync && echo 3 > /proc/sys/vm/drop_caches' clears the high usage
-(~4GB) from dentry but 'bio' does not release any (11GB) memory and
-continues to grow slowly.
+Nor have I, either reported (save for you) or personally.
 
-This is running the Rockstor distro based on CentOS. The system has 16GB of RAM.
+>> If I dump the allocated chunks and their % usage, it's clear that the
+>> last 6 new added ones have a usage of only a few percent.
 
-Kernel: 4.4.5-1.el7.elrepo.x86_64
-btrfs-progs: 4.4.1
+Snip the dump, but curious as a user (not a dev) what command you used.  
+Presumably one of the debug commands which I'm not particularly familiar 
+with, but I wasn't aware it was even possible.
 
-Kernel messages aren't showing anything of note during the replace
-until it starts throwing out OOM errors.
+>> The only things this host does is
+>>   1) being a webserver for a small internal debian packages repository
+>>   2) running low-volume mailman with a few lists, no archive-gzipping
+>> mega cronjobs or anything enabled.
+>>   3) some little legacy php thingies
+>>
+>> Interesting fact is that most of the 1GiB increases happen at the same
+>> time as cron.daily runs. However, there's only a few standard things in
+>> there. An occasional package upgrade by unattended-upgrade, or some
+>> logrotate. The total contents of /var/log/ together is only 66MB...
+>> Graphs show only less than about 100 MB reads/writes in total around
+>> this time.
 
-I would like to collect enough information for a useful bug report
-here, but I also can't babysit this rebuild during the work week and
-reboot it once a day for OOM crashes. Should I cancel the replace
-operation and use 'dev delete missing' instead? Will using 'delete
-missing' cause any problem if it's done after a partially completed
-and canceled replace?
+The cron.daily timing is interesting.  I'll come back to that below.
 
---94eb2c11b96464a539053413b332
-Content-Type: text/plain; charset=US-ASCII; name="FWbn3S3C.txt"
-Content-Disposition: attachment; filename="FWbn3S3C.txt"
-Content-Transfer-Encoding: base64
-X-Attachment-Id: f_ioud9u660
+>> As you can see in the graph the amount of used space is even
+>> decreasing, because I cleaned up a bunch of old packages in the
+>> repository, and still, btrfs keeps allocating new data chunks like a
+>> hungry beast.
+>>
+>> Why would this happen?
 
-IyBzbGFidG9wIC1vIC1zPWENCiBBY3RpdmUgLyBUb3RhbCBPYmplY3RzICglIHVzZWQpICAgIDog
-MzM0MzE0MzIgLyAzMzY2NDE2MCAoOTkuMyUpDQogQWN0aXZlIC8gVG90YWwgU2xhYnMgKCUgdXNl
-ZCkgICAgICA6IDEzNDY3MzYgLyAxMzQ2NzM2ICgxMDAuMCUpDQogQWN0aXZlIC8gVG90YWwgQ2Fj
-aGVzICglIHVzZWQpICAgICA6IDc4IC8gMTE0ICg2OC40JSkNCiBBY3RpdmUgLyBUb3RhbCBTaXpl
-ICglIHVzZWQpICAgICAgIDogMTA1MTIxMzYuMTlLIC8gMTA3Mzc3MDEuODBLICg5Ny45JSkNCiBN
-aW5pbXVtIC8gQXZlcmFnZSAvIE1heGltdW0gT2JqZWN0IDogMC4wMUsgLyAwLjMySyAvIDE1LjYy
-Sw0KDQogIE9CSlMgQUNUSVZFICBVU0UgT0JKIFNJWkUgIFNMQUJTIE9CSi9TTEFCIENBQ0hFIFNJ
-WkUgTkFNRSAgICAgICAgICAgICAgICAgICANCjMyNDkzNjUwIDMyNDkyNzc1ICA5OSUgICAgMC4z
-MUsgMTI5OTc0NiAgICAgICAyNSAgMTAzOTc5NjhLIGJpby0xICAgICAgICAgICAgICAgICAgDQoz
-MjM1MDUgMzIzNDQ3ICA5OSUgICAgMC4xOUsgIDE1NDA1ICAgICAgIDIxICAgICA2MTYyMEsgZGVu
-dHJ5ICAgICAgICAgICAgICAgICANCjE3NjY4MCAxNzY2ODAgMTAwJSAgICAwLjA3SyAgIDMxNTUg
-ICAgICAgNTYgICAgIDEyNjIwSyBidHJmc19mcmVlX3NwYWNlICAgICAgIA0KMTE4MjA4ICA0MTI4
-OCAgMzQlICAgIDAuMTJLICAgMzY5NCAgICAgICAzMiAgICAgMTQ3NzZLIGttYWxsb2MtMTI4ICAg
-ICAgICAgICAgDQogOTQ1MjggIDQzMzc4ICA0NSUgICAgMC4yNUsgICAyOTU0ICAgICAgIDMyICAg
-ICAyMzYzMksga21hbGxvYy0yNTYgICAgICAgICAgICANCiA5MTg3MiAgNDE2ODIgIDQ1JSAgICAw
-LjUwSyAgIDI4NzEgICAgICAgMzIgICAgIDQ1OTM2SyBrbWFsbG9jLTUxMiAgICAgICAgICAgIA0K
-IDgzMDQ4ICAzOTAzMSAgNDYlICAgIDQuMDBLICAxMDM4MSAgICAgICAgOCAgICAzMzIxOTJLIGtt
-YWxsb2MtNDA5NiAgICAgICAgICAgDQogNjkwNDkgIDY5MDQ5IDEwMCUgICAgMC4yN0sgICAyMzgx
-ICAgICAgIDI5ICAgICAxOTA0OEsgYnRyZnNfZXh0ZW50X2J1ZmZlciAgICANCiA0Njg3MiAgNDYz
-ODUgIDk4JSAgICAwLjU3SyAgIDE2NzQgICAgICAgMjggICAgIDI2Nzg0SyByYWRpeF90cmVlX25v
-ZGUgICAgICAgIA0KIDIzNDYwICAyMzQ2MCAxMDAlICAgIDAuMTJLICAgIDY5MCAgICAgICAzNCAg
-ICAgIDI3NjBLIGtlcm5mc19ub2RlX2NhY2hlICAgICAgDQogMTc1MzYgIDE3NTM2IDEwMCUgICAg
-MC45OEsgICAgNTQ4ICAgICAgIDMyICAgICAxNzUzNksgYnRyZnNfaW5vZGUgICAgICAgICAgICAN
-CiAxNjM4MCAgMTYwMDcgIDk3JSAgICAwLjE0SyAgICA1ODUgICAgICAgMjggICAgICAyMzQwSyBi
-dHJmc19wYXRoICAgICAgICAgICAgIA0KIDEyNDQ0ICAxMTYzNSAgOTMlICAgIDAuMDhLICAgIDI0
-NCAgICAgICA1MSAgICAgICA5NzZLIEFjcGktU3RhdGUgICAgICAgICAgICAgDQogMTI0MDQgIDEy
-NDA0IDEwMCUgICAgMC41NUsgICAgNDQzICAgICAgIDI4ICAgICAgNzA4OEsgaW5vZGVfY2FjaGUg
-ICAgICAgICAgICANCiAxMTY0OCAgMTA4NTEgIDkzJSAgICAwLjA2SyAgICAxODIgICAgICAgNjQg
-ICAgICAgNzI4SyBrbWFsbG9jLTY0ICAgICAgICAgICAgIA0KIDEwNDA0ICAgNTcxNiAgNTQlICAg
-IDAuMDhLICAgIDIwNCAgICAgICA1MSAgICAgICA4MTZLIGJ0cmZzX2V4dGVudF9zdGF0ZSAgICAg
-DQogIDg5NTQgICA4NzAzICA5NyUgICAgMC4xOEsgICAgNDA3ICAgICAgIDIyICAgICAgMTYyOEsg
-dm1fYXJlYV9zdHJ1Y3QgICAgICAgICANCiAgNTg4OCAgIDQ5NDYgIDg0JSAgICAwLjAzSyAgICAg
-NDYgICAgICAxMjggICAgICAgMTg0SyBrbWFsbG9jLTMyICAgICAgICAgICAgIA0KICA1NjMyICAg
-NTYzMiAxMDAlICAgIDAuMDFLICAgICAxMSAgICAgIDUxMiAgICAgICAgNDRLIGttYWxsb2MtOCAg
-ICAgICAgICAgICAgDQogIDUwNDkgICA0OTA1ICA5NyUgICAgMC4wOEsgICAgIDk5ICAgICAgIDUx
-ICAgICAgIDM5NksgYW5vbl92bWEgICAgICAgICAgICAgICANCiAgNDM1MiAgIDQzNTIgMTAwJSAg
-ICAwLjAySyAgICAgMTcgICAgICAyNTYgICAgICAgIDY4SyBrbWFsbG9jLTE2ICAgICAgICAgICAg
-IA0KICAzNzIzICAgMzcyMyAxMDAlICAgIDAuMDVLICAgICA1MSAgICAgICA3MyAgICAgICAyMDRL
-IEFjcGktUGFyc2UgICAgICAgICAgICAgDQogIDMyMzAgICAzMjMwIDEwMCUgICAgMC4wNUsgICAg
-IDM4ICAgICAgIDg1ICAgICAgIDE1MksgZnRyYWNlX2V2ZW50X2ZpZWxkICAgICANCiAgMzIxMyAg
-IDI5NDkgIDkxJSAgICAwLjE5SyAgICAxNTMgICAgICAgMjEgICAgICAgNjEySyBrbWFsbG9jLTE5
-MiAgICAgICAgICAgIA0KICAzMTIwICAgMzA5MCAgOTklICAgIDAuNjFLICAgIDEyMCAgICAgICAy
-NiAgICAgIDE5MjBLIHByb2NfaW5vZGVfY2FjaGUgICAgICAgDQogIDI4MTQgICAyODE0IDEwMCUg
-ICAgMC4wOUsgICAgIDY3ICAgICAgIDQyICAgICAgIDI2OEsga21hbGxvYy05NiAgICAgICAgICAg
-ICANCiAgMTk4NCAgIDE1MTAgIDc2JSAgICAxLjAwSyAgICAgNjIgICAgICAgMzIgICAgICAxOTg0
-SyBrbWFsbG9jLTEwMjQgICAgICAgICAgIA0KICAxOTA0ICAgMTkwNCAxMDAlICAgIDAuMDdLICAg
-ICAzNCAgICAgICA1NiAgICAgICAxMzZLIEFjcGktT3BlcmFuZCAgICAgICAgICAgDQogIDE0NzIg
-ICAxNDcyIDEwMCUgICAgMC4wOUsgICAgIDMyICAgICAgIDQ2ICAgICAgIDEyOEsgdHJhY2VfZXZl
-bnRfZmlsZSAgICAgICANCiAgMTIyNCAgIDEyMjQgMTAwJSAgICAwLjA0SyAgICAgMTIgICAgICAx
-MDIgICAgICAgIDQ4SyBBY3BpLU5hbWVzcGFjZSAgICAgICAgIA0KICAxMTUyICAgMTE1MiAxMDAl
-ICAgIDAuNjRLICAgICA0OCAgICAgICAyNCAgICAgICA3NjhLIHNobWVtX2lub2RlX2NhY2hlICAg
-ICAgDQogICA1OTIgICAgNTgxICA5OCUgICAgMi4wMEsgICAgIDM3ICAgICAgIDE2ICAgICAgMTE4
-NEsga21hbGxvYy0yMDQ4ICAgICAgICAgICANCiAgIDUyOCAgICA0NTcgIDg2JSAgICAwLjM2SyAg
-ICAgMjQgICAgICAgMjIgICAgICAgMTkySyBibGtkZXZfcmVxdWVzdHMgICAgICAgIA0KICAgNDYy
-ICAgIDM1NSAgNzYlICAgIDAuMzhLICAgICAyMiAgICAgICAyMSAgICAgICAxNzZLIG1udF9jYWNo
-ZSAgICAgICAgICAgICAgDQogICA0NTAgICAgNDMzICA5NiUgICAgMS4wNksgICAgIDE1ICAgICAg
-IDMwICAgICAgIDQ4MEsgc2lnbmFsX2NhY2hlICAgICAgICAgICANCiAgIDQyOSAgICA0MjkgMTAw
-JSAgICAwLjIwSyAgICAgMTEgICAgICAgMzkgICAgICAgIDg4SyBidHJmc19kZWxheWVkX3JlZl9o
-ZWFkIA0KICAgNDIwICAgIDQyMCAxMDAlICAgIDIuMDVLICAgICAyOCAgICAgICAxNSAgICAgICA4
-OTZLIGlkcl9sYXllcl9jYWNoZSAgICAgICAgDQogICA0MDggICAgNDA4IDEwMCUgICAgMC4wNEsg
-ICAgICA0ICAgICAgMTAyICAgICAgICAxNksgYnRyZnNfZGVsYXllZF9leHRlbnRfb3ANCiAgIDQw
-MCAgICA0MDAgMTAwJSAgICAwLjYySyAgICAgMTYgICAgICAgMjUgICAgICAgMjU2SyBzb2NrX2lu
-b2RlX2NhY2hlICAgICAgIA0KICAgMzY0ICAgIDM2NCAxMDAlICAgIDAuMzBLICAgICAxNCAgICAg
-ICAyNiAgICAgICAxMTJLIGJ0cmZzX2RlbGF5ZWRfbm9kZSAgICAgDQogICAzNTEgICAgMzUxIDEw
-MCUgICAgMC4xMEsgICAgICA5ICAgICAgIDM5ICAgICAgICAzNksgYnVmZmVyX2hlYWQgICAgICAg
-ICAgICANCiAgIDM0NSAgICAzMTIgIDkwJSAgICAyLjA2SyAgICAgMjMgICAgICAgMTUgICAgICAg
-NzM2SyBzaWdoYW5kX2NhY2hlICAgICAgICAgIA0KICAgMzE4ICAgIDI5OCAgOTMlICAgIDUuMjVL
-ICAgICA1MyAgICAgICAgNiAgICAgIDE2OTZLIHRhc2tfc3RydWN0ICAgICAgICAgICAgDQogICAy
-NTYgICAgMjU2IDEwMCUgICAgMC4wNksgICAgICA0ICAgICAgIDY0ICAgICAgICAxNksga21lbV9j
-YWNoZV9ub2RlICAgICAgICANCiAgIDI1NiAgICAyNTYgMTAwJSAgICAwLjAySyAgICAgIDEgICAg
-ICAyNTYgICAgICAgICA0SyBqYmQyX3Jldm9rZV90YWJsZV9z
---94eb2c11b96464a539053413b332--
+> since it got any followup and since I'm bold enough to bump it one more
+> time... :)
+> 
+> I really don't understand the behaviour I described. Does it ring a bell
+> with anyone? This system is still allocating new 1GB data chunks every 1
+> or 2 days without using them at all, and I have to use balance every
+> week to get them away again.
+
+Honestly I can only guess, and it's a new guess I didn't think of the 
+first time around, thus my lack of response the first time around.  But 
+lacking anyone else replying with better theories, given that I do have a 
+guess, I might as well put it out there.
+
+Is it possible something in that daily cron allocates/writes a large but 
+likely spare file, perhaps a gig or more, probably fsyncing to lock the 
+large size in place, then truncates it to actual size, which might be 
+only a few kilobytes?
+
+That's sort of behavior could at least in theory trigger the behavior you 
+describe, tho not being a dev and not being a Linux filesystem behavior 
+expert by any means, I'm admittedly fuzzy on exactly what details might 
+translate that theory into the reality you're seeing.
+
+
+In any event, my usual "brute force" approach to such mysteries is to 
+bisect the problem space down until I know where the issue is.
+
+First, try rescheduling your cron.daily run to a different time, and see 
+if the behavior follows it, thus specifically tying it to something in 
+that run.
+
+Second, try either running all tasks it runs manually, checking which one 
+triggers the problem, or if you have too many tasks for that to be 
+convenient, split them into cron.daily1 and cron.daily2, scheduled at 
+different times, bisecting the problem by seeing which one the behavior 
+follows.
+
+Repeat as needed until you've discovered the culprit, then examine 
+exactly what it's doing to the filesystem.
+
+And please report your results.  Besides satisfying my own personal 
+curiosity, there's a fair chance someone else will have the same issue at 
+some point and either post their own question, or discover this thread 
+via google or whatever.
+
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

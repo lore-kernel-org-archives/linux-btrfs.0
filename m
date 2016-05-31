@@ -1,200 +1,82 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:16327 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1750856AbcEYEO0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 25 May 2016 00:14:26 -0400
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-To: linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.cz
-Subject: [PATCH 2/2] btrfs-progs: Use new random number API
-Date: Wed, 25 May 2016 12:14:05 +0800
-Message-Id: <1464149645-4308-2-git-send-email-quwenruo@cn.fujitsu.com>
-In-Reply-To: <1464149645-4308-1-git-send-email-quwenruo@cn.fujitsu.com>
-References: <1464149645-4308-1-git-send-email-quwenruo@cn.fujitsu.com>
+Received: from mx2.suse.de ([195.135.220.15]:57517 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1756224AbcEaUmA (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 31 May 2016 16:42:00 -0400
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+	by mx2.suse.de (Postfix) with ESMTP id 2995DAAEF
+	for <linux-btrfs@vger.kernel.org>; Tue, 31 May 2016 20:41:59 +0000 (UTC)
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Cc: David Sterba <DSterba@suse.com>
+From: Jeff Mahoney <jeffm@suse.com>
+Subject: [RFC] strace patches for new ioctls
+Message-ID: <4a3270c7-8023-6d2c-3ab0-ffc699feb94f@suse.com>
+Date: Tue, 31 May 2016 16:41:55 -0400
 MIME-Version: 1.0
+Content-Type: multipart/signed; micalg=pgp-sha1;
+ protocol="application/pgp-signature";
+ boundary="51siGPJ4B3x5P37I0nvxKSbHtDWt1eWoa"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Replace old and not so informal srand()/rand() calls to new random
-number API.
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--51siGPJ4B3x5P37I0nvxKSbHtDWt1eWoa
+Content-Type: multipart/mixed; boundary="M0M20axqrDtDFR9Fv6TA0G7A0JKJFhS5f"
+From: Jeff Mahoney <jeffm@suse.com>
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Cc: David Sterba <DSterba@suse.com>
+Message-ID: <4a3270c7-8023-6d2c-3ab0-ffc699feb94f@suse.com>
+Subject: [RFC] strace patches for new ioctls
 
-Including btrfs-corrupt-block(main user), btrfs-image and btrfs-crc.
+--M0M20axqrDtDFR9Fv6TA0G7A0JKJFhS5f
+Content-Type: text/plain; charset=utf-8
+Content-Transfer-Encoding: quoted-printable
 
-Some tests like dir-test/random-test/quick-test is not modified.
-As random-test itself can't even pass build.
+Hi all -
 
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
----
- btrfs-corrupt-block.c | 23 +++++++++++------------
- btrfs-crc.c           |  9 +++++----
- btrfs-image.c         |  4 ++--
- 3 files changed, 18 insertions(+), 18 deletions(-)
+Strace 4.12 was tagged for release today and it supports decoding of
+btrfs ioctls.  I'd like to propose a requirement that future ioctl
+additions come with a patch to strace as well so we don't get out of sync=
+=2E
 
-diff --git a/btrfs-corrupt-block.c b/btrfs-corrupt-block.c
-index d331f96..2cc9704 100644
---- a/btrfs-corrupt-block.c
-+++ b/btrfs-corrupt-block.c
-@@ -131,8 +131,8 @@ static void corrupt_keys(struct btrfs_trans_handle *trans,
- 	if (nr == 0)
- 		return;
- 
--	slot = rand() % nr;
--	bad_slot = rand() % nr;
-+	slot = rand_range(nr);
-+	bad_slot = rand_range(nr);
- 
- 	if (bad_slot == slot)
- 		return;
-@@ -181,7 +181,7 @@ static int corrupt_extent(struct btrfs_trans_handle *trans,
- 	struct btrfs_path *path;
- 	int ret;
- 	int slot;
--	int should_del = rand() % 3;
-+	int should_del = rand_range(3);
- 
- 	path = btrfs_alloc_path();
- 	if (!path)
-@@ -257,7 +257,7 @@ static void btrfs_corrupt_extent_leaf(struct btrfs_trans_handle *trans,
- 				      struct extent_buffer *eb)
- {
- 	u32 nr = btrfs_header_nritems(eb);
--	u32 victim = rand() % nr;
-+	u32 victim = rand_range(nr);
- 	u64 objectid;
- 	struct btrfs_key key;
- 
-@@ -281,7 +281,7 @@ static void btrfs_corrupt_extent_tree(struct btrfs_trans_handle *trans,
- 	}
- 
- 	if (btrfs_header_level(eb) == 1 && eb != root->node) {
--		if (rand() % 5)
-+		if (rand_range(5))
- 			return;
- 	}
- 
-@@ -390,7 +390,7 @@ static u64 generate_u64(u64 orig)
- {
- 	u64 ret;
- 	do {
--		ret = rand();
-+		ret = rand_u64();
- 	} while (ret == orig);
- 	return ret;
- }
-@@ -399,7 +399,7 @@ static u32 generate_u32(u32 orig)
- {
- 	u32 ret;
- 	do {
--		ret = rand();
-+		ret = rand_u32();
- 	} while (ret == orig);
- 	return ret;
- }
-@@ -408,7 +408,7 @@ static u8 generate_u8(u8 orig)
- {
- 	u8 ret;
- 	do {
--		ret = rand();
-+		ret = rand_u8();
- 	} while (ret == orig);
- 	return ret;
- }
-@@ -944,7 +944,7 @@ static int corrupt_chunk_tree(struct btrfs_trans_handle *trans,
- 	while (!btrfs_previous_item(root, path, 0, BTRFS_DEV_ITEM_KEY)) {
- 		slot = path->slots[0];
- 		leaf = path->nodes[0];
--		del = rand() % 3;
-+		del = rand_range(3);
- 		/* Never delete the first item to keep the leaf structure */
- 		if (path->slots[0] == 0)
- 			del = 0;
-@@ -971,7 +971,7 @@ static int corrupt_chunk_tree(struct btrfs_trans_handle *trans,
- 	while (!btrfs_previous_item(root, path, 0, BTRFS_CHUNK_ITEM_KEY)) {
- 		slot = path->slots[0];
- 		leaf = path->nodes[0];
--		del = rand() % 3;
-+		del = rand_range(3);
- 		btrfs_item_key_to_cpu(leaf, &found_key, slot);
- 		ret = corrupt_item_nocow(trans, root, path, del);
- 		if (ret)
-@@ -1040,7 +1040,6 @@ int main(int argc, char **argv)
- 	char field[FIELD_BUF_LEN];
- 
- 	field[0] = '\0';
--	srand(128);
- 	memset(&key, 0, sizeof(key));
- 
- 	while(1) {
-@@ -1179,7 +1178,7 @@ int main(int argc, char **argv)
- 
- 		if (logical == (u64)-1)
- 			print_usage(1);
--		del = rand() % 3;
-+		del = rand_range(3);
- 		path = btrfs_alloc_path();
- 		if (!path) {
- 			fprintf(stderr, "path allocation failed\n");
-diff --git a/btrfs-crc.c b/btrfs-crc.c
-index 723e0b7..b50b951 100644
---- a/btrfs-crc.c
-+++ b/btrfs-crc.c
-@@ -40,7 +40,7 @@ int main(int argc, char **argv)
- 	char *str;
- 	char *buf;
- 	int length = 10;
--	int seed = getpid() ^ getppid();
-+	u64 seed = 0;
- 	int loop = 0;
- 	int i;
- 
-@@ -54,7 +54,7 @@ int main(int argc, char **argv)
- 			loop = 1;
- 			break;
- 		case 's':
--			seed = atol(optarg);
-+			seed = atoll(optarg);
- 			break;
- 		case 'h':
- 			usage();
-@@ -77,11 +77,12 @@ int main(int argc, char **argv)
- 	buf = malloc(length);
- 	if (!buf)
- 		return -ENOMEM;
--	srand(seed);
-+	if (seed)
-+		rand_seed(seed);
- 
- 	while (1) {
- 		for (i = 0; i < length; i++)
--			buf[i] = rand() % 94 + 33;
-+			buf[i] = rand_range(94) + 33;
- 		if (crc32c(~1, buf, length) == checksum)
- 			printf("%12lu - %.*s\n", checksum, length, buf);
- 	}
-diff --git a/btrfs-image.c b/btrfs-image.c
-index 8a1b799..9488913 100644
---- a/btrfs-image.c
-+++ b/btrfs-image.c
-@@ -188,7 +188,7 @@ static char *generate_garbage(u32 name_len)
- 		return NULL;
- 
- 	for (i = 0; i < name_len; i++) {
--		char c = rand() % 94 + 33;
-+		char c = rand_range(94) + 33;
- 
- 		if (c == '/')
- 			c++;
-@@ -392,7 +392,7 @@ static char *find_collision(struct metadump_struct *md, char *name,
- 			"generating normal garbage, it won't match indexes\n",
- 			val->len, val->val);
- 		for (i = 0; i < name_len; i++) {
--			char c = rand() % 94 + 33;
-+			char c = rand_range(94) + 33;
- 
- 			if (c == '/')
- 				c++;
--- 
-2.8.2
+I wrote the decoding to help with some issues some of our developers
+were seeing while writing various tools.  Rather than describing their
+workload or showing us the code, an strace in verbose mode shows us
+pretty much exactly what they're doing.
+
+Opinions?
+
+-Jeff
+
+--=20
+Jeff Mahoney
+SUSE Labs
 
 
+--M0M20axqrDtDFR9Fv6TA0G7A0JKJFhS5f--
 
+--51siGPJ4B3x5P37I0nvxKSbHtDWt1eWoa
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG/MacGPG2 v2.0.19 (Darwin)
+Comment: GPGTools - http://gpgtools.org
+
+iQIcBAEBAgAGBQJXTfcUAAoJEB57S2MheeWyHGsQALfzCfKldzcrNm5irYD7OPh3
+k/JyCPR/kiVfTI9xDAgmOpZ7YKVlxP1JJNfhm5Juk5DDLsjNYGBpm671Qm1Li9Ft
+Dn1N605RMGhWmCQT4qST8rYlK1L4rSChOIFH7+Omtq3BI9wZOILmoW6dypGLIzEm
+tDgNR8Pcmo1z6KPAA3BBZnnSTGgyBLA0cr0Jbk6IKUEzRSVblh4KtOwg1UivjVJD
+C/49ud04ibw4MLKClXOpH082PKlOGsljV3sOyagjyjvuyWJviusqZ5KSOgq0DDjs
+hpetkN4yeLI3lZqLdCoHzrbJMILrTM5Mts/GgycR2+fgURf/EaoxSqmv5iaR3l8q
+sqSuBQWFQouer0Wi0BDnGuQ3brWE1HGB3WXXdQT5QhEAC6Up79XXJdpmHvY1td1r
+JyYPYUVbYMETikvCfPw+PigrtDVxu6Fa04naDGCONYxwzaWscyJIFQfNxmqZfxvU
+FR83Z1WEc24/P2d1PuDVqGWi+YKbRc+sAxUALFxxWnOiumxJcO0w2OH48L0kifW7
+R9ctIaQ1t6QM1cBKrh/unb6MK0wxoYkCKyR8KCiKfkv4BrzqttBT7YqI/n/XAVI+
+Gnyhe4aX8TiinCIXdVy3ZFxzOQSQSxgzEofT3LcEseOD6LDZBqFUrDMXZOa8aOLy
+xZTTDiR3DCguNoLen4pz
+=lzey
+-----END PGP SIGNATURE-----
+
+--51siGPJ4B3x5P37I0nvxKSbHtDWt1eWoa--

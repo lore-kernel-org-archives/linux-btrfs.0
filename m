@@ -1,78 +1,98 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-it0-f42.google.com ([209.85.214.42]:38278 "EHLO
-	mail-it0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753150AbcEaMVx (ORCPT
+Received: from mail-it0-f51.google.com ([209.85.214.51]:37051 "EHLO
+	mail-it0-f51.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752725AbcEaMtJ (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 31 May 2016 08:21:53 -0400
-Received: by mail-it0-f42.google.com with SMTP id i127so25736702ita.1
-        for <linux-btrfs@vger.kernel.org>; Tue, 31 May 2016 05:21:53 -0700 (PDT)
-Subject: Re: Hot data tracking / hybrid storage
-To: Ferry Toth <ftoth@exalondelft.nl>, linux-btrfs@vger.kernel.org
-References: <nh9p2p$cns$1@ger.gmane.org>
- <pan$ae8c7$965ff694$cf73d90e$9e134691@cox.net>
- <20160516010524.7e208f96@jupiter.sol.kaishome.de>
- <nhedk2$dpq$1@ger.gmane.org> <0d68f988-e117-4b61-cb9b-d18a26e2b909@gmail.com>
- <20160517203335.5ff99a05@jupiter.sol.kaishome.de>
- <nhir96$8n4$1@ger.gmane.org>
- <20160519200926.0a2b5dcf@jupiter.sol.kaishome.de>
- <e8ff591f-751b-ac56-45bb-98cdc7b206e7@gmail.com>
- <CAPmG0jYi+gCO3Ps4Xi1ahE4qoqMt6ZmLMrxT_URDHdaA_cZCLg@mail.gmail.com>
- <1c1358af-4549-618a-c408-b93832d33225@gmail.com> <nhnfu8$igq$1@ger.gmane.org>
- <9bde1aa8-fac5-34c4-dffc-0bf15d86c008@gmail.com> <574A8AFF.7020606@gmail.com>
- <CAJCQCtRnLekmARtLNySDofJah12CpKO0VpKygwf7NfQJzS8URg@mail.gmail.com>
- <574B2EE6.6080402@applied-asynchrony.com>
- <CAJCQCtQpCkTP0uPc9TTLn0S+pQpLsAgBodKZvsYKm9vTuFv=Kg@mail.gmail.com>
- <nifkcs$ovp$1@ger.gmane.org>
+	Tue, 31 May 2016 08:49:09 -0400
+Received: by mail-it0-f51.google.com with SMTP id z123so50149923itg.0
+        for <linux-btrfs@vger.kernel.org>; Tue, 31 May 2016 05:49:09 -0700 (PDT)
+Subject: Re: Reducing impact of periodic btrfs balance
+To: Graham Cobb <g.btrfs@cobb.uk.net>, linux-btrfs@vger.kernel.org
+References: <573C6E47.2080109@cobb.uk.net>
+ <d40d8fc7-3766-1ccc-3253-9f870a0f4f85@cn.fujitsu.com>
+ <574774DB.4020507@cobb.uk.net>
 From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <9340ef1a-6746-1c3c-88f9-56fa2a0b7f0e@gmail.com>
-Date: Tue, 31 May 2016 08:21:48 -0400
+Message-ID: <074cdb6e-5eee-ae85-c275-605a1d9bb177@gmail.com>
+Date: Tue, 31 May 2016 08:49:03 -0400
 MIME-Version: 1.0
-In-Reply-To: <nifkcs$ovp$1@ger.gmane.org>
+In-Reply-To: <574774DB.4020507@cobb.uk.net>
 Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2016-05-29 16:45, Ferry Toth wrote:
-> Op Sun, 29 May 2016 12:33:06 -0600, schreef Chris Murphy:
->
->> On Sun, May 29, 2016 at 12:03 PM, Holger Hoffstätte
->> <holger@applied-asynchrony.com> wrote:
->>> On 05/29/16 19:53, Chris Murphy wrote:
->>>> But I'm skeptical of bcache using a hidden area historically for the
->>>> bootloader, to put its device metadata. I didn't realize that was the
->>>> case. Imagine if LVM were to stuff metadata into the MBR gap, or
->>>> mdadm. Egads.
->>>
->>> On the matter of bcache in general this seems noteworthy:
->>>
->>> https://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/
-> commit/?id=4d1034eb7c2f5e32d48ddc4dfce0f1a723d28667
->>>
->>> bummer..
+On 2016-05-26 18:12, Graham Cobb wrote:
+> On 19/05/16 02:33, Qu Wenruo wrote:
 >>
->> Well it doesn't mean no one will take it, just that no one has taken it
->> yet. But the future of SSD caching may only be with LVM.
 >>
->> --
->> Chris Murphy
+>> Graham Cobb wrote on 2016/05/18 14:29 +0100:
+>>> A while ago I had a "no space" problem (despite fi df, fi show and fi
+>>> usage all agreeing I had over 1TB free).  But this email isn't about
+>>> that.
+>>>
+>>> As part of fixing that problem, I tried to do a "balance -dusage=20" on
+>>> the disk.  I was expecting it to have system impact, but it was a major
+>>> disaster.  The balance didn't just run for a long time, it locked out
+>>> all activity on the disk for hours.  A simple "touch" command to create
+>>> one file took over an hour.
+>>
+>> It seems that balance blocked a transaction for a long time, which makes
+>> your touch operation to wait for that transaction to end.
 >
-> I think all the above posts underline exacly my point:
+> I have been reading volumes.c.  But I don't have a feel for which
+> transactions are likely to be the things blocking for a really long time
+> (hours).
 >
-> Instead of using a ssd cache (be it bcache or dm-cache) it would be much
-> better to have the btrfs allocator be aware of ssd's in the pool and
-> prioritize allocations to the ssd to maximize performance.
+> If this can occur, I think the warnings to users about balance need to
+> be extended to include this issue.  Currently the user mode code warns
+> users that unfiltered balances may take a long time, but it doesn't warn
+> that the disk may be unusable during that time.
+Whether or not the disk is usable depends on a number of factors.  I 
+have no issues using my disks while they're being balanced (even hen 
+doing a full balance), but they also all support command queuing, and 
+are either fast disks, or on really good storage controllers.
 >
-> This will allow to easily add more ssd's or replace worn out ones,
-> without the mentioned headaches. After all adding/replacing drives to a
-> pool is one of btrfs's biggest advantages.
-It would still need to be pretty configurable, and even then would still 
-be a niche use case.  It would also need automatic migration to be 
-practical beyond a certain point, most people using regular computers 
-outside of corporate environments don't have that same 'access frequency 
-decreases over time' pattern that the manual migration scheme you 
-suggested would be good for.
+>>> 3) My btrfs-balance-slowly script would work better if there was a
+>>> time-based limit filter for balance, not just the current count-based
+>>> filter.  I would like to be able to say, for example, run balance for no
+>>> more than 10 minutes (completing the operation in progress, of course)
+>>> then return.
+>>
+>> As btrfs balance is done in block group unit, I'm afraid such thing
+>> would be a little tricky to implement.
+>
+> It would be really easy to add a jiffies-based limit into the checks in
+> should_balance_chunk.  Of course, this would only test the limit in
+> between block groups but that is what I was looking for -- a time-based
+> version of the current limit filter.
+>
+> On the other hand, the time limit could just be added into the user mode
+> code: after the timer expires it could issue a "balance pause".  Would
+> the effect be identical in terms of timing, resources required, etc?
+This is entirely userspace policy, and thus should be done in userspace. 
+  Pretty much everything that has a filter already can't be entirely 
+implemented in userspace, despite technically being policy, because it 
+requires specific knowledge of the filesystem internals.  Having a time 
+limited mode requires no such knowledge, and thus could be done in 
+userspace.  Putting it in userspace also would make it easier to debug, 
+and less likely to cause other fallout in the rest of the balance code.
+>
+> Would it be better to do a "balance pause" or a "balance cancel"?  The
+> goal would be to suspend balance processing and allow the system to do
+> something else for a while (say 20 minutes) and then go back to doing
+> more balance later.  What is the difference between resuming a paused
+> balance compared to starting a new balance? Bearing in mind that this is
+> a heavily used disk so we can expect lots of transactions to have
+> happened in the meantime (otherwise we wouldn't need this capability)?
+The difference between resuming a paused balance and starting a balance 
+after canceling one is pretty simple.  Resuming a paused balance will 
+not re-process chunks that were already processed, starting a new one 
+after canceling may or may not (depending on what other filters are 
+involved).  I think having the option to do either would be a good 
+thing, cancel makes a bit more sense if you're going long periods of 
+time between each run and are using other limiting filters (like usage 
+filtering), whereas pause makes more sense if doing a full balance or 
+only pausing for a short time between each run.
 
-I think overall the most useful way of doing it would be something like 
-the L2ARC on ZFS, which is essentially swap space for the page-cache, 
-put on an SSD.
+Depending on how the balance ioctl reacts to being interrupted with a 
+signal, this would in theory not be hard to implement either.
 

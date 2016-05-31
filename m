@@ -1,59 +1,143 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:54023 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750863AbcEaTvo (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 31 May 2016 15:51:44 -0400
-Date: Tue, 31 May 2016 12:51:42 -0700
-From: Mark Fasheh <mfasheh@suse.de>
-To: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
-Cc: linux-btrfs@vger.kernel.org, fstests@vger.kernel.org
-Subject: Re: [PATCH] fstests: btrfs: add test for qgroup handle de-refer
-Message-ID: <20160531195142.GA7633@wotan.suse.de>
-Reply-To: Mark Fasheh <mfasheh@suse.de>
-References: <1464660234-14562-1-git-send-email-lufq.fnst@cn.fujitsu.com>
+Received: from cn.fujitsu.com ([222.73.24.84]:62259 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1755908AbcEaHwY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 31 May 2016 03:52:24 -0400
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+To: dsterba@suse.com, linux-btrfs@vger.kernel.org
+Subject: [PATCH] btrfs-progs: convert: Fix a bug that makes convert asserts at scan time
+Date: Tue, 31 May 2016 15:51:13 +0800
+Message-Id: <20160531075113.24603-1-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1464660234-14562-1-git-send-email-lufq.fnst@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Thanks for this test.
+When a ext2 fs filled with a 57M file, it's possible that convert fails
+with assert in add_merge_cache_extent().
 
-On Tue, May 31, 2016 at 10:03:54AM +0800, Lu Fengqi wrote:
-> +echo "Start balance" >>$seqres.full
-> +_btrfs_stress_balance -d $SCRATCH_MNT >/dev/null 2>&1 &
-> +balance_pid=$!
-> +
-> +# 30s is enough to trigger bug
-> +sleep $((30*$TIME_FACTOR))
-> +kill $fsstress_pid $balance_pid
-> +wait
-> +
-> +# kill _btrfs_stress_balance can't end balance, so call btrfs balance cancel
-> +# to cancel running or paused balance.
-> +$BTRFS_UTIL_PROG balance cancel $SCRATCH_MNT &> /dev/null
-> +
-> +rm -rf $SCRATCH_MNT/*
-> +_run_btrfs_util_prog filesystem sync $SCRATCH_MNT
-> +units=`_btrfs_qgroup_units`
-> +$BTRFS_UTIL_PROG qgroup show $units $SCRATCH_MNT | $SED_PROG -n '/[0-9]/p' | \
-> +	$AWK_PROG '{print $2" "$3}'
+The problem is that the ext2 used space just takes some of the second
+superblock.
+And due to a bug in reserving superblock space, it corrupted used space
+tree and cause assert.
 
-Wouldn't it be better here to just have btrfsck check for inconsistencies?
-If you look at tests/btrfs/122 this is what I mean:
+Fix in by doing better used space merging for case where superblock
+range is inside the ext2 used space.
 
-+# generate a qgroup report and look for inconsistent groups
-+$BTRFS_UTIL_PROG check --qgroup-report $SCRATCH_DEV 2>&1 | \
-+                       grep -q -E "Counts for qgroup.*are different"
-+if [ $? -ne 0 ]; then
-+       status=0
-+fi
+Reported-by: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+---
+ btrfs-convert.c | 81 ++++++++++++++++++++++++++++++++++++++++++++++++++++-----
+ 1 file changed, 74 insertions(+), 7 deletions(-)
 
-That way we're not keying on some specific value showing up but instead that
-qgroup validation passes (which is really what we want to test).
+diff --git a/btrfs-convert.c b/btrfs-convert.c
+index c28dae6..30dd6e8 100644
+--- a/btrfs-convert.c
++++ b/btrfs-convert.c
+@@ -1928,6 +1928,57 @@ static int convert_open_fs(const char *devname,
+ }
+ 
+ /*
++ * Helper for expend and merge extent_cache for wipe_one_reserved_range()
++ * to handle wipe range is inside an existing cache case.
++ */
++static int _expand_extent_cache(struct cache_tree *tree,
++				struct cache_extent *entry,
++				u64 min_stripe_size, int backward)
++{
++	struct cache_extent *ce;
++	int diff;
++
++	if (entry->size >= min_stripe_size)
++		return 0;
++	diff = min_stripe_size - entry->size;
++
++	if (backward) {
++		ce = prev_cache_extent(entry);
++		if (!ce)
++			goto expand_back;
++		if (ce->start + ce->size >= entry->start - diff) {
++			/* Directly merge with previous extent */
++			ce->size = entry->start + entry->size - ce->start;
++			remove_cache_extent(tree, entry);
++			free(entry);
++			return 0;
++		}
++expand_back:
++		/* No over lap, normal extent */
++		if (entry->start < diff) {
++			error("can't find space for data chunk layout");
++			return -ENOSPC;
++		}
++		entry->start -= diff;
++		entry->size += diff;
++		return 0;
++	}
++	ce = next_cache_extent(entry);
++	if (!ce)
++		goto expand_after;
++	if (entry->start + entry->size + diff >= ce->start) {
++		/* Directly merge with next extent */
++		entry->size = ce->start + ce->size - entry->start;
++		remove_cache_extent(tree, ce);
++		free(ce);
++		return 0;
++	}
++expand_after:
++	entry->size += diff;
++	return 0;
++}
++
++/*
+  * Remove one reserve range from given cache tree
+  * if min_stripe_size is non-zero, it will ensure for split case,
+  * all its split cache extent is no smaller than @min_strip_size / 2.
+@@ -1986,21 +2037,37 @@ static int wipe_one_reserved_range(struct cache_tree *tree,
+ 		 * |-------cache-----|
+ 		 *	|-wipe-|
+ 		 */
++		u64 old_start = cache->start;
+ 		u64 old_len = cache->size;
+ 		u64 insert_start = start + len;
+ 		u64 insert_len;
+ 
+ 		cache->size = start - cache->start;
+-		if (ensure_size)
+-			cache->size = max(cache->size, min_stripe_size);
+-		cache->start = start - cache->size;
++		/* Expand the leading half part if needed */
++		if (ensure_size && cache->size < min_stripe_size) {
++			ret = _expand_extent_cache(tree, cache,
++					min_stripe_size, 1);
++			if (ret < 0)
++				return ret;
++		}
+ 
+ 		/* And insert the new one */
+-		insert_len = old_len - start - len;
+-		if (ensure_size)
+-			insert_len = max(insert_len, min_stripe_size);
+-
++		insert_len = old_start + old_len - start - len;
+ 		ret = add_merge_cache_extent(tree, insert_start, insert_len);
++		if (ret < 0)
++			return ret;
++
++		/* Expand the last half part if needed */
++		if (ensure_size && insert_len < min_stripe_size) {
++			cache = lookup_cache_extent(tree, insert_start,
++						    insert_len);
++			if (!cache || cache->start != insert_start ||
++			    cache->size != insert_len)
++				return -ENOENT;
++			ret = _expand_extent_cache(tree, cache,
++					min_stripe_size, 0);
++		}
++
+ 		return ret;
+ 	}
+ 	/*
+-- 
+2.8.3
 
-Thanks,
-	--Mark
 
---
-Mark Fasheh
+

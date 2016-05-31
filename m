@@ -1,29 +1,51 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f196.google.com ([209.85.223.196]:33060 "EHLO
-	mail-io0-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755317AbcEaHjM (ORCPT
+Received: from mail-it0-f68.google.com ([209.85.214.68]:33072 "EHLO
+	mail-it0-f68.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756854AbcEaJSP (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 31 May 2016 03:39:12 -0400
+	Tue, 31 May 2016 05:18:15 -0400
 MIME-Version: 1.0
 Reply-To: fdmanana@gmail.com
-In-Reply-To: <1464660234-14562-1-git-send-email-lufq.fnst@cn.fujitsu.com>
+In-Reply-To: <14be2210-cf79-56c1-d549-2fd5ccae86e2@cn.fujitsu.com>
 References: <1464660234-14562-1-git-send-email-lufq.fnst@cn.fujitsu.com>
-Date: Tue, 31 May 2016 08:39:11 +0100
-Message-ID: <CAL3q7H7N029j8Vqqu+11j2PtVgS7zc+PCz8UdF3sHo1VSc9kRg@mail.gmail.com>
+	<CAL3q7H7N029j8Vqqu+11j2PtVgS7zc+PCz8UdF3sHo1VSc9kRg@mail.gmail.com>
+	<14be2210-cf79-56c1-d549-2fd5ccae86e2@cn.fujitsu.com>
+Date: Tue, 31 May 2016 10:18:13 +0100
+Message-ID: <CAL3q7H7NWCPxje8YyXTQmoteuUtCn7E7eiZt0O7JR3gbDSf0yw@mail.gmail.com>
 Subject: Re: [PATCH] fstests: btrfs: add test for qgroup handle de-refer
 From: Filipe Manana <fdmanana@gmail.com>
-To: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        fstests@vger.kernel.org
+To: luke <lufq.fnst@cn.fujitsu.com>
+Cc: fstests@vger.kernel.org,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, May 31, 2016 at 3:03 AM, Lu Fengqi <lufq.fnst@cn.fujitsu.com> wrote:
+On Tue, May 31, 2016 at 10:08 AM, luke <lufq.fnst@cn.fujitsu.com> wrote:
+>
+>
+>
+>
+> At 05/31/2016 03:39 PM, Filipe Manana wrote:
+>
+> On Tue, May 31, 2016 at 3:03 AM, Lu Fengqi <lufq.fnst@cn.fujitsu.com> wrote:
+>
 > Test if qgroup can handle de-reference reallocation.
+>
+> What is "de-reference reallocation"?
+>
+>
+>  Sorry, I'm not good at English. I mean "extent de-reference during
+> reallocation".
 
-What is "de-reference reallocation"?
+Well that's still not clear. It's not so much an English problem but
+rather what do you mean with that concept.
+Is is reading an extent (as a result of read or pread syscall for
+e.g.), freeing an extent, or what?
 
+thanks
+
+>
 > Although current
 > qgroup can handle it, we still need to prevent any regression which may
 > break current qgroup.
@@ -31,7 +53,8 @@ What is "de-reference reallocation"?
 > Signed-off-by: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
 > ---
 >  common/rc           |  4 +--
->  tests/btrfs/028     | 91 +++++++++++++++++++++++++++++++++++++++++++++++++++++
+>  tests/btrfs/028     | 91
+> +++++++++++++++++++++++++++++++++++++++++++++++++++++
 >  tests/btrfs/028.out |  2 ++
 >  tests/btrfs/group   |  1 +
 >  4 files changed, 96 insertions(+), 2 deletions(-)
@@ -62,9 +85,12 @@ What is "de-reference reallocation"?
 > @@ -0,0 +1,91 @@
 > +#! /bin/bash
 > +# FS QA Test 028
-
-Missing a short description here of what the test does (what it tests).
-
+>
+> Missing a short description here of what the test does (what it tests).
+>
+> OK, I'll add this description.
+>
+>
 > +#
 > +#-----------------------------------------------------------------------
 > +# Copyright (c) 2016 Fujitsu. All Rights Reserved.
@@ -123,12 +149,15 @@ Missing a short description here of what the test does (what it tests).
 > +
 > +# Increase the probability of generating de-refer extent, and decrease
 > +# other.
-
-Again, what is a "de-refer extent"? I've never seen this expression
-before (and I don't others will understand it).
-
-thanks
-
+>
+> Again, what is a "de-refer extent"? I've never seen this expression
+> before (and I don't others will understand it).
+>
+> thanks
+>
+> Ditto.
+>
+>
 > +args=`_scale_fsstress_args -z \
 > +       -f write=10 -f unlink=10 \
 > +       -f creat=10 -f fsync=10 \
@@ -147,14 +176,16 @@ thanks
 > +kill $fsstress_pid $balance_pid
 > +wait
 > +
-> +# kill _btrfs_stress_balance can't end balance, so call btrfs balance cancel
+> +# kill _btrfs_stress_balance can't end balance, so call btrfs balance
+> cancel
 > +# to cancel running or paused balance.
 > +$BTRFS_UTIL_PROG balance cancel $SCRATCH_MNT &> /dev/null
 > +
 > +rm -rf $SCRATCH_MNT/*
 > +_run_btrfs_util_prog filesystem sync $SCRATCH_MNT
 > +units=`_btrfs_qgroup_units`
-> +$BTRFS_UTIL_PROG qgroup show $units $SCRATCH_MNT | $SED_PROG -n '/[0-9]/p' | \
+> +$BTRFS_UTIL_PROG qgroup show $units $SCRATCH_MNT | $SED_PROG -n '/[0-9]/p'
+> | \
 > +       $AWK_PROG '{print $2" "$3}'
 > +
 > +# success, all done
@@ -189,6 +220,10 @@ thanks
 > To unsubscribe from this list: send the line "unsubscribe fstests" in
 > the body of a message to majordomo@vger.kernel.org
 > More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>
+>
+> Thanks,
+> Lu
 
 
 

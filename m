@@ -1,29 +1,24 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:27046 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:8617 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1161860AbcEaAjD (ORCPT
+	with ESMTP id S1162439AbcEaBOE (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 30 May 2016 20:39:03 -0400
+	Mon, 30 May 2016 21:14:04 -0400
 Subject: Re: [PATCH] btrfs-progs: tests: run rollback after conversion
 To: <dsterba@suse.cz>, David Sterba <dsterba@suse.com>,
         <linux-btrfs@vger.kernel.org>
 References: <1464623554-5119-1-git-send-email-dsterba@suse.com>
  <20160530155656.GD29147@twin.jikos.cz>
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <d9f97248-c57c-81f6-2eae-00fe989ab4b8@cn.fujitsu.com>
-Date: Tue, 31 May 2016 08:38:57 +0800
+Message-ID: <8eee3f8f-f9ab-e978-c3e9-6007bda17560@cn.fujitsu.com>
+Date: Tue, 31 May 2016 09:13:57 +0800
 MIME-Version: 1.0
 In-Reply-To: <20160530155656.GD29147@twin.jikos.cz>
 Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Thanks for the report.
 
-We will check it and fix it soon.
-
-Thanks,
-Qu
 
 David Sterba wrote on 2016/05/30 17:56 +0200:
 > Hi Qu,
@@ -35,5 +30,21 @@ David Sterba wrote on 2016/05/30 17:56 +0200:
 > the convert and low-mem fsck patchsets.
 >
 >
+Pretty strange.
+
+As I manually tested a ext4 filled with my /etc, used 32K default 
+incompat flags, both convert and rollback succeeded without problem.
+
+The same is for convert-tests.sh.
+All passed here, just as what we did when developing the patchset.
+
+The commit head I tested is 2a7c68a4e46f4713e746d6e977e9c4cf27913ce3.
+
+Did you have more info on the situation where the rollback fails?
+Like the commit head, test method (I assume it's rollback tests from 
+btrfs-progs)?
+
+Thanks,
+Qu
 
 

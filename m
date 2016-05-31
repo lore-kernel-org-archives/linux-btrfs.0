@@ -1,43 +1,92 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:39011 "EHLO mx1.redhat.com"
+Received: from mx2.suse.de ([195.135.220.15]:36936 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750773AbcFLFIi (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 12 Jun 2016 01:08:38 -0400
-Date: Sun, 12 Jun 2016 13:08:35 +0800
-From: Eryu Guan <eguan@redhat.com>
-To: Anand Jain <anand.jain@oracle.com>
-Cc: fstests@vger.kernel.org, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 6/6] fstests: btrfs: test RAID5 device reappear and
- balance
-Message-ID: <20160612050835.GD5140@eguan.usersys.redhat.com>
-References: <1463495530-425-1-git-send-email-anand.jain@oracle.com>
- <1463495530-425-6-git-send-email-anand.jain@oracle.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1463495530-425-6-git-send-email-anand.jain@oracle.com>
+	id S1750884AbcEaX6d (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 31 May 2016 19:58:33 -0400
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+	by mx2.suse.de (Postfix) with ESMTP id 097AAAB43
+	for <linux-btrfs@vger.kernel.org>; Tue, 31 May 2016 23:58:32 +0000 (UTC)
+From: David Sterba <dsterba@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Jeff Mahoney <jeffm@suse.com>, David Sterba <dsterba@suse.com>
+Subject: [PATCH] btrfs: advertise which crc32c implementation is being used at module load
+Date: Wed,  1 Jun 2016 01:57:49 +0200
+Message-Id: <1464739069-32385-1-git-send-email-dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, May 17, 2016 at 10:32:10PM +0800, Anand Jain wrote:
-> The test does the following:
-> Initialize a RAID5 with some data
-> 
-> Re-mount RAID5 degraded with _dev3_ missing and write data.
-> Save md5sum checkpoint1
-> 
-> Re-mount healthy RAID5
-> 
-> Let balance fix degraded blocks.
-> Save md5sum checkpoint2
-> 
-> Re-mount RAID1 degraded now with _dev1_ missing.
-> Save md5sum checkpoint3
-> 
-> Verify if all three md5sum matches
-> 
-> Signed-off-by: Anand Jain <anand.jain@oracle.com>
+From: Jeff Mahoney <jeffm@suse.com>
 
-All comments for 5/6 apply here for 6/6 :)
+Since several architectures support hardware-accelerated crc32c
+calculation, it would be nice to confirm that btrfs is actually using it.
 
-Thanks,
-Eryu
+We can see an elevated use count for the module, but it doesn't actually
+show who the users are.  This patch simply prints the name of the driver
+after successfully initializing the shash.
+
+Signed-off-by: Jeff Mahoney <jeffm@suse.com>
+[ added a helper and used in module load-time message ]
+Signed-off-by: David Sterba <dsterba@suse.com>
+---
+
+Slightly modified version of Jeff's patch.
+
+ fs/btrfs/hash.c  | 5 +++++
+ fs/btrfs/hash.h  | 1 +
+ fs/btrfs/super.c | 5 +++--
+ 3 files changed, 9 insertions(+), 2 deletions(-)
+
+diff --git a/fs/btrfs/hash.c b/fs/btrfs/hash.c
+index aae520b2aee5..a97fdc156a03 100644
+--- a/fs/btrfs/hash.c
++++ b/fs/btrfs/hash.c
+@@ -24,6 +24,11 @@ int __init btrfs_hash_init(void)
+ 	return PTR_ERR_OR_ZERO(tfm);
+ }
+ 
++const char* btrfs_crc32c_impl(void)
++{
++	return crypto_tfm_alg_driver_name(crypto_shash_tfm(tfm));
++}
++
+ void btrfs_hash_exit(void)
+ {
+ 	crypto_free_shash(tfm);
+diff --git a/fs/btrfs/hash.h b/fs/btrfs/hash.h
+index 118a2316e5d3..c3a2ec554361 100644
+--- a/fs/btrfs/hash.h
++++ b/fs/btrfs/hash.h
+@@ -22,6 +22,7 @@
+ int __init btrfs_hash_init(void);
+ 
+ void btrfs_hash_exit(void);
++const char* btrfs_crc32c_impl(void);
+ 
+ u32 btrfs_crc32c(u32 crc, const void *address, unsigned int length);
+ 
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index 4e59a91a11e0..4397a303fc6c 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -2303,7 +2303,7 @@ static void btrfs_interface_exit(void)
+ 
+ static void btrfs_print_mod_info(void)
+ {
+-	printk(KERN_INFO "Btrfs loaded"
++	printk(KERN_INFO "Btrfs loaded, crc32c=%s"
+ #ifdef CONFIG_BTRFS_DEBUG
+ 			", debug=on"
+ #endif
+@@ -2313,7 +2313,8 @@ static void btrfs_print_mod_info(void)
+ #ifdef CONFIG_BTRFS_FS_CHECK_INTEGRITY
+ 			", integrity-checker=on"
+ #endif
+-			"\n");
++			"\n",
++			btrfs_crc32c_impl());
+ }
+ 
+ static int btrfs_run_sanity_tests(void)
+-- 
+2.7.1
+

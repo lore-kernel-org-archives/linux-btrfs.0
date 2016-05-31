@@ -1,26 +1,35 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from bombadil.infradead.org ([198.137.202.9]:34937 "EHLO
-	bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753014AbcEaMwd (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:41093 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750730AbcEaQmo (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 31 May 2016 08:52:33 -0400
-Date: Tue, 31 May 2016 05:52:31 -0700
-From: Christoph Hellwig <hch@infradead.org>
-To: "Darrick J. Wong" <darrick.wong@oracle.com>
-Cc: david@fromorbit.com, hch@infradead.org, fstests@vger.kernel.org,
-        linux-btrfs@vger.kernel.org, xfs@oss.sgi.com
-Subject: Re: [PATCH v2 2/7] tests: don't put loop control files on the
- scratch mount
-Message-ID: <20160531125231.GD17018@infradead.org>
+	Tue, 31 May 2016 12:42:44 -0400
+Date: Tue, 31 May 2016 09:41:38 -0700
+From: "Darrick J. Wong" <darrick.wong@oracle.com>
+To: Christoph Hellwig <hch@infradead.org>
+Cc: linux-btrfs@vger.kernel.org, Xiao Yang <yangx.jy@cn.fujitsu.com>,
+        fstests@vger.kernel.org, xfs@oss.sgi.com
+Subject: Re: [PATCH 8/7] xfs/122: don't break on old xfsprogs
+Message-ID: <20160531164138.GB5053@birch.djwong.org>
 References: <146424222237.6278.4174636124436241002.stgit@birch.djwong.org>
- <146424223512.6278.15231849939938178494.stgit@birch.djwong.org>
- <20160527032804.GA9418@birch.djwong.org>
+ <20160527180231.GB5050@birch.djwong.org>
+ <20160531125109.GA17018@infradead.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20160527032804.GA9418@birch.djwong.org>
+In-Reply-To: <20160531125109.GA17018@infradead.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Looks fine,
+On Tue, May 31, 2016 at 05:51:09AM -0700, Christoph Hellwig wrote:
+> Looks fine, but can't we also remove the workaround at the end of the
+> the test as well?
 
-Reviewed-by: Christoph Hellwig <hch@lst.de>
+Oh, heh, yes, those can go.  The whitespace is wrong on them anyway.
+
+--D
+
+> 
+> _______________________________________________
+> xfs mailing list
+> xfs@oss.sgi.com
+> http://oss.sgi.com/mailman/listinfo/xfs

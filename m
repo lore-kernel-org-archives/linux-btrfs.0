@@ -1,78 +1,113 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f176.google.com ([209.85.223.176]:35357 "EHLO
-	mail-io0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755323AbcEaHmk (ORCPT
+Received: from mail-io0-f172.google.com ([209.85.223.172]:34752 "EHLO
+	mail-io0-f172.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751227AbcEaMPn (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 31 May 2016 03:42:40 -0400
-Received: by mail-io0-f176.google.com with SMTP id p64so84483837ioi.2
-        for <linux-btrfs@vger.kernel.org>; Tue, 31 May 2016 00:42:39 -0700 (PDT)
+	Tue, 31 May 2016 08:15:43 -0400
+Received: by mail-io0-f172.google.com with SMTP id p194so37651624iod.1
+        for <linux-btrfs@vger.kernel.org>; Tue, 31 May 2016 05:15:43 -0700 (PDT)
+Subject: Re: RFE: 'btrfs' tools machine readable output
+To: Nicholas D Steeves <nsteeves@gmail.com>
+References: <20160516121456.GA16970@redhat.com>
+ <1c0d1dbc-325b-829a-762c-67288bb957a3@gmail.com>
+ <CAD=QJKjx3QstqTB8kFLO7uYFuCNf7S++TTBkMkmnAPfp9iw1Uw@mail.gmail.com>
+Cc: "Richard W.M. Jones" <rjones@redhat.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>, ptoscano@redhat.com
+From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Message-ID: <b2cfc1a7-12d9-64e7-4d65-a8cf40f9cd05@gmail.com>
+Date: Tue, 31 May 2016 08:15:38 -0400
 MIME-Version: 1.0
-Reply-To: fdmanana@gmail.com
-In-Reply-To: <CAMbyGOMdgMKK=ttSR0NujhdbnitMwU+4+ebH6z5YW4U=zxnxtQ@mail.gmail.com>
-References: <CAMbyGOMdgMKK=ttSR0NujhdbnitMwU+4+ebH6z5YW4U=zxnxtQ@mail.gmail.com>
-Date: Tue, 31 May 2016 08:42:39 +0100
-Message-ID: <CAL3q7H6PYmevJ03QXa_hWcj-Yjfhj3hyqdZRXPOL+numT-jGSA@mail.gmail.com>
-Subject: Re: Runaway SLAB usage by 'bio' during 'device replace'
-From: Filipe Manana <fdmanana@gmail.com>
-To: Chris Johnson <hittingsmoke@gmail.com>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+In-Reply-To: <CAD=QJKjx3QstqTB8kFLO7uYFuCNf7S++TTBkMkmnAPfp9iw1Uw@mail.gmail.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, May 30, 2016 at 7:48 PM, Chris Johnson <hittingsmoke@gmail.com> wrote:
-> I have a RAID6 array that had a failed HDD. The drive failed
-> completely and has been removed from the system. I'm running a 'device
-> replace' operation with a new disk. The array is ~20TB so this will
-> take a few days.
+On 2016-05-27 15:47, Nicholas D Steeves wrote:
+> On 16 May 2016 at 08:39, Austin S. Hemmelgarn <ahferroin7@gmail.com> wrote:
+>> On 2016-05-16 08:14, Richard W.M. Jones wrote:
+>>>
+>>> It would be really helpful if the btrfs tools had a machine-readable
+>>> output.
+>>> With machine-readable output, there'd be a flag which would
+>>> change the output.  eg:
+>>> $ btrfs --json filesystem show
+>>> {
+>>>   "devices": {
+>>>      "Label": "ROOT",
+>>>      "uuid": "af471cfc-421a-4d51-8811-ce969f76828a",
+>>>      /// etc
+>>>   }
+>>> }
+>> I would love to see something like this myself, as it would make integration
+>> with monitoring tools so much easier.  I'd vote for YAML as the output format
+>> though, as it's easily human readable as well as machine parseable while
+>> still being space efficient.
+>> ---
+>> - filesystems
+>>   - label: 'ROOT'
+>>     uuid: af471cfc-421a-4d51-8811-ce969f76828a
+>>     devices: 1
+>>       - devid: 1
+>>         size: 767.97 MB
+>>         used 92.00 MB
+>>         path: /dev/sda2
+>>     used: 5.29 MB
+>> ...
 >
-> Yesterday the system crashed hard with OOM errors about 24 hours into
-> the replace. Rebooting after the crash and remounting the array
-> automatically resumed the replace where it left off.
+> Rather than adding language-specific output/extensions to btrfs-progs,
+> what does everyone think of an interface which allows arbitrary
+> ordering similar to the date command, with arbitrary delimiter
+> support?
 >
-> Today I kept a close eye on it and have watched the memory usage creep
-> up slowly.
+> eg: date +%a\ %d\ \%B\ %H:%m
 >
-> htop says this is user process memory (green bar) but shows no user
-> processes using this much memory
+> with something like: %D (device), %L (label), %V (volume), %v
+> (subvolume), %U (volume UUID), %u (subvol UUID), et al.
 >
-> free says this is almost entirely cached/buffered memory that is
-> taking up the space.
+> 'avoids formatting the output to any particular convention, and the
+> order of what is queried can be in any order...but I think the [unit
+> to operate on] [named unit] bit would necessarily need to come first.
+> We already have that in btrfs [sub/fi/dev] [name] :-)
 >
-> slabtop reveals that there is a highly unusual amount of SLAB going to
-> 'bio' which has to do with block allocation apparently. slabtop output
-> is attached.
+> Or should it be a separate command...  Something like "btrfs-machine
+> [unit to operate on] [named unit] [action eg: print] [cryptic line
+> with user's choice of delimiter and formatting]".  And then there
+> might also be the option to "btrfs-machine [unit to operate on] [named
+> unit] return [scrub status, balance status, etc.]" which returns a
+> single integer value along the lines of idle|in
+> progress|success|failure.  And at some point in the future
+> btrfs-machine [unit to operate on] [named unit] progress [operation]
+> which functions like "fsck -C [fd]".
 >
-> 'sync && echo 3 > /proc/sys/vm/drop_caches' clears the high usage
-> (~4GB) from dentry but 'bio' does not release any (11GB) memory and
-> continues to grow slowly.
+> Now that, I imagine, would be something libvirt users would like,
+> whether for web interface, GUI, or wrapper script for for a slick NAS
+> web interfaces.
+>
+> For now, maybe start with a proof of concept with only the "print"
+> action implemented?  And eventually merge this into the main btrfs
+> command something like this: "btrfs -m unit name action args" or
+> "btrfs --machine unit name action args"
+I'm not sure how practical this would be, the format language would have 
+to be pretty complex, and would need to be easily extensible at the same 
+time.  We have a functionally infinite upper bound on what can be 
+reported by a number of commands (fi df for example is bounded only by 
+the number of supported profiles), and trying to sanely handle that gets 
+complicated.
 
-Probably you are experiencing a leak that was recently fixed and, at
-the moment, available only in the 4.7-rc1 kernel:
-
-https://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/commit/?id=4673272f43ae790ab9ec04e38a7542f82bb8f020
-
+Also, once we have _some_ kind of machine parseable output, it becomes 
+much easier to use other tools to pull out the exact info you want.
 >
-> This is running the Rockstor distro based on CentOS. The system has 16GB of RAM.
+> On 16 May 2016 at 08:21, Martin Steigerwald <martin@lichtvoll.de> wrote:
+>> How about a libbtrfs so that other tools can benefit from btrfs tools
+>> functionality?
+> Does much does /usr/lib/x86_64-linux-gnu/libbtrfs.so expose?
 >
-> Kernel: 4.4.5-1.el7.elrepo.x86_64
-> btrfs-progs: 4.4.1
->
-> Kernel messages aren't showing anything of note during the replace
-> until it starts throwing out OOM errors.
->
-> I would like to collect enough information for a useful bug report
-> here, but I also can't babysit this rebuild during the work week and
-> reboot it once a day for OOM crashes. Should I cancel the replace
-> operation and use 'dev delete missing' instead? Will using 'delete
-> missing' cause any problem if it's done after a partially completed
-> and canceled replace?
+> What is the path of minimum duplication of work, and minimum long-term
+> maintenance?  If my assumptions are correct, this is a 2000-level
+> programming course textbook challenge on writing a program using a
+> library to query some values...and that might be something I could
+> manage :-)
+Based on the fact that our CLI interface is really the only API people 
+are using, I don't think there's almost anything exposed at a high-level 
+in libbtrfs.
 
-
-
--- 
-Filipe David Manana,
-
-"Reasonable men adapt themselves to the world.
- Unreasonable men adapt the world to themselves.
- That's why all progress depends on unreasonable men."

@@ -1,113 +1,78 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f172.google.com ([209.85.223.172]:34752 "EHLO
-	mail-io0-f172.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751227AbcEaMPn (ORCPT
+Received: from mail-it0-f42.google.com ([209.85.214.42]:38278 "EHLO
+	mail-it0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753150AbcEaMVx (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 31 May 2016 08:15:43 -0400
-Received: by mail-io0-f172.google.com with SMTP id p194so37651624iod.1
-        for <linux-btrfs@vger.kernel.org>; Tue, 31 May 2016 05:15:43 -0700 (PDT)
-Subject: Re: RFE: 'btrfs' tools machine readable output
-To: Nicholas D Steeves <nsteeves@gmail.com>
-References: <20160516121456.GA16970@redhat.com>
- <1c0d1dbc-325b-829a-762c-67288bb957a3@gmail.com>
- <CAD=QJKjx3QstqTB8kFLO7uYFuCNf7S++TTBkMkmnAPfp9iw1Uw@mail.gmail.com>
-Cc: "Richard W.M. Jones" <rjones@redhat.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>, ptoscano@redhat.com
+	Tue, 31 May 2016 08:21:53 -0400
+Received: by mail-it0-f42.google.com with SMTP id i127so25736702ita.1
+        for <linux-btrfs@vger.kernel.org>; Tue, 31 May 2016 05:21:53 -0700 (PDT)
+Subject: Re: Hot data tracking / hybrid storage
+To: Ferry Toth <ftoth@exalondelft.nl>, linux-btrfs@vger.kernel.org
+References: <nh9p2p$cns$1@ger.gmane.org>
+ <pan$ae8c7$965ff694$cf73d90e$9e134691@cox.net>
+ <20160516010524.7e208f96@jupiter.sol.kaishome.de>
+ <nhedk2$dpq$1@ger.gmane.org> <0d68f988-e117-4b61-cb9b-d18a26e2b909@gmail.com>
+ <20160517203335.5ff99a05@jupiter.sol.kaishome.de>
+ <nhir96$8n4$1@ger.gmane.org>
+ <20160519200926.0a2b5dcf@jupiter.sol.kaishome.de>
+ <e8ff591f-751b-ac56-45bb-98cdc7b206e7@gmail.com>
+ <CAPmG0jYi+gCO3Ps4Xi1ahE4qoqMt6ZmLMrxT_URDHdaA_cZCLg@mail.gmail.com>
+ <1c1358af-4549-618a-c408-b93832d33225@gmail.com> <nhnfu8$igq$1@ger.gmane.org>
+ <9bde1aa8-fac5-34c4-dffc-0bf15d86c008@gmail.com> <574A8AFF.7020606@gmail.com>
+ <CAJCQCtRnLekmARtLNySDofJah12CpKO0VpKygwf7NfQJzS8URg@mail.gmail.com>
+ <574B2EE6.6080402@applied-asynchrony.com>
+ <CAJCQCtQpCkTP0uPc9TTLn0S+pQpLsAgBodKZvsYKm9vTuFv=Kg@mail.gmail.com>
+ <nifkcs$ovp$1@ger.gmane.org>
 From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <b2cfc1a7-12d9-64e7-4d65-a8cf40f9cd05@gmail.com>
-Date: Tue, 31 May 2016 08:15:38 -0400
+Message-ID: <9340ef1a-6746-1c3c-88f9-56fa2a0b7f0e@gmail.com>
+Date: Tue, 31 May 2016 08:21:48 -0400
 MIME-Version: 1.0
-In-Reply-To: <CAD=QJKjx3QstqTB8kFLO7uYFuCNf7S++TTBkMkmnAPfp9iw1Uw@mail.gmail.com>
+In-Reply-To: <nifkcs$ovp$1@ger.gmane.org>
 Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2016-05-27 15:47, Nicholas D Steeves wrote:
-> On 16 May 2016 at 08:39, Austin S. Hemmelgarn <ahferroin7@gmail.com> wrote:
->> On 2016-05-16 08:14, Richard W.M. Jones wrote:
+On 2016-05-29 16:45, Ferry Toth wrote:
+> Op Sun, 29 May 2016 12:33:06 -0600, schreef Chris Murphy:
+>
+>> On Sun, May 29, 2016 at 12:03 PM, Holger Hoffstätte
+>> <holger@applied-asynchrony.com> wrote:
+>>> On 05/29/16 19:53, Chris Murphy wrote:
+>>>> But I'm skeptical of bcache using a hidden area historically for the
+>>>> bootloader, to put its device metadata. I didn't realize that was the
+>>>> case. Imagine if LVM were to stuff metadata into the MBR gap, or
+>>>> mdadm. Egads.
 >>>
->>> It would be really helpful if the btrfs tools had a machine-readable
->>> output.
->>> With machine-readable output, there'd be a flag which would
->>> change the output.  eg:
->>> $ btrfs --json filesystem show
->>> {
->>>   "devices": {
->>>      "Label": "ROOT",
->>>      "uuid": "af471cfc-421a-4d51-8811-ce969f76828a",
->>>      /// etc
->>>   }
->>> }
->> I would love to see something like this myself, as it would make integration
->> with monitoring tools so much easier.  I'd vote for YAML as the output format
->> though, as it's easily human readable as well as machine parseable while
->> still being space efficient.
->> ---
->> - filesystems
->>   - label: 'ROOT'
->>     uuid: af471cfc-421a-4d51-8811-ce969f76828a
->>     devices: 1
->>       - devid: 1
->>         size: 767.97 MB
->>         used 92.00 MB
->>         path: /dev/sda2
->>     used: 5.29 MB
->> ...
+>>> On the matter of bcache in general this seems noteworthy:
+>>>
+>>> https://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/
+> commit/?id=4d1034eb7c2f5e32d48ddc4dfce0f1a723d28667
+>>>
+>>> bummer..
+>>
+>> Well it doesn't mean no one will take it, just that no one has taken it
+>> yet. But the future of SSD caching may only be with LVM.
+>>
+>> --
+>> Chris Murphy
 >
-> Rather than adding language-specific output/extensions to btrfs-progs,
-> what does everyone think of an interface which allows arbitrary
-> ordering similar to the date command, with arbitrary delimiter
-> support?
+> I think all the above posts underline exacly my point:
 >
-> eg: date +%a\ %d\ \%B\ %H:%m
+> Instead of using a ssd cache (be it bcache or dm-cache) it would be much
+> better to have the btrfs allocator be aware of ssd's in the pool and
+> prioritize allocations to the ssd to maximize performance.
 >
-> with something like: %D (device), %L (label), %V (volume), %v
-> (subvolume), %U (volume UUID), %u (subvol UUID), et al.
->
-> 'avoids formatting the output to any particular convention, and the
-> order of what is queried can be in any order...but I think the [unit
-> to operate on] [named unit] bit would necessarily need to come first.
-> We already have that in btrfs [sub/fi/dev] [name] :-)
->
-> Or should it be a separate command...  Something like "btrfs-machine
-> [unit to operate on] [named unit] [action eg: print] [cryptic line
-> with user's choice of delimiter and formatting]".  And then there
-> might also be the option to "btrfs-machine [unit to operate on] [named
-> unit] return [scrub status, balance status, etc.]" which returns a
-> single integer value along the lines of idle|in
-> progress|success|failure.  And at some point in the future
-> btrfs-machine [unit to operate on] [named unit] progress [operation]
-> which functions like "fsck -C [fd]".
->
-> Now that, I imagine, would be something libvirt users would like,
-> whether for web interface, GUI, or wrapper script for for a slick NAS
-> web interfaces.
->
-> For now, maybe start with a proof of concept with only the "print"
-> action implemented?  And eventually merge this into the main btrfs
-> command something like this: "btrfs -m unit name action args" or
-> "btrfs --machine unit name action args"
-I'm not sure how practical this would be, the format language would have 
-to be pretty complex, and would need to be easily extensible at the same 
-time.  We have a functionally infinite upper bound on what can be 
-reported by a number of commands (fi df for example is bounded only by 
-the number of supported profiles), and trying to sanely handle that gets 
-complicated.
+> This will allow to easily add more ssd's or replace worn out ones,
+> without the mentioned headaches. After all adding/replacing drives to a
+> pool is one of btrfs's biggest advantages.
+It would still need to be pretty configurable, and even then would still 
+be a niche use case.  It would also need automatic migration to be 
+practical beyond a certain point, most people using regular computers 
+outside of corporate environments don't have that same 'access frequency 
+decreases over time' pattern that the manual migration scheme you 
+suggested would be good for.
 
-Also, once we have _some_ kind of machine parseable output, it becomes 
-much easier to use other tools to pull out the exact info you want.
->
-> On 16 May 2016 at 08:21, Martin Steigerwald <martin@lichtvoll.de> wrote:
->> How about a libbtrfs so that other tools can benefit from btrfs tools
->> functionality?
-> Does much does /usr/lib/x86_64-linux-gnu/libbtrfs.so expose?
->
-> What is the path of minimum duplication of work, and minimum long-term
-> maintenance?  If my assumptions are correct, this is a 2000-level
-> programming course textbook challenge on writing a program using a
-> library to query some values...and that might be something I could
-> manage :-)
-Based on the fact that our CLI interface is really the only API people 
-are using, I don't think there's almost anything exposed at a high-level 
-in libbtrfs.
+I think overall the most useful way of doing it would be something like 
+the L2ARC on ZFS, which is essentially swap space for the page-cache, 
+put on an SSD.
 

@@ -1,564 +1,66 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:50758 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S932508AbcE3PZs (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 30 May 2016 11:25:48 -0400
-Date: Mon, 30 May 2016 17:25:06 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
-Cc: linux-btrfs@vger.kernel.org
+Received: from cn.fujitsu.com ([59.151.112.132]:29384 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1161860AbcEaAie (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 30 May 2016 20:38:34 -0400
 Subject: Re: [PATCH] btrfs: fix check_shared for fiemap ioctl
-Message-ID: <20160530152506.GC29147@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
+To: <dsterba@suse.cz>, Lu Fengqi <lufq.fnst@cn.fujitsu.com>,
+        <linux-btrfs@vger.kernel.org>
 References: <1463369030-15434-1-git-send-email-lufq.fnst@cn.fujitsu.com>
+ <d228d748-2947-a934-8bc1-afd53127e796@cn.fujitsu.com>
+ <20160530151528.GB29147@twin.jikos.cz>
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Message-ID: <b91c1b77-39ee-1a75-a530-4618f7765bd6@cn.fujitsu.com>
+Date: Tue, 31 May 2016 08:38:25 +0800
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1463369030-15434-1-git-send-email-lufq.fnst@cn.fujitsu.com>
+In-Reply-To: <20160530151528.GB29147@twin.jikos.cz>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, May 16, 2016 at 11:23:50AM +0800, Lu Fengqi wrote:
-> +/*
-> + * ref_root is used as the root of the ref tree that hold a collection
-> + * of unique references.
-> + */
-> +struct ref_root {
-> +	/*
-> +	 * the unique_refs represents the number of ref_nodes with a positive
-> +	 * count stored in the tree. Even if a ref_node(the count is greater
-> +	 * than one) is added, the unique_refs will only increase one.
-> +	 */
-> +	unsigned int unique_refs;
-> +
-> +	struct rb_root rb_root;
 
-The rb_root could be moved to the beginning so the offset_of magic will
-not generate extra offset to the sructure.
 
-> +};
-> +
-> +/* ref_node is used to store a unique reference to the ref tree. */
-> +struct ref_node {
-> +	/* for NORMAL_REF, otherwise all these fields should be set to 0 */
-> +	u64 root_id;
-> +	u64 object_id;
-> +	u64 offset;
-> +
-> +	/* for SHARED_REF, otherwise parent field should be set to 0 */
-> +	u64 parent;
-> +
-> +	/* ref to the ref_mod of btrfs_delayed_ref_node(delayed-ref.h) */
-> +	int ref_mod;
-> +
-> +	struct rb_node rb_node;
+David Sterba wrote on 2016/05/30 17:15 +0200:
+> On Fri, May 27, 2016 at 09:39:53AM +0800, Qu Wenruo wrote:
+>> Any comment?
+>>
+>> This patch does not fix the submitted generic/352[1] and generic/353[2]
+>> test cases, but also introduce a much better structure and design for
+>> later backref walk use.
+>>
+>> Instead of a list and do a O(n^3)~O(n^4) iteration for fiemap ioctl on a
+>> reflinked(deduped) file, it's now only O(n)~O(nlogn) for SHARED flag
+>> check to pass generic/352.
+>
+> This is a good improvement, though there's potentially hidden cost in
+> the allocations and maintaining the temporary structures. Do you have
+> actual performance numbers?
+>
+>
+Test case generic/352 is already the proof.
 
-Same here (move to the beginning)
+For a 1G file whose all file extents are pointing to the same 128K file 
+extent, fiemap will just soft lockup for backref walk.
 
-> +};
-> +
-> +/* dynamically allocate and initialize a ref_root */
-> +static struct ref_root *ref_root_alloc(gfp_t gfp_mask)
-> +{
-> +	struct ref_root *ref_tree;
-> +
-> +	ref_tree = kmalloc(sizeof(*ref_tree), gfp_mask);
+Even for case(*) it doesn't hang, it takes about 3~4 seconds to do 
+check_shared() for one extent.
 
-Drop the gfp_mask and make it GFP_KERNEL
 
-> +	if (!ref_tree)
-> +		return NULL;
-> +
-> +	ref_tree->rb_root = RB_ROOT;
-> +	ref_tree->unique_refs = 0;
-> +
-> +	return ref_tree;
-> +}
-> +
-> +/* free all node in the ref tree, and reinit ref_root */
+With this patch, chech_shared() returned immediately, if found any other 
+delayed ref/extent ref, making the whole fiemap ioctl super fast for 
+deduped file case.
 
-               nodes
+*: Two 1G file, inside the same subvolume, pointing to the same 128K 
+file extent will not cause soft lockup.
 
-> +static void ref_root_fini(struct ref_root *ref_tree)
-> +{
-> +	struct ref_node *node;
-> +	struct rb_node *next;
-> +
-> +	while ((next = rb_first(&ref_tree->rb_root)) != NULL) {
-> +		node = rb_entry(next, struct ref_node, rb_node);
-> +		rb_erase(next, &ref_tree->rb_root);
-> +		kfree(node);
 
-This could be slow as rb_erase has to do the rb-tree rotations. Can we
-do a post-order traversal and just free the nodes?
+We can use such patch to rework current backref walk code, which does 
+unneeded list iteration instead of faster rb tree search, but it's too 
+aggressive, and we want to do it step by step, starting from these bugs 
+exposed by inband dedupe.
 
-> +	}
-> +
-> +	ref_tree->rb_root = RB_ROOT;
-> +	ref_tree->unique_refs = 0;
-> +}
-> +
-> +/* free dynamically allocated ref_root */
-> +static void ref_root_free(struct ref_root *ref_tree)
-> +{
-> +	if (!ref_tree)
-> +		return;
-> +
-> +	ref_root_fini(ref_tree);
-> +	kfree(ref_tree);
-> +}
-> +
-> +/*
-> + * search ref_node with (root_id, object_id, offset, parent) in the tree
-> + *
-> + * if found, the pointer of the ref_node will be returned;
-> + * if not found, NULL will be returned and pos will point to the rb_node for
-> + * insert, pos_parent will point to pos'parent for insert;
-> +*/
-> +static struct ref_node *__ref_tree_search(struct ref_root *ref_tree,
-> +					  struct rb_node ***pos,
-> +					  struct rb_node **pos_parent,
-> +					  u64 root_id, u64 object_id,
-> +					  u64 offset, u64 parent)
-> +{
-> +	struct ref_node *cur = NULL;
-> +
-> +	*pos = &ref_tree->rb_root.rb_node;
-> +
-> +	while (**pos) {
-> +		*pos_parent = **pos;
-> +		cur = rb_entry(*pos_parent, struct ref_node, rb_node);
-> +
-> +		if (cur->root_id < root_id) {
-> +			*pos = &(**pos)->rb_right;
-> +			continue;
-> +		} else if (cur->root_id > root_id) {
-> +			*pos = &(**pos)->rb_left;
-> +			continue;
-> +		}
-> +
-> +		if (cur->object_id < object_id) {
-> +			*pos = &(**pos)->rb_right;
-> +			continue;
-> +		} else if (cur->object_id > object_id) {
-> +			*pos = &(**pos)->rb_left;
-> +			continue;
-> +		}
-> +
-> +		if (cur->offset < offset) {
-> +			*pos = &(**pos)->rb_right;
-> +			continue;
-> +		} else if (cur->offset > offset) {
-> +			*pos = &(**pos)->rb_left;
-> +			continue;
-> +		}
-> +
-> +		if (cur->parent < parent) {
-> +			*pos = &(**pos)->rb_right;
-> +			continue;
-> +		} else if (cur->parent > parent) {
-> +			*pos = &(**pos)->rb_left;
-> +			continue;
-> +		}
-> +
-> +		return cur;
-> +	}
-> +
-> +	return NULL;
-> +}
-> +
-> +/*
-> + * insert a ref_node to the ref tree
-> + * @pos used for specifiy the position to insert
-> + * @pos_parent for specifiy pos's parent
-> + *
-> + * success, return 0;
-> + * ref_node already exists, return -EEXIST;
-> +*/
-> +static int ref_tree_insert(struct ref_root *ref_tree, struct rb_node **pos,
-> +			   struct rb_node *pos_parent, struct ref_node *ins)
-> +{
-> +	struct rb_node **p = NULL;
-> +	struct rb_node *parent = NULL;
-> +	struct ref_node *cur = NULL;
-> +
-> +	if (!pos) {
-> +		cur = __ref_tree_search(ref_tree, &p, &parent, ins->root_id,
-> +					ins->object_id, ins->offset,
-> +					ins->parent);
-> +		if (cur)
-> +			return -EEXIST;
-> +	} else {
-> +		p = pos;
-> +		parent = pos_parent;
-> +	}
-> +
-> +	rb_link_node(&ins->rb_node, parent, p);
-> +	rb_insert_color(&ins->rb_node, &ref_tree->rb_root);
-> +
-> +	return 0;
-> +}
-> +
-> +/* erase and free ref_node, caller should update ref_root->unique_refs */
-> +static void ref_tree_remove(struct ref_root *ref_tree, struct ref_node *node)
-> +{
-> +	rb_erase(&node->rb_node, &ref_tree->rb_root);
-> +	kfree(node);
-> +}
-> +
-> +/*
-> + * update ref_root->unique_refs
-> + *
-> + * call __ref_tree_search
-> + *	1. if ref_node doesn't exist, ref_tree_insert this node, and update
-> + *	ref_root->unique_refs:
-> + *		if ref_node->ref_mod > 0, ref_root->unique_refs++;
-> + *		if ref_node->ref_mod < 0, do noting;
-> + *
-> + *	2. if ref_node is found, then get origin ref_node->ref_mod, and update
-> + *	ref_node->ref_mod.
-> + *		if ref_node->ref_mod is equal to 0,then call ref_tree_remove
-> + *
-> + *		according to origin_mod and new_mod, update ref_root->items
-> + *		+----------------+--------------+-------------+
-> + *		|		 |new_count <= 0|new_count > 0|
-> + *		+----------------+--------------+-------------+
-> + *		|origin_count < 0|       0      |      1      |
-> + *		+----------------+--------------+-------------+
-> + *		|origin_count > 0|      -1      |      0      |
-> + *		+----------------+--------------+-------------+
-> + *
-> + * In case of allocation failure, -ENOMEM is returned and the ref_tree stays
-> + * unaltered.
-> + * Success, return 0
-> + */
-> +static int ref_tree_add(struct ref_root *ref_tree, u64 root_id, u64 object_id,
-> +			u64 offset, u64 parent, int count, gfp_t gfp_mask)
-> +{
-> +	struct ref_node *node = NULL;
-> +	struct rb_node **pos = NULL;
-> +	struct rb_node *pos_parent = NULL;
-> +	int origin_count;
-> +	int ret;
-> +
-> +	if (!count)
-> +		return 0;
-> +
-> +	node = __ref_tree_search(ref_tree, &pos, &pos_parent, root_id,
-> +				 object_id, offset, parent);
-> +	if (node == NULL) {
-> +		node = kmalloc(sizeof(*node), gfp_mask);
+Thanks,
+Qu
 
-drop gfp_mask and use GFP_KERNEL
 
-> +		if (!node)
-> +			return -ENOMEM;
-> +
-> +		node->root_id = root_id;
-> +		node->object_id = object_id;
-> +		node->offset = offset;
-> +		node->parent = parent;
-> +		node->ref_mod = count;
-> +
-> +		ret = ref_tree_insert(ref_tree, pos, pos_parent, node);
-
-The error should be handled even if ASSERT is not compiled in.
-
-> +		ASSERT(!ret);
-> +
-> +		ref_tree->unique_refs += node->ref_mod > 0 ? 1 : 0;
-> +
-> +		return 0;
-> +	}
-> +
-> +	origin_count = node->ref_mod;
-> +	node->ref_mod += count;
-> +
-> +	if (!node->ref_mod)
-> +		ref_tree_remove(ref_tree, node);
-> +
-> +	if (node->ref_mod > 0)
-> +		ref_tree->unique_refs += origin_count > 0 ? 0 : 1;
-> +	else if (node->ref_mod <= 0)
-> +		ref_tree->unique_refs += origin_count > 0 ? -1 : 0;
-> +
-> +	return 0;
-> +}
-> +
->  static int check_extent_in_eb(struct btrfs_key *key, struct extent_buffer *eb,
->  				struct btrfs_file_extent_item *fi,
->  				u64 extent_item_pos,
-> @@ -699,6 +943,7 @@ static int __add_delayed_refs(struct btrfs_delayed_ref_head *head, u64 seq,
->  static int __add_inline_refs(struct btrfs_fs_info *fs_info,
->  			     struct btrfs_path *path, u64 bytenr,
->  			     int *info_level, struct list_head *prefs,
-> +			     struct ref_root *ref_tree,
->  			     u64 *total_refs, u64 inum)
->  {
->  	int ret = 0;
-> @@ -766,6 +1011,14 @@ static int __add_inline_refs(struct btrfs_fs_info *fs_info,
->  			count = btrfs_shared_data_ref_count(leaf, sdref);
->  			ret = __add_prelim_ref(prefs, 0, NULL, 0, offset,
->  					       bytenr, count, GFP_NOFS);
-> +			if (ref_tree) {
-> +				if (!ret)
-> +					ret = ref_tree_add(ref_tree, 0, 0, 0,
-> +							   bytenr, count,
-> +							   GFP_NOFS);
-> +				if (!ret && ref_tree->unique_refs > 1)
-> +					ret = BACKREF_FOUND_SHARED;
-> +			}
->  			break;
->  		}
->  		case BTRFS_TREE_BLOCK_REF_KEY:
-> @@ -793,6 +1046,15 @@ static int __add_inline_refs(struct btrfs_fs_info *fs_info,
->  			root = btrfs_extent_data_ref_root(leaf, dref);
->  			ret = __add_prelim_ref(prefs, root, &key, 0, 0,
->  					       bytenr, count, GFP_NOFS);
-> +			if (ref_tree) {
-> +				if (!ret)
-> +					ret = ref_tree_add(ref_tree, root,
-> +							   key.objectid,
-> +							   key.offset, 0,
-> +							   count, GFP_NOFS);
-> +				if (!ret && ref_tree->unique_refs > 1)
-> +					ret = BACKREF_FOUND_SHARED;
-> +			}
->  			break;
->  		}
->  		default:
-> @@ -811,7 +1073,8 @@ static int __add_inline_refs(struct btrfs_fs_info *fs_info,
->   */
->  static int __add_keyed_refs(struct btrfs_fs_info *fs_info,
->  			    struct btrfs_path *path, u64 bytenr,
-> -			    int info_level, struct list_head *prefs, u64 inum)
-> +			    int info_level, struct list_head *prefs,
-> +			    struct ref_root *ref_tree, u64 inum)
->  {
->  	struct btrfs_root *extent_root = fs_info->extent_root;
->  	int ret;
-> @@ -854,6 +1117,14 @@ static int __add_keyed_refs(struct btrfs_fs_info *fs_info,
->  			count = btrfs_shared_data_ref_count(leaf, sdref);
->  			ret = __add_prelim_ref(prefs, 0, NULL, 0, key.offset,
->  						bytenr, count, GFP_NOFS);
-> +			if (ref_tree) {
-> +				if (!ret)
-> +					ret = ref_tree_add(ref_tree, 0, 0, 0,
-> +							   bytenr, count,
-> +							   GFP_NOFS);
-> +				if (!ret && ref_tree->unique_refs > 1)
-> +					ret = BACKREF_FOUND_SHARED;
-> +			}
->  			break;
->  		}
->  		case BTRFS_TREE_BLOCK_REF_KEY:
-> @@ -882,6 +1153,15 @@ static int __add_keyed_refs(struct btrfs_fs_info *fs_info,
->  			root = btrfs_extent_data_ref_root(leaf, dref);
->  			ret = __add_prelim_ref(prefs, root, &key, 0, 0,
->  					       bytenr, count, GFP_NOFS);
-> +			if (ref_tree) {
-> +				if (!ret)
-> +					ret = ref_tree_add(ref_tree, root,
-> +							   key.objectid,
-> +							   key.offset, 0,
-> +							   count, GFP_NOFS);
-> +				if (!ret && ref_tree->unique_refs > 1)
-> +					ret = BACKREF_FOUND_SHARED;
-> +			}
->  			break;
->  		}
->  		default:
-> @@ -908,13 +1188,16 @@ static int __add_keyed_refs(struct btrfs_fs_info *fs_info,
->   * commit root.
->   * The special case is for qgroup to search roots in commit_transaction().
->   *
-> + * If check_shared is set to 1, any extent has more than one ref item, will
-> + * be returned BACKREF_FOUND_SHARED immediately.
-> + *
->   * FIXME some caching might speed things up
->   */
->  static int find_parent_nodes(struct btrfs_trans_handle *trans,
->  			     struct btrfs_fs_info *fs_info, u64 bytenr,
->  			     u64 time_seq, struct ulist *refs,
->  			     struct ulist *roots, const u64 *extent_item_pos,
-> -			     u64 root_objectid, u64 inum)
-> +			     u64 root_objectid, u64 inum, int check_shared)
->  {
->  	struct btrfs_key key;
->  	struct btrfs_path *path;
-> @@ -926,6 +1209,7 @@ static int find_parent_nodes(struct btrfs_trans_handle *trans,
->  	struct list_head prefs;
->  	struct __prelim_ref *ref;
->  	struct extent_inode_elem *eie = NULL;
-> +	struct ref_root *ref_tree = NULL;
->  	u64 total_refs = 0;
->  
->  	INIT_LIST_HEAD(&prefs);
-> @@ -957,6 +1241,18 @@ static int find_parent_nodes(struct btrfs_trans_handle *trans,
->  again:
->  	head = NULL;
->  
-> +	if (check_shared) {
-> +		if (!ref_tree) {
-> +			ref_tree = ref_root_alloc(GFP_NOFS);
-> +			if (!ref_tree) {
-> +				ret = -ENOMEM;
-> +				goto out;
-> +			}
-> +		} else {
-> +			ref_root_fini(ref_tree);
-> +		}
-> +	}
-> +
->  	ret = btrfs_search_slot(trans, fs_info->extent_root, &key, path, 0, 0);
->  	if (ret < 0)
->  		goto out;
-> @@ -1001,6 +1297,37 @@ again:
->  		} else {
->  			spin_unlock(&delayed_refs->lock);
->  		}
-> +
-> +		if (check_shared && !list_empty(&prefs_delayed)) {
-> +			/*
-> +			 * Add all delay_ref to the ref_tree and check if there
-> +			 * are multiple ref item added.
-> +			 */
-> +			list_for_each_entry(ref, &prefs_delayed, list) {
-> +				if (ref->key_for_search.type) {
-> +					ret = ref_tree_add(ref_tree,
-> +						ref->root_id,
-> +						ref->key_for_search.objectid,
-> +						ref->key_for_search.offset,
-> +						0, ref->count, GFP_NOFS);
-> +					if (ret)
-> +						goto out;
-> +				} else {
-> +					ret = ref_tree_add(ref_tree, 0, 0, 0,
-> +						     ref->parent, ref->count,
-> +						     GFP_NOFS);
-> +					if (ret)
-> +						goto out;
-> +				}
-> +
-> +			}
-> +
-> +			if (ref_tree->unique_refs > 1) {
-> +				ret = BACKREF_FOUND_SHARED;
-> +				goto out;
-> +			}
-> +
-> +		}
->  	}
->  
->  	if (path->slots[0]) {
-> @@ -1016,11 +1343,13 @@ again:
->  		     key.type == BTRFS_METADATA_ITEM_KEY)) {
->  			ret = __add_inline_refs(fs_info, path, bytenr,
->  						&info_level, &prefs,
-> -						&total_refs, inum);
-> +						ref_tree, &total_refs,
-> +						inum);
->  			if (ret)
->  				goto out;
->  			ret = __add_keyed_refs(fs_info, path, bytenr,
-> -					       info_level, &prefs, inum);
-> +					       info_level, &prefs,
-> +					       ref_tree, inum);
->  			if (ret)
->  				goto out;
->  		}
-> @@ -1105,6 +1434,7 @@ again:
->  
->  out:
->  	btrfs_free_path(path);
-> +	ref_root_free(ref_tree);
->  	while (!list_empty(&prefs)) {
->  		ref = list_first_entry(&prefs, struct __prelim_ref, list);
->  		list_del(&ref->list);
-> @@ -1158,8 +1488,8 @@ static int btrfs_find_all_leafs(struct btrfs_trans_handle *trans,
->  	if (!*leafs)
->  		return -ENOMEM;
->  
-> -	ret = find_parent_nodes(trans, fs_info, bytenr,
-> -				time_seq, *leafs, NULL, extent_item_pos, 0, 0);
-> +	ret = find_parent_nodes(trans, fs_info, bytenr, time_seq,
-> +				*leafs, NULL, extent_item_pos, 0, 0, 0);
->  	if (ret < 0 && ret != -ENOENT) {
->  		free_leaf_list(*leafs);
->  		return ret;
-> @@ -1201,8 +1531,8 @@ static int __btrfs_find_all_roots(struct btrfs_trans_handle *trans,
->  
->  	ULIST_ITER_INIT(&uiter);
->  	while (1) {
-> -		ret = find_parent_nodes(trans, fs_info, bytenr,
-> -					time_seq, tmp, *roots, NULL, 0, 0);
-> +		ret = find_parent_nodes(trans, fs_info, bytenr, time_seq,
-> +					tmp, *roots, NULL, 0, 0, 0);
->  		if (ret < 0 && ret != -ENOENT) {
->  			ulist_free(tmp);
->  			ulist_free(*roots);
-> @@ -1272,7 +1602,7 @@ int btrfs_check_shared(struct btrfs_trans_handle *trans,
->  	ULIST_ITER_INIT(&uiter);
->  	while (1) {
->  		ret = find_parent_nodes(trans, fs_info, bytenr, elem.seq, tmp,
-> -					roots, NULL, root_objectid, inum);
-> +					roots, NULL, root_objectid, inum, 1);
->  		if (ret == BACKREF_FOUND_SHARED) {
->  			/* this is the only condition under which we return 1 */
->  			ret = 1;
-> diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-> index 76a0c85..a242e37 100644
-> --- a/fs/btrfs/extent_io.c
-> +++ b/fs/btrfs/extent_io.c
-> @@ -20,6 +20,7 @@
->  #include "locking.h"
->  #include "rcu-string.h"
->  #include "backref.h"
-> +#include "transaction.h"
->  
->  static struct kmem_cache *extent_state_cache;
->  static struct kmem_cache *extent_buffer_cache;
-> @@ -4471,21 +4472,36 @@ int extent_fiemap(struct inode *inode, struct fiemap_extent_info *fieinfo,
->  			flags |= (FIEMAP_EXTENT_DELALLOC |
->  				  FIEMAP_EXTENT_UNKNOWN);
->  		} else if (fieinfo->fi_extents_max) {
-> +			struct btrfs_trans_handle *trans;
-> +
->  			u64 bytenr = em->block_start -
->  				(em->start - em->orig_start);
->  
->  			disko = em->block_start + offset_in_extent;
->  
->  			/*
-> +			 * We need a trans handle to get delayed refs
-> +			 */
-> +			trans = btrfs_join_transaction(root);
-
-What are the implications of join/end transaction here? It's just
-fiemap, I would not expect messing with transaction here.
-
-> +			/*
-> +			 * It's OK if we can't start a trans
-> +			 * we can still check from commit_root
-> +			 */
-> +			if (IS_ERR(trans))
-> +				trans = NULL;
-
-So if we can cope with no transaction, why is this not default?
-
-> +
-> +			/*
->  			 * As btrfs supports shared space, this information
->  			 * can be exported to userspace tools via
->  			 * flag FIEMAP_EXTENT_SHARED.  If fi_extents_max == 0
->  			 * then we're just getting a count and we can skip the
->  			 * lookup stuff.
->  			 */
-> -			ret = btrfs_check_shared(NULL, root->fs_info,
-> +			ret = btrfs_check_shared(trans, root->fs_info,
->  						 root->objectid,
->  						 btrfs_ino(inode), bytenr);
-> +			if (trans)
-> +				btrfs_end_transaction(trans, root);
->  			if (ret < 0)
->  				goto out_free;
->  			if (ret)

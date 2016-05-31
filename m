@@ -1,44 +1,39 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:55161 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1752740AbcEZCgR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 25 May 2016 22:36:17 -0400
-Received: from adam-work.localdomain (unknown [10.167.226.34])
-	by cn.fujitsu.com (Postfix) with ESMTP id D94B74056403
-	for <linux-btrfs@vger.kernel.org>; Thu, 26 May 2016 10:36:02 +0800 (CST)
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs-progs: corrupt-block: Add support to corrupt extent for skinny metadata
-Date: Thu, 26 May 2016 10:36:02 +0800
-Message-Id: <1464230162-7657-1-git-send-email-quwenruo@cn.fujitsu.com>
+Received: from mx2.suse.de ([195.135.220.15]:40050 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751616AbcEaRAK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 31 May 2016 13:00:10 -0400
+Date: Tue, 31 May 2016 18:59:32 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: dsterba@suse.com, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs-progs: convert: Fix bugs in backup superblock
+ migration
+Message-ID: <20160531165932.GM29147@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20160531084933.17577-1-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20160531084933.17577-1-quwenruo@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-For skinny metadata case, btrfs-corrupt-block can't corrupt a metadata
-extent due to the type judgment doesn't include BTRFS_METADATA_ITEM_KEY.
+On Tue, May 31, 2016 at 04:49:33PM +0800, Qu Wenruo wrote:
+> New convert has several bugs with backup superblock migration
+> 
+> 1) Backup superblocks are not migrated due to bad judgement
+>    Two wrong judgement cause backup superblocks are not migrated at all
+> 
+> 2) Converted ext* image doesn't keep hole for backup superblocks
+>    Since we are creating file extents according to tmp_used, which has
+>    wiped out backup superblock ranges.
+>    In that case, later superblock migration will fail, since migration
+>    will insert file extent range into ext* image.
+> 
+> Fix above bugs will make convert on ext2 image filled about 100M data
+> successful.
+> 
+> Reported-by: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
+> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 
-Fix it.
-
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
----
- btrfs-corrupt-block.c | 1 +
- 1 file changed, 1 insertion(+)
-
-diff --git a/btrfs-corrupt-block.c b/btrfs-corrupt-block.c
-index 2cc9704..020afab 100644
---- a/btrfs-corrupt-block.c
-+++ b/btrfs-corrupt-block.c
-@@ -210,6 +210,7 @@ static int corrupt_extent(struct btrfs_trans_handle *trans,
- 			break;
- 
- 		if (key.type != BTRFS_EXTENT_ITEM_KEY &&
-+		    key.type != BTRFS_METADATA_ITEM_KEY &&
- 		    key.type != BTRFS_TREE_BLOCK_REF_KEY &&
- 		    key.type != BTRFS_EXTENT_DATA_REF_KEY &&
- 		    key.type != BTRFS_EXTENT_REF_V0_KEY &&
--- 
-2.8.2
-
-
-
+Please send the testcases or test images. Patch pplied.

@@ -1,89 +1,82 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from e19.ny.us.ibm.com ([129.33.205.209]:58090 "EHLO
+Received: from e19.ny.us.ibm.com ([129.33.205.209]:58078 "EHLO
 	e19.ny.us.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754638AbcFAPxD (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 1 Jun 2016 11:53:03 -0400
+	with ESMTP id S1751648AbcFAPxB (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 1 Jun 2016 11:53:01 -0400
 Received: from localhost
 	by e19.ny.us.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
 	for <linux-btrfs@vger.kernel.org> from <xufeifei@linux.vnet.ibm.com>;
-	Wed, 1 Jun 2016 11:53:02 -0400
+	Wed, 1 Jun 2016 11:53:00 -0400
 From: Feifei Xu <xufeifei@linux.vnet.ibm.com>
 To: linux-btrfs@vger.kernel.org
 Cc: steve.capper@linaro.org, chandan@mykolab.com, jbacik@fb.com,
         dsterba@suse.com, chandan@linux.vnet.ibm.com, feifeixu.sh@gmail.com,
         Feifei Xu <xufeifei@linux.vnet.ibm.com>
-Subject: [PATCH V2 2/8] Btrfs: Fix integer overflow when calculating bytes_per_bitmap
-Date: Wed,  1 Jun 2016 15:51:41 +0000
-Message-Id: <1464796307-67173-3-git-send-email-xufeifei@linux.vnet.ibm.com>
+Subject: [PATCH V2 1/8] Btrfs: test_check_exists: Fix infinite loop when searching for free space entries
+Date: Wed,  1 Jun 2016 15:51:40 +0000
+Message-Id: <1464796307-67173-2-git-send-email-xufeifei@linux.vnet.ibm.com>
 In-Reply-To: <1464796307-67173-1-git-send-email-xufeifei@linux.vnet.ibm.com>
 References: <1464796307-67173-1-git-send-email-xufeifei@linux.vnet.ibm.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On ppc64, bytes_per_bitmap will be (65536*8*65536). Hence append UL to
-fix integer overflow.
+On a ppc64 machine using 64K as the block size, assume that the RB
+tree at btrfs_free_space_ctl->free_space_offset contains following
+two entries:
+
+1. A bitmap entry having an offset value of 0 and having the bits
+   corresponding to the address range [128M+512K, 128M+768K] set.
+2. An extent entry corresponding to the address range
+   [128M-256K, 128M-128K]
+
+In such a scenario, test_check_exists() invoked for checking the
+existence of address range [128M+768K, 256M] can lead to an
+infinite loop as explained below:
+
+- Checking for the extent entry fails.
+- Checking for a bitmap entry results in the free space info in
+  range [128M+512K, 128M+768K] beng returned.
+- rb_prev(info) returns NULL because the bitmap entry starting from
+  offset 0 comes first in the RB tree.
+- current_node = bitmap node.
+- while (current_node)
+	tmp = rb_next(bitmap_node);/*tmp is extent based free space entry*/
+	Since extent based free space entry's last address is smaller
+	than the address being searched for (i.e. 128M+768K) we
+	incorrectly again obtain the extent node as the "next right node"
+	of the RB tree and thus end up looping infinitely.
+
+This patch fixes the issue by checking the "tmp" variable which point
+to the most recently searched free space node.
 
 Reviewed-by: Chandan Rajendra <chandan@linux.vnet.ibm.com>
 Signed-off-by: Feifei Xu <xufeifei@linux.vnet.ibm.com>
 ---
- fs/btrfs/free-space-cache.c       | 12 ++++++------
- fs/btrfs/tests/free-space-tests.c |  2 +-
- 2 files changed, 7 insertions(+), 7 deletions(-)
+ fs/btrfs/free-space-cache.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
 diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
-index fa62335..2813ef0 100644
+index c6dc118..fa62335 100644
 --- a/fs/btrfs/free-space-cache.c
 +++ b/fs/btrfs/free-space-cache.c
-@@ -29,7 +29,7 @@
- #include "inode-map.h"
- #include "volumes.h"
- 
--#define BITS_PER_BITMAP		(PAGE_SIZE * 8)
-+#define BITS_PER_BITMAP		(PAGE_SIZE * 8UL)
- #define MAX_CACHE_BYTES_PER_GIG	SZ_32K
- 
- struct btrfs_trim_range {
-@@ -1415,11 +1415,11 @@ static inline u64 offset_to_bitmap(struct btrfs_free_space_ctl *ctl,
- 				   u64 offset)
- {
- 	u64 bitmap_start;
--	u32 bytes_per_bitmap;
-+	u64 bytes_per_bitmap;
- 
- 	bytes_per_bitmap = BITS_PER_BITMAP * ctl->unit;
- 	bitmap_start = offset - ctl->start;
--	bitmap_start = div_u64(bitmap_start, bytes_per_bitmap);
-+	bitmap_start = div64_u64(bitmap_start, bytes_per_bitmap);
- 	bitmap_start *= bytes_per_bitmap;
- 	bitmap_start += ctl->start;
- 
-@@ -1638,10 +1638,10 @@ static void recalculate_thresholds(struct btrfs_free_space_ctl *ctl)
- 	u64 bitmap_bytes;
- 	u64 extent_bytes;
- 	u64 size = block_group->key.offset;
--	u32 bytes_per_bg = BITS_PER_BITMAP * ctl->unit;
--	u32 max_bitmaps = div_u64(size + bytes_per_bg - 1, bytes_per_bg);
-+	u64 bytes_per_bg = BITS_PER_BITMAP * ctl->unit;
-+	u64 max_bitmaps = div64_u64(size + bytes_per_bg - 1, bytes_per_bg);
- 
--	max_bitmaps = max_t(u32, max_bitmaps, 1);
-+	max_bitmaps = max_t(u64, max_bitmaps, 1);
- 
- 	ASSERT(ctl->total_bitmaps <= max_bitmaps);
- 
-diff --git a/fs/btrfs/tests/free-space-tests.c b/fs/btrfs/tests/free-space-tests.c
-index 0eeb8f3..f3756d6 100644
---- a/fs/btrfs/tests/free-space-tests.c
-+++ b/fs/btrfs/tests/free-space-tests.c
-@@ -22,7 +22,7 @@
- #include "../disk-io.h"
- #include "../free-space-cache.h"
- 
--#define BITS_PER_BITMAP		(PAGE_SIZE * 8)
-+#define BITS_PER_BITMAP		(PAGE_SIZE * 8UL)
- 
- /*
-  * This test just does basic sanity checking, making sure we can add an extent
+@@ -3662,7 +3662,7 @@ have_info:
+ 			if (tmp->offset + tmp->bytes < offset)
+ 				break;
+ 			if (offset + bytes < tmp->offset) {
+-				n = rb_prev(&info->offset_index);
++				n = rb_prev(&tmp->offset_index);
+ 				continue;
+ 			}
+ 			info = tmp;
+@@ -3676,7 +3676,7 @@ have_info:
+ 			if (offset + bytes < tmp->offset)
+ 				break;
+ 			if (tmp->offset + tmp->bytes < offset) {
+-				n = rb_next(&info->offset_index);
++				n = rb_next(&tmp->offset_index);
+ 				continue;
+ 			}
+ 			info = tmp;
 -- 
 2.7.4
 

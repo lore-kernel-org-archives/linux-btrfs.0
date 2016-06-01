@@ -1,48 +1,112 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:45125 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:1901 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1750750AbcFABvc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 31 May 2016 21:51:32 -0400
+	id S1750998AbcFAIWj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 1 Jun 2016 04:22:39 -0400
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: dsterba@suse.com, linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs-progs: convert-tests: Add test for backup superblock migration
-Date: Wed,  1 Jun 2016 09:51:21 +0800
-Message-Id: <20160601015121.23944-1-quwenruo@cn.fujitsu.com>
+Subject: [PATCH] btrfs-progs: convert: Fix bugs in backup superblock migration
+Date: Wed,  1 Jun 2016 16:22:26 +0800
+Message-Id: <20160601082226.24166-1-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-New convert framework uses new and simpler chunk layout, while the cost
-is the more complex superblock range migration logical, compared to old
-convert.
+New convert has several bugs with backup superblock migration
 
-Enhance the convert test script to create file which will takes up 2nd
-backup superblock space, to ensure the superblock migration is working
-as expected.
+1) Backup superblocks are not migrated due to bad judgement
+   Two wrong judgement cause backup superblocks are not migrated at all
 
-Suggested-by: David Sterba <dsterba@suse.cz>
+2) Converted ext* image doesn't keep hole for backup superblocks
+   Since we are creating file extents according to tmp_used, which has
+   wiped out backup superblock ranges.
+   In that case, later superblock migration will fail, since migration
+   will insert file extent range into ext* image.
+
+Fix above bugs will make convert on ext2 image filled about 100M data
+successful.
+
+Reported-by: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- tests/convert-tests.sh | 6 ++++++
- 1 file changed, 6 insertions(+)
+v2:
+  Fix a bug that range judgement misses one possible branch.
+  Which leads to overflap file extent for converted btrfs.
 
-diff --git a/tests/convert-tests.sh b/tests/convert-tests.sh
-index 06d8419..d4e13d6 100755
---- a/tests/convert-tests.sh
-+++ b/tests/convert-tests.sh
-@@ -124,6 +124,12 @@ convert_test() {
- 	# create a file to check btrfs-convert can convert regular file
- 	# correct
- 	run_check_mount_test_dev
+  Special test cases are under way
+---
+ btrfs-convert.c | 38 ++++++++++++++++++++++++++++++++++++--
+ 1 file changed, 36 insertions(+), 2 deletions(-)
+
+diff --git a/btrfs-convert.c b/btrfs-convert.c
+index 30dd6e8..42d646c 100644
+--- a/btrfs-convert.c
++++ b/btrfs-convert.c
+@@ -1263,12 +1263,46 @@ static int create_image_file_range(struct btrfs_trans_handle *trans,
+ 	struct btrfs_block_group_cache *bg_cache;
+ 	u64 len = *ret_len;
+ 	u64 disk_bytenr;
++	int i;
+ 	int ret;
+ 
+ 	BUG_ON(bytenr != round_down(bytenr, root->sectorsize));
+ 	BUG_ON(len != round_down(len, root->sectorsize));
+ 	len = min_t(u64, len, BTRFS_MAX_EXTENT_SIZE);
+ 
++	/*
++	 * Skip sb ranges first
++	 * [0, 1M), [sb_offset(1), +64K), [sb_offset(2), +64K].
++	 *
++	 * Or we will insert a hole into current image file, and later
++	 * migrate block will fail as there is already a file extent.
++	 */
++	if (bytenr < 1024 * 1024) {
++		*ret_len = 1024 * 1024 - bytenr;
++		return 0;
++	}
++	for (i = 1; i < BTRFS_SUPER_MIRROR_MAX; i++) {
++		u64 cur = btrfs_sb_offset(i);
++		/*
++		 * 	|--reserved--|
++		 * |----range-------|
++		 * May still need to go through file extent inserts
++		 */
++		if (bytenr < cur && bytenr + len >= cur) {
++			len = min_t(u64, len, cur - bytenr);
++			break;
++		}
++		/*
++		 * |--reserved--|
++		 * 	|---range---|
++		 * Drop out, no need to insert anything
++		 */
++		if (bytenr >= cur && bytenr < cur + BTRFS_STRIPE_LEN) {
++			*ret_len = cur + BTRFS_STRIPE_LEN - bytenr;
++			return 0;
++		}
++	}
 +
-+	# create a file inside the fs before convert, to make sure there is
-+	# data covering btrfs backup superblock range (64M)
-+	run_check $SUDO_HELPER dd if=/dev/zero bs=1M count=64 \
-+		of=$TEST_MNT/convert_space_holder
-+
- 	populate_fs
- 	run_check $SUDO_HELPER dd if=/dev/zero of=$TEST_MNT/test bs=$nodesize \
- 		count=1 >/dev/null 2>&1
+ 	cache = search_cache_extent(used, bytenr);
+ 	if (cache) {
+ 		if (cache->start <= bytenr) {
+@@ -1425,7 +1459,7 @@ static int migrate_reserved_ranges(struct btrfs_trans_handle *trans,
+ 	/* second sb(fisrt sb is included in 0~1M) */
+ 	cur_off = btrfs_sb_offset(1);
+ 	cur_len = min(total_bytes, cur_off + BTRFS_STRIPE_LEN) - cur_off;
+-	if (cur_off < total_bytes)
++	if (cur_off > total_bytes)
+ 		return ret;
+ 	ret = migrate_one_reserved_range(trans, root, used, inode, fd, ino,
+ 					 cur_off, cur_len, datacsum);
+@@ -1435,7 +1469,7 @@ static int migrate_reserved_ranges(struct btrfs_trans_handle *trans,
+ 	/* Last sb */
+ 	cur_off = btrfs_sb_offset(2);
+ 	cur_len = min(total_bytes, cur_off + BTRFS_STRIPE_LEN) - cur_off;
+-	if (cur_off < total_bytes)
++	if (cur_off > total_bytes)
+ 		return ret;
+ 	ret = migrate_one_reserved_range(trans, root, used, inode, fd, ino,
+ 					 cur_off, cur_len, datacsum);
 -- 
 2.8.3
 

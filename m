@@ -1,38 +1,49 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:46804 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1757189AbcFAFiC (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 1 Jun 2016 01:38:02 -0400
-Date: Tue, 31 May 2016 22:38:00 -0700
-From: Mark Fasheh <mfasheh@suse.de>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Cc: linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.com>,
-        Josef Bacik <jbacik@fb.com>
-Subject: Re: [PATCH] Improve balance performance when qgroups are turned on
-Message-ID: <20160601053800.GE7633@wotan.suse.de>
-Reply-To: Mark Fasheh <mfasheh@suse.de>
-References: <20160527001806.GX7633@wotan.suse.de>
- <f65fce82-4985-8fc5-604d-399fbc7b5e3c@cn.fujitsu.com>
- <20160601005008.GD7633@wotan.suse.de>
- <32fe4f1d-0ad8-da6f-ccca-becd551b4bee@cn.fujitsu.com>
+Received: from cn.fujitsu.com ([59.151.112.132]:8111 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1754531AbcFABcu (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 31 May 2016 21:32:50 -0400
+Subject: Re: [PATCH] btrfs-progs: convert: Fix a bug that makes convert
+ asserts at scan time
+To: <dsterba@suse.cz>, <dsterba@suse.com>, <linux-btrfs@vger.kernel.org>
+References: <20160531075113.24603-1-quwenruo@cn.fujitsu.com>
+ <20160531165046.GL29147@twin.jikos.cz>
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Message-ID: <b85fabc4-2290-b8cc-5379-fe67d7507718@cn.fujitsu.com>
+Date: Wed, 1 Jun 2016 09:32:41 +0800
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-In-Reply-To: <32fe4f1d-0ad8-da6f-ccca-becd551b4bee@cn.fujitsu.com>
+In-Reply-To: <20160531165046.GL29147@twin.jikos.cz>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jun 01, 2016 at 09:31:14AM +0800, Qu Wenruo wrote:
-> Thanks　for the test case.
-> It would be better if you could submit a test case for it.
-
-Yeah I'll handle this.
 
 
-> Reproduced the problem. I'll track it down.
-> Seems to be related with metadata.
+At 06/01/2016 12:50 AM, David Sterba wrote:
+> On Tue, May 31, 2016 at 03:51:13PM +0800, Qu Wenruo wrote:
+>> When a ext2 fs filled with a 57M file, it's possible that convert fails
+>> with assert in add_merge_cache_extent().
+>>
+>> The problem is that the ext2 used space just takes some of the second
+>> superblock.
+>> And due to a bug in reserving superblock space, it corrupted used space
+>> tree and cause assert.
+>>
+>> Fix in by doing better used space merging for case where superblock
+>> range is inside the ext2 used space.
+>>
+>> Reported-by: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
+>> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+>
+> The reproduce seems easy, do you have an image or test script for that?
+> Pach applied.
+>
+>
+I'll modify the convert test script to make sure it will always have 
+enough data to cover backup super blocks.
 
-Thanks, please CC me on any patches.
-	--Mark
+Thanks,
+Qu
 
---
-Mark Fasheh
+

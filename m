@@ -1,49 +1,70 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:8111 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:48844 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1754531AbcFABcu (ORCPT
+	with ESMTP id S1755805AbcFADaX (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 31 May 2016 21:32:50 -0400
-Subject: Re: [PATCH] btrfs-progs: convert: Fix a bug that makes convert
- asserts at scan time
-To: <dsterba@suse.cz>, <dsterba@suse.com>, <linux-btrfs@vger.kernel.org>
-References: <20160531075113.24603-1-quwenruo@cn.fujitsu.com>
- <20160531165046.GL29147@twin.jikos.cz>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <b85fabc4-2290-b8cc-5379-fe67d7507718@cn.fujitsu.com>
-Date: Wed, 1 Jun 2016 09:32:41 +0800
+	Tue, 31 May 2016 23:30:23 -0400
+Subject: Re: [PATCH] fstests: btrfs: add test for qgroup handle de-refer
+To: Mark Fasheh <mfasheh@suse.de>
+References: <1464660234-14562-1-git-send-email-lufq.fnst@cn.fujitsu.com>
+ <20160531195142.GA7633@wotan.suse.de>
+CC: <linux-btrfs@vger.kernel.org>, <fstests@vger.kernel.org>
+From: luke <lufq.fnst@cn.fujitsu.com>
+Message-ID: <cd4858fc-3b41-d23d-ff1d-0cc9ed1a4bc7@cn.fujitsu.com>
+Date: Wed, 1 Jun 2016 11:30:08 +0800
 MIME-Version: 1.0
-In-Reply-To: <20160531165046.GL29147@twin.jikos.cz>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+In-Reply-To: <20160531195142.GA7633@wotan.suse.de>
+Content-Type: text/plain; charset="windows-1252"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
 
-At 06/01/2016 12:50 AM, David Sterba wrote:
-> On Tue, May 31, 2016 at 03:51:13PM +0800, Qu Wenruo wrote:
->> When a ext2 fs filled with a 57M file, it's possible that convert fails
->> with assert in add_merge_cache_extent().
->>
->> The problem is that the ext2 used space just takes some of the second
->> superblock.
->> And due to a bug in reserving superblock space, it corrupted used space
->> tree and cause assert.
->>
->> Fix in by doing better used space merging for case where superblock
->> range is inside the ext2 used space.
->>
->> Reported-by: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
->> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+At 06/01/2016 03:51 AM, Mark Fasheh wrote:
+> Thanks for this test.
 >
-> The reproduce seems easy, do you have an image or test script for that?
-> Pach applied.
+> On Tue, May 31, 2016 at 10:03:54AM +0800, Lu Fengqi wrote:
+>> +echo "Start balance" >>$seqres.full
+>> +_btrfs_stress_balance -d $SCRATCH_MNT >/dev/null 2>&1 &
+>> +balance_pid=$!
+>> +
+>> +# 30s is enough to trigger bug
+>> +sleep $((30*$TIME_FACTOR))
+>> +kill $fsstress_pid $balance_pid
+>> +wait
+>> +
+>> +# kill _btrfs_stress_balance can't end balance, so call btrfs balance cancel
+>> +# to cancel running or paused balance.
+>> +$BTRFS_UTIL_PROG balance cancel $SCRATCH_MNT &> /dev/null
+>> +
+>> +rm -rf $SCRATCH_MNT/*
+>> +_run_btrfs_util_prog filesystem sync $SCRATCH_MNT
+>> +units=`_btrfs_qgroup_units`
+>> +$BTRFS_UTIL_PROG qgroup show $units $SCRATCH_MNT | $SED_PROG -n '/[0-9]/p' | \
+>> +	$AWK_PROG '{print $2" "$3}'
+> Wouldn't it be better here to just have btrfsck check for inconsistencies?
+> If you look at tests/btrfs/122 this is what I mean:
+>
+> +# generate a qgroup report and look for inconsistent groups
+> +$BTRFS_UTIL_PROG check --qgroup-report $SCRATCH_DEV 2>&1 | \
+> +                       grep -q -E "Counts for qgroup.*are different"
+> +if [ $? -ne 0 ]; then
+> +       status=0
+> +fi
+>
+> That way we're not keying on some specific value showing up but instead that
+> qgroup validation passes (which is really what we want to test).
+>
+> Thanks,
+> 	--Mark
+>
+> --
+> Mark Fasheh
 >
 >
-I'll modify the convert test script to make sure it will always have 
-enough data to cover backup super blocks.
+OK, I will try this and update this patch.
 
 Thanks,
-Qu
+Lu
 
 

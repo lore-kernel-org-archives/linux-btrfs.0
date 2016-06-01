@@ -1,54 +1,89 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from e37.co.us.ibm.com ([32.97.110.158]:35924 "EHLO
-	e37.co.us.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751648AbcFAPw7 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 1 Jun 2016 11:52:59 -0400
+Received: from e19.ny.us.ibm.com ([129.33.205.209]:58090 "EHLO
+	e19.ny.us.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754638AbcFAPxD (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 1 Jun 2016 11:53:03 -0400
 Received: from localhost
-	by e37.co.us.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
+	by e19.ny.us.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
 	for <linux-btrfs@vger.kernel.org> from <xufeifei@linux.vnet.ibm.com>;
-	Wed, 1 Jun 2016 09:52:57 -0600
+	Wed, 1 Jun 2016 11:53:02 -0400
 From: Feifei Xu <xufeifei@linux.vnet.ibm.com>
 To: linux-btrfs@vger.kernel.org
 Cc: steve.capper@linaro.org, chandan@mykolab.com, jbacik@fb.com,
         dsterba@suse.com, chandan@linux.vnet.ibm.com, feifeixu.sh@gmail.com,
         Feifei Xu <xufeifei@linux.vnet.ibm.com>
-Subject: [PATCH V2 7/8] Btrfs: self-tests: Fix test_bitmaps fail on 64k sectorsize
-Date: Wed,  1 Jun 2016 15:51:46 +0000
-Message-Id: <1464796307-67173-8-git-send-email-xufeifei@linux.vnet.ibm.com>
+Subject: [PATCH V2 2/8] Btrfs: Fix integer overflow when calculating bytes_per_bitmap
+Date: Wed,  1 Jun 2016 15:51:41 +0000
+Message-Id: <1464796307-67173-3-git-send-email-xufeifei@linux.vnet.ibm.com>
 In-Reply-To: <1464796307-67173-1-git-send-email-xufeifei@linux.vnet.ibm.com>
 References: <1464796307-67173-1-git-send-email-xufeifei@linux.vnet.ibm.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-With 64K sectorsize, 1G sized block group cannot span across bitmaps.
-To execute test_bitmaps() function, this commit allocates
-"BITS_PER_BITMAP * sectorsize + PAGE_SIZE" sized block group.
+On ppc64, bytes_per_bitmap will be (65536*8*65536). Hence append UL to
+fix integer overflow.
 
 Reviewed-by: Chandan Rajendra <chandan@linux.vnet.ibm.com>
 Signed-off-by: Feifei Xu <xufeifei@linux.vnet.ibm.com>
 ---
- fs/btrfs/tests/free-space-tests.c | 8 +++++++-
- 1 file changed, 7 insertions(+), 1 deletion(-)
+ fs/btrfs/free-space-cache.c       | 12 ++++++------
+ fs/btrfs/tests/free-space-tests.c |  2 +-
+ 2 files changed, 7 insertions(+), 7 deletions(-)
 
+diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
+index fa62335..2813ef0 100644
+--- a/fs/btrfs/free-space-cache.c
++++ b/fs/btrfs/free-space-cache.c
+@@ -29,7 +29,7 @@
+ #include "inode-map.h"
+ #include "volumes.h"
+ 
+-#define BITS_PER_BITMAP		(PAGE_SIZE * 8)
++#define BITS_PER_BITMAP		(PAGE_SIZE * 8UL)
+ #define MAX_CACHE_BYTES_PER_GIG	SZ_32K
+ 
+ struct btrfs_trim_range {
+@@ -1415,11 +1415,11 @@ static inline u64 offset_to_bitmap(struct btrfs_free_space_ctl *ctl,
+ 				   u64 offset)
+ {
+ 	u64 bitmap_start;
+-	u32 bytes_per_bitmap;
++	u64 bytes_per_bitmap;
+ 
+ 	bytes_per_bitmap = BITS_PER_BITMAP * ctl->unit;
+ 	bitmap_start = offset - ctl->start;
+-	bitmap_start = div_u64(bitmap_start, bytes_per_bitmap);
++	bitmap_start = div64_u64(bitmap_start, bytes_per_bitmap);
+ 	bitmap_start *= bytes_per_bitmap;
+ 	bitmap_start += ctl->start;
+ 
+@@ -1638,10 +1638,10 @@ static void recalculate_thresholds(struct btrfs_free_space_ctl *ctl)
+ 	u64 bitmap_bytes;
+ 	u64 extent_bytes;
+ 	u64 size = block_group->key.offset;
+-	u32 bytes_per_bg = BITS_PER_BITMAP * ctl->unit;
+-	u32 max_bitmaps = div_u64(size + bytes_per_bg - 1, bytes_per_bg);
++	u64 bytes_per_bg = BITS_PER_BITMAP * ctl->unit;
++	u64 max_bitmaps = div64_u64(size + bytes_per_bg - 1, bytes_per_bg);
+ 
+-	max_bitmaps = max_t(u32, max_bitmaps, 1);
++	max_bitmaps = max_t(u64, max_bitmaps, 1);
+ 
+ 	ASSERT(ctl->total_bitmaps <= max_bitmaps);
+ 
 diff --git a/fs/btrfs/tests/free-space-tests.c b/fs/btrfs/tests/free-space-tests.c
-index 029343b..3956bb2 100644
+index 0eeb8f3..f3756d6 100644
 --- a/fs/btrfs/tests/free-space-tests.c
 +++ b/fs/btrfs/tests/free-space-tests.c
-@@ -843,7 +843,13 @@ int btrfs_test_free_space_cache(u32 sectorsize, u32 nodesize)
+@@ -22,7 +22,7 @@
+ #include "../disk-io.h"
+ #include "../free-space-cache.h"
  
- 	test_msg("Running btrfs free space cache tests\n");
+-#define BITS_PER_BITMAP		(PAGE_SIZE * 8)
++#define BITS_PER_BITMAP		(PAGE_SIZE * 8UL)
  
--	cache = btrfs_alloc_dummy_block_group(1024 * 1024 * 1024, sectorsize);
-+	/*
-+	 * For ppc64 (with 64k page size), bytes per bitmap might be
-+	 * larger than 1G.  To make bitmap test available in ppc64,
-+	 * alloc dummy block group whose size cross bitmaps.
-+	 */
-+	cache = btrfs_alloc_dummy_block_group(BITS_PER_BITMAP * sectorsize
-+					+ PAGE_SIZE, sectorsize);
- 	if (!cache) {
- 		test_msg("Couldn't run the tests\n");
- 		return 0;
+ /*
+  * This test just does basic sanity checking, making sure we can add an extent
 -- 
 2.7.4
 

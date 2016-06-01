@@ -1,82 +1,70 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from e19.ny.us.ibm.com ([129.33.205.209]:58078 "EHLO
-	e19.ny.us.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751648AbcFAPxB (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 1 Jun 2016 11:53:01 -0400
+Received: from e17.ny.us.ibm.com ([129.33.205.207]:57017 "EHLO
+	e17.ny.us.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932108AbcFAPxL (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 1 Jun 2016 11:53:11 -0400
 Received: from localhost
-	by e19.ny.us.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
+	by e17.ny.us.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
 	for <linux-btrfs@vger.kernel.org> from <xufeifei@linux.vnet.ibm.com>;
-	Wed, 1 Jun 2016 11:53:00 -0400
+	Wed, 1 Jun 2016 11:53:10 -0400
 From: Feifei Xu <xufeifei@linux.vnet.ibm.com>
 To: linux-btrfs@vger.kernel.org
 Cc: steve.capper@linaro.org, chandan@mykolab.com, jbacik@fb.com,
         dsterba@suse.com, chandan@linux.vnet.ibm.com, feifeixu.sh@gmail.com,
         Feifei Xu <xufeifei@linux.vnet.ibm.com>
-Subject: [PATCH V2 1/8] Btrfs: test_check_exists: Fix infinite loop when searching for free space entries
-Date: Wed,  1 Jun 2016 15:51:40 +0000
-Message-Id: <1464796307-67173-2-git-send-email-xufeifei@linux.vnet.ibm.com>
+Subject: [PATCH V2 8/8] Btrfs: self-tests: Fix extent buffer bitmap test fail on BE system
+Date: Wed,  1 Jun 2016 15:51:47 +0000
+Message-Id: <1464796307-67173-9-git-send-email-xufeifei@linux.vnet.ibm.com>
 In-Reply-To: <1464796307-67173-1-git-send-email-xufeifei@linux.vnet.ibm.com>
 References: <1464796307-67173-1-git-send-email-xufeifei@linux.vnet.ibm.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On a ppc64 machine using 64K as the block size, assume that the RB
-tree at btrfs_free_space_ctl->free_space_offset contains following
-two entries:
-
-1. A bitmap entry having an offset value of 0 and having the bits
-   corresponding to the address range [128M+512K, 128M+768K] set.
-2. An extent entry corresponding to the address range
-   [128M-256K, 128M-128K]
-
-In such a scenario, test_check_exists() invoked for checking the
-existence of address range [128M+768K, 256M] can lead to an
-infinite loop as explained below:
-
-- Checking for the extent entry fails.
-- Checking for a bitmap entry results in the free space info in
-  range [128M+512K, 128M+768K] beng returned.
-- rb_prev(info) returns NULL because the bitmap entry starting from
-  offset 0 comes first in the RB tree.
-- current_node = bitmap node.
-- while (current_node)
-	tmp = rb_next(bitmap_node);/*tmp is extent based free space entry*/
-	Since extent based free space entry's last address is smaller
-	than the address being searched for (i.e. 128M+768K) we
-	incorrectly again obtain the extent node as the "next right node"
-	of the RB tree and thus end up looping infinitely.
-
-This patch fixes the issue by checking the "tmp" variable which point
-to the most recently searched free space node.
+In __test_eb_bitmaps(), we write random data to a bitmap. Then copy
+the bitmap to another bitmap that resides inside an extent buffer.
+Later we verify the values of corresponding bits in the bitmap and the
+bitmap inside the extent buffer. However, extent_buffer_test_bit()
+reads in byte granularity while test_bit() reads in unsigned long
+granularity. Hence we end up comparing wrong bits on big-endian
+systems such as ppc64. This commit fixes the issue by reading the
+bitmap in byte granularity.
 
 Reviewed-by: Chandan Rajendra <chandan@linux.vnet.ibm.com>
 Signed-off-by: Feifei Xu <xufeifei@linux.vnet.ibm.com>
 ---
- fs/btrfs/free-space-cache.c | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+ fs/btrfs/tests/extent-io-tests.c | 12 +++++++++++-
+ 1 file changed, 11 insertions(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
-index c6dc118..fa62335 100644
---- a/fs/btrfs/free-space-cache.c
-+++ b/fs/btrfs/free-space-cache.c
-@@ -3662,7 +3662,7 @@ have_info:
- 			if (tmp->offset + tmp->bytes < offset)
- 				break;
- 			if (offset + bytes < tmp->offset) {
--				n = rb_prev(&info->offset_index);
-+				n = rb_prev(&tmp->offset_index);
- 				continue;
- 			}
- 			info = tmp;
-@@ -3676,7 +3676,7 @@ have_info:
- 			if (offset + bytes < tmp->offset)
- 				break;
- 			if (tmp->offset + tmp->bytes < offset) {
--				n = rb_next(&info->offset_index);
-+				n = rb_next(&tmp->offset_index);
- 				continue;
- 			}
- 			info = tmp;
+diff --git a/fs/btrfs/tests/extent-io-tests.c b/fs/btrfs/tests/extent-io-tests.c
+index d7f5bbb..0f7cfab 100644
+--- a/fs/btrfs/tests/extent-io-tests.c
++++ b/fs/btrfs/tests/extent-io-tests.c
+@@ -273,6 +273,16 @@ out:
+ 	return ret;
+ }
+ 
++/**
++ * test_bit_in_byte - Determine whether a bit is set in a byte
++ * @nr: bit number to test
++ * @addr: Address to start counting from
++ */
++static inline int test_bit_in_byte(int nr, const u8 *addr)
++{
++	return 1UL & (addr[nr / BITS_PER_BYTE] >> (nr & (BITS_PER_BYTE - 1)));
++}
++
+ static int __test_eb_bitmaps(unsigned long *bitmap, struct extent_buffer *eb,
+ 			     unsigned long len)
+ {
+@@ -338,7 +348,7 @@ static int __test_eb_bitmaps(unsigned long *bitmap, struct extent_buffer *eb,
+ 	for (i = 0; i < len * BITS_PER_BYTE; i++) {
+ 		int bit, bit1;
+ 
+-		bit = !!test_bit(i, bitmap);
++		bit = !!test_bit_in_byte(i, (u8 *)bitmap);
+ 		bit1 = !!extent_buffer_test_bit(eb, 0, i);
+ 		if (bit1 != bit) {
+ 			test_msg("Testing bit pattern failed\n");
 -- 
 2.7.4
 

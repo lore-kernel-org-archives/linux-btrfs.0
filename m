@@ -1,40 +1,66 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:49353 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750716AbcFAMeO (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 1 Jun 2016 08:34:14 -0400
-Date: Wed, 1 Jun 2016 14:33:34 +0200
-From: David Sterba <dsterba@suse.cz>
-To: dsterba@suse.cz, Feifei Xu <xufeifei@linux.vnet.ibm.com>,
-        linux-btrfs@vger.kernel.org, steve.capper@linaro.org,
-        chandan@mykolab.com, jbacik@fb.com, dsterba@suse.com,
-        chandan@linux.vnet.ibm.com, feifeixu.sh@gmail.com
-Subject: Re: [PATCH V2 5/8] Btrfs: self-tests: Support testing all possible
- sectorsizes and nodesizes
-Message-ID: <20160601123334.GW29147@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <201606011120.u51BJXQB005621@mx0a-001b2d01.pphosted.com>
- <201606011120.u51BJVGc003246@mx0a-001b2d01.pphosted.com>
- <20160601122118.GV29147@twin.jikos.cz>
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:6563 "EHLO
+	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1755474AbcFAROR (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 1 Jun 2016 13:14:17 -0400
+Subject: Re: [PATCH V2 0/8] Btrfs: self-tests: Support non-4k page size
+To: Feifei Xu <xufeifei@linux.vnet.ibm.com>, <linux-btrfs@vger.kernel.org>
+References: <1464796307-67173-1-git-send-email-xufeifei@linux.vnet.ibm.com>
+CC: <steve.capper@linaro.org>, <chandan@mykolab.com>, <dsterba@suse.com>,
+        <chandan@linux.vnet.ibm.com>, <feifeixu.sh@gmail.com>
+From: Josef Bacik <jbacik@fb.com>
+Message-ID: <a019c0ce-29cc-a719-0920-a77965654f9f@fb.com>
+Date: Wed, 1 Jun 2016 13:13:47 -0400
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20160601122118.GV29147@twin.jikos.cz>
+In-Reply-To: <1464796307-67173-1-git-send-email-xufeifei@linux.vnet.ibm.com>
+Content-Type: text/plain; charset="windows-1252"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jun 01, 2016 at 02:21:18PM +0200, David Sterba wrote:
-> >  static int btrfs_run_sanity_tests(void)
-> >  {
-> > -	int ret;
-> > +	int ret, i;
-> >  	u32 sectorsize, nodesize;
-> > -
-> > -	sectorsize = PAGE_SIZE;
-> > -	nodesize = PAGE_SIZE;
-> 
-> This does not seem to apply to any branch I'd expect to be relevant
-> (master, for-linus, chandan's main patchset), please clarify.
+On 06/01/2016 11:51 AM, Feifei Xu wrote:
+> Hi,
+>
+> Btrfs self-test module assumed that both sectorsize and PAGE_SIZE are 4K.
+> Thus many self-tests fail on non-4K page size systems, like ppc64. This
+> patchset enables self-tests to be executed on non-4k page size systems.
+>
+> This patchset enables us to easily add support for possible sectorsizes and
+> nodesizes (e.g. for future subpage-blocksize support).
+>
+> This patchset also fixes the following bugs in self-tests:
+>  1) Fix integer overflow when calculating bytes_per_bitmap
+>  2) Fix infinite loop when searching for free space
+>  3) Fix extent test_bitmaps fail on 64k sectorsize system
+>  4) Fix extent buffer bitmap test fail on big-endian system
+>
+> Also use macros instead of constants add add missing newline
+> when print strings in self-tests codes.
+>
+> -----
+> V1->V2:
+>   1) use rb_next(&tmp->offset_index)/rb_prev(&tmp->offset_index) instead
+>      of doing the info = tmp thing. As suggested by Josef Bacik.
+>
+>   2) Separate V1 patch "[PATCH 3/5] Btrfs: self-tests: Support non-4k
+>      page size" to following  patches in V2.
+> 	- [PATCH V2 3/8] Btrfs: self-tests: Support non-4k page size
+> 	- [PATCH V2 4/8] Btrfs: self-tests: Execute page straddling
+> 		test only when nodesize < PAGE_SIZE
+> 	- [PATCH V2 5/8] Btrfs: self-tests: Support testing all
+> 		possible sectorsizes and nodesizes
+> 	- [PATCH V2 6/8] Btrfs: self-tests: Use macros instead of
+> 		constants and add missing newline
+>      As suggested by David Sterba that separate all change that are not
+>      related to hardcoded 4096/sectorsize/PAGE_SIZE.
+>
+>   3) fix some coding style issue
 
-Aha, sorry, this was in patch 3. BTW, please fix the mail threading so
-the patches are replies to the cover letter. I fixed that manually in
-mutt but did not add all the patches that arrived later.
+You can add
+
+Reviewed-by: Josef Bacik <jbacik@fb.com>
+
+Thanks,
+
+Josef
+

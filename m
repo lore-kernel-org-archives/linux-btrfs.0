@@ -1,143 +1,174 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-vk0-f48.google.com ([209.85.213.48]:33890 "EHLO
-	mail-vk0-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750863AbcFAWW7 convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 1 Jun 2016 18:22:59 -0400
-Received: by mail-vk0-f48.google.com with SMTP id c189so47512711vkb.1
-        for <linux-btrfs@vger.kernel.org>; Wed, 01 Jun 2016 15:22:58 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <CAE8gLh=g7oUK_FAcSN2HaeFmEsK1jBMar4DEfzBwEWiUioDhAQ@mail.gmail.com>
-References: <CAE8gLhm0-+kkwFv1-+t+tWLrZrzh4B9cJUDRrgPpwfvB_obVCA@mail.gmail.com>
-	<CAEtw4r2hsCd1+bFNcXn_s5jj-8x6qer+x0gLx8wTgNi1=nAXhw@mail.gmail.com>
-	<CAE8gLh=g7oUK_FAcSN2HaeFmEsK1jBMar4DEfzBwEWiUioDhAQ@mail.gmail.com>
-Date: Thu, 2 Jun 2016 00:22:57 +0200
-Message-ID: <CAPmG0jb0eVsg1gX4q3TMA9icRaPS9ULcs2KPBX-_biJ5KPUsrQ@mail.gmail.com>
-Subject: Re: "No space left on device" and balance doesn't work
-From: Henk Slager <eye1tm@gmail.com>
-To: MegaBrutal <megabrutal@gmail.com>
-Cc: Peter Becker <floyd.net@gmail.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Received: from mailgw-02.dd24.net ([193.46.215.43]:58517 "EHLO
+	mailgw-02.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750863AbcFAWZj (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 1 Jun 2016 18:25:39 -0400
+Received: from mailpolicy-01.live.igb.homer.key-systems.net (mailpolicy-02.live.igb.homer.key-systems.net [192.168.1.27])
+	by mailgw-02.dd24.net (Postfix) with ESMTP id C23AD5FB0E
+	for <linux-btrfs@vger.kernel.org>; Wed,  1 Jun 2016 22:25:36 +0000 (UTC)
+Received: from mailgw-02.dd24.net ([192.168.1.36])
+	by mailpolicy-01.live.igb.homer.key-systems.net (mailpolicy-02.live.igb.homer.key-systems.net [192.168.1.25]) (amavisd-new, port 10236)
+	with ESMTP id JMreI7Ru49cp for <linux-btrfs@vger.kernel.org>;
+	Wed,  1 Jun 2016 22:25:34 +0000 (UTC)
+Received: from heisenberg.fritz.box (ppp-46-244-216-200.dynamic.mnet-online.de [46.244.216.200])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+	(No client certificate requested)
+	by mailgw-02.dd24.net (Postfix) with ESMTPSA
+	for <linux-btrfs@vger.kernel.org>; Wed,  1 Jun 2016 22:25:34 +0000 (UTC)
+Message-ID: <1464819934.6742.71.camel@scientia.net>
+Subject: raid5/6 production use status?
+From: Christoph Anton Mitterer <calestyo@scientia.net>
+To: linux-btrfs@vger.kernel.org
+Date: Thu, 02 Jun 2016 00:25:34 +0200
+Content-Type: multipart/signed; micalg="sha-512";
+	protocol="application/x-pkcs7-signature";
+	boundary="=-jPSVAYny0nH3S/VmUZpM"
+Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jun 1, 2016 at 11:06 PM, MegaBrutal <megabrutal@gmail.com> wrote:
-> Hi Peter,
->
-> I tried. I either get "Done, had to relocate 0 out of 33 chunks" or
-> "ERROR: error during balancing '/': No space left on device", and
-> nothing changes.
->
->
-> 2016-06-01 22:29 GMT+02:00 Peter Becker <floyd.net@gmail.com>:
->> try this:
->>
->> btrfs fi balance start -musage=0 /
->> btrfs fi balance start -dusage=0 /
->>
->> btrfs fi balance start -musage=1 /
->> btrfs fi balance start -dusage=1 /
->>
->> btrfs fi balance start -musage=5 /
->> btrfs fi balance start -musage=10 /
->> btrfs fi balance start -musage=20 /
->>
->>
->> btrfs fi balance start -dusage=5 /
->> btrfs fi balance start -dusage=10 /
->> btrfs fi balance start -dusage=20 /
->> ....
->>
->> 2016-06-01 20:30 GMT+02:00 MegaBrutal <megabrutal@gmail.com>:
->>> Hi all,
->>>
->>> I have a 20 GB file system and df says I have about 2,6 GB free space,
->>> yet I can't do anything on the file system because I get "No space
->>> left on device" errors. I read that balance may help to remedy the
->>> situation, but it actually doesn't.
->>>
->>>
->>> Some data about the FS:
->>>
->>>
->>> root@ReThinkCentre:~# df -h /
->>> Fájlrendszer                Méret Fogl. Szab. Fo.% Csatol. pont
->>> /dev/mapper/centrevg-rootlv   20G   18G  2,6G  88% /
->>>
->>> root@ReThinkCentre:~# btrfs fi show /
->>> Label: 'RootFS'  uuid: 3f002b8d-8a1f-41df-ad05-e3c91d7603fb
->>>         Total devices 1 FS bytes used 15.42GiB
->>>         devid    1 size 20.00GiB used 20.00GiB path /dev/mapper/centrevg-rootlv
 
-The device is completely filled with chunks (size and used are the
-same) and none of the chunks is empty so a balance won't work at all.
+--=-jPSVAYny0nH3S/VmUZpM
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
-A way to get out of this situation is to add a temporary extra device
-(e.g. 8GB USB stick or a loop device on some larger USB disk) to the
-fs and then do the various balance operations. Removing as much as
-possible snapshots will ease the balance mostly, depending how old the
-snapshots are.
-Once you see that the total amount of space used by chunks is (a few
-GiB) less then 19GiB, you can remove the temporary extra device from
-the fs again.
+Hey.
 
-It then is still possible that you run into the same situation again;
-This is a longterm bug/problem. A brand new kernel might help, with
-ENOSPC patches included.
+I've lost a bit track recently and the wiki changelog doesn't seem to
+contain much about how things went on at the RAID5/6 front... so how're
+things going?
 
-What is the kernel version used?
-Is the fs on a mechanical disk or SSD?
-What are the mount options?
-How old is the fs?
+Is it already more or less "productively" usable? What's still missing?
 
-You might want to run this phython script, so you get an idea of what
-the chunks fill-level is
-https://github.com/knorrie/btrfs-heatmap/blob/master/show_usage.py
+I guess there still aren't any administrative tools that e.g. monitor
+for failed disks or block errors?
 
-Also you could mount the fs with enospc_debug, and see what is reported in dmesg
+Does that RAID5/6 itself work already? Is it possible to replace broken
+devices (or such with block errors)? Are things like a completely
+failing disk (during fs being online) handled gracefully?
+How about scrubbing/repairing... I assume on read it would identify
+silent block errors by the checksum[0] and rebuild it if possible,
+doing what when it fails? Just giving read errors? Marking the btrfs
+RAID failed and remounting the fs read-only?
 
->>> root@ReThinkCentre:~# btrfs fi df /
->>> Data, single: total=16.69GiB, used=14.14GiB
->>> System, DUP: total=32.00MiB, used=16.00KiB
->>> Metadata, DUP: total=1.62GiB, used=1.28GiB
->>> GlobalReserve, single: total=352.00MiB, used=0.00B
->>>
->>> root@ReThinkCentre:~# btrfs version
->>> btrfs-progs v4.4
->>>
->>>
->>> This happens when I try to balance:
->>>
->>> root@ReThinkCentre:~# btrfs fi balance start -dusage=66 /
->>> Done, had to relocate 0 out of 33 chunks
->>> root@ReThinkCentre:~# btrfs fi balance start -dusage=67 /
->>> ERROR: error during balancing '/': No space left on device
->>> There may be more info in syslog - try dmesg | tail
->>>
->>>
->>> "dmesg | tail" does not show anything related to this.
->>>
->>> It is important to note that the file system currently has 32
->>> snapshots of / at the moment, and snapshots taking up all the free
->>> space is a plausible explanation. Maybe deleting some of the oldest
->>> snapshots or just increasing the file system would help the situation.
->>> However, I'm still interested, if the file system is full, why does df
->>> show there is free space, and how could I show the situation without
->>> having the mentioned options? I actually have an alert set up which
->>> triggers when the FS usage reaches 90%, so then I know I have to
->>> delete some old snapshots. It worked so far, I cleaned the snapshots
->>> at 90%, FS usage fell back, everyone was happy. But now the alert
->>> didn't even trigger because the FS is at 88% usage, so it shouldn't be
->>> full yet.
->>>
->>>
->>> Best regards and kecske,
->>> MegaBrutal
->>> --
->>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->>> the body of a message to majordomo@vger.kernel.org
->>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+
+Cheers & thx,
+Chris.
+
+[0] Except of course for the nodatacow case, which, albeit a major
+case, unfortunately still seems to lack the important checksumming
+support :-(
+--=-jPSVAYny0nH3S/VmUZpM
+Content-Type: application/x-pkcs7-signature; name="smime.p7s"
+Content-Disposition: attachment; filename="smime.p7s"
+Content-Transfer-Encoding: base64
+
+MIAGCSqGSIb3DQEHAqCAMIACAQExDzANBglghkgBZQMEAgMFADCABgkqhkiG9w0BBwEAAKCCEmow
+ggXiMIIDyqADAgECAhBctkhuRwyYxn/2gNtkSuKNMA0GCSqGSIb3DQEBCwUAMH0xCzAJBgNVBAYT
+AklMMRYwFAYDVQQKEw1TdGFydENvbSBMdGQuMSswKQYDVQQLEyJTZWN1cmUgRGlnaXRhbCBDZXJ0
+aWZpY2F0ZSBTaWduaW5nMSkwJwYDVQQDEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0
+eTAeFw0xNTEyMTYwMTAwMDVaFw0zMDEyMTYwMTAwMDVaMHUxCzAJBgNVBAYTAklMMRYwFAYDVQQK
+Ew1TdGFydENvbSBMdGQuMSkwJwYDVQQLEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0
+eTEjMCEGA1UEAxMaU3RhcnRDb20gQ2xhc3MgMiBDbGllbnQgQ0EwggEiMA0GCSqGSIb3DQEBAQUA
+A4IBDwAwggEKAoIBAQDuD1CMlQkjhKz1UGqP1jeiTiH9MgllRz6vOPrVG/eE0H/J4QQLV/PeL8RT
+4xc44bEzsoJu0IhwnEchb+TxE/qw88w7hxODuw3N8Faxix6a1jp83+RWvZHZf78+O+3GYBpekZfT
+Oe9A/FoTXbcgwZfLTMQodn+ckNnX31M/1M2f2/7VA7QBlvihontyHQOlIlryQXnGI0UMCD21oopK
+tW48ckv0wUVg8irBKGMeD65gTON/Fsw/ZBbBqadoD1jt85FIM1ql24WUBEBwO1d0ykCKOIbgcqes
+3fbcjQpruUNMBbIu1MMIRMqwjx/M7IvSKcS7VYRWl0/K2byzWvBAHh/1AgMBAAGjggFkMIIBYDAO
+BgNVHQ8BAf8EBAMCAQYwHQYDVR0lBBYwFAYIKwYBBQUHAwIGCCsGAQUFBwMEMBIGA1UdEwEB/wQI
+MAYBAf8CAQAwMgYDVR0fBCswKTAnoCWgI4YhaHR0cDovL2NybC5zdGFydHNzbC5jb20vc2ZzY2Eu
+Y3JsMGYGCCsGAQUFBwEBBFowWDAkBggrBgEFBQcwAYYYaHR0cDovL29jc3Auc3RhcnRzc2wuY29t
+MDAGCCsGAQUFBzAChiRodHRwOi8vYWlhLnN0YXJ0c3NsLmNvbS9jZXJ0cy9jYS5jcnQwHQYDVR0O
+BBYEFJmXqxg1OotZRUOYsnJxyPT7Cc8WMB8GA1UdIwQYMBaAFE4L7xqkQFulF2mHMMo0aEPQQa7y
+MD8GA1UdIAQ4MDYwNAYEVR0gADAsMCoGCCsGAQUFBwIBFh5odHRwOi8vd3d3LnN0YXJ0c3NsLmNv
+bS9wb2xpY3kwDQYJKoZIhvcNAQELBQADggIBAJlBQQTO9iT1TjA0eEO7V/1AbBvMAfibjAgofxmJ
+01jBmHKg0pbTjWInTTYoxb3LBgz3mfjvvS1PjnIfb29MyVm0G/PSHjgq7Ews1dEJMPC9XTuxPf2c
++MWLkynBlotW542JprW+iTWfZafyUtzIKW1hk0YASJ8zSSj8D++9yR+0UhkbvlECJkdi1+et0EaI
+7HIX6ccj1rfcFFflWX/fPT64dn9jpg9s0nuJug4WsVkEK236WndZoMHrZmgF7CIyZ3T0muqYwkAS
+DDcRt9A21o/Mc+D8Q6GVmKRGB3gEKvOtsioHZEqJv6CdAm3a6gloo5pX3RL1eCzc8Lzfs4T0ISZj
+r8xNMbTGlsuHaFH+stDewKsfnpo4N64OtAGrzmVfFFsMIRENRHsVlSEe/6LVpBpjn00+7bqEN3qe
+qSxIOraYJ12mJ08G4YnP2U1fadHIaS50O5ZXqAivoBl9pi/6CBNc5wIMlkXMyFZ0sLsI+9ErFDu9
+OJhX7iWCo69X0ydlzXj08+2K1PKyr+g6/vTPHur63JotNrhyoWEJyWEjBLA4QmJXfGpB5u+bCwNf
+sFpcYAlkiFt1Rs2vemgSBy3q4DHDbPKvr1YImZNRSHP+TX9NP94JRkmqcyD/qaN7u2JV1pRAlwG0
+npyrn6ZQM1QHV+iFbwQ4VqLMWk//QVo/rZy1MIIGPjCCBSagAwIBAgIQPZ6tDP/RHLwcz1F+2kRA
+DzANBgkqhkiG9w0BAQsFADB1MQswCQYDVQQGEwJJTDEWMBQGA1UEChMNU3RhcnRDb20gTHRkLjEp
+MCcGA1UECxMgU3RhcnRDb20gQ2VydGlmaWNhdGlvbiBBdXRob3JpdHkxIzAhBgNVBAMTGlN0YXJ0
+Q29tIENsYXNzIDIgQ2xpZW50IENBMB4XDTE2MDEwMjAyMDIzNloXDTE4MDEwMjAyMDIzNlowejEL
+MAkGA1UEBhMCREUxDzANBgNVBAgMBkJheWVybjERMA8GA1UEBwwITcO8bmNoZW4xITAfBgNVBAMM
+GENocmlzdG9waCBBbnRvbiBNaXR0ZXJlcjEkMCIGCSqGSIb3DQEJARYVY2FsZXN0eW9Ac2NpZW50
+aWEubmV0MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAsoxs789VtR81tlqeP2vwE3Cp
+YosZYRfrovj+Wb91paoV5OQcFuXA7yONnLsWxOnJ3AGgy1/wG79Ko+yHSmF2K88pEWjrFe0zmZWZ
+0b2OtMoKLEjxz7Nz2N7/lmgss8XinJ083LwLKSe4f+JLjnF5hX/g6wG4NkFXVOIf2YFZ0+c1NYFQ
+T6Vy42EWdk+JLDoXjyd2hEperLCz9rQr2k3wh0cn8R1FDUGerBGpMnvyKV6JXj5vZsqJnmiiId9e
+0IdBj4Wcs3hT2usk6dJYwHrZ8b7Fkv6BRq90DUI7i8+ukTdp5hnAb8TPSbe1JS4h3Jc7r2NVLkpo
+Gbuw98er9s2PEAvpECD3toO3ojBevL56vEDbGa5tXpvvcWCz6t3QyEKJ2E54hWw1fbUA0BtydQC0
+mhKBtrENVnnCDrSgiyBMnd8y+kw6iPKeJEjNObGubc4BZp47zPn/ZiDBaHue6S0MXsoS7XEGOuCU
+09S/8kD8wTecBg+KdlLSNkLm+xqx6Cy7zwcj3IuQv0PeWi4kfEkAJfl8IeAP/4049iA6a1rkhJl7
+1rDjpEGBCG+i9BAgBeNdHLtQ7bugdvU+GfHjFXEU1emUk91E2liML8kpCvhUAXcLhhL8bxPJiX2/
+VQ2esrpQVO56OzpivNauonLaWmHEKOSfPC3s5AKMytMTiUiszEUCAwEAAaOCAcMwggG/MAsGA1Ud
+DwQEAwIEsDAdBgNVHSUEFjAUBggrBgEFBQcDAgYIKwYBBQUHAwQwCQYDVR0TBAIwADAdBgNVHQ4E
+FgQUwRklxF1ZV2ooSMkFwLiK13apkK0wHwYDVR0jBBgwFoAUmZerGDU6i1lFQ5iycnHI9PsJzxYw
+bwYIKwYBBQUHAQEEYzBhMCQGCCsGAQUFBzABhhhodHRwOi8vb2NzcC5zdGFydHNzbC5jb20wOQYI
+KwYBBQUHMAKGLWh0dHA6Ly9haWEuc3RhcnRzc2wuY29tL2NlcnRzL3NjYS5jbGllbnQyLmNydDA4
+BgNVHR8EMTAvMC2gK6AphidodHRwOi8vY3JsLnN0YXJ0c3NsLmNvbS9zY2EtY2xpZW50Mi5jcmww
+IAYDVR0RBBkwF4EVY2FsZXN0eW9Ac2NpZW50aWEubmV0MCMGA1UdEgQcMBqGGGh0dHA6Ly93d3cu
+c3RhcnRzc2wuY29tLzBUBgNVHSAETTBLMAwGCisGAQQBgbU3BgEwOwYLKwYBBAGBtTcBAgQwLDAq
+BggrBgEFBQcCARYeaHR0cDovL3d3dy5zdGFydHNzbC5jb20vcG9saWN5MA0GCSqGSIb3DQEBCwUA
+A4IBAQBb8EIsoUN/tgUgQqrNXNtlksPep84kx5yRBgr71uf3ITLddGtzfDBj6KdZUoy7SG3MQkyO
+kvYmXBClj23rv8Iol48/3oi9XWZw5EV3uHrRse1TzQgMPZE0hZsDgkqXVoxMQfk55ndjZIHMfSkn
+hdnqSP5zZ4TCmDEKLppPMDcQSSrjilnbthpxlIJzeGeEFtrh6ssh/oF6mUaEGFcd8kx9RS51K1gt
+H4J36y4E6pKB7EdxG2+0yVzAIta8dkD/BiMCKRWhp1EmzQ2uIh2nX5y8t4e2xHHuiy11Yeq6UTW/
+JmfxF4xcbkNK/rv9ISBg9K+mZtg2QXr+P/CJBtej2RLUMIIGPjCCBSagAwIBAgIQPZ6tDP/RHLwc
+z1F+2kRADzANBgkqhkiG9w0BAQsFADB1MQswCQYDVQQGEwJJTDEWMBQGA1UEChMNU3RhcnRDb20g
+THRkLjEpMCcGA1UECxMgU3RhcnRDb20gQ2VydGlmaWNhdGlvbiBBdXRob3JpdHkxIzAhBgNVBAMT
+GlN0YXJ0Q29tIENsYXNzIDIgQ2xpZW50IENBMB4XDTE2MDEwMjAyMDIzNloXDTE4MDEwMjAyMDIz
+NlowejELMAkGA1UEBhMCREUxDzANBgNVBAgMBkJheWVybjERMA8GA1UEBwwITcO8bmNoZW4xITAf
+BgNVBAMMGENocmlzdG9waCBBbnRvbiBNaXR0ZXJlcjEkMCIGCSqGSIb3DQEJARYVY2FsZXN0eW9A
+c2NpZW50aWEubmV0MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAsoxs789VtR81tlqe
+P2vwE3CpYosZYRfrovj+Wb91paoV5OQcFuXA7yONnLsWxOnJ3AGgy1/wG79Ko+yHSmF2K88pEWjr
+Fe0zmZWZ0b2OtMoKLEjxz7Nz2N7/lmgss8XinJ083LwLKSe4f+JLjnF5hX/g6wG4NkFXVOIf2YFZ
+0+c1NYFQT6Vy42EWdk+JLDoXjyd2hEperLCz9rQr2k3wh0cn8R1FDUGerBGpMnvyKV6JXj5vZsqJ
+nmiiId9e0IdBj4Wcs3hT2usk6dJYwHrZ8b7Fkv6BRq90DUI7i8+ukTdp5hnAb8TPSbe1JS4h3Jc7
+r2NVLkpoGbuw98er9s2PEAvpECD3toO3ojBevL56vEDbGa5tXpvvcWCz6t3QyEKJ2E54hWw1fbUA
+0BtydQC0mhKBtrENVnnCDrSgiyBMnd8y+kw6iPKeJEjNObGubc4BZp47zPn/ZiDBaHue6S0MXsoS
+7XEGOuCU09S/8kD8wTecBg+KdlLSNkLm+xqx6Cy7zwcj3IuQv0PeWi4kfEkAJfl8IeAP/4049iA6
+a1rkhJl71rDjpEGBCG+i9BAgBeNdHLtQ7bugdvU+GfHjFXEU1emUk91E2liML8kpCvhUAXcLhhL8
+bxPJiX2/VQ2esrpQVO56OzpivNauonLaWmHEKOSfPC3s5AKMytMTiUiszEUCAwEAAaOCAcMwggG/
+MAsGA1UdDwQEAwIEsDAdBgNVHSUEFjAUBggrBgEFBQcDAgYIKwYBBQUHAwQwCQYDVR0TBAIwADAd
+BgNVHQ4EFgQUwRklxF1ZV2ooSMkFwLiK13apkK0wHwYDVR0jBBgwFoAUmZerGDU6i1lFQ5iycnHI
+9PsJzxYwbwYIKwYBBQUHAQEEYzBhMCQGCCsGAQUFBzABhhhodHRwOi8vb2NzcC5zdGFydHNzbC5j
+b20wOQYIKwYBBQUHMAKGLWh0dHA6Ly9haWEuc3RhcnRzc2wuY29tL2NlcnRzL3NjYS5jbGllbnQy
+LmNydDA4BgNVHR8EMTAvMC2gK6AphidodHRwOi8vY3JsLnN0YXJ0c3NsLmNvbS9zY2EtY2xpZW50
+Mi5jcmwwIAYDVR0RBBkwF4EVY2FsZXN0eW9Ac2NpZW50aWEubmV0MCMGA1UdEgQcMBqGGGh0dHA6
+Ly93d3cuc3RhcnRzc2wuY29tLzBUBgNVHSAETTBLMAwGCisGAQQBgbU3BgEwOwYLKwYBBAGBtTcB
+AgQwLDAqBggrBgEFBQcCARYeaHR0cDovL3d3dy5zdGFydHNzbC5jb20vcG9saWN5MA0GCSqGSIb3
+DQEBCwUAA4IBAQBb8EIsoUN/tgUgQqrNXNtlksPep84kx5yRBgr71uf3ITLddGtzfDBj6KdZUoy7
+SG3MQkyOkvYmXBClj23rv8Iol48/3oi9XWZw5EV3uHrRse1TzQgMPZE0hZsDgkqXVoxMQfk55ndj
+ZIHMfSknhdnqSP5zZ4TCmDEKLppPMDcQSSrjilnbthpxlIJzeGeEFtrh6ssh/oF6mUaEGFcd8kx9
+RS51K1gtH4J36y4E6pKB7EdxG2+0yVzAIta8dkD/BiMCKRWhp1EmzQ2uIh2nX5y8t4e2xHHuiy11
+Yeq6UTW/JmfxF4xcbkNK/rv9ISBg9K+mZtg2QXr+P/CJBtej2RLUMYIEfjCCBHoCAQEwgYkwdTEL
+MAkGA1UEBhMCSUwxFjAUBgNVBAoTDVN0YXJ0Q29tIEx0ZC4xKTAnBgNVBAsTIFN0YXJ0Q29tIENl
+cnRpZmljYXRpb24gQXV0aG9yaXR5MSMwIQYDVQQDExpTdGFydENvbSBDbGFzcyAyIENsaWVudCBD
+QQIQPZ6tDP/RHLwcz1F+2kRADzANBglghkgBZQMEAgMFAKCCAcUwGAYJKoZIhvcNAQkDMQsGCSqG
+SIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTYwNjAxMjIyNTM0WjBPBgkqhkiG9w0BCQQxQgRAwly8
+WSZIiiIH73xXBPwOs3gPBJnyEppgTRyQMvupTGXPZ+pCgc1llfhneUe0TQfENp2SGM/dXIctOmvg
+MsbBjjCBmgYJKwYBBAGCNxAEMYGMMIGJMHUxCzAJBgNVBAYTAklMMRYwFAYDVQQKEw1TdGFydENv
+bSBMdGQuMSkwJwYDVQQLEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0eTEjMCEGA1UE
+AxMaU3RhcnRDb20gQ2xhc3MgMiBDbGllbnQgQ0ECED2erQz/0Ry8HM9RftpEQA8wgZwGCyqGSIb3
+DQEJEAILMYGMoIGJMHUxCzAJBgNVBAYTAklMMRYwFAYDVQQKEw1TdGFydENvbSBMdGQuMSkwJwYD
+VQQLEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0eTEjMCEGA1UEAxMaU3RhcnRDb20g
+Q2xhc3MgMiBDbGllbnQgQ0ECED2erQz/0Ry8HM9RftpEQA8wDQYJKoZIhvcNAQEBBQAEggIAYBok
+/yVyqyDKuXCucg/vOzFzddt+HytqdwDeJoYdQubiSqSPPV97ddfh/GD3b/Gx1Trr4jM6MK0YE3KZ
+B77P5U58FeumfO8SHEmEVfZD5QYzq7FgP8x3lQetZfbQ2mbAbQWGSNcLpfmjY0J9n32IdX4rYzQi
+zhHKKrI36wIaQSxSNLABsUtRWf6YqE+UTABbnjzis32TZyxmXAvNkkq82oiTxyoETMOvzvjjfyLt
+OX8HBJuNTSgDCOtkrxLKbRosYNW3qpzaet1Oc93vKW4q5KwrY+fzJwmzqgLENLgRAT3IREUcWsbv
+BQNtB5JVlSwIeJt9JTdwiOX4esSoOOtR1Ttx8ROeDifM9SlYTwcwv1QtknsuPgG9UJfKDxGuqgfI
+ZbOosy3hwUqFUgrygsFQIfRZLYIEUCH/KyUqGI9LYu5HwDYZgkcLfFIEbm+AVe3hlqjeaskmxJte
+jaq2DWsp300d3O7rVOPX3KLLk55fMXd3eHfnD9wjCx7V36t+j/dY+fS+cOm4BkhniVnoLzSHD8wS
+ejhG3c43G9ilmoIN/8ART9soRfjxTx+vCNg6h1gwasMZaJFqOGNQRl4KJirzMh8vBYXkRY+0Bik8
+96xfhxfa7IXHGoXXmS9vxyioDJNggYHNUEPXJX9kc/6B2wJt84mGnE629bpQSuJSvMXOjG8AAAAA
+AAA=
+
+
+--=-jPSVAYny0nH3S/VmUZpM--
+

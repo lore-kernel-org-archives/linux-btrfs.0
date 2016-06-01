@@ -1,55 +1,78 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:32366 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:29870 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1754676AbcFAD0H (ORCPT
+	with ESMTP id S1751287AbcFABYF (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 31 May 2016 23:26:07 -0400
-Subject: Re: [PATCH] btrfs-progs: make btrfs-image restore to support dup
+	Tue, 31 May 2016 21:24:05 -0400
+Subject: Re: [PATCH] btrfs: fix check_shared for fiemap ioctl
 To: <dsterba@suse.cz>
-References: <1464255780-14429-1-git-send-email-lufq.fnst@cn.fujitsu.com>
- <20160530164518.GE29147@twin.jikos.cz>
- <691c5c1d-4d11-c1c9-956d-bc5b8d553236@cn.fujitsu.com>
- <20160531160108.GH29147@suse.cz>
+References: <1463369030-15434-1-git-send-email-lufq.fnst@cn.fujitsu.com>
+ <20160530152506.GC29147@twin.jikos.cz>
+ <f7e6d563-9964-5427-d9ad-cf7db858ad24@cn.fujitsu.com>
+ <20160531161555.GI29147@suse.cz>
 CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 From: luke <lufq.fnst@cn.fujitsu.com>
-Message-ID: <1857cd49-a5f2-a338-47a0-ce5a54ab5f8c@cn.fujitsu.com>
-Date: Wed, 1 Jun 2016 11:25:57 +0800
+Message-ID: <283c34ba-3ae5-c2c1-1b3e-e0d98c5e4f52@cn.fujitsu.com>
+Date: Wed, 1 Jun 2016 09:23:57 +0800
 MIME-Version: 1.0
-In-Reply-To: <20160531160108.GH29147@suse.cz>
+In-Reply-To: <20160531161555.GI29147@suse.cz>
 Content-Type: text/plain; charset="windows-1252"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
 
-At 06/01/2016 12:01 AM, David Sterba wrote:
-> On Tue, May 31, 2016 at 03:14:25PM +0800, luke wrote:
->>>> @@ -68,6 +68,12 @@ struct meta_cluster {
->>>>    struct fs_chunk {
->>>>    	u64 logical;
->>>>    	u64 physical;
->>>> +	/* physical_dup only store additonal physical for BTRFS_BLOCK_GROUP_DUP
->>>> +	 * currently restore only support single and dup
->>>> +	 * TODO: modify this structure and the function related to this
->>>> +	 * structure for support raid*
->>> What does it do in case of RAID? Can we do runtime checks and report
->>> potential problems? btrfs-image on multiple device was always somehow
->>> tricky so I'll merge the patch.
->> For multiple device,  if the number of  target devices equal to the
->> number of source devices, obviously we can offer the enough disk size
->> and keep the original offset. However, if restore the multi-device
->> metadata to one disk, we should remap all chunk and use other profile to
->> instead of raid*(for example, raid0 -> single, raid1 -> dup). Currently
->> I have only a rough idea, it may need to refactor a lot of function.
->> We can report some warnings when we find raid* profile in the restore
->> process. Should I add these warnings?
-> Yes please, that's what I was asking for. If you're going to do
-> intrusive refactorin, please add tests.
+At 06/01/2016 12:15 AM, David Sterba wrote:
+> On Tue, May 31, 2016 at 11:08:39AM +0800, luke wrote:
+>>>> +};
+>>>> +
+>>>> +/* dynamically allocate and initialize a ref_root */
+>>>> +static struct ref_root *ref_root_alloc(gfp_t gfp_mask)
+>>>> +{
+>>>> +	struct ref_root *ref_tree;
+>>>> +
+>>>> +	ref_tree = kmalloc(sizeof(*ref_tree), gfp_mask);
+>>> Drop the gfp_mask and make it GFP_KERNEL
+>> OK, I'll drop the gfp_mask, but can you tell me why should use
+>> GFP_KERNEL instead of GFP_NOFS?
+> Because there's no need to narrow the allocation constraints. GFP_NOFS
+> is necessary when the caller is on a critical path that must not recurse
+> back to the filesystem through the allocation (ie. if the allocator
+> decides to free some memory and tries tro write dirty data). FIEMAP is
+> called from an ioctl.
+OK, I'll update this patch with GFP_KERNEL.
 >
->
-OK. When I started to refactor, I'll add these.
+>>>>    			disko = em->block_start + offset_in_extent;
+>>>>    
+>>>>    			/*
+>>>> +			 * We need a trans handle to get delayed refs
+>>>> +			 */
+>>>> +			trans = btrfs_join_transaction(root);
+>>> What are the implications of join/end transaction here? It's just
+>>> fiemap, I would not expect messing with transaction here.
+>> This transaction is used to handle delayed_refs, if trans = NULL, we
+>> have to ignore the delayed_refs.
+> Yes that's what the comment says as well, but I still don't understand
+> why, so I need somebody else to review that part.
+If not checking delayed refs, shared_flag will not be set for reflink 
+until transaction committed.
+Test case to test this misbehavior is already submitted(generic/353).
+
+The simplest test procedure would be like  the following:
+
+# xfs_io -f -c "pwrite 0 128K" test
+# cp --reflink test test2
+# xfs_io -c "fiemap" test2
+
+And normally, the SHARED flag should be set, but since the trans isn't 
+committed yet, if not checking delayed refs, we can't determine whether 
+it is shared by others.
 
 Thanks,
 Lu
+
+>
+>
+
 
 

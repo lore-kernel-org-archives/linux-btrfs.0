@@ -1,23 +1,23 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from out2-smtp.messagingengine.com ([66.111.4.26]:33025 "EHLO
+Received: from out2-smtp.messagingengine.com ([66.111.4.26]:58337 "EHLO
 	out2-smtp.messagingengine.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1752536AbcFBDFG convert rfc822-to-8bit
+	by vger.kernel.org with ESMTP id S1752080AbcFBDHB convert rfc822-to-8bit
 	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 1 Jun 2016 23:05:06 -0400
-Received: from compute2.internal (compute2.nyi.internal [10.202.2.42])
-	by mailout.nyi.internal (Postfix) with ESMTP id 707F120D05
-	for <linux-btrfs@vger.kernel.org>; Wed,  1 Jun 2016 23:05:04 -0400 (EDT)
+	Wed, 1 Jun 2016 23:07:01 -0400
+Received: from compute1.internal (compute1.nyi.internal [10.202.2.41])
+	by mailout.nyi.internal (Postfix) with ESMTP id 2B22220B6C
+	for <linux-btrfs@vger.kernel.org>; Wed,  1 Jun 2016 23:07:00 -0400 (EDT)
 Received: from ebox.rath.org (ebox.rath.org [45.79.69.51])
-	by mail.messagingengine.com (Postfix) with ESMTPA id 2A6FDF2022
-	for <linux-btrfs@vger.kernel.org>; Wed,  1 Jun 2016 23:05:04 -0400 (EDT)
+	by mail.messagingengine.com (Postfix) with ESMTPA id DCAC1F29EE
+	for <linux-btrfs@vger.kernel.org>; Wed,  1 Jun 2016 23:06:59 -0400 (EDT)
 Received: from vostro.rath.org (vostro [192.168.12.4])
-	by ebox.rath.org (Postfix) with ESMTPS id CC42F2D417D
-	for <linux-btrfs@vger.kernel.org>; Thu,  2 Jun 2016 03:05:02 +0000 (UTC)
+	by ebox.rath.org (Postfix) with ESMTPS id B39902D417E
+	for <linux-btrfs@vger.kernel.org>; Thu,  2 Jun 2016 03:06:58 +0000 (UTC)
 From: Nikolaus Rath <Nikolaus@rath.org>
 To: linux-btrfs@vger.kernel.org
-Subject: Problems with storing Mercurial repositories
-Date: Wed, 01 Jun 2016 20:05:03 -0700
-Message-ID: <87h9dc5m00.fsf@vostro.rath.org>
+Subject: How to map extents to files
+Date: Wed, 01 Jun 2016 20:06:58 -0700
+Message-ID: <87eg8g5lwt.fsf@vostro.rath.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -25,29 +25,21 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 Hello,
 
-A little while ago I noticed that a btrfsck of my home directory
-produced a *lot* of the following errors:
+For one of my btrfs volumes, btrfsck reports a lot of the following
+warnings:
 
 [...]
-checking fs roots
-root 5 inode 3149867 errors 400, nbytes wrong
-root 5 inode 3150237 errors 400, nbytes wrong
-root 5 inode 3150238 errors 400, nbytes wrong
+checking extents
+bad extent [138477568, 138510336), type mismatch with chunk
+bad extent [140091392, 140148736), type mismatch with chunk
+bad extent [140148736, 140201984), type mismatch with chunk
+bad extent [140836864, 140865536), type mismatch with chunk
 [...]
 
-I've now piped all the inodes through "btrfs inspect-internal
-inode-resolve" and made a surprising discovery: every affected inode is
-a .i file in the ".hg/store/data/" directory of a Mercurial
-repository. This affects multiple repositories of different projects
-created and modified at different times.
+Is there a way to discover which files are affected by this (in
+particular so that I can take a look at them before and after a btrfsck
+--repair)?
 
-As far as Mercurial is concerned, there seems to be no problem. I can
-operate on the repository as always, and "hg verify" finds no issues
-either.
-
-I'm reporting this here mainly so there's a record of the
-phenomenon. But if there is a btrfs test suite, maybe it'd be a good
-idea to add a bunch of Mercurial repository operations to it?
 
 Best,
 -Nikolaus

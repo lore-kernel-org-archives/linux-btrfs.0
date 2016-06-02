@@ -1,51 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from out2-smtp.messagingengine.com ([66.111.4.26]:58337 "EHLO
-	out2-smtp.messagingengine.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1752080AbcFBDHB convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 1 Jun 2016 23:07:01 -0400
-Received: from compute1.internal (compute1.nyi.internal [10.202.2.41])
-	by mailout.nyi.internal (Postfix) with ESMTP id 2B22220B6C
-	for <linux-btrfs@vger.kernel.org>; Wed,  1 Jun 2016 23:07:00 -0400 (EDT)
-Received: from ebox.rath.org (ebox.rath.org [45.79.69.51])
-	by mail.messagingengine.com (Postfix) with ESMTPA id DCAC1F29EE
-	for <linux-btrfs@vger.kernel.org>; Wed,  1 Jun 2016 23:06:59 -0400 (EDT)
-Received: from vostro.rath.org (vostro [192.168.12.4])
-	by ebox.rath.org (Postfix) with ESMTPS id B39902D417E
-	for <linux-btrfs@vger.kernel.org>; Thu,  2 Jun 2016 03:06:58 +0000 (UTC)
-From: Nikolaus Rath <Nikolaus@rath.org>
-To: linux-btrfs@vger.kernel.org
-Subject: How to map extents to files
-Date: Wed, 01 Jun 2016 20:06:58 -0700
-Message-ID: <87eg8g5lwt.fsf@vostro.rath.org>
+Received: from cn.fujitsu.com ([59.151.112.132]:1969 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1750740AbcFBECP (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 2 Jun 2016 00:02:15 -0400
+Subject: Re: How to map extents to files
+To: Nikolaus Rath <Nikolaus@rath.org>, <linux-btrfs@vger.kernel.org>
+References: <87eg8g5lwt.fsf@vostro.rath.org>
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Message-ID: <06ef9ac3-ed15-9621-9629-4c8965618db6@cn.fujitsu.com>
+Date: Thu, 2 Jun 2016 12:01:55 +0800
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
+In-Reply-To: <87eg8g5lwt.fsf@vostro.rath.org>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
-
-For one of my btrfs volumes, btrfsck reports a lot of the following
-warnings:
-
-[...]
-checking extents
-bad extent [138477568, 138510336), type mismatch with chunk
-bad extent [140091392, 140148736), type mismatch with chunk
-bad extent [140148736, 140201984), type mismatch with chunk
-bad extent [140836864, 140865536), type mismatch with chunk
-[...]
-
-Is there a way to discover which files are affected by this (in
-particular so that I can take a look at them before and after a btrfsck
---repair)?
 
 
-Best,
--Nikolaus
+At 06/02/2016 11:06 AM, Nikolaus Rath wrote:
+> Hello,
+>
+> For one of my btrfs volumes, btrfsck reports a lot of the following
+> warnings:
+>
+> [...]
+> checking extents
+> bad extent [138477568, 138510336), type mismatch with chunk
+> bad extent [140091392, 140148736), type mismatch with chunk
+> bad extent [140148736, 140201984), type mismatch with chunk
+> bad extent [140836864, 140865536), type mismatch with chunk
+> [...]
+>
+> Is there a way to discover which files are affected by this (in
+> particular so that I can take a look at them before and after a btrfsck
+> --repair)?
+>
+>
+> Best,
+> -Nikolaus
+>
+Which version is the progs? If the fs is not converted from ext2/3/4, it 
+may be a false alert.
 
--- 
-GPG encrypted emails preferred. Key id: 0xD113FCAC3C4E599F
-Fingerprint: ED31 791B 2C5C 1613 AF38 8B8A D113 FCAC 3C4E 599F
+Thanks,
+Qu
 
-             »Time flies like an arrow, fruit flies like a Banana.«
+

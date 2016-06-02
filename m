@@ -1,111 +1,78 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oi0-f44.google.com ([209.85.218.44]:35391 "EHLO
-	mail-oi0-f44.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932383AbcFBVIl convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 2 Jun 2016 17:08:41 -0400
-Received: by mail-oi0-f44.google.com with SMTP id w184so97494652oiw.2
-        for <linux-btrfs@vger.kernel.org>; Thu, 02 Jun 2016 14:08:40 -0700 (PDT)
+Received: from mail-vk0-f45.google.com ([209.85.213.45]:34628 "EHLO
+	mail-vk0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932337AbcFBWMW (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 2 Jun 2016 18:12:22 -0400
+Received: by mail-vk0-f45.google.com with SMTP id c189so90792029vkb.1
+        for <linux-btrfs@vger.kernel.org>; Thu, 02 Jun 2016 15:12:21 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <57508CED.1020109@xsdg.org>
-References: <57508CED.1020109@xsdg.org>
-Date: Thu, 2 Jun 2016 15:08:39 -0600
-Message-ID: <CAJCQCtQOX+Pw1vsTxsAHnXjx2nQZUBLuKBnis26ST8ONu1+x7w@mail.gmail.com>
-Subject: Re: btrfs ENOSPC "not the usual problem"
-From: Chris Murphy <lists@colorremedies.com>
-To: Omari Stephens <xsdg@xsdg.org>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>, Omari Stephens <xsdg@mit.edu>
+In-Reply-To: <CAC-H7HkWiTD5HYXoTuqW4rEhYSXr9xnp1xk6aZ51F_yhQ--CYw@mail.gmail.com>
+References: <CAC-H7HkWiTD5HYXoTuqW4rEhYSXr9xnp1xk6aZ51F_yhQ--CYw@mail.gmail.com>
+Date: Fri, 3 Jun 2016 00:12:20 +0200
+Message-ID: <CAPmG0jbJbUzi+1UbXgp1i_J_ZhHHQH-J9hoOjqxepa9BsXeTwQ@mail.gmail.com>
+Subject: Re: [BUG] receive not seeing file that exists
+From: Henk Slager <eye1tm@gmail.com>
+To: Benedikt Morbach <benedikt.morbach@googlemail.com>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>, Josef Bacik <jbacik@fb.com>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Jun 2, 2016 at 1:45 PM, Omari Stephens <xsdg@xsdg.org> wrote:
-> [Note: not on list; please reply-all]
+On Thu, Jun 2, 2016 at 9:26 AM, Benedikt Morbach
+<benedikt.morbach@googlemail.com> wrote:
+> Hi all,
 >
-> I've read everything I can find about running out of space on btrfs, and it
-> hasn't helped.  I'm currently dead in the water.
+> I've encountered a bug in btrfs-receive. When receiving a certain
+> incremental send, it will error with:
 >
-> Everything I do seems to make the problem monotonically worse — I tried
-> adding a loopback device to the fs, and now I can't remove it.  Then I tried
-> adding a real device (mSATA) to the fs and now I still can't remove the
-> loopback device (which is making everything super slow), and I also can't
-> remove the mSATA.  I've removed about 100GB from the filesystem and that
-> hasn't done anything either.
+>     ERROR: cannot open
+> backup/detritus/root/root.20160524T1800/var/log/journal/9cbb44cf160f4c1089f77e32ed376a0b/user-1000.journal:
+> No such file or directory
 >
-> Is there anything I can to do even figure out how bad things are, what I
-> need to do to make any kind of forward progress?  This is a laptop, so I
-> don't want to add an external drive only to find out that I can't remove it
-> without corrupting my filesystem.
+> even though that path exists and the parent subvolume is identical on
+> both ends (I checked manually).
 >
-> ### FILESYSTEM STATE
-> 19:23:14> [root{slobol}@/home/xsdg]
-> #btrfs fi show /home
-> Label: none  uuid: 4776be5b-5058-4248-a1b7-7c213757dfbd
->     Total devices 3 FS bytes used 221.02GiB
->     devid    1 size 418.72GiB used 413.72GiB path /dev/sda3
->     devid    2 size 10.00GiB used 5.00GiB path /dev/loop0
->     devid    3 size 14.91GiB used 3.00GiB path /dev/sdb1
->
->
-> 19:23:33> [root{slobol}@/home/xsdg]
-> #btrfs fi usage /home
-> Overall:
->     Device size:         443.63GiB
->     Device allocated:         421.72GiB
->     Device unallocated:          21.91GiB
->     Device missing:             0.00B
->     Used:             221.68GiB
->     Free (estimated):         219.24GiB    (min: 208.29GiB)
->     Data ratio:                  1.00
->     Metadata ratio:              2.00
->     Global reserve:         228.00MiB    (used: 36.00KiB)
->
-> Data,single: Size:417.69GiB, Used:220.36GiB
->    /dev/loop0       5.00GiB
->    /dev/sda3     409.69GiB
->    /dev/sdb1       3.00GiB
->
-> Metadata,single: Size:8.00MiB, Used:0.00B
->    /dev/sda3       8.00MiB
->
-> Metadata,DUP: Size:2.00GiB, Used:674.45MiB
->    /dev/sda3       4.00GiB
->
-> System,single: Size:4.00MiB, Used:0.00B
->    /dev/sda3       4.00MiB
->
-> System,DUP: Size:8.00MiB, Used:56.00KiB
->    /dev/sda3      16.00MiB
->
-> Unallocated:
->    /dev/loop0       5.00GiB
->    /dev/sda3       5.00GiB
->    /dev/sdb1      11.91GiB
->
->
-> ### BALANCE FAILS, EVEN WITH -dusage=0
-> 19:23:02> [root{slobol}@/home/xsdg]
-> #btrfs balance start -v -dusage=0 .
-> Dumping filters: flags 0x1, state 0x0, force is off
->   DATA (flags 0x2): balancing, usage=0
-> ERROR: error during balancing '.': No space left on device
-> There may be more info in syslog - try dmesg | tail
->
->
-> ### CAN'T REMOVE DEVICES -> ENOSPC
-> #btrfs device remove /dev/loop0 /home
-> ERROR: error removing device '/dev/loop0': No space left on device
+> I've noticed this happen before on the same directory (and google
+> confirms it has also happened to others) and /var/log/journal/ and its
+> children are the only directories with 'chattr +C' on this system, so
+> it might be related to that?
 
+Now that I see this report, I realize that I also hit this issue. I
+was compiling a kernel with 'make -j4 all'. Under some circumstances,
+this leads to 'package temp too high' and throtlling speed of CPU;
+with -j1 or -j2 I haven't seen it (root cause is the power supply I
+think).
 
-Well the big problem here is that it's a loop device so even if it
-were a known/fixed bug you're stuck being unable to boot; well, except
-you could add a big enough device, convert to raid1, and reboot with
-rootflags=degraded.
+Anyhow, while this compile was running, my nightly snapshotting and
+incremental send|receive was started. I saw a mce HW error in kernel
+log also at that point, so I did restart. Also the inc send had failed
+so I thought, it was due to mce issue. But also with no mce-HW issues
+logged, tools-4.5.3 + kernel-4.5.4 and also tools-4.5.3 + kernel-4.6.0
+had the same issue.
 
-I'd use the external to make a backup, and start planning to make a
-new fs, at least until someone else with a better idea arrives on
-scene.
+I run send and receive on same PC in this case, but splitting the
+stream to a file in addition. The file was already corrupt (too short)
+I noticed, so I concluded the issue was in send. I set up a hourly
+extra backup crontask for this problem subvol and it failed almost
+every hour. For another subvolume on the new 3-day young fs, it was
+not a problem. The fs is a few TB, has default mkfs settings +noholes.
+Nodesize increased from 4k to 16k, that was a reason to re-create it.
 
+For the problem subvol and also others that I do not inc backup, I set
+the subvol to ro on old fs, send the stream-file to temp storage,
+received it back on new fs and set it to rw and created initial backup
+snapshot of it and send it over to backup fs. That all worked fine.
+Several programs write and delete roughly 10 files/hour so not very
+active part of the fs. It was quite random at which file the
+incremental stream got corrupted.
 
+My best guess was that the use of  btrfs property set  might be the
+issue, so I rsynced the data in the subvol into a new subvol and did
+initial backup snapshot transfer. This was with tools-4.5.3 +
+kernel-4.5.4 and it runs now fine for 10 days.
 
--- 
-Chris Murphy
+I had limited time to research this issue for the subvol and also
+cannot provide send-stream data for the subvol. But I have still a 12G
+btrfs-stream of a .git kernelbuild tree that also got this btrfs
+property set ro=true treatment. So I might try to reproduce the bug
+with that one.

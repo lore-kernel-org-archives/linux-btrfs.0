@@ -1,165 +1,148 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:25526 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:63031 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751164AbcFBAts (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 1 Jun 2016 20:49:48 -0400
-Subject: Re: [PATCH v10 03/21] btrfs: dedupe: Introduce function to add hash
- into in-memory tree
+	with ESMTP id S1750960AbcFBBBb (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 1 Jun 2016 21:01:31 -0400
+Subject: Re: [PATCH v10 04/21] btrfs: dedupe: Introduce function to remove
+ hash from in-memory tree
 To: Mark Fasheh <mfasheh@suse.de>
 References: <1459492512-31435-1-git-send-email-quwenruo@cn.fujitsu.com>
- <1459492512-31435-4-git-send-email-quwenruo@cn.fujitsu.com>
- <20160601193741.GF7633@wotan.suse.de>
+ <1459492512-31435-5-git-send-email-quwenruo@cn.fujitsu.com>
+ <20160601194028.GG7633@wotan.suse.de>
 CC: <linux-btrfs@vger.kernel.org>, Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <157bf74b-d357-d852-934f-e1392efcf412@cn.fujitsu.com>
-Date: Thu, 2 Jun 2016 08:49:45 +0800
+Message-ID: <d3366304-bc56-1b8f-82d8-84d4dbb98fe0@cn.fujitsu.com>
+Date: Thu, 2 Jun 2016 09:01:25 +0800
 MIME-Version: 1.0
-In-Reply-To: <20160601193741.GF7633@wotan.suse.de>
+In-Reply-To: <20160601194028.GG7633@wotan.suse.de>
 Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
 
-At 06/02/2016 03:37 AM, Mark Fasheh wrote:
-> On Fri, Apr 01, 2016 at 02:34:54PM +0800, Qu Wenruo wrote:
+At 06/02/2016 03:40 AM, Mark Fasheh wrote:
+> On Fri, Apr 01, 2016 at 02:34:55PM +0800, Qu Wenruo wrote:
 >> From: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
 >>
->> Introduce static function inmem_add() to add hash into in-memory tree.
->> And now we can implement the btrfs_dedupe_add() interface.
+>> Introduce static function inmem_del() to remove hash from in-memory
+>> dedupe tree.
+>> And implement btrfs_dedupe_del() and btrfs_dedup_destroy() interfaces.
 >>
 >> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 >> Signed-off-by: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
 >> ---
->>  fs/btrfs/dedupe.c | 151 ++++++++++++++++++++++++++++++++++++++++++++++++++++++
->>  1 file changed, 151 insertions(+)
+>>  fs/btrfs/dedupe.c | 105 ++++++++++++++++++++++++++++++++++++++++++++++++++++++
+>>  1 file changed, 105 insertions(+)
 >>
 >> diff --git a/fs/btrfs/dedupe.c b/fs/btrfs/dedupe.c
->> index 2211588..4e8455e 100644
+>> index 4e8455e..a229ded 100644
 >> --- a/fs/btrfs/dedupe.c
 >> +++ b/fs/btrfs/dedupe.c
->> @@ -32,6 +32,14 @@ struct inmem_hash {
->>  	u8 hash[];
->>  };
->>
->> +static inline struct inmem_hash *inmem_alloc_hash(u16 type)
->> +{
->> +	if (WARN_ON(type >= ARRAY_SIZE(btrfs_dedupe_sizes)))
->> +		return NULL;
->> +	return kzalloc(sizeof(struct inmem_hash) + btrfs_dedupe_sizes[type],
->> +			GFP_NOFS);
->> +}
->> +
->>  static int init_dedupe_info(struct btrfs_dedupe_info **ret_info, u16 type,
->>  			    u16 backend, u64 blocksize, u64 limit)
->>  {
->> @@ -152,3 +160,146 @@ enable:
->>  	fs_info->dedupe_enabled = 1;
->>  	return ret;
+>> @@ -303,3 +303,108 @@ int btrfs_dedupe_add(struct btrfs_trans_handle *trans,
+>>  		return inmem_add(dedupe_info, hash);
+>>  	return -EINVAL;
 >>  }
 >> +
->> +static int inmem_insert_hash(struct rb_root *root,
->> +			     struct inmem_hash *hash, int hash_len)
+>> +static struct inmem_hash *
+>> +inmem_search_bytenr(struct btrfs_dedupe_info *dedupe_info, u64 bytenr)
 >> +{
->> +	struct rb_node **p = &root->rb_node;
->> +	struct rb_node *parent = NULL;
->> +	struct inmem_hash *entry = NULL;
->> +
->> +	while (*p) {
->> +		parent = *p;
->> +		entry = rb_entry(parent, struct inmem_hash, hash_node);
->> +		if (memcmp(hash->hash, entry->hash, hash_len) < 0)
->> +			p = &(*p)->rb_left;
->> +		else if (memcmp(hash->hash, entry->hash, hash_len) > 0)
->> +			p = &(*p)->rb_right;
->> +		else
->> +			return 1;
->> +	}
->> +	rb_link_node(&hash->hash_node, parent, p);
->> +	rb_insert_color(&hash->hash_node, root);
->> +	return 0;
->> +}
->> +
->> +static int inmem_insert_bytenr(struct rb_root *root,
->> +			       struct inmem_hash *hash)
->> +{
->> +	struct rb_node **p = &root->rb_node;
+>> +	struct rb_node **p = &dedupe_info->bytenr_root.rb_node;
 >> +	struct rb_node *parent = NULL;
 >> +	struct inmem_hash *entry = NULL;
 >> +
 >> +	while (*p) {
 >> +		parent = *p;
 >> +		entry = rb_entry(parent, struct inmem_hash, bytenr_node);
->> +		if (hash->bytenr < entry->bytenr)
+>> +
+>> +		if (bytenr < entry->bytenr)
 >> +			p = &(*p)->rb_left;
->> +		else if (hash->bytenr > entry->bytenr)
+>> +		else if (bytenr > entry->bytenr)
 >> +			p = &(*p)->rb_right;
 >> +		else
->> +			return 1;
+>> +			return entry;
 >> +	}
->> +	rb_link_node(&hash->bytenr_node, parent, p);
->> +	rb_insert_color(&hash->bytenr_node, root);
+>> +
+>> +	return NULL;
+>> +}
+>> +
+>> +/* Delete a hash from in-memory dedupe tree */
+>> +static int inmem_del(struct btrfs_dedupe_info *dedupe_info, u64 bytenr)
+>> +{
+>> +	struct inmem_hash *hash;
+>> +
+>> +	mutex_lock(&dedupe_info->lock);
+>> +	hash = inmem_search_bytenr(dedupe_info, bytenr);
+>> +	if (!hash) {
+>> +		mutex_unlock(&dedupe_info->lock);
+>> +		return 0;
+>> +	}
+>> +
+>> +	__inmem_del(dedupe_info, hash);
+>> +	mutex_unlock(&dedupe_info->lock);
 >> +	return 0;
 >> +}
 >> +
->> +static void __inmem_del(struct btrfs_dedupe_info *dedupe_info,
->> +			struct inmem_hash *hash)
+>> +/* Remove a dedupe hash from dedupe tree */
+>> +int btrfs_dedupe_del(struct btrfs_trans_handle *trans,
+>> +		     struct btrfs_fs_info *fs_info, u64 bytenr)
 >> +{
->> +	list_del(&hash->lru_list);
->> +	rb_erase(&hash->hash_node, &dedupe_info->hash_root);
->> +	rb_erase(&hash->bytenr_node, &dedupe_info->bytenr_root);
+>> +	struct btrfs_dedupe_info *dedupe_info = fs_info->dedupe_info;
 >> +
->> +	if (!WARN_ON(dedupe_info->current_nr == 0))
->> +		dedupe_info->current_nr--;
+>> +	if (!fs_info->dedupe_enabled)
+>> +		return 0;
 >> +
->> +	kfree(hash);
+>> +	if (WARN_ON(dedupe_info == NULL))
+>> +		return -EINVAL;
+>> +
+>> +	if (dedupe_info->backend == BTRFS_DEDUPE_BACKEND_INMEMORY)
+>> +		return inmem_del(dedupe_info, bytenr);
+>> +	return -EINVAL;
 >> +}
 >> +
->> +/*
->> + * Insert a hash into in-memory dedupe tree
->> + * Will remove exceeding last recent use hash.
->> + *
->> + * If the hash mathced with existing one, we won't insert it, to
->> + * save memory
->> + */
->> +static int inmem_add(struct btrfs_dedupe_info *dedupe_info,
->> +		     struct btrfs_dedupe_hash *hash)
+>> +static void inmem_destroy(struct btrfs_dedupe_info *dedupe_info)
 >> +{
->> +	int ret = 0;
->> +	u16 type = dedupe_info->hash_type;
->> +	struct inmem_hash *ihash;
->> +
->> +	ihash = inmem_alloc_hash(type);
->> +
->> +	if (!ihash)
->> +		return -ENOMEM;
->> +
->> +	/* Copy the data out */
->> +	ihash->bytenr = hash->bytenr;
->> +	ihash->num_bytes = hash->num_bytes;
->> +	memcpy(ihash->hash, hash->hash, btrfs_dedupe_sizes[type]);
+>> +	struct inmem_hash *entry, *tmp;
 >> +
 >> +	mutex_lock(&dedupe_info->lock);
+>> +	list_for_each_entry_safe(entry, tmp, &dedupe_info->lru_list, lru_list)
+>> +		__inmem_del(dedupe_info, entry);
+>> +	mutex_unlock(&dedupe_info->lock);
+>> +}
+>> +
+>> +int btrfs_dedupe_disable(struct btrfs_fs_info *fs_info)
+>> +{
+>> +	struct btrfs_dedupe_info *dedupe_info;
+>> +	int ret;
+>> +
+>> +	/* Here we don't want to increase refs of dedupe_info */
+>> +	fs_info->dedupe_enabled = 0;
 >
-> Can you describe somewhere in a comment why we need this mutex? It is
-> unclear just based on reading the code why we need a sleeping lock here.
+> Can this clear of fs_info->dedupe_enabled race with another thread in write?
+> I don't see any locking (but perhaps that comes in a later patch).
 > 	--Mark
 
-For on-disk backend, we will do B-tree operation inside the critical 
-range, so in that case we need to use mutex.
+Here we use sync fs to ensure no dedupe write will happen later.
+(No need to ensure current transaction will go through dedupe)
 
-It's OK to use spinlock for in-memory backend and use mutex for on-disk 
-backend, but we want to re-use most of their code, just like in later 
-patch with generic_search_hash(), so we use mutex for all backends.
+Different buffered writer may get different dedupe_enabled flag, but 
+whether we do dedupe is not determined by the flag at buffered write 
+time.(For this V10 patch)
 
-And for mutex, it's not that slow than spinlock, unless there is a lot 
-of concurrency.
-(IIRC, linux-rt replace most spinlock with mutex for better preemption)
+Instead it's determined by the flag when we run delalloc range.
+And we use sync_fs() to write all dirty pages, ensuring no dedupe write 
+will happen later, then freeing dedupe_info.
 
-For inband dedupe case, the most time consuming routine is not hash 
-insert, but hash calculation.
+So it's should be fine, and test cases like btrfs/200(not mainlined) 
+will test it.
 
-So mutex here is not a optimization hotspot AFAIK.
+
+Although the behavior may change a little in V11, to handle ENOSPC problem.
+
+In next version, whether doing dedupe is determined at buffered write 
+time, and restore the result to io_tree, to handle metadata reservation 
+better.
+And still use sync_fs() to ensure no other race.
 
 Thanks,
 Qu

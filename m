@@ -1,58 +1,70 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mgwym02.jp.fujitsu.com ([211.128.242.41]:38112 "EHLO
-	mgwym02.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750754AbcFBEvN (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 2 Jun 2016 00:51:13 -0400
-Received: from m3050.s.css.fujitsu.com (msm.b.css.fujitsu.com [10.134.21.208])
-	by kw-mxq.gw.nic.fujitsu.com (Postfix) with ESMTP id 9D862AC02F0
-	for <linux-btrfs@vger.kernel.org>; Thu,  2 Jun 2016 13:50:46 +0900 (JST)
-Subject: Re: Very quick embarrassing q: /var/lib permissions.
-To: al <6401e46d@opayq.com>, linux-btrfs@vger.kernel.org
-References: <loom.20160531T234453-643@post.gmane.org>
- <d0551873-1579-66b1-08c5-d002e721612f@jp.fujitsu.com>
- <loom.20160602T031625-163@post.gmane.org>
-From: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
-Message-ID: <b59606d4-c9ec-5dc5-3c04-2d3d52b13809@jp.fujitsu.com>
-Date: Thu, 2 Jun 2016 13:50:37 +0900
+Received: from meiko.romanrm.net ([195.154.92.155]:60378 "EHLO
+	meiko.romanrm.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750931AbcFBFQk (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 2 Jun 2016 01:16:40 -0400
+Date: Thu, 2 Jun 2016 10:16:34 +0500
+From: Roman Mamedov <rm@romanrm.net>
+To: Mark Fasheh <mfasheh@suse.de>
+Cc: Qu Wenruo <quwenruo@cn.fujitsu.com>, linux-btrfs@vger.kernel.org,
+        David Sterba <dsterba@suse.cz>, chris@suse.de,
+        Josef Bacik <jbacik@fb.com>
+Subject: Re: [PATCH v7 0/8] Inband dedupe for btrfs-progs
+Message-ID: <20160602101634.55f9c1be@natsu>
+In-Reply-To: <20160601213210.GK7633@wotan.suse.de>
+References: <1459492670-31596-1-git-send-email-quwenruo@cn.fujitsu.com>
+	<20160601213210.GK7633@wotan.suse.de>
 MIME-Version: 1.0
-In-Reply-To: <loom.20160602T031625-163@post.gmane.org>
-Content-Type: text/plain; charset=windows-1252; format=flowed
+Content-Type: multipart/signed; micalg=pgp-sha1;
+ boundary="Sig_/2sE4viX1zSrkZxbDr2eUCkW"; protocol="application/pgp-signature"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2016/06/02 10:20, al wrote:
-> Satoru Takeuchi <takeuchi_satoru <at> jp.fujitsu.com> writes:
-> <snip>
->
-> Thank you, sir!
->
-> I wonder if you would let me have the permissions (only) of any of the files
-> you have inside your equivalent directory.
+--Sig_/2sE4viX1zSrkZxbDr2eUCkW
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: quoted-printable
 
-Here it is.
+On Wed, 1 Jun 2016 14:32:10 -0700
+Mark Fasheh <mfasheh@suse.de> wrote:
 
-===================
-# ls -l /var/lib/btrfs/
-total 4
--rw-------. 1 root root 413 Jun  1 08:19 scrub.status.<FSID>
-===================
+> Can we please have seperate and obvious namespaces for in-band dedupe and
+> out-of-band dedupe commands? I realize that there is no oob-dedupe
+> funcationality in btrfs-progs today but I would like to avoid confusing
+> users in the case that this code hits btrfs-progs.
+>=20
+> Specifically by this, I mean I'd like to see anything except 'dedupe' as =
+the
+> btrfs command, so a user who sees 'btrfs dedupe ....' is not confusing the
+> two forms we have.
+>=20
+> I don't personally care what other name is used and of course it could ha=
+ve
+> 'dedupe' in the name just not solely 'dedupe'. As a poor example, we could
+> call it 'btrfs inband-dedupe ...'.
 
->
-> Effectively I'm asking (for evidence) if I'm using the command with
-> escalated permissions when this is unnecessary.
+There might be no such code added ever -- but everyone will be stuck with
+typing "inband-dedupe" instead of the simple and short "dedupe" forever
+because of this "future precaution".
 
-I wonder why you ask these question.
-Probably it's enough to read the file permissions of
-your system...
+At least make that "dedupe-inband", so that the shorthand form of "dedupe"
+also works for now, and only starts throwing a warning if any other subcomm=
+and
+starting with "dedupe" is added.
 
-Thanks,
-Satoru
+--=20
+With respect,
+Roman
 
->
->
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
+--Sig_/2sE4viX1zSrkZxbDr2eUCkW
+Content-Type: application/pgp-signature
+Content-Description: OpenPGP digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2
+
+iEYEARECAAYFAldPwTQACgkQTLKSvz+PZwg2rACfeEsfvUJHg65IBFRFq0xdRgE2
+CBgAoIlvAPg+VsRPu+k2TukMTpb0ftyE
+=OtRY
+-----END PGP SIGNATURE-----
+
+--Sig_/2sE4viX1zSrkZxbDr2eUCkW--

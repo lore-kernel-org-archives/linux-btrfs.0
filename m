@@ -1,42 +1,40 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:36508 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751840AbcFBQls (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 2 Jun 2016 12:41:48 -0400
-Date: Thu, 2 Jun 2016 18:41:08 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Cc: bo.li.liu@oracle.com, Qu Wenruo <quwenruo@cn.fujitsu.com>,
-        linux-btrfs@vger.kernel.org, dsterba@suse.cz,
-        David Sterba <dsterba@suse.com>
-Subject: Re: [PATCH v3 05/22] btrfs-progs: Introduce function to setup
- temporary superblock
-Message-ID: <20160602164108.GH29147@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1454043812-7893-1-git-send-email-quwenruo@cn.fujitsu.com>
- <1454043812-7893-6-git-send-email-quwenruo@cn.fujitsu.com>
- <20160528030459.GA31255@localhost.localdomain>
- <9cd7dc82-184b-e5f0-0b7e-d359820202d2@gmx.com>
+Received: from kolab.zavadatar.com ([46.101.124.0]:52599 "EHLO
+	kolab.zavadatar.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932086AbcFBKD4 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 2 Jun 2016 06:03:56 -0400
+Date: Thu, 2 Jun 2016 13:03:51 +0300
+From: Yauhen Kharuzhy <yauhen.kharuzhy@zavadatar.com>
+To: Filipe Manana <fdmanana@gmail.com>
+Cc: Scott Talbert <scott.talbert@hgst.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: Device replace issues and disabling it until they are solved
+Message-ID: <20160602100321.GA20887@jeknote.loshitsa1.net>
+References: <CAL3q7H6R=Sii-Qn3G7ZL5d4vT33jj-MZOF92fH7T-QHjHSNtow@mail.gmail.com>
+ <CAL3q7H71v-U+hAKyscCd4ShckoKapFEEQn=3xS1d2M4u9KAEZQ@mail.gmail.com>
+ <alpine.DEB.2.10.1605261506540.25778@dispatch>
+ <CAL3q7H67b3JNMogY5DS4X3JTLQEugB4E48kjLx6fE69VwXGpDQ@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <9cd7dc82-184b-e5f0-0b7e-d359820202d2@gmx.com>
+In-Reply-To: <CAL3q7H67b3JNMogY5DS4X3JTLQEugB4E48kjLx6fE69VwXGpDQ@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, May 29, 2016 at 06:52:41PM +0800, Qu Wenruo wrote:
-> >> +	btrfs_set_super_leafsize(super, cfg->nodesize);
-> >> +	btrfs_set_super_nodesize(super, cfg->nodesize);
-> >> +	btrfs_set_super_stripesize(super, cfg->stripesize);
-> >> +	btrfs_set_super_csum_type(super, BTRFS_CSUM_TYPE_CRC32);
-> >> +	btrfs_set_super_chunk_root(super, chunk_bytenr);
-> >> +	btrfs_set_super_cache_generation(super, -1);
-> >> +	btrfs_set_super_incompat_flags(super, cfg->features);
-> >> +	if (cfg->label)
-> >> +		strncpy(super->label, cfg->label, BTRFS_LABEL_SIZE - 1);
-> >
-> > Why not use __strncpy_null?
+On Fri, May 27, 2016 at 10:43:47AM +0100, Filipe Manana wrote:
+> > Hi Filipe,
 > 
-> Good idea, I'll add new patch to use it.
+> Hi Scott,
+> 
+> >
+> > Does your recent patch set (from May 20) address all of these issues?
+> 
+> Yes.
 
-I've updated it in the patch, there was one more that used strncpy and
-coverity reported it.
+Tested, RAID5/6 still produces a plenty of 'failed to rebuild valid
+logical NNNNNN" messages after two consecutive device replaces. So,
+replace is still not usable for RAID5/6. And it is very slow in
+comparison with 'device add && balance device remove missing' sequence
+(4x slower).
+
+-- 
+Yauhen Kharuzhy

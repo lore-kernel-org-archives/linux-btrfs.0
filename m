@@ -1,37 +1,61 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:39574 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S933022AbcFBRh6 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 2 Jun 2016 13:37:58 -0400
-Date: Thu, 2 Jun 2016 19:37:19 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Cc: dsterba@suse.com, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 1/2] btrfs-progs: convert: Fix a bug which fails to
- insert hole file extent
-Message-ID: <20160602173719.GL29147@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20160602072250.25214-1-quwenruo@cn.fujitsu.com>
+Received: from mgwkm03.jp.fujitsu.com ([202.219.69.170]:32986 "EHLO
+	mgwkm03.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752099AbcFBIGv (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 2 Jun 2016 04:06:51 -0400
+Received: from m3050.s.css.fujitsu.com (msm.b.css.fujitsu.com [10.134.21.208])
+	by kw-mxoi1.gw.nic.fujitsu.com (Postfix) with ESMTP id 48E1BAC01DF
+	for <linux-btrfs@vger.kernel.org>; Thu,  2 Jun 2016 17:06:45 +0900 (JST)
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+From: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
+Subject: [PATCH 1/5] btrfs-progs: btrfs-crc: fix build error
+Message-ID: <08faf8d3-0cc4-5164-b583-f69c8c3eb5bc@jp.fujitsu.com>
+Date: Thu, 2 Jun 2016 17:06:37 +0900
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20160602072250.25214-1-quwenruo@cn.fujitsu.com>
+Content-Type: text/plain; charset=iso-2022-jp; format=flowed; delsp=yes
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Jun 02, 2016 at 03:22:49PM +0800, Qu Wenruo wrote:
-> When copying inode, if there is a file referring part of a hole range,
-> convert will fail.
-> 
-> The problem is, when calculating real extent bytenr, it doesn't check if
-> the original extent is a hole.
-> 
-> In case the orinal extent is a hole, we still calculate bytenr using
-> file_pos - found_extent_file_pos, causing non-zero value, and later
-> btrfs_record_file_extent() detects that we are pointing to non-exist
-> extent and aborts convert.
-> 
-> Fix it by checking the disk_bytenr before calculating real disk bytenr.
-> 
-> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Remove the following build error.
 
-Applied, thanks.
+   ====================================
+   $ make btrfs-crc
+       [CC]     btrfs-crc.o
+       [LD]     btrfs-crc
+   btrfs-crc.o: In function `usage':
+   /home/sat/src/btrfs-progs/btrfs-crc.c:26: multiple definition of `usage'
+   help.o:/home/sat/src/btrfs-progs/help.c:125: first defined here
+   collect2: error: ld returned 1 exit status
+   Makefile:294: recipe for target 'btrfs-crc' failed
+   make: *** [btrfs-crc] Error 1
+   =====================================
+
+Signed-off-by: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
+---
+  btrfs-crc.c | 4 ++--
+  1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/btrfs-crc.c b/btrfs-crc.c
+index 723e0b7..86dfe05 100644
+--- a/btrfs-crc.c
++++ b/btrfs-crc.c
+@@ -22,7 +22,7 @@
+  #include "crc32c.h"
+  #include "utils.h"
+
+-void usage(void)
++void print_usage(void)
+  {
+  	printf("usage: btrfs-crc filename\n");
+  	printf("    print out the btrfs crc for \"filename\"\n");
+@@ -57,7 +57,7 @@ int main(int argc, char **argv)
+  			seed = atol(optarg);
+  			break;
+  		case 'h':
+-			usage();
++			print_usage();
+  		case '?':
+  			return 255;
+  		}
+-- 
+2.5.5

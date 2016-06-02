@@ -1,135 +1,76 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-it0-f52.google.com ([209.85.214.52]:38770 "EHLO
-	mail-it0-f52.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932408AbcFBM4b (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 2 Jun 2016 08:56:31 -0400
-Received: by mail-it0-f52.google.com with SMTP id i127so50339318ita.1
-        for <linux-btrfs@vger.kernel.org>; Thu, 02 Jun 2016 05:56:31 -0700 (PDT)
-Subject: Re: "No space left on device" and balance doesn't work
-To: MegaBrutal <megabrutal@gmail.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-References: <CAE8gLhm0-+kkwFv1-+t+tWLrZrzh4B9cJUDRrgPpwfvB_obVCA@mail.gmail.com>
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <bcf8033b-bafe-f927-efdb-b898d2b00a24@gmail.com>
-Date: Thu, 2 Jun 2016 08:56:28 -0400
+Received: from mail-vk0-f42.google.com ([209.85.213.42]:33541 "EHLO
+	mail-vk0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932789AbcFBNzz (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 2 Jun 2016 09:55:55 -0400
+Received: by mail-vk0-f42.google.com with SMTP id r140so71745969vkf.0
+        for <linux-btrfs@vger.kernel.org>; Thu, 02 Jun 2016 06:55:55 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <CAE8gLhm0-+kkwFv1-+t+tWLrZrzh4B9cJUDRrgPpwfvB_obVCA@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+In-Reply-To: <CAPmG0jb0eVsg1gX4q3TMA9icRaPS9ULcs2KPBX-_biJ5KPUsrQ@mail.gmail.com>
+References: <CAE8gLhm0-+kkwFv1-+t+tWLrZrzh4B9cJUDRrgPpwfvB_obVCA@mail.gmail.com>
+	<CAEtw4r2hsCd1+bFNcXn_s5jj-8x6qer+x0gLx8wTgNi1=nAXhw@mail.gmail.com>
+	<CAE8gLh=g7oUK_FAcSN2HaeFmEsK1jBMar4DEfzBwEWiUioDhAQ@mail.gmail.com>
+	<CAPmG0jb0eVsg1gX4q3TMA9icRaPS9ULcs2KPBX-_biJ5KPUsrQ@mail.gmail.com>
+Date: Thu, 2 Jun 2016 15:55:54 +0200
+Message-ID: <CAE8gLhkR4XzNx9tarhzD2LdsCRJ3e+BPcWYpE-qA4jnJsvSrLg@mail.gmail.com>
+Subject: Re: "No space left on device" and balance doesn't work
+From: MegaBrutal <megabrutal@gmail.com>
+To: Henk Slager <eye1tm@gmail.com>
+Cc: Peter Becker <floyd.net@gmail.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2016-06-01 14:30, MegaBrutal wrote:
-> Hi all,
->
-> I have a 20 GB file system and df says I have about 2,6 GB free space,
-> yet I can't do anything on the file system because I get "No space
-> left on device" errors. I read that balance may help to remedy the
-> situation, but it actually doesn't.
->
->
-> Some data about the FS:
->
->
-> root@ReThinkCentre:~# df -h /
-> Fájlrendszer                Méret Fogl. Szab. Fo.% Csatol. pont
-> /dev/mapper/centrevg-rootlv   20G   18G  2,6G  88% /
->
-> root@ReThinkCentre:~# btrfs fi show /
-> Label: 'RootFS'  uuid: 3f002b8d-8a1f-41df-ad05-e3c91d7603fb
->         Total devices 1 FS bytes used 15.42GiB
->         devid    1 size 20.00GiB used 20.00GiB path /dev/mapper/centrevg-rootlv
->
-> root@ReThinkCentre:~# btrfs fi df /
-> Data, single: total=16.69GiB, used=14.14GiB
-> System, DUP: total=32.00MiB, used=16.00KiB
-> Metadata, DUP: total=1.62GiB, used=1.28GiB
-> GlobalReserve, single: total=352.00MiB, used=0.00B
->
-> root@ReThinkCentre:~# btrfs version
-> btrfs-progs v4.4
->
->
-> This happens when I try to balance:
->
-> root@ReThinkCentre:~# btrfs fi balance start -dusage=66 /
-> Done, had to relocate 0 out of 33 chunks
-> root@ReThinkCentre:~# btrfs fi balance start -dusage=67 /
-> ERROR: error during balancing '/': No space left on device
-> There may be more info in syslog - try dmesg | tail
->
->
-> "dmesg | tail" does not show anything related to this.
->
-> It is important to note that the file system currently has 32
-> snapshots of / at the moment, and snapshots taking up all the free
-> space is a plausible explanation. Maybe deleting some of the oldest
-> snapshots or just increasing the file system would help the situation.
-> However, I'm still interested, if the file system is full, why does df
-> show there is free space, and how could I show the situation without
-> having the mentioned options? I actually have an alert set up which
-> triggers when the FS usage reaches 90%, so then I know I have to
-> delete some old snapshots. It worked so far, I cleaned the snapshots
-> at 90%, FS usage fell back, everyone was happy. But now the alert
-> didn't even trigger because the FS is at 88% usage, so it shouldn't be
-> full yet.
-The first thing that needs to be understood is that df has been pretty 
-much unchanged since it was introduced in the 70's (IIRC, it was in at 
-least SVR4, possibly earlier UNIX versions too).  Back then, it was 
-pretty easy to say what percentage of space was used and how much is 
-left.  Back then, a filesystem only allocated one set of blocks for a 
-file, and it didn't need extra space for updates, and the file took up 
-exactly as much space as it's size on disk (usually, it can get kind of 
-complicated based on a number of factors).  In addition, traditional UFS 
-had a fixed size metadata area for the inodes, which simplified 
-computations even more.
+2016-06-02 0:22 GMT+02:00 Henk Slager <eye1tm@gmail.com>:
+> What is the kernel version used?
+> Is the fs on a mechanical disk or SSD?
+> What are the mount options?
+> How old is the fs?
 
-In BTRFS though, almost all of these assumptions which the original 
-interface made aren't guaranteed.
+Linux 4.4.0-22-generic (Ubuntu 16.04).
+Mechanical disks in LVM.
+Mount: /dev/mapper/centrevg-rootlv on / type btrfs
+(rw,relatime,space_cache,subvolid=257,subvol=/@)
+I don't know how to retrieve the exact FS age, but it was created in
+2014 August.
 
-Now, the biggest difference though is in how BTRFS allocates space. 
-BTRFS uses a two tier allocation system.  First, you have high-level 
-allocations of what are usually referred to as chunks, and then it 
-allocates blocks within those chunks.  The balance operation operates at 
-the chunk level, whereas things like defragmentation operate at the 
-block level.  For performance reasons, BTRFS usually has separate chunks 
-for metadata and data.  Data chunks are usually 1GB, and metadata chunks 
-are usually 256MB, although both can vary in size based on the size of 
-the filesystem.  Figuring out the exact size gets tricky on a live 
-filesystem, but if your filesystem is between 16G and 64G, you're pretty 
-much guaranteed to have chunks which are the default size.
+Snapshots (their names encode their creation dates):
 
-Now, because of the segregation of data and metadata, and how chunk 
-allocation works, it's possible to end up in a situation where you 
-technically have free space, but you can't actually do anything with it. 
-  This is because most file operations on BTRFS require at least a few 
-blocks of metadata space so that the COW updates can happen.  You 
-luckily don't appear to be quite to that point.
+ID 908 gen 487349 top level 5 path @-snapshot-20160503000001
+ID 909 gen 488849 top level 5 path @-snapshot-20160504000001
+ID 910 gen 490313 top level 5 path @-snapshot-20160505000001
+ID 911 gen 491763 top level 5 path @-snapshot-20160506000001
+ID 912 gen 493399 top level 5 path @-snapshot-20160507000002
+ID 913 gen 494996 top level 5 path @-snapshot-20160508000002
+ID 914 gen 496495 top level 5 path @-snapshot-20160509000002
+ID 915 gen 498094 top level 5 path @-snapshot-20160510000005
+ID 916 gen 499688 top level 5 path @-snapshot-20160511000002
+ID 917 gen 501308 top level 5 path @-snapshot-20160512000001
+ID 918 gen 503375 top level 5 path @-snapshot-20160514000002
+ID 919 gen 504356 top level 5 path @-snapshot-20160515000001
+ID 920 gen 505890 top level 5 path @-snapshot-20160516000001
+ID 921 gen 506901 top level 5 path @-snapshot-20160517000001
+ID 922 gen 507313 top level 5 path @-snapshot-20160518000002
+ID 923 gen 507712 top level 5 path @-snapshot-20160519000001
+ID 924 gen 508057 top level 5 path @-snapshot-20160520000001
+ID 925 gen 508882 top level 5 path @-snapshot-20160521000001
+ID 926 gen 509241 top level 5 path @-snapshot-20160522000001
+ID 927 gen 509618 top level 5 path @-snapshot-20160523000001
+ID 928 gen 510277 top level 5 path @-snapshot-20160524000002
+ID 929 gen 511357 top level 5 path @-snapshot-20160525000002
+ID 930 gen 512125 top level 5 path @-snapshot-20160526000002
+ID 931 gen 513292 top level 5 path @-snapshot-20160527000001
+ID 932 gen 515766 top level 5 path @-snapshot-20160528000002
+ID 933 gen 517349 top level 5 path @-snapshot-20160529000004
+ID 934 gen 519004 top level 5 path @-snapshot-20160530000002
+ID 935 gen 519500 top level 5 path @-snapshot-20160531000002
+ID 936 gen 519847 top level 5 path @-snapshot-20160601000001
+ID 937 gen 521829 top level 5 path @-snapshot-20160602000001
 
-For compatibility reasons, we have to report _something_ through df.  We 
-can't however report many of the situational things about the state of 
-the FS itself (for example, if you have all the possible chunks 
-allocated, no space in data chunks, but free space in metadata chunks, 
-it's possible to create a lot of very small files, but creating a big 
-one will fail).  As a result of this, what we report through df is 
-technically absolutely correct (in your case, you _do_ technically have 
-2.6G of free space), but is also absolutely useless for any kind of 
-management decision.
+Removing old snapshots is the most feasible solution, but I can also
+increase the FS size. It's easy since it's in LVM, and there is plenty
+of space in the volume group.
 
-In your particular situation, what's happened is that you have all the 
-space allocated to chunks, but have free space within those chunks. 
-Balance never puts data in existing chunks, and you can't allocate any 
-new chunks, so you can't run a balance.  However, because of that free 
-space in the chunks, you can still use the filesystem itself for 
-'regular' filesystem operations.
-
-In this situation, Henk's suggestion of adding another device is one of 
-three options for dealing with this.  The other two options (which are 
-usually less practical for most people) are to resize the filesystem to 
-have more space, or recreate it from scratch.
-
-As far as avoiding this in the future, the best option is to keep an eye 
-on the output of fi show, and keep the per-device 'used' value at least 
-a few GB below the device size.  I usually go for about 2GB or 0.2% of 
-the device size, whichever is bigger.  This will give you enough 
-headroom for at least a few chunks to be allocated so that balance can 
-proceed.
+Probably I should rewrite my alert script to check btrfs fi show
+instead of plain df.

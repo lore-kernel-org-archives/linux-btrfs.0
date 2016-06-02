@@ -1,153 +1,92 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:63031 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:34122 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1750960AbcFBBBb (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 1 Jun 2016 21:01:31 -0400
-Subject: Re: [PATCH v10 04/21] btrfs: dedupe: Introduce function to remove
- hash from in-memory tree
+	with ESMTP id S1751754AbcFBBIb (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 1 Jun 2016 21:08:31 -0400
+Subject: Re: [PATCH v10 08/21] btrfs: ordered-extent: Add support for dedupe
 To: Mark Fasheh <mfasheh@suse.de>
 References: <1459492512-31435-1-git-send-email-quwenruo@cn.fujitsu.com>
- <1459492512-31435-5-git-send-email-quwenruo@cn.fujitsu.com>
- <20160601194028.GG7633@wotan.suse.de>
-CC: <linux-btrfs@vger.kernel.org>, Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
+ <1459492512-31435-9-git-send-email-quwenruo@cn.fujitsu.com>
+ <20160601220633.GN7633@wotan.suse.de>
+CC: <linux-btrfs@vger.kernel.org>, Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>,
+        David Sterba <dsterba@suse.cz>
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <d3366304-bc56-1b8f-82d8-84d4dbb98fe0@cn.fujitsu.com>
-Date: Thu, 2 Jun 2016 09:01:25 +0800
+Message-ID: <5d04b06d-9d5d-bf8f-d555-8448a699301f@cn.fujitsu.com>
+Date: Thu, 2 Jun 2016 09:08:23 +0800
 MIME-Version: 1.0
-In-Reply-To: <20160601194028.GG7633@wotan.suse.de>
+In-Reply-To: <20160601220633.GN7633@wotan.suse.de>
 Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
 
-At 06/02/2016 03:40 AM, Mark Fasheh wrote:
-> On Fri, Apr 01, 2016 at 02:34:55PM +0800, Qu Wenruo wrote:
+At 06/02/2016 06:06 AM, Mark Fasheh wrote:
+> On Fri, Apr 01, 2016 at 02:34:59PM +0800, Qu Wenruo wrote:
 >> From: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
 >>
->> Introduce static function inmem_del() to remove hash from in-memory
->> dedupe tree.
->> And implement btrfs_dedupe_del() and btrfs_dedup_destroy() interfaces.
+>> Add ordered-extent support for dedupe.
+>>
+>> Note, current ordered-extent support only supports non-compressed source
+>> extent.
+>> Support for compressed source extent will be added later.
 >>
 >> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 >> Signed-off-by: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
 >> ---
->>  fs/btrfs/dedupe.c | 105 ++++++++++++++++++++++++++++++++++++++++++++++++++++++
->>  1 file changed, 105 insertions(+)
+>>  fs/btrfs/ordered-data.c | 44 ++++++++++++++++++++++++++++++++++++++++----
+>>  fs/btrfs/ordered-data.h | 13 +++++++++++++
+>>  2 files changed, 53 insertions(+), 4 deletions(-)
 >>
->> diff --git a/fs/btrfs/dedupe.c b/fs/btrfs/dedupe.c
->> index 4e8455e..a229ded 100644
->> --- a/fs/btrfs/dedupe.c
->> +++ b/fs/btrfs/dedupe.c
->> @@ -303,3 +303,108 @@ int btrfs_dedupe_add(struct btrfs_trans_handle *trans,
->>  		return inmem_add(dedupe_info, hash);
->>  	return -EINVAL;
->>  }
->> +
->> +static struct inmem_hash *
->> +inmem_search_bytenr(struct btrfs_dedupe_info *dedupe_info, u64 bytenr)
->> +{
->> +	struct rb_node **p = &dedupe_info->bytenr_root.rb_node;
->> +	struct rb_node *parent = NULL;
->> +	struct inmem_hash *entry = NULL;
->> +
->> +	while (*p) {
->> +		parent = *p;
->> +		entry = rb_entry(parent, struct inmem_hash, bytenr_node);
->> +
->> +		if (bytenr < entry->bytenr)
->> +			p = &(*p)->rb_left;
->> +		else if (bytenr > entry->bytenr)
->> +			p = &(*p)->rb_right;
->> +		else
->> +			return entry;
->> +	}
->> +
->> +	return NULL;
->> +}
->> +
->> +/* Delete a hash from in-memory dedupe tree */
->> +static int inmem_del(struct btrfs_dedupe_info *dedupe_info, u64 bytenr)
->> +{
->> +	struct inmem_hash *hash;
->> +
->> +	mutex_lock(&dedupe_info->lock);
->> +	hash = inmem_search_bytenr(dedupe_info, bytenr);
->> +	if (!hash) {
->> +		mutex_unlock(&dedupe_info->lock);
->> +		return 0;
->> +	}
->> +
->> +	__inmem_del(dedupe_info, hash);
->> +	mutex_unlock(&dedupe_info->lock);
->> +	return 0;
->> +}
->> +
->> +/* Remove a dedupe hash from dedupe tree */
->> +int btrfs_dedupe_del(struct btrfs_trans_handle *trans,
->> +		     struct btrfs_fs_info *fs_info, u64 bytenr)
->> +{
->> +	struct btrfs_dedupe_info *dedupe_info = fs_info->dedupe_info;
->> +
->> +	if (!fs_info->dedupe_enabled)
->> +		return 0;
->> +
->> +	if (WARN_ON(dedupe_info == NULL))
->> +		return -EINVAL;
->> +
->> +	if (dedupe_info->backend == BTRFS_DEDUPE_BACKEND_INMEMORY)
->> +		return inmem_del(dedupe_info, bytenr);
->> +	return -EINVAL;
->> +}
->> +
->> +static void inmem_destroy(struct btrfs_dedupe_info *dedupe_info)
->> +{
->> +	struct inmem_hash *entry, *tmp;
->> +
->> +	mutex_lock(&dedupe_info->lock);
->> +	list_for_each_entry_safe(entry, tmp, &dedupe_info->lru_list, lru_list)
->> +		__inmem_del(dedupe_info, entry);
->> +	mutex_unlock(&dedupe_info->lock);
->> +}
->> +
->> +int btrfs_dedupe_disable(struct btrfs_fs_info *fs_info)
->> +{
->> +	struct btrfs_dedupe_info *dedupe_info;
->> +	int ret;
->> +
->> +	/* Here we don't want to increase refs of dedupe_info */
->> +	fs_info->dedupe_enabled = 0;
+>> diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
+>> index 0de7da5..ef24ad1 100644
+>> --- a/fs/btrfs/ordered-data.c
+>> +++ b/fs/btrfs/ordered-data.c
+>> @@ -26,6 +26,7 @@
+>>  #include "extent_io.h"
+>>  #include "disk-io.h"
+>>  #include "compression.h"
+>> +#include "dedupe.h"
+>>
+>>  static struct kmem_cache *btrfs_ordered_extent_cache;
+>>
+>> @@ -184,7 +185,8 @@ static inline struct rb_node *tree_search(struct btrfs_ordered_inode_tree *tree,
+>>   */
+>>  static int __btrfs_add_ordered_extent(struct inode *inode, u64 file_offset,
+>>  				      u64 start, u64 len, u64 disk_len,
+>> -				      int type, int dio, int compress_type)
+>> +				      int type, int dio, int compress_type,
+>> +				      struct btrfs_dedupe_hash *hash)
+>>  {
+>>  	struct btrfs_root *root = BTRFS_I(inode)->root;
+>>  	struct btrfs_ordered_inode_tree *tree;
+>> @@ -204,6 +206,31 @@ static int __btrfs_add_ordered_extent(struct inode *inode, u64 file_offset,
+>>  	entry->inode = igrab(inode);
+>>  	entry->compress_type = compress_type;
+>>  	entry->truncated_len = (u64)-1;
+>> +	entry->hash = NULL;
+>> +	/*
+>> +	 * Hash hit must go through dedupe routine at all cost, even dedupe
+>> +	 * is disabled. As its delayed ref is already increased.
+>> +	 */
 >
-> Can this clear of fs_info->dedupe_enabled race with another thread in write?
-> I don't see any locking (but perhaps that comes in a later patch).
+> Initially, I had a hard time understanding this comment but I'm pretty sure
+> I know what you mean.
+>
+> /*
+>  * A hash hit means we have already incremented the extents delayed ref.
+>  * We must handle this even if another process raced to turn off dedupe
+>  * otherwise we might leak a reference.
+>  */
+>
+> might be better. Hope that helps.
 > 	--Mark
+>
 
-Here we use sync fs to ensure no dedupe write will happen later.
-(No need to ensure current transaction will go through dedupe)
-
-Different buffered writer may get different dedupe_enabled flag, but 
-whether we do dedupe is not determined by the flag at buffered write 
-time.(For this V10 patch)
-
-Instead it's determined by the flag when we run delalloc range.
-And we use sync_fs() to write all dirty pages, ensuring no dedupe write 
-will happen later, then freeing dedupe_info.
-
-So it's should be fine, and test cases like btrfs/200(not mainlined) 
-will test it.
-
-
-Although the behavior may change a little in V11, to handle ENOSPC problem.
-
-In next version, whether doing dedupe is determined at buffered write 
-time, and restore the result to io_tree, to handle metadata reservation 
-better.
-And still use sync_fs() to ensure no other race.
+Same meaning, much better grammar.
 
 Thanks,
 Qu
-
->
 > --
 > Mark Fasheh
 >

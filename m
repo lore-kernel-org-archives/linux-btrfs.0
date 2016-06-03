@@ -1,60 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:48313 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751164AbcFFGxH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 6 Jun 2016 02:53:07 -0400
-Subject: Re: [PATCH 42/45] block, fs, drivers: remove REQ_OP compat defs and
- related code
-To: mchristi@redhat.com, linux-f2fs-devel@lists.sourceforge.net,
-        linux-ext4@vger.kernel.org, konrad.wilk@oracle.com,
-        drbd-dev@lists.linbit.com, philipp.reisner@linbit.com,
-        lars.ellenberg@linbit.com, linux-raid@vger.kernel.org,
-        dm-devel@redhat.com, linux-fsdevel@vger.kernel.org,
-        linux-bcache@vger.kernel.org, linux-block@vger.kernel.org,
-        linux-kernel@vger.kernel.org, linux-scsi@vger.kernel.org,
-        linux-mtd@lists.infradead.org, target-devel@vger.kernel.org,
-        linux-btrfs@vger.kernel.org, osd-dev@open-osd.org, xfs@oss.sgi.com,
-        ocfs2-devel@oss.oracle.com
-References: <1465155145-10812-1-git-send-email-mchristi@redhat.com>
- <1465155145-10812-43-git-send-email-mchristi@redhat.com>
-From: Hannes Reinecke <hare@suse.de>
-Message-ID: <57551DD0.9090703@suse.de>
-Date: Mon, 6 Jun 2016 08:53:04 +0200
+Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:11630 "EHLO
+	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1161171AbcFCU5s (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 3 Jun 2016 16:57:48 -0400
+Date: Fri, 3 Jun 2016 16:57:43 -0400
+From: Chris Mason <clm@fb.com>
+To: Linus Torvalds <torvalds@linux-foundation.org>,
+        LKML <linux-kernel@vger.kernel.org>,
+        btrfs <linux-btrfs@vger.kernel.org>
+Subject: [GIT PULL] Btrfs
+Message-ID: <20160603205743.lcq6jz5mdflzwyit@floor.thefacebook.com>
 MIME-Version: 1.0
-In-Reply-To: <1465155145-10812-43-git-send-email-mchristi@redhat.com>
-Content-Type: text/plain; charset=windows-1252
+Content-Type: text/plain; charset="us-ascii"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 06/05/2016 09:32 PM, mchristi@redhat.com wrote:
-> From: Mike Christie <mchristi@redhat.com>
-> 
-> This patch drops the compat definition of req_op where it matches
-> the rq_flag_bits definitions, and drops the related old and compat
-> code that allowed users to set either the op or flags for the operation.
-> 
-> We also then store the operation in the bi_rw/cmd_flags field similar
-> to how we used to store the bio ioprio where it sat in the upper bits
-> of the field.
-> 
-> Signed-off-by: Mike Christie <mchristi@redhat.com>
-> ---
->  drivers/scsi/sd.c           |  2 +-
->  include/linux/bio.h         |  3 ---
->  include/linux/blk_types.h   | 52 +++++++++++++++++----------------------------
->  include/linux/blkdev.h      | 14 ++++++++----
->  include/linux/fs.h          | 37 +++++++++++++-------------------
->  include/trace/events/f2fs.h |  1 -
->  6 files changed, 46 insertions(+), 63 deletions(-)
-> 
-Reviewed-by: Hannes Reinecke <hare@suse.com>
+Hi Linus,
 
-Cheers,
+My for-linus-4.7 branch has some fixes:
 
-Hannes
--- 
-Dr. Hannes Reinecke		   Teamlead Storage & Networking
-hare@suse.de			               +49 911 74053 688
-SUSE LINUX GmbH, Maxfeldstr. 5, 90409 Nürnberg
-GF: F. Imendörffer, J. Smithard, J. Guild, D. Upmanyu, G. Norton
-HRB 21284 (AG Nürnberg)
+git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git for-linus-4.7
+
+I realized as I was prepping this pull that my tip commit still had
+Facebook task numbers and other internal metadata in it.  So I had to
+reword the description, which is why it is only a few hours old.  Only
+the description changed since testing.
+
+The important part of this pull is Filipe's set of fixes for btrfs device
+replacement.  Filipe fixed a few issues seen on the list and a number
+he found on his own.
+
+Filipe Manana (8) commits (+93/-19):
+    Btrfs: fix race setting block group back to RW mode during device replace (+5/-5)
+    Btrfs: fix unprotected assignment of the left cursor for device replace (+4/-0)
+    Btrfs: fix race setting block group readonly during device replace (+46/-2)
+    Btrfs: fix race between device replace and block group removal (+11/-0)
+    Btrfs: fix race between device replace and chunk allocation (+9/-12)
+    Btrfs: fix race between readahead and device replace/removal (+2/-0)
+    Btrfs: fix race between device replace and read repair (+10/-0)
+    Btrfs: fix race between device replace and discard (+6/-0)
+
+Chris Mason (1) commits (+12/-1):
+    Btrfs: deal with duplciates during extent_map insertion in btrfs_get_extent
+
+Total: (9) commits (+105/-20)
+
+ fs/btrfs/extent-tree.c  |  6 ++++++
+ fs/btrfs/extent_io.c    | 10 ++++++++++
+ fs/btrfs/inode.c        | 13 ++++++++++++-
+ fs/btrfs/ordered-data.c |  6 +++++-
+ fs/btrfs/ordered-data.h |  2 +-
+ fs/btrfs/reada.c        |  2 ++
+ fs/btrfs/scrub.c        | 50 ++++++++++++++++++++++++++++++++++++++++++++++---
+ fs/btrfs/volumes.c      | 32 +++++++++++++++++++------------
+ 8 files changed, 103 insertions(+), 18 deletions(-)

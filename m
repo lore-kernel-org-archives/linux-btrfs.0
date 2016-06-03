@@ -1,43 +1,46 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wm0-f47.google.com ([74.125.82.47]:36332 "EHLO
-	mail-wm0-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932538AbcFCNrf (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 3 Jun 2016 09:47:35 -0400
-Received: by mail-wm0-f47.google.com with SMTP id n184so126995763wmn.1
-        for <linux-btrfs@vger.kernel.org>; Fri, 03 Jun 2016 06:47:35 -0700 (PDT)
-Subject: Re: Recommended why to use btrfs for production?
-To: Martin <rc6encrypted@gmail.com>
-References: <CAGQ70Yc=HHxJspMCKFBpEURRu=53pZW3k3rVDVO3QPGP_b9Tkw@mail.gmail.com>
- <aeade1fe-825c-6fc2-7f6d-85f4c5400b38@gmail.com>
- <CAGQ70YeZzDgiT_v1Z0eGcWsn8prnji30hCkyjrBg8vNziLUkiQ@mail.gmail.com>
-Cc: linux-btrfs@vger.kernel.org
-From: Julian Taylor <jtaylor.debian@googlemail.com>
-Message-ID: <57518A73.5030201@googlemail.com>
-Date: Fri, 3 Jun 2016 15:47:31 +0200
+Received: from mail-oi0-f41.google.com ([209.85.218.41]:33926 "EHLO
+	mail-oi0-f41.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752897AbcFCOFV (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 3 Jun 2016 10:05:21 -0400
+Received: by mail-oi0-f41.google.com with SMTP id e72so128287484oib.1
+        for <linux-btrfs@vger.kernel.org>; Fri, 03 Jun 2016 07:05:20 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <CAGQ70YeZzDgiT_v1Z0eGcWsn8prnji30hCkyjrBg8vNziLUkiQ@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+In-Reply-To: <aeade1fe-825c-6fc2-7f6d-85f4c5400b38@gmail.com>
+References: <CAGQ70Yc=HHxJspMCKFBpEURRu=53pZW3k3rVDVO3QPGP_b9Tkw@mail.gmail.com>
+	<aeade1fe-825c-6fc2-7f6d-85f4c5400b38@gmail.com>
+Date: Fri, 3 Jun 2016 08:05:19 -0600
+Message-ID: <CAJCQCtQ4i0PWisxi708EmrTuPHH7hNEkKfY28GjTG2s4Sk3DYQ@mail.gmail.com>
+Subject: Re: Recommended why to use btrfs for production?
+From: Chris Murphy <lists@colorremedies.com>
+To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Cc: Martin <rc6encrypted@gmail.com>, Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 06/03/2016 03:31 PM, Martin wrote:
->> In general, avoid Ubuntu LTS versions when dealing with BTRFS, as well as
->> most enterprise distros, they all tend to back-port patches instead of using
->> newer kernels, which means it's functionally impossible to provide good
->> support for them here (because we can't know for sure what exactly they've
->> back-ported).  I'd suggest building your own kernel if possible, with Arch
->> Linux being a close second (they follow upstream very closely), followed by
->> Fedora and non-LTS Ubuntu.
+On Fri, Jun 3, 2016 at 6:55 AM, Austin S. Hemmelgarn
+<ahferroin7@gmail.com> wrote:
+
 >
-> Then I would build my own, if that is the preferred option.
->
+> That said, there are other options.  If you have enough disks, you can run
+> BTRFS raid1 on top of LVM or MD RAID5 or RAID6, which provides you with the
+> benefits of both.
 
-Ubuntu also provides newer kernels for their LTS via the Hardware 
-Enablement Stack:
+There is a trade off. Either mdadm or lvm raid5, raid6, are more
+mature and stable, but it's more maintenance. You have a btrfs scrub
+as well as the md scrub. Btrfs on md/lvm raid56 will detect mismatches
+but won't be able to fix them because from its perspective there's no
+redundancy, except possibly metadata. So the repair has to happen on
+the mdadm/lvm side
 
-https://wiki.ubuntu.com/Kernel/LTSEnablementStack
+Make certain the kernel command timer value is greater than the driver
+error recovery timeout. The former is found in sysfs, per block
+device, the latter can be get and set with smartctl. Wrong
+configuration is common (it's actually the default) when using
+consumer drives, and inevitably leads to problems, even the loss of
+the entire array. It really is a terrible default.
 
-So if you can live with about 6 month time lag and shorter support for 
-the non-lts versions of those kernels that is a good option.
-As you can see 16.04 currently provides 4.4 and the next update will 
-likely be 4.8.
+
+-- 
+Chris Murphy

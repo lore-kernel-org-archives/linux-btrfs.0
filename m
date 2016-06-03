@@ -1,70 +1,49 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:51045 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1160998AbcFBVke (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 2 Jun 2016 17:40:34 -0400
-Date: Thu, 2 Jun 2016 14:40:32 -0700
-From: Mark Fasheh <mfasheh@suse.de>
-To: Jeff Mahoney <jeffm@suse.com>
-Cc: dsterba@suse.cz, Lu Fengqi <lufq.fnst@cn.fujitsu.com>,
-        linux-btrfs@vger.kernel.org
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:63235 "EHLO
+	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1752930AbcFCOC4 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 3 Jun 2016 10:02:56 -0400
 Subject: Re: [PATCH v2] btrfs: fix check_shared for fiemap ioctl
-Message-ID: <20160602214032.GT7633@wotan.suse.de>
-Reply-To: Mark Fasheh <mfasheh@suse.de>
+To: Lu Fengqi <lufq.fnst@cn.fujitsu.com>, <linux-btrfs@vger.kernel.org>
 References: <1464760085-12078-1-git-send-email-lufq.fnst@cn.fujitsu.com>
- <20160601211522.GI7633@wotan.suse.de>
- <20160602170732.GJ29147@twin.jikos.cz>
- <20160602190814.GQ7633@wotan.suse.de>
- <75b66bb1-9d20-a1af-2f41-688b9aee73a3@suse.com>
- <20160602211740.GS7633@wotan.suse.de>
+CC: <dsterba@suse.cz>
+From: Josef Bacik <jbacik@fb.com>
+Message-ID: <3b5ed9c3-7ffd-4bcf-5992-e11b7f6463a5@fb.com>
+Date: Fri, 3 Jun 2016 10:02:34 -0400
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20160602211740.GS7633@wotan.suse.de>
+In-Reply-To: <1464760085-12078-1-git-send-email-lufq.fnst@cn.fujitsu.com>
+Content-Type: text/plain; charset="windows-1252"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Jun 02, 2016 at 02:17:40PM -0700, Mark Fasheh wrote:
-> On Thu, Jun 02, 2016 at 04:56:06PM -0400, Jeff Mahoney wrote:
-> > On 6/2/16 3:08 PM, Mark Fasheh wrote:
-> > > On Thu, Jun 02, 2016 at 07:07:32PM +0200, David Sterba wrote:
-> > >> On Wed, Jun 01, 2016 at 02:15:22PM -0700, Mark Fasheh wrote:
-> > >>>> +/* dynamically allocate and initialize a ref_root */
-> > >>>> +static struct ref_root *ref_root_alloc(void)
-> > >>>> +{
-> > >>>> +	struct ref_root *ref_tree;
-> > >>>> +
-> > >>>> +	ref_tree = kmalloc(sizeof(*ref_tree), GFP_KERNEL);
-> > >>>
-> > >>> I'm pretty sure we want GFP_NOFS here.
-> > >>
-> > >> Then please explain to me why/where the reasoning below is wrong:
-> > > 
-> > > The general reasoning of when to use GFP_NOFS below is fine, I don't
-> > > disagree with that at all. If there is no way a recursion back into btrfs
-> > > can't happen at that allocation site then we can use GFP_KERNEL.
-> > > 
-> > > That said, have you closely audited this path? Does the allocation happen
-> > > completely outside any locks that might be shared with the writeout path?
-> > > What happens if we have to do writeout of the inode being fiemapped in order
-> > > to allocate space? If the answer to all my questions is "there is no way
-> > > this can deadlock" then by all means, we should use GFP_KERNEL. Otherwise
-> > > GFP_NOFS is a sensible guard against possible future deadlocks.
-> > 
-> > This is exactly the situation we discussed at LSF/MM this year.  The MM
-> > folks are pushing back because the fs folks tend to use GFP_NOFS as a
-> > talisman.  The audit needs to happen, otherwise that last sentence is
-> > another talisman.
-> 
-> There's nothing here I disagree with. I'm not seeing a strong technical
-> justification, which is what I want (being called from an ioctl means
-> nothing in this case).
+On 06/01/2016 01:48 AM, Lu Fengqi wrote:
+> Only in the case of different root_id or different object_id, check_shared
+> identified extent as the shared. However, If a extent was referred by
+> different offset of same file, it should also be identified as shared.
+> In addition, check_shared's loop scale is at least  n^3, so if a extent
+> has too many references,  even causes soft hang up.
+>
+> First, add all delayed_ref to the ref_tree and calculate the unqiue_refs,
+> if the unique_refs is greater than one, return BACKREF_FOUND_SHARED.
+> Then individually add the  on-disk reference(inline/keyed) to the ref_tree
+> and calculate the unique_refs of the ref_tree to check if the unique_refs
+> is greater than one.Because once there are two references to return
+> SHARED, so the time complexity is close to the constant.
+>
+> Reported-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
+> Signed-off-by: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
 
-A small amount of searching shows me that extent_fiemap() does
-lock_extent_bits() and writepage_delalloc() also calls lock_extent_bits()
-(via find_lock_delalloc_range()).
+This is a lot of work for just wanting to know if something is shared. 
+Instead lets adjust this slightly.  Instead of passing down a 
+root_objectid/inum and noticing this and returned shared, add a new way 
+to iterate refs.  Currently we go gather all the refs and then do the 
+iterate dance, which is what takes so long.  So instead add another 
+helper that calls the provided function every time it has a match, and 
+then we can pass in whatever context we want, and we return when 
+something matches.  This way we don't have all this extra accounting, 
+and we're no longer passing root_objectid/inum around and testing for 
+some magic scenario.  Thanks,
 
-I'm no expert on the extent locking but that seems pretty deadlocky to me.
-	--Mark
+Josef
 
---
-Mark Fasheh

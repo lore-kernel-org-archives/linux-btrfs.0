@@ -1,94 +1,66 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f169.google.com ([209.85.223.169]:36828 "EHLO
+Received: from mail-io0-f169.google.com ([209.85.223.169]:33391 "EHLO
 	mail-io0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751629AbcFCT54 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 3 Jun 2016 15:57:56 -0400
-Received: by mail-io0-f169.google.com with SMTP id k19so73307204ioi.3
-        for <linux-btrfs@vger.kernel.org>; Fri, 03 Jun 2016 12:57:56 -0700 (PDT)
+	with ESMTP id S932675AbcFCUaN (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 3 Jun 2016 16:30:13 -0400
+Received: by mail-io0-f169.google.com with SMTP id t40so88367286ioi.0
+        for <linux-btrfs@vger.kernel.org>; Fri, 03 Jun 2016 13:30:12 -0700 (PDT)
+Received: from [169.254.77.254] ([70.51.159.130])
+        by smtp.gmail.com with ESMTPSA id v40sm3475380ioi.3.2016.06.03.13.30.11
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLSv1/SSLv3 cipher=OTHER);
+        Fri, 03 Jun 2016 13:30:11 -0700 (PDT)
+Message-ID: <5751E8D2.7070001@gmail.com>
+Date: Fri, 03 Jun 2016 16:30:10 -0400
+From: "B. S." <bs27975@gmail.com>
 MIME-Version: 1.0
-In-Reply-To: <1464979359.1571.25.camel@gmail.com>
-References: <1464977432.1571.20.camel@gmail.com>
-	<1464977591.6679.13.camel@scientia.net>
-	<1464979359.1571.25.camel@gmail.com>
-Date: Fri, 3 Jun 2016 14:57:55 -0500
-Message-ID: <CAKZK7uwczSs8LpCB92o08zON8nUkGGoQGB5is_KXSQTkHjvYTg@mail.gmail.com>
-Subject: Re: RAID1 vs RAID10 and best way to set up 6 disks
-From: Justin Brown <justin.brown@fandingo.org>
-To: Mitchell Fossen <msfossen@gmail.com>
-Cc: Christoph Anton Mitterer <calestyo@scientia.net>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+To: linux-btrfs@vger.kernel.org
+Subject: Pointers to mirroring partitions (w/ encryption?) help?
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-> Mitchell wrote:
-> With RAID10, there's still only 1 other copy, but the entire "original"
-disk is mirrored to another one, right?
+Hallo. I'm continuing on sinking in to btrfs, so pointers to concise 
+help articles appreciated. I've got a couple new home systems, so 
+perhaps it's time to investigate encryption, and given the bit rot I've 
+seen here, perhaps time to mirror volumes so the wonderful btrfs 
+self-healing facilities can be taken advantage of.
 
-No, full disks are never mirrored in any configuration.
+Problem with today's hard drives, a quick look at Canada Computer shows 
+the smallest drives 500GB, 120GB SSDs, far more than the 20GB or so an 
+OS needs. Yet not looking to put in a 2nd HD, either. It feels like 
+mirroring volumes makes sense.
 
-Here's how I understand Btrfs' non-parity redundancy profiles:
+(EFI [partitions] also seem to be sticking their fingers in here.]
 
-single: only a single instance of a file exists across the file system
-dup: two instances of a file exist across the file system, and they
-may reside on the same physical disk (4.5.1+ required to use dup
-profile on multi-disk file system)
-raid1: same as dup but the instances are guaranteed to be on different disks
-raid0: single but  can be striped between multiple disks
-raid10: data is guaranteed to exist on two separate devices but if n>2
-the data is load balanced between disks*
+Assume a CD sized (680MB) /boot, and perhaps a 200MB (?) sized EFI 
+partition, it seems to me one sets up / as usual (less complex install), 
+then creates another partition for mirroring, later. IIUC, btrfs add 
+device /dev/sda4 / is appropriate, then. Then running a balance seems 
+recommended.
 
-Even though my explanation is imperfect, I hopes that illustrates that
-Btrfs RAID is different than traditional RAID. Btrfs provides the same
-physical redundancy as RAID, but the implementation mechanisms are
-quite a bit different. This has wonderful consequences for
-flexibility, and it's what allowed me to run a 5x2TB RAID10 array for
-nearly two years and essentially allow complete allocation. The
-downside is that since allocations aren't enforced from start (eg. MD
-requiring certain number of disks and identical sizes), it's possible
-to get weird allocations over time, but the resolution is simple: run
-a balance from time to time.
+Confusing, however, is having those (both) partitions encrypted. Seems 
+some work is needed beforehand. But I've never done encryption. I have 
+come across https://github.com/gebi/keyctl_keyscript, so I understand 
+there will be gotchas to deal with - later. But not there yet, and not 
+real sure how to start.
 
-> Christoph wrote:
-> Especially, when you have an odd number devices (or devices with
-different sizes), its not clear to me, personally, at all how far that
-redundancy actually goes respectively what btrfs actually does... could
-be that you have your 2 copies, but maybe on the same device then?
+The additional problem is most articles reference FDE (Full Disk 
+Encryption) - but that doesn't seem to be prudent. e.g. Unencrypted 
+/boot. So having problems finding concise links on the topics, -FDE 
+-"Full Disk Encryption".
 
-RAID1 (and transitively RAID10) guarantees two copies on different
-disks, always. Only dup allows the copies to reside on the same disk.
-This is guaranteed is preserved, even when n=2k+1 and mixed-capacity
-disks. If disks run out of available chunks to satisfy the redundancy
-profile, the result is ENOSPC and requires the administrator to
-balance the file system before new allocations can succeed. The
-question essentially is asking if Btrfs will spontaneously degrade
-into "dup" if chunks cannot be allocated on some devices. That will
-never happen.
+Any good links to concise instructions on building / establishing 
+encrypted btrfs mirror volumes? dm_crypt seems to be the basis, and not 
+looking to add LVM, seems an unnecessary extra layer of complexity.
 
+It also feels like I could mkfs.btrfs /dev/sda3 /dev/sda4, then mirror 
+subvolumes (or it inherently comes along for the ride?) - so my 
+confusion level increases. Especially if encryption is added to the mix.
 
-On Fri, Jun 3, 2016 at 1:42 PM, Mitchell Fossen <msfossen@gmail.com> wrote:
-> Thanks for pointing that out, so if I'm thinking correctly, with RAID1
-> it's just that there is a copy of the data somewhere on some other
-> drive.
->
-> With RAID10, there's still only 1 other copy, but the entire "original"
-> disk is mirrored to another one, right?
->
-> On Fri, 2016-06-03 at 20:13 +0200, Christoph Anton Mitterer wrote:
->> On Fri, 2016-06-03 at 13:10 -0500, Mitchell Fossen wrote:
->> >
->> > Is there any caveats between RAID1 on all 6 vs RAID10?
->> Just to be safe: RAID1 in btrfs means not what RAID1 means in any
->> other
->> terminology about RAID.
->>
->> The former has only two duplicates, the later means full mirroring of
->> all devices.
->>
->>
->> Cheers,
->> Chris.
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+So, I could take an HD, create partitions as above (how? e.g. Set up 
+encryption / btrfs mirror volumes), then clonezilla (?) partitions from 
+a current machine in. I assume mounting a live cd then cp -a from old 
+disk partition to new disk partition won't 'just work'. (?)
+
+Article suggestions?

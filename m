@@ -1,66 +1,136 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:49440 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1750884AbcFFInZ (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 6 Jun 2016 04:43:25 -0400
-Subject: Re: [PATCH 0/4] btrfs: return all mirror whether need_raid_map set or
- not
-To: <dsterba@suse.cz>, Zhao Lei <zhaolei@cn.fujitsu.com>,
-        <linux-btrfs@vger.kernel.org>
-References: <cover.1450177455.git.zhaolei@cn.fujitsu.com>
- <20160606082139.GS29147@twin.jikos.cz>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <c64562f1-4544-35fe-7f4b-821633472689@cn.fujitsu.com>
-Date: Mon, 6 Jun 2016 16:43:08 +0800
-MIME-Version: 1.0
-In-Reply-To: <20160606082139.GS29147@twin.jikos.cz>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+Received: from mail-qt0-f196.google.com ([209.85.216.196]:33835 "EHLO
+	mail-qt0-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750960AbcFCCIG (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 2 Jun 2016 22:08:06 -0400
+Received: by mail-qt0-f196.google.com with SMTP id d51so1819721qte.1
+        for <linux-btrfs@vger.kernel.org>; Thu, 02 Jun 2016 19:08:05 -0700 (PDT)
+From: Andrew Armenia <andrew@asquaredlabs.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Andrew Armenia <andrew@asquaredlabs.com>
+Subject: [PATCH] btrfs: chunk_width_limit mount option
+Date: Thu,  2 Jun 2016 21:50:15 -0400
+Message-Id: <1464918615-6458-1-git-send-email-andrew@asquaredlabs.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+This patch adds mount option 'chunk_width_limit=X', which when set forces
+the chunk allocator to use only up to X devices when allocating a chunk.
+This may help reduce the seek penalties seen in filesystems with large
+numbers of devices.
 
+Signed-off-by: Andrew Armenia <andrew@asquaredlabs.com>
+---
+ fs/btrfs/ctree.h   |  3 +++
+ fs/btrfs/super.c   | 22 +++++++++++++++++++++-
+ fs/btrfs/volumes.c | 26 ++++++++++++++++++++++++++
+ 3 files changed, 50 insertions(+), 1 deletion(-)
 
-At 06/06/2016 04:21 PM, David Sterba wrote:
-> On Tue, Dec 15, 2015 at 07:09:48PM +0800, Zhao Lei wrote:
->> __btrfs_map_block() should return all mirror on WRITE,
->> REQ_GET_READ_MIRRORS, and RECOVERY case, whether need_raid_map set
->> or not.
->>
->> need_raid_map only used to control is to set bbio->raid_map.
->>
->> Current code works right becuase there is only one caller can
->> trigger above bug, which is readahead, and this function happened
->> to bypass on less mirror.
->>
->> But after we fixed __btrfs_map_block(), readahead will be really
->> works, and exit with warning at another bug.
->> This patchset fixed __btrfs_map_block(), and disable raid56
->> readahead temp temporary, (actually, it already disable by this bug),
->> and I'll fix raid56 readahead next.
->>
->> Zhao Lei (4):
->>   btrfs: Disable raid56 readahead
->>   btrfs: return all mirror whether need_raid_map set or not
->>   btrfs: Small cleanup for get index_srcdev loop
->>   btrfs: Use direct way to determine raid56 write/recover mode
->
-> Are these patches still relevant? If yes, please update and resed,
-> thanks.
-
-Hi David,
-
-Zhao doesn't work on btrfs any more.
-
-So I'll re-check these patches and see if they are still needed.
-If so, I'll rebase (some of) them and resend.
-
-Thanks,
-Qu
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
->
-
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 101c3cf..27b6f8f 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -754,6 +754,9 @@ struct btrfs_fs_info {
+ 	unsigned long pending_changes;
+ 	unsigned long compress_type:4;
+ 	int commit_interval;
++
++	int chunk_width_limit;
++
+ 	/*
+ 	 * It is a suggestive number, the read side is safe even it gets a
+ 	 * wrong number because we will write out the data into a regular
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index 4e59a91..3da5220 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -300,7 +300,7 @@ enum {
+ 	Opt_commit_interval, Opt_barrier, Opt_nodefrag, Opt_nodiscard,
+ 	Opt_noenospc_debug, Opt_noflushoncommit, Opt_acl, Opt_datacow,
+ 	Opt_datasum, Opt_treelog, Opt_noinode_cache, Opt_usebackuproot,
+-	Opt_nologreplay, Opt_norecovery,
++	Opt_nologreplay, Opt_norecovery, Opt_width_limit,
+ #ifdef CONFIG_BTRFS_DEBUG
+ 	Opt_fragment_data, Opt_fragment_metadata, Opt_fragment_all,
+ #endif
+@@ -360,6 +360,7 @@ static const match_table_t tokens = {
+ 	{Opt_rescan_uuid_tree, "rescan_uuid_tree"},
+ 	{Opt_fatal_errors, "fatal_errors=%s"},
+ 	{Opt_commit_interval, "commit=%d"},
++	{Opt_width_limit, "chunk_width_limit=%d"},
+ #ifdef CONFIG_BTRFS_DEBUG
+ 	{Opt_fragment_data, "fragment=data"},
+ 	{Opt_fragment_metadata, "fragment=metadata"},
+@@ -782,6 +783,22 @@ int btrfs_parse_options(struct btrfs_root *root, char *options,
+ 				info->commit_interval = BTRFS_DEFAULT_COMMIT_INTERVAL;
+ 			}
+ 			break;
++		case Opt_width_limit:
++			intarg = 0;
++			ret = match_int(&args[0], &intarg);
++			if (ret < 0) {
++				btrfs_err(root->fs_info, "invalid chunk width limit");
++				ret = -EINVAL;
++				goto out;
++			}
++
++			if (intarg > 0) {
++				info->chunk_width_limit = intarg;
++			} else {
++				btrfs_info(root->fs_info, "chunk width is unlimited");
++				info->chunk_width_limit = 0;
++			}
++			break;
+ #ifdef CONFIG_BTRFS_DEBUG
+ 		case Opt_fragment_all:
+ 			btrfs_info(root->fs_info, "fragmenting all space");
+@@ -1207,6 +1224,9 @@ static int btrfs_show_options(struct seq_file *seq, struct dentry *dentry)
+ 	if (info->thread_pool_size !=  min_t(unsigned long,
+ 					     num_online_cpus() + 2, 8))
+ 		seq_printf(seq, ",thread_pool=%d", info->thread_pool_size);
++	if (info->chunk_width_limit != 0)
++		seq_printf(seq, ",chunk_width_limit=%d",
++			info->chunk_width_limit);
+ 	if (btrfs_test_opt(root, COMPRESS)) {
+ 		if (info->compress_type == BTRFS_COMPRESS_ZLIB)
+ 			compress_type = "zlib";
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index bdc6256..6d0d35d 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -4558,6 +4558,32 @@ static int __btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
+ 	devs_increment = btrfs_raid_array[index].devs_increment;
+ 	ncopies = btrfs_raid_array[index].ncopies;
+ 
++	/*
++	 * if we have a statically-configured chunk width, and the type doesn't
++	 * specify one, go ahead and use the statically-configured max instead.
++	 *
++	 * If the static value is greater than the BTRFS_MAX_DEVS for the
++	 * chunk tree, we ignore it.
++	 *
++	 * Also, we ignore the static value for system chunks.
++	 */
++	if (
++		devs_max == 0 && info->chunk_width_limit != 0
++		&& !(type & BTRFS_BLOCK_GROUP_SYSTEM)
++		&& info->chunk_width_limit <= BTRFS_MAX_DEVS(info->chunk_root)
++	) {
++		if (info->chunk_width_limit >= devs_min) {
++			devs_max = info->chunk_width_limit;
++		} else {
++			/* warn that the static devs_max is unusable */
++			btrfs_warn(info,
++				"can't satisfy max chunk width of %d; "
++				"minimum %d devices needed",
++				info->chunk_width_limit, devs_max
++			);
++		}
++	}
++
+ 	if (type & BTRFS_BLOCK_GROUP_DATA) {
+ 		max_stripe_size = SZ_1G;
+ 		max_chunk_size = 10 * max_stripe_size;
+-- 
+2.1.4
 

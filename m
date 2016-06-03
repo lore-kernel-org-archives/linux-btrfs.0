@@ -1,71 +1,63 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-it0-f54.google.com ([209.85.214.54]:35858 "EHLO
-	mail-it0-f54.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751485AbcFCMnT (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 3 Jun 2016 08:43:19 -0400
-Received: by mail-it0-f54.google.com with SMTP id f67so7817909ith.1
-        for <linux-btrfs@vger.kernel.org>; Fri, 03 Jun 2016 05:43:18 -0700 (PDT)
-Subject: Re: "No space left on device" and balance doesn't work
-To: Henk Slager <eye1tm@gmail.com>, MegaBrutal <megabrutal@gmail.com>
-References: <CAE8gLhm0-+kkwFv1-+t+tWLrZrzh4B9cJUDRrgPpwfvB_obVCA@mail.gmail.com>
- <CAEtw4r2hsCd1+bFNcXn_s5jj-8x6qer+x0gLx8wTgNi1=nAXhw@mail.gmail.com>
- <CAE8gLh=g7oUK_FAcSN2HaeFmEsK1jBMar4DEfzBwEWiUioDhAQ@mail.gmail.com>
- <CAPmG0jb0eVsg1gX4q3TMA9icRaPS9ULcs2KPBX-_biJ5KPUsrQ@mail.gmail.com>
- <CAE8gLhkR4XzNx9tarhzD2LdsCRJ3e+BPcWYpE-qA4jnJsvSrLg@mail.gmail.com>
- <CAPmG0jZj6S6TXe0xLdiJWMto=VX7NM7WhSc5T3MLf=HWvsR7+Q@mail.gmail.com>
-Cc: Peter Becker <floyd.net@gmail.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
+Received: from mail-it0-f68.google.com ([209.85.214.68]:35924 "EHLO
+	mail-it0-f68.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752698AbcFCMzW (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 3 Jun 2016 08:55:22 -0400
+Received: by mail-it0-f68.google.com with SMTP id i127so6377357ita.3
+        for <linux-btrfs@vger.kernel.org>; Fri, 03 Jun 2016 05:55:21 -0700 (PDT)
+Subject: Re: Recommended why to use btrfs for production?
+To: Martin <rc6encrypted@gmail.com>, linux-btrfs@vger.kernel.org
+References: <CAGQ70Yc=HHxJspMCKFBpEURRu=53pZW3k3rVDVO3QPGP_b9Tkw@mail.gmail.com>
 From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <0b6a094b-ccf0-36c4-aafb-12a4e9cd424d@gmail.com>
-Date: Fri, 3 Jun 2016 08:43:14 -0400
+Message-ID: <aeade1fe-825c-6fc2-7f6d-85f4c5400b38@gmail.com>
+Date: Fri, 3 Jun 2016 08:55:18 -0400
 MIME-Version: 1.0
-In-Reply-To: <CAPmG0jZj6S6TXe0xLdiJWMto=VX7NM7WhSc5T3MLf=HWvsR7+Q@mail.gmail.com>
+In-Reply-To: <CAGQ70Yc=HHxJspMCKFBpEURRu=53pZW3k3rVDVO3QPGP_b9Tkw@mail.gmail.com>
 Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2016-06-02 18:45, Henk Slager wrote:
-> On Thu, Jun 2, 2016 at 3:55 PM, MegaBrutal <megabrutal@gmail.com> wrote:
->> 2016-06-02 0:22 GMT+02:00 Henk Slager <eye1tm@gmail.com>:
->>> What is the kernel version used?
->>> Is the fs on a mechanical disk or SSD?
->>> What are the mount options?
->>> How old is the fs?
->>
->> Linux 4.4.0-22-generic (Ubuntu 16.04).
->> Mechanical disks in LVM.
->> Mount: /dev/mapper/centrevg-rootlv on / type btrfs
->> (rw,relatime,space_cache,subvolid=257,subvol=/@)
->> I don't know how to retrieve the exact FS age, but it was created in
->> 2014 August.
->>
->> Snapshots (their names encode their creation dates):
->>
->> ID 908 gen 487349 top level 5 path @-snapshot-20160503000001
-> ...<snip>
->> ID 937 gen 521829 top level 5 path @-snapshot-20160602000001
->>
->> Removing old snapshots is the most feasible solution, but I can also
->> increase the FS size. It's easy since it's in LVM, and there is plenty
->> of space in the volume group.
->>
->> Probably I should rewrite my alert script to check btrfs fi show
->> instead of plain df.
+On 2016-06-03 05:49, Martin wrote:
+> Hello,
 >
-> Yes I think that makes sense, to decide on chunk-level. You can see
-> how big the chunks are with the linked show_usage.py program, most of
-> 33 should be 1GiB as already very well explained by Austin.
+> We would like to use urBackup to make laptop backups, and they mention
+> btrfs as an option.
 >
-> The setup looks all pretty normal and btrfs should be able to handle
-> it, but unfortunately your fs is a typical example that one currently
-> needs to monitor/tune a btrfs fs for its 'health' in order to keep it
-> running longterm. You might want to change mount option relatime to
-> noatime, so that you have less writes to metadata chunks. It should
-> lower the scattering inside the metadata chunks.
-Also, since you're on a new enough kernel, try 'lazytime' in the mount 
-options as well, this defers all on-disk timestamp updates for up to 24 
-hours or until the inode gets written out anyway, but keeps the updated 
-info in memory.  The only downside to this is that mtimes might not be 
-correct after an unclean shutdown, but most software will have no issues 
-with this.
+> https://www.urbackup.org/administration_manual.html#x1-8400010.6
+>
+> So if we go with btrfs and we need 100TB usable space in raid6, and to
+> have it replicated each night to another btrfs server for "backup" of
+> the backup, how should we then install btrfs?
+>
+> E.g. Should we use the latest Fedora, CentOS, Ubuntu, Ubuntu LTS, or
+> should we compile the kernel our self?
+In general, avoid Ubuntu LTS versions when dealing with BTRFS, as well 
+as most enterprise distros, they all tend to back-port patches instead 
+of using newer kernels, which means it's functionally impossible to 
+provide good support for them here (because we can't know for sure what 
+exactly they've back-ported).  I'd suggest building your own kernel if 
+possible, with Arch Linux being a close second (they follow upstream 
+very closely), followed by Fedora and non-LTS Ubuntu.
+>
+> And a bonus question: How stable is raid6 and detecting and replacing
+> failed drives?
+Do not use BTRFS raid6 mode in production, it has at least 2 known 
+serious bugs that may cause complete loss of the array due to a disk 
+failure.  Both of these issues have as of yet unknown trigger 
+conditions, although they do seem to occur more frequently with larger 
+arrays.
 
+That said, there are other options.  If you have enough disks, you can 
+run BTRFS raid1 on top of LVM or MD RAID5 or RAID6, which provides you 
+with the benefits of both.
+
+Alternatively, you could use BTRFS raid1 on top of LVM or MD RAID1, 
+which actually gets relatively decent performance and can provide even 
+better guarantees than RAID6 would (depending on how you set it up, you 
+can lose a lot more disks safely).  If you go this way, I'd suggest 
+setting up disks in pairs at the lower level, and then just let BTRFS 
+handle spanning the data across disks (BTRFS raid1 mode keeps exactly 
+two copies of each block).  While this is not quite as efficient as just 
+doing LVM based RAID6 with a traditional FS on top, it's also a lot 
+easier to handle reshaping the array on-line because of the device 
+management in BTRFS itself.

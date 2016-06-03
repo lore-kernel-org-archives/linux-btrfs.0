@@ -1,160 +1,105 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mailgw-02.dd24.net ([193.46.215.43]:55576 "EHLO
-	mailgw-02.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752426AbcFCTJM (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 3 Jun 2016 15:09:12 -0400
-Received: from mailpolicy-01.live.igb.homer.key-systems.net (mailpolicy-02.live.igb.homer.key-systems.net [192.168.1.27])
-	by mailgw-02.dd24.net (Postfix) with ESMTP id 94E6B5FCF0
-	for <linux-btrfs@vger.kernel.org>; Fri,  3 Jun 2016 19:09:09 +0000 (UTC)
-Received: from mailgw-02.dd24.net ([192.168.1.36])
-	by mailpolicy-01.live.igb.homer.key-systems.net (mailpolicy-02.live.igb.homer.key-systems.net [192.168.1.25]) (amavisd-new, port 10236)
-	with ESMTP id bhGlDOfcfZGf for <linux-btrfs@vger.kernel.org>;
-	Fri,  3 Jun 2016 19:09:06 +0000 (UTC)
-Received: from heisenberg.fritz.box (ppp-46-244-202-98.dynamic.mnet-online.de [46.244.202.98])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
-	(No client certificate requested)
-	by mailgw-02.dd24.net (Postfix) with ESMTPSA
-	for <linux-btrfs@vger.kernel.org>; Fri,  3 Jun 2016 19:09:06 +0000 (UTC)
-Message-ID: <1464980946.9296.0.camel@scientia.net>
-Subject: Re: Recommended why to use btrfs for production?
-From: Christoph Anton Mitterer <calestyo@scientia.net>
-To: linux-btrfs@vger.kernel.org
-Date: Fri, 03 Jun 2016 21:09:06 +0200
-In-Reply-To: <dd952b29-1bea-59e1-1857-418b86951b47@gmail.com>
-References: <CAGQ70Yc=HHxJspMCKFBpEURRu=53pZW3k3rVDVO3QPGP_b9Tkw@mail.gmail.com>	
- <aeade1fe-825c-6fc2-7f6d-85f4c5400b38@gmail.com>	
- <CAGQ70YeZzDgiT_v1Z0eGcWsn8prnji30hCkyjrBg8vNziLUkiQ@mail.gmail.com>
-	 <dd952b29-1bea-59e1-1857-418b86951b47@gmail.com>
-Content-Type: multipart/signed; micalg="sha-512";
-	protocol="application/x-pkcs7-signature";
-	boundary="=-+clICN+3gKeHUTSEPgaJ"
-Mime-Version: 1.0
+Received: from mail-qg0-f52.google.com ([209.85.192.52]:34366 "EHLO
+	mail-qg0-f52.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752252AbcFCTuO (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 3 Jun 2016 15:50:14 -0400
+Received: by mail-qg0-f52.google.com with SMTP id p34so17001406qgp.1
+        for <linux-btrfs@vger.kernel.org>; Fri, 03 Jun 2016 12:50:14 -0700 (PDT)
+Subject: Re: btrfs
+To: Christoph Anton Mitterer <calestyo@scientia.net>,
+        linux-btrfs@vger.kernel.org
+References: <1464819934.6742.71.camel@scientia.net>
+ <d500a743-7a39-8ec5-c6ce-e5a3c70ede91@nv-systems.net>
+ <1464975482.6679.11.camel@scientia.net>
+From: Austin S Hemmelgarn <ahferroin7@gmail.com>
+Message-ID: <6f18c0d1-8ac5-c325-0ba8-ffb949c54554@gmail.com>
+Date: Fri, 3 Jun 2016 15:50:10 -0400
+MIME-Version: 1.0
+In-Reply-To: <1464975482.6679.11.camel@scientia.net>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On 2016-06-03 13:38, Christoph Anton Mitterer wrote:
+> Hey..
+> 
+> Hm... so the overall btrfs state seems to be still pretty worrying,
+> doesn't it?
+> 
+> - RAID5/6 seems far from being stable or even usable,... not to talk
+>   about higher parity levels, whose earlier posted patches (e.g.
+>   http://thread.gmane.org/gmane.linux.kernel/1654735) seem to have
+>   been given up.
+There's no point in trying to do higher parity levels if we can't get
+regular parity working correctly.  Given the current state of things, it
+might be better to break even and just rewrite the whole parity raid
+thing from scratch, but I doubt that anybody is willing to do that.
+> 
+> - Serious show-stoppers and security deficiencies like the UUID
+>   collision corruptions/attacks that have been extensively discussed
+>   earlier, are still open
+The UUID issue is not a BTRFS specific one, it just happens to be easier
+to cause issues with it on BTRFS, it causes problems with all Linux
+native filesystems, as well as LVM, and is also an issue on Windows.
+There is no way to solve it sanely given the requirement that userspace
+not be broken.  Properly fixing this would likely make us more dependent
+on hardware configuration than even mounting by device name.
+> 
+> - a number of important core features not fully working in many
+>   situations (e.g. the issues with defrag, not being ref-link aware,...
+>   an I vaguely remember similar things with compression).
+OK, how then should defrag handle reflinks?  Preserving them prevents it
+from being able to completely defragment data.  It's worth pointing out
+that it is generally pointless to defragment snapshots, as they are
+typically infrequently accessed in most use cases.
+> 
+> - OTOH, defrag seems to be viable for important use cases (VM images,
+>   DBs,... everything where large files are internally re-written
+>   randomly).
+>   Sure there is nodatacow, but with that one effectively completely
+>   looses one of the core features/promises of btrfs (integrity by
+>   checksumming)... and as I've showed in an earlier large discussion,
+>   none of the typical use cases for nodatacow has any high-level
+>   checksumming, and even if, it's not used per default, or doesn't give
+>   the same benefits at it would on the fs level, like using it for RAID
+>   recovery).
+The argument of nodatacow being viable for anything is a pretty
+significant secondary discussion that is itself entirely orthogonal to
+the point you appear to be trying to make here.
+> 
+> - other earlier anticipated features like newer/better compression or
+>   checksum algos seem to be dead either
+This one I entirely agree about.  The arguments against adding other
+compression algorithms and new checksums are entirely bogus.  Ideally
+we'd switch to just encoding API info from the CryptoAPI and let people
+use wherever they want from there.
+> 
+> - still no real RAID 1
+No, you mean still no higher order replication.  I know I'm being
+stubborn about this, but RAID-1 is offici8ally defined in the standards
+as 2-way replication.  The only extant systems that support higher
+levels of replication and call it RAID-1 are entirely based on MD RAID
+and it's poor choice of naming.
 
---=-+clICN+3gKeHUTSEPgaJ
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
-
-Hey.
-
-Does anyone know whether the write hole issues have been fixed already?
-https://btrfs.wiki.kernel.org/index.php/RAID56=C2=A0still mentions it.
-
-Cheers,
-Chris.
---=-+clICN+3gKeHUTSEPgaJ
-Content-Type: application/x-pkcs7-signature; name="smime.p7s"
-Content-Disposition: attachment; filename="smime.p7s"
-Content-Transfer-Encoding: base64
-
-MIAGCSqGSIb3DQEHAqCAMIACAQExDzANBglghkgBZQMEAgMFADCABgkqhkiG9w0BBwEAAKCCEmow
-ggXiMIIDyqADAgECAhBctkhuRwyYxn/2gNtkSuKNMA0GCSqGSIb3DQEBCwUAMH0xCzAJBgNVBAYT
-AklMMRYwFAYDVQQKEw1TdGFydENvbSBMdGQuMSswKQYDVQQLEyJTZWN1cmUgRGlnaXRhbCBDZXJ0
-aWZpY2F0ZSBTaWduaW5nMSkwJwYDVQQDEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0
-eTAeFw0xNTEyMTYwMTAwMDVaFw0zMDEyMTYwMTAwMDVaMHUxCzAJBgNVBAYTAklMMRYwFAYDVQQK
-Ew1TdGFydENvbSBMdGQuMSkwJwYDVQQLEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0
-eTEjMCEGA1UEAxMaU3RhcnRDb20gQ2xhc3MgMiBDbGllbnQgQ0EwggEiMA0GCSqGSIb3DQEBAQUA
-A4IBDwAwggEKAoIBAQDuD1CMlQkjhKz1UGqP1jeiTiH9MgllRz6vOPrVG/eE0H/J4QQLV/PeL8RT
-4xc44bEzsoJu0IhwnEchb+TxE/qw88w7hxODuw3N8Faxix6a1jp83+RWvZHZf78+O+3GYBpekZfT
-Oe9A/FoTXbcgwZfLTMQodn+ckNnX31M/1M2f2/7VA7QBlvihontyHQOlIlryQXnGI0UMCD21oopK
-tW48ckv0wUVg8irBKGMeD65gTON/Fsw/ZBbBqadoD1jt85FIM1ql24WUBEBwO1d0ykCKOIbgcqes
-3fbcjQpruUNMBbIu1MMIRMqwjx/M7IvSKcS7VYRWl0/K2byzWvBAHh/1AgMBAAGjggFkMIIBYDAO
-BgNVHQ8BAf8EBAMCAQYwHQYDVR0lBBYwFAYIKwYBBQUHAwIGCCsGAQUFBwMEMBIGA1UdEwEB/wQI
-MAYBAf8CAQAwMgYDVR0fBCswKTAnoCWgI4YhaHR0cDovL2NybC5zdGFydHNzbC5jb20vc2ZzY2Eu
-Y3JsMGYGCCsGAQUFBwEBBFowWDAkBggrBgEFBQcwAYYYaHR0cDovL29jc3Auc3RhcnRzc2wuY29t
-MDAGCCsGAQUFBzAChiRodHRwOi8vYWlhLnN0YXJ0c3NsLmNvbS9jZXJ0cy9jYS5jcnQwHQYDVR0O
-BBYEFJmXqxg1OotZRUOYsnJxyPT7Cc8WMB8GA1UdIwQYMBaAFE4L7xqkQFulF2mHMMo0aEPQQa7y
-MD8GA1UdIAQ4MDYwNAYEVR0gADAsMCoGCCsGAQUFBwIBFh5odHRwOi8vd3d3LnN0YXJ0c3NsLmNv
-bS9wb2xpY3kwDQYJKoZIhvcNAQELBQADggIBAJlBQQTO9iT1TjA0eEO7V/1AbBvMAfibjAgofxmJ
-01jBmHKg0pbTjWInTTYoxb3LBgz3mfjvvS1PjnIfb29MyVm0G/PSHjgq7Ews1dEJMPC9XTuxPf2c
-+MWLkynBlotW542JprW+iTWfZafyUtzIKW1hk0YASJ8zSSj8D++9yR+0UhkbvlECJkdi1+et0EaI
-7HIX6ccj1rfcFFflWX/fPT64dn9jpg9s0nuJug4WsVkEK236WndZoMHrZmgF7CIyZ3T0muqYwkAS
-DDcRt9A21o/Mc+D8Q6GVmKRGB3gEKvOtsioHZEqJv6CdAm3a6gloo5pX3RL1eCzc8Lzfs4T0ISZj
-r8xNMbTGlsuHaFH+stDewKsfnpo4N64OtAGrzmVfFFsMIRENRHsVlSEe/6LVpBpjn00+7bqEN3qe
-qSxIOraYJ12mJ08G4YnP2U1fadHIaS50O5ZXqAivoBl9pi/6CBNc5wIMlkXMyFZ0sLsI+9ErFDu9
-OJhX7iWCo69X0ydlzXj08+2K1PKyr+g6/vTPHur63JotNrhyoWEJyWEjBLA4QmJXfGpB5u+bCwNf
-sFpcYAlkiFt1Rs2vemgSBy3q4DHDbPKvr1YImZNRSHP+TX9NP94JRkmqcyD/qaN7u2JV1pRAlwG0
-npyrn6ZQM1QHV+iFbwQ4VqLMWk//QVo/rZy1MIIGPjCCBSagAwIBAgIQPZ6tDP/RHLwcz1F+2kRA
-DzANBgkqhkiG9w0BAQsFADB1MQswCQYDVQQGEwJJTDEWMBQGA1UEChMNU3RhcnRDb20gTHRkLjEp
-MCcGA1UECxMgU3RhcnRDb20gQ2VydGlmaWNhdGlvbiBBdXRob3JpdHkxIzAhBgNVBAMTGlN0YXJ0
-Q29tIENsYXNzIDIgQ2xpZW50IENBMB4XDTE2MDEwMjAyMDIzNloXDTE4MDEwMjAyMDIzNlowejEL
-MAkGA1UEBhMCREUxDzANBgNVBAgMBkJheWVybjERMA8GA1UEBwwITcO8bmNoZW4xITAfBgNVBAMM
-GENocmlzdG9waCBBbnRvbiBNaXR0ZXJlcjEkMCIGCSqGSIb3DQEJARYVY2FsZXN0eW9Ac2NpZW50
-aWEubmV0MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAsoxs789VtR81tlqeP2vwE3Cp
-YosZYRfrovj+Wb91paoV5OQcFuXA7yONnLsWxOnJ3AGgy1/wG79Ko+yHSmF2K88pEWjrFe0zmZWZ
-0b2OtMoKLEjxz7Nz2N7/lmgss8XinJ083LwLKSe4f+JLjnF5hX/g6wG4NkFXVOIf2YFZ0+c1NYFQ
-T6Vy42EWdk+JLDoXjyd2hEperLCz9rQr2k3wh0cn8R1FDUGerBGpMnvyKV6JXj5vZsqJnmiiId9e
-0IdBj4Wcs3hT2usk6dJYwHrZ8b7Fkv6BRq90DUI7i8+ukTdp5hnAb8TPSbe1JS4h3Jc7r2NVLkpo
-Gbuw98er9s2PEAvpECD3toO3ojBevL56vEDbGa5tXpvvcWCz6t3QyEKJ2E54hWw1fbUA0BtydQC0
-mhKBtrENVnnCDrSgiyBMnd8y+kw6iPKeJEjNObGubc4BZp47zPn/ZiDBaHue6S0MXsoS7XEGOuCU
-09S/8kD8wTecBg+KdlLSNkLm+xqx6Cy7zwcj3IuQv0PeWi4kfEkAJfl8IeAP/4049iA6a1rkhJl7
-1rDjpEGBCG+i9BAgBeNdHLtQ7bugdvU+GfHjFXEU1emUk91E2liML8kpCvhUAXcLhhL8bxPJiX2/
-VQ2esrpQVO56OzpivNauonLaWmHEKOSfPC3s5AKMytMTiUiszEUCAwEAAaOCAcMwggG/MAsGA1Ud
-DwQEAwIEsDAdBgNVHSUEFjAUBggrBgEFBQcDAgYIKwYBBQUHAwQwCQYDVR0TBAIwADAdBgNVHQ4E
-FgQUwRklxF1ZV2ooSMkFwLiK13apkK0wHwYDVR0jBBgwFoAUmZerGDU6i1lFQ5iycnHI9PsJzxYw
-bwYIKwYBBQUHAQEEYzBhMCQGCCsGAQUFBzABhhhodHRwOi8vb2NzcC5zdGFydHNzbC5jb20wOQYI
-KwYBBQUHMAKGLWh0dHA6Ly9haWEuc3RhcnRzc2wuY29tL2NlcnRzL3NjYS5jbGllbnQyLmNydDA4
-BgNVHR8EMTAvMC2gK6AphidodHRwOi8vY3JsLnN0YXJ0c3NsLmNvbS9zY2EtY2xpZW50Mi5jcmww
-IAYDVR0RBBkwF4EVY2FsZXN0eW9Ac2NpZW50aWEubmV0MCMGA1UdEgQcMBqGGGh0dHA6Ly93d3cu
-c3RhcnRzc2wuY29tLzBUBgNVHSAETTBLMAwGCisGAQQBgbU3BgEwOwYLKwYBBAGBtTcBAgQwLDAq
-BggrBgEFBQcCARYeaHR0cDovL3d3dy5zdGFydHNzbC5jb20vcG9saWN5MA0GCSqGSIb3DQEBCwUA
-A4IBAQBb8EIsoUN/tgUgQqrNXNtlksPep84kx5yRBgr71uf3ITLddGtzfDBj6KdZUoy7SG3MQkyO
-kvYmXBClj23rv8Iol48/3oi9XWZw5EV3uHrRse1TzQgMPZE0hZsDgkqXVoxMQfk55ndjZIHMfSkn
-hdnqSP5zZ4TCmDEKLppPMDcQSSrjilnbthpxlIJzeGeEFtrh6ssh/oF6mUaEGFcd8kx9RS51K1gt
-H4J36y4E6pKB7EdxG2+0yVzAIta8dkD/BiMCKRWhp1EmzQ2uIh2nX5y8t4e2xHHuiy11Yeq6UTW/
-JmfxF4xcbkNK/rv9ISBg9K+mZtg2QXr+P/CJBtej2RLUMIIGPjCCBSagAwIBAgIQPZ6tDP/RHLwc
-z1F+2kRADzANBgkqhkiG9w0BAQsFADB1MQswCQYDVQQGEwJJTDEWMBQGA1UEChMNU3RhcnRDb20g
-THRkLjEpMCcGA1UECxMgU3RhcnRDb20gQ2VydGlmaWNhdGlvbiBBdXRob3JpdHkxIzAhBgNVBAMT
-GlN0YXJ0Q29tIENsYXNzIDIgQ2xpZW50IENBMB4XDTE2MDEwMjAyMDIzNloXDTE4MDEwMjAyMDIz
-NlowejELMAkGA1UEBhMCREUxDzANBgNVBAgMBkJheWVybjERMA8GA1UEBwwITcO8bmNoZW4xITAf
-BgNVBAMMGENocmlzdG9waCBBbnRvbiBNaXR0ZXJlcjEkMCIGCSqGSIb3DQEJARYVY2FsZXN0eW9A
-c2NpZW50aWEubmV0MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAsoxs789VtR81tlqe
-P2vwE3CpYosZYRfrovj+Wb91paoV5OQcFuXA7yONnLsWxOnJ3AGgy1/wG79Ko+yHSmF2K88pEWjr
-Fe0zmZWZ0b2OtMoKLEjxz7Nz2N7/lmgss8XinJ083LwLKSe4f+JLjnF5hX/g6wG4NkFXVOIf2YFZ
-0+c1NYFQT6Vy42EWdk+JLDoXjyd2hEperLCz9rQr2k3wh0cn8R1FDUGerBGpMnvyKV6JXj5vZsqJ
-nmiiId9e0IdBj4Wcs3hT2usk6dJYwHrZ8b7Fkv6BRq90DUI7i8+ukTdp5hnAb8TPSbe1JS4h3Jc7
-r2NVLkpoGbuw98er9s2PEAvpECD3toO3ojBevL56vEDbGa5tXpvvcWCz6t3QyEKJ2E54hWw1fbUA
-0BtydQC0mhKBtrENVnnCDrSgiyBMnd8y+kw6iPKeJEjNObGubc4BZp47zPn/ZiDBaHue6S0MXsoS
-7XEGOuCU09S/8kD8wTecBg+KdlLSNkLm+xqx6Cy7zwcj3IuQv0PeWi4kfEkAJfl8IeAP/4049iA6
-a1rkhJl71rDjpEGBCG+i9BAgBeNdHLtQ7bugdvU+GfHjFXEU1emUk91E2liML8kpCvhUAXcLhhL8
-bxPJiX2/VQ2esrpQVO56OzpivNauonLaWmHEKOSfPC3s5AKMytMTiUiszEUCAwEAAaOCAcMwggG/
-MAsGA1UdDwQEAwIEsDAdBgNVHSUEFjAUBggrBgEFBQcDAgYIKwYBBQUHAwQwCQYDVR0TBAIwADAd
-BgNVHQ4EFgQUwRklxF1ZV2ooSMkFwLiK13apkK0wHwYDVR0jBBgwFoAUmZerGDU6i1lFQ5iycnHI
-9PsJzxYwbwYIKwYBBQUHAQEEYzBhMCQGCCsGAQUFBzABhhhodHRwOi8vb2NzcC5zdGFydHNzbC5j
-b20wOQYIKwYBBQUHMAKGLWh0dHA6Ly9haWEuc3RhcnRzc2wuY29tL2NlcnRzL3NjYS5jbGllbnQy
-LmNydDA4BgNVHR8EMTAvMC2gK6AphidodHRwOi8vY3JsLnN0YXJ0c3NsLmNvbS9zY2EtY2xpZW50
-Mi5jcmwwIAYDVR0RBBkwF4EVY2FsZXN0eW9Ac2NpZW50aWEubmV0MCMGA1UdEgQcMBqGGGh0dHA6
-Ly93d3cuc3RhcnRzc2wuY29tLzBUBgNVHSAETTBLMAwGCisGAQQBgbU3BgEwOwYLKwYBBAGBtTcB
-AgQwLDAqBggrBgEFBQcCARYeaHR0cDovL3d3dy5zdGFydHNzbC5jb20vcG9saWN5MA0GCSqGSIb3
-DQEBCwUAA4IBAQBb8EIsoUN/tgUgQqrNXNtlksPep84kx5yRBgr71uf3ITLddGtzfDBj6KdZUoy7
-SG3MQkyOkvYmXBClj23rv8Iol48/3oi9XWZw5EV3uHrRse1TzQgMPZE0hZsDgkqXVoxMQfk55ndj
-ZIHMfSknhdnqSP5zZ4TCmDEKLppPMDcQSSrjilnbthpxlIJzeGeEFtrh6ssh/oF6mUaEGFcd8kx9
-RS51K1gtH4J36y4E6pKB7EdxG2+0yVzAIta8dkD/BiMCKRWhp1EmzQ2uIh2nX5y8t4e2xHHuiy11
-Yeq6UTW/JmfxF4xcbkNK/rv9ISBg9K+mZtg2QXr+P/CJBtej2RLUMYIEfjCCBHoCAQEwgYkwdTEL
-MAkGA1UEBhMCSUwxFjAUBgNVBAoTDVN0YXJ0Q29tIEx0ZC4xKTAnBgNVBAsTIFN0YXJ0Q29tIENl
-cnRpZmljYXRpb24gQXV0aG9yaXR5MSMwIQYDVQQDExpTdGFydENvbSBDbGFzcyAyIENsaWVudCBD
-QQIQPZ6tDP/RHLwcz1F+2kRADzANBglghkgBZQMEAgMFAKCCAcUwGAYJKoZIhvcNAQkDMQsGCSqG
-SIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTYwNjAzMTkwOTA2WjBPBgkqhkiG9w0BCQQxQgRANBZR
-R2nrQ3F+0knqHrkuoKggwYLtnJONcuDm6LwTYtsy/sHDADeOYSXs9yqf1PGTp4bvfV9UVFcKPowd
-wMMAsDCBmgYJKwYBBAGCNxAEMYGMMIGJMHUxCzAJBgNVBAYTAklMMRYwFAYDVQQKEw1TdGFydENv
-bSBMdGQuMSkwJwYDVQQLEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0eTEjMCEGA1UE
-AxMaU3RhcnRDb20gQ2xhc3MgMiBDbGllbnQgQ0ECED2erQz/0Ry8HM9RftpEQA8wgZwGCyqGSIb3
-DQEJEAILMYGMoIGJMHUxCzAJBgNVBAYTAklMMRYwFAYDVQQKEw1TdGFydENvbSBMdGQuMSkwJwYD
-VQQLEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0eTEjMCEGA1UEAxMaU3RhcnRDb20g
-Q2xhc3MgMiBDbGllbnQgQ0ECED2erQz/0Ry8HM9RftpEQA8wDQYJKoZIhvcNAQEBBQAEggIAFceB
-ZVkbUuhmOd5bmQ7VwO3oPYq/PSnuYXVt1PfemL3WXtODhduDA0aO0tpsE1xdu//aiR/JdRrxiwE/
-dY/jGQf1uDjzdlNPBBxuH968t5nlRWR35FJsVEPWRLjo03JkLQFyZUsdzgHuvwtiawF+M5DneQqR
-iOHp19kIxN0GqCIXZSYfCS0Fx9jdSRc7EhiV6Vuzmsgw0C+xHUAC1G+iL//S3Orh6rh3PczCTpbZ
-TNilt/yiXITkQ4vVD0gAWR+hjsItaObWaNA3L+ei5Yx5wMYRDC66LAbIc86k6vVhRFqm+RvllRTV
-w4VlnaT0cLcy4mvajNeF/sIsJYwGnoRFcojUOOx9oTQ8Xf9LfkksULcqvm4WM9pPLa83H8Eki+Ef
-D0X7guMyjid85sPFJYQkYKfDHAEf5POMosMlzw7J4ZL4fXPL7s7amtPtnfTqBLTDChxznp8gNFov
-EQpZjXOip4bMEBmh6Iwnczl79Lwuzt3I46F30u7T0yi9W83TvbgixlJ4R2rEDOMDlQqN22sSz4Ce
-b0J2ABdbGuQ6kCe0AKylzeljnNLfgzcY+e3Tia2CytkX5H0yC+t663hOOEbd5/ALkPobfnMSh9vF
-NeTem6SeW/fBF7a9R8nVO3y+ONrQqXnRS7pZFfYhaRPcC+fRPe6MG/JXBVsQg9F7639ZaM0AAAAA
-AAA=
-
-
---=-+clICN+3gKeHUTSEPgaJ--
-
+Overall, between this and the insanity that is raid5/6, somebody with
+significantly more skill than me, and significantly more time than most
+of the developers, needs to just take a step back and rewrite the whole
+multi-device profile support from scratch.
+> 
+> - no end-user/admin grade maangement/analysis tools, that tell non-
+>   experts about the state/health of their fs, and whether things like
+>   balance etc.pp. are necessary
+I don't see anyone forthcoming with such tools either.  As far as basic
+monitoring, it's trivial to do with simple scripts from tools like monit
+or nagios.  As far as complex things like determining whether a fs needs
+balanced, that's really non-trivial to figure out.  Even with a person
+looking at it, it's still not easy to know whether or not a balance will
+actually help.
+> 
+> - the still problematic documentation situation
+Not trying to rationalize this, but go take a look at a majority of
+other projects, most of them that aren't backed by some huge corporation
+throwing insane amounts of money at them have at best mediocre end-user
+documentation.  The fact that more effort is being put into development
+than documentation is generally a good thing, especially for something
+that is not yet feature complete like BTRFS.

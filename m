@@ -1,27 +1,36 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oi0-f46.google.com ([209.85.218.46]:36599 "EHLO
-	mail-oi0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932304AbcFCJ5l (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 3 Jun 2016 05:57:41 -0400
-Received: by mail-oi0-f46.google.com with SMTP id j1so118887883oih.3
-        for <linux-btrfs@vger.kernel.org>; Fri, 03 Jun 2016 02:57:41 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <20160603095344.GV14027@torres.zugschlus.de>
-References: <CAGQ70Yc=HHxJspMCKFBpEURRu=53pZW3k3rVDVO3QPGP_b9Tkw@mail.gmail.com>
- <20160603095344.GV14027@torres.zugschlus.de>
-From: Martin <rc6encrypted@gmail.com>
-Date: Fri, 3 Jun 2016 11:57:40 +0200
-Message-ID: <CAGQ70Ydvyx_cii9SCXV_Xh5ikEEmkUCtTsR24Pno_zUBzd2YmA@mail.gmail.com>
+Received: from syrinx.knorrie.org ([82.94.188.77]:40502 "EHLO
+	syrinx.knorrie.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932361AbcFCKBN (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 3 Jun 2016 06:01:13 -0400
 Subject: Re: Recommended why to use btrfs for production?
-To: Marc Haber <mh+linux-btrfs@zugschlus.de>
-Cc: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+To: Martin <rc6encrypted@gmail.com>, linux-btrfs@vger.kernel.org
+References: <CAGQ70Yc=HHxJspMCKFBpEURRu=53pZW3k3rVDVO3QPGP_b9Tkw@mail.gmail.com>
+From: Hans van Kranenburg <hans.van.kranenburg@mendix.com>
+Message-ID: <57515566.5050809@mendix.com>
+Date: Fri, 3 Jun 2016 12:01:10 +0200
+MIME-Version: 1.0
+In-Reply-To: <CAGQ70Yc=HHxJspMCKFBpEURRu=53pZW3k3rVDVO3QPGP_b9Tkw@mail.gmail.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-> Do you plan to use Snapshots? How many of them?
+Hi Martin,
 
-Yes, minimum 7 for each day of the week.
+On 06/03/2016 11:49 AM, Martin wrote:
+>
+> We would like to use urBackup to make laptop backups, and they mention
+> btrfs as an option.
+>
+> [...]
+>
+> And a bonus question: How stable is raid6 and detecting and replacing
+> failed drives?
 
-Nice to have would be 4 extra for each week of the month and then 12
-for each month of the year.
+Before trying RAID5/6 in production, be sure to read posts like these:
+
+http://www.spinics.net/lists/linux-btrfs/msg55642.html
+
+o/
+
+Hans van Kranenburg

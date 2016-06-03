@@ -1,56 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mailgw-02.dd24.net ([193.46.215.43]:55321 "EHLO
+Received: from mailgw-02.dd24.net ([193.46.215.43]:55576 "EHLO
 	mailgw-02.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752550AbcFCS7i (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 3 Jun 2016 14:59:38 -0400
-Message-ID: <1464980373.6679.28.camel@scientia.net>
-Subject: Re: RAID1 vs RAID10 and best way to set up 6 disks
+	with ESMTP id S1752426AbcFCTJM (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 3 Jun 2016 15:09:12 -0400
+Received: from mailpolicy-01.live.igb.homer.key-systems.net (mailpolicy-02.live.igb.homer.key-systems.net [192.168.1.27])
+	by mailgw-02.dd24.net (Postfix) with ESMTP id 94E6B5FCF0
+	for <linux-btrfs@vger.kernel.org>; Fri,  3 Jun 2016 19:09:09 +0000 (UTC)
+Received: from mailgw-02.dd24.net ([192.168.1.36])
+	by mailpolicy-01.live.igb.homer.key-systems.net (mailpolicy-02.live.igb.homer.key-systems.net [192.168.1.25]) (amavisd-new, port 10236)
+	with ESMTP id bhGlDOfcfZGf for <linux-btrfs@vger.kernel.org>;
+	Fri,  3 Jun 2016 19:09:06 +0000 (UTC)
+Received: from heisenberg.fritz.box (ppp-46-244-202-98.dynamic.mnet-online.de [46.244.202.98])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+	(No client certificate requested)
+	by mailgw-02.dd24.net (Postfix) with ESMTPSA
+	for <linux-btrfs@vger.kernel.org>; Fri,  3 Jun 2016 19:09:06 +0000 (UTC)
+Message-ID: <1464980946.9296.0.camel@scientia.net>
+Subject: Re: Recommended why to use btrfs for production?
 From: Christoph Anton Mitterer <calestyo@scientia.net>
-To: Mitchell Fossen <msfossen@gmail.com>, linux-btrfs@vger.kernel.org
-Date: Fri, 03 Jun 2016 20:59:33 +0200
-In-Reply-To: <1464979359.1571.25.camel@gmail.com>
-References: <1464977432.1571.20.camel@gmail.com>	
-	 <1464977591.6679.13.camel@scientia.net>
-	 <1464979359.1571.25.camel@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Date: Fri, 03 Jun 2016 21:09:06 +0200
+In-Reply-To: <dd952b29-1bea-59e1-1857-418b86951b47@gmail.com>
+References: <CAGQ70Yc=HHxJspMCKFBpEURRu=53pZW3k3rVDVO3QPGP_b9Tkw@mail.gmail.com>	
+ <aeade1fe-825c-6fc2-7f6d-85f4c5400b38@gmail.com>	
+ <CAGQ70YeZzDgiT_v1Z0eGcWsn8prnji30hCkyjrBg8vNziLUkiQ@mail.gmail.com>
+	 <dd952b29-1bea-59e1-1857-418b86951b47@gmail.com>
 Content-Type: multipart/signed; micalg="sha-512";
 	protocol="application/x-pkcs7-signature";
-	boundary="=-M9AGc4HKUtC7WvHW6ouC"
+	boundary="=-+clICN+3gKeHUTSEPgaJ"
 Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---=-M9AGc4HKUtC7WvHW6ouC
+--=-+clICN+3gKeHUTSEPgaJ
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
 
-On Fri, 2016-06-03 at 13:42 -0500, Mitchell Fossen wrote:
-> Thanks for pointing that out, so if I'm thinking correctly, with
-> RAID1
-> it's just that there is a copy of the data somewhere on some other
-> drive.
->=20
-> With RAID10, there's still only 1 other copy, but the entire
-> "original"
-> disk is mirrored to another one, right?
+Hey.
 
-To be honest, I couldn't tell you for sure :-/ ... IMHO the btrfs
-documentation has some "issues".
-
-mkfs.btrfs(8) says: 2 copies for RAID10, so I'd assume it's just the
-striped version of what btrfs - for whichever questionable reason -
-calls "RAID1".
-
-Especially, when you have an odd number devices (or devices with
-different sizes), its not clear to me, personally, at all how far that
-redundancy actually goes respectively what btrfs actually does... could
-be that you have your 2 copies, but maybe on the same device then?
-
+Does anyone know whether the write hole issues have been fixed already?
+https://btrfs.wiki.kernel.org/index.php/RAID56=C2=A0still mentions it.
 
 Cheers,
 Chris.
-
---=-M9AGc4HKUtC7WvHW6ouC
+--=-+clICN+3gKeHUTSEPgaJ
 Content-Type: application/x-pkcs7-signature; name="smime.p7s"
 Content-Disposition: attachment; filename="smime.p7s"
 Content-Transfer-Encoding: base64
@@ -142,25 +136,25 @@ Yeq6UTW/JmfxF4xcbkNK/rv9ISBg9K+mZtg2QXr+P/CJBtej2RLUMYIEfjCCBHoCAQEwgYkwdTEL
 MAkGA1UEBhMCSUwxFjAUBgNVBAoTDVN0YXJ0Q29tIEx0ZC4xKTAnBgNVBAsTIFN0YXJ0Q29tIENl
 cnRpZmljYXRpb24gQXV0aG9yaXR5MSMwIQYDVQQDExpTdGFydENvbSBDbGFzcyAyIENsaWVudCBD
 QQIQPZ6tDP/RHLwcz1F+2kRADzANBglghkgBZQMEAgMFAKCCAcUwGAYJKoZIhvcNAQkDMQsGCSqG
-SIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTYwNjAzMTg1OTMzWjBPBgkqhkiG9w0BCQQxQgRAk/9r
-hlF2xIiVpi+Va31rlcgf1e+z7U/3DaZKr7dZ2n9ByUV7NDK+uq1zsB8yNHccJtda7uV4RTjVXhpU
-5ONxRTCBmgYJKwYBBAGCNxAEMYGMMIGJMHUxCzAJBgNVBAYTAklMMRYwFAYDVQQKEw1TdGFydENv
+SIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTYwNjAzMTkwOTA2WjBPBgkqhkiG9w0BCQQxQgRANBZR
+R2nrQ3F+0knqHrkuoKggwYLtnJONcuDm6LwTYtsy/sHDADeOYSXs9yqf1PGTp4bvfV9UVFcKPowd
+wMMAsDCBmgYJKwYBBAGCNxAEMYGMMIGJMHUxCzAJBgNVBAYTAklMMRYwFAYDVQQKEw1TdGFydENv
 bSBMdGQuMSkwJwYDVQQLEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0eTEjMCEGA1UE
 AxMaU3RhcnRDb20gQ2xhc3MgMiBDbGllbnQgQ0ECED2erQz/0Ry8HM9RftpEQA8wgZwGCyqGSIb3
 DQEJEAILMYGMoIGJMHUxCzAJBgNVBAYTAklMMRYwFAYDVQQKEw1TdGFydENvbSBMdGQuMSkwJwYD
 VQQLEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0eTEjMCEGA1UEAxMaU3RhcnRDb20g
-Q2xhc3MgMiBDbGllbnQgQ0ECED2erQz/0Ry8HM9RftpEQA8wDQYJKoZIhvcNAQEBBQAEggIAiwBa
-V7Wdy8ooTh3aIs3PiP8utmUvBGkyEWbvhFz9NTuYNcpTQwUXn3KBp4aAbfo26cYo3EvcPmEzbjY0
-AuHVuxB9QCk+XC5X0w5M4a38lMXRt43vV+yANPYUC1AWAQlsv6w6uRLBPWBZaLkRGurSRwbGBWr3
-F0fcCftPtIzsv+G+DIRUqdYbN5XfevN1hYRSPau+I5U5gdwoWjh534qDFiP1uthXwMWMNHk+6mY9
-p0XgxcCbCgnVOolDuPpniTN/2EttLQgertGpcAxtnUwNqCtUVe8okdfyPYO6/jQ0Usq2w28Jh5zM
-2qYyvG/QqsN/Kb0cbimJiLCV9TLeSSK4P6vGFDZpwBfPtk7KEBY4TpQq57znWmFEyGAB4L2jcH+u
-pvMqJgmx/nNuQh/aFy9pGmtUYXbsI1bXlSpmX5e+kOo7jbaPf/EqVTqzvqkIZBb+FDC/w0nMslF8
-kbnTIOTdzzAzD6p0gReHNw6xFJl1qIv5gpSNi0JeMn+M4jmejvlUDmnhZqNPp7jMggiRmWBx13m/
-kRM/GkQeune568P/S0/uZ6PyiFPgnyptwhM6HE3DJ9HQ1QNU1LN4WGgWp+nZo/+opW2zydxuN7SF
-zQkSGBPKDLgijwzmzG4nzmtZZeUDtKlHJ2PmbyX71464uNWsLKJr+HIRBntPH6abxmt0DOMAAAAA
+Q2xhc3MgMiBDbGllbnQgQ0ECED2erQz/0Ry8HM9RftpEQA8wDQYJKoZIhvcNAQEBBQAEggIAFceB
+ZVkbUuhmOd5bmQ7VwO3oPYq/PSnuYXVt1PfemL3WXtODhduDA0aO0tpsE1xdu//aiR/JdRrxiwE/
+dY/jGQf1uDjzdlNPBBxuH968t5nlRWR35FJsVEPWRLjo03JkLQFyZUsdzgHuvwtiawF+M5DneQqR
+iOHp19kIxN0GqCIXZSYfCS0Fx9jdSRc7EhiV6Vuzmsgw0C+xHUAC1G+iL//S3Orh6rh3PczCTpbZ
+TNilt/yiXITkQ4vVD0gAWR+hjsItaObWaNA3L+ei5Yx5wMYRDC66LAbIc86k6vVhRFqm+RvllRTV
+w4VlnaT0cLcy4mvajNeF/sIsJYwGnoRFcojUOOx9oTQ8Xf9LfkksULcqvm4WM9pPLa83H8Eki+Ef
+D0X7guMyjid85sPFJYQkYKfDHAEf5POMosMlzw7J4ZL4fXPL7s7amtPtnfTqBLTDChxznp8gNFov
+EQpZjXOip4bMEBmh6Iwnczl79Lwuzt3I46F30u7T0yi9W83TvbgixlJ4R2rEDOMDlQqN22sSz4Ce
+b0J2ABdbGuQ6kCe0AKylzeljnNLfgzcY+e3Tia2CytkX5H0yC+t663hOOEbd5/ALkPobfnMSh9vF
+NeTem6SeW/fBF7a9R8nVO3y+ONrQqXnRS7pZFfYhaRPcC+fRPe6MG/JXBVsQg9F7639ZaM0AAAAA
 AAA=
 
 
---=-M9AGc4HKUtC7WvHW6ouC--
+--=-+clICN+3gKeHUTSEPgaJ--
 

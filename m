@@ -1,36 +1,41 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lf0-f53.google.com ([209.85.215.53]:36616 "EHLO
-	mail-lf0-f53.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750785AbcFDG1U (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 4 Jun 2016 02:27:20 -0400
-Received: by mail-lf0-f53.google.com with SMTP id b73so66500356lfb.3
-        for <linux-btrfs@vger.kernel.org>; Fri, 03 Jun 2016 23:27:19 -0700 (PDT)
-Subject: Re: "No space left on device" and balance doesn't work
-To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>,
-        MegaBrutal <megabrutal@gmail.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-References: <CAE8gLhm0-+kkwFv1-+t+tWLrZrzh4B9cJUDRrgPpwfvB_obVCA@mail.gmail.com>
- <bcf8033b-bafe-f927-efdb-b898d2b00a24@gmail.com>
+Received: from mail-lf0-f44.google.com ([209.85.215.44]:36364 "EHLO
+	mail-lf0-f44.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750785AbcFDHYs (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 4 Jun 2016 03:24:48 -0400
+Received: by mail-lf0-f44.google.com with SMTP id b73so66953024lfb.3
+        for <linux-btrfs@vger.kernel.org>; Sat, 04 Jun 2016 00:24:47 -0700 (PDT)
+Subject: Re: btrfs
+To: Christoph Anton Mitterer <calestyo@scientia.net>,
+        Austin S Hemmelgarn <ahferroin7@gmail.com>,
+        linux-btrfs@vger.kernel.org
+References: <1464819934.6742.71.camel@scientia.net>
+ <d500a743-7a39-8ec5-c6ce-e5a3c70ede91@nv-systems.net>
+ <1464975482.6679.11.camel@scientia.net>
+ <6f18c0d1-8ac5-c325-0ba8-ffb949c54554@gmail.com>
+ <1465005092.6648.39.camel@scientia.net>
 From: Andrei Borzenkov <arvidjaar@gmail.com>
-Message-ID: <575274C1.8070801@gmail.com>
-Date: Sat, 4 Jun 2016 09:27:13 +0300
+Message-ID: <57528238.6080809@gmail.com>
+Date: Sat, 4 Jun 2016 10:24:40 +0300
 MIME-Version: 1.0
-In-Reply-To: <bcf8033b-bafe-f927-efdb-b898d2b00a24@gmail.com>
+In-Reply-To: <1465005092.6648.39.camel@scientia.net>
 Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-02.06.2016 15:56, Austin S. Hemmelgarn пишет:
+04.06.2016 04:51, Christoph Anton Mitterer пишет:
+...
 > 
-> In your particular situation, what's happened is that you have all the
-> space allocated to chunks, but have free space within those chunks.
-> Balance never puts data in existing chunks, and you can't allocate any
-> new chunks, so you can't run a balance.  However, because of that free
-> space in the chunks, you can still use the filesystem itself for
-> 'regular' filesystem operations.
+>> The only extant systems that support higher
+>> levels of replication and call it RAID-1 are entirely based on MD
+>> RAID
+>> and it's poor choice of naming.
+> 
+> Not true either, show me any single hardware RAID controller that does
+> RAID1 in a dup2 fashion... I manage some >2PiB of storage at the
+> faculty, all controller we have, handle RAID1 in the sense of "all
+> disks mirrored".
 > 
 
-How balance decides where to put data from chunks it frees? I.e. let's
-say I have one free data chunk and 10 chunks filled to 10%. Will "btrfs
-ba start -dusage=10" pack data from all 10 chunks into single one, this
-freeing 10 chunks for further processing?
+Out of curiosity - which model of hardware controllers? Those I am aware
+of simply won't let you create RAID1 if more than 2 disks are selected.

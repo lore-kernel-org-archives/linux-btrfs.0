@@ -1,263 +1,140 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mailgw-02.dd24.net ([193.46.215.43]:37155 "EHLO
-	mailgw-02.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750838AbcFDBvi (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 3 Jun 2016 21:51:38 -0400
-Message-ID: <1465005092.6648.39.camel@scientia.net>
+Received: from mailgw-01.dd24.net ([193.46.215.41]:58111 "EHLO
+	mailgw-01.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750838AbcFDCNp (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 3 Jun 2016 22:13:45 -0400
+Message-ID: <1465006419.6648.54.camel@scientia.net>
 Subject: Re: btrfs
 From: Christoph Anton Mitterer <calestyo@scientia.net>
-To: Austin S Hemmelgarn <ahferroin7@gmail.com>, linux-btrfs@vger.kernel.org
-Date: Sat, 04 Jun 2016 03:51:32 +0200
-In-Reply-To: <6f18c0d1-8ac5-c325-0ba8-ffb949c54554@gmail.com>
+To: Brendan Hide <brendan@swiftspirit.co.za>, linux-btrfs@vger.kernel.org
+Date: Sat, 04 Jun 2016 04:13:39 +0200
+In-Reply-To: <f4a9ef2f-99a8-bcc4-5a8f-b022914980f0@swiftspirit.co.za>
 References: <1464819934.6742.71.camel@scientia.net>	
  <d500a743-7a39-8ec5-c6ce-e5a3c70ede91@nv-systems.net>	
  <1464975482.6679.11.camel@scientia.net>
-	 <6f18c0d1-8ac5-c325-0ba8-ffb949c54554@gmail.com>
+	 <f4a9ef2f-99a8-bcc4-5a8f-b022914980f0@swiftspirit.co.za>
 Content-Type: multipart/signed; micalg="sha-512";
 	protocol="application/x-pkcs7-signature";
-	boundary="=-KV8UjhBTuvC/Oie2gZOQ"
+	boundary="=-apYgDK9Cms98OcUF8hnK"
 Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---=-KV8UjhBTuvC/Oie2gZOQ
+--=-apYgDK9Cms98OcUF8hnK
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
 
-On Fri, 2016-06-03 at 15:50 -0400, Austin S Hemmelgarn wrote:
-> There's no point in trying to do higher parity levels if we can't get
-> regular parity working correctly.=C2=A0=C2=A0Given the current state of t=
-hings,
-> it might be better to break even and just rewrite the whole parity
-> raid thing from scratch, but I doubt that anybody is willing to do
-> that.
+On Sat, 2016-06-04 at 00:22 +0200, Brendan Hide wrote:
+> - RAID5/6 seems far from being stable or even usable,... not to
+> > talk
+> > =C2=A0 about higher parity levels, whose earlier posted patches (e.g.
+> > =C2=A0=C2=A0http://thread.gmane.org/gmane.linux.kernel/1654735) seem to=
+ have
+> > =C2=A0 been given up.
+> =C2=A0I'm not certain why that patch didn't get any replies, though it
+> should also be noted that it was sent to three mailing lists - and
+> that btrfs was simply an implementation example. See previous thread
+> here: http://thread.gmane.org/gmane.linux.kernel/1622485
+Ah... I remembered that one, but just couldn't find it anymore... so
+even two efforts already, both seem dead :-(
 
-Well... as I've said, things are pretty worrying. Obviously I cannot
-really judge, since I'm not into btrfs' development... maybe there's a
-lack of manpower? Since btrfs seems to be a very important part (i.e.
-next-gen fs), wouldn't it be possible to either get some additional
-funding by the Linux Foundation, or possible that some of the core
-developers make an open call for funding by companies?
-Having some additional people, perhaps working fulltime on it, may be a
-big help.
-
-As for the RAID... given how many time/effort is spent now into 5/6,..
-it really seems that one should have considered multi-parity from the
-beginning on.
-Kinda feels like either, with multi-parity this whole instability phase
-would start again, or it will simply never happen.
-
-
-> > - Serious show-stoppers and security deficiencies like the UUID
-> > =C2=A0 collision corruptions/attacks that have been extensively
-> > discussed
-> > =C2=A0 earlier, are still open
-> The UUID issue is not a BTRFS specific one, it just happens to be
-> easier
-> to cause issues with it on BTRFS
-
-uhm this had been discussed extensively before, as I've said... AFAICS
-btrfs is the only system we have, that can possibly cause data
-corruption or even security breach by UUID collisions.
-I wouldn't know that other fs, or LVM are affected, these just continue
-to use those devices already "online"... and I think lvm refuses to
-activate VGs, if conflicting UUIDs are found.
-
-
-> There is no way to solve it sanely given the requirement that
-> userspace
-> not be broken.
-No this is not true. Back when this was discussed, I and others
-described how it could/should be done,... respectively how
-userspace/kernel should behave, in short:
-- continue using those devices that are already active
-- refusing to (auto)assemble by UUID, if there are conflicts
-=C2=A0 or requiring to specify the devices (with some=C2=A0--override-yes-i=
--know-
-=C2=A0 what-i-do option=C2=A0option or so)
-- in case of assembling/rebuilding/similar... never doing this
-=C2=A0 automatically
-
-I think there were some more corner cases, I basically had them all
-discussed in the thread back then (search for "attacking btrfs
-filesystems via UUID collisions?" and IIRC some different titled parent
-or child threads).
-
-
-> =C2=A0=C2=A0Properly fixing this would likely make us more dependent
-> on hardware configuration than even mounting by device name.
-Sure, if there are colliding UUIDs, and one still wants to mount (by
-using some --override-yes-i-know-what-i-do option),.. it would need to
-be by specifying the device name...
-But where's the problem?
-This would anyway only happen if someone either attacks or someone made
-a clone, and it's far better to refuse automatic assembly in cases
-where accidental corruption can happen or where attacks may be
-possible, requiring the user/admin to manually take action, than having
-corruption or security breach.
-
-Imagine the simple case: degraded RAID1 on a PC; if btrfs would do some
-auto-rebuild based on UUID, then if an attacker knows that he'd just
-need to plug in a USB disk with a fitting UUID...and easily gets a copy
-of everything on disk, gpg keys, ssh keys, etc.
-
+> I recall reading it and thinking 6 parities is madness - but I
+> certainly see how it would be good for future-proofing.
+Well I can imagine that scenarios exist in which more than two parities
+may be highly desirable...
 
 
 > > - a number of important core features not fully working in many
 > > =C2=A0 situations (e.g. the issues with defrag, not being ref-link
 > > aware,...
 > > =C2=A0 an I vaguely remember similar things with compression).
-> OK, how then should defrag handle reflinks?=C2=A0=C2=A0Preserving them pr=
-events
-> it
-> from being able to completely defragment data.
-Didn't that even work in the past and had just some performance issues?
+> =C2=A0True also. There are various features and situations where btrfs
+> does not work as intelligently as expected.
+
+And even worse: Some of these are totally impossible to know for the
+average user. =3D> the documentation issue (though at least the defrag
+issue is documented now in btrfs-filesystem(8) at least).
 
 
-> > - OTOH, defrag seems to be viable for important use cases (VM
-> > images,
-> > =C2=A0 DBs,... everything where large files are internally re-written
-> > =C2=A0 randomly).
-> > =C2=A0 Sure there is nodatacow, but with that one effectively completel=
-y
-> > =C2=A0 looses one of the core features/promises of btrfs (integrity by
-> > =C2=A0 checksumming)... and as I've showed in an earlier large
-> > discussion,
-> > =C2=A0 none of the typical use cases for nodatacow has any high-level
-> > =C2=A0 checksumming, and even if, it's not used per default, or doesn't
-> > give
-> > =C2=A0 the same benefits at it would on the fs level, like using it for
-> > RAID
-> > =C2=A0 recovery).
-> The argument of nodatacow being viable for anything is a pretty
-> significant secondary discussion that is itself entirely orthogonal
-> to
-> the point you appear to be trying to make here.
 
-Well the point here was:=C2=A0
-- many people (including myself) like btrfs, it's
-=C2=A0 (promised/future/current) features
-- it's intended as a general purpose fs
-- this includes the case of having such file/IO patterns as e.g. for VM
-=C2=A0 images or DBs
-- this is currently not really doable without loosing one of the
-=C2=A0 promises (integrity)
+> =C2=A0I class these under the "you're doing it wrong" theme. The vast
+> majority of popular database engines have been designed without CoW
+> in mind and, unfortunately, one *cannot* simply dump it onto a CoW
+> system and expect it to perform well. There is no easy answer here.
+Well the easy answer is: nodatacow
+At least in terms of: it's technically possible, not talking about "is
+it easy for the end-user (the average admin may possible at one point
+read that nodatacow should be done for VMs and DBs, but what about all
+the smallish DBs like Firefox sqlites and so on, or simply any other
+scenario where such IO patterns happen).
 
-So the point I'm trying to make:
-People do probably not care so much whether their VM image/etc. is
-COWed or not, snapshots/etc. still work with that,... but they may
-likely care if the integrity feature is lost.
-So IMHO, nodatacow + checksumming deserves to be amongst the top
-priorities.
+But the problem with nodatacow is the implication of checksumming loss.
+
+
+
+
+> > - other earlier anticipated features like newer/better compression
+> > or
+> > =C2=A0 checksum algos seem to be dead either
+> =C2=A0Re alternative compression: https://btrfs.wiki.kernel.org/index.php=
+/
+> FAQ#Will_btrfs_support_LZ4.3F
+> My short version: This is a premature optimisation.
+>=20
+> IMO, alternative checksums is also a premature optimisation. An RFC
+> for alternative checksums was last looked at by Liu Bo in November
+> 2014. A different strategy was proposed as the code didn't make use
+> of a pre-existing crypto code in the kernel.
+
 
 
 > > - still no real RAID 1
-> No, you mean still no higher order replication.=C2=A0=C2=A0I know I'm bei=
-ng
-> stubborn about this, but RAID-1 is offici8ally defined in the
-> standards
-> as 2-way replication.
-I think I remember that you've claimed that last time already, and as
-I've said back then:
-- what counts is probably the common understanding of the term, which
-=C2=A0 is N disks RAID1 =3D N disks mirrored
-- if there is something like an "official definition", it's probably
-=C2=A0 the original paper that introduced RAID:
-=C2=A0=C2=A0http://www.eecs.berkeley.edu/Pubs/TechRpts/1987/CSD-87-391.pdf
-=C2=A0 PDF page 11, respectively content page 9 describes RAID1 as:
-=C2=A0 "This is the most expensive option since *all* disks are
-=C2=A0 duplicated..."
-
-
-> The only extant systems that support higher
-> levels of replication and call it RAID-1 are entirely based on MD
-> RAID
-> and it's poor choice of naming.
-
-Not true either, show me any single hardware RAID controller that does
-RAID1 in a dup2 fashion... I manage some >2PiB of storage at the
-faculty, all controller we have, handle RAID1 in the sense of "all
-disks mirrored".
+> =C2=A0This depends on what you mean by "real" - and I'm guessing you're
+> misled by mdraid's feature to have multiple copies in RAID1 rather
+> than just the two. RAID1 by definition is exactly two mirrored
+> copies. No more. No less.
+See my answer to Austin about the same claim.
+Actually I have no idea where it comes from,... even the more down-to-
+earth sources like Wikipedia all speak about "mirroring of all disks",
+as the original paper about RAID.
 
 
 > > - no end-user/admin grade maangement/analysis tools, that tell non-
 > > =C2=A0 experts about the state/health of their fs, and whether things
 > > like
 > > =C2=A0 balance etc.pp. are necessary
-> I don't see anyone forthcoming with such tools either.=C2=A0=C2=A0As far =
-as
-> basic
-> monitoring, it's trivial to do with simple scripts from tools like
-> monit
-> or nagios.
+> >=20
+> > - the still problematic documentation situation
+> =C2=A0Simple answer: RAID5/6 is not yet recommended for storing data you
+> don't mind losing. Btrfs is *also* not yet ready for install-and-
+> forget-style system administration.
 
-AFAIU, even that isn't really possible right now, is it?
-Take RAID again,... there is no place where you can see whether the
-RAID state is "optimal", or does that exist in the meantime? Last time,
-people were advised to look at the kernel logs, but this is no proper
-way to check for the state... logging may simply be deactivated, or you
-may have an offline fs, for which the logs have been lost because they
-were on another disk.
+Well the problem with writing good documentation in the "we do it once
+it's finished style" is often that it will never happen... or that the
+devs themselves don't recall all details.
 
-Not to talk about the inability to properly determine how often btrfs
-encountered errors, and "silently" corrected it.
-E.g. some statistics about a device, that can be used to decide whether
-its dying.
-I think these things should be stored in the fs (and additionally also
-on the respective device), where it can also be extracted when no
-/var/log is present or when forensics are done.
+Also in the meantime there is so much (also often outdated) 3rd party
+documentation and myths that come alive, that it takes ages to clean up
+with all that.
 
 
-> =C2=A0=C2=A0As far as complex things like determining whether a fs needs
-> balanced, that's really non-trivial to figure out.=C2=A0=C2=A0Even with a
-> person
-> looking at it, it's still not easy to know whether or not a balance
-> will
-> actually help.
-Well I wouldn't call myself a btrfs expert, but from time to time I've
-been a bit "more active" on the list.
-Even I know about these strange cases (sometimes tricks), like many
-empty data/meta block groups, that may or may not get cleaned up, and
-may result in troubles
-How should the normal user/admin be able to cope with such things if
-there are no good tools?
+> I personally recommend against using btrfs for people who aren't
+> familiar with it.
+I think it *is* pretty important that many people try/test/play with
+it, because that helps stabilisation... but even during that phase,
+documentation would be quite important.
 
-It starts with simple things like:
-- adding a further disk to a RAID
-=C2=A0 =3D> there should be a tool which tells you: dude, some files are no=
-t
-=C2=A0 =C2=A0 =C2=A0yet "rebuild"(duplicated),... do a balance or whatever.
-
-
-> >- the still problematic documentation situation
-> Not trying to rationalize this, but go take a look at a majority of
-> other projects, most of them that aren't backed by some huge
-> corporation
-> throwing insane amounts of money at them have at best mediocre end-
-> user
-> documentation.=C2=A0=C2=A0The fact that more effort is being put into
-> development
-> than documentation is generally a good thing, especially for
-> something
-> that is not yet feature complete like BTRFS.
-
-Uhm.. yes and no...
-The lack of documentation (i.e. admin/end-user-grade documentation)
-also means that people have less understanding in the system, less
-trust, less knowledge on what they can expect/do with it (will Ctrl-C
-on btrfs checl work? what if I shut down during a balance? does it
-break then? etc. pp.), less will to play with it.
-Further,... if btrfs would reach the state of being "feature complete"
-(if that ever happens, and I don't mean because of slow development,
-but rather, because most other fs shows that development goes "ever"
-on),... there would be *so much* to do in documentation, that it's
-unlikely it will happen.
+If there would be e.g. an kept-up-to-date wiki page about the status
+and current perils of e.g. RAID5/6, people (like me) wouldn't ask every
+weeks, saving the devs' time.
+Plus people wouldn't end up simply trying it, believing it works
+already, and then face data loss.
 
 
 Cheers,
 Chris.
---=-KV8UjhBTuvC/Oie2gZOQ
+--=-apYgDK9Cms98OcUF8hnK
 Content-Type: application/x-pkcs7-signature; name="smime.p7s"
 Content-Disposition: attachment; filename="smime.p7s"
 Content-Transfer-Encoding: base64
@@ -349,25 +226,25 @@ Yeq6UTW/JmfxF4xcbkNK/rv9ISBg9K+mZtg2QXr+P/CJBtej2RLUMYIEfjCCBHoCAQEwgYkwdTEL
 MAkGA1UEBhMCSUwxFjAUBgNVBAoTDVN0YXJ0Q29tIEx0ZC4xKTAnBgNVBAsTIFN0YXJ0Q29tIENl
 cnRpZmljYXRpb24gQXV0aG9yaXR5MSMwIQYDVQQDExpTdGFydENvbSBDbGFzcyAyIENsaWVudCBD
 QQIQPZ6tDP/RHLwcz1F+2kRADzANBglghkgBZQMEAgMFAKCCAcUwGAYJKoZIhvcNAQkDMQsGCSqG
-SIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTYwNjA0MDE1MTMzWjBPBgkqhkiG9w0BCQQxQgRA3FV8
-WXYJ0EdWXy56QB9LvQ2GD2zu8jC9SgylkqvZV2BmPFdLS1K80vRzcwwthwSasXkscQUdAAlEyZN7
-8/gbxTCBmgYJKwYBBAGCNxAEMYGMMIGJMHUxCzAJBgNVBAYTAklMMRYwFAYDVQQKEw1TdGFydENv
+SIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTYwNjA0MDIxMzM5WjBPBgkqhkiG9w0BCQQxQgRAP9CT
+ogRD3izNUjPw6eM+cZVPDKVbo4oMvCcTdBo2ZGxPtd9Uh/btWgLpC2hcrwBrRzBSD0WAKADYosJY
+OesNzDCBmgYJKwYBBAGCNxAEMYGMMIGJMHUxCzAJBgNVBAYTAklMMRYwFAYDVQQKEw1TdGFydENv
 bSBMdGQuMSkwJwYDVQQLEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0eTEjMCEGA1UE
 AxMaU3RhcnRDb20gQ2xhc3MgMiBDbGllbnQgQ0ECED2erQz/0Ry8HM9RftpEQA8wgZwGCyqGSIb3
 DQEJEAILMYGMoIGJMHUxCzAJBgNVBAYTAklMMRYwFAYDVQQKEw1TdGFydENvbSBMdGQuMSkwJwYD
 VQQLEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0eTEjMCEGA1UEAxMaU3RhcnRDb20g
-Q2xhc3MgMiBDbGllbnQgQ0ECED2erQz/0Ry8HM9RftpEQA8wDQYJKoZIhvcNAQEBBQAEggIAripb
-012zqn27kHzAsSDFhmhA7Hn3RO6+ooGb/JztiZ/HQ3ElW/SUGEJaTBmP1A64POR4Vze/BICoiYwS
-43NnCsCSZJuiMURHhkm6y9gAHvTySWvp+np2gbSM1wSirJWaXYhuEtxmfqbCKt3y2V4Y8TN6RLa+
-wc5n2SxK2Oj3FHHciv9boSDKRi4tpmkN/4C5dXABwqrc7yMGHnJvClG6pvUrF5+Nub6htEuoV9sV
-CQBBTuuVpUOXrKZo60Fm7F8yGuIri8ZalDnxznoV7cT0GKuHdSMcUdDfNJGkRDZiL5zIxEu6IR53
-aWc0ZpQjXFMYKi6/LbH4ijjZ6ZuUpbT2o0BnYaFkhiXyegIK/Gqpq2FSWbPg1F7LLGVKdJcQSkdj
-DyvdeeGZyUHrmS46gCAPBsdFcZAmKIMbNQwGB0C/nuqdxtlME0u0cK39WrEpsBfZSNdOwg0bCzI3
-FE5TSxhIP1TSL7xE2pMpfSvjCOkr1abwvCSN14zTuVwZoiEvhyHCDKZf4CCmVUsyFwvzHCd2OBf4
-TVGzV9/IBDIBK07kIs7zsSyhK9BcqL4GGaK+axxkN4bh5wKvyyJDO6qoKsZanX0EA7e0P2PPX4A8
-6dc/vwnL/b73spzNrvRtrqTJeDqYgQOvVfHCVFk9dsfKd6Oad89V3ffIG7Ew8zwkPVLIGJEAAAAA
+Q2xhc3MgMiBDbGllbnQgQ0ECED2erQz/0Ry8HM9RftpEQA8wDQYJKoZIhvcNAQEBBQAEggIAVUis
+F+JtM7fz8eQMqK707hnWXdC/XYDfDt998oO67Cqc7Nj/BzwHu6uFYay8PQLvGjfZ4Y2dK77W3mM2
+PTgsJR/JZdgO2I879DdkS+QcCnH3zZdZVyjiNn2r6eCZXngyYQ+yNPWWH+jG8KXjaS5ENo8gKtJ1
+FVLxzxZM3VKAaOJVI9TrEWE2sl+gGOgR9ROekFxx4dp8q93rDPWErwGx+7b5sKleCwc0U+gqlguX
+IyppNo3UPhDjUZU0U8asoXxmHbqjqJwOADHv1MYYjdw6/gXyvTsLFotgUsVoGTnFyygsI8EmwNzw
+LBUMqCwP2nEqBaRYe0jFbvLfPr6uDIx94Qi7mab269EVL5XqDWVcNI5quKdBy+eB8I4ElxGH1zXz
+wgKWBgpGFMy09UZvdhmPmaZGTXkWV5dNdqkUha9lD71RXfPYfyHAb87mPvLDkA5MWI3p0ZybKRwk
+Rq8OtF8rQaj2r3OHMAAF+LSXe/JAVlDm5MvviE4SrbJG616WzxFo1lebMmiAADEIsapmAP3rBlCo
+yUHiaAi1zH5ozh12Znwe5XFdDAJgdfG4z2nV+rU61trrYil8HpnJkGhBGdmxTWu+csesFkYmTvna
+ujB9Y11A/jR4wDPaoGKdsKbfqAOG8NSP9yK+fJwh6AN5PGu87T8EElaVwGNa5oDiN9OICRgAAAAA
 AAA=
 
 
---=-KV8UjhBTuvC/Oie2gZOQ--
+--=-apYgDK9Cms98OcUF8hnK--
 

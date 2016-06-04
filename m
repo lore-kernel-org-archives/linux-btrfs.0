@@ -1,90 +1,94 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-it0-f54.google.com ([209.85.214.54]:38002 "EHLO
-	mail-it0-f54.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751076AbcFDRiZ (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 4 Jun 2016 13:38:25 -0400
-Received: by mail-it0-f54.google.com with SMTP id i65so7302417ith.1
-        for <linux-btrfs@vger.kernel.org>; Sat, 04 Jun 2016 10:38:24 -0700 (PDT)
-Received: from [169.254.77.254] ([70.51.159.130])
-        by smtp.gmail.com with ESMTPSA id d74sm2316680ith.13.2016.06.04.10.31.06
-        for <linux-btrfs@vger.kernel.org>
-        (version=TLSv1/SSLv3 cipher=OTHER);
-        Sat, 04 Jun 2016 10:31:06 -0700 (PDT)
-Message-ID: <5753105A.1030404@gmail.com>
-Date: Sat, 04 Jun 2016 13:31:06 -0400
-From: "B. S." <bs27975@gmail.com>
+Received: from mail-oi0-f49.google.com ([209.85.218.49]:33237 "EHLO
+	mail-oi0-f49.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750721AbcFDTF6 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 4 Jun 2016 15:05:58 -0400
+Received: by mail-oi0-f49.google.com with SMTP id k23so173657875oih.0
+        for <linux-btrfs@vger.kernel.org>; Sat, 04 Jun 2016 12:05:58 -0700 (PDT)
 MIME-Version: 1.0
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
+In-Reply-To: <CAKZK7uyRSUBp3J=HunPbmFVzLzzH1=QghOD2_p-5+UpyMXuGGg@mail.gmail.com>
+References: <5751E8D2.7070001@gmail.com>
+	<CAKZK7uyRSUBp3J=HunPbmFVzLzzH1=QghOD2_p-5+UpyMXuGGg@mail.gmail.com>
+Date: Sat, 4 Jun 2016 13:05:57 -0600
+Message-ID: <CAJCQCtQUBsB-w7TrSAd=+t+E=6aqyPmcUrmMWyd6sg6BuJsS4Q@mail.gmail.com>
 Subject: Re: Pointers to mirroring partitions (w/ encryption?) help?
-References: <5751E8D2.7070001@gmail.com> <CAKZK7uyRSUBp3J=HunPbmFVzLzzH1=QghOD2_p-5+UpyMXuGGg@mail.gmail.com> <5752873C.8050105@gmail.com>
-In-Reply-To: <5752873C.8050105@gmail.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+From: Chris Murphy <lists@colorremedies.com>
+To: Justin Brown <justin.brown@fandingo.org>
+Cc: "B. S." <bs27975@gmail.com>, linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
-On 06/04/2016 03:46 AM, Andrei Borzenkov wrote:
-> 04.06.2016 04:39, Justin Brown пишет:
->> Here's some thoughts:
->>
->>> Assume a CD sized (680MB) /boot
->>
->> Some distros carry patches for grub that allow booting from Btrfs,
->> so no separate /boot file system is required. (Fedora does not;
->> Ubuntu -- and therefore probably all Debians -- does.)
->>
+On Fri, Jun 3, 2016 at 7:39 PM, Justin Brown <justin.brown@fandingo.org> wrote:
+> Here's some thoughts:
 >
-> Which grub (or which Fedora) do you mean? btrfs support is upstream
-> since 2010.
+>> Assume a CD sized (680MB) /boot
 >
-> There are restrictions, in particular RAID levels support (RAID5/6 are
-> not implemented).
+> Some distros carry patches for grub that allow booting from Btrfs
 
-Good to know / be reminded of (such specifics) - thanks.
+Upstream GRUB has had Btrfs support for a long time. There's been no
+need for distros to carry separate patches for years. The exception is
+openSUSE, where they have a healthy set of patches for supporting the
+discovery of and boot of read only snapshots created by snapper. Those
+patches are not merged upstream, I'm not sure if they will be.
 
->>> perhaps a 200MB (?) sized EFI partition
->>
->> Way bigger than necessary. It should only be 1-2MiB, and IIRC 2MiB
->> might be the max UEFI allows.
->>
+
+>, so
+> no separate /boot file system is required. (Fedora does not; Ubuntu --
+> and therefore probably all Debians -- does.)
+
+The problem on Fedora is that they depend on grubby to modify the
+grub.cfg. And grubby gets confused when the kernel/initramfs are
+located on a Btrfs subvolume other than the top level. And Fedora's
+installer only installs the system onto a subvolume (specifically,
+every mount point defined in the installer becomes a subvolume if you
+use Btrfs). So it's stuck being unable to support /boot if it's on
+Btrfs.
+
+
+
 >
-> You may want to review recent discussion on systemd regarding systemd
-> boot (a.k.a. gummiboot) which wants to have ESP mounted as /boot.
+>> perhaps a 200MB (?) sized EFI partition
 >
-> UEFI mandates support for FAT32 on ESP so max size should be whatever
-> max size FAT32 has.
-> ...
->>
->>> The additional problem is most articles reference FDE (Full Disk
->>> Encryption) - but that doesn't seem to be prudent. e.g. Unencrypted
->>> /boot. So having problems finding concise links on the topics, -FDE
->>> -"Full Disk Encryption".
->>
->> Yeah, when it comes to FDE, you either have to make your peace with
->> trusting the manufacturer, or you can't. If you are going to boot
->> your system with a traditional boot loader, an unencrypted partition
->> is mandatory.
+> Way bigger than necessary. It should only be 1-2MiB, and IIRC 2MiB
+> might be the max UEFI allows.
+
+You're confusing the ESP with BIOSBoot. The minimum size for 512 byte
+sector drives per Microsoft's technotes is 100MiB. Most OEMs use
+something between 100MiB and 300MiB. Apple creates a 200MB ESP even
+though they don't use it for booting, rather just to stage firmware
+updates.
+
+The UEFI spec itself doesn't say how big the ESP should be. 200MiBi is
+sane for 512 byte drives. It needs to be 260MiB minimum for 4Kn
+drives, because of the minimum number of FAT allocation units at 4096
+bytes each requires a 260MiB minimum volume.
+
+
+
+
 >
-> No, it is not with grub2 that supports LUKS (and geli in *BSD world). Of
-> course initial grub image must be written outside of encrypted area and
-> readable by firmware.
-
-Good to know. Do you have a link to a how to on such?
-
->> That being said, we live in a world with UEFI Secure
->> Boot. While your EFI parition must be unencrypted vfat, you can sign
->> the kernels (or shims), and the UEFI can be configured to only boot
->> signed executables, including only those signed by your own key. Some
->> distros already provide this feature, including using keys probably
->> already trusted by the default keystore.
->>
+>> The additional problem is most articles reference FDE (Full Disk Encryption) - but that doesn't seem to be prudent. e.g. Unencrypted /boot. So having problems finding concise links on the topics, -FDE -"Full Disk Encryption".
 >
-> UEFI Secure Boot is rather orthogonal to the question of disk encryption.
+> Yeah, when it comes to FDE, you either have to make your peace with
+> trusting the manufacturer, or you can't. If you are going to boot your
+> system with a traditional boot loader, an unencrypted partition is
+> mandatory.
 
-Perhaps, but not orthogonal to the OP question.
+/boot can be encrypted, GRUB supports this, but I'm unaware of any
+installer that does. The ESP can't be encrypted.
 
-In the end, the OP is about all this 'stuff' landing at once, the 
-majority btrfs centric, and a call for help finding the end of the 
-string to pull on in a linear way. e.g., as pointed out, most articles 
-premising FDE, which is not in play per OP. The OP requesting pointers 
-to good concise how to links.
+http://dustymabe.com/2015/07/06/encrypting-more-boot-joins-the-party/
+
+It's vaguely possible for the SED variety of drive to support fully
+encrypted everything, including the ESP. The problem is we don't have
+OPAL support on Linux at all anywhere. And for some inexplicable
+reason, the TCG hasn't commissioned a free UEFI application for
+managing the keys and unlocking the drive in the preboot environment.
+For now, it seems, such support has to already be in the firmware.
+
+
+
+
+-- 
+Chris Murphy

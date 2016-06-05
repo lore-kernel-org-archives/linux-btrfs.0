@@ -1,8 +1,8 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:39342 "EHLO mx1.redhat.com"
+Received: from mx1.redhat.com ([209.132.183.28]:37478 "EHLO mx1.redhat.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752371AbcFETdX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 5 Jun 2016 15:33:23 -0400
+	id S1751868AbcFETci (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 5 Jun 2016 15:32:38 -0400
 From: mchristi@redhat.com
 To: linux-f2fs-devel@lists.sourceforge.net, linux-ext4@vger.kernel.org,
         konrad.wilk@oracle.com, drbd-dev@lists.linbit.com,
@@ -14,9 +14,9 @@ To: linux-f2fs-devel@lists.sourceforge.net, linux-ext4@vger.kernel.org,
         target-devel@vger.kernel.org, linux-btrfs@vger.kernel.org,
         osd-dev@open-osd.org, xfs@oss.sgi.com, ocfs2-devel@oss.oracle.com
 Cc: Mike Christie <mchristi@redhat.com>
-Subject: [PATCH 22/45] pm: use bio op accessors
-Date: Sun,  5 Jun 2016 14:32:02 -0500
-Message-Id: <1465155145-10812-23-git-send-email-mchristi@redhat.com>
+Subject: [PATCH 02/45] block: add REQ_OP definitions and helpers
+Date: Sun,  5 Jun 2016 14:31:42 -0500
+Message-Id: <1465155145-10812-3-git-send-email-mchristi@redhat.com>
 In-Reply-To: <1465155145-10812-1-git-send-email-mchristi@redhat.com>
 References: <1465155145-10812-1-git-send-email-mchristi@redhat.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -24,122 +24,145 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Mike Christie <mchristi@redhat.com>
 
-Separate the op from the rq_flag_bits and have the pm code
-set/get the bio using bio_set_op_attrs/bio_op.
+The following patches separate the operation (WRITE, READ, DISCARD,
+etc) from the rq_flag_bits flags. This patch adds definitions for
+request/bio operations (REQ_OPs) and adds request/bio accessors to
+get/set the op.
+
+In this patch the REQ_OPs match the REQ rq_flag_bits ones
+for compat reasons while all the code is converted to use the
+op accessors in the set. In the last patches the op will become a
+number and the accessors and helpers in this patch will be dropped
+or updated.
 
 Signed-off-by: Mike Christie <mchristi@redhat.com>
-Reviewed-by: Christoph Hellwig <hch@lst.de>
-Reviewed-by: Hannes Reinecke <hare@suse.com>
 ---
- kernel/power/swap.c | 30 ++++++++++++++++++------------
- 1 file changed, 18 insertions(+), 12 deletions(-)
+ include/linux/bio.h       |  3 +++
+ include/linux/blk_types.h | 24 ++++++++++++++++++++++++
+ include/linux/blkdev.h    | 10 +++++++++-
+ include/linux/fs.h        | 26 ++++++++++++++++++++++++--
+ 4 files changed, 60 insertions(+), 3 deletions(-)
 
-diff --git a/kernel/power/swap.c b/kernel/power/swap.c
-index be227f5..c1aaac4 100644
---- a/kernel/power/swap.c
-+++ b/kernel/power/swap.c
-@@ -261,7 +261,7 @@ static void hib_end_io(struct bio *bio)
- 	bio_put(bio);
- }
+diff --git a/include/linux/bio.h b/include/linux/bio.h
+index 3bde942..09c5308 100644
+--- a/include/linux/bio.h
++++ b/include/linux/bio.h
+@@ -44,6 +44,9 @@
+ #define BIO_MAX_SIZE		(BIO_MAX_PAGES << PAGE_SHIFT)
+ #define BIO_MAX_SECTORS		(BIO_MAX_SIZE >> 9)
  
--static int hib_submit_io(int rw, pgoff_t page_off, void *addr,
-+static int hib_submit_io(int op, int op_flags, pgoff_t page_off, void *addr,
- 		struct hib_bio_batch *hb)
++#define bio_op(bio)				(op_from_rq_bits((bio)->bi_rw))
++#define bio_set_op_attrs(bio, op, flags)	((bio)->bi_rw |= (op | flags))
++
+ /*
+  * upper 16 bits of bi_rw define the io priority of this bio
+  */
+diff --git a/include/linux/blk_types.h b/include/linux/blk_types.h
+index 77e5d81..6e60baa 100644
+--- a/include/linux/blk_types.h
++++ b/include/linux/blk_types.h
+@@ -242,6 +242,30 @@ enum rq_flag_bits {
+ #define REQ_HASHED		(1ULL << __REQ_HASHED)
+ #define REQ_MQ_INFLIGHT		(1ULL << __REQ_MQ_INFLIGHT)
+ 
++enum req_op {
++	REQ_OP_READ,
++	REQ_OP_WRITE		= REQ_WRITE,
++	REQ_OP_DISCARD		= REQ_DISCARD,
++	REQ_OP_WRITE_SAME	= REQ_WRITE_SAME,
++};
++
++/*
++ * tmp cpmpat. Users used to set the write bit for all non reads, but
++ * we will be dropping the bitmap use for ops. Support both until
++ * the end of the patchset.
++ */
++static inline int op_from_rq_bits(u64 flags)
++{
++	if (flags & REQ_OP_DISCARD)
++		return REQ_OP_DISCARD;
++	else if (flags & REQ_OP_WRITE_SAME)
++		return REQ_OP_WRITE_SAME;
++	else if (flags & REQ_OP_WRITE)
++		return REQ_OP_WRITE;
++	else
++		return REQ_OP_READ;
++}
++
+ typedef unsigned int blk_qc_t;
+ #define BLK_QC_T_NONE	-1U
+ #define BLK_QC_T_SHIFT	16
+diff --git a/include/linux/blkdev.h b/include/linux/blkdev.h
+index 3d9cf32..49c2dbc 100644
+--- a/include/linux/blkdev.h
++++ b/include/linux/blkdev.h
+@@ -200,6 +200,13 @@ struct request {
+ 	struct request *next_rq;
+ };
+ 
++#define req_op(req)		(op_from_rq_bits((req)->cmd_flags))
++#define req_set_op(req, op)	((req)->cmd_flags |= op)
++#define req_set_op_attrs(req, op, flags) do {	\
++	req_set_op(req, op);			\
++	(req)->cmd_flags |= flags;		\
++} while (0)
++
+ static inline unsigned short req_get_ioprio(struct request *req)
  {
- 	struct page *page = virt_to_page(addr);
-@@ -271,7 +271,7 @@ static int hib_submit_io(int rw, pgoff_t page_off, void *addr,
- 	bio = bio_alloc(__GFP_RECLAIM | __GFP_HIGH, 1);
- 	bio->bi_iter.bi_sector = page_off * (PAGE_SIZE >> 9);
- 	bio->bi_bdev = hib_resume_bdev;
--	bio->bi_rw = rw;
-+	bio_set_op_attrs(bio, op, op_flags);
+ 	return req->ioprio;
+@@ -597,7 +604,8 @@ static inline void queue_flag_clear(unsigned int flag, struct request_queue *q)
  
- 	if (bio_add_page(bio, page, PAGE_SIZE, 0) < PAGE_SIZE) {
- 		printk(KERN_ERR "PM: Adding page to bio failed at %llu\n",
-@@ -307,7 +307,8 @@ static int mark_swapfiles(struct swap_map_handle *handle, unsigned int flags)
- {
- 	int error;
+ #define list_entry_rq(ptr)	list_entry((ptr), struct request, queuelist)
  
--	hib_submit_io(READ_SYNC, swsusp_resume_block, swsusp_header, NULL);
-+	hib_submit_io(REQ_OP_READ, READ_SYNC, swsusp_resume_block,
-+		      swsusp_header, NULL);
- 	if (!memcmp("SWAP-SPACE",swsusp_header->sig, 10) ||
- 	    !memcmp("SWAPSPACE2",swsusp_header->sig, 10)) {
- 		memcpy(swsusp_header->orig_sig,swsusp_header->sig, 10);
-@@ -316,8 +317,8 @@ static int mark_swapfiles(struct swap_map_handle *handle, unsigned int flags)
- 		swsusp_header->flags = flags;
- 		if (flags & SF_CRC32_MODE)
- 			swsusp_header->crc32 = handle->crc32;
--		error = hib_submit_io(WRITE_SYNC, swsusp_resume_block,
--					swsusp_header, NULL);
-+		error = hib_submit_io(REQ_OP_WRITE, WRITE_SYNC,
-+				      swsusp_resume_block, swsusp_header, NULL);
- 	} else {
- 		printk(KERN_ERR "PM: Swap header not found!\n");
- 		error = -ENODEV;
-@@ -390,7 +391,7 @@ static int write_page(void *buf, sector_t offset, struct hib_bio_batch *hb)
- 	} else {
- 		src = buf;
- 	}
--	return hib_submit_io(WRITE_SYNC, offset, src, hb);
-+	return hib_submit_io(REQ_OP_WRITE, WRITE_SYNC, offset, src, hb);
- }
+-#define rq_data_dir(rq)		((int)((rq)->cmd_flags & 1))
++#define rq_data_dir(rq) \
++	(op_is_write(op_from_rq_bits(rq->cmd_flags)) ? WRITE : READ)
  
- static void release_swap_writer(struct swap_map_handle *handle)
-@@ -993,7 +994,8 @@ static int get_swap_reader(struct swap_map_handle *handle,
- 			return -ENOMEM;
- 		}
+ /*
+  * Driver can handle struct request, if it either has an old style
+diff --git a/include/linux/fs.h b/include/linux/fs.h
+index 65e4c51..62ca2f9 100644
+--- a/include/linux/fs.h
++++ b/include/linux/fs.h
+@@ -2465,14 +2465,36 @@ extern bool is_bad_inode(struct inode *);
  
--		error = hib_submit_io(READ_SYNC, offset, tmp->map, NULL);
-+		error = hib_submit_io(REQ_OP_READ, READ_SYNC, offset,
-+				      tmp->map, NULL);
- 		if (error) {
- 			release_swap_reader(handle);
- 			return error;
-@@ -1017,7 +1019,7 @@ static int swap_read_page(struct swap_map_handle *handle, void *buf,
- 	offset = handle->cur->entries[handle->k];
- 	if (!offset)
- 		return -EFAULT;
--	error = hib_submit_io(READ_SYNC, offset, buf, hb);
-+	error = hib_submit_io(REQ_OP_READ, READ_SYNC, offset, buf, hb);
- 	if (error)
- 		return error;
- 	if (++handle->k >= MAP_PAGE_ENTRIES) {
-@@ -1526,7 +1528,8 @@ int swsusp_check(void)
- 	if (!IS_ERR(hib_resume_bdev)) {
- 		set_blocksize(hib_resume_bdev, PAGE_SIZE);
- 		clear_page(swsusp_header);
--		error = hib_submit_io(READ_SYNC, swsusp_resume_block,
-+		error = hib_submit_io(REQ_OP_READ, READ_SYNC,
-+					swsusp_resume_block,
- 					swsusp_header, NULL);
- 		if (error)
- 			goto put;
-@@ -1534,7 +1537,8 @@ int swsusp_check(void)
- 		if (!memcmp(HIBERNATE_SIG, swsusp_header->sig, 10)) {
- 			memcpy(swsusp_header->sig, swsusp_header->orig_sig, 10);
- 			/* Reset swap signature now */
--			error = hib_submit_io(WRITE_SYNC, swsusp_resume_block,
-+			error = hib_submit_io(REQ_OP_WRITE, WRITE_SYNC,
-+						swsusp_resume_block,
- 						swsusp_header, NULL);
- 		} else {
- 			error = -EINVAL;
-@@ -1578,10 +1582,12 @@ int swsusp_unmark(void)
- {
- 	int error;
+ #ifdef CONFIG_BLOCK
+ /*
++ * tmp cpmpat. Users used to set the write bit for all non reads, but
++ * we will be dropping the bitmap use for ops. Support both until
++ * the end of the patchset.
++ */
++static inline bool op_is_write(unsigned long flags)
++{
++	if (flags & (REQ_OP_WRITE | REQ_OP_WRITE_SAME | REQ_OP_DISCARD))
++		return true;
++	else
++		return false;
++}
++
++/*
+  * return READ, READA, or WRITE
+  */
+-#define bio_rw(bio)		((bio)->bi_rw & (RW_MASK | RWA_MASK))
++static inline int bio_rw(struct bio *bio)
++{
++	if (op_is_write(op_from_rq_bits(bio->bi_rw)))
++		return WRITE;
++
++	return bio->bi_rw & RWA_MASK;
++}
  
--	hib_submit_io(READ_SYNC, swsusp_resume_block, swsusp_header, NULL);
-+	hib_submit_io(REQ_OP_READ, READ_SYNC, swsusp_resume_block,
-+		      swsusp_header, NULL);
- 	if (!memcmp(HIBERNATE_SIG,swsusp_header->sig, 10)) {
- 		memcpy(swsusp_header->sig,swsusp_header->orig_sig, 10);
--		error = hib_submit_io(WRITE_SYNC, swsusp_resume_block,
-+		error = hib_submit_io(REQ_OP_WRITE, WRITE_SYNC,
-+					swsusp_resume_block,
- 					swsusp_header, NULL);
- 	} else {
- 		printk(KERN_ERR "PM: Cannot find swsusp signature!\n");
+ /*
+  * return data direction, READ or WRITE
+  */
+-#define bio_data_dir(bio)	((bio)->bi_rw & 1)
++static inline int bio_data_dir(struct bio *bio)
++{
++	return op_is_write(op_from_rq_bits(bio->bi_rw)) ? WRITE : READ;
++}
+ 
+ extern void check_disk_size_change(struct gendisk *disk,
+ 				   struct block_device *bdev);
 -- 
 2.7.2
 

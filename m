@@ -1,8 +1,8 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:37557 "EHLO mx1.redhat.com"
+Received: from mx1.redhat.com ([209.132.183.28]:48266 "EHLO mx1.redhat.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752279AbcFETdT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 5 Jun 2016 15:33:19 -0400
+	id S1752686AbcFETdq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 5 Jun 2016 15:33:46 -0400
 From: mchristi@redhat.com
 To: linux-f2fs-devel@lists.sourceforge.net, linux-ext4@vger.kernel.org,
         konrad.wilk@oracle.com, drbd-dev@lists.linbit.com,
@@ -14,9 +14,9 @@ To: linux-f2fs-devel@lists.sourceforge.net, linux-ext4@vger.kernel.org,
         target-devel@vger.kernel.org, linux-btrfs@vger.kernel.org,
         osd-dev@open-osd.org, xfs@oss.sgi.com, ocfs2-devel@oss.oracle.com
 Cc: Mike Christie <mchristi@redhat.com>
-Subject: [PATCH 20/45] nilfs: use bio op accessors
-Date: Sun,  5 Jun 2016 14:32:00 -0500
-Message-Id: <1465155145-10812-21-git-send-email-mchristi@redhat.com>
+Subject: [PATCH 32/45] block: prepare mq request creation to use REQ_OPs
+Date: Sun,  5 Jun 2016 14:32:12 -0500
+Message-Id: <1465155145-10812-33-git-send-email-mchristi@redhat.com>
 In-Reply-To: <1465155145-10812-1-git-send-email-mchristi@redhat.com>
 References: <1465155145-10812-1-git-send-email-mchristi@redhat.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -24,83 +24,120 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Mike Christie <mchristi@redhat.com>
 
-Separate the op from the rq_flag_bits and have nilfs
-set/get the bio using bio_set_op_attrs/bio_op.
+This patch modifies the blk mq request creation code to use
+separate variables for the operation and flags, because in the
+the next patches the struct request users will be converted like
+was done for bios.
 
 Signed-off-by: Mike Christie <mchristi@redhat.com>
 Reviewed-by: Christoph Hellwig <hch@lst.de>
 Reviewed-by: Hannes Reinecke <hare@suse.com>
-Acked-by: Ryusuke Konishi <konishi.ryusuke@lab.ntt.co.jp>
 ---
- fs/nilfs2/segbuf.c | 17 +++++++++--------
- 1 file changed, 9 insertions(+), 8 deletions(-)
+ block/blk-mq.c | 30 ++++++++++++++++--------------
+ 1 file changed, 16 insertions(+), 14 deletions(-)
 
-diff --git a/fs/nilfs2/segbuf.c b/fs/nilfs2/segbuf.c
-index 0f62909..a962d7d 100644
---- a/fs/nilfs2/segbuf.c
-+++ b/fs/nilfs2/segbuf.c
-@@ -346,7 +346,8 @@ static void nilfs_end_bio_write(struct bio *bio)
+diff --git a/block/blk-mq.c b/block/blk-mq.c
+index 29cbc1b..3393f29 100644
+--- a/block/blk-mq.c
++++ b/block/blk-mq.c
+@@ -159,16 +159,17 @@ bool blk_mq_can_queue(struct blk_mq_hw_ctx *hctx)
+ EXPORT_SYMBOL(blk_mq_can_queue);
+ 
+ static void blk_mq_rq_ctx_init(struct request_queue *q, struct blk_mq_ctx *ctx,
+-			       struct request *rq, unsigned int rw_flags)
++			       struct request *rq, int op,
++			       unsigned int op_flags)
+ {
+ 	if (blk_queue_io_stat(q))
+-		rw_flags |= REQ_IO_STAT;
++		op_flags |= REQ_IO_STAT;
+ 
+ 	INIT_LIST_HEAD(&rq->queuelist);
+ 	/* csd/requeue_work/fifo_time is initialized before use */
+ 	rq->q = q;
+ 	rq->mq_ctx = ctx;
+-	rq->cmd_flags |= rw_flags;
++	req_set_op_attrs(rq, op, op_flags);
+ 	/* do not touch atomic flags, it needs atomic ops against the timer */
+ 	rq->cpu = -1;
+ 	INIT_HLIST_NODE(&rq->hash);
+@@ -203,11 +204,11 @@ static void blk_mq_rq_ctx_init(struct request_queue *q, struct blk_mq_ctx *ctx,
+ 	rq->end_io_data = NULL;
+ 	rq->next_rq = NULL;
+ 
+-	ctx->rq_dispatched[rw_is_sync(rw_flags)]++;
++	ctx->rq_dispatched[rw_is_sync(op | op_flags)]++;
  }
  
- static int nilfs_segbuf_submit_bio(struct nilfs_segment_buffer *segbuf,
--				   struct nilfs_write_info *wi, int mode)
-+				   struct nilfs_write_info *wi, int mode,
-+				   int mode_flags)
+ static struct request *
+-__blk_mq_alloc_request(struct blk_mq_alloc_data *data, int rw)
++__blk_mq_alloc_request(struct blk_mq_alloc_data *data, int op, int op_flags)
  {
- 	struct bio *bio = wi->bio;
- 	int err;
-@@ -364,7 +365,7 @@ static int nilfs_segbuf_submit_bio(struct nilfs_segment_buffer *segbuf,
+ 	struct request *rq;
+ 	unsigned int tag;
+@@ -222,7 +223,7 @@ __blk_mq_alloc_request(struct blk_mq_alloc_data *data, int rw)
+ 		}
  
- 	bio->bi_end_io = nilfs_end_bio_write;
- 	bio->bi_private = segbuf;
--	bio->bi_rw = mode;
-+	bio_set_op_attrs(bio, mode, mode_flags);
- 	submit_bio(bio);
- 	segbuf->sb_nbio++;
- 
-@@ -438,7 +439,7 @@ static int nilfs_segbuf_submit_bh(struct nilfs_segment_buffer *segbuf,
- 		return 0;
- 	}
- 	/* bio is FULL */
--	err = nilfs_segbuf_submit_bio(segbuf, wi, mode);
-+	err = nilfs_segbuf_submit_bio(segbuf, wi, mode, 0);
- 	/* never submit current bh */
- 	if (likely(!err))
- 		goto repeat;
-@@ -462,19 +463,19 @@ static int nilfs_segbuf_write(struct nilfs_segment_buffer *segbuf,
- {
- 	struct nilfs_write_info wi;
- 	struct buffer_head *bh;
--	int res = 0, rw = WRITE;
-+	int res = 0;
- 
- 	wi.nilfs = nilfs;
- 	nilfs_segbuf_prepare_write(segbuf, &wi);
- 
- 	list_for_each_entry(bh, &segbuf->sb_segsum_buffers, b_assoc_buffers) {
--		res = nilfs_segbuf_submit_bh(segbuf, &wi, bh, rw);
-+		res = nilfs_segbuf_submit_bh(segbuf, &wi, bh, REQ_OP_WRITE);
- 		if (unlikely(res))
- 			goto failed_bio;
+ 		rq->tag = tag;
+-		blk_mq_rq_ctx_init(data->q, data->ctx, rq, rw);
++		blk_mq_rq_ctx_init(data->q, data->ctx, rq, op, op_flags);
+ 		return rq;
  	}
  
- 	list_for_each_entry(bh, &segbuf->sb_payload_buffers, b_assoc_buffers) {
--		res = nilfs_segbuf_submit_bh(segbuf, &wi, bh, rw);
-+		res = nilfs_segbuf_submit_bh(segbuf, &wi, bh, REQ_OP_WRITE);
- 		if (unlikely(res))
- 			goto failed_bio;
+@@ -246,7 +247,7 @@ struct request *blk_mq_alloc_request(struct request_queue *q, int rw,
+ 	hctx = q->mq_ops->map_queue(q, ctx->cpu);
+ 	blk_mq_set_alloc_data(&alloc_data, q, flags, ctx, hctx);
+ 
+-	rq = __blk_mq_alloc_request(&alloc_data, rw);
++	rq = __blk_mq_alloc_request(&alloc_data, rw, 0);
+ 	if (!rq && !(flags & BLK_MQ_REQ_NOWAIT)) {
+ 		__blk_mq_run_hw_queue(hctx);
+ 		blk_mq_put_ctx(ctx);
+@@ -254,7 +255,7 @@ struct request *blk_mq_alloc_request(struct request_queue *q, int rw,
+ 		ctx = blk_mq_get_ctx(q);
+ 		hctx = q->mq_ops->map_queue(q, ctx->cpu);
+ 		blk_mq_set_alloc_data(&alloc_data, q, flags, ctx, hctx);
+-		rq =  __blk_mq_alloc_request(&alloc_data, rw);
++		rq =  __blk_mq_alloc_request(&alloc_data, rw, 0);
+ 		ctx = alloc_data.ctx;
  	}
-@@ -484,8 +485,8 @@ static int nilfs_segbuf_write(struct nilfs_segment_buffer *segbuf,
- 		 * Last BIO is always sent through the following
- 		 * submission.
- 		 */
+ 	blk_mq_put_ctx(ctx);
+@@ -1169,7 +1170,8 @@ static struct request *blk_mq_map_request(struct request_queue *q,
+ 	struct blk_mq_hw_ctx *hctx;
+ 	struct blk_mq_ctx *ctx;
+ 	struct request *rq;
+-	int rw = bio_data_dir(bio);
++	int op = bio_data_dir(bio);
++	int op_flags = 0;
+ 	struct blk_mq_alloc_data alloc_data;
+ 
+ 	blk_queue_enter_live(q);
+@@ -1177,20 +1179,20 @@ static struct request *blk_mq_map_request(struct request_queue *q,
+ 	hctx = q->mq_ops->map_queue(q, ctx->cpu);
+ 
+ 	if (rw_is_sync(bio->bi_rw))
 -		rw |= REQ_SYNC;
--		res = nilfs_segbuf_submit_bio(segbuf, &wi, rw);
-+		res = nilfs_segbuf_submit_bio(segbuf, &wi, REQ_OP_WRITE,
-+					      REQ_SYNC);
- 	}
++		op_flags |= REQ_SYNC;
  
-  failed_bio:
+-	trace_block_getrq(q, bio, rw);
++	trace_block_getrq(q, bio, op);
+ 	blk_mq_set_alloc_data(&alloc_data, q, BLK_MQ_REQ_NOWAIT, ctx, hctx);
+-	rq = __blk_mq_alloc_request(&alloc_data, rw);
++	rq = __blk_mq_alloc_request(&alloc_data, op, op_flags);
+ 	if (unlikely(!rq)) {
+ 		__blk_mq_run_hw_queue(hctx);
+ 		blk_mq_put_ctx(ctx);
+-		trace_block_sleeprq(q, bio, rw);
++		trace_block_sleeprq(q, bio, op);
+ 
+ 		ctx = blk_mq_get_ctx(q);
+ 		hctx = q->mq_ops->map_queue(q, ctx->cpu);
+ 		blk_mq_set_alloc_data(&alloc_data, q, 0, ctx, hctx);
+-		rq = __blk_mq_alloc_request(&alloc_data, rw);
++		rq = __blk_mq_alloc_request(&alloc_data, op, op_flags);
+ 		ctx = alloc_data.ctx;
+ 		hctx = alloc_data.hctx;
+ 	}
 -- 
 2.7.2
 

@@ -1,61 +1,63 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oi0-f66.google.com ([209.85.218.66]:33115 "EHLO
-	mail-oi0-f66.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750958AbcFEPvh (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 5 Jun 2016 11:51:37 -0400
-Received: by mail-oi0-f66.google.com with SMTP id f12so6888998oig.0
-        for <linux-btrfs@vger.kernel.org>; Sun, 05 Jun 2016 08:51:37 -0700 (PDT)
+Received: from sender163-mail.zoho.com ([74.201.84.163]:24921 "EHLO
+	sender163-mail.zoho.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751708AbcFEQdk convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 5 Jun 2016 12:33:40 -0400
+From: "James Johnston" <johnstonj.public@codenest.com>
+To: "'Mladen Milinkovic'" <maxrd2@smoothware.net>,
+        "'Chris Murphy'" <lists@colorremedies.com>,
+        "'Austin S. Hemmelgarn'" <ahferroin7@gmail.com>
+Cc: "'Martin'" <rc6encrypted@gmail.com>,
+        "'Btrfs BTRFS'" <linux-btrfs@vger.kernel.org>
+References: <CAGQ70Yc=HHxJspMCKFBpEURRu=53pZW3k3rVDVO3QPGP_b9Tkw@mail.gmail.com> <aeade1fe-825c-6fc2-7f6d-85f4c5400b38@gmail.com> <CAJCQCtQ4i0PWisxi708EmrTuPHH7hNEkKfY28GjTG2s4Sk3DYQ@mail.gmail.com> <73123a36-6502-d735-c813-fce43b620e5a@smoothware.net>
+In-Reply-To: <73123a36-6502-d735-c813-fce43b620e5a@smoothware.net>
+Subject: RE: Recommended why to use btrfs for production?
+Date: Sun, 5 Jun 2016 16:33:34 -0000
+Message-ID: <0aaf01d1bf48$020d4670$0627d350$@codenest.com>
 MIME-Version: 1.0
-In-Reply-To: <1465080182.6662.1.camel@scientia.net>
-References: <1464819934.6742.71.camel@scientia.net>
-	<d500a743-7a39-8ec5-c6ce-e5a3c70ede91@nv-systems.net>
-	<1464975482.6679.11.camel@scientia.net>
-	<6f18c0d1-8ac5-c325-0ba8-ffb949c54554@gmail.com>
-	<1465005092.6648.39.camel@scientia.net>
-	<57528238.6080809@gmail.com>
-	<CAJCQCtS+GK88LZHY-uoWarn0qCuDuva4rg_TB_jEwAZo3nCcDQ@mail.gmail.com>
-	<1465061839.6689.9.camel@scientia.net>
-	<CAJCQCtQsfC5U2dSiT-tdPseaHmJPf=9fai+2vGUNxuf8veKx7g@mail.gmail.com>
-	<1465080182.6662.1.camel@scientia.net>
-Date: Sun, 5 Jun 2016 09:51:36 -0600
-Message-ID: <CAJCQCtTrrusKs2BeXN5AFBGFzS3zsU2KFSh0pk=DhER7pELzvg@mail.gmail.com>
-Subject: Re: btrfs
-From: Chris Murphy <lists@colorremedies.com>
-To: Christoph Anton Mitterer <calestyo@scientia.net>
-Cc: Chris Murphy <lists@colorremedies.com>,
-        Austin S Hemmelgarn <ahferroin7@gmail.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain;
+	charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, Jun 4, 2016 at 4:43 PM, Christoph Anton Mitterer
-<calestyo@scientia.net> wrote:
-> On Sat, 2016-06-04 at 13:13 -0600, Chris Murphy wrote:
->> mdadm supports DDF.
->
-> Sure... it also supports IMSM,... so what? Neither of them are the
-> default for mdadm, nor does it change the used terminology :)
+On 06/05/2016 10:46 AM, Mladen Milinkovic wrote:
+> On 06/03/2016 04:05 PM, Chris Murphy wrote:
+> > Make certain the kernel command timer value is greater than the driver
+> > error recovery timeout. The former is found in sysfs, per block
+> > device, the latter can be get and set with smartctl. Wrong
+> > configuration is common (it's actually the default) when using
+> > consumer drives, and inevitably leads to problems, even the loss of
+> > the entire array. It really is a terrible default.
+> 
+> Since it's first time i've heard of this I did some googling.
+> 
+> Here's some nice article about these timeouts:
+> http://strugglers.net/~andy/blog/2015/11/09/linux-software-raid-and-drive-
+> timeouts/comment-page-1/
+> 
+> And some udev rules that should apply this automatically:
+> http://comments.gmane.org/gmane.linux.raid/48193
 
-Why is mdadm the reference point for terminology?
+I think the first link there is a good one.  On my system:
 
-There's actually better consistency in terminology usage outside Linux
-because of SNIA and DDF than within Linux where the most basic terms
-aren't agreed upon by various upstream maintainers. mdadm and lvm use
-different terms even though they're both now using the same md backend
-in the kernel.
+/sys/block/sdX/device/timeout
 
- mdadm chunk = lvm segment = btrfs stripe = ddf strip = ddf stripe
-element. Some things have no equivalents like the Btrfs chunk. But
-someone hears chunk and they wonder if it's the same thing as the
-mdadm chunk but it isn't, and actually Btrfs also uses the term block
-group for chunk, because...
+defaults to 30 seconds - long enough for a drive with short TLER setting
+but too short for a consumer drive.
 
-So if you want to create a decoder ring for terminology that's great
-and would be useful; but just asking everyone in Btrfs land to come up
-with Btrfs terminology 2.0 merely adds to the list of inconsistent
-term usage, it doesn't actual fix any problems.
+There is a Red Hat link on setting up a udev rule for it here:
+https://access.redhat.com/documentation/en-US/Red_Hat_Enterprise_Linux/5/html/Online_Storage_Reconfiguration_Guide/task_controlling-scsi-command-timer-onlining-devices.html
+
+I thought it looked a little funny, so I combined the above with one of the
+VMware udev rules pre-installed on my Ubuntu system and came up with this:
+
+# Update timeout from 180 to one of your choosing:
+ACTION=="add|change", SUBSYSTEMS=="scsi", ATTRS{type}=="0|7|14", \
+RUN+="/bin/sh -c 'echo 180 >/sys$DEVPATH/device/timeout'"
+
+Now my attached drives automatically get this timeout without any scripting
+or manual setting of the timeout.
+
+James
 
 
--- 
-Chris Murphy

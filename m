@@ -1,8 +1,8 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:48266 "EHLO mx1.redhat.com"
+Received: from mx1.redhat.com ([209.132.183.28]:34973 "EHLO mx1.redhat.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752686AbcFETdq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 5 Jun 2016 15:33:46 -0400
+	id S1752197AbcFETdM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 5 Jun 2016 15:33:12 -0400
 From: mchristi@redhat.com
 To: linux-f2fs-devel@lists.sourceforge.net, linux-ext4@vger.kernel.org,
         konrad.wilk@oracle.com, drbd-dev@lists.linbit.com,
@@ -14,9 +14,9 @@ To: linux-f2fs-devel@lists.sourceforge.net, linux-ext4@vger.kernel.org,
         target-devel@vger.kernel.org, linux-btrfs@vger.kernel.org,
         osd-dev@open-osd.org, xfs@oss.sgi.com, ocfs2-devel@oss.oracle.com
 Cc: Mike Christie <mchristi@redhat.com>
-Subject: [PATCH 32/45] block: prepare mq request creation to use REQ_OPs
-Date: Sun,  5 Jun 2016 14:32:12 -0500
-Message-Id: <1465155145-10812-33-git-send-email-mchristi@redhat.com>
+Subject: [PATCH 17/45] xfs: use bio op accessors
+Date: Sun,  5 Jun 2016 14:31:57 -0500
+Message-Id: <1465155145-10812-18-git-send-email-mchristi@redhat.com>
 In-Reply-To: <1465155145-10812-1-git-send-email-mchristi@redhat.com>
 References: <1465155145-10812-1-git-send-email-mchristi@redhat.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -24,120 +24,129 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Mike Christie <mchristi@redhat.com>
 
-This patch modifies the blk mq request creation code to use
-separate variables for the operation and flags, because in the
-the next patches the struct request users will be converted like
-was done for bios.
+Separate the op from the rq_flag_bits and have xfs
+set/get the bio using bio_set_op_attrs/bio_op.
 
 Signed-off-by: Mike Christie <mchristi@redhat.com>
-Reviewed-by: Christoph Hellwig <hch@lst.de>
-Reviewed-by: Hannes Reinecke <hare@suse.com>
 ---
- block/blk-mq.c | 30 ++++++++++++++++--------------
- 1 file changed, 16 insertions(+), 14 deletions(-)
 
-diff --git a/block/blk-mq.c b/block/blk-mq.c
-index 29cbc1b..3393f29 100644
---- a/block/blk-mq.c
-+++ b/block/blk-mq.c
-@@ -159,16 +159,17 @@ bool blk_mq_can_queue(struct blk_mq_hw_ctx *hctx)
- EXPORT_SYMBOL(blk_mq_can_queue);
+v8:
+1. Handled changes due to rebase and dropped signed offs due to
+upstream changes since last review.
+
+ fs/xfs/xfs_aops.c | 12 ++++--------
+ fs/xfs/xfs_buf.c  | 26 ++++++++++++++------------
+ 2 files changed, 18 insertions(+), 20 deletions(-)
+
+diff --git a/fs/xfs/xfs_aops.c b/fs/xfs/xfs_aops.c
+index 0cd1603..87d2b21 100644
+--- a/fs/xfs/xfs_aops.c
++++ b/fs/xfs/xfs_aops.c
+@@ -438,10 +438,8 @@ xfs_submit_ioend(
  
- static void blk_mq_rq_ctx_init(struct request_queue *q, struct blk_mq_ctx *ctx,
--			       struct request *rq, unsigned int rw_flags)
-+			       struct request *rq, int op,
-+			       unsigned int op_flags)
- {
- 	if (blk_queue_io_stat(q))
--		rw_flags |= REQ_IO_STAT;
-+		op_flags |= REQ_IO_STAT;
+ 	ioend->io_bio->bi_private = ioend;
+ 	ioend->io_bio->bi_end_io = xfs_end_bio;
+-	if (wbc->sync_mode == WB_SYNC_ALL)
+-		ioend->io_bio->bi_rw = WRITE_SYNC;
+-	else
+-		ioend->io_bio->bi_rw = WRITE;
++	bio_set_op_attrs(ioend->io_bio, REQ_OP_WRITE,
++			 (wbc->sync_mode == WB_SYNC_ALL) ? WRITE_SYNC : 0);
+ 	/*
+ 	 * If we are failing the IO now, just mark the ioend with an
+ 	 * error and finish it. This will run IO completion immediately
+@@ -512,10 +510,8 @@ xfs_chain_bio(
  
- 	INIT_LIST_HEAD(&rq->queuelist);
- 	/* csd/requeue_work/fifo_time is initialized before use */
- 	rq->q = q;
- 	rq->mq_ctx = ctx;
--	rq->cmd_flags |= rw_flags;
-+	req_set_op_attrs(rq, op, op_flags);
- 	/* do not touch atomic flags, it needs atomic ops against the timer */
- 	rq->cpu = -1;
- 	INIT_HLIST_NODE(&rq->hash);
-@@ -203,11 +204,11 @@ static void blk_mq_rq_ctx_init(struct request_queue *q, struct blk_mq_ctx *ctx,
- 	rq->end_io_data = NULL;
- 	rq->next_rq = NULL;
- 
--	ctx->rq_dispatched[rw_is_sync(rw_flags)]++;
-+	ctx->rq_dispatched[rw_is_sync(op | op_flags)]++;
+ 	bio_chain(ioend->io_bio, new);
+ 	bio_get(ioend->io_bio);		/* for xfs_destroy_ioend */
+-	if (wbc->sync_mode == WB_SYNC_ALL)
+-		ioend->io_bio->bi_rw = WRITE_SYNC;
+-	else
+-		ioend->io_bio->bi_rw = WRITE;
++	bio_set_op_attrs(ioend->io_bio, REQ_OP_WRITE,
++			  (wbc->sync_mode == WB_SYNC_ALL) ? WRITE_SYNC : 0);
+ 	submit_bio(ioend->io_bio);
+ 	ioend->io_bio = new;
  }
- 
- static struct request *
--__blk_mq_alloc_request(struct blk_mq_alloc_data *data, int rw)
-+__blk_mq_alloc_request(struct blk_mq_alloc_data *data, int op, int op_flags)
+diff --git a/fs/xfs/xfs_buf.c b/fs/xfs/xfs_buf.c
+index 0777c67..d8acd37 100644
+--- a/fs/xfs/xfs_buf.c
++++ b/fs/xfs/xfs_buf.c
+@@ -1127,7 +1127,8 @@ xfs_buf_ioapply_map(
+ 	int		map,
+ 	int		*buf_offset,
+ 	int		*count,
+-	int		rw)
++	int		op,
++	int		op_flags)
  {
- 	struct request *rq;
- 	unsigned int tag;
-@@ -222,7 +223,7 @@ __blk_mq_alloc_request(struct blk_mq_alloc_data *data, int rw)
+ 	int		page_index;
+ 	int		total_nr_pages = bp->b_page_count;
+@@ -1166,7 +1167,7 @@ next_chunk:
+ 	bio->bi_iter.bi_sector = sector;
+ 	bio->bi_end_io = xfs_buf_bio_end_io;
+ 	bio->bi_private = bp;
+-	bio->bi_rw = rw;
++	bio_set_op_attrs(bio, op, op_flags);
+ 
+ 	for (; size && nr_pages; nr_pages--, page_index++) {
+ 		int	rbytes, nbytes = PAGE_SIZE - offset;
+@@ -1210,7 +1211,8 @@ _xfs_buf_ioapply(
+ 	struct xfs_buf	*bp)
+ {
+ 	struct blk_plug	plug;
+-	int		rw;
++	int		op;
++	int		op_flags = 0;
+ 	int		offset;
+ 	int		size;
+ 	int		i;
+@@ -1229,14 +1231,13 @@ _xfs_buf_ioapply(
+ 		bp->b_ioend_wq = bp->b_target->bt_mount->m_buf_workqueue;
+ 
+ 	if (bp->b_flags & XBF_WRITE) {
++		op = REQ_OP_WRITE;
+ 		if (bp->b_flags & XBF_SYNCIO)
+-			rw = WRITE_SYNC;
+-		else
+-			rw = WRITE;
++			op_flags = WRITE_SYNC;
+ 		if (bp->b_flags & XBF_FUA)
+-			rw |= REQ_FUA;
++			op_flags |= REQ_FUA;
+ 		if (bp->b_flags & XBF_FLUSH)
+-			rw |= REQ_FLUSH;
++			op_flags |= REQ_FLUSH;
+ 
+ 		/*
+ 		 * Run the write verifier callback function if it exists. If
+@@ -1266,13 +1267,14 @@ _xfs_buf_ioapply(
+ 			}
  		}
- 
- 		rq->tag = tag;
--		blk_mq_rq_ctx_init(data->q, data->ctx, rq, rw);
-+		blk_mq_rq_ctx_init(data->q, data->ctx, rq, op, op_flags);
- 		return rq;
+ 	} else if (bp->b_flags & XBF_READ_AHEAD) {
+-		rw = READA;
++		op = REQ_OP_READ;
++		op_flags = REQ_RAHEAD;
+ 	} else {
+-		rw = READ;
++		op = REQ_OP_READ;
  	}
  
-@@ -246,7 +247,7 @@ struct request *blk_mq_alloc_request(struct request_queue *q, int rw,
- 	hctx = q->mq_ops->map_queue(q, ctx->cpu);
- 	blk_mq_set_alloc_data(&alloc_data, q, flags, ctx, hctx);
+ 	/* we only use the buffer cache for meta-data */
+-	rw |= REQ_META;
++	op_flags |= REQ_META;
  
--	rq = __blk_mq_alloc_request(&alloc_data, rw);
-+	rq = __blk_mq_alloc_request(&alloc_data, rw, 0);
- 	if (!rq && !(flags & BLK_MQ_REQ_NOWAIT)) {
- 		__blk_mq_run_hw_queue(hctx);
- 		blk_mq_put_ctx(ctx);
-@@ -254,7 +255,7 @@ struct request *blk_mq_alloc_request(struct request_queue *q, int rw,
- 		ctx = blk_mq_get_ctx(q);
- 		hctx = q->mq_ops->map_queue(q, ctx->cpu);
- 		blk_mq_set_alloc_data(&alloc_data, q, flags, ctx, hctx);
--		rq =  __blk_mq_alloc_request(&alloc_data, rw);
-+		rq =  __blk_mq_alloc_request(&alloc_data, rw, 0);
- 		ctx = alloc_data.ctx;
- 	}
- 	blk_mq_put_ctx(ctx);
-@@ -1169,7 +1170,8 @@ static struct request *blk_mq_map_request(struct request_queue *q,
- 	struct blk_mq_hw_ctx *hctx;
- 	struct blk_mq_ctx *ctx;
- 	struct request *rq;
--	int rw = bio_data_dir(bio);
-+	int op = bio_data_dir(bio);
-+	int op_flags = 0;
- 	struct blk_mq_alloc_data alloc_data;
- 
- 	blk_queue_enter_live(q);
-@@ -1177,20 +1179,20 @@ static struct request *blk_mq_map_request(struct request_queue *q,
- 	hctx = q->mq_ops->map_queue(q, ctx->cpu);
- 
- 	if (rw_is_sync(bio->bi_rw))
--		rw |= REQ_SYNC;
-+		op_flags |= REQ_SYNC;
- 
--	trace_block_getrq(q, bio, rw);
-+	trace_block_getrq(q, bio, op);
- 	blk_mq_set_alloc_data(&alloc_data, q, BLK_MQ_REQ_NOWAIT, ctx, hctx);
--	rq = __blk_mq_alloc_request(&alloc_data, rw);
-+	rq = __blk_mq_alloc_request(&alloc_data, op, op_flags);
- 	if (unlikely(!rq)) {
- 		__blk_mq_run_hw_queue(hctx);
- 		blk_mq_put_ctx(ctx);
--		trace_block_sleeprq(q, bio, rw);
-+		trace_block_sleeprq(q, bio, op);
- 
- 		ctx = blk_mq_get_ctx(q);
- 		hctx = q->mq_ops->map_queue(q, ctx->cpu);
- 		blk_mq_set_alloc_data(&alloc_data, q, 0, ctx, hctx);
--		rq = __blk_mq_alloc_request(&alloc_data, rw);
-+		rq = __blk_mq_alloc_request(&alloc_data, op, op_flags);
- 		ctx = alloc_data.ctx;
- 		hctx = alloc_data.hctx;
- 	}
+ 	/*
+ 	 * Walk all the vectors issuing IO on them. Set up the initial offset
+@@ -1284,7 +1286,7 @@ _xfs_buf_ioapply(
+ 	size = BBTOB(bp->b_io_length);
+ 	blk_start_plug(&plug);
+ 	for (i = 0; i < bp->b_map_count; i++) {
+-		xfs_buf_ioapply_map(bp, i, &offset, &size, rw);
++		xfs_buf_ioapply_map(bp, i, &offset, &size, op, op_flags);
+ 		if (bp->b_error)
+ 			break;
+ 		if (size <= 0)
 -- 
 2.7.2
 

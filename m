@@ -1,8 +1,8 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:33889 "EHLO mx1.redhat.com"
+Received: from mx1.redhat.com ([209.132.183.28]:56618 "EHLO mx1.redhat.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752341AbcFETdW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 5 Jun 2016 15:33:22 -0400
+	id S1752720AbcFETds (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 5 Jun 2016 15:33:48 -0400
 From: mchristi@redhat.com
 To: linux-f2fs-devel@lists.sourceforge.net, linux-ext4@vger.kernel.org,
         konrad.wilk@oracle.com, drbd-dev@lists.linbit.com,
@@ -14,9 +14,9 @@ To: linux-f2fs-devel@lists.sourceforge.net, linux-ext4@vger.kernel.org,
         target-devel@vger.kernel.org, linux-btrfs@vger.kernel.org,
         osd-dev@open-osd.org, xfs@oss.sgi.com, ocfs2-devel@oss.oracle.com
 Cc: Mike Christie <mchristi@redhat.com>
-Subject: [PATCH 21/45] ocfs2: use bio op accessors
-Date: Sun,  5 Jun 2016 14:32:01 -0500
-Message-Id: <1465155145-10812-22-git-send-email-mchristi@redhat.com>
+Subject: [PATCH 33/45] block: prepare elevator to use REQ_OPs.
+Date: Sun,  5 Jun 2016 14:32:13 -0500
+Message-Id: <1465155145-10812-34-git-send-email-mchristi@redhat.com>
 In-Reply-To: <1465155145-10812-1-git-send-email-mchristi@redhat.com>
 References: <1465155145-10812-1-git-send-email-mchristi@redhat.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -24,58 +24,105 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Mike Christie <mchristi@redhat.com>
 
-Separate the op from the rq_flag_bits and have ocfs2
-set/get the bio using bio_set_op_attrs/bio_op.
+This patch converts the elevator code to use separate variables
+for the operation and flags, and to check req_op for the REQ_OP.
 
 Signed-off-by: Mike Christie <mchristi@redhat.com>
 Reviewed-by: Christoph Hellwig <hch@lst.de>
 Reviewed-by: Hannes Reinecke <hare@suse.com>
 ---
- fs/ocfs2/cluster/heartbeat.c | 10 ++++++----
- 1 file changed, 6 insertions(+), 4 deletions(-)
+ block/blk-core.c         | 2 +-
+ block/cfq-iosched.c      | 4 ++--
+ block/elevator.c         | 7 +++----
+ include/linux/elevator.h | 4 ++--
+ 4 files changed, 8 insertions(+), 9 deletions(-)
 
-diff --git a/fs/ocfs2/cluster/heartbeat.c b/fs/ocfs2/cluster/heartbeat.c
-index 8b1d86e..636abcb 100644
---- a/fs/ocfs2/cluster/heartbeat.c
-+++ b/fs/ocfs2/cluster/heartbeat.c
-@@ -530,7 +530,8 @@ static void o2hb_bio_end_io(struct bio *bio)
- static struct bio *o2hb_setup_one_bio(struct o2hb_region *reg,
- 				      struct o2hb_bio_wait_ctxt *wc,
- 				      unsigned int *current_slot,
--				      unsigned int max_slots, int rw)
-+				      unsigned int max_slots, int op,
-+				      int op_flags)
+diff --git a/block/blk-core.c b/block/blk-core.c
+index a68dc07..090e55d 100644
+--- a/block/blk-core.c
++++ b/block/blk-core.c
+@@ -1081,7 +1081,7 @@ static struct request *__get_request(struct request_list *rl, int op,
+ 	if (unlikely(blk_queue_dying(q)))
+ 		return ERR_PTR(-ENODEV);
+ 
+-	may_queue = elv_may_queue(q, op | op_flags);
++	may_queue = elv_may_queue(q, op, op_flags);
+ 	if (may_queue == ELV_MQUEUE_NO)
+ 		goto rq_starved;
+ 
+diff --git a/block/cfq-iosched.c b/block/cfq-iosched.c
+index 4a34978..3fcc598 100644
+--- a/block/cfq-iosched.c
++++ b/block/cfq-iosched.c
+@@ -4285,7 +4285,7 @@ static inline int __cfq_may_queue(struct cfq_queue *cfqq)
+ 	return ELV_MQUEUE_MAY;
+ }
+ 
+-static int cfq_may_queue(struct request_queue *q, int rw)
++static int cfq_may_queue(struct request_queue *q, int op, int op_flags)
  {
- 	int len, current_page;
- 	unsigned int vec_len, vec_start;
-@@ -556,7 +557,7 @@ static struct bio *o2hb_setup_one_bio(struct o2hb_region *reg,
- 	bio->bi_bdev = reg->hr_bdev;
- 	bio->bi_private = wc;
- 	bio->bi_end_io = o2hb_bio_end_io;
--	bio->bi_rw = rw;
-+	bio_set_op_attrs(bio, op, op_flags);
+ 	struct cfq_data *cfqd = q->elevator->elevator_data;
+ 	struct task_struct *tsk = current;
+@@ -4302,7 +4302,7 @@ static int cfq_may_queue(struct request_queue *q, int rw)
+ 	if (!cic)
+ 		return ELV_MQUEUE_MAY;
  
- 	vec_start = (cs << bits) % PAGE_SIZE;
- 	while(cs < max_slots) {
-@@ -593,7 +594,7 @@ static int o2hb_read_slots(struct o2hb_region *reg,
+-	cfqq = cic_to_cfqq(cic, rw_is_sync(rw));
++	cfqq = cic_to_cfqq(cic, rw_is_sync(op | op_flags));
+ 	if (cfqq) {
+ 		cfq_init_prio_data(cfqq, cic);
  
- 	while(current_slot < max_slots) {
- 		bio = o2hb_setup_one_bio(reg, &wc, &current_slot, max_slots,
--					 READ);
-+					 REQ_OP_READ, 0);
- 		if (IS_ERR(bio)) {
- 			status = PTR_ERR(bio);
- 			mlog_errno(status);
-@@ -625,7 +626,8 @@ static int o2hb_issue_node_write(struct o2hb_region *reg,
+diff --git a/block/elevator.c b/block/elevator.c
+index c3555c9..ea9319d 100644
+--- a/block/elevator.c
++++ b/block/elevator.c
+@@ -366,8 +366,7 @@ void elv_dispatch_sort(struct request_queue *q, struct request *rq)
+ 	list_for_each_prev(entry, &q->queue_head) {
+ 		struct request *pos = list_entry_rq(entry);
  
- 	slot = o2nm_this_node();
+-		if ((rq->cmd_flags & REQ_DISCARD) !=
+-		    (pos->cmd_flags & REQ_DISCARD))
++		if ((req_op(rq) == REQ_OP_DISCARD) != (req_op(pos) == REQ_OP_DISCARD))
+ 			break;
+ 		if (rq_data_dir(rq) != rq_data_dir(pos))
+ 			break;
+@@ -717,12 +716,12 @@ void elv_put_request(struct request_queue *q, struct request *rq)
+ 		e->type->ops.elevator_put_req_fn(rq);
+ }
  
--	bio = o2hb_setup_one_bio(reg, write_wc, &slot, slot+1, WRITE_SYNC);
-+	bio = o2hb_setup_one_bio(reg, write_wc, &slot, slot+1, REQ_OP_WRITE,
-+				 WRITE_SYNC);
- 	if (IS_ERR(bio)) {
- 		status = PTR_ERR(bio);
- 		mlog_errno(status);
+-int elv_may_queue(struct request_queue *q, int rw)
++int elv_may_queue(struct request_queue *q, int op, int op_flags)
+ {
+ 	struct elevator_queue *e = q->elevator;
+ 
+ 	if (e->type->ops.elevator_may_queue_fn)
+-		return e->type->ops.elevator_may_queue_fn(q, rw);
++		return e->type->ops.elevator_may_queue_fn(q, op, op_flags);
+ 
+ 	return ELV_MQUEUE_MAY;
+ }
+diff --git a/include/linux/elevator.h b/include/linux/elevator.h
+index 638b324..953d286 100644
+--- a/include/linux/elevator.h
++++ b/include/linux/elevator.h
+@@ -26,7 +26,7 @@ typedef int (elevator_dispatch_fn) (struct request_queue *, int);
+ typedef void (elevator_add_req_fn) (struct request_queue *, struct request *);
+ typedef struct request *(elevator_request_list_fn) (struct request_queue *, struct request *);
+ typedef void (elevator_completed_req_fn) (struct request_queue *, struct request *);
+-typedef int (elevator_may_queue_fn) (struct request_queue *, int);
++typedef int (elevator_may_queue_fn) (struct request_queue *, int, int);
+ 
+ typedef void (elevator_init_icq_fn) (struct io_cq *);
+ typedef void (elevator_exit_icq_fn) (struct io_cq *);
+@@ -134,7 +134,7 @@ extern struct request *elv_former_request(struct request_queue *, struct request
+ extern struct request *elv_latter_request(struct request_queue *, struct request *);
+ extern int elv_register_queue(struct request_queue *q);
+ extern void elv_unregister_queue(struct request_queue *q);
+-extern int elv_may_queue(struct request_queue *, int);
++extern int elv_may_queue(struct request_queue *, int, int);
+ extern void elv_completed_request(struct request_queue *, struct request *);
+ extern int elv_set_request(struct request_queue *q, struct request *rq,
+ 			   struct bio *bio, gfp_t gfp_mask);
 -- 
 2.7.2
 

@@ -1,8 +1,8 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:37478 "EHLO mx1.redhat.com"
+Received: from mx1.redhat.com ([209.132.183.28]:34983 "EHLO mx1.redhat.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751868AbcFETci (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 5 Jun 2016 15:32:38 -0400
+	id S1752258AbcFETdQ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 5 Jun 2016 15:33:16 -0400
 From: mchristi@redhat.com
 To: linux-f2fs-devel@lists.sourceforge.net, linux-ext4@vger.kernel.org,
         konrad.wilk@oracle.com, drbd-dev@lists.linbit.com,
@@ -14,9 +14,9 @@ To: linux-f2fs-devel@lists.sourceforge.net, linux-ext4@vger.kernel.org,
         target-devel@vger.kernel.org, linux-btrfs@vger.kernel.org,
         osd-dev@open-osd.org, xfs@oss.sgi.com, ocfs2-devel@oss.oracle.com
 Cc: Mike Christie <mchristi@redhat.com>
-Subject: [PATCH 02/45] block: add REQ_OP definitions and helpers
-Date: Sun,  5 Jun 2016 14:31:42 -0500
-Message-Id: <1465155145-10812-3-git-send-email-mchristi@redhat.com>
+Subject: [PATCH 19/45] mpage: use bio op accessors
+Date: Sun,  5 Jun 2016 14:31:59 -0500
+Message-Id: <1465155145-10812-20-git-send-email-mchristi@redhat.com>
 In-Reply-To: <1465155145-10812-1-git-send-email-mchristi@redhat.com>
 References: <1465155145-10812-1-git-send-email-mchristi@redhat.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -24,145 +24,160 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Mike Christie <mchristi@redhat.com>
 
-The following patches separate the operation (WRITE, READ, DISCARD,
-etc) from the rq_flag_bits flags. This patch adds definitions for
-request/bio operations (REQ_OPs) and adds request/bio accessors to
-get/set the op.
-
-In this patch the REQ_OPs match the REQ rq_flag_bits ones
-for compat reasons while all the code is converted to use the
-op accessors in the set. In the last patches the op will become a
-number and the accessors and helpers in this patch will be dropped
-or updated.
+Separate the op from the rq_flag_bits and have the mpage code
+set/get the bio using bio_set_op_attrs/bio_op.
 
 Signed-off-by: Mike Christie <mchristi@redhat.com>
+Reviewed-by: Christoph Hellwig <hch@lst.de>
+Reviewed-by: Hannes Reinecke <hare@suse.com>
 ---
- include/linux/bio.h       |  3 +++
- include/linux/blk_types.h | 24 ++++++++++++++++++++++++
- include/linux/blkdev.h    | 10 +++++++++-
- include/linux/fs.h        | 26 ++++++++++++++++++++++++--
- 4 files changed, 60 insertions(+), 3 deletions(-)
+ fs/mpage.c | 40 ++++++++++++++++++++--------------------
+ 1 file changed, 20 insertions(+), 20 deletions(-)
 
-diff --git a/include/linux/bio.h b/include/linux/bio.h
-index 3bde942..09c5308 100644
---- a/include/linux/bio.h
-+++ b/include/linux/bio.h
-@@ -44,6 +44,9 @@
- #define BIO_MAX_SIZE		(BIO_MAX_PAGES << PAGE_SHIFT)
- #define BIO_MAX_SECTORS		(BIO_MAX_SIZE >> 9)
+diff --git a/fs/mpage.c b/fs/mpage.c
+index 2c251ec..37b2828 100644
+--- a/fs/mpage.c
++++ b/fs/mpage.c
+@@ -56,11 +56,11 @@ static void mpage_end_io(struct bio *bio)
+ 	bio_put(bio);
+ }
  
-+#define bio_op(bio)				(op_from_rq_bits((bio)->bi_rw))
-+#define bio_set_op_attrs(bio, op, flags)	((bio)->bi_rw |= (op | flags))
-+
- /*
-  * upper 16 bits of bi_rw define the io priority of this bio
-  */
-diff --git a/include/linux/blk_types.h b/include/linux/blk_types.h
-index 77e5d81..6e60baa 100644
---- a/include/linux/blk_types.h
-+++ b/include/linux/blk_types.h
-@@ -242,6 +242,30 @@ enum rq_flag_bits {
- #define REQ_HASHED		(1ULL << __REQ_HASHED)
- #define REQ_MQ_INFLIGHT		(1ULL << __REQ_MQ_INFLIGHT)
- 
-+enum req_op {
-+	REQ_OP_READ,
-+	REQ_OP_WRITE		= REQ_WRITE,
-+	REQ_OP_DISCARD		= REQ_DISCARD,
-+	REQ_OP_WRITE_SAME	= REQ_WRITE_SAME,
-+};
-+
-+/*
-+ * tmp cpmpat. Users used to set the write bit for all non reads, but
-+ * we will be dropping the bitmap use for ops. Support both until
-+ * the end of the patchset.
-+ */
-+static inline int op_from_rq_bits(u64 flags)
-+{
-+	if (flags & REQ_OP_DISCARD)
-+		return REQ_OP_DISCARD;
-+	else if (flags & REQ_OP_WRITE_SAME)
-+		return REQ_OP_WRITE_SAME;
-+	else if (flags & REQ_OP_WRITE)
-+		return REQ_OP_WRITE;
-+	else
-+		return REQ_OP_READ;
-+}
-+
- typedef unsigned int blk_qc_t;
- #define BLK_QC_T_NONE	-1U
- #define BLK_QC_T_SHIFT	16
-diff --git a/include/linux/blkdev.h b/include/linux/blkdev.h
-index 3d9cf32..49c2dbc 100644
---- a/include/linux/blkdev.h
-+++ b/include/linux/blkdev.h
-@@ -200,6 +200,13 @@ struct request {
- 	struct request *next_rq;
- };
- 
-+#define req_op(req)		(op_from_rq_bits((req)->cmd_flags))
-+#define req_set_op(req, op)	((req)->cmd_flags |= op)
-+#define req_set_op_attrs(req, op, flags) do {	\
-+	req_set_op(req, op);			\
-+	(req)->cmd_flags |= flags;		\
-+} while (0)
-+
- static inline unsigned short req_get_ioprio(struct request *req)
+-static struct bio *mpage_bio_submit(int rw, struct bio *bio)
++static struct bio *mpage_bio_submit(int op, int op_flags, struct bio *bio)
  {
- 	return req->ioprio;
-@@ -597,7 +604,8 @@ static inline void queue_flag_clear(unsigned int flag, struct request_queue *q)
+ 	bio->bi_end_io = mpage_end_io;
+-	bio->bi_rw = rw;
+-	guard_bio_eod(rw, bio);
++	bio_set_op_attrs(bio, op, op_flags);
++	guard_bio_eod(op, bio);
+ 	submit_bio(bio);
+ 	return NULL;
+ }
+@@ -270,7 +270,7 @@ do_mpage_readpage(struct bio *bio, struct page *page, unsigned nr_pages,
+ 	 * This page will go to BIO.  Do we need to send this BIO off first?
+ 	 */
+ 	if (bio && (*last_block_in_bio != blocks[0] - 1))
+-		bio = mpage_bio_submit(READ, bio);
++		bio = mpage_bio_submit(REQ_OP_READ, 0, bio);
  
- #define list_entry_rq(ptr)	list_entry((ptr), struct request, queuelist)
+ alloc_new:
+ 	if (bio == NULL) {
+@@ -287,7 +287,7 @@ alloc_new:
  
--#define rq_data_dir(rq)		((int)((rq)->cmd_flags & 1))
-+#define rq_data_dir(rq) \
-+	(op_is_write(op_from_rq_bits(rq->cmd_flags)) ? WRITE : READ)
+ 	length = first_hole << blkbits;
+ 	if (bio_add_page(bio, page, length, 0) < length) {
+-		bio = mpage_bio_submit(READ, bio);
++		bio = mpage_bio_submit(REQ_OP_READ, 0, bio);
+ 		goto alloc_new;
+ 	}
  
- /*
-  * Driver can handle struct request, if it either has an old style
-diff --git a/include/linux/fs.h b/include/linux/fs.h
-index 65e4c51..62ca2f9 100644
---- a/include/linux/fs.h
-+++ b/include/linux/fs.h
-@@ -2465,14 +2465,36 @@ extern bool is_bad_inode(struct inode *);
+@@ -295,7 +295,7 @@ alloc_new:
+ 	nblocks = map_bh->b_size >> blkbits;
+ 	if ((buffer_boundary(map_bh) && relative_block == nblocks) ||
+ 	    (first_hole != blocks_per_page))
+-		bio = mpage_bio_submit(READ, bio);
++		bio = mpage_bio_submit(REQ_OP_READ, 0, bio);
+ 	else
+ 		*last_block_in_bio = blocks[blocks_per_page - 1];
+ out:
+@@ -303,7 +303,7 @@ out:
  
- #ifdef CONFIG_BLOCK
- /*
-+ * tmp cpmpat. Users used to set the write bit for all non reads, but
-+ * we will be dropping the bitmap use for ops. Support both until
-+ * the end of the patchset.
-+ */
-+static inline bool op_is_write(unsigned long flags)
-+{
-+	if (flags & (REQ_OP_WRITE | REQ_OP_WRITE_SAME | REQ_OP_DISCARD))
-+		return true;
-+	else
-+		return false;
-+}
-+
-+/*
-  * return READ, READA, or WRITE
-  */
--#define bio_rw(bio)		((bio)->bi_rw & (RW_MASK | RWA_MASK))
-+static inline int bio_rw(struct bio *bio)
-+{
-+	if (op_is_write(op_from_rq_bits(bio->bi_rw)))
-+		return WRITE;
-+
-+	return bio->bi_rw & RWA_MASK;
-+}
+ confused:
+ 	if (bio)
+-		bio = mpage_bio_submit(READ, bio);
++		bio = mpage_bio_submit(REQ_OP_READ, 0, bio);
+ 	if (!PageUptodate(page))
+ 	        block_read_full_page(page, get_block);
+ 	else
+@@ -385,7 +385,7 @@ mpage_readpages(struct address_space *mapping, struct list_head *pages,
+ 	}
+ 	BUG_ON(!list_empty(pages));
+ 	if (bio)
+-		mpage_bio_submit(READ, bio);
++		mpage_bio_submit(REQ_OP_READ, 0, bio);
+ 	return 0;
+ }
+ EXPORT_SYMBOL(mpage_readpages);
+@@ -406,7 +406,7 @@ int mpage_readpage(struct page *page, get_block_t get_block)
+ 	bio = do_mpage_readpage(bio, page, 1, &last_block_in_bio,
+ 			&map_bh, &first_logical_block, get_block, gfp);
+ 	if (bio)
+-		mpage_bio_submit(READ, bio);
++		mpage_bio_submit(REQ_OP_READ, 0, bio);
+ 	return 0;
+ }
+ EXPORT_SYMBOL(mpage_readpage);
+@@ -487,7 +487,7 @@ static int __mpage_writepage(struct page *page, struct writeback_control *wbc,
+ 	struct buffer_head map_bh;
+ 	loff_t i_size = i_size_read(inode);
+ 	int ret = 0;
+-	int wr = (wbc->sync_mode == WB_SYNC_ALL ?  WRITE_SYNC : WRITE);
++	int op_flags = (wbc->sync_mode == WB_SYNC_ALL ?  WRITE_SYNC : 0);
  
- /*
-  * return data direction, READ or WRITE
-  */
--#define bio_data_dir(bio)	((bio)->bi_rw & 1)
-+static inline int bio_data_dir(struct bio *bio)
-+{
-+	return op_is_write(op_from_rq_bits(bio->bi_rw)) ? WRITE : READ;
-+}
+ 	if (page_has_buffers(page)) {
+ 		struct buffer_head *head = page_buffers(page);
+@@ -596,7 +596,7 @@ page_is_mapped:
+ 	 * This page will go to BIO.  Do we need to send this BIO off first?
+ 	 */
+ 	if (bio && mpd->last_block_in_bio != blocks[0] - 1)
+-		bio = mpage_bio_submit(wr, bio);
++		bio = mpage_bio_submit(REQ_OP_WRITE, op_flags, bio);
  
- extern void check_disk_size_change(struct gendisk *disk,
- 				   struct block_device *bdev);
+ alloc_new:
+ 	if (bio == NULL) {
+@@ -623,7 +623,7 @@ alloc_new:
+ 	wbc_account_io(wbc, page, PAGE_SIZE);
+ 	length = first_unmapped << blkbits;
+ 	if (bio_add_page(bio, page, length, 0) < length) {
+-		bio = mpage_bio_submit(wr, bio);
++		bio = mpage_bio_submit(REQ_OP_WRITE, op_flags, bio);
+ 		goto alloc_new;
+ 	}
+ 
+@@ -633,7 +633,7 @@ alloc_new:
+ 	set_page_writeback(page);
+ 	unlock_page(page);
+ 	if (boundary || (first_unmapped != blocks_per_page)) {
+-		bio = mpage_bio_submit(wr, bio);
++		bio = mpage_bio_submit(REQ_OP_WRITE, op_flags, bio);
+ 		if (boundary_block) {
+ 			write_boundary_block(boundary_bdev,
+ 					boundary_block, 1 << blkbits);
+@@ -645,7 +645,7 @@ alloc_new:
+ 
+ confused:
+ 	if (bio)
+-		bio = mpage_bio_submit(wr, bio);
++		bio = mpage_bio_submit(REQ_OP_WRITE, op_flags, bio);
+ 
+ 	if (mpd->use_writepage) {
+ 		ret = mapping->a_ops->writepage(page, wbc);
+@@ -702,9 +702,9 @@ mpage_writepages(struct address_space *mapping,
+ 
+ 		ret = write_cache_pages(mapping, wbc, __mpage_writepage, &mpd);
+ 		if (mpd.bio) {
+-			int wr = (wbc->sync_mode == WB_SYNC_ALL ?
+-				  WRITE_SYNC : WRITE);
+-			mpage_bio_submit(wr, mpd.bio);
++			int op_flags = (wbc->sync_mode == WB_SYNC_ALL ?
++				  WRITE_SYNC : 0);
++			mpage_bio_submit(REQ_OP_WRITE, op_flags, mpd.bio);
+ 		}
+ 	}
+ 	blk_finish_plug(&plug);
+@@ -723,9 +723,9 @@ int mpage_writepage(struct page *page, get_block_t get_block,
+ 	};
+ 	int ret = __mpage_writepage(page, wbc, &mpd);
+ 	if (mpd.bio) {
+-		int wr = (wbc->sync_mode == WB_SYNC_ALL ?
+-			  WRITE_SYNC : WRITE);
+-		mpage_bio_submit(wr, mpd.bio);
++		int op_flags = (wbc->sync_mode == WB_SYNC_ALL ?
++			  WRITE_SYNC : 0);
++		mpage_bio_submit(REQ_OP_WRITE, op_flags, mpd.bio);
+ 	}
+ 	return ret;
+ }
 -- 
 2.7.2
 

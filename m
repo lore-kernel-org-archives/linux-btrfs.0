@@ -1,95 +1,95 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mailgw-01.dd24.net ([193.46.215.41]:50178 "EHLO
+Received: from mailgw-01.dd24.net ([193.46.215.41]:50604 "EHLO
 	mailgw-01.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751211AbcFEUjO (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 5 Jun 2016 16:39:14 -0400
-Received: from mailpolicy-01.live.igb.homer.key-systems.net (mailpolicy-02.live.igb.homer.key-systems.net [192.168.1.27])
-	by mailgw-01.dd24.net (Postfix) with ESMTP id D2D625FBFD
-	for <linux-btrfs@vger.kernel.org>; Sun,  5 Jun 2016 20:39:11 +0000 (UTC)
-Received: from mailgw-01.dd24.net ([192.168.1.35])
-	by mailpolicy-01.live.igb.homer.key-systems.net (mailpolicy-02.live.igb.homer.key-systems.net [192.168.1.25]) (amavisd-new, port 10235)
-	with ESMTP id RBlXTdVZx0Q2 for <linux-btrfs@vger.kernel.org>;
-	Sun,  5 Jun 2016 20:39:10 +0000 (UTC)
-Received: from heisenberg.fritz.box (ppp-46-244-202-98.dynamic.mnet-online.de [46.244.202.98])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
-	(No client certificate requested)
-	by mailgw-01.dd24.net (Postfix) with ESMTPSA
-	for <linux-btrfs@vger.kernel.org>; Sun,  5 Jun 2016 20:39:09 +0000 (UTC)
-Message-ID: <1465159149.6702.29.camel@scientia.net>
+	with ESMTP id S1752182AbcFEU4u (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 5 Jun 2016 16:56:50 -0400
+Message-ID: <1465160205.6702.38.camel@scientia.net>
 Subject: Re: btrfs
 From: Christoph Anton Mitterer <calestyo@scientia.net>
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Date: Sun, 05 Jun 2016 22:39:09 +0200
-In-Reply-To: <CAJCQCtTrrusKs2BeXN5AFBGFzS3zsU2KFSh0pk=DhER7pELzvg@mail.gmail.com>
-References: <1464819934.6742.71.camel@scientia.net>	
-	<d500a743-7a39-8ec5-c6ce-e5a3c70ede91@nv-systems.net>	
-	<1464975482.6679.11.camel@scientia.net>	
-	<6f18c0d1-8ac5-c325-0ba8-ffb949c54554@gmail.com>	
-	<1465005092.6648.39.camel@scientia.net>
-	<57528238.6080809@gmail.com>	
-	<CAJCQCtS+GK88LZHY-uoWarn0qCuDuva4rg_TB_jEwAZo3nCcDQ@mail.gmail.com>	
-	<1465061839.6689.9.camel@scientia.net>	
-	<CAJCQCtQsfC5U2dSiT-tdPseaHmJPf=9fai+2vGUNxuf8veKx7g@mail.gmail.com>	
-	<1465080182.6662.1.camel@scientia.net>
-	 <CAJCQCtTrrusKs2BeXN5AFBGFzS3zsU2KFSh0pk=DhER7pELzvg@mail.gmail.com>
+To: Henk Slager <eye1tm@gmail.com>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Date: Sun, 05 Jun 2016 22:56:45 +0200
+In-Reply-To: <CAPmG0jZGY841PNwYi6gaun38gjN83=OMQB0r_UiVrdL9iY2J9Q@mail.gmail.com>
+References: <1464819934.6742.71.camel@scientia.net>
+	 <d500a743-7a39-8ec5-c6ce-e5a3c70ede91@nv-systems.net>	
+ <1464975482.6679.11.camel@scientia.net>
+	 <6f18c0d1-8ac5-c325-0ba8-ffb949c54554@gmail.com>	
+ <1465005092.6648.39.camel@scientia.net>
+	 <CAPmG0jZGY841PNwYi6gaun38gjN83=OMQB0r_UiVrdL9iY2J9Q@mail.gmail.com>
 Content-Type: multipart/signed; micalg="sha-512";
 	protocol="application/x-pkcs7-signature";
-	boundary="=-4P8vHiQMelC1FRp9sa68"
+	boundary="=-hOG2EbUoYcMXpFLQENU2"
 Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---=-4P8vHiQMelC1FRp9sa68
+--=-hOG2EbUoYcMXpFLQENU2
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
 
-On Sun, 2016-06-05 at 09:51 -0600, Chris Murphy wrote:
-> Why is mdadm the reference point for terminology?
-I haven't said it is,... I just said it mdadm, original paper, WP use
-it the common/historic way.
-And since all of these were there before btrfs, and in the case of
-mdadm/MD "in" the kernel,... one should probably try to follow that, if
-possible.
+On Sun, 2016-06-05 at 22:39 +0200, Henk Slager wrote:
+> > So the point I'm trying to make:
+> > People do probably not care so much whether their VM image/etc. is
+> > COWed or not, snapshots/etc. still work with that,... but they may
+> > likely care if the integrity feature is lost.
+> > So IMHO, nodatacow + checksumming deserves to be amongst the top
+> > priorities.
+> Have you tried blockdevice/HDD caching like bcache or dmcache in
+> combination with VMs on BTRFS?
+No yet,... my personal use case is just some VMs on the notebook, and
+for this, the above would seem a bit overkill.
+For the larger VM cluster at the institute,... puh to be honest I don't
+know by hard what we do there.
 
 
-
-> There's actually better consistency in terminology usage outside
-> Linux
-> because of SNIA and DDF than within Linux where the most basic terms
-> aren't agreed upon by various upstream maintainers.
-
-Does anyone in the Linux world really care much about DDF? Even
-outside? ;-)
-Seriously,... as I tried to show in one of my previous posts, I think
-the terminology of DDF, at least WRT RAID1 is a bit awkward.
+> =C2=A0=C2=A0Or ZVOL for VMs in ZFS with L2ARC?
+Well but all this is an alternative solution,...
 
 
->  mdadm and lvm use
-> different terms even though they're both now using the same md
-> backend
-> in the kernel.
-Depending on whether one choose to use=C2=A0"raid1" and "mirror" segment
-types....
+> I assume the primary reason for wanting nodatacow + checksumming is
+> to
+> avoid long seektimes on HDDs due to growing fragmentation of the VM
+> images over time.
+Well the primary reason is wanting to have overall checksumming in the
+fs, regardless of which features one uses.
+
+I think we already have some situations where tools use/set btrfs
+features by themselves (i.e. automatically)... wasn't systemd creating
+subvols per default in some locations, when there's btrfs?
+So it's no big step to postgresql/etc. setting nodatacow, making people
+loose integrity without them even knowing.
 
 
-Anyway,... I think that discussion gets a bit pointless,... I think
-it's clear that the current terminology may easily cause confusion, and
-I think for a term like "RAID1", which is a artificial name it's
-something completely else as for terms like "stripe", "chunk", etc.,
-which are rather common terms and where one must expect that they are
-used for different things in different areas.
+Of course, avoiding the fragmentation is the reason for the desire to
+have nodatacow.
 
-And as I've said just before... the other points on my bucket list,
-like the UUID collision (security) issues, the no checksumming with
-nodatacow, etc. =C2=A0deserve IMHO much more attention than the terminology
-:)
 
-So I'm kinda out of this specific part of the discussion.
+>  But even if you have nodatacow + checksumming
+> implemented, it is then still HDD access and a VM imagefile itself is
+> not guaranteed to be continuous.
+Uhm... sure, but that's no difference to other filesystems?!
+
+
+> It is clear that for VM images the amount of extents will be large
+> over time (like 50k or so, autodefrag on),
+Wasn't it said, that autodefrag performs bad for anything larger than
+~1G?
+
+
+>  but with a modern SSD used
+> as cache, it doesn't matter. It is still way faster than just HDD(s),
+> even with freshly copied image with <100 extents.
+Well the fragmentation has also many other consequences and not just
+seeks (assuming everyone would use SSDs, which is and probably won't be
+the case for quite a while).
+Most obviously you get much more IOPS and btrfs itself will, AFAIU,
+also suffer from some issues due to the fragmentation.
+
 
 Cheers,
 Chris.
---=-4P8vHiQMelC1FRp9sa68
+--=-hOG2EbUoYcMXpFLQENU2
 Content-Type: application/x-pkcs7-signature; name="smime.p7s"
 Content-Disposition: attachment; filename="smime.p7s"
 Content-Transfer-Encoding: base64
@@ -181,25 +181,25 @@ Yeq6UTW/JmfxF4xcbkNK/rv9ISBg9K+mZtg2QXr+P/CJBtej2RLUMYIEfjCCBHoCAQEwgYkwdTEL
 MAkGA1UEBhMCSUwxFjAUBgNVBAoTDVN0YXJ0Q29tIEx0ZC4xKTAnBgNVBAsTIFN0YXJ0Q29tIENl
 cnRpZmljYXRpb24gQXV0aG9yaXR5MSMwIQYDVQQDExpTdGFydENvbSBDbGFzcyAyIENsaWVudCBD
 QQIQPZ6tDP/RHLwcz1F+2kRADzANBglghkgBZQMEAgMFAKCCAcUwGAYJKoZIhvcNAQkDMQsGCSqG
-SIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTYwNjA1MjAzOTA5WjBPBgkqhkiG9w0BCQQxQgRAcb8g
-D7g7tkeJ+IsYNGFz5qOph2JF17gZzcVTApvRp7x+wNO5Pk0r5o4j9/VMEzSJ9NKczBrHbd64vrmK
-lZJlRDCBmgYJKwYBBAGCNxAEMYGMMIGJMHUxCzAJBgNVBAYTAklMMRYwFAYDVQQKEw1TdGFydENv
+SIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTYwNjA1MjA1NjQ1WjBPBgkqhkiG9w0BCQQxQgRAkgZk
+Y3S+UnkByp66LUQhZe9Gg+r1Baf0ZtClrGwWJUhOyyb1xgomThPCmpFN7TIv3SACPNqSCzdqdHWx
+jQdy7jCBmgYJKwYBBAGCNxAEMYGMMIGJMHUxCzAJBgNVBAYTAklMMRYwFAYDVQQKEw1TdGFydENv
 bSBMdGQuMSkwJwYDVQQLEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0eTEjMCEGA1UE
 AxMaU3RhcnRDb20gQ2xhc3MgMiBDbGllbnQgQ0ECED2erQz/0Ry8HM9RftpEQA8wgZwGCyqGSIb3
 DQEJEAILMYGMoIGJMHUxCzAJBgNVBAYTAklMMRYwFAYDVQQKEw1TdGFydENvbSBMdGQuMSkwJwYD
 VQQLEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0eTEjMCEGA1UEAxMaU3RhcnRDb20g
-Q2xhc3MgMiBDbGllbnQgQ0ECED2erQz/0Ry8HM9RftpEQA8wDQYJKoZIhvcNAQEBBQAEggIAFlQp
-ADcyut4rEs7T9ib/kuf/dZs4GpoHBO/We++JkLOym4nxwV1dOzF/aeF++Mg00GEe2tTjN6hpQKiP
-9BiYdWi53Y0LNM8R9Px7/Z3KCej7b2DBo3QRnGgDPfMcqryOsnSSm8bswk0FpfC21a1pJ1k9XpxA
-zAPNHljCbJbREyF+U4AJpupNO4c7WG5KAvjf2WKwz3yqlSS4BOHICuGT8Wei9Dr2C4/hibuzwu7M
-hCmqfrWoQ5OEO1fKelquq/WTlQITgBfWlSiCY66hBOzcUbvQn1tgsc6Sx6rIvI+vRo7fogCZ2+0U
-kVZt9zQ582xh8m4IE+1TNVxh9YhzBZH4dcGuEh7CLXWsQCnVlZ4aGY7zG2bhCTb9gPmBQ4hay4LE
-IQvCdi/LWisbqAjBnnmT0I1MBQm5p0tUX74ETamsFKePGfhCDC45TLcxewm0nxstD2PNmACw5j4L
-sQP0GgYeM7IQf3agdCXXg/17iMsn7wwjUh8Wi8v+NUyWL5bzLH4n/vKt5OVSOZzTgQ2Tae7KWoZy
-UovWaA0JQ4L/mJDyxwOdwOg9PpZSMMOuFvGP+dWygkfctPKRV+PLzyJLcPrf7lriM503FNOJ2R+m
-1m3jHicRQs5joD7TvKuB4Cmu/3SDKuVP+tTx4fPy40ka8jDfrLLbl9t0Od4f5SaxwHn++O4AAAAA
+Q2xhc3MgMiBDbGllbnQgQ0ECED2erQz/0Ry8HM9RftpEQA8wDQYJKoZIhvcNAQEBBQAEggIAqyWW
+/Lk/OVV/sf+Rz8HPr+XquW4Re9pXjXgGGMRK8hL/09sKc0Kc5yPQ3b+R7PraKYvwXeOfKf3LQ9Mx
+55ie5+/3a4UhFxrJIG+NvoOigUAi2q69MwqG3ZIhP2BWz3Qx0yf/0tvKRXZ0SM2mc6Dmv3LenUZe
+qcScBaEIfkMGGJJmiYTNMbanEqewep15H9vZWslwZhJ4AFwS+5OcFnqd/hK7ZjQX7cbhtDXTWKjj
+2oWHku9fcHSplVMAKxvgtfenDcXB7Yz1lZUKmKNy6e5vUCQ3bA8q6tl6TUz48DVJagBDHDL/d3ig
+v+P67fSCiTj2Dws20myJkUnKvdW0lD8mb+AVu1bXhgmB4LlAGGsmtzEzj8jnokp5u5Q6Cew3cf7/
+pYNeo00LrX2UllgzThUzIgnThGHhOMYefSBhOaEM9TD8LQmMUiEHknFQDJtTv1u1qRctKF4gdcR6
+C9YVbfTseETUsrCUXgujZpAAM9IVF8mE+DA2iUCHt2YUeOCxpdTQHutptk1/Ahkcj2Q4ooN+1sZU
+cTFanE+0+VeoUpRPMeqfKLB3zV8JLZsuNrIOTq6SMcb0lSx8KIEG0+PVIbJj0i9dhoQJjDVW2HQn
+nL0GM02T86bWAQ7ZO5J9kmoY8vVapUGsnqqUXWJNZn/B7ZwaTh5FqBuGhgdfXpqkXgiWKS0AAAAA
 AAA=
 
 
---=-4P8vHiQMelC1FRp9sa68--
+--=-hOG2EbUoYcMXpFLQENU2--
 

@@ -1,8 +1,8 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:53541 "EHLO mx1.redhat.com"
+Received: from mx1.redhat.com ([209.132.183.28]:38792 "EHLO mx1.redhat.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752431AbcFETd0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 5 Jun 2016 15:33:26 -0400
+	id S1752579AbcFETdh (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 5 Jun 2016 15:33:37 -0400
 From: mchristi@redhat.com
 To: linux-f2fs-devel@lists.sourceforge.net, linux-ext4@vger.kernel.org,
         konrad.wilk@oracle.com, drbd-dev@lists.linbit.com,
@@ -14,9 +14,9 @@ To: linux-f2fs-devel@lists.sourceforge.net, linux-ext4@vger.kernel.org,
         target-devel@vger.kernel.org, linux-btrfs@vger.kernel.org,
         osd-dev@open-osd.org, xfs@oss.sgi.com, ocfs2-devel@oss.oracle.com
 Cc: Mike Christie <mchristi@redhat.com>
-Subject: [PATCH 23/45] dm: pass dm stats data dir instead of bi_rw
-Date: Sun,  5 Jun 2016 14:32:03 -0500
-Message-Id: <1465155145-10812-24-git-send-email-mchristi@redhat.com>
+Subject: [PATCH 28/45] target: use bio op accessors
+Date: Sun,  5 Jun 2016 14:32:08 -0500
+Message-Id: <1465155145-10812-29-git-send-email-mchristi@redhat.com>
 In-Reply-To: <1465155145-10812-1-git-send-email-mchristi@redhat.com>
 References: <1465155145-10812-1-git-send-email-mchristi@redhat.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -24,123 +24,122 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Mike Christie <mchristi@redhat.com>
 
-It looks like dm stats cares about the data direction
-(READ vs WRITE) and does not need the bio/request flags.
-Commands like REQ_FLUSH, REQ_DISCARD and REQ_WRITE_SAME
-are currently always set with REQ_WRITE, so the extra check for
-REQ_DISCARD in dm_stats_account_io is not needed.
-
-This patch has it use the bio and request data_dir helpers
-instead of accessing the bi_rw/cmd_flags directly. This makes
-the next patches that remove the operation from the cmd_flags
-and bi_rw easier, because we will no longer have the REQ_WRITE
-bit set for operations like discards.
+Separate the op from the rq_flag_bits and have the target layer
+set/get the bio using bio_set_op_attrs/bio_op.
 
 Signed-off-by: Mike Christie <mchristi@redhat.com>
-Reviewed-by: Christoph Hellwig <hch@lst.de>
-Reviewed-by: Hannes Reinecke <hare@suse.com>
 ---
-v2:
+ drivers/target/target_core_iblock.c | 29 ++++++++++++++---------------
+ drivers/target/target_core_pscsi.c  |  2 +-
+ 2 files changed, 15 insertions(+), 16 deletions(-)
 
-1. Merged Mike Snitzer's fixes to pass in int instead of
-unsigned long.
-
-2. Fix 80 char col issues.
-
- drivers/md/dm-stats.c |  9 ++++-----
- drivers/md/dm.c       | 21 ++++++++++++---------
- 2 files changed, 16 insertions(+), 14 deletions(-)
-
-diff --git a/drivers/md/dm-stats.c b/drivers/md/dm-stats.c
-index 8289804..4fba26c 100644
---- a/drivers/md/dm-stats.c
-+++ b/drivers/md/dm-stats.c
-@@ -514,11 +514,10 @@ static void dm_stat_round(struct dm_stat *s, struct dm_stat_shared *shared,
+diff --git a/drivers/target/target_core_iblock.c b/drivers/target/target_core_iblock.c
+index c25109c..22af12f 100644
+--- a/drivers/target/target_core_iblock.c
++++ b/drivers/target/target_core_iblock.c
+@@ -312,7 +312,8 @@ static void iblock_bio_done(struct bio *bio)
  }
  
- static void dm_stat_for_entry(struct dm_stat *s, size_t entry,
--			      unsigned long bi_rw, sector_t len,
-+			      int idx, sector_t len,
- 			      struct dm_stats_aux *stats_aux, bool end,
- 			      unsigned long duration_jiffies)
+ static struct bio *
+-iblock_get_bio(struct se_cmd *cmd, sector_t lba, u32 sg_num, int rw)
++iblock_get_bio(struct se_cmd *cmd, sector_t lba, u32 sg_num, int op,
++	       int op_flags)
  {
--	unsigned long idx = bi_rw & REQ_WRITE;
- 	struct dm_stat_shared *shared = &s->stat_shared[entry];
- 	struct dm_stat_percpu *p;
+ 	struct iblock_dev *ib_dev = IBLOCK_DEV(cmd->se_dev);
+ 	struct bio *bio;
+@@ -334,7 +335,7 @@ iblock_get_bio(struct se_cmd *cmd, sector_t lba, u32 sg_num, int rw)
+ 	bio->bi_private = cmd;
+ 	bio->bi_end_io = &iblock_bio_done;
+ 	bio->bi_iter.bi_sector = lba;
+-	bio->bi_rw = rw;
++	bio_set_op_attrs(bio, op, op_flags);
  
-@@ -584,7 +583,7 @@ static void dm_stat_for_entry(struct dm_stat *s, size_t entry,
- #endif
+ 	return bio;
  }
+@@ -480,7 +481,7 @@ iblock_execute_write_same(struct se_cmd *cmd)
+ 		goto fail;
+ 	cmd->priv = ibr;
  
--static void __dm_stat_bio(struct dm_stat *s, unsigned long bi_rw,
-+static void __dm_stat_bio(struct dm_stat *s, int bi_rw,
- 			  sector_t bi_sector, sector_t end_sector,
- 			  bool end, unsigned long duration_jiffies,
- 			  struct dm_stats_aux *stats_aux)
-@@ -645,8 +644,8 @@ void dm_stats_account_io(struct dm_stats *stats, unsigned long bi_rw,
- 		last = raw_cpu_ptr(stats->last);
- 		stats_aux->merged =
- 			(bi_sector == (ACCESS_ONCE(last->last_sector) &&
--				       ((bi_rw & (REQ_WRITE | REQ_DISCARD)) ==
--					(ACCESS_ONCE(last->last_rw) & (REQ_WRITE | REQ_DISCARD)))
-+				       ((bi_rw == WRITE) ==
-+					(ACCESS_ONCE(last->last_rw) == WRITE))
- 				       ));
- 		ACCESS_ONCE(last->last_sector) = end_sector;
- 		ACCESS_ONCE(last->last_rw) = bi_rw;
-diff --git a/drivers/md/dm.c b/drivers/md/dm.c
-index 1b2f962..f5ac0a3 100644
---- a/drivers/md/dm.c
-+++ b/drivers/md/dm.c
-@@ -723,8 +723,9 @@ static void start_io_acct(struct dm_io *io)
- 		atomic_inc_return(&md->pending[rw]));
+-	bio = iblock_get_bio(cmd, block_lba, 1, WRITE);
++	bio = iblock_get_bio(cmd, block_lba, 1, REQ_OP_WRITE, 0);
+ 	if (!bio)
+ 		goto fail_free_ibr;
  
- 	if (unlikely(dm_stats_used(&md->stats)))
--		dm_stats_account_io(&md->stats, bio->bi_rw, bio->bi_iter.bi_sector,
--				    bio_sectors(bio), false, 0, &io->stats_aux);
-+		dm_stats_account_io(&md->stats, bio_data_dir(bio),
-+				    bio->bi_iter.bi_sector, bio_sectors(bio),
-+				    false, 0, &io->stats_aux);
- }
+@@ -493,7 +494,8 @@ iblock_execute_write_same(struct se_cmd *cmd)
+ 		while (bio_add_page(bio, sg_page(sg), sg->length, sg->offset)
+ 				!= sg->length) {
  
- static void end_io_acct(struct dm_io *io)
-@@ -738,8 +739,9 @@ static void end_io_acct(struct dm_io *io)
- 	generic_end_io_acct(rw, &dm_disk(md)->part0, io->start_time);
+-			bio = iblock_get_bio(cmd, block_lba, 1, WRITE);
++			bio = iblock_get_bio(cmd, block_lba, 1, REQ_OP_WRITE,
++					     0);
+ 			if (!bio)
+ 				goto fail_put_bios;
  
- 	if (unlikely(dm_stats_used(&md->stats)))
--		dm_stats_account_io(&md->stats, bio->bi_rw, bio->bi_iter.bi_sector,
--				    bio_sectors(bio), true, duration, &io->stats_aux);
-+		dm_stats_account_io(&md->stats, bio_data_dir(bio),
-+				    bio->bi_iter.bi_sector, bio_sectors(bio),
-+				    true, duration, &io->stats_aux);
+@@ -679,8 +681,7 @@ iblock_execute_rw(struct se_cmd *cmd, struct scatterlist *sgl, u32 sgl_nents,
+ 	struct scatterlist *sg;
+ 	u32 sg_num = sgl_nents;
+ 	unsigned bio_cnt;
+-	int rw = 0;
+-	int i;
++	int i, op, op_flags = 0;
  
- 	/*
- 	 * After this is decremented the bio must not be touched if it is
-@@ -1121,9 +1123,9 @@ static void rq_end_stats(struct mapped_device *md, struct request *orig)
- 	if (unlikely(dm_stats_used(&md->stats))) {
- 		struct dm_rq_target_io *tio = tio_from_request(orig);
- 		tio->duration_jiffies = jiffies - tio->duration_jiffies;
--		dm_stats_account_io(&md->stats, orig->cmd_flags, blk_rq_pos(orig),
--				    tio->n_sectors, true, tio->duration_jiffies,
--				    &tio->stats_aux);
-+		dm_stats_account_io(&md->stats, rq_data_dir(orig),
-+				    blk_rq_pos(orig), tio->n_sectors, true,
-+				    tio->duration_jiffies, &tio->stats_aux);
- 	}
- }
- 
-@@ -2082,8 +2084,9 @@ static void dm_start_request(struct mapped_device *md, struct request *orig)
- 		struct dm_rq_target_io *tio = tio_from_request(orig);
- 		tio->duration_jiffies = jiffies;
- 		tio->n_sectors = blk_rq_sectors(orig);
--		dm_stats_account_io(&md->stats, orig->cmd_flags, blk_rq_pos(orig),
--				    tio->n_sectors, false, 0, &tio->stats_aux);
-+		dm_stats_account_io(&md->stats, rq_data_dir(orig),
-+				    blk_rq_pos(orig), tio->n_sectors, false, 0,
-+				    &tio->stats_aux);
+ 	if (data_direction == DMA_TO_DEVICE) {
+ 		struct iblock_dev *ib_dev = IBLOCK_DEV(dev);
+@@ -689,18 +690,15 @@ iblock_execute_rw(struct se_cmd *cmd, struct scatterlist *sgl, u32 sgl_nents,
+ 		 * Force writethrough using WRITE_FUA if a volatile write cache
+ 		 * is not enabled, or if initiator set the Force Unit Access bit.
+ 		 */
++		op = REQ_OP_WRITE;
+ 		if (test_bit(QUEUE_FLAG_FUA, &q->queue_flags)) {
+ 			if (cmd->se_cmd_flags & SCF_FUA)
+-				rw = WRITE_FUA;
++				op_flags = WRITE_FUA;
+ 			else if (!test_bit(QUEUE_FLAG_WC, &q->queue_flags))
+-				rw = WRITE_FUA;
+-			else
+-				rw = WRITE;
+-		} else {
+-			rw = WRITE;
++				op_flags = WRITE_FUA;
+ 		}
+ 	} else {
+-		rw = READ;
++		op = REQ_OP_READ;
  	}
  
- 	/*
+ 	ibr = kzalloc(sizeof(struct iblock_req), GFP_KERNEL);
+@@ -714,7 +712,7 @@ iblock_execute_rw(struct se_cmd *cmd, struct scatterlist *sgl, u32 sgl_nents,
+ 		return 0;
+ 	}
+ 
+-	bio = iblock_get_bio(cmd, block_lba, sgl_nents, rw);
++	bio = iblock_get_bio(cmd, block_lba, sgl_nents, op, op_flags);
+ 	if (!bio)
+ 		goto fail_free_ibr;
+ 
+@@ -738,7 +736,8 @@ iblock_execute_rw(struct se_cmd *cmd, struct scatterlist *sgl, u32 sgl_nents,
+ 				bio_cnt = 0;
+ 			}
+ 
+-			bio = iblock_get_bio(cmd, block_lba, sg_num, rw);
++			bio = iblock_get_bio(cmd, block_lba, sg_num, op,
++					     op_flags);
+ 			if (!bio)
+ 				goto fail_put_bios;
+ 
+diff --git a/drivers/target/target_core_pscsi.c b/drivers/target/target_core_pscsi.c
+index de18790..81564c8 100644
+--- a/drivers/target/target_core_pscsi.c
++++ b/drivers/target/target_core_pscsi.c
+@@ -922,7 +922,7 @@ pscsi_map_sg(struct se_cmd *cmd, struct scatterlist *sgl, u32 sgl_nents,
+ 					goto fail;
+ 
+ 				if (rw)
+-					bio->bi_rw |= REQ_WRITE;
++					bio_set_op_attrs(bio, REQ_OP_WRITE, 0);
+ 
+ 				pr_debug("PSCSI: Allocated bio: %p,"
+ 					" dir: %s nr_vecs: %d\n", bio,
 -- 
 2.7.2
 

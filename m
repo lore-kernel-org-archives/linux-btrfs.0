@@ -1,8 +1,8 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:56618 "EHLO mx1.redhat.com"
+Received: from mx1.redhat.com ([209.132.183.28]:37557 "EHLO mx1.redhat.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752720AbcFETds (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 5 Jun 2016 15:33:48 -0400
+	id S1752279AbcFETdT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 5 Jun 2016 15:33:19 -0400
 From: mchristi@redhat.com
 To: linux-f2fs-devel@lists.sourceforge.net, linux-ext4@vger.kernel.org,
         konrad.wilk@oracle.com, drbd-dev@lists.linbit.com,
@@ -14,9 +14,9 @@ To: linux-f2fs-devel@lists.sourceforge.net, linux-ext4@vger.kernel.org,
         target-devel@vger.kernel.org, linux-btrfs@vger.kernel.org,
         osd-dev@open-osd.org, xfs@oss.sgi.com, ocfs2-devel@oss.oracle.com
 Cc: Mike Christie <mchristi@redhat.com>
-Subject: [PATCH 33/45] block: prepare elevator to use REQ_OPs.
-Date: Sun,  5 Jun 2016 14:32:13 -0500
-Message-Id: <1465155145-10812-34-git-send-email-mchristi@redhat.com>
+Subject: [PATCH 20/45] nilfs: use bio op accessors
+Date: Sun,  5 Jun 2016 14:32:00 -0500
+Message-Id: <1465155145-10812-21-git-send-email-mchristi@redhat.com>
 In-Reply-To: <1465155145-10812-1-git-send-email-mchristi@redhat.com>
 References: <1465155145-10812-1-git-send-email-mchristi@redhat.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -24,105 +24,83 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Mike Christie <mchristi@redhat.com>
 
-This patch converts the elevator code to use separate variables
-for the operation and flags, and to check req_op for the REQ_OP.
+Separate the op from the rq_flag_bits and have nilfs
+set/get the bio using bio_set_op_attrs/bio_op.
 
 Signed-off-by: Mike Christie <mchristi@redhat.com>
 Reviewed-by: Christoph Hellwig <hch@lst.de>
 Reviewed-by: Hannes Reinecke <hare@suse.com>
+Acked-by: Ryusuke Konishi <konishi.ryusuke@lab.ntt.co.jp>
 ---
- block/blk-core.c         | 2 +-
- block/cfq-iosched.c      | 4 ++--
- block/elevator.c         | 7 +++----
- include/linux/elevator.h | 4 ++--
- 4 files changed, 8 insertions(+), 9 deletions(-)
+ fs/nilfs2/segbuf.c | 17 +++++++++--------
+ 1 file changed, 9 insertions(+), 8 deletions(-)
 
-diff --git a/block/blk-core.c b/block/blk-core.c
-index a68dc07..090e55d 100644
---- a/block/blk-core.c
-+++ b/block/blk-core.c
-@@ -1081,7 +1081,7 @@ static struct request *__get_request(struct request_list *rl, int op,
- 	if (unlikely(blk_queue_dying(q)))
- 		return ERR_PTR(-ENODEV);
- 
--	may_queue = elv_may_queue(q, op | op_flags);
-+	may_queue = elv_may_queue(q, op, op_flags);
- 	if (may_queue == ELV_MQUEUE_NO)
- 		goto rq_starved;
- 
-diff --git a/block/cfq-iosched.c b/block/cfq-iosched.c
-index 4a34978..3fcc598 100644
---- a/block/cfq-iosched.c
-+++ b/block/cfq-iosched.c
-@@ -4285,7 +4285,7 @@ static inline int __cfq_may_queue(struct cfq_queue *cfqq)
- 	return ELV_MQUEUE_MAY;
+diff --git a/fs/nilfs2/segbuf.c b/fs/nilfs2/segbuf.c
+index 0f62909..a962d7d 100644
+--- a/fs/nilfs2/segbuf.c
++++ b/fs/nilfs2/segbuf.c
+@@ -346,7 +346,8 @@ static void nilfs_end_bio_write(struct bio *bio)
  }
  
--static int cfq_may_queue(struct request_queue *q, int rw)
-+static int cfq_may_queue(struct request_queue *q, int op, int op_flags)
+ static int nilfs_segbuf_submit_bio(struct nilfs_segment_buffer *segbuf,
+-				   struct nilfs_write_info *wi, int mode)
++				   struct nilfs_write_info *wi, int mode,
++				   int mode_flags)
  {
- 	struct cfq_data *cfqd = q->elevator->elevator_data;
- 	struct task_struct *tsk = current;
-@@ -4302,7 +4302,7 @@ static int cfq_may_queue(struct request_queue *q, int rw)
- 	if (!cic)
- 		return ELV_MQUEUE_MAY;
+ 	struct bio *bio = wi->bio;
+ 	int err;
+@@ -364,7 +365,7 @@ static int nilfs_segbuf_submit_bio(struct nilfs_segment_buffer *segbuf,
  
--	cfqq = cic_to_cfqq(cic, rw_is_sync(rw));
-+	cfqq = cic_to_cfqq(cic, rw_is_sync(op | op_flags));
- 	if (cfqq) {
- 		cfq_init_prio_data(cfqq, cic);
+ 	bio->bi_end_io = nilfs_end_bio_write;
+ 	bio->bi_private = segbuf;
+-	bio->bi_rw = mode;
++	bio_set_op_attrs(bio, mode, mode_flags);
+ 	submit_bio(bio);
+ 	segbuf->sb_nbio++;
  
-diff --git a/block/elevator.c b/block/elevator.c
-index c3555c9..ea9319d 100644
---- a/block/elevator.c
-+++ b/block/elevator.c
-@@ -366,8 +366,7 @@ void elv_dispatch_sort(struct request_queue *q, struct request *rq)
- 	list_for_each_prev(entry, &q->queue_head) {
- 		struct request *pos = list_entry_rq(entry);
- 
--		if ((rq->cmd_flags & REQ_DISCARD) !=
--		    (pos->cmd_flags & REQ_DISCARD))
-+		if ((req_op(rq) == REQ_OP_DISCARD) != (req_op(pos) == REQ_OP_DISCARD))
- 			break;
- 		if (rq_data_dir(rq) != rq_data_dir(pos))
- 			break;
-@@ -717,12 +716,12 @@ void elv_put_request(struct request_queue *q, struct request *rq)
- 		e->type->ops.elevator_put_req_fn(rq);
- }
- 
--int elv_may_queue(struct request_queue *q, int rw)
-+int elv_may_queue(struct request_queue *q, int op, int op_flags)
+@@ -438,7 +439,7 @@ static int nilfs_segbuf_submit_bh(struct nilfs_segment_buffer *segbuf,
+ 		return 0;
+ 	}
+ 	/* bio is FULL */
+-	err = nilfs_segbuf_submit_bio(segbuf, wi, mode);
++	err = nilfs_segbuf_submit_bio(segbuf, wi, mode, 0);
+ 	/* never submit current bh */
+ 	if (likely(!err))
+ 		goto repeat;
+@@ -462,19 +463,19 @@ static int nilfs_segbuf_write(struct nilfs_segment_buffer *segbuf,
  {
- 	struct elevator_queue *e = q->elevator;
+ 	struct nilfs_write_info wi;
+ 	struct buffer_head *bh;
+-	int res = 0, rw = WRITE;
++	int res = 0;
  
- 	if (e->type->ops.elevator_may_queue_fn)
--		return e->type->ops.elevator_may_queue_fn(q, rw);
-+		return e->type->ops.elevator_may_queue_fn(q, op, op_flags);
+ 	wi.nilfs = nilfs;
+ 	nilfs_segbuf_prepare_write(segbuf, &wi);
  
- 	return ELV_MQUEUE_MAY;
- }
-diff --git a/include/linux/elevator.h b/include/linux/elevator.h
-index 638b324..953d286 100644
---- a/include/linux/elevator.h
-+++ b/include/linux/elevator.h
-@@ -26,7 +26,7 @@ typedef int (elevator_dispatch_fn) (struct request_queue *, int);
- typedef void (elevator_add_req_fn) (struct request_queue *, struct request *);
- typedef struct request *(elevator_request_list_fn) (struct request_queue *, struct request *);
- typedef void (elevator_completed_req_fn) (struct request_queue *, struct request *);
--typedef int (elevator_may_queue_fn) (struct request_queue *, int);
-+typedef int (elevator_may_queue_fn) (struct request_queue *, int, int);
+ 	list_for_each_entry(bh, &segbuf->sb_segsum_buffers, b_assoc_buffers) {
+-		res = nilfs_segbuf_submit_bh(segbuf, &wi, bh, rw);
++		res = nilfs_segbuf_submit_bh(segbuf, &wi, bh, REQ_OP_WRITE);
+ 		if (unlikely(res))
+ 			goto failed_bio;
+ 	}
  
- typedef void (elevator_init_icq_fn) (struct io_cq *);
- typedef void (elevator_exit_icq_fn) (struct io_cq *);
-@@ -134,7 +134,7 @@ extern struct request *elv_former_request(struct request_queue *, struct request
- extern struct request *elv_latter_request(struct request_queue *, struct request *);
- extern int elv_register_queue(struct request_queue *q);
- extern void elv_unregister_queue(struct request_queue *q);
--extern int elv_may_queue(struct request_queue *, int);
-+extern int elv_may_queue(struct request_queue *, int, int);
- extern void elv_completed_request(struct request_queue *, struct request *);
- extern int elv_set_request(struct request_queue *q, struct request *rq,
- 			   struct bio *bio, gfp_t gfp_mask);
+ 	list_for_each_entry(bh, &segbuf->sb_payload_buffers, b_assoc_buffers) {
+-		res = nilfs_segbuf_submit_bh(segbuf, &wi, bh, rw);
++		res = nilfs_segbuf_submit_bh(segbuf, &wi, bh, REQ_OP_WRITE);
+ 		if (unlikely(res))
+ 			goto failed_bio;
+ 	}
+@@ -484,8 +485,8 @@ static int nilfs_segbuf_write(struct nilfs_segment_buffer *segbuf,
+ 		 * Last BIO is always sent through the following
+ 		 * submission.
+ 		 */
+-		rw |= REQ_SYNC;
+-		res = nilfs_segbuf_submit_bio(segbuf, &wi, rw);
++		res = nilfs_segbuf_submit_bio(segbuf, &wi, REQ_OP_WRITE,
++					      REQ_SYNC);
+ 	}
+ 
+  failed_bio:
 -- 
 2.7.2
 

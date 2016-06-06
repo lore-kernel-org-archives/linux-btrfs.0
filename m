@@ -1,61 +1,78 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:58237 "EHLO mx2.suse.de"
+Received: from mx1.redhat.com ([209.132.183.28]:35480 "EHLO mx1.redhat.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751025AbcFFJGV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 6 Jun 2016 05:06:21 -0400
-Date: Mon, 6 Jun 2016 11:05:37 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Cc: dsterba@suse.com, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v2 2/2] btrfs-progs: convert-tests: Add test case for
- backup superblock migration
-Message-ID: <20160606090537.GW29147@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20160603023426.25216-1-quwenruo@cn.fujitsu.com>
- <20160603023426.25216-2-quwenruo@cn.fujitsu.com>
+	id S1751665AbcFFPkl (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 6 Jun 2016 11:40:41 -0400
+Subject: Re: [PATCH 28/45] target: use bio op accessors
+To: Hannes Reinecke <hare@suse.de>, linux-f2fs-devel@lists.sourceforge.net,
+        linux-ext4@vger.kernel.org, konrad.wilk@oracle.com,
+        drbd-dev@lists.linbit.com, philipp.reisner@linbit.com,
+        lars.ellenberg@linbit.com, linux-raid@vger.kernel.org,
+        dm-devel@redhat.com, linux-fsdevel@vger.kernel.org,
+        linux-bcache@vger.kernel.org, linux-block@vger.kernel.org,
+        linux-kernel@vger.kernel.org, linux-scsi@vger.kernel.org,
+        linux-mtd@lists.infradead.org, target-devel@vger.kernel.org,
+        linux-btrfs@vger.kernel.org, osd-dev@open-osd.org, xfs@oss.sgi.com,
+        ocfs2-devel@oss.oracle.com
+References: <1465155145-10812-1-git-send-email-mchristi@redhat.com>
+ <1465155145-10812-29-git-send-email-mchristi@redhat.com>
+ <57551C57.5090507@suse.de>
+From: Mike Christie <mchristi@redhat.com>
+Message-ID: <57559973.1020105@redhat.com>
+Date: Mon, 6 Jun 2016 10:40:35 -0500
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20160603023426.25216-2-quwenruo@cn.fujitsu.com>
+In-Reply-To: <57551C57.5090507@suse.de>
+Content-Type: text/plain; charset=windows-1252
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Jun 03, 2016 at 10:34:26AM +0800, Qu Wenruo wrote:
-> New convert introduced simpler chunk/extent allocation algorithm, at the
-> cost of complex backup superblock migration codes.
-> 
-> Use specially built ext2 images to test if btrfs-convert can convert and
-> rollback images without problem.
-> 
-> All these special ext2 image have blocks/holes across 2nd btrfs backup
-> superblock.
-> 
-> The naming of test image is like the following:
-> 	|<------superblock migration range----->|
-> 	64M					64M + 64K
-> |-Data--|-Data--|/Hole//|-Data--|/Hole//|-Data--|--Data--| = drdhdhdrd
-> 
-> These test cases should check all typical layouts and make sure new
-> convert works.
-> 
-> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+On 06/06/2016 01:46 AM, Hannes Reinecke wrote:
+> On 06/05/2016 09:32 PM, mchristi@redhat.com wrote:
+>> From: Mike Christie <mchristi@redhat.com>
+>>
+>> Separate the op from the rq_flag_bits and have the target layer
+>> set/get the bio using bio_set_op_attrs/bio_op.
+>>
+>> Signed-off-by: Mike Christie <mchristi@redhat.com>
+>> ---
+>>  drivers/target/target_core_iblock.c | 29 ++++++++++++++---------------
+>>  drivers/target/target_core_pscsi.c  |  2 +-
+>>  2 files changed, 15 insertions(+), 16 deletions(-)
+>>
+>> diff --git a/drivers/target/target_core_iblock.c b/drivers/target/target_core_iblock.c
+>> index c25109c..22af12f 100644
+>> --- a/drivers/target/target_core_iblock.c
+>> +++ b/drivers/target/target_core_iblock.c
+> [ .. ]
+>> @@ -689,18 +690,15 @@ iblock_execute_rw(struct se_cmd *cmd, struct scatterlist *sgl, u32 sgl_nents,
+>>  		 * Force writethrough using WRITE_FUA if a volatile write cache
+>>  		 * is not enabled, or if initiator set the Force Unit Access bit.
+>>  		 */
+>> +		op = REQ_OP_WRITE;
+>>  		if (test_bit(QUEUE_FLAG_FUA, &q->queue_flags)) {
+>>  			if (cmd->se_cmd_flags & SCF_FUA)
+>> -				rw = WRITE_FUA;
+>> +				op_flags = WRITE_FUA;
+>>  			else if (!test_bit(QUEUE_FLAG_WC, &q->queue_flags))
+>> -				rw = WRITE_FUA;
+>> -			else
+>> -				rw = WRITE;
+>> -		} else {
+>> -			rw = WRITE;
+>> +				op_flags = WRITE_FUA;
+>>  		}
+> Wrong intendation.
 
-Applied, thanks.
+It should be ok. That line is for the QUEUE_FLAG_WC test. We end up with:
 
-> +	extracted=$(extract_image "$src")
-> +	run_check $SUDO_HELPER e2fsck -n -f $extracted
-> +	run_check $SUDO_HELPER $TOP/btrfs-convert $extracted
-> +	run_check $SUDO_HELPER $TOP/btrfs check $extracted
-> +	run_check $SUDO_HELPER $TOP/btrfs-show-super $extracted
-> +
-> +	run_check $SUDO_HELPER mount -o loop $extracted $TEST_MNT
-> +	run_check $SUDO_HELPER e2fsck -n -f $TEST_MNT/ext2_saved/image
-> +	run_check $SUDO_HELPER umount $TEST_MNT
-> +
-> +	run_check $SUDO_HELPER $TOP/btrfs check $extracted
-> +	run_check $SUDO_HELPER $TOP/btrfs-convert -r $extracted
-> +	run_check $SUDO_HELPER e2fsck -n -f $extracted
+op = REQ_OP_WRITE;
+if (test_bit(QUEUE_FLAG_FUA, &q->queue_flags)) {
+	if (cmd->se_cmd_flags & SCF_FUA)
+		op_flags = WRITE_FUA;
+	else if (!test_bit(QUEUE_FLAG_WC, &q->queue_flags))
+		op_flags = WRITE_FUA;
+}
 
-Most of the SUDO_HELPER calls are not necessary, and the tests failed
-when run under user (on NFS where root cannot do everything), so I did
-some additional changes. The separate convert dir should be now ready
-for adding more images easily.
+
+
+

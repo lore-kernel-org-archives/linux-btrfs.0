@@ -1,41 +1,26 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wm0-f44.google.com ([74.125.82.44]:34949 "EHLO
-	mail-wm0-f44.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751690AbcFWKD6 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 23 Jun 2016 06:03:58 -0400
-Received: by mail-wm0-f44.google.com with SMTP id v199so119693515wmv.0
-        for <linux-btrfs@vger.kernel.org>; Thu, 23 Jun 2016 03:03:57 -0700 (PDT)
-Subject: Re: On shrinkable caches
-To: dsterba@suse.cz, linux-btrfs@vger.kernel.org, clm@fb.com
-References: <5767D2D4.4090709@kyup.com> <20160623094347.GX4915@twin.jikos.cz>
-From: Nikolay Borisov <kernel@kyup.com>
-Message-ID: <576BB40A.8030408@kyup.com>
-Date: Thu, 23 Jun 2016 13:03:54 +0300
+Received: from mail-pf0-f176.google.com ([209.85.192.176]:36282 "EHLO
+	mail-pf0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750933AbcFFMRR (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 6 Jun 2016 08:17:17 -0400
+Received: by mail-pf0-f176.google.com with SMTP id z187so12540247pfz.3
+        for <linux-btrfs@vger.kernel.org>; Mon, 06 Jun 2016 05:17:16 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <20160623094347.GX4915@twin.jikos.cz>
-Content-Type: text/plain; charset=windows-1252
+From: Kaho Ng <ngkaho1234@gmail.com>
+Date: Mon, 6 Jun 2016 20:17:15 +0800
+Message-ID: <CAGeO4WO080utWsqajLKUnR5X1CgA61uZB-hpryoNN-ixq_rhXw@mail.gmail.com>
+Subject: What is the worst case scenario of splitting an extent-tree's node or leaf?
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hi all,
 
+I have questions on how BTRFS handles the scenario that a split pf
+extent-tree's node/leaf  incurs another splits in the tree's
+node/leaf. Is that scenario bounded? If it is, how could I calculate
+the number that the split starts looping.
 
-On 06/23/2016 12:43 PM, David Sterba wrote:
-> On Mon, Jun 20, 2016 at 02:26:12PM +0300, Nikolay Borisov wrote:
->> I have a question regarding the SLAB_RECLAIM_ACCOUNT flag with which
->> BTRFS caches are created. Currently there isn't a single usage of
->> register_shrinker under fs/btrfs.
-> 
-> The SLAB_RECLAIM_ACCOUNT flag has been there since the first versions in
-> 2007 (when shrinkeres did not exist) but I can't find any specific
-> reason why.
-> 
->> Apart from the inode cache which is
->> being shrunk from the generic super_cache_scan I don't think the memory
->> used for those caches should be accounted as reclaimable?
-> 
-> I agree, in most cases I don't see any possibility to reclaim the
-> objects earlier than the explicit free.
-
-If that's the case, then I'll be happy to send a patch.
-
+Regards,
+Kaho Ng

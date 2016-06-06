@@ -1,54 +1,34 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:29916 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751184AbcFDAkJ (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 3 Jun 2016 20:40:09 -0400
-From: Liu Bo <bo.li.liu@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.cz>
-Subject: [PATCH] Btrfs: clear uptodate flags of pages in sys_array eb
-Date: Fri,  3 Jun 2016 17:41:42 -0700
-Message-Id: <1465000902-3205-1-git-send-email-bo.li.liu@oracle.com>
+Received: from mx2.suse.de ([195.135.220.15]:55839 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752362AbcFFIi3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 6 Jun 2016 04:38:29 -0400
+Date: Mon, 6 Jun 2016 10:37:46 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Liu Bo <bo.li.liu@oracle.com>
+Cc: linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.cz>,
+        Anand Jain <anand.jain@oracle.com>,
+        Qu Wenruo <quwenruo@cn.fujitsu.com>
+Subject: Re: [PATCH v2 1/2] Btrfs: add more valid checks for superblock
+Message-ID: <20160606083746.GT29147@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1464980715-6442-1-git-send-email-bo.li.liu@oracle.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1464980715-6442-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We set uptodate flag to pages in the temporary sys_array eb,
-but do not clear the flag after free eb.  As the special
-btree inode may still hold a reference on those pages, the
-uptodate flag can remain alive in them.
+On Fri, Jun 03, 2016 at 12:05:14PM -0700, Liu Bo wrote:
+> This adds valid checks for super_total_bytes, super_bytes_used and
+> super_stripesize, super_num_devices.
+> 
+> Reported-by: Vegard Nossum <vegard.nossum@oracle.com>
+> Reported-by: Quentin Casasnovas <quentin.casasnovas@oracle.com>
+> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
 
-If btrfs_super_chunk_root has been intentionally changed to the
-offset of this sys_array eb, reading chunk_root will read content
-of sys_array and it will pass our beautiful checks in
-btree_readpage_end_io_hook() because of
-"pages of eb are uptodate => eb is uptodate"
+Reviewed-by: David Sterba <dsterba@suse.com>
 
-This adds the 'clear uptodate' part to force it to read from disk.
-
-Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
----
- fs/btrfs/volumes.c | 2 ++
- 1 file changed, 2 insertions(+)
-
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 7a169de..d2ca03b 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -6681,12 +6681,14 @@ int btrfs_read_sys_array(struct btrfs_root *root)
- 		sb_array_offset += len;
- 		cur_offset += len;
- 	}
-+	clear_extent_buffer_uptodate(sb);
- 	free_extent_buffer_stale(sb);
- 	return ret;
- 
- out_short_read:
- 	printk(KERN_ERR "BTRFS: sys_array too short to read %u bytes at offset %u\n",
- 			len, cur_offset);
-+	clear_extent_buffer_uptodate(sb);
- 	free_extent_buffer_stale(sb);
- 	return -EIO;
- }
--- 
-2.5.5
-
+I'll switch the printk(KERN_ to the btrfs_* helpers and do minor tweaks
+in the messages, but otherwise this version looks good to me. I don't
+think we need the helper for stripe value checks as I proposed.

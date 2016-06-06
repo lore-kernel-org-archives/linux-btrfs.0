@@ -1,9 +1,9 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:46386 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:47313 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750914AbcFFGVM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 6 Jun 2016 02:21:12 -0400
-Subject: Re: [PATCH 09/45] block discard: use bio set op accessor
+	id S1751130AbcFFGoE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 6 Jun 2016 02:44:04 -0400
+Subject: Re: [PATCH 24/45] dm: use bio op accessors
 To: mchristi@redhat.com, linux-f2fs-devel@lists.sourceforge.net,
         linux-ext4@vger.kernel.org, konrad.wilk@oracle.com,
         drbd-dev@lists.linbit.com, philipp.reisner@linbit.com,
@@ -15,29 +15,23 @@ To: mchristi@redhat.com, linux-f2fs-devel@lists.sourceforge.net,
         linux-btrfs@vger.kernel.org, osd-dev@open-osd.org, xfs@oss.sgi.com,
         ocfs2-devel@oss.oracle.com
 References: <1465155145-10812-1-git-send-email-mchristi@redhat.com>
- <1465155145-10812-10-git-send-email-mchristi@redhat.com>
+ <1465155145-10812-25-git-send-email-mchristi@redhat.com>
 From: Hannes Reinecke <hare@suse.de>
-Message-ID: <57551655.3020306@suse.de>
-Date: Mon, 6 Jun 2016 08:21:09 +0200
+Message-ID: <57551BA7.8080102@suse.de>
+Date: Mon, 6 Jun 2016 08:43:51 +0200
 MIME-Version: 1.0
-In-Reply-To: <1465155145-10812-10-git-send-email-mchristi@redhat.com>
+In-Reply-To: <1465155145-10812-25-git-send-email-mchristi@redhat.com>
 Content-Type: text/plain; charset=windows-1252
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 06/05/2016 09:31 PM, mchristi@redhat.com wrote:
+On 06/05/2016 09:32 PM, mchristi@redhat.com wrote:
 > From: Mike Christie <mchristi@redhat.com>
 > 
-> This converts the block issue discard helper and users to use
-> the bio_set_op_attrs accessor and only pass in the operation flags
-> like REQ_SEQURE.
+> Separate the op from the rq_flag_bits and have dm
+> set/get the bio using bio_set_op_attrs/bio_op.
 > 
 > Signed-off-by: Mike Christie <mchristi@redhat.com>
-> ---
->  block/blk-lib.c        | 13 +++++++------
->  drivers/md/dm-thin.c   |  2 +-
->  include/linux/blkdev.h |  3 ++-
->  3 files changed, 10 insertions(+), 8 deletions(-)
 > 
 Reviewed-by: Hannes Reinecke <hare@suse.com>
 

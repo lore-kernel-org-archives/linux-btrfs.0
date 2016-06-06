@@ -1,218 +1,371 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f178.google.com ([209.85.223.178]:35315 "EHLO
-	mail-io0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751857AbcFFLyq (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 6 Jun 2016 07:54:46 -0400
-Received: by mail-io0-f178.google.com with SMTP id o189so125775685ioe.2
-        for <linux-btrfs@vger.kernel.org>; Mon, 06 Jun 2016 04:54:45 -0700 (PDT)
-Subject: Re: RAID1 vs RAID10 and best way to set up 6 disks
+Received: from mail-it0-f53.google.com ([209.85.214.53]:36822 "EHLO
+	mail-it0-f53.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751753AbcFFNEO (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 6 Jun 2016 09:04:14 -0400
+Received: by mail-it0-f53.google.com with SMTP id f67so41684329ith.1
+        for <linux-btrfs@vger.kernel.org>; Mon, 06 Jun 2016 06:04:13 -0700 (PDT)
+Subject: Re: btrfs
 To: Christoph Anton Mitterer <calestyo@scientia.net>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-References: <1464977432.1571.20.camel@gmail.com>
- <1464977591.6679.13.camel@scientia.net> <1464979359.1571.25.camel@gmail.com>
- <1464980373.6679.28.camel@scientia.net>
- <89aaee85-9ad5-9bde-b4fb-6c4758e8fd34@swiftspirit.co.za>
- <1465089045.6662.19.camel@scientia.net>
- <CAJCQCtSLsA5RfPG1Q2m99DHmYCp3EAXkTnZxBbfX8usLvFbgCw@mail.gmail.com>
- <1465158692.6702.21.camel@scientia.net>
+        linux-btrfs@vger.kernel.org
+References: <1464819934.6742.71.camel@scientia.net>
+ <d500a743-7a39-8ec5-c6ce-e5a3c70ede91@nv-systems.net>
+ <1464975482.6679.11.camel@scientia.net>
+ <6f18c0d1-8ac5-c325-0ba8-ffb949c54554@gmail.com>
+ <1465005092.6648.39.camel@scientia.net>
 From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <cf780b5c-0a9d-14ea-2d06-870a7575755d@gmail.com>
-Date: Mon, 6 Jun 2016 07:54:41 -0400
+Message-ID: <5f306afd-8a22-a707-022e-7572d3944752@gmail.com>
+Date: Mon, 6 Jun 2016 09:04:08 -0400
 MIME-Version: 1.0
-In-Reply-To: <1465158692.6702.21.camel@scientia.net>
+In-Reply-To: <1465005092.6648.39.camel@scientia.net>
 Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2016-06-05 16:31, Christoph Anton Mitterer wrote:
-> On Sun, 2016-06-05 at 09:36 -0600, Chris Murphy wrote:
->> That's ridiculous. It isn't incorrect to refer to only 2 copies as
->> raid1.
-> No, if there are only two devices then not.
-> But obviously we're talking about how btrfs does RAID1, in which even
-> with n>2 devices there are only 2 copies - that's incorrect.
-Go read the original standards that defined the term RAID (assuming you 
-can find a openly accessible copy), it defines RAID1 as a mirrored 
-_pair_ of disks.  This is how every hardware RAID controller I've ever 
-seen implements RAID1, and in fact how most software RAID 
-implementations (including the fake raid in some motherboards) 
-implements it with the sole exception of Linux's MD-RAID and it's direct 
-derivatives (which includes LVM/DM based RAID, as well as BSD's GEOM 
-framework).
+On 2016-06-03 21:51, Christoph Anton Mitterer wrote:
+> On Fri, 2016-06-03 at 15:50 -0400, Austin S Hemmelgarn wrote:
+>> There's no point in trying to do higher parity levels if we can't get
+>> regular parity working correctly.  Given the current state of things,
+>> it might be better to break even and just rewrite the whole parity
+>> raid thing from scratch, but I doubt that anybody is willing to do
+>> that.
+>
+> Well... as I've said, things are pretty worrying. Obviously I cannot
+> really judge, since I'm not into btrfs' development... maybe there's a
+> lack of manpower? Since btrfs seems to be a very important part (i.e.
+> next-gen fs), wouldn't it be possible to either get some additional
+> funding by the Linux Foundation, or possible that some of the core
+> developers make an open call for funding by companies?
+> Having some additional people, perhaps working fulltime on it, may be a
+> big help.
+>
+> As for the RAID... given how many time/effort is spent now into 5/6,..
+> it really seems that one should have considered multi-parity from the
+> beginning on.
+> Kinda feels like either, with multi-parity this whole instability phase
+> would start again, or it will simply never happen.
+New features will always cause some instability, period, there is no way 
+to avoid that.
 >
 >
->>  You have to explicitly ask both mdadm
-> Aha, and which option would that be?
-Specifying more than two disks.  The request is more correctly an 
-implicit one, but the fact that it's implied by a now largely obsolete 
-piece of software does not mean that BTRFS should have the same 
-implications.
+>>> - Serious show-stoppers and security deficiencies like the UUID
+>>>   collision corruptions/attacks that have been extensively
+>>> discussed
+>>>   earlier, are still open
+>> The UUID issue is not a BTRFS specific one, it just happens to be
+>> easier
+>> to cause issues with it on BTRFS
 >
->>  and lvcreate for the
->> number of copies you want, it doesn't automatically happen.
-> I've said that before, but at least it allows you to use the full
-> number of disks, so we're again back to that it's closer to the
-> original and common meaning of RAID1 than what btrfs does.
-/me inserts reflink to the first part of my reply.
->
->
->>  The man
->> page for mkfs.btrfs is very clear you only get two copies.
->
-> I haven't denied that... but one shouldn't use terms that are commonly
-> understood in a different mannor and require people to read all the
-> small printed.
-> One could also have changed it's RAID0 with RAID1, and I guess people
-> wouldn't be too delighted if the excuse was "well it's in the manpage".
-You can leave the hyperbolic theoreticals out of this, they really do 
-detract from your argument.
+> uhm this had been discussed extensively before, as I've said... AFAICS
+> btrfs is the only system we have, that can possibly cause data
+> corruption or even security breach by UUID collisions.
+> I wouldn't know that other fs, or LVM are affected, these just continue
+> to use those devices already "online"... and I think lvm refuses to
+> activate VGs, if conflicting UUIDs are found.
+If you are mounting by UUID, it is entirely non-deterministic which 
+filesystem with that UUID will be mounted (because device enumeration is 
+non-deterministic).  As far as LVM, it refuses activating VG's, but it 
+can still have issues if you have LV's with the same UUID (which can be 
+done pretty trivially), and the fact that it refuses to activate them 
+technically constitutes a DoS attack (because you can't use the resources).
 >
 >
->>
->>> Well I'd say, for btrfs: do away with the term "RAID" at all, use
->>> e.g.:
->>>
->>> linear = just a bunch of devices put together, no striping
->>>          basically what MD's linear is
->> Except this isn't really how Btrfs single works. The difference
->> between mdadm linear and Btrfs single is more different in behavior
->> than the difference between mdadm raid1 and btrfs raid1. So you're
->> proposing tolerating a bigger difference, while criticizing a smaller
->> one. *shrug*
+>> There is no way to solve it sanely given the requirement that
+>> userspace
+>> not be broken.
+> No this is not true. Back when this was discussed, I and others
+> described how it could/should be done,... respectively how
+> userspace/kernel should behave, in short:
+> - continue using those devices that are already active
+This is easy, but only works for mounted filesystems.
+> - refusing to (auto)assemble by UUID, if there are conflicts
+>   or requiring to specify the devices (with some --override-yes-i-know-
+>   what-i-do option option or so)
+> - in case of assembling/rebuilding/similar... never doing this
+>   automatically
+These two allow anyone with the ability to plug in a USB device to DoS 
+the system.
 >
-> What's the big difference? Would you care to explain? But I'm happy
-> with "single" either, it just doesn't really tell that there is no
-> striping, I mean "single" points more towards "we have no resilience
-> but only 1 copy", whether this is striped or not.
-On this point I actually do kind of agree with you, but Chris is also 
-correct here, BTRFS single mode is just as different from MD linear mode 
-as BTRFS raid1 is from MD RAID1, if not more so.
->
->
->
->> If a metaphor is going to be used for a technical thing, it would be
->> mirrors or mirroring. Mirror would mean exactly two (the original and
->> the mirror). See lvcreate --mirrors. Also, the lvm mirror segment
->> type
->> is legacy, having been replaced with raid1 (man lvcreate uses the
->> term
->> raid1, not RAID1 or RAID-1). So I'm not a big fan of this term.
->
-> Admittedly, I didn't like the "mirror(s)" either... I was just trying
-> to show that different names could be used that are already a bit
-> better.
+> I think there were some more corner cases, I basically had them all
+> discussed in the thread back then (search for "attacking btrfs
+> filesystems via UUID collisions?" and IIRC some different titled parent
+> or child threads).
 >
 >
->>> striped = basically what RAID0 is
->>
->> lvcreate uses only striped, not raid0. mdadm uses only RAID0, not
->> striped. Since striping is also employed with RAIDs 4, 5, 6, 7, it
->> seems ambiguous even though without further qualification whether
->> parity exists, it's considered to mean non-parity striping. The
->> ambiguity is probably less of a problem than the contradiction that
->> is
->> RAID0.
+>>   Properly fixing this would likely make us more dependent
+>> on hardware configuration than even mounting by device name.
+> Sure, if there are colliding UUIDs, and one still wants to mount (by
+> using some --override-yes-i-know-what-i-do option),.. it would need to
+> be by specifying the device name...
+> But where's the problem?
+> This would anyway only happen if someone either attacks or someone made
+> a clone, and it's far better to refuse automatic assembly in cases
+> where accidental corruption can happen or where attacks may be
+> possible, requiring the user/admin to manually take action, than having
+> corruption or security breach.
+Refusing automatic assembly does not prevent the attack, it simply 
+converts it from a data corruption attack to a DoS attack.
 >
-> Mhh,.. well or one makes schema names that contain all possible
-> properties of a "RAID", something like:
-> replicasN-parityN-[not]striped
+> Imagine the simple case: degraded RAID1 on a PC; if btrfs would do some
+> auto-rebuild based on UUID, then if an attacker knows that he'd just
+> need to plug in a USB disk with a fitting UUID...and easily gets a copy
+> of everything on disk, gpg keys, ssh keys, etc.
+If the attacker has physical access to the machine, it's irrelevant even 
+with such protection, as there are all kinds of other things that could 
+be done to get data off of the disk (especially if the system has 
+thunderbolt ports or USB C ports).  If the user has any unsecured 
+encryption or authentication tokens on the system, they're screwed 
+anyway though.
 >
-> SINGLE would be something like "replicas1-parity0-notstriped".
-> RAID5 would be something like "replicas0-parity1-striped".
-It's worth pointing out that both programmers and sysadmins are still 
-lazy typists, so it would more likely end up being:
-rep1-par0-strip0
-rep0-par1-stripN (with N being the number of desired stripes).
+>>> - a number of important core features not fully working in many
+>>>   situations (e.g. the issues with defrag, not being ref-link
+>>> aware,...
+>>>   an I vaguely remember similar things with compression).
+>> OK, how then should defrag handle reflinks?  Preserving them prevents
+>> it
+>> from being able to completely defragment data.
+> Didn't that even work in the past and had just some performance issues?
+Most of it was scaling issues, but unless you have some solution to 
+handle it correctly, there's no point in complaining about it.  And my 
+point about defragmentation with reflinks still stands.
+>
+>
+>>> - OTOH, defrag seems to be viable for important use cases (VM
+>>> images,
+>>>   DBs,... everything where large files are internally re-written
+>>>   randomly).
+>>>   Sure there is nodatacow, but with that one effectively completely
+>>>   looses one of the core features/promises of btrfs (integrity by
+>>>   checksumming)... and as I've showed in an earlier large
+>>> discussion,
+>>>   none of the typical use cases for nodatacow has any high-level
+>>>   checksumming, and even if, it's not used per default, or doesn't
+>>> give
+>>>   the same benefits at it would on the fs level, like using it for
+>>> RAID
+>>>   recovery).
+>> The argument of nodatacow being viable for anything is a pretty
+>> significant secondary discussion that is itself entirely orthogonal
+>> to
+>> the point you appear to be trying to make here.
+>
+> Well the point here was:
+> - many people (including myself) like btrfs, it's
+>   (promised/future/current) features
+> - it's intended as a general purpose fs
+> - this includes the case of having such file/IO patterns as e.g. for VM
+>   images or DBs
+> - this is currently not really doable without loosing one of the
+>   promises (integrity)
+>
+> So the point I'm trying to make:
+> People do probably not care so much whether their VM image/etc. is
+> COWed or not, snapshots/etc. still work with that,... but they may
+> likely care if the integrity feature is lost.
+> So IMHO, nodatacow + checksumming deserves to be amongst the top
+> priorities.
+You're not thinking from a programming perspective.  There is no way to 
+force atomic updates of data in chunks bigger than the sector size on a 
+block storage device.  Without that ability, there is no way to ensure 
+that the checksum for a data block and the data block itself are either 
+both written or neither written unless you either use COW or some form 
+of journaling.
+>
+>
+>>> - still no real RAID 1
+>> No, you mean still no higher order replication.  I know I'm being
+>> stubborn about this, but RAID-1 is offici8ally defined in the
+>> standards
+>> as 2-way replication.
+> I think I remember that you've claimed that last time already, and as
+> I've said back then:
+> - what counts is probably the common understanding of the term, which
+>   is N disks RAID1 = N disks mirrored
+> - if there is something like an "official definition", it's probably
+>   the original paper that introduced RAID:
+>   http://www.eecs.berkeley.edu/Pubs/TechRpts/1987/CSD-87-391.pdf
+>   PDF page 11, respectively content page 9 describes RAID1 as:
+>   "This is the most expensive option since *all* disks are
+>   duplicated..."
+>
+>
+>> The only extant systems that support higher
+>> levels of replication and call it RAID-1 are entirely based on MD
+>> RAID
+>> and it's poor choice of naming.
+>
+> Not true either, show me any single hardware RAID controller that does
+> RAID1 in a dup2 fashion... I manage some >2PiB of storage at the
+> faculty, all controller we have, handle RAID1 in the sense of "all
+> disks mirrored".
+Exact specs, please.  While I don't manage data on anywhere near that 
+scale, I have seen hundreds of different models of RAID controllers over 
+the years, and have yet to see one that is an actual hardware 
+implementation that supports creating a RAID1 configuration with more 
+than two disks.
 
-Having a number to indicate the striping is actually useful (there are 
-legitimate cases for not striping across everything we can, and we need 
-some way to represent stripes that weren't allocated at full width for 
-some reason).
+As far as controllers that I've seen that do RAID-1 solely as 2 way 
+replication:
+* Every single Dell branded controller I've dealt with, including recent 
+SAS3 based ones (pretty sure most of these are LSI Logic devices)
+* Every single Marvell based controller I've dealt with.
+* All of the Adaptec and LSI Logic controllers I've dealt with (although 
+most of these I've dealt with are older devices).
+* All of the HighPoint controllers I've dealt with.
+* The few non-Marvell based Areca controllers I've dealt with.
+>
+>
+>>> - no end-user/admin grade maangement/analysis tools, that tell non-
+>>>   experts about the state/health of their fs, and whether things
+>>> like
+>>>   balance etc.pp. are necessary
+>> I don't see anyone forthcoming with such tools either.  As far as
+>> basic
+>> monitoring, it's trivial to do with simple scripts from tools like
+>> monit
+>> or nagios.
+>
+> AFAIU, even that isn't really possible right now, is it?
+There's a limit to what you can do with this, but you can definitely 
+check things like error counts from normal operation and scrubs, notify 
+when the filesystem goes degraded, and other basic things that most 
+people expect out of system monitoring.
 
-Such a scheme was actually proposed back when the higher order parity 
-patches were being discussed.  Like those patches, it was decided to 
-wait until we had basic feature completeness before trying to tackle that.
+In my particular case, what I'm doing is:
+1. Run scrub from a cronjob daily (none of my filesystems are big enough 
+for this to take more than an hour)
+2. From monit, check the return code of 'btrfs scrub status' at some 
+point early in the morning after the scrub finishes, if it returns 
+non-zero, there were errors during the scrub.
+3. Have monit poll filesystem flags every cycle (in my case, every 
+minute).  If it sees these change, the filesystem had some issue.
+4. Parse the output of 'btrfs device stats' to check for recorded errors 
+and send an alert under various cases (checking whole system aggregates 
+of each type, and per-filesystem aggregates of all types, and flagging 
+when it's above a certain threshold).
+5. Run an hourly filtered balance with -dusage=50 -dlimit=2 -musage=50 
+-mlimit=3 to clean up partially used chunks.
+6. If any of these have issues, I get an e-mail from the system (and 
+because of how I set that up, that works even if none of the persistent 
+storage on the system is working correctly).
+Note that this is just the BTRFS specific things, and doesn't include 
+SMART checks, low-level LVM verification, and other similar things.
+> Take RAID again,... there is no place where you can see whether the
+> RAID state is "optimal", or does that exist in the meantime? Last time,
+> people were advised to look at the kernel logs, but this is no proper
+> way to check for the state... logging may simply be deactivated, or you
+> may have an offline fs, for which the logs have been lost because they
+> were on another disk.
+Unless you have a modified kernel or are using raid5/6, the filesystem 
+will go read-only when degraded.  You can poll the filesystem flags to 
+verify this (although it's better to poll and check if they're changed,a 
+s that can detect other issues too).  Additionally, you can check device 
+stats, which will show any errors.
+>
+> Not to talk about the inability to properly determine how often btrfs
+> encountered errors, and "silently" corrected it.
+> E.g. some statistics about a device, that can be used to decide whether
+> its dying.
+> I think these things should be stored in the fs (and additionally also
+> on the respective device), where it can also be extracted when no
+> /var/log is present or when forensics are done.
+'btrfs device stats' will show you running error counts since the last 
+time they were manually reset (by passing the -z flag to said command). 
+It's also notably one of the few tools that has output which is easy to 
+parse programmatically (which is an entirely separate issue).
 >
 >
->>> And just mention in the manpage, which of these names comes closest
->>> to
->>> what people understand by RAID level i.
->>
->> It already does this. What version of btrfs-progs are you basing your
->> criticism on that there's some inconsistency, deficiency, or
->> ambiguity
->> when it comes to these raid levels?
->
-> Well first, the terminology thing is the least serious issue from my
-> original list ;-) ... TBH I don't know why such a large discussion came
-> out of that point.
->
-> Even though I'm not reading along all mails here, we have probably at
-> least every month someone who wasn't aware that RAID1 is not what he
-> assumes it to be.
-And it's also almost always someone who didn't properly read the 
-documentation, which means they would have gotten bitten by something 
-else eventually as well.  This expectation that anyone should be able to 
-pick up any piece of software and immediately use it without reading 
-documentation needs to stop.  Catering to such people is not a 
-sustainable design choice for a piece of software as complex as a 
-filesystem.
-> And I don't think these people can be blamed for not RTFM, because IMHO
-> this is a term commonly understood as mirror all available devices.
-> That's how the original paper describes it, it's how Wikipedia
-> describes it and all other sources I've ever read to the topic.
-The first sentence of 
-https://en.wikipedia.org/wiki/Standard_RAID_levels#RAID_1 as of right 
-now is exactly:
-RAID 1 consists of an exact copy (or mirror) of a set of data on two or 
-more disks; a classic RAID 1 mirrored pair contains two disks.
+>>   As far as complex things like determining whether a fs needs
+>> balanced, that's really non-trivial to figure out.  Even with a
+>> person
+>> looking at it, it's still not easy to know whether or not a balance
+>> will
+>> actually help.
+> Well I wouldn't call myself a btrfs expert, but from time to time I've
+> been a bit "more active" on the list.
+> Even I know about these strange cases (sometimes tricks), like many
+> empty data/meta block groups, that may or may not get cleaned up, and
+> may result in troubles
+> How should the normal user/admin be able to cope with such things if
+> there are no good tools?
+Empty block groups get deleted automatically these days (I distinctly 
+remember this going in, because it temporarily broke discard and fstrim 
+support).\, so that one is not an issue if they're on a new enough kernel.
 
-The 'classic RAID 1 mirrored pair' it refers to describes every RAID-1 
-implementation I or anyone I've asked (including people of the pre-UNIX 
-vintage who still deal with computers) has ever seen with the sole 
-exception of the software implementations in Linux and BSD.
->
->>  The one that's unequivocally
->> problematic alone without reading the man page is raid10. The
->> historic
->> understanding is that it's a stripe of mirrors, and this suggests you
->> can lose a mirror of each stripe i.e. multiple disks and not lose
->> data, which is not true for Btrfs raid10. But the man page makes that
->> clear, you have 2 copies for redundancy, that's it.
-> Yes, same basic problem.
->
->
->> On the CLI? Not worth it. If the user is that ignorant, too bad, use
->> a
->> GUI program to help build the storage stack from scratch. I'm really
->> not sympathetic if a user creates a raid1 from two partitions of the
->> same block device anymore than if it's ultimately the same physical
->> device managed by a device mapper variant.
->
-> Well one I have no strong opinion on that... if testing for it (or at
-> least simple cases) would be easy, why not.
-> Not every situation may be as easily visible as creating a RAID1 on
-> /dev/sda1 and /dev/sda2.
-> One may use LABELs, or UUIDs and accidentally catch the wrong, and in
-> such cases a check may help.
-To paraphrase something from the Debian IRC:
-'Our job is to make sure that if the user points a gun at his foot and 
-pulls the trigger, the bullet gets to the intended location'
+As far as what I specifically said, it's still hard to know if a balance 
+will _help_ or not.  For example, one of the people I was helping on the 
+mailing list recently had a filesystem which had a bunch of chunks which 
+were partially allocated and thus a lot of 'free space' listed in 
+various tools, but none which were empty, and the only reason this was 
+apparent was because a balance filtered on usage was failing above a 
+certain threshold and not balancing anything below that threshold. 
+Having to test for such things and as such use potentially a lot of disk 
+bandwidth (especially because the threshold can be pretty high, in this 
+case it was 67%) is not user friendly any more than not reporting an 
+issue at all is.
 
-There are limits to what we can protect against, and we shouldn't be 
-preventing people from doing things that while they seem unreasonable at 
-face value, are perfectly legitimate uses of the software.  BTRFS raid1 
-mode on a single device falls solidly into this category for a couple of 
-reasons:
-1. Until recently, this was the only way without mixed mode to get data 
-chunk redundancy on a single device.  In many distros, this is still the 
-only way to do so.
-2. Because of how it's implemented, this actually doesn't get insanely 
-horrible performance like trying to do the same thing with MD or LVM 
-based RAID would.
-3. This allows for forcing specific organization of data on the media, 
-which can combined with item 1, be particularly useful (for example, 
-some SSD's have SLC flash backing the area up through where the MFT 
-would be on NTFS, and MLC for the rest, or some 'hybrid' disks actually 
-just have flash for the first part of the logical device they expose, 
-and traditional magnetic storage for the rest).
+Part of the issue here is that people aren't used to using filesystem 
+specific tools to check their filesystems.  df is a classic example of 
+this, which was designed in the 70's and never envisioned some of the 
+cases we have to deal with in BTRFS.
+>
+> It starts with simple things like:
+> - adding a further disk to a RAID
+>   => there should be a tool which tells you: dude, some files are not
+>      yet "rebuild"(duplicated),... do a balance or whatever.
+Adding a disk should implicitly balance the FS unless you tell it not 
+to, it was just a poor design choice in the first place to not do it 
+that way.
+>
+>
+>>> - the still problematic documentation situation
+>> Not trying to rationalize this, but go take a look at a majority of
+>> other projects, most of them that aren't backed by some huge
+>> corporation
+>> throwing insane amounts of money at them have at best mediocre end-
+>> user
+>> documentation.  The fact that more effort is being put into
+>> development
+>> than documentation is generally a good thing, especially for
+>> something
+>> that is not yet feature complete like BTRFS.
+>
+> Uhm.. yes and no...
+> The lack of documentation (i.e. admin/end-user-grade documentation)
+> also means that people have less understanding in the system, less
+> trust, less knowledge on what they can expect/do with it (will Ctrl-C
+> on btrfs checl work? what if I shut down during a balance? does it
+> break then? etc. pp.), less will to play with it.
+Given the state of BTRFS, that's not a bad thing.  A good administrator 
+looking into it will do proper testing before using it.  If you aren't 
+going to properly test something this comparatively new, you probably 
+shouldn't be just arbitrarily using it without question.
+> Further,... if btrfs would reach the state of being "feature complete"
+> (if that ever happens, and I don't mean because of slow development,
+> but rather, because most other fs shows that development goes "ever"
+> on),... there would be *so much* to do in documentation, that it's
+> unlikely it will happen.
+In this particular case, I use the term 'feature complete' to mean on 
+par feature wise with most other equivalent software (in this case, near 
+feature parity with ZFS, as that's really the only significant 
+competitor in the intended market).  As of right now, the only extant 
+items other than bugs that would need to be in BTRFS to be feature 
+complete by this definition are:
+1. Quota support
+2. Higher-order replication (at a minimum, 3 copies)
+3. Higher order parity (at a minimum, 3-level, which is the highest ZFS 
+supports right now).
+4. Online filesystem checking.
+5. In-band deduplication.
+6. In-line encryption.
+7. Storage teiring (like ZFS's L2ARC, or bcache).
+
+Of these, items 1 and 5 are under active development, 6 would likely not 
+require much effort for a basic implementation because there's a VFS 
+level API for it now, and 2 and 3 are stalled pending functional raid5/6 
+(which is the correct choice, adding them now would make it more 
+complicated to fix raid5/6), which means that the only ones that don't 
+appear to be actively on the radar are 4 (which most non-enterprise 
+users probably don't strictly need) and 7 (which would be nice but would 
+require significant work for limited benefit given the alternative 
+options in the block layer itself).

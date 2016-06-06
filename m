@@ -1,34 +1,191 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:60522 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752024AbcFQQjb (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 17 Jun 2016 12:39:31 -0400
-Date: Fri, 17 Jun 2016 18:40:06 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Chandan Rajendra <chandan@linux.vnet.ibm.com>
-Cc: linux-btrfs@vger.kernel.org, dsterba@suse.com, bo.li.liu@oracle.com
-Subject: Re: [PATCH] Btrfs: btrfs_check_super_valid: Allow 4096 as stripesize
-Message-ID: <20160617164006.GH4915@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1466095078-25726-1-git-send-email-chandan@linux.vnet.ibm.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1466095078-25726-1-git-send-email-chandan@linux.vnet.ibm.com>
+Received: from userp1040.oracle.com ([156.151.31.81]:32334 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751208AbcFFTAD (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 6 Jun 2016 15:00:03 -0400
+From: Liu Bo <bo.li.liu@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Cc: David Sterba <dsterba@suse.cz>, Qu Wenruo <quwenruo@cn.fujitsu.com>
+Subject: [PATCH v2] Btrfs: check if extent buffer is aligned to sectorsize
+Date: Mon,  6 Jun 2016 12:01:23 -0700
+Message-Id: <1465239683-29666-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Jun 16, 2016 at 10:07:58PM +0530, Chandan Rajendra wrote:
-> Older btrfs-progs/mkfs.btrfs sets 4096 as the stripesize. Hence
-> restricting stripesize to be equal to sectorsize would cause super block
-> validation to return an error on architectures where PAGE_SIZE is not
-> equal to 4096.
-> 
-> Hence as a workaround, this commit allows stripesize to be set to 4096
-> bytes.
-> 
-> Signed-off-by: Chandan Rajendra <chandan@linux.vnet.ibm.com>
+Thanks to fuzz testing, we can pass an invalid bytenr to extent buffer
+via alloc_extent_buffer().  An unaligned eb can have more pages than it
+should have, which ends up extent buffer's leak or some corrupted content
+in extent buffer.
 
-Reviewed-by: David Sterba <dsterba@suse.com>
+This adds a warning to let us quickly know what was happening.
 
-As we've discused on IRC, there's one more place to fix the stripesize,
-but I'll take this one as it's fixing the validation side.
+Now that alloc_extent_buffer() no more returns NULL, this changes its
+caller and callers of its caller to match with the new error
+handling.
+
+Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+---
+v2:
+  - Add more fine-grained error handling to alloc_extent_buffer() and
+    its callers
+  - Use btrfs_err and -EINVAL instead of WARN_ONCE().
+
+ fs/btrfs/ctree.c       |  2 ++
+ fs/btrfs/disk-io.c     |  8 ++++----
+ fs/btrfs/extent-tree.c | 10 ++++++----
+ fs/btrfs/extent_io.c   | 15 ++++++++++++---
+ fs/btrfs/tree-log.c    |  4 ++--
+ fs/btrfs/volumes.c     |  4 ++--
+ 6 files changed, 28 insertions(+), 15 deletions(-)
+
+diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
+index 427c36b..24c9fb2 100644
+--- a/fs/btrfs/ctree.c
++++ b/fs/btrfs/ctree.c
+@@ -2510,6 +2510,8 @@ read_block_for_search(struct btrfs_trans_handle *trans,
+ 		if (!btrfs_buffer_uptodate(tmp, 0, 0))
+ 			ret = -EIO;
+ 		free_extent_buffer(tmp);
++	} else {
++		ret = PTR_ERR(tmp);
+ 	}
+ 	return ret;
+ }
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index ea78d77..c2a9cec 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -1098,7 +1098,7 @@ void readahead_tree_block(struct btrfs_root *root, u64 bytenr)
+ 	struct inode *btree_inode = root->fs_info->btree_inode;
+ 
+ 	buf = btrfs_find_create_tree_block(root, bytenr);
+-	if (!buf)
++	if (IS_ERR(buf))
+ 		return;
+ 	read_extent_buffer_pages(&BTRFS_I(btree_inode)->io_tree,
+ 				 buf, 0, WAIT_NONE, btree_get_extent, 0);
+@@ -1114,7 +1114,7 @@ int reada_tree_block_flagged(struct btrfs_root *root, u64 bytenr,
+ 	int ret;
+ 
+ 	buf = btrfs_find_create_tree_block(root, bytenr);
+-	if (!buf)
++	if (IS_ERR(buf))
+ 		return 0;
+ 
+ 	set_bit(EXTENT_BUFFER_READAHEAD, &buf->bflags);
+@@ -1171,8 +1171,8 @@ struct extent_buffer *read_tree_block(struct btrfs_root *root, u64 bytenr,
+ 	int ret;
+ 
+ 	buf = btrfs_find_create_tree_block(root, bytenr);
+-	if (!buf)
+-		return ERR_PTR(-ENOMEM);
++	if (IS_ERR(buf))
++		return buf;
+ 
+ 	ret = btree_read_extent_buffer_pages(root, buf, 0, parent_transid);
+ 	if (ret) {
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index a400951..d63eeee 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -8010,8 +8010,9 @@ btrfs_init_new_buffer(struct btrfs_trans_handle *trans, struct btrfs_root *root,
+ 	struct extent_buffer *buf;
+ 
+ 	buf = btrfs_find_create_tree_block(root, bytenr);
+-	if (!buf)
+-		return ERR_PTR(-ENOMEM);
++	if (IS_ERR(buf))
++		return buf;
++
+ 	btrfs_set_header_generation(buf, trans->transid);
+ 	btrfs_set_buffer_lockdep_class(root->root_key.objectid, buf, level);
+ 	btrfs_tree_lock(buf);
+@@ -8653,8 +8654,9 @@ static noinline int do_walk_down(struct btrfs_trans_handle *trans,
+ 	next = btrfs_find_tree_block(root->fs_info, bytenr);
+ 	if (!next) {
+ 		next = btrfs_find_create_tree_block(root, bytenr);
+-		if (!next)
+-			return -ENOMEM;
++		if (IS_ERR(next))
++			return PTR_ERR(next);
++
+ 		btrfs_set_buffer_lockdep_class(root->root_key.objectid, next,
+ 					       level - 1);
+ 		reada = 1;
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index 6f38c2c..91c4d23 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -4883,18 +4883,25 @@ struct extent_buffer *alloc_extent_buffer(struct btrfs_fs_info *fs_info,
+ 	int uptodate = 1;
+ 	int ret;
+ 
++	if (!IS_ALIGNED(start, fs_info->tree_root->sectorsize)) {
++		btrfs_err(fs_info, "bad tree block start %llu", start);
++		return ERR_PTR(-EINVAL);
++	}
++
+ 	eb = find_extent_buffer(fs_info, start);
+ 	if (eb)
+ 		return eb;
+ 
+ 	eb = __alloc_extent_buffer(fs_info, start, len);
+ 	if (!eb)
+-		return NULL;
++		return ERR_PTR(-ENOMEM);
+ 
+ 	for (i = 0; i < num_pages; i++, index++) {
+ 		p = find_or_create_page(mapping, index, GFP_NOFS|__GFP_NOFAIL);
+-		if (!p)
++		if (!p) {
++			exists = ERR_PTR(-ENOMEM);
+ 			goto free_eb;
++		}
+ 
+ 		spin_lock(&mapping->private_lock);
+ 		if (PagePrivate(p)) {
+@@ -4939,8 +4946,10 @@ struct extent_buffer *alloc_extent_buffer(struct btrfs_fs_info *fs_info,
+ 		set_bit(EXTENT_BUFFER_UPTODATE, &eb->bflags);
+ again:
+ 	ret = radix_tree_preload(GFP_NOFS);
+-	if (ret)
++	if (ret) {
++		exists = ERR_PTR(ret);
+ 		goto free_eb;
++	}
+ 
+ 	spin_lock(&fs_info->buffer_lock);
+ 	ret = radix_tree_insert(&fs_info->buffer_radix,
+diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+index b7665af..c05f69a 100644
+--- a/fs/btrfs/tree-log.c
++++ b/fs/btrfs/tree-log.c
+@@ -2422,8 +2422,8 @@ static noinline int walk_down_log_tree(struct btrfs_trans_handle *trans,
+ 		root_owner = btrfs_header_owner(parent);
+ 
+ 		next = btrfs_find_create_tree_block(root, bytenr);
+-		if (!next)
+-			return -ENOMEM;
++		if (IS_ERR(next))
++			return PTR_ERR(next);
+ 
+ 		if (*level == 1) {
+ 			ret = wc->process_func(root, next, wc, ptr_gen);
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 7a169de..d50a713 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -6597,8 +6597,8 @@ int btrfs_read_sys_array(struct btrfs_root *root)
+ 	 * overallocate but we can keep it as-is, only the first page is used.
+ 	 */
+ 	sb = btrfs_find_create_tree_block(root, BTRFS_SUPER_INFO_OFFSET);
+-	if (!sb)
+-		return -ENOMEM;
++	if (IS_ERR(sb))
++		return PTR_ERR(sb);
+ 	set_extent_buffer_uptodate(sb);
+ 	btrfs_set_buffer_lockdep_class(root->root_key.objectid, sb, 0);
+ 	/*
+-- 
+2.5.5
+

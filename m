@@ -1,109 +1,70 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f177.google.com ([209.85.223.177]:34510 "EHLO
-	mail-io0-f177.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751337AbcFFN3v (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 6 Jun 2016 09:29:51 -0400
-Received: by mail-io0-f177.google.com with SMTP id 5so16690135ioy.1
-        for <linux-btrfs@vger.kernel.org>; Mon, 06 Jun 2016 06:29:51 -0700 (PDT)
+Received: from mail-it0-f52.google.com ([209.85.214.52]:38104 "EHLO
+	mail-it0-f52.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751293AbcFFNgO (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 6 Jun 2016 09:36:14 -0400
+Received: by mail-it0-f52.google.com with SMTP id i65so35307897ith.1
+        for <linux-btrfs@vger.kernel.org>; Mon, 06 Jun 2016 06:36:13 -0700 (PDT)
 Subject: Re: Recommended why to use btrfs for production?
-To: Chris Murphy <lists@colorremedies.com>,
-        Nicholas D Steeves <nsteeves@gmail.com>
+To: James Johnston <johnstonj.public@codenest.com>,
+        "'Chris Murphy'" <lists@colorremedies.com>,
+        "'Mladen Milinkovic'" <maxrd2@smoothware.net>
 References: <CAGQ70Yc=HHxJspMCKFBpEURRu=53pZW3k3rVDVO3QPGP_b9Tkw@mail.gmail.com>
  <aeade1fe-825c-6fc2-7f6d-85f4c5400b38@gmail.com>
  <CAJCQCtQ4i0PWisxi708EmrTuPHH7hNEkKfY28GjTG2s4Sk3DYQ@mail.gmail.com>
- <CAGQ70YdK0XZeDB_J7ugcQj-c=UPYimo=MUGPTNy8oOVpi8H9GA@mail.gmail.com>
- <156f60b2-d666-d553-194b-c09de041d476@gmail.com>
- <CAD=QJKgqHBaUJXupFgzXR6jgC_LVacY4ZO58SYZOcmmfG_hdiA@mail.gmail.com>
- <CAJCQCtTjB=Yf8kjASV+eEiL03NOsD-tZn3UN3aHSR2N73vVkkg@mail.gmail.com>
-Cc: Martin <rc6encrypted@gmail.com>, Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+ <73123a36-6502-d735-c813-fce43b620e5a@smoothware.net>
+ <CAJCQCtTDbb47n8G0Skay5QEcY_9Qjjv_gRyCkG+-L7YKyes=7g@mail.gmail.com>
+ <0b4e01d1bf9c$cf89c110$6e9d4330$@codenest.com>
+Cc: "'Martin'" <rc6encrypted@gmail.com>,
+        "'Btrfs BTRFS'" <linux-btrfs@vger.kernel.org>
 From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <a45a3a5d-e655-5568-8e73-65f30440eeb1@gmail.com>
-Date: Mon, 6 Jun 2016 09:29:47 -0400
+Message-ID: <8d34c1d8-d65c-9838-a644-75674ae9e446@gmail.com>
+Date: Mon, 6 Jun 2016 09:36:09 -0400
 MIME-Version: 1.0
-In-Reply-To: <CAJCQCtTjB=Yf8kjASV+eEiL03NOsD-tZn3UN3aHSR2N73vVkkg@mail.gmail.com>
+In-Reply-To: <0b4e01d1bf9c$cf89c110$6e9d4330$@codenest.com>
 Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2016-06-03 21:48, Chris Murphy wrote:
-> On Fri, Jun 3, 2016 at 6:48 PM, Nicholas D Steeves <nsteeves@gmail.com> wrote:
->> On 3 June 2016 at 11:33, Austin S. Hemmelgarn <ahferroin7@gmail.com> wrote:
->>> On 2016-06-03 10:11, Martin wrote:
->>>>>
->>>>> Make certain the kernel command timer value is greater than the driver
->>>>> error recovery timeout. The former is found in sysfs, per block
->>>>> device, the latter can be get and set with smartctl. Wrong
->>>>> configuration is common (it's actually the default) when using
->>>>> consumer drives, and inevitably leads to problems, even the loss of
->>>>> the entire array. It really is a terrible default.
->>>>
->>>>
->>>> Are nearline SAS drives considered consumer drives?
->>>>
->>> If it's a SAS drive, then no, especially when you start talking about things
->>> marketed as 'nearline'.  Additionally, SCT ERC is entirely a SATA thing, I
->>> forget what the equivalent in SCSI (and by extension SAS) terms is, but I'm
->>> pretty sure that the kernel handles things differently there.
+On 2016-06-05 22:40, James Johnston wrote:
+> On 06/06/2016 at 01:47, Chris Murphy wrote:
+>> On Sun, Jun 5, 2016 at 4:45 AM, Mladen Milinkovic <maxrd2@smoothware.net> wrote:
+>>> On 06/03/2016 04:05 PM, Chris Murphy wrote:
+>>>> Make certain the kernel command timer value is greater than the driver
+>>>> error recovery timeout. The former is found in sysfs, per block
+>>>> device, the latter can be get and set with smartctl. Wrong
+>>>> configuration is common (it's actually the default) when using
+>>>> consumer drives, and inevitably leads to problems, even the loss of
+>>>> the entire array. It really is a terrible default.
+>>>
+>>> Since it's first time i've heard of this I did some googling.
+>>>
+>>> Here's some nice article about these timeouts:
+>>> http://strugglers.net/~andy/blog/2015/11/09/linux-software-raid-and-drive-
+>> timeouts/comment-page-1/
+>>>
+>>> And some udev rules that should apply this automatically:
+>>> http://comments.gmane.org/gmane.linux.raid/48193
 >>
->> For the purposes of BTRFS RAID1: For drives that ship with SCT ERC of
->> 7sec, is the default kernel command timeout of 30sec appropriate, or
->> should it be reduced?
+>> Yes it's a constant problem that pops up on the linux-raid list.
+>> Sometimes the list is quiet on this issue but it really seems like
+>> it's once a week. From last week...
+>>
+>> http://www.spinics.net/lists/raid/msg52447.html
 >
-> It's fine. But it depends on your use case, if it can tolerate a rare
->> 7 second < 30 second hang, and you're prepared to start
-> investigating the cause then I'd leave it alone. If the use case
-> prefers resetting the drive when it stops responding, then you'd go
-> with something shorter.
+> It seems like it would be useful if the distributions or the kernel could
+> automatically set the kernel timeout to an appropriate value.  If the TLER can be
+> indeed be queried via smartctl, then it would be easy to automatically read it,
+> and then calculate a suitable timeout.  A RAID-oriented drive would end up leaving
+> the current 30 seconds, while if it can't successfully query for TLER or the drive
+> just doesn't support it, then assume a consumer drive and set timeout for 180
+> seconds.
 >
-> I'm fairly certain SAS's command queue doesn't get obliterated with
-> such a link reset, just the hung command; where SATA drives all
-> information in the queue is lost. So resets on SATA are a much bigger
-> penalty if I have the correct understanding.
-There's also more involved otherwise with a ATA link reset because AHCI 
-controllers aren't MP safe, so there's a global lock that has to be held 
-while talking to them.  Because of this, a link reset on an ATA drive 
-(be it SATA or PATA) will cause performance degradation for all other 
-devices on that controller as well until the reset is complete.
->
->
->>  For SATA drives that do not support SC TERC, is
->> it true that 120sec is a sane value?  I forget where I got this value
->> of 120sec;
->
-> It's a good question. It's not well documented, is not defined in the
-> SATA spec, so it's probably make/model specific. The linux-raid@ list
-> probably has the most information on this just because their users get
-> nailed by this problem often. And the recommendation does seem to vary
-> around 120 to 180. That is of course a maximum. The drive could give
-> up much sooner. But what you don't want is for the drive to be in
-> recovery for a bad sector, and the command timer does a link reset,
-> losing all of what the drive was doing: all of which is replaceable
-> except really one thing which is what sector was having the problem.
-> And right now there's no report of the drive for slow sectors. It only
-> reports failed reads, and it's that failed read error that includes
-> the sector, so that the raid mechanism can figure out what data is
-> missing, recongistruct from mirror or parity, and then fix the bad
-> sector by writing to it.
-FWIW, I usually go with 150 on the Seagate 'Desktop' drives I use.  I've 
-seen some cheap Hitachi and Toshiba disks that need it as high as 300 
-though to work right.
->
->> it might have been this list, it might have been an mdadm
->> bug report.  Also, in terms of tuning, I've been unable to find
->> whether the ideal kernel timeout value changes depending on RAID
->> type...is that a factor in selecting a sane kernel timeout value?
->
-> No. It's strictly a value to make certain you get read errors from the
-> drive rather than link resets.
-You have to factor in how the controller handles things too.  SOme of 
-them will retry just like a desktop drive, and you need to account for that.
->
-> And that's why I think it's a bad default, because it totally thwarts
-> attempts by manufacturers to recover marginal sectors, even in the
-> single disk case.
-That's debatable, by attempting to recover the bad sector, they're 
-slowing down the whole system.  The likelihood of recovering a bad 
-sectors functionally falls off linearly the longer you try, and not 
-having the ability to choose when to report an error is the bigger issue 
-here.
-
+> That way, zero user configuration would be needed in the common case.  Or is it
+> not that simple?
+Strictly speaking, it's policy, and therefore shouldn't be in the 
+kernel.  It's not hard to write a script to handle this though, both 
+hdparm and smartctl can set the SCT ERC value, and will report an error 
+if it fails, so you can try and set the value as you want (I personally 
+would go with 10 seconds instead of 7), and if that fails, bump the 
+kernel command timout.

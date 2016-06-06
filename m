@@ -1,9 +1,10 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:48232 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:48313 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751118AbcFFGvn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 6 Jun 2016 02:51:43 -0400
-Subject: Re: [PATCH 41/45] block, drivers, fs: shrink bi_rw from long to int
+	id S1751164AbcFFGxH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 6 Jun 2016 02:53:07 -0400
+Subject: Re: [PATCH 42/45] block, fs, drivers: remove REQ_OP compat defs and
+ related code
 To: mchristi@redhat.com, linux-f2fs-devel@lists.sourceforge.net,
         linux-ext4@vger.kernel.org, konrad.wilk@oracle.com,
         drbd-dev@lists.linbit.com, philipp.reisner@linbit.com,
@@ -15,12 +16,12 @@ To: mchristi@redhat.com, linux-f2fs-devel@lists.sourceforge.net,
         linux-btrfs@vger.kernel.org, osd-dev@open-osd.org, xfs@oss.sgi.com,
         ocfs2-devel@oss.oracle.com
 References: <1465155145-10812-1-git-send-email-mchristi@redhat.com>
- <1465155145-10812-42-git-send-email-mchristi@redhat.com>
+ <1465155145-10812-43-git-send-email-mchristi@redhat.com>
 From: Hannes Reinecke <hare@suse.de>
-Message-ID: <57551D7C.8000004@suse.de>
-Date: Mon, 6 Jun 2016 08:51:40 +0200
+Message-ID: <57551DD0.9090703@suse.de>
+Date: Mon, 6 Jun 2016 08:53:04 +0200
 MIME-Version: 1.0
-In-Reply-To: <1465155145-10812-42-git-send-email-mchristi@redhat.com>
+In-Reply-To: <1465155145-10812-43-git-send-email-mchristi@redhat.com>
 Content-Type: text/plain; charset=windows-1252
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
@@ -28,18 +29,23 @@ List-ID: <linux-btrfs.vger.kernel.org>
 On 06/05/2016 09:32 PM, mchristi@redhat.com wrote:
 > From: Mike Christie <mchristi@redhat.com>
 > 
-> We don't need bi_rw to be so large on 64 bit archs, so
-> reduce it to unsigned int.
+> This patch drops the compat definition of req_op where it matches
+> the rq_flag_bits definitions, and drops the related old and compat
+> code that allowed users to set either the op or flags for the operation.
+> 
+> We also then store the operation in the bi_rw/cmd_flags field similar
+> to how we used to store the bio ioprio where it sat in the upper bits
+> of the field.
 > 
 > Signed-off-by: Mike Christie <mchristi@redhat.com>
 > ---
->  block/blk-core.c           | 2 +-
->  drivers/md/dm-flakey.c     | 2 +-
->  drivers/md/raid5.c         | 6 +++---
->  fs/btrfs/check-integrity.c | 4 ++--
->  fs/btrfs/inode.c           | 2 +-
->  include/linux/blk_types.h  | 2 +-
->  6 files changed, 9 insertions(+), 9 deletions(-)
+>  drivers/scsi/sd.c           |  2 +-
+>  include/linux/bio.h         |  3 ---
+>  include/linux/blk_types.h   | 52 +++++++++++++++++----------------------------
+>  include/linux/blkdev.h      | 14 ++++++++----
+>  include/linux/fs.h          | 37 +++++++++++++-------------------
+>  include/trace/events/f2fs.h |  1 -
+>  6 files changed, 46 insertions(+), 63 deletions(-)
 > 
 Reviewed-by: Hannes Reinecke <hare@suse.com>
 

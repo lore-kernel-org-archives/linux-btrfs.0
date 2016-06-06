@@ -1,135 +1,155 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.22]:56178 "EHLO mout.gmx.net"
+Received: from mx2.suse.de ([195.135.220.15]:58719 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750799AbcFDKhZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 4 Jun 2016 06:37:25 -0400
-Subject: Re: [PATCH v10 00/21] Btrfs dedupe framework
-To: Josef Bacik <jbacik@fb.com>, Qu Wenruo <quwenruo@cn.fujitsu.com>,
-        linux-btrfs@vger.kernel.org
+	id S1751510AbcFFTy3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 6 Jun 2016 15:54:29 -0400
+Date: Mon, 6 Jun 2016 12:54:27 -0700
+From: Mark Fasheh <mfasheh@suse.de>
+To: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Cc: Josef Bacik <jbacik@fb.com>, Qu Wenruo <quwenruo@cn.fujitsu.com>,
+        linux-btrfs@vger.kernel.org,
+        Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>,
+        David Sterba <dsterba@suse.cz>
+Subject: Re: [PATCH v10 09/21] btrfs: dedupe: Inband in-memory only
+ de-duplication implement
+Message-ID: <20160606195427.GV7633@wotan.suse.de>
+Reply-To: Mark Fasheh <mfasheh@suse.de>
 References: <1459492512-31435-1-git-send-email-quwenruo@cn.fujitsu.com>
- <601bf2e3-a1c3-97aa-38ee-39ff3f6d8545@fb.com>
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <ab769045-8bf9-14c5-47e2-afa9570735f7@gmx.com>
-Date: Sat, 4 Jun 2016 18:37:12 +0800
+ <1459492512-31435-10-git-send-email-quwenruo@cn.fujitsu.com>
+ <20160601220850.GO7633@wotan.suse.de>
+ <79288812-9c6a-b74c-7186-47cb5dfac41d@cn.fujitsu.com>
+ <8e4e09ce-233a-239f-e03b-4a0f0b33c3cc@fb.com>
+ <4236b0aa-f516-0a7f-02f3-b398ff5bd7bf@gmx.com>
 MIME-Version: 1.0
-In-Reply-To: <601bf2e3-a1c3-97aa-38ee-39ff3f6d8545@fb.com>
-Content-Type: text/plain; charset=windows-1252; format=flowed
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <4236b0aa-f516-0a7f-02f3-b398ff5bd7bf@gmx.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Sat, Jun 04, 2016 at 06:26:39PM +0800, Qu Wenruo wrote:
+> 
+> 
+> On 06/03/2016 10:27 PM, Josef Bacik wrote:
+> >On 06/01/2016 09:12 PM, Qu Wenruo wrote:
+> >>
+> >>
+> >>At 06/02/2016 06:08 AM, Mark Fasheh wrote:
+> >>>On Fri, Apr 01, 2016 at 02:35:00PM +0800, Qu Wenruo wrote:
+> >>>>Core implement for inband de-duplication.
+> >>>>It reuse the async_cow_start() facility to do the calculate dedupe
+> >>>>hash.
+> >>>>And use dedupe hash to do inband de-duplication at extent level.
+> >>>>
+> >>>>The work flow is as below:
+> >>>>1) Run delalloc range for an inode
+> >>>>2) Calculate hash for the delalloc range at the unit of dedupe_bs
+> >>>>3) For hash match(duplicated) case, just increase source extent ref
+> >>>>   and insert file extent.
+> >>>>   For hash mismatch case, go through the normal cow_file_range()
+> >>>>   fallback, and add hash into dedupe_tree.
+> >>>>   Compress for hash miss case is not supported yet.
+> >>>>
+> >>>>Current implement restore all dedupe hash in memory rb-tree, with LRU
+> >>>>behavior to control the limit.
+> >>>>
+> >>>>Signed-off-by: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
+> >>>>Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+> >>>>---
+> >>>> fs/btrfs/extent-tree.c |  18 ++++
+> >>>> fs/btrfs/inode.c       | 235
+> >>>>++++++++++++++++++++++++++++++++++++++++++-------
+> >>>> fs/btrfs/relocation.c  |  16 ++++
+> >>>> 3 files changed, 236 insertions(+), 33 deletions(-)
+> >>>>
+> >>>>diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+> >>>>index 53e1297..dabd721 100644
+> >>>>--- a/fs/btrfs/extent-tree.c
+> >>>>+++ b/fs/btrfs/extent-tree.c
+> >>>>@@ -37,6 +37,7 @@
+> >>>> #include "math.h"
+> >>>> #include "sysfs.h"
+> >>>> #include "qgroup.h"
+> >>>>+#include "dedupe.h"
+> >>>>
+> >>>> #undef SCRAMBLE_DELAYED_REFS
+> >>>>
+> >>>>@@ -2399,6 +2400,8 @@ static int run_one_delayed_ref(struct
+> >>>>btrfs_trans_handle *trans,
+> >>>>
+> >>>>     if (btrfs_delayed_ref_is_head(node)) {
+> >>>>         struct btrfs_delayed_ref_head *head;
+> >>>>+        struct btrfs_fs_info *fs_info = root->fs_info;
+> >>>>+
+> >>>>         /*
+> >>>>          * we've hit the end of the chain and we were supposed
+> >>>>          * to insert this extent into the tree.  But, it got
+> >>>>@@ -2413,6 +2416,15 @@ static int run_one_delayed_ref(struct
+> >>>>btrfs_trans_handle *trans,
+> >>>>             btrfs_pin_extent(root, node->bytenr,
+> >>>>                      node->num_bytes, 1);
+> >>>>             if (head->is_data) {
+> >>>>+                /*
+> >>>>+                 * If insert_reserved is given, it means
+> >>>>+                 * a new extent is revered, then deleted
+> >>>>+                 * in one tran, and inc/dec get merged to 0.
+> >>>>+                 *
+> >>>>+                 * In this case, we need to remove its dedup
+> >>>>+                 * hash.
+> >>>>+                 */
+> >>>>+                btrfs_dedupe_del(trans, fs_info, node->bytenr);
+> >>>>                 ret = btrfs_del_csums(trans, root,
+> >>>>                               node->bytenr,
+> >>>>                               node->num_bytes);
+> >>>>@@ -6713,6 +6725,12 @@ static int __btrfs_free_extent(struct
+> >>>>btrfs_trans_handle *trans,
+> >>>>         btrfs_release_path(path);
+> >>>>
+> >>>>         if (is_data) {
+> >>>>+            ret = btrfs_dedupe_del(trans, info, bytenr);
+> >>>>+            if (ret < 0) {
+> >>>>+                btrfs_abort_transaction(trans, extent_root,
+> >>>>+                            ret);
+> >>>
+> >>>I don't see why an error here should lead to a readonly fs.
+> >>>    --Mark
+> >>>
+> >>
+> >>Because such deletion error can lead to corruption.
+> >>
+> >>For example, extent A is already in hash pool.
+> >>And when freeing extent A, we need to delete its hash, of course.
+> >>
+> >>But if such deletion fails, which means the hash is still in the pool,
+> >>even the extent A no longer exists in extent tree.
+> >
+> >Except if we're in in-memory mode only it doesn't matter, so don't abort
+> >if we're in in-memory mode.  Thanks,
+> >
+> >Josef
+> >
+> 
+> If we can't ensure a hash is delete along with the extent, we will
+> screw up the whole fs, as new write can points to non-exist extent.
+> 
+> Although you're right with in-memory mode here, we won't abort
+> trans, as inmem_del_hash() won't return error code. It will always
+> return 0.
+
+Until a third party comes along and changes it to return an error code and
+neither you or I are there to remind them to fix this check (or have simply
+forgotten).
 
 
-On 06/03/2016 11:20 PM, Josef Bacik wrote:
-> On 04/01/2016 02:34 AM, Qu Wenruo wrote:
->> This patchset can be fetched from github:
->> https://github.com/adam900710/linux.git wang_dedupe_20160401
->>
->> In this patchset, we're proud to bring a completely new storage backend:
->> Khala backend.
->>
->> With Khala backend, all dedupe hash will be restored in the Khala,
->> shared with every Kalai protoss, with unlimited storage and almost zero
->> search latency.
->> A perfect backend for any Kalai protoss. "My life for Aiur!"
->>
->> Unfortunately, such backend is not available for human.
->>
->>
->> OK, except the super-fancy and date-related backend, the patchset is
->> still a serious patchset.
->> In this patchset, we mostly addressed the on-disk format change
->> comment from
->> Chris:
->> 1) Reduced dedupe hash item and bytenr item.
->>    Now dedupe hash item structure size is reduced from 41 bytes
->>    (9 bytes hash_item + 32 bytes hash)
->>    to 29 bytes (5 bytes hash_item + 24 bytes hash)
->>    Without the last patch, it's even less with only 24 bytes
->>    (24 bytes hash only).
->>    And dedupe bytenr item structure size is reduced from 32 bytes (full
->>    hash) to 0.
->>
->> 2) Hide dedupe ioctls into CONFIG_BTRFS_DEBUG
->>    Advised by David, to make btrfs dedupe as an experimental feature for
->>    advanced user.
->>    This is used to allow this patchset to be merged while still allow us
->>    to change ioctl in the further.
->>
->> 3) Add back missing bug fix patches
->>    I just missed 2 bug fix patches in previous iteration.
->>    Adding them back.
->>
->> Now patch 1~11 provide the full backward-compatible in-memory backend.
->> And patch 12~14 provide per-file dedupe flag feature.
->> Patch 15~20 provide on-disk dedupe backend with persist dedupe state for
->> in-memory backend.
->> The last patch is just preparation for possible dedupe-compress co-work.
->>
->
-> You can add
->
-> Reviewed-by: Josef Bacik <jbacik@fb.com>
->
-> to everything I didn't comment on (and not the ENOSPC one either, but I
-> commented on that one last time).
+> So still, no need to change anyway.
 
-Thanks for the review.
-
-All your comment will be addressed in next version, except ones I commented.
-
->
-> But just because I've reviewed it doesn't mean it's ready to go in.
-> Before we are going to take this I want to see the following
-
-Right, I won't rush to merge it, and I'm pretty sure you would like to 
-review the incoming ENOSPC fix further, as the root fix would be a 
-little complicated and affects a lot of common routines.
-
->
-> 1) fsck support for dedupe that verifies the hashes with what is on disk
-
-Nice advice, if hash pool is screwed up, the whole fs will be screwed up.
-
-But that's for on-disk backend, and unfortunately, on-disk backend will 
-be excluded in next version.
-
-On-disk backend will only be re-introduced after in-memory backend only 
-patchset.
-
-> so any xfstests we write are sure to catch problems.
-
-
-> 2) xfstests.  They need to do the following things for both in memory
-> and ondisk
->     a) targeted verification.  So write one pattern, write the same
->        pattern to a different file and use fiemap to verify they are the
->        same.
-Already in previous xfstests patchset.
-
-But need a little modification, as we may merge in-mem and on-disk 
-backend in different kernel merge windows, so test cases may be split 
-for different backends.
-
-I'll update xfstest with V11 patchset, to do in-mem only checks.
-
->     b) modify fsstress to have an option to always write the same
->        pattern and then run a stress test while balancing.
-
-We already had such test cases, and even with current fsstress, its 
-pattern is already good enough to trigger some bug in our test cases.
-
-But it's still a good idea to make fsstress to reproduce dedupe bugs 
-more preciously.
+Personally I'd call this 'defensive coding' and do a check for in-memory
+only before our abort_trans().  This would have no effect on our running
+code but avoids the problem I stated above.  Alternatively, you could
+clearly comment the exception. I don't like leaving it as-is for the reason 
+I stated above.
 
 Thanks,
-Qu
->
-> Once the issues I've hilighted in the other patches are resolved and the
-> above xfstests things are merged and the fsck patches are
-> reviewed/accepted then we can move forward with including dedup.  Thanks,
->
-> Josef
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+	--Mark
+
+--
+Mark Fasheh

@@ -1,191 +1,122 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:32334 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751208AbcFFTAD (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 6 Jun 2016 15:00:03 -0400
-From: Liu Bo <bo.li.liu@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.cz>, Qu Wenruo <quwenruo@cn.fujitsu.com>
-Subject: [PATCH v2] Btrfs: check if extent buffer is aligned to sectorsize
-Date: Mon,  6 Jun 2016 12:01:23 -0700
-Message-Id: <1465239683-29666-1-git-send-email-bo.li.liu@oracle.com>
+Received: from mx2.suse.de ([195.135.220.15]:54126 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751540AbcFHEgn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 8 Jun 2016 00:36:43 -0400
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+	by mx2.suse.de (Postfix) with ESMTP id 19D32AAB6
+	for <linux-btrfs@vger.kernel.org>; Wed,  8 Jun 2016 04:36:41 +0000 (UTC)
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+From: Jeff Mahoney <jeffm@suse.com>
+Subject: [PATCH] btrfs: account for non-CoW'd blocks in
+ btrfs_abort_transaction
+Message-ID: <43cd8760-6275-cd2f-1d98-a62b5c85c5e5@suse.com>
+Date: Wed, 8 Jun 2016 00:36:38 -0400
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Thanks to fuzz testing, we can pass an invalid bytenr to extent buffer
-via alloc_extent_buffer().  An unaligned eb can have more pages than it
-should have, which ends up extent buffer's leak or some corrupted content
-in extent buffer.
+The test for !trans->blocks_used in btrfs_abort_transaction is
+insufficient to determine whether it's safe to drop the transaction
+handle on the floor.  btrfs_cow_block, informed by should_cow_block,
+can return blocks that have already been CoW'd in the current
+transaction.  trans->blocks_used is only incremented for new block
+allocations. If an operation overlaps the blocks in the current
+transaction entirely and must abort the transaction, we'll happily
+let it clean up the trans handle even though it may have modified
+the blocks and will commit an incomplete operation.
 
-This adds a warning to let us quickly know what was happening.
+In the long-term, I'd like to do closer tracking of when the fs
+is actually modified so we can still recover as gracefully as possible,
+but that approach will need some discussion.  In the short term,
+since this is the only code using trans->blocks_used, let's just
+switch it to a bool indicating whether any blocks were used and set
+it when should_cow_block returns false.
 
-Now that alloc_extent_buffer() no more returns NULL, this changes its
-caller and callers of its caller to match with the new error
-handling.
-
-Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+Cc: stable@vger.kernel.org # 3.4+
+Signed-off-by: Jeff Mahoney <jeffm@suse.com>
 ---
-v2:
-  - Add more fine-grained error handling to alloc_extent_buffer() and
-    its callers
-  - Use btrfs_err and -EINVAL instead of WARN_ONCE().
-
- fs/btrfs/ctree.c       |  2 ++
- fs/btrfs/disk-io.c     |  8 ++++----
- fs/btrfs/extent-tree.c | 10 ++++++----
- fs/btrfs/extent_io.c   | 15 ++++++++++++---
- fs/btrfs/tree-log.c    |  4 ++--
- fs/btrfs/volumes.c     |  4 ++--
- 6 files changed, 28 insertions(+), 15 deletions(-)
+ fs/btrfs/ctree.c       | 5 ++++-
+ fs/btrfs/extent-tree.c | 2 +-
+ fs/btrfs/super.c       | 2 +-
+ fs/btrfs/transaction.h | 2 +-
+ 4 files changed, 7 insertions(+), 4 deletions(-)
 
 diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-index 427c36b..24c9fb2 100644
+index 427c36b..135af4e 100644
 --- a/fs/btrfs/ctree.c
 +++ b/fs/btrfs/ctree.c
-@@ -2510,6 +2510,8 @@ read_block_for_search(struct btrfs_trans_handle *trans,
- 		if (!btrfs_buffer_uptodate(tmp, 0, 0))
- 			ret = -EIO;
- 		free_extent_buffer(tmp);
-+	} else {
-+		ret = PTR_ERR(tmp);
- 	}
- 	return ret;
- }
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index ea78d77..c2a9cec 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -1098,7 +1098,7 @@ void readahead_tree_block(struct btrfs_root *root, u64 bytenr)
- 	struct inode *btree_inode = root->fs_info->btree_inode;
+@@ -1552,6 +1552,7 @@ noinline int btrfs_cow_block(struct btrfs_trans_handle *trans,
+ 		       trans->transid, root->fs_info->generation);
  
- 	buf = btrfs_find_create_tree_block(root, bytenr);
--	if (!buf)
-+	if (IS_ERR(buf))
- 		return;
- 	read_extent_buffer_pages(&BTRFS_I(btree_inode)->io_tree,
- 				 buf, 0, WAIT_NONE, btree_get_extent, 0);
-@@ -1114,7 +1114,7 @@ int reada_tree_block_flagged(struct btrfs_root *root, u64 bytenr,
- 	int ret;
- 
- 	buf = btrfs_find_create_tree_block(root, bytenr);
--	if (!buf)
-+	if (IS_ERR(buf))
+ 	if (!should_cow_block(trans, root, buf)) {
++		trans->dirty = true;
+ 		*cow_ret = buf;
  		return 0;
+ 	}
+@@ -2773,8 +2774,10 @@ again:
+ 			 * then we don't want to set the path blocking,
+ 			 * so we test it here
+ 			 */
+-			if (!should_cow_block(trans, root, b))
++			if (!should_cow_block(trans, root, b)) {
++				trans->dirty = true;
+ 				goto cow_done;
++			}
  
- 	set_bit(EXTENT_BUFFER_READAHEAD, &buf->bflags);
-@@ -1171,8 +1171,8 @@ struct extent_buffer *read_tree_block(struct btrfs_root *root, u64 bytenr,
- 	int ret;
- 
- 	buf = btrfs_find_create_tree_block(root, bytenr);
--	if (!buf)
--		return ERR_PTR(-ENOMEM);
-+	if (IS_ERR(buf))
-+		return buf;
- 
- 	ret = btree_read_extent_buffer_pages(root, buf, 0, parent_transid);
- 	if (ret) {
+ 			/*
+ 			 * must have write locks on this node and the
 diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index a400951..d63eeee 100644
+index 689d25a..1ed31eb 100644
 --- a/fs/btrfs/extent-tree.c
 +++ b/fs/btrfs/extent-tree.c
-@@ -8010,8 +8010,9 @@ btrfs_init_new_buffer(struct btrfs_trans_handle *trans, struct btrfs_root *root,
- 	struct extent_buffer *buf;
+@@ -8044,7 +8044,7 @@ btrfs_init_new_buffer(struct btrfs_trans_handle *trans, struct btrfs_root *root,
+ 		set_extent_dirty(&trans->transaction->dirty_pages, buf->start,
+ 			 buf->start + buf->len - 1, GFP_NOFS);
+ 	}
+-	trans->blocks_used++;
++	trans->dirty = true;
+ 	/* this returns a buffer locked for blocking */
+ 	return buf;
+ }
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index 4e59a91..bd07e01 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -235,7 +235,7 @@ void __btrfs_abort_transaction(struct btrfs_trans_handle *trans,
+ 	trans->aborted = errno;
+ 	/* Nothing used. The other threads that have joined this
+ 	 * transaction may be able to continue. */
+-	if (!trans->blocks_used && list_empty(&trans->new_bgs)) {
++	if (!trans->dirty && list_empty(&trans->new_bgs)) {
+ 		const char *errstr;
  
- 	buf = btrfs_find_create_tree_block(root, bytenr);
--	if (!buf)
--		return ERR_PTR(-ENOMEM);
-+	if (IS_ERR(buf))
-+		return buf;
-+
- 	btrfs_set_header_generation(buf, trans->transid);
- 	btrfs_set_buffer_lockdep_class(root->root_key.objectid, buf, level);
- 	btrfs_tree_lock(buf);
-@@ -8653,8 +8654,9 @@ static noinline int do_walk_down(struct btrfs_trans_handle *trans,
- 	next = btrfs_find_tree_block(root->fs_info, bytenr);
- 	if (!next) {
- 		next = btrfs_find_create_tree_block(root, bytenr);
--		if (!next)
--			return -ENOMEM;
-+		if (IS_ERR(next))
-+			return PTR_ERR(next);
-+
- 		btrfs_set_buffer_lockdep_class(root->root_key.objectid, next,
- 					       level - 1);
- 		reada = 1;
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 6f38c2c..91c4d23 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -4883,18 +4883,25 @@ struct extent_buffer *alloc_extent_buffer(struct btrfs_fs_info *fs_info,
- 	int uptodate = 1;
- 	int ret;
- 
-+	if (!IS_ALIGNED(start, fs_info->tree_root->sectorsize)) {
-+		btrfs_err(fs_info, "bad tree block start %llu", start);
-+		return ERR_PTR(-EINVAL);
-+	}
-+
- 	eb = find_extent_buffer(fs_info, start);
- 	if (eb)
- 		return eb;
- 
- 	eb = __alloc_extent_buffer(fs_info, start, len);
- 	if (!eb)
--		return NULL;
-+		return ERR_PTR(-ENOMEM);
- 
- 	for (i = 0; i < num_pages; i++, index++) {
- 		p = find_or_create_page(mapping, index, GFP_NOFS|__GFP_NOFAIL);
--		if (!p)
-+		if (!p) {
-+			exists = ERR_PTR(-ENOMEM);
- 			goto free_eb;
-+		}
- 
- 		spin_lock(&mapping->private_lock);
- 		if (PagePrivate(p)) {
-@@ -4939,8 +4946,10 @@ struct extent_buffer *alloc_extent_buffer(struct btrfs_fs_info *fs_info,
- 		set_bit(EXTENT_BUFFER_UPTODATE, &eb->bflags);
- again:
- 	ret = radix_tree_preload(GFP_NOFS);
--	if (ret)
-+	if (ret) {
-+		exists = ERR_PTR(ret);
- 		goto free_eb;
-+	}
- 
- 	spin_lock(&fs_info->buffer_lock);
- 	ret = radix_tree_insert(&fs_info->buffer_radix,
-diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index b7665af..c05f69a 100644
---- a/fs/btrfs/tree-log.c
-+++ b/fs/btrfs/tree-log.c
-@@ -2422,8 +2422,8 @@ static noinline int walk_down_log_tree(struct btrfs_trans_handle *trans,
- 		root_owner = btrfs_header_owner(parent);
- 
- 		next = btrfs_find_create_tree_block(root, bytenr);
--		if (!next)
--			return -ENOMEM;
-+		if (IS_ERR(next))
-+			return PTR_ERR(next);
- 
- 		if (*level == 1) {
- 			ret = wc->process_func(root, next, wc, ptr_gen);
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 7a169de..d50a713 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -6597,8 +6597,8 @@ int btrfs_read_sys_array(struct btrfs_root *root)
- 	 * overallocate but we can keep it as-is, only the first page is used.
- 	 */
- 	sb = btrfs_find_create_tree_block(root, BTRFS_SUPER_INFO_OFFSET);
--	if (!sb)
--		return -ENOMEM;
-+	if (IS_ERR(sb))
-+		return PTR_ERR(sb);
- 	set_extent_buffer_uptodate(sb);
- 	btrfs_set_buffer_lockdep_class(root->root_key.objectid, sb, 0);
+ 		errstr = btrfs_decode_error(errno);
+diff --git a/fs/btrfs/transaction.h b/fs/btrfs/transaction.h
+index 9fe0ec2..c5abee4 100644
+--- a/fs/btrfs/transaction.h
++++ b/fs/btrfs/transaction.h
+@@ -110,7 +110,6 @@ struct btrfs_trans_handle {
+ 	u64 chunk_bytes_reserved;
+ 	unsigned long use_count;
+ 	unsigned long blocks_reserved;
+-	unsigned long blocks_used;
+ 	unsigned long delayed_ref_updates;
+ 	struct btrfs_transaction *transaction;
+ 	struct btrfs_block_rsv *block_rsv;
+@@ -121,6 +120,7 @@ struct btrfs_trans_handle {
+ 	bool can_flush_pending_bgs;
+ 	bool reloc_reserved;
+ 	bool sync;
++	bool dirty;
+ 	unsigned int type;
  	/*
+ 	 * this root is only needed to validate that the root passed to
 -- 
-2.5.5
+2.7.1
 
+
+-- 
+Jeff Mahoney
+SUSE Labs

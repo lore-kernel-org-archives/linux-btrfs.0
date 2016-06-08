@@ -1,90 +1,58 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtprelay05.ispgateway.de ([80.67.31.100]:35005 "EHLO
-	smtprelay05.ispgateway.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753394AbcFHO5n (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 8 Jun 2016 10:57:43 -0400
-Received: from [77.13.71.57] (helo=hermione.invalid)
-	by smtprelay05.ispgateway.de with esmtpsa (TLSv1.2:AES256-GCM-SHA384:256)
-	(Exim 4.84)
-	(envelope-from <envelope@m-berberich.de>)
-	id 1bAevK-0005Dm-HX
-	for linux-btrfs@vger.kernel.org; Wed, 08 Jun 2016 16:57:38 +0200
-Received: from berberic by hermione.invalid with local (Exim 4.87)
-	(envelope-from <envelope@m-berberich.de>)
-	id 1bAevK-0003KM-1s
-	for linux-btrfs@vger.kernel.org; Wed, 08 Jun 2016 16:57:38 +0200
-Date: Wed, 8 Jun 2016 16:57:38 +0200
-From: M G Berberich <btrfs@oss.m-berberich.de>
-To: linux-btrfs@vger.kernel.org
-Subject: 4.6.1 crash probably during find
-Message-ID: <20160608145738.GA6277@invalid>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
+Received: from mxout015.mail.hostpoint.ch ([217.26.49.175]:58955 "EHLO
+	mxout015.mail.hostpoint.ch" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1423409AbcFHTbN convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 8 Jun 2016 15:31:13 -0400
+Received: from [10.0.2.46] (helo=asmtp013.mail.hostpoint.ch)
+	by mxout015.mail.hostpoint.ch with esmtp (Exim 4.84 (FreeBSD))
+	(envelope-from <btrfs@bueechi.net>)
+	id 1bAidG-0000xK-8t
+	for linux-btrfs@vger.kernel.org; Wed, 08 Jun 2016 20:55:14 +0200
+Received: from 217-162-125-82.dynamic.hispeed.ch ([217.162.125.82] helo=imac.lan)
+	by asmtp013.mail.hostpoint.ch with esmtpa (Exim 4.84 (FreeBSD))
+	(envelope-from <btrfs@bueechi.net>)
+	id 1bAidG-000AU0-6r
+	for linux-btrfs@vger.kernel.org; Wed, 08 Jun 2016 20:55:14 +0200
+From: boli <btrfs@bueechi.net>
+Content-Type: text/plain; charset=us-ascii
+Subject: Replacing drives with larger ones in a 4 drive raid1
+Date: Wed, 8 Jun 2016 20:55:13 +0200
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Message-Id: <022F65B5-228D-4EEF-95C9-3C269B63B290@bueechi.net>
+Mime-Version: 1.0 (Mac OS X Mail 9.3 \(3124\))
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
+Dear list
 
-System crashed. SysRq stilled worked.
-btrfs check does not find error on any filesystem.
+I've had a 4 drive btrfs raid1 setup in my backup NAS for a few months now. It's running Fedora 23 Server with kernel 4.5.5 and btrfs-progs v4.4.1.
 
-[82275.348754] general protection fault: 0000 [#1] PREEMPT SMP 
-[82275.354640] Modules linked in: cp210x usbserial rc_digittrade mt2060 af9013 uas intel_rapl kvm_intel dvb_usb_af9015 dvb_usb_v2 dvb_core kvm rc_core irqbypass input_leds ghash_clmulni_intel usb_storage serio_raw it87 hwmon_vid firewire_sbp2 firewire_core ppdev lp autofs4
-[82275.379649] CPU: 3 PID: 21655 Comm: find Not tainted 4.6.1 #2
-[82275.385604] Hardware name: Gigabyte Technology Co., Ltd. H87-HD3/H87-HD3, BIOS F10 08/18/2015
-[82275.394404] task: ffff8802a6d1b500 ti: ffff88025586c000 task.ti: ffff88025586c000
-[82275.402127] RIP: 0010:[<ffffffff811d6bff>]  [<ffffffff811d6bff>] find_inode+0x3f/0xc0
-[82275.410224] RSP: 0018:ffff88025586fad8  EFLAGS: 00010286
-[82275.415708] RAX: 0000000000000000 RBX: f7ff88021d39bd50 RCX: ffff88025586fb90
-[82275.423074] RDX: ffffffff812f7fe0 RSI: ffff88080acf87b8 RDI: f7ff88021d39be30
-[82275.430439] RBP: ffff88025586fb08 R08: ffff88025586fb90 R09: ffffffff812cca91
-[82275.437810] R10: ffff88080a2e1100 R11: 0000000000000002 R12: ffff88025586fb90
-[82275.445176] R13: ffffffff812f7fe0 R14: ffff88080acf87b8 R15: ffff88080815e800
-[82275.452540] FS:  00007f66c9121800(0000) GS:ffff88082e2c0000(0000) knlGS:0000000000000000
-[82275.460893] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
-[82275.466824] CR2: 0000558caf8adde8 CR3: 000000025e2b6000 CR4: 00000000001406e0
-[82275.474189] DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
-[82275.481560] DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
-[82275.488927] Stack:
-[82275.491002]  ffff88025586faf0 ffff88080815e800 ffff88080acf87b8 ffff88025586fb90
-[82275.498684]  ffffffff812f7fe0 ffff8803cfc1eb60 ffff88025586fb50 ffffffff811d7eac
-[82275.506366]  ffff8807c61ca230 ffffffff812f82b0 0000000000000000 ffff880225bb1300
-[82275.514048] Call Trace:
-[82275.516574]  [<ffffffff812f7fe0>] ? do_async_commit+0x40/0x40
-[82275.522507]  [<ffffffff811d7eac>] iget5_locked+0x7c/0x1c0
-[82275.528079]  [<ffffffff812f82b0>] ? create_pinned_em+0x130/0x130
-[82275.534282]  [<ffffffff813033fb>] btrfs_iget+0x4b/0x6a0
-[82275.539679]  [<ffffffff81313856>] ? release_extent_buffer+0x26/0xc0
-[82275.546147]  [<ffffffff81319616>] ? free_extent_buffer+0x46/0x90
-[82275.552349]  [<ffffffff8130420e>] btrfs_lookup_dentry+0x3ee/0x520
-[82275.558642]  [<ffffffff8130434d>] btrfs_lookup+0xd/0x30
-[82275.564038]  [<ffffffff811c67a8>] lookup_real+0x18/0x60
-[82275.569441]  [<ffffffff811c6c58>] lookup_slow+0x58/0xe0
-[82275.574836]  [<ffffffff811c9615>] walk_component+0x1c5/0x430
-[82275.580678]  [<ffffffff811c75b6>] ? path_init+0x266/0x370
-[82275.586252]  [<ffffffff811c9e28>] path_lookupat+0x58/0x100
-[82275.591914]  [<ffffffff811cc4a9>] filename_lookup+0x99/0x150
-[82275.597758]  [<ffffffff812cca91>] ? btrfs_free_path+0x21/0x30
-[82275.603690]  [<ffffffff812fb6f8>] ? btrfs_real_readdir+0x198/0x5e0
-[82275.610070]  [<ffffffff811cc12d>] ? getname_flags+0x6d/0x1f0
-[82275.615912]  [<ffffffff811cc601>] user_path_at_empty+0x31/0x40
-[82275.621937]  [<ffffffff811c1aae>] vfs_fstatat+0x4e/0xa0
-[82275.627330]  [<ffffffff811d9de9>] ? __fd_install+0x59/0x100
-[82275.633082]  [<ffffffff811c1fa5>] SYSC_newfstatat+0x15/0x30
-[82275.638835]  [<ffffffff811da519>] ? f_dupfd+0x69/0x80
-[82275.644050]  [<ffffffff811cec74>] ? SyS_fcntl+0x114/0x540
-[82275.649621]  [<ffffffff811c2049>] SyS_newfstatat+0x9/0x10
-[82275.655193]  [<ffffffff819e011b>] entry_SYSCALL_64_fastpath+0x13/0x8f
-[82275.661843] Code: 48 8b 3e 48 85 ff 74 35 49 89 f6 49 89 d5 49 89 cc 48 81 ef e0 00 00 00 48 89 fb 75 0e eb 1e 48 89 fb 48 81 eb e0 00 00 00 74 12 <4c> 39 7b 28 74 1d 48 8b bb e0 00 00 00 48 85 ff 75 e2 31 c0 48 
-[82275.682196] RIP  [<ffffffff811d6bff>] find_inode+0x3f/0xc0
-[82275.687873]  RSP <ffff88025586fad8>
-[82275.696634] ---[ end trace 50dd42c58e9d164c ]---
-[82275.701395] note: find[21655] exited with preempt_count 1
+Recently I had the idea to replace the 6 TB HDDs with 8 TB ones ("WD Red"), because their price is now acceptable.
+(More back story: That particular machine has only 4 HDD bays, which is why I originally dared run it as raid5, but later converted to raid1 after having experienced very slow monthly btrfs scrubs and figuring that 12 TB total capacity would be enough for a while; my main NAS on the other hand has always had 6 x 6 TB raid1, that's from where I knew that scrubs can be much faster).
 
-	MfG
-	bmg
+Anyway, so I physically replaced one of the 6 TB drives with an 8 TB one. Fedora didn't boot properly, but went into emergency mode, apparently because it couldn't mount the filesystem.
 
--- 
-„Des is völlig wurscht, was heut beschlos- | M G Berberich
- sen wird: I bin sowieso dagegn!“          | mail@m-berberich.de
-(SPD-Stadtrat Kurt Schindler; Regensburg)  | 
+Because I have to use a finicky Java console when it's booted in emergency mode, I figured I should probably get it to boot normally again as quickly as possible, so I can connect properly with SSH instead.
+
+I guessed the way to do that would be to remove the missing drive from /etc/crypttab (all drives use encryption) and from the btrfs raid1, then reboot and add the new drive to the btrfs volume (also I'd like to completely zero the new drive first, to weed out bad sectors).
+
+In the wiki I read about replace as well as delete/add and figured since I will eventually have to replace all 4 drives one-by-one, I might as well try out different methods and gain insight while doing it. :)
+
+So for this first replacement I mounted the volume degraded and ran "btrfs device delete missing /mnt", and that's where it's been stuck for the past ~23 hours. Only later did I figure out that this command will trigger a rebalance, and of course that will take a long time.
+
+I'm not entirely sure that this rebalance has a chance to work, as a 3x6 TB raid1 would only have 9 TB of space, which may just be enough (but not by much). I can't currently check how much space is actually used, but it must be at least 8.1 TB (that's how much data is on my main NAS), but probably not much more than that (my main NAS may still have most if not all of the snapshots synched to the backup NAS too, for now).
+
+Regarding a few gotchas: I use btrbk to copy and thin snapshots, so there are < 100 snapshots. I might still have quotas active though, because that allows determining the diff size between 2 snapshots. In practice I don't use this often, so will turn it off once things are stable, because I read in other list mails that it makes things slow.
+
+I assume I could probably just Ctrl+C that "btrfs device delete missing /mnt", and the balance would continue as usual in the background, but I have not done that yet, as I'd rather consult you guys first (a bit late, I know).
+
+Anyway, if you have any tips, I'm glad to read them.
+
+For now my plan is to continue waiting what happens. Since it's a just my personal backup NAS, the downtime is not that bad, only that it won't get the usual nightly backups from my main NAS for some time.
+
+Losing data and having to start from scratch would just be an inconvenience, but not a disaster, particularly because the backup NAS is at a friend's house and my upstream is only 50 Mbit/s.
+
+Also thanks to Hugo and Duncan for their awesome/insightful replies to my first question a few months ago (didn't want to spam the list just to say thanks).
+
+Best regards, boli

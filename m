@@ -1,73 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oi0-f65.google.com ([209.85.218.65]:34387 "EHLO
-	mail-oi0-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751073AbcFITTr (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 9 Jun 2016 15:19:47 -0400
-Received: by mail-oi0-f65.google.com with SMTP id r4so9266698oib.1
-        for <linux-btrfs@vger.kernel.org>; Thu, 09 Jun 2016 12:19:47 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <20160606150031.GI24492@carfax.org.uk>
-References: <1464918615-6458-1-git-send-email-andrew@asquaredlabs.com>
- <20160606091729.GX29147@twin.jikos.cz> <CA+jCKRUtDqwVppYSv3jCODZW+U-AV5v1421x4TRHjp36aftw8A@mail.gmail.com>
- <20160606150031.GI24492@carfax.org.uk>
-From: Andrew Armenia <andrew@asquaredlabs.com>
-Date: Thu, 9 Jun 2016 15:19:07 -0400
-Message-ID: <CA+jCKRV2-Lo22W+KT=OfZ+Go_y86rptR5xjCbL2Qyda0Kj717w@mail.gmail.com>
-Subject: Re: [PATCH] btrfs: chunk_width_limit mount option
-To: Hugo Mills <hugo@carfax.org.uk>, dsterba@suse.cz,
-        linux-btrfs@vger.kernel.org
+Received: from plane.gmane.org ([80.91.229.3]:36466 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751688AbcFIT6M (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 9 Jun 2016 15:58:12 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+	id 1bB65c-0006AF-Q0
+	for linux-btrfs@vger.kernel.org; Thu, 09 Jun 2016 21:58:04 +0200
+Received: from ip-64-134-228-1.public.wayport.net ([64.134.228.1])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Thu, 09 Jun 2016 21:58:04 +0200
+Received: from 1i5t5.duncan by ip-64-134-228-1.public.wayport.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Thu, 09 Jun 2016 21:58:04 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: Recommended why to use btrfs for production?
+Date: Thu, 9 Jun 2016 19:57:58 +0000 (UTC)
+Message-ID: <pan$3271$1d7da956$393e2ccc$d395c1dd@cox.net>
+References: <CAGQ70Yc=HHxJspMCKFBpEURRu=53pZW3k3rVDVO3QPGP_b9Tkw@mail.gmail.com>
+	<aeade1fe-825c-6fc2-7f6d-85f4c5400b38@gmail.com>
+	<CAGQ70YeZzDgiT_v1Z0eGcWsn8prnji30hCkyjrBg8vNziLUkiQ@mail.gmail.com>
+	<dd952b29-1bea-59e1-1857-418b86951b47@gmail.com>
+	<pan$f0f75$1ba12fd1$de89e173$5dda67a@cox.net>
+	<aa93e9e0-eade-085c-c955-2f7e433d92f8@gmail.com>
+	<CAJCQCtR_s6qt_4PXRDu4e78KiaKM+SrTDB6WMw8MzZNuP+B5rA@mail.gmail.com>
+Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Jun 6, 2016 at 11:00 AM, Hugo Mills <hugo@carfax.org.uk> wrote:
-> On Mon, Jun 06, 2016 at 09:43:19AM -0400, Andrew Armenia wrote:
->> On Mon, Jun 6, 2016 at 5:17 AM, David Sterba <dsterba@suse.cz> wrote:
->> > On Thu, Jun 02, 2016 at 09:50:15PM -0400, Andrew Armenia wrote:
->> >> This patch adds mount option 'chunk_width_limit=X', which when set forces
->> >> the chunk allocator to use only up to X devices when allocating a chunk.
->> >> This may help reduce the seek penalties seen in filesystems with large
->> >> numbers of devices.
->> >
->> > There is a use for such limit but passing it as a mount is not the right
->> > way to do it. Changing the value requires remount, different raid levels
->> > might need different values, it's not persistent etc.
->>
->> Thanks for the feedback. I agree that it's less than an ideal way to
->> do it. I guess I was a bit quick to release proof-of-concept code.
->> I'll try to do some more work on the configuration side of things and
->> resubmit.
->
->    Last time something like this came up in discussion, the consensus
-> was to put the configuration in xattrs in the btrfs namespace. There
-> should be one with a name to indicate "global" configuration, applied
-> to the top of subvol 5. If the feature allows configuration on a
-> per-subvol or per-object basis, then there should also be a name for
-> the relevant xattr (also in the btrfs namespace) that can be created
-> on each object as required.
->
->    Hugo.
->
-> --
-> Hugo Mills             | Klytus, I'm bored. What plaything can you offer me
-> hugo@... carfax.org.uk | today?
-> http://carfax.org.uk/  |
-> PGP: E2AB1DE4          |                      Ming the Merciless, Flash Gordon
+Chris Murphy posted on Thu, 09 Jun 2016 11:39:23 -0600 as excerpted:
 
-OK, since I'm new here I'll throw my thoughts out before writing and
-submitting another patch. I wouldn't want to have to read the xattrs
-from disk every time a chunk needs to be allocated. That means the
-allocator configuration will need to be cached in the fs_info
-structure. My current line of thinking is to create a
-btrfs_allocator_config structure containing all of the allocator
-parameters - for now a user-set devs_max for each RAID level. I'd add
-a couple ioctls to allow the userspace tools to get and set these
-parameters. The "set" ioctl would also persist this configuration to
-one or more xattrs on the root of subvol 5 per Hugo's suggestion.
+> Yeah but somewhere there's a chunk that's likely affected by two losses,
+> with a probability much higher than for conventional raid10 where such a
+> loss is very binary: if the loss is a mirrored pair, the whole array and
+> filesystem implodes; if the loss does not affect an entire mirrored
+> pair, the whole array survives.
+> 
+> The thing with Btrfs raid 10 is you can't really tell in advance to what
+> degree you have loss. It's not a binary condition, it has a gray area
+> where a lot of data can still be retrieved, but the instant you hit
+> missing data it's a loss, and if you hit missing metadata then the fs
+> will either go read only or crash, it just can't continue. So that
+> "walking on egg shells" behavior in a 2+ drive loss is really different
+> from a conventional raid10 where it's either gonna completely work or
+> completely fail.
 
-I'm still a bit hung up on the proper way to read the config back at
-mount time. Patching the mount routines doesn't seem like a good way
-to do it. Perhaps just doing it at the first invocation of
-__btrfs_alloc_chunk is best? Any other thoughts?
+Yes, thanks, CMurphy.  That's exactly what I was trying to explain. =:^)
 
--Andrew
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

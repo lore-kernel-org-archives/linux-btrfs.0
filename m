@@ -1,80 +1,133 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:16628 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932882AbcFOUt0 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 15 Jun 2016 16:49:26 -0400
-Date: Wed, 15 Jun 2016 13:50:55 -0700
-From: Liu Bo <bo.li.liu@oracle.com>
-To: fdmanana@kernel.org
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs: add missing check for writeback errors on fsync
-Message-ID: <20160615205055.GA8071@localhost.localdomain>
-Reply-To: bo.li.liu@oracle.com
-References: <1465933822-25805-1-git-send-email-fdmanana@kernel.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1465933822-25805-1-git-send-email-fdmanana@kernel.org>
+Received: from mail.kernel.org ([198.145.29.136]:48006 "EHLO mail.kernel.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751315AbcFIQxS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 9 Jun 2016 12:53:18 -0400
+Received: from mail.kernel.org (localhost [127.0.0.1])
+	by mail.kernel.org (Postfix) with ESMTP id D7C77202A1
+	for <linux-btrfs@vger.kernel.org>; Thu,  9 Jun 2016 16:53:16 +0000 (UTC)
+Received: from debian3.lan (bl12-226-64.dsl.telepac.pt [85.245.226.64])
+	(using TLSv1.2 with cipher AES128-SHA256 (128/128 bits))
+	(No client certificate requested)
+	by mail.kernel.org (Postfix) with ESMTPSA id A5ADC20295
+	for <linux-btrfs@vger.kernel.org>; Thu,  9 Jun 2016 16:53:15 +0000 (UTC)
+From: fdmanana@kernel.org
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH 1/2] Btrfs: be more precise on errors when getting an inode from disk
+Date: Thu,  9 Jun 2016 17:53:10 +0100
+Message-Id: <1465491191-28102-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Jun 14, 2016 at 08:50:22PM +0100, fdmanana@kernel.org wrote:
-> From: Filipe Manana <fdmanana@suse.com>
-> 
-> When we start an fsync we start ordered extents for all delalloc ranges.
-> However before attempting to log the inode, we only wait for those ordered
-> extents if we are not doing a full sync (bit BTRFS_INODE_NEEDS_FULL_SYNC
-> is set in the inode's flags). This means that if an ordered extent
-> completes with an IO error before we check if we can skip logging the
-> inode, we will not catch and report the IO error to user space. This is
-> because on an IO error, when the ordered extent completes we do not
-> update the inode, so if the inode was not previously updated by the
-> current transaction we end up not logging it through calls to fsync and
-> therefore not check its mapping flags for the presence of IO errors.
-> 
-> Fix this by checking for errors in the flags of the inode's mapping when
-> we notice we can skip logging the inode.
-> 
-> This caused sporadic failures in the test generic/331 (which explicitly
-> tests for IO errors during an fsync call).
+From: Filipe Manana <fdmanana@suse.com>
 
-Good catch.
+When we attempt to read an inode from disk, we end up always returning an
+-ESTALE error to the caller regardless of the actual failure reason, which
+can be an out of memory problem (when allocating a path), some error found
+when reading from the fs/subvolume btree (like a genuine IO error) or the
+inode does not exists. So lets start returning the real error code to the
+callers so that they don't treat all -ESTALE errors as meaning that the
+inode does not exists (such as during orphan cleanup). This will also be
+needed for a subsequent patch in the same series dealing with a special
+fsync case.
 
-Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+ fs/btrfs/inode.c | 27 ++++++++++++++++++---------
+ 1 file changed, 18 insertions(+), 9 deletions(-)
 
-Thanks,
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index e5558d9..1ae0fc8 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -3419,10 +3419,10 @@ int btrfs_orphan_cleanup(struct btrfs_root *root)
+ 		found_key.offset = 0;
+ 		inode = btrfs_iget(root->fs_info->sb, &found_key, root, NULL);
+ 		ret = PTR_ERR_OR_ZERO(inode);
+-		if (ret && ret != -ESTALE)
++		if (ret && ret != -ENOENT)
+ 			goto out;
+ 
+-		if (ret == -ESTALE && root == root->fs_info->tree_root) {
++		if (ret == -ENOENT && root == root->fs_info->tree_root) {
+ 			struct btrfs_root *dead_root;
+ 			struct btrfs_fs_info *fs_info = root->fs_info;
+ 			int is_dead_root = 0;
+@@ -3458,7 +3458,7 @@ int btrfs_orphan_cleanup(struct btrfs_root *root)
+ 		 * Inode is already gone but the orphan item is still there,
+ 		 * kill the orphan item.
+ 		 */
+-		if (ret == -ESTALE) {
++		if (ret == -ENOENT) {
+ 			trans = btrfs_start_transaction(root, 1);
+ 			if (IS_ERR(trans)) {
+ 				ret = PTR_ERR(trans);
+@@ -3617,7 +3617,7 @@ static noinline int acls_after_inode_item(struct extent_buffer *leaf,
+ /*
+  * read an inode from the btree into the in-memory inode
+  */
+-static void btrfs_read_locked_inode(struct inode *inode)
++static int btrfs_read_locked_inode(struct inode *inode)
+ {
+ 	struct btrfs_path *path;
+ 	struct extent_buffer *leaf;
+@@ -3636,14 +3636,19 @@ static void btrfs_read_locked_inode(struct inode *inode)
+ 		filled = true;
+ 
+ 	path = btrfs_alloc_path();
+-	if (!path)
++	if (!path) {
++		ret = -ENOMEM;
+ 		goto make_bad;
++	}
+ 
+ 	memcpy(&location, &BTRFS_I(inode)->location, sizeof(location));
+ 
+ 	ret = btrfs_lookup_inode(NULL, root, path, &location, 0);
+-	if (ret)
++	if (ret) {
++		if (ret > 0)
++			ret = -ENOENT;
+ 		goto make_bad;
++	}
+ 
+ 	leaf = path->nodes[0];
+ 
+@@ -3796,11 +3801,12 @@ cache_acl:
+ 	}
+ 
+ 	btrfs_update_iflags(inode);
+-	return;
++	return 0;
+ 
+ make_bad:
+ 	btrfs_free_path(path);
+ 	make_bad_inode(inode);
++	return ret;
+ }
+ 
+ /*
+@@ -5585,7 +5591,9 @@ struct inode *btrfs_iget(struct super_block *s, struct btrfs_key *location,
+ 		return ERR_PTR(-ENOMEM);
+ 
+ 	if (inode->i_state & I_NEW) {
+-		btrfs_read_locked_inode(inode);
++		int ret;
++
++		ret = btrfs_read_locked_inode(inode);
+ 		if (!is_bad_inode(inode)) {
+ 			inode_tree_add(inode);
+ 			unlock_new_inode(inode);
+@@ -5594,7 +5602,8 @@ struct inode *btrfs_iget(struct super_block *s, struct btrfs_key *location,
+ 		} else {
+ 			unlock_new_inode(inode);
+ 			iput(inode);
+-			inode = ERR_PTR(-ESTALE);
++			ASSERT(ret < 0);
++			inode = ERR_PTR(ret < 0 ? ret : -ESTALE);
+ 		}
+ 	}
+ 
+-- 
+2.7.0.rc3
 
--liubo
-
-> 
-> Signed-off-by: Filipe Manana <fdmanana@suse.com>
-> ---
->  fs/btrfs/file.c | 8 ++++++++
->  1 file changed, 8 insertions(+)
-> 
-> diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-> index 159a934..6c6863a 100644
-> --- a/fs/btrfs/file.c
-> +++ b/fs/btrfs/file.c
-> @@ -2039,6 +2039,14 @@ int btrfs_sync_file(struct file *file, loff_t start, loff_t end, int datasync)
->  		 */
->  		clear_bit(BTRFS_INODE_NEEDS_FULL_SYNC,
->  			  &BTRFS_I(inode)->runtime_flags);
-> +		/*
-> +		 * An ordered extent might have started before and completed
-> +		 * already with io errors, in which case the inode was not
-> +		 * updated and we end up here. So check the inode's mapping
-> +		 * flags for any errors that might have happened while doing
-> +		 * writeback of file data.
-> +		 */
-> +		ret = btrfs_inode_check_errors(inode);
->  		inode_unlock(inode);
->  		goto out;
->  	}
-> -- 
-> 2.7.0.rc3
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html

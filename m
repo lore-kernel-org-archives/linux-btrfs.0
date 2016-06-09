@@ -1,133 +1,252 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.136]:48006 "EHLO mail.kernel.org"
+Received: from mail.kernel.org ([198.145.29.136]:48020 "EHLO mail.kernel.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751315AbcFIQxS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 9 Jun 2016 12:53:18 -0400
+	id S932116AbcFIQxU (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 9 Jun 2016 12:53:20 -0400
 Received: from mail.kernel.org (localhost [127.0.0.1])
-	by mail.kernel.org (Postfix) with ESMTP id D7C77202A1
-	for <linux-btrfs@vger.kernel.org>; Thu,  9 Jun 2016 16:53:16 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id A8E5120295
+	for <linux-btrfs@vger.kernel.org>; Thu,  9 Jun 2016 16:53:18 +0000 (UTC)
 Received: from debian3.lan (bl12-226-64.dsl.telepac.pt [85.245.226.64])
 	(using TLSv1.2 with cipher AES128-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPSA id A5ADC20295
-	for <linux-btrfs@vger.kernel.org>; Thu,  9 Jun 2016 16:53:15 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTPSA id 3147A202B8
+	for <linux-btrfs@vger.kernel.org>; Thu,  9 Jun 2016 16:53:17 +0000 (UTC)
 From: fdmanana@kernel.org
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 1/2] Btrfs: be more precise on errors when getting an inode from disk
-Date: Thu,  9 Jun 2016 17:53:10 +0100
-Message-Id: <1465491191-28102-1-git-send-email-fdmanana@kernel.org>
+Subject: [PATCH 2/2] Btrfs: improve performance on fsync against new inode after rename/unlink
+Date: Thu,  9 Jun 2016 17:53:11 +0100
+Message-Id: <1465491191-28102-2-git-send-email-fdmanana@kernel.org>
+In-Reply-To: <1465491191-28102-1-git-send-email-fdmanana@kernel.org>
+References: <1465491191-28102-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Filipe Manana <fdmanana@suse.com>
 
-When we attempt to read an inode from disk, we end up always returning an
--ESTALE error to the caller regardless of the actual failure reason, which
-can be an out of memory problem (when allocating a path), some error found
-when reading from the fs/subvolume btree (like a genuine IO error) or the
-inode does not exists. So lets start returning the real error code to the
-callers so that they don't treat all -ESTALE errors as meaning that the
-inode does not exists (such as during orphan cleanup). This will also be
-needed for a subsequent patch in the same series dealing with a special
-fsync case.
+With commit 56f23fdbb600 ("Btrfs: fix file/data loss caused by fsync after
+rename and new inode") we got simple fix for a functional issue when the
+following sequence of actions is done:
+
+  at transaction N
+  create file A at directory D
+  at transaction N + M (where M >= 1)
+  move/rename existing file A from directory D to directory E
+  create a new file named A at directory D
+  fsync the new file
+  power fail
+
+The solution was to simply detect such scenario and fallback to a full
+transaction commit when we detect it. However this turned out to had a
+significant impact on throughput (and a bit on latency too) for benchmarks
+using the dbench tool, which simulates real workloads from smbd (Samba)
+servers. For example on a test vm (with a debug kernel):
+
+Unpatched:
+Throughput 19.1572 MB/sec  32 clients  32 procs  max_latency=1005.229 ms
+
+Patched:
+Throughput 23.7015 MB/sec  32 clients  32 procs  max_latency=809.206 ms
+
+The patched results (this patch is applied) are similar to the results of
+a kernel with the commit 56f23fdbb600 ("Btrfs: fix file/data loss caused
+by fsync after rename and new inode") reverted.
+
+This change avoids the fallback to a transaction commit and instead makes
+sure all the names of the conflicting inode (the one that had a name in a
+past transaction that matches the name of the new file in the same parent
+directory) are logged so that at log replay time we don't lose neither the
+new file nor the old file, and the old file gets the name it was renamed
+to.
+
+This also ends up avoiding a full transaction commit for a similar case
+that involves an unlink instead of a rename of the old file:
+
+  at transaction N
+  create file A at directory D
+  at transaction N + M (where M >= 1)
+  remove file A
+  create a new file named A at directory D
+  fsync the new file
+  power fail
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/inode.c | 27 ++++++++++++++++++---------
- 1 file changed, 18 insertions(+), 9 deletions(-)
+ fs/btrfs/inode.c    | 19 +++++++++++-
+ fs/btrfs/tree-log.c | 85 ++++++++++++++++++++++++++++++++++++++++++++++++-----
+ 2 files changed, 95 insertions(+), 9 deletions(-)
 
 diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index e5558d9..1ae0fc8 100644
+index 1ae0fc8..6dcd38b 100644
 --- a/fs/btrfs/inode.c
 +++ b/fs/btrfs/inode.c
-@@ -3419,10 +3419,10 @@ int btrfs_orphan_cleanup(struct btrfs_root *root)
- 		found_key.offset = 0;
- 		inode = btrfs_iget(root->fs_info->sb, &found_key, root, NULL);
- 		ret = PTR_ERR_OR_ZERO(inode);
--		if (ret && ret != -ESTALE)
-+		if (ret && ret != -ENOENT)
- 			goto out;
+@@ -4194,6 +4194,7 @@ static int btrfs_rmdir(struct inode *dir, struct dentry *dentry)
+ 	int err = 0;
+ 	struct btrfs_root *root = BTRFS_I(dir)->root;
+ 	struct btrfs_trans_handle *trans;
++	u64 last_unlink_trans;
  
--		if (ret == -ESTALE && root == root->fs_info->tree_root) {
-+		if (ret == -ENOENT && root == root->fs_info->tree_root) {
- 			struct btrfs_root *dead_root;
- 			struct btrfs_fs_info *fs_info = root->fs_info;
- 			int is_dead_root = 0;
-@@ -3458,7 +3458,7 @@ int btrfs_orphan_cleanup(struct btrfs_root *root)
- 		 * Inode is already gone but the orphan item is still there,
- 		 * kill the orphan item.
- 		 */
--		if (ret == -ESTALE) {
-+		if (ret == -ENOENT) {
- 			trans = btrfs_start_transaction(root, 1);
- 			if (IS_ERR(trans)) {
- 				ret = PTR_ERR(trans);
-@@ -3617,7 +3617,7 @@ static noinline int acls_after_inode_item(struct extent_buffer *leaf,
- /*
-  * read an inode from the btree into the in-memory inode
-  */
--static void btrfs_read_locked_inode(struct inode *inode)
-+static int btrfs_read_locked_inode(struct inode *inode)
- {
- 	struct btrfs_path *path;
- 	struct extent_buffer *leaf;
-@@ -3636,14 +3636,19 @@ static void btrfs_read_locked_inode(struct inode *inode)
- 		filled = true;
+ 	if (inode->i_size > BTRFS_EMPTY_DIR_SIZE)
+ 		return -ENOTEMPTY;
+@@ -4216,11 +4217,27 @@ static int btrfs_rmdir(struct inode *dir, struct dentry *dentry)
+ 	if (err)
+ 		goto out;
  
- 	path = btrfs_alloc_path();
--	if (!path)
-+	if (!path) {
-+		ret = -ENOMEM;
- 		goto make_bad;
-+	}
- 
- 	memcpy(&location, &BTRFS_I(inode)->location, sizeof(location));
- 
- 	ret = btrfs_lookup_inode(NULL, root, path, &location, 0);
--	if (ret)
-+	if (ret) {
-+		if (ret > 0)
-+			ret = -ENOENT;
- 		goto make_bad;
-+	}
- 
- 	leaf = path->nodes[0];
- 
-@@ -3796,11 +3801,12 @@ cache_acl:
- 	}
- 
- 	btrfs_update_iflags(inode);
--	return;
-+	return 0;
- 
- make_bad:
- 	btrfs_free_path(path);
- 	make_bad_inode(inode);
-+	return ret;
- }
- 
- /*
-@@ -5585,7 +5591,9 @@ struct inode *btrfs_iget(struct super_block *s, struct btrfs_key *location,
- 		return ERR_PTR(-ENOMEM);
- 
- 	if (inode->i_state & I_NEW) {
--		btrfs_read_locked_inode(inode);
-+		int ret;
++	last_unlink_trans = BTRFS_I(inode)->last_unlink_trans;
 +
-+		ret = btrfs_read_locked_inode(inode);
- 		if (!is_bad_inode(inode)) {
- 			inode_tree_add(inode);
- 			unlock_new_inode(inode);
-@@ -5594,7 +5602,8 @@ struct inode *btrfs_iget(struct super_block *s, struct btrfs_key *location,
- 		} else {
- 			unlock_new_inode(inode);
- 			iput(inode);
--			inode = ERR_PTR(-ESTALE);
-+			ASSERT(ret < 0);
-+			inode = ERR_PTR(ret < 0 ? ret : -ESTALE);
+ 	/* now the directory is empty */
+ 	err = btrfs_unlink_inode(trans, root, dir, d_inode(dentry),
+ 				 dentry->d_name.name, dentry->d_name.len);
+-	if (!err)
++	if (!err) {
+ 		btrfs_i_size_write(inode, 0);
++		/*
++		 * Propagate the last_unlink_trans value of the deleted dir to
++		 * its parent directory. This is to prevent an unrecoverable
++		 * log tree in the case we do something like this:
++		 * 1) create dir foo
++		 * 2) create snapshot under dir foo
++		 * 3) delete the snapshot
++		 * 4) rmdir foo
++		 * 5) mkdir foo
++		 * 6) fsync foo or some file inside foo
++		 */
++		if (last_unlink_trans >= trans->transid)
++			BTRFS_I(dir)->last_unlink_trans = last_unlink_trans;
++	}
+ out:
+ 	btrfs_end_transaction(trans, root);
+ 	btrfs_btree_balance_dirty(root);
+diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+index aa8fed1..0c39afb 100644
+--- a/fs/btrfs/tree-log.c
++++ b/fs/btrfs/tree-log.c
+@@ -4469,7 +4469,8 @@ static int btrfs_log_trailing_hole(struct btrfs_trans_handle *trans,
+ static int btrfs_check_ref_name_override(struct extent_buffer *eb,
+ 					 const int slot,
+ 					 const struct btrfs_key *key,
+-					 struct inode *inode)
++					 struct inode *inode,
++					 u64 *other_ino)
+ {
+ 	int ret;
+ 	struct btrfs_path *search_path;
+@@ -4528,7 +4529,16 @@ static int btrfs_check_ref_name_override(struct extent_buffer *eb,
+ 					   search_path, parent,
+ 					   name, this_name_len, 0);
+ 		if (di && !IS_ERR(di)) {
+-			ret = 1;
++			struct btrfs_key di_key;
++
++			btrfs_dir_item_key_to_cpu(search_path->nodes[0],
++						  di, &di_key);
++			if (di_key.type == BTRFS_INODE_ITEM_KEY) {
++				ret = 1;
++				*other_ino = di_key.objectid;
++			} else {
++				ret = -EAGAIN;
++			}
+ 			goto out;
+ 		} else if (IS_ERR(di)) {
+ 			ret = PTR_ERR(di);
+@@ -4718,16 +4728,71 @@ again:
+ 		if ((min_key.type == BTRFS_INODE_REF_KEY ||
+ 		     min_key.type == BTRFS_INODE_EXTREF_KEY) &&
+ 		    BTRFS_I(inode)->generation == trans->transid) {
++			u64 other_ino = 0;
++
+ 			ret = btrfs_check_ref_name_override(path->nodes[0],
+ 							    path->slots[0],
+-							    &min_key, inode);
++							    &min_key, inode,
++							    &other_ino);
+ 			if (ret < 0) {
+ 				err = ret;
+ 				goto out_unlock;
+ 			} else if (ret > 0) {
+-				err = 1;
+-				btrfs_set_log_full_commit(root->fs_info, trans);
+-				goto out_unlock;
++				struct btrfs_key inode_key;
++				struct inode *other_inode;
++
++				if (ins_nr > 0) {
++					ins_nr++;
++				} else {
++					ins_nr = 1;
++					ins_start_slot = path->slots[0];
++				}
++				ret = copy_items(trans, inode, dst_path, path,
++						 &last_extent, ins_start_slot,
++						 ins_nr, inode_only,
++						 logged_isize);
++				if (ret < 0) {
++					err = ret;
++					goto out_unlock;
++				}
++				ins_nr = 0;
++				btrfs_release_path(path);
++				inode_key.objectid = other_ino;
++				inode_key.type = BTRFS_INODE_ITEM_KEY;
++				inode_key.offset = 0;
++				other_inode = btrfs_iget(root->fs_info->sb,
++							 &inode_key, root,
++							 NULL);
++				/*
++				 * If the other inode that had a conflicting dir
++				 * entry was deleted in the current transaction,
++				 * we don't need to do more work nor fallback to
++				 * a transaction commit.
++				 */
++				if (IS_ERR(other_inode) &&
++				    PTR_ERR(other_inode) == -ENOENT) {
++					goto next_key;
++				} else if (IS_ERR(other_inode)) {
++					err = PTR_ERR(other_inode);
++					goto out_unlock;
++				}
++				/*
++				 * We are safe logging the other inode without
++				 * acquiring its i_mutex as long as we log with
++				 * the LOG_INODE_EXISTS mode. We're safe against
++				 * concurrent renames of the other inode as well
++				 * because during a rename we pin the log and
++				 * update the log with the new name before we
++				 * unpin it.
++				 */
++				err = btrfs_log_inode(trans, root, other_inode,
++						      LOG_INODE_EXISTS,
++						      0, LLONG_MAX, ctx);
++				iput(other_inode);
++				if (err)
++					goto out_unlock;
++				else
++					goto next_key;
+ 			}
  		}
- 	}
  
+@@ -4795,7 +4860,7 @@ next_slot:
+ 			ins_nr = 0;
+ 		}
+ 		btrfs_release_path(path);
+-
++next_key:
+ 		if (min_key.offset < (u64)-1) {
+ 			min_key.offset++;
+ 		} else if (min_key.type < max_key.type) {
+@@ -4989,8 +5054,12 @@ static noinline int check_parent_dirs_for_sync(struct btrfs_trans_handle *trans,
+ 		if (!parent || d_really_is_negative(parent) || sb != d_inode(parent)->i_sb)
+ 			break;
+ 
+-		if (IS_ROOT(parent))
++		if (IS_ROOT(parent)) {
++			inode = d_inode(parent);
++			if (btrfs_must_commit_transaction(trans, inode))
++				ret = 1;
+ 			break;
++		}
+ 
+ 		parent = dget_parent(parent);
+ 		dput(old_parent);
 -- 
 2.7.0.rc3
 

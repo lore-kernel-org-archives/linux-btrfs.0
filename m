@@ -1,76 +1,85 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:59683 "EHLO plane.gmane.org"
+Received: from plane.gmane.org ([80.91.229.3]:32864 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752172AbcFIPdm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 9 Jun 2016 11:33:42 -0400
+	id S1752631AbcFIPlX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 9 Jun 2016 11:41:23 -0400
 Received: from list by plane.gmane.org with local (Exim 4.69)
 	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1bB1ry-0005BG-QO
-	for linux-btrfs@vger.kernel.org; Thu, 09 Jun 2016 17:27:42 +0200
+	id 1bB25B-0000I2-VB
+	for linux-btrfs@vger.kernel.org; Thu, 09 Jun 2016 17:41:22 +0200
 Received: from ip-64-134-228-1.public.wayport.net ([64.134.228.1])
         by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 09 Jun 2016 17:27:42 +0200
+        for <linux-btrfs@vger.kernel.org>; Thu, 09 Jun 2016 17:41:21 +0200
 Received: from 1i5t5.duncan by ip-64-134-228-1.public.wayport.net with local (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 09 Jun 2016 17:27:42 +0200
+        for <linux-btrfs@vger.kernel.org>; Thu, 09 Jun 2016 17:41:21 +0200
 To: linux-btrfs@vger.kernel.org
 From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: Replacing drives with larger ones in a 4 drive raid1
-Date: Thu, 9 Jun 2016 15:20:47 +0000 (UTC)
-Message-ID: <pan$6ab4$792ded48$cf23daab$a8e4c2@cox.net>
-References: <022F65B5-228D-4EEF-95C9-3C269B63B290@bueechi.net>
+Subject: Re: btrfs filesystem keeps allocating new chunks for no apparent
+ reason
+Date: Thu, 9 Jun 2016 15:41:15 +0000 (UTC)
+Message-ID: <pan$2dac6$9a9c194e$57b6cef4$3686a053@cox.net>
+References: <572D0C8B.8010404@mendix.com>
+	<89a684c7-364e-f409-5348-bc0077fd438c@cn.fujitsu.com>
+	<5758A5F6.4060400@mendix.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-boli posted on Wed, 08 Jun 2016 20:55:13 +0200 as excerpted:
+Hans van Kranenburg posted on Thu, 09 Jun 2016 01:10:46 +0200 as
+excerpted:
 
-> Recently I had the idea to replace the 6 TB HDDs with 8 TB ones ("WD
-> Red"), because their price is now acceptable.
+> The next question is what files these extents belong to. To find out, I
+> need to open up the extent items I get back and follow a backreference
+> to an inode object. Might do that tomorrow, fun.
+> 
+> To be honest, I suspect /var/log and/or the file storage of mailman to
+> be the cause of the fragmentation, since there's logging from postfix,
+> mailman and nginx going on all day long in a slow but steady tempo.
+> While using btrfs for a number of use cases at work now, we normally
+> don't use it for the root filesystem. And the cases where it's used as
+> root filesystem don't do much logging or mail.
 
-Are those the 8 TB SMR "archive" drives?
+FWIW, that's one reason I have a dedicated partition (and filesystem) for 
+logs, here.  (The other reason is that should something go runaway log-
+spewing, I get a warning much sooner when my log filesystem fills up, not 
+much later, with much worse implications, when the main filesystem fills 
+up!)
 
-I haven't been following the issue very closely, but be aware that there 
-were serious issues with those drives a few kernels back, and that while 
-those issues are now fixed, the drives themselves operate rather 
-differently than normal drives, and simply don't work well in normal 
-usage.
+> And no, autodefrag is not in the mount options currently. Would that be
+> helpful in this case?
 
-The short version is that they really are designed for archiving and work 
-well when used for that purpose -- a mostly write once and leave it there 
-for archiving and retrieval but rarely if ever rewrite it, type usage.  
-However, they work rather poorly in normal usage where data is rewritten, 
-because they have to rewrite entire zones of data, and that takes much 
-longer than simply rewriting individual sectors on normal drives does.
+It should be helpful, yes.  Be aware that autodefrag works best with 
+smaller (sub-half-gig) files, however, and that it used to cause 
+performance issues with larger database and VM files, in particular.  
+There used to be a warning on the wiki about that, that was recently 
+removed, so apparently it's not the issue that it was, but you might wish 
+to monitor any databases or VMs with gig-plus files to see if it's going 
+to be a performance issue, once you turn on autodefrag.
 
-With the kernel patches to fix the initial problems they do work well 
-enough, tho performance may not be what you expect, but the key to 
-keeping them working well is being aware that they continue to do 
-rewrites in the background for long after they are done with the initial 
-write, and shutting them down while they are doing them can be an issue.
+The other issue with autodefrag is that if it hasn't been on and things 
+are heavily fragmented, it can at first drive down performance as it 
+rewrites all these heavily fragmented files, until it catches up and is 
+mostly dealing only with the normal refragmentation load.  Of course the 
+best way around that is to run autodefrag from the first time you mount 
+the filesystem and start writing to it, so it never gets overly 
+fragmented in the first place.  For a currently in-use and highly 
+fragmented filesystem, you have two choices, either backup and do a fresh 
+mkfs.btrfs so you can start with a clean filesystem and autodefrag from 
+the beginning, or doing manual defrag.
 
-Due to btrfs' data checksumming feature, small variances to data that 
-wouldn't normally be detected on non-checksumming filesystems were 
-detected far sooner on btrfs, making it far more sensitive to these small 
-errors.  However, if you use the drives for their intended nearly write-
-only purpose, and/or very seldom power down the drives at all or do so 
-only long after (give it half an hour, say) any writes have completed, as 
-long as you're running a current kernel with the initial issues patched, 
-you should be fine.  Just don't treat them like normal drives.
+However, be aware that if you have snapshots locking down the old extents 
+in their fragmented form, a manual defrag will copy the data to new 
+extents without releasing the old ones as they're locked in place by the 
+snapshots, thus using additional space.  Worse, if the filesystem is 
+already heavily fragmented and snapshots are locking most of those 
+fragments in place, defrag likely won't help a lot, because the free 
+space as well will be heavily fragmented.   So starting off with a clean 
+and new filesystem and using autodefrag from the beginning really is your 
+best bet.
 
-If OTOH you need more normal drive usage including lots of data rewrites, 
-especially if you frequently poweroff the devices, strongly consider 
-avoiding those 8 TB SMR drives, at least until the technology has a few 
-more years to mature.
-
-There's more information on other threads on the list and on other lists, 
-if you need it and nobody posts more direct information (such as the 
-specific patches in question and what specific kernel versions they hit) 
-here.  I could find it but I'd have to do a search in my own list 
-archives, and now that you are aware of the problem, you can of course do 
-the search as well, if you need to. =:^)
 
 -- 
 Duncan - List replies preferred.   No HTML msgs.

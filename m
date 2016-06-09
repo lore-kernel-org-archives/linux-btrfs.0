@@ -1,93 +1,278 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:35907 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:37629 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753287AbcFMUTY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 13 Jun 2016 16:19:24 -0400
+	id S1751396AbcFIXsM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 9 Jun 2016 19:48:12 -0400
 Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id 67E3BAAAD
-	for <linux-btrfs@vger.kernel.org>; Mon, 13 Jun 2016 20:19:22 +0000 (UTC)
-Subject: Re: [PATCH 2/2] btrfs: prefix fsid to all trace events
-To: dsterba@suse.cz, Btrfs Development List <linux-btrfs@vger.kernel.org>
-References: <1465516081-26045-1-git-send-email-jeffm@suse.com>
- <1465516081-26045-2-git-send-email-jeffm@suse.com>
- <20160613154814.GC6205@twin.jikos.cz>
-From: Jeff Mahoney <jeffm@suse.com>
-Message-ID: <b9e6442b-a75b-6e65-d280-f1624feed4d7@suse.com>
-Date: Mon, 13 Jun 2016 16:19:12 -0400
-MIME-Version: 1.0
-In-Reply-To: <20160613154814.GC6205@twin.jikos.cz>
-Content-Type: multipart/signed; micalg=pgp-sha1;
- protocol="application/pgp-signature";
- boundary="VjsoJpQIa5gaxqlPER8sFtSuxRhFP9wG6"
+	by mx2.suse.de (Postfix) with ESMTP id 00B86ABF1
+	for <linux-btrfs@vger.kernel.org>; Thu,  9 Jun 2016 23:48:09 +0000 (UTC)
+From: jeffm@suse.com
+To: Btrfs Development List <linux-btrfs@vger.kernel.org>
+Cc: Jeff Mahoney <jeffm@suse.com>
+Subject: [PATCH 1/2] btrfs: plumb fs_info into btrfs_work
+Date: Thu,  9 Jun 2016 19:48:00 -0400
+Message-Id: <1465516081-26045-1-git-send-email-jeffm@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---VjsoJpQIa5gaxqlPER8sFtSuxRhFP9wG6
-Content-Type: multipart/mixed; boundary="G2UOAuVE3fIC2gF3LkXEg7w5Qdi1Dtbws"
 From: Jeff Mahoney <jeffm@suse.com>
-To: dsterba@suse.cz, Btrfs Development List <linux-btrfs@vger.kernel.org>
-Message-ID: <b9e6442b-a75b-6e65-d280-f1624feed4d7@suse.com>
-Subject: Re: [PATCH 2/2] btrfs: prefix fsid to all trace events
-References: <1465516081-26045-1-git-send-email-jeffm@suse.com>
- <1465516081-26045-2-git-send-email-jeffm@suse.com>
- <20160613154814.GC6205@twin.jikos.cz>
-In-Reply-To: <20160613154814.GC6205@twin.jikos.cz>
 
---G2UOAuVE3fIC2gF3LkXEg7w5Qdi1Dtbws
-Content-Type: text/plain; charset=windows-1252
-Content-Transfer-Encoding: quoted-printable
+In order to provide an fsid for trace events, we'll need a btrfs_fs_info
+pointer.  The most lightweight way to do that for btrfs_work structures
+is to associate it with the __btrfs_workqueue structure.  Each queued
+btrfs_work structure has a workqueue associated with it, so that's
+a natural fit.  It's a privately defined structures, so we add accessors
+to retrieve the fs_info pointer.
 
-On 6/13/16 11:48 AM, David Sterba wrote:
-> On Thu, Jun 09, 2016 at 07:48:01PM -0400, jeffm@suse.com wrote:
->> +#define TP_printk_btrfs(fmt, args...) \
->> +	TP_printk("%pU: " fmt, __entry->fsid, args)
->=20
-> So it's identified by the UUID. As there's no previous format of the
-> filesystem identifier (unlike the syslog messages), I'm ok with using
-> the UUID.
+Signed-off-by: Jeff Mahoney <jeffm@suse.com>
+---
+ fs/btrfs/async-thread.c | 31 +++++++++++++++++++++++++------
+ fs/btrfs/async-thread.h |  6 +++++-
+ fs/btrfs/disk-io.c      | 47 ++++++++++++++++++++++++++++-------------------
+ fs/btrfs/scrub.c        | 10 +++++-----
+ 4 files changed, 63 insertions(+), 31 deletions(-)
 
-Buried in the patch is actually the single use of a previous format for
-trace events that I've converted to use the macros.  It's the
-btrfs_space_reservation that Josef added in 2012[1].
+diff --git a/fs/btrfs/async-thread.c b/fs/btrfs/async-thread.c
+index 5fb60ea..e0f071f 100644
+--- a/fs/btrfs/async-thread.c
++++ b/fs/btrfs/async-thread.c
+@@ -34,6 +34,10 @@
+ 
+ struct __btrfs_workqueue {
+ 	struct workqueue_struct *normal_wq;
++
++	/* File system this workqueue services */
++	struct btrfs_fs_info *fs_info;
++
+ 	/* List head pointing to ordered work list */
+ 	struct list_head ordered_list;
+ 
+@@ -70,6 +74,18 @@ void btrfs_##name(struct work_struct *arg)				\
+ 	normal_work_helper(work);					\
+ }
+ 
++struct btrfs_fs_info *
++btrfs_workqueue_owner(struct __btrfs_workqueue *wq)
++{
++	return wq->fs_info;
++}
++
++struct btrfs_fs_info *
++btrfs_work_owner(struct btrfs_work *work)
++{
++	return work->wq->fs_info;
++}
++
+ BTRFS_WORK_HELPER(worker_helper);
+ BTRFS_WORK_HELPER(delalloc_helper);
+ BTRFS_WORK_HELPER(flush_delalloc_helper);
+@@ -94,14 +110,15 @@ BTRFS_WORK_HELPER(scrubnc_helper);
+ BTRFS_WORK_HELPER(scrubparity_helper);
+ 
+ static struct __btrfs_workqueue *
+-__btrfs_alloc_workqueue(const char *name, unsigned int flags, int limit_active,
+-			 int thresh)
++__btrfs_alloc_workqueue(struct btrfs_fs_info *fs_info, const char *name,
++			unsigned int flags, int limit_active, int thresh)
+ {
+ 	struct __btrfs_workqueue *ret = kzalloc(sizeof(*ret), GFP_KERNEL);
+ 
+ 	if (!ret)
+ 		return NULL;
+ 
++	ret->fs_info = fs_info;
+ 	ret->limit_active = limit_active;
+ 	atomic_set(&ret->pending, 0);
+ 	if (thresh == 0)
+@@ -143,7 +160,8 @@ __btrfs_alloc_workqueue(const char *name, unsigned int flags, int limit_active,
+ static inline void
+ __btrfs_destroy_workqueue(struct __btrfs_workqueue *wq);
+ 
+-struct btrfs_workqueue *btrfs_alloc_workqueue(const char *name,
++struct btrfs_workqueue *btrfs_alloc_workqueue(struct btrfs_fs_info *fs_info,
++					      const char *name,
+ 					      unsigned int flags,
+ 					      int limit_active,
+ 					      int thresh)
+@@ -153,7 +171,8 @@ struct btrfs_workqueue *btrfs_alloc_workqueue(const char *name,
+ 	if (!ret)
+ 		return NULL;
+ 
+-	ret->normal = __btrfs_alloc_workqueue(name, flags & ~WQ_HIGHPRI,
++	ret->normal = __btrfs_alloc_workqueue(fs_info, name,
++					      flags & ~WQ_HIGHPRI,
+ 					      limit_active, thresh);
+ 	if (!ret->normal) {
+ 		kfree(ret);
+@@ -161,8 +180,8 @@ struct btrfs_workqueue *btrfs_alloc_workqueue(const char *name,
+ 	}
+ 
+ 	if (flags & WQ_HIGHPRI) {
+-		ret->high = __btrfs_alloc_workqueue(name, flags, limit_active,
+-						    thresh);
++		ret->high = __btrfs_alloc_workqueue(fs_info, name, flags,
++						    limit_active, thresh);
+ 		if (!ret->high) {
+ 			__btrfs_destroy_workqueue(ret->normal);
+ 			kfree(ret);
+diff --git a/fs/btrfs/async-thread.h b/fs/btrfs/async-thread.h
+index ad4d064..8e52484 100644
+--- a/fs/btrfs/async-thread.h
++++ b/fs/btrfs/async-thread.h
+@@ -21,6 +21,7 @@
+ #define __BTRFS_ASYNC_THREAD_
+ #include <linux/workqueue.h>
+ 
++struct btrfs_fs_info;
+ struct btrfs_workqueue;
+ /* Internal use only */
+ struct __btrfs_workqueue;
+@@ -67,7 +68,8 @@ BTRFS_WORK_HELPER_PROTO(scrubnc_helper);
+ BTRFS_WORK_HELPER_PROTO(scrubparity_helper);
+ 
+ 
+-struct btrfs_workqueue *btrfs_alloc_workqueue(const char *name,
++struct btrfs_workqueue *btrfs_alloc_workqueue(struct btrfs_fs_info *fs_info,
++					      const char *name,
+ 					      unsigned int flags,
+ 					      int limit_active,
+ 					      int thresh);
+@@ -80,4 +82,6 @@ void btrfs_queue_work(struct btrfs_workqueue *wq,
+ void btrfs_destroy_workqueue(struct btrfs_workqueue *wq);
+ void btrfs_workqueue_set_max(struct btrfs_workqueue *wq, int max);
+ void btrfs_set_work_high_priority(struct btrfs_work *work);
++struct btrfs_fs_info *btrfs_work_owner(struct btrfs_work *work);
++struct btrfs_fs_info *btrfs_workqueue_owner(struct __btrfs_workqueue *wq);
+ #endif
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 6628fca..d040d66 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -2306,17 +2306,19 @@ static int btrfs_init_workqueues(struct btrfs_fs_info *fs_info,
+ 	unsigned int flags = WQ_MEM_RECLAIM | WQ_FREEZABLE | WQ_UNBOUND;
+ 
+ 	fs_info->workers =
+-		btrfs_alloc_workqueue("worker", flags | WQ_HIGHPRI,
+-				      max_active, 16);
++		btrfs_alloc_workqueue(fs_info, "worker",
++				      flags | WQ_HIGHPRI, max_active, 16);
+ 
+ 	fs_info->delalloc_workers =
+-		btrfs_alloc_workqueue("delalloc", flags, max_active, 2);
++		btrfs_alloc_workqueue(fs_info, "delalloc",
++				      flags, max_active, 2);
+ 
+ 	fs_info->flush_workers =
+-		btrfs_alloc_workqueue("flush_delalloc", flags, max_active, 0);
++		btrfs_alloc_workqueue(fs_info, "flush_delalloc",
++				      flags, max_active, 0);
+ 
+ 	fs_info->caching_workers =
+-		btrfs_alloc_workqueue("cache", flags, max_active, 0);
++		btrfs_alloc_workqueue(fs_info, "cache", flags, max_active, 0);
+ 
+ 	/*
+ 	 * a higher idle thresh on the submit workers makes it much more
+@@ -2324,41 +2326,48 @@ static int btrfs_init_workqueues(struct btrfs_fs_info *fs_info,
+ 	 * devices
+ 	 */
+ 	fs_info->submit_workers =
+-		btrfs_alloc_workqueue("submit", flags,
++		btrfs_alloc_workqueue(fs_info, "submit", flags,
+ 				      min_t(u64, fs_devices->num_devices,
+ 					    max_active), 64);
+ 
+ 	fs_info->fixup_workers =
+-		btrfs_alloc_workqueue("fixup", flags, 1, 0);
++		btrfs_alloc_workqueue(fs_info, "fixup", flags, 1, 0);
+ 
+ 	/*
+ 	 * endios are largely parallel and should have a very
+ 	 * low idle thresh
+ 	 */
+ 	fs_info->endio_workers =
+-		btrfs_alloc_workqueue("endio", flags, max_active, 4);
++		btrfs_alloc_workqueue(fs_info, "endio", flags, max_active, 4);
+ 	fs_info->endio_meta_workers =
+-		btrfs_alloc_workqueue("endio-meta", flags, max_active, 4);
++		btrfs_alloc_workqueue(fs_info, "endio-meta", flags,
++				      max_active, 4);
+ 	fs_info->endio_meta_write_workers =
+-		btrfs_alloc_workqueue("endio-meta-write", flags, max_active, 2);
++		btrfs_alloc_workqueue(fs_info, "endio-meta-write", flags,
++				      max_active, 2);
+ 	fs_info->endio_raid56_workers =
+-		btrfs_alloc_workqueue("endio-raid56", flags, max_active, 4);
++		btrfs_alloc_workqueue(fs_info, "endio-raid56", flags,
++				      max_active, 4);
+ 	fs_info->endio_repair_workers =
+-		btrfs_alloc_workqueue("endio-repair", flags, 1, 0);
++		btrfs_alloc_workqueue(fs_info, "endio-repair", flags, 1, 0);
+ 	fs_info->rmw_workers =
+-		btrfs_alloc_workqueue("rmw", flags, max_active, 2);
++		btrfs_alloc_workqueue(fs_info, "rmw", flags, max_active, 2);
+ 	fs_info->endio_write_workers =
+-		btrfs_alloc_workqueue("endio-write", flags, max_active, 2);
++		btrfs_alloc_workqueue(fs_info, "endio-write", flags,
++				      max_active, 2);
+ 	fs_info->endio_freespace_worker =
+-		btrfs_alloc_workqueue("freespace-write", flags, max_active, 0);
++		btrfs_alloc_workqueue(fs_info, "freespace-write", flags,
++				      max_active, 0);
+ 	fs_info->delayed_workers =
+-		btrfs_alloc_workqueue("delayed-meta", flags, max_active, 0);
++		btrfs_alloc_workqueue(fs_info, "delayed-meta", flags,
++				      max_active, 0);
+ 	fs_info->readahead_workers =
+-		btrfs_alloc_workqueue("readahead", flags, max_active, 2);
++		btrfs_alloc_workqueue(fs_info, "readahead", flags,
++				      max_active, 2);
+ 	fs_info->qgroup_rescan_workers =
+-		btrfs_alloc_workqueue("qgroup-rescan", flags, 1, 0);
++		btrfs_alloc_workqueue(fs_info, "qgroup-rescan", flags, 1, 0);
+ 	fs_info->extent_workers =
+-		btrfs_alloc_workqueue("extent-refs", flags,
++		btrfs_alloc_workqueue(fs_info, "extent-refs", flags,
+ 				      min_t(u64, fs_devices->num_devices,
+ 					    max_active), 8);
+ 
+diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
+index 70427ef..86270c6 100644
+--- a/fs/btrfs/scrub.c
++++ b/fs/btrfs/scrub.c
+@@ -3781,27 +3781,27 @@ static noinline_for_stack int scrub_workers_get(struct btrfs_fs_info *fs_info,
+ 	if (fs_info->scrub_workers_refcnt == 0) {
+ 		if (is_dev_replace)
+ 			fs_info->scrub_workers =
+-				btrfs_alloc_workqueue("scrub", flags,
++				btrfs_alloc_workqueue(fs_info, "scrub", flags,
+ 						      1, 4);
+ 		else
+ 			fs_info->scrub_workers =
+-				btrfs_alloc_workqueue("scrub", flags,
++				btrfs_alloc_workqueue(fs_info, "scrub", flags,
+ 						      max_active, 4);
+ 		if (!fs_info->scrub_workers)
+ 			goto fail_scrub_workers;
+ 
+ 		fs_info->scrub_wr_completion_workers =
+-			btrfs_alloc_workqueue("scrubwrc", flags,
++			btrfs_alloc_workqueue(fs_info, "scrubwrc", flags,
+ 					      max_active, 2);
+ 		if (!fs_info->scrub_wr_completion_workers)
+ 			goto fail_scrub_wr_completion_workers;
+ 
+ 		fs_info->scrub_nocow_workers =
+-			btrfs_alloc_workqueue("scrubnc", flags, 1, 0);
++			btrfs_alloc_workqueue(fs_info, "scrubnc", flags, 1, 0);
+ 		if (!fs_info->scrub_nocow_workers)
+ 			goto fail_scrub_nocow_workers;
+ 		fs_info->scrub_parity_workers =
+-			btrfs_alloc_workqueue("scrubparity", flags,
++			btrfs_alloc_workqueue(fs_info, "scrubparity", flags,
+ 					      max_active, 2);
+ 		if (!fs_info->scrub_parity_workers)
+ 			goto fail_scrub_parity_workers;
+-- 
+2.7.1
 
-I wouldn't have minded a shorter identifier but given how prevalent its
-usage is internal to the FS, its exported interfaces, and tools
-surrounding it, it seems like it's the only real choice.
-
--Jeff
-
-[1] 8c2a3ca20f6 (Btrfs: space leak tracepoints)
-
---=20
-Jeff Mahoney
-SUSE Labs
-
-
---G2UOAuVE3fIC2gF3LkXEg7w5Qdi1Dtbws--
-
---VjsoJpQIa5gaxqlPER8sFtSuxRhFP9wG6
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG/MacGPG2 v2.0.19 (Darwin)
-Comment: GPGTools - http://gpgtools.org
-
-iQIcBAEBAgAGBQJXXxVGAAoJEB57S2MheeWyFiAP/ixw+BElHz6Abf8kymN9eHs2
-uQFL7g1r8zHd8wQr4RrP90stsVft4G5NVevVq6M2xIXF2EN+RbW84Pt9QsXl8a6k
-P2XC4zL7fLVELWRIzyk1bHCc4q3yKl/6xqCybFQY3rvjvULWEHFO+fx3AwDd3BLw
-Hl5ie7kC32+LV3a4LHyZ/B4IOIlWrocgwBeoEKWK7btGnWb5RloDFPFFQ4yrhaHH
-+NIfV4yObAAR23lGjfHlScvx3XpW2fvVi8KC3RJZXzI7Fnf5cEnqx08zeaP/Howb
-pqiiP1iPc1pUmdf89ParcO0rH+aLUOsGsqcY0qVEUMq3QQr2dQ3DOLXP/W0BtrZv
-syaHVKTQMXl3XDhMmQzIR0kvIvHQt3snRupKnRoWD04H4PQL7jB1Q+Lk2Sf2mQYZ
-KOhJ1p8IjX/LIDVEKycgp+qxlf9SnPB1gmAqtdnhiKEDy0Ww3iwFKpUTmDCjDpIi
-oPlV3cbNZlZRqXc2Tx8F0xnmI+4XxB0nLPHB8hX6fJ2v8Bum9B3mipd4cbebvKBA
-PcABeS4f+kuEZvg0pQdY8AEigycUobXc/v6+a41VRoUK21nzOpo7FRL/bY8tFTAG
-HZXIdvHOHvn2VDf7Iuh2coPL8HtIDTqx5QmkfQegjiRKZeMVY7qFUdb5W0VnlUx/
-1+qHmJz5pRxh8KR/yZW4
-=QqGG
------END PGP SIGNATURE-----
-
---VjsoJpQIa5gaxqlPER8sFtSuxRhFP9wG6--

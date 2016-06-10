@@ -1,197 +1,98 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from syrinx.knorrie.org ([82.94.188.77]:40098 "EHLO
-	syrinx.knorrie.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752704AbcFJUrd (ORCPT
+Received: from mail-vk0-f46.google.com ([209.85.213.46]:36106 "EHLO
+	mail-vk0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932296AbcFJVAL (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 10 Jun 2016 16:47:33 -0400
-Subject: Re: [PATCH] Btrfs-progs: add check-only option for balance
-To: Ashish Samant <ashish.samant@oracle.com>, linux-btrfs@vger.kernel.org
-References: <1465508801-14163-1-git-send-email-ashish.samant@oracle.com>
-Cc: bo.li.liu@oracle.com
-From: Hans van Kranenburg <hans.van.kranenburg@mendix.com>
-Message-ID: <575B2760.30109@mendix.com>
-Date: Fri, 10 Jun 2016 22:47:28 +0200
+	Fri, 10 Jun 2016 17:00:11 -0400
+Received: by mail-vk0-f46.google.com with SMTP id u64so2241689vkf.3
+        for <linux-btrfs@vger.kernel.org>; Fri, 10 Jun 2016 14:00:11 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <1465508801-14163-1-git-send-email-ashish.samant@oracle.com>
-Content-Type: text/plain; charset=windows-1252; format=flowed
+In-Reply-To: <CAKzrAgRQOvpy3ZVrLHHaRQt-JcjiFSFz6HPGr1vnvBK0xy5xGg@mail.gmail.com>
+References: <CAKzrAgRQOvpy3ZVrLHHaRQt-JcjiFSFz6HPGr1vnvBK0xy5xGg@mail.gmail.com>
+From: Henk Slager <eye1tm@gmail.com>
+Date: Fri, 10 Jun 2016 23:00:10 +0200
+Message-ID: <CAPmG0jZUx+V+1eyw1cDpHDkudXqfLQFL9+53Lzb3f0_PGXw+Xw@mail.gmail.com>
+Subject: Re: Cannot balance FS (No space left on device)
+To: "ojab //" <ojab@ojab.ru>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+On Fri, Jun 10, 2016 at 8:04 PM, ojab // <ojab@ojab.ru> wrote:
+> [Please CC me since I'm not subscribed to the list]
+> Hi,
+> I've tried to `/usr/bin/btrfs fi defragment -r` my btrfs partition,
+> but it's failed w/ "No space left on device" and now I can't get any
+> free space on that partition (deleting some files or adding new device
+> doesn't help). During defrag I've used `space_cache=v2` mount option,
+> but remounted FS w/ `clear_cache` flag since then. Also I've deleted
+> about 50Gb of files and added new 250Gb disk since then:
+>
+>>$ df -h /mnt/xxx/
+>>Filesystem      Size  Used Avail Use% Mounted on
+>>/dev/sdc1       2,1T  1,8T   37G  99% /mnt/xxx
+>>$ sudo /usr/bin/btrfs fi show
+>>Label: none  uuid: 8a65465d-1a8c-4f80-abc6-c818c38567c3
+>>    Total devices 3 FS bytes used 1.78TiB
+>>    devid    1 size 931.51GiB used 931.51GiB path /dev/sdc1
+>>    devid    2 size 931.51GiB used 931.51GiB path /dev/sdb1
+>>    devid    3 size 230.41GiB used 0.00B path /dev/sdd1
+>>$ sudo /usr/bin/btrfs fi usage /mnt/xxx/
+>>Overall:
+>>    Device size:                   2.04TiB
+>>    Device allocated:              1.82TiB
+>>    Device unallocated:            230.41GiB
+>>    Device missing:                0.00B
+>>    Used:                          1.78TiB
+>>    Free (estimated):              267.23GiB      (min: 152.03GiB)
+>>    Data ratio:                    1.00
+>>    Metadata ratio:                2.00
+>>    Global reserve:                512.00MiB      (used: 0.00B)
+>>
+>>Data,RAID0: Size:1.81TiB, Used:1.78TiB
+>>   /dev/sdb1               928.48GiB
+>>   /dev/sdc1               928.48GiB
+>>
+>>Metadata,RAID1: Size:3.00GiB, Used:2.30GiB
+>>   /dev/sdb1       3.00GiB
+>>   /dev/sdc1       3.00GiB
+>>
+>>System,RAID1: Size:32.00MiB, Used:176.00KiB
+>>   /dev/sdb1    32.00MiB
+>>   /dev/sdc1    32.00MiB
+>>
+>>Unallocated:
+>>   /dev/sdb1       1.01MiB
+>>   /dev/sdc1       1.00MiB
+>>   /dev/sdd1       230.41GiB
+>>$ sudo /usr/bin/btrfs balance start -dusage=66 /mnt/xxx/
+>>Done, had to relocate 0 out of 935 chunks
+>>$ sudo /usr/bin/btrfs balance start -dusage=67 /mnt/xxx/
+>>ERROR: error during balancing '/mnt/xxx/': No space left on device
+>>There may be more info in syslog - try dmesg | tail
+>
+> I assume that there is something wrong with metadata, since I can copy
+> files to FS.
+> I'm on 4.6.2 vanilla kernel and using btrfs-progs-4.6, btrfs-debugfs
+> output can be found here:
+> https://gist.githubusercontent.com/ojab/1a8b1f83341403a169a8e66995c7c3da/raw/61621d22f706d7543a93a3d005415543af9a0db0/gistfile1.txt.
+> Any hint what else can I try to fix the issue?
 
-Correct me if I'm wrong,
+I have seldom seen an fs so full, very regular numbers :)
 
-On 06/09/2016 11:46 PM, Ashish Samant wrote:
-> +/* return 0 if balance can remove a data block group, otherwise return 1 */
-> +static int search_data_bgs(const char *path)
-> +{
-> +	struct btrfs_ioctl_search_args args;
-> +	struct btrfs_ioctl_search_key *sk;
-> +	struct btrfs_ioctl_search_header *header;
-> +	struct btrfs_block_group_item *bg;
-> +	unsigned long off = 0;
-> +	DIR *dirstream = NULL;
-> +	int e;
-> +	int fd;
-> +	int i;
-> +	u64 total_free = 0;
-> +	u64 min_used = (u64)-1;
-> +	u64 free_of_min_used = 0;
-> +	u64 bg_of_min_used = 0;
-> +	u64 flags;
-> +	u64 used;
-> +	int ret = 0;
-> +	int nr_data_bgs = 0;
-> +
-> +	fd = btrfs_open_dir(path, &dirstream, 1);
-> +	if (fd < 0)
-> +		return 1;
-> +
-> +	memset(&args, 0, sizeof(args));
-> +	sk = &args.key;
-> +
-> +	sk->tree_id = BTRFS_EXTENT_TREE_OBJECTID;
-> +	sk->min_objectid = sk->min_offset = sk->min_transid = 0;
-> +	sk->max_objectid = sk->max_offset = sk->max_transid = (u64)-1;
-> +	sk->max_type = sk->min_type = BTRFS_BLOCK_GROUP_ITEM_KEY;
-> +	sk->nr_items = 65536;
+But can you provide the output of this script:
+https://github.com/knorrie/btrfs-heatmap/blob/master/show_usage.py
 
-This search returns not only block group information, but also 
-everything else. You're first retrieving the complete extent tree to 
-userspace, in buffers...
+It gives better info w.r.t. devices and it is then easier to say what
+has to be done.
 
-> +
-> +	while (1) {
-> +		ret = ioctl(fd, BTRFS_IOC_TREE_SEARCH, &args);
-> +		e = errno;
-> +		if (ret < 0) {
-> +			fprintf(stderr, "ret %d error '%s'\n", ret,
-> +				strerror(e));
-> +			return ret;
-> +		}
-> +		/*
-> +		 * it should not happen.
-> +		 */
-> +		if (sk->nr_items == 0)
-> +			break;
-> +
-> +		off = 0;
-> +		for (i = 0; i < sk->nr_items; i++) {
-> +			header = (struct btrfs_ioctl_search_header *)(args.buf
-> +								      + off);
-> +
-> +			off += sizeof(*header);
-> +			if (header->type == BTRFS_BLOCK_GROUP_ITEM_KEY) {
-
-...and then just throwing 99.999999% of the results away again. This is 
-going to take a phenomenal amount of effort on a huge filesystem, 
-copying unnessecary data around between the kernel and your program.
-
-The first thing I learned myself when starting to play with the search 
-ioctl is that the search doesn't happen in some kind of 3 dimensional 
-space. You can't just filter on a type of object when walking the tree.
-
-http://logs.tvrrug.org.uk/logs/%23btrfs/2016-02-13.html#2016-02-13T22:32:52
-
-The sk->max_type = sk->min_type = BTRFS_BLOCK_GROUP_ITEM_KEY only makes 
-the search space start somewhere halfway objid 0 and end halfway objid 
-max, including all other possible values for the type field for all 
-objids in between.
-
-> +				bg = (struct btrfs_block_group_item *)
-> +					(args.buf + off);
-> +				flags = btrfs_block_group_flags(bg);
-> +				if (flags & BTRFS_BLOCK_GROUP_DATA) {
-> +					nr_data_bgs++;
-> +					used = btrfs_block_group_used(bg);
-> +					printf(
-> +					"block_group %15llu (len %11llu used %11llu)\n",
-> +							header->objectid,
-> +							header->offset, used);
-> +					total_free += header->offset - used;
-> +					if (min_used >= used) {
-> +						min_used = used;
-> +						free_of_min_used =
-> +							header->offset - used;
-> +						bg_of_min_used =
-> +							header->objectid;
-> +					}
-> +				}
-> +			}
-> +
-> +			off += header->len;
-> +			sk->min_objectid = header->objectid;
-> +			sk->min_type = header->type;
-> +			sk->min_offset = header->offset;
-
-When the following is a part of your extent tree...
-
-key (289406976 EXTENT_ITEM 19193856) itemoff 15718 itemsize 53
-extent refs 1 gen 11 flags DATA
-extent data backref root 5 objectid 258 offset 0 count 1
-
-key (289406976 BLOCK_GROUP_ITEM 1073741824) itemoff 15694 itemsize 24
-block group used 24612864 chunk_objectid 256 flags DATA
-
-...and when the extent_item just manages to squeeze in as last result 
-into the current result buffer from the ioctl...
-
-...then your search key looks like (289406976 168 19193856) after 
-copying the values from the last seen object...
-
-> +		}
-> +		sk->nr_items = 65536;
-> +
-> +		if (sk->min_objectid < sk->max_objectid)
-> +			sk->min_objectid += 1;
-
-...and now it's (289406977 168 19193856), which means you're continuing 
-your search *after* the block group item!
-
-(289406976 168 19193856) is actually (289406976 << 72) + (168 << 64) + 
-19193856, which is 1366685806470112827871857008640
-
-The search is continued at 1366685811192479310741502222336, which skips 
-4722366482869645213696 possible places where an object could live in the 
-tree.
-
-> +		else
-> +			break;
-> +	}
-> +
-> +	if (nr_data_bgs <= 1) {
-> +		printf("Data block groups in fs = %d, no need to do balance.\n",
-> +				nr_data_bgs);
-> +		return 1;
-> +	}
-> +
-> +	printf("total bgs %d total_free %llu min_used bg %llu has (min_used %llu free %llu)\n",
-> +			nr_data_bgs, total_free, bg_of_min_used, min_used,
-> +			free_of_min_used);
-> +	if (total_free - free_of_min_used > min_used) {
-> +		printf("run 'btrfs balance start -dvrange=%llu..%llu <mountpoint>'\n",
-> +				bg_of_min_used, bg_of_min_used + 1);
-> +		ret = 0;
-> +	} else {
-> +		printf("Please don't balance data block groups, it won't work.\n");
-> +		ret = 1;
-> +	}
-> +
-> +	return ret;
-> +}
-
-A more efficient way to do this search is to first look at the chunk 
-tree, and for every chunk listed in there look up 1 exact match in the 
-extent tree, and then read the used value of it.
-
-Ironically, this is exact the thing that I was looking for when that IRC 
-conversation referenced above happened, resulting in a very similar 
-thing, playing around with searches, done in python instead of C. :-]
-
-https://github.com/knorrie/btrfs-heatmap (see show_usage.py)
-
-Moo! Have fun,
-
--- 
-Hans van Kranenburg - System / Network Engineer
-T +31 (0)10 2760434 | hans.van.kranenburg@mendix.com | www.mendix.com
+But you have btrfs raid0 data (2 stripes) and raid1 metadata, and they
+both want 2 devices currently and there is only one device with place
+for your 2G chunks. So in theory you need 2 empty devices added for a
+balance to succeed. If you can allow reduces redundancy for some time,
+you could shrink the fs used space on hdd1 to half, same for the
+partition itself, add a hdd2 parttition and add that to the fs. Or
+just add another HDD.
+Then your 50Gb of deletions could get into effect if you start
+balancing. Also have a look at the balance stripe filters I would say.

@@ -1,78 +1,60 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-vk0-f66.google.com ([209.85.213.66]:36311 "EHLO
-	mail-vk0-f66.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752111AbcFJSEi (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 10 Jun 2016 14:04:38 -0400
-Received: by mail-vk0-f66.google.com with SMTP id v188so2613411vkf.3
-        for <linux-btrfs@vger.kernel.org>; Fri, 10 Jun 2016 11:04:37 -0700 (PDT)
-MIME-Version: 1.0
-From: "ojab //" <ojab@ojab.ru>
-Date: Fri, 10 Jun 2016 18:04:34 +0000
-Message-ID: <CAKzrAgRQOvpy3ZVrLHHaRQt-JcjiFSFz6HPGr1vnvBK0xy5xGg@mail.gmail.com>
-Subject: Cannot balance FS (No space left on device)
+Received: from aarghimedes.fi ([62.75.165.48]:37169 "EHLO aarghimedes.fi"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752462AbcFJS42 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 10 Jun 2016 14:56:28 -0400
+Received: from [192.168.2.120] (79-134-100-39.cust.suomicom.net [79.134.100.39])
+	by aarghimedes.fi (Postfix) with ESMTPSA id C9C0C63C559D
+	for <linux-btrfs@vger.kernel.org>; Fri, 10 Jun 2016 21:56:22 +0300 (EEST)
+Subject: Re: Replacing drives with larger ones in a 4 drive raid1
 To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+References: <022F65B5-228D-4EEF-95C9-3C269B63B290@bueechi.net>
+ <pan$6ab4$792ded48$cf23daab$a8e4c2@cox.net>
+From: Jukka Larja <roskakori@aarghimedes.fi>
+Message-ID: <575B0D5B.8040601@aarghimedes.fi>
+Date: Fri, 10 Jun 2016 21:56:27 +0300
+MIME-Version: 1.0
+In-Reply-To: <pan$6ab4$792ded48$cf23daab$a8e4c2@cox.net>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-[Please CC me since I'm not subscribed to the list]
-Hi,
-I've tried to `/usr/bin/btrfs fi defragment -r` my btrfs partition,
-but it's failed w/ "No space left on device" and now I can't get any
-free space on that partition (deleting some files or adding new device
-doesn't help). During defrag I've used `space_cache=v2` mount option,
-but remounted FS w/ `clear_cache` flag since then. Also I've deleted
-about 50Gb of files and added new 250Gb disk since then:
+This is somewhat off topic but...
 
->$ df -h /mnt/xxx/
->Filesystem      Size  Used Avail Use% Mounted on
->/dev/sdc1       2,1T  1,8T   37G  99% /mnt/xxx
->$ sudo /usr/bin/btrfs fi show
->Label: none  uuid: 8a65465d-1a8c-4f80-abc6-c818c38567c3
->    Total devices 3 FS bytes used 1.78TiB
->    devid    1 size 931.51GiB used 931.51GiB path /dev/sdc1
->    devid    2 size 931.51GiB used 931.51GiB path /dev/sdb1
->    devid    3 size 230.41GiB used 0.00B path /dev/sdd1
->$ sudo /usr/bin/btrfs fi usage /mnt/xxx/
->Overall:
->    Device size:                   2.04TiB
->    Device allocated:              1.82TiB
->    Device unallocated:            230.41GiB
->    Device missing:                0.00B
->    Used:                          1.78TiB
->    Free (estimated):              267.23GiB      (min: 152.03GiB)
->    Data ratio:                    1.00
->    Metadata ratio:                2.00
->    Global reserve:                512.00MiB      (used: 0.00B)
->
->Data,RAID0: Size:1.81TiB, Used:1.78TiB
->   /dev/sdb1               928.48GiB
->   /dev/sdc1               928.48GiB
->
->Metadata,RAID1: Size:3.00GiB, Used:2.30GiB
->   /dev/sdb1       3.00GiB
->   /dev/sdc1       3.00GiB
->
->System,RAID1: Size:32.00MiB, Used:176.00KiB
->   /dev/sdb1    32.00MiB
->   /dev/sdc1    32.00MiB
->
->Unallocated:
->   /dev/sdb1       1.01MiB
->   /dev/sdc1       1.00MiB
->   /dev/sdd1       230.41GiB
->$ sudo /usr/bin/btrfs balance start -dusage=66 /mnt/xxx/
->Done, had to relocate 0 out of 935 chunks
->$ sudo /usr/bin/btrfs balance start -dusage=67 /mnt/xxx/
->ERROR: error during balancing '/mnt/xxx/': No space left on device
->There may be more info in syslog - try dmesg | tail
+9.6.2016, 18.20, Duncan kirjoitti:
 
-I assume that there is something wrong with metadata, since I can copy
-files to FS.
-I'm on 4.6.2 vanilla kernel and using btrfs-progs-4.6, btrfs-debugfs
-output can be found here:
-https://gist.githubusercontent.com/ojab/1a8b1f83341403a169a8e66995c7c3da/raw/61621d22f706d7543a93a3d005415543af9a0db0/gistfile1.txt.
-Any hint what else can I try to fix the issue?
+> Are those the 8 TB SMR "archive" drives?
+>
+> I haven't been following the issue very closely, but be aware that there
+> were serious issues with those drives a few kernels back, and that while
+> those issues are now fixed, the drives themselves operate rather
+> differently than normal drives, and simply don't work well in normal
+> usage.
 
-//wbr ojab
+Either the issues were not fixed or LSI Logic / Symbios Logic SAS3008 is 
+incompatible with the drives (and an older model of theirs, which I don't 
+have anymore) as well as Intel Corporation 8 Series/C220 Series Chipset 
+Family 6-port SATA Controller 1 [AHCI mode] (rev 05).
+
+I haven't been able to get the disks to fail with any other load but Btrfs. 
+However, with that they fail spectacularly. They drop out and make enough 
+mess to corrupt things beyond repair. (See 
+https://www.spinics.net/lists/linux-btrfs/msg55218.html for more info.)
+
+There's a slight change that I missed some relevant kernel update. When I 
+get new disks and can get the array fixed (it still only mounts read-only), 
+I'll do some testing with the SMR drives. If they work, that's great, but at 
+the moment I wouldn't buy them for Btrfs use even if the workload or 
+environmental characteristics wouldn't be a problem.
+
+-- 
+      ...Elämälle vierasta toimintaa...
+     Jukka Larja, Roskakori@aarghimedes.fi
+
+"Are we feeling better then?"
+"I'm naming all the stars."
+"You can't see the stars, love. That's the ceiling. Also, it's day."
+"I can see them. But I've named them all the same name, and there's terrible 
+confusion..."
+- Spike & Drusilla, Buffy the Vampire Slayer -
+

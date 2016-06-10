@@ -1,290 +1,78 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp-35.italiaonline.it ([212.48.25.163]:55260 "EHLO libero.it"
-	rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-	id S1751225AbcFJR5W (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 10 Jun 2016 13:57:22 -0400
-Reply-To: kreijack@inwind.it
-Subject: Re: [PATCH] Btrfs-progs: add check-only option for balance
-References: <1465508801-14163-1-git-send-email-ashish.samant@oracle.com>
-To: Ashish Samant <ashish.samant@oracle.com>
-Cc: linux-btrfs@vger.kernel.org, bo.li.liu@oracle.com
-From: Goffredo Baroncelli <kreijack@inwind.it>
-Message-ID: <9dbb261c-3bfd-16e1-3ed6-c12ed9d59601@inwind.it>
-Date: Fri, 10 Jun 2016 19:57:15 +0200
+Received: from mail-vk0-f66.google.com ([209.85.213.66]:36311 "EHLO
+	mail-vk0-f66.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752111AbcFJSEi (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 10 Jun 2016 14:04:38 -0400
+Received: by mail-vk0-f66.google.com with SMTP id v188so2613411vkf.3
+        for <linux-btrfs@vger.kernel.org>; Fri, 10 Jun 2016 11:04:37 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <1465508801-14163-1-git-send-email-ashish.samant@oracle.com>
-Content-Type: text/plain; charset=windows-1252
+From: "ojab //" <ojab@ojab.ru>
+Date: Fri, 10 Jun 2016 18:04:34 +0000
+Message-ID: <CAKzrAgRQOvpy3ZVrLHHaRQt-JcjiFSFz6HPGr1vnvBK0xy5xGg@mail.gmail.com>
+Subject: Cannot balance FS (No space left on device)
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi all,
+[Please CC me since I'm not subscribed to the list]
+Hi,
+I've tried to `/usr/bin/btrfs fi defragment -r` my btrfs partition,
+but it's failed w/ "No space left on device" and now I can't get any
+free space on that partition (deleting some files or adding new device
+doesn't help). During defrag I've used `space_cache=v2` mount option,
+but remounted FS w/ `clear_cache` flag since then. Also I've deleted
+about 50Gb of files and added new 250Gb disk since then:
 
-On 2016-06-09 23:46, Ashish Samant wrote:
-> From: Liu Bo <bo.li.lu@oracle.com>
-> 
-> This aims to decide whether a balance can reduce the number of
-> data block groups and if it can, this shows the '-dvrange' block
-> group's objectid.
-> 
-> With this, you can run
-> 'btrfs balance start -c mnt' or 'btrfs balance start --check-only mnt'
-> 
->  --------------------------------------------------------------
-> $ btrfs balance start -c /mnt/btrfs
-> Checking data block groups...
-> block_group        12582912 (len     8388608 used      786432)
-> block_group      1103101952 (len  1073741824 used   536870912)
-> block_group      2176843776 (len  1073741824 used  1073741824)
-> total bgs 3 total_free 544473088 min_used bg 12582912 has (min_used 786432 free 7602176)
-> run 'btrfs balance start -dvrange=12582912..12582913 your_mnt'
-> 
-> $ btrfs balance start -dvrange=12582912..12582913 /mnt/btrfs
-> Done, had to relocate 1 out of 5 chunks
-> 
-> $ btrfs balance start -c /mnt/btrfs
-> Checking data block groups...
-> block_group      1103101952 (len  1073741824 used   537395200)
-> block_group      2176843776 (len  1073741824 used  1073741824)
-> total bgs 2 total_free 536346624 min_used bg 1103101952 has (min_used 537395200 free 536346624)
->  --------------------------------------------------------------
-> 
-> So you now know how to babysit your btrfs in a smart way.
+>$ df -h /mnt/xxx/
+>Filesystem      Size  Used Avail Use% Mounted on
+>/dev/sdc1       2,1T  1,8T   37G  99% /mnt/xxx
+>$ sudo /usr/bin/btrfs fi show
+>Label: none  uuid: 8a65465d-1a8c-4f80-abc6-c818c38567c3
+>    Total devices 3 FS bytes used 1.78TiB
+>    devid    1 size 931.51GiB used 931.51GiB path /dev/sdc1
+>    devid    2 size 931.51GiB used 931.51GiB path /dev/sdb1
+>    devid    3 size 230.41GiB used 0.00B path /dev/sdd1
+>$ sudo /usr/bin/btrfs fi usage /mnt/xxx/
+>Overall:
+>    Device size:                   2.04TiB
+>    Device allocated:              1.82TiB
+>    Device unallocated:            230.41GiB
+>    Device missing:                0.00B
+>    Used:                          1.78TiB
+>    Free (estimated):              267.23GiB      (min: 152.03GiB)
+>    Data ratio:                    1.00
+>    Metadata ratio:                2.00
+>    Global reserve:                512.00MiB      (used: 0.00B)
+>
+>Data,RAID0: Size:1.81TiB, Used:1.78TiB
+>   /dev/sdb1               928.48GiB
+>   /dev/sdc1               928.48GiB
+>
+>Metadata,RAID1: Size:3.00GiB, Used:2.30GiB
+>   /dev/sdb1       3.00GiB
+>   /dev/sdc1       3.00GiB
+>
+>System,RAID1: Size:32.00MiB, Used:176.00KiB
+>   /dev/sdb1    32.00MiB
+>   /dev/sdc1    32.00MiB
+>
+>Unallocated:
+>   /dev/sdb1       1.01MiB
+>   /dev/sdc1       1.00MiB
+>   /dev/sdd1       230.41GiB
+>$ sudo /usr/bin/btrfs balance start -dusage=66 /mnt/xxx/
+>Done, had to relocate 0 out of 935 chunks
+>$ sudo /usr/bin/btrfs balance start -dusage=67 /mnt/xxx/
+>ERROR: error during balancing '/mnt/xxx/': No space left on device
+>There may be more info in syslog - try dmesg | tail
 
-I think that it is an excellent tool. However I have some suggestions, most of these are from an user interface POV:
+I assume that there is something wrong with metadata, since I can copy
+files to FS.
+I'm on 4.6.2 vanilla kernel and using btrfs-progs-4.6, btrfs-debugfs
+output can be found here:
+https://gist.githubusercontent.com/ojab/1a8b1f83341403a169a8e66995c7c3da/raw/61621d22f706d7543a93a3d005415543af9a0db0/gistfile1.txt.
+Any hint what else can I try to fix the issue?
 
-1) this should be a real command; it doesn't make sense at all that this command is a "sub command" of "btrfs bal start". I have two suggestion about that:
-a) we could add a new sub-command to the "balance" family. Something like "btrfs bal analisys", where we could put some suggestions for a good balance
-b) we could add a new sub-command to the "inspect" family. We could also add some feature like showing other block_gruop (system and metadata), and print their profile: i.e.
-
-  # btrfs inspect block-group-analisys /
-  Type           Mode              Start         Len        Used
-  Data           single      83806388224     1.00GiB   945.64MiB
-  Data           single      84880130048     1.00GiB   890.60MiB
-  Data           single      85953871872     1.00GiB   818.18MiB
-  Data           single      87027613696     1.00GiB   835.58MiB
-  Data           single      88101355520     1.00GiB  1023.91MiB
-  System         single      89175097344    32.00MiB    16.00KiB
-  Metadata       single      89208651776     1.00GiB   614.88MiB
-  [...]
-
-further options could be added like showing only the most empty chunks, sorting by the Used value, filtering by type and/or profile....
-
-2) From a readability POV, I suggest to use the pretty_size() function to display a more readable "len" and "used".
-3) For the same reason, I suggest to switch to a "tabular" format, like my example: it doesn't make sense to write for every line "block_group/len/used"...
-4) when the usual balance command fails because ENOSPACE, we could suggest to use this new command....
-
-more notes below
-
-BR
-G.Baroncelli
-
-> 
-> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
-> Signed-off-by: Ashish Samant <ashish.samant@oracle.com>
-> ---
->  cmds-balance.c |  127 +++++++++++++++++++++++++++++++++++++++++++++++++++++++-
->  1 files changed, 126 insertions(+), 1 deletions(-)
-> 
-> diff --git a/cmds-balance.c b/cmds-balance.c
-> index 8f3bf5b..e2aab6c 100644
-> --- a/cmds-balance.c
-> +++ b/cmds-balance.c
-> @@ -493,6 +493,116 @@ out:
->  	return ret;
->  }
->  
-> +/* return 0 if balance can remove a data block group, otherwise return 1 */
-> +static int search_data_bgs(const char *path)
-> +{
-> +	struct btrfs_ioctl_search_args args;
-> +	struct btrfs_ioctl_search_key *sk;
-> +	struct btrfs_ioctl_search_header *header;
-> +	struct btrfs_block_group_item *bg;
-> +	unsigned long off = 0;
-> +	DIR *dirstream = NULL;
-> +	int e;
-> +	int fd;
-> +	int i;
-> +	u64 total_free = 0;
-> +	u64 min_used = (u64)-1;
-> +	u64 free_of_min_used = 0;
-> +	u64 bg_of_min_used = 0;
-> +	u64 flags;
-> +	u64 used;
-> +	int ret = 0;
-> +	int nr_data_bgs = 0;
-> +
-> +	fd = btrfs_open_dir(path, &dirstream, 1);
-> +	if (fd < 0)
-> +		return 1;
-> +
-> +	memset(&args, 0, sizeof(args));
-> +	sk = &args.key;
-> +
-> +	sk->tree_id = BTRFS_EXTENT_TREE_OBJECTID;
-> +	sk->min_objectid = sk->min_offset = sk->min_transid = 0;
-> +	sk->max_objectid = sk->max_offset = sk->max_transid = (u64)-1;
-> +	sk->max_type = sk->min_type = BTRFS_BLOCK_GROUP_ITEM_KEY;
-> +	sk->nr_items = 65536;
-> +
-> +	while (1) {
-> +		ret = ioctl(fd, BTRFS_IOC_TREE_SEARCH, &args);
-> +		e = errno;
-> +		if (ret < 0) {
-> +			fprintf(stderr, "ret %d error '%s'\n", ret,
-> +				strerror(e));
-> +			return ret;
-> +		}
-> +		/*
-> +		 * it should not happen.
-> +		 */
-> +		if (sk->nr_items == 0)
-> +			break;
-> +
-> +		off = 0;
-> +		for (i = 0; i < sk->nr_items; i++) {
-> +			header = (struct btrfs_ioctl_search_header *)(args.buf
-> +								      + off);
-> +
-> +			off += sizeof(*header);
-> +			if (header->type == BTRFS_BLOCK_GROUP_ITEM_KEY) {
-> +				bg = (struct btrfs_block_group_item *)
-> +					(args.buf + off);
-> +				flags = btrfs_block_group_flags(bg);
-> +				if (flags & BTRFS_BLOCK_GROUP_DATA) {
-> +					nr_data_bgs++;
-> +					used = btrfs_block_group_used(bg);
-> +					printf(
-> +					"block_group %15llu (len %11llu used %11llu)\n",
-> +							header->objectid,
-> +							header->offset, used);
-
-                                                        ^^^^^^^^^^^^^^^^^^^^^
-Use pretty_size() around "header->offset" and "used"...
-
-> +					total_free += header->offset - used;
-> +					if (min_used >= used) {
-
-I think that it would be better to track the chunk with the max space free that we can reallocate: the chunk from which we should start must be selected from the ones that have the properties:
-	used <= total_free
-and this chunk must have
-	max(size - used)
-This to free the max space with one shot
-	
-	
-
-> +						min_used = used;
-> +						free_of_min_used =
-> +							header->offset - used;
-> +						bg_of_min_used =
-> +							header->objectid;
-> +					}
-> +				}
-> +			}
-> +
-> +			off += header->len;
-> +			sk->min_objectid = header->objectid;
-> +			sk->min_type = header->type;
-> +			sk->min_offset = header->offset;
-> +		}
-> +		sk->nr_items = 65536;
-> +
-> +		if (sk->min_objectid < sk->max_objectid)
-> +			sk->min_objectid += 1;
-> +		else
-> +			break;
-> +	}
-> +
-> +	if (nr_data_bgs <= 1) {
-> +		printf("Data block groups in fs = %d, no need to do balance.\n",
-> +				nr_data_bgs);
-> +		return 1;
-> +	}
-> +
-> +	printf("total bgs %d total_free %llu min_used bg %llu has (min_used %llu free %llu)\n",
-> +			nr_data_bgs, total_free, bg_of_min_used, min_used,
-> +			free_of_min_used);
-> +	if (total_free - free_of_min_used > min_used) {
-> +		printf("run 'btrfs balance start -dvrange=%llu..%llu <mountpoint>'\n",
-> +				bg_of_min_used, bg_of_min_used + 1);
-> +		ret = 0;
-> +	} else {
-> +		printf("Please don't balance data block groups, it won't work.\n");
-
-We should add the reason because the balance will not fail
-
-"WARNING: don't balance data block groups; it won't work, because there is no enough space free".
-
-
-> +		ret = 1;
-> +	}
-> +
-> +	return ret;
-> +}
-> +
->  static const char * const cmd_balance_start_usage[] = {
->  	"btrfs balance start [options] <path>",
->  	"Balance chunks across the devices",
-> @@ -508,6 +618,7 @@ static const char * const cmd_balance_start_usage[] = {
->  	"-m[filters]    act on metadata chunks",
->  	"-s[filters]    act on system chunks (only under -f)",
->  	"-v             be verbose",
-> +	"-c             only check if balance would make sense, not doing real job",
->  	"-f             force reducing of metadata integrity",
->  	"--full-balance do not print warning and do not delay start",
->  	NULL
-> @@ -521,6 +632,7 @@ static int cmd_balance_start(int argc, char **argv)
->  	int force = 0;
->  	int verbose = 0;
->  	unsigned start_flags = 0;
-> +	int check_data_bgs = 0;
->  	int i;
->  
->  	memset(&args, 0, sizeof(args));
-> @@ -534,12 +646,14 @@ static int cmd_balance_start(int argc, char **argv)
->  			{ "system", optional_argument, NULL, 's' },
->  			{ "force", no_argument, NULL, 'f' },
->  			{ "verbose", no_argument, NULL, 'v' },
-> +			{ "check-only", no_argument, NULL, 'c' },
->  			{ "full-balance", no_argument, NULL,
->  				GETOPT_VAL_FULL_BALANCE },
->  			{ NULL, 0, NULL, 0 }
->  		};
->  
-> -		int opt = getopt_long(argc, argv, "d::s::m::fv", longopts, NULL);
-> +		int opt = getopt_long(argc, argv, "d::s::m::fvc", longopts,
-> +				      NULL);
->  		if (opt < 0)
->  			break;
->  
-> @@ -571,6 +685,9 @@ static int cmd_balance_start(int argc, char **argv)
->  		case 'v':
->  			verbose = 1;
->  			break;
-> +		case 'c':
-> +			check_data_bgs = 1;
-> +			break;
->  		case GETOPT_VAL_FULL_BALANCE:
->  			start_flags |= BALANCE_START_NOWARN;
->  			break;
-> @@ -582,6 +699,14 @@ static int cmd_balance_start(int argc, char **argv)
->  	if (check_argc_exact(argc - optind, 1))
->  		usage(cmd_balance_start_usage);
->  
-> +	if (check_data_bgs) {
-> +		if (verbose)
-> +			dump_ioctl_balance_args(&args);
-> +
-> +		printf("Checking data block groups...\n");
-> +		return search_data_bgs(argv[optind]);
-> +	}
-> +
->  	/*
->  	 * allow -s only under --force, otherwise do with system chunks
->  	 * the same thing we were ordered to do with meta chunks
-> 
-
-
--- 
-gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
-Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5
+//wbr ojab

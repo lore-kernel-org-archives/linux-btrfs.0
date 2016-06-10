@@ -1,43 +1,71 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.mailbox.org ([80.241.60.215]:46431 "EHLO mx2.mailbox.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751419AbcFJKyW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 10 Jun 2016 06:54:22 -0400
-Received: from smtp1.mailbox.org (smtp1.mailbox.org [80.241.60.240])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
-	(No client certificate requested)
-	by mx2.mailbox.org (Postfix) with ESMTPS id DD55D434C5
-	for <linux-btrfs@vger.kernel.org>; Fri, 10 Jun 2016 12:54:18 +0200 (CEST)
-Received: from smtp1.mailbox.org ([80.241.60.240])
-	by hefe.heinlein-support.de (hefe.heinlein-support.de [91.198.250.172]) (amavisd-new, port 10030)
-	with ESMTP id CAYVOiGHn973 for <linux-btrfs@vger.kernel.org>;
-	Fri, 10 Jun 2016 12:54:17 +0200 (CEST)
-Date: Fri, 10 Jun 2016 12:54:17 +0200 (CEST)
-From: Lenz Grimmer <lenz@grimmer.com>
-To: linux-btrfs@vger.kernel.org
-Message-ID: <1026941351.8013.1465556057388@office.mailbox.org>
-Subject: Managing storage (incl. Btrfs) on Linux with openATTIC
+Received: from mail-io0-f181.google.com ([209.85.223.181]:35018 "EHLO
+	mail-io0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752935AbcFJLFs (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 10 Jun 2016 07:05:48 -0400
+Received: by mail-io0-f181.google.com with SMTP id o127so16380233iod.2
+        for <linux-btrfs@vger.kernel.org>; Fri, 10 Jun 2016 04:05:48 -0700 (PDT)
+Subject: Re: fsck: to repair or not to repair
+To: Nikolaus Rath <Nikolaus@rath.org>, linux-btrfs@vger.kernel.org
+References: <87y47g1esh.fsf@thinkpad.rath.org>
+ <87fuslg19q.fsf@vostro.rath.org>
+From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Message-ID: <ec929c7d-079d-8ea5-87d7-fce0ed1c45b7@gmail.com>
+Date: Fri, 10 Jun 2016 07:05:40 -0400
 MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+In-Reply-To: <87fuslg19q.fsf@vostro.rath.org>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi there,
+On 2016-06-09 23:40, Nikolaus Rath wrote:
+> On May 11 2016, Nikolaus Rath <Nikolaus@rath.org> wrote:
+>> Hello,
+>>
+>> I recently ran btrfsck on one of my file systems, and got the following
+>> messages:
+>>
+>> checking extents
+>> checking free space cache
+>> checking fs roots
+>> root 5 inode 3149867 errors 400, nbytes wrong
+>> root 5 inode 3150237 errors 400, nbytes wrong
+>> root 5 inode 3150238 errors 400, nbytes wrong
+>> root 5 inode 3150242 errors 400, nbytes wrong
+>> root 5 inode 3150260 errors 400, nbytes wrong
+>> [ lots of similar message with different inode numbers ]
+>> root 5 inode 15595011 errors 400, nbytes wrong
+>> root 5 inode 15595016 errors 400, nbytes wrong
+>> Checking filesystem on /dev/mapper/vg0-nikratio_crypt
+>> UUID: 8742472d-a9b0-4ab6-b67a-5d21f14f7a38
+>> found 263648960636 bytes used err is 1
+>> total csum bytes: 395314372
+>> total tree bytes: 908644352
+>> total fs tree bytes: 352735232
+>> total extent tree bytes: 95039488
+>> btree space waste bytes: 156301160
+>> file data blocks allocated: 675209801728
+>>  referenced 410351722496
+>> Btrfs v3.17
+>>
+>>
+>> Can someone explain to me the risk that I run by attempting a repair,
+>> and (conversely) what I put at stake when continuing to use this file
+>> system as-is?
+>
+> To follow-up on this: after finding out which files were affected (using
+> btrfs inspect-internal), I was able to fix the problem without using
+> btrfsck by simply copying the data, deleting the file, and restoring it:
+>
+> cat affected-files.txt | while read -r name; do
+> rsync -a "${name}" "/backup/location/${name}"
+> rm -f "${name}"
+> cp -a "/backup/location/${name}" "${name}"
+> done
+>
+> (I used rsync to avoid cp making use of reflinks). After this procedure,
+> btrfschk reported no more problems.
+JFYI, if you've using GNU cp, you can pass '--reflink=never' to avoid it 
+making reflinks.
 
-if you're using Btrfs on Linux for file serving purposes, i'd like to invite you to take a look at our open source storage management project "openATTIC":
-
-  http://openattic.org/
-
-We provide a web UI and RESTful API to create CIFS/NFS shares on top of Btrfs and other file systems, including monitoring and snapshots. Other file systems like ext4, XFS or ZFS are supported, too. We also support sharing block volumes via iSCSI and Fibre Channel via LIO and are currently working on adding Ceph Management and Monitoring support as well.
-
-openATTIC 2.0 is currently in development and we're looking for more testers and feedback. Packages for the Debian/Ubuntu, RHEL/CentOS and SUSE are available via apt/yum repos.
-
-For the time being, we don't yet support all the nifty Btrfs features (e.g. RAID levels), but you can already use openATTIC to manage (e.g. creating and snapshotting) and monitor Btrfs file systems via the WebUI. We plan to further extend the Btrfs functionality incrementally with each release. Some use cases we have in mind are documented here: https://wiki.openattic.org/display/OP/openATTIC+Storage+Management+Use+Cases
-
-So if you're looking for a free (GPLv2) storage management tool that supports your favorite file system, we'd be glad if you give openATTIC a try!
-
-Thanks and sorry for the noise,
-
-Lenz
--- 
- Lenz Grimmer <lenz@grimmer.com> - http://www.lenzg.net/

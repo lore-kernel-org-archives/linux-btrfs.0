@@ -1,41 +1,37 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:37080 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751842AbcFOIJT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 15 Jun 2016 04:09:19 -0400
-Date: Wed, 15 Jun 2016 10:09:54 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
-Cc: Hugo Mills <hugo@carfax.org.uk>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] btrfs-progs: doc: correct the destination of
- btrfs-receive
-Message-ID: <20160615080954.GG6205@suse.cz>
-Reply-To: dsterba@suse.cz
-References: <491d91eb-0d51-b8ba-a046-61e2e392f06e@jp.fujitsu.com>
- <20160614085133.GE6205@twin.jikos.cz>
- <20160614091608.GC5437@carfax.org.uk>
- <9a4c1521-f1eb-8eaf-59c8-f2e0cb897ed9@jp.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <9a4c1521-f1eb-8eaf-59c8-f2e0cb897ed9@jp.fujitsu.com>
+Received: from mail-qg0-f67.google.com ([209.85.192.67]:36143 "EHLO
+	mail-qg0-f67.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751494AbcFJN6K (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 10 Jun 2016 09:58:10 -0400
+Received: by mail-qg0-f67.google.com with SMTP id k43so5315961qgk.3
+        for <linux-btrfs@vger.kernel.org>; Fri, 10 Jun 2016 06:58:09 -0700 (PDT)
+From: Noah Massey <noah.massey@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Noah Massey <noah.massey@gmail.com>
+Subject: [PATCH] btrfs-progs: doc: add missing newline in btrfs-convert
+Date: Fri, 10 Jun 2016 09:57:55 -0400
+Message-Id: <1465567075-9153-1-git-send-email-noah.massey@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jun 15, 2016 at 10:55:45AM +0900, Satoru Takeuchi wrote:
-> >> ie. all the context lines start with two spaces instead of one. I'll
-> >> apply this patch manually but please have a look.
-> > 
-> >    Looking at this, I suspect it's a consequence of sending it as
-> > "Content-Type: format=flowed; delsp=yes". I'm not sure which of those
-> > two options is the culprit. When I look at the message in my client
-> > (mutt), it looks absolutely fine. When I pipe it to hexdump, the
-> > double-spacing is apparent.
-> 
-> You're right. These are added to charset="iso-2022-jp" plain text
-> mail since thunderbird 45.
-> 
-> I disabled the setting that appends the above mentioned options.
-> So, probably the following sample patch doesn't have strange spaces.
+Signed-off-by: Noah Massey <noah.massey@gmail.com>
+---
+ Documentation/btrfs-convert.asciidoc | 1 +
+ 1 file changed, 1 insertion(+)
 
-Yes, looks good now, thanks.
+diff --git a/Documentation/btrfs-convert.asciidoc b/Documentation/btrfs-convert.asciidoc
+index 28f9a39..ab3577d 100644
+--- a/Documentation/btrfs-convert.asciidoc
++++ b/Documentation/btrfs-convert.asciidoc
+@@ -90,6 +90,7 @@ are supported by old kernels. To disable a feature, prefix it with '^'.
+ To see all available features that btrfs-convert supports run:
+ +
+ +btrfs-convert -O list-all+
+++
+ -p|--progress::
+ show progress of conversion, on by default
+ --no-progress::
+-- 
+2.8.1
+

@@ -1,84 +1,73 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from out2-smtp.messagingengine.com ([66.111.4.26]:52476 "EHLO
-	out2-smtp.messagingengine.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1750994AbcFJDkF convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 9 Jun 2016 23:40:05 -0400
-Received: from compute6.internal (compute6.nyi.internal [10.202.2.46])
-	by mailout.nyi.internal (Postfix) with ESMTP id 061CF20E18
-	for <linux-btrfs@vger.kernel.org>; Thu,  9 Jun 2016 23:40:03 -0400 (EDT)
-Received: from ebox.rath.org (ebox.rath.org [45.79.69.51])
-	by mail.messagingengine.com (Postfix) with ESMTPA id AA266CC070
-	for <linux-btrfs@vger.kernel.org>; Thu,  9 Jun 2016 23:40:03 -0400 (EDT)
-Received: from vostro.rath.org (vostro [192.168.12.4])
-	by ebox.rath.org (Postfix) with ESMTPS id 466BD2E7BC3
-	for <linux-btrfs@vger.kernel.org>; Fri, 10 Jun 2016 03:40:02 +0000 (UTC)
-From: Nikolaus Rath <Nikolaus@rath.org>
-To: linux-btrfs@vger.kernel.org
-Subject: Re: fsck: to repair or not to repair
-References: <87y47g1esh.fsf@thinkpad.rath.org>
-Date: Thu, 09 Jun 2016 20:40:01 -0700
-In-Reply-To: <87y47g1esh.fsf@thinkpad.rath.org> (Nikolaus Rath's message of
-	"Wed, 11 May 2016 14:10:54 -0700")
-Message-ID: <87fuslg19q.fsf@vostro.rath.org>
+Received: from cn.fujitsu.com ([59.151.112.132]:56555 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1750710AbcFJISB (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 10 Jun 2016 04:18:01 -0400
+Subject: Re: How to map extents to files
+To: Nikolaus Rath <Nikolaus@rath.org>
+References: <87eg8g5lwt.fsf@vostro.rath.org>
+ <06ef9ac3-ed15-9621-9629-4c8965618db6@cn.fujitsu.com>
+ <87zir3skpo.fsf@thinkpad.rath.org>
+CC: <linux-btrfs@vger.kernel.org>
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Message-ID: <420018f7-d129-5861-2fc4-bf2f92e46b69@cn.fujitsu.com>
+Date: Fri, 10 Jun 2016 16:17:45 +0800
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
+In-Reply-To: <87zir3skpo.fsf@thinkpad.rath.org>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On May 11 2016, Nikolaus Rath <Nikolaus@rath.org> wrote:
-> Hello,
+
+
+At 06/02/2016 10:56 PM, Nikolaus Rath wrote:
+> On Jun 02 2016, Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
+>> At 06/02/2016 11:06 AM, Nikolaus Rath wrote:
+>>> Hello,
+>>>
+>>> For one of my btrfs volumes, btrfsck reports a lot of the following
+>>> warnings:
+>>>
+>>> [...]
+>>> checking extents
+>>> bad extent [138477568, 138510336), type mismatch with chunk
+>>> bad extent [140091392, 140148736), type mismatch with chunk
+>>> bad extent [140148736, 140201984), type mismatch with chunk
+>>> bad extent [140836864, 140865536), type mismatch with chunk
+>>> [...]
+>>>
+>>> Is there a way to discover which files are affected by this (in
+>>> particular so that I can take a look at them before and after a btrfsck
+>>> --repair)?
+>>
+>> Which version is the progs? If the fs is not converted from ext2/3/4,
+>> it may be a false alert.
 >
-> I recently ran btrfsck on one of my file systems, and got the following
-> messages:
->
-> checking extents
-> checking free space cache
-> checking fs roots
-> root 5 inode 3149867 errors 400, nbytes wrong
-> root 5 inode 3150237 errors 400, nbytes wrong
-> root 5 inode 3150238 errors 400, nbytes wrong
-> root 5 inode 3150242 errors 400, nbytes wrong
-> root 5 inode 3150260 errors 400, nbytes wrong
-> [ lots of similar message with different inode numbers ]
-> root 5 inode 15595011 errors 400, nbytes wrong
-> root 5 inode 15595016 errors 400, nbytes wrong
-> Checking filesystem on /dev/mapper/vg0-nikratio_crypt
-> UUID: 8742472d-a9b0-4ab6-b67a-5d21f14f7a38
-> found 263648960636 bytes used err is 1
-> total csum bytes: 395314372
-> total tree bytes: 908644352
-> total fs tree bytes: 352735232
-> total extent tree bytes: 95039488
-> btree space waste bytes: 156301160
-> file data blocks allocated: 675209801728
->  referenced 410351722496
-> Btrfs v3.17
+> Version is 4.4.1. The fs may very well have been converted from ext4,
+> but I can't tell for sure.
 >
 >
-> Can someone explain to me the risk that I run by attempting a repair,
-> and (conversely) what I put at stake when continuing to use this file
-> system as-is?
- 
-To follow-up on this: after finding out which files were affected (using
-btrfs inspect-internal), I was able to fix the problem without using
-btrfsck by simply copying the data, deleting the file, and restoring it:
+> Best,
+> -Nikolaus
+>
 
-cat affected-files.txt | while read -r name; do
-rsync -a "${name}" "/backup/location/${name}"
-rm -f "${name}"
-cp -a "/backup/location/${name}" "${name}"
-done
+Sorry for the late reply.
 
-(I used rsync to avoid cp making use of reflinks). After this procedure,
-btrfschk reported no more problems.
+For such case, btrfsck --repair is unable to fix it, as btrfs-progs is 
+not able to balance extents.
+
+Normally, a full balance would fix it.
 
 
-Best,
--Nikolaus
+I would try to update btrfs-progs to 4.5 and recheck, to see if it's a 
+false alert.
+If not, then remove unused snapshots and then do the full balance.
 
--- 
-GPG encrypted emails preferred. Key id: 0xD113FCAC3C4E599F
-Fingerprint: ED31 791B 2C5C 1613 AF38 8B8A D113 FCAC 3C4E 599F
+It's recommended to delete unused snapshots, as if there are too many 
+snapshots, balance may be quite slow.
 
-             »Time flies like an arrow, fruit flies like a Banana.«
+Thanks,
+Qu
+
+

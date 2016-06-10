@@ -1,73 +1,43 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:56555 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1750710AbcFJISB (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 10 Jun 2016 04:18:01 -0400
-Subject: Re: How to map extents to files
-To: Nikolaus Rath <Nikolaus@rath.org>
-References: <87eg8g5lwt.fsf@vostro.rath.org>
- <06ef9ac3-ed15-9621-9629-4c8965618db6@cn.fujitsu.com>
- <87zir3skpo.fsf@thinkpad.rath.org>
-CC: <linux-btrfs@vger.kernel.org>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <420018f7-d129-5861-2fc4-bf2f92e46b69@cn.fujitsu.com>
-Date: Fri, 10 Jun 2016 16:17:45 +0800
+Received: from mx2.mailbox.org ([80.241.60.215]:46431 "EHLO mx2.mailbox.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751419AbcFJKyW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 10 Jun 2016 06:54:22 -0400
+Received: from smtp1.mailbox.org (smtp1.mailbox.org [80.241.60.240])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+	(No client certificate requested)
+	by mx2.mailbox.org (Postfix) with ESMTPS id DD55D434C5
+	for <linux-btrfs@vger.kernel.org>; Fri, 10 Jun 2016 12:54:18 +0200 (CEST)
+Received: from smtp1.mailbox.org ([80.241.60.240])
+	by hefe.heinlein-support.de (hefe.heinlein-support.de [91.198.250.172]) (amavisd-new, port 10030)
+	with ESMTP id CAYVOiGHn973 for <linux-btrfs@vger.kernel.org>;
+	Fri, 10 Jun 2016 12:54:17 +0200 (CEST)
+Date: Fri, 10 Jun 2016 12:54:17 +0200 (CEST)
+From: Lenz Grimmer <lenz@grimmer.com>
+To: linux-btrfs@vger.kernel.org
+Message-ID: <1026941351.8013.1465556057388@office.mailbox.org>
+Subject: Managing storage (incl. Btrfs) on Linux with openATTIC
 MIME-Version: 1.0
-In-Reply-To: <87zir3skpo.fsf@thinkpad.rath.org>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hi there,
 
+if you're using Btrfs on Linux for file serving purposes, i'd like to invite you to take a look at our open source storage management project "openATTIC":
 
-At 06/02/2016 10:56 PM, Nikolaus Rath wrote:
-> On Jun 02 2016, Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
->> At 06/02/2016 11:06 AM, Nikolaus Rath wrote:
->>> Hello,
->>>
->>> For one of my btrfs volumes, btrfsck reports a lot of the following
->>> warnings:
->>>
->>> [...]
->>> checking extents
->>> bad extent [138477568, 138510336), type mismatch with chunk
->>> bad extent [140091392, 140148736), type mismatch with chunk
->>> bad extent [140148736, 140201984), type mismatch with chunk
->>> bad extent [140836864, 140865536), type mismatch with chunk
->>> [...]
->>>
->>> Is there a way to discover which files are affected by this (in
->>> particular so that I can take a look at them before and after a btrfsck
->>> --repair)?
->>
->> Which version is the progs? If the fs is not converted from ext2/3/4,
->> it may be a false alert.
->
-> Version is 4.4.1. The fs may very well have been converted from ext4,
-> but I can't tell for sure.
->
->
-> Best,
-> -Nikolaus
->
+  http://openattic.org/
 
-Sorry for the late reply.
+We provide a web UI and RESTful API to create CIFS/NFS shares on top of Btrfs and other file systems, including monitoring and snapshots. Other file systems like ext4, XFS or ZFS are supported, too. We also support sharing block volumes via iSCSI and Fibre Channel via LIO and are currently working on adding Ceph Management and Monitoring support as well.
 
-For such case, btrfsck --repair is unable to fix it, as btrfs-progs is 
-not able to balance extents.
+openATTIC 2.0 is currently in development and we're looking for more testers and feedback. Packages for the Debian/Ubuntu, RHEL/CentOS and SUSE are available via apt/yum repos.
 
-Normally, a full balance would fix it.
+For the time being, we don't yet support all the nifty Btrfs features (e.g. RAID levels), but you can already use openATTIC to manage (e.g. creating and snapshotting) and monitor Btrfs file systems via the WebUI. We plan to further extend the Btrfs functionality incrementally with each release. Some use cases we have in mind are documented here: https://wiki.openattic.org/display/OP/openATTIC+Storage+Management+Use+Cases
 
+So if you're looking for a free (GPLv2) storage management tool that supports your favorite file system, we'd be glad if you give openATTIC a try!
 
-I would try to update btrfs-progs to 4.5 and recheck, to see if it's a 
-false alert.
-If not, then remove unused snapshots and then do the full balance.
+Thanks and sorry for the noise,
 
-It's recommended to delete unused snapshots, as if there are too many 
-snapshots, balance may be quite slow.
-
-Thanks,
-Qu
-
-
+Lenz
+-- 
+ Lenz Grimmer <lenz@grimmer.com> - http://www.lenzg.net/

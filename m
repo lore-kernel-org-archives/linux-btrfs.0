@@ -1,92 +1,81 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mga04.intel.com ([192.55.52.120]:19866 "EHLO mga04.intel.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753934AbcFIHv5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 9 Jun 2016 03:51:57 -0400
-From: Felipe Balbi <balbi@kernel.org>
-To: Deepa Dinamani <deepa.kernel@gmail.com>, linux-fsdevel@vger.kernel.org,
-        linux-kernel@vger.kernel.org
-Cc: Arnd Bergmann <arnd@arndb.de>, Thomas Gleixner <tglx@linutronix.de>,
-        Al Viro <viro@zeniv.linux.org.uk>,
-        Linus Torvalds <torvalds@linux-foundation.org>, y2038@lists.linaro.org,
-        Anna Schumaker <anna.schumaker@netapp.com>,
-        Anton Vorontsov <anton@enomsg.org>,
-        Benny Halevy <bhalevy@primarydata.com>,
-        Boaz Harrosh <ooo@electrozaur.com>,
-        Changman Lee <cm224.lee@samsung.com>, Chris Mason <clm@fb.com>,
-        Colin Cross <ccross@android.com>, Dave Kleikamp <shaggy@kernel.org>,
-        "David S. Miller" <davem@davemloft.net>,
-        David Sterba <dsterba@suse.com>,
-        Eric Van Hensbergen <ericvh@gmail.com>,
-        Hugh Dickins <hughd@google.com>, Ian Kent <raven@themaw.net>,
-        Jaegeuk Kim <jaegeuk@kernel.org>, Joern Engel <joern@logfs.org>,
-        Josef Bacik <jbacik@fb.com>, Kees Cook <keescook@chromium.org>,
-        Latchesar Ionkov <lucho@ionkov.net>,
-        Matt Fleming <matt@codeblueprint.co.uk>,
-        Matthew Garrett <matthew.garrett@nebula.com>,
-        Miklos Szeredi <miklos@szeredi.hu>,
-        Nadia Yvette Chambers <nyc@holomorphy.com>,
-        Prasad Joshi <prasadjoshi.linux@gmail.com>,
-        Robert Richter <rric@kernel.org>, Ron Minnich <rminnich@sandia.gov>,
-        Tony Luck <tony.luck@intel.com>,
-        Trond Myklebust <trond.myklebust@primarydata.com>,
-        autofs@vger.kernel.org, cluster-devel@redhat.com,
-        jfs-discussion@lists.sourceforge.net, linux-btrfs@vger.kernel.org,
-        linux-efi@vger.kernel.org, linux-f2fs-devel@lists.sourceforge.net,
-        linux-mm@kvack.org, linux-nfs@vger.kernel.org,
-        linux-nilfs@vger.kernel.org, linuxppc-dev@lists.ozlabs.org,
-        linux-rdma@vger.kernel.org, linux-s390@vger.kernel.org,
-        linux-security-module@vger.kernel.org, linux-usb@vger.kernel.org,
-        logfs@logfs.org, netdev@vger.kernel.org, ocfs2-devel@oss.oracle.com,
-        oprofile-list@lists.sf.net, osd-dev@open-osd.org,
-        selinux@tycho.nsa.gov, v9fs-developer@lists.sourceforge.net
-Subject: Re: [PATCH 00/21] Delete CURRENT_TIME and CURRENT_TIME_SEC macros
-In-Reply-To: <1465448705-25055-1-git-send-email-deepa.kernel@gmail.com>
-References: <1465448705-25055-1-git-send-email-deepa.kernel@gmail.com>
-Date: Thu, 09 Jun 2016 10:51:31 +0300
-Message-ID: <87twh294vw.fsf@linux.intel.com>
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:55967 "EHLO
+	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1751788AbcFJUB3 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 10 Jun 2016 16:01:29 -0400
+Date: Fri, 10 Jun 2016 16:01:12 -0400
+From: Chris Mason <clm@fb.com>
+To: Linus Torvalds <torvalds@linux-foundation.org>,
+        LKML <linux-kernel@vger.kernel.org>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: [GIT PULL] Btrfs
+Message-ID: <20160610200112.bovbofqxizi42w4y@floor.thefacebook.com>
 MIME-Version: 1.0
-Content-Type: multipart/signed; boundary="=-=-=";
-	micalg=pgp-sha256; protocol="application/pgp-signature"
+Content-Type: text/plain; charset="us-ascii"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
---=-=-=
-Content-Type: text/plain
-Content-Transfer-Encoding: quoted-printable
+Hi Linus
 
+My for-linus-4.7 branch:
 
-Hi,
+git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git for-linus-4.7
 
-Deepa Dinamani <deepa.kernel@gmail.com> writes:
->  drivers/usb/gadget/function/f_fs.c                 |  2 +-
->  drivers/usb/gadget/legacy/inode.c                  |  2 +-
+Has some fixes and some new self tests for btrfs.  The self tests are
+usually disabled in the .config file (unless you're doing btrfs dev
+work), and this bunch is meant to find problems with the 64K page
+size patches.
 
-for drivers/usb/gadget:
+Jeff has a patch to help people see if they are using the hardware
+assist crc32c module, which really helps us nail down problems when
+people ask why crcs are using so much CPU.
 
-Acked-by: Felipe Balbi <balbi@kernel.org>
+Otherwise, it's small fixes.
 
-=2D-=20
-balbi
+Feifei Xu (8) commits (+475/-361):
+    Btrfs: test_check_exists: Fix infinite loop when searching for free space entries (+2/-2)
+    Btrfs: self-tests: Execute page straddling test only when nodesize < PAGE_SIZE (+30/-19)
+    Btrfs: self-tests: Use macros instead of constants and add missing newline (+31/-18)
+    Btrfs: self-tests: Support testing all possible sectorsizes and nodesizes (+32/-22)
+    Btrfs: self-tests: Fix extent buffer bitmap test fail on BE system (+11/-1)
+    Btrfs: Fix integer overflow when calculating bytes_per_bitmap (+7/-7)
+    Btrfs: self-tests: Fix test_bitmaps fail on 64k sectorsize (+7/-1)
+    Btrfs: self-tests: Support non-4k page size (+355/-291)
 
---=-=-=
-Content-Type: application/pgp-signature; name="signature.asc"
+Liu Bo (3) commits (+104/-15):
+    Btrfs: clear uptodate flags of pages in sys_array eb (+2/-0)
+    Btrfs: add validadtion checks for chunk loading (+67/-15)
+    Btrfs: add more validation checks for superblock (+35/-0)
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2
+Josef Bacik (1) commits (+1/-0):
+    Btrfs: end transaction if we abort when creating uuid root
 
-iQIcBAEBCAAGBQJXWSADAAoJEIaOsuA1yqRE3xkP/iQ1fuTIybbV6wTI8KcBipLN
-RYE+b6JJVPFMIpj76aDznk/eZG+CSnwRUAPoPGWs1o7xVqnVGqfLDMWyHLp3pU5C
-NQyphaTDahzkV3cbTbAjbLpcluDKmCmRb++9YyfSyEcFP4HnlpgmIVFM7SinMADk
-OXGwum3/L0HpAs+91j4FORMHiKma5fa5CXmE5aHsM3TSWONWldycLywu9jlF/AyU
-lY83J4AjvL2qii9hWdlxX81+zFZ92Vh9v5vvms8ErPB2w3a75PbM70gaoVM2VOxQ
-kMeLZUiGywrnDv+/RKC+9WX3KiwDsAlTk1rbuDBePE7PbjQmRW/hfRtXcpECXAyG
-LrV9HskF1UIIv8aVyWoR/GwQdO0cdxoW8uBuw+/l7pSHTvfpvl3/sb+VNBH3j2lQ
-aosxpF7QlU08QxWzpPHgrQ7TNbZ0o9zl5aZ8HAhAPt9FZDu1KKHy/EEJ0aI5d25y
-p7aTdxvf2SxMGVo6K1ozZUq/EeXOW061oeOUmDLT1NZWS69g19lGBx/XSWLpqf1b
-V6SK0hpP3QqHajNOsTFfHLuP13zygCZsSQJU1Z4MO3RyawyMsgjCqAKrEHCoF0zL
-rCfYHY+r6PMRmrirPoBdPwdoWB8/i1INydBfU4OqjO/7dRgjhl2iPSUvSOPrhVlu
-g2HkIFwp1Wj8eyUm+JYM
-=tfo4
------END PGP SIGNATURE-----
---=-=-=--
+Jeff Mahoney (1) commits (+9/-2):
+    btrfs: advertise which crc32c implementation is being used at module load
+
+Vinson Lee (1) commits (+1/-1):
+    btrfs: Use __u64 in exported linux/btrfs.h.
+
+Total: (14) commits (+590/-379)
+
+ fs/btrfs/ctree.c                       |   6 +-
+ fs/btrfs/disk-io.c                     |  20 +-
+ fs/btrfs/disk-io.h                     |   2 +-
+ fs/btrfs/extent_io.c                   |  10 +-
+ fs/btrfs/extent_io.h                   |   4 +-
+ fs/btrfs/free-space-cache.c            |  18 +-
+ fs/btrfs/hash.c                        |   5 +
+ fs/btrfs/hash.h                        |   1 +
+ fs/btrfs/super.c                       |  57 ++++--
+ fs/btrfs/tests/btrfs-tests.c           |   6 +-
+ fs/btrfs/tests/btrfs-tests.h           |  27 +--
+ fs/btrfs/tests/extent-buffer-tests.c   |  13 +-
+ fs/btrfs/tests/extent-io-tests.c       |  86 ++++++---
+ fs/btrfs/tests/free-space-tests.c      |  76 +++++---
+ fs/btrfs/tests/free-space-tree-tests.c |  30 +--
+ fs/btrfs/tests/inode-tests.c           | 344 ++++++++++++++++++---------------
+ fs/btrfs/tests/qgroup-tests.c          | 111 ++++++-----
+ fs/btrfs/volumes.c                     | 109 +++++++++--
+ include/uapi/linux/btrfs.h             |   2 +-
+ 19 files changed, 569 insertions(+), 358 deletions(-)

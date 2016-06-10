@@ -1,9 +1,9 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from out2-smtp.messagingengine.com ([66.111.4.26]:37626 "EHLO
+Received: from out2-smtp.messagingengine.com ([66.111.4.26]:52401 "EHLO
 	out2-smtp.messagingengine.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S932114AbcFJPyk convert rfc822-to-8bit
+	by vger.kernel.org with ESMTP id S932719AbcFJPzO convert rfc822-to-8bit
 	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 10 Jun 2016 11:54:40 -0400
+	Fri, 10 Jun 2016 11:55:14 -0400
 From: Nikolaus Rath <Nikolaus@rath.org>
 To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
 Cc: linux-btrfs@vger.kernel.org
@@ -11,10 +11,8 @@ Subject: Re: fsck: to repair or not to repair
 References: <87y47g1esh.fsf@thinkpad.rath.org>
 	<87fuslg19q.fsf@vostro.rath.org>
 	<ec929c7d-079d-8ea5-87d7-fce0ed1c45b7@gmail.com>
-Date: Fri, 10 Jun 2016 08:54:36 -0700
-In-Reply-To: <ec929c7d-079d-8ea5-87d7-fce0ed1c45b7@gmail.com> (Austin
-	S. Hemmelgarn's message of "Fri, 10 Jun 2016 07:05:40 -0400")
-Message-ID: <87twh1t4xv.fsf@thinkpad.rath.org>
+Date: Fri, 10 Jun 2016 08:55:11 -0700
+Message-ID: <87shwlt4ww.fsf@thinkpad.rath.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -25,7 +23,7 @@ On Jun 10 2016, "Austin S. Hemmelgarn" <ahferroin7@gmail.com> wrote:
 > it making reflinks.
 
 I would have expected so, but at least in coreutils 8.23 the only valid
-options are "never" and "auto" (at least according to cp --help and the
+options are "always" and "auto" (at least according to cp --help and the
 manpage).
 
 Best,

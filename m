@@ -1,122 +1,40 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:54126 "EHLO mx2.suse.de"
+Received: from mout.gmx.net ([212.227.15.18]:64562 "EHLO mout.gmx.net"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751540AbcFHEgn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 8 Jun 2016 00:36:43 -0400
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id 19D32AAB6
-	for <linux-btrfs@vger.kernel.org>; Wed,  8 Jun 2016 04:36:41 +0000 (UTC)
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-From: Jeff Mahoney <jeffm@suse.com>
-Subject: [PATCH] btrfs: account for non-CoW'd blocks in
- btrfs_abort_transaction
-Message-ID: <43cd8760-6275-cd2f-1d98-a62b5c85c5e5@suse.com>
-Date: Wed, 8 Jun 2016 00:36:38 -0400
-MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
+	id S1751499AbcFKQL3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 11 Jun 2016 12:11:29 -0400
+From: Heinrich Schuchardt <xypron.glpk@gmx.de>
+To: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
+        David Sterba <dsterba@suse.com>
+Cc: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
+        Heinrich Schuchardt <xypron.glpk@gmx.de>
+Subject: [PATCH 1/1] btrfs: Use correct format specifier
+Date: Sat, 11 Jun 2016 18:11:10 +0200
+Message-Id: <1465661470-10525-1-git-send-email-xypron.glpk@gmx.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The test for !trans->blocks_used in btrfs_abort_transaction is
-insufficient to determine whether it's safe to drop the transaction
-handle on the floor.  btrfs_cow_block, informed by should_cow_block,
-can return blocks that have already been CoW'd in the current
-transaction.  trans->blocks_used is only incremented for new block
-allocations. If an operation overlaps the blocks in the current
-transaction entirely and must abort the transaction, we'll happily
-let it clean up the trans handle even though it may have modified
-the blocks and will commit an incomplete operation.
+Component mirror_num of struct btrfsic_block is defined
+as unsigned int. Use %u as format specifier.
 
-In the long-term, I'd like to do closer tracking of when the fs
-is actually modified so we can still recover as gracefully as possible,
-but that approach will need some discussion.  In the short term,
-since this is the only code using trans->blocks_used, let's just
-switch it to a bool indicating whether any blocks were used and set
-it when should_cow_block returns false.
-
-Cc: stable@vger.kernel.org # 3.4+
-Signed-off-by: Jeff Mahoney <jeffm@suse.com>
+Signed-off-by: Heinrich Schuchardt <xypron.glpk@gmx.de>
 ---
- fs/btrfs/ctree.c       | 5 ++++-
- fs/btrfs/extent-tree.c | 2 +-
- fs/btrfs/super.c       | 2 +-
- fs/btrfs/transaction.h | 2 +-
- 4 files changed, 7 insertions(+), 4 deletions(-)
+ fs/btrfs/check-integrity.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-index 427c36b..135af4e 100644
---- a/fs/btrfs/ctree.c
-+++ b/fs/btrfs/ctree.c
-@@ -1552,6 +1552,7 @@ noinline int btrfs_cow_block(struct btrfs_trans_handle *trans,
- 		       trans->transid, root->fs_info->generation);
- 
- 	if (!should_cow_block(trans, root, buf)) {
-+		trans->dirty = true;
- 		*cow_ret = buf;
- 		return 0;
- 	}
-@@ -2773,8 +2774,10 @@ again:
- 			 * then we don't want to set the path blocking,
- 			 * so we test it here
- 			 */
--			if (!should_cow_block(trans, root, b))
-+			if (!should_cow_block(trans, root, b)) {
-+				trans->dirty = true;
- 				goto cow_done;
-+			}
- 
- 			/*
- 			 * must have write locks on this node and the
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 689d25a..1ed31eb 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -8044,7 +8044,7 @@ btrfs_init_new_buffer(struct btrfs_trans_handle *trans, struct btrfs_root *root,
- 		set_extent_dirty(&trans->transaction->dirty_pages, buf->start,
- 			 buf->start + buf->len - 1, GFP_NOFS);
- 	}
--	trans->blocks_used++;
-+	trans->dirty = true;
- 	/* this returns a buffer locked for blocking */
- 	return buf;
- }
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 4e59a91..bd07e01 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -235,7 +235,7 @@ void __btrfs_abort_transaction(struct btrfs_trans_handle *trans,
- 	trans->aborted = errno;
- 	/* Nothing used. The other threads that have joined this
- 	 * transaction may be able to continue. */
--	if (!trans->blocks_used && list_empty(&trans->new_bgs)) {
-+	if (!trans->dirty && list_empty(&trans->new_bgs)) {
- 		const char *errstr;
- 
- 		errstr = btrfs_decode_error(errno);
-diff --git a/fs/btrfs/transaction.h b/fs/btrfs/transaction.h
-index 9fe0ec2..c5abee4 100644
---- a/fs/btrfs/transaction.h
-+++ b/fs/btrfs/transaction.h
-@@ -110,7 +110,6 @@ struct btrfs_trans_handle {
- 	u64 chunk_bytes_reserved;
- 	unsigned long use_count;
- 	unsigned long blocks_reserved;
--	unsigned long blocks_used;
- 	unsigned long delayed_ref_updates;
- 	struct btrfs_transaction *transaction;
- 	struct btrfs_block_rsv *block_rsv;
-@@ -121,6 +120,7 @@ struct btrfs_trans_handle {
- 	bool can_flush_pending_bgs;
- 	bool reloc_reserved;
- 	bool sync;
-+	bool dirty;
- 	unsigned int type;
- 	/*
- 	 * this root is only needed to validate that the root passed to
+diff --git a/fs/btrfs/check-integrity.c b/fs/btrfs/check-integrity.c
+index ca70bc7..5d5cae0 100644
+--- a/fs/btrfs/check-integrity.c
++++ b/fs/btrfs/check-integrity.c
+@@ -2646,7 +2646,7 @@ static void btrfsic_dump_tree_sub(const struct btrfsic_state *state,
+ 	 * This algorithm is recursive because the amount of used stack space
+ 	 * is very small and the max recursion depth is limited.
+ 	 */
+-	indent_add = sprintf(buf, "%c-%llu(%s/%llu/%d)",
++	indent_add = sprintf(buf, "%c-%llu(%s/%llu/%u)",
+ 			     btrfsic_get_block_type(state, block),
+ 			     block->logical_bytenr, block->dev_state->name,
+ 			     block->dev_bytenr, block->mirror_num);
 -- 
-2.7.1
+2.1.4
 
-
--- 
-Jeff Mahoney
-SUSE Labs

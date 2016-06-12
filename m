@@ -1,316 +1,88 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f193.google.com ([209.85.223.193]:34837 "EHLO
-	mail-io0-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S964862AbcFMJtr (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 13 Jun 2016 05:49:47 -0400
+Received: from mx1.redhat.com ([209.132.183.28]:60160 "EHLO mx1.redhat.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750708AbcFLElD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 12 Jun 2016 00:41:03 -0400
+Date: Sun, 12 Jun 2016 12:40:59 +0800
+From: Eryu Guan <eguan@redhat.com>
+To: Anand Jain <anand.jain@oracle.com>
+Cc: fstests@vger.kernel.org, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 1/6] fstests: btrfs: add functions to set and reset
+ required number of SCRATCH_DEV_POOL
+Message-ID: <20160612044059.GZ5140@eguan.usersys.redhat.com>
+References: <1463495530-425-1-git-send-email-anand.jain@oracle.com>
 MIME-Version: 1.0
-Reply-To: fdmanana@gmail.com
-In-Reply-To: <57a95603-0abf-583b-9c73-43fe4f3f97a7@cn.fujitsu.com>
-References: <1465783850-13501-1-git-send-email-lufq.fnst@cn.fujitsu.com>
- <20160613030449.GI5140@eguan.usersys.redhat.com> <196ba573-3f1b-753b-42ad-988054283fe6@cn.fujitsu.com>
- <57a95603-0abf-583b-9c73-43fe4f3f97a7@cn.fujitsu.com>
-From: Filipe Manana <fdmanana@gmail.com>
-Date: Mon, 13 Jun 2016 10:49:45 +0100
-Message-ID: <CAL3q7H4THn_ErZUxzSo+nSjcxbMBmcA4c45bsmjKHH_Bj4rOxQ@mail.gmail.com>
-Subject: Re: [PATCH v3] fstests: btrfs: add test for qgroup handle extent de-reference
-To: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
-Cc: Eryu Guan <eguan@redhat.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        fstests@vger.kernel.org, Mark Fasheh <mfasheh@suse.de>,
-        Qu Wenruo <quwenruo@cn.fujitsu.com>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1463495530-425-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Jun 13, 2016 at 9:06 AM, Lu Fengqi <lufq.fnst@cn.fujitsu.com> wrote:
-> At 06/13/2016 03:29 PM, Lu Fengqi wrote:
->>
->> At 06/13/2016 11:04 AM, Eryu Guan wrote:
->>>
->>> On Mon, Jun 13, 2016 at 10:10:50AM +0800, Lu Fengqi wrote:
->>>>
->>>> Test if qgroup can handle extent de-reference during reallocation.
->>>> "extent de-reference" means that reducing an extent's reference count
->>>> or freeing an extent.
->>>> Although current qgroup can handle it, we still need to prevent any
->>>> regression which may break current qgroup.
->>>>
->>>> Signed-off-by: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
->>>> ---
->>>>  common/rc           |  4 +--
->>>>  tests/btrfs/028     | 98
->>>> +++++++++++++++++++++++++++++++++++++++++++++++++++++
->>>>  tests/btrfs/028.out |  2 ++
->>>>  tests/btrfs/group   |  1 +
->>>>  4 files changed, 103 insertions(+), 2 deletions(-)
->>>>  create mode 100755 tests/btrfs/028
->>>>  create mode 100644 tests/btrfs/028.out
->>>>
->>>> diff --git a/common/rc b/common/rc
->>>> index 51092a0..650d198 100644
->>>> --- a/common/rc
->>>> +++ b/common/rc
->>>> @@ -3284,9 +3284,9 @@ _btrfs_get_profile_configs()
->>>>  # stress btrfs by running balance operation in a loop
->>>>  _btrfs_stress_balance()
->>>>  {
->>>> -    local btrfs_mnt=$1
->>>> +    local options=$@
->>>>      while true; do
->>>> -        $BTRFS_UTIL_PROG balance start $btrfs_mnt
->>>> +        $BTRFS_UTIL_PROG balance start $options
->>>>      done
->>>>  }
->>>>
->>>> diff --git a/tests/btrfs/028 b/tests/btrfs/028
->>>> new file mode 100755
->>>> index 0000000..8cea49a
->>>> --- /dev/null
->>>> +++ b/tests/btrfs/028
->>>> @@ -0,0 +1,98 @@
->>>> +#! /bin/bash
->>>> +# FS QA Test 028
->>>> +#
->>>> +# Test if qgroup can handle extent de-reference during reallocation.
->>>> +# "extent de-reference" means that reducing an extent's reference count
->>>> +# or freeing an extent.
->>>> +# Although current qgroup can handle it, we still need to prevent any
->>>> +# regression which may break current qgroup.
->>>> +#
->>>>
->>>> +#-----------------------------------------------------------------------
->>>>
->>>> +# Copyright (c) 2016 Fujitsu. All Rights Reserved.
->>>> +#
->>>> +# This program is free software; you can redistribute it and/or
->>>> +# modify it under the terms of the GNU General Public License as
->>>> +# published by the Free Software Foundation.
->>>> +#
->>>> +# This program is distributed in the hope that it would be useful,
->>>> +# but WITHOUT ANY WARRANTY; without even the implied warranty of
->>>> +# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
->>>> +# GNU General Public License for more details.
->>>> +#
->>>> +# You should have received a copy of the GNU General Public License
->>>> +# along with this program; if not, write the Free Software Foundation,
->>>> +# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
->>>>
->>>> +#-----------------------------------------------------------------------
->>>>
->>>> +#
->>>> +
->>>> +seq=`basename $0`
->>>> +seqres=$RESULT_DIR/$seq
->>>> +echo "QA output created by $seq"
->>>> +
->>>> +here=`pwd`
->>>> +tmp=/tmp/$$
->>>> +status=1    # failure is the default!
->>>> +trap "_cleanup; exit \$status" 0 1 2 3 15
->>>> +
->>>> +_cleanup()
->>>> +{
->>>> +    cd /
->>>> +    rm -f $tmp.*
->>>> +}
->>>> +
->>>> +# get standard environment, filters and checks
->>>> +. ./common/rc
->>>> +. ./common/filter
->>>> +
->>>> +# remove previous $seqres.full before test
->>>> +rm -f $seqres.full
->>>> +
->>>> +# real QA test starts here
->>>> +_supported_fs btrfs
->>>> +_supported_os Linux
->>>> +_require_scratch
->>>> +
->>>> +_scratch_mkfs
->>>> +_scratch_mount
->>>> +
->>>> +_run_btrfs_util_prog quota enable $SCRATCH_MNT
->>>> +_run_btrfs_util_prog quota rescan -w $SCRATCH_MNT
->>>> +
->>>> +# Increase the probability of generating de-refer extent, and decrease
->>>> +# other.
->>>> +args=`_scale_fsstress_args -z \
->>>> +    -f write=10 -f unlink=10 \
->>>> +    -f creat=10 -f fsync=10 \
->>>> +    -f fsync=10 -n 100000 -p 2 \
->>>> +    -d $SCRATCH_MNT/stress_dir`
->>>> +echo "Run fsstress $args" >>$seqres.full
->>>> +$FSSTRESS_PROG $args >/dev/null 2>&1 &
->>>> +fsstress_pid=$!
->>>> +
->>>> +echo "Start balance" >>$seqres.full
->>>> +_btrfs_stress_balance -d $SCRATCH_MNT >/dev/null 2>&1 &
->>>> +balance_pid=$!
->>>> +
->>>> +# 30s is enough to trigger bug
->>>> +sleep $((30*$TIME_FACTOR))
->>>> +kill $fsstress_pid $balance_pid
->>>> +wait
->>>> +
->>>> +# kill _btrfs_stress_balance can't end balance, so call btrfs
->>>> balance cancel
->>>> +# to cancel running or paused balance.
->>>> +$BTRFS_UTIL_PROG balance cancel $SCRATCH_MNT &> /dev/null
->>>> +
->>>> +_run_btrfs_util_prog filesystem sync $SCRATCH_MNT
->>>> +
->>>> +_scratch_unmount
->>>> +
->>>> +# generate a qgroup report and look for inconsistent groups
->>>> +$BTRFS_UTIL_PROG check --qgroup-report $SCRATCH_DEV 2>&1 | \
->>>> +            grep -q -E "Counts for qgroup.*are different"
->>>> +if [ $? -ne 0 ]; then
->>>> +    echo "Silence is golden"
->>>> +    # success, all done
->>>> +    status=0
->>>> +fi
->>>
->>>
->>> I'm testing with 4.7-rc1 kernel and btrfs-progs v4.4, this test fails,
->>> which means btrfs check finds inconsistent groups. But according to your
->>> commit log, current kernel should pass the test. So is the failure
->>> expected?
->>>
->>> Also, just grep for different qgroup counts and print the message out if
->>> grep finds the message, so it breaks golden image on error and we know
->>> something really goes wrong. Right now test fails just because of
->>> missing "Silence is golden", which is unclear why it fails:
->>>
->>>  @@ -1,2 +1 @@
->>>   QA output created by 028
->>>  -Silence is golden
->>>
->>> Do the following instead:
->>>
->>>     $BTRFS_UTIL_PROG check ... | grep -E "..."
->>>     echo "Silence is golden"
->>>     status=0
->>>     exit
->>>
->>> And we see this on failure:
->>>
->>>  @@ -1,2 +1,3 @@
->>>   QA output created by 028
->>>  +Counts for qgroup id: 5 are different
->>>   Silence is golden
->>>
->>> Thanks,
->>> Eryu
->>>
->>>> +
->>>> +exit
->>>> diff --git a/tests/btrfs/028.out b/tests/btrfs/028.out
->>>> new file mode 100644
->>>> index 0000000..2615f73
->>>> --- /dev/null
->>>> +++ b/tests/btrfs/028.out
->>>> @@ -0,0 +1,2 @@
->>>> +QA output created by 028
->>>> +Silence is golden
->>>> diff --git a/tests/btrfs/group b/tests/btrfs/group
->>>> index da0e27f..35ecf59 100644
->>>> --- a/tests/btrfs/group
->>>> +++ b/tests/btrfs/group
->>>> @@ -30,6 +30,7 @@
->>>>  025 auto quick send clone
->>>>  026 auto quick compress prealloc
->>>>  027 auto replace
->>>> +028 auto qgroup balance
->>>>  029 auto quick clone
->>>>  030 auto quick send
->>>>  031 auto quick subvol clone
->>>> --
->>>> 2.5.5
->>>>
->>>>
->>>>
->>>> --
->>>> To unsubscribe from this list: send the line "unsubscribe fstests" in
->>>> the body of a message to majordomo@vger.kernel.org
->>>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->>>
->>>
->>>
->>
->> Excuse me, I tried several versions of the kernel (4.6-rc7+ / 4.7-rc1 /
->> 4.7-rc3), the test didn't fail. Can you provide me with more information
->> about your test environment?
->>
->>
-> Sorry, this test fails after I perform it more times. It seems to be a bug
-> of btrfs qgroup. We will continue to track this bug.
+On Tue, May 17, 2016 at 10:32:05PM +0800, Anand Jain wrote:
+> This patch provides functions
+>  _scratch_dev_pool_get()
+>  _scratch_dev_pool_put()
+> 
+> Which will help to set/reset SCRATCH_DEV_POOL with the required
+> number of devices. SCRATCH_DEV_POOL_SAVED will hold all the devices.
+> 
+> Usage:
+>   _scratch_dev_pool_get() <ndevs>
+>   :: do stuff
+> 
+>   _scratch_dev_pool_put()
+> 
+> Signed-off-by: Anand Jain <anand.jain@oracle.com>
 
-Which is already known and reported some time ago:
+I'm not sure about the usefulness and the implementation of these
+helpers (include the _spare_dev_get|_put helpers), but they look good to
+me. It'd better to have btrfs developers review them as well.
 
-http://thread.gmane.org/gmane.comp.file-systems.btrfs/56687/focus=56824
+> ---
+>  common/rc | 47 +++++++++++++++++++++++++++++++++++++++++++++++
+>  1 file changed, 47 insertions(+)
+> 
+> diff --git a/common/rc b/common/rc
+> index 91e8f1c8e693..33632fd8e4a3 100644
+> --- a/common/rc
+> +++ b/common/rc
+> @@ -786,6 +786,53 @@ _scratch_mkfs()
+>      esac
+>  }
+>  
+> +#
+> +# $1 Number of the scratch devs required
+> +#
 
-It's another regression introduced in kernel 4.2 with the large
-qgroups rewrite (data extents are not accounted anymore after
-balance).
-It's trivial to reproduce with:
+Some comments about its usage/purpose would be good, otherwise one has
+to search for the commit log and look into it to understand its purpose
 
+> +_scratch_dev_pool_get()
+> +{
+> +	if [ $# != 1 ]; then
+> +		_fail "Usage: _scratch_dev_pool_get ndevs"
+> +	fi
+> +
+> +	local test_ndevs=$1
+> +	local config_ndevs=`echo $SCRATCH_DEV_POOL| wc -w`
+> +	local devs[]="( $SCRATCH_DEV_POOL )"
+> +
+> +	typeset -p config_ndevs >/dev/null 2>&1
+> +	if [ $? != 0 ]; then
+> +		_fail "Bug: unset val, must call _scratch_dev_pool_get before _scratch_dev_pool_put"
 
-#!/bin/bash -x
+This error message seems confusing, it's _scratch_dev_pool_get being
+called here, not _put.
 
-MNT="/mnt/sdi"
-DEV="/dev/sdi"
+> +	fi
+> +
+> +	# _require_scratch_dev_pool $test_ndevs
+> +	# must have already checked the min required devices
+> +	# but just in case, trap here for any potential bugs
+> +	# perpetuating any further
+> +	if [ $config_ndevs -lt $test_ndevs ]; then
+> +		_notrun "Need at least test requested number of ndevs $test_ndevs"
 
-mkfs.btrfs --nodesize=4096 -f $DEV
-mount -t btrfs $DEV $MNT
+This message is not clear to me either.
 
-# fill metadata space, create a tree with 1 node and 2 leaves
-for ((i = 1; i <= 10; i++)); do
-        mkdir $MNT/d$i
-done
-for ((i = 1; i <= 1; i++)); do
-        xfs_io -f -c "pwrite -S 0xaa 0 8K" $MNT/f$i
-done
-
-btrfs fi sync $MNT
-btrfs quota enable $MNT
-btrfs quota rescan -w $MNT
-btrfs qg show $MNT
-
-umount $MNT
-btrfsck $DEV
-
-mount -t btrfs $DEV $MNT
-
-time btrfs balance start -d $MNT
-
-umount $MNT
-btrfsck $DEV
-
-
-Also, please, when you send a new version of a patch, add a changelog
-describing what changed between versions. See [1] for an example.
-I noticed you do this for all patches you send.
-
-[1] https://btrfs.wiki.kernel.org/index.php/Developer%27s_FAQ#Repeated_submissions
-
->
->
-> --
-> Thanks,
-> Lu
->
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe fstests" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-
-
-
--- 
-Filipe David Manana,
-
-"Reasonable men adapt themselves to the world.
- Unreasonable men adapt the world to themselves.
- That's why all progress depends on unreasonable men."
+Thanks,
+Eryu

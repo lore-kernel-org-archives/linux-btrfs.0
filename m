@@ -1,35 +1,27 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:53380 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:44365 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751168AbcFIN1k (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 9 Jun 2016 09:27:40 -0400
-Date: Thu, 9 Jun 2016 15:28:14 +0200
+	id S1423119AbcFMPPE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 13 Jun 2016 11:15:04 -0400
+Date: Mon, 13 Jun 2016 17:15:42 +0200
 From: David Sterba <dsterba@suse.cz>
-To: Liu Bo <bo.li.liu@oracle.com>
-Cc: linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.cz>,
-        Qu Wenruo <quwenruo@cn.fujitsu.com>
-Subject: Re: [PATCH v2] Btrfs: check if extent buffer is aligned to sectorsize
-Message-ID: <20160609132814.GK3905@twin.jikos.cz>
+To: Heinrich Schuchardt <xypron.glpk@gmx.de>
+Cc: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
+        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org,
+        linux-kernel@vger.kernel.org
+Subject: Re: [PATCH 1/1] btrfs: Use correct format specifier
+Message-ID: <20160613151542.GA6205@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <1465239683-29666-1-git-send-email-bo.li.liu@oracle.com>
+References: <1465661470-10525-1-git-send-email-xypron.glpk@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1465239683-29666-1-git-send-email-bo.li.liu@oracle.com>
+In-Reply-To: <1465661470-10525-1-git-send-email-xypron.glpk@gmx.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Jun 06, 2016 at 12:01:23PM -0700, Liu Bo wrote:
-> Thanks to fuzz testing, we can pass an invalid bytenr to extent buffer
-> via alloc_extent_buffer().  An unaligned eb can have more pages than it
-> should have, which ends up extent buffer's leak or some corrupted content
-> in extent buffer.
+On Sat, Jun 11, 2016 at 06:11:10PM +0200, Heinrich Schuchardt wrote:
+> Component mirror_num of struct btrfsic_block is defined
+> as unsigned int. Use %u as format specifier.
 > 
-> This adds a warning to let us quickly know what was happening.
-> 
-> Now that alloc_extent_buffer() no more returns NULL, this changes its
-> caller and callers of its caller to match with the new error
-> handling.
-> 
-> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
-
+> Signed-off-by: Heinrich Schuchardt <xypron.glpk@gmx.de>
 Reviewed-by: David Sterba <dsterba@suse.com>

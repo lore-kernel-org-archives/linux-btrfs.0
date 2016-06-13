@@ -1,60 +1,63 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from washoe.dartmouth.edu ([129.170.30.229]:39469 "EHLO
-	smtp.onerussian.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S933283AbcFMDrD (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 12 Jun 2016 23:47:03 -0400
-Received: from [66.228.68.185] (helo=localhost)
-	by smtp.onerussian.com with esmtpsa (TLS1.2:RSA_AES_128_CBC_SHA1:128)
-	(Exim 4.80)
-	(envelope-from <yoh@onerussian.com>)
-	id 1bCIq4-00069n-2B
-	for linux-btrfs@vger.kernel.org; Sun, 12 Jun 2016 23:47:01 -0400
-Date: Sun, 12 Jun 2016 23:46:54 -0400
-From: Yaroslav Halchenko <yoh@onerussian.com>
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Message-ID: <20160612151531.GA28826@hopa.kiewit.dartmouth.edu>
-Reply-To: yoh@onerussian.com
-References: <20160610234114.GB11174@onerussian.com>
- <CAJCQCtS1UTBx1-GELqUTbrdcxmncN3bv7X3OjGGrjvzom28m+w@mail.gmail.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-In-Reply-To: <CAJCQCtS1UTBx1-GELqUTbrdcxmncN3bv7X3OjGGrjvzom28m+w@mail.gmail.com>
-Subject: Re: recent complete stalls of btrfs (4.6.0-rc4+) -- any advice?
+Received: from plane.gmane.org ([80.91.229.3]:43910 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S933283AbcFMDyS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 12 Jun 2016 23:54:18 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+	id 1bCIx4-0007HP-QY
+	for linux-btrfs@vger.kernel.org; Mon, 13 Jun 2016 05:54:16 +0200
+Received: from 64.134.221.43 ([64.134.221.43])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Mon, 13 Jun 2016 05:54:14 +0200
+Received: from 1i5t5.duncan by 64.134.221.43 with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Mon, 13 Jun 2016 05:54:14 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: Replacing drives with larger ones in a 4 drive raid1
+Date: Mon, 13 Jun 2016 03:54:08 +0000 (UTC)
+Message-ID: <pan$68dc6$cfb2f3f9$47775110$b24d1225@cox.net>
+References: <022F65B5-228D-4EEF-95C9-3C269B63B290@bueechi.net>
+	<38F2FB04-0617-4DD3-9D48-ED3C4434003D@bueechi.net>
+	<0AC846B3-C8B0-45FF-BCA9-F681811A23D7@bueechi.net>
+	<CAPmG0jYrstbaBkL98YrwQk4CXxmBOo4nXd=waAJ9tXGc_WpTag@mail.gmail.com>
+	<0426BC4B-1E70-4988-94FC-8D56EEBD0796@bueechi.net>
+	<CAPmG0jYTd0a3NfzAXSGCBkMxZNQQ0pE+U_bmd3ks4x0OAWL6Rw@mail.gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Henk Slager posted on Sun, 12 Jun 2016 21:03:22 +0200 as excerpted:
 
-On Fri, 10 Jun 2016, Chris Murphy wrote:
+> But now that you anyhow have all data on 3x 6TB drives, you could save
+> balancing time by just doing btrfs-replace 6TB to 8TB 3x and then for
+> the 4th 8TB just add it and let btrfs do the spreading/balancing over
+> time by itself.
 
-> > Are those issues something which was fixed since 4.6.0-rc4+ or I should
-> > be on look out for them to come back?  What other information should I
-> > provide if I run into them again to help you troubleshoot/fix it?
+That's what I'd suggest.  You have all the data on three of the 6 TB 
+drives now.  Just replace one at a time to 8 TB drives.  Then add the 4th 
+8 TB drive, and then at your option do a final balance at that point, or 
+simply let the normal activity take care of it.
 
-> > P.S. Please CC me the replies
+Altho if you're doing mostly add, little delete, without a balance you 
+may run out of space prematurely, since raid1 requires two drives with 
+unallocated space on them to allocate a new chunk (one copy on each of 
+the two), and you'll only have ~2 TB free on each of the three, which 
+would be used up with ~2 TB still left free on the last added drive...
 
-
-> 4.6.2 is current and it's a lot easier to just use that and see if it
-> still happens than for someone to track down whether it's been fixed
-> since a six week old RC.
-
-Dear Chris,
-
-Thank you for the reply!  Now running v4.7-rc2-300-g3d0f0b6
-
-The thing is that this issue doesn't happen right away, and it takes a
-while for it to develop, and seems to be only after an intensive load.
-So the version I run will always be "X weeks old" if I just keep hopping
-the recent release of master, and it would be an indefinite goose
-chase if left un-analyzed.  That is why I would still appreciate an
-advice on what specifics to report/attempt if such crash happens next
-time, or may be if someone is having an idea of what could have lead to
-this crash to start with.
+So at least a partial balance after adding that 4th 8 TB in is probably a 
+good idea.  You can leave that last drive with a couple extra free TB 
+compared to the others and cancel the balance at that point, and new 
+allocations should take it from there, but unless you're going to be 
+deleting several TB of stuff as you add, at least doing a few TB worth of 
+balance to the new drive to start the process should result in a pretty 
+even spread as it fills up the rest of the way.
 
 -- 
-Yaroslav O. Halchenko, Ph.D.
-http://neuro.debian.net http://www.pymvpa.org http://www.fail2ban.org
-Research Scientist,            Psychological and Brain Sciences Dept.
-Dartmouth College, 419 Moore Hall, Hinman Box 6207, Hanover, NH 03755
-Phone: +1 (603) 646-9834                       Fax: +1 (603) 646-1419
-WWW:   http://www.linkedin.com/in/yarik        
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

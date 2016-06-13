@@ -1,137 +1,64 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f182.google.com ([209.85.223.182]:36318 "EHLO
-	mail-io0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S965088AbcFMLJa (ORCPT
+Received: from mail-io0-f178.google.com ([209.85.223.178]:34519 "EHLO
+	mail-io0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1422882AbcFMMZA (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 13 Jun 2016 07:09:30 -0400
-Received: by mail-io0-f182.google.com with SMTP id n127so116737594iof.3
-        for <linux-btrfs@vger.kernel.org>; Mon, 13 Jun 2016 04:09:29 -0700 (PDT)
-Subject: Re: Allocator behaviour during device delete
-To: Henk Slager <eye1tm@gmail.com>, Brendan Hide <brendan@swiftspirit.co.za>
-References: <00ad8257-ba24-fe62-5c93-8db426afec69@swiftspirit.co.za>
- <f88b62ed-1e17-2f67-8d0d-210ad96cace5@gmail.com>
- <9f5e3c8d-6461-887a-0574-6104f48d0957@swiftspirit.co.za>
- <CAPmG0jarU7qKzWQrE3Z-a6vieQGcei4G6tXQcGkAK6ocabNAsQ@mail.gmail.com>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+	Mon, 13 Jun 2016 08:25:00 -0400
+Received: by mail-io0-f178.google.com with SMTP id 5so118115107ioy.1
+        for <linux-btrfs@vger.kernel.org>; Mon, 13 Jun 2016 05:24:59 -0700 (PDT)
+Subject: Re: Replacing drives with larger ones in a 4 drive raid1
+To: boli <btrfs@bueechi.net>, linux-btrfs <linux-btrfs@vger.kernel.org>
+References: <022F65B5-228D-4EEF-95C9-3C269B63B290@bueechi.net>
+ <38F2FB04-0617-4DD3-9D48-ED3C4434003D@bueechi.net>
+ <0AC846B3-C8B0-45FF-BCA9-F681811A23D7@bueechi.net>
 From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <400b7399-4e25-9390-3c9c-bfd1dbeea7ba@gmail.com>
-Date: Mon, 13 Jun 2016 07:09:21 -0400
+Message-ID: <e4c67cb3-b5f3-5dbb-1fb1-4d9a3b9a2f60@gmail.com>
+Date: Mon, 13 Jun 2016 08:24:52 -0400
 MIME-Version: 1.0
-In-Reply-To: <CAPmG0jarU7qKzWQrE3Z-a6vieQGcei4G6tXQcGkAK6ocabNAsQ@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+In-Reply-To: <0AC846B3-C8B0-45FF-BCA9-F681811A23D7@bueechi.net>
+Content-Type: text/plain; charset=windows-1252; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2016-06-10 15:26, Henk Slager wrote:
-> On Thu, Jun 9, 2016 at 3:54 PM, Brendan Hide <brendan@swiftspirit.co.za> wrote:
+On 2016-06-12 06:35, boli wrote:
+>> It has now been doing "btrfs device delete missing /mnt" for about 90 hours.
 >>
+>> These 90 hours seem like a rather long time, given that a rebalance/convert from 4-disk-raid5 to 4-disk-raid1 took about 20 hours months ago, and a scrub takes about 7 hours (4-disk-raid1).
 >>
->> On 06/09/2016 03:07 PM, Austin S. Hemmelgarn wrote:
->>>
->>> On 2016-06-09 08:34, Brendan Hide wrote:
->>>>
->>>> Hey, all
->>>>
->>>> I noticed this odd behaviour while migrating from a 1TB spindle to SSD
->>>> (in this case on a LUKS-encrypted 200GB partition) - and am curious if
->>>> this behaviour I've noted below is expected or known. I figure it is a
->>>> bug. Depending on the situation, it *could* be severe. In my case it was
->>>> simply annoying.
->>>>
->>>> ---
->>>> Steps
->>>>
->>>> After having added the new device (btrfs dev add), I deleted the old
->>>> device (btrfs dev del)
->>>>
->>>> Then, whilst waiting for that to complete, I started a watch of "btrfs
->>>> fi show /". Note that the below is very close to the output at the time
->>>> - but is not actually copy/pasted from the output.
->>>>
->>>>> Label: 'tricky-root'  uuid: bcbe47a5-bd3f-497a-816b-decb4f822c42
->>>>>         Total devices 2 FS bytes used 115.03GiB
->>>>>         devid    1 size 0.00GiB used 298.06GiB path /dev/sda2
->>>>>         devid    2 size 200.88GiB used 0.00GiB path
->>>>> /dev/mapper/cryptroot
->>>>
->>>>
->>>>
->>>> devid1 is the old disk while devid2 is the new SSD
->>>>
->>>> After a few minutes, I saw that the numbers have changed - but that the
->>>> SSD still had no data:
->>>>
->>>>> Label: 'tricky-root'  uuid: bcbe47a5-bd3f-497a-816b-decb4f822c42
->>>>>         Total devices 2 FS bytes used 115.03GiB
->>>>>         devid    1 size 0.00GiB used 284.06GiB path /dev/sda2
->>>>>         devid    2 size 200.88GiB used 0.00GiB path
->>>>> /dev/mapper/cryptroot
->>>>
->>>>
->>>> The "FS bytes used" amount was changing a lot - but mostly stayed near
->>>> the original total, which is expected since there was very little
->>>> happening other than the "migration".
->>>>
->>>> I'm not certain of the exact point where it started using the new disk's
->>>> space. I figure that may have been helpful to pinpoint. :-/
->>>
->>> OK, I'm pretty sure I know what was going on in this case.  Your
->>> assumption that device delete uses the balance code is correct, and that
->>> is why you see what's happening happening.  There are two key bits that
->>> are missing though:
->>> 1. Balance will never allocate chunks when it doesn't need to.
+>> OTOH the filesystem will be rather full with only 3 of 4 disks available, so I do expect it to take somewhat "longer than usual".
+>>
+>> Would anyone venture a guess as to how long it might take?
 >
-> In relation to discussions w.r.t. enospc and device full of chunks, I
-> say this 1. statement and I see different behavior with kernel 4.6.0
-> tools 4.5.3
-> On a idle fs with some fragmentation, I did balance -dusage=5, it
-> completes succesfuly and leaves and new empty chunk (highest vaddr).
-> Then balance -dusage=6, does 2 chunks with that usage level:
-> - the zero filled last chunk is replaced with a new empty chunk (higher vaddr)
-> - the 2 usage=6 chunks are gone
-> - one chunk with the lowest vaddr saw its usage increase from 47 to 60
-> - several metadata chunks have change slightly in usage
+> It's done now, and took close to 99 hours to rebalance 8.1 TB of data from a 4x6TB raid1 (12 TB capacity) with 1 drive missing onto the remaining 3x6TB raid1 (9 TB capacity).
 >
-> It could be a 2-step datamove, but from just the states before and
-> after balance I can't prove that.
-I should have been more clear about this, I meant:
-Balance will never allocate chunks if there's no data to move from the 
-one it's balance, or if it already has allocated a chunk which isn't yet 
-full.
-
-IOW, If a chunk is empty, it won't trigger a new allocation to balance 
-just that chunk, and if the data in a chunk will all fit in the free 
-space in a chunk that's already been allocated by this balance run, it 
-will get packed there instead of triggering a new allocation.
-
-What balance actually does is send everything selected by the filters 
-through the allocator again.  Using the convert filters makes balance 
-tell the allocator to start using that profile for new allocations, 
-doing a device delete tells the allocator to not use that device and 
-then runs balance.  This ends up being most of why balance is useful at 
-all, because it has the net effect of defragmenting free space, which in 
-turn can free up empty chunks.
+> Now I made sure quotas were off, then started a screen to fill the new 8 TB disk with zeros, detached it and and checked iotop to get a rough estimate on how long it will take (I'm aware it will become slower in time).
 >
->>> 2. The space usage listed in fi show is how much space is allocated to
->>> chunks, not how much is used in those chunks.
->>>
->>> In this case, based on what you've said, you had a lot of empty or
->>> mostly empty chunks.  As a result of this, the device delete was both
->>> copying data, and consolidating free space.  If you have a lot of empty
->>> or mostly empty chunks, it's not unusual for a device delete to look
->>> like this until you start hitting chunks that have actual data in them.
->>> The pri8mary point of this behavior is that it makes it possible to
->>> directly switch to a smaller device without having to run a balance and
->>> then a resize before replacing the device, and then resize again
->>> afterwards.
->>
->>
->> Thanks, Austin. Your explanation is along the lines of my thinking though.
->>
->> The new disk should have had *some* data written to it at that point, as it
->> started out at over 600GiB in allocation (should have probably mentioned
->> that already). Consolidating or not, I would consider data being written to
->> the old disk to be a bug, even if it is considered minor.
->>
->> I'll set up a reproducible test later today to prove/disprove the theory. :)
+> After that I'll add this 8 TB disk to the btrfs raid1 (for yet another rebalance).
+>
+> The next 3 disks will be replaced with "btrfs replace", so only one rebalance each is needed.
+>
+> I assume each "btrfs replace" would do a full rebalance, and thus assign chunks according to the normal strategy of choosing the two drives with the most free space, which in this case would be a chunk to the new drive, and a mirrored chunk to that existing 3 drive with most free space.
+Replace doesn't need to do a balance, it's largely just a block level 
+copy of the device being replaced, but with some special handling so 
+that the filesystem is consistent throughout the whole operation.  This 
+is most of why it's so much more efficient than add/delete.
+>
+> What I'm wondering is this:
+> If the goal is to replace 4x 6TB drive (raid1) with 4x 8TB drive (still raid1), is there a way to remove one 6 TB drive at a time, recreate its exact contents from the other 3 drives onto a new 8 TB drive, without doing a full rebalance? That is: without writing any substantial amount of data onto the remaining 3 drives.
+The most efficient way of converting the array online without adding any 
+more disks than you have to begin with is:
+1. Delete one device from the array with device delete.
+2. Physically switch the now unused device with one of the new devices.
+3. Use btrfs replace to replace one of the devices in the array with the 
+newly connected device (and make sure to resize to the full size of the 
+new device).
+4. Repeat from step 2 until you aren't using any of the old devices in 
+the array.
+5. You should have one old device left unused, physically switch it for 
+a new device.
+6. Use btrfs device add to add the new device to the array, then run a 
+full balance.
 
+This will result in only two balances being needed (one implicit in the 
+device delete, and the explicit final one to restripe across the full 
+array), and will result in the absolute minimum possible data transfer.

@@ -1,108 +1,178 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-001b2d01.pphosted.com ([148.163.156.1]:41701 "EHLO
-	mx0a-001b2d01.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1757897AbcFALUJ (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:38635 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S933247AbcFMCLb (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 1 Jun 2016 07:20:09 -0400
-Received: from pps.filterd (m0048827.ppops.net [127.0.0.1])
-	by mx0a-001b2d01.pphosted.com (8.16.0.11/8.16.0.11) with SMTP id u51BJXQB005621
-	for <linux-btrfs@vger.kernel.org>; Wed, 1 Jun 2016 07:20:08 -0400
-Message-Id: <201606011120.u51BJXQB005621@mx0a-001b2d01.pphosted.com>
-Received: from e23smtp08.au.ibm.com (e23smtp08.au.ibm.com [202.81.31.141])
-	by mx0a-001b2d01.pphosted.com with ESMTP id 239t3s8qe2-1
-	(version=TLSv1.2 cipher=AES256-SHA bits=256 verify=NOT)
-	for <linux-btrfs@vger.kernel.org>; Wed, 01 Jun 2016 07:20:08 -0400
-Received: from localhost
-	by e23smtp08.au.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
-	for <linux-btrfs@vger.kernel.org> from <xufeifei@linux.vnet.ibm.com>;
-	Wed, 1 Jun 2016 21:20:05 +1000
-Received: from d23relay08.au.ibm.com (d23relay08.au.ibm.com [9.185.71.33])
-	by d23dlp03.au.ibm.com (Postfix) with ESMTP id D265C3578058
-	for <linux-btrfs@vger.kernel.org>; Wed,  1 Jun 2016 21:20:03 +1000 (EST)
-Received: from d23av06.au.ibm.com (d23av06.au.ibm.com [9.190.235.151])
-	by d23relay08.au.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id u51BJtA255705768
-	for <linux-btrfs@vger.kernel.org>; Wed, 1 Jun 2016 21:20:03 +1000
-Received: from d23av06.au.ibm.com (localhost [127.0.0.1])
-	by d23av06.au.ibm.com (8.14.4/8.14.4/NCO v10.0 AVout) with ESMTP id u51BJGDF017627
-	for <linux-btrfs@vger.kernel.org>; Wed, 1 Jun 2016 21:19:17 +1000
-From: Feifei Xu <xufeifei@linux.vnet.ibm.com>
-To: linux-btrfs@vger.kernel.org
-Cc: steve.capper@linaro.org, chandan@mykolab.com, jbacik@fb.com,
-        dsterba@suse.com, chandan@linux.vnet.ibm.com, feifeixu.sh@gmail.com,
-        Feifei Xu <xufeifei@linux.vnet.ibm.com>
-Subject: [PATCH V2 0/8] Btrfs: self-tests: Support non-4k page size 
-Date: Wed,  1 Jun 2016 19:18:22 +0800
+	Sun, 12 Jun 2016 22:11:31 -0400
+From: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>, <fstests@vger.kernel.org>
+CC: <eguan@redhat.com>, Lu Fengqi <lufq.fnst@cn.fujitsu.com>
+Subject: [PATCH v3] fstests: btrfs: add test for qgroup handle extent de-reference
+Date: Mon, 13 Jun 2016 10:10:50 +0800
+Message-ID: <1465783850-13501-1-git-send-email-lufq.fnst@cn.fujitsu.com>
+MIME-Version: 1.0
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+Test if qgroup can handle extent de-reference during reallocation.
+"extent de-reference" means that reducing an extent's reference count
+or freeing an extent.
+Although current qgroup can handle it, we still need to prevent any
+regression which may break current qgroup.
 
-Btrfs self-test module assumed that both sectorsize and PAGE_SIZE are 4K.
-Thus many self-tests fail on non-4K page size systems, like ppc64. This
-patchset enables self-tests to be executed on non-4k page size systems.
+Signed-off-by: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
+---
+ common/rc           |  4 +--
+ tests/btrfs/028     | 98 +++++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/028.out |  2 ++
+ tests/btrfs/group   |  1 +
+ 4 files changed, 103 insertions(+), 2 deletions(-)
+ create mode 100755 tests/btrfs/028
+ create mode 100644 tests/btrfs/028.out
 
-This patchset enables us to easily add support for possible sectorsizes and
-nodesizes (e.g. for future subpage-blocksize support).
-
-This patchset also fixes the following bugs in self-tests:
- 1) Fix integer overflow when calculating bytes_per_bitmap
- 2) Fix infinite loop when searching for free space
- 3) Fix extent test_bitmaps fail on 64k sectorsize system
- 4) Fix extent buffer bitmap test fail on big-endian system
-
-Also use macros instead of constants add add missing newline
-when print strings in self-tests codes.
-
------
-V1->V2:
-  1) use rb_next(&tmp->offset_index)/rb_prev(&tmp->offset_index) instead
-     of doing the info = tmp thing. As suggested by Josef Bacik.
-
-  2) Separate V1 patch "[PATCH 3/5] Btrfs: self-tests: Support non-4k 
-     page size" to following  patches in V2.
-	- [PATCH V2 3/8] Btrfs: self-tests: Support non-4k page size
-	- [PATCH V2 4/8] Btrfs: self-tests: Execute page straddling
-		test only when nodesize < PAGE_SIZE
-	- [PATCH V2 5/8] Btrfs: self-tests: Support testing all
-		possible sectorsizes and nodesizes
-	- [PATCH V2 6/8] Btrfs: self-tests: Use macros instead of
-		constants and add missing newline
-     As suggested by David Sterba that separate all change that are not
-     related to hardcoded 4096/sectorsize/PAGE_SIZE.
-
-  3) fix some coding style issue
------
-Feifei Xu (8):
-  Btrfs: test_check_exists: Fix infinite loop when searching for free
-    space entries
-  Btrfs: Fix integer overflow when calculating bytes_per_bitmap
-  Btrfs: self-tests: Support non-4k page size
-  Btrfs: self-tests: Execute page straddling test only when nodesize <
-    PAGE_SIZE
-  Btrfs: self-tests: Support testing all possible sectorsizes and
-    nodesizes
-  Btrfs: self-tests: Use macros instead of constants and add missing
-    newline
-  Btrfs: self-tests: Fix test_bitmaps fail on 64k sectorsize
-  Btrfs: self-tests: Fix extent buffer bitmap test fail on BE system
-
- fs/btrfs/ctree.c                       |   6 +-
- fs/btrfs/disk-io.c                     |   9 +-
- fs/btrfs/disk-io.h                     |   2 +-
- fs/btrfs/extent_io.c                   |  10 +-
- fs/btrfs/extent_io.h                   |   4 +-
- fs/btrfs/free-space-cache.c            |  18 +-
- fs/btrfs/super.c                       |  52 +++--
- fs/btrfs/tests/btrfs-tests.c           |   6 +-
- fs/btrfs/tests/btrfs-tests.h           |  27 +--
- fs/btrfs/tests/extent-buffer-tests.c   |  13 +-
- fs/btrfs/tests/extent-io-tests.c       |  86 ++++++---
- fs/btrfs/tests/free-space-tests.c      |  76 +++++---
- fs/btrfs/tests/free-space-tree-tests.c |  30 +--
- fs/btrfs/tests/inode-tests.c           | 344 ++++++++++++++++++---------------
- fs/btrfs/tests/qgroup-tests.c          | 111 ++++++-----
- 15 files changed, 454 insertions(+), 340 deletions(-)
-
+diff --git a/common/rc b/common/rc
+index 51092a0..650d198 100644
+--- a/common/rc
++++ b/common/rc
+@@ -3284,9 +3284,9 @@ _btrfs_get_profile_configs()
+ # stress btrfs by running balance operation in a loop
+ _btrfs_stress_balance()
+ {
+-	local btrfs_mnt=$1
++	local options=$@
+ 	while true; do
+-		$BTRFS_UTIL_PROG balance start $btrfs_mnt
++		$BTRFS_UTIL_PROG balance start $options
+ 	done
+ }
+ 
+diff --git a/tests/btrfs/028 b/tests/btrfs/028
+new file mode 100755
+index 0000000..8cea49a
+--- /dev/null
++++ b/tests/btrfs/028
+@@ -0,0 +1,98 @@
++#! /bin/bash
++# FS QA Test 028
++#
++# Test if qgroup can handle extent de-reference during reallocation.
++# "extent de-reference" means that reducing an extent's reference count
++# or freeing an extent.
++# Although current qgroup can handle it, we still need to prevent any
++# regression which may break current qgroup.
++#
++#-----------------------------------------------------------------------
++# Copyright (c) 2016 Fujitsu. All Rights Reserved.
++#
++# This program is free software; you can redistribute it and/or
++# modify it under the terms of the GNU General Public License as
++# published by the Free Software Foundation.
++#
++# This program is distributed in the hope that it would be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write the Free Software Foundation,
++# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++#-----------------------------------------------------------------------
++#
++
++seq=`basename $0`
++seqres=$RESULT_DIR/$seq
++echo "QA output created by $seq"
++
++here=`pwd`
++tmp=/tmp/$$
++status=1	# failure is the default!
++trap "_cleanup; exit \$status" 0 1 2 3 15
++
++_cleanup()
++{
++	cd /
++	rm -f $tmp.*
++}
++
++# get standard environment, filters and checks
++. ./common/rc
++. ./common/filter
++
++# remove previous $seqres.full before test
++rm -f $seqres.full
++
++# real QA test starts here
++_supported_fs btrfs
++_supported_os Linux
++_require_scratch
++
++_scratch_mkfs
++_scratch_mount
++
++_run_btrfs_util_prog quota enable $SCRATCH_MNT
++_run_btrfs_util_prog quota rescan -w $SCRATCH_MNT
++
++# Increase the probability of generating de-refer extent, and decrease
++# other.
++args=`_scale_fsstress_args -z \
++	-f write=10 -f unlink=10 \
++	-f creat=10 -f fsync=10 \
++	-f fsync=10 -n 100000 -p 2 \
++	-d $SCRATCH_MNT/stress_dir`
++echo "Run fsstress $args" >>$seqres.full
++$FSSTRESS_PROG $args >/dev/null 2>&1 &
++fsstress_pid=$!
++
++echo "Start balance" >>$seqres.full
++_btrfs_stress_balance -d $SCRATCH_MNT >/dev/null 2>&1 &
++balance_pid=$!
++
++# 30s is enough to trigger bug
++sleep $((30*$TIME_FACTOR))
++kill $fsstress_pid $balance_pid
++wait
++
++# kill _btrfs_stress_balance can't end balance, so call btrfs balance cancel
++# to cancel running or paused balance.
++$BTRFS_UTIL_PROG balance cancel $SCRATCH_MNT &> /dev/null
++
++_run_btrfs_util_prog filesystem sync $SCRATCH_MNT
++
++_scratch_unmount
++
++# generate a qgroup report and look for inconsistent groups
++$BTRFS_UTIL_PROG check --qgroup-report $SCRATCH_DEV 2>&1 | \
++			grep -q -E "Counts for qgroup.*are different"
++if [ $? -ne 0 ]; then
++	echo "Silence is golden"
++	# success, all done
++	status=0
++fi
++
++exit
+diff --git a/tests/btrfs/028.out b/tests/btrfs/028.out
+new file mode 100644
+index 0000000..2615f73
+--- /dev/null
++++ b/tests/btrfs/028.out
+@@ -0,0 +1,2 @@
++QA output created by 028
++Silence is golden
+diff --git a/tests/btrfs/group b/tests/btrfs/group
+index da0e27f..35ecf59 100644
+--- a/tests/btrfs/group
++++ b/tests/btrfs/group
+@@ -30,6 +30,7 @@
+ 025 auto quick send clone
+ 026 auto quick compress prealloc
+ 027 auto replace
++028 auto qgroup balance
+ 029 auto quick clone
+ 030 auto quick send
+ 031 auto quick subvol clone
 -- 
-2.7.4
+2.5.5
+
+
 

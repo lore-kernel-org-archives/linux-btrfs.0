@@ -1,72 +1,94 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail02.iobjects.de ([188.40.134.68]:54634 "EHLO
-	mail02.iobjects.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751220AbcFNPaT (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 14 Jun 2016 11:30:19 -0400
-Received: from tux.wizards.de (pD953E4E5.dip0.t-ipconnect.de [217.83.228.229])
-	by mail02.iobjects.de (Postfix) with ESMTPSA id D0E5D416014E
-	for <linux-btrfs@vger.kernel.org>; Tue, 14 Jun 2016 17:30:17 +0200 (CEST)
-Received: from [192.168.100.223] (ragnarok [192.168.100.223])
-	by tux.wizards.de (Postfix) with ESMTP id 6BE6511C01D2
-	for <linux-btrfs@vger.kernel.org>; Tue, 14 Jun 2016 17:30:17 +0200 (CEST)
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-From: =?UTF-8?Q?Holger_Hoffst=c3=a4tte?= <holger@applied-asynchrony.com>
-Subject: Another 'traling page extent' observation
-Message-ID: <57602309.601@applied-asynchrony.com>
-Date: Tue, 14 Jun 2016 17:30:17 +0200
+Received: from smtp-35.italiaonline.it ([212.48.25.163]:49463 "EHLO libero.it"
+	rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+	id S1752553AbcFNSMF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 14 Jun 2016 14:12:05 -0400
+Reply-To: kreijack@inwind.it
+Subject: Re: [PATCH] Btrfs-progs: add check-only option for balance
+References: <1465508801-14163-1-git-send-email-ashish.samant@oracle.com>
+ <575B2760.30109@mendix.com> <cbd07ef0-83ba-e8af-fe6c-2ed5689965c2@inwind.it>
+ <575DAFAE.10906@mendix.com>
+To: Hans van Kranenburg <hans.van.kranenburg@mendix.com>,
+        Ashish Samant <ashish.samant@oracle.com>, linux-btrfs@vger.kernel.org
+Cc: bo.li.liu@oracle.com
+From: Goffredo Baroncelli <kreijack@inwind.it>
+Message-ID: <580d1242-6698-a977-9008-6ac743f205e4@inwind.it>
+Date: Tue, 14 Jun 2016 20:11:59 +0200
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
+In-Reply-To: <575DAFAE.10906@mendix.com>
+Content-Type: text/plain; charset=windows-1252
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+On 2016-06-12 20:53, Hans van Kranenburg wrote:
+> Hi!
+> 
+> On 06/12/2016 08:41 PM, Goffredo Baroncelli wrote:
+>> Hi All,
+>> 
+>> On 2016-06-10 22:47, Hans van Kranenburg wrote:
+>>>> +        if (sk->min_objectid < sk->max_objectid) + 
+>>>> sk->min_objectid += 1;
+>>> 
+>>> ...and now it's (289406977 168 19193856), which means you're 
+>>> continuing your search *after* the block group item!
+>>> 
+>>> (289406976 168 19193856) is actually (289406976 << 72) + (168 << 
+>>> 64) + 19193856, which is 1366685806470112827871857008640
+>>> 
+>>> The search is continued at 1366685811192479310741502222336,
+>>> which skips 4722366482869645213696 possible places where an
+>>> object could live in the tree.
+>> 
+>> I am not sure to follow you. The extent tree (the tree involved in 
+>> the search), contains only two kind of object:
+>> 
+>> - BLOCK_GROUP_ITEM  where the key means (logical address, 0xc0,
+>> size in bytes) - EXTENT_ITEM, where the key means (logical address,
+>> 0xa8, size in bytes)
+>> 
+>> So it seems that for each (possible) "logical address", only two 
+>> items might exist; the two item are completely identified by 
+>> (objectid, type, ). It should not possible (for the extent tree)
+>> to have two item with the same objectid,key and different offset.
+>> So, for the extent tree, it is safe to advance only the objectid
+>> field.
+>> 
+>> I am wrong ?
+> 
+> When calling the search ioctl, the caller has to provide a memory
+> buffer that the kernel is going to fill with results. For
+> BTRFS_IOC_TREE_SEARCH used here, this buffer has a fixed size of 4096
+> bytes. Without some headers etc, this leaves a bit less than 4000
+> bytes of space for the kernel to write search result objects to.
+> 
+> If I do a search that will result in far more objects to be returned
+> than possible to fit in those <4096 bytes, the kernel will just put a
+> few in there until the next one does not fit any more.
+> 
+> It's the responsibility of the caller to change the start of the
+> search to point just after the last received object and do the search
+> again, in order to retrieve a few extra results.
 
-I have made another observation regarding extra extents; it seems I'm
-good at finding these things. Sorry. ;-)
+You are right. If the last item in the buffer is a EXTENT_ITEM, and the 
+next item in the disk is a BLOCK_GROUP_ITEM with the same object id,
+the latter would be skipped.
 
-This time it's with rsync. I found it when I started to use the --inplace
-option, which doesn't do rsync's usual write-to-temporary/rename cycle, but
-instead writes to a destination file directly. All of a sudden many newly
-backed up files had a traling 4k extent, for no good reason.
+I was find always terrible the BTRFS_IOC_TREE_SEARCH; if the min_*
+fields was separate from the key, the use of this ioctl would
+be a lot simpler. Moreover in most case (like this one), it would be 
+reduced the context switches, because the ioctl would return
+only valid data.
 
-This has nothing to do with extending overwrites (where new extents would
-of course be fine); it happens when the file is new. It is also independent
-of the file size or the filesystem state: it does not seem to be caused by
-fragmented free space.
 
-Reproducer example (current dir is btrfs):
 
-$ls -al /tmp/data
--rw-r--r-- 1 root root 17569552 Jun 14 16:33 /tmp/data
+> 
+> So, the important line here was: "...when the extent_item just
+> manages to squeeze in as last result into the current result buffer
+> from the ioctl..."
+> 
 
-$rm -f data && rsync /tmp/data . && sync && filefrag -ek data
-Filesystem type is: 9123683e
-File size of data is 17569552 (17160 blocks of 1024 bytes)
- ext:     logical_offset:        physical_offset: length:   expected: flags:
-   0:        0..   17159:   53918020..  53935179:  17160:             last,eof
-data: 1 extent found
 
-$rm -f data && rsync --inplace /tmp/data . && sync && filefrag -ek data
-Filesystem type is: 9123683e
-File size of data is 17569552 (17160 blocks of 1024 bytes)
- ext:     logical_offset:        physical_offset: length:   expected: flags:
-   0:        0..   17155:   48133532..  48150687:  17156:            
-   1:    17156..   17159:   36734592..  36734595:      4:   48150688: last,eof
-data: 2 extents found
-
-This is repeatable and independent of the file, so I suspect that after
-Liu Bo's fix for the previously reported stray extents in the middle
-of the file with slow buffered writes [1] there's an edge case where a page
-is still treated differently at the end after close()-ing the file - which
-rsync does correctly.
-
-This is on my 4.4.x++ kernel with btrfs ~4.7 and space_cache=v2, but since
-it also happens on a fresh volume with v1 it's probably just another
-off-by-one somewhere in the writeback/page handling.
-
-thanks,
-Holger
-
-[1] commit a91326679f aka "Btrfs: make mapping->writeback_index point to the
-last written page"
+-- 
+gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
+Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5

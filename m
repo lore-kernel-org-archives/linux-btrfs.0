@@ -1,12 +1,12 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:22898 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:55337 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1422642AbcFNA6r (ORCPT
+	with ESMTP id S965014AbcFNBRf (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 13 Jun 2016 20:58:47 -0400
+	Mon, 13 Jun 2016 21:17:35 -0400
 Subject: Re: [PATCH v3] fstests: btrfs: add test for qgroup handle extent
  de-reference
-To: <fdmanana@gmail.com>, Lu Fengqi <lufq.fnst@cn.fujitsu.com>
+To: <fdmanana@gmail.com>
 References: <1465783850-13501-1-git-send-email-lufq.fnst@cn.fujitsu.com>
  <20160613030449.GI5140@eguan.usersys.redhat.com>
  <196ba573-3f1b-753b-42ad-988054283fe6@cn.fujitsu.com>
@@ -14,17 +14,16 @@ References: <1465783850-13501-1-git-send-email-lufq.fnst@cn.fujitsu.com>
  <CAL3q7H4THn_ErZUxzSo+nSjcxbMBmcA4c45bsmjKHH_Bj4rOxQ@mail.gmail.com>
 CC: Eryu Guan <eguan@redhat.com>,
         "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        <fstests@vger.kernel.org>, Mark Fasheh <mfasheh@suse.de>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <b27737d1-fe46-a33c-c7e7-433dd5ad2cdb@cn.fujitsu.com>
-Date: Tue, 14 Jun 2016 08:58:32 +0800
+        <fstests@vger.kernel.org>, Mark Fasheh <mfasheh@suse.de>,
+        Qu Wenruo <quwenruo@cn.fujitsu.com>
+From: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
+Message-ID: <e343bf7b-732d-8b91-1785-230538d0bdc3@cn.fujitsu.com>
+Date: Tue, 14 Jun 2016 09:17:28 +0800
 MIME-Version: 1.0
 In-Reply-To: <CAL3q7H4THn_ErZUxzSo+nSjcxbMBmcA4c45bsmjKHH_Bj4rOxQ@mail.gmail.com>
 Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
-
-
 
 At 06/13/2016 05:49 PM, Filipe Manana wrote:
 > On Mon, Jun 13, 2016 at 9:06 AM, Lu Fengqi <lufq.fnst@cn.fujitsu.com> wrote:
@@ -290,40 +289,8 @@ At 06/13/2016 05:49 PM, Filipe Manana wrote:
 >
 > umount $MNT
 > btrfsck $DEV
-Yes, we also found this internally.
-
-And the direct cause is already located.
-
-The direct cause is, we're increasing new data extents' reference even 
-the referencer(fs tree) is still referring to old extents.
-
-If using ftrace to trace add/run_delayed_data_ref() and 
-qgroup_account_extent(), one should find that, new data extents' 
-reference is increased with both data reloc tree and final 
-referencer.(fs tree in the test script).
-
-In that timing, backref walk can't find any root referring the new data 
-extents.
-The data reloc tree is the current referencer, but qgroup won't account 
-data reloc tree.
-While new data extents have fs tree backref, fs tree still refers to the 
-old extent. So backref walk won't count it either.
-
-And the commit_trans before we really merges reloc roots makes the 
-accounting wrong.
-
-So it seems to be an existing problem before the qgroup rework.
-
-The quick fix won't be hard, just re-dirty the new data extent at 
-merge_reloc_roots() time.
-
-But I'm still investigating if we can fix it in a better method, to 
-increase the new data extents' reference at correct time.
-
-Thanks,
-Qu
-
 >
+OK.
 >
 > Also, please, when you send a new version of a patch, add a changelog
 > describing what changed between versions. See [1] for an example.
@@ -331,19 +298,11 @@ Qu
 >
 > [1] https://btrfs.wiki.kernel.org/index.php/Developer%27s_FAQ#Repeated_submissions
 >
->>
->>
->> --
->> Thanks,
->> Lu
->>
->>
->> --
->> To unsubscribe from this list: send the line "unsubscribe fstests" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
->
->
+Sorry, I will add the change log when I update this patch.
+
+
+-- 
+Thanks,
+Lu
 
 

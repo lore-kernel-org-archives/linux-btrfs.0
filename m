@@ -1,98 +1,222 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:40265 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752053AbcFWNBL (ORCPT
+Received: from mx0a-001b2d01.pphosted.com ([148.163.156.1]:7300 "EHLO
+	mx0a-001b2d01.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1751403AbcFNHLg (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 23 Jun 2016 09:01:11 -0400
-From: Anand Jain <anand.jain@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Cc: clm@fb.com, dsterba@suse.cz
-Subject: [PATCH RFC] don't background blkdev_put()
-Date: Thu, 23 Jun 2016 21:01:53 +0800
-Message-Id: <1466686913-7832-1-git-send-email-anand.jain@oracle.com>
+	Tue, 14 Jun 2016 03:11:36 -0400
+Received: from pps.filterd (m0098394.ppops.net [127.0.0.1])
+	by mx0a-001b2d01.pphosted.com (8.16.0.11/8.16.0.11) with SMTP id u5E79Jij118983
+	for <linux-btrfs@vger.kernel.org>; Tue, 14 Jun 2016 03:11:35 -0400
+Received: from e31.co.us.ibm.com (e31.co.us.ibm.com [32.97.110.149])
+	by mx0a-001b2d01.pphosted.com with ESMTP id 23gf59b82g-1
+	(version=TLSv1.2 cipher=AES256-SHA bits=256 verify=NOT)
+	for <linux-btrfs@vger.kernel.org>; Tue, 14 Jun 2016 03:11:35 -0400
+Received: from localhost
+	by e31.co.us.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
+	for <linux-btrfs@vger.kernel.org> from <chandan@linux.vnet.ibm.com>;
+	Tue, 14 Jun 2016 01:11:33 -0600
+From: Chandan Rajendra <chandan@linux.vnet.ibm.com>
+To: clm@fb.com, jbacik@fb.com, dsterba@suse.cz
+Cc: Chandan Rajendra <chandan@linux.vnet.ibm.com>, linux-btrfs@vger.kernel.org,
+        chandan@mykolab.com
+Subject: [PATCH V19 00/19] Allow I/O on blocks whose size is less than page size
+Date: Tue, 14 Jun 2016 12:40:57 +0530
+Message-Id: <1465888276-30670-1-git-send-email-chandan@linux.vnet.ibm.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-As of now we are calling blkdev_put() under call_rcu,
-actually which isn't necessary. Unless I am missing
-something. This is a try out patch to know the same.
+Btrfs assumes block size to be the same as the machine's page
+size. This would mean that a Btrfs instance created on a 4k page size
+machine (e.g. x86) will not be mountable on machines with larger page
+sizes (e.g. PPC64/AARCH64). This patchset aims to resolve this
+incompatibility.
 
-Ran successfully the fstests.
+This patchset continues with the work posted previously at
+http://thread.gmane.org/gmane.comp.file-systems.btrfs/55653.
 
-This should be applied on top of recent other patches,
-  [PATCH 1/2] btrfs: reorg btrfs_close_one_device()
-  [PATCH v3 2/2] btrfs: make sure device is synced before return
+I have reverted the upstream commit "btrfs: fix lockups from
+btrfs_clear_path_blocking" (f82c458a2c3ffb94b431fc6ad791a79df1b3713e)
+since this led to soft-lockups when the patch "Btrfs:
+subpagesize-blocksize: Prevent writes to an extent buffer when
+PG_writeback flag is set" is applied. During 2015's Vault Conference
+Btrfs meetup, Chris Mason had suggested that he will write up a
+suitable locking function to be used when writing dirty pages that map
+metadata blocks. Until we have a suitable locking function available,
+this patchset temporarily disables the commit
+f82c458a2c3ffb94b431fc6ad791a79df1b3713e.
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
----
- fs/btrfs/volumes.c | 28 +++++++++++++++++++++++-----
- 1 file changed, 23 insertions(+), 5 deletions(-)
+The commits for the Btrfs kernel module can be found at
+https://github.com/chandanr/linux/tree/btrfs/subpagesize-blocksize.
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index e0ad29d6fe9a..63036702ea18 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -834,10 +834,6 @@ static void __free_device(struct work_struct *work)
- 	struct btrfs_device *device;
- 
- 	device = container_of(work, struct btrfs_device, rcu_work);
--
--	if (device->bdev)
--		blkdev_put(device->bdev, device->mode);
--
- 	rcu_string_free(device->name);
- 	kfree(device);
- }
-@@ -874,6 +870,8 @@ static void btrfs_close_one_device(struct btrfs_device *device)
- 		sync_blockdev(device->bdev);
- 		invalidate_bdev(device->bdev);
- 	}
-+	if (device->bdev)
-+		blkdev_put(device->bdev, device->mode);
- 
- 	new_device = btrfs_alloc_device(NULL, &device->devid,
- 					device->uuid);
-@@ -1931,6 +1929,13 @@ int btrfs_rm_device(struct btrfs_root *root, char *device_path, u64 devid)
- 		btrfs_sysfs_rm_device_link(root->fs_info->fs_devices, device);
- 	}
- 
-+	if (device->bdev && device->writeable) {
-+		sync_blockdev(device->bdev);
-+		invalidate_bdev(device->bdev);
-+	}
-+	if (device->bdev)
-+		blkdev_put(device->bdev, device->mode);
-+
- 	call_rcu(&device->rcu, free_device);
- 
- 	num_devices = btrfs_super_num_devices(root->fs_info->super_copy) - 1;
-@@ -2024,6 +2029,13 @@ void btrfs_rm_dev_replace_free_srcdev(struct btrfs_fs_info *fs_info,
- 		/* zero out the old super if it is writable */
- 		btrfs_scratch_superblocks(srcdev->bdev, srcdev->name->str);
- 	}
-+
-+	if (srcdev->bdev && srcdev->writeable) {
-+		sync_blockdev(srcdev->bdev);
-+		invalidate_bdev(srcdev->bdev);
-+	}
-+	if (srcdev->bdev)
-+		blkdev_put(srcdev->bdev, srcdev->mode);
- 	call_rcu(&srcdev->rcu, free_device);
- 
- 	/*
-@@ -2079,6 +2091,12 @@ void btrfs_destroy_dev_replace_tgtdev(struct btrfs_fs_info *fs_info,
- 	 * the device_list_mutex lock.
- 	 */
- 	btrfs_scratch_superblocks(tgtdev->bdev, tgtdev->name->str);
-+	if (tgtdev->bdev && tgtdev->writeable) {
-+		sync_blockdev(tgtdev->bdev);
-+		invalidate_bdev(tgtdev->bdev);
-+	}
-+	if (tgtdev->bdev)
-+		blkdev_put(tgtdev->bdev, tgtdev->mode);
- 	call_rcu(&tgtdev->rcu, free_device);
- }
- 
+To create a filesystem with block size < page size, a patched version
+of the Btrfs-progs package is required. The corresponding fixes for
+Btrfs-progs can be found at
+https://github.com/chandanr/btrfs-progs/tree/btrfs/subpagesize-blocksize.
+
+The patchset is based off kdave/master branch. I had cherry picked the
+following fixes to self-tests (from kdave/for-next branch) before
+applying the subpage-blocksize patchset:
+
+Btrfs: self-tests: Fix extent buffer bitmap test fail on BE system
+Btrfs: self-tests: Fix test_bitmaps fail on 64k sectorsize
+Btrfs: self-tests: Use macros instead of constants and add missing newline
+Btrfs: self-tests: Support testing all possible sectorsizes and nodesizes
+Btrfs: self-tests: Execute page straddling test only when nodesize < PAGE_SIZE
+Btrfs: self-tests: Support non-4k page size
+Btrfs: Fix integer overflow when calculating bytes_per_bitmap
+Btrfs: test_check_exists: Fix infinite loop when searching for free space entries
+
+Fstests run status:
+1. x86_64
+   - With 4k sectorsize, all the tests that succeed with the master
+     branch at git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git
+     branch also do so with the patches applied.
+   - With 2k sectorsize, generic/027 never seems to complete. In my
+     case, the test did not complete even after 45 mins of run time.
+2. ppc64
+   - With 4k sectorsize, 16k nodesize and with "nospace_cache" mount
+     option, except for scrub and compression tests, all the tests
+     that succeed with the master branch at
+     git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git
+     branch also do so with the patches applied.
+   - With 64k sectorsize & nodesize, all the tests that succeed with
+     the master branch at
+     git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git
+     branch also do so with the patches applied.
+
+TODO:
+1. On ppc64, btrfsck segfaults when checking a filesystem instance
+   having 2k sectorsize.
+2. I am planning to fix scrub & compression via a separate patchset.
+
+Changes from V18:
+1. The per-page bitmap used to track the block status is now allocated
+   from a slab cache.
+2. The per-page bitmap is allocated and used only in cases where
+   sectorsize < PAGE_SIZE.
+3. The new patch "Btrfs: subpage-blocksize: Disable compression"
+   disables compression in subpage-blocksize scenario.
+
+Changes from V17:
+1. Due to mistakes made during git rebase operations, fixes ended up
+   in incorrect patches. This patchset gets the fixes in the right
+   patches.
+
+Changes from V16:
+1. The V15 patchset consisted of patches obtained from an incorrect
+   git branch. Apologies for the mistake. All the entries listed under
+   "Changes from V15" hold good for V16.
+
+Changes from V15:
+1. The invocation of cleancache_get_page() in __do_readpage() assumed
+   blocksize to be same as PAGE_SIZE. We now invoke cleancache_get_page()
+   only if blocksize is same as PAGE_SIZE. Thanks to David Sterba for
+   pointing this out.
+2. In __extent_writepage_io() we used to accumulate all the contiguous
+   dirty blocks within the page before submitting the file offset range
+   for I/O. In some cases this caused the bio to span across more than
+   a stripe. For example, With 4k block size, 64K stripe size
+   and 64K page size, assume
+   - All the blocks mapped by the page are contiguous on the logical
+     address space.
+   - The first block of the page is mapped to the second block of the
+     stripe.
+   In such a scenario, we would add all the blocks of the page to
+   bio. This would mean that we would overflow the stripe by one 4K
+   block. Hence this patchset removes the optimization and invokes
+   submit_extent_page() for every dirty 4K block.
+3. The following patches are newly added:
+   - Btrfs: subpage-blocksize: __btrfs_lookup_bio_sums: Set offset
+     when moving to a new bio_vec 
+   - Btrfs: subpage-blocksize: Make file extent relocate code subpage
+     blocksize aware 
+   - Btrfs: btrfs_clone: Flush dirty blocks of a page that do not map
+     the clone range
+
+Changes from V14:
+1. Fix usage of cleancache_get_page() in __do_readpage().
+   In filesystems which support subpage-blocksize scenario, a page can
+   map one or more blocks. Hence cleancache_get_page() should be
+   invoked only when the page maps a non-hole extent and block size
+   being used is equal to the page size. Thanks to David Sterba for
+   pointing this out.
+2. Replace page_read_complete() and page_write_complete() functions
+   with page_io_complete().
+3. Provide more documentation (as part of both commit message and code
+   comments) about the usage of the per-page
+   btrfs_page_private->io_lock.
+
+Changes from V13:
+1. Enable dedup ioctl to work in subpagesize-blocksize scenario.
+
+Changes from V12:
+1. The logic in the function btrfs_punch_hole() has been fixed to
+   check for the presence of BLK_STATE_UPTODATE flags for blocks in
+   pages which partially map the file range being punched.
+   
+Changes from V11:
+1. Addressed the review comments provided by Liu Bo for version V11.
+2. Fixed file defragmentation code to work in subpagesize-blocksize
+   scenario.
+3. Many "hard to reproduce" bugs were fixed.
+
+Chandan Rajendra (19):
+  Btrfs: subpage-blocksize: Fix whole page read.
+  Btrfs: subpage-blocksize: Fix whole page write
+  Btrfs: subpage-blocksize: Make sure delalloc range intersects with the
+    locked page's range
+  Btrfs: subpage-blocksize: Define extent_buffer_head
+  Btrfs: subpage-blocksize: Read tree blocks whose size is < PAGE_SIZE
+  Btrfs: subpage-blocksize: Write only dirty extent buffers belonging to
+    a page
+  Btrfs: subpage-blocksize: Allow mounting filesystems where sectorsize
+    < PAGE_SIZE
+  Btrfs: subpage-blocksize: Deal with partial ordered extent
+    allocations.
+  Btrfs: subpage-blocksize: Explicitly track I/O status of blocks of an
+    ordered extent.
+  Btrfs: subpage-blocksize: btrfs_punch_hole: Fix uptodate blocks check
+  Btrfs: subpage-blocksize: Prevent writes to an extent buffer when
+    PG_writeback flag is set
+  Revert "btrfs: fix lockups from btrfs_clear_path_blocking"
+  Btrfs: subpage-blocksize: Fix file defragmentation code
+  Btrfs: subpage-blocksize: extent_clear_unlock_delalloc: Prevent page
+    from being unlocked more than once
+  Btrfs: subpage-blocksize: Enable dedupe ioctl
+  Btrfs: subpage-blocksize: btrfs_clone: Flush dirty blocks of a page
+    that do not map the clone range
+  Btrfs: subpage-blocksize: Make file extent relocate code subpage
+    blocksize aware
+  Btrfs: subpage-blocksize: __btrfs_lookup_bio_sums: Set offset when
+    moving to a new bio_vec
+  Btrfs: subpage-blocksize: Disable compression
+
+ fs/btrfs/ctree.c                       |   37 +-
+ fs/btrfs/ctree.h                       |    6 +-
+ fs/btrfs/disk-io.c                     |  167 ++--
+ fs/btrfs/disk-io.h                     |    5 +-
+ fs/btrfs/extent-tree.c                 |   21 +-
+ fs/btrfs/extent_io.c                   | 1702 +++++++++++++++++++++++---------
+ fs/btrfs/extent_io.h                   |  152 ++-
+ fs/btrfs/file-item.c                   |    7 +-
+ fs/btrfs/file.c                        |  106 +-
+ fs/btrfs/inode.c                       |  503 +++++++---
+ fs/btrfs/ioctl.c                       |  232 +++--
+ fs/btrfs/locking.c                     |   24 +-
+ fs/btrfs/locking.h                     |    2 -
+ fs/btrfs/ordered-data.c                |   19 +
+ fs/btrfs/ordered-data.h                |    4 +
+ fs/btrfs/relocation.c                  |   53 +-
+ fs/btrfs/root-tree.c                   |    2 +-
+ fs/btrfs/super.c                       |   27 +-
+ fs/btrfs/tests/btrfs-tests.c           |   12 +-
+ fs/btrfs/tests/extent-io-tests.c       |    5 +-
+ fs/btrfs/tests/free-space-tree-tests.c |   79 +-
+ fs/btrfs/tree-log.c                    |    2 +-
+ fs/btrfs/volumes.c                     |   11 +-
+ include/trace/events/btrfs.h           |    2 +-
+ 24 files changed, 2263 insertions(+), 917 deletions(-)
+
 -- 
-2.7.0
+2.1.0
 

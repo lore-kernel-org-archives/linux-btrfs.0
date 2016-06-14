@@ -1,42 +1,211 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:15278 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:63121 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1751328AbcF2FOA (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 29 Jun 2016 01:14:00 -0400
-Received: from localhost.localdomain (unknown [10.167.226.107])
-	by cn.fujitsu.com (Postfix) with ESMTP id C9DD94056401
-	for <linux-btrfs@vger.kernel.org>; Wed, 29 Jun 2016 13:13:52 +0800 (CST)
-From: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 2/2] btrfs: fix free space calculation in dump_space_info()
-Date: Wed, 29 Jun 2016 13:12:16 +0800
-Message-Id: <20160629051216.16876-1-wangxg.fnst@cn.fujitsu.com>
+	id S1751366AbcFNJ0o (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 14 Jun 2016 05:26:44 -0400
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+To: fdmanana@gmail.com, mfasheh@suse.de, fstests@vger.kernel.org,
+        linux-btrfs@vger.kernel.org
+Subject: [PATCH] btrfs: relocation: Fix leaking qgroups numbers on data extents
+Date: Tue, 14 Jun 2016 17:26:22 +0800
+Message-Id: <20160614092622.15560-1-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Signed-off-by: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
----
- fs/btrfs/extent-tree.c | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+When balancing data extents, qgroup will leak all its numbers for
+balanced data extents.
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 8550a0e..520ba8f 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -7747,8 +7747,8 @@ static void dump_space_info(struct btrfs_space_info *info, u64 bytes,
- 	printk(KERN_INFO "BTRFS: space_info %llu has %llu free, is %sfull\n",
- 	       info->flags,
- 	       info->total_bytes - info->bytes_used - info->bytes_pinned -
--	       info->bytes_reserved - info->bytes_readonly,
--	       (info->full) ? "" : "not ");
-+	       info->bytes_reserved - info->bytes_readonly -
-+	       info->bytes_may_use, (info->full) ? "" : "not ");
- 	printk(KERN_INFO "BTRFS: space_info total=%llu, used=%llu, pinned=%llu, "
- 	       "reserved=%llu, may_use=%llu, readonly=%llu\n",
- 	       info->total_bytes, info->bytes_used, info->bytes_pinned,
+The root cause is the non-standard extent reference update used in
+balance code.
+
+The problem happens in the following steps:
+(Use 4M as original data extent size, and 257 as src root objectid)
+
+1) Balance create new data extents and increase its refs
+
+Balance will alloc new data extent and create new EXTENT_DATA in data
+reloc tree, while its refernece is increased with 2 different
+referencer: 257 and data reloc tree.
+
+While at that time, file tree is still referring to old extents.
+
+Extent bytenr   |    Real referencer    |     backrefs     |
+------------------------------------------------------------
+New             | Data reloc            | Data reloc + 257 | << Mismatch
+Old             | 257                   | 257              |
+
+Qgroup number: 4M + metadata
+
+2) Commit trans before merging reloc tree
+Then we goes to prepare_to_merge(), which will commit transacation.
+
+In the qgroup update codes inside commit_transaction, although backref
+walk codes find the new data extents has 2 backref, but file tree
+backref can't find referencer(file tree is still referring to old
+extents), and data reloc doesn't count as file tree.
+
+Extent bytenr   | nr_old_roots | nr_new_roots | qgroup change |
+--------------------------------------------------------------|
+New             | 0            | 0            | 0             |
+Old             | 1            | 1            | 0             |
+
+Qgroup number: 4M + metadata +-0 = 4M + metadata
+
+3) Swap tree blocks and free old tree blocks
+Then we goes to merge_reloc_roots(), which swaps the tree blocks
+directly, and free the old tree blocks.
+Freeing tree blocks will also free its data extents, this goes through
+normal routine, and qgroup handles it well, decreasing the numbers.
+
+And since new data extent is not updated here (updated in step 1), so
+qgroup won't scan new data extent.
+
+Extent bytenr   | nr_old_roots | nr_new_roots | qgroup change |
+--------------------------------------------------------------|
+New             |-No modification, doesn't go through qgroup--|
+Old             | 1            | 0            | -4M           |
+
+Qgroup number: 4M + metadata -4M = metadata
+
+This patch will fix it by re-dirtying new extent at step 3), so backref
+walk and qgroup can get correct result.
+
+And thanks to the new qgroup framework, we don't need to check whether
+it is needed to dirty some file extents. Even some unrelated extents are
+re-dirtied, qgroup can handle it quite well.
+
+So we only need to ensure we don't miss some extents.
+
+Reported-by: Mark Fasheh <mfasheh@suse.de>
+Reported-by: Filipe Manana <fdmanana@gmail.com>
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+---
+ fs/btrfs/relocation.c | 94 +++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 94 insertions(+)
+
+diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
+index 0477dca..f1d696d 100644
+--- a/fs/btrfs/relocation.c
++++ b/fs/btrfs/relocation.c
+@@ -31,6 +31,7 @@
+ #include "async-thread.h"
+ #include "free-space-cache.h"
+ #include "inode-map.h"
++#include "qgroup.h"
+ 
+ /*
+  * backref_node, mapping_node and tree_block start with this
+@@ -1750,6 +1751,78 @@ int memcmp_node_keys(struct extent_buffer *eb, int slot,
+ }
+ 
+ /*
++ * Helper function to fixup screwed qgroups caused by increased extent ref,
++ * which doesn't follow normal extent ref update behavior.
++ * (Correct behavior is, increase extent ref and modify source root in
++ *  one trans)
++ * No better solution as long as we're doing swapping trick to do balance.
++ */
++static int qgroup_redirty_data_extents(struct btrfs_trans_handle *trans,
++				       struct btrfs_root *root, u64 bytenr,
++				       u64 gen)
++{
++	struct btrfs_fs_info *fs_info = root->fs_info;
++	struct extent_buffer *leaf;
++	struct btrfs_delayed_ref_root *delayed_refs;
++	int slot;
++	int ret = 0;
++
++	if (!fs_info->quota_enabled || !is_fstree(root->objectid))
++		return 0;
++	if (WARN_ON(!trans))
++		return -EINVAL;
++
++	delayed_refs = &trans->transaction->delayed_refs;
++
++	leaf = read_tree_block(root, bytenr, gen);
++	if (IS_ERR(leaf)) {
++		return PTR_ERR(leaf);
++	} else if (!extent_buffer_uptodate(leaf)) {
++		ret = -EIO;
++		goto out;
++	}
++
++	/* We only care leaf, which may contains EXTENT_DATA */
++	if (btrfs_header_level(leaf) != 0)
++		goto out;
++
++	for (slot = 0; slot < btrfs_header_nritems(leaf); slot++) {
++		struct btrfs_key key;
++		struct btrfs_file_extent_item *fi;
++		struct btrfs_qgroup_extent_record *record;
++		struct btrfs_qgroup_extent_record *exist;
++
++		btrfs_item_key_to_cpu(leaf, &key, slot);
++		if (key.type != BTRFS_EXTENT_DATA_KEY)
++			continue;
++		fi = btrfs_item_ptr(leaf, slot, struct btrfs_file_extent_item);
++		if (btrfs_file_extent_type(leaf, fi) ==
++		    BTRFS_FILE_EXTENT_INLINE ||
++		    btrfs_file_extent_disk_bytenr(leaf, fi) == 0)
++			continue;
++
++		record = kmalloc(sizeof(*record), GFP_NOFS);
++		if (!record) {
++			ret = -ENOMEM;
++			break;
++		}
++		record->bytenr = btrfs_file_extent_disk_bytenr(leaf, fi);
++		record->num_bytes = btrfs_file_extent_disk_num_bytes(leaf, fi);
++		record->old_roots = NULL;
++
++		spin_lock(&delayed_refs->lock);
++		exist = btrfs_qgroup_insert_dirty_extent(delayed_refs, record);
++		spin_unlock(&delayed_refs->lock);
++		if (exist)
++			kfree(record);
++	}
++out:
++	free_extent_buffer(leaf);
++	return ret;
++
++}
++
++/*
+  * try to replace tree blocks in fs tree with the new blocks
+  * in reloc tree. tree blocks haven't been modified since the
+  * reloc tree was create can be replaced.
+@@ -1919,7 +1992,28 @@ again:
+ 					0);
+ 		BUG_ON(ret);
+ 
++		/*
++		 * Fix up the screwed up qgroups
++		 *
++		 * For tree blocks with extent data, new data extent's
++		 * backref is already increased with both file tree and data
++		 * reloc tree.
++		 * While trans is committed before we modify file tree.
++		 *
++		 * This makes qgroup can't account new data extents well,
++		 * as the file tree is still referring to old extents, not
++		 * new extents, backref walk will find the new extent only
++		 * referred by data reloc tree.
++		 * So qgroup is screwed up and didn't increase its ref/excl.
++		 *
++		 * Fix it up by re-dirtying qgroup record for data extents in
++		 * new tree blocks
++		 */
++		ret = qgroup_redirty_data_extents(trans, dest, new_bytenr,
++						  new_ptr_gen);
+ 		btrfs_unlock_up_safe(path, 0);
++		if (ret < 0)
++			break;
+ 
+ 		ret = level;
+ 		break;
 -- 
-2.9.0
+2.8.3
 
 
 

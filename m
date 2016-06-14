@@ -1,72 +1,72 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from out1-smtp.messagingengine.com ([66.111.4.25]:57190 "EHLO
-	out1-smtp.messagingengine.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1750985AbcFNPE5 convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 14 Jun 2016 11:04:57 -0400
-From: Nikolaus Rath <Nikolaus@rath.org>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Cc: <linux-btrfs@vger.kernel.org>
-Subject: Re: How to map extents to files
-References: <87eg8g5lwt.fsf@vostro.rath.org>
-	<06ef9ac3-ed15-9621-9629-4c8965618db6@cn.fujitsu.com>
-	<87zir3skpo.fsf@thinkpad.rath.org>
-	<420018f7-d129-5861-2fc4-bf2f92e46b69@cn.fujitsu.com>
-Date: Tue, 14 Jun 2016 08:04:49 -0700
-In-Reply-To: <420018f7-d129-5861-2fc4-bf2f92e46b69@cn.fujitsu.com> (Qu
-	Wenruo's message of "Fri, 10 Jun 2016 16:17:45 +0800")
-Message-ID: <87y4677qwe.fsf@thinkpad.rath.org>
+Received: from mail02.iobjects.de ([188.40.134.68]:54634 "EHLO
+	mail02.iobjects.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751220AbcFNPaT (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 14 Jun 2016 11:30:19 -0400
+Received: from tux.wizards.de (pD953E4E5.dip0.t-ipconnect.de [217.83.228.229])
+	by mail02.iobjects.de (Postfix) with ESMTPSA id D0E5D416014E
+	for <linux-btrfs@vger.kernel.org>; Tue, 14 Jun 2016 17:30:17 +0200 (CEST)
+Received: from [192.168.100.223] (ragnarok [192.168.100.223])
+	by tux.wizards.de (Postfix) with ESMTP id 6BE6511C01D2
+	for <linux-btrfs@vger.kernel.org>; Tue, 14 Jun 2016 17:30:17 +0200 (CEST)
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+From: =?UTF-8?Q?Holger_Hoffst=c3=a4tte?= <holger@applied-asynchrony.com>
+Subject: Another 'traling page extent' observation
+Message-ID: <57602309.601@applied-asynchrony.com>
+Date: Tue, 14 Jun 2016 17:30:17 +0200
 MIME-Version: 1.0
 Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Jun 10 2016, Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
-> At 06/02/2016 10:56 PM, Nikolaus Rath wrote:
->> On Jun 02 2016, Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
->>> At 06/02/2016 11:06 AM, Nikolaus Rath wrote:
->>>> Hello,
->>>>
->>>> For one of my btrfs volumes, btrfsck reports a lot of the following
->>>> warnings:
->>>>
->>>> [...]
->>>> checking extents
->>>> bad extent [138477568, 138510336), type mismatch with chunk
->>>> bad extent [140091392, 140148736), type mismatch with chunk
->>>> bad extent [140148736, 140201984), type mismatch with chunk
->>>> bad extent [140836864, 140865536), type mismatch with chunk
->>>> [...]
->>>>
->>>> Is there a way to discover which files are affected by this (in
->>>> particular so that I can take a look at them before and after a btrfsck
->>>> --repair)?
->>>
->>> Which version is the progs? If the fs is not converted from ext2/3/4,
->>> it may be a false alert.
->>
->> Version is 4.4.1. The fs may very well have been converted from ext4,
->> but I can't tell for sure.
->
-> For such case, btrfsck --repair is unable to fix it, as btrfs-progs is
-> not able to balance extents.
->
-> Normally, a full balance would fix it.
->
->
-> I would try to update btrfs-progs to 4.5 and recheck, to see if it's a
-> false alert.
-> If not, then remove unused snapshots and then do the full balance.
+Hi,
 
-Newest btrfs-progs reported the same error, and a full balance fixed
-it. Thank you!
+I have made another observation regarding extra extents; it seems I'm
+good at finding these things. Sorry. ;-)
 
-Best,
-Nikolaus
+This time it's with rsync. I found it when I started to use the --inplace
+option, which doesn't do rsync's usual write-to-temporary/rename cycle, but
+instead writes to a destination file directly. All of a sudden many newly
+backed up files had a traling 4k extent, for no good reason.
 
--- 
-GPG encrypted emails preferred. Key id: 0xD113FCAC3C4E599F
-Fingerprint: ED31 791B 2C5C 1613 AF38 8B8A D113 FCAC 3C4E 599F
+This has nothing to do with extending overwrites (where new extents would
+of course be fine); it happens when the file is new. It is also independent
+of the file size or the filesystem state: it does not seem to be caused by
+fragmented free space.
 
-             »Time flies like an arrow, fruit flies like a Banana.«
+Reproducer example (current dir is btrfs):
 
+$ls -al /tmp/data
+-rw-r--r-- 1 root root 17569552 Jun 14 16:33 /tmp/data
+
+$rm -f data && rsync /tmp/data . && sync && filefrag -ek data
+Filesystem type is: 9123683e
+File size of data is 17569552 (17160 blocks of 1024 bytes)
+ ext:     logical_offset:        physical_offset: length:   expected: flags:
+   0:        0..   17159:   53918020..  53935179:  17160:             last,eof
+data: 1 extent found
+
+$rm -f data && rsync --inplace /tmp/data . && sync && filefrag -ek data
+Filesystem type is: 9123683e
+File size of data is 17569552 (17160 blocks of 1024 bytes)
+ ext:     logical_offset:        physical_offset: length:   expected: flags:
+   0:        0..   17155:   48133532..  48150687:  17156:            
+   1:    17156..   17159:   36734592..  36734595:      4:   48150688: last,eof
+data: 2 extents found
+
+This is repeatable and independent of the file, so I suspect that after
+Liu Bo's fix for the previously reported stray extents in the middle
+of the file with slow buffered writes [1] there's an edge case where a page
+is still treated differently at the end after close()-ing the file - which
+rsync does correctly.
+
+This is on my 4.4.x++ kernel with btrfs ~4.7 and space_cache=v2, but since
+it also happens on a fresh volume with v1 it's probably just another
+off-by-one somewhere in the writeback/page handling.
+
+thanks,
+Holger
+
+[1] commit a91326679f aka "Btrfs: make mapping->writeback_index point to the
+last written page"

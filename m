@@ -1,179 +1,59 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:25161 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1161123AbcFNBm6 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 13 Jun 2016 21:42:58 -0400
-From: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>, <fstests@vger.kernel.org>
-CC: <fdmanana@gmail.com>, Lu Fengqi <lufq.fnst@cn.fujitsu.com>
-Subject: [PATCH v4] fstests: btrfs: add test for qgroup handle extent de-reference
-Date: Tue, 14 Jun 2016 09:42:39 +0800
-Message-ID: <1465868559-10997-1-git-send-email-lufq.fnst@cn.fujitsu.com>
+Received: from mx2.suse.de ([195.135.220.15]:40546 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750942AbcFNIu5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 14 Jun 2016 04:50:57 -0400
+Date: Tue, 14 Jun 2016 10:51:33 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH] btrfs-progs: doc: correct the destination of
+ btrfs-receive
+Message-ID: <20160614085133.GE6205@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <491d91eb-0d51-b8ba-a046-61e2e392f06e@jp.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <491d91eb-0d51-b8ba-a046-61e2e392f06e@jp.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Test if qgroup can handle extent de-reference during reallocation.
-"extent de-reference" means that reducing an extent's reference count
-or freeing an extent.
-Although current qgroup can handle it, we still need to prevent any
-regression which may break current qgroup.
+On Tue, Jun 14, 2016 at 02:50:19PM +0900, Satoru Takeuchi wrote:
+> We can set not only btrfs mount point but also any path belong to
+> btrfs mount point as btrfs-receive's destination.
+> 
+> Signed-off-by: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
 
-Signed-off-by: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
----
-v4: print the message out if grep finds the message
-v3: remove unnecessary parameters of mkfs
-v2: use btrfsck check for inconsistencies
----
- common/rc           |  4 +--
- tests/btrfs/028     | 95 +++++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/028.out |  2 ++
- tests/btrfs/group   |  1 +
- 4 files changed, 100 insertions(+), 2 deletions(-)
- create mode 100755 tests/btrfs/028
- create mode 100644 tests/btrfs/028.out
+The patches from you have a consistent whitespace damage, I've fixed
+the btrfs-crc but now that I see it again I suspect some error on your
+side.
 
-diff --git a/common/rc b/common/rc
-index 51092a0..650d198 100644
---- a/common/rc
-+++ b/common/rc
-@@ -3284,9 +3284,9 @@ _btrfs_get_profile_configs()
- # stress btrfs by running balance operation in a loop
- _btrfs_stress_balance()
- {
--	local btrfs_mnt=$1
-+	local options=$@
- 	while true; do
--		$BTRFS_UTIL_PROG balance start $btrfs_mnt
-+		$BTRFS_UTIL_PROG balance start $options
- 	done
- }
- 
-diff --git a/tests/btrfs/028 b/tests/btrfs/028
-new file mode 100755
-index 0000000..1425609
---- /dev/null
-+++ b/tests/btrfs/028
-@@ -0,0 +1,95 @@
-+#! /bin/bash
-+# FS QA Test 028
-+#
-+# Test if qgroup can handle extent de-reference during reallocation.
-+# "extent de-reference" means that reducing an extent's reference count
-+# or freeing an extent.
-+# Although current qgroup can handle it, we still need to prevent any
-+# regression which may break current qgroup.
-+#
-+#-----------------------------------------------------------------------
-+# Copyright (c) 2016 Fujitsu. All Rights Reserved.
-+#
-+# This program is free software; you can redistribute it and/or
-+# modify it under the terms of the GNU General Public License as
-+# published by the Free Software Foundation.
-+#
-+# This program is distributed in the hope that it would be useful,
-+# but WITHOUT ANY WARRANTY; without even the implied warranty of
-+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+# GNU General Public License for more details.
-+#
-+# You should have received a copy of the GNU General Public License
-+# along with this program; if not, write the Free Software Foundation,
-+# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-+#-----------------------------------------------------------------------
-+#
-+
-+seq=`basename $0`
-+seqres=$RESULT_DIR/$seq
-+echo "QA output created by $seq"
-+
-+here=`pwd`
-+tmp=/tmp/$$
-+status=1	# failure is the default!
-+trap "_cleanup; exit \$status" 0 1 2 3 15
-+
-+_cleanup()
-+{
-+	cd /
-+	rm -f $tmp.*
-+}
-+
-+# get standard environment, filters and checks
-+. ./common/rc
-+. ./common/filter
-+
-+# remove previous $seqres.full before test
-+rm -f $seqres.full
-+
-+# real QA test starts here
-+_supported_fs btrfs
-+_supported_os Linux
-+_require_scratch
-+
-+_scratch_mkfs
-+_scratch_mount
-+
-+_run_btrfs_util_prog quota enable $SCRATCH_MNT
-+_run_btrfs_util_prog quota rescan -w $SCRATCH_MNT
-+
-+# Increase the probability of generating de-refer extent, and decrease
-+# other.
-+args=`_scale_fsstress_args -z \
-+	-f write=10 -f unlink=10 \
-+	-f creat=10 -f fsync=10 \
-+	-f fsync=10 -n 100000 -p 2 \
-+	-d $SCRATCH_MNT/stress_dir`
-+echo "Run fsstress $args" >>$seqres.full
-+$FSSTRESS_PROG $args >/dev/null 2>&1 &
-+fsstress_pid=$!
-+
-+echo "Start balance" >>$seqres.full
-+_btrfs_stress_balance -d $SCRATCH_MNT >/dev/null 2>&1 &
-+balance_pid=$!
-+
-+# 30s is enough to trigger bug
-+sleep $((30*$TIME_FACTOR))
-+kill $fsstress_pid $balance_pid
-+wait
-+
-+# kill _btrfs_stress_balance can't end balance, so call btrfs balance cancel
-+# to cancel running or paused balance.
-+$BTRFS_UTIL_PROG balance cancel $SCRATCH_MNT &> /dev/null
-+
-+_run_btrfs_util_prog filesystem sync $SCRATCH_MNT
-+
-+_scratch_unmount
-+
-+# generate a qgroup report and look for inconsistent groups
-+$BTRFS_UTIL_PROG check --qgroup-report $SCRATCH_DEV 2>&1 | \
-+	grep -E "Counts for qgroup.*are different"
-+echo "Silence is golden"
-+status=0
-+
-+exit
-diff --git a/tests/btrfs/028.out b/tests/btrfs/028.out
-new file mode 100644
-index 0000000..2615f73
---- /dev/null
-+++ b/tests/btrfs/028.out
-@@ -0,0 +1,2 @@
-+QA output created by 028
-+Silence is golden
-diff --git a/tests/btrfs/group b/tests/btrfs/group
-index da0e27f..35ecf59 100644
---- a/tests/btrfs/group
-+++ b/tests/btrfs/group
-@@ -30,6 +30,7 @@
- 025 auto quick send clone
- 026 auto quick compress prealloc
- 027 auto replace
-+028 auto qgroup balance
- 029 auto quick clone
- 030 auto quick send
- 031 auto quick subvol clone
--- 
-2.5.5
+> @@ -7,14 +7,14 @@ btrfs-receive - receive subvolumes from send stream
+> 
+>   SYNOPSIS
+>   --------
+> -*btrfs receive* [options] <mount>
+> +*btrfs receive* [options] <path>
+> 
+>   DESCRIPTION
+>   -----------
+> 
+>   Receive a stream of changes and replicate one or more subvolumes that were
+>   previously used with *btrfs send* The received subvolumes are stored to
+> -'mount'.
+> +'path'.
+> 
+>   *btrfs receive* will fail int the following cases:
+> 
+> @@ -37,7 +37,7 @@ by default, btrfs receive uses standard input to receive the stream,
+>   use this option to read from a file instead
+> 
+>   -C|--chroot::
+> -confine the process to 'mount' using `chroot`(1)
+> +confine the process to 'path' using `chroot`(1)
+> 
+>   -e::
+>   terminate after receiving an 'end cmd' marker in the stream.
 
-
-
+ie. all the context lines start with two spaces instead of one. I'll
+apply this patch manually but please have a look.

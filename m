@@ -1,144 +1,123 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:48400 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S932778AbcFJN2j (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 10 Jun 2016 09:28:39 -0400
-Date: Fri, 10 Jun 2016 15:28:43 +0200
-From: David Sterba <dsterba@suse.cz>
-To: linux-btrfs@vger.kernel.org
-Cc: clm@fb.com
-Subject: Btrfs progs release 4.6
-Message-ID: <20160610132843.GB29921@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
+Received: from userp1040.oracle.com ([156.151.31.81]:20187 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750806AbcFNKwg (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 14 Jun 2016 06:52:36 -0400
+From: Anand Jain <anand.jain@oracle.com>
+Subject: Re: [PULL] Btrfs for 4.7, part 2
+To: Chris Mason <clm@fb.com>, dsterba@suse.cz, David Sterba <dsterba@suse.com>,
+        linux-btrfs@vger.kernel.org
+References: <cover.1464254502.git.dsterba@suse.com>
+ <20160527001414.opeu5ffezblckpd4@floor.thefacebook.com>
+ <20160527111822.GV29147@twin.jikos.cz>
+ <20160527143527.bctpuav5la3vchu4@floor.thefacebook.com>
+ <20160527154210.illgoqxoyjhj7dbp@floor.thefacebook.com>
+ <57492925.7070000@oracle.com> <20160529122103.GA8726@clm-mbp.masoncoding.com>
+Message-ID: <1e7bc117-aaa3-c77f-b933-cd0c37b5ce68@oracle.com>
+Date: Tue, 14 Jun 2016 18:52:03 +0800
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20160529122103.GA8726@clm-mbp.masoncoding.com>
+Content-Type: text/plain; charset=windows-1252; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
 
-the btrfs-progs 4.6 have been released (no change since rc1). The
-biggest change is the btrfs-convert rewrite. The delayed release was
-caused by more testing as there were some late fixes to the code
-although the patchset has been in the development branch for a long
-time.
+Chris,
 
-Apart from that, usual load of small fixes and improvements.
+   Sorry for the delay due to vacation.
 
-* convert - major rewrite:
-  * fix a long-standing bug that led to mixing data blocks into metadata block
-    groups
-  * the workaround was to do full balance after conversion, which was
-    recommended practice anyway
-  * explicitly set the lowest supported version of e2fstools to 1.41
-* provide and install udev rules file that addresses problems with device
-  mapper devices, renames after removal
-* send: new option: quiet
-* dev usage: report slack space (device size minus filesystem area on the dev)
-* image: support DUP
-* build: short options to enable debugging builds
-* other:
-  * code cleanups
-  * build fixes
-  * more tests and other enhancements
+more below..
 
-Tarballs: https://www.kernel.org/pub/linux/kernel/people/kdave/btrfs-progs/
-Git: git://git.kernel.org/pub/scm/linux/kernel/git/kdave/btrfs-progs.git
+On 05/29/2016 08:21 PM, Chris Mason wrote:
+> On Sat, May 28, 2016 at 01:14:13PM +0800, Anand Jain wrote:
+>>
+>>
+>> On 05/27/2016 11:42 PM, Chris Mason wrote:
+>>>> I'm getting errors from btrfs fi show -d, after the very last round of
+>>>> device replaces.  A little extra debugging:
+>>>>
+>>>> bytenr mismatch, want=4332716032, have=0
+>>>> ERROR: cannot read chunk root
+>>>> ERROR reading /dev/vdh
+>>>> failed /dev/vdh
+>>>>
+>>>> Which is cute because the very next command we run fscks /dev/vdh and
+>>>> succeeds.
+>>
+>> Checked the code paths both btrfs fi show -d and btrfs check,
+>> both are calling flush during relative open_ctree in progs.
+>>
+>> However the flush is called after we have read superblock. That
+>> means the read_superblock during 'show' cli (only) will read superblock
+>> without flush, and 'check' won't, because 011 calls 'check' after
+>> 'show'. But it still does not explain the above error, which is
+>> during open_ctree not at read superblock. Remains strange case as
+>> of now.
+>
+> It's because we're just not done writing it out yet when btrfs fi show
+> is run.
+> I think replace is special here.
+>
+>>
+>> Also. I can't reproduce.
+>>
+>
+> I'm in a relatively new test rig using kvm, which probably explains why
+> I haven't seen it before.  You can probably make it easier by adding
+> a sleep inside the actual __free_device() func.
+>
+>>>> So the page cache is stale and this isn't related to any of our
+>>>> patches.
+>>>
+>>> close_ctree() calls into btrfs_close_devices(), which calls
+>>> btrfs_close_one_device(), which uses:
+>>>
+>>> call_rcu(&device->rcu, free_device);
+>>>
+>>> close_ctree() also does an rcu_barrier() to make sure and wait for
+>>> free_device() to finish.
+>>>
+>>> But, free_device() just puts the work into schedule_work(), so we don't
+>>> know for sure the blkdev_put is done when we exit.
+>>
+>> Right, saw that before. Any idea why its like that ? Or if it
+>> should be fixed?
+>
+> It's just trying to limit the work that is done from call_rcu, and it
+> should
+> definitely be fixed.  It might cause EBUSY or other problems.  Probably
+> easiest to add a counter or completion object that gets changed by the
+> __free_device function.
 
-Shortlog:
 
-Anand Jain (2):
-      btrfs-progs: makefile: add clean-all to the usage
-      btrfs-progs: clean up commands.h
+yes indeed sleep made the problem to reproduce,
 
-David Sterba (22):
-      btrfs-progs: build: add support for debugging builds
-      btrfs-progs: docs: compression is disabled with nodatasum/nodatacow
-      btrfs-progs: device usage: report slack space
-      btrfs-progs: makefile: add target for testing installation
-      btrfs-progs: drop O_CREATE from open_ctree_fs_info
-      btrfs-progs: fix type mismatch in backtrace dumping functions
-      btrfs-progs: switch to common message helpers in utils.c
-      btrfs-progs: tests: convert, run md5sum with sudo helper
-      btrfs-progs: tests: run rollback after conversion
-      btrfs-progs: tests: convert: dump all superblocks after conversion
-      btrfs-progs: tests: document cli-tests in readme
-      btrfs-progs: use wider int type in btrfs_min_global_blk_rsv_size
-      btrfs-progs: tests: move convert helpers to a separate file
-      btrfs-progs: tests: convert: separate ext2 tests
-      btrfs-progs: tests: convert: separate ext3 tests
-      btrfs-progs: tests: convert: separate ext4 tests
-      btrfs-progs: tests: clean up the test driver of convert tests
-      btrfs-progs: tests: convert: set common variables
-      btrfs-progs: tests: unify test drivers
-      btrfs-progs: tests: 004-ext2-backup-superblock-ranges, drop unnecessary root privs
-      btrfs-progs: tests: 004-ext2-backup-superblock-ranges, use common helpers for image loop
-      Btrfs progs v4.6
+Also looks like this problem was identified by below
+commit before, however the fix wasn't correct.
+    ----
+      commit bc178622d40d87e75abc131007342429c9b03351
+      btrfs: use rcu_barrier() to wait for bdev puts at unmount
 
-Jeff Mahoney (1):
-      btrfs-progs: udev: add rules for dm devices
+      ::
+      Adding an rcu_barrier() to btrfs_close_devices() causes unmount
+      to wait
+      until all blkdev_put()s are done, and the device is truly free once
+      unmount complet
+    ----
 
-Lu Fengqi (2):
-      btrfs-progs: tests: add 020-extent-ref-cases
-      btrfs-progs: make btrfs-image restore to support dup
+  As free_devces() spinoff __free_device() to make the actual
+  bdev put we need to wait on __free_device(). But rcu_barrier()
+  just waits for free_device() to complete, so at the end of
+  rcu_barrier() the blkdev_put()  may not be completed.
 
-M G Berberich (1):
-      btrfs-progs: send: add quiet option
 
-Merlin Hartley (1):
-      btrfs-progs: doc: fix typo in btrfs-subvolume
+  Wrote a new fix as in the patches,
+   [PATH 2/2] btrfs: wait for bdev put
 
-Nicholas D Steeves (1):
-      btrfs-progs: typo review of strings and comments
+  For review comments.
 
-Qu Wenruo (36):
-      btrfs-progs: Enhance tree block check by checking empty leaf or node
-      btrfs-progs: Return earlier for previous item
-      btrfs-progs: convert-tests: Add test for backup superblock migration
-      btrfs-progs: corrupt-block: Add support to corrupt extent for skinny metadata
-      btrfs-progs: utils: Introduce new pseudo random API
-      btrfs-progs: Use new random number API
-      btrfs-progs: convert-tests: Add support for custom test scripts
-      btrfs-progs: convert-tests: Add test case for backup superblock migration
-      btrfs-progs: convert: add compatibility layer for e2fsprogs < 1.42
-      btrfs-progs: convert: Introduce functions to read used space
-      btrfs-progs: convert: Introduce new function to remove reserved ranges
-      btrfs-progs: convert: Introduce function to calculate the available space
-      btrfs-progs: utils: Introduce new function for convert
-      btrfs-progs: Introduce function to setup temporary superblock
-      btrfs-progs: Introduce function to setup temporary tree root
-      btrfs-progs: Introduce function to setup temporary chunk root
-      btrfs-progs: Introduce function to initialize device tree
-      btrfs-progs: Introduce function to initialize fs tree
-      btrfs-progs: Introduce function to initialize csum tree
-      btrfs-progs: Introduce function to setup temporary extent tree
-      btrfs-progs: Introduce function to create convert data chunks
-      btrfs-progs: extent-tree: Introduce function to find the first overlapping extent
-      btrfs-progs: extent-tree: Enhance btrfs_record_file_extent
-      btrfs-progs: convert: Introduce new function to create converted image
-      btrfs-progs: convert: Introduce function to migrate reserved ranges
-      btrfs-progs: convert: Enhance record_file_blocks to handle reserved ranges
-      btrfs-progs: convert: Introduce init_btrfs_v2 function.
-      btrfs-progs: Introduce do_convert_v2 function
-      btrfs-progs: Convert: Add support for rollback new convert behavior
-      btrfs-progs: convert: Strictly avoid meta or system chunk allocation
-      btrfs-progs: Cleanup old btrfs-convert
-      btrfs-progs: convert: Add support to rollback new convert image
-      btrfs-progs: convert: Fix a bug that makes convert asserts at scan time
-      btrfs-progs: convert: Fix bugs in backup superblock migration
-      btrfs-progs: convert: Insert needed holes for superblock migration
-      btrfs-progs: convert: Fix a bug which fails to insert hole file extent
 
-Satoru Takeuchi (7):
-      btrfs-progs: prop: simplify parse_args()
-      btrfs-progs: prop: remove conditions which never be satisfied
-      btrfs-progs: btrfs-crc: fix build error
-      btrfs-progs: btrfs-crc should be ignored by git
-      btrfs-progs: btrfs-crc: print usage on receiving invalid arguments
-      btrfs-progs: btrfs-crc: improve usage message
-      btrfs-progs: btrfs-crc: make argc check more strict
+Thanks, -Anand
 
-Zhao Lei (3):
-      btrfs-progs: autogen: Avoid chdir fail on dirname with blank
-      btrfs-progs: autogen: Don't show success message on fail
-      btrfs-progs: autogen: Make build success in CentOS 6 and 7
+> -chris

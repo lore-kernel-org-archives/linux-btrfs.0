@@ -1,171 +1,179 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:16558 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752272AbcFCTEX (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 3 Jun 2016 15:04:23 -0400
-From: Liu Bo <bo.li.liu@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.cz>, Anand Jain <anand.jain@oracle.com>,
-        Qu Wenruo <quwenruo@cn.fujitsu.com>
-Subject: [PATCH v2 2/2] Btrfs: add valid checks for chunk loading
-Date: Fri,  3 Jun 2016 12:05:15 -0700
-Message-Id: <1464980715-6442-2-git-send-email-bo.li.liu@oracle.com>
-In-Reply-To: <1464980715-6442-1-git-send-email-bo.li.liu@oracle.com>
-References: <1464980715-6442-1-git-send-email-bo.li.liu@oracle.com>
+Received: from cn.fujitsu.com ([59.151.112.132]:25161 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1161123AbcFNBm6 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 13 Jun 2016 21:42:58 -0400
+From: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>, <fstests@vger.kernel.org>
+CC: <fdmanana@gmail.com>, Lu Fengqi <lufq.fnst@cn.fujitsu.com>
+Subject: [PATCH v4] fstests: btrfs: add test for qgroup handle extent de-reference
+Date: Tue, 14 Jun 2016 09:42:39 +0800
+Message-ID: <1465868559-10997-1-git-send-email-lufq.fnst@cn.fujitsu.com>
+MIME-Version: 1.0
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-To prevent fuzz filesystem images from panic the whole system,
-we need various validation checks to refuse to mount such an image
-if btrfs finds any invalid value during loading chunks, including
-both sys_array and regular chunks.
+Test if qgroup can handle extent de-reference during reallocation.
+"extent de-reference" means that reducing an extent's reference count
+or freeing an extent.
+Although current qgroup can handle it, we still need to prevent any
+regression which may break current qgroup.
 
-Note that these checks may not be sufficient to cover all corner cases,
-feel free to add more checks.
-
-Reported-by: Vegard Nossum <vegard.nossum@oracle.com>
-Reported-by: Quentin Casasnovas <quentin.casasnovas@oracle.com>
-Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+Signed-off-by: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
 ---
-v2: 
- - Fix several typos.
+v4: print the message out if grep finds the message
+v3: remove unnecessary parameters of mkfs
+v2: use btrfsck check for inconsistencies
+---
+ common/rc           |  4 +--
+ tests/btrfs/028     | 95 +++++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/028.out |  2 ++
+ tests/btrfs/group   |  1 +
+ 4 files changed, 100 insertions(+), 2 deletions(-)
+ create mode 100755 tests/btrfs/028
+ create mode 100644 tests/btrfs/028.out
 
- fs/btrfs/volumes.c | 81 ++++++++++++++++++++++++++++++++++++++++++++----------
- 1 file changed, 66 insertions(+), 15 deletions(-)
-
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index d403ab6..7a169de 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -6250,27 +6250,23 @@ struct btrfs_device *btrfs_alloc_device(struct btrfs_fs_info *fs_info,
- 	return dev;
+diff --git a/common/rc b/common/rc
+index 51092a0..650d198 100644
+--- a/common/rc
++++ b/common/rc
+@@ -3284,9 +3284,9 @@ _btrfs_get_profile_configs()
+ # stress btrfs by running balance operation in a loop
+ _btrfs_stress_balance()
+ {
+-	local btrfs_mnt=$1
++	local options=$@
+ 	while true; do
+-		$BTRFS_UTIL_PROG balance start $btrfs_mnt
++		$BTRFS_UTIL_PROG balance start $options
+ 	done
  }
  
--static int read_one_chunk(struct btrfs_root *root, struct btrfs_key *key,
--			  struct extent_buffer *leaf,
--			  struct btrfs_chunk *chunk)
-+/* Return -EIO if any error, otherwise return 0. */
-+static int btrfs_check_chunk_valid(struct btrfs_root *root,
-+				   struct extent_buffer *leaf,
-+				   struct btrfs_chunk *chunk, u64 logical)
- {
--	struct btrfs_mapping_tree *map_tree = &root->fs_info->mapping_tree;
--	struct map_lookup *map;
--	struct extent_map *em;
--	u64 logical;
- 	u64 length;
- 	u64 stripe_len;
--	u64 devid;
--	u8 uuid[BTRFS_UUID_SIZE];
--	int num_stripes;
--	int ret;
--	int i;
-+	u16 num_stripes;
-+	u16 sub_stripes;
-+	u64 type;
- 
--	logical = key->offset;
- 	length = btrfs_chunk_length(leaf, chunk);
- 	stripe_len = btrfs_chunk_stripe_len(leaf, chunk);
- 	num_stripes = btrfs_chunk_num_stripes(leaf, chunk);
--	/* Validation check */
-+	sub_stripes = btrfs_chunk_sub_stripes(leaf, chunk);
-+	type = btrfs_chunk_type(leaf, chunk);
+diff --git a/tests/btrfs/028 b/tests/btrfs/028
+new file mode 100755
+index 0000000..1425609
+--- /dev/null
++++ b/tests/btrfs/028
+@@ -0,0 +1,95 @@
++#! /bin/bash
++# FS QA Test 028
++#
++# Test if qgroup can handle extent de-reference during reallocation.
++# "extent de-reference" means that reducing an extent's reference count
++# or freeing an extent.
++# Although current qgroup can handle it, we still need to prevent any
++# regression which may break current qgroup.
++#
++#-----------------------------------------------------------------------
++# Copyright (c) 2016 Fujitsu. All Rights Reserved.
++#
++# This program is free software; you can redistribute it and/or
++# modify it under the terms of the GNU General Public License as
++# published by the Free Software Foundation.
++#
++# This program is distributed in the hope that it would be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write the Free Software Foundation,
++# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++#-----------------------------------------------------------------------
++#
 +
- 	if (!num_stripes) {
- 		btrfs_err(root->fs_info, "invalid chunk num_stripes: %u",
- 			  num_stripes);
-@@ -6281,6 +6277,11 @@ static int read_one_chunk(struct btrfs_root *root, struct btrfs_key *key,
- 			  "invalid chunk logical %llu", logical);
- 		return -EIO;
- 	}
-+	if (btrfs_chunk_sector_size(leaf, chunk) != root->sectorsize) {
-+		btrfs_err(root->fs_info, "invalid chunk sectorsize %u",
-+			  btrfs_chunk_sector_size(leaf, chunk));
-+		return -EIO;
-+	}
- 	if (!length || !IS_ALIGNED(length, root->sectorsize)) {
- 		btrfs_err(root->fs_info,
- 			"invalid chunk length %llu", length);
-@@ -6292,13 +6293,53 @@ static int read_one_chunk(struct btrfs_root *root, struct btrfs_key *key,
- 		return -EIO;
- 	}
- 	if (~(BTRFS_BLOCK_GROUP_TYPE_MASK | BTRFS_BLOCK_GROUP_PROFILE_MASK) &
--	    btrfs_chunk_type(leaf, chunk)) {
-+	    type) {
- 		btrfs_err(root->fs_info, "unrecognized chunk type: %llu",
- 			  ~(BTRFS_BLOCK_GROUP_TYPE_MASK |
- 			    BTRFS_BLOCK_GROUP_PROFILE_MASK) &
- 			  btrfs_chunk_type(leaf, chunk));
- 		return -EIO;
- 	}
-+	if ((type & BTRFS_BLOCK_GROUP_RAID10 && sub_stripes != 2) ||
-+	    (type & BTRFS_BLOCK_GROUP_RAID1 && num_stripes < 1) ||
-+	    (type & BTRFS_BLOCK_GROUP_RAID5 && num_stripes < 2) ||
-+	    (type & BTRFS_BLOCK_GROUP_RAID6 && num_stripes < 3) ||
-+	    (type & BTRFS_BLOCK_GROUP_DUP && num_stripes > 2) ||
-+	    ((type & BTRFS_BLOCK_GROUP_PROFILE_MASK) == 0 &&
-+	     num_stripes != 1)) {
-+		btrfs_err(root->fs_info, "invalid num_stripes:sub_stripes %u:%u for profile %llu",
-+			  num_stripes, sub_stripes,
-+			  type & BTRFS_BLOCK_GROUP_PROFILE_MASK);
-+		return -EIO;
-+	}
++seq=`basename $0`
++seqres=$RESULT_DIR/$seq
++echo "QA output created by $seq"
 +
-+	return 0;
++here=`pwd`
++tmp=/tmp/$$
++status=1	# failure is the default!
++trap "_cleanup; exit \$status" 0 1 2 3 15
++
++_cleanup()
++{
++	cd /
++	rm -f $tmp.*
 +}
 +
-+static int read_one_chunk(struct btrfs_root *root, struct btrfs_key *key,
-+			  struct extent_buffer *leaf,
-+			  struct btrfs_chunk *chunk)
-+{
-+	struct btrfs_mapping_tree *map_tree = &root->fs_info->mapping_tree;
-+	struct map_lookup *map;
-+	struct extent_map *em;
-+	u64 logical;
-+	u64 length;
-+	u64 stripe_len;
-+	u64 devid;
-+	u8 uuid[BTRFS_UUID_SIZE];
-+	int num_stripes;
-+	int ret;
-+	int i;
++# get standard environment, filters and checks
++. ./common/rc
++. ./common/filter
 +
-+	logical = key->offset;
-+	length = btrfs_chunk_length(leaf, chunk);
-+	stripe_len = btrfs_chunk_stripe_len(leaf, chunk);
-+	num_stripes = btrfs_chunk_num_stripes(leaf, chunk);
++# remove previous $seqres.full before test
++rm -f $seqres.full
 +
-+	ret = btrfs_check_chunk_valid(root, leaf, chunk, logical);
-+	if (ret)
-+		return ret;
- 
- 	read_lock(&map_tree->map_tree.lock);
- 	em = lookup_extent_mapping(&map_tree->map_tree, logical, 1);
-@@ -6546,6 +6587,7 @@ int btrfs_read_sys_array(struct btrfs_root *root)
- 	u32 array_size;
- 	u32 len = 0;
- 	u32 cur_offset;
-+	u64 type;
- 	struct btrfs_key key;
- 
- 	ASSERT(BTRFS_SUPER_INFO_SIZE <= root->nodesize);
-@@ -6612,6 +6654,15 @@ int btrfs_read_sys_array(struct btrfs_root *root)
- 				break;
- 			}
- 
-+			type = btrfs_chunk_type(sb, chunk);
-+			if ((type & BTRFS_BLOCK_GROUP_SYSTEM) == 0) {
-+				printk(KERN_ERR
-+	    "BTRFS: invalid chunk type %llu in sys_array at offset %u\n",
-+					type, cur_offset);
-+				ret = -EIO;
-+				break;
-+			}
++# real QA test starts here
++_supported_fs btrfs
++_supported_os Linux
++_require_scratch
 +
- 			len = btrfs_chunk_item_size(num_stripes);
- 			if (cur_offset + len > array_size)
- 				goto out_short_read;
++_scratch_mkfs
++_scratch_mount
++
++_run_btrfs_util_prog quota enable $SCRATCH_MNT
++_run_btrfs_util_prog quota rescan -w $SCRATCH_MNT
++
++# Increase the probability of generating de-refer extent, and decrease
++# other.
++args=`_scale_fsstress_args -z \
++	-f write=10 -f unlink=10 \
++	-f creat=10 -f fsync=10 \
++	-f fsync=10 -n 100000 -p 2 \
++	-d $SCRATCH_MNT/stress_dir`
++echo "Run fsstress $args" >>$seqres.full
++$FSSTRESS_PROG $args >/dev/null 2>&1 &
++fsstress_pid=$!
++
++echo "Start balance" >>$seqres.full
++_btrfs_stress_balance -d $SCRATCH_MNT >/dev/null 2>&1 &
++balance_pid=$!
++
++# 30s is enough to trigger bug
++sleep $((30*$TIME_FACTOR))
++kill $fsstress_pid $balance_pid
++wait
++
++# kill _btrfs_stress_balance can't end balance, so call btrfs balance cancel
++# to cancel running or paused balance.
++$BTRFS_UTIL_PROG balance cancel $SCRATCH_MNT &> /dev/null
++
++_run_btrfs_util_prog filesystem sync $SCRATCH_MNT
++
++_scratch_unmount
++
++# generate a qgroup report and look for inconsistent groups
++$BTRFS_UTIL_PROG check --qgroup-report $SCRATCH_DEV 2>&1 | \
++	grep -E "Counts for qgroup.*are different"
++echo "Silence is golden"
++status=0
++
++exit
+diff --git a/tests/btrfs/028.out b/tests/btrfs/028.out
+new file mode 100644
+index 0000000..2615f73
+--- /dev/null
++++ b/tests/btrfs/028.out
+@@ -0,0 +1,2 @@
++QA output created by 028
++Silence is golden
+diff --git a/tests/btrfs/group b/tests/btrfs/group
+index da0e27f..35ecf59 100644
+--- a/tests/btrfs/group
++++ b/tests/btrfs/group
+@@ -30,6 +30,7 @@
+ 025 auto quick send clone
+ 026 auto quick compress prealloc
+ 027 auto replace
++028 auto qgroup balance
+ 029 auto quick clone
+ 030 auto quick send
+ 031 auto quick subvol clone
 -- 
 2.5.5
+
+
 

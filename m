@@ -1,116 +1,51 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-vk0-f47.google.com ([209.85.213.47]:36765 "EHLO
-	mail-vk0-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753270AbcFOMlV (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 15 Jun 2016 08:41:21 -0400
-Received: by mail-vk0-f47.google.com with SMTP id u64so27357521vkf.3
-        for <linux-btrfs@vger.kernel.org>; Wed, 15 Jun 2016 05:41:20 -0700 (PDT)
+Received: from mx2.suse.de ([195.135.220.15]:56181 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751903AbcFOMzh (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 15 Jun 2016 08:55:37 -0400
+Date: Wed, 15 Jun 2016 14:56:10 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Roman Mamedov <rm@romanrm.net>
+Cc: Mark Fasheh <mfasheh@suse.de>, Qu Wenruo <quwenruo@cn.fujitsu.com>,
+        linux-btrfs@vger.kernel.org, chris@suse.de,
+        Josef Bacik <jbacik@fb.com>
+Subject: Re: [PATCH v7 0/8] Inband dedupe for btrfs-progs
+Message-ID: <20160615125610.GK6205@suse.cz>
+Reply-To: dsterba@suse.cz
+References: <1459492670-31596-1-git-send-email-quwenruo@cn.fujitsu.com>
+ <20160601213210.GK7633@wotan.suse.de>
+ <20160602101634.55f9c1be@natsu>
 MIME-Version: 1.0
-In-Reply-To: <CAKzrAgSP31D+qAVF7fVMRY4qsXMpXDhJxxBAKdbE8=0fkh3N7w@mail.gmail.com>
-References: <CAKzrAgSGRQk_wEairoCUhK6GDCFOVbVWJLub4M_fu7uHC-pO0w@mail.gmail.com>
- <CAKzrAgSP31D+qAVF7fVMRY4qsXMpXDhJxxBAKdbE8=0fkh3N7w@mail.gmail.com>
-From: E V <eliventer@gmail.com>
-Date: Wed, 15 Jun 2016 08:41:19 -0400
-Message-ID: <CAJtFHUQ5-UeH4NdagESOeZz6+wya_HpnZJH_jFWfGDG5+oifYg@mail.gmail.com>
-Subject: Re: Cannot balance FS (No space left on device)
-To: "ojab //" <ojab@ojab.ru>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20160602101634.55f9c1be@natsu>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-In my experience phantom ENOSPC messages are frequently due to the
-free space cache being corrupt. Mounting with nospace_cache or
-space_cache=v2 may help.
+On Thu, Jun 02, 2016 at 10:16:34AM +0500, Roman Mamedov wrote:
+> On Wed, 1 Jun 2016 14:32:10 -0700
+> Mark Fasheh <mfasheh@suse.de> wrote:
+> 
+> > Can we please have seperate and obvious namespaces for in-band dedupe and
+> > out-of-band dedupe commands? I realize that there is no oob-dedupe
+> > funcationality in btrfs-progs today but I would like to avoid confusing
+> > users in the case that this code hits btrfs-progs.
+> > 
+> > Specifically by this, I mean I'd like to see anything except 'dedupe' as the
+> > btrfs command, so a user who sees 'btrfs dedupe ....' is not confusing the
+> > two forms we have.
+> > 
+> > I don't personally care what other name is used and of course it could have
+> > 'dedupe' in the name just not solely 'dedupe'. As a poor example, we could
+> > call it 'btrfs inband-dedupe ...'.
+> 
+> There might be no such code added ever -- but everyone will be stuck with
+> typing "inband-dedupe" instead of the simple and short "dedupe" forever
+> because of this "future precaution".
+> 
+> At least make that "dedupe-inband", so that the shorthand form of "dedupe"
+> also works for now, and only starts throwing a warning if any other subcommand
+> starting with "dedupe" is added.
 
-On Wed, Jun 15, 2016 at 6:59 AM, ojab // <ojab@ojab.ru> wrote:
-> On Fri, Jun 10, 2016 at 2:58 PM, ojab // <ojab@ojab.ru> wrote:
->> [Please CC me since I'm not subscribed to the list]
->
-> So I'm still playing w/ btrfs and again I have 'No space left on
-> device' during balance:
->>$ sudo /usr/bin/btrfs balance start --full-balance /mnt/xxx/
->>ERROR: error during balancing '/mnt/xxx/': No space left on device
->>There may be more info in syslog - try dmesg | tail
->>$ sudo dmesg -T  | grep BTRFS | tail
->>[Wed Jun 15 10:28:53 2016] BTRFS info (device sdc1): relocating block group 13043037372416 flags 9
->>[Wed Jun 15 10:28:53 2016] BTRFS info (device sdc1): relocating block group 13041963630592 flags 20
->>[Wed Jun 15 10:29:54 2016] BTRFS info (device sdc1): found 25155 extents
->>[Wed Jun 15 10:29:54 2016] BTRFS info (device sdc1): relocating block group 13040889888768 flags 20
->>[Wed Jun 15 10:30:50 2016] BTRFS info (device sdc1): found 63700 extents
->>[Wed Jun 15 10:30:50 2016] BTRFS info (device sdc1): relocating block group 13040856334336 flags 18
->>[Wed Jun 15 10:30:51 2016] BTRFS info (device sdc1): found 9 extents
->>[Wed Jun 15 10:30:52 2016] BTRFS info (device sdc1): relocating block group 13039782592512 flags 20
->>[Wed Jun 15 10:32:08 2016] BTRFS info (device sdc1): found 61931 extents
->>[Wed Jun 15 10:32:08 2016] BTRFS info (device sdc1): 896 enospc errors during balance
->>$ sudo /usr/bin/btrfs balance start -dusage=75 /mnt/xxx/
->>Done, had to relocate 1 out of 901 chunks
->>$ sudo /usr/bin/btrfs balance start -dusage=76 /mnt/xxx/
->>ERROR: error during balancing '/mnt/xxx/': No space left on device
->>There may be more info in syslog - try dmesg | tail
->>$ sudo /usr/bin/btrfs fi usage /mnt/xxx/
->>Overall:
->>    Device size:                   1.98TiB
->>    Device allocated:              1.85TiB
->>    Device unallocated:            135.06GiB
->>    Device missing:                0.00B
->>    Used:                          1.85TiB
->>    Free (estimated):              135.68GiB      (min: 68.15GiB)
->>    Data ratio:                    1.00
->>    Metadata ratio:                2.00
->>    Global reserve:                512.00MiB      (used: 0.00B)
->>
->>Data,RAID0: Size:1.84TiB, Used:1.84TiB
->>   /dev/sdb1               895.27GiB
->>   /dev/sdc1               895.27GiB
->>   /dev/sdd1               37.27GiB
->>   /dev/sdd2               37.27GiB
->>   /dev/sde1               11.27GiB
->>   /dev/sde2               11.27GiB
->>
->>Metadata,RAID1: Size:4.00GiB, Used:2.21GiB
->>   /dev/sdb1       2.00GiB
->>   /dev/sdc1       2.00GiB
->>   /dev/sde1       2.00GiB
->>   /dev/sde2       2.00GiB
->>
->>System,RAID1: Size:32.00MiB, Used:160.00KiB
->>   /dev/sde1    32.00MiB
->>   /dev/sde2    32.00MiB
->>
->>Unallocated:
->>   /dev/sdb1      34.25GiB
->>   /dev/sdc1      34.25GiB
->>   /dev/sdd1      1.11MiB
->>   /dev/sdd2      1.05MiB
->>   /dev/sde1      33.28GiB
->>   /dev/sde2      33.28GiB
->>$ sudo /usr/bin/btrfs fi show /mnt/xxx/
->>Label: none  uuid: 8a65465d-1a8c-4f80-abc6-c818c38567c3
->>       Total devices 6 FS bytes used 1.84TiB
->>       devid    1 size 931.51GiB used 897.27GiB path /dev/sdc1
->>       devid    2 size 931.51GiB used 897.27GiB path /dev/sdb1
->>       devid    3 size 37.27GiB used 37.27GiB path /dev/sdd1
->>       devid    4 size 37.27GiB used 37.27GiB path /dev/sdd2
->>       devid    5 size 46.58GiB used 13.30GiB path /dev/sde1
->>       devid    6 size 46.58GiB used 13.30GiB path /dev/sde2
->
-> show_usage.py output can be found here:
-> https://gist.github.com/ojab/a24ce373ce5bede001140c572879fce8
->
-> Balance always fails with '896 enospc errors during balance' message
-> in dmesg. I don't quite understand the logic: there is a plenty of
-> space on four devices, why `btrfs` apparently trying to use sdd[0-1]
-> drives, is it a bug or intended behaviour?
-> What is the proper way of fixing such an issue in general, adding more
-> devices and rebalancing? How can I determine how many devices should
-> be added and their capacity?
->
-> I'm still on 4.6.2 vanilla kernel and using btrfs-progs-4.6.
->
-> //wbr ojab
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+This sounds like a good idea to me. Alternatively it could be 'idedupe'
+and if we ever need the out-of-band, we could call it like 'fdedupe'
+(file dedupe).

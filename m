@@ -1,105 +1,130 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:43327 "EHLO
-	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932073AbcFNJQN (ORCPT
+Received: from mgwym03.jp.fujitsu.com ([211.128.242.42]:11670 "EHLO
+	mgwym03.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932241AbcFOB4j (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 14 Jun 2016 05:16:13 -0400
-Date: Tue, 14 Jun 2016 09:16:08 +0000
-From: Hugo Mills <hugo@carfax.org.uk>
-To: dsterba@suse.cz, Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+	Tue, 14 Jun 2016 21:56:39 -0400
+Received: from m3050.s.css.fujitsu.com (msm.b.css.fujitsu.com [10.134.21.208])
+	by yt-mxoi1.gw.nic.fujitsu.com (Postfix) with ESMTP id DF688AC00FE
+	for <linux-btrfs@vger.kernel.org>; Wed, 15 Jun 2016 10:56:34 +0900 (JST)
 Subject: Re: [PATCH] btrfs-progs: doc: correct the destination of
  btrfs-receive
-Message-ID: <20160614091608.GC5437@carfax.org.uk>
+To: Hugo Mills <hugo@carfax.org.uk>, dsterba@suse.cz,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 References: <491d91eb-0d51-b8ba-a046-61e2e392f06e@jp.fujitsu.com>
- <20160614085133.GE6205@twin.jikos.cz>
+ <20160614085133.GE6205@twin.jikos.cz> <20160614091608.GC5437@carfax.org.uk>
+From: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
+Message-ID: <9a4c1521-f1eb-8eaf-59c8-f2e0cb897ed9@jp.fujitsu.com>
+Date: Wed, 15 Jun 2016 10:55:45 +0900
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="RIYY1s2vRbPFwWeW"
-In-Reply-To: <20160614085133.GE6205@twin.jikos.cz>
+In-Reply-To: <20160614091608.GC5437@carfax.org.uk>
+Content-Type: text/plain; charset=windows-1252
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On 2016/06/14 18:16, Hugo Mills wrote:
+> On Tue, Jun 14, 2016 at 10:51:33AM +0200, David Sterba wrote:
+>> On Tue, Jun 14, 2016 at 02:50:19PM +0900, Satoru Takeuchi wrote:
+>>> We can set not only btrfs mount point but also any path belong to
+>>> btrfs mount point as btrfs-receive's destination.
+>>>
+>>> Signed-off-by: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
+>>
+>> The patches from you have a consistent whitespace damage, I've fixed
+>> the btrfs-crc but now that I see it again I suspect some error on your
+>> side.
 
---RIYY1s2vRbPFwWeW
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+The problem is on my side. I'm sorry.
 
-On Tue, Jun 14, 2016 at 10:51:33AM +0200, David Sterba wrote:
-> On Tue, Jun 14, 2016 at 02:50:19PM +0900, Satoru Takeuchi wrote:
-> > We can set not only btrfs mount point but also any path belong to
-> > btrfs mount point as btrfs-receive's destination.
-> > 
-> > Signed-off-by: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
+>>
+>>> @@ -7,14 +7,14 @@ btrfs-receive - receive subvolumes from send stream
+>>>
+>>>   SYNOPSIS
+>>>   --------
+>>> -*btrfs receive* [options] <mount>
+>>> +*btrfs receive* [options] <path>
+>>>
+>>>   DESCRIPTION
+>>>   -----------
+>>>
+>>>   Receive a stream of changes and replicate one or more subvolumes that were
+>>>   previously used with *btrfs send* The received subvolumes are stored to
+>>> -'mount'.
+>>> +'path'.
+>>>
+>>>   *btrfs receive* will fail int the following cases:
+>>>
+>>> @@ -37,7 +37,7 @@ by default, btrfs receive uses standard input to receive the stream,
+>>>   use this option to read from a file instead
+>>>
+>>>   -C|--chroot::
+>>> -confine the process to 'mount' using `chroot`(1)
+>>> +confine the process to 'path' using `chroot`(1)
+>>>
+>>>   -e::
+>>>   terminate after receiving an 'end cmd' marker in the stream.
+>>
+>> ie. all the context lines start with two spaces instead of one. I'll
+>> apply this patch manually but please have a look.
 > 
-> The patches from you have a consistent whitespace damage, I've fixed
-> the btrfs-crc but now that I see it again I suspect some error on your
-> side.
-> 
-> > @@ -7,14 +7,14 @@ btrfs-receive - receive subvolumes from send stream
-> > 
-> >   SYNOPSIS
-> >   --------
-> > -*btrfs receive* [options] <mount>
-> > +*btrfs receive* [options] <path>
-> > 
-> >   DESCRIPTION
-> >   -----------
-> > 
-> >   Receive a stream of changes and replicate one or more subvolumes that were
-> >   previously used with *btrfs send* The received subvolumes are stored to
-> > -'mount'.
-> > +'path'.
-> > 
-> >   *btrfs receive* will fail int the following cases:
-> > 
-> > @@ -37,7 +37,7 @@ by default, btrfs receive uses standard input to receive the stream,
-> >   use this option to read from a file instead
-> > 
-> >   -C|--chroot::
-> > -confine the process to 'mount' using `chroot`(1)
-> > +confine the process to 'path' using `chroot`(1)
-> > 
-> >   -e::
-> >   terminate after receiving an 'end cmd' marker in the stream.
-> 
-> ie. all the context lines start with two spaces instead of one. I'll
-> apply this patch manually but please have a look.
+>    Looking at this, I suspect it's a consequence of sending it as
+> "Content-Type: format=flowed; delsp=yes". I'm not sure which of those
+> two options is the culprit. When I look at the message in my client
+> (mutt), it looks absolutely fine. When I pipe it to hexdump, the
+> double-spacing is apparent.
 
-   Looking at this, I suspect it's a consequence of sending it as
-"Content-Type: format=flowed; delsp=yes". I'm not sure which of those
-two options is the culprit. When I look at the message in my client
-(mutt), it looks absolutely fine. When I pipe it to hexdump, the
-double-spacing is apparent.
+You're right. These are added to charset="iso-2022-jp" plain text
+mail since thunderbird 45.
 
-   Hugo.
+I disabled the setting that appends the above mentioned options.
+So, probably the following sample patch doesn't have strange spaces.
 
+===================================
+We can set not only btrfs mount points but also any paths belong to
+btrfs mount point as btrfs-receive's destination.
+
+Signed-off-by: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
+---
+ Documentation/btrfs-receive.asciidoc | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/Documentation/btrfs-receive.asciidoc b/Documentation/btrfs-receive.asciidoc
+index fbbded2..e246603 100644
+--- a/Documentation/btrfs-receive.asciidoc
++++ b/Documentation/btrfs-receive.asciidoc
+@@ -7,14 +7,14 @@ btrfs-receive - receive subvolumes from send stream
+
+ SYNOPSIS
+ --------
+-*btrfs receive* [options] <mount>
++*btrfs receive* [options] <path>
+
+ DESCRIPTION
+ -----------
+
+ Receive a stream of changes and replicate one or more subvolumes that were
+ previously used with *btrfs send* The received subvolumes are stored to
+-'mount'.
++'path'.
+
+ *btrfs receive* will fail int the following cases:
+
+@@ -37,7 +37,7 @@ by default, btrfs receive uses standard input to receive the stream,
+ use this option to read from a file instead
+
+ -C|--chroot::
+-confine the process to 'mount' using `chroot`(1)
++confine the process to 'path' using `chroot`(1)
+
+ -e::
+ terminate after receiving an 'end cmd' marker in the stream.
 -- 
-Hugo Mills             | It's against my programming to impersonate a deity!
-hugo@... carfax.org.uk |
-http://carfax.org.uk/  |
-PGP: E2AB1DE4          |                              C3PO, Return of the Jedi
+2.5.5
+===================================
 
---RIYY1s2vRbPFwWeW
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+Thanks,
+Satoru
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-
-iQIcBAEBAgAGBQJXX8tYAAoJEFheFHXiqx3kwh8P/3p1p9qQ2CpqAjA3vT2cO4NY
-Hdypopq52u2aQp1lu1qW50Bj4at/cLWBCqdwXpu1SV7+s1SvX4rewSFbbSdNPiNt
-PrFu/0QNvOlmFP4F0ptHN/J6eqs+Uil1VYCTXZQ+CqG6kYkHSPVFFX1Qmq3ciAYQ
-WKknNoImoYwxHsm4qWy9P4dFJeTc0NPlhMf7wsqfuD4Z2CyjZkIsN6qIR9nW48OV
-g0LsaaPpaHG/dKfpuplc4/1f8fCPS4Z27rikWcSD/C7wwvzn3k5hP+URYCFlrcGF
-BCzn77nq6W7+fLXWmSfkASHwyxMFACpfcaXGD8d9O3CjfnY65oa3C5DqHB0/Gex0
-BmAfzeMaHyN1dND+P974rpuYv4AL+UxRhN9bDz8+Xrx4iOl27IzfiEnvbmg2qMaT
-IrdzF94r5oqXuDN/ctlocsVI9yxsFOF7tWaLU6AlNW8uvln4Nn9swV0n0X/ODgtk
-nt67LMdZk//9hPxh0wyDD6DaijDxEfwPr7exc/o8J1Uh9gxH61uH1wAjkUumSbey
-WLNuvvmeCHuNhX4nPWRLwsDudBe5xUBal5N9yVGDhdT9rsGYBbx39fa7emyYCuNo
-TgAfhzpDyHydPRFAoK0pYmUEmqtG0Br+uQcDGqr7clydptMEidrdKUfmX1YTlFBN
-6TUXwZVwwaekdw+pafaz
-=TIrN
------END PGP SIGNATURE-----
-
---RIYY1s2vRbPFwWeW--
+> 
+>    Hugo.
+> 

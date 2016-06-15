@@ -1,167 +1,112 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:33289 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932629AbcFQQkm (ORCPT
+Received: from mx0a-001b2d01.pphosted.com ([148.163.156.1]:11567 "EHLO
+	mx0a-001b2d01.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1751801AbcFODmj (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 17 Jun 2016 12:40:42 -0400
-Date: Fri, 17 Jun 2016 09:40:25 -0700
-From: "Darrick J. Wong" <darrick.wong@oracle.com>
-To: david@fromorbit.com
-Cc: linux-btrfs@vger.kernel.org, fstests@vger.kernel.org, xfs@oss.sgi.com
-Subject: [PATCH v2 14/20] xfs: test clearing reflink inode flag
-Message-ID: <20160617164025.GF5740@birch.djwong.org>
-References: <146612796204.25024.18254357523133394284.stgit@birch.djwong.org>
- <146612805032.25024.3244105391915486280.stgit@birch.djwong.org>
+	Tue, 14 Jun 2016 23:42:39 -0400
+Received: from pps.filterd (m0098409.ppops.net [127.0.0.1])
+	by mx0a-001b2d01.pphosted.com (8.16.0.11/8.16.0.11) with SMTP id u5F3e3IU093878
+	for <linux-btrfs@vger.kernel.org>; Tue, 14 Jun 2016 23:42:39 -0400
+Received: from e28smtp05.in.ibm.com (e28smtp05.in.ibm.com [125.16.236.5])
+	by mx0a-001b2d01.pphosted.com with ESMTP id 23jgmn93yf-1
+	(version=TLSv1.2 cipher=AES256-SHA bits=256 verify=NOT)
+	for <linux-btrfs@vger.kernel.org>; Tue, 14 Jun 2016 23:42:38 -0400
+Received: from localhost
+	by e28smtp05.in.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
+	for <linux-btrfs@vger.kernel.org> from <chandan@linux.vnet.ibm.com>;
+	Wed, 15 Jun 2016 09:12:36 +0530
+Received: from d28relay07.in.ibm.com (d28relay07.in.ibm.com [9.184.220.158])
+	by d28dlp02.in.ibm.com (Postfix) with ESMTP id B5E913940061
+	for <linux-btrfs@vger.kernel.org>; Wed, 15 Jun 2016 09:12:33 +0530 (IST)
+Received: from d28av01.in.ibm.com (d28av01.in.ibm.com [9.184.220.63])
+	by d28relay07.in.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id u5F3gXP427852900
+	for <linux-btrfs@vger.kernel.org>; Wed, 15 Jun 2016 09:12:33 +0530
+Received: from d28av01.in.ibm.com (localhost [127.0.0.1])
+	by d28av01.in.ibm.com (8.14.4/8.14.4/NCO v10.0 AVout) with ESMTP id u5F3gWm7030490
+	for <linux-btrfs@vger.kernel.org>; Wed, 15 Jun 2016 09:12:33 +0530
+From: Chandan Rajendra <chandan@linux.vnet.ibm.com>
+To: Liu Bo <bo.li.liu@oracle.com>
+Cc: linux-btrfs@vger.kernel.org, Eryu Guan <guaneryu@gmail.com>,
+        David Sterba <dsterba@suse.com>
+Subject: Re: [PATCH] Btrfs: let super_stripesize match with sectorsize
+Date: Wed, 15 Jun 2016 09:12:28 +0530
+In-Reply-To: <1465940023-27773-1-git-send-email-bo.li.liu@oracle.com>
+References: <1465940023-27773-1-git-send-email-bo.li.liu@oracle.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <146612805032.25024.3244105391915486280.stgit@birch.djwong.org>
+Content-Type: text/plain; charset="us-ascii"
+Message-Id: <1561797.nA26SuRYQT@localhost.localdomain>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Check that xfs_repair can clear the reflink inode flag.
+On Tuesday, June 14, 2016 02:33:43 PM Liu Bo wrote:
+> Right now stripesize is set to 4096 while sectorsize is set to
+> max(4096, pagesize).  However, kernel requires super_stripesize
+> to match with sectorsize.
+> 
+> Reported-by: Eryu Guan <guaneryu@gmail.com>
+> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+> ---
+>  mkfs.c | 2 ++
+>  1 file changed, 2 insertions(+)
+> 
+> diff --git a/mkfs.c b/mkfs.c
+> index a3a3c14..8d00766 100644
+> --- a/mkfs.c
+> +++ b/mkfs.c
+> @@ -1482,6 +1482,8 @@ int main(int argc, char **argv)
+>  	}
+> 
+>  	sectorsize = max(sectorsize, (u32)sysconf(_SC_PAGESIZE));
+> +	stripesize = sectorsize;
+> +
+>  	saved_optind = optind;
+>  	dev_cnt = argc - optind;
+>  	if (dev_cnt == 0)
 
-v2: This is a reflink test; use _require_scratch_reflink
+Hello Liu Bo,
 
-Signed-off-by: Darrick J. Wong <darrick.wong@oracle.com>
----
- tests/xfs/872     |   93 +++++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/xfs/872.out |   20 +++++++++++
- tests/xfs/group   |    1 +
- 3 files changed, 114 insertions(+)
- create mode 100755 tests/xfs/872
- create mode 100644 tests/xfs/872.out
+We have to fix the following check in check_super() as well,
 
-diff --git a/tests/xfs/872 b/tests/xfs/872
-new file mode 100755
-index 0000000..e4c987e
---- /dev/null
-+++ b/tests/xfs/872
-@@ -0,0 +1,93 @@
-+#! /bin/bash
-+# FS QA Test No. 872
-+#
-+# Create 100 reflinked files, CoW them all, and see if xfs_repair will
-+# clear the reflink flag.  There was a buffer handling bug in xfs_repair
-+# that (fortunately) triggered asserts in the rmap code when clearing
-+# the reflink flag.
-+#
-+#-----------------------------------------------------------------------
-+# Copyright (c) 2016, Oracle and/or its affiliates.  All Rights Reserved.
-+#
-+# This program is free software; you can redistribute it and/or
-+# modify it under the terms of the GNU General Public License as
-+# published by the Free Software Foundation.
-+#
-+# This program is distributed in the hope that it would be useful,
-+# but WITHOUT ANY WARRANTY; without even the implied warranty of
-+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+# GNU General Public License for more details.
-+#
-+# You should have received a copy of the GNU General Public License
-+# along with this program; if not, write the Free Software Foundation,
-+# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-+#-----------------------------------------------------------------------
-+
-+seq=`basename $0`
-+seqres=$RESULT_DIR/$seq
-+echo "QA output created by $seq"
-+
-+here=`pwd`
-+tmp=/tmp/$$
-+status=1    # failure is the default!
-+trap "_cleanup; exit \$status" 0 1 2 3 15
-+
-+_cleanup()
-+{
-+    cd /
-+    umount $SCRATCH_MNT > /dev/null 2>&1
-+    rm -rf $tmp.*
-+}
-+
-+# get standard environment, filters and checks
-+. ./common/rc
-+. ./common/filter
-+. ./common/reflink
-+
-+# real QA test starts here
-+_supported_os Linux
-+_supported_fs xfs
-+_require_cp_reflink
-+_require_scratch_reflink
-+
-+rm -f $seqres.full
-+
-+nr=128 # spanning at least one inode chunk tickles a bug in xfs_repair
-+echo "Format filesystem"
-+_scratch_mkfs >/dev/null 2>&1
-+_scratch_mount >> $seqres.full
-+
-+echo "Create files"
-+_pwrite_byte 0x66 0 1 $SCRATCH_MNT/file.0 >> $seqres.full
-+seq 1 $nr | while read i; do
-+	_cp_reflink $SCRATCH_MNT/file.0 $SCRATCH_MNT/file.$i
-+done
-+sync
-+
-+echo "Check files"
-+for i in 0 $((nr / 2)) $nr; do
-+	md5sum $SCRATCH_MNT/file.$i | _filter_scratch
-+	$XFS_IO_PROG -c 'lsattr -v' $SCRATCH_MNT/file.$i | _filter_scratch
-+done
-+
-+echo "CoW all files"
-+seq 1 $nr | while read i; do
-+	echo m >> $SCRATCH_MNT/file.$i
-+done
-+
-+echo "Repair filesystem"
-+_scratch_unmount
-+_repair_scratch_fs >> $seqres.full
-+_scratch_mount
-+
-+echo "Check files again"
-+for i in 0 $((nr / 2)) $nr; do
-+	md5sum $SCRATCH_MNT/file.$i | _filter_scratch
-+	$XFS_IO_PROG -c 'lsattr -v' $SCRATCH_MNT/file.$i | _filter_scratch
-+done
-+
-+echo "Done"
-+
-+# success, all done
-+status=0
-+exit
-diff --git a/tests/xfs/872.out b/tests/xfs/872.out
-new file mode 100644
-index 0000000..316cb0a
---- /dev/null
-+++ b/tests/xfs/872.out
-@@ -0,0 +1,20 @@
-+QA output created by 872
-+Format filesystem
-+Create files
-+Check files
-+8fa14cdd754f91cc6554c9e71929cce7  SCRATCH_MNT/file.0
-+[reflink] SCRATCH_MNT/file.0 
-+8fa14cdd754f91cc6554c9e71929cce7  SCRATCH_MNT/file.64
-+[reflink] SCRATCH_MNT/file.64 
-+8fa14cdd754f91cc6554c9e71929cce7  SCRATCH_MNT/file.128
-+[reflink] SCRATCH_MNT/file.128 
-+CoW all files
-+Repair filesystem
-+Check files again
-+8fa14cdd754f91cc6554c9e71929cce7  SCRATCH_MNT/file.0
-+[] SCRATCH_MNT/file.0 
-+0f17fd72b7bbf5bda0ff433e6d1fc118  SCRATCH_MNT/file.64
-+[] SCRATCH_MNT/file.64 
-+0f17fd72b7bbf5bda0ff433e6d1fc118  SCRATCH_MNT/file.128
-+[] SCRATCH_MNT/file.128 
-+Done
-diff --git a/tests/xfs/group b/tests/xfs/group
-index 0f94794..ca36ad6 100644
---- a/tests/xfs/group
-+++ b/tests/xfs/group
-@@ -304,3 +304,4 @@
- 869 auto quick clone
- 870 auto quick clone
- 871 auto quick clone
-+872 auto quick clone
+       if (btrfs_super_stripesize(sb) != 4096) {
+                error("invalid stripesize %u", btrfs_super_stripesize(sb));
+                goto error_out;
+        }
+
+i.e. btrfs_super_stripesize(sb) must be equal to
+btrfs_super_sectorsize(sb).
+
+However in btrfs-progs (mkfs.c to be precise) since we had stripesize
+hardcoded to 4096, setting stripesize to the value of sectorsize in
+mkfs.c will cause the following to occur when mkfs.btrfs is invoked for
+devices with existing Btrfs filesystem instances,
+
+NOTE: Assume we have changed the stripesize validation in btrfs-progs'
+check_super() to,
+
+        if (btrfs_super_stripesize(sb) != btrfs_super_sectorsize(sb)) {
+                error("invalid stripesize %u", btrfs_super_stripesize(sb));
+                goto error_out;
+        }
+
+
+main()
+ for each device file passed as an argument,
+   test_dev_for_mkfs()
+     check_mounted
+       check_mounted_where
+         btrfs_scan_one_device
+           btrfs_read_dev_super
+             check_super() call will fail for existing filesystems which have
+             stripesize set to 4k. All existing filesystem instances will fall
+             into this category.
+
+This error value is pushed up the call stack and this causes the device to not
+get added to the fs_devices_mnt list in check_mounted_where(). Hence we would
+fail to correctly check the mount status of the multi-device btrfs
+filesystems.
+
+I will try to figure out a solution to this problem.
+
+-- 
+chandan
+

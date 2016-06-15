@@ -1,108 +1,119 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:27532 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752574AbcFOIpZ (ORCPT
+Received: from userp1040.oracle.com ([156.151.31.81]:45594 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751024AbcFOIqZ (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 15 Jun 2016 04:45:25 -0400
+	Wed, 15 Jun 2016 04:46:25 -0400
 From: Anand Jain <anand.jain@oracle.com>
 To: fstests@vger.kernel.org
 Cc: linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 1/6] fstests: btrfs: add functions to set and reset required number of SCRATCH_DEV_POOL
-Date: Wed, 15 Jun 2016 16:46:03 +0800
-Message-Id: <1465980363-18906-1-git-send-email-anand.jain@oracle.com>
-In-Reply-To: <1463495530-425-1-git-send-email-anand.jain@oracle.com>
-References: <1463495530-425-1-git-send-email-anand.jain@oracle.com>
+Subject: [PATCH v2 2/6] fstests: btrfs: add functions to get and put a device for replace target
+Date: Wed, 15 Jun 2016 16:47:02 +0800
+Message-Id: <1465980422-18947-1-git-send-email-anand.jain@oracle.com>
+In-Reply-To: <1463495530-425-2-git-send-email-anand.jain@oracle.com>
+References: <1463495530-425-2-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Anand Jain <Anand.Jain@oracle.com>
 
-This patch provides functions
- _scratch_dev_pool_get()
- _scratch_dev_pool_put()
+For the replace tests we need a device as a spare device,
+here functions _spare_dev_get() and _spare_dev_put()
+will get it from the SCRATCH_DEV_POOL_SAVED, which is set
+when _scratch_dev_pool_get() is called, and is based on how
+many has already been assigned to SCRATCH_DEV_POOL.
 
-Which will help to set/reset SCRATCH_DEV_POOL with the required
-number of devices. SCRATCH_DEV_POOL_SAVED will hold all the devices.
+ usage:
+   _scratch_dev_pool_get 3
+   _spare_dev_get
 
-Usage:
-  _scratch_dev_pool_get() <ndevs>
-  :: do stuff
+      SPARE_DEV will have a device set which can be
+      used as the replace target device.
 
-  _scratch_dev_pool_put()
+   _spare_dev_put
+   _scratch_dev_pool_put
+
+_spare_dev_get() will pick the next device after SCRATCH_DEV_POOL
+devices, from the SCRATCH_DEV_POOL_SAVED, and assigns it to
+SPARE_DEV. _spare_dev_put() will set to SPARE_DEV to null.
 
 Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
- v2: Error message and comment section updates.
+ v2: Added comments
 
- common/rc | 55 +++++++++++++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 55 insertions(+)
+ common/rc | 59 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 59 insertions(+)
 
 diff --git a/common/rc b/common/rc
-index 51092a0644f0..31c46ba1226e 100644
+index 31c46ba1226e..ffdbfcdae68d 100644
 --- a/common/rc
 +++ b/common/rc
-@@ -802,6 +802,61 @@ _scratch_mkfs()
+@@ -802,6 +802,65 @@ _scratch_mkfs()
      esac
  }
  
-+#
-+# Generally test cases will have..
-+#   _require_scratch_dev_pool X
-+# to make sure it has the enough scratch devices including
-+# replace-target and spare device. Now arg1 here is the
-+# required number of scratch devices by a-test-case excluding
-+# the replace-target and spare device. So this function will
-+# set SCRATCH_DEV_POOL to the specified number of devices.
++# Helper function to get a spare or replace-target device from
++# configured SCRATCH_DEV_POLL, must call _scratch_dev_pool_get()
++# before _spare_dev_get(). Replace-target-device/Spare-device will
++# be assigned to SPARE_DEV.
++# As of now only one replace-target-device/spare-device can be
++# assigned.
 +#
 +# Usage:
 +#  _scratch_dev_pool_get() <ndevs>
++#     _spare_dev_get()
 +#     :: do stuff
-+#
++#     _spare_dev_put()
 +#  _scratch_dev_pool_put()
 +#
-+_scratch_dev_pool_get()
-+{
-+	if [ $# != 1 ]; then
-+		_fail "Usage: _scratch_dev_pool_get ndevs"
-+	fi
-+
-+	local test_ndevs=$1
-+	local config_ndevs=`echo $SCRATCH_DEV_POOL| wc -w`
-+	local devs[]="( $SCRATCH_DEV_POOL )"
-+
-+	typeset -p config_ndevs >/dev/null 2>&1
-+	if [ $? != 0 ]; then
-+		_fail "Bug: cant find SCRATCH_DEV_POOL ndevs"
-+	fi
-+
-+	if [ $config_ndevs -lt $test_ndevs ]; then
-+		_notrun "Need at least test requested number of ndevs $test_ndevs"
-+	fi
-+
-+	SCRATCH_DEV_POOL_SAVED=${SCRATCH_DEV_POOL}
-+	export SCRATCH_DEV_POOL_SAVED
-+	SCRATCH_DEV_POOL=${devs[@]:0:$test_ndevs}
-+	export SCRATCH_DEV_POOL
-+}
-+
-+_scratch_dev_pool_put()
++_spare_dev_get()
 +{
 +	typeset -p SCRATCH_DEV_POOL_SAVED >/dev/null 2>&1
 +	if [ $? != 0 ]; then
-+		_fail "Bug: unset val, must call _scratch_dev_pool_get before _scratch_dev_pool_put"
++		_fail "Bug: unset val, must call _scratch_dev_pool_get before _spare_dev_get"
 +	fi
 +
 +	if [ -z "$SCRATCH_DEV_POOL_SAVED" ]; then
-+		_fail "Bug: str empty, must call _scratch_dev_pool_get before _scratch_dev_pool_put"
++		_fail "Bug: str empty, must call _scratch_dev_pool_get before _spare_dev_get"
 +	fi
 +
-+	export SCRATCH_DEV_POOL=$SCRATCH_DEV_POOL_SAVED
-+	export SCRATCH_DEV_POOL_SAVED=""
++	# Check if the spare is already assigned
++	typeset -p SPARE_DEV >/dev/null 2>&1
++	if [ $? == 0 ]; then
++		if [ ! -z "$SPARE_DEV" ]; then
++			_fail "Bug: SPARE_DEV = $SPARE_DEV already assigned"
++		fi
++	fi
++
++	local ndevs=`echo $SCRATCH_DEV_POOL| wc -w`
++	local config_ndevs=`echo $SCRATCH_DEV_POOL_SAVED| wc -w`
++
++	if [ $ndevs -eq $config_ndevs ]; then
++		_notrun "All devs used no spare"
++	fi
++	# Get a dev that is not used
++	local devs[]="( $SCRATCH_DEV_POOL_SAVED )"
++	SPARE_DEV=${devs[@]:$ndevs:1}
++	export SPARE_DEV
 +}
 +
- _scratch_pool_mkfs()
- {
-     case $FSTYP in
++_spare_dev_put()
++{
++	typeset -p SPARE_DEV >/dev/null 2>&1
++	if [ $? != 0 ]; then
++		_fail "Bug: unset val, must call _spare_dev_get before its put"
++	fi
++
++	if [ -z "$SPARE_DEV" ]; then
++		_fail "Bug: str empty, must call _spare_dev_get before its put"
++	fi
++
++	export SPARE_DEV=""
++}
++
+ #
+ # Generally test cases will have..
+ #   _require_scratch_dev_pool X
 -- 
 2.7.0
 

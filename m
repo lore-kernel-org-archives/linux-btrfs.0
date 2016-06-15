@@ -1,120 +1,100 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:27114 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750858AbcFOIog (ORCPT
+Received: from userp1040.oracle.com ([156.151.31.81]:44447 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752696AbcFOIor (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 15 Jun 2016 04:44:36 -0400
-Subject: Re: [PATCH 2/6] fstests: btrfs: add functions to get and put a device
- for replace target
+	Wed, 15 Jun 2016 04:44:47 -0400
+Subject: Re: [PATCH 4/6] fstests: btrfs: add helper function to check if btrfs
+ is module
 To: Eryu Guan <eguan@redhat.com>
 References: <1463495530-425-1-git-send-email-anand.jain@oracle.com>
- <1463495530-425-2-git-send-email-anand.jain@oracle.com>
- <20160612044243.GA5140@eguan.usersys.redhat.com>
+ <1463495530-425-4-git-send-email-anand.jain@oracle.com>
+ <20160612045318.GB5140@eguan.usersys.redhat.com>
 Cc: fstests@vger.kernel.org, linux-btrfs@vger.kernel.org
 From: Anand Jain <anand.jain@oracle.com>
-Message-ID: <c832062d-af58-04b6-c4a1-615d13267ea9@oracle.com>
-Date: Wed, 15 Jun 2016 16:45:18 +0800
+Message-ID: <f36cbe68-710f-adb4-91c6-c0646078a7c9@oracle.com>
+Date: Wed, 15 Jun 2016 16:45:31 +0800
 MIME-Version: 1.0
-In-Reply-To: <20160612044243.GA5140@eguan.usersys.redhat.com>
+In-Reply-To: <20160612045318.GB5140@eguan.usersys.redhat.com>
 Content-Type: text/plain; charset=windows-1252; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
 
-On 06/12/2016 12:42 PM, Eryu Guan wrote:
-> On Tue, May 17, 2016 at 10:32:06PM +0800, Anand Jain wrote:
->> For the replace tests we need a device as a spare device,
->> here functions _spare_dev_get() and _spare_dev_put()
->> will get it from the SCRATCH_DEV_POOL_SAVED, which is set
->> when _scratch_dev_pool_get() is called, and is based on how
->> many has already been assigned to SCRATCH_DEV_POOL.
+On 06/12/2016 12:53 PM, Eryu Guan wrote:
+> On Tue, May 17, 2016 at 10:32:08PM +0800, Anand Jain wrote:
+>> We need btrfs to be a module so that it can unloaded and reloaded,
+>> so that we can clean up the btrfs internal in memory device list.
+>
+> It looks like a bug to me if btrfs needs to reload module to clean up
+> the device list.
+  Definitely not a bug, but a pending enhancement.
+
+> If a user builds btrfs in kernel then he cannot replace
+> btrfs device properly?
+  No. That's not true.
+
+> Or it's not totally clear to me why a test needs
+> to reload btrfs module.
+
+  Sure.
+  Test cases such 5/6 and 6/6 needs devices to be un-scanned.
+  But as said, as of now we don't have such a feature and
+  in a way _reload_btrfs_ko() will help to achieve the device
+  un-scan.
+
+  Further we have seen situations where previous test cases
+  affects the next test case results. These are bugs,
+  but are unintentional at that test case point of viwe, and
+  is disturbingly deviating, so these helpers will help to
+  start with a clean btrfs memory, so that test results are
+  consistent to what is being tested.
+
 >>
->>  usage:
->>    _scratch_dev_pool_get 3
->>    _spare_dev_get
->>
->>       SPARE_DEV will have a device set which can be
->>       used as the replace target device.
->>
->>    _spare_dev_put
->>    _scratch_dev_pool_put
->>
->> _spare_dev_get() will pick the next device after SCRATCH_DEV_POOL
->> devices, from the SCRATCH_DEV_POOL_SAVED, and assigns it to
->> SPARE_DEV. _spare_dev_put() will set to SPARE_DEV to null.
+>> This patch adds _require_btrfs_unloadable() and _reload_btrfs_ko()
+>> to help with the same.
 >>
 >> Signed-off-by: Anand Jain <anand.jain@oracle.com>
 >> ---
->>  common/rc | 45 +++++++++++++++++++++++++++++++++++++++++++++
->>  1 file changed, 45 insertions(+)
+>>  common/rc | 12 ++++++++++++
+>>  1 file changed, 12 insertions(+)
 >>
 >> diff --git a/common/rc b/common/rc
->> index 33632fd8e4a3..f2b39ddbee0c 100644
+>> index f2b39ddbee0c..a9391b4cbf57 100644
 >> --- a/common/rc
 >> +++ b/common/rc
->> @@ -786,6 +786,51 @@ _scratch_mkfs()
->>      esac
+>> @@ -1403,6 +1403,18 @@ _supported_os()
+>>      _notrun "not suitable for this OS: $HOSTOS"
 >>  }
 >>
->> +_spare_dev_get()
+>> +_require_btrfs_unloadable()
 >
-> I'd like to see some comments about these helpers in the code. Otherwise
-> look good to me.
+> The name seems misleading, the name indicates that it requires btrfs to
+> be unloadable, but in the code it _notrun if btrfs is unloadable.
 
-  Added in v2. Thanks Anand
+  ok. Will rename it.
+
+Thanks, Anand
 
 
 > Thanks,
 > Eryu
 >
 >> +{
->> +	typeset -p SCRATCH_DEV_POOL_SAVED >/dev/null 2>&1
->> +	if [ $? != 0 ]; then
->> +		_fail "Bug: unset val, must call _scratch_dev_pool_get before _spare_dev_get"
->> +	fi
->> +
->> +	if [ -z "$SCRATCH_DEV_POOL_SAVED" ]; then
->> +		_fail "Bug: str empty, must call _scratch_dev_pool_get before _spare_dev_get"
->> +	fi
->> +
->> +	# Check if the spare is already assigned
->> +	typeset -p SPARE_DEV >/dev/null 2>&1
->> +	if [ $? == 0 ]; then
->> +		if [ ! -z "$SPARE_DEV" ]; then
->> +			_fail "Bug: SPARE_DEV = $SPARE_DEV already assigned"
->> +		fi
->> +	fi
->> +
->> +	local ndevs=`echo $SCRATCH_DEV_POOL| wc -w`
->> +	local config_ndevs=`echo $SCRATCH_DEV_POOL_SAVED| wc -w`
->> +
->> +	if [ $ndevs -eq $config_ndevs ]; then
->> +		_notrun "All devs used no spare"
->> +	fi
->> +	# Get a dev that is not used
->> +	local devs[]="( $SCRATCH_DEV_POOL_SAVED )"
->> +	SPARE_DEV=${devs[@]:$ndevs:1}
->> +	export SPARE_DEV
+>> +	modprobe -r btrfs || _notrun "btrfs unloadable"
+>> +	modprobe btrfs || _notrun "Can't load btrfs"
 >> +}
 >> +
->> +_spare_dev_put()
+>> +_reload_btrfs_ko()
 >> +{
->> +	typeset -p SPARE_DEV >/dev/null 2>&1
->> +	if [ $? != 0 ]; then
->> +		_fail "Bug: unset val, must call _spare_dev_get before its put"
->> +	fi
->> +
->> +	if [ -z "$SPARE_DEV" ]; then
->> +		_fail "Bug: str empty, must call _spare_dev_get before its put"
->> +	fi
->> +
->> +	export SPARE_DEV=""
+>> +	modprobe -r btrfs || _fail "btrfs unload failed"
+>> +	modprobe btrfs || _fail "btrfs load failed"
 >> +}
 >> +
->>  #
->>  # $1 Number of the scratch devs required
->>  #
+>>  # this test needs a scratch partition - check we're ok & unmount it
+>>  # No post-test check of the device is required. e.g. the test intentionally
+>>  # finishes the test with the filesystem in a corrupt state
 >> --
 >> 2.7.0
 >>

@@ -1,209 +1,128 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:63121 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:64302 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1751366AbcFNJ0o (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 14 Jun 2016 05:26:44 -0400
+	id S932182AbcFOCKK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 14 Jun 2016 22:10:10 -0400
+Received: from adam-work.localdomain (unknown [10.167.226.34])
+	by cn.fujitsu.com (Postfix) with ESMTP id B290D405640F
+	for <linux-btrfs@vger.kernel.org>; Wed, 15 Jun 2016 10:10:03 +0800 (CST)
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-To: fdmanana@gmail.com, mfasheh@suse.de, fstests@vger.kernel.org,
-        linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs: relocation: Fix leaking qgroups numbers on data extents
-Date: Tue, 14 Jun 2016 17:26:22 +0800
-Message-Id: <20160614092622.15560-1-quwenruo@cn.fujitsu.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH v11 11/13] btrfs: relocation: Enhance error handling to avoid BUG_ON
+Date: Wed, 15 Jun 2016 10:09:59 +0800
+Message-Id: <20160615021001.9588-12-quwenruo@cn.fujitsu.com>
+In-Reply-To: <20160615021001.9588-1-quwenruo@cn.fujitsu.com>
+References: <20160615021001.9588-1-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When balancing data extents, qgroup will leak all its numbers for
-balanced data extents.
+Since the introduce of btrfs dedupe tree, it's possible that balance can
+race with dedupe disabling.
 
-The root cause is the non-standard extent reference update used in
-balance code.
+When this happens, dedupe_enabled will make btrfs_get_fs_root() return
+PTR_ERR(-ENOENT).
+But due to a bug in error handling branch, when this happens
+backref_cache->nr_nodes is increased but the node is neither added to
+backref_cache or nr_nodes decreased.
+Causing BUG_ON() in backref_cache_cleanup()
 
-The problem happens in the following steps:
-(Use 4M as original data extent size, and 257 as src root objectid)
+[ 2611.668810] ------------[ cut here ]------------
+[ 2611.669946] kernel BUG at
+/home/sat/ktest/linux/fs/btrfs/relocation.c:243!
+[ 2611.670572] invalid opcode: 0000 [#1] SMP
+[ 2611.686797] Call Trace:
+[ 2611.687034]  [<ffffffffa01f71d3>]
+btrfs_relocate_block_group+0x1b3/0x290 [btrfs]
+[ 2611.687706]  [<ffffffffa01cc177>]
+btrfs_relocate_chunk.isra.40+0x47/0xd0 [btrfs]
+[ 2611.688385]  [<ffffffffa01cdb12>] btrfs_balance+0xb22/0x11e0 [btrfs]
+[ 2611.688966]  [<ffffffffa01d9611>] btrfs_ioctl_balance+0x391/0x3a0
+[btrfs]
+[ 2611.689587]  [<ffffffffa01ddaf0>] btrfs_ioctl+0x1650/0x2290 [btrfs]
+[ 2611.690145]  [<ffffffff81171cda>] ? lru_cache_add+0x3a/0x80
+[ 2611.690647]  [<ffffffff81171e4c>] ?
+lru_cache_add_active_or_unevictable+0x4c/0xc0
+[ 2611.691310]  [<ffffffff81193f04>] ? handle_mm_fault+0xcd4/0x17f0
+[ 2611.691842]  [<ffffffff811da423>] ? cp_new_stat+0x153/0x180
+[ 2611.692342]  [<ffffffff8119913d>] ? __vma_link_rb+0xfd/0x110
+[ 2611.692842]  [<ffffffff81199209>] ? vma_link+0xb9/0xc0
+[ 2611.693303]  [<ffffffff811e7e81>] do_vfs_ioctl+0xa1/0x5a0
+[ 2611.693781]  [<ffffffff8104e024>] ? __do_page_fault+0x1b4/0x400
+[ 2611.694310]  [<ffffffff811e83c1>] SyS_ioctl+0x41/0x70
+[ 2611.694758]  [<ffffffff816dfc6e>] entry_SYSCALL_64_fastpath+0x12/0x71
+[ 2611.695331] Code: ff 48 8b 45 bf 49 83 af a8 05 00 00 01 49 89 87 a0
+05 00 00 e9 2e fd ff ff b8 f4 ff ff ff e9 e4 fb ff ff 0f 0b 0f 0b 0f 0b
+0f 0b <0f> 0b 0f 0b 41 89 c6 e9 b8 fb ff ff e8 9e a6 e8 e0 4c 89 e7 44
+[ 2611.697870] RIP  [<ffffffffa01f6fc1>]
+relocate_block_group+0x741/0x7a0 [btrfs]
+[ 2611.698818]  RSP <ffff88002a81fb30>
 
-1) Balance create new data extents and increase its refs
+This patch will call remove_backref_node() in error handling branch, and
+cache the returned -ENOENT in relocate_tree_block() and continue
+balancing.
 
-Balance will alloc new data extent and create new EXTENT_DATA in data
-reloc tree, while its refernece is increased with 2 different
-referencer: 257 and data reloc tree.
-
-While at that time, file tree is still referring to old extents.
-
-Extent bytenr   |    Real referencer    |     backrefs     |
-------------------------------------------------------------
-New             | Data reloc            | Data reloc + 257 | << Mismatch
-Old             | 257                   | 257              |
-
-Qgroup number: 4M + metadata
-
-2) Commit trans before merging reloc tree
-Then we goes to prepare_to_merge(), which will commit transacation.
-
-In the qgroup update codes inside commit_transaction, although backref
-walk codes find the new data extents has 2 backref, but file tree
-backref can't find referencer(file tree is still referring to old
-extents), and data reloc doesn't count as file tree.
-
-Extent bytenr   | nr_old_roots | nr_new_roots | qgroup change |
---------------------------------------------------------------|
-New             | 0            | 0            | 0             |
-Old             | 1            | 1            | 0             |
-
-Qgroup number: 4M + metadata +-0 = 4M + metadata
-
-3) Swap tree blocks and free old tree blocks
-Then we goes to merge_reloc_roots(), which swaps the tree blocks
-directly, and free the old tree blocks.
-Freeing tree blocks will also free its data extents, this goes through
-normal routine, and qgroup handles it well, decreasing the numbers.
-
-And since new data extent is not updated here (updated in step 1), so
-qgroup won't scan new data extent.
-
-Extent bytenr   | nr_old_roots | nr_new_roots | qgroup change |
---------------------------------------------------------------|
-New             |-No modification, doesn't go through qgroup--|
-Old             | 1            | 0            | -4M           |
-
-Qgroup number: 4M + metadata -4M = metadata
-
-This patch will fix it by re-dirtying new extent at step 3), so backref
-walk and qgroup can get correct result.
-
-And thanks to the new qgroup framework, we don't need to check whether
-it is needed to dirty some file extents. Even some unrelated extents are
-re-dirtied, qgroup can handle it quite well.
-
-So we only need to ensure we don't miss some extents.
-
-Reported-by: Mark Fasheh <mfasheh@suse.de>
-Reported-by: Filipe Manana <fdmanana@gmail.com>
+Reported-by: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- fs/btrfs/relocation.c | 94 +++++++++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 94 insertions(+)
+ fs/btrfs/relocation.c | 22 +++++++++++++++++-----
+ 1 file changed, 17 insertions(+), 5 deletions(-)
 
 diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-index 0477dca..f1d696d 100644
+index b7de713..32fcd8d 100644
 --- a/fs/btrfs/relocation.c
 +++ b/fs/btrfs/relocation.c
-@@ -31,6 +31,7 @@
- #include "async-thread.h"
- #include "free-space-cache.h"
- #include "inode-map.h"
-+#include "qgroup.h"
+@@ -887,6 +887,13 @@ again:
+ 		root = read_fs_root(rc->extent_root->fs_info, key.offset);
+ 		if (IS_ERR(root)) {
+ 			err = PTR_ERR(root);
++			/*
++			 * Don't forget to cleanup current node.
++			 * As it may not be added to backref_cache but nr_node
++			 * increased.
++			 * This will cause BUG_ON() in backref_cache_cleanup().
++			 */
++			remove_backref_node(&rc->backref_cache, cur);
+ 			goto out;
+ 		}
  
- /*
-  * backref_node, mapping_node and tree_block start with this
-@@ -1750,6 +1751,78 @@ int memcmp_node_keys(struct extent_buffer *eb, int slot,
- }
+@@ -2991,14 +2998,21 @@ int relocate_tree_blocks(struct btrfs_trans_handle *trans,
+ 	}
  
- /*
-+ * Helper function to fixup screwed qgroups caused by increased extent ref,
-+ * which doesn't follow normal extent ref update behavior.
-+ * (Correct behavior is, increase extent ref and modify source root in
-+ *  one trans)
-+ * No better solution as long as we're doing swapping trick to do balance.
-+ */
-+static int qgroup_redirty_data_extents(struct btrfs_trans_handle *trans,
-+				       struct btrfs_root *root, u64 bytenr,
-+				       u64 gen)
-+{
-+	struct btrfs_fs_info *fs_info = root->fs_info;
-+	struct extent_buffer *leaf;
-+	struct btrfs_delayed_ref_root *delayed_refs;
-+	int slot;
-+	int ret = 0;
-+
-+	if (!fs_info->quota_enabled || !is_fstree(root->objectid))
-+		return 0;
-+	if (WARN_ON(!trans))
-+		return -EINVAL;
-+
-+	delayed_refs = &trans->transaction->delayed_refs;
-+
-+	leaf = read_tree_block(root, bytenr, gen);
-+	if (IS_ERR(leaf)) {
-+		return PTR_ERR(leaf);
-+	} else if (!extent_buffer_uptodate(leaf)) {
-+		ret = -EIO;
-+		goto out;
-+	}
-+
-+	/* We only care leaf, which may contains EXTENT_DATA */
-+	if (btrfs_header_level(leaf) != 0)
-+		goto out;
-+
-+	for (slot = 0; slot < btrfs_header_nritems(leaf); slot++) {
-+		struct btrfs_key key;
-+		struct btrfs_file_extent_item *fi;
-+		struct btrfs_qgroup_extent_record *record;
-+		struct btrfs_qgroup_extent_record *exist;
-+
-+		btrfs_item_key_to_cpu(leaf, &key, slot);
-+		if (key.type != BTRFS_EXTENT_DATA_KEY)
-+			continue;
-+		fi = btrfs_item_ptr(leaf, slot, struct btrfs_file_extent_item);
-+		if (btrfs_file_extent_type(leaf, fi) ==
-+		    BTRFS_FILE_EXTENT_INLINE ||
-+		    btrfs_file_extent_disk_bytenr(leaf, fi) == 0)
-+			continue;
-+
-+		record = kmalloc(sizeof(*record), GFP_NOFS);
-+		if (!record) {
-+			ret = -ENOMEM;
+ 	rb_node = rb_first(blocks);
+-	while (rb_node) {
++	for (rb_node = rb_first(blocks); rb_node; rb_node = rb_next(rb_node)) {
+ 		block = rb_entry(rb_node, struct tree_block, rb_node);
+ 
+ 		node = build_backref_tree(rc, &block->key,
+ 					  block->level, block->bytenr);
+ 		if (IS_ERR(node)) {
++			/*
++			 * The root(dedupe tree yet) of the tree block is
++			 * going to be freed and can't be reached.
++			 * Just skip it and continue balancing.
++			 */
++			if (PTR_ERR(node) == -ENOENT)
++				continue;
+ 			err = PTR_ERR(node);
+-			goto out;
 +			break;
-+		}
-+		record->bytenr = btrfs_file_extent_disk_bytenr(leaf, fi);
-+		record->num_bytes = btrfs_file_extent_disk_num_bytes(leaf, fi);
-+		record->old_roots = NULL;
-+
-+		spin_lock(&delayed_refs->lock);
-+		exist = btrfs_qgroup_insert_dirty_extent(delayed_refs, record);
-+		spin_unlock(&delayed_refs->lock);
-+		if (exist)
-+			kfree(record);
-+	}
-+out:
-+	free_extent_buffer(leaf);
-+	return ret;
-+
-+}
-+
-+/*
-  * try to replace tree blocks in fs tree with the new blocks
-  * in reloc tree. tree blocks haven't been modified since the
-  * reloc tree was create can be replaced.
-@@ -1919,7 +1992,28 @@ again:
- 					0);
- 		BUG_ON(ret);
+ 		}
  
-+		/*
-+		 * Fix up the screwed up qgroups
-+		 *
-+		 * For tree blocks with extent data, new data extent's
-+		 * backref is already increased with both file tree and data
-+		 * reloc tree.
-+		 * While trans is committed before we modify file tree.
-+		 *
-+		 * This makes qgroup can't account new data extents well,
-+		 * as the file tree is still referring to old extents, not
-+		 * new extents, backref walk will find the new extent only
-+		 * referred by data reloc tree.
-+		 * So qgroup is screwed up and didn't increase its ref/excl.
-+		 *
-+		 * Fix it up by re-dirtying qgroup record for data extents in
-+		 * new tree blocks
-+		 */
-+		ret = qgroup_redirty_data_extents(trans, dest, new_bytenr,
-+						  new_ptr_gen);
- 		btrfs_unlock_up_safe(path, 0);
-+		if (ret < 0)
+ 		ret = relocate_tree_block(trans, rc, node, &block->key,
+@@ -3006,11 +3020,9 @@ int relocate_tree_blocks(struct btrfs_trans_handle *trans,
+ 		if (ret < 0) {
+ 			if (ret != -EAGAIN || rb_node == rb_first(blocks))
+ 				err = ret;
+-			goto out;
 +			break;
+ 		}
+-		rb_node = rb_next(rb_node);
+ 	}
+-out:
+ 	err = finish_pending_nodes(trans, rc, path, err);
  
- 		ret = level;
- 		break;
+ out_free_path:
 -- 
 2.8.3
 

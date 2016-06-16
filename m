@@ -1,126 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from james.kirk.hungrycats.org ([174.142.39.145]:45035 "EHLO
-	james.kirk.hungrycats.org" rhost-flags-OK-FAIL-OK-OK)
-	by vger.kernel.org with ESMTP id S933283AbcFMDrd (ORCPT
+Received: from mx0b-001b2d01.pphosted.com ([148.163.158.5]:19493 "EHLO
+	mx0a-001b2d01.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1754418AbcFPQiY (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 12 Jun 2016 23:47:33 -0400
-From: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
+	Thu, 16 Jun 2016 12:38:24 -0400
+Received: from pps.filterd (m0098420.ppops.net [127.0.0.1])
+	by mx0b-001b2d01.pphosted.com (8.16.0.11/8.16.0.11) with SMTP id u5GGYKKE046630
+	for <linux-btrfs@vger.kernel.org>; Thu, 16 Jun 2016 12:38:24 -0400
+Received: from e34.co.us.ibm.com (e34.co.us.ibm.com [32.97.110.152])
+	by mx0b-001b2d01.pphosted.com with ESMTP id 23kdg5pkhe-1
+	(version=TLSv1.2 cipher=AES256-SHA bits=256 verify=NOT)
+	for <linux-btrfs@vger.kernel.org>; Thu, 16 Jun 2016 12:38:24 -0400
+Received: from localhost
+	by e34.co.us.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
+	for <linux-btrfs@vger.kernel.org> from <chandan@linux.vnet.ibm.com>;
+	Thu, 16 Jun 2016 10:38:23 -0600
+From: Chandan Rajendra <chandan@linux.vnet.ibm.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs: avoid blocking open_ctree from cleaner_kthread
-Date: Sun, 12 Jun 2016 23:39:58 -0400
-Message-Id: <1465789198-8145-1-git-send-email-ce3g8jdj@umail.furryterror.org>
+Cc: Chandan Rajendra <chandan@linux.vnet.ibm.com>, dsterba@suse.com,
+        bo.li.liu@oracle.com
+Subject: [PATCH] Btrfs: btrfs_check_super_valid: Allow 4096 as stripesize
+Date: Thu, 16 Jun 2016 22:07:58 +0530
+Message-Id: <1466095078-25726-1-git-send-email-chandan@linux.vnet.ibm.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This fixes a problem introduced in commit 2f3165ecf103599f82bf0ea254039db335fb5005
-"btrfs: don't force mounts to wait for cleaner_kthread to delete one or more subvolumes".
+Older btrfs-progs/mkfs.btrfs sets 4096 as the stripesize. Hence
+restricting stripesize to be equal to sectorsize would cause super block
+validation to return an error on architectures where PAGE_SIZE is not
+equal to 4096.
 
-open_ctree eventually calls btrfs_replay_log which in turn calls
-btrfs_commit_super which tries to lock the cleaner_mutex, causing a
-recursive mutex deadlock during mount.
+Hence as a workaround, this commit allows stripesize to be set to 4096
+bytes.
 
-Instead of playing whack-a-mole trying to keep up with all the
-functions that may want to lock cleaner_mutex, put all the cleaner_mutex
-lockers back where they were, and attack the problem more directly:
-keep cleaner_kthread asleep until the filesystem is mounted.
-
-When filesystems are mounted read-only and later remounted read-write,
-open_ctree did not set fs_info->open and neither does anything else.
-Set this flag in btrfs_remount so that neither btrfs_delete_unused_bgs
-nor cleaner_kthread get confused by the common case of "/" filesystem
-read-only mount followed by read-write remount.
-
-Signed-off-by: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
+Signed-off-by: Chandan Rajendra <chandan@linux.vnet.ibm.com>
 ---
- fs/btrfs/disk-io.c | 25 ++++++++++---------------
- fs/btrfs/super.c   |  2 ++
- 2 files changed, 12 insertions(+), 15 deletions(-)
+ fs/btrfs/disk-io.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
 
 diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 1142127..190a5e0 100644
+index 1142127..7f92b4f 100644
 --- a/fs/btrfs/disk-io.c
 +++ b/fs/btrfs/disk-io.c
-@@ -1806,6 +1806,13 @@ static int cleaner_kthread(void *arg)
- 		if (btrfs_need_cleaner_sleep(root))
- 			goto sleep;
- 
-+		/*
-+		 * Do not do anything if we might cause open_ctree() to block
-+		 * before we have finished mounting the filesystem.
-+		 */
-+		if (!root->fs_info->open)
-+			goto sleep;
-+
- 		if (!mutex_trylock(&root->fs_info->cleaner_mutex))
- 			goto sleep;
- 
-@@ -2520,7 +2527,6 @@ int open_ctree(struct super_block *sb,
- 	int num_backups_tried = 0;
- 	int backup_index = 0;
- 	int max_active;
--	bool cleaner_mutex_locked = false;
- 
- 	tree_root = fs_info->tree_root = btrfs_alloc_root(fs_info, GFP_KERNEL);
- 	chunk_root = fs_info->chunk_root = btrfs_alloc_root(fs_info, GFP_KERNEL);
-@@ -2999,13 +3005,6 @@ retry_root_backup:
- 		goto fail_sysfs;
+@@ -4139,7 +4139,8 @@ static int btrfs_check_super_valid(struct btrfs_fs_info *fs_info,
+ 		ret = -EINVAL;
  	}
- 
--	/*
--	 * Hold the cleaner_mutex thread here so that we don't block
--	 * for a long time on btrfs_recover_relocation.  cleaner_kthread
--	 * will wait for us to finish mounting the filesystem.
--	 */
--	mutex_lock(&fs_info->cleaner_mutex);
--	cleaner_mutex_locked = true;
- 	fs_info->cleaner_kthread = kthread_run(cleaner_kthread, tree_root,
- 					       "btrfs-cleaner");
- 	if (IS_ERR(fs_info->cleaner_kthread))
-@@ -3065,8 +3064,10 @@ retry_root_backup:
- 		ret = btrfs_cleanup_fs_roots(fs_info);
- 		if (ret)
- 			goto fail_qgroup;
--		/* We locked cleaner_mutex before creating cleaner_kthread. */
-+
-+		mutex_lock(&fs_info->cleaner_mutex);
- 		ret = btrfs_recover_relocation(tree_root);
-+		mutex_unlock(&fs_info->cleaner_mutex);
- 		if (ret < 0) {
- 			btrfs_warn(fs_info, "failed to recover relocation: %d",
- 					ret);
-@@ -3074,8 +3075,6 @@ retry_root_backup:
- 			goto fail_qgroup;
- 		}
- 	}
--	mutex_unlock(&fs_info->cleaner_mutex);
--	cleaner_mutex_locked = false;
- 
- 	location.objectid = BTRFS_FS_TREE_OBJECTID;
- 	location.type = BTRFS_ROOT_ITEM_KEY;
-@@ -3189,10 +3188,6 @@ fail_cleaner:
- 	filemap_write_and_wait(fs_info->btree_inode->i_mapping);
- 
- fail_sysfs:
--	if (cleaner_mutex_locked) {
--		mutex_unlock(&fs_info->cleaner_mutex);
--		cleaner_mutex_locked = false;
--	}
- 	btrfs_sysfs_remove_mounted(fs_info);
- 
- fail_fsdev_sysfs:
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 4339b66..9934519 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -1807,6 +1807,8 @@ static int btrfs_remount(struct super_block *sb, int *flags, char *data)
- 			}
- 		}
- 		sb->s_flags &= ~MS_RDONLY;
-+
-+		fs_info->open = 1;
- 	}
- out:
- 	wake_up_process(fs_info->transaction_kthread);
+ 	if (!is_power_of_2(btrfs_super_stripesize(sb)) ||
+-	    btrfs_super_stripesize(sb) != sectorsize) {
++		((btrfs_super_stripesize(sb) != sectorsize) &&
++			(btrfs_super_stripesize(sb) != 4096))) {
+ 		btrfs_err(fs_info, "invalid stripesize %u",
+ 		       btrfs_super_stripesize(sb));
+ 		ret = -EINVAL;
 -- 
-2.1.4
+2.5.5
 

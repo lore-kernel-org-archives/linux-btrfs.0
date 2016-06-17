@@ -1,57 +1,34 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:36421 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751711AbcFQJSO (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 17 Jun 2016 05:18:14 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1bDpuk-0002Fk-7t
-	for linux-btrfs@vger.kernel.org; Fri, 17 Jun 2016 11:18:10 +0200
-Received: from 168.159.160.57 ([168.159.160.57])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 17 Jun 2016 11:18:10 +0200
-Received: from toyours_sridhar by 168.159.160.57 with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 17 Jun 2016 11:18:10 +0200
-To: linux-btrfs@vger.kernel.org
-From: sri <toyours_sridhar@yahoo.co.in>
-Subject: btrfs multi device handling
-Date: Fri, 17 Jun 2016 09:18:04 +0000 (UTC)
-Message-ID: <loom.20160617T110624-71@post.gmane.org>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Received: from mail-io0-f195.google.com ([209.85.223.195]:36413 "EHLO
+	mail-io0-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751278AbcFQOpd (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 17 Jun 2016 10:45:33 -0400
+Received: by mail-io0-f195.google.com with SMTP id s63so9575070ioi.3
+        for <linux-btrfs@vger.kernel.org>; Fri, 17 Jun 2016 07:45:32 -0700 (PDT)
+From: Tyson Whitehead <twhitehead@gmail.com>
+To: Chris Murphy <lists@colorremedies.com>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Subject: Re: Scrub aborts on newer kernels
+Date: Fri, 17 Jun 2016 10:45:27 -0400
+Message-ID: <25284905.4oL6MYjT0a@whitehead.beowulf.uwo.ca>
+In-Reply-To: <CAJCQCtTcns_Oq=ku2zx_Dhm8hbfJBDzj57ybDLDZ2=fQ1W0Vow@mail.gmail.com>
+References: <1970914.zjZ5YKPDft@whitehead.beowulf.uwo.ca> <CAJCQCtTcns_Oq=ku2zx_Dhm8hbfJBDzj57ybDLDZ2=fQ1W0Vow@mail.gmail.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I am trying to understand how btrfs handles multiple devices configured to 
-a single btrfs file system.
+On May 27, 2016 12:12:54 PM Chris Murphy wrote:
+> On Thu, May 26, 2016 at 11:55 AM, Tyson Whitehead <twhitehead@gmail.com> wrote:
+> > Under the last several kernels versions (4.6 and I believe 4.4 and, 4.5) btrfs scrub aborts before completing.
+> 
+> I can't reproduce this with btrfs-progs 4.5.2 and kernel 4.6.0.
+> 
+> I think the bigger issue is the lack of information why a scrub is aborted.
 
-As compared to traditinal LVM2, say 2 physical disks /dev/sda, /dev/sdb 
-are configured as single LVM2 pool and lvm provide an abstract view say 
-/dev/mapper/VG1-LV1 where VG1 is name of volume ground created on top of 
-/dev/sda and /dev/sdb and LV1 is logical volume.
+Thanks for checking into this Chris.
 
-for mkfs, we can provide /dev/mapper/VG1-LV1 to create file system. This 
-path is kind of virtual device managed by LVM2. and Using dm, I/Os are 
-transferred to respective devices /dev/sda or /dev/sdb.
+Any advice on how to get some more information out of the scrub process?
 
-Does btrfs also creates such virtual view of all devices provided while 
-operating on disks under the file system?
-
-To support my question, example is mkfs.btrfs /dev/sdc /dev/sdd creates 
-btrfs.  Both disks are of size 5GB. Hence around 10GB btrfs fs is created.
-
-For this btrfs internally creates any virtual path for 10GB view? or how 
-btrfs internally manages?
-
-I am looking at scrub code where struct btrfs_device structure contains
-struct block_device *bdev and also struct btrfs_fs_devices *fs_devices 
-fields.
-
-If I relate my question does bdev filed in btrfs_device is virtual view of 
-all devices? and fs_devices represents  list of individual devices (in 
-above example /dev/sdc and /dev/sdd) ?
-
-Thank you in advance.
-
+Cheers!  -Tyson

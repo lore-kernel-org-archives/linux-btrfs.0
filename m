@@ -1,54 +1,58 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:6079 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1751011AbcFRNBl (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 18 Jun 2016 09:01:41 -0400
-Date: Sat, 18 Jun 2016 09:01:35 -0400
-From: Chris Mason <clm@fb.com>
-To: Linus Torvalds <torvalds@linux-foundation.org>,
-        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: [GIT PULL] Btrfs
-Message-ID: <20160618130135.7ncitkqe3aimaodq@floor.masoncoding.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Received: from mx2.suse.de ([195.135.220.15]:33833 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751386AbcFQRBk (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 17 Jun 2016 13:01:40 -0400
+From: David Sterba <dsterba@suse.com>
+To: clm@fb.com
+Cc: linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.com>
+Subject: [PULL] Btrfs fixes for 4.7-rc4
+Date: Fri, 17 Jun 2016 19:02:09 +0200
+Message-Id: <cover.1466182369.git.dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Linus,
+Hi,
 
-My for-linus-4.7 branch has a few fixes:
+there are a few fixes of things introduced during this dev cycle, the
+supreblock validation was too eager and refuses to mount valid fileystems. We
+need to fix in on the progs side but for the time being the wrong stripesize
+value (4096) must be accepted. Other than that a few more bugfixes. Thanks.
 
-git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git for-linus-4.7
+The following changes since commit 719da39a61173c849f70656ed1a302e4b6deaa5b:
 
-The most user visible change here is a fix for our recent superblock
-validation checks that were causing problems on non-4k pagesized
-systems.
+  Merge branch 'misc-fixes-4.7' of git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux into for-linus-4.7 (2016-06-08 14:36:12 -0700)
 
-David Sterba (2) commits (+1/-6):
-    btrfs: use new error message helper in qgroup_account_snapshot (+1/-1)
-    btrfs: remove build fixup for qgroup_account_snapshot (+0/-5)
+are available in the git repository at:
 
-Jeff Mahoney (1) commits (+7/-4):
-    btrfs: account for non-CoW'd blocks in btrfs_abort_transaction
+  git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git for-chris
 
-Liu Bo (1) commits (+28/-15):
-    Btrfs: check if extent buffer is aligned to sectorsize
+for you to fetch changes up to dd5c93111dc9d26e038ac437f7a403d617e82c62:
 
-Heinrich Schuchardt (1) commits (+1/-1):
-    btrfs: Use correct format specifier
+  Btrfs: btrfs_check_super_valid: Allow 4096 as stripesize (2016-06-17 18:32:49 +0200)
 
-Zygo Blaxell (1) commits (+12/-15):
-    btrfs: avoid blocking open_ctree from cleaner_kthread
+----------------------------------------------------------------
+Chandan Rajendra (1):
+      Btrfs: btrfs_check_super_valid: Allow 4096 as stripesize
 
-Josef Bacik (1) commits (+10/-1):
-    Btrfs: don't BUG_ON() in btrfs_orphan_add
+David Sterba (2):
+      btrfs: use new error message helper in qgroup_account_snapshot
+      btrfs: remove build fixup for qgroup_account_snapshot
 
-Chandan Rajendra (1) commits (+2/-1):
-    Btrfs: btrfs_check_super_valid: Allow 4096 as stripesize
+Heinrich Schuchardt (1):
+      btrfs: Use correct format specifier
 
-Total: (8) commits (+61/-43)
+Jeff Mahoney (1):
+      btrfs: account for non-CoW'd blocks in btrfs_abort_transaction
+
+Josef Bacik (1):
+      Btrfs: don't BUG_ON() in btrfs_orphan_add
+
+Liu Bo (1):
+      Btrfs: check if extent buffer is aligned to sectorsize
+
+Zygo Blaxell (1):
+      btrfs: avoid blocking open_ctree from cleaner_kthread
 
  fs/btrfs/check-integrity.c |  2 +-
  fs/btrfs/ctree.c           |  7 ++++++-

@@ -1,27 +1,27 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-001b2d01.pphosted.com ([148.163.156.1]:40479 "EHLO
+Received: from mx0a-001b2d01.pphosted.com ([148.163.156.1]:31446 "EHLO
 	mx0a-001b2d01.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1753962AbcFPQir (ORCPT
+	by vger.kernel.org with ESMTP id S1751114AbcFQFiN (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 16 Jun 2016 12:38:47 -0400
-Received: from pps.filterd (m0098394.ppops.net [127.0.0.1])
-	by mx0a-001b2d01.pphosted.com (8.16.0.11/8.16.0.11) with SMTP id u5GGYNtw002534
-	for <linux-btrfs@vger.kernel.org>; Thu, 16 Jun 2016 12:38:46 -0400
-Received: from e32.co.us.ibm.com (e32.co.us.ibm.com [32.97.110.150])
-	by mx0a-001b2d01.pphosted.com with ESMTP id 23kw2pqkuc-1
+	Fri, 17 Jun 2016 01:38:13 -0400
+Received: from pps.filterd (m0098409.ppops.net [127.0.0.1])
+	by mx0a-001b2d01.pphosted.com (8.16.0.11/8.16.0.11) with SMTP id u5H5Y0Wb060870
+	for <linux-btrfs@vger.kernel.org>; Fri, 17 Jun 2016 01:38:13 -0400
+Received: from e31.co.us.ibm.com (e31.co.us.ibm.com [32.97.110.149])
+	by mx0a-001b2d01.pphosted.com with ESMTP id 23krwcpq54-1
 	(version=TLSv1.2 cipher=AES256-SHA bits=256 verify=NOT)
-	for <linux-btrfs@vger.kernel.org>; Thu, 16 Jun 2016 12:38:46 -0400
+	for <linux-btrfs@vger.kernel.org>; Fri, 17 Jun 2016 01:38:12 -0400
 Received: from localhost
-	by e32.co.us.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
+	by e31.co.us.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
 	for <linux-btrfs@vger.kernel.org> from <chandan@linux.vnet.ibm.com>;
-	Thu, 16 Jun 2016 10:38:45 -0600
+	Thu, 16 Jun 2016 23:38:12 -0600
 From: Chandan Rajendra <chandan@linux.vnet.ibm.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Chandan Rajendra <chandan@linux.vnet.ibm.com>, dsterba@suse.com,
-        bo.li.liu@oracle.com
-Subject: [PATCH] Btrfs-progs: Initialize stripesize to the value of sectorsize
-Date: Thu, 16 Jun 2016 22:08:29 +0530
-Message-Id: <1466095109-26044-1-git-send-email-chandan@linux.vnet.ibm.com>
+        bo.li.liu@oracle.com, takeuchi_satoru@jp.fujitsu.com
+Subject: [PATCH V2] Btrfs-progs: Initialize stripesize to the value of sectorsize
+Date: Fri, 17 Jun 2016 11:07:54 +0530
+Message-Id: <1466141874-15854-1-git-send-email-chandan@linux.vnet.ibm.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
@@ -52,21 +52,24 @@ Hence as a workaround this commit allows 4096 as a valid stripesize.
 
 Signed-off-by: Chandan Rajendra <chandan@linux.vnet.ibm.com>
 ---
- disk-io.c | 4 +++-
+Changelog:
+v1->v2: Use Tabs to indent rather than spaces. Thanks to Satoru Takeuchi for
+pointing this out.
+
+disk-io.c | 3 ++-
  mkfs.c    | 1 +
- 2 files changed, 4 insertions(+), 1 deletion(-)
+ 2 files changed, 3 insertions(+), 1 deletion(-)
 
 diff --git a/disk-io.c b/disk-io.c
-index 77eb0a6..1ac7631 100644
+index 77eb0a6..fbce506 100644
 --- a/disk-io.c
 +++ b/disk-io.c
-@@ -1476,7 +1476,9 @@ static int check_super(struct btrfs_super_block *sb)
+@@ -1476,7 +1476,8 @@ static int check_super(struct btrfs_super_block *sb)
  		error("invalid bytes_used %llu", btrfs_super_bytes_used(sb));
  		goto error_out;
  	}
 -	if (btrfs_super_stripesize(sb) != 4096) {
-+
-+        if ((btrfs_super_stripesize(sb) != 4096)
++	if ((btrfs_super_stripesize(sb) != 4096)
 +		&& (btrfs_super_stripesize(sb) != btrfs_super_sectorsize(sb))) {
  		error("invalid stripesize %u", btrfs_super_stripesize(sb));
  		goto error_out;

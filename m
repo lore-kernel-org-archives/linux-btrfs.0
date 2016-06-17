@@ -1,57 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-001b2d01.pphosted.com ([148.163.158.5]:19493 "EHLO
-	mx0a-001b2d01.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1754418AbcFPQiY (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 16 Jun 2016 12:38:24 -0400
-Received: from pps.filterd (m0098420.ppops.net [127.0.0.1])
-	by mx0b-001b2d01.pphosted.com (8.16.0.11/8.16.0.11) with SMTP id u5GGYKKE046630
-	for <linux-btrfs@vger.kernel.org>; Thu, 16 Jun 2016 12:38:24 -0400
-Received: from e34.co.us.ibm.com (e34.co.us.ibm.com [32.97.110.152])
-	by mx0b-001b2d01.pphosted.com with ESMTP id 23kdg5pkhe-1
-	(version=TLSv1.2 cipher=AES256-SHA bits=256 verify=NOT)
-	for <linux-btrfs@vger.kernel.org>; Thu, 16 Jun 2016 12:38:24 -0400
-Received: from localhost
-	by e34.co.us.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
-	for <linux-btrfs@vger.kernel.org> from <chandan@linux.vnet.ibm.com>;
-	Thu, 16 Jun 2016 10:38:23 -0600
-From: Chandan Rajendra <chandan@linux.vnet.ibm.com>
+Received: from mx2.suse.de ([195.135.220.15]:58921 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752024AbcFQQW0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 17 Jun 2016 12:22:26 -0400
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+	by mx2.suse.de (Postfix) with ESMTP id A9B33AAF4
+	for <linux-btrfs@vger.kernel.org>; Fri, 17 Jun 2016 16:22:24 +0000 (UTC)
+From: David Sterba <dsterba@suse.com>
 To: linux-btrfs@vger.kernel.org
-Cc: Chandan Rajendra <chandan@linux.vnet.ibm.com>, dsterba@suse.com,
-        bo.li.liu@oracle.com
-Subject: [PATCH] Btrfs: btrfs_check_super_valid: Allow 4096 as stripesize
-Date: Thu, 16 Jun 2016 22:07:58 +0530
-Message-Id: <1466095078-25726-1-git-send-email-chandan@linux.vnet.ibm.com>
+Cc: David Sterba <dsterba@suse.com>
+Subject: [PATCH 1/2] btrfs: use new error message helper in qgroup_account_snapshot
+Date: Fri, 17 Jun 2016 18:23:01 +0200
+Message-Id: <bcd1887467541622ed26f2bdbf3096e4b3ff32c6.1466180408.git.dsterba@suse.com>
+In-Reply-To: <cover.1466180408.git.dsterba@suse.com>
+References: <cover.1466180408.git.dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Older btrfs-progs/mkfs.btrfs sets 4096 as the stripesize. Hence
-restricting stripesize to be equal to sectorsize would cause super block
-validation to return an error on architectures where PAGE_SIZE is not
-equal to 4096.
+We've renamed btrfs_std_error, this one is left from last merge.
 
-Hence as a workaround, this commit allows stripesize to be set to 4096
-bytes.
-
-Signed-off-by: Chandan Rajendra <chandan@linux.vnet.ibm.com>
+Signed-off-by: David Sterba <dsterba@suse.com>
 ---
- fs/btrfs/disk-io.c | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+ fs/btrfs/transaction.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 1142127..7f92b4f 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -4139,7 +4139,8 @@ static int btrfs_check_super_valid(struct btrfs_fs_info *fs_info,
- 		ret = -EINVAL;
- 	}
- 	if (!is_power_of_2(btrfs_super_stripesize(sb)) ||
--	    btrfs_super_stripesize(sb) != sectorsize) {
-+		((btrfs_super_stripesize(sb) != sectorsize) &&
-+			(btrfs_super_stripesize(sb) != 4096))) {
- 		btrfs_err(fs_info, "invalid stripesize %u",
- 		       btrfs_super_stripesize(sb));
- 		ret = -EINVAL;
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index f6e24cb423ae..4e74b5733030 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -1385,7 +1385,7 @@ static int qgroup_account_snapshot(struct btrfs_trans_handle *trans,
+ 	switch_commit_roots(trans->transaction, fs_info);
+ 	ret = btrfs_write_and_wait_transaction(trans, src);
+ 	if (ret)
+-		btrfs_std_error(fs_info, ret,
++		btrfs_handle_fs_error(fs_info, ret,
+ 			"Error while writing out transaction for qgroup");
+ 
+ out:
 -- 
-2.5.5
+2.7.1
 

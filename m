@@ -1,62 +1,89 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:35703 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755124AbcFQBsN (ORCPT
+Received: from mgwkm04.jp.fujitsu.com ([202.219.69.171]:27986 "EHLO
+	mgwkm04.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753811AbcFQAOi (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 16 Jun 2016 21:48:13 -0400
-Subject: [PATCH 20/20] xfs: scrub fs (if still mounted) at the end of the
- test
-From: "Darrick J. Wong" <darrick.wong@oracle.com>
-To: david@fromorbit.com, darrick.wong@oracle.com
-Cc: linux-btrfs@vger.kernel.org, fstests@vger.kernel.org, xfs@oss.sgi.com
-Date: Thu, 16 Jun 2016 18:48:07 -0700
-Message-ID: <146612808781.25024.9354886387434772563.stgit@birch.djwong.org>
-In-Reply-To: <146612796204.25024.18254357523133394284.stgit@birch.djwong.org>
-References: <146612796204.25024.18254357523133394284.stgit@birch.djwong.org>
+	Thu, 16 Jun 2016 20:14:38 -0400
+Received: from m3051.s.css.fujitsu.com (m3051.s.css.fujitsu.com [10.134.21.209])
+	by kw-mxq.gw.nic.fujitsu.com (Postfix) with ESMTP id E0F31AC011E
+	for <linux-btrfs@vger.kernel.org>; Fri, 17 Jun 2016 09:14:32 +0900 (JST)
+Subject: Re: [PATCH] Btrfs-progs: Initialize stripesize to the value of
+ sectorsize
+To: Chandan Rajendra <chandan@linux.vnet.ibm.com>, linux-btrfs@vger.kernel.org
+References: <1466095109-26044-1-git-send-email-chandan@linux.vnet.ibm.com>
+Cc: dsterba@suse.com, bo.li.liu@oracle.com
+From: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
+Message-ID: <589a75e9-277e-8c79-a904-6db5fc2a9a23@jp.fujitsu.com>
+Date: Fri, 17 Jun 2016 09:14:07 +0900
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
+In-Reply-To: <1466095109-26044-1-git-send-email-chandan@linux.vnet.ibm.com>
+Content-Type: text/plain; charset=iso-2022-jp
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Teach _check_xfs_filesystem to scrub mounted filesystems before
-unmounting and fscking them.  This is mostly to test the online
-scrub tool...
+On 2016/06/17 1:38, Chandan Rajendra wrote:
+> stripesize should ideally be set to the value of sectorsize. However
+> previous versions of btrfs-progs/mkfs.btrfs had set stripesize to a
+> value of 4096. On machines with PAGE_SIZE other than 4096, This could
+> lead to the following scenario,
+> 
+> - /dev/loop0, /dev/loop1 and /dev/loop2 are mounted as a single
+>   filesystem. The filesystem was created by an older version of mkfs.btrfs
+>   which set stripesize to 4k.
+> - losetup -a
+>    /dev/loop0: [0030]:19477 (/root/disk-imgs/file-0.img)
+>    /dev/loop1: [0030]:16577 (/root/disk-imgs/file-1.img)
+>    /dev/loop2: [64770]:3423229 (/root/disk-imgs/file-2.img)
+> - /etc/mtab lists only /dev/loop0
+> - losetup /dev/loop4 /root/disk-imgs/file-1.img
+>   The new mkfs.btrfs invoked as 'mkfs.btrfs -f /dev/loop4' succeeds even
+>   though /dev/loop1 has already been mounted and has
+>   /root/disk-imgs/file-1.img as its backing file.
+> 
+> The above behaviour occurs because check_super() function returns an
+> error code (due to stripesize not being set to 4096) and hence
+> check_mounted_where() function treats /dev/loop1 as a disk containing a
+> filesystem other than Btrfs.
+> 
+> Hence as a workaround this commit allows 4096 as a valid stripesize.
+> 
+> Signed-off-by: Chandan Rajendra <chandan@linux.vnet.ibm.com>
+> ---
+>  disk-io.c | 4 +++-
+>  mkfs.c    | 1 +
+>  2 files changed, 4 insertions(+), 1 deletion(-)
+> 
+> diff --git a/disk-io.c b/disk-io.c
+> index 77eb0a6..1ac7631 100644
+> --- a/disk-io.c
+> +++ b/disk-io.c
+> @@ -1476,7 +1476,9 @@ static int check_super(struct btrfs_super_block *sb)
+>  		error("invalid bytes_used %llu", btrfs_super_bytes_used(sb));
+>  		goto error_out;
+>  	}
+> -	if (btrfs_super_stripesize(sb) != 4096) {
+> +
+> +        if ((btrfs_super_stripesize(sb) != 4096)
 
-Signed-off-by: Darrick J. Wong <darrick.wong@oracle.com>
----
- common/config |    1 +
- common/rc     |    7 +++++++
- 2 files changed, 8 insertions(+)
+Just one trivial comment. Tab was converted to some spaces.
 
+Thanks,
+Satoru
 
-diff --git a/common/config b/common/config
-index cacd815..41edb0c 100644
---- a/common/config
-+++ b/common/config
-@@ -163,6 +163,7 @@ export XFS_REPAIR_PROG="`set_prog_path xfs_repair`"
- export XFS_DB_PROG="`set_prog_path xfs_db`"
- export XFS_GROWFS_PROG=`set_prog_path xfs_growfs`
- export XFS_IO_PROG="`set_prog_path xfs_io`"
-+export XFS_SCRUB_PROG="`set_prog_path xfs_scrub`"
- export XFS_PARALLEL_REPAIR_PROG="`set_prog_path xfs_prepair`"
- export XFS_PARALLEL_REPAIR64_PROG="`set_prog_path xfs_prepair64`"
- export __XFSDUMP_PROG="`set_prog_path xfsdump`"
-diff --git a/common/rc b/common/rc
-index 847191e..ea5baea 100644
---- a/common/rc
-+++ b/common/rc
-@@ -2188,6 +2188,13 @@ _check_xfs_filesystem()
- 
-     if [ "$type" = "xfs" ]
-     then
-+	if [ -x "$XFS_SCRUB_PROG" ]; then
-+		"$XFS_SCRUB_PROG" $scrubflag -vd $device >>$seqres.full
-+		if [ $? -ne 0 ]; then
-+			echo "filesystem on $device failed scrub (see $seqres.full)"
-+			ok=0
-+		fi
-+	fi
-         # mounted ...
-         mountpoint=`_umount_or_remount_ro $device`
-     fi
-
+> +		&& (btrfs_super_stripesize(sb) != btrfs_super_sectorsize(sb))) {
+>  		error("invalid stripesize %u", btrfs_super_stripesize(sb));
+>  		goto error_out;
+>  	}
+> diff --git a/mkfs.c b/mkfs.c
+> index a3a3c14..697bdc2 100644
+> --- a/mkfs.c
+> +++ b/mkfs.c
+> @@ -1482,6 +1482,7 @@ int main(int argc, char **argv)
+>  	}
+>  
+>  	sectorsize = max(sectorsize, (u32)sysconf(_SC_PAGESIZE));
+> +	stripesize = sectorsize;
+>  	saved_optind = optind;
+>  	dev_cnt = argc - optind;
+>  	if (dev_cnt == 0)
+> 

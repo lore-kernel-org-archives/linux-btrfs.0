@@ -1,58 +1,49 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:47556 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752606AbcFOIub (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:18112 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754227AbcFQBqM (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 15 Jun 2016 04:50:31 -0400
-Subject: Re: [PATCH 6/6] fstests: btrfs: test RAID5 device reappear and
- balance
-To: Eryu Guan <eguan@redhat.com>
-References: <1463495530-425-1-git-send-email-anand.jain@oracle.com>
- <1463495530-425-6-git-send-email-anand.jain@oracle.com>
- <20160612050835.GD5140@eguan.usersys.redhat.com>
-Cc: fstests@vger.kernel.org, linux-btrfs@vger.kernel.org
-From: Anand Jain <anand.jain@oracle.com>
-Message-ID: <08937eb8-9a92-7cb7-a3ce-8cc2fb52a6a0@oracle.com>
-Date: Wed, 15 Jun 2016 16:51:16 +0800
+	Thu, 16 Jun 2016 21:46:12 -0400
+Subject: [PATCH v6 00/20] xfstests: minor fixes for the reflink/dedupe tests
+From: "Darrick J. Wong" <darrick.wong@oracle.com>
+To: david@fromorbit.com, darrick.wong@oracle.com
+Cc: linux-btrfs@vger.kernel.org, fstests@vger.kernel.org, xfs@oss.sgi.com
+Date: Thu, 16 Jun 2016 18:46:02 -0700
+Message-ID: <146612796204.25024.18254357523133394284.stgit@birch.djwong.org>
 MIME-Version: 1.0
-In-Reply-To: <20160612050835.GD5140@eguan.usersys.redhat.com>
-Content-Type: text/plain; charset=windows-1252; format=flowed
+Content-Type: text/plain; charset="utf-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hi all,
 
+This is the sixth revision of a patchset that adds to xfstests
+support for testing reverse-mappings of physical blocks to file and
+metadata (rmap); support for testing multiple file logical blocks to
+the same physical block (reflink); and implements the beginnings of
+online metadata scrubbing.
 
-On 06/12/2016 01:08 PM, Eryu Guan wrote:
-> On Tue, May 17, 2016 at 10:32:10PM +0800, Anand Jain wrote:
->> The test does the following:
->> Initialize a RAID5 with some data
->>
->> Re-mount RAID5 degraded with _dev3_ missing and write data.
->> Save md5sum checkpoint1
->>
->> Re-mount healthy RAID5
->>
->> Let balance fix degraded blocks.
->> Save md5sum checkpoint2
->>
->> Re-mount RAID1 degraded now with _dev1_ missing.
->> Save md5sum checkpoint3
->>
->> Verify if all three md5sum matches
->>
->> Signed-off-by: Anand Jain <anand.jain@oracle.com>
->
-> All comments for 5/6 apply here for 6/6 :)
+The first eight patches are in Eryu Guan's pull request on 2016-06-15.
+Those patches haven't changed, but they're not yet in the upstream
+repo.
 
-yep. Taken care in v2. Thanks for all the review comments.
+If you're going to start using this mess, you probably ought to just
+pull from my github trees for kernel[1], xfsprogs[2], and xfstests[3].
+There are also updates for xfs-docs[4].  The kernel patches should
+apply to dchinner's for-next; xfsprogs patches to for-next; and
+xfstest to master.  The kernel git tree already has for-next included.
 
-Anand
+The patches have been xfstested with x64, i386, and armv7l--arm64,
+ppc64, and ppc64le no longer boot in qemu.  All three architectures
+pass all 'clone' group tests except xfs/128 (which is the swapext
+test), and AFAICT don't cause any new failures for the 'auto' group.
 
->
-> Thanks,
-> Eryu
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
+This is an extraordinary way to eat your data.  Enjoy! 
+Comments and questions are, as always, welcome.
+
+--D
+
+[1] https://github.com/djwong/linux/tree/djwong-devel
+[2] https://github.com/djwong/xfsprogs/tree/djwong-devel
+[3] https://github.com/djwong/xfstests/tree/djwong-devel
+[4] https://github.com/djwong/xfs-documentation/tree/djwong-devel

@@ -1,288 +1,247 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:51856 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751950AbcFWT0J (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 23 Jun 2016 15:26:09 -0400
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id 1E57AAD32
-	for <linux-btrfs@vger.kernel.org>; Thu, 23 Jun 2016 19:26:08 +0000 (UTC)
-From: jeffm@suse.com
+Received: from cn.fujitsu.com ([222.73.24.84]:18892 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1754723AbcFQBC7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 16 Jun 2016 21:02:59 -0400
+Received: from adam-work.localdomain (unknown [10.167.226.34])
+	by cn.fujitsu.com (Postfix) with ESMTP id E088E4056404
+	for <linux-btrfs@vger.kernel.org>; Fri, 17 Jun 2016 09:02:44 +0800 (CST)
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 3/3] btrfs-progs: check: switch to iterating over the backref_tree
-Date: Thu, 23 Jun 2016 15:26:06 -0400
-Message-Id: <1466709966-31506-4-git-send-email-jeffm@suse.com>
-In-Reply-To: <1466709966-31506-1-git-send-email-jeffm@suse.com>
-References: <1466709966-31506-1-git-send-email-jeffm@suse.com>
+Subject: [PATCH v8 1/4] btrfs-progs: Basic framework for dedupe-inband command group
+Date: Fri, 17 Jun 2016 09:02:41 +0800
+Message-Id: <20160617010244.6996-2-quwenruo@cn.fujitsu.com>
+In-Reply-To: <20160617010244.6996-1-quwenruo@cn.fujitsu.com>
+References: <20160617010244.6996-1-quwenruo@cn.fujitsu.com>
+MIME-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Jeff Mahoney <jeffm@suse.com>
+Add basic ioctl header and command group framework for later use.
+Alone with basic man page doc.
 
-We now have two data structures that can be used to iterate the same data
-set, and there may be quite a few of them in memory.  Eliminating the
-list_head member will reduce memory consumption while iterating over
-the extent backrefs.
-
-Signed-off-by: Jeff Mahoney <jeffm@suse.com>
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- cmds-check.c | 88 ++++++++++++++++++++++++++----------------------------------
- 1 file changed, 38 insertions(+), 50 deletions(-)
+ Documentation/Makefile.in                  |  1 +
+ Documentation/btrfs-dedupe-inband.asciidoc | 40 +++++++++++++++++++++++++
+ Documentation/btrfs.asciidoc               |  4 +++
+ Makefile.in                                |  3 +-
+ btrfs.c                                    |  2 ++
+ cmds-dedupe-ib.c                           | 48 ++++++++++++++++++++++++++++++
+ commands.h                                 |  2 ++
+ ioctl.h                                    | 21 +++++++++++++
+ 8 files changed, 120 insertions(+), 1 deletion(-)
+ create mode 100644 Documentation/btrfs-dedupe-inband.asciidoc
+ create mode 100644 cmds-dedupe-ib.c
 
-diff --git a/cmds-check.c b/cmds-check.c
-index 4785f00..6434857 100644
---- a/cmds-check.c
-+++ b/cmds-check.c
-@@ -76,7 +76,6 @@ static struct task_ctx ctx = { 0 };
- static struct cache_tree *roots_info_cache = NULL;
+diff --git a/Documentation/Makefile.in b/Documentation/Makefile.in
+index aea2cb4..7db4164 100644
+--- a/Documentation/Makefile.in
++++ b/Documentation/Makefile.in
+@@ -28,6 +28,7 @@ MAN8_TXT += btrfs-qgroup.asciidoc
+ MAN8_TXT += btrfs-replace.asciidoc
+ MAN8_TXT += btrfs-restore.asciidoc
+ MAN8_TXT += btrfs-property.asciidoc
++MAN8_TXT += btrfs-dedupe-inband.asciidoc
  
- struct extent_backref {
--	struct list_head list;
- 	struct rb_node node;
- 	unsigned int is_data:1;
- 	unsigned int found_extent_tree:1;
-@@ -86,12 +85,6 @@ struct extent_backref {
+ # Category 5 manual page
+ MAN5_TXT += btrfs-man5.asciidoc
+diff --git a/Documentation/btrfs-dedupe-inband.asciidoc b/Documentation/btrfs-dedupe-inband.asciidoc
+new file mode 100644
+index 0000000..9ee2bc7
+--- /dev/null
++++ b/Documentation/btrfs-dedupe-inband.asciidoc
+@@ -0,0 +1,40 @@
++btrfs-dedupe(8)
++==============
++
++NAME
++----
++btrfs-dedupe-inband - manage in-band (write time) de-duplication of a btrfs
++filesystem
++
++SYNOPSIS
++--------
++*btrfs dedupe-inband* <subcommand> <args>
++
++DESCRIPTION
++-----------
++*btrfs dedupe-inband* is used to enable/disable or show current in-band de-duplication
++status of a btrfs filesystem.
++
++Kernel support for in-band de-duplication starts from 4.8.
++
++WARNING: In-band de-duplication is still an experimental feautre of btrfs,
++use with caution.
++
++SUBCOMMAND
++----------
++Nothing yet
++
++EXIT STATUS
++-----------
++*btrfs dedupe-inband* returns a zero exit status if it succeeds. Non zero is
++returned in case of failure.
++
++AVAILABILITY
++------------
++*btrfs* is part of btrfs-progs.
++Please refer to the btrfs wiki http://btrfs.wiki.kernel.org for
++further details.
++
++SEE ALSO
++--------
++`mkfs.btrfs`(8),
+diff --git a/Documentation/btrfs.asciidoc b/Documentation/btrfs.asciidoc
+index 6a77a85..8ded842 100644
+--- a/Documentation/btrfs.asciidoc
++++ b/Documentation/btrfs.asciidoc
+@@ -43,6 +43,10 @@ COMMANDS
+ 	Do off-line check on a btrfs filesystem. +
+ 	See `btrfs-check`(8) for details.
+ 
++*dedupe*::
++	Control btrfs in-band(write time) de-duplication. +
++	See `btrfs-dedupe`(8) for details.
++
+ *device*::
+ 	Manage devices managed by btrfs, including add/delete/scan and so
+ 	on. +
+diff --git a/Makefile.in b/Makefile.in
+index ac6b353..5cf0fc2 100644
+--- a/Makefile.in
++++ b/Makefile.in
+@@ -86,7 +86,8 @@ cmds_objects = cmds-subvolume.o cmds-filesystem.o cmds-device.o cmds-scrub.o \
+ 	       cmds-quota.o cmds-qgroup.o cmds-replace.o cmds-check.o \
+ 	       cmds-restore.o cmds-rescue.o chunk-recover.o super-recover.o \
+ 	       cmds-property.o cmds-fi-usage.o cmds-inspect-dump-tree.o \
+-	       cmds-inspect-dump-super.o cmds-inspect-tree-stats.o cmds-fi-du.o
++	       cmds-inspect-dump-super.o cmds-inspect-tree-stats.o cmds-fi-du.o \
++	       cmds-dedupe-ib.o
+ libbtrfs_objects = send-stream.o send-utils.o rbtree.o btrfs-list.o crc32c.o \
+ 		   uuid-tree.o utils-lib.o rbtree-utils.o
+ libbtrfs_headers = send-stream.h send-utils.h send.h rbtree.h btrfs-list.h \
+diff --git a/btrfs.c b/btrfs.c
+index cc70515..06c211b 100644
+--- a/btrfs.c
++++ b/btrfs.c
+@@ -199,6 +199,8 @@ static const struct cmd_group btrfs_cmd_group = {
+ 		{ "receive", cmd_receive, cmd_receive_usage, NULL, 0 },
+ 		{ "quota", cmd_quota, NULL, &quota_cmd_group, 0 },
+ 		{ "qgroup", cmd_qgroup, NULL, &qgroup_cmd_group, 0 },
++		{ "dedupe-inband", cmd_dedupe_ib, NULL, &dedupe_ib_cmd_group,
++			0 },
+ 		{ "replace", cmd_replace, NULL, &replace_cmd_group, 0 },
+ 		{ "help", cmd_help, cmd_help_usage, NULL, 0 },
+ 		{ "version", cmd_version, cmd_version_usage, NULL, 0 },
+diff --git a/cmds-dedupe-ib.c b/cmds-dedupe-ib.c
+new file mode 100644
+index 0000000..160c8ec
+--- /dev/null
++++ b/cmds-dedupe-ib.c
+@@ -0,0 +1,48 @@
++/*
++ * Copyright (C) 2015 Fujitsu.  All rights reserved.
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public
++ * License v2 as published by the Free Software Foundation.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++ * General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public
++ * License along with this program; if not, write to the
++ * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
++ * Boston, MA 021110-1307, USA.
++ */
++
++#include <getopt.h>
++#include <unistd.h>
++#include <sys/ioctl.h>
++
++#include "ctree.h"
++#include "ioctl.h"
++
++#include "commands.h"
++#include "utils.h"
++#include "kerncompat.h"
++#include "dedupe-ib.h"
++
++static const char * const dedupe_ib_cmd_group_usage[] = {
++	"btrfs dedupe-inband <command> [options] <path>",
++	NULL
++};
++
++static const char dedupe_ib_cmd_group_info[] =
++"manage inband(write time) de-duplication";
++
++const struct cmd_group dedupe_ib_cmd_group = {
++	dedupe_ib_cmd_group_usage, dedupe_ib_cmd_group_info, {
++		NULL_CMD_STRUCT
++	}
++};
++
++int cmd_dedupe_ib(int argc, char **argv)
++{
++	return handle_command_group(&dedupe_ib_cmd_group, argc, argv);
++}
+diff --git a/commands.h b/commands.h
+index 94229c1..2002c45 100644
+--- a/commands.h
++++ b/commands.h
+@@ -93,6 +93,7 @@ extern const struct cmd_group inspect_cmd_group;
+ extern const struct cmd_group property_cmd_group;
+ extern const struct cmd_group quota_cmd_group;
+ extern const struct cmd_group qgroup_cmd_group;
++extern const struct cmd_group dedupe_ib_cmd_group;
+ extern const struct cmd_group replace_cmd_group;
+ extern const struct cmd_group rescue_cmd_group;
+ 
+@@ -118,6 +119,7 @@ int cmd_send(int argc, char **argv);
+ int cmd_receive(int argc, char **argv);
+ int cmd_quota(int argc, char **argv);
+ int cmd_qgroup(int argc, char **argv);
++int cmd_dedupe_ib(int argc, char **argv);
+ int cmd_replace(int argc, char **argv);
+ int cmd_restore(int argc, char **argv);
+ int cmd_select_super(int argc, char **argv);
+diff --git a/ioctl.h b/ioctl.h
+index 5f18bcb..c88bca2 100644
+--- a/ioctl.h
++++ b/ioctl.h
+@@ -503,6 +503,27 @@ struct btrfs_ioctl_get_dev_stats {
+ 	__u64 unused[128 - 2 - BTRFS_DEV_STAT_VALUES_MAX]; /* pad to 1k */
  };
  
- static inline struct extent_backref *
--to_extent_backref(struct list_head *entry)
--{
--	return list_entry(entry, struct extent_backref, list);
--}
--
--static inline struct extent_backref *
- rb_node_to_extent_backref(struct rb_node *node)
- {
- 	return rb_entry(node, struct extent_backref, node);
-@@ -3879,16 +3872,15 @@ out:
- 
- static int all_backpointers_checked(struct extent_record *rec, int print_errs)
- {
--	struct list_head *cur = rec->backrefs.next;
-+	struct rb_node *n;
- 	struct extent_backref *back;
- 	struct tree_backref *tback;
- 	struct data_backref *dback;
- 	u64 found = 0;
- 	int err = 0;
- 
--	while(cur != &rec->backrefs) {
--		back = to_extent_backref(cur);
--		cur = cur->next;
-+	for (n = rb_first(&rec->backref_tree); n; n = rb_next(n)) {
-+		back = rb_node_to_extent_backref(n);
- 		if (!back->found_extent_tree) {
- 			err = 1;
- 			if (!print_errs)
-@@ -3991,17 +3983,15 @@ out:
- 	return err;
- }
- 
--static int free_all_extent_backrefs(struct extent_record *rec)
-+static void __free_one_backref(struct rb_node *node)
- {
--	struct extent_backref *back;
--	struct list_head *cur;
--	while (!list_empty(&rec->backrefs)) {
--		cur = rec->backrefs.next;
--		back = to_extent_backref(cur);
--		list_del(cur);
--		free(back);
--	}
--	return 0;
-+	struct extent_backref *back = rb_node_to_extent_backref(node);
-+	free(back);
-+}
++/*
++ * de-duplication control modes
++ * For re-config, enable will handle it
++ */
++#define BTRFS_DEDUPE_CTL_ENABLE	1
++#define BTRFS_DEDUPE_CTL_DISABLE 2
++#define BTRFS_DEDUPE_CTL_STATUS	3
++#define BTRFS_DEDUPE_CTL_LAST	4
++struct btrfs_ioctl_dedupe_args {
++	__u16 cmd;		/* In: command(see above macro) */
++	__u64 blocksize;	/* In/Out: For enable/status */
++	__u64 limit_nr;		/* In/Out: For enable/status */
++	__u64 limit_mem;	/* In/Out: For enable/status */
++	__u64 current_nr;	/* Out: For status output */
++	__u16 backend;		/* In/Out: For enable/status */
++	__u16 hash_type;	/* In/Out: For enable/status */
++	u8 status;		/* Out: For status output */
++	/* pad to 512 bytes */
++	u8 __unused[473];
++};
 +
-+static void free_all_extent_backrefs(struct extent_record *rec)
-+{
-+	rb_free_nodes(&rec->backref_tree, __free_one_backref);
- }
- 
- static void free_extent_record_cache(struct btrfs_fs_info *fs_info,
-@@ -4041,7 +4031,7 @@ static int check_owner_ref(struct btrfs_root *root,
- 			    struct extent_record *rec,
- 			    struct extent_buffer *buf)
- {
--	struct extent_backref *node;
-+	struct extent_backref *node, *tmp;
- 	struct tree_backref *back;
- 	struct btrfs_root *ref_root;
- 	struct btrfs_key key;
-@@ -4051,7 +4041,8 @@ static int check_owner_ref(struct btrfs_root *root,
- 	int found = 0;
- 	int ret;
- 
--	list_for_each_entry(node, &rec->backrefs, list) {
-+	rbtree_postorder_for_each_entry_safe(node, tmp,
-+					     &rec->backref_tree, node) {
- 		if (node->is_data)
- 			continue;
- 		if (!node->found_ref)
-@@ -4096,18 +4087,16 @@ static int check_owner_ref(struct btrfs_root *root,
- 
- static int is_extent_tree_record(struct extent_record *rec)
- {
--	struct list_head *cur = rec->backrefs.next;
--	struct extent_backref *node;
-+	struct extent_backref *ref, *tmp;
- 	struct tree_backref *back;
- 	int is_extent = 0;
- 
--	while(cur != &rec->backrefs) {
--		node = to_extent_backref(cur);
--		cur = cur->next;
--		if (node->is_data)
-+	rbtree_postorder_for_each_entry_safe(ref, tmp,
-+					     &rec->backref_tree, node) {
-+		if (ref->is_data)
- 			return 0;
--		back = to_tree_backref(node);
--		if (node->full_backref)
-+		back = to_tree_backref(ref);
-+		if (ref->full_backref)
- 			return 0;
- 		if (back->root == BTRFS_EXTENT_TREE_OBJECTID)
- 			is_extent = 1;
-@@ -4522,7 +4511,6 @@ static struct tree_backref *alloc_tree_backref(struct extent_record *rec,
- 		ref->root = root;
- 		ref->node.full_backref = 0;
- 	}
--	list_add_tail(&ref->node.list, &rec->backrefs);
- 	rb_insert(&rec->backref_tree, &ref->node.node, compare_extent_backref);
- 
- 	return ref;
-@@ -4587,7 +4575,6 @@ static struct data_backref *alloc_data_backref(struct extent_record *rec,
- 	ref->bytes = max_size;
- 	ref->found_ref = 0;
- 	ref->num_refs = 0;
--	list_add_tail(&ref->node.list, &rec->backrefs);
- 	rb_insert(&rec->backref_tree, &ref->node.node, compare_extent_backref);
- 	if (max_size > rec->max_size)
- 		rec->max_size = max_size;
-@@ -4621,12 +4608,12 @@ static void check_extent_type(struct extent_record *rec)
- 	 * Check SYSTEM extent, as it's also marked as metadata, we can only
- 	 * make sure it's a SYSTEM extent by its backref
- 	 */
--	if (!list_empty(&rec->backrefs)) {
-+	if (!RB_EMPTY_ROOT(&rec->backref_tree)) {
- 		struct extent_backref *node;
- 		struct tree_backref *tback;
- 		u64 bg_type;
- 
--		node = to_extent_backref(rec->backrefs.next);
-+		node = rb_node_to_extent_backref(rb_first(&rec->backref_tree));
- 		if (node->is_data) {
- 			/* tree block shouldn't have data backref */
- 			rec->wrong_chunk_type = 1;
-@@ -6479,7 +6466,7 @@ static int free_extent_hook(struct btrfs_trans_handle *trans,
- 			back->node.found_extent_tree = 0;
- 
- 		if (!back->node.found_extent_tree && back->node.found_ref) {
--			list_del(&back->node.list);
-+			rb_erase(&back->node.node, &rec->backref_tree);
- 			free(back);
- 		}
- 	} else {
-@@ -6498,7 +6485,7 @@ static int free_extent_hook(struct btrfs_trans_handle *trans,
- 			back->node.found_extent_tree = 0;
- 		}
- 		if (!back->node.found_extent_tree && back->node.found_ref) {
--			list_del(&back->node.list);
-+			rb_erase(&back->node.node, &rec->backref_tree);
- 			free(back);
- 		}
- 	}
-@@ -6935,7 +6922,7 @@ out:
- static int verify_backrefs(struct btrfs_fs_info *info, struct btrfs_path *path,
- 			   struct extent_record *rec)
- {
--	struct extent_backref *back;
-+	struct extent_backref *back, *tmp;
- 	struct data_backref *dback;
- 	struct extent_entry *entry, *best = NULL;
- 	LIST_HEAD(entries);
-@@ -6951,7 +6938,8 @@ static int verify_backrefs(struct btrfs_fs_info *info, struct btrfs_path *path,
- 	if (rec->metadata)
- 		return 0;
- 
--	list_for_each_entry(back, &rec->backrefs, list) {
-+	rbtree_postorder_for_each_entry_safe(back, tmp,
-+					     &rec->backref_tree, node) {
- 		if (back->full_backref || !back->is_data)
- 			continue;
- 
-@@ -7077,7 +7065,8 @@ static int verify_backrefs(struct btrfs_fs_info *info, struct btrfs_path *path,
- 	 * Ok great we all agreed on an extent record, let's go find the real
- 	 * references and fix up the ones that don't match.
- 	 */
--	list_for_each_entry(back, &rec->backrefs, list) {
-+	rbtree_postorder_for_each_entry_safe(back, tmp,
-+					     &rec->backref_tree, node) {
- 		if (back->full_backref || !back->is_data)
- 			continue;
- 
-@@ -7306,7 +7295,7 @@ static int find_possible_backrefs(struct btrfs_fs_info *info,
- 				  struct extent_record *rec)
- {
- 	struct btrfs_root *root;
--	struct extent_backref *back;
-+	struct extent_backref *back, *tmp;
- 	struct data_backref *dback;
- 	struct cache_extent *cache;
- 	struct btrfs_file_extent_item *fi;
-@@ -7314,7 +7303,8 @@ static int find_possible_backrefs(struct btrfs_fs_info *info,
- 	u64 bytenr, bytes;
- 	int ret;
- 
--	list_for_each_entry(back, &rec->backrefs, list) {
-+	rbtree_postorder_for_each_entry_safe(back, tmp,
-+					     &rec->backref_tree, node) {
- 		/* Don't care about full backrefs (poor unloved backrefs) */
- 		if (back->full_backref || !back->is_data)
- 			continue;
-@@ -7402,7 +7392,7 @@ static int record_orphan_data_extents(struct btrfs_fs_info *fs_info,
- {
- 	struct btrfs_key key;
- 	struct btrfs_root *dest_root;
--	struct extent_backref *back;
-+	struct extent_backref *back, *tmp;
- 	struct data_backref *dback;
- 	struct orphan_data_extent *orphan;
- 	struct btrfs_path *path;
-@@ -7414,7 +7404,8 @@ static int record_orphan_data_extents(struct btrfs_fs_info *fs_info,
- 	path = btrfs_alloc_path();
- 	if (!path)
- 		return -ENOMEM;
--	list_for_each_entry(back, &rec->backrefs, list) {
-+	rbtree_postorder_for_each_entry_safe(back, tmp,
-+					     &rec->backref_tree, node) {
- 		if (back->full_backref || !back->is_data ||
- 		    !back->found_extent_tree)
- 			continue;
-@@ -7481,9 +7472,8 @@ static int fixup_extent_refs(struct btrfs_fs_info *info,
- 	struct btrfs_trans_handle *trans = NULL;
- 	int ret;
- 	struct btrfs_path *path;
--	struct list_head *cur = rec->backrefs.next;
- 	struct cache_extent *cache;
--	struct extent_backref *back;
-+	struct extent_backref *back, *tmp;
- 	int allocated = 0;
- 	u64 flags = 0;
- 
-@@ -7534,10 +7524,8 @@ static int fixup_extent_refs(struct btrfs_fs_info *info,
- 	}
- 
- 	/* step three, recreate all the refs we did find */
--	while(cur != &rec->backrefs) {
--		back = to_extent_backref(cur);
--		cur = cur->next;
--
-+	rbtree_postorder_for_each_entry_safe(back, tmp,
-+					     &rec->backref_tree, node) {
- 		/*
- 		 * if we didn't find any references, don't create a
- 		 * new extent record
+ /* BTRFS_IOC_SNAP_CREATE is no longer used by the btrfs command */
+ #define BTRFS_QUOTA_CTL_ENABLE	1
+ #define BTRFS_QUOTA_CTL_DISABLE	2
 -- 
-2.7.1
+2.8.3
+
+
 

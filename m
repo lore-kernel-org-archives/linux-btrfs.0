@@ -1,64 +1,64 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pf0-f194.google.com ([209.85.192.194]:33650 "EHLO
-	mail-pf0-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751991AbcFTA2U (ORCPT
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:6079 "EHLO
+	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1751011AbcFRNBl (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 19 Jun 2016 20:28:20 -0400
-From: Deepa Dinamani <deepa.kernel@gmail.com>
-To: linux-fsdevel@vger.kernel.org, linux-kernel@vger.kernel.org
-Cc: arnd@arndb.de, tglx@linutronix.de, torvalds@linux-foundation.org,
-        tytso@mit.edu, viro@zeniv.linux.org.uk, y2038@lists.linaro.org,
-        Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
-        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 08/24] fs: btrfs: Use ktime_get_real_ts for root ctime
-Date: Sun, 19 Jun 2016 17:27:07 -0700
-Message-Id: <1466382443-11063-9-git-send-email-deepa.kernel@gmail.com>
-In-Reply-To: <1466382443-11063-1-git-send-email-deepa.kernel@gmail.com>
-References: <1466382443-11063-1-git-send-email-deepa.kernel@gmail.com>
+	Sat, 18 Jun 2016 09:01:41 -0400
+Date: Sat, 18 Jun 2016 09:01:35 -0400
+From: Chris Mason <clm@fb.com>
+To: Linus Torvalds <torvalds@linux-foundation.org>,
+        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: [GIT PULL] Btrfs
+Message-ID: <20160618130135.7ncitkqe3aimaodq@floor.masoncoding.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-btrfs_root_item maintains the ctime for root updates.
-This is not part of vfs_inode.
+Hi Linus,
 
-Since current_time() uses struct inode* as an argument
-as Linus suggested, this cannot be used to update root
-times unless, we modify the signature to use inode.
+My for-linus-4.7 branch has a few fixes:
 
-Since btrfs uses nanosecond time granularity, it can also
-use ktime_get_real_ts directly to obtain timestamp for
-the root. It is necessary to use the timespec time api
-here because the same btrfs_set_stack_timespec_*() apis
-are used for vfs inode times as well. These can be
-transitioned to using timespec64 when btrfs internally
-changes to use timespec64 as well.
+git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git for-linus-4.7
 
-Signed-off-by: Deepa Dinamani <deepa.kernel@gmail.com>
-Cc: Chris Mason <clm@fb.com>
-Cc: Josef Bacik <jbacik@fb.com>
-Cc: David Sterba <dsterba@suse.com>
-Cc: linux-btrfs@vger.kernel.org
----
- fs/btrfs/root-tree.c | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+The most user visible change here is a fix for our recent superblock
+validation checks that were causing problems on non-4k pagesized
+systems.
 
-diff --git a/fs/btrfs/root-tree.c b/fs/btrfs/root-tree.c
-index f1c3086..161118b 100644
---- a/fs/btrfs/root-tree.c
-+++ b/fs/btrfs/root-tree.c
-@@ -496,10 +496,11 @@ void btrfs_update_root_times(struct btrfs_trans_handle *trans,
- 			     struct btrfs_root *root)
- {
- 	struct btrfs_root_item *item = &root->root_item;
--	struct timespec ct = current_fs_time(root->fs_info->sb);
-+	struct timespec ct;
- 
- 	spin_lock(&root->root_item_lock);
- 	btrfs_set_root_ctransid(item, trans->transid);
-+	ktime_get_real_ts(&ct);
- 	btrfs_set_stack_timespec_sec(&item->ctime, ct.tv_sec);
- 	btrfs_set_stack_timespec_nsec(&item->ctime, ct.tv_nsec);
- 	spin_unlock(&root->root_item_lock);
--- 
-1.9.1
+David Sterba (2) commits (+1/-6):
+    btrfs: use new error message helper in qgroup_account_snapshot (+1/-1)
+    btrfs: remove build fixup for qgroup_account_snapshot (+0/-5)
 
+Jeff Mahoney (1) commits (+7/-4):
+    btrfs: account for non-CoW'd blocks in btrfs_abort_transaction
+
+Liu Bo (1) commits (+28/-15):
+    Btrfs: check if extent buffer is aligned to sectorsize
+
+Heinrich Schuchardt (1) commits (+1/-1):
+    btrfs: Use correct format specifier
+
+Zygo Blaxell (1) commits (+12/-15):
+    btrfs: avoid blocking open_ctree from cleaner_kthread
+
+Josef Bacik (1) commits (+10/-1):
+    Btrfs: don't BUG_ON() in btrfs_orphan_add
+
+Chandan Rajendra (1) commits (+2/-1):
+    Btrfs: btrfs_check_super_valid: Allow 4096 as stripesize
+
+Total: (8) commits (+61/-43)
+
+ fs/btrfs/check-integrity.c |  2 +-
+ fs/btrfs/ctree.c           |  7 ++++++-
+ fs/btrfs/disk-io.c         | 36 ++++++++++++++++--------------------
+ fs/btrfs/extent-tree.c     | 12 +++++++-----
+ fs/btrfs/extent_io.c       | 15 ++++++++++++---
+ fs/btrfs/inode.c           | 11 ++++++++++-
+ fs/btrfs/super.c           |  4 +++-
+ fs/btrfs/transaction.c     |  7 +------
+ fs/btrfs/transaction.h     |  2 +-
+ fs/btrfs/tree-log.c        |  4 ++--
+ fs/btrfs/volumes.c         |  4 ++--
+ 11 files changed, 61 insertions(+), 43 deletions(-)

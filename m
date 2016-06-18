@@ -1,63 +1,89 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wm0-f43.google.com ([74.125.82.43]:35620 "EHLO
-	mail-wm0-f43.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750790AbcF2Gqs (ORCPT
+Received: from userp1040.oracle.com ([156.151.31.81]:24531 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751087AbcFRCNP (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 29 Jun 2016 02:46:48 -0400
-Received: by mail-wm0-f43.google.com with SMTP id v199so166572175wmv.0
-        for <linux-btrfs@vger.kernel.org>; Tue, 28 Jun 2016 23:46:47 -0700 (PDT)
-From: Nikolay Borisov <kernel@kyup.com>
-To: clm@fb.com, jbacik@fb.com, dsterba@suse.com
-Cc: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
-        operations@siteground.com, Nikolay Borisov <kernel@kyup.com>
-Subject: [PATCH] btrfs: Handle uninitialised inode eviction
-Date: Wed, 29 Jun 2016 09:46:41 +0300
-Message-Id: <1467182801-16948-1-git-send-email-kernel@kyup.com>
+	Fri, 17 Jun 2016 22:13:15 -0400
+From: Liu Bo <bo.li.liu@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Cc: David Sterba <dsterba@suse.cz>
+Subject: [PATCH] Btrfs: fix error handling in map_private_extent_buffer
+Date: Fri, 17 Jun 2016 19:16:21 -0700
+Message-Id: <1466216181-1555-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The code flow in btrfs_new_inode allows for btrfs_evict_inode to be
-called with not fully initialised inode (e.g. ->root member not
-being set). This can happen when btrfs_set_inode_index in
-btrfs_new_inode fails, which in turn would call iput for the newly
-allocated inode. This in turn leads to vfs calling into btrfs_evict_inode.
-This leads to null pointer dereference. To handle this situation check whether
-the passed inode has root set and just free it in case it doesn't.
+map_private_extent_buffer() can return -EINVAL in two different cases,
+1. when the requested contents span two pages if nodesize is larger
+   than pagesize,
+2. when it detects something insane.
 
-Signed-off-by: Nikolay Borisov <kernel@kyup.com>
+The 2nd one used to be only a WARN_ON(1), and we decided to return a error
+to callers, but we didn't fix up all its callers, which will be
+addressed by this patch.
+
+Without this, btrfs may end up with 'general protection', ie.
+reading invalid memory.
+
+Reported-by: Vegard Nossum <vegard.nossum@oracle.com>
+Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
 ---
- fs/btrfs/inode.c | 9 ++++++++-
- 1 file changed, 8 insertions(+), 1 deletion(-)
+ fs/btrfs/ctree.c     | 6 +++++-
+ fs/btrfs/extent_io.c | 7 ++++++-
+ 2 files changed, 11 insertions(+), 2 deletions(-)
 
-Hello, 
-
-I belive this is fixes the issue reported in 
-http://thread.gmane.org/gmane.comp.file-systems.btrfs/57809
-
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 4421954720b8..b51723811d01 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -5159,11 +5159,18 @@ void btrfs_evict_inode(struct inode *inode)
- 	struct btrfs_root *root = BTRFS_I(inode)->root;
- 	struct btrfs_block_rsv *rsv, *global_rsv;
- 	int steal_from_global = 0;
--	u64 min_size = btrfs_calc_trunc_metadata_size(root, 1);
-+	u64 min_size;
- 	int ret;
+diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
+index 4602568..c49a500 100644
+--- a/fs/btrfs/ctree.c
++++ b/fs/btrfs/ctree.c
+@@ -1785,10 +1785,12 @@ static noinline int generic_bin_search(struct extent_buffer *eb,
+ 			if (!err) {
+ 				tmp = (struct btrfs_disk_key *)(kaddr + offset -
+ 							map_start);
+-			} else {
++			} else if (err == 1) {
+ 				read_extent_buffer(eb, &unaligned,
+ 						   offset, sizeof(unaligned));
+ 				tmp = &unaligned;
++			} else {
++				return err;
+ 			}
  
- 	trace_btrfs_inode_evict(inode);
+ 		} else {
+@@ -2825,6 +2827,8 @@ cow_done:
+ 		}
  
-+	if (!root) {
-+		kmem_cache_free(btrfs_inode_cachep, BTRFS_I(inode));
-+		return;
-+	}
-+
-+	min_size = btrfs_calc_trunc_metadata_size(root, 1);
-+
- 	evict_inode_truncate_pages(inode);
+ 		ret = key_search(b, key, level, &prev_cmp, &slot);
++		if (ret < 0)
++			goto done;
  
- 	if (inode->i_nlink &&
+ 		if (level != 0) {
+ 			int dec = 0;
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index a3412d6..aa44d3e 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -5333,6 +5333,11 @@ int read_extent_buffer_to_user(struct extent_buffer *eb, void __user *dstv,
+ 	return ret;
+ }
+ 
++/*
++ * return 0 if the item is found within a page.
++ * return 1 if the item spans two page.
++ * return -EINVAL otherwise.
++ */
+ int map_private_extent_buffer(struct extent_buffer *eb, unsigned long start,
+ 			       unsigned long min_len, char **map,
+ 			       unsigned long *map_start,
+@@ -5347,7 +5352,7 @@ int map_private_extent_buffer(struct extent_buffer *eb, unsigned long start,
+ 		PAGE_SHIFT;
+ 
+ 	if (i != end_i)
+-		return -EINVAL;
++		return 1;
+ 
+ 	if (i == 0) {
+ 		offset = start_offset;
 -- 
-2.5.0
+2.5.5
 

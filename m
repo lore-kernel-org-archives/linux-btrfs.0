@@ -1,19 +1,18 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pf0-f173.google.com ([209.85.192.173]:32959 "EHLO
-	mail-pf0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751807AbcFQR7P (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 17 Jun 2016 13:59:15 -0400
-Received: by mail-pf0-f173.google.com with SMTP id i123so29112372pfg.0
-        for <linux-btrfs@vger.kernel.org>; Fri, 17 Jun 2016 10:59:15 -0700 (PDT)
-Date: Fri, 17 Jun 2016 10:59:08 -0700
-From: Omar Sandoval <osandov@osandov.com>
-To: Chris Mason <clm@fb.com>, dsterba@suse.cz, linux-btrfs@vger.kernel.org,
+Received: from mx2.suse.de ([195.135.220.15]:53344 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1755839AbcFTPym (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 20 Jun 2016 11:54:42 -0400
+Date: Mon, 20 Jun 2016 17:07:04 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Omar Sandoval <osandov@osandov.com>
+Cc: Chris Mason <clm@fb.com>, dsterba@suse.cz, linux-btrfs@vger.kernel.org,
         Al Viro <viro@zeniv.linux.org.uk>, kernel-team@fb.com,
         Omar Sandoval <osandov@fb.com>
 Subject: Re: [PATCH] Btrfs: fix ->iterate_shared() by upgrading i_rwsem for
  delayed nodes
-Message-ID: <20160617175908.GD28716@vader.DHCP.thefacebook.com>
+Message-ID: <20160620150704.GQ4915@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
 References: <1e937bd41beebb68b1bf1201205059cb8f614dad.1463777299.git.osandov@fb.com>
  <20160525201129.GQ29147@twin.jikos.cz>
  <20160525202226.djc7dk4uhzuleets@floor.thefacebook.com>
@@ -43,12 +42,7 @@ On Fri, Jun 17, 2016 at 10:55:54AM -0700, Omar Sandoval wrote:
 > 
 > Chris/Dave, what's the plan for this? Since it's getting late for 4.7,
 > should we just think harder for a proper solution for 4.8?
-> 
-> -- 
-> Omar
 
-Whoops, I hit "g" in Mutt one too many times and sent to a bogus
-recipient, ignore that guy.
-
--- 
-Omar
+There are a few more fixes queued for rc5 so I can add this one as well.
+It's been in for-next since the first posting but I haven't run any
+specific tests.

@@ -1,77 +1,81 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ob0-f180.google.com ([209.85.214.180]:34162 "EHLO
-	mail-ob0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754010AbcFTSgY (ORCPT
+Received: from james.kirk.hungrycats.org ([174.142.39.145]:34543 "EHLO
+	james.kirk.hungrycats.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752232AbcFTTLl (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 20 Jun 2016 14:36:24 -0400
-Received: by mail-ob0-f180.google.com with SMTP id ru5so435819obc.1
-        for <linux-btrfs@vger.kernel.org>; Mon, 20 Jun 2016 11:36:16 -0700 (PDT)
+	Mon, 20 Jun 2016 15:11:41 -0400
+Date: Mon, 20 Jun 2016 15:11:12 -0400
+From: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
+To: Roman Mamedov <rm@romanrm.net>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: Adventures in btrfs raid5 disk recovery
+Message-ID: <20160620191112.GL15597@hungrycats.org>
+References: <20160620034427.GK15597@hungrycats.org>
+ <20160620231351.1833a341@natsu>
 MIME-Version: 1.0
-In-Reply-To: <5767B5EE.30409@gmail.com>
-References: <1970914.zjZ5YKPDft@whitehead.beowulf.uwo.ca>
-	<CAJCQCtTcns_Oq=ku2zx_Dhm8hbfJBDzj57ybDLDZ2=fQ1W0Vow@mail.gmail.com>
-	<25284905.4oL6MYjT0a@whitehead.beowulf.uwo.ca>
-	<CAJCQCtQ8yPE5CSyrZ2k0ZCT6Wp5VYo9iSxe9znKv=Q04cXzODw@mail.gmail.com>
-	<5767B5EE.30409@gmail.com>
-Date: Mon, 20 Jun 2016 12:05:15 -0600
-Message-ID: <CAJCQCtQy=TVDsW1ypS6GSrMGRVjuB1kOXzVi7gNDbkxr6=KEAA@mail.gmail.com>
-Subject: Re: Scrub aborts on newer kernels
-From: Chris Murphy <lists@colorremedies.com>
-To: Tyson Whitehead <twhitehead@gmail.com>
-Cc: Chris Murphy <lists@colorremedies.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="rmUrFcWP4LYae1gV"
+In-Reply-To: <20160620231351.1833a341@natsu>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Jun 20, 2016 at 3:22 AM, Tyson Whitehead <twhitehead@gmail.com> wrote:
-> On 17/06/16 06:18 PM, Chris Murphy wrote:
->>
->> On Fri, Jun 17, 2016 at 8:45 AM, Tyson Whitehead <twhitehead@gmail.com>
->> wrote:
->>>
->>> On May 27, 2016 12:12:54 PM Chris Murphy wrote:
->>>>
->>>> On Thu, May 26, 2016 at 11:55 AM, Tyson Whitehead <twhitehead@gmail.com>
->>>> wrote:
->>>>>
->>>>> Under the last several kernels versions (4.6 and I believe 4.4 and,
->>>>> 4.5) btrfs scrub aborts before completing.
->>>>
->>>>
->>>> I can't reproduce this with btrfs-progs 4.5.2 and kernel 4.6.0.
->>>>
->>>> I think the bigger issue is the lack of information why a scrub is
->>>> aborted.
->>>
->>>
->>> Thanks for checking into this Chris.
->>>
->>> Any advice on how to get some more information out of the scrub process?
->>
->>
->> Next you need to find out why this one device has so many errors. Put the
->> output from smartctl -x /dev/sdb somewhere, maybe even attach it to the bug
->> report since it's somewhat related. Either that device is simply unreliable,
->> or you've got a bad cable connection.
->
->
-> The device is okay.  The errors were caused by me running it for a period
-> with only one of the devices present.
->
-> In more detail.  My desktop has a BTRFS RAID 1 setup.  I needed to access to
-> it on the road, so I just shut the desktop down, grabbed one of the drives,
-> and used it in my laptop in degraded mode.
->
-> When I got back I recombined them (the one I left in my office was never
-> booted by itself) and started a scrub.  That is when I discovered scrub
-> aborted on newer kernels but completed okay on older ones.
 
-That's troubling indeed.
+--rmUrFcWP4LYae1gV
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-OK so what about a balance with one of the kernels that aborts scrub?
-Does the balance abort or does it work and then does a subsequent
-scrub work?
+On Mon, Jun 20, 2016 at 11:13:51PM +0500, Roman Mamedov wrote:
+> On Sun, 19 Jun 2016 23:44:27 -0400
+> Zygo Blaxell <ce3g8jdj@umail.furryterror.org> wrote:
+> From a practical standpoint, [aside from not using Btrfs RAID5], you'd be
+> better off shutting down the system, booting a rescue OS, copying the con=
+tent
+> of the failing disk to the replacement one using 'ddrescue', then removin=
+g the
+> bad disk, and after boot up your main system wouldn't notice anything has=
+ ever
+> happened, aside from a few recoverable CRC errors in the "holes" on the a=
+reas
+> which ddrescue failed to copy.
 
--- 
-Chris Murphy
+I'm aware of ddrescue and myrescue, but in this case the disk has failed,
+past tense.  At this point the remaining choices are to make btrfs native
+raid5 recovery work, or to restore from backups.
+
+> But in general it's commendable that you're experimenting with doing thin=
+gs
+> "the native way", as this is provides feedback to the developers and coul=
+d help
+> make the RAID implementation better. I guess that's the whole point of the
+> exercise and the report, and hope this ends up being useful for everyone.
+
+The intent was both to provide a cautionary tale for anyone considering
+deploying a btrfs raid5 system today, and to possibly engage some
+developers to help solve the problems.
+
+The underlying causes seem to be somewhat removed from where the symptoms
+are appearing, and at the moment I don't understand this code well enough
+to know where to look for them.  Any assistance would be greatly appreciate=
+d.
+
+
+> --=20
+> With respect,
+> Roman
+
+
+
+--rmUrFcWP4LYae1gV
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
+
+iEYEARECAAYFAldoP9AACgkQgfmLGlazG5yp1gCfQ6TzhMWOn2l0YgAeyZNsjCrW
+ElwAnRD8D0NfSCxpy5QHlNntzGge7RBh
+=iAYU
+-----END PGP SIGNATURE-----
+
+--rmUrFcWP4LYae1gV--

@@ -1,46 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:58925 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:51693 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753487AbcFQQW3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 17 Jun 2016 12:22:29 -0400
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id DE7E4AAF4
-	for <linux-btrfs@vger.kernel.org>; Fri, 17 Jun 2016 16:22:27 +0000 (UTC)
-From: David Sterba <dsterba@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.com>
-Subject: [PATCH 2/2] btrfs: remove build fixup for qgroup_account_snapshot
-Date: Fri, 17 Jun 2016 18:23:04 +0200
-Message-Id: <5734a1c349939152ee5e990f85136feb9355236d.1466180408.git.dsterba@suse.com>
-In-Reply-To: <cover.1466180408.git.dsterba@suse.com>
-References: <cover.1466180408.git.dsterba@suse.com>
+	id S1751189AbcFTJry (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 20 Jun 2016 05:47:54 -0400
+Date: Mon, 20 Jun 2016 11:46:09 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Deepa Dinamani <deepa.kernel@gmail.com>
+Cc: linux-fsdevel@vger.kernel.org, linux-kernel@vger.kernel.org, arnd@arndb.de,
+        tglx@linutronix.de, torvalds@linux-foundation.org, tytso@mit.edu,
+        viro@zeniv.linux.org.uk, y2038@lists.linaro.org,
+        Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
+        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v2 08/24] fs: btrfs: Use ktime_get_real_ts for root ctime
+Message-ID: <20160620094608.GL4915@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1466382443-11063-1-git-send-email-deepa.kernel@gmail.com>
+ <1466382443-11063-9-git-send-email-deepa.kernel@gmail.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1466382443-11063-9-git-send-email-deepa.kernel@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Introduced in 2c1984f244838477aab ("btrfs: build fixup for
-qgroup_account_snapshot") as temporary bisectability build fixup.
+On Sun, Jun 19, 2016 at 05:27:07PM -0700, Deepa Dinamani wrote:
+> btrfs_root_item maintains the ctime for root updates.
+> This is not part of vfs_inode.
+> 
+> Since current_time() uses struct inode* as an argument
+> as Linus suggested, this cannot be used to update root
+> times unless, we modify the signature to use inode.
+> 
+> Since btrfs uses nanosecond time granularity, it can also
+> use ktime_get_real_ts directly to obtain timestamp for
+> the root. It is necessary to use the timespec time api
+> here because the same btrfs_set_stack_timespec_*() apis
+> are used for vfs inode times as well. These can be
+> transitioned to using timespec64 when btrfs internally
+> changes to use timespec64 as well.
+> 
+> Signed-off-by: Deepa Dinamani <deepa.kernel@gmail.com>
+> Cc: Chris Mason <clm@fb.com>
+> Cc: Josef Bacik <jbacik@fb.com>
 
-Signed-off-by: David Sterba <dsterba@suse.com>
----
- fs/btrfs/transaction.c | 5 -----
- 1 file changed, 5 deletions(-)
-
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index 4e74b5733030..765845742fde 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -1311,11 +1311,6 @@ int btrfs_defrag_root(struct btrfs_root *root)
- 	return ret;
- }
- 
--/* Bisesctability fixup, remove in 4.8 */
--#ifndef btrfs_std_error
--#define btrfs_std_error btrfs_handle_fs_error
--#endif
--
- /*
-  * Do all special snapshot related qgroup dirty hack.
-  *
--- 
-2.7.1
-
+Acked-by: David Sterba <dsterba@suse.com>

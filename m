@@ -1,43 +1,46 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:41103 "EHLO
+Received: from aserp1040.oracle.com ([141.146.126.69]:27703 "EHLO
 	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750760AbcFNKyu (ORCPT
+	with ESMTP id S1751408AbcFUKXq (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 14 Jun 2016 06:54:50 -0400
+	Tue, 21 Jun 2016 06:23:46 -0400
 From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
-Cc: clm@fb.com
-Subject: [PATCH 2/2] btrfs: wait for bdev put
-Date: Tue, 14 Jun 2016 18:55:26 +0800
-Message-Id: <1465901726-15490-2-git-send-email-anand.jain@oracle.com>
-In-Reply-To: <1465901726-15490-1-git-send-email-anand.jain@oracle.com>
-References: <1e7bc117-aaa3-c77f-b933-cd0c37b5ce68@oracle.com>
- <1465901726-15490-1-git-send-email-anand.jain@oracle.com>
+Cc: holger@applied-asynchrony.com, clm@fb.com, dsterba@suse.com,
+        xiaolong.ye@intel.com
+Subject: [PATCH v2 2/2] btrfs: wait for bdev put
+Date: Tue, 21 Jun 2016 18:24:08 +0800
+Message-Id: <1466504648-2937-1-git-send-email-anand.jain@oracle.com>
+In-Reply-To: <1465901726-15490-2-git-send-email-anand.jain@oracle.com>
+References: <1465901726-15490-2-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Further to the previous commit
- bc178622d40d87e75abc131007342429c9b03351
- btrfs: use rcu_barrier() to wait for bdev puts at unmount
+From: Anand Jain <Anand.Jain@oracle.com>
 
-Since free_device() spinoff __free_device() the rcu_barrier() for
-      call_rcu(&device->rcu, free_device);
-didn't help.
+Further to the commit
+     bc178622d40d87e75abc131007342429c9b03351
+     btrfs: use rcu_barrier() to wait for bdev puts at unmount
 
-This patch reverts changes by
- bc178622d40d87e75abc131007342429c9b03351
-and implement a method to wait on the __free_device() by using
-a new bdev_closing member in struct btrfs_device.
+This patch implements a method to time wait on the __free_device()
+which actually does the bdev put. This is needed as the user space
+running 'btrfs fi show -d' immediately after the replace and
+unmount, is still reading older information from the device.
+
+ mail-archive.com/linux-btrfs@vger.kernel.org/msg54188.html
 
 Signed-off-by: Anand Jain <anand.jain@oracle.com>
-[rework: bc178622d40d87e75abc131007342429c9b03351]
+[updates: bc178622d40d87e75abc131007342429c9b03351]
 ---
- fs/btrfs/volumes.c | 44 ++++++++++++++++++++++++++++++++++++++------
+v2: Also to make sure bdev_closing is set it needs rcu_barrier(),
+    restored rcu_barrier().
+
+ fs/btrfs/volumes.c | 45 +++++++++++++++++++++++++++++++++++++++++++--
  fs/btrfs/volumes.h |  1 +
- 2 files changed, 39 insertions(+), 6 deletions(-)
+ 2 files changed, 44 insertions(+), 2 deletions(-)
 
 diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index a4e8d48acd4b..404ce1daebb1 100644
+index 604daf315669..ef61c34cafbf 100644
 --- a/fs/btrfs/volumes.c
 +++ b/fs/btrfs/volumes.c
 @@ -27,6 +27,7 @@
@@ -110,17 +113,20 @@ index a4e8d48acd4b..404ce1daebb1 100644
  
  	mutex_lock(&uuid_mutex);
  	ret = __btrfs_close_devices(fs_devices);
-@@ -927,12 +956,15 @@ int btrfs_close_devices(struct btrfs_fs_devices *fs_devices)
- 		__btrfs_close_devices(fs_devices);
- 		free_fs_devices(fs_devices);
+@@ -929,10 +958,22 @@ int btrfs_close_devices(struct btrfs_fs_devices *fs_devices)
  	}
--	/*
--	 * Wait for rcu kworkers under __btrfs_close_devices
+ 	/*
+ 	 * Wait for rcu kworkers under __btrfs_close_devices
 -	 * to finish all blkdev_puts so device is really
 -	 * free when umount is done.
--	 */
--	rcu_barrier();
++	 * to finish all free_device()
+ 	 */
+ 	rcu_barrier();
 +
++	/*
++	 * Wait for a grace period so that __free_device()
++	 * will actaully do the device close.
++	 */
 +	while (is_device_closing(&fs_devices->devices) &&
 +						--retry_cnt) {
 +		mdelay(1000); //1 sec

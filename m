@@ -1,89 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:24531 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751087AbcFRCNP (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 17 Jun 2016 22:13:15 -0400
-From: Liu Bo <bo.li.liu@oracle.com>
+Received: from cn.fujitsu.com ([222.73.24.84]:60260 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1752546AbcFUDVd (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 20 Jun 2016 23:21:33 -0400
+Received: from localhost.localdomain (unknown [10.167.226.107])
+	by cn.fujitsu.com (Postfix) with ESMTP id 4E43E4056403
+	for <linux-btrfs@vger.kernel.org>; Tue, 21 Jun 2016 11:14:45 +0800 (CST)
+From: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.cz>
-Subject: [PATCH] Btrfs: fix error handling in map_private_extent_buffer
-Date: Fri, 17 Jun 2016 19:16:21 -0700
-Message-Id: <1466216181-1555-1-git-send-email-bo.li.liu@oracle.com>
+Subject: [PATCH] btrfs: add missing bytes_readonly attribute file in sysfs
+Date: Tue, 21 Jun 2016 11:12:56 +0800
+Message-Id: <1466478776-26117-1-git-send-email-wangxg.fnst@cn.fujitsu.com>
+MIME-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-map_private_extent_buffer() can return -EINVAL in two different cases,
-1. when the requested contents span two pages if nodesize is larger
-   than pagesize,
-2. when it detects something insane.
-
-The 2nd one used to be only a WARN_ON(1), and we decided to return a error
-to callers, but we didn't fix up all its callers, which will be
-addressed by this patch.
-
-Without this, btrfs may end up with 'general protection', ie.
-reading invalid memory.
-
-Reported-by: Vegard Nossum <vegard.nossum@oracle.com>
-Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+Signed-off-by: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
 ---
- fs/btrfs/ctree.c     | 6 +++++-
- fs/btrfs/extent_io.c | 7 ++++++-
- 2 files changed, 11 insertions(+), 2 deletions(-)
+ fs/btrfs/sysfs.c | 2 ++
+ 1 file changed, 2 insertions(+)
 
-diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-index 4602568..c49a500 100644
---- a/fs/btrfs/ctree.c
-+++ b/fs/btrfs/ctree.c
-@@ -1785,10 +1785,12 @@ static noinline int generic_bin_search(struct extent_buffer *eb,
- 			if (!err) {
- 				tmp = (struct btrfs_disk_key *)(kaddr + offset -
- 							map_start);
--			} else {
-+			} else if (err == 1) {
- 				read_extent_buffer(eb, &unaligned,
- 						   offset, sizeof(unaligned));
- 				tmp = &unaligned;
-+			} else {
-+				return err;
- 			}
- 
- 		} else {
-@@ -2825,6 +2827,8 @@ cow_done:
- 		}
- 
- 		ret = key_search(b, key, level, &prev_cmp, &slot);
-+		if (ret < 0)
-+			goto done;
- 
- 		if (level != 0) {
- 			int dec = 0;
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index a3412d6..aa44d3e 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -5333,6 +5333,11 @@ int read_extent_buffer_to_user(struct extent_buffer *eb, void __user *dstv,
- 	return ret;
- }
- 
-+/*
-+ * return 0 if the item is found within a page.
-+ * return 1 if the item spans two page.
-+ * return -EINVAL otherwise.
-+ */
- int map_private_extent_buffer(struct extent_buffer *eb, unsigned long start,
- 			       unsigned long min_len, char **map,
- 			       unsigned long *map_start,
-@@ -5347,7 +5352,7 @@ int map_private_extent_buffer(struct extent_buffer *eb, unsigned long start,
- 		PAGE_SHIFT;
- 
- 	if (i != end_i)
--		return -EINVAL;
-+		return 1;
- 
- 	if (i == 0) {
- 		offset = start_offset;
+diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
+index 4da84ca..7b0fcca 100644
+--- a/fs/btrfs/sysfs.c
++++ b/fs/btrfs/sysfs.c
+@@ -328,6 +328,7 @@ SPACE_INFO_ATTR(bytes_used);
+ SPACE_INFO_ATTR(bytes_pinned);
+ SPACE_INFO_ATTR(bytes_reserved);
+ SPACE_INFO_ATTR(bytes_may_use);
++SPACE_INFO_ATTR(bytes_readonly);
+ SPACE_INFO_ATTR(disk_used);
+ SPACE_INFO_ATTR(disk_total);
+ BTRFS_ATTR(total_bytes_pinned, btrfs_space_info_show_total_bytes_pinned);
+@@ -339,6 +340,7 @@ static struct attribute *space_info_attrs[] = {
+ 	BTRFS_ATTR_PTR(bytes_pinned),
+ 	BTRFS_ATTR_PTR(bytes_reserved),
+ 	BTRFS_ATTR_PTR(bytes_may_use),
++	BTRFS_ATTR_PTR(bytes_readonly),
+ 	BTRFS_ATTR_PTR(disk_used),
+ 	BTRFS_ATTR_PTR(disk_total),
+ 	BTRFS_ATTR_PTR(total_bytes_pinned),
 -- 
-2.5.5
+1.8.3.1
+
+
 

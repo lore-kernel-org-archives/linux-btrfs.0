@@ -1,131 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lf0-f45.google.com ([209.85.215.45]:36612 "EHLO
-	mail-lf0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752743AbcFURXi (ORCPT
+Received: from fallback4.mail.ru ([94.100.181.169]:34098 "EHLO
+	fallback4.mail.ru" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751374AbcFUXbL (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 21 Jun 2016 13:23:38 -0400
-Received: by mail-lf0-f45.google.com with SMTP id q132so33928706lfe.3
-        for <linux-btrfs@vger.kernel.org>; Tue, 21 Jun 2016 10:23:36 -0700 (PDT)
-Received: from intelfx-laptop.local ([77.41.63.43])
-        by smtp.gmail.com with ESMTPSA id dw5sm1773825lbc.26.2016.06.21.10.23.34
-        for <linux-btrfs@vger.kernel.org>
-        (version=TLS1_2 cipher=ECDHE-RSA-CHACHA20-POLY1305 bits=256/256);
-        Tue, 21 Jun 2016 10:23:34 -0700 (PDT)
-Message-ID: <1466529808.27445.14.camel@intelfx.name>
-Subject: Rescue a single-device btrfs instance with zeroed tree root
-From: Ivan Shapovalov <intelfx@intelfx.name>
-Reply-To: intelfx@intelfx.name
+	Tue, 21 Jun 2016 19:31:11 -0400
+Received: from smtp21.mail.ru (smtp21.mail.ru [94.100.179.250])
+	by fallback4.mail.ru (mPOP.Fallback_MX) with ESMTP id 1991E1E4028B
+	for <linux-btrfs@vger.kernel.org>; Wed, 22 Jun 2016 02:31:06 +0300 (MSK)
+Received: from 82-169-65-155.ip.telfort.nl ([82.169.65.155]:44058 helo=centurion.home)
+	by smtp21.mail.ru with esmtpa (envelope-from <dma_k@mail.ru>)
+	id 1bFV8A-00024h-JM
+	for linux-btrfs@vger.kernel.org; Wed, 22 Jun 2016 02:30:55 +0300
+Received: from [192.168.1.85] (Furia.home [192.168.1.85])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+	(No client certificate requested)
+	by centurion.home (Postfix) with ESMTPSA id E4F121DCF99
+	for <linux-btrfs@vger.kernel.org>; Wed, 22 Jun 2016 01:30:51 +0200 (CEST)
+Subject: Re: Is "btrfs balance start" truly asynchronous?
 To: linux-btrfs@vger.kernel.org
-Date: Tue, 21 Jun 2016 20:23:28 +0300
-Content-Type: multipart/signed; micalg="pgp-sha512";
-	protocol="application/pgp-signature"; boundary="=-dZenbF97IXtiqnbShwnW"
-Mime-Version: 1.0
+References: <f68639e5a41343c04fa4d76f3fb14370@www.centurion.link>
+ <pan$7df97$9174e96e$7848d28b$295d4358@cox.net>
+ <bc9cdbdf-060b-e903-0c74-c2b6f1f92077@gmail.com>
+ <20160621113339.GA3325@carfax.org.uk>
+ <176a9733-ade2-d3a6-a9aa-1476d6afb3e1@gmail.com>
+ <57693E72.1090706@cobb.uk.net>
+From: Dmitry Katsubo <dma_k@mail.ru>
+Message-ID: <5769CE2E.2000306@mail.ru>
+Date: Wed, 22 Jun 2016 01:30:54 +0200
+MIME-Version: 1.0
+In-Reply-To: <57693E72.1090706@cobb.uk.net>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On 2016-06-21 15:17, Graham Cobb wrote:
+> On 21/06/16 12:51, Austin S. Hemmelgarn wrote:
+>> The scrub design works, but the whole state file thing has some rather
+>> irritating side effects and other implications, and developed out of
+>> requirements that aren't present for balance (it might be nice to check
+>> how many chunks actually got balanced after the fact, but it's not
+>> absolutely necessary).
+> 
+> Actually, that would be **really** useful.  I have been experimenting
+> with cancelling balances after a certain time (as part of my
+> "balance-slowly" script).  I have got it working, just using bash
+> scripting, but it means my script does not know whether any work has
+> actually been done by the balance run which was cancelled (if no work
+> was done, but it timed out anyway, there is probably no point trying
+> again with the same timeout later!).
 
---=-dZenbF97IXtiqnbShwnW
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+Additionally it would be nice if balance/scrub reports the status via
+/proc in human readable manner (similar to /proc/mdstat).
 
-Hello,
-
-So this is another case of "I lost my partition and do not have
-backups". More precisely, _this_ is the backup and it turned out to be
-damaged.
-
-(The backup was made by partclone.btrfs. Together with a zeroed out
-tree root, this asks for a bug in partclone...)
-
-So: the tree root is zeroes, backup roots are zeroes too,
-btrfs-find-root only reports blocks of level 0 (needed is 1).
-Is there something that can be done? Maybe it is possible to
-reconstruct the root from its children?
-Operations log following.
-Please Cc: me in replies as I'm not subscribed to the list.
-
-1. regular mount
-
-# mount /dev/loop0p3 /mnt/temp
-
-=3D=3D=3D dmesg =3D=3D=3D
-[106737.299592] BTRFS info (device loop0p3): disk space caching is enabled
-[106737.299604] BTRFS: has skinny extents
-[106737.299884] BTRFS error (device loop0p3): bad tree block start 0 162633=
-449472
-[106737.299888] BTRFS: failed to read tree root on loop0p3
-[106737.314359] BTRFS: open_ctree failed
-=3D=3D=3D end dmesg =3D=3D=3D
-
-2. mount with -o recovery
-
-# mount -o recovery /dev/loop0p3 /mnt/temp
-
-=3D=3D=3D dmesg =3D=3D=3D
-[106742.305720] BTRFS warning (device loop0p3): 'recovery' is deprecated, u=
-se 'usebackuproot' instead
-[106742.305722] BTRFS info (device loop0p3): trying to use backup root at m=
-ount time
-[106742.305724] BTRFS info (device loop0p3): disk space caching is enabled
-[106742.305725] BTRFS: has skinny extents
-[106742.306056] BTRFS error (device loop0p3): bad tree block start 0 162633=
-449472
-[106742.306060] BTRFS: failed to read tree root on loop0p3
-[106742.306069] BTRFS error (device loop0p3): bad tree block start 0 162633=
-449472
-[106742.306071] BTRFS: failed to read tree root on loop0p3
-[106742.306084] BTRFS error (device loop0p3): bad tree block start 0 162632=
-237056
-[106742.306086] BTRFS: failed to read tree root on loop0p3
-[106742.306097] BTRFS error (device loop0p3): bad tree block start 0 162626=
-682880
-[106742.306100] BTRFS: failed to read tree root on loop0p3
-[106742.306111] BTRFS error (device loop0p3): bad tree block start 0 162609=
-168384
-[106742.306114] BTRFS: failed to read tree root on loop0p3
-[106742.327272] BTRFS: open_ctree failed
-=3D=3D=3D end dmesg =3D=3D=3D
-
-
-3. btrfs-find-root
-
-# btrfs-find-root /dev/loop0p3
-Couldn't read tree root
-Superblock thinks the generation is 22332
-Superblock thinks the level is 1
-Well block 162633646080(gen: 22332 level: 0) seems good, but generation/lev=
-el doesn't match, want gen: 22332 level: 1
-Well block 162633596928(gen: 22332 level: 0) seems good, but generation/lev=
-el doesn't match, want gen: 22332 level: 1
-Well block 162633515008(gen: 22332 level: 0) seems good, but generation/lev=
-el doesn't match, want gen: 22332 level: 1
-
-Thanks,
---=20
-
-Ivan Shapovalov / intelfx /
---=-dZenbF97IXtiqnbShwnW
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: This is a digitally signed message part
-Content-Transfer-Encoding: 7bit
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2
-
-iQIcBAABCgAGBQJXaXgQAAoJEHveF8jk4w6dV6wQAKzZjXR+7ifq29RGTXcEZEq2
-xG0Yp54FCRu0cAKq69WDbkC1VIUrt4/ZXIplUpwDBsSVYTbcUbjB2Fydl5S9cagX
-x9Nf3Td5IZV1rdzjkIj6pw4H7+6SMj2UKHmjVDwjzDJ5Uo1i6Rq1yMAbi8TqYd31
-ARa0LJ2cQnOmwa/Xy3B0phNiahjSTbRcsksZ8g6YHeIvEWz4sPbz/Y5orQ2+s3o8
-ZBYz3sWh020wSLILKdTvyxAxmWWv5Xv9kxCcfVQBfKiVO/Anj/EZS8FPIohUZavR
-GMBKSjc63um2e4eEHBYGnH102WWxZruHnrlArKRy63UEb3U9R1Ii2CGg4LMzV3kV
-Y8344fDi0a0/+UAs5XWt4LUmgbg5sF6cDWOSkmINZFgsdmsjXQns3wsaFM/qQeJg
-mXtTxfuTHNx7f/MwOo7RSyp3zbj9uzefz2L7HU0XuPAqC39eMZxP8fi9mIUaylWy
-loymFuUvV9ep1rMmG0K9zkYikMZhv1hih2qBdN6DbgwKnat0Ml/yNqQHzTR/k0Zr
-nst7gK3tB7BncZwHS3VtyAUHcvRsQuEwncxVJ2QyZUSxQCFsrF33ZB4l2YMKtKWd
-cEZ4aX/vkE8kuMJS3hJIjuWrQFZmMp8sMfFDc0sX5Xlzdv7gtmTMM+SwJI6e9dh5
-dkmOyh5T7PCnYxojv4LG
-=cm9U
------END PGP SIGNATURE-----
-
---=-dZenbF97IXtiqnbShwnW--
-
+-- 
+With best regards,
+Dmitry

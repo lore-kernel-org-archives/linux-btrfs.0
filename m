@@ -1,23 +1,35 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from bombadil.infradead.org ([198.137.202.9]:57630 "EHLO
-	bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751531AbcFVHQT (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:41085 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1750978AbcFVH3q (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 22 Jun 2016 03:16:19 -0400
-Date: Tue, 21 Jun 2016 23:24:03 -0700
-From: Christoph Hellwig <hch@infradead.org>
-To: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
-Cc: linux-btrfs@vger.kernel.org
+	Wed, 22 Jun 2016 03:29:46 -0400
 Subject: Re: [PATCH] btrfs: fix disk_i_size update bug when fallocate() fails
-Message-ID: <20160622062403.GA16380@infradead.org>
+To: Christoph Hellwig <hch@infradead.org>
 References: <1466560621-18133-1-git-send-email-wangxg.fnst@cn.fujitsu.com>
+ <20160622062403.GA16380@infradead.org>
+CC: <linux-btrfs@vger.kernel.org>
+From: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
+Message-ID: <576A3E0A.6020101@cn.fujitsu.com>
+Date: Wed, 22 Jun 2016 15:28:10 +0800
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1466560621-18133-1-git-send-email-wangxg.fnst@cn.fujitsu.com>
+In-Reply-To: <20160622062403.GA16380@infradead.org>
+Content-Type: text/plain; charset="windows-1252"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jun 22, 2016 at 09:57:01AM +0800, Wang Xiaoguang wrote:
-> And below test case can reveal this bug:
+hello,
 
-Please wire this up for xfstests, thanks!
+On 06/22/2016 02:24 PM, Christoph Hellwig wrote:
+> On Wed, Jun 22, 2016 at 09:57:01AM +0800, Wang Xiaoguang wrote:
+>> And below test case can reveal this bug:
+> Please wire this up for xfstests, thanks!
+OK.
+
+Regards,
+Xiaoguang Wang
+>
+>
+
+
+

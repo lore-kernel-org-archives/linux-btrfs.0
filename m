@@ -1,107 +1,98 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:28765 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752238AbcF1UqQ (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:40265 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752053AbcFWNBL (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 28 Jun 2016 16:46:16 -0400
-From: Liu Bo <bo.li.liu@oracle.com>
+	Thu, 23 Jun 2016 09:01:11 -0400
+From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
-Cc: Chandan Rajendra <chandan@linux.vnet.ibm.com>
-Subject: [PATCH] Btrfs: fix double free of fs root
-Date: Tue, 28 Jun 2016 13:44:38 -0700
-Message-Id: <1467146678-29046-1-git-send-email-bo.li.liu@oracle.com>
+Cc: clm@fb.com, dsterba@suse.cz
+Subject: [PATCH RFC] don't background blkdev_put()
+Date: Thu, 23 Jun 2016 21:01:53 +0800
+Message-Id: <1466686913-7832-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I got this warning while mounting a btrfs image,
+As of now we are calling blkdev_put() under call_rcu,
+actually which isn't necessary. Unless I am missing
+something. This is a try out patch to know the same.
 
-[ 3020.509606] ------------[ cut here ]------------
-[ 3020.510107] WARNING: CPU: 3 PID: 5581 at lib/idr.c:1051 ida_remove+0xca/0x190
-[ 3020.510853] ida_remove called for id=42 which is not allocated.
-[ 3020.511466] Modules linked in:
-[ 3020.511802] CPU: 3 PID: 5581 Comm: mount Not tainted 4.7.0-rc5+ #274
-[ 3020.512438] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS 1.8.2-20150714_191134- 04/01/2014
-[ 3020.513385]  0000000000000286 0000000021295d86 ffff88006c66b8f0 ffffffff8182ba5a
-[ 3020.514153]  0000000000000000 0000000000000009 ffff88006c66b930 ffffffff810e0ed7
-[ 3020.514928]  0000041b00000000 ffffffff8289a8c0 ffff88007f437880 0000000000000000
-[ 3020.515717] Call Trace:
-[ 3020.515965]  [<ffffffff8182ba5a>] dump_stack+0xc9/0x13f
-[ 3020.516487]  [<ffffffff810e0ed7>] __warn+0x147/0x160
-[ 3020.517005]  [<ffffffff810e0f4f>] warn_slowpath_fmt+0x5f/0x80
-[ 3020.517572]  [<ffffffff8182e6ca>] ida_remove+0xca/0x190
-[ 3020.518075]  [<ffffffff813a2bcc>] free_anon_bdev+0x2c/0x60
-[ 3020.518609]  [<ffffffff81657a9f>] free_fs_root+0x13f/0x160
-[ 3020.519138]  [<ffffffff8165c679>] btrfs_get_fs_root+0x379/0x3d0
-[ 3020.519710]  [<ffffffff81e6e975>] ? __mutex_unlock_slowpath+0x155/0x2c0
-[ 3020.520366]  [<ffffffff816615b1>] open_ctree+0x2e91/0x3200
-[ 3020.520965]  [<ffffffff8161ede2>] btrfs_mount+0x1322/0x15b0
-[ 3020.521536]  [<ffffffff81e60e74>] ? kmemleak_alloc_percpu+0x44/0x170
-[ 3020.522167]  [<ffffffff8115f5e1>] ? lockdep_init_map+0x61/0x210
-[ 3020.522780]  [<ffffffff813a4f59>] mount_fs+0x49/0x2c0
-[ 3020.523305]  [<ffffffff813d840c>] vfs_kern_mount+0xac/0x1b0
-[ 3020.523872]  [<ffffffff8161dee1>] btrfs_mount+0x421/0x15b0
-[ 3020.524402]  [<ffffffff81e60e74>] ? kmemleak_alloc_percpu+0x44/0x170
-[ 3020.525045]  [<ffffffff8115f5e1>] ? lockdep_init_map+0x61/0x210
-[ 3020.525657]  [<ffffffff8115f5e1>] ? lockdep_init_map+0x61/0x210
-[ 3020.526289]  [<ffffffff813a4f59>] mount_fs+0x49/0x2c0
-[ 3020.526803]  [<ffffffff813d840c>] vfs_kern_mount+0xac/0x1b0
-[ 3020.527365]  [<ffffffff813dc27a>] do_mount+0x41a/0x1770
-[ 3020.527899]  [<ffffffff812e800d>] ? strndup_user+0x6d/0xc0
-[ 3020.528447]  [<ffffffff812e7f68>] ? memdup_user+0x78/0xb0
-[ 3020.528987]  [<ffffffff813ddad0>] SyS_mount+0x150/0x160
-[ 3020.529493]  [<ffffffff81e72b7c>] entry_SYSCALL_64_fastpath+0x1f/0xbd
+Ran successfully the fstests.
 
-It turns out that we free fs root twice, btrfs_init_fs_root() calls
-free_anon_bdev(root->anon_dev) and later then btrfs_get_fs_root() cals
-free_fs_root which does another free_anon_bdev() and it ends up with the
-above warning.
+This should be applied on top of recent other patches,
+  [PATCH 1/2] btrfs: reorg btrfs_close_one_device()
+  [PATCH v3 2/2] btrfs: make sure device is synced before return
 
-Instead of reset root->anon_dev to 0 after free_anon_bdev(), we can let
-btrfs_init_fs_root() return directly since its callers have already done
-the free job by calling free_fs_root().
-
-Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
- fs/btrfs/disk-io.c | 12 +++---------
- 1 file changed, 3 insertions(+), 9 deletions(-)
+ fs/btrfs/volumes.c | 28 +++++++++++++++++++++++-----
+ 1 file changed, 23 insertions(+), 5 deletions(-)
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 60ce119..6c88c63 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -1600,14 +1600,14 @@ int btrfs_init_fs_root(struct btrfs_root *root)
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index e0ad29d6fe9a..63036702ea18 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -834,10 +834,6 @@ static void __free_device(struct work_struct *work)
+ 	struct btrfs_device *device;
  
- 	ret = get_anon_bdev(&root->anon_dev);
- 	if (ret)
--		goto free_writers;
-+		goto fail;
+ 	device = container_of(work, struct btrfs_device, rcu_work);
+-
+-	if (device->bdev)
+-		blkdev_put(device->bdev, device->mode);
+-
+ 	rcu_string_free(device->name);
+ 	kfree(device);
+ }
+@@ -874,6 +870,8 @@ static void btrfs_close_one_device(struct btrfs_device *device)
+ 		sync_blockdev(device->bdev);
+ 		invalidate_bdev(device->bdev);
+ 	}
++	if (device->bdev)
++		blkdev_put(device->bdev, device->mode);
  
- 	mutex_lock(&root->objectid_mutex);
- 	ret = btrfs_find_highest_objectid(root,
- 					&root->highest_objectid);
- 	if (ret) {
- 		mutex_unlock(&root->objectid_mutex);
--		goto free_root_dev;
-+		goto fail;
+ 	new_device = btrfs_alloc_device(NULL, &device->devid,
+ 					device->uuid);
+@@ -1931,6 +1929,13 @@ int btrfs_rm_device(struct btrfs_root *root, char *device_path, u64 devid)
+ 		btrfs_sysfs_rm_device_link(root->fs_info->fs_devices, device);
  	}
  
- 	ASSERT(root->highest_objectid <= BTRFS_LAST_FREE_OBJECTID);
-@@ -1615,14 +1615,8 @@ int btrfs_init_fs_root(struct btrfs_root *root)
- 	mutex_unlock(&root->objectid_mutex);
++	if (device->bdev && device->writeable) {
++		sync_blockdev(device->bdev);
++		invalidate_bdev(device->bdev);
++	}
++	if (device->bdev)
++		blkdev_put(device->bdev, device->mode);
++
+ 	call_rcu(&device->rcu, free_device);
  
- 	return 0;
--
--free_root_dev:
--	free_anon_bdev(root->anon_dev);
--free_writers:
--	btrfs_free_subvolume_writers(root->subv_writers);
- fail:
--	kfree(root->free_ino_ctl);
--	kfree(root->free_ino_pinned);
-+	/* the caller is responsible to call free_fs_root */
- 	return ret;
+ 	num_devices = btrfs_super_num_devices(root->fs_info->super_copy) - 1;
+@@ -2024,6 +2029,13 @@ void btrfs_rm_dev_replace_free_srcdev(struct btrfs_fs_info *fs_info,
+ 		/* zero out the old super if it is writable */
+ 		btrfs_scratch_superblocks(srcdev->bdev, srcdev->name->str);
+ 	}
++
++	if (srcdev->bdev && srcdev->writeable) {
++		sync_blockdev(srcdev->bdev);
++		invalidate_bdev(srcdev->bdev);
++	}
++	if (srcdev->bdev)
++		blkdev_put(srcdev->bdev, srcdev->mode);
+ 	call_rcu(&srcdev->rcu, free_device);
+ 
+ 	/*
+@@ -2079,6 +2091,12 @@ void btrfs_destroy_dev_replace_tgtdev(struct btrfs_fs_info *fs_info,
+ 	 * the device_list_mutex lock.
+ 	 */
+ 	btrfs_scratch_superblocks(tgtdev->bdev, tgtdev->name->str);
++	if (tgtdev->bdev && tgtdev->writeable) {
++		sync_blockdev(tgtdev->bdev);
++		invalidate_bdev(tgtdev->bdev);
++	}
++	if (tgtdev->bdev)
++		blkdev_put(tgtdev->bdev, tgtdev->mode);
+ 	call_rcu(&tgtdev->rcu, free_device);
  }
  
 -- 
-2.5.5
+2.7.0
 

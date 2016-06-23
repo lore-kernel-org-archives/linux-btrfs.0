@@ -1,120 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:21129 "EHLO
+Received: from userp1040.oracle.com ([156.151.31.81]:21609 "EHLO
 	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750964AbcFNKyv (ORCPT
+	with ESMTP id S1752112AbcFWMx1 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 14 Jun 2016 06:54:51 -0400
+	Thu, 23 Jun 2016 08:53:27 -0400
 From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
-Cc: clm@fb.com
-Subject: [PATCH 1/2] btrfs: reorg btrfs_close_one_device()
-Date: Tue, 14 Jun 2016 18:55:25 +0800
-Message-Id: <1465901726-15490-1-git-send-email-anand.jain@oracle.com>
-In-Reply-To: <1e7bc117-aaa3-c77f-b933-cd0c37b5ce68@oracle.com>
-References: <1e7bc117-aaa3-c77f-b933-cd0c37b5ce68@oracle.com>
+Cc: dsterba@suse.cz, holger@applied-asynchrony.com, clm@fb.com,
+        xiaolong.ye@intel.com
+Subject: [PATCH v3 2/2] btrfs: make sure device is synced before return
+Date: Thu, 23 Jun 2016 20:54:07 +0800
+Message-Id: <1466686447-7780-1-git-send-email-anand.jain@oracle.com>
+In-Reply-To: <1465901726-15490-2-git-send-email-anand.jain@oracle.com>
+References: <1465901726-15490-2-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Moves closer to the caller and removes declaration
+An inconsistent behavior due to stale reads from the
+disk was reported
+
+  mail-archive.com/linux-btrfs@vger.kernel.org/msg54188.html
+
+This patch will make sure devices are synced before
+return in the unmount thread.
 
 Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
- fs/btrfs/volumes.c | 71 +++++++++++++++++++++++++++---------------------------
- 1 file changed, 35 insertions(+), 36 deletions(-)
+ v2: Also to make sure bdev_closing is set it needs rcu_barrier(),
+     restored rcu_barrier().
+ v3: Removed the complicated timed-wait on blkdev_put code,
+     but make synced and invalidated before umount is returned.
+     So sorry that I have to change the title of this patch
+     as well (was: btrfs: wait for bdev put).
+
+ fs/btrfs/volumes.c | 5 +++++
+ 1 file changed, 5 insertions(+)
 
 diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index a637e99e4c6b..a4e8d48acd4b 100644
+index 604daf315669..f741ade130a4 100644
 --- a/fs/btrfs/volumes.c
 +++ b/fs/btrfs/volumes.c
-@@ -140,7 +140,6 @@ static int btrfs_relocate_sys_chunks(struct btrfs_root *root);
- static void __btrfs_reset_dev_stats(struct btrfs_device *dev);
- static void btrfs_dev_stat_print_on_error(struct btrfs_device *dev);
- static void btrfs_dev_stat_print_on_load(struct btrfs_device *device);
--static void btrfs_close_one_device(struct btrfs_device *device);
+@@ -870,6 +870,11 @@ static void btrfs_close_one_device(struct btrfs_device *device)
+ 	if (device->missing)
+ 		fs_devices->missing_devices--;
  
- DEFINE_MUTEX(uuid_mutex);
- static LIST_HEAD(fs_uuids);
-@@ -853,6 +852,41 @@ static void free_device(struct rcu_head *head)
- 	schedule_work(&device->rcu_work);
- }
- 
-+static void btrfs_close_one_device(struct btrfs_device *device)
-+{
-+	struct btrfs_fs_devices *fs_devices = device->fs_devices;
-+	struct btrfs_device *new_device;
-+	struct rcu_string *name;
-+
-+	if (device->bdev)
-+		fs_devices->open_devices--;
-+
-+	if (device->writeable &&
-+	    device->devid != BTRFS_DEV_REPLACE_DEVID) {
-+		list_del_init(&device->dev_alloc_list);
-+		fs_devices->rw_devices--;
++	if (device->bdev && device->writeable) {
++		sync_blockdev(device->bdev);
++		invalidate_bdev(device->bdev);
 +	}
 +
-+	if (device->missing)
-+		fs_devices->missing_devices--;
-+
-+	new_device = btrfs_alloc_device(NULL, &device->devid,
-+					device->uuid);
-+	BUG_ON(IS_ERR(new_device)); /* -ENOMEM */
-+
-+	/* Safe because we are under uuid_mutex */
-+	if (device->name) {
-+		name = rcu_string_strdup(device->name->str, GFP_NOFS);
-+		BUG_ON(!name); /* -ENOMEM */
-+		rcu_assign_pointer(new_device->name, name);
-+	}
-+
-+	list_replace_rcu(&device->dev_list, &new_device->dev_list);
-+	new_device->fs_devices = device->fs_devices;
-+
-+	call_rcu(&device->rcu, free_device);
-+}
-+
- static int __btrfs_close_devices(struct btrfs_fs_devices *fs_devices)
- {
- 	struct btrfs_device *device, *tmp;
-@@ -7054,38 +7088,3 @@ void btrfs_reset_fs_info_ptr(struct btrfs_fs_info *fs_info)
- 		fs_devices = fs_devices->seed;
- 	}
- }
--
--static void btrfs_close_one_device(struct btrfs_device *device)
--{
--	struct btrfs_fs_devices *fs_devices = device->fs_devices;
--	struct btrfs_device *new_device;
--	struct rcu_string *name;
--
--	if (device->bdev)
--		fs_devices->open_devices--;
--
--	if (device->writeable &&
--	    device->devid != BTRFS_DEV_REPLACE_DEVID) {
--		list_del_init(&device->dev_alloc_list);
--		fs_devices->rw_devices--;
--	}
--
--	if (device->missing)
--		fs_devices->missing_devices--;
--
--	new_device = btrfs_alloc_device(NULL, &device->devid,
--					device->uuid);
--	BUG_ON(IS_ERR(new_device)); /* -ENOMEM */
--
--	/* Safe because we are under uuid_mutex */
--	if (device->name) {
--		name = rcu_string_strdup(device->name->str, GFP_NOFS);
--		BUG_ON(!name); /* -ENOMEM */
--		rcu_assign_pointer(new_device->name, name);
--	}
--
--	list_replace_rcu(&device->dev_list, &new_device->dev_list);
--	new_device->fs_devices = device->fs_devices;
--
--	call_rcu(&device->rcu, free_device);
--}
+ 	new_device = btrfs_alloc_device(NULL, &device->devid,
+ 					device->uuid);
+ 	BUG_ON(IS_ERR(new_device)); /* -ENOMEM */
 -- 
 2.7.0
 

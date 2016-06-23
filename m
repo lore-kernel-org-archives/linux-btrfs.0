@@ -1,332 +1,518 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from syrinx.knorrie.org ([82.94.188.77]:56012 "EHLO
-	syrinx.knorrie.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751188AbcFVXOP (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:4144 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1750824AbcFWBUz (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 22 Jun 2016 19:14:15 -0400
-Subject: Re: btrfs: page allocation failure: order:1, mode:0x2204020
-To: dsterba@suse.cz, linux-btrfs <linux-btrfs@vger.kernel.org>
-References: <b0e70e1a-6eb5-9f9f-86e0-9049ae12f470@mendix.com>
- <20160620124902.GO4915@twin.jikos.cz>
-From: Hans van Kranenburg <hans.van.kranenburg@mendix.com>
-Message-ID: <71f4ab7b-83ba-7ed7-ecc3-1d8c3cd33068@mendix.com>
-Date: Thu, 23 Jun 2016 01:14:08 +0200
+	Wed, 22 Jun 2016 21:20:55 -0400
+Subject: Re: [RFC][PATCH] btrfs-progs: inspect: new subcommand to dump chunks
+To: David Sterba <dsterba@suse.com>, <linux-btrfs@vger.kernel.org>
+References: <1466616406-28087-1-git-send-email-dsterba@suse.com>
+CC: David Sterba <dsterba@suse.cz>
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Message-ID: <02c731c5-f784-41f4-8cd1-4cf25d7f32e7@cn.fujitsu.com>
+Date: Thu, 23 Jun 2016 09:20:40 +0800
 MIME-Version: 1.0
-In-Reply-To: <20160620124902.GO4915@twin.jikos.cz>
-Content-Type: text/plain; charset=windows-1252; format=flowed
+In-Reply-To: <1466616406-28087-1-git-send-email-dsterba@suse.com>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 06/20/2016 02:49 PM, David Sterba wrote:
-> On Sat, Jun 18, 2016 at 08:47:55PM +0200, Hans van Kranenburg wrote:
->> Last night, one of my btrfs filesystems went read-only after a memory
->> allocation failure (logging attached).
+
+
+At 06/23/2016 01:26 AM, David Sterba wrote:
+> From: David Sterba <dsterba@suse.cz>
 >
-> According to the logs, the allocation itself happens out of btrfs so we
-> can't do much here.
+> Hi,
 >
-> More specifically, when creating a new subvolume and requesting an
-> anonymous block device (via get_anon_bdev), there's a call to request a
-> free id for it. This could ask for "order-1" ie 8kb of contiguous
-> memory. And it failed.
+> the chunk dump is a useful thing, for debugging or balance filters.
+
+Yes, quite useful.
+I don't ever need to manually check btrfs-debug-tree output to figure 
+out the dev-extent layout.
+
+But according to the output, it's more like dev-extent dump, not chunk dump.
+
+It's better to make things more clear for objects at different logical 
+level.
+
 >
-> This depends on memory fragmentation, ie. how the pages are allocated
-> and freed over time. Tweaking vm.min_free_kbytes could help but it's not
-> designed to prevent memory allocations in such scenario.
+> Example output:
 >
-> The id range sturctures themselves do not need more than a 4k page, but
-> the slab cache tries to provide more objects per slab, I see this on my
-> box right now:
+> Chunks on device id: 1
+> PNumber            Type        PStart        Length          PEnd     Age         LStart  Usage
+> -----------------------------------------------------------------------------------------------
+>       0   System/RAID1        1.00MiB      32.00MiB      33.00MiB      47        1.40TiB   0.06
+
+[Mixed chunk/dev-extent output]
+For "PStart/Length/Pend/Lstart" that's OK.
+(Although I prefer "Plength" to "Length", as it's a little confusing for 
+chunk logical length and dev_extent physical length)
+
+Since "pstart" = key.offset, "length" = dev_extent_length, "Pend" = 
+pstart + length and "Lstart" = dev_extent_chunk_offset, these values are 
+all straightforward.
+
+But for Usage, it's completely a chunk/block group level thing, so 
+personally speaking it's better not to output per chunk usage in 
+dev-extent dump
+
+If there is real "chunk dump", then that's the best place to output 
+per-chunk "usage".
+
+For dev-extent level usage, it should be the usage of a device, not per 
+chunk.
+
+["Age" calculation]
+Another concern is about "age", since there is no generation in 
+chunk_item nor dev_extent, so you're using logical bytenr as a hint.
+
+This method implies the fact that btrfs will always allocates new chunk 
+with increasing logical bytenr, never reuse lower logical bytenr.
+
+Such behavior provides the basis for a lot of other btrfs functions, 
+like balance/qgroup rescan.
+IMHO it won't be changed in any time soon. But I'm still a little 
+concerned about using such assumption.
+
+
+Since "age" here is more like a sorting index, not the generation when 
+the chunk is created.
+It may not really reflect how long one chunk really lived.
+
+It maybe completely OK for most people, but at least it's not as 
+straightforward as generation.
+
+
+[Support for offline btrfs]
+BTW, it's also a good idea to support not only mounted fs, but also 
+offlined one.
+
+As for offlined one, no need to bother about the tree search ioctl, just 
+straightforward search_slots().
+(That's why I like offline btrfs tools)
+
+Thanks,
+Qu
+
+>       1 Metadata/RAID1       33.00MiB       1.00GiB       1.03GiB      31        1.36TiB  64.03
+>       2 Metadata/RAID1        1.03GiB      32.00MiB       1.06GiB      36        1.36TiB  77.28
+>       3     Data/single       1.06GiB       1.00GiB       2.06GiB      12      422.30GiB  78.90
+>       4     Data/single       2.06GiB       1.00GiB       3.06GiB      11      420.30GiB  78.47
+> ...
 >
-> Excerpt from /proc/slabinfo:
+> (full output is at http://susepaste.org/view/raw/089a9877)
 >
-> idr_layer_cache      474    486   2096    3    2
+> This patch does the basic output, not filtering or sorting besides physical and
+> logical offset. There are possiblities to do more or enhance the output (eg.
+> starting with logical chunk and list the related physcial chunks together).
+> Or filter by type/profile, or understand the balance filters format.
 >
-> where  3 == objperslab and 2 == pages per slab, which corresponds to the
-> 8kb. This seems to depend on internal slab cache logic, and nothing I'd
-> like to go chaning right now.
-
-Aha, interesting. The output of "sort -nk 6 < /proc/slabinfo" shows me 
-that most of them use the 4k.
-
-> [...]
->> I've seen this happen once before somewhere else, also during snapshot
->> creation, also with a 4.5.x kernel.
-
-Speaking of the devil... Yesterday another one crashed, and this one is 
-using Debian 3.16.7-ckt25-2. Errors attached.
-
->> There's a bug report at Debian, in which is suggested to increase the
->> value of vm.min_free_kbytes:
->> https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=666021
+> As it is now, it's per-device dump of physical layout, which was the original
+> idea.
 >
-> [...]
+> Printing 'usage' is not default as it's quite slow, it uses the search ioctl
+> and probably not in the best way, or there's some other issue in the
+> implementation.
 >
->> [2363000.815554] Node 0 Normal: 2424*4kB (U) 0*8kB 0*16kB 0*32kB 0*64kB
->> 0*128kB 0*256kB 0*512kB 0*1024kB 0*2048kB 0*4096kB = 9696kB
+> I'll add the patch to devel branch but will not add it for any particular
+> release yet, I'd like some feedback first. Thanks.
 >
-> Just to confirm the fragmentation, there are no page orders higher than
-> 0 (ie.  8k and up).
+> -------------
+> New command 'btrfs inspect-internal dump-chunks' will dump layout of
+> chunks as stored on the devices. This corresponds to the physical
+> layout, sorted by the physical offset. The block group usage can be
+> shown as well, but the search is too slow so it's off by default.
 >
-> So, technically not a btrfs bug but we could get affected by it badly.
+> If the physical offset sorting is selected, the empty space between
+> chunks is also shown.
+>
+> Signed-off-by: David Sterba <dsterba@suse.com>
+> ---
+>  cmds-inspect.c | 364 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+>  1 file changed, 364 insertions(+)
+>
+> diff --git a/cmds-inspect.c b/cmds-inspect.c
+> index dd7b9dd278f2..4eace63d8517 100644
+> --- a/cmds-inspect.c
+> +++ b/cmds-inspect.c
+> @@ -623,6 +623,368 @@ static int cmd_inspect_min_dev_size(int argc, char **argv)
+>  	return !!ret;
+>  }
+>
+> +static const char * const cmd_dump_chunks_usage[] = {
+> +	"btrfs inspect-internal chunk-stats [options] <path>",
+> +	"Show chunks (block groups) layout",
+> +	"Show chunks (block groups) layout for all devices",
+> +	"",
+> +	HELPINFO_UNITS_LONG,
+> +	"--sort=MODE        sort by the physical or logical chunk start",
+> +	"                   MODE is one of pstart or lstart (default: pstart)",
+> +	"--usage            show usage per block group, note this can be slow",
+> +	NULL
+> +};
+> +
+> +enum {
+> +	CHUNK_SORT_PSTART,
+> +	CHUNK_SORT_LSTART,
+> +	CHUNK_SORT_DEFAULT = CHUNK_SORT_PSTART
+> +};
+> +
+> +struct dump_chunks_entry {
+> +	u64 devid;
+> +	u64 start;
+> +	u64 lstart;
+> +	u64 length;
+> +	u64 flags;
+> +	u64 age;
+> +	u64 used;
+> +	u32 pnumber;
+> +};
+> +
+> +struct dump_chunks_ctx {
+> +	unsigned length;
+> +	unsigned size;
+> +	struct dump_chunks_entry *stats;
+> +};
+> +
+> +int cmp_cse_devid_start(const void *va, const void *vb)
+> +{
+> +	const struct dump_chunks_entry *a = va;
+> +	const struct dump_chunks_entry *b = vb;
+> +
+> +	if (a->devid < b->devid)
+> +		return -1;
+> +	if (a->devid > b->devid)
+> +		return 1;
+> +
+> +	if (a->start < b->start)
+> +		return -1;
+> +	if (a->start == b->start) {
+> +		error(
+> +	"chunks start on same offset in the same device: devid %llu start %llu",
+> +		    (unsigned long long)a->devid, (unsigned long long)a->start);
+> +		return 0;
+> +	}
+> +	return 1;
+> +}
+> +
+> +int cmp_cse_devid_lstart(const void *va, const void *vb)
+> +{
+> +	const struct dump_chunks_entry *a = va;
+> +	const struct dump_chunks_entry *b = vb;
+> +
+> +	if (a->devid < b->devid)
+> +		return -1;
+> +	if (a->devid > b->devid)
+> +		return 1;
+> +
+> +	if (a->lstart < b->lstart)
+> +		return -1;
+> +	if (a->lstart == b->lstart) {
+> +		error(
+> +"chunks logically start on same offset in the same device: devid %llu start %llu",
+> +		    (unsigned long long)a->devid, (unsigned long long)a->lstart);
+> +		return 0;
+> +	}
+> +	return 1;
+> +}
+> +
+> +void print_dump_chunks(struct dump_chunks_ctx *ctx, unsigned sort_mode,
+> +		unsigned unit_mode, int with_usage)
+> +{
+> +	u64 devid;
+> +	struct dump_chunks_entry e;
+> +	int i;
+> +	int chidx;
+> +	u64 lastend = 0;
+> +	u64 age;
+> +
+> +	/*
+> +	 * Chunks are sorted logically as found by the ioctl, we need to sort
+> +	 * them once to find the physical ordering. This is the default mode.
+> +	 */
+> +	qsort(ctx->stats, ctx->length, sizeof(ctx->stats[0]), cmp_cse_devid_start);
+> +	devid = 0;
+> +	age = 0;
+> +	for (i = 0; i < ctx->length; i++) {
+> +		e = ctx->stats[i];
+> +		if (e.devid != devid) {
+> +			devid = e.devid;
+> +			age = 0;
+> +		}
+> +		ctx->stats[i].pnumber = age;
+> +		age++;
+> +	}
+> +
+> +	if (sort_mode == CHUNK_SORT_LSTART)
+> +		qsort(ctx->stats, ctx->length, sizeof(ctx->stats[0]), cmp_cse_devid_lstart);
+> +
+> +	devid = 0;
+> +	for (i = 0; i < ctx->length; i++) {
+> +		e = ctx->stats[i];
+> +		if (e.devid != devid) {
+> +			devid = e.devid;
+> +			if (i != 0)
+> +				putchar('\n');
+> +			printf("Chunks on device id: %llu\n", devid);
+> +			printf("PNumber            Type        PStart        Length          PEnd     Age         LStart%s\n",
+> +					with_usage ? "  Usage" : "");
+> +			printf("----------------------------------------------------------------------------------------%s\n",
+> +					with_usage ? "-------" : "");
+> +			chidx = 0;
+> +			lastend = 0;
+> +		}
+> +		if (sort_mode == CHUNK_SORT_PSTART && lastend > 0
+> +		    && e.start != lastend) {
+> +			printf("      .           empty             .  ");
+> +			printf("%12s  ",
+> +				pretty_size_mode(e.start - lastend, unit_mode));
+> +			printf("           .       .              .\n");
+> +		}
+> +
+> +		printf("%7u ", e.pnumber);
+> +		printf("%8s/%-6s  ", btrfs_group_type_str(e.flags),
+> +				btrfs_group_profile_str(e.flags));
+> +		printf("%12s  ", pretty_size_mode(e.start, unit_mode));
+> +		printf("%12s  ", pretty_size_mode(e.length, unit_mode));
+> +		printf("%12s  ",
+> +			pretty_size_mode(e.start + e.length - 1, unit_mode));
+> +		printf("%6llu ", e.age);
+> +		printf("%14s", pretty_size_mode(e.lstart, unit_mode));
+> +		if (with_usage)
+> +			printf("  %5.2f", (float)e.used / e.length * 100);
+> +		printf("\n");
+> +
+> +		lastend = e.start + e.length;
+> +		chidx++;
+> +	}
+> +}
+> +
+> +static u64 fill_usage(int fd, u64 lstart)
+> +{
+> +	struct btrfs_ioctl_search_args args;
+> +	struct btrfs_ioctl_search_key *sk = &args.key;
+> +	struct btrfs_ioctl_search_header sh;
+> +	struct btrfs_block_group_item *item;
+> +	int ret;
+> +
+> +	memset(&args, 0, sizeof(args));
+> +	sk->tree_id = BTRFS_EXTENT_TREE_OBJECTID;
+> +	sk->min_objectid = lstart;
+> +	sk->max_objectid = lstart;
+> +	sk->min_type = BTRFS_BLOCK_GROUP_ITEM_KEY;
+> +	sk->max_type = BTRFS_BLOCK_GROUP_ITEM_KEY;
+> +	sk->min_offset = 0;
+> +	sk->max_offset = (u64)-1;
+> +	sk->max_transid = (u64)-1;
+> +
+> +	sk->nr_items = 4096;
+> +	ret = ioctl(fd, BTRFS_IOC_TREE_SEARCH, &args);
+> +	if (ret < 0) {
+> +		error("cannot perform the search: %s", strerror(errno));
+> +		return 1;
+> +	}
+> +	if (sk->nr_items == 0) {
+> +		warning("blockgroup %llu not found",
+> +				(unsigned long long)lstart);
+> +		return 0;
+> +	}
+> +	if (sk->nr_items > 1) {
+> +		warning("found more than one blockgroup %llu",
+> +				(unsigned long long)lstart);
+> +	}
+> +
+> +	memcpy(&sh, args.buf, sizeof(sh));
+> +	item = (struct btrfs_block_group_item*)(args.buf + sizeof(sh));
+> +
+> +	return item->used;
+> +}
+> +
+> +static int cmd_dump_chunks(int argc, char **argv)
+> +{
+> +	struct btrfs_ioctl_search_args args;
+> +	struct btrfs_ioctl_search_key *sk = &args.key;
+> +	struct btrfs_ioctl_search_header sh;
+> +	unsigned long off = 0;
+> +	u64 *age = 0;
+> +	unsigned age_size = 128;
+> +	int ret;
+> +	int fd;
+> +	int i;
+> +	int e;
+> +	DIR *dirstream = NULL;
+> +	unsigned unit_mode;
+> +	unsigned sort_mode = 0;
+> +	int with_usage = 0;
+> +	const char *path;
+> +	struct dump_chunks_ctx ctx = {
+> +		.length = 0,
+> +		.size = 1024,
+> +		.stats = NULL
+> +	};
+> +
+> +	unit_mode = get_unit_mode_from_arg(&argc, argv, 0);
+> +
+> +	while (1) {
+> +		int c;
+> +		enum { GETOPT_VAL_SORT = 256, GETOPT_VAL_USAGE };
+> +		static const struct option long_options[] = {
+> +			{"sort", required_argument, NULL, GETOPT_VAL_SORT },
+> +			{"usage", no_argument, NULL, GETOPT_VAL_USAGE },
+> +			{NULL, 0, NULL, 0}
+> +		};
+> +
+> +		c = getopt_long(argc, argv, "", long_options, NULL);
+> +		if (c < 0)
+> +			break;
+> +
+> +		switch (c) {
+> +		case GETOPT_VAL_SORT:
+> +			if (strcmp(optarg, "pstart") == 0) {
+> +				sort_mode = CHUNK_SORT_PSTART;
+> +			} else if (strcmp(optarg, "lstart") == 0) {
+> +				sort_mode = CHUNK_SORT_LSTART;
+> +			} else {
+> +				error("unknown sort mode: %s", optarg);
+> +				exit(1);
+> +			}
+> +			break;
+> +		case GETOPT_VAL_USAGE:
+> +			with_usage = 1;
+> +			break;
+> +		default:
+> +			usage(cmd_dump_chunks_usage);
+> +		}
+> +	}
+> +
+> +	if (check_argc_exact(argc - optind, 1))
+> +		usage(cmd_dump_chunks_usage);
+> +
+> +	ctx.stats = calloc(ctx.size, sizeof(ctx.stats[0]));
+> +	if (!ctx.stats)
+> +		goto out_nomem;
+> +
+> +	path = argv[optind];
+> +
+> +	fd = open_file_or_dir(path, &dirstream);
+> +	if (fd < 0) {
+> +	        error("cannot access '%s': %s", path, strerror(errno));
+> +		return 1;
+> +	}
+> +
+> +	memset(&args, 0, sizeof(args));
+> +	sk->tree_id = BTRFS_CHUNK_TREE_OBJECTID;
+> +	sk->min_objectid = BTRFS_FIRST_CHUNK_TREE_OBJECTID;
+> +	sk->max_objectid = BTRFS_FIRST_CHUNK_TREE_OBJECTID;
+> +	sk->min_type = BTRFS_CHUNK_ITEM_KEY;
+> +	sk->max_type = BTRFS_CHUNK_ITEM_KEY;
+> +	sk->max_offset = (u64)-1;
+> +	sk->max_transid = (u64)-1;
+> +	age = calloc(age_size, sizeof(u64));
+> +	if (!age)
+> +		goto out_nomem;
+> +
+> +	while (1) {
+> +		sk->nr_items = 4096;
+> +		ret = ioctl(fd, BTRFS_IOC_TREE_SEARCH, &args);
+> +		e = errno;
+> +		if (ret < 0) {
+> +			error("cannot perform the search: %s", strerror(e));
+> +			return 1;
+> +		}
+> +		if (sk->nr_items == 0)
+> +			break;
+> +
+> +		off = 0;
+> +		for (i = 0; i < sk->nr_items; i++) {
+> +			struct btrfs_chunk *item;
+> +			struct btrfs_stripe *stripes;
+> +			int sidx;
+> +			u64 used = (u64)-1;
+> +
+> +			memcpy(&sh, args.buf + off, sizeof(sh));
+> +			off += sizeof(sh);
+> +			item = (struct btrfs_chunk*)(args.buf + off);
+> +			off += sh.len;
+> +
+> +			stripes = &item->stripe;
+> +			for (sidx = 0; sidx < item->num_stripes; sidx++) {
+> +				struct dump_chunks_entry *e;
+> +				u64 devid;
+> +
+> +				e = &ctx.stats[ctx.length];
+> +				devid = stripes[sidx].devid;
+> +				e->devid = devid;
+> +				e->start = stripes[sidx].offset;
+> +				e->lstart = sh.offset;
+> +				e->length = item->length;
+> +				e->flags = item->type;
+> +				e->pnumber = -1;
+> +				while (devid > age_size) {
+> +					u64 *tmp;
+> +					unsigned old_size = age_size;
+> +
+> +					age_size += 128;
+> +					tmp = calloc(age_size, sizeof(u64));
+> +					if (!tmp) {
+> +						free(age);
+> +						goto out_nomem;
+> +					}
+> +					memcpy(tmp, age, sizeof(u64) * old_size);
+> +					age = tmp;
+> +				}
+> +				e->age = age[devid]++;
+> +				if (with_usage) {
+> +					if (used == (u64)-1)
+> +						used = fill_usage(fd, sh.offset);
+> +					e->used = used;
+> +				} else {
+> +					e->used = 0;
+> +				}
+> +
+> +				ctx.length++;
+> +
+> +				if (ctx.length == ctx.size) {
+> +					ctx.size += 1024;
+> +					ctx.stats = realloc(ctx.stats, ctx.size
+> +						* sizeof(ctx.stats[0]));
+> +					if (!ctx.stats)
+> +						goto out_nomem;
+> +				}
+> +			}
+> +
+> +			sk->min_objectid = sh.objectid;
+> +			sk->min_type = sh.type;
+> +			sk->min_offset = sh.offset;
+> +		}
+> +		if (sk->min_offset < (u64)-1)
+> +			sk->min_offset++;
+> +		else
+> +			break;
+> +	}
+> +
+> +	print_dump_chunks(&ctx, sort_mode, unit_mode, with_usage);
+> +	free(ctx.stats);
+> +
+> +	close_file_or_dir(fd, dirstream);
+> +	return 0;
+> +
+> +out_nomem:
+> +	error("not enough memory");
+> +	return 1;
+> +}
+> +
+>  static const char inspect_cmd_group_info[] =
+>  "query various internal information";
+>
+> @@ -644,6 +1006,8 @@ const struct cmd_group inspect_cmd_group = {
+>  				cmd_inspect_dump_super_usage, NULL, 0 },
+>  		{ "tree-stats", cmd_inspect_tree_stats,
+>  				cmd_inspect_tree_stats_usage, NULL, 0 },
+> +		{ "dump-chunks", cmd_dump_chunks, cmd_dump_chunks_usage, NULL,
+> +			0 },
+>  		NULL_CMD_STRUCT
+>  	}
+>  };
+>
 
-Ah, so the list is what's still free, and there's no 8kB block available.
 
-Now this also makes perfect sense to me:
-https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=666021#90
-
-So while increasing the min_free_kbytes will not fix the fragmentation 
-issue, it is at least a workaround by just throwing some more dedicated 
-space at it and decreasing the chance of this happening.
-
-This one was even more spectacular, since it ends in oopsing and the 
-whole box going down a bit later. I see no line with "Normal" in here by 
-the way...
-
-btrfs: page allocation failure: order:1, mode:0x204020
-CPU: 0 PID: 9475 Comm: btrfs Not tainted 3.16.0-4-amd64 #1 Debian 
-3.16.7-ckt25-2
-  0000000000000000 ffffffff8150e835 0000000000204020 ffff8800052f7838
-  ffffffff81142d3f 0000000000000000 0000000000000000 ffff880000000002
-  0000000000000041 ffff8800ef8a5c00 0000000000000000 0000000000000000
-Call Trace:
-  [<ffffffff8150e835>] ? dump_stack+0x5d/0x78
-  [<ffffffff81142d3f>] ? warn_alloc_failed+0xdf/0x130
-  [<ffffffff81146fea>] ? __alloc_pages_nodemask+0x8ca/0xb30
-  [<ffffffff8118d08b>] ? kmem_getpages+0x5b/0x110
-  [<ffffffff8118e6bf>] ? fallback_alloc+0x1cf/0x210
-  [<ffffffff8118f2a0>] ? kmem_cache_alloc+0x1f0/0x450
-  [<ffffffff812abd20>] ? ida_pre_get+0x60/0xe0
-  [<ffffffff811aa9e2>] ? get_anon_bdev+0x62/0xe0
-  [<ffffffffa00a43f1>] ? btrfs_init_fs_root+0x101/0x190 [btrfs]
-  [<ffffffffa00a5a86>] ? btrfs_get_fs_root+0xb6/0x270 [btrfs]
-  [<ffffffffa00a9bb6>] ? create_pending_snapshot+0x6f6/0x960 [btrfs]
-  [<ffffffffa00a9ea9>] ? create_pending_snapshots+0x89/0xb0 [btrfs]
-  [<ffffffffa00ab0ac>] ? btrfs_commit_transaction+0x40c/0xa10 [btrfs]
-  [<ffffffffa00ab740>] ? start_transaction+0x90/0x570 [btrfs]
-  [<ffffffffa00dcbba>] ? btrfs_mksubvol.isra.29+0x54a/0x5a0 [btrfs]
-  [<ffffffff810a7e60>] ? prepare_to_wait_event+0xf0/0xf0
-  [<ffffffffa00dcda1>] ? btrfs_ioctl_snap_create_transid+0x191/0x1a0 [btrfs]
-  [<ffffffffa00dcf0e>] ? btrfs_ioctl_snap_create_v2+0xee/0x140 [btrfs]
-  [<ffffffffa00e0704>] ? btrfs_ioctl+0xcc4/0x2b50 [btrfs]
-  [<ffffffff81169b8c>] ? handle_mm_fault+0x63c/0x11c0
-  [<ffffffff8116ffcf>] ? mmap_region+0x15f/0x650
-  [<ffffffff81057311>] ? __do_page_fault+0x1d1/0x4f0
-  [<ffffffff811707a9>] ? do_mmap_pgoff+0x2e9/0x3b0
-  [<ffffffff811bacdf>] ? do_vfs_ioctl+0x2cf/0x4b0
-  [<ffffffff811baf41>] ? SyS_ioctl+0x81/0xa0
-  [<ffffffff81516a28>] ? page_fault+0x28/0x30
-  [<ffffffff81514a0d>] ? system_call_fast_compare_end+0x10/0x15
-Mem-Info:
-Node 0 DMA per-cpu:
-CPU    0: hi:    0, btch:   1 usd:   0
-Node 0 DMA32 per-cpu:
-CPU    0: hi:  186, btch:  31 usd: 135
-active_anon:58342 inactive_anon:20518 isolated_anon:0
-  active_file:371028 inactive_file:364279 isolated_file:0
-  unevictable:0 dirty:25166 writeback:0 unstable:0
-  free:85089 slab_reclaimable:46135 slab_unreclaimable:9219
-  mapped:5560 shmem:20579 pagetables:1492 bounce:0
-  free_cma:0
-Node 0 DMA free:14984kB min:32kB low:40kB high:48kB active_anon:344kB 
-inactive_anon:160kB active_file:40kB inactive_file:36kB unevictable:0kB 
-isolated(anon):0kB isolated(file):0kB present:15996kB managed:15912kB 
-mlocked:0kB dirty:16kB writeback:0kB mapped:32kB shmem:160kB 
-slab_reclaimable:84kB slab_unreclaimable:60kB kernel_stack:64kB 
-pagetables:16kB unstable:0kB bounce:0kB free_cma:0kB writeback_tmp:0kB 
-pages_scanned:11 all_unreclaimable? no
-lowmem_reserve[]: 0 3743 3743 3743
-Node 0 DMA32 free:325372kB min:7808kB low:9760kB high:11712kB 
-active_anon:233024kB inactive_anon:81912kB active_file:1484072kB 
-inactive_file:1457080kB unevictable:0kB isolated(anon):0kB 
-isolated(file):0kB present:3923968kB managed:3835376kB mlocked:0kB 
-dirty:100648kB writeback:0kB mapped:22208kB shmem:82156kB 
-slab_reclaimable:184456kB slab_unreclaimable:36816kB kernel_stack:3200kB 
-pagetables:5952kB unstable:0kB bounce:0kB free_cma:0kB writeback_tmp:0kB 
-pages_scanned:0 all_unreclaimable? no
-lowmem_reserve[]: 0 0 0 0
-Node 0 DMA: 10*4kB (UEM) 6*8kB (UEM) 5*16kB (UEM) 1*32kB (E) 3*64kB 
-(UEM) 4*128kB (UM) 1*256kB (E) 1*512kB (E) 3*1024kB (UEM) 3*2048kB (EMR) 
-1*4096kB (M) = 14984kB
-Node 0 DMA32: 81023*4kB (UE) 0*8kB 0*16kB 8*32kB (R) 2*64kB (R) 3*128kB 
-(R) 0*256kB 1*512kB (R) 0*1024kB 0*2048kB 0*4096kB = 325372kB
-Node 0 hugepages_total=0 hugepages_free=0 hugepages_surp=0 
-hugepages_size=2048kB
-755878 total pagecache pages
-0 pages in swap cache
-Swap cache stats: add 0, delete 0, find 0/0
-Free swap  = 0kB
-Total swap = 0kB
-984991 pages RAM
-0 pages HighMem/MovableOnly
-22148 pages reserved
-0 pages hwpoisoned
-------------[ cut here ]------------
-WARNING: CPU: 0 PID: 9475 at 
-/build/linux-lqALYs/linux-3.16.7-ckt25/fs/btrfs/super.c:259 
-__btrfs_abort_transaction+0x4b/0x110 [btrfs]()
-Modules linked in: binfmt_misc ip6t_REJECT nf_conntrack_ipv6 
-nf_defrag_ipv6 ip6table_filter ip6table_mangle ip6table_raw ip6_tables 
-xt_LOG xt_limit ipt_REJECT xt_tcpudp xt_owner xt_conntrack 
-iptable_filter iptable_nat nf_conntrack_ipv4 nf_defrag_ipv4 nf_nat_ipv4 
-nf_nat iptable_mangle xt_CT nf_conntrack xt_multiport iptable_raw 
-ip_tables x_tables x86_pkg_temp_thermal thermal_sys coretemp 
-crc32_pclmul aesni_intel aes_x86_64 lrw gf128mul glue_helper ablk_helper 
-cryptd quota_v2 quota_tree loop autofs4 ext4 crc16 mbcache jbd2 btrfs 
-xen_netfront xen_blkfront crct10dif_pclmul crct10dif_common xor 
-crc32c_intel raid6_pq
-CPU: 0 PID: 9475 Comm: btrfs Not tainted 3.16.0-4-amd64 #1 Debian 
-3.16.7-ckt25-2
-  0000000000000000 ffffffff8150e835 ffff8800052f7a88 0000000000000009
-  ffffffff810677f7 00000000fffffff4 ffff8800052f7ad8 ffff88002a4b44e8
-  ffffffffa0123070 000000000000053e ffffffff8106785c ffffffffa0126af8
-Call Trace:
-  [<ffffffff8150e835>] ? dump_stack+0x5d/0x78
-  [<ffffffff810677f7>] ? warn_slowpath_common+0x77/0x90
-  [<ffffffff8106785c>] ? warn_slowpath_fmt+0x4c/0x50
-  [<ffffffffa007e00b>] ? __btrfs_abort_transaction+0x4b/0x110 [btrfs]
-  [<ffffffffa00a9ce8>] ? create_pending_snapshot+0x828/0x960 [btrfs]
-  [<ffffffffa00a9ea9>] ? create_pending_snapshots+0x89/0xb0 [btrfs]
-  [<ffffffffa00ab0ac>] ? btrfs_commit_transaction+0x40c/0xa10 [btrfs]
-  [<ffffffffa00ab740>] ? start_transaction+0x90/0x570 [btrfs]
-  [<ffffffffa00dcbba>] ? btrfs_mksubvol.isra.29+0x54a/0x5a0 [btrfs]
-  [<ffffffff810a7e60>] ? prepare_to_wait_event+0xf0/0xf0
-  [<ffffffffa00dcda1>] ? btrfs_ioctl_snap_create_transid+0x191/0x1a0 [btrfs]
-  [<ffffffffa00dcf0e>] ? btrfs_ioctl_snap_create_v2+0xee/0x140 [btrfs]
-  [<ffffffffa00e0704>] ? btrfs_ioctl+0xcc4/0x2b50 [btrfs]
-  [<ffffffff81169b8c>] ? handle_mm_fault+0x63c/0x11c0
-  [<ffffffff8116ffcf>] ? mmap_region+0x15f/0x650
-  [<ffffffff81057311>] ? __do_page_fault+0x1d1/0x4f0
-  [<ffffffff811707a9>] ? do_mmap_pgoff+0x2e9/0x3b0
-  [<ffffffff811bacdf>] ? do_vfs_ioctl+0x2cf/0x4b0
-  [<ffffffff811baf41>] ? SyS_ioctl+0x81/0xa0
-  [<ffffffff81516a28>] ? page_fault+0x28/0x30
-  [<ffffffff81514a0d>] ? system_call_fast_compare_end+0x10/0x15
----[ end trace 57a77704ddefbd3c ]---
-BTRFS: error (device xvdn) in create_pending_snapshot:1342: errno=-12 
-Out of memory
-BTRFS info (device xvdn): forced readonly
-BTRFS warning (device xvdn): Skipping commit of aborted transaction.
-BTRFS: error (device xvdn) in cleanup_transaction:1585: errno=-12 Out of 
-memory
-
-And then 13329 seconds later:
-
-BUG: unable to handle kernel NULL pointer dereference at 0000000000000008
-IP: [<ffffffff812b08b8>] rb_insert_color+0x18/0x180
-PGD 2f0d5067 PUD d34cc067 PMD 0
-Oops: 0000 [#1] SMP
-Modules linked in: binfmt_misc ip6t_REJECT nf_conntrack_ipv6 
-nf_defrag_ipv6 ip6table_filter ip6table_mangle ip6table_raw ip6_tables 
-xt_LOG xt_limit ipt_REJECT xt_tcpudp xt_owner xt_conntrack 
-iptable_filter iptable_nat nf_conntrack_ipv4 nf_defrag_ipv4 nf_nat_ipv4 
-nf_nat iptable_mangle xt_CT nf_conntrack xt_multiport iptable_raw 
-ip_tables x_tables x86_pkg_temp_thermal thermal_sys coretemp 
-crc32_pclmul aesni_intel aes_x86_64 lrw gf128mul glue_helper ablk_helper 
-cryptd quota_v2 quota_tree loop autofs4 ext4 crc16 mbcache jbd2 btrfs 
-xen_netfront xen_blkfront crct10dif_pclmul crct10dif_common xor 
-crc32c_intel raid6_pq
-CPU: 0 PID: 20222 Comm: btrfs_usage Tainted: G        W 
-3.16.0-4-amd64 #1 Debian 3.16.7-ckt25-2
-task: ffff880004474310 ti: ffff88005ef70000 task.ti: ffff88005ef70000
-RIP: e030:[<ffffffff812b08b8>]  [<ffffffff812b08b8>] 
-rb_insert_color+0x18/0x180
-RSP: e02b:ffff88005ef73d18  EFLAGS: 00010246
-RAX: ffff880039aaacc8 RBX: ffff8800b32e15c0 RCX: ffff880039aaacc8
-RDX: 0000000000000000 RSI: ffff880039aaaac0 RDI: ffff8800b32e15c8
-RBP: ffff8800db3020a0 R08: 0000000040dd9cd5 R09: ffff8800b32e15c0
-R10: 00000000039e1f7b R11: 00000000c1d37d9f R12: ffff880039aaaac0
-R13: 0000000040dd9cd4 R14: 00000000a1d8abf1 R15: ffff8800db302ff8
-FS:  00007f0a2018c700(0000) GS:ffff8800ef600000(0000) knlGS:0000000000000000
-CS:  e033 DS: 0000 ES: 0000 CR0: 000000008005003b
-CR2: 0000000000000008 CR3: 000000000996b000 CR4: 0000000000002660
-Stack:
-  ffffffffa014f75b ffff88000bcad4a0 ffff88005ef73dd8 ffff8800e8c720c8
-  0000000000000000 ffff8800db3020a0 ffffffffa015eca0 ffff8800db302000
-  0000000000001000 ffff8800000000a0 000000005ef73dfc 0000000000000009
-Call Trace:
-  [<ffffffffa014f75b>] ? ext4_htree_store_dirent+0xeb/0x120 [ext4]
-  [<ffffffffa015eca0>] ? htree_dirblock_to_tree+0x160/0x190 [ext4]
-  [<ffffffffa015fed1>] ? ext4_htree_fill_tree+0xc1/0x250 [ext4]
-  [<ffffffff811b7adb>] ? path_openat+0xbb/0x680
-  [<ffffffffa014eefb>] ? ext4_readdir+0x17b/0x8d0 [ext4]
-  [<ffffffff811b884a>] ? do_filp_open+0x3a/0x90
-  [<ffffffff811bafff>] ? iterate_dir+0x9f/0x120
-  [<ffffffff811bb459>] ? SyS_getdents+0x89/0x100
-  [<ffffffff811bb150>] ? fillonedir+0xd0/0xd0
-  [<ffffffff81514a0d>] ? system_call_fast_compare_end+0x10/0x15
-Code: 89 d0 48 83 e0 fc 75 eb f3 c3 31 c0 c3 66 0f 1f 44 00 00 48 8b 07 
-48 85 c0 0f 84 24 01 00 00 48 8b 10 f6 c2 01 0f 85 58 01 00 00 <48> 8b 
-4a 08 49 89 d0 48 39 c8 0f 84 93 00 00 00 48 85 c9 74 05
-RIP  [<ffffffff812b08b8>] rb_insert_color+0x18/0x180
-  RSP <ffff88005ef73d18>
-CR2: 0000000000000008
----[ end trace 57a77704ddefbd3d ]---
-BUG: unable to handle kernel paging request at 00000000fffffffe
-IP: [<ffffffff8118d67a>] free_block+0x12a/0x1c0
-PGD 0
-Oops: 0002 [#2] SMP
-Modules linked in: binfmt_misc ip6t_REJECT nf_conntrack_ipv6 
-nf_defrag_ipv6 ip6table_filter ip6table_mangle ip6table_raw ip6_tables 
-xt_LOG xt_limit ipt_REJECT xt_tcpudp xt_owner xt_conntrack 
-iptable_filter iptable_nat nf_conntrack_ipv4 nf_defrag_ipv4 nf_nat_ipv4 
-nf_nat iptable_mangle xt_CT nf_conntrack xt_multiport iptable_raw 
-ip_tables x_tables x86_pkg_temp_thermal thermal_sys coretemp 
-crc32_pclmul aesni_intel aes_x86_64 lrw gf128mul glue_helper ablk_helper 
-cryptd quota_v2 quota_tree loop autofs4 ext4 crc16 mbcache jbd2 btrfs 
-xen_netfront xen_blkfront crct10dif_pclmul crct10dif_common xor 
-crc32c_intel raid6_pq
-CPU: 0 PID: 20222 Comm: btrfs_usage Tainted: G      D W 
-3.16.0-4-amd64 #1 Debian 3.16.7-ckt25-2
-task: ffff880004474310 ti: ffff88005ef70000 task.ti: ffff88005ef70000
-RIP: e030:[<ffffffff8118d67a>]  [<ffffffff8118d67a>] free_block+0x12a/0x1c0
-RSP: e02b:ffff88005ef73948  EFLAGS: 00010082
-RAX: 00000000fffffffe RBX: ffff8800eac0d828 RCX: 0000000000000000
-RDX: 0000000000e6aab3 RSI: ffffea0000c9d530 RDI: dead000000200200
-RBP: ffff8800eac001c0 R08: ffff8800eac021c0 R09: 0000000000000000
-R10: 0000000000000001 R11: fffffffffffffff4 R12: 0000000080000000
-R13: ffffea0000000000 R14: 000077ff80000000 R15: ffff8800eac0d9f8
-FS:  00007f0a2018c700(0000) GS:ffff8800ef600000(0000) knlGS:0000000000000000
-CS:  e033 DS: 0000 ES: 0000 CR0: 000000008005003b
-CR2: 00000000fffffffe CR3: 0000000001813000 CR4: 0000000000002660
-Stack:
-  0000000000000000 ffff8800eac0d800 000000000000003c ffff8800eac021c0
-  ffff8800eac0d818 ffff8800eac001c0 0000000000000000 ffffffff8150d3d2
-  ffff8800eac0d800 ffff880039aaacc0 0000000000000277 0000000000000000
-Call Trace:
-  [<ffffffff8150d3d2>] ? cache_flusharray+0x78/0xa2
-  [<ffffffff8118e938>] ? kfree+0x178/0x220
-  [<ffffffffa014e99f>] ? free_rb_tree_fname+0x4f/0x70 [ext4]
-  [<ffffffffa014e9da>] ? ext4_release_dir+0x1a/0x30 [ext4]
-  [<ffffffff811aa1ea>] ? __fput+0xca/0x1d0
-  [<ffffffff810852dc>] ? task_work_run+0x8c/0xb0
-  [<ffffffff81069ba1>] ? do_exit+0x2b1/0xa50
-  [<ffffffff81016217>] ? oops_end+0x97/0xe0
-  [<ffffffff8150b172>] ? no_context+0x2b2/0x2be
-  [<ffffffff810575a3>] ? __do_page_fault+0x463/0x4f0
-  [<ffffffff811d7c39>] ? __find_get_block_slow+0xc9/0x170
-  [<ffffffff811d8dc3>] ? __find_get_block+0x223/0x250
-  [<ffffffff81516a28>] ? page_fault+0x28/0x30
-  [<ffffffff812b08b8>] ? rb_insert_color+0x18/0x180
-  [<ffffffffa014f75b>] ? ext4_htree_store_dirent+0xeb/0x120 [ext4]
-  [<ffffffffa015eca0>] ? htree_dirblock_to_tree+0x160/0x190 [ext4]
-  [<ffffffffa015fed1>] ? ext4_htree_fill_tree+0xc1/0x250 [ext4]
-  [<ffffffff811b7adb>] ? path_openat+0xbb/0x680
-  [<ffffffffa014eefb>] ? ext4_readdir+0x17b/0x8d0 [ext4]
-  [<ffffffff811b884a>] ? do_filp_open+0x3a/0x90
-  [<ffffffff811bafff>] ? iterate_dir+0x9f/0x120
-  [<ffffffff811bb459>] ? SyS_getdents+0x89/0x100
-  [<ffffffff811bb150>] ? fillonedir+0xd0/0xd0
-  [<ffffffff81514a0d>] ? system_call_fast_compare_end+0x10/0x15
-Code: 28 8b 4d 10 89 c2 48 0f af d1 0f b6 4d 14 48 c1 ea 20 29 d0 d3 e8 
-0f b6 4d 15 01 c2 8b 46 18 d3 ea 48 8b 4e 10 83 e8 01 89 46 18 <88> 14 
-01 49 8b 40 38 48 83 c0 01 49 89 40 38 8b 56 18 85 d2 0f
-RIP  [<ffffffff8118d67a>] free_block+0x12a/0x1c0
-  RSP <ffff88005ef73948>
-CR2: 00000000fffffffe
----[ end trace 57a77704ddefbd3e ]---
-Fixing recursive fault but reboot is needed!
-
--- 
-Hans van Kranenburg - System / Network Engineer
-T +31 (0)10 2760434 | hans.van.kranenburg@mendix.com | www.mendix.com

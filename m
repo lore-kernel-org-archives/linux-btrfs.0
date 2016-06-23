@@ -1,136 +1,73 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:4144 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1750824AbcFWBUz (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:37555 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750838AbcFWBur (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 22 Jun 2016 21:20:55 -0400
+	Wed, 22 Jun 2016 21:50:47 -0400
+Date: Wed, 22 Jun 2016 18:53:52 -0700
+From: Liu Bo <bo.li.liu@oracle.com>
+To: David Sterba <dsterba@suse.com>
+Cc: linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.cz>
 Subject: Re: [RFC][PATCH] btrfs-progs: inspect: new subcommand to dump chunks
-To: David Sterba <dsterba@suse.com>, <linux-btrfs@vger.kernel.org>
+Message-ID: <20160623015352.GA15815@localhost.localdomain>
+Reply-To: bo.li.liu@oracle.com
 References: <1466616406-28087-1-git-send-email-dsterba@suse.com>
-CC: David Sterba <dsterba@suse.cz>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <02c731c5-f784-41f4-8cd1-4cf25d7f32e7@cn.fujitsu.com>
-Date: Thu, 23 Jun 2016 09:20:40 +0800
 MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
 In-Reply-To: <1466616406-28087-1-git-send-email-dsterba@suse.com>
-Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
-
-At 06/23/2016 01:26 AM, David Sterba wrote:
+On Wed, Jun 22, 2016 at 07:26:46PM +0200, David Sterba wrote:
 > From: David Sterba <dsterba@suse.cz>
->
+> 
 > Hi,
->
+> 
 > the chunk dump is a useful thing, for debugging or balance filters.
-
-Yes, quite useful.
-I don't ever need to manually check btrfs-debug-tree output to figure 
-out the dev-extent layout.
-
-But according to the output, it's more like dev-extent dump, not chunk dump.
-
-It's better to make things more clear for objects at different logical 
-level.
-
->
+> 
 > Example output:
->
+> 
 > Chunks on device id: 1
 > PNumber            Type        PStart        Length          PEnd     Age         LStart  Usage
 > -----------------------------------------------------------------------------------------------
 >       0   System/RAID1        1.00MiB      32.00MiB      33.00MiB      47        1.40TiB   0.06
-
-[Mixed chunk/dev-extent output]
-For "PStart/Length/Pend/Lstart" that's OK.
-(Although I prefer "Plength" to "Length", as it's a little confusing for 
-chunk logical length and dev_extent physical length)
-
-Since "pstart" = key.offset, "length" = dev_extent_length, "Pend" = 
-pstart + length and "Lstart" = dev_extent_chunk_offset, these values are 
-all straightforward.
-
-But for Usage, it's completely a chunk/block group level thing, so 
-personally speaking it's better not to output per chunk usage in 
-dev-extent dump
-
-If there is real "chunk dump", then that's the best place to output 
-per-chunk "usage".
-
-For dev-extent level usage, it should be the usage of a device, not per 
-chunk.
-
-["Age" calculation]
-Another concern is about "age", since there is no generation in 
-chunk_item nor dev_extent, so you're using logical bytenr as a hint.
-
-This method implies the fact that btrfs will always allocates new chunk 
-with increasing logical bytenr, never reuse lower logical bytenr.
-
-Such behavior provides the basis for a lot of other btrfs functions, 
-like balance/qgroup rescan.
-IMHO it won't be changed in any time soon. But I'm still a little 
-concerned about using such assumption.
-
-
-Since "age" here is more like a sorting index, not the generation when 
-the chunk is created.
-It may not really reflect how long one chunk really lived.
-
-It maybe completely OK for most people, but at least it's not as 
-straightforward as generation.
-
-
-[Support for offline btrfs]
-BTW, it's also a good idea to support not only mounted fs, but also 
-offlined one.
-
-As for offlined one, no need to bother about the tree search ioctl, just 
-straightforward search_slots().
-(That's why I like offline btrfs tools)
-
-Thanks,
-Qu
-
 >       1 Metadata/RAID1       33.00MiB       1.00GiB       1.03GiB      31        1.36TiB  64.03
 >       2 Metadata/RAID1        1.03GiB      32.00MiB       1.06GiB      36        1.36TiB  77.28
 >       3     Data/single       1.06GiB       1.00GiB       2.06GiB      12      422.30GiB  78.90
 >       4     Data/single       2.06GiB       1.00GiB       3.06GiB      11      420.30GiB  78.47
 > ...
->
+> 
 > (full output is at http://susepaste.org/view/raw/089a9877)
->
+> 
 > This patch does the basic output, not filtering or sorting besides physical and
 > logical offset. There are possiblities to do more or enhance the output (eg.
 > starting with logical chunk and list the related physcial chunks together).
 > Or filter by type/profile, or understand the balance filters format.
->
+> 
 > As it is now, it's per-device dump of physical layout, which was the original
 > idea.
->
+> 
 > Printing 'usage' is not default as it's quite slow, it uses the search ioctl
 > and probably not in the best way, or there's some other issue in the
 > implementation.
->
+> 
 > I'll add the patch to devel branch but will not add it for any particular
 > release yet, I'd like some feedback first. Thanks.
->
+> 
 > -------------
 > New command 'btrfs inspect-internal dump-chunks' will dump layout of
 > chunks as stored on the devices. This corresponds to the physical
 > layout, sorted by the physical offset. The block group usage can be
 > shown as well, but the search is too slow so it's off by default.
->
+> 
 > If the physical offset sorting is selected, the empty space between
 > chunks is also shown.
->
+> 
 > Signed-off-by: David Sterba <dsterba@suse.com>
 > ---
 >  cmds-inspect.c | 364 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 >  1 file changed, 364 insertions(+)
->
+> 
 > diff --git a/cmds-inspect.c b/cmds-inspect.c
 > index dd7b9dd278f2..4eace63d8517 100644
 > --- a/cmds-inspect.c
@@ -138,7 +75,7 @@ Qu
 > @@ -623,6 +623,368 @@ static int cmd_inspect_min_dev_size(int argc, char **argv)
 >  	return !!ret;
 >  }
->
+>  
 > +static const char * const cmd_dump_chunks_usage[] = {
 > +	"btrfs inspect-internal chunk-stats [options] <path>",
 > +	"Show chunks (block groups) layout",
@@ -306,6 +243,13 @@ Qu
 > +	sk->max_transid = (u64)-1;
 > +
 > +	sk->nr_items = 4096;
+
+What if we set nr_items = 1?  From the code review, this can let us
+stop and return immediately.
+
+Thanks,
+
+-liubo
 > +	ret = ioctl(fd, BTRFS_IOC_TREE_SEARCH, &args);
 > +	if (ret < 0) {
 > +		error("cannot perform the search: %s", strerror(errno));
@@ -503,7 +447,7 @@ Qu
 > +
 >  static const char inspect_cmd_group_info[] =
 >  "query various internal information";
->
+>  
 > @@ -644,6 +1006,8 @@ const struct cmd_group inspect_cmd_group = {
 >  				cmd_inspect_dump_super_usage, NULL, 0 },
 >  		{ "tree-stats", cmd_inspect_tree_stats,
@@ -513,6 +457,10 @@ Qu
 >  		NULL_CMD_STRUCT
 >  	}
 >  };
->
-
-
+> -- 
+> 2.7.1
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

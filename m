@@ -1,25 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:51980 "EHLO
+Received: from userp1040.oracle.com ([156.151.31.81]:43814 "EHLO
 	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751878AbcFWB3K (ORCPT
+	with ESMTP id S1752074AbcFWX3i (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 22 Jun 2016 21:29:10 -0400
-Received: from aserv0022.oracle.com (aserv0022.oracle.com [141.146.126.234])
-	by userp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id u5N1T8oU013105
-	(version=TLSv1 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Thu, 23 Jun 2016 01:29:09 GMT
-Received: from aserv0122.oracle.com (aserv0122.oracle.com [141.146.126.236])
-	by aserv0022.oracle.com (8.13.8/8.13.8) with ESMTP id u5N1T86U011030
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Thu, 23 Jun 2016 01:29:08 GMT
-Received: from abhmp0018.oracle.com (abhmp0018.oracle.com [141.146.116.24])
-	by aserv0122.oracle.com (8.13.8/8.13.8) with ESMTP id u5N1T6Lb023456
-	for <linux-btrfs@vger.kernel.org>; Thu, 23 Jun 2016 01:29:07 GMT
+	Thu, 23 Jun 2016 19:29:38 -0400
 From: Liu Bo <bo.li.liu@oracle.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] Btrfs: error out if generic_bin_search get invalid arguments
-Date: Wed, 22 Jun 2016 18:32:19 -0700
-Message-Id: <1466645539-27296-1-git-send-email-bo.li.liu@oracle.com>
+Cc: dsterba@suse.cz
+Subject: [PATCH v2] Btrfs: error out if generic_bin_search get invalid arguments
+Date: Thu, 23 Jun 2016 16:32:45 -0700
+Message-Id: <1466724765-27364-1-git-send-email-bo.li.liu@oracle.com>
+In-Reply-To: <1466645539-27296-1-git-send-email-bo.li.liu@oracle.com>
+References: <1466645539-27296-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
@@ -35,6 +27,8 @@ instead of returning the first item.
 
 Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
 ---
+v2: fix typo of in printed message.
+
  fs/btrfs/ctree.c | 8 ++++++++
  1 file changed, 8 insertions(+)
 
@@ -48,7 +42,7 @@ index c49a500..915d224 100644
  
 +	if (low > high) {
 +		btrfs_err(eb->fs_info,
-+		 "%s: low (%d) < high (%d) eb %llu owner %llu level %d",
++		 "%s: low (%d) > high (%d) eb %llu owner %llu level %d",
 +			  __func__, low, high, eb->start,
 +			  btrfs_header_owner(eb), btrfs_header_level(eb));
 +		return -EINVAL;

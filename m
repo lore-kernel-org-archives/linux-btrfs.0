@@ -1,88 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-001b2d01.pphosted.com ([148.163.158.5]:57214 "EHLO
-	mx0a-001b2d01.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1751080AbcFWJqz (ORCPT
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:18788 "EHLO
+	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1751166AbcFWSdA (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 23 Jun 2016 05:46:55 -0400
-Received: from pps.filterd (m0098414.ppops.net [127.0.0.1])
-	by mx0b-001b2d01.pphosted.com (8.16.0.11/8.16.0.11) with SMTP id u5N9iSYC022235
-	for <linux-btrfs@vger.kernel.org>; Thu, 23 Jun 2016 05:46:54 -0400
-Received: from e38.co.us.ibm.com (e38.co.us.ibm.com [32.97.110.159])
-	by mx0b-001b2d01.pphosted.com with ESMTP id 23qd1j4wr8-1
-	(version=TLSv1.2 cipher=AES256-SHA bits=256 verify=NOT)
-	for <linux-btrfs@vger.kernel.org>; Thu, 23 Jun 2016 05:46:53 -0400
-Received: from localhost
-	by e38.co.us.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
-	for <linux-btrfs@vger.kernel.org> from <chandan@linux.vnet.ibm.com>;
-	Thu, 23 Jun 2016 03:46:53 -0600
-From: Chandan Rajendra <chandan@linux.vnet.ibm.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Chandan Rajendra <chandan@linux.vnet.ibm.com>, dsterba@suse.com,
-        bo.li.liu@oracle.com
-Subject: [PATCH] Btrfs: Force stripesize to the value of sectorsize
-Date: Thu, 23 Jun 2016 15:16:44 +0530
-Message-Id: <1466675204-31299-1-git-send-email-chandan@linux.vnet.ibm.com>
+	Thu, 23 Jun 2016 14:33:00 -0400
+Subject: Re: [PULL] Btrfs updates for 4.7-rc5
+To: David Sterba <dsterba@suse.com>
+References: <cover.1466678869.git.dsterba@suse.com>
+CC: <linux-btrfs@vger.kernel.org>
+From: Chris Mason <clm@fb.com>
+Message-ID: <6fdb096c-d3f8-dc85-3a17-f8cf63506c4b@fb.com>
+Date: Thu, 23 Jun 2016 14:32:11 -0400
+MIME-Version: 1.0
+In-Reply-To: <cover.1466678869.git.dsterba@suse.com>
+Content-Type: text/plain; charset="windows-1252"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Btrfs code currently assumes stripesize to be same as
-sectorsize. However Btrfs-progs (until commit
-df05c7ed455f519e6e15e46196392e4757257305) has been setting
-btrfs_super_block->stripesize to a value of 4096.
 
-This commit makes sure that the value of btrfs_super_block->stripesize
-is a power of 2. Later, it unconditionally sets btrfs_root->stripesize
-to sectorsize.
 
-Signed-off-by: Chandan Rajendra <chandan@linux.vnet.ibm.com>
----
- fs/btrfs/disk-io.c | 6 ++----
- fs/btrfs/volumes.c | 4 ++--
- 2 files changed, 4 insertions(+), 6 deletions(-)
+On 06/23/2016 06:56 AM, David Sterba wrote:
+> Hi,
+>
+> this is hopefully the last pull for 4.7 from me. There are two fixes that
+> should finalize the changes introduced in this dev cycle, plus some minor
+> independent fixes.
+>
+> The following changes since commit 33688abb2802ff3a230bd2441f765477b94cc89e:
+>
+>   Linux 4.7-rc4 (2016-06-19 21:30:02 -0700)
+>
+> are available in the git repository at:
+>
+>   git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git for-chris
+>
+> for you to fetch changes up to 917b187d467d87ed8d75b3d2084d906845ed126a:
+>
+>   Btrfs: Force stripesize to the value of sectorsize (2016-06-23 12:16:01 +0200)
+>
+> ----------------------------------------------------------------
+> Chandan Rajendra (1):
+>       Btrfs: Force stripesize to the value of sectorsize
+>
+> Liu Bo (1):
+>       Btrfs: fix error handling in map_private_extent_buffer
+>
+> Omar Sandoval (1):
+>       Btrfs: fix ->iterate_shared() by upgrading i_rwsem for delayed nodes
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 54cca7a..60ce119 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -2806,7 +2806,7 @@ int open_ctree(struct super_block *sb,
- 
- 	nodesize = btrfs_super_nodesize(disk_super);
- 	sectorsize = btrfs_super_sectorsize(disk_super);
--	stripesize = btrfs_super_stripesize(disk_super);
-+	stripesize = sectorsize;
- 	fs_info->dirty_metadata_batch = nodesize * (1 + ilog2(nr_cpu_ids));
- 	fs_info->delalloc_batch = sectorsize * 512 * (1 + ilog2(nr_cpu_ids));
- 
-@@ -4133,9 +4133,7 @@ static int btrfs_check_super_valid(struct btrfs_fs_info *fs_info,
- 		       btrfs_super_bytes_used(sb));
- 		ret = -EINVAL;
- 	}
--	if (!is_power_of_2(btrfs_super_stripesize(sb)) ||
--		((btrfs_super_stripesize(sb) != sectorsize) &&
--			(btrfs_super_stripesize(sb) != 4096))) {
-+	if (!is_power_of_2(btrfs_super_stripesize(sb))) {
- 		btrfs_err(fs_info, "invalid stripesize %u",
- 		       btrfs_super_stripesize(sb));
- 		ret = -EINVAL;
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index c3a2900..64eec2c 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -4694,12 +4694,12 @@ static int __btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
- 
- 	if (type & BTRFS_BLOCK_GROUP_RAID5) {
- 		raid_stripe_len = find_raid56_stripe_len(ndevs - 1,
--				 btrfs_super_stripesize(info->super_copy));
-+						extent_root->stripesize);
- 		data_stripes = num_stripes - 1;
- 	}
- 	if (type & BTRFS_BLOCK_GROUP_RAID6) {
- 		raid_stripe_len = find_raid56_stripe_len(ndevs - 2,
--				 btrfs_super_stripesize(info->super_copy));
-+						extent_root->stripesize);
- 		data_stripes = num_stripes - 2;
- 	}
- 
--- 
-2.5.5
+Thanks Dave, I do have these integrated but I had to update Omar's patch 
+to re-enable the iterate_shared call.  Since Al reverted the btrfs usage 
+of iterate_shared, Omar's code was giving the vfs layer an inode without 
+the write lock held.
 
+-chris

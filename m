@@ -1,113 +1,116 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from out1.mail.ruhr-uni-bochum.de ([134.147.53.149]:40046 "EHLO
-	out1.mail.ruhr-uni-bochum.de" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1752204AbcFWWvO (ORCPT
+Received: from mail-oi0-f54.google.com ([209.85.218.54]:34889 "EHLO
+	mail-oi0-f54.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752385AbcFWXhL (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 23 Jun 2016 18:51:14 -0400
-Subject: Re: btrfs send/receive error
-To: Lubos Kolouch <kolcon@kolcon.net>, linux-btrfs@vger.kernel.org
-References: <20160622120108.GA15708@localhost>
- <b3bf0ff9-175b-29fa-485d-4818811619eb@rub.de>
- <loom.20160623T090018-726@post.gmane.org>
-From: Michael Duell <michael.duell@rub.de>
-Message-ID: <7a162880-9ada-787a-3772-ab0fab69b20d@rub.de>
-Date: Fri, 24 Jun 2016 00:51:04 +0200
+	Thu, 23 Jun 2016 19:37:11 -0400
+Received: by mail-oi0-f54.google.com with SMTP id r2so93507218oih.2
+        for <linux-btrfs@vger.kernel.org>; Thu, 23 Jun 2016 16:37:11 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <loom.20160623T090018-726@post.gmane.org>
-Content-Type: multipart/signed; micalg=pgp-sha384;
- protocol="application/pgp-signature";
- boundary="53Oj2NweJACXer8l1V0KnsN83vwvbHBGP"
+In-Reply-To: <CAJCQCtRUUd+moK25N3704ZG54cFrCw1-Uxm2QO-XF9g0=mHazw@mail.gmail.com>
+References: <20160620034427.GK15597@hungrycats.org> <20160620231351.1833a341@natsu>
+ <20160620191112.GL15597@hungrycats.org> <CAJCQCtR9uAn58KJKEjCsbyLYJTQVqMx-ghsVp_MjLBF-aiikcg@mail.gmail.com>
+ <20160620204049.GA1986@hungrycats.org> <CAJCQCtR5pV53mFyGWxRxm69zwF5_sEvNRRRvOSgnZ1t8KZdc3g@mail.gmail.com>
+ <20160621015559.GM15597@hungrycats.org> <CAJCQCtRUUd+moK25N3704ZG54cFrCw1-Uxm2QO-XF9g0=mHazw@mail.gmail.com>
+From: Chris Murphy <lists@colorremedies.com>
+Date: Thu, 23 Jun 2016 17:37:09 -0600
+Message-ID: <CAJCQCtT57k7Mirq=d6wTewY6EzvJE0g28EbmG9wLk+6cTASEEg@mail.gmail.com>
+Subject: Re: Adventures in btrfs raid5 disk recovery
+To: Chris Murphy <lists@colorremedies.com>
+Cc: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>,
+        Roman Mamedov <rm@romanrm.net>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---53Oj2NweJACXer8l1V0KnsN83vwvbHBGP
-Content-Type: multipart/mixed; boundary="XiU3bRNRi5qp068Gnsi0iCcR2kLv2mJxT"
-From: Michael Duell <michael.duell@rub.de>
-To: Lubos Kolouch <kolcon@kolcon.net>, linux-btrfs@vger.kernel.org
-Message-ID: <7a162880-9ada-787a-3772-ab0fab69b20d@rub.de>
-Subject: Re: btrfs send/receive error
-References: <20160622120108.GA15708@localhost>
- <b3bf0ff9-175b-29fa-485d-4818811619eb@rub.de>
- <loom.20160623T090018-726@post.gmane.org>
-In-Reply-To: <loom.20160623T090018-726@post.gmane.org>
+On Wed, Jun 22, 2016 at 11:14 AM, Chris Murphy <lists@colorremedies.com> wrote:
 
---XiU3bRNRi5qp068Gnsi0iCcR2kLv2mJxT
-Content-Type: text/plain; charset=windows-1252
-Content-Transfer-Encoding: quoted-printable
+>
+> However, from btrfs-debug-tree from a 3 device raid5 volume:
+>
+> item 5 key (FIRST_CHUNK_TREE CHUNK_ITEM 1103101952) itemoff 15621 itemsize 144
+> chunk length 2147483648 owner 2 stripe_len 65536
+> type DATA|RAID5 num_stripes 3
+> stripe 0 devid 2 offset 9437184
+> dev uuid: 3c6f37eb-5cae-455a-82bc-a1b0877dea55
+> stripe 1 devid 1 offset 1094713344
+> dev uuid: 13104709-6f30-4982-979e-4f055c326fad
+> stripe 2 devid 3 offset 1083179008
+> dev uuid: d45fc482-a0c1-46b1-98c1-41cea5a11c80
+>
+> I expect that parity is in this data block group, and therefore is
+> checksummed the same as any other data in that block group.
 
-Hallo Lubos!
+This appears to be wrong. Comparing the same file, one file only, one
+two new Btrfs volumes, one volume single, one volume raid5, I get a
+single csum tree entry:
 
-I am not the right one to adress with this issue.
+raid5
+    item 0 key (EXTENT_CSUM EXTENT_CSUM 12009865216) itemoff 16155 itemsize 128
+        extent csum item
 
-I, too, am only suffering from the bug, but not=20
-technically apt to address the problem.
+single
 
-You should search this ML and the internet for the
-appropriate threads and help out there.
+    item 0 key (EXTENT_CSUM EXTENT_CSUM 2168717312) itemoff 16155 itemsize 128
+        extent csum item
 
-I am just a user :)
+They're both the same size. They both contain the same data. So it
+looks like parity is not separately checksummed.
 
-Greetings, Michael
-
-On 2016-06-23 09:02, Lubos Kolouch wrote:
-> Michael Duell <michael.duell <at> rub.de> writes:
->=20
->>
->> Hallo Lubos!
->>
->> I have got the same problems with send/receive. Had those problems
->> for several weeks or months now. Not sure when those started.
->>
->> These send/receive problems are known and there are several bug=20
->> reports all over the internet and also on this list.
->>
->> Not sure if or when this gets fixed. It's broken atm.
->>
->> Michael
->>
->=20
->=20
-> Hallo Michael,
->=20
-> I would like to help to debug the issue. Something I can do/get
-> logs/whatever to speed up the root cause analysis and get it fixed?
->=20
-> MfG/Best regards,
->=20
-> Lubos
->=20
->=20
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->=20
+If there's a missing 64KiB data strip (bad sector, or dead drive), the
+reconstruction of that strip from parity should match available csums
+for those blocks. So in this way it's possible to infer if the parity
+strip is bad. But, it also means assuming everything else about this
+full stripe: the remaining data strips and their csums, are correct.
 
 
---XiU3bRNRi5qp068Gnsi0iCcR2kLv2mJxT--
 
---53Oj2NweJACXer8l1V0KnsN83vwvbHBGP
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
 
------BEGIN PGP SIGNATURE-----
+> So in your example of degraded writes, no matter what the on disk
+> format makes it discoverable there is a problem:
+>
+> A. The "updating" is still always COW so there is no overwriting.
 
-iQIcBAEBCQAGBQJXbGfdAAoJEPMsk5xVZv93ha4QAJGC/4E2iuyCAFO97MfUqUBV
-2BW4bc9NvKcaVGgDwaKJ3QVQ1UDewMZ8coOtoUR1WII4GQ1YlAfoRQGvmTVGQ4Dy
-rHOlDOtddj/osNwJzQ7WjPTTqmLncBSSJSvuSd/T5MIsHMO1B8lMBLTgTiVvPYA+
-cuHsGENWcvhBn0hfwRwcI9+ZDIa9jabkK8WoricwCNBBAsRqleC3U4N38wWhgLeq
-AJmAy8kZ884QnX2OdFG0HijGnXl2p572JoreQzAubez3ICBiH/4LnmVRrZ2ntB4P
-OmQrBjUDwOiWjdFrb2QwK9ZGEm3Dych55q+l/RdhyENnrpiHTXVmsmpLR6SS5ZqM
-vZyw9EX1P7SzdgH45d06OqoHirmF5wGaOLY2uwpa3OyxrxwdSAX7PV/NoWKuWQzN
-Y/YyZZpSZO4Gpga38oVEumi4ZmSOBifXpxF8YYPfulxqtoqNX/Y64sySRsCZyr/B
-m9vpjSK7Cpo7P/9ukorFLe14TEP3y17zgCyN015uCfVVIrWSTnqwADhraz0a6duq
-7/HzmXiPs7m7sQWROcI2BHfNm4Ibv65rOL49o+Pre3P5+WIkS4+W1X41PUVSOH1i
-IUagqJbpPrWrRi24Dki0Vr7qAgF227570T1PA/QcRQUDbwCDLY0tl5guU/TAu8Rm
-2YembfG9QORwmxDwZXai
-=5weM
------END PGP SIGNATURE-----
+There is RMW code in btrfs/raid56.c but I don't know when that gets
+triggered. With simple files changing one character with vi and gedit,
+I get completely different logical and physical numbers with each
+change, so it's clearly cowing the entire stripe (192KiB in my 3 dev
+raid5).
 
---53Oj2NweJACXer8l1V0KnsN83vwvbHBGP--
+
+[root@f24s ~]# filefrag -v /mnt/5/64k-a-then64k-b.txt
+Filesystem type is: 9123683e
+File size of /mnt/5/64k-a-then64k-b.txt is 131072 (32 blocks of 4096 bytes)
+ ext:     logical_offset:        physical_offset: length:   expected: flags:
+   0:        0..      31:    2931744..   2931775:     32:             last,eof
+/mnt/5/64k-a-then64k-b.txt: 1 extent found
+[root@f24s ~]# btrfs-map-logical -l $[4096*2931744] /dev/VG/a
+mirror 1 logical 12008423424 physical 1114112 device /dev/mapper/VG-b
+mirror 2 logical 12008423424 physical 34668544 device /dev/mapper/VG-a
+[root@f24s ~]# vi /mnt/5/64k-a-then64k-b.txt
+[root@f24s ~]# filefrag -v /mnt/5/64k-a-then64k-b.txt
+Filesystem type is: 9123683e
+File size of /mnt/5/64k-a-then64k-b.txt is 131072 (32 blocks of 4096 bytes)
+ ext:     logical_offset:        physical_offset: length:   expected: flags:
+   0:        0..      31:    2931776..   2931807:     32:             last,eof
+/mnt/5/64k-a-then64k-b.txt: 1 extent found
+[root@f24s ~]# btrfs-map-logical -l $[4096*29317776] /dev/VG/a
+No extent found at range [120085610496,120085626880)
+[root@f24s ~]# btrfs-map-logical -l $[4096*2931776] /dev/VG/a
+mirror 1 logical 12008554496 physical 1108475904 device /dev/mapper/VG-c
+mirror 2 logical 12008554496 physical 1179648 device /dev/mapper/VG-b
+[root@f24s ~]#
+
+There is a neat bug/rfe I found for btrfs-map-logical, it doesn't
+report back the physical locations for all num_stripes on the volume.
+It only spits back two, and sometimes it's the two data strips,
+sometimes it's one data and one parity strip.
+
+
+[1]
+https://bugzilla.kernel.org/show_bug.cgi?id=120941
+
+
+-- 
+Chris Murphy

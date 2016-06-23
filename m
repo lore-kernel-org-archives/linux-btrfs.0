@@ -1,105 +1,68 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:30164 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751516AbcFWNHC (ORCPT
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:34275 "EHLO
+	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1750874AbcFWO1r (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 23 Jun 2016 09:07:02 -0400
-Subject: Re: [PATCH v2 2/2] btrfs: wait for bdev put
-To: Chris Mason <clm@fb.com>
+	Thu, 23 Jun 2016 10:27:47 -0400
+Subject: Re: [PATCH v3 2/2] btrfs: make sure device is synced before return
+To: Anand Jain <anand.jain@oracle.com>, <linux-btrfs@vger.kernel.org>
 References: <1465901726-15490-2-git-send-email-anand.jain@oracle.com>
- <1466504648-2937-1-git-send-email-anand.jain@oracle.com>
- <0eaf435d-f6e3-31c3-24e2-5a8b1df840a8@fb.com>
- <1b7bb28b-939e-c111-9bb0-5091ab1cdcf1@oracle.com>
- <1466632025.28956.0@smtp.office365.com>
-Cc: linux-btrfs@vger.kernel.org, holger@applied-asynchrony.com,
-        dsterba@suse.com, xiaolong.ye@intel.com
-From: Anand Jain <anand.jain@oracle.com>
-Message-ID: <5576e4c6-bed6-b7f2-a2bd-e86b94705e05@oracle.com>
-Date: Thu, 23 Jun 2016 21:07:45 +0800
+ <1466686447-7780-1-git-send-email-anand.jain@oracle.com>
+CC: <dsterba@suse.cz>, <holger@applied-asynchrony.com>,
+        <xiaolong.ye@intel.com>
+From: Chris Mason <clm@fb.com>
+Message-ID: <dd4d6f70-46bf-0ce9-31f8-bc337b67fb42@fb.com>
+Date: Thu, 23 Jun 2016 10:27:27 -0400
 MIME-Version: 1.0
-In-Reply-To: <1466632025.28956.0@smtp.office365.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+In-Reply-To: <1466686447-7780-1-git-send-email-anand.jain@oracle.com>
+Content-Type: text/plain; charset="windows-1252"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
 
-On 06/23/2016 05:47 AM, Chris Mason wrote:
+On 06/23/2016 08:54 AM, Anand Jain wrote:
+> An inconsistent behavior due to stale reads from the
+> disk was reported
 >
+>   mail-archive.com/linux-btrfs@vger.kernel.org/msg54188.html
 >
-> On Wed, Jun 22, 2016 at 6:18 AM, Anand Jain <anand.jain@oracle.com> wrote:
->>
->>
->>  Thanks for the review Chris.
->>
->> On 06/21/2016 09:00 PM, Chris Mason wrote:
->>> On 06/21/2016 06:24 AM, Anand Jain wrote:
->>>> From: Anand Jain <Anand.Jain@oracle.com>
->>>>
->>>> Further to the commit
->>>>       bc178622d40d87e75abc131007342429c9b03351
->>>>       btrfs: use rcu_barrier() to wait for bdev puts at unmount
->>>>
->>>> This patch implements a method to time wait on the __free_device()
->>>> which actually does the bdev put. This is needed as the user space
->>>> running 'btrfs fi show -d' immediately after the replace and
->>>> unmount, is still reading older information from the device.
->>>
->>> Thanks for working on this Anand.  Since it looks like blkdev_put can
->>> deadlock against us, can we please switch to making sure we fully flush
->>> the outstanding IO?  It's probably enough to do a sync_blockdev() call
->>> before we allow the unmount to finish, but we can toss in an
->>> invalidate_bdev for good measure.
->>
->>
->> ------------
->> # git diff
->> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
->> index 604daf315669..e0ad29d6fe9a 100644
->> --- a/fs/btrfs/volumes.c
->> +++ b/fs/btrfs/volumes.c
->> @@ -870,6 +870,11 @@ static void btrfs_close_one_device(struct
->> btrfs_device *device)
->>         if (device->missing)
->>                 fs_devices->missing_devices--;
->>
->> +       if (device->bdev && device->writeable) {
->> +               sync_blockdev(device->bdev);
->> +               invalidate_bdev(device->bdev);
->> +       }
->> +
->>         new_device = btrfs_alloc_device(NULL, &device->devid,
->>                                         device->uuid);
->>         BUG_ON(IS_ERR(new_device)); /* -ENOMEM */
->> -----------
->>
->>
->>  However, theoretically still there might be a problem - at the end of
->>  unmount, if the device exclusive open is not actually closed, then
->>  there might be a race with another program which is trying to open
->>  the device in exclusive mode. Like for eg:
->>       unmount /btrfs; fsck /dev/X
->>  and here fsck might fail to open the device if it wins the race.
+> This patch will make sure devices are synced before
+> return in the unmount thread.
 >
-> This true, but at least we know he'll have up to date buffers if he does
-> manage to open the device.
+> Signed-off-by: Anand Jain <anand.jain@oracle.com>
+> ---
+>  v2: Also to make sure bdev_closing is set it needs rcu_barrier(),
+>      restored rcu_barrier().
+>  v3: Removed the complicated timed-wait on blkdev_put code,
+>      but make synced and invalidated before umount is returned.
+>      So sorry that I have to change the title of this patch
+>      as well (was: btrfs: wait for bdev put).
 >
-> With the generic code, the blkdev_put happens after the super is gone,
-> so I'm not sure we can completely fix this from inside our callback.
+>  fs/btrfs/volumes.c | 5 +++++
+>  1 file changed, 5 insertions(+)
+>
+> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+> index 604daf315669..f741ade130a4 100644
+> --- a/fs/btrfs/volumes.c
+> +++ b/fs/btrfs/volumes.c
+> @@ -870,6 +870,11 @@ static void btrfs_close_one_device(struct btrfs_device *device)
+>  	if (device->missing)
+>  		fs_devices->missing_devices--;
+>
+> +	if (device->bdev && device->writeable) {
+> +		sync_blockdev(device->bdev);
+> +		invalidate_bdev(device->bdev);
+> +	}
+> +
+>  	new_device = btrfs_alloc_device(NULL, &device->devid,
+>  					device->uuid);
+>  	BUG_ON(IS_ERR(new_device)); /* -ENOMEM */
+>
 
-  Makes sense, sent out v3 with title
-   (btrfs: make sure device is synced before return)
+This should do it,I'll check with the xfstest I was able to reliably get 
+errors on.
 
-  Also sent out RFC patch
-     btrfs: make sure device is synced before return
-  where I have tried not to background blkdev_put(),
-  which seems to be better, it works fine per fstests.
+Thanks!
 
-
-Thanks, Anand
-
-
-> -chris
->
->
->
+-chris

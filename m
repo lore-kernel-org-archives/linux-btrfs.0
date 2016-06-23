@@ -1,68 +1,113 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:41789 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750874AbcFWVAM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 23 Jun 2016 17:00:12 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1bGBjH-0001VI-Oo
-	for linux-btrfs@vger.kernel.org; Thu, 23 Jun 2016 23:00:03 +0200
-Received: from bl13-157-91.dsl.telepac.pt ([85.246.157.91])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 23 Jun 2016 23:00:03 +0200
-Received: from vascomalmeida by bl13-157-91.dsl.telepac.pt with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 23 Jun 2016 23:00:03 +0200
-To: linux-btrfs@vger.kernel.org
-From: Vasco Almeida <vascomalmeida@sapo.pt>
-Subject: Bad hard drive - checksum verify failure forces readonly mount
-Date: Thu, 23 Jun 2016 20:30:18 +0000 (UTC)
-Message-ID: <loom.20160623T205347-371@post.gmane.org>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Received: from out1.mail.ruhr-uni-bochum.de ([134.147.53.149]:40046 "EHLO
+	out1.mail.ruhr-uni-bochum.de" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1752204AbcFWWvO (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 23 Jun 2016 18:51:14 -0400
+Subject: Re: btrfs send/receive error
+To: Lubos Kolouch <kolcon@kolcon.net>, linux-btrfs@vger.kernel.org
+References: <20160622120108.GA15708@localhost>
+ <b3bf0ff9-175b-29fa-485d-4818811619eb@rub.de>
+ <loom.20160623T090018-726@post.gmane.org>
+From: Michael Duell <michael.duell@rub.de>
+Message-ID: <7a162880-9ada-787a-3772-ab0fab69b20d@rub.de>
+Date: Fri, 24 Jun 2016 00:51:04 +0200
+MIME-Version: 1.0
+In-Reply-To: <loom.20160623T090018-726@post.gmane.org>
+Content-Type: multipart/signed; micalg=pgp-sha384;
+ protocol="application/pgp-signature";
+ boundary="53Oj2NweJACXer8l1V0KnsN83vwvbHBGP"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I was running OpenSuse Leap 42.1 with btrfs and
-LVM (Logical Volume Management).
-Last time I've checked smartd log, I noticed there were
-30 sector pending reallocation and 1 unrecoverable bad
-sector on hard drive.
-I think my hard drive got some sector corrupted and now btrfs fails
-some checksum and forces mount readonly.
-The device is successfully mounted readonly.
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--53Oj2NweJACXer8l1V0KnsN83vwvbHBGP
+Content-Type: multipart/mixed; boundary="XiU3bRNRi5qp068Gnsi0iCcR2kLv2mJxT"
+From: Michael Duell <michael.duell@rub.de>
+To: Lubos Kolouch <kolcon@kolcon.net>, linux-btrfs@vger.kernel.org
+Message-ID: <7a162880-9ada-787a-3772-ab0fab69b20d@rub.de>
+Subject: Re: btrfs send/receive error
+References: <20160622120108.GA15708@localhost>
+ <b3bf0ff9-175b-29fa-485d-4818811619eb@rub.de>
+ <loom.20160623T090018-726@post.gmane.org>
+In-Reply-To: <loom.20160623T090018-726@post.gmane.org>
 
-OpenSuse dmesg reported:
+--XiU3bRNRi5qp068Gnsi0iCcR2kLv2mJxT
+Content-Type: text/plain; charset=windows-1252
+Content-Transfer-Encoding: quoted-printable
 
-BTRFS: dm-1 checksum verify failed on 437944320 wanted 39F45669 found
-8BF8C752 leval 0
-(more 2 times)
-BTRFS: error (device dm-1) in btrfs_drop_snapshot:???: error=-5 IO failure
-BTRFS: info (device dm-1): forced readonly
+Hallo Lubos!
 
-Now I'm on System Rescue CD and that is not reported.
-I've written down those log line on paper, so there may be some typo.
-Seemingly there is no journalctl installed on this system to check
-OpenSuse logs again.
+I am not the right one to adress with this issue.
 
-All the following logs are on System Rescue CD.
-mount -o ro,recovery /dev/mapper/vg_pupu-lv_opensuse_root /mnt/opensuse
-https://bpaste.net/show/263e5f7ae9d4
+I, too, am only suffering from the bug, but not=20
+technically apt to address the problem.
 
-After mounting and umounting several times with and without "-o ro,recovery"
-https://bpaste.net/show/43eb64decb63
+You should search this ML and the internet for the
+appropriate threads and help out there.
 
-btrfs check --readonly /dev/mapper/vg_pupu-lv_opensuse_root
-https://bpaste.net/show/7ecf422c73a2
+I am just a user :)
+
+Greetings, Michael
+
+On 2016-06-23 09:02, Lubos Kolouch wrote:
+> Michael Duell <michael.duell <at> rub.de> writes:
+>=20
+>>
+>> Hallo Lubos!
+>>
+>> I have got the same problems with send/receive. Had those problems
+>> for several weeks or months now. Not sure when those started.
+>>
+>> These send/receive problems are known and there are several bug=20
+>> reports all over the internet and also on this list.
+>>
+>> Not sure if or when this gets fixed. It's broken atm.
+>>
+>> Michael
+>>
+>=20
+>=20
+> Hallo Michael,
+>=20
+> I would like to help to debug the issue. Something I can do/get
+> logs/whatever to speed up the root cause analysis and get it fixed?
+>=20
+> MfG/Best regards,
+>=20
+> Lubos
+>=20
+>=20
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>=20
 
 
-Would it be apropriate to run any of "btrfs check --repair /device" or
-"btrfs check --init-csum-tree /device" to be able to mount readwrite again?
+--XiU3bRNRi5qp068Gnsi0iCcR2kLv2mJxT--
 
-smartctl --all /dev/disk/by-id/ata-SAMSUNG_HD154UI_S1Y6JDWSC01351
-https://bpaste.net/show/a6c132618974
+--53Oj2NweJACXer8l1V0KnsN83vwvbHBGP
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
 
-btrfs check manpage: https://btrfs.wiki.kernel.org/index.php/Manpage/btrfs-check
-btrfsck page: https://btrfs.wiki.kernel.org/index.php/Btrfsck
+-----BEGIN PGP SIGNATURE-----
 
+iQIcBAEBCQAGBQJXbGfdAAoJEPMsk5xVZv93ha4QAJGC/4E2iuyCAFO97MfUqUBV
+2BW4bc9NvKcaVGgDwaKJ3QVQ1UDewMZ8coOtoUR1WII4GQ1YlAfoRQGvmTVGQ4Dy
+rHOlDOtddj/osNwJzQ7WjPTTqmLncBSSJSvuSd/T5MIsHMO1B8lMBLTgTiVvPYA+
+cuHsGENWcvhBn0hfwRwcI9+ZDIa9jabkK8WoricwCNBBAsRqleC3U4N38wWhgLeq
+AJmAy8kZ884QnX2OdFG0HijGnXl2p572JoreQzAubez3ICBiH/4LnmVRrZ2ntB4P
+OmQrBjUDwOiWjdFrb2QwK9ZGEm3Dych55q+l/RdhyENnrpiHTXVmsmpLR6SS5ZqM
+vZyw9EX1P7SzdgH45d06OqoHirmF5wGaOLY2uwpa3OyxrxwdSAX7PV/NoWKuWQzN
+Y/YyZZpSZO4Gpga38oVEumi4ZmSOBifXpxF8YYPfulxqtoqNX/Y64sySRsCZyr/B
+m9vpjSK7Cpo7P/9ukorFLe14TEP3y17zgCyN015uCfVVIrWSTnqwADhraz0a6duq
+7/HzmXiPs7m7sQWROcI2BHfNm4Ibv65rOL49o+Pre3P5+WIkS4+W1X41PUVSOH1i
+IUagqJbpPrWrRi24Dki0Vr7qAgF227570T1PA/QcRQUDbwCDLY0tl5guU/TAu8Rm
+2YembfG9QORwmxDwZXai
+=5weM
+-----END PGP SIGNATURE-----
+
+--53Oj2NweJACXer8l1V0KnsN83vwvbHBGP--

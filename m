@@ -1,67 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:18089 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1751830AbcF0Hwk (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 27 Jun 2016 03:52:40 -0400
-Received: from localhost.localdomain (unknown [10.167.226.34])
-	by cn.fujitsu.com (Postfix) with ESMTP id EFADA4056406
-	for <linux-btrfs@vger.kernel.org>; Mon, 27 Jun 2016 15:52:15 +0800 (CST)
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Received: from mx2.suse.de ([195.135.220.15]:51853 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751436AbcFWT0O (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 23 Jun 2016 15:26:14 -0400
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+	by mx2.suse.de (Postfix) with ESMTP id F0D70AC0B
+	for <linux-btrfs@vger.kernel.org>; Thu, 23 Jun 2016 19:26:07 +0000 (UTC)
+From: jeffm@suse.com
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 2/2] btrfs-progs: convert-test: Add test case for discontinuous hole extent
-Date: Mon, 27 Jun 2016 15:50:11 +0800
-Message-Id: <20160627075011.24330-2-quwenruo@cn.fujitsu.com>
-In-Reply-To: <20160627075011.24330-1-quwenruo@cn.fujitsu.com>
-References: <20160627075011.24330-1-quwenruo@cn.fujitsu.com>
-MIME-Version: 1.0
+Subject: [PATCH 0/3] btrfs-progs: check improve 'checking extents' scalability
+Date: Thu, 23 Jun 2016 15:26:03 -0400
+Message-Id: <1466709966-31506-1-git-send-email-jeffm@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-For ext* fs containing a large hole(larger than 128M), btrfs-convert
-will only insert one 128M hole extent and skip the remaining.
+From: Jeff Mahoney <jeffm@suse.com>
 
-This leads to discontinuous file extents.
+While running xfstests generic/291, which creates a single file populated
+with reflinks to the same extent, I found that fsck had been running for
+hours.  perf top lead me to find_data_backref as the culprit, and a litte
+more digging made it clear: For every extent record we add, we iterate
+the entire list first.  My test case had ~2M records.  That math doesn't
+go well.
 
-Add test case for it, and since it's a pinpoint regression test case, no
-combination of convert options nor checksum verification.
+This patchset converts the extent_backref list to an rbtree.  The test
+that used to run for more than 8 hours without completing now takes
+less than 20 seconds.
 
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+-Jeff
+
 ---
- tests/convert-tests/006-large-hole-extent/test.sh | 23 +++++++++++++++++++++++
- 1 file changed, 23 insertions(+)
- create mode 100755 tests/convert-tests/006-large-hole-extent/test.sh
 
-diff --git a/tests/convert-tests/006-large-hole-extent/test.sh b/tests/convert-tests/006-large-hole-extent/test.sh
-new file mode 100755
-index 0000000..d3bc093
---- /dev/null
-+++ b/tests/convert-tests/006-large-hole-extent/test.sh
-@@ -0,0 +1,23 @@
-+#!/bin/bash
-+# Create a base image with large hole extent, then convert to btrfs,
-+# check the converted image.
-+# Check if btrfs-convert can handle such large hole.
-+# Fast pinpoint regression test. No options combination nor checksum
-+# verification
-+
-+source $TOP/tests/common
-+source $TOP/tests/common.convert
-+
-+setup_root_helper
-+prepare_test_dev 512M
-+check_prereq btrfs-convert
-+
-+default_mke2fs="mke2fs -t ext4 -b 4096"
-+convert_test_preamble '' 'large hole extent test' 16k "$default_mke2fs"
-+convert_test_prep_fs $default_mke2fs
-+
-+run_check $SUDO_HELPER dd if=/dev/zero of=$TEST_MNT/file bs=1M \
-+	count=1 seek=1024 > /dev/null 2>&1
-+
-+run_check_umount_test_dev
-+convert_test_do_convert 
+Jeff Mahoney (3):
+  btrfs-progs: check: add helpers for converting between structures
+  btrfs-progs: check: supplement extent backref list with rbtree
+  btrfs-progs: check: switch to iterating over the backref_tree
+
+ cmds-check.c | 355 +++++++++++++++++++++++++++++++++++++++--------------------
+ 1 file changed, 237 insertions(+), 118 deletions(-)
+
 -- 
-2.9.0
-
-
+2.7.1
 

@@ -1,67 +1,214 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:51927 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751950AbcFWB26 (ORCPT
+Received: from mail-wm0-f68.google.com ([74.125.82.68]:35253 "EHLO
+	mail-wm0-f68.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751287AbcFWSRW (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 22 Jun 2016 21:28:58 -0400
-Received: from userv0021.oracle.com (userv0021.oracle.com [156.151.31.71])
-	by userp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id u5N1Svit012765
-	(version=TLSv1 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Thu, 23 Jun 2016 01:28:58 GMT
-Received: from aserv0122.oracle.com (aserv0122.oracle.com [141.146.126.236])
-	by userv0021.oracle.com (8.13.8/8.13.8) with ESMTP id u5N1SvWn025162
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Thu, 23 Jun 2016 01:28:57 GMT
-Received: from abhmp0009.oracle.com (abhmp0009.oracle.com [141.146.116.15])
-	by aserv0122.oracle.com (8.13.8/8.13.8) with ESMTP id u5N1StvF023358
-	for <linux-btrfs@vger.kernel.org>; Thu, 23 Jun 2016 01:28:56 GMT
-From: Liu Bo <bo.li.liu@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] Btrfs: fix BUG_ON in btrfs_submit_compressed_write
-Date: Wed, 22 Jun 2016 18:32:06 -0700
-Message-Id: <1466645526-27128-1-git-send-email-bo.li.liu@oracle.com>
+	Thu, 23 Jun 2016 14:17:22 -0400
+From: Nikolay Borisov <n.borisov.lkml@gmail.com>
+To: dsterba@suse.com, linux-btrfs@vger.kernel.org
+Cc: linux-kernel@vger.kernel.org, clm@fb.com, jbacik@fb.com,
+        Nikolay Borisov <n.borisov.lkml@gmail.com>
+Subject: [PATCH] btrfs: Fix slab accounting flags
+Date: Thu, 23 Jun 2016 21:17:08 +0300
+Message-Id: <1466705828-26195-1-git-send-email-n.borisov.lkml@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is similar to btrfs_submit_compressed_read(), if we fail after
-bio is allocated, then we can use bio_endio() and errors are saved
- in bio->bi_error.  But please note that we don't return errors to
-its caller because the caller assumes it won't call endio to cleanup
-on error.
+BTRFS is using a variety of slab caches to satisfy internal needs.
+Those slab caches are always allocated with the SLAB_RECLAIM_ACCOUNT,
+meaning allocations from the caches are going to be accounted as
+SReclaimable. At the same time btrfs is not registering any shrinkers
+whatsoever, thus preventing memory from the slabs to be shrunk. This
+means those caches are not in fact reclaimable.
 
-Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+To fix this remove the SLAB_RECLAIM_ACCOUNT on all caches apart from the
+inode cache, since this one is being freed by the generic VFS super_block
+shrinker. Also set the transaction related caches as SLAB_TEMPORARY,
+to better document the lifetime of the objects (it just translates
+to SLAB_RECLAIM_ACCOUNT).
+
+Signed-off-by: Nikolay Borisov <n.borisov.lkml@gmail.com>
 ---
- fs/btrfs/compression.c | 10 ++++++++--
- 1 file changed, 8 insertions(+), 2 deletions(-)
+ fs/btrfs/backref.c       | 2 +-
+ fs/btrfs/delayed-inode.c | 2 +-
+ fs/btrfs/delayed-ref.c   | 8 ++++----
+ fs/btrfs/disk-io.c       | 2 +-
+ fs/btrfs/extent_io.c     | 4 ++--
+ fs/btrfs/extent_map.c    | 2 +-
+ fs/btrfs/file.c          | 2 +-
+ fs/btrfs/inode.c         | 8 ++++----
+ fs/btrfs/ordered-data.c  | 2 +-
+ 9 files changed, 16 insertions(+), 16 deletions(-)
 
-diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
-index 658c39b..7a4d9c8 100644
---- a/fs/btrfs/compression.c
-+++ b/fs/btrfs/compression.c
-@@ -402,7 +402,10 @@ int btrfs_submit_compressed_write(struct inode *inode, u64 start,
- 			}
+diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
+index 8bb3509099e8..1ac8a3c7f68e 100644
+--- a/fs/btrfs/backref.c
++++ b/fs/btrfs/backref.c
+@@ -139,7 +139,7 @@ int __init btrfs_prelim_ref_init(void)
+ 	btrfs_prelim_ref_cache = kmem_cache_create("btrfs_prelim_ref",
+ 					sizeof(struct __prelim_ref),
+ 					0,
+-					SLAB_RECLAIM_ACCOUNT | SLAB_MEM_SPREAD,
++					SLAB_MEM_SPREAD,
+ 					NULL);
+ 	if (!btrfs_prelim_ref_cache)
+ 		return -ENOMEM;
+diff --git a/fs/btrfs/delayed-inode.c b/fs/btrfs/delayed-inode.c
+index 61561c2a3f96..4e5cd7dde3c5 100644
+--- a/fs/btrfs/delayed-inode.c
++++ b/fs/btrfs/delayed-inode.c
+@@ -34,7 +34,7 @@ int __init btrfs_delayed_inode_init(void)
+ 	delayed_node_cache = kmem_cache_create("btrfs_delayed_node",
+ 					sizeof(struct btrfs_delayed_node),
+ 					0,
+-					SLAB_RECLAIM_ACCOUNT | SLAB_MEM_SPREAD,
++					SLAB_MEM_SPREAD,
+ 					NULL);
+ 	if (!delayed_node_cache)
+ 		return -ENOMEM;
+diff --git a/fs/btrfs/delayed-ref.c b/fs/btrfs/delayed-ref.c
+index 430b3689b112..08e452599249 100644
+--- a/fs/btrfs/delayed-ref.c
++++ b/fs/btrfs/delayed-ref.c
+@@ -940,28 +940,28 @@ int btrfs_delayed_ref_init(void)
+ 	btrfs_delayed_ref_head_cachep = kmem_cache_create(
+ 				"btrfs_delayed_ref_head",
+ 				sizeof(struct btrfs_delayed_ref_head), 0,
+-				SLAB_RECLAIM_ACCOUNT | SLAB_MEM_SPREAD, NULL);
++				SLAB_MEM_SPREAD, NULL);
+ 	if (!btrfs_delayed_ref_head_cachep)
+ 		goto fail;
  
- 			ret = btrfs_map_bio(root, WRITE, bio, 0, 1);
--			BUG_ON(ret); /* -ENOMEM */
-+			if (ret) {
-+				bio->bi_error = ret;
-+				bio_endio(bio);
-+			}
+ 	btrfs_delayed_tree_ref_cachep = kmem_cache_create(
+ 				"btrfs_delayed_tree_ref",
+ 				sizeof(struct btrfs_delayed_tree_ref), 0,
+-				SLAB_RECLAIM_ACCOUNT | SLAB_MEM_SPREAD, NULL);
++				SLAB_MEM_SPREAD, NULL);
+ 	if (!btrfs_delayed_tree_ref_cachep)
+ 		goto fail;
  
- 			bio_put(bio);
+ 	btrfs_delayed_data_ref_cachep = kmem_cache_create(
+ 				"btrfs_delayed_data_ref",
+ 				sizeof(struct btrfs_delayed_data_ref), 0,
+-				SLAB_RECLAIM_ACCOUNT | SLAB_MEM_SPREAD, NULL);
++				SLAB_MEM_SPREAD, NULL);
+ 	if (!btrfs_delayed_data_ref_cachep)
+ 		goto fail;
  
-@@ -432,7 +435,10 @@ int btrfs_submit_compressed_write(struct inode *inode, u64 start,
- 	}
+ 	btrfs_delayed_extent_op_cachep = kmem_cache_create(
+ 				"btrfs_delayed_extent_op",
+ 				sizeof(struct btrfs_delayed_extent_op), 0,
+-				SLAB_RECLAIM_ACCOUNT | SLAB_MEM_SPREAD, NULL);
++				SLAB_MEM_SPREAD, NULL);
+ 	if (!btrfs_delayed_extent_op_cachep)
+ 		goto fail;
  
- 	ret = btrfs_map_bio(root, WRITE, bio, 0, 1);
--	BUG_ON(ret); /* -ENOMEM */
-+	if (ret) {
-+		bio->bi_error = ret;
-+		bio_endio(bio);
-+	}
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 54cca7a1572b..cb1a05da5682 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -101,7 +101,7 @@ int __init btrfs_end_io_wq_init(void)
+ 	btrfs_end_io_wq_cache = kmem_cache_create("btrfs_end_io_wq",
+ 					sizeof(struct btrfs_end_io_wq),
+ 					0,
+-					SLAB_RECLAIM_ACCOUNT | SLAB_MEM_SPREAD,
++					SLAB_MEM_SPREAD,
+ 					NULL);
+ 	if (!btrfs_end_io_wq_cache)
+ 		return -ENOMEM;
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index aaee3ef55ed8..f3337998264d 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -163,13 +163,13 @@ int __init extent_io_init(void)
+ {
+ 	extent_state_cache = kmem_cache_create("btrfs_extent_state",
+ 			sizeof(struct extent_state), 0,
+-			SLAB_RECLAIM_ACCOUNT | SLAB_MEM_SPREAD, NULL);
++			SLAB_MEM_SPREAD, NULL);
+ 	if (!extent_state_cache)
+ 		return -ENOMEM;
  
- 	bio_put(bio);
+ 	extent_buffer_cache = kmem_cache_create("btrfs_extent_buffer",
+ 			sizeof(struct extent_buffer), 0,
+-			SLAB_RECLAIM_ACCOUNT | SLAB_MEM_SPREAD, NULL);
++			SLAB_MEM_SPREAD, NULL);
+ 	if (!extent_buffer_cache)
+ 		goto free_state_cache;
+ 
+diff --git a/fs/btrfs/extent_map.c b/fs/btrfs/extent_map.c
+index e0715fcfb11e..26f9ac719d20 100644
+--- a/fs/btrfs/extent_map.c
++++ b/fs/btrfs/extent_map.c
+@@ -13,7 +13,7 @@ int __init extent_map_init(void)
+ {
+ 	extent_map_cache = kmem_cache_create("btrfs_extent_map",
+ 			sizeof(struct extent_map), 0,
+-			SLAB_RECLAIM_ACCOUNT | SLAB_MEM_SPREAD, NULL);
++			SLAB_MEM_SPREAD, NULL);
+ 	if (!extent_map_cache)
+ 		return -ENOMEM;
  	return 0;
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index e0c9bd3fb02d..55e4d36f0c6a 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -2977,7 +2977,7 @@ int btrfs_auto_defrag_init(void)
+ {
+ 	btrfs_inode_defrag_cachep = kmem_cache_create("btrfs_inode_defrag",
+ 					sizeof(struct inode_defrag), 0,
+-					SLAB_RECLAIM_ACCOUNT | SLAB_MEM_SPREAD,
++					SLAB_MEM_SPREAD,
+ 					NULL);
+ 	if (!btrfs_inode_defrag_cachep)
+ 		return -ENOMEM;
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index d2be95cfb6d1..66051c02b6de 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -9383,25 +9383,25 @@ int btrfs_init_cachep(void)
+ 
+ 	btrfs_trans_handle_cachep = kmem_cache_create("btrfs_trans_handle",
+ 			sizeof(struct btrfs_trans_handle), 0,
+-			SLAB_RECLAIM_ACCOUNT | SLAB_MEM_SPREAD, NULL);
++			SLAB_TEMPORARY | SLAB_MEM_SPREAD, NULL);
+ 	if (!btrfs_trans_handle_cachep)
+ 		goto fail;
+ 
+ 	btrfs_transaction_cachep = kmem_cache_create("btrfs_transaction",
+ 			sizeof(struct btrfs_transaction), 0,
+-			SLAB_RECLAIM_ACCOUNT | SLAB_MEM_SPREAD, NULL);
++			SLAB_TEMPORARY | SLAB_MEM_SPREAD, NULL);
+ 	if (!btrfs_transaction_cachep)
+ 		goto fail;
+ 
+ 	btrfs_path_cachep = kmem_cache_create("btrfs_path",
+ 			sizeof(struct btrfs_path), 0,
+-			SLAB_RECLAIM_ACCOUNT | SLAB_MEM_SPREAD, NULL);
++			SLAB_MEM_SPREAD, NULL);
+ 	if (!btrfs_path_cachep)
+ 		goto fail;
+ 
+ 	btrfs_free_space_cachep = kmem_cache_create("btrfs_free_space",
+ 			sizeof(struct btrfs_free_space), 0,
+-			SLAB_RECLAIM_ACCOUNT | SLAB_MEM_SPREAD, NULL);
++			SLAB_MEM_SPREAD, NULL);
+ 	if (!btrfs_free_space_cachep)
+ 		goto fail;
+ 
+diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
+index e96634a725c3..c9fa1661277c 100644
+--- a/fs/btrfs/ordered-data.c
++++ b/fs/btrfs/ordered-data.c
+@@ -1121,7 +1121,7 @@ int __init ordered_data_init(void)
+ {
+ 	btrfs_ordered_extent_cache = kmem_cache_create("btrfs_ordered_extent",
+ 				     sizeof(struct btrfs_ordered_extent), 0,
+-				     SLAB_RECLAIM_ACCOUNT | SLAB_MEM_SPREAD,
++				     SLAB_MEM_SPREAD,
+ 				     NULL);
+ 	if (!btrfs_ordered_extent_cache)
+ 		return -ENOMEM;
 -- 
-2.5.5
+2.7.4
 

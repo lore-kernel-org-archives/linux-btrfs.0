@@ -1,47 +1,93 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oi0-f46.google.com ([209.85.218.46]:34206 "EHLO
-	mail-oi0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750799AbcFXA0Y (ORCPT
+Received: from mail-oi0-f52.google.com ([209.85.218.52]:32923 "EHLO
+	mail-oi0-f52.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750866AbcFXAy3 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 23 Jun 2016 20:26:24 -0400
-Received: by mail-oi0-f46.google.com with SMTP id s66so94669649oif.1
-        for <linux-btrfs@vger.kernel.org>; Thu, 23 Jun 2016 17:26:24 -0700 (PDT)
+	Thu, 23 Jun 2016 20:54:29 -0400
+Received: by mail-oi0-f52.google.com with SMTP id u201so95333077oie.0
+        for <linux-btrfs@vger.kernel.org>; Thu, 23 Jun 2016 17:54:29 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <5790aea9-0976-1742-7d1b-79dbe44008c3@inwind.it>
-References: <20160620034427.GK15597@hungrycats.org> <20160620231351.1833a341@natsu>
- <20160620191112.GL15597@hungrycats.org> <CAJCQCtR9uAn58KJKEjCsbyLYJTQVqMx-ghsVp_MjLBF-aiikcg@mail.gmail.com>
- <20160620204049.GA1986@hungrycats.org> <CAJCQCtR5pV53mFyGWxRxm69zwF5_sEvNRRRvOSgnZ1t8KZdc3g@mail.gmail.com>
- <20160621015559.GM15597@hungrycats.org> <CAJCQCtRUUd+moK25N3704ZG54cFrCw1-Uxm2QO-XF9g0=mHazw@mail.gmail.com>
- <20160622203504.GQ15597@hungrycats.org> <5790aea9-0976-1742-7d1b-79dbe44008c3@inwind.it>
+In-Reply-To: <loom.20160623T205347-371@post.gmane.org>
+References: <loom.20160623T205347-371@post.gmane.org>
 From: Chris Murphy <lists@colorremedies.com>
-Date: Thu, 23 Jun 2016 18:26:22 -0600
-Message-ID: <CAJCQCtRXqSCFZTca+Vwraa0vS-MzLQKEkr=s41Vypc-O0ZDdxQ@mail.gmail.com>
-Subject: Re: Adventures in btrfs raid5 disk recovery
-To: kreijack@inwind.it
-Cc: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>,
-        Chris Murphy <lists@colorremedies.com>, Roman Mamedov <rm@romanrm.net>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Date: Thu, 23 Jun 2016 18:54:28 -0600
+Message-ID: <CAJCQCtRO+FYrsfHF_ARSnPfoS7uzvLR4hB1V-TJ_YN4NcA6srw@mail.gmail.com>
+Subject: Re: Bad hard drive - checksum verify failure forces readonly mount
+To: Vasco Almeida <vascomalmeida@sapo.pt>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Jun 23, 2016 at 1:32 PM, Goffredo Baroncelli <kreijack@inwind.it> wrote:
-
+On Thu, Jun 23, 2016 at 2:30 PM, Vasco Almeida <vascomalmeida@sapo.pt> wrote:
+> I was running OpenSuse Leap 42.1 with btrfs and
+> LVM (Logical Volume Management).
+> Last time I've checked smartd log, I noticed there were
+> 30 sector pending reallocation and 1 unrecoverable bad
+> sector on hard drive.
+> I think my hard drive got some sector corrupted and now btrfs fails
+> some checksum and forces mount readonly.
+> The device is successfully mounted readonly.
 >
-> The raid5 write hole is avoided in BTRFS (and in ZFS) thanks to the checksum.
+> OpenSuse dmesg reported:
+>
+> BTRFS: dm-1 checksum verify failed on 437944320 wanted 39F45669 found
+> 8BF8C752 leval 0
+> (more 2 times)
+> BTRFS: error (device dm-1) in btrfs_drop_snapshot:???: error=-5 IO failure
+> BTRFS: info (device dm-1): forced readonly
+>
+> Now I'm on System Rescue CD and that is not reported.
+> I've written down those log line on paper, so there may be some typo.
+> Seemingly there is no journalctl installed on this system to check
+> OpenSuse logs again.
+>
+> All the following logs are on System Rescue CD.
+> mount -o ro,recovery /dev/mapper/vg_pupu-lv_opensuse_root /mnt/opensuse
+> https://bpaste.net/show/263e5f7ae9d4
+>
+> After mounting and umounting several times with and without "-o ro,recovery"
+> https://bpaste.net/show/43eb64decb63
+>
+> btrfs check --readonly /dev/mapper/vg_pupu-lv_opensuse_root
+> https://bpaste.net/show/7ecf422c73a2
+>
+>
+> Would it be apropriate to run any of "btrfs check --repair /device" or
+> "btrfs check --init-csum-tree /device" to be able to mount readwrite again?
+>
+> smartctl --all /dev/disk/by-id/ata-SAMSUNG_HD154UI_S1Y6JDWSC01351
+> https://bpaste.net/show/a6c132618974
+>
+> btrfs check manpage: https://btrfs.wiki.kernel.org/index.php/Manpage/btrfs-check
+> btrfsck page: https://btrfs.wiki.kernel.org/index.php/Btrfsck
 
-Yeah I'm kinda confused on this point.
+Normally if this is just data blocks corrupted it will still mount rw
+and just flag the affected file in kernel messages so you can delete
+it and replace.
 
-https://btrfs.wiki.kernel.org/index.php/RAID56
+Since that's not happening, it's probably metadata, but then there
+should be two copies unless this is on SSD or otherwise the file
+system was created with -m single. If there are two copies of the
+metadata and both are wrong that's unusual.
 
-It says there is a write hole for Btrfs. But defines it in terms of
-parity possibly being stale after a crash. I think the term comes not
-from merely parity being wrong but parity being wrong *and* then being
-used to wrongly reconstruct data because it's blindly trusted.
 
-I don't read code well enough, but I'd be surprised if Btrfs
-reconstructs from parity and doesn't then check the resulting
-reconstructed data to its EXTENT_CSUM.
+>From the pasted kernel messages:
+
+> Linux version 3.18.34-std473-amd64 (root@rl-sysrcd-p11) (gcc version 4.8.5 (Gentoo 4.8.5 p1.3, pie-0.6.2) ) #2 SMP Tue May 24 20:34:19 UTC 2016
+
+
+3.18.34 is ancient. Find something newer and try to remount normally.
+And then also with recovery if necessary (don't use ro, see if it'll
+mount rw and fix itself). And if not, then try btrfs check with a
+newer version of btrfs-progs, I can't tell from the pasted output what
+version you're using but since the kernel is so old, decent chance the
+btrfsck is old also.
+
+
+Chris Murphy
+
+
 
 
 

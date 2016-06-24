@@ -1,16 +1,16 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:37804 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:37808 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750972AbcFXWP1 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 24 Jun 2016 18:15:27 -0400
+	id S1751025AbcFXWP2 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 24 Jun 2016 18:15:28 -0400
 Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id EB009AD32
-	for <linux-btrfs@vger.kernel.org>; Fri, 24 Jun 2016 22:15:25 +0000 (UTC)
+	by mx2.suse.de (Postfix) with ESMTP id 11F9EAD51
+	for <linux-btrfs@vger.kernel.org>; Fri, 24 Jun 2016 22:15:26 +0000 (UTC)
 From: jeffm@suse.com
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 01/31] btrfs: plumb fs_info into btrfs_work
-Date: Fri, 24 Jun 2016 18:14:54 -0400
-Message-Id: <1466806524-27508-2-git-send-email-jeffm@suse.com>
+Subject: [PATCH 02/31] btrfs: prefix fsid to all trace events
+Date: Fri, 24 Jun 2016 18:14:55 -0400
+Message-Id: <1466806524-27508-3-git-send-email-jeffm@suse.com>
 In-Reply-To: <1466806524-27508-1-git-send-email-jeffm@suse.com>
 References: <1466806524-27508-1-git-send-email-jeffm@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -18,262 +18,1131 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Jeff Mahoney <jeffm@suse.com>
 
-In order to provide an fsid for trace events, we'll need a btrfs_fs_info
-pointer.  The most lightweight way to do that for btrfs_work structures
-is to associate it with the __btrfs_workqueue structure.  Each queued
-btrfs_work structure has a workqueue associated with it, so that's
-a natural fit.  It's a privately defined structures, so we add accessors
-to retrieve the fs_info pointer.
+When using trace events to debug a problem, it's impossible to determine
+which file system generated a particular event.  This patch adds a
+macro to prefix standard information to the head of a trace event.
+
+The extent_state alloc/free events are all that's left without an
+fs_info available.
 
 Signed-off-by: Jeff Mahoney <jeffm@suse.com>
 ---
- fs/btrfs/async-thread.c | 31 +++++++++++++++++++++++++------
- fs/btrfs/async-thread.h |  6 +++++-
- fs/btrfs/disk-io.c      | 47 ++++++++++++++++++++++++++++-------------------
- fs/btrfs/scrub.c        | 10 +++++-----
- 4 files changed, 63 insertions(+), 31 deletions(-)
+ fs/btrfs/delayed-ref.c       |   9 +-
+ fs/btrfs/extent-tree.c       |  10 +-
+ fs/btrfs/qgroup.c            |  19 +--
+ fs/btrfs/qgroup.h            |   9 +-
+ fs/btrfs/super.c             |   2 +-
+ include/trace/events/btrfs.h | 282 ++++++++++++++++++++++++-------------------
+ 6 files changed, 182 insertions(+), 149 deletions(-)
 
-diff --git a/fs/btrfs/async-thread.c b/fs/btrfs/async-thread.c
-index 5fb60ea..e0f071f 100644
---- a/fs/btrfs/async-thread.c
-+++ b/fs/btrfs/async-thread.c
-@@ -34,6 +34,10 @@
+diff --git a/fs/btrfs/delayed-ref.c b/fs/btrfs/delayed-ref.c
+index 430b368..e7b1ec0 100644
+--- a/fs/btrfs/delayed-ref.c
++++ b/fs/btrfs/delayed-ref.c
+@@ -606,7 +606,8 @@ add_delayed_ref_head(struct btrfs_fs_info *fs_info,
+ 		qrecord->num_bytes = num_bytes;
+ 		qrecord->old_roots = NULL;
  
- struct __btrfs_workqueue {
- 	struct workqueue_struct *normal_wq;
-+
-+	/* File system this workqueue services */
-+	struct btrfs_fs_info *fs_info;
-+
- 	/* List head pointing to ordered work list */
- 	struct list_head ordered_list;
+-		qexisting = btrfs_qgroup_insert_dirty_extent(delayed_refs,
++		qexisting = btrfs_qgroup_insert_dirty_extent(fs_info,
++							     delayed_refs,
+ 							     qrecord);
+ 		if (qexisting)
+ 			kfree(qrecord);
+@@ -615,7 +616,7 @@ add_delayed_ref_head(struct btrfs_fs_info *fs_info,
+ 	spin_lock_init(&head_ref->lock);
+ 	mutex_init(&head_ref->mutex);
  
-@@ -70,6 +74,18 @@ void btrfs_##name(struct work_struct *arg)				\
- 	normal_work_helper(work);					\
+-	trace_add_delayed_ref_head(ref, head_ref, action);
++	trace_add_delayed_ref_head(fs_info, ref, head_ref, action);
+ 
+ 	existing = htree_insert(&delayed_refs->href_root,
+ 				&head_ref->href_node);
+@@ -682,7 +683,7 @@ add_delayed_tree_ref(struct btrfs_fs_info *fs_info,
+ 		ref->type = BTRFS_TREE_BLOCK_REF_KEY;
+ 	full_ref->level = level;
+ 
+-	trace_add_delayed_tree_ref(ref, full_ref, action);
++	trace_add_delayed_tree_ref(fs_info, ref, full_ref, action);
+ 
+ 	ret = add_delayed_ref_tail_merge(trans, delayed_refs, head_ref, ref);
+ 
+@@ -739,7 +740,7 @@ add_delayed_data_ref(struct btrfs_fs_info *fs_info,
+ 	full_ref->objectid = owner;
+ 	full_ref->offset = offset;
+ 
+-	trace_add_delayed_data_ref(ref, full_ref, action);
++	trace_add_delayed_data_ref(fs_info, ref, full_ref, action);
+ 
+ 	ret = add_delayed_ref_tail_merge(trans, delayed_refs, head_ref, ref);
+ 
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 29e5d00..39308a8 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -2194,7 +2194,7 @@ static int run_delayed_data_ref(struct btrfs_trans_handle *trans,
+ 	ins.type = BTRFS_EXTENT_ITEM_KEY;
+ 
+ 	ref = btrfs_delayed_node_to_data_ref(node);
+-	trace_run_delayed_data_ref(node, ref, node->action);
++	trace_run_delayed_data_ref(root->fs_info, node, ref, node->action);
+ 
+ 	if (node->type == BTRFS_SHARED_DATA_REF_KEY)
+ 		parent = ref->parent;
+@@ -2349,7 +2349,7 @@ static int run_delayed_tree_ref(struct btrfs_trans_handle *trans,
+ 						 SKINNY_METADATA);
+ 
+ 	ref = btrfs_delayed_node_to_tree_ref(node);
+-	trace_run_delayed_tree_ref(node, ref, node->action);
++	trace_run_delayed_tree_ref(root->fs_info, node, ref, node->action);
+ 
+ 	if (node->type == BTRFS_SHARED_BLOCK_REF_KEY)
+ 		parent = ref->parent;
+@@ -2413,7 +2413,8 @@ static int run_one_delayed_ref(struct btrfs_trans_handle *trans,
+ 		 */
+ 		BUG_ON(extent_op);
+ 		head = btrfs_delayed_node_to_head(node);
+-		trace_run_delayed_ref_head(node, head, node->action);
++		trace_run_delayed_ref_head(root->fs_info, node, head,
++					   node->action);
+ 
+ 		if (insert_reserved) {
+ 			btrfs_pin_extent(root, node->bytenr,
+@@ -8317,7 +8318,8 @@ static int record_one_subtree_extent(struct btrfs_trans_handle *trans,
+ 
+ 	delayed_refs = &trans->transaction->delayed_refs;
+ 	spin_lock(&delayed_refs->lock);
+-	if (btrfs_qgroup_insert_dirty_extent(delayed_refs, qrecord))
++	if (btrfs_qgroup_insert_dirty_extent(trans->root->fs_info,
++					     delayed_refs, qrecord))
+ 		kfree(qrecord);
+ 	spin_unlock(&delayed_refs->lock);
+ 
+diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
+index 9d4c05b..13e28d8 100644
+--- a/fs/btrfs/qgroup.c
++++ b/fs/btrfs/qgroup.c
+@@ -1453,9 +1453,10 @@ int btrfs_qgroup_prepare_account_extents(struct btrfs_trans_handle *trans,
+ 	return ret;
  }
  
-+struct btrfs_fs_info *
-+btrfs_workqueue_owner(struct __btrfs_workqueue *wq)
-+{
-+	return wq->fs_info;
-+}
-+
-+struct btrfs_fs_info *
-+btrfs_work_owner(struct btrfs_work *work)
-+{
-+	return work->wq->fs_info;
-+}
-+
- BTRFS_WORK_HELPER(worker_helper);
- BTRFS_WORK_HELPER(delalloc_helper);
- BTRFS_WORK_HELPER(flush_delalloc_helper);
-@@ -94,14 +110,15 @@ BTRFS_WORK_HELPER(scrubnc_helper);
- BTRFS_WORK_HELPER(scrubparity_helper);
- 
- static struct __btrfs_workqueue *
--__btrfs_alloc_workqueue(const char *name, unsigned int flags, int limit_active,
--			 int thresh)
-+__btrfs_alloc_workqueue(struct btrfs_fs_info *fs_info, const char *name,
-+			unsigned int flags, int limit_active, int thresh)
+-struct btrfs_qgroup_extent_record
+-*btrfs_qgroup_insert_dirty_extent(struct btrfs_delayed_ref_root *delayed_refs,
+-				  struct btrfs_qgroup_extent_record *record)
++struct btrfs_qgroup_extent_record *
++btrfs_qgroup_insert_dirty_extent(struct btrfs_fs_info *fs_info,
++				 struct btrfs_delayed_ref_root *delayed_refs,
++				 struct btrfs_qgroup_extent_record *record)
  {
- 	struct __btrfs_workqueue *ret = kzalloc(sizeof(*ret), GFP_KERNEL);
+ 	struct rb_node **p = &delayed_refs->dirty_extent_root.rb_node;
+ 	struct rb_node *parent_node = NULL;
+@@ -1463,7 +1464,7 @@ struct btrfs_qgroup_extent_record
+ 	u64 bytenr = record->bytenr;
  
- 	if (!ret)
- 		return NULL;
+ 	assert_spin_locked(&delayed_refs->lock);
+-	trace_btrfs_qgroup_insert_dirty_extent(record);
++	trace_btrfs_qgroup_insert_dirty_extent(fs_info, record);
  
-+	ret->fs_info = fs_info;
- 	ret->limit_active = limit_active;
- 	atomic_set(&ret->pending, 0);
- 	if (thresh == 0)
-@@ -143,7 +160,8 @@ __btrfs_alloc_workqueue(const char *name, unsigned int flags, int limit_active,
- static inline void
- __btrfs_destroy_workqueue(struct __btrfs_workqueue *wq);
+ 	while (*p) {
+ 		parent_node = *p;
+@@ -1595,8 +1596,8 @@ static int qgroup_update_counters(struct btrfs_fs_info *fs_info,
+ 		cur_old_count = btrfs_qgroup_get_old_refcnt(qg, seq);
+ 		cur_new_count = btrfs_qgroup_get_new_refcnt(qg, seq);
  
--struct btrfs_workqueue *btrfs_alloc_workqueue(const char *name,
-+struct btrfs_workqueue *btrfs_alloc_workqueue(struct btrfs_fs_info *fs_info,
-+					      const char *name,
- 					      unsigned int flags,
- 					      int limit_active,
- 					      int thresh)
-@@ -153,7 +171,8 @@ struct btrfs_workqueue *btrfs_alloc_workqueue(const char *name,
- 	if (!ret)
- 		return NULL;
+-		trace_qgroup_update_counters(qg->qgroupid, cur_old_count,
+-					     cur_new_count);
++		trace_qgroup_update_counters(fs_info, qg->qgroupid,
++					     cur_old_count, cur_new_count);
  
--	ret->normal = __btrfs_alloc_workqueue(name, flags & ~WQ_HIGHPRI,
-+	ret->normal = __btrfs_alloc_workqueue(fs_info, name,
-+					      flags & ~WQ_HIGHPRI,
- 					      limit_active, thresh);
- 	if (!ret->normal) {
- 		kfree(ret);
-@@ -161,8 +180,8 @@ struct btrfs_workqueue *btrfs_alloc_workqueue(const char *name,
- 	}
+ 		/* Rfer update part */
+ 		if (cur_old_count == 0 && cur_new_count > 0) {
+@@ -1687,8 +1688,8 @@ btrfs_qgroup_account_extent(struct btrfs_trans_handle *trans,
+ 		goto out_free;
+ 	BUG_ON(!fs_info->quota_root);
  
- 	if (flags & WQ_HIGHPRI) {
--		ret->high = __btrfs_alloc_workqueue(name, flags, limit_active,
--						    thresh);
-+		ret->high = __btrfs_alloc_workqueue(fs_info, name, flags,
-+						    limit_active, thresh);
- 		if (!ret->high) {
- 			__btrfs_destroy_workqueue(ret->normal);
- 			kfree(ret);
-diff --git a/fs/btrfs/async-thread.h b/fs/btrfs/async-thread.h
-index ad4d064..8e52484 100644
---- a/fs/btrfs/async-thread.h
-+++ b/fs/btrfs/async-thread.h
-@@ -21,6 +21,7 @@
- #define __BTRFS_ASYNC_THREAD_
- #include <linux/workqueue.h>
+-	trace_btrfs_qgroup_account_extent(bytenr, num_bytes, nr_old_roots,
+-					  nr_new_roots);
++	trace_btrfs_qgroup_account_extent(fs_info, bytenr, num_bytes,
++					  nr_old_roots, nr_new_roots);
  
-+struct btrfs_fs_info;
- struct btrfs_workqueue;
- /* Internal use only */
- struct __btrfs_workqueue;
-@@ -67,7 +68,8 @@ BTRFS_WORK_HELPER_PROTO(scrubnc_helper);
- BTRFS_WORK_HELPER_PROTO(scrubparity_helper);
+ 	qgroups = ulist_alloc(GFP_NOFS);
+ 	if (!qgroups) {
+@@ -1759,7 +1760,7 @@ int btrfs_qgroup_account_extents(struct btrfs_trans_handle *trans,
+ 		record = rb_entry(node, struct btrfs_qgroup_extent_record,
+ 				  node);
  
+-		trace_btrfs_qgroup_account_extents(record);
++		trace_btrfs_qgroup_account_extents(fs_info, record);
  
--struct btrfs_workqueue *btrfs_alloc_workqueue(const char *name,
-+struct btrfs_workqueue *btrfs_alloc_workqueue(struct btrfs_fs_info *fs_info,
-+					      const char *name,
- 					      unsigned int flags,
- 					      int limit_active,
- 					      int thresh);
-@@ -80,4 +82,6 @@ void btrfs_queue_work(struct btrfs_workqueue *wq,
- void btrfs_destroy_workqueue(struct btrfs_workqueue *wq);
- void btrfs_workqueue_set_max(struct btrfs_workqueue *wq, int max);
- void btrfs_set_work_high_priority(struct btrfs_work *work);
-+struct btrfs_fs_info *btrfs_work_owner(struct btrfs_work *work);
-+struct btrfs_fs_info *btrfs_workqueue_owner(struct __btrfs_workqueue *wq);
- #endif
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 54cca7a..685c81a 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -2316,17 +2316,19 @@ static int btrfs_init_workqueues(struct btrfs_fs_info *fs_info,
- 	unsigned int flags = WQ_MEM_RECLAIM | WQ_FREEZABLE | WQ_UNBOUND;
+ 		if (!ret) {
+ 			/*
+diff --git a/fs/btrfs/qgroup.h b/fs/btrfs/qgroup.h
+index ecb2c14..710887c 100644
+--- a/fs/btrfs/qgroup.h
++++ b/fs/btrfs/qgroup.h
+@@ -63,9 +63,10 @@ void btrfs_free_qgroup_config(struct btrfs_fs_info *fs_info);
+ struct btrfs_delayed_extent_op;
+ int btrfs_qgroup_prepare_account_extents(struct btrfs_trans_handle *trans,
+ 					 struct btrfs_fs_info *fs_info);
+-struct btrfs_qgroup_extent_record
+-*btrfs_qgroup_insert_dirty_extent(struct btrfs_delayed_ref_root *delayed_refs,
+-				  struct btrfs_qgroup_extent_record *record);
++struct btrfs_qgroup_extent_record *
++btrfs_qgroup_insert_dirty_extent(struct btrfs_fs_info *fs_info,
++				 struct btrfs_delayed_ref_root *delayed_refs,
++				 struct btrfs_qgroup_extent_record *record);
+ int
+ btrfs_qgroup_account_extent(struct btrfs_trans_handle *trans,
+ 			    struct btrfs_fs_info *fs_info,
+@@ -88,7 +89,7 @@ static inline void btrfs_qgroup_free_delayed_ref(struct btrfs_fs_info *fs_info,
+ 						 u64 ref_root, u64 num_bytes)
+ {
+ 	btrfs_qgroup_free_refroot(fs_info, ref_root, num_bytes);
+-	trace_btrfs_qgroup_free_delayed_ref(ref_root, num_bytes);
++	trace_btrfs_qgroup_free_delayed_ref(fs_info, ref_root, num_bytes);
+ }
+ void assert_qgroups_uptodate(struct btrfs_trans_handle *trans);
  
- 	fs_info->workers =
--		btrfs_alloc_workqueue("worker", flags | WQ_HIGHPRI,
--				      max_active, 16);
-+		btrfs_alloc_workqueue(fs_info, "worker",
-+				      flags | WQ_HIGHPRI, max_active, 16);
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index 60e7179..ee56b0e 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -1149,7 +1149,7 @@ int btrfs_sync_fs(struct super_block *sb, int wait)
+ 	struct btrfs_fs_info *fs_info = btrfs_sb(sb);
+ 	struct btrfs_root *root = fs_info->tree_root;
  
- 	fs_info->delalloc_workers =
--		btrfs_alloc_workqueue("delalloc", flags, max_active, 2);
-+		btrfs_alloc_workqueue(fs_info, "delalloc",
-+				      flags, max_active, 2);
+-	trace_btrfs_sync_fs(wait);
++	trace_btrfs_sync_fs(fs_info, wait);
  
- 	fs_info->flush_workers =
--		btrfs_alloc_workqueue("flush_delalloc", flags, max_active, 0);
-+		btrfs_alloc_workqueue(fs_info, "flush_delalloc",
-+				      flags, max_active, 0);
+ 	if (!wait) {
+ 		filemap_flush(fs_info->btree_inode->i_mapping);
+diff --git a/include/trace/events/btrfs.h b/include/trace/events/btrfs.h
+index e90e82a..eba0c65 100644
+--- a/include/trace/events/btrfs.h
++++ b/include/trace/events/btrfs.h
+@@ -66,6 +66,21 @@ struct btrfs_qgroup_extent_record;
+ 	{ BTRFS_BLOCK_GROUP_RAID6,	"RAID6"}
  
- 	fs_info->caching_workers =
--		btrfs_alloc_workqueue("cache", flags, max_active, 0);
-+		btrfs_alloc_workqueue(fs_info, "cache", flags, max_active, 0);
+ #define BTRFS_UUID_SIZE 16
++#define TP_STRUCT__entry_fsid __array(u8, fsid, BTRFS_UUID_SIZE)
++
++#define TP_fast_assign_fsid(fs_info)					\
++	memcpy(__entry->fsid, fs_info->fsid, BTRFS_UUID_SIZE)
++
++#define TP_STRUCT__entry_btrfs(args...)					\
++	TP_STRUCT__entry(						\
++		TP_STRUCT__entry_fsid					\
++		args)
++#define TP_fast_assign_btrfs(fs_info, args...)				\
++	TP_fast_assign(							\
++		TP_fast_assign_fsid(fs_info);				\
++		args)
++#define TP_printk_btrfs(fmt, args...) \
++	TP_printk("%pU: " fmt, __entry->fsid, args)
  
- 	/*
- 	 * a higher idle thresh on the submit workers makes it much more
-@@ -2334,41 +2336,48 @@ static int btrfs_init_workqueues(struct btrfs_fs_info *fs_info,
- 	 * devices
- 	 */
- 	fs_info->submit_workers =
--		btrfs_alloc_workqueue("submit", flags,
-+		btrfs_alloc_workqueue(fs_info, "submit", flags,
- 				      min_t(u64, fs_devices->num_devices,
- 					    max_active), 64);
+ TRACE_EVENT(btrfs_transaction_commit,
  
- 	fs_info->fixup_workers =
--		btrfs_alloc_workqueue("fixup", flags, 1, 0);
-+		btrfs_alloc_workqueue(fs_info, "fixup", flags, 1, 0);
+@@ -73,17 +88,17 @@ TRACE_EVENT(btrfs_transaction_commit,
  
- 	/*
- 	 * endios are largely parallel and should have a very
- 	 * low idle thresh
- 	 */
- 	fs_info->endio_workers =
--		btrfs_alloc_workqueue("endio", flags, max_active, 4);
-+		btrfs_alloc_workqueue(fs_info, "endio", flags, max_active, 4);
- 	fs_info->endio_meta_workers =
--		btrfs_alloc_workqueue("endio-meta", flags, max_active, 4);
-+		btrfs_alloc_workqueue(fs_info, "endio-meta", flags,
-+				      max_active, 4);
- 	fs_info->endio_meta_write_workers =
--		btrfs_alloc_workqueue("endio-meta-write", flags, max_active, 2);
-+		btrfs_alloc_workqueue(fs_info, "endio-meta-write", flags,
-+				      max_active, 2);
- 	fs_info->endio_raid56_workers =
--		btrfs_alloc_workqueue("endio-raid56", flags, max_active, 4);
-+		btrfs_alloc_workqueue(fs_info, "endio-raid56", flags,
-+				      max_active, 4);
- 	fs_info->endio_repair_workers =
--		btrfs_alloc_workqueue("endio-repair", flags, 1, 0);
-+		btrfs_alloc_workqueue(fs_info, "endio-repair", flags, 1, 0);
- 	fs_info->rmw_workers =
--		btrfs_alloc_workqueue("rmw", flags, max_active, 2);
-+		btrfs_alloc_workqueue(fs_info, "rmw", flags, max_active, 2);
- 	fs_info->endio_write_workers =
--		btrfs_alloc_workqueue("endio-write", flags, max_active, 2);
-+		btrfs_alloc_workqueue(fs_info, "endio-write", flags,
-+				      max_active, 2);
- 	fs_info->endio_freespace_worker =
--		btrfs_alloc_workqueue("freespace-write", flags, max_active, 0);
-+		btrfs_alloc_workqueue(fs_info, "freespace-write", flags,
-+				      max_active, 0);
- 	fs_info->delayed_workers =
--		btrfs_alloc_workqueue("delayed-meta", flags, max_active, 0);
-+		btrfs_alloc_workqueue(fs_info, "delayed-meta", flags,
-+				      max_active, 0);
- 	fs_info->readahead_workers =
--		btrfs_alloc_workqueue("readahead", flags, max_active, 2);
-+		btrfs_alloc_workqueue(fs_info, "readahead", flags,
-+				      max_active, 2);
- 	fs_info->qgroup_rescan_workers =
--		btrfs_alloc_workqueue("qgroup-rescan", flags, 1, 0);
-+		btrfs_alloc_workqueue(fs_info, "qgroup-rescan", flags, 1, 0);
- 	fs_info->extent_workers =
--		btrfs_alloc_workqueue("extent-refs", flags,
-+		btrfs_alloc_workqueue(fs_info, "extent-refs", flags,
- 				      min_t(u64, fs_devices->num_devices,
- 					    max_active), 8);
+ 	TP_ARGS(root),
  
-diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index 70427ef..86270c6 100644
---- a/fs/btrfs/scrub.c
-+++ b/fs/btrfs/scrub.c
-@@ -3781,27 +3781,27 @@ static noinline_for_stack int scrub_workers_get(struct btrfs_fs_info *fs_info,
- 	if (fs_info->scrub_workers_refcnt == 0) {
- 		if (is_dev_replace)
- 			fs_info->scrub_workers =
--				btrfs_alloc_workqueue("scrub", flags,
-+				btrfs_alloc_workqueue(fs_info, "scrub", flags,
- 						      1, 4);
- 		else
- 			fs_info->scrub_workers =
--				btrfs_alloc_workqueue("scrub", flags,
-+				btrfs_alloc_workqueue(fs_info, "scrub", flags,
- 						      max_active, 4);
- 		if (!fs_info->scrub_workers)
- 			goto fail_scrub_workers;
+-	TP_STRUCT__entry(
++	TP_STRUCT__entry_btrfs(
+ 		__field(	u64,  generation		)
+ 		__field(	u64,  root_objectid		)
+ 	),
  
- 		fs_info->scrub_wr_completion_workers =
--			btrfs_alloc_workqueue("scrubwrc", flags,
-+			btrfs_alloc_workqueue(fs_info, "scrubwrc", flags,
- 					      max_active, 2);
- 		if (!fs_info->scrub_wr_completion_workers)
- 			goto fail_scrub_wr_completion_workers;
+-	TP_fast_assign(
++	TP_fast_assign_btrfs(root->fs_info,
+ 		__entry->generation	= root->fs_info->generation;
+ 		__entry->root_objectid	= root->root_key.objectid;
+ 	),
  
- 		fs_info->scrub_nocow_workers =
--			btrfs_alloc_workqueue("scrubnc", flags, 1, 0);
-+			btrfs_alloc_workqueue(fs_info, "scrubnc", flags, 1, 0);
- 		if (!fs_info->scrub_nocow_workers)
- 			goto fail_scrub_nocow_workers;
- 		fs_info->scrub_parity_workers =
--			btrfs_alloc_workqueue("scrubparity", flags,
-+			btrfs_alloc_workqueue(fs_info, "scrubparity", flags,
- 					      max_active, 2);
- 		if (!fs_info->scrub_parity_workers)
- 			goto fail_scrub_parity_workers;
+-	TP_printk("root = %llu(%s), gen = %llu",
++	TP_printk_btrfs("root = %llu(%s), gen = %llu",
+ 		  show_root_type(__entry->root_objectid),
+ 		  (unsigned long long)__entry->generation)
+ );
+@@ -94,7 +109,7 @@ DECLARE_EVENT_CLASS(btrfs__inode,
+ 
+ 	TP_ARGS(inode),
+ 
+-	TP_STRUCT__entry(
++	TP_STRUCT__entry_btrfs(
+ 		__field(	ino_t,  ino			)
+ 		__field(	blkcnt_t,  blocks		)
+ 		__field(	u64,  disk_i_size		)
+@@ -104,7 +119,7 @@ DECLARE_EVENT_CLASS(btrfs__inode,
+ 		__field(	u64,  root_objectid		)
+ 	),
+ 
+-	TP_fast_assign(
++	TP_fast_assign_btrfs(btrfs_sb(inode->i_sb),
+ 		__entry->ino	= inode->i_ino;
+ 		__entry->blocks	= inode->i_blocks;
+ 		__entry->disk_i_size  = BTRFS_I(inode)->disk_i_size;
+@@ -115,7 +130,7 @@ DECLARE_EVENT_CLASS(btrfs__inode,
+ 				BTRFS_I(inode)->root->root_key.objectid;
+ 	),
+ 
+-	TP_printk("root = %llu(%s), gen = %llu, ino = %lu, blocks = %llu, "
++	TP_printk_btrfs("root = %llu(%s), gen = %llu, ino = %lu, blocks = %llu, "
+ 		  "disk_i_size = %llu, last_trans = %llu, logged_trans = %llu",
+ 		  show_root_type(__entry->root_objectid),
+ 		  (unsigned long long)__entry->generation,
+@@ -175,7 +190,7 @@ TRACE_EVENT_CONDITION(btrfs_get_extent,
+ 
+ 	TP_CONDITION(map),
+ 
+-	TP_STRUCT__entry(
++	TP_STRUCT__entry_btrfs(
+ 		__field(	u64,  root_objectid	)
+ 		__field(	u64,  start		)
+ 		__field(	u64,  len		)
+@@ -187,7 +202,7 @@ TRACE_EVENT_CONDITION(btrfs_get_extent,
+ 		__field(	unsigned int,  compress_type	)
+ 	),
+ 
+-	TP_fast_assign(
++	TP_fast_assign_btrfs(root->fs_info,
+ 		__entry->root_objectid	= root->root_key.objectid;
+ 		__entry->start 		= map->start;
+ 		__entry->len		= map->len;
+@@ -199,7 +214,7 @@ TRACE_EVENT_CONDITION(btrfs_get_extent,
+ 		__entry->compress_type	= map->compress_type;
+ 	),
+ 
+-	TP_printk("root = %llu(%s), start = %llu, len = %llu, "
++	TP_printk_btrfs("root = %llu(%s), start = %llu, len = %llu, "
+ 		  "orig_start = %llu, block_start = %llu(%s), "
+ 		  "block_len = %llu, flags = %s, refs = %u, "
+ 		  "compress_type = %u",
+@@ -233,7 +248,7 @@ DECLARE_EVENT_CLASS(btrfs__ordered_extent,
+ 
+ 	TP_ARGS(inode, ordered),
+ 
+-	TP_STRUCT__entry(
++	TP_STRUCT__entry_btrfs(
+ 		__field(	ino_t,  ino		)
+ 		__field(	u64,  file_offset	)
+ 		__field(	u64,  start		)
+@@ -246,7 +261,7 @@ DECLARE_EVENT_CLASS(btrfs__ordered_extent,
+ 		__field(	u64,  root_objectid	)
+ 	),
+ 
+-	TP_fast_assign(
++	TP_fast_assign_btrfs(btrfs_sb(inode->i_sb),
+ 		__entry->ino 		= inode->i_ino;
+ 		__entry->file_offset	= ordered->file_offset;
+ 		__entry->start		= ordered->start;
+@@ -260,7 +275,7 @@ DECLARE_EVENT_CLASS(btrfs__ordered_extent,
+ 				BTRFS_I(inode)->root->root_key.objectid;
+ 	),
+ 
+-	TP_printk("root = %llu(%s), ino = %llu, file_offset = %llu, "
++	TP_printk_btrfs("root = %llu(%s), ino = %llu, file_offset = %llu, "
+ 		  "start = %llu, len = %llu, disk_len = %llu, "
+ 		  "bytes_left = %llu, flags = %s, compress_type = %d, "
+ 		  "refs = %d",
+@@ -310,7 +325,7 @@ DECLARE_EVENT_CLASS(btrfs__writepage,
+ 
+ 	TP_ARGS(page, inode, wbc),
+ 
+-	TP_STRUCT__entry(
++	TP_STRUCT__entry_btrfs(
+ 		__field(	ino_t,  ino			)
+ 		__field(	pgoff_t,  index			)
+ 		__field(	long,   nr_to_write		)
+@@ -324,7 +339,7 @@ DECLARE_EVENT_CLASS(btrfs__writepage,
+ 		__field(	u64,    root_objectid		)
+ 	),
+ 
+-	TP_fast_assign(
++	TP_fast_assign_btrfs(btrfs_sb(inode->i_sb),
+ 		__entry->ino		= inode->i_ino;
+ 		__entry->index		= page->index;
+ 		__entry->nr_to_write	= wbc->nr_to_write;
+@@ -339,7 +354,7 @@ DECLARE_EVENT_CLASS(btrfs__writepage,
+ 				 BTRFS_I(inode)->root->root_key.objectid;
+ 	),
+ 
+-	TP_printk("root = %llu(%s), ino = %lu, page_index = %lu, "
++	TP_printk_btrfs("root = %llu(%s), ino = %lu, page_index = %lu, "
+ 		  "nr_to_write = %ld, pages_skipped = %ld, range_start = %llu, "
+ 		  "range_end = %llu, for_kupdate = %d, "
+ 		  "for_reclaim = %d, range_cyclic = %d, writeback_index = %lu",
+@@ -366,7 +381,7 @@ TRACE_EVENT(btrfs_writepage_end_io_hook,
+ 
+ 	TP_ARGS(page, start, end, uptodate),
+ 
+-	TP_STRUCT__entry(
++	TP_STRUCT__entry_btrfs(
+ 		__field(	ino_t,	 ino		)
+ 		__field(	pgoff_t, index		)
+ 		__field(	u64,	 start		)
+@@ -375,7 +390,7 @@ TRACE_EVENT(btrfs_writepage_end_io_hook,
+ 		__field(	u64,    root_objectid	)
+ 	),
+ 
+-	TP_fast_assign(
++	TP_fast_assign_btrfs(btrfs_sb(page->mapping->host->i_sb),
+ 		__entry->ino	= page->mapping->host->i_ino;
+ 		__entry->index	= page->index;
+ 		__entry->start	= start;
+@@ -385,7 +400,7 @@ TRACE_EVENT(btrfs_writepage_end_io_hook,
+ 			 BTRFS_I(page->mapping->host)->root->root_key.objectid;
+ 	),
+ 
+-	TP_printk("root = %llu(%s), ino = %lu, page_index = %lu, start = %llu, "
++	TP_printk_btrfs("root = %llu(%s), ino = %lu, page_index = %lu, start = %llu, "
+ 		  "end = %llu, uptodate = %d",
+ 		  show_root_type(__entry->root_objectid),
+ 		  (unsigned long)__entry->ino, (unsigned long)__entry->index,
+@@ -399,7 +414,7 @@ TRACE_EVENT(btrfs_sync_file,
+ 
+ 	TP_ARGS(file, datasync),
+ 
+-	TP_STRUCT__entry(
++	TP_STRUCT__entry_btrfs(
+ 		__field(	ino_t,  ino		)
+ 		__field(	ino_t,  parent		)
+ 		__field(	int,    datasync	)
+@@ -410,6 +425,7 @@ TRACE_EVENT(btrfs_sync_file,
+ 		struct dentry *dentry = file->f_path.dentry;
+ 		struct inode *inode = d_inode(dentry);
+ 
++		TP_fast_assign_fsid(btrfs_sb(file->f_path.dentry->d_sb));
+ 		__entry->ino		= inode->i_ino;
+ 		__entry->parent		= d_inode(dentry->d_parent)->i_ino;
+ 		__entry->datasync	= datasync;
+@@ -417,7 +433,7 @@ TRACE_EVENT(btrfs_sync_file,
+ 				 BTRFS_I(inode)->root->root_key.objectid;
+ 	),
+ 
+-	TP_printk("root = %llu(%s), ino = %ld, parent = %ld, datasync = %d",
++	TP_printk_btrfs("root = %llu(%s), ino = %ld, parent = %ld, datasync = %d",
+ 		  show_root_type(__entry->root_objectid),
+ 		  (unsigned long)__entry->ino, (unsigned long)__entry->parent,
+ 		  __entry->datasync)
+@@ -425,19 +441,19 @@ TRACE_EVENT(btrfs_sync_file,
+ 
+ TRACE_EVENT(btrfs_sync_fs,
+ 
+-	TP_PROTO(int wait),
++	TP_PROTO(struct btrfs_fs_info *fs_info, int wait),
+ 
+-	TP_ARGS(wait),
++	TP_ARGS(fs_info, wait),
+ 
+-	TP_STRUCT__entry(
++	TP_STRUCT__entry_btrfs(
+ 		__field(	int,  wait		)
+ 	),
+ 
+-	TP_fast_assign(
++	TP_fast_assign_btrfs(fs_info,
+ 		__entry->wait	= wait;
+ 	),
+ 
+-	TP_printk("wait = %d", __entry->wait)
++	TP_printk_btrfs("wait = %d", __entry->wait)
+ );
+ 
+ #define show_ref_action(action)						\
+@@ -450,13 +466,14 @@ TRACE_EVENT(btrfs_sync_fs,
+ 
+ DECLARE_EVENT_CLASS(btrfs_delayed_tree_ref,
+ 
+-	TP_PROTO(struct btrfs_delayed_ref_node *ref,
++	TP_PROTO(struct btrfs_fs_info *fs_info,
++		 struct btrfs_delayed_ref_node *ref,
+ 		 struct btrfs_delayed_tree_ref *full_ref,
+ 		 int action),
+ 
+-	TP_ARGS(ref, full_ref, action),
++	TP_ARGS(fs_info, ref, full_ref, action),
+ 
+-	TP_STRUCT__entry(
++	TP_STRUCT__entry_btrfs(
+ 		__field(	u64,  bytenr		)
+ 		__field(	u64,  num_bytes		)
+ 		__field(	int,  action		) 
+@@ -467,7 +484,7 @@ DECLARE_EVENT_CLASS(btrfs_delayed_tree_ref,
+ 		__field(	u64,  seq		)
+ 	),
+ 
+-	TP_fast_assign(
++	TP_fast_assign_btrfs(fs_info,
+ 		__entry->bytenr		= ref->bytenr;
+ 		__entry->num_bytes	= ref->num_bytes;
+ 		__entry->action		= action;
+@@ -478,7 +495,7 @@ DECLARE_EVENT_CLASS(btrfs_delayed_tree_ref,
+ 		__entry->seq		= ref->seq;
+ 	),
+ 
+-	TP_printk("bytenr = %llu, num_bytes = %llu, action = %s, "
++	TP_printk_btrfs("bytenr = %llu, num_bytes = %llu, action = %s, "
+ 		  "parent = %llu(%s), ref_root = %llu(%s), level = %d, "
+ 		  "type = %s, seq = %llu",
+ 		  (unsigned long long)__entry->bytenr,
+@@ -492,31 +509,34 @@ DECLARE_EVENT_CLASS(btrfs_delayed_tree_ref,
+ 
+ DEFINE_EVENT(btrfs_delayed_tree_ref,  add_delayed_tree_ref,
+ 
+-	TP_PROTO(struct btrfs_delayed_ref_node *ref,
++	TP_PROTO(struct btrfs_fs_info *fs_info,
++		 struct btrfs_delayed_ref_node *ref,
+ 		 struct btrfs_delayed_tree_ref *full_ref,
+ 		 int action),
+ 
+-	TP_ARGS(ref, full_ref, action)
++	TP_ARGS(fs_info, ref, full_ref, action)
+ );
+ 
+ DEFINE_EVENT(btrfs_delayed_tree_ref,  run_delayed_tree_ref,
+ 
+-	TP_PROTO(struct btrfs_delayed_ref_node *ref,
++	TP_PROTO(struct btrfs_fs_info *fs_info,
++		 struct btrfs_delayed_ref_node *ref,
+ 		 struct btrfs_delayed_tree_ref *full_ref,
+ 		 int action),
+ 
+-	TP_ARGS(ref, full_ref, action)
++	TP_ARGS(fs_info, ref, full_ref, action)
+ );
+ 
+ DECLARE_EVENT_CLASS(btrfs_delayed_data_ref,
+ 
+-	TP_PROTO(struct btrfs_delayed_ref_node *ref,
++	TP_PROTO(struct btrfs_fs_info *fs_info,
++		 struct btrfs_delayed_ref_node *ref,
+ 		 struct btrfs_delayed_data_ref *full_ref,
+ 		 int action),
+ 
+-	TP_ARGS(ref, full_ref, action),
++	TP_ARGS(fs_info, ref, full_ref, action),
+ 
+-	TP_STRUCT__entry(
++	TP_STRUCT__entry_btrfs(
+ 		__field(	u64,  bytenr		)
+ 		__field(	u64,  num_bytes		)
+ 		__field(	int,  action		) 
+@@ -528,7 +548,7 @@ DECLARE_EVENT_CLASS(btrfs_delayed_data_ref,
+ 		__field(	u64,  seq		)
+ 	),
+ 
+-	TP_fast_assign(
++	TP_fast_assign_btrfs(fs_info,
+ 		__entry->bytenr		= ref->bytenr;
+ 		__entry->num_bytes	= ref->num_bytes;
+ 		__entry->action		= action;
+@@ -540,7 +560,7 @@ DECLARE_EVENT_CLASS(btrfs_delayed_data_ref,
+ 		__entry->seq		= ref->seq;
+ 	),
+ 
+-	TP_printk("bytenr = %llu, num_bytes = %llu, action = %s, "
++	TP_printk_btrfs("bytenr = %llu, num_bytes = %llu, action = %s, "
+ 		  "parent = %llu(%s), ref_root = %llu(%s), owner = %llu, "
+ 		  "offset = %llu, type = %s, seq = %llu",
+ 		  (unsigned long long)__entry->bytenr,
+@@ -556,45 +576,48 @@ DECLARE_EVENT_CLASS(btrfs_delayed_data_ref,
+ 
+ DEFINE_EVENT(btrfs_delayed_data_ref,  add_delayed_data_ref,
+ 
+-	TP_PROTO(struct btrfs_delayed_ref_node *ref,
++	TP_PROTO(struct btrfs_fs_info *fs_info,
++		 struct btrfs_delayed_ref_node *ref,
+ 		 struct btrfs_delayed_data_ref *full_ref,
+ 		 int action),
+ 
+-	TP_ARGS(ref, full_ref, action)
++	TP_ARGS(fs_info, ref, full_ref, action)
+ );
+ 
+ DEFINE_EVENT(btrfs_delayed_data_ref,  run_delayed_data_ref,
+ 
+-	TP_PROTO(struct btrfs_delayed_ref_node *ref,
++	TP_PROTO(struct btrfs_fs_info *fs_info,
++		 struct btrfs_delayed_ref_node *ref,
+ 		 struct btrfs_delayed_data_ref *full_ref,
+ 		 int action),
+ 
+-	TP_ARGS(ref, full_ref, action)
++	TP_ARGS(fs_info, ref, full_ref, action)
+ );
+ 
+ DECLARE_EVENT_CLASS(btrfs_delayed_ref_head,
+ 
+-	TP_PROTO(struct btrfs_delayed_ref_node *ref,
++	TP_PROTO(struct btrfs_fs_info *fs_info,
++		 struct btrfs_delayed_ref_node *ref,
+ 		 struct btrfs_delayed_ref_head *head_ref,
+ 		 int action),
+ 
+-	TP_ARGS(ref, head_ref, action),
++	TP_ARGS(fs_info, ref, head_ref, action),
+ 
+-	TP_STRUCT__entry(
++	TP_STRUCT__entry_btrfs(
+ 		__field(	u64,  bytenr		)
+ 		__field(	u64,  num_bytes		)
+ 		__field(	int,  action		) 
+ 		__field(	int,  is_data		)
+ 	),
+ 
+-	TP_fast_assign(
++	TP_fast_assign_btrfs(fs_info,
+ 		__entry->bytenr		= ref->bytenr;
+ 		__entry->num_bytes	= ref->num_bytes;
+ 		__entry->action		= action;
+ 		__entry->is_data	= head_ref->is_data;
+ 	),
+ 
+-	TP_printk("bytenr = %llu, num_bytes = %llu, action = %s, is_data = %d",
++	TP_printk_btrfs("bytenr = %llu, num_bytes = %llu, action = %s, is_data = %d",
+ 		  (unsigned long long)__entry->bytenr,
+ 		  (unsigned long long)__entry->num_bytes,
+ 		  show_ref_action(__entry->action),
+@@ -603,20 +626,22 @@ DECLARE_EVENT_CLASS(btrfs_delayed_ref_head,
+ 
+ DEFINE_EVENT(btrfs_delayed_ref_head,  add_delayed_ref_head,
+ 
+-	TP_PROTO(struct btrfs_delayed_ref_node *ref,
++	TP_PROTO(struct btrfs_fs_info *fs_info,
++		 struct btrfs_delayed_ref_node *ref,
+ 		 struct btrfs_delayed_ref_head *head_ref,
+ 		 int action),
+ 
+-	TP_ARGS(ref, head_ref, action)
++	TP_ARGS(fs_info, ref, head_ref, action)
+ );
+ 
+ DEFINE_EVENT(btrfs_delayed_ref_head,  run_delayed_ref_head,
+ 
+-	TP_PROTO(struct btrfs_delayed_ref_node *ref,
++	TP_PROTO(struct btrfs_fs_info *fs_info,
++		 struct btrfs_delayed_ref_node *ref,
+ 		 struct btrfs_delayed_ref_head *head_ref,
+ 		 int action),
+ 
+-	TP_ARGS(ref, head_ref, action)
++	TP_ARGS(fs_info, ref, head_ref, action)
+ );
+ 
+ #define show_chunk_type(type)					\
+@@ -638,7 +663,7 @@ DECLARE_EVENT_CLASS(btrfs__chunk,
+ 
+ 	TP_ARGS(root, map, offset, size),
+ 
+-	TP_STRUCT__entry(
++	TP_STRUCT__entry_btrfs(
+ 		__field(	int,  num_stripes		)
+ 		__field(	u64,  type			)
+ 		__field(	int,  sub_stripes		)
+@@ -647,7 +672,7 @@ DECLARE_EVENT_CLASS(btrfs__chunk,
+ 		__field(	u64,  root_objectid		)
+ 	),
+ 
+-	TP_fast_assign(
++	TP_fast_assign_btrfs(root->fs_info,
+ 		__entry->num_stripes	= map->num_stripes;
+ 		__entry->type		= map->type;
+ 		__entry->sub_stripes	= map->sub_stripes;
+@@ -656,7 +681,7 @@ DECLARE_EVENT_CLASS(btrfs__chunk,
+ 		__entry->root_objectid	= root->root_key.objectid;
+ 	),
+ 
+-	TP_printk("root = %llu(%s), offset = %llu, size = %llu, "
++	TP_printk_btrfs("root = %llu(%s), offset = %llu, size = %llu, "
+ 		  "num_stripes = %d, sub_stripes = %d, type = %s",
+ 		  show_root_type(__entry->root_objectid),
+ 		  (unsigned long long)__entry->offset,
+@@ -688,7 +713,7 @@ TRACE_EVENT(btrfs_cow_block,
+ 
+ 	TP_ARGS(root, buf, cow),
+ 
+-	TP_STRUCT__entry(
++	TP_STRUCT__entry_btrfs(
+ 		__field(	u64,  root_objectid		)
+ 		__field(	u64,  buf_start			)
+ 		__field(	int,  refs			)
+@@ -697,7 +722,7 @@ TRACE_EVENT(btrfs_cow_block,
+ 		__field(	int,  cow_level			)
+ 	),
+ 
+-	TP_fast_assign(
++	TP_fast_assign_btrfs(root->fs_info,
+ 		__entry->root_objectid	= root->root_key.objectid;
+ 		__entry->buf_start	= buf->start;
+ 		__entry->refs		= atomic_read(&buf->refs);
+@@ -706,7 +731,7 @@ TRACE_EVENT(btrfs_cow_block,
+ 		__entry->cow_level	= btrfs_header_level(cow);
+ 	),
+ 
+-	TP_printk("root = %llu(%s), refs = %d, orig_buf = %llu "
++	TP_printk_btrfs("root = %llu(%s), refs = %d, orig_buf = %llu "
+ 		  "(orig_level = %d), cow_buf = %llu (cow_level = %d)",
+ 		  show_root_type(__entry->root_objectid),
+ 		  __entry->refs,
+@@ -723,25 +748,23 @@ TRACE_EVENT(btrfs_space_reservation,
+ 
+ 	TP_ARGS(fs_info, type, val, bytes, reserve),
+ 
+-	TP_STRUCT__entry(
+-		__array(	u8,	fsid,	BTRFS_UUID_SIZE	)
++	TP_STRUCT__entry_btrfs(
+ 		__string(	type,	type			)
+ 		__field(	u64,	val			)
+ 		__field(	u64,	bytes			)
+ 		__field(	int,	reserve			)
+ 	),
+ 
+-	TP_fast_assign(
+-		memcpy(__entry->fsid, fs_info->fsid, BTRFS_UUID_SIZE);
++	TP_fast_assign_btrfs(fs_info,
+ 		__assign_str(type, type);
+ 		__entry->val		= val;
+ 		__entry->bytes		= bytes;
+ 		__entry->reserve	= reserve;
+ 	),
+ 
+-	TP_printk("%pU: %s: %Lu %s %Lu", __entry->fsid, __get_str(type),
+-		  __entry->val, __entry->reserve ? "reserve" : "release",
+-		  __entry->bytes)
++	TP_printk_btrfs("%s: %Lu %s %Lu", __get_str(type), __entry->val,
++			__entry->reserve ? "reserve" : "release",
++			__entry->bytes)
+ );
+ 
+ DECLARE_EVENT_CLASS(btrfs__reserved_extent,
+@@ -750,19 +773,19 @@ DECLARE_EVENT_CLASS(btrfs__reserved_extent,
+ 
+ 	TP_ARGS(root, start, len),
+ 
+-	TP_STRUCT__entry(
++	TP_STRUCT__entry_btrfs(
+ 		__field(	u64,  root_objectid		)
+ 		__field(	u64,  start			)
+ 		__field(	u64,  len			)
+ 	),
+ 
+-	TP_fast_assign(
++	TP_fast_assign_btrfs(root->fs_info,
+ 		__entry->root_objectid	= root->root_key.objectid;
+ 		__entry->start		= start;
+ 		__entry->len		= len;
+ 	),
+ 
+-	TP_printk("root = %llu(%s), start = %llu, len = %llu",
++	TP_printk_btrfs("root = %llu(%s), start = %llu, len = %llu",
+ 		  show_root_type(__entry->root_objectid),
+ 		  (unsigned long long)__entry->start,
+ 		  (unsigned long long)__entry->len)
+@@ -789,21 +812,21 @@ TRACE_EVENT(find_free_extent,
+ 
+ 	TP_ARGS(root, num_bytes, empty_size, data),
+ 
+-	TP_STRUCT__entry(
++	TP_STRUCT__entry_btrfs(
+ 		__field(	u64,	root_objectid		)
+ 		__field(	u64,	num_bytes		)
+ 		__field(	u64,	empty_size		)
+ 		__field(	u64,	data			)
+ 	),
+ 
+-	TP_fast_assign(
++	TP_fast_assign_btrfs(root->fs_info,
+ 		__entry->root_objectid	= root->root_key.objectid;
+ 		__entry->num_bytes	= num_bytes;
+ 		__entry->empty_size	= empty_size;
+ 		__entry->data		= data;
+ 	),
+ 
+-	TP_printk("root = %Lu(%s), len = %Lu, empty_size = %Lu, "
++	TP_printk_btrfs("root = %Lu(%s), len = %Lu, empty_size = %Lu, "
+ 		  "flags = %Lu(%s)", show_root_type(__entry->root_objectid),
+ 		  __entry->num_bytes, __entry->empty_size, __entry->data,
+ 		  __print_flags((unsigned long)__entry->data, "|",
+@@ -818,7 +841,7 @@ DECLARE_EVENT_CLASS(btrfs__reserve_extent,
+ 
+ 	TP_ARGS(root, block_group, start, len),
+ 
+-	TP_STRUCT__entry(
++	TP_STRUCT__entry_btrfs(
+ 		__field(	u64,	root_objectid		)
+ 		__field(	u64,	bg_objectid		)
+ 		__field(	u64,	flags			)
+@@ -826,7 +849,7 @@ DECLARE_EVENT_CLASS(btrfs__reserve_extent,
+ 		__field(	u64,	len			)
+ 	),
+ 
+-	TP_fast_assign(
++	TP_fast_assign_btrfs(root->fs_info,
+ 		__entry->root_objectid	= root->root_key.objectid;
+ 		__entry->bg_objectid	= block_group->key.objectid;
+ 		__entry->flags		= block_group->flags;
+@@ -834,7 +857,7 @@ DECLARE_EVENT_CLASS(btrfs__reserve_extent,
+ 		__entry->len		= len;
+ 	),
+ 
+-	TP_printk("root = %Lu(%s), block_group = %Lu, flags = %Lu(%s), "
++	TP_printk_btrfs("root = %Lu(%s), block_group = %Lu, flags = %Lu(%s), "
+ 		  "start = %Lu, len = %Lu",
+ 		  show_root_type(__entry->root_objectid), __entry->bg_objectid,
+ 		  __entry->flags, __print_flags((unsigned long)__entry->flags,
+@@ -867,7 +890,7 @@ TRACE_EVENT(btrfs_find_cluster,
+ 
+ 	TP_ARGS(block_group, start, bytes, empty_size, min_bytes),
+ 
+-	TP_STRUCT__entry(
++	TP_STRUCT__entry_btrfs(
+ 		__field(	u64,	bg_objectid		)
+ 		__field(	u64,	flags			)
+ 		__field(	u64,	start			)
+@@ -876,7 +899,7 @@ TRACE_EVENT(btrfs_find_cluster,
+ 		__field(	u64,	min_bytes		)
+ 	),
+ 
+-	TP_fast_assign(
++	TP_fast_assign_btrfs(block_group->fs_info,
+ 		__entry->bg_objectid	= block_group->key.objectid;
+ 		__entry->flags		= block_group->flags;
+ 		__entry->start		= start;
+@@ -885,7 +908,7 @@ TRACE_EVENT(btrfs_find_cluster,
+ 		__entry->min_bytes	= min_bytes;
+ 	),
+ 
+-	TP_printk("block_group = %Lu, flags = %Lu(%s), start = %Lu, len = %Lu,"
++	TP_printk_btrfs("block_group = %Lu, flags = %Lu(%s), start = %Lu, len = %Lu,"
+ 		  " empty_size = %Lu, min_bytes = %Lu", __entry->bg_objectid,
+ 		  __entry->flags,
+ 		  __print_flags((unsigned long)__entry->flags, "|",
+@@ -899,15 +922,15 @@ TRACE_EVENT(btrfs_failed_cluster_setup,
+ 
+ 	TP_ARGS(block_group),
+ 
+-	TP_STRUCT__entry(
++	TP_STRUCT__entry_btrfs(
+ 		__field(	u64,	bg_objectid		)
+ 	),
+ 
+-	TP_fast_assign(
++	TP_fast_assign_btrfs(block_group->fs_info,
+ 		__entry->bg_objectid	= block_group->key.objectid;
+ 	),
+ 
+-	TP_printk("block_group = %Lu", __entry->bg_objectid)
++	TP_printk_btrfs("block_group = %Lu", __entry->bg_objectid)
+ );
+ 
+ TRACE_EVENT(btrfs_setup_cluster,
+@@ -917,7 +940,7 @@ TRACE_EVENT(btrfs_setup_cluster,
+ 
+ 	TP_ARGS(block_group, cluster, size, bitmap),
+ 
+-	TP_STRUCT__entry(
++	TP_STRUCT__entry_btrfs(
+ 		__field(	u64,	bg_objectid		)
+ 		__field(	u64,	flags			)
+ 		__field(	u64,	start			)
+@@ -926,7 +949,7 @@ TRACE_EVENT(btrfs_setup_cluster,
+ 		__field(	int,	bitmap			)
+ 	),
+ 
+-	TP_fast_assign(
++	TP_fast_assign_btrfs(block_group->fs_info,
+ 		__entry->bg_objectid	= block_group->key.objectid;
+ 		__entry->flags		= block_group->flags;
+ 		__entry->start		= cluster->window_start;
+@@ -935,7 +958,7 @@ TRACE_EVENT(btrfs_setup_cluster,
+ 		__entry->bitmap		= bitmap;
+ 	),
+ 
+-	TP_printk("block_group = %Lu, flags = %Lu(%s), window_start = %Lu, "
++	TP_printk_btrfs("block_group = %Lu, flags = %Lu(%s), window_start = %Lu, "
+ 		  "size = %Lu, max_size = %Lu, bitmap = %d",
+ 		  __entry->bg_objectid,
+ 		  __entry->flags,
+@@ -993,7 +1016,7 @@ DECLARE_EVENT_CLASS(btrfs__work,
+ 
+ 	TP_ARGS(work),
+ 
+-	TP_STRUCT__entry(
++	TP_STRUCT__entry_btrfs(
+ 		__field(	void *,	work			)
+ 		__field(	void *, wq			)
+ 		__field(	void *,	func			)
+@@ -1002,7 +1025,7 @@ DECLARE_EVENT_CLASS(btrfs__work,
+ 		__field(	void *,	normal_work		)
+ 	),
+ 
+-	TP_fast_assign(
++	TP_fast_assign_btrfs(btrfs_work_owner(work),
+ 		__entry->work		= work;
+ 		__entry->wq		= work->wq;
+ 		__entry->func		= work->func;
+@@ -1011,7 +1034,7 @@ DECLARE_EVENT_CLASS(btrfs__work,
+ 		__entry->normal_work	= &work->normal_work;
+ 	),
+ 
+-	TP_printk("work=%p (normal_work=%p), wq=%p, func=%pf, ordered_func=%p,"
++	TP_printk_btrfs("work=%p (normal_work=%p), wq=%p, func=%pf, ordered_func=%p,"
+ 		  " ordered_free=%p",
+ 		  __entry->work, __entry->normal_work, __entry->wq,
+ 		   __entry->func, __entry->ordered_func, __entry->ordered_free)
+@@ -1024,15 +1047,15 @@ DECLARE_EVENT_CLASS(btrfs__work__done,
+ 
+ 	TP_ARGS(work),
+ 
+-	TP_STRUCT__entry(
++	TP_STRUCT__entry_btrfs(
+ 		__field(	void *,	work			)
+ 	),
+ 
+-	TP_fast_assign(
++	TP_fast_assign_btrfs(btrfs_work_owner(work),
+ 		__entry->work		= work;
+ 	),
+ 
+-	TP_printk("work->%p", __entry->work)
++	TP_printk_btrfs("work->%p", __entry->work)
+ );
+ 
+ DEFINE_EVENT(btrfs__work, btrfs_work_queued,
+@@ -1069,19 +1092,19 @@ DECLARE_EVENT_CLASS(btrfs__workqueue,
+ 
+ 	TP_ARGS(wq, name, high),
+ 
+-	TP_STRUCT__entry(
++	TP_STRUCT__entry_btrfs(
+ 		__field(	void *,	wq			)
+ 		__string(	name,	name			)
+ 		__field(	int ,	high			)
+ 	),
+ 
+-	TP_fast_assign(
++	TP_fast_assign_btrfs(btrfs_workqueue_owner(wq),
+ 		__entry->wq		= wq;
+ 		__assign_str(name, name);
+ 		__entry->high		= high;
+ 	),
+ 
+-	TP_printk("name=%s%s, wq=%p", __get_str(name),
++	TP_printk_btrfs("name=%s%s, wq=%p", __get_str(name),
+ 		  __print_flags(__entry->high, "",
+ 				{(WQ_HIGHPRI),	"-high"}),
+ 		  __entry->wq)
+@@ -1100,15 +1123,15 @@ DECLARE_EVENT_CLASS(btrfs__workqueue_done,
+ 
+ 	TP_ARGS(wq),
+ 
+-	TP_STRUCT__entry(
++	TP_STRUCT__entry_btrfs(
+ 		__field(	void *,	wq			)
+ 	),
+ 
+-	TP_fast_assign(
++	TP_fast_assign_btrfs(btrfs_workqueue_owner(wq),
+ 		__entry->wq		= wq;
+ 	),
+ 
+-	TP_printk("wq=%p", __entry->wq)
++	TP_printk_btrfs("wq=%p", __entry->wq)
+ );
+ 
+ DEFINE_EVENT(btrfs__workqueue_done, btrfs_workqueue_destroy,
+@@ -1124,19 +1147,19 @@ DECLARE_EVENT_CLASS(btrfs__qgroup_data_map,
+ 
+ 	TP_ARGS(inode, free_reserved),
+ 
+-	TP_STRUCT__entry(
++	TP_STRUCT__entry_btrfs(
+ 		__field(	u64,		rootid		)
+ 		__field(	unsigned long,	ino		)
+ 		__field(	u64,		free_reserved	)
+ 	),
+ 
+-	TP_fast_assign(
++	TP_fast_assign_btrfs(btrfs_sb(inode->i_sb),
+ 		__entry->rootid		=	BTRFS_I(inode)->root->objectid;
+ 		__entry->ino		=	inode->i_ino;
+ 		__entry->free_reserved	=	free_reserved;
+ 	),
+ 
+-	TP_printk("rootid=%llu, ino=%lu, free_reserved=%llu",
++	TP_printk_btrfs("rootid=%llu, ino=%lu, free_reserved=%llu",
+ 		  __entry->rootid, __entry->ino, __entry->free_reserved)
+ );
+ 
+@@ -1165,7 +1188,7 @@ DECLARE_EVENT_CLASS(btrfs__qgroup_rsv_data,
+ 
+ 	TP_ARGS(inode, start, len, reserved, op),
+ 
+-	TP_STRUCT__entry(
++	TP_STRUCT__entry_btrfs(
+ 		__field(	u64,		rootid		)
+ 		__field(	unsigned long,	ino		)
+ 		__field(	u64,		start		)
+@@ -1174,7 +1197,7 @@ DECLARE_EVENT_CLASS(btrfs__qgroup_rsv_data,
+ 		__field(	int,		op		)
+ 	),
+ 
+-	TP_fast_assign(
++	TP_fast_assign_btrfs(btrfs_sb(inode->i_sb),
+ 		__entry->rootid		= BTRFS_I(inode)->root->objectid;
+ 		__entry->ino		= inode->i_ino;
+ 		__entry->start		= start;
+@@ -1183,7 +1206,7 @@ DECLARE_EVENT_CLASS(btrfs__qgroup_rsv_data,
+ 		__entry->op		= op;
+ 	),
+ 
+-	TP_printk("root=%llu, ino=%lu, start=%llu, len=%llu, reserved=%llu, op=%s",
++	TP_printk_btrfs("root=%llu, ino=%lu, start=%llu, len=%llu, reserved=%llu, op=%s",
+ 		  __entry->rootid, __entry->ino, __entry->start, __entry->len,
+ 		  __entry->reserved,
+ 		  __print_flags((unsigned long)__entry->op, "",
+@@ -1207,86 +1230,90 @@ DEFINE_EVENT(btrfs__qgroup_rsv_data, btrfs_qgroup_release_data,
+ 
+ DECLARE_EVENT_CLASS(btrfs__qgroup_delayed_ref,
+ 
+-	TP_PROTO(u64 ref_root, u64 reserved),
++	TP_PROTO(struct btrfs_fs_info *fs_info, u64 ref_root, u64 reserved),
+ 
+-	TP_ARGS(ref_root, reserved),
++	TP_ARGS(fs_info, ref_root, reserved),
+ 
+-	TP_STRUCT__entry(
++	TP_STRUCT__entry_btrfs(
+ 		__field(	u64,		ref_root	)
+ 		__field(	u64,		reserved	)
+ 	),
+ 
+-	TP_fast_assign(
++	TP_fast_assign_btrfs(fs_info,
+ 		__entry->ref_root	= ref_root;
+ 		__entry->reserved	= reserved;
+ 	),
+ 
+-	TP_printk("root=%llu, reserved=%llu, op=free",
++	TP_printk_btrfs("root=%llu, reserved=%llu, op=free",
+ 		  __entry->ref_root, __entry->reserved)
+ );
+ 
+ DEFINE_EVENT(btrfs__qgroup_delayed_ref, btrfs_qgroup_free_delayed_ref,
+ 
+-	TP_PROTO(u64 ref_root, u64 reserved),
++	TP_PROTO(struct btrfs_fs_info *fs_info, u64 ref_root, u64 reserved),
+ 
+-	TP_ARGS(ref_root, reserved)
++	TP_ARGS(fs_info, ref_root, reserved)
+ );
+ 
+ DECLARE_EVENT_CLASS(btrfs_qgroup_extent,
+-	TP_PROTO(struct btrfs_qgroup_extent_record *rec),
++	TP_PROTO(struct btrfs_fs_info *fs_info,
++		 struct btrfs_qgroup_extent_record *rec),
+ 
+-	TP_ARGS(rec),
++	TP_ARGS(fs_info, rec),
+ 
+-	TP_STRUCT__entry(
++	TP_STRUCT__entry_btrfs(
+ 		__field(	u64,  bytenr		)
+ 		__field(	u64,  num_bytes		)
+ 	),
+ 
+-	TP_fast_assign(
++	TP_fast_assign_btrfs(fs_info,
+ 		__entry->bytenr		= rec->bytenr,
+ 		__entry->num_bytes	= rec->num_bytes;
+ 	),
+ 
+-	TP_printk("bytenr = %llu, num_bytes = %llu",
++	TP_printk_btrfs("bytenr = %llu, num_bytes = %llu",
+ 		  (unsigned long long)__entry->bytenr,
+ 		  (unsigned long long)__entry->num_bytes)
+ );
+ 
+ DEFINE_EVENT(btrfs_qgroup_extent, btrfs_qgroup_account_extents,
+ 
+-	TP_PROTO(struct btrfs_qgroup_extent_record *rec),
++	TP_PROTO(struct btrfs_fs_info *fs_info,
++		 struct btrfs_qgroup_extent_record *rec),
+ 
+-	TP_ARGS(rec)
++	TP_ARGS(fs_info, rec)
+ );
+ 
+ DEFINE_EVENT(btrfs_qgroup_extent, btrfs_qgroup_insert_dirty_extent,
+ 
+-	TP_PROTO(struct btrfs_qgroup_extent_record *rec),
++	TP_PROTO(struct btrfs_fs_info *fs_info,
++		 struct btrfs_qgroup_extent_record *rec),
+ 
+-	TP_ARGS(rec)
++	TP_ARGS(fs_info, rec)
+ );
+ 
+ TRACE_EVENT(btrfs_qgroup_account_extent,
+ 
+-	TP_PROTO(u64 bytenr, u64 num_bytes, u64 nr_old_roots, u64 nr_new_roots),
++	TP_PROTO(struct btrfs_fs_info *fs_info, u64 bytenr,
++		 u64 num_bytes, u64 nr_old_roots, u64 nr_new_roots),
+ 
+-	TP_ARGS(bytenr, num_bytes, nr_old_roots, nr_new_roots),
++	TP_ARGS(fs_info, bytenr, num_bytes, nr_old_roots, nr_new_roots),
+ 
+-	TP_STRUCT__entry(
++	TP_STRUCT__entry_btrfs(
+ 		__field(	u64,  bytenr			)
+ 		__field(	u64,  num_bytes			)
+ 		__field(	u64,  nr_old_roots		)
+ 		__field(	u64,  nr_new_roots		)
+ 	),
+ 
+-	TP_fast_assign(
++	TP_fast_assign_btrfs(fs_info,
+ 		__entry->bytenr		= bytenr;
+ 		__entry->num_bytes	= num_bytes;
+ 		__entry->nr_old_roots	= nr_old_roots;
+ 		__entry->nr_new_roots	= nr_new_roots;
+ 	),
+ 
+-	TP_printk("bytenr = %llu, num_bytes = %llu, nr_old_roots = %llu, "
++	TP_printk_btrfs("bytenr = %llu, num_bytes = %llu, nr_old_roots = %llu, "
+ 		  "nr_new_roots = %llu",
+ 		  __entry->bytenr,
+ 		  __entry->num_bytes,
+@@ -1296,23 +1323,24 @@ TRACE_EVENT(btrfs_qgroup_account_extent,
+ 
+ TRACE_EVENT(qgroup_update_counters,
+ 
+-	TP_PROTO(u64 qgid, u64 cur_old_count, u64 cur_new_count),
++	TP_PROTO(struct btrfs_fs_info *fs_info, u64 qgid,
++		 u64 cur_old_count, u64 cur_new_count),
+ 
+-	TP_ARGS(qgid, cur_old_count, cur_new_count),
++	TP_ARGS(fs_info, qgid, cur_old_count, cur_new_count),
+ 
+-	TP_STRUCT__entry(
++	TP_STRUCT__entry_btrfs(
+ 		__field(	u64,  qgid			)
+ 		__field(	u64,  cur_old_count		)
+ 		__field(	u64,  cur_new_count		)
+ 	),
+ 
+-	TP_fast_assign(
++	TP_fast_assign_btrfs(fs_info,
+ 		__entry->qgid		= qgid;
+ 		__entry->cur_old_count	= cur_old_count;
+ 		__entry->cur_new_count	= cur_new_count;
+ 	),
+ 
+-	TP_printk("qgid = %llu, cur_old_count = %llu, cur_new_count = %llu",
++	TP_printk_btrfs("qgid = %llu, cur_old_count = %llu, cur_new_count = %llu",
+ 		  __entry->qgid,
+ 		  __entry->cur_old_count,
+ 		  __entry->cur_new_count)
 -- 
 2.7.1
 

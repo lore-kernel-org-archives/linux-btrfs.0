@@ -1,47 +1,86 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.flw5.de ([37.187.16.190]:53944 "EHLO mail.flw5.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750853AbcFXJdV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 24 Jun 2016 05:33:21 -0400
-Received: from [2001:470:78a0:fd:c642:196e:8260:1787] (helo=abraxas.flw5.de)
-	by mail.flw5.de with esmtpsa (TLS1.2:ECDHE_RSA_AES_256_GCM_SHA384:256)
-	(Exim 4.87)
-	id 1bGN7F-00005O-UH
-	for linux-btrfs@vger.kernel.org; Fri, 24 Jun 2016 11:09:34 +0200
-Received: from stefan by abraxas.flw5.de with local (Exim 4.87)
-	(envelope-from <stefan@flw5.de>)
-	id 1bGN79-0005xK-Lk
-	for linux-btrfs@vger.kernel.org; Fri, 24 Jun 2016 11:09:27 +0200
-Date: Fri, 24 Jun 2016 11:09:27 +0200
-From: Stefan Schweizer <stefan@flw5.de>
-To: linux-btrfs@vger.kernel.org
-Subject: btrfs-convert: Unable to find block group for 0
-Message-ID: <20160624090927.GD31030@abraxas.flw5.de>
+Received: from mail-qk0-f181.google.com ([209.85.220.181]:33839 "EHLO
+	mail-qk0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751133AbcFXJwX convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 24 Jun 2016 05:52:23 -0400
+Received: by mail-qk0-f181.google.com with SMTP id t127so139570302qkf.1
+        for <linux-btrfs@vger.kernel.org>; Fri, 24 Jun 2016 02:52:22 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20160624085014.GH3325@carfax.org.uk>
+References: <CAJCQCtR9uAn58KJKEjCsbyLYJTQVqMx-ghsVp_MjLBF-aiikcg@mail.gmail.com>
+ <20160620204049.GA1986@hungrycats.org> <CAJCQCtR5pV53mFyGWxRxm69zwF5_sEvNRRRvOSgnZ1t8KZdc3g@mail.gmail.com>
+ <20160621015559.GM15597@hungrycats.org> <CAJCQCtRUUd+moK25N3704ZG54cFrCw1-Uxm2QO-XF9g0=mHazw@mail.gmail.com>
+ <20160622203504.GQ15597@hungrycats.org> <5790aea9-0976-1742-7d1b-79dbe44008c3@inwind.it>
+ <CAJCQCtRXqSCFZTca+Vwraa0vS-MzLQKEkr=s41Vypc-O0ZDdxQ@mail.gmail.com>
+ <20160624014752.GB14667@hungrycats.org> <576CB0DA.6030409@gmail.com> <20160624085014.GH3325@carfax.org.uk>
+From: Andrei Borzenkov <arvidjaar@gmail.com>
+Date: Fri, 24 Jun 2016 12:52:21 +0300
+Message-ID: <CAA91j0Uqg0FafFTG3NhQt=p8KkYRhTeMU5Bd+JuUxDntP6g8Ng@mail.gmail.com>
+Subject: Re: Adventures in btrfs raid5 disk recovery
+To: Hugo Mills <hugo@carfax.org.uk>, Andrei Borzenkov <arvidjaar@gmail.com>,
+        Zygo Blaxell <ce3g8jdj@umail.furryterror.org>,
+        Chris Murphy <lists@colorremedies.com>, kreijack@inwind.it,
+        Roman Mamedov <rm@romanrm.net>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-While trying to convert a ext4 filesystem to btrfs with the new btrfs-convert from btrfs-progs-4.6 I
-got the following error:
+On Fri, Jun 24, 2016 at 11:50 AM, Hugo Mills <hugo@carfax.org.uk> wrote:
+> On Fri, Jun 24, 2016 at 07:02:34AM +0300, Andrei Borzenkov wrote:
+>> 24.06.2016 04:47, Zygo Blaxell пишет:
+>> > On Thu, Jun 23, 2016 at 06:26:22PM -0600, Chris Murphy wrote:
+>> >> On Thu, Jun 23, 2016 at 1:32 PM, Goffredo Baroncelli <kreijack@inwind.it> wrote:
+>> >>> The raid5 write hole is avoided in BTRFS (and in ZFS) thanks to the checksum.
+>> >>
+>> >> Yeah I'm kinda confused on this point.
+>> >>
+>> >> https://btrfs.wiki.kernel.org/index.php/RAID56
+>> >>
+>> >> It says there is a write hole for Btrfs. But defines it in terms of
+>> >> parity possibly being stale after a crash. I think the term comes not
+>> >> from merely parity being wrong but parity being wrong *and* then being
+>> >> used to wrongly reconstruct data because it's blindly trusted.
+>> >
+>> > I think the opposite is more likely, as the layers above raid56
+>> > seem to check the data against sums before raid56 ever sees it.
+>> > (If those layers seem inverted to you, I agree, but OTOH there are
+>> > probably good reason to do it that way).
+>> >
+>>
+>> Yes, that's how I read code as well. btrfs layer that does checksumming
+>> is unaware of parity blocks at all; for all practical purposes they do
+>> not exist. What happens is approximately
+>>
+>> 1. logical extent is allocated and checksum computed
+>> 2. it is mapped to physical area(s) on disks, skipping over what would
+>> be parity blocks
+>> 3. when these areas are written out, RAID56 parity is computed and filled in
+>>
+>> IOW btrfs checksums are for (meta)data and RAID56 parity is not data.
+>
+>    Checksums are not parity, correct. However, every data block
+> (including, I think, the parity) is checksummed and put into the csum
+> tree. This allows the FS to determine where damage has occurred,
+> rather thansimply detecting that it has occurred (which would be the
+> case if the parity doesn't match the data, or if the two copies of a
+> RAID-1 array don't match).
+>
 
-create btrfs filesystem:
-        blocksize: 4096
-        nodesize:  16384
-        features:  extref, skinny-metadata (default)
-creating ext2 image file.
-Unable to find block group for 0
-extent-tree.c:289: find_search_start: Assertion `1`
-failed.
-./btrfs-convert(btrfs_reserve_extent+0x8e9)[0x41979d]
-./btrfs-convert(btrfs_alloc_free_block+0x50)[0x419b27]
-./btrfs-convert[0x40b8d8]
-./btrfs-convert(btrfs_search_slot+0x13f7)[0x40d9d6]
-./btrfs-convert(btrfs_csum_file_block+0x3b5)[0x41f144]
-./btrfs-convert[0x4387b1]
-./btrfs-convert(main+0x2013)[0x43d180]
-/lib/x86_64-linux-gnu/libc.so.6(__libc_start_main+0xf0)[0x7fca6bb895f0]
-./btrfs-convert(_start+0x29)[0x4082b9]
+Yes, that is what I wrote below. But that means that RAID5 with one
+degraded disk won't be able to reconstruct data on this degraded disk
+because reconstructed extent content won't match checksum. Which kinda
+makes RAID5 pointless.
 
-Before I already tried btrfs-convert from btrfs-progs-4.5.2 which I
-accidentally aborted but until then seemed to run fine.
+...
+>
+>> > It looks like uncorrectable failures might occur because parity is
+>> > correct, but the parity checksum is out of date, so the parity checksum
+>> > doesn't match even though data blindly reconstructed from the parity
+>> > *would* match the data.
+>> >
+>>
+>> Yep, that is how I read it too. So if your data is checksummed, it
+>> should at least avoid silent corruption.
+>>

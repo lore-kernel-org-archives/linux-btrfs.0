@@ -1,250 +1,166 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.15.18]:57718 "EHLO mout.gmx.net"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751495AbcFXIap (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 24 Jun 2016 04:30:45 -0400
+Received: from mx0a-001b2d01.pphosted.com ([148.163.156.1]:48355 "EHLO
+	mx0a-001b2d01.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1750953AbcFXJ3R (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 24 Jun 2016 05:29:17 -0400
+Received: from pps.filterd (m0098410.ppops.net [127.0.0.1])
+	by mx0a-001b2d01.pphosted.com (8.16.0.11/8.16.0.11) with SMTP id u5O9T88B133363
+	for <linux-btrfs@vger.kernel.org>; Fri, 24 Jun 2016 05:29:17 -0400
+Received: from e23smtp01.au.ibm.com (e23smtp01.au.ibm.com [202.81.31.143])
+	by mx0a-001b2d01.pphosted.com with ESMTP id 23rkcfkx09-1
+	(version=TLSv1.2 cipher=AES256-SHA bits=256 verify=NOT)
+	for <linux-btrfs@vger.kernel.org>; Fri, 24 Jun 2016 05:29:17 -0400
+Received: from localhost
+	by e23smtp01.au.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
+	for <linux-btrfs@vger.kernel.org> from <chandan@linux.vnet.ibm.com>;
+	Fri, 24 Jun 2016 19:29:14 +1000
+Received: from d23relay09.au.ibm.com (d23relay09.au.ibm.com [9.185.63.181])
+	by d23dlp03.au.ibm.com (Postfix) with ESMTP id 1F6A03578053
+	for <linux-btrfs@vger.kernel.org>; Fri, 24 Jun 2016 19:29:12 +1000 (EST)
+Received: from d23av04.au.ibm.com (d23av04.au.ibm.com [9.190.235.139])
+	by d23relay09.au.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id u5O9TCtd22151384
+	for <linux-btrfs@vger.kernel.org>; Fri, 24 Jun 2016 19:29:12 +1000
+Received: from d23av04.au.ibm.com (localhost [127.0.0.1])
+	by d23av04.au.ibm.com (8.14.4/8.14.4/NCO v10.0 AVout) with ESMTP id u5O9TBfF030970
+	for <linux-btrfs@vger.kernel.org>; Fri, 24 Jun 2016 19:29:11 +1000
+From: Chandan Rajendra <chandan@linux.vnet.ibm.com>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: dsterba@suse.cz, linux-btrfs@vger.kernel.org
 Subject: Re: [PATCH v11 00/13] Btrfs dedupe framework
-To: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>,
-        Qu Wenruo <quwenruo@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
-References: <20160615021001.9588-1-quwenruo@cn.fujitsu.com>
- <577f07dc-cf92-992b-3c9e-bfd2f321e416@cn.fujitsu.com>
- <4edaddcf-424d-647d-bd0e-241657ed8733@jp.fujitsu.com>
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <4b597ba2-85c7-1ec3-60ba-c8dfcd34f2fb@gmx.com>
-Date: Fri, 24 Jun 2016 16:30:27 +0800
+Date: Fri, 24 Jun 2016 14:59:07 +0530
+In-Reply-To: <023d6b07-2326-bc48-188e-21ff8a442304@cn.fujitsu.com>
+References: <20160615021001.9588-1-quwenruo@cn.fujitsu.com> <20160623121738.GZ4915@twin.jikos.cz> <023d6b07-2326-bc48-188e-21ff8a442304@cn.fujitsu.com>
 MIME-Version: 1.0
-In-Reply-To: <4edaddcf-424d-647d-bd0e-241657ed8733@jp.fujitsu.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Type: text/plain; charset="us-ascii"
+Message-Id: <2530830.B25feXa6fV@reserved-192-168-1-6.rchland.ibm.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Friday, June 24, 2016 10:50:41 AM Qu Wenruo wrote:
+> Hi Chandan, David,
+> 
+> When I'm trying to rebase dedupe patchset on top of Chadan's sub page 
+> size patchset (using David's for-next-test-20160620), although the 
+> rebase itself is quite simple, but I'm afraid that I found some bugs for 
+> sub page size patchset, *without* dedupe patchset applied.
+> 
+> These bugs seems to be unrelated to each other
+> 1) state leak at btrfs rmmod time
 
+The leak was due to not freeing 'cached_state' in
+read_extent_buffer_pages(). I have fixed this and the fix will be part of the
+patchset when I post the next version to the mailing list.
 
-On 06/24/2016 02:54 PM, Satoru Takeuchi wrote:
-> On 2016/06/22 10:48, Qu Wenruo wrote:
->> Here is the long-waited (simple and theoretical) performance test for dedupe.
->>
->> Such result may be added to btrfs wiki page, as an advice for dedupe use case.
->>
->> The full result can be check from google drive:
->> https://drive.google.com/file/d/0BxpkL3ehzX3pb05WT1lZSnRGbjA/view?usp=sharing
->>
->> [Short Conclusion]
->> For high dedupe rate and easily compressible data,
->> if cpu cores >= 4, dedupe speed is on par with lzo compression,
->> and faster than default dd, about 35% faster.
->>
->> if cpu == 2, lzo compression is faster than dedupe, but both faster than default dd.
->>
->> For cpu == 1, lzo compression is on par with SAS HDD, while dedupe is slower than default dd.
->
-> It's better to clarify the meaning of the numbers
-> described in you graph.
+I have always compiled the btrfs code as part of the vmlinux image and hence
+have never rmmod the btrfs module during my local testing. The space leak
+messages might have appeared when I shut down my guest. Hence I had never
+noticed them before. Thanks once again for informing me about it.
 
-Right, I just missed the unit (MBytes/s)
+> 2) bytes_may_use leak at qgroup EDQUOTA error time
 
->
->>
->> [Test Platform]
->> The test platform is Fujitsu PRIMERGY RX300 S7.
->> CPU: Intel(R) Xeon(R) CPU E5-2620 0 @ 2.00GHz (2 nodes)
->> Memory: 32G, while limited to 8G in performace tests
->> Disk: 300G SAS HDDs with hardware RAID 5/6
->
-> How about describing the kernel versions too?
+I have a slightly older version of btrfs-progs which does not yet have btrfs
+dedupe" command. I will get the new version and check if the space leak can be
+reproduced on my machine.
 
-Yes, I should mention it, as wang_dedupe_20160524 branch.
+However, I don't see the space leak warning messages when the reproducer
+script is executed after commenting out "btrfs dedupe enable $mnt".
 
->
->>
->> [Test method]
->> Just do 40G buffered write into a new btrfs.
->> Since it's 5 times(in fact 7 times, since only 5.7G available memory) the total usable memory, flush will happen several times.
->>
->> dd if=/dev/zero bs=1M count=40960 of=/mnt/btrfs/out
->>
->> [Future plan]
->> More tests on less theoretical cases, like low-to-medium dedup rate.
->> Which may leads to slower performance than raw dd.
->>
->> Considering lzo is already the fastest compression method btrfs provides yet, SHA512 should make dedupe even faster, faster than compression.
->>
->> Also, current dedupe is splitting dealloc range into 512K segments first, then split into 128K (default dedupe size) and balance hash work into different CPUs, so for smaller dedupe block size, dedupe should be faster and take full usage of all CPUs.
->
-> How about adding the performance of the kernel without
-> dedupe patchset? By adding such data and comparing it with
-> "default" data, you can prove dedupe patchset doesn't
-> affect performance at all if dedupe is disabled.
-
-Right, makes sense.
-I'll add more test and result in next version.
-
-Thanks,
-Qu
-
->
+> 3) selftest is run several times at modules load time
+>     15 times, to be more exact
+>     And since I didn't found any immediate number related to run it 15
+>     times, I assume at least it's not designed to do it 15 times.
+> 
+> The reproducer for 1) and 2) is quite simple, extracted from btrfs/022 
+> test case:
+> ------
+> dev=/dev/sdb5
+> mnt=/mnt/test
+> 
+> umount $dev &> /dev/null
+> 
+> mkfs.btrfs $dev -f
+> mount $dev $mnt -o nospace_cache
+> btrfs dedupe enable $mnt
+> btrfs sub create $mnt/sub
+> btrfs quota enable $mnt
+> 
+> 
+> # Just use small limit, making ftrace less noise.
+> btrfs qgroup limit 512K 0/257 $mnt
+> dd if=/dev/urandom of=$mnt/sub/test bs=1M count=1
+> umount $mnt
+> rmmod btrfs
+> ------
+> 
+> At unmount time, kernel warning will happen due to may_use bytes leak.
+> I could dig it further, as it looks like a bug in space reservation 
+> failure case.
+> ------
+> BTRFS: space_info 1 has 8044544 free, is not full
+> BTRFS: space_info total=8388608, used=344064, pinned=0, reserved=0, 
+> may_use=409600, readonly=0
+> ------
+> 
+> And at rmmod time, btrfs will detect extent_state leak, whose length is 
+> always 4095 (page size - 1).
+> 
+> Hope this will help, and I'm willing to help to fix the problem.
+> 
 > Thanks,
-> Satoru
->
->>
->> Thanks,
->> Qu
->>
->>
->> At 06/15/2016 10:09 AM, Qu Wenruo wrote:
->>> This patchset can be fetched from github:
->>> https://github.com/adam900710/linux.git wang_dedupe_20160524
->>>
->>> In this update, the patchset goes through another re-organization along
->>> with other fixes to address comments from community.
->>> 1) Move on-disk backend and dedupe props out of the patchset
->>>    Suggested by David.
->>>    There is still some discussion on the on-disk format.
->>>    And dedupe prop is still not 100% determined.
->>>
->>>    So it's better to focus on the current in-memory backend only, which
->>>    doesn't bring any on-disk format change.
->>>
->>>    Once the framework is done, new backends and props can be added more
->>>    easily.
->>>
->>> 2) Better enable/disable and buffered write race avoidance
->>>    Inspired by Mark.
->>>    Although in previous version, we didn't trigger it with our test
->>>    case, but if we manually add delay(5s) to __btrfs_buffered_write(),
->>>    it's possible to trigger disable and buffered write race.
->>>
->>>    The cause is, there is a windows between __btrfs_buffered_write() and
->>>    btrfs_dirty_pages().
->>>    In that window, sync_filesystem() can return very quickly since there
->>>    is no dirty page.
->>>    During that window, dedupe disable can happen and finish, and
->>>    buffered writer may access to the NULL pointer of dedupe info.
->>>
->>>    Now we use sb->s_writers.rw_sem to wait all current writers and block
->>>    further writers, then sync the fs, change dedupe status and finally
->>>    unblock writers. (Like freeze)
->>>    This provides clearer logical and code, and safer than previous
->>>    method, because there is no windows before we dirty pages.
->>>
->>> 3) Fix ENOSPC problem with better solution.
->>>    Pointed out by Josef.
->>>    The last 2 patches from Wang fixes ENOSPC problem, in a more
->>>    comprehensive method for delalloc metadata reservation.
->>>    Alone with small outstanding extents improvement, to co-operate with
->>>    tunable max extent size.
->>>
->>> Now the whole patchset will only add in-memory backend as a whole.
->>> No other backend nor prop.
->>> So we can focus on the framework itself.
->>>
->>> Next version will focus on ioctl interface modification suggested by
->>> David.
->>>
->>> Thanks,
->>> Qu
->>>
->>> Changelog:
->>> v2:
->>>   Totally reworked to handle multiple backends
->>> v3:
->>>   Fix a stupid but deadly on-disk backend bug
->>>   Add handle for multiple hash on same bytenr corner case to fix abort
->>>   trans error
->>>   Increase dedup rate by enhancing delayed ref handler for both backend.
->>>   Move dedup_add() to run_delayed_ref() time, to fix abort trans error.
->>>   Increase dedup block size up limit to 8M.
->>> v4:
->>>   Add dedup prop for disabling dedup for given files/dirs.
->>>   Merge inmem_search() and ondisk_search() into generic_search() to save
->>>   some code
->>>   Fix another delayed_ref related bug.
->>>   Use the same mutex for both inmem and ondisk backend.
->>>   Move dedup_add() back to btrfs_finish_ordered_io() to increase dedup
->>>   rate.
->>> v5:
->>>   Reuse compress routine for much simpler dedup function.
->>>   Slightly improved performance due to above modification.
->>>   Fix race between dedup enable/disable
->>>   Fix for false ENOSPC report
->>> v6:
->>>   Further enable/disable race window fix.
->>>   Minor format change according to checkpatch.
->>> v7:
->>>   Fix one concurrency bug with balance.
->>>   Slightly modify return value from -EINVAL to -EOPNOTSUPP for
->>>   btrfs_dedup_ioctl() to allow progs to distinguish unsupported commands
->>>   and wrong parameter.
->>>   Rebased to integration-4.6.
->>> v8:
->>>   Rename 'dedup' to 'dedupe'.
->>>   Add support to allow dedupe and compression work at the same time.
->>>   Fix several balance related bugs. Special thanks to Satoru Takeuchi,
->>>   who exposed most of them.
->>>   Small dedupe hit case performance improvement.
->>> v9:
->>>   Re-order the patchset to completely separate pure in-memory and any
->>>   on-disk format change.
->>>   Fold bug fixes into its original patch.
->>> v10:
->>>   Adding back missing bug fix patch.
->>>   Reduce on-disk item size.
->>>   Hide dedupe ioctl under CONFIG_BTRFS_DEBUG.
->>> v11:
->>>   Remove other backend and props support to focus on the framework and
->>>   in-memory backend. Suggested by David.
->>>   Better disable and buffered write race protection.
->>>   Comprehensive fix to dedupe metadata ENOSPC problem.
->>>
->>> Qu Wenruo (3):
->>>   btrfs: delayed-ref: Add support for increasing data ref under spinlock
->>>   btrfs: dedupe: Inband in-memory only de-duplication implement
->>>   btrfs: relocation: Enhance error handling to avoid BUG_ON
->>>
->>> Wang Xiaoguang (10):
->>>   btrfs: dedupe: Introduce dedupe framework and its header
->>>   btrfs: dedupe: Introduce function to initialize dedupe info
->>>   btrfs: dedupe: Introduce function to add hash into in-memory tree
->>>   btrfs: dedupe: Introduce function to remove hash from in-memory tree
->>>   btrfs: dedupe: Introduce function to search for an existing hash
->>>   btrfs: dedupe: Implement btrfs_dedupe_calc_hash interface
->>>   btrfs: ordered-extent: Add support for dedupe
->>>   btrfs: dedupe: Add ioctl for inband dedupelication
->>>   btrfs: improve inode's outstanding_extents computation
->>>   btrfs: dedupe: fix false ENOSPC
->>>
->>>  fs/btrfs/Makefile           |   2 +-
->>>  fs/btrfs/ctree.h            |  25 +-
->>>  fs/btrfs/dedupe.c           | 710 ++++++++++++++++++++++++++++++++++++++++++++
->>>  fs/btrfs/dedupe.h           | 210 +++++++++++++
->>>  fs/btrfs/delayed-ref.c      |  30 +-
->>>  fs/btrfs/delayed-ref.h      |   8 +
->>>  fs/btrfs/disk-io.c          |   4 +
->>>  fs/btrfs/extent-tree.c      |  83 +++++-
->>>  fs/btrfs/extent_io.c        |  63 +++-
->>>  fs/btrfs/extent_io.h        |  15 +-
->>>  fs/btrfs/file.c             |  26 +-
->>>  fs/btrfs/free-space-cache.c |   5 +-
->>>  fs/btrfs/inode-map.c        |   4 +-
->>>  fs/btrfs/inode.c            | 434 ++++++++++++++++++++++-----
->>>  fs/btrfs/ioctl.c            |  80 ++++-
->>>  fs/btrfs/ordered-data.c     |  46 ++-
->>>  fs/btrfs/ordered-data.h     |  14 +
->>>  fs/btrfs/relocation.c       |  46 ++-
->>>  fs/btrfs/sysfs.c            |   2 +
->>>  include/uapi/linux/btrfs.h  |  41 +++
->>>  20 files changed, 1701 insertions(+), 147 deletions(-)
->>>  create mode 100644 fs/btrfs/dedupe.c
->>>  create mode 100644 fs/btrfs/dedupe.h
->>>
->>
->>
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
+> Qu
+> 
+> At 06/23/2016 08:17 PM, David Sterba wrote:
+> > On Tue, Jun 21, 2016 at 10:25:19PM +0530, Chandan Rajendra wrote:
+> >>>> I'm completely OK to do the rebase, but since I don't have 64K page size
+> >>>> machine to test the rebase, we can only test if 4K system is unaffected.
+> >>>>
+> >>>> Although not much help, at least it would be better than making it compile.
+> >>>>
+> >>>> Also such rebase may help us to expose bad design/unexpected corner case
+> >>>> in dedupe.
+> >>>> So if it's OK, please let me try to do the rebase.
+> >>>
+> >>> Well, if you base dedupe on subpage, then it could be hard to find the
+> >>> patchset that introduces bugs, or combination of both. We should be able
+> >>> to test the features independently, and thus I'm proposing to first find
+> >>> some common patchset that makes that possible.
+> >>
+> >> I am not sure if I understood the above statement correctly. Do you mean to
+> >> commit the 'common/simple' patches from both the subpage-blocksize & dedupe
+> >> patchset first and then bring in the complicated ones later?
+> >
+> > That would be great yes, but ...
+> >
+> >> If yes, then we have a problem doing that w.r.t subpage-blocksize
+> >> patchset. The first few patches bring in the core changes necessary for the
+> >> other remaining patches.
+> >
+> > ... not easily possible. I looked again for common functions that change
+> > the singature and found only cow_file_range and run_delalloc_nocow. The
+> > plan:
+> >
+> > - separate patch that adds new parameters required by both patches to
+> >   the functions
+> > - update all call sites, add 0/NULL as defaults for the new unused
+> >   parameters
+> > - rebase both patches on top of this patch
+> >
+> > How does this help: if a patch starts to use the new parameter, it
+> > changes only the value at all call sites. This is much easier to verify
+> > and merge manually compared to adding a new parameter to the middle of
+> > the list, namely when the functions take 6+.
+> >
+> > The other conflicts like conversion from PAGE_SIZE to the the block
+> > oriented iterations will be harder, but these are usually localized and
+> > can be resolved. We'll see if there are other options to reduce the
+> > clashes but at the moment it's stuck at the two functions. Does that
+> > explain it better?
+> >
+> >
+> 
+> 
+
+-- 
+chandan
+

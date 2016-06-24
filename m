@@ -1,16 +1,16 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:37808 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:37803 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751025AbcFXWP2 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 24 Jun 2016 18:15:28 -0400
+	id S1751010AbcFXWP1 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 24 Jun 2016 18:15:27 -0400
 Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id 11F9EAD51
+	by mx2.suse.de (Postfix) with ESMTP id 12058AD69
 	for <linux-btrfs@vger.kernel.org>; Fri, 24 Jun 2016 22:15:26 +0000 (UTC)
 From: jeffm@suse.com
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 02/31] btrfs: prefix fsid to all trace events
-Date: Fri, 24 Jun 2016 18:14:55 -0400
-Message-Id: <1466806524-27508-3-git-send-email-jeffm@suse.com>
+Subject: [PATCH 03/31] btrfs: btrfs_test_opt and friends should take a btrfs_fs_info
+Date: Fri, 24 Jun 2016 18:14:56 -0400
+Message-Id: <1466806524-27508-4-git-send-email-jeffm@suse.com>
 In-Reply-To: <1466806524-27508-1-git-send-email-jeffm@suse.com>
 References: <1466806524-27508-1-git-send-email-jeffm@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -18,1131 +18,952 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Jeff Mahoney <jeffm@suse.com>
 
-When using trace events to debug a problem, it's impossible to determine
-which file system generated a particular event.  This patch adds a
-macro to prefix standard information to the head of a trace event.
-
-The extent_state alloc/free events are all that's left without an
-fs_info available.
+btrfs_test_opt and friends only use the root pointer to access
+the fs_info.  Let's pass the fs_info directly in preparation to
+eliminate similar patterns all over btrfs.
 
 Signed-off-by: Jeff Mahoney <jeffm@suse.com>
 ---
- fs/btrfs/delayed-ref.c       |   9 +-
- fs/btrfs/extent-tree.c       |  10 +-
- fs/btrfs/qgroup.c            |  19 +--
- fs/btrfs/qgroup.h            |   9 +-
- fs/btrfs/super.c             |   2 +-
- include/trace/events/btrfs.h | 282 ++++++++++++++++++++++++-------------------
- 6 files changed, 182 insertions(+), 149 deletions(-)
+ fs/btrfs/ctree.h            |  22 ++++----
+ fs/btrfs/delayed-inode.c    |   2 +-
+ fs/btrfs/dev-replace.c      |   4 +-
+ fs/btrfs/disk-io.c          |  22 ++++----
+ fs/btrfs/extent-tree.c      |  32 +++++------
+ fs/btrfs/file.c             |   2 +-
+ fs/btrfs/free-space-cache.c |   6 +-
+ fs/btrfs/inode-map.c        |  12 ++--
+ fs/btrfs/inode.c            |  12 ++--
+ fs/btrfs/ioctl.c            |   2 +-
+ fs/btrfs/super.c            | 132 +++++++++++++++++++++++---------------------
+ fs/btrfs/transaction.c      |   6 +-
+ fs/btrfs/tree-log.c         |   4 +-
+ fs/btrfs/volumes.c          |  11 ++--
+ 14 files changed, 137 insertions(+), 132 deletions(-)
 
-diff --git a/fs/btrfs/delayed-ref.c b/fs/btrfs/delayed-ref.c
-index 430b368..e7b1ec0 100644
---- a/fs/btrfs/delayed-ref.c
-+++ b/fs/btrfs/delayed-ref.c
-@@ -606,7 +606,8 @@ add_delayed_ref_head(struct btrfs_fs_info *fs_info,
- 		qrecord->num_bytes = num_bytes;
- 		qrecord->old_roots = NULL;
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 101c3cf..100d2ea 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -1297,21 +1297,21 @@ struct btrfs_root {
+ #define btrfs_clear_opt(o, opt)		((o) &= ~BTRFS_MOUNT_##opt)
+ #define btrfs_set_opt(o, opt)		((o) |= BTRFS_MOUNT_##opt)
+ #define btrfs_raw_test_opt(o, opt)	((o) & BTRFS_MOUNT_##opt)
+-#define btrfs_test_opt(root, opt)	((root)->fs_info->mount_opt & \
++#define btrfs_test_opt(fs_info, opt)	((fs_info)->mount_opt & \
+ 					 BTRFS_MOUNT_##opt)
  
--		qexisting = btrfs_qgroup_insert_dirty_extent(delayed_refs,
-+		qexisting = btrfs_qgroup_insert_dirty_extent(fs_info,
-+							     delayed_refs,
- 							     qrecord);
- 		if (qexisting)
- 			kfree(qrecord);
-@@ -615,7 +616,7 @@ add_delayed_ref_head(struct btrfs_fs_info *fs_info,
- 	spin_lock_init(&head_ref->lock);
- 	mutex_init(&head_ref->mutex);
+-#define btrfs_set_and_info(root, opt, fmt, args...)			\
++#define btrfs_set_and_info(fs_info, opt, fmt, args...)			\
+ {									\
+-	if (!btrfs_test_opt(root, opt))					\
+-		btrfs_info(root->fs_info, fmt, ##args);			\
+-	btrfs_set_opt(root->fs_info->mount_opt, opt);			\
++	if (!btrfs_test_opt(fs_info, opt))				\
++		btrfs_info(fs_info, fmt, ##args);			\
++	btrfs_set_opt(fs_info->mount_opt, opt);				\
+ }
  
--	trace_add_delayed_ref_head(ref, head_ref, action);
-+	trace_add_delayed_ref_head(fs_info, ref, head_ref, action);
+-#define btrfs_clear_and_info(root, opt, fmt, args...)			\
++#define btrfs_clear_and_info(fs_info, opt, fmt, args...)		\
+ {									\
+-	if (btrfs_test_opt(root, opt))					\
+-		btrfs_info(root->fs_info, fmt, ##args);			\
+-	btrfs_clear_opt(root->fs_info->mount_opt, opt);			\
++	if (btrfs_test_opt(fs_info, opt))				\
++		btrfs_info(fs_info, fmt, ##args);			\
++	btrfs_clear_opt(fs_info->mount_opt, opt);			\
+ }
  
- 	existing = htree_insert(&delayed_refs->href_root,
- 				&head_ref->href_node);
-@@ -682,7 +683,7 @@ add_delayed_tree_ref(struct btrfs_fs_info *fs_info,
- 		ref->type = BTRFS_TREE_BLOCK_REF_KEY;
- 	full_ref->level = level;
+ #ifdef CONFIG_BTRFS_DEBUG
+@@ -1319,9 +1319,9 @@ static inline int
+ btrfs_should_fragment_free_space(struct btrfs_root *root,
+ 				 struct btrfs_block_group_cache *block_group)
+ {
+-	return (btrfs_test_opt(root, FRAGMENT_METADATA) &&
++	return (btrfs_test_opt(root->fs_info, FRAGMENT_METADATA) &&
+ 		block_group->flags & BTRFS_BLOCK_GROUP_METADATA) ||
+-	       (btrfs_test_opt(root, FRAGMENT_DATA) &&
++	       (btrfs_test_opt(root->fs_info, FRAGMENT_DATA) &&
+ 		block_group->flags &  BTRFS_BLOCK_GROUP_DATA);
+ }
+ #endif
+diff --git a/fs/btrfs/delayed-inode.c b/fs/btrfs/delayed-inode.c
+index 61561c2..ed67717 100644
+--- a/fs/btrfs/delayed-inode.c
++++ b/fs/btrfs/delayed-inode.c
+@@ -653,7 +653,7 @@ static int btrfs_delayed_inode_reserve_metadata(
+ 		if (!ret)
+ 			goto out;
  
--	trace_add_delayed_tree_ref(ref, full_ref, action);
-+	trace_add_delayed_tree_ref(fs_info, ref, full_ref, action);
+-		if (btrfs_test_opt(root, ENOSPC_DEBUG)) {
++		if (btrfs_test_opt(root->fs_info, ENOSPC_DEBUG)) {
+ 			btrfs_debug(root->fs_info,
+ 				    "block rsv migrate returned %d", ret);
+ 			WARN_ON(1);
+diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
+index 63ef9cd..e9bbff3 100644
+--- a/fs/btrfs/dev-replace.c
++++ b/fs/btrfs/dev-replace.c
+@@ -142,7 +142,7 @@ no_valid_dev_replace_entry_found:
+ 		 * missing
+ 		 */
+ 		if (!dev_replace->srcdev &&
+-		    !btrfs_test_opt(dev_root, DEGRADED)) {
++		    !btrfs_test_opt(dev_root->fs_info, DEGRADED)) {
+ 			ret = -EIO;
+ 			btrfs_warn(fs_info,
+ 			   "cannot mount because device replace operation is ongoing and");
+@@ -151,7 +151,7 @@ no_valid_dev_replace_entry_found:
+ 			   src_devid);
+ 		}
+ 		if (!dev_replace->tgtdev &&
+-		    !btrfs_test_opt(dev_root, DEGRADED)) {
++		    !btrfs_test_opt(dev_root->fs_info, DEGRADED)) {
+ 			ret = -EIO;
+ 			btrfs_warn(fs_info,
+ 			   "cannot mount because device replace operation is ongoing and");
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 685c81a..8f27127 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -3025,8 +3025,8 @@ retry_root_backup:
+ 	if (IS_ERR(fs_info->transaction_kthread))
+ 		goto fail_cleaner;
  
- 	ret = add_delayed_ref_tail_merge(trans, delayed_refs, head_ref, ref);
+-	if (!btrfs_test_opt(tree_root, SSD) &&
+-	    !btrfs_test_opt(tree_root, NOSSD) &&
++	if (!btrfs_test_opt(tree_root->fs_info, SSD) &&
++	    !btrfs_test_opt(tree_root->fs_info, NOSSD) &&
+ 	    !fs_info->fs_devices->rotating) {
+ 		btrfs_info(fs_info, "detected SSD devices, enabling SSD mode");
+ 		btrfs_set_opt(fs_info->mount_opt, SSD);
+@@ -3039,9 +3039,9 @@ retry_root_backup:
+ 	btrfs_apply_pending_changes(fs_info);
  
-@@ -739,7 +740,7 @@ add_delayed_data_ref(struct btrfs_fs_info *fs_info,
- 	full_ref->objectid = owner;
- 	full_ref->offset = offset;
+ #ifdef CONFIG_BTRFS_FS_CHECK_INTEGRITY
+-	if (btrfs_test_opt(tree_root, CHECK_INTEGRITY)) {
++	if (btrfs_test_opt(tree_root->fs_info, CHECK_INTEGRITY)) {
+ 		ret = btrfsic_mount(tree_root, fs_devices,
+-				    btrfs_test_opt(tree_root,
++				    btrfs_test_opt(tree_root->fs_info,
+ 					CHECK_INTEGRITY_INCLUDING_EXTENT_DATA) ?
+ 				    1 : 0,
+ 				    fs_info->check_integrity_print_mask);
+@@ -3057,7 +3057,7 @@ retry_root_backup:
  
--	trace_add_delayed_data_ref(ref, full_ref, action);
-+	trace_add_delayed_data_ref(fs_info, ref, full_ref, action);
+ 	/* do not make disk changes in broken FS or nologreplay is given */
+ 	if (btrfs_super_log_root(disk_super) != 0 &&
+-	    !btrfs_test_opt(tree_root, NOLOGREPLAY)) {
++	    !btrfs_test_opt(tree_root->fs_info, NOLOGREPLAY)) {
+ 		ret = btrfs_replay_log(fs_info, fs_devices);
+ 		if (ret) {
+ 			err = ret;
+@@ -3098,7 +3098,7 @@ retry_root_backup:
+ 	if (sb->s_flags & MS_RDONLY)
+ 		return 0;
  
- 	ret = add_delayed_ref_tail_merge(trans, delayed_refs, head_ref, ref);
+-	if (btrfs_test_opt(tree_root, FREE_SPACE_TREE) &&
++	if (btrfs_test_opt(tree_root->fs_info, FREE_SPACE_TREE) &&
+ 	    !btrfs_fs_compat_ro(fs_info, FREE_SPACE_TREE)) {
+ 		btrfs_info(fs_info, "creating free space tree");
+ 		ret = btrfs_create_free_space_tree(fs_info);
+@@ -3135,7 +3135,7 @@ retry_root_backup:
+ 
+ 	btrfs_qgroup_rescan_resume(fs_info);
+ 
+-	if (btrfs_test_opt(tree_root, CLEAR_CACHE) &&
++	if (btrfs_test_opt(tree_root->fs_info, CLEAR_CACHE) &&
+ 	    btrfs_fs_compat_ro(fs_info, FREE_SPACE_TREE)) {
+ 		btrfs_info(fs_info, "clearing free space tree");
+ 		ret = btrfs_clear_free_space_tree(fs_info);
+@@ -3156,7 +3156,7 @@ retry_root_backup:
+ 			close_ctree(tree_root);
+ 			return ret;
+ 		}
+-	} else if (btrfs_test_opt(tree_root, RESCAN_UUID_TREE) ||
++	} else if (btrfs_test_opt(tree_root->fs_info, RESCAN_UUID_TREE) ||
+ 		   fs_info->generation !=
+ 				btrfs_super_uuid_tree_generation(disk_super)) {
+ 		btrfs_info(fs_info, "checking UUID tree");
+@@ -3233,7 +3233,7 @@ fail:
+ 	return err;
+ 
+ recovery_tree_root:
+-	if (!btrfs_test_opt(tree_root, USEBACKUPROOT))
++	if (!btrfs_test_opt(tree_root->fs_info, USEBACKUPROOT))
+ 		goto fail_tree_roots;
+ 
+ 	free_root_pointers(fs_info, 0);
+@@ -3648,7 +3648,7 @@ static int write_all_supers(struct btrfs_root *root, int max_mirrors)
+ 	int total_errors = 0;
+ 	u64 flags;
+ 
+-	do_barriers = !btrfs_test_opt(root, NOBARRIER);
++	do_barriers = !btrfs_test_opt(root->fs_info, NOBARRIER);
+ 	backup_super_roots(root->fs_info);
+ 
+ 	sb = root->fs_info->super_for_commit;
+@@ -3932,7 +3932,7 @@ void close_ctree(struct btrfs_root *root)
+ 	iput(fs_info->btree_inode);
+ 
+ #ifdef CONFIG_BTRFS_FS_CHECK_INTEGRITY
+-	if (btrfs_test_opt(root, CHECK_INTEGRITY))
++	if (btrfs_test_opt(root->fs_info, CHECK_INTEGRITY))
+ 		btrfsic_unmount(root, fs_info->fs_devices);
+ #endif
  
 diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 29e5d00..39308a8 100644
+index 39308a8..efb5459 100644
 --- a/fs/btrfs/extent-tree.c
 +++ b/fs/btrfs/extent-tree.c
-@@ -2194,7 +2194,7 @@ static int run_delayed_data_ref(struct btrfs_trans_handle *trans,
- 	ins.type = BTRFS_EXTENT_ITEM_KEY;
+@@ -3427,7 +3427,7 @@ again:
  
- 	ref = btrfs_delayed_node_to_data_ref(node);
--	trace_run_delayed_data_ref(node, ref, node->action);
-+	trace_run_delayed_data_ref(root->fs_info, node, ref, node->action);
+ 	spin_lock(&block_group->lock);
+ 	if (block_group->cached != BTRFS_CACHE_FINISHED ||
+-	    !btrfs_test_opt(root, SPACE_CACHE)) {
++	    !btrfs_test_opt(root->fs_info, SPACE_CACHE)) {
+ 		/*
+ 		 * don't bother trying to write stuff out _if_
+ 		 * a) we're not cached,
+@@ -3504,7 +3504,7 @@ int btrfs_setup_space_cache(struct btrfs_trans_handle *trans,
+ 	struct btrfs_path *path;
  
- 	if (node->type == BTRFS_SHARED_DATA_REF_KEY)
- 		parent = ref->parent;
-@@ -2349,7 +2349,7 @@ static int run_delayed_tree_ref(struct btrfs_trans_handle *trans,
- 						 SKINNY_METADATA);
+ 	if (list_empty(&cur_trans->dirty_bgs) ||
+-	    !btrfs_test_opt(root, SPACE_CACHE))
++	    !btrfs_test_opt(root->fs_info, SPACE_CACHE))
+ 		return 0;
  
- 	ref = btrfs_delayed_node_to_tree_ref(node);
--	trace_run_delayed_tree_ref(node, ref, node->action);
-+	trace_run_delayed_tree_ref(root->fs_info, node, ref, node->action);
+ 	path = btrfs_alloc_path();
+@@ -4417,7 +4417,7 @@ void check_system_chunk(struct btrfs_trans_handle *trans,
+ 	thresh = btrfs_calc_trunc_metadata_size(root, num_devs) +
+ 		btrfs_calc_trans_metadata_size(root, 1);
  
- 	if (node->type == BTRFS_SHARED_BLOCK_REF_KEY)
- 		parent = ref->parent;
-@@ -2413,7 +2413,8 @@ static int run_one_delayed_ref(struct btrfs_trans_handle *trans,
+-	if (left < thresh && btrfs_test_opt(root, ENOSPC_DEBUG)) {
++	if (left < thresh && btrfs_test_opt(root->fs_info, ENOSPC_DEBUG)) {
+ 		btrfs_info(root->fs_info, "left=%llu, need=%llu, flags=%llu",
+ 			left, thresh, type);
+ 		dump_space_info(info, 0, 0);
+@@ -6009,7 +6009,7 @@ static int update_block_group(struct btrfs_trans_handle *trans,
+ 		spin_lock(&cache->space_info->lock);
+ 		spin_lock(&cache->lock);
+ 
+-		if (btrfs_test_opt(root, SPACE_CACHE) &&
++		if (btrfs_test_opt(root->fs_info, SPACE_CACHE) &&
+ 		    cache->disk_cache_state < BTRFS_DC_CLEAR)
+ 			cache->disk_cache_state = BTRFS_DC_CLEAR;
+ 
+@@ -6388,7 +6388,7 @@ fetch_cluster_info(struct btrfs_root *root, struct btrfs_space_info *space_info,
+ 		   u64 *empty_cluster)
+ {
+ 	struct btrfs_free_cluster *ret = NULL;
+-	bool ssd = btrfs_test_opt(root, SSD);
++	bool ssd = btrfs_test_opt(root->fs_info, SSD);
+ 
+ 	*empty_cluster = 0;
+ 	if (btrfs_mixed_space_info(space_info))
+@@ -6518,7 +6518,7 @@ int btrfs_finish_extent_commit(struct btrfs_trans_handle *trans,
+ 			break;
+ 		}
+ 
+-		if (btrfs_test_opt(root, DISCARD))
++		if (btrfs_test_opt(root->fs_info, DISCARD))
+ 			ret = btrfs_discard_extent(root, start,
+ 						   end + 1 - start, NULL);
+ 
+@@ -7737,7 +7737,7 @@ again:
+ 			if (num_bytes == min_alloc_size)
+ 				final_tried = true;
+ 			goto again;
+-		} else if (btrfs_test_opt(root, ENOSPC_DEBUG)) {
++		} else if (btrfs_test_opt(root->fs_info, ENOSPC_DEBUG)) {
+ 			struct btrfs_space_info *sinfo;
+ 
+ 			sinfo = __find_space_info(root->fs_info, flags);
+@@ -7768,7 +7768,7 @@ static int __btrfs_free_reserved_extent(struct btrfs_root *root,
+ 	if (pin)
+ 		pin_down_extent(root, cache, start, len, 1);
+ 	else {
+-		if (btrfs_test_opt(root, DISCARD))
++		if (btrfs_test_opt(root->fs_info, DISCARD))
+ 			ret = btrfs_discard_extent(root, start, len, NULL);
+ 		btrfs_add_free_space(cache, start, len);
+ 		btrfs_update_reserved_bytes(cache, len, RESERVE_FREE, delalloc);
+@@ -8078,7 +8078,7 @@ again:
+ 		goto again;
+ 	}
+ 
+-	if (btrfs_test_opt(root, ENOSPC_DEBUG)) {
++	if (btrfs_test_opt(root->fs_info, ENOSPC_DEBUG)) {
+ 		static DEFINE_RATELIMIT_STATE(_rs,
+ 				DEFAULT_RATELIMIT_INTERVAL * 10,
+ 				/*DEFAULT_RATELIMIT_BURST*/ 1);
+@@ -9510,7 +9510,7 @@ int btrfs_can_relocate(struct btrfs_root *root, u64 bytenr)
+ 	int full = 0;
+ 	int ret = 0;
+ 
+-	debug = btrfs_test_opt(root, ENOSPC_DEBUG);
++	debug = btrfs_test_opt(root->fs_info, ENOSPC_DEBUG);
+ 
+ 	block_group = btrfs_lookup_block_group(root->fs_info, bytenr);
+ 
+@@ -9782,7 +9782,7 @@ int btrfs_free_block_groups(struct btrfs_fs_info *info)
+ 		space_info = list_entry(info->space_info.next,
+ 					struct btrfs_space_info,
+ 					list);
+-		if (btrfs_test_opt(info->tree_root, ENOSPC_DEBUG)) {
++		if (btrfs_test_opt(info, ENOSPC_DEBUG)) {
+ 			if (WARN_ON(space_info->bytes_pinned > 0 ||
+ 			    space_info->bytes_reserved > 0 ||
+ 			    space_info->bytes_may_use > 0)) {
+@@ -9906,10 +9906,10 @@ int btrfs_read_block_groups(struct btrfs_root *root)
+ 	path->reada = READA_FORWARD;
+ 
+ 	cache_gen = btrfs_super_cache_generation(root->fs_info->super_copy);
+-	if (btrfs_test_opt(root, SPACE_CACHE) &&
++	if (btrfs_test_opt(root->fs_info, SPACE_CACHE) &&
+ 	    btrfs_super_generation(root->fs_info->super_copy) != cache_gen)
+ 		need_clear = 1;
+-	if (btrfs_test_opt(root, CLEAR_CACHE))
++	if (btrfs_test_opt(root->fs_info, CLEAR_CACHE))
+ 		need_clear = 1;
+ 
+ 	while (1) {
+@@ -9940,7 +9940,7 @@ int btrfs_read_block_groups(struct btrfs_root *root)
+ 			 * b) Setting 'dirty flag' makes sure that we flush
+ 			 *    the new space cache info onto disk.
+ 			 */
+-			if (btrfs_test_opt(root, SPACE_CACHE))
++			if (btrfs_test_opt(root->fs_info, SPACE_CACHE))
+ 				cache->disk_cache_state = BTRFS_DC_CLEAR;
+ 		}
+ 
+@@ -10406,7 +10406,7 @@ int btrfs_remove_block_group(struct btrfs_trans_handle *trans,
+ 	spin_lock(&block_group->space_info->lock);
+ 	list_del_init(&block_group->ro_list);
+ 
+-	if (btrfs_test_opt(root, ENOSPC_DEBUG)) {
++	if (btrfs_test_opt(root->fs_info, ENOSPC_DEBUG)) {
+ 		WARN_ON(block_group->space_info->total_bytes
+ 			< block_group->key.offset);
+ 		WARN_ON(block_group->space_info->bytes_readonly
+@@ -10674,7 +10674,7 @@ void btrfs_delete_unused_bgs(struct btrfs_fs_info *fs_info)
+ 		spin_unlock(&space_info->lock);
+ 
+ 		/* DISCARD can flip during remount */
+-		trimming = btrfs_test_opt(root, DISCARD);
++		trimming = btrfs_test_opt(root->fs_info, DISCARD);
+ 
+ 		/* Implicit trim during transaction commit. */
+ 		if (trimming)
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index e0c9bd3..ffd9001 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -132,7 +132,7 @@ static int __btrfs_add_inode_defrag(struct inode *inode,
+ 
+ static inline int __need_auto_defrag(struct btrfs_root *root)
+ {
+-	if (!btrfs_test_opt(root, AUTO_DEFRAG))
++	if (!btrfs_test_opt(root->fs_info, AUTO_DEFRAG))
+ 		return 0;
+ 
+ 	if (btrfs_fs_closing(root->fs_info))
+diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
+index 69d270f..cee2049 100644
+--- a/fs/btrfs/free-space-cache.c
++++ b/fs/btrfs/free-space-cache.c
+@@ -3026,7 +3026,7 @@ int btrfs_find_space_cluster(struct btrfs_root *root,
+ 	 * For metadata, allow allocates with smaller extents.  For
+ 	 * data, keep it dense.
+ 	 */
+-	if (btrfs_test_opt(root, SSD_SPREAD)) {
++	if (btrfs_test_opt(root->fs_info, SSD_SPREAD)) {
+ 		cont1_bytes = min_bytes = bytes + empty_size;
+ 	} else if (block_group->flags & BTRFS_BLOCK_GROUP_METADATA) {
+ 		cont1_bytes = bytes;
+@@ -3470,7 +3470,7 @@ int load_free_ino_cache(struct btrfs_fs_info *fs_info, struct btrfs_root *root)
+ 	int ret = 0;
+ 	u64 root_gen = btrfs_root_generation(&root->root_item);
+ 
+-	if (!btrfs_test_opt(root, INODE_MAP_CACHE))
++	if (!btrfs_test_opt(root->fs_info, INODE_MAP_CACHE))
+ 		return 0;
+ 
+ 	/*
+@@ -3514,7 +3514,7 @@ int btrfs_write_out_ino_cache(struct btrfs_root *root,
+ 	struct btrfs_io_ctl io_ctl;
+ 	bool release_metadata = true;
+ 
+-	if (!btrfs_test_opt(root, INODE_MAP_CACHE))
++	if (!btrfs_test_opt(root->fs_info, INODE_MAP_CACHE))
+ 		return 0;
+ 
+ 	memset(&io_ctl, 0, sizeof(io_ctl));
+diff --git a/fs/btrfs/inode-map.c b/fs/btrfs/inode-map.c
+index 70107f7..e3ad8c1 100644
+--- a/fs/btrfs/inode-map.c
++++ b/fs/btrfs/inode-map.c
+@@ -38,7 +38,7 @@ static int caching_kthread(void *data)
+ 	int slot;
+ 	int ret;
+ 
+-	if (!btrfs_test_opt(root, INODE_MAP_CACHE))
++	if (!btrfs_test_opt(root->fs_info, INODE_MAP_CACHE))
+ 		return 0;
+ 
+ 	path = btrfs_alloc_path();
+@@ -141,7 +141,7 @@ static void start_caching(struct btrfs_root *root)
+ 	int ret;
+ 	u64 objectid;
+ 
+-	if (!btrfs_test_opt(root, INODE_MAP_CACHE))
++	if (!btrfs_test_opt(root->fs_info, INODE_MAP_CACHE))
+ 		return;
+ 
+ 	spin_lock(&root->ino_cache_lock);
+@@ -185,7 +185,7 @@ static void start_caching(struct btrfs_root *root)
+ 
+ int btrfs_find_free_ino(struct btrfs_root *root, u64 *objectid)
+ {
+-	if (!btrfs_test_opt(root, INODE_MAP_CACHE))
++	if (!btrfs_test_opt(root->fs_info, INODE_MAP_CACHE))
+ 		return btrfs_find_free_objectid(root, objectid);
+ 
+ again:
+@@ -211,7 +211,7 @@ void btrfs_return_ino(struct btrfs_root *root, u64 objectid)
+ {
+ 	struct btrfs_free_space_ctl *pinned = root->free_ino_pinned;
+ 
+-	if (!btrfs_test_opt(root, INODE_MAP_CACHE))
++	if (!btrfs_test_opt(root->fs_info, INODE_MAP_CACHE))
+ 		return;
+ again:
+ 	if (root->ino_cache_state == BTRFS_CACHE_FINISHED) {
+@@ -251,7 +251,7 @@ void btrfs_unpin_free_ino(struct btrfs_root *root)
+ 	struct rb_node *n;
+ 	u64 count;
+ 
+-	if (!btrfs_test_opt(root, INODE_MAP_CACHE))
++	if (!btrfs_test_opt(root->fs_info, INODE_MAP_CACHE))
+ 		return;
+ 
+ 	while (1) {
+@@ -412,7 +412,7 @@ int btrfs_save_ino_cache(struct btrfs_root *root,
+ 	if (btrfs_root_refs(&root->root_item) == 0)
+ 		return 0;
+ 
+-	if (!btrfs_test_opt(root, INODE_MAP_CACHE))
++	if (!btrfs_test_opt(root->fs_info, INODE_MAP_CACHE))
+ 		return 0;
+ 
+ 	path = btrfs_alloc_path();
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index d2be95c..141a233 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -374,12 +374,12 @@ static inline int inode_need_compress(struct inode *inode)
+ 	struct btrfs_root *root = BTRFS_I(inode)->root;
+ 
+ 	/* force compress */
+-	if (btrfs_test_opt(root, FORCE_COMPRESS))
++	if (btrfs_test_opt(root->fs_info, FORCE_COMPRESS))
+ 		return 1;
+ 	/* bad compression ratios */
+ 	if (BTRFS_I(inode)->flags & BTRFS_INODE_NOCOMPRESS)
+ 		return 0;
+-	if (btrfs_test_opt(root, COMPRESS) ||
++	if (btrfs_test_opt(root->fs_info, COMPRESS) ||
+ 	    BTRFS_I(inode)->flags & BTRFS_INODE_COMPRESS ||
+ 	    BTRFS_I(inode)->force_compress)
+ 		return 1;
+@@ -602,7 +602,7 @@ cont:
+ 		nr_pages_ret = 0;
+ 
+ 		/* flag the file so we don't compress in the future */
+-		if (!btrfs_test_opt(root, FORCE_COMPRESS) &&
++		if (!btrfs_test_opt(root->fs_info, FORCE_COMPRESS) &&
+ 		    !(BTRFS_I(inode)->force_compress)) {
+ 			BTRFS_I(inode)->flags |= BTRFS_INODE_NOCOMPRESS;
+ 		}
+@@ -1156,7 +1156,7 @@ static int cow_file_range_async(struct inode *inode, struct page *locked_page,
+ 		async_cow->start = start;
+ 
+ 		if (BTRFS_I(inode)->flags & BTRFS_INODE_NOCOMPRESS &&
+-		    !btrfs_test_opt(root, FORCE_COMPRESS))
++		    !btrfs_test_opt(root->fs_info, FORCE_COMPRESS))
+ 			cur_end = end;
+ 		else
+ 			cur_end = min(end, start + SZ_512K - 1);
+@@ -6237,9 +6237,9 @@ static struct inode *btrfs_new_inode(struct btrfs_trans_handle *trans,
+ 	btrfs_inherit_iflags(inode, dir);
+ 
+ 	if (S_ISREG(mode)) {
+-		if (btrfs_test_opt(root, NODATASUM))
++		if (btrfs_test_opt(root->fs_info, NODATASUM))
+ 			BTRFS_I(inode)->flags |= BTRFS_INODE_NODATASUM;
+-		if (btrfs_test_opt(root, NODATACOW))
++		if (btrfs_test_opt(root->fs_info, NODATACOW))
+ 			BTRFS_I(inode)->flags |= BTRFS_INODE_NODATACOW |
+ 				BTRFS_INODE_NODATASUM;
+ 	}
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 0517356..ffb1628 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -2406,7 +2406,7 @@ static noinline int btrfs_ioctl_snap_destroy(struct file *file,
+ 		 * rmdir(2).
  		 */
- 		BUG_ON(extent_op);
- 		head = btrfs_delayed_node_to_head(node);
--		trace_run_delayed_ref_head(node, head, node->action);
-+		trace_run_delayed_ref_head(root->fs_info, node, head,
-+					   node->action);
+ 		err = -EPERM;
+-		if (!btrfs_test_opt(root, USER_SUBVOL_RM_ALLOWED))
++		if (!btrfs_test_opt(root->fs_info, USER_SUBVOL_RM_ALLOWED))
+ 			goto out_dput;
  
- 		if (insert_reserved) {
- 			btrfs_pin_extent(root, node->bytenr,
-@@ -8317,7 +8318,8 @@ static int record_one_subtree_extent(struct btrfs_trans_handle *trans,
- 
- 	delayed_refs = &trans->transaction->delayed_refs;
- 	spin_lock(&delayed_refs->lock);
--	if (btrfs_qgroup_insert_dirty_extent(delayed_refs, qrecord))
-+	if (btrfs_qgroup_insert_dirty_extent(trans->root->fs_info,
-+					     delayed_refs, qrecord))
- 		kfree(qrecord);
- 	spin_unlock(&delayed_refs->lock);
- 
-diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-index 9d4c05b..13e28d8 100644
---- a/fs/btrfs/qgroup.c
-+++ b/fs/btrfs/qgroup.c
-@@ -1453,9 +1453,10 @@ int btrfs_qgroup_prepare_account_extents(struct btrfs_trans_handle *trans,
- 	return ret;
- }
- 
--struct btrfs_qgroup_extent_record
--*btrfs_qgroup_insert_dirty_extent(struct btrfs_delayed_ref_root *delayed_refs,
--				  struct btrfs_qgroup_extent_record *record)
-+struct btrfs_qgroup_extent_record *
-+btrfs_qgroup_insert_dirty_extent(struct btrfs_fs_info *fs_info,
-+				 struct btrfs_delayed_ref_root *delayed_refs,
-+				 struct btrfs_qgroup_extent_record *record)
- {
- 	struct rb_node **p = &delayed_refs->dirty_extent_root.rb_node;
- 	struct rb_node *parent_node = NULL;
-@@ -1463,7 +1464,7 @@ struct btrfs_qgroup_extent_record
- 	u64 bytenr = record->bytenr;
- 
- 	assert_spin_locked(&delayed_refs->lock);
--	trace_btrfs_qgroup_insert_dirty_extent(record);
-+	trace_btrfs_qgroup_insert_dirty_extent(fs_info, record);
- 
- 	while (*p) {
- 		parent_node = *p;
-@@ -1595,8 +1596,8 @@ static int qgroup_update_counters(struct btrfs_fs_info *fs_info,
- 		cur_old_count = btrfs_qgroup_get_old_refcnt(qg, seq);
- 		cur_new_count = btrfs_qgroup_get_new_refcnt(qg, seq);
- 
--		trace_qgroup_update_counters(qg->qgroupid, cur_old_count,
--					     cur_new_count);
-+		trace_qgroup_update_counters(fs_info, qg->qgroupid,
-+					     cur_old_count, cur_new_count);
- 
- 		/* Rfer update part */
- 		if (cur_old_count == 0 && cur_new_count > 0) {
-@@ -1687,8 +1688,8 @@ btrfs_qgroup_account_extent(struct btrfs_trans_handle *trans,
- 		goto out_free;
- 	BUG_ON(!fs_info->quota_root);
- 
--	trace_btrfs_qgroup_account_extent(bytenr, num_bytes, nr_old_roots,
--					  nr_new_roots);
-+	trace_btrfs_qgroup_account_extent(fs_info, bytenr, num_bytes,
-+					  nr_old_roots, nr_new_roots);
- 
- 	qgroups = ulist_alloc(GFP_NOFS);
- 	if (!qgroups) {
-@@ -1759,7 +1760,7 @@ int btrfs_qgroup_account_extents(struct btrfs_trans_handle *trans,
- 		record = rb_entry(node, struct btrfs_qgroup_extent_record,
- 				  node);
- 
--		trace_btrfs_qgroup_account_extents(record);
-+		trace_btrfs_qgroup_account_extents(fs_info, record);
- 
- 		if (!ret) {
- 			/*
-diff --git a/fs/btrfs/qgroup.h b/fs/btrfs/qgroup.h
-index ecb2c14..710887c 100644
---- a/fs/btrfs/qgroup.h
-+++ b/fs/btrfs/qgroup.h
-@@ -63,9 +63,10 @@ void btrfs_free_qgroup_config(struct btrfs_fs_info *fs_info);
- struct btrfs_delayed_extent_op;
- int btrfs_qgroup_prepare_account_extents(struct btrfs_trans_handle *trans,
- 					 struct btrfs_fs_info *fs_info);
--struct btrfs_qgroup_extent_record
--*btrfs_qgroup_insert_dirty_extent(struct btrfs_delayed_ref_root *delayed_refs,
--				  struct btrfs_qgroup_extent_record *record);
-+struct btrfs_qgroup_extent_record *
-+btrfs_qgroup_insert_dirty_extent(struct btrfs_fs_info *fs_info,
-+				 struct btrfs_delayed_ref_root *delayed_refs,
-+				 struct btrfs_qgroup_extent_record *record);
- int
- btrfs_qgroup_account_extent(struct btrfs_trans_handle *trans,
- 			    struct btrfs_fs_info *fs_info,
-@@ -88,7 +89,7 @@ static inline void btrfs_qgroup_free_delayed_ref(struct btrfs_fs_info *fs_info,
- 						 u64 ref_root, u64 num_bytes)
- {
- 	btrfs_qgroup_free_refroot(fs_info, ref_root, num_bytes);
--	trace_btrfs_qgroup_free_delayed_ref(ref_root, num_bytes);
-+	trace_btrfs_qgroup_free_delayed_ref(fs_info, ref_root, num_bytes);
- }
- void assert_qgroups_uptodate(struct btrfs_trans_handle *trans);
- 
+ 		/*
 diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 60e7179..ee56b0e 100644
+index ee56b0e..a7b9a15 100644
 --- a/fs/btrfs/super.c
 +++ b/fs/btrfs/super.c
-@@ -1149,7 +1149,7 @@ int btrfs_sync_fs(struct super_block *sb, int wait)
- 	struct btrfs_fs_info *fs_info = btrfs_sb(sb);
- 	struct btrfs_root *root = fs_info->tree_root;
- 
--	trace_btrfs_sync_fs(wait);
-+	trace_btrfs_sync_fs(fs_info, wait);
- 
- 	if (!wait) {
- 		filemap_flush(fs_info->btree_inode->i_mapping);
-diff --git a/include/trace/events/btrfs.h b/include/trace/events/btrfs.h
-index e90e82a..eba0c65 100644
---- a/include/trace/events/btrfs.h
-+++ b/include/trace/events/btrfs.h
-@@ -66,6 +66,21 @@ struct btrfs_qgroup_extent_record;
- 	{ BTRFS_BLOCK_GROUP_RAID6,	"RAID6"}
- 
- #define BTRFS_UUID_SIZE 16
-+#define TP_STRUCT__entry_fsid __array(u8, fsid, BTRFS_UUID_SIZE)
-+
-+#define TP_fast_assign_fsid(fs_info)					\
-+	memcpy(__entry->fsid, fs_info->fsid, BTRFS_UUID_SIZE)
-+
-+#define TP_STRUCT__entry_btrfs(args...)					\
-+	TP_STRUCT__entry(						\
-+		TP_STRUCT__entry_fsid					\
-+		args)
-+#define TP_fast_assign_btrfs(fs_info, args...)				\
-+	TP_fast_assign(							\
-+		TP_fast_assign_fsid(fs_info);				\
-+		args)
-+#define TP_printk_btrfs(fmt, args...) \
-+	TP_printk("%pU: " fmt, __entry->fsid, args)
- 
- TRACE_EVENT(btrfs_transaction_commit,
- 
-@@ -73,17 +88,17 @@ TRACE_EVENT(btrfs_transaction_commit,
- 
- 	TP_ARGS(root),
- 
--	TP_STRUCT__entry(
-+	TP_STRUCT__entry_btrfs(
- 		__field(	u64,  generation		)
- 		__field(	u64,  root_objectid		)
- 	),
- 
--	TP_fast_assign(
-+	TP_fast_assign_btrfs(root->fs_info,
- 		__entry->generation	= root->fs_info->generation;
- 		__entry->root_objectid	= root->root_key.objectid;
- 	),
- 
--	TP_printk("root = %llu(%s), gen = %llu",
-+	TP_printk_btrfs("root = %llu(%s), gen = %llu",
- 		  show_root_type(__entry->root_objectid),
- 		  (unsigned long long)__entry->generation)
- );
-@@ -94,7 +109,7 @@ DECLARE_EVENT_CLASS(btrfs__inode,
- 
- 	TP_ARGS(inode),
- 
--	TP_STRUCT__entry(
-+	TP_STRUCT__entry_btrfs(
- 		__field(	ino_t,  ino			)
- 		__field(	blkcnt_t,  blocks		)
- 		__field(	u64,  disk_i_size		)
-@@ -104,7 +119,7 @@ DECLARE_EVENT_CLASS(btrfs__inode,
- 		__field(	u64,  root_objectid		)
- 	),
- 
--	TP_fast_assign(
-+	TP_fast_assign_btrfs(btrfs_sb(inode->i_sb),
- 		__entry->ino	= inode->i_ino;
- 		__entry->blocks	= inode->i_blocks;
- 		__entry->disk_i_size  = BTRFS_I(inode)->disk_i_size;
-@@ -115,7 +130,7 @@ DECLARE_EVENT_CLASS(btrfs__inode,
- 				BTRFS_I(inode)->root->root_key.objectid;
- 	),
- 
--	TP_printk("root = %llu(%s), gen = %llu, ino = %lu, blocks = %llu, "
-+	TP_printk_btrfs("root = %llu(%s), gen = %llu, ino = %lu, blocks = %llu, "
- 		  "disk_i_size = %llu, last_trans = %llu, logged_trans = %llu",
- 		  show_root_type(__entry->root_objectid),
- 		  (unsigned long long)__entry->generation,
-@@ -175,7 +190,7 @@ TRACE_EVENT_CONDITION(btrfs_get_extent,
- 
- 	TP_CONDITION(map),
- 
--	TP_STRUCT__entry(
-+	TP_STRUCT__entry_btrfs(
- 		__field(	u64,  root_objectid	)
- 		__field(	u64,  start		)
- 		__field(	u64,  len		)
-@@ -187,7 +202,7 @@ TRACE_EVENT_CONDITION(btrfs_get_extent,
- 		__field(	unsigned int,  compress_type	)
- 	),
- 
--	TP_fast_assign(
-+	TP_fast_assign_btrfs(root->fs_info,
- 		__entry->root_objectid	= root->root_key.objectid;
- 		__entry->start 		= map->start;
- 		__entry->len		= map->len;
-@@ -199,7 +214,7 @@ TRACE_EVENT_CONDITION(btrfs_get_extent,
- 		__entry->compress_type	= map->compress_type;
- 	),
- 
--	TP_printk("root = %llu(%s), start = %llu, len = %llu, "
-+	TP_printk_btrfs("root = %llu(%s), start = %llu, len = %llu, "
- 		  "orig_start = %llu, block_start = %llu(%s), "
- 		  "block_len = %llu, flags = %s, refs = %u, "
- 		  "compress_type = %u",
-@@ -233,7 +248,7 @@ DECLARE_EVENT_CLASS(btrfs__ordered_extent,
- 
- 	TP_ARGS(inode, ordered),
- 
--	TP_STRUCT__entry(
-+	TP_STRUCT__entry_btrfs(
- 		__field(	ino_t,  ino		)
- 		__field(	u64,  file_offset	)
- 		__field(	u64,  start		)
-@@ -246,7 +261,7 @@ DECLARE_EVENT_CLASS(btrfs__ordered_extent,
- 		__field(	u64,  root_objectid	)
- 	),
- 
--	TP_fast_assign(
-+	TP_fast_assign_btrfs(btrfs_sb(inode->i_sb),
- 		__entry->ino 		= inode->i_ino;
- 		__entry->file_offset	= ordered->file_offset;
- 		__entry->start		= ordered->start;
-@@ -260,7 +275,7 @@ DECLARE_EVENT_CLASS(btrfs__ordered_extent,
- 				BTRFS_I(inode)->root->root_key.objectid;
- 	),
- 
--	TP_printk("root = %llu(%s), ino = %llu, file_offset = %llu, "
-+	TP_printk_btrfs("root = %llu(%s), ino = %llu, file_offset = %llu, "
- 		  "start = %llu, len = %llu, disk_len = %llu, "
- 		  "bytes_left = %llu, flags = %s, compress_type = %d, "
- 		  "refs = %d",
-@@ -310,7 +325,7 @@ DECLARE_EVENT_CLASS(btrfs__writepage,
- 
- 	TP_ARGS(page, inode, wbc),
- 
--	TP_STRUCT__entry(
-+	TP_STRUCT__entry_btrfs(
- 		__field(	ino_t,  ino			)
- 		__field(	pgoff_t,  index			)
- 		__field(	long,   nr_to_write		)
-@@ -324,7 +339,7 @@ DECLARE_EVENT_CLASS(btrfs__writepage,
- 		__field(	u64,    root_objectid		)
- 	),
- 
--	TP_fast_assign(
-+	TP_fast_assign_btrfs(btrfs_sb(inode->i_sb),
- 		__entry->ino		= inode->i_ino;
- 		__entry->index		= page->index;
- 		__entry->nr_to_write	= wbc->nr_to_write;
-@@ -339,7 +354,7 @@ DECLARE_EVENT_CLASS(btrfs__writepage,
- 				 BTRFS_I(inode)->root->root_key.objectid;
- 	),
- 
--	TP_printk("root = %llu(%s), ino = %lu, page_index = %lu, "
-+	TP_printk_btrfs("root = %llu(%s), ino = %lu, page_index = %lu, "
- 		  "nr_to_write = %ld, pages_skipped = %ld, range_start = %llu, "
- 		  "range_end = %llu, for_kupdate = %d, "
- 		  "for_reclaim = %d, range_cyclic = %d, writeback_index = %lu",
-@@ -366,7 +381,7 @@ TRACE_EVENT(btrfs_writepage_end_io_hook,
- 
- 	TP_ARGS(page, start, end, uptodate),
- 
--	TP_STRUCT__entry(
-+	TP_STRUCT__entry_btrfs(
- 		__field(	ino_t,	 ino		)
- 		__field(	pgoff_t, index		)
- 		__field(	u64,	 start		)
-@@ -375,7 +390,7 @@ TRACE_EVENT(btrfs_writepage_end_io_hook,
- 		__field(	u64,    root_objectid	)
- 	),
- 
--	TP_fast_assign(
-+	TP_fast_assign_btrfs(btrfs_sb(page->mapping->host->i_sb),
- 		__entry->ino	= page->mapping->host->i_ino;
- 		__entry->index	= page->index;
- 		__entry->start	= start;
-@@ -385,7 +400,7 @@ TRACE_EVENT(btrfs_writepage_end_io_hook,
- 			 BTRFS_I(page->mapping->host)->root->root_key.objectid;
- 	),
- 
--	TP_printk("root = %llu(%s), ino = %lu, page_index = %lu, start = %llu, "
-+	TP_printk_btrfs("root = %llu(%s), ino = %lu, page_index = %lu, start = %llu, "
- 		  "end = %llu, uptodate = %d",
- 		  show_root_type(__entry->root_objectid),
- 		  (unsigned long)__entry->ino, (unsigned long)__entry->index,
-@@ -399,7 +414,7 @@ TRACE_EVENT(btrfs_sync_file,
- 
- 	TP_ARGS(file, datasync),
- 
--	TP_STRUCT__entry(
-+	TP_STRUCT__entry_btrfs(
- 		__field(	ino_t,  ino		)
- 		__field(	ino_t,  parent		)
- 		__field(	int,    datasync	)
-@@ -410,6 +425,7 @@ TRACE_EVENT(btrfs_sync_file,
- 		struct dentry *dentry = file->f_path.dentry;
- 		struct inode *inode = d_inode(dentry);
- 
-+		TP_fast_assign_fsid(btrfs_sb(file->f_path.dentry->d_sb));
- 		__entry->ino		= inode->i_ino;
- 		__entry->parent		= d_inode(dentry->d_parent)->i_ino;
- 		__entry->datasync	= datasync;
-@@ -417,7 +433,7 @@ TRACE_EVENT(btrfs_sync_file,
- 				 BTRFS_I(inode)->root->root_key.objectid;
- 	),
- 
--	TP_printk("root = %llu(%s), ino = %ld, parent = %ld, datasync = %d",
-+	TP_printk_btrfs("root = %llu(%s), ino = %ld, parent = %ld, datasync = %d",
- 		  show_root_type(__entry->root_objectid),
- 		  (unsigned long)__entry->ino, (unsigned long)__entry->parent,
- 		  __entry->datasync)
-@@ -425,19 +441,19 @@ TRACE_EVENT(btrfs_sync_file,
- 
- TRACE_EVENT(btrfs_sync_fs,
- 
--	TP_PROTO(int wait),
-+	TP_PROTO(struct btrfs_fs_info *fs_info, int wait),
- 
--	TP_ARGS(wait),
-+	TP_ARGS(fs_info, wait),
- 
--	TP_STRUCT__entry(
-+	TP_STRUCT__entry_btrfs(
- 		__field(	int,  wait		)
- 	),
- 
--	TP_fast_assign(
-+	TP_fast_assign_btrfs(fs_info,
- 		__entry->wait	= wait;
- 	),
- 
--	TP_printk("wait = %d", __entry->wait)
-+	TP_printk_btrfs("wait = %d", __entry->wait)
- );
- 
- #define show_ref_action(action)						\
-@@ -450,13 +466,14 @@ TRACE_EVENT(btrfs_sync_fs,
- 
- DECLARE_EVENT_CLASS(btrfs_delayed_tree_ref,
- 
--	TP_PROTO(struct btrfs_delayed_ref_node *ref,
-+	TP_PROTO(struct btrfs_fs_info *fs_info,
-+		 struct btrfs_delayed_ref_node *ref,
- 		 struct btrfs_delayed_tree_ref *full_ref,
- 		 int action),
- 
--	TP_ARGS(ref, full_ref, action),
-+	TP_ARGS(fs_info, ref, full_ref, action),
- 
--	TP_STRUCT__entry(
-+	TP_STRUCT__entry_btrfs(
- 		__field(	u64,  bytenr		)
- 		__field(	u64,  num_bytes		)
- 		__field(	int,  action		) 
-@@ -467,7 +484,7 @@ DECLARE_EVENT_CLASS(btrfs_delayed_tree_ref,
- 		__field(	u64,  seq		)
- 	),
- 
--	TP_fast_assign(
-+	TP_fast_assign_btrfs(fs_info,
- 		__entry->bytenr		= ref->bytenr;
- 		__entry->num_bytes	= ref->num_bytes;
- 		__entry->action		= action;
-@@ -478,7 +495,7 @@ DECLARE_EVENT_CLASS(btrfs_delayed_tree_ref,
- 		__entry->seq		= ref->seq;
- 	),
- 
--	TP_printk("bytenr = %llu, num_bytes = %llu, action = %s, "
-+	TP_printk_btrfs("bytenr = %llu, num_bytes = %llu, action = %s, "
- 		  "parent = %llu(%s), ref_root = %llu(%s), level = %d, "
- 		  "type = %s, seq = %llu",
- 		  (unsigned long long)__entry->bytenr,
-@@ -492,31 +509,34 @@ DECLARE_EVENT_CLASS(btrfs_delayed_tree_ref,
- 
- DEFINE_EVENT(btrfs_delayed_tree_ref,  add_delayed_tree_ref,
- 
--	TP_PROTO(struct btrfs_delayed_ref_node *ref,
-+	TP_PROTO(struct btrfs_fs_info *fs_info,
-+		 struct btrfs_delayed_ref_node *ref,
- 		 struct btrfs_delayed_tree_ref *full_ref,
- 		 int action),
- 
--	TP_ARGS(ref, full_ref, action)
-+	TP_ARGS(fs_info, ref, full_ref, action)
- );
- 
- DEFINE_EVENT(btrfs_delayed_tree_ref,  run_delayed_tree_ref,
- 
--	TP_PROTO(struct btrfs_delayed_ref_node *ref,
-+	TP_PROTO(struct btrfs_fs_info *fs_info,
-+		 struct btrfs_delayed_ref_node *ref,
- 		 struct btrfs_delayed_tree_ref *full_ref,
- 		 int action),
- 
--	TP_ARGS(ref, full_ref, action)
-+	TP_ARGS(fs_info, ref, full_ref, action)
- );
- 
- DECLARE_EVENT_CLASS(btrfs_delayed_data_ref,
- 
--	TP_PROTO(struct btrfs_delayed_ref_node *ref,
-+	TP_PROTO(struct btrfs_fs_info *fs_info,
-+		 struct btrfs_delayed_ref_node *ref,
- 		 struct btrfs_delayed_data_ref *full_ref,
- 		 int action),
- 
--	TP_ARGS(ref, full_ref, action),
-+	TP_ARGS(fs_info, ref, full_ref, action),
- 
--	TP_STRUCT__entry(
-+	TP_STRUCT__entry_btrfs(
- 		__field(	u64,  bytenr		)
- 		__field(	u64,  num_bytes		)
- 		__field(	int,  action		) 
-@@ -528,7 +548,7 @@ DECLARE_EVENT_CLASS(btrfs_delayed_data_ref,
- 		__field(	u64,  seq		)
- 	),
- 
--	TP_fast_assign(
-+	TP_fast_assign_btrfs(fs_info,
- 		__entry->bytenr		= ref->bytenr;
- 		__entry->num_bytes	= ref->num_bytes;
- 		__entry->action		= action;
-@@ -540,7 +560,7 @@ DECLARE_EVENT_CLASS(btrfs_delayed_data_ref,
- 		__entry->seq		= ref->seq;
- 	),
- 
--	TP_printk("bytenr = %llu, num_bytes = %llu, action = %s, "
-+	TP_printk_btrfs("bytenr = %llu, num_bytes = %llu, action = %s, "
- 		  "parent = %llu(%s), ref_root = %llu(%s), owner = %llu, "
- 		  "offset = %llu, type = %s, seq = %llu",
- 		  (unsigned long long)__entry->bytenr,
-@@ -556,45 +576,48 @@ DECLARE_EVENT_CLASS(btrfs_delayed_data_ref,
- 
- DEFINE_EVENT(btrfs_delayed_data_ref,  add_delayed_data_ref,
- 
--	TP_PROTO(struct btrfs_delayed_ref_node *ref,
-+	TP_PROTO(struct btrfs_fs_info *fs_info,
-+		 struct btrfs_delayed_ref_node *ref,
- 		 struct btrfs_delayed_data_ref *full_ref,
- 		 int action),
- 
--	TP_ARGS(ref, full_ref, action)
-+	TP_ARGS(fs_info, ref, full_ref, action)
- );
- 
- DEFINE_EVENT(btrfs_delayed_data_ref,  run_delayed_data_ref,
- 
--	TP_PROTO(struct btrfs_delayed_ref_node *ref,
-+	TP_PROTO(struct btrfs_fs_info *fs_info,
-+		 struct btrfs_delayed_ref_node *ref,
- 		 struct btrfs_delayed_data_ref *full_ref,
- 		 int action),
- 
--	TP_ARGS(ref, full_ref, action)
-+	TP_ARGS(fs_info, ref, full_ref, action)
- );
- 
- DECLARE_EVENT_CLASS(btrfs_delayed_ref_head,
- 
--	TP_PROTO(struct btrfs_delayed_ref_node *ref,
-+	TP_PROTO(struct btrfs_fs_info *fs_info,
-+		 struct btrfs_delayed_ref_node *ref,
- 		 struct btrfs_delayed_ref_head *head_ref,
- 		 int action),
- 
--	TP_ARGS(ref, head_ref, action),
-+	TP_ARGS(fs_info, ref, head_ref, action),
- 
--	TP_STRUCT__entry(
-+	TP_STRUCT__entry_btrfs(
- 		__field(	u64,  bytenr		)
- 		__field(	u64,  num_bytes		)
- 		__field(	int,  action		) 
- 		__field(	int,  is_data		)
- 	),
- 
--	TP_fast_assign(
-+	TP_fast_assign_btrfs(fs_info,
- 		__entry->bytenr		= ref->bytenr;
- 		__entry->num_bytes	= ref->num_bytes;
- 		__entry->action		= action;
- 		__entry->is_data	= head_ref->is_data;
- 	),
- 
--	TP_printk("bytenr = %llu, num_bytes = %llu, action = %s, is_data = %d",
-+	TP_printk_btrfs("bytenr = %llu, num_bytes = %llu, action = %s, is_data = %d",
- 		  (unsigned long long)__entry->bytenr,
- 		  (unsigned long long)__entry->num_bytes,
- 		  show_ref_action(__entry->action),
-@@ -603,20 +626,22 @@ DECLARE_EVENT_CLASS(btrfs_delayed_ref_head,
- 
- DEFINE_EVENT(btrfs_delayed_ref_head,  add_delayed_ref_head,
- 
--	TP_PROTO(struct btrfs_delayed_ref_node *ref,
-+	TP_PROTO(struct btrfs_fs_info *fs_info,
-+		 struct btrfs_delayed_ref_node *ref,
- 		 struct btrfs_delayed_ref_head *head_ref,
- 		 int action),
- 
--	TP_ARGS(ref, head_ref, action)
-+	TP_ARGS(fs_info, ref, head_ref, action)
- );
- 
- DEFINE_EVENT(btrfs_delayed_ref_head,  run_delayed_ref_head,
- 
--	TP_PROTO(struct btrfs_delayed_ref_node *ref,
-+	TP_PROTO(struct btrfs_fs_info *fs_info,
-+		 struct btrfs_delayed_ref_node *ref,
- 		 struct btrfs_delayed_ref_head *head_ref,
- 		 int action),
- 
--	TP_ARGS(ref, head_ref, action)
-+	TP_ARGS(fs_info, ref, head_ref, action)
- );
- 
- #define show_chunk_type(type)					\
-@@ -638,7 +663,7 @@ DECLARE_EVENT_CLASS(btrfs__chunk,
- 
- 	TP_ARGS(root, map, offset, size),
- 
--	TP_STRUCT__entry(
-+	TP_STRUCT__entry_btrfs(
- 		__field(	int,  num_stripes		)
- 		__field(	u64,  type			)
- 		__field(	int,  sub_stripes		)
-@@ -647,7 +672,7 @@ DECLARE_EVENT_CLASS(btrfs__chunk,
- 		__field(	u64,  root_objectid		)
- 	),
- 
--	TP_fast_assign(
-+	TP_fast_assign_btrfs(root->fs_info,
- 		__entry->num_stripes	= map->num_stripes;
- 		__entry->type		= map->type;
- 		__entry->sub_stripes	= map->sub_stripes;
-@@ -656,7 +681,7 @@ DECLARE_EVENT_CLASS(btrfs__chunk,
- 		__entry->root_objectid	= root->root_key.objectid;
- 	),
- 
--	TP_printk("root = %llu(%s), offset = %llu, size = %llu, "
-+	TP_printk_btrfs("root = %llu(%s), offset = %llu, size = %llu, "
- 		  "num_stripes = %d, sub_stripes = %d, type = %s",
- 		  show_root_type(__entry->root_objectid),
- 		  (unsigned long long)__entry->offset,
-@@ -688,7 +713,7 @@ TRACE_EVENT(btrfs_cow_block,
- 
- 	TP_ARGS(root, buf, cow),
- 
--	TP_STRUCT__entry(
-+	TP_STRUCT__entry_btrfs(
- 		__field(	u64,  root_objectid		)
- 		__field(	u64,  buf_start			)
- 		__field(	int,  refs			)
-@@ -697,7 +722,7 @@ TRACE_EVENT(btrfs_cow_block,
- 		__field(	int,  cow_level			)
- 	),
- 
--	TP_fast_assign(
-+	TP_fast_assign_btrfs(root->fs_info,
- 		__entry->root_objectid	= root->root_key.objectid;
- 		__entry->buf_start	= buf->start;
- 		__entry->refs		= atomic_read(&buf->refs);
-@@ -706,7 +731,7 @@ TRACE_EVENT(btrfs_cow_block,
- 		__entry->cow_level	= btrfs_header_level(cow);
- 	),
- 
--	TP_printk("root = %llu(%s), refs = %d, orig_buf = %llu "
-+	TP_printk_btrfs("root = %llu(%s), refs = %d, orig_buf = %llu "
- 		  "(orig_level = %d), cow_buf = %llu (cow_level = %d)",
- 		  show_root_type(__entry->root_objectid),
- 		  __entry->refs,
-@@ -723,25 +748,23 @@ TRACE_EVENT(btrfs_space_reservation,
- 
- 	TP_ARGS(fs_info, type, val, bytes, reserve),
- 
--	TP_STRUCT__entry(
--		__array(	u8,	fsid,	BTRFS_UUID_SIZE	)
-+	TP_STRUCT__entry_btrfs(
- 		__string(	type,	type			)
- 		__field(	u64,	val			)
- 		__field(	u64,	bytes			)
- 		__field(	int,	reserve			)
- 	),
- 
--	TP_fast_assign(
--		memcpy(__entry->fsid, fs_info->fsid, BTRFS_UUID_SIZE);
-+	TP_fast_assign_btrfs(fs_info,
- 		__assign_str(type, type);
- 		__entry->val		= val;
- 		__entry->bytes		= bytes;
- 		__entry->reserve	= reserve;
- 	),
- 
--	TP_printk("%pU: %s: %Lu %s %Lu", __entry->fsid, __get_str(type),
--		  __entry->val, __entry->reserve ? "reserve" : "release",
--		  __entry->bytes)
-+	TP_printk_btrfs("%s: %Lu %s %Lu", __get_str(type), __entry->val,
-+			__entry->reserve ? "reserve" : "release",
-+			__entry->bytes)
- );
- 
- DECLARE_EVENT_CLASS(btrfs__reserved_extent,
-@@ -750,19 +773,19 @@ DECLARE_EVENT_CLASS(btrfs__reserved_extent,
- 
- 	TP_ARGS(root, start, len),
- 
--	TP_STRUCT__entry(
-+	TP_STRUCT__entry_btrfs(
- 		__field(	u64,  root_objectid		)
- 		__field(	u64,  start			)
- 		__field(	u64,  len			)
- 	),
- 
--	TP_fast_assign(
-+	TP_fast_assign_btrfs(root->fs_info,
- 		__entry->root_objectid	= root->root_key.objectid;
- 		__entry->start		= start;
- 		__entry->len		= len;
- 	),
- 
--	TP_printk("root = %llu(%s), start = %llu, len = %llu",
-+	TP_printk_btrfs("root = %llu(%s), start = %llu, len = %llu",
- 		  show_root_type(__entry->root_objectid),
- 		  (unsigned long long)__entry->start,
- 		  (unsigned long long)__entry->len)
-@@ -789,21 +812,21 @@ TRACE_EVENT(find_free_extent,
- 
- 	TP_ARGS(root, num_bytes, empty_size, data),
- 
--	TP_STRUCT__entry(
-+	TP_STRUCT__entry_btrfs(
- 		__field(	u64,	root_objectid		)
- 		__field(	u64,	num_bytes		)
- 		__field(	u64,	empty_size		)
- 		__field(	u64,	data			)
- 	),
- 
--	TP_fast_assign(
-+	TP_fast_assign_btrfs(root->fs_info,
- 		__entry->root_objectid	= root->root_key.objectid;
- 		__entry->num_bytes	= num_bytes;
- 		__entry->empty_size	= empty_size;
- 		__entry->data		= data;
- 	),
- 
--	TP_printk("root = %Lu(%s), len = %Lu, empty_size = %Lu, "
-+	TP_printk_btrfs("root = %Lu(%s), len = %Lu, empty_size = %Lu, "
- 		  "flags = %Lu(%s)", show_root_type(__entry->root_objectid),
- 		  __entry->num_bytes, __entry->empty_size, __entry->data,
- 		  __print_flags((unsigned long)__entry->data, "|",
-@@ -818,7 +841,7 @@ DECLARE_EVENT_CLASS(btrfs__reserve_extent,
- 
- 	TP_ARGS(root, block_group, start, len),
- 
--	TP_STRUCT__entry(
-+	TP_STRUCT__entry_btrfs(
- 		__field(	u64,	root_objectid		)
- 		__field(	u64,	bg_objectid		)
- 		__field(	u64,	flags			)
-@@ -826,7 +849,7 @@ DECLARE_EVENT_CLASS(btrfs__reserve_extent,
- 		__field(	u64,	len			)
- 	),
- 
--	TP_fast_assign(
-+	TP_fast_assign_btrfs(root->fs_info,
- 		__entry->root_objectid	= root->root_key.objectid;
- 		__entry->bg_objectid	= block_group->key.objectid;
- 		__entry->flags		= block_group->flags;
-@@ -834,7 +857,7 @@ DECLARE_EVENT_CLASS(btrfs__reserve_extent,
- 		__entry->len		= len;
- 	),
- 
--	TP_printk("root = %Lu(%s), block_group = %Lu, flags = %Lu(%s), "
-+	TP_printk_btrfs("root = %Lu(%s), block_group = %Lu, flags = %Lu(%s), "
- 		  "start = %Lu, len = %Lu",
- 		  show_root_type(__entry->root_objectid), __entry->bg_objectid,
- 		  __entry->flags, __print_flags((unsigned long)__entry->flags,
-@@ -867,7 +890,7 @@ TRACE_EVENT(btrfs_find_cluster,
- 
- 	TP_ARGS(block_group, start, bytes, empty_size, min_bytes),
- 
--	TP_STRUCT__entry(
-+	TP_STRUCT__entry_btrfs(
- 		__field(	u64,	bg_objectid		)
- 		__field(	u64,	flags			)
- 		__field(	u64,	start			)
-@@ -876,7 +899,7 @@ TRACE_EVENT(btrfs_find_cluster,
- 		__field(	u64,	min_bytes		)
- 	),
- 
--	TP_fast_assign(
-+	TP_fast_assign_btrfs(block_group->fs_info,
- 		__entry->bg_objectid	= block_group->key.objectid;
- 		__entry->flags		= block_group->flags;
- 		__entry->start		= start;
-@@ -885,7 +908,7 @@ TRACE_EVENT(btrfs_find_cluster,
- 		__entry->min_bytes	= min_bytes;
- 	),
- 
--	TP_printk("block_group = %Lu, flags = %Lu(%s), start = %Lu, len = %Lu,"
-+	TP_printk_btrfs("block_group = %Lu, flags = %Lu(%s), start = %Lu, len = %Lu,"
- 		  " empty_size = %Lu, min_bytes = %Lu", __entry->bg_objectid,
- 		  __entry->flags,
- 		  __print_flags((unsigned long)__entry->flags, "|",
-@@ -899,15 +922,15 @@ TRACE_EVENT(btrfs_failed_cluster_setup,
- 
- 	TP_ARGS(block_group),
- 
--	TP_STRUCT__entry(
-+	TP_STRUCT__entry_btrfs(
- 		__field(	u64,	bg_objectid		)
- 	),
- 
--	TP_fast_assign(
-+	TP_fast_assign_btrfs(block_group->fs_info,
- 		__entry->bg_objectid	= block_group->key.objectid;
- 	),
- 
--	TP_printk("block_group = %Lu", __entry->bg_objectid)
-+	TP_printk_btrfs("block_group = %Lu", __entry->bg_objectid)
- );
- 
- TRACE_EVENT(btrfs_setup_cluster,
-@@ -917,7 +940,7 @@ TRACE_EVENT(btrfs_setup_cluster,
- 
- 	TP_ARGS(block_group, cluster, size, bitmap),
- 
--	TP_STRUCT__entry(
-+	TP_STRUCT__entry_btrfs(
- 		__field(	u64,	bg_objectid		)
- 		__field(	u64,	flags			)
- 		__field(	u64,	start			)
-@@ -926,7 +949,7 @@ TRACE_EVENT(btrfs_setup_cluster,
- 		__field(	int,	bitmap			)
- 	),
- 
--	TP_fast_assign(
-+	TP_fast_assign_btrfs(block_group->fs_info,
- 		__entry->bg_objectid	= block_group->key.objectid;
- 		__entry->flags		= block_group->flags;
- 		__entry->start		= cluster->window_start;
-@@ -935,7 +958,7 @@ TRACE_EVENT(btrfs_setup_cluster,
- 		__entry->bitmap		= bitmap;
- 	),
- 
--	TP_printk("block_group = %Lu, flags = %Lu(%s), window_start = %Lu, "
-+	TP_printk_btrfs("block_group = %Lu, flags = %Lu(%s), window_start = %Lu, "
- 		  "size = %Lu, max_size = %Lu, bitmap = %d",
- 		  __entry->bg_objectid,
- 		  __entry->flags,
-@@ -993,7 +1016,7 @@ DECLARE_EVENT_CLASS(btrfs__work,
- 
- 	TP_ARGS(work),
- 
--	TP_STRUCT__entry(
-+	TP_STRUCT__entry_btrfs(
- 		__field(	void *,	work			)
- 		__field(	void *, wq			)
- 		__field(	void *,	func			)
-@@ -1002,7 +1025,7 @@ DECLARE_EVENT_CLASS(btrfs__work,
- 		__field(	void *,	normal_work		)
- 	),
- 
--	TP_fast_assign(
-+	TP_fast_assign_btrfs(btrfs_work_owner(work),
- 		__entry->work		= work;
- 		__entry->wq		= work->wq;
- 		__entry->func		= work->func;
-@@ -1011,7 +1034,7 @@ DECLARE_EVENT_CLASS(btrfs__work,
- 		__entry->normal_work	= &work->normal_work;
- 	),
- 
--	TP_printk("work=%p (normal_work=%p), wq=%p, func=%pf, ordered_func=%p,"
-+	TP_printk_btrfs("work=%p (normal_work=%p), wq=%p, func=%pf, ordered_func=%p,"
- 		  " ordered_free=%p",
- 		  __entry->work, __entry->normal_work, __entry->wq,
- 		   __entry->func, __entry->ordered_func, __entry->ordered_free)
-@@ -1024,15 +1047,15 @@ DECLARE_EVENT_CLASS(btrfs__work__done,
- 
- 	TP_ARGS(work),
- 
--	TP_STRUCT__entry(
-+	TP_STRUCT__entry_btrfs(
- 		__field(	void *,	work			)
- 	),
- 
--	TP_fast_assign(
-+	TP_fast_assign_btrfs(btrfs_work_owner(work),
- 		__entry->work		= work;
- 	),
- 
--	TP_printk("work->%p", __entry->work)
-+	TP_printk_btrfs("work->%p", __entry->work)
- );
- 
- DEFINE_EVENT(btrfs__work, btrfs_work_queued,
-@@ -1069,19 +1092,19 @@ DECLARE_EVENT_CLASS(btrfs__workqueue,
- 
- 	TP_ARGS(wq, name, high),
- 
--	TP_STRUCT__entry(
-+	TP_STRUCT__entry_btrfs(
- 		__field(	void *,	wq			)
- 		__string(	name,	name			)
- 		__field(	int ,	high			)
- 	),
- 
--	TP_fast_assign(
-+	TP_fast_assign_btrfs(btrfs_workqueue_owner(wq),
- 		__entry->wq		= wq;
- 		__assign_str(name, name);
- 		__entry->high		= high;
- 	),
- 
--	TP_printk("name=%s%s, wq=%p", __get_str(name),
-+	TP_printk_btrfs("name=%s%s, wq=%p", __get_str(name),
- 		  __print_flags(__entry->high, "",
- 				{(WQ_HIGHPRI),	"-high"}),
- 		  __entry->wq)
-@@ -1100,15 +1123,15 @@ DECLARE_EVENT_CLASS(btrfs__workqueue_done,
- 
- 	TP_ARGS(wq),
- 
--	TP_STRUCT__entry(
-+	TP_STRUCT__entry_btrfs(
- 		__field(	void *,	wq			)
- 	),
- 
--	TP_fast_assign(
-+	TP_fast_assign_btrfs(btrfs_workqueue_owner(wq),
- 		__entry->wq		= wq;
- 	),
- 
--	TP_printk("wq=%p", __entry->wq)
-+	TP_printk_btrfs("wq=%p", __entry->wq)
- );
- 
- DEFINE_EVENT(btrfs__workqueue_done, btrfs_workqueue_destroy,
-@@ -1124,19 +1147,19 @@ DECLARE_EVENT_CLASS(btrfs__qgroup_data_map,
- 
- 	TP_ARGS(inode, free_reserved),
- 
--	TP_STRUCT__entry(
-+	TP_STRUCT__entry_btrfs(
- 		__field(	u64,		rootid		)
- 		__field(	unsigned long,	ino		)
- 		__field(	u64,		free_reserved	)
- 	),
- 
--	TP_fast_assign(
-+	TP_fast_assign_btrfs(btrfs_sb(inode->i_sb),
- 		__entry->rootid		=	BTRFS_I(inode)->root->objectid;
- 		__entry->ino		=	inode->i_ino;
- 		__entry->free_reserved	=	free_reserved;
- 	),
- 
--	TP_printk("rootid=%llu, ino=%lu, free_reserved=%llu",
-+	TP_printk_btrfs("rootid=%llu, ino=%lu, free_reserved=%llu",
- 		  __entry->rootid, __entry->ino, __entry->free_reserved)
- );
- 
-@@ -1165,7 +1188,7 @@ DECLARE_EVENT_CLASS(btrfs__qgroup_rsv_data,
- 
- 	TP_ARGS(inode, start, len, reserved, op),
- 
--	TP_STRUCT__entry(
-+	TP_STRUCT__entry_btrfs(
- 		__field(	u64,		rootid		)
- 		__field(	unsigned long,	ino		)
- 		__field(	u64,		start		)
-@@ -1174,7 +1197,7 @@ DECLARE_EVENT_CLASS(btrfs__qgroup_rsv_data,
- 		__field(	int,		op		)
- 	),
- 
--	TP_fast_assign(
-+	TP_fast_assign_btrfs(btrfs_sb(inode->i_sb),
- 		__entry->rootid		= BTRFS_I(inode)->root->objectid;
- 		__entry->ino		= inode->i_ino;
- 		__entry->start		= start;
-@@ -1183,7 +1206,7 @@ DECLARE_EVENT_CLASS(btrfs__qgroup_rsv_data,
- 		__entry->op		= op;
- 	),
- 
--	TP_printk("root=%llu, ino=%lu, start=%llu, len=%llu, reserved=%llu, op=%s",
-+	TP_printk_btrfs("root=%llu, ino=%lu, start=%llu, len=%llu, reserved=%llu, op=%s",
- 		  __entry->rootid, __entry->ino, __entry->start, __entry->len,
- 		  __entry->reserved,
- 		  __print_flags((unsigned long)__entry->op, "",
-@@ -1207,86 +1230,90 @@ DEFINE_EVENT(btrfs__qgroup_rsv_data, btrfs_qgroup_release_data,
- 
- DECLARE_EVENT_CLASS(btrfs__qgroup_delayed_ref,
- 
--	TP_PROTO(u64 ref_root, u64 reserved),
-+	TP_PROTO(struct btrfs_fs_info *fs_info, u64 ref_root, u64 reserved),
- 
--	TP_ARGS(ref_root, reserved),
-+	TP_ARGS(fs_info, ref_root, reserved),
- 
--	TP_STRUCT__entry(
-+	TP_STRUCT__entry_btrfs(
- 		__field(	u64,		ref_root	)
- 		__field(	u64,		reserved	)
- 	),
- 
--	TP_fast_assign(
-+	TP_fast_assign_btrfs(fs_info,
- 		__entry->ref_root	= ref_root;
- 		__entry->reserved	= reserved;
- 	),
- 
--	TP_printk("root=%llu, reserved=%llu, op=free",
-+	TP_printk_btrfs("root=%llu, reserved=%llu, op=free",
- 		  __entry->ref_root, __entry->reserved)
- );
- 
- DEFINE_EVENT(btrfs__qgroup_delayed_ref, btrfs_qgroup_free_delayed_ref,
- 
--	TP_PROTO(u64 ref_root, u64 reserved),
-+	TP_PROTO(struct btrfs_fs_info *fs_info, u64 ref_root, u64 reserved),
- 
--	TP_ARGS(ref_root, reserved)
-+	TP_ARGS(fs_info, ref_root, reserved)
- );
- 
- DECLARE_EVENT_CLASS(btrfs_qgroup_extent,
--	TP_PROTO(struct btrfs_qgroup_extent_record *rec),
-+	TP_PROTO(struct btrfs_fs_info *fs_info,
-+		 struct btrfs_qgroup_extent_record *rec),
- 
--	TP_ARGS(rec),
-+	TP_ARGS(fs_info, rec),
- 
--	TP_STRUCT__entry(
-+	TP_STRUCT__entry_btrfs(
- 		__field(	u64,  bytenr		)
- 		__field(	u64,  num_bytes		)
- 	),
- 
--	TP_fast_assign(
-+	TP_fast_assign_btrfs(fs_info,
- 		__entry->bytenr		= rec->bytenr,
- 		__entry->num_bytes	= rec->num_bytes;
- 	),
- 
--	TP_printk("bytenr = %llu, num_bytes = %llu",
-+	TP_printk_btrfs("bytenr = %llu, num_bytes = %llu",
- 		  (unsigned long long)__entry->bytenr,
- 		  (unsigned long long)__entry->num_bytes)
- );
- 
- DEFINE_EVENT(btrfs_qgroup_extent, btrfs_qgroup_account_extents,
- 
--	TP_PROTO(struct btrfs_qgroup_extent_record *rec),
-+	TP_PROTO(struct btrfs_fs_info *fs_info,
-+		 struct btrfs_qgroup_extent_record *rec),
- 
--	TP_ARGS(rec)
-+	TP_ARGS(fs_info, rec)
- );
- 
- DEFINE_EVENT(btrfs_qgroup_extent, btrfs_qgroup_insert_dirty_extent,
- 
--	TP_PROTO(struct btrfs_qgroup_extent_record *rec),
-+	TP_PROTO(struct btrfs_fs_info *fs_info,
-+		 struct btrfs_qgroup_extent_record *rec),
- 
--	TP_ARGS(rec)
-+	TP_ARGS(fs_info, rec)
- );
- 
- TRACE_EVENT(btrfs_qgroup_account_extent,
- 
--	TP_PROTO(u64 bytenr, u64 num_bytes, u64 nr_old_roots, u64 nr_new_roots),
-+	TP_PROTO(struct btrfs_fs_info *fs_info, u64 bytenr,
-+		 u64 num_bytes, u64 nr_old_roots, u64 nr_new_roots),
- 
--	TP_ARGS(bytenr, num_bytes, nr_old_roots, nr_new_roots),
-+	TP_ARGS(fs_info, bytenr, num_bytes, nr_old_roots, nr_new_roots),
- 
--	TP_STRUCT__entry(
-+	TP_STRUCT__entry_btrfs(
- 		__field(	u64,  bytenr			)
- 		__field(	u64,  num_bytes			)
- 		__field(	u64,  nr_old_roots		)
- 		__field(	u64,  nr_new_roots		)
- 	),
- 
--	TP_fast_assign(
-+	TP_fast_assign_btrfs(fs_info,
- 		__entry->bytenr		= bytenr;
- 		__entry->num_bytes	= num_bytes;
- 		__entry->nr_old_roots	= nr_old_roots;
- 		__entry->nr_new_roots	= nr_new_roots;
- 	),
- 
--	TP_printk("bytenr = %llu, num_bytes = %llu, nr_old_roots = %llu, "
-+	TP_printk_btrfs("bytenr = %llu, num_bytes = %llu, nr_old_roots = %llu, "
- 		  "nr_new_roots = %llu",
- 		  __entry->bytenr,
- 		  __entry->num_bytes,
-@@ -1296,23 +1323,24 @@ TRACE_EVENT(btrfs_qgroup_account_extent,
- 
- TRACE_EVENT(qgroup_update_counters,
- 
--	TP_PROTO(u64 qgid, u64 cur_old_count, u64 cur_new_count),
-+	TP_PROTO(struct btrfs_fs_info *fs_info, u64 qgid,
-+		 u64 cur_old_count, u64 cur_new_count),
- 
--	TP_ARGS(qgid, cur_old_count, cur_new_count),
-+	TP_ARGS(fs_info, qgid, cur_old_count, cur_new_count),
- 
--	TP_STRUCT__entry(
-+	TP_STRUCT__entry_btrfs(
- 		__field(	u64,  qgid			)
- 		__field(	u64,  cur_old_count		)
- 		__field(	u64,  cur_new_count		)
- 	),
- 
--	TP_fast_assign(
-+	TP_fast_assign_btrfs(fs_info,
- 		__entry->qgid		= qgid;
- 		__entry->cur_old_count	= cur_old_count;
- 		__entry->cur_new_count	= cur_new_count;
- 	),
- 
--	TP_printk("qgid = %llu, cur_old_count = %llu, cur_new_count = %llu",
-+	TP_printk_btrfs("qgid = %llu, cur_old_count = %llu, cur_new_count = %llu",
- 		  __entry->qgid,
- 		  __entry->cur_old_count,
- 		  __entry->cur_new_count)
+@@ -432,12 +432,12 @@ int btrfs_parse_options(struct btrfs_root *root, char *options,
+ 			 */
+ 			break;
+ 		case Opt_nodatasum:
+-			btrfs_set_and_info(root, NODATASUM,
++			btrfs_set_and_info(info, NODATASUM,
+ 					   "setting nodatasum");
+ 			break;
+ 		case Opt_datasum:
+-			if (btrfs_test_opt(root, NODATASUM)) {
+-				if (btrfs_test_opt(root, NODATACOW))
++			if (btrfs_test_opt(info, NODATASUM)) {
++				if (btrfs_test_opt(info, NODATACOW))
+ 					btrfs_info(root->fs_info, "setting datasum, datacow enabled");
+ 				else
+ 					btrfs_info(root->fs_info, "setting datasum");
+@@ -446,9 +446,9 @@ int btrfs_parse_options(struct btrfs_root *root, char *options,
+ 			btrfs_clear_opt(info->mount_opt, NODATASUM);
+ 			break;
+ 		case Opt_nodatacow:
+-			if (!btrfs_test_opt(root, NODATACOW)) {
+-				if (!btrfs_test_opt(root, COMPRESS) ||
+-				    !btrfs_test_opt(root, FORCE_COMPRESS)) {
++			if (!btrfs_test_opt(info, NODATACOW)) {
++				if (!btrfs_test_opt(info, COMPRESS) ||
++				    !btrfs_test_opt(info, FORCE_COMPRESS)) {
+ 					btrfs_info(root->fs_info,
+ 						   "setting nodatacow, compression disabled");
+ 				} else {
+@@ -461,7 +461,7 @@ int btrfs_parse_options(struct btrfs_root *root, char *options,
+ 			btrfs_set_opt(info->mount_opt, NODATASUM);
+ 			break;
+ 		case Opt_datacow:
+-			btrfs_clear_and_info(root, NODATACOW,
++			btrfs_clear_and_info(info, NODATACOW,
+ 					     "setting datacow");
+ 			break;
+ 		case Opt_compress_force:
+@@ -470,10 +470,11 @@ int btrfs_parse_options(struct btrfs_root *root, char *options,
+ 			/* Fallthrough */
+ 		case Opt_compress:
+ 		case Opt_compress_type:
+-			saved_compress_type = btrfs_test_opt(root, COMPRESS) ?
++			saved_compress_type = btrfs_test_opt(info,
++							     COMPRESS) ?
+ 				info->compress_type : BTRFS_COMPRESS_NONE;
+ 			saved_compress_force =
+-				btrfs_test_opt(root, FORCE_COMPRESS);
++				btrfs_test_opt(info, FORCE_COMPRESS);
+ 			if (token == Opt_compress ||
+ 			    token == Opt_compress_force ||
+ 			    strcmp(args[0].from, "zlib") == 0) {
+@@ -513,10 +514,10 @@ int btrfs_parse_options(struct btrfs_root *root, char *options,
+ 				 */
+ 				btrfs_clear_opt(info->mount_opt, FORCE_COMPRESS);
+ 			}
+-			if ((btrfs_test_opt(root, COMPRESS) &&
++			if ((btrfs_test_opt(info, COMPRESS) &&
+ 			     (info->compress_type != saved_compress_type ||
+ 			      compress_force != saved_compress_force)) ||
+-			    (!btrfs_test_opt(root, COMPRESS) &&
++			    (!btrfs_test_opt(info, COMPRESS) &&
+ 			     no_compress == 1)) {
+ 				btrfs_info(root->fs_info,
+ 					   "%s %s compression",
+@@ -526,25 +527,25 @@ int btrfs_parse_options(struct btrfs_root *root, char *options,
+ 			compress_force = false;
+ 			break;
+ 		case Opt_ssd:
+-			btrfs_set_and_info(root, SSD,
++			btrfs_set_and_info(info, SSD,
+ 					   "use ssd allocation scheme");
+ 			break;
+ 		case Opt_ssd_spread:
+-			btrfs_set_and_info(root, SSD_SPREAD,
++			btrfs_set_and_info(info, SSD_SPREAD,
+ 					   "use spread ssd allocation scheme");
+ 			btrfs_set_opt(info->mount_opt, SSD);
+ 			break;
+ 		case Opt_nossd:
+-			btrfs_set_and_info(root, NOSSD,
++			btrfs_set_and_info(info, NOSSD,
+ 					     "not using ssd allocation scheme");
+ 			btrfs_clear_opt(info->mount_opt, SSD);
+ 			break;
+ 		case Opt_barrier:
+-			btrfs_clear_and_info(root, NOBARRIER,
++			btrfs_clear_and_info(info, NOBARRIER,
+ 					     "turning on barriers");
+ 			break;
+ 		case Opt_nobarrier:
+-			btrfs_set_and_info(root, NOBARRIER,
++			btrfs_set_and_info(info, NOBARRIER,
+ 					   "turning off barriers");
+ 			break;
+ 		case Opt_thread_pool:
+@@ -604,24 +605,24 @@ int btrfs_parse_options(struct btrfs_root *root, char *options,
+ 			root->fs_info->sb->s_flags &= ~MS_POSIXACL;
+ 			break;
+ 		case Opt_notreelog:
+-			btrfs_set_and_info(root, NOTREELOG,
++			btrfs_set_and_info(info, NOTREELOG,
+ 					   "disabling tree log");
+ 			break;
+ 		case Opt_treelog:
+-			btrfs_clear_and_info(root, NOTREELOG,
++			btrfs_clear_and_info(info, NOTREELOG,
+ 					     "enabling tree log");
+ 			break;
+ 		case Opt_norecovery:
+ 		case Opt_nologreplay:
+-			btrfs_set_and_info(root, NOLOGREPLAY,
++			btrfs_set_and_info(info, NOLOGREPLAY,
+ 					   "disabling log replay at mount time");
+ 			break;
+ 		case Opt_flushoncommit:
+-			btrfs_set_and_info(root, FLUSHONCOMMIT,
++			btrfs_set_and_info(info, FLUSHONCOMMIT,
+ 					   "turning on flush-on-commit");
+ 			break;
+ 		case Opt_noflushoncommit:
+-			btrfs_clear_and_info(root, FLUSHONCOMMIT,
++			btrfs_clear_and_info(info, FLUSHONCOMMIT,
+ 					     "turning off flush-on-commit");
+ 			break;
+ 		case Opt_ratio:
+@@ -638,11 +639,11 @@ int btrfs_parse_options(struct btrfs_root *root, char *options,
+ 			}
+ 			break;
+ 		case Opt_discard:
+-			btrfs_set_and_info(root, DISCARD,
++			btrfs_set_and_info(info, DISCARD,
+ 					   "turning on discard");
+ 			break;
+ 		case Opt_nodiscard:
+-			btrfs_clear_and_info(root, DISCARD,
++			btrfs_clear_and_info(info, DISCARD,
+ 					     "turning off discard");
+ 			break;
+ 		case Opt_space_cache:
+@@ -651,12 +652,13 @@ int btrfs_parse_options(struct btrfs_root *root, char *options,
+ 			    strcmp(args[0].from, "v1") == 0) {
+ 				btrfs_clear_opt(root->fs_info->mount_opt,
+ 						FREE_SPACE_TREE);
+-				btrfs_set_and_info(root, SPACE_CACHE,
++				btrfs_set_and_info(info, SPACE_CACHE,
+ 						   "enabling disk space caching");
+ 			} else if (strcmp(args[0].from, "v2") == 0) {
+ 				btrfs_clear_opt(root->fs_info->mount_opt,
+ 						SPACE_CACHE);
+-				btrfs_set_and_info(root, FREE_SPACE_TREE,
++				btrfs_set_and_info(info,
++						   FREE_SPACE_TREE,
+ 						   "enabling free space tree");
+ 			} else {
+ 				ret = -EINVAL;
+@@ -667,12 +669,14 @@ int btrfs_parse_options(struct btrfs_root *root, char *options,
+ 			btrfs_set_opt(info->mount_opt, RESCAN_UUID_TREE);
+ 			break;
+ 		case Opt_no_space_cache:
+-			if (btrfs_test_opt(root, SPACE_CACHE)) {
+-				btrfs_clear_and_info(root, SPACE_CACHE,
++			if (btrfs_test_opt(info, SPACE_CACHE)) {
++				btrfs_clear_and_info(info,
++						     SPACE_CACHE,
+ 						     "disabling disk space caching");
+ 			}
+-			if (btrfs_test_opt(root, FREE_SPACE_TREE)) {
+-				btrfs_clear_and_info(root, FREE_SPACE_TREE,
++			if (btrfs_test_opt(info, FREE_SPACE_TREE)) {
++				btrfs_clear_and_info(info,
++						     FREE_SPACE_TREE,
+ 						     "disabling free space tree");
+ 			}
+ 			break;
+@@ -685,7 +689,7 @@ int btrfs_parse_options(struct btrfs_root *root, char *options,
+ 					     "disabling inode map caching");
+ 			break;
+ 		case Opt_clear_cache:
+-			btrfs_set_and_info(root, CLEAR_CACHE,
++			btrfs_set_and_info(info, CLEAR_CACHE,
+ 					   "force clearing of disk cache");
+ 			break;
+ 		case Opt_user_subvol_rm_allowed:
+@@ -698,11 +702,11 @@ int btrfs_parse_options(struct btrfs_root *root, char *options,
+ 			btrfs_clear_opt(info->mount_opt, ENOSPC_DEBUG);
+ 			break;
+ 		case Opt_defrag:
+-			btrfs_set_and_info(root, AUTO_DEFRAG,
++			btrfs_set_and_info(info, AUTO_DEFRAG,
+ 					   "enabling auto defrag");
+ 			break;
+ 		case Opt_nodefrag:
+-			btrfs_clear_and_info(root, AUTO_DEFRAG,
++			btrfs_clear_and_info(info, AUTO_DEFRAG,
+ 					     "disabling auto defrag");
+ 			break;
+ 		case Opt_recovery:
+@@ -810,22 +814,22 @@ check:
+ 	/*
+ 	 * Extra check for current option against current flag
+ 	 */
+-	if (btrfs_test_opt(root, NOLOGREPLAY) && !(new_flags & MS_RDONLY)) {
++	if (btrfs_test_opt(info, NOLOGREPLAY) && !(new_flags & MS_RDONLY)) {
+ 		btrfs_err(root->fs_info,
+ 			  "nologreplay must be used with ro mount option");
+ 		ret = -EINVAL;
+ 	}
+ out:
+ 	if (btrfs_fs_compat_ro(root->fs_info, FREE_SPACE_TREE) &&
+-	    !btrfs_test_opt(root, FREE_SPACE_TREE) &&
+-	    !btrfs_test_opt(root, CLEAR_CACHE)) {
++	    !btrfs_test_opt(info, FREE_SPACE_TREE) &&
++	    !btrfs_test_opt(info, CLEAR_CACHE)) {
+ 		btrfs_err(root->fs_info, "cannot disable free space tree");
+ 		ret = -EINVAL;
+ 
+ 	}
+-	if (!ret && btrfs_test_opt(root, SPACE_CACHE))
++	if (!ret && btrfs_test_opt(info, SPACE_CACHE))
+ 		btrfs_info(root->fs_info, "disk space caching is enabled");
+-	if (!ret && btrfs_test_opt(root, FREE_SPACE_TREE))
++	if (!ret && btrfs_test_opt(info, FREE_SPACE_TREE))
+ 		btrfs_info(root->fs_info, "using free space tree");
+ 	kfree(orig);
+ 	return ret;
+@@ -1192,13 +1196,13 @@ static int btrfs_show_options(struct seq_file *seq, struct dentry *dentry)
+ 	struct btrfs_root *root = info->tree_root;
+ 	char *compress_type;
+ 
+-	if (btrfs_test_opt(root, DEGRADED))
++	if (btrfs_test_opt(info, DEGRADED))
+ 		seq_puts(seq, ",degraded");
+-	if (btrfs_test_opt(root, NODATASUM))
++	if (btrfs_test_opt(info, NODATASUM))
+ 		seq_puts(seq, ",nodatasum");
+-	if (btrfs_test_opt(root, NODATACOW))
++	if (btrfs_test_opt(info, NODATACOW))
+ 		seq_puts(seq, ",nodatacow");
+-	if (btrfs_test_opt(root, NOBARRIER))
++	if (btrfs_test_opt(info, NOBARRIER))
+ 		seq_puts(seq, ",nobarrier");
+ 	if (info->max_inline != BTRFS_DEFAULT_MAX_INLINE)
+ 		seq_printf(seq, ",max_inline=%llu", info->max_inline);
+@@ -1207,56 +1211,56 @@ static int btrfs_show_options(struct seq_file *seq, struct dentry *dentry)
+ 	if (info->thread_pool_size !=  min_t(unsigned long,
+ 					     num_online_cpus() + 2, 8))
+ 		seq_printf(seq, ",thread_pool=%d", info->thread_pool_size);
+-	if (btrfs_test_opt(root, COMPRESS)) {
++	if (btrfs_test_opt(info, COMPRESS)) {
+ 		if (info->compress_type == BTRFS_COMPRESS_ZLIB)
+ 			compress_type = "zlib";
+ 		else
+ 			compress_type = "lzo";
+-		if (btrfs_test_opt(root, FORCE_COMPRESS))
++		if (btrfs_test_opt(info, FORCE_COMPRESS))
+ 			seq_printf(seq, ",compress-force=%s", compress_type);
+ 		else
+ 			seq_printf(seq, ",compress=%s", compress_type);
+ 	}
+-	if (btrfs_test_opt(root, NOSSD))
++	if (btrfs_test_opt(info, NOSSD))
+ 		seq_puts(seq, ",nossd");
+-	if (btrfs_test_opt(root, SSD_SPREAD))
++	if (btrfs_test_opt(info, SSD_SPREAD))
+ 		seq_puts(seq, ",ssd_spread");
+-	else if (btrfs_test_opt(root, SSD))
++	else if (btrfs_test_opt(info, SSD))
+ 		seq_puts(seq, ",ssd");
+-	if (btrfs_test_opt(root, NOTREELOG))
++	if (btrfs_test_opt(info, NOTREELOG))
+ 		seq_puts(seq, ",notreelog");
+-	if (btrfs_test_opt(root, NOLOGREPLAY))
++	if (btrfs_test_opt(info, NOLOGREPLAY))
+ 		seq_puts(seq, ",nologreplay");
+-	if (btrfs_test_opt(root, FLUSHONCOMMIT))
++	if (btrfs_test_opt(info, FLUSHONCOMMIT))
+ 		seq_puts(seq, ",flushoncommit");
+-	if (btrfs_test_opt(root, DISCARD))
++	if (btrfs_test_opt(info, DISCARD))
+ 		seq_puts(seq, ",discard");
+ 	if (!(root->fs_info->sb->s_flags & MS_POSIXACL))
+ 		seq_puts(seq, ",noacl");
+-	if (btrfs_test_opt(root, SPACE_CACHE))
++	if (btrfs_test_opt(info, SPACE_CACHE))
+ 		seq_puts(seq, ",space_cache");
+-	else if (btrfs_test_opt(root, FREE_SPACE_TREE))
++	else if (btrfs_test_opt(info, FREE_SPACE_TREE))
+ 		seq_puts(seq, ",space_cache=v2");
+ 	else
+ 		seq_puts(seq, ",nospace_cache");
+-	if (btrfs_test_opt(root, RESCAN_UUID_TREE))
++	if (btrfs_test_opt(info, RESCAN_UUID_TREE))
+ 		seq_puts(seq, ",rescan_uuid_tree");
+-	if (btrfs_test_opt(root, CLEAR_CACHE))
++	if (btrfs_test_opt(info, CLEAR_CACHE))
+ 		seq_puts(seq, ",clear_cache");
+-	if (btrfs_test_opt(root, USER_SUBVOL_RM_ALLOWED))
++	if (btrfs_test_opt(info, USER_SUBVOL_RM_ALLOWED))
+ 		seq_puts(seq, ",user_subvol_rm_allowed");
+-	if (btrfs_test_opt(root, ENOSPC_DEBUG))
++	if (btrfs_test_opt(info, ENOSPC_DEBUG))
+ 		seq_puts(seq, ",enospc_debug");
+-	if (btrfs_test_opt(root, AUTO_DEFRAG))
++	if (btrfs_test_opt(info, AUTO_DEFRAG))
+ 		seq_puts(seq, ",autodefrag");
+-	if (btrfs_test_opt(root, INODE_MAP_CACHE))
++	if (btrfs_test_opt(info, INODE_MAP_CACHE))
+ 		seq_puts(seq, ",inode_cache");
+-	if (btrfs_test_opt(root, SKIP_BALANCE))
++	if (btrfs_test_opt(info, SKIP_BALANCE))
+ 		seq_puts(seq, ",skip_balance");
+ #ifdef CONFIG_BTRFS_FS_CHECK_INTEGRITY
+-	if (btrfs_test_opt(root, CHECK_INTEGRITY_INCLUDING_EXTENT_DATA))
++	if (btrfs_test_opt(info, CHECK_INTEGRITY_INCLUDING_EXTENT_DATA))
+ 		seq_puts(seq, ",check_int_data");
+-	else if (btrfs_test_opt(root, CHECK_INTEGRITY))
++	else if (btrfs_test_opt(info, CHECK_INTEGRITY))
+ 		seq_puts(seq, ",check_int");
+ 	if (info->check_integrity_print_mask)
+ 		seq_printf(seq, ",check_int_print_mask=%d",
+@@ -1265,14 +1269,14 @@ static int btrfs_show_options(struct seq_file *seq, struct dentry *dentry)
+ 	if (info->metadata_ratio)
+ 		seq_printf(seq, ",metadata_ratio=%d",
+ 				info->metadata_ratio);
+-	if (btrfs_test_opt(root, PANIC_ON_FATAL_ERROR))
++	if (btrfs_test_opt(info, PANIC_ON_FATAL_ERROR))
+ 		seq_puts(seq, ",fatal_errors=panic");
+ 	if (info->commit_interval != BTRFS_DEFAULT_COMMIT_INTERVAL)
+ 		seq_printf(seq, ",commit=%d", info->commit_interval);
+ #ifdef CONFIG_BTRFS_DEBUG
+-	if (btrfs_test_opt(root, FRAGMENT_DATA))
++	if (btrfs_test_opt(info, FRAGMENT_DATA))
+ 		seq_puts(seq, ",fragment=data");
+-	if (btrfs_test_opt(root, FRAGMENT_METADATA))
++	if (btrfs_test_opt(info, FRAGMENT_METADATA))
+ 		seq_puts(seq, ",fragment=metadata");
+ #endif
+ 	seq_printf(seq, ",subvolid=%llu",
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index 7658457..db26eff 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -1708,7 +1708,7 @@ static void update_super_roots(struct btrfs_root *root)
+ 	super->root = root_item->bytenr;
+ 	super->generation = root_item->generation;
+ 	super->root_level = root_item->level;
+-	if (btrfs_test_opt(root, SPACE_CACHE))
++	if (btrfs_test_opt(root->fs_info, SPACE_CACHE))
+ 		super->cache_generation = root_item->generation;
+ 	if (root->fs_info->update_uuid_tree_gen)
+ 		super->uuid_tree_generation = root_item->generation;
+@@ -1894,14 +1894,14 @@ static void cleanup_transaction(struct btrfs_trans_handle *trans,
+ 
+ static inline int btrfs_start_delalloc_flush(struct btrfs_fs_info *fs_info)
+ {
+-	if (btrfs_test_opt(fs_info->tree_root, FLUSHONCOMMIT))
++	if (btrfs_test_opt(fs_info, FLUSHONCOMMIT))
+ 		return btrfs_start_delalloc_roots(fs_info, 1, -1);
+ 	return 0;
+ }
+ 
+ static inline void btrfs_wait_delalloc_flush(struct btrfs_fs_info *fs_info)
+ {
+-	if (btrfs_test_opt(fs_info->tree_root, FLUSHONCOMMIT))
++	if (btrfs_test_opt(fs_info, FLUSHONCOMMIT))
+ 		btrfs_wait_ordered_roots(fs_info, -1, 0, (u64)-1);
+ }
+ 
+diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+index c05f69a..5893018 100644
+--- a/fs/btrfs/tree-log.c
++++ b/fs/btrfs/tree-log.c
+@@ -2757,7 +2757,7 @@ int btrfs_sync_log(struct btrfs_trans_handle *trans,
+ 	while (1) {
+ 		int batch = atomic_read(&root->log_batch);
+ 		/* when we're on an ssd, just kick the log commit out */
+-		if (!btrfs_test_opt(root, SSD) &&
++		if (!btrfs_test_opt(root->fs_info, SSD) &&
+ 		    test_bit(BTRFS_ROOT_MULTI_LOG_TASKS, &root->state)) {
+ 			mutex_unlock(&root->log_mutex);
+ 			schedule_timeout_uninterruptible(1);
+@@ -5301,7 +5301,7 @@ static int btrfs_log_inode_parent(struct btrfs_trans_handle *trans,
+ 
+ 	sb = inode->i_sb;
+ 
+-	if (btrfs_test_opt(root, NOTREELOG)) {
++	if (btrfs_test_opt(root->fs_info, NOTREELOG)) {
+ 		ret = 1;
+ 		goto end_no_trans;
+ 	}
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 2f631b5..ca98cac 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -3885,7 +3885,7 @@ int btrfs_resume_balance_async(struct btrfs_fs_info *fs_info)
+ 	}
+ 	spin_unlock(&fs_info->balance_lock);
+ 
+-	if (btrfs_test_opt(fs_info->tree_root, SKIP_BALANCE)) {
++	if (btrfs_test_opt(fs_info, SKIP_BALANCE)) {
+ 		btrfs_info(fs_info, "force skipping balance");
+ 		return 0;
+ 	}
+@@ -6396,7 +6396,8 @@ static int read_one_chunk(struct btrfs_root *root, struct btrfs_key *key,
+ 				   BTRFS_UUID_SIZE);
+ 		map->stripes[i].dev = btrfs_find_device(root->fs_info, devid,
+ 							uuid, NULL);
+-		if (!map->stripes[i].dev && !btrfs_test_opt(root, DEGRADED)) {
++		if (!map->stripes[i].dev &&
++		    !btrfs_test_opt(root->fs_info, DEGRADED)) {
+ 			free_extent_map(em);
+ 			return -EIO;
+ 		}
+@@ -6464,7 +6465,7 @@ static struct btrfs_fs_devices *open_seed_devices(struct btrfs_root *root,
+ 
+ 	fs_devices = find_fsid(fsid);
+ 	if (!fs_devices) {
+-		if (!btrfs_test_opt(root, DEGRADED))
++		if (!btrfs_test_opt(root->fs_info, DEGRADED))
+ 			return ERR_PTR(-ENOENT);
+ 
+ 		fs_devices = alloc_fs_devices(fsid);
+@@ -6526,7 +6527,7 @@ static int read_one_dev(struct btrfs_root *root,
+ 
+ 	device = btrfs_find_device(root->fs_info, devid, dev_uuid, fs_uuid);
+ 	if (!device) {
+-		if (!btrfs_test_opt(root, DEGRADED))
++		if (!btrfs_test_opt(root->fs_info, DEGRADED))
+ 			return -EIO;
+ 
+ 		device = add_missing_dev(root, fs_devices, devid, dev_uuid);
+@@ -6535,7 +6536,7 @@ static int read_one_dev(struct btrfs_root *root,
+ 		btrfs_warn(root->fs_info, "devid %llu uuid %pU missing",
+ 				devid, dev_uuid);
+ 	} else {
+-		if (!device->bdev && !btrfs_test_opt(root, DEGRADED))
++		if (!device->bdev && !btrfs_test_opt(root->fs_info, DEGRADED))
+ 			return -EIO;
+ 
+ 		if(!device->bdev && !device->missing) {
 -- 
 2.7.1
 

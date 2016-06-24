@@ -1,16 +1,16 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:37864 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:37867 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751317AbcFXWPb (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 24 Jun 2016 18:15:31 -0400
+	id S1751394AbcFXWPc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 24 Jun 2016 18:15:32 -0400
 Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id 2990CADCA
+	by mx2.suse.de (Postfix) with ESMTP id 69D47ADD9
 	for <linux-btrfs@vger.kernel.org>; Fri, 24 Jun 2016 22:15:27 +0000 (UTC)
 From: jeffm@suse.com
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 13/31] btrfs: add btrfs_trans_handle->fs_info pointer
-Date: Fri, 24 Jun 2016 18:15:06 -0400
-Message-Id: <1466806524-27508-14-git-send-email-jeffm@suse.com>
+Subject: [PATCH 14/31] btrfs: btrfs_abort_transaction, drop root parameter
+Date: Fri, 24 Jun 2016 18:15:07 -0400
+Message-Id: <1466806524-27508-15-git-send-email-jeffm@suse.com>
 In-Reply-To: <1466806524-27508-1-git-send-email-jeffm@suse.com>
 References: <1466806524-27508-1-git-send-email-jeffm@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -18,88 +18,1384 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Jeff Mahoney <jeffm@suse.com>
 
-btrfs_trans_handle->root is documented as for use for confirming
-that the root passed in to start the transaction is the same as the
-one ending it.  It's used in several places when an fs_info pointer
-is needed, so let's just add an fs_info pointer directly.  Eventually,
-the root pointer can be removed.
+__btrfs_abort_transaction doesn't use its root parameter except to
+obtain an fs_info pointer.  We can obtain that from trans->root->fs_info
+for now and from trans->fs_info in a later patch.
 
 Signed-off-by: Jeff Mahoney <jeffm@suse.com>
 ---
- fs/btrfs/extent-tree.c | 6 +++---
- fs/btrfs/qgroup.c      | 2 +-
- fs/btrfs/transaction.c | 1 +
- fs/btrfs/transaction.h | 1 +
- 4 files changed, 6 insertions(+), 4 deletions(-)
+ fs/btrfs/ctree.c            | 12 +++----
+ fs/btrfs/ctree.h            |  8 ++---
+ fs/btrfs/delayed-inode.c    |  2 +-
+ fs/btrfs/extent-tree.c      | 47 ++++++++++++++-------------
+ fs/btrfs/file-item.c        |  2 +-
+ fs/btrfs/file.c             |  8 ++---
+ fs/btrfs/free-space-cache.c |  2 +-
+ fs/btrfs/free-space-tree.c  | 16 +++++-----
+ fs/btrfs/inode-map.c        |  4 +--
+ fs/btrfs/inode.c            | 77 ++++++++++++++++++++++-----------------------
+ fs/btrfs/ioctl.c            | 33 +++++++++----------
+ fs/btrfs/relocation.c       |  4 +--
+ fs/btrfs/root-tree.c        | 10 +++---
+ fs/btrfs/super.c            | 12 ++++---
+ fs/btrfs/transaction.c      | 30 +++++++++---------
+ fs/btrfs/tree-log.c         | 14 ++++-----
+ fs/btrfs/volumes.c          | 18 +++++------
+ 17 files changed, 147 insertions(+), 152 deletions(-)
 
+diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
+index 2bf3d58..904b924 100644
+--- a/fs/btrfs/ctree.c
++++ b/fs/btrfs/ctree.c
+@@ -1153,14 +1153,14 @@ static noinline int __btrfs_cow_block(struct btrfs_trans_handle *trans,
+ 
+ 	ret = update_ref_for_cow(trans, root, buf, cow, &last_ref);
+ 	if (ret) {
+-		btrfs_abort_transaction(trans, root, ret);
++		btrfs_abort_transaction(trans, ret);
+ 		return ret;
+ 	}
+ 
+ 	if (test_bit(BTRFS_ROOT_REF_COWS, &root->state)) {
+ 		ret = btrfs_reloc_cow_block(trans, root, buf, cow);
+ 		if (ret) {
+-			btrfs_abort_transaction(trans, root, ret);
++			btrfs_abort_transaction(trans, ret);
+ 			return ret;
+ 		}
+ 	}
+@@ -1198,7 +1198,7 @@ static noinline int __btrfs_cow_block(struct btrfs_trans_handle *trans,
+ 		if (last_ref) {
+ 			ret = tree_mod_log_free_eb(root->fs_info, buf);
+ 			if (ret) {
+-				btrfs_abort_transaction(trans, root, ret);
++				btrfs_abort_transaction(trans, ret);
+ 				return ret;
+ 			}
+ 		}
+@@ -3236,7 +3236,7 @@ static int push_node_left(struct btrfs_trans_handle *trans,
+ 	ret = tree_mod_log_eb_copy(root->fs_info, dst, src, dst_nritems, 0,
+ 				   push_items);
+ 	if (ret) {
+-		btrfs_abort_transaction(trans, root, ret);
++		btrfs_abort_transaction(trans, ret);
+ 		return ret;
+ 	}
+ 	copy_extent_buffer(dst, src,
+@@ -3311,7 +3311,7 @@ static int balance_node_right(struct btrfs_trans_handle *trans,
+ 	ret = tree_mod_log_eb_copy(root->fs_info, dst, src, 0,
+ 				   src_nritems - push_items, push_items);
+ 	if (ret) {
+-		btrfs_abort_transaction(trans, root, ret);
++		btrfs_abort_transaction(trans, ret);
+ 		return ret;
+ 	}
+ 	copy_extent_buffer(dst, src,
+@@ -3515,7 +3515,7 @@ static noinline int split_node(struct btrfs_trans_handle *trans,
+ 	ret = tree_mod_log_eb_copy(root->fs_info, split, c, 0,
+ 				   mid, c_nritems - mid);
+ 	if (ret) {
+-		btrfs_abort_transaction(trans, root, ret);
++		btrfs_abort_transaction(trans, ret);
+ 		return ret;
+ 	}
+ 	copy_extent_buffer(split, c,
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 95fe439..679135d 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -3366,23 +3366,23 @@ const char *btrfs_decode_error(int errno);
+ 
+ __cold
+ void __btrfs_abort_transaction(struct btrfs_trans_handle *trans,
+-			       struct btrfs_root *root, const char *function,
++			       const char *function,
+ 			       unsigned int line, int errno);
+ 
+ /*
+  * Call btrfs_abort_transaction as early as possible when an error condition is
+  * detected, that way the exact line number is reported.
+  */
+-#define btrfs_abort_transaction(trans, root, errno)		\
++#define btrfs_abort_transaction(trans, errno)		\
+ do {								\
+ 	/* Report first abort since mount */			\
+ 	if (!test_and_set_bit(BTRFS_FS_STATE_TRANS_ABORTED,	\
+-			&((root)->fs_info->fs_state))) {	\
++			&((trans)->fs_info->fs_state))) {	\
+ 		WARN(1, KERN_DEBUG				\
+ 		"BTRFS: Transaction aborted (error %d)\n",	\
+ 		(errno));					\
+ 	}							\
+-	__btrfs_abort_transaction((trans), (root), __func__,	\
++	__btrfs_abort_transaction((trans), __func__,		\
+ 				  __LINE__, (errno));		\
+ } while (0)
+ 
+diff --git a/fs/btrfs/delayed-inode.c b/fs/btrfs/delayed-inode.c
+index ed67717..316ca24 100644
+--- a/fs/btrfs/delayed-inode.c
++++ b/fs/btrfs/delayed-inode.c
+@@ -1188,7 +1188,7 @@ static int __btrfs_run_delayed_items(struct btrfs_trans_handle *trans,
+ 		if (ret) {
+ 			btrfs_release_delayed_node(curr_node);
+ 			curr_node = NULL;
+-			btrfs_abort_transaction(trans, root, ret);
++			btrfs_abort_transaction(trans, ret);
+ 			break;
+ 		}
+ 
 diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index e4af375..2081ed4 100644
+index 2081ed4..56d7b32 100644
 --- a/fs/btrfs/extent-tree.c
 +++ b/fs/btrfs/extent-tree.c
-@@ -4562,7 +4562,7 @@ out:
- 	 */
- 	if (trans->can_flush_pending_bgs &&
- 	    trans->chunk_bytes_reserved >= (u64)SZ_2M) {
--		btrfs_create_pending_block_groups(trans, trans->root);
-+		btrfs_create_pending_block_groups(trans, extent_root);
- 		btrfs_trans_release_chunk_metadata(trans);
- 	}
+@@ -2170,7 +2170,7 @@ static int __btrfs_inc_extent_ref(struct btrfs_trans_handle *trans,
+ 				    path, bytenr, parent, root_objectid,
+ 				    owner, offset, refs_to_add);
+ 	if (ret)
+-		btrfs_abort_transaction(trans, root, ret);
++		btrfs_abort_transaction(trans, ret);
+ out:
+ 	btrfs_free_path(path);
  	return ret;
-@@ -5527,7 +5527,7 @@ void btrfs_trans_release_metadata(struct btrfs_trans_handle *trans,
+@@ -2950,7 +2950,7 @@ again:
+ 	trans->can_flush_pending_bgs = false;
+ 	ret = __btrfs_run_delayed_refs(trans, root, count);
+ 	if (ret < 0) {
+-		btrfs_abort_transaction(trans, root, ret);
++		btrfs_abort_transaction(trans, ret);
+ 		return ret;
+ 	}
+ 
+@@ -3409,7 +3409,7 @@ again:
+ 		 * transaction, this only happens in really bad situations
+ 		 * anyway.
+ 		 */
+-		btrfs_abort_transaction(trans, root, ret);
++		btrfs_abort_transaction(trans, ret);
+ 		goto out_put;
+ 	}
+ 	WARN_ON(ret);
+@@ -3649,7 +3649,7 @@ again:
+ 				}
+ 				spin_unlock(&cur_trans->dirty_bgs_lock);
+ 			} else if (ret) {
+-				btrfs_abort_transaction(trans, root, ret);
++				btrfs_abort_transaction(trans, ret);
+ 			}
+ 		}
+ 
+@@ -3795,7 +3795,7 @@ int btrfs_write_dirty_block_groups(struct btrfs_trans_handle *trans,
+ 							    cache);
+ 			}
+ 			if (ret)
+-				btrfs_abort_transaction(trans, root, ret);
++				btrfs_abort_transaction(trans, ret);
+ 		}
+ 
+ 		/* if its not on the io list, we need to put the block group */
+@@ -6656,7 +6656,7 @@ static int __btrfs_free_extent(struct btrfs_trans_handle *trans,
+ 						    NULL, refs_to_drop,
+ 						    is_data, &last_ref);
+ 			if (ret) {
+-				btrfs_abort_transaction(trans, extent_root, ret);
++				btrfs_abort_transaction(trans, ret);
+ 				goto out;
+ 			}
+ 			btrfs_release_path(path);
+@@ -6705,7 +6705,7 @@ static int __btrfs_free_extent(struct btrfs_trans_handle *trans,
+ 							 path->nodes[0]);
+ 			}
+ 			if (ret < 0) {
+-				btrfs_abort_transaction(trans, extent_root, ret);
++				btrfs_abort_transaction(trans, ret);
+ 				goto out;
+ 			}
+ 			extent_slot = path->slots[0];
+@@ -6716,10 +6716,10 @@ static int __btrfs_free_extent(struct btrfs_trans_handle *trans,
+ 			"unable to find ref byte nr %llu parent %llu root %llu  owner %llu offset %llu",
+ 			bytenr, parent, root_objectid, owner_objectid,
+ 			owner_offset);
+-		btrfs_abort_transaction(trans, extent_root, ret);
++		btrfs_abort_transaction(trans, ret);
+ 		goto out;
+ 	} else {
+-		btrfs_abort_transaction(trans, extent_root, ret);
++		btrfs_abort_transaction(trans, ret);
+ 		goto out;
+ 	}
+ 
+@@ -6731,7 +6731,7 @@ static int __btrfs_free_extent(struct btrfs_trans_handle *trans,
+ 		ret = convert_extent_item_v0(trans, extent_root, path,
+ 					     owner_objectid, 0);
+ 		if (ret < 0) {
+-			btrfs_abort_transaction(trans, extent_root, ret);
++			btrfs_abort_transaction(trans, ret);
+ 			goto out;
+ 		}
+ 
+@@ -6750,7 +6750,7 @@ static int __btrfs_free_extent(struct btrfs_trans_handle *trans,
+ 			btrfs_print_leaf(extent_root, path->nodes[0]);
+ 		}
+ 		if (ret < 0) {
+-			btrfs_abort_transaction(trans, extent_root, ret);
++			btrfs_abort_transaction(trans, ret);
+ 			goto out;
+ 		}
+ 
+@@ -6775,7 +6775,7 @@ static int __btrfs_free_extent(struct btrfs_trans_handle *trans,
+ 		btrfs_err(info, "trying to drop %d refs but we only have %Lu "
+ 			  "for bytenr %Lu", refs_to_drop, refs, bytenr);
+ 		ret = -EINVAL;
+-		btrfs_abort_transaction(trans, extent_root, ret);
++		btrfs_abort_transaction(trans, ret);
+ 		goto out;
+ 	}
+ 	refs -= refs_to_drop;
+@@ -6798,7 +6798,7 @@ static int __btrfs_free_extent(struct btrfs_trans_handle *trans,
+ 						    iref, refs_to_drop,
+ 						    is_data, &last_ref);
+ 			if (ret) {
+-				btrfs_abort_transaction(trans, extent_root, ret);
++				btrfs_abort_transaction(trans, ret);
+ 				goto out;
+ 			}
+ 		}
+@@ -6821,7 +6821,7 @@ static int __btrfs_free_extent(struct btrfs_trans_handle *trans,
+ 		ret = btrfs_del_items(trans, extent_root, path, path->slots[0],
+ 				      num_to_del);
+ 		if (ret) {
+-			btrfs_abort_transaction(trans, extent_root, ret);
++			btrfs_abort_transaction(trans, ret);
+ 			goto out;
+ 		}
+ 		btrfs_release_path(path);
+@@ -6829,7 +6829,7 @@ static int __btrfs_free_extent(struct btrfs_trans_handle *trans,
+ 		if (is_data) {
+ 			ret = btrfs_del_csums(trans, root, bytenr, num_bytes);
+ 			if (ret) {
+-				btrfs_abort_transaction(trans, extent_root, ret);
++				btrfs_abort_transaction(trans, ret);
+ 				goto out;
+ 			}
+ 		}
+@@ -6837,13 +6837,13 @@ static int __btrfs_free_extent(struct btrfs_trans_handle *trans,
+ 		ret = add_to_free_space_tree(trans, root->fs_info, bytenr,
+ 					     num_bytes);
+ 		if (ret) {
+-			btrfs_abort_transaction(trans, extent_root, ret);
++			btrfs_abort_transaction(trans, ret);
+ 			goto out;
+ 		}
+ 
+ 		ret = update_block_group(trans, root, bytenr, num_bytes, 0);
+ 		if (ret) {
+-			btrfs_abort_transaction(trans, extent_root, ret);
++			btrfs_abort_transaction(trans, ret);
+ 			goto out;
+ 		}
+ 	}
+@@ -7627,8 +7627,7 @@ loop:
+ 			 * can do more things.
+ 			 */
+ 			if (ret < 0 && ret != -ENOSPC)
+-				btrfs_abort_transaction(trans,
+-							root, ret);
++				btrfs_abort_transaction(trans, ret);
+ 			else
+ 				ret = 0;
+ 			if (!exist)
+@@ -9104,7 +9103,7 @@ int btrfs_drop_snapshot(struct btrfs_root *root,
+ 						&root->root_key,
+ 						root_item);
+ 			if (ret) {
+-				btrfs_abort_transaction(trans, tree_root, ret);
++				btrfs_abort_transaction(trans, ret);
+ 				err = ret;
+ 				goto out_end_trans;
+ 			}
+@@ -9131,7 +9130,7 @@ int btrfs_drop_snapshot(struct btrfs_root *root,
+ 
+ 	ret = btrfs_del_root(trans, tree_root, &root->root_key);
+ 	if (ret) {
+-		btrfs_abort_transaction(trans, tree_root, ret);
++		btrfs_abort_transaction(trans, ret);
+ 		goto out_end_trans;
+ 	}
+ 
+@@ -9139,7 +9138,7 @@ int btrfs_drop_snapshot(struct btrfs_root *root,
+ 		ret = btrfs_find_root(tree_root, &root->root_key, path,
+ 				      NULL, NULL);
+ 		if (ret < 0) {
+-			btrfs_abort_transaction(trans, tree_root, ret);
++			btrfs_abort_transaction(trans, ret);
+ 			err = ret;
+ 			goto out_end_trans;
+ 		} else if (ret > 0) {
+@@ -10084,11 +10083,11 @@ void btrfs_create_pending_block_groups(struct btrfs_trans_handle *trans,
+ 		ret = btrfs_insert_item(trans, extent_root, &key, &item,
+ 					sizeof(item));
+ 		if (ret)
+-			btrfs_abort_transaction(trans, extent_root, ret);
++			btrfs_abort_transaction(trans, ret);
+ 		ret = btrfs_finish_chunk_alloc(trans, extent_root,
+ 					       key.objectid, key.offset);
+ 		if (ret)
+-			btrfs_abort_transaction(trans, extent_root, ret);
++			btrfs_abort_transaction(trans, ret);
+ 		add_block_group_free_space(trans, root->fs_info, block_group);
+ 		/* already aborted the transaction if it failed. */
+ next:
+diff --git a/fs/btrfs/file-item.c b/fs/btrfs/file-item.c
+index fc6390e..e4b8e77 100644
+--- a/fs/btrfs/file-item.c
++++ b/fs/btrfs/file-item.c
+@@ -698,7 +698,7 @@ int btrfs_del_csums(struct btrfs_trans_handle *trans,
+ 			 */
+ 			ret = btrfs_split_item(trans, root, path, &key, offset);
+ 			if (ret && ret != -EAGAIN) {
+-				btrfs_abort_transaction(trans, root, ret);
++				btrfs_abort_transaction(trans, ret);
+ 				goto out;
+ 			}
+ 
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index ffd9001..cc928aa 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -950,7 +950,7 @@ delete_extent_item:
+ 			ret = btrfs_del_items(trans, root, path, del_slot,
+ 					      del_nr);
+ 			if (ret) {
+-				btrfs_abort_transaction(trans, root, ret);
++				btrfs_abort_transaction(trans, ret);
+ 				break;
+ 			}
+ 
+@@ -974,7 +974,7 @@ delete_extent_item:
+ 		path->slots[0] = del_slot;
+ 		ret = btrfs_del_items(trans, root, path, del_slot, del_nr);
+ 		if (ret)
+-			btrfs_abort_transaction(trans, root, ret);
++			btrfs_abort_transaction(trans, ret);
+ 	}
+ 
+ 	leaf = path->nodes[0];
+@@ -1190,7 +1190,7 @@ again:
+ 			goto again;
+ 		}
+ 		if (ret < 0) {
+-			btrfs_abort_transaction(trans, root, ret);
++			btrfs_abort_transaction(trans, ret);
+ 			goto out;
+ 		}
+ 
+@@ -1278,7 +1278,7 @@ again:
+ 
+ 		ret = btrfs_del_items(trans, root, path, del_slot, del_nr);
+ 		if (ret < 0) {
+-			btrfs_abort_transaction(trans, root, ret);
++			btrfs_abort_transaction(trans, ret);
+ 			goto out;
+ 		}
+ 	}
+diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
+index cee2049..d571bd2 100644
+--- a/fs/btrfs/free-space-cache.c
++++ b/fs/btrfs/free-space-cache.c
+@@ -280,7 +280,7 @@ fail:
+ 	if (locked)
+ 		mutex_unlock(&trans->transaction->cache_write_mutex);
+ 	if (ret)
+-		btrfs_abort_transaction(trans, root, ret);
++		btrfs_abort_transaction(trans, ret);
+ 
+ 	return ret;
+ }
+diff --git a/fs/btrfs/free-space-tree.c b/fs/btrfs/free-space-tree.c
+index 53dbeaf..87e7e3d 100644
+--- a/fs/btrfs/free-space-tree.c
++++ b/fs/btrfs/free-space-tree.c
+@@ -305,7 +305,7 @@ int convert_free_space_to_bitmaps(struct btrfs_trans_handle *trans,
+ out:
+ 	kvfree(bitmap);
+ 	if (ret)
+-		btrfs_abort_transaction(trans, root, ret);
++		btrfs_abort_transaction(trans, ret);
+ 	return ret;
+ }
+ 
+@@ -454,7 +454,7 @@ int convert_free_space_to_extents(struct btrfs_trans_handle *trans,
+ out:
+ 	kvfree(bitmap);
+ 	if (ret)
+-		btrfs_abort_transaction(trans, root, ret);
++		btrfs_abort_transaction(trans, ret);
+ 	return ret;
+ }
+ 
+@@ -851,7 +851,7 @@ int remove_from_free_space_tree(struct btrfs_trans_handle *trans,
+ out:
+ 	btrfs_free_path(path);
+ 	if (ret)
+-		btrfs_abort_transaction(trans, fs_info->free_space_root, ret);
++		btrfs_abort_transaction(trans, ret);
+ 	return ret;
+ }
+ 
+@@ -1047,7 +1047,7 @@ int add_to_free_space_tree(struct btrfs_trans_handle *trans,
+ out:
+ 	btrfs_free_path(path);
+ 	if (ret)
+-		btrfs_abort_transaction(trans, fs_info->free_space_root, ret);
++		btrfs_abort_transaction(trans, ret);
+ 	return ret;
+ }
+ 
+@@ -1193,7 +1193,7 @@ int btrfs_create_free_space_tree(struct btrfs_fs_info *fs_info)
+ 
+ abort:
+ 	fs_info->creating_free_space_tree = 0;
+-	btrfs_abort_transaction(trans, tree_root, ret);
++	btrfs_abort_transaction(trans, ret);
+ 	btrfs_end_transaction(trans, tree_root);
+ 	return ret;
+ }
+@@ -1280,7 +1280,7 @@ int btrfs_clear_free_space_tree(struct btrfs_fs_info *fs_info)
+ 	return 0;
+ 
+ abort:
+-	btrfs_abort_transaction(trans, tree_root, ret);
++	btrfs_abort_transaction(trans, ret);
+ 	btrfs_end_transaction(trans, tree_root);
+ 	return ret;
+ }
+@@ -1333,7 +1333,7 @@ out:
+ 	btrfs_free_path(path);
+ 	mutex_unlock(&block_group->free_space_lock);
+ 	if (ret)
+-		btrfs_abort_transaction(trans, fs_info->free_space_root, ret);
++		btrfs_abort_transaction(trans, ret);
+ 	return ret;
+ }
+ 
+@@ -1410,7 +1410,7 @@ int remove_block_group_free_space(struct btrfs_trans_handle *trans,
+ out:
+ 	btrfs_free_path(path);
+ 	if (ret)
+-		btrfs_abort_transaction(trans, root, ret);
++		btrfs_abort_transaction(trans, ret);
+ 	return ret;
+ }
+ 
+diff --git a/fs/btrfs/inode-map.c b/fs/btrfs/inode-map.c
+index e3ad8c1..aa6faba 100644
+--- a/fs/btrfs/inode-map.c
++++ b/fs/btrfs/inode-map.c
+@@ -458,7 +458,7 @@ again:
+ 	BTRFS_I(inode)->generation = 0;
+ 	ret = btrfs_update_inode(trans, root, inode);
+ 	if (ret) {
+-		btrfs_abort_transaction(trans, root, ret);
++		btrfs_abort_transaction(trans, ret);
+ 		goto out_put;
+ 	}
+ 
+@@ -466,7 +466,7 @@ again:
+ 		ret = btrfs_truncate_free_space_cache(root, trans, NULL, inode);
+ 		if (ret) {
+ 			if (ret != -ENOSPC)
+-				btrfs_abort_transaction(trans, root, ret);
++				btrfs_abort_transaction(trans, ret);
+ 			goto out_put;
+ 		}
+ 	}
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 1acba51..322ee50 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -294,7 +294,7 @@ static noinline int cow_file_range_inline(struct btrfs_root *root,
+ 				   start, aligned_end, NULL,
+ 				   1, 1, extent_item_size, &extent_inserted);
+ 	if (ret) {
+-		btrfs_abort_transaction(trans, root, ret);
++		btrfs_abort_transaction(trans, ret);
+ 		goto out;
+ 	}
+ 
+@@ -305,7 +305,7 @@ static noinline int cow_file_range_inline(struct btrfs_root *root,
+ 				   inline_len, compressed_size,
+ 				   compress_type, compressed_pages);
+ 	if (ret && ret != -ENOSPC) {
+-		btrfs_abort_transaction(trans, root, ret);
++		btrfs_abort_transaction(trans, ret);
+ 		goto out;
+ 	} else if (ret == -ENOSPC) {
+ 		ret = 1;
+@@ -2595,7 +2595,7 @@ again:
+ 	ret = btrfs_insert_empty_item(trans, root, path, &key,
+ 					sizeof(*extent));
+ 	if (ret) {
+-		btrfs_abort_transaction(trans, root, ret);
++		btrfs_abort_transaction(trans, ret);
+ 		goto out_free_path;
+ 	}
+ 
+@@ -2622,7 +2622,7 @@ again:
+ 			backref->root_id, backref->inum,
+ 			new->file_pos);	/* start - extent_offset */
+ 	if (ret) {
+-		btrfs_abort_transaction(trans, root, ret);
++		btrfs_abort_transaction(trans, ret);
+ 		goto out_free_path;
+ 	}
+ 
+@@ -2891,7 +2891,7 @@ static int btrfs_finish_ordered_io(struct btrfs_ordered_extent *ordered_extent)
+ 		trans->block_rsv = &root->fs_info->delalloc_block_rsv;
+ 		ret = btrfs_update_inode_fallback(trans, root, inode);
+ 		if (ret) /* -ENOMEM or corruption */
+-			btrfs_abort_transaction(trans, root, ret);
++			btrfs_abort_transaction(trans, ret);
+ 		goto out;
+ 	}
+ 
+@@ -2951,7 +2951,7 @@ static int btrfs_finish_ordered_io(struct btrfs_ordered_extent *ordered_extent)
+ 			   ordered_extent->file_offset, ordered_extent->len,
+ 			   trans->transid);
+ 	if (ret < 0) {
+-		btrfs_abort_transaction(trans, root, ret);
++		btrfs_abort_transaction(trans, ret);
+ 		goto out_unlock;
+ 	}
+ 
+@@ -2961,7 +2961,7 @@ static int btrfs_finish_ordered_io(struct btrfs_ordered_extent *ordered_extent)
+ 	btrfs_ordered_update_i_size(inode, 0, ordered_extent);
+ 	ret = btrfs_update_inode_fallback(trans, root, inode);
+ 	if (ret) { /* -ENOMEM or corruption */
+-		btrfs_abort_transaction(trans, root, ret);
++		btrfs_abort_transaction(trans, ret);
+ 		goto out_unlock;
+ 	}
+ 	ret = 0;
+@@ -3205,7 +3205,7 @@ void btrfs_orphan_commit_root(struct btrfs_trans_handle *trans,
+ 		ret = btrfs_del_orphan_item(trans, root->fs_info->tree_root,
+ 					    root->root_key.objectid);
+ 		if (ret)
+-			btrfs_abort_transaction(trans, root, ret);
++			btrfs_abort_transaction(trans, ret);
+ 		else
+ 			clear_bit(BTRFS_ROOT_ORPHAN_ITEM_INSERTED,
+ 				  &root->state);
+@@ -3296,7 +3296,7 @@ int btrfs_orphan_add(struct btrfs_trans_handle *trans, struct inode *inode)
+ 			if (ret != -EEXIST) {
+ 				clear_bit(BTRFS_INODE_HAS_ORPHAN_ITEM,
+ 					  &BTRFS_I(inode)->runtime_flags);
+-				btrfs_abort_transaction(trans, root, ret);
++				btrfs_abort_transaction(trans, ret);
+ 				return ret;
+ 			}
+ 		}
+@@ -3308,7 +3308,7 @@ int btrfs_orphan_add(struct btrfs_trans_handle *trans, struct inode *inode)
+ 		ret = btrfs_insert_orphan_item(trans, root->fs_info->tree_root,
+ 					       root->root_key.objectid);
+ 		if (ret && ret != -EEXIST) {
+-			btrfs_abort_transaction(trans, root, ret);
++			btrfs_abort_transaction(trans, ret);
+ 			return ret;
+ 		}
+ 	}
+@@ -4007,20 +4007,20 @@ static int __btrfs_unlink_inode(struct btrfs_trans_handle *trans,
+ 		btrfs_info(root->fs_info,
+ 			"failed to delete reference to %.*s, inode %llu parent %llu",
+ 			name_len, name, ino, dir_ino);
+-		btrfs_abort_transaction(trans, root, ret);
++		btrfs_abort_transaction(trans, ret);
+ 		goto err;
+ 	}
+ skip_backref:
+ 	ret = btrfs_delete_delayed_dir_index(trans, root, dir, index);
+ 	if (ret) {
+-		btrfs_abort_transaction(trans, root, ret);
++		btrfs_abort_transaction(trans, ret);
+ 		goto err;
+ 	}
+ 
+ 	ret = btrfs_del_inode_ref_in_log(trans, root, name, name_len,
+ 					 inode, dir_ino);
+ 	if (ret != 0 && ret != -ENOENT) {
+-		btrfs_abort_transaction(trans, root, ret);
++		btrfs_abort_transaction(trans, ret);
+ 		goto err;
+ 	}
+ 
+@@ -4029,7 +4029,7 @@ skip_backref:
+ 	if (ret == -ENOENT)
+ 		ret = 0;
+ 	else if (ret)
+-		btrfs_abort_transaction(trans, root, ret);
++		btrfs_abort_transaction(trans, ret);
+ err:
+ 	btrfs_free_path(path);
+ 	if (ret)
+@@ -4143,7 +4143,7 @@ int btrfs_unlink_subvol(struct btrfs_trans_handle *trans,
+ 	WARN_ON(key.type != BTRFS_ROOT_ITEM_KEY || key.objectid != objectid);
+ 	ret = btrfs_delete_one_dir_name(trans, root, path, di);
+ 	if (ret) {
+-		btrfs_abort_transaction(trans, root, ret);
++		btrfs_abort_transaction(trans, ret);
+ 		goto out;
+ 	}
+ 	btrfs_release_path(path);
+@@ -4153,7 +4153,7 @@ int btrfs_unlink_subvol(struct btrfs_trans_handle *trans,
+ 				 dir_ino, &index, name, name_len);
+ 	if (ret < 0) {
+ 		if (ret != -ENOENT) {
+-			btrfs_abort_transaction(trans, root, ret);
++			btrfs_abort_transaction(trans, ret);
+ 			goto out;
+ 		}
+ 		di = btrfs_search_dir_index_item(root, path, dir_ino,
+@@ -4163,7 +4163,7 @@ int btrfs_unlink_subvol(struct btrfs_trans_handle *trans,
+ 				ret = -ENOENT;
+ 			else
+ 				ret = PTR_ERR(di);
+-			btrfs_abort_transaction(trans, root, ret);
++			btrfs_abort_transaction(trans, ret);
+ 			goto out;
+ 		}
+ 
+@@ -4176,7 +4176,7 @@ int btrfs_unlink_subvol(struct btrfs_trans_handle *trans,
+ 
+ 	ret = btrfs_delete_delayed_dir_index(trans, root, dir, index);
+ 	if (ret) {
+-		btrfs_abort_transaction(trans, root, ret);
++		btrfs_abort_transaction(trans, ret);
+ 		goto out;
+ 	}
+ 
+@@ -4185,7 +4185,7 @@ int btrfs_unlink_subvol(struct btrfs_trans_handle *trans,
+ 	dir->i_mtime = dir->i_ctime = current_fs_time(dir->i_sb);
+ 	ret = btrfs_update_inode_fallback(trans, root, dir);
+ 	if (ret)
+-		btrfs_abort_transaction(trans, root, ret);
++		btrfs_abort_transaction(trans, ret);
+ out:
+ 	btrfs_free_path(path);
+ 	return ret;
+@@ -4506,7 +4506,6 @@ search_again:
+ 							      pending_del_nr);
+ 					if (err) {
+ 						btrfs_abort_transaction(trans,
+-									root,
+ 									err);
+ 						goto error;
+ 					}
+@@ -4518,8 +4517,7 @@ search_again:
+ 							     item_end,
+ 							     new_size);
+ 				if (err) {
+-					btrfs_abort_transaction(trans,
+-								root, err);
++					btrfs_abort_transaction(trans, err);
+ 					goto error;
+ 				}
+ 			} else if (test_bit(BTRFS_ROOT_REF_COWS,
+@@ -4582,8 +4580,7 @@ delete:
+ 						pending_del_slot,
+ 						pending_del_nr);
+ 				if (ret) {
+-					btrfs_abort_transaction(trans,
+-								root, ret);
++					btrfs_abort_transaction(trans, ret);
+ 					goto error;
+ 				}
+ 				pending_del_nr = 0;
+@@ -4616,7 +4613,7 @@ out:
+ 		ret = btrfs_del_items(trans, root, path, pending_del_slot,
+ 				      pending_del_nr);
+ 		if (ret)
+-			btrfs_abort_transaction(trans, root, ret);
++			btrfs_abort_transaction(trans, ret);
+ 	}
+ error:
+ 	if (root->root_key.objectid != BTRFS_TREE_LOG_OBJECTID)
+@@ -4785,7 +4782,7 @@ static int maybe_insert_hole(struct btrfs_root *root, struct inode *inode,
+ 
+ 	ret = btrfs_drop_extents(trans, root, inode, offset, offset + len, 1);
+ 	if (ret) {
+-		btrfs_abort_transaction(trans, root, ret);
++		btrfs_abort_transaction(trans, ret);
+ 		btrfs_end_transaction(trans, root);
+ 		return ret;
+ 	}
+@@ -4793,7 +4790,7 @@ static int maybe_insert_hole(struct btrfs_root *root, struct inode *inode,
+ 	ret = btrfs_insert_file_extent(trans, root, btrfs_ino(inode), offset,
+ 				       0, 0, len, 0, len, 0, 0, 0);
+ 	if (ret)
+-		btrfs_abort_transaction(trans, root, ret);
++		btrfs_abort_transaction(trans, ret);
+ 	else
+ 		btrfs_update_inode(trans, root, inode);
+ 	btrfs_end_transaction(trans, root);
+@@ -5020,7 +5017,7 @@ static int btrfs_setsize(struct inode *inode, struct iattr *attr)
+ 			i_size_write(inode, BTRFS_I(inode)->disk_i_size);
+ 			err = btrfs_orphan_del(trans, inode);
+ 			if (err)
+-				btrfs_abort_transaction(trans, root, err);
++				btrfs_abort_transaction(trans, err);
+ 			btrfs_end_transaction(trans, root);
+ 		}
+ 	}
+@@ -6317,7 +6314,7 @@ int btrfs_add_link(struct btrfs_trans_handle *trans,
+ 	if (ret == -EEXIST || ret == -EOVERFLOW)
+ 		goto fail_dir_item;
+ 	else if (ret) {
+-		btrfs_abort_transaction(trans, root, ret);
++		btrfs_abort_transaction(trans, ret);
+ 		return ret;
+ 	}
+ 
+@@ -6328,7 +6325,7 @@ int btrfs_add_link(struct btrfs_trans_handle *trans,
+ 		current_fs_time(parent_inode->i_sb);
+ 	ret = btrfs_update_inode(trans, root, parent_inode);
+ 	if (ret)
+-		btrfs_abort_transaction(trans, root, ret);
++		btrfs_abort_transaction(trans, ret);
+ 	return ret;
+ 
+ fail_dir_item:
+@@ -9551,7 +9548,7 @@ static int btrfs_rename_exchange(struct inode *old_dir,
+ 			ret = btrfs_update_inode(trans, root, old_inode);
+ 	}
+ 	if (ret) {
+-		btrfs_abort_transaction(trans, root, ret);
++		btrfs_abort_transaction(trans, ret);
+ 		goto out_fail;
+ 	}
+ 
+@@ -9571,7 +9568,7 @@ static int btrfs_rename_exchange(struct inode *old_dir,
+ 			ret = btrfs_update_inode(trans, dest, new_inode);
+ 	}
+ 	if (ret) {
+-		btrfs_abort_transaction(trans, root, ret);
++		btrfs_abort_transaction(trans, ret);
+ 		goto out_fail;
+ 	}
+ 
+@@ -9579,7 +9576,7 @@ static int btrfs_rename_exchange(struct inode *old_dir,
+ 			     new_dentry->d_name.name,
+ 			     new_dentry->d_name.len, 0, old_idx);
+ 	if (ret) {
+-		btrfs_abort_transaction(trans, root, ret);
++		btrfs_abort_transaction(trans, ret);
+ 		goto out_fail;
+ 	}
+ 
+@@ -9587,7 +9584,7 @@ static int btrfs_rename_exchange(struct inode *old_dir,
+ 			     old_dentry->d_name.name,
+ 			     old_dentry->d_name.len, 0, new_idx);
+ 	if (ret) {
+-		btrfs_abort_transaction(trans, root, ret);
++		btrfs_abort_transaction(trans, ret);
+ 		goto out_fail;
+ 	}
+ 
+@@ -9826,7 +9823,7 @@ static int btrfs_rename(struct inode *old_dir, struct dentry *old_dentry,
+ 			ret = btrfs_update_inode(trans, root, old_inode);
+ 	}
+ 	if (ret) {
+-		btrfs_abort_transaction(trans, root, ret);
++		btrfs_abort_transaction(trans, ret);
+ 		goto out_fail;
+ 	}
+ 
+@@ -9850,7 +9847,7 @@ static int btrfs_rename(struct inode *old_dir, struct dentry *old_dentry,
+ 		if (!ret && new_inode->i_nlink == 0)
+ 			ret = btrfs_orphan_add(trans, d_inode(new_dentry));
+ 		if (ret) {
+-			btrfs_abort_transaction(trans, root, ret);
++			btrfs_abort_transaction(trans, ret);
+ 			goto out_fail;
+ 		}
+ 	}
+@@ -9859,7 +9856,7 @@ static int btrfs_rename(struct inode *old_dir, struct dentry *old_dentry,
+ 			     new_dentry->d_name.name,
+ 			     new_dentry->d_name.len, 0, index);
+ 	if (ret) {
+-		btrfs_abort_transaction(trans, root, ret);
++		btrfs_abort_transaction(trans, ret);
+ 		goto out_fail;
+ 	}
+ 
+@@ -9879,7 +9876,7 @@ static int btrfs_rename(struct inode *old_dir, struct dentry *old_dentry,
+ 						old_dentry);
+ 
+ 		if (ret) {
+-			btrfs_abort_transaction(trans, root, ret);
++			btrfs_abort_transaction(trans, ret);
+ 			goto out_fail;
+ 		}
+ 	}
+@@ -10305,7 +10302,7 @@ static int __btrfs_prealloc_file_range(struct inode *inode, int mode,
+ 		if (ret) {
+ 			btrfs_free_reserved_extent(root, ins.objectid,
+ 						   ins.offset, 0);
+-			btrfs_abort_transaction(trans, root, ret);
++			btrfs_abort_transaction(trans, ret);
+ 			if (own_trans)
+ 				btrfs_end_transaction(trans, root);
+ 			break;
+@@ -10365,7 +10362,7 @@ next:
+ 		ret = btrfs_update_inode(trans, root, inode);
+ 
+ 		if (ret) {
+-			btrfs_abort_transaction(trans, root, ret);
++			btrfs_abort_transaction(trans, ret);
+ 			if (own_trans)
+ 				btrfs_end_transaction(trans, root);
+ 			break;
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 81413e6..14ed1e9 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -561,7 +561,7 @@ static noinline int create_subvol(struct inode *dir,
+ 	new_root = btrfs_read_fs_root_no_name(root->fs_info, &key);
+ 	if (IS_ERR(new_root)) {
+ 		ret = PTR_ERR(new_root);
+-		btrfs_abort_transaction(trans, root, ret);
++		btrfs_abort_transaction(trans, ret);
+ 		goto fail;
+ 	}
+ 
+@@ -570,7 +570,7 @@ static noinline int create_subvol(struct inode *dir,
+ 	ret = btrfs_create_subvol_root(trans, new_root, root, new_dirid);
+ 	if (ret) {
+ 		/* We potentially lose an unused inode item here */
+-		btrfs_abort_transaction(trans, root, ret);
++		btrfs_abort_transaction(trans, ret);
+ 		goto fail;
+ 	}
+ 
+@@ -583,7 +583,7 @@ static noinline int create_subvol(struct inode *dir,
+ 	 */
+ 	ret = btrfs_set_inode_index(dir, &index);
+ 	if (ret) {
+-		btrfs_abort_transaction(trans, root, ret);
++		btrfs_abort_transaction(trans, ret);
+ 		goto fail;
+ 	}
+ 
+@@ -591,7 +591,7 @@ static noinline int create_subvol(struct inode *dir,
+ 				    name, namelen, dir, &key,
+ 				    BTRFS_FT_DIR, index);
+ 	if (ret) {
+-		btrfs_abort_transaction(trans, root, ret);
++		btrfs_abort_transaction(trans, ret);
+ 		goto fail;
+ 	}
+ 
+@@ -608,7 +608,7 @@ static noinline int create_subvol(struct inode *dir,
+ 				  root_item->uuid, BTRFS_UUID_KEY_SUBVOL,
+ 				  objectid);
+ 	if (ret)
+-		btrfs_abort_transaction(trans, root, ret);
++		btrfs_abort_transaction(trans, ret);
+ 
+ fail:
+ 	kfree(root_item);
+@@ -2488,7 +2488,7 @@ static noinline int btrfs_ioctl_snap_destroy(struct file *file,
+ 				dentry->d_name.len);
+ 	if (ret) {
+ 		err = ret;
+-		btrfs_abort_transaction(trans, root, ret);
++		btrfs_abort_transaction(trans, ret);
+ 		goto out_end_trans;
+ 	}
+ 
+@@ -2504,7 +2504,7 @@ static noinline int btrfs_ioctl_snap_destroy(struct file *file,
+ 					root->fs_info->tree_root,
+ 					dest->root_key.objectid);
+ 		if (ret) {
+-			btrfs_abort_transaction(trans, root, ret);
++			btrfs_abort_transaction(trans, ret);
+ 			err = ret;
+ 			goto out_end_trans;
+ 		}
+@@ -2514,7 +2514,7 @@ static noinline int btrfs_ioctl_snap_destroy(struct file *file,
+ 				  dest->root_item.uuid, BTRFS_UUID_KEY_SUBVOL,
+ 				  dest->root_key.objectid);
+ 	if (ret && ret != -ENOENT) {
+-		btrfs_abort_transaction(trans, root, ret);
++		btrfs_abort_transaction(trans, ret);
+ 		err = ret;
+ 		goto out_end_trans;
+ 	}
+@@ -2524,7 +2524,7 @@ static noinline int btrfs_ioctl_snap_destroy(struct file *file,
+ 					  BTRFS_UUID_KEY_RECEIVED_SUBVOL,
+ 					  dest->root_key.objectid);
+ 		if (ret && ret != -ENOENT) {
+-			btrfs_abort_transaction(trans, root, ret);
++			btrfs_abort_transaction(trans, ret);
+ 			err = ret;
+ 			goto out_end_trans;
+ 		}
+@@ -3291,7 +3291,7 @@ static int clone_finish_inode_update(struct btrfs_trans_handle *trans,
+ 
+ 	ret = btrfs_update_inode(trans, root, inode);
+ 	if (ret) {
+-		btrfs_abort_transaction(trans, root, ret);
++		btrfs_abort_transaction(trans, ret);
+ 		btrfs_end_transaction(trans, root);
+ 		goto out;
+ 	}
+@@ -3693,7 +3693,7 @@ process_slot:
+ 				if (ret) {
+ 					if (ret != -EOPNOTSUPP)
+ 						btrfs_abort_transaction(trans,
+-								root, ret);
++									ret);
+ 					btrfs_end_transaction(trans, root);
+ 					goto out;
+ 				}
+@@ -3701,8 +3701,7 @@ process_slot:
+ 				ret = btrfs_insert_empty_item(trans, root, path,
+ 							      &new_key, size);
+ 				if (ret) {
+-					btrfs_abort_transaction(trans, root,
+-								ret);
++					btrfs_abort_transaction(trans, ret);
+ 					btrfs_end_transaction(trans, root);
+ 					goto out;
+ 				}
+@@ -3734,7 +3733,6 @@ process_slot:
+ 							new_key.offset - datao);
+ 					if (ret) {
+ 						btrfs_abort_transaction(trans,
+-									root,
+ 									ret);
+ 						btrfs_end_transaction(trans,
+ 								      root);
+@@ -3771,7 +3769,6 @@ process_slot:
+ 				if (ret) {
+ 					if (ret != -EOPNOTSUPP)
+ 						btrfs_abort_transaction(trans,
+-									root,
+ 									ret);
+ 					btrfs_end_transaction(trans, root);
+ 					goto out;
+@@ -3827,7 +3824,7 @@ process_slot:
+ 					 last_dest_end, destoff + len, 1);
+ 		if (ret) {
+ 			if (ret != -EOPNOTSUPP)
+-				btrfs_abort_transaction(trans, root, ret);
++				btrfs_abort_transaction(trans, ret);
+ 			btrfs_end_transaction(trans, root);
+ 			goto out;
+ 		}
+@@ -5163,13 +5160,13 @@ static long _btrfs_ioctl_set_received_subvol(struct file *file,
+ 					  BTRFS_UUID_KEY_RECEIVED_SUBVOL,
+ 					  root->root_key.objectid);
+ 		if (ret < 0 && ret != -EEXIST) {
+-			btrfs_abort_transaction(trans, root, ret);
++			btrfs_abort_transaction(trans, ret);
+ 			goto out;
+ 		}
+ 	}
+ 	ret = btrfs_commit_transaction(trans, root);
+ 	if (ret < 0) {
+-		btrfs_abort_transaction(trans, root, ret);
++		btrfs_abort_transaction(trans, ret);
+ 		goto out;
+ 	}
+ 
+diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
+index 0477dca..9d07953 100644
+--- a/fs/btrfs/relocation.c
++++ b/fs/btrfs/relocation.c
+@@ -1719,7 +1719,7 @@ int replace_file_extents(struct btrfs_trans_handle *trans,
+ 					   btrfs_header_owner(leaf),
+ 					   key.objectid, key.offset);
+ 		if (ret) {
+-			btrfs_abort_transaction(trans, root, ret);
++			btrfs_abort_transaction(trans, ret);
+ 			break;
+ 		}
+ 
+@@ -1727,7 +1727,7 @@ int replace_file_extents(struct btrfs_trans_handle *trans,
+ 					parent, btrfs_header_owner(leaf),
+ 					key.objectid, key.offset);
+ 		if (ret) {
+-			btrfs_abort_transaction(trans, root, ret);
++			btrfs_abort_transaction(trans, ret);
+ 			break;
+ 		}
+ 	}
+diff --git a/fs/btrfs/root-tree.c b/fs/btrfs/root-tree.c
+index f1c3086..7fd7e18 100644
+--- a/fs/btrfs/root-tree.c
++++ b/fs/btrfs/root-tree.c
+@@ -150,7 +150,7 @@ int btrfs_update_root(struct btrfs_trans_handle *trans, struct btrfs_root
+ 
+ 	ret = btrfs_search_slot(trans, root, key, path, 0, 1);
+ 	if (ret < 0) {
+-		btrfs_abort_transaction(trans, root, ret);
++		btrfs_abort_transaction(trans, ret);
+ 		goto out;
+ 	}
+ 
+@@ -176,20 +176,20 @@ int btrfs_update_root(struct btrfs_trans_handle *trans, struct btrfs_root
+ 		ret = btrfs_search_slot(trans, root, key, path,
+ 				-1, 1);
+ 		if (ret < 0) {
+-			btrfs_abort_transaction(trans, root, ret);
++			btrfs_abort_transaction(trans, ret);
+ 			goto out;
+ 		}
+ 
+ 		ret = btrfs_del_item(trans, root, path);
+ 		if (ret < 0) {
+-			btrfs_abort_transaction(trans, root, ret);
++			btrfs_abort_transaction(trans, ret);
+ 			goto out;
+ 		}
+ 		btrfs_release_path(path);
+ 		ret = btrfs_insert_empty_item(trans, root, path,
+ 				key, sizeof(*item));
+ 		if (ret < 0) {
+-			btrfs_abort_transaction(trans, root, ret);
++			btrfs_abort_transaction(trans, ret);
+ 			goto out;
+ 		}
+ 		l = path->nodes[0];
+@@ -448,7 +448,7 @@ again:
+ 	ret = btrfs_insert_empty_item(trans, tree_root, path, &key,
+ 				      sizeof(*ref) + name_len);
+ 	if (ret) {
+-		btrfs_abort_transaction(trans, tree_root, ret);
++		btrfs_abort_transaction(trans, ret);
+ 		btrfs_free_path(path);
+ 		return ret;
+ 	}
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index d8e48bb..4c031d7 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -229,9 +229,11 @@ void btrfs_printk(const struct btrfs_fs_info *fs_info, const char *fmt, ...)
   */
- void btrfs_trans_release_chunk_metadata(struct btrfs_trans_handle *trans)
+ __cold
+ void __btrfs_abort_transaction(struct btrfs_trans_handle *trans,
+-			       struct btrfs_root *root, const char *function,
++			       const char *function,
+ 			       unsigned int line, int errno)
  {
--	struct btrfs_fs_info *fs_info = trans->root->fs_info;
 +	struct btrfs_fs_info *fs_info = trans->fs_info;
++
+ 	trans->aborted = errno;
+ 	/* Nothing used. The other threads that have joined this
+ 	 * transaction may be able to continue. */
+@@ -239,16 +241,16 @@ void __btrfs_abort_transaction(struct btrfs_trans_handle *trans,
+ 		const char *errstr;
  
- 	if (!trans->chunk_bytes_reserved)
+ 		errstr = btrfs_decode_error(errno);
+-		btrfs_warn(root->fs_info,
++		btrfs_warn(fs_info,
+ 		           "%s:%d: Aborting unused transaction(%s).",
+ 		           function, line, errstr);
  		return;
-@@ -8318,7 +8318,7 @@ static int record_one_subtree_extent(struct btrfs_trans_handle *trans,
- 
- 	delayed_refs = &trans->transaction->delayed_refs;
- 	spin_lock(&delayed_refs->lock);
--	if (btrfs_qgroup_insert_dirty_extent(trans->root->fs_info,
-+	if (btrfs_qgroup_insert_dirty_extent(trans->fs_info,
- 					     delayed_refs, qrecord))
- 		kfree(qrecord);
- 	spin_unlock(&delayed_refs->lock);
-diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-index 3a83631..93ee1c1 100644
---- a/fs/btrfs/qgroup.c
-+++ b/fs/btrfs/qgroup.c
-@@ -2196,7 +2196,7 @@ void assert_qgroups_uptodate(struct btrfs_trans_handle *trans)
- {
- 	if (list_empty(&trans->qgroup_ref_list) && !trans->delayed_ref_elem.seq)
- 		return;
--	btrfs_err(trans->root->fs_info,
-+	btrfs_err(trans->fs_info,
- 		"qgroups not uptodate in trans handle %p:  list is%s empty, "
- 		"seq is %#x.%x",
- 		trans, list_empty(&trans->qgroup_ref_list) ? "" : " not",
+ 	}
+ 	ACCESS_ONCE(trans->transaction->aborted) = errno;
+ 	/* Wake up anybody who may be waiting on this transaction */
+-	wake_up(&root->fs_info->transaction_wait);
+-	wake_up(&root->fs_info->transaction_blocked_wait);
+-	__btrfs_handle_fs_error(root->fs_info, function, line, errno, NULL);
++	wake_up(&fs_info->transaction_wait);
++	wake_up(&fs_info->transaction_blocked_wait);
++	__btrfs_handle_fs_error(fs_info, function, line, errno, NULL);
+ }
+ /*
+  * __btrfs_panic decodes unexpected, fatal errors from the caller,
 diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index db26eff..db0eb1f 100644
+index db0eb1f..ad2b6d1 100644
 --- a/fs/btrfs/transaction.c
 +++ b/fs/btrfs/transaction.c
-@@ -561,6 +561,7 @@ again:
- 	h->transaction = cur_trans;
- 	h->root = root;
- 	h->use_count = 1;
-+	h->fs_info = root->fs_info;
- 
- 	h->type = type;
- 	h->can_flush_pending_bgs = true;
-diff --git a/fs/btrfs/transaction.h b/fs/btrfs/transaction.h
-index c5abee4..efb1226 100644
---- a/fs/btrfs/transaction.h
-+++ b/fs/btrfs/transaction.h
-@@ -128,6 +128,7 @@ struct btrfs_trans_handle {
- 	 * Subvolume quota depends on this
+@@ -1491,7 +1491,7 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
+ 		goto dir_item_existed;
+ 	} else if (IS_ERR(dir_item)) {
+ 		ret = PTR_ERR(dir_item);
+-		btrfs_abort_transaction(trans, root, ret);
++		btrfs_abort_transaction(trans, ret);
+ 		goto fail;
+ 	}
+ 	btrfs_release_path(path);
+@@ -1504,7 +1504,7 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
  	 */
- 	struct btrfs_root *root;
-+	struct btrfs_fs_info *fs_info;
- 	struct seq_list delayed_ref_elem;
- 	struct list_head qgroup_ref_list;
- 	struct list_head new_bgs;
+ 	ret = btrfs_run_delayed_items(trans, root);
+ 	if (ret) {	/* Transaction aborted */
+-		btrfs_abort_transaction(trans, root, ret);
++		btrfs_abort_transaction(trans, ret);
+ 		goto fail;
+ 	}
+ 
+@@ -1543,7 +1543,7 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
+ 	if (ret) {
+ 		btrfs_tree_unlock(old);
+ 		free_extent_buffer(old);
+-		btrfs_abort_transaction(trans, root, ret);
++		btrfs_abort_transaction(trans, ret);
+ 		goto fail;
+ 	}
+ 
+@@ -1554,7 +1554,7 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
+ 	btrfs_tree_unlock(old);
+ 	free_extent_buffer(old);
+ 	if (ret) {
+-		btrfs_abort_transaction(trans, root, ret);
++		btrfs_abort_transaction(trans, ret);
+ 		goto fail;
+ 	}
+ 	/* see comments in should_cow_block() */
+@@ -1568,7 +1568,7 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
+ 	btrfs_tree_unlock(tmp);
+ 	free_extent_buffer(tmp);
+ 	if (ret) {
+-		btrfs_abort_transaction(trans, root, ret);
++		btrfs_abort_transaction(trans, ret);
+ 		goto fail;
+ 	}
+ 
+@@ -1580,7 +1580,7 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
+ 				 btrfs_ino(parent_inode), index,
+ 				 dentry->d_name.name, dentry->d_name.len);
+ 	if (ret) {
+-		btrfs_abort_transaction(trans, root, ret);
++		btrfs_abort_transaction(trans, ret);
+ 		goto fail;
+ 	}
+ 
+@@ -1588,19 +1588,19 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
+ 	pending->snap = btrfs_read_fs_root_no_name(root->fs_info, &key);
+ 	if (IS_ERR(pending->snap)) {
+ 		ret = PTR_ERR(pending->snap);
+-		btrfs_abort_transaction(trans, root, ret);
++		btrfs_abort_transaction(trans, ret);
+ 		goto fail;
+ 	}
+ 
+ 	ret = btrfs_reloc_post_snapshot(trans, pending);
+ 	if (ret) {
+-		btrfs_abort_transaction(trans, root, ret);
++		btrfs_abort_transaction(trans, ret);
+ 		goto fail;
+ 	}
+ 
+ 	ret = btrfs_run_delayed_refs(trans, root, (unsigned long)-1);
+ 	if (ret) {
+-		btrfs_abort_transaction(trans, root, ret);
++		btrfs_abort_transaction(trans, ret);
+ 		goto fail;
+ 	}
+ 
+@@ -1622,7 +1622,7 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
+ 	/* We have check then name at the beginning, so it is impossible. */
+ 	BUG_ON(ret == -EEXIST || ret == -EOVERFLOW);
+ 	if (ret) {
+-		btrfs_abort_transaction(trans, root, ret);
++		btrfs_abort_transaction(trans, ret);
+ 		goto fail;
+ 	}
+ 
+@@ -1632,13 +1632,13 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
+ 		current_fs_time(parent_inode->i_sb);
+ 	ret = btrfs_update_inode_fallback(trans, parent_root, parent_inode);
+ 	if (ret) {
+-		btrfs_abort_transaction(trans, root, ret);
++		btrfs_abort_transaction(trans, ret);
+ 		goto fail;
+ 	}
+ 	ret = btrfs_uuid_tree_add(trans, fs_info->uuid_root, new_uuid.b,
+ 				  BTRFS_UUID_KEY_SUBVOL, objectid);
+ 	if (ret) {
+-		btrfs_abort_transaction(trans, root, ret);
++		btrfs_abort_transaction(trans, ret);
+ 		goto fail;
+ 	}
+ 	if (!btrfs_is_empty_uuid(new_root_item->received_uuid)) {
+@@ -1647,14 +1647,14 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
+ 					  BTRFS_UUID_KEY_RECEIVED_SUBVOL,
+ 					  objectid);
+ 		if (ret && ret != -EEXIST) {
+-			btrfs_abort_transaction(trans, root, ret);
++			btrfs_abort_transaction(trans, ret);
+ 			goto fail;
+ 		}
+ 	}
+ 
+ 	ret = btrfs_run_delayed_refs(trans, root, (unsigned long)-1);
+ 	if (ret) {
+-		btrfs_abort_transaction(trans, root, ret);
++		btrfs_abort_transaction(trans, ret);
+ 		goto fail;
+ 	}
+ 
+@@ -1850,7 +1850,7 @@ static void cleanup_transaction(struct btrfs_trans_handle *trans,
+ 
+ 	WARN_ON(trans->use_count > 1);
+ 
+-	btrfs_abort_transaction(trans, root, err);
++	btrfs_abort_transaction(trans, err);
+ 
+ 	spin_lock(&root->fs_info->trans_lock);
+ 
+diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+index 5893018..697d7f6 100644
+--- a/fs/btrfs/tree-log.c
++++ b/fs/btrfs/tree-log.c
+@@ -2788,7 +2788,7 @@ int btrfs_sync_log(struct btrfs_trans_handle *trans,
+ 	ret = btrfs_write_marked_extents(log, &log->dirty_log_pages, mark);
+ 	if (ret) {
+ 		blk_finish_plug(&plug);
+-		btrfs_abort_transaction(trans, root, ret);
++		btrfs_abort_transaction(trans, ret);
+ 		btrfs_free_logged_extents(log, log_transid);
+ 		btrfs_set_log_full_commit(root->fs_info, trans);
+ 		mutex_unlock(&root->log_mutex);
+@@ -2838,7 +2838,7 @@ int btrfs_sync_log(struct btrfs_trans_handle *trans,
+ 		btrfs_set_log_full_commit(root->fs_info, trans);
+ 
+ 		if (ret != -ENOSPC) {
+-			btrfs_abort_transaction(trans, root, ret);
++			btrfs_abort_transaction(trans, ret);
+ 			mutex_unlock(&log_root_tree->log_mutex);
+ 			goto out;
+ 		}
+@@ -2898,7 +2898,7 @@ int btrfs_sync_log(struct btrfs_trans_handle *trans,
+ 	blk_finish_plug(&plug);
+ 	if (ret) {
+ 		btrfs_set_log_full_commit(root->fs_info, trans);
+-		btrfs_abort_transaction(trans, root, ret);
++		btrfs_abort_transaction(trans, ret);
+ 		btrfs_free_logged_extents(log, log_transid);
+ 		mutex_unlock(&log_root_tree->log_mutex);
+ 		goto out_wake_log_root;
+@@ -2934,7 +2934,7 @@ int btrfs_sync_log(struct btrfs_trans_handle *trans,
+ 	ret = write_ctree_super(trans, root->fs_info->tree_root, 1);
+ 	if (ret) {
+ 		btrfs_set_log_full_commit(root->fs_info, trans);
+-		btrfs_abort_transaction(trans, root, ret);
++		btrfs_abort_transaction(trans, ret);
+ 		goto out_wake_log_root;
+ 	}
+ 
+@@ -2991,7 +2991,7 @@ static void free_log_tree(struct btrfs_trans_handle *trans,
+ 	ret = walk_log_tree(trans, log, &wc);
+ 	/* I don't think this can happen but just in case */
+ 	if (ret)
+-		btrfs_abort_transaction(trans, log, ret);
++		btrfs_abort_transaction(trans, ret);
+ 
+ 	while (1) {
+ 		ret = find_first_extent_bit(&log->dirty_log_pages,
+@@ -3160,7 +3160,7 @@ out_unlock:
+ 		btrfs_set_log_full_commit(root->fs_info, trans);
+ 		ret = 0;
+ 	} else if (ret < 0)
+-		btrfs_abort_transaction(trans, root, ret);
++		btrfs_abort_transaction(trans, ret);
+ 
+ 	btrfs_end_log_trans(root);
+ 
+@@ -3193,7 +3193,7 @@ int btrfs_del_inode_ref_in_log(struct btrfs_trans_handle *trans,
+ 		btrfs_set_log_full_commit(root->fs_info, trans);
+ 		ret = 0;
+ 	} else if (ret < 0 && ret != -ENOENT)
+-		btrfs_abort_transaction(trans, root, ret);
++		btrfs_abort_transaction(trans, ret);
+ 	btrfs_end_log_trans(root);
+ 
+ 	return ret;
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index e0332c9..0f4f99a 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -2399,14 +2399,14 @@ int btrfs_init_new_device(struct btrfs_root *root, char *device_path)
+ 		ret = init_first_rw_device(trans, root, device);
+ 		unlock_chunks(root);
+ 		if (ret) {
+-			btrfs_abort_transaction(trans, root, ret);
++			btrfs_abort_transaction(trans, ret);
+ 			goto error_trans;
+ 		}
+ 	}
+ 
+ 	ret = btrfs_add_device(trans, root, device);
+ 	if (ret) {
+-		btrfs_abort_transaction(trans, root, ret);
++		btrfs_abort_transaction(trans, ret);
+ 		goto error_trans;
+ 	}
+ 
+@@ -2415,7 +2415,7 @@ int btrfs_init_new_device(struct btrfs_root *root, char *device_path)
+ 
+ 		ret = btrfs_finish_sprout(trans, root);
+ 		if (ret) {
+-			btrfs_abort_transaction(trans, root, ret);
++			btrfs_abort_transaction(trans, ret);
+ 			goto error_trans;
+ 		}
+ 
+@@ -2801,7 +2801,7 @@ int btrfs_remove_chunk(struct btrfs_trans_handle *trans,
+ 					    &dev_extent_len);
+ 		if (ret) {
+ 			mutex_unlock(&fs_devices->device_list_mutex);
+-			btrfs_abort_transaction(trans, root, ret);
++			btrfs_abort_transaction(trans, ret);
+ 			goto out;
+ 		}
+ 
+@@ -2820,7 +2820,7 @@ int btrfs_remove_chunk(struct btrfs_trans_handle *trans,
+ 			ret = btrfs_update_device(trans, map->stripes[i].dev);
+ 			if (ret) {
+ 				mutex_unlock(&fs_devices->device_list_mutex);
+-				btrfs_abort_transaction(trans, root, ret);
++				btrfs_abort_transaction(trans, ret);
+ 				goto out;
+ 			}
+ 		}
+@@ -2829,7 +2829,7 @@ int btrfs_remove_chunk(struct btrfs_trans_handle *trans,
+ 
+ 	ret = btrfs_free_chunk(trans, root, chunk_objectid, chunk_offset);
+ 	if (ret) {
+-		btrfs_abort_transaction(trans, root, ret);
++		btrfs_abort_transaction(trans, ret);
+ 		goto out;
+ 	}
+ 
+@@ -2838,14 +2838,14 @@ int btrfs_remove_chunk(struct btrfs_trans_handle *trans,
+ 	if (map->type & BTRFS_BLOCK_GROUP_SYSTEM) {
+ 		ret = btrfs_del_sys_chunk(root, chunk_objectid, chunk_offset);
+ 		if (ret) {
+-			btrfs_abort_transaction(trans, root, ret);
++			btrfs_abort_transaction(trans, ret);
+ 			goto out;
+ 		}
+ 	}
+ 
+ 	ret = btrfs_remove_block_group(trans, extent_root, chunk_offset, em);
+ 	if (ret) {
+-		btrfs_abort_transaction(trans, extent_root, ret);
++		btrfs_abort_transaction(trans, ret);
+ 		goto out;
+ 	}
+ 
+@@ -4240,7 +4240,7 @@ int btrfs_create_uuid_tree(struct btrfs_fs_info *fs_info)
+ 				      BTRFS_UUID_TREE_OBJECTID);
+ 	if (IS_ERR(uuid_root)) {
+ 		ret = PTR_ERR(uuid_root);
+-		btrfs_abort_transaction(trans, tree_root, ret);
++		btrfs_abort_transaction(trans, ret);
+ 		btrfs_end_transaction(trans, tree_root);
+ 		return ret;
+ 	}
 -- 
 2.7.1
 

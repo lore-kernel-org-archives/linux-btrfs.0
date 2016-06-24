@@ -1,16 +1,16 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:37859 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:37865 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751483AbcFXWPc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	id S1751485AbcFXWPc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
 	Fri, 24 Jun 2016 18:15:32 -0400
 Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id 6984EADE5
+	by mx2.suse.de (Postfix) with ESMTP id 8E61AADE9
 	for <linux-btrfs@vger.kernel.org>; Fri, 24 Jun 2016 22:15:28 +0000 (UTC)
 From: jeffm@suse.com
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 25/31] btrfs: root->fs_info cleanup, lock/unlock_chunks
-Date: Fri, 24 Jun 2016 18:15:18 -0400
-Message-Id: <1466806524-27508-26-git-send-email-jeffm@suse.com>
+Subject: [PATCH 30/31] btrfs: root->fs_info cleanup, btrfs_commit_transaction already has root
+Date: Fri, 24 Jun 2016 18:15:23 -0400
+Message-Id: <1466806524-27508-31-git-send-email-jeffm@suse.com>
 In-Reply-To: <1466806524-27508-1-git-send-email-jeffm@suse.com>
 References: <1466806524-27508-1-git-send-email-jeffm@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -18,394 +18,531 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Jeff Mahoney <jeffm@suse.com>
 
+btrfs_commit_transaction is always called using the root that was used
+to create the transaction handle.  Passing it separately is unnecessary.
+
 Signed-off-by: Jeff Mahoney <jeffm@suse.com>
 ---
- fs/btrfs/disk-io.c          |  4 +--
- fs/btrfs/extent-tree.c      |  8 +++---
- fs/btrfs/free-space-cache.c |  4 +--
- fs/btrfs/volumes.c          | 70 ++++++++++++++++++++++-----------------------
- fs/btrfs/volumes.h          |  8 +++---
- 5 files changed, 47 insertions(+), 47 deletions(-)
+ fs/btrfs/dev-replace.c     | 10 +++++-----
+ fs/btrfs/disk-io.c         |  6 +++---
+ fs/btrfs/extent-tree.c     |  4 ++--
+ fs/btrfs/file.c            |  2 +-
+ fs/btrfs/free-space-tree.c |  4 ++--
+ fs/btrfs/inode.c           |  4 ++--
+ fs/btrfs/ioctl.c           | 23 +++++++++++------------
+ fs/btrfs/qgroup.c          |  4 ++--
+ fs/btrfs/relocation.c      | 10 +++++-----
+ fs/btrfs/scrub.c           |  3 +--
+ fs/btrfs/send.c            |  2 +-
+ fs/btrfs/super.c           |  4 ++--
+ fs/btrfs/transaction.c     | 10 +++++-----
+ fs/btrfs/transaction.h     |  3 +--
+ fs/btrfs/tree-log.c        |  2 +-
+ fs/btrfs/volumes.c         | 14 +++++++-------
+ 16 files changed, 51 insertions(+), 54 deletions(-)
 
+diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
+index 3eb0017..57dee36 100644
+--- a/fs/btrfs/dev-replace.c
++++ b/fs/btrfs/dev-replace.c
+@@ -333,7 +333,7 @@ int btrfs_dev_replace_start(struct btrfs_fs_info *fs_info, char *tgtdev_name,
+ 	 */
+ 	trans = btrfs_attach_transaction(root);
+ 	if (!IS_ERR(trans)) {
+-		ret = btrfs_commit_transaction(trans, root);
++		ret = btrfs_commit_transaction(trans);
+ 		if (ret)
+ 			return ret;
+ 	} else if (PTR_ERR(trans) != -ENOENT) {
+@@ -395,7 +395,7 @@ int btrfs_dev_replace_start(struct btrfs_fs_info *fs_info, char *tgtdev_name,
+ 		goto leave;
+ 	}
+ 
+-	ret = btrfs_commit_transaction(trans, root);
++	ret = btrfs_commit_transaction(trans);
+ 	WARN_ON(ret);
+ 
+ 	/* the disk copy procedure reuses the scrub code */
+@@ -511,7 +511,7 @@ static int btrfs_dev_replace_finishing(struct btrfs_fs_info *fs_info,
+ 		mutex_unlock(&dev_replace->lock_finishing_cancel_unmount);
+ 		return PTR_ERR(trans);
+ 	}
+-	ret = btrfs_commit_transaction(trans, root);
++	ret = btrfs_commit_transaction(trans);
+ 	WARN_ON(ret);
+ 
+ 	mutex_lock(&uuid_mutex);
+@@ -601,7 +601,7 @@ static int btrfs_dev_replace_finishing(struct btrfs_fs_info *fs_info,
+ 	/* write back the superblocks */
+ 	trans = btrfs_start_transaction(root, 0);
+ 	if (!IS_ERR(trans))
+-		btrfs_commit_transaction(trans, root);
++		btrfs_commit_transaction(trans);
+ 
+ 	mutex_unlock(&dev_replace->lock_finishing_cancel_unmount);
+ 
+@@ -716,7 +716,7 @@ static u64 __btrfs_dev_replace_cancel(struct btrfs_fs_info *fs_info)
+ 		mutex_unlock(&dev_replace->lock_finishing_cancel_unmount);
+ 		return PTR_ERR(trans);
+ 	}
+-	ret = btrfs_commit_transaction(trans, root);
++	ret = btrfs_commit_transaction(trans);
+ 	WARN_ON(ret);
+ 	if (tgt_device)
+ 		btrfs_destroy_dev_replace_tgtdev(fs_info, tgt_device);
 diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index b7891c4..18b41d7 100644
+index f60be47..153e03e 100644
 --- a/fs/btrfs/disk-io.c
 +++ b/fs/btrfs/disk-io.c
-@@ -3949,7 +3949,7 @@ void close_ctree(struct btrfs_fs_info *fs_info)
- 	__btrfs_free_block_rsv(root->orphan_block_rsv);
- 	root->orphan_block_rsv = NULL;
+@@ -1874,7 +1874,7 @@ sleep:
+ 	} else {
+ 		int ret;
  
--	lock_chunks(root);
-+	lock_chunks(root->fs_info);
- 	while (!list_empty(&fs_info->pinned_chunks)) {
- 		struct extent_map *em;
- 
-@@ -3958,7 +3958,7 @@ void close_ctree(struct btrfs_fs_info *fs_info)
- 		list_del_init(&em->list);
- 		free_extent_map(em);
- 	}
--	unlock_chunks(root);
-+	unlock_chunks(root->fs_info);
+-		ret = btrfs_commit_transaction(trans, root);
++		ret = btrfs_commit_transaction(trans);
+ 		if (ret)
+ 			btrfs_err(fs_info,
+ 				  "cleaner open transaction commit returned %d",
+@@ -1926,7 +1926,7 @@ static int transaction_kthread(void *arg)
+ 			goto sleep;
+ 		}
+ 		if (transid == trans->transid) {
+-			btrfs_commit_transaction(trans, root);
++			btrfs_commit_transaction(trans);
+ 		} else {
+ 			btrfs_end_transaction(trans, root);
+ 		}
+@@ -3848,7 +3848,7 @@ int btrfs_commit_super(struct btrfs_fs_info *fs_info)
+ 	trans = btrfs_join_transaction(root);
+ 	if (IS_ERR(trans))
+ 		return PTR_ERR(trans);
+-	return btrfs_commit_transaction(trans, root);
++	return btrfs_commit_transaction(trans);
  }
  
- int btrfs_buffer_uptodate(struct extent_buffer *buf, u64 parent_transid,
+ void close_ctree(struct btrfs_fs_info *fs_info)
 diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 088182c..14f4d05 100644
+index 778ef17..31478eb 100644
 --- a/fs/btrfs/extent-tree.c
 +++ b/fs/btrfs/extent-tree.c
-@@ -9418,9 +9418,9 @@ again:
- out:
- 	if (cache->flags & BTRFS_BLOCK_GROUP_SYSTEM) {
- 		alloc_flags = update_block_group_flags(root, cache->flags);
--		lock_chunks(root->fs_info->chunk_root);
-+		lock_chunks(root->fs_info);
- 		check_system_chunk(trans, root, alloc_flags);
--		unlock_chunks(root->fs_info->chunk_root);
-+		unlock_chunks(root->fs_info);
+@@ -4204,7 +4204,7 @@ commit_trans:
+ 			    test_bit(BTRFS_TRANS_HAVE_FREE_BGS,
+ 				     &trans->transaction->flags) ||
+ 			    need_commit > 0) {
+-				ret = btrfs_commit_transaction(trans, root);
++				ret = btrfs_commit_transaction(trans);
+ 				if (ret)
+ 					return ret;
+ 				/*
+@@ -4785,7 +4785,7 @@ commit:
+ 	if (IS_ERR(trans))
+ 		return -ENOSPC;
+ 
+-	return btrfs_commit_transaction(trans, root);
++	return btrfs_commit_transaction(trans);
+ }
+ 
+ enum flush_state {
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index 51f77a2..5fa030f 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -2129,7 +2129,7 @@ int btrfs_sync_file(struct file *file, loff_t start, loff_t end, int datasync)
+ 				goto out;
+ 			}
+ 		}
+-		ret = btrfs_commit_transaction(trans, root);
++		ret = btrfs_commit_transaction(trans);
+ 	} else {
+ 		ret = btrfs_end_transaction(trans, root);
  	}
- 	mutex_unlock(&root->fs_info->ro_block_group_mutex);
+diff --git a/fs/btrfs/free-space-tree.c b/fs/btrfs/free-space-tree.c
+index 58daa0e..671865b 100644
+--- a/fs/btrfs/free-space-tree.c
++++ b/fs/btrfs/free-space-tree.c
+@@ -1187,7 +1187,7 @@ int btrfs_create_free_space_tree(struct btrfs_fs_info *fs_info)
+ 	btrfs_set_fs_compat_ro(fs_info, FREE_SPACE_TREE);
+ 	fs_info->creating_free_space_tree = 0;
  
-@@ -10433,7 +10433,7 @@ int btrfs_remove_block_group(struct btrfs_trans_handle *trans,
- 
- 	memcpy(&key, &block_group->key, sizeof(key));
- 
--	lock_chunks(root);
-+	lock_chunks(root->fs_info);
- 	if (!list_empty(&em->list)) {
- 		/* We're in the transaction->pending_chunks list. */
- 		free_extent_map(em);
-@@ -10501,7 +10501,7 @@ int btrfs_remove_block_group(struct btrfs_trans_handle *trans,
- 		free_extent_map(em);
- 	}
- 
--	unlock_chunks(root);
-+	unlock_chunks(root->fs_info);
- 
- 	ret = remove_block_group_free_space(trans, root->fs_info, block_group);
+-	ret = btrfs_commit_transaction(trans, tree_root);
++	ret = btrfs_commit_transaction(trans);
  	if (ret)
-diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
-index 02803e9..b194c09 100644
---- a/fs/btrfs/free-space-cache.c
-+++ b/fs/btrfs/free-space-cache.c
-@@ -3327,7 +3327,7 @@ void btrfs_put_block_group_trimming(struct btrfs_block_group_cache *block_group)
- 	spin_unlock(&block_group->lock);
+ 		return ret;
  
- 	if (cleanup) {
--		lock_chunks(block_group->fs_info->chunk_root);
-+		lock_chunks(block_group->fs_info);
- 		em_tree = &block_group->fs_info->mapping_tree.map_tree;
- 		write_lock(&em_tree->lock);
- 		em = lookup_extent_mapping(em_tree, block_group->key.objectid,
-@@ -3339,7 +3339,7 @@ void btrfs_put_block_group_trimming(struct btrfs_block_group_cache *block_group)
+@@ -1275,7 +1275,7 @@ int btrfs_clear_free_space_tree(struct btrfs_fs_info *fs_info)
+ 	free_extent_buffer(free_space_root->commit_root);
+ 	kfree(free_space_root);
+ 
+-	ret = btrfs_commit_transaction(trans, tree_root);
++	ret = btrfs_commit_transaction(trans);
+ 	if (ret)
+ 		return ret;
+ 
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 37ef685..4600e93 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -5296,7 +5296,7 @@ void btrfs_evict_inode(struct inode *inode)
+ 		 * again.
  		 */
- 		remove_extent_mapping(em_tree, em);
- 		write_unlock(&em_tree->lock);
--		unlock_chunks(block_group->fs_info->chunk_root);
-+		unlock_chunks(block_group->fs_info);
- 
- 		/* once for us and once for the tree */
- 		free_extent_map(em);
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 26e8687..e90246d 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -1833,10 +1833,10 @@ int btrfs_rm_device(struct btrfs_root *root, char *device_path, u64 devid)
- 	}
- 
- 	if (device->writeable) {
--		lock_chunks(root);
-+		lock_chunks(root->fs_info);
- 		list_del_init(&device->dev_alloc_list);
- 		device->fs_devices->rw_devices--;
--		unlock_chunks(root);
-+		unlock_chunks(root->fs_info);
- 		dev_name = kstrdup(device->name->str, GFP_KERNEL);
- 		if (!dev_name) {
- 			ret = -ENOMEM;
-@@ -1938,11 +1938,11 @@ out:
- 
- error_undo:
- 	if (device->writeable) {
--		lock_chunks(root);
-+		lock_chunks(root->fs_info);
- 		list_add(&device->dev_alloc_list,
- 			 &root->fs_info->fs_devices->alloc_list);
- 		device->fs_devices->rw_devices++;
--		unlock_chunks(root);
-+		unlock_chunks(root->fs_info);
- 	}
- 	goto out;
- }
-@@ -2164,9 +2164,9 @@ static int btrfs_prepare_sprout(struct btrfs_root *root)
- 	list_for_each_entry(device, &seed_devices->devices, dev_list)
- 		device->fs_devices = seed_devices;
- 
--	lock_chunks(root);
-+	lock_chunks(root->fs_info);
- 	list_splice_init(&fs_devices->alloc_list, &seed_devices->alloc_list);
--	unlock_chunks(root);
-+	unlock_chunks(root->fs_info);
- 
- 	fs_devices->seeding = 0;
- 	fs_devices->num_devices = 0;
-@@ -2356,7 +2356,7 @@ int btrfs_init_new_device(struct btrfs_fs_info *fs_info, char *device_path)
- 	device->fs_devices = root->fs_info->fs_devices;
- 
- 	mutex_lock(&root->fs_info->fs_devices->device_list_mutex);
--	lock_chunks(root);
-+	lock_chunks(root->fs_info);
- 	list_add_rcu(&device->dev_list, &root->fs_info->fs_devices->devices);
- 	list_add(&device->dev_alloc_list,
- 		 &root->fs_info->fs_devices->alloc_list);
-@@ -2390,13 +2390,13 @@ int btrfs_init_new_device(struct btrfs_fs_info *fs_info, char *device_path)
- 	 */
- 	btrfs_clear_space_info_full(root->fs_info);
- 
--	unlock_chunks(root);
-+	unlock_chunks(root->fs_info);
- 	mutex_unlock(&root->fs_info->fs_devices->device_list_mutex);
- 
- 	if (seeding_dev) {
--		lock_chunks(root);
-+		lock_chunks(root->fs_info);
- 		ret = init_first_rw_device(trans, root, device);
--		unlock_chunks(root);
-+		unlock_chunks(root->fs_info);
  		if (ret) {
- 			btrfs_abort_transaction(trans, ret);
- 			goto error_trans;
-@@ -2641,13 +2641,13 @@ int btrfs_grow_device(struct btrfs_trans_handle *trans,
- 	if (!device->writeable)
- 		return -EACCES;
+-			ret = btrfs_commit_transaction(trans, root);
++			ret = btrfs_commit_transaction(trans);
+ 			if (ret) {
+ 				btrfs_orphan_del(NULL, inode);
+ 				btrfs_free_block_rsv(fs_info, rsv);
+@@ -5972,7 +5972,7 @@ int btrfs_write_inode(struct inode *inode, struct writeback_control *wbc)
+ 			trans = btrfs_join_transaction(root);
+ 		if (IS_ERR(trans))
+ 			return PTR_ERR(trans);
+-		ret = btrfs_commit_transaction(trans, root);
++		ret = btrfs_commit_transaction(trans);
+ 	}
+ 	return ret;
+ }
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 50fc151..04e8061 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -623,9 +623,9 @@ fail:
+ 		*async_transid = trans->transid;
+ 		err = btrfs_commit_transaction_async(trans, root, 1);
+ 		if (err)
+-			err = btrfs_commit_transaction(trans, root);
++			err = btrfs_commit_transaction(trans);
+ 	} else {
+-		err = btrfs_commit_transaction(trans, root);
++		err = btrfs_commit_transaction(trans);
+ 	}
+ 	if (err && !ret)
+ 		ret = err;
+@@ -732,12 +732,11 @@ static int create_snapshot(struct btrfs_root *root, struct inode *dir,
+ 	if (async_transid) {
+ 		*async_transid = trans->transid;
+ 		ret = btrfs_commit_transaction_async(trans,
+-				     fs_info->extent_root, 1);
++						     fs_info->extent_root, 1);
+ 		if (ret)
+-			ret = btrfs_commit_transaction(trans, root);
++			ret = btrfs_commit_transaction(trans);
+ 	} else {
+-		ret = btrfs_commit_transaction(trans,
+-					       fs_info->extent_root);
++		ret = btrfs_commit_transaction(trans);
+ 	}
+ 	if (ret)
+ 		goto fail;
+@@ -1619,7 +1618,7 @@ static noinline int btrfs_ioctl_resize(struct file *file,
+ 			goto out_free;
+ 		}
+ 		ret = btrfs_grow_device(trans, device, new_size);
+-		btrfs_commit_transaction(trans, root);
++		btrfs_commit_transaction(trans);
+ 	} else if (new_size < old_size) {
+ 		ret = btrfs_shrink_device(device, new_size);
+ 	} /* equal, nothing need to do */
+@@ -1868,7 +1867,7 @@ static noinline int btrfs_ioctl_subvol_setflags(struct file *file,
+ 	ret = btrfs_update_root(trans, fs_info->tree_root,
+ 				&root->root_key, &root->root_item);
  
--	lock_chunks(device->fs_info->dev_root);
-+	lock_chunks(device->fs_info);
- 	old_total = btrfs_super_total_bytes(super_copy);
- 	diff = new_size - device->total_bytes;
- 
- 	if (new_size <= device->total_bytes ||
- 	    device->is_tgtdev_for_dev_replace) {
--		unlock_chunks(device->fs_info->dev_root);
-+		unlock_chunks(device->fs_info);
- 		return -EINVAL;
+-	btrfs_commit_transaction(trans, root);
++	btrfs_commit_transaction(trans);
+ out_reset:
+ 	if (ret)
+ 		btrfs_set_root_flags(&root->root_item, root_flags);
+@@ -4875,7 +4874,7 @@ static long btrfs_ioctl_quota_ctl(struct file *file, void __user *arg)
+ 		break;
  	}
  
-@@ -2662,7 +2662,7 @@ int btrfs_grow_device(struct btrfs_trans_handle *trans,
- 	if (list_empty(&device->resized_list))
- 		list_add_tail(&device->resized_list,
- 			      &fs_devices->resized_devices);
--	unlock_chunks(device->fs_info->dev_root);
-+	unlock_chunks(device->fs_info);
- 
- 	return btrfs_update_device(trans, device);
- }
-@@ -2718,7 +2718,7 @@ static int btrfs_del_sys_chunk(struct btrfs_fs_info *fs_info,
- 	u32 cur;
- 	struct btrfs_key key;
- 
--	lock_chunks(root);
-+	lock_chunks(root->fs_info);
- 	array_size = btrfs_super_sys_array_size(super_copy);
- 
- 	ptr = super_copy->sys_chunk_array;
-@@ -2748,7 +2748,7 @@ static int btrfs_del_sys_chunk(struct btrfs_fs_info *fs_info,
- 			cur += len;
+-	err = btrfs_commit_transaction(trans, fs_info->tree_root);
++	err = btrfs_commit_transaction(trans);
+ 	if (err && !ret)
+ 		ret = err;
+ out:
+@@ -5189,7 +5188,7 @@ static long _btrfs_ioctl_set_received_subvol(struct file *file,
+ 			goto out;
  		}
  	}
--	unlock_chunks(root);
-+	unlock_chunks(root->fs_info);
+-	ret = btrfs_commit_transaction(trans, root);
++	ret = btrfs_commit_transaction(trans);
+ 	if (ret < 0) {
+ 		btrfs_abort_transaction(trans, ret);
+ 		goto out;
+@@ -5343,7 +5342,7 @@ static int btrfs_ioctl_set_fslabel(struct file *file, void __user *arg)
+ 	spin_lock(&fs_info->super_lock);
+ 	strcpy(super_block->label, label);
+ 	spin_unlock(&fs_info->super_lock);
+-	ret = btrfs_commit_transaction(trans, root);
++	ret = btrfs_commit_transaction(trans);
+ 
+ out_unlock:
+ 	mnt_drop_write_file(file);
+@@ -5515,7 +5514,7 @@ static int btrfs_ioctl_set_features(struct file *file, void __user *arg)
+ 	btrfs_set_super_incompat_flags(super_block, newflags);
+ 	spin_unlock(&fs_info->super_lock);
+ 
+-	ret = btrfs_commit_transaction(trans, root);
++	ret = btrfs_commit_transaction(trans);
+ out_drop_write:
+ 	mnt_drop_write_file(file);
+ 
+diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
+index 6d45fb4..b00c2ea 100644
+--- a/fs/btrfs/qgroup.c
++++ b/fs/btrfs/qgroup.c
+@@ -2319,7 +2319,7 @@ static void btrfs_qgroup_rescan_worker(struct btrfs_work *work)
+ 			err = qgroup_rescan_leaf(fs_info, path, trans);
+ 		}
+ 		if (err > 0)
+-			btrfs_commit_transaction(trans, fs_info->fs_root);
++			btrfs_commit_transaction(trans);
+ 		else
+ 			btrfs_end_transaction(trans, fs_info->fs_root);
+ 	}
+@@ -2472,7 +2472,7 @@ btrfs_qgroup_rescan(struct btrfs_fs_info *fs_info)
+ 		fs_info->qgroup_flags &= ~BTRFS_QGROUP_STATUS_FLAG_RESCAN;
+ 		return PTR_ERR(trans);
+ 	}
+-	ret = btrfs_commit_transaction(trans, fs_info->fs_root);
++	ret = btrfs_commit_transaction(trans);
+ 	if (ret) {
+ 		fs_info->qgroup_flags &= ~BTRFS_QGROUP_STATUS_FLAG_RESCAN;
+ 		return ret;
+diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
+index a2ca2f0..d64a805 100644
+--- a/fs/btrfs/relocation.c
++++ b/fs/btrfs/relocation.c
+@@ -2342,7 +2342,7 @@ again:
+ 	list_splice(&reloc_roots, &rc->reloc_roots);
+ 
+ 	if (!err)
+-		btrfs_commit_transaction(trans, rc->extent_root);
++		btrfs_commit_transaction(trans);
+ 	else
+ 		btrfs_end_transaction(trans, rc->extent_root);
+ 	return err;
+@@ -3917,7 +3917,7 @@ int prepare_to_relocate(struct reloc_control *rc)
+ 		 */
+ 		return PTR_ERR(trans);
+ 	}
+-	btrfs_commit_transaction(trans, rc->extent_root);
++	btrfs_commit_transaction(trans);
+ 	return 0;
+ }
+ 
+@@ -4111,7 +4111,7 @@ restart:
+ 	if (IS_ERR(trans))
+ 		err = PTR_ERR(trans);
+ 	else
+-		btrfs_commit_transaction(trans, rc->extent_root);
++		btrfs_commit_transaction(trans);
+ out_free:
+ 	btrfs_free_block_rsv(fs_info, rc->block_rsv);
+ 	btrfs_free_path(path);
+@@ -4465,7 +4465,7 @@ int btrfs_recover_relocation(struct btrfs_root *root)
+ 		fs_root->reloc_root = reloc_root;
+ 	}
+ 
+-	err = btrfs_commit_transaction(trans, rc->extent_root);
++	err = btrfs_commit_transaction(trans);
+ 	if (err)
+ 		goto out_free;
+ 
+@@ -4477,7 +4477,7 @@ int btrfs_recover_relocation(struct btrfs_root *root)
+ 	if (IS_ERR(trans))
+ 		err = PTR_ERR(trans);
+ 	else
+-		err = btrfs_commit_transaction(trans, rc->extent_root);
++		err = btrfs_commit_transaction(trans);
+ out_free:
+ 	kfree(rc);
+ out:
+diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
+index 5b0fcc9..c98b91b 100644
+--- a/fs/btrfs/scrub.c
++++ b/fs/btrfs/scrub.c
+@@ -3612,8 +3612,7 @@ int scrub_enumerate_chunks(struct scrub_ctx *sctx,
+ 				if (IS_ERR(trans))
+ 					ret = PTR_ERR(trans);
+ 				else
+-					ret = btrfs_commit_transaction(trans,
+-								       root);
++					ret = btrfs_commit_transaction(trans);
+ 				if (ret) {
+ 					scrub_pause_off(fs_info);
+ 					btrfs_put_block_group(cache);
+diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
+index 5f4f853..cd0a052 100644
+--- a/fs/btrfs/send.c
++++ b/fs/btrfs/send.c
+@@ -5911,7 +5911,7 @@ commit_trans:
+ 		goto again;
+ 	}
+ 
+-	return btrfs_commit_transaction(trans, sctx->send_root);
++	return btrfs_commit_transaction(trans);
+ }
+ 
+ static void btrfs_root_dec_send_in_progress(struct btrfs_root* root)
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index 3a160e1..d407826 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -1188,7 +1188,7 @@ int btrfs_sync_fs(struct super_block *sb, int wait)
+ 		if (IS_ERR(trans))
+ 			return PTR_ERR(trans);
+ 	}
+-	return btrfs_commit_transaction(trans, root);
++	return btrfs_commit_transaction(trans);
+ }
+ 
+ static int btrfs_show_options(struct seq_file *seq, struct dentry *dentry)
+@@ -2228,7 +2228,7 @@ static int btrfs_freeze(struct super_block *sb)
+ 			return 0;
+ 		return PTR_ERR(trans);
+ 	}
+-	return btrfs_commit_transaction(trans, root);
++	return btrfs_commit_transaction(trans);
+ }
+ 
+ static int btrfs_show_devname(struct seq_file *m, struct dentry *root)
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index 57d3187..a546c08 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -580,7 +580,7 @@ again:
+ 	if (cur_trans->state >= TRANS_STATE_BLOCKED &&
+ 	    may_wait_transaction(fs_info, type)) {
+ 		current->journal_info = h;
+-		btrfs_commit_transaction(h, root);
++		btrfs_commit_transaction(h);
+ 		goto again;
+ 	}
+ 
+@@ -877,7 +877,7 @@ static int __btrfs_end_transaction(struct btrfs_trans_handle *trans,
+ 
+ 	if (lock && ACCESS_ONCE(cur_trans->state) == TRANS_STATE_BLOCKED) {
+ 		if (throttle)
+-			return btrfs_commit_transaction(trans, root);
++			return btrfs_commit_transaction(trans);
+ 		else
+ 			wake_up_process(info->transaction_kthread);
+ 	}
+@@ -1798,7 +1798,7 @@ static void do_async_commit(struct work_struct *work)
+ 
+ 	current->journal_info = ac->newtrans;
+ 
+-	btrfs_commit_transaction(ac->newtrans, ac->root);
++	btrfs_commit_transaction(ac->newtrans);
+ 	kfree(ac);
+ }
+ 
+@@ -1924,9 +1924,9 @@ btrfs_wait_pending_ordered(struct btrfs_transaction *cur_trans)
+ 		   atomic_read(&cur_trans->pending_ordered) == 0);
+ }
+ 
+-int btrfs_commit_transaction(struct btrfs_trans_handle *trans,
+-			     struct btrfs_root *root)
++int btrfs_commit_transaction(struct btrfs_trans_handle *trans)
+ {
++	struct btrfs_root *root = trans->root;
+ 	struct btrfs_fs_info *fs_info = root->fs_info;
+ 	struct btrfs_transaction *cur_trans = trans->transaction;
+ 	struct btrfs_transaction *prev_trans = NULL;
+diff --git a/fs/btrfs/transaction.h b/fs/btrfs/transaction.h
+index 8bcf529..7d3b358 100644
+--- a/fs/btrfs/transaction.h
++++ b/fs/btrfs/transaction.h
+@@ -206,8 +206,7 @@ int btrfs_wait_for_commit(struct btrfs_fs_info *fs_info, u64 transid);
+ void btrfs_add_dead_root(struct btrfs_root *root);
+ int btrfs_defrag_root(struct btrfs_root *root);
+ int btrfs_clean_one_deleted_snapshot(struct btrfs_root *root);
+-int btrfs_commit_transaction(struct btrfs_trans_handle *trans,
+-			     struct btrfs_root *root);
++int btrfs_commit_transaction(struct btrfs_trans_handle *trans);
+ int btrfs_commit_transaction_async(struct btrfs_trans_handle *trans,
+ 				   struct btrfs_root *root,
+ 				   int wait_for_unblock);
+diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+index 945f02c..e714eb5 100644
+--- a/fs/btrfs/tree-log.c
++++ b/fs/btrfs/tree-log.c
+@@ -5614,7 +5614,7 @@ again:
+ 	btrfs_free_path(path);
+ 
+ 	/* step 4: commit the transaction, which also unpins the blocks */
+-	ret = btrfs_commit_transaction(trans, fs_info->tree_root);
++	ret = btrfs_commit_transaction(trans);
+ 	if (ret)
+ 		return ret;
+ 
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index fadb37f..5953948 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -1717,7 +1717,7 @@ static int btrfs_rm_dev_item(struct btrfs_fs_info *fs_info,
+ 		goto out;
+ out:
+ 	btrfs_free_path(path);
+-	btrfs_commit_transaction(trans, root);
++	btrfs_commit_transaction(trans);
  	return ret;
  }
  
-@@ -2785,9 +2785,9 @@ int btrfs_remove_chunk(struct btrfs_trans_handle *trans,
- 		return -EINVAL;
- 	}
- 	map = em->map_lookup;
--	lock_chunks(root->fs_info->chunk_root);
-+	lock_chunks(fs_info);
- 	check_system_chunk(trans, extent_root, map->type);
--	unlock_chunks(root->fs_info->chunk_root);
-+	unlock_chunks(fs_info);
+@@ -2428,7 +2428,7 @@ int btrfs_init_new_device(struct btrfs_fs_info *fs_info, char *device_path)
  
- 	/*
- 	 * Take the device list mutex to prevent races with the final phase of
-@@ -2807,14 +2807,14 @@ int btrfs_remove_chunk(struct btrfs_trans_handle *trans,
+ 	fs_info->num_tolerated_disk_barrier_failures =
+ 		btrfs_calc_num_tolerated_disk_barrier_failures(fs_info);
+-	ret = btrfs_commit_transaction(trans, root);
++	ret = btrfs_commit_transaction(trans);
+ 
+ 	if (seeding_dev) {
+ 		mutex_unlock(&uuid_mutex);
+@@ -2449,7 +2449,7 @@ int btrfs_init_new_device(struct btrfs_fs_info *fs_info, char *device_path)
+ 				return 0;
+ 			return PTR_ERR(trans);
  		}
- 
- 		if (device->bytes_used > 0) {
--			lock_chunks(root);
-+			lock_chunks(root->fs_info);
- 			btrfs_device_set_bytes_used(device,
- 					device->bytes_used - dev_extent_len);
- 			spin_lock(&root->fs_info->free_chunk_lock);
- 			root->fs_info->free_chunk_space += dev_extent_len;
- 			spin_unlock(&root->fs_info->free_chunk_lock);
- 			btrfs_clear_space_info_full(root->fs_info);
--			unlock_chunks(root);
-+			unlock_chunks(root->fs_info);
- 		}
- 
- 		if (map->stripes[i].dev) {
-@@ -4315,7 +4315,7 @@ int btrfs_shrink_device(struct btrfs_device *device, u64 new_size)
- 
- 	path->reada = READA_FORWARD;
- 
--	lock_chunks(root);
-+	lock_chunks(root->fs_info);
- 
- 	btrfs_device_set_total_bytes(device, new_size);
- 	if (device->writeable) {
-@@ -4324,7 +4324,7 @@ int btrfs_shrink_device(struct btrfs_device *device, u64 new_size)
- 		root->fs_info->free_chunk_space -= diff;
- 		spin_unlock(&root->fs_info->free_chunk_lock);
- 	}
--	unlock_chunks(root);
-+	unlock_chunks(root->fs_info);
- 
- again:
- 	key.objectid = device->devid;
-@@ -4396,7 +4396,7 @@ again:
- 		goto done;
+-		ret = btrfs_commit_transaction(trans, root);
++		ret = btrfs_commit_transaction(trans);
  	}
  
--	lock_chunks(root);
-+	lock_chunks(root->fs_info);
+ 	/* Update ctime/mtime for libblkid */
+@@ -3020,7 +3020,7 @@ static int insert_balance_item(struct btrfs_fs_info *fs_info,
+ 	btrfs_mark_buffer_dirty(leaf);
+ out:
+ 	btrfs_free_path(path);
+-	err = btrfs_commit_transaction(trans, root);
++	err = btrfs_commit_transaction(trans);
+ 	if (err && !ret)
+ 		ret = err;
+ 	return ret;
+@@ -3059,7 +3059,7 @@ static int del_balance_item(struct btrfs_fs_info *fs_info)
+ 	ret = btrfs_del_item(trans, root, path);
+ out:
+ 	btrfs_free_path(path);
+-	err = btrfs_commit_transaction(trans, root);
++	err = btrfs_commit_transaction(trans);
+ 	if (err && !ret)
+ 		ret = err;
+ 	return ret;
+@@ -4239,7 +4239,7 @@ int btrfs_create_uuid_tree(struct btrfs_fs_info *fs_info)
  
- 	/*
- 	 * We checked in the above loop all device extents that were already in
-@@ -4416,7 +4416,7 @@ again:
+ 	fs_info->uuid_root = uuid_root;
  
- 		if (contains_pending_extent(trans->transaction, device,
- 					    &start, len)) {
--			unlock_chunks(root);
-+			unlock_chunks(root->fs_info);
+-	ret = btrfs_commit_transaction(trans, tree_root);
++	ret = btrfs_commit_transaction(trans);
+ 	if (ret)
+ 		return ret;
+ 
+@@ -4411,7 +4411,7 @@ again:
  			checked_pending_chunks = true;
  			failed = 0;
  			retried = false;
-@@ -4434,7 +4434,7 @@ again:
- 
- 	WARN_ON(diff > old_total);
- 	btrfs_set_super_total_bytes(super_copy, old_total - diff);
--	unlock_chunks(root);
-+	unlock_chunks(root->fs_info);
- 
- 	/* Now btrfs_update_device() will change the on-disk size. */
- 	ret = btrfs_update_device(trans, device);
-@@ -4442,14 +4442,14 @@ again:
- done:
- 	btrfs_free_path(path);
- 	if (ret) {
--		lock_chunks(root);
-+		lock_chunks(root->fs_info);
- 		btrfs_device_set_total_bytes(device, old_size);
- 		if (device->writeable)
- 			device->fs_devices->total_rw_bytes += diff;
- 		spin_lock(&root->fs_info->free_chunk_lock);
- 		root->fs_info->free_chunk_space += diff;
- 		spin_unlock(&root->fs_info->free_chunk_lock);
--		unlock_chunks(root);
-+		unlock_chunks(root->fs_info);
- 	}
- 	return ret;
- }
-@@ -4463,11 +4463,11 @@ static int btrfs_add_system_chunk(struct btrfs_root *root,
- 	u32 array_size;
- 	u8 *ptr;
- 
--	lock_chunks(root);
-+	lock_chunks(root->fs_info);
- 	array_size = btrfs_super_sys_array_size(super_copy);
- 	if (array_size + item_size + sizeof(disk_key)
- 			> BTRFS_SYSTEM_CHUNK_ARRAY_SIZE) {
--		unlock_chunks(root);
-+		unlock_chunks(root->fs_info);
- 		return -EFBIG;
- 	}
- 
-@@ -4478,7 +4478,7 @@ static int btrfs_add_system_chunk(struct btrfs_root *root,
- 	memcpy(ptr, chunk, item_size);
- 	item_size += sizeof(disk_key);
- 	btrfs_set_super_sys_array_size(super_copy, array_size + item_size);
--	unlock_chunks(root);
-+	unlock_chunks(root->fs_info);
- 
- 	return 0;
- }
-@@ -6724,7 +6724,7 @@ int btrfs_read_chunk_tree(struct btrfs_fs_info *fs_info)
- 		return -ENOMEM;
- 
- 	mutex_lock(&uuid_mutex);
--	lock_chunks(root);
-+	lock_chunks(root->fs_info);
- 
- 	/*
- 	 * Read all device items, and then all the chunk items. All
-@@ -6791,7 +6791,7 @@ int btrfs_read_chunk_tree(struct btrfs_fs_info *fs_info)
- 	}
- 	ret = 0;
- error:
--	unlock_chunks(root);
-+	unlock_chunks(root->fs_info);
- 	mutex_unlock(&uuid_mutex);
- 
- 	btrfs_free_path(path);
-@@ -7090,13 +7090,13 @@ void btrfs_update_commit_device_size(struct btrfs_fs_info *fs_info)
- 		return;
- 
- 	mutex_lock(&fs_devices->device_list_mutex);
--	lock_chunks(fs_info->dev_root);
-+	lock_chunks(fs_info);
- 	list_for_each_entry_safe(curr, next, &fs_devices->resized_devices,
- 				 resized_list) {
- 		list_del_init(&curr->resized_list);
- 		curr->commit_total_bytes = curr->disk_total_bytes;
- 	}
--	unlock_chunks(fs_info->dev_root);
-+	unlock_chunks(fs_info);
- 	mutex_unlock(&fs_devices->device_list_mutex);
- }
- 
-@@ -7113,7 +7113,7 @@ void btrfs_update_commit_device_bytes_used(struct btrfs_root *root,
- 		return;
- 
- 	/* In order to kick the device replace finish process */
--	lock_chunks(root);
-+	lock_chunks(root->fs_info);
- 	list_for_each_entry(em, &transaction->pending_chunks, list) {
- 		map = em->map_lookup;
- 
-@@ -7122,7 +7122,7 @@ void btrfs_update_commit_device_bytes_used(struct btrfs_root *root,
- 			dev->commit_bytes_used = dev->bytes_used;
- 		}
- 	}
--	unlock_chunks(root);
-+	unlock_chunks(root->fs_info);
- }
- 
- void btrfs_set_fs_info_ptr(struct btrfs_fs_info *fs_info)
-diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-index a0ac26e..52fad80 100644
---- a/fs/btrfs/volumes.h
-+++ b/fs/btrfs/volumes.h
-@@ -511,14 +511,14 @@ void btrfs_update_commit_device_size(struct btrfs_fs_info *fs_info);
- void btrfs_update_commit_device_bytes_used(struct btrfs_root *root,
- 					struct btrfs_transaction *transaction);
- 
--static inline void lock_chunks(struct btrfs_root *root)
-+static inline void lock_chunks(struct btrfs_fs_info *fs_info)
- {
--	mutex_lock(&root->fs_info->chunk_mutex);
-+	mutex_lock(&fs_info->chunk_mutex);
- }
- 
--static inline void unlock_chunks(struct btrfs_root *root)
-+static inline void unlock_chunks(struct btrfs_fs_info *fs_info)
- {
--	mutex_unlock(&root->fs_info->chunk_mutex);
-+	mutex_unlock(&fs_info->chunk_mutex);
- }
- 
- struct list_head *btrfs_get_fs_uuids(void);
+-			ret = btrfs_commit_transaction(trans, root);
++			ret = btrfs_commit_transaction(trans);
+ 			if (ret)
+ 				goto done;
+ 			goto again;
 -- 
 2.7.1
 

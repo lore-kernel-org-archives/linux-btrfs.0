@@ -1,87 +1,80 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from james.kirk.hungrycats.org ([174.142.39.145]:46677 "EHLO
-	james.kirk.hungrycats.org" rhost-flags-OK-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1751308AbcFXQja (ORCPT
+Received: from mail-oi0-f41.google.com ([209.85.218.41]:32936 "EHLO
+	mail-oi0-f41.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751898AbcFXQrn (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 24 Jun 2016 12:39:30 -0400
-Date: Fri, 24 Jun 2016 12:39:29 -0400
-From: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
-To: Andrei Borzenkov <arvidjaar@gmail.com>
-Cc: Chris Murphy <lists@colorremedies.com>, kreijack@inwind.it,
-        Roman Mamedov <rm@romanrm.net>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Subject: Re: Adventures in btrfs raid5 disk recovery
-Message-ID: <20160624163929.GE14667@hungrycats.org>
-References: <CAJCQCtR9uAn58KJKEjCsbyLYJTQVqMx-ghsVp_MjLBF-aiikcg@mail.gmail.com>
- <20160620204049.GA1986@hungrycats.org>
- <CAJCQCtR5pV53mFyGWxRxm69zwF5_sEvNRRRvOSgnZ1t8KZdc3g@mail.gmail.com>
- <20160621015559.GM15597@hungrycats.org>
- <CAJCQCtRUUd+moK25N3704ZG54cFrCw1-Uxm2QO-XF9g0=mHazw@mail.gmail.com>
- <20160622203504.GQ15597@hungrycats.org>
- <5790aea9-0976-1742-7d1b-79dbe44008c3@inwind.it>
- <CAJCQCtRXqSCFZTca+Vwraa0vS-MzLQKEkr=s41Vypc-O0ZDdxQ@mail.gmail.com>
- <20160624014752.GB14667@hungrycats.org>
- <576CB0DA.6030409@gmail.com>
+	Fri, 24 Jun 2016 12:47:43 -0400
+Received: by mail-oi0-f41.google.com with SMTP id u201so122765111oie.0
+        for <linux-btrfs@vger.kernel.org>; Fri, 24 Jun 2016 09:47:42 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="0QFb0wBpEddLcDHQ"
-In-Reply-To: <576CB0DA.6030409@gmail.com>
+In-Reply-To: <5356822.A3RRKHDHNy@linux-omuo>
+References: <loom.20160623T205347-371@post.gmane.org> <CAJCQCtRO+FYrsfHF_ARSnPfoS7uzvLR4hB1V-TJ_YN4NcA6srw@mail.gmail.com>
+ <5356822.A3RRKHDHNy@linux-omuo>
+From: Chris Murphy <lists@colorremedies.com>
+Date: Fri, 24 Jun 2016 10:47:40 -0600
+Message-ID: <CAJCQCtQ-xYrERT5R4gSC1C7OkoeP2LeS9W9UL5VY5SmDBXk71w@mail.gmail.com>
+Subject: Re: Bad hard drive - checksum verify failure forces readonly mount
+To: Vasco Almeida <vascomalmeida@sapo.pt>
+Cc: Chris Murphy <lists@colorremedies.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Fri, Jun 24, 2016 at 9:52 AM, Vasco Almeida <vascomalmeida@sapo.pt> wrote:
 
---0QFb0wBpEddLcDHQ
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+>>
+>> From the pasted kernel messages:
+>> > Linux version 3.18.34-std473-amd64 (root@rl-sysrcd-p11) (gcc version 4.8.5
+>> > (Gentoo 4.8.5 p1.3, pie-0.6.2) ) #2 SMP Tue May 24 20:34:19 UTC 2016
+>> 3.18.34 is ancient. Find something newer and try to remount normally.
+> Present information concerns openSUSE Leap 42.1 (x86_64) mount of root file
+> system at boot time. That should mount it normally. Hope that fits what you
+> mean.
 
-On Fri, Jun 24, 2016 at 07:02:34AM +0300, Andrei Borzenkov wrote:
-> >> I don't read code well enough, but I'd be surprised if Btrfs
-> >> reconstructs from parity and doesn't then check the resulting
-> >> reconstructed data to its EXTENT_CSUM.
-> >=20
-> > I wouldn't be surprised if both things happen in different code paths,
-> > given the number of different paths leading into the raid56 code and
-> > the number of distinct failure modes it seems to have.
->=20
-> Well, the problem is that parity block cannot be redirected on write as
-> data blocks; which makes it impossible to version control it. The only
-> solution I see is to always use full stripe writes by either wasting
-> time in fixed width stripe or using variable width, so that every stripe
-> always gets new version of parity. This makes it possible to keep parity
-> checksums like data checksums.
-
-The allocator could try harder to avoid partial stripe writes.  We can
-write multiple small extents to the same stripe as long as we always do
-it all within one transaction, and then later treat the entire stripe
-as read-only until every extent is removed.  It would be possible to do
-that by fudging extent lengths (effectively adding a bunch of prealloc-ish
-space if we have a partial write after all the delalloc stuff is done),
-but it could also waste some blocks on every single transaction, or
-create a bunch of "free but unavailable" space that makes df/statvfs
-output even more wrong than it usually is.
-
-The raid5 rmw code could try to relocate the other extents sharing a
-stripe, but I fear that with the current state of backref walking code
-that would make raid5 spectacularly slow if a filesystem is anywhere
-near full.
-
-We could also write rmw parity block updates to a journal (like another
-log tree).  That would enable us to at least fix up the parity blocks
-after a crash, and close the write hole.  That's an on-disk format
-change though.
+OK but it's not mounting it normally, it's still being forced readonly
+at btrfs_drop_snapshot and the only thing I'm coming up with search
+wise is that it's related to qgroups. Have you enabled quotas on this
+file system ever?
 
 
---0QFb0wBpEddLcDHQ
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+> btrfs-progs v4.1.2+20151002
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
+A lot of changes have happened since 4.1.2 I would still use something
+newer and try to repair it.
 
-iEYEARECAAYFAldtYkEACgkQgfmLGlazG5wjNwCgttpH1eo+j5tBuZN2//yVXdjq
-XqkAmwXpcl3eZ+oKVNCHopF+2aHxSMsr
-=ZAdZ
------END PGP SIGNATURE-----
 
---0QFb0wBpEddLcDHQ--
+>
+> $ /usr/sbin/btrfs fi df /
+> Data, single: total=10.01GiB, used=9.06GiB
+> System, DUP: total=64.00MiB, used=16.00KiB
+> Metadata, DUP: total=1.12GiB, used=596.69MiB
+> GlobalReserve, single: total=208.00MiB, used=0.00B
+>
+> I forgot to mention in last e-mail that I ran Marc MERLIN's scrubbing script
+> [1] after mounting the device with "-o ro,recovery" on System Rescue CD.
+> Even after that device is forced readonly.
+
+OK but System Rescue CD uses an old kernel by btrfs standards, even
+account for all the backports in that particular version:
+4.7.3) 2016-06-04:
+Standard kernels: Long-Term-Supported linux-3.18.34 (rescue32 + rescue64)
+
+So that's why I'm suggesting you use something newer, like 4.5.x, same
+for btrfs-progs. The old versions aren't working. There's no assurance
+it'll work with new versions, but that it doesn't get fixed up with
+old versions means you either try new versions or you rebuild the file
+system. *shrug*
+
+
+> I would like to find a solution to be able to mount normally readwrite again
+> and hopefully understand what caused the issue.
+
+My best guess is qgroup related, there were a lot of problems with
+multiple quota implementations and snapshots and openSUSE does take
+many many snapshots. So that could be it. But without a reproducer
+it's hard to say what caused it.
+
+
+-- 
+Chris Murphy

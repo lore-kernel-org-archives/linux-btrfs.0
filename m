@@ -1,87 +1,97 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oi0-f51.google.com ([209.85.218.51]:35119 "EHLO
-	mail-oi0-f51.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751394AbcFXRw5 convert rfc822-to-8bit (ORCPT
+Received: from james.kirk.hungrycats.org ([174.142.39.145]:36792 "EHLO
+	james.kirk.hungrycats.org" rhost-flags-OK-FAIL-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1751394AbcFXSG0 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 24 Jun 2016 13:52:57 -0400
-Received: by mail-oi0-f51.google.com with SMTP id r2so125181303oih.2
-        for <linux-btrfs@vger.kernel.org>; Fri, 24 Jun 2016 10:52:57 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <576D6C0A.7070502@gmail.com>
-References: <CAJCQCtR9uAn58KJKEjCsbyLYJTQVqMx-ghsVp_MjLBF-aiikcg@mail.gmail.com>
- <20160620204049.GA1986@hungrycats.org> <CAJCQCtR5pV53mFyGWxRxm69zwF5_sEvNRRRvOSgnZ1t8KZdc3g@mail.gmail.com>
- <20160621015559.GM15597@hungrycats.org> <CAJCQCtRUUd+moK25N3704ZG54cFrCw1-Uxm2QO-XF9g0=mHazw@mail.gmail.com>
- <20160622203504.GQ15597@hungrycats.org> <5790aea9-0976-1742-7d1b-79dbe44008c3@inwind.it>
- <CAJCQCtRXqSCFZTca+Vwraa0vS-MzLQKEkr=s41Vypc-O0ZDdxQ@mail.gmail.com>
- <20160624014752.GB14667@hungrycats.org> <576CB0DA.6030409@gmail.com>
- <20160624085014.GH3325@carfax.org.uk> <CAA91j0Uqg0FafFTG3NhQt=p8KkYRhTeMU5Bd+JuUxDntP6g8Ng@mail.gmail.com>
- <CAJCQCtQBQAng5_mNJZev+64Z15BSkBkG9f2qmz=ckPRqXRbbWA@mail.gmail.com> <576D6C0A.7070502@gmail.com>
-From: Chris Murphy <lists@colorremedies.com>
-Date: Fri, 24 Jun 2016 11:52:54 -0600
-Message-ID: <CAJCQCtSskA4PC_a8tgQopHFNO83NQ=Gkx406haB7G0nBi5e=2A@mail.gmail.com>
-Subject: Re: Adventures in btrfs raid5 disk recovery
-To: Andrei Borzenkov <arvidjaar@gmail.com>
-Cc: Chris Murphy <lists@colorremedies.com>, Hugo Mills <hugo@carfax.org.uk>,
-        Zygo Blaxell <ce3g8jdj@umail.furryterror.org>, kreijack@inwind.it,
-        Roman Mamedov <rm@romanrm.net>,
+	Fri, 24 Jun 2016 14:06:26 -0400
+Date: Fri, 24 Jun 2016 14:06:15 -0400
+From: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
+To: Chris Murphy <lists@colorremedies.com>
+Cc: Hugo Mills <hugo@carfax.org.uk>, Andrei Borzenkov <arvidjaar@gmail.com>,
+        kreijack@inwind.it, Roman Mamedov <rm@romanrm.net>,
         Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Subject: Re: Adventures in btrfs raid5 disk recovery
+Message-ID: <20160624180615.GS15597@hungrycats.org>
+References: <CAJCQCtRUUd+moK25N3704ZG54cFrCw1-Uxm2QO-XF9g0=mHazw@mail.gmail.com>
+ <20160622203504.GQ15597@hungrycats.org>
+ <5790aea9-0976-1742-7d1b-79dbe44008c3@inwind.it>
+ <CAJCQCtRXqSCFZTca+Vwraa0vS-MzLQKEkr=s41Vypc-O0ZDdxQ@mail.gmail.com>
+ <20160624014752.GB14667@hungrycats.org>
+ <576CB0DA.6030409@gmail.com>
+ <20160624085014.GH3325@carfax.org.uk>
+ <CAA91j0Uqg0FafFTG3NhQt=p8KkYRhTeMU5Bd+JuUxDntP6g8Ng@mail.gmail.com>
+ <20160624101658.GI3325@carfax.org.uk>
+ <CAJCQCtT1erMUphkn_-NPhT3A0gV1b-7O+OTxO=OsFHefRd53dA@mail.gmail.com>
+MIME-Version: 1.0
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="w1A23YewkF9s+fLd"
+In-Reply-To: <CAJCQCtT1erMUphkn_-NPhT3A0gV1b-7O+OTxO=OsFHefRd53dA@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Jun 24, 2016 at 11:21 AM, Andrei Borzenkov <arvidjaar@gmail.com> wrote:
-> 24.06.2016 20:06, Chris Murphy пишет:
->> On Fri, Jun 24, 2016 at 3:52 AM, Andrei Borzenkov <arvidjaar@gmail.com> wrote:
->>> On Fri, Jun 24, 2016 at 11:50 AM, Hugo Mills <hugo@carfax.org.uk> wrote:
->>> eta)data and RAID56 parity is not data.
->>>>
->>>>    Checksums are not parity, correct. However, every data block
->>>> (including, I think, the parity) is checksummed and put into the csum
->>>> tree. This allows the FS to determine where damage has occurred,
->>>> rather thansimply detecting that it has occurred (which would be the
->>>> case if the parity doesn't match the data, or if the two copies of a
->>>> RAID-1 array don't match).
->>>>
->>>
->>> Yes, that is what I wrote below. But that means that RAID5 with one
->>> degraded disk won't be able to reconstruct data on this degraded disk
->>> because reconstructed extent content won't match checksum. Which kinda
->>> makes RAID5 pointless.
->>
->> I don't understand this. Whether the failed disk means a stripe is
->> missing a data strip or parity strip, if any other strip is damaged of
->> course the reconstruction isn't going to match checksum. This does not
->> make raid5 pointless.
->>
->
-> Yes, you are right. We have double failure here. Still, in current
-> situation we apparently may end with btrfs reconstructing missing block
-> using wrong information. As was mentioned elsewhere, btrfs does not
-> verify checksum of reconstructed block, meaning data corruption.
 
-Well that'd be bad, but also good in that it would explain a lot of
-problems people have when metadata is also raid5. In this whole thread
-the premise is the metadata is raid1, so the fs doesn't totally face
-plant we just get a bunch of weird data corruptions. The metadata
-raid5 case were sorta "WTF happened?" and not much was really said
-about it other than telling the user to scrape off what they can and
-start over.
+--w1A23YewkF9s+fLd
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-Anyway, while not good I still think this is not super problematic to
-at least *do* check EXTENT_CSUM after reconstruction from parity
-rather than assuming that reconstruction happened correctly. The data
-needed to pass fail the rebuild is already on the disk. It just needs
-to be checked.
+On Fri, Jun 24, 2016 at 11:40:56AM -0600, Chris Murphy wrote:
+> On Fri, Jun 24, 2016 at 4:16 AM, Hugo Mills <hugo@carfax.org.uk> wrote:
+> > On Fri, Jun 24, 2016 at 12:52:21PM +0300, Andrei Borzenkov wrote:
+> >    For data, say you have n-1 good devices, with n-1 blocks on them.
+> > Each block has a checksum in the metadata, so you can read that
+> > checksum, read the blocks, and verify that they're not damaged. From
+> > those n-1 known-good blocks (all data, or one parity and the rest
+> > data) you can reconstruct the remaining block. That reconstructed
+> > block won't be checked against the csum for the missing block -- it'll
+> > just be written and a new csum for it written with it.
+>=20
+> The last sentence is hugely problematic. Parity doesn't appear to be
+> either CoW'd or checksummed. If it is used for reconstruction and the
+> reconstructed data isn't compared to the data's EXTENT_CSUM entry, but
+> that entry is rather recomputed and written, that's just like blindly
+> trusting the parity is correct and then authenticating it with a csum.
 
-Better would be to get parity csummed and put into the csum tree. But
-I don't know how much that helps. Think about always computing and
-writing csums for parity, which almost never get used vs keeping
-things the way they are now and just *checking our work* after
-reconstruction from parity. If there's some obvious major advantage to
-checksumming the parity I'm all ears but I'm not thinking of it at the
-moment.
+I think what happens is the data is recomputed, but the csum on the
+data is _not_ updated (the csum does not reside in the raid56 code).
+A read of the reconstructed data would get a csum failure (of course,
+every 4 billionth time this happens the csum is correct by random chance,
+so you wouldn't want to be reading parity blocks from a drive full of
+garbage, but that's a different matter).
+
+> It's  not difficult to test. Corrupt one byte of parity. Yank a drive.
+> Add a new one. Start a reconstruction with scrub or balance (or both
+> to see if they differ) and find out what happens. What should happen
+> is the reconstruct should work for everything except that one file. If
+> it's reconstructed silently, it should contain visible corruption and
+> we all collectively raise our eyebrows.
+
+I've done something like that test:  write random data to 1000 random
+blocks on one disk, then run scrub.  It reconstructs the data without
+problems (except for the minor wart that 'scrub status -d' counts the
+randomly against every device, while 'dev stats' counts all the errors
+on the disk that was corrupted).
+
+Disk-side data corruption is a thing I have to deal with a few times each
+year, so I tested the btrfs raid5 implementation for that case before I
+started using it.  As far as I can tell so far, everything in btrfs raid5
+works properly if a disk fails _while the filesystem is not mounted_.
+
+The problem I see in the field is not *silent* corruption.  It's a whole
+lot of very *noisy* corruption detected under circumstances where I'd
+expect to see no corruption at all (silent or otherwise).
 
 
+--w1A23YewkF9s+fLd
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
 
--- 
-Chris Murphy
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
+
+iEYEARECAAYFAldtdpcACgkQgfmLGlazG5xRZwCeOYsemOz1Hmjio6vxywfVqZks
+EdUAniag/D4obfPg8SzaVQ0GiPQdzc52
+=23I5
+-----END PGP SIGNATURE-----
+
+--w1A23YewkF9s+fLd--

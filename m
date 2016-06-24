@@ -1,248 +1,279 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:52989 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:37804 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751571AbcF0C2T (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 26 Jun 2016 22:28:19 -0400
-Subject: Re: [PATCH 04/31] btrfs: tests, move initialization into tests/
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
+	id S1750972AbcFXWP1 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 24 Jun 2016 18:15:27 -0400
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+	by mx2.suse.de (Postfix) with ESMTP id EB009AD32
+	for <linux-btrfs@vger.kernel.org>; Fri, 24 Jun 2016 22:15:25 +0000 (UTC)
+From: jeffm@suse.com
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH 01/31] btrfs: plumb fs_info into btrfs_work
+Date: Fri, 24 Jun 2016 18:14:54 -0400
+Message-Id: <1466806524-27508-2-git-send-email-jeffm@suse.com>
+In-Reply-To: <1466806524-27508-1-git-send-email-jeffm@suse.com>
 References: <1466806524-27508-1-git-send-email-jeffm@suse.com>
- <1466806524-27508-5-git-send-email-jeffm@suse.com>
- <ad05794a-c417-ec49-d1b9-22eda06e141e@cn.fujitsu.com>
-From: Jeff Mahoney <jeffm@suse.com>
-Message-ID: <57708F3E.7090205@suse.com>
-Date: Sun, 26 Jun 2016 22:28:14 -0400
-MIME-Version: 1.0
-In-Reply-To: <ad05794a-c417-ec49-d1b9-22eda06e141e@cn.fujitsu.com>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="44BjaoiUpISQQxqO4bAnLP45h6COoR3wU"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---44BjaoiUpISQQxqO4bAnLP45h6COoR3wU
-Content-Type: multipart/mixed; boundary="VCVVWJWtpJQeQXsnDLSV1slkwrAmfQ58x"
 From: Jeff Mahoney <jeffm@suse.com>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
-Message-ID: <57708F3E.7090205@suse.com>
-Subject: Re: [PATCH 04/31] btrfs: tests, move initialization into tests/
-References: <1466806524-27508-1-git-send-email-jeffm@suse.com>
- <1466806524-27508-5-git-send-email-jeffm@suse.com>
- <ad05794a-c417-ec49-d1b9-22eda06e141e@cn.fujitsu.com>
-In-Reply-To: <ad05794a-c417-ec49-d1b9-22eda06e141e@cn.fujitsu.com>
 
---VCVVWJWtpJQeQXsnDLSV1slkwrAmfQ58x
-Content-Type: text/plain; charset=utf-8
-Content-Transfer-Encoding: quoted-printable
+In order to provide an fsid for trace events, we'll need a btrfs_fs_info
+pointer.  The most lightweight way to do that for btrfs_work structures
+is to associate it with the __btrfs_workqueue structure.  Each queued
+btrfs_work structure has a workqueue associated with it, so that's
+a natural fit.  It's a privately defined structures, so we add accessors
+to retrieve the fs_info pointer.
 
-On 6/26/16 10:17 PM, Qu Wenruo wrote:
->=20
->=20
-> At 06/25/2016 06:14 AM, jeffm@suse.com wrote:
->> From: Jeff Mahoney <jeffm@suse.com>
->>
->> We have all these stubs that only exist because they're called from
->> btrfs_run_sanity_tests, which is a static inside super.c.  Let's just
->> move it all into tests/btrfs-tests.c and only have one stub.
->>
->> Signed-off-by: Jeff Mahoney <jeffm@suse.com>
->> ---
->>  fs/btrfs/super.c             | 43
->> ----------------------------------------
->>  fs/btrfs/tests/btrfs-tests.c | 47
->> ++++++++++++++++++++++++++++++++++++++++++--
->>  fs/btrfs/tests/btrfs-tests.h | 35 +++------------------------------
->>  3 files changed, 48 insertions(+), 77 deletions(-)
->>
->> diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
->> index a7b9a15..d8e48bb 100644
->> --- a/fs/btrfs/super.c
->> +++ b/fs/btrfs/super.c
->> @@ -2323,49 +2323,6 @@ static void btrfs_print_mod_info(void)
->>              btrfs_crc32c_impl());
->>  }
->>
->> -static int btrfs_run_sanity_tests(void)
->> -{
->> -    int ret, i;
->> -    u32 sectorsize, nodesize;
->> -    u32 test_sectorsize[] =3D {
->> -        PAGE_SIZE,
->> -    };
->> -    ret =3D btrfs_init_test_fs();
->> -    if (ret)
->> -        return ret;
->> -    for (i =3D 0; i < ARRAY_SIZE(test_sectorsize); i++) {
->> -        sectorsize =3D test_sectorsize[i];
->> -        for (nodesize =3D sectorsize;
->> -             nodesize <=3D BTRFS_MAX_METADATA_BLOCKSIZE;
->> -             nodesize <<=3D 1) {
->> -            pr_info("BTRFS: selftest: sectorsize: %u  nodesize: %u\n"=
-,
->> -                sectorsize, nodesize);
->> -            ret =3D btrfs_test_free_space_cache(sectorsize, nodesize)=
-;
->> -            if (ret)
->> -                goto out;
->> -            ret =3D btrfs_test_extent_buffer_operations(sectorsize,
->> -                nodesize);
->> -            if (ret)
->> -                goto out;
->> -            ret =3D btrfs_test_extent_io(sectorsize, nodesize);
->> -            if (ret)
->> -                goto out;
->> -            ret =3D btrfs_test_inodes(sectorsize, nodesize);
->> -            if (ret)
->> -                goto out;
->> -            ret =3D btrfs_test_qgroups(sectorsize, nodesize);
->> -            if (ret)
->> -                goto out;
->> -            ret =3D btrfs_test_free_space_tree(sectorsize, nodesize);=
+Signed-off-by: Jeff Mahoney <jeffm@suse.com>
+---
+ fs/btrfs/async-thread.c | 31 +++++++++++++++++++++++++------
+ fs/btrfs/async-thread.h |  6 +++++-
+ fs/btrfs/disk-io.c      | 47 ++++++++++++++++++++++++++++-------------------
+ fs/btrfs/scrub.c        | 10 +++++-----
+ 4 files changed, 63 insertions(+), 31 deletions(-)
 
->> -            if (ret)
->> -                goto out;
->> -        }
->> -    }
->> -out:
->> -    btrfs_destroy_test_fs();
->> -    return ret;
->> -}
->> -
->>  static int __init init_btrfs_fs(void)
->>  {
->>      int err;
->> diff --git a/fs/btrfs/tests/btrfs-tests.c b/fs/btrfs/tests/btrfs-tests=
-=2Ec
->> index 10eb249..d90c951 100644
->> --- a/fs/btrfs/tests/btrfs-tests.c
->> +++ b/fs/btrfs/tests/btrfs-tests.c
->> @@ -54,7 +54,7 @@ struct inode *btrfs_new_test_inode(void)
->>      return new_inode(test_mnt->mnt_sb);
->>  }
->>
->> -int btrfs_init_test_fs(void)
->> +static int btrfs_init_test_fs(void)
->>  {
->>      int ret;
->>
->> @@ -73,7 +73,7 @@ int btrfs_init_test_fs(void)
->>      return 0;
->>  }
->>
->> -void btrfs_destroy_test_fs(void)
->> +static void btrfs_destroy_test_fs(void)
->>  {
->>      kern_unmount(test_mnt);
->>      unregister_filesystem(&test_type);
->> @@ -220,3 +220,46 @@ void btrfs_init_dummy_trans(struct
->> btrfs_trans_handle *trans)
->>      INIT_LIST_HEAD(&trans->qgroup_ref_list);
->>      trans->type =3D __TRANS_DUMMY;
->>  }
->> +
->> +int btrfs_run_sanity_tests(void)
->> +{
->> +    int ret, i;
->> +    u32 sectorsize, nodesize;
->> +    u32 test_sectorsize[] =3D {
->> +        PAGE_SIZE,
->> +    };
->> +    ret =3D btrfs_init_test_fs();
->> +    if (ret)
->> +        return ret;
->> +    for (i =3D 0; i < ARRAY_SIZE(test_sectorsize); i++) {
->> +        sectorsize =3D test_sectorsize[i];
->> +        for (nodesize =3D sectorsize;
->> +             nodesize <=3D BTRFS_MAX_METADATA_BLOCKSIZE;
->> +             nodesize <<=3D 1) {
->> +            pr_info("BTRFS: selftest: sectorsize: %u  nodesize: %u\n"=
-,
->> +                sectorsize, nodesize);
->> +            ret =3D btrfs_test_free_space_cache(sectorsize, nodesize)=
-;
->> +            if (ret)
->> +                goto out;
->> +            ret =3D btrfs_test_extent_buffer_operations(sectorsize,
->> +                nodesize);
->> +            if (ret)
->> +                goto out;
->> +            ret =3D btrfs_test_extent_io(sectorsize, nodesize);
->> +            if (ret)
->> +                goto out;
->> +            ret =3D btrfs_test_inodes(sectorsize, nodesize);
->> +            if (ret)
->> +                goto out;
->> +            ret =3D btrfs_test_qgroups(sectorsize, nodesize);
->> +            if (ret)
->> +                goto out;
->> +            ret =3D btrfs_test_free_space_tree(sectorsize, nodesize);=
+diff --git a/fs/btrfs/async-thread.c b/fs/btrfs/async-thread.c
+index 5fb60ea..e0f071f 100644
+--- a/fs/btrfs/async-thread.c
++++ b/fs/btrfs/async-thread.c
+@@ -34,6 +34,10 @@
+ 
+ struct __btrfs_workqueue {
+ 	struct workqueue_struct *normal_wq;
++
++	/* File system this workqueue services */
++	struct btrfs_fs_info *fs_info;
++
+ 	/* List head pointing to ordered work list */
+ 	struct list_head ordered_list;
+ 
+@@ -70,6 +74,18 @@ void btrfs_##name(struct work_struct *arg)				\
+ 	normal_work_helper(work);					\
+ }
+ 
++struct btrfs_fs_info *
++btrfs_workqueue_owner(struct __btrfs_workqueue *wq)
++{
++	return wq->fs_info;
++}
++
++struct btrfs_fs_info *
++btrfs_work_owner(struct btrfs_work *work)
++{
++	return work->wq->fs_info;
++}
++
+ BTRFS_WORK_HELPER(worker_helper);
+ BTRFS_WORK_HELPER(delalloc_helper);
+ BTRFS_WORK_HELPER(flush_delalloc_helper);
+@@ -94,14 +110,15 @@ BTRFS_WORK_HELPER(scrubnc_helper);
+ BTRFS_WORK_HELPER(scrubparity_helper);
+ 
+ static struct __btrfs_workqueue *
+-__btrfs_alloc_workqueue(const char *name, unsigned int flags, int limit_active,
+-			 int thresh)
++__btrfs_alloc_workqueue(struct btrfs_fs_info *fs_info, const char *name,
++			unsigned int flags, int limit_active, int thresh)
+ {
+ 	struct __btrfs_workqueue *ret = kzalloc(sizeof(*ret), GFP_KERNEL);
+ 
+ 	if (!ret)
+ 		return NULL;
+ 
++	ret->fs_info = fs_info;
+ 	ret->limit_active = limit_active;
+ 	atomic_set(&ret->pending, 0);
+ 	if (thresh == 0)
+@@ -143,7 +160,8 @@ __btrfs_alloc_workqueue(const char *name, unsigned int flags, int limit_active,
+ static inline void
+ __btrfs_destroy_workqueue(struct __btrfs_workqueue *wq);
+ 
+-struct btrfs_workqueue *btrfs_alloc_workqueue(const char *name,
++struct btrfs_workqueue *btrfs_alloc_workqueue(struct btrfs_fs_info *fs_info,
++					      const char *name,
+ 					      unsigned int flags,
+ 					      int limit_active,
+ 					      int thresh)
+@@ -153,7 +171,8 @@ struct btrfs_workqueue *btrfs_alloc_workqueue(const char *name,
+ 	if (!ret)
+ 		return NULL;
+ 
+-	ret->normal = __btrfs_alloc_workqueue(name, flags & ~WQ_HIGHPRI,
++	ret->normal = __btrfs_alloc_workqueue(fs_info, name,
++					      flags & ~WQ_HIGHPRI,
+ 					      limit_active, thresh);
+ 	if (!ret->normal) {
+ 		kfree(ret);
+@@ -161,8 +180,8 @@ struct btrfs_workqueue *btrfs_alloc_workqueue(const char *name,
+ 	}
+ 
+ 	if (flags & WQ_HIGHPRI) {
+-		ret->high = __btrfs_alloc_workqueue(name, flags, limit_active,
+-						    thresh);
++		ret->high = __btrfs_alloc_workqueue(fs_info, name, flags,
++						    limit_active, thresh);
+ 		if (!ret->high) {
+ 			__btrfs_destroy_workqueue(ret->normal);
+ 			kfree(ret);
+diff --git a/fs/btrfs/async-thread.h b/fs/btrfs/async-thread.h
+index ad4d064..8e52484 100644
+--- a/fs/btrfs/async-thread.h
++++ b/fs/btrfs/async-thread.h
+@@ -21,6 +21,7 @@
+ #define __BTRFS_ASYNC_THREAD_
+ #include <linux/workqueue.h>
+ 
++struct btrfs_fs_info;
+ struct btrfs_workqueue;
+ /* Internal use only */
+ struct __btrfs_workqueue;
+@@ -67,7 +68,8 @@ BTRFS_WORK_HELPER_PROTO(scrubnc_helper);
+ BTRFS_WORK_HELPER_PROTO(scrubparity_helper);
+ 
+ 
+-struct btrfs_workqueue *btrfs_alloc_workqueue(const char *name,
++struct btrfs_workqueue *btrfs_alloc_workqueue(struct btrfs_fs_info *fs_info,
++					      const char *name,
+ 					      unsigned int flags,
+ 					      int limit_active,
+ 					      int thresh);
+@@ -80,4 +82,6 @@ void btrfs_queue_work(struct btrfs_workqueue *wq,
+ void btrfs_destroy_workqueue(struct btrfs_workqueue *wq);
+ void btrfs_workqueue_set_max(struct btrfs_workqueue *wq, int max);
+ void btrfs_set_work_high_priority(struct btrfs_work *work);
++struct btrfs_fs_info *btrfs_work_owner(struct btrfs_work *work);
++struct btrfs_fs_info *btrfs_workqueue_owner(struct __btrfs_workqueue *wq);
+ #endif
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 54cca7a..685c81a 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -2316,17 +2316,19 @@ static int btrfs_init_workqueues(struct btrfs_fs_info *fs_info,
+ 	unsigned int flags = WQ_MEM_RECLAIM | WQ_FREEZABLE | WQ_UNBOUND;
+ 
+ 	fs_info->workers =
+-		btrfs_alloc_workqueue("worker", flags | WQ_HIGHPRI,
+-				      max_active, 16);
++		btrfs_alloc_workqueue(fs_info, "worker",
++				      flags | WQ_HIGHPRI, max_active, 16);
+ 
+ 	fs_info->delalloc_workers =
+-		btrfs_alloc_workqueue("delalloc", flags, max_active, 2);
++		btrfs_alloc_workqueue(fs_info, "delalloc",
++				      flags, max_active, 2);
+ 
+ 	fs_info->flush_workers =
+-		btrfs_alloc_workqueue("flush_delalloc", flags, max_active, 0);
++		btrfs_alloc_workqueue(fs_info, "flush_delalloc",
++				      flags, max_active, 0);
+ 
+ 	fs_info->caching_workers =
+-		btrfs_alloc_workqueue("cache", flags, max_active, 0);
++		btrfs_alloc_workqueue(fs_info, "cache", flags, max_active, 0);
+ 
+ 	/*
+ 	 * a higher idle thresh on the submit workers makes it much more
+@@ -2334,41 +2336,48 @@ static int btrfs_init_workqueues(struct btrfs_fs_info *fs_info,
+ 	 * devices
+ 	 */
+ 	fs_info->submit_workers =
+-		btrfs_alloc_workqueue("submit", flags,
++		btrfs_alloc_workqueue(fs_info, "submit", flags,
+ 				      min_t(u64, fs_devices->num_devices,
+ 					    max_active), 64);
+ 
+ 	fs_info->fixup_workers =
+-		btrfs_alloc_workqueue("fixup", flags, 1, 0);
++		btrfs_alloc_workqueue(fs_info, "fixup", flags, 1, 0);
+ 
+ 	/*
+ 	 * endios are largely parallel and should have a very
+ 	 * low idle thresh
+ 	 */
+ 	fs_info->endio_workers =
+-		btrfs_alloc_workqueue("endio", flags, max_active, 4);
++		btrfs_alloc_workqueue(fs_info, "endio", flags, max_active, 4);
+ 	fs_info->endio_meta_workers =
+-		btrfs_alloc_workqueue("endio-meta", flags, max_active, 4);
++		btrfs_alloc_workqueue(fs_info, "endio-meta", flags,
++				      max_active, 4);
+ 	fs_info->endio_meta_write_workers =
+-		btrfs_alloc_workqueue("endio-meta-write", flags, max_active, 2);
++		btrfs_alloc_workqueue(fs_info, "endio-meta-write", flags,
++				      max_active, 2);
+ 	fs_info->endio_raid56_workers =
+-		btrfs_alloc_workqueue("endio-raid56", flags, max_active, 4);
++		btrfs_alloc_workqueue(fs_info, "endio-raid56", flags,
++				      max_active, 4);
+ 	fs_info->endio_repair_workers =
+-		btrfs_alloc_workqueue("endio-repair", flags, 1, 0);
++		btrfs_alloc_workqueue(fs_info, "endio-repair", flags, 1, 0);
+ 	fs_info->rmw_workers =
+-		btrfs_alloc_workqueue("rmw", flags, max_active, 2);
++		btrfs_alloc_workqueue(fs_info, "rmw", flags, max_active, 2);
+ 	fs_info->endio_write_workers =
+-		btrfs_alloc_workqueue("endio-write", flags, max_active, 2);
++		btrfs_alloc_workqueue(fs_info, "endio-write", flags,
++				      max_active, 2);
+ 	fs_info->endio_freespace_worker =
+-		btrfs_alloc_workqueue("freespace-write", flags, max_active, 0);
++		btrfs_alloc_workqueue(fs_info, "freespace-write", flags,
++				      max_active, 0);
+ 	fs_info->delayed_workers =
+-		btrfs_alloc_workqueue("delayed-meta", flags, max_active, 0);
++		btrfs_alloc_workqueue(fs_info, "delayed-meta", flags,
++				      max_active, 0);
+ 	fs_info->readahead_workers =
+-		btrfs_alloc_workqueue("readahead", flags, max_active, 2);
++		btrfs_alloc_workqueue(fs_info, "readahead", flags,
++				      max_active, 2);
+ 	fs_info->qgroup_rescan_workers =
+-		btrfs_alloc_workqueue("qgroup-rescan", flags, 1, 0);
++		btrfs_alloc_workqueue(fs_info, "qgroup-rescan", flags, 1, 0);
+ 	fs_info->extent_workers =
+-		btrfs_alloc_workqueue("extent-refs", flags,
++		btrfs_alloc_workqueue(fs_info, "extent-refs", flags,
+ 				      min_t(u64, fs_devices->num_devices,
+ 					    max_active), 8);
+ 
+diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
+index 70427ef..86270c6 100644
+--- a/fs/btrfs/scrub.c
++++ b/fs/btrfs/scrub.c
+@@ -3781,27 +3781,27 @@ static noinline_for_stack int scrub_workers_get(struct btrfs_fs_info *fs_info,
+ 	if (fs_info->scrub_workers_refcnt == 0) {
+ 		if (is_dev_replace)
+ 			fs_info->scrub_workers =
+-				btrfs_alloc_workqueue("scrub", flags,
++				btrfs_alloc_workqueue(fs_info, "scrub", flags,
+ 						      1, 4);
+ 		else
+ 			fs_info->scrub_workers =
+-				btrfs_alloc_workqueue("scrub", flags,
++				btrfs_alloc_workqueue(fs_info, "scrub", flags,
+ 						      max_active, 4);
+ 		if (!fs_info->scrub_workers)
+ 			goto fail_scrub_workers;
+ 
+ 		fs_info->scrub_wr_completion_workers =
+-			btrfs_alloc_workqueue("scrubwrc", flags,
++			btrfs_alloc_workqueue(fs_info, "scrubwrc", flags,
+ 					      max_active, 2);
+ 		if (!fs_info->scrub_wr_completion_workers)
+ 			goto fail_scrub_wr_completion_workers;
+ 
+ 		fs_info->scrub_nocow_workers =
+-			btrfs_alloc_workqueue("scrubnc", flags, 1, 0);
++			btrfs_alloc_workqueue(fs_info, "scrubnc", flags, 1, 0);
+ 		if (!fs_info->scrub_nocow_workers)
+ 			goto fail_scrub_nocow_workers;
+ 		fs_info->scrub_parity_workers =
+-			btrfs_alloc_workqueue("scrubparity", flags,
++			btrfs_alloc_workqueue(fs_info, "scrubparity", flags,
+ 					      max_active, 2);
+ 		if (!fs_info->scrub_parity_workers)
+ 			goto fail_scrub_parity_workers;
+-- 
+2.7.1
 
->> +            if (ret)
->> +                goto out;
->> +        }
->> +    }
->> +out:
->> +    btrfs_destroy_test_fs();
->> +    return ret;
->> +}
->> diff --git a/fs/btrfs/tests/btrfs-tests.h b/fs/btrfs/tests/btrfs-tests=
-=2Eh
->> index 66fb6b70..e7d364f 100644
->> --- a/fs/btrfs/tests/btrfs-tests.h
->> +++ b/fs/btrfs/tests/btrfs-tests.h
->> @@ -20,20 +20,19 @@
->>  #define __BTRFS_TESTS
->>
->>  #ifdef CONFIG_BTRFS_FS_RUN_SANITY_TESTS
->> +int btrfs_run_sanity_tests(void);
->>
->>  #define test_msg(fmt, ...) pr_info("BTRFS: selftest: " fmt,
->> ##__VA_ARGS__)
->>
->>  struct btrfs_root;
->>  struct btrfs_trans_handle;
->>
->> -int btrfs_test_free_space_cache(u32 sectorsize, u32 nodesize);
->>  int btrfs_test_extent_buffer_operations(u32 sectorsize, u32 nodesize)=
-;
->> +int btrfs_test_free_space_cache(u32 sectorsize, u32 nodesize);
->=20
-> Anything special for the line move?
-> Otherwise it looks good for me.
-
-No.  It's probably leftover from an earlier revision.  It's not necessary=
-=2E
-
--Jeff
-
---=20
-Jeff Mahoney
-SUSE Labs
-
-
---VCVVWJWtpJQeQXsnDLSV1slkwrAmfQ58x--
-
---44BjaoiUpISQQxqO4bAnLP45h6COoR3wU
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG/MacGPG2 v2
-
-iQIcBAEBCAAGBQJXcI8+AAoJEB57S2MheeWyNuUP/2+ZX9tTTZrgMeNcZERHeqTK
-HI8Q+HvwNOHgcXF+fQkC/ch9z3mSwDEdJGS9BKkxVbzkBH2g6bIfQ0YkmJd1ZvB8
-sy/vJsuLoKK85oMj4v6jjNt9ZJvhl5Gzjub5+Bfam2cDjHU3liGdAkYNJ3hikQTa
-QnsSDDckLX3TENRtm1JGzx/oo+hhYfKVGk8YxWOE4v1i5fI22yXCeuHOQmUuLFP8
-0i+GM3aSBVhc9h6LmbF91GjjIhC4TFzrbUO+uohf/y3YYc5svndAt2UwFvCJ7DQD
-t1hrTMSwbIbc+hTT4/SqJmWfe4zxaiGX0oREW4Ec8IX377Nk1Q3otXSvktr+RHBQ
-uwwoSrXtbaJRK2Xt+uQfM3AgkDAVFfNPmNPxoNpmKAjetJLLYJOXWx/XNNeHrckI
-hu6U7os6wAEUs2iQ2QhiOSZL/NJeCXXDbu74FYkZWpg4br77gCiW7/9co3eBAfv7
-CaGo+8TVnA5wHvDIqGk6dMQiJzH5PMM3DZMIrHhp4psq8QBWoPqyzs7PwZe8j1/W
-73r5nzif4epKNbvGjxCqDKjPT6f9oc6eXjY4T5qsHKP6Uzh0XLPsW2qeM6Scpfik
-c7TCMp8dCqFLmMTJDOuIoYYltwPXdGryeeGJUILEkTlR0bg4l8nhI5ARsNgnFsIQ
-iZ9iBRqkIX/SgpxfdsSX
-=kBWS
------END PGP SIGNATURE-----
-
---44BjaoiUpISQQxqO4bAnLP45h6COoR3wU--

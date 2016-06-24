@@ -1,134 +1,145 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qk0-f180.google.com ([209.85.220.180]:34415 "EHLO
-	mail-qk0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750853AbcFXKQk (ORCPT
+Received: from frost.carfax.org.uk ([85.119.82.111]:46724 "EHLO
+	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751255AbcFXKRE (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 24 Jun 2016 06:16:40 -0400
-Received: by mail-qk0-f180.google.com with SMTP id t127so140156445qkf.1
-        for <linux-btrfs@vger.kernel.org>; Fri, 24 Jun 2016 03:16:40 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <CAJCQCtSt832VcaKanj9cn9wY6+FZ68G9mOuSS=8i-AzmGQuV9g@mail.gmail.com>
-References: <20160620034427.GK15597@hungrycats.org> <20160620231351.1833a341@natsu>
- <20160620191112.GL15597@hungrycats.org> <CAJCQCtR9uAn58KJKEjCsbyLYJTQVqMx-ghsVp_MjLBF-aiikcg@mail.gmail.com>
- <20160620204049.GA1986@hungrycats.org> <CAJCQCtR5pV53mFyGWxRxm69zwF5_sEvNRRRvOSgnZ1t8KZdc3g@mail.gmail.com>
- <20160621015559.GM15597@hungrycats.org> <CAJCQCtRUUd+moK25N3704ZG54cFrCw1-Uxm2QO-XF9g0=mHazw@mail.gmail.com>
- <CAJCQCtT57k7Mirq=d6wTewY6EzvJE0g28EbmG9wLk+6cTASEEg@mail.gmail.com>
- <20160624020712.GC14667@hungrycats.org> <CAJCQCtSt832VcaKanj9cn9wY6+FZ68G9mOuSS=8i-AzmGQuV9g@mail.gmail.com>
-From: Andrei Borzenkov <arvidjaar@gmail.com>
-Date: Fri, 24 Jun 2016 13:16:38 +0300
-Message-ID: <CAA91j0WVMBv1TMpyC+hvtcwd3ZPepr3oVNg4g2qPjPy4Lf5UxQ@mail.gmail.com>
-Subject: Re: Adventures in btrfs raid5 disk recovery
-To: Chris Murphy <lists@colorremedies.com>
+	Fri, 24 Jun 2016 06:17:04 -0400
+Date: Fri, 24 Jun 2016 10:16:58 +0000
+From: Hugo Mills <hugo@carfax.org.uk>
+To: Andrei Borzenkov <arvidjaar@gmail.com>
 Cc: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>,
+        Chris Murphy <lists@colorremedies.com>, kreijack@inwind.it,
         Roman Mamedov <rm@romanrm.net>,
         Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Subject: Re: Adventures in btrfs raid5 disk recovery
+Message-ID: <20160624101658.GI3325@carfax.org.uk>
+References: <CAJCQCtR5pV53mFyGWxRxm69zwF5_sEvNRRRvOSgnZ1t8KZdc3g@mail.gmail.com>
+ <20160621015559.GM15597@hungrycats.org>
+ <CAJCQCtRUUd+moK25N3704ZG54cFrCw1-Uxm2QO-XF9g0=mHazw@mail.gmail.com>
+ <20160622203504.GQ15597@hungrycats.org>
+ <5790aea9-0976-1742-7d1b-79dbe44008c3@inwind.it>
+ <CAJCQCtRXqSCFZTca+Vwraa0vS-MzLQKEkr=s41Vypc-O0ZDdxQ@mail.gmail.com>
+ <20160624014752.GB14667@hungrycats.org>
+ <576CB0DA.6030409@gmail.com>
+ <20160624085014.GH3325@carfax.org.uk>
+ <CAA91j0Uqg0FafFTG3NhQt=p8KkYRhTeMU5Bd+JuUxDntP6g8Ng@mail.gmail.com>
+MIME-Version: 1.0
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="ev7mvGV+3JQuI2Eo"
+In-Reply-To: <CAA91j0Uqg0FafFTG3NhQt=p8KkYRhTeMU5Bd+JuUxDntP6g8Ng@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Jun 24, 2016 at 8:20 AM, Chris Murphy <lists@colorremedies.com> wrote:
 
-> [root@f24s ~]# filefrag -v /mnt/5/*
-> Filesystem type is: 9123683e
-> File size of /mnt/5/a.txt is 16383 (4 blocks of 4096 bytes)
->  ext:     logical_offset:        physical_offset: length:   expected: flags:
->    0:        0..       3:    2931712..   2931715:      4:             last,eof
+--ev7mvGV+3JQuI2Eo
+Content-Type: text/plain; charset=utf-8
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-Hmm ... I wonder what is wrong here (openSUSE Tumbleweed)
+On Fri, Jun 24, 2016 at 12:52:21PM +0300, Andrei Borzenkov wrote:
+> On Fri, Jun 24, 2016 at 11:50 AM, Hugo Mills <hugo@carfax.org.uk> wrote:
+> > On Fri, Jun 24, 2016 at 07:02:34AM +0300, Andrei Borzenkov wrote:
+> >> 24.06.2016 04:47, Zygo Blaxell =D0=BF=D0=B8=D1=88=D0=B5=D1=82:
+> >> > On Thu, Jun 23, 2016 at 06:26:22PM -0600, Chris Murphy wrote:
+> >> >> On Thu, Jun 23, 2016 at 1:32 PM, Goffredo Baroncelli <kreijack@inwi=
+nd.it> wrote:
+> >> >>> The raid5 write hole is avoided in BTRFS (and in ZFS) thanks to th=
+e checksum.
+> >> >>
+> >> >> Yeah I'm kinda confused on this point.
+> >> >>
+> >> >> https://btrfs.wiki.kernel.org/index.php/RAID56
+> >> >>
+> >> >> It says there is a write hole for Btrfs. But defines it in terms of
+> >> >> parity possibly being stale after a crash. I think the term comes n=
+ot
+> >> >> from merely parity being wrong but parity being wrong *and* then be=
+ing
+> >> >> used to wrongly reconstruct data because it's blindly trusted.
+> >> >
+> >> > I think the opposite is more likely, as the layers above raid56
+> >> > seem to check the data against sums before raid56 ever sees it.
+> >> > (If those layers seem inverted to you, I agree, but OTOH there are
+> >> > probably good reason to do it that way).
+> >> >
+> >>
+> >> Yes, that's how I read code as well. btrfs layer that does checksumming
+> >> is unaware of parity blocks at all; for all practical purposes they do
+> >> not exist. What happens is approximately
+> >>
+> >> 1. logical extent is allocated and checksum computed
+> >> 2. it is mapped to physical area(s) on disks, skipping over what would
+> >> be parity blocks
+> >> 3. when these areas are written out, RAID56 parity is computed and fil=
+led in
+> >>
+> >> IOW btrfs checksums are for (meta)data and RAID56 parity is not data.
+> >
+> >    Checksums are not parity, correct. However, every data block
+> > (including, I think, the parity) is checksummed and put into the csum
+> > tree. This allows the FS to determine where damage has occurred,
+> > rather thansimply detecting that it has occurred (which would be the
+> > case if the parity doesn't match the data, or if the two copies of a
+> > RAID-1 array don't match).
+> >
+>=20
+> Yes, that is what I wrote below. But that means that RAID5 with one
+> degraded disk won't be able to reconstruct data on this degraded disk
+> because reconstructed extent content won't match checksum. Which kinda
+> makes RAID5 pointless.
 
-nohostname:~ # filefrag -v /mnt/1
-Filesystem type is: 9123683e
-File size of /mnt/1 is 3072 (1 block of 4096 bytes)
- ext:     logical_offset:        physical_offset: length:   expected: flags:
-   0:        0..       0:     269376..    269376:      1:             last,eof
-/mnt/1: 1 extent found
+   Eh? How do you come to that conclusion?
 
-But!
+   For data, say you have n-1 good devices, with n-1 blocks on them.
+Each block has a checksum in the metadata, so you can read that
+checksum, read the blocks, and verify that they're not damaged. From
+those n-1 known-good blocks (all data, or one parity and the rest
+data) you can reconstruct the remaining block. That reconstructed
+block won't be checked against the csum for the missing block -- it'll
+just be written and a new csum for it written with it.
 
-nohostname:~ # filefrag -v /etc/passwd
-Filesystem type is: 9123683e
-File size of /etc/passwd is 1527 (1 block of 4096 bytes)
- ext:     logical_offset:        physical_offset: length:   expected: flags:
-   0:        0..    4095:          0..      4095:   4096:
-last,not_aligned,inline,eof
-/etc/passwd: 1 extent found
-nohostname:~ #
+   Hugo.
 
-Why it works for one filesystem but does not work for an other one?
-...
->
-> So at the old address, it shows the "aaaaa..." is still there. And at
-> the added single block for this file at new logical and physical
-> addresses, is the modification substituting the first "a" for "g".
->
-> In this case, no rmw, no partial stripe modification, and no data
-> already on-disk is at risk.
+> ...
+> >
+> >> > It looks like uncorrectable failures might occur because parity is
+> >> > correct, but the parity checksum is out of date, so the parity check=
+sum
+> >> > doesn't match even though data blindly reconstructed from the parity
+> >> > *would* match the data.
+> >> >
+> >>
+> >> Yep, that is how I read it too. So if your data is checksummed, it
+> >> should at least avoid silent corruption.
+> >>
 
-You misunderstand the nature of problem. What is put at risk is data
-that is already on disk and "shares" parity with new data.
+--=20
+Hugo Mills             | Debugging is like hitting yourself in the head with
+hugo@... carfax.org.uk | hammer: it feels so good when you find the bug, and
+http://carfax.org.uk/  | you're allowed to stop debugging.
+PGP: E2AB1DE4          |                                        PotatoEngin=
+eer
 
-As example, here are the first 64K in several extents on 4 disk RAID5
-with so far single data chunk
+--ev7mvGV+3JQuI2Eo
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
 
-        item 6 key (FIRST_CHUNK_TREE CHUNK_ITEM 1103101952) itemoff
-15491 itemsize 176
-                chunk length 3221225472 owner 2 stripe_len 65536
-                type DATA|RAID5 num_stripes 4
-                        stripe 0 devid 4 offset 9437184
-                        dev uuid: ed13e42e-1633-4230-891c-897e86d1c0be
-                        stripe 1 devid 3 offset 9437184
-                        dev uuid: 10032b95-3f48-4ea0-a9ee-90064c53da1f
-                        stripe 2 devid 2 offset 1074790400
-                        dev uuid: cd749bd9-3d72-43b4-89a8-45e4a92658cf
-                        stripe 3 devid 1 offset 1094713344
-                        dev uuid: 41538b9f-3869-4c32-b3e2-30aa2ea1534e
-                dev extent chunk_tree 3
-                chunk objectid 256 chunk offset 1103101952 length 1073741824
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.12 (GNU/Linux)
 
+iQIcBAEBAgAGBQJXbQiaAAoJEFheFHXiqx3kwrAP/iuqDSjMueVpYukyFLczDe60
+1VzkS5BVqR1PpcKXS4Tkvv/TkyTTnKe1frl1T55h5AS46rtzYdNdBbVEtkF51SgQ
+2iwHpjt26kk8S5s2Q9a5n2Jjcn/GmAYqY5X7TOhVNgKNnDFsw3CVNYHmDWwZoszS
+CdIB1ybe7W2qp6XSBGJ9X8iA009dXJ3J83xJCVpnNxd3KwnDiTqRS0VJI9DO2Q79
+iFDOOIGUXUw+KynEPyJ9DAQGJp3iMkjTicrxA9vzwTlOzCrwjkOi1EC7r1xgCw1L
+XwCybJP8hphw/b95p2Qyt2E3BLg3ID4KyOw1yV+njwklDt3SRRmbAWcFhitN9GFQ
+eX0D6Htnmgmv0eMW/0jw4ajOhnkIm8Ey8gPNOhX78gSno2GSymrq0lV8kTW1K7mK
+TDe9veYLmrvRCWDLdjOUFbkUwbZgx2Gty8Ui1aXi07wcH3me3BHMGgbXMqWaktSk
+GmMbs4KCzKNVyX2Il3VnwZZHE0lop2dPIMKyyIZAWMWOJGX0yVtANYDh37kCd8GK
++DDarS4RmtIrUL+XDoXAKP7AS6LGUhJj2PSCemYojGKKPmiyYj5rX/j+f2yEbOIx
+sfpE5m80CoXx6Z6p5N9tIazdTwaBrZKc1fcbqytdh+Sx4gFRSJE41xshUAIBQm48
+rMgjpZEgpkWXECcAkbx4
+=LkCa
+-----END PGP SIGNATURE-----
 
-        item 5 key (1 DEV_EXTENT 1094713344) itemoff 16027 itemsize 48
-                dev extent chunk_tree 3
-                chunk objectid 256 chunk offset 1103101952 length 1073741824
-        item 7 key (2 DEV_EXTENT 1074790400) itemoff 15931 itemsize 48
-                dev extent chunk_tree 3
-                chunk objectid 256 chunk offset 1103101952 length 1073741824
-        item 9 key (3 DEV_EXTENT 9437184) itemoff 15835 itemsize 48
-                dev extent chunk_tree 3
-                chunk objectid 256 chunk offset 1103101952 length 1073741824
-        item 11 key (4 DEV_EXTENT 9437184) itemoff 15739 itemsize 48
-                dev extent chunk_tree 3
-                chunk objectid 256 chunk offset 1103101952 length 1073741824
-
-where devid 1 = sdb1, 2 = sdc1 etc.
-
-Now let's write some data (I created several files) up to 64K in size:
-
-mirror 1 logical 1103364096 physical 1074855936 device /dev/sdc1
-mirror 2 logical 1103364096 physical 9502720 device /dev/sde1
-mirror 1 logical 1103368192 physical 1074860032 device /dev/sdc1
-mirror 2 logical 1103368192 physical 9506816 device /dev/sde1
-mirror 1 logical 1103372288 physical 1074864128 device /dev/sdc1
-mirror 2 logical 1103372288 physical 9510912 device /dev/sde1
-mirror 1 logical 1103376384 physical 1074868224 device /dev/sdc1
-mirror 2 logical 1103376384 physical 9515008 device /dev/sde1
-mirror 1 logical 1103380480 physical 1074872320 device /dev/sdc1
-mirror 2 logical 1103380480 physical 9519104 device /dev/sde1
-
-Note that btrfs allocates 64K on the same device before switching to
-the next one. What is a bit misleading here, sdc1 is data and sde1 is
-parity (you can see it in checksum tree, where only items for sdc1
-exist).
-
-Now let's write next 64k and see what happens
-
-nohostname:~ # btrfs-map-logical -l 1103429632 -b 65536 /dev/sdb1
-mirror 1 logical 1103429632 physical 1094778880 device /dev/sdb1
-mirror 2 logical 1103429632 physical 9502720 device /dev/sde1
-
-See? btrfs now allocates new stripe on sdb1; this stripe is at the
-same offset as previous one on sdc1 (64K) and so shares the same
-parity stripe on sde1. If you compare 64K on sde1 at offset 9502720
-before and after, you will see that it has changed. INPLACE. Without
-CoW. This is exactly what puts existing data on sdc1 at risk - if sdb1
-is updated but sde1 is not, attempt to reconstruct data on sdc1 will
-either fail (if we have checksums) or result in silent corruption.
+--ev7mvGV+3JQuI2Eo--

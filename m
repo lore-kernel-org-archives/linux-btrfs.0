@@ -1,104 +1,129 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-it0-f52.google.com ([209.85.214.52]:35047 "EHLO
-	mail-it0-f52.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750997AbcFXSUD (ORCPT
+Received: from mail-vk0-f65.google.com ([209.85.213.65]:36841 "EHLO
+	mail-vk0-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751025AbcFXXRt (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 24 Jun 2016 14:20:03 -0400
-Received: by mail-it0-f52.google.com with SMTP id g127so21404366ith.0
-        for <linux-btrfs@vger.kernel.org>; Fri, 24 Jun 2016 11:20:02 -0700 (PDT)
-Subject: Re: Adventures in btrfs raid5 disk recovery
-To: Chris Murphy <lists@colorremedies.com>,
-        Andrei Borzenkov <arvidjaar@gmail.com>
-References: <CAJCQCtR9uAn58KJKEjCsbyLYJTQVqMx-ghsVp_MjLBF-aiikcg@mail.gmail.com>
- <20160620204049.GA1986@hungrycats.org>
- <CAJCQCtR5pV53mFyGWxRxm69zwF5_sEvNRRRvOSgnZ1t8KZdc3g@mail.gmail.com>
- <20160621015559.GM15597@hungrycats.org>
- <CAJCQCtRUUd+moK25N3704ZG54cFrCw1-Uxm2QO-XF9g0=mHazw@mail.gmail.com>
- <20160622203504.GQ15597@hungrycats.org>
- <5790aea9-0976-1742-7d1b-79dbe44008c3@inwind.it>
- <CAJCQCtRXqSCFZTca+Vwraa0vS-MzLQKEkr=s41Vypc-O0ZDdxQ@mail.gmail.com>
- <20160624014752.GB14667@hungrycats.org> <576CB0DA.6030409@gmail.com>
- <20160624085014.GH3325@carfax.org.uk>
- <CAA91j0Uqg0FafFTG3NhQt=p8KkYRhTeMU5Bd+JuUxDntP6g8Ng@mail.gmail.com>
- <CAJCQCtQBQAng5_mNJZev+64Z15BSkBkG9f2qmz=ckPRqXRbbWA@mail.gmail.com>
- <576D6C0A.7070502@gmail.com>
- <CAJCQCtSskA4PC_a8tgQopHFNO83NQ=Gkx406haB7G0nBi5e=2A@mail.gmail.com>
-Cc: Hugo Mills <hugo@carfax.org.uk>,
-        Zygo Blaxell <ce3g8jdj@umail.furryterror.org>, kreijack@inwind.it,
-        Roman Mamedov <rm@romanrm.net>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <c2a320a6-261b-723d-ab83-58f883e6315b@gmail.com>
-Date: Fri, 24 Jun 2016 14:19:53 -0400
+	Fri, 24 Jun 2016 19:17:49 -0400
+Received: by mail-vk0-f65.google.com with SMTP id v188so21152727vkf.3
+        for <linux-btrfs@vger.kernel.org>; Fri, 24 Jun 2016 16:17:48 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <CAJCQCtSskA4PC_a8tgQopHFNO83NQ=Gkx406haB7G0nBi5e=2A@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+From: Henk Slager <eye1tm@gmail.com>
+Date: Sat, 25 Jun 2016 01:17:47 +0200
+Message-ID: <CAPmG0ja1zDQxJ-bw7c-GLscb6hPddKRNHGnCxNvYWSJMaP+eJA@mail.gmail.com>
+Subject: noholes and incremental send streamsize
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2016-06-24 13:52, Chris Murphy wrote:
-> On Fri, Jun 24, 2016 at 11:21 AM, Andrei Borzenkov <arvidjaar@gmail.com> wrote:
->> 24.06.2016 20:06, Chris Murphy пишет:
->>> On Fri, Jun 24, 2016 at 3:52 AM, Andrei Borzenkov <arvidjaar@gmail.com> wrote:
->>>> On Fri, Jun 24, 2016 at 11:50 AM, Hugo Mills <hugo@carfax.org.uk> wrote:
->>>> eta)data and RAID56 parity is not data.
->>>>>
->>>>>    Checksums are not parity, correct. However, every data block
->>>>> (including, I think, the parity) is checksummed and put into the csum
->>>>> tree. This allows the FS to determine where damage has occurred,
->>>>> rather thansimply detecting that it has occurred (which would be the
->>>>> case if the parity doesn't match the data, or if the two copies of a
->>>>> RAID-1 array don't match).
->>>>>
->>>>
->>>> Yes, that is what I wrote below. But that means that RAID5 with one
->>>> degraded disk won't be able to reconstruct data on this degraded disk
->>>> because reconstructed extent content won't match checksum. Which kinda
->>>> makes RAID5 pointless.
->>>
->>> I don't understand this. Whether the failed disk means a stripe is
->>> missing a data strip or parity strip, if any other strip is damaged of
->>> course the reconstruction isn't going to match checksum. This does not
->>> make raid5 pointless.
->>>
->>
->> Yes, you are right. We have double failure here. Still, in current
->> situation we apparently may end with btrfs reconstructing missing block
->> using wrong information. As was mentioned elsewhere, btrfs does not
->> verify checksum of reconstructed block, meaning data corruption.
->
-> Well that'd be bad, but also good in that it would explain a lot of
-> problems people have when metadata is also raid5. In this whole thread
-> the premise is the metadata is raid1, so the fs doesn't totally face
-> plant we just get a bunch of weird data corruptions. The metadata
-> raid5 case were sorta "WTF happened?" and not much was really said
-> about it other than telling the user to scrape off what they can and
-> start over.
->
-> Anyway, while not good I still think this is not super problematic to
-> at least *do* check EXTENT_CSUM after reconstruction from parity
-> rather than assuming that reconstruction happened correctly. The data
-> needed to pass fail the rebuild is already on the disk. It just needs
-> to be checked.
->
-> Better would be to get parity csummed and put into the csum tree. But
-> I don't know how much that helps. Think about always computing and
-> writing csums for parity, which almost never get used vs keeping
-> things the way they are now and just *checking our work* after
-> reconstruction from parity. If there's some obvious major advantage to
-> checksumming the parity I'm all ears but I'm not thinking of it at the
-> moment.
->
-Well, the obvious major advantage that comes to mind for me to 
-checksumming parity is that it would let us scrub the parity data itself 
-and verify it.  I'd personally much rather know my parity is bad before 
-I need to use it than after using it to reconstruct data and getting an 
-error there, and I'd be willing to be that most seasoned sysadmins 
-working for companies using big storage arrays likely feel the same 
-about it.  I could see it being practical to have an option to turn this 
-off for performance reasons or similar, but again, I have a feeling that 
-most people would rather be able to check if a rebuild will eat data 
-before trying to rebuild (depending on the situation in such a case, it 
-will sometimes just make more sense to nuke the array and restore from a 
-backup instead of spending time waiting for it to rebuild).
+Hi,
 
+the virtual machine images files I create and use are mostly sparse,
+so that not too much space on a filesystem with snapshots and on
+filesystems that are receive targets is used.
+But I noticed that with just starting up and shutting down a virtual
+machine, the difference between 2 nightly snapshots as generated by
+send -p is huge. It turns out that the cause is the noholes flag of
+the filesystem. I have set this flag to have a bit less metadata
+hopefully, but it turns out to have a very negative side effect.
+
+The sparse part of a file that is changed between 2 snapshots is added
+to the difference between the 2 snapshots when doing send -p, in full
+'no-sparse' size (as zeros I think, as the data compresses extremely
+well).
+So in case of a 50G VM that has roughly 8G of actual written
+filesystem data (a new OS install), I saw 40G of generated btrfs
+sendstream data by just a start/stop of the VM.
+
+I think this behavior is not correct: Sparse is read as zeros normally
+AFAIK, so if the file locations that are sparse are the same for a
+snapshotted file and its parent, there should not be a difference.
+
+The following sequence shows the problem; if the btrfstune command is
+skipped, streamsize is as expected.
+
+
+uname -r
+btrfs --version
+truncate -s 5G /holetest.img
+losetup /dev/loop0 /holetest.img
+mkfs.btrfs /dev/loop0
+
+btrfstune -n /dev/loop0
+
+btrfs-show-super /dev/loop0 | grep incompat_flags
+mount /dev/loop0 /mnt
+btrfs sub create /mnt/vol1
+truncate -s 4G /mnt/vol1/test1
+btrfs sub snap -r /mnt/vol1 /mnt/vol1.ro0
+dd if=/dev/urandom of=/mnt/vol1/test1 bs=1M count=1 conv=notrunc
+sync
+btrfs sub snap -r /mnt/vol1 /mnt/vol1.ro1
+dd if=/dev/urandom of=/mnt/vol1/test1 bs=1M count=1 conv=notrunc
+sync
+btrfs sub snap -r /mnt/vol1 /mnt/vol1.ro2
+btrfs send -p /mnt/vol1.ro1 /mnt/vol1.ro2 > /sendsize.btrfs
+ls -al /sendsize.btrfs
+umount /mnt
+losetup -d /dev/loop0
+rm /holetest.img /sendsize.btrfs
+
+
+=> output
+
+# uname -r
+4.7.0-rc4-kade
+# btrfs --version
+btrfs-progs v4.6.1
+# truncate -s 5G /holetest.img
+# losetup /dev/loop0 /holetest.img
+# mkfs.btrfs /dev/loop0
+btrfs-progs v4.5.3+20160516
+See http://btrfs.wiki.kernel.org for more information.
+
+Performing full device TRIM (5.00GiB) ...
+Label:              (null)
+UUID:               338e948c-ee8c-4b9f-926e-b6f8fe140ae6
+Node size:          16384
+Sector size:        4096
+Filesystem size:    5.00GiB
+Block group profiles:
+ Data:             single            8.00MiB
+ Metadata:         DUP             264.00MiB
+ System:           DUP              12.00MiB
+SSD detected:       no
+Incompat features:  extref, skinny-metadata
+Number of devices:  1
+Devices:
+  ID        SIZE  PATH
+   1     5.00GiB  /dev/loop0
+
+#
+# btrfstune -n /dev/loop0
+#
+# btrfs-show-super /dev/loop0 | grep incompat_flags
+incompat_flags          0x341
+# mount /dev/loop0 /mnt
+# btrfs sub create /mnt/vol1
+Create subvolume '/mnt/vol1'
+# truncate -s 4G /mnt/vol1/test1
+# btrfs sub snap -r /mnt/vol1 /mnt/vol1.ro0
+Create a readonly snapshot of '/mnt/vol1' in '/mnt/vol1.ro0'
+# dd if=/dev/urandom of=/mnt/vol1/test1 bs=1M count=1 conv=notrunc
+1+0 records in
+1+0 records out
+1048576 bytes (1,0 MB, 1,0 MiB) copied, 0,0779673 s, 13,4 MB/s
+# sync
+# btrfs sub snap -r /mnt/vol1 /mnt/vol1.ro1
+Create a readonly snapshot of '/mnt/vol1' in '/mnt/vol1.ro1'
+# dd if=/dev/urandom of=/mnt/vol1/test1 bs=1M count=1 conv=notrunc
+1+0 records in
+1+0 records out
+1048576 bytes (1,0 MB, 1,0 MiB) copied, 0,0634306 s, 16,5 MB/s
+# sync
+# btrfs sub snap -r /mnt/vol1 /mnt/vol1.ro2
+Create a readonly snapshot of '/mnt/vol1' in '/mnt/vol1.ro2'
+# btrfs send -p /mnt/vol1.ro1 /mnt/vol1.ro2 > /sendsize.btrfs
+At subvol /mnt/vol1.ro2
+# ls -al /sendsize.btrfs
+-rw-r--r-- 1 root root 4298025877 jun 25 00:26 /sendsize.btrfs

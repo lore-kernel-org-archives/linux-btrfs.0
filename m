@@ -1,14 +1,14 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:58747 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:58750 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750999AbcFXPIh (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	id S1751025AbcFXPIh (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
 	Fri, 24 Jun 2016 11:08:37 -0400
 From: jeffm@suse.com
 To: fstests@vger.kernel.org
 Cc: linux-btrfs@vger.kernel.org
-Subject: [PATCH 3/4] fstests: btrfs/125: test sysfs exports of allocation and device membership info
-Date: Fri, 24 Jun 2016 11:08:33 -0400
-Message-Id: <1466780914-23884-3-git-send-email-jeffm@suse.com>
+Subject: [PATCH 4/4] fstests: btrfs/126,127,128: test feature ioctl and sysfs interfaces
+Date: Fri, 24 Jun 2016 11:08:34 -0400
+Message-Id: <1466780914-23884-4-git-send-email-jeffm@suse.com>
 In-Reply-To: <1466780914-23884-1-git-send-email-jeffm@suse.com>
 References: <1466780914-23884-1-git-send-email-jeffm@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -16,78 +16,53 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Jeff Mahoney <jeffm@suse.com>
 
-This tests the sysfs publishing for btrfs allocation and device
-membership info under a number of different layouts, similar to the
-btrfs replace test. We test the allocation files only for existence and
-that they contain numerical values. We test the device membership
-by mapping the devices used to create the file system to sysfs paths
-and matching them against the paths used for the device membership
-symlinks.
+This tests the exporting of feature information from the kernel via
+sysfs and ioctl. The first test works whether the sysfs permissions
+are correct, if the information exported via sysfs matches
+what the ioctls are reporting, and if they both match the on-disk
+superblock's version of the feature sets. The second and third tests
+test online setting and clearing of feature bits via the sysfs and
+ioctl interfaces, checking whether they match the on-disk super on
+each cycle.
 
-It passes on kernels without a /sys/fs/btrfs/<fsid> directory.
+In every case, if the features are not present, it is not considered
+a failure and a message indicating that will be dumped to the $num.full
+file.
 
 Signed-off-by: Jeff Mahoney <jeffm@suse.com>
 ---
- common/config       |   4 +-
- common/rc           |   7 ++
- tests/btrfs/125     | 193 ++++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/125.out |   2 +
- tests/btrfs/group   |   1 +
- 5 files changed, 205 insertions(+), 2 deletions(-)
- create mode 100755 tests/btrfs/125
- create mode 100644 tests/btrfs/125.out
+ tests/btrfs/126     | 269 ++++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/126.out |   2 +
+ tests/btrfs/127     | 185 ++++++++++++++++++++++++++++++++++++
+ tests/btrfs/127.out |   2 +
+ tests/btrfs/128     | 178 ++++++++++++++++++++++++++++++++++
+ tests/btrfs/128.out |   2 +
+ tests/btrfs/group   |   3 +
+ 7 files changed, 641 insertions(+)
+ create mode 100755 tests/btrfs/126
+ create mode 100644 tests/btrfs/126.out
+ create mode 100755 tests/btrfs/127
+ create mode 100644 tests/btrfs/127.out
+ create mode 100755 tests/btrfs/128
+ create mode 100644 tests/btrfs/128.out
 
-diff --git a/common/config b/common/config
-index c25b1ec..c5e65f7 100644
---- a/common/config
-+++ b/common/config
-@@ -201,13 +201,13 @@ export DEBUGFS_PROG="`set_prog_path debugfs`"
- # newer systems have udevadm command but older systems like RHEL5 don't.
- # But if neither one is available, just set it to "sleep 1" to wait for lv to
- # be settled
--UDEV_SETTLE_PROG="`set_prog_path udevadm`"
-+UDEVADM_PROG="`set_prog_path udevadm`"
- if [ "$UDEV_SETTLE_PROG" == "" ]; then
- 	# try udevsettle command
- 	UDEV_SETTLE_PROG="`set_prog_path udevsettle`"
- else
- 	# udevadm is available, add 'settle' as subcommand
--	UDEV_SETTLE_PROG="$UDEV_SETTLE_PROG settle"
-+	UDEV_SETTLE_PROG="$UDEVADM_PROG settle"
- fi
- # neither command is available, use sleep 1
- if [ "$UDEV_SETTLE_PROG" == "" ]; then
-diff --git a/common/rc b/common/rc
-index 4b05fcf..f4c4312 100644
---- a/common/rc
-+++ b/common/rc
-@@ -76,6 +76,13 @@ _btrfs_get_subvolid()
- 	$BTRFS_UTIL_PROG sub list $mnt | grep $name | awk '{ print $2 }'
- }
- 
-+_btrfs_get_feature_flags()
-+{
-+	local dev=$1
-+	local class=$2
-+	$BTRFS_SHOW_SUPER_PROG $dev | grep ^${class}_flags | awk '{print $NF}'
-+}
-+
- _btrfs_get_fsid()
- {
- 	local dev=$1
-diff --git a/tests/btrfs/125 b/tests/btrfs/125
+diff --git a/tests/btrfs/126 b/tests/btrfs/126
 new file mode 100755
-index 0000000..83f1921
+index 0000000..3d660c5
 --- /dev/null
-+++ b/tests/btrfs/125
-@@ -0,0 +1,193 @@
-+#! /bin/bash
-+# FS QA Test No. 125
++++ b/tests/btrfs/126
+@@ -0,0 +1,269 @@
++#!/bin/bash
++# FA QA Test No. 126
 +#
-+# Test of the btrfs sysfs publishing
++# Test online feature publishing
++#
++# This test doesn't test the changing of features. It does test that
++# the proper publishing bits and permissions match up with
++# the expected values.
 +#
 +#-----------------------------------------------------------------------
-+# Copyright (C) 2013-2016 SUSE.  All rights reserved.
++# Copyright (c) 2013 SUSE, All Rights Reserved.
 +#
 +# This program is free software; you can redistribute it and/or
 +# modify it under the terms of the GNU General Public License as
@@ -101,196 +76,661 @@ index 0000000..83f1921
 +# You should have received a copy of the GNU General Public License
 +# along with this program; if not, write the Free Software Foundation,
 +# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-+#
 +#-----------------------------------------------------------------------
-+#
 +
-+seq=`basename $0`
++seq=$(basename $0)
 +seqres=$RESULT_DIR/$seq
 +echo "== QA output created by $seq"
 +
-+here=`pwd`
++here=$(pwd)
 +tmp=/tmp/$$
 +status=1
 +
 +# get standard environment, filters and checks
 +. ./common/rc
-+. ./common/filter
++. ./common/filter.btrfs
 +
-+# real QA test starts here
 +_supported_fs btrfs
++_supported_os Linux
 +_require_scratch
-+_require_scratch_dev_pool
-+_require_command "$UDEVADM_PROG"
++_require_command $BTRFS_SHOW_SUPER_PROG
 +
-+rm -f $seqres.full
-+rm -f $tmp.tmp
++_scratch_mkfs > /dev/null 2>&1
++_scratch_mount
 +
-+check_file() {
++check_features() {
++	reserved="$2"
++	method="$3"
++	if [ "$1" != 0 ]; then
++		echo "$method: failed: $reserved"
++		exit 1
++	fi
++        if [ "$reserved" = "Not implemented." ]; then
++                echo "Skipping ioctl test. Not implemented." >> $seqres.full
++                return
++        fi
++}
++
++error=false
++
++# test -w will always return true if root is making the call.
++# This would be true in most cases, but for sysfs files, the permissions
++# are enforced even for root.
++is_writeable() {
 +	local file=$1
-+	base="$(echo "$file" | sed -e 's#/sys/fs/btrfs/[0-9a-f-][0-9a-f-]*/##')"
-+	if [ ! -f "$file" ]; then
-+		echo "$base missing."
-+		return 0
-+	else
-+		value="$(cat $file)"
-+		if [ -n "$(echo $value | tr -d 0-9)" ]; then
-+			echo "ERROR: $base: numerical value expected" \
-+			     "(got $value)"
-+			return 0
-+		fi
-+	fi
-+	return 1
-+}
++	mode=$(stat -c "0%a" "$file")
++	mode=$(( $mode & 0200 ))
 +
-+check_chunk() {
-+	path=$1
-+	mkfs_options=$2
-+	error=false
-+
-+	chunktype=$(basename $path)
-+	if [ ! -d "$path" ]; then
-+		echo "No $chunktype directory."
-+		exit 1
-+	fi
-+
-+	for file in bytes_may_use bytes_pinned bytes_reserved bytes_used \
-+		    disk_total disk_used flags total_bytes \
-+		    total_bytes_pinned; do
-+		if check_file "$path/$file"; then
-+			error=true
-+		fi
-+	done
-+
-+	if [ "$chunktype" = "data" -o "$chunktype" = "mixed" ]; then
-+		opt="-d"
-+	elif [ "$chunktype" = "metadata" -o "$chunktype" = "system" ]; then
-+		opt="-m"
-+	fi
-+
-+	profile=$(echo $mkfs_options | sed -e "s/.*$opt \([[:alnum:]]*\).*/\1/")
-+	if [ ! -d "$path/$profile" ]; then
-+		echo "No $profile dir for $chunktype"
-+		exit 1
-+	fi
-+
-+	for file in total_bytes used_bytes; do
-+		if check_file $path/$profile/$file; then
-+			error=true
-+		fi
-+	done
-+
-+	$error && exit 1
-+}
-+
-+check_dev_link() {
-+	local dev=$1
-+	DEV="/sys/$($UDEVADM_PROG info --query=path $dev)"
-+	DEV="$(readlink -f $DEV)"
-+	found=false
-+	for link in $sysfs_base/devices/*; do
-+		LINK="$(readlink -f $link)"
-+		if [ "$LINK" = "$DEV" ]; then
-+			found=true
-+			break
-+		fi
-+	done
-+	if ! $found; then
-+		echo "Symlink for $dev missing in $sysfs_base/devices"
-+		return 1
-+	fi
++	[ "$mode" -eq 0 ] && return 1
 +	return 0
 +}
 +
-+workout()
-+{
-+	local mkfs_options="$1"
-+	local num_devs4raid="$2"
-+	local fssize
-+	local used_devs=""
++# ioctl
++read -a features < <(src/btrfs_ioctl_helper $SCRATCH_MNT GET_FEATURES 2>&1)
++check_features $? "$features" "GET_FEATURES"
 +
-+	if [ "`echo $SCRATCH_DEV_POOL | wc -w`" -lt $num_devs4raid ]; then
-+		echo "Skip workout $1 $2 $3 $4"
-+		echo "Too few devices in SCRATCH_DEV_POOL $SCRATCH_DEV_POOL," \
-+		     "required: $num_devs4raid"
-+		echo "Skip workout $1 $2 $3 $4" >> $seqres.full
-+		echo "Too few devices in SCRATCH_DEV_POOL $SCRATCH_DEV_POOL," \
-+		     "required: $num_devs4raid" >> $seqres.full
-+		return 0
-+	fi
++test_ioctl=true
++[ "${features[*]}" = "Not implemented." ] && test_ioctl=false
 +
-+	if [ "$num_devs4raid" -gt 1 ]; then
-+		used_devs=$(echo $SCRATCH_DEV_POOL|tr '\t' ' '| \
-+			    cut -d ' ' -f 2-$num_devs4raid)
-+	fi
++read -a supp_features < <(src/btrfs_ioctl_helper $SCRATCH_MNT GET_SUPPORTED_FEATURES 2>&1)
++check_features $? "$supp_features" "GET_SUPPORTED_FEATURES"
++[ "${supp_features[*]}" = "Not implemented." ] && test_ioctl=false
 +
-+	_scratch_mkfs $mkfs_options $used_devs >> $seqres.full 2>&1 || \
-+	_fail "mkfs failed"
++# Sysfs checks
++fsid=$(_btrfs_get_fsid $SCRATCH_DEV)
++sysfs_base="/sys/fs/btrfs"
 +
-+	_scratch_mount
-+
-+	# Check allocation
-+	sysfs_base="/sys/fs/btrfs/$(_btrfs_get_fsid $SCRATCH_DEV)"
-+
-+	# Feature isn't present for testing
-+	if [ ! -d "$sysfs_base" ]; then
-+		echo "Skipping sysfs test: $sysfs_base not found." \
++# TODO Add tool to enable and test unknown feature bits
++get_feature_mask() {
++	class=""
++	case "$attr" in
++	mixed_backref)	class=incompat; bit=0x1 ;;
++	default_subvol)	class=incompat; bit=0x2 ;;
++	mixed_groups)	class=incompat; bit=0x4 ;;
++	compress_lzo)	class=incompat; bit=0x8 ;;
++	compress_lsov2)	class=incompat; bit=0x10 ;;
++	big_metadata)	class=incompat; bit=0x20 ;;
++	extended_iref)	class=incompat; bit=0x40 ;;
++	raid56)		class=incompat; bit=0x80 ;;
++	skinny_metadata)class=incompat; bit=0x100 ;;
++	compat:*)	class=compat; bit=${attr##compat:} ;;
++	compat_ro:*)	class=compat_ro; bit=${attr##compat_ro:} ;;
++	incompat:*)	class=incompat; bit=${attr##incompat:} ;;
++	esac
++	if [ -z "$class" ]; then
++		echo "Unknown feature name $attr. xfstests needs updating." \
++		     " Skipping the test of sysfs values to superblock values" \
 +		     >> $seqres.full
 +		return
 +	fi
 +
-+	mixed=false
-+	case "$mkfs_options" in
-+	*-M*)
-+		mixed=true;
-+		;;
-+	esac
-+
-+	check_chunk "$sysfs_base/allocation/system" "$mkfs_options"
-+	if $mixed; then
-+		check_chunk "$sysfs_base/allocation/mixed" "$mkfs_options"
-+	else
-+		check_chunk "$sysfs_base/allocation/data" "$mkfs_options"
-+		check_chunk "$sysfs_base/allocation/metadata" "$mkfs_options"
-+	fi
-+
-+	for dev in $used_devs; do
-+		check_dev_link $dev || exit 1
-+	done
-+
-+	umount $SCRATCH_MNT > /dev/null 2>&1
++	echo "$class $bit"
 +}
 +
-+workout "-m single -d single" 1
-+workout "-m single -d single -M" 1
-+workout "-m dup -d single" 1
-+workout "-m dup -d dup -M" 1
-+workout "-m raid0 -d raid0" 2
-+workout "-m raid1 -d raid1" 2
-+workout "-m raid5 -d raid5" 2
-+workout "-m raid6 -d raid6" 3
-+workout "-m raid10 -d raid10" 4
++get_changeable_mask() {
++	local class=$1
++	local index=0
++	if [ "$class" = "compat" ]; then
++		index=0
++	elif [ "$class" = "compat_ro" ]; then
++		index=1
++	elif [ "$class" = "incompat" ]; then
++		index=2
++	fi
++	local set_index=$(( $index + 3 ))
++	local clear_index=$(( $index + 6 ))
++
++	local mask=$(( ${supp_features[$set_index]} | \
++		       ${supp_features[$clear_index]} ))
++
++	echo $mask
++}
++
++test_sysfs=false
++if [ -d "$sysfs_base/features" -a -d "$sysfs_base/$fsid/features" ]; then
++	test_sysfs=true
++fi
++
++# Check enabled features in sysfs vs what the superblock claims
++sysfs_features=(0 0 0)
++for file in $sysfs_base/$fsid/features/*; do
++	$test_sysfs || break
++	attr=$(basename $file)
++	val=$(cat $file)
++	read class bit < <(get_feature_mask $attr)
++
++	# A file that exists but has a 0 value means that it's changeable
++	if [ "$val" -eq 0 ]; then
++		if [ ! -e "$sysfs_base/features/$attr" ]; then
++			echo "$fsid/$attr exists with a 0 value but" \
++			     "features/$attr doesn't exist."
++			error=true
++			continue
++		elif ! is_writeable "$file"; then
++			echo "$attr is not writable but exists and has a" \
++			     "0 value."
++			error=true
++		fi
++
++		mask=$(get_changeable_mask $class)
++		if [ "$(( $bit & ~$mask ))" -ne 0 ]; then
++			echo "$attr is writable but GET_SUPPORTED_FEATURES" \
++			     "ioctl claims it shouldn't be."
++			error=true
++		fi
++
++		continue
++	fi
++	if [ "$class" = "compat" ]; then
++		sysfs_features[0]=$(( ${sysfs_features[0]} | $bit ))
++	elif [ "$class" = "compat_ro" ]; then
++		sysfs_features[1]=$(( ${sysfs_features[1]} | $bit ))
++	elif [ "$class" = "incompat" ]; then
++		sysfs_features[2]=$(( ${sysfs_features[2]} | $bit ))
++	else
++		# We will end up with a bit set in the superblock that
++		# doesn't have a matching bit here. The feature-bit to name
++		# mapping must be kept up-to-date for this test to succeed.
++		echo "Unknown feature name $attr. xfstests needs updating." \
++		     "Skipping the test of sysfs values to superblock values" \
++		      >> $seqres.full
++		skip_sysfs_super_check=true
++	fi
++done
++
++for file in $sysfs_base/features/*; do
++	$test_sysfs || break
++	attr=$(basename $file)
++	val=$(cat $file)
++	if [ "$val" -gt 0 ]; then
++		if [ ! -e "$sysfs_base/$fsid/features/$attr" ]; then
++			echo "features/$attr has a nonzero value ($val)" \
++			     "but $fsid/features/$attr doesn't exist"
++			error=true
++			continue
++		fi
++		if ! is_writeable "$sysfs_base/$fsid/features/$attr"; then
++			echo "features/$attr has a nonzero value ($val)" \
++			     "but $fsid/features/$attr is not writable"
++			error=true
++			continue
++		fi
++		continue
++	fi
++
++	[ ! -e "$sysfs_base/$fsid/features/$attr" ] && continue
++
++	if is_writeable "$sysfs_base/$fsid/features/$attr"; then
++		echo "features/$attr has a zero value but" \
++		     "$fsid/features/$attr is writable."
++		error=true
++		continue
++	fi
++
++	read class bit < <(get_feature_mask $attr)
++	mask=$(get_changeable_mask $class)
++	if [ "$(( $bit & $mask ))" -ne 0 ]; then
++		echo "$attr isn't writable but GET_SUPPORTED_FEATURES" \
++		     "ioctl claims it should be."
++		error=true
++		continue
++	fi
++done
++
++umount $SCRATCH_MNT > /dev/null 2>&1
++
++fields=("compat" "compat_ro" "incompat")
++declare -a disk_flags
++
++check_ioctl_flags() {
++	local index=$1
++	local flags=${features[$index]}
++
++	if [ "$flags" != "${disk_flags[$index]}" ]; then
++		echo "ioctl returned different ${fields[$index]} flags" \
++		     "($flags) than those contained in superblock" \
++		     "(${disk_flags[$index]})"
++		error=true
++	fi
++}
++
++check_sysfs_flags() {
++	local index=$1
++	$skip_sysfs_super_check || return
++
++	flags=$(printf "0x%llx" ${sysfs_features[$index]})
++	if [ "$flags" != "${disk_flags[$index]}" ]; then
++		echo "sysfs returned different ${fields[$index]}" \
++		     "flags ($flags) than those contained in" \
++		     "superblock (${disk_flags[$index]})"
++		error=true
++	fi
++}
++
++
++for index in $(seq 0 2); do
++	class=${fields[$index]}
++	disk_flags[$index]=$(_btrfs_get_feature_flags $SCRATCH_DEV $class)
++	$test_ioctl && check_ioctl_flags "$index"
++	$test_sysfs && check_sysfs_flags "$index"
++done
++
++$error && exit 1
++
++#
++echo "Silence is golden"
++status=0
++exit
+diff --git a/tests/btrfs/126.out b/tests/btrfs/126.out
+new file mode 100644
+index 0000000..fd12fb0
+--- /dev/null
++++ b/tests/btrfs/126.out
+@@ -0,0 +1,2 @@
++== QA output created by 126
++Silence is golden
+diff --git a/tests/btrfs/127 b/tests/btrfs/127
+new file mode 100755
+index 0000000..0a7eb91
+--- /dev/null
++++ b/tests/btrfs/127
+@@ -0,0 +1,185 @@
++#!/bin/bash
++# FA QA Test No. 127
++#
++# Test online feature changing via ioctl
++#
++#-----------------------------------------------------------------------
++# Copyright (c) 2013 SUSE, All Rights Reserved.
++#
++# This program is free software; you can redistribute it and/or
++# modify it under the terms of the GNU General Public License as
++# published by the Free Software Foundation.
++#
++# This program is distributed in the hope that it would be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write the Free Software Foundation,
++# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++#-----------------------------------------------------------------------
++
++seq=$(basename $0)
++seqres=$RESULT_DIR/$seq
++echo "== QA output created by $seq"
++
++here=$(pwd)
++tmp=/tmp/$$
++status=1
++
++# get standard environment, filters and checks
++. ./common/rc
++. ./common/filter.btrfs
++
++_supported_fs btrfs
++_supported_os Linux
++_require_scratch
++_require_command $BTRFS_SHOW_SUPER_PROG
++
++IOCTL=src/btrfs_ioctl_helper
++
++check_features() {
++	reserved="$2"
++	method="$3"
++	if [ "$1" != 0 ]; then
++		echo "$method: failed: $reserved"
++		exit 1
++	fi
++	if [ "$reserved" = "Not implemented." ]; then
++		echo "Skipping ioctl $method test. Not implemented." \
++		     >> $seqres.full
++		echo "Silence is golden."
++		exit 0
++	fi
++}
++
++# 3 values, one for each each of the fields
++update_features() {
++	read -a features < <($IOCTL $SCRATCH_MNT GET_FEATURES 2>&1)
++	check_features $? "${features[@]}" "GET_FEATURES"
++}
++
++set_feature() {
++	local field=$1
++	local bits=$2
++	local class=${fields[$field]}
++	local old=${features[$field]}
++	msg=$($IOCTL $SCRATCH_MNT SET_FEATURES set $class $bits)
++	check_features $? "$msg" "SET_FEATURES"
++	update_features
++	local new=${features[$field]}
++
++	if [ "$old" = "$new" ]; then
++		echo "Feature setting failed"
++		exit 1
++	fi
++	expected=$(( $old | $bits ))
++	new=$(( $new ))
++	if [ "$expected" -ne "$new" ]; then
++		echo "Feature setting failed; Got $new, expected $expected"
++		exit 1
++	fi
++	echo $new
++}
++
++clear_feature() {
++	local field=$1
++	local bits=$2
++	local class=${fields[$field]}
++	local old=${features[$field]}
++	msg=$($IOCTL $SCRATCH_MNT SET_FEATURES clear $class $bits)
++	check_features $? "$msg" "SET_FEATURES"
++	update_features
++	local new="${features[$field]}"
++
++	if [ "$old" = "$new" ]; then
++		echo "Feature clearing failed"
++		exit 1
++	fi
++	expected=$(( $old & ~$bits ))
++	new=$(( $new ))
++	if [ "$expected" -ne "$new" ]; then
++		echo "Feature clearing failed; Got $new, expected $expected"
++		exit 1
++	fi
++}
++
++check_flags() {
++	local index=$1
++	local expected=$(( $2 ))
++	local class=${fields[$index]}
++	disk_flags="$(( $(_btrfs_get_feature_flags $SCRATCH_DEV $class) ))"
++	if [ "$disk_flags" -ne "$expected" ]; then
++		echo "mismatch: $disk_flags-$expected"
++		error=true
++	fi
++}
++
++error=false
++fields=("compat" "compat_ro" "incompat")
++
++_scratch_mkfs > /dev/null 2>&1
++_scratch_mount
++
++update_features
++
++# 9 values; 3 each for supported, settable, and clearable
++read -a supp_features < <($IOCTL $SCRATCH_MNT GET_SUPPORTED_FEATURES 2>&1)
++check_features $? "$supp_features" "GET_SUPPORTED_FEATURES"
++
++# Cycle through settable features.
++# Set the feature
++# Reload ioctl version and test against expected new value
++# Unmount and test against expected new value
++# Reount
++settable() {
++	echo "${supp_features[$(( $1 + 3 ))]}"
++}
++did_set=false
++for field in $(seq 0 2); do
++	fset="$(settable $field)"
++	[ -z "$fset" ] && break
++	for n in $(seq 0 63); do
++		old="${features[$field]}"
++		v="$(( $fset & (1 << $n) ))"
++		[ "$v" -eq 0 ] && continue
++		new="$(set_feature $field $v)"
++		umount $SCRATCH_MNT > /dev/null 2>&1
++		expected="$(( $old | $v ))"
++		check_flags "$field" "$expected"
++		_scratch_mount
++		did_set=true
++	done
++done
++$did_set || echo "No online-settable features to test." >> $seqres.full
++
++# Repeat with clearing features
++clearable() {
++	echo "${supp_features[$(( $1 + 6 ))]}"
++}
++did_clear=false
++for field in $(seq 0 2); do
++	fclear="$(clearable $field)"
++	[ -z "$fclear" ] && break
++	for n in $(seq 0 63); do
++		v="$(( $fclear & (1 << $n) ))"
++		[ "$v" -eq 0 ] && continue
++
++		new="$(clear_feature $field $v)"
++		umount $SCRATCH_MNT > /dev/null 2>&1
++		expected=$(( $old &~ $v ))
++		check_flags $field $expected
++		_scratch_mount
++		did_clear=true
++	done
++done
++$did_clear || echo "No online-clearable features to test." >> $seqres.full
++
++umount $SCRATCH_MNT > /dev/null 2>&1
++
++$error && exit 1
 +
 +echo "Silence is golden"
 +status=0
 +exit
-diff --git a/tests/btrfs/125.out b/tests/btrfs/125.out
+diff --git a/tests/btrfs/127.out b/tests/btrfs/127.out
 new file mode 100644
-index 0000000..91f76e8
+index 0000000..2ff4733
 --- /dev/null
-+++ b/tests/btrfs/125.out
++++ b/tests/btrfs/127.out
 @@ -0,0 +1,2 @@
-+== QA output created by 125
++== QA output created by 127
++Silence is golden
+diff --git a/tests/btrfs/128 b/tests/btrfs/128
+new file mode 100755
+index 0000000..7de780a
+--- /dev/null
++++ b/tests/btrfs/128
+@@ -0,0 +1,178 @@
++#!/bin/bash
++# FA QA Test No. 128
++#
++# Test online feature changing via sysfs
++#
++#-----------------------------------------------------------------------
++# Copyright (c) 2013 SUSE, All Rights Reserved.
++#
++# This program is free software; you can redistribute it and/or
++# modify it under the terms of the GNU General Public License as
++# published by the Free Software Foundation.
++#
++# This program is distributed in the hope that it would be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write the Free Software Foundation,
++# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++#-----------------------------------------------------------------------
++
++seq=$(basename $0)
++seqres=$RESULT_DIR/$seq
++echo "== QA output created by $seq"
++
++here=$(pwd)
++tmp=/tmp/$$
++status=1
++
++# get standard environment, filters and checks
++. ./common/rc
++. ./common/filter.btrfs
++
++_supported_fs btrfs
++_supported_os Linux
++_require_scratch
++_require_command $BTRFS_SHOW_SUPER_PROG
++
++IOCTL=src/btrfs_ioctl_helper
++
++check_flags() {
++	local class=$1
++	local expected=$2
++	disk_flags="$(_btrfs_get_feature_flags $SCRATCH_DEV $class)"
++	disk_flags=$(printf 0x%llx $disk_flags)
++	expected=$(printf 0x%llx $expected)
++	if [ "$disk_flags" != "$expected" ]; then
++		echo "mismatch: $disk_flags-$expected"
++		error=true
++	fi
++}
++
++get_feature_mask() {
++	local attr=$1
++	local class=""
++	local bit=
++	case "$attr" in
++	mixed_backref)	class=incompat bit=0x1 ;;
++	default_subvol)	class=incompat bit=0x2 ;;
++	mixed_groups)	class=incompat bit=0x4 ;;
++	compress_lzo)	class=incompat bit=0x8 ;;
++	compress_lsov2)	class=incompat bit=0x10 ;;
++	big_metadata)	class=incompat bit=0x20 ;;
++	extended_iref)	class=incompat bit=0x40 ;;
++	raid56)		class=incompat bit=0x80 ;;
++	skinny_metadata)class=incompat bit=0x100 ;;
++	compat:*)	class=compat; bit=${attr##compat:} ;;
++	compat_ro:*)	class=compat_ro; bit=${attr##compat_ro:} ;;
++	incompat:*)	class=incompat; bit=${attr##incompat:} ;;
++	esac
++	if [ -z "$class" ]; then
++		echo "Unknown feature name $attr. xfstests needs updating." \
++		     " Skipping the test of sysfs values to superblock values" \
++		     >> $seqres.full
++		return
++	fi
++	echo "$class $bit"
++}
++
++
++_scratch_mkfs > /dev/null 2>&1
++error=false
++fields=("compat" "compat_ro" "incompat")
++sysfs_base="/sys/fs/btrfs"
++settable=""
++clearable=""
++
++if [ ! -d "$sysfs_base/features" ]; then
++	echo "Silence is golden"
++	echo "This kernel does not export $sysfs_base/features." \
++	     "Nothing to test." >> $seqres.full
++	exit 0
++fi
++
++# Gather up the features the kernel knows about
++_scratch_mount
++for feature in $sysfs_base/features/*; do
++	val=$(cat $feature)
++	fname=$(basename $feature)
++	if [ "$(( $val & 0x1 ))" -eq 1 ]; then
++		settable="$settable $fname"
++	fi
++	if [ "$(( $val & 0x2 ))" -eq 2 ]; then
++		clearable="$clearable $fname"
++	fi
++done
++umount $SCRATCH_MNT > /dev/null 2>&1
++
++# Set/clear tests do their own mount cycling
++sysfs_fs_base="$sysfs_base/$(_btrfs_get_fsid $SCRATCH_DEV)"
++
++if [ ! -d "$sysfs_fs_base/features" ]; then
++	echo "Silence is golden"
++	echo "This kernel does not export $sysfs_fs_base/features." \
++	     "Nothing to test." >> $seqres.full
++	exit 0
++fi
++
++did_set=false
++for feature in $settable; do
++	read class bit < <(get_feature_mask $feature)
++	[ -z "$class" ] && continue
++	flags=$(_btrfs_get_feature_flags $SCRATCH_DEV $class)
++	_scratch_mount
++	val=$(cat $sysfs_fs_base/features/$feature)
++	[ "$val" -ne 0 ] && continue
++	echo 1 > $sysfs_fs_base/features/$feature
++	if [ $? -ne 0 ] ; then
++		echo "Error while setting $feature - $st"
++		error=true
++		umount $SCRATCH_MNT > /dev/null 2>&1
++		continue
++	fi
++	newval=$(cat $sysfs_fs_base/features/$feature)
++	if [ "$newval" -ne 1 ]; then
++		echo "Setting feature $feature was ignored."
++		error=true
++	fi
++	umount $SCRATCH_MNT > /dev/null 2>&1
++	check_flags $class $(( $flags | $bit ))
++	did_set=true
++done
++$did_set || echo "No online-settable features to test." >> $seqres.full
++
++did_clear=false
++for feature in $clearable; do
++	read class bit < <(get_feature_mask $feature)
++	[ -z "$class" ] && continue
++	flags=$(_btrfs_get_feature_flags $SCRATCH_DEV $class)
++	_scratch_mount
++	val=$(cat $sysfs_fs_base/features/$feature)
++	[ "$val" -ne 1 ] && continue
++	echo 0 > $sysfs_fs_base/features/$feature
++	if [ $? -ne 0 ] ; then
++		echo "Error while clearing $feature - $st"
++		error=true
++		umount $SCRATCH_MNT > /dev/null 2>&1
++		continue
++	fi
++	newval=$(cat $sysfs_fs_base/features/$feature)
++	if [ "$newval" -ne 0 ]; then
++		echo "Clearing feature $feature was ignored."
++		error=true
++	fi
++	umount $SCRATCH_MNT > /dev/null 2>&1
++	check_flags $class $(( $flags & ~$bit ))
++	did_clear=true
++done
++$did_clear || echo "No online-clearable features to test." >> $seqres.full
++
++# Still umounted from set/clear tests
++
++$error && exit 1
++
++echo "Silence is golden"
++status=0
++exit
+diff --git a/tests/btrfs/128.out b/tests/btrfs/128.out
+new file mode 100644
+index 0000000..1b86f92
+--- /dev/null
++++ b/tests/btrfs/128.out
+@@ -0,0 +1,2 @@
++== QA output created by 128
 +Silence is golden
 diff --git a/tests/btrfs/group b/tests/btrfs/group
-index 8b5050e..3535f02 100644
+index 3535f02..e76265d 100644
 --- a/tests/btrfs/group
 +++ b/tests/btrfs/group
-@@ -127,3 +127,4 @@
- 122 auto quick snapshot qgroup
+@@ -128,3 +128,6 @@
  123 auto quick qgroup
  124 auto quick metadata
-+125 auto quick metadata
+ 125 auto quick metadata
++126 auto quick metadata
++127 auto quick metadata
++128 auto quick metadata
 -- 
 1.8.5.6
 

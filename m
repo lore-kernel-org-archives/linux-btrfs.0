@@ -1,179 +1,264 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.crc.id.au ([203.56.246.92]:35606 "EHLO mail.crc.id.au"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750961AbcFYETd (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 25 Jun 2016 00:19:33 -0400
-Received: from [IPv6:2407:e400:b000:201:c586:44c:f762:4f7e] (unknown [IPv6:2407:e400:b000:201:c586:44c:f762:4f7e])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-SHA (256/256 bits))
-	(No client certificate requested)
-	by mail.crc.id.au (Postfix) with ESMTPSA id A33453A005B
-	for <linux-btrfs@vger.kernel.org>; Sat, 25 Jun 2016 14:19:27 +1000 (AEST)
-Subject: Re: Trying to rescue my data :(
-To: linux-btrfs@vger.kernel.org
-References: <15415597-7f29-396e-8425-8cbbeb32e897@crc.id.au>
- <4e1bff4c-3cfc-4391-d093-8293bf29e795@crc.id.au>
- <CAN05THTxMBrP-JV7atjdskfDYybwmEAV61EDkWRW_Yk70Cfdjg@mail.gmail.com>
- <dd7fd123-c3a2-7ad0-bf22-a67a1b1a97d7@crc.id.au>
- <d00790ae-bf8d-ee18-06a9-d0c5f6010129@gmail.com>
- <47f587fd-b553-5ed7-ac38-202bf7297350@crc.id.au>
- <f0fb8364-de4b-e85f-a8ff-87892c1e3a79@gmail.com>
-From: Steven Haigh <netwiz@crc.id.au>
-Message-ID: <c87e2f76-6cd6-46a4-21ca-dc5f66898d59@crc.id.au>
-Date: Sat, 25 Jun 2016 14:19:11 +1000
+Received: from smtp-36.italiaonline.it ([212.48.25.164]:50973 "EHLO libero.it"
+	rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+	id S1751132AbcFYMVm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 25 Jun 2016 08:21:42 -0400
+From: Goffredo Baroncelli <kreijack@inwind.it>
+Subject: [BUG] Btrfs scrub sometime recalculate wrong parity in raid5
+Reply-To: kreijack@inwind.it
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Message-ID: <8695beeb-f991-28c4-cf6b-8c92339e468f@inwind.it>
+Date: Sat, 25 Jun 2016 14:21:38 +0200
 MIME-Version: 1.0
-In-Reply-To: <f0fb8364-de4b-e85f-a8ff-87892c1e3a79@gmail.com>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="LtIe9huHwbUqJUuxnI6DMXJR2Fu4UPnqT"
+Content-Type: multipart/mixed;
+ boundary="------------F9DCB25854A31F5DC9B7A339"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---LtIe9huHwbUqJUuxnI6DMXJR2Fu4UPnqT
-Content-Type: multipart/mixed; boundary="FwUARVfaECXawHkbVX0qofe7IsJkAHHTI"
-From: Steven Haigh <netwiz@crc.id.au>
-To: linux-btrfs@vger.kernel.org
-Message-ID: <c87e2f76-6cd6-46a4-21ca-dc5f66898d59@crc.id.au>
-Subject: Re: Trying to rescue my data :(
-References: <15415597-7f29-396e-8425-8cbbeb32e897@crc.id.au>
- <4e1bff4c-3cfc-4391-d093-8293bf29e795@crc.id.au>
- <CAN05THTxMBrP-JV7atjdskfDYybwmEAV61EDkWRW_Yk70Cfdjg@mail.gmail.com>
- <dd7fd123-c3a2-7ad0-bf22-a67a1b1a97d7@crc.id.au>
- <d00790ae-bf8d-ee18-06a9-d0c5f6010129@gmail.com>
- <47f587fd-b553-5ed7-ac38-202bf7297350@crc.id.au>
- <f0fb8364-de4b-e85f-a8ff-87892c1e3a79@gmail.com>
-In-Reply-To: <f0fb8364-de4b-e85f-a8ff-87892c1e3a79@gmail.com>
-
---FwUARVfaECXawHkbVX0qofe7IsJkAHHTI
+This is a multi-part message in MIME format.
+--------------F9DCB25854A31F5DC9B7A339
 Content-Type: text/plain; charset=utf-8
-Content-Transfer-Encoding: quoted-printable
+Content-Transfer-Encoding: 7bit
 
-On 25/06/2016 3:50 AM, Austin S. Hemmelgarn wrote:
-> On 2016-06-24 13:43, Steven Haigh wrote:
->> On 25/06/16 03:40, Austin S. Hemmelgarn wrote:
->>> On 2016-06-24 13:05, Steven Haigh wrote:
->>>> On 25/06/16 02:59, ronnie sahlberg wrote:
->>>> What I have in mind here is that a file seems to get CREATED when I
->>>> copy
->>>> the file that crashes the system in the target directory. I'm thinki=
-ng
->>>> if I 'cp -an source/ target/' that it will make this somewhat easier=
+Hi all,
 
->>>> (it
->>>> won't overwrite the zero byte file).
->>> You may want to try with rsync (rsync -vahogSHAXOP should get just ab=
-out
->>> everything possible out of the filesystem except for some security
->>> attributes (stuff like SELinux context), and will give you nice
->>> information about progress as well).  It will keep running in the fac=
-e
->>> of individual read errors, and will only try each file once.  It also=
+following the thread "Adventures in btrfs raid5 disk recovery", I investigated a bit the BTRFS capability to scrub a corrupted raid5 filesystem. To test it, I first find where a file was stored, and then I tried to corrupt the data disks (when unmounted) or the parity disk.
+The result showed that sometime the kernel recomputed the parity wrongly.
 
->>> has the advantage of showing you the transfer rate and exactly where =
-in
->>> the directory structure you are, and handles partial copies sanely to=
-o
->>> (it's more reliable restarting an rsync transfer than a cp one that g=
-ot
->>> interrupted part way through).
->>
->> I may try that - I came up with this:
->> #!/bin/bash
->>
->> mount -o ro,nossd,degraded /dev/xvdc /mnt/fileshare/
->>
->> find /mnt/fileshare/data/Photos/ -type f -print0 |
->>     while IFS=3D read -r -d $'\0' line; do
->>         echo "Processing $line"
->>         DIR=3D`dirname "$line"`
->>         mkdir -p "/mnt/recover/$DIR"
->>         if [ ! -e "/mnt/recover/$line" ]; then
->>                 echo "Copying $line to /mnt/recover/$line"
->>                 touch "/mnt/recover/$line"
->>                 sync
->>                 cp -f "$line" "/mnt/recover/$line"
->>                 sync
->>         fi
->>     done
->>
->> umount /mnt/fileshare
->>
->> I'm slowly picking through the data - and it has crashed a few times..=
-=2E
->> It seems that there are some checksum failures that don't crash the
->> entire system - so that's a good thing to know - not sure if that mean=
-s
->> that it is correcting the data with parity - or something else.
->>
->> I'll see how much data I can extract with this and go from there - as =
-it
->> may be good enough to call it a success.
->>
-> AH, if you're having issues with crashes when you hit errors, you may
-> want to avoid rsync then, it will try to reread any files that don't
-> match in size and mtime, so it would likely just keep crashing on the
-> same file over and over again.
->=20
-> Also, looking at the script you've got, that will probably run faster
-> too because it shouldn't need to call stat() on everything like rsync
-> does (because of the size and mtime comparison).
+I tested the following kernel
+- 4.6.1
+- 4.5.4
+and both showed the same behavior.
 
-Well, as a data point, the data is slowly coming off the RAID6 array.
-Some stuff is just dead and crashes the entire host whenever you try to
-access it. At the moment, my average uptime is about 2-3 minutes...
+The test was performed as described below:
 
-I've added my recovery rsync script to /etc/rc.local - and I'm just
-starting / destroying the VM every time it crashes.
+1) create a filesystem in raid5 mode (for data and metadata) of 1500MB 
 
-I'm also rsync'ing the data from that system out to other areas of
-storage so I can pull off as much data as possible (I don't have a spare
-4.4Tb to use).
+	truncate -s 500M disk1.img; losetup -f disk1.img
+	truncate -s 500M disk2.img; losetup -f disk2.img
+	truncate -s 500M disk3.img; losetup -f disk3.img
+	sudo mkfs.btrfs -d raid5 -m raid5 /dev/loop[0-2]
+	sudo mount /dev/loop0 mnt/
 
-I lost a total of 5 photos out of 83Gb worth - which is good. My music
-collection doesn't seem to be that lucky - which means lots of time
-ripping CDs in the future :P
+2) I created a file with a length of 128kb:
 
-I haven't tried the applications / ISOs directory yet - but we'll see
-how that goes when I get there...
+	python -c "print 'ad'+'a'*65534+'bd'+'b'*65533" | sudo tee mnt/out.txt
+	sudo umount mnt/
 
-The photos were the main thing I was concerned about, the rest is just
-handy.
+3) I looked at the output of 'btrfs-debug-tree /dev/loop0' and I was able to find where the file stripe is located:
 
-Interesting though that EVERY crash references:
-	kernel BUG at fs/btrfs/extent_io.c:2401!
+/dev/loop0: offset=81788928+16*4096        (64k, second half of the file: 'bdbbbb.....)
+/dev/loop1: offset=61865984+16*4096        (64k, first half of the file: 'adaaaa.....)
+/dev/loop2: offset=61865984+16*4096        (64k, parity: '\x03\x00\x03\x03\x03.....)
+
+4) I tried to corrupt each disk (one disk per test), and then run a scrub:
+
+for example for the disk /dev/loop2:
+	sudo dd if=/dev/zero of=/dev/loop2 bs=1 \
+        	        seek=$((61865984+16*4096)) count=5
+	sudo mount /dev/loop0 mnt
+	sudo btrfs scrub start mnt/.
+
+5) I check the disks at the offsets above, to verify that the data/parity is correct
+
+However I found that:
+1) if I corrupt the parity disk (/dev/loop2), scrub don't find any corruption, but recomputed the parity (always correctly);
+
+2) when I corrupted the other disks (/dev/loop[01]) btrfs was able to find the corruption. But I found two main behaviors:
+
+2.a) the kernel repaired the damage, but compute the wrong parity. Where it was the parity, the kernel copied the data of the second disk on the parity disk
+
+2.b) the kernel repaired the damage, and rebuild a correct parity 
+
+I have to point out another strange thing: in dmesg I found two kinds of messages:
+
+msg1)
+	[....]
+	[ 1021.366944] BTRFS info (device loop2): disk space caching is enabled
+	[ 1021.366949] BTRFS: has skinny extents
+	[ 1021.399208] BTRFS warning (device loop2): checksum error at logical 142802944 on dev /dev/loop0, sector 159872, root 5, inode 257, offset 65536, length 4096, links 1 (path: out.txt)
+	[ 1021.399214] BTRFS error (device loop2): bdev /dev/loop0 errs: wr 0, rd 0, flush 0, corrupt 1, gen 0
+	[ 1021.399291] BTRFS error (device loop2): fixed up error at logical 142802944 on dev /dev/loop0
+
+msg2)
+	[ 1017.435068] BTRFS info (device loop2): disk space caching is enabled
+	[ 1017.435074] BTRFS: has skinny extents
+	[ 1017.436778] BTRFS info (device loop2): bdev /dev/loop0 errs: wr 0, rd 0, flush 0, corrupt 1, gen 0
+	[ 1017.463403] BTRFS warning (device loop2): checksum error at logical 142802944 on dev /dev/loop0, sector 159872, 	root 5, inode 257, offset 65536, length 4096, links 1 (path: out.txt)
+	[ 1017.463409] BTRFS error (device loop2): bdev /dev/loop0 errs: wr 0, rd 0, flush 0, corrupt 2, gen 0
+	[ 1017.463467] BTRFS warning (device loop2): checksum error at logical 142802944 on dev /dev/loop0, sector 159872, root 5, inode 257, offset 65536, length 4096, links 1 (path: out.txt)
+	[ 1017.463472] BTRFS error (device loop2): bdev /dev/loop0 errs: wr 0, rd 0, flush 0, corrupt 3, gen 0
+	[ 1017.463512] BTRFS error (device loop2): unable to fixup (regular) error at logical 142802944 on dev /dev/loop0
+	[ 1017.463535] BTRFS error (device loop2): fixed up error at logical 142802944 on dev /dev/loop0
 
 
---=20
-Steven Haigh
+but these seem to be UNrelated to the kernel behavior 2.a) or 2.b)
 
-Email: netwiz@crc.id.au
-Web: https://www.crc.id.au
-Phone: (03) 9001 6090 - 0412 935 897
+Another strangeness is that SCRUB sometime reports
+ ERROR: there are uncorrectable errors
+and sometime reports
+ WARNING: errors detected during scrubbing, corrected
+
+but also these seems UNrelated to the behavior 2.a) or 2.b) or msg1 or msg2
 
 
---FwUARVfaECXawHkbVX0qofe7IsJkAHHTI--
+Enclosed you can find the script which I used to trigger the bug. I have to rerun it several times to show the problem because it doesn't happen every time. Pay attention that the offset and the loop device name are hard coded. You must run the script in the same directory where it is: eg "bash test.sh". 
 
---LtIe9huHwbUqJUuxnI6DMXJR2Fu4UPnqT
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
+Br
+G.Baroncelli
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2
 
-iQIcBAEBCAAGBQJXbgZQAAoJEEGvNdV6fTHcYg0QALWd2rK9pSqK6JC3dN+2E+Jd
-BXglpkdRLvTqlliAiAmXrCi81tvg1OhEx171Okye2J4nl5vpXLHExgb0E/kY2ViA
-X5olQDloMAV6Wbtv4alVZigpfQnV2M4FYCXDwwbpjV4z0XDlovutzlayoRb8oYv3
-/Gvj0zdOW/QY3/1TXZw8hApBGmo7HgCA+rI4SPRFriuR6WU/yahCxkrNhEFi+9sD
-f0ysQ9CbBelraAFvl6CZTDTAIHc2ASmNlVedit8gs8gKGhntlja8g6UC2V7V+l8h
-wB6+fPGAT1VryoUyH/mtWWvVseqAixtw3MBDVNVjYcPXeaxWLFeAvh55ls2/CTdd
-MwEt/IyjetRge99eimb7uzpWQY40GE2YAdEmKjY+soSaspIrjNG2g3rsgNyiJr+F
-yKLmVWHgecRItHGUO5hOdrv4acs5kpLSMhdG9VccHZfab1GIRW42CIJTqoXQPyYN
-9kj+2xOGMQtjU6htDH2+PBKB4lv45Fq51ZWqb0V0RdD/Og21MOLLg5bej6xjqZj0
-ssgbI6hYRsMkqIei81+QyqK18M5ClEdTEcKANiMmOhFmE7oB9Xsi5Z0f1uVbdfXk
-cUEVGC3atUpVerLUQNL8F0AssmKCrxOVyQlgQW+9HTb6r3Q0vsNUF0C6fb1f/wIZ
-lhXzy9xlc6a55UxUX4ns
-=1z3E
------END PGP SIGNATURE-----
+ 
+-- 
+gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
+Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5
 
---LtIe9huHwbUqJUuxnI6DMXJR2Fu4UPnqT--
+
+-- 
+gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
+Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5
+
+--------------F9DCB25854A31F5DC9B7A339
+Content-Type: application/x-sh;
+ name="test.sh"
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline;
+ filename="test.sh"
+
+root="$(pwd)"
+disks="disk1.img disk2.img disk3.img"
+imgsize=500M
+
+
+#
+# returns all the loopback devices
+#
+loop_disks() {
+	sudo losetup | grep $root | awk '{ print $1 }'
+}
+
+
+#init the fs
+
+init_fs() {
+	#destroy fs
+	echo umount mnt
+	sudo umount mnt
+	for i in $( loop_disks ); do
+		echo "losetup -d $i"
+		sudo losetup -d $i
+	done
+
+	for i in $disks; do
+		rm $i
+		truncate -s $imgsize $i
+		sudo losetup -f $i
+	done
+
+	loops="$(loop_disks)"
+	loop1="$(echo $loops | awk '{ print $1 }')"
+	echo "loops=$loops; loop1=$loop1"
+
+	sudo mkfs.btrfs -d raid5 -m raid5 $loops
+	sudo mount $loop1 mnt/
+
+	python -c "print 'ad'+'a'*65534+'bd'+'b'*65533" | sudo tee mnt/out.txt >/dev/null
+
+	ls -l mnt/out.txt
+
+	sudo umount mnt
+	sync; sync
+}
+
+check_fs() {
+	# check
+	d="$(dd 2>/dev/null if=/dev/loop0 bs=1 skip=$((81788928+16*4096)) count=5)"
+	if [ "$d" != "bdbbb" ]; then
+		echo "******** Wrong data on disk /dev/loop0 [$d]"
+		return 1
+	fi
+
+	d="$(dd 2>/dev/null if=/dev/loop1 bs=1 skip=$((61865984+16*4096)) count=5)"
+	if [ "$d" != "adaaa" ]; then
+		echo "******** Wrong data on disk /dev/loop1 [$d]"
+		return 1
+	fi
+	d="$(dd 2>/dev/null if=/dev/loop2 bs=1 skip=$((61865984+16*4096)) count=5 | xxd | dd bs=1 count=4 skip=10)"
+	if [ "x$d" != "x0300" ]; then
+		echo "******* Wrong data on disk /dev/loop2 [$(echo -n $d)]"
+		return 1
+	fi
+
+	return 0
+}
+
+test_corrupt_loop2() {
+	echo "--- test 1: corrupt loop2"
+	echo 3 | sudo tee /proc/sys/vm/drop_caches
+	sudo dd if=/dev/zero of=/dev/loop2 bs=1 \
+		seek=$((61865984+16*4096)) count=5
+	check_fs &>/dev/null && {
+			echo Corruption failed
+			exit 100
+		}
+	echo 3 | sudo tee /proc/sys/vm/drop_caches
+	sudo mount /dev/loop0 mnt
+	sudo btrfs scrub start mnt/.
+	sync; sync
+	cat mnt/out.txt &>/dev/null || echo "Read FAIL"
+	sudo umount mnt
+	check_fs || exit
+	echo "--- test1: OK"
+}
+
+
+
+test_corrupt_loop1() {
+	echo "--- test 2: corrupt loop1"
+	echo 3 | sudo tee /proc/sys/vm/drop_caches
+	sudo dd if=/dev/zero of=/dev/loop1 bs=1 \
+		seek=$((61865984+16*4096)) count=5
+	check_fs &>/dev/null && {
+			echo Corruption failed
+			exit 100
+		}
+	echo 3 | sudo tee /proc/sys/vm/drop_caches
+	sudo mount /dev/loop0 mnt
+	sudo btrfs scrub start mnt/.
+	sync; sync
+	cat mnt/out.txt &>/dev/null || echo "Read FAIL"
+	sudo umount mnt
+	check_fs || exit
+	echo "--- test2: OK"
+}
+
+test_corrupt_loop0() {
+	echo "--- test 3: corrupt loop0"
+	echo 3 | sudo tee /proc/sys/vm/drop_caches
+	sudo dd if=/dev/zero of=/dev/loop0 bs=1 \
+		seek=$((81788928+16*4096)) count=5
+	check_fs &>/dev/null && {
+			echo Corruption failed
+			exit 100
+		}
+	echo 3 | sudo tee /proc/sys/vm/drop_caches
+	sudo mount /dev/loop0 mnt
+	sudo btrfs scrub start mnt/.
+	sync; sync
+	cat mnt/out.txt &>/dev/null || echo "Read FAIL"
+	sudo umount mnt
+	check_fs || exit
+	echo "--- testr3: OK"
+}
+
+
+init_fs
+check_fs || exit 100
+echo "Integrity test OK"
+
+test_corrupt_loop0
+
+
+
+
+--------------F9DCB25854A31F5DC9B7A339--

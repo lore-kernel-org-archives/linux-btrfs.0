@@ -1,51 +1,65 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:4541 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1751249AbcFYNmN (ORCPT
+Received: from mail-pa0-f68.google.com ([209.85.220.68]:35894 "EHLO
+	mail-pa0-f68.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751854AbcFYVih (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 25 Jun 2016 09:42:13 -0400
-Date: Sat, 25 Jun 2016 09:42:06 -0400
-From: Chris Mason <clm@fb.com>
-To: Linus Torvalds <torvalds@linux-foundation.org>,
-        LKML <linux-kernel@vger.kernel.org>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: [GIT PULL 2/2] Btrfs
-Message-ID: <20160625134206.rch4rrhqt35fkmq3@floor.thefacebook.com>
-References: <20160625131317.orm7k3dvt4mbfqof@floor.thefacebook.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-In-Reply-To: <20160625131317.orm7k3dvt4mbfqof@floor.thefacebook.com>
+	Sat, 25 Jun 2016 17:38:37 -0400
+From: Deepa Dinamani <deepa.kernel@gmail.com>
+To: linux-fsdevel@vger.kernel.org, linux-kernel@vger.kernel.org
+Cc: arnd@arndb.de, tglx@linutronix.de, torvalds@linux-foundation.org,
+        tytso@mit.edu, viro@zeniv.linux.org.uk, y2038@lists.linaro.org,
+        Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
+        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
+Subject: [PATCH v3 09/24] fs: btrfs: Use ktime_get_real_ts for root ctime
+Date: Sat, 25 Jun 2016 14:37:33 -0700
+Message-Id: <1466890668-23400-10-git-send-email-deepa.kernel@gmail.com>
+In-Reply-To: <1466890668-23400-1-git-send-email-deepa.kernel@gmail.com>
+References: <1466890668-23400-1-git-send-email-deepa.kernel@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Linus,
+btrfs_root_item maintains the ctime for root updates.
+This is not part of vfs_inode.
 
-Btrfs part two was supposed to be a single patch on part of v4.7-rc4.
-Somehow I didn't notice that my part2 branch repeated a few of the
-patches in part 1 when I set it up earlier this week.  Cherry-picking
-gone wrong as I folded a fix into Dave Sterba's original integration.
+Since current_time() uses struct inode* as an argument
+as Linus suggested, this cannot be used to update root
+times unless, we modify the signature to use inode.
 
-I've been testing the git-merged result of part1, part2 and your
-master for a while, but I just rebased part2 so it didn't include
-any duplicates.  I ran git diff to verify the merged result of
-today's pull is exactly the same as the one I've been testing.
+Since btrfs uses nanosecond time granularity, it can also
+use ktime_get_real_ts directly to obtain timestamp for
+the root. It is necessary to use the timespec time api
+here because the same btrfs_set_stack_timespec_*() apis
+are used for vfs inode times as well. These can be
+transitioned to using timespec64 when btrfs internally
+changes to use timespec64 as well.
 
-My for-linus-4.7-part2 branch:
+Signed-off-by: Deepa Dinamani <deepa.kernel@gmail.com>
+Cc: Chris Mason <clm@fb.com>
+Cc: Josef Bacik <jbacik@fb.com>
+Cc: David Sterba <dsterba@suse.com>
+Cc: linux-btrfs@vger.kernel.org
+Acked-by: David Sterba <dsterba@suse.com>
+---
+ fs/btrfs/root-tree.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
 
-git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git for-linus-4.7-part2
+diff --git a/fs/btrfs/root-tree.c b/fs/btrfs/root-tree.c
+index f1c3086..161118b 100644
+--- a/fs/btrfs/root-tree.c
++++ b/fs/btrfs/root-tree.c
+@@ -496,10 +496,11 @@ void btrfs_update_root_times(struct btrfs_trans_handle *trans,
+ 			     struct btrfs_root *root)
+ {
+ 	struct btrfs_root_item *item = &root->root_item;
+-	struct timespec ct = current_fs_time(root->fs_info->sb);
++	struct timespec ct;
+ 
+ 	spin_lock(&root->root_item_lock);
+ 	btrfs_set_root_ctransid(item, trans->transid);
++	ktime_get_real_ts(&ct);
+ 	btrfs_set_stack_timespec_sec(&item->ctime, ct.tv_sec);
+ 	btrfs_set_stack_timespec_nsec(&item->ctime, ct.tv_nsec);
+ 	spin_unlock(&root->root_item_lock);
+-- 
+1.9.1
 
-Has one patch from Omar to bring iterate_shared back to btrfs.  We have
-a tree of work we queue up for directory items and it doesn't
-lend itself well to shared access.  While we're cleaning it up, Omar
-has changed things to use an exclusive lock when there are delayed
-items.
-
-Omar Sandoval (1) commits (+34/-13):
-    Btrfs: fix ->iterate_shared() by upgrading i_rwsem for delayed nodes
-
-Total: (1) commits (+34/-13)
-
- fs/btrfs/delayed-inode.c | 27 ++++++++++++++++++++++-----
- fs/btrfs/delayed-inode.h | 10 ++++++----
- fs/btrfs/inode.c         | 10 ++++++----
- 3 files changed, 34 insertions(+), 13 deletions(-)

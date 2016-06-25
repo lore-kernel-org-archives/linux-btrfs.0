@@ -1,121 +1,179 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from relay3.ptmail.sapo.pt ([212.55.154.23]:54096 "EHLO sapo.pt"
-	rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-	id S1751101AbcFYAGN (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 24 Jun 2016 20:06:13 -0400
-Date: Sat, 25 Jun 2016 01:06:10 +0100
-Message-ID: <20160625010610.Horde.tUycS31CmgVWfy3CPu7qJCD@mail.sapo.pt>
-From: Vasco Almeida <vascomalmeida@sapo.pt>
-To: Chris Murphy <lists@colorremedies.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Subject: Re: Bad hard drive - checksum verify failure forces readonly mount
-References: <loom.20160623T205347-371@post.gmane.org>
- <CAJCQCtRO+FYrsfHF_ARSnPfoS7uzvLR4hB1V-TJ_YN4NcA6srw@mail.gmail.com>
- <5356822.A3RRKHDHNy@linux-omuo>
- <CAJCQCtQ-xYrERT5R4gSC1C7OkoeP2LeS9W9UL5VY5SmDBXk71w@mail.gmail.com>
-In-Reply-To: <CAJCQCtQ-xYrERT5R4gSC1C7OkoeP2LeS9W9UL5VY5SmDBXk71w@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8; format=flowed; DelSp=Yes
+Received: from mail.crc.id.au ([203.56.246.92]:35606 "EHLO mail.crc.id.au"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750961AbcFYETd (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 25 Jun 2016 00:19:33 -0400
+Received: from [IPv6:2407:e400:b000:201:c586:44c:f762:4f7e] (unknown [IPv6:2407:e400:b000:201:c586:44c:f762:4f7e])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-SHA (256/256 bits))
+	(No client certificate requested)
+	by mail.crc.id.au (Postfix) with ESMTPSA id A33453A005B
+	for <linux-btrfs@vger.kernel.org>; Sat, 25 Jun 2016 14:19:27 +1000 (AEST)
+Subject: Re: Trying to rescue my data :(
+To: linux-btrfs@vger.kernel.org
+References: <15415597-7f29-396e-8425-8cbbeb32e897@crc.id.au>
+ <4e1bff4c-3cfc-4391-d093-8293bf29e795@crc.id.au>
+ <CAN05THTxMBrP-JV7atjdskfDYybwmEAV61EDkWRW_Yk70Cfdjg@mail.gmail.com>
+ <dd7fd123-c3a2-7ad0-bf22-a67a1b1a97d7@crc.id.au>
+ <d00790ae-bf8d-ee18-06a9-d0c5f6010129@gmail.com>
+ <47f587fd-b553-5ed7-ac38-202bf7297350@crc.id.au>
+ <f0fb8364-de4b-e85f-a8ff-87892c1e3a79@gmail.com>
+From: Steven Haigh <netwiz@crc.id.au>
+Message-ID: <c87e2f76-6cd6-46a4-21ca-dc5f66898d59@crc.id.au>
+Date: Sat, 25 Jun 2016 14:19:11 +1000
 MIME-Version: 1.0
+In-Reply-To: <f0fb8364-de4b-e85f-a8ff-87892c1e3a79@gmail.com>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="LtIe9huHwbUqJUuxnI6DMXJR2Fu4UPnqT"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Citando Chris Murphy <lists@colorremedies.com>:
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--LtIe9huHwbUqJUuxnI6DMXJR2Fu4UPnqT
+Content-Type: multipart/mixed; boundary="FwUARVfaECXawHkbVX0qofe7IsJkAHHTI"
+From: Steven Haigh <netwiz@crc.id.au>
+To: linux-btrfs@vger.kernel.org
+Message-ID: <c87e2f76-6cd6-46a4-21ca-dc5f66898d59@crc.id.au>
+Subject: Re: Trying to rescue my data :(
+References: <15415597-7f29-396e-8425-8cbbeb32e897@crc.id.au>
+ <4e1bff4c-3cfc-4391-d093-8293bf29e795@crc.id.au>
+ <CAN05THTxMBrP-JV7atjdskfDYybwmEAV61EDkWRW_Yk70Cfdjg@mail.gmail.com>
+ <dd7fd123-c3a2-7ad0-bf22-a67a1b1a97d7@crc.id.au>
+ <d00790ae-bf8d-ee18-06a9-d0c5f6010129@gmail.com>
+ <47f587fd-b553-5ed7-ac38-202bf7297350@crc.id.au>
+ <f0fb8364-de4b-e85f-a8ff-87892c1e3a79@gmail.com>
+In-Reply-To: <f0fb8364-de4b-e85f-a8ff-87892c1e3a79@gmail.com>
 
-> On Fri, Jun 24, 2016 at 9:52 AM, Vasco Almeida <vascomalmeida@sapo.pt> wrote:
->
->>>
->>> From the pasted kernel messages:
->>> > Linux version 3.18.34-std473-amd64 (root@rl-sysrcd-p11) (gcc  
->>> version 4.8.5
->>> > (Gentoo 4.8.5 p1.3, pie-0.6.2) ) #2 SMP Tue May 24 20:34:19 UTC 2016
->>> 3.18.34 is ancient. Find something newer and try to remount normally.
->> Present information concerns openSUSE Leap 42.1 (x86_64) mount of root file
->> system at boot time. That should mount it normally. Hope that fits what you
->> mean.
->
-> OK but it's not mounting it normally, it's still being forced readonly
-> at btrfs_drop_snapshot and the only thing I'm coming up with search
-> wise is that it's related to qgroups. Have you enabled quotas on this
-> file system ever?
+--FwUARVfaECXawHkbVX0qofe7IsJkAHHTI
+Content-Type: text/plain; charset=utf-8
+Content-Transfer-Encoding: quoted-printable
 
-Unless openSUSE does that by default, I did not enable quotas. It is  
-not something I am aware of doing.
->
->
->> btrfs-progs v4.1.2+20151002
->
-> A lot of changes have happened since 4.1.2 I would still use something
-> newer and try to repair it.
+On 25/06/2016 3:50 AM, Austin S. Hemmelgarn wrote:
+> On 2016-06-24 13:43, Steven Haigh wrote:
+>> On 25/06/16 03:40, Austin S. Hemmelgarn wrote:
+>>> On 2016-06-24 13:05, Steven Haigh wrote:
+>>>> On 25/06/16 02:59, ronnie sahlberg wrote:
+>>>> What I have in mind here is that a file seems to get CREATED when I
+>>>> copy
+>>>> the file that crashes the system in the target directory. I'm thinki=
+ng
+>>>> if I 'cp -an source/ target/' that it will make this somewhat easier=
 
-By repair do you mean issue "btrfs check --repair /device" ?
+>>>> (it
+>>>> won't overwrite the zero byte file).
+>>> You may want to try with rsync (rsync -vahogSHAXOP should get just ab=
+out
+>>> everything possible out of the filesystem except for some security
+>>> attributes (stuff like SELinux context), and will give you nice
+>>> information about progress as well).  It will keep running in the fac=
+e
+>>> of individual read errors, and will only try each file once.  It also=
 
->> $ /usr/sbin/btrfs fi df /
->> Data, single: total=10.01GiB, used=9.06GiB
->> System, DUP: total=64.00MiB, used=16.00KiB
->> Metadata, DUP: total=1.12GiB, used=596.69MiB
->> GlobalReserve, single: total=208.00MiB, used=0.00B
+>>> has the advantage of showing you the transfer rate and exactly where =
+in
+>>> the directory structure you are, and handles partial copies sanely to=
+o
+>>> (it's more reliable restarting an rsync transfer than a cp one that g=
+ot
+>>> interrupted part way through).
 >>
->> I forgot to mention in last e-mail that I ran Marc MERLIN's scrubbing script
->> [1] after mounting the device with "-o ro,recovery" on System Rescue CD.
->> Even after that device is forced readonly.
->
-> OK but System Rescue CD uses an old kernel by btrfs standards, even
-> account for all the backports in that particular version:
-> 4.7.3) 2016-06-04:
-> Standard kernels: Long-Term-Supported linux-3.18.34 (rescue32 + rescue64)
->
-> So that's why I'm suggesting you use something newer, like 4.5.x, same
-> for btrfs-progs. The old versions aren't working. There's no assurance
-> it'll work with new versions, but that it doesn't get fixed up with
-> old versions means you either try new versions or you rebuild the file
-> system. *shrug*
+>> I may try that - I came up with this:
+>> #!/bin/bash
+>>
+>> mount -o ro,nossd,degraded /dev/xvdc /mnt/fileshare/
+>>
+>> find /mnt/fileshare/data/Photos/ -type f -print0 |
+>>     while IFS=3D read -r -d $'\0' line; do
+>>         echo "Processing $line"
+>>         DIR=3D`dirname "$line"`
+>>         mkdir -p "/mnt/recover/$DIR"
+>>         if [ ! -e "/mnt/recover/$line" ]; then
+>>                 echo "Copying $line to /mnt/recover/$line"
+>>                 touch "/mnt/recover/$line"
+>>                 sync
+>>                 cp -f "$line" "/mnt/recover/$line"
+>>                 sync
+>>         fi
+>>     done
+>>
+>> umount /mnt/fileshare
+>>
+>> I'm slowly picking through the data - and it has crashed a few times..=
+=2E
+>> It seems that there are some checksum failures that don't crash the
+>> entire system - so that's a good thing to know - not sure if that mean=
+s
+>> that it is correcting the data with parity - or something else.
+>>
+>> I'll see how much data I can extract with this and go from there - as =
+it
+>> may be good enough to call it a success.
+>>
+> AH, if you're having issues with crashes when you hit errors, you may
+> want to avoid rsync then, it will try to reread any files that don't
+> match in size and mtime, so it would likely just keep crashing on the
+> same file over and over again.
+>=20
+> Also, looking at the script you've got, that will probably run faster
+> too because it shouldn't need to call stat() on everything like rsync
+> does (because of the size and mtime comparison).
 
-I am using Fedora 24 and have issued "mount  
-/dev/mapper/vg_pupu-lv_opensuse_root /mnt". Got some call trace and  
-scary stuff that did not get before on other systems. Please check  
-dmesg output linked below.
+Well, as a data point, the data is slowly coming off the RAID6 array.
+Some stuff is just dead and crashes the entire host whenever you try to
+access it. At the moment, my average uptime is about 2-3 minutes...
 
-Linux catarina 4.5.7-300.fc24.x86_64 #1 SMP Wed Jun 8 18:12:45 UTC  
-2016 x86_64 x86_64 x86_64 GNU/Linux
-btrfs-progs v4.5.2
+I've added my recovery rsync script to /etc/rc.local - and I'm just
+starting / destroying the VM every time it crashes.
 
-# btrfs fi show
-Label: none  uuid: ad167e92-fbb1-4148-b54d-6345b6fb26da
-	Total devices 1 FS bytes used 9.63GiB
-	devid    1 size 50.00GiB used 12.32GiB path  
-/dev/mapper/vg_pupu-lv_opensuse_root
-# btrfs fi df /mnt/
-Data, single: total=10.01GiB, used=9.05GiB
-System, DUP: total=32.00MiB, used=16.00KiB
-Metadata, DUP: total=1.12GiB, used=597.62MiB
-GlobalReserve, single: total=208.00MiB, used=224.00KiB
+I'm also rsync'ing the data from that system out to other areas of
+storage so I can pull off as much data as possible (I don't have a spare
+4.4Tb to use).
 
-dmesg http://paste.fedoraproject.org/384352/80842814/
-dmesg after umount http://paste.fedoraproject.org/384359/14668108/
-diff between two http://paste.fedoraproject.org/384364/11704146/
+I lost a total of 5 photos out of 83Gb worth - which is good. My music
+collection doesn't seem to be that lucky - which means lots of time
+ripping CDs in the future :P
 
-btrfs check --readonly /dev/mappper/vg_pupu-lv_opensuse_root
-http://paste.fedoraproject.org/384361/68112421/
+I haven't tried the applications / ISOs directory yet - but we'll see
+how that goes when I get there...
 
-After umount and mounting again, the device was normally mounted  
-readwrite again:
-/dev/mapper/vg_pupu-lv_opensuse_root on /mnt type btrfs  
-(rw,relatime,seclabel,space_cache,subvolid=259,subvol=/@/.snapshots/1/snapshot)
-But trying to umount it afterwards makes umount command hang. Device  
-no longer shows on mount output, though.
-CTRL-C or SIGTERM can't kill umount.
+The photos were the main thing I was concerned about, the rest is just
+handy.
 
-dmesg http://paste.fedoraproject.org/384371/14668130/
+Interesting though that EVERY crash references:
+	kernel BUG at fs/btrfs/extent_io.c:2401!
 
 
+--=20
+Steven Haigh
 
->> I would like to find a solution to be able to mount normally readwrite again
->> and hopefully understand what caused the issue.
->
-> My best guess is qgroup related, there were a lot of problems with
-> multiple quota implementations and snapshots and openSUSE does take
-> many many snapshots. So that could be it. But without a reproducer
-> it's hard to say what caused it.
+Email: netwiz@crc.id.au
+Web: https://www.crc.id.au
+Phone: (03) 9001 6090 - 0412 935 897
 
-Thank you again for your time and reply.
 
+--FwUARVfaECXawHkbVX0qofe7IsJkAHHTI--
+
+--LtIe9huHwbUqJUuxnI6DMXJR2Fu4UPnqT
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2
+
+iQIcBAEBCAAGBQJXbgZQAAoJEEGvNdV6fTHcYg0QALWd2rK9pSqK6JC3dN+2E+Jd
+BXglpkdRLvTqlliAiAmXrCi81tvg1OhEx171Okye2J4nl5vpXLHExgb0E/kY2ViA
+X5olQDloMAV6Wbtv4alVZigpfQnV2M4FYCXDwwbpjV4z0XDlovutzlayoRb8oYv3
+/Gvj0zdOW/QY3/1TXZw8hApBGmo7HgCA+rI4SPRFriuR6WU/yahCxkrNhEFi+9sD
+f0ysQ9CbBelraAFvl6CZTDTAIHc2ASmNlVedit8gs8gKGhntlja8g6UC2V7V+l8h
+wB6+fPGAT1VryoUyH/mtWWvVseqAixtw3MBDVNVjYcPXeaxWLFeAvh55ls2/CTdd
+MwEt/IyjetRge99eimb7uzpWQY40GE2YAdEmKjY+soSaspIrjNG2g3rsgNyiJr+F
+yKLmVWHgecRItHGUO5hOdrv4acs5kpLSMhdG9VccHZfab1GIRW42CIJTqoXQPyYN
+9kj+2xOGMQtjU6htDH2+PBKB4lv45Fq51ZWqb0V0RdD/Og21MOLLg5bej6xjqZj0
+ssgbI6hYRsMkqIei81+QyqK18M5ClEdTEcKANiMmOhFmE7oB9Xsi5Z0f1uVbdfXk
+cUEVGC3atUpVerLUQNL8F0AssmKCrxOVyQlgQW+9HTb6r3Q0vsNUF0C6fb1f/wIZ
+lhXzy9xlc6a55UxUX4ns
+=1z3E
+-----END PGP SIGNATURE-----
+
+--LtIe9huHwbUqJUuxnI6DMXJR2Fu4UPnqT--

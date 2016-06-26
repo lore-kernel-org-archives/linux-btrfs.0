@@ -1,77 +1,59 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from relay5.ptmail.sapo.pt ([212.55.154.25]:46050 "EHLO sapo.pt"
-	rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-	id S1751789AbcFZNGS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 26 Jun 2016 09:06:18 -0400
-Message-ID: <1466946315.4049.19.camel@sapo.pt>
-Subject: Re: Bad hard drive - checksum verify failure forces readonly mount
-From: Vasco Almeida <vascomalmeida@sapo.pt>
-To: Chris Murphy <lists@colorremedies.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Date: Sun, 26 Jun 2016 13:05:15 +0000
-In-Reply-To: <CAJCQCtQ+q90r=Q38mtVKoBeAmXmPJPP2cp=dfLj3kBiEv66bzA@mail.gmail.com>
-References: <loom.20160623T205347-371@post.gmane.org>
-	 <CAJCQCtRO+FYrsfHF_ARSnPfoS7uzvLR4hB1V-TJ_YN4NcA6srw@mail.gmail.com>
- <5356822.A3RRKHDHNy@linux-omuo>
-	 <CAJCQCtQ-xYrERT5R4gSC1C7OkoeP2LeS9W9UL5VY5SmDBXk71w@mail.gmail.com>
- <20160625010610.Horde.tUycS31CmgVWfy3CPu7qJCD@mail.sapo.pt>
- <CAJCQCtSGZO8JVXqVOwifT84KTLCkciux+Y6A_na4AA-PxPjjbw@mail.gmail.com>
-	 <20160625211024.Horde.pL6RMZNJL6tnjtpglBZjDaB@mail.sapo.pt>
-	 <CAJCQCtQ+q90r=Q38mtVKoBeAmXmPJPP2cp=dfLj3kBiEv66bzA@mail.gmail.com>
-Content-Type: text/plain; charset="UTF-8"
+Received: from plane.gmane.org ([80.91.229.3]:54801 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752054AbcFZPDg (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 26 Jun 2016 11:03:36 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+	id 1bHBau-0003p4-QD
+	for linux-btrfs@vger.kernel.org; Sun, 26 Jun 2016 17:03:34 +0200
+Received: from 64.134.221.43 ([64.134.221.43])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sun, 26 Jun 2016 17:03:32 +0200
+Received: from 1i5t5.duncan by 64.134.221.43 with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sun, 26 Jun 2016 17:03:32 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: Adventures in btrfs raid5 disk recovery
+Date: Sun, 26 Jun 2016 15:03:25 +0000 (UTC)
+Message-ID: <pan$78072$6fbc243b$9e6540c9$b3a61597@cox.net>
+References: <CAJCQCtR9uAn58KJKEjCsbyLYJTQVqMx-ghsVp_MjLBF-aiikcg@mail.gmail.com>
+	<CAJCQCtR5pV53mFyGWxRxm69zwF5_sEvNRRRvOSgnZ1t8KZdc3g@mail.gmail.com>
+	<20160621015559.GM15597@hungrycats.org>
+	<CAJCQCtRUUd+moK25N3704ZG54cFrCw1-Uxm2QO-XF9g0=mHazw@mail.gmail.com>
+	<20160622203504.GQ15597@hungrycats.org>
+	<5790aea9-0976-1742-7d1b-79dbe44008c3@inwind.it>
+	<CAJCQCtRXqSCFZTca+Vwraa0vS-MzLQKEkr=s41Vypc-O0ZDdxQ@mail.gmail.com>
+	<20160624014752.GB14667@hungrycats.org> <576CB0DA.6030409@gmail.com>
+	<20160624085014.GH3325@carfax.org.uk>
+	<CAA91j0Uqg0FafFTG3NhQt=p8KkYRhTeMU5Bd+JuUxDntP6g8Ng@mail.gmail.com>
+	<CAJCQCtQBQAng5_mNJZev+64Z15BSkBkG9f2qmz=ckPRqXRbbWA@mail.gmail.com>
+	<576D6C0A.7070502@gmail.com>
+	<CAJCQCtSskA4PC_a8tgQopHFNO83NQ=Gkx406haB7G0nBi5e=2A@mail.gmail.com>
+	<c2a320a6-261b-723d-ab83-58f883e6315b@gmail.com>
+	<CAJCQCtSqO4GNm8kBDuzUXEXYx+54zFgsD6=ARNsRgVUb53LQZw@mail.gmail.com>
+	<CAJCQCtQhRbL_AWpspudPZzkkGkHT3O9T0QL94Of5LD8agmonwg@mail.gmail.com>
+	<576F8A28.7060808@gmail.com>
 Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-A Sáb, 25-06-2016 às 14:54 -0600, Chris Murphy escreveu:
-> On Sat, Jun 25, 2016 at 2:10 PM, Vasco Almeida <vascomalmeida@sapo.pt
-> > wrote:
-> > Citando Chris Murphy <lists@colorremedies.com>:
-> > > 3. btrfs-image so that devs can see what's causing the problem
-> > > that
-> > > the current code isn't handling well enough.
-> > 
-> > 
-> > btrfs-image does not create dump image:
-> > 
-> > # btrfs-image /dev/mapper/vg_pupu-lv_opensuse_root
-> > btrfs-lv_opensuse_root.image
-> > checksum verify failed on 437944320 found 8BF8C752 wanted 39F456C8
-> > checksum verify failed on 437944320 found 8BF8C752 wanted 39F456C8
-> > checksum verify failed on 437944320 found 8BF8C752 wanted 39F456C8
-> > checksum verify failed on 437944320 found 8BF8C752 wanted 39F456C8
-> > Csum didn't match
-> > Error reading metadata block
-> > Error adding block -5
-> > checksum verify failed on 437944320 found 8BF8C752 wanted 39F456C8
-> > checksum verify failed on 437944320 found 8BF8C752 wanted 39F456C8
-> > checksum verify failed on 437944320 found 8BF8C752 wanted 39F456C8
-> > checksum verify failed on 437944320 found 8BF8C752 wanted 39F456C8
-> > Csum didn't match
-> > Error reading metadata block
-> > Error flushing pending -5
-> > create failed (Success)
-> > # echo $?
-> > 1
-> 
-> Well it's pretty strange to have DUP metadata and for the checksum
-> verify to fail on both copies. I don't have much optimism that brfsck
-> repair can fix it either. But still it's worth a shot since there's
-> not much else to go on.
+Andrei Borzenkov posted on Sun, 26 Jun 2016 10:54:16 +0300 as excerpted:
 
-I have tried "btrfs check --repair /device" but that seems do not do
-any good.
-http://paste.fedoraproject.org/384960/66945936/
+> P.S. usage of "stripe" to mean "stripe element" actually adds to
+> confusion when reading code :)
 
-I then issued "mount /device /mnt" and, like before, it was mounted
-readwrite and then forced readonly. Got some kernel oops and traces. 
+... and posts (including patches, which I guess are code as well, just 
+not applied yet).  I've been noticing that in the "stripe length" 
+patches, when the comment associated with the patch suggests it's "strip 
+length" they're actually talking about, using the "N strips, one per 
+device, make a stripe" definition.
 
-I noticed that btrfs-balance was using ~100% CPU whilst btrfs device
-was mounted readonly. I let it run for about 20 minutes.
-Then had to reboot because the system was no responding well: was
-unable to open or close applications, use internet. Did SysRq+reisu
-(operations were enabled) and then pressed reset button on computer.
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 
-Unfortunately dmesg dumps were lost after resetting computer.
-
-What else can I do or I must rebuild the file system?

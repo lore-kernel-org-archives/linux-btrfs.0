@@ -1,59 +1,89 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:54801 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752054AbcFZPDg (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 26 Jun 2016 11:03:36 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1bHBau-0003p4-QD
-	for linux-btrfs@vger.kernel.org; Sun, 26 Jun 2016 17:03:34 +0200
-Received: from 64.134.221.43 ([64.134.221.43])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sun, 26 Jun 2016 17:03:32 +0200
-Received: from 1i5t5.duncan by 64.134.221.43 with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sun, 26 Jun 2016 17:03:32 +0200
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: Adventures in btrfs raid5 disk recovery
-Date: Sun, 26 Jun 2016 15:03:25 +0000 (UTC)
-Message-ID: <pan$78072$6fbc243b$9e6540c9$b3a61597@cox.net>
-References: <CAJCQCtR9uAn58KJKEjCsbyLYJTQVqMx-ghsVp_MjLBF-aiikcg@mail.gmail.com>
-	<CAJCQCtR5pV53mFyGWxRxm69zwF5_sEvNRRRvOSgnZ1t8KZdc3g@mail.gmail.com>
-	<20160621015559.GM15597@hungrycats.org>
-	<CAJCQCtRUUd+moK25N3704ZG54cFrCw1-Uxm2QO-XF9g0=mHazw@mail.gmail.com>
-	<20160622203504.GQ15597@hungrycats.org>
-	<5790aea9-0976-1742-7d1b-79dbe44008c3@inwind.it>
-	<CAJCQCtRXqSCFZTca+Vwraa0vS-MzLQKEkr=s41Vypc-O0ZDdxQ@mail.gmail.com>
-	<20160624014752.GB14667@hungrycats.org> <576CB0DA.6030409@gmail.com>
-	<20160624085014.GH3325@carfax.org.uk>
-	<CAA91j0Uqg0FafFTG3NhQt=p8KkYRhTeMU5Bd+JuUxDntP6g8Ng@mail.gmail.com>
-	<CAJCQCtQBQAng5_mNJZev+64Z15BSkBkG9f2qmz=ckPRqXRbbWA@mail.gmail.com>
-	<576D6C0A.7070502@gmail.com>
-	<CAJCQCtSskA4PC_a8tgQopHFNO83NQ=Gkx406haB7G0nBi5e=2A@mail.gmail.com>
-	<c2a320a6-261b-723d-ab83-58f883e6315b@gmail.com>
-	<CAJCQCtSqO4GNm8kBDuzUXEXYx+54zFgsD6=ARNsRgVUb53LQZw@mail.gmail.com>
-	<CAJCQCtQhRbL_AWpspudPZzkkGkHT3O9T0QL94Of5LD8agmonwg@mail.gmail.com>
-	<576F8A28.7060808@gmail.com>
-Mime-Version: 1.0
+Received: from mail-oi0-f68.google.com ([209.85.218.68]:36176 "EHLO
+	mail-oi0-f68.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751460AbcFZQn4 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 26 Jun 2016 12:43:56 -0400
+Received: by mail-oi0-f68.google.com with SMTP id x6so26653189oif.3
+        for <linux-btrfs@vger.kernel.org>; Sun, 26 Jun 2016 09:43:55 -0700 (PDT)
+MIME-Version: 1.0
+In-Reply-To: <a291b1c0-fadf-da85-fc46-657884ec38bc@inwind.it>
+References: <8695beeb-f991-28c4-cf6b-8c92339e468f@inwind.it>
+ <CAJCQCtTXJhgKsmQGUXrppntYj8u6vk3jzP9Q4UMBomJ255QTQw@mail.gmail.com>
+ <CAJCQCtSF3WTxOkrgdWL78DqxYf-kLzXr4vnKPLoe2mhURhqkOA@mail.gmail.com>
+ <268f4f78-c277-43e9-a621-fc32d5fad172@inwind.it> <CAJCQCtRWfWXruAJTbCsh7dKc=2iRk6CHMOMTUBbh7JGH6SaXtA@mail.gmail.com>
+ <a291b1c0-fadf-da85-fc46-657884ec38bc@inwind.it>
+From: Chris Murphy <lists@colorremedies.com>
+Date: Sun, 26 Jun 2016 10:43:54 -0600
+Message-ID: <CAJCQCtTMqHEjA0cvt_YbmB1eqRhtn+0Pbq6iMgxx0h0TNSYp2Q@mail.gmail.com>
+Subject: Re: [BUG] Btrfs scrub sometime recalculate wrong parity in raid5
+To: kreijack@inwind.it
+Cc: Chris Murphy <lists@colorremedies.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Andrei Borzenkov posted on Sun, 26 Jun 2016 10:54:16 +0300 as excerpted:
+On Sun, Jun 26, 2016 at 3:20 AM, Goffredo Baroncelli <kreijack@inwind.it> wrote:
+> On 2016-06-26 00:33, Chris Murphy wrote:
+>> On Sat, Jun 25, 2016 at 12:42 PM, Goffredo Baroncelli
+>> <kreijack@inwind.it> wrote:
+>>> On 2016-06-25 19:58, Chris Murphy wrote:
+>>> [...]
+>>>>> Wow. So it sees the data strip corruption, uses good parity on disk to
+>>>>> fix it, writes the fix to disk, recomputes parity for some reason but
+>>>>> does it wrongly, and then overwrites good parity with bad parity?
+>>>>
+>>>> The wrong parity, is it valid for the data strips that includes the
+>>>> (intentionally) corrupt data?
+>>>>
+>>>> Can parity computation happen before the csum check? Where sometimes you get:
+>>>>
+>>>> read data strips > computer parity > check csum fails > read good
+>>>> parity from disk > fix up the bad data chunk > write wrong parity
+>>>> (based on wrong data)?
+>>>>
+>>>> https://git.kernel.org/cgit/linux/kernel/git/stable/linux-stable.git/tree/fs/btrfs/raid56.c?id=refs/tags/v4.6.3
+>>>>
+>>>> 2371-2383 suggest that there's a parity check, it's not always being
+>>>> rewritten to disk if it's already correct. But it doesn't know it's
+>>>> not correct, it thinks it's wrong so writes out the wrongly computed
+>>>> parity?
+>>>
+>>> The parity is not valid for both the corrected data and the corrupted data. It seems that the scrub process copy the contents of the disk2 to disk3. It could happens only if the contents of disk1 is zero.
+>>
+>> I'm not sure what it takes to hit this exactly. I just tested 3x
+>> raid5, where two files 128KiB "a" and 128KiB "b", so that's a full
+>> stripe write for each. I corrupted devid 1 64KiB of "a" and devid2
+>> 64KiB of "b" did a scrub, error is detected, and corrected, and parity
+>> is still correct.
+>
+> How many time tried this corruption test ? I was unable to raise the bug systematically; in average every three tests I got 1 bug....
 
-> P.S. usage of "stripe" to mean "stripe element" actually adds to
-> confusion when reading code :)
+Once.
 
-... and posts (including patches, which I guess are code as well, just 
-not applied yet).  I've been noticing that in the "stripe length" 
-patches, when the comment associated with the patch suggests it's "strip 
-length" they're actually talking about, using the "N strips, one per 
-device, make a stripe" definition.
+I just did it a 2nd time and both file's parity are wrong now. So I
+did it several more times. Sometimes both files' parity is bad.
+Sometimes just one file's parity is bad. Sometimes neither file's
+parity is bad.
+
+It's a very bad bug, because it is a form of silent data corruption
+and it's induced by Btrfs. And it's apparently non-deterministically
+hit. Is this some form of race condition?
+
+Somewhat orthogonal to this, is that while Btrfs is subject to the
+write hole problem where parity can be wrong, this is detected and
+warned. Bad data doesn't propagate up to user space.
+
+This might explain how users are getting hit with corrupt files only
+after they have a degraded volume. They did a scrub where some fixups
+happen, but behind the scene possibly parity was corrupted even though
+their data was fixed. Later they have a failed device, and the bad
+parity is needed, and now there are a bunch of scary checksum errors
+with piles of files listed as unrecoverable. And in fact they are
+unrecoverable because the bad parity means bad reconstruction, so even
+scraping it off with btrfs restore won't work.
+
 
 -- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+Chris Murphy

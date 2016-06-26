@@ -1,64 +1,77 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp-36.italiaonline.it ([212.48.25.164]:55863 "EHLO libero.it"
+Received: from relay5.ptmail.sapo.pt ([212.55.154.25]:46050 "EHLO sapo.pt"
 	rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-	id S1751731AbcFZJUx (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 26 Jun 2016 05:20:53 -0400
-Reply-To: kreijack@inwind.it
-Subject: Re: [BUG] Btrfs scrub sometime recalculate wrong parity in raid5
-References: <8695beeb-f991-28c4-cf6b-8c92339e468f@inwind.it>
- <CAJCQCtTXJhgKsmQGUXrppntYj8u6vk3jzP9Q4UMBomJ255QTQw@mail.gmail.com>
- <CAJCQCtSF3WTxOkrgdWL78DqxYf-kLzXr4vnKPLoe2mhURhqkOA@mail.gmail.com>
- <268f4f78-c277-43e9-a621-fc32d5fad172@inwind.it>
- <CAJCQCtRWfWXruAJTbCsh7dKc=2iRk6CHMOMTUBbh7JGH6SaXtA@mail.gmail.com>
+	id S1751789AbcFZNGS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 26 Jun 2016 09:06:18 -0400
+Message-ID: <1466946315.4049.19.camel@sapo.pt>
+Subject: Re: Bad hard drive - checksum verify failure forces readonly mount
+From: Vasco Almeida <vascomalmeida@sapo.pt>
 To: Chris Murphy <lists@colorremedies.com>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-From: Goffredo Baroncelli <kreijack@inwind.it>
-Message-ID: <a291b1c0-fadf-da85-fc46-657884ec38bc@inwind.it>
-Date: Sun, 26 Jun 2016 11:20:50 +0200
-MIME-Version: 1.0
-In-Reply-To: <CAJCQCtRWfWXruAJTbCsh7dKc=2iRk6CHMOMTUBbh7JGH6SaXtA@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Date: Sun, 26 Jun 2016 13:05:15 +0000
+In-Reply-To: <CAJCQCtQ+q90r=Q38mtVKoBeAmXmPJPP2cp=dfLj3kBiEv66bzA@mail.gmail.com>
+References: <loom.20160623T205347-371@post.gmane.org>
+	 <CAJCQCtRO+FYrsfHF_ARSnPfoS7uzvLR4hB1V-TJ_YN4NcA6srw@mail.gmail.com>
+ <5356822.A3RRKHDHNy@linux-omuo>
+	 <CAJCQCtQ-xYrERT5R4gSC1C7OkoeP2LeS9W9UL5VY5SmDBXk71w@mail.gmail.com>
+ <20160625010610.Horde.tUycS31CmgVWfy3CPu7qJCD@mail.sapo.pt>
+ <CAJCQCtSGZO8JVXqVOwifT84KTLCkciux+Y6A_na4AA-PxPjjbw@mail.gmail.com>
+	 <20160625211024.Horde.pL6RMZNJL6tnjtpglBZjDaB@mail.sapo.pt>
+	 <CAJCQCtQ+q90r=Q38mtVKoBeAmXmPJPP2cp=dfLj3kBiEv66bzA@mail.gmail.com>
+Content-Type: text/plain; charset="UTF-8"
+Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2016-06-26 00:33, Chris Murphy wrote:
-> On Sat, Jun 25, 2016 at 12:42 PM, Goffredo Baroncelli
-> <kreijack@inwind.it> wrote:
->> On 2016-06-25 19:58, Chris Murphy wrote:
->> [...]
->>>> Wow. So it sees the data strip corruption, uses good parity on disk to
->>>> fix it, writes the fix to disk, recomputes parity for some reason but
->>>> does it wrongly, and then overwrites good parity with bad parity?
->>>
->>> The wrong parity, is it valid for the data strips that includes the
->>> (intentionally) corrupt data?
->>>
->>> Can parity computation happen before the csum check? Where sometimes you get:
->>>
->>> read data strips > computer parity > check csum fails > read good
->>> parity from disk > fix up the bad data chunk > write wrong parity
->>> (based on wrong data)?
->>>
->>> https://git.kernel.org/cgit/linux/kernel/git/stable/linux-stable.git/tree/fs/btrfs/raid56.c?id=refs/tags/v4.6.3
->>>
->>> 2371-2383 suggest that there's a parity check, it's not always being
->>> rewritten to disk if it's already correct. But it doesn't know it's
->>> not correct, it thinks it's wrong so writes out the wrongly computed
->>> parity?
->>
->> The parity is not valid for both the corrected data and the corrupted data. It seems that the scrub process copy the contents of the disk2 to disk3. It could happens only if the contents of disk1 is zero.
+A Sáb, 25-06-2016 às 14:54 -0600, Chris Murphy escreveu:
+> On Sat, Jun 25, 2016 at 2:10 PM, Vasco Almeida <vascomalmeida@sapo.pt
+> > wrote:
+> > Citando Chris Murphy <lists@colorremedies.com>:
+> > > 3. btrfs-image so that devs can see what's causing the problem
+> > > that
+> > > the current code isn't handling well enough.
+> > 
+> > 
+> > btrfs-image does not create dump image:
+> > 
+> > # btrfs-image /dev/mapper/vg_pupu-lv_opensuse_root
+> > btrfs-lv_opensuse_root.image
+> > checksum verify failed on 437944320 found 8BF8C752 wanted 39F456C8
+> > checksum verify failed on 437944320 found 8BF8C752 wanted 39F456C8
+> > checksum verify failed on 437944320 found 8BF8C752 wanted 39F456C8
+> > checksum verify failed on 437944320 found 8BF8C752 wanted 39F456C8
+> > Csum didn't match
+> > Error reading metadata block
+> > Error adding block -5
+> > checksum verify failed on 437944320 found 8BF8C752 wanted 39F456C8
+> > checksum verify failed on 437944320 found 8BF8C752 wanted 39F456C8
+> > checksum verify failed on 437944320 found 8BF8C752 wanted 39F456C8
+> > checksum verify failed on 437944320 found 8BF8C752 wanted 39F456C8
+> > Csum didn't match
+> > Error reading metadata block
+> > Error flushing pending -5
+> > create failed (Success)
+> > # echo $?
+> > 1
 > 
-> I'm not sure what it takes to hit this exactly. I just tested 3x
-> raid5, where two files 128KiB "a" and 128KiB "b", so that's a full
-> stripe write for each. I corrupted devid 1 64KiB of "a" and devid2
-> 64KiB of "b" did a scrub, error is detected, and corrected, and parity
-> is still correct.
+> Well it's pretty strange to have DUP metadata and for the checksum
+> verify to fail on both copies. I don't have much optimism that brfsck
+> repair can fix it either. But still it's worth a shot since there's
+> not much else to go on.
 
-How many time tried this corruption test ? I was unable to raise the bug systematically; in average every three tests I got 1 bug.... 
+I have tried "btrfs check --repair /device" but that seems do not do
+any good.
+http://paste.fedoraproject.org/384960/66945936/
 
+I then issued "mount /device /mnt" and, like before, it was mounted
+readwrite and then forced readonly. Got some kernel oops and traces. 
 
-[....]
+I noticed that btrfs-balance was using ~100% CPU whilst btrfs device
+was mounted readonly. I let it run for about 20 minutes.
+Then had to reboot because the system was no responding well: was
+unable to open or close applications, use internet. Did SysRq+reisu
+(operations were enabled) and then pressed reset button on computer.
 
--- 
-gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
-Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5
+Unfortunately dmesg dumps were lost after resetting computer.
+
+What else can I do or I must rebuild the file system?

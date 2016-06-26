@@ -1,99 +1,89 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oi0-f45.google.com ([209.85.218.45]:35418 "EHLO
-	mail-oi0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751330AbcFZTyu convert rfc822-to-8bit (ORCPT
+Received: from mail-oi0-f44.google.com ([209.85.218.44]:35377 "EHLO
+	mail-oi0-f44.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751104AbcFZWdK (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 26 Jun 2016 15:54:50 -0400
-Received: by mail-oi0-f45.google.com with SMTP id r2so176876757oih.2
-        for <linux-btrfs@vger.kernel.org>; Sun, 26 Jun 2016 12:54:49 -0700 (PDT)
+	Sun, 26 Jun 2016 18:33:10 -0400
+Received: by mail-oi0-f44.google.com with SMTP id r2so179309492oih.2
+        for <linux-btrfs@vger.kernel.org>; Sun, 26 Jun 2016 15:33:10 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <1466946315.4049.19.camel@sapo.pt>
-References: <loom.20160623T205347-371@post.gmane.org> <CAJCQCtRO+FYrsfHF_ARSnPfoS7uzvLR4hB1V-TJ_YN4NcA6srw@mail.gmail.com>
- <5356822.A3RRKHDHNy@linux-omuo> <CAJCQCtQ-xYrERT5R4gSC1C7OkoeP2LeS9W9UL5VY5SmDBXk71w@mail.gmail.com>
- <20160625010610.Horde.tUycS31CmgVWfy3CPu7qJCD@mail.sapo.pt>
- <CAJCQCtSGZO8JVXqVOwifT84KTLCkciux+Y6A_na4AA-PxPjjbw@mail.gmail.com>
- <20160625211024.Horde.pL6RMZNJL6tnjtpglBZjDaB@mail.sapo.pt>
- <CAJCQCtQ+q90r=Q38mtVKoBeAmXmPJPP2cp=dfLj3kBiEv66bzA@mail.gmail.com> <1466946315.4049.19.camel@sapo.pt>
-From: Chris Murphy <lists@colorremedies.com>
-Date: Sun, 26 Jun 2016 13:54:48 -0600
-Message-ID: <CAJCQCtSaMTA4a8+jGO8TXEQCQi7Yi2pS-S2qPNKt8q1eZSkULA@mail.gmail.com>
-Subject: Re: Bad hard drive - checksum verify failure forces readonly mount
-To: Vasco Almeida <vascomalmeida@sapo.pt>
-Cc: Chris Murphy <lists@colorremedies.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+In-Reply-To: <pan$60ea0$54eb541$a3b060fc$181835e5@cox.net>
+References: <8695beeb-f991-28c4-cf6b-8c92339e468f@inwind.it>
+ <CAJCQCtTXJhgKsmQGUXrppntYj8u6vk3jzP9Q4UMBomJ255QTQw@mail.gmail.com> <pan$60ea0$54eb541$a3b060fc$181835e5@cox.net>
+From: ronnie sahlberg <ronniesahlberg@gmail.com>
+Date: Sun, 26 Jun 2016 15:33:08 -0700
+Message-ID: <CAN05THQCJS8x0yF6DjDFfsNWzp1u4edv5dH-BMb1TTofZdtjgA@mail.gmail.com>
+Subject: Re: [BUG] Btrfs scrub sometime recalculate wrong parity in raid5
+To: Duncan <1i5t5.duncan@cox.net>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Jun 26, 2016 at 7:05 AM, Vasco Almeida <vascomalmeida@sapo.pt> wrote:
-> A Sáb, 25-06-2016 às 14:54 -0600, Chris Murphy escreveu:
->> On Sat, Jun 25, 2016 at 2:10 PM, Vasco Almeida <vascomalmeida@sapo.pt
->> > wrote:
->> > Citando Chris Murphy <lists@colorremedies.com>:
->> > > 3. btrfs-image so that devs can see what's causing the problem
->> > > that
->> > > the current code isn't handling well enough.
->> >
->> >
->> > btrfs-image does not create dump image:
->> >
->> > # btrfs-image /dev/mapper/vg_pupu-lv_opensuse_root
->> > btrfs-lv_opensuse_root.image
->> > checksum verify failed on 437944320 found 8BF8C752 wanted 39F456C8
->> > checksum verify failed on 437944320 found 8BF8C752 wanted 39F456C8
->> > checksum verify failed on 437944320 found 8BF8C752 wanted 39F456C8
->> > checksum verify failed on 437944320 found 8BF8C752 wanted 39F456C8
->> > Csum didn't match
->> > Error reading metadata block
->> > Error adding block -5
->> > checksum verify failed on 437944320 found 8BF8C752 wanted 39F456C8
->> > checksum verify failed on 437944320 found 8BF8C752 wanted 39F456C8
->> > checksum verify failed on 437944320 found 8BF8C752 wanted 39F456C8
->> > checksum verify failed on 437944320 found 8BF8C752 wanted 39F456C8
->> > Csum didn't match
->> > Error reading metadata block
->> > Error flushing pending -5
->> > create failed (Success)
->> > # echo $?
->> > 1
->>
->> Well it's pretty strange to have DUP metadata and for the checksum
->> verify to fail on both copies. I don't have much optimism that brfsck
->> repair can fix it either. But still it's worth a shot since there's
->> not much else to go on.
+On Sat, Jun 25, 2016 at 7:53 PM, Duncan <1i5t5.duncan@cox.net> wrote:
+> Chris Murphy posted on Sat, 25 Jun 2016 11:25:05 -0600 as excerpted:
 >
-> I have tried "btrfs check --repair /device" but that seems do not do
-> any good.
-> http://paste.fedoraproject.org/384960/66945936/
+>> Wow. So it sees the data strip corruption, uses good parity on disk to
+>> fix it, writes the fix to disk, recomputes parity for some reason but
+>> does it wrongly, and then overwrites good parity with bad parity?
+>> That's fucked. So in other words, if there are any errors fixed up
+>> during a scrub, you should do a 2nd scrub. The first scrub should make
+>> sure data is correct, and the 2nd scrub should make sure the bug is
+>> papered over by computing correct parity and replacing the bad parity.
+>>
+>> I wonder if the same problem happens with balance or if this is just a
+>> bug in scrub code?
+>
+> Could this explain why people have been reporting so many raid56 mode
+> cases of btrfs replacing a first drive appearing to succeed just fine,
+> but then they go to btrfs replace a second drive, and the array crashes
+> as if the first replace didn't work correctly after all, resulting in two
+> bad devices once the second replace gets under way, of course bringing
+> down the array?
+>
+> If so, then it looks like we have our answer as to what has been going
+> wrong that has been so hard to properly trace and thus to bugfix.
+>
+> Combine that with the raid4 dedicated parity device behavior you're
+> seeing if the writes are all exactly 128 MB, with that possibly
+> explaining the super-slow replaces, and this thread may have just given
+> us answers to both of those until-now-untraceable issues.
+>
+> Regardless, what's /very/ clear by now is that raid56 mode as it
+> currently exists is more or less fatally flawed, and a full scrap and
+> rewrite to an entirely different raid56 mode on-disk format may be
+> necessary to fix it.
+>
+> And what's even clearer is that people /really/ shouldn't be using raid56
+> mode for anything but testing with throw-away data, at this point.
+> Anything else is simply irresponsible.
+>
+> Does that mean we need to put a "raid56 mode may eat your babies" level
+> warning in the manpage and require a --force to either mkfs.btrfs or
+> balance to raid56 mode?  Because that's about where I am on it.
 
-It did fix things, in particular with the snapshot that was having
-problems being dropped. But it's not enough it seems to prevent it
-from going read only.
-
-There's more than one bug here, you might see if the repair was good
-enough that it's possible to use brtfs-image now. If not, use
-btrfs-debug-tree <dev> > file.txt and post that file somewhere. This
-does expose file names. Maybe that'll shed some light on the problem.
-But also worth filing a bug at bugzilla.kernel.org with this debug
-tree referenced (probably too big to attach), maybe a dev will be able
-to look at it and improve things so they don't fail.
+Agree. At this point letting ordinary users create raid56 filesystems
+is counterproductive.
 
 
-> What else can I do or I must rebuild the file system?
+I would suggest:
 
-Well, it's a long shot but you could try using --repair --init-csum
-which will create a new csum tree. But that applies to data, if the
-problem with it going read only is due to metadata corruption this
-won't help. And then last you could try --init-extent-tree. Thing I
-can't answer is which order to do it in.
+1, a much more strongly worded warning in the wiki. Make sure there
+are no misunderstandings
+that they really should not use raid56 right now for new filesystems.
 
-In any case there will be files that you shouldn't trust after csum
-has been recreated, anything corrupt will now have a new csum, so you
-can get silent data corruption. It's better to just blow away this
-file system and make a new one and reinstall the OS. But if you're
-feeling brave, you can try one or both of those additional options and
-see if they can help.
+2, Instead of a --force flag. (Users tend to ignore ---force and
+warnings in documentation.)
+Instead ifdef out the options to create raid56 in mkfs.btrfs.
+Developers who want to test can just remove the ifdef and recompile
+the tools anyway.
+But if end-users have to recompile userspace, that really forces the
+point that "you
+really should not use this right now".
 
-
--- 
-Chris Murphy
+3, reach out to the documentation and fora for the major distros and
+make sure they update their
+documentation accordingly.
+I think a lot of end-users, if they try to research something, are
+more likely to go to <their-distro> fora and wiki
+than search out an upstream fora.

@@ -1,134 +1,102 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oi0-f45.google.com ([209.85.218.45]:35604 "EHLO
-	mail-oi0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751644AbcF0Wa0 (ORCPT
+Received: from mail-oi0-f41.google.com ([209.85.218.41]:36359 "EHLO
+	mail-oi0-f41.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751874AbcF0WzJ (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 27 Jun 2016 18:30:26 -0400
-Received: by mail-oi0-f45.google.com with SMTP id r2so220507271oih.2
-        for <linux-btrfs@vger.kernel.org>; Mon, 27 Jun 2016 15:30:25 -0700 (PDT)
+	Mon, 27 Jun 2016 18:55:09 -0400
+Received: by mail-oi0-f41.google.com with SMTP id f189so221249680oig.3
+        for <linux-btrfs@vger.kernel.org>; Mon, 27 Jun 2016 15:55:08 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <20160627215726.GG14667@hungrycats.org>
-References: <576CB0DA.6030409@gmail.com> <20160624085014.GH3325@carfax.org.uk>
- <CAA91j0Uqg0FafFTG3NhQt=p8KkYRhTeMU5Bd+JuUxDntP6g8Ng@mail.gmail.com>
- <CAJCQCtQBQAng5_mNJZev+64Z15BSkBkG9f2qmz=ckPRqXRbbWA@mail.gmail.com>
- <576D6C0A.7070502@gmail.com> <CAJCQCtSskA4PC_a8tgQopHFNO83NQ=Gkx406haB7G0nBi5e=2A@mail.gmail.com>
- <c2a320a6-261b-723d-ab83-58f883e6315b@gmail.com> <CAJCQCtSqO4GNm8kBDuzUXEXYx+54zFgsD6=ARNsRgVUb53LQZw@mail.gmail.com>
- <fd7d250c-0a5a-ea3e-9ea2-ec6e50e14169@gmail.com> <CAJCQCtQugDoR6fnPeion37FLS3LarjfP6dt+-Z3jPgLG0Xkmwg@mail.gmail.com>
- <20160627215726.GG14667@hungrycats.org>
+In-Reply-To: <20160628002602.022258bf@system>
+References: <20160627233612.662d2a9a@system> <CAJCQCtT_vbOzbvMOuV6wgvz4iMHcpQmAhX-y1-dkOi6F323KRg@mail.gmail.com>
+ <20160628002602.022258bf@system>
 From: Chris Murphy <lists@colorremedies.com>
-Date: Mon, 27 Jun 2016 16:30:23 -0600
-Message-ID: <CAJCQCtRbrLaXSGm9DA6FrHO9Pd9ozaaJpKd6HjMGXCojdxbZoQ@mail.gmail.com>
-Subject: Re: Adventures in btrfs raid5 disk recovery
-To: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
-Cc: Chris Murphy <lists@colorremedies.com>,
-        "Austin S. Hemmelgarn" <ahferroin7@gmail.com>,
-        Andrei Borzenkov <arvidjaar@gmail.com>,
-        Hugo Mills <hugo@carfax.org.uk>, kreijack@inwind.it,
-        Roman Mamedov <rm@romanrm.net>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Date: Mon, 27 Jun 2016 16:55:07 -0600
+Message-ID: <CAJCQCtR3FQ-Pe40dOcKGgd+8paraHuCoNCw5Kk+2G7bOOJF1rw@mail.gmail.com>
+Subject: Re: Kernel bug during RAID1 replace
+To: Saint Germain <saintger@gmail.com>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Jun 27, 2016 at 3:57 PM, Zygo Blaxell
-<ce3g8jdj@umail.furryterror.org> wrote:
-> On Mon, Jun 27, 2016 at 10:17:04AM -0600, Chris Murphy wrote:
+On Mon, Jun 27, 2016 at 4:26 PM, Saint Germain <saintger@gmail.com> wrote:
 
+>>
 >
->> It just came up again in a thread over the weekend on linux-raid@. I'm
->> going to ask while people are paying attention if a patch to change
->> the 30 second time out to something a lot higher has ever been
->> floated, what the negatives might be, and where to get this fixed if
->> it wouldn't be accepted in the kernel code directly.
+> Thanks for your help.
 >
-> Defaults are defaults, they're not for everyone.  30 seconds is about
-> two minutes too short for an SMR drive's worst-case write latency, or
-> 28 seconds too long for an OLTP system, or just right for an end-user's
-> personal machine with a low-energy desktop drive and a long spin-up time.
-
-The question is where is the correct place to change the default to
-broadly capture most use cases, because it's definitely incompatible
-with consumer SATA drives, whether in an enclosure or not.
-
-Maybe it's with the kernel teams at each distribution? Or maybe an
-upstream udev rule?
-
-In any case something needs to give here because it's been years of
-bugging users about this misconfiguration and people constantly run
-into it, which means user education is not working.
-
-
+> Ok here is the log from the mounting, and including btrfs replace
+> (btrfs replace start -f /dev/sda1 /dev/sdd1 /home):
 >
-> Once a drive starts taking 30+ seconds to do I/O, I consider the drive
-> failed in the sense that it's too slow to meet latency requirements.
+> BTRFS info (device sdb1): disk space caching is enabled
+> BTRFS info (device sdb1): bdev /dev/sdb1 errs: wr 11881695, rd 12, flush 7928, corrupt 1705631, gen 1335
+> BTRFS info (device sdb1): bdev /dev/sda1 errs: wr 0, rd 0, flush 0, corrupt 14220, gen 24
 
-Well that is then a mismatch between use case and the drive purchasing
-decision. Consumer drives do this. It's how they're designed to work.
+Eek. So sdb has 11+ million write errors, flush errors, read errors,
+and over 1 million corruptions. It's dying or dead.
 
+And sda has a dozen thousand+ corruptions. This isn't a good
+combination, as you have two devices with problems and raid5 only
+protects you from one device with problems.
 
-> When the problem is that it's already taking too long, the solution is
-> not waiting even longer.  To put things in perspective, consider that
-> server hardware watchdog timeouts are typically 60 seconds by default
-> (if not maximum).
-
-If you want the data retrieved from that particular device, the only
-solution is waiting longer. The alternative is what you get, an IO
-error (well actually you get a link reset, which also means the entire
-command queue is purged on SATA drives).
+You were in the process of replacing sda, which is good, but it may
+not be enough...
 
 
-> If anything, I want the timeout to be shorter so that upper layers with
-> redundancy can get an EIO and initiate repair promptly, and admins can
-> get notified to evict chronic offenders from their drive slots, without
-> having to pay extra for hard disk firmware with that feature.
+> BTRFS info (device sdb1): dev_replace from /dev/sda1 (devid 1) to /dev/sdd1 started
+> scrub_handle_errored_block: 166 callbacks suppressed
+> BTRFS warning (device sdb1): checksum error at logical 93445255168 on dev /dev/sda1, sector 77669048, root 5, inode 3434831, offset 479232, length 4096, links 1 (path: user/.local/share/zeitgeist/activity.sqlite-wal)
+> btrfs_dev_stat_print_on_error: 166 callbacks suppressed
+> BTRFS error (device sdb1): bdev /dev/sda1 errs: wr 0, rd 0, flush 0, corrupt 14221, gen 24
+> scrub_handle_errored_block: 166 callbacks suppressed
+> BTRFS error (device sdb1): unable to fixup (regular) error at logical 93445255168 on dev /dev/sda1
 
-The drive totally thwarts this. It doesn't report back to the kernel
-what command is hung, as far as I'm aware. It just hangs and goes into
-a so called "deep recovery" there is no way to know what sector is
-causing the problem until the drive reports a read error, which will
-include the affected sector LBA.
-
-Btrfs does have something of a work around for when things get slow,
-and that's balance, read and rewrite everything. The write forces
-sector remapping by the drive firmware for bad sectors.
-
-
->> *Ideally* I think we'd want two timeouts. I'd like to see commands
->> have a timer that results in merely a warning that could be used by
->> e.g. btrfs scrub to know "hey this sector range is 'slow' I'm going to
->> write over those sectors". That's how bad sectors start out, they read
->> slower and eventually go beyond 30 seconds and now it's all link
->> resets. If the problem could be fixed before then... that's the best
->> scenario.
->
-> What's the downside of a link reset?  Can the driver not just return
-> EIO for all the outstanding IOs in progress at reset, and let the upper
-> layers deal with it?  Or is the problem that the upper layers are all
-> horribly broken by EIOs, or drive firmware horribly broken by link resets?
-
-Link reset clears the entire command queue on SATA drives, and it
-wipes away any possibility of finding out what LBA or even a range of
-LBAs, is the source of the stall. So it pretty much gets you nothing.
+Shoot. You have a lot of these. It looks suspiciously like you're
+hitting a case list regulars are only just starting to understand
+(somewhat) where it's possible to have a legit corrupt sector that
+Btrfs detects during scrub as wrong, fixes it from parity, but then
+occasionally wrongly overwrites the parity with bad parity. This
+doesn't cause an immediately recognizable problem. But if the volume
+becomes degraded later, Btrfs must use parity to reconstruct
+on-the-fly and if it hits one of these bad parities, the
+reconstruction is bad, and ends up causing lots of these checksum
+errors. We can tell it's not metadata corruption because a.) there's a
+file listed as being affected and b.) the file system doesn't fail and
+go read only. But still it means those files are likely toast...
 
 
-> The upper layers could time the IOs, and make their own decisions based
-> on the timing (e.g. btrfs or mdadm could proactively repair anything that
-> took more than 10 seconds to read).  That might be a better approach,
-> since shortening the time to an EIO is only useful when you have a
-> redundancy layer in place to do something about them.
+[...snip many instances of checksum errors...]
 
-For RAID with redundancy, that's doable, although I have no idea what
-work is needed, or even if it's possible, to track commands in this
-manner, and fall back to some kind of repair mode as if it were a read
-error.
+> BTRFS error (device sdb1): bdev /dev/sda1 errs: wr 0, rd 0, flush 0, corrupt 16217, gen 24
+> ata2.00: exception Emask 0x0 SAct 0x4000 SErr 0x0 action 0x0
+> ata2.00: irq_stat 0x40000008
+> ata2.00: failed command: READ FPDMA QUEUED
+> ata2.00: cmd 60/08:70:08:d8:70/00:00:0f:00:00/40 tag 14 ncq 4096 in
+>          res 41/40:00:08:d8:70/00:00:0f:00:00/40 Emask 0x409 (media error) <F>
+> ata2.00: status: { DRDY ERR }
+> ata2.00: error: { UNC }
+> ata2.00: configured for UDMA/133
+> sd 1:0:0:0: [sdb] tag#14 FAILED Result: hostbyte=DID_OK driverbyte=DRIVER_SENSE
+> sd 1:0:0:0: [sdb] tag#14 Sense Key : Medium Error [current] [descriptor]
+> sd 1:0:0:0: [sdb] tag#14 Add. Sense: Unrecovered read error - auto reallocate failed
+> sd 1:0:0:0: [sdb] tag#14 CDB: Read(10) 28 00 0f 70 d8 08 00 00 08 00
+> blk_update_request: I/O error, dev sdb, sector 259053576
 
-For single drives and RAID 0, the only possible solution is to not do
-link resets for up to 3 minutes and hope the drive returns the single
-copy of data.
+OK yeah so bad sector on sdb. So you have two failures because sda is
+already giving you trouble while being replaced and on top of it you
+now get a 2nd (partial) failure via bad sectors.
 
-Even in the case of Btrfs DUP, it's thwarted without a read error
-reported from the drive (or it returning bad data).
+So rather urgently I think you need to copy things off this volume if
+you don't already have a backup so you can save as much as possible.
+Don't write to the drives. You might even consider 'mount -o
+remount,ro' to avoid anything writing to the volume. Copy the most
+important data first, triage time.
 
+While that happens you can safely collect some more information:
+
+btrfs fi us <mp>
+smartctl -x <dev>   ## for both drives
 
 
 -- 

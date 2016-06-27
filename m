@@ -1,156 +1,116 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lf0-f51.google.com ([209.85.215.51]:34072 "EHLO
-	mail-lf0-f51.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751215AbcF0JXo (ORCPT
+Received: from mail-io0-f175.google.com ([209.85.223.175]:36407 "EHLO
+	mail-io0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751827AbcF0LWL (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 27 Jun 2016 05:23:44 -0400
-Received: by mail-lf0-f51.google.com with SMTP id h129so152358778lfh.1
-        for <linux-btrfs@vger.kernel.org>; Mon, 27 Jun 2016 02:23:43 -0700 (PDT)
-Received: from intelfx-laptop.local ([93.175.7.90])
-        by smtp.gmail.com with ESMTPSA id g28sm3085854ljg.24.2016.06.27.02.23.40
-        for <linux-btrfs@vger.kernel.org>
-        (version=TLS1_2 cipher=ECDHE-RSA-CHACHA20-POLY1305 bits=256/256);
-        Mon, 27 Jun 2016 02:23:41 -0700 (PDT)
-Message-ID: <1467019414.17298.6.camel@intelfx.name>
-Subject: Re: Rescue a single-device btrfs instance with zeroed tree root
-From: Ivan Shapovalov <intelfx@intelfx.name>
-Reply-To: intelfx@intelfx.name
-To: linux-btrfs@vger.kernel.org
-Date: Mon, 27 Jun 2016 12:23:34 +0300
-In-Reply-To: <1466529808.27445.14.camel@intelfx.name>
-References: <1466529808.27445.14.camel@intelfx.name>
-Content-Type: multipart/signed; micalg="pgp-sha512";
-	protocol="application/pgp-signature"; boundary="=-WwvNO+52vrGD3bMtY1lv"
-Mime-Version: 1.0
+	Mon, 27 Jun 2016 07:22:11 -0400
+Received: by mail-io0-f175.google.com with SMTP id s63so145435517ioi.3
+        for <linux-btrfs@vger.kernel.org>; Mon, 27 Jun 2016 04:22:05 -0700 (PDT)
+Subject: Re: Adventures in btrfs raid5 disk recovery
+To: Chris Murphy <lists@colorremedies.com>
+References: <CAJCQCtR9uAn58KJKEjCsbyLYJTQVqMx-ghsVp_MjLBF-aiikcg@mail.gmail.com>
+ <20160620204049.GA1986@hungrycats.org>
+ <CAJCQCtR5pV53mFyGWxRxm69zwF5_sEvNRRRvOSgnZ1t8KZdc3g@mail.gmail.com>
+ <20160621015559.GM15597@hungrycats.org>
+ <CAJCQCtRUUd+moK25N3704ZG54cFrCw1-Uxm2QO-XF9g0=mHazw@mail.gmail.com>
+ <20160622203504.GQ15597@hungrycats.org>
+ <5790aea9-0976-1742-7d1b-79dbe44008c3@inwind.it>
+ <CAJCQCtRXqSCFZTca+Vwraa0vS-MzLQKEkr=s41Vypc-O0ZDdxQ@mail.gmail.com>
+ <20160624014752.GB14667@hungrycats.org> <576CB0DA.6030409@gmail.com>
+ <20160624085014.GH3325@carfax.org.uk>
+ <CAA91j0Uqg0FafFTG3NhQt=p8KkYRhTeMU5Bd+JuUxDntP6g8Ng@mail.gmail.com>
+ <CAJCQCtQBQAng5_mNJZev+64Z15BSkBkG9f2qmz=ckPRqXRbbWA@mail.gmail.com>
+ <576D6C0A.7070502@gmail.com>
+ <CAJCQCtSskA4PC_a8tgQopHFNO83NQ=Gkx406haB7G0nBi5e=2A@mail.gmail.com>
+ <c2a320a6-261b-723d-ab83-58f883e6315b@gmail.com>
+ <CAJCQCtSqO4GNm8kBDuzUXEXYx+54zFgsD6=ARNsRgVUb53LQZw@mail.gmail.com>
+Cc: Andrei Borzenkov <arvidjaar@gmail.com>, Hugo Mills <hugo@carfax.org.uk>,
+        Zygo Blaxell <ce3g8jdj@umail.furryterror.org>, kreijack@inwind.it,
+        Roman Mamedov <rm@romanrm.net>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Message-ID: <fd7d250c-0a5a-ea3e-9ea2-ec6e50e14169@gmail.com>
+Date: Mon, 27 Jun 2016 07:21:56 -0400
+MIME-Version: 1.0
+In-Reply-To: <CAJCQCtSqO4GNm8kBDuzUXEXYx+54zFgsD6=ARNsRgVUb53LQZw@mail.gmail.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On 2016-06-25 12:44, Chris Murphy wrote:
+> On Fri, Jun 24, 2016 at 12:19 PM, Austin S. Hemmelgarn
+> <ahferroin7@gmail.com> wrote:
+>
+>> Well, the obvious major advantage that comes to mind for me to checksumming
+>> parity is that it would let us scrub the parity data itself and verify it.
+>
+> OK but hold on. During scrub, it should read data, compute checksums
+> *and* parity, and compare those to what's on-disk - > EXTENT_CSUM in
+> the checksum tree, and the parity strip in the chunk tree. And if
+> parity is wrong, then it should be replaced.
+Except that's horribly inefficient.  With limited exceptions involving 
+highly situational co-processors, computing a checksum of a parity block 
+is always going to be faster than computing parity for the stripe.  By 
+using that to check parity, we can safely speed up the common case of 
+near zero errors during a scrub by a pretty significant factor.
 
---=-WwvNO+52vrGD3bMtY1lv
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
-
-On 2016-06-21 at 20:23 +0300, Ivan Shapovalov wrote:
-> Hello,
->=20
-> So this is another case of "I lost my partition and do not have
-> backups". More precisely, _this_ is the backup and it turned out to
-> be
-> damaged.
->=20
-> (The backup was made by partclone.btrfs. Together with a zeroed out
-> tree root, this asks for a bug in partclone...)
->=20
-> So: the tree root is zeroes, backup roots are zeroes too,
-> btrfs-find-root only reports blocks of level 0 (needed is 1).
-> Is there something that can be done? Maybe it is possible to
-> reconstruct the root from its children?
-> Operations log following.
-> Please Cc: me in replies as I'm not subscribed to the list.
-
-
-Anyone? I'd appreciate any advice on how to rebuild the tree roots.
-
-I'd even write some code if someone tells me the disk format and
-logical tree constraints (i. e. in which order to put pointers to child
-nodes).
-
-BTW, it looks like all tree roots are lost, i. e. btrfs-find-root with
-any objectid (extent tree, subvolume tree, anything in ctree.h) finds
-only level 0 nodes.
-
-It should be possible to rebuild intermediate nodes, isn't it? Do they
-contain valuable information?
-
-Please Cc: me in replies as I'm not subscribed to the list.
-
-Thanks,
---=20
-
-Ivan Shapovalov / intelfx /
-
->=20
-> 1. regular mount
->=20
-> # mount /dev/loop0p3 /mnt/temp
->=20
-> =3D=3D=3D dmesg =3D=3D=3D
-> [106737.299592] BTRFS info (device loop0p3): disk space caching is
-> enabled
-> [106737.299604] BTRFS: has skinny extents
-> [106737.299884] BTRFS error (device loop0p3): bad tree block start 0
-> 162633449472
-> [106737.299888] BTRFS: failed to read tree root on loop0p3
-> [106737.314359] BTRFS: open_ctree failed
-> =3D=3D=3D end dmesg =3D=3D=3D
->=20
-> 2. mount with -o recovery
->=20
-> # mount -o recovery /dev/loop0p3 /mnt/temp
->=20
-> =3D=3D=3D dmesg =3D=3D=3D
-> [106742.305720] BTRFS warning (device loop0p3): 'recovery' is
-> deprecated, use 'usebackuproot' instead
-> [106742.305722] BTRFS info (device loop0p3): trying to use backup
-> root at mount time
-> [106742.305724] BTRFS info (device loop0p3): disk space caching is
-> enabled
-> [106742.305725] BTRFS: has skinny extents
-> [106742.306056] BTRFS error (device loop0p3): bad tree block start 0
-> 162633449472
-> [106742.306060] BTRFS: failed to read tree root on loop0p3
-> [106742.306069] BTRFS error (device loop0p3): bad tree block start 0
-> 162633449472
-> [106742.306071] BTRFS: failed to read tree root on loop0p3
-> [106742.306084] BTRFS error (device loop0p3): bad tree block start 0
-> 162632237056
-> [106742.306086] BTRFS: failed to read tree root on loop0p3
-> [106742.306097] BTRFS error (device loop0p3): bad tree block start 0
-> 162626682880
-> [106742.306100] BTRFS: failed to read tree root on loop0p3
-> [106742.306111] BTRFS error (device loop0p3): bad tree block start 0
-> 162609168384
-> [106742.306114] BTRFS: failed to read tree root on loop0p3
-> [106742.327272] BTRFS: open_ctree failed
-> =3D=3D=3D end dmesg =3D=3D=3D
->=20
->=20
-> 3. btrfs-find-root
->=20
-> # btrfs-find-root /dev/loop0p3
-> Couldn't read tree root
-> Superblock thinks the generation is 22332
-> Superblock thinks the level is 1
-> Well block 162633646080(gen: 22332 level: 0) seems good, but
-> generation/level doesn't match, want gen: 22332 level: 1
-> Well block 162633596928(gen: 22332 level: 0) seems good, but
-> generation/level doesn't match, want gen: 22332 level: 1
-> Well block 162633515008(gen: 22332 level: 0) seems good, but
-> generation/level doesn't match, want gen: 22332 level: 1
->=20
-> Thanks,
---=-WwvNO+52vrGD3bMtY1lv
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: This is a digitally signed message part
-Content-Transfer-Encoding: 7bit
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2
-
-iQIcBAABCgAGBQJXcPCWAAoJEHveF8jk4w6dX+0P/1uabgzqMmp3EG9Ul77Blk52
-pGW0tW/5xdJb+t7Ilv9OOQgFuTpnARIhTNC0+HKs35zvBkNnwgrYfeWV0vXjHrQM
-/yvoWWiUcHMxvGMtdRnE1dXuyJFJQWo1du10dxBKQkMNehfPqW0hUjP3L6zLLyK3
-9A53z19Wy+6rAw2wE84vRDt9dLs4b4SFfNrmK3iERww/MQcQyXnQC8ifjfM7iVNg
-A/NKjZdIHX98/y3Zn9WywZMCV/I8GHORzimkd1cUWsvOQlzeIRjjEUhYRNOucH9z
-EOLQRGejBgBb9Qea7rSxi8n9y4klfVh63ro1IRqh+PFTX3nMkaNCFobHmzQjhGbE
-8P6wL3KNMWhSLBv03vuLozdFMLn5XG85G3rDtQEAOTLBerIWHak2XOb4wWUXK8Ef
-LEG7oKzzb/pRGEb/LMIhra5w1LNvR/TozU/Jq5/eftO2t1VfGXvN95K5mbmIH3c2
-0b2gOeU6/AWSjPpNzsjfGnl+QRMZYMDM58FeEdxkoNI7XGkVlGQV24zah18oUhWB
-L9t7mou+9w1zTvQSt3/L6/0MUKEe9hv58w8PueBWi7zLmuk11nMtOWFCPfxcyH6u
-bZVYihRPPFRsovnZKcul/YC8wD33s7AN+Xixq3vSo65xzKeI6rksI0aL71AU5w4H
-8uIS3gAb6c9lvggWxA9a
-=Z+kX
------END PGP SIGNATURE-----
-
---=-WwvNO+52vrGD3bMtY1lv--
-
+The ideal situation that I'd like to see for scrub WRT parity is:
+1. Store checksums for the parity itself.
+2. During scrub, if the checksum is good, the parity is good, and we 
+just saved the time of computing the whole parity block.
+3. If the checksum is not good, then compute the parity.  If the parity 
+just computed matches what is there already, the checksum is bad and 
+should be rewritten (and we should probably recompute the whole block of 
+checksums it's in), otherwise, the parity was bad, write out the new 
+parity and update the checksum.
+4. Have an option to skip the csum check on the parity and always 
+compute it.
+>
+> Even check > md/sync_action does this. So no pun intended but Btrfs
+> isn't even at parity with mdadm on data integrity if it doesn't check
+> if the parity matches data.
+Except that MD and LVM don't have checksums to verify anything outside 
+of the very high-level metadata.  They have to compute the parity during 
+a scrub because that's the _only_ way they have to check data integrity. 
+  Just because that's the only way for them to check it does not mean we 
+have to follow their design, especially considering that we have other, 
+faster ways to check it.
+>
+>
+>> I'd personally much rather know my parity is bad before I need to use it
+>> than after using it to reconstruct data and getting an error there, and I'd
+>> be willing to be that most seasoned sysadmins working for companies using
+>> big storage arrays likely feel the same about it.
+>
+> That doesn't require parity csums though. It just requires computing
+> parity during a scrub and comparing it to the parity on disk to make
+> sure they're the same. If they aren't, assuming no other error for
+> that full stripe read, then the parity block is replaced.
+It does not require it, but it can make it significantly more efficient, 
+and even a 1% increase in efficiency is a huge difference on a big array.
+>
+> So that's also something to check in the code or poke a system with a
+> stick and see what happens.
+>
+>> I could see it being
+>> practical to have an option to turn this off for performance reasons or
+>> similar, but again, I have a feeling that most people would rather be able
+>> to check if a rebuild will eat data before trying to rebuild (depending on
+>> the situation in such a case, it will sometimes just make more sense to nuke
+>> the array and restore from a backup instead of spending time waiting for it
+>> to rebuild).
+>
+> The much bigger problem we have right now that affects Btrfs,
+> LVM/mdadm md raid, is this silly bad default with non-enterprise
+> drives having no configurable SCT ERC, with ensuing long recovery
+> times, and the kernel SCSI command timer at 30 seconds - which
+> actually also fucks over regular single disk users also because it
+> means they don't get the "benefit" of long recovery times, which is
+> the whole g'd point of that feature. This itself causes so many
+> problems where bad sectors just get worse and don't get fixed up
+> because of all the link resets. So I still think it's a bullshit
+> default kernel side because it pretty much affects the majority use
+> case, it is only a non-problem with proprietary hardware raid, and
+> software raid using enterprise (or NAS specific) drives that already
+> have short recovery times by default.
+On this, we can agree.

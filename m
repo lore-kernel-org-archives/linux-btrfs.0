@@ -1,56 +1,64 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oi0-f43.google.com ([209.85.218.43]:36028 "EHLO
-	mail-oi0-f43.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751977AbcF0TYe (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 27 Jun 2016 15:24:34 -0400
-Received: by mail-oi0-f43.google.com with SMTP id f189so214397271oig.3
-        for <linux-btrfs@vger.kernel.org>; Mon, 27 Jun 2016 12:24:33 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <feb87fbf-c017-ce29-3ba5-abc9d4cbb303@fastmail.fm>
-References: <a3dcbcfc-a8b5-6a54-f600-63dd2d9162b5@fastmail.fm>
- <CAJCQCtRrk70p+iNNKCZvmz4T3R2=2d_JqQXJuSpt2QD1g9ysZQ@mail.gmail.com> <feb87fbf-c017-ce29-3ba5-abc9d4cbb303@fastmail.fm>
-From: Chris Murphy <lists@colorremedies.com>
-Date: Mon, 27 Jun 2016 13:24:32 -0600
-Message-ID: <CAJCQCtSdNitRUA498COj1S3bcgdVA8Xf6qq1Fw71pbn_m=Z62A@mail.gmail.com>
-Subject: Re: Btrfs full balance command fails due to ENOSPC (bug 121071)
-To: Francesco Turco <fturco@fastmail.fm>
-Cc: Chris Murphy <lists@colorremedies.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Received: from plane.gmane.org ([80.91.229.3]:42637 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751915AbcF0TsB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 27 Jun 2016 15:48:01 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+	id 1bHcVg-0000ww-8n
+	for linux-btrfs@vger.kernel.org; Mon, 27 Jun 2016 21:47:59 +0200
+Received: from 64.134.221.43 ([64.134.221.43])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Mon, 27 Jun 2016 21:47:56 +0200
+Received: from 1i5t5.duncan by 64.134.221.43 with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Mon, 27 Jun 2016 21:47:56 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: [BUG] Btrfs scrub sometime recalculate wrong parity in raid5
+Date: Mon, 27 Jun 2016 19:47:35 +0000 (UTC)
+Message-ID: <pan$c4bd4$c1594f22$8b12854$dd1b6d96@cox.net>
+References: <8695beeb-f991-28c4-cf6b-8c92339e468f@inwind.it>
+	<CAJCQCtTXJhgKsmQGUXrppntYj8u6vk3jzP9Q4UMBomJ255QTQw@mail.gmail.com>
+	<pan$60ea0$54eb541$a3b060fc$181835e5@cox.net>
+	<CAN05THQCJS8x0yF6DjDFfsNWzp1u4edv5dH-BMb1TTofZdtjgA@mail.gmail.com>
+	<0c4e71329babb09442966c6659f9d965@crc.id.au>
+Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Jun 27, 2016 at 12:32 PM, Francesco Turco <fturco@fastmail.fm> wrote:
-> On 2016-06-27 20:18, Chris Murphy wrote:
->> If you can grab btrfs-debugfs from
->> https://github.com/kdave/btrfs-progs/blob/master/btrfs-debugfs
->>
->> And then attach the output to the bug report it might be useful for a
->> developer. But really your case is an odd duck, because there's fully
->> 14GiB unallocated, so it should be able to create a new one without
->> problem.
->>
->> $ sudo ./btrfs-debugfs -b /
->
-> Done! Thank you, I was not aware of the existence of btrfs-debug...
+Steven Haigh posted on Mon, 27 Jun 2016 13:21:00 +1000 as excerpted:
 
-I'm not certain what the "1 enospc errors during balance' refers to.
-That message happens several times, the balance operation isn't
-aborted, and doesn't come with any call traces (those appear later).
-Further, the btrfs-debugfs output suggests the balance worked - each
-bg is continguously located after the last and they're all new bg
-offset values compared to what's found in the dmesg.
+> I'd also recommend updates to the ArchLinux wiki - as for some reason I
+> always seem to end up there when searching for a certain topic...
 
-This might be that obscure -28 enospc bug that affects some file
-systems and hasn't been tracked down yet. If I recall correctly it's a
-misleading error, and the only work around to get rid of it is migrate
-to a new Btrfs file system. I don't think the file system is at any
-risk in the current state, but I'm not certain as it's already an edge
-case. I'd just make sure you keep suitably current backups and keep
-using it.
+Not really btrfs related, but for people using popular search engines, at 
+least, this is likely for two reasons:
+
+1) Arch is apparently the most popular distro among reasonably 
+technically literate users -- those who will both tend to have good 
+technical knowledge and advice on the various real-life issues Linux 
+users tend to encounter, and are likely to post it to an easily publicly 
+indexable forum.  (And in that regard, wikis are likely to be more 
+indexable than (web archives of) mailing lists like this, because that's 
+(part of) what wikis /do/ by design, make topics keyword searchable.  
+Lists, not so much.)
+
+2) Specifically to the point of being _publicly_ indexable, Arch may have 
+a more liberal robots.txt that allows indexers more access, than other 
+distros, some of which may limit robot access for performance reasons.
 
 
+With this combination, arch's wiki is a natural place for searches to 
+point.
+
+So agreed, a high priority on getting the raid56 warning up there on the 
+arch wiki is a good idea, indeed.
 
 -- 
-Chris Murphy
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

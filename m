@@ -1,180 +1,133 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mailgw-02.dd24.net ([193.46.215.43]:50503 "EHLO
-	mailgw-02.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751788AbcF0Dul (ORCPT
+Received: from mail-qk0-f177.google.com ([209.85.220.177]:35975 "EHLO
+	mail-qk0-f177.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751564AbcF0D5x (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 26 Jun 2016 23:50:41 -0400
-Message-ID: <1466999436.13546.6.camel@scientia.net>
-Subject: Re: [BUG] Btrfs scrub sometime recalculate wrong parity in raid5
-From: Christoph Anton Mitterer <calestyo@scientia.net>
-To: ronnie sahlberg <ronniesahlberg@gmail.com>, Duncan <1i5t5.duncan@cox.net>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Date: Mon, 27 Jun 2016 05:50:36 +0200
-In-Reply-To: <CAN05THQCJS8x0yF6DjDFfsNWzp1u4edv5dH-BMb1TTofZdtjgA@mail.gmail.com>
-References: <8695beeb-f991-28c4-cf6b-8c92339e468f@inwind.it>	
- <CAJCQCtTXJhgKsmQGUXrppntYj8u6vk3jzP9Q4UMBomJ255QTQw@mail.gmail.com>
-	 <pan$60ea0$54eb541$a3b060fc$181835e5@cox.net>
-	 <CAN05THQCJS8x0yF6DjDFfsNWzp1u4edv5dH-BMb1TTofZdtjgA@mail.gmail.com>
-Content-Type: multipart/signed; micalg="sha-512";
-	protocol="application/x-pkcs7-signature";
-	boundary="=-1K/gxIHsRH88Fz8DwlnF"
-Mime-Version: 1.0
+	Sun, 26 Jun 2016 23:57:53 -0400
+Received: by mail-qk0-f177.google.com with SMTP id p10so194805507qke.3
+        for <linux-btrfs@vger.kernel.org>; Sun, 26 Jun 2016 20:57:52 -0700 (PDT)
+MIME-Version: 1.0
+From: Nick Austin <nick@smartaustin.com>
+Date: Sun, 26 Jun 2016 20:57:32 -0700
+Message-ID: <CAPrP9G8gH4szLy3uHmVcH4dBsoze4XhNZA9t-qUxecnwOgYNVg@mail.gmail.com>
+Subject: Strange behavior when replacing device on BTRFS RAID 5 array.
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+I have a 4 device BTRFS RAID 5 filesystem.
 
---=-1K/gxIHsRH88Fz8DwlnF
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+One of the device members of this file system (sdr) had badblocks, so I
+decided to replace it.
 
-On Sun, 2016-06-26 at 15:33 -0700, ronnie sahlberg wrote:
-> 1, a much more strongly worded warning in the wiki. Make sure there
-> are no misunderstandings
-> that they really should not use raid56 right now for new filesystems.
-I doubt most end users can be assumed to read the wiki...
+(I don't have a copy of fi show from before the replace. :-/ )
 
+I ran this command:
+sudo btrfs replace start 4 /dev/sdw /mnt/newdata
 
-> 2, Instead of a --force flag. (Users tend to ignore ---force and
-> warnings in documentation.)
-> Instead ifdef out the options to create raid56 in mkfs.btrfs.
-> Developers who want to test can just remove the ifdef and recompile
-> the tools anyway.
-> But if end-users have to recompile userspace, that really forces the
-> point that "you
-> really should not use this right now".
+I had to shrink /dev/sdr by ~250 megs since the replacement drive was a tiny bit
+smaller.
 
-Well if one does --force or --yes-i-know-what-i-do, and one actually
-doesn't than such person is on his own.
-People can always shoot themselves if they want to.
+Jun 25 17:26:52 frank kernel: BTRFS info (device sdr): resizing devid 4
+Jun 25 17:26:52 frank kernel: BTRFS info (device sdr): new size for /dev/sdr is
+6001175121920
+Jun 25 17:27:45 frank kernel: BTRFS info (device sdr): dev_replace from /dev/sdr
+ (devid 4) to /dev/sdw started
 
-Actually I think that the compile-time way is inferior here.
-Distros may just always enable raid56 there to allow people to continue
-mounting their existing filesystems.
+The replace started, all seemed well.
+
+3 hours into the replace, sdr dropped off the SATA bus and was redetected
+as sdx. Bummer, but shouldn't be fatal.
+
+This event really seemed to throw BTRFS for a loop.
 
 
+Jun 25 20:32:35 frank kernel: sd 10:0:19:0: device_block, handle(0x0019)
+Jun 25 20:33:05 frank kernel: sd 10:0:19:0: device_unblock and setting
+to running, handle(0x0019)
+Jun 25 20:33:05 frank kernel: scsi 10:0:19:0: rejecting I/O to offline device
+Jun 25 20:33:05 frank kernel: scsi 10:0:19:0: [sdr] killing request
+Jun 25 20:33:05 frank kernel: scsi 10:0:19:0: rejecting I/O to offline device
+Jun 25 20:33:05 frank kernel: scsi 10:0:19:0: [sdr] killing request
+Jun 25 20:33:05 frank kernel: scsi 10:0:19:0: rejecting I/O to offline device
+Jun 25 20:33:05 frank kernel: scsi 10:0:19:0: [sdr] killing request
+Jun 25 20:33:05 frank kernel: scsi 10:0:19:0: [sdr] FAILED Result:
+hostbyte=DID_NO_CONNECT driverbyte=DRIVER_OK
+Jun 25 20:33:05 frank kernel: blk_update_request: I/O error, dev sdr,
+sector 1785876480
+Jun 25 20:33:05 frank kernel: mpt2sas_cm0: removing handle(0x0019),
+sas_addr(0x500194000687e20e)
+Jun 25 20:33:05 frank kernel: mpt2sas_cm0: removing : enclosure
+logical id(0x500194000687e23f), slot(14)
+Jun 25 20:33:16 frank kernel: scsi 10:0:21:0: Direct-Access     ATA
+  WL6000GSA12872E  1C01 PQ: 0 ANSI: 5
 
-What should IMHO be done as well is giving a big fat warning in the
-manpages/etc. that when nodatacow is used RAID recovery cannot produce
-valid data (at least as long as there isn't checksumming implemented
-for nodatacow).
-Probably it should also be documented what btrfs does in such
-situation. E.g. does it just randomly pick a readable block from one of
-the copies? Simply error out and consider the file broken? Fill the
-blocks in question with zero?
+Here you can see btrfs seems to figure out sdr has become sdx (based on the
+"dev /dev/sdx" entry showing up on the BTRFS warning lines).
 
-Cheers,
-Chris.
---=-1K/gxIHsRH88Fz8DwlnF
-Content-Type: application/x-pkcs7-signature; name="smime.p7s"
-Content-Disposition: attachment; filename="smime.p7s"
-Content-Transfer-Encoding: base64
+Unfortunately, all remaining IO for the device formerly known as sdr results in
+btrf errors like the ones listed below. iostat confirms no IO on sdx.
 
-MIAGCSqGSIb3DQEHAqCAMIACAQExDzANBglghkgBZQMEAgMFADCABgkqhkiG9w0BBwEAAKCCEmow
-ggXiMIIDyqADAgECAhBctkhuRwyYxn/2gNtkSuKNMA0GCSqGSIb3DQEBCwUAMH0xCzAJBgNVBAYT
-AklMMRYwFAYDVQQKEw1TdGFydENvbSBMdGQuMSswKQYDVQQLEyJTZWN1cmUgRGlnaXRhbCBDZXJ0
-aWZpY2F0ZSBTaWduaW5nMSkwJwYDVQQDEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0
-eTAeFw0xNTEyMTYwMTAwMDVaFw0zMDEyMTYwMTAwMDVaMHUxCzAJBgNVBAYTAklMMRYwFAYDVQQK
-Ew1TdGFydENvbSBMdGQuMSkwJwYDVQQLEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0
-eTEjMCEGA1UEAxMaU3RhcnRDb20gQ2xhc3MgMiBDbGllbnQgQ0EwggEiMA0GCSqGSIb3DQEBAQUA
-A4IBDwAwggEKAoIBAQDuD1CMlQkjhKz1UGqP1jeiTiH9MgllRz6vOPrVG/eE0H/J4QQLV/PeL8RT
-4xc44bEzsoJu0IhwnEchb+TxE/qw88w7hxODuw3N8Faxix6a1jp83+RWvZHZf78+O+3GYBpekZfT
-Oe9A/FoTXbcgwZfLTMQodn+ckNnX31M/1M2f2/7VA7QBlvihontyHQOlIlryQXnGI0UMCD21oopK
-tW48ckv0wUVg8irBKGMeD65gTON/Fsw/ZBbBqadoD1jt85FIM1ql24WUBEBwO1d0ykCKOIbgcqes
-3fbcjQpruUNMBbIu1MMIRMqwjx/M7IvSKcS7VYRWl0/K2byzWvBAHh/1AgMBAAGjggFkMIIBYDAO
-BgNVHQ8BAf8EBAMCAQYwHQYDVR0lBBYwFAYIKwYBBQUHAwIGCCsGAQUFBwMEMBIGA1UdEwEB/wQI
-MAYBAf8CAQAwMgYDVR0fBCswKTAnoCWgI4YhaHR0cDovL2NybC5zdGFydHNzbC5jb20vc2ZzY2Eu
-Y3JsMGYGCCsGAQUFBwEBBFowWDAkBggrBgEFBQcwAYYYaHR0cDovL29jc3Auc3RhcnRzc2wuY29t
-MDAGCCsGAQUFBzAChiRodHRwOi8vYWlhLnN0YXJ0c3NsLmNvbS9jZXJ0cy9jYS5jcnQwHQYDVR0O
-BBYEFJmXqxg1OotZRUOYsnJxyPT7Cc8WMB8GA1UdIwQYMBaAFE4L7xqkQFulF2mHMMo0aEPQQa7y
-MD8GA1UdIAQ4MDYwNAYEVR0gADAsMCoGCCsGAQUFBwIBFh5odHRwOi8vd3d3LnN0YXJ0c3NsLmNv
-bS9wb2xpY3kwDQYJKoZIhvcNAQELBQADggIBAJlBQQTO9iT1TjA0eEO7V/1AbBvMAfibjAgofxmJ
-01jBmHKg0pbTjWInTTYoxb3LBgz3mfjvvS1PjnIfb29MyVm0G/PSHjgq7Ews1dEJMPC9XTuxPf2c
-+MWLkynBlotW542JprW+iTWfZafyUtzIKW1hk0YASJ8zSSj8D++9yR+0UhkbvlECJkdi1+et0EaI
-7HIX6ccj1rfcFFflWX/fPT64dn9jpg9s0nuJug4WsVkEK236WndZoMHrZmgF7CIyZ3T0muqYwkAS
-DDcRt9A21o/Mc+D8Q6GVmKRGB3gEKvOtsioHZEqJv6CdAm3a6gloo5pX3RL1eCzc8Lzfs4T0ISZj
-r8xNMbTGlsuHaFH+stDewKsfnpo4N64OtAGrzmVfFFsMIRENRHsVlSEe/6LVpBpjn00+7bqEN3qe
-qSxIOraYJ12mJ08G4YnP2U1fadHIaS50O5ZXqAivoBl9pi/6CBNc5wIMlkXMyFZ0sLsI+9ErFDu9
-OJhX7iWCo69X0ydlzXj08+2K1PKyr+g6/vTPHur63JotNrhyoWEJyWEjBLA4QmJXfGpB5u+bCwNf
-sFpcYAlkiFt1Rs2vemgSBy3q4DHDbPKvr1YImZNRSHP+TX9NP94JRkmqcyD/qaN7u2JV1pRAlwG0
-npyrn6ZQM1QHV+iFbwQ4VqLMWk//QVo/rZy1MIIGPjCCBSagAwIBAgIQPZ6tDP/RHLwcz1F+2kRA
-DzANBgkqhkiG9w0BAQsFADB1MQswCQYDVQQGEwJJTDEWMBQGA1UEChMNU3RhcnRDb20gTHRkLjEp
-MCcGA1UECxMgU3RhcnRDb20gQ2VydGlmaWNhdGlvbiBBdXRob3JpdHkxIzAhBgNVBAMTGlN0YXJ0
-Q29tIENsYXNzIDIgQ2xpZW50IENBMB4XDTE2MDEwMjAyMDIzNloXDTE4MDEwMjAyMDIzNlowejEL
-MAkGA1UEBhMCREUxDzANBgNVBAgMBkJheWVybjERMA8GA1UEBwwITcO8bmNoZW4xITAfBgNVBAMM
-GENocmlzdG9waCBBbnRvbiBNaXR0ZXJlcjEkMCIGCSqGSIb3DQEJARYVY2FsZXN0eW9Ac2NpZW50
-aWEubmV0MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAsoxs789VtR81tlqeP2vwE3Cp
-YosZYRfrovj+Wb91paoV5OQcFuXA7yONnLsWxOnJ3AGgy1/wG79Ko+yHSmF2K88pEWjrFe0zmZWZ
-0b2OtMoKLEjxz7Nz2N7/lmgss8XinJ083LwLKSe4f+JLjnF5hX/g6wG4NkFXVOIf2YFZ0+c1NYFQ
-T6Vy42EWdk+JLDoXjyd2hEperLCz9rQr2k3wh0cn8R1FDUGerBGpMnvyKV6JXj5vZsqJnmiiId9e
-0IdBj4Wcs3hT2usk6dJYwHrZ8b7Fkv6BRq90DUI7i8+ukTdp5hnAb8TPSbe1JS4h3Jc7r2NVLkpo
-Gbuw98er9s2PEAvpECD3toO3ojBevL56vEDbGa5tXpvvcWCz6t3QyEKJ2E54hWw1fbUA0BtydQC0
-mhKBtrENVnnCDrSgiyBMnd8y+kw6iPKeJEjNObGubc4BZp47zPn/ZiDBaHue6S0MXsoS7XEGOuCU
-09S/8kD8wTecBg+KdlLSNkLm+xqx6Cy7zwcj3IuQv0PeWi4kfEkAJfl8IeAP/4049iA6a1rkhJl7
-1rDjpEGBCG+i9BAgBeNdHLtQ7bugdvU+GfHjFXEU1emUk91E2liML8kpCvhUAXcLhhL8bxPJiX2/
-VQ2esrpQVO56OzpivNauonLaWmHEKOSfPC3s5AKMytMTiUiszEUCAwEAAaOCAcMwggG/MAsGA1Ud
-DwQEAwIEsDAdBgNVHSUEFjAUBggrBgEFBQcDAgYIKwYBBQUHAwQwCQYDVR0TBAIwADAdBgNVHQ4E
-FgQUwRklxF1ZV2ooSMkFwLiK13apkK0wHwYDVR0jBBgwFoAUmZerGDU6i1lFQ5iycnHI9PsJzxYw
-bwYIKwYBBQUHAQEEYzBhMCQGCCsGAQUFBzABhhhodHRwOi8vb2NzcC5zdGFydHNzbC5jb20wOQYI
-KwYBBQUHMAKGLWh0dHA6Ly9haWEuc3RhcnRzc2wuY29tL2NlcnRzL3NjYS5jbGllbnQyLmNydDA4
-BgNVHR8EMTAvMC2gK6AphidodHRwOi8vY3JsLnN0YXJ0c3NsLmNvbS9zY2EtY2xpZW50Mi5jcmww
-IAYDVR0RBBkwF4EVY2FsZXN0eW9Ac2NpZW50aWEubmV0MCMGA1UdEgQcMBqGGGh0dHA6Ly93d3cu
-c3RhcnRzc2wuY29tLzBUBgNVHSAETTBLMAwGCisGAQQBgbU3BgEwOwYLKwYBBAGBtTcBAgQwLDAq
-BggrBgEFBQcCARYeaHR0cDovL3d3dy5zdGFydHNzbC5jb20vcG9saWN5MA0GCSqGSIb3DQEBCwUA
-A4IBAQBb8EIsoUN/tgUgQqrNXNtlksPep84kx5yRBgr71uf3ITLddGtzfDBj6KdZUoy7SG3MQkyO
-kvYmXBClj23rv8Iol48/3oi9XWZw5EV3uHrRse1TzQgMPZE0hZsDgkqXVoxMQfk55ndjZIHMfSkn
-hdnqSP5zZ4TCmDEKLppPMDcQSSrjilnbthpxlIJzeGeEFtrh6ssh/oF6mUaEGFcd8kx9RS51K1gt
-H4J36y4E6pKB7EdxG2+0yVzAIta8dkD/BiMCKRWhp1EmzQ2uIh2nX5y8t4e2xHHuiy11Yeq6UTW/
-JmfxF4xcbkNK/rv9ISBg9K+mZtg2QXr+P/CJBtej2RLUMIIGPjCCBSagAwIBAgIQPZ6tDP/RHLwc
-z1F+2kRADzANBgkqhkiG9w0BAQsFADB1MQswCQYDVQQGEwJJTDEWMBQGA1UEChMNU3RhcnRDb20g
-THRkLjEpMCcGA1UECxMgU3RhcnRDb20gQ2VydGlmaWNhdGlvbiBBdXRob3JpdHkxIzAhBgNVBAMT
-GlN0YXJ0Q29tIENsYXNzIDIgQ2xpZW50IENBMB4XDTE2MDEwMjAyMDIzNloXDTE4MDEwMjAyMDIz
-NlowejELMAkGA1UEBhMCREUxDzANBgNVBAgMBkJheWVybjERMA8GA1UEBwwITcO8bmNoZW4xITAf
-BgNVBAMMGENocmlzdG9waCBBbnRvbiBNaXR0ZXJlcjEkMCIGCSqGSIb3DQEJARYVY2FsZXN0eW9A
-c2NpZW50aWEubmV0MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAsoxs789VtR81tlqe
-P2vwE3CpYosZYRfrovj+Wb91paoV5OQcFuXA7yONnLsWxOnJ3AGgy1/wG79Ko+yHSmF2K88pEWjr
-Fe0zmZWZ0b2OtMoKLEjxz7Nz2N7/lmgss8XinJ083LwLKSe4f+JLjnF5hX/g6wG4NkFXVOIf2YFZ
-0+c1NYFQT6Vy42EWdk+JLDoXjyd2hEperLCz9rQr2k3wh0cn8R1FDUGerBGpMnvyKV6JXj5vZsqJ
-nmiiId9e0IdBj4Wcs3hT2usk6dJYwHrZ8b7Fkv6BRq90DUI7i8+ukTdp5hnAb8TPSbe1JS4h3Jc7
-r2NVLkpoGbuw98er9s2PEAvpECD3toO3ojBevL56vEDbGa5tXpvvcWCz6t3QyEKJ2E54hWw1fbUA
-0BtydQC0mhKBtrENVnnCDrSgiyBMnd8y+kw6iPKeJEjNObGubc4BZp47zPn/ZiDBaHue6S0MXsoS
-7XEGOuCU09S/8kD8wTecBg+KdlLSNkLm+xqx6Cy7zwcj3IuQv0PeWi4kfEkAJfl8IeAP/4049iA6
-a1rkhJl71rDjpEGBCG+i9BAgBeNdHLtQ7bugdvU+GfHjFXEU1emUk91E2liML8kpCvhUAXcLhhL8
-bxPJiX2/VQ2esrpQVO56OzpivNauonLaWmHEKOSfPC3s5AKMytMTiUiszEUCAwEAAaOCAcMwggG/
-MAsGA1UdDwQEAwIEsDAdBgNVHSUEFjAUBggrBgEFBQcDAgYIKwYBBQUHAwQwCQYDVR0TBAIwADAd
-BgNVHQ4EFgQUwRklxF1ZV2ooSMkFwLiK13apkK0wHwYDVR0jBBgwFoAUmZerGDU6i1lFQ5iycnHI
-9PsJzxYwbwYIKwYBBQUHAQEEYzBhMCQGCCsGAQUFBzABhhhodHRwOi8vb2NzcC5zdGFydHNzbC5j
-b20wOQYIKwYBBQUHMAKGLWh0dHA6Ly9haWEuc3RhcnRzc2wuY29tL2NlcnRzL3NjYS5jbGllbnQy
-LmNydDA4BgNVHR8EMTAvMC2gK6AphidodHRwOi8vY3JsLnN0YXJ0c3NsLmNvbS9zY2EtY2xpZW50
-Mi5jcmwwIAYDVR0RBBkwF4EVY2FsZXN0eW9Ac2NpZW50aWEubmV0MCMGA1UdEgQcMBqGGGh0dHA6
-Ly93d3cuc3RhcnRzc2wuY29tLzBUBgNVHSAETTBLMAwGCisGAQQBgbU3BgEwOwYLKwYBBAGBtTcB
-AgQwLDAqBggrBgEFBQcCARYeaHR0cDovL3d3dy5zdGFydHNzbC5jb20vcG9saWN5MA0GCSqGSIb3
-DQEBCwUAA4IBAQBb8EIsoUN/tgUgQqrNXNtlksPep84kx5yRBgr71uf3ITLddGtzfDBj6KdZUoy7
-SG3MQkyOkvYmXBClj23rv8Iol48/3oi9XWZw5EV3uHrRse1TzQgMPZE0hZsDgkqXVoxMQfk55ndj
-ZIHMfSknhdnqSP5zZ4TCmDEKLppPMDcQSSrjilnbthpxlIJzeGeEFtrh6ssh/oF6mUaEGFcd8kx9
-RS51K1gtH4J36y4E6pKB7EdxG2+0yVzAIta8dkD/BiMCKRWhp1EmzQ2uIh2nX5y8t4e2xHHuiy11
-Yeq6UTW/JmfxF4xcbkNK/rv9ISBg9K+mZtg2QXr+P/CJBtej2RLUMYIEfjCCBHoCAQEwgYkwdTEL
-MAkGA1UEBhMCSUwxFjAUBgNVBAoTDVN0YXJ0Q29tIEx0ZC4xKTAnBgNVBAsTIFN0YXJ0Q29tIENl
-cnRpZmljYXRpb24gQXV0aG9yaXR5MSMwIQYDVQQDExpTdGFydENvbSBDbGFzcyAyIENsaWVudCBD
-QQIQPZ6tDP/RHLwcz1F+2kRADzANBglghkgBZQMEAgMFAKCCAcUwGAYJKoZIhvcNAQkDMQsGCSqG
-SIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTYwNjI3MDM1MDM2WjBPBgkqhkiG9w0BCQQxQgRAxC6f
-iBROc6LKM8TK9MrD/B3zcVM6zUx3KmjdqnQM0ntACBkr6S0/YfvsgSQxmipqdqhvtbOfkUSLEjPn
-vc8gZDCBmgYJKwYBBAGCNxAEMYGMMIGJMHUxCzAJBgNVBAYTAklMMRYwFAYDVQQKEw1TdGFydENv
-bSBMdGQuMSkwJwYDVQQLEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0eTEjMCEGA1UE
-AxMaU3RhcnRDb20gQ2xhc3MgMiBDbGllbnQgQ0ECED2erQz/0Ry8HM9RftpEQA8wgZwGCyqGSIb3
-DQEJEAILMYGMoIGJMHUxCzAJBgNVBAYTAklMMRYwFAYDVQQKEw1TdGFydENvbSBMdGQuMSkwJwYD
-VQQLEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0eTEjMCEGA1UEAxMaU3RhcnRDb20g
-Q2xhc3MgMiBDbGllbnQgQ0ECED2erQz/0Ry8HM9RftpEQA8wDQYJKoZIhvcNAQEBBQAEggIAnFII
-CpLtSPJKdOZDzjYvpRXpuXsFL9cvTPg2rJh++Tk9KnTqZurs+ErtA+1kYcyntw31MovG2b3J3CFv
-gvVm1y1a0Bej4C299hXnyAeJBI5d1DbDbybD9LhQrIqPc7QJK03BT7WusMyJeBnm444P+7KCuruD
-OLQ2gpjFFs3m8bpHEFssikUpYeb/Im6+JpiJRyEcohrU8b5/4zebQekfFnZpa8iJDbShGRs4jEkZ
-IVa4oV+LbJX5S3ZeNDIzennGI/jfvwxLGx/amb9TSv/2wXW3PilLJuziEWg9mETlGlCzRrS6VcKt
-dVb2ogjVEtLlt4S1CGVbYs6GypTvtgFnQA8OQ06zeHN0v0wuwIcdFdJMLZBiKGEUUxLJwgupaxrU
-/Ax2O6TcmwO2PnvbtWbl4e90L9MPpkm66UG3tyG4NRnwoXoQaM2M4euuVee++1uJsOKB6CLiwTqf
-Wkq1z2EfFQE9o+NYTYz2m71WflIzQtLPNQP8yzWmbWqOMAlmtbevqHboqVACyOZURLuMxJxf8UEy
-IhaL2YMpMJf+G72PBALorfuVrhq5GVDaXK+0bEH2uEeU9LyhoYGb0D1yD4Sxs9R5Mg2HUzBPdfti
-EMRcRo3BVkb/KwgKP1D/cvsWJRJBFdRpR2XZu8PPFO2DvIGIAoSk7b1wWC5FpHmwHvkX7/8AAAAA
-AAA=
+Jun 25 20:33:17 frank kernel: sd 10:0:21:0: [sdx] Attached SCSI disk
+...
+Jun 25 20:33:20 frank kernel: scrub_handle_errored_block: 31983
+callbacks suppressed
+Jun 25 20:33:20 frank kernel: BTRFS warning (device sdr): i/o error at
+logical 2742536544256 on dev /dev/sdx, sector 1786897488, root 5,
+inode 222965, offset 296329216, length 4096, links 1 (path:
+/path/to/file)
+Jun 25 20:33:20 frank kernel: btrfs_dev_stat_print_on_error: 32107
+callbacks suppressed
+
+These messages continue for many hours as the replace continues running.
+
+sudo btrfs replace status /mnt/newdata
+Started on 25.Jun 17:27:45, finished on 26.Jun 12:48:22, 0 write errs,
+0 uncorr. read errs
+
+...
+Jun 26 12:48:22 frank kernel: BTRFS warning (device sdr): lost page
+write due to IO error on /dev/sdx  (Many, many of these)
+Jun 26 12:48:22 frank kernel: BTRFS info (device sdr): dev_replace
+from /dev/sdx (devid 4) to /dev/sdw finished
 
 
---=-1K/gxIHsRH88Fz8DwlnF--
+Great! /dev/sdx replaced by /dev/sdw!
 
+Now let's confirm:
+
+sudo btrfs fi show /mnt/newdata
+Label: '/var/data'  uuid: e4a2eb77-956e-447a-875e-4f6595a5d3ec
+        Total devices 4 FS bytes used 8.07TiB
+        devid    1 size 5.46TiB used 2.70TiB path /dev/sdg
+        devid    2 size 5.46TiB used 2.70TiB path /dev/sdl
+        devid    3 size 5.46TiB used 2.70TiB path /dev/sdm
+        devid    4 size 5.46TiB used 2.70TiB path /dev/sdx
+
+Bummer, this doesn't look right.
+
+sdx is still in the array (failing drive).
+
+Additionally, /dev/sdw isn't listed at all! Worse still, it looks like the
+array has lost redundancy (it has 8TiB of data, and that's the amount shown as
+used divided by number of devices). It looks like it tried to add the new
+device, but did a balance across all of them instead?
+
+% sudo btrfs fi df /mnt/newdata
+Data, RAID5: total=8.07TiB, used=8.06TiB
+System, RAID10: total=80.00MiB, used=576.00KiB
+Metadata, RAID10: total=12.00GiB, used=10.26GiB
+GlobalReserve, single: total=512.00MiB, used=0.00B
+
+Any advice would be appreciated.
+
+%  uname -a
+Linux frank 4.5.5-201.fc23.x86_64 #1 SMP Sat May 21 15:29:49 UTC 2016 x86_64
+x86_64 x86_64 GNU/Linux
+
+% lsb_release
+Description:    Fedora release 24 (Twenty Three)
+
+% btrfs --version
+btrfs-progs v4.4.1

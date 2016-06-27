@@ -1,14 +1,14 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:32825 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:32826 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751857AbcF0UOR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	id S1751869AbcF0UOR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
 	Mon, 27 Jun 2016 16:14:17 -0400
 From: jeffm@suse.com
 To: fstests@vger.kernel.org, linux-btrfs@vger.kernel.org
 Cc: Eryu Guan <eguan@redhat.com>
-Subject: [PATCH v2 1/4] btrfs/048: extend _filter_btrfs_prop_error to handle additional errors
-Date: Mon, 27 Jun 2016 16:14:11 -0400
-Message-Id: <1467058454-25907-2-git-send-email-jeffm@suse.com>
+Subject: [PATCH v2 2/4] btrfs/124: test global metadata reservation reporting
+Date: Mon, 27 Jun 2016 16:14:12 -0400
+Message-Id: <1467058454-25907-3-git-send-email-jeffm@suse.com>
 In-Reply-To: <1467058454-25907-1-git-send-email-jeffm@suse.com>
 References: <1467058454-25907-1-git-send-email-jeffm@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -16,89 +16,345 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Jeff Mahoney <jeffm@suse.com>
 
-btrfsprogs v4.5.3 changed the formatting of some error messages.  This
-patch extends the filter for btrfs prop to handle those.
+Btrfs can now report the size of the global metadata reservation
+via ioctl and sysfs.
+
+This test confirms that we get sane results on an empty file system.
 
 Signed-off-by: Jeff Mahoney <jeffm@suse.com>
 ---
- common/filter.btrfs | 10 +++++++---
- tests/btrfs/048     |  6 ++++--
- tests/btrfs/048.out |  4 ++--
- 3 files changed, 13 insertions(+), 7 deletions(-)
+ .gitignore               |   1 +
+ common/btrfs             |  43 +++++++++++++++
+ src/Makefile             |   3 +-
+ src/btrfs_ioctl_helper.c | 132 +++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/124          |  84 ++++++++++++++++++++++++++++++
+ tests/btrfs/124.out      |   1 +
+ tests/btrfs/group        |   1 +
+ 7 files changed, 264 insertions(+), 1 deletion(-)
+ create mode 100644 common/btrfs
+ create mode 100644 src/btrfs_ioctl_helper.c
+ create mode 100755 tests/btrfs/124
+ create mode 100644 tests/btrfs/124.out
 
-diff --git a/common/filter.btrfs b/common/filter.btrfs
-index 9970f4d..0cf7f0d 100644
---- a/common/filter.btrfs
-+++ b/common/filter.btrfs
-@@ -72,15 +72,19 @@ _filter_btrfs_compress_property()
- 	sed -e "s/compression=\(lzo\|zlib\)/COMPRESSION=XXX/g"
- }
+diff --git a/.gitignore b/.gitignore
+index 28bd180..0e4f2a1 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -39,6 +39,7 @@
+ /src/append_reader
+ /src/append_writer
+ /src/bstat
++/src/btrfs_ioctl_helper
+ /src/bulkstat_unlink_test
+ /src/bulkstat_unlink_test_modified
+ /src/dbtest
+diff --git a/common/btrfs b/common/btrfs
+new file mode 100644
+index 0000000..b972b13
+--- /dev/null
++++ b/common/btrfs
+@@ -0,0 +1,43 @@
++#!/bin/bash
++# Functions for testing btrfs
++
++_btrfs_get_fsid()
++{
++	local mnt=$1
++	if [ -z "$mnt" ]; then
++		mnt=$TEST_DIR
++	fi
++	$BTRFS_UTIL_PROG filesystem show $mnt|awk '/uuid:/ {print $NF}'
++}
++
++_btrfs_get_sysfs()
++{
++	local mnt=$1
++	local fsid=$(_btrfs_get_fsid $mnt)
++	echo "/sys/fs/btrfs/$fsid"
++}
++
++_require_btrfs_sysfs()
++{
++	local mnt=$1
++	if [ -z "$mnt" ]; then
++		mnt=$TEST_DIR
++	fi
++	if [ ! -d "$(_btrfs_get_sysfs $mnt)" ];then
++		_notrun "btrfs sysfs support not available."
++	fi
++}
++
++_require_btrfs_ioctl()
++{
++	local ioctl=$1
++	local mnt=$2
++	shift 2
++	if [ -z "$mnt" ]; then
++		mnt=$TEST_DIR
++	fi
++	out=$(src/btrfs_ioctl_helper $mnt $ioctl $@)
++	if [ "$out" = "Not implemented." ]; then
++		_notrun "btrfs ioctl $ioctl not implemented."
++	fi
++}
+diff --git a/src/Makefile b/src/Makefile
+index 1bf318b..c467475 100644
+--- a/src/Makefile
++++ b/src/Makefile
+@@ -20,7 +20,8 @@ LINUX_TARGETS = xfsctl bstat t_mtab getdevicesize preallo_rw_pattern_reader \
+ 	bulkstat_unlink_test_modified t_dir_offset t_futimens t_immutable \
+ 	stale_handle pwrite_mmap_blocked t_dir_offset2 seek_sanity_test \
+ 	seek_copy_test t_readdir_1 t_readdir_2 fsync-tester nsexec cloner \
+-	renameat2 t_getcwd e4compact test-nextquota punch-alternating
++	renameat2 t_getcwd e4compact test-nextquota punch-alternating \
++	btrfs_ioctl_helper
  
--# filter name of the property from the output, optionally verify against $1
-+# filter error messages from btrfs prop, optionally verify against $1
- # recognized message(s):
- #  "object is not compatible with property: label"
-+#  "invalid value for property:{, value}"
-+#  "failed to {get,set} compression for $PATH[.:]: Invalid argument"
- _filter_btrfs_prop_error()
- {
- 	if ! [ -z "$1" ]; then
--		sed -e "s/\(compatible with property\): $1/\1/"
-+		sed -e "s#\(compatible with property\): $1#\1#" \
-+		    -e "s#^\(.*failed to [sg]et compression for $1\)[:.] \(.*\)#\1: \2#"
- 	else
--		sed -e "s/^\(.*compatible with property\).*/\1/"
-+		sed -e "s#^\(.*compatible with property\).*#\1#" \
-+		    -e "s#^\(.*invalid value for property\)[:.].*#\1#"
- 	fi
- }
+ SUBDIRS =
  
-diff --git a/tests/btrfs/048 b/tests/btrfs/048
-index 4a36303..0b907b0 100755
---- a/tests/btrfs/048
-+++ b/tests/btrfs/048
-@@ -79,7 +79,8 @@ echo -e "\nTesting subvolume ro property"
- _run_btrfs_util_prog subvolume create $SCRATCH_MNT/sv1
- $BTRFS_UTIL_PROG property get $SCRATCH_MNT/sv1 ro
- echo "***"
--$BTRFS_UTIL_PROG property set $SCRATCH_MNT/sv1 ro foo
-+$BTRFS_UTIL_PROG property set $SCRATCH_MNT/sv1 ro foo 2>&1 |
-+	_filter_btrfs_prop_error
- echo "***"
- $BTRFS_UTIL_PROG property set $SCRATCH_MNT/sv1 ro true
- echo "***"
-@@ -99,7 +100,8 @@ $BTRFS_UTIL_PROG property get $SCRATCH_MNT/testdir/file1 compression
- $BTRFS_UTIL_PROG property get $SCRATCH_MNT/testdir/subdir1 compression
- echo "***"
- $BTRFS_UTIL_PROG property set $SCRATCH_MNT/testdir/file1 compression \
--	foo 2>&1 | _filter_scratch
-+	foo 2>&1 | _filter_scratch |
-+	_filter_btrfs_prop_error SCRATCH_MNT/testdir/file1
- echo "***"
- $BTRFS_UTIL_PROG property set $SCRATCH_MNT/testdir/file1 compression lzo
- $BTRFS_UTIL_PROG property get $SCRATCH_MNT/testdir/file1 compression
-diff --git a/tests/btrfs/048.out b/tests/btrfs/048.out
-index 0b20d0b..3e4e3d2 100644
---- a/tests/btrfs/048.out
-+++ b/tests/btrfs/048.out
-@@ -15,7 +15,7 @@ ERROR: object is not compatible with property
- Testing subvolume ro property
- ro=false
- ***
--ERROR: invalid value for property.
-+ERROR: invalid value for property
- ***
- ***
- ro=true
-@@ -27,7 +27,7 @@ ro=false
- 
- Testing compression property
- ***
--ERROR: failed to set compression for SCRATCH_MNT/testdir/file1. Invalid argument
-+ERROR: failed to set compression for SCRATCH_MNT/testdir/file1: Invalid argument
- ***
- compression=lzo
- compression=lzo
+diff --git a/src/btrfs_ioctl_helper.c b/src/btrfs_ioctl_helper.c
+new file mode 100644
+index 0000000..b6eb924
+--- /dev/null
++++ b/src/btrfs_ioctl_helper.c
+@@ -0,0 +1,132 @@
++#include <sys/ioctl.h>
++#include <stdio.h>
++#include <sys/fcntl.h>
++#include <errno.h>
++#include <string.h>
++#include <stdint.h>
++#include <unistd.h>
++#include <stdlib.h>
++
++#ifndef BTRFS_IOCTL_MAGIC
++#define BTRFS_IOCTL_MAGIC 0x94
++#endif
++
++#ifndef BTRFS_IOC_SPACE_INFO
++struct btrfs_ioctl_space_info {
++        uint64_t flags;
++        uint64_t total_bytes;
++        uint64_t used_bytes;
++};
++
++struct btrfs_ioctl_space_args {
++        uint64_t space_slots;
++        uint64_t total_spaces;
++        struct btrfs_ioctl_space_info spaces[0];
++};
++#define BTRFS_IOC_SPACE_INFO _IOWR(BTRFS_IOCTL_MAGIC, 20, \
++                                    struct btrfs_ioctl_space_args)
++#endif
++#ifndef BTRFS_SPACE_INFO_GLOBAL_RSV
++#define BTRFS_SPACE_INFO_GLOBAL_RSV    (1ULL << 49)
++#endif
++
++static int global_rsv_ioctl(int fd, int argc, char *argv[])
++{
++	struct btrfs_ioctl_space_args arg;
++	struct btrfs_ioctl_space_args *args;
++	int ret;
++	int i;
++	size_t size;
++
++	arg.space_slots = 0;
++
++	ret = ioctl(fd, BTRFS_IOC_SPACE_INFO, &arg);
++	if (ret)
++		return -errno;
++
++	size = sizeof(*args) + sizeof(args->spaces[0]) * arg.total_spaces;
++	args = malloc(size);
++	if (!args)
++		return -ENOMEM;
++
++	args->space_slots = arg.total_spaces;
++
++	ret = ioctl(fd, BTRFS_IOC_SPACE_INFO, args);
++	if (ret)
++		return -errno;
++
++	for (i = 0; i < args->total_spaces; i++) {
++		if (args->spaces[i].flags & BTRFS_SPACE_INFO_GLOBAL_RSV) {
++			unsigned long long reserved;
++			reserved = args->spaces[i].total_bytes;
++			printf("%llu\n", reserved);
++			return 0;
++		}
++	}
++
++	return -ENOENT;
++}
++
++#define IOCTL_TABLE_ENTRY(_ioctl_name, _handler) \
++	{ .name = #_ioctl_name, .ioctl_cmd = BTRFS_IOC_##_ioctl_name, \
++	  .handler = _handler, }
++
++struct ioctl_table_entry {
++	const char *name;
++	unsigned ioctl_cmd;
++	int (*handler)(int fd, int argc, char *argv[]);
++};
++
++static struct ioctl_table_entry ioctls[] = {
++	IOCTL_TABLE_ENTRY(SPACE_INFO, global_rsv_ioctl),
++};
++
++int
++main(int argc, char *argv[])
++{
++	int fd;
++	int ret;
++	struct ioctl_table_entry *entry = NULL;
++	int i;
++
++	if (argc < 3) {
++		fprintf(stderr,
++			"usage: %s <fs mount point> <ioctl name> [args..]\n",
++			argv[0]);
++		return 1;
++	}
++
++	fd = open(argv[1], O_RDONLY|O_DIRECTORY);
++	if (fd < 0) {
++		perror(argv[1]);
++		return 1;
++	}
++
++	for (i = 0; i < (sizeof(ioctls)/sizeof(ioctls[0])); i++) {
++		if (strcmp(argv[2], ioctls[i].name) == 0) {
++			entry = &ioctls[i];
++			break;
++		}
++	}
++
++	if (!entry) {
++		fprintf(stderr, "ERROR: unknown ioctl %s\n", argv[2]);
++		close(fd);
++		return 1;
++	}
++
++	ret = entry->handler(fd, argc - 3, argv + 3);
++	if (ret == -ENOTTY) {
++		printf("Not implemented.\n");
++		close(fd);
++		return 0;
++	} else if (ret) {
++		fprintf(stderr, "ERROR: %s failed: %s\n",
++			entry->name, strerror(-ret));
++		close(fd);
++		return 1;
++	}
++
++	close(fd);
++	return 0;
++}
+diff --git a/tests/btrfs/124 b/tests/btrfs/124
+new file mode 100755
+index 0000000..2ab9dfb
+--- /dev/null
++++ b/tests/btrfs/124
+@@ -0,0 +1,84 @@
++#!/bin/bash
++# FA QA Test No. 124
++#
++# Test global metadata reservation reporting
++#
++# 1) Create empty file system
++# 2) Call the BTRFS_IOC_GLOBAL_RSV ioctl
++# 3) Read the /sys/fs/btrfs/<fsid>/allocation/global_rsv_reserved file
++#    and confirm it's a number
++# 4) Compare the results between the two to confirm they match
++#
++#-----------------------------------------------------------------------
++# Copyright (c) 2016 SUSE, All Rights Reserved.
++#
++# This program is free software; you can redistribute it and/or
++# modify it under the terms of the GNU General Public License as
++# published by the Free Software Foundation.
++#
++# This program is distributed in the hope that it would be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write the Free Software Foundation,
++# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  12110-1301  USA
++#-----------------------------------------------------------------------
++
++seq=$(basename $0)
++seqres=$RESULT_DIR/$seq
++echo "QA output created by $seq"
++
++here=$(pwd)
++tmp=/tmp/$$
++status=1
++trap "_cleanup; exit \$status" 0 1 2 3 15
++
++_cleanup()
++{
++	cd /
++	rm -f $tmp.*
++}
++
++# get standard environment, filters and checks
++. ./common/rc
++. ./common/btrfs
++. ./common/filter.btrfs
++
++# remove previous $seqres.full before test
++rm -f $seqres.full
++
++_supported_fs btrfs
++_supported_os Linux
++_require_test
++_require_btrfs_ioctl SPACE_INFO
++_require_btrfs_sysfs
++
++IOCTL="src/btrfs_ioctl_helper"
++
++SYSFS_PREFIX="$(_btrfs_get_sysfs)/allocation"
++[ -d "$SYSFS_PREFIX" ] || _notrun "sysfs directory not found"
++
++check_sysfs_output()
++{
++	reserved="$1"
++	method="$2"
++	if [ -n "$(echo $reserved | tr -d 0-9)" ]; then
++		echo "$method: numerical value expected (got $reserved)"
++	fi
++}
++
++ioctl_reserved="$($IOCTL $TEST_DIR SPACE_INFO)"
++
++reserved="$(cat $SYSFS_PREFIX/global_rsv_reserved)"
++check_sysfs_output "$reserved" "sysfs:reserved"
++if [ "$reserved" != "$ioctl_reserved" ]; then
++	echo "ioctl ($ioctl_reserved) != sysfs ($reserved)"
++fi
++size="$(cat $SYSFS_PREFIX/global_rsv_size)"
++check_sysfs_output "$size" "sysfs:size"
++
++# success, all done
++status=0
++exit
+diff --git a/tests/btrfs/124.out b/tests/btrfs/124.out
+new file mode 100644
+index 0000000..0129e81
+--- /dev/null
++++ b/tests/btrfs/124.out
+@@ -0,0 +1 @@
++QA output created by 124
+diff --git a/tests/btrfs/group b/tests/btrfs/group
+index 5a26ed7..8b5050e 100644
+--- a/tests/btrfs/group
++++ b/tests/btrfs/group
+@@ -126,3 +126,4 @@
+ 121 auto quick snapshot qgroup
+ 122 auto quick snapshot qgroup
+ 123 auto quick qgroup
++124 auto quick metadata
 -- 
 1.8.5.6
 

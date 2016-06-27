@@ -1,74 +1,66 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oi0-f49.google.com ([209.85.218.49]:35092 "EHLO
-	mail-oi0-f49.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751638AbcF0QtG (ORCPT
+Received: from out3-smtp.messagingengine.com ([66.111.4.27]:33470 "EHLO
+	out3-smtp.messagingengine.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1751673AbcF0R2S (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 27 Jun 2016 12:49:06 -0400
-Received: by mail-oi0-f49.google.com with SMTP id r2so208462025oih.2
-        for <linux-btrfs@vger.kernel.org>; Mon, 27 Jun 2016 09:49:06 -0700 (PDT)
+	Mon, 27 Jun 2016 13:28:18 -0400
+Received: from compute3.internal (compute3.nyi.internal [10.202.2.43])
+	by mailout.nyi.internal (Postfix) with ESMTP id 796062066B
+	for <linux-btrfs@vger.kernel.org>; Mon, 27 Jun 2016 13:28:17 -0400 (EDT)
+Received: from [192.168.1.129] (unknown [2.235.201.237])
+	by mail.messagingengine.com (Postfix) with ESMTPA id AF184CCD34
+	for <linux-btrfs@vger.kernel.org>; Mon, 27 Jun 2016 13:28:16 -0400 (EDT)
+To: linux-btrfs@vger.kernel.org
+From: Francesco Turco <fturco@fastmail.fm>
+Subject: Btrfs full balance command fails due to ENOSPC (bug 121071)
+Message-ID: <a3dcbcfc-a8b5-6a54-f600-63dd2d9162b5@fastmail.fm>
+Date: Mon, 27 Jun 2016 19:28:15 +0200
 MIME-Version: 1.0
-In-Reply-To: <1467009019.1982.14.camel@sapo.pt>
-References: <loom.20160623T205347-371@post.gmane.org> <CAJCQCtRO+FYrsfHF_ARSnPfoS7uzvLR4hB1V-TJ_YN4NcA6srw@mail.gmail.com>
- <5356822.A3RRKHDHNy@linux-omuo> <CAJCQCtQ-xYrERT5R4gSC1C7OkoeP2LeS9W9UL5VY5SmDBXk71w@mail.gmail.com>
- <20160625010610.Horde.tUycS31CmgVWfy3CPu7qJCD@mail.sapo.pt>
- <CAJCQCtSGZO8JVXqVOwifT84KTLCkciux+Y6A_na4AA-PxPjjbw@mail.gmail.com>
- <20160625211024.Horde.pL6RMZNJL6tnjtpglBZjDaB@mail.sapo.pt>
- <CAJCQCtQ+q90r=Q38mtVKoBeAmXmPJPP2cp=dfLj3kBiEv66bzA@mail.gmail.com>
- <1466946315.4049.19.camel@sapo.pt> <CAJCQCtSaMTA4a8+jGO8TXEQCQi7Yi2pS-S2qPNKt8q1eZSkULA@mail.gmail.com>
- <1467009019.1982.14.camel@sapo.pt>
-From: Chris Murphy <lists@colorremedies.com>
-Date: Mon, 27 Jun 2016 10:49:05 -0600
-Message-ID: <CAJCQCtR1cYvO5hC=k-RiZnQ2BSAzeTk8NM-kZZE=Qng-1rxLuQ@mail.gmail.com>
-Subject: Re: Bad hard drive - checksum verify failure forces readonly mount
-To: Vasco Almeida <vascomalmeida@sapo.pt>
-Cc: Chris Murphy <lists@colorremedies.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Jun 27, 2016 at 12:30 AM, Vasco Almeida <vascomalmeida@sapo.pt> wrote:
+Note: I already filed bug 121071 but perhaps I should have written to
+this mailing list first.
 
-> File system image available at (choose one link)
-> https://mega.nz/#!AkAEgKyB!RUa7G5xHIygWm0ALx5ZxQjjXNdFYa7lDRHJ_sW0bWLs
-> https://www.sendspace.com/file/i70cft
+I get the ENOSPC error when running a btrfs full balance command for my
+root partition, even if it seems I have a lot of free/unallocated space.
 
+# btrfs filesystem show /
+Label: none  uuid: 27150b83-7d90-4031-8e83-581315b9a254
+	Total devices 1 FS bytes used 10.79GiB
+	devid    1 size 25.00GiB used 13.31GiB path /dev/mapper/Desktop-root
+# btrfs filesystem df /
+Data, single: total=11.00GiB, used=10.40GiB
+System, DUP: total=32.00MiB, used=16.00KiB
+Metadata, DUP: total=1.12GiB, used=392.08MiB
+GlobalReserve, single: total=144.00MiB, used=0.00B
+# btrfs balance start --full-balance /
+ERROR: error during balancing '/': No space left on device
+There may be more info in syslog - try dmesg | tail
+# dmesg | tail
+[29807.441930] BTRFS info (device dm-2): found 13206 extents
+[29807.879845] BTRFS info (device dm-2): relocating block group
+47542435840 flags 1
+[29827.116083] BTRFS info (device dm-2): found 12909 extents
+[29830.500110] BTRFS info (device dm-2): found 12909 extents
+[29830.976485] BTRFS info (device dm-2): relocating block group
+46468694016 flags 1
+[29848.924188] BTRFS info (device dm-2): found 5129 extents
+[29851.533076] BTRFS info (device dm-2): found 5129 extents
+[29851.994787] BTRFS info (device dm-2): relocating block group
+46435139584 flags 34
+[29852.399460] BTRFS info (device dm-2): found 1 extents
+[29852.657983] BTRFS info (device dm-2): 1 enospc errors during balance
 
+I have successfully balanced both the boot and home partitions before.
+Only root gives me problems.
 
+Is there anything I can try? Should I run the command from a live CD? Is
+this a real bug or a mistake from an unexperienced btrfs user like me?
 
-> Should I file a bug report with that image dump linked above or btrfs-
-> debug-tree output or both?
-
-If it were me, I'd include both. Maybe the image is incomplete or vice
-versa. The debug tree output is also human readable. I'd also put them
-up in a cloud location where you can kinda forget about them for a
-while, I've had images not looked at for 6+ months by a dev.
-
-
-> I think I will use the subject of this thread as summary to file the
-> bug. Can you think of something more suitable or is that fine?
-
-I would try to summarize something like:
-file system created with btrfs-progs version -----, and mostly used
-with kernel version -----, and inexplicably the file system became
-unusable at boot time always mounting only readonly. Newer kernel
-versions still could not mount it, nor was btrfs check using
-btrfs-progs version ----- able to repair. See thread URL for more
-details.
-
-btrfs-image URL
-btrfs-debug-tree URL
-
-
-> I think I will reinstall the OS since, even if I manage to recover the
-> file system from this issue, that OS will be something I can not trust
-> fully.
-
-Yeah pretty much that's right. There is an rpm command where you can
-have it check the signatures of all installed binaries, but I forget
-what it is offhand. That'd be an alternative to reinstalling if the
-init options were to work.
-
+Thanks.
 
 -- 
-Chris Murphy
+Website: http://www.fturco.net/
+GPG key: 6712 2364 B2FE 30E1 4791 EB82 7BB1 1F53 29DE CD34

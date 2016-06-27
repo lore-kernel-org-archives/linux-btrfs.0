@@ -1,42 +1,26 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:43201 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752223AbcFZNvD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 26 Jun 2016 09:51:03 -0400
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id 09413AC6C
-	for <linux-btrfs@vger.kernel.org>; Sun, 26 Jun 2016 13:51:01 +0000 (UTC)
+Received: from cn.fujitsu.com ([59.151.112.132]:27083 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1751799AbcF0Be5 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 26 Jun 2016 21:34:57 -0400
 Subject: Re: [PATCH 00/31] btrfs: simplify use of struct btrfs_root pointers
-To: linux-btrfs@vger.kernel.org
+To: <jeffm@suse.com>, <linux-btrfs@vger.kernel.org>
 References: <1466806524-27508-1-git-send-email-jeffm@suse.com>
-From: Jeff Mahoney <jeffm@suse.com>
-Message-ID: <fa30d667-b498-feb0-517e-72fa5ebf20e3@suse.com>
-Date: Sun, 26 Jun 2016 09:50:50 -0400
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Message-ID: <be2d0e17-7c16-5ac4-2910-ca01386fdc34@cn.fujitsu.com>
+Date: Mon, 27 Jun 2016 09:34:33 +0800
 MIME-Version: 1.0
 In-Reply-To: <1466806524-27508-1-git-send-email-jeffm@suse.com>
-Content-Type: multipart/signed; micalg=pgp-sha1;
- protocol="application/pgp-signature";
- boundary="vpoG2aPPtE376H48C25CcCO36r3qcHHvD"
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---vpoG2aPPtE376H48C25CcCO36r3qcHHvD
-Content-Type: multipart/mixed; boundary="Fu5fg4n0gj7HBSgoIUQh7TGWdO2c82CsS"
-From: Jeff Mahoney <jeffm@suse.com>
-To: linux-btrfs@vger.kernel.org
-Message-ID: <fa30d667-b498-feb0-517e-72fa5ebf20e3@suse.com>
-Subject: Re: [PATCH 00/31] btrfs: simplify use of struct btrfs_root pointers
-References: <1466806524-27508-1-git-send-email-jeffm@suse.com>
-In-Reply-To: <1466806524-27508-1-git-send-email-jeffm@suse.com>
 
---Fu5fg4n0gj7HBSgoIUQh7TGWdO2c82CsS
-Content-Type: text/plain; charset=windows-1252
-Content-Transfer-Encoding: quoted-printable
 
-On 6/24/16 6:14 PM, jeffm@suse.com wrote:
+At 06/25/2016 06:14 AM, jeffm@suse.com wrote:
 > From: Jeff Mahoney <jeffm@suse.com>
->=20
+>
 > One of the common complaints I've heard from new and experienced
 > developers alike about the btrfs code is the ubiquity of
 > struct btrfs_root.  There is one for every tree on disk and it's not
@@ -44,75 +28,94 @@ On 6/24/16 6:14 PM, jeffm@suse.com wrote:
 > be frustrating to spend time figuring out which root is required only
 > to discover that it's not actually used for anything other than
 > getting the fs-global struct btrfs_fs_info.
->=20
+
+Can't agree any more.
+
+btrfs_root should only be used for case involving searching one fs tree.
+
+For non-fs trees, like extent/chunk/root and other trees, we should get 
+it from fs_info, other than passing a btrfs_root.
+
+So for this, I totally agree on the modification.
+
+>
 > The patchset contains several sections.
->=20
-> 1) The fsid trace event patchset I posted earlier; I can rebase without=
- this
+>
+> 1) The fsid trace event patchset I posted earlier; I can rebase without this
 >    but I'd prefer not to.
->=20
+
+IMHO the fsid output in ftrace is too long, making the ftrace harder to 
+read.
+
+And even more, for some developer, like me, is doing testing with only 
+one btrfs fs.
+In that case, the ftrace fsid output is completely redundant.
+
+So it would be quite nice to limit the fsid to first 8 hex bytes.
+
+(And the first time I tested David's for next branch, the ftrace output 
+makes it quite hard to read, had to stripe them out to read out needed data)
+
+>
 > 2) Converting btrfs_test_opt and friends to use an fs_info.
->=20
+>
 > 3) Converting tests to use an fs_info pointer whenever a root is used.
->=20
+>
 > 4) Moving sectorsize and nodesize to fs_info and cleaning up the
 >    macros used to access them.
->=20
-> 5) General cleanups and small fixes to make the later patches easier to=
 
+Yeah! nodesize inside btrfs_root is never sane.
+I still remember the days I need to get nodesize either from 
+fs_info->sb_copy or fs_info->root_tree.
+
+I'll check each patch more carefully then, but the direction is quite good.
+Good job!
+
+Thanks,
+Qu
+
+>
+> 5) General cleanups and small fixes to make the later patches easier to
 >    review.
->=20
+>
 > 6) Adding an "fs_info" convenience variable to every functiont that
 >    references root->fs_info more than once.  As new references appear
 >    in functions, more of these are added later.
->=20
+>
 > 7) Call functions that always overwrite their root parameter with
 >    an fs_info instead.
->=20
+>
 > 8) Call functions that are always called using the same root with
 >    an fs_info instead, retreiving the root internally.
->=20
-> 9) Convert every function that accepts a root argument but only uses it=
-
+>
+> 9) Convert every function that accepts a root argument but only uses it
 >    to retreive an fs_info to accept an fs_info instead.  This is a
 >    recursive process as the changes percolate up.
->=20
-> 10) Separately convert btrfs_commit_transaction and btrfs_end_transacti=
-on
->     to use trans->root instead of a root parameter.  Both are always ca=
-lled
->     with the same root that was passed to btrfs_{start,join}_transactio=
-n.
->=20
+>
+> 10) Separately convert btrfs_commit_transaction and btrfs_end_transaction
+>     to use trans->root instead of a root parameter.  Both are always called
+>     with the same root that was passed to btrfs_{start,join}_transaction.
+>
 > This series of patches in email format is the "squashed" version of
 > the full development series.  That series is available at:
->=20
+>
 > git://git.kernel.org/pub/scm/linux/kernel/git/jeffm/linux-btrfs.git
->=20
+>
 > There are two branches of interest:
 > - btrfs-testing/root-fsinfo-cleanup-squashed contains this series
 > - btrfs-testing/root-fsinfo-cleanup contains the full series
-
-Hrm.  It looks like vger didn't allow a few of the patches through,
-presumably due to size.  Using the git repo is probably the only way to
-go, then.
-
--Jeff
-
-> The btrfs-testing/root-fsinfo-cleanup branch is easier to review if usi=
-ng
-> git as each change is discrete.  As a whole, the patchset is invasive b=
-ut
-> should change execution minimally.  It passes and fails the same xfstes=
-ts
+>
+> The btrfs-testing/root-fsinfo-cleanup branch is easier to review if using
+> git as each change is discrete.  As a whole, the patchset is invasive but
+> should change execution minimally.  It passes and fails the same xfstests
 > that the unpatched kernel does across multiple runs.
->=20
+>
 > Thanks,
->=20
+>
 > -Jeff
->=20
+>
 > ---
->=20
+>
 > Jeff Mahoney (31):
 >   btrfs: plumb fs_info into btrfs_work
 >   btrfs: prefix fsid to all trace events
@@ -125,12 +128,10 @@ ts
 >   btrfs: cleanup, remove prototype for btrfs_find_root_ref
 >   btrfs: introduce BTRFS_MAX_ITEM_SIZE
 >   btrfs: convert nodesize macros to static inlines
->   btrfs: btrfs_relocate_chunk pass extent_root to btrfs_end_transaction=
-
+>   btrfs: btrfs_relocate_chunk pass extent_root to btrfs_end_transaction
 >   btrfs: add btrfs_trans_handle->fs_info pointer
 >   btrfs: btrfs_abort_transaction, drop root parameter
->   btrfs: call functions that overwrite their root parameter with fs_inf=
-o
+>   btrfs: call functions that overwrite their root parameter with fs_info
 >   btrfs: call functions that always use the same root with fs_info
 >     instead
 >   btrfs: btrfs_init_new_device should use fs_info->dev_root
@@ -151,7 +152,7 @@ o
 >     root
 >   btrfs: root->fs_info cleanup, btrfs_end_transaction{,_throttle} use
 >     trans->fs_info instead of parameter
->=20
+>
 >  fs/btrfs/async-thread.c                |   31 +-
 >  fs/btrfs/async-thread.h                |    6 +-
 >  fs/btrfs/backref.c                     |   12 +-
@@ -169,8 +170,7 @@ o
 >  fs/btrfs/disk-io.c                     |  593 ++++++++-------
 >  fs/btrfs/disk-io.h                     |   27 +-
 >  fs/btrfs/export.c                      |   10 +-
->  fs/btrfs/extent-tree.c                 | 1297 ++++++++++++++++--------=
---------
+>  fs/btrfs/extent-tree.c                 | 1297 ++++++++++++++++----------------
 >  fs/btrfs/extent_io.c                   |   41 +-
 >  fs/btrfs/extent_io.h                   |    4 +-
 >  fs/btrfs/file-item.c                   |  164 ++--
@@ -213,38 +213,6 @@ o
 >  fs/btrfs/xattr.c                       |   21 +-
 >  include/trace/events/btrfs.h           |  296 ++++----
 >  59 files changed, 4383 insertions(+), 4109 deletions(-)
->=20
+>
 
 
---=20
-Jeff Mahoney
-SUSE Labs
-
-
---Fu5fg4n0gj7HBSgoIUQh7TGWdO2c82CsS--
-
---vpoG2aPPtE376H48C25CcCO36r3qcHHvD
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG/MacGPG2 v2.0.19 (Darwin)
-Comment: GPGTools - http://gpgtools.org
-
-iQIcBAEBAgAGBQJXb93BAAoJEB57S2MheeWyKn8QALQdYVSNFi3bNqbG4q01uD8f
-rXpeyJ1RNBhhQUzcCQzXIVwznTE7/RMczC6u5h9TREF1TpR6PsuO7g2R65R5Rwez
-xZnjg3zokbIWCl0sDLoWcoUwaw7ZwHjqqC1G9HZbukMw0Yle4uTKvvMYEDOrl8kN
-7ebdHTTfUmla3un38do6T3QiWLXgJoZ4MBkbDunTU5W1zh0r4WGWnQQTRyExB0dg
-di0klYqPS1QKtYjyy3/hw5e3cPfyePfHH8LC6fuSrinWPdMvbGCKw6jhfBku20Oi
-If1dixG4g2qbrS5mEVWFUbZZ/13KBZp445WuvUb3em51ukpENvNkRbg8ObDOFuhc
-qlOqLGLWoedE2l5YCdRl3OKRb8qnojXo0FNZQTxa9k8qreIFDWOigGsJETbFAZXz
-4hkvml+2uLCsKQBHmxaEeEW6ybt9qnkhmQ0wUQgS2zmzOzizjXVKsNh7XzyEras2
-lKgDjGDeA0mqYCJMMl0Mmc6pWUuU2oKDCkeBxerivROIj65JCRAwqy/cajsJuK2i
-0dOAK6YHpXlSd8l1r0bf53MYTWO1L6VZSv6+L/RmdW5LIvJLhYKteIqHzTvLtAFB
-w/HmtLP5ZjgNVFlR248h8gzMEPzCEDxfZyDMzMJJFysYKLC3B7cZCPruGvbJYzcR
-BtP/V3oST34jQB6/6FPK
-=JpQd
------END PGP SIGNATURE-----
-
---vpoG2aPPtE376H48C25CcCO36r3qcHHvD--

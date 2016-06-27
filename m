@@ -1,45 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oi0-f45.google.com ([209.85.218.45]:33064 "EHLO
-	mail-oi0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751808AbcF0Rqv (ORCPT
+Received: from mail-oi0-f42.google.com ([209.85.218.42]:34780 "EHLO
+	mail-oi0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751745AbcF0SSq (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 27 Jun 2016 13:46:51 -0400
-Received: by mail-oi0-f45.google.com with SMTP id u201so210499351oie.0
-        for <linux-btrfs@vger.kernel.org>; Mon, 27 Jun 2016 10:46:51 -0700 (PDT)
+	Mon, 27 Jun 2016 14:18:46 -0400
+Received: by mail-oi0-f42.google.com with SMTP id s66so211768251oif.1
+        for <linux-btrfs@vger.kernel.org>; Mon, 27 Jun 2016 11:18:46 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <CAJCQCtTY-vsZi_QmQ7gSpzkQfC9oPfPU1uqvf8madwDRPsCDJw@mail.gmail.com>
-References: <CAPrP9G8gH4szLy3uHmVcH4dBsoze4XhNZA9t-qUxecnwOgYNVg@mail.gmail.com>
- <CAPrP9G8gUfYD92m2e89P4n6_2B4i4CJTe-MnZrR_3gAoQAw=1Q@mail.gmail.com> <CAJCQCtTY-vsZi_QmQ7gSpzkQfC9oPfPU1uqvf8madwDRPsCDJw@mail.gmail.com>
+In-Reply-To: <a3dcbcfc-a8b5-6a54-f600-63dd2d9162b5@fastmail.fm>
+References: <a3dcbcfc-a8b5-6a54-f600-63dd2d9162b5@fastmail.fm>
 From: Chris Murphy <lists@colorremedies.com>
-Date: Mon, 27 Jun 2016 11:46:50 -0600
-Message-ID: <CAJCQCtTcDc2H3KYHe1oqT9QnZq2pt8Mn=SX6ZpMHT8bTPdE8_w@mail.gmail.com>
-Subject: Re: Strange behavior when replacing device on BTRFS RAID 5 array.
-To: Chris Murphy <lists@colorremedies.com>
-Cc: Nick Austin <nick@smartaustin.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Date: Mon, 27 Jun 2016 12:18:44 -0600
+Message-ID: <CAJCQCtRrk70p+iNNKCZvmz4T3R2=2d_JqQXJuSpt2QD1g9ysZQ@mail.gmail.com>
+Subject: Re: Btrfs full balance command fails due to ENOSPC (bug 121071)
+To: Francesco Turco <fturco@fastmail.fm>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Jun 27, 2016 at 11:29 AM, Chris Murphy <lists@colorremedies.com> wrote:
+On Mon, Jun 27, 2016 at 11:28 AM, Francesco Turco <fturco@fastmail.fm> wrote:
+> Note: I already filed bug 121071 but perhaps I should have written to
+> this mailing list first.
 
->
-> Next is to decide to what degree you want to salvage this volume and
-> keep using Btrfs raid56 despite the risks
+https://bugzilla.kernel.org/show_bug.cgi?id=121071
 
-Forgot to complete this thought. So if you get a backup, and decide
-you want to fix it, I would see if you can cancel the replace using
-"btrfs replace cancel <mp>" and confirm that it stops. And now is the
-risky part, which is whether to try "btrfs add" and then "btrfs
-remove" or remove the bad drive, reboot, and see if it'll mount with
--o degraded, and then use add and remove (in which case you'll use
-'remove missing').
+It's a good bug report.
 
-The first you risk Btrfs still using the flaky bad drive.
 
-The second you risk whether a degraded mount will work, and whether
-any other drive in the array has a problem while degraded (like an
-unrecovery read error from a single sector).
+> Is there anything I can try? Should I run the command from a live CD? Is
+> this a real bug or a mistake from an unexperienced btrfs user like me?
+
+It's a bug somewhere, not a user mistake.
+
+If you can grab btrfs-debugfs from
+https://github.com/kdave/btrfs-progs/blob/master/btrfs-debugfs
+
+And then attach the output to the bug report it might be useful for a
+developer. But really your case is an odd duck, because there's fully
+14GiB unallocated, so it should be able to create a new one without
+problem.
+
+$ sudo ./btrfs-debugfs -b /
+
 
 
 -- 

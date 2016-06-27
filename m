@@ -1,46 +1,61 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from haggis.mythic-beasts.com ([93.93.131.56]:34331 "EHLO
-	haggis.mythic-beasts.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751533AbcFYAgO (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 24 Jun 2016 20:36:14 -0400
-Date: Sat, 25 Jun 2016 00:47:29 +0100
-From: Luis Henriques <henrix@camandro.org>
+Received: from cn.fujitsu.com ([222.73.24.84]:18089 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1751830AbcF0Hwj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 27 Jun 2016 03:52:39 -0400
+Received: from localhost.localdomain (unknown [10.167.226.34])
+	by cn.fujitsu.com (Postfix) with ESMTP id 768D24056404
+	for <linux-btrfs@vger.kernel.org>; Mon, 27 Jun 2016 15:52:15 +0800 (CST)
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.cz>
-Subject: [PATCH] btrfs-progs: tests: 001-simple-unmounted: fix test failure
- due to bashism
-Message-ID: <20160624234729.GA29145@charon>
+Subject: [PATCH 1/2] btrfs-progs: convert: Fix a bug leads to discontinuous extents
+Date: Mon, 27 Jun 2016 15:50:10 +0800
+Message-Id: <20160627075011.24330-1-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The usage of 'source' is a bashism, and '.' should be used instead.  This
-is causing fuzz-tests/001-simple-unmounted to fail in systems where
-/bin/sh isn't bash:
+Btrfs_record_file_extent() will split extents using max extent size(128M).
+It works well for real file extents, but not that well for large
+hole extent, as hole doesn't have extent size limit.
 
-    [TEST/fuzz]   001-simple-unmounted
-./test.sh: 5: ./test.sh: source: not found
-./test.sh: 7: ./test.sh: setup_root_helper: not found
-./test.sh: 8: ./test.sh: check_prereq: not found
-./test.sh: 18: ./test.sh: check_all_images: not found
+In that case, it will only insert one 128M hole, and skip the rest,
+leading to discontinuous extent error for converted btrfs.
 
-Since most (all?) tests actually use /bin/bash, change this test to use
-bash too.
+Fix it by not splitting hole extents.
 
-Signed-off-by: Luis Henriques <henrix@camandro.org>
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- tests/fuzz-tests/001-simple-unmounted/test.sh | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ extent-tree.c | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
 
-diff --git a/tests/fuzz-tests/001-simple-unmounted/test.sh b/tests/fuzz-tests/001-simple-unmounted/test.sh
-index bf01a3a45a96..98fe7b0ccb74 100755
---- a/tests/fuzz-tests/001-simple-unmounted/test.sh
-+++ b/tests/fuzz-tests/001-simple-unmounted/test.sh
-@@ -1,4 +1,4 @@
--#!/bin/sh
-+#!/bin/bash
+diff --git a/extent-tree.c b/extent-tree.c
+index 5ca53fa..a58da23 100644
+--- a/extent-tree.c
++++ b/extent-tree.c
+@@ -3985,10 +3985,11 @@ static int __btrfs_record_file_extent(struct btrfs_trans_handle *trans,
+ 	u64 extent_offset;
+ 	u64 num_bytes = *ret_num_bytes;
  
- # iterate over all fuzzed images and run 'btrfs check'
+-	num_bytes = min_t(u64, num_bytes, BTRFS_MAX_EXTENT_SIZE);
+ 	/*
+ 	 * All supported file system should not use its 0 extent.
+ 	 * As it's for hole
++	 *
++	 * And hole extent has no size limit, no need to loop.
+ 	 */
+ 	if (disk_bytenr == 0) {
+ 		ret = btrfs_insert_file_extent(trans, root, objectid,
+@@ -3996,6 +3997,7 @@ static int __btrfs_record_file_extent(struct btrfs_trans_handle *trans,
+ 						num_bytes, num_bytes);
+ 		return ret;
+ 	}
++	num_bytes = min_t(u64, num_bytes, BTRFS_MAX_EXTENT_SIZE);
  
+ 	path = btrfs_alloc_path();
+ 	if (!path)
+-- 
+2.9.0
+
+
+

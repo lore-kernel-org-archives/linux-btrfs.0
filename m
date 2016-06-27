@@ -1,132 +1,174 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oi0-f50.google.com ([209.85.218.50]:35762 "EHLO
-	mail-oi0-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751673AbcF0QRM (ORCPT
+Received: from mailgw-01.dd24.net ([193.46.215.41]:47637 "EHLO
+	mailgw-01.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751740AbcF0QkC (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 27 Jun 2016 12:17:12 -0400
-Received: by mail-oi0-f50.google.com with SMTP id r2so207210188oih.2
-        for <linux-btrfs@vger.kernel.org>; Mon, 27 Jun 2016 09:17:07 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <fd7d250c-0a5a-ea3e-9ea2-ec6e50e14169@gmail.com>
-References: <CAJCQCtR9uAn58KJKEjCsbyLYJTQVqMx-ghsVp_MjLBF-aiikcg@mail.gmail.com>
- <20160620204049.GA1986@hungrycats.org> <CAJCQCtR5pV53mFyGWxRxm69zwF5_sEvNRRRvOSgnZ1t8KZdc3g@mail.gmail.com>
- <20160621015559.GM15597@hungrycats.org> <CAJCQCtRUUd+moK25N3704ZG54cFrCw1-Uxm2QO-XF9g0=mHazw@mail.gmail.com>
- <20160622203504.GQ15597@hungrycats.org> <5790aea9-0976-1742-7d1b-79dbe44008c3@inwind.it>
- <CAJCQCtRXqSCFZTca+Vwraa0vS-MzLQKEkr=s41Vypc-O0ZDdxQ@mail.gmail.com>
- <20160624014752.GB14667@hungrycats.org> <576CB0DA.6030409@gmail.com>
- <20160624085014.GH3325@carfax.org.uk> <CAA91j0Uqg0FafFTG3NhQt=p8KkYRhTeMU5Bd+JuUxDntP6g8Ng@mail.gmail.com>
- <CAJCQCtQBQAng5_mNJZev+64Z15BSkBkG9f2qmz=ckPRqXRbbWA@mail.gmail.com>
- <576D6C0A.7070502@gmail.com> <CAJCQCtSskA4PC_a8tgQopHFNO83NQ=Gkx406haB7G0nBi5e=2A@mail.gmail.com>
- <c2a320a6-261b-723d-ab83-58f883e6315b@gmail.com> <CAJCQCtSqO4GNm8kBDuzUXEXYx+54zFgsD6=ARNsRgVUb53LQZw@mail.gmail.com>
- <fd7d250c-0a5a-ea3e-9ea2-ec6e50e14169@gmail.com>
-From: Chris Murphy <lists@colorremedies.com>
-Date: Mon, 27 Jun 2016 10:17:04 -0600
-Message-ID: <CAJCQCtQugDoR6fnPeion37FLS3LarjfP6dt+-Z3jPgLG0Xkmwg@mail.gmail.com>
-Subject: Re: Adventures in btrfs raid5 disk recovery
-To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Cc: Chris Murphy <lists@colorremedies.com>,
-        Andrei Borzenkov <arvidjaar@gmail.com>,
-        Hugo Mills <hugo@carfax.org.uk>,
-        Zygo Blaxell <ce3g8jdj@umail.furryterror.org>, kreijack@inwind.it,
-        Roman Mamedov <rm@romanrm.net>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+	Mon, 27 Jun 2016 12:40:02 -0400
+Received: from mailpolicy-01.live.igb.homer.key-systems.net (mailpolicy-02.live.igb.homer.key-systems.net [192.168.1.27])
+	by mailgw-01.dd24.net (Postfix) with ESMTP id EE6115FCF3
+	for <linux-btrfs@vger.kernel.org>; Mon, 27 Jun 2016 16:39:59 +0000 (UTC)
+Received: from mailgw-01.dd24.net ([192.168.1.35])
+	by mailpolicy-01.live.igb.homer.key-systems.net (mailpolicy-02.live.igb.homer.key-systems.net [192.168.1.25]) (amavisd-new, port 10235)
+	with ESMTP id c6R4av28zhSe for <linux-btrfs@vger.kernel.org>;
+	Mon, 27 Jun 2016 16:39:57 +0000 (UTC)
+Received: from heisenberg.fritz.box (ppp-46-244-208-37.dynamic.mnet-online.de [46.244.208.37])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+	(No client certificate requested)
+	by mailgw-01.dd24.net (Postfix) with ESMTPSA
+	for <linux-btrfs@vger.kernel.org>; Mon, 27 Jun 2016 16:39:57 +0000 (UTC)
+Message-ID: <1467045597.6613.9.camel@scientia.net>
+Subject: Re: [BUG] Btrfs scrub sometime recalculate wrong parity in raid5
+From: Christoph Anton Mitterer <calestyo@scientia.net>
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Date: Mon, 27 Jun 2016 18:39:57 +0200
+In-Reply-To: <5770AD08.3050201@gmail.com>
+References: <8695beeb-f991-28c4-cf6b-8c92339e468f@inwind.it>	
+ <CAJCQCtTXJhgKsmQGUXrppntYj8u6vk3jzP9Q4UMBomJ255QTQw@mail.gmail.com>	
+ <pan$60ea0$54eb541$a3b060fc$181835e5@cox.net>	
+ <CAN05THQCJS8x0yF6DjDFfsNWzp1u4edv5dH-BMb1TTofZdtjgA@mail.gmail.com>	
+ <1466999436.13546.6.camel@scientia.net> <5770AD08.3050201@gmail.com>
+Content-Type: multipart/signed; micalg="sha-512";
+	protocol="application/x-pkcs7-signature";
+	boundary="=-fPtx9PjSQjJ/EqZHAGJf"
+Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Jun 27, 2016 at 5:21 AM, Austin S. Hemmelgarn
-<ahferroin7@gmail.com> wrote:
-> On 2016-06-25 12:44, Chris Murphy wrote:
->>
->> On Fri, Jun 24, 2016 at 12:19 PM, Austin S. Hemmelgarn
->> <ahferroin7@gmail.com> wrote:
->>
->>> Well, the obvious major advantage that comes to mind for me to
->>> checksumming
->>> parity is that it would let us scrub the parity data itself and verify
->>> it.
->>
->>
->> OK but hold on. During scrub, it should read data, compute checksums
->> *and* parity, and compare those to what's on-disk - > EXTENT_CSUM in
->> the checksum tree, and the parity strip in the chunk tree. And if
->> parity is wrong, then it should be replaced.
->
-> Except that's horribly inefficient.  With limited exceptions involving
-> highly situational co-processors, computing a checksum of a parity block is
-> always going to be faster than computing parity for the stripe.  By using
-> that to check parity, we can safely speed up the common case of near zero
-> errors during a scrub by a pretty significant factor.
 
-OK I'm in favor of that. Although somehow md gets away with this by
-computing and checking parity for its scrubs, and still manages to
-keep drives saturated in the process - at least HDDs, I'm not sure how
-it fares on SSDs.
+--=-fPtx9PjSQjJ/EqZHAGJf
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
+
+On Mon, 2016-06-27 at 07:35 +0300, Andrei Borzenkov wrote:
+> The problem is that current implementation of RAID56 puts exactly CoW
+> data at risk. I.e. writing new (copy of) data may suddenly make old
+> (copy of) data inaccessible, even though it had been safely committed
+> to
+> disk and is now in read-only snapshot.
+
+Sure,... mine was just a general thing to be added.
+No checksums =3D> no way to tell which block is valid in case of silent
+block errors =3D> no way to recover unless by chance
+
+=3D> should be included as a warning, especially as userland software
+starts to automatically set nodatacow (IIRC systemd does so), thereby
+silently breaking functionality (integrity+recoverability) assumed by
+the user.
 
 
+Cheers,
+Chris-
+--=-fPtx9PjSQjJ/EqZHAGJf
+Content-Type: application/x-pkcs7-signature; name="smime.p7s"
+Content-Disposition: attachment; filename="smime.p7s"
+Content-Transfer-Encoding: base64
+
+MIAGCSqGSIb3DQEHAqCAMIACAQExDzANBglghkgBZQMEAgMFADCABgkqhkiG9w0BBwEAAKCCEmow
+ggXiMIIDyqADAgECAhBctkhuRwyYxn/2gNtkSuKNMA0GCSqGSIb3DQEBCwUAMH0xCzAJBgNVBAYT
+AklMMRYwFAYDVQQKEw1TdGFydENvbSBMdGQuMSswKQYDVQQLEyJTZWN1cmUgRGlnaXRhbCBDZXJ0
+aWZpY2F0ZSBTaWduaW5nMSkwJwYDVQQDEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0
+eTAeFw0xNTEyMTYwMTAwMDVaFw0zMDEyMTYwMTAwMDVaMHUxCzAJBgNVBAYTAklMMRYwFAYDVQQK
+Ew1TdGFydENvbSBMdGQuMSkwJwYDVQQLEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0
+eTEjMCEGA1UEAxMaU3RhcnRDb20gQ2xhc3MgMiBDbGllbnQgQ0EwggEiMA0GCSqGSIb3DQEBAQUA
+A4IBDwAwggEKAoIBAQDuD1CMlQkjhKz1UGqP1jeiTiH9MgllRz6vOPrVG/eE0H/J4QQLV/PeL8RT
+4xc44bEzsoJu0IhwnEchb+TxE/qw88w7hxODuw3N8Faxix6a1jp83+RWvZHZf78+O+3GYBpekZfT
+Oe9A/FoTXbcgwZfLTMQodn+ckNnX31M/1M2f2/7VA7QBlvihontyHQOlIlryQXnGI0UMCD21oopK
+tW48ckv0wUVg8irBKGMeD65gTON/Fsw/ZBbBqadoD1jt85FIM1ql24WUBEBwO1d0ykCKOIbgcqes
+3fbcjQpruUNMBbIu1MMIRMqwjx/M7IvSKcS7VYRWl0/K2byzWvBAHh/1AgMBAAGjggFkMIIBYDAO
+BgNVHQ8BAf8EBAMCAQYwHQYDVR0lBBYwFAYIKwYBBQUHAwIGCCsGAQUFBwMEMBIGA1UdEwEB/wQI
+MAYBAf8CAQAwMgYDVR0fBCswKTAnoCWgI4YhaHR0cDovL2NybC5zdGFydHNzbC5jb20vc2ZzY2Eu
+Y3JsMGYGCCsGAQUFBwEBBFowWDAkBggrBgEFBQcwAYYYaHR0cDovL29jc3Auc3RhcnRzc2wuY29t
+MDAGCCsGAQUFBzAChiRodHRwOi8vYWlhLnN0YXJ0c3NsLmNvbS9jZXJ0cy9jYS5jcnQwHQYDVR0O
+BBYEFJmXqxg1OotZRUOYsnJxyPT7Cc8WMB8GA1UdIwQYMBaAFE4L7xqkQFulF2mHMMo0aEPQQa7y
+MD8GA1UdIAQ4MDYwNAYEVR0gADAsMCoGCCsGAQUFBwIBFh5odHRwOi8vd3d3LnN0YXJ0c3NsLmNv
+bS9wb2xpY3kwDQYJKoZIhvcNAQELBQADggIBAJlBQQTO9iT1TjA0eEO7V/1AbBvMAfibjAgofxmJ
+01jBmHKg0pbTjWInTTYoxb3LBgz3mfjvvS1PjnIfb29MyVm0G/PSHjgq7Ews1dEJMPC9XTuxPf2c
++MWLkynBlotW542JprW+iTWfZafyUtzIKW1hk0YASJ8zSSj8D++9yR+0UhkbvlECJkdi1+et0EaI
+7HIX6ccj1rfcFFflWX/fPT64dn9jpg9s0nuJug4WsVkEK236WndZoMHrZmgF7CIyZ3T0muqYwkAS
+DDcRt9A21o/Mc+D8Q6GVmKRGB3gEKvOtsioHZEqJv6CdAm3a6gloo5pX3RL1eCzc8Lzfs4T0ISZj
+r8xNMbTGlsuHaFH+stDewKsfnpo4N64OtAGrzmVfFFsMIRENRHsVlSEe/6LVpBpjn00+7bqEN3qe
+qSxIOraYJ12mJ08G4YnP2U1fadHIaS50O5ZXqAivoBl9pi/6CBNc5wIMlkXMyFZ0sLsI+9ErFDu9
+OJhX7iWCo69X0ydlzXj08+2K1PKyr+g6/vTPHur63JotNrhyoWEJyWEjBLA4QmJXfGpB5u+bCwNf
+sFpcYAlkiFt1Rs2vemgSBy3q4DHDbPKvr1YImZNRSHP+TX9NP94JRkmqcyD/qaN7u2JV1pRAlwG0
+npyrn6ZQM1QHV+iFbwQ4VqLMWk//QVo/rZy1MIIGPjCCBSagAwIBAgIQPZ6tDP/RHLwcz1F+2kRA
+DzANBgkqhkiG9w0BAQsFADB1MQswCQYDVQQGEwJJTDEWMBQGA1UEChMNU3RhcnRDb20gTHRkLjEp
+MCcGA1UECxMgU3RhcnRDb20gQ2VydGlmaWNhdGlvbiBBdXRob3JpdHkxIzAhBgNVBAMTGlN0YXJ0
+Q29tIENsYXNzIDIgQ2xpZW50IENBMB4XDTE2MDEwMjAyMDIzNloXDTE4MDEwMjAyMDIzNlowejEL
+MAkGA1UEBhMCREUxDzANBgNVBAgMBkJheWVybjERMA8GA1UEBwwITcO8bmNoZW4xITAfBgNVBAMM
+GENocmlzdG9waCBBbnRvbiBNaXR0ZXJlcjEkMCIGCSqGSIb3DQEJARYVY2FsZXN0eW9Ac2NpZW50
+aWEubmV0MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAsoxs789VtR81tlqeP2vwE3Cp
+YosZYRfrovj+Wb91paoV5OQcFuXA7yONnLsWxOnJ3AGgy1/wG79Ko+yHSmF2K88pEWjrFe0zmZWZ
+0b2OtMoKLEjxz7Nz2N7/lmgss8XinJ083LwLKSe4f+JLjnF5hX/g6wG4NkFXVOIf2YFZ0+c1NYFQ
+T6Vy42EWdk+JLDoXjyd2hEperLCz9rQr2k3wh0cn8R1FDUGerBGpMnvyKV6JXj5vZsqJnmiiId9e
+0IdBj4Wcs3hT2usk6dJYwHrZ8b7Fkv6BRq90DUI7i8+ukTdp5hnAb8TPSbe1JS4h3Jc7r2NVLkpo
+Gbuw98er9s2PEAvpECD3toO3ojBevL56vEDbGa5tXpvvcWCz6t3QyEKJ2E54hWw1fbUA0BtydQC0
+mhKBtrENVnnCDrSgiyBMnd8y+kw6iPKeJEjNObGubc4BZp47zPn/ZiDBaHue6S0MXsoS7XEGOuCU
+09S/8kD8wTecBg+KdlLSNkLm+xqx6Cy7zwcj3IuQv0PeWi4kfEkAJfl8IeAP/4049iA6a1rkhJl7
+1rDjpEGBCG+i9BAgBeNdHLtQ7bugdvU+GfHjFXEU1emUk91E2liML8kpCvhUAXcLhhL8bxPJiX2/
+VQ2esrpQVO56OzpivNauonLaWmHEKOSfPC3s5AKMytMTiUiszEUCAwEAAaOCAcMwggG/MAsGA1Ud
+DwQEAwIEsDAdBgNVHSUEFjAUBggrBgEFBQcDAgYIKwYBBQUHAwQwCQYDVR0TBAIwADAdBgNVHQ4E
+FgQUwRklxF1ZV2ooSMkFwLiK13apkK0wHwYDVR0jBBgwFoAUmZerGDU6i1lFQ5iycnHI9PsJzxYw
+bwYIKwYBBQUHAQEEYzBhMCQGCCsGAQUFBzABhhhodHRwOi8vb2NzcC5zdGFydHNzbC5jb20wOQYI
+KwYBBQUHMAKGLWh0dHA6Ly9haWEuc3RhcnRzc2wuY29tL2NlcnRzL3NjYS5jbGllbnQyLmNydDA4
+BgNVHR8EMTAvMC2gK6AphidodHRwOi8vY3JsLnN0YXJ0c3NsLmNvbS9zY2EtY2xpZW50Mi5jcmww
+IAYDVR0RBBkwF4EVY2FsZXN0eW9Ac2NpZW50aWEubmV0MCMGA1UdEgQcMBqGGGh0dHA6Ly93d3cu
+c3RhcnRzc2wuY29tLzBUBgNVHSAETTBLMAwGCisGAQQBgbU3BgEwOwYLKwYBBAGBtTcBAgQwLDAq
+BggrBgEFBQcCARYeaHR0cDovL3d3dy5zdGFydHNzbC5jb20vcG9saWN5MA0GCSqGSIb3DQEBCwUA
+A4IBAQBb8EIsoUN/tgUgQqrNXNtlksPep84kx5yRBgr71uf3ITLddGtzfDBj6KdZUoy7SG3MQkyO
+kvYmXBClj23rv8Iol48/3oi9XWZw5EV3uHrRse1TzQgMPZE0hZsDgkqXVoxMQfk55ndjZIHMfSkn
+hdnqSP5zZ4TCmDEKLppPMDcQSSrjilnbthpxlIJzeGeEFtrh6ssh/oF6mUaEGFcd8kx9RS51K1gt
+H4J36y4E6pKB7EdxG2+0yVzAIta8dkD/BiMCKRWhp1EmzQ2uIh2nX5y8t4e2xHHuiy11Yeq6UTW/
+JmfxF4xcbkNK/rv9ISBg9K+mZtg2QXr+P/CJBtej2RLUMIIGPjCCBSagAwIBAgIQPZ6tDP/RHLwc
+z1F+2kRADzANBgkqhkiG9w0BAQsFADB1MQswCQYDVQQGEwJJTDEWMBQGA1UEChMNU3RhcnRDb20g
+THRkLjEpMCcGA1UECxMgU3RhcnRDb20gQ2VydGlmaWNhdGlvbiBBdXRob3JpdHkxIzAhBgNVBAMT
+GlN0YXJ0Q29tIENsYXNzIDIgQ2xpZW50IENBMB4XDTE2MDEwMjAyMDIzNloXDTE4MDEwMjAyMDIz
+NlowejELMAkGA1UEBhMCREUxDzANBgNVBAgMBkJheWVybjERMA8GA1UEBwwITcO8bmNoZW4xITAf
+BgNVBAMMGENocmlzdG9waCBBbnRvbiBNaXR0ZXJlcjEkMCIGCSqGSIb3DQEJARYVY2FsZXN0eW9A
+c2NpZW50aWEubmV0MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAsoxs789VtR81tlqe
+P2vwE3CpYosZYRfrovj+Wb91paoV5OQcFuXA7yONnLsWxOnJ3AGgy1/wG79Ko+yHSmF2K88pEWjr
+Fe0zmZWZ0b2OtMoKLEjxz7Nz2N7/lmgss8XinJ083LwLKSe4f+JLjnF5hX/g6wG4NkFXVOIf2YFZ
+0+c1NYFQT6Vy42EWdk+JLDoXjyd2hEperLCz9rQr2k3wh0cn8R1FDUGerBGpMnvyKV6JXj5vZsqJ
+nmiiId9e0IdBj4Wcs3hT2usk6dJYwHrZ8b7Fkv6BRq90DUI7i8+ukTdp5hnAb8TPSbe1JS4h3Jc7
+r2NVLkpoGbuw98er9s2PEAvpECD3toO3ojBevL56vEDbGa5tXpvvcWCz6t3QyEKJ2E54hWw1fbUA
+0BtydQC0mhKBtrENVnnCDrSgiyBMnd8y+kw6iPKeJEjNObGubc4BZp47zPn/ZiDBaHue6S0MXsoS
+7XEGOuCU09S/8kD8wTecBg+KdlLSNkLm+xqx6Cy7zwcj3IuQv0PeWi4kfEkAJfl8IeAP/4049iA6
+a1rkhJl71rDjpEGBCG+i9BAgBeNdHLtQ7bugdvU+GfHjFXEU1emUk91E2liML8kpCvhUAXcLhhL8
+bxPJiX2/VQ2esrpQVO56OzpivNauonLaWmHEKOSfPC3s5AKMytMTiUiszEUCAwEAAaOCAcMwggG/
+MAsGA1UdDwQEAwIEsDAdBgNVHSUEFjAUBggrBgEFBQcDAgYIKwYBBQUHAwQwCQYDVR0TBAIwADAd
+BgNVHQ4EFgQUwRklxF1ZV2ooSMkFwLiK13apkK0wHwYDVR0jBBgwFoAUmZerGDU6i1lFQ5iycnHI
+9PsJzxYwbwYIKwYBBQUHAQEEYzBhMCQGCCsGAQUFBzABhhhodHRwOi8vb2NzcC5zdGFydHNzbC5j
+b20wOQYIKwYBBQUHMAKGLWh0dHA6Ly9haWEuc3RhcnRzc2wuY29tL2NlcnRzL3NjYS5jbGllbnQy
+LmNydDA4BgNVHR8EMTAvMC2gK6AphidodHRwOi8vY3JsLnN0YXJ0c3NsLmNvbS9zY2EtY2xpZW50
+Mi5jcmwwIAYDVR0RBBkwF4EVY2FsZXN0eW9Ac2NpZW50aWEubmV0MCMGA1UdEgQcMBqGGGh0dHA6
+Ly93d3cuc3RhcnRzc2wuY29tLzBUBgNVHSAETTBLMAwGCisGAQQBgbU3BgEwOwYLKwYBBAGBtTcB
+AgQwLDAqBggrBgEFBQcCARYeaHR0cDovL3d3dy5zdGFydHNzbC5jb20vcG9saWN5MA0GCSqGSIb3
+DQEBCwUAA4IBAQBb8EIsoUN/tgUgQqrNXNtlksPep84kx5yRBgr71uf3ITLddGtzfDBj6KdZUoy7
+SG3MQkyOkvYmXBClj23rv8Iol48/3oi9XWZw5EV3uHrRse1TzQgMPZE0hZsDgkqXVoxMQfk55ndj
+ZIHMfSknhdnqSP5zZ4TCmDEKLppPMDcQSSrjilnbthpxlIJzeGeEFtrh6ssh/oF6mUaEGFcd8kx9
+RS51K1gtH4J36y4E6pKB7EdxG2+0yVzAIta8dkD/BiMCKRWhp1EmzQ2uIh2nX5y8t4e2xHHuiy11
+Yeq6UTW/JmfxF4xcbkNK/rv9ISBg9K+mZtg2QXr+P/CJBtej2RLUMYIEfjCCBHoCAQEwgYkwdTEL
+MAkGA1UEBhMCSUwxFjAUBgNVBAoTDVN0YXJ0Q29tIEx0ZC4xKTAnBgNVBAsTIFN0YXJ0Q29tIENl
+cnRpZmljYXRpb24gQXV0aG9yaXR5MSMwIQYDVQQDExpTdGFydENvbSBDbGFzcyAyIENsaWVudCBD
+QQIQPZ6tDP/RHLwcz1F+2kRADzANBglghkgBZQMEAgMFAKCCAcUwGAYJKoZIhvcNAQkDMQsGCSqG
+SIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTYwNjI3MTYzOTU3WjBPBgkqhkiG9w0BCQQxQgRAxUuc
+lXJFmbgj6eveD1RCvBHQrLkseTwcvTZYHNsIfFZC/3xkIyu56bbxPRhj5Ixj3KpM6F4R29zpbj9L
+RRS3hzCBmgYJKwYBBAGCNxAEMYGMMIGJMHUxCzAJBgNVBAYTAklMMRYwFAYDVQQKEw1TdGFydENv
+bSBMdGQuMSkwJwYDVQQLEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0eTEjMCEGA1UE
+AxMaU3RhcnRDb20gQ2xhc3MgMiBDbGllbnQgQ0ECED2erQz/0Ry8HM9RftpEQA8wgZwGCyqGSIb3
+DQEJEAILMYGMoIGJMHUxCzAJBgNVBAYTAklMMRYwFAYDVQQKEw1TdGFydENvbSBMdGQuMSkwJwYD
+VQQLEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0eTEjMCEGA1UEAxMaU3RhcnRDb20g
+Q2xhc3MgMiBDbGllbnQgQ0ECED2erQz/0Ry8HM9RftpEQA8wDQYJKoZIhvcNAQEBBQAEggIAfqgP
+qgspm0mAGn1XvK6/BbXsHmn+788ZfkivIqtPmxX32MRxFt1QZWS9ehJPLjztnda6yWICX92c11v1
+RDjMzX2AiST1Pag3NpyZsTL++ELL29ZgxsZFvxomc+1DHJcHHs3Gd2hWHUZce78cKZU9biz4VCDK
+PLaamcBP7ocBYjEdIY9EgkyPwoNmlPNueAs0ZE3LvdOqudadsf3Jn5yfQjt0e2lqHA6R8XFrMAE/
+pg7rIrBCj16Fs49eo9Dmh0qU7sclYmdU4AnO6QKb0Lyl/KwG+rZqZ8X9PUs5JUhtHz8HySDUzd9C
+2gDg+MLDbE1vepwnF+Sd5bTOgvy+T3vYGApuPfjhCLIcnONZtx5yk6EcyyiYq0NAhhCFG7QfMiwA
+6ozXAx6F9DzmSEyKVtY8ZXrjo2H2vjMyklXoZiQ7/erCHCtifyN2U7QfoiCdAj6BHHRga4fVp2ZJ
+4n/M8ylTS2LRJ6HxZXBmCgJU3g/t/qcjGjiOMmVWUaIMVTZaEL9tP90FodIrxmCCJd6x6R6OAVQS
+hx+tsJgQBolxFzlRzp47kuej1t7plw6o+GgI89cu1gkTABzMR4JHejs1OeARWlvZI1GIzn3pwNyO
+gf4qXsz9LIXYCTO1x+aKO9yhtNaJDTVkj2qi26lyTlrhQTihYr5YV083WHCfbNR4HHf9lf4AAAAA
+AAA=
 
 
-> The ideal situation that I'd like to see for scrub WRT parity is:
-> 1. Store checksums for the parity itself.
-> 2. During scrub, if the checksum is good, the parity is good, and we just
-> saved the time of computing the whole parity block.
-> 3. If the checksum is not good, then compute the parity.  If the parity just
-> computed matches what is there already, the checksum is bad and should be
-> rewritten (and we should probably recompute the whole block of checksums
-> it's in), otherwise, the parity was bad, write out the new parity and update
-> the checksum.
-> 4. Have an option to skip the csum check on the parity and always compute
-> it.
->>
->>
->> Even check > md/sync_action does this. So no pun intended but Btrfs
->> isn't even at parity with mdadm on data integrity if it doesn't check
->> if the parity matches data.
->
-> Except that MD and LVM don't have checksums to verify anything outside of
-> the very high-level metadata.  They have to compute the parity during a
-> scrub because that's the _only_ way they have to check data integrity.  Just
-> because that's the only way for them to check it does not mean we have to
-> follow their design, especially considering that we have other, faster ways
-> to check it.
+--=-fPtx9PjSQjJ/EqZHAGJf--
 
-I'm not opposed to this optimization. But retroactively better
-qualifying my previous "major advantage" what I meant was in terms of
-solving functional deficiency.
-
-
-
->> The much bigger problem we have right now that affects Btrfs,
->> LVM/mdadm md raid, is this silly bad default with non-enterprise
->> drives having no configurable SCT ERC, with ensuing long recovery
->> times, and the kernel SCSI command timer at 30 seconds - which
->> actually also fucks over regular single disk users also because it
->> means they don't get the "benefit" of long recovery times, which is
->> the whole g'd point of that feature. This itself causes so many
->> problems where bad sectors just get worse and don't get fixed up
->> because of all the link resets. So I still think it's a bullshit
->> default kernel side because it pretty much affects the majority use
->> case, it is only a non-problem with proprietary hardware raid, and
->> software raid using enterprise (or NAS specific) drives that already
->> have short recovery times by default.
->
-> On this, we can agree.
-
-It just came up again in a thread over the weekend on linux-raid@. I'm
-going to ask while people are paying attention if a patch to change
-the 30 second time out to something a lot higher has ever been
-floated, what the negatives might be, and where to get this fixed if
-it wouldn't be accepted in the kernel code directly.
-
-*Ideally* I think we'd want two timeouts. I'd like to see commands
-have a timer that results in merely a warning that could be used by
-e.g. btrfs scrub to know "hey this sector range is 'slow' I'm going to
-write over those sectors". That's how bad sectors start out, they read
-slower and eventually go beyond 30 seconds and now it's all link
-resets. If the problem could be fixed before then... that's the best
-scenario.
-
-The 2nd timer would be, OK the controller or drive just face planted, reset.
-
--- 
-Chris Murphy

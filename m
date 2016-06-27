@@ -1,113 +1,135 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.crc.id.au ([203.56.246.92]:52398 "EHLO mail.crc.id.au"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751639AbcF0W3T (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 27 Jun 2016 18:29:19 -0400
-Received: from [IPv6:2407:e400:b000:201:5447:badc:1e2c:fd1b] (unknown [IPv6:2407:e400:b000:201:5447:badc:1e2c:fd1b])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-SHA (256/256 bits))
-	(No client certificate requested)
-	by mail.crc.id.au (Postfix) with ESMTPSA id 60E193A009D
-	for <linux-btrfs@vger.kernel.org>; Tue, 28 Jun 2016 08:29:15 +1000 (AEST)
-Subject: Re: Strange behavior when replacing device on BTRFS RAID 5 array.
-To: linux-btrfs@vger.kernel.org
-References: <CAPrP9G8gH4szLy3uHmVcH4dBsoze4XhNZA9t-qUxecnwOgYNVg@mail.gmail.com>
- <CAPrP9G8gUfYD92m2e89P4n6_2B4i4CJTe-MnZrR_3gAoQAw=1Q@mail.gmail.com>
- <CAJCQCtTY-vsZi_QmQ7gSpzkQfC9oPfPU1uqvf8madwDRPsCDJw@mail.gmail.com>
- <CAJCQCtTcDc2H3KYHe1oqT9QnZq2pt8Mn=SX6ZpMHT8bTPdE8_w@mail.gmail.com>
-From: Steven Haigh <netwiz@crc.id.au>
-Message-ID: <1ef7ca49-35a5-f742-bcb3-70afd97ba384@crc.id.au>
-Date: Tue, 28 Jun 2016 08:29:09 +1000
+Received: from mail-oi0-f45.google.com ([209.85.218.45]:35604 "EHLO
+	mail-oi0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751644AbcF0Wa0 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 27 Jun 2016 18:30:26 -0400
+Received: by mail-oi0-f45.google.com with SMTP id r2so220507271oih.2
+        for <linux-btrfs@vger.kernel.org>; Mon, 27 Jun 2016 15:30:25 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <CAJCQCtTcDc2H3KYHe1oqT9QnZq2pt8Mn=SX6ZpMHT8bTPdE8_w@mail.gmail.com>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="ev6GeAu5FdcFFvx5u3pqeahIRKi1M1IQC"
+In-Reply-To: <20160627215726.GG14667@hungrycats.org>
+References: <576CB0DA.6030409@gmail.com> <20160624085014.GH3325@carfax.org.uk>
+ <CAA91j0Uqg0FafFTG3NhQt=p8KkYRhTeMU5Bd+JuUxDntP6g8Ng@mail.gmail.com>
+ <CAJCQCtQBQAng5_mNJZev+64Z15BSkBkG9f2qmz=ckPRqXRbbWA@mail.gmail.com>
+ <576D6C0A.7070502@gmail.com> <CAJCQCtSskA4PC_a8tgQopHFNO83NQ=Gkx406haB7G0nBi5e=2A@mail.gmail.com>
+ <c2a320a6-261b-723d-ab83-58f883e6315b@gmail.com> <CAJCQCtSqO4GNm8kBDuzUXEXYx+54zFgsD6=ARNsRgVUb53LQZw@mail.gmail.com>
+ <fd7d250c-0a5a-ea3e-9ea2-ec6e50e14169@gmail.com> <CAJCQCtQugDoR6fnPeion37FLS3LarjfP6dt+-Z3jPgLG0Xkmwg@mail.gmail.com>
+ <20160627215726.GG14667@hungrycats.org>
+From: Chris Murphy <lists@colorremedies.com>
+Date: Mon, 27 Jun 2016 16:30:23 -0600
+Message-ID: <CAJCQCtRbrLaXSGm9DA6FrHO9Pd9ozaaJpKd6HjMGXCojdxbZoQ@mail.gmail.com>
+Subject: Re: Adventures in btrfs raid5 disk recovery
+To: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
+Cc: Chris Murphy <lists@colorremedies.com>,
+        "Austin S. Hemmelgarn" <ahferroin7@gmail.com>,
+        Andrei Borzenkov <arvidjaar@gmail.com>,
+        Hugo Mills <hugo@carfax.org.uk>, kreijack@inwind.it,
+        Roman Mamedov <rm@romanrm.net>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---ev6GeAu5FdcFFvx5u3pqeahIRKi1M1IQC
-Content-Type: multipart/mixed; boundary="0NtGH5X1gwCXmICa46dD2Is8431ThfBQu"
-From: Steven Haigh <netwiz@crc.id.au>
-To: linux-btrfs@vger.kernel.org
-Message-ID: <1ef7ca49-35a5-f742-bcb3-70afd97ba384@crc.id.au>
-Subject: Re: Strange behavior when replacing device on BTRFS RAID 5 array.
-References: <CAPrP9G8gH4szLy3uHmVcH4dBsoze4XhNZA9t-qUxecnwOgYNVg@mail.gmail.com>
- <CAPrP9G8gUfYD92m2e89P4n6_2B4i4CJTe-MnZrR_3gAoQAw=1Q@mail.gmail.com>
- <CAJCQCtTY-vsZi_QmQ7gSpzkQfC9oPfPU1uqvf8madwDRPsCDJw@mail.gmail.com>
- <CAJCQCtTcDc2H3KYHe1oqT9QnZq2pt8Mn=SX6ZpMHT8bTPdE8_w@mail.gmail.com>
-In-Reply-To: <CAJCQCtTcDc2H3KYHe1oqT9QnZq2pt8Mn=SX6ZpMHT8bTPdE8_w@mail.gmail.com>
+On Mon, Jun 27, 2016 at 3:57 PM, Zygo Blaxell
+<ce3g8jdj@umail.furryterror.org> wrote:
+> On Mon, Jun 27, 2016 at 10:17:04AM -0600, Chris Murphy wrote:
 
---0NtGH5X1gwCXmICa46dD2Is8431ThfBQu
-Content-Type: text/plain; charset=utf-8
-Content-Transfer-Encoding: quoted-printable
+>
+>> It just came up again in a thread over the weekend on linux-raid@. I'm
+>> going to ask while people are paying attention if a patch to change
+>> the 30 second time out to something a lot higher has ever been
+>> floated, what the negatives might be, and where to get this fixed if
+>> it wouldn't be accepted in the kernel code directly.
+>
+> Defaults are defaults, they're not for everyone.  30 seconds is about
+> two minutes too short for an SMR drive's worst-case write latency, or
+> 28 seconds too long for an OLTP system, or just right for an end-user's
+> personal machine with a low-energy desktop drive and a long spin-up time.
 
-On 28/06/16 03:46, Chris Murphy wrote:
-> On Mon, Jun 27, 2016 at 11:29 AM, Chris Murphy <lists@colorremedies.com=
-> wrote:
->=20
->>
->> Next is to decide to what degree you want to salvage this volume and
->> keep using Btrfs raid56 despite the risks
->=20
-> Forgot to complete this thought. So if you get a backup, and decide
-> you want to fix it, I would see if you can cancel the replace using
-> "btrfs replace cancel <mp>" and confirm that it stops. And now is the
-> risky part, which is whether to try "btrfs add" and then "btrfs
-> remove" or remove the bad drive, reboot, and see if it'll mount with
-> -o degraded, and then use add and remove (in which case you'll use
-> 'remove missing').
->=20
-> The first you risk Btrfs still using the flaky bad drive.
->=20
-> The second you risk whether a degraded mount will work, and whether
-> any other drive in the array has a problem while degraded (like an
-> unrecovery read error from a single sector).
+The question is where is the correct place to change the default to
+broadly capture most use cases, because it's definitely incompatible
+with consumer SATA drives, whether in an enclosure or not.
 
-This is the exact set of circumstances that caused my corrupt array. I
-was using RAID6 - yet it still corrupted large portions of things. In
-theory, due to having double parity, it should still have survived even
-if a disk did go bad - but there we are.
+Maybe it's with the kernel teams at each distribution? Or maybe an
+upstream udev rule?
 
-I first started a replace - noted how slow it was going - cancelled the
-replace, then did an add / delete - the system crashed and it was all ove=
-r.
-
-Just as another data point, I've been flogging the guts out of the array
-with mdadm RAID6 doing a reshape of that - and no read errors, system
-crashes or other problems in over 48 hours.
-
---=20
-Steven Haigh
-
-Email: netwiz@crc.id.au
-Web: https://www.crc.id.au
-Phone: (03) 9001 6090 - 0412 935 897
+In any case something needs to give here because it's been years of
+bugging users about this misconfiguration and people constantly run
+into it, which means user education is not working.
 
 
---0NtGH5X1gwCXmICa46dD2Is8431ThfBQu--
+>
+> Once a drive starts taking 30+ seconds to do I/O, I consider the drive
+> failed in the sense that it's too slow to meet latency requirements.
 
---ev6GeAu5FdcFFvx5u3pqeahIRKi1M1IQC
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
+Well that is then a mismatch between use case and the drive purchasing
+decision. Consumer drives do this. It's how they're designed to work.
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2
 
-iQIcBAEBCAAGBQJXcai6AAoJEEGvNdV6fTHcTMEP/Ag5pHaY2NL6h7G2p+a6/pSN
-XjOYDPlJrT92BcJ9LJec3nVAFFJJycopxXrXuO8mcG/8arcyNIf+aPsszEUMZelp
-byHH00o4/JsNrhv63g/QIzRYQCJO3/1QO8fpYUZhJSI99yLp1F6Y7hkp8vKSJbbI
-pTMJDhvsZ9ypkfE4dJTp/tSOyxWNXFRVlbiJDGvxAP5VXA9m76s76eh8FHuLG0UL
-nNMPSZ3GnTVvSp8drWugNAWXlmVM/CoxSQ0ZV0dDd/AI/KupVhXh/yMNmE2XbqB5
-rzeg9MW8apKPPzbfd9K/K97TEAWfuVGWEx4JGslR8Hd6YHioDf5XHaJaUfcvzTGV
-/Sq8uiBagArLpQVsrZvirgqC7n10D/bvjI/LUeLO3nyT8pk+KEFjv2yrS6QEqV8l
-D8l/Fj52krGbooHXdrytM7KnkuOub6hD8OGfofjlHIEF2iJTbDX3PA8M533cOKzW
-wC2PXrwN3Iyhs7Siu5WSsxODia8/5UmIItuy8H6uIKIHW3Ccf9PRLYCJL4ei7nXw
-BaBngTjRPZy3HfcWVlJJiXbLmAChjPYheqXQjknNvYIbCgh5/cIA5bnYO/0zycFP
-39Fec6ecuSiDalIJ843Sqof+/BMeYRVpwIEA5w7ZvsPBRtKjq4JuzKp32IkH4J9x
-hKeedXg/HzqCNhExCgnc
-=byv4
------END PGP SIGNATURE-----
+> When the problem is that it's already taking too long, the solution is
+> not waiting even longer.  To put things in perspective, consider that
+> server hardware watchdog timeouts are typically 60 seconds by default
+> (if not maximum).
 
---ev6GeAu5FdcFFvx5u3pqeahIRKi1M1IQC--
+If you want the data retrieved from that particular device, the only
+solution is waiting longer. The alternative is what you get, an IO
+error (well actually you get a link reset, which also means the entire
+command queue is purged on SATA drives).
+
+
+> If anything, I want the timeout to be shorter so that upper layers with
+> redundancy can get an EIO and initiate repair promptly, and admins can
+> get notified to evict chronic offenders from their drive slots, without
+> having to pay extra for hard disk firmware with that feature.
+
+The drive totally thwarts this. It doesn't report back to the kernel
+what command is hung, as far as I'm aware. It just hangs and goes into
+a so called "deep recovery" there is no way to know what sector is
+causing the problem until the drive reports a read error, which will
+include the affected sector LBA.
+
+Btrfs does have something of a work around for when things get slow,
+and that's balance, read and rewrite everything. The write forces
+sector remapping by the drive firmware for bad sectors.
+
+
+>> *Ideally* I think we'd want two timeouts. I'd like to see commands
+>> have a timer that results in merely a warning that could be used by
+>> e.g. btrfs scrub to know "hey this sector range is 'slow' I'm going to
+>> write over those sectors". That's how bad sectors start out, they read
+>> slower and eventually go beyond 30 seconds and now it's all link
+>> resets. If the problem could be fixed before then... that's the best
+>> scenario.
+>
+> What's the downside of a link reset?  Can the driver not just return
+> EIO for all the outstanding IOs in progress at reset, and let the upper
+> layers deal with it?  Or is the problem that the upper layers are all
+> horribly broken by EIOs, or drive firmware horribly broken by link resets?
+
+Link reset clears the entire command queue on SATA drives, and it
+wipes away any possibility of finding out what LBA or even a range of
+LBAs, is the source of the stall. So it pretty much gets you nothing.
+
+
+> The upper layers could time the IOs, and make their own decisions based
+> on the timing (e.g. btrfs or mdadm could proactively repair anything that
+> took more than 10 seconds to read).  That might be a better approach,
+> since shortening the time to an EIO is only useful when you have a
+> redundancy layer in place to do something about them.
+
+For RAID with redundancy, that's doable, although I have no idea what
+work is needed, or even if it's possible, to track commands in this
+manner, and fall back to some kind of repair mode as if it were a read
+error.
+
+For single drives and RAID 0, the only possible solution is to not do
+link resets for up to 3 minutes and hope the drive returns the single
+copy of data.
+
+Even in the case of Btrfs DUP, it's thwarted without a read error
+reported from the drive (or it returning bad data).
+
+
+
+-- 
+Chris Murphy

@@ -1,64 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:42637 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751915AbcF0TsB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 27 Jun 2016 15:48:01 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1bHcVg-0000ww-8n
-	for linux-btrfs@vger.kernel.org; Mon, 27 Jun 2016 21:47:59 +0200
-Received: from 64.134.221.43 ([64.134.221.43])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 27 Jun 2016 21:47:56 +0200
-Received: from 1i5t5.duncan by 64.134.221.43 with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 27 Jun 2016 21:47:56 +0200
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: [BUG] Btrfs scrub sometime recalculate wrong parity in raid5
-Date: Mon, 27 Jun 2016 19:47:35 +0000 (UTC)
-Message-ID: <pan$c4bd4$c1594f22$8b12854$dd1b6d96@cox.net>
-References: <8695beeb-f991-28c4-cf6b-8c92339e468f@inwind.it>
-	<CAJCQCtTXJhgKsmQGUXrppntYj8u6vk3jzP9Q4UMBomJ255QTQw@mail.gmail.com>
-	<pan$60ea0$54eb541$a3b060fc$181835e5@cox.net>
-	<CAN05THQCJS8x0yF6DjDFfsNWzp1u4edv5dH-BMb1TTofZdtjgA@mail.gmail.com>
-	<0c4e71329babb09442966c6659f9d965@crc.id.au>
-Mime-Version: 1.0
+Received: from mail-oi0-f53.google.com ([209.85.218.53]:36550 "EHLO
+	mail-oi0-f53.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751940AbcF0UyK (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 27 Jun 2016 16:54:10 -0400
+Received: by mail-oi0-f53.google.com with SMTP id f189so217598511oig.3
+        for <linux-btrfs@vger.kernel.org>; Mon, 27 Jun 2016 13:54:09 -0700 (PDT)
+MIME-Version: 1.0
+In-Reply-To: <CAJCQCtQugDoR6fnPeion37FLS3LarjfP6dt+-Z3jPgLG0Xkmwg@mail.gmail.com>
+References: <CAJCQCtR9uAn58KJKEjCsbyLYJTQVqMx-ghsVp_MjLBF-aiikcg@mail.gmail.com>
+ <20160620204049.GA1986@hungrycats.org> <CAJCQCtR5pV53mFyGWxRxm69zwF5_sEvNRRRvOSgnZ1t8KZdc3g@mail.gmail.com>
+ <20160621015559.GM15597@hungrycats.org> <CAJCQCtRUUd+moK25N3704ZG54cFrCw1-Uxm2QO-XF9g0=mHazw@mail.gmail.com>
+ <20160622203504.GQ15597@hungrycats.org> <5790aea9-0976-1742-7d1b-79dbe44008c3@inwind.it>
+ <CAJCQCtRXqSCFZTca+Vwraa0vS-MzLQKEkr=s41Vypc-O0ZDdxQ@mail.gmail.com>
+ <20160624014752.GB14667@hungrycats.org> <576CB0DA.6030409@gmail.com>
+ <20160624085014.GH3325@carfax.org.uk> <CAA91j0Uqg0FafFTG3NhQt=p8KkYRhTeMU5Bd+JuUxDntP6g8Ng@mail.gmail.com>
+ <CAJCQCtQBQAng5_mNJZev+64Z15BSkBkG9f2qmz=ckPRqXRbbWA@mail.gmail.com>
+ <576D6C0A.7070502@gmail.com> <CAJCQCtSskA4PC_a8tgQopHFNO83NQ=Gkx406haB7G0nBi5e=2A@mail.gmail.com>
+ <c2a320a6-261b-723d-ab83-58f883e6315b@gmail.com> <CAJCQCtSqO4GNm8kBDuzUXEXYx+54zFgsD6=ARNsRgVUb53LQZw@mail.gmail.com>
+ <fd7d250c-0a5a-ea3e-9ea2-ec6e50e14169@gmail.com> <CAJCQCtQugDoR6fnPeion37FLS3LarjfP6dt+-Z3jPgLG0Xkmwg@mail.gmail.com>
+From: Chris Murphy <lists@colorremedies.com>
+Date: Mon, 27 Jun 2016 14:54:07 -0600
+Message-ID: <CAJCQCtSJuE3MAAgLAEU2akhKQiFSu8Oag+=GdSt-4S=BnLSQoA@mail.gmail.com>
+Subject: Re: Adventures in btrfs raid5 disk recovery
+To: Chris Murphy <lists@colorremedies.com>
+Cc: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>,
+        Andrei Borzenkov <arvidjaar@gmail.com>,
+        Hugo Mills <hugo@carfax.org.uk>,
+        Zygo Blaxell <ce3g8jdj@umail.furryterror.org>, kreijack@inwind.it,
+        Roman Mamedov <rm@romanrm.net>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Steven Haigh posted on Mon, 27 Jun 2016 13:21:00 +1000 as excerpted:
+For what it's worth I found btrfs-map-logical can produce mapping for
+raid5 (didn't test raid6) by specifying the extent block length. If
+that's omitted it only shows the device+mapping for the first strip.
 
-> I'd also recommend updates to the ArchLinux wiki - as for some reason I
-> always seem to end up there when searching for a certain topic...
+This example is a 3 disk raid5, with a 128KiB file all in a single extent.
 
-Not really btrfs related, but for people using popular search engines, at 
-least, this is likely for two reasons:
+[root@f24s ~]# btrfs-map-logical -l 14157742080 /dev/VG/a
+mirror 1 logical 14157742080 physical 1109327872 device /dev/mapper/VG-a
+mirror 2 logical 14157742080 physical 2183069696 device /dev/mapper/VG-c
 
-1) Arch is apparently the most popular distro among reasonably 
-technically literate users -- those who will both tend to have good 
-technical knowledge and advice on the various real-life issues Linux 
-users tend to encounter, and are likely to post it to an easily publicly 
-indexable forum.  (And in that regard, wikis are likely to be more 
-indexable than (web archives of) mailing lists like this, because that's 
-(part of) what wikis /do/ by design, make topics keyword searchable.  
-Lists, not so much.)
+[root@f24s ~]# btrfs-map-logical -l 14157742080 -b 131072 /dev/VG/a
+mirror 1 logical 14157742080 physical 1109327872 device /dev/mapper/VG-a
+mirror 1 logical 14157807616 physical 1075773440 device /dev/mapper/VG-b
+mirror 2 logical 14157742080 physical 2183069696 device /dev/mapper/VG-c
+mirror 2 logical 14157807616 physical 2183069696 device /dev/mapper/VG-c
 
-2) Specifically to the point of being _publicly_ indexable, Arch may have 
-a more liberal robots.txt that allows indexers more access, than other 
-distros, some of which may limit robot access for performance reasons.
+It's also possible to use -c and -o to copy the extent to a file and
+more easily diff it with a control file, rather than using dd.
 
-
-With this combination, arch's wiki is a natural place for searches to 
-point.
-
-So agreed, a high priority on getting the raid56 warning up there on the 
-arch wiki is a good idea, indeed.
-
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+Chris Murphy

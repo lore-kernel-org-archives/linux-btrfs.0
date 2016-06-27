@@ -1,78 +1,156 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from relay4.ptmail.sapo.pt ([212.55.154.24]:37945 "EHLO sapo.pt"
-	rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-	id S1750870AbcF0Ga1 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 27 Jun 2016 02:30:27 -0400
-Message-ID: <1467009019.1982.14.camel@sapo.pt>
-Subject: Re: Bad hard drive - checksum verify failure forces readonly mount
-From: Vasco Almeida <vascomalmeida@sapo.pt>
-To: Chris Murphy <lists@colorremedies.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Date: Mon, 27 Jun 2016 06:30:19 +0000
-In-Reply-To: <CAJCQCtSaMTA4a8+jGO8TXEQCQi7Yi2pS-S2qPNKt8q1eZSkULA@mail.gmail.com>
-References: <loom.20160623T205347-371@post.gmane.org>
-	 <CAJCQCtRO+FYrsfHF_ARSnPfoS7uzvLR4hB1V-TJ_YN4NcA6srw@mail.gmail.com>
- <5356822.A3RRKHDHNy@linux-omuo>
-	 <CAJCQCtQ-xYrERT5R4gSC1C7OkoeP2LeS9W9UL5VY5SmDBXk71w@mail.gmail.com>
- <20160625010610.Horde.tUycS31CmgVWfy3CPu7qJCD@mail.sapo.pt>
- <CAJCQCtSGZO8JVXqVOwifT84KTLCkciux+Y6A_na4AA-PxPjjbw@mail.gmail.com>
- <20160625211024.Horde.pL6RMZNJL6tnjtpglBZjDaB@mail.sapo.pt>
- <CAJCQCtQ+q90r=Q38mtVKoBeAmXmPJPP2cp=dfLj3kBiEv66bzA@mail.gmail.com>
-	 <1466946315.4049.19.camel@sapo.pt>
-	 <CAJCQCtSaMTA4a8+jGO8TXEQCQi7Yi2pS-S2qPNKt8q1eZSkULA@mail.gmail.com>
-Content-Type: text/plain; charset="UTF-8"
+Received: from mail-lf0-f51.google.com ([209.85.215.51]:34072 "EHLO
+	mail-lf0-f51.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751215AbcF0JXo (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 27 Jun 2016 05:23:44 -0400
+Received: by mail-lf0-f51.google.com with SMTP id h129so152358778lfh.1
+        for <linux-btrfs@vger.kernel.org>; Mon, 27 Jun 2016 02:23:43 -0700 (PDT)
+Received: from intelfx-laptop.local ([93.175.7.90])
+        by smtp.gmail.com with ESMTPSA id g28sm3085854ljg.24.2016.06.27.02.23.40
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLS1_2 cipher=ECDHE-RSA-CHACHA20-POLY1305 bits=256/256);
+        Mon, 27 Jun 2016 02:23:41 -0700 (PDT)
+Message-ID: <1467019414.17298.6.camel@intelfx.name>
+Subject: Re: Rescue a single-device btrfs instance with zeroed tree root
+From: Ivan Shapovalov <intelfx@intelfx.name>
+Reply-To: intelfx@intelfx.name
+To: linux-btrfs@vger.kernel.org
+Date: Mon, 27 Jun 2016 12:23:34 +0300
+In-Reply-To: <1466529808.27445.14.camel@intelfx.name>
+References: <1466529808.27445.14.camel@intelfx.name>
+Content-Type: multipart/signed; micalg="pgp-sha512";
+	protocol="application/pgp-signature"; boundary="=-WwvNO+52vrGD3bMtY1lv"
 Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-A Dom, 26-06-2016 às 13:54 -0600, Chris Murphy escreveu:
-> On Sun, Jun 26, 2016 at 7:05 AM, Vasco Almeida <vascomalmeida@sapo.pt
-> > wrote:
-> > I have tried "btrfs check --repair /device" but that seems do not
-> > do
-> > any good.
-> > http://paste.fedoraproject.org/384960/66945936/
-> 
-> It did fix things, in particular with the snapshot that was having
-> problems being dropped. But it's not enough it seems to prevent it
-> from going read only.
-> 
-> There's more than one bug here, you might see if the repair was good
-> enough that it's possible to use brtfs-image now.
 
-File system image available at (choose one link)
-https://mega.nz/#!AkAEgKyB!RUa7G5xHIygWm0ALx5ZxQjjXNdFYa7lDRHJ_sW0bWLs
-https://www.sendspace.com/file/i70cft
+--=-WwvNO+52vrGD3bMtY1lv
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
->  If not, use
-> btrfs-debug-tree <dev> > file.txt and post that file somewhere. This
-> does expose file names. Maybe that'll shed some light on the problem.
-> But also worth filing a bug at bugzilla.kernel.org with this debug
-> tree referenced (probably too big to attach), maybe a dev will be
-> able
-> to look at it and improve things so they don't fail.
+On 2016-06-21 at 20:23 +0300, Ivan Shapovalov wrote:
+> Hello,
+>=20
+> So this is another case of "I lost my partition and do not have
+> backups". More precisely, _this_ is the backup and it turned out to
+> be
+> damaged.
+>=20
+> (The backup was made by partclone.btrfs. Together with a zeroed out
+> tree root, this asks for a bug in partclone...)
+>=20
+> So: the tree root is zeroes, backup roots are zeroes too,
+> btrfs-find-root only reports blocks of level 0 (needed is 1).
+> Is there something that can be done? Maybe it is possible to
+> reconstruct the root from its children?
+> Operations log following.
+> Please Cc: me in replies as I'm not subscribed to the list.
 
-Should I file a bug report with that image dump linked above or btrfs-
-debug-tree output or both?
-I think I will use the subject of this thread as summary to file the
-bug. Can you think of something more suitable or is that fine?
 
-> > What else can I do or I must rebuild the file system?
-> 
-> Well, it's a long shot but you could try using --repair --init-csum
-> which will create a new csum tree. But that applies to data, if the
-> problem with it going read only is due to metadata corruption this
-> won't help. And then last you could try --init-extent-tree. Thing I
-> can't answer is which order to do it in.
-> 
-> In any case there will be files that you shouldn't trust after csum
-> has been recreated, anything corrupt will now have a new csum, so you
-> can get silent data corruption. It's better to just blow away this
-> file system and make a new one and reinstall the OS. But if you're
-> feeling brave, you can try one or both of those additional options
-> and
-> see if they can help.
+Anyone? I'd appreciate any advice on how to rebuild the tree roots.
 
-I think I will reinstall the OS since, even if I manage to recover the
-file system from this issue, that OS will be something I can not trust
-fully.
+I'd even write some code if someone tells me the disk format and
+logical tree constraints (i. e. in which order to put pointers to child
+nodes).
+
+BTW, it looks like all tree roots are lost, i. e. btrfs-find-root with
+any objectid (extent tree, subvolume tree, anything in ctree.h) finds
+only level 0 nodes.
+
+It should be possible to rebuild intermediate nodes, isn't it? Do they
+contain valuable information?
+
+Please Cc: me in replies as I'm not subscribed to the list.
+
+Thanks,
+--=20
+
+Ivan Shapovalov / intelfx /
+
+>=20
+> 1. regular mount
+>=20
+> # mount /dev/loop0p3 /mnt/temp
+>=20
+> =3D=3D=3D dmesg =3D=3D=3D
+> [106737.299592] BTRFS info (device loop0p3): disk space caching is
+> enabled
+> [106737.299604] BTRFS: has skinny extents
+> [106737.299884] BTRFS error (device loop0p3): bad tree block start 0
+> 162633449472
+> [106737.299888] BTRFS: failed to read tree root on loop0p3
+> [106737.314359] BTRFS: open_ctree failed
+> =3D=3D=3D end dmesg =3D=3D=3D
+>=20
+> 2. mount with -o recovery
+>=20
+> # mount -o recovery /dev/loop0p3 /mnt/temp
+>=20
+> =3D=3D=3D dmesg =3D=3D=3D
+> [106742.305720] BTRFS warning (device loop0p3): 'recovery' is
+> deprecated, use 'usebackuproot' instead
+> [106742.305722] BTRFS info (device loop0p3): trying to use backup
+> root at mount time
+> [106742.305724] BTRFS info (device loop0p3): disk space caching is
+> enabled
+> [106742.305725] BTRFS: has skinny extents
+> [106742.306056] BTRFS error (device loop0p3): bad tree block start 0
+> 162633449472
+> [106742.306060] BTRFS: failed to read tree root on loop0p3
+> [106742.306069] BTRFS error (device loop0p3): bad tree block start 0
+> 162633449472
+> [106742.306071] BTRFS: failed to read tree root on loop0p3
+> [106742.306084] BTRFS error (device loop0p3): bad tree block start 0
+> 162632237056
+> [106742.306086] BTRFS: failed to read tree root on loop0p3
+> [106742.306097] BTRFS error (device loop0p3): bad tree block start 0
+> 162626682880
+> [106742.306100] BTRFS: failed to read tree root on loop0p3
+> [106742.306111] BTRFS error (device loop0p3): bad tree block start 0
+> 162609168384
+> [106742.306114] BTRFS: failed to read tree root on loop0p3
+> [106742.327272] BTRFS: open_ctree failed
+> =3D=3D=3D end dmesg =3D=3D=3D
+>=20
+>=20
+> 3. btrfs-find-root
+>=20
+> # btrfs-find-root /dev/loop0p3
+> Couldn't read tree root
+> Superblock thinks the generation is 22332
+> Superblock thinks the level is 1
+> Well block 162633646080(gen: 22332 level: 0) seems good, but
+> generation/level doesn't match, want gen: 22332 level: 1
+> Well block 162633596928(gen: 22332 level: 0) seems good, but
+> generation/level doesn't match, want gen: 22332 level: 1
+> Well block 162633515008(gen: 22332 level: 0) seems good, but
+> generation/level doesn't match, want gen: 22332 level: 1
+>=20
+> Thanks,
+--=-WwvNO+52vrGD3bMtY1lv
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: This is a digitally signed message part
+Content-Transfer-Encoding: 7bit
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2
+
+iQIcBAABCgAGBQJXcPCWAAoJEHveF8jk4w6dX+0P/1uabgzqMmp3EG9Ul77Blk52
+pGW0tW/5xdJb+t7Ilv9OOQgFuTpnARIhTNC0+HKs35zvBkNnwgrYfeWV0vXjHrQM
+/yvoWWiUcHMxvGMtdRnE1dXuyJFJQWo1du10dxBKQkMNehfPqW0hUjP3L6zLLyK3
+9A53z19Wy+6rAw2wE84vRDt9dLs4b4SFfNrmK3iERww/MQcQyXnQC8ifjfM7iVNg
+A/NKjZdIHX98/y3Zn9WywZMCV/I8GHORzimkd1cUWsvOQlzeIRjjEUhYRNOucH9z
+EOLQRGejBgBb9Qea7rSxi8n9y4klfVh63ro1IRqh+PFTX3nMkaNCFobHmzQjhGbE
+8P6wL3KNMWhSLBv03vuLozdFMLn5XG85G3rDtQEAOTLBerIWHak2XOb4wWUXK8Ef
+LEG7oKzzb/pRGEb/LMIhra5w1LNvR/TozU/Jq5/eftO2t1VfGXvN95K5mbmIH3c2
+0b2gOeU6/AWSjPpNzsjfGnl+QRMZYMDM58FeEdxkoNI7XGkVlGQV24zah18oUhWB
+L9t7mou+9w1zTvQSt3/L6/0MUKEe9hv58w8PueBWi7zLmuk11nMtOWFCPfxcyH6u
+bZVYihRPPFRsovnZKcul/YC8wD33s7AN+Xixq3vSo65xzKeI6rksI0aL71AU5w4H
+8uIS3gAb6c9lvggWxA9a
+=Z+kX
+-----END PGP SIGNATURE-----
+
+--=-WwvNO+52vrGD3bMtY1lv--
+

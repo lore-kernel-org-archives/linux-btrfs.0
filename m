@@ -1,60 +1,87 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:51225 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751480AbcF3Ayz (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 29 Jun 2016 20:54:55 -0400
-Received: from userv0021.oracle.com (userv0021.oracle.com [156.151.31.71])
-	by aserp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id u5U0smZI004745
-	(version=TLSv1 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Thu, 30 Jun 2016 00:54:49 GMT
-Received: from userv0122.oracle.com (userv0122.oracle.com [156.151.31.75])
-	by userv0021.oracle.com (8.13.8/8.13.8) with ESMTP id u5U0smaE006930
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Thu, 30 Jun 2016 00:54:48 GMT
-Received: from abhmp0001.oracle.com (abhmp0001.oracle.com [141.146.116.7])
-	by userv0122.oracle.com (8.14.4/8.14.4) with ESMTP id u5U0sltG029297
-	for <linux-btrfs@vger.kernel.org>; Thu, 30 Jun 2016 00:54:47 GMT
-From: Liu Bo <bo.li.liu@oracle.com>
+Received: from cn.fujitsu.com ([222.73.24.84]:57877 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1752054AbcF1B5w (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 27 Jun 2016 21:57:52 -0400
+Received: from adam-work.localdomain (unknown [10.167.226.34])
+	by cn.fujitsu.com (Postfix) with ESMTP id B3F90413CA1C
+	for <linux-btrfs@vger.kernel.org>; Tue, 28 Jun 2016 09:57:47 +0800 (CST)
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v2] Btrfs: remove BUG() in raid56
-Date: Wed, 29 Jun 2016 17:57:56 -0700
-Message-Id: <1467248276-12310-1-git-send-email-bo.li.liu@oracle.com>
-In-Reply-To: <1463184422-13584-1-git-send-email-bo.li.liu@oracle.com>
-References: <1463184422-13584-1-git-send-email-bo.li.liu@oracle.com>
+Subject: [PATCH] btrfs: Fix leaking bytes_may_use after hitting EDQUOTA
+Date: Tue, 28 Jun 2016 09:57:29 +0800
+Message-Id: <20160628015729.14624-1-quwenruo@cn.fujitsu.com>
+MIME-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This BUG() has been triggered by a fuzz testing image, but in fact
-btrfs can handle this gracefully by returning -EIO.
+If one mount btrfs with enospc_debug mount option and hit qgroup limits
+in btrfs_check_data_free_space(), then at unmount time, kernel warning
+will be triggered alone with a data space info dump.
+------
+------------[ cut here ]------------
+WARNING: CPU: 0 PID: 3875 at fs/btrfs/extent-tree.c:9785
+btrfs_free_block_groups+0x2b8/0x460 [btrfs]
+Modules linked in: btrfs ext4 jbd2 mbcache xor zlib_deflate raid6_pq xfs
+[last unloaded: btrfs]
+CPU: 0 PID: 3875 Comm: umount Tainted: G        W       4.7.0-rc4+ #13
+Hardware name: innotek GmbH VirtualBox/VirtualBox, BIOS VirtualBox
+12/01/2006
+ 0000000000000000 ffff8800230a7d00 ffffffff813b89e5 0000000000000000
+ 0000000000000000 ffff8800230a7d40 ffffffff810c9b8b 00002639230a7d50
+ ffff88003d523a78 ffff88003d523b80 ffff88000d1c0000 ffff88000d1c00c8
+Call Trace:
+ [<ffffffff813b89e5>] dump_stack+0x67/0x92
+ [<ffffffff810c9b8b>] __warn+0xcb/0xf0
+ [<ffffffff810c9c7d>] warn_slowpath_null+0x1d/0x20
+ [<ffffffffa0367508>] btrfs_free_block_groups+0x2b8/0x460 [btrfs]
+ [<ffffffffa03792e3>] close_ctree+0x173/0x350 [btrfs]
+ [<ffffffffa0348f39>] btrfs_put_super+0x19/0x20 [btrfs]
+ [<ffffffff812449aa>] generic_shutdown_super+0x6a/0xf0
+ [<ffffffff81244ca2>] kill_anon_super+0x12/0x20
+ [<ffffffffa0349728>] btrfs_kill_super+0x18/0x110 [btrfs]
+ [<ffffffff81244f1e>] deactivate_locked_super+0x3e/0x70
+ [<ffffffff8124536c>] deactivate_super+0x5c/0x60
+ [<ffffffff812667ef>] cleanup_mnt+0x3f/0x90
+ [<ffffffff81266882>] __cleanup_mnt+0x12/0x20
+ [<ffffffff810ecbd1>] task_work_run+0x81/0xc0
+ [<ffffffff810022f3>] exit_to_usermode_loop+0xb3/0xc0
+ [<ffffffff81002dc0>] syscall_return_slowpath+0xb0/0xc0
+ [<ffffffff81885f73>] entry_SYSCALL_64_fastpath+0xa6/0xa8
+---[ end trace 99b9af8484495c66 ]---
+BTRFS: space_info 1 has 8044544 free, is not full
+BTRFS: space_info total=8388608, used=344064, pinned=0, reserved=0,
+may_use=409600, readonly=0
+------
 
-Thus, use btrfs_warn to give us more debugging information than a 
-single BUG() and return error properly.
+The problem is in btrfs_check_data_free_space(), we reserve data space
+first and then reserve qgroup space.
+However if qgroup reserve failed, we didn't cleanup reserved data space,
+which leads to the kernel warning.
 
-Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+Fix it by freeing reserved data space when qgroup_reserve_data() fails.
+
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
-v2: - use btrfs_warn with more debugging information instead of WARN_ONCE.
-    - change the patch title.
+ fs/btrfs/extent-tree.c | 3 +++
+ 1 file changed, 3 insertions(+)
 
- fs/btrfs/raid56.c | 5 ++++-
- 1 file changed, 4 insertions(+), 1 deletion(-)
-
-diff --git a/fs/btrfs/raid56.c b/fs/btrfs/raid56.c
-index f8b6d41..5f4712c 100644
---- a/fs/btrfs/raid56.c
-+++ b/fs/btrfs/raid56.c
-@@ -2139,7 +2139,10 @@ int raid56_parity_recover(struct btrfs_root *root, struct bio *bio,
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 29e5d00..e349da0 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -4265,6 +4265,9 @@ int btrfs_check_data_free_space(struct inode *inode, u64 start, u64 len)
+ 	 * range, but don't impact performance on quota disable case.
+ 	 */
+ 	ret = btrfs_qgroup_reserve_data(inode, start, len);
++	if (ret < 0)
++		/* Qgroup reserve failed, need to cleanup reserved data space */
++		btrfs_free_reserved_data_space(inode, start, len);
+ 	return ret;
+ }
  
- 	rbio->faila = find_logical_bio_stripe(rbio, bio);
- 	if (rbio->faila == -1) {
--		BUG();
-+		btrfs_warn(root->fs_info,
-+	"rbio->faila is -1: (bio has logical %llu len %llu, bbio has map_type %llu)",
-+			   (u64)bio->bi_iter.bi_sector << 9,
-+			   (u64)bio->bi_iter.bi_size, bbio->map_type);
- 		if (generic_io)
- 			btrfs_put_bbio(bbio);
- 		kfree(rbio);
 -- 
-2.5.5
+2.9.0
+
+
 

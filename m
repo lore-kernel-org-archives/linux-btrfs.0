@@ -1,42 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from out3-smtp.messagingengine.com ([66.111.4.27]:58235 "EHLO
+Received: from out3-smtp.messagingengine.com ([66.111.4.27]:36399 "EHLO
 	out3-smtp.messagingengine.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1751193AbcF1Nqq (ORCPT
+	by vger.kernel.org with ESMTP id S1751947AbcF1NwF (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 28 Jun 2016 09:46:46 -0400
+	Tue, 28 Jun 2016 09:52:05 -0400
 Subject: Re: Btrfs full balance command fails due to ENOSPC (bug 121071)
-To: Henk Slager <eye1tm@gmail.com>, Chris Murphy <lists@colorremedies.com>
+To: Hans van Kranenburg <hans.van.kranenburg@mendix.com>,
+        Henk Slager <eye1tm@gmail.com>, Chris Murphy <lists@colorremedies.com>
 References: <a3dcbcfc-a8b5-6a54-f600-63dd2d9162b5@fastmail.fm>
  <CAJCQCtRrk70p+iNNKCZvmz4T3R2=2d_JqQXJuSpt2QD1g9ysZQ@mail.gmail.com>
  <feb87fbf-c017-ce29-3ba5-abc9d4cbb303@fastmail.fm>
  <CAJCQCtSdNitRUA498COj1S3bcgdVA8Xf6qq1Fw71pbn_m=Z62A@mail.gmail.com>
  <CAPmG0jbhv8tL4wOimNuAYKv+BruZy=JfzjjhjnEg6nbF5A+1_g@mail.gmail.com>
+ <640254ee-1773-0d47-4190-7082512c6f43@mendix.com>
 Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 From: Francesco Turco <fturco@fastmail.fm>
-Message-ID: <0fe98668-5448-91c6-964d-4b9ab877668b@fastmail.fm>
-Date: Tue, 28 Jun 2016 15:46:43 +0200
+Message-ID: <cbbbf181-f883-68ab-1a7a-be1349ab5faa@fastmail.fm>
+Date: Tue, 28 Jun 2016 15:52:02 +0200
 MIME-Version: 1.0
-In-Reply-To: <CAPmG0jbhv8tL4wOimNuAYKv+BruZy=JfzjjhjnEg6nbF5A+1_g@mail.gmail.com>
+In-Reply-To: <640254ee-1773-0d47-4190-7082512c6f43@mendix.com>
 Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2016-06-27 23:26, Henk Slager wrote:
-> btrfs-debug does not show metadata ans system chunks; the balancing
-> problem might come from those.
-> This script does show all chunks:
-> https://github.com/knorrie/btrfs-heatmap/blob/master/show_usage.py
+On 2016-06-27 23:47, Hans van Kranenburg wrote:
+> Since the existence of python-btrfs, it has gathered a few useful
+> example scripts:
 > 
-> You might want to use vrange or drange balance filters so that you can
-> just target a certain chunk and maybe that gives a hint where the
-> problem might be. But anyhow, the behavior experienced is a bug.
+> git clone https://github.com/knorrie/python-btrfs
+> cd python-btrfs/examples/
+> (get root prompt)
+> 
+> ./show_usage.py /mountpoint <- view sorted by 'virtual' address space
+> ./show_dev_extents.py /mountpoint <- view sorted by physical layout
+> 
+> The show_usage in the btrfs-heatmap repo is almost gone. I'm currently
+> replacing all the proof of concept playing around stuff in there with
+> dedicated png-creation code that uses the python-btrfs lib.
 
-Updated the bug with the output log from your script. I simply ran it as:
-
-./show_usage.py /
-
-I don't know how to use vrange/drange balance filters. Can you show me
-how to do that, please?
+I also issued the show_dev_extents.py command as you suggested. Hope it
+helps.
 
 -- 
 Website: http://www.fturco.net/

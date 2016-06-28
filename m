@@ -1,130 +1,59 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from james.kirk.hungrycats.org ([174.142.39.145]:38209 "EHLO
-	james.kirk.hungrycats.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751977AbcF1B4E (ORCPT
+Received: from mail-oi0-f44.google.com ([209.85.218.44]:34596 "EHLO
+	mail-oi0-f44.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751639AbcF1CPA (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 27 Jun 2016 21:56:04 -0400
-Date: Mon, 27 Jun 2016 21:52:46 -0400
-From: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
-To: Chris Murphy <lists@colorremedies.com>
-Cc: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>,
-        Andrei Borzenkov <arvidjaar@gmail.com>,
-        Hugo Mills <hugo@carfax.org.uk>, kreijack@inwind.it,
-        Roman Mamedov <rm@romanrm.net>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Subject: Re: Adventures in btrfs raid5 disk recovery
-Message-ID: <20160628015245.GI14667@hungrycats.org>
-References: <CAA91j0Uqg0FafFTG3NhQt=p8KkYRhTeMU5Bd+JuUxDntP6g8Ng@mail.gmail.com>
- <CAJCQCtQBQAng5_mNJZev+64Z15BSkBkG9f2qmz=ckPRqXRbbWA@mail.gmail.com>
- <576D6C0A.7070502@gmail.com>
- <CAJCQCtSskA4PC_a8tgQopHFNO83NQ=Gkx406haB7G0nBi5e=2A@mail.gmail.com>
- <c2a320a6-261b-723d-ab83-58f883e6315b@gmail.com>
- <CAJCQCtSqO4GNm8kBDuzUXEXYx+54zFgsD6=ARNsRgVUb53LQZw@mail.gmail.com>
- <fd7d250c-0a5a-ea3e-9ea2-ec6e50e14169@gmail.com>
- <CAJCQCtQugDoR6fnPeion37FLS3LarjfP6dt+-Z3jPgLG0Xkmwg@mail.gmail.com>
- <20160627215726.GG14667@hungrycats.org>
- <CAJCQCtRbrLaXSGm9DA6FrHO9Pd9ozaaJpKd6HjMGXCojdxbZoQ@mail.gmail.com>
+	Mon, 27 Jun 2016 22:15:00 -0400
+Received: by mail-oi0-f44.google.com with SMTP id s66so4057858oif.1
+        for <linux-btrfs@vger.kernel.org>; Mon, 27 Jun 2016 19:14:59 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="5vjQsMS/9MbKYGLq"
-In-Reply-To: <CAJCQCtRbrLaXSGm9DA6FrHO9Pd9ozaaJpKd6HjMGXCojdxbZoQ@mail.gmail.com>
+In-Reply-To: <20160628024940.3b323b26@system>
+References: <20160627233612.662d2a9a@system> <CAJCQCtT_vbOzbvMOuV6wgvz4iMHcpQmAhX-y1-dkOi6F323KRg@mail.gmail.com>
+ <20160628002602.022258bf@system> <CAJCQCtR3FQ-Pe40dOcKGgd+8paraHuCoNCw5Kk+2G7bOOJF1rw@mail.gmail.com>
+ <CAJCQCtRm3=7fkBcTA4o4r10cLqC-bzcsKunb5k+uA-siyZmMnQ@mail.gmail.com>
+ <20160628010618.58e235fa@system> <CAJCQCtRoPcYQyHmkXT6yBQ31YTXLWeC+097=x0SVp+FeQ8M04w@mail.gmail.com>
+ <20160628024940.3b323b26@system>
+From: Chris Murphy <lists@colorremedies.com>
+Date: Mon, 27 Jun 2016 20:14:58 -0600
+Message-ID: <CAJCQCtRSu0GwLRqgvzj9pv80gqoqb6vnjVMLwMmnWF-rvR0tcg@mail.gmail.com>
+Subject: Re: Kernel bug during RAID1 replace
+To: Saint Germain <saintger@gmail.com>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Mon, Jun 27, 2016 at 6:49 PM, Saint Germain <saintger@gmail.com> wrote:
 
---5vjQsMS/9MbKYGLq
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+>
+> I've tried both option and launched a replace, but I got the same error
+> (replace is cancelled, jernel bug).
+> I will let these options on and attempt a ddrescue on /dev/sda
+> to /dev/sdd.
+> Then I will disconnect /dev/sda and reboot and see if it works better.
 
-On Mon, Jun 27, 2016 at 04:30:23PM -0600, Chris Murphy wrote:
-> On Mon, Jun 27, 2016 at 3:57 PM, Zygo Blaxell
-> <ce3g8jdj@umail.furryterror.org> wrote:
-> > On Mon, Jun 27, 2016 at 10:17:04AM -0600, Chris Murphy wrote:
-> > If anything, I want the timeout to be shorter so that upper layers with
-> > redundancy can get an EIO and initiate repair promptly, and admins can
-> > get notified to evict chronic offenders from their drive slots, without
-> > having to pay extra for hard disk firmware with that feature.
->=20
-> The drive totally thwarts this. It doesn't report back to the kernel
-> what command is hung, as far as I'm aware. It just hangs and goes into
-> a so called "deep recovery" there is no way to know what sector is
-> causing the problem
-
-I'm proposing just treat the link reset _as_ an EIO, unless transparent
-link resets are required for link speed negotiation or something.
-The drive wouldn't be thwarting anything, the host would just ignore it
-(unless the drive doesn't respond to a link reset until after its internal
-timeout, in which case nothing is saved by shortening the timeout).
-
-> until the drive reports a read error, which will
-> include the affected sector LBA.
-
-It doesn't matter which sector.  Chances are good that it was more than
-one of the outstanding requested sectors anyway.  Rewrite them all.
-
-We know which sectors they are because somebody has an IO operation
-waiting for a status on each of them (unless they're using AIO or some
-other API where a request can be fired at a hard drive and the reply
-discarded).  Notify all of them that their IO failed and move on.
-
-> Btrfs does have something of a work around for when things get slow,
-> and that's balance, read and rewrite everything. The write forces
-> sector remapping by the drive firmware for bad sectors.
-
-It's a crude form of "resilvering" as ZFS calls it.
-
-> > The upper layers could time the IOs, and make their own decisions based
-> > on the timing (e.g. btrfs or mdadm could proactively repair anything th=
-at
-> > took more than 10 seconds to read).  That might be a better approach,
-> > since shortening the time to an EIO is only useful when you have a
-> > redundancy layer in place to do something about them.
->=20
-> For RAID with redundancy, that's doable, although I have no idea what
-> work is needed, or even if it's possible, to track commands in this
-> manner, and fall back to some kind of repair mode as if it were a read
-> error.
-
-If btrfs sees EIO from a lower block layer it will try to reconstruct the
-missing data (but not repair it).  If that happens during a scrub,
-it will also attempt to rewrite the missing data over the original
-offending sectors.  This happens every few months in my server pool,
-and seems to be working even on btrfs raid5.
-
-Last time I checked all the RAID implementations on Linux (ok, so that's
-pretty much just md-raid) had some sort of repair capability.  lvm uses
-(or can use) the md-raid implementation.  ext4 and xfs on naked disk
-partitions will have problems, but that's because they were designed in
-the 1990's when we were young and naive and still believed hard disks
-would one day become reliable devices without buggy firmware.
-
-> For single drives and RAID 0, the only possible solution is to not do
-> link resets for up to 3 minutes and hope the drive returns the single
-> copy of data.
-
-So perhaps the timeout should be influenced by higher layers, e.g. if a
-disk becomes part of a raid1, its timeout should be shortened by default,
-while a timeout for a disk that is not used in by redundant layer should
-be longer.
-
-> Even in the case of Btrfs DUP, it's thwarted without a read error
-> reported from the drive (or it returning bad data).
-
-That case gets messy--different timeouts for different parts of the disk.
-Probably not practical.
+Sounds reasonable. Just make sure the file system is already unmounted
+when you use ddrescue because otherwise you're block copying it while
+it could be modified while rw mounted (generation number tends to get
+incremented while rw mounted).
 
 
---5vjQsMS/9MbKYGLq
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+>> Last, I have no idea if the massive Btrfs write errors on sda are from
+>> an earlier problem where the drive data or power cable got jiggled or
+>> was otherwise absent temporarily? So depending on how the block
+>> timeout change affects your data recovery, you might end up needing to
+>> do a reboot to get back to a more stable state for all of this? It
+>> really should be able to fix things *if* at least one copy can be read
+>> and then written to the other drive.
+>>
+>
+> I have also no idea why is sda behaving like this. I haven't done
+> anything particular on these drives.
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
+Yeah pretty weird. At some point once things are stable, if this file
+system survives, you might want to use btrfs dev stat -z to wipe out
+those stats.
 
-iEYEARECAAYFAldx2G0ACgkQgfmLGlazG5yxNACgwOD6665Vg6nqQWE3NhlLmdJr
-2FUAn0YXhleWpCfvy84RSBDb5+I2DBI/
-=GG60
------END PGP SIGNATURE-----
 
---5vjQsMS/9MbKYGLq--
+-- 
+Chris Murphy

@@ -1,45 +1,78 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from out3-smtp.messagingengine.com ([66.111.4.27]:36399 "EHLO
+Received: from out3-smtp.messagingengine.com ([66.111.4.27]:38070 "EHLO
 	out3-smtp.messagingengine.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1751947AbcF1NwF (ORCPT
+	by vger.kernel.org with ESMTP id S1752058AbcF1P7G (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 28 Jun 2016 09:52:05 -0400
-Subject: Re: Btrfs full balance command fails due to ENOSPC (bug 121071)
-To: Hans van Kranenburg <hans.van.kranenburg@mendix.com>,
-        Henk Slager <eye1tm@gmail.com>, Chris Murphy <lists@colorremedies.com>
-References: <a3dcbcfc-a8b5-6a54-f600-63dd2d9162b5@fastmail.fm>
- <CAJCQCtRrk70p+iNNKCZvmz4T3R2=2d_JqQXJuSpt2QD1g9ysZQ@mail.gmail.com>
- <feb87fbf-c017-ce29-3ba5-abc9d4cbb303@fastmail.fm>
- <CAJCQCtSdNitRUA498COj1S3bcgdVA8Xf6qq1Fw71pbn_m=Z62A@mail.gmail.com>
- <CAPmG0jbhv8tL4wOimNuAYKv+BruZy=JfzjjhjnEg6nbF5A+1_g@mail.gmail.com>
- <640254ee-1773-0d47-4190-7082512c6f43@mendix.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+	Tue, 28 Jun 2016 11:59:06 -0400
+Received: from compute7.internal (compute7.nyi.internal [10.202.2.47])
+	by mailout.nyi.internal (Postfix) with ESMTP id 3AC7C21713
+	for <linux-btrfs@vger.kernel.org>; Tue, 28 Jun 2016 11:59:00 -0400 (EDT)
+Received: from [192.168.1.129] (unknown [2.235.201.237])
+	by mail.messagingengine.com (Postfix) with ESMTPA id 9FFEFCCDBC
+	for <linux-btrfs@vger.kernel.org>; Tue, 28 Jun 2016 11:58:59 -0400 (EDT)
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 From: Francesco Turco <fturco@fastmail.fm>
-Message-ID: <cbbbf181-f883-68ab-1a7a-be1349ab5faa@fastmail.fm>
-Date: Tue, 28 Jun 2016 15:52:02 +0200
+Subject: Btrfs check command fails with "assertion failed" error
+Message-ID: <5b7fbcfe-520a-cc00-f772-97a83fc9aa3d@fastmail.fm>
+Date: Tue, 28 Jun 2016 17:58:58 +0200
 MIME-Version: 1.0
-In-Reply-To: <640254ee-1773-0d47-4190-7082512c6f43@mendix.com>
 Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2016-06-27 23:47, Hans van Kranenburg wrote:
-> Since the existence of python-btrfs, it has gathered a few useful
-> example scripts:
-> 
-> git clone https://github.com/knorrie/python-btrfs
-> cd python-btrfs/examples/
-> (get root prompt)
-> 
-> ./show_usage.py /mountpoint <- view sorted by 'virtual' address space
-> ./show_dev_extents.py /mountpoint <- view sorted by physical layout
-> 
-> The show_usage in the btrfs-heatmap repo is almost gone. I'm currently
-> replacing all the proof of concept playing around stuff in there with
-> dedicated png-creation code that uses the python-btrfs lib.
+When trying to repair a btrfs root filesystem I get the following error
+message:
 
-I also issued the show_dev_extents.py command as you suggested. Hope it
-helps.
+# losetup -f /home/fturco/Buffer/root-20160616.img
+# btrfs check --repair /dev/loop0
+enabling repair mode
+warning, device 4 is missing
+Checking filesystem on /dev/loop0
+UUID: 34fb5b58-f50f-47c3-a5b8-91d81a30eade
+checking extents
+Unable to find block group for 0
+extent-tree.c:289: find_search_start: Assertion `1` failed.
+btrfs[0x44882e]
+btrfs(btrfs_reserve_extent+0xaa9)[0x44d639]
+btrfs(btrfs_alloc_free_block+0x5f)[0x44d6ff]
+btrfs(__btrfs_cow_block+0xc4)[0x43e9d4]
+btrfs(btrfs_cow_block+0x35)[0x43efd5]
+btrfs[0x4442e6]
+btrfs(btrfs_commit_transaction+0x95)[0x446115]
+btrfs[0x42b58e]
+btrfs(cmd_check+0x76c)[0x42c60c]
+btrfs(main+0x7b)[0x40ac3b]
+/usr/lib/libc.so.6(__libc_start_main+0xf1)[0x7f272f658741]
+btrfs(_start+0x29)[0x40ad39]
+
+This is an unmountable filesystem:
+
+# mount /dev/loop0 /mnt/
+mount: wrong fs type, bad option, bad superblock on /dev/loop0,
+       missing codepage or helper program, or other error
+
+       In some cases useful info is found in syslog - try
+       dmesg | tail or so.
+
+# dmesg | tail
+[ 9185.503571] scsi 8:0:0:1: Direct-Access     Samsung  File-CD Gadget
+0000 PQ: 0 ANSI: 2
+[ 9185.513943] sd 8:0:0:0: [sdb] Attached SCSI removable disk
+[ 9185.514565] sd 8:0:0:1: [sdc] Attached SCSI removable disk
+[13773.533435] usb 1-4: USB disconnect, device number 8
+[31454.672925] loop: module loaded
+[31455.600069] BTRFS: device fsid 34fb5b58-f50f-47c3-a5b8-91d81a30eade
+devid 1 transid 81460 /dev/loop0
+[32584.640398] BTRFS info (device loop0): disk space caching is enabled
+[32584.640403] BTRFS: has skinny extents
+[32584.654196] BTRFS: failed to read the system array on loop0
+[32584.666774] BTRFS: open_ctree failed
+
+Fortunately I have no valuable content in that image file and I restored
+the system from a recent backup, but I still wonder if there's a bug
+somewhere in btrfs-check.
+
+Do you need other debug informations perhaps?
 
 -- 
 Website: http://www.fturco.net/

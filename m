@@ -1,72 +1,43 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtprelay05.ispgateway.de ([80.67.31.93]:55181 "EHLO
-	smtprelay05.ispgateway.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752301AbcF1M4o (ORCPT
+Received: from out3-smtp.messagingengine.com ([66.111.4.27]:58235 "EHLO
+	out3-smtp.messagingengine.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1751193AbcF1Nqq (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 28 Jun 2016 08:56:44 -0400
-Received: from [77.13.67.154] (helo=hermione.invalid)
-	by smtprelay05.ispgateway.de with esmtpsa (TLSv1.2:AES256-GCM-SHA384:256)
-	(Exim 4.84)
-	(envelope-from <envelope@m-berberich.de>)
-	id 1bHsZE-00038v-BA
-	for linux-btrfs@vger.kernel.org; Tue, 28 Jun 2016 14:56:40 +0200
-Received: from berberic by hermione.invalid with local (Exim 4.87)
-	(envelope-from <envelope@m-berberich.de>)
-	id 1bHsZD-0002ug-Qc
-	for linux-btrfs@vger.kernel.org; Tue, 28 Jun 2016 14:56:39 +0200
-Date: Tue, 28 Jun 2016 14:56:39 +0200
-From: M G Berberich <btrfs@oss.m-berberich.de>
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: Bug in 'btrfs filesystem du' ?
-Message-ID: <20160628125639.GA6997@invalid>
-References: <20160627132841.GA11661@invalid>
- <20160627133310.GB11661@invalid>
- <CAPmG0jbcojqdERe39Fnu20mg2e2VyxJOUi53Zy6kV_=B=q-zEA@mail.gmail.com>
+	Tue, 28 Jun 2016 09:46:46 -0400
+Subject: Re: Btrfs full balance command fails due to ENOSPC (bug 121071)
+To: Henk Slager <eye1tm@gmail.com>, Chris Murphy <lists@colorremedies.com>
+References: <a3dcbcfc-a8b5-6a54-f600-63dd2d9162b5@fastmail.fm>
+ <CAJCQCtRrk70p+iNNKCZvmz4T3R2=2d_JqQXJuSpt2QD1g9ysZQ@mail.gmail.com>
+ <feb87fbf-c017-ce29-3ba5-abc9d4cbb303@fastmail.fm>
+ <CAJCQCtSdNitRUA498COj1S3bcgdVA8Xf6qq1Fw71pbn_m=Z62A@mail.gmail.com>
+ <CAPmG0jbhv8tL4wOimNuAYKv+BruZy=JfzjjhjnEg6nbF5A+1_g@mail.gmail.com>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+From: Francesco Turco <fturco@fastmail.fm>
+Message-ID: <0fe98668-5448-91c6-964d-4b9ab877668b@fastmail.fm>
+Date: Tue, 28 Jun 2016 15:46:43 +0200
 MIME-Version: 1.0
+In-Reply-To: <CAPmG0jbhv8tL4wOimNuAYKv+BruZy=JfzjjhjnEg6nbF5A+1_g@mail.gmail.com>
 Content-Type: text/plain; charset=utf-8
-In-Reply-To: <CAPmG0jbcojqdERe39Fnu20mg2e2VyxJOUi53Zy6kV_=B=q-zEA@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
-
-Am Montag, den 27. Juni schrieb Henk Slager:
-> On Mon, Jun 27, 2016 at 3:33 PM, M G Berberich <btrfs@oss.m-berberich.de> wrote:
-> > Am Montag, den 27. Juni schrieb M G Berberich:
-> >> after a balance ‘btrfs filesystem du’ probably shows false data about
-> >> shared data.
-> >
-> > Oh, I forgot: I have btrfs-progs v4.5.2 and kernel 4.6.2.
+On 2016-06-27 23:26, Henk Slager wrote:
+> btrfs-debug does not show metadata ans system chunks; the balancing
+> problem might come from those.
+> This script does show all chunks:
+> https://github.com/knorrie/btrfs-heatmap/blob/master/show_usage.py
 > 
-> With  btrfs-progs v4.6.1 and kernel 4.7-rc5, the numbers are correct
-> about shared data.
+> You might want to use vrange or drange balance filters so that you can
+> just target a certain chunk and maybe that gives a hint where the
+> problem might be. But anyhow, the behavior experienced is a bug.
 
-I tested with kernels 4.6.3 and 4.7-rc5 and with btrfs-progs 4.5.2 and
-4.61. The later kernel with two patches to make the kernel work:
-https://lkml.org/lkml/2016/6/1/310 https://lkml.org/lkml/2016/6/1/311 .
+Updated the bug with the output log from your script. I simply ran it as:
 
-You can see the script¹ I used (do-btrfs-du-test) and the logs at
-http://m-berberich.de/btrfs/
+./show_usage.py /
 
-In all four cases, ‘btrfs fi du -s .’ reports
+I don't know how to use vrange/drange balance filters. Can you show me
+how to do that, please?
 
-     Total   Exclusive  Set shared  Filename
-  59.38MiB       0.00B    29.69MiB  .
-
-befor balance and
-
-     Total   Exclusive  Set shared  Filename
-  59.38MiB    59.38MiB       0.00B  .
-
-after balance.
-
-Disclaimer: The script works for me, no guaranty at all.
-
-	MfG
-	bmg
-__________
-¹ Disclaimer: The script works for me, no guaranty at all.
 -- 
-„Des is völlig wurscht, was heut beschlos- | M G Berberich
- sen wird: I bin sowieso dagegn!“          | mail@m-berberich.de
-(SPD-Stadtrat Kurt Schindler; Regensburg)  | 
+Website: http://www.fturco.net/
+GPG key: 6712 2364 B2FE 30E1 4791 EB82 7BB1 1F53 29DE CD34

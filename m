@@ -1,32 +1,38 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from out3-smtp.messagingengine.com ([66.111.4.27]:51071 "EHLO
-	out3-smtp.messagingengine.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1751673AbcF1SbS (ORCPT
+Received: from mail-vk0-f48.google.com ([209.85.213.48]:33896 "EHLO
+	mail-vk0-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752071AbcF1UMZ (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 28 Jun 2016 14:31:18 -0400
-Subject: Re: Btrfs check command fails with "assertion failed" error
-To: Chris Murphy <lists@colorremedies.com>
-References: <5b7fbcfe-520a-cc00-f772-97a83fc9aa3d@fastmail.fm>
- <CAJCQCtQXBhtMr71wcb9TW3gFycoKT1QEYj=+P59fW+FM+WogLQ@mail.gmail.com>
- <9f86cccc-b6b3-95c7-400d-026894e257f5@fastmail.fm>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-From: Francesco Turco <fturco@fastmail.fm>
-Message-ID: <43ea343b-54d8-aa96-6c37-6b3183d7abc4@fastmail.fm>
-Date: Tue, 28 Jun 2016 20:31:16 +0200
+	Tue, 28 Jun 2016 16:12:25 -0400
+Received: by mail-vk0-f48.google.com with SMTP id c2so37864714vkg.1
+        for <linux-btrfs@vger.kernel.org>; Tue, 28 Jun 2016 13:11:50 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <9f86cccc-b6b3-95c7-400d-026894e257f5@fastmail.fm>
-Content-Type: text/plain; charset=utf-8
+From: =?UTF-8?B?T3R0byBLZWvDpGzDpGluZW4=?= <otto@seravo.fi>
+Date: Tue, 28 Jun 2016 23:11:19 +0300
+Message-ID: <CAHj_TLC5Fgzkd49wvU-6WDO-mbqnZs6MUwxje+0vowCcUJLmsw@mail.gmail.com>
+Subject: btrfs-check: Fix bitflipped keys from bad RAM
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2016-06-28 20:20, Francesco Turco wrote:
-> So I'm going to submit a bug as you suggested.
+Hello!
 
-Done: https://bugzilla.kernel.org/show_bug.cgi?id=121111
+A patch with this subject was submitted in May 2014:
+http://www.spinics.net/lists/linux-btrfs/msg33777.html
 
-I also found another similar bug:
-https://bugzilla.kernel.org/show_bug.cgi?id=104821
+I don't see it among any of the ~360 open issues at
+https://bugzilla.kernel.org/buglist.cgi?bug_status=NEW&bug_status=ASSIGNED&bug_status=REOPENED&component=btrfs
 
--- 
-Website: http://www.fturco.net/
-GPG key: 6712 2364 B2FE 30E1 4791 EB82 7BB1 1F53 29DE CD34
+Unless somebody objects, I'll file it as a NEW issue with patch.
+
+
+I think the work done by Hugo Mills for this one is important and it
+would be a pity if those patches were forgotten. It is one of those
+things where btrfs could outperform zfs, which has not bitflip
+recovery. Btrfs could have one, and it would be great.
+
+I personally came across a machine with a bitflipped index and I would
+love to test these patches. I am however reluctant to invest time in
+it if there is no issue in the bug tracker and no visible progress.
+Without proper tracking all debugging/feedback would go in vain.

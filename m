@@ -1,88 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:33000 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751601AbcF3K6W (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 30 Jun 2016 06:58:22 -0400
-From: Anand Jain <anand.jain@oracle.com>
-To: fstests@vger.kernel.org
-Cc: linux-btrfs@vger.kernel.org
-Subject: [PATCH v3 6/6] fstests: btrfs: test RAID5 device reappear and balance
-Date: Thu, 30 Jun 2016 18:59:14 +0800
-Message-Id: <1467284354-3450-1-git-send-email-anand.jain@oracle.com>
-In-Reply-To: <1463495530-425-6-git-send-email-anand.jain@oracle.com>
-References: <1463495530-425-6-git-send-email-anand.jain@oracle.com>
+Received: from cn.fujitsu.com ([222.73.24.84]:52297 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1752060AbcF1Bzc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 27 Jun 2016 21:55:32 -0400
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+To: linux-btrfs@vger.kernel.org, fstests@vger.kernel.org
+Subject: [PATCH] fstests: btrfs: Regression test for leaking data reserved space
+Date: Tue, 28 Jun 2016 09:54:51 +0800
+Message-Id: <20160628015451.13903-1-quwenruo@cn.fujitsu.com>
+MIME-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Anand Jain <Anand.Jain@oracle.com>
+When btrfs hits EDQUOTA when reserving data space, it will leak already
+reserved data space.
 
-The test does the following:
-Initialize a RAID5 with some data
+This test case will check it by using more restrict enospc_debug mount
+option to trigger kernel warning at umount time.
 
-Re-mount RAID5 degraded with _dev3_ missing and write data.
-Save md5sum checkpoint1
-
-Re-mount healthy RAID5
-
-Let balance fix degraded blocks.
-Save md5sum checkpoint2
-
-Re-mount RAID1 degraded now with _dev1_ missing.
-Save md5sum checkpoint3
-
-Verify if all three md5sum matches
-
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
-v3:
-  Removed _require_scratch_nocheck
-  Fixed the FS fill size to be at 100m
-  Typo fixes in the log and .out file
-  Rebase on latest fstests
-  
-v2:
-  add tmp= and its rm
-  add comments to why _reload_btrfs_ko is used
-  add missing put and test_mount at notrun exit
-  use echo instead of _fail when checkpoints are checked
-  .out updated to remove Silence..
+ tests/btrfs/124     | 73 +++++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/124.out |  2 ++
+ tests/btrfs/group   |  1 +
+ 3 files changed, 76 insertions(+)
+ create mode 100755 tests/btrfs/124
+ create mode 100644 tests/btrfs/124.out
 
- tests/btrfs/125     | 182 ++++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/125.out |   7 ++
- tests/btrfs/group   |   1 +
- 3 files changed, 190 insertions(+)
- create mode 100755 tests/btrfs/125
- create mode 100644 tests/btrfs/125.out
-
-diff --git a/tests/btrfs/125 b/tests/btrfs/125
+diff --git a/tests/btrfs/124 b/tests/btrfs/124
 new file mode 100755
-index 000000000000..1062b87b3eb9
+index 0000000..94a5b28
 --- /dev/null
-+++ b/tests/btrfs/125
-@@ -0,0 +1,182 @@
++++ b/tests/btrfs/124
+@@ -0,0 +1,73 @@
 +#! /bin/bash
-+# FS QA Test 125
++# FS QA Test 124
 +#
-+# This test verify if the reconstructed data on the RAID5 is good.
-+# Steps:
-+# Initialize RAID5 with some data
++# Regression test for leaking data space after hitting EDQUOTA
 +#
-+# Re-mount RAID5 degraded with dev3 missing and write data
-+# Save md5sum checkpoint1
-+#
-+# Re-mount healthy RAID5
-+#
-+# Let balance fix the RAID5.
-+# Save md5sum checkpoint2
-+#
-+# Re-mount RAID5 degraded with dev1 as missing.
-+# Save md5sum checkpoint3
-+#
-+# Verify if all three checkpoints match
-+#
-+#---------------------------------------------------------------------
-+# Copyright (c) 2016 Oracle.  All Rights Reserved.
++#-----------------------------------------------------------------------
++# Copyright (c) 2016 Fujitsu.  All Rights Reserved.
 +#
 +# This program is free software; you can redistribute it and/or
 +# modify it under the terms of the GNU General Public License as
@@ -96,7 +53,7 @@ index 000000000000..1062b87b3eb9
 +# You should have received a copy of the GNU General Public License
 +# along with this program; if not, write the Free Software Foundation,
 +# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-+#---------------------------------------------------------------------
++#-----------------------------------------------------------------------
 +#
 +
 +seq=`basename $0`
@@ -123,148 +80,51 @@ index 000000000000..1062b87b3eb9
 +
 +# real QA test starts here
 +
++# Modify as appropriate.
 +_supported_fs btrfs
 +_supported_os Linux
-+_require_scratch_dev_pool 3
++_require_scratch
 +
-+# we need btrfs to unload, need test dir unmounted
-+_test_unmount
-+_require_btrfs_loadable
++_scratch_mkfs
++# Use enospc_debug mount option to trigger restrict space info check
++_scratch_mount "-o enospc_debug"
 +
-+_scratch_dev_pool_get 3
++_run_btrfs_util_prog quota enable $SCRATCH_MNT
++_run_btrfs_util_prog quota rescan -w $SCRATCH_MNT
++_run_btrfs_util_prog qgroup limit 512K 0/5 $SCRATCH_MNT
 +
-+dev1=`echo $SCRATCH_DEV_POOL | awk '{print $1}'`
-+dev2=`echo $SCRATCH_DEV_POOL | awk '{print $2}'`
-+dev3=`echo $SCRATCH_DEV_POOL | awk '{print $3}'`
++# The amount of written data may change due to different nodesize at mkfs time,
++# so redirect stdout to seqres.full.
++# Also, EDQUOTA is expected, which can't be redirected due to the limitation
++# of _filter_xfs_io, so golden output will include EDQUOTA error message
++_pwrite_byte 0xcdcdcdcd 0 1M $SCRATCH_MNT/test_file | _filter_xfs_io \
++	>> $seqres.full
 +
-+echo dev1=$dev1 >> $seqres.full
-+echo dev2=$dev2 >> $seqres.full
-+echo dev3=$dev3 >> $seqres.full
++# Fstests will umount the fs, and at umount time, kernel warning will be
++# triggered
 +
-+# Balance won't be successful if filled too much
-+dev1_sz=`blockdev --getsize64 $dev1`
-+dev2_sz=`blockdev --getsize64 $dev2`
-+dev3_sz=`blockdev --getsize64 $dev3`
-+
-+# get min of both.
-+max_fs_sz=`echo -e "$dev1_sz\n$dev2_sz\n$dev3_sz" | sort | head -1`
-+# Need disks with more than 2G
-+if [ $max_fs_sz -lt 2000000000 ]; then
-+	_scratch_dev_pool_put
-+	_test_mount
-+	_notrun "Smallest dev size $max_fs_sz, Need at least 2G"
-+fi
-+max_fs_sz=100000000
-+bs="1M"
-+count=$(($max_fs_sz / 1000000))
-+
-+#-------------normal init-------------------
-+echo >> $seqres.full
-+echo "max_fs_sz=$max_fs_sz count=$count" >> $seqres.full
-+echo "-----Initialize -----" >> $seqres.full
-+_scratch_pool_mkfs "-mraid5 -draid5" >> $seqres.full 2>&1
-+_scratch_mount >> $seqres.full 2>&1
-+dd if=/dev/zero of="$SCRATCH_MNT"/tf1 bs=$bs count=1 \
-+					>>$seqres.full 2>&1
-+_run_btrfs_util_prog filesystem show
-+_run_btrfs_util_prog filesystem df $SCRATCH_MNT
-+count=$(( count-- ))
-+
-+
-+#-------------degraded-init-------------------
-+echo >> $seqres.full
-+echo "-----Write degraded mount fill upto $max_fs_sz bytes-----" >> $seqres.full
-+echo
-+echo "Write data with degraded mount"
-+
-+echo "unmount" >> $seqres.full
-+_scratch_unmount
-+echo "clean btrfs ko" >> $seqres.full
-+# un-scan the btrfs devices
-+_reload_btrfs_ko
-+_mount -o degraded,device=$dev2 $dev1 $SCRATCH_MNT >>$seqres.full 2>&1
-+dd if=/dev/zero of="$SCRATCH_MNT"/tf2 bs=$bs count=$count \
-+					>>$seqres.full 2>&1
-+_run_btrfs_util_prog filesystem show
-+_run_btrfs_util_prog filesystem df $SCRATCH_MNT
-+checkpoint1=`md5sum $SCRATCH_MNT/tf2`
-+echo $checkpoint1 >> $seqres.full 2>&1
-+
-+#-------------balance-------------------
-+echo >> $seqres.full
-+echo "-----Mount normal-----" >> $seqres.full
-+echo
-+echo "Mount normal and balance"
-+
-+_scratch_unmount
-+_run_btrfs_util_prog device scan
-+_scratch_mount >> $seqres.full 2>&1
-+
-+echo >> $seqres.full
-+_run_btrfs_util_prog balance start ${SCRATCH_MNT}
-+
-+_run_btrfs_util_prog filesystem show
-+_run_btrfs_util_prog filesystem df ${SCRATCH_MNT}
-+
-+checkpoint2=`md5sum $SCRATCH_MNT/tf2`
-+echo $checkpoint2 >> $seqres.full 2>&1
-+
-+#-------------degraded-mount-------------------
-+echo >> $seqres.full
-+echo "-----Mount degraded with dev1 missing-----" >> $seqres.full
-+echo
-+echo "Mount degraded but with other dev"
-+
-+_scratch_unmount
-+# un-scan the btrfs devices
-+_reload_btrfs_ko
-+
-+_mount -o degraded,device=${dev2} $dev3 $SCRATCH_MNT >>$seqres.full 2>&1
-+
-+_run_btrfs_util_prog filesystem show
-+_run_btrfs_util_prog filesystem df $SCRATCH_MNT
-+checkpoint3=`md5sum $SCRATCH_MNT/tf2`
-+echo $checkpoint3 >> $seqres.full 2>&1
-+
-+if [ "$checkpoint1" != "$checkpoint2" ]; then
-+	echo $checkpoint1
-+	echo $checkpoint2
-+	echo "Inital sum does not match with after balance"
-+fi
-+
-+if [ "$checkpoint1" != "$checkpoint3" ]; then
-+	echo $checkpoint1
-+	echo $checkpoint3
-+	echo "Inital sum does not match with data on dev2 written by balance"
-+fi
-+
-+_scratch_dev_pool_put
-+_test_mount
-+
++# success, all done
 +status=0
 +exit
-diff --git a/tests/btrfs/125.out b/tests/btrfs/125.out
+diff --git a/tests/btrfs/124.out b/tests/btrfs/124.out
 new file mode 100644
-index 000000000000..d795f7d8e8a0
+index 0000000..6774792
 --- /dev/null
-+++ b/tests/btrfs/125.out
-@@ -0,0 +1,7 @@
-+QA output created by 125
-+
-+Write data with degraded mount
-+
-+Mount normal and balance
-+
-+Mount degraded but with other dev
++++ b/tests/btrfs/124.out
+@@ -0,0 +1,2 @@
++QA output created by 124
++pwrite64: Disk quota exceeded
 diff --git a/tests/btrfs/group b/tests/btrfs/group
-index ba13e128b173..d959b1d38f6d 100644
+index 5a26ed7..a398213 100644
 --- a/tests/btrfs/group
 +++ b/tests/btrfs/group
-@@ -127,3 +127,4 @@
+@@ -126,3 +126,4 @@
+ 121 auto quick snapshot qgroup
  122 auto quick snapshot qgroup
  123 auto quick qgroup
- 124 auto replace
-+125 auto replace
++124 auto quick qgroup
 -- 
-2.7.0
+2.5.5
+
+
 

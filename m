@@ -1,75 +1,63 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:52187 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751793AbcF3S5j (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 30 Jun 2016 14:57:39 -0400
-Date: Thu, 30 Jun 2016 11:55:53 -0700
-From: Mark Fasheh <mfasheh@suse.de>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v5 0/4] Btrfs in-band de-duplication test cases
-Message-ID: <20160630185553.GA26224@wotan.suse.de>
-Reply-To: Mark Fasheh <mfasheh@suse.de>
-References: <20160630092439.27693-1-quwenruo@cn.fujitsu.com>
+Received: from aserp1050.oracle.com ([141.146.126.70]:43972 "EHLO
+	aserp1050.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751137AbcF2EAZ (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 29 Jun 2016 00:00:25 -0400
+Date: Tue, 28 Jun 2016 20:36:48 -0700
+From: "Darrick J. Wong" <darrick.wong@oracle.com>
+To: david@fromorbit.com
+Cc: linux-btrfs@vger.kernel.org, fstests@vger.kernel.org, xfs@oss.sgi.com
+Subject: [PATCH 21/20] xfs/128: cycle_mount the scratch device, not the test
+ device
+Message-ID: <20160629033648.GA7108@birch.djwong.org>
+References: <146612796204.25024.18254357523133394284.stgit@birch.djwong.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20160630092439.27693-1-quwenruo@cn.fujitsu.com>
+In-Reply-To: <146612796204.25024.18254357523133394284.stgit@birch.djwong.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Qu, you might want to CC fstests@vger.kernel.org on these patches.
+This test uses the scratch device, so cycle that, not the test dev.
 
-Thanks,
-	--Mark
+Signed-off-by: Darrick J. Wong <darrick.wong@oracle.com>
+---
+ tests/xfs/128 |    7 ++++---
+ 1 file changed, 4 insertions(+), 3 deletions(-)
 
-On Thu, Jun 30, 2016 at 05:24:35PM +0800, Qu Wenruo wrote:
-> Btrfs in-band de-duplication test case for in-memory backend.
-> 
-> v5:
->   Due to kernel ioctl change, add FORCE flag for "dedupe enable" ioctl call.
-> v4:
->   Due to kernel patchset re-organization, remove on-disk backend test cases
-> v3:
->   Add new test cases for on-disk backend with metadata balance
-> v2:
->   Add new test cases for on-disk backend with full balance
-> 
-> 
-> Qu Wenruo (4):
->   fstests: rename _require_btrfs to _require_btrfs_subcommand
->   fstests: btrfs: Add basic test for btrfs in-band de-duplication
->   fstests: btrfs: Add testcase for btrfs dedupe and metadata balance
->     race test
->   fstests: btrfs: Test inband dedupe with data balance.
-> 
->  common/defrag       |  13 ++++++
->  common/rc           |   2 +-
->  tests/btrfs/004     |   2 +-
->  tests/btrfs/048     |   2 +-
->  tests/btrfs/059     |   2 +-
->  tests/btrfs/200     | 116 ++++++++++++++++++++++++++++++++++++++++++++++++++++
->  tests/btrfs/200.out |  22 ++++++++++
->  tests/btrfs/201     | 112 ++++++++++++++++++++++++++++++++++++++++++++++++++
->  tests/btrfs/201.out |   2 +
->  tests/btrfs/203     | 110 +++++++++++++++++++++++++++++++++++++++++++++++++
->  tests/btrfs/203.out |   3 ++
->  tests/btrfs/group   |   3 ++
->  12 files changed, 385 insertions(+), 4 deletions(-)
->  create mode 100755 tests/btrfs/200
->  create mode 100644 tests/btrfs/200.out
->  create mode 100755 tests/btrfs/201
->  create mode 100644 tests/btrfs/201.out
->  create mode 100755 tests/btrfs/203
->  create mode 100644 tests/btrfs/203.out
-> 
-> -- 
-> 2.9.0
-> 
-> 
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
---
-Mark Fasheh
+diff --git a/tests/xfs/128 b/tests/xfs/128
+index 8758d7e..2e756d5 100755
+--- a/tests/xfs/128
++++ b/tests/xfs/128
+@@ -66,7 +66,7 @@ _pwrite_byte 0x61 0 $((blks * blksz)) $testdir/file1 >> $seqres.full
+ _cp_reflink $testdir/file1 $testdir/file2
+ _cp_reflink $testdir/file2 $testdir/file3
+ _cp_reflink $testdir/file3 $testdir/file4
+-_test_cycle_mount
++_scratch_cycle_mount
+ free_blocks1=$(stat -f $testdir -c '%f')
+ 
+ md5sum $testdir/file1 | _filter_scratch
+@@ -82,7 +82,7 @@ c04=$(_md5_checksum $testdir/file4)
+ echo "CoW the reflink copies"
+ _pwrite_byte 0x62 $blksz $blksz $testdir/file2 >> $seqres.full
+ _pwrite_byte 0x63 $(( blksz * (blks - 1) )) $blksz $testdir/file3 >> $seqres.full
+-_test_cycle_mount
++_scratch_cycle_mount
+ free_blocks2=$(stat -f $testdir -c '%f')
+ 
+ md5sum $testdir/file1 | _filter_scratch
+@@ -97,11 +97,12 @@ c14=$(_md5_checksum $testdir/file4)
+ 
+ echo "Defragment"
+ lsattr -l $testdir/ | _filter_scratch | _filter_spaces
++filefrag -v $testdir/file* >> $seqres.full
+ $XFS_FSR_PROG -v -d $testdir/file1 >> $seqres.full
+ $XFS_FSR_PROG -v -d $testdir/file2 >> $seqres.full # fsr probably breaks the link
+ $XFS_FSR_PROG -v -d $testdir/file3 >> $seqres.full # fsr probably breaks the link
+ $XFS_FSR_PROG -v -d $testdir/file4 >> $seqres.full # fsr probably ignores this file
+-_test_cycle_mount
++_scratch_cycle_mount
+ free_blocks3=$(stat -f $testdir -c '%f')
+ 
+ md5sum $testdir/file1 | _filter_scratch

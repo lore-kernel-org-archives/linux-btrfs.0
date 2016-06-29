@@ -1,144 +1,105 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from zne1-mx-out05.web4pro.fr ([185.49.20.68]:38458 "EHLO
-	zne1-mta-edge-out-01.w4p.fr" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1751290AbcF2TUg convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 29 Jun 2016 15:20:36 -0400
-Date: Wed, 29 Jun 2016 21:20:18 +0200 (CEST)
-From: Benoit GEORGELIN - Association Web4all
-	<benoit.georgelin@web4all.fr>
-To: Duncan <1i5t5.duncan@cox.net>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Message-ID: <2137907854.307769.1467228018668.JavaMail.zimbra@web4all.fr>
-In-Reply-To: <pan$4c3cf$b132bffe$aec370dd$341fc9fd@cox.net>
-References: <1872105242.302575.1467216517408.JavaMail.zimbra@web4all.fr> <1981850459.302621.1467216953768.JavaMail.zimbra@web4all.fr> <pan$4c3cf$b132bffe$aec370dd$341fc9fd@cox.net>
-Subject: Re: Disk quota exceeded
+Received: from frost.carfax.org.uk ([85.119.82.111]:33525 "EHLO
+	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751218AbcF2TX7 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 29 Jun 2016 15:23:59 -0400
+Date: Wed, 29 Jun 2016 19:23:57 +0000
+From: Hugo Mills <hugo@carfax.org.uk>
+To: Saint Germain <saintger@gmail.com>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Subject: Re: Kernel bug during RAID1 replace
+Message-ID: <20160629192357.GC10223@carfax.org.uk>
+References: <CAJCQCtRSu0GwLRqgvzj9pv80gqoqb6vnjVMLwMmnWF-rvR0tcg@mail.gmail.com>
+ <20160629005208.5e9addcf@system>
+ <CAJCQCtQnNfpu6xoFy2W_hfikphhp_AbUDVmm4Lr2Rsncrx_EsA@mail.gmail.com>
+ <20160629115055.29018e6a@system>
+ <CAJCQCtS=kd31tOe_YCX96W1K85sH2_qTAsxggyyP5kWzZrauoQ@mail.gmail.com>
+ <20160629201208.275b37ad@system>
+ <16e65a07-03b6-2540-fc96-3538c5bc5c99@gmail.com>
+ <20160629210217.0e4e4d1c@system>
+ <CAJCQCtRyPyXA+4+D-J8940xiOMcEwQHgsk6uSpnPeLUduAJd2Q@mail.gmail.com>
+ <20160629211613.125ce3f0@system>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="jy6Sn24JjFx/iggw"
+In-Reply-To: <20160629211613.125ce3f0@system>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Duncan, 
 
-Thanks a lot for your answer. This give me a lot of information and a better idea of what I should do. 
-I just upgraded the kernel to 4.6.3-040603-generic and i will see if it's working better with this kernel. 
+--jy6Sn24JjFx/iggw
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-If not, I will have to look to another FS with a more stable quotas :) 
-
-Cordialement, 
-
-Benoît 
-
-Afin de contribuer au respect de l'environnement, merci de n'imprimer ce mail qu'en cas de nécessité
-
------ Mail original -----
-De: "Duncan" <1i5t5.duncan@cox.net>
-À: "linux-btrfs" <linux-btrfs@vger.kernel.org>
-Envoyé: Mercredi 29 Juin 2016 13:19:35
-Objet: Re: Disk quota exceeded
-
-Benoit GEORGELIN - Association Web4all posted on Wed, 29 Jun 2016 18:15:53 
-+0200 as excerpted: 
-
-> Hi dear users of the list. 
+On Wed, Jun 29, 2016 at 09:16:13PM +0200, Saint Germain wrote:
+> On Wed, 29 Jun 2016 13:08:30 -0600, Chris Murphy
+> <lists@colorremedies.com> wrote :
 > 
-> I'm new to the BTRFS file-system and I am having some problems with 
-> quotas I would like to share with you what I'm facing about "Disk quota 
-> exceeded" it's quite strange to me. 
-
-Three points. 
-
-1) Btrfs quotas have a long history of trouble, both in correctness and 
-in scaling ability (btrfs balances and checks can take far longer with 
-quotas enabled, often too long to be practical), and if they are now 
-stable, it's only a very recent development. As a result, my 
-recommendation has been and remains not to use btrfs quotas unless you 
-are specifically doing so to work with the devs to test and bugfix. If 
-you don't need them, simply turn them off and leave them off until they 
-are known to work. If you do actually need quota functionality, you're 
-far better off using a filesystem where quotas are actually stable and 
-work as intended. 
-
-> - Description of the environment I have a BTRFS volume "/var/lib/lxd" 
-> I have some subvolume into "/var/lib/lxd/containers" 
+> > >> > Ok I will follow your advice and start over with a fresh BTRFS
+> > >> > volume. As explained on another email, rsync doesn't support
+> > >> > reflink, so do you think it is worth trying with BTRFS send
+> > >> > instead ? Is it safe to copy this way or rsync is more reliable
+> > >> > in case of faulty BTRFS volume ?
+> > >> >
+> > >> If you have the space, btrfs restore would probably be the best
+> > >> option. It's not likely, but using send has a risk of contaminating
+> > >> the new filesystem as well.
+> > >>
+> > >
+> > > I have to copy through the network (I am running out of disks...) so
+> > > btrfs restore is unfortunately not an option.
+> > > I didn't know that btrfs send could contaminate the target disk as
+> > > well ?
+> > > Ok rsync it is then.
+> > 
+> > restore will let you extract files despite csum errors. I don't think
+> > send will, and using cp or rsync Btrfs definitely won't hand over the
+> > file.
+> > 
 > 
-> The volume have quota enable Every subvolume have their quota groupe 
-> created Limit of 10Go has been set to every single subvolumes 
-> 
-> -The problem Randomly I can't write to some of the subvolumes anymore 
-> without having datas added into the subvolume. 
-> I can't figure why and the subvolumes are randomly not usable with the 
-> error : Disk quota exceeded 
+> That's Ok I'd prefer to avoid copying files with csum errors anyway (I
+> can restore them from backups).
+> However will btrfs send abort the whole operation as soon as it finds a
+> csum error ?
+> And will I have the risk to "contaminate" the target BTRFS volume by
+> using BTRFS send ?
 
-2) I'm not sure of the current status here, but it's worth keeping in 
-mind that unlike other filesystems, btrfs separates data and metadata, 
-and it's possible for data to be under quota and still run out, if 
-metadata takes you over quota. 
+   A send stream is effectively just a sequence of filesystem commands
+(mv, cp, cp --reflink, rm, dd). So any damage that it can do when
+replayed by receive is limited to what you can do with the basic shell
+commands (plus cloning extents). If you have metadata breakage in your
+source filesystem, this won't cause the same metadata breakage to show
+up in the target filesystem.
 
-There was some talk a kernel cycle or two ago suggesting separating data 
-and metadata quotas and allowing setting them either separately or 
-overall capping them, but as I said, I'm not sure what the status is on 
-that. 
-
-> I did delete all the quota groups, disable quota on the volume, enable 
-> the quota group again on the volume, check if quota groups were back 
-> automatically as btrfs version 4 is supposed to do I added back the 
-> limit 10Go Rescan Everything work just fine but some time after, I'm 
-> back to over-quota on some subvolumes. 
-> 
-> Thanks for your help on this. 
-> 
-> Below, more details about the config and system point of view : 
-> 
-> 
-> uname -a Linux lxd-virt-01b 4.2.0-30-generic #36-Ubuntu SMP Fri Feb 26 
-> 00:58:07 UTC 2016 x86_64 x86_64 x86_64 GNU/Linux 
-
-3) Unfortunately, ubuntu chose what from upstream's viewpoint was a short- 
-term-stable kernel. 4.2 is no longer supported upstream, and while it's 
-possible that ubuntu is backporting as appropriate, on this list we track 
-upstream and don't know what individual distros have backported and what 
-they haven't. 
-
-And I know for sure that 4.2 still had serious quota issues that are 
-unlikely to have been fixed with backports because they never /did/ work 
-right by 4.2, so the quota issues weren't regressions and thus patches to 
-fix them would have been unlikely stable candidates. 
-
-You thus have a few choices: 
-
-4.1 and 4.4 are upstream LTS series, and continue to be supported (tho 
-I'd suggest 4.4 if you'll be adopting one, as btrfs is still developing 
-fast enough that we only tend to well support the last couple LTS, and 
-beyond that, while critical patches will be backported to the extent 
-possible, if you have a problem you're still likely to be asked to 
-upgrade and see if the problem is still there if you're out of that 2 LTS 
-series window, and 4.1 is getting a bit long in the tooth to be just 
-upgrading to now). So one choice is to move to the latest version of one 
-of them. 
-
-Another choice would be to continue with 4.2, but get your support from 
-your distro, who is better qualified to support it as they know what 
-they've backported and what they haven't. 
-
-And another choice is upgrade to current kernels, where again we 
-generally support the last two series, 4.6 and 4.5 ATM. 
-
-
-(FWIW, userspace version numbers are synced to kernelspace numbers. 
-Backward compatibility is supported, so a good rule of thumb there is to 
-run btrfs userspace at least as new as your kernel, which assuming you're 
-staying in line with the latest two kernels of either current or LTS 
-series, will mean your userspace doesn't get too far behind either. But 
-you're on 4.4 userspace already, so are fine there.) 
-
+   Hugo.
 
 -- 
-Duncan - List replies preferred. No HTML msgs. 
-"Every nonfree program has a lord, a master -- 
-and if you use the program, he is your master." Richard Stallman 
+Hugo Mills             | Quidquid latine dictum sit, altum videtur
+hugo@... carfax.org.uk |
+http://carfax.org.uk/  |
+PGP: E2AB1DE4          |
 
--- 
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in 
-the body of a message to majordomo@vger.kernel.org 
-More majordomo info at http://vger.kernel.org/majordomo-info.html 
+--jy6Sn24JjFx/iggw
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.12 (GNU/Linux)
+
+iQIcBAEBAgAGBQJXdCBNAAoJEFheFHXiqx3koIUP/juAw9ATk62isCL+NtgYok54
+HgRWhkFCjEJF7Wp8p3X7MT3oUf4n0zBEBN7IhR8XXP/+Nk+AfqR6peNnmgAGmr/4
+hqJ152o3k8yizMpN8PcQQcQlmMhUS+3et5G8aR20Vm7JN43zSI4CV75yRm07+XE0
+xI/ZevYuItIrTcun4pk6UxUAYF7PeMItrsK4r4/jiMBRS504qjkNatMvIZOVaM0p
+pJuRQhmDM2UFSRSWKe2TZxtMxRHTJE1sGjDltYzRWe3xJ90FLX+5QVfUZjH+zbmG
+rUetfaPpo2bvPEmPxSh54nIUT7FTg2uGH9TxWIwDPnq5+flmpofbcpsed3SmH1Td
+0CQ2heRQOXqQCIfsCKURnNfBzt0AyWx2WZWeO/7ERHxTlvclM/xVMpw19pKcIISY
+Vp9Wt0TsolmSlunWZdzGw2FumyNcb7DsSthnaJdDIDAOxg6n55ht43oBINKiVfvQ
+lTQQk6rYCFHTQFce1VAgfBG4nhpd2s3YeAtokIZQb+JlNfNXglVBOkuepv7Md0GU
+hG0trcPAYC7HRWAeB8+my/W+H3f8v24UFC+cDHwLAhxnm1s8+Rd8rbe7Rvkdm4yZ
+HvfyMYJOAnanWNgyTxk5LE9RdowNjkbaD7VfzC8mNwgzYn6noEUhb2aJy8hisA2c
+AydDWP7zfzeGxA4UST7O
+=CtXA
+-----END PGP SIGNATURE-----
+
+--jy6Sn24JjFx/iggw--

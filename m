@@ -1,214 +1,231 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wm0-f68.google.com ([74.125.82.68]:35253 "EHLO
-	mail-wm0-f68.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751287AbcFWSRW (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:35125 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752440AbcF2Bwm (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 23 Jun 2016 14:17:22 -0400
-From: Nikolay Borisov <n.borisov.lkml@gmail.com>
-To: dsterba@suse.com, linux-btrfs@vger.kernel.org
-Cc: linux-kernel@vger.kernel.org, clm@fb.com, jbacik@fb.com,
-        Nikolay Borisov <n.borisov.lkml@gmail.com>
-Subject: [PATCH] btrfs: Fix slab accounting flags
-Date: Thu, 23 Jun 2016 21:17:08 +0300
-Message-Id: <1466705828-26195-1-git-send-email-n.borisov.lkml@gmail.com>
+	Tue, 28 Jun 2016 21:52:42 -0400
+From: Liu Bo <bo.li.liu@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Peter Becker <floyd.net@gmail.com>
+Subject: [PATCH] Btrfs: fix read_node_slot to return errors
+Date: Tue, 28 Jun 2016 18:55:48 -0700
+Message-Id: <1467165348-9931-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-BTRFS is using a variety of slab caches to satisfy internal needs.
-Those slab caches are always allocated with the SLAB_RECLAIM_ACCOUNT,
-meaning allocations from the caches are going to be accounted as
-SReclaimable. At the same time btrfs is not registering any shrinkers
-whatsoever, thus preventing memory from the slabs to be shrunk. This
-means those caches are not in fact reclaimable.
+We use read_node_slot() to read btree node and it has two cases,
+a) slot is out of range, which means 'no such entry'
+b) we fail to read the block, due to checksum fails or corrupted
+   content or not with uptodate flag.
+But we're returning NULL in both cases, this makes it return -ENOENT
+in case a) and return -EIO in case b), and this fixes its callers
+as well as btrfs_search_forward() 's caller to catch the new errors.
 
-To fix this remove the SLAB_RECLAIM_ACCOUNT on all caches apart from the
-inode cache, since this one is being freed by the generic VFS super_block
-shrinker. Also set the transaction related caches as SLAB_TEMPORARY,
-to better document the lifetime of the objects (it just translates
-to SLAB_RECLAIM_ACCOUNT).
+The problem is reported by Peter Becker, and I can manage to
+hit the same BUG_ON by mounting my fuzz image.
 
-Signed-off-by: Nikolay Borisov <n.borisov.lkml@gmail.com>
+Reported-by: Peter Becker <floyd.net@gmail.com>
+Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
 ---
- fs/btrfs/backref.c       | 2 +-
- fs/btrfs/delayed-inode.c | 2 +-
- fs/btrfs/delayed-ref.c   | 8 ++++----
- fs/btrfs/disk-io.c       | 2 +-
- fs/btrfs/extent_io.c     | 4 ++--
- fs/btrfs/extent_map.c    | 2 +-
- fs/btrfs/file.c          | 2 +-
- fs/btrfs/inode.c         | 8 ++++----
- fs/btrfs/ordered-data.c  | 2 +-
- 9 files changed, 16 insertions(+), 16 deletions(-)
+ fs/btrfs/ctree.c    | 63 +++++++++++++++++++++++++++++++++++++----------------
+ fs/btrfs/tree-log.c |  4 ++++
+ 2 files changed, 48 insertions(+), 19 deletions(-)
 
-diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
-index 8bb3509099e8..1ac8a3c7f68e 100644
---- a/fs/btrfs/backref.c
-+++ b/fs/btrfs/backref.c
-@@ -139,7 +139,7 @@ int __init btrfs_prelim_ref_init(void)
- 	btrfs_prelim_ref_cache = kmem_cache_create("btrfs_prelim_ref",
- 					sizeof(struct __prelim_ref),
- 					0,
--					SLAB_RECLAIM_ACCOUNT | SLAB_MEM_SPREAD,
-+					SLAB_MEM_SPREAD,
- 					NULL);
- 	if (!btrfs_prelim_ref_cache)
- 		return -ENOMEM;
-diff --git a/fs/btrfs/delayed-inode.c b/fs/btrfs/delayed-inode.c
-index 61561c2a3f96..4e5cd7dde3c5 100644
---- a/fs/btrfs/delayed-inode.c
-+++ b/fs/btrfs/delayed-inode.c
-@@ -34,7 +34,7 @@ int __init btrfs_delayed_inode_init(void)
- 	delayed_node_cache = kmem_cache_create("btrfs_delayed_node",
- 					sizeof(struct btrfs_delayed_node),
- 					0,
--					SLAB_RECLAIM_ACCOUNT | SLAB_MEM_SPREAD,
-+					SLAB_MEM_SPREAD,
- 					NULL);
- 	if (!delayed_node_cache)
- 		return -ENOMEM;
-diff --git a/fs/btrfs/delayed-ref.c b/fs/btrfs/delayed-ref.c
-index 430b3689b112..08e452599249 100644
---- a/fs/btrfs/delayed-ref.c
-+++ b/fs/btrfs/delayed-ref.c
-@@ -940,28 +940,28 @@ int btrfs_delayed_ref_init(void)
- 	btrfs_delayed_ref_head_cachep = kmem_cache_create(
- 				"btrfs_delayed_ref_head",
- 				sizeof(struct btrfs_delayed_ref_head), 0,
--				SLAB_RECLAIM_ACCOUNT | SLAB_MEM_SPREAD, NULL);
-+				SLAB_MEM_SPREAD, NULL);
- 	if (!btrfs_delayed_ref_head_cachep)
- 		goto fail;
+diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
+index a85cf7d..63510e0 100644
+--- a/fs/btrfs/ctree.c
++++ b/fs/btrfs/ctree.c
+@@ -1858,7 +1858,6 @@ static void root_sub_used(struct btrfs_root *root, u32 size)
  
- 	btrfs_delayed_tree_ref_cachep = kmem_cache_create(
- 				"btrfs_delayed_tree_ref",
- 				sizeof(struct btrfs_delayed_tree_ref), 0,
--				SLAB_RECLAIM_ACCOUNT | SLAB_MEM_SPREAD, NULL);
-+				SLAB_MEM_SPREAD, NULL);
- 	if (!btrfs_delayed_tree_ref_cachep)
- 		goto fail;
+ /* given a node and slot number, this reads the blocks it points to.  The
+  * extent buffer is returned with a reference taken (but unlocked).
+- * NULL is returned on error.
+  */
+ static noinline struct extent_buffer *read_node_slot(struct btrfs_root *root,
+ 				   struct extent_buffer *parent, int slot)
+@@ -1866,19 +1865,16 @@ static noinline struct extent_buffer *read_node_slot(struct btrfs_root *root,
+ 	int level = btrfs_header_level(parent);
+ 	struct extent_buffer *eb;
  
- 	btrfs_delayed_data_ref_cachep = kmem_cache_create(
- 				"btrfs_delayed_data_ref",
- 				sizeof(struct btrfs_delayed_data_ref), 0,
--				SLAB_RECLAIM_ACCOUNT | SLAB_MEM_SPREAD, NULL);
-+				SLAB_MEM_SPREAD, NULL);
- 	if (!btrfs_delayed_data_ref_cachep)
- 		goto fail;
+-	if (slot < 0)
+-		return NULL;
+-	if (slot >= btrfs_header_nritems(parent))
+-		return NULL;
++	if (slot < 0 || slot >= btrfs_header_nritems(parent))
++		return ERR_PTR(-ENOENT);
  
- 	btrfs_delayed_extent_op_cachep = kmem_cache_create(
- 				"btrfs_delayed_extent_op",
- 				sizeof(struct btrfs_delayed_extent_op), 0,
--				SLAB_RECLAIM_ACCOUNT | SLAB_MEM_SPREAD, NULL);
-+				SLAB_MEM_SPREAD, NULL);
- 	if (!btrfs_delayed_extent_op_cachep)
- 		goto fail;
+ 	BUG_ON(level == 0);
  
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 54cca7a1572b..cb1a05da5682 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -101,7 +101,7 @@ int __init btrfs_end_io_wq_init(void)
- 	btrfs_end_io_wq_cache = kmem_cache_create("btrfs_end_io_wq",
- 					sizeof(struct btrfs_end_io_wq),
- 					0,
--					SLAB_RECLAIM_ACCOUNT | SLAB_MEM_SPREAD,
-+					SLAB_MEM_SPREAD,
- 					NULL);
- 	if (!btrfs_end_io_wq_cache)
- 		return -ENOMEM;
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index aaee3ef55ed8..f3337998264d 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -163,13 +163,13 @@ int __init extent_io_init(void)
+ 	eb = read_tree_block(root, btrfs_node_blockptr(parent, slot),
+ 			     btrfs_node_ptr_generation(parent, slot));
+-	if (IS_ERR(eb) || !extent_buffer_uptodate(eb)) {
+-		if (!IS_ERR(eb))
+-			free_extent_buffer(eb);
+-		eb = NULL;
++	if (!IS_ERR(eb) && !extent_buffer_uptodate(eb)) {
++		free_extent_buffer(eb);
++		eb = ERR_PTR(-EIO);
+ 	}
+ 
+ 	return eb;
+@@ -1931,8 +1927,8 @@ static noinline int balance_level(struct btrfs_trans_handle *trans,
+ 
+ 		/* promote the child to a root */
+ 		child = read_node_slot(root, mid, 0);
+-		if (!child) {
+-			ret = -EROFS;
++		if (IS_ERR(child)) {
++			ret = PTR_ERR(child);
+ 			btrfs_handle_fs_error(root->fs_info, ret, NULL);
+ 			goto enospc;
+ 		}
+@@ -1970,6 +1966,9 @@ static noinline int balance_level(struct btrfs_trans_handle *trans,
+ 		return 0;
+ 
+ 	left = read_node_slot(root, parent, pslot - 1);
++	if (IS_ERR(left))
++		left = NULL;
++
+ 	if (left) {
+ 		btrfs_tree_lock(left);
+ 		btrfs_set_lock_blocking(left);
+@@ -1980,7 +1979,11 @@ static noinline int balance_level(struct btrfs_trans_handle *trans,
+ 			goto enospc;
+ 		}
+ 	}
++
+ 	right = read_node_slot(root, parent, pslot + 1);
++	if (IS_ERR(right))
++		right = NULL;
++
+ 	if (right) {
+ 		btrfs_tree_lock(right);
+ 		btrfs_set_lock_blocking(right);
+@@ -2135,6 +2138,8 @@ static noinline int push_nodes_for_insert(struct btrfs_trans_handle *trans,
+ 		return 1;
+ 
+ 	left = read_node_slot(root, parent, pslot - 1);
++	if (IS_ERR(left))
++		left = NULL;
+ 
+ 	/* first, try to make some room in the middle buffer */
+ 	if (left) {
+@@ -2185,6 +2190,8 @@ static noinline int push_nodes_for_insert(struct btrfs_trans_handle *trans,
+ 		free_extent_buffer(left);
+ 	}
+ 	right = read_node_slot(root, parent, pslot + 1);
++	if (IS_ERR(right))
++		right = NULL;
+ 
+ 	/*
+ 	 * then try to empty the right most buffer into the middle
+@@ -3773,7 +3780,11 @@ static int push_leaf_right(struct btrfs_trans_handle *trans, struct btrfs_root
+ 	btrfs_assert_tree_locked(path->nodes[1]);
+ 
+ 	right = read_node_slot(root, upper, slot + 1);
+-	if (right == NULL)
++	/*
++	 * slot + 1 is not valid or we fail to read the right node,
++	 * no big deal, just return.
++	 */
++	if (IS_ERR(right))
+ 		return 1;
+ 
+ 	btrfs_tree_lock(right);
+@@ -4003,7 +4014,11 @@ static int push_leaf_left(struct btrfs_trans_handle *trans, struct btrfs_root
+ 	btrfs_assert_tree_locked(path->nodes[1]);
+ 
+ 	left = read_node_slot(root, path->nodes[1], slot - 1);
+-	if (left == NULL)
++	/*
++	 * slot - 1 is not valid or we fail to read the left node,
++	 * no big deal, just return.
++	 */
++	if (IS_ERR(left))
+ 		return 1;
+ 
+ 	btrfs_tree_lock(left);
+@@ -5210,7 +5225,10 @@ find_next_key:
+ 		}
+ 		btrfs_set_path_blocking(path);
+ 		cur = read_node_slot(root, cur, slot);
+-		BUG_ON(!cur); /* -ENOMEM */
++		if (IS_ERR(cur)) {
++			ret = PTR_ERR(cur);
++			goto out;
++		}
+ 
+ 		btrfs_tree_read_lock(cur);
+ 
+@@ -5229,7 +5247,7 @@ out:
+ 	return ret;
+ }
+ 
+-static void tree_move_down(struct btrfs_root *root,
++static int tree_move_down(struct btrfs_root *root,
+ 			   struct btrfs_path *path,
+ 			   int *level, int root_level)
  {
- 	extent_state_cache = kmem_cache_create("btrfs_extent_state",
- 			sizeof(struct extent_state), 0,
--			SLAB_RECLAIM_ACCOUNT | SLAB_MEM_SPREAD, NULL);
-+			SLAB_MEM_SPREAD, NULL);
- 	if (!extent_state_cache)
- 		return -ENOMEM;
+@@ -5238,6 +5256,10 @@ static void tree_move_down(struct btrfs_root *root,
+ 					path->slots[*level]);
+ 	path->slots[*level - 1] = 0;
+ 	(*level)--;
++
++	if (IS_ERR(path->nodes[*level - 1]))
++		return PTR_ERR(path->nodes[*level - 1]);
++	return 0;
+ }
  
- 	extent_buffer_cache = kmem_cache_create("btrfs_extent_buffer",
- 			sizeof(struct extent_buffer), 0,
--			SLAB_RECLAIM_ACCOUNT | SLAB_MEM_SPREAD, NULL);
-+			SLAB_MEM_SPREAD, NULL);
- 	if (!extent_buffer_cache)
- 		goto free_state_cache;
+ static int tree_move_next_or_upnext(struct btrfs_root *root,
+@@ -5282,8 +5304,7 @@ static int tree_advance(struct btrfs_root *root,
+ 	if (*level == 0 || !allow_down) {
+ 		ret = tree_move_next_or_upnext(root, path, level, root_level);
+ 	} else {
+-		tree_move_down(root, path, level, root_level);
+-		ret = 0;
++		ret = tree_move_down(root, path, level, root_level);
+ 	}
+ 	if (ret >= 0) {
+ 		if (*level == 0)
+@@ -5457,8 +5478,10 @@ int btrfs_compare_trees(struct btrfs_root *left_root,
+ 					left_root_level,
+ 					advance_left != ADVANCE_ONLY_NEXT,
+ 					&left_key);
+-			if (ret < 0)
++			if (ret == -1)
+ 				left_end_reached = ADVANCE;
++			else if (ret < 0)
++				goto out;
+ 			advance_left = 0;
+ 		}
+ 		if (advance_right && !right_end_reached) {
+@@ -5466,8 +5489,10 @@ int btrfs_compare_trees(struct btrfs_root *left_root,
+ 					right_root_level,
+ 					advance_right != ADVANCE_ONLY_NEXT,
+ 					&right_key);
+-			if (ret < 0)
++			if (ret == -1)
+ 				right_end_reached = ADVANCE;
++			else if (ret < 0)
++				goto out;
+ 			advance_right = 0;
+ 		}
  
-diff --git a/fs/btrfs/extent_map.c b/fs/btrfs/extent_map.c
-index e0715fcfb11e..26f9ac719d20 100644
---- a/fs/btrfs/extent_map.c
-+++ b/fs/btrfs/extent_map.c
-@@ -13,7 +13,7 @@ int __init extent_map_init(void)
- {
- 	extent_map_cache = kmem_cache_create("btrfs_extent_map",
- 			sizeof(struct extent_map), 0,
--			SLAB_RECLAIM_ACCOUNT | SLAB_MEM_SPREAD, NULL);
-+			SLAB_MEM_SPREAD, NULL);
- 	if (!extent_map_cache)
- 		return -ENOMEM;
- 	return 0;
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index e0c9bd3fb02d..55e4d36f0c6a 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -2977,7 +2977,7 @@ int btrfs_auto_defrag_init(void)
- {
- 	btrfs_inode_defrag_cachep = kmem_cache_create("btrfs_inode_defrag",
- 					sizeof(struct inode_defrag), 0,
--					SLAB_RECLAIM_ACCOUNT | SLAB_MEM_SPREAD,
-+					SLAB_MEM_SPREAD,
- 					NULL);
- 	if (!btrfs_inode_defrag_cachep)
- 		return -ENOMEM;
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index d2be95cfb6d1..66051c02b6de 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -9383,25 +9383,25 @@ int btrfs_init_cachep(void)
- 
- 	btrfs_trans_handle_cachep = kmem_cache_create("btrfs_trans_handle",
- 			sizeof(struct btrfs_trans_handle), 0,
--			SLAB_RECLAIM_ACCOUNT | SLAB_MEM_SPREAD, NULL);
-+			SLAB_TEMPORARY | SLAB_MEM_SPREAD, NULL);
- 	if (!btrfs_trans_handle_cachep)
- 		goto fail;
- 
- 	btrfs_transaction_cachep = kmem_cache_create("btrfs_transaction",
- 			sizeof(struct btrfs_transaction), 0,
--			SLAB_RECLAIM_ACCOUNT | SLAB_MEM_SPREAD, NULL);
-+			SLAB_TEMPORARY | SLAB_MEM_SPREAD, NULL);
- 	if (!btrfs_transaction_cachep)
- 		goto fail;
- 
- 	btrfs_path_cachep = kmem_cache_create("btrfs_path",
- 			sizeof(struct btrfs_path), 0,
--			SLAB_RECLAIM_ACCOUNT | SLAB_MEM_SPREAD, NULL);
-+			SLAB_MEM_SPREAD, NULL);
- 	if (!btrfs_path_cachep)
- 		goto fail;
- 
- 	btrfs_free_space_cachep = kmem_cache_create("btrfs_free_space",
- 			sizeof(struct btrfs_free_space), 0,
--			SLAB_RECLAIM_ACCOUNT | SLAB_MEM_SPREAD, NULL);
-+			SLAB_MEM_SPREAD, NULL);
- 	if (!btrfs_free_space_cachep)
- 		goto fail;
- 
-diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
-index e96634a725c3..c9fa1661277c 100644
---- a/fs/btrfs/ordered-data.c
-+++ b/fs/btrfs/ordered-data.c
-@@ -1121,7 +1121,7 @@ int __init ordered_data_init(void)
- {
- 	btrfs_ordered_extent_cache = kmem_cache_create("btrfs_ordered_extent",
- 				     sizeof(struct btrfs_ordered_extent), 0,
--				     SLAB_RECLAIM_ACCOUNT | SLAB_MEM_SPREAD,
-+				     SLAB_MEM_SPREAD,
- 				     NULL);
- 	if (!btrfs_ordered_extent_cache)
- 		return -ENOMEM;
+diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+index c05f69a..aa4475e 100644
+--- a/fs/btrfs/tree-log.c
++++ b/fs/btrfs/tree-log.c
+@@ -4703,6 +4703,10 @@ static int btrfs_log_inode(struct btrfs_trans_handle *trans,
+ 		ins_nr = 0;
+ 		ret = btrfs_search_forward(root, &min_key,
+ 					   path, trans->transid);
++		if (ret < 0) {
++			err = ret;
++			goto out_unlock;
++		}
+ 		if (ret != 0)
+ 			break;
+ again:
 -- 
-2.7.4
+2.5.5
 

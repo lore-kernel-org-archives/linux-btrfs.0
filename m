@@ -1,16 +1,16 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
 Received: from cn.fujitsu.com ([222.73.24.84]:62265 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1751987AbcF3JTE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 30 Jun 2016 05:19:04 -0400
+	id S1752001AbcF3JTG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 30 Jun 2016 05:19:06 -0400
 Received: from adam-work.localdomain (unknown [10.167.226.34])
-	by cn.fujitsu.com (Postfix) with ESMTP id 1B9B94043CEB
-	for <linux-btrfs@vger.kernel.org>; Thu, 30 Jun 2016 17:18:34 +0800 (CST)
+	by cn.fujitsu.com (Postfix) with ESMTP id 26DB04043CF9
+	for <linux-btrfs@vger.kernel.org>; Thu, 30 Jun 2016 17:18:35 +0800 (CST)
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs: dedupe: Introduce new reconfigure ioctl
-Date: Thu, 30 Jun 2016 17:18:20 +0800
-Message-Id: <20160630091833.26975-3-quwenruo@cn.fujitsu.com>
+Subject: [PATCH V12 14/14] btrfs: dedupe: Introduce new reconfigure ioctl
+Date: Thu, 30 Jun 2016 17:18:33 +0800
+Message-Id: <20160630091833.26975-16-quwenruo@cn.fujitsu.com>
 In-Reply-To: <20160630091833.26975-1-quwenruo@cn.fujitsu.com>
 References: <20160630091833.26975-1-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -74,7 +74,7 @@ Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
  4 files changed, 143 insertions(+), 25 deletions(-)
 
 diff --git a/fs/btrfs/dedupe.c b/fs/btrfs/dedupe.c
-index 4484e30..cb23bea 100644
+index ad1bb82..a3f4f0d 100644
 --- a/fs/btrfs/dedupe.c
 +++ b/fs/btrfs/dedupe.c
 @@ -41,6 +41,40 @@ static inline struct inmem_hash *inmem_alloc_hash(u16 algo)
@@ -191,7 +191,7 @@ index 4484e30..cb23bea 100644
  	if (blocksize > BTRFS_DEDUPE_BLOCKSIZE_MAX ||
  	    blocksize < BTRFS_DEDUPE_BLOCKSIZE_MIN ||
  	    blocksize < fs_info->tree_root->sectorsize ||
-@@ -144,7 +203,8 @@ static int check_dedupe_parameter(struct btrfs_fs_info *fs_info,
+@@ -145,7 +204,8 @@ static int check_dedupe_parameter(struct btrfs_fs_info *fs_info,
  	/* Backend specific check */
  	if (backend == BTRFS_DEDUPE_BACKEND_INMEMORY) {
  		/* only one limit is accepted for enable*/
@@ -201,7 +201,7 @@ index 4484e30..cb23bea 100644
  			dargs->limit_nr = 0;
  			dargs->limit_mem = 0;
  			return -EINVAL;
-@@ -177,18 +237,19 @@ static int check_dedupe_parameter(struct btrfs_fs_info *fs_info,
+@@ -178,18 +238,19 @@ static int check_dedupe_parameter(struct btrfs_fs_info *fs_info,
  	return 0;
  }
  
@@ -230,7 +230,7 @@ index 4484e30..cb23bea 100644
  		/* Check if we are re-enable for different dedupe config */
  		if (dedupe_info->blocksize != dargs->blocksize ||
  		    dedupe_info->hash_algo != dargs->hash_algo ||
-@@ -215,6 +276,28 @@ enable:
+@@ -216,6 +277,28 @@ enable:
  	return ret;
  }
  
@@ -284,10 +284,10 @@ index 8259e38..f8335e0 100644
   /*
   * Get inband dedupe info
 diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 3e82ae7..729cda7 100644
+index a172f2d..bea7701 100644
 --- a/fs/btrfs/ioctl.c
 +++ b/fs/btrfs/ioctl.c
-@@ -3381,6 +3381,19 @@ static long btrfs_ioctl_dedupe_ctl(struct btrfs_root *root, void __user *args)
+@@ -3311,6 +3311,19 @@ static long btrfs_ioctl_dedupe_ctl(struct btrfs_root *root, void __user *args)
  		btrfs_dedupe_status(fs_info, dargs);
  		mutex_unlock(&fs_info->dedupe_ioctl_lock);
  		break;

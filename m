@@ -1,54 +1,51 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:20606 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:26407 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1751989AbcF3J3d (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 30 Jun 2016 05:29:33 -0400
+	id S1751885AbcF3J3e (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 30 Jun 2016 05:29:34 -0400
 Received: from adam-work.localdomain (unknown [10.167.226.34])
-	by cn.fujitsu.com (Postfix) with ESMTP id 890A14056401
+	by cn.fujitsu.com (Postfix) with ESMTP id E1E7D4056404
 	for <linux-btrfs@vger.kernel.org>; Thu, 30 Jun 2016 17:24:40 +0800 (CST)
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v5 3/4] fstests: btrfs: Add testcase for btrfs dedupe and metadata balance race test
-Date: Thu, 30 Jun 2016 17:24:38 +0800
-Message-Id: <20160630092439.27693-4-quwenruo@cn.fujitsu.com>
+Subject: [PATCH v5 4/4] fstests: btrfs: Test inband dedupe with data balance.
+Date: Thu, 30 Jun 2016 17:24:39 +0800
+Message-Id: <20160630092439.27693-5-quwenruo@cn.fujitsu.com>
 In-Reply-To: <20160630092439.27693-1-quwenruo@cn.fujitsu.com>
 References: <20160630092439.27693-1-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Btrfs balance with inband dedupe enable/disable will expose a lot of
-hidden dedupe bug:
+Btrfs balance will reloate date extent, but its hash is removed too late
+at run_delayed_ref() time, which will cause extent ref increased
+during balance, cause either find_data_references() gives WARN_ON()
+or even run_delayed_refs() fails and cause transaction abort.
 
-1) Enable/disable race bug
-2) Btrfs dedupe tree balance corrupted delayed_ref
-3) Btrfs disable and balance will cause balance BUG_ON
+Add such concurrency test for inband dedupe and data balance.
 
-Reported-by: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- tests/btrfs/201     | 112 ++++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/201.out |   2 +
+ tests/btrfs/203     | 110 ++++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/203.out |   3 ++
  tests/btrfs/group   |   1 +
- 3 files changed, 115 insertions(+)
- create mode 100755 tests/btrfs/201
- create mode 100644 tests/btrfs/201.out
+ 3 files changed, 114 insertions(+)
+ create mode 100755 tests/btrfs/203
+ create mode 100644 tests/btrfs/203.out
 
-diff --git a/tests/btrfs/201 b/tests/btrfs/201
+diff --git a/tests/btrfs/203 b/tests/btrfs/203
 new file mode 100755
-index 0000000..152e9f7
+index 0000000..96af734
 --- /dev/null
-+++ b/tests/btrfs/201
-@@ -0,0 +1,112 @@
++++ b/tests/btrfs/203
+@@ -0,0 +1,110 @@
 +#! /bin/bash
-+# FS QA Test 201
++# FS QA Test 203
 +#
-+# Btrfs inband dedup enable/disable race with metadata balance
++# Btrfs inband dedupe with balance concurrency test
 +#
-+# This tests will test the following bugs exposed in development:
-+# 1) enable/disable race
-+# 2) tree balance cause delayed ref corruption
-+# 3) disable and balance cause BUG_ON
++# This can spot inband dedupe error which will increase delayed ref on
++# an data extent inside RO block group
 +#
 +#-----------------------------------------------------------------------
 +# Copyright (c) 2016 Fujitsu.  All Rights Reserved.
@@ -80,19 +77,18 @@ index 0000000..152e9f7
 +_cleanup()
 +{
 +	cd /
-+	rm -f $tmp.*
-+	killall $FSSTRESS_PROG &> /dev/null
-+	kill $trigger_pid &> /dev/null
++	kill $populate_pid &> /dev/null
 +	kill $balance_pid &> /dev/null
 +	wait
-+
-+	# See comment later
++	# Check later comment for reason
 +	$BTRFS_UTIL_PROG balance cancel $SCRATCH_MNT &> /dev/null
++	rm -f $tmp.*
 +}
 +
 +# get standard environment, filters and checks
 +. ./common/rc
 +. ./common/filter
++. ./common/reflink
 +
 +# remove previous $seqres.full before test
 +rm -f $seqres.full
@@ -102,73 +98,75 @@ index 0000000..152e9f7
 +_supported_fs btrfs
 +_supported_os Linux
 +_require_scratch
++_require_cp_reflink
 +_require_btrfs_subcommand dedupe
 +_require_btrfs_fs_feature dedupe
 +
-+# Use 64K dedupe size to keep compatibility for 64K page size
-+dedupe_bs=64K
++dedupe_bs=128k
++file_size_in_kilo=4096
++init_file=$SCRATCH_MNT/foo
++run_time=$((60 * $TIME_FACTOR))
 +
 +_scratch_mkfs >> $seqres.full 2>&1
 +_scratch_mount
 +
-+mkdir -p $SCRATCH_MNT/stressdir
-+
-+runtime=$((60 * $TIME_FACTOR))
-+
-+trigger_work()
++do_dedupe_balance_test()
 +{
-+	while true; do
-+		_run_btrfs_util_prog dedupe enable -f -s inmemory \
-+			-b $dedupe_bs $SCRATCH_MNT
-+		sleep 1
-+		_run_btrfs_util_prog dedupe disable $SCRATCH_MNT
-+		sleep 1
-+	done
++	_run_btrfs_util_prog dedupe enable -f -b $dedupe_bs -s inmemory \
++		$SCRATCH_MNT
++
++	# create the initial file and fill hash pool
++	$XFS_IO_PROG -f -c "pwrite -S 0x0 -b $dedupe_bs 0 $dedupe_bs" -c "fsync" \
++		$init_file | _filter_xfs_io
++
++	_btrfs_stress_balance $SCRATCH_MNT >/dev/null 2>&1 &
++	balance_pid=$!
++
++	# Populate fs with all 0 data, to trigger enough in-band dedupe work
++	# to race with balance
++	_populate_fs -n 5 -f 10000000 -d 1 -r $SCRATCH_MNT \
++		-s $file_size_in_kilo &> /dev/null &
++	populate_pid=$!
++
++	sleep $run_time
++
++	kill $populate_pid
++	kill $balance_pid
++	wait
++
++	# Sometimes even we killed $balance_pid and wait returned,
++	# balance may still be running, use balance cancel to wait it.
++	# As this is just a workaround, we don't want it pollute seqres
++	# so call $BTRFS_UTIL_PROG directly
++	$BTRFS_UTIL_PROG balance cancel $SCRATCH_MNT &> /dev/null
++
++	rm $SCRATCH_MNT/* -rf &> /dev/null
++	_run_btrfs_util_prog dedupe disable $SCRATCH_MNT
 +}
 +
-+# redirect all output, as error output like 'balance cancelled by user'
-+# will populuate the golden output.
-+_btrfs_stress_balance -m $SCRATCH_MNT &> /dev/null &
-+balance_pid=$!
++do_dedupe_balance_test
 +
-+$FSSTRESS_PROG $(_scale_fsstress_args -p 1 -n 10000000) $FSSTRESS_AVOID \
-+	-d $SCRATCH_MNT/stressdir > /dev/null 2>&1 &
-+
-+trigger_work &
-+trigger_pid=$!
-+
-+sleep $runtime
-+killall $FSSTRESS_PROG &> /dev/null
-+kill $trigger_pid &> /dev/null
-+kill $balance_pid &> /dev/null
-+wait
-+
-+# Manually stop balance as it's possible balance is still running for a short
-+# time. And we don't want to populate $seqres.full, so call $BTRFS_UTIL_PROG
-+# directly
-+$BTRFS_UTIL_PROG balance cancel $SCRATCH_MNT &> /dev/null
-+
-+echo "Silence is golden"
 +# success, all done
 +status=0
 +exit
-diff --git a/tests/btrfs/201.out b/tests/btrfs/201.out
+diff --git a/tests/btrfs/203.out b/tests/btrfs/203.out
 new file mode 100644
-index 0000000..5ac973f
+index 0000000..404394c
 --- /dev/null
-+++ b/tests/btrfs/201.out
-@@ -0,0 +1,2 @@
-+QA output created by 201
-+Silence is golden
++++ b/tests/btrfs/203.out
+@@ -0,0 +1,3 @@
++QA output created by 203
++wrote 131072/131072 bytes at offset 0
++XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
 diff --git a/tests/btrfs/group b/tests/btrfs/group
-index fc9577b..46f5c8e 100644
+index 46f5c8e..5dac856 100644
 --- a/tests/btrfs/group
 +++ b/tests/btrfs/group
-@@ -127,3 +127,4 @@
- 122 auto quick snapshot qgroup
+@@ -128,3 +128,4 @@
  123 auto quick qgroup
  200 auto ib-dedupe
-+201 auto ib-dedupe
+ 201 auto ib-dedupe
++203 auto ib-dedupe balance
 -- 
 2.9.0
 

@@ -1,121 +1,98 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from syrinx.knorrie.org ([82.94.188.77]:53039 "EHLO
-	syrinx.knorrie.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751287AbcFWX32 (ORCPT
+Received: from mail-wm0-f46.google.com ([74.125.82.46]:34874 "EHLO
+	mail-wm0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751839AbcF3LST (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 23 Jun 2016 19:29:28 -0400
-Subject: Re: Hello world, python-btrfs
-To: dsterba@suse.cz, linux-btrfs <linux-btrfs@vger.kernel.org>
-References: <57647351.4010603@mendix.com>
- <20160623142648.GE4915@twin.jikos.cz>
-From: Hans van Kranenburg <hans.van.kranenburg@mendix.com>
-Message-ID: <d97ae16c-3348-9952-2416-acc60b5eb817@mendix.com>
-Date: Fri, 24 Jun 2016 01:29:22 +0200
+	Thu, 30 Jun 2016 07:18:19 -0400
+Received: by mail-wm0-f46.google.com with SMTP id v199so216802884wmv.0
+        for <linux-btrfs@vger.kernel.org>; Thu, 30 Jun 2016 04:18:17 -0700 (PDT)
+To: Tejun Heo <tj@kernel.org>, Jan Kara <jack@suse.com>
+Cc: "Linux-Kernel@Vger. Kernel. Org" <linux-kernel@vger.kernel.org>,
+        dvyukov@google.com, linux-btrfs@vger.kernel.org,
+        SiteGround Operations <operations@siteground.com>
+From: Nikolay Borisov <kernel@kyup.com>
+Subject: GPF in __mark_inode_dirty due to locked_inode_to_wb_and_lock_list
+ returning NULL
+Message-ID: <5774FFF6.3030408@kyup.com>
+Date: Thu, 30 Jun 2016 14:18:14 +0300
 MIME-Version: 1.0
-In-Reply-To: <20160623142648.GE4915@twin.jikos.cz>
-Content-Type: text/plain; charset=windows-1252; format=flowed
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+Hello, 
 
-On 06/23/2016 04:26 PM, David Sterba wrote:
-> On Sat, Jun 18, 2016 at 12:01:53AM +0200, Hans van Kranenburg wrote:
->> proof-of-concept level scripts to be able to debug my btrfs file
->> systems, the inevitable happened:
->>
->> https://github.com/knorrie/python-btrfs/
->>
->> Currently, the primary goal of this module is to be able to inspect the
->> internals of an existing filesystem for educational purposes.
->
-> Looks great, I like.
+In light of the discussion in https://patchwork.kernel.org/patch/9187411/ and 
+the discussion at https://groups.google.com/forum/#!topic/syzkaller/XvxH3cBQ134
 
-Thanks, much appreciated!
+I think the following might be related:
 
-> Python is better language for prototyping various
-> things, also more convenient to write one-shot scripts to do specific
-> rescue tasks.
->
->> The python module acts as a wrapper around the low level kernel calls
->> and btrfs data structures, presenting them as python objects with
->> interesting attributes and references to other objects.
->
-> I guess it could be extended to read the filesystem objects directly
-> from the image, so it's not only built around the search ioctl.
->
->> Why?!
->>
->> * Because it's fun!
->
-> Best reason ever!
+[1416412.898946] BUG: unable to handle kernel NULL pointer dereference at 0000000000000018
+[1416412.899217] IP: [<ffffffff811cab1d>] __mark_inode_dirty+0x21d/0x410
+[1416412.899438] PGD 0 
+[1416412.899647] Oops: 0000 [#1] SMP 
+[1416412.903807] CPU: 2 PID: 11154 Comm: umount Tainted: P        W  O    4.4.9-clouder1 #20
+[1416412.903980] Hardware name: Supermicro X9DRD-7LN4F(-JBOD)/X9DRD-EF/X9DRD-7LN4F, BIOS 3.0a 12/05/2013
+[1416412.904270] task: ffff880466f18000 ti: ffff8802651d0000 task.ti: ffff8802651d0000
+[1416412.907150] RIP: 0010:[<ffffffff811cab1d>]  [<ffffffff811cab1d>] __mark_inode_dirty+0x21d/0x410
+[1416412.907487] RSP: 0018:ffff8802651d3828  EFLAGS: 00010282
+[1416412.907656] RAX: 0000000000000000 RBX: ffff8801f71c3c48 RCX: 000000000000001a
+[1416412.907829] RDX: 0000000000000000 RSI: 0000000000000004 RDI: ffff88034a44c398
+[1416412.908001] RBP: ffff8802651d38d8 R08: 0000000000000000 R09: 0000000000000000
+[1416412.908173] R10: 0000000000000000 R11: ffff88020e17d468 R12: 0000000000000000
+[1416412.908343] R13: ffff88034a44c340 R14: 0000000000000000 R15: 0000000000000000
+[1416412.908516] FS:  00007fd09f80f740(0000) GS:ffff88047fc40000(0000) knlGS:0000000000000000
+[1416412.908690] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+[1416412.908859] CR2: 0000000000000018 CR3: 00000004671da000 CR4: 00000000000406e0
+[1416412.909030] Stack:
+[1416412.909192]  ffff8802651d38d8 ffffffffa0912043 ffff8802651d38e8 ffffffffa0911de3
+[1416412.909551]  ffff8802651d38a4 ffff8802a41fcfa0 0000000000000000 0000000000000003
+[1416412.909908]  ffff8801f71c3c48 ffff88046f029000 ffff8802651d38d8 ffffffff8113d2ed
+[1416412.910263] Call Trace:
+[1416412.910455]  [<ffffffffa0912043>] ? __set_extent_bit+0x393/0x5e0 [btrfs]
+[1416412.910642]  [<ffffffffa0911de3>] ? __set_extent_bit+0x133/0x5e0 [btrfs]
+[1416412.910816]  [<ffffffff8113d2ed>] ? account_page_dirtied+0xed/0x1b0
+[1416412.910987]  [<ffffffff8113d486>] __set_page_dirty_nobuffers+0xd6/0x150
+[1416412.911173]  [<ffffffffa08f2a0e>] btrfs_set_page_dirty+0xe/0x10 [btrfs]
+[1416412.911346]  [<ffffffff81139c61>] set_page_dirty+0x41/0x70
+[1416412.911530]  [<ffffffffa090376a>] btrfs_dirty_pages+0x7a/0xb0 [btrfs]
+[1416412.911718]  [<ffffffffa093a263>] __btrfs_write_out_cache+0x383/0x430 [btrfs]
+[1416412.911903]  [<ffffffffa08d360e>] ? btrfs_free_reserved_data_space_noquota+0x5e/0x130 [btrfs]
+[1416412.912208]  [<ffffffffa093be8f>] btrfs_write_out_cache+0xaf/0x120 [btrfs]
+[1416412.912391]  [<ffffffffa08dbb7f>] btrfs_start_dirty_block_groups+0x24f/0x490 [btrfs]
+[1416412.912566]  [<ffffffff8107adb2>] ? __might_sleep+0x52/0x90
+[1416412.912750]  [<ffffffffa08efe63>] btrfs_commit_transaction+0x163/0xb70 [btrfs]
+[1416412.912933]  [<ffffffffa08f0ccd>] ? start_transaction+0x9d/0x4e0 [btrfs]
+[1416412.913119]  [<ffffffffa090bf4b>] ? btrfs_wait_ordered_roots+0x1bb/0x1f0 [btrfs]
+[1416412.913302]  [<ffffffffa08bb0d0>] btrfs_sync_fs+0x70/0x150 [btrfs]
+[1416412.913475]  [<ffffffff811d3e10>] __sync_filesystem+0x30/0x50
+[1416412.913645]  [<ffffffff811d3e72>] sync_filesystem+0x42/0x60
+[1416412.913816]  [<ffffffff811a2dab>] generic_shutdown_super+0x2b/0x100
+[1416412.913987]  [<ffffffff811a2f76>] kill_anon_super+0x16/0x30
+[1416412.914165]  [<ffffffffa08beeae>] btrfs_kill_super+0x1e/0x130 [btrfs]
+[1416412.914338]  [<ffffffff811a31b3>] deactivate_locked_super+0x53/0x90
+[1416412.914507]  [<ffffffff811a3651>] deactivate_super+0x51/0x70
+[1416412.914679]  [<ffffffff811bf4ef>] cleanup_mnt+0x3f/0x80
+[1416412.914852]  [<ffffffff811bf582>] __cleanup_mnt+0x12/0x20
+[1416412.915028]  [<ffffffff81072968>] task_work_run+0x68/0xb0
+[1416412.915203]  [<ffffffff81002306>] exit_to_usermode_loop+0xe6/0xf0
+[1416412.915376]  [<ffffffff811b75ad>] ? dput+0x11d/0x240
+[1416412.915547]  [<ffffffff81002600>] syscall_return_slowpath+0xa0/0x110
+[1416412.915719]  [<ffffffff81002017>] ? trace_hardirqs_on_thunk+0x17/0x19
+[1416412.915893]  [<ffffffff8164302c>] int_ret_from_sys_call+0x25/0x9f
 
-Moo!
+The faulting instructions are: 
 
->> * Because I get sick of using horrible ducttape regex solutions to
->> programmatically parse human readable output of external tools to
->> implement monitoring tools~~!11one.
+0xffffffff811cab12 <__mark_inode_dirty+530>:    callq  0xffffffff811c9d80 <locked_inode_to_wb_and_lock_list>
+0xffffffff811cab17 <__mark_inode_dirty+535>:    mov    %rax,%r13      ; move bdi_writeback to r13
+0xffffffff811cab1a <__mark_inode_dirty+538>:    mov    (%rax),%rax    ; rax = bdi_write-back->bdi
+0xffffffff811cab1d <__mark_inode_dirty+541>:    testb  $0x2,0x18(%rax) ; bdi_cap_writeback_dirty(wb->bdi) 
 
-This is actually the main reason I started it. Or was it being able to 
-see where balance got the usage information from...
+So we call locked_inode_to_wb_and_lock_list, and then get the bdi_writeback->bdi, 
+which actually is null. As a matter of fact the whole struct bdi_writeback is null
+(not the pointer to it). Is this possible to stem from the same issue discussed
+in the referenced email threads or is it a different, btrfs-specific problem. 
 
->> * Because I might to be able to help other people that also want to
->> learn the internals of btrfs.
->> * Much more...
->>
->> How?
->>
->> * It's a python library, so the code will have a decent level of
->> pythonicity. The ioctl search returns a generator, the search key is a
->> nice object you can just increment etc...
->> * This is a work in progress. I can only add support for parts of btrfs
->> that I understand myself first.
->
-> My question is whether it sounds like a good idea to host the python
-> bindings inside btrfs-progs or not.
+Regards, 
+Nikolay 
 
-Whoa, hold your horses!
-
-> I can imagine creating scripts to
-> craft images for testing or verifying results of fsck, so it would be
-> more convenient to keep them in one place (but using a git submodule
-> instead would not be a big deal).
-
-python-btrfs is just a library. You can just clone the git somewhere, 
-start hacking on it and put it in your python path, or pip install or 
-apt-get install python-btrfs etc...
-
-Programs that use it can be anywhere. What I have in examples/ now 
-should probably end up either in howto style documentation or in proper 
-tests for the lib (which requires keeping known-state filesystem images 
-to test on etc, exploding into a new level of whoa).
-
-> I'm mostly interested in the object representation of the filesystem
-> objects and basic API around that, so if you have other plans with
-> python-btrfs, we can at least share some of the code. My python-fu is
-> not that strong so I'd rely on you or others to maintain that if you're
-> interested.
-
-Ok, I added a little TODO:
-https://github.com/knorrie/python-btrfs/blob/master/TODO.md
-
-There's a few things I want to do first at least, which are completing 
-to support the full set of data structures using the kernel API, 
-finishing to move existing code that I have lying around to use the new 
-lib and a bit of extra info to help interested sysadmin/programmers to 
-start using the library to peek around in their own filesystem a bit to 
-see what's going on.
-
-I haven't looked at how the btrfs-progs treat disks directly, but would 
-certainly be interested in learning about that.
-
- From what you say, I feel that you're thinking about not only looking 
-around in filesystems, but having ways to manipulate them?
-
-Can you provide a more concrete example of "craft images for testing" or 
-related ideas about how this project could help during regular btrfs 
-development?
-
--- 
-Hans van Kranenburg - System / Network Engineer
-T +31 (0)10 2760434 | hans.van.kranenburg@mendix.com | www.mendix.com

@@ -1,430 +1,310 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:48595 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750774AbcFQUiB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 17 Jun 2016 16:38:01 -0400
-From: Mark Fasheh <mfasheh@suse.de>
+Received: from cn.fujitsu.com ([222.73.24.84]:20606 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1751885AbcF3J16 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 30 Jun 2016 05:27:58 -0400
+Received: from adam-work.localdomain (unknown [10.167.226.34])
+	by cn.fujitsu.com (Postfix) with ESMTP id 43E434056403
+	for <linux-btrfs@vger.kernel.org>; Thu, 30 Jun 2016 17:24:32 +0800 (CST)
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.cz>, Qu Wenruo <quwenruo@cn.fujitsu.com>,
-        Mark Fasheh <mfasheh@suse.de>
-Subject: [PATCH 2/2] btrfs-progs: btrfsck: write corrected qgroup info to disk
-Date: Fri, 17 Jun 2016 13:37:49 -0700
-Message-Id: <1466195869-28109-3-git-send-email-mfasheh@suse.de>
-In-Reply-To: <1466195869-28109-1-git-send-email-mfasheh@suse.de>
-References: <1466195869-28109-1-git-send-email-mfasheh@suse.de>
+Subject: [PATCH v9 1/5] btrfs-progs: Basic framework for dedupe-inband command group
+Date: Thu, 30 Jun 2016 17:24:27 +0800
+Message-Id: <20160630092431.27636-2-quwenruo@cn.fujitsu.com>
+In-Reply-To: <20160630092431.27636-1-quwenruo@cn.fujitsu.com>
+References: <20160630092431.27636-1-quwenruo@cn.fujitsu.com>
+MIME-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Now that we can verify all qgroups, we can write the corrected qgroups out
-to disk when '--repair' is specified. The qgroup status item is also updated
-to clear any out-of-date state. The repair_ functions were modeled after the
-inode repair code in cmds-check.c.
+Add basic ioctl header and command group framework for later use.
+Alone with basic man page doc.
 
-I also renamed the 'scan' member of qgroup_status_item to 'rescan' in order
-to keep consistency with the kernel.
-
-Testing this was easy, I just reproduced qgroup inconsistencies via the
-usual routes and had btrfsck fix them.
-
-Signed-off-by: Mark Fasheh <mfasheh@suse.de>
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- cmds-check.c    |  15 +++--
- ctree.h         |  10 ++--
- print-tree.c    |   2 +-
- qgroup-verify.c | 178 ++++++++++++++++++++++++++++++++++++++++++++++++++++----
- qgroup-verify.h |   3 +-
- repair.c        |   2 +
- repair.h        |   2 +
- 7 files changed, 189 insertions(+), 23 deletions(-)
+ Documentation/Makefile.in                  |  1 +
+ Documentation/btrfs-dedupe-inband.asciidoc | 40 +++++++++++++++++++++++++
+ Documentation/btrfs.asciidoc               |  4 +++
+ Makefile.in                                |  3 +-
+ btrfs.c                                    |  2 ++
+ cmds-dedupe-ib.c                           | 48 ++++++++++++++++++++++++++++++
+ commands.h                                 |  2 ++
+ dedupe-ib.h                                | 41 +++++++++++++++++++++++++
+ ioctl.h                                    | 35 ++++++++++++++++++++++
+ 9 files changed, 175 insertions(+), 1 deletion(-)
+ create mode 100644 Documentation/btrfs-dedupe-inband.asciidoc
+ create mode 100644 cmds-dedupe-ib.c
+ create mode 100644 dedupe-ib.h
 
-diff --git a/cmds-check.c b/cmds-check.c
-index 7b65f89..b7f4bd5 100644
---- a/cmds-check.c
-+++ b/cmds-check.c
-@@ -67,7 +67,6 @@ static u64 data_bytes_referenced = 0;
- static int found_old_backref = 0;
- static LIST_HEAD(duplicate_extents);
- static LIST_HEAD(delete_items);
--static int repair = 0;
- static int no_holes = 0;
- static int init_extent_tree = 0;
- static int check_data_csum = 0;
-@@ -9543,6 +9542,7 @@ int cmd_check(int argc, char **argv)
- 	int init_csum_tree = 0;
- 	int readonly = 0;
- 	int qgroup_report = 0;
-+	int qgroups_repaired = 0;
- 	enum btrfs_open_ctree_flags ctree_flags = OPEN_CTREE_EXCLUSIVE;
+diff --git a/Documentation/Makefile.in b/Documentation/Makefile.in
+index aea2cb4..7db4164 100644
+--- a/Documentation/Makefile.in
++++ b/Documentation/Makefile.in
+@@ -28,6 +28,7 @@ MAN8_TXT += btrfs-qgroup.asciidoc
+ MAN8_TXT += btrfs-replace.asciidoc
+ MAN8_TXT += btrfs-restore.asciidoc
+ MAN8_TXT += btrfs-property.asciidoc
++MAN8_TXT += btrfs-dedupe-inband.asciidoc
  
- 	while(1) {
-@@ -9698,7 +9698,7 @@ int cmd_check(int argc, char **argv)
- 		       uuidbuf);
- 		ret = qgroup_verify_all(info);
- 		if (ret == 0)
--			ret = report_qgroups(1);
-+			report_qgroups(1);
- 		goto close_out;
- 	}
- 	if (subvolid) {
-@@ -9852,6 +9852,10 @@ int cmd_check(int argc, char **argv)
- 		err = qgroup_verify_all(info);
- 		if (err)
- 			goto out;
-+		report_qgroups(0);
-+		err = repair_qgroups(info, &qgroups_repaired);
-+		if (err)
-+			goto out;
- 	}
- 
- 	if (!list_empty(&root->fs_info->recow_ebs)) {
-@@ -9860,10 +9864,9 @@ int cmd_check(int argc, char **argv)
- 	}
- out:
- 	/* Don't override original ret */
--	if (ret)
--		report_qgroups(0);
--	else
--		ret = report_qgroups(0);
-+	if (!ret && qgroups_repaired)
-+		ret = qgroups_repaired;
+ # Category 5 manual page
+ MAN5_TXT += btrfs-man5.asciidoc
+diff --git a/Documentation/btrfs-dedupe-inband.asciidoc b/Documentation/btrfs-dedupe-inband.asciidoc
+new file mode 100644
+index 0000000..9ee2bc7
+--- /dev/null
++++ b/Documentation/btrfs-dedupe-inband.asciidoc
+@@ -0,0 +1,40 @@
++btrfs-dedupe(8)
++==============
 +
- 	if (found_old_backref) { /*
- 		 * there was a disk format change when mixed
- 		 * backref was in testing tree. The old format
-diff --git a/ctree.h b/ctree.h
-index 86227f8..34c6b73 100644
---- a/ctree.h
-+++ b/ctree.h
-@@ -897,7 +897,7 @@ struct btrfs_qgroup_status_item {
- 	__le64 version;
- 	__le64 generation;
- 	__le64 flags;
--	__le64 scan;		/* progress during scanning */
-+	__le64 rescan;		/* progress during scanning */
- } __attribute__ ((__packed__));
- 
- struct btrfs_block_group_item {
-@@ -2130,8 +2130,8 @@ BTRFS_SETGET_FUNCS(qgroup_status_generation, struct btrfs_qgroup_status_item,
- 		   generation, 64);
- BTRFS_SETGET_FUNCS(qgroup_status_flags, struct btrfs_qgroup_status_item,
- 		   flags, 64);
--BTRFS_SETGET_FUNCS(qgroup_status_scan, struct btrfs_qgroup_status_item,
--		   scan, 64);
-+BTRFS_SETGET_FUNCS(qgroup_status_rescan, struct btrfs_qgroup_status_item,
-+		   rescan, 64);
- 
- BTRFS_SETGET_STACK_FUNCS(stack_qgroup_status_version,
- 			 struct btrfs_qgroup_status_item, version, 64);
-@@ -2139,8 +2139,8 @@ BTRFS_SETGET_STACK_FUNCS(stack_qgroup_status_generation,
- 			 struct btrfs_qgroup_status_item, generation, 64);
- BTRFS_SETGET_STACK_FUNCS(stack_qgroup_status_flags,
- 			 struct btrfs_qgroup_status_item, flags, 64);
--BTRFS_SETGET_STACK_FUNCS(stack_qgroup_status_scan,
--			 struct btrfs_qgroup_status_item, scan, 64);
-+BTRFS_SETGET_STACK_FUNCS(stack_qgroup_status_rescan,
-+			 struct btrfs_qgroup_status_item, rescan, 64);
- 
- /* btrfs_qgroup_info_item */
- BTRFS_SETGET_FUNCS(qgroup_info_generation, struct btrfs_qgroup_info_item,
-diff --git a/print-tree.c b/print-tree.c
-index 746f25b..9f9e11e 100644
---- a/print-tree.c
-+++ b/print-tree.c
-@@ -1037,7 +1037,7 @@ void btrfs_print_leaf(struct btrfs_root *root, struct extent_buffer *l)
- 				btrfs_qgroup_status_generation(l, qg_status),
- 				flags_str,
- 				(unsigned long long)
--				btrfs_qgroup_status_scan(l, qg_status));
-+				btrfs_qgroup_status_rescan(l, qg_status));
- 			break;
- 		case BTRFS_QGROUP_RELATION_KEY:
- 			break;
-diff --git a/qgroup-verify.c b/qgroup-verify.c
-index 23f2961..12921ad 100644
---- a/qgroup-verify.c
-+++ b/qgroup-verify.c
-@@ -29,6 +29,8 @@
- #include "utils.h"
- #include "ulist.h"
- #include "rbtree-utils.h"
-+#include "repair.h"
-+#include "transaction.h"
- 
- #include "qgroup-verify.h"
- 
-@@ -65,6 +67,8 @@ struct qgroup_count {
- 	struct list_head members;
- 
- 	u64 cur_refcnt;
++NAME
++----
++btrfs-dedupe-inband - manage in-band (write time) de-duplication of a btrfs
++filesystem
 +
-+	struct list_head bad_list;
++SYNOPSIS
++--------
++*btrfs dedupe-inband* <subcommand> <args>
++
++DESCRIPTION
++-----------
++*btrfs dedupe-inband* is used to enable/disable or show current in-band de-duplication
++status of a btrfs filesystem.
++
++Kernel support for in-band de-duplication starts from 4.8.
++
++WARNING: In-band de-duplication is still an experimental feautre of btrfs,
++use with caution.
++
++SUBCOMMAND
++----------
++Nothing yet
++
++EXIT STATUS
++-----------
++*btrfs dedupe-inband* returns a zero exit status if it succeeds. Non zero is
++returned in case of failure.
++
++AVAILABILITY
++------------
++*btrfs* is part of btrfs-progs.
++Please refer to the btrfs wiki http://btrfs.wiki.kernel.org for
++further details.
++
++SEE ALSO
++--------
++`mkfs.btrfs`(8),
+diff --git a/Documentation/btrfs.asciidoc b/Documentation/btrfs.asciidoc
+index 6a77a85..8ded842 100644
+--- a/Documentation/btrfs.asciidoc
++++ b/Documentation/btrfs.asciidoc
+@@ -43,6 +43,10 @@ COMMANDS
+ 	Do off-line check on a btrfs filesystem. +
+ 	See `btrfs-check`(8) for details.
+ 
++*dedupe*::
++	Control btrfs in-band(write time) de-duplication. +
++	See `btrfs-dedupe`(8) for details.
++
+ *device*::
+ 	Manage devices managed by btrfs, including add/delete/scan and so
+ 	on. +
+diff --git a/Makefile.in b/Makefile.in
+index ac6b353..5cf0fc2 100644
+--- a/Makefile.in
++++ b/Makefile.in
+@@ -86,7 +86,8 @@ cmds_objects = cmds-subvolume.o cmds-filesystem.o cmds-device.o cmds-scrub.o \
+ 	       cmds-quota.o cmds-qgroup.o cmds-replace.o cmds-check.o \
+ 	       cmds-restore.o cmds-rescue.o chunk-recover.o super-recover.o \
+ 	       cmds-property.o cmds-fi-usage.o cmds-inspect-dump-tree.o \
+-	       cmds-inspect-dump-super.o cmds-inspect-tree-stats.o cmds-fi-du.o
++	       cmds-inspect-dump-super.o cmds-inspect-tree-stats.o cmds-fi-du.o \
++	       cmds-dedupe-ib.o
+ libbtrfs_objects = send-stream.o send-utils.o rbtree.o btrfs-list.o crc32c.o \
+ 		   uuid-tree.o utils-lib.o rbtree-utils.o
+ libbtrfs_headers = send-stream.h send-utils.h send.h rbtree.h btrfs-list.h \
+diff --git a/btrfs.c b/btrfs.c
+index cc70515..06c211b 100644
+--- a/btrfs.c
++++ b/btrfs.c
+@@ -199,6 +199,8 @@ static const struct cmd_group btrfs_cmd_group = {
+ 		{ "receive", cmd_receive, cmd_receive_usage, NULL, 0 },
+ 		{ "quota", cmd_quota, NULL, &quota_cmd_group, 0 },
+ 		{ "qgroup", cmd_qgroup, NULL, &qgroup_cmd_group, 0 },
++		{ "dedupe-inband", cmd_dedupe_ib, NULL, &dedupe_ib_cmd_group,
++			0 },
+ 		{ "replace", cmd_replace, NULL, &replace_cmd_group, 0 },
+ 		{ "help", cmd_help, cmd_help_usage, NULL, 0 },
+ 		{ "version", cmd_version, cmd_version_usage, NULL, 0 },
+diff --git a/cmds-dedupe-ib.c b/cmds-dedupe-ib.c
+new file mode 100644
+index 0000000..160c8ec
+--- /dev/null
++++ b/cmds-dedupe-ib.c
+@@ -0,0 +1,48 @@
++/*
++ * Copyright (C) 2015 Fujitsu.  All rights reserved.
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public
++ * License v2 as published by the Free Software Foundation.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++ * General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public
++ * License along with this program; if not, write to the
++ * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
++ * Boston, MA 021110-1307, USA.
++ */
++
++#include <getopt.h>
++#include <unistd.h>
++#include <sys/ioctl.h>
++
++#include "ctree.h"
++#include "ioctl.h"
++
++#include "commands.h"
++#include "utils.h"
++#include "kerncompat.h"
++#include "dedupe-ib.h"
++
++static const char * const dedupe_ib_cmd_group_usage[] = {
++	"btrfs dedupe-inband <command> [options] <path>",
++	NULL
++};
++
++static const char dedupe_ib_cmd_group_info[] =
++"manage inband(write time) de-duplication";
++
++const struct cmd_group dedupe_ib_cmd_group = {
++	dedupe_ib_cmd_group_usage, dedupe_ib_cmd_group_info, {
++		NULL_CMD_STRUCT
++	}
++};
++
++int cmd_dedupe_ib(int argc, char **argv)
++{
++	return handle_command_group(&dedupe_ib_cmd_group, argc, argv);
++}
+diff --git a/commands.h b/commands.h
+index 94229c1..2002c45 100644
+--- a/commands.h
++++ b/commands.h
+@@ -93,6 +93,7 @@ extern const struct cmd_group inspect_cmd_group;
+ extern const struct cmd_group property_cmd_group;
+ extern const struct cmd_group quota_cmd_group;
+ extern const struct cmd_group qgroup_cmd_group;
++extern const struct cmd_group dedupe_ib_cmd_group;
+ extern const struct cmd_group replace_cmd_group;
+ extern const struct cmd_group rescue_cmd_group;
+ 
+@@ -118,6 +119,7 @@ int cmd_send(int argc, char **argv);
+ int cmd_receive(int argc, char **argv);
+ int cmd_quota(int argc, char **argv);
+ int cmd_qgroup(int argc, char **argv);
++int cmd_dedupe_ib(int argc, char **argv);
+ int cmd_replace(int argc, char **argv);
+ int cmd_restore(int argc, char **argv);
+ int cmd_select_super(int argc, char **argv);
+diff --git a/dedupe-ib.h b/dedupe-ib.h
+new file mode 100644
+index 0000000..02c5f8f
+--- /dev/null
++++ b/dedupe-ib.h
+@@ -0,0 +1,41 @@
++/*
++ * Copyright (C) 2015 Fujitsu.  All rights reserved.
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public
++ * License v2 as published by the Free Software Foundation.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++ * General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public
++ * License along with this program; if not, write to the
++ * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
++ * Boston, MA 021110-1307, USA.
++ */
++
++#ifndef __BTRFS_DEDUPE__
++#define __BTRFS_DEDUPE__
++
++/*
++ * Dedup storage backend
++ * On disk is persist storage but overhead is large
++ * In memory is fast but will lose all its hash on umount
++ */
++#define BTRFS_DEDUPE_BACKEND_INMEMORY		0
++#define BTRFS_DEDUPE_BACKEND_LAST		1
++
++/* Dedup block size limit and default value */
++#define BTRFS_DEDUPE_BLOCKSIZE_MAX	(8 * 1024 * 1024)
++#define BTRFS_DEDUPE_BLOCKSIZE_MIN	(16 * 1024)
++#define BTRFS_DEDUPE_BLOCKSIZE_DEFAULT	(128 * 1024)
++
++/* Default dedupe limit on number of hash */
++#define BTRFS_DEDUPE_LIMIT_NR_DEFAULT	(32 * 1024)
++
++/* Hash algorithm, only support SHA256 yet */
++#define BTRFS_DEDUPE_HASH_SHA256		0
++
++#endif
+diff --git a/ioctl.h b/ioctl.h
+index 5f18bcb..e698ef7 100644
+--- a/ioctl.h
++++ b/ioctl.h
+@@ -503,6 +503,41 @@ struct btrfs_ioctl_get_dev_stats {
+ 	__u64 unused[128 - 2 - BTRFS_DEV_STAT_VALUES_MAX]; /* pad to 1k */
  };
  
- static struct counts_tree {
-@@ -74,6 +78,8 @@ static struct counts_tree {
- 	unsigned int		qgroup_inconsist:1;
- } counts = { .root = RB_ROOT };
- 
-+static LIST_HEAD(bad_qgroups);
++/*
++ * de-duplication control modes
++ * For re-config, enable will handle it
++ */
++#define BTRFS_DEDUPE_CTL_ENABLE	1
++#define BTRFS_DEDUPE_CTL_DISABLE 2
++#define BTRFS_DEDUPE_CTL_STATUS	3
++#define BTRFS_DEDUPE_CTL_RECONF	4
++#define BTRFS_DEDUPE_CTL_LAST	5
 +
- static struct rb_root by_bytenr = RB_ROOT;
- 
- /*
-@@ -817,6 +823,7 @@ static struct qgroup_count *alloc_count(struct btrfs_disk_key *key,
- 			btrfs_qgroup_info_exclusive_compressed(leaf, disk);
- 		INIT_LIST_HEAD(&c->groups);
- 		INIT_LIST_HEAD(&c->members);
-+		INIT_LIST_HEAD(&c->bad_list);
- 
- 		if (insert_count(c)) {
- 			free(c);
-@@ -1243,34 +1250,36 @@ static int report_qgroup_difference(struct qgroup_count *count, int verbose)
- 			print_fields_signed(excl_diff, excl_diff,
- 					    "diff:", "exclusive");
- 	}
--	return (is_different && count->subvol_exists);
++/*
++ * Allow enable command to be executed on dedupe enabled fs.
++ * Make dedupe_enable ioctl to be stateless.
++ *
++ * Or only dedup_reconf ioctl can be executed on dedupe enabled fs
++ */
++#define BTRFS_DEDUPE_FLAG_FORCE		(1 << 0)
++/*
++ * This structure is used for dedupe enable/disable/configure
++ * and status ioctl.
++ * Reserved range should be set to 0xff.
++ */
++struct btrfs_ioctl_dedupe_args {
++	__u16 cmd;		/* In: command */
++	__u64 blocksize;	/* In/Out: blocksize */
++	__u64 limit_nr;		/* In/Out: limit nr for inmem backend */
++	__u64 limit_mem;	/* In/Out: limit mem for inmem backend */
++	__u64 current_nr;	/* Out: current hash nr */
++	__u16 backend;		/* In/Out: current backend */
++	__u16 hash_algo;	/* In/Out: hash algorithm */
++	u8 status;		/* Out: enabled or disabled */
++	u8 flags;		/* In: special flags for ioctl */
++	u8 __unused[472];	/* Pad to 512 bytes */
++};
 +
-+	return is_different;
- }
- 
--int report_qgroups(int all)
-+void report_qgroups(int all)
- {
- 	struct rb_node *node;
- 	struct qgroup_count *c;
--	int ret = 0;
- 
--	if (counts.rescan_running) {
-+	if (!repair && counts.rescan_running) {
- 		if (all) {
- 			printf(
--	"Qgroup rescan is running, qgroup counts difference is expected\n");
-+	"Qgroup rescan is running, a difference in qgroup counts is expected\n");
- 		} else {
- 			printf(
--	"Qgroup rescan is running, ignore qgroup check\n");
--			return ret;
-+	"Qgroup rescan is running, qgroups will not be printed.\n");
-+			return;
- 		}
- 	}
- 	if (counts.qgroup_inconsist && !counts.rescan_running)
--		fprintf(stderr, "Qgroup is already inconsistent before checking\n");
-+		fprintf(stderr, "Qgroup are marked as inconsistent.\n");
- 	node = rb_first(&counts.root);
- 	while (node) {
- 		c = rb_entry(node, struct qgroup_count, rb_node);
--		ret |= report_qgroup_difference(c, all);
-+
-+		if (report_qgroup_difference(c, all))
-+			list_add_tail(&c->bad_list, &bad_qgroups);
-+
- 		node = rb_next(node);
- 	}
--	return ret;
- }
- 
- void free_qgroup_counts(void)
-@@ -1283,6 +1292,8 @@ void free_qgroup_counts(void)
- 	while (node) {
- 		c = rb_entry(node, struct qgroup_count, rb_node);
- 
-+		list_del(&c->bad_list);
-+
- 		list_for_each_entry_safe(glist, tmpglist, &c->groups,
- 					 next_group) {
- 			list_del(&glist->next_group);
-@@ -1418,3 +1429,150 @@ out:
- 	return ret;
- }
- 
-+static int repair_qgroup_info(struct btrfs_fs_info *info,
-+			      struct qgroup_count *count)
-+{
-+	int ret;
-+	struct btrfs_root *root = info->quota_root;
-+	struct btrfs_trans_handle *trans;
-+	struct btrfs_path *path;
-+	struct btrfs_qgroup_info_item *info_item;
-+	struct btrfs_key key;
-+
-+	printf("Repair qgroup %llu/%llu\n", btrfs_qgroup_level(count->qgroupid),
-+	       btrfs_qgroup_subvid(count->qgroupid));
-+
-+	path = btrfs_alloc_path();
-+	if (!path)
-+		return -ENOMEM;
-+
-+	trans = btrfs_start_transaction(root, 1);
-+	if (IS_ERR(trans)) {
-+		btrfs_free_path(path);
-+		return PTR_ERR(trans);
-+	}
-+
-+	key.objectid = 0;
-+	key.type = BTRFS_QGROUP_INFO_KEY;
-+	key.offset = count->qgroupid;
-+	ret = btrfs_search_slot(trans, root, &key, path, 0, 1);
-+	if (ret) {
-+		error("Could not find disk item for qgroup %llu/%llu.\n",
-+		      btrfs_qgroup_level(count->qgroupid),
-+		      btrfs_qgroup_subvid(count->qgroupid));
-+		if (ret > 0)
-+			ret = -ENOENT;
-+		goto out;
-+	}
-+
-+	info_item = btrfs_item_ptr(path->nodes[0], path->slots[0],
-+				   struct btrfs_qgroup_info_item);
-+
-+	btrfs_set_qgroup_info_generation(path->nodes[0], info_item,
-+					 trans->transid);
-+
-+	btrfs_set_qgroup_info_referenced(path->nodes[0], info_item,
-+					 count->info.referenced);
-+	btrfs_set_qgroup_info_referenced_compressed(path->nodes[0], info_item,
-+					    count->info.referenced_compressed);
-+
-+	btrfs_set_qgroup_info_exclusive(path->nodes[0], info_item,
-+					count->info.exclusive);
-+	btrfs_set_qgroup_info_exclusive_compressed(path->nodes[0], info_item,
-+					   count->info.exclusive_compressed);
-+
-+	btrfs_mark_buffer_dirty(path->nodes[0]);
-+
-+out:
-+	btrfs_commit_transaction(trans, root);
-+	btrfs_free_path(path);
-+
-+	return ret;
-+}
-+
-+static int repair_qgroup_status(struct btrfs_fs_info *info)
-+{
-+	int ret;
-+	struct btrfs_root *root = info->quota_root;
-+	struct btrfs_trans_handle *trans;
-+	struct btrfs_path *path;
-+	struct btrfs_key key;
-+	struct btrfs_qgroup_status_item *status_item;
-+
-+	printf("Repair qgroup status item\n");
-+
-+	path = btrfs_alloc_path();
-+	if (!path)
-+		return -ENOMEM;
-+
-+	trans = btrfs_start_transaction(root, 1);
-+	if (IS_ERR(trans)) {
-+		btrfs_free_path(path);
-+		return PTR_ERR(trans);
-+	}
-+
-+	key.objectid = 0;
-+	key.type = BTRFS_QGROUP_STATUS_KEY;
-+	key.offset = 0;
-+	ret = btrfs_search_slot(trans, root, &key, path, 0, 1);
-+	if (ret) {
-+		error("Could not find qgroup status item\n");
-+		if (ret > 0)
-+			ret = -ENOENT;
-+		goto out;
-+	}
-+
-+	status_item = btrfs_item_ptr(path->nodes[0], path->slots[0],
-+				     struct btrfs_qgroup_status_item);
-+	btrfs_set_qgroup_status_flags(path->nodes[0], status_item,
-+				      BTRFS_QGROUP_STATUS_FLAG_ON);
-+	btrfs_set_qgroup_status_rescan(path->nodes[0], status_item, 0);
-+	btrfs_set_qgroup_status_generation(path->nodes[0], status_item,
-+					   trans->transid);
-+
-+	btrfs_mark_buffer_dirty(path->nodes[0]);
-+
-+out:
-+	btrfs_commit_transaction(trans, root);
-+	btrfs_free_path(path);
-+
-+	return ret;
-+}
-+
-+int repair_qgroups(struct btrfs_fs_info *info, int *repaired)
-+{
-+	int ret;
-+	struct qgroup_count *count, *tmpcount;
-+
-+	*repaired = 0;
-+
-+	if (!repair)
-+		return 0;
-+
-+	list_for_each_entry_safe(count, tmpcount, &bad_qgroups, bad_list) {
-+		ret = repair_qgroup_info(info, count);
-+		if (ret) {
-+			goto out;
-+		}
-+
-+		(*repaired)++;
-+
-+		list_del_init(&count->bad_list);
-+	}
-+
-+	/*
-+	 * Do this step last as we want the latest transaction id on
-+	 * our qgroup status to avoid a (useless) warning after
-+	 * mount.
-+	 */
-+	if (*repaired || counts.qgroup_inconsist || counts.rescan_running) {
-+		ret = repair_qgroup_status(info);
-+		if (ret)
-+			goto out;
-+
-+		(*repaired)++;
-+	}
-+
-+out:
-+	return ret;
-+}
-diff --git a/qgroup-verify.h b/qgroup-verify.h
-index 0f8ff9b..d7d83a4 100644
---- a/qgroup-verify.h
-+++ b/qgroup-verify.h
-@@ -23,7 +23,8 @@
- #include "ctree.h"
- 
- int qgroup_verify_all(struct btrfs_fs_info *info);
--int report_qgroups(int all);
-+void report_qgroups(int all);
-+int repair_qgroups(struct btrfs_fs_info *info, int *repaired);
- 
- int print_extent_state(struct btrfs_fs_info *info, u64 subvol);
- 
-diff --git a/repair.c b/repair.c
-index 4f74742..07a1232 100644
---- a/repair.c
-+++ b/repair.c
-@@ -21,6 +21,8 @@
- #include "utils.h"
- #include "repair.h"
- 
-+int repair = 0;
-+
- int btrfs_add_corrupt_extent_record(struct btrfs_fs_info *info,
- 				    struct btrfs_key *first_key,
- 				    u64 start, u64 len, int level)
-diff --git a/repair.h b/repair.h
-index 3fc0e8b..355bbf2 100644
---- a/repair.h
-+++ b/repair.h
-@@ -21,6 +21,8 @@
- 
- #include "ctree.h"
- 
-+extern int repair; /* repair mode */
-+
- struct btrfs_corrupt_block {
- 	struct cache_extent cache;
- 	struct btrfs_key key;
+ /* BTRFS_IOC_SNAP_CREATE is no longer used by the btrfs command */
+ #define BTRFS_QUOTA_CTL_ENABLE	1
+ #define BTRFS_QUOTA_CTL_DISABLE	2
 -- 
-2.1.4
+2.9.0
+
+
 

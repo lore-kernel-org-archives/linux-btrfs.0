@@ -1,58 +1,38 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:18679 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1750882AbcFQOal (ORCPT
+Received: from mail-qk0-f181.google.com ([209.85.220.181]:35113 "EHLO
+	mail-qk0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751865AbcGAAQw (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 17 Jun 2016 10:30:41 -0400
-Date: Fri, 17 Jun 2016 10:30:26 -0400
-From: Chris Mason <clm@fb.com>
-To: David Sterba <dsterba@suse.cz>
-CC: Josef Bacik <jbacik@fb.com>, <linux-btrfs@vger.kernel.org>,
-        <kernel-team@fb.com>
-Subject: Re: [PATCH] Btrfs: track transid for delayed ref flushing
-Message-ID: <20160617143024.GA68324@clm-mbp.thefacebook.com>
-References: <1460410660-17430-1-git-send-email-jbacik@fb.com>
- <20160427135938.pczv7f4ulrvwehqp@floor.thefacebook.com>
- <20160427222951.GO29353@twin.jikos.cz>
+	Thu, 30 Jun 2016 20:16:52 -0400
+Received: by mail-qk0-f181.google.com with SMTP id a125so176914043qkc.2
+        for <linux-btrfs@vger.kernel.org>; Thu, 30 Jun 2016 17:16:52 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"; format=flowed
-In-Reply-To: <20160427222951.GO29353@twin.jikos.cz>
+In-Reply-To: <1fb4624c-4a2f-6076-0883-4a7bff395821@oracle.com>
+References: <CAGqmi75KFyiCzF2J5Xa_a8S27iR6Kp1jxH4JcwHBe1pD8m1egg@mail.gmail.com>
+ <1fb4624c-4a2f-6076-0883-4a7bff395821@oracle.com>
+From: Nicholas D Steeves <nsteeves@gmail.com>
+Date: Thu, 30 Jun 2016 20:16:51 -0400
+Message-ID: <CAD=QJKg9_zeVGS+apkGK6b6n1EC4N=br01aP9Dn=W_ssHzEgcA@mail.gmail.com>
+Subject: Re: RAID1: if one disk failed, what errors are expected?
+To: Anand Jain <anand.jain@oracle.com>
+Cc: Timofey Titovets <nefelim4ag@gmail.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Apr 28, 2016 at 12:29:52AM +0200, David Sterba wrote:
->On Wed, Apr 27, 2016 at 09:59:38AM -0400, Chris Mason wrote:
->> > @@ -2854,9 +2855,16 @@ static void delayed_ref_async_start(struct btrfs_work *work)
->> >
->> >  	async = container_of(work, struct async_delayed_refs, work);
->> >
->> > -	trans = btrfs_join_transaction(async->root);
->> > +	trans = btrfs_attach_transaction(async->root);
->> >  	if (IS_ERR(trans)) {
->> > -		async->error = PTR_ERR(trans);
->> > +		if (PTR_ERR(trans) != -ENOENT)
->> > +			async->error = PTR_ERR(trans);
->> > +		goto done;
->> > +	}
->>
->> This ends up deadlocking because btrfs_attach_transaction waits in ways
->> that join does not.  The differences between these two are really
->> subtle, and we manage to make this mistake every year or so.
->>
->> Subject: [PATCH] btrfs: fix deadlock in delayed_ref_async_start
->>
->> "Btrfs: track transid for delayed ref flushing" was deadlocking on
->> btrfs_attach_transaction because its not safe to call from the async
->> delayed ref start code.  This commit brings back btrfs_join_transaction
->> instead and checks for a blocked commit.
->>
->> Signed-off-by: Josef Bacik <jbacik@fb.com>
->> Signed-off-by: Chris Mason <clm@fb.com>
+On 30 June 2016 at 07:57, Anand Jain <anand.jain@oracle.com> wrote:
 >
->This patch seems to be an incremental but I don't see the original patch
->from Josef merged anywhere (I haven't picked it to for-next yet), are
->you going to commit both?
+> Right. Application shouldn't notice the EIO. First of all,
+> we are not stopping IO to the disk which is pulled out. The
+> below patches 11/13 and 12/13 fixes it.
+>
+>  [PATCH 11/13] btrfs: introduce device dynamic state transition to offline
+> or failed
+>  [PATCH 12/13] btrfs: check device for critical errors and mark failed
 
-Yeah, I'll pull both in.  Thanks!
+When are these two patches expected to hit mainline?  Do you think
+they'll be merged before linux-4.10?
 
--chris
+Cheers,
+Nicholas

@@ -1,46 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wm0-f51.google.com ([74.125.82.51]:38616 "EHLO
-	mail-wm0-f51.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752166AbcGAVum (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 1 Jul 2016 17:50:42 -0400
-Received: by mail-wm0-f51.google.com with SMTP id r201so44870393wme.1
-        for <linux-btrfs@vger.kernel.org>; Fri, 01 Jul 2016 14:50:42 -0700 (PDT)
+Received: from len.romanrm.net ([195.154.117.182]:48538 "EHLO len.romanrm.net"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750803AbcGAW3h (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 1 Jul 2016 18:29:37 -0400
+Date: Sat, 2 Jul 2016 03:29:30 +0500
+From: Roman Mamedov <rm@romanrm.net>
+To: g6094199@freenet.de
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: FYI: *buntu - btrfs kernel error
+Message-ID: <20160702032930.7ccb1d26@natsu>
+In-Reply-To: <dc10db83-ce23-161e-0307-9011f4ed4ec7@chefmail.de>
+References: <dc10db83-ce23-161e-0307-9011f4ed4ec7@chefmail.de>
 MIME-Version: 1.0
-In-Reply-To: <CAJCQCtQ_=Z1f6oO0gtjtA-wKiEL2VsB=iy0sE4AmwHwh-9gYXw@mail.gmail.com>
-References: <CADbsYN2RZ9q7pFSawEkWbTXvomAONz60t7b1Hm6f7Mma=veKgQ@mail.gmail.com>
- <CAJCQCtQheg_PqSaf1EZ7_oHkBBwa=CLSifMbW9=sXNLK7asFng@mail.gmail.com>
- <CADbsYN2Y+UaOVZO_kATeomEy6Xho6kMkY-vgAyKMK4w2MV6VCQ@mail.gmail.com> <CAJCQCtQ_=Z1f6oO0gtjtA-wKiEL2VsB=iy0sE4AmwHwh-9gYXw@mail.gmail.com>
-From: Grey Christoforo <grey@christoforo.net>
-Date: Fri, 1 Jul 2016 22:50:21 +0100
-Message-ID: <CADbsYN15dJa6OszsV3Fia6Qt=87RxuP28swy_s2JFORjOXO4iA@mail.gmail.com>
-Subject: Re: btrfs lockup
-To: Chris Murphy <lists@colorremedies.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: multipart/signed; micalg=pgp-sha1;
+ boundary="Sig_/DeuyC1fU0/dR2LDjCDtwaLb"; protocol="application/pgp-signature"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Jul 1, 2016 at 9:51 PM, Chris Murphy <lists@colorremedies.com> wrote:
-> This is interesting:
->
-> Jul 01 11:56:40 kernel: BTRFS info (device nvme0n1p5): relocating
-> block group 232511242240 flags 1
->
-> a. It's an NVMe drive.
-> b. Btrfs at this time is involved in a balance operation of some sort.
-The balance operation is one I started manually. It's a coincidence
-that it's running at this point and I don't believe it's related to
-the lockups because
-1) I saw the lockups on a previous baobab scan of my
-/var/lib/docker/btrfs/subvolumes when no balance was taking place
-and
-2) after removing all of docker's subvolumes, the problem has gone away
->
->
-> And then what you previously reported, the parts of which I don't follow:
->
-> Jul 01 12:00:31 kernel: NMI watchdog: BUG: soft lockup - CPU#0 stuck
-> for 22s! [scanner:7121]
-I'd guess this is the kernel's protection mechanism to try to recover
-when come critical (blocking) thread does not return, looks like it's
-essentially killing the process when a watchdog timer expires.
+--Sig_/DeuyC1fU0/dR2LDjCDtwaLb
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: quoted-printable
+
+On Fri, 1 Jul 2016 20:09:55 +0200
+g6094199@freenet.de wrote:
+
+> he guys,
+>=20
+> yes i know its *buntu xenial and nobody knows what they have backported,
+> but maybe its still interesting for someone....
+
+That's not an error, but just a warning that some operation was taking so
+long, that the kernel was concerned it might be hung. You can adjust the
+warning time threshold from 120 seconds back and forth as you like via the
+sysfs interface.
+
+What you're missing to report is whether or not the system works fine after
+this, or the FS operations lock up entirely and server requires a reboot. If
+it works fine, then you shouldn't worry about this too much.
+
+--=20
+With respect,
+Roman
+
+--Sig_/DeuyC1fU0/dR2LDjCDtwaLb
+Content-Type: application/pgp-signature
+Content-Description: OpenPGP digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2
+
+iEYEARECAAYFAld27s0ACgkQTLKSvz+PZwjHKgCfedGJraWjF1GDwIMfepP6HyC9
+AxYAn0J5Zg3i2tK43wJdZgpOy49sd7Nm
+=p6Rd
+-----END PGP SIGNATURE-----
+
+--Sig_/DeuyC1fU0/dR2LDjCDtwaLb--

@@ -1,46 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.136]:35532 "EHLO mail.kernel.org"
+Received: from mail.kernel.org ([198.145.29.136]:35618 "EHLO mail.kernel.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753536AbcGKLSL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 11 Jul 2016 07:18:11 -0400
+	id S1752525AbcGKLTC (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 11 Jul 2016 07:19:02 -0400
 From: fdmanana@kernel.org
 To: fstests@vger.kernel.org
 Cc: linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH 2/3] btrfs: add test for incremental send after removing a directory
-Date: Sat,  2 Jul 2016 13:32:38 +0100
-Message-Id: <1467462758-14550-1-git-send-email-fdmanana@kernel.org>
+Subject: [PATCH 3/3] btrfs: test that send does not issue invalid rmdir operations
+Date: Sat,  2 Jul 2016 13:33:28 +0100
+Message-Id: <1467462808-14609-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Filipe Manana <fdmanana@suse.com>
 
-Test that, under a particular scenario, an incremental send operation does
-not leak memory (which used to emit a warning in dmesg/syslog).
+Test that an incremental send operation does not prematurely issues rmdir
+operations under a particular scenario (the rmdir operation is sent before
+the target directory is empty).
 
-This is a regression test for a btrfs kernel fix that has the title:
-"Btrfs: send, fix warning due to late freeing of orphan_dir_info
-structures".
+This issue is fixed by the following patch for the linux kernel:
+
+  "Btrfs: incremental send, fix premature rmdir operations"
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- tests/btrfs/125     | 127 ++++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/125.out |   2 +
+ tests/btrfs/126     | 123 ++++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/126.out |   2 +
  tests/btrfs/group   |   1 +
- 3 files changed, 130 insertions(+)
- create mode 100755 tests/btrfs/125
- create mode 100644 tests/btrfs/125.out
+ 3 files changed, 126 insertions(+)
+ create mode 100755 tests/btrfs/126
+ create mode 100644 tests/btrfs/126.out
 
-diff --git a/tests/btrfs/125 b/tests/btrfs/125
+diff --git a/tests/btrfs/126 b/tests/btrfs/126
 new file mode 100755
-index 0000000..2ee39c7
+index 0000000..7d33549
 --- /dev/null
-+++ b/tests/btrfs/125
-@@ -0,0 +1,127 @@
++++ b/tests/btrfs/126
+@@ -0,0 +1,123 @@
 +#! /bin/bash
-+# FS QA Test No. btrfs/125
++# FS QA Test No. btrfs/126
 +#
-+# Test that, under a particular scenario, an incremental send operation does
-+# not leak memory (which used to emit a warning in dmesg/syslog).
++# Test that an incremental send operation does not prematurely issues rmdir
++# operations under a particular scenario (the rmdir operation is sent before
++# the target directory is empty).
 +#
 +#-----------------------------------------------------------------------
 +# Copyright (C) 2016 SUSE Linux Products GmbH. All Rights Reserved.
@@ -100,7 +102,6 @@ index 0000000..2ee39c7
 +mv $SCRATCH_MNT/tmp $SCRATCH_MNT/del
 +mkdir $SCRATCH_MNT/a/c
 +mkdir $SCRATCH_MNT/del/x
-+mkdir $SCRATCH_MNT/del/y
 +
 +# Filesystem looks like:
 +#
@@ -111,21 +112,18 @@ index 0000000..2ee39c7
 +# |--- del/                                                     (ino 259)
 +#       |--- tmp/                                               (ino 258)
 +#       |--- x/                                                 (ino 261)
-+#       |--- y/                                                 (ino 262)
 +#
 +_run_btrfs_util_prog subvolume snapshot -r $SCRATCH_MNT $SCRATCH_MNT/mysnap1
 +
-+# It used to be that when attempting to issue an rmdir operation for inode 259,
-+# the kernel allocated an orphan_dir_info structure so that later after doing
-+# the delayed rename operation for inode 258 (which happened once inode 260 was
-+# renamed) it would check if it could finally issue a rmdir instruction for
-+# inode 259. If it couldn't, it would not release the previously allocated
-+# orphan_dir_info structure immediately. Instead it would only release it once
-+# it finished the send stream and it would emit a warning in dmesg/syslog.
++# When inode 260 was processed, rename operations for it and for inode 258 were
++# issued (the rename for inode 260 must happen before the rename for inode 258).
++# Then immediately after issuing the rename operation for inode 258, and before
++# inode 261 was processed, the send stream issued a rmdir operation for inode
++# 260, which would make the receiver fail with the error ENOTEMPTY because inode
++# 261 was not yet renamed, it was still a child of inode 260 at that time.
 +#
 +mv $SCRATCH_MNT/a/c $SCRATCH_MNT
 +mv $SCRATCH_MNT/del/x $SCRATCH_MNT/a
-+mv $SCRATCH_MNT/del/y $SCRATCH_MNT/a
 +mv $SCRATCH_MNT/del/tmp $SCRATCH_MNT/c
 +rmdir $SCRATCH_MNT/del
 +
@@ -134,7 +132,6 @@ index 0000000..2ee39c7
 +# .                                                             (ino 256)
 +# |--- a/                                                       (ino 257)
 +# |    |--- x/                                                  (ino 261)
-+# |    |--- y/                                                  (ino 262)
 +# |
 +# |--- c/                                                       (ino 260)
 +#      |--- tmp/                                                (ino 258)
@@ -163,23 +160,23 @@ index 0000000..2ee39c7
 +echo "Silence is golden"
 +status=0
 +exit
-diff --git a/tests/btrfs/125.out b/tests/btrfs/125.out
+diff --git a/tests/btrfs/126.out b/tests/btrfs/126.out
 new file mode 100644
-index 0000000..0cfa697
+index 0000000..dcab9e3
 --- /dev/null
-+++ b/tests/btrfs/125.out
++++ b/tests/btrfs/126.out
 @@ -0,0 +1,2 @@
-+QA output created by 125
++QA output created by 126
 +Silence is golden
 diff --git a/tests/btrfs/group b/tests/btrfs/group
-index 19f4688..82443f6 100644
+index 82443f6..b134caa 100644
 --- a/tests/btrfs/group
 +++ b/tests/btrfs/group
-@@ -127,3 +127,4 @@
- 122 auto quick snapshot qgroup
+@@ -128,3 +128,4 @@
  123 auto quick qgroup
  124 auto quick send
-+125 auto quick send
+ 125 auto quick send
++126 auto quick send
 -- 
 2.7.0.rc3
 

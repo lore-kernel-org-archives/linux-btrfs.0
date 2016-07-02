@@ -1,77 +1,362 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:35576 "EHLO mx2.suse.de"
+Received: from mail.kernel.org ([198.145.29.136]:35214 "EHLO mail.kernel.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754457AbcGLQrH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 12 Jul 2016 12:47:07 -0400
-Date: Tue, 12 Jul 2016 18:47:15 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Hans van Kranenburg <hans.van.kranenburg@mendix.com>
-Cc: dsterba@suse.cz, linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: Hello world, python-btrfs
-Message-ID: <20160712164715.GH10595@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <57647351.4010603@mendix.com>
- <20160623142648.GE4915@twin.jikos.cz>
- <d97ae16c-3348-9952-2416-acc60b5eb817@mendix.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <d97ae16c-3348-9952-2416-acc60b5eb817@mendix.com>
+	id S1751203AbcGKLO4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 11 Jul 2016 07:14:56 -0400
+Received: from mail.kernel.org (localhost [127.0.0.1])
+	by mail.kernel.org (Postfix) with ESMTP id 4138B20204
+	for <linux-btrfs@vger.kernel.org>; Mon, 11 Jul 2016 11:14:54 +0000 (UTC)
+Received: from debian3.lan (bl12-226-64.dsl.telepac.pt [85.245.226.64])
+	(using TLSv1.2 with cipher AES128-SHA256 (128/128 bits))
+	(No client certificate requested)
+	by mail.kernel.org (Postfix) with ESMTPSA id CF164201F4
+	for <linux-btrfs@vger.kernel.org>; Mon, 11 Jul 2016 11:14:51 +0000 (UTC)
+From: fdmanana@kernel.org
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH 1/7] Btrfs: send, fix failure to move directories with the same name around
+Date: Sat,  2 Jul 2016 13:29:21 +0100
+Message-Id: <1467462561-14146-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Jun 24, 2016 at 01:29:22AM +0200, Hans van Kranenburg wrote:
-> > I can imagine creating scripts to
-> > craft images for testing or verifying results of fsck, so it would be
-> > more convenient to keep them in one place (but using a git submodule
-> > instead would not be a big deal).
-> 
-> python-btrfs is just a library. You can just clone the git somewhere, 
-> start hacking on it and put it in your python path, or pip install or 
-> apt-get install python-btrfs etc...
+From: Robbie Ko <robbieko@synology.com>
 
-So it sounds more appropriate to keep them separate.
+When doing an incremental send we can end up not moving directories that
+have the same name. This happens when the same parent directory has
+different child directories with the same name in the parent and send
+snapshots.
 
-> Programs that use it can be anywhere. What I have in examples/ now 
-> should probably end up either in howto style documentation or in proper 
-> tests for the lib (which requires keeping known-state filesystem images 
-> to test on etc, exploding into a new level of whoa).
-> 
-> > I'm mostly interested in the object representation of the filesystem
-> > objects and basic API around that, so if you have other plans with
-> > python-btrfs, we can at least share some of the code. My python-fu is
-> > not that strong so I'd rely on you or others to maintain that if you're
-> > interested.
-> 
-> Ok, I added a little TODO:
-> https://github.com/knorrie/python-btrfs/blob/master/TODO.md
-> 
-> There's a few things I want to do first at least, which are completing 
-> to support the full set of data structures using the kernel API, 
-> finishing to move existing code that I have lying around to use the new 
-> lib and a bit of extra info to help interested sysadmin/programmers to 
-> start using the library to peek around in their own filesystem a bit to 
-> see what's going on.
+For example, consider the following scenario:
 
-So this will be mostly ioctl based.
+  Parent snapshot:
 
-> I haven't looked at how the btrfs-progs treat disks directly, but would 
-> certainly be interested in learning about that.
+  .                   (ino 256)
+  |---- d/            (ino 257)
+  |     |--- p1/      (ino 258)
+  |
+  |---- p1/           (ino 259)
 
-The core work lies in the b-tree item manipulation, free block
-allocation and maybe more.
+  Send snapshot:
 
->  From what you say, I feel that you're thinking about not only looking 
-> around in filesystems, but having ways to manipulate them?
+  .                    (ino 256)
+  |--- d/              (ino 257)
+       |--- p1/        (ino 259)
+             |--- p1/  (ino 258)
 
-Yes. Initially it can be only in-place modification, like rewrite a
-specific member of an item and recalculate the block checksum. We can do that
-with btrfs-corrupt-block but the command line interface is not that great.
+The directory named "d" (inode 257) has in both snapshots an entry with
+the name "p1" but it refers to different inodes in both snapshots (inode
+258 in the parent snapshot and inode 259 in the send snapshot). When
+attempting to move inode 258, the operation is delayed because its new
+parent, inode 259, was not yet moved/renamed (as the stream is currently
+processing inode 258). Then when processing inode 259, we also end up
+delaying its move/rename operation so that it happens after inode 258 is
+moved/renamed. This decision to delay the move/rename rename operation
+of inode 259 is due to the fact that the new parent inode (257) still
+has inode 258 as its child, which has the same name has inode 259. So
+we end up with inode 258 move/rename operation waiting for inode's 259
+move/rename operation, which in turn it waiting for inode's 258
+move/rename. This results in ending the send stream without issuing
+move/rename operations for inodes 258 and 259 and generating the
+following warnings in syslog/dmesg:
 
-> Can you provide a more concrete example of "craft images for testing" or 
-> related ideas about how this project could help during regular btrfs 
-> development?
+[148402.979747] ------------[ cut here ]------------
+[148402.980588] WARNING: CPU: 14 PID: 4117 at fs/btrfs/send.c:6177 btrfs_ioctl_send+0xe03/0xe51 [btrfs]
+[148402.981928] Modules linked in: btrfs crc32c_generic xor raid6_pq acpi_cpufreq tpm_tis ppdev tpm parport_pc psmouse parport sg pcspkr i2c_piix4 i2c_core evdev processor serio_raw button loop autofs4 ext4 crc16 jbd2 mbcache sr_mod cdrom sd_mod ata_generic virtio_scsi ata_piix libata virtio_pci virtio_ring virtio e1000 scsi_mod floppy [last unloaded: btrfs]
+[148402.986999] CPU: 14 PID: 4117 Comm: btrfs Tainted: G        W       4.6.0-rc7-btrfs-next-31+ #1
+[148402.988136] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS by qemu-project.org 04/01/2014
+[148402.988136]  0000000000000000 ffff88022139fca8 ffffffff8126b42c 0000000000000000
+[148402.988136]  0000000000000000 ffff88022139fce8 ffffffff81052b14 000018212139fac8
+[148402.988136]  ffff88022b0db400 0000000000000000 0000000000000001 0000000000000000
+[148402.988136] Call Trace:
+[148402.988136]  [<ffffffff8126b42c>] dump_stack+0x67/0x90
+[148402.988136]  [<ffffffff81052b14>] __warn+0xc2/0xdd
+[148402.988136]  [<ffffffff81052beb>] warn_slowpath_null+0x1d/0x1f
+[148402.988136]  [<ffffffffa04bc831>] btrfs_ioctl_send+0xe03/0xe51 [btrfs]
+[148402.988136]  [<ffffffffa048b358>] btrfs_ioctl+0x14f/0x1f81 [btrfs]
+[148402.988136]  [<ffffffff8108e456>] ? arch_local_irq_save+0x9/0xc
+[148402.988136]  [<ffffffff8108eb51>] ? __lock_is_held+0x3c/0x57
+[148402.988136]  [<ffffffff8118da05>] vfs_ioctl+0x18/0x34
+[148402.988136]  [<ffffffff8118e00c>] do_vfs_ioctl+0x550/0x5be
+[148402.988136]  [<ffffffff81196f0c>] ? __fget+0x6b/0x77
+[148402.988136]  [<ffffffff81196fa1>] ? __fget_light+0x62/0x71
+[148402.988136]  [<ffffffff8118e0d1>] SyS_ioctl+0x57/0x79
+[148402.988136]  [<ffffffff8149e025>] entry_SYSCALL_64_fastpath+0x18/0xa8
+[148402.988136]  [<ffffffff8108e89d>] ? trace_hardirqs_off_caller+0x3f/0xaa
+[148403.011373] ---[ end trace a4539270c8056f8b ]---
+[148403.012296] ------------[ cut here ]------------
+[148403.013071] WARNING: CPU: 14 PID: 4117 at fs/btrfs/send.c:6194 btrfs_ioctl_send+0xe19/0xe51 [btrfs]
+[148403.014447] Modules linked in: btrfs crc32c_generic xor raid6_pq acpi_cpufreq tpm_tis ppdev tpm parport_pc psmouse parport sg pcspkr i2c_piix4 i2c_core evdev processor serio_raw button loop autofs4 ext4 crc16 jbd2 mbcache sr_mod cdrom sd_mod ata_generic virtio_scsi ata_piix libata virtio_pci virtio_ring virtio e1000 scsi_mod floppy [last unloaded: btrfs]
+[148403.019708] CPU: 14 PID: 4117 Comm: btrfs Tainted: G        W       4.6.0-rc7-btrfs-next-31+ #1
+[148403.020104] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS by qemu-project.org 04/01/2014
+[148403.020104]  0000000000000000 ffff88022139fca8 ffffffff8126b42c 0000000000000000
+[148403.020104]  0000000000000000 ffff88022139fce8 ffffffff81052b14 000018322139fac8
+[148403.020104]  ffff88022b0db400 0000000000000000 0000000000000001 0000000000000000
+[148403.020104] Call Trace:
+[148403.020104]  [<ffffffff8126b42c>] dump_stack+0x67/0x90
+[148403.020104]  [<ffffffff81052b14>] __warn+0xc2/0xdd
+[148403.020104]  [<ffffffff81052beb>] warn_slowpath_null+0x1d/0x1f
+[148403.020104]  [<ffffffffa04bc847>] btrfs_ioctl_send+0xe19/0xe51 [btrfs]
+[148403.020104]  [<ffffffffa048b358>] btrfs_ioctl+0x14f/0x1f81 [btrfs]
+[148403.020104]  [<ffffffff8108e456>] ? arch_local_irq_save+0x9/0xc
+[148403.020104]  [<ffffffff8108eb51>] ? __lock_is_held+0x3c/0x57
+[148403.020104]  [<ffffffff8118da05>] vfs_ioctl+0x18/0x34
+[148403.020104]  [<ffffffff8118e00c>] do_vfs_ioctl+0x550/0x5be
+[148403.020104]  [<ffffffff81196f0c>] ? __fget+0x6b/0x77
+[148403.020104]  [<ffffffff81196fa1>] ? __fget_light+0x62/0x71
+[148403.020104]  [<ffffffff8118e0d1>] SyS_ioctl+0x57/0x79
+[148403.020104]  [<ffffffff8149e025>] entry_SYSCALL_64_fastpath+0x18/0xa8
+[148403.020104]  [<ffffffff8108e89d>] ? trace_hardirqs_off_caller+0x3f/0xaa
+[148403.038981] ---[ end trace a4539270c8056f8c ]---
 
-With a good support of python interface to btrfs structures, we can eg.
-lookup specific extent items, swap some pointers and see how fsck
-survives.  Writing that as a C code is possible, but IMO more tedious
-compared to python.
+There's another issue caused by similar (but more complex) changes in the
+directory hierarchy that makes move/rename operations fail, described with
+the following example:
+
+  Parent snapshot:
+
+  .
+  |---- a/                                                   (ino 262)
+  |     |---- c/                                             (ino 268)
+  |
+  |---- d/                                                   (ino 263)
+        |---- ance/                                          (ino 267)
+                |---- e/                                     (ino 264)
+                |---- f/                                     (ino 265)
+                |---- ance/                                  (ino 266)
+
+  Send snapshot:
+
+  .
+  |---- a/                                                   (ino 262)
+  |---- c/                                                   (ino 268)
+  |     |---- ance/                                          (ino 267)
+  |
+  |---- d/                                                   (ino 263)
+  |     |---- ance/                                          (ino 266)
+  |
+  |---- f/                                                   (ino 265)
+        |---- e/                                             (ino 264)
+
+When the inode 265 is processed, the path for inode 267 is computed, which
+at that time corresponds to "d/ance", and it's stored in the names cache.
+Later on when processing inode 266, we end up orphanizing (renaming to a
+name matching the pattern o<ino>-<gen>-<seq>) inode 267 because it has
+the same name as inode 266 and it's currently a child of the new parent
+directory (inode 263) for inode 266. After the orphanization and while we
+are still processing inode 266, a rename operation for inode 266 is
+generated. However the source path for that rename operation is incorrect
+because it ends up using the old, pre-orphanization, name of inode 267.
+The no longer valid name for inode 267 was previously cached when
+processing inode 265 and it remains usable and considered valid until
+the inode currently being processed has a number greater than 267.
+This resulted in the receiving side failing with the following error:
+
+  ERROR: rename d/ance/ance -> d/ance failed: No such file or directory
+
+So fix these issues by detecting such circular dependencies for rename
+operations and by clearing the cached name of an inode once the inode
+is orphanized.
+
+A test case for fstests will follow soon.
+
+Signed-off-by: Robbie Ko <robbieko@synology.com>
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+[Rewrote change log to be more detailed and organized, and improved
+ comments]
+
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+ fs/btrfs/send.c | 100 +++++++++++++++++++++++++++++++++++++++++++++++++++++---
+ 1 file changed, 95 insertions(+), 5 deletions(-)
+
+diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
+index b71dd29..993e1ba 100644
+--- a/fs/btrfs/send.c
++++ b/fs/btrfs/send.c
+@@ -231,7 +231,6 @@ struct pending_dir_move {
+ 	u64 parent_ino;
+ 	u64 ino;
+ 	u64 gen;
+-	bool is_orphan;
+ 	struct list_head update_refs;
+ };
+ 
+@@ -1861,7 +1860,8 @@ static int will_overwrite_ref(struct send_ctx *sctx, u64 dir, u64 dir_gen,
+ 	 * was already unlinked/moved, so we can safely assume that we will not
+ 	 * overwrite anything at this point in time.
+ 	 */
+-	if (other_inode > sctx->send_progress) {
++	if (other_inode > sctx->send_progress ||
++	    is_waiting_for_move(sctx, other_inode)) {
+ 		ret = get_inode_info(sctx->parent_root, other_inode, NULL,
+ 				who_gen, NULL, NULL, NULL, NULL);
+ 		if (ret < 0)
+@@ -3047,7 +3047,6 @@ static int add_pending_dir_move(struct send_ctx *sctx,
+ 	pm->parent_ino = parent_ino;
+ 	pm->ino = ino;
+ 	pm->gen = ino_gen;
+-	pm->is_orphan = is_orphan;
+ 	INIT_LIST_HEAD(&pm->list);
+ 	INIT_LIST_HEAD(&pm->update_refs);
+ 	RB_CLEAR_NODE(&pm->node);
+@@ -3113,6 +3112,48 @@ static struct pending_dir_move *get_pending_dir_moves(struct send_ctx *sctx,
+ 	return NULL;
+ }
+ 
++static int path_loop(struct send_ctx *sctx, struct fs_path *name,
++		     u64 ino, u64 gen, u64 *ancestor_ino)
++{
++	int ret = 0;
++	u64 parent_inode = 0;
++	u64 parent_gen = 0;
++	u64 start_ino = ino;
++
++	*ancestor_ino = 0;
++	while (ino != BTRFS_FIRST_FREE_OBJECTID) {
++		fs_path_reset(name);
++
++		if (is_waiting_for_rm(sctx, ino))
++			break;
++		if (is_waiting_for_move(sctx, ino)) {
++			if (*ancestor_ino == 0)
++				*ancestor_ino = ino;
++			ret = get_first_ref(sctx->parent_root, ino,
++					    &parent_inode, &parent_gen, name);
++		} else {
++			ret = __get_cur_name_and_parent(sctx, ino, gen,
++							&parent_inode,
++							&parent_gen, name);
++			if (ret > 0) {
++				ret = 0;
++				break;
++			}
++		}
++		if (ret < 0)
++			break;
++		if (parent_inode == start_ino) {
++			ret = 1;
++			if (*ancestor_ino == 0)
++				*ancestor_ino = ino;
++			break;
++		}
++		ino = parent_inode;
++		gen = parent_gen;
++	}
++	return ret;
++}
++
+ static int apply_dir_move(struct send_ctx *sctx, struct pending_dir_move *pm)
+ {
+ 	struct fs_path *from_path = NULL;
+@@ -3123,6 +3164,8 @@ static int apply_dir_move(struct send_ctx *sctx, struct pending_dir_move *pm)
+ 	u64 parent_ino, parent_gen;
+ 	struct waiting_dir_move *dm = NULL;
+ 	u64 rmdir_ino = 0;
++	u64 ancestor;
++	bool is_orphan;
+ 	int ret;
+ 
+ 	name = fs_path_alloc();
+@@ -3135,9 +3178,10 @@ static int apply_dir_move(struct send_ctx *sctx, struct pending_dir_move *pm)
+ 	dm = get_waiting_dir_move(sctx, pm->ino);
+ 	ASSERT(dm);
+ 	rmdir_ino = dm->rmdir_ino;
++	is_orphan = dm->orphanized;
+ 	free_waiting_dir_move(sctx, dm);
+ 
+-	if (pm->is_orphan) {
++	if (is_orphan) {
+ 		ret = gen_unique_name(sctx, pm->ino,
+ 				      pm->gen, from_path);
+ 	} else {
+@@ -3155,6 +3199,22 @@ static int apply_dir_move(struct send_ctx *sctx, struct pending_dir_move *pm)
+ 		goto out;
+ 
+ 	sctx->send_progress = sctx->cur_ino + 1;
++	ret = path_loop(sctx, name, pm->ino, pm->gen, &ancestor);
++	if (ret) {
++		LIST_HEAD(deleted_refs);
++		ASSERT(ancestor > BTRFS_FIRST_FREE_OBJECTID);
++		ret = add_pending_dir_move(sctx, pm->ino, pm->gen, ancestor,
++					   &pm->update_refs, &deleted_refs,
++					   is_orphan);
++		if (ret < 0)
++			goto out;
++		if (rmdir_ino) {
++			dm = get_waiting_dir_move(sctx, pm->ino);
++			ASSERT(dm);
++			dm->rmdir_ino = rmdir_ino;
++		}
++		goto out;
++	}
+ 	fs_path_reset(name);
+ 	to_path = name;
+ 	name = NULL;
+@@ -3325,6 +3385,7 @@ static int wait_for_dest_dir_move(struct send_ctx *sctx,
+ 	u64 left_gen;
+ 	u64 right_gen;
+ 	int ret = 0;
++	struct waiting_dir_move *wdm;
+ 
+ 	if (RB_EMPTY_ROOT(&sctx->waiting_dir_moves))
+ 		return 0;
+@@ -3383,7 +3444,8 @@ static int wait_for_dest_dir_move(struct send_ctx *sctx,
+ 		goto out;
+ 	}
+ 
+-	if (is_waiting_for_move(sctx, di_key.objectid)) {
++	wdm = get_waiting_dir_move(sctx, di_key.objectid);
++	if (wdm && !wdm->orphanized) {
+ 		ret = add_pending_dir_move(sctx,
+ 					   sctx->cur_ino,
+ 					   sctx->cur_inode_gen,
+@@ -3643,11 +3705,26 @@ verbose_printk("btrfs: process_recorded_refs %llu\n", sctx->cur_ino);
+ 				goto out;
+ 			if (ret) {
+ 				struct name_cache_entry *nce;
++				struct waiting_dir_move *wdm;
+ 
+ 				ret = orphanize_inode(sctx, ow_inode, ow_gen,
+ 						cur->full_path);
+ 				if (ret < 0)
+ 					goto out;
++
++				/*
++				 * If ow_inode has its rename operation delayed
++				 * make sure that its orphanized name is used in
++				 * the source path when performing its rename
++				 * operation.
++				 */
++				if (is_waiting_for_move(sctx, ow_inode)) {
++					wdm = get_waiting_dir_move(sctx,
++								   ow_inode);
++					ASSERT(wdm);
++					wdm->orphanized = true;
++				}
++
+ 				/*
+ 				 * Make sure we clear our orphanized inode's
+ 				 * name from the name cache. This is because the
+@@ -3663,6 +3740,19 @@ verbose_printk("btrfs: process_recorded_refs %llu\n", sctx->cur_ino);
+ 					name_cache_delete(sctx, nce);
+ 					kfree(nce);
+ 				}
++
++				/*
++				 * ow_inode might currently be an ancestor of
++				 * cur_ino, therefore compute valid_path (the
++				 * current path of cur_ino) again because it
++				 * might contain the pre-orphanization name of
++				 * ow_inode, which is no longer valid.
++				 */
++				fs_path_reset(valid_path);
++				ret = get_cur_path(sctx, sctx->cur_ino,
++					   sctx->cur_inode_gen, valid_path);
++				if (ret < 0)
++					goto out;
+ 			} else {
+ 				ret = send_unlink(sctx, cur->full_path);
+ 				if (ret < 0)
+-- 
+2.7.0.rc3
+

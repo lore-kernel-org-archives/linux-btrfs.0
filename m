@@ -1,57 +1,67 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from syrinx.knorrie.org ([82.94.188.77]:55393 "EHLO
-	syrinx.knorrie.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932081AbcGBReP (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 2 Jul 2016 13:34:15 -0400
-Received: from [IPv6:2001:980:4a41:fb::12] (unknown [IPv6:2001:980:4a41:fb::12])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
-	(No client certificate requested)
-	by syrinx.knorrie.org (Postfix) with ESMTPSA id DA0E0600E8
-	for <linux-btrfs@vger.kernel.org>; Sat,  2 Jul 2016 19:34:11 +0200 (CEST)
-Subject: Re: Filesystem locks up, also with older kernel on any action after
- booting into 4.7-rc4 once
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-References: <472f47d4-b6c9-072d-3fe4-a1ec2af141c7@mendix.com>
-From: Hans van Kranenburg <hans.van.kranenburg@mendix.com>
-Message-ID: <acd41233-2895-fbfc-8277-5ca2a07c3eef@mendix.com>
-Date: Sat, 2 Jul 2016 19:34:11 +0200
+Received: from mail-oi0-f53.google.com ([209.85.218.53]:34667 "EHLO
+	mail-oi0-f53.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750800AbcGBSiv (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 2 Jul 2016 14:38:51 -0400
+Received: by mail-oi0-f53.google.com with SMTP id s66so150457620oif.1
+        for <linux-btrfs@vger.kernel.org>; Sat, 02 Jul 2016 11:38:51 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <472f47d4-b6c9-072d-3fe4-a1ec2af141c7@mendix.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+In-Reply-To: <CADbsYN15dJa6OszsV3Fia6Qt=87RxuP28swy_s2JFORjOXO4iA@mail.gmail.com>
+References: <CADbsYN2RZ9q7pFSawEkWbTXvomAONz60t7b1Hm6f7Mma=veKgQ@mail.gmail.com>
+ <CAJCQCtQheg_PqSaf1EZ7_oHkBBwa=CLSifMbW9=sXNLK7asFng@mail.gmail.com>
+ <CADbsYN2Y+UaOVZO_kATeomEy6Xho6kMkY-vgAyKMK4w2MV6VCQ@mail.gmail.com>
+ <CAJCQCtQ_=Z1f6oO0gtjtA-wKiEL2VsB=iy0sE4AmwHwh-9gYXw@mail.gmail.com> <CADbsYN15dJa6OszsV3Fia6Qt=87RxuP28swy_s2JFORjOXO4iA@mail.gmail.com>
+From: Chris Murphy <lists@colorremedies.com>
+Date: Sat, 2 Jul 2016 12:38:50 -0600
+Message-ID: <CAJCQCtR=cDCtVtn2Y8eaezJaT-jxmGTMJ8=ugGCtd-hjNC+BnA@mail.gmail.com>
+Subject: Re: btrfs lockup
+To: Grey Christoforo <grey@christoforo.net>
+Cc: Chris Murphy <lists@colorremedies.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 07/02/2016 07:14 PM, Hans van Kranenburg wrote:
-> I just rebooted a VM into a 4.7 kernel. The joy didn't last long. After
-> 177 seconds the btrfs data partition (root is on ext4) locked up. Worse,
-> it keeps locking up on any action performed even when  rebooting it with
-> older kernels again. D: The filesystem initially mounts fine, but then
-> locks up again immediately.
->
-> Linux stacheldraht 4.7.0-rc4-amd64 #1 SMP Debian 4.7~rc4-1~exp1
-> (2016-06-20) x86_64 GNU/Linux
->
-> ps output shows [btrfs-transaction] in D state:
->
-> root      1108  0.0  0.0      0     0 ?        D    17:42   0:00  \_
-> [btrfs-transacti]
->
-> From dmesg:
->
-> [blah blah blah]
->
-> So, something happened inside the fs that makes it lock up every time I
-> try to do anything with it...
+On Fri, Jul 1, 2016 at 3:50 PM, Grey Christoforo <grey@christoforo.net> wrote:
+> On Fri, Jul 1, 2016 at 9:51 PM, Chris Murphy <lists@colorremedies.com> wrote:
+>> This is interesting:
+>>
+>> Jul 01 11:56:40 kernel: BTRFS info (device nvme0n1p5): relocating
+>> block group 232511242240 flags 1
+>>
+>> a. It's an NVMe drive.
+>> b. Btrfs at this time is involved in a balance operation of some sort.
+> The balance operation is one I started manually. It's a coincidence
+> that it's running at this point and I don't believe it's related to
+> the lockups because
+> 1) I saw the lockups on a previous baobab scan of my
+> /var/lib/docker/btrfs/subvolumes when no balance was taking place
+> and
+> 2) after removing all of docker's subvolumes, the problem has gone away
+>>
+>>
+>> And then what you previously reported, the parts of which I don't follow:
+>>
+>> Jul 01 12:00:31 kernel: NMI watchdog: BUG: soft lockup - CPU#0 stuck
+>> for 22s! [scanner:7121]
+> I'd guess this is the kernel's protection mechanism to try to recover
+> when come critical (blocking) thread does not return, looks like it's
+> essentially killing the process when a watchdog timer expires.
 
-I force-rebooted the poor thing again, and mounted the filesystem ro. It 
-mounts without any complaint. I can see all files now, I can do sub list 
-etc...
+I suggest filing a bug and put the URL here. If you can reproduce
+without balance that's probably cleaner for a developer to follow. And
+then also when the blocking happens if you can do sysrq+t, then
+something like 'journalctl -k -o short-monotonic > dmesg_sysrqt.log'
+since often it'll overfill the kernel message buffer where journald
+will get it all and just the kernel messages. Attach that to the bug.
 
-So I think I'm going to copy some data to a new filesystem on a new 
-block device just in case. The thing has to move to new storage anyway 
-it's about 100 subvolumes with about 150GB of data, so that's a nice 
-excercise with send/receive.
+Open question if there are kernel debug options to try, I can't really
+tell if this is directly Btrfs related or incidental. The soft lockup
+message refers to scanner as the running task, and it comes up more
+than once in the message log. No idea what that is. I guess it could
+be some unexpected interaction between Btrfs, VFS and this scanner
+task.
+
 
 -- 
-Hans van Kranenburg - System / Network Engineer
-T +31 (0)10 2760434 | hans.van.kranenburg@mendix.com | www.mendix.com
+Chris Murphy

@@ -1,55 +1,51 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.136]:55042 "EHLO mail.kernel.org"
+Received: from mail.kernel.org ([198.145.29.136]:55196 "EHLO mail.kernel.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S932658AbcGLKdN (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 12 Jul 2016 06:33:13 -0400
+	id S932605AbcGLKeX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 12 Jul 2016 06:34:23 -0400
 From: fdmanana@kernel.org
 To: fstests@vger.kernel.org
 Cc: linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH v2 1/3] btrfs: add test for an incremental send after moving directories around
-Date: Sat,  2 Jul 2016 21:15:26 +0100
-Message-Id: <1467490526-2818-1-git-send-email-fdmanana@kernel.org>
-In-Reply-To: <1467462728-14495-1-git-send-email-fdmanana@kernel.org>
-References: <1467462728-14495-1-git-send-email-fdmanana@kernel.org>
+Subject: [PATCH v2 2/3] btrfs: add test for incremental send after removing a directory
+Date: Sat,  2 Jul 2016 21:16:37 +0100
+Message-Id: <1467490597-2872-1-git-send-email-fdmanana@kernel.org>
+In-Reply-To: <1467462758-14550-1-git-send-email-fdmanana@kernel.org>
+References: <1467462758-14550-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Filipe Manana <fdmanana@suse.com>
 
-Test that an incremental send operation works after doing radical changes
-in the directory hierarchy that involve switching the inode that directory
-entries point to.
+Test that, under a particular scenario, an incremental send operation does
+not leak memory (which used to emit a warning in dmesg/syslog).
 
-This test exercises scenarios used to fail in btrfs and are fixed by the
-following patches for the linux kernel:
-
- "Btrfs: send, fix failure to move directories with the same name around"
- "Btrfs: incremental send, fix invalid paths for rename operations"
+This is a regression test for a btrfs kernel fix that has the title:
+"Btrfs: send, fix warning due to late freeing of orphan_dir_info
+structures".
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
 
 V2: Added missing _require_test and "cd /" to the _cleanup function.
 
- tests/btrfs/124     | 263 ++++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/124.out |   2 +
+ tests/btrfs/125     | 129 ++++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/125.out |   2 +
  tests/btrfs/group   |   1 +
- 3 files changed, 266 insertions(+)
- create mode 100755 tests/btrfs/124
- create mode 100644 tests/btrfs/124.out
+ 3 files changed, 132 insertions(+)
+ create mode 100755 tests/btrfs/125
+ create mode 100644 tests/btrfs/125.out
 
-diff --git a/tests/btrfs/124 b/tests/btrfs/124
+diff --git a/tests/btrfs/125 b/tests/btrfs/125
 new file mode 100755
-index 0000000..abf1d39
+index 0000000..313e9cb
 --- /dev/null
-+++ b/tests/btrfs/124
-@@ -0,0 +1,263 @@
++++ b/tests/btrfs/125
+@@ -0,0 +1,129 @@
 +#! /bin/bash
-+# FS QA Test No. btrfs/124
++# FS QA Test No. btrfs/125
 +#
-+# Test that an incremental send operation works after doing radical changes
-+# in the directory hierarchy that involve switching the inode that directory
-+# entries point to.
++# Test that, under a particular scenario, an incremental send operation does
++# not leak memory (which used to emit a warning in dmesg/syslog).
 +#
 +#-----------------------------------------------------------------------
 +# Copyright (C) 2016 SUSE Linux Products GmbH. All Rights Reserved.
@@ -105,183 +101,50 @@ index 0000000..abf1d39
 +_scratch_mkfs >>$seqres.full 2>&1
 +_scratch_mount
 +
-+# case 1
-+mkdir -p $SCRATCH_MNT/case_1/d/p1
-+mkdir $SCRATCH_MNT/case_1/p1
-+
-+# case 2
-+mkdir -p $SCRATCH_MNT/case_2/a
-+mkdir $SCRATCH_MNT/case_2/d
-+mkdir $SCRATCH_MNT/case_2/e
-+mkdir $SCRATCH_MNT/case_2/f
-+mkdir $SCRATCH_MNT/case_2/ance
-+mkdir $SCRATCH_MNT/case_2/d/ance
-+mkdir $SCRATCH_MNT/case_2/a/c
-+mv $SCRATCH_MNT/case_2/e $SCRATCH_MNT/case_2/d/ance
-+mv $SCRATCH_MNT/case_2/f $SCRATCH_MNT/case_2/d/ance
-+mv $SCRATCH_MNT/case_2/ance $SCRATCH_MNT/case_2/d/ance
-+
-+# case 3
-+mkdir -p $SCRATCH_MNT/case_3/d
-+mkdir $SCRATCH_MNT/case_3/a
-+mkdir $SCRATCH_MNT/case_3/waiting_dir
-+mkdir -p $SCRATCH_MNT/case_3/pre/ance
-+mkdir $SCRATCH_MNT/case_3/d/ance
-+mkdir $SCRATCH_MNT/case_3/a/c
-+mv $SCRATCH_MNT/case_3/waiting_dir $SCRATCH_MNT/case_3/d/ance
-+
-+# case 4
-+mkdir -p $SCRATCH_MNT/case_4/tmp
-+mkdir $SCRATCH_MNT/case_4/below_ance
-+mkdir -p $SCRATCH_MNT/case_4/pre/wait_dir
-+mkdir $SCRATCH_MNT/case_4/desc
-+mkdir $SCRATCH_MNT/case_4/ance
-+mv $SCRATCH_MNT/case_4/below_ance $SCRATCH_MNT/case_4/ance
-+mkdir $SCRATCH_MNT/case_4/other_dir
++mkdir $SCRATCH_MNT/a
++mkdir $SCRATCH_MNT/tmp
++mkdir $SCRATCH_MNT/del
++mv $SCRATCH_MNT/tmp $SCRATCH_MNT/del
++mkdir $SCRATCH_MNT/a/c
++mkdir $SCRATCH_MNT/del/x
++mkdir $SCRATCH_MNT/del/y
 +
 +# Filesystem looks like:
 +#
-+# .                                                                  (ino 256)
-+# |--- case_1/                                                       (ino 257)
-+# |       |---- d/                                                   (ino 258)
-+# |       |     |--- p1/                                             (ino 259)
-+# |       |
-+# |       |---- p1/                                                  (ino 260)
++# .                                                             (ino 256)
++# |--- a/                                                       (ino 257)
++# |    |--- c/                                                  (ino 260)
 +# |
-+# |--- case_2/                                                       (ino 261)
-+# |       |---- a/                                                   (ino 262)
-+# |       |     |---- c/                                             (ino 268)
-+# |       |
-+# |       |---- d/                                                   (ino 263)
-+# |             |---- ance/                                          (ino 267)
-+# |                     |---- e/                                     (ino 264)
-+# |                     |---- f/                                     (ino 265)
-+# |                     |---- ance/                                  (ino 266)
-+# |
-+# |--- case_3/                                                       (ino 269)
-+# |       |---- a/                                                   (ino 271)
-+# |       |     |---- c/                                             (ino 276)
-+# |       |
-+# |       |---- d/                                                   (ino 270)
-+# |       |     |---- ance/                                          (ino 275)
-+# |       |             |---- waiting_dir/                           (ino 272)
-+# |       |
-+# |       |---- pre/                                                 (ino 273)
-+# |              |---- ance/                                         (ino 274)
-+# |
-+# |--- case_4/                                                       (ino 277)
-+#         |---- tmp/                                                 (ino 278)
-+#         |---- pre/                                                 (ino 280)
-+#         |      |---- wait_dir/                                     (ino 281)
-+#         |
-+#         |---- desc/                                                (ino 282)
-+#         |---- ance/                                                (ino 283)
-+#         |       |---- below_ance/                                  (ino 279)
-+#         |
-+#         |---- other_dir/                                           (ino 284)
++# |--- del/                                                     (ino 259)
++#       |--- tmp/                                               (ino 258)
++#       |--- x/                                                 (ino 261)
++#       |--- y/                                                 (ino 262)
 +#
 +_run_btrfs_util_prog subvolume snapshot -r $SCRATCH_MNT $SCRATCH_MNT/mysnap1
 +
-+# case 1
++# It used to be that when attempting to issue an rmdir operation for inode 259,
++# the kernel allocated an orphan_dir_info structure so that later after doing
++# the delayed rename operation for inode 258 (which happened once inode 260 was
++# renamed) it would check if it could finally issue a rmdir instruction for
++# inode 259. If it couldn't, it would not release the previously allocated
++# orphan_dir_info structure immediately. Instead it would only release it once
++# it finished the send stream and it would emit a warning in dmesg/syslog.
 +#
-+# The directory named "d" (inode 257) has in both snapshots an entry with the
-+# name "p1" but it refers to different inodes in both snapshots (inode 258 in
-+# the parent snapshot and inode 259 in the send snapshot). When attempting to
-+# move inode 258, the operation is delayed because its new parent, inode 259,
-+# was not yet moved/renamed (as the stream is currently processing inode 258).
-+# Later on when processing inode 259, btrfs' send also ended up delaying the
-+# move/rename operation for this inode, so that it would happen after inode 258
-+# was processed, creating a circular dependency that resulted in the send stream
-+# terminating without issuing a rename operations for the inodes 258 and 259.
-+#
-+mv $SCRATCH_MNT/case_1/d/p1 $SCRATCH_MNT/case_1/p1
-+mv $SCRATCH_MNT/case_1/p1 $SCRATCH_MNT/case_1/d
-+
-+# case 2
-+#
-+# When the inode 265 is processed, the path for inode 267 is computed, which at
-+# that time corresponds to "case_2/d/ance", and it was stored in the name cache
-+# (to avoid recomputing it again later when needed).
-+# Later on when processing inode 266, btrfs' send end up orphanizing (renaming
-+# to a name matching the pattern o<ino>-<gen>-<seq>) inode 267 because it has
-+# the same name as inode 266 and at that time it's a child of the new parent
-+# directory (inode 263) for inode 266. After the orphanization and while still
-+# processing inode 266, a rename operation for inode 266 was generated. However
-+# the source path for that rename operation was incorrect because it ended up
-+# using the old, pre-orphanization, name of inode 267.
-+#
-+mv $SCRATCH_MNT/case_2/a/c $SCRATCH_MNT/case_2
-+mv $SCRATCH_MNT/case_2/d/ance $SCRATCH_MNT/case_2/c
-+mv $SCRATCH_MNT/case_2/c/ance/ance $SCRATCH_MNT/case_2/d
-+mv $SCRATCH_MNT/case_2/c/ance/f $SCRATCH_MNT/case_2
-+mv $SCRATCH_MNT/case_2/c/ance/e $SCRATCH_MNT/case_2/f
-+
-+# case 3
-+#
-+# This is similar to cases 1 and 2, but adding more complexity just to exercise
-+# btrfs' incremental send correctness.
-+#
-+mv $SCRATCH_MNT/case_3/d/ance $SCRATCH_MNT/case_3/a
-+mv $SCRATCH_MNT/case_3/a/c $SCRATCH_MNT/case_3
-+mv $SCRATCH_MNT/case_3/a/ance/waiting_dir $SCRATCH_MNT/case_3/c
-+mv $SCRATCH_MNT/case_3/pre/ance $SCRATCH_MNT/case_3/d
-+mv $SCRATCH_MNT/case_3/pre $SCRATCH_MNT/case_3/c/waiting_dir
-+
-+# case 4
-+#
-+# When attempting to rename inode 283, the incremental send stream included an
-+# invalid destination path for the rename command. This was due to a missing
-+# path loop detection in the send code that made the rename of inode 283 happen
-+# without waiting for the rename of inode 284 to happen first (since it's an
-+# ancestor in the send snapshot that is beyond the current progress and it was
-+# also renamed/moved).
-+#
-+mv $SCRATCH_MNT/case_4/other_dir $SCRATCH_MNT/case_4/tmp
-+mv $SCRATCH_MNT/case_4/ance/below_ance $SCRATCH_MNT/case_4/tmp/other_dir
-+mv $SCRATCH_MNT/case_4/pre/wait_dir $SCRATCH_MNT/case_4/tmp/other_dir
-+mv $SCRATCH_MNT/case_4/pre $SCRATCH_MNT/case_4/tmp/other_dir/below_ance
-+mv $SCRATCH_MNT/case_4/desc $SCRATCH_MNT/case_4/tmp/other_dir/wait_dir
-+mv $SCRATCH_MNT/case_4/ance $SCRATCH_MNT/case_4/tmp/other_dir/wait_dir/desc
++mv $SCRATCH_MNT/a/c $SCRATCH_MNT
++mv $SCRATCH_MNT/del/x $SCRATCH_MNT/a
++mv $SCRATCH_MNT/del/y $SCRATCH_MNT/a
++mv $SCRATCH_MNT/del/tmp $SCRATCH_MNT/c
++rmdir $SCRATCH_MNT/del
 +
 +# Filesystem now looks like:
 +#
-+# .                                                                  (ino 256)
-+# |--- case_1/                                                       (ino 257)
-+# |        |--- d/                                                   (ino 258)
-+# |             |--- p1/                                             (ino 260)
-+# |                   |--- p1/                                       (ino 259)
++# .                                                             (ino 256)
++# |--- a/                                                       (ino 257)
++# |    |--- x/                                                  (ino 261)
++# |    |--- y/                                                  (ino 262)
 +# |
-+# |--- case_2/                                                       (ino 261)
-+# |       |---- a/                                                   (ino 262)
-+# |       |---- c/                                                   (ino 268)
-+# |       |     |---- ance/                                          (ino 267)
-+# |       |
-+# |       |---- d/                                                   (ino 263)
-+# |       |     |---- ance/                                          (ino 266)
-+# |       |
-+# |       |---- f/                                                   (ino 265)
-+# |             |---- e/                                             (ino 264)
-+# |
-+# |--- case_3/                                                       (ino 269)
-+# |       |---- a/                                                   (ino 271)
-+# |       |     |---- ance/                                          (ino 275)
-+# |       |
-+# |       |---- c/                                                   (ino 276)
-+# |       |     |---- waiting_dir/                                   (ino 272)
-+# |       |                   |---- pre/                             (ino 273)
-+# |       |
-+# |       |---- d/                                                   (ino 270)
-+# |             |---- ance/                                          (ino 274)
-+# |
-+# |--- case_4/                                                       (ino 277)
-+#         |---- tmp/                                                 (ino 278)
-+#                |---- other_dir/                                    (ino 284)
-+#                            |---- below_ance/                       (ino 279)
-+#                            |            |---- pre/                 (ino 280)
-+#                            |
-+#                            |---- wait_dir/                         (ino 281)
-+#                                       |---- desc/                  (ino 282)
-+#                                               |---- ance/          (ino 283)
++# |--- c/                                                       (ino 260)
++#      |--- tmp/                                                (ino 258)
 +#
 +_run_btrfs_util_prog subvolume snapshot -r $SCRATCH_MNT $SCRATCH_MNT/mysnap2
 +
@@ -307,23 +170,23 @@ index 0000000..abf1d39
 +echo "Silence is golden"
 +status=0
 +exit
-diff --git a/tests/btrfs/124.out b/tests/btrfs/124.out
+diff --git a/tests/btrfs/125.out b/tests/btrfs/125.out
 new file mode 100644
-index 0000000..d7339e6
+index 0000000..0cfa697
 --- /dev/null
-+++ b/tests/btrfs/124.out
++++ b/tests/btrfs/125.out
 @@ -0,0 +1,2 @@
-+QA output created by 124
++QA output created by 125
 +Silence is golden
 diff --git a/tests/btrfs/group b/tests/btrfs/group
-index 5a26ed7..19f4688 100644
+index 19f4688..82443f6 100644
 --- a/tests/btrfs/group
 +++ b/tests/btrfs/group
-@@ -126,3 +126,4 @@
- 121 auto quick snapshot qgroup
+@@ -127,3 +127,4 @@
  122 auto quick snapshot qgroup
  123 auto quick qgroup
-+124 auto quick send
+ 124 auto quick send
++125 auto quick send
 -- 
 2.7.0.rc3
 

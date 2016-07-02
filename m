@@ -1,117 +1,102 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.136]:35300 "EHLO mail.kernel.org"
+Received: from mail.kernel.org ([198.145.29.136]:35352 "EHLO mail.kernel.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S932115AbcGKLPh (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 11 Jul 2016 07:15:37 -0400
+	id S932178AbcGKLPv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 11 Jul 2016 07:15:51 -0400
 Received: from mail.kernel.org (localhost [127.0.0.1])
-	by mail.kernel.org (Postfix) with ESMTP id EADCA20204
-	for <linux-btrfs@vger.kernel.org>; Mon, 11 Jul 2016 11:15:35 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 2BBC820204
+	for <linux-btrfs@vger.kernel.org>; Mon, 11 Jul 2016 11:15:47 +0000 (UTC)
 Received: from debian3.lan (bl12-226-64.dsl.telepac.pt [85.245.226.64])
 	(using TLSv1.2 with cipher AES128-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPSA id AEC05201F4
-	for <linux-btrfs@vger.kernel.org>; Mon, 11 Jul 2016 11:15:34 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTPSA id EEFE5201F4
+	for <linux-btrfs@vger.kernel.org>; Mon, 11 Jul 2016 11:15:45 +0000 (UTC)
 From: fdmanana@kernel.org
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 3/7] Btrfs: incremental send, fix invalid paths for rename operations
-Date: Sat,  2 Jul 2016 13:30:06 +0100
-Message-Id: <1467462606-14244-1-git-send-email-fdmanana@kernel.org>
+Subject: [PATCH 4/7] Btrfs: incremental send, fix premature rmdir operations
+Date: Sat,  2 Jul 2016 13:30:17 +0100
+Message-Id: <1467462617-14293-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Filipe Manana <fdmanana@suse.com>
+From: Robbie Ko <robbieko@synology.com>
 
-Example scenario:
+Under certain situations, an incremental send operation can contain
+a rmdir operation that will make the receiving end fail when attempting
+to execute it, because the target directory is not yet empty.
+
+Consider the following example:
 
   Parent snapshot:
 
-  .                                                       (ino 277)
-  |---- tmp/                                              (ino 278)
-  |---- pre/                                              (ino 280)
-  |      |---- wait_dir/                                  (ino 281)
+  .                                                             (ino 256)
+  |--- a/                                                       (ino 257)
+  |    |--- c/                                                  (ino 260)
   |
-  |---- desc/                                             (ino 282)
-  |---- ance/                                             (ino 283)
-  |       |---- below_ance/                               (ino 279)
-  |
-  |---- other_dir/                                        (ino 284)
+  |--- del/                                                     (ino 259)
+        |--- tmp/                                               (ino 258)
+        |--- x/                                                 (ino 261)
 
   Send snapshot:
 
-  .                                                       (ino 277)
-  |---- tmp/                                              (ino 278)
-         |---- other_dir/                                 (ino 284)
-                   |---- below_ance/                      (ino 279)
-                   |            |---- pre/                (ino 280)
-                   |
-                   |---- wait_dir/                        (ino 281)
-                              |---- desc/                 (ino 282)
-                                      |---- ance/         (ino 283)
+  .                                                             (ino 256)
+  |--- a/                                                       (ino 257)
+  |    |--- x/                                                  (ino 261)
+  |
+  |--- c/                                                       (ino 260)
+       |--- tmp/                                                (ino 258)
 
-While computing the send stream the following steps happen:
+1) When processing inode 258, we delay its rename operation because inode
+   260 is its new parent in the send snapshot and it was not yet renamed
+   (since 260 > 258, that is, beyond the current progress);
 
-1) While processing inode 279 we end up delaying its rename operation
-   because its new parent in the send snapshot, inode 284, was not
-   yet processed and therefore not yet renamed;
+2) When processing inode 259, we realize we can not yet send an rmdir
+   operation (against inode 259) because inode 258 was still not yet
+   renamed/moved away from inode 259. Therefore we update data structures
+   so that after inode 258 is renamed, we try again to see if we can
+   finally send an rmdir operation for inode 259;
 
-2) Later when processing inode 280 we end up renaming it immediately to
-   "ance/below_once/pre" and not delay its rename operation because its
-   new parent (inode 279 in the send snapshot) has its rename operation
-   delayed and inode 280 is not an encestor of inode 279 (its parent in
-   the send snapshot) in the parent snapshot;
+3) When we process inode 260, we send a rename operation for it followed
+   by a rename operation for inode 258. Once we send the rename operation
+   for inode 258 we then check if we can finally issue an rmdir for its
+   previous parent, inode 259, by calling the can_rmdir() function with
+   a value of sctx->cur_ino + 1 (260 + 1 = 261) for its "progress"
+   argument. This makes can_rmdir() return true (value 1) because even
+   though there's still a child inode of inode 259 that was not yet
+   renamed/moved, which is inode 261, the given value of progress (261)
+   is not lower then 261 (that is, not lower than the inode number of
+   some child of inode 259). So we end up sending a rmdir operation for
+   inode 259 before its child inode 261 is processed and renamed.
 
-3) When processing inode 281 we end up delaying its rename operation
-   because its new parent in the send snapshot, inode 284, was not yet
-   processed and therefore not yet renamed;
+So fix this by passing the correct progress value to the call to
+can_rmdir() from within apply_dir_move() (where we issue delayed rename
+operations), which should match stcx->cur_ino (the number of the inode
+currently being processed) and not sctx->cur_ino + 1.
 
-4) When processing inode 282 we do not delay its rename operation because
-   its parent in the send snapshot, inode 281, already has its own rename
-   operation delayed and our current inode (282) is not an ancestor of
-   inode 281 in the parent snapshot. Therefore inode 282 is renamed to
-   "ance/below_ance/pre/wait_dir";
+A test case for fstests follows soon.
 
-5) When processing inode 283 we realize that we can rename it because one
-   of its ancestors in the send snapshot, inode 281, has its rename
-   operation delayed and inode 283 is not an ancestor of inode 281 in the
-   parent snapshot. So a rename operation to rename inode 283 to
-   "ance/below_ance/pre/wait_dir/desc/ance" is issued. This path is
-   invalid due to a missing path building loop that was undetected by
-   the incremental send implementation, as inode 283 ends up getting
-   included twice in the path (once with its path in the parent snapshot).
-   Therefore its rename operation must wait before the ancestor inode 284
-   is renamed.
+Signed-off-by: Robbie Ko <robbieko@synology.com>
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+[Rewrote change log to be more detailed, clear and well formatted]
 
-Fix this by not terminating the rename dependency checks when we find an
-ancestor, in the send snapshot, that has its rename operation delayed. So
-that we continue doing the same checks if the current inode is not an
-ancestor, in the parent snapshot, of an ancestor in the send snapshot we
-are processing in the loop.
-
-The problem and reproducer were reported by Robbie Ko, as part of a patch
-titled "Btrfs: incremental send, avoid ancestor rename to descendant".
-However the fix was unnecessarily complicated and can be addressed with
-much less code and effort.
-
-Reported-by: Robbie Ko <robbieko@synology.com>
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/send.c | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+ fs/btrfs/send.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-index 0dc05bb..3d6a4dd 100644
+index 3d6a4dd..4115aba 100644
 --- a/fs/btrfs/send.c
 +++ b/fs/btrfs/send.c
-@@ -3534,7 +3534,8 @@ static int wait_for_parent_move(struct send_ctx *sctx,
- 			ret = is_ancestor(sctx->parent_root,
- 					  sctx->cur_ino, sctx->cur_inode_gen,
- 					  ino, path_before);
--			break;
-+			if (ret)
-+				break;
+@@ -3236,7 +3236,7 @@ static int apply_dir_move(struct send_ctx *sctx, struct pending_dir_move *pm)
+ 			/* already deleted */
+ 			goto finish;
  		}
- 
- 		fs_path_reset(path_before);
+-		ret = can_rmdir(sctx, rmdir_ino, odi->gen, sctx->cur_ino + 1);
++		ret = can_rmdir(sctx, rmdir_ino, odi->gen, sctx->cur_ino);
+ 		if (ret < 0)
+ 			goto out;
+ 		if (!ret)
 -- 
 2.7.0.rc3
 

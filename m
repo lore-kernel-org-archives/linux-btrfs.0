@@ -1,69 +1,68 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lf0-f66.google.com ([209.85.215.66]:34355 "EHLO
-	mail-lf0-f66.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751420AbcGBXhH (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 2 Jul 2016 19:37:07 -0400
-Received: by mail-lf0-f66.google.com with SMTP id l102so2018545lfi.1
-        for <linux-btrfs@vger.kernel.org>; Sat, 02 Jul 2016 16:36:21 -0700 (PDT)
-MIME-Version: 1.0
-From: Tomasz Kusmierz <tom.kusmierz@gmail.com>
-Date: Sun, 3 Jul 2016 00:36:19 +0100
-Message-ID: <CAKinxcVHevoWzgYO+1tjiGOow=shc=oBpvRrTSedeAn1raUrXA@mail.gmail.com>
-Subject: btrfs RAID 10 truncates files over 2G to 4096 bytes.
+Received: from plane.gmane.org ([80.91.229.3]:50804 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752572AbcGCKeA (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 3 Jul 2016 06:34:00 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+	id 1bJeim-00032O-RZ
+	for linux-btrfs@vger.kernel.org; Sun, 03 Jul 2016 12:33:52 +0200
+Received: from ip1f11faed.dynamic.kabel-deutschland.de ([31.17.250.237])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sun, 03 Jul 2016 12:33:52 +0200
+Received: from hurikhan77 by ip1f11faed.dynamic.kabel-deutschland.de with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sun, 03 Jul 2016 12:33:52 +0200
 To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+From: Kai Krakow <hurikhan77@gmail.com>
+Subject: Re: btrfs defrag questions
+Date: Sun, 3 Jul 2016 12:33:41 +0200
+Message-ID: <20160703123341.7c297efa@jupiter.sol.kaishome.de>
+References: <5776CF08.5040601@mail.ru>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=US-ASCII
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+Am Fri, 1 Jul 2016 22:14:00 +0200
+schrieb Dmitry Katsubo <dma_k@mail.ru>:
 
-My setup is that I use one file system for / and /home (on SSD) and a
-larger raid 10 for /mnt/share (6 x 2TB).
+> Hello everyone,
+> 
+> Question #1:
+> 
+> While doing defrag I got the following message:
+> 
+> # btrfs fi defrag -r /home
+> ERROR: defrag failed on /home/user/.dropbox-dist/dropbox: Success
+> total 1 failures
+> 
+> I feel that something went wrong, but the message is a bit misleading.
+> 
+> Provided that Dropbox is running in the system, does it mean that it
+> cannot be defagmented?
 
-Today I've discovered that 14 of files that are supposed to be over
-2GB are in fact just 4096 bytes. I've checked the content of those 4KB
-and it seems that it does contain information that were at the
-beginnings of the files.
+That is probably true. Files that are mapped into memory (like running
+executables) cannot be changed on disk. You could make a copy of that
+file, remove the original, and rename the new into place. As long as
+the executable is running it will stay on disk but you can now
+defragment the file and next time dropbox is started it will use the
+new one.
 
-I've experienced this problem in the past (3 - 4 years ago ?) but
-attributed it to different problem that I've spoke with you guys here
-about (corruption due to non ECC ram). At that time I did deleted
-files affected (56) and similar problem was discovered a year but not
-more than 2 years ago and I believe I've deleted the files.
+> Question #2:
+> 
+> Suppose that in above example /home/ftp is mounted as another btrfs
+> array (not subvolume). Will 'btrfs fi defrag -r /home' defragment it
+> (recursively) as well?
 
-I periodically (once a month) run a scrub on my system to eliminate
-any errors sneaking in. I believe I did a balance a half a year ago ?
-to reclaim space after I deleted a large database.
+Yes, last time I tried the command crossed file system boundaries. It
+will simply report ioctl errors if it operates on incompatible files
+and continue its way.
 
-root@noname_server:/mnt/share# btrfs fi show
-Label: none  uuid: 060c2345-5d2f-4965-b0a2-47ed2d1a5ba2
-    Total devices 1 FS bytes used 177.19GiB
-    devid    3 size 899.22GiB used 360.06GiB path /dev/sde2
+-- 
+Regards,
+Kai
 
-Label: none  uuid: d4cd1d5f-92c4-4b0f-8d45-1b378eff92a1
-    Total devices 6 FS bytes used 4.02TiB
-    devid    1 size 1.82TiB used 1.34TiB path /dev/sdg1
-    devid    2 size 1.82TiB used 1.34TiB path /dev/sdh1
-    devid    3 size 1.82TiB used 1.34TiB path /dev/sdi1
-    devid    4 size 1.82TiB used 1.34TiB path /dev/sdb1
-    devid    5 size 1.82TiB used 1.34TiB path /dev/sda1
-    devid    6 size 1.82TiB used 1.34TiB path /dev/sdf1
+Replies to list-only preferred.
 
-root@noname_server:/mnt/share# uname -a
-Linux noname_server 4.4.0-28-generic #47-Ubuntu SMP Fri Jun 24
-10:09:13 UTC 2016 x86_64 x86_64 x86_64 GNU/Linux
-root@noname_server:/mnt/share# btrfs --version
-btrfs-progs v4.4
-root@noname_server:/mnt/share#
-
-
-Problem is that stuff on this filesystem moves so slowly that it's
-hard to remember historical events ... it's like AWS glacier. What I
-can state with 100% certainty is that:
-- files that are affected are 2GB and over (safe to assume 4GB and over)
-- files affected were just read (and some not even read) never written
-after putting into storage
-- In the past I've assumed that files affected are due to size, but I
-have quite few ISO files some backups of virtual machines ... no
-problems there - seems like problem originates in one folder & size >
-2GB & extension .mkv

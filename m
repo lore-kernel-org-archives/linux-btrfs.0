@@ -1,32 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:53909 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750734AbcGDR4o (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 4 Jul 2016 13:56:44 -0400
-Date: Mon, 4 Jul 2016 19:57:08 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Hans van Kranenburg <hans.van.kranenburg@mendix.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs: use the correct struct for BTRFS_IOC_LOGICAL_INO
-Message-ID: <20160704175708.GO13336@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1467580986-2968-1-git-send-email-hans.van.kranenburg@mendix.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1467580986-2968-1-git-send-email-hans.van.kranenburg@mendix.com>
+Received: from smtp.dpl.mendix.net ([83.96.177.10]:36994 "EHLO
+	smtp.dpl.mendix.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932248AbcGCVcb (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 3 Jul 2016 17:32:31 -0400
+From: Hans van Kranenburg <hans.van.kranenburg@mendix.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Hans van Kranenburg <hans.van.kranenburg@mendix.com>
+Subject: [PATCH] Btrfs: use the correct struct for BTRFS_IOC_LOGICAL_INO
+Date: Sun,  3 Jul 2016 23:23:06 +0200
+Message-Id: <1467580986-2968-1-git-send-email-hans.van.kranenburg@mendix.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Jul 03, 2016 at 11:23:06PM +0200, Hans van Kranenburg wrote:
-> BTRFS_IOC_LOGICAL_INO takes a btrfs_ioctl_logical_ino_args as argument,
-> not a btrfs_ioctl_ino_path_args. The lines were probably copy/pasted
-> when the code was written.
-> 
-> Since btrfs_ioctl_logical_ino_args and btrfs_ioctl_ino_path_args have
-> the same size, the actual IOCTL definition here does not change.
-> 
-> But, it makes the code less confusing for the reader.
-> 
-> Signed-off-by: Hans van Kranenburg <hans.van.kranenburg@mendix.com>
+BTRFS_IOC_LOGICAL_INO takes a btrfs_ioctl_logical_ino_args as argument,
+not a btrfs_ioctl_ino_path_args. The lines were probably copy/pasted
+when the code was written.
 
-Reviewed-by: David Sterba <dsterba@suse.com>
+Since btrfs_ioctl_logical_ino_args and btrfs_ioctl_ino_path_args have
+the same size, the actual IOCTL definition here does not change.
+
+But, it makes the code less confusing for the reader.
+
+Signed-off-by: Hans van Kranenburg <hans.van.kranenburg@mendix.com>
+---
+ include/uapi/linux/btrfs.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/include/uapi/linux/btrfs.h b/include/uapi/linux/btrfs.h
+index 2bdd1e3..ac5eacd 100644
+--- a/include/uapi/linux/btrfs.h
++++ b/include/uapi/linux/btrfs.h
+@@ -798,7 +798,7 @@ static inline char *btrfs_err_str(enum btrfs_err_code err_code)
+ #define BTRFS_IOC_INO_PATHS _IOWR(BTRFS_IOCTL_MAGIC, 35, \
+ 					struct btrfs_ioctl_ino_path_args)
+ #define BTRFS_IOC_LOGICAL_INO _IOWR(BTRFS_IOCTL_MAGIC, 36, \
+-					struct btrfs_ioctl_ino_path_args)
++					struct btrfs_ioctl_logical_ino_args)
+ #define BTRFS_IOC_SET_RECEIVED_SUBVOL _IOWR(BTRFS_IOCTL_MAGIC, 37, \
+ 				struct btrfs_ioctl_received_subvol_args)
+ #define BTRFS_IOC_SEND _IOW(BTRFS_IOCTL_MAGIC, 38, struct btrfs_ioctl_send_args)
+-- 
+2.8.1
+

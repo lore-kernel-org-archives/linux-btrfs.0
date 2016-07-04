@@ -1,47 +1,37 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:47100 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:33124 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753400AbcGDMUR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 4 Jul 2016 08:20:17 -0400
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id 70DC9AC5D
-	for <linux-btrfs@vger.kernel.org>; Mon,  4 Jul 2016 12:20:16 +0000 (UTC)
-Date: Mon, 4 Jul 2016 14:20:42 +0200
+	id S1753025AbcGDON6 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 4 Jul 2016 10:13:58 -0400
+Date: Mon, 4 Jul 2016 16:14:22 +0200
 From: David Sterba <dsterba@suse.cz>
-To: jeffm@suse.com
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 0/3] btrfs-progs: check improve 'checking extents'
- scalability
-Message-ID: <20160704122042.GG13336@twin.jikos.cz>
+To: Mark Fasheh <mfasheh@suse.de>
+Cc: linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.cz>,
+        Qu Wenruo <quwenruo@cn.fujitsu.com>
+Subject: Re: [PATCH 2/2] btrfs-progs: btrfsck: write corrected qgroup info to
+ disk
+Message-ID: <20160704141422.GI13336@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <1466709966-31506-1-git-send-email-jeffm@suse.com>
+References: <1466195869-28109-1-git-send-email-mfasheh@suse.de>
+ <1466195869-28109-3-git-send-email-mfasheh@suse.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1466709966-31506-1-git-send-email-jeffm@suse.com>
+In-Reply-To: <1466195869-28109-3-git-send-email-mfasheh@suse.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Jun 23, 2016 at 03:26:03PM -0400, jeffm@suse.com wrote:
-> From: Jeff Mahoney <jeffm@suse.com>
+On Fri, Jun 17, 2016 at 01:37:49PM -0700, Mark Fasheh wrote:
+> Now that we can verify all qgroups, we can write the corrected qgroups out
+> to disk when '--repair' is specified. The qgroup status item is also updated
+> to clear any out-of-date state. The repair_ functions were modeled after the
+> inode repair code in cmds-check.c.
 > 
-> While running xfstests generic/291, which creates a single file populated
-> with reflinks to the same extent, I found that fsck had been running for
-> hours.  perf top lead me to find_data_backref as the culprit, and a litte
-> more digging made it clear: For every extent record we add, we iterate
-> the entire list first.  My test case had ~2M records.  That math doesn't
-> go well.
+> I also renamed the 'scan' member of qgroup_status_item to 'rescan' in order
+> to keep consistency with the kernel.
 > 
-> This patchset converts the extent_backref list to an rbtree.  The test
-> that used to run for more than 8 hours without completing now takes
-> less than 20 seconds.
+> Testing this was easy, I just reproduced qgroup inconsistencies via the
+> usual routes and had btrfsck fix them.
 > 
-> -Jeff
-> 
-> ---
-> 
-> Jeff Mahoney (3):
->   btrfs-progs: check: add helpers for converting between structures
->   btrfs-progs: check: supplement extent backref list with rbtree
->   btrfs-progs: check: switch to iterating over the backref_tree
+> Signed-off-by: Mark Fasheh <mfasheh@suse.de>
 
-Applied (with some trivial fixups), thanks.
+Applied. I've factored out the 'repair' related code.

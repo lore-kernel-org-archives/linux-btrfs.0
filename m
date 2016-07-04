@@ -1,87 +1,55 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wm0-f41.google.com ([74.125.82.41]:35612 "EHLO
-	mail-wm0-f41.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750963AbcGMNUH (ORCPT
+Received: from mx0a-001b2d01.pphosted.com ([148.163.156.1]:53947 "EHLO
+	mx0a-001b2d01.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1752853AbcGDEgM (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 13 Jul 2016 09:20:07 -0400
-Received: by mail-wm0-f41.google.com with SMTP id f65so28642696wmi.0
-        for <linux-btrfs@vger.kernel.org>; Wed, 13 Jul 2016 06:19:36 -0700 (PDT)
-From: Nikolay Borisov <kernel@kyup.com>
-To: dsterba@suse.cz
-Cc: linux-btrfs@vger.kernel.org, Nikolay Borisov <kernel@kyup.com>
-Subject: [PATCH 2/2] btrfs: Add ratelimit to btrfs printing
-Date: Wed, 13 Jul 2016 16:19:15 +0300
-Message-Id: <1468415955-30804-2-git-send-email-kernel@kyup.com>
-In-Reply-To: <20160713121526.GJ10595@twin.jikos.cz>
-References: <20160713121526.GJ10595@twin.jikos.cz>
+	Mon, 4 Jul 2016 00:36:12 -0400
+Received: from pps.filterd (m0098410.ppops.net [127.0.0.1])
+	by mx0a-001b2d01.pphosted.com (8.16.0.11/8.16.0.11) with SMTP id u644XdUY116557
+	for <linux-btrfs@vger.kernel.org>; Mon, 4 Jul 2016 00:36:12 -0400
+Received: from e19.ny.us.ibm.com (e19.ny.us.ibm.com [129.33.205.209])
+	by mx0a-001b2d01.pphosted.com with ESMTP id 23xa5165y5-1
+	(version=TLSv1.2 cipher=AES256-SHA bits=256 verify=NOT)
+	for <linux-btrfs@vger.kernel.org>; Mon, 04 Jul 2016 00:36:12 -0400
+Received: from localhost
+	by e19.ny.us.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
+	for <linux-btrfs@vger.kernel.org> from <chandan@linux.vnet.ibm.com>;
+	Mon, 4 Jul 2016 00:36:11 -0400
+From: Chandan Rajendra <chandan@linux.vnet.ibm.com>
+To: clm@fb.com, jbacik@fb.com, dsterba@suse.com
+Cc: Chandan Rajendra <chandan@linux.vnet.ibm.com>, linux-btrfs@vger.kernel.org
+Subject: [PATCH V20 19/19] Btrfs: subpage-blocksize: Rate limit scrub error message
+Date: Mon,  4 Jul 2016 10:04:39 +0530
+In-Reply-To: <1467606879-14181-1-git-send-email-chandan@linux.vnet.ibm.com>
+References: <1467606879-14181-1-git-send-email-chandan@linux.vnet.ibm.com>
+Message-Id: <1467606879-14181-20-git-send-email-chandan@linux.vnet.ibm.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This patch adds ratelimiting to all messages which are not
-using the _rl version of the various printing APIs in btrf. This
-is designed to be used as a safety net, since a flood messages
-might cause the softlockup detector to trigger. To reduce
-interference between different classes of messages use a separate
-ratelimit state for every class of message.
----
- fs/btrfs/super.c | 25 +++++++++++++++++++++++--
- 1 file changed, 23 insertions(+), 2 deletions(-)
+btrfs/073 invokes scrub ioctl in a tight loop. In subpage-blocksize
+scenario this results in a lot of "scrub: size assumption sectorsize !=
+PAGE_SIZE " messages being printed on the console. To reduce the number
+of such messages this commit uses btrfs_err_rl() instead of
+btrfs_err().
 
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 4339b6613f19..93d7f4e826ad 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -184,6 +184,21 @@ static const char * const logtypes[] = {
- 	"debug",
- };
+Signed-off-by: Chandan Rajendra <chandan@linux.vnet.ibm.com>
+---
+ fs/btrfs/scrub.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
+index 86270c6..68c8a09 100644
+--- a/fs/btrfs/scrub.c
++++ b/fs/btrfs/scrub.c
+@@ -3856,7 +3856,7 @@ int btrfs_scrub_dev(struct btrfs_fs_info *fs_info, u64 devid, u64 start,
  
-+
-+/* Use 1 ratelimit state per log level so that a flood of less important
-+ * messages doesn't cause a more important ones to be dropped
-+ */
-+static struct ratelimit_state printk_limits[] = {
-+	RATELIMIT_STATE_INIT(printk_limits[0], DEFAULT_RATELIMIT_INTERVAL, 100),
-+	RATELIMIT_STATE_INIT(printk_limits[1], DEFAULT_RATELIMIT_INTERVAL, 100),
-+	RATELIMIT_STATE_INIT(printk_limits[2], DEFAULT_RATELIMIT_INTERVAL, 100),
-+	RATELIMIT_STATE_INIT(printk_limits[3], DEFAULT_RATELIMIT_INTERVAL, 100),
-+	RATELIMIT_STATE_INIT(printk_limits[4], DEFAULT_RATELIMIT_INTERVAL, 100),
-+	RATELIMIT_STATE_INIT(printk_limits[5], DEFAULT_RATELIMIT_INTERVAL, 100),
-+	RATELIMIT_STATE_INIT(printk_limits[6], DEFAULT_RATELIMIT_INTERVAL, 100),
-+	RATELIMIT_STATE_INIT(printk_limits[7], DEFAULT_RATELIMIT_INTERVAL, 100),
-+};
-+
- void btrfs_printk(const struct btrfs_fs_info *fs_info, const char *fmt, ...)
- {
- 	struct super_block *sb = fs_info->sb;
-@@ -192,6 +207,7 @@ void btrfs_printk(const struct btrfs_fs_info *fs_info, const char *fmt, ...)
- 	va_list args;
- 	const char *type = logtypes[4];
- 	int kern_level;
-+	struct ratelimit_state *ratelimit;
- 
- 	va_start(args, fmt);
- 
-@@ -202,13 +218,18 @@ void btrfs_printk(const struct btrfs_fs_info *fs_info, const char *fmt, ...)
- 		lvl[size] = '\0';
- 		fmt += size;
- 		type = logtypes[kern_level - '0'];
--	} else
-+		ratelimit = &printk_limits[kern_level - '0'];
-+	} else {
- 		*lvl = '\0';
-+		/* Default to debug output */
-+		ratelimit = &printk_limits[7];
-+	}
- 
- 	vaf.fmt = fmt;
- 	vaf.va = &args;
- 
--	printk("%sBTRFS %s (device %s): %pV\n", lvl, type, sb->s_id, &vaf);
-+	if (__ratelimit(ratelimit))
-+		printk("%sBTRFS %s (device %s): %pV\n", lvl, type, sb->s_id, &vaf);
- 
- 	va_end(args);
- }
+ 	if (fs_info->chunk_root->sectorsize != PAGE_SIZE) {
+ 		/* not supported for data w/o checksums */
+-		btrfs_err(fs_info,
++		btrfs_err_rl(fs_info,
+ 			   "scrub: size assumption sectorsize != PAGE_SIZE "
+ 			   "(%d != %lu) fails",
+ 		       fs_info->chunk_root->sectorsize, PAGE_SIZE);
 -- 
-2.5.0
+2.5.5
 

@@ -1,37 +1,35 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:43215 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:51407 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752072AbcGGKUZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 7 Jul 2016 06:20:25 -0400
-Date: Thu, 7 Jul 2016 12:20:44 +0200
+	id S1753293AbcGDRHy (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 4 Jul 2016 13:07:54 -0400
+Date: Mon, 4 Jul 2016 19:08:18 +0200
 From: David Sterba <dsterba@suse.cz>
-To: Nikolay Borisov <n.borisov.lkml@gmail.com>
-Cc: dsterba@suse.com, linux-btrfs@vger.kernel.org,
-        linux-kernel@vger.kernel.org, clm@fb.com, jbacik@fb.com
-Subject: Re: [PATCH] btrfs: Fix slab accounting flags
-Message-ID: <20160707102044.GS13336@twin.jikos.cz>
+To: Liu Bo <bo.li.liu@oracle.com>
+Cc: linux-btrfs@vger.kernel.org, Peter Becker <floyd.net@gmail.com>
+Subject: Re: [PATCH] Btrfs: fix read_node_slot to return errors
+Message-ID: <20160704170818.GK13336@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <1466705828-26195-1-git-send-email-n.borisov.lkml@gmail.com>
+References: <1467165348-9931-1-git-send-email-bo.li.liu@oracle.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1466705828-26195-1-git-send-email-n.borisov.lkml@gmail.com>
+In-Reply-To: <1467165348-9931-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Jun 23, 2016 at 09:17:08PM +0300, Nikolay Borisov wrote:
-> BTRFS is using a variety of slab caches to satisfy internal needs.
-> Those slab caches are always allocated with the SLAB_RECLAIM_ACCOUNT,
-> meaning allocations from the caches are going to be accounted as
-> SReclaimable. At the same time btrfs is not registering any shrinkers
-> whatsoever, thus preventing memory from the slabs to be shrunk. This
-> means those caches are not in fact reclaimable.
-> 
-> To fix this remove the SLAB_RECLAIM_ACCOUNT on all caches apart from the
-> inode cache, since this one is being freed by the generic VFS super_block
-> shrinker. Also set the transaction related caches as SLAB_TEMPORARY,
-> to better document the lifetime of the objects (it just translates
-> to SLAB_RECLAIM_ACCOUNT).
-> 
-> Signed-off-by: Nikolay Borisov <n.borisov.lkml@gmail.com>
+On Tue, Jun 28, 2016 at 06:55:48PM -0700, Liu Bo wrote:
+> @@ -5238,6 +5256,10 @@ static void tree_move_down(struct btrfs_root *root,
+>  					path->slots[*level]);
+>  	path->slots[*level - 1] = 0;
+>  	(*level)--;
+> +
+> +	if (IS_ERR(path->nodes[*level - 1]))
+> +		return PTR_ERR(path->nodes[*level - 1]);
 
-Reviewed-by: David Sterba <dsterba@suse.com>
+Is this right? *level changes since the call to read_node_slot so I
+don't understand which value are we actually testing for error.
+
+Otherwise looks good.
+
+> +	return 0;
+>  }

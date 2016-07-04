@@ -1,50 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from tartarus.angband.pl ([89.206.35.136]:35447 "EHLO
-	tartarus.angband.pl" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932156AbcGCVa0 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 3 Jul 2016 17:30:26 -0400
-Date: Sun, 3 Jul 2016 23:30:20 +0200
-From: Adam Borowski <kilobyte@angband.pl>
-To: Henk Slager <eye1tm@gmail.com>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: btrfs defrag questions
-Message-ID: <20160703213020.GA23178@angband.pl>
-References: <5776CF08.5040601@mail.ru>
- <20160703123341.7c297efa@jupiter.sol.kaishome.de>
- <CAPmG0jZ3RMuDX-fzK7WyuNH+NeSyZw8zhWerTo7ve-CgTADSPw@mail.gmail.com>
+Received: from mail-vk0-f53.google.com ([209.85.213.53]:33451 "EHLO
+	mail-vk0-f53.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753420AbcGDIcp (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 4 Jul 2016 04:32:45 -0400
+Received: by mail-vk0-f53.google.com with SMTP id k68so136699809vkb.0
+        for <linux-btrfs@vger.kernel.org>; Mon, 04 Jul 2016 01:32:44 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CAPmG0jZ3RMuDX-fzK7WyuNH+NeSyZw8zhWerTo7ve-CgTADSPw@mail.gmail.com>
+In-Reply-To: <CAJCQCtS_yjnqQwMk+8RooVkmAAkiv+2jt=xEeVz4OkvAThubwg@mail.gmail.com>
+References: <CAKzrAgRQOvpy3ZVrLHHaRQt-JcjiFSFz6HPGr1vnvBK0xy5xGg@mail.gmail.com>
+ <CAPmG0jZUx+V+1eyw1cDpHDkudXqfLQFL9+53Lzb3f0_PGXw+Xw@mail.gmail.com>
+ <CAKzrAgTngBtK+eRGFh75GZ3MmuBKYyjbQXjD_LBhE8J-TuN0yg@mail.gmail.com>
+ <575B378E.8050304@mendix.com> <CAKzrAgTSnSyNV7KO4ERkH1BohdPEzzwbqGVSx3UhET+5PwUH2g@mail.gmail.com>
+ <575B4198.4050803@mendix.com> <57d127c6-8362-8d47-79c2-19f60d930858@gmail.com>
+ <5785a25d-0bf4-53c9-0b85-eb50be140062@mendix.com> <CAJCQCtS_yjnqQwMk+8RooVkmAAkiv+2jt=xEeVz4OkvAThubwg@mail.gmail.com>
+From: "ojab //" <ojab@ojab.ru>
+Date: Mon, 4 Jul 2016 08:32:43 +0000
+Message-ID: <CAKzrAgT6-TkQBJhvYr5R8kykPUVMesRkaOoz5fjE5kQNXzrcGQ@mail.gmail.com>
+Subject: Re: Cannot balance FS (No space left on device)
+To: Chris Murphy <lists@colorremedies.com>
+Cc: Hans van Kranenburg <hans.van.kranenburg@mendix.com>,
+        "Austin S. Hemmelgarn" <ahferroin7@gmail.com>,
+        Henk Slager <eye1tm@gmail.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Jul 03, 2016 at 04:15:02PM +0200, Henk Slager wrote:
-> >> Provided that Dropbox is running in the system, does it mean that it
-> >> cannot be defagmented?
-> >
-> > That is probably true. Files that are mapped into memory (like running
-> > executables) cannot be changed on disk. You could make a copy of that
-> > file, remove the original, and rename the new into place. As long as
-> > the executable is running it will stay on disk but you can now
-> > defragment the file and next time dropbox is started it will use the
-> > new one.
-> 
-> I get:
-> ERROR: cannot open ./dropbox: Text file busy
-> 
-> when I run:
-> btrfs fi defrag -v ./dropbox
-> 
-> This is with kernel 4.6.2 and progs 4.6.1, dropbox running and mount
-> option compress=lzo
+On Sat, Jul 2, 2016 at 7:03 PM, Chris Murphy <lists@colorremedies.com> wrote:
+> On Sat, Jul 2, 2016 at 9:07 AM, Hans van Kranenburg
+> <hans.van.kranenburg@mendix.com> wrote:
+>
+>>
+>> Also, the behaviour of *always* creating a new empty block group before
+>> starting to work (which makes it impossible to free up space on a fully
+>> allocated filesystem with balance) got reverted in:
+>>
+>> https://git.kernel.org/cgit/linux/kernel/git/stable/linux-stable.git/commit/?id=cf25ce518e8ef9d59b292e51193bed2b023a32da
+>>
+>> This patch is in 4.5 and 4.7-rc, but *not* in 4.6.
+>
+> Upstream it first appears in 4.5.7.
+>
+> --
+> Chris Murphy
+And looks like this patch also fixed my `balance` issue, yay. Thanks.
 
-This is the same thing as with dedupe: the kernel requires you to have the
-file opened for writing despite there being no direct reasons for this.
-Defragging is not a write operation in POSIX sense: it doesn't alter the
-file's contents in any way.
-
-I think it'd be good to relax this requirement to check whether the user
-_could_ open the file for writing (ie, cap or w permissions).
-
--- 
-An imaginary friend squared is a real enemy.
+//wbr ojab

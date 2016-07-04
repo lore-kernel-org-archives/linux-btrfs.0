@@ -1,68 +1,77 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-001b2d01.pphosted.com ([148.163.158.5]:44906 "EHLO
-	mx0a-001b2d01.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1752791AbcGDEfy (ORCPT
+Received: from mx0a-001b2d01.pphosted.com ([148.163.156.1]:8819 "EHLO
+	mx0a-001b2d01.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1752720AbcGDEf6 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 4 Jul 2016 00:35:54 -0400
-Received: from pps.filterd (m0098413.ppops.net [127.0.0.1])
-	by mx0b-001b2d01.pphosted.com (8.16.0.11/8.16.0.11) with SMTP id u644XdNS093749
-	for <linux-btrfs@vger.kernel.org>; Mon, 4 Jul 2016 00:35:53 -0400
-Received: from e32.co.us.ibm.com (e32.co.us.ibm.com [32.97.110.150])
-	by mx0b-001b2d01.pphosted.com with ESMTP id 23x7ruh1sp-1
+	Mon, 4 Jul 2016 00:35:58 -0400
+Received: from pps.filterd (m0098409.ppops.net [127.0.0.1])
+	by mx0a-001b2d01.pphosted.com (8.16.0.11/8.16.0.11) with SMTP id u644XeNU062691
+	for <linux-btrfs@vger.kernel.org>; Mon, 4 Jul 2016 00:35:58 -0400
+Received: from e35.co.us.ibm.com (e35.co.us.ibm.com [32.97.110.153])
+	by mx0a-001b2d01.pphosted.com with ESMTP id 23x8wuqu57-1
 	(version=TLSv1.2 cipher=AES256-SHA bits=256 verify=NOT)
-	for <linux-btrfs@vger.kernel.org>; Mon, 04 Jul 2016 00:35:53 -0400
+	for <linux-btrfs@vger.kernel.org>; Mon, 04 Jul 2016 00:35:58 -0400
 Received: from localhost
-	by e32.co.us.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
+	by e35.co.us.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
 	for <linux-btrfs@vger.kernel.org> from <chandan@linux.vnet.ibm.com>;
-	Sun, 3 Jul 2016 22:35:53 -0600
+	Sun, 3 Jul 2016 22:35:57 -0600
 From: Chandan Rajendra <chandan@linux.vnet.ibm.com>
 To: clm@fb.com, jbacik@fb.com, dsterba@suse.com
 Cc: Chandan Rajendra <chandan@linux.vnet.ibm.com>, linux-btrfs@vger.kernel.org
-Subject: [PATCH V20 14/19] Btrfs: subpage-blocksize: Enable dedupe ioctl
-Date: Mon,  4 Jul 2016 10:04:34 +0530
+Subject: [PATCH V20 15/19] Btrfs: subpage-blocksize: btrfs_clone: Flush dirty blocks of a page that do not map the clone range
+Date: Mon,  4 Jul 2016 10:04:35 +0530
 In-Reply-To: <1467606879-14181-1-git-send-email-chandan@linux.vnet.ibm.com>
 References: <1467606879-14181-1-git-send-email-chandan@linux.vnet.ibm.com>
-Message-Id: <1467606879-14181-15-git-send-email-chandan@linux.vnet.ibm.com>
+Message-Id: <1467606879-14181-16-git-send-email-chandan@linux.vnet.ibm.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The function implementing the dedupe ioctl
-i.e. btrfs_ioctl_file_extent_same(), returns with an error in
-subpage-blocksize scenario. This was done due to the fact that Btrfs did
-not have code to deal with block size < page size. This commit removes
-this restriction since we now support "block size < page size".
+After cloning the required extents, we truncate all the pages that map
+the file range being cloned. In subpage-blocksize scenario, we could
+have dirty blocks before and/or after the clone range in the
+leading/trailing pages. Truncating these pages would lead to data
+loss. Hence this commit forces such dirty blocks to be flushed to disk
+before performing the clone operation.
 
 Signed-off-by: Chandan Rajendra <chandan@linux.vnet.ibm.com>
 ---
- fs/btrfs/ioctl.c | 10 ----------
- 1 file changed, 10 deletions(-)
+ fs/btrfs/ioctl.c | 16 ++++++++++++++++
+ 1 file changed, 16 insertions(+)
 
 diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index fb92566..5d9062e 100644
+index 5d9062e..0ef3c32 100644
 --- a/fs/btrfs/ioctl.c
 +++ b/fs/btrfs/ioctl.c
-@@ -3325,21 +3325,11 @@ ssize_t btrfs_dedupe_file_range(struct file *src_file, u64 loff, u64 olen,
- {
- 	struct inode *src = file_inode(src_file);
- 	struct inode *dst = file_inode(dst_file);
--	u64 bs = BTRFS_I(src)->root->fs_info->sb->s_blocksize;
- 	ssize_t res;
+@@ -3921,6 +3921,7 @@ static noinline int btrfs_clone_files(struct file *file, struct file *file_src,
+ 	int ret;
+ 	u64 len = olen;
+ 	u64 bs = root->fs_info->sb->s_blocksize;
++	u64 dest_end;
+ 	int same_inode = src == inode;
  
- 	if (olen > BTRFS_MAX_DEDUPE_LEN)
- 		olen = BTRFS_MAX_DEDUPE_LEN;
+ 	/*
+@@ -3981,6 +3982,21 @@ static noinline int btrfs_clone_files(struct file *file, struct file *file_src,
+ 			goto out_unlock;
+ 	}
  
--	if (WARN_ON_ONCE(bs < PAGE_SIZE)) {
--		/*
--		 * Btrfs does not support blocksize < page_size. As a
--		 * result, btrfs_cmp_data() won't correctly handle
--		 * this situation without an update.
--		 */
--		return -EINVAL;
--	}
--
- 	res = btrfs_extent_same(src, loff, olen, dst, dst_loff);
- 	if (res)
- 		return res;
++	if ((round_down(destoff, PAGE_SIZE) < inode->i_size) &&
++		!IS_ALIGNED(destoff, PAGE_SIZE)) {
++		ret = filemap_write_and_wait_range(inode->i_mapping,
++					round_down(destoff, PAGE_SIZE),
++					destoff - 1);
++	}
++
++	dest_end = destoff + len - 1;
++	if ((dest_end < inode->i_size) &&
++		!IS_ALIGNED(dest_end + 1, PAGE_SIZE)) {
++		ret = filemap_write_and_wait_range(inode->i_mapping,
++					dest_end + 1,
++					round_up(dest_end, PAGE_SIZE));
++	}
++
+ 	if (destoff > inode->i_size) {
+ 		ret = btrfs_cont_expand(inode, inode->i_size, destoff);
+ 		if (ret)
 -- 
 2.5.5
 

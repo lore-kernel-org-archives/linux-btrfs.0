@@ -1,58 +1,37 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:48316 "EHLO mx1.redhat.com"
+Received: from mx2.suse.de ([195.135.220.15]:41962 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S932239AbcGDGvk (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 4 Jul 2016 02:51:40 -0400
-Date: Mon, 4 Jul 2016 14:51:37 +0800
-From: Eryu Guan <eguan@redhat.com>
-To: "Darrick J. Wong" <darrick.wong@oracle.com>
-Cc: david@fromorbit.com, linux-btrfs@vger.kernel.org, fstests@vger.kernel.org,
-        xfs@oss.sgi.com
-Subject: Re: [PATCH 16/20] reflink: test cross-mountpoint reflink and dedupe
-Message-ID: <20160704065137.GW23649@eguan.usersys.redhat.com>
-References: <146612796204.25024.18254357523133394284.stgit@birch.djwong.org>
- <146612806287.25024.6626531953151914169.stgit@birch.djwong.org>
+	id S1753141AbcGDLhO (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 4 Jul 2016 07:37:14 -0400
+Date: Mon, 4 Jul 2016 13:37:38 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Luis Henriques <henrix@camandro.org>
+Cc: linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.cz>
+Subject: Re: [PATCH] btrfs-progs: tests: 001-simple-unmounted: fix test
+ failure due to bashism
+Message-ID: <20160704113738.GB13336@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20160624234729.GA29145@charon>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <146612806287.25024.6626531953151914169.stgit@birch.djwong.org>
+In-Reply-To: <20160624234729.GA29145@charon>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Jun 16, 2016 at 06:47:42PM -0700, Darrick J. Wong wrote:
-> Test sharing blocks via reflink and dedupe between two different
-> mountpoints of the same filesystem.  This shouldn't work, since
-> we don't allow cross-mountpoint functions.
+On Sat, Jun 25, 2016 at 12:47:29AM +0100, Luis Henriques wrote:
+> The usage of 'source' is a bashism, and '.' should be used instead.  This
+> is causing fuzz-tests/001-simple-unmounted to fail in systems where
+> /bin/sh isn't bash:
 > 
-> Signed-off-by: Darrick J. Wong <darrick.wong@oracle.com>
-> ---
->  common/reflink        |    2 +
->  tests/generic/927     |   88 +++++++++++++++++++++++++++++++++++++++++++++++++
->  tests/generic/927.out |    9 +++++
->  tests/generic/928     |   86 ++++++++++++++++++++++++++++++++++++++++++++++++
->  tests/generic/928.out |   10 ++++++
->  tests/generic/group   |    2 +
->  6 files changed, 196 insertions(+), 1 deletion(-)
->  create mode 100755 tests/generic/927
->  create mode 100644 tests/generic/927.out
->  create mode 100755 tests/generic/928
->  create mode 100644 tests/generic/928.out
+>     [TEST/fuzz]   001-simple-unmounted
+> ./test.sh: 5: ./test.sh: source: not found
+> ./test.sh: 7: ./test.sh: setup_root_helper: not found
+> ./test.sh: 8: ./test.sh: check_prereq: not found
+> ./test.sh: 18: ./test.sh: check_all_images: not found
 > 
+> Since most (all?) tests actually use /bin/bash, change this test to use
+> bash too.
 > 
-> diff --git a/common/reflink b/common/reflink
-> index 4ec390d..1363971 100644
-> --- a/common/reflink
-> +++ b/common/reflink
-> @@ -107,7 +107,7 @@ _require_scratch_dedupe()
->  	_scratch_mount
->  	"$XFS_IO_PROG" -f -c "pwrite -S 0x61 0 65536" "$SCRATCH_MNT/file1" > /dev/null
->  	"$XFS_IO_PROG" -f -c "pwrite -S 0x61 0 65536" "$SCRATCH_MNT/file2" > /dev/null
-> -	testio="$("$XFS_IO_PROG" -f -c "dedupe $TEST_DIR/file1 0 0 65536" "$TEST_DIR/file2" 2>&1)"
-> +	testio="$("$XFS_IO_PROG" -f -c "dedupe $SCRATCH_MNT/file1 0 0 65536" "$SCRATCH_MNT/file2" 2>&1)"
->  	echo $testio | grep -q "Operation not supported" && \
->  		_notrun "Dedupe not supported by test filesystem type: $FSTYP"
->  	echo $testio | grep -q "Inappropriate ioctl for device" && \
+> Signed-off-by: Luis Henriques <henrix@camandro.org>
 
-I think this hunk belongs to a seperate patch.
-
-Thanks,
-Eryu
+Applied, thanks.

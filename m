@@ -1,41 +1,32 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wm0-f67.google.com ([74.125.82.67]:33634 "EHLO
-	mail-wm0-f67.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750713AbcGCEke (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 3 Jul 2016 00:40:34 -0400
-From: Salah Triki <salah.triki@gmail.com>
-To: clm@fb.com, jbacik@fb.com, dsterba@suse.com
-Cc: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
-        salah.triki@gmail.com
-Subject: [PATCH] fs: btrfs: Replace -ENOENT by -ERANGE in btrfs_get_acl()
-Date: Sun,  3 Jul 2016 05:40:10 +0100
-Message-Id: <1467520810-11027-1-git-send-email-salah.triki@gmail.com>
+Received: from mx2.suse.de ([195.135.220.15]:53909 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750734AbcGDR4o (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 4 Jul 2016 13:56:44 -0400
+Date: Mon, 4 Jul 2016 19:57:08 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Hans van Kranenburg <hans.van.kranenburg@mendix.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] Btrfs: use the correct struct for BTRFS_IOC_LOGICAL_INO
+Message-ID: <20160704175708.GO13336@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1467580986-2968-1-git-send-email-hans.van.kranenburg@mendix.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1467580986-2968-1-git-send-email-hans.van.kranenburg@mendix.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-size contains the value returned by posix_acl_from_xattr(), which
-returns -ERANGE, -ENODATA, zero, or an integer greater than zero. So
-replace -ENOENT by -ERANGE.
+On Sun, Jul 03, 2016 at 11:23:06PM +0200, Hans van Kranenburg wrote:
+> BTRFS_IOC_LOGICAL_INO takes a btrfs_ioctl_logical_ino_args as argument,
+> not a btrfs_ioctl_ino_path_args. The lines were probably copy/pasted
+> when the code was written.
+> 
+> Since btrfs_ioctl_logical_ino_args and btrfs_ioctl_ino_path_args have
+> the same size, the actual IOCTL definition here does not change.
+> 
+> But, it makes the code less confusing for the reader.
+> 
+> Signed-off-by: Hans van Kranenburg <hans.van.kranenburg@mendix.com>
 
-Signed-off-by: Salah Triki <salah.triki@gmail.com>
----
- fs/btrfs/acl.c | 3 +--
- 1 file changed, 1 insertion(+), 2 deletions(-)
-
-diff --git a/fs/btrfs/acl.c b/fs/btrfs/acl.c
-index 67a6077..53bb7af 100644
---- a/fs/btrfs/acl.c
-+++ b/fs/btrfs/acl.c
-@@ -55,8 +55,7 @@ struct posix_acl *btrfs_get_acl(struct inode *inode, int type)
- 	}
- 	if (size > 0) {
- 		acl = posix_acl_from_xattr(&init_user_ns, value, size);
--	} else if (size == -ENOENT || size == -ENODATA || size == 0) {
--		/* FIXME, who returns -ENOENT?  I think nobody */
-+	} else if (size == -ERANGE || size == -ENODATA || size == 0) {
- 		acl = NULL;
- 	} else {
- 		acl = ERR_PTR(-EIO);
--- 
-1.9.1
-
+Reviewed-by: David Sterba <dsterba@suse.com>

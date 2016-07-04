@@ -1,92 +1,139 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wm0-f42.google.com ([74.125.82.42]:36909 "EHLO
-	mail-wm0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750734AbcGDV2r convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 4 Jul 2016 17:28:47 -0400
-Received: by mail-wm0-f42.google.com with SMTP id a66so129351152wme.0
-        for <linux-btrfs@vger.kernel.org>; Mon, 04 Jul 2016 14:28:46 -0700 (PDT)
-Content-Type: text/plain; charset=utf-8
-Mime-Version: 1.0 (Mac OS X Mail 9.3 \(3124\))
-Subject: Re: btrfs RAID 10 truncates files over 2G to 4096 bytes.
-From: Tomasz Kusmierz <tom.kusmierz@gmail.com>
-In-Reply-To: <CAPmG0jYfdYt81E8oaky53eYmy69tWgpLkRFWXRxGF_d3g3Uhjg@mail.gmail.com>
-Date: Mon, 4 Jul 2016 22:28:42 +0100
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Message-Id: <EDF51D2D-A311-47DF-BFF7-F5C855B9E96D@gmail.com>
-References: <CAKinxcVHevoWzgYO+1tjiGOow=shc=oBpvRrTSedeAn1raUrXA@mail.gmail.com> <CAPmG0jYfdYt81E8oaky53eYmy69tWgpLkRFWXRxGF_d3g3Uhjg@mail.gmail.com>
-To: Henk Slager <eye1tm@gmail.com>
+Received: from plane.gmane.org ([80.91.229.3]:52591 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S932503AbcGDVnm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 4 Jul 2016 17:43:42 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+	id 1bKBeT-0000u6-W3
+	for linux-btrfs@vger.kernel.org; Mon, 04 Jul 2016 23:43:38 +0200
+Received: from ip1f11faed.dynamic.kabel-deutschland.de ([31.17.250.237])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Mon, 04 Jul 2016 23:43:37 +0200
+Received: from hurikhan77 by ip1f11faed.dynamic.kabel-deutschland.de with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Mon, 04 Jul 2016 23:43:37 +0200
+To: linux-btrfs@vger.kernel.org
+From: Kai Krakow <hurikhan77@gmail.com>
+Subject: Re: btrfs defrag questions
+Date: Mon, 4 Jul 2016 23:43:29 +0200
+Message-ID: <20160704234329.6a0e76f9@jupiter.sol.kaishome.de>
+References: <5776CF08.5040601@mail.ru>
+	<20160703123341.7c297efa@jupiter.sol.kaishome.de>
+	<CAPmG0jZ3RMuDX-fzK7WyuNH+NeSyZw8zhWerTo7ve-CgTADSPw@mail.gmail.com>
+	<20160703213020.GA23178@angband.pl>
+	<20160704231650.58fc253c@jupiter.sol.kaishome.de>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=US-ASCII
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I did consider that, but:
-- some files were NOT accessed by anything with 100% certainty (well if there is a rootkit on my system or something in that shape than maybe yes) 
-- the only application that could access those files is totem (well Nautilius checks extension -> directs it to totem) so in that case we would hear about out break of totem killing people files.  
-- if it was a kernel bug then other large files would be affected.
+Am Mon, 4 Jul 2016 23:16:50 +0200
+schrieb Kai Krakow <hurikhan77@gmail.com>:
 
-Maybe I’m wrong and it’s actually related to the fact that all those files are located in single location on file system (single folder) that might have a historical bug in some structure somewhere ? 
-
-I did forgot to add that file system was created a long time ago and it was created with leaf & node size = 16k. 
-
-(ps. this email client on OS X is driving me up the wall … have to correct the corrections all the time :/)
-
-> On 4 Jul 2016, at 22:13, Henk Slager <eye1tm@gmail.com> wrote:
+> Am Sun, 3 Jul 2016 23:30:20 +0200
+> schrieb Adam Borowski <kilobyte@angband.pl>:
 > 
-> On Sun, Jul 3, 2016 at 1:36 AM, Tomasz Kusmierz <tom.kusmierz@gmail.com> wrote:
->> Hi,
->> 
->> My setup is that I use one file system for / and /home (on SSD) and a
->> larger raid 10 for /mnt/share (6 x 2TB).
->> 
->> Today I've discovered that 14 of files that are supposed to be over
->> 2GB are in fact just 4096 bytes. I've checked the content of those 4KB
->> and it seems that it does contain information that were at the
->> beginnings of the files.
->> 
->> I've experienced this problem in the past (3 - 4 years ago ?) but
->> attributed it to different problem that I've spoke with you guys here
->> about (corruption due to non ECC ram). At that time I did deleted
->> files affected (56) and similar problem was discovered a year but not
->> more than 2 years ago and I believe I've deleted the files.
->> 
->> I periodically (once a month) run a scrub on my system to eliminate
->> any errors sneaking in. I believe I did a balance a half a year ago ?
->> to reclaim space after I deleted a large database.
->> 
->> root@noname_server:/mnt/share# btrfs fi show
->> Label: none  uuid: 060c2345-5d2f-4965-b0a2-47ed2d1a5ba2
->>    Total devices 1 FS bytes used 177.19GiB
->>    devid    3 size 899.22GiB used 360.06GiB path /dev/sde2
->> 
->> Label: none  uuid: d4cd1d5f-92c4-4b0f-8d45-1b378eff92a1
->>    Total devices 6 FS bytes used 4.02TiB
->>    devid    1 size 1.82TiB used 1.34TiB path /dev/sdg1
->>    devid    2 size 1.82TiB used 1.34TiB path /dev/sdh1
->>    devid    3 size 1.82TiB used 1.34TiB path /dev/sdi1
->>    devid    4 size 1.82TiB used 1.34TiB path /dev/sdb1
->>    devid    5 size 1.82TiB used 1.34TiB path /dev/sda1
->>    devid    6 size 1.82TiB used 1.34TiB path /dev/sdf1
->> 
->> root@noname_server:/mnt/share# uname -a
->> Linux noname_server 4.4.0-28-generic #47-Ubuntu SMP Fri Jun 24
->> 10:09:13 UTC 2016 x86_64 x86_64 x86_64 GNU/Linux
->> root@noname_server:/mnt/share# btrfs --version
->> btrfs-progs v4.4
->> root@noname_server:/mnt/share#
->> 
->> 
->> Problem is that stuff on this filesystem moves so slowly that it's
->> hard to remember historical events ... it's like AWS glacier. What I
->> can state with 100% certainty is that:
->> - files that are affected are 2GB and over (safe to assume 4GB and over)
->> - files affected were just read (and some not even read) never written
->> after putting into storage
->> - In the past I've assumed that files affected are due to size, but I
->> have quite few ISO files some backups of virtual machines ... no
->> problems there - seems like problem originates in one folder & size >
->> 2GB & extension .mkv
+> > On Sun, Jul 03, 2016 at 04:15:02PM +0200, Henk Slager wrote:
+> >  [...]    
+>  [...]  
+> > > 
+> > > I get:
+> > > ERROR: cannot open ./dropbox: Text file busy
+> > > 
+> > > when I run:
+> > > btrfs fi defrag -v ./dropbox
+> > > 
+> > > This is with kernel 4.6.2 and progs 4.6.1, dropbox running and
+> > > mount option compress=lzo    
+> > 
+> > This is the same thing as with dedupe: the kernel requires you to
+> > have the file opened for writing despite there being no direct
+> > reasons for this. Defragging is not a write operation in POSIX
+> > sense: it doesn't alter the file's contents in any way.
+> > 
+> > I think it'd be good to relax this requirement to check whether the
+> > user _could_ open the file for writing (ie, cap or w permissions).  
 > 
-> In case some application is the root cause of the issue, I would say
-> try to keep some ro snapshots done by a tool like snapper for example,
-> but maybe you do that already. It sounds also like this is some kernel
-> bug, snaphots won't help that much then I think.
+> I don't think that works because the file is mapped into memory while
+> it is executed. The kernel doesn't actively load an executable. It is
+> just mapped into memory and acts like a mini swap file: Blocks are
+> paged into RAM as soon as the CPU encounters them. Executing a file
+> involves page faults. And this is why you cannot rearrange it on disk:
+> The kernel holds a lock while the file's contents are mapped, it needs
+> consistent 1:1 block mapping determined at time of mapping the file.
+> 
+> You can however manipulate the file name. If you move the file, then
+> _copy_ it back into place, then remove the old file, the contents
+> become orphan. The contents will be unlinked from storage if the file
+> mapping is closed. If your PC is rebooted while the orphan exists, the
+> file system will do an orphan cleanup at reboot (you will see such
+> messages in dmesg then). The fact that you made a copy and moved it in
+> place of the original filename, however, allows you to now modify the
+> file contents - as this copy is not mapped. That won't touch the
+> original orphan contents. I think this should also be possible with a
+> reflink copy (cp -b) but I'm not sure.
+> 
+> You simply cannot change on-disk layout of mapped files. In addition,
+> you cannot write to executables mapped into memory - it would destroy
+> consistency of what the memory manager swapped into RAM and what is on
+> disk. The error message here is "text file busy". In the context of
+> executables, "text" is the program text - read: the binary
+> instructions for the CPU. It has nothing to do with an ordinary text
+> file humans can read (the common meaning is just "read" as in "CPUs
+> can read" and "humans can read").
+> 
+> So in other words: There is a direct reason, and you actually change
+> contents on disk from kernel perspective just because their layout is
+> changed. Think of it like this: If you defrag the file, it's contents
+> do not change, yes, just the layout. The blocks are moved somewhere
+> else. Next time, the kernel tries to page a block from disk of the
+> previously learned mapping (which is now invalid), the block may have
+> changed because you added new files to the disk. Thus, the content of
+> the block has changed, the executable would crash. I think this has
+> nothing to do with POSIX - the Linux kernel isn't even pure POSIX
+> conform (it just tries to stay as close as possible). This is just how
+> running executables works and this needs protection against tampering
+> or other attacks.
+> 
+> Other OSes like Windows act in the same way (executables are mapped
+> into memory, not loaded). But Windows/NTFS doesn't support the concept
+> of orphans (at least not that I know of) which makes mapped
+> executables (DLL, EXE) immutable while they are mapped. One reason
+> why Windows needs a reboot for everything and Unix OSes don't.
+> 
+> If OSes would load todays executables program text into memory (thus
+> making a complete copy of it into RAM), like good old DOS did, they
+> would become pretty slow. Binary executables are paged into RAM on
+> demand.
+> 
+> http://stackoverflow.com/questions/8506865/when-a-binary-file-runs-does-it-copy-its-entire-binary-data-into-memory-at-once
+> 
+
+BTW: This is why prelinking improves application startup times...
+Usually, at start of a binary, the dynamic linker will adjust jump
+addresses throughout the whole binary involving a lot of page faults.
+Prelinking largely solves this by doing runtime linking in advance so
+the runtime linker's modification to the binary are reduced to a
+minimum. Page faults are reduced and application startup will be more
+instant. I think this even reduces memory pressure as the pages can
+simply be discarded because they are not modified in memory during
+startup. This, however, involves predeterming a common memory layout
+for all binaries sharing the same libraries - which is quite expensive
+and works better on 64bit systems. This is why prelinking takes a long
+time, has to be updated when you update packages, and can even fail if
+address space is too small (which hits you early on 32bit).
+
+The fact that prelinking sets address space layout in advance may also
+reduce system security because it will no longer be random at time the
+dynamic linker runs - but this is probably not a very strong point
+against prelinking on desktop systems. Prelinking is usually redone on
+a daily basis by a cronjob.
+
+-- 
+Regards,
+Kai
+
+Replies to list-only preferred.
 

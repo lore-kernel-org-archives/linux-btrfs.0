@@ -1,45 +1,54 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oi0-f41.google.com ([209.85.218.41]:34717 "EHLO
-	mail-oi0-f41.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750757AbcGEXFs (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Jul 2016 19:05:48 -0400
-Received: by mail-oi0-f41.google.com with SMTP id s66so249774753oif.1
-        for <linux-btrfs@vger.kernel.org>; Tue, 05 Jul 2016 16:05:48 -0700 (PDT)
+Received: from mail-oi0-f50.google.com ([209.85.218.50]:33187 "EHLO
+	mail-oi0-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750840AbcGEXTr convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Jul 2016 19:19:47 -0400
+Received: by mail-oi0-f50.google.com with SMTP id u201so249964393oie.0
+        for <linux-btrfs@vger.kernel.org>; Tue, 05 Jul 2016 16:19:47 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <70f12c1b-8d30-c5f7-faa8-10a86a49c332@crc.id.au>
-References: <576CB0DA.6030409@gmail.com> <20160624085014.GH3325@carfax.org.uk>
- <CAA91j0Uqg0FafFTG3NhQt=p8KkYRhTeMU5Bd+JuUxDntP6g8Ng@mail.gmail.com>
- <CAJCQCtQBQAng5_mNJZev+64Z15BSkBkG9f2qmz=ckPRqXRbbWA@mail.gmail.com>
- <576D6C0A.7070502@gmail.com> <CAJCQCtSskA4PC_a8tgQopHFNO83NQ=Gkx406haB7G0nBi5e=2A@mail.gmail.com>
- <c2a320a6-261b-723d-ab83-58f883e6315b@gmail.com> <CAJCQCtSqO4GNm8kBDuzUXEXYx+54zFgsD6=ARNsRgVUb53LQZw@mail.gmail.com>
- <fd7d250c-0a5a-ea3e-9ea2-ec6e50e14169@gmail.com> <CAJCQCtQugDoR6fnPeion37FLS3LarjfP6dt+-Z3jPgLG0Xkmwg@mail.gmail.com>
- <20160627215726.GG14667@hungrycats.org> <ab23dea9-4fee-feef-cc7a-5f58cfd4067f@gmail.com>
- <7bad0370-ac01-2280-d8b1-e31b0ae9cffe@crc.id.au> <154fc0b3-8c39-eff6-48c9-5d2667e967b1@gmail.com>
- <31207cfc-245f-1b6e-4ef9-b8bf04b65e70@crc.id.au> <CAJCQCtTto04fz_=z0P0rBVX7sVqe1+LG-kbq7D1djXyB=tRdLQ@mail.gmail.com>
- <70f12c1b-8d30-c5f7-faa8-10a86a49c332@crc.id.au>
+In-Reply-To: <b9647ec5-fe9b-4bfe-97d1-329f47dbf7b0@gmail.com>
+References: <cc4fd464-271c-6b32-263c-ae91c19b8712@gmail.com>
+ <CAJCQCtQoCtbt5NrggHPp+WrwUKbJ0nah4s6nJ0mPnKsGQ5i63Q@mail.gmail.com>
+ <95f58623-95a4-b5d2-fa3a-bfb957840a31@gmail.com> <CAJCQCtSczHoBYyKB1DTyqGngdvC+BHtnXeZiG=1QHWkAWFO6EA@mail.gmail.com>
+ <dc944146-50ce-b2fd-189c-a2c9f5a957c3@gmail.com> <CAJCQCtTPXY7=9vi9Ai2VrCEHzsEj_J0gurAVH5JGLJYmKmUpPw@mail.gmail.com>
+ <577B2E1D.5070808@gmail.com> <CAJCQCtSW+3eA-amrGgQAds1F8sYPDPgTB9x49RjWnaq=vSePgw@mail.gmail.com>
+ <b9647ec5-fe9b-4bfe-97d1-329f47dbf7b0@gmail.com>
 From: Chris Murphy <lists@colorremedies.com>
-Date: Tue, 5 Jul 2016 17:05:44 -0600
-Message-ID: <CAJCQCtR+S7mVSKiDSLOnJ+CjCwtmpj9w=pFDK_chHCqpcV-+Ww@mail.gmail.com>
-Subject: Re: Adventures in btrfs raid5 disk recovery
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Date: Tue, 5 Jul 2016 17:19:46 -0600
+Message-ID: <CAJCQCtRPhn0i0MkPn1QFr0wqovwQkuEdZ=eWtRZ0QR3O5z5T+w@mail.gmail.com>
+Subject: Re: Unable to mount degraded RAID5
+To: =?UTF-8?B?VG9tw6HFoSBIcmRpbmE=?= <thomas.rkh@gmail.com>
+Cc: Chris Murphy <lists@colorremedies.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Related:
-http://www.spinics.net/lists/raid/msg52880.html
+On Tue, Jul 5, 2016 at 12:40 PM, Tomáš Hrdina <thomas.rkh@gmail.com> wrote:
+> I don't know, if it would be good idea, but my disk, which disconnected
+> is connected again. Maybe it could help in getting data to the right
+> state, so other two disk could be mounted alone. But don't know, if it
+> would stay connected for some work. Or if it would make things even worst.
 
-Looks like there is some traction to figuring out what to do about
-this, whether it's a udev rule or something that happens in the kernel
-itself. Pretty much the only hardware setup unaffected by this are
-those with enterprise or NAS drives. Every configuration of a consumer
-drive, single, linear/concat, and all software (mdadm, lvm, Btrfs)
-RAID Levels are adversely affected by this.
+I'd stick to the read only commands:
 
-I suspect, but haven't tested, that ZFS On Linux would be equally
-affected, unless they're completely reimplementing their own block
-layer (?) So there are quite a few parties now negatively impacted by
-the current default behavior.
+btrfs check
+btrfs-debug-tree -d
+btrfs-find-root
+
+Also, I'm surprised I didn't ask (seeing as I'm on a rampage about
+this these days)
 
 
+smartctl -l scterc /dev/sdX   ## for each drive
+smartcl -a /dev/sdX  ## for each drive
+cat /sys/block/sdX/device/timeout   ## for each drive
+
+We should find out if there are bad sectors, and if they can even be
+properly corrected by Btrfs self healing mechanism. The normal default
+on Linux prevents this with consumer drives.
+
+
+
+-- 
 Chris Murphy

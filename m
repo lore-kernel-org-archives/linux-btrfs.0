@@ -1,55 +1,102 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oi0-f45.google.com ([209.85.218.45]:33655 "EHLO
-	mail-oi0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754599AbcGFSTX (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 Jul 2016 14:19:23 -0400
-Received: by mail-oi0-f45.google.com with SMTP id u201so281575423oie.0
-        for <linux-btrfs@vger.kernel.org>; Wed, 06 Jul 2016 11:19:22 -0700 (PDT)
+Received: from mail-oi0-f42.google.com ([209.85.218.42]:36494 "EHLO
+	mail-oi0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755676AbcGFSXw convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 Jul 2016 14:23:52 -0400
+Received: by mail-oi0-f42.google.com with SMTP id f189so282372545oig.3
+        for <linux-btrfs@vger.kernel.org>; Wed, 06 Jul 2016 11:23:51 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <CAFDLS-AA6nYJy6BBRPhqAL-7PpA-TTEUqpjLR2+cZ05A+5kx7A@mail.gmail.com>
-References: <CAFDLS-CtnVDtD8d=Wtp0tVokKJ6pjptpX7MR862dThBJvSPC5g@mail.gmail.com>
- <CAFDLS-AA6nYJy6BBRPhqAL-7PpA-TTEUqpjLR2+cZ05A+5kx7A@mail.gmail.com>
+In-Reply-To: <44c18e92-69b4-1409-1bf3-b1d08f6f84db@gmail.com>
+References: <CAJCQCtRQBGNeCyENzTPT=yiqs3Tcc=aD8v6usKNtTnvyOd0uqw@mail.gmail.com>
+ <20160705212706.719397fc@jupiter.sol.kaishome.de> <CAJCQCtRyvC6J=KJSVYRd1sOWPoVm69tA--3U8kAVdDynkziwNA@mail.gmail.com>
+ <CAJCQCtS7OgKKzstJDz52Sd6+SJygDzoVzMhvwHqGxFmihr6Aqg@mail.gmail.com>
+ <CAA91j0VbaRpt46tYf_oqd7fRuRn_ev-=Zxf_Bwiwd=TUHR+2Ow@mail.gmail.com>
+ <CAJCQCtSZ=7v5PgD4mYKhayg03UfVqCV0ADBSjTsFDHiVcdxAjw@mail.gmail.com> <44c18e92-69b4-1409-1bf3-b1d08f6f84db@gmail.com>
 From: Chris Murphy <lists@colorremedies.com>
-Date: Wed, 6 Jul 2016 12:19:21 -0600
-Message-ID: <CAJCQCtT82qFxsehXAmSwerPmV1KnVM5LBS=WA1iE8SiVbUtFRg@mail.gmail.com>
-Subject: Re: Unable to mount degraded RAID5
-To: Gonzalo Gomez-Arrue Azpiazu <ggomarr@gmail.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Date: Wed, 6 Jul 2016 12:23:50 -0600
+Message-ID: <CAJCQCtRd-=RYAVWJBoVKPLU3-jx0T1oQgmhJwBM01j9zpFsUvg@mail.gmail.com>
+Subject: Re: 64-btrfs.rules and degraded boot
+To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Cc: Chris Murphy <lists@colorremedies.com>,
+        Andrei Borzenkov <arvidjaar@gmail.com>,
+        Kai Krakow <hurikhan77@gmail.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jul 6, 2016 at 11:12 AM, Gonzalo Gomez-Arrue Azpiazu
-<ggomarr@gmail.com> wrote:
-> Hello,
+On Wed, Jul 6, 2016 at 12:04 PM, Austin S. Hemmelgarn
+<ahferroin7@gmail.com> wrote:
+> On 2016-07-06 13:19, Chris Murphy wrote:
+>>
+>> On Wed, Jul 6, 2016 at 3:51 AM, Andrei Borzenkov <arvidjaar@gmail.com>
+>> wrote:
+>>>
+>>> 3) can we query btrfs whether it is mountable in degraded mode?
+>>> according to documentation, "btrfs device ready" (which udev builtin
+>>> follows) checks "if it has ALL of it’s devices in cache for mounting".
+>>> This is required for proper systemd ordering of services.
+>>
+>>
+>> Where does udev builtin use btrfs itself? I see "btrfs ready $device"
+>> which is not a valid btrfs user space command.
+>>
+>> I never get any errors from "btrfs device ready" even when too many
+>> devices are missing. I don't know what it even does or if it's broken.
+>>
+>> This is a three device raid1 where I removed 2 devices and "btrfs
+>> device ready" does not complain, it always returns silent for me no
+>> matter what. It's been this way for years as far as I know.
+>>
+>> [root@f24s ~]# lvs
+>>   LV         VG Attr       LSize  Pool       Origin Data%  Meta%  Move
+>> Log Cpy%Sync Convert
+>>   1          VG Vwi-a-tz-- 50.00g thintastic        2.55
+>>   2          VG Vwi-a-tz-- 50.00g thintastic        4.00
+>>   3          VG Vwi-a-tz-- 50.00g thintastic        2.54
+>>   thintastic VG twi-aotz-- 90.00g                   5.05   2.92
+>> [root@f24s ~]# btrfs fi show
+>> Label: none  uuid: 96240fd9-ea76-47e7-8cf4-05d3570ccfd7
+>>     Total devices 3 FS bytes used 2.26GiB
+>>     devid    1 size 50.00GiB used 3.00GiB path /dev/mapper/VG-1
+>>     devid    2 size 50.00GiB used 2.01GiB path /dev/mapper/VG-2
+>>     devid    3 size 50.00GiB used 3.01GiB path /dev/mapper/VG-3
+>>
+>> [root@f24s ~]# btrfs device ready /dev/mapper/VG-1
+>> [root@f24s ~]#
+>> [root@f24s ~]# lvchange -an VG/1
+>> [root@f24s ~]# lvchange -an VG/2
+>> [root@f24s ~]# btrfs dev scan
+>> Scanning for Btrfs filesystems
+>> [root@f24s ~]# lvs
+>>   LV         VG Attr       LSize  Pool       Origin Data%  Meta%  Move
+>> Log Cpy%Sync Convert
+>>   1          VG Vwi---tz-- 50.00g thintastic
+>>   2          VG Vwi---tz-- 50.00g thintastic
+>>   3          VG Vwi-a-tz-- 50.00g thintastic        2.54
+>>   thintastic VG twi-aotz-- 90.00g                   5.05   2.92
+>> [root@f24s ~]# btrfs fi show
+>> warning, device 2 is missing
+>> Label: none  uuid: 96240fd9-ea76-47e7-8cf4-05d3570ccfd7
+>>     Total devices 3 FS bytes used 2.26GiB
+>>     devid    3 size 50.00GiB used 3.01GiB path /dev/mapper/VG-3
+>>     *** Some devices missing
+>>
+>> [root@f24s ~]# btrfs device ready /dev/mapper/VG-3
+>> [root@f24s ~]#
 >
-> I had a RAID5 with 3 disks and one failed; now the filesystem cannot be mounted.
->
-> None of the recommendations that I found seem to work. The situation
-> seems to be similar to this one:
-> http://www.spinics.net/lists/linux-btrfs/msg56825.html
->
-> Any suggestion on what to try next?
+> You won't get any output from it regardless, you have to check the return
+> code as it's intended to be a tool for scripts and such.
 
-Basically if you are degraded *and* it runs into additional errors,
-then it's broken because raid5 only protects against one device error.
-The main problem is if it can't read the chunk root it's hard for any
-tool to recover data because the chunk tree mapping is vital to
-finding data.
+How do I check the return code? When I use strace, no matter what I'm getting
 
-What do you get for:
-btrfs rescue super-recover -v /dev/sdc1
++++ exited with 0 +++
 
-It's a problem with the chunk tree because all of your super blocks
-point to the same chunk tree root so there isn't another one to try.
-
->sudo btrfs-find-root /dev/sdc1
->warning, device 2 is missing
->Couldn't read chunk root
->Open ctree failed
-
-It's bad news. I'm not even sure 'btrfs restore' can help this case.
-
+I see both 'brfs device ready' and the udev btrfs builtin test are
+calling BTRFS_IOC_DEVICES_READY so, it looks like udev is not using
+user space tools to check but rather a btrfs ioctl. So clearly that
+works or I wouldn't have stalled boots when all devices aren't
+present.
 
 -- 
 Chris Murphy

@@ -1,63 +1,66 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-it0-f43.google.com ([209.85.214.43]:36365 "EHLO
-	mail-it0-f43.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750868AbcGFLp1 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 Jul 2016 07:45:27 -0400
-Received: by mail-it0-f43.google.com with SMTP id g4so63703369ith.1
-        for <linux-btrfs@vger.kernel.org>; Wed, 06 Jul 2016 04:45:27 -0700 (PDT)
-Subject: Re: 64-btrfs.rules and degraded boot
-To: Andrei Borzenkov <arvidjaar@gmail.com>,
-        Chris Murphy <lists@colorremedies.com>
-References: <CAJCQCtRQBGNeCyENzTPT=yiqs3Tcc=aD8v6usKNtTnvyOd0uqw@mail.gmail.com>
- <20160705212706.719397fc@jupiter.sol.kaishome.de>
- <CAJCQCtRyvC6J=KJSVYRd1sOWPoVm69tA--3U8kAVdDynkziwNA@mail.gmail.com>
- <CAJCQCtS7OgKKzstJDz52Sd6+SJygDzoVzMhvwHqGxFmihr6Aqg@mail.gmail.com>
- <CAA91j0VbaRpt46tYf_oqd7fRuRn_ev-=Zxf_Bwiwd=TUHR+2Ow@mail.gmail.com>
-Cc: Kai Krakow <hurikhan77@gmail.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Received: from mail-io0-f175.google.com ([209.85.223.175]:32946 "EHLO
+	mail-io0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751622AbcGFLv2 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 Jul 2016 07:51:28 -0400
+Received: by mail-io0-f175.google.com with SMTP id t74so197728766ioi.0
+        for <linux-btrfs@vger.kernel.org>; Wed, 06 Jul 2016 04:51:28 -0700 (PDT)
+Received: from [191.9.212.201] (rrcs-70-62-41-24.central.biz.rr.com. [70.62.41.24])
+        by smtp.gmail.com with ESMTPSA id m133sm1514965ioa.23.2016.07.06.04.51.25
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
+        Wed, 06 Jul 2016 04:51:26 -0700 (PDT)
+Subject: Re: Adventures in btrfs raid5 disk recovery
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+References: <576CB0DA.6030409@gmail.com> <20160624085014.GH3325@carfax.org.uk>
+ <CAA91j0Uqg0FafFTG3NhQt=p8KkYRhTeMU5Bd+JuUxDntP6g8Ng@mail.gmail.com>
+ <CAJCQCtQBQAng5_mNJZev+64Z15BSkBkG9f2qmz=ckPRqXRbbWA@mail.gmail.com>
+ <576D6C0A.7070502@gmail.com>
+ <CAJCQCtSskA4PC_a8tgQopHFNO83NQ=Gkx406haB7G0nBi5e=2A@mail.gmail.com>
+ <c2a320a6-261b-723d-ab83-58f883e6315b@gmail.com>
+ <CAJCQCtSqO4GNm8kBDuzUXEXYx+54zFgsD6=ARNsRgVUb53LQZw@mail.gmail.com>
+ <fd7d250c-0a5a-ea3e-9ea2-ec6e50e14169@gmail.com>
+ <CAJCQCtQugDoR6fnPeion37FLS3LarjfP6dt+-Z3jPgLG0Xkmwg@mail.gmail.com>
+ <20160627215726.GG14667@hungrycats.org>
+ <ab23dea9-4fee-feef-cc7a-5f58cfd4067f@gmail.com>
+ <7bad0370-ac01-2280-d8b1-e31b0ae9cffe@crc.id.au>
+ <154fc0b3-8c39-eff6-48c9-5d2667e967b1@gmail.com>
+ <31207cfc-245f-1b6e-4ef9-b8bf04b65e70@crc.id.au>
+ <CAJCQCtTto04fz_=z0P0rBVX7sVqe1+LG-kbq7D1djXyB=tRdLQ@mail.gmail.com>
+ <70f12c1b-8d30-c5f7-faa8-10a86a49c332@crc.id.au>
+ <CAJCQCtR+S7mVSKiDSLOnJ+CjCwtmpj9w=pFDK_chHCqpcV-+Ww@mail.gmail.com>
 From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <10018aa9-a2e2-dd2a-b8d9-9945e0e170af@gmail.com>
-Date: Wed, 6 Jul 2016 07:45:21 -0400
+Message-ID: <a3ce663f-6df5-e662-f3c2-a11f44f46715@gmail.com>
+Date: Wed, 6 Jul 2016 07:51:21 -0400
 MIME-Version: 1.0
-In-Reply-To: <CAA91j0VbaRpt46tYf_oqd7fRuRn_ev-=Zxf_Bwiwd=TUHR+2Ow@mail.gmail.com>
+In-Reply-To: <CAJCQCtR+S7mVSKiDSLOnJ+CjCwtmpj9w=pFDK_chHCqpcV-+Ww@mail.gmail.com>
 Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2016-07-06 05:51, Andrei Borzenkov wrote:
-> On Tue, Jul 5, 2016 at 11:10 PM, Chris Murphy <lists@colorremedies.com> wrote:
->> I started a systemd-devel@ thread since that's where most udev stuff
->> gets talked about.
->>
->> https://lists.freedesktop.org/archives/systemd-devel/2016-July/037031.html
->>
+On 2016-07-05 19:05, Chris Murphy wrote:
+> Related:
+> http://www.spinics.net/lists/raid/msg52880.html
 >
-> Before discussing how to implement it in systemd, we need to decide
-> what to implement. I.e.
+> Looks like there is some traction to figuring out what to do about
+> this, whether it's a udev rule or something that happens in the kernel
+> itself. Pretty much the only hardware setup unaffected by this are
+> those with enterprise or NAS drives. Every configuration of a consumer
+> drive, single, linear/concat, and all software (mdadm, lvm, Btrfs)
+> RAID Levels are adversely affected by this.
+The thing I don't get about this is that while the per-device settings 
+on a given system are policy, the default value is not, and should be 
+expected to work correctly (but not necessarily optimally) on as many 
+systems as possible, so any claim that this should be fixed in udev are 
+bogus by the regular kernel rules.
 >
-> 1) do you always want to mount filesystem in degraded mode if not
-> enough devices are present or only if explicit hint is given?
-> 2) do you want to restrict degrade handling to root only or to other
-> filesystems as well? Note that there could be more early boot
-> filesystems that absolutely need same treatment (enters separate
-> /usr), and there are also normal filesystems that may need be mounted
-> even degraded.
-> 3) can we query btrfs whether it is mountable in degraded mode?
-> according to documentation, "btrfs device ready" (which udev builtin
-> follows) checks "if it has ALL of it’s devices in cache for mounting".
-> This is required for proper systemd ordering of services.
+> I suspect, but haven't tested, that ZFS On Linux would be equally
+> affected, unless they're completely reimplementing their own block
+> layer (?) So there are quite a few parties now negatively impacted by
+> the current default behavior.
+OTOH, I would not be surprised if the stance there is 'you get no 
+support if your not using enterprise drives', not because of the project 
+itself, but because it's ZFS.  Part of their minimum recommended 
+hardware requirements is ECC RAM, so it wouldn't surprise me if 
+enterprise storage devices are there too.
 
-To be entirely honest, if it were me, I'd want systemd to fsck off.  If 
-the kernel mount(2) call succeeds, then the filesystem was ready enough 
-to mount, and if it doesn't, then it wasn't, end of story.  The whole 
-concept of trying to track in userspace something the kernel itself 
-tracks and knows a whole lot more about is absolutely stupid.  It makes 
-some sense when dealing with LVM or MD, because that is potentially a 
-security issue (someone could inject a bogus device node that you then 
-mount instead of your desired target), but it makes no sense here, 
-because there's no way to prevent the equivalent from happening in BTRFS.
-
-As far as the udev rules, I'm pretty certain that _we_ ship those with 
-btrfs-progs, I have no idea why they're packaged with udev in CentOS (oh 
-wait, I bet they package every single possible udev rule in that package 
-just in case, don't they?).

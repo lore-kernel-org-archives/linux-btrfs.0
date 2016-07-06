@@ -1,83 +1,212 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from okda.pipebreaker.pl ([176.56.236.173]:54652 "EHLO
-	okda.pipebreaker.pl" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751919AbcGFNFb (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 Jul 2016 09:05:31 -0400
-Received: from 185-6-29-55-rev.logitus.pl ([185.6.29.55] helo=mother.pipebreaker.pl)
-	by okda.pipebreaker.pl with esmtps (TLSv1.2:ECDHE-RSA-AES256-GCM-SHA384:256)
-	(Exim 4.87)
-	(envelope-from <tomek@pipebreaker.pl>)
-	id 1bKmH7-0011JX-HO
-	for linux-btrfs@vger.kernel.org; Wed, 06 Jul 2016 14:49:57 +0200
-Date: Wed, 6 Jul 2016 14:49:54 +0200
-From: Tomasz Torcz <tomek@pipebreaker.pl>
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Subject: Re: 64-btrfs.rules and degraded boot
-Message-ID: <20160706124954.GA307667@mother.pipebreaker.pl>
-References: <CAJCQCtRQBGNeCyENzTPT=yiqs3Tcc=aD8v6usKNtTnvyOd0uqw@mail.gmail.com>
- <20160705212706.719397fc@jupiter.sol.kaishome.de>
- <CAJCQCtRyvC6J=KJSVYRd1sOWPoVm69tA--3U8kAVdDynkziwNA@mail.gmail.com>
- <CAJCQCtS7OgKKzstJDz52Sd6+SJygDzoVzMhvwHqGxFmihr6Aqg@mail.gmail.com>
- <CAA91j0VbaRpt46tYf_oqd7fRuRn_ev-=Zxf_Bwiwd=TUHR+2Ow@mail.gmail.com>
- <10018aa9-a2e2-dd2a-b8d9-9945e0e170af@gmail.com>
- <CAA91j0VUTBc8W2CBFQJZFR4RxJAYL1bkw6GTJLsxu9mMBZ4yDw@mail.gmail.com>
+Received: from mail-oi0-f44.google.com ([209.85.218.44]:36403 "EHLO
+	mail-oi0-f44.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932380AbcGFQIM convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 Jul 2016 12:08:12 -0400
+Received: by mail-oi0-f44.google.com with SMTP id f189so277083005oig.3
+        for <linux-btrfs@vger.kernel.org>; Wed, 06 Jul 2016 09:08:11 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-In-Reply-To: <CAA91j0VUTBc8W2CBFQJZFR4RxJAYL1bkw6GTJLsxu9mMBZ4yDw@mail.gmail.com>
+In-Reply-To: <04874cd6-b043-2743-8e6e-f0ebd61400ed@gmail.com>
+References: <cc4fd464-271c-6b32-263c-ae91c19b8712@gmail.com>
+ <CAJCQCtQoCtbt5NrggHPp+WrwUKbJ0nah4s6nJ0mPnKsGQ5i63Q@mail.gmail.com>
+ <95f58623-95a4-b5d2-fa3a-bfb957840a31@gmail.com> <CAJCQCtSczHoBYyKB1DTyqGngdvC+BHtnXeZiG=1QHWkAWFO6EA@mail.gmail.com>
+ <dc944146-50ce-b2fd-189c-a2c9f5a957c3@gmail.com> <CAJCQCtTPXY7=9vi9Ai2VrCEHzsEj_J0gurAVH5JGLJYmKmUpPw@mail.gmail.com>
+ <577B2E1D.5070808@gmail.com> <CAJCQCtSW+3eA-amrGgQAds1F8sYPDPgTB9x49RjWnaq=vSePgw@mail.gmail.com>
+ <b9647ec5-fe9b-4bfe-97d1-329f47dbf7b0@gmail.com> <CAJCQCtRPhn0i0MkPn1QFr0wqovwQkuEdZ=eWtRZ0QR3O5z5T+w@mail.gmail.com>
+ <04874cd6-b043-2743-8e6e-f0ebd61400ed@gmail.com>
+From: Chris Murphy <lists@colorremedies.com>
+Date: Wed, 6 Jul 2016 10:08:10 -0600
+Message-ID: <CAJCQCtTAMHYBQ+PCrrsMcRW_yhyp8dqmOrLsujEHxy+jq1rOrw@mail.gmail.com>
+Subject: Re: Unable to mount degraded RAID5
+To: =?UTF-8?B?VG9tw6HFoSBIcmRpbmE=?= <thomas.rkh@gmail.com>
+Cc: Chris Murphy <lists@colorremedies.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jul 06, 2016 at 02:55:37PM +0300, Andrei Borzenkov wrote:
-> On Wed, Jul 6, 2016 at 2:45 PM, Austin S. Hemmelgarn
-> <ahferroin7@gmail.com> wrote:
-> > On 2016-07-06 05:51, Andrei Borzenkov wrote:
-> >>
-> >> On Tue, Jul 5, 2016 at 11:10 PM, Chris Murphy <lists@colorremedies.com>
-> >> wrote:
-> >>>
-> >>> I started a systemd-devel@ thread since that's where most udev stuff
-> >>> gets talked about.
-> >>>
-> >>>
-> >>> https://lists.freedesktop.org/archives/systemd-devel/2016-July/037031.html
-> >>>
-> >>
-> >> Before discussing how to implement it in systemd, we need to decide
-> >> what to implement. I.e.
-> >>
-> >> 1) do you always want to mount filesystem in degraded mode if not
-> >> enough devices are present or only if explicit hint is given?
-> >> 2) do you want to restrict degrade handling to root only or to other
-> >> filesystems as well? Note that there could be more early boot
-> >> filesystems that absolutely need same treatment (enters separate
-> >> /usr), and there are also normal filesystems that may need be mounted
-> >> even degraded.
-> >> 3) can we query btrfs whether it is mountable in degraded mode?
-> >> according to documentation, "btrfs device ready" (which udev builtin
-> >> follows) checks "if it has ALL of it’s devices in cache for mounting".
-> >> This is required for proper systemd ordering of services.
-> >
-> >
-> > To be entirely honest, if it were me, I'd want systemd to fsck off.  If the
-> > kernel mount(2) call succeeds, then the filesystem was ready enough to
-> > mount, and if it doesn't, then it wasn't, end of story.
-> 
-> How should user space know when to try mount? What user space is
-> supposed to do during boot if mount fails? Do you suggest
-> 
-> while true; do
->   mount /dev/foo && exit 0
-> done
-> 
-> as part of startup sequence? And note that nowhere is systemd involved so far.
+On Wed, Jul 6, 2016 at 2:07 AM, Tomáš Hrdina <thomas.rkh@gmail.com> wrote:
+> Now with 3 disks:
+>
+> sudo btrfs check /dev/sda
+> parent transid verify failed on 7008807157760 wanted 70175 found 70133
+> parent transid verify failed on 7008807157760 wanted 70175 found 70133
+> checksum verify failed on 7008807157760 found F192848C wanted 1571393A
+> checksum verify failed on 7008807157760 found F192848C wanted 1571393A
+> bytenr mismatch, want=7008807157760, have=65536
+> Checking filesystem on /dev/sda
+> UUID: 2dab74bb-fc73-4c47-a413-a55840f6f71e
+> checking extents
+> parent transid verify failed on 7009468874752 wanted 70180 found 70133
+> parent transid verify failed on 7009468874752 wanted 70180 found 70133
+> checksum verify failed on 7009468874752 found 2B10421A wanted CFF3FFAC
+> checksum verify failed on 7009468874752 found 2B10421A wanted CFF3FFAC
+> bytenr mismatch, want=7009468874752, have=65536
+> parent transid verify failed on 7008859045888 wanted 70175 found 70133
+> parent transid verify failed on 7008859045888 wanted 70175 found 70133
+> checksum verify failed on 7008859045888 found 7313A127 wanted 97F01C91
+> checksum verify failed on 7008859045888 found 7313A127 wanted 97F01C91
+> bytenr mismatch, want=7008859045888, have=65536
+> parent transid verify failed on 7008899547136 wanted 70175 found 70133
+> parent transid verify failed on 7008899547136 wanted 70175 found 70133
+> checksum verify failed on 7008899547136 found 2B6F9045 wanted CF8C2DF3
+> parent transid verify failed on 7008899547136 wanted 70175 found 70133
+> Ignoring transid failure
+> leaf parent key incorrect 7008899547136
+> bad block 7008899547136
+> Errors found in extent allocation tree or chunk allocation
+> parent transid verify failed on 7009074167808 wanted 70175 found 70133
+> parent transid verify failed on 7009074167808 wanted 70175 found 70133
+> checksum verify failed on 7009074167808 found FDA6D1F0 wanted 19456C46
+> checksum verify failed on 7009074167808 found FDA6D1F0 wanted 19456C46
+> bytenr mismatch, want=7009074167808, have=65536
 
-  Getting rid of such loops was the original motivation for the ioctl:
-http://www.spinics.net/lists/linux-btrfs/msg17372.html
+Ok much better than before, these all seem sane with a limited number
+of problems. Maybe --repair can fix it, but don't do that yet.
 
-  Maybe the ioctl need extending? Instead of returning 1/0, it could
-take flag saying ”return 1 as soon as degraded mount is possible”?
-  
+
+
+
+> sudo btrfs-debug-tree -d /dev/sdc
+> http://sebsauvage.net/paste/?d690b2c9d130008d#cni3fnKUZ7Y/oaXm+nsOw0afoWDFXNl26eC+vbJmcRA=
+
+OK good, so now it finds the chunk tree OK. This is good news. I would
+try to mount it ro first, if you need to make or refresh a backup. So
+in order:
+
+mount -o ro
+mount -o ro,recovery
+
+If those don't work lets see what the user and kernel errors are.
+
+
+
+>
+>
+> sudo btrfs-find-root /dev/sdc
+> parent transid verify failed on 7008807157760 wanted 70175 found 70133
+> parent transid verify failed on 7008807157760 wanted 70175 found 70133
+> Superblock thinks the generation is 70182
+> Superblock thinks the level is 1
+> Found tree root at 6062830010368 gen 70182 level 1
+> Well block 6062434418688(gen: 70181 level: 1) seems good, but
+> generation/level doesn't match, want gen: 70182 level: 1
+> Well block 6062497202176(gen: 69186 level: 0) seems good, but
+> generation/level doesn't match, want gen: 70182 level: 1
+> Well block 6062470332416(gen: 69186 level: 0) seems good, but
+> generation/level doesn't match, want gen: 70182 level: 1
+
+This is also a good sign that you can probably get btrfs rescue to
+work and point it to one of these older tree roots, if mount won't
+work.
+
+
+>
+>
+> sudo smartctl -l scterc /dev/sda
+> smartctl 6.5 2016-01-24 r4214 [x86_64-linux-4.4.0-24-generic] (local build)
+> Copyright (C) 2002-16, Bruce Allen, Christian Franke, www.smartmontools.org
+>
+> SCT Error Recovery Control:
+>            Read: Disabled
+>           Write: Disabled
+>
+>
+> sudo smartctl -l scterc /dev/sdb
+> smartctl 6.5 2016-01-24 r4214 [x86_64-linux-4.4.0-24-generic] (local build)
+> Copyright (C) 2002-16, Bruce Allen, Christian Franke, www.smartmontools.org
+>
+> SCT Error Recovery Control:
+>            Read:     70 (7.0 seconds)
+>           Write:     70 (7.0 seconds)
+>
+>
+> sudo smartctl -l scterc /dev/sdc
+> smartctl 6.5 2016-01-24 r4214 [x86_64-linux-4.4.0-24-generic] (local build)
+> Copyright (C) 2002-16, Bruce Allen, Christian Franke, www.smartmontools.org
+>
+> SCT Error Recovery Control:
+>            Read: Disabled
+>           Write: Disabled
+
+
+
+There's good news and bad news. The good news is all the drives
+support SCT ERC. The bad news is two of the drives have the wrong
+setting for raid1+, including raid5. Issue:
+
+smartctl -l scterc,70,70 /dev/sdX   #for each drive
+
+
+This is not a persistent setting. The drive being powered off (maybe
+even reset) will revert the setting to drive default. Some people use
+a udev rule to set this during startup. I think it can also be done
+with a systemd unit. You'd want to specify the drives by id, wwn if
+available, so that it's always consistent across boots.
+
+The point of this setting is to force the drive to give up on errors
+quickly, allowing Btrfs in this case to be informed of the exact
+problem (media error and what sector) so that Btrfs can reconstruct
+the data from parity and then fix the bad sector(s). In your current
+configuration the fixup can't happen, so problems start to accumulate.
+
+
+
+> sudo smartcl -a /dev/sdx
+> http://sebsauvage.net/paste/?aab1d282ceb1e1cf#auxFRkK5GCW8j1gR7mwgzR1z92Qn9oqtc6EEC2C6sEE=
+
+sudo smartctl -a /dev/sda
+ === START OF INFORMATION SECTION === Model Family: Seagate NAS HDD
+Device Model: ST4000VN000-1H4168 Serial Number: Z302YVSZ
+5 Reallocated_Sector_Ct 0x0033 089 089 010 Pre-fail Always - 14648
+
+That's too many reallocated sectors. The good news is none are
+pending. But for a NAS drive I think this is too high, get it replaced
+under warranty. It certainly means that the unrecoverable read spec
+for this particular drive is being busted so they should replace it
+without question. It's possible this value is high by a factor of 8 if
+they're counting 512 byte logical sectors, where the actual physical
+sector is 4096 bytes. So it might not be as big of a problem as it
+seems, but it's still busted the spec.
+
+sudo smartctl -a /dev/sdb
+=== START OF INFORMATION SECTION === Model Family: Seagate NAS HDD
+Device Model: ST4000VN000-2AH166 Serial Number: WDH00SM8 LU WWN Device
+Id: 5 000c50 09bbd3af2
+
+ Error 1 occurred at disk power-on lifetime: 453 hours (18 days + 21
+hours) When the command that caused the error occurred, the device was
+active or idle. After command completion occurred, registers were: ER
+ST SC SN CL CH DH -- -- -- -- -- -- -- 40 51 00 ff ff ff 0f Error: UNC
+at LBA = 0x0fffffff = 268435455
+
+This drive has recently experienced an explicit read error. That
+probably was fixed by Btrfs 18 days ago, if you have logs going back
+that long you'd likely see a fixup for this same sector LBA value.
+
+
+/dev/sdc looks OK.
+
+What's interesting looking at all smartctl outputs is that all three
+are NAS models of Seagate but *two* of them do not have SCT ERC
+enabled by default. That is very eyebrow raising as it relates to the
+potential spread of misconfigurations of RAID.
+
+
+Device Model: ST4000VN000-1H4168
+Device Model: ST4000VN000-2AH166  ## this one has SCT ERC set to 70 deciseconds
+Device Model: ST4000VN000-1H4168
+
+Seems like a bad idea for a NAS drive to default to SCT ERC disabled,
+I would expect the overwhelming use case for NAS drives will be raid1,
+5, or 6, all of which need SCT ERC enabled. Very weird choice by
+Seagate in my opinion.
+
+Anyway, you should enable this on the other two drives. That way there
+are fast error recoveries. If it turns out Btrfs can't reconstruct
+something upon error, we can deal with that later. The main thing is
+you want to get this raid5 as healthy as possible before the
+previously failed device fails again, or gets replaced.
+
 -- 
-Tomasz Torcz                 Morality must always be based on practicality.
-xmpp: zdzichubg@chrome.pl                -- Baron Vladimir Harkonnen
-
+Chris Murphy

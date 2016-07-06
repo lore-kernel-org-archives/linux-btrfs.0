@@ -1,53 +1,78 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:34746 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753217AbcG2Rx7 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 29 Jul 2016 13:53:59 -0400
-From: Liu Bo <bo.li.liu@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.cz>
-Subject: [PATCH v4] Btrfs: remove BUG() in raid56
-Date: Fri, 29 Jul 2016 10:57:55 -0700
-Message-Id: <1469815075-5945-1-git-send-email-bo.li.liu@oracle.com>
-In-Reply-To: <1469645807-16370-1-git-send-email-bo.li.liu@oracle.com>
-References: <1469645807-16370-1-git-send-email-bo.li.liu@oracle.com>
+Received: from mail02.iobjects.de ([188.40.134.68]:60598 "EHLO
+	mail02.iobjects.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751201AbcGFM2A (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 Jul 2016 08:28:00 -0400
+Subject: Re: [PATCH 2/2] btrfs: fix false ENOSPC for btrfs_fallocate()
+To: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
+References: <20160706103753.4908-1-wangxg.fnst@cn.fujitsu.com>
+ <20160706103753.4908-2-wangxg.fnst@cn.fujitsu.com>
+Cc: dsterba@suse.cz
+From: =?UTF-8?Q?Holger_Hoffst=c3=a4tte?= <holger@applied-asynchrony.com>
+Message-ID: <577CF94E.1010506@applied-asynchrony.com>
+Date: Wed, 6 Jul 2016 14:27:58 +0200
+MIME-Version: 1.0
+In-Reply-To: <20160706103753.4908-2-wangxg.fnst@cn.fujitsu.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This BUG() has been triggered by a fuzz testing image, which contains
-an invalid chunk type, ie. a single stripe chunk has the raid6 type.
+On 07/06/16 12:37, Wang Xiaoguang wrote:
+> Below test scripts can reproduce this false ENOSPC:
+> 	#!/bin/bash
+> 	dd if=/dev/zero of=fs.img bs=$((1024*1024)) count=128
+> 	dev=$(losetup --show -f fs.img)
+> 	mkfs.btrfs -f -M $dev
+> 	mkdir /tmp/mntpoint
+> 	mount /dev/loop0 /tmp/mntpoint
+> 	cd mntpoint
+> 	xfs_io -f -c "falloc 0 $((40*1024*1024))" testfile
+> 
+> Above fallocate(2) operation will fail for ENOSPC reason, but indeed
+> fs still has free space to satisfy this request. The reason is
+> btrfs_fallocate() dose not decrease btrfs_space_info's bytes_may_use
+> just in time, and it calls btrfs_free_reserved_data_space_noquota() in
+> the end of btrfs_fallocate(), which is too late and have already added
+> false unnecessary pressure to enospc system. See call graph:
+> btrfs_fallocate()
+> |-> btrfs_alloc_data_chunk_ondemand()
+>     It will add btrfs_space_info's bytes_may_use accordingly.
+> |-> btrfs_prealloc_file_range()
+>     It will call btrfs_reserve_extent(), but note that alloc type is
+>     RESERVE_ALLOC_NO_ACCOUNT, so btrfs_update_reserved_bytes() will
+>     only increase btrfs_space_info's bytes_reserved accordingly, but
+>     will not decrease btrfs_space_info's bytes_may_use, then obviously
+>     we have overestimated real needed disk space, and it'll impact
+>     other processes who do write(2) or fallocate(2) operations, also
+>     can impact metadata reservation in mixed mode, and bytes_max_use
+>     will only be decreased in the end of btrfs_fallocate(). To fix
+>     this false ENOSPC, we need to decrease btrfs_space_info's
+>     bytes_may_use in btrfs_prealloc_file_range() in time, as what we
+>     do in cow_file_range(),
+>     See call graph in :
+>     cow_file_range()
+>     |-> extent_clear_unlock_delalloc()
+>         |-> clear_extent_bit()
+>             |-> btrfs_clear_bit_hook()
+>                 |-> btrfs_free_reserved_data_space_noquota()
+>                     This function will decrease bytes_may_use accordingly.
+> 
+> So this patch choose to call btrfs_free_reserved_data_space() in
+> __btrfs_prealloc_file_range() for both successful and failed path.
+> 
+> Also this patch removes some old and useless comments.
+> 
+> Signed-off-by: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
 
-Btrfs can handle this gracefully by returning -EIO, so besides using
-btrfs_warn to give us more debugging information rather than a single
-BUG(), we can return error properly.
+Verified that the reproducer script indeed fails (with btrfs ~4.7) and
+the patch (on top of 1/2) fixes it. Also ran a bunch of other fallocating
+things without problem. Free space also still seems sane, as far as I
+could tell.
 
-Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
----
-v2: use btrfs_warn with more debugging information instead of WARN_ONCE.
-v3: give a short summary about what happens when the error occurs and
-    add a ASSERT(0).
-v4: remove ASSERT(0).
+So for both patches:
 
- fs/btrfs/raid56.c | 5 ++++-
- 1 file changed, 4 insertions(+), 1 deletion(-)
+Tested-by: Holger Hoffstätte <holger@applied-asynchrony.com>
 
-diff --git a/fs/btrfs/raid56.c b/fs/btrfs/raid56.c
-index f8b6d41..bb0c14f 100644
---- a/fs/btrfs/raid56.c
-+++ b/fs/btrfs/raid56.c
-@@ -2139,7 +2139,10 @@ int raid56_parity_recover(struct btrfs_root *root, struct bio *bio,
- 
- 	rbio->faila = find_logical_bio_stripe(rbio, bio);
- 	if (rbio->faila == -1) {
--		BUG();
-+		btrfs_warn(root->fs_info,
-+	"%s could not find the bad stripe in raid56 so that we cannot recover any more (bio has logical %llu len %llu, bbio has map_type %llu)",
-+			   __func__, (u64)bio->bi_iter.bi_sector << 9,
-+			   (u64)bio->bi_iter.bi_size, bbio->map_type);
- 		if (generic_io)
- 			btrfs_put_bbio(bbio);
- 		kfree(rbio);
--- 
-2.5.5
+cheers,
+Holger
 

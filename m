@@ -1,123 +1,226 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-it0-f43.google.com ([209.85.214.43]:37053 "EHLO
-	mail-it0-f43.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751622AbcGFMPB (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 Jul 2016 08:15:01 -0400
-Received: by mail-it0-f43.google.com with SMTP id f6so104270039ith.0
-        for <linux-btrfs@vger.kernel.org>; Wed, 06 Jul 2016 05:15:01 -0700 (PDT)
-Subject: Re: 64-btrfs.rules and degraded boot
-To: Andrei Borzenkov <arvidjaar@gmail.com>
-References: <CAJCQCtRQBGNeCyENzTPT=yiqs3Tcc=aD8v6usKNtTnvyOd0uqw@mail.gmail.com>
- <20160705212706.719397fc@jupiter.sol.kaishome.de>
- <CAJCQCtRyvC6J=KJSVYRd1sOWPoVm69tA--3U8kAVdDynkziwNA@mail.gmail.com>
- <CAJCQCtS7OgKKzstJDz52Sd6+SJygDzoVzMhvwHqGxFmihr6Aqg@mail.gmail.com>
- <CAA91j0VbaRpt46tYf_oqd7fRuRn_ev-=Zxf_Bwiwd=TUHR+2Ow@mail.gmail.com>
- <10018aa9-a2e2-dd2a-b8d9-9945e0e170af@gmail.com>
- <CAA91j0VUTBc8W2CBFQJZFR4RxJAYL1bkw6GTJLsxu9mMBZ4yDw@mail.gmail.com>
-Cc: Chris Murphy <lists@colorremedies.com>, Kai Krakow <hurikhan77@gmail.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <f3b5493d-456c-f614-7c1b-fd1b6e9977bc@gmail.com>
-Date: Wed, 6 Jul 2016 08:14:54 -0400
-MIME-Version: 1.0
-In-Reply-To: <CAA91j0VUTBc8W2CBFQJZFR4RxJAYL1bkw6GTJLsxu9mMBZ4yDw@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+Received: from mail-wm0-f50.google.com ([74.125.82.50]:38275 "EHLO
+	mail-wm0-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751093AbcGFMUT convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 Jul 2016 08:20:19 -0400
+Received: by mail-wm0-f50.google.com with SMTP id r201so190307212wme.1
+        for <linux-btrfs@vger.kernel.org>; Wed, 06 Jul 2016 05:20:18 -0700 (PDT)
+Content-Type: text/plain; charset=utf-8
+Mime-Version: 1.0 (Mac OS X Mail 9.3 \(3124\))
+Subject: Re: btrfs RAID 10 truncates files over 2G to 4096 bytes.
+From: Tomasz Kusmierz <tom.kusmierz@gmail.com>
+In-Reply-To: <CAPmG0jaUeisyZD6eApjaf=e3OdTaCWFDCoT_8Msc1HUadyNWug@mail.gmail.com>
+Date: Wed, 6 Jul 2016 13:20:15 +0100
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Message-Id: <EE95D9F3-84A2-4F45-B1FE-D54557374EF3@gmail.com>
+References: <CAKinxcVHevoWzgYO+1tjiGOow=shc=oBpvRrTSedeAn1raUrXA@mail.gmail.com> <CAPmG0jYfdYt81E8oaky53eYmy69tWgpLkRFWXRxGF_d3g3Uhjg@mail.gmail.com> <EDF51D2D-A311-47DF-BFF7-F5C855B9E96D@gmail.com> <CAPmG0jaUz1JeRiu_cAqQXM-mAhBcTLKrmxfTu=OqcrHLBRLA+A@mail.gmail.com> <0EBF76CB-A350-4108-91EF-076A73932061@gmail.com> <CAPmG0jaUeisyZD6eApjaf=e3OdTaCWFDCoT_8Msc1HUadyNWug@mail.gmail.com>
+To: Henk Slager <eye1tm@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2016-07-06 07:55, Andrei Borzenkov wrote:
-> On Wed, Jul 6, 2016 at 2:45 PM, Austin S. Hemmelgarn
-> <ahferroin7@gmail.com> wrote:
->> On 2016-07-06 05:51, Andrei Borzenkov wrote:
->>>
->>> On Tue, Jul 5, 2016 at 11:10 PM, Chris Murphy <lists@colorremedies.com>
->>> wrote:
->>>>
->>>> I started a systemd-devel@ thread since that's where most udev stuff
->>>> gets talked about.
->>>>
->>>>
->>>> https://lists.freedesktop.org/archives/systemd-devel/2016-July/037031.html
->>>>
->>>
->>> Before discussing how to implement it in systemd, we need to decide
->>> what to implement. I.e.
->>>
->>> 1) do you always want to mount filesystem in degraded mode if not
->>> enough devices are present or only if explicit hint is given?
->>> 2) do you want to restrict degrade handling to root only or to other
->>> filesystems as well? Note that there could be more early boot
->>> filesystems that absolutely need same treatment (enters separate
->>> /usr), and there are also normal filesystems that may need be mounted
->>> even degraded.
->>> 3) can we query btrfs whether it is mountable in degraded mode?
->>> according to documentation, "btrfs device ready" (which udev builtin
->>> follows) checks "if it has ALL of it’s devices in cache for mounting".
->>> This is required for proper systemd ordering of services.
->>
->>
->> To be entirely honest, if it were me, I'd want systemd to fsck off.  If the
->> kernel mount(2) call succeeds, then the filesystem was ready enough to
->> mount, and if it doesn't, then it wasn't, end of story.
->
-> How should user space know when to try mount? What user space is
-> supposed to do during boot if mount fails? Do you suggest
->
-> while true; do
->   mount /dev/foo && exit 0
-> done
->
-> as part of startup sequence? And note that nowhere is systemd involved so far.
-Nowhere there, except if you have a filesystem in fstab (or a mount 
-unit, which I hate for other reasons that I will not go into right now), 
-and you mount it and systemd thinks the device isn't ready, it unmounts 
-it _immediately_.  In the case of boot, it's because of systemd thinking 
-the device isn't ready that you can't mount degraded with a missing 
-device.  In the case of the root filesystem at least, the initramfs is 
-expected to handle this, and most of them do poll in some way, or have 
-other methods of determining this.  I occasionally have issues with it 
-with dracut without systemd, but that's due to a separate bug there 
-involving the device mapper.
 
->
->> The whole concept
->> of trying to track in userspace something the kernel itself tracks and knows
->> a whole lot more about is absolutely stupid.
->
-> It need not be user space. If kernel notifies user space when
-> filesystem is mountable, problem solved. It could be udev event,
-> netlink, whatever. Until kernel does it, user space need to either
-> poll or somehow track it based on available events.
-THis I agree could be done better, but it absolutely should not be in 
-userspace, the notification needs to come from the kernel, but that 
-leads to the problem of knowing whether or not the FS can mount 
-degraded, or only ro, or any number of other situations.
->
->> It makes some sense when
->> dealing with LVM or MD, because that is potentially a security issue
->> (someone could inject a bogus device node that you then mount instead of
->> your desired target),
->
-> I do not understand it at all. MD and LVM has exactly the same problem
-> - they need to know when they can assemble MD/VG. I miss what it has
-> to do with security, sorry.
-If you don't track whether or not the device is assembled, then someone 
-could create an arbitrary device node with the same name and then get 
-you to mount that, possibly causing all kinds of issues depending on any 
-number of other factors.
->
->> but it makes no sense here, because there's no way to
->> prevent the equivalent from happening in BTRFS.
->>
->> As far as the udev rules, I'm pretty certain that _we_ ship those with
->> btrfs-progs,
->
-> No, you do not. You ship rule to rename devices to be more
-> "user-friendly". But the rule in question has always been part of
-> udev.
-Ah, you're right, I was mistaken about this.
->
->> I have no idea why they're packaged with udev in CentOS (oh
->> wait, I bet they package every single possible udev rule in that package
->> just in case, don't they?).
+> On 6 Jul 2016, at 02:25, Henk Slager <eye1tm@gmail.com> wrote:
+> 
+> On Wed, Jul 6, 2016 at 2:32 AM, Tomasz Kusmierz <tom.kusmierz@gmail.com> wrote:
+>> 
+>> On 6 Jul 2016, at 00:30, Henk Slager <eye1tm@gmail.com> wrote:
+>> 
+>> On Mon, Jul 4, 2016 at 11:28 PM, Tomasz Kusmierz <tom.kusmierz@gmail.com>
+>> wrote:
+>> 
+>> I did consider that, but:
+>> - some files were NOT accessed by anything with 100% certainty (well if
+>> there is a rootkit on my system or something in that shape than maybe yes)
+>> - the only application that could access those files is totem (well
+>> Nautilius checks extension -> directs it to totem) so in that case we would
+>> hear about out break of totem killing people files.
+>> - if it was a kernel bug then other large files would be affected.
+>> 
+>> Maybe I’m wrong and it’s actually related to the fact that all those files
+>> are located in single location on file system (single folder) that might
+>> have a historical bug in some structure somewhere ?
+>> 
+>> 
+>> I find it hard to imagine that this has something to do with the
+>> folderstructure, unless maybe the folder is a subvolume with
+>> non-default attributes or so. How the files in that folder are created
+>> (at full disktransferspeed or during a day or even a week) might give
+>> some hint. You could run filefrag and see if that rings a bell.
+>> 
+>> files that are 4096 show:
+>> 1 extent found
+> 
+> I actually meant filefrag for the files that are not (yet) truncated
+> to 4k. For example for virtual machine imagefiles (CoW), one could see
+> an MBR write.
+117 extents found
+filesize 15468645003
+
+good / bad ?  
+> 
+>> I did forgot to add that file system was created a long time ago and it was
+>> created with leaf & node size = 16k.
+>> 
+>> 
+>> If this long time ago is >2 years then you have likely specifically
+>> set node size = 16k, otherwise with older tools it would have been 4K.
+>> 
+>> You are right I used -l 16K -n 16K
+>> 
+>> Have you created it as raid10 or has it undergone profile conversions?
+>> 
+>> Due to lack of spare disks
+>> (it may sound odd for some but spending for more than 6 disks for home use
+>> seems like an overkill)
+>> and due to last I’ve had I had to migrate all data to new file system.
+>> This played that way that I’ve:
+>> 1. from original FS I’ve removed 2 disks
+>> 2. Created RAID1 on those 2 disks,
+>> 3. shifted 2TB
+>> 4. removed 2 disks from source FS and adde those to destination FS
+>> 5 shifted 2 further TB
+>> 6 destroyed original FS and adde 2 disks to destination FS
+>> 7 converted destination FS to RAID10
+>> 
+>> FYI, when I convert to raid 10 I use:
+>> btrfs balance start -mconvert=raid10 -dconvert=raid10 -sconvert=raid10 -f
+>> /path/to/FS
+>> 
+>> this filesystem has 5 sub volumes. Files affected are located in separate
+>> folder within a “victim folder” that is within a one sub volume.
+>> 
+>> 
+>> It could also be that the ondisk format is somewhat corrupted (btrfs
+>> check should find that ) and that that causes the issue.
+>> 
+>> 
+>> root@noname_server:/mnt# btrfs check /dev/sdg1
+>> Checking filesystem on /dev/sdg1
+>> UUID: d4cd1d5f-92c4-4b0f-8d45-1b378eff92a1
+>> checking extents
+>> checking free space cache
+>> checking fs roots
+>> checking csums
+>> checking root refs
+>> found 4424060642634 bytes used err is 0
+>> total csum bytes: 4315954936
+>> total tree bytes: 4522786816
+>> total fs tree bytes: 61702144
+>> total extent tree bytes: 41402368
+>> btree space waste bytes: 72430813
+>> file data blocks allocated: 4475917217792
+>> referenced 4420407603200
+>> 
+>> No luck there :/
+> 
+> Indeed looks all normal.
+> 
+>> In-lining on raid10 has caused me some trouble (I had 4k nodes) over
+>> time, it has happened over a year ago with kernels recent at that
+>> time, but the fs was converted from raid5
+>> 
+>> Could you please elaborate on that ? you also ended up with files that got
+>> truncated to 4096 bytes ?
+> 
+> I did not have truncated to 4k files, but your case lets me think of
+> small files inlining. Default max_inline mount option is 8k and that
+> means that 0 to ~3k files end up in metadata. I had size corruptions
+> for several of those small sized files that were updated quite
+> frequent, also within commit time AFAIK. Btrfs check lists this as
+> errors 400, although fs operation is not disturbed. I don't know what
+> happens if those small files are being updated/rewritten and are just
+> below or just above the max_inline limit.
+> 
+> The only thing I was thinking of is that your files were started as
+> small, so inline, then extended to multi-GB. In the past, there were
+> 'bad extent/chunk type' issues and it was suggested that the fs would
+> have been an ext4-converted one (which had non-compliant mixed
+> metadata and data) but for most it was not the case. So there was/is
+> something unclear, but full balance or so fixed it as far as I
+> remember. But it is guessing, I do not have any failure cases like the
+> one you see.
+
+When I think of it, I did move this folder first when filesystem was RAID 1 (or not even RAID at all) and then it was upgraded to RAID 1 then RAID 10. 
+Was there a faulty balance around August 2014 ? Please remember that I’m using Ubuntu so it was probably kernel from Ubuntu 14.04 LTS
+
+Also, I would like to hear it from horses mouth: dos & donts for a long term storage where you moderately care about the data:
+RAID10 - flaky ? would RAID1 give similar performance ? 
+leaf & node size = 16k - pointless / flaky / untested / phased out ?
+growing FS: add disks and rebalance and then change to different RAID level or it doesn’t matter ?!
+RAID level on system data - am I an idiot to just even touch it ? 
+
+> 
+>> You might want to run the python scrips from here:
+>> https://github.com/knorrie/python-btrfs
+>> 
+>> Will do.
+>> 
+>> so that maybe you see how block-groups/chunks are filled etc.
+>> 
+>> (ps. this email client on OS X is driving me up the wall … have to correct
+>> the corrections all the time :/)
+>> 
+>> On 4 Jul 2016, at 22:13, Henk Slager <eye1tm@gmail.com> wrote:
+>> 
+>> On Sun, Jul 3, 2016 at 1:36 AM, Tomasz Kusmierz <tom.kusmierz@gmail.com>
+>> wrote:
+>> 
+>> Hi,
+>> 
+>> My setup is that I use one file system for / and /home (on SSD) and a
+>> larger raid 10 for /mnt/share (6 x 2TB).
+>> 
+>> Today I've discovered that 14 of files that are supposed to be over
+>> 2GB are in fact just 4096 bytes. I've checked the content of those 4KB
+>> and it seems that it does contain information that were at the
+>> beginnings of the files.
+>> 
+>> I've experienced this problem in the past (3 - 4 years ago ?) but
+>> attributed it to different problem that I've spoke with you guys here
+>> about (corruption due to non ECC ram). At that time I did deleted
+>> files affected (56) and similar problem was discovered a year but not
+>> more than 2 years ago and I believe I've deleted the files.
+>> 
+>> I periodically (once a month) run a scrub on my system to eliminate
+>> any errors sneaking in. I believe I did a balance a half a year ago ?
+>> to reclaim space after I deleted a large database.
+>> 
+>> root@noname_server:/mnt/share# btrfs fi show
+>> Label: none  uuid: 060c2345-5d2f-4965-b0a2-47ed2d1a5ba2
+>>  Total devices 1 FS bytes used 177.19GiB
+>>  devid    3 size 899.22GiB used 360.06GiB path /dev/sde2
+>> 
+>> Label: none  uuid: d4cd1d5f-92c4-4b0f-8d45-1b378eff92a1
+>>  Total devices 6 FS bytes used 4.02TiB
+>>  devid    1 size 1.82TiB used 1.34TiB path /dev/sdg1
+>>  devid    2 size 1.82TiB used 1.34TiB path /dev/sdh1
+>>  devid    3 size 1.82TiB used 1.34TiB path /dev/sdi1
+>>  devid    4 size 1.82TiB used 1.34TiB path /dev/sdb1
+>>  devid    5 size 1.82TiB used 1.34TiB path /dev/sda1
+>>  devid    6 size 1.82TiB used 1.34TiB path /dev/sdf1
+>> 
+>> root@noname_server:/mnt/share# uname -a
+>> Linux noname_server 4.4.0-28-generic #47-Ubuntu SMP Fri Jun 24
+>> 10:09:13 UTC 2016 x86_64 x86_64 x86_64 GNU/Linux
+>> root@noname_server:/mnt/share# btrfs --version
+>> btrfs-progs v4.4
+>> root@noname_server:/mnt/share#
+>> 
+>> 
+>> Problem is that stuff on this filesystem moves so slowly that it's
+>> hard to remember historical events ... it's like AWS glacier. What I
+>> can state with 100% certainty is that:
+>> - files that are affected are 2GB and over (safe to assume 4GB and over)
+>> - files affected were just read (and some not even read) never written
+>> after putting into storage
+>> - In the past I've assumed that files affected are due to size, but I
+>> have quite few ISO files some backups of virtual machines ... no
+>> problems there - seems like problem originates in one folder & size >
+>> 2GB & extension .mkv
+>> 
+>> 
+>> In case some application is the root cause of the issue, I would say
+>> try to keep some ro snapshots done by a tool like snapper for example,
+>> but maybe you do that already. It sounds also like this is some kernel
+>> bug, snaphots won't help that much then I think.
 

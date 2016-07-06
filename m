@@ -1,117 +1,89 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wm0-f41.google.com ([74.125.82.41]:36771 "EHLO
-	mail-wm0-f41.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932555AbcGFW7S convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 Jul 2016 18:59:18 -0400
-Received: by mail-wm0-f41.google.com with SMTP id f126so190284440wma.1
-        for <linux-btrfs@vger.kernel.org>; Wed, 06 Jul 2016 15:59:17 -0700 (PDT)
-Content-Type: text/plain; charset=utf-8
-Mime-Version: 1.0 (Mac OS X Mail 9.3 \(3124\))
-Subject: Re: raid1 has failing disks, but smart is clear
-From: Tomasz Kusmierz <tom.kusmierz@gmail.com>
-In-Reply-To: <577D82AE.3040005@gmail.com>
-Date: Wed, 6 Jul 2016 23:59:14 +0100
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Message-Id: <03E1A820-7029-4022-9D46-900C4FCA1ADC@gmail.com>
-References: <577D82AE.3040005@gmail.com>
-To: Corey Coughlin <corey.coughlin.cc3@gmail.com>
+Received: from plane.gmane.org ([80.91.229.3]:42218 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1755651AbcGFXW6 convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 Jul 2016 19:22:58 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+	id 1bKw9b-0007s8-VY
+	for linux-btrfs@vger.kernel.org; Thu, 07 Jul 2016 01:22:52 +0200
+Received: from ip1f11faed.dynamic.kabel-deutschland.de ([31.17.250.237])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Thu, 07 Jul 2016 01:22:51 +0200
+Received: from hurikhan77 by ip1f11faed.dynamic.kabel-deutschland.de with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Thu, 07 Jul 2016 01:22:51 +0200
+To: linux-btrfs@vger.kernel.org
+From: Kai Krakow <hurikhan77@gmail.com>
+Subject: Re: btrfs RAID 10 truncates files over 2G to 4096 bytes.
+Date: Thu, 7 Jul 2016 01:22:46 +0200
+Message-ID: <20160707012246.3559fd0a@jupiter.sol.kaishome.de>
+References: <CAKinxcVHevoWzgYO+1tjiGOow=shc=oBpvRrTSedeAn1raUrXA@mail.gmail.com>
+	<CAPmG0jYfdYt81E8oaky53eYmy69tWgpLkRFWXRxGF_d3g3Uhjg@mail.gmail.com>
+	<EDF51D2D-A311-47DF-BFF7-F5C855B9E96D@gmail.com>
+	<CAPmG0jaUz1JeRiu_cAqQXM-mAhBcTLKrmxfTu=OqcrHLBRLA+A@mail.gmail.com>
+	<0EBF76CB-A350-4108-91EF-076A73932061@gmail.com>
+	<CAPmG0jaUeisyZD6eApjaf=e3OdTaCWFDCoT_8Msc1HUadyNWug@mail.gmail.com>
+	<EE95D9F3-84A2-4F45-B1FE-D54557374EF3@gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Am Wed, 6 Jul 2016 13:20:15 +0100
+schrieb Tomasz Kusmierz <tom.kusmierz@gmail.com>:
 
-> On 6 Jul 2016, at 23:14, Corey Coughlin <corey.coughlin.cc3@gmail.com> wrote:
+> When I think of it, I did move this folder first when filesystem was
+> RAID 1 (or not even RAID at all) and then it was upgraded to RAID 1
+> then RAID 10. Was there a faulty balance around August 2014 ? Please
+> remember that I’m using Ubuntu so it was probably kernel from Ubuntu
+> 14.04 LTS
 > 
-> Hi all,
->    Hoping you all can help, have a strange problem, think I know what's going on, but could use some verification.  I set up a raid1 type btrfs filesystem on an Ubuntu 16.04 system, here's what it looks like:
-> 
-> btrfs fi show
-> Label: none  uuid: 597ee185-36ac-4b68-8961-d4adc13f95d4
->    Total devices 10 FS bytes used 3.42TiB
->    devid    1 size 1.82TiB used 1.18TiB path /dev/sdd
->    devid    2 size 698.64GiB used 47.00GiB path /dev/sdk
->    devid    3 size 931.51GiB used 280.03GiB path /dev/sdm
->    devid    4 size 931.51GiB used 280.00GiB path /dev/sdl
->    devid    5 size 1.82TiB used 1.17TiB path /dev/sdi
->    devid    6 size 1.82TiB used 823.03GiB path /dev/sdj
->    devid    7 size 698.64GiB used 47.00GiB path /dev/sdg
->    devid    8 size 1.82TiB used 1.18TiB path /dev/sda
->    devid    9 size 1.82TiB used 1.18TiB path /dev/sdb
->    devid   10 size 1.36TiB used 745.03GiB path /dev/sdh
-> 
-> I added a couple disks, and then ran a balance operation, and that took about 3 days to finish.  When it did finish, tried a scrub and got this message:
-> 
-> scrub status for 597ee185-36ac-4b68-8961-d4adc13f95d4
->    scrub started at Sun Jun 26 18:19:28 2016 and was aborted after 01:16:35
->    total bytes scrubbed: 926.45GiB with 18849935 errors
->    error details: read=18849935
->    corrected errors: 5860, uncorrectable errors: 18844075, unverified errors: 0
-> 
-> So that seems bad.  Took a look at the devices and a few of them have errors:
-> ...
-> [/dev/sdi].generation_errs 0
-> [/dev/sdj].write_io_errs   289436740
-> [/dev/sdj].read_io_errs    289492820
-> [/dev/sdj].flush_io_errs   12411
-> [/dev/sdj].corruption_errs 0
-> [/dev/sdj].generation_errs 0
-> [/dev/sdg].write_io_errs   0
-> ...
-> [/dev/sda].generation_errs 0
-> [/dev/sdb].write_io_errs   3490143
-> [/dev/sdb].read_io_errs    111
-> [/dev/sdb].flush_io_errs   268
-> [/dev/sdb].corruption_errs 0
-> [/dev/sdb].generation_errs 0
-> [/dev/sdh].write_io_errs   5839
-> [/dev/sdh].read_io_errs    2188
-> [/dev/sdh].flush_io_errs   11
-> [/dev/sdh].corruption_errs 1
-> [/dev/sdh].generation_errs 16373
-> 
-> So I checked the smart data for those disks, they seem perfect, no reallocated sectors, no problems.  But one thing I did notice is that they are all WD Green drives.  So I'm guessing that if they power down and get reassigned to a new /dev/sd* letter, that could lead to data corruption.  I used idle3ctl to turn off the shut down mode on all the green drives in the system, but I'm having trouble getting the filesystem working without the errors.  I tried a 'check --repair' command on it, and it seems to find a lot of verification errors, but it doesn't look like things are getting fixed.
->  But I have all the data on it backed up on another system, so I can recreate this if I need to.  But here's what I want to know:
-> 
-> 1.  Am I correct about the issues with the WD Green drives, if they change mounts during disk operations, will that corrupt data?
-I just wanted to chip in with WD Green drives. I have a RAID10 running on 6x2TB of those, actually had for ~3 years. If disk goes down for spin down, and you try to access something - kernel & FS & whole system will wait for drive to re-spin and everything works OK. I’ve never had a drive being reassigned to different /dev/sdX due to spin down / up. 
-2 years ago I was having a corruption due to not using ECC ram on my system and one of RAM modules started producing errors that were never caught up by CPU / MoBo. Long story short, guy here managed to point me to the right direction and I started shifting my data to hopefully new and not corrupted FS … but I was sceptical of similar issue that you have described AND I did raid1 and while mounted I did shift disk from one SATA port to another and FS managed to pick up the disk in new location and did not even blinked (as far as I remember there was syslog entry to say that disk vanished and then that disk was added)
+> Also, I would like to hear it from horses mouth: dos & donts for a
+> long term storage where you moderately care about the data: RAID10 -
+> flaky ? would RAID1 give similar performance ?
 
-Last word, you got plenty of errors in your SMART for transfer related stuff, please be advised that this may mean:
-- faulty cable
-- faulty mono controller
-- faulty drive controller
-- bad RAM - yes, mother board CAN use your ram for storing data and transfer related stuff … specially chapter ones. 
+The current implementation of RAID0 in btrfs is probably not very
+optimized. RAID0 is a special case anyways: Stripes have a defined
+width - I'm not sure what it is for btrfs, probably it's per chunk, so
+it's 1GB, maybe it's 64k **. That means your data is usually not read
+from multiple disks in parallel anyways as long as requests are below
+stripe width (which is probably true for most access patterns except
+copying files) - there's no immediate performance benefit. This holds
+true for any RAID0 with read and write patterns below the stripe size.
+Data is just more evenly distributed across devices and your
+application will only benefit performance-wise if accesses spread
+semi-random across the span of the whole file. And at least last time I
+checked, it was stated that btrfs raid0 does not submit IOs in parallel
+yet but first reads one stripe, then the next - so it doesn't submit
+IOs to different devices in parallel.
 
-> 2.  If that is the case:
->    a.) Is there any way I can stop the /dev/sd* mount points from changing?  Or can I set up the filesystem using UUIDs or something more solid?  I googled about it, but found conflicting info
-Don’t get it the wrong way but I’m personally surprised that anybody still uses mount points rather than UUID. Devices change from boot to boot for a lot of people and most of distros moved to uuid (2 years ago ? even the swap is mounted via UUID now)
+Getting to RAID1, btrfs is even less optimized: Stripe decision is based
+on process pids instead of device load, read accesses won't distribute
+evenly to different stripes per single process, it's only just reading
+from the same single device - always. Write access isn't faster anyways:
+Both stripes need to be written - writing RAID1 is single device
+performance only.
 
->    b.) Or, is there something else changing my drive devices?  I have most of drives on an LSI SAS 9201-16i card, is there something I need to do to make them fixed?
-I’ll let more senior data storage experts to speak up but most of the time people frowned on me for mentioning anything different than north bridge / Intel raid card / super micro / 3 ware . 
+So I guess, at this stage there's no big difference between RAID1 and
+RAID10 in btrfs (except maybe for large file copies), not for single
+process access patterns and neither for multi process access patterns.
+Btrfs can only benefit from RAID1 in multi process access patterns
+currently, as can btrfs RAID0 by design for usual small random access
+patterns (and maybe large sequential operations). But RAID1 with more
+than two disks and multi process access patterns is more or less equal
+to RAID10 because stripes are likely to be on different devices anyways.
 
-(And yes I did found the hard way they were right:
-- marvel controller on my mobo randomly writes garbage to your drives 
-- adapted PCI express card was switching of all the drives mid flight while pretending “it’s OK” resulting in very peculiar data losses in the middle of big files)
+In conclusion: RAID1 is simpler than RAID10 and thus its less likely to
+contain flaws or bugs.
 
->    c.) Or, is there a script or something I can use to figure out if the disks will change mounts?
->    d.) Or, if I wipe everything and rebuild, will the disks with the idle3ctl fix work now?
-> 
-> Regardless of whether or not it's a WD Green drive issue, should I just wipefs all the disks and rebuild it?  Is there any way to recover this?  Thanks for any help!
+**: Please enlighten me, I couldn't find docs on this matter.
 
-IF you remotelly care about the data that you have (I think you should if you came here), I would suggest a good exercise: 
-- unplug all the drives you use for this file system and stop toying with it because you may loose more data (I did because I thought I knew better)
-- get your self 2 new drives
-- find my thread from ~2 years ago on this mailing list (might be different email address)
-- try to locate Chris Mason reply with a script “my old friend”
-- run this script on you system for couple of DAYS and you will see whenever you have any corruption creeping in
-- if corruptions are creeping in, change a component in your system (controller / RAM / mobo / CPU / PSU) and repeat exercise (best to organise your self access to some spare parts / extra machine.
-- when all is good, make and FS out of those 2 new drives, and try to rescue data from OLD FS !
-- unplug new FS and put it one the shelf
-- try to fix old FS … this will be a FUN and very educating exercise … 
+-- 
+Regards,
+Kai
 
-> 
->    ------- Corey
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Replies to list-only preferred.
+
 

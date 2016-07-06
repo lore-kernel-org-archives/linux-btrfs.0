@@ -1,212 +1,103 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oi0-f44.google.com ([209.85.218.44]:36403 "EHLO
-	mail-oi0-f44.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932380AbcGFQIM convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 Jul 2016 12:08:12 -0400
-Received: by mail-oi0-f44.google.com with SMTP id f189so277083005oig.3
-        for <linux-btrfs@vger.kernel.org>; Wed, 06 Jul 2016 09:08:11 -0700 (PDT)
+Received: from mail-oi0-f47.google.com ([209.85.218.47]:32935 "EHLO
+	mail-oi0-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752945AbcGFQoB (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 Jul 2016 12:44:01 -0400
+Received: by mail-oi0-f47.google.com with SMTP id u201so277908033oie.0
+        for <linux-btrfs@vger.kernel.org>; Wed, 06 Jul 2016 09:44:01 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <04874cd6-b043-2743-8e6e-f0ebd61400ed@gmail.com>
-References: <cc4fd464-271c-6b32-263c-ae91c19b8712@gmail.com>
- <CAJCQCtQoCtbt5NrggHPp+WrwUKbJ0nah4s6nJ0mPnKsGQ5i63Q@mail.gmail.com>
- <95f58623-95a4-b5d2-fa3a-bfb957840a31@gmail.com> <CAJCQCtSczHoBYyKB1DTyqGngdvC+BHtnXeZiG=1QHWkAWFO6EA@mail.gmail.com>
- <dc944146-50ce-b2fd-189c-a2c9f5a957c3@gmail.com> <CAJCQCtTPXY7=9vi9Ai2VrCEHzsEj_J0gurAVH5JGLJYmKmUpPw@mail.gmail.com>
- <577B2E1D.5070808@gmail.com> <CAJCQCtSW+3eA-amrGgQAds1F8sYPDPgTB9x49RjWnaq=vSePgw@mail.gmail.com>
- <b9647ec5-fe9b-4bfe-97d1-329f47dbf7b0@gmail.com> <CAJCQCtRPhn0i0MkPn1QFr0wqovwQkuEdZ=eWtRZ0QR3O5z5T+w@mail.gmail.com>
- <04874cd6-b043-2743-8e6e-f0ebd61400ed@gmail.com>
+In-Reply-To: <a3ce663f-6df5-e662-f3c2-a11f44f46715@gmail.com>
+References: <576CB0DA.6030409@gmail.com> <20160624085014.GH3325@carfax.org.uk>
+ <CAA91j0Uqg0FafFTG3NhQt=p8KkYRhTeMU5Bd+JuUxDntP6g8Ng@mail.gmail.com>
+ <CAJCQCtQBQAng5_mNJZev+64Z15BSkBkG9f2qmz=ckPRqXRbbWA@mail.gmail.com>
+ <576D6C0A.7070502@gmail.com> <CAJCQCtSskA4PC_a8tgQopHFNO83NQ=Gkx406haB7G0nBi5e=2A@mail.gmail.com>
+ <c2a320a6-261b-723d-ab83-58f883e6315b@gmail.com> <CAJCQCtSqO4GNm8kBDuzUXEXYx+54zFgsD6=ARNsRgVUb53LQZw@mail.gmail.com>
+ <fd7d250c-0a5a-ea3e-9ea2-ec6e50e14169@gmail.com> <CAJCQCtQugDoR6fnPeion37FLS3LarjfP6dt+-Z3jPgLG0Xkmwg@mail.gmail.com>
+ <20160627215726.GG14667@hungrycats.org> <ab23dea9-4fee-feef-cc7a-5f58cfd4067f@gmail.com>
+ <7bad0370-ac01-2280-d8b1-e31b0ae9cffe@crc.id.au> <154fc0b3-8c39-eff6-48c9-5d2667e967b1@gmail.com>
+ <31207cfc-245f-1b6e-4ef9-b8bf04b65e70@crc.id.au> <CAJCQCtTto04fz_=z0P0rBVX7sVqe1+LG-kbq7D1djXyB=tRdLQ@mail.gmail.com>
+ <70f12c1b-8d30-c5f7-faa8-10a86a49c332@crc.id.au> <CAJCQCtR+S7mVSKiDSLOnJ+CjCwtmpj9w=pFDK_chHCqpcV-+Ww@mail.gmail.com>
+ <a3ce663f-6df5-e662-f3c2-a11f44f46715@gmail.com>
 From: Chris Murphy <lists@colorremedies.com>
-Date: Wed, 6 Jul 2016 10:08:10 -0600
-Message-ID: <CAJCQCtTAMHYBQ+PCrrsMcRW_yhyp8dqmOrLsujEHxy+jq1rOrw@mail.gmail.com>
-Subject: Re: Unable to mount degraded RAID5
-To: =?UTF-8?B?VG9tw6HFoSBIcmRpbmE=?= <thomas.rkh@gmail.com>
-Cc: Chris Murphy <lists@colorremedies.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Date: Wed, 6 Jul 2016 10:43:57 -0600
+Message-ID: <CAJCQCtR9LqOAHYdyZ5zRJbS53hOuhTKR-7Pkkg_edPSx5UqqRw@mail.gmail.com>
+Subject: Re: Adventures in btrfs raid5 disk recovery
+To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jul 6, 2016 at 2:07 AM, Tomáš Hrdina <thomas.rkh@gmail.com> wrote:
-> Now with 3 disks:
+On Wed, Jul 6, 2016 at 5:51 AM, Austin S. Hemmelgarn
+<ahferroin7@gmail.com> wrote:
+> On 2016-07-05 19:05, Chris Murphy wrote:
+>>
+>> Related:
+>> http://www.spinics.net/lists/raid/msg52880.html
+>>
+>> Looks like there is some traction to figuring out what to do about
+>> this, whether it's a udev rule or something that happens in the kernel
+>> itself. Pretty much the only hardware setup unaffected by this are
+>> those with enterprise or NAS drives. Every configuration of a consumer
+>> drive, single, linear/concat, and all software (mdadm, lvm, Btrfs)
+>> RAID Levels are adversely affected by this.
 >
-> sudo btrfs check /dev/sda
-> parent transid verify failed on 7008807157760 wanted 70175 found 70133
-> parent transid verify failed on 7008807157760 wanted 70175 found 70133
-> checksum verify failed on 7008807157760 found F192848C wanted 1571393A
-> checksum verify failed on 7008807157760 found F192848C wanted 1571393A
-> bytenr mismatch, want=7008807157760, have=65536
-> Checking filesystem on /dev/sda
-> UUID: 2dab74bb-fc73-4c47-a413-a55840f6f71e
-> checking extents
-> parent transid verify failed on 7009468874752 wanted 70180 found 70133
-> parent transid verify failed on 7009468874752 wanted 70180 found 70133
-> checksum verify failed on 7009468874752 found 2B10421A wanted CFF3FFAC
-> checksum verify failed on 7009468874752 found 2B10421A wanted CFF3FFAC
-> bytenr mismatch, want=7009468874752, have=65536
-> parent transid verify failed on 7008859045888 wanted 70175 found 70133
-> parent transid verify failed on 7008859045888 wanted 70175 found 70133
-> checksum verify failed on 7008859045888 found 7313A127 wanted 97F01C91
-> checksum verify failed on 7008859045888 found 7313A127 wanted 97F01C91
-> bytenr mismatch, want=7008859045888, have=65536
-> parent transid verify failed on 7008899547136 wanted 70175 found 70133
-> parent transid verify failed on 7008899547136 wanted 70175 found 70133
-> checksum verify failed on 7008899547136 found 2B6F9045 wanted CF8C2DF3
-> parent transid verify failed on 7008899547136 wanted 70175 found 70133
-> Ignoring transid failure
-> leaf parent key incorrect 7008899547136
-> bad block 7008899547136
-> Errors found in extent allocation tree or chunk allocation
-> parent transid verify failed on 7009074167808 wanted 70175 found 70133
-> parent transid verify failed on 7009074167808 wanted 70175 found 70133
-> checksum verify failed on 7009074167808 found FDA6D1F0 wanted 19456C46
-> checksum verify failed on 7009074167808 found FDA6D1F0 wanted 19456C46
-> bytenr mismatch, want=7009074167808, have=65536
+> The thing I don't get about this is that while the per-device settings on a
+> given system are policy, the default value is not, and should be expected to
+> work correctly (but not necessarily optimally) on as many systems as
+> possible, so any claim that this should be fixed in udev are bogus by the
+> regular kernel rules.
 
-Ok much better than before, these all seem sane with a limited number
-of problems. Maybe --repair can fix it, but don't do that yet.
+Sure. But changing it in the kernel leads to what other consequences?
+It fixes the problem under discussion but what problem will it
+introduce? I think it's valid to explore this, at the least so
+affected parties can be informed.
+
+Also, the problem isn't instigated by Linux, rather by drive
+manufacturers introducing a whole new kind of error recovery, with an
+order of magnitude longer recovery time. Now probably most hardware in
+the field are such drives. Even SSDs like my Samsung 840 EVO that
+support SCT ERC have it disabled, therefore the top end recovery time
+is undiscoverable in the device itself. Maybe it's buried in a spec.
+
+So does it make sense to just set the default to 180? Or is there a
+smarter way to do this? I don't know.
 
 
-
-
-> sudo btrfs-debug-tree -d /dev/sdc
-> http://sebsauvage.net/paste/?d690b2c9d130008d#cni3fnKUZ7Y/oaXm+nsOw0afoWDFXNl26eC+vbJmcRA=
-
-OK good, so now it finds the chunk tree OK. This is good news. I would
-try to mount it ro first, if you need to make or refresh a backup. So
-in order:
-
-mount -o ro
-mount -o ro,recovery
-
-If those don't work lets see what the user and kernel errors are.
-
-
-
+>> I suspect, but haven't tested, that ZFS On Linux would be equally
+>> affected, unless they're completely reimplementing their own block
+>> layer (?) So there are quite a few parties now negatively impacted by
+>> the current default behavior.
 >
->
-> sudo btrfs-find-root /dev/sdc
-> parent transid verify failed on 7008807157760 wanted 70175 found 70133
-> parent transid verify failed on 7008807157760 wanted 70175 found 70133
-> Superblock thinks the generation is 70182
-> Superblock thinks the level is 1
-> Found tree root at 6062830010368 gen 70182 level 1
-> Well block 6062434418688(gen: 70181 level: 1) seems good, but
-> generation/level doesn't match, want gen: 70182 level: 1
-> Well block 6062497202176(gen: 69186 level: 0) seems good, but
-> generation/level doesn't match, want gen: 70182 level: 1
-> Well block 6062470332416(gen: 69186 level: 0) seems good, but
-> generation/level doesn't match, want gen: 70182 level: 1
+> OTOH, I would not be surprised if the stance there is 'you get no support if
+> your not using enterprise drives', not because of the project itself, but
+> because it's ZFS.  Part of their minimum recommended hardware requirements
+> is ECC RAM, so it wouldn't surprise me if enterprise storage devices are
+> there too.
 
-This is also a good sign that you can probably get btrfs rescue to
-work and point it to one of these older tree roots, if mount won't
-work.
+http://open-zfs.org/wiki/Hardware
+"Consistent performance requires hard drives that support error
+recovery control. "
 
+"Drives that lack such functionality can be expected to have
+arbitrarily high limits. Several minutes is not impossible. Drives
+with this functionality typically default to 7 seconds. ZFS does not
+currently adjust this setting on drives. However, it is advisable to
+write a script to set the error recovery time to a low value, such as
+0.1 seconds until ZFS is modified to control it. This must be done on
+every boot. "
 
->
->
-> sudo smartctl -l scterc /dev/sda
-> smartctl 6.5 2016-01-24 r4214 [x86_64-linux-4.4.0-24-generic] (local build)
-> Copyright (C) 2002-16, Bruce Allen, Christian Franke, www.smartmontools.org
->
-> SCT Error Recovery Control:
->            Read: Disabled
->           Write: Disabled
->
->
-> sudo smartctl -l scterc /dev/sdb
-> smartctl 6.5 2016-01-24 r4214 [x86_64-linux-4.4.0-24-generic] (local build)
-> Copyright (C) 2002-16, Bruce Allen, Christian Franke, www.smartmontools.org
->
-> SCT Error Recovery Control:
->            Read:     70 (7.0 seconds)
->           Write:     70 (7.0 seconds)
->
->
-> sudo smartctl -l scterc /dev/sdc
-> smartctl 6.5 2016-01-24 r4214 [x86_64-linux-4.4.0-24-generic] (local build)
-> Copyright (C) 2002-16, Bruce Allen, Christian Franke, www.smartmontools.org
->
-> SCT Error Recovery Control:
->            Read: Disabled
->           Write: Disabled
+They do not explicitly require enterprise drives, but they clearly
+expect SCT ERC enabled to some sane value.
 
+At least for Btrfs and ZFS, the mkfs is in a position to know all
+parameters for properly setting SCT ERC and the SCSI command timer for
+every device. Maybe it could create the udev rule? Single and raid0
+profiles need to permit long recoveries; where raid1, 5, 6 need to set
+things for very short recoveries.
 
+Possibly mdadm and lvm tools do the same thing.
 
-There's good news and bad news. The good news is all the drives
-support SCT ERC. The bad news is two of the drives have the wrong
-setting for raid1+, including raid5. Issue:
-
-smartctl -l scterc,70,70 /dev/sdX   #for each drive
-
-
-This is not a persistent setting. The drive being powered off (maybe
-even reset) will revert the setting to drive default. Some people use
-a udev rule to set this during startup. I think it can also be done
-with a systemd unit. You'd want to specify the drives by id, wwn if
-available, so that it's always consistent across boots.
-
-The point of this setting is to force the drive to give up on errors
-quickly, allowing Btrfs in this case to be informed of the exact
-problem (media error and what sector) so that Btrfs can reconstruct
-the data from parity and then fix the bad sector(s). In your current
-configuration the fixup can't happen, so problems start to accumulate.
-
-
-
-> sudo smartcl -a /dev/sdx
-> http://sebsauvage.net/paste/?aab1d282ceb1e1cf#auxFRkK5GCW8j1gR7mwgzR1z92Qn9oqtc6EEC2C6sEE=
-
-sudo smartctl -a /dev/sda
- === START OF INFORMATION SECTION === Model Family: Seagate NAS HDD
-Device Model: ST4000VN000-1H4168 Serial Number: Z302YVSZ
-5 Reallocated_Sector_Ct 0x0033 089 089 010 Pre-fail Always - 14648
-
-That's too many reallocated sectors. The good news is none are
-pending. But for a NAS drive I think this is too high, get it replaced
-under warranty. It certainly means that the unrecoverable read spec
-for this particular drive is being busted so they should replace it
-without question. It's possible this value is high by a factor of 8 if
-they're counting 512 byte logical sectors, where the actual physical
-sector is 4096 bytes. So it might not be as big of a problem as it
-seems, but it's still busted the spec.
-
-sudo smartctl -a /dev/sdb
-=== START OF INFORMATION SECTION === Model Family: Seagate NAS HDD
-Device Model: ST4000VN000-2AH166 Serial Number: WDH00SM8 LU WWN Device
-Id: 5 000c50 09bbd3af2
-
- Error 1 occurred at disk power-on lifetime: 453 hours (18 days + 21
-hours) When the command that caused the error occurred, the device was
-active or idle. After command completion occurred, registers were: ER
-ST SC SN CL CH DH -- -- -- -- -- -- -- 40 51 00 ff ff ff 0f Error: UNC
-at LBA = 0x0fffffff = 268435455
-
-This drive has recently experienced an explicit read error. That
-probably was fixed by Btrfs 18 days ago, if you have logs going back
-that long you'd likely see a fixup for this same sector LBA value.
-
-
-/dev/sdc looks OK.
-
-What's interesting looking at all smartctl outputs is that all three
-are NAS models of Seagate but *two* of them do not have SCT ERC
-enabled by default. That is very eyebrow raising as it relates to the
-potential spread of misconfigurations of RAID.
-
-
-Device Model: ST4000VN000-1H4168
-Device Model: ST4000VN000-2AH166  ## this one has SCT ERC set to 70 deciseconds
-Device Model: ST4000VN000-1H4168
-
-Seems like a bad idea for a NAS drive to default to SCT ERC disabled,
-I would expect the overwhelming use case for NAS drives will be raid1,
-5, or 6, all of which need SCT ERC enabled. Very weird choice by
-Seagate in my opinion.
-
-Anyway, you should enable this on the other two drives. That way there
-are fast error recoveries. If it turns out Btrfs can't reconstruct
-something upon error, we can deal with that later. The main thing is
-you want to get this raid5 as healthy as possible before the
-previously failed device fails again, or gets replaced.
 
 -- 
 Chris Murphy

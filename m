@@ -1,44 +1,63 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qk0-f169.google.com ([209.85.220.169]:36298 "EHLO
-	mail-qk0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754068AbcGFSYy (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 Jul 2016 14:24:54 -0400
-Received: by mail-qk0-f169.google.com with SMTP id 82so17370859qko.3
-        for <linux-btrfs@vger.kernel.org>; Wed, 06 Jul 2016 11:24:54 -0700 (PDT)
+Received: from mail-qt0-f178.google.com ([209.85.216.178]:36187 "EHLO
+	mail-qt0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751793AbcGFS3q (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 Jul 2016 14:29:46 -0400
+Received: by mail-qt0-f178.google.com with SMTP id w59so121004588qtd.3
+        for <linux-btrfs@vger.kernel.org>; Wed, 06 Jul 2016 11:29:45 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <CAJCQCtSZ=7v5PgD4mYKhayg03UfVqCV0ADBSjTsFDHiVcdxAjw@mail.gmail.com>
+In-Reply-To: <CAJCQCtRd-=RYAVWJBoVKPLU3-jx0T1oQgmhJwBM01j9zpFsUvg@mail.gmail.com>
 References: <CAJCQCtRQBGNeCyENzTPT=yiqs3Tcc=aD8v6usKNtTnvyOd0uqw@mail.gmail.com>
  <20160705212706.719397fc@jupiter.sol.kaishome.de> <CAJCQCtRyvC6J=KJSVYRd1sOWPoVm69tA--3U8kAVdDynkziwNA@mail.gmail.com>
  <CAJCQCtS7OgKKzstJDz52Sd6+SJygDzoVzMhvwHqGxFmihr6Aqg@mail.gmail.com>
- <CAA91j0VbaRpt46tYf_oqd7fRuRn_ev-=Zxf_Bwiwd=TUHR+2Ow@mail.gmail.com> <CAJCQCtSZ=7v5PgD4mYKhayg03UfVqCV0ADBSjTsFDHiVcdxAjw@mail.gmail.com>
+ <CAA91j0VbaRpt46tYf_oqd7fRuRn_ev-=Zxf_Bwiwd=TUHR+2Ow@mail.gmail.com>
+ <CAJCQCtSZ=7v5PgD4mYKhayg03UfVqCV0ADBSjTsFDHiVcdxAjw@mail.gmail.com>
+ <44c18e92-69b4-1409-1bf3-b1d08f6f84db@gmail.com> <CAJCQCtRd-=RYAVWJBoVKPLU3-jx0T1oQgmhJwBM01j9zpFsUvg@mail.gmail.com>
 From: Andrei Borzenkov <arvidjaar@gmail.com>
-Date: Wed, 6 Jul 2016 21:24:52 +0300
-Message-ID: <CAA91j0VEBRDUW+MehjtUqhZHi2dehnbY9w-_quEihRc1D=cpvQ@mail.gmail.com>
+Date: Wed, 6 Jul 2016 21:29:44 +0300
+Message-ID: <CAA91j0WN85uzYJWbUCXjWWyzg2JS_5or8dHh4PRvpgu3U6LeJA@mail.gmail.com>
 Subject: Re: 64-btrfs.rules and degraded boot
 To: Chris Murphy <lists@colorremedies.com>
-Cc: Kai Krakow <hurikhan77@gmail.com>,
+Cc: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>,
+        Kai Krakow <hurikhan77@gmail.com>,
         Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jul 6, 2016 at 8:19 PM, Chris Murphy <lists@colorremedies.com> wrote:
+On Wed, Jul 6, 2016 at 9:23 PM, Chris Murphy <lists@colorremedies.com> wrote:
+>>> [root@f24s ~]# btrfs fi show
+>>> warning, device 2 is missing
+>>> Label: none  uuid: 96240fd9-ea76-47e7-8cf4-05d3570ccfd7
+>>>     Total devices 3 FS bytes used 2.26GiB
+>>>     devid    3 size 50.00GiB used 3.01GiB path /dev/mapper/VG-3
+>>>     *** Some devices missing
+>>>
+>>> [root@f24s ~]# btrfs device ready /dev/mapper/VG-3
+>>> [root@f24s ~]#
+>>
+>> You won't get any output from it regardless, you have to check the return
+>> code as it's intended to be a tool for scripts and such.
 >
-> I'm mainly concerned with rootfs. And I'm mainly concerned with a very
-> simple 2 disk raid1. With a simple user opt in using
-> rootflags=degraded, it should be possible to boot the system. Right
-> now it's not possible. Maybe just deleting 64-btrfs.rules would fix
-> this problem, I haven't tried it.
+> How do I check the return code? When I use strace, no matter what I'm getting
 >
+> +++ exited with 0 +++
+>
+> I see both 'brfs device ready' and the udev btrfs builtin test are
+> calling BTRFS_IOC_DEVICES_READY so, it looks like udev is not using
+> user space tools to check but rather a btrfs ioctl.
 
-While deleting this rule will fix your specific degraded 2 disk raid 1
-it will break non-degraded multi-device filesystem. Logic currently
-implemented by systemd assumes that mount is called after
-prerequisites have been fulfilled. Deleting this rule will call mount
-as soon as the very first device is seen; such filesystem is obviously
-not mountable.
+Correct. It is possible that ioctl returns correct result only the
+very first time; notice that in your example btrfs had seen all other
+devices at least once while at boot it is really the case of other
+devices missing so far.
 
-Equivalent of this rule is required under systemd and desired in
-general to avoid polling. On systemd list I outlined possible
-alternative implementation as systemd service instead of really
-hackish udev rule.
+Which returns us to the question - how we can reliably query kernel
+about mountability of filesystem.
+
+> So clearly that
+> works or I wouldn't have stalled boots when all devices aren't
+> present.
+>
+> --
+> Chris Murphy

@@ -1,410 +1,205 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pf0-f169.google.com ([209.85.192.169]:35397 "EHLO
-	mail-pf0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751279AbcGNXbW (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 14 Jul 2016 19:31:22 -0400
-Received: by mail-pf0-f169.google.com with SMTP id c2so34823962pfa.2
-        for <linux-btrfs@vger.kernel.org>; Thu, 14 Jul 2016 16:31:21 -0700 (PDT)
-From: Omar Sandoval <osandov@osandov.com>
+Received: from cn.fujitsu.com ([222.73.24.84]:59404 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1754702AbcGGCML (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 6 Jul 2016 22:12:11 -0400
+Received: from adam-work.localdomain (unknown [10.167.226.34])
+	by cn.fujitsu.com (Postfix) with ESMTP id B798C4056403
+	for <linux-btrfs@vger.kernel.org>; Thu,  7 Jul 2016 10:11:59 +0800 (CST)
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
-Cc: kernel-team@fb.com
-Subject: [PATCH 3/3] Btrfs: expand free space tree sanity tests to catch endianness bug
-Date: Thu, 14 Jul 2016 16:31:08 -0700
-Message-Id: <cb4b1ce6e2a419db84fbc9cc5356951fa49953d2.1468538030.git.osandov@fb.com>
-In-Reply-To: <cover.1468538030.git.osandov@fb.com>
-References: <cover.1468538030.git.osandov@fb.com>
-In-Reply-To: <cover.1468538030.git.osandov@fb.com>
-References: <cover.1468538030.git.osandov@fb.com>
+Subject: [PATCH v1] btrfs: Avoid reading out unnecessary extent tree blocks when mounting
+Date: Thu,  7 Jul 2016 10:11:59 +0800
+Message-Id: <20160707021159.10335-1-quwenruo@cn.fujitsu.com>
+MIME-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Omar Sandoval <osandov@fb.com>
+Btrfs_read_block_groups() function is the most time consuming function
+if the fs is large and filled with small extents.
 
-The free space tree format conversion functions were broken on
-big-endian systems, but the sanity tests didn't catch it because all of
-the operations were aligned to multiple words. This was meant to catch
-any bugs in the extent buffer code's handling of high memory, but it
-ended up hiding the endianness bug. Expand the tests to do both
-sector-aligned and page-aligned operations.
+For a btrfs filled with 100,000,000 16K sized files, mount the fs takes
+about 10 seconds.
 
-Signed-off-by: Omar Sandoval <osandov@fb.com>
+While ftrace shows that, btrfs_read_block_groups() takes about 9
+seconds, taking up 90% of the mount time.
+So it's worthy to speedup btrfs_read_block_groups(), to reduce the
+overall mount time.
+
+Btrfs_read_block_groups() calls btrfs_search_slot() to find block group
+items.
+However the search key is (<block group start>, BLOCK_GROUP_KEY, 0).
+This makes search_slot() always returns previous slot.
+
+Under most case, it's OK since the block group item and previous slot
+are in the same leaf.
+But for cases where block group item are the first item of a leaf, we
+must read out next leaf to get block group item.
+This needs extra IO and makes btrfs_read_block_groups() slower.
+
+In fact, before we call btrfs_read_block_groups(), we have already read
+out all chunks, which are 1:1 mapped with block group items.
+So we can get the exact block group length for btrfs_search_slot(), to
+avoid any possible btrfs_next_leaf() to speedup
+btrfs_read_block_groups().
+
+With this patch, time spent on btrfs_read_block_groups() is reduced to
+7.56s, compared to old 8.94s, about 15% improvement.
+
+Reported-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- fs/btrfs/tests/free-space-tree-tests.c | 164 +++++++++++++++++++--------------
- 1 file changed, 96 insertions(+), 68 deletions(-)
+v2:
+  Update commit message
+---
+ fs/btrfs/extent-tree.c | 61 ++++++++++++++++++++------------------------------
+ fs/btrfs/extent_map.h  | 22 ++++++++++++++++++
+ 2 files changed, 46 insertions(+), 37 deletions(-)
 
-diff --git a/fs/btrfs/tests/free-space-tree-tests.c b/fs/btrfs/tests/free-space-tree-tests.c
-index aac507085ab0..d837b9e422d8 100644
---- a/fs/btrfs/tests/free-space-tree-tests.c
-+++ b/fs/btrfs/tests/free-space-tree-tests.c
-@@ -27,12 +27,6 @@ struct free_space_extent {
- 	u64 start, length;
- };
- 
--/*
-- * The test cases align their operations to this in order to hit some of the
-- * edge cases in the bitmap code.
-- */
--#define BITMAP_RANGE (BTRFS_FREE_SPACE_BITMAP_BITS * PAGE_SIZE)
--
- static int __check_free_space_extents(struct btrfs_trans_handle *trans,
- 				      struct btrfs_fs_info *fs_info,
- 				      struct btrfs_block_group_cache *cache,
-@@ -168,7 +162,8 @@ static int check_free_space_extents(struct btrfs_trans_handle *trans,
- static int test_empty_block_group(struct btrfs_trans_handle *trans,
- 				  struct btrfs_fs_info *fs_info,
- 				  struct btrfs_block_group_cache *cache,
--				  struct btrfs_path *path)
-+				  struct btrfs_path *path,
-+				  u32 alignment)
- {
- 	struct free_space_extent extents[] = {
- 		{cache->key.objectid, cache->key.offset},
-@@ -181,7 +176,8 @@ static int test_empty_block_group(struct btrfs_trans_handle *trans,
- static int test_remove_all(struct btrfs_trans_handle *trans,
- 			   struct btrfs_fs_info *fs_info,
- 			   struct btrfs_block_group_cache *cache,
--			   struct btrfs_path *path)
-+			   struct btrfs_path *path,
-+			   u32 alignment)
- {
- 	struct free_space_extent extents[] = {};
- 	int ret;
-@@ -201,16 +197,17 @@ static int test_remove_all(struct btrfs_trans_handle *trans,
- static int test_remove_beginning(struct btrfs_trans_handle *trans,
- 				 struct btrfs_fs_info *fs_info,
- 				 struct btrfs_block_group_cache *cache,
--				 struct btrfs_path *path)
-+				 struct btrfs_path *path,
-+				 u32 alignment)
- {
- 	struct free_space_extent extents[] = {
--		{cache->key.objectid + BITMAP_RANGE,
--			cache->key.offset - BITMAP_RANGE},
-+		{cache->key.objectid + alignment,
-+			cache->key.offset - alignment},
- 	};
- 	int ret;
- 
- 	ret = __remove_from_free_space_tree(trans, fs_info, cache, path,
--					    cache->key.objectid, BITMAP_RANGE);
-+					    cache->key.objectid, alignment);
- 	if (ret) {
- 		test_msg("Could not remove free space\n");
- 		return ret;
-@@ -224,17 +221,18 @@ static int test_remove_beginning(struct btrfs_trans_handle *trans,
- static int test_remove_end(struct btrfs_trans_handle *trans,
- 			   struct btrfs_fs_info *fs_info,
- 			   struct btrfs_block_group_cache *cache,
--			   struct btrfs_path *path)
-+			   struct btrfs_path *path,
-+			   u32 alignment)
- {
- 	struct free_space_extent extents[] = {
--		{cache->key.objectid, cache->key.offset - BITMAP_RANGE},
-+		{cache->key.objectid, cache->key.offset - alignment},
- 	};
- 	int ret;
- 
- 	ret = __remove_from_free_space_tree(trans, fs_info, cache, path,
- 					    cache->key.objectid +
--					    cache->key.offset - BITMAP_RANGE,
--					    BITMAP_RANGE);
-+					    cache->key.offset - alignment,
-+					    alignment);
- 	if (ret) {
- 		test_msg("Could not remove free space\n");
- 		return ret;
-@@ -247,18 +245,19 @@ static int test_remove_end(struct btrfs_trans_handle *trans,
- static int test_remove_middle(struct btrfs_trans_handle *trans,
- 			      struct btrfs_fs_info *fs_info,
- 			      struct btrfs_block_group_cache *cache,
--			      struct btrfs_path *path)
-+			      struct btrfs_path *path,
-+			      u32 alignment)
- {
- 	struct free_space_extent extents[] = {
--		{cache->key.objectid, BITMAP_RANGE},
--		{cache->key.objectid + 2 * BITMAP_RANGE,
--			cache->key.offset - 2 * BITMAP_RANGE},
-+		{cache->key.objectid, alignment},
-+		{cache->key.objectid + 2 * alignment,
-+			cache->key.offset - 2 * alignment},
- 	};
- 	int ret;
- 
- 	ret = __remove_from_free_space_tree(trans, fs_info, cache, path,
--					    cache->key.objectid + BITMAP_RANGE,
--					    BITMAP_RANGE);
-+					    cache->key.objectid + alignment,
-+					    alignment);
- 	if (ret) {
- 		test_msg("Could not remove free space\n");
- 		return ret;
-@@ -271,10 +270,11 @@ static int test_remove_middle(struct btrfs_trans_handle *trans,
- static int test_merge_left(struct btrfs_trans_handle *trans,
- 			   struct btrfs_fs_info *fs_info,
- 			   struct btrfs_block_group_cache *cache,
--			   struct btrfs_path *path)
-+			   struct btrfs_path *path,
-+			   u32 alignment)
- {
- 	struct free_space_extent extents[] = {
--		{cache->key.objectid, 2 * BITMAP_RANGE},
-+		{cache->key.objectid, 2 * alignment},
- 	};
- 	int ret;
- 
-@@ -287,15 +287,15 @@ static int test_merge_left(struct btrfs_trans_handle *trans,
- 	}
- 
- 	ret = __add_to_free_space_tree(trans, fs_info, cache, path,
--				       cache->key.objectid, BITMAP_RANGE);
-+				       cache->key.objectid, alignment);
- 	if (ret) {
- 		test_msg("Could not add free space\n");
- 		return ret;
- 	}
- 
- 	ret = __add_to_free_space_tree(trans, fs_info, cache, path,
--				       cache->key.objectid + BITMAP_RANGE,
--				       BITMAP_RANGE);
-+				       cache->key.objectid + alignment,
-+				       alignment);
- 	if (ret) {
- 		test_msg("Could not add free space\n");
- 		return ret;
-@@ -308,10 +308,11 @@ static int test_merge_left(struct btrfs_trans_handle *trans,
- static int test_merge_right(struct btrfs_trans_handle *trans,
- 			   struct btrfs_fs_info *fs_info,
- 			   struct btrfs_block_group_cache *cache,
--			   struct btrfs_path *path)
-+			   struct btrfs_path *path,
-+			   u32 alignment)
- {
- 	struct free_space_extent extents[] = {
--		{cache->key.objectid + BITMAP_RANGE, 2 * BITMAP_RANGE},
-+		{cache->key.objectid + alignment, 2 * alignment},
- 	};
- 	int ret;
- 
-@@ -324,16 +325,16 @@ static int test_merge_right(struct btrfs_trans_handle *trans,
- 	}
- 
- 	ret = __add_to_free_space_tree(trans, fs_info, cache, path,
--				       cache->key.objectid + 2 * BITMAP_RANGE,
--				       BITMAP_RANGE);
-+				       cache->key.objectid + 2 * alignment,
-+				       alignment);
- 	if (ret) {
- 		test_msg("Could not add free space\n");
- 		return ret;
- 	}
- 
- 	ret = __add_to_free_space_tree(trans, fs_info, cache, path,
--				       cache->key.objectid + BITMAP_RANGE,
--				       BITMAP_RANGE);
-+				       cache->key.objectid + alignment,
-+				       alignment);
- 	if (ret) {
- 		test_msg("Could not add free space\n");
- 		return ret;
-@@ -346,10 +347,11 @@ static int test_merge_right(struct btrfs_trans_handle *trans,
- static int test_merge_both(struct btrfs_trans_handle *trans,
- 			   struct btrfs_fs_info *fs_info,
- 			   struct btrfs_block_group_cache *cache,
--			   struct btrfs_path *path)
-+			   struct btrfs_path *path,
-+			   u32 alignment)
- {
- 	struct free_space_extent extents[] = {
--		{cache->key.objectid, 3 * BITMAP_RANGE},
-+		{cache->key.objectid, 3 * alignment},
- 	};
- 	int ret;
- 
-@@ -362,23 +364,23 @@ static int test_merge_both(struct btrfs_trans_handle *trans,
- 	}
- 
- 	ret = __add_to_free_space_tree(trans, fs_info, cache, path,
--				       cache->key.objectid, BITMAP_RANGE);
-+				       cache->key.objectid, alignment);
- 	if (ret) {
- 		test_msg("Could not add free space\n");
- 		return ret;
- 	}
- 
- 	ret = __add_to_free_space_tree(trans, fs_info, cache, path,
--				       cache->key.objectid + 2 * BITMAP_RANGE,
--				       BITMAP_RANGE);
-+				       cache->key.objectid + 2 * alignment,
-+				       alignment);
- 	if (ret) {
- 		test_msg("Could not add free space\n");
- 		return ret;
- 	}
- 
- 	ret = __add_to_free_space_tree(trans, fs_info, cache, path,
--				       cache->key.objectid + BITMAP_RANGE,
--				       BITMAP_RANGE);
-+				       cache->key.objectid + alignment,
-+				       alignment);
- 	if (ret) {
- 		test_msg("Could not add free space\n");
- 		return ret;
-@@ -391,12 +393,13 @@ static int test_merge_both(struct btrfs_trans_handle *trans,
- static int test_merge_none(struct btrfs_trans_handle *trans,
- 			   struct btrfs_fs_info *fs_info,
- 			   struct btrfs_block_group_cache *cache,
--			   struct btrfs_path *path)
-+			   struct btrfs_path *path,
-+			   u32 alignment)
- {
- 	struct free_space_extent extents[] = {
--		{cache->key.objectid, BITMAP_RANGE},
--		{cache->key.objectid + 2 * BITMAP_RANGE, BITMAP_RANGE},
--		{cache->key.objectid + 4 * BITMAP_RANGE, BITMAP_RANGE},
-+		{cache->key.objectid, alignment},
-+		{cache->key.objectid + 2 * alignment, alignment},
-+		{cache->key.objectid + 4 * alignment, alignment},
- 	};
- 	int ret;
- 
-@@ -409,23 +412,23 @@ static int test_merge_none(struct btrfs_trans_handle *trans,
- 	}
- 
- 	ret = __add_to_free_space_tree(trans, fs_info, cache, path,
--				       cache->key.objectid, BITMAP_RANGE);
-+				       cache->key.objectid, alignment);
- 	if (ret) {
- 		test_msg("Could not add free space\n");
- 		return ret;
- 	}
- 
- 	ret = __add_to_free_space_tree(trans, fs_info, cache, path,
--				       cache->key.objectid + 4 * BITMAP_RANGE,
--				       BITMAP_RANGE);
-+				       cache->key.objectid + 4 * alignment,
-+				       alignment);
- 	if (ret) {
- 		test_msg("Could not add free space\n");
- 		return ret;
- 	}
- 
- 	ret = __add_to_free_space_tree(trans, fs_info, cache, path,
--				       cache->key.objectid + 2 * BITMAP_RANGE,
--				       BITMAP_RANGE);
-+				       cache->key.objectid + 2 * alignment,
-+				       alignment);
- 	if (ret) {
- 		test_msg("Could not add free space\n");
- 		return ret;
-@@ -438,10 +441,11 @@ static int test_merge_none(struct btrfs_trans_handle *trans,
- typedef int (*test_func_t)(struct btrfs_trans_handle *,
- 			   struct btrfs_fs_info *,
- 			   struct btrfs_block_group_cache *,
--			   struct btrfs_path *);
-+			   struct btrfs_path *,
-+			   u32 alignment);
- 
--static int run_test(test_func_t test_func, int bitmaps,
--		u32 sectorsize, u32 nodesize)
-+static int run_test(test_func_t test_func, int bitmaps, u32 sectorsize,
-+		    u32 nodesize, u32 alignment)
- {
- 	struct btrfs_root *root = NULL;
- 	struct btrfs_block_group_cache *cache = NULL;
-@@ -479,7 +483,7 @@ static int run_test(test_func_t test_func, int bitmaps,
- 	btrfs_set_header_nritems(root->node, 0);
- 	root->alloc_bytenr += 2 * nodesize;
- 
--	cache = btrfs_alloc_dummy_block_group(8 * BITMAP_RANGE, sectorsize);
-+	cache = btrfs_alloc_dummy_block_group(8 * alignment, sectorsize);
- 	if (!cache) {
- 		test_msg("Couldn't allocate dummy block group cache\n");
- 		ret = -ENOMEM;
-@@ -513,7 +517,7 @@ static int run_test(test_func_t test_func, int bitmaps,
- 		}
- 	}
- 
--	ret = test_func(&trans, root->fs_info, cache, path);
-+	ret = test_func(&trans, root->fs_info, cache, path, alignment);
- 	if (ret)
- 		goto out;
- 
-@@ -537,15 +541,27 @@ out:
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 82b912a..874f5b3 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -9648,39 +9648,20 @@ out:
  	return ret;
  }
  
--static int run_test_both_formats(test_func_t test_func,
--	u32 sectorsize, u32 nodesize)
-+static int run_test_both_formats(test_func_t test_func, u32 sectorsize,
-+				 u32 nodesize, u32 alignment)
+-static int find_first_block_group(struct btrfs_root *root,
+-		struct btrfs_path *path, struct btrfs_key *key)
++int find_block_group(struct btrfs_root *root,
++				   struct btrfs_path *path,
++				   struct extent_map *chunk_em)
  {
-+	int test_ret = 0;
- 	int ret;
+ 	int ret = 0;
+-	struct btrfs_key found_key;
+-	struct extent_buffer *leaf;
+-	int slot;
+-
+-	ret = btrfs_search_slot(NULL, root, key, path, 0, 0);
+-	if (ret < 0)
+-		goto out;
++	struct btrfs_key key;
  
--	ret = run_test(test_func, 0, sectorsize, nodesize);
--	if (ret)
--		return ret;
--	return run_test(test_func, 1, sectorsize, nodesize);
-+	ret = run_test(test_func, 0, sectorsize, nodesize, alignment);
-+	if (ret) {
-+		test_msg("%pf failed with extents, sectorsize=%u, nodesize=%u, alignment=%u\n",
-+			 test_func, sectorsize, nodesize, alignment);
-+		test_ret = ret;
-+	}
-+
-+	ret = run_test(test_func, 1, sectorsize, nodesize, alignment);
-+	if (ret) {
-+		test_msg("%pf failed with bitmaps, sectorsize=%u, nodesize=%u, alignment=%u\n",
-+			 test_func, sectorsize, nodesize, alignment);
-+		test_ret = ret;
-+	}
-+
-+	return test_ret;
+-	while (1) {
+-		slot = path->slots[0];
+-		leaf = path->nodes[0];
+-		if (slot >= btrfs_header_nritems(leaf)) {
+-			ret = btrfs_next_leaf(root, path);
+-			if (ret == 0)
+-				continue;
+-			if (ret < 0)
+-				goto out;
+-			break;
+-		}
+-		btrfs_item_key_to_cpu(leaf, &found_key, slot);
++	key.objectid = chunk_em->start;
++	key.offset = chunk_em->len;
++	key.type = BTRFS_BLOCK_GROUP_ITEM_KEY;
+ 
+-		if (found_key.objectid >= key->objectid &&
+-		    found_key.type == BTRFS_BLOCK_GROUP_ITEM_KEY) {
+-			ret = 0;
+-			goto out;
+-		}
+-		path->slots[0]++;
+-	}
+-out:
++	ret = btrfs_search_slot(NULL, root, &key, path, 0, 0);
++	if (ret > 0)
++		ret = -ENOENT;
+ 	return ret;
  }
  
- int btrfs_test_free_space_tree(u32 sectorsize, u32 nodesize)
-@@ -561,18 +577,30 @@ int btrfs_test_free_space_tree(u32 sectorsize, u32 nodesize)
- 		test_merge_both,
- 		test_merge_none,
- 	};
-+	u32 bitmap_alignment;
-+	int test_ret = 0;
- 	int i;
+@@ -9899,16 +9880,14 @@ int btrfs_read_block_groups(struct btrfs_root *root)
+ 	struct btrfs_block_group_cache *cache;
+ 	struct btrfs_fs_info *info = root->fs_info;
+ 	struct btrfs_space_info *space_info;
+-	struct btrfs_key key;
++	struct btrfs_mapping_tree *map_tree = &root->fs_info->mapping_tree;
++	struct extent_map *chunk_em;
+ 	struct btrfs_key found_key;
+ 	struct extent_buffer *leaf;
+ 	int need_clear = 0;
+ 	u64 cache_gen;
  
-+	/*
-+	 * Align some operations to a page to flush out bugs in the extent
-+	 * buffer bitmap handling of highmem.
-+	 */
-+	bitmap_alignment = BTRFS_FREE_SPACE_BITMAP_BITS * PAGE_SIZE;
+ 	root = info->extent_root;
+-	key.objectid = 0;
+-	key.offset = 0;
+-	key.type = BTRFS_BLOCK_GROUP_ITEM_KEY;
+ 	path = btrfs_alloc_path();
+ 	if (!path)
+ 		return -ENOMEM;
+@@ -9921,10 +9900,16 @@ int btrfs_read_block_groups(struct btrfs_root *root)
+ 	if (btrfs_test_opt(root, CLEAR_CACHE))
+ 		need_clear = 1;
+ 
++	/* Here we don't lock the map tree, as we are the only reader */
++	chunk_em = first_extent_mapping(&map_tree->map_tree);
++	/* Not really possible */
++	if (!chunk_em) {
++		ret = -ENOENT;
++		goto error;
++	}
 +
- 	test_msg("Running free space tree tests\n");
- 	for (i = 0; i < ARRAY_SIZE(tests); i++) {
--		int ret = run_test_both_formats(tests[i], sectorsize,
--			nodesize);
--		if (ret) {
--			test_msg("%pf : sectorsize %u failed\n",
--				tests[i], sectorsize);
--			return ret;
--		}
-+		int ret;
-+
-+		ret = run_test_both_formats(tests[i], sectorsize, nodesize,
-+					    sectorsize);
-+		if (ret)
-+			test_ret = ret;
-+
-+		ret = run_test_both_formats(tests[i], sectorsize, nodesize,
-+					    bitmap_alignment);
-+		if (ret)
-+			test_ret = ret;
+ 	while (1) {
+-		ret = find_first_block_group(root, path, &key);
+-		if (ret > 0)
+-			break;
++		ret = find_block_group(root, path, chunk_em);
+ 		if (ret != 0)
+ 			goto error;
+ 
+@@ -9958,7 +9943,6 @@ int btrfs_read_block_groups(struct btrfs_root *root)
+ 				   sizeof(cache->item));
+ 		cache->flags = btrfs_block_group_flags(&cache->item);
+ 
+-		key.objectid = found_key.objectid + found_key.offset;
+ 		btrfs_release_path(path);
+ 
+ 		/*
+@@ -10039,6 +10023,9 @@ int btrfs_read_block_groups(struct btrfs_root *root)
+ 			}
+ 			spin_unlock(&info->unused_bgs_lock);
+ 		}
++		chunk_em = next_extent_mapping(chunk_em);
++		if (!chunk_em)
++			break;
  	}
  
--	return 0;
-+	return test_ret;
- }
+ 	list_for_each_entry_rcu(space_info, &root->fs_info->space_info, list) {
+diff --git a/fs/btrfs/extent_map.h b/fs/btrfs/extent_map.h
+index eb8b8fa..9358e3e 100644
+--- a/fs/btrfs/extent_map.h
++++ b/fs/btrfs/extent_map.h
+@@ -90,4 +90,26 @@ int unpin_extent_cache(struct extent_map_tree *tree, u64 start, u64 len, u64 gen
+ void clear_em_logging(struct extent_map_tree *tree, struct extent_map *em);
+ struct extent_map *search_extent_mapping(struct extent_map_tree *tree,
+ 					 u64 start, u64 len);
++
++static inline struct extent_map *
++first_extent_mapping(struct extent_map_tree *tree)
++{
++	struct rb_node *node;
++
++	node = rb_first(&tree->map);
++	if (!node)
++		return NULL;
++	return rb_entry(node, struct extent_map, rb_node);
++}
++
++static inline struct extent_map *
++next_extent_mapping(struct extent_map *map)
++{
++	struct rb_node *node;
++
++	node = rb_next(&map->rb_node);
++	if (!node)
++		return NULL;
++	return rb_entry(node, struct extent_map, rb_node);
++}
+ #endif
 -- 
 2.9.0
+
+
 

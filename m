@@ -1,56 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oi0-f42.google.com ([209.85.218.42]:34829 "EHLO
-	mail-oi0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751610AbcGGRkz (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 7 Jul 2016 13:40:55 -0400
-Received: by mail-oi0-f42.google.com with SMTP id r2so33016978oih.2
-        for <linux-btrfs@vger.kernel.org>; Thu, 07 Jul 2016 10:40:55 -0700 (PDT)
+Received: from mail-oi0-f52.google.com ([209.85.218.52]:35975 "EHLO
+	mail-oi0-f52.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750941AbcGGR5K (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 7 Jul 2016 13:57:10 -0400
+Received: by mail-oi0-f52.google.com with SMTP id f189so33597512oig.3
+        for <linux-btrfs@vger.kernel.org>; Thu, 07 Jul 2016 10:57:09 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <CAPmG0jZZ7FB0teBGGHojPoGctRyVC3D2cS56q1kYDMFrC=fOnA@mail.gmail.com>
-References: <96f8022e-4209-2498-62e4-50ccbee46e37@freenet.de> <CAPmG0jZZ7FB0teBGGHojPoGctRyVC3D2cS56q1kYDMFrC=fOnA@mail.gmail.com>
+In-Reply-To: <0120508a-b9e7-b9e7-4f27-79f982ee07fe@fastmail.fm>
+References: <0120508a-b9e7-b9e7-4f27-79f982ee07fe@fastmail.fm>
 From: Chris Murphy <lists@colorremedies.com>
-Date: Thu, 7 Jul 2016 11:40:53 -0600
-Message-ID: <CAJCQCtQt2A7w4JNUuhU7YOHTyj_z8M_RqsZCDw0G2YEENXaBvg@mail.gmail.com>
-Subject: Re: rollback to a snapshot and delete old top volume - missing of "@"
-To: Henk Slager <eye1tm@gmail.com>
-Cc: Kai Herlemann <nesadaw@freenet.de>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
+Date: Thu, 7 Jul 2016 11:57:08 -0600
+Message-ID: <CAJCQCtRV2Eis8h9u_Mpum_pFoLzOQe+LjooO0Y4_AYqwsVBiMA@mail.gmail.com>
+Subject: Re: Frequent btrfs corruption on a USB flash drive
+To: Francesco Turco <fturco@fastmail.fm>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Jul 7, 2016 at 10:01 AM, Henk Slager <eye1tm@gmail.com> wrote:
+On Thu, Jul 7, 2016 at 7:49 AM, Francesco Turco <fturco@fastmail.fm> wrote:
 
-> What the latest debian likes as naming convention I dont know, but in
-> openSuSE @ is a directory in the toplevel volume (ID=5 or ID=0 as
-> alias) and that directory contains subvolumes.
+> $ btrfs filesystem show
+> /run/media/fturco/5283147c-b7b4-448f-97b0-b235344a56a3
+> $
 
-No, opensuse doesn't use @ at all. They use a subvolume called
-.snapshots to contain snapper snapshots.
+Try it with sudo. I think it's a bug that 'btrfs fi show' returns
+silently for non-root. It should produce an error that root privileges
+are needed, or it should work for unprivileged users.
 
-On a system using snapper, its snapshots should probably be deleted
-via snapper so it's aware of the state change.
 
-And very clearly from the OP's output from 'btrfs sub list' there are
-no subvolumes with @ in the path, so there is no subvolume @, nor are
-there any subvolumes contained in a directory @.
 
-Assuming the posted output from btrfs sub list is the complete output,
-.snapshots is a directory and there are three subvolumes in it. I
-suspect the OP is unfamiliar with snapper conventions and is trying to
-delete a snapshot outside of snapper, and is used to some other
-(Debian or Ubuntu) convention where snapshots somehow relate to @,
-which is a mimicking of how ZFS does things.
 
-Anyway the reason why the command fails is stated in the error
-message. The system appears to be installed in the top level of the
-file system (subvolid=5), and that can't be deleted. First it's the
-immutable first subvolume of a Btrfs file system, and second it's
-populated with other subvolumes which would inhibit its removal even
-if it weren't the top level subvolume.
+> Btrfs-check reports many errors. I attached the output to this e-mail
+> message.
+>
+> Output from dmesg:
+>
+> $ dmesg | tail
+> [18756.159963] BTRFS error (device dm-4): bad tree block start
+> 6592115285688248773 35323904
 
-What can be done is delete the directories in the top level, retaining
-the subvolumes that are there.
+The problem happened before this, so I think we need the entire dmesg.
+
+
+
+> I checked this USB flash drive with badblocks in non-destructive
+> read-write mode. No errors.
+
+Use F3 to test flash:
+http://oss.digirati.com.br/f3/
+
+Some distros have it in their repo, Fedora does. It's a bit
+unintuitive what you need to do is use the write binary to write the
+test files to the stick (this is destructive) and then use the read
+binary to read back the written files.
+
+Read more, and also includes a much faster alternative for GNOME:
+https://blogs.gnome.org/hughsie/2015/01/28/detecting-fake-flash/
 
 
 

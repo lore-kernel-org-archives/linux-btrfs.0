@@ -1,106 +1,117 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:17609 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755480AbcGFTvw (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 Jul 2016 15:51:52 -0400
-Date: Wed, 6 Jul 2016 12:54:49 -0700
-From: Liu Bo <bo.li.liu@oracle.com>
-To: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
-Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz
+Received: from cn.fujitsu.com ([59.151.112.132]:45823 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1756016AbcGGC2w (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 Jul 2016 22:28:52 -0400
 Subject: Re: [PATCH 1/2] btrfs: use correct offset for reloc_inode in
  prealloc_file_extent_cluster()
-Message-ID: <20160706195449.GA2397@localhost.localdomain>
-Reply-To: bo.li.liu@oracle.com
+To: <bo.li.liu@oracle.com>
 References: <20160706103753.4908-1-wangxg.fnst@cn.fujitsu.com>
+ <20160706195449.GA2397@localhost.localdomain>
+CC: <linux-btrfs@vger.kernel.org>, <dsterba@suse.cz>
+From: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
+Message-ID: <577DBDDC.6060409@cn.fujitsu.com>
+Date: Thu, 7 Jul 2016 10:26:36 +0800
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20160706103753.4908-1-wangxg.fnst@cn.fujitsu.com>
+In-Reply-To: <20160706195449.GA2397@localhost.localdomain>
+Content-Type: text/plain; charset="windows-1252"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jul 06, 2016 at 06:37:52PM +0800, Wang Xiaoguang wrote:
-> In prealloc_file_extent_cluster(), btrfs_check_data_free_space() uses
-> wrong file offset for reloc_inode, it uses cluster->start and cluster->end,
-> which indeed are extent's bytenr. The correct value should be
-> cluster->[start|end] minus block group's start bytenr.
-> 
-> start bytenr   cluster->start
-> |              |     extent      |   extent   | ...| extent |
-> |----------------------------------------------------------------|
-> |                block group reloc_inode                         |
-> 
-> Signed-off-by: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
-> ---
->  fs/btrfs/relocation.c | 27 +++++++++++++++------------
->  1 file changed, 15 insertions(+), 12 deletions(-)
-> 
-> diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-> index 0477dca..abc2f69 100644
-> --- a/fs/btrfs/relocation.c
-> +++ b/fs/btrfs/relocation.c
-> @@ -3030,34 +3030,37 @@ int prealloc_file_extent_cluster(struct inode *inode,
->  	u64 num_bytes;
->  	int nr = 0;
->  	int ret = 0;
-> +	u64 prealloc_start, prealloc_end;
->  
->  	BUG_ON(cluster->start != cluster->boundary[0]);
->  	inode_lock(inode);
->  
-> -	ret = btrfs_check_data_free_space(inode, cluster->start,
-> -					  cluster->end + 1 - cluster->start);
-> +	start = cluster->start - offset;
-> +	end = cluster->end - offset;
-> +	ret = btrfs_check_data_free_space(inode, start, end + 1 - start);
->  	if (ret)
->  		goto out;
->  
->  	while (nr < cluster->nr) {
-> -		start = cluster->boundary[nr] - offset;
-> +		prealloc_start = cluster->boundary[nr] - offset;
->  		if (nr + 1 < cluster->nr)
-> -			end = cluster->boundary[nr + 1] - 1 - offset;
-> +			prealloc_end = cluster->boundary[nr + 1] - 1 - offset;
->  		else
-> -			end = cluster->end - offset;
-> +			prealloc_end = cluster->end - offset;
->  
-> -		lock_extent(&BTRFS_I(inode)->io_tree, start, end);
-> -		num_bytes = end + 1 - start;
-> -		ret = btrfs_prealloc_file_range(inode, 0, start,
-> +		lock_extent(&BTRFS_I(inode)->io_tree, prealloc_start,
-> +			    prealloc_end);
-> +		num_bytes = prealloc_end + 1 - prealloc_start;
-> +		ret = btrfs_prealloc_file_range(inode, 0, prealloc_start,
->  						num_bytes, num_bytes,
-> -						end + 1, &alloc_hint);
-> -		unlock_extent(&BTRFS_I(inode)->io_tree, start, end);
-> +						prealloc_end + 1, &alloc_hint);
-> +		unlock_extent(&BTRFS_I(inode)->io_tree, prealloc_start,
-> +			      prealloc_end);
+hello,
 
-Changing names is unnecessary, we can pick up other names for btrfs_{check/free}_data_free_space().
+On 07/07/2016 03:54 AM, Liu Bo wrote:
+> On Wed, Jul 06, 2016 at 06:37:52PM +0800, Wang Xiaoguang wrote:
+>> In prealloc_file_extent_cluster(), btrfs_check_data_free_space() uses
+>> wrong file offset for reloc_inode, it uses cluster->start and cluster->end,
+>> which indeed are extent's bytenr. The correct value should be
+>> cluster->[start|end] minus block group's start bytenr.
+>>
+>> start bytenr   cluster->start
+>> |              |     extent      |   extent   | ...| extent |
+>> |----------------------------------------------------------------|
+>> |                block group reloc_inode                         |
+>>
+>> Signed-off-by: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
+>> ---
+>>   fs/btrfs/relocation.c | 27 +++++++++++++++------------
+>>   1 file changed, 15 insertions(+), 12 deletions(-)
+>>
+>> diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
+>> index 0477dca..abc2f69 100644
+>> --- a/fs/btrfs/relocation.c
+>> +++ b/fs/btrfs/relocation.c
+>> @@ -3030,34 +3030,37 @@ int prealloc_file_extent_cluster(struct inode *inode,
+>>   	u64 num_bytes;
+>>   	int nr = 0;
+>>   	int ret = 0;
+>> +	u64 prealloc_start, prealloc_end;
+>>   
+>>   	BUG_ON(cluster->start != cluster->boundary[0]);
+>>   	inode_lock(inode);
+>>   
+>> -	ret = btrfs_check_data_free_space(inode, cluster->start,
+>> -					  cluster->end + 1 - cluster->start);
+>> +	start = cluster->start - offset;
+>> +	end = cluster->end - offset;
+>> +	ret = btrfs_check_data_free_space(inode, start, end + 1 - start);
+>>   	if (ret)
+>>   		goto out;
+>>   
+>>   	while (nr < cluster->nr) {
+>> -		start = cluster->boundary[nr] - offset;
+>> +		prealloc_start = cluster->boundary[nr] - offset;
+>>   		if (nr + 1 < cluster->nr)
+>> -			end = cluster->boundary[nr + 1] - 1 - offset;
+>> +			prealloc_end = cluster->boundary[nr + 1] - 1 - offset;
+>>   		else
+>> -			end = cluster->end - offset;
+>> +			prealloc_end = cluster->end - offset;
+>>   
+>> -		lock_extent(&BTRFS_I(inode)->io_tree, start, end);
+>> -		num_bytes = end + 1 - start;
+>> -		ret = btrfs_prealloc_file_range(inode, 0, start,
+>> +		lock_extent(&BTRFS_I(inode)->io_tree, prealloc_start,
+>> +			    prealloc_end);
+>> +		num_bytes = prealloc_end + 1 - prealloc_start;
+>> +		ret = btrfs_prealloc_file_range(inode, 0, prealloc_start,
+>>   						num_bytes, num_bytes,
+>> -						end + 1, &alloc_hint);
+>> -		unlock_extent(&BTRFS_I(inode)->io_tree, start, end);
+>> +						prealloc_end + 1, &alloc_hint);
+>> +		unlock_extent(&BTRFS_I(inode)->io_tree, prealloc_start,
+>> +			      prealloc_end);
+> Changing names is unnecessary, we can pick up other names for btrfs_{check/free}_data_free_space().
+OK, then the changes will be small, thanks.
 
-Thanks,
+Regards,
+Xiaoguang Wang
 
--liubo
+>
+> Thanks,
+>
+> -liubo
+>
+>>   		if (ret)
+>>   			break;
+>>   		nr++;
+>>   	}
+>> -	btrfs_free_reserved_data_space(inode, cluster->start,
+>> -				       cluster->end + 1 - cluster->start);
+>> +	btrfs_free_reserved_data_space(inode, start, end + 1 - start);
+>>   out:
+>>   	inode_unlock(inode);
+>>   	return ret;
+>> -- 
+>> 2.9.0
+>>
+>>
+>>
+>> --
+>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>> the body of a message to majordomo@vger.kernel.org
+>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>
 
->  		if (ret)
->  			break;
->  		nr++;
->  	}
-> -	btrfs_free_reserved_data_space(inode, cluster->start,
-> -				       cluster->end + 1 - cluster->start);
-> +	btrfs_free_reserved_data_space(inode, start, end + 1 - start);
->  out:
->  	inode_unlock(inode);
->  	return ret;
-> -- 
-> 2.9.0
-> 
-> 
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+
+

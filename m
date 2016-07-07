@@ -1,44 +1,36 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:22822 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752862AbcGERsw (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Jul 2016 13:48:52 -0400
-Date: Tue, 5 Jul 2016 10:51:55 -0700
-From: Liu Bo <bo.li.liu@oracle.com>
-To: dsterba@suse.cz
-Cc: linux-btrfs@vger.kernel.org, Peter Becker <floyd.net@gmail.com>
-Subject: Re: [PATCH] Btrfs: fix read_node_slot to return errors
-Message-ID: <20160705175155.GA16941@localhost.localdomain>
-Reply-To: bo.li.liu@oracle.com
+Received: from mx2.suse.de ([195.135.220.15]:54475 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750762AbcGGME6 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 7 Jul 2016 08:04:58 -0400
+Date: Thu, 7 Jul 2016 14:05:17 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Liu Bo <bo.li.liu@oracle.com>
+Cc: linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.cz>
+Subject: Re: [PATCH v2] Btrfs: fix read_node_slot to return errors
+Message-ID: <20160707120517.GW13336@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
 References: <1467165348-9931-1-git-send-email-bo.li.liu@oracle.com>
- <20160704170818.GK13336@twin.jikos.cz>
+ <1467745814-12889-1-git-send-email-bo.li.liu@oracle.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20160704170818.GK13336@twin.jikos.cz>
+In-Reply-To: <1467745814-12889-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Jul 04, 2016 at 07:08:18PM +0200, David Sterba wrote:
-> On Tue, Jun 28, 2016 at 06:55:48PM -0700, Liu Bo wrote:
-> > @@ -5238,6 +5256,10 @@ static void tree_move_down(struct btrfs_root *root,
-> >  					path->slots[*level]);
-> >  	path->slots[*level - 1] = 0;
-> >  	(*level)--;
-> > +
-> > +	if (IS_ERR(path->nodes[*level - 1]))
-> > +		return PTR_ERR(path->nodes[*level - 1]);
+On Tue, Jul 05, 2016 at 12:10:14PM -0700, Liu Bo wrote:
+> We use read_node_slot() to read btree node and it has two cases,
+> a) slot is out of range, which means 'no such entry'
+> b) we fail to read the block, due to checksum fails or corrupted
+>    content or not with uptodate flag.
+> But we're returning NULL in both cases, this makes it return -ENOENT
+> in case a) and return -EIO in case b), and this fixes its callers
+> as well as btrfs_search_forward() 's caller to catch the new errors.
 > 
-> Is this right? *level changes since the call to read_node_slot so I
-> don't understand which value are we actually testing for error.
-
-Uh, it should check the returned btree block, not after (*level)--;
-
-
+> The problem is reported by Peter Becker, and I can manage to
+> hit the same BUG_ON by mounting my fuzz image.
 > 
-> Otherwise looks good.
+> Reported-by: Peter Becker <floyd.net@gmail.com>
+> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
 
-Thanks for reviewing this.
-
-Thanks,
-
--liubo
+Reviewed-by: David Sterba <dsterba@suse.com>

@@ -1,56 +1,60 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtprelay02.ispgateway.de ([80.67.31.29]:59683 "EHLO
-	smtprelay02.ispgateway.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751580AbcGGJqZ (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 7 Jul 2016 05:46:25 -0400
-Received: from [77.13.69.70] (helo=hermione.invalid)
-	by smtprelay02.ispgateway.de with esmtpsa (TLSv1.2:AES256-GCM-SHA384:256)
-	(Exim 4.84)
-	(envelope-from <envelope@m-berberich.de>)
-	id 1bL5t0-00069X-AS
-	for linux-btrfs@vger.kernel.org; Thu, 07 Jul 2016 11:46:22 +0200
-Received: from berberic by hermione.invalid with local (Exim 4.87)
-	(envelope-from <envelope@m-berberich.de>)
-	id 1bL5sz-0003Lg-SO
-	for linux-btrfs@vger.kernel.org; Thu, 07 Jul 2016 11:46:21 +0200
-Date: Thu, 7 Jul 2016 11:46:21 +0200
-From: M G Berberich <btrfs@oss.m-berberich.de>
-To: linux-btrfs@vger.kernel.org
-Subject: fstrim problem/bug
-Message-ID: <20160707094621.GB7153@invalid>
+Received: from mail-vk0-f44.google.com ([209.85.213.44]:33221 "EHLO
+	mail-vk0-f44.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752118AbcGGKSW (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 7 Jul 2016 06:18:22 -0400
+Received: by mail-vk0-f44.google.com with SMTP id b192so14289562vke.0
+        for <linux-btrfs@vger.kernel.org>; Thu, 07 Jul 2016 03:18:22 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
+In-Reply-To: <CAJCQCtS=5Zx_toc3WuOpymyVUYFZMUo=wh+ZmTC=jh6bL3XYXg@mail.gmail.com>
+References: <CALLEBqG65hkAd+KyoNZudCKv58OuBm3L5VOjWcvMQ5GfGNCngA@mail.gmail.com>
+ <CAJCQCtS=5Zx_toc3WuOpymyVUYFZMUo=wh+ZmTC=jh6bL3XYXg@mail.gmail.com>
+From: Stanislaw Kaminski <stasheck.fora@gmail.com>
+Date: Thu, 7 Jul 2016 12:18:02 +0200
+Message-ID: <CALLEBqF7HZ0VmMpFmoTik0_2FBXp7q5Z4EHxe_fMDY9ni2j44Q@mail.gmail.com>
+Subject: Re: Out of space error even though there's 100 GB unused?
+To: Chris Murphy <lists@colorremedies.com>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
+Hi all,
+I downgraded to 4.4.1-1 - all fine, 4.5.5.-1 - also fine, then got
+back to 4.6.3-2 - and it's still fine. Apparently running under
+different kernel somehow fixed the glitch (as far as I can test...).
 
-On a filesystem with 40 G free space and 54 G used, ‘fstrim -v’ gave
-this result:
+That leaves me with the other question: before issues, I 1.6 TiB was
+used, now all the tools report 1.7 TiB issued (except for btrfs fs du
+/home, this reports 1.6 TiB). How is that possible?
 
-    # fstrim -v /
-    /: 0 B (0 bytes) trimmed
+Cheers,
+Stan
 
-After running balance it gave a more sensible
-
-    # fstrim -v /
-    /: 37.3 GiB (40007368704 bytes) trimmed
-
-As far as I understand, fstrim should report any unused block to the
-disk, so its controller can reuse these blocks. I expected ’fstrim -v’
-to report about 40 G trimmed. The fact, that after balance fstrim
-reports a sensible amount of trimmed bytes leads to the conclusion,
-that fstrim on btrfs does not report unused blocks to the disk (as it
-should), but only the blocks of unused chunks. As the fstrim-command
-only does a ‘ioctl(fd, FITRIM, &range))’ this seems to be a bug in the
-fstrim kernel-code.
-In the field this means, that without regularly running balance,
-fstrim does not work on btrfs.
-
-	MfG
-	bmg
-
--- 
-„Des is völlig wurscht, was heut beschlos- | M G Berberich
- sen wird: I bin sowieso dagegn!“          | mail@m-berberich.de
-(SPD-Stadtrat Kurt Schindler; Regensburg)  | 
+2016-07-06 19:42 GMT+02:00 Chris Murphy <lists@colorremedies.com>:
+> On Wed, Jul 6, 2016 at 3:55 AM, Stanislaw Kaminski
+> <stasheck.fora@gmail.com> wrote:
+>
+>>     Device unallocated:           97.89GiB
+>
+> There should be no problem creating any type of block group from this
+> much space. It's a bug.
+>
+> I would try regression testing. Kernel 4.5.7 has some changes that may
+> or may not relate to this (they should only relate when there is no
+> unallocated space left) so you could try 4.5.6 and 4.5.7. And also
+> 4.4.14.
+>
+> But also the kernel messages are important. There is this obscure
+> enospc with error -28, so either with or without enospc_debug mount
+> option is useful to try in 4.6.3 (I think it's less useful in older
+> kernels).
+>
+> But do try nospace_cache first. If that works, you could then mount
+> with clear_cache one time and see if that provides an enduring fix. It
+> can take some time to rebuild the cache after clear_cache is used.
+>
+>
+>
+> --
+> Chris Murphy

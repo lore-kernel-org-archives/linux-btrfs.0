@@ -1,28 +1,31 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from out3-smtp.messagingengine.com ([66.111.4.27]:41540 "EHLO
-	out3-smtp.messagingengine.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1751206AbcGGVNb (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 7 Jul 2016 17:13:31 -0400
-Subject: Re: Frequent btrfs corruption on a USB flash drive
-To: "Andrew E. Mileski" <andrewm@isoar.ca>, linux-btrfs@vger.kernel.org
-References: <0120508a-b9e7-b9e7-4f27-79f982ee07fe@fastmail.fm>
- <577EC57C.8060607@isoar.ca>
-From: Francesco Turco <fturco@fastmail.fm>
-Message-ID: <0ad5fc23-9b10-5e95-888d-9717a8fb480d@fastmail.fm>
-Date: Thu, 7 Jul 2016 23:13:27 +0200
+Received: from 206-248-167-68.dsl.teksavvy.com ([206.248.167.68]:40693 "EHLO
+	mail.isoar.ca" rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752028AbcGGVsq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 7 Jul 2016 17:48:46 -0400
+Message-ID: <577EC57C.8060607@isoar.ca>
+Date: Thu, 07 Jul 2016 17:11:24 -0400
+From: "Andrew E. Mileski" <andrewm@isoar.ca>
 MIME-Version: 1.0
-In-Reply-To: <577EC57C.8060607@isoar.ca>
-Content-Type: text/plain; charset=utf-8
+To: Francesco Turco <fturco@fastmail.fm>, linux-btrfs@vger.kernel.org
+Subject: Re: Frequent btrfs corruption on a USB flash drive
+References: <0120508a-b9e7-b9e7-4f27-79f982ee07fe@fastmail.fm>
+In-Reply-To: <0120508a-b9e7-b9e7-4f27-79f982ee07fe@fastmail.fm>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On 2016-07-07 09:49, Francesco Turco wrote:
+> I have a USB flash drive with an encrypted Btrfs filesystem where I
+> store daily backups. My problem is that this btrfs filesystem gets
+> corrupted very often, after a few days of usage. Usually I just reformat
+> it and move along, but this time I'd like to understand the root cause
+> of the problem and fix it.
 
-On 2016-07-07 23:11, Andrew E. Mileski wrote:
-> How large is this USB flash device?
+How large is this USB flash device?
 
-64 GB.
+I've had issues with btrfs and small devices, where a 1 GB data chunk is 
+relatively large.
 
--- 
-Website: http://www.fturco.net/
-GPG key: 6712 2364 B2FE 30E1 4791 EB82 7BB1 1F53 29DE CD34
+~~
+Andrew E. Mileski

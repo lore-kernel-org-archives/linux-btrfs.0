@@ -1,8 +1,8 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp-36.italiaonline.it ([212.48.25.164]:43701 "EHLO libero.it"
+Received: from smtp-36.italiaonline.it ([212.48.25.164]:44682 "EHLO libero.it"
 	rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-	id S1751234AbcGGRAz (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 7 Jul 2016 13:00:55 -0400
+	id S1751234AbcGGRHx (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 7 Jul 2016 13:07:53 -0400
 Reply-To: kreijack@inwind.it
 Subject: Re: 64-btrfs.rules and degraded boot
 References: <CAJCQCtRQBGNeCyENzTPT=yiqs3Tcc=aD8v6usKNtTnvyOd0uqw@mail.gmail.com>
@@ -11,72 +11,52 @@ References: <CAJCQCtRQBGNeCyENzTPT=yiqs3Tcc=aD8v6usKNtTnvyOd0uqw@mail.gmail.com>
  <CAJCQCtS7OgKKzstJDz52Sd6+SJygDzoVzMhvwHqGxFmihr6Aqg@mail.gmail.com>
  <CAA91j0VbaRpt46tYf_oqd7fRuRn_ev-=Zxf_Bwiwd=TUHR+2Ow@mail.gmail.com>
  <CAJCQCtSZ=7v5PgD4mYKhayg03UfVqCV0ADBSjTsFDHiVcdxAjw@mail.gmail.com>
- <44c18e92-69b4-1409-1bf3-b1d08f6f84db@gmail.com>
- <CAJCQCtRd-=RYAVWJBoVKPLU3-jx0T1oQgmhJwBM01j9zpFsUvg@mail.gmail.com>
- <460a10bc-b793-35cb-7d31-73ce08204012@gmail.com>
- <CAJCQCtSO2-ysgHn2KV2-YGoLEsHMb54ikEXYHW+Fz9PKG7uURw@mail.gmail.com>
+ <CAA91j0VEBRDUW+MehjtUqhZHi2dehnbY9w-_quEihRc1D=cpvQ@mail.gmail.com>
+ <CAJCQCtTVKA0DEqDhDDduTMMONo7XUrGD-VaDt2Zfsg_mqP762Q@mail.gmail.com>
 To: Chris Murphy <lists@colorremedies.com>,
-        "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Cc: Andrei Borzenkov <arvidjaar@gmail.com>, Kai Krakow <hurikhan77@gmail.com>,
+        Andrei Borzenkov <arvidjaar@gmail.com>
+Cc: Kai Krakow <hurikhan77@gmail.com>,
         Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 From: Goffredo Baroncelli <kreijack@inwind.it>
-Message-ID: <ce59a5f7-5e50-db50-aec5-35c37219e93e@inwind.it>
-Date: Thu, 7 Jul 2016 19:00:53 +0200
+Message-ID: <99221c4e-0ab4-43c7-8b47-b4fd7ff0c35d@inwind.it>
+Date: Thu, 7 Jul 2016 19:07:50 +0200
 MIME-Version: 1.0
-In-Reply-To: <CAJCQCtSO2-ysgHn2KV2-YGoLEsHMb54ikEXYHW+Fz9PKG7uURw@mail.gmail.com>
+In-Reply-To: <CAJCQCtTVKA0DEqDhDDduTMMONo7XUrGD-VaDt2Zfsg_mqP762Q@mail.gmail.com>
 Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2016-07-06 22:00, Chris Murphy wrote:
-> On Wed, Jul 6, 2016 at 1:17 PM, Austin S. Hemmelgarn
-> <ahferroin7@gmail.com> wrote:
+On 2016-07-06 20:57, Chris Murphy wrote:
+[...]
 > 
->> In bash or most other POSIX compliant shells, you can run this:
->> echo $?
->> to get the return code of the previous command.
->>
->> In your case though, it may be reporting the FS ready because it had already
->> seen all the devices, IIUC, the flag that checks is only set once, and never
->> unset, which is not a good design in this case.
+> Seems like we need more granularity by btrfs ioctl for device ready,
+> e.g. some way to indicate:
 > 
-> Oh dear.
-> 
-> [root@f24s ~]# lvs
->   LV         VG Attr       LSize  Pool       Origin Data%  Meta%  Move
-> Log Cpy%Sync Convert
->   1          VG Vwi---tz-- 50.00g thintastic
->   2          VG Vwi---tz-- 50.00g thintastic
->   3          VG Vwi-a-tz-- 50.00g thintastic        2.54
->   thintastic VG twi-aotz-- 90.00g                   5.05   2.92
-> [root@f24s ~]# btrfs dev scan
-> Scanning for Btrfs filesystems
-> [root@f24s ~]# echo $?
-> 0
-> [root@f24s ~]# btrfs device ready /dev/mapper/VG-3
-> [root@f24s ~]# echo $?
-> 0
-> [root@f24s ~]# btrfs fi show
-> warning, device 2 is missing
-> Label: none  uuid: 96240fd9-ea76-47e7-8cf4-05d3570ccfd7
->     Total devices 3 FS bytes used 2.26GiB
->     devid    3 size 50.00GiB used 3.01GiB path /dev/mapper/VG-3
->     *** Some devices missing
+> 0 all devices ready
+> 1 devices not ready (don't even try to mount)
+> 2 minimum devices ready (degraded mount possible)
 > 
 > 
-> Cute, device 1 is also missing but that's not mentioned. In any case,
-> the device is still ready even after a dev scan. I guess this isn't
-> exactly testable all that easily unless I reboot.
+> Btrfs multiple device single and raid0 only return code 0 or 1. Where
+> raid 1, 5, 6 could return code 2. The systemd default policy for code
+> 2 could be to wait some amount of time to see if state goes to 0. At
+> the timeout, try to mount anyway. If rootflags=degraded, it mounts. If
+> not, mount fails, and we get a dracut prompt.
+> 
 
-IIRC a device when "registered" by "btrfs dev scan", is never removed from the available devices. This means that if you remove a valid device after that it is already scanned, "btrfs dev ready" still return OK until a reboot happened.
+Pay attention that to return 2, you have to scan all the VGs to check if all the involved devices are available: i.e. a filesystem composed by 5 disks, may have a VG RAID5 with only 3 disks used for data, and a VG RAID1 for metadata for the other two disks....
 
->From your email, it is not clear if you rebooted (or rmmod-ded btrfs) after you removed the devices.
+Think to try to perform this for each disk appearing.... I fear that it is too expensive
 
-Only my 2¢...
 
-BR
-G.Baroncelli
+> That's better behavior than now.
 > 
+>> Equivalent of this rule is required under systemd and desired in
+>> general to avoid polling. On systemd list I outlined possible
+>> alternative implementation as systemd service instead of really
+>> hackish udev rule.
+> 
+> I'll go read it there. Thanks.
 > 
 > 
 

@@ -1,24 +1,24 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wm0-f65.google.com ([74.125.82.65]:33615 "EHLO
-	mail-wm0-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754750AbcGENzn (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Jul 2016 09:55:43 -0400
+Received: from mx2.suse.de ([195.135.220.15]:43215 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752072AbcGGKUZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 7 Jul 2016 06:20:25 -0400
+Date: Thu, 7 Jul 2016 12:20:44 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Nikolay Borisov <n.borisov.lkml@gmail.com>
+Cc: dsterba@suse.com, linux-btrfs@vger.kernel.org,
+        linux-kernel@vger.kernel.org, clm@fb.com, jbacik@fb.com
 Subject: Re: [PATCH] btrfs: Fix slab accounting flags
-To: dsterba@suse.com, linux-btrfs@vger.kernel.org
+Message-ID: <20160707102044.GS13336@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
 References: <1466705828-26195-1-git-send-email-n.borisov.lkml@gmail.com>
-Cc: linux-kernel@vger.kernel.org, clm@fb.com, jbacik@fb.com
-From: Nikolay Borisov <n.borisov.lkml@gmail.com>
-Message-ID: <577BBC5B.70000@gmail.com>
-Date: Tue, 5 Jul 2016 16:55:39 +0300
 MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
 In-Reply-To: <1466705828-26195-1-git-send-email-n.borisov.lkml@gmail.com>
-Content-Type: text/plain; charset=windows-1252
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-After some days of inactivity a gentle ping is in order.
-
-On 06/23/2016 09:17 PM, Nikolay Borisov wrote:
+On Thu, Jun 23, 2016 at 09:17:08PM +0300, Nikolay Borisov wrote:
 > BTRFS is using a variety of slab caches to satisfy internal needs.
 > Those slab caches are always allocated with the SLAB_RECLAIM_ACCOUNT,
 > meaning allocations from the caches are going to be accounted as
@@ -33,185 +33,5 @@ On 06/23/2016 09:17 PM, Nikolay Borisov wrote:
 > to SLAB_RECLAIM_ACCOUNT).
 > 
 > Signed-off-by: Nikolay Borisov <n.borisov.lkml@gmail.com>
-> ---
->  fs/btrfs/backref.c       | 2 +-
->  fs/btrfs/delayed-inode.c | 2 +-
->  fs/btrfs/delayed-ref.c   | 8 ++++----
->  fs/btrfs/disk-io.c       | 2 +-
->  fs/btrfs/extent_io.c     | 4 ++--
->  fs/btrfs/extent_map.c    | 2 +-
->  fs/btrfs/file.c          | 2 +-
->  fs/btrfs/inode.c         | 8 ++++----
->  fs/btrfs/ordered-data.c  | 2 +-
->  9 files changed, 16 insertions(+), 16 deletions(-)
-> 
-> diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
-> index 8bb3509099e8..1ac8a3c7f68e 100644
-> --- a/fs/btrfs/backref.c
-> +++ b/fs/btrfs/backref.c
-> @@ -139,7 +139,7 @@ int __init btrfs_prelim_ref_init(void)
->  	btrfs_prelim_ref_cache = kmem_cache_create("btrfs_prelim_ref",
->  					sizeof(struct __prelim_ref),
->  					0,
-> -					SLAB_RECLAIM_ACCOUNT | SLAB_MEM_SPREAD,
-> +					SLAB_MEM_SPREAD,
->  					NULL);
->  	if (!btrfs_prelim_ref_cache)
->  		return -ENOMEM;
-> diff --git a/fs/btrfs/delayed-inode.c b/fs/btrfs/delayed-inode.c
-> index 61561c2a3f96..4e5cd7dde3c5 100644
-> --- a/fs/btrfs/delayed-inode.c
-> +++ b/fs/btrfs/delayed-inode.c
-> @@ -34,7 +34,7 @@ int __init btrfs_delayed_inode_init(void)
->  	delayed_node_cache = kmem_cache_create("btrfs_delayed_node",
->  					sizeof(struct btrfs_delayed_node),
->  					0,
-> -					SLAB_RECLAIM_ACCOUNT | SLAB_MEM_SPREAD,
-> +					SLAB_MEM_SPREAD,
->  					NULL);
->  	if (!delayed_node_cache)
->  		return -ENOMEM;
-> diff --git a/fs/btrfs/delayed-ref.c b/fs/btrfs/delayed-ref.c
-> index 430b3689b112..08e452599249 100644
-> --- a/fs/btrfs/delayed-ref.c
-> +++ b/fs/btrfs/delayed-ref.c
-> @@ -940,28 +940,28 @@ int btrfs_delayed_ref_init(void)
->  	btrfs_delayed_ref_head_cachep = kmem_cache_create(
->  				"btrfs_delayed_ref_head",
->  				sizeof(struct btrfs_delayed_ref_head), 0,
-> -				SLAB_RECLAIM_ACCOUNT | SLAB_MEM_SPREAD, NULL);
-> +				SLAB_MEM_SPREAD, NULL);
->  	if (!btrfs_delayed_ref_head_cachep)
->  		goto fail;
->  
->  	btrfs_delayed_tree_ref_cachep = kmem_cache_create(
->  				"btrfs_delayed_tree_ref",
->  				sizeof(struct btrfs_delayed_tree_ref), 0,
-> -				SLAB_RECLAIM_ACCOUNT | SLAB_MEM_SPREAD, NULL);
-> +				SLAB_MEM_SPREAD, NULL);
->  	if (!btrfs_delayed_tree_ref_cachep)
->  		goto fail;
->  
->  	btrfs_delayed_data_ref_cachep = kmem_cache_create(
->  				"btrfs_delayed_data_ref",
->  				sizeof(struct btrfs_delayed_data_ref), 0,
-> -				SLAB_RECLAIM_ACCOUNT | SLAB_MEM_SPREAD, NULL);
-> +				SLAB_MEM_SPREAD, NULL);
->  	if (!btrfs_delayed_data_ref_cachep)
->  		goto fail;
->  
->  	btrfs_delayed_extent_op_cachep = kmem_cache_create(
->  				"btrfs_delayed_extent_op",
->  				sizeof(struct btrfs_delayed_extent_op), 0,
-> -				SLAB_RECLAIM_ACCOUNT | SLAB_MEM_SPREAD, NULL);
-> +				SLAB_MEM_SPREAD, NULL);
->  	if (!btrfs_delayed_extent_op_cachep)
->  		goto fail;
->  
-> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-> index 54cca7a1572b..cb1a05da5682 100644
-> --- a/fs/btrfs/disk-io.c
-> +++ b/fs/btrfs/disk-io.c
-> @@ -101,7 +101,7 @@ int __init btrfs_end_io_wq_init(void)
->  	btrfs_end_io_wq_cache = kmem_cache_create("btrfs_end_io_wq",
->  					sizeof(struct btrfs_end_io_wq),
->  					0,
-> -					SLAB_RECLAIM_ACCOUNT | SLAB_MEM_SPREAD,
-> +					SLAB_MEM_SPREAD,
->  					NULL);
->  	if (!btrfs_end_io_wq_cache)
->  		return -ENOMEM;
-> diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-> index aaee3ef55ed8..f3337998264d 100644
-> --- a/fs/btrfs/extent_io.c
-> +++ b/fs/btrfs/extent_io.c
-> @@ -163,13 +163,13 @@ int __init extent_io_init(void)
->  {
->  	extent_state_cache = kmem_cache_create("btrfs_extent_state",
->  			sizeof(struct extent_state), 0,
-> -			SLAB_RECLAIM_ACCOUNT | SLAB_MEM_SPREAD, NULL);
-> +			SLAB_MEM_SPREAD, NULL);
->  	if (!extent_state_cache)
->  		return -ENOMEM;
->  
->  	extent_buffer_cache = kmem_cache_create("btrfs_extent_buffer",
->  			sizeof(struct extent_buffer), 0,
-> -			SLAB_RECLAIM_ACCOUNT | SLAB_MEM_SPREAD, NULL);
-> +			SLAB_MEM_SPREAD, NULL);
->  	if (!extent_buffer_cache)
->  		goto free_state_cache;
->  
-> diff --git a/fs/btrfs/extent_map.c b/fs/btrfs/extent_map.c
-> index e0715fcfb11e..26f9ac719d20 100644
-> --- a/fs/btrfs/extent_map.c
-> +++ b/fs/btrfs/extent_map.c
-> @@ -13,7 +13,7 @@ int __init extent_map_init(void)
->  {
->  	extent_map_cache = kmem_cache_create("btrfs_extent_map",
->  			sizeof(struct extent_map), 0,
-> -			SLAB_RECLAIM_ACCOUNT | SLAB_MEM_SPREAD, NULL);
-> +			SLAB_MEM_SPREAD, NULL);
->  	if (!extent_map_cache)
->  		return -ENOMEM;
->  	return 0;
-> diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-> index e0c9bd3fb02d..55e4d36f0c6a 100644
-> --- a/fs/btrfs/file.c
-> +++ b/fs/btrfs/file.c
-> @@ -2977,7 +2977,7 @@ int btrfs_auto_defrag_init(void)
->  {
->  	btrfs_inode_defrag_cachep = kmem_cache_create("btrfs_inode_defrag",
->  					sizeof(struct inode_defrag), 0,
-> -					SLAB_RECLAIM_ACCOUNT | SLAB_MEM_SPREAD,
-> +					SLAB_MEM_SPREAD,
->  					NULL);
->  	if (!btrfs_inode_defrag_cachep)
->  		return -ENOMEM;
-> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-> index d2be95cfb6d1..66051c02b6de 100644
-> --- a/fs/btrfs/inode.c
-> +++ b/fs/btrfs/inode.c
-> @@ -9383,25 +9383,25 @@ int btrfs_init_cachep(void)
->  
->  	btrfs_trans_handle_cachep = kmem_cache_create("btrfs_trans_handle",
->  			sizeof(struct btrfs_trans_handle), 0,
-> -			SLAB_RECLAIM_ACCOUNT | SLAB_MEM_SPREAD, NULL);
-> +			SLAB_TEMPORARY | SLAB_MEM_SPREAD, NULL);
->  	if (!btrfs_trans_handle_cachep)
->  		goto fail;
->  
->  	btrfs_transaction_cachep = kmem_cache_create("btrfs_transaction",
->  			sizeof(struct btrfs_transaction), 0,
-> -			SLAB_RECLAIM_ACCOUNT | SLAB_MEM_SPREAD, NULL);
-> +			SLAB_TEMPORARY | SLAB_MEM_SPREAD, NULL);
->  	if (!btrfs_transaction_cachep)
->  		goto fail;
->  
->  	btrfs_path_cachep = kmem_cache_create("btrfs_path",
->  			sizeof(struct btrfs_path), 0,
-> -			SLAB_RECLAIM_ACCOUNT | SLAB_MEM_SPREAD, NULL);
-> +			SLAB_MEM_SPREAD, NULL);
->  	if (!btrfs_path_cachep)
->  		goto fail;
->  
->  	btrfs_free_space_cachep = kmem_cache_create("btrfs_free_space",
->  			sizeof(struct btrfs_free_space), 0,
-> -			SLAB_RECLAIM_ACCOUNT | SLAB_MEM_SPREAD, NULL);
-> +			SLAB_MEM_SPREAD, NULL);
->  	if (!btrfs_free_space_cachep)
->  		goto fail;
->  
-> diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
-> index e96634a725c3..c9fa1661277c 100644
-> --- a/fs/btrfs/ordered-data.c
-> +++ b/fs/btrfs/ordered-data.c
-> @@ -1121,7 +1121,7 @@ int __init ordered_data_init(void)
->  {
->  	btrfs_ordered_extent_cache = kmem_cache_create("btrfs_ordered_extent",
->  				     sizeof(struct btrfs_ordered_extent), 0,
-> -				     SLAB_RECLAIM_ACCOUNT | SLAB_MEM_SPREAD,
-> +				     SLAB_MEM_SPREAD,
->  				     NULL);
->  	if (!btrfs_ordered_extent_cache)
->  		return -ENOMEM;
-> 
+
+Reviewed-by: David Sterba <dsterba@suse.com>

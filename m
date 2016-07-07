@@ -1,66 +1,59 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp-36.italiaonline.it ([212.48.25.164]:44682 "EHLO libero.it"
-	rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-	id S1751234AbcGGRHx (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 7 Jul 2016 13:07:53 -0400
-Reply-To: kreijack@inwind.it
-Subject: Re: 64-btrfs.rules and degraded boot
-References: <CAJCQCtRQBGNeCyENzTPT=yiqs3Tcc=aD8v6usKNtTnvyOd0uqw@mail.gmail.com>
- <20160705212706.719397fc@jupiter.sol.kaishome.de>
- <CAJCQCtRyvC6J=KJSVYRd1sOWPoVm69tA--3U8kAVdDynkziwNA@mail.gmail.com>
- <CAJCQCtS7OgKKzstJDz52Sd6+SJygDzoVzMhvwHqGxFmihr6Aqg@mail.gmail.com>
- <CAA91j0VbaRpt46tYf_oqd7fRuRn_ev-=Zxf_Bwiwd=TUHR+2Ow@mail.gmail.com>
- <CAJCQCtSZ=7v5PgD4mYKhayg03UfVqCV0ADBSjTsFDHiVcdxAjw@mail.gmail.com>
- <CAA91j0VEBRDUW+MehjtUqhZHi2dehnbY9w-_quEihRc1D=cpvQ@mail.gmail.com>
- <CAJCQCtTVKA0DEqDhDDduTMMONo7XUrGD-VaDt2Zfsg_mqP762Q@mail.gmail.com>
-To: Chris Murphy <lists@colorremedies.com>,
-        Andrei Borzenkov <arvidjaar@gmail.com>
-Cc: Kai Krakow <hurikhan77@gmail.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-From: Goffredo Baroncelli <kreijack@inwind.it>
-Message-ID: <99221c4e-0ab4-43c7-8b47-b4fd7ff0c35d@inwind.it>
-Date: Thu, 7 Jul 2016 19:07:50 +0200
+Received: from mail-oi0-f42.google.com ([209.85.218.42]:34829 "EHLO
+	mail-oi0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751610AbcGGRkz (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 7 Jul 2016 13:40:55 -0400
+Received: by mail-oi0-f42.google.com with SMTP id r2so33016978oih.2
+        for <linux-btrfs@vger.kernel.org>; Thu, 07 Jul 2016 10:40:55 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <CAJCQCtTVKA0DEqDhDDduTMMONo7XUrGD-VaDt2Zfsg_mqP762Q@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8
+In-Reply-To: <CAPmG0jZZ7FB0teBGGHojPoGctRyVC3D2cS56q1kYDMFrC=fOnA@mail.gmail.com>
+References: <96f8022e-4209-2498-62e4-50ccbee46e37@freenet.de> <CAPmG0jZZ7FB0teBGGHojPoGctRyVC3D2cS56q1kYDMFrC=fOnA@mail.gmail.com>
+From: Chris Murphy <lists@colorremedies.com>
+Date: Thu, 7 Jul 2016 11:40:53 -0600
+Message-ID: <CAJCQCtQt2A7w4JNUuhU7YOHTyj_z8M_RqsZCDw0G2YEENXaBvg@mail.gmail.com>
+Subject: Re: rollback to a snapshot and delete old top volume - missing of "@"
+To: Henk Slager <eye1tm@gmail.com>
+Cc: Kai Herlemann <nesadaw@freenet.de>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2016-07-06 20:57, Chris Murphy wrote:
-[...]
-> 
-> Seems like we need more granularity by btrfs ioctl for device ready,
-> e.g. some way to indicate:
-> 
-> 0 all devices ready
-> 1 devices not ready (don't even try to mount)
-> 2 minimum devices ready (degraded mount possible)
-> 
-> 
-> Btrfs multiple device single and raid0 only return code 0 or 1. Where
-> raid 1, 5, 6 could return code 2. The systemd default policy for code
-> 2 could be to wait some amount of time to see if state goes to 0. At
-> the timeout, try to mount anyway. If rootflags=degraded, it mounts. If
-> not, mount fails, and we get a dracut prompt.
-> 
+On Thu, Jul 7, 2016 at 10:01 AM, Henk Slager <eye1tm@gmail.com> wrote:
 
-Pay attention that to return 2, you have to scan all the VGs to check if all the involved devices are available: i.e. a filesystem composed by 5 disks, may have a VG RAID5 with only 3 disks used for data, and a VG RAID1 for metadata for the other two disks....
+> What the latest debian likes as naming convention I dont know, but in
+> openSuSE @ is a directory in the toplevel volume (ID=5 or ID=0 as
+> alias) and that directory contains subvolumes.
 
-Think to try to perform this for each disk appearing.... I fear that it is too expensive
+No, opensuse doesn't use @ at all. They use a subvolume called
+.snapshots to contain snapper snapshots.
+
+On a system using snapper, its snapshots should probably be deleted
+via snapper so it's aware of the state change.
+
+And very clearly from the OP's output from 'btrfs sub list' there are
+no subvolumes with @ in the path, so there is no subvolume @, nor are
+there any subvolumes contained in a directory @.
+
+Assuming the posted output from btrfs sub list is the complete output,
+.snapshots is a directory and there are three subvolumes in it. I
+suspect the OP is unfamiliar with snapper conventions and is trying to
+delete a snapshot outside of snapper, and is used to some other
+(Debian or Ubuntu) convention where snapshots somehow relate to @,
+which is a mimicking of how ZFS does things.
+
+Anyway the reason why the command fails is stated in the error
+message. The system appears to be installed in the top level of the
+file system (subvolid=5), and that can't be deleted. First it's the
+immutable first subvolume of a Btrfs file system, and second it's
+populated with other subvolumes which would inhibit its removal even
+if it weren't the top level subvolume.
+
+What can be done is delete the directories in the top level, retaining
+the subvolumes that are there.
 
 
-> That's better behavior than now.
-> 
->> Equivalent of this rule is required under systemd and desired in
->> general to avoid polling. On systemd list I outlined possible
->> alternative implementation as systemd service instead of really
->> hackish udev rule.
-> 
-> I'll go read it there. Thanks.
-> 
-> 
 
 
 -- 
-gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
-Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5
+Chris Murphy

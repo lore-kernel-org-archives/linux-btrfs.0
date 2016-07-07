@@ -1,77 +1,117 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-vk0-f50.google.com ([209.85.213.50]:34444 "EHLO
-	mail-vk0-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751163AbcGGQY7 convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 7 Jul 2016 12:24:59 -0400
-Received: by mail-vk0-f50.google.com with SMTP id d67so26983626vkh.1
-        for <linux-btrfs@vger.kernel.org>; Thu, 07 Jul 2016 09:24:27 -0700 (PDT)
+Received: from mail-vk0-f53.google.com ([209.85.213.53]:34422 "EHLO
+	mail-vk0-f53.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751163AbcGGQgq (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 7 Jul 2016 12:36:46 -0400
+Received: by mail-vk0-f53.google.com with SMTP id d67so27449042vkh.1
+        for <linux-btrfs@vger.kernel.org>; Thu, 07 Jul 2016 09:36:45 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <20160707094621.GB7153@invalid>
-References: <20160707094621.GB7153@invalid>
+In-Reply-To: <CALLEBqGr9-jnba4XTV=JaVuNKPhNgEJuLZFmmLEkw-7HOB-Asg@mail.gmail.com>
+References: <CALLEBqG65hkAd+KyoNZudCKv58OuBm3L5VOjWcvMQ5GfGNCngA@mail.gmail.com>
+ <CAJCQCtS=5Zx_toc3WuOpymyVUYFZMUo=wh+ZmTC=jh6bL3XYXg@mail.gmail.com>
+ <CALLEBqF7HZ0VmMpFmoTik0_2FBXp7q5Z4EHxe_fMDY9ni2j44Q@mail.gmail.com>
+ <CALLEBqFoy0MXgPJBHG=yQnXQwWJsBQJFBofNqwmJTjZFK9sV2g@mail.gmail.com> <CALLEBqGr9-jnba4XTV=JaVuNKPhNgEJuLZFmmLEkw-7HOB-Asg@mail.gmail.com>
 From: Henk Slager <eye1tm@gmail.com>
-Date: Thu, 7 Jul 2016 18:24:26 +0200
-Message-ID: <CAPmG0jYZ+MboSMn_CXwmZ_mSSOdQWSexCk4thXa+p4BozrVQwQ@mail.gmail.com>
-Subject: Re: fstrim problem/bug
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Date: Thu, 7 Jul 2016 18:36:44 +0200
+Message-ID: <CAPmG0jZP_0GJ_L0dh76hZPdcewtcy56E3cttgJrydC6cT7Mqwg@mail.gmail.com>
+Subject: Re: Out of space error even though there's 100 GB unused?
+To: Stanislaw Kaminski <stasheck.fora@gmail.com>
+Cc: Chris Murphy <lists@colorremedies.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Jul 7, 2016 at 11:46 AM, M G Berberich <btrfs@oss.m-berberich.de> wrote:
-> Hello,
+On Thu, Jul 7, 2016 at 5:17 PM, Stanislaw Kaminski
+<stasheck.fora@gmail.com> wrote:
+> Hi Chris, Alex, Hugo,
 >
-> On a filesystem with 40 G free space and 54 G used, ‘fstrim -v’ gave
-> this result:
+> Running now: Linux archb3 4.6.2-1-ARCH #1 PREEMPT Mon Jun 13 02:11:34
+> MDT 2016 armv5tel GNU/Linux
 >
->     # fstrim -v /
->     /: 0 B (0 bytes) trimmed
+> Seems to be working fine. I started a defrag, and it seems I'm getting
+> my space back:
+> $ sudo btrfs fi usage /home
+> Overall:
+>     Device size:                   1.81TiB
+>     Device allocated:              1.73TiB
+>     Device unallocated:           80.89GiB
+>     Device missing:                  0.00B
+>     Used:                          1.65TiB
+>     Free (estimated):            159.63GiB      (min: 119.19GiB)
+>     Data ratio:                       1.00
+>     Metadata ratio:                   2.00
+>     Global reserve:              512.00MiB      (used: 240.00KiB)
 >
-> After running balance it gave a more sensible
+> Data,single: Size:1.72TiB, Used:1.65TiB
+>    /dev/sda4       1.72TiB
 >
->     # fstrim -v /
->     /: 37.3 GiB (40007368704 bytes) trimmed
+> Metadata,DUP: Size:3.50GiB, Used:2.16GiB
+>    /dev/sda4       7.00GiB
 >
-> As far as I understand, fstrim should report any unused block to the
-> disk, so its controller can reuse these blocks. I expected ’fstrim -v’
-> to report about 40 G trimmed. The fact, that after balance fstrim
-> reports a sensible amount of trimmed bytes leads to the conclusion,
-> that fstrim on btrfs does not report unused blocks to the disk (as it
-> should), but only the blocks of unused chunks. As the fstrim-command
-> only does a ‘ioctl(fd, FITRIM, &range))’ this seems to be a bug in the
-> fstrim kernel-code.
-> In the field this means, that without regularly running balance,
-> fstrim does not work on btrfs.
+> System,DUP: Size:32.00MiB, Used:224.00KiB
+>    /dev/sda4      64.00MiB
+>
+> Unallocated:
+>    /dev/sda4      80.89GiB
+>
+> I deleted some unfinished torrent, ~10 GB in size, but as you can see,
+> "Free space" has grown by 60 GB (re-checked now and it's 1 GB more now
+> - so definitely caused by defrag).
+>
+> What has changed between 4.6.2 and 4.6.3?
 
-hmm, yes indeed I see this as well:
+https://git.kernel.org/cgit/linux/kernel/git/stable/linux-stable.git/diff/?id=v4.6.3&id2=v4.6.2&dt=2
 
-# btrfs fi us /
-Overall:
-   Device size:                  55.00GiB
-   Device allocated:             46.55GiB
-   Device unallocated:            8.45GiB
-   Device missing:                  0.00B
-   Used:                         39.64GiB
-   Free (estimated):             13.96GiB      (min: 13.96GiB)
-   Data ratio:                       1.00
-   Metadata ratio:                   1.00
-   Global reserve:              480.00MiB      (used: 0.00B)
+I see no change for Btrfs
 
-Data,single: Size:43.77GiB, Used:38.25GiB
-  /dev/sda1      43.77GiB
-
-Metadata,single: Size:2.75GiB, Used:1.39GiB
-  /dev/sda1       2.75GiB
-
-System,single: Size:32.00MiB, Used:16.00KiB
-  /dev/sda1      32.00MiB
-
-Unallocated:
-  /dev/sda1       8.45GiB
-# fstrim -v /
-/: 9,3 GiB (10014126080 bytes) trimmed
-# fallocate -l 5G testfile
-# fstrim -v /
-/: 4,3 GiB (4644130816 bytes) trimmed
-
-Where the difference between 8.45GiB and 9,3 GiB comes from, I
-currently don't understand.
+> Cheers,
+> Stan
+>
+> 2016-07-07 12:28 GMT+02:00 Stanislaw Kaminski <stasheck.fora@gmail.com>:
+>> Too early report, the issue is back. Back to testing....
+>>
+>> 2016-07-07 12:18 GMT+02:00 Stanislaw Kaminski <stasheck.fora@gmail.com>:
+>>> Hi all,
+>>> I downgraded to 4.4.1-1 - all fine, 4.5.5.-1 - also fine, then got
+>>> back to 4.6.3-2 - and it's still fine. Apparently running under
+>>> different kernel somehow fixed the glitch (as far as I can test...).
+>>>
+>>> That leaves me with the other question: before issues, I 1.6 TiB was
+>>> used, now all the tools report 1.7 TiB issued (except for btrfs fs du
+>>> /home, this reports 1.6 TiB). How is that possible?
+>>>
+>>> Cheers,
+>>> Stan
+>>>
+>>> 2016-07-06 19:42 GMT+02:00 Chris Murphy <lists@colorremedies.com>:
+>>>> On Wed, Jul 6, 2016 at 3:55 AM, Stanislaw Kaminski
+>>>> <stasheck.fora@gmail.com> wrote:
+>>>>
+>>>>>     Device unallocated:           97.89GiB
+>>>>
+>>>> There should be no problem creating any type of block group from this
+>>>> much space. It's a bug.
+>>>>
+>>>> I would try regression testing. Kernel 4.5.7 has some changes that may
+>>>> or may not relate to this (they should only relate when there is no
+>>>> unallocated space left) so you could try 4.5.6 and 4.5.7. And also
+>>>> 4.4.14.
+>>>>
+>>>> But also the kernel messages are important. There is this obscure
+>>>> enospc with error -28, so either with or without enospc_debug mount
+>>>> option is useful to try in 4.6.3 (I think it's less useful in older
+>>>> kernels).
+>>>>
+>>>> But do try nospace_cache first. If that works, you could then mount
+>>>> with clear_cache one time and see if that provides an enduring fix. It
+>>>> can take some time to rebuild the cache after clear_cache is used.
+>>>>
+>>>>
+>>>>
+>>>> --
+>>>> Chris Murphy
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

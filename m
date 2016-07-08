@@ -1,135 +1,99 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-it0-f65.google.com ([209.85.214.65]:34252 "EHLO
-	mail-it0-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754180AbcGHMYY (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 8 Jul 2016 08:24:24 -0400
-Received: by mail-it0-f65.google.com with SMTP id u186so3399849ita.1
-        for <linux-btrfs@vger.kernel.org>; Fri, 08 Jul 2016 05:24:24 -0700 (PDT)
-Subject: Re: 64-btrfs.rules and degraded boot
-To: Chris Murphy <lists@colorremedies.com>
-References: <CAJCQCtRQBGNeCyENzTPT=yiqs3Tcc=aD8v6usKNtTnvyOd0uqw@mail.gmail.com>
- <20160705212706.719397fc@jupiter.sol.kaishome.de>
- <CAJCQCtRyvC6J=KJSVYRd1sOWPoVm69tA--3U8kAVdDynkziwNA@mail.gmail.com>
- <CAJCQCtS7OgKKzstJDz52Sd6+SJygDzoVzMhvwHqGxFmihr6Aqg@mail.gmail.com>
- <CAA91j0VbaRpt46tYf_oqd7fRuRn_ev-=Zxf_Bwiwd=TUHR+2Ow@mail.gmail.com>
- <10018aa9-a2e2-dd2a-b8d9-9945e0e170af@gmail.com>
- <CAA91j0VUTBc8W2CBFQJZFR4RxJAYL1bkw6GTJLsxu9mMBZ4yDw@mail.gmail.com>
- <f3b5493d-456c-f614-7c1b-fd1b6e9977bc@gmail.com>
- <1E3215A5-EAA9-425D-AE08-B81B57D3043E@gmail.com>
- <93cdc463-8f53-5cf6-055c-05b5359ad814@gmail.com>
- <fddbc0b3-deb7-8ac8-46c7-bde110206482@inwind.it>
- <de824c8d-f94f-87bd-2bf9-d27b1ff7294a@gmail.com>
- <CAJCQCtS7=bR_r6+u+vSxE7rfUOOwx0G3NTff4=WUbfV3riWVSA@mail.gmail.com>
- <e6f35e35-f2bd-03f6-5544-4fb8fa527042@gmail.com>
- <CAJCQCtQvp8p71Uwv2x-Sag+1W=T9wKWn4YckKSYyqrbjdOYQcQ@mail.gmail.com>
-Cc: Goffredo Baroncelli <kreijack@inwind.it>,
-        Andrei Borzenkov <arvidjaar@gmail.com>,
-        Kai Krakow <hurikhan77@gmail.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <3e97fc5d-74ab-b1bc-1556-32ddd8d2ba8f@gmail.com>
-Date: Fri, 8 Jul 2016 08:24:17 -0400
+Received: from mail-qk0-f195.google.com ([209.85.220.195]:34113 "EHLO
+	mail-qk0-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754874AbcGHOnr (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 8 Jul 2016 10:43:47 -0400
+Received: by mail-qk0-f195.google.com with SMTP id 82so10202333qko.1
+        for <linux-btrfs@vger.kernel.org>; Fri, 08 Jul 2016 07:43:47 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <CAJCQCtQvp8p71Uwv2x-Sag+1W=T9wKWn4YckKSYyqrbjdOYQcQ@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+In-Reply-To: <CALLEBqFetJRAnwc0sYG-1seAGFBQu9-2nstH8hg-a1drdVdW_g@mail.gmail.com>
+References: <CALLEBqG65hkAd+KyoNZudCKv58OuBm3L5VOjWcvMQ5GfGNCngA@mail.gmail.com>
+ <CAJCQCtS=5Zx_toc3WuOpymyVUYFZMUo=wh+ZmTC=jh6bL3XYXg@mail.gmail.com>
+ <CALLEBqF7HZ0VmMpFmoTik0_2FBXp7q5Z4EHxe_fMDY9ni2j44Q@mail.gmail.com>
+ <CALLEBqFoy0MXgPJBHG=yQnXQwWJsBQJFBofNqwmJTjZFK9sV2g@mail.gmail.com>
+ <CALLEBqGr9-jnba4XTV=JaVuNKPhNgEJuLZFmmLEkw-7HOB-Asg@mail.gmail.com>
+ <CAPmG0jZP_0GJ_L0dh76hZPdcewtcy56E3cttgJrydC6cT7Mqwg@mail.gmail.com> <CALLEBqFetJRAnwc0sYG-1seAGFBQu9-2nstH8hg-a1drdVdW_g@mail.gmail.com>
+From: Henk Slager <eye1tm@gmail.com>
+Date: Fri, 8 Jul 2016 16:43:46 +0200
+Message-ID: <CAPmG0jZAFyVDhkQE5g6MzL8fQikD7p2xC21X6vbJa+=UkiSJmA@mail.gmail.com>
+Subject: Re: Out of space error even though there's 100 GB unused?
+To: Stanislaw Kaminski <stasheck.fora@gmail.com>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2016-07-07 16:20, Chris Murphy wrote:
-> On Thu, Jul 7, 2016 at 1:59 PM, Austin S. Hemmelgarn
-> <ahferroin7@gmail.com> wrote:
+On Fri, Jul 8, 2016 at 9:22 AM, Stanislaw Kaminski
+<stasheck.fora@gmail.com> wrote:
+> Huh.
 >
->> D-Bus support needs to be optional, period.  Not everybody uses D-Bus (I
->> have dozens of systems that get by just fine without it, and know hundreds
->> of other people who do as well), and even people who do don't always use
->> every tool needed (on the one system I manage that does have it, the only
->> things I need it for are Avahi, ConsoleKit, udev, and NetworkManager, and
->> I'm getting pretty close to the point of getting rid of NM and CK and
->> re-implementing or forking Avahi).  You have to consider the fact that there
->> are and always will be people who do not install a GUI on their system and
->> want the absolute minimum of software installed.
+> I left defrag running overnight, and now I'm back to my >200 GiB free
+> space. Also, I got no "out of space" messages in Transmission, and it
+> successfully downloaded few GBs.
 >
-> That's fine, they can monitor kernel messages directly as their
-> notification system. I'm concerned with people who don't ever look at
-> kernel messages, you know, mortal users who have better things to do
-> with a computer than that. It's important for most anyone to not have
-> to wait for problems to manifest traumatically.
-My point is that they probably need btrfs-progs too.  Take me for 
-example, I don't use some fancy graphical tool to tell me when my disks 
-are failing, but I don't scrape kernel logs either.  I have things set 
-up to monitor the disks directly (using btrfs-progs in the case of stuff 
-that can check for), and notify me via e-mail if there's an issue.  Not 
-supporting that use case at all would be like e2fsprogs adding a 
-dependency on X11 and telling everyone who doesn't want to use X11 to 
-just go implement their own tools.  If that happened, e2fsprogs would 
-get forked, the commit reverted in that fork, and most of the 
-non-enterprise distros would probably switch pretty damn quick to the 
-forked version.
+> But in dmesg I have 209 traces, see attached.
 >
->
->> Personally, I don't care what Fedora is doing, or even what GNOME (or any
->> other DE for that matter, the only reason I use Xfce is because some things
->> need a GUI (many of them unnecessarily), and that happens to be the DE I
->> have the fewest complaints about) is doing.  The only reason that things
->> like GNOME Disks and such exist is because they're trying to imitate Windows
->> and OS X, which is all well and good for a desktop, but is absolute crap for
->> many server and embedded environments (Microsoft finally realized this, and
->> Windows Server 2012 added the ability to install without a full desktop,
->> which actually means that they have _more_ options than a number of Linux
->> distributions (yes you can rip out the desktop on many distros if you want,
->> but that takes an insane amount of effort most of the time, not to mention
->> storage space)).
->
-> I'm willing to bet dollars to donuts Xfce fans would love to know if
-> one of their rootfs mirrors is spewing read errors, while smartd
-> defers to the drive which says "hey no problems here". GNOME at least
-> does report certain critical smart errors, but that still leaves
-> something like 40% of drive failures happening without prior notice.
-I'm not saying some specific users don't care, I'm saying that requiring 
-people to have a specific software stack which may not work for their 
-use case is a stupid choice for something as low level as this.  Yes 
-people want to know when something failed, but we shouldn't mandate 
-_how_ they choose in a given system to check this.  There need to be 
-more choices than just a GUI tool and talking directly to the kernel. 
-Looking at this another way, it is fully possible to implement something 
-to do this in a DE agnostic manner _without depending on D-BUS_ using 
-the tools as they are right now.  An initial implementation would of 
-course be inefficient, but until we get notifications _from the kernel_ 
-about FS state, we have to poll regardless, which means that having 
-D-Bus support would not help (and would probably just make things slower).
->
->
->> Storaged also qualifies as something that _needs_ to be optional, especially
->> because it appears to require systemd (and it falls into the same category
->> as D-Bus of 'unnecessary bloat on many systems').  Adding a mandatory
->> dependency on systemd _will_ split the community and severely piss off quite
->> a few people (you will likely get some rather nasty looks from a number of
->> senior kernel developers if you meet them in person).
->
-> I just want things to work for users, defined as people who would like
-> to stop depending on Windows and macOS for both server and desktop
-> usage. I don't really care about ideological issues outside of that
-> goal.
-Making us hard depend on storaged would not help this goal.  It's no 
-different than the Microsoft and Apple approach of 'our way or not at all'.
+> Does that say anything to you?
 
-To clarify, I'm not trying to argue against adding support, I'm arguing 
-against it being mandatory.  A filesystem which requires specific system 
-services to be running just for regular maintenance tasks is not a well 
-designed filesystem.  To be entirely honest, I'm not all that happy 
-about the functional dependency on udev to have device discovery, but 
-there's no point in me arguing about that...
+I get some vague clue about the problem, but no-one seems to know
+exactly the root cause(s).
+The 4.6.2 code where the warning comes from is this:
+...
+/*
+ * Called if we need to clear a data reservation for this inode
+ * Normally in a error case.
+ *
+ * This one will *NOT* use accurate qgroup reserved space API, just for case
+ * which we can't sleep and is sure it won't affect qgroup reserved space.
+ * Like clear_bit_hook().
+ */
+void btrfs_free_reserved_data_space_noquota(struct inode *inode, u64 start,
+                                            u64 len)
+{
+   struct btrfs_root *root = BTRFS_I(inode)->root;
+   struct btrfs_space_info *data_sinfo;
 
-Just thinking aloud, but why not do a daemon that does the actual 
-monitoring, and then provide an interface (at least a UNIX domain 
-socket, and optionally a D-Bus endpoint) that other tools can use to 
-query filesystem status.  LVM already has a similar setup for monitoring 
-DM-RAID volumes, snapshots, and thin storage pools, although it's 
-designed as an event driven tool that does something when specific 
-things happen (for example, possibly auto-extending snapshots when they 
-start to get full).  Other than the D-Bus support, I could probably 
-write a basic piece of software to do this in Python in about a week of 
-work (most of which would be figuring out the edge cases and making sure 
-it works on both 2.7 and 3) that would provide similar functionality 
-(with better configurability too) to that which could easily provide an 
-interface to query filesystem status.
+   /* Make sure the range is aligned to sectorsize */
+   len = round_up(start + len, root->sectorsize) -
+       round_down(start, root->sectorsize);
+   start = round_down(start, root->sectorsize);
+
+   data_sinfo = root->fs_info->data_sinfo;
+   spin_lock(&data_sinfo->lock);
+   if (WARN_ON(data_sinfo->bytes_may_use < len))
+           data_sinfo->bytes_may_use = 0;
+   else
+           data_sinfo->bytes_may_use -= len;
+   trace_btrfs_space_reservation(root->fs_info, "space_info",
+                               data_sinfo->flags, len, 0);
+   spin_unlock(&data_sinfo->lock);
+}
+...
+
+I think the system is still 'recovering' from getting stuck earlier.
+What exactly that is, I don't know. You would probably need to enable
+more debugging facilities in order to figure out from which file or
+inode the problem comes from. I don't know if you can compile a 4.7
+kernel for this Kirkwood SoC, but that would be one way forward. (BTW,
+is it a 88F6281 or  a 88F6282 ?)
+
+As far as I remember, Josef Basik has posted some patches that could
+benefit this case, I am not sure if they made it in 4.7, but that is
+what I think I would try.
+
+Otherwise, it are workarounds:
+- you could have a look at the cpuload during defrag and normal
+operation and see how it relates to the rate of issuing this warning
+- add mount option noatime
+- as it looks like this this fs is (also) a torrent-client target, you
+can put the torrents in a directoru ot subvol with noCoW flag set or
+mount the whole fs with nodatacow
+- again clean cache and then mount with space_cache=v2. Then new
+mounts will use v2 then automatically. Only thing I can say it that
+helped me getting out of kernel crash situation with 4.6.2. 4.7.0-rc5
+did not crash on the same fs, so I got it working again (
+de-allocations and cleanups, the fs is almost exclusively a
+btrfs-receive target)
+- connect the fs to a multi-core x86_64 system running same kernel
+version for some time and see if you can reproduce the same type of
+WARN_ONs

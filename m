@@ -1,44 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:50705 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1755484AbcGHSXj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 8 Jul 2016 14:23:39 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1bLaR6-00055I-8t
-	for linux-btrfs@vger.kernel.org; Fri, 08 Jul 2016 20:23:36 +0200
-Received: from ip-64-134-228-164.public.wayport.net ([64.134.228.164])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 08 Jul 2016 20:23:36 +0200
-Received: from 1i5t5.duncan by ip-64-134-228-164.public.wayport.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 08 Jul 2016 20:23:36 +0200
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
+Received: from tartarus.angband.pl ([89.206.35.136]:34672 "EHLO
+	tartarus.angband.pl" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932824AbcGHVrg (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 8 Jul 2016 17:47:36 -0400
+Date: Fri, 8 Jul 2016 23:47:11 +0200
+From: Adam Borowski <kilobyte@angband.pl>
+To: Chris Mason <clm@fb.com>
+Cc: Gabriel C <nix.or.die@gmail.com>, linux-btrfs@vger.kernel.org,
+        quwenruo@cn.fujitsu.com
 Subject: Re: A lot warnings in dmesg while running thunderbird
-Date: Fri, 8 Jul 2016 18:23:30 +0000 (UTC)
-Message-ID: <pan$c9f11$e8b05281$1a7658ed$d1f42be1@cox.net>
+Message-ID: <20160708214711.GA10544@angband.pl>
 References: <CAEJqkghMZDOJoyRkf_-HTfuKLnj0eaAGmtjVAPY2UftV7TxbvA@mail.gmail.com>
-	<ab5cc111-7ed7-3209-7411-6c656892d4a3@fb.com>
-	<CAEJqkgiWOnyk8AzROc-tGTqKiDJkCt364tgFT5P-2Sa+XwjeMA@mail.gmail.com>
-	<b84d72ce-3221-1f0d-7f63-ae02fe0d776b@fb.com>
-	<47ff1ea1-d4a9-55d9-f65d-60e94be93146@gmail.com>
-	<73545420-2ce5-c4d3-d59a-98d2114bafd2@fb.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+ <ab5cc111-7ed7-3209-7411-6c656892d4a3@fb.com>
+ <CAEJqkgiWOnyk8AzROc-tGTqKiDJkCt364tgFT5P-2Sa+XwjeMA@mail.gmail.com>
+ <b84d72ce-3221-1f0d-7f63-ae02fe0d776b@fb.com>
+ <47ff1ea1-d4a9-55d9-f65d-60e94be93146@gmail.com>
+ <73545420-2ce5-c4d3-d59a-98d2114bafd2@fb.com>
+ <20160708182116.GA30214@angband.pl>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20160708182116.GA30214@angband.pl>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Chris Mason posted on Fri, 08 Jul 2016 12:02:35 -0400 as excerpted:
+On Fri, Jul 08, 2016 at 08:21:16PM +0200, Adam Borowski wrote:
+> On Fri, Jul 08, 2016 at 12:02:35PM -0400, Chris Mason wrote:
+> > On 07/08/2016 11:02 AM, Gabriel C wrote:
+> > > [btrfs_destroy_inode again]
+> 
+> > Can you please run the attached test program:
+> > 
+> > gcc -o short-write short-write.c -lpthread
+> > ./short-write some-new-file-on-btrfs
+> > 
+> > I want to see if you're triggering the same problem we've tried to fix, or
+> > something else.
+> 
+> Looks like same, 4.6.3:
+[...]
+> ... and sda1 is goes ro.
+> Single device, noatime,compress=lzo,ssd.
+> 
+> It's somewhat puzzling that back in the day applying 56244ef15 stopped this
+> reproducer for me, yet somehow it triggers again.
 
-> Can you please run the attached test program:
+The above on 4.6.3 triggered pretty immediately.  I then compiled fresh
+4.7-rc6+ (today's Linus' master), which did trigger only after a lot of time
+and effort.  First I tried on freshly formatted 2TB spinning rust, no luck.
+Then on 1GB rust, almost full of a mixture of crap.  Then on my regular ssd
+-- it survived an hour of so with little concurrent use, then went boom only
+late of a kernel compile on that filesystem.
 
-Umm... you want him to run it on the affected 4.6.x and late 4.7-rcs, not 
-on the unaffected 4.5.x, correct?
+Same backtrace.
 
 -- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+An imaginary friend squared is a real enemy.

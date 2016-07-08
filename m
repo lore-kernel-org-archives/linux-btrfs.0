@@ -1,155 +1,34 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:28689 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751337AbcGUAkN (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 20 Jul 2016 20:40:13 -0400
-From: Liu Bo <bo.li.liu@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.cz>
-Subject: [PATCH v2] Btrfs: fix memory leak of block group cache
-Date: Wed, 20 Jul 2016 17:44:12 -0700
-Message-Id: <1469061852-21185-1-git-send-email-bo.li.liu@oracle.com>
-In-Reply-To: <1469061234-15337-1-git-send-email-bo.li.liu@oracle.com>
-References: <1469061234-15337-1-git-send-email-bo.li.liu@oracle.com>
+Received: from mx2.suse.de ([195.135.220.15]:34494 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1755874AbcGHP0x (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 8 Jul 2016 11:26:53 -0400
+Date: Fri, 8 Jul 2016 17:27:10 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org, fdmanana@kernel.org
+Subject: Re: [PATCH] btrfs: fix WARNING in btrfs_select_ref_head()
+Message-ID: <20160708152710.GN13336@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1466385532-6005-1-git-send-email-wangxg.fnst@cn.fujitsu.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1466385532-6005-1-git-send-email-wangxg.fnst@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-While processing delayed refs, we may update block group's statistics
-and attach it to cur_trans->dirty_bgs, and later writing dirty block
-groups will process the list, which happens during
-btrfs_commit_transaction().
+On Mon, Jun 20, 2016 at 09:18:52AM +0800, Wang Xiaoguang wrote:
+> @@ -2665,7 +2665,10 @@ static noinline int __btrfs_run_delayed_refs(struct btrfs_trans_handle *trans,
+>  
+>  		btrfs_free_delayed_extent_op(extent_op);
+>  		if (ret) {
+> +			spin_lock(&delayed_refs->lock);
+>  			locked_ref->processing = 0;
+> +			delayed_refs->num_heads_ready++;
+> +			spin_unlock(&delayed_refs->lock);
+>  			btrfs_delayed_ref_unlock(locked_ref);
+>  			btrfs_put_delayed_ref(ref);
+>  			btrfs_debug(fs_info, "run_one_delayed_ref returned %d", ret);
 
-For whatever reason, the transaction is aborted and dirty_bgs
-is not processed in cleanup_transaction(), we end up with memory leak
-of these dirty block group cache.
-
-Since btrfs_start_dirty_block_groups() doesn't make it go to the commit
-critical section, this also adds the cleanup work inside it.
-
-Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
----
-v2: - remove the 'return' when dirty_bgs is empty because there
-      might be block group in list io_bgs.
-    - remove unnecessary '\n' in btrfs_err().
-    - more commit log.
-
- fs/btrfs/disk-io.c     | 71 ++++++++++++++++++++++++++++++++++++++++++++++++++
- fs/btrfs/disk-io.h     |  2 ++
- fs/btrfs/extent-tree.c |  2 ++
- 3 files changed, 75 insertions(+)
-
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index db53eb8..4c110de 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -4434,9 +4434,80 @@ again:
- 	return 0;
- }
- 
-+static void btrfs_cleanup_bg_io(struct btrfs_block_group_cache *cache)
-+{
-+	struct inode *inode;
-+
-+	inode = cache->io_ctl.inode;
-+	if (inode) {
-+		invalidate_inode_pages2(inode->i_mapping);
-+		BTRFS_I(inode)->generation = 0;
-+		cache->io_ctl.inode = NULL;
-+		iput(inode);
-+	}
-+	btrfs_put_block_group(cache);
-+}
-+
-+void btrfs_cleanup_dirty_bgs(struct btrfs_transaction *cur_trans,
-+			     struct btrfs_root *root)
-+{
-+	struct btrfs_block_group_cache *cache;
-+
-+	spin_lock(&cur_trans->dirty_bgs_lock);
-+	while (!list_empty(&cur_trans->dirty_bgs)) {
-+		cache = list_first_entry(&cur_trans->dirty_bgs,
-+					 struct btrfs_block_group_cache,
-+					 dirty_list);
-+		if (!cache) {
-+			btrfs_err(root->fs_info,
-+				  "orphan block group dirty_bgs list");
-+			spin_unlock(&cur_trans->dirty_bgs_lock);
-+			return;
-+		}
-+
-+		if (!list_empty(&cache->io_list)) {
-+			spin_unlock(&cur_trans->dirty_bgs_lock);
-+			list_del_init(&cache->io_list);
-+			btrfs_cleanup_bg_io(cache);
-+			spin_lock(&cur_trans->dirty_bgs_lock);
-+		}
-+
-+		list_del_init(&cache->dirty_list);
-+		spin_lock(&cache->lock);
-+		cache->disk_cache_state = BTRFS_DC_ERROR;
-+		spin_unlock(&cache->lock);
-+
-+		spin_unlock(&cur_trans->dirty_bgs_lock);
-+		btrfs_put_block_group(cache);
-+		spin_lock(&cur_trans->dirty_bgs_lock);
-+	}
-+	spin_unlock(&cur_trans->dirty_bgs_lock);
-+
-+	while (!list_empty(&cur_trans->io_bgs)) {
-+		cache = list_first_entry(&cur_trans->io_bgs,
-+					 struct btrfs_block_group_cache,
-+					 io_list);
-+		if (!cache) {
-+			btrfs_err(root->fs_info,
-+				  "orphan block group on io_bgs list");
-+			return;
-+		}
-+
-+		list_del_init(&cache->io_list);
-+		spin_lock(&cache->lock);
-+		cache->disk_cache_state = BTRFS_DC_ERROR;
-+		spin_unlock(&cache->lock);
-+		btrfs_cleanup_bg_io(cache);
-+	}
-+}
-+
- void btrfs_cleanup_one_transaction(struct btrfs_transaction *cur_trans,
- 				   struct btrfs_root *root)
- {
-+	btrfs_cleanup_dirty_bgs(cur_trans, root);
-+	ASSERT(list_empty(&cur_trans->dirty_bgs));
-+	ASSERT(list_empty(&cur_trans->io_bgs));
-+
- 	btrfs_destroy_delayed_refs(cur_trans, root);
- 
- 	cur_trans->state = TRANS_STATE_COMMIT_START;
-diff --git a/fs/btrfs/disk-io.h b/fs/btrfs/disk-io.h
-index acba821..6201663 100644
---- a/fs/btrfs/disk-io.h
-+++ b/fs/btrfs/disk-io.h
-@@ -133,6 +133,8 @@ int btrfs_init_log_root_tree(struct btrfs_trans_handle *trans,
- 			     struct btrfs_fs_info *fs_info);
- int btrfs_add_log_tree(struct btrfs_trans_handle *trans,
- 		       struct btrfs_root *root);
-+void btrfs_cleanup_dirty_bgs(struct btrfs_transaction *trans,
-+			     struct btrfs_root *root);
- void btrfs_cleanup_one_transaction(struct btrfs_transaction *trans,
- 				  struct btrfs_root *root);
- struct btrfs_root *btrfs_create_tree(struct btrfs_trans_handle *trans,
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 50bd683..7a35c9d 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -3698,6 +3698,8 @@ again:
- 			goto again;
- 		}
- 		spin_unlock(&cur_trans->dirty_bgs_lock);
-+	} else if (ret < 0) {
-+		btrfs_cleanup_dirty_bgs(cur_trans, root);
- 	}
- 
- 	btrfs_free_path(path);
--- 
-2.5.5
-
+I don't feel qualified to review this and add it to the 4.8 first pull.
+The patch will be in for-next though.

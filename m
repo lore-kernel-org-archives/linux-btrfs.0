@@ -1,48 +1,51 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oi0-f54.google.com ([209.85.218.54]:34701 "EHLO
-	mail-oi0-f54.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753775AbcGGXHR (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 7 Jul 2016 19:07:17 -0400
-Received: by mail-oi0-f54.google.com with SMTP id s66so44036162oif.1
-        for <linux-btrfs@vger.kernel.org>; Thu, 07 Jul 2016 16:07:11 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <577EDA03.9000308@isoar.ca>
-References: <0120508a-b9e7-b9e7-4f27-79f982ee07fe@fastmail.fm>
- <577EC57C.8060607@isoar.ca> <0ad5fc23-9b10-5e95-888d-9717a8fb480d@fastmail.fm>
- <577EDA03.9000308@isoar.ca>
-From: Chris Murphy <lists@colorremedies.com>
-Date: Thu, 7 Jul 2016 17:07:09 -0600
-Message-ID: <CAJCQCtRLncc+y8n136SzoeBh9x26GdkM6Hq-8g7DOXu1nB3m+A@mail.gmail.com>
-Subject: Re: Frequent btrfs corruption on a USB flash drive
-To: "Andrew E. Mileski" <andrewm@isoar.ca>
-Cc: Francesco Turco <fturco@fastmail.fm>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Received: from plane.gmane.org ([80.91.229.3]:55669 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753436AbcGHBZD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 7 Jul 2016 21:25:03 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+	id 1bLKXK-0004ty-EP
+	for linux-btrfs@vger.kernel.org; Fri, 08 Jul 2016 03:24:58 +0200
+Received: from ip-64-134-228-164.public.wayport.net ([64.134.228.164])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Fri, 08 Jul 2016 03:24:58 +0200
+Received: from 1i5t5.duncan by ip-64-134-228-164.public.wayport.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Fri, 08 Jul 2016 03:24:58 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: raid1 has failing disks, but smart is clear
+Date: Fri, 8 Jul 2016 01:24:51 +0000 (UTC)
+Message-ID: <pan$90586$9ef8a2d7$381c8c69$44837006@cox.net>
+References: <577D82AE.3040005@gmail.com>
+	<03E1A820-7029-4022-9D46-900C4FCA1ADC@gmail.com>
+	<577DF95E.7080100@gmail.com>
+Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Jul 7, 2016 at 4:38 PM, Andrew E. Mileski <andrewm@isoar.ca> wrote:
-> On 2016-07-07 17:13, Francesco Turco wrote:
->>
->>
->> On 2016-07-07 23:11, Andrew E. Mileski wrote:
->>>
->>> How large is this USB flash device?
->>
->>
->> 64 GB.
->>
->
-> I don't know if there is an official recommended minimum size for btrfs, but
-> I would expect 64 GB to be okay.
+Corey Coughlin posted on Wed, 06 Jul 2016 23:40:30 -0700 as excerpted:
 
-In my similar case, it was a 16GiB stick, but the Btrfs on LUKS
-partition was maybe 4GiB. Again I used -M and ran into zero problems
-in ~6 months of almost daily usage. But not rsync. I was using it for
-encrypted /home.
+> Well yeah, if I was mounting all the disks to different mount points, I
+> would definitely use UUIDs to get them mounted.  But I haven't seen any
+> way to set up a "mkfs.btrfs" command to use UUID or anything else for
+> individual drives.  Am I missing something?  I've been doing a lot of
+> googling.
 
+FWIW, you can use the /dev/disk/by-*/* symlinks (as normally setup by 
+udev) to reference various devices.
 
-
+Of course because the identifiers behind by-uuid and by-label are per-
+filesystem, those will normally only identify the one device of a multi-
+device filesystem, but the by-id links ID on device serials and partition 
+number, and if you are using GPT partitioning, you have by-partuuid and 
+(if you set them when setting up the partitions) by-partlabel as well.
 
 -- 
-Chris Murphy
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

@@ -1,70 +1,36 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:50458 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:60285 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750920AbcGDQwD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 4 Jul 2016 12:52:03 -0400
-Date: Mon, 4 Jul 2016 18:52:26 +0200
+	id S1755183AbcGHO4U (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 8 Jul 2016 10:56:20 -0400
+Date: Fri, 8 Jul 2016 16:56:31 +0200
 From: David Sterba <dsterba@suse.cz>
-To: Liu Bo <bo.li.liu@oracle.com>
-Cc: linux-btrfs@vger.kernel.org, Chandan Rajendra <chandan@linux.vnet.ibm.com>
-Subject: Re: [PATCH] Btrfs: fix double free of fs root
-Message-ID: <20160704165226.GJ13336@twin.jikos.cz>
+To: Anand Jain <anand.jain@oracle.com>
+Cc: linux-btrfs@vger.kernel.org, clm@fb.com, dsterba@suse.cz
+Subject: Re: [PATCH RFC] don't background blkdev_put()
+Message-ID: <20160708145631.GL13336@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <1467146678-29046-1-git-send-email-bo.li.liu@oracle.com>
+References: <1466686913-7832-1-git-send-email-anand.jain@oracle.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1467146678-29046-1-git-send-email-bo.li.liu@oracle.com>
+In-Reply-To: <1466686913-7832-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Jun 28, 2016 at 01:44:38PM -0700, Liu Bo wrote:
-> I got this warning while mounting a btrfs image,
-> 
-> [ 3020.509606] ------------[ cut here ]------------
-> [ 3020.510107] WARNING: CPU: 3 PID: 5581 at lib/idr.c:1051 ida_remove+0xca/0x190
-> [ 3020.510853] ida_remove called for id=42 which is not allocated.
-> [ 3020.511466] Modules linked in:
-> [ 3020.511802] CPU: 3 PID: 5581 Comm: mount Not tainted 4.7.0-rc5+ #274
-> [ 3020.512438] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS 1.8.2-20150714_191134- 04/01/2014
-> [ 3020.513385]  0000000000000286 0000000021295d86 ffff88006c66b8f0 ffffffff8182ba5a
-> [ 3020.514153]  0000000000000000 0000000000000009 ffff88006c66b930 ffffffff810e0ed7
-> [ 3020.514928]  0000041b00000000 ffffffff8289a8c0 ffff88007f437880 0000000000000000
-> [ 3020.515717] Call Trace:
-> [ 3020.515965]  [<ffffffff8182ba5a>] dump_stack+0xc9/0x13f
-> [ 3020.516487]  [<ffffffff810e0ed7>] __warn+0x147/0x160
-> [ 3020.517005]  [<ffffffff810e0f4f>] warn_slowpath_fmt+0x5f/0x80
-> [ 3020.517572]  [<ffffffff8182e6ca>] ida_remove+0xca/0x190
-> [ 3020.518075]  [<ffffffff813a2bcc>] free_anon_bdev+0x2c/0x60
-> [ 3020.518609]  [<ffffffff81657a9f>] free_fs_root+0x13f/0x160
-> [ 3020.519138]  [<ffffffff8165c679>] btrfs_get_fs_root+0x379/0x3d0
-> [ 3020.519710]  [<ffffffff81e6e975>] ? __mutex_unlock_slowpath+0x155/0x2c0
-> [ 3020.520366]  [<ffffffff816615b1>] open_ctree+0x2e91/0x3200
-> [ 3020.520965]  [<ffffffff8161ede2>] btrfs_mount+0x1322/0x15b0
-> [ 3020.521536]  [<ffffffff81e60e74>] ? kmemleak_alloc_percpu+0x44/0x170
-> [ 3020.522167]  [<ffffffff8115f5e1>] ? lockdep_init_map+0x61/0x210
-> [ 3020.522780]  [<ffffffff813a4f59>] mount_fs+0x49/0x2c0
-> [ 3020.523305]  [<ffffffff813d840c>] vfs_kern_mount+0xac/0x1b0
-> [ 3020.523872]  [<ffffffff8161dee1>] btrfs_mount+0x421/0x15b0
-> [ 3020.524402]  [<ffffffff81e60e74>] ? kmemleak_alloc_percpu+0x44/0x170
-> [ 3020.525045]  [<ffffffff8115f5e1>] ? lockdep_init_map+0x61/0x210
-> [ 3020.525657]  [<ffffffff8115f5e1>] ? lockdep_init_map+0x61/0x210
-> [ 3020.526289]  [<ffffffff813a4f59>] mount_fs+0x49/0x2c0
-> [ 3020.526803]  [<ffffffff813d840c>] vfs_kern_mount+0xac/0x1b0
-> [ 3020.527365]  [<ffffffff813dc27a>] do_mount+0x41a/0x1770
-> [ 3020.527899]  [<ffffffff812e800d>] ? strndup_user+0x6d/0xc0
-> [ 3020.528447]  [<ffffffff812e7f68>] ? memdup_user+0x78/0xb0
-> [ 3020.528987]  [<ffffffff813ddad0>] SyS_mount+0x150/0x160
-> [ 3020.529493]  [<ffffffff81e72b7c>] entry_SYSCALL_64_fastpath+0x1f/0xbd
-> 
-> It turns out that we free fs root twice, btrfs_init_fs_root() calls
-> free_anon_bdev(root->anon_dev) and later then btrfs_get_fs_root() cals
-> free_fs_root which does another free_anon_bdev() and it ends up with the
-> above warning.
-> 
-> Instead of reset root->anon_dev to 0 after free_anon_bdev(), we can let
-> btrfs_init_fs_root() return directly since its callers have already done
-> the free job by calling free_fs_root().
-> 
-> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+On Thu, Jun 23, 2016 at 09:01:53PM +0800, Anand Jain wrote:
+> As of now we are calling blkdev_put() under call_rcu,
+> actually which isn't necessary. Unless I am missing
+> something. This is a try out patch to know the same.
 
-Reviewed-by: David Sterba <dsterba@suse.com>
+Moving the blkdev_put after sync and invalidate, and out of the rcu
+callback looks safe (and better) to me. Please create a helper for the
+code that does
+
+> +	if (device->bdev && device->writeable) {
+> +		sync_blockdev(device->bdev);
+> +		invalidate_bdev(device->bdev);
+> +	}
+> +	if (device->bdev)
+> +		blkdev_put(device->bdev, device->mode);
+
+It's repeated 3 times, justifies a helper.

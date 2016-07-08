@@ -1,63 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-vk0-f52.google.com ([209.85.213.52]:34320 "EHLO
-	mail-vk0-f52.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755609AbcGHSQN (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 8 Jul 2016 14:16:13 -0400
-Received: by mail-vk0-f52.google.com with SMTP id d67so64887753vkh.1
-        for <linux-btrfs@vger.kernel.org>; Fri, 08 Jul 2016 11:16:12 -0700 (PDT)
+Received: from mail-lf0-f54.google.com ([209.85.215.54]:34029 "EHLO
+	mail-lf0-f54.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755664AbcGHSv7 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 8 Jul 2016 14:51:59 -0400
+Received: by mail-lf0-f54.google.com with SMTP id h129so33242846lfh.1
+        for <linux-btrfs@vger.kernel.org>; Fri, 08 Jul 2016 11:51:58 -0700 (PDT)
+Subject: Re: rollback to a snapshot and delete old top volume - missing of "@"
+To: Kai Herlemann <nesadaw@freenet.de>, linux-btrfs@vger.kernel.org
+References: <96f8022e-4209-2498-62e4-50ccbee46e37@freenet.de>
+From: Andrei Borzenkov <arvidjaar@gmail.com>
+Message-ID: <577FF64B.2070203@gmail.com>
+Date: Fri, 8 Jul 2016 21:51:55 +0300
 MIME-Version: 1.0
-In-Reply-To: <8cfbbe33-86da-7199-1b4e-cf13fa8e0f1b@gmail.com>
-References: <0120508a-b9e7-b9e7-4f27-79f982ee07fe@fastmail.fm>
- <CAJCQCtRV2Eis8h9u_Mpum_pFoLzOQe+LjooO0Y4_AYqwsVBiMA@mail.gmail.com>
- <c8c5564e-623a-f1ca-b1c2-521e18de714c@fastmail.fm> <8cfbbe33-86da-7199-1b4e-cf13fa8e0f1b@gmail.com>
-From: Henk Slager <eye1tm@gmail.com>
-Date: Fri, 8 Jul 2016 20:16:11 +0200
-Message-ID: <CAPmG0japRHX7_BBAHGAh=uwPTOOYDvAcAXmvT60VGabYHsr2iw@mail.gmail.com>
-Subject: Re: Frequent btrfs corruption on a USB flash drive
-To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Cc: Francesco Turco <fturco@fastmail.fm>,
-        Chris Murphy <lists@colorremedies.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+In-Reply-To: <96f8022e-4209-2498-62e4-50ccbee46e37@freenet.de>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
->> Device is GOOD
->>
->> I also created a big file with dd using /dev/urandom with the same size
->> as my flash drive, copied it once and read it three times. The SHA-1
->> checksum is always the same and matches the original one on the hard disk.
->>
->> So after much testing I feel I can conclude that my USB flash drive is
->> not fake and it is not defective.
->>
-> For what it's worth, there's multiple other things that could cause similar
-> issues.  I've had a number of cases where bad USB hubs or poorly designed
-> (or just buggy or failing) USB controllers caused similar data corruption,
-> the most recent one being an issue with both a bad USB 2.0 hub (which did
-> not properly implement the USB standard, counterfeit USB devices come in all
-> types) and a malfunctioning USB 3.0 controller (which did not properly
-> account for things that didn't properly implement the standard and had no
-> recovery code to handle this in the drivers).  I ended up in most cases
-> checking the ports using other USB devices (at least a keyboard, a mouse,
-> and a USB serial adapter).
+07.07.2016 15:17, Kai Herlemann пишет:
+> Hi,
+> 
+> I want to rollback a snapshot and have done this by execute "btrfs sub
+> set-default / 618".
+> Now I want to delete the old top volume to save space, but google and
+> manuals didn't helped.
+> 
+> I mounted for the following the root volume at /mnt/gparted with
+> subvolid=0, subvol=/ has the same effect.
+> Usually, the top volume is saved in /@, so I would be able to delete it
+> by execute "btrfs sub delete /@" (or move at first @ to @_badroot and
+> the snapshot to @). But that isn't possible, the output of that command
+> is "ERROR: cannot access subvolume /@: No such file or directory".
+> I've posted the output of "btrfs sub list /mnt/gparted" at
+> http://pastebin.com/r7WNbJq8. As you can see, there's no subvolume named @.
+> 
+> I have the same problem with my /home/ partition.
+> 
+> Output of "uname -a" (self-compiled kernel):
+> Linux debian-linux 4.1.26 #1 SMP Wed Jun 8 18:40:04 CEST 2016 x86_64
+> GNU/Linux
+> 
 
-Similar as Austin, I also want to note that there might be USB related
-issues that only pop-up after some time and not in tests.
+You need to ask on your distribution list; this is really not a question
+of btrfs but rather how distribution manages snapshots.
 
-For example, this weekend I connected a 2.5inch 500G drive with its
-Y-cable to a H87M-Pro board that is fed by a 80+Gold PSU, despite its
-many 'bad sectors' I remembered from 2 years ago in a btrfs raid1
-setup. This 500G disk has worked well for almost 2 years connected to
-a 7-inch eeepc4G, XFS formatted. But with the H87M-Pro I just now saw
-that it dropped off the USB every now and then, causing trouble for
-Btrfs.
+But if you originally installed in top level subvolume, then you have no
+way to delete it. You may try to manually clean content of top level
+subvolume if you need to free space.
 
-For connecting harddisks to phones, I once bought an external powered
-hub, and I put that between the board the the 500G disk => that made
-it all stable, no disconnects and Btrfs works fine as expected. I had
-similar issues on another PC with a Sandisk Extreme 64G USB3 stick,
-but that was likely a protocol issue.
-
-So maybe try to use the stick with your use case in another HW setup,
-hopefully then it is stable for a longer time than the few days now.
+That was initial implementation done by (open)SUSE and they changed it
+later to install in subvolume from the very start. But information you
+provided is not enough to know how system was installed originally.

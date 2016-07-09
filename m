@@ -1,75 +1,140 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oi0-f51.google.com ([209.85.218.51]:36548 "EHLO
-	mail-oi0-f51.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932486AbcGIBUP (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 8 Jul 2016 21:20:15 -0400
-Received: by mail-oi0-f51.google.com with SMTP id f189so81442938oig.3
-        for <linux-btrfs@vger.kernel.org>; Fri, 08 Jul 2016 18:20:14 -0700 (PDT)
+Received: from mail-pa0-f43.google.com ([209.85.220.43]:34852 "EHLO
+	mail-pa0-f43.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750696AbcGIFNx (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 9 Jul 2016 01:13:53 -0400
+Received: by mail-pa0-f43.google.com with SMTP id dx3so18299695pab.2
+        for <linux-btrfs@vger.kernel.org>; Fri, 08 Jul 2016 22:13:52 -0700 (PDT)
+Subject: Re: raid1 has failing disks, but smart is clear
+To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>,
+        Tomasz Kusmierz <tom.kusmierz@gmail.com>
+References: <577D82AE.3040005@gmail.com>
+ <03E1A820-7029-4022-9D46-900C4FCA1ADC@gmail.com>
+ <7d6827bd-a978-13ab-6732-b7cf7d21bdb8@gmail.com> <577F3107.6040806@gmail.com>
+ <CAKinxcWScz6Azu=RDQPcnj4zr0jjyZ62QEQT18O7mOKz-E+jfQ@mail.gmail.com>
+ <8d9f3f42-4a96-6791-790d-89ce02e5caaf@gmail.com>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+From: Corey Coughlin <corey.coughlin.cc3@gmail.com>
+Message-ID: <5780880E.1030004@gmail.com>
+Date: Fri, 8 Jul 2016 22:13:50 -0700
 MIME-Version: 1.0
-In-Reply-To: <CAJCQCtQt2A7w4JNUuhU7YOHTyj_z8M_RqsZCDw0G2YEENXaBvg@mail.gmail.com>
-References: <96f8022e-4209-2498-62e4-50ccbee46e37@freenet.de>
- <CAPmG0jZZ7FB0teBGGHojPoGctRyVC3D2cS56q1kYDMFrC=fOnA@mail.gmail.com> <CAJCQCtQt2A7w4JNUuhU7YOHTyj_z8M_RqsZCDw0G2YEENXaBvg@mail.gmail.com>
-From: Chris Murphy <lists@colorremedies.com>
-Date: Fri, 8 Jul 2016 19:20:13 -0600
-Message-ID: <CAJCQCtQnC3aQ0_AFKMwbGUjRByJiyhEk4ny2cRQGGW7ysVo0OQ@mail.gmail.com>
-Subject: Re: rollback to a snapshot and delete old top volume - missing of "@"
-Cc: Henk Slager <eye1tm@gmail.com>, Kai Herlemann <nesadaw@freenet.de>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
-To: unlisted-recipients:; (no To-header on input)
+In-Reply-To: <8d9f3f42-4a96-6791-790d-89ce02e5caaf@gmail.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Jul 7, 2016 at 11:40 AM, Chris Murphy <lists@colorremedies.com> wrote:
-> On Thu, Jul 7, 2016 at 10:01 AM, Henk Slager <eye1tm@gmail.com> wrote:
+Hi all,
+     One thing I may not have made clear, this wasn't a system that has 
+been running for a month and just became up corrupt out of nowhere, the 
+corruption showed up the first time I tried to run a filesystem balance, 
+basically the day after I set up the filesystem and copied files over.  
+I was hoping to get it stable and then add some more disks, but since it 
+wasn't stable right off the top, I'm assuming the problem is bigger than 
+some bad memory. I ran the stress.sh on two disks connected to ports on 
+the motherboard, that seemed to work fine.  And I'm using a pair of WD 
+green drives, in case there's an issue with those.  I did order some WD 
+red NAS drives, hoping they arrive soon.  I'm running the stress now 
+with them connected to the SAS card, trying to only let them run for a 
+day to see if something bad happens, it's a 4 port card so if there's a 
+problem with a specific port or cable, it could take me a while to find 
+it.  I'm hoping it shows up in a somewhat obvious way.  But thanks for 
+all the help, the stress.sh runs give me a clear way to try to debug 
+this, thanks again for that tip.
+
+     ------- Corey
+
+On 07/08/2016 05:14 AM, Austin S. Hemmelgarn wrote:
+> On 2016-07-08 07:14, Tomasz Kusmierz wrote:
+>>>
+>>> Well, I was able to run memtest on the system last night, that 
+>>> passed with
+>>> flying colors, so I'm now leaning toward the problem being in the 
+>>> sas card.
+>>> But I'll have to run some more tests.
+>>>
+>>
+>> Seriously use the "stres.sh" for couple of days, When I was running
+>> memtest it was running continuously for 3 days without the error, day
+>> of stres.sh and errors started showing up.
+>> Be VERY careful with trusting any sort of that tool, modern CPU's lye
+>> to you continuously !!!
+>> 1. You may think that you've wrote best on the planet code that
+>> bypasses a CPU cache, but in reality since CPU's are multicore you can
+>> end up with overzealous MPMD traping you inside of you cache memory
+>> and all you resting will do is write a page (trapped in cache) read it
+>> from cache (coherency mechanism, not the mis/hit one) will trap you
+>> inside of L3 so you have no clue you don't touch the ram, then CPU
+>> will just dump your page to RAM and "job done"
+>> 2. Since coherency problems and real problems with non blocking on
+>> mpmd you can have a DMA controller sucking pages out your own cache,
+>> due to ram being marked as dirty and CPU will try to spare the time
+>> and accelerate the operation to push DMA straigh out of L3 to
+>> somewhere else (mentioning that sine some testers use crazy way of
+>> forcing your ram access via DMA to somewhere and back to force droping
+>> out of L3)
+>> 3. This one is actually funny: some testers didn't claim the pages to
+>> the process so for some reason pages that the were using were not
+>> showing up as used / dirty etc so all the testing was done 32kB of L1
+>> ... tests were fast thou :)
+>>
+>> srters.sh will test operation of the whole system !!! it shifts a lot
+>> of data so disks are engaged, CPU keeps pumping out CRC32 all the time
+>> so it's busy, RAM gets hit nicely as well due to high DMA.
+> Agreed, never just trust memtest86 or memtest86+.
 >
->> What the latest debian likes as naming convention I dont know, but in
->> openSuSE @ is a directory in the toplevel volume (ID=5 or ID=0 as
->> alias) and that directory contains subvolumes.
+> FWIW< here's the routine I go through to test new RAM:
+> 1. Run regular memtest86 for at least 3 full cycles in full SMP mode 
+> (F2 while starting up to force SMP).  On some systems this may hang, 
+> but that's an issue in the BIOS's setup of the CPU and MC, not the 
+> RAM, and is generally not indicative of a system which will have issues.
+> 2. Run regular memtest86 for at least 3 full cycles in regular UP mode 
+> (the default on most non-NUMA hardware).
+> 3. Repeat 1 and 2 with memtest86+.  It's diverged enough from regular 
+> memtest86 that it's functionally a separate tool, and I've seen RAM 
+> that passes one but not the other on multiple occasions before.
+> 4. Boot SystemRescueCD, download a copy of the Linux sources, and run 
+> as many allmodconfig builds in parallel as I have CPU's, each with a 
+> number of make jobs equal to the twice number of CPU's (so each CPU 
+> ends up running at least two threads).  This forces enough context 
+> switching to completely trash even the L3 cache on almost any modern 
+> processor, which means it forces things out to RAM.  It won't hit all 
+> your RAM, but I've found it to be a relatively reliable way to verify 
+> the memory bus and the memory controller work properly.
+> 5. Still from SystemRescueCD, use a tool called memtester (essentially 
+> memtest86, but run from userspace) to check the RAM.
+> 6. Still from SystemRescueCD, use sha1sum to compute SHA-1 hashes of 
+> all the disks in the system, using at least 8 instances of sha1sum per 
+> CPU core, and make sure that all the sums for a disk match.
+> 7. Do 6 again, but using cat to compute the sum of a concatenation of 
+> all the disks in the system (so the individual commands end up being 
+> `cat /dev/sd? | sha1sum`).  This will rapidly use all available memory 
+> on the system and keep it in use for quite a while.
+> 8. If I'm using my home server system, I also have a special virtual 
+> runlevel set up where I spin up 4 times as many VM's as I have CPU 
+> cores (so on my current 8 core system, I spin up 32), all assigned a 
+> part of the RAM not used by the host (which I shrink to the minimum 
+> useable size of about 500MB), all running steps 1-3 in parallel.
 >
-> No, opensuse doesn't use @ at all. They use a subvolume called
-> .snapshots to contain snapper snapshots.
+> It may also be worth mentioning that I've seen very poorly behaved 
+> HBA's that produce symptoms that look like bad RAM, including issues 
+> not related to the disks themselves, yet show no issues when regular 
+> memory testing is run.
+>>
+>> When come to think about it, if your device points change during
+>> operation of the system it might be an LSI card dying -> reinitialize
+>> -> rediscovering drives -> drives show up in different point. On my
+>> system I can hot swap sata and it will come up with different dev even
+>> thou it was connected to same place on the controller.
+> Barring a few odd controllers I've seen which support hot-plug but not 
+> hot-remove, that shouldn't happen unless the device is in use, and in 
+> that case it only happens because of the existing open references to 
+> the device being held by whatever is using it.
+>>
+>> I think, most important - I presume you run nonECC ?
+> And if not, how well shielded is your system?  You can often get by 
+> with non-ECC RAM if you have good EMI shielding and reboot regularly.  
+> Most servers actually do have good EMI shielding, and many pre-built 
+> desktops do, but a lot of DIY systems don't (especially if ti's a 
+> gaming case, the poly-carbonate windows many of them have in the side 
+> panel are a _huge_ hole in the EMI shielding).
 
-OK this has changed in openSUSE Tumbleweed. It does create an @
-subvolume into which all other subvolumes are created including
-.snapshots.
-
-0:install:/mnt # btrfs sub list -t /mnt/
-ID    gen    top level    path
---    ---    ---------    ----
-257    31    5           @
-258    12    257        @/.snapshots
-259    37    258        @/.snapshots/1/snapshot
-260    14    257        @/boot/grub2/i386-pc
-261    15    257        @/boot/grub2/x86_64-efi
-262    16    257        @/opt
-263    17    257        @/srv
-264    18    257        @/tmp
-265    19    257        @/usr/local
-266    35    257        @/var/cache
-267    21    257        @/var/crash
-268    23    257        @/var/lib/libvirt/images
-269    23    257        @/var/lib/mailman
-270    25    257        @/var/lib/mariadb
-271    26    257        @/var/lib/mysql
-272    26    257        @/var/lib/named
-273    28    257        @/var/lib/pgsql
-274    35    257        @/var/log
-275    29    257        @/var/opt
-276    30    257        @/var/spool
-277    35    257        @/var/tmp
-
-The installation time rootfs is
-0:install:/mnt # mount | grep btrfs
-/dev/vda2 on /mnt type btrfs
-(rw,relatime,space_cache,subvolid=259,subvol=/@/.snapshots/1/snapshot)
-
-I don't really understand the point of this additional layer of nesting under @.
-
-I didn't test if it's still changing the default subvolume, rather
-than using rootflags=subvol or subvolid.
-
-
-
--- 
-Chris Murphy

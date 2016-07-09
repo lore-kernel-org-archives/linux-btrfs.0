@@ -1,58 +1,61 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:52153 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S932302AbcGOJpw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 15 Jul 2016 05:45:52 -0400
-Date: Fri, 15 Jul 2016 11:45:56 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Cc: Liu Bo <bo.li.liu@oracle.com>, linux-btrfs@vger.kernel.org,
-        David Sterba <dsterba@suse.cz>
-Subject: Re: [PATCH] Btrfs-progs: fix btrfs-map-logical to only print extent
- mapping info
-Message-ID: <20160715094556.GS10595@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1468546827-28501-1-git-send-email-bo.li.liu@oracle.com>
- <f12ae244-0b15-fb93-eda1-8f758694afde@cn.fujitsu.com>
+Received: from mail-lf0-f67.google.com ([209.85.215.67]:35974 "EHLO
+	mail-lf0-f67.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932623AbcGIFxx (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 9 Jul 2016 01:53:53 -0400
+Received: by mail-lf0-f67.google.com with SMTP id a2so8684238lfe.3
+        for <linux-btrfs@vger.kernel.org>; Fri, 08 Jul 2016 22:53:53 -0700 (PDT)
+Subject: Re: [PATCH v2] btrfs-progs: du: fix to skip not btrfs dir/file
+To: Wang Shilong <wangshilong1991@gmail.com>, linux-btrfs@vger.kernel.org
+Cc: dsterba@suse.cz
+From: Andrei Borzenkov <arvidjaar@gmail.com>
+Message-ID: <5780916E.3040508@gmail.com>
+Date: Sat, 9 Jul 2016 08:53:50 +0300
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <f12ae244-0b15-fb93-eda1-8f758694afde@cn.fujitsu.com>
+Content-Type: text/plain; charset=windows-1251
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Jul 15, 2016 at 10:22:52AM +0800, Qu Wenruo wrote:
+07.07.2016 12:43, Wang Shilong пишет:
+> 'btrfs file du' is a very useful tool to watch my system
+> file usage information with snapshot aware.
 > 
+> when trying to run following commands:
+> [root@localhost btrfs-progs]# btrfs file du /
+>      Total   Exclusive  Set shared  Filename
+> ERROR: Failed to lookup root id - Inappropriate ioctl for device
+> ERROR: cannot check space of '/': Unknown error -1
 > 
-> At 07/15/2016 09:40 AM, Liu Bo wrote:
-> > I have a valid btrfs image which contains,
-> > ...
-> >         item 10 key (1103101952 BLOCK_GROUP_ITEM 1288372224) itemoff 15947 itemsize 24
-> >                 block group used 655360 chunk_objectid 256 flags DATA|RAID5
-> >         item 11 key (1103364096 EXTENT_ITEM 131072) itemoff 15894 itemsize 53
-> >                 extent refs 1 gen 11 flags DATA
-> >                 extent data backref root 5 objectid 258 offset 0 count 1
-> >         item 12 key (1103888384 EXTENT_ITEM 262144) itemoff 15841 itemsize 53
-> >                 extent refs 1 gen 15 flags DATA
-> >                 extent data backref root 1 objectid 256 offset 0 count 1
-> >         item 13 key (1104281600 EXTENT_ITEM 262144) itemoff 15788 itemsize 53
-> >                 extent refs 1 gen 15 flags DATA
-> >                 extent data backref root 1 objectid 257 offset 0 count 1
-> > ...
-> >
-> > The extent [1103364096, 131072) has length 131072, but if we run
-> >
-> > "btrfs-map-logical -l 1103364096 -b $((65536 * 3)) /dev/sda"
-> >
-> > it will return mapping info 's of  non-existing extents.
-> >
-> > It's because it assumes that extents's are contiguous on logical address,
-> > when it's not true, after one loop (cur_logical += cur_len) and mapping
-> > the next extent, we can get an extent that is out of our search range and
-> > we end up with a negative @real_len and printing all mapping infos till
-> > the disk end.
-> >
-> > Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+> and My Filesystem looks like this:
+> [root@localhost btrfs-progs]# df -Th
+> Filesystem     Type      Size  Used Avail Use% Mounted on
+> devtmpfs       devtmpfs   16G     0   16G   0% /dev
+> tmpfs          tmpfs      16G  368K   16G   1% /dev/shm
+> tmpfs          tmpfs      16G  1.4M   16G   1% /run
+> tmpfs          tmpfs      16G     0   16G   0% /sys/fs/cgroup
+> /dev/sda3      btrfs      60G   19G   40G  33% /
+> tmpfs          tmpfs      16G  332K   16G   1% /tmp
+> /dev/sdc       btrfs     2.8T  166G  1.7T   9% /data
+> /dev/sda2      xfs       2.0G  452M  1.6G  23% /boot
+> /dev/sda1      vfat      1.9G   11M  1.9G   1% /boot/efi
+> tmpfs          tmpfs     3.2G   24K  3.2G   1% /run/user/1000
 > 
-> Reviewed-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+> So I installed Btrfs as my root partition, but boot partition
+> can be other fs.
+> 
+> We can Let btrfs tool aware of this is not a btrfs file or
+> directory and skip those files, so that someone like me
+> could just run 'btrfs file du /' to scan all btrfs filesystems.
+> 
+> After patch, it will look like:
+>    Total   Exclusive  Set shared  Filename
+>      0.00B       0.00B           -  //root/.bash_logout
+>      0.00B       0.00B           -  //root/.bash_profile
+>      0.00B       0.00B           -  //root/.bashrc
+>      0.00B       0.00B           -  //root/.cshrc
+>      0.00B       0.00B           -  //root/.tcshrc
+> 
 
-Applied, thanks.
+Can you avoid double slashes?
+
+

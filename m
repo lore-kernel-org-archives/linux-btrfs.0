@@ -1,88 +1,51 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:47239 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750887AbcGMF26 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 13 Jul 2016 01:28:58 -0400
-Date: Tue, 12 Jul 2016 22:28:38 -0700
-From: "Darrick J. Wong" <darrick.wong@oracle.com>
-To: Eryu Guan <eguan@redhat.com>
-Cc: david@fromorbit.com, linux-btrfs@vger.kernel.org, fstests@vger.kernel.org,
-        xfs@oss.sgi.com
-Subject: Re: [PATCH v6 00/20] xfstests: minor fixes for the reflink/dedupe
- tests
-Message-ID: <20160713052837.GE13625@birch.djwong.org>
-References: <146612796204.25024.18254357523133394284.stgit@birch.djwong.org>
- <20160705043130.GF23649@eguan.usersys.redhat.com>
+Received: from mx2.suse.de ([195.135.220.15]:43996 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1758474AbcGKKvz (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 11 Jul 2016 06:51:55 -0400
+Date: Mon, 11 Jul 2016 12:51:57 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Tomasz Chmielewski <mangoo@wpkg.org>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: can't use btrfs on USB-stick (write errors)
+Message-ID: <20160711105157.GV13336@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <85480401635e3cc778b7ab1d241072e8@admin.virtall.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20160705043130.GF23649@eguan.usersys.redhat.com>
+In-Reply-To: <85480401635e3cc778b7ab1d241072e8@admin.virtall.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Jul 05, 2016 at 12:31:30PM +0800, Eryu Guan wrote:
-> Hi Darrick,
+On Tue, Jun 21, 2016 at 11:54:57PM +0900, Tomasz Chmielewski wrote:
+> I've tried to use btrfs on USB-stick, but unfortunately it fails with 
+> write errors.
 > 
-> On Thu, Jun 16, 2016 at 06:46:02PM -0700, Darrick J. Wong wrote:
-> > Hi all,
-> > 
-> > This is the sixth revision of a patchset that adds to xfstests
-> > support for testing reverse-mappings of physical blocks to file and
-> > metadata (rmap); support for testing multiple file logical blocks to
-> > the same physical block (reflink); and implements the beginnings of
-> > online metadata scrubbing.
-> > 
-> > The first eight patches are in Eryu Guan's pull request on 2016-06-15.
-> > Those patches haven't changed, but they're not yet in the upstream
-> > repo.
-> > 
-> > If you're going to start using this mess, you probably ought to just
-> > pull from my github trees for kernel[1], xfsprogs[2], and xfstests[3].
-> > There are also updates for xfs-docs[4].  The kernel patches should
-> > apply to dchinner's for-next; xfsprogs patches to for-next; and
-> > xfstest to master.  The kernel git tree already has for-next included.
-> > 
-> > The patches have been xfstested with x64, i386, and armv7l--arm64,
-> > ppc64, and ppc64le no longer boot in qemu.  All three architectures
-> > pass all 'clone' group tests except xfs/128 (which is the swapext
-> > test), and AFAICT don't cause any new failures for the 'auto' group.
-> > 
-> > This is an extraordinary way to eat your data.  Enjoy! 
-> > Comments and questions are, as always, welcome.
+> The below is for kernel 4.4; I've tried with 4.6.2, and it fails in a 
+> similar way.
 > 
-> I tested your xfstests patches with your kernel(HEAD f0b34b6 xfs: add
-> btree scrub tracepoints) and xfsprogs(HEAD 34bd754 xfs_scrub: create
-> online filesystem scrub program), with x86_64 host & 4k block size XFS.
 > 
-> A './check -g auto' run looked fine overall. Besides the comments I
-> replied to some patches, other common minor issues are:
-> - space indention in _cleanup not tab
-> - bare 'umount $SCRATCH_MNT' not _scratch_unmount
-> - whitespace issues in _test|scratch_inject_error
+> I'm not sure how to reliably reproduce it, but it seems to me it has 
+> something to do with:
 > 
-> (I can fix all these minor issues at commit time, if you don't have
-> other major updates to these patches).
+> - plenty of random writes
 > 
-> And the review of changes to xfs/122 needs help from other XFS
-> developers :) (09/20 and 10/20)
+> - USB stick sometimes "very slow to reply" (may be USB-stick dependent)
 > 
-> And besides the first 8 patches, 15/20 has been in upstream as well.
 > 
-> Thanks,
-> Eryu
+> The closest thing to reproduce pretty much within an hour was launching 
+> ktorrent and downloading a couple of Linux isos.
 > 
-> P.S.
-> The failed tests I saw when testing with reflink-enabled kernel &
-> xfsprogs:
-> 
-> Failures: generic/054 generic/055 generic/108 generic/204 generic/356 generic/357 xfs/004 xfs/096 xfs/122 xfs/293
-> 
-> generic/108 generic/204 and xfs/004 are new failures compared to stock
-> kernel and xfsprogs (kernel 4.7-rc5, xfsprogs 4.7-rc1).
-> 
-> Just FYI.
+> ext4 does not fail under similar load. USB stick is brand new, writing 
+> data with dd is successful, reading data with dd is successful (whether 
+> it's ext4, btrfs or raw partition); it only seems to fail with btrfs and 
+> plenty of random writes.
 
-Thanks for doing this.  I'm seeing some of the same failures you are,
-and will fix them up in the next patch bundle.
+I think it's the write pattern that does not go well with the usb stick.
+>From the logs provided, it's an EIO during transaction commit, that's
+usually fatal so the filesystem switches to read-only.
 
---D
+The dd write pattern (and consecutive writes) do not stress the flash
+translation layer or it's internal block allocation and reclaim. As you
+say it's not easy to reproduce, I'm more inclined to blame the usb
+stick.

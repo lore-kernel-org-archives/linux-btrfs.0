@@ -1,65 +1,185 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:45914 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S932729AbcGKRbL (ORCPT
+Received: from mgwym03.jp.fujitsu.com ([211.128.242.42]:33395 "EHLO
+	mgwym03.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755498AbcGKBpJ (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 11 Jul 2016 13:31:11 -0400
-Subject: Re: stat() on btrfs reports the st_blocks with delay (data loss in
- archivers)
-To: <dsterba@suse.cz>, Pavel Raiskup <praiskup@redhat.com>,
-        <linux-btrfs@vger.kernel.org>, bug-tar <bug-tar@gnu.org>
-References: <2628320.PvJcFm1FZr@unused-4-107.brq.redhat.com>
- <20160711144119.GY13336@twin.jikos.cz>
- <67a9457e-3925-e6b3-65db-ff30c6386678@fb.com>
- <20160711151620.GZ13336@twin.jikos.cz>
-From: Chris Mason <clm@fb.com>
-Message-ID: <f1b987b5-f060-fd79-eef4-99658cc35049@fb.com>
-Date: Mon, 11 Jul 2016 13:30:58 -0400
+	Sun, 10 Jul 2016 21:45:09 -0400
+Received: from m3051.s.css.fujitsu.com (m3051.s.css.fujitsu.com [10.134.21.209])
+	by yt-mxauth.gw.nic.fujitsu.com (Postfix) with ESMTP id EA70FAC0365
+	for <linux-btrfs@vger.kernel.org>; Mon, 11 Jul 2016 10:45:00 +0900 (JST)
+Subject: Re: [PATCH] btrfs-progs: add option to run balance as daemon
+To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>, linux-btrfs@vger.kernel.org,
+        dsterba@suse.com
+References: <20160621151659.32157-1-ahferroin7@gmail.com>
+From: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
+Message-ID: <29743bb5-3b69-4d13-5737-cea6dd8f6a46@jp.fujitsu.com>
+Date: Mon, 11 Jul 2016 10:44:30 +0900
 MIME-Version: 1.0
-In-Reply-To: <20160711151620.GZ13336@twin.jikos.cz>
-Content-Type: text/plain; charset="windows-1252"; format=flowed
+In-Reply-To: <20160621151659.32157-1-ahferroin7@gmail.com>
+Content-Type: text/plain; charset=iso-2022-jp
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On 2016/06/22 0:16, Austin S. Hemmelgarn wrote:
+> Currently, balance operations are run synchronously in the foreground.
+> This is nice for interactive management, but is kind of crappy when you
+> start looking at automation and similar things.
+> 
+> This patch adds an option to `btrfs balance start` to tell it to
+> daemonize prior to running the balance operation, thus allowing us to
+> preform balances asynchronously.  The two biggest use cases I have for
+> this are starting a balance on a remote server without establishing a
+> full shell session, and being able to background the balance in a
+> recovery shell (which usually has no job control) so I can still get
+> progress information.
+> 
+> Because it simply daemonizes prior to calling the balance ioctl, this
+> doesn't actually need any kernel support.
+> 
+> Signed-off-by: Austin S. Hemmelgarn <ahferroin7@gmail.com>
+> ---
+> This works as is, but there are two specific things I would love to
+> eventually fix but don't have the time to fix right now:
+> * There is no way to get any feedback from the balance operation.
+> * Because of how everything works, trying to start a new balance with
+>   --background while one iw already running won't return an error but
+>   won't queue or start a new balance either.
+> 
+> The first one is more a utility item than anything else, and probably
+> would not be hard to add.  Ideally, it should be output to a user
+> specified file, and this should work even for a normal foreground balance.
+> 
+> The second is very much a UX issue, but can't be easily sovled without
+> doing some creative process monitoring from the parrent processes.
+> 
+>  Documentation/btrfs-balance.asciidoc |  2 ++
+>  cmds-balance.c                       | 43 +++++++++++++++++++++++++++++++++++-
+>  2 files changed, 44 insertions(+), 1 deletion(-)
+> 
+> diff --git a/Documentation/btrfs-balance.asciidoc b/Documentation/btrfs-balance.asciidoc
+> index 7df40b9..f487dbb 100644
+> --- a/Documentation/btrfs-balance.asciidoc
+> +++ b/Documentation/btrfs-balance.asciidoc
+> @@ -85,6 +85,8 @@ act on system chunks (requires '-f'), see `FILTERS` section for details about 'f
+>  be verbose and print balance filter arguments
+>  -f::::
+>  force reducing of metadata integrity, eg. when going from 'raid1' to 'single'
+> +--background::::
+> +run the balance operation asynchronously in the background
+>  
+>  *status* [-v] <path>::
+>  Show status of running or paused balance.
+> diff --git a/cmds-balance.c b/cmds-balance.c
+> index 708bbf4..66169b7 100644
+> --- a/cmds-balance.c
+> +++ b/cmds-balance.c
+> @@ -20,6 +20,9 @@
+>  #include <unistd.h>
+>  #include <getopt.h>
+>  #include <sys/ioctl.h>
+> +#include <sys/types.h>
+> +#include <sys/stat.h>
+> +#include <fcntl.h>
+>  #include <errno.h>
+>  
+>  #include "kerncompat.h"
+> @@ -510,6 +513,7 @@ static const char * const cmd_balance_start_usage[] = {
+>  	"-v             be verbose",
+>  	"-f             force reducing of metadata integrity",
+>  	"--full-balance do not print warning and do not delay start",
+> +	"--background   run the balance as a background process",
+>  	NULL
+>  };
+>  
+> @@ -520,6 +524,7 @@ static int cmd_balance_start(int argc, char **argv)
+>  						&args.meta, NULL };
+>  	int force = 0;
+>  	int verbose = 0;
+> +	int background = 0;
+>  	unsigned start_flags = 0;
+>  	int i;
+>  
+> @@ -527,7 +532,8 @@ static int cmd_balance_start(int argc, char **argv)
+>  
+>  	optind = 1;
+>  	while (1) {
+> -		enum { GETOPT_VAL_FULL_BALANCE = 256 };
+> +		enum { GETOPT_VAL_FULL_BALANCE = 256,
+> +			GETOPT_VAL_BACKGROUND = 257 };
+>  		static const struct option longopts[] = {
+>  			{ "data", optional_argument, NULL, 'd'},
+>  			{ "metadata", optional_argument, NULL, 'm' },
+> @@ -536,6 +542,8 @@ static int cmd_balance_start(int argc, char **argv)
+>  			{ "verbose", no_argument, NULL, 'v' },
+>  			{ "full-balance", no_argument, NULL,
+>  				GETOPT_VAL_FULL_BALANCE },
+> +			{ "background", no_argument, NULL,
+> +				GETOPT_VAL_BACKGROUND },
+>  			{ NULL, 0, NULL, 0 }
+>  		};
+>  
+> @@ -574,6 +582,9 @@ static int cmd_balance_start(int argc, char **argv)
+>  		case GETOPT_VAL_FULL_BALANCE:
+>  			start_flags |= BALANCE_START_NOWARN;
+>  			break;
+> +		case GETOPT_VAL_BACKGROUND:
+> +			background = 1;
+> +			break;
+>  		default:
+>  			usage(cmd_balance_start_usage);
+>  		}
+> @@ -626,6 +637,36 @@ static int cmd_balance_start(int argc, char **argv)
+>  		args.flags |= BTRFS_BALANCE_FORCE;
+>  	if (verbose)
+>  		dump_ioctl_balance_args(&args);
+> +	if (background) {
+> +		switch (fork()) {
+> +		case (-1):
+> +			error("Unable to fork to run balance in background");
+> +			return 1;
+> +			break;
+> +		case (0):
+> +			setsid();
+> +			switch(fork()) {
+> +				case (-1):
+> +					error("Unable to fork to run balance in background");
+> +					exit(1);
+> +					break;
+> +				case (0):
+> +					chdir("/");
 
+You should check the return value of chdir(). Otherwise
+we get the following warning message at the build time.
 
-On 07/11/2016 11:16 AM, David Sterba wrote:
-> On Mon, Jul 11, 2016 at 11:00:55AM -0400, Chris Mason wrote:
->> So, the real bug is that we're letting some delalloc stat hang around
->> after the truncate, probably related to IO in progress.  We do already
->> account for delalloc in what we return to stat, but there's a corner
->> case involving truncate where we screw it up.
->
-> So the original testcase:
->
->>>>     a) some "tool" creates sparse file
->>>>     b) that tool does not sync explicitly and exits ..
->>>>     c) tar is called immediately after that to archive the sparse file
->>>>     d) tar considers [2] the file is completely sparse (because st_blocks is
->>>>        zero) and archives no data.  Here comes data loss.
->
-> will not happen. The application would basically have to mimick the
-> provided reproducer script and do the truncate/write loop and be lucky
-> enough to let tar hit the short race window.
->
+=================================
+cmds-balance.c: In function 'cmd_balance_start':
+cmds-balance.c:654:6: warning: ignoring return value of 'chdir', declared with attribute warn_unused_result [-Wunused-result]
+      chdir("/");
+      ^
+=================================
 
-Looking harder there is a race window that can trigger this without the 
-truncate loop:
+I found this warning message at
+integration-20160704(2355a7e5dcdf122d1924).
 
-1) application calls write(), we make the pages delalloc (in-ram 
-st_blocks goes up)
-2) VM calls write_cache_pages, we go find a contiguous delalloc range
-3) We call cow_file_range on the locked range of pages
-4) cow_file_range clears the delalloc bits (in-ram st_blocks goes down)
+Thanks,
+Satoru
 
-< ----- race begins here ----->
-
-5) The io is started
-6) The IO completes and extents are inserted into the metadata
-7) the on disk/in-ram st_blocks goes up
-
-< ---- race ends here ---->
-
-This makes a ton more sense than leaking delalloc bits.
-
--chris
+> +					close(0);
+> +					close(1);
+> +					close(2);
+> +					open("/dev/null", O_RDONLY);
+> +					open("/dev/null", O_WRONLY);
+> +					open("/dev/null", O_WRONLY);
+> +					break;
+> +				default:
+> +					exit(0);
+> +			}
+> +			break;
+> +		default:
+> +			exit(0);
+> +		}
+> +	}
+>  
+>  	return do_balance(argv[optind], &args, start_flags);
+>  }
+> 

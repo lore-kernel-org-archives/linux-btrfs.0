@@ -1,16 +1,14 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:4512 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:41536 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1757521AbcGKDGD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 10 Jul 2016 23:06:03 -0400
+	id S1757466AbcGKDGC (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 10 Jul 2016 23:06:02 -0400
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
-Cc: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>,
-        Chandan Rajendra <chandan@linux.vnet.ibm.com>,
-        David Sterba <dsterba@suse.cz>
-Subject: [PATCH v12.1 01/15] btrfs: expand cow_file_range() to support in-band dedup and subpage-blocksize
-Date: Mon, 11 Jul 2016 11:05:29 +0800
-Message-Id: <20160711030543.30115-2-quwenruo@cn.fujitsu.com>
+Cc: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
+Subject: [PATCH v12.1 04/15] btrfs: dedupe: Introduce function to add hash into in-memory tree
+Date: Mon, 11 Jul 2016 11:05:32 +0800
+Message-Id: <20160711030543.30115-5-quwenruo@cn.fujitsu.com>
 In-Reply-To: <20160711030543.30115-1-quwenruo@cn.fujitsu.com>
 References: <20160711030543.30115-1-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -19,133 +17,182 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
 
-Extract cow_file_range() new parameters for both in-band dedupe and
-subpage sector size patchset.
+Introduce static function inmem_add() to add hash into in-memory tree.
+And now we can implement the btrfs_dedupe_add() interface.
 
-This should make conflict of both patchset to minimal, and reduce the
-effort needed to rebase them.
-
-Cc: Chandan Rajendra <chandan@linux.vnet.ibm.com>
-Cc: David Sterba <dsterba@suse.cz>
-Signed-off-by: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Signed-off-by: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
+Reviewed-by: Josef Bacik <jbacik@fb.com>
 ---
- fs/btrfs/dedupe.h | 24 ++++++++++++++++++++++++
- fs/btrfs/inode.c  | 28 +++++++++++++++++-----------
- 2 files changed, 41 insertions(+), 11 deletions(-)
- create mode 100644 fs/btrfs/dedupe.h
+ fs/btrfs/dedupe.c | 151 ++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 151 insertions(+)
 
-diff --git a/fs/btrfs/dedupe.h b/fs/btrfs/dedupe.h
-new file mode 100644
-index 0000000..83ebfe2
---- /dev/null
-+++ b/fs/btrfs/dedupe.h
-@@ -0,0 +1,24 @@
-+/*
-+ * Copyright (C) 2016 Fujitsu.  All rights reserved.
-+ *
-+ * This program is free software; you can redistribute it and/or
-+ * modify it under the terms of the GNU General Public
-+ * License v2 as published by the Free Software Foundation.
-+ *
-+ * This program is distributed in the hope that it will be useful,
-+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
-+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-+ * General Public License for more details.
-+ *
-+ * You should have received a copy of the GNU General Public
-+ * License along with this program; if not, write to the
-+ * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
-+ * Boston, MA 021110-1307, USA.
-+ */
+diff --git a/fs/btrfs/dedupe.c b/fs/btrfs/dedupe.c
+index b14166a..e51412b 100644
+--- a/fs/btrfs/dedupe.c
++++ b/fs/btrfs/dedupe.c
+@@ -32,6 +32,14 @@ struct inmem_hash {
+ 	u8 hash[];
+ };
+ 
++static inline struct inmem_hash *inmem_alloc_hash(u16 algo)
++{
++	if (WARN_ON(algo >= ARRAY_SIZE(btrfs_hash_sizes)))
++		return NULL;
++	return kzalloc(sizeof(struct inmem_hash) + btrfs_hash_sizes[algo],
++			GFP_NOFS);
++}
 +
-+#ifndef __BTRFS_DEDUPE__
-+#define __BTRFS_DEDUPE__
-+
-+/* later in-band dedupe will expand this struct */
-+struct btrfs_dedupe_hash;
-+#endif
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index bf4319d..ef2b27e 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -60,6 +60,7 @@
- #include "hash.h"
- #include "props.h"
- #include "qgroup.h"
-+#include "dedupe.h"
- 
- struct btrfs_iget_args {
- 	struct btrfs_key *location;
-@@ -105,8 +106,9 @@ static int btrfs_truncate(struct inode *inode);
- static int btrfs_finish_ordered_io(struct btrfs_ordered_extent *ordered_extent);
- static noinline int cow_file_range(struct inode *inode,
- 				   struct page *locked_page,
--				   u64 start, u64 end, int *page_started,
--				   unsigned long *nr_written, int unlock);
-+				   u64 start, u64 end, u64 delalloc_end,
-+				   int *page_started, unsigned long *nr_written,
-+				   int unlock, struct btrfs_dedupe_hash *hash);
- static struct extent_map *create_pinned_em(struct inode *inode, u64 start,
- 					   u64 len, u64 orig_start,
- 					   u64 block_start, u64 block_len,
-@@ -710,7 +712,10 @@ retry:
- 					     async_extent->start,
- 					     async_extent->start +
- 					     async_extent->ram_size - 1,
--					     &page_started, &nr_written, 0);
-+					     async_extent->start +
-+					     async_extent->ram_size - 1,
-+					     &page_started, &nr_written, 0,
-+					     NULL);
- 
- 			/* JDM XXX */
- 
-@@ -923,9 +928,9 @@ static u64 get_extent_allocation_hint(struct inode *inode, u64 start,
-  */
- static noinline int cow_file_range(struct inode *inode,
- 				   struct page *locked_page,
--				   u64 start, u64 end, int *page_started,
--				   unsigned long *nr_written,
--				   int unlock)
-+				   u64 start, u64 end, u64 delalloc_end,
-+				   int *page_started, unsigned long *nr_written,
-+				   int unlock, struct btrfs_dedupe_hash *hash)
+ static int init_dedupe_info(struct btrfs_dedupe_info **ret_info,
+ 			    struct btrfs_ioctl_dedupe_args *dargs)
  {
- 	struct btrfs_root *root = BTRFS_I(inode)->root;
- 	u64 alloc_hint = 0;
-@@ -1416,7 +1421,8 @@ out_check:
- 		if (cow_start != (u64)-1) {
- 			ret = cow_file_range(inode, locked_page,
- 					     cow_start, found_key.offset - 1,
--					     page_started, nr_written, 1);
-+					     end, page_started, nr_written, 1,
-+					     NULL);
- 			if (ret) {
- 				if (!nolock && nocow)
- 					btrfs_end_write_no_snapshoting(root);
-@@ -1499,8 +1505,8 @@ out_check:
- 	}
- 
- 	if (cow_start != (u64)-1) {
--		ret = cow_file_range(inode, locked_page, cow_start, end,
--				     page_started, nr_written, 1);
-+		ret = cow_file_range(inode, locked_page, cow_start, end, end,
-+				     page_started, nr_written, 1, NULL);
- 		if (ret)
- 			goto error;
- 	}
-@@ -1559,8 +1565,8 @@ static int run_delalloc_range(struct inode *inode, struct page *locked_page,
- 		ret = run_delalloc_nocow(inode, locked_page, start, end,
- 					 page_started, 0, nr_written);
- 	} else if (!inode_need_compress(inode)) {
--		ret = cow_file_range(inode, locked_page, start, end,
--				      page_started, nr_written, 1);
-+		ret = cow_file_range(inode, locked_page, start, end, end,
-+				      page_started, nr_written, 1, NULL);
- 	} else {
- 		set_bit(BTRFS_INODE_HAS_ASYNC_EXTENT,
- 			&BTRFS_I(inode)->runtime_flags);
+@@ -183,3 +191,146 @@ int btrfs_dedupe_disable(struct btrfs_fs_info *fs_info)
+ 	/* Place holder for bisect, will be implemented in later patches */
+ 	return 0;
+ }
++
++static int inmem_insert_hash(struct rb_root *root,
++			     struct inmem_hash *hash, int hash_len)
++{
++	struct rb_node **p = &root->rb_node;
++	struct rb_node *parent = NULL;
++	struct inmem_hash *entry = NULL;
++
++	while (*p) {
++		parent = *p;
++		entry = rb_entry(parent, struct inmem_hash, hash_node);
++		if (memcmp(hash->hash, entry->hash, hash_len) < 0)
++			p = &(*p)->rb_left;
++		else if (memcmp(hash->hash, entry->hash, hash_len) > 0)
++			p = &(*p)->rb_right;
++		else
++			return 1;
++	}
++	rb_link_node(&hash->hash_node, parent, p);
++	rb_insert_color(&hash->hash_node, root);
++	return 0;
++}
++
++static int inmem_insert_bytenr(struct rb_root *root,
++			       struct inmem_hash *hash)
++{
++	struct rb_node **p = &root->rb_node;
++	struct rb_node *parent = NULL;
++	struct inmem_hash *entry = NULL;
++
++	while (*p) {
++		parent = *p;
++		entry = rb_entry(parent, struct inmem_hash, bytenr_node);
++		if (hash->bytenr < entry->bytenr)
++			p = &(*p)->rb_left;
++		else if (hash->bytenr > entry->bytenr)
++			p = &(*p)->rb_right;
++		else
++			return 1;
++	}
++	rb_link_node(&hash->bytenr_node, parent, p);
++	rb_insert_color(&hash->bytenr_node, root);
++	return 0;
++}
++
++static void __inmem_del(struct btrfs_dedupe_info *dedupe_info,
++			struct inmem_hash *hash)
++{
++	list_del(&hash->lru_list);
++	rb_erase(&hash->hash_node, &dedupe_info->hash_root);
++	rb_erase(&hash->bytenr_node, &dedupe_info->bytenr_root);
++
++	if (!WARN_ON(dedupe_info->current_nr == 0))
++		dedupe_info->current_nr--;
++
++	kfree(hash);
++}
++
++/*
++ * Insert a hash into in-memory dedupe tree
++ * Will remove exceeding last recent use hash.
++ *
++ * If the hash mathced with existing one, we won't insert it, to
++ * save memory
++ */
++static int inmem_add(struct btrfs_dedupe_info *dedupe_info,
++		     struct btrfs_dedupe_hash *hash)
++{
++	int ret = 0;
++	u16 algo = dedupe_info->hash_algo;
++	struct inmem_hash *ihash;
++
++	ihash = inmem_alloc_hash(algo);
++
++	if (!ihash)
++		return -ENOMEM;
++
++	/* Copy the data out */
++	ihash->bytenr = hash->bytenr;
++	ihash->num_bytes = hash->num_bytes;
++	memcpy(ihash->hash, hash->hash, btrfs_hash_sizes[algo]);
++
++	mutex_lock(&dedupe_info->lock);
++
++	ret = inmem_insert_bytenr(&dedupe_info->bytenr_root, ihash);
++	if (ret > 0) {
++		kfree(ihash);
++		ret = 0;
++		goto out;
++	}
++
++	ret = inmem_insert_hash(&dedupe_info->hash_root, ihash,
++				btrfs_hash_sizes[algo]);
++	if (ret > 0) {
++		/*
++		 * We only keep one hash in tree to save memory, so if
++		 * hash conflicts, free the one to insert.
++		 */
++		rb_erase(&ihash->bytenr_node, &dedupe_info->bytenr_root);
++		kfree(ihash);
++		ret = 0;
++		goto out;
++	}
++
++	list_add(&ihash->lru_list, &dedupe_info->lru_list);
++	dedupe_info->current_nr++;
++
++	/* Remove the last dedupe hash if we exceed limit */
++	while (dedupe_info->current_nr > dedupe_info->limit_nr) {
++		struct inmem_hash *last;
++
++		last = list_entry(dedupe_info->lru_list.prev,
++				  struct inmem_hash, lru_list);
++		__inmem_del(dedupe_info, last);
++	}
++out:
++	mutex_unlock(&dedupe_info->lock);
++	return 0;
++}
++
++int btrfs_dedupe_add(struct btrfs_trans_handle *trans,
++		     struct btrfs_fs_info *fs_info,
++		     struct btrfs_dedupe_hash *hash)
++{
++	struct btrfs_dedupe_info *dedupe_info = fs_info->dedupe_info;
++
++	if (!fs_info->dedupe_enabled || !hash)
++		return 0;
++
++	if (WARN_ON(dedupe_info == NULL))
++		return -EINVAL;
++
++	if (WARN_ON(!btrfs_dedupe_hash_hit(hash)))
++		return -EINVAL;
++
++	/* ignore old hash */
++	if (dedupe_info->blocksize != hash->num_bytes)
++		return 0;
++
++	if (dedupe_info->backend == BTRFS_DEDUPE_BACKEND_INMEMORY)
++		return inmem_add(dedupe_info, hash);
++	return -EINVAL;
++}
 -- 
 2.9.0
 

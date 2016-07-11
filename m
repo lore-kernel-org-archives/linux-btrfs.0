@@ -1,105 +1,151 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
 Received: from cn.fujitsu.com ([222.73.24.84]:4512 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1757466AbcGKDF6 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 10 Jul 2016 23:05:58 -0400
-Received: from adam-work.localdomain (unknown [10.167.226.34])
-	by cn.fujitsu.com (Postfix) with ESMTP id 352804091CF7
-	for <linux-btrfs@vger.kernel.org>; Mon, 11 Jul 2016 11:05:46 +0800 (CST)
+	id S1757521AbcGKDGD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 10 Jul 2016 23:06:03 -0400
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v12.1 06/15] btrfs: delayed-ref: Add support for increasing data ref under spinlock
-Date: Mon, 11 Jul 2016 11:05:34 +0800
-Message-Id: <20160711030543.30115-7-quwenruo@cn.fujitsu.com>
+Cc: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>,
+        Chandan Rajendra <chandan@linux.vnet.ibm.com>,
+        David Sterba <dsterba@suse.cz>
+Subject: [PATCH v12.1 01/15] btrfs: expand cow_file_range() to support in-band dedup and subpage-blocksize
+Date: Mon, 11 Jul 2016 11:05:29 +0800
+Message-Id: <20160711030543.30115-2-quwenruo@cn.fujitsu.com>
 In-Reply-To: <20160711030543.30115-1-quwenruo@cn.fujitsu.com>
 References: <20160711030543.30115-1-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-For in-band dedupe, btrfs needs to increase data ref with delayed_ref
-locked, so add a new function btrfs_add_delayed_data_ref_lock() to
-increase extent ref with delayed_refs already locked.
+From: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
 
+Extract cow_file_range() new parameters for both in-band dedupe and
+subpage sector size patchset.
+
+This should make conflict of both patchset to minimal, and reduce the
+effort needed to rebase them.
+
+Cc: Chandan Rajendra <chandan@linux.vnet.ibm.com>
+Cc: David Sterba <dsterba@suse.cz>
+Signed-off-by: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Reviewed-by: Josef Bacik <jbacik@fb.com>
 ---
- fs/btrfs/delayed-ref.c | 30 +++++++++++++++++++++++-------
- fs/btrfs/delayed-ref.h |  8 ++++++++
- 2 files changed, 31 insertions(+), 7 deletions(-)
+ fs/btrfs/dedupe.h | 24 ++++++++++++++++++++++++
+ fs/btrfs/inode.c  | 28 +++++++++++++++++-----------
+ 2 files changed, 41 insertions(+), 11 deletions(-)
+ create mode 100644 fs/btrfs/dedupe.h
 
-diff --git a/fs/btrfs/delayed-ref.c b/fs/btrfs/delayed-ref.c
-index e7b1ec0..bd97cf0 100644
---- a/fs/btrfs/delayed-ref.c
-+++ b/fs/btrfs/delayed-ref.c
-@@ -806,6 +806,26 @@ free_ref:
- }
- 
- /*
-+ * Do real delayed data ref insert.
-+ * Caller must hold delayed_refs->lock and allocation memory
-+ * for dref,head_ref and record.
-+ */
-+void btrfs_add_delayed_data_ref_locked(struct btrfs_fs_info *fs_info,
-+			struct btrfs_trans_handle *trans,
-+			struct btrfs_delayed_data_ref *dref,
-+			struct btrfs_delayed_ref_head *head_ref,
-+			struct btrfs_qgroup_extent_record *qrecord,
-+			u64 bytenr, u64 num_bytes, u64 parent, u64 ref_root,
-+			u64 owner, u64 offset, u64 reserved, int action)
-+{
-+	head_ref = add_delayed_ref_head(fs_info, trans, &head_ref->node,
-+			qrecord, bytenr, num_bytes, ref_root, reserved,
-+			action, 1);
-+	add_delayed_data_ref(fs_info, trans, head_ref, &dref->node, bytenr,
-+			num_bytes, parent, ref_root, owner, offset, action);
-+}
-+
+diff --git a/fs/btrfs/dedupe.h b/fs/btrfs/dedupe.h
+new file mode 100644
+index 0000000..83ebfe2
+--- /dev/null
++++ b/fs/btrfs/dedupe.h
+@@ -0,0 +1,24 @@
 +/*
-  * add a delayed data ref. it's similar to btrfs_add_delayed_tree_ref.
++ * Copyright (C) 2016 Fujitsu.  All rights reserved.
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public
++ * License v2 as published by the Free Software Foundation.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++ * General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public
++ * License along with this program; if not, write to the
++ * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
++ * Boston, MA 021110-1307, USA.
++ */
++
++#ifndef __BTRFS_DEDUPE__
++#define __BTRFS_DEDUPE__
++
++/* later in-band dedupe will expand this struct */
++struct btrfs_dedupe_hash;
++#endif
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index bf4319d..ef2b27e 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -60,6 +60,7 @@
+ #include "hash.h"
+ #include "props.h"
+ #include "qgroup.h"
++#include "dedupe.h"
+ 
+ struct btrfs_iget_args {
+ 	struct btrfs_key *location;
+@@ -105,8 +106,9 @@ static int btrfs_truncate(struct inode *inode);
+ static int btrfs_finish_ordered_io(struct btrfs_ordered_extent *ordered_extent);
+ static noinline int cow_file_range(struct inode *inode,
+ 				   struct page *locked_page,
+-				   u64 start, u64 end, int *page_started,
+-				   unsigned long *nr_written, int unlock);
++				   u64 start, u64 end, u64 delalloc_end,
++				   int *page_started, unsigned long *nr_written,
++				   int unlock, struct btrfs_dedupe_hash *hash);
+ static struct extent_map *create_pinned_em(struct inode *inode, u64 start,
+ 					   u64 len, u64 orig_start,
+ 					   u64 block_start, u64 block_len,
+@@ -710,7 +712,10 @@ retry:
+ 					     async_extent->start,
+ 					     async_extent->start +
+ 					     async_extent->ram_size - 1,
+-					     &page_started, &nr_written, 0);
++					     async_extent->start +
++					     async_extent->ram_size - 1,
++					     &page_started, &nr_written, 0,
++					     NULL);
+ 
+ 			/* JDM XXX */
+ 
+@@ -923,9 +928,9 @@ static u64 get_extent_allocation_hint(struct inode *inode, u64 start,
   */
- int btrfs_add_delayed_data_ref(struct btrfs_fs_info *fs_info,
-@@ -850,13 +870,9 @@ int btrfs_add_delayed_data_ref(struct btrfs_fs_info *fs_info,
- 	 * insert both the head node and the new ref without dropping
- 	 * the spin lock
- 	 */
--	head_ref = add_delayed_ref_head(fs_info, trans, &head_ref->node, record,
--					bytenr, num_bytes, ref_root, reserved,
--					action, 1);
--
--	add_delayed_data_ref(fs_info, trans, head_ref, &ref->node, bytenr,
--				   num_bytes, parent, ref_root, owner, offset,
--				   action);
-+	btrfs_add_delayed_data_ref_locked(fs_info, trans, ref, head_ref, record,
-+			bytenr, num_bytes, parent, ref_root, owner, offset,
-+			reserved, action);
- 	spin_unlock(&delayed_refs->lock);
- 
- 	return 0;
-diff --git a/fs/btrfs/delayed-ref.h b/fs/btrfs/delayed-ref.h
-index 5fca953..5830341 100644
---- a/fs/btrfs/delayed-ref.h
-+++ b/fs/btrfs/delayed-ref.h
-@@ -239,11 +239,19 @@ static inline void btrfs_put_delayed_ref(struct btrfs_delayed_ref_node *ref)
+ static noinline int cow_file_range(struct inode *inode,
+ 				   struct page *locked_page,
+-				   u64 start, u64 end, int *page_started,
+-				   unsigned long *nr_written,
+-				   int unlock)
++				   u64 start, u64 end, u64 delalloc_end,
++				   int *page_started, unsigned long *nr_written,
++				   int unlock, struct btrfs_dedupe_hash *hash)
+ {
+ 	struct btrfs_root *root = BTRFS_I(inode)->root;
+ 	u64 alloc_hint = 0;
+@@ -1416,7 +1421,8 @@ out_check:
+ 		if (cow_start != (u64)-1) {
+ 			ret = cow_file_range(inode, locked_page,
+ 					     cow_start, found_key.offset - 1,
+-					     page_started, nr_written, 1);
++					     end, page_started, nr_written, 1,
++					     NULL);
+ 			if (ret) {
+ 				if (!nolock && nocow)
+ 					btrfs_end_write_no_snapshoting(root);
+@@ -1499,8 +1505,8 @@ out_check:
  	}
- }
  
-+struct btrfs_qgroup_extent_record;
- int btrfs_add_delayed_tree_ref(struct btrfs_fs_info *fs_info,
- 			       struct btrfs_trans_handle *trans,
- 			       u64 bytenr, u64 num_bytes, u64 parent,
- 			       u64 ref_root, int level, int action,
- 			       struct btrfs_delayed_extent_op *extent_op);
-+void btrfs_add_delayed_data_ref_locked(struct btrfs_fs_info *fs_info,
-+			struct btrfs_trans_handle *trans,
-+			struct btrfs_delayed_data_ref *dref,
-+			struct btrfs_delayed_ref_head *head_ref,
-+			struct btrfs_qgroup_extent_record *qrecord,
-+			u64 bytenr, u64 num_bytes, u64 parent, u64 ref_root,
-+			u64 owner, u64 offset, u64 reserved, int action);
- int btrfs_add_delayed_data_ref(struct btrfs_fs_info *fs_info,
- 			       struct btrfs_trans_handle *trans,
- 			       u64 bytenr, u64 num_bytes,
+ 	if (cow_start != (u64)-1) {
+-		ret = cow_file_range(inode, locked_page, cow_start, end,
+-				     page_started, nr_written, 1);
++		ret = cow_file_range(inode, locked_page, cow_start, end, end,
++				     page_started, nr_written, 1, NULL);
+ 		if (ret)
+ 			goto error;
+ 	}
+@@ -1559,8 +1565,8 @@ static int run_delalloc_range(struct inode *inode, struct page *locked_page,
+ 		ret = run_delalloc_nocow(inode, locked_page, start, end,
+ 					 page_started, 0, nr_written);
+ 	} else if (!inode_need_compress(inode)) {
+-		ret = cow_file_range(inode, locked_page, start, end,
+-				      page_started, nr_written, 1);
++		ret = cow_file_range(inode, locked_page, start, end, end,
++				      page_started, nr_written, 1, NULL);
+ 	} else {
+ 		set_bit(BTRFS_INODE_HAS_ASYNC_EXTENT,
+ 			&BTRFS_I(inode)->runtime_flags);
 -- 
 2.9.0
 

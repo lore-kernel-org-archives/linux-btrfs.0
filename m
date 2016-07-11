@@ -1,258 +1,105 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
 Received: from cn.fujitsu.com ([222.73.24.84]:4512 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1757302AbcGKDFz (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 10 Jul 2016 23:05:55 -0400
+	id S1757466AbcGKDF6 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 10 Jul 2016 23:05:58 -0400
+Received: from adam-work.localdomain (unknown [10.167.226.34])
+	by cn.fujitsu.com (Postfix) with ESMTP id 352804091CF7
+	for <linux-btrfs@vger.kernel.org>; Mon, 11 Jul 2016 11:05:46 +0800 (CST)
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
-Cc: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
-Subject: [PATCH v12.1 02/15] btrfs: dedupe: Introduce dedupe framework and its header
-Date: Mon, 11 Jul 2016 11:05:30 +0800
-Message-Id: <20160711030543.30115-3-quwenruo@cn.fujitsu.com>
+Subject: [PATCH v12.1 06/15] btrfs: delayed-ref: Add support for increasing data ref under spinlock
+Date: Mon, 11 Jul 2016 11:05:34 +0800
+Message-Id: <20160711030543.30115-7-quwenruo@cn.fujitsu.com>
 In-Reply-To: <20160711030543.30115-1-quwenruo@cn.fujitsu.com>
 References: <20160711030543.30115-1-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
-
-Introduce the header for btrfs in-band(write time) de-duplication
-framework and needed header.
-
-The new de-duplication framework is going to support 2 different dedupe
-methods and 1 dedupe hash.
+For in-band dedupe, btrfs needs to increase data ref with delayed_ref
+locked, so add a new function btrfs_add_delayed_data_ref_lock() to
+increase extent ref with delayed_refs already locked.
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Signed-off-by: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
+Reviewed-by: Josef Bacik <jbacik@fb.com>
 ---
- fs/btrfs/ctree.h           |   7 +++
- fs/btrfs/dedupe.h          | 137 ++++++++++++++++++++++++++++++++++++++++++++-
- fs/btrfs/disk-io.c         |   1 +
- include/uapi/linux/btrfs.h |  34 +++++++++++
- 4 files changed, 177 insertions(+), 2 deletions(-)
+ fs/btrfs/delayed-ref.c | 30 +++++++++++++++++++++++-------
+ fs/btrfs/delayed-ref.h |  8 ++++++++
+ 2 files changed, 31 insertions(+), 7 deletions(-)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 83a6a93..412aad0 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -1093,6 +1093,13 @@ struct btrfs_fs_info {
- 	struct list_head pinned_chunks;
+diff --git a/fs/btrfs/delayed-ref.c b/fs/btrfs/delayed-ref.c
+index e7b1ec0..bd97cf0 100644
+--- a/fs/btrfs/delayed-ref.c
++++ b/fs/btrfs/delayed-ref.c
+@@ -806,6 +806,26 @@ free_ref:
+ }
  
- 	int creating_free_space_tree;
-+
-+	/*
-+	 * Inband de-duplication related structures
-+	 */
-+	unsigned long dedupe_enabled:1;
-+	struct btrfs_dedupe_info *dedupe_info;
-+	struct mutex dedupe_ioctl_lock;
- };
- 
- struct btrfs_subvolume_writers {
-diff --git a/fs/btrfs/dedupe.h b/fs/btrfs/dedupe.h
-index 83ebfe2..8f57661 100644
---- a/fs/btrfs/dedupe.h
-+++ b/fs/btrfs/dedupe.h
-@@ -19,6 +19,139 @@
- #ifndef __BTRFS_DEDUPE__
- #define __BTRFS_DEDUPE__
- 
--/* later in-band dedupe will expand this struct */
--struct btrfs_dedupe_hash;
-+#include <linux/btrfs.h>
-+#include <linux/wait.h>
-+#include <crypto/hash.h>
-+
-+static int btrfs_hash_sizes[] = { 32 };
-+
-+/*
-+ * For caller outside of dedupe.c
-+ *
-+ * Different dedupe backends should have their own hash structure
+ /*
++ * Do real delayed data ref insert.
++ * Caller must hold delayed_refs->lock and allocation memory
++ * for dref,head_ref and record.
 + */
-+struct btrfs_dedupe_hash {
-+	u64 bytenr;
-+	u32 num_bytes;
-+
-+	/* last field is a variable length array of dedupe hash */
-+	u8 hash[];
-+};
-+
-+struct btrfs_dedupe_info {
-+	/* dedupe blocksize */
-+	u64 blocksize;
-+	u16 backend;
-+	u16 hash_algo;
-+
-+	struct crypto_shash *dedupe_driver;
-+
-+	/*
-+	 * Use mutex to portect both backends
-+	 * Even for in-memory backends, the rb-tree can be quite large,
-+	 * so mutex is better for such use case.
-+	 */
-+	struct mutex lock;
-+
-+	/* following members are only used in in-memory backend */
-+	struct rb_root hash_root;
-+	struct rb_root bytenr_root;
-+	struct list_head lru_list;
-+	u64 limit_nr;
-+	u64 current_nr;
-+};
-+
-+struct btrfs_trans_handle;
-+
-+static inline int btrfs_dedupe_hash_hit(struct btrfs_dedupe_hash *hash)
++void btrfs_add_delayed_data_ref_locked(struct btrfs_fs_info *fs_info,
++			struct btrfs_trans_handle *trans,
++			struct btrfs_delayed_data_ref *dref,
++			struct btrfs_delayed_ref_head *head_ref,
++			struct btrfs_qgroup_extent_record *qrecord,
++			u64 bytenr, u64 num_bytes, u64 parent, u64 ref_root,
++			u64 owner, u64 offset, u64 reserved, int action)
 +{
-+	return (hash && hash->bytenr);
++	head_ref = add_delayed_ref_head(fs_info, trans, &head_ref->node,
++			qrecord, bytenr, num_bytes, ref_root, reserved,
++			action, 1);
++	add_delayed_data_ref(fs_info, trans, head_ref, &dref->node, bytenr,
++			num_bytes, parent, ref_root, owner, offset, action);
 +}
 +
-+int btrfs_dedupe_hash_size(u16 algo);
-+struct btrfs_dedupe_hash *btrfs_dedupe_alloc_hash(u16 algo);
-+
 +/*
-+ * Initial inband dedupe info
-+ * Called at dedupe enable time.
-+ *
-+ * Return 0 for success
-+ * Return <0 for any error
-+ * (from unsupported param to tree creation error for some backends)
-+ */
-+int btrfs_dedupe_enable(struct btrfs_fs_info *fs_info,
-+			struct btrfs_ioctl_dedupe_args *dargs);
-+
-+/*
-+ * Disable dedupe and invalidate all its dedupe data.
-+ * Called at dedupe disable time.
-+ *
-+ * Return 0 for success
-+ * Return <0 for any error
-+ * (tree operation error for some backends)
-+ */
-+int btrfs_dedupe_disable(struct btrfs_fs_info *fs_info);
-+
-+/*
-+ * Get current dedupe status.
-+ * Return 0 for success
-+ * No possible error yet
-+ */
-+void btrfs_dedupe_status(struct btrfs_fs_info *fs_info,
-+			 struct btrfs_ioctl_dedupe_args *dargs);
-+
-+/*
-+ * Calculate hash for dedupe.
-+ * Caller must ensure [start, start + dedupe_bs) has valid data.
-+ *
-+ * Return 0 for success
-+ * Return <0 for any error
-+ * (error from hash codes)
-+ */
-+int btrfs_dedupe_calc_hash(struct btrfs_fs_info *fs_info,
-+			   struct inode *inode, u64 start,
-+			   struct btrfs_dedupe_hash *hash);
-+
-+/*
-+ * Search for duplicated extents by calculated hash
-+ * Caller must call btrfs_dedupe_calc_hash() first to get the hash.
-+ *
-+ * @inode: the inode for we are writing
-+ * @file_pos: offset inside the inode
-+ * As we will increase extent ref immediately after a hash match,
-+ * we need @file_pos and @inode in this case.
-+ *
-+ * Return > 0 for a hash match, and the extent ref will be
-+ * *INCREASED*, and hash->bytenr/num_bytes will record the existing
-+ * extent data.
-+ * Return 0 for a hash miss. Nothing is done
-+ * Return <0 for any error
-+ * (tree operation error for some backends)
-+ */
-+int btrfs_dedupe_search(struct btrfs_fs_info *fs_info,
-+			struct inode *inode, u64 file_pos,
-+			struct btrfs_dedupe_hash *hash);
-+
-+/*
-+ * Add a dedupe hash into dedupe info
-+ * Return 0 for success
-+ * Return <0 for any error
-+ * (tree operation error for some backends)
-+ */
-+int btrfs_dedupe_add(struct btrfs_trans_handle *trans,
-+		     struct btrfs_fs_info *fs_info,
-+		     struct btrfs_dedupe_hash *hash);
-+
-+/*
-+ * Remove a dedupe hash from dedupe info
-+ * Return 0 for success
-+ * Return <0 for any error
-+ * (tree operation error for some backends)
-+ *
-+ * NOTE: if hash deletion error is not handled well, it will lead
-+ * to corrupted fs, as later dedupe write can points to non-exist or even
-+ * wrong extent.
-+ */
-+int btrfs_dedupe_del(struct btrfs_trans_handle *trans,
-+		     struct btrfs_fs_info *fs_info, u64 bytenr);
- #endif
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 9cb955a..ebc641b 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -2608,6 +2608,7 @@ int open_ctree(struct super_block *sb,
- 	mutex_init(&fs_info->reloc_mutex);
- 	mutex_init(&fs_info->delalloc_root_mutex);
- 	mutex_init(&fs_info->cleaner_delayed_iput_mutex);
-+	mutex_init(&fs_info->dedupe_ioctl_lock);
- 	seqlock_init(&fs_info->profiles_lock);
+  * add a delayed data ref. it's similar to btrfs_add_delayed_tree_ref.
+  */
+ int btrfs_add_delayed_data_ref(struct btrfs_fs_info *fs_info,
+@@ -850,13 +870,9 @@ int btrfs_add_delayed_data_ref(struct btrfs_fs_info *fs_info,
+ 	 * insert both the head node and the new ref without dropping
+ 	 * the spin lock
+ 	 */
+-	head_ref = add_delayed_ref_head(fs_info, trans, &head_ref->node, record,
+-					bytenr, num_bytes, ref_root, reserved,
+-					action, 1);
+-
+-	add_delayed_data_ref(fs_info, trans, head_ref, &ref->node, bytenr,
+-				   num_bytes, parent, ref_root, owner, offset,
+-				   action);
++	btrfs_add_delayed_data_ref_locked(fs_info, trans, ref, head_ref, record,
++			bytenr, num_bytes, parent, ref_root, owner, offset,
++			reserved, action);
+ 	spin_unlock(&delayed_refs->lock);
  
- 	INIT_LIST_HEAD(&fs_info->dirty_cowonly_roots);
-diff --git a/include/uapi/linux/btrfs.h b/include/uapi/linux/btrfs.h
-index 2bdd1e3..f3f09b7 100644
---- a/include/uapi/linux/btrfs.h
-+++ b/include/uapi/linux/btrfs.h
-@@ -619,6 +619,40 @@ struct btrfs_ioctl_get_dev_stats {
- 	__u64 unused[128 - 2 - BTRFS_DEV_STAT_VALUES_MAX]; /* pad to 1k */
- };
+ 	return 0;
+diff --git a/fs/btrfs/delayed-ref.h b/fs/btrfs/delayed-ref.h
+index 5fca953..5830341 100644
+--- a/fs/btrfs/delayed-ref.h
++++ b/fs/btrfs/delayed-ref.h
+@@ -239,11 +239,19 @@ static inline void btrfs_put_delayed_ref(struct btrfs_delayed_ref_node *ref)
+ 	}
+ }
  
-+/* In-band dedupe related */
-+#define BTRFS_DEDUPE_BACKEND_INMEMORY		0
-+#define BTRFS_DEDUPE_BACKEND_ONDISK		1
-+
-+/* Only support inmemory yet, so count is still only 1 */
-+#define BTRFS_DEDUPE_BACKEND_COUNT		1
-+
-+/* Dedup block size limit and default value */
-+#define BTRFS_DEDUPE_BLOCKSIZE_MAX	(8 * 1024 * 1024)
-+#define BTRFS_DEDUPE_BLOCKSIZE_MIN	(16 * 1024)
-+#define BTRFS_DEDUPE_BLOCKSIZE_DEFAULT	(128 * 1024)
-+
-+/* Hash algorithm, only support SHA256 yet */
-+#define BTRFS_DEDUPE_HASH_SHA256		0
-+
-+/*
-+ * This structure is used for dedupe enable/disable/configure
-+ * and status ioctl.
-+ * Reserved range should be set to 0xff.
-+ */
-+struct btrfs_ioctl_dedupe_args {
-+	__u16 cmd;		/* In: command */
-+	__u64 blocksize;	/* In/Out: blocksize */
-+	__u64 limit_nr;		/* In/Out: limit nr for inmem backend */
-+	__u64 limit_mem;	/* In/Out: limit mem for inmem backend */
-+	__u64 current_nr;	/* Out: current hash nr */
-+	__u16 backend;		/* In/Out: current backend */
-+	__u16 hash_algo;	/* In/Out: hash algorithm */
-+	u8 status;		/* Out: enabled or disabled */
-+	u8 flags;		/* In: special flags for ioctl */
-+	u8 __unused[472];	/* Pad to 512 bytes */
-+};
-+
-+
- #define BTRFS_QUOTA_CTL_ENABLE	1
- #define BTRFS_QUOTA_CTL_DISABLE	2
- #define BTRFS_QUOTA_CTL_RESCAN__NOTUSED	3
++struct btrfs_qgroup_extent_record;
+ int btrfs_add_delayed_tree_ref(struct btrfs_fs_info *fs_info,
+ 			       struct btrfs_trans_handle *trans,
+ 			       u64 bytenr, u64 num_bytes, u64 parent,
+ 			       u64 ref_root, int level, int action,
+ 			       struct btrfs_delayed_extent_op *extent_op);
++void btrfs_add_delayed_data_ref_locked(struct btrfs_fs_info *fs_info,
++			struct btrfs_trans_handle *trans,
++			struct btrfs_delayed_data_ref *dref,
++			struct btrfs_delayed_ref_head *head_ref,
++			struct btrfs_qgroup_extent_record *qrecord,
++			u64 bytenr, u64 num_bytes, u64 parent, u64 ref_root,
++			u64 owner, u64 offset, u64 reserved, int action);
+ int btrfs_add_delayed_data_ref(struct btrfs_fs_info *fs_info,
+ 			       struct btrfs_trans_handle *trans,
+ 			       u64 bytenr, u64 num_bytes,
 -- 
 2.9.0
 

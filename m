@@ -1,14 +1,15 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:41536 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:57172 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1757530AbcGKDGG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 10 Jul 2016 23:06:06 -0400
+	id S1757561AbcGKDGW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 10 Jul 2016 23:06:22 -0400
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
-Cc: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
-Subject: [PATCH v12.1 09/15] btrfs: ordered-extent: Add support for dedupe
-Date: Mon, 11 Jul 2016 11:05:37 +0800
-Message-Id: <20160711030543.30115-10-quwenruo@cn.fujitsu.com>
+Cc: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>, Mark Fasheh <mfasheh@suse.de>,
+        Josef Bacik <jbacik@fb.com>
+Subject: [PATCH v12.1 13/15] btrfs: improve inode's outstanding_extents computation
+Date: Mon, 11 Jul 2016 11:05:41 +0800
+Message-Id: <20160711030543.30115-14-quwenruo@cn.fujitsu.com>
 In-Reply-To: <20160711030543.30115-1-quwenruo@cn.fujitsu.com>
 References: <20160711030543.30115-1-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -17,150 +18,253 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
 
-Add ordered-extent support for dedupe.
+This issue was revealed by modifying BTRFS_MAX_EXTENT_SIZE(128MB) to 64KB,
+When modifying BTRFS_MAX_EXTENT_SIZE(128MB) to 64KB, fsstress test often
+gets these warnings from btrfs_destroy_inode():
+	WARN_ON(BTRFS_I(inode)->outstanding_extents);
+	WARN_ON(BTRFS_I(inode)->reserved_extents);
 
-Note, current ordered-extent support only supports non-compressed source
-extent.
-Support for compressed source extent will be added later.
+Simple test program below can reproduce this issue steadily.
+Note: you need to modify BTRFS_MAX_EXTENT_SIZE to 64KB to have test,
+otherwise there won't be such WARNING.
+	#include <string.h>
+	#include <unistd.h>
+	#include <sys/types.h>
+	#include <sys/stat.h>
+	#include <fcntl.h>
 
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+	int main(void)
+	{
+		int fd;
+		char buf[68 *1024];
+
+		memset(buf, 0, 68 * 1024);
+		fd = open("testfile", O_CREAT | O_EXCL | O_RDWR);
+		pwrite(fd, buf, 68 * 1024, 64 * 1024);
+		return;
+	}
+
+When BTRFS_MAX_EXTENT_SIZE is 64KB, and buffered data range is:
+64KB						128K		132KB
+|-----------------------------------------------|---------------|
+                         64 + 4KB
+
+1) for above data range, btrfs_delalloc_reserve_metadata() will reserve
+metadata and set BTRFS_I(inode)->outstanding_extents to 2.
+(68KB + 64KB - 1) / 64KB == 2
+
+Outstanding_extents: 2
+
+2) then btrfs_dirty_page() will be called to dirty pages and set
+EXTENT_DELALLOC flag. In this case, btrfs_set_bit_hook() will be called
+twice.
+The 1st set_bit_hook() call will set DEALLOC flag for the first 64K.
+64KB						128KB
+|-----------------------------------------------|
+	64KB DELALLOC
+Outstanding_extents: 2
+
+Set_bit_hooks() uses FIRST_DELALLOC flag to avoid re-increase
+outstanding_extents counter.
+So for 1st set_bit_hooks() call, it won't modify outstanding_extents,
+it's still 2.
+
+Then FIRST_DELALLOC flag is *CLEARED*.
+
+3) 2nd btrfs_set_bit_hook() call.
+Because FIRST_DELALLOC have been cleared by previous set_bit_hook(),
+btrfs_set_bit_hook() will increase BTRFS_I(inode)->outstanding_extents by
+one, so now BTRFS_I(inode)->outstanding_extents is 3.
+64KB                                            128KB            132KB
+|-----------------------------------------------|----------------|
+	64K DELALLOC				   4K DELALLOC
+Outstanding_extents: 3
+
+But the correct outstanding_extents number should be 2, not 3.
+The 2nd btrfs_set_bit_hook() call just screwed up this, and leads to the
+WARN_ON().
+
+Normally, we can solve it by only increasing outstanding_extents in
+set_bit_hook().
+But the problem is for delalloc_reserve/release_metadata(), we only have
+a 'length' parameter, and calculate in-accurate outstanding_extents.
+If we only rely on set_bit_hook() release_metadata() will crew things up
+as it will decrease inaccurate number.
+
+So the fix we use is:
+1) Increase *INACCURATE* outstanding_extents at delalloc_reserve_meta
+   Just as a place holder.
+2) Increase *accurate* outstanding_extents at set_bit_hooks()
+   This is the real increaser.
+3) Decrease *INACCURATE* outstanding_extents before returning
+   This makes outstanding_extents to correct value.
+
+For 128M BTRFS_MAX_EXTENT_SIZE, due to limitation of
+__btrfs_buffered_write(), each iteration will only handle about 2MB
+data.
+So btrfs_dirty_pages() won't need to handle cases cross 2 extents.
+
+Cc: Mark Fasheh <mfasheh@suse.de>
+Cc: Josef Bacik <jbacik@fb.com>
 Signed-off-by: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
-Reviewed-by: Josef Bacik <jbacik@fb.com>
 ---
- fs/btrfs/ordered-data.c | 46 ++++++++++++++++++++++++++++++++++++++++++----
- fs/btrfs/ordered-data.h | 13 +++++++++++++
- 2 files changed, 55 insertions(+), 4 deletions(-)
+ fs/btrfs/ctree.h |  2 ++
+ fs/btrfs/inode.c | 68 +++++++++++++++++++++++++++++++++++++++++++++++++++-----
+ fs/btrfs/ioctl.c |  6 ++---
+ 3 files changed, 66 insertions(+), 10 deletions(-)
 
-diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
-index aca8264..eedb292 100644
---- a/fs/btrfs/ordered-data.c
-+++ b/fs/btrfs/ordered-data.c
-@@ -26,6 +26,7 @@
- #include "extent_io.h"
- #include "disk-io.h"
- #include "compression.h"
-+#include "dedupe.h"
- 
- static struct kmem_cache *btrfs_ordered_extent_cache;
- 
-@@ -184,7 +185,8 @@ static inline struct rb_node *tree_search(struct btrfs_ordered_inode_tree *tree,
-  */
- static int __btrfs_add_ordered_extent(struct inode *inode, u64 file_offset,
- 				      u64 start, u64 len, u64 disk_len,
--				      int type, int dio, int compress_type)
-+				      int type, int dio, int compress_type,
-+				      struct btrfs_dedupe_hash *hash)
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 412aad0..fc5bae3 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -3105,6 +3105,8 @@ int btrfs_start_delalloc_roots(struct btrfs_fs_info *fs_info, int delay_iput,
+ 			       int nr);
+ int btrfs_set_extent_delalloc(struct inode *inode, u64 start, u64 end,
+ 			      struct extent_state **cached_state);
++int btrfs_set_extent_defrag(struct inode *inode, u64 start, u64 end,
++			    struct extent_state **cached_state);
+ int btrfs_create_subvol_root(struct btrfs_trans_handle *trans,
+ 			     struct btrfs_root *new_root,
+ 			     struct btrfs_root *parent_root,
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 7bfbaec..41994db 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -1730,11 +1730,15 @@ static void btrfs_split_extent_hook(struct inode *inode,
+ 				    struct extent_state *orig, u64 split)
  {
- 	struct btrfs_root *root = BTRFS_I(inode)->root;
- 	struct btrfs_ordered_inode_tree *tree;
-@@ -204,6 +206,33 @@ static int __btrfs_add_ordered_extent(struct inode *inode, u64 file_offset,
- 	entry->inode = igrab(inode);
- 	entry->compress_type = compress_type;
- 	entry->truncated_len = (u64)-1;
-+	entry->hash = NULL;
-+	/*
-+	 * A hash hit means we have already incremented the extents delayed
-+	 * ref.
-+	 * We must handle this even if another process is trying to
-+	 * turn off dedupe, otherwise we will leak a reference.
-+	 */
-+	if (hash && (hash->bytenr || root->fs_info->dedupe_enabled)) {
-+		struct btrfs_dedupe_info *dedupe_info;
+ 	u64 size;
++	struct btrfs_root *root = BTRFS_I(inode)->root;
+ 
+ 	/* not delalloc, ignore it */
+ 	if (!(orig->state & EXTENT_DELALLOC))
+ 		return;
+ 
++	if (root == root->fs_info->tree_root)
++		return;
 +
-+		dedupe_info = root->fs_info->dedupe_info;
-+		if (WARN_ON(dedupe_info == NULL)) {
-+			kmem_cache_free(btrfs_ordered_extent_cache,
-+					entry);
-+			return -EINVAL;
-+		}
-+		entry->hash = btrfs_dedupe_alloc_hash(dedupe_info->hash_algo);
-+		if (!entry->hash) {
-+			kmem_cache_free(btrfs_ordered_extent_cache, entry);
-+			return -ENOMEM;
-+		}
-+		entry->hash->bytenr = hash->bytenr;
-+		entry->hash->num_bytes = hash->num_bytes;
-+		memcpy(entry->hash->hash, hash->hash,
-+		       btrfs_hash_sizes[dedupe_info->hash_algo]);
+ 	size = orig->end - orig->start + 1;
+ 	if (size > BTRFS_MAX_EXTENT_SIZE) {
+ 		u64 num_extents;
+@@ -1772,11 +1776,15 @@ static void btrfs_merge_extent_hook(struct inode *inode,
+ {
+ 	u64 new_size, old_size;
+ 	u64 num_extents;
++	struct btrfs_root *root = BTRFS_I(inode)->root;
+ 
+ 	/* not delalloc, ignore it */
+ 	if (!(other->state & EXTENT_DELALLOC))
+ 		return;
+ 
++	if (root == root->fs_info->tree_root)
++		return;
++
+ 	if (new->start > other->start)
+ 		new_size = new->end - other->start + 1;
+ 	else
+@@ -1883,13 +1891,16 @@ static void btrfs_set_bit_hook(struct inode *inode,
+ 	if (!(state->state & EXTENT_DELALLOC) && (*bits & EXTENT_DELALLOC)) {
+ 		struct btrfs_root *root = BTRFS_I(inode)->root;
+ 		u64 len = state->end + 1 - state->start;
++		u64 num_extents = div64_u64(len + BTRFS_MAX_EXTENT_SIZE - 1,
++					    BTRFS_MAX_EXTENT_SIZE);
+ 		bool do_list = !btrfs_is_free_space_inode(inode);
+ 
+-		if (*bits & EXTENT_FIRST_DELALLOC) {
++		if (*bits & EXTENT_FIRST_DELALLOC)
+ 			*bits &= ~EXTENT_FIRST_DELALLOC;
+-		} else {
++
++		if (root != root->fs_info->tree_root) {
+ 			spin_lock(&BTRFS_I(inode)->lock);
+-			BTRFS_I(inode)->outstanding_extents++;
++			BTRFS_I(inode)->outstanding_extents += num_extents;
+ 			spin_unlock(&BTRFS_I(inode)->lock);
+ 		}
+ 
+@@ -1937,7 +1948,7 @@ static void btrfs_clear_bit_hook(struct inode *inode,
+ 
+ 		if (*bits & EXTENT_FIRST_DELALLOC) {
+ 			*bits &= ~EXTENT_FIRST_DELALLOC;
+-		} else if (!(*bits & EXTENT_DO_ACCOUNTING)) {
++		} else if (!(*bits & EXTENT_DO_ACCOUNTING) && do_list) {
+ 			spin_lock(&BTRFS_I(inode)->lock);
+ 			BTRFS_I(inode)->outstanding_extents -= num_extents;
+ 			spin_unlock(&BTRFS_I(inode)->lock);
+@@ -2134,9 +2145,54 @@ static noinline int add_pending_csums(struct btrfs_trans_handle *trans,
+ int btrfs_set_extent_delalloc(struct inode *inode, u64 start, u64 end,
+ 			      struct extent_state **cached_state)
+ {
++	int ret;
++	struct btrfs_root *root = BTRFS_I(inode)->root;
++	u64 num_extents = div64_u64(end - start + BTRFS_MAX_EXTENT_SIZE,
++				    BTRFS_MAX_EXTENT_SIZE);
++
+ 	WARN_ON((end & (PAGE_SIZE - 1)) == 0);
+-	return set_extent_delalloc(&BTRFS_I(inode)->io_tree, start, end,
+-				   cached_state);
++	ret = set_extent_delalloc(&BTRFS_I(inode)->io_tree, start, end,
++				  cached_state);
++
++	/*
++	 * btrfs_delalloc_reserve_metadata() will first add number of
++	 * outstanding extents according to data length, which is inaccurate
++	 * for case like dirtying already dirty pages.
++	 * so here we will decrease such inaccurate numbers, to make
++	 * outstanding_extents only rely on the correct values added by
++	 * set_bit_hook()
++	 *
++	 * Also, we skipped the metadata space reserve for space cache inodes,
++	 * so don't modify the outstanding_extents value.
++	 */
++	if (ret == 0 && root != root->fs_info->tree_root) {
++		spin_lock(&BTRFS_I(inode)->lock);
++		BTRFS_I(inode)->outstanding_extents -= num_extents;
++		spin_unlock(&BTRFS_I(inode)->lock);
 +	}
 +
- 	if (type != BTRFS_ORDERED_IO_DONE && type != BTRFS_ORDERED_COMPLETE)
- 		set_bit(type, &entry->flags);
- 
-@@ -250,15 +279,23 @@ int btrfs_add_ordered_extent(struct inode *inode, u64 file_offset,
- {
- 	return __btrfs_add_ordered_extent(inode, file_offset, start, len,
- 					  disk_len, type, 0,
--					  BTRFS_COMPRESS_NONE);
-+					  BTRFS_COMPRESS_NONE, NULL);
- }
- 
-+int btrfs_add_ordered_extent_dedupe(struct inode *inode, u64 file_offset,
-+				   u64 start, u64 len, u64 disk_len, int type,
-+				   struct btrfs_dedupe_hash *hash)
-+{
-+	return __btrfs_add_ordered_extent(inode, file_offset, start, len,
-+					  disk_len, type, 0,
-+					  BTRFS_COMPRESS_NONE, hash);
++	return ret;
 +}
- int btrfs_add_ordered_extent_dio(struct inode *inode, u64 file_offset,
- 				 u64 start, u64 len, u64 disk_len, int type)
- {
- 	return __btrfs_add_ordered_extent(inode, file_offset, start, len,
- 					  disk_len, type, 1,
--					  BTRFS_COMPRESS_NONE);
-+					  BTRFS_COMPRESS_NONE, NULL);
- }
- 
- int btrfs_add_ordered_extent_compress(struct inode *inode, u64 file_offset,
-@@ -267,7 +304,7 @@ int btrfs_add_ordered_extent_compress(struct inode *inode, u64 file_offset,
- {
- 	return __btrfs_add_ordered_extent(inode, file_offset, start, len,
- 					  disk_len, type, 0,
--					  compress_type);
-+					  compress_type, NULL);
- }
- 
- /*
-@@ -577,6 +614,7 @@ void btrfs_put_ordered_extent(struct btrfs_ordered_extent *entry)
- 			list_del(&sum->list);
- 			kfree(sum);
- 		}
-+		kfree(entry->hash);
- 		kmem_cache_free(btrfs_ordered_extent_cache, entry);
- 	}
- }
-diff --git a/fs/btrfs/ordered-data.h b/fs/btrfs/ordered-data.h
-index 4515077..8dda4a5 100644
---- a/fs/btrfs/ordered-data.h
-+++ b/fs/btrfs/ordered-data.h
-@@ -139,6 +139,16 @@ struct btrfs_ordered_extent {
- 	struct completion completion;
- 	struct btrfs_work flush_work;
- 	struct list_head work_list;
 +
-+	/*
-+	 * For inband deduplication
-+	 * If hash is NULL, no deduplication.
-+	 * If hash->bytenr is zero, means this is a dedupe miss, hash will
-+	 * be added into dedupe tree.
-+	 * If hash->bytenr is non-zero, this is a dedupe hit. Extent ref is
-+	 * *ALREADY* increased.
-+	 */
-+	struct btrfs_dedupe_hash *hash;
- };
++int btrfs_set_extent_defrag(struct inode *inode, u64 start, u64 end,
++			    struct extent_state **cached_state)
++{
++	int ret;
++	struct btrfs_root *root = BTRFS_I(inode)->root;
++	u64 num_extents = div64_u64(end - start + BTRFS_MAX_EXTENT_SIZE,
++				    BTRFS_MAX_EXTENT_SIZE);
++
++	WARN_ON((end & (PAGE_SIZE - 1)) == 0);
++	ret = set_extent_defrag(&BTRFS_I(inode)->io_tree, start, end,
++				cached_state);
++
++	if (ret == 0 && root != root->fs_info->tree_root) {
++		spin_lock(&BTRFS_I(inode)->lock);
++		BTRFS_I(inode)->outstanding_extents -= num_extents;
++		spin_unlock(&BTRFS_I(inode)->lock);
++	}
++
++	return ret;
+ }
  
- /*
-@@ -172,6 +182,9 @@ int btrfs_dec_test_first_ordered_pending(struct inode *inode,
- 				   int uptodate);
- int btrfs_add_ordered_extent(struct inode *inode, u64 file_offset,
- 			     u64 start, u64 len, u64 disk_len, int type);
-+int btrfs_add_ordered_extent_dedupe(struct inode *inode, u64 file_offset,
-+				   u64 start, u64 len, u64 disk_len, int type,
-+				   struct btrfs_dedupe_hash *hash);
- int btrfs_add_ordered_extent_dio(struct inode *inode, u64 file_offset,
- 				 u64 start, u64 len, u64 disk_len, int type);
- int btrfs_add_ordered_extent_compress(struct inode *inode, u64 file_offset,
+ /* see btrfs_writepage_start_hook for details on why this is required */
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 5655816..d6149ef 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -1236,10 +1236,8 @@ again:
+ 				(page_cnt - i_done) << PAGE_SHIFT);
+ 	}
+ 
+-
+-	set_extent_defrag(&BTRFS_I(inode)->io_tree, page_start, page_end - 1,
+-			  &cached_state);
+-
++	btrfs_set_extent_defrag(inode, page_start,
++				page_end - 1, &cached_state);
+ 	unlock_extent_cached(&BTRFS_I(inode)->io_tree,
+ 			     page_start, page_end - 1, &cached_state,
+ 			     GFP_NOFS);
 -- 
 2.9.0
 

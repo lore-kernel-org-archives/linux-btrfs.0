@@ -1,47 +1,113 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:39065 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754746AbcGLR3x (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 12 Jul 2016 13:29:53 -0400
-Date: Tue, 12 Jul 2016 19:30:02 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Liu Bo <bo.li.liu@oracle.com>
-Cc: linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.cz>
-Subject: Re: [PATCH v3] Btrfs: fix eb memory leak due to readpage failure
-Message-ID: <20160712173002.GI10595@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
+Received: from aserp1040.oracle.com ([141.146.126.69]:16768 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751669AbcGKRgN (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 11 Jul 2016 13:36:13 -0400
+From: Liu Bo <bo.li.liu@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Cc: David Sterba <dsterba@suse.cz>
+Subject: [PATCH v3] Btrfs: fix eb memory leak due to readpage failure
+Date: Mon, 11 Jul 2016 10:39:07 -0700
+Message-Id: <1468258747-19617-1-git-send-email-bo.li.liu@oracle.com>
+In-Reply-To: <1464980918-8365-1-git-send-email-bo.li.liu@oracle.com>
 References: <1464980918-8365-1-git-send-email-bo.li.liu@oracle.com>
- <1468258747-19617-1-git-send-email-bo.li.liu@oracle.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1468258747-19617-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Jul 11, 2016 at 10:39:07AM -0700, Liu Bo wrote:
-> eb->io_pages is set in read_extent_buffer_pages().
-> 
-> In case of readpage failure, for pages that have been added to bio,
-> it calls bio_endio and later readpage_io_failed_hook() does the work.
-> 
-> When this eb's page (couldn't be the 1st page) fails to add itself to bio
-> due to failure in merge_bio(), it cannot decrease eb->io_pages via bio_endio,
->  and ends up with a memory leak eventually.
-> 
-> This lets __do_readpage propagate errors to callers and adds the
->  'atomic_dec(&eb->io_pages)'.
-> 
-> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+eb->io_pages is set in read_extent_buffer_pages().
 
-Reviewed-by: David Sterba <dsterba@suse.com>
+In case of readpage failure, for pages that have been added to bio,
+it calls bio_endio and later readpage_io_failed_hook() does the work.
 
->  		if (!PageUptodate(page)) {
-> +			if (ret) {
-> +				atomic_dec(&eb->io_pages);
-> +				unlock_page(page);
-> +				continue;
-> +			}
+When this eb's page (couldn't be the 1st page) fails to add itself to bio
+due to failure in merge_bio(), it cannot decrease eb->io_pages via bio_endio,
+ and ends up with a memory leak eventually.
 
-This changes the behaviour to "fail early", which could be positive as a
-sequence of unreadable blocks will not try to reread all of them with
-the timeouts and retries.
+This lets __do_readpage propagate errors to callers and adds the
+ 'atomic_dec(&eb->io_pages)'.
+
+Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+---
+v2: - Move 'dec io_pages' to the caller so that we're consistent with
+      write_one_eb()
+v3: - Bail out once we fail to read a page and do the cleanup work
+      for eb->io_pages
+
+ fs/btrfs/extent_io.c | 25 ++++++++++++++++++++++---
+ 1 file changed, 22 insertions(+), 3 deletions(-)
+
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index ac1a696..7303e5a 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -2878,6 +2878,7 @@ __get_extent_map(struct inode *inode, struct page *page, size_t pg_offset,
+  * into the tree that are removed when the IO is done (by the end_io
+  * handlers)
+  * XXX JDM: This needs looking at to ensure proper page locking
++ * return 0 on success, otherwise return error
+  */
+ static int __do_readpage(struct extent_io_tree *tree,
+ 			 struct page *page,
+@@ -2899,7 +2900,7 @@ static int __do_readpage(struct extent_io_tree *tree,
+ 	sector_t sector;
+ 	struct extent_map *em;
+ 	struct block_device *bdev;
+-	int ret;
++	int ret = 0;
+ 	int nr = 0;
+ 	size_t pg_offset = 0;
+ 	size_t iosize;
+@@ -3080,6 +3081,7 @@ static int __do_readpage(struct extent_io_tree *tree,
+ 		} else {
+ 			SetPageError(page);
+ 			unlock_extent(tree, cur, cur + iosize - 1);
++			goto out;
+ 		}
+ 		cur = cur + iosize;
+ 		pg_offset += iosize;
+@@ -3090,7 +3092,7 @@ out:
+ 			SetPageUptodate(page);
+ 		unlock_page(page);
+ 	}
+-	return 0;
++	return ret;
+ }
+ 
+ static inline void __do_contiguous_readpages(struct extent_io_tree *tree,
+@@ -5230,14 +5232,31 @@ int read_extent_buffer_pages(struct extent_io_tree *tree,
+ 	atomic_set(&eb->io_pages, num_reads);
+ 	for (i = start_i; i < num_pages; i++) {
+ 		page = eb->pages[i];
++
+ 		if (!PageUptodate(page)) {
++			if (ret) {
++				atomic_dec(&eb->io_pages);
++				unlock_page(page);
++				continue;
++			}
++
+ 			ClearPageError(page);
+ 			err = __extent_read_full_page(tree, page,
+ 						      get_extent, &bio,
+ 						      mirror_num, &bio_flags,
+ 						      READ | REQ_META);
+-			if (err)
++			if (err) {
+ 				ret = err;
++				/*
++				 * We use &bio in above __extent_read_full_page,
++				 * so we ensure that if it returns error, the
++				 * current page fails to add itself to bio and
++				 * it's been unlocked.
++				 *
++				 * We must dec io_pages by ourselves.
++				 */
++				atomic_dec(&eb->io_pages);
++			}
+ 		} else {
+ 			unlock_page(page);
+ 		}
+-- 
+2.5.5
+

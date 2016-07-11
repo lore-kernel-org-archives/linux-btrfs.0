@@ -1,35 +1,51 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:54906 "EHLO mx2.suse.de"
+Received: from plane.gmane.org ([80.91.229.3]:47332 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750879AbcGGMME (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 7 Jul 2016 08:12:04 -0400
-Date: Thu, 7 Jul 2016 14:11:30 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Liu Bo <bo.li.liu@oracle.com>
-Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz
-Subject: Re: [PATCH v2] Btrfs: error out if generic_bin_search get invalid
- arguments
-Message-ID: <20160707121130.GX13336@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1466645539-27296-1-git-send-email-bo.li.liu@oracle.com>
- <1466724765-27364-1-git-send-email-bo.li.liu@oracle.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1466724765-27364-1-git-send-email-bo.li.liu@oracle.com>
+	id S1755085AbcGKP7o (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 11 Jul 2016 11:59:44 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+	id 1bMdcU-00063e-6u
+	for linux-btrfs@vger.kernel.org; Mon, 11 Jul 2016 17:59:42 +0200
+Received: from ip-64-134-228-164.public.wayport.net ([64.134.228.164])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Mon, 11 Jul 2016 17:59:42 +0200
+Received: from 1i5t5.duncan by ip-64-134-228-164.public.wayport.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Mon, 11 Jul 2016 17:59:42 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: [PATCH v2] btrfs: fix free space calculation in
+ dump_space_info()
+Date: Mon, 11 Jul 2016 15:59:35 +0000 (UTC)
+Message-ID: <pan$9c0bf$33ee4c33$fff8aed3$9ef69860@cox.net>
+References: <20160711113004.4896-1-wangxg.fnst@cn.fujitsu.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Jun 23, 2016 at 04:32:45PM -0700, Liu Bo wrote:
-> With btrfs-corrupt-block, one can set btree node/leaf's field, if
-> we assign a negative value to node/leaf, we can get various hangs,
-> eg. if extent_root's nritems is -2ULL, then we get stuck in
->  btrfs_read_block_groups() because it has a while loop and
-> btrfs_search_slot() on extent_root will always return the first
->  child.
-> 
-> This lets us know what's happening and returns a EINVAL to callers
-> instead of returning the first item.
-> 
-> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+Wang Xiaoguang posted on Mon, 11 Jul 2016 19:30:04 +0800 as excerpted:
 
-Reviewed-by: David Sterba <dsterba@suse.com>
+> In btrfs, btrfs_space_info's bytes_may_use is treated as fs used space,
+> as what we do in reserve_metadata_bytes() or
+> btrfs_alloc_data_chunk_ondemand(), so in dump_space_info(), when
+> calculating free space, we should also minus btrfs_space_info's
+> bytes_may_use.
+> 
+> Signed-off-by: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
+> ---
+>  fs/btrfs/extent-tree.c | 4 ++--
+
+I'm not a dev so won't evaluate the patch itself.  However, on kernel 
+related mailing lists it's standard practice to include a short, often 
+one-line per revision, revision changelog.  It helps reviewers keep track 
+of what changed since the last time they looked at the patch.  See pretty 
+much any on-list v2+ patch as an example.
+
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

@@ -1,92 +1,263 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:58495 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:59560 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751504AbcGGCaD (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 Jul 2016 22:30:03 -0400
+	with ESMTP id S1752568AbcGKLgk (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 11 Jul 2016 07:36:40 -0400
 Subject: Re: [PATCH 2/2] btrfs: fix false ENOSPC for btrfs_fallocate()
-To: =?UTF-8?Q?Holger_Hoffst=c3=a4tte?= <holger@applied-asynchrony.com>,
-        <linux-btrfs@vger.kernel.org>
+To: <linux-btrfs@vger.kernel.org>
 References: <20160706103753.4908-1-wangxg.fnst@cn.fujitsu.com>
  <20160706103753.4908-2-wangxg.fnst@cn.fujitsu.com>
- <577CF94E.1010506@applied-asynchrony.com>
 CC: <dsterba@suse.cz>
 From: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
-Message-ID: <577DBE26.7030601@cn.fujitsu.com>
-Date: Thu, 7 Jul 2016 10:27:50 +0800
+Message-ID: <5783843A.5080809@cn.fujitsu.com>
+Date: Mon, 11 Jul 2016 19:34:18 +0800
 MIME-Version: 1.0
-In-Reply-To: <577CF94E.1010506@applied-asynchrony.com>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+In-Reply-To: <20160706103753.4908-2-wangxg.fnst@cn.fujitsu.com>
+Content-Type: text/plain; charset="windows-1252"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 hello,
 
-On 07/06/2016 08:27 PM, Holger Hoffstätte wrote:
-> On 07/06/16 12:37, Wang Xiaoguang wrote:
->> Below test scripts can reproduce this false ENOSPC:
->> 	#!/bin/bash
->> 	dd if=/dev/zero of=fs.img bs=$((1024*1024)) count=128
->> 	dev=$(losetup --show -f fs.img)
->> 	mkfs.btrfs -f -M $dev
->> 	mkdir /tmp/mntpoint
->> 	mount /dev/loop0 /tmp/mntpoint
->> 	cd mntpoint
->> 	xfs_io -f -c "falloc 0 $((40*1024*1024))" testfile
->>
->> Above fallocate(2) operation will fail for ENOSPC reason, but indeed
->> fs still has free space to satisfy this request. The reason is
->> btrfs_fallocate() dose not decrease btrfs_space_info's bytes_may_use
->> just in time, and it calls btrfs_free_reserved_data_space_noquota() in
->> the end of btrfs_fallocate(), which is too late and have already added
->> false unnecessary pressure to enospc system. See call graph:
->> btrfs_fallocate()
->> |-> btrfs_alloc_data_chunk_ondemand()
->>      It will add btrfs_space_info's bytes_may_use accordingly.
->> |-> btrfs_prealloc_file_range()
->>      It will call btrfs_reserve_extent(), but note that alloc type is
->>      RESERVE_ALLOC_NO_ACCOUNT, so btrfs_update_reserved_bytes() will
->>      only increase btrfs_space_info's bytes_reserved accordingly, but
->>      will not decrease btrfs_space_info's bytes_may_use, then obviously
->>      we have overestimated real needed disk space, and it'll impact
->>      other processes who do write(2) or fallocate(2) operations, also
->>      can impact metadata reservation in mixed mode, and bytes_max_use
->>      will only be decreased in the end of btrfs_fallocate(). To fix
->>      this false ENOSPC, we need to decrease btrfs_space_info's
->>      bytes_may_use in btrfs_prealloc_file_range() in time, as what we
->>      do in cow_file_range(),
->>      See call graph in :
->>      cow_file_range()
->>      |-> extent_clear_unlock_delalloc()
->>          |-> clear_extent_bit()
->>              |-> btrfs_clear_bit_hook()
->>                  |-> btrfs_free_reserved_data_space_noquota()
->>                      This function will decrease bytes_may_use accordingly.
->>
->> So this patch choose to call btrfs_free_reserved_data_space() in
->> __btrfs_prealloc_file_range() for both successful and failed path.
->>
->> Also this patch removes some old and useless comments.
->>
->> Signed-off-by: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
-> Verified that the reproducer script indeed fails (with btrfs ~4.7) and
-> the patch (on top of 1/2) fixes it. Also ran a bunch of other fallocating
-> things without problem. Free space also still seems sane, as far as I
-> could tell.
->
-> So for both patches:
->
-> Tested-by: Holger Hoffstätte <holger@applied-asynchrony.com>
-Thanks very much :)
+Please ignore this patch, though this patch is correct to me, and pass
+the fstests test. I have prepared a new common patch to fix this false
+ENOSPC bug. Currently I'm doing fstests test, and will sent them
+tomorrow, thanks.
 
 Regards,
 Xiaoguang Wang
 
+On 07/06/2016 06:37 PM, Wang Xiaoguang wrote:
+> Below test scripts can reproduce this false ENOSPC:
+> 	#!/bin/bash
+> 	dd if=/dev/zero of=fs.img bs=$((1024*1024)) count=128
+> 	dev=$(losetup --show -f fs.img)
+> 	mkfs.btrfs -f -M $dev
+> 	mkdir /tmp/mntpoint
+> 	mount /dev/loop0 /tmp/mntpoint
+> 	cd mntpoint
+> 	xfs_io -f -c "falloc 0 $((40*1024*1024))" testfile
 >
-> cheers,
-> Holger
+> Above fallocate(2) operation will fail for ENOSPC reason, but indeed
+> fs still has free space to satisfy this request. The reason is
+> btrfs_fallocate() dose not decrease btrfs_space_info's bytes_may_use
+> just in time, and it calls btrfs_free_reserved_data_space_noquota() in
+> the end of btrfs_fallocate(), which is too late and have already added
+> false unnecessary pressure to enospc system. See call graph:
+> btrfs_fallocate()
+> |-> btrfs_alloc_data_chunk_ondemand()
+>      It will add btrfs_space_info's bytes_may_use accordingly.
+> |-> btrfs_prealloc_file_range()
+>      It will call btrfs_reserve_extent(), but note that alloc type is
+>      RESERVE_ALLOC_NO_ACCOUNT, so btrfs_update_reserved_bytes() will
+>      only increase btrfs_space_info's bytes_reserved accordingly, but
+>      will not decrease btrfs_space_info's bytes_may_use, then obviously
+>      we have overestimated real needed disk space, and it'll impact
+>      other processes who do write(2) or fallocate(2) operations, also
+>      can impact metadata reservation in mixed mode, and bytes_max_use
+>      will only be decreased in the end of btrfs_fallocate(). To fix
+>      this false ENOSPC, we need to decrease btrfs_space_info's
+>      bytes_may_use in btrfs_prealloc_file_range() in time, as what we
+>      do in cow_file_range(),
+>      See call graph in :
+>      cow_file_range()
+>      |-> extent_clear_unlock_delalloc()
+>          |-> clear_extent_bit()
+>              |-> btrfs_clear_bit_hook()
+>                  |-> btrfs_free_reserved_data_space_noquota()
+>                      This function will decrease bytes_may_use accordingly.
 >
+> So this patch choose to call btrfs_free_reserved_data_space() in
+> __btrfs_prealloc_file_range() for both successful and failed path.
 >
+> Also this patch removes some old and useless comments.
 >
+> Signed-off-by: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
+> ---
+>   fs/btrfs/extent-tree.c |  1 -
+>   fs/btrfs/file.c        | 23 ++++++++++++-----------
+>   fs/btrfs/inode-map.c   |  3 +--
+>   fs/btrfs/inode.c       | 12 ++++++++++++
+>   fs/btrfs/relocation.c  | 10 +++++++++-
+>   5 files changed, 34 insertions(+), 15 deletions(-)
+>
+> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+> index 82b912a..b0c86d2 100644
+> --- a/fs/btrfs/extent-tree.c
+> +++ b/fs/btrfs/extent-tree.c
+> @@ -3490,7 +3490,6 @@ again:
+>   		dcs = BTRFS_DC_SETUP;
+>   	else if (ret == -ENOSPC)
+>   		set_bit(BTRFS_TRANS_CACHE_ENOSPC, &trans->transaction->flags);
+> -	btrfs_free_reserved_data_space(inode, 0, num_pages);
+>   
+>   out_put:
+>   	iput(inode);
+> diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+> index 2234e88..f872113 100644
+> --- a/fs/btrfs/file.c
+> +++ b/fs/btrfs/file.c
+> @@ -2669,6 +2669,7 @@ static long btrfs_fallocate(struct file *file, int mode,
+>   
+>   	alloc_start = round_down(offset, blocksize);
+>   	alloc_end = round_up(offset + len, blocksize);
+> +	cur_offset = alloc_start;
+>   
+>   	/* Make sure we aren't being give some crap mode */
+>   	if (mode & ~(FALLOC_FL_KEEP_SIZE | FALLOC_FL_PUNCH_HOLE))
+> @@ -2761,7 +2762,6 @@ static long btrfs_fallocate(struct file *file, int mode,
+>   
+>   	/* First, check if we exceed the qgroup limit */
+>   	INIT_LIST_HEAD(&reserve_list);
+> -	cur_offset = alloc_start;
+>   	while (1) {
+>   		em = btrfs_get_extent(inode, NULL, 0, cur_offset,
+>   				      alloc_end - cur_offset, 0);
+> @@ -2788,6 +2788,14 @@ static long btrfs_fallocate(struct file *file, int mode,
+>   					last_byte - cur_offset);
+>   			if (ret < 0)
+>   				break;
+> +		} else {
+> +			/*
+> +			 * Do not need to reserve unwritten extent for this
+> +			 * range, free reserved data space first, otherwise
+> +			 * it'll result false ENOSPC error.
+> +			 */
+> +			btrfs_free_reserved_data_space(inode, cur_offset,
+> +				last_byte - cur_offset);
+>   		}
+>   		free_extent_map(em);
+>   		cur_offset = last_byte;
+> @@ -2839,18 +2847,11 @@ out_unlock:
+>   	unlock_extent_cached(&BTRFS_I(inode)->io_tree, alloc_start, locked_end,
+>   			     &cached_state, GFP_KERNEL);
+>   out:
+> -	/*
+> -	 * As we waited the extent range, the data_rsv_map must be empty
+> -	 * in the range, as written data range will be released from it.
+> -	 * And for prealloacted extent, it will also be released when
+> -	 * its metadata is written.
+> -	 * So this is completely used as cleanup.
+> -	 */
+> -	btrfs_qgroup_free_data(inode, alloc_start, alloc_end - alloc_start);
+>   	inode_unlock(inode);
+>   	/* Let go of our reservation. */
+> -	btrfs_free_reserved_data_space(inode, alloc_start,
+> -				       alloc_end - alloc_start);
+> +	if (ret != 0)
+> +		btrfs_free_reserved_data_space(inode, cur_offset,
+> +					       alloc_end - cur_offset);
+>   	return ret;
+>   }
+>   
+> diff --git a/fs/btrfs/inode-map.c b/fs/btrfs/inode-map.c
+> index 70107f7..e59e7d6 100644
+> --- a/fs/btrfs/inode-map.c
+> +++ b/fs/btrfs/inode-map.c
+> @@ -495,10 +495,9 @@ again:
+>   	ret = btrfs_prealloc_file_range_trans(inode, trans, 0, 0, prealloc,
+>   					      prealloc, prealloc, &alloc_hint);
+>   	if (ret) {
+> -		btrfs_delalloc_release_space(inode, 0, prealloc);
+> +		btrfs_delalloc_release_metadata(inode, prealloc);
+>   		goto out_put;
+>   	}
+> -	btrfs_free_reserved_data_space(inode, 0, prealloc);
+>   
+>   	ret = btrfs_write_out_ino_cache(root, trans, path, inode);
+>   out_put:
+> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+> index 4421954..4dc7c838 100644
+> --- a/fs/btrfs/inode.c
+> +++ b/fs/btrfs/inode.c
+> @@ -10269,6 +10269,7 @@ static int __btrfs_prealloc_file_range(struct inode *inode, int mode,
+>   	u64 last_alloc = (u64)-1;
+>   	int ret = 0;
+>   	bool own_trans = true;
+> +	u64 end = start + num_bytes - 1;
+>   
+>   	if (trans)
+>   		own_trans = false;
+> @@ -10347,6 +10348,7 @@ static int __btrfs_prealloc_file_range(struct inode *inode, int mode,
+>   		}
+>   		free_extent_map(em);
+>   next:
+> +		btrfs_free_reserved_data_space(inode, cur_offset, ins.offset);
+>   		num_bytes -= ins.offset;
+>   		cur_offset += ins.offset;
+>   		*alloc_hint = ins.objectid + ins.offset;
+> @@ -10377,9 +10379,18 @@ next:
+>   		if (own_trans)
+>   			btrfs_end_transaction(trans, root);
+>   	}
+> +
+> +	if (cur_offset < end)
+> +		btrfs_free_reserved_data_space(inode, cur_offset,
+> +			end - cur_offset + 1);
+>   	return ret;
+>   }
+>   
+> +/*
+> + * __btrfs_prealloc_file_range() will call btrfs_free_reserved_data_space()
+> + * internally for both sucessful and failed path, btrfs_prealloc_file_range()'s
+> + * callers does not need to call btrfs_free_reserved_data_space() any more.
+> + */
+>   int btrfs_prealloc_file_range(struct inode *inode, int mode,
+>   			      u64 start, u64 num_bytes, u64 min_size,
+>   			      loff_t actual_len, u64 *alloc_hint)
+> @@ -10389,6 +10400,7 @@ int btrfs_prealloc_file_range(struct inode *inode, int mode,
+>   					   NULL);
+>   }
+>   
+> +/* Please see same comments in btrfs_prealloc_file_range() */
+>   int btrfs_prealloc_file_range_trans(struct inode *inode,
+>   				    struct btrfs_trans_handle *trans, int mode,
+>   				    u64 start, u64 num_bytes, u64 min_size,
+> diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
+> index abc2f69..70756fd 100644
+> --- a/fs/btrfs/relocation.c
+> +++ b/fs/btrfs/relocation.c
+> @@ -3031,6 +3031,7 @@ int prealloc_file_extent_cluster(struct inode *inode,
+>   	int nr = 0;
+>   	int ret = 0;
+>   	u64 prealloc_start, prealloc_end;
+> +	u64 cur_offset;
+>   
+>   	BUG_ON(cluster->start != cluster->boundary[0]);
+>   	inode_lock(inode);
+> @@ -3041,6 +3042,7 @@ int prealloc_file_extent_cluster(struct inode *inode,
+>   	if (ret)
+>   		goto out;
+>   
+> +	cur_offset = start;
+>   	while (nr < cluster->nr) {
+>   		prealloc_start = cluster->boundary[nr] - offset;
+>   		if (nr + 1 < cluster->nr)
+> @@ -3051,16 +3053,22 @@ int prealloc_file_extent_cluster(struct inode *inode,
+>   		lock_extent(&BTRFS_I(inode)->io_tree, prealloc_start,
+>   			    prealloc_end);
+>   		num_bytes = prealloc_end + 1 - prealloc_start;
+> +		if (cur_offset < start)
+> +			btrfs_free_reserved_data_space(inode, cur_offset,
+> +				start - cur_offset);
+>   		ret = btrfs_prealloc_file_range(inode, 0, prealloc_start,
+>   						num_bytes, num_bytes,
+>   						prealloc_end + 1, &alloc_hint);
+>   		unlock_extent(&BTRFS_I(inode)->io_tree, prealloc_start,
+>   			      prealloc_end);
+> +		cur_offset = prealloc_end + 1;
+>   		if (ret)
+>   			break;
+>   		nr++;
+>   	}
+> -	btrfs_free_reserved_data_space(inode, start, end + 1 - start);
+> +	if (cur_offset < end)
+> +		btrfs_free_reserved_data_space(inode, cur_offset,
+> +				end + 1 - cur_offset);
+>   out:
+>   	inode_unlock(inode);
+>   	return ret;
 
 
 

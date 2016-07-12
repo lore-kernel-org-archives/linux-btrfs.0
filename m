@@ -1,93 +1,240 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f179.google.com ([209.85.223.179]:36235 "EHLO
-	mail-io0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S964775AbcGLPeM (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 12 Jul 2016 11:34:12 -0400
-Received: by mail-io0-f179.google.com with SMTP id b62so19838328iod.3
-        for <linux-btrfs@vger.kernel.org>; Tue, 12 Jul 2016 08:34:12 -0700 (PDT)
-Subject: Re: 64-btrfs.rules and degraded boot
-To: Chris Murphy <lists@colorremedies.com>
-References: <CAJCQCtRQBGNeCyENzTPT=yiqs3Tcc=aD8v6usKNtTnvyOd0uqw@mail.gmail.com>
- <CAJCQCtRyvC6J=KJSVYRd1sOWPoVm69tA--3U8kAVdDynkziwNA@mail.gmail.com>
- <CAJCQCtS7OgKKzstJDz52Sd6+SJygDzoVzMhvwHqGxFmihr6Aqg@mail.gmail.com>
- <CAA91j0VbaRpt46tYf_oqd7fRuRn_ev-=Zxf_Bwiwd=TUHR+2Ow@mail.gmail.com>
- <10018aa9-a2e2-dd2a-b8d9-9945e0e170af@gmail.com>
- <CAA91j0VUTBc8W2CBFQJZFR4RxJAYL1bkw6GTJLsxu9mMBZ4yDw@mail.gmail.com>
- <f3b5493d-456c-f614-7c1b-fd1b6e9977bc@gmail.com>
- <1E3215A5-EAA9-425D-AE08-B81B57D3043E@gmail.com>
- <93cdc463-8f53-5cf6-055c-05b5359ad814@gmail.com>
- <fddbc0b3-deb7-8ac8-46c7-bde110206482@inwind.it>
- <de824c8d-f94f-87bd-2bf9-d27b1ff7294a@gmail.com>
- <CAJCQCtS7=bR_r6+u+vSxE7rfUOOwx0G3NTff4=WUbfV3riWVSA@mail.gmail.com>
- <e6f35e35-f2bd-03f6-5544-4fb8fa527042@gmail.com>
- <CAJCQCtQvp8p71Uwv2x-Sag+1W=T9wKWn4YckKSYyqrbjdOYQcQ@mail.gmail.com>
- <3e97fc5d-74ab-b1bc-1556-32ddd8d2ba8f@gmail.com>
- <CAJCQCtSrwFwhFhZo6CrEyCgsj3LATqLYu2uOwyOORP3KUazK=Q@mail.gmail.com>
-Cc: Goffredo Baroncelli <kreijack@inwind.it>,
-        Andrei Borzenkov <arvidjaar@gmail.com>,
-        Kai Krakow <hurikhan77@gmail.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <f5af09d8-05d6-5815-58c0-cdbe8cda9453@gmail.com>
-Date: Tue, 12 Jul 2016 11:34:02 -0400
+Received: from smtp-35.italiaonline.it ([212.48.25.163]:49431 "EHLO libero.it"
+	rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+	id S1750919AbcGLVul (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 12 Jul 2016 17:50:41 -0400
+Reply-To: kreijack@inwind.it
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+From: Goffredo Baroncelli <kreijack@inwind.it>
+Subject: [BUG] Btrfs scrub sometime recalculate wrong parity in raid5: take
+ two
+Message-ID: <da6e9c30-02a0-39fc-3c67-d0af4fd5bf51@inwind.it>
+Date: Tue, 12 Jul 2016 23:50:19 +0200
 MIME-Version: 1.0
-In-Reply-To: <CAJCQCtSrwFwhFhZo6CrEyCgsj3LATqLYu2uOwyOORP3KUazK=Q@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2016-07-11 17:07, Chris Murphy wrote:
-> On Fri, Jul 8, 2016 at 6:24 AM, Austin S. Hemmelgarn
-> <ahferroin7@gmail.com> wrote:
->
->> To clarify, I'm not trying to argue against adding support, I'm arguing
->> against it being mandatory.
->
-> By "D-Bus support" I did not mean to indicate mandating it, just that
-> it would be one possible way to get some very basic state change
-> messages to user space tools so we're doing the least amount of wheel
-> reinvention as possible.
-Minimizing the amount of work would be good, but I would not agree about 
-D-Bus doing that.  It's easy to debug socket based IPC, it's not easy to 
-debug D-Bus based IPC.  From a development perspective, I'd say we need 
-to get something working with sockets first, and then worry about D-Bus 
-once we have working infrastructure and abstraction for IPC.
->
->
->>  A filesystem which requires specific system
->> services to be running just for regular maintenance tasks is not a well
->> designed filesystem.  To be entirely honest, I'm not all that happy about
->> the functional dependency on udev to have device discovery, but there's no
->> point in me arguing about that...
->
-> Well everything else that came before it is effectively deprecated, so
-> there's no going back. The way forward would be to get udev more
-> granular state information about a Btrfs volume than 0 and 1.
-People still use other options, usually in embedded systems, but options 
-do exist and are used.
+Hi All,
 
-That said, I couldn't agree more about reporting more info about the 
-state of the FS, but I still feel that scanning on device connection is 
-not a good thing with the way things are currently designed in the 
-kernel, not just the binary state reporting.
->
->>
->> Just thinking aloud, but why not do a daemon that does the actual
->> monitoring, and then provide an interface (at least a UNIX domain socket,
->> and optionally a D-Bus endpoint) that other tools can use to query
->> filesystem status.  LVM already has a similar setup for monitoring DM-RAID
->> volumes, snapshots, and thin storage pools, although it's designed as an
->> event driven tool that does something when specific things happen (for
->> example, possibly auto-extending snapshots when they start to get full).
->
-> That would be consistent with mdadm --monitor and dmeventd, but it is
-> yet another wheel reinvention at the lower level, which then also
-> necessitates higher level things to adapt to that interface. It would
-> be neat if there could be some unification and consistency.
->
-A consistent external API would be a good thing, but I'm not sure if 
-unifying the internal design would be.  Trying to unify handling in an 
-external project would make things less reliable, not more reliable, 
-because
+I developed a new btrfs command "btrfs insp phy"[1] to further investigate this bug [2]. Using "btrfs insp phy" I developed a script to trigger the bug. The bug is not always triggered, but most of time yes. 
 
+Basically the script create a raid5 filesystem (using three loop-device on three file called disk[123].img); on this filesystem  it is create a file. Then using "btrfs insp phy", the physical placement of the data on the device are computed.
+
+First the script checks that the data are the right one (for data1, data2 and parity), then it corrupt the data:
+
+test1: the parity is corrupted, then scrub is ran. Then the (data1, data2, parity) data on the disk are checked. This test goes fine all the times
+
+test2: data2 is corrupted, then scrub is ran. Then the (data1, data2, parity) data on the disk are checked. This test fail most of the time: the data on the disk is not correct; the parity is wrong. Scrub sometime reports "WARNING: errors detected during scrubbing, corrected" and sometime reports "ERROR: there are uncorrectable errors". But this seems unrelated to the fact that the data is corrupetd or not
+test3: like test2, but data1 is corrupted. The result are the same as above.
+
+
+test4: data2 is corrupted, the the file is read. The system doesn't return error (the data seems to be fine); but the data2 on the disk is still corrupted.
+
+
+Note: data1, data2, parity are the disk-element of the raid5 stripe-
+
+Conclusion:
+
+most of the time, it seems that btrfs-raid5 is not capable to rebuild parity and data. Worse the message returned by scrub is incoherent by the status on the disk. The tests didn't fail every time; this complicate the diagnosis. However my script fails most of the time.
+
+BR
+G.Baroncelli
+
+----
+
+root="$(pwd)"
+disks="disk1.img disk2.img disk3.img"
+imgsize=500M
+BTRFS=../btrfs-progs/btrfs
+
+
+#
+# returns all the loopback devices
+#
+loop_disks() {
+	sudo losetup | grep $root | awk '{ print $1 }'
+}
+
+#init the fs
+
+init_fs() {
+	#destroy fs
+	echo umount mnt
+	sudo umount mnt
+	for i in $( loop_disks ); do
+		echo "losetup -d $i"
+		sudo losetup -d $i
+	done
+
+	for i in $disks; do
+		rm $i
+		truncate -s $imgsize $i
+		sudo losetup -f $i
+	done
+
+	loops="$(loop_disks)"
+	loop1="$(echo $loops | awk '{ print $1 }')"
+	echo "loops=$loops; loop1=$loop1"
+
+	sudo mkfs.btrfs -d raid5 -m raid5 $loops
+	sudo mount $loop1 mnt/
+
+	python -c "print 'ad'+'a'*65534+'bd'+'b'*65533" | sudo tee mnt/out.txt >/dev/null
+
+	ls -l mnt/out.txt
+
+	sudo umount mnt
+	sync; sync
+}
+
+check_fs() {
+
+        sudo mount $loop1 mnt
+        data="$(sudo $BTRFS insp phy mnt/out.txt)"
+        
+        data1_off="$(echo "$data" | grep "DATA$" | awk '{ print $5 }')"
+        data2_off="$(echo "$data" | grep "OTHER$" | awk '{ print $5 }')"
+        parity_off="$(echo "$data" | grep "PARITY$" | awk '{ print $5 }')"
+        data1_dev="$(echo "$data" | grep "DATA$" | awk '{ print $3 }')"
+        data2_dev="$(echo "$data" | grep "OTHER$" | awk '{ print $3 }')"
+        parity_dev="$(echo "$data" | grep "PARITY$" | awk '{ print $3 }')"
+        
+        sudo umount mnt
+        
+	# check
+	d="$(dd 2>/dev/null if=$data1_dev bs=1 skip=$data1_off count=5)"
+	if [ "$d" != "adaaa" ]; then
+		echo "******* Wrong data on disk:off $data1_dev:$data1_off (data1)"
+		return 1
+	fi
+
+	d="$(dd 2>/dev/null if=$data2_dev bs=1 skip=$data2_off count=5)"
+	if [ "$d" != "bdbbb" ]; then
+		echo "******* Wrong data on disk:off $data2_dev:$data2_off (data2)"
+		return 1
+	fi
+
+	d="$(dd 2>/dev/null if=$parity_dev bs=1 skip=$parity_off count=5 | 
+                xxd | dd 2>/dev/null bs=1 count=9 skip=10)"
+	if [ "x$d" != "x0300 0303" ]; then
+		echo "******* Wrong data on disk:off $parity_dev:$parity_off (parity)"
+		return 1
+	fi
+
+	return 0
+}
+
+test_corrupt_parity() {
+	echo "--- test 1: corrupt parity"
+	echo 3 | sudo tee >/dev/null /proc/sys/vm/drop_caches
+	sudo dd 2>/dev/null if=/dev/zero of=$parity_dev bs=1 \
+		seek=$parity_off count=5
+	check_fs &>/dev/null && {
+			echo Corruption failed
+			exit 100
+		}
+	echo 3 | sudo tee >/dev/null /proc/sys/vm/drop_caches
+	sudo mount $loop1 mnt
+	sudo btrfs scrub start mnt/.
+	sync; sync
+	cat mnt/out.txt &>/dev/null || echo "Read FAIL"
+	sudo umount mnt
+	echo 3 | sudo tee >/dev/null /proc/sys/vm/drop_caches
+	check_fs || return 1
+	echo "--- test1: OK"
+	return 0
+}
+
+
+
+test_corrupt_data2() {
+	echo "--- test 2: corrupt data2"
+	echo 3 | sudo tee >/dev/null /proc/sys/vm/drop_caches
+	sudo dd 2>/dev/null if=/dev/zero of=$data2_dev bs=1 \
+		seek=$data2_off count=5
+	check_fs &>/dev/null && {
+			echo Corruption failed
+			exit 100
+		}
+	echo 3 | sudo tee >/dev/null >/dev/null /proc/sys/vm/drop_caches
+	sudo mount $loop1 mnt
+	sudo btrfs scrub start mnt/.
+	sync; sync
+	cat mnt/out.txt &>/dev/null || echo "Read FAIL"
+	sudo umount mnt
+	echo 3 | sudo tee >/dev/null /proc/sys/vm/drop_caches
+	check_fs || return 1
+	echo "--- test2: OK"
+	return 0
+}
+
+test_corrupt_data1() {
+	echo "--- test 3: corrupt data1"
+	echo 3 | sudo tee >/dev/null /proc/sys/vm/drop_caches
+	sudo dd 2>/dev/null if=/dev/zero of=$data1_dev bs=1 \
+		seek=$data1_off count=5
+	check_fs &>/dev/null && {
+			echo Corruption failed
+			exit 100
+		}
+	echo 3 | sudo tee >/dev/null /proc/sys/vm/drop_caches
+	sudo mount $loop1 mnt
+	sudo btrfs scrub start mnt/.
+	sync; sync
+	cat mnt/out.txt &>/dev/null || echo "Read FAIL"
+	sudo umount mnt
+	echo 3 | sudo tee >/dev/null /proc/sys/vm/drop_caches
+	check_fs || return 1
+	echo "--- test3: OK"
+	return 0
+}
+
+test_corrupt_data2_wo_scrub() {
+	echo "--- test 4: corrupt data2; read without scrub"
+	echo 3 | sudo tee >/dev/null /proc/sys/vm/drop_caches
+	sudo dd 2>/dev/null if=/dev/zero of=$data2_dev bs=1 \
+		seek=$data2_off count=5
+	check_fs &>/dev/null && {
+			echo Corruption failed
+			exit 100
+		}
+	echo 3 | sudo tee >/dev/null /proc/sys/vm/drop_caches
+	sudo mount $loop1 mnt
+	cat mnt/out.txt &>/dev/null || echo "Read FAIL"
+	sudo umount mnt
+	echo 3 | sudo tee >/dev/null /proc/sys/vm/drop_caches
+	check_fs || return 1
+	echo "--- test 4: OK"
+	return 0
+}
+
+
+for t in test_corrupt_parity test_corrupt_data2 test_corrupt_data1 \
+    test_corrupt_data2_wo_scrub; do
+    
+        init_fs &>/dev/null
+        if ! check_fs &>/dev/null; then 
+             echo Integrity test failed
+             exit 100
+        fi
+
+        $t
+        echo
+    
+done
+
+
+-----------------
+
+
+
+
+[1] See email "New btrfs sub command: btrfs inspect physical-find"
+[2] See email "[BUG] Btrfs scrub sometime recalculate wrong parity in raid5"
+
+
+
+-- 
+gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
+Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5

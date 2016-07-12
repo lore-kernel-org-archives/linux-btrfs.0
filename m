@@ -1,41 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from ipmail05.adl6.internode.on.net ([150.101.137.143]:10524 "EHLO
-	ipmail05.adl6.internode.on.net" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1752472AbcGYAge (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 24 Jul 2016 20:36:34 -0400
-Date: Mon, 25 Jul 2016 10:36:30 +1000
-From: Dave Chinner <david@fromorbit.com>
-To: Chris Mason <clm@fb.com>
-Cc: Gabriel C <nix.or.die@gmail.com>, linux-btrfs@vger.kernel.org,
-        quwenruo@cn.fujitsu.com
-Subject: Re: A lot warnings in dmesg while running thunderbird
-Message-ID: <20160725003630.GT16044@dastard>
-References: <CAEJqkghMZDOJoyRkf_-HTfuKLnj0eaAGmtjVAPY2UftV7TxbvA@mail.gmail.com>
- <ab5cc111-7ed7-3209-7411-6c656892d4a3@fb.com>
- <CAEJqkgiWOnyk8AzROc-tGTqKiDJkCt364tgFT5P-2Sa+XwjeMA@mail.gmail.com>
- <b84d72ce-3221-1f0d-7f63-ae02fe0d776b@fb.com>
- <47ff1ea1-d4a9-55d9-f65d-60e94be93146@gmail.com>
- <73545420-2ce5-c4d3-d59a-98d2114bafd2@fb.com>
+Received: from mx2.suse.de ([195.135.220.15]:43522 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750717AbcGLNUf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 12 Jul 2016 09:20:35 -0400
+Date: Tue, 12 Jul 2016 15:20:44 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Nikolay Borisov <kernel@kyup.com>
+Cc: jbacik@fb.com, clm@fb.com, operations@siteground.com,
+        linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs: Add ratelimiting to printing facility
+Message-ID: <20160712132044.GC10595@suse.cz>
+Reply-To: dsterba@suse.cz
+References: <1468326012-15910-1-git-send-email-kernel@kyup.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <73545420-2ce5-c4d3-d59a-98d2114bafd2@fb.com>
+In-Reply-To: <1468326012-15910-1-git-send-email-kernel@kyup.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Jul 08, 2016 at 12:02:35PM -0400, Chris Mason wrote:
-> Can you please run the attached test program:
-> 
-> gcc -o short-write short-write.c -lpthread
-> ./short-write some-new-file-on-btrfs
+On Tue, Jul 12, 2016 at 03:20:12PM +0300, Nikolay Borisov wrote:
+> Currently the btrfs printk infrastructure doesn't implement any
+> kind of ratelimiting.
 
-Hi Chris, this seems like a useful thing to be testing on a regular
-basis - can you turn this into an xfstests regression test and
-submit it?
+If you count the whole infrastructure, it does. See ctree.h and macros
+ending with _rl (btrfs_err_rl), and should be used where the messages
+are likely to flood. Otherwise I think "more is better" regarding
+messages as this is helpful when debugging issues.
 
-Cheers,
+> Recently I came accross a case where due to
+> FS corruption an excessive amount of printk caused the softlockup
+> detector to trigger and reset the server. This patch aims to avoid
+> two types of issue: 
+>  * I want to avoid different levels of messages interefere with the
+>  ratelimiting of oneanother so as to avoid a situation where a 
+>  flood of INFO messages causes the ratelimit to trigger, 
+>  potentially leading to supression of more important messages. 
 
-Dave.
--- 
-Dave Chinner
-david@fromorbit.com
+Yeah, that's my concern as well. What if there's a burst of several
+error messages that do not fit to the limit and some of them get
+dropped.
+
+>  * Avoid a flood of any type of messages rendering the machine 
+>  unusable
+
+While I'd rather set a per-message ratelimiting, it's possible that an
+unexpected error will start flooding. So some sort of per-level limiting
+could be implemented, as you propose, but I'd suggest to set the numbers
+higher. That way it would still flood up to certain level but should
+avoid the lockups.

@@ -1,73 +1,93 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oi0-f53.google.com ([209.85.218.53]:32907 "EHLO
-	mail-oi0-f53.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751153AbcGKVHT (ORCPT
+Received: from mail-pf0-f177.google.com ([209.85.192.177]:32886 "EHLO
+	mail-pf0-f177.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750874AbcGLEub (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 11 Jul 2016 17:07:19 -0400
-Received: by mail-oi0-f53.google.com with SMTP id u201so165975173oie.0
-        for <linux-btrfs@vger.kernel.org>; Mon, 11 Jul 2016 14:07:18 -0700 (PDT)
+	Tue, 12 Jul 2016 00:50:31 -0400
+Received: by mail-pf0-f177.google.com with SMTP id i123so2492013pfg.0
+        for <linux-btrfs@vger.kernel.org>; Mon, 11 Jul 2016 21:50:31 -0700 (PDT)
+Subject: Re: raid1 has failing disks, but smart is clear
+To: Andrei Borzenkov <arvidjaar@gmail.com>,
+        Tomasz Kusmierz <tom.kusmierz@gmail.com>
+References: <577D82AE.3040005@gmail.com>
+ <03E1A820-7029-4022-9D46-900C4FCA1ADC@gmail.com> <577DF95E.7080100@gmail.com>
+ <57808E3E.2020907@gmail.com>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+From: Corey Coughlin <corey.coughlin.cc3@gmail.com>
+Message-ID: <57847715.20700@gmail.com>
+Date: Mon, 11 Jul 2016 21:50:29 -0700
 MIME-Version: 1.0
-In-Reply-To: <3e97fc5d-74ab-b1bc-1556-32ddd8d2ba8f@gmail.com>
-References: <CAJCQCtRQBGNeCyENzTPT=yiqs3Tcc=aD8v6usKNtTnvyOd0uqw@mail.gmail.com>
- <20160705212706.719397fc@jupiter.sol.kaishome.de> <CAJCQCtRyvC6J=KJSVYRd1sOWPoVm69tA--3U8kAVdDynkziwNA@mail.gmail.com>
- <CAJCQCtS7OgKKzstJDz52Sd6+SJygDzoVzMhvwHqGxFmihr6Aqg@mail.gmail.com>
- <CAA91j0VbaRpt46tYf_oqd7fRuRn_ev-=Zxf_Bwiwd=TUHR+2Ow@mail.gmail.com>
- <10018aa9-a2e2-dd2a-b8d9-9945e0e170af@gmail.com> <CAA91j0VUTBc8W2CBFQJZFR4RxJAYL1bkw6GTJLsxu9mMBZ4yDw@mail.gmail.com>
- <f3b5493d-456c-f614-7c1b-fd1b6e9977bc@gmail.com> <1E3215A5-EAA9-425D-AE08-B81B57D3043E@gmail.com>
- <93cdc463-8f53-5cf6-055c-05b5359ad814@gmail.com> <fddbc0b3-deb7-8ac8-46c7-bde110206482@inwind.it>
- <de824c8d-f94f-87bd-2bf9-d27b1ff7294a@gmail.com> <CAJCQCtS7=bR_r6+u+vSxE7rfUOOwx0G3NTff4=WUbfV3riWVSA@mail.gmail.com>
- <e6f35e35-f2bd-03f6-5544-4fb8fa527042@gmail.com> <CAJCQCtQvp8p71Uwv2x-Sag+1W=T9wKWn4YckKSYyqrbjdOYQcQ@mail.gmail.com>
- <3e97fc5d-74ab-b1bc-1556-32ddd8d2ba8f@gmail.com>
-From: Chris Murphy <lists@colorremedies.com>
-Date: Mon, 11 Jul 2016 15:07:16 -0600
-Message-ID: <CAJCQCtSrwFwhFhZo6CrEyCgsj3LATqLYu2uOwyOORP3KUazK=Q@mail.gmail.com>
-Subject: Re: 64-btrfs.rules and degraded boot
-To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Cc: Chris Murphy <lists@colorremedies.com>,
-        Goffredo Baroncelli <kreijack@inwind.it>,
-        Andrei Borzenkov <arvidjaar@gmail.com>,
-        Kai Krakow <hurikhan77@gmail.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+In-Reply-To: <57808E3E.2020907@gmail.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Jul 8, 2016 at 6:24 AM, Austin S. Hemmelgarn
-<ahferroin7@gmail.com> wrote:
+Hi Andrei,
+     Thanks for the info, sorry about the improper terminology.  In 
+better news, I discovered that one disk wasn't getting recognized by the 
+OS at certain outputs of one of my mini-sas to sata cables, so I got a 
+new one, and the disk works fine on that.  So I'm that's at least one 
+bad cable, I still have to check the other 3, though.
 
-> To clarify, I'm not trying to argue against adding support, I'm arguing
-> against it being mandatory.
+     ------ Corey
 
-By "D-Bus support" I did not mean to indicate mandating it, just that
-it would be one possible way to get some very basic state change
-messages to user space tools so we're doing the least amount of wheel
-reinvention as possible.
-
-
->  A filesystem which requires specific system
-> services to be running just for regular maintenance tasks is not a well
-> designed filesystem.  To be entirely honest, I'm not all that happy about
-> the functional dependency on udev to have device discovery, but there's no
-> point in me arguing about that...
-
-Well everything else that came before it is effectively deprecated, so
-there's no going back. The way forward would be to get udev more
-granular state information about a Btrfs volume than 0 and 1.
-
+On 07/08/2016 10:40 PM, Andrei Borzenkov wrote:
+> 07.07.2016 09:40, Corey Coughlin пишет:
+>> Hi Tomasz,
+>>      Thanks for the response!  I should clear some things up, though.
+>>
+>> On 07/06/2016 03:59 PM, Tomasz Kusmierz wrote:
+>>>> On 6 Jul 2016, at 23:14, Corey Coughlin
+>>>> <corey.coughlin.cc3@gmail.com> wrote:
+>>>>
+>>>> Hi all,
+>>>>      Hoping you all can help, have a strange problem, think I know
+>>>> what's going on, but could use some verification.  I set up a raid1
+>>>> type btrfs filesystem on an Ubuntu 16.04 system, here's what it looks
+>>>> like:
+>>>>
+>>>> btrfs fi show
+>>>> Label: none  uuid: 597ee185-36ac-4b68-8961-d4adc13f95d4
+>>>>      Total devices 10 FS bytes used 3.42TiB
+>>>>      devid    1 size 1.82TiB used 1.18TiB path /dev/sdd
+>>>>      devid    2 size 698.64GiB used 47.00GiB path /dev/sdk
+>>>>      devid    3 size 931.51GiB used 280.03GiB path /dev/sdm
+>>>>      devid    4 size 931.51GiB used 280.00GiB path /dev/sdl
+>>>>      devid    5 size 1.82TiB used 1.17TiB path /dev/sdi
+>>>>      devid    6 size 1.82TiB used 823.03GiB path /dev/sdj
+>>>>      devid    7 size 698.64GiB used 47.00GiB path /dev/sdg
+>>>>      devid    8 size 1.82TiB used 1.18TiB path /dev/sda
+>>>>      devid    9 size 1.82TiB used 1.18TiB path /dev/sdb
+>>>>      devid   10 size 1.36TiB used 745.03GiB path /dev/sdh
+>> Now when I say that the drives mount points change, I'm not saying they
+>> change when I reboot.  They change while the system is running.  For
+>> instance, here's the fi show after I ran a "check --repair" run this
+>> afternoon:
+>>
+>> btrfs fi show
+>> Label: none  uuid: 597ee185-36ac-4b68-8961-d4adc13f95d4
+>>      Total devices 10 FS bytes used 3.42TiB
+>>      devid    1 size 1.82TiB used 1.18TiB path /dev/sdd
+>>      devid    2 size 698.64GiB used 47.00GiB path /dev/sdk
+>>      devid    3 size 931.51GiB used 280.03GiB path /dev/sdm
+>>      devid    4 size 931.51GiB used 280.00GiB path /dev/sdl
+>>      devid    5 size 1.82TiB used 1.17TiB path /dev/sdi
+>>      devid    6 size 1.82TiB used 823.03GiB path /dev/sds
+>>      devid    7 size 698.64GiB used 47.00GiB path /dev/sdg
+>>      devid    8 size 1.82TiB used 1.18TiB path /dev/sda
+>>      devid    9 size 1.82TiB used 1.18TiB path /dev/sdb
+>>      devid   10 size 1.36TiB used 745.03GiB path /dev/sdh
+>>
+>> Notice that /dev/sdj in the previous run changed to /dev/sds.  There was
+>> no reboot, the mount just changed.  I don't know why that is happening,
+>> but it seems like the majority of the errors are on that drive.  But
+>> given that I've fixed the start/stop issue on that disk, it probably
+>> isn't a WD Green issue.
+> It's not "mount point", it is just device names. Do not make it sound
+> more confusing than it already is :)
 >
-> Just thinking aloud, but why not do a daemon that does the actual
-> monitoring, and then provide an interface (at least a UNIX domain socket,
-> and optionally a D-Bus endpoint) that other tools can use to query
-> filesystem status.  LVM already has a similar setup for monitoring DM-RAID
-> volumes, snapshots, and thin storage pools, although it's designed as an
-> event driven tool that does something when specific things happen (for
-> example, possibly auto-extending snapshots when they start to get full).
+> This implies that disks drop off and reappear. Do you have "dmesg" or
+> log (/var/log/syslog or /var/log/messages or journalctl) for the same
+> period of time?
+>
 
-That would be consistent with mdadm --monitor and dmeventd, but it is
-yet another wheel reinvention at the lower level, which then also
-necessitates higher level things to adapt to that interface. It would
-be neat if there could be some unification and consistency.
-
-
--- 
-Chris Murphy

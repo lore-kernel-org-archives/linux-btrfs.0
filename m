@@ -1,89 +1,196 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:11906 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1753039AbcGFKkJ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 6 Jul 2016 06:40:09 -0400
-From: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
+Received: from mail-pf0-f171.google.com ([209.85.192.171]:36751 "EHLO
+	mail-pf0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752675AbcGMRi3 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 13 Jul 2016 13:38:29 -0400
+Received: by mail-pf0-f171.google.com with SMTP id t190so20673447pfb.3
+        for <linux-btrfs@vger.kernel.org>; Wed, 13 Jul 2016 10:38:28 -0700 (PDT)
+From: Omar Sandoval <osandov@osandov.com>
 To: linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.cz
-Subject: [PATCH 1/2] btrfs: use correct offset for reloc_inode in prealloc_file_extent_cluster()
-Date: Wed,  6 Jul 2016 18:37:52 +0800
-Message-Id: <20160706103753.4908-1-wangxg.fnst@cn.fujitsu.com>
-MIME-Version: 1.0
+Cc: Anatoly Pugachev <matorola@gmail.com>,
+        Feifei Xu <xufeifei@linux.vnet.ibm.com>, kernel-team@fb.com
+Subject: [PATCH v2] Btrfs: fix extent buffer bitmap tests on big-endian systems
+Date: Wed, 13 Jul 2016 10:37:49 -0700
+Message-Id: <31ba96950f44bb9e53ae87ba8d70f0df4b446f8c.1468430549.git.osandov@fb.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-In prealloc_file_extent_cluster(), btrfs_check_data_free_space() uses
-wrong file offset for reloc_inode, it uses cluster->start and cluster->end,
-which indeed are extent's bytenr. The correct value should be
-cluster->[start|end] minus block group's start bytenr.
+From: Omar Sandoval <osandov@fb.com>
 
-start bytenr   cluster->start
-|              |     extent      |   extent   | ...| extent |
-|----------------------------------------------------------------|
-|                block group reloc_inode                         |
+The in-memory bitmap code manipulates words and is therefore sensitive
+to endianness, while the extent buffer bitmap code addresses bytes and
+is byte-order agnostic. Because the byte addressing of the extent buffer
+bitmaps is equivalent to a little-endian in-memory bitmap, the extent
+buffer bitmap tests fail on big-endian systems.
 
-Signed-off-by: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
+34b3e6c92af1 ("Btrfs: self-tests: Fix extent buffer bitmap test fail on
+BE system") worked around another endianness bug in the tests but missed
+this one because ed9e4afdb055 ("Btrfs: self-tests: Execute page
+straddling test only when nodesize < PAGE_SIZE") disables this part of
+the test on ppc64. That change lost the original meaning of the test,
+however. We really want to test that an equivalent series of operations
+using the in-memory bitmap API and the extent buffer bitmap API produces
+equivalent results.
+
+To fix this, don't use memcmp_extent_buffer() or write_extent_buffer();
+do everything bit-by-bit.
+
+Reported-by: Anatoly Pugachev <matorola@gmail.com>
+Tested-by: Anatoly Pugachev <matorola@gmail.com>
+Tested-by: Feifei Xu <xufeifei@linux.vnet.ibm.com>
+Signed-off-by: Omar Sandoval <osandov@fb.com>
 ---
- fs/btrfs/relocation.c | 27 +++++++++++++++------------
- 1 file changed, 15 insertions(+), 12 deletions(-)
+Changes since v1:
+- Fix loop bounds of pseudo-random bit pattern test to actually use all
+  of the bits
+- Add tested-bys
 
-diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-index 0477dca..abc2f69 100644
---- a/fs/btrfs/relocation.c
-+++ b/fs/btrfs/relocation.c
-@@ -3030,34 +3030,37 @@ int prealloc_file_extent_cluster(struct inode *inode,
- 	u64 num_bytes;
- 	int nr = 0;
- 	int ret = 0;
-+	u64 prealloc_start, prealloc_end;
- 
- 	BUG_ON(cluster->start != cluster->boundary[0]);
- 	inode_lock(inode);
- 
--	ret = btrfs_check_data_free_space(inode, cluster->start,
--					  cluster->end + 1 - cluster->start);
-+	start = cluster->start - offset;
-+	end = cluster->end - offset;
-+	ret = btrfs_check_data_free_space(inode, start, end + 1 - start);
- 	if (ret)
- 		goto out;
- 
- 	while (nr < cluster->nr) {
--		start = cluster->boundary[nr] - offset;
-+		prealloc_start = cluster->boundary[nr] - offset;
- 		if (nr + 1 < cluster->nr)
--			end = cluster->boundary[nr + 1] - 1 - offset;
-+			prealloc_end = cluster->boundary[nr + 1] - 1 - offset;
- 		else
--			end = cluster->end - offset;
-+			prealloc_end = cluster->end - offset;
- 
--		lock_extent(&BTRFS_I(inode)->io_tree, start, end);
--		num_bytes = end + 1 - start;
--		ret = btrfs_prealloc_file_range(inode, 0, start,
-+		lock_extent(&BTRFS_I(inode)->io_tree, prealloc_start,
-+			    prealloc_end);
-+		num_bytes = prealloc_end + 1 - prealloc_start;
-+		ret = btrfs_prealloc_file_range(inode, 0, prealloc_start,
- 						num_bytes, num_bytes,
--						end + 1, &alloc_hint);
--		unlock_extent(&BTRFS_I(inode)->io_tree, start, end);
-+						prealloc_end + 1, &alloc_hint);
-+		unlock_extent(&BTRFS_I(inode)->io_tree, prealloc_start,
-+			      prealloc_end);
- 		if (ret)
- 			break;
- 		nr++;
- 	}
--	btrfs_free_reserved_data_space(inode, cluster->start,
--				       cluster->end + 1 - cluster->start);
-+	btrfs_free_reserved_data_space(inode, start, end + 1 - start);
- out:
- 	inode_unlock(inode);
+ fs/btrfs/tests/extent-io-tests.c | 87 +++++++++++++++++++++++-----------------
+ 1 file changed, 51 insertions(+), 36 deletions(-)
+
+diff --git a/fs/btrfs/tests/extent-io-tests.c b/fs/btrfs/tests/extent-io-tests.c
+index d19ab0317283..caad80bb9bd0 100644
+--- a/fs/btrfs/tests/extent-io-tests.c
++++ b/fs/btrfs/tests/extent-io-tests.c
+@@ -273,20 +273,37 @@ out:
  	return ret;
+ }
+ 
+-/**
+- * test_bit_in_byte - Determine whether a bit is set in a byte
+- * @nr: bit number to test
+- * @addr: Address to start counting from
+- */
+-static inline int test_bit_in_byte(int nr, const u8 *addr)
++static int check_eb_bitmap(unsigned long *bitmap, struct extent_buffer *eb,
++			   unsigned long len)
+ {
+-	return 1UL & (addr[nr / BITS_PER_BYTE] >> (nr & (BITS_PER_BYTE - 1)));
++	unsigned long i;
++
++	for (i = 0; i < len * BITS_PER_BYTE; i++) {
++		int bit, bit1;
++
++		bit = !!test_bit(i, bitmap);
++		bit1 = !!extent_buffer_test_bit(eb, 0, i);
++		if (bit1 != bit) {
++			test_msg("Bits do not match\n");
++			return -EINVAL;
++		}
++
++		bit1 = !!extent_buffer_test_bit(eb, i / BITS_PER_BYTE,
++						i % BITS_PER_BYTE);
++		if (bit1 != bit) {
++			test_msg("Offset bits do not match\n");
++			return -EINVAL;
++		}
++	}
++	return 0;
+ }
+ 
+ static int __test_eb_bitmaps(unsigned long *bitmap, struct extent_buffer *eb,
+ 			     unsigned long len)
+ {
+-	unsigned long i, x;
++	unsigned long i, j;
++	u32 x;
++	int ret;
+ 
+ 	memset(bitmap, 0, len);
+ 	memset_extent_buffer(eb, 0, 0, len);
+@@ -297,16 +314,18 @@ static int __test_eb_bitmaps(unsigned long *bitmap, struct extent_buffer *eb,
+ 
+ 	bitmap_set(bitmap, 0, len * BITS_PER_BYTE);
+ 	extent_buffer_bitmap_set(eb, 0, 0, len * BITS_PER_BYTE);
+-	if (memcmp_extent_buffer(eb, bitmap, 0, len) != 0) {
++	ret = check_eb_bitmap(bitmap, eb, len);
++	if (ret) {
+ 		test_msg("Setting all bits failed\n");
+-		return -EINVAL;
++		return ret;
+ 	}
+ 
+ 	bitmap_clear(bitmap, 0, len * BITS_PER_BYTE);
+ 	extent_buffer_bitmap_clear(eb, 0, 0, len * BITS_PER_BYTE);
+-	if (memcmp_extent_buffer(eb, bitmap, 0, len) != 0) {
++	ret = check_eb_bitmap(bitmap, eb, len);
++	if (ret) {
+ 		test_msg("Clearing all bits failed\n");
+-		return -EINVAL;
++		return ret;
+ 	}
+ 
+ 	/* Straddling pages test */
+@@ -316,9 +335,10 @@ static int __test_eb_bitmaps(unsigned long *bitmap, struct extent_buffer *eb,
+ 			sizeof(long) * BITS_PER_BYTE);
+ 		extent_buffer_bitmap_set(eb, PAGE_SIZE - sizeof(long) / 2, 0,
+ 					sizeof(long) * BITS_PER_BYTE);
+-		if (memcmp_extent_buffer(eb, bitmap, 0, len) != 0) {
++		ret = check_eb_bitmap(bitmap, eb, len);
++		if (ret) {
+ 			test_msg("Setting straddling pages failed\n");
+-			return -EINVAL;
++			return ret;
+ 		}
+ 
+ 		bitmap_set(bitmap, 0, len * BITS_PER_BYTE);
+@@ -328,9 +348,10 @@ static int __test_eb_bitmaps(unsigned long *bitmap, struct extent_buffer *eb,
+ 		extent_buffer_bitmap_set(eb, 0, 0, len * BITS_PER_BYTE);
+ 		extent_buffer_bitmap_clear(eb, PAGE_SIZE - sizeof(long) / 2, 0,
+ 					sizeof(long) * BITS_PER_BYTE);
+-		if (memcmp_extent_buffer(eb, bitmap, 0, len) != 0) {
++		ret = check_eb_bitmap(bitmap, eb, len);
++		if (ret) {
+ 			test_msg("Clearing straddling pages failed\n");
+-			return -EINVAL;
++			return ret;
+ 		}
+ 	}
+ 
+@@ -339,28 +360,22 @@ static int __test_eb_bitmaps(unsigned long *bitmap, struct extent_buffer *eb,
+ 	 * something repetitive that could miss some hypothetical off-by-n bug.
+ 	 */
+ 	x = 0;
+-	for (i = 0; i < len / sizeof(long); i++) {
+-		x = (0x19660dULL * (u64)x + 0x3c6ef35fULL) & 0xffffffffUL;
+-		bitmap[i] = x;
+-	}
+-	write_extent_buffer(eb, bitmap, 0, len);
+-
+-	for (i = 0; i < len * BITS_PER_BYTE; i++) {
+-		int bit, bit1;
+-
+-		bit = !!test_bit_in_byte(i, (u8 *)bitmap);
+-		bit1 = !!extent_buffer_test_bit(eb, 0, i);
+-		if (bit1 != bit) {
+-			test_msg("Testing bit pattern failed\n");
+-			return -EINVAL;
++	bitmap_clear(bitmap, 0, len * BITS_PER_BYTE);
++	extent_buffer_bitmap_clear(eb, 0, 0, len * BITS_PER_BYTE);
++	for (i = 0; i < len * BITS_PER_BYTE / 32; i++) {
++		x = (0x19660dULL * (u64)x + 0x3c6ef35fULL) & 0xffffffffU;
++		for (j = 0; j < 32; j++) {
++			if (x & (1U << j)) {
++				bitmap_set(bitmap, i * 32 + j, 1);
++				extent_buffer_bitmap_set(eb, 0, i * 32 + j, 1);
++			}
+ 		}
++	}
+ 
+-		bit1 = !!extent_buffer_test_bit(eb, i / BITS_PER_BYTE,
+-						i % BITS_PER_BYTE);
+-		if (bit1 != bit) {
+-			test_msg("Testing bit pattern with offset failed\n");
+-			return -EINVAL;
+-		}
++	ret = check_eb_bitmap(bitmap, eb, len);
++	if (ret) {
++		test_msg("Random bit pattern failed\n");
++		return ret;
+ 	}
+ 
+ 	return 0;
 -- 
 2.9.0
-
-
 

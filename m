@@ -1,240 +1,242 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp-35.italiaonline.it ([212.48.25.163]:49431 "EHLO libero.it"
-	rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-	id S1750919AbcGLVul (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 12 Jul 2016 17:50:41 -0400
-Reply-To: kreijack@inwind.it
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-From: Goffredo Baroncelli <kreijack@inwind.it>
-Subject: [BUG] Btrfs scrub sometime recalculate wrong parity in raid5: take
- two
-Message-ID: <da6e9c30-02a0-39fc-3c67-d0af4fd5bf51@inwind.it>
-Date: Tue, 12 Jul 2016 23:50:19 +0200
-MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
+Received: from plane.gmane.org ([80.91.229.3]:46610 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752485AbcGMHVd (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 13 Jul 2016 03:21:33 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+	id 1bNETn-0004Fm-83
+	for linux-btrfs@vger.kernel.org; Wed, 13 Jul 2016 09:21:11 +0200
+Received: from ip-64-134-228-164.public.wayport.net ([64.134.228.164])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Wed, 13 Jul 2016 09:21:11 +0200
+Received: from 1i5t5.duncan by ip-64-134-228-164.public.wayport.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Wed, 13 Jul 2016 09:21:11 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: ERROR: ioctl(DEV_REPLACE_START) failed on "/mnt": Read-only
+ file system
+Date: Wed, 13 Jul 2016 07:21:04 +0000 (UTC)
+Message-ID: <pan$33005$b43c1faa$391235c7$48d59e33@cox.net>
+References: <d10c846e-36a4-44b6-1d59-65fae30d8e59@rz.uni-freiburg.de>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi All,
+Tamas Baumgartner-Kis posted on Tue, 12 Jul 2016 13:46:56 +0200 as
+excerpted:
 
-I developed a new btrfs command "btrfs insp phy"[1] to further investigate this bug [2]. Using "btrfs insp phy" I developed a script to trigger the bug. The bug is not always triggered, but most of time yes. 
+> Hi,
+> 
+> 
+> I have a problem with the current BTRFS 4.6
+> 
+> 
+> I'm running a Archlinux in a KVM to test BTRFS.
+> 
+> First I played with one device and subvolumes.
+> 
+> After that I added a second device to make a raid1.
+> 
+> # btrfs device add /dev/sdb /mnt
+> # btrfs balance start -dconvert=raid1 -mconvert=raid1 /mnt
 
-Basically the script create a raid5 filesystem (using three loop-device on three file called disk[123].img); on this filesystem  it is create a file. Then using "btrfs insp phy", the physical placement of the data on the device are computed.
+So both data and metadata.  Thanks for specifying the command as
+sometimes it's unclear that the conversion was done for both, or
+just one.
 
-First the script checks that the data are the right one (for data1, data2 and parity), then it corrupt the data:
+> To make a stresstest I removed the first device and wanted to
+> boot, but unfortunately the system couldn't boot.
+> 
+> So I booted into a liveSystem:
+> 
+> #uname -a
+> Linux archiso 4.6.3-1-ARCH #1 SMP PREEMPT Fri Jun 24 21:19:13 CEST 2016
+> x86_64 GNU/Linux
+> 
+> First I tried to mount the "leftover" device with the degraded option
+> 
+> # mount -o degraded /dev/sda /mnt
+> mount: wrong fs type, bad option, bad superblock on /dev/sda,
+>        missing codepage or helper program, or other error
+> 
+>        In some cases useful info is found in syslog - try
+>        dmesg | tail or so.
+> 
+> 
+> but this works only if I also use the read-only option.
+> 
+> # mount -oro,degraded /dev/sda /mnt
+> 
+> If I try then to replace the missing device I got an error
+> 
+> # btrfs replace start -B 1 /dev/sdb /mnt
+> ERROR: ioctl(DEV_REPLACE_START) failed on "/mnt": Read-only file system
 
-test1: the parity is corrupted, then scrub is ran. Then the (data1, data2, parity) data on the disk are checked. This test goes fine all the times
+That's expected.  Adding/deleting/replacing a device requires a
+writable filesystem.
 
-test2: data2 is corrupted, then scrub is ran. Then the (data1, data2, parity) data on the disk are checked. This test fail most of the time: the data on the disk is not correct; the parity is wrong. Scrub sometime reports "WARNING: errors detected during scrubbing, corrected" and sometime reports "ERROR: there are uncorrectable errors". But this seems unrelated to the fact that the data is corrupetd or not
-test3: like test2, but data1 is corrupted. The result are the same as above.
+> Hire are some additional info about the system
+> 
+> #  btrfs --version
+> btrfs-progs v4.6
+> 
+> 
+> 
+> # btrfs fi show
+> Label: 'hdd0'  uuid: 97b5c51a-65d3-4a84-9382-9b99756ca4ab
+> 	Total devices 2 FS bytes used 1.09GiB
+> 	devid    2 size 10.00GiB used 3.56GiB path /dev/sda
+> 	*** Some devices missing
+> 
+> 
+> 
+> # btrfs fi df /mnt
+> Data, RAID1: total=2.00GiB, used=1.04GiB
+> Data, single: total=1.00GiB, used=640.00KiB
+> System, RAID1: total=32.00MiB, used=16.00KiB
+> System, single: total=32.00MiB, used=0.00B
+> Metadata, RAID1: total=256.00MiB, used=54.02MiB
+> Metadata, single: total=256.00MiB, used=256.00KiB
+> GlobalReserve, single: total=32.00MiB, used=0.00B
 
+This reveals the problem.  You have single chunks in addition
+to the raid1 chunks.  Current btrfs will refuse to mount
+writable with a device missing in such a case, in ordered
+to prevent further damage.
 
-test4: data2 is corrupted, the the file is read. The system doesn't return error (the data seems to be fine); but the data2 on the disk is still corrupted.
+Which is a problem, because current btrfs raid1 requires at
+least two devices to write further raid1 content.  So what
+happens when you have a two-device raid1 degraded to a
+single device, is btrfs can no longer write raid1, because
+that requires two devices, so it starts writing single
+mode chunks.
 
+Which means as long as you repair the raid1 in that same
+mount session, you're good.
 
-Note: data1, data2, parity are the disk-element of the raid5 stripe-
-
-Conclusion:
-
-most of the time, it seems that btrfs-raid5 is not capable to rebuild parity and data. Worse the message returned by scrub is incoherent by the status on the disk. The tests didn't fail every time; this complicate the diagnosis. However my script fails most of the time.
-
-BR
-G.Baroncelli
-
-----
-
-root="$(pwd)"
-disks="disk1.img disk2.img disk3.img"
-imgsize=500M
-BTRFS=../btrfs-progs/btrfs
-
-
-#
-# returns all the loopback devices
-#
-loop_disks() {
-	sudo losetup | grep $root | awk '{ print $1 }'
-}
-
-#init the fs
-
-init_fs() {
-	#destroy fs
-	echo umount mnt
-	sudo umount mnt
-	for i in $( loop_disks ); do
-		echo "losetup -d $i"
-		sudo losetup -d $i
-	done
-
-	for i in $disks; do
-		rm $i
-		truncate -s $imgsize $i
-		sudo losetup -f $i
-	done
-
-	loops="$(loop_disks)"
-	loop1="$(echo $loops | awk '{ print $1 }')"
-	echo "loops=$loops; loop1=$loop1"
-
-	sudo mkfs.btrfs -d raid5 -m raid5 $loops
-	sudo mount $loop1 mnt/
-
-	python -c "print 'ad'+'a'*65534+'bd'+'b'*65533" | sudo tee mnt/out.txt >/dev/null
-
-	ls -l mnt/out.txt
-
-	sudo umount mnt
-	sync; sync
-}
-
-check_fs() {
-
-        sudo mount $loop1 mnt
-        data="$(sudo $BTRFS insp phy mnt/out.txt)"
-        
-        data1_off="$(echo "$data" | grep "DATA$" | awk '{ print $5 }')"
-        data2_off="$(echo "$data" | grep "OTHER$" | awk '{ print $5 }')"
-        parity_off="$(echo "$data" | grep "PARITY$" | awk '{ print $5 }')"
-        data1_dev="$(echo "$data" | grep "DATA$" | awk '{ print $3 }')"
-        data2_dev="$(echo "$data" | grep "OTHER$" | awk '{ print $3 }')"
-        parity_dev="$(echo "$data" | grep "PARITY$" | awk '{ print $3 }')"
-        
-        sudo umount mnt
-        
-	# check
-	d="$(dd 2>/dev/null if=$data1_dev bs=1 skip=$data1_off count=5)"
-	if [ "$d" != "adaaa" ]; then
-		echo "******* Wrong data on disk:off $data1_dev:$data1_off (data1)"
-		return 1
-	fi
-
-	d="$(dd 2>/dev/null if=$data2_dev bs=1 skip=$data2_off count=5)"
-	if [ "$d" != "bdbbb" ]; then
-		echo "******* Wrong data on disk:off $data2_dev:$data2_off (data2)"
-		return 1
-	fi
-
-	d="$(dd 2>/dev/null if=$parity_dev bs=1 skip=$parity_off count=5 | 
-                xxd | dd 2>/dev/null bs=1 count=9 skip=10)"
-	if [ "x$d" != "x0300 0303" ]; then
-		echo "******* Wrong data on disk:off $parity_dev:$parity_off (parity)"
-		return 1
-	fi
-
-	return 0
-}
-
-test_corrupt_parity() {
-	echo "--- test 1: corrupt parity"
-	echo 3 | sudo tee >/dev/null /proc/sys/vm/drop_caches
-	sudo dd 2>/dev/null if=/dev/zero of=$parity_dev bs=1 \
-		seek=$parity_off count=5
-	check_fs &>/dev/null && {
-			echo Corruption failed
-			exit 100
-		}
-	echo 3 | sudo tee >/dev/null /proc/sys/vm/drop_caches
-	sudo mount $loop1 mnt
-	sudo btrfs scrub start mnt/.
-	sync; sync
-	cat mnt/out.txt &>/dev/null || echo "Read FAIL"
-	sudo umount mnt
-	echo 3 | sudo tee >/dev/null /proc/sys/vm/drop_caches
-	check_fs || return 1
-	echo "--- test1: OK"
-	return 0
-}
+But you only get that one chance.  If you don't repair it
+in that first mount session after it starts writing to the
+degraded raid1 and thus creates those single mode chunks,
+you don't get a second chance, because once those single
+mode chunks are there it will refuse to mount writable
+with a missing device.  All you can do then is mount
+degraded read-only, and copy your data off.
 
 
+This is a known issue with *current* btrfs.  There are
+actually two sets of patches in discussion to fix the
+problem, but I don't believe (and your results support
+it as well) that 4.6 got them.  I'm not actually sure
+what 4.7 status is as I've not tracked it /that/ closely.
 
-test_corrupt_data2() {
-	echo "--- test 2: corrupt data2"
-	echo 3 | sudo tee >/dev/null /proc/sys/vm/drop_caches
-	sudo dd 2>/dev/null if=/dev/zero of=$data2_dev bs=1 \
-		seek=$data2_off count=5
-	check_fs &>/dev/null && {
-			echo Corruption failed
-			exit 100
-		}
-	echo 3 | sudo tee >/dev/null >/dev/null /proc/sys/vm/drop_caches
-	sudo mount $loop1 mnt
-	sudo btrfs scrub start mnt/.
-	sync; sync
-	cat mnt/out.txt &>/dev/null || echo "Read FAIL"
-	sudo umount mnt
-	echo 3 | sudo tee >/dev/null /proc/sys/vm/drop_caches
-	check_fs || return 1
-	echo "--- test2: OK"
-	return 0
-}
+The first attempt at a fix was a patch set that
+had btrfs check each chunk, and if all chunks
+were accounted for, as they will be on an originally
+two-device raid1 that had a device dropped and then
+had single-mode chunks written to the other one, it
+would still allow degraded writable mount.  Only if
+some chunks end up not available as they're on the
+missing device, would the filesystem only allow
+degraded, read-only mounting.  This is referred to
+as the per-chunk check patchset.
 
-test_corrupt_data1() {
-	echo "--- test 3: corrupt data1"
-	echo 3 | sudo tee >/dev/null /proc/sys/vm/drop_caches
-	sudo dd 2>/dev/null if=/dev/zero of=$data1_dev bs=1 \
-		seek=$data1_off count=5
-	check_fs &>/dev/null && {
-			echo Corruption failed
-			exit 100
-		}
-	echo 3 | sudo tee >/dev/null /proc/sys/vm/drop_caches
-	sudo mount $loop1 mnt
-	sudo btrfs scrub start mnt/.
-	sync; sync
-	cat mnt/out.txt &>/dev/null || echo "Read FAIL"
-	sudo umount mnt
-	echo 3 | sudo tee >/dev/null /proc/sys/vm/drop_caches
-	check_fs || return 1
-	echo "--- test3: OK"
-	return 0
-}
+But while that strategy and patch-set worked, further
+discussion decided it was a work-around to the actual
+problem -- internally, btrfs tracks two numbers for
+minimum allowed devices for writable mount, full
+functionality, and degraded but everything still
+available.  For raid1 full functionality, obviously
+the minimum is two devices, but the degraded minimum
+should be just one device, of course also requiring
+that no more than a single device should be missing,
+since btrfs raid1 is only two copies no matter the
+number of devices (above 1).
 
-test_corrupt_data2_wo_scrub() {
-	echo "--- test 4: corrupt data2; read without scrub"
-	echo 3 | sudo tee >/dev/null /proc/sys/vm/drop_caches
-	sudo dd 2>/dev/null if=/dev/zero of=$data2_dev bs=1 \
-		seek=$data2_off count=5
-	check_fs &>/dev/null && {
-			echo Corruption failed
-			exit 100
-		}
-	echo 3 | sudo tee >/dev/null /proc/sys/vm/drop_caches
-	sudo mount $loop1 mnt
-	cat mnt/out.txt &>/dev/null || echo "Read FAIL"
-	sudo umount mnt
-	echo 3 | sudo tee >/dev/null /proc/sys/vm/drop_caches
-	check_fs || return 1
-	echo "--- test 4: OK"
-	return 0
-}
+The real bug was decided to be that for raid1,
+btrfs had both the minimums set to two devices.
+Which is why the forced-switch to single-mode
+chunk writing code was added in the first place, as
+a workaround to /this/ problem, instead of
+fixing it by allowing writing to only a single
+device with the other copy missing, if degraded
+was in the options.
 
+However, by the time that decision was reached
+and a patch created and in-testing to change
+the raid1 mode degraded writable minimum, it was
+already too late in the 4.6 cycle to get such
+a big change in.
 
-for t in test_corrupt_parity test_corrupt_data2 test_corrupt_data1 \
-    test_corrupt_data2_wo_scrub; do
-    
-        init_fs &>/dev/null
-        if ! check_fs &>/dev/null; then 
-             echo Integrity test failed
-             exit 100
-        fi
+Meanwhile, the other problem was that the initial
+per-chunk check patches were added to a patch-set
+that wasn't yet considered mature and thus wasn't
+picked for early 4.6.  The delay was fortunate in
+that it allowed the real problem to be discovered
+and a patch created, but that's why a fix may not
+have made it into 4.7 either, because if the patch
+set it's a part of is still not considered mature,
+it would not have been pulled for 4.7 either, and
+the new patch fixing the real problem would still
+be in limbo along with it.
 
-        $t
-        echo
-    
-done
+Unless of course it was individually cherry-picked
+apart from the patchset as a whole.  As a user not
+a dev myself, I followed the discussion, but I haven't
+followed developments close enough to know what the
+current status is, and whether the second patch fix
+actually made it into 4.7, or not.
 
+So in summary, it's a known problem, with an early
+proposed patch that was decided to be really a
+work-around that didn't fix the real problem, and a
+second proposed patch now available, but I don't
+know the status of testing and whether it reached
+mainline in time for 4.7.
 
------------------
+But they /are/ aware of the problem and /are/ working
+on it.  In the mean time, you have three choices.
+You can:
 
+1)  Try to be careful and actually do a replace
+on the first degraded writable mount of a btrfs raid1,
+because you know that's the only chance you'll get with
+current code to repair it.
 
+2) Find and apply one or the other patches manually.
 
-
-[1] See email "New btrfs sub command: btrfs inspect physical-find"
-[2] See email "[BUG] Btrfs scrub sometime recalculate wrong parity in raid5"
+3) Just let the thing go read-only if it's going
+to, and copy everything over to a different
+filesystem from the read-only btrfs before blowing
+it away, if it comes to that.
 
 
+But meanwhile, while the above btrfs fi df reveals
+the problem as we see it on the existing filesystem,
+it says nothing about how it got that way.  Your
+sequence above doesn't mention mounting the
+degraded raid1 writable once, for it to create those
+single-mode chunks that are now blocking writable
+mount, but that's one way it could have happened.
+
+Another way would be if the balance-conversion from
+single mode to raid1 never properly completed in the
+first place.  But I'm assuming it did and that you
+had a full raid1 btrfs fi df report at one point.
+
+A third way would be if some other bug triggered
+btrfs to suddenly start writing single mode
+chunks.  There were some bugs like that in the
+past, but they've been fixed for some time.  But
+perhaps there are similar newer bugs, or perhaps
+you ran the filesystem on an old kernel with
+that bug.
 
 -- 
-gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
-Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

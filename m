@@ -1,71 +1,88 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pa0-f50.google.com ([209.85.220.50]:36001 "EHLO
-	mail-pa0-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753177AbcGLWrb (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:47239 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750887AbcGMF26 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 12 Jul 2016 18:47:31 -0400
-Received: by mail-pa0-f50.google.com with SMTP id pp5so4152300pac.3
-        for <linux-btrfs@vger.kernel.org>; Tue, 12 Jul 2016 15:47:24 -0700 (PDT)
-Date: Tue, 12 Jul 2016 15:47:12 -0700
-From: Omar Sandoval <osandov@osandov.com>
-To: dsterba@suse.cz, Anatoly Pugachev <matorola@gmail.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>, sparclinux@vger.kernel.org,
-        debian-sparc <debian-sparc@lists.debian.org>
-Subject: Re: btrfs module does not load on sparc64
-Message-ID: <20160712224712.GA7880@vader.DHCP.thefacebook.com>
-References: <CADxRZqwhBoc9sNxxZ4a9ZJ0JiYWiL9xtG8T_ws4i61YrtNHtHg@mail.gmail.com>
- <20160711100646.GS13336@twin.jikos.cz>
+	Wed, 13 Jul 2016 01:28:58 -0400
+Date: Tue, 12 Jul 2016 22:28:38 -0700
+From: "Darrick J. Wong" <darrick.wong@oracle.com>
+To: Eryu Guan <eguan@redhat.com>
+Cc: david@fromorbit.com, linux-btrfs@vger.kernel.org, fstests@vger.kernel.org,
+        xfs@oss.sgi.com
+Subject: Re: [PATCH v6 00/20] xfstests: minor fixes for the reflink/dedupe
+ tests
+Message-ID: <20160713052837.GE13625@birch.djwong.org>
+References: <146612796204.25024.18254357523133394284.stgit@birch.djwong.org>
+ <20160705043130.GF23649@eguan.usersys.redhat.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20160711100646.GS13336@twin.jikos.cz>
+In-Reply-To: <20160705043130.GF23649@eguan.usersys.redhat.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Jul 11, 2016 at 12:06:46PM +0200, David Sterba wrote:
-> On Thu, Jul 07, 2016 at 05:29:35PM +0300, Anatoly Pugachev wrote:
-> > Compiled linux kernel (git version 4.7.0-rc6+) using my own kernel
-> > config file, enabling :
-> > 
-> > CONFIG_BTRFS_FS_RUN_SANITY_TESTS=y
-> > CONFIG_BTRFS_DEBUG=y
-> > CONFIG_BTRFS_ASSERT=y
-> > 
-> > and now I can't load btrfs module:
-> > 
-> > # modprobe btrfs
-> > modprobe: ERROR: could not insert 'btrfs': Invalid argument
-> > 
-> > 
-> > and in logs (and on console):
-> > 
-> > [1897399.942697] Btrfs loaded, crc32c=crc32c-generic, debug=on, assert=on
-> > [1897400.024645] BTRFS: selftest: sectorsize: 8192  nodesize: 8192
-> > [1897400.098089] BTRFS: selftest: Running btrfs free space cache tests
-> > [1897400.175863] BTRFS: selftest: Running extent only tests
-> > [1897400.241871] BTRFS: selftest: Running bitmap only tests
-> > [1897400.307877] BTRFS: selftest: Running bitmap and extent tests
-> > [1897400.380329] BTRFS: selftest: Running space stealing from bitmap to extent
-> > [1897400.470517] BTRFS: selftest: Free space cache tests finished
-> > [1897400.542875] BTRFS: selftest: Running extent buffer operation tests
-> > [1897400.621710] BTRFS: selftest: Running btrfs_split_item tests
-> > [1897400.692929] BTRFS: selftest: Running extent I/O tests
-> > [1897400.757459] BTRFS: selftest: Running find delalloc tests
-> > [1897401.082670] BTRFS: selftest: Running extent buffer bitmap tests
-> > [1897401.161223] BTRFS: selftest: Setting straddling pages failed
+On Tue, Jul 05, 2016 at 12:31:30PM +0800, Eryu Guan wrote:
+> Hi Darrick,
 > 
-> The sanity tests fail at some point with EINVAL, so the module will fail
-> to load in turn. Looking at the test itself (__test_eb_bitmaps), it does
-> no make any assumptions about page size etc. so this "should work".
-> Taking powerpc with 64k page size for another reference where the tests
-> work, I'm not sure what exactly could be wrong here.
+> On Thu, Jun 16, 2016 at 06:46:02PM -0700, Darrick J. Wong wrote:
+> > Hi all,
+> > 
+> > This is the sixth revision of a patchset that adds to xfstests
+> > support for testing reverse-mappings of physical blocks to file and
+> > metadata (rmap); support for testing multiple file logical blocks to
+> > the same physical block (reflink); and implements the beginnings of
+> > online metadata scrubbing.
+> > 
+> > The first eight patches are in Eryu Guan's pull request on 2016-06-15.
+> > Those patches haven't changed, but they're not yet in the upstream
+> > repo.
+> > 
+> > If you're going to start using this mess, you probably ought to just
+> > pull from my github trees for kernel[1], xfsprogs[2], and xfstests[3].
+> > There are also updates for xfs-docs[4].  The kernel patches should
+> > apply to dchinner's for-next; xfsprogs patches to for-next; and
+> > xfstest to master.  The kernel git tree already has for-next included.
+> > 
+> > The patches have been xfstested with x64, i386, and armv7l--arm64,
+> > ppc64, and ppc64le no longer boot in qemu.  All three architectures
+> > pass all 'clone' group tests except xfs/128 (which is the swapext
+> > test), and AFAICT don't cause any new failures for the 'auto' group.
+> > 
+> > This is an extraordinary way to eat your data.  Enjoy! 
+> > Comments and questions are, as always, welcome.
+> 
+> I tested your xfstests patches with your kernel(HEAD f0b34b6 xfs: add
+> btree scrub tracepoints) and xfsprogs(HEAD 34bd754 xfs_scrub: create
+> online filesystem scrub program), with x86_64 host & 4k block size XFS.
+> 
+> A './check -g auto' run looked fine overall. Besides the comments I
+> replied to some patches, other common minor issues are:
+> - space indention in _cleanup not tab
+> - bare 'umount $SCRATCH_MNT' not _scratch_unmount
+> - whitespace issues in _test|scratch_inject_error
+> 
+> (I can fix all these minor issues at commit time, if you don't have
+> other major updates to these patches).
+> 
+> And the review of changes to xfs/122 needs help from other XFS
+> developers :) (09/20 and 10/20)
+> 
+> And besides the first 8 patches, 15/20 has been in upstream as well.
+> 
+> Thanks,
+> Eryu
+> 
+> P.S.
+> The failed tests I saw when testing with reflink-enabled kernel &
+> xfsprogs:
+> 
+> Failures: generic/054 generic/055 generic/108 generic/204 generic/356 generic/357 xfs/004 xfs/096 xfs/122 xfs/293
+> 
+> generic/108 generic/204 and xfs/004 are new failures compared to stock
+> kernel and xfsprogs (kernel 4.7-rc5, xfsprogs 4.7-rc1).
+> 
+> Just FYI.
 
-This is an endianness problem with the test. It's not showing up on
-powerpc because ed9e4afdb055 ("Btrfs: self-tests: Execute page
-straddling test only when nodesize < PAGE_SIZE") [1] disabled that chunk
-of the test. It also fails on a big-endian MIPS QEMU system with 16K
-pages. I'll send up a patch.
+Thanks for doing this.  I'm seeing some of the same failures you are,
+and will fix them up in the next patch bundle.
 
-1: https://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/commit/?id=ed9e4afdb0551e3ef4ee8433fe664433a20ef73a
-
--- 
-Omar
+--D

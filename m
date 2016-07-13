@@ -1,242 +1,192 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:46610 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752485AbcGMHVd (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 13 Jul 2016 03:21:33 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1bNETn-0004Fm-83
-	for linux-btrfs@vger.kernel.org; Wed, 13 Jul 2016 09:21:11 +0200
-Received: from ip-64-134-228-164.public.wayport.net ([64.134.228.164])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 13 Jul 2016 09:21:11 +0200
-Received: from 1i5t5.duncan by ip-64-134-228-164.public.wayport.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 13 Jul 2016 09:21:11 +0200
+Received: from mailgateway3.uni-freiburg.de ([132.230.2.213]:48679 "EHLO
+	mailgateway3.uni-freiburg.de" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1752714AbcGMKYi (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 13 Jul 2016 06:24:38 -0400
+Received: from ms2.uni-freiburg.de ([132.230.2.3] helo=uni-freiburg.de) port 59076
+	by mailgateway3.uni-freiburg.de with esmtp
+	(Exim 4.85 #2 built 17-Dec-2015 15:40:08 running on Gentoo)
+	id 1bNHL8-0001fY-0R
+	for linux-btrfs@vger.kernel.org; Wed, 13 Jul 2016 12:24:26 +0200
+Received: from [132.230.9.129] (account tamas.baumgartner-kis@rz.uni-freiburg.de [132.230.9.129] verified)
+  by rz.uni-freiburg.de (CommuniGate Pro SMTP 6.1.6b)
+  with ESMTPSA id 289842657 for linux-btrfs@vger.kernel.org; Wed, 13 Jul 2016 12:24:24 +0200
 To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: ERROR: ioctl(DEV_REPLACE_START) failed on "/mnt": Read-only
- file system
-Date: Wed, 13 Jul 2016 07:21:04 +0000 (UTC)
-Message-ID: <pan$33005$b43c1faa$391235c7$48d59e33@cox.net>
-References: <d10c846e-36a4-44b6-1d59-65fae30d8e59@rz.uni-freiburg.de>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+From: Tamas Baumgartner-Kis <Tamas.Baumgartner-Kis@rz.uni-freiburg.de>
+Subject: Re: ERROR: ioctl(DEV_REPLACE_START) failed on "/mnt": Read-only file
+ system
+Message-ID: <49f1ec8e-1c39-d401-9ed3-73887de24c5e@rz.uni-freiburg.de>
+Date: Wed, 13 Jul 2016 12:24:24 +0200
+MIME-Version: 1.0
+Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha-256; boundary="------------ms080603060707070606030901"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Tamas Baumgartner-Kis posted on Tue, 12 Jul 2016 13:46:56 +0200 as
-excerpted:
+This is a cryptographically signed message in MIME format.
 
-> Hi,
-> 
-> 
-> I have a problem with the current BTRFS 4.6
-> 
-> 
-> I'm running a Archlinux in a KVM to test BTRFS.
-> 
-> First I played with one device and subvolumes.
-> 
-> After that I added a second device to make a raid1.
-> 
-> # btrfs device add /dev/sdb /mnt
-> # btrfs balance start -dconvert=raid1 -mconvert=raid1 /mnt
+--------------ms080603060707070606030901
+Content-Type: text/plain; charset=utf-8
+Content-Transfer-Encoding: quoted-printable
 
-So both data and metadata.  Thanks for specifying the command as
-sometimes it's unclear that the conversion was done for both, or
-just one.
+Hi Duncan,
 
-> To make a stresstest I removed the first device and wanted to
-> boot, but unfortunately the system couldn't boot.
-> 
-> So I booted into a liveSystem:
-> 
-> #uname -a
-> Linux archiso 4.6.3-1-ARCH #1 SMP PREEMPT Fri Jun 24 21:19:13 CEST 2016
-> x86_64 GNU/Linux
-> 
-> First I tried to mount the "leftover" device with the degraded option
-> 
-> # mount -o degraded /dev/sda /mnt
-> mount: wrong fs type, bad option, bad superblock on /dev/sda,
->        missing codepage or helper program, or other error
-> 
->        In some cases useful info is found in syslog - try
->        dmesg | tail or so.
-> 
-> 
-> but this works only if I also use the read-only option.
-> 
-> # mount -oro,degraded /dev/sda /mnt
-> 
-> If I try then to replace the missing device I got an error
-> 
-> # btrfs replace start -B 1 /dev/sdb /mnt
-> ERROR: ioctl(DEV_REPLACE_START) failed on "/mnt": Read-only file system
+many many thanks for your nice explanation and pointing it out
+what could happened.
 
-That's expected.  Adding/deleting/replacing a device requires a
-writable filesystem.
-
-> Hire are some additional info about the system
-> 
-> #  btrfs --version
-> btrfs-progs v4.6
-> 
-> 
-> 
-> # btrfs fi show
-> Label: 'hdd0'  uuid: 97b5c51a-65d3-4a84-9382-9b99756ca4ab
-> 	Total devices 2 FS bytes used 1.09GiB
-> 	devid    2 size 10.00GiB used 3.56GiB path /dev/sda
-> 	*** Some devices missing
-> 
-> 
-> 
-> # btrfs fi df /mnt
-> Data, RAID1: total=2.00GiB, used=1.04GiB
-> Data, single: total=1.00GiB, used=640.00KiB
-> System, RAID1: total=32.00MiB, used=16.00KiB
-> System, single: total=32.00MiB, used=0.00B
-> Metadata, RAID1: total=256.00MiB, used=54.02MiB
-> Metadata, single: total=256.00MiB, used=256.00KiB
-> GlobalReserve, single: total=32.00MiB, used=0.00B
-
-This reveals the problem.  You have single chunks in addition
-to the raid1 chunks.  Current btrfs will refuse to mount
-writable with a device missing in such a case, in ordered
-to prevent further damage.
-
-Which is a problem, because current btrfs raid1 requires at
-least two devices to write further raid1 content.  So what
-happens when you have a two-device raid1 degraded to a
-single device, is btrfs can no longer write raid1, because
-that requires two devices, so it starts writing single
-mode chunks.
-
-Which means as long as you repair the raid1 in that same
-mount session, you're good.
-
-But you only get that one chance.  If you don't repair it
-in that first mount session after it starts writing to the
-degraded raid1 and thus creates those single mode chunks,
-you don't get a second chance, because once those single
-mode chunks are there it will refuse to mount writable
-with a missing device.  All you can do then is mount
-degraded read-only, and copy your data off.
+> This reveals the problem.  You have single chunks in addition
+> to the raid1 chunks.  Current btrfs will refuse to mount
+> writable with a device missing in such a case, in ordered
+> to prevent further damage.
 
 
-This is a known issue with *current* btrfs.  There are
-actually two sets of patches in discussion to fix the
-problem, but I don't believe (and your results support
-it as well) that 4.6 got them.  I'm not actually sure
-what 4.7 status is as I've not tracked it /that/ closely.
-
-The first attempt at a fix was a patch set that
-had btrfs check each chunk, and if all chunks
-were accounted for, as they will be on an originally
-two-device raid1 that had a device dropped and then
-had single-mode chunks written to the other one, it
-would still allow degraded writable mount.  Only if
-some chunks end up not available as they're on the
-missing device, would the filesystem only allow
-degraded, read-only mounting.  This is referred to
-as the per-chunk check patchset.
-
-But while that strategy and patch-set worked, further
-discussion decided it was a work-around to the actual
-problem -- internally, btrfs tracks two numbers for
-minimum allowed devices for writable mount, full
-functionality, and degraded but everything still
-available.  For raid1 full functionality, obviously
-the minimum is two devices, but the degraded minimum
-should be just one device, of course also requiring
-that no more than a single device should be missing,
-since btrfs raid1 is only two copies no matter the
-number of devices (above 1).
-
-The real bug was decided to be that for raid1,
-btrfs had both the minimums set to two devices.
-Which is why the forced-switch to single-mode
-chunk writing code was added in the first place, as
-a workaround to /this/ problem, instead of
-fixing it by allowing writing to only a single
-device with the other copy missing, if degraded
-was in the options.
-
-However, by the time that decision was reached
-and a patch created and in-testing to change
-the raid1 mode degraded writable minimum, it was
-already too late in the 4.6 cycle to get such
-a big change in.
-
-Meanwhile, the other problem was that the initial
-per-chunk check patches were added to a patch-set
-that wasn't yet considered mature and thus wasn't
-picked for early 4.6.  The delay was fortunate in
-that it allowed the real problem to be discovered
-and a patch created, but that's why a fix may not
-have made it into 4.7 either, because if the patch
-set it's a part of is still not considered mature,
-it would not have been pulled for 4.7 either, and
-the new patch fixing the real problem would still
-be in limbo along with it.
-
-Unless of course it was individually cherry-picked
-apart from the patchset as a whole.  As a user not
-a dev myself, I followed the discussion, but I haven't
-followed developments close enough to know what the
-current status is, and whether the second patch fix
-actually made it into 4.7, or not.
-
-So in summary, it's a known problem, with an early
-proposed patch that was decided to be really a
-work-around that didn't fix the real problem, and a
-second proposed patch now available, but I don't
-know the status of testing and whether it reached
-mainline in time for 4.7.
-
-But they /are/ aware of the problem and /are/ working
-on it.  In the mean time, you have three choices.
-You can:
-
-1)  Try to be careful and actually do a replace
-on the first degraded writable mount of a btrfs raid1,
-because you know that's the only chance you'll get with
-current code to repair it.
-
-2) Find and apply one or the other patches manually.
-
-3) Just let the thing go read-only if it's going
-to, and copy everything over to a different
-filesystem from the read-only btrfs before blowing
-it away, if it comes to that.
+> But meanwhile, while the above btrfs fi df reveals
+> the problem as we see it on the existing filesystem,
+> it says nothing about how it got that way.  Your
+> sequence above doesn't mention mounting the
+> degraded raid1 writable once, for it to create those
+> single-mode chunks that are now blocking writable
+> mount, but that's one way it could have happened.
 
 
-But meanwhile, while the above btrfs fi df reveals
-the problem as we see it on the existing filesystem,
-it says nothing about how it got that way.  Your
-sequence above doesn't mention mounting the
-degraded raid1 writable once, for it to create those
-single-mode chunks that are now blocking writable
-mount, but that's one way it could have happened.
+You're right, I booted first in to the installed system on the harddisk
+and ended up in the rescueshell because obviously the "degraded" option
+in the fstab is missing. So I mounted the harddisk manually with
+the "degraded" option. But after that I decided to do the repairing
+in a LiveSystem... I assume that is where the problem come from.
+Because in the LiveSystem I wasn't able to mount the harddisk only
+with the degraded option.
 
-Another way would be if the balance-conversion from
-single mode to raid1 never properly completed in the
-first place.  But I'm assuming it did and that you
-had a full raid1 btrfs fi df report at one point.
+So as you mentioned either you fix the missing harddisk during the
+running of the System or after that you have one shot (for example in
+a LiveSystem), otherwise you have to copy from the readonly mounted
+harddisk.
 
-A third way would be if some other bug triggered
-btrfs to suddenly start writing single mode
-chunks.  There were some bugs like that in the
-past, but they've been fixed for some time.  But
-perhaps there are similar newer bugs, or perhaps
-you ran the filesystem on an old kernel with
-that bug.
+> Another way would be if the balance-conversion from
+> single mode to raid1 never properly completed in the
+> first place.  But I'm assuming it did and that you
+> had a full raid1 btrfs fi df report at one point.
 
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+> A third way would be if some other bug triggered
+> btrfs to suddenly start writing single mode
+> chunks.  There were some bugs like that in the
+> past, but they've been fixed for some time.  But
+> perhaps there are similar newer bugs, or perhaps
+> you ran the filesystem on an old kernel with
+> that bug.
 
+Thank you and kind regards
+    Tamas Baumgartner-Kis
+
+--=20
+Tam=C3=A1s Baumgartner-Kis
+Rechenzentrum der Universit=C3=A4t Freiburg
+Phone: +49 761 203 4605
+E-Mail: Tamas.Baumgartner-Kis@rz.uni-freiburg.de
+
+
+--------------ms080603060707070606030901
+Content-Type: application/pkcs7-signature; name="smime.p7s"
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment; filename="smime.p7s"
+Content-Description: S/MIME Cryptographic Signature
+
+MIAGCSqGSIb3DQEHAqCAMIACAQExDzANBglghkgBZQMEAgEFADCABgkqhkiG9w0BBwEAAKCC
+EGcwggTVMIIDvaADAgECAghQTsb1PRG0ZDANBgkqhkiG9w0BAQsFADBxMQswCQYDVQQGEwJE
+RTEcMBoGA1UEChMTRGV1dHNjaGUgVGVsZWtvbSBBRzEfMB0GA1UECxMWVC1UZWxlU2VjIFRy
+dXN0IENlbnRlcjEjMCEGA1UEAxMaRGV1dHNjaGUgVGVsZWtvbSBSb290IENBIDIwHhcNMTQw
+NzIyMTIwODI2WhcNMTkwNzA5MjM1OTAwWjBaMQswCQYDVQQGEwJERTETMBEGA1UEChMKREZO
+LVZlcmVpbjEQMA4GA1UECxMHREZOLVBLSTEkMCIGA1UEAxMbREZOLVZlcmVpbiBQQ0EgR2xv
+YmFsIC0gRzAxMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA6ZvDZ4X5Da71jVTD
+llA1PWLpbkztlNcAW5UidNQg6zSP1uzAMQQLmYHiphTSUqAoI4SLdIkEXlvg4njBeMsWyyg1
+OXstkEXQ7aAAeny/Sg4bAMOG6VwrMRF7DPOCJEOMHDiLamgAmu7cT3ir0sYTm3at7t4m6O8B
+r3QPwQmi9mvOvdPNFDBP9eXjpMhim4IaAycwDQJlYE3t0QkjKpY1WCfTdsZxtpAdxO3/NYZ9
+bzOz2w/FEcKKg6GUXUFr2NIQ9Uz9ylGs2b3vkoO72uuLFlZWQ8/h1RM9ph8nMM1JVNvJEzSa
+cXXFbOqnC5j5IZ0nrz6jOTlIaoytyZn7wxLyvQIDAQABo4IBhjCCAYIwDgYDVR0PAQH/BAQD
+AgEGMB0GA1UdDgQWBBRJt8bP6D0ff+pEexMp9/EKcD7eZDAfBgNVHSMEGDAWgBQxw3kbuvVT
+1xfgiXotF2wKsyudMzASBgNVHRMBAf8ECDAGAQH/AgECMGIGA1UdIARbMFkwEQYPKwYBBAGB
+rSGCLAEBBAICMBEGDysGAQQBga0hgiwBAQQDADARBg8rBgEEAYGtIYIsAQEEAwEwDwYNKwYB
+BAGBrSGCLAEBBDANBgsrBgEEAYGtIYIsHjA+BgNVHR8ENzA1MDOgMaAvhi1odHRwOi8vcGtp
+MDMzNi50ZWxlc2VjLmRlL3JsL0RUX1JPT1RfQ0FfMi5jcmwweAYIKwYBBQUHAQEEbDBqMCwG
+CCsGAQUFBzABhiBodHRwOi8vb2NzcDAzMzYudGVsZXNlYy5kZS9vY3NwcjA6BggrBgEFBQcw
+AoYuaHR0cDovL3BraTAzMzYudGVsZXNlYy5kZS9jcnQvRFRfUk9PVF9DQV8yLmNlcjANBgkq
+hkiG9w0BAQsFAAOCAQEAYyAo/ZwhhnK+OUZZOTIlvKkBmw3Myn1BnIZtCm4ssxNZdbEzkhth
+Jxb/w7LVNYL7hCoBSb1mu2YvssIGXW4/buMBWlvKQ2NclbbhMacf1QdfTeZlgk4y+cN8ekvN
+TVx07iHydQLsUj7SyWrTkCNuSWc1vn9NVqTszC/Pt6GXqHI+ybxA1lqkCD3WvILDt7cyjrEs
+jmpttzUCGc/1OURYY6ckABCwu/xOr24vOLulV0k/2G5QbyyXltwdRpplic+uzPLl2Z9Tsz6h
+L5Kp2AvGhB8Exuse6J99tXulAvEkxSRjETTMWpMgKnmIOiVCkKllO3yG0xIVIyn8LNrMOVtU
+FzCCBWcwggRPoAMCAQICBxeQYO6Qlu8wDQYJKoZIhvcNAQELBQAwWjELMAkGA1UEBhMCREUx
+EzARBgNVBAoTCkRGTi1WZXJlaW4xEDAOBgNVBAsTB0RGTi1QS0kxJDAiBgNVBAMTG0RGTi1W
+ZXJlaW4gUENBIEdsb2JhbCAtIEcwMTAeFw0xNDA1MTIxNTA2MDZaFw0xOTA3MDkyMzU5MDBa
+MIGGMQswCQYDVQQGEwJERTEeMBwGA1UEChMVVW5pdmVyc2l0YWV0IEZyZWlidXJnMRYwFAYD
+VQQLEw1SZWNoZW56ZW50cnVtMRgwFgYDVQQDEw9VbmktRlIgQ0EgLSBHMDIxJTAjBgkqhkiG
+9w0BCQEWFnBraUByei51bmktZnJlaWJ1cmcuZGUwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAw
+ggEKAoIBAQCf7mzykck8Vf8FUy5DwtYtNKNCmfBLBAA4j0SZ8/aLJ5/x8lgTQGZrTXO1UxZp
+cCIMo+vQpHfHSVgA30tih5z9a16zHJqDiptuHCwwcdhmuGEWfSBJgF5g0f0VXB2FOiOo5xU8
+kGw+IWkC/+OzxCMKODGXHTOIIs/yRQbU1HKrqhjUepNh1Hu/LBQt8EXtWbPOLR3nU4BJLs3G
+2p40zwOUxw8y8cFXu0aJobKlYKgpHNqtHyZ7h/LX5jMjpaxH9sbKTT+ZxL2fS6eighN4tJFI
+5szt+FWGSSC/GcdWvWZwYZi+NnH0CKhJxCAgrtB+ZxMYWwffMFQxBAbwpg7hPOzlAgMBAAGj
+ggIDMIIB/zASBgNVHRMBAf8ECDAGAQH/AgEBMA4GA1UdDwEB/wQEAwIBBjARBgNVHSAECjAI
+MAYGBFUdIAAwHQYDVR0OBBYEFDNnqdbxk1U2rKEyvcHkljn/THAxMB8GA1UdIwQYMBaAFEm3
+xs/oPR9/6kR7Eyn38QpwPt5kMCEGA1UdEQQaMBiBFnBraUByei51bmktZnJlaWJ1cmcuZGUw
+gYgGA1UdHwSBgDB+MD2gO6A5hjdodHRwOi8vY2RwMS5wY2EuZGZuLmRlL2dsb2JhbC1yb290
+LWNhL3B1Yi9jcmwvY2FjcmwuY3JsMD2gO6A5hjdodHRwOi8vY2RwMi5wY2EuZGZuLmRlL2ds
+b2JhbC1yb290LWNhL3B1Yi9jcmwvY2FjcmwuY3JsMIHXBggrBgEFBQcBAQSByjCBxzAzBggr
+BgEFBQcwAYYnaHR0cDovL29jc3AucGNhLmRmbi5kZS9PQ1NQLVNlcnZlci9PQ1NQMEcGCCsG
+AQUFBzAChjtodHRwOi8vY2RwMS5wY2EuZGZuLmRlL2dsb2JhbC1yb290LWNhL3B1Yi9jYWNl
+cnQvY2FjZXJ0LmNydDBHBggrBgEFBQcwAoY7aHR0cDovL2NkcDIucGNhLmRmbi5kZS9nbG9i
+YWwtcm9vdC1jYS9wdWIvY2FjZXJ0L2NhY2VydC5jcnQwDQYJKoZIhvcNAQELBQADggEBAI5e
+ehxKszyHlsTZT6HAsPFfy3gDN9HE8xKrRfPqhylVNkdGde7i09sg442UWg2PmglUq7BCxGu3
+9suSY9iQEZzdX5CspktFgfa8O2KYa/Z+7/K0xopyY6JzZ9EIXHppmiYXE8ZYomPErxaKdWT6
+WGwRAKUL4FY8n+TbDlrDcK85ebQcU18F397S8gph6EAlk0/Lo81IP3RxoxLUX9Bs8YUWQQ2G
+hryQZfIlEqpRIBRSsd1zSxgHCYvgQTs5saJ4jK/6NZjO56cWaGP0HZ564UuGS2lPD4OYyLUG
+gh80K8YgeOJHcxOP5940F6ESRFsPUmaROi8s7eUGqI6Wetc/DiEwggYfMIIFB6ADAgECAgcZ
+mMnpsr3HMA0GCSqGSIb3DQEBCwUAMIGGMQswCQYDVQQGEwJERTEeMBwGA1UEChMVVW5pdmVy
+c2l0YWV0IEZyZWlidXJnMRYwFAYDVQQLEw1SZWNoZW56ZW50cnVtMRgwFgYDVQQDEw9Vbmkt
+RlIgQ0EgLSBHMDIxJTAjBgkqhkiG9w0BCQEWFnBraUByei51bmktZnJlaWJ1cmcuZGUwHhcN
+MTUwNjExMDg1MjQyWhcNMTgwNjEwMDg1MjQyWjCBsDELMAkGA1UEBhMCREUxHjAcBgNVBAoM
+FVVuaXZlcnNpdGFldCBGcmVpYnVyZzEoMCYGA1UECwwfUmVjaGVuemVudHJ1bS9OZXR6d2Vy
+a2FidGVpbHVuZzEeMBwGA1UEAwwVVGFtYXMgQmF1bWdhcnRuZXItS2lzMTcwNQYJKoZIhvcN
+AQkBFihUYW1hcy5CYXVtZ2FydG5lci1LaXNAcnoudW5pLWZyZWlidXJnLmRlMIIBIjANBgkq
+hkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAwjNXe6i6WvLI8mVqzexGGHp2yXyQwlfdxx9vLDvg
+96BbUbD3N4/z2I9uVE5cqZcNMX59ZfyCP4hTj4IPp8MyV0jWBj/UBY+yZYS5N/hpL7MppqMM
+X3KHOfO/uP/sfLAN8iwlUez5Va37P6tNnMNOkpcn9D9tPQWD7luxXUNeezae7y42uC+j55Qs
+AR2eZMR3WLdpVfeTri4aOYf8LYrhgIl9CokC5cE3Tq919VhFQGPQGpkT+6RhQ+ewRB2iW6NM
+ntCp3QNh5/nNAHyGb6YnxOZAdKAkr1mQ/EHaSL4wxYdIaWOrykI+daxVTTSGlWYk+fcvG0CA
+N2NVl+ywkartlQIDAQABo4ICZDCCAmAwQAYDVR0gBDkwNzARBg8rBgEEAYGtIYIsAQEEAwMw
+EQYPKwYBBAGBrSGCLAIBBAMBMA8GDSsGAQQBga0hgiwBAQQwCQYDVR0TBAIwADALBgNVHQ8E
+BAMCBeAwHQYDVR0lBBYwFAYIKwYBBQUHAwIGCCsGAQUFBwMEMB0GA1UdDgQWBBTkYSs1FbVG
+owlcee1Vn0Wol1fgNzAfBgNVHSMEGDAWgBQzZ6nW8ZNVNqyhMr3B5JY5/0xwMTAzBgNVHREE
+LDAqgShUYW1hcy5CYXVtZ2FydG5lci1LaXNAcnoudW5pLWZyZWlidXJnLmRlMIGPBgNVHR8E
+gYcwgYQwQKA+oDyGOmh0dHA6Ly9jZHAxLnBjYS5kZm4uZGUvdW5pLWZyZWlidXJnLWNhL3B1
+Yi9jcmwvZ19jYWNybC5jcmwwQKA+oDyGOmh0dHA6Ly9jZHAyLnBjYS5kZm4uZGUvdW5pLWZy
+ZWlidXJnLWNhL3B1Yi9jcmwvZ19jYWNybC5jcmwwgd0GCCsGAQUFBwEBBIHQMIHNMDMGCCsG
+AQUFBzABhidodHRwOi8vb2NzcC5wY2EuZGZuLmRlL09DU1AtU2VydmVyL09DU1AwSgYIKwYB
+BQUHMAKGPmh0dHA6Ly9jZHAxLnBjYS5kZm4uZGUvdW5pLWZyZWlidXJnLWNhL3B1Yi9jYWNl
+cnQvZ19jYWNlcnQuY3J0MEoGCCsGAQUFBzAChj5odHRwOi8vY2RwMi5wY2EuZGZuLmRlL3Vu
+aS1mcmVpYnVyZy1jYS9wdWIvY2FjZXJ0L2dfY2FjZXJ0LmNydDANBgkqhkiG9w0BAQsFAAOC
+AQEAcXClGLGLb48f9kVEmVw2yWQ/ORmZXS2PN5OdPkcsXtCmRhnpolscqYniF8Jv9re2QeEe
+7WMiWkpLbmtmmfgzlIu+LaKrGYyGvVkU5YyE0m0/897JfscnqYSve3w98O0CTaYG8nAyhLSI
+0/b6gtaqrsC35sxgDlaqLZcrjtzGH5HNzaC/Ir+HVJ+6Q4Mm5jkK371nm2xfH12FqXbmrJGl
+V1xoTlGKnz/X+Nc+7AQ4wAiCIxT70pxvCOURNHydeUM6vuM2dh9vwKOaiyOWHUQfwsoP3z17
+1rL+xsJky5VrQIVMRkWPEFVi6H8dlVnlGPF35w4rL+oRHahMqGndYEQZ4TGCA+cwggPjAgEB
+MIGSMIGGMQswCQYDVQQGEwJERTEeMBwGA1UEChMVVW5pdmVyc2l0YWV0IEZyZWlidXJnMRYw
+FAYDVQQLEw1SZWNoZW56ZW50cnVtMRgwFgYDVQQDEw9VbmktRlIgQ0EgLSBHMDIxJTAjBgkq
+hkiG9w0BCQEWFnBraUByei51bmktZnJlaWJ1cmcuZGUCBxmYyemyvccwDQYJYIZIAWUDBAIB
+BQCgggIlMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE2MDcx
+MzEwMjQyNFowLwYJKoZIhvcNAQkEMSIEIKSLcHL6BrT/b+wCWsuqO0Uyz68PWmXjh0wleWuj
+8xlwMGwGCSqGSIb3DQEJDzFfMF0wCwYJYIZIAWUDBAEqMAsGCWCGSAFlAwQBAjAKBggqhkiG
+9w0DBzAOBggqhkiG9w0DAgICAIAwDQYIKoZIhvcNAwICAUAwBwYFKw4DAgcwDQYIKoZIhvcN
+AwICASgwgaMGCSsGAQQBgjcQBDGBlTCBkjCBhjELMAkGA1UEBhMCREUxHjAcBgNVBAoTFVVu
+aXZlcnNpdGFldCBGcmVpYnVyZzEWMBQGA1UECxMNUmVjaGVuemVudHJ1bTEYMBYGA1UEAxMP
+VW5pLUZSIENBIC0gRzAyMSUwIwYJKoZIhvcNAQkBFhZwa2lAcnoudW5pLWZyZWlidXJnLmRl
+AgcZmMnpsr3HMIGlBgsqhkiG9w0BCRACCzGBlaCBkjCBhjELMAkGA1UEBhMCREUxHjAcBgNV
+BAoTFVVuaXZlcnNpdGFldCBGcmVpYnVyZzEWMBQGA1UECxMNUmVjaGVuemVudHJ1bTEYMBYG
+A1UEAxMPVW5pLUZSIENBIC0gRzAyMSUwIwYJKoZIhvcNAQkBFhZwa2lAcnoudW5pLWZyZWli
+dXJnLmRlAgcZmMnpsr3HMA0GCSqGSIb3DQEBAQUABIIBAMCT/KkYt4lgDtwIH44HYriMbPjG
+RkmOhicJQwhjF9ZY2PAkDOFwfKUOkZTDCVeWqa8N5ZysPdkSy1ac2oH1ihi3cKZHLn4ZOsM+
+tu644blBOdBXzXIYedIio0N45vD4VQ+Z7e1WH7cvb0FyOMq2zjs3YP+d62iTCUQUfxV5CaON
+cXKa47585KtFOfQG/EZVyUpeqhjmtfCnc3SB39yFkzt46kYYaqlR4bXypb1+DnReaw7bgAnv
+Ml16WoadgJXgjKr4TxxFt+27kU7m/DPnMGNGSTh7TojJbXuDmwHQO4fJ3uyuBJ8zyDpDNbwS
+YZ02hickj0al7X9tjzPVxydshasAAAAAAAA=
+--------------ms080603060707070606030901--

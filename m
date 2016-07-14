@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pf0-f176.google.com ([209.85.192.176]:34334 "EHLO
+Received: from mail-pf0-f176.google.com ([209.85.192.176]:33057 "EHLO
 	mail-pf0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751153AbcGNXbT (ORCPT
+	with ESMTP id S1751133AbcGNXbU (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 14 Jul 2016 19:31:19 -0400
-Received: by mail-pf0-f176.google.com with SMTP id p64so902002pfb.1
-        for <linux-btrfs@vger.kernel.org>; Thu, 14 Jul 2016 16:31:19 -0700 (PDT)
+	Thu, 14 Jul 2016 19:31:20 -0400
+Received: by mail-pf0-f176.google.com with SMTP id y134so8599561pfg.0
+        for <linux-btrfs@vger.kernel.org>; Thu, 14 Jul 2016 16:31:20 -0700 (PDT)
 From: Omar Sandoval <osandov@osandov.com>
 To: linux-btrfs@vger.kernel.org
-Cc: kernel-team@fb.com, stable@vger.kernel.org
-Subject: [PATCH 1/3] Btrfs: fix free space tree bitmaps on big-endian systems
-Date: Thu, 14 Jul 2016 16:31:06 -0700
-Message-Id: <85425278548bc20317c3607d05c8fbade93ea723.1468538030.git.osandov@fb.com>
+Cc: kernel-team@fb.com
+Subject: [PATCH 2/3] Btrfs: fix extent buffer bitmap tests on big-endian systems
+Date: Thu, 14 Jul 2016 16:31:07 -0700
+Message-Id: <fd59705a730c316b6cb7adf0762d3b1b1016c512.1468538030.git.osandov@fb.com>
 In-Reply-To: <cover.1468538030.git.osandov@fb.com>
 References: <cover.1468538030.git.osandov@fb.com>
 In-Reply-To: <cover.1468538030.git.osandov@fb.com>
@@ -21,252 +21,174 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Omar Sandoval <osandov@fb.com>
 
-In convert_free_space_to_{bitmaps,extents}(), we buffer the free space
-bitmaps in memory and copy them directly to/from the extent buffers with
-{read,write}_extent_buffer(). The extent buffer bitmap helpers use byte
-granularity, which is equivalent to a little-endian bitmap. This means
-that on big-endian systems, the in-memory bitmaps will be written to
-disk byte-swapped. To fix this, use byte-granularity for the bitmaps in
-memory.
+The in-memory bitmap code manipulates words and is therefore sensitive
+to endianness, while the extent buffer bitmap code addresses bytes and
+is byte-order agnostic. Because the byte addressing of the extent buffer
+bitmaps is equivalent to a little-endian in-memory bitmap, the extent
+buffer bitmap tests fail on big-endian systems.
 
-Cc: stable@vger.kernel.org
+34b3e6c92af1 ("Btrfs: self-tests: Fix extent buffer bitmap test fail on
+BE system") worked around another endianness bug in the tests but missed
+this one because ed9e4afdb055 ("Btrfs: self-tests: Execute page
+straddling test only when nodesize < PAGE_SIZE") disables this part of
+the test on ppc64. That change lost the original meaning of the test,
+however. We really want to test that an equivalent series of operations
+using the in-memory bitmap API and the extent buffer bitmap API produces
+equivalent results.
+
+To fix this, don't use memcmp_extent_buffer() or write_extent_buffer();
+do everything bit-by-bit.
+
+Reported-by: Anatoly Pugachev <matorola@gmail.com>
+Tested-by: Anatoly Pugachev <matorola@gmail.com>
+Tested-by: Feifei Xu <xufeifei@linux.vnet.ibm.com>
 Signed-off-by: Omar Sandoval <osandov@fb.com>
 ---
- fs/btrfs/extent_io.c       | 64 +++++++++++++++++++++++++++++++++-------------
- fs/btrfs/extent_io.h       | 22 ++++++++++++++++
- fs/btrfs/free-space-tree.c | 17 ++++++------
- 3 files changed, 76 insertions(+), 27 deletions(-)
+ fs/btrfs/tests/extent-io-tests.c | 87 +++++++++++++++++++++++-----------------
+ 1 file changed, 51 insertions(+), 36 deletions(-)
 
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 75533adef998..bdb43882791a 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -5514,17 +5514,45 @@ void copy_extent_buffer(struct extent_buffer *dst, struct extent_buffer *src,
- 	}
+diff --git a/fs/btrfs/tests/extent-io-tests.c b/fs/btrfs/tests/extent-io-tests.c
+index d19ab0317283..caad80bb9bd0 100644
+--- a/fs/btrfs/tests/extent-io-tests.c
++++ b/fs/btrfs/tests/extent-io-tests.c
+@@ -273,20 +273,37 @@ out:
+ 	return ret;
  }
  
--/*
-- * The extent buffer bitmap operations are done with byte granularity because
-- * bitmap items are not guaranteed to be aligned to a word and therefore a
-- * single word in a bitmap may straddle two pages in the extent buffer.
+-/**
+- * test_bit_in_byte - Determine whether a bit is set in a byte
+- * @nr: bit number to test
+- * @addr: Address to start counting from
 - */
--#define BIT_BYTE(nr) ((nr) / BITS_PER_BYTE)
--#define BYTE_MASK ((1 << BITS_PER_BYTE) - 1)
--#define BITMAP_FIRST_BYTE_MASK(start) \
--	((BYTE_MASK << ((start) & (BITS_PER_BYTE - 1))) & BYTE_MASK)
--#define BITMAP_LAST_BYTE_MASK(nbits) \
--	(BYTE_MASK >> (-(nbits) & (BITS_PER_BYTE - 1)))
-+void le_bitmap_set(u8 *map, unsigned int start, int len)
-+{
-+	u8 *p = map + BIT_BYTE(start);
-+	const unsigned int size = start + len;
-+	int bits_to_set = BITS_PER_BYTE - (start % BITS_PER_BYTE);
-+	u8 mask_to_set = BITMAP_FIRST_BYTE_MASK(start);
-+
-+	while (len - bits_to_set >= 0) {
-+		*p |= mask_to_set;
-+		len -= bits_to_set;
-+		bits_to_set = BITS_PER_BYTE;
-+		mask_to_set = ~(u8)0;
-+		p++;
-+	}
-+	if (len) {
-+		mask_to_set &= BITMAP_LAST_BYTE_MASK(size);
-+		*p |= mask_to_set;
-+	}
-+}
-+
-+void le_bitmap_clear(u8 *map, unsigned int start, int len)
-+{
-+	u8 *p = map + BIT_BYTE(start);
-+	const unsigned int size = start + len;
-+	int bits_to_clear = BITS_PER_BYTE - (start % BITS_PER_BYTE);
-+	u8 mask_to_clear = BITMAP_FIRST_BYTE_MASK(start);
-+
-+	while (len - bits_to_clear >= 0) {
-+		*p &= ~mask_to_clear;
-+		len -= bits_to_clear;
-+		bits_to_clear = BITS_PER_BYTE;
-+		mask_to_clear = ~(u8)0;
-+		p++;
-+	}
-+	if (len) {
-+		mask_to_clear &= BITMAP_LAST_BYTE_MASK(size);
-+		*p &= ~mask_to_clear;
-+	}
-+}
- 
- /*
-  * eb_bitmap_offset() - calculate the page and offset of the byte containing the
-@@ -5568,7 +5596,7 @@ static inline void eb_bitmap_offset(struct extent_buffer *eb,
- int extent_buffer_test_bit(struct extent_buffer *eb, unsigned long start,
- 			   unsigned long nr)
+-static inline int test_bit_in_byte(int nr, const u8 *addr)
++static int check_eb_bitmap(unsigned long *bitmap, struct extent_buffer *eb,
++			   unsigned long len)
  {
--	char *kaddr;
-+	u8 *kaddr;
- 	struct page *page;
- 	unsigned long i;
- 	size_t offset;
-@@ -5590,13 +5618,13 @@ int extent_buffer_test_bit(struct extent_buffer *eb, unsigned long start,
- void extent_buffer_bitmap_set(struct extent_buffer *eb, unsigned long start,
- 			      unsigned long pos, unsigned long len)
- {
--	char *kaddr;
-+	u8 *kaddr;
- 	struct page *page;
- 	unsigned long i;
- 	size_t offset;
- 	const unsigned int size = pos + len;
- 	int bits_to_set = BITS_PER_BYTE - (pos % BITS_PER_BYTE);
--	unsigned int mask_to_set = BITMAP_FIRST_BYTE_MASK(pos);
-+	u8 mask_to_set = BITMAP_FIRST_BYTE_MASK(pos);
- 
- 	eb_bitmap_offset(eb, start, pos, &i, &offset);
- 	page = eb->pages[i];
-@@ -5607,7 +5635,7 @@ void extent_buffer_bitmap_set(struct extent_buffer *eb, unsigned long start,
- 		kaddr[offset] |= mask_to_set;
- 		len -= bits_to_set;
- 		bits_to_set = BITS_PER_BYTE;
--		mask_to_set = ~0U;
-+		mask_to_set = ~(u8)0;
- 		if (++offset >= PAGE_SIZE && len > 0) {
- 			offset = 0;
- 			page = eb->pages[++i];
-@@ -5632,13 +5660,13 @@ void extent_buffer_bitmap_set(struct extent_buffer *eb, unsigned long start,
- void extent_buffer_bitmap_clear(struct extent_buffer *eb, unsigned long start,
- 				unsigned long pos, unsigned long len)
- {
--	char *kaddr;
-+	u8 *kaddr;
- 	struct page *page;
- 	unsigned long i;
- 	size_t offset;
- 	const unsigned int size = pos + len;
- 	int bits_to_clear = BITS_PER_BYTE - (pos % BITS_PER_BYTE);
--	unsigned int mask_to_clear = BITMAP_FIRST_BYTE_MASK(pos);
-+	u8 mask_to_clear = BITMAP_FIRST_BYTE_MASK(pos);
- 
- 	eb_bitmap_offset(eb, start, pos, &i, &offset);
- 	page = eb->pages[i];
-@@ -5649,7 +5677,7 @@ void extent_buffer_bitmap_clear(struct extent_buffer *eb, unsigned long start,
- 		kaddr[offset] &= ~mask_to_clear;
- 		len -= bits_to_clear;
- 		bits_to_clear = BITS_PER_BYTE;
--		mask_to_clear = ~0U;
-+		mask_to_clear = ~(u8)0;
- 		if (++offset >= PAGE_SIZE && len > 0) {
- 			offset = 0;
- 			page = eb->pages[++i];
-diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
-index c0c1c4fef6ce..d19010729468 100644
---- a/fs/btrfs/extent_io.h
-+++ b/fs/btrfs/extent_io.h
-@@ -58,6 +58,28 @@
-  */
- #define EXTENT_PAGE_PRIVATE 1
- 
-+/*
-+ * The extent buffer bitmap operations are done with byte granularity instead of
-+ * word granularity for two reasons:
-+ * 1. The bitmaps must be little-endian on disk.
-+ * 2. Bitmap items are not guaranteed to be aligned to a word and therefore a
-+ *    single word in a bitmap may straddle two pages in the extent buffer.
-+ */
-+#define BIT_BYTE(nr) ((nr) / BITS_PER_BYTE)
-+#define BYTE_MASK ((1 << BITS_PER_BYTE) - 1)
-+#define BITMAP_FIRST_BYTE_MASK(start) \
-+	((BYTE_MASK << ((start) & (BITS_PER_BYTE - 1))) & BYTE_MASK)
-+#define BITMAP_LAST_BYTE_MASK(nbits) \
-+	(BYTE_MASK >> (-(nbits) & (BITS_PER_BYTE - 1)))
+-	return 1UL & (addr[nr / BITS_PER_BYTE] >> (nr & (BITS_PER_BYTE - 1)));
++	unsigned long i;
 +
-+static inline int le_test_bit(int nr, const u8 *addr)
-+{
-+	return 1U & (addr[BIT_BYTE(nr)] >> (nr & (BITS_PER_BYTE-1)));
-+}
++	for (i = 0; i < len * BITS_PER_BYTE; i++) {
++		int bit, bit1;
 +
-+extern void le_bitmap_set(u8 *map, unsigned int start, int len);
-+extern void le_bitmap_clear(u8 *map, unsigned int start, int len);
++		bit = !!test_bit(i, bitmap);
++		bit1 = !!extent_buffer_test_bit(eb, 0, i);
++		if (bit1 != bit) {
++			test_msg("Bits do not match\n");
++			return -EINVAL;
++		}
 +
- struct extent_state;
- struct btrfs_root;
- struct btrfs_io_bio;
-diff --git a/fs/btrfs/free-space-tree.c b/fs/btrfs/free-space-tree.c
-index 53dbeaf6ce94..68ce45a2b763 100644
---- a/fs/btrfs/free-space-tree.c
-+++ b/fs/btrfs/free-space-tree.c
-@@ -151,7 +151,7 @@ static inline u32 free_space_bitmap_size(u64 size, u32 sectorsize)
- 	return DIV_ROUND_UP((u32)div_u64(size, sectorsize), BITS_PER_BYTE);
++		bit1 = !!extent_buffer_test_bit(eb, i / BITS_PER_BYTE,
++						i % BITS_PER_BYTE);
++		if (bit1 != bit) {
++			test_msg("Offset bits do not match\n");
++			return -EINVAL;
++		}
++	}
++	return 0;
  }
  
--static unsigned long *alloc_bitmap(u32 bitmap_size)
-+static u8 *alloc_bitmap(u32 bitmap_size)
+ static int __test_eb_bitmaps(unsigned long *bitmap, struct extent_buffer *eb,
+ 			     unsigned long len)
  {
- 	void *mem;
+-	unsigned long i, x;
++	unsigned long i, j;
++	u32 x;
++	int ret;
  
-@@ -180,8 +180,7 @@ int convert_free_space_to_bitmaps(struct btrfs_trans_handle *trans,
- 	struct btrfs_free_space_info *info;
- 	struct btrfs_key key, found_key;
- 	struct extent_buffer *leaf;
--	unsigned long *bitmap;
--	char *bitmap_cursor;
-+	u8 *bitmap, *bitmap_cursor;
- 	u64 start, end;
- 	u64 bitmap_range, i;
- 	u32 bitmap_size, flags, expected_extent_count;
-@@ -231,7 +230,7 @@ int convert_free_space_to_bitmaps(struct btrfs_trans_handle *trans,
- 						block_group->sectorsize);
- 				last = div_u64(found_key.objectid + found_key.offset - start,
- 					       block_group->sectorsize);
--				bitmap_set(bitmap, first, last - first);
-+				le_bitmap_set(bitmap, first, last - first);
+ 	memset(bitmap, 0, len);
+ 	memset_extent_buffer(eb, 0, 0, len);
+@@ -297,16 +314,18 @@ static int __test_eb_bitmaps(unsigned long *bitmap, struct extent_buffer *eb,
  
- 				extent_count++;
- 				nr++;
-@@ -269,7 +268,7 @@ int convert_free_space_to_bitmaps(struct btrfs_trans_handle *trans,
- 		goto out;
+ 	bitmap_set(bitmap, 0, len * BITS_PER_BYTE);
+ 	extent_buffer_bitmap_set(eb, 0, 0, len * BITS_PER_BYTE);
+-	if (memcmp_extent_buffer(eb, bitmap, 0, len) != 0) {
++	ret = check_eb_bitmap(bitmap, eb, len);
++	if (ret) {
+ 		test_msg("Setting all bits failed\n");
+-		return -EINVAL;
++		return ret;
  	}
  
--	bitmap_cursor = (char *)bitmap;
-+	bitmap_cursor = bitmap;
- 	bitmap_range = block_group->sectorsize * BTRFS_FREE_SPACE_BITMAP_BITS;
- 	i = start;
- 	while (i < end) {
-@@ -318,7 +317,7 @@ int convert_free_space_to_extents(struct btrfs_trans_handle *trans,
- 	struct btrfs_free_space_info *info;
- 	struct btrfs_key key, found_key;
- 	struct extent_buffer *leaf;
--	unsigned long *bitmap;
-+	u8 *bitmap;
- 	u64 start, end;
- 	/* Initialize to silence GCC. */
- 	u64 extent_start = 0;
-@@ -362,7 +361,7 @@ int convert_free_space_to_extents(struct btrfs_trans_handle *trans,
- 				break;
- 			} else if (found_key.type == BTRFS_FREE_SPACE_BITMAP_KEY) {
- 				unsigned long ptr;
--				char *bitmap_cursor;
-+				u8 *bitmap_cursor;
- 				u32 bitmap_pos, data_size;
+ 	bitmap_clear(bitmap, 0, len * BITS_PER_BYTE);
+ 	extent_buffer_bitmap_clear(eb, 0, 0, len * BITS_PER_BYTE);
+-	if (memcmp_extent_buffer(eb, bitmap, 0, len) != 0) {
++	ret = check_eb_bitmap(bitmap, eb, len);
++	if (ret) {
+ 		test_msg("Clearing all bits failed\n");
+-		return -EINVAL;
++		return ret;
+ 	}
  
- 				ASSERT(found_key.objectid >= start);
-@@ -372,7 +371,7 @@ int convert_free_space_to_extents(struct btrfs_trans_handle *trans,
- 				bitmap_pos = div_u64(found_key.objectid - start,
- 						     block_group->sectorsize *
- 						     BITS_PER_BYTE);
--				bitmap_cursor = ((char *)bitmap) + bitmap_pos;
-+				bitmap_cursor = bitmap + bitmap_pos;
- 				data_size = free_space_bitmap_size(found_key.offset,
- 								   block_group->sectorsize);
+ 	/* Straddling pages test */
+@@ -316,9 +335,10 @@ static int __test_eb_bitmaps(unsigned long *bitmap, struct extent_buffer *eb,
+ 			sizeof(long) * BITS_PER_BYTE);
+ 		extent_buffer_bitmap_set(eb, PAGE_SIZE - sizeof(long) / 2, 0,
+ 					sizeof(long) * BITS_PER_BYTE);
+-		if (memcmp_extent_buffer(eb, bitmap, 0, len) != 0) {
++		ret = check_eb_bitmap(bitmap, eb, len);
++		if (ret) {
+ 			test_msg("Setting straddling pages failed\n");
+-			return -EINVAL;
++			return ret;
+ 		}
  
-@@ -409,7 +408,7 @@ int convert_free_space_to_extents(struct btrfs_trans_handle *trans,
- 	offset = start;
- 	bitnr = 0;
- 	while (offset < end) {
--		bit = !!test_bit(bitnr, bitmap);
-+		bit = !!le_test_bit(bitnr, bitmap);
- 		if (prev_bit == 0 && bit == 1) {
- 			extent_start = offset;
- 		} else if (prev_bit == 1 && bit == 0) {
+ 		bitmap_set(bitmap, 0, len * BITS_PER_BYTE);
+@@ -328,9 +348,10 @@ static int __test_eb_bitmaps(unsigned long *bitmap, struct extent_buffer *eb,
+ 		extent_buffer_bitmap_set(eb, 0, 0, len * BITS_PER_BYTE);
+ 		extent_buffer_bitmap_clear(eb, PAGE_SIZE - sizeof(long) / 2, 0,
+ 					sizeof(long) * BITS_PER_BYTE);
+-		if (memcmp_extent_buffer(eb, bitmap, 0, len) != 0) {
++		ret = check_eb_bitmap(bitmap, eb, len);
++		if (ret) {
+ 			test_msg("Clearing straddling pages failed\n");
+-			return -EINVAL;
++			return ret;
+ 		}
+ 	}
+ 
+@@ -339,28 +360,22 @@ static int __test_eb_bitmaps(unsigned long *bitmap, struct extent_buffer *eb,
+ 	 * something repetitive that could miss some hypothetical off-by-n bug.
+ 	 */
+ 	x = 0;
+-	for (i = 0; i < len / sizeof(long); i++) {
+-		x = (0x19660dULL * (u64)x + 0x3c6ef35fULL) & 0xffffffffUL;
+-		bitmap[i] = x;
+-	}
+-	write_extent_buffer(eb, bitmap, 0, len);
+-
+-	for (i = 0; i < len * BITS_PER_BYTE; i++) {
+-		int bit, bit1;
+-
+-		bit = !!test_bit_in_byte(i, (u8 *)bitmap);
+-		bit1 = !!extent_buffer_test_bit(eb, 0, i);
+-		if (bit1 != bit) {
+-			test_msg("Testing bit pattern failed\n");
+-			return -EINVAL;
++	bitmap_clear(bitmap, 0, len * BITS_PER_BYTE);
++	extent_buffer_bitmap_clear(eb, 0, 0, len * BITS_PER_BYTE);
++	for (i = 0; i < len * BITS_PER_BYTE / 32; i++) {
++		x = (0x19660dULL * (u64)x + 0x3c6ef35fULL) & 0xffffffffU;
++		for (j = 0; j < 32; j++) {
++			if (x & (1U << j)) {
++				bitmap_set(bitmap, i * 32 + j, 1);
++				extent_buffer_bitmap_set(eb, 0, i * 32 + j, 1);
++			}
+ 		}
++	}
+ 
+-		bit1 = !!extent_buffer_test_bit(eb, i / BITS_PER_BYTE,
+-						i % BITS_PER_BYTE);
+-		if (bit1 != bit) {
+-			test_msg("Testing bit pattern with offset failed\n");
+-			return -EINVAL;
+-		}
++	ret = check_eb_bitmap(bitmap, eb, len);
++	if (ret) {
++		test_msg("Random bit pattern failed\n");
++		return ret;
+ 	}
+ 
+ 	return 0;
 -- 
 2.9.0
 

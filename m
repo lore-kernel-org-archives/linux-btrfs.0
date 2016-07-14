@@ -1,85 +1,102 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oi0-f49.google.com ([209.85.218.49]:32867 "EHLO
-	mail-oi0-f49.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750765AbcGMQ3D (ORCPT
+Received: from achille.seblu.net ([62.210.204.83]:34610 "EHLO
+	achille.seblu.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750967AbcGNL0P (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 13 Jul 2016 12:29:03 -0400
-Received: by mail-oi0-f49.google.com with SMTP id j185so71658570oih.0
-        for <linux-btrfs@vger.kernel.org>; Wed, 13 Jul 2016 09:29:02 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <49f1ec8e-1c39-d401-9ed3-73887de24c5e@rz.uni-freiburg.de>
-References: <49f1ec8e-1c39-d401-9ed3-73887de24c5e@rz.uni-freiburg.de>
-From: Chris Murphy <lists@colorremedies.com>
-Date: Wed, 13 Jul 2016 10:28:50 -0600
-Message-ID: <CAJCQCtTOnnvDMoNOd6R1HCT555RTd9wvAcP3EokELygwSiobNw@mail.gmail.com>
-Subject: Re: ERROR: ioctl(DEV_REPLACE_START) failed on "/mnt": Read-only file system
-To: Tamas Baumgartner-Kis <Tamas.Baumgartner-Kis@rz.uni-freiburg.de>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+	Thu, 14 Jul 2016 07:26:15 -0400
+Received: from murphy.h.seblu.net (cac94-h02-176-184-25-92.dsl.sta.abo.bbox.fr [176.184.25.92])
+	(Authenticated sender: seblu)
+	by achille.seblu.net (Postfix) with ESMTPSA id B739150C0093
+	for <linux-btrfs@vger.kernel.org>; Thu, 14 Jul 2016 13:18:51 +0200 (CEST)
+Message-ID: <1468495129.19617.127.camel@seblu.net>
+Subject: btrfs replace performance with missing drive
+From: =?ISO-8859-1?Q?S=E9bastien?= Luttringer <seblu@seblu.net>
+To: linux-btrfs@vger.kernel.org
+Date: Thu, 14 Jul 2016 13:18:49 +0200
+Content-Type: multipart/signed; micalg="pgp-sha384";
+	protocol="application/pgp-signature"; boundary="=-fBipo5VlMrFyXMSgJKOl"
+Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jul 13, 2016 at 4:24 AM, Tamas Baumgartner-Kis
-<Tamas.Baumgartner-Kis@rz.uni-freiburg.de> wrote:
-> Hi Duncan,
->
-> many many thanks for your nice explanation and pointing it out
-> what could happened.
->
->> This reveals the problem.  You have single chunks in addition
->> to the raid1 chunks.  Current btrfs will refuse to mount
->> writable with a device missing in such a case, in ordered
->> to prevent further damage.
->
->
->> But meanwhile, while the above btrfs fi df reveals
->> the problem as we see it on the existing filesystem,
->> it says nothing about how it got that way.  Your
->> sequence above doesn't mention mounting the
->> degraded raid1 writable once, for it to create those
->> single-mode chunks that are now blocking writable
->> mount, but that's one way it could have happened.
->
->
-> You're right, I booted first in to the installed system on the harddisk
-> and ended up in the rescueshell because obviously the "degraded" option
-> in the fstab is missing. So I mounted the harddisk manually with
-> the "degraded" option. But after that I decided to do the repairing
-> in a LiveSystem... I assume that is where the problem come from.
-> Because in the LiveSystem I wasn't able to mount the harddisk only
-> with the degraded option.
->
-> So as you mentioned either you fix the missing harddisk during the
-> running of the System or after that you have one shot (for example in
-> a LiveSystem), otherwise you have to copy from the readonly mounted
-> harddisk.
->
->> Another way would be if the balance-conversion from
->> single mode to raid1 never properly completed in the
->> first place.  But I'm assuming it did and that you
->> had a full raid1 btrfs fi df report at one point.
->
->> A third way would be if some other bug triggered
->> btrfs to suddenly start writing single mode
->> chunks.  There were some bugs like that in the
->> past, but they've been fixed for some time.  But
->> perhaps there are similar newer bugs, or perhaps
->> you ran the filesystem on an old kernel with
->> that bug.
+
+--=-fBipo5VlMrFyXMSgJKOl
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: base64
+
+SGVsbG8sCgpJIGhhdmUgYSBwZXJmb3JtYW5jZSBpc3N1ZSB3aXRoIMKrYnRyZnMgcmVwbGFjZcK7
+IHdpdGggcmFpZDUgYW5kIGEgX21pc3NpbmdfCmRldmljZS4gTXkgYnRyZnMgcmVseSBvbiA2eDRU
+QiBIREQgYW5kIHRoZSBvcGVyYXRpbmcgc3lzdGVtIGlzIGFuIEFyY2hsaW51eC4KCkluIGEgbnV0
+c2hlbGwsIEkgd2lsbCBuZWVkIDIzIHRvIDQ2IGRheXMgdG8gcmVwbGFjZSBvbiBtaXNzaW5nIGRp
+c2suCgojIGJ0cmZzIGZpIHNoIC9ob21lCkxhYmVsOiAncmFwdG9yLmhvbWUnwqDCoHV1aWQ6IDg3
+MzljOGIyLTExMGItNDRhYy04YjRkLTI4NWFkMDZlZTQ0NgrCoMKgwqDCoMKgwqDCoMKgVG90YWwg
+ZGV2aWNlcyA3IEZTIGJ5dGVzIHVzZWQgMTQuNjBUaUIKwqDCoMKgwqDCoMKgwqDCoGRldmlkwqDC
+oMKgwqAwIHNpemUgMy42NFRpQiB1c2VkIDIuODBUaUIgcGF0aCAvZGV2L3NkZgrCoMKgwqDCoMKg
+wqDCoMKgZGV2aWTCoMKgwqDCoDMgc2l6ZSAzLjY0VGlCIHVzZWQgMi45N1RpQiBwYXRoIC9kZXYv
+c2RoCsKgwqDCoMKgwqDCoMKgwqBkZXZpZMKgwqDCoMKgNSBzaXplIDMuNjRUaUIgdXNlZCAyLjk3
+VGlCIHBhdGggL2Rldi9zZGMKwqDCoMKgwqDCoMKgwqDCoGRldmlkwqDCoMKgwqA2IHNpemUgMy42
+NFRpQiB1c2VkIDIuOTdUaUIgcGF0aCAvZGV2L3NkZArCoMKgwqDCoMKgwqDCoMKgZGV2aWTCoMKg
+wqDCoDcgc2l6ZSAzLjY0VGlCIHVzZWQgMi45N1RpQiBwYXRoIC9kZXYvc2RlCsKgwqDCoMKgwqDC
+oMKgwqBkZXZpZMKgwqDCoMKgOCBzaXplIDMuNjRUaUIgdXNlZCAyLjk3VGlCIHBhdGggL2Rldi9z
+ZGcKwqDCoMKgwqDCoMKgwqDCoCoqKiBTb21lIGRldmljZXMgbWlzc2luZwoKCkF0IGEgZGlzayBm
+dWxsIHNwZWVkICgxMDAgTUIvcykgcmVwbGFjaW5nIHRoZSBtaXNzaW5nIGRpc2sgKDQgVEIpIHNo
+b3VsZCB0YWtlCmFyb3VuZCA4IGhvdXJzLiBXaXRoIHRoZSBzYW1lIGRpc2sgbW9kZWwgYW5kIHNh
+bWUgSEJBIGNhcmQgaW4gYW5vdGhlciBjb21wdXRlcgp3aXRoIGEgbWRhZG0vcmFpZDUsIEkgY291
+bGQgdmVyaWZ5IHRoaXMgZHVyYXRpb24gY291bGQgYmUgcmVhY2guCgpJIGFsc28gdGVzdGVkIGEg
+wqtidHJmcyByZXBsYWNlwrsgd2l0aG91dCBhIG1pc3NpbmcgZGlzayBhbmQgdGhlIHNwZWVkIHdh
+cyBub3Qgc28KYmFkLiBTb21ld2hlcmUgYXJvdW5kIGhhbGYgZGlzayBzcGVlZCAoNTAtNjBNQi9z
+KS7CoFBlcmZvcm1hbmNlcyBhcmUgdW5kZXIKbWRhZG0uCgpCdXQsIGluIG15IGNhc2UsIHRoZSBk
+cml2ZSBpcyBwYXNzIGF3YXksIEkgY2FuJ3QgdXNlIGl0IGFzIHNvdXJjZSBvZiB0aGUKcmVwbGFj
+ZSwgc28gSSBoYXZlIGEgcmVwbGFjZSBzcGVlZCBvZiAxLTJNQi9zICEgV2hpY2ggbWVhbiBiZXR3
+ZWVuIDIzLTQ2IGRheXMKd2l0aCBiYWQgdXNhZ2UgcGVyZm9ybWFuY2UgYW5kIHNlY3VyaXR5IHJp
+c2suCgpJIHRyaWVkIHRvIHVwZ3JhZGUgdGhlIGtlcm5lbCB0byB0aGUgbGF0ZXN0ICg0LjctcmM2
+KSBidXQgaXQncyBub3QgYmV0dGVyIGluCnBlcmZvcm1hbmNlLiBJIGdvdCBzb21lIGNyYXNoIGR1
+cmluZyByZXBsYWNlIHdpdGggNC42LjAgd2hpY2ggdmFuaXNoIHdpdGggdGhlCmxhc3QgcmMuCgoj
+IGlvc3RhdCAtbWTCoMKgCkxpbnV4IDQuNy4wLXJjNi1zZWJsdQoocmFwdG9yLnNlYmx1Lm5ldCnC
+oMKgwqDCoMKgwqDCoMKgMTQvMDcvMjAxNsKgwqDCoMKgwqDCoF94ODZfNjRfwqDCoMKgwqDCoMKg
+wqDCoCg0IENQVSkKCkRldmljZTrCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqB0cHPCoMKgwqDCoE1C
+X3JlYWQvc8KgwqDCoMKgTUJfd3J0bi9zwqDCoMKgwqBNQl9yZWFkwqDCoMKgwqBNQl93cnRuCnNk
+Y8KgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgMzU2LDc1wqDCoMKgwqDCoMKgwqDCoDIyLDUxwqDC
+oMKgwqDCoMKgwqDCoMKgMCwxNMKgwqDCoMKgOTEzMjA1NMKgwqDCoMKgwqDCoDU4NDI3CnNkZMKg
+wqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgMzU2LDI3wqDCoMKgwqDCoMKgwqDCoDIyLDUxwqDCoMKg
+wqDCoMKgwqDCoMKgMCwxNMKgwqDCoMKgOTEzMTYxMsKgwqDCoMKgwqDCoDU3MDk0CnNkZcKgwqDC
+oMKgwqDCoMKgwqDCoMKgwqDCoMKgMzYxLDUzwqDCoMKgwqDCoMKgwqDCoDIyLDUywqDCoMKgwqDC
+oMKgwqDCoMKgMCwxNMKgwqDCoMKgOTEzMjIwN8KgwqDCoMKgwqDCoDU3MjQ1CnNkZsKgwqDCoMKg
+wqDCoMKgwqDCoMKgwqDCoMKgMzYyLDc4wqDCoMKgwqDCoMKgwqDCoMKgMCwwMMKgwqDCoMKgwqDC
+oMKgwqDCoDEsODHCoMKgwqDCoMKgwqDCoMKgwqDCoDTCoMKgwqDCoMKgNzM1Nzg2CnNkZ8KgwqDC
+oMKgwqDCoMKgwqDCoMKgwqDCoMKgMzU3LDgywqDCoMKgwqDCoMKgwqDCoDIyLDUxwqDCoMKgwqDC
+oMKgwqDCoMKgMCwxNMKgwqDCoMKgOTEzMTc2M8KgwqDCoMKgwqDCoDU4MzIzCnNkaMKgwqDCoMKg
+wqDCoMKgwqDCoMKgwqDCoMKgMzI1LDI1wqDCoMKgwqDCoMKgwqDCoDIyLDUywqDCoMKgwqDCoMKg
+wqDCoMKgMCwxNMKgwqDCoMKgOTEzMjcxNcKgwqDCoMKgwqDCoDU4MzU1CgoKU28gSSBoYXZlIGEg
+cmVhbGx5IHBvb3IgcGVyZm9ybWFuY2UgaW4gcmVidWlsZGluZyBhIHJhaWQ1IG1vc3RseSB3aGVu
+IHRoZQpyZXBsYWNlZCBkZXZpY2UgaXMgbWlzc2luZy4KSXMgdGhlcmUgYSBwYXJhbWV0ZXIgdG8g
+dHdlYWsgb2Ygc29tZXRoaW5nIEkgY2FuIGRvIHRvIGltcHJvdmUgdGhlIHJlcGxhY2UgP8KgCgpS
+ZWdhcmRzLAoKLS0gClPDqWJhc3RpZW4gIlNlYmx1IiBMdXR0cmluZ2VyCmh0dHBzOi8vc2VibHUu
+bmV0IHwgVHdpdHRlcjogQHNlYmx1NDIKR1BHOiAweDIwNzJENzdB
 
 
-Yeah I've run into this several times.
+--=-fBipo5VlMrFyXMSgJKOl
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: This is a digitally signed message part
+Content-Transfer-Encoding: 7bit
 
-The particularly vicious scenario is Drive A goes offline or is
-unavailable, and Drive B is mounted degraded, silently gets single
-chunks to which data is written, and then Drive A is replaced but
-these single chunks still exist only on Drive B. If Drive B dies, you
-have data loss, for a volume that is ostensibly raid 1.
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2
 
-The flaw is the allocation of single chunks when degraded, it should
-write only into raid1 chunks, existing or newly allocated. It's data
-loss waiting to happen.
+iQIUBAABCQAGBQJXh3UZAAoJEDwch2Awtl/i7yEPwKYxFv5NArKLQ9fkekTnLqKc
+TGNHR/5QfgxdKAMSaCaZvST9r7V0Wg90PtQPsT8jImgM4ayCWGOVLdPjThoINpzs
+YjcEtd/Hla1aNP2yuFVqnLQyXXJQQeyCqCrHuasIjLFT6h5pBWU2fNQKWHWou8tm
+9Z4+NyYIDcXtiTIEZa1zSwx5Ve0fqyC2iuKCCBdPNw5r+qYWt178GyCeMO2Po5gR
+I9nuneZKHnSM/8IYnGHmY7rBFLQMrHv3Y/zemJIlSG7sszuU95UVruYHGpa5pdUE
+yCFAw52TdTPqPYE75BPGd21/CQM0TnJKgTRLYns2gg4ikthtjeqbY0HRPdbhI7Yi
++Rw9BP4Kk1OsNngc+piQ4hK7AQVPRvPYkLTZUbi0nByegbyPaEGsH75tWHzW8J9o
+SVvJzLgTWL45aIAYyzEsM5gbZ1fdNtRxASkaNRLL8WmeukVCxDw9v6KbQDydyVYF
+vEuLhkGyO10Vmi/WDOt2RoU6WlOwVyDwZ/Zt7iuKeabMEQNg1tVm+/Tvu/pKeO2m
+Pr0AevkEy0AgRoML4Dfsg/UCr290LoGjNwIclA8EDeJFHHxEXXUHuMI3M3mnivN+
+CkhbBQnDAknlHF/CGLx+LYBCHeMFVzNtgwgngU1zpSjXzBtQEDn+LjCv+fe5tqPm
+DMbdMhFmPA==
+=lnYV
+-----END PGP SIGNATURE-----
 
+--=-fBipo5VlMrFyXMSgJKOl--
 
--- 
-Chris Murphy

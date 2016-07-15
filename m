@@ -1,74 +1,89 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-it0-f49.google.com ([209.85.214.49]:38694 "EHLO
-	mail-it0-f49.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932779AbcGOMKo (ORCPT
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:14339 "EHLO
+	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1751082AbcGONVV (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 15 Jul 2016 08:10:44 -0400
-Received: by mail-it0-f49.google.com with SMTP id h190so17450739ith.1
-        for <linux-btrfs@vger.kernel.org>; Fri, 15 Jul 2016 05:10:44 -0700 (PDT)
-Subject: Re: Data recovery from a linear multi-disk btrfs file system
-To: Matt <langelino@gmx.net>, linux-btrfs@vger.kernel.org
-References: <A06BAA26-44FF-4947-B552-26ED228B5BF6@gmx.net>
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <179e2713-cd97-213c-3476-82f0b48c6442@gmail.com>
-Date: Fri, 15 Jul 2016 08:10:38 -0400
+	Fri, 15 Jul 2016 09:21:21 -0400
+Subject: Re: [BUG] Btrfs scrub sometime recalculate wrong parity in raid5:
+ take two
+To: Andrei Borzenkov <arvidjaar@gmail.com>, <kreijack@inwind.it>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+References: <da6e9c30-02a0-39fc-3c67-d0af4fd5bf51@inwind.it>
+ <a0538df6-7e25-fae8-8ebd-b18120a1c516@fb.com> <578868EE.2030108@gmail.com>
+From: Chris Mason <clm@fb.com>
+Message-ID: <2af4a9cc-bf09-680c-1743-530e521677b2@fb.com>
+Date: Fri, 15 Jul 2016 09:20:44 -0400
 MIME-Version: 1.0
-In-Reply-To: <A06BAA26-44FF-4947-B552-26ED228B5BF6@gmx.net>
-Content-Type: text/plain; charset=utf-8; format=flowed
+In-Reply-To: <578868EE.2030108@gmail.com>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2016-07-15 05:51, Matt wrote:
-> Hello
->
-> I glued together 6 disks in linear lvm fashion (no RAID) to obtain one large file system (see below).  One of the 6 disk failed. What is the best way to recover from this?
->
-> Thanks to RAID1 of the metadata I can still access the data residing on the remaining 5 disks after mounting ro,force.  What I would like to do now is to
->
-> 1) Find out the names of all the files with missing data
-> 2) Make the file system fully functional (rw) again.
->
-> To achieve 2 I wanted to move the data of the disk. This, however, turns out to be rather difficult.
->  - rsync does not provide a immediate time-out option in case of an IO error
->  - Even when I set the time-out for dd_rescue to a minimum, the transfer speed is still way too low to move the data
->  (> 15TB) off the file system.
-> Both methods are too slow to move off the data within a reasonable time frame.
->
-> Does anybody have a suggestion how to best recover from this? (Our backup is incomplete).
-> I am looking for either a tool to move off the  data — something which gives up immediately in case of IO error and log the affected files.
-> Alternatively I am looking for a btrfs command like  “ btrfs device delete missing “ for a non-RAID multi-disk btrfs filesystem.
-> Would some variant of  "btrfs balance" do something helpful?
->
-> Any help is appreciated!
->
-> Regards,
-> Matt
->
-> # btrfs fi show
-> Label: none  uuid: d82fff2c-0232-47dd-a257-04c67141fc83
-> 	Total devices 6 FS bytes used 16.83TiB
-> 	devid    1 size 3.64TiB used 3.47TiB path /dev/sdc
-> 	devid    2 size 3.64TiB used 3.47TiB path /dev/sdd
-> 	devid    3 size 3.64TiB used 3.47TiB path /dev/sde
-> 	devid    4 size 3.64TiB used 3.47TiB path /dev/sdf
-> 	devid    5 size 1.82TiB used 1.82TiB path /dev/sdb
-> 	*** Some devices missing
->
->
-> # btrfs fi df /work
-> Data, RAID0: total=18.31TiB, used=16.80TiB
-> Data, single: total=8.00MiB, used=8.00MiB
-> System, RAID1: total=8.00MiB, used=896.00KiB
-> System, single: total=4.00MiB, used=0.00B
-> Metadata, RAID1: total=34.00GiB, used=30.18GiB
-> Metadata, single: total=8.00MiB, used=0.00B
-> GlobalReserve, single: total=512.00MiB, used=0.00B
-The tool you want is `btrfs restore`.  You'll need somewhere to put the 
-files from this too of course.  That said, given that you had data in 
-raid0 mode, you're not likely to get much other than very small files 
-back out of this, and given other factors, you're not likely to get what 
-you would consider reasonable performance out of this either.
 
-Your best bet to get a working filesystem again would be to just 
-recreate it from scratch, there's not much else that can be done when 
-you've got a raid0 profile and have lost a disk.
+
+On 07/15/2016 12:39 AM, Andrei Borzenkov wrote:
+> 15.07.2016 00:20, Chris Mason пишет:
+>>
+>>
+>> On 07/12/2016 05:50 PM, Goffredo Baroncelli wrote:
+>>> Hi All,
+>>>
+>>> I developed a new btrfs command "btrfs insp phy"[1] to further
+>>> investigate this bug [2]. Using "btrfs insp phy" I developed a script
+>>> to trigger the bug. The bug is not always triggered, but most of time
+>>> yes.
+>>>
+>>> Basically the script create a raid5 filesystem (using three
+>>> loop-device on three file called disk[123].img); on this filesystem
+>
+> Are those devices themselves on btrfs? Just to avoid any sort of
+> possible side effects?
+>
+>>> it is create a file. Then using "btrfs insp phy", the physical
+>>> placement of the data on the device are computed.
+>>>
+>>> First the script checks that the data are the right one (for data1,
+>>> data2 and parity), then it corrupt the data:
+>>>
+>>> test1: the parity is corrupted, then scrub is ran. Then the (data1,
+>>> data2, parity) data on the disk are checked. This test goes fine all
+>>> the times
+>>>
+>>> test2: data2 is corrupted, then scrub is ran. Then the (data1, data2,
+>>> parity) data on the disk are checked. This test fail most of the time:
+>>> the data on the disk is not correct; the parity is wrong. Scrub
+>>> sometime reports "WARNING: errors detected during scrubbing,
+>>> corrected" and sometime reports "ERROR: there are uncorrectable
+>>> errors". But this seems unrelated to the fact that the data is
+>>> corrupetd or not
+>>> test3: like test2, but data1 is corrupted. The result are the same as
+>>> above.
+>>>
+>>>
+>>> test4: data2 is corrupted, the the file is read. The system doesn't
+>>> return error (the data seems to be fine); but the data2 on the disk is
+>>> still corrupted.
+>>>
+>>>
+>>> Note: data1, data2, parity are the disk-element of the raid5 stripe-
+>>>
+>>> Conclusion:
+>>>
+>>> most of the time, it seems that btrfs-raid5 is not capable to rebuild
+>>> parity and data. Worse the message returned by scrub is incoherent by
+>>> the status on the disk. The tests didn't fail every time; this
+>>> complicate the diagnosis. However my script fails most of the time.
+>>
+>> Interesting, thanks for taking the time to write this up.  Is the
+>> failure specific to scrub?  Or is parity rebuild in general also failing
+>> in this case?
+>>
+>
+> How do you rebuild parity without scrub as long as all devices appear to
+> be present?
+
+If one block is corrupted, the crcs will fail and the kernel will 
+rebuild parity when you read the file.  You can also use balance instead 
+of scrub.
+
+-chris

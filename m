@@ -1,62 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:28459 "EHLO
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:32729 "EHLO
 	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1758559AbcGKKwG (ORCPT
+	by vger.kernel.org with ESMTP id S1751312AbcGOTf1 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 11 Jul 2016 06:52:06 -0400
-Date: Mon, 11 Jul 2016 06:51:27 -0400
-From: Chris Mason <clm@fb.com>
-To: Chandan Rajendra <chandan@linux.vnet.ibm.com>
-CC: Gabriel C <nix.or.die@gmail.com>, <linux-btrfs@vger.kernel.org>,
-        <quwenruo@cn.fujitsu.com>
+	Fri, 15 Jul 2016 15:35:27 -0400
 Subject: Re: A lot warnings in dmesg while running thunderbird
-Message-ID: <20160711105122.GA30104@clm-mbp.masoncoding.com>
+To: Gabriel C <nix.or.die@gmail.com>, <linux-btrfs@vger.kernel.org>
 References: <CAEJqkghMZDOJoyRkf_-HTfuKLnj0eaAGmtjVAPY2UftV7TxbvA@mail.gmail.com>
- <47ff1ea1-d4a9-55d9-f65d-60e94be93146@gmail.com>
- <73545420-2ce5-c4d3-d59a-98d2114bafd2@fb.com>
- <35812568.Zn4Yz0rfXf@localhost.localdomain>
+CC: <quwenruo@cn.fujitsu.com>
+From: Chris Mason <clm@fb.com>
+Message-ID: <50805ba8-2681-8606-79b3-add5b47b864f@fb.com>
+Date: Fri, 15 Jul 2016 15:35:04 -0400
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"; format=flowed
-In-Reply-To: <35812568.Zn4Yz0rfXf@localhost.localdomain>
+In-Reply-To: <CAEJqkghMZDOJoyRkf_-HTfuKLnj0eaAGmtjVAPY2UftV7TxbvA@mail.gmail.com>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Jul 11, 2016 at 11:28:01AM +0530, Chandan Rajendra wrote:
->On Friday, July 08, 2016 12:02:35 PM Chris Mason wrote:
->>
->> Can you please run the attached test program:
->>
->> gcc -o short-write short-write.c -lpthread
->> ./short-write some-new-file-on-btrfs
->>
->> I want to see if you're triggering the same problem we've tried to fix,
->> or something else.
->>
+
+
+On 07/07/2016 06:24 AM, Gabriel C wrote:
+> Hi,
 >
->Hi Chris,
+> while running thunderbird on linux 4.6.3 and 4.7.0-rc6 ( didn't tested
+> other versions )
+> I trigger the following :
 >
->I am able to reproduce the issue with the 'short-write' program. But before
->the call trace associated with btrfs_destroy_inode(), I see the following call
->trace ...
 >
->------------[ cut here ]------------
->WARNING: CPU: 2 PID: 2311 at /home/chandan/repos/linux/fs/btrfs/extent-tree.c:4303 btrfs_free_reserved_data_space_noquota+0xe8/0x100
->Modules linked in:
+> [ 6393.305675] WARNING: CPU: 6 PID: 5870 at fs/btrfs/inode.c:9306
+> btrfs_destroy_inode+0x22e/0x2a0 [btrfs]
 
-[ ... ]
+Every time I've reproduced this, I've hit a warning in extent-tree.c 
+about trying to decrement bytes_may_use too far.  Then I get enospc
+on every operation.
 
->
->I will continue to debug and find out the root cause.
+Josef fixed a few corner cases here with his new enospc changes, and I'm 
+not able to trigger (yet) with those applied.  Dave Sterba has them all 
+in his for-next branch:
 
-Thanks Chandan, I'm able to reproduce the same thing more easily by changing
-short-write to have:
+git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git for-next
 
-#define ROUNDS 4096
-
-and by getting rid of the sync_file_range call.
-
-Still nailing down where the accounting is going wrong, so any help is
-appreciated.
+Can you please try that on top of v4.7-rc7
 
 -chris
-

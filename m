@@ -1,81 +1,69 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp-35.italiaonline.it ([212.48.25.163]:45954 "EHLO libero.it"
-	rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-	id S1751234AbcGOQWJ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 15 Jul 2016 12:22:09 -0400
-Reply-To: kreijack@inwind.it
-Subject: Re: New btrfs sub command: btrfs inspect physical-find
-References: <7c20be09-1ac2-1d1f-f545-e2d56578a77b@libero.it>
- <16994642-2a2f-55fa-c683-7153977f4577@fb.com>
-To: Chris Mason <clm@fb.com>, linux-btrfs <linux-btrfs@vger.kernel.org>
-Cc: David Sterba <dsterba@suse.cz>
-From: Goffredo Baroncelli <kreijack@inwind.it>
-Message-ID: <de79e38e-7d1f-f08a-0b70-c2fb299b5200@inwind.it>
-Date: Fri, 15 Jul 2016 18:22:05 +0200
+Received: from smtprelay04.ispgateway.de ([80.67.31.31]:51348 "EHLO
+	smtprelay04.ispgateway.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751738AbcGOS3k convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 15 Jul 2016 14:29:40 -0400
+Received: from p4fce2793.dip0.t-ipconnect.de ([79.206.39.147] helo=[127.0.0.1])
+	by smtprelay04.ispgateway.de with esmtpsa (TLSv1.2:DHE-RSA-AES128-SHA:128)
+	(Exim 4.84)
+	(envelope-from <hendrik@friedels.name>)
+	id 1bO7rl-0005Um-7h
+	for linux-btrfs@vger.kernel.org; Fri, 15 Jul 2016 20:29:37 +0200
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+From: Hendrik Friedel <hendrik@friedels.name>
+Subject: Status of SMR with BTRFS
+Message-ID: <b2b863cf-214a-6774-27a4-c41208a578ff@friedels.name>
+Date: Fri, 15 Jul 2016 20:29:28 +0200
 MIME-Version: 1.0
-In-Reply-To: <16994642-2a2f-55fa-c683-7153977f4577@fb.com>
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2016-07-14 23:45, Chris Mason wrote:
-> 
-> 
-> On 07/12/2016 05:40 PM, Goffredo Baroncelli wrote:
->> Hi All,
->> 
->> the enclosed patch adds a new btrfs sub command: "btrfs inspect
->> physical-find". The aim of this new command is to show the physical
->> placement on the disk of a file. Currently it handles all the
->> profiles (single, dup, raid1/10/5/6). I develop this command in
->> order to show some bug in btrfs RAID5 profile (see next email).
-> 
-> I've done this manually from time to time, and love the idea of
-> having a helper for it.  Can I talk you into adding a way to save the
-> contents of the block without having to use dd?  btrfs-map-logical
-> does this now, but not via the search ioctl and not by filename.
-> 
-> say:
-> 
-> btrfs inspect physical-find -c <copy number> -o <output file> <filename> offset
+Hello,
 
-I prefer to add another command to do that (like btrfs insp physical-dump). And I will add as constraint like 
-	offset % blocksize == 0
-this in order to avoid handling data spread different stripes/chunks.
+I have a 5TB Seagate drive that uses SMR.
 
-However <copy number> has different meaning:
+I was wondering, if BTRFS is usable with this Harddrive technology. So, 
+first I searched the BTRFS wiki -nothing. Then google.
 
-single/raid0 -> means nothing
-raid1/raid10 -> means the copy #
-raid5/raid6  -> could mean the parity: i.e.
-	-1 -> first parity (raid5/raid6)
-	-2 -> 2nd parity (raid6 only)
- 
-> Looks like you've open coded btrfs_map_logical() below, getting
-> output from the search ioctl.  Dave might want that in a more
-> centralized place.
+* I found this: https://bbs.archlinux.org/viewtopic.php?id=203696
+But this turned out to be an issue not related to BTRFS.
 
-I will give a look 
+* Then this: 
+http://www.snia.org/sites/default/files/SDC15_presentations/smr/ 
+HannesReinecke_Strategies_for_running_unmodified_FS_SMR.pdf
+   " BTRFS operation matches SMR parameters very closely [...]
 
- 
-> Also, please turn:
-> 
-> for(;;) if (foo) { statements }
-> 
-> Into
-> 
-> for(;;) { if (foo) { statements } }
-> 
-> I find that much less error prone.
+      High number of misaligned write accesses ; points to an issue with 
+btrfs itself
 
-Ok
 
-> 
-> -chris
-> 
-BR
-G.Baroncelli
+* Then this: 
+http://superuser.com/questions/962257/fastest-linux-filesystem-on-shingled-disks
+The BTRFS performance seemed good.
 
--- 
-gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
-Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5
+
+* Finally this: http://www.spinics.net/lists/linux-btrfs/msg48072.html
+"So you can get mixed results when trying to use the SMR devices but I'd 
+say it will mostly not work.
+But, btrfs has all the fundamental features in place, we'd have to make
+adjustments to follow the SMR constraints:"
+[...]
+I have some notes at
+https://github.com/kdave/drafts/blob/master/btrfs/smr-mode.txt"
+
+
+So, now I am wondering, what the state is today. "We" (I am happy to do 
+that; but not sure of access rights) should also summarize this in the wiki.
+My use-case by the way are back-ups. I am thinking of using some of the 
+interesting BTRFS features for this (send/receive, deduplication)
+
+Greetings,
+Hendrik
+
+
+---
+Diese E-Mail wurde von Avast Antivirus-Software auf Viren geprüft.
+https://www.avast.com/antivirus
+

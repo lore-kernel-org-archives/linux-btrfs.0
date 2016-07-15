@@ -1,64 +1,74 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-001b2d01.pphosted.com ([148.163.158.5]:64179 "EHLO
-	mx0a-001b2d01.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S932595AbcGOL6w (ORCPT
+Received: from mail-it0-f49.google.com ([209.85.214.49]:38694 "EHLO
+	mail-it0-f49.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932779AbcGOMKo (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 15 Jul 2016 07:58:52 -0400
-Received: from pps.filterd (m0098416.ppops.net [127.0.0.1])
-	by mx0b-001b2d01.pphosted.com (8.16.0.11/8.16.0.11) with SMTP id u6FBs9kS125624
-	for <linux-btrfs@vger.kernel.org>; Fri, 15 Jul 2016 07:58:51 -0400
-Received: from e23smtp07.au.ibm.com (e23smtp07.au.ibm.com [202.81.31.140])
-	by mx0b-001b2d01.pphosted.com with ESMTP id 246hekfea3-1
-	(version=TLSv1.2 cipher=AES256-SHA bits=256 verify=NOT)
-	for <linux-btrfs@vger.kernel.org>; Fri, 15 Jul 2016 07:58:51 -0400
-Received: from localhost
-	by e23smtp07.au.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
-	for <linux-btrfs@vger.kernel.org> from <chandan@linux.vnet.ibm.com>;
-	Fri, 15 Jul 2016 21:58:48 +1000
-Received: from d23relay06.au.ibm.com (d23relay06.au.ibm.com [9.185.63.219])
-	by d23dlp02.au.ibm.com (Postfix) with ESMTP id 158E72BB0057
-	for <linux-btrfs@vger.kernel.org>; Fri, 15 Jul 2016 21:58:46 +1000 (EST)
-Received: from d23av03.au.ibm.com (d23av03.au.ibm.com [9.190.234.97])
-	by d23relay06.au.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id u6FBwjF026411236
-	for <linux-btrfs@vger.kernel.org>; Fri, 15 Jul 2016 21:58:45 +1000
-Received: from d23av03.au.ibm.com (localhost [127.0.0.1])
-	by d23av03.au.ibm.com (8.14.4/8.14.4/NCO v10.0 AVout) with ESMTP id u6FBwjxh005412
-	for <linux-btrfs@vger.kernel.org>; Fri, 15 Jul 2016 21:58:45 +1000
-From: Chandan Rajendra <chandan@linux.vnet.ibm.com>
-To: dsterba@suse.cz
-Cc: David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs: allocate exact page array size in extent_buffer
-Date: Fri, 15 Jul 2016 17:28:42 +0530
-In-Reply-To: <20160715094406.GR10595@twin.jikos.cz>
-References: <1468499372-24687-1-git-send-email-dsterba@suse.com> <3567275.PIHfl50pLS@localhost.localdomain> <20160715094406.GR10595@twin.jikos.cz>
+	Fri, 15 Jul 2016 08:10:44 -0400
+Received: by mail-it0-f49.google.com with SMTP id h190so17450739ith.1
+        for <linux-btrfs@vger.kernel.org>; Fri, 15 Jul 2016 05:10:44 -0700 (PDT)
+Subject: Re: Data recovery from a linear multi-disk btrfs file system
+To: Matt <langelino@gmx.net>, linux-btrfs@vger.kernel.org
+References: <A06BAA26-44FF-4947-B552-26ED228B5BF6@gmx.net>
+From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Message-ID: <179e2713-cd97-213c-3476-82f0b48c6442@gmail.com>
+Date: Fri, 15 Jul 2016 08:10:38 -0400
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Message-Id: <2207881.izrC6JhlLc@localhost.localdomain>
+In-Reply-To: <A06BAA26-44FF-4947-B552-26ED228B5BF6@gmx.net>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Friday, July 15, 2016 11:44:06 AM David Sterba wrote:
-> On Fri, Jul 15, 2016 at 11:47:07AM +0530, Chandan Rajendra wrote:
-> > On Thursday, July 14, 2016 02:29:32 PM David Sterba wrote:
-> > > The calculation of extent_buffer::pages size was done for 4k PAGE_SIZE,
-> > > but this wastes 15 unused pointers on arches with large page size. Eg.
-> > > on ppc64 this gives 15 * 8 = 120 bytes.
-> > >
-> > 
-> > The non PAGE_SIZE aligned extent buffer usage in page straddling tests in
-> > test_eb_bitmaps() need atleast one more page. So how about the following ...
-> > 
-> > #define INLINE_EXTENT_BUFFER_PAGES    (BTRFS_MAX_METADATA_BLOCKSIZE / PAGE_SIZE + 1)
-> 
-> Could the extra page pointer be normally used? Ie. not just for the sake
-> of the tests. I'd rather not waste the bytes. As a compromise, we can do +1
-> only if the tests are compiled in.
-> 
+On 2016-07-15 05:51, Matt wrote:
+> Hello
+>
+> I glued together 6 disks in linear lvm fashion (no RAID) to obtain one large file system (see below).  One of the 6 disk failed. What is the best way to recover from this?
+>
+> Thanks to RAID1 of the metadata I can still access the data residing on the remaining 5 disks after mounting ro,force.  What I would like to do now is to
+>
+> 1) Find out the names of all the files with missing data
+> 2) Make the file system fully functional (rw) again.
+>
+> To achieve 2 I wanted to move the data of the disk. This, however, turns out to be rather difficult.
+>  - rsync does not provide a immediate time-out option in case of an IO error
+>  - Even when I set the time-out for dd_rescue to a minimum, the transfer speed is still way too low to move the data
+>  (> 15TB) off the file system.
+> Both methods are too slow to move off the data within a reasonable time frame.
+>
+> Does anybody have a suggestion how to best recover from this? (Our backup is incomplete).
+> I am looking for either a tool to move off the  data — something which gives up immediately in case of IO error and log the affected files.
+> Alternatively I am looking for a btrfs command like  “ btrfs device delete missing “ for a non-RAID multi-disk btrfs filesystem.
+> Would some variant of  "btrfs balance" do something helpful?
+>
+> Any help is appreciated!
+>
+> Regards,
+> Matt
+>
+> # btrfs fi show
+> Label: none  uuid: d82fff2c-0232-47dd-a257-04c67141fc83
+> 	Total devices 6 FS bytes used 16.83TiB
+> 	devid    1 size 3.64TiB used 3.47TiB path /dev/sdc
+> 	devid    2 size 3.64TiB used 3.47TiB path /dev/sdd
+> 	devid    3 size 3.64TiB used 3.47TiB path /dev/sde
+> 	devid    4 size 3.64TiB used 3.47TiB path /dev/sdf
+> 	devid    5 size 1.82TiB used 1.82TiB path /dev/sdb
+> 	*** Some devices missing
+>
+>
+> # btrfs fi df /work
+> Data, RAID0: total=18.31TiB, used=16.80TiB
+> Data, single: total=8.00MiB, used=8.00MiB
+> System, RAID1: total=8.00MiB, used=896.00KiB
+> System, single: total=4.00MiB, used=0.00B
+> Metadata, RAID1: total=34.00GiB, used=30.18GiB
+> Metadata, single: total=8.00MiB, used=0.00B
+> GlobalReserve, single: total=512.00MiB, used=0.00B
+The tool you want is `btrfs restore`.  You'll need somewhere to put the 
+files from this too of course.  That said, given that you had data in 
+raid0 mode, you're not likely to get much other than very small files 
+back out of this, and given other factors, you're not likely to get what 
+you would consider reasonable performance out of this either.
 
-I don't see any other scenario where the extra page pointer gets used. Also, I
-just executed fstests with your patch applied and disabling self-tests from
-the kernel configuration. The tests ran fine.
-
--- 
-chandan
-
+Your best bet to get a working filesystem again would be to just 
+recreate it from scratch, there's not much else that can be done when 
+you've got a raid0 profile and have lost a disk.

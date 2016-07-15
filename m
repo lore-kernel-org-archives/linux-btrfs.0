@@ -1,97 +1,84 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:63825 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751279AbcGOD4m (ORCPT
+Received: from mail-lf0-f50.google.com ([209.85.215.50]:34771 "EHLO
+	mail-lf0-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751503AbcGOEjO (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 14 Jul 2016 23:56:42 -0400
-Subject: Re: mount btrfs takes 30 minutes, btrfs check runs out of memory
-To: John Ettedgui <john.ettedgui@gmail.com>,
-        Austin S Hemmelgarn <ahferroin7@gmail.com>
-References: <CAJ3TwYQXqUZiKhYc5rciTmvGX1RLkHnkQb5SSYAJ7AD+kbudag@mail.gmail.com>
- <55BADEC4.3020409@cn.fujitsu.com>
- <CAJ3TwYRN+1tJY+paz=qZT0_XP=r9CcTKbBgX_kZRFOWj8vSK=w@mail.gmail.com>
- <55BAFEF9.1070107@cn.fujitsu.com>
- <CAJ3TwYR5g-JhjmGnZUXqLXc7qV1_=AN5_6sj54JQODbtgG9Aag@mail.gmail.com>
- <55BB0A39.1050208@cn.fujitsu.com>
- <CAJ3TwYS+yL8Tk8d3uigpXrfD+dcn2G4tWwbF7jcB=BCDZqs6+g@mail.gmail.com>
- <CAJ3TwYQc3d5R6r+tjY9mxUzptWA_MktUbZeaQebmNRBuqB7zYA@mail.gmail.com>
- <55C017E7.40704@cn.fujitsu.com>
- <CAJ3TwYTd_8-uwn-osNsf6UAuxGvoJCeWmxWYNHmzXoF_+yrABA@mail.gmail.com>
- <55C02AF9.3070600@cn.fujitsu.com>
- <CAJ3TwYQUX-CgqSXMxxU+6tcb0_0tuJbwKqHHPufCnsDBYuXycw@mail.gmail.com>
- <55C0A1ED.6020407@gmail.com>
- <CAJ3TwYQgm2f4SQFOO_vgGLP0V71q+oesbjFxTjhEJnrXYLe4fQ@mail.gmail.com>
- <55C1F3DD.7020603@gmail.com>
- <CAJ3TwYSW+SvbBrh1u_x+c3HTRx03qSR6BoH5cj_VzCXxZYv6EA@mail.gmail.com>
-CC: btrfs <linux-btrfs@vger.kernel.org>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <126f9f09-4e28-3c12-5384-63032e17942f@cn.fujitsu.com>
-Date: Fri, 15 Jul 2016 11:56:32 +0800
+	Fri, 15 Jul 2016 00:39:14 -0400
+Received: by mail-lf0-f50.google.com with SMTP id l69so21812676lfg.1
+        for <linux-btrfs@vger.kernel.org>; Thu, 14 Jul 2016 21:39:13 -0700 (PDT)
+Subject: Re: [BUG] Btrfs scrub sometime recalculate wrong parity in raid5:
+ take two
+To: Chris Mason <clm@fb.com>, kreijack@inwind.it,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+References: <da6e9c30-02a0-39fc-3c67-d0af4fd5bf51@inwind.it>
+ <a0538df6-7e25-fae8-8ebd-b18120a1c516@fb.com>
+From: Andrei Borzenkov <arvidjaar@gmail.com>
+Message-ID: <578868EE.2030108@gmail.com>
+Date: Fri, 15 Jul 2016 07:39:10 +0300
 MIME-Version: 1.0
-In-Reply-To: <CAJ3TwYSW+SvbBrh1u_x+c3HTRx03qSR6BoH5cj_VzCXxZYv6EA@mail.gmail.com>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+In-Reply-To: <a0538df6-7e25-fae8-8ebd-b18120a1c516@fb.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Sorry for the late reply.
+15.07.2016 00:20, Chris Mason пишет:
+> 
+> 
+> On 07/12/2016 05:50 PM, Goffredo Baroncelli wrote:
+>> Hi All,
+>>
+>> I developed a new btrfs command "btrfs insp phy"[1] to further
+>> investigate this bug [2]. Using "btrfs insp phy" I developed a script
+>> to trigger the bug. The bug is not always triggered, but most of time
+>> yes.
+>>
+>> Basically the script create a raid5 filesystem (using three
+>> loop-device on three file called disk[123].img); on this filesystem 
 
-[Slow mount]
-In fact we also reproduce the same problem, and found the problem.
+Are those devices themselves on btrfs? Just to avoid any sort of
+possible side effects?
 
-It's related to the size of extent tree.
+>> it is create a file. Then using "btrfs insp phy", the physical
+>> placement of the data on the device are computed.
+>>
+>> First the script checks that the data are the right one (for data1,
+>> data2 and parity), then it corrupt the data:
+>>
+>> test1: the parity is corrupted, then scrub is ran. Then the (data1,
+>> data2, parity) data on the disk are checked. This test goes fine all
+>> the times
+>>
+>> test2: data2 is corrupted, then scrub is ran. Then the (data1, data2,
+>> parity) data on the disk are checked. This test fail most of the time:
+>> the data on the disk is not correct; the parity is wrong. Scrub
+>> sometime reports "WARNING: errors detected during scrubbing,
+>> corrected" and sometime reports "ERROR: there are uncorrectable
+>> errors". But this seems unrelated to the fact that the data is
+>> corrupetd or not
+>> test3: like test2, but data1 is corrupted. The result are the same as
+>> above.
+>>
+>>
+>> test4: data2 is corrupted, the the file is read. The system doesn't
+>> return error (the data seems to be fine); but the data2 on the disk is
+>> still corrupted.
+>>
+>>
+>> Note: data1, data2, parity are the disk-element of the raid5 stripe-
+>>
+>> Conclusion:
+>>
+>> most of the time, it seems that btrfs-raid5 is not capable to rebuild
+>> parity and data. Worse the message returned by scrub is incoherent by
+>> the status on the disk. The tests didn't fail every time; this
+>> complicate the diagnosis. However my script fails most of the time.
+> 
+> Interesting, thanks for taking the time to write this up.  Is the
+> failure specific to scrub?  Or is parity rebuild in general also failing
+> in this case?
+> 
 
-If the extent tree is large enough, mount needs to do quite a lot of IO 
-to read out all block group items.
-And such read is random small read (default leaf size is just 16K), and 
-considering the per GB cost, spinning rust is the normal choice for such 
-large fs, which makes random small read even more slower.
-
-
-The good news is, we have patch to slightly speedup the mount, by 
-avoiding reading out unrelated tree blocks.
-
-In our test environment, it takes 15% less time to mount a fs filled 
-with 16K files(2T used space).
-
-https://patchwork.kernel.org/patch/9021421/
-
-
-And according to the facts that only extent size is related to the 
-problem, any method to reduce extent tree size will help, including 
-defrag, nodatacow.
-
-[Btrfsck OOM]
-Lu Fengqi is developing btrfsck low memory usage mode.
-It's not merged into mainline btrfs progs and not fully completely, but 
-shows quite positive result for large fs.
-
-It may needs sometime to get it stable, but IMHO it's going the right 
-direction.
-
-Thanks,
-Qu
-
-
-
-At 07/12/2016 04:31 AM, John Ettedgui wrote:
-> On Wed, Aug 5, 2015 at 4:30 AM Austin S Hemmelgarn <ahferroin7@gmail.com
-> <mailto:ahferroin7@gmail.com>> wrote:
->> Yeah, you're probably better off getting a TB disk and starting with
->> that. In theory it is possible to automate the process, but I would
->> advise against that if at all possible, it's a lot easier to recover
->> from an error if you're doing it manually.
->
-> Hello,
->
-> Has there been any progress on this issue?
->
-> My btrfs partitions are now all cleanly made, not converted from ext4,
-> and yet they still take up to 30s to mount. Interestingly they're all
-> about the same size, but some take quite longer than others.. I guess
-> differences FS related.
->
->
-> Thank you!
-> John
+How do you rebuild parity without scrub as long as all devices appear to
+be present?
 
 

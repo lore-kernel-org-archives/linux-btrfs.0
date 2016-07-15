@@ -1,159 +1,119 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:62349 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1750870AbcGOFZI (ORCPT
+Received: from mx0a-001b2d01.pphosted.com ([148.163.156.1]:1351 "EHLO
+	mx0a-001b2d01.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1752232AbcGOGRV (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 15 Jul 2016 01:25:08 -0400
-Subject: Re: mount btrfs takes 30 minutes, btrfs check runs out of memory
-To: John Ettedgui <john.ettedgui@gmail.com>,
-        Austin S Hemmelgarn <ahferroin7@gmail.com>
-References: <CAJ3TwYQXqUZiKhYc5rciTmvGX1RLkHnkQb5SSYAJ7AD+kbudag@mail.gmail.com>
- <55BADEC4.3020409@cn.fujitsu.com>
- <CAJ3TwYRN+1tJY+paz=qZT0_XP=r9CcTKbBgX_kZRFOWj8vSK=w@mail.gmail.com>
- <55BAFEF9.1070107@cn.fujitsu.com>
- <CAJ3TwYR5g-JhjmGnZUXqLXc7qV1_=AN5_6sj54JQODbtgG9Aag@mail.gmail.com>
- <55BB0A39.1050208@cn.fujitsu.com>
- <CAJ3TwYS+yL8Tk8d3uigpXrfD+dcn2G4tWwbF7jcB=BCDZqs6+g@mail.gmail.com>
- <CAJ3TwYQc3d5R6r+tjY9mxUzptWA_MktUbZeaQebmNRBuqB7zYA@mail.gmail.com>
- <55C017E7.40704@cn.fujitsu.com>
- <CAJ3TwYTd_8-uwn-osNsf6UAuxGvoJCeWmxWYNHmzXoF_+yrABA@mail.gmail.com>
- <55C02AF9.3070600@cn.fujitsu.com>
- <CAJ3TwYQUX-CgqSXMxxU+6tcb0_0tuJbwKqHHPufCnsDBYuXycw@mail.gmail.com>
- <55C0A1ED.6020407@gmail.com>
- <CAJ3TwYQgm2f4SQFOO_vgGLP0V71q+oesbjFxTjhEJnrXYLe4fQ@mail.gmail.com>
- <55C1F3DD.7020603@gmail.com>
- <CAJ3TwYSW+SvbBrh1u_x+c3HTRx03qSR6BoH5cj_VzCXxZYv6EA@mail.gmail.com>
- <126f9f09-4e28-3c12-5384-63032e17942f@cn.fujitsu.com>
- <CAJ3TwYRXwDVVfT0TRRiM9dEw-7TvY8qG=WvMYKczZOv6wkFWAQ@mail.gmail.com>
-CC: btrfs <linux-btrfs@vger.kernel.org>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <fd718727-9b54-ba58-5f39-63066181d13e@cn.fujitsu.com>
-Date: Fri, 15 Jul 2016 13:24:45 +0800
+	Fri, 15 Jul 2016 02:17:21 -0400
+Received: from pps.filterd (m0098394.ppops.net [127.0.0.1])
+	by mx0a-001b2d01.pphosted.com (8.16.0.11/8.16.0.11) with SMTP id u6F6DjtN042204
+	for <linux-btrfs@vger.kernel.org>; Fri, 15 Jul 2016 02:17:21 -0400
+Received: from e23smtp06.au.ibm.com (e23smtp06.au.ibm.com [202.81.31.148])
+	by mx0a-001b2d01.pphosted.com with ESMTP id 246k2130en-1
+	(version=TLSv1.2 cipher=AES256-SHA bits=256 verify=NOT)
+	for <linux-btrfs@vger.kernel.org>; Fri, 15 Jul 2016 02:17:21 -0400
+Received: from localhost
+	by e23smtp06.au.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
+	for <linux-btrfs@vger.kernel.org> from <chandan@linux.vnet.ibm.com>;
+	Fri, 15 Jul 2016 16:17:12 +1000
+Received: from d23relay10.au.ibm.com (d23relay10.au.ibm.com [9.190.26.77])
+	by d23dlp02.au.ibm.com (Postfix) with ESMTP id 137EB2BB005D
+	for <linux-btrfs@vger.kernel.org>; Fri, 15 Jul 2016 16:17:11 +1000 (EST)
+Received: from d23av04.au.ibm.com (d23av04.au.ibm.com [9.190.235.139])
+	by d23relay10.au.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id u6F6HBI420709514
+	for <linux-btrfs@vger.kernel.org>; Fri, 15 Jul 2016 16:17:11 +1000
+Received: from d23av04.au.ibm.com (localhost [127.0.0.1])
+	by d23av04.au.ibm.com (8.14.4/8.14.4/NCO v10.0 AVout) with ESMTP id u6F6HAOT009595
+	for <linux-btrfs@vger.kernel.org>; Fri, 15 Jul 2016 16:17:10 +1000
+From: Chandan Rajendra <chandan@linux.vnet.ibm.com>
+To: David Sterba <dsterba@suse.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs: allocate exact page array size in extent_buffer
+Date: Fri, 15 Jul 2016 11:47:07 +0530
+In-Reply-To: <1468499372-24687-1-git-send-email-dsterba@suse.com>
+References: <1468499372-24687-1-git-send-email-dsterba@suse.com>
 MIME-Version: 1.0
-In-Reply-To: <CAJ3TwYRXwDVVfT0TRRiM9dEw-7TvY8qG=WvMYKczZOv6wkFWAQ@mail.gmail.com>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+Content-Type: text/plain; charset="us-ascii"
+Message-Id: <3567275.PIHfl50pLS@localhost.localdomain>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Thursday, July 14, 2016 02:29:32 PM David Sterba wrote:
+> The calculation of extent_buffer::pages size was done for 4k PAGE_SIZE,
+> but this wastes 15 unused pointers on arches with large page size. Eg.
+> on ppc64 this gives 15 * 8 = 120 bytes.
+>
+
+The non PAGE_SIZE aligned extent buffer usage in page straddling tests in
+test_eb_bitmaps() need atleast one more page. So how about the following ...
+
+#define INLINE_EXTENT_BUFFER_PAGES    (BTRFS_MAX_METADATA_BLOCKSIZE / PAGE_SIZE + 1)
 
 
-At 07/15/2016 12:39 PM, John Ettedgui wrote:
-> On Thu, Jul 14, 2016 at 8:56 PM Qu Wenruo <quwenruo@cn.fujitsu.com
-> <mailto:quwenruo@cn.fujitsu.com>> wrote:
->
->     Sorry for the late reply.
->
-> Oh it's all good, it's only a been a few days.
->
->     [Slow mount]
->     In fact we also reproduce the same problem, and found the problem.
->
-> Awesome!
->
->     It's related to the size of extent tree.
->
->     If the extent tree is large enough, mount needs to do quite a lot of IO
->     to read out all block group items.
->     And such read is random small read (default leaf size is just 16K), and
->     considering the per GB cost, spinning rust is the normal choice for such
->     large fs, which makes random small read even more slower.
->
->
->     The good news is, we have patch to slightly speedup the mount, by
->     avoiding reading out unrelated tree blocks.
->
->     In our test environment, it takes 15% less time to mount a fs filled
->     with 16K files(2T used space).
->
->     https://patchwork.kernel.org/patch/9021421/
->
->
-> Great, I will try this and report on it.
->
->     And according to the facts that only extent size is related to the
->     problem, any method to reduce extent tree size will help, including
->     defrag, nodatacow.
->
-> Would increasing the leaf size help as well?
-May help.
-But didn't test it, and since leafsize can only be determined at mkfs 
-time, it's not an easy thing to try it.
+> Signed-off-by: David Sterba <dsterba@suse.com>
+> ---
+>  fs/btrfs/ctree.h     | 6 ------
+>  fs/btrfs/extent_io.c | 2 ++
+>  fs/btrfs/extent_io.h | 8 +++++++-
+>  3 files changed, 9 insertions(+), 7 deletions(-)
+> 
+> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+> index 4274a7bfdaed..f914f6187753 100644
+> --- a/fs/btrfs/ctree.h
+> +++ b/fs/btrfs/ctree.h
+> @@ -66,12 +66,6 @@ struct btrfs_ordered_sum;
+>  #define BTRFS_COMPAT_EXTENT_TREE_V0
+> 
+>  /*
+> - * the max metadata block size.  This limit is somewhat artificial,
+> - * but the memmove costs go through the roof for larger blocks.
+> - */
+> -#define BTRFS_MAX_METADATA_BLOCKSIZE 65536
+> -
+> -/*
+>   * we can actually store much bigger names, but lets not confuse the rest
+>   * of linux
+>   */
+> diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+> index 75533adef998..6f468a1842e6 100644
+> --- a/fs/btrfs/extent_io.c
+> +++ b/fs/btrfs/extent_io.c
+> @@ -4660,6 +4660,8 @@ __alloc_extent_buffer(struct btrfs_fs_info *fs_info, u64 start,
+>  	/*
+>  	 * Sanity checks, currently the maximum is 64k covered by 16x 4k pages
+>  	 */
+> +	BUILD_BUG_ON(INLINE_EXTENT_BUFFER_PAGES * PAGE_SIZE
+> +		!= BTRFS_MAX_METADATA_BLOCKSIZE);
+>  	BUILD_BUG_ON(BTRFS_MAX_METADATA_BLOCKSIZE
+>  		> MAX_INLINE_EXTENT_BUFFER_SIZE);
+>  	BUG_ON(len > MAX_INLINE_EXTENT_BUFFER_SIZE);
+> diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
+> index c0c1c4fef6ce..edfa1a0ab82b 100644
+> --- a/fs/btrfs/extent_io.h
+> +++ b/fs/btrfs/extent_io.h
+> @@ -4,6 +4,12 @@
+>  #include <linux/rbtree.h>
+>  #include "ulist.h"
+> 
+> +/*
+> + * The maximum metadata block size.  This limit is somewhat artificial,
+> + * but the memmove costs go through the roof for larger blocks.
+> + */
+> +#define BTRFS_MAX_METADATA_BLOCKSIZE (65536U)
+> +
+>  /* bits for the extent state */
+>  #define EXTENT_DIRTY		(1U << 0)
+>  #define EXTENT_WRITEBACK	(1U << 1)
+> @@ -118,7 +124,7 @@ struct extent_state {
+>  #endif
+>  };
+> 
+> -#define INLINE_EXTENT_BUFFER_PAGES 16
+> +#define INLINE_EXTENT_BUFFER_PAGES    (BTRFS_MAX_METADATA_BLOCKSIZE / PAGE_SIZE)
+>  #define MAX_INLINE_EXTENT_BUFFER_SIZE (INLINE_EXTENT_BUFFER_PAGES * PAGE_SIZE)
+>  struct extent_buffer {
+>  	u64 start;
+> 
 
-> nodatacow seems unsafe
-Nodatacow is not that unsafe, as btrfs will still do data cow if it's 
-needed, like rewriting data of another subvolume/snapshot.
-
-That would be one of the most obvious method if you do a lot of rewrite.
-
-> as for defrag, all my partitions are already on
-> autodefrag, so I assume that should be good. Or is manual once in a
-> while a good idea as well?
-AFAIK autodefrag will only help if you're doing appending write.
-
-Manual one will help more, but since btrfs has problem defraging extents 
-shared by different subvolumes, I doubt the effect if you have a lot of 
-subvolumes/snapshots.
-
-
-Another method is to disable compression.
-For compression, file extent size up limit is 128K, while for 
-non-compress case, it's 128M.
-
-So for the same 1G sized file, it would cause 8K extents using 
-compression, while only 8 extents without compression.
-
->
-> Is there a way to display the tree size? that would help knowing what
-> worked and what didn't.
-
-You can dump the whole extent tree to get the accurate size:
-
-# btrfs-debug-tree -t 2 <your dev> > some_file
-
-It may be quite long, so output redirection is highly recommended.
-You can do it online(mounted), but if the fs is very very large, it's 
-recommended to do it offline(unmounted), or at least make sure there is 
-not much write while mounted.
-
-Check the first few line then you can already get the overall size:
-
-------
-btrfs-progs v4.6.1
-extent tree key (EXTENT_TREE ROOT_ITEM 0)
-node 30441472 level *1* items 41 free 452 generation 7 owner 2
-------
-
-If the level is high (7 is the highest possible value), it's almost sure 
-that's the problem.
-
-For accurate space size, use the following scrip
-t to get the number of extent tree blocks:
-
-------
-$ egrep -e "^node" -e "^leaf" some_file | wc -l
-------
-
-Then multiple it by nodesize, you get the accurate size of extent tree.
-
-Thanks,
-Qu
->
->
->     [Btrfsck OOM]
->     Lu Fengqi is developing btrfsck low memory usage mode.
->     It's not merged into mainline btrfs progs and not fully completely, but
->     shows quite positive result for large fs.
->
->     It may needs sometime to get it stable, but IMHO it's going the right
->     direction.
->
-> Well that is great news as well, thank you for sharing it!
->
->     Thanks,
->     Qu
->
->
-> Thank you!
-> John
-
+-- 
+chandan
 

@@ -1,62 +1,64 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cc-smtpout3.netcologne.de ([89.1.8.213]:57415 "EHLO
-	cc-smtpout3.netcologne.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932590AbcGOLeo (ORCPT
+Received: from mx0b-001b2d01.pphosted.com ([148.163.158.5]:64179 "EHLO
+	mx0a-001b2d01.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
+	by vger.kernel.org with ESMTP id S932595AbcGOL6w (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 15 Jul 2016 07:34:44 -0400
-Subject: Re: mount btrfs takes 30 minutes, btrfs check runs out of memory
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>,
-        John Ettedgui <john.ettedgui@gmail.com>,
-        Austin S Hemmelgarn <ahferroin7@gmail.com>
-References: <CAJ3TwYQXqUZiKhYc5rciTmvGX1RLkHnkQb5SSYAJ7AD+kbudag@mail.gmail.com>
- <55BADEC4.3020409@cn.fujitsu.com>
- <CAJ3TwYRN+1tJY+paz=qZT0_XP=r9CcTKbBgX_kZRFOWj8vSK=w@mail.gmail.com>
- <55BAFEF9.1070107@cn.fujitsu.com>
- <CAJ3TwYR5g-JhjmGnZUXqLXc7qV1_=AN5_6sj54JQODbtgG9Aag@mail.gmail.com>
- <55BB0A39.1050208@cn.fujitsu.com>
- <CAJ3TwYS+yL8Tk8d3uigpXrfD+dcn2G4tWwbF7jcB=BCDZqs6+g@mail.gmail.com>
- <CAJ3TwYQc3d5R6r+tjY9mxUzptWA_MktUbZeaQebmNRBuqB7zYA@mail.gmail.com>
- <55C017E7.40704@cn.fujitsu.com>
- <CAJ3TwYTd_8-uwn-osNsf6UAuxGvoJCeWmxWYNHmzXoF_+yrABA@mail.gmail.com>
- <55C02AF9.3070600@cn.fujitsu.com>
- <CAJ3TwYQUX-CgqSXMxxU+6tcb0_0tuJbwKqHHPufCnsDBYuXycw@mail.gmail.com>
- <55C0A1ED.6020407@gmail.com>
- <CAJ3TwYQgm2f4SQFOO_vgGLP0V71q+oesbjFxTjhEJnrXYLe4fQ@mail.gmail.com>
- <55C1F3DD.7020603@gmail.com>
- <CAJ3TwYSW+SvbBrh1u_x+c3HTRx03qSR6BoH5cj_VzCXxZYv6EA@mail.gmail.com>
- <126f9f09-4e28-3c12-5384-63032e17942f@cn.fujitsu.com>
-Cc: btrfs <linux-btrfs@vger.kernel.org>
-From: Christian Rohmann <crohmann@netcologne.de>
-Message-ID: <d14c14d2-79d3-222b-59e2-ae8b38c7f2d4@netcologne.de>
-Date: Fri, 15 Jul 2016 13:29:24 +0200
+	Fri, 15 Jul 2016 07:58:52 -0400
+Received: from pps.filterd (m0098416.ppops.net [127.0.0.1])
+	by mx0b-001b2d01.pphosted.com (8.16.0.11/8.16.0.11) with SMTP id u6FBs9kS125624
+	for <linux-btrfs@vger.kernel.org>; Fri, 15 Jul 2016 07:58:51 -0400
+Received: from e23smtp07.au.ibm.com (e23smtp07.au.ibm.com [202.81.31.140])
+	by mx0b-001b2d01.pphosted.com with ESMTP id 246hekfea3-1
+	(version=TLSv1.2 cipher=AES256-SHA bits=256 verify=NOT)
+	for <linux-btrfs@vger.kernel.org>; Fri, 15 Jul 2016 07:58:51 -0400
+Received: from localhost
+	by e23smtp07.au.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
+	for <linux-btrfs@vger.kernel.org> from <chandan@linux.vnet.ibm.com>;
+	Fri, 15 Jul 2016 21:58:48 +1000
+Received: from d23relay06.au.ibm.com (d23relay06.au.ibm.com [9.185.63.219])
+	by d23dlp02.au.ibm.com (Postfix) with ESMTP id 158E72BB0057
+	for <linux-btrfs@vger.kernel.org>; Fri, 15 Jul 2016 21:58:46 +1000 (EST)
+Received: from d23av03.au.ibm.com (d23av03.au.ibm.com [9.190.234.97])
+	by d23relay06.au.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id u6FBwjF026411236
+	for <linux-btrfs@vger.kernel.org>; Fri, 15 Jul 2016 21:58:45 +1000
+Received: from d23av03.au.ibm.com (localhost [127.0.0.1])
+	by d23av03.au.ibm.com (8.14.4/8.14.4/NCO v10.0 AVout) with ESMTP id u6FBwjxh005412
+	for <linux-btrfs@vger.kernel.org>; Fri, 15 Jul 2016 21:58:45 +1000
+From: Chandan Rajendra <chandan@linux.vnet.ibm.com>
+To: dsterba@suse.cz
+Cc: David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs: allocate exact page array size in extent_buffer
+Date: Fri, 15 Jul 2016 17:28:42 +0530
+In-Reply-To: <20160715094406.GR10595@twin.jikos.cz>
+References: <1468499372-24687-1-git-send-email-dsterba@suse.com> <3567275.PIHfl50pLS@localhost.localdomain> <20160715094406.GR10595@twin.jikos.cz>
 MIME-Version: 1.0
-In-Reply-To: <126f9f09-4e28-3c12-5384-63032e17942f@cn.fujitsu.com>
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain; charset="us-ascii"
+Message-Id: <2207881.izrC6JhlLc@localhost.localdomain>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hey Qu, all
-
-On 07/15/2016 05:56 AM, Qu Wenruo wrote:
+On Friday, July 15, 2016 11:44:06 AM David Sterba wrote:
+> On Fri, Jul 15, 2016 at 11:47:07AM +0530, Chandan Rajendra wrote:
+> > On Thursday, July 14, 2016 02:29:32 PM David Sterba wrote:
+> > > The calculation of extent_buffer::pages size was done for 4k PAGE_SIZE,
+> > > but this wastes 15 unused pointers on arches with large page size. Eg.
+> > > on ppc64 this gives 15 * 8 = 120 bytes.
+> > >
+> > 
+> > The non PAGE_SIZE aligned extent buffer usage in page straddling tests in
+> > test_eb_bitmaps() need atleast one more page. So how about the following ...
+> > 
+> > #define INLINE_EXTENT_BUFFER_PAGES    (BTRFS_MAX_METADATA_BLOCKSIZE / PAGE_SIZE + 1)
 > 
-> The good news is, we have patch to slightly speedup the mount, by
-> avoiding reading out unrelated tree blocks.
+> Could the extra page pointer be normally used? Ie. not just for the sake
+> of the tests. I'd rather not waste the bytes. As a compromise, we can do +1
+> only if the tests are compiled in.
 > 
-> In our test environment, it takes 15% less time to mount a fs filled
-> with 16K files(2T used space).
-> 
-> https://patchwork.kernel.org/patch/9021421/
 
-I have a 30TB RAID6 filesystem with compression on and I've seen mount
-times of up to 20 minutes (!).
+I don't see any other scenario where the extra page pointer gets used. Also, I
+just executed fstests with your patch applied and disabling self-tests from
+the kernel configuration. The tests ran fine.
 
-I don't want to sound unfair, but 15% improvement is good, but not in
-the league where BTRFS needs to be.
-Do I understand you comments correctly that further improvement would
-result in a change of the on-disk format?
+-- 
+chandan
 
-
-
-Thanks and with regards
-
-Christian

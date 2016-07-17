@@ -1,95 +1,113 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.20]:53532 "EHLO mout.gmx.net"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751786AbcGPXyN (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 16 Jul 2016 19:54:13 -0400
-Subject: Re: mount btrfs takes 30 minutes, btrfs check runs out of memory
-To: Christian Rohmann <crohmann@netcologne.de>,
-        Qu Wenruo <quwenruo@cn.fujitsu.com>,
-        John Ettedgui <john.ettedgui@gmail.com>,
-        Austin S Hemmelgarn <ahferroin7@gmail.com>
-References: <CAJ3TwYQXqUZiKhYc5rciTmvGX1RLkHnkQb5SSYAJ7AD+kbudag@mail.gmail.com>
- <55BADEC4.3020409@cn.fujitsu.com>
- <CAJ3TwYRN+1tJY+paz=qZT0_XP=r9CcTKbBgX_kZRFOWj8vSK=w@mail.gmail.com>
- <55BAFEF9.1070107@cn.fujitsu.com>
- <CAJ3TwYR5g-JhjmGnZUXqLXc7qV1_=AN5_6sj54JQODbtgG9Aag@mail.gmail.com>
- <55BB0A39.1050208@cn.fujitsu.com>
- <CAJ3TwYS+yL8Tk8d3uigpXrfD+dcn2G4tWwbF7jcB=BCDZqs6+g@mail.gmail.com>
- <CAJ3TwYQc3d5R6r+tjY9mxUzptWA_MktUbZeaQebmNRBuqB7zYA@mail.gmail.com>
- <55C017E7.40704@cn.fujitsu.com>
- <CAJ3TwYTd_8-uwn-osNsf6UAuxGvoJCeWmxWYNHmzXoF_+yrABA@mail.gmail.com>
- <55C02AF9.3070600@cn.fujitsu.com>
- <CAJ3TwYQUX-CgqSXMxxU+6tcb0_0tuJbwKqHHPufCnsDBYuXycw@mail.gmail.com>
- <55C0A1ED.6020407@gmail.com>
- <CAJ3TwYQgm2f4SQFOO_vgGLP0V71q+oesbjFxTjhEJnrXYLe4fQ@mail.gmail.com>
- <55C1F3DD.7020603@gmail.com>
- <CAJ3TwYSW+SvbBrh1u_x+c3HTRx03qSR6BoH5cj_VzCXxZYv6EA@mail.gmail.com>
- <126f9f09-4e28-3c12-5384-63032e17942f@cn.fujitsu.com>
- <d14c14d2-79d3-222b-59e2-ae8b38c7f2d4@netcologne.de>
-Cc: btrfs <linux-btrfs@vger.kernel.org>, Chris Mason <clm@fb.com>,
-        David Sterba <dsterba@suse.cz>, Josef Bacik <jbacik@fb.com>
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <c14cbb3a-7eb7-11de-e502-5e7d97719f3f@gmx.com>
-Date: Sun, 17 Jul 2016 07:53:45 +0800
-MIME-Version: 1.0
-In-Reply-To: <d14c14d2-79d3-222b-59e2-ae8b38c7f2d4@netcologne.de>
-Content-Type: text/plain; charset=utf-8; format=flowed
+Received: from achille.seblu.net ([62.210.204.83]:39798 "EHLO
+	achille.seblu.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751882AbcGQCJb (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 16 Jul 2016 22:09:31 -0400
+Received: from murphy.h.seblu.net (cac94-h02-176-184-25-92.dsl.sta.abo.bbox.fr [176.184.25.92])
+	(Authenticated sender: seblu)
+	by achille.seblu.net (Postfix) with ESMTPSA id D816750C0093
+	for <linux-btrfs@vger.kernel.org>; Sun, 17 Jul 2016 04:09:21 +0200 (CEST)
+Message-ID: <1468721359.19617.169.camel@seblu.net>
+Subject: Size reported differently between profiles
+From: =?ISO-8859-1?Q?S=E9bastien?= Luttringer <seblu@seblu.net>
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Date: Sun, 17 Jul 2016 04:09:19 +0200
+Content-Type: multipart/signed; micalg="pgp-sha384";
+	protocol="application/pgp-signature"; boundary="=-0zZuD784itTn6mVEMT1s"
+Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
+--=-0zZuD784itTn6mVEMT1s
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
-On 07/15/2016 07:29 PM, Christian Rohmann wrote:
-> Hey Qu, all
->
-> On 07/15/2016 05:56 AM, Qu Wenruo wrote:
->>
->> The good news is, we have patch to slightly speedup the mount, by
->> avoiding reading out unrelated tree blocks.
->>
->> In our test environment, it takes 15% less time to mount a fs filled
->> with 16K files(2T used space).
->>
->> https://patchwork.kernel.org/patch/9021421/
->
-> I have a 30TB RAID6 filesystem with compression on and I've seen mount
-> times of up to 20 minutes (!).
->
-> I don't want to sound unfair, but 15% improvement is good, but not in
-> the league where BTRFS needs to be.
-> Do I understand you comments correctly that further improvement would
-> result in a change of the on-disk format?
+Hello,
 
-Yes, that's the case.
+=C2=ABbtrfs fi usage=C2=BB report size differently between single,RAID0,RAI=
+D1,RAID5,RAID6
+and RAID10.
 
-The problem is, we put BLOCK_GROUP_ITEM into extent tree, along with 
-tons of EXTENT_ITEM/METADATA_ITEM.
+The test is done with 2 files of 1.4GiB each on 4x10GiB devices. I used bal=
+ance
+to get size between profiles.
 
-This makes search for BLOCK_GROUP_ITEM very very very slow if extent 
-tree is really big.
+Data,single: Size:4.00GiB, Used:2.85GiB
+=C2=A0=C2=A0=C2=A0/dev/sdb	=C2=A0=C2=A0=C2=A01.00GiB
+=C2=A0=C2=A0=C2=A0/dev/sdc	=C2=A0=C2=A0=C2=A01.00GiB
+=C2=A0=C2=A0=C2=A0/dev/sdd	=C2=A0=C2=A0=C2=A01.00GiB
+=C2=A0=C2=A0=C2=A0/dev/sde	=C2=A0=C2=A0=C2=A01.00GiB
 
-On the handle, we search CHUNK_ITEM very very fast, because CHUNK_ITEM 
-are in their own tree.
-(CHUNK_ITEM and BLOCK_GROUP_ITEM are 1:1 mapped)
+Data,RAID0: Size:8.00GiB, Used:2.85GiB
+=C2=A0=C2=A0=C2=A0/dev/sdb	=C2=A0=C2=A0=C2=A02.00GiB
+=C2=A0=C2=A0=C2=A0/dev/sdc	=C2=A0=C2=A0=C2=A02.00GiB
+=C2=A0=C2=A0=C2=A0/dev/sdd	=C2=A0=C2=A0=C2=A02.00GiB
+=C2=A0=C2=A0=C2=A0/dev/sde	=C2=A0=C2=A0=C2=A02.00GiB
 
-So to completely fix it, btrfs needs on-disk format change to put 
-BLOCK_GROUP_ITEM into their own tree.
+Data,RAID1: Size:4.00GiB, Used:2.85GiB
+   /dev/sdb	   2.00GiB
+   /dev/sdc	   2.00GiB
+   /dev/sdd	   2.00GiB
+   /dev/sde	   2.00GiB
 
-IMHO there maybe be some objection from other devs though.
+Data,RAID5: Size:6.00GiB, Used:2.85GiB
+   /dev/sdb	   2.00GiB
+   /dev/sdc	   2.00GiB
+   /dev/sdd	   2.00GiB
+   /dev/sde	   2.00GiB
 
-Anyway, I add the three maintainers to Cc, and hopes we can get a better 
-idea to fix it.
+Data,RAID6: Size:6.00GiB, Used:2.85GiB
+   /dev/sdb	   3.00GiB
+   /dev/sdc	   3.00GiB
+   /dev/sdd	   3.00GiB
+   /dev/sde	   3.00GiB
 
-Thanks,
-Qu
->
->
->
-> Thanks and with regards
->
-> Christian
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
+Data,RAID10: Size:4.00GiB, Used:2.85GiB
+   /dev/sdb	   1.00GiB
+   /dev/sdc	   1.00GiB
+   /dev/sdd	   1.00GiB
+   /dev/sde	   1.00GiB
+
+For single,RAID0,RAID10 profiles, the sum of device sizes is equal to total=
+ size. Like total size is the "byte allocated size" for all devices.
+
+For RAID1,RAID5,RAID6 profiles, sum of devices sizes is more than the total=
+ size. Looks like the redundancy was subtracted from the total.
+Like total size is the "profile size allocated".
+
+So, why RAID1 and RAID10 are reporting their sizes differently? This confus=
+e me.
+
+Cheers,
+
+--=20
+S=C3=A9bastien "Seblu" Luttringer
+https://seblu.net | Twitter: @seblu42
+GPG: 0x2072D77A
+--=-0zZuD784itTn6mVEMT1s
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: This is a digitally signed message part
+Content-Transfer-Encoding: 7bit
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2
+
+iQIUBAABCQAGBQJXiujPAAoJEDwch2Awtl/iuEAPwJywRGDeO/0lxKLOG5jDBjhB
+JiVrnSTra9PgKuDP+h3Dvla1BwVurur25+CQqnkkFi2kUDmtbXUV+8NrL3SZDlnW
+feYfkMliIuxcL9WVS0Fy9UBugutRzCFZHIMG22ywTsRUlrgu1RstoAPDrXSi6Bod
+chtbD7jnutbGQEloGZOPoHxXUAsZuXtGIg+0xSHbH5E6BJWmVmXGqdQED6Xyae9s
+mgxKHhXhLZhMdWtcMdcv/HfRpqrvD6rEEAoE3TuQ38ETQv+IQbt8U9wBU0UUHLGD
+GjqCWcUqp6YDfq1OGp6P4t/wHuG7jBD8mzBfsAuzTOm0A6NbYWVuKAWlY0YbGZXR
+udAzli1b4d/qxQydTH11dsj1ZajRNOyZz1gOC3UpRBEEq17uM1yxBwVodKsKASsI
+q/vGYZBeZ2K6xpiz7nqARXVnz//mDuqixB52xb2jZpObClq+wKDscS1NZJNIoa9a
+gsQjMhQvly///yOEOtv727evRlNs/XWY0Ps4lJ/AqFf+H37Dicz9SXYBqZYDM9w3
+A4OxL+C4B/1AUN43WPRxghJFFIwoodSx2U4UP5rMAHpWAX+IaQx6TPFsbwrCqk21
+hw621X9WFOv09hCDMMgEAFHzWr2MeimQy95WrCCEy+Lqf8I5QIMqL5z2rVWpqFYA
+y2/zQ+osPg==
+=sLiU
+-----END PGP SIGNATURE-----
+
+--=-0zZuD784itTn6mVEMT1s--
+

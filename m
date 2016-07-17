@@ -1,63 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lf0-f43.google.com ([209.85.215.43]:36189 "EHLO
-	mail-lf0-f43.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751909AbcGQDJz convert rfc822-to-8bit (ORCPT
+Received: from dd15408.kasserver.com ([85.13.136.168]:56602 "EHLO
+	dd15408.kasserver.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750796AbcGQIgd (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 16 Jul 2016 23:09:55 -0400
-Received: by mail-lf0-f43.google.com with SMTP id g62so1306071lfe.3
-        for <linux-btrfs@vger.kernel.org>; Sat, 16 Jul 2016 20:09:54 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <9d52a64a-eb5a-e626-2c62-2ff9bede2eef@friedels.name>
-References: <b2b863cf-214a-6774-27a4-c41208a578ff@friedels.name>
- <56C7BB16-91D2-42AB-B81A-33403CAFE0ED@gmail.com> <9d52a64a-eb5a-e626-2c62-2ff9bede2eef@friedels.name>
-From: Tomasz Kusmierz <tom.kusmierz@gmail.com>
-Date: Sun, 17 Jul 2016 04:09:52 +0100
-Message-ID: <CAKinxcUBhsh_b6en_4B9cQ77UPMTtbYPusedPegucW3ZP0Fkuw@mail.gmail.com>
+	Sun, 17 Jul 2016 04:36:33 -0400
+Received: from [192.168.0.13] (p5DDCF0BD.dip0.t-ipconnect.de [93.220.240.189])
+	by dd15408.kasserver.com (Postfix) with ESMTPSA id 0CD95940837
+	for <linux-btrfs@vger.kernel.org>; Sun, 17 Jul 2016 10:26:40 +0200 (CEST)
+To: linux-btrfs@vger.kernel.org
+From: Matthias Prager <linux@matthiasprager.de>
 Subject: Re: Status of SMR with BTRFS
-To: Hendrik Friedel <hendrik@friedels.name>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Message-ID: <91da7783-ffa1-7d35-a364-344c61e7ddbe@matthiasprager.de>
+Date: Sun, 17 Jul 2016 10:26:36 +0200
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Just please don't take it as picking or something:
+Hello Hendrik,
 
-> It's a Seagate Expansion Desktop 5TB (USB3). It is probably a ST5000DM000.
+from my experience btrfs does work as badly with SMR drives (I only had
+the opportunity to test on a 8TB Seagate device-managed drive) as ext4.
+The initial performance is fine (for a few gigabytes / minutes), but
+drops of a cliff as soon as the internal buffer-region for
+non-sequential writes fills up (even though I tested large file SMB
+transfers).
 
-this is TGMR not SMR disk:
-http://www.seagate.com/www-content/product-content/desktop-hdd-fam/en-us/docs/100743772a.pdf
-So it still confirms to standard record strategy ...
+The only file system that worked really well with the 8TB Seagate SMR
+drive was f2fs. I used 'mkfs.f2fs -o 0 -a 0 -s 9 /dev/sdx' to create one
+and mounted it with noatime. -o means no additional over provisioning
+(the 5% default is a lot of wasted space on a 8TB drive), -a 0 tells
+f2fs not to use separate areas on the disks at the same time (which does
+not perform well on hdds only on ssds) and finally -s 9 tells f2fs to
+layout the file system in 1GB chunks.
+I hammered this file system for some days (via SMB and via shred-script)
+and it worked really well (performance and stability wise).
+
+I am considering using SMR drives for the next upgrades in my storage
+server in the basement - the only things missing in f2fs are checksums
+and raid1 support. But in my current setup (md-raid1+ext4) I don't get
+checksums either so f2fs+smr is still on my road-map. Long term, I would
+really like to switch to btrfs with it's built-in check summing (which
+unfortunately does not work with NOCOW) and raid1. But some of the file
+systems are almost 100% filled and I'm not trusting btrfs's stability
+yet (and the manageability / handling of btrfs lacks behind compared to
+say zfs).
 
 
->> There are two types:
->> 1. SMR managed by device firmware. BTRFS sees that as a normal block
->> device … problems you get are not related to BTRFS it self …
->
-> That for sure. But the way BTRFS uses/writes data could cause problems in
-> conjunction with these devices still, no?
-I'm sorry but I'm confused now, what "magical way of using/writing
-data" you actually mean ? AFAIK btrfs sees the disk as a block device
-... for example devices has a very varying sector size, which is a 512
-bytes + some CRC + maybe ECC ... btrfs does not access this data,
-drive does ... to be honest drives tend to lie to you continuously !
-They use this ECC to magically bail out of bad sector, give you data
-and silently switch to spare sector ...
-
-Now think slowly and thoroughly about it: who would write a code (and
-maintain it) for a file system that access device specific data for X
-amount of vendors with each having Y amount of model specific
-configurations/caveats/firmwares/protocols ... S.M.A.R.T. emerged to
-give a unifying interface to device statistics ... this is how bad it
-was ...
+I realize this mails sounds very negative for btrfs, I'm sorry that was
+not my intention. I'm actually a big fan of btrfs and already running it
+on my test-server, but I fear it still needs quite some time to mature.
+That's why I really appreciate all the hard work of the btrfs-devs!
 
 
-FYI,
-in 2009 I was creating a product with linux that was starting from a
-flash based FS ... some people required that data after 20 years would
-boot up unchanged ... my answer was: "HOW", yes I could ensure a
-certain files integrity in readout by checking md5, but I could not
-warrant a whole FS integrity ... specially at the time when j2ffs was
-only option on flash memories (yeah it had to be RW as well @#$*@#$)
-... so btrfs comes along and takes away most of problems ... if you
-care about your data, do some research ... if not ... maybe raiserFS
-is for you :)
+Kind regards
+Matthias

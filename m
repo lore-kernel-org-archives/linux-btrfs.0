@@ -1,89 +1,84 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:50319 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1750998AbcGRNnV (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 18 Jul 2016 09:43:21 -0400
+Received: from plane.gmane.org ([80.91.229.3]:36363 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751827AbcGRPbY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 18 Jul 2016 11:31:24 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+	id 1bPAVn-0003lI-I8
+	for linux-btrfs@vger.kernel.org; Mon, 18 Jul 2016 17:31:16 +0200
+Received: from 64.134.221.72 ([64.134.221.72])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Mon, 18 Jul 2016 17:31:15 +0200
+Received: from 1i5t5.duncan by 64.134.221.72 with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Mon, 18 Jul 2016 17:31:15 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
 Subject: Re: mount btrfs takes 30 minutes, btrfs check runs out of memory
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>,
-        Christian Rohmann <crohmann@netcologne.de>,
-        Qu Wenruo <quwenruo@cn.fujitsu.com>,
-        John Ettedgui <john.ettedgui@gmail.com>,
-        Austin S Hemmelgarn <ahferroin7@gmail.com>
+Date: Mon, 18 Jul 2016 15:31:00 +0000 (UTC)
+Message-ID: <pan$dd5b6$9cf94b5a$62923e99$f654aec1@cox.net>
 References: <CAJ3TwYQXqUZiKhYc5rciTmvGX1RLkHnkQb5SSYAJ7AD+kbudag@mail.gmail.com>
- <CAJ3TwYRN+1tJY+paz=qZT0_XP=r9CcTKbBgX_kZRFOWj8vSK=w@mail.gmail.com>
- <55BAFEF9.1070107@cn.fujitsu.com>
- <CAJ3TwYR5g-JhjmGnZUXqLXc7qV1_=AN5_6sj54JQODbtgG9Aag@mail.gmail.com>
- <55BB0A39.1050208@cn.fujitsu.com>
- <CAJ3TwYS+yL8Tk8d3uigpXrfD+dcn2G4tWwbF7jcB=BCDZqs6+g@mail.gmail.com>
- <CAJ3TwYQc3d5R6r+tjY9mxUzptWA_MktUbZeaQebmNRBuqB7zYA@mail.gmail.com>
- <55C017E7.40704@cn.fujitsu.com>
- <CAJ3TwYTd_8-uwn-osNsf6UAuxGvoJCeWmxWYNHmzXoF_+yrABA@mail.gmail.com>
- <55C02AF9.3070600@cn.fujitsu.com>
- <CAJ3TwYQUX-CgqSXMxxU+6tcb0_0tuJbwKqHHPufCnsDBYuXycw@mail.gmail.com>
- <55C0A1ED.6020407@gmail.com>
- <CAJ3TwYQgm2f4SQFOO_vgGLP0V71q+oesbjFxTjhEJnrXYLe4fQ@mail.gmail.com>
- <55C1F3DD.7020603@gmail.com>
- <CAJ3TwYSW+SvbBrh1u_x+c3HTRx03qSR6BoH5cj_VzCXxZYv6EA@mail.gmail.com>
- <126f9f09-4e28-3c12-5384-63032e17942f@cn.fujitsu.com>
- <d14c14d2-79d3-222b-59e2-ae8b38c7f2d4@netcologne.de>
- <c14cbb3a-7eb7-11de-e502-5e7d97719f3f@gmx.com>
-CC: btrfs <linux-btrfs@vger.kernel.org>, Chris Mason <clm@fb.com>,
-        "David Sterba" <dsterba@suse.cz>
-From: Josef Bacik <jbacik@fb.com>
-Message-ID: <0ac17bdc-64eb-bbbd-ae90-61cfdc16660d@fb.com>
-Date: Mon, 18 Jul 2016 09:42:50 -0400
-MIME-Version: 1.0
-In-Reply-To: <c14cbb3a-7eb7-11de-e502-5e7d97719f3f@gmx.com>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+	<55C02AF9.3070600@cn.fujitsu.com>
+	<CAJ3TwYQUX-CgqSXMxxU+6tcb0_0tuJbwKqHHPufCnsDBYuXycw@mail.gmail.com>
+	<55C0A1ED.6020407@gmail.com>
+	<CAJ3TwYQgm2f4SQFOO_vgGLP0V71q+oesbjFxTjhEJnrXYLe4fQ@mail.gmail.com>
+	<55C1F3DD.7020603@gmail.com>
+	<CAJ3TwYSW+SvbBrh1u_x+c3HTRx03qSR6BoH5cj_VzCXxZYv6EA@mail.gmail.com>
+	<126f9f09-4e28-3c12-5384-63032e17942f@cn.fujitsu.com>
+	<CAJ3TwYRXwDVVfT0TRRiM9dEw-7TvY8qG=WvMYKczZOv6wkFWAQ@mail.gmail.com>
+	<fd718727-9b54-ba58-5f39-63066181d13e@cn.fujitsu.com>
+	<CAJ3TwYSTnQfj=qmBLtnmtXQKexMMD4x=9Gk3p3anf4uF+G26kw@mail.gmail.com>
+	<CAJ3TwYTnMPVwkrZEU-=Q_Nq+9Bn0vM3z+EFC8RP=RTyaufSoqw@mail.gmail.com>
+	<5cc93522-1bd2-bdc1-d5da-a11d5e4816a7@cn.fujitsu.com>
+	<CAJ3TwYRpc_R-wVur0T6+Uy_aPVXTGpvp_ag1Ar9K2HoB0H1ySQ@mail.gmail.com>
+	<799054c4-b4f5-2dc0-4f70-4345159d9078@cn.fujitsu.com>
+	<CAJ3TwYRH8JVkuv2Hu7FYb+BSwKGrq1spx079zwOF_FO1y=9NFA@mail.gmail.com>
+	<e51aaa6e-a4b9-c187-84fa-c57799865b0e@cn.fujitsu.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 07/16/2016 07:53 PM, Qu Wenruo wrote:
->
->
-> On 07/15/2016 07:29 PM, Christian Rohmann wrote:
->> Hey Qu, all
->>
->> On 07/15/2016 05:56 AM, Qu Wenruo wrote:
->>>
->>> The good news is, we have patch to slightly speedup the mount, by
->>> avoiding reading out unrelated tree blocks.
->>>
->>> In our test environment, it takes 15% less time to mount a fs filled
->>> with 16K files(2T used space).
->>>
->>> https://patchwork.kernel.org/patch/9021421/
->>
->> I have a 30TB RAID6 filesystem with compression on and I've seen mount
->> times of up to 20 minutes (!).
->>
->> I don't want to sound unfair, but 15% improvement is good, but not in
->> the league where BTRFS needs to be.
->> Do I understand you comments correctly that further improvement would
->> result in a change of the on-disk format?
->
-> Yes, that's the case.
->
-> The problem is, we put BLOCK_GROUP_ITEM into extent tree, along with tons of
-> EXTENT_ITEM/METADATA_ITEM.
->
-> This makes search for BLOCK_GROUP_ITEM very very very slow if extent tree is
-> really big.
->
-> On the handle, we search CHUNK_ITEM very very fast, because CHUNK_ITEM are in
-> their own tree.
-> (CHUNK_ITEM and BLOCK_GROUP_ITEM are 1:1 mapped)
->
-> So to completely fix it, btrfs needs on-disk format change to put
-> BLOCK_GROUP_ITEM into their own tree.
->
-> IMHO there maybe be some objection from other devs though.
->
-> Anyway, I add the three maintainers to Cc, and hopes we can get a better idea to
-> fix it.
+Qu Wenruo posted on Mon, 18 Jul 2016 17:07:47 +0800 as excerpted:
 
-Yeah I'm going to fix this when I do the per-block group extent tree thing.  Thanks,
+>>     Since I'm really surprised on the mount time reduce, especially
+>>     considering the fact that for compression case, max extent size is
+>>     limited to 128K, IMHO defrag won't help much.
+>>
+>> Is the 128K limit for the whole FS or only for files that btrfs deemed
+>> worth to compress? If it's the latter, that could explain why defrag
+>> helped.
+> 
+> The latter. But the 128K is not for compressed size, but raw size.
+> 
+> So no matter the compressed size, any extent whose uncompressed size is
+> larger than 128K will be split.
+> 
+> The main reason I'm surprised about the mount time reduce, is that
+> considering the sectorsize (4K for x86_64 and x86), the fragments won't
+> increase too much.
+> The smallest extent size is determined by sectorsize(4K for most arch).
+> Compressed extent up limit is 128K,  4K -> 128K is only 32 times. While
+> for non-compress case, its extent size up limit is 128M.
+> 32K times larger than sector size, or 1024 times larger than compressed
+> extent size.
+> 
+> So I'm quite surprised that defrag helps so much.
 
-Josef
+[I'm only seeing your posts here, not his (yet?), so I'm only seeing what 
+you quote from his posts and may be missing part of the story.  Never-the-
+less...]
+
+I think what he's referring to is that he's only running compress, not 
+compress-force, and presumably not autodefrag.  So there's probably a lot 
+of uncompressed files that were heavily fragmented and thus in many 
+extents, that a defrag run helped consolidate, thus reducing mount time 
+substantially.
+
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 

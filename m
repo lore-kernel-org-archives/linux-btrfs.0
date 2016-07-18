@@ -1,53 +1,68 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aarghimedes.fi ([62.75.165.48]:45527 "EHLO aarghimedes.fi"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751777AbcGRS42 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 18 Jul 2016 14:56:28 -0400
+Received: from smtprelay05.ispgateway.de ([80.67.31.98]:44222 "EHLO
+	smtprelay05.ispgateway.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751762AbcGRTFg convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 18 Jul 2016 15:05:36 -0400
 Subject: Re: Status of SMR with BTRFS
-To: Matthias Prager <linux@matthiasprager.de>, Henk Slager <eye1tm@gmail.com>
-References: <91da7783-ffa1-7d35-a364-344c61e7ddbe@matthiasprager.de>
- <CAPmG0jb+FMOMNWhsOhE1gzsry_x862pjSO_wV8_PFbyaBoEmUg@mail.gmail.com>
- <5c31c6fd-5f4a-0fb6-07c9-a56964f30262@matthiasprager.de>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-From: Jukka Larja <roskakori@aarghimedes.fi>
-Message-ID: <578D24CB.8030106@aarghimedes.fi>
-Date: Mon, 18 Jul 2016 21:49:47 +0300
+To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>,
+        Tomasz Kusmierz <tom.kusmierz@gmail.com>
+References: <b2b863cf-214a-6774-27a4-c41208a578ff@friedels.name>
+ <56C7BB16-91D2-42AB-B81A-33403CAFE0ED@gmail.com>
+ <9d52a64a-eb5a-e626-2c62-2ff9bede2eef@friedels.name>
+ <CAKinxcUBhsh_b6en_4B9cQ77UPMTtbYPusedPegucW3ZP0Fkuw@mail.gmail.com>
+ <0e3dfcb6-c635-5904-9e97-1aa11a84dcd4@friedels.name>
+ <96008b98-0100-35e5-50b0-43e923c92010@gmail.com>
+ <bd311710-35c8-ce52-5b5a-96876330bde6@friedels.name>
+ <667a14be-4a01-02f6-79f9-a8cd585f360d@gmail.com>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>, dave@jikos.cz
+From: Hendrik Friedel <hendrik@friedels.name>
+Message-ID: <f7dec129-0aa2-832a-1842-95cd2ddd940e@friedels.name>
+Date: Mon, 18 Jul 2016 21:05:30 +0200
 MIME-Version: 1.0
-In-Reply-To: <5c31c6fd-5f4a-0fb6-07c9-a56964f30262@matthiasprager.de>
+In-Reply-To: <667a14be-4a01-02f6-79f9-a8cd585f360d@gmail.com>
 Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-18.7.2016, 0.44, Matthias Prager kirjoitti:
+Hello Austin,
 
-> the Seagate SMR drives are fast enough to handle Gbit-LAN
-> speeds if they are served mostly large sequential chunks by the file
-> system, which f2fs actually manages to do (cold storage in my scenario
-> too). Btrfs does too many scattered writes for this to work without
-> bandages (i.e. caching or snapshotting) (although I do see the advantage
-> in having checksums for data which you write once and then read like
-> once every year).
+thanks for your reply.
 
-I have two 8 TB Seagate Archive drives (which did cause me lots of extra 
-work, before I got everything patched and/or hardware to work correctly) in 
-Btrfs raid1[0] configuration. They serve as backup for DVR (and for testing, 
-as a backup of a backup of my Windows laptop) with around 4 TB of 
-recordings. Original rsync ran at about network speed. Both drives were 
-writing a bit over 100 MB/s for the whole time.
+>> Ok, thanks; So, TGMR does not say whether or not the Device is SMR or
+>> not, right?
+> I'm not 100% certain about that.  Technically, the only non-firmware
+> difference is in the read head and the tracking.  If it were me, I'd be
+> listing SMR instead of TGMR on the data sheet, but I'd be more than
+> willing to bet that many drive manufacturers won't think like that.
+>> While the Data-Sheet does not mention SMR and the 'Desktop' in the name
+>> rather than 'Archive' would indicate no SMR, some reviews indicate SMR
+>> (http://www.legitreviews.com/seagate-barracuda-st5000dm000-5tb-desktop-hard-drive-review_161241)
+>>
+>  Beyond that, I'm not sure,
+> but I believe that their 'Desktop' branding still means it's TGMR and
+> not SMR.
 
-Backups are updated once per day, few GBs of recordings and around 5000 
-small files from laptop changed, removed or created. I'm sort of waiting for 
-something to explode, but so far it seems to be working fine. Maybe I'll put 
-some real backups there some day.
+... which in the Seagate nomenclature might not exclude each other (TGMR 
+could still be SMR). I will just ask them...
+How did you find out on your drives whether they use SMR?
 
-[0] No need to tell me this shouldn't be done. It's for testing purposes.
+> I'd very much suggest avoiding USB connected SMR drives though, USB is
+> already poorly designed for storage devices (even with USB attached
+> SCSI), and most of the filesystem issues I see personally (not just with
+> BTRFS, but any other filesystem as well) are on USB connected storage,
+> so I'd be very wary of adding all the potential issues with SMR drives
+> on top of that as well.
 
--- 
-      ...Elämälle vierasta toimintaa...
-     Jukka Larja, Roskakori@aarghimedes.fi
+Understood. But I use this drive as a Backup. The Drive must not be 
+connected to the System unless doing a backup. Otherwise a Virus, or 
+just an issue with the power (peak due to lightning strike) might vanish 
+both the Source data and Backup at once (single point of failure).
 
-"Later subverted by himself; when he tried to march through the Makran 
-desert *SPOILER ALERT*. Ouch..."
-"Buddy, Alexander is literally ancient history. There are limits to the 
-spoiler tag."
-- TV Tropes Wiki, Never Tell Me The Odds, Aleksanteri suuresta -
+Greetings,
+Hendrik
+
+---
+Diese E-Mail wurde von Avast Antivirus-Software auf Viren geprüft.
+https://www.avast.com/antivirus
+

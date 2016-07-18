@@ -1,84 +1,63 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:36363 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751827AbcGRPbY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 18 Jul 2016 11:31:24 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1bPAVn-0003lI-I8
-	for linux-btrfs@vger.kernel.org; Mon, 18 Jul 2016 17:31:16 +0200
-Received: from 64.134.221.72 ([64.134.221.72])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 18 Jul 2016 17:31:15 +0200
-Received: from 1i5t5.duncan by 64.134.221.72 with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 18 Jul 2016 17:31:15 +0200
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: mount btrfs takes 30 minutes, btrfs check runs out of memory
-Date: Mon, 18 Jul 2016 15:31:00 +0000 (UTC)
-Message-ID: <pan$dd5b6$9cf94b5a$62923e99$f654aec1@cox.net>
-References: <CAJ3TwYQXqUZiKhYc5rciTmvGX1RLkHnkQb5SSYAJ7AD+kbudag@mail.gmail.com>
-	<55C02AF9.3070600@cn.fujitsu.com>
-	<CAJ3TwYQUX-CgqSXMxxU+6tcb0_0tuJbwKqHHPufCnsDBYuXycw@mail.gmail.com>
-	<55C0A1ED.6020407@gmail.com>
-	<CAJ3TwYQgm2f4SQFOO_vgGLP0V71q+oesbjFxTjhEJnrXYLe4fQ@mail.gmail.com>
-	<55C1F3DD.7020603@gmail.com>
-	<CAJ3TwYSW+SvbBrh1u_x+c3HTRx03qSR6BoH5cj_VzCXxZYv6EA@mail.gmail.com>
-	<126f9f09-4e28-3c12-5384-63032e17942f@cn.fujitsu.com>
-	<CAJ3TwYRXwDVVfT0TRRiM9dEw-7TvY8qG=WvMYKczZOv6wkFWAQ@mail.gmail.com>
-	<fd718727-9b54-ba58-5f39-63066181d13e@cn.fujitsu.com>
-	<CAJ3TwYSTnQfj=qmBLtnmtXQKexMMD4x=9Gk3p3anf4uF+G26kw@mail.gmail.com>
-	<CAJ3TwYTnMPVwkrZEU-=Q_Nq+9Bn0vM3z+EFC8RP=RTyaufSoqw@mail.gmail.com>
-	<5cc93522-1bd2-bdc1-d5da-a11d5e4816a7@cn.fujitsu.com>
-	<CAJ3TwYRpc_R-wVur0T6+Uy_aPVXTGpvp_ag1Ar9K2HoB0H1ySQ@mail.gmail.com>
-	<799054c4-b4f5-2dc0-4f70-4345159d9078@cn.fujitsu.com>
-	<CAJ3TwYRH8JVkuv2Hu7FYb+BSwKGrq1spx079zwOF_FO1y=9NFA@mail.gmail.com>
-	<e51aaa6e-a4b9-c187-84fa-c57799865b0e@cn.fujitsu.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Received: from smtp-35.italiaonline.it ([212.48.25.163]:48180 "EHLO libero.it"
+	rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+	id S1751777AbcGRS4b (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 18 Jul 2016 14:56:31 -0400
+Reply-To: kreijack@inwind.it
+Subject: Re: [BUG] Btrfs scrub sometime recalculate wrong parity in raid5
+References: <20160716155111.GA9751@ks392938.kimsufi.com>
+To: Jarkko Lavinen <jlavi@iki.fi>, linux-btrfs@vger.kernel.org
+From: Goffredo Baroncelli <kreijack@libero.it>
+Message-ID: <cc93fc7e-2bbf-40c3-807e-2b7d0b962335@libero.it>
+Date: Mon, 18 Jul 2016 20:56:22 +0200
+MIME-Version: 1.0
+In-Reply-To: <20160716155111.GA9751@ks392938.kimsufi.com>
+Content-Type: text/plain; charset=windows-1252
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Qu Wenruo posted on Mon, 18 Jul 2016 17:07:47 +0800 as excerpted:
+Hi
 
->>     Since I'm really surprised on the mount time reduce, especially
->>     considering the fact that for compression case, max extent size is
->>     limited to 128K, IMHO defrag won't help much.
->>
->> Is the 128K limit for the whole FS or only for files that btrfs deemed
->> worth to compress? If it's the latter, that could explain why defrag
->> helped.
+On 2016-07-16 17:51, Jarkko Lavinen wrote:
+> On 07/12/2016 05:50 PM, Goffredo Baroncelli wrote:
+>> Using "btrfs insp phy" I developed a script to trigger the bug.
 > 
-> The latter. But the 128K is not for compressed size, but raw size.
+> Thank you for the script and all for sharing the raid5 and scrubbing
+> issues. I have been using two raid5 arrays and ran scrub occasionally
+> without any problems lately and been in false confidence. I converted
+> successfully raid5 arrays into raid10 without any glitch.
 > 
-> So no matter the compressed size, any extent whose uncompressed size is
-> larger than 128K will be split.
-> 
-> The main reason I'm surprised about the mount time reduce, is that
-> considering the sectorsize (4K for x86_64 and x86), the fragments won't
-> increase too much.
-> The smallest extent size is determined by sectorsize(4K for most arch).
-> Compressed extent up limit is 128K,  4K -> 128K is only 32 times. While
-> for non-compress case, its extent size up limit is 128M.
-> 32K times larger than sector size, or 1024 times larger than compressed
-> extent size.
-> 
-> So I'm quite surprised that defrag helps so much.
+> I tried to modify the shell script so that instead of corrupting data
+> with dd, a simulated bad block is created with device mapper. Modern
+> disks are likely to either return the correct data or an error if
+> they cannot.
 
-[I'm only seeing your posts here, not his (yet?), so I'm only seeing what 
-you quote from his posts and may be missing part of the story.  Never-the-
-less...]
 
-I think what he's referring to is that he's only running compress, not 
-compress-force, and presumably not autodefrag.  So there's probably a lot 
-of uncompressed files that were heavily fragmented and thus in many 
-extents, that a defrag run helped consolidate, thus reducing mount time 
-substantially.
+You are right; but doing so we are complicating further the test case:
+- my tests show what happen when there is a corruption, but the drive behaves well
+- your tests show what happen when there is a corruption AND the drive has a failure
+
+I agree that your simulation is more realistic, but I fear that doing so we are complicating the bug finding.
+
+> 
+> The modified script behaves very much like the original dd version.
+> With dd version I see wrong data instead of expected data. 
+
+When toy say "I see wrong data", you means with 
+1) "cat mnt/out.txt" 
+or 2) with "dd if=/dev/loop....." ?
+
+In the first case I see always good data; in the second case I see wrong data but of course no reading error
+
+> With simulated bad block I see no data at all instead of expected data
+> since dd quits on read error.
+> 
+> Jarkko Lavinen
+> 
+
 
 -- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
+Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5
+
 

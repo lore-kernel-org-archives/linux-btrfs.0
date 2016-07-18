@@ -1,48 +1,33 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from bombadil.infradead.org ([198.137.202.9]:52458 "EHLO
-	bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751326AbcGRDux (ORCPT
+Received: from mail-io0-f169.google.com ([209.85.223.169]:35348 "EHLO
+	mail-io0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751642AbcGRV2z (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 17 Jul 2016 23:50:53 -0400
-Date: Sun, 17 Jul 2016 20:50:51 -0700
-From: Christoph Hellwig <hch@infradead.org>
-To: Mike Christie <mchristi@redhat.com>
-Cc: Vincent Stehl?? <vincent.stehle@intel.com>, linux-btrfs@vger.kernel.org,
-        linux-block@vger.kernel.org, Jens Axboe <axboe@fb.com>,
-        dm-devel@redhat.com
-Subject: Re: [dm-devel] [PATCH next] Btrfs: fix comparison in
- __btrfs_map_block()
-Message-ID: <20160718035051.GA3304@infradead.org>
+	Mon, 18 Jul 2016 17:28:55 -0400
+Received: by mail-io0-f169.google.com with SMTP id m101so2572732ioi.2
+        for <linux-btrfs@vger.kernel.org>; Mon, 18 Jul 2016 14:28:55 -0700 (PDT)
+Subject: Re: [PATCH next] Btrfs: fix comparison in __btrfs_map_block()
+To: =?UTF-8?Q?Vincent_Stehl=c3=a9?= <vincent.stehle@intel.com>,
+        linux-btrfs@vger.kernel.org
 References: <1465155145-10812-14-git-send-email-mchristi@redhat.com>
  <1468595001-4270-1-git-send-email-vincent.stehle@intel.com>
- <578BEFB7.6060209@redhat.com>
+Cc: linux-block@vger.kernel.org, dm-devel@redhat.com,
+        Mike Christie <mchristi@redhat.com>, Jens Axboe <axboe@fb.com>
+From: Jens Axboe <axboe@kernel.dk>
+Message-ID: <17530fad-226a-77e7-ff76-3fca3b1ffc97@kernel.dk>
+Date: Mon, 18 Jul 2016 15:28:52 -0600
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <578BEFB7.6060209@redhat.com>
+In-Reply-To: <1468595001-4270-1-git-send-email-vincent.stehle@intel.com>
+Content-Type: text/plain; charset=windows-1252; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Jul 17, 2016 at 03:51:03PM -0500, Mike Christie wrote:
-> > 
-> > diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-> > index a69203a..6ee1e36 100644
-> > --- a/fs/btrfs/volumes.c
-> > +++ b/fs/btrfs/volumes.c
-> > @@ -5533,7 +5533,7 @@ static int __btrfs_map_block(struct btrfs_fs_info *fs_info, int op,
-> >  		}
-> >  
-> >  	} else if (map->type & BTRFS_BLOCK_GROUP_DUP) {
-> > -		if (op == REQ_OP_WRITE || REQ_OP_DISCARD ||
-> > +		if (op == REQ_OP_WRITE || op == REQ_OP_DISCARD ||
-> >  		    op == REQ_GET_READ_MIRRORS) {
-> >  			num_stripes = map->num_stripes;
-> >  		} else if (mirror_num) {
-> > 
-> 
-> 
-> Shoot. Dumb mistake by me. It is of course correct.
+On 07/15/2016 09:03 AM, Vincent Stehlé wrote:
+> Add missing comparison to op in expression, which was forgotten when doing
+> the REQ_OP transition.
 
-Ad while we're at it we need to fix up that REQ_GET_READ_MIRRORS thing.
-Overloading the op localally in a fs is going to create problems sooner
-or later as no one touching the generic values and/or the code
-mashalling it in different forms knows about it.
+Thanks, added to the 4.8 branch.
+
+-- 
+Jens Axboe
+

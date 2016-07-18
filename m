@@ -1,89 +1,125 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dd15408.kasserver.com ([85.13.136.168]:53624 "EHLO
-	dd15408.kasserver.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751198AbcGQVor (ORCPT
+Received: from mail-io0-f179.google.com ([209.85.223.179]:35886 "EHLO
+	mail-io0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751531AbcGRLXF (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 17 Jul 2016 17:44:47 -0400
+	Mon, 18 Jul 2016 07:23:05 -0400
+Received: by mail-io0-f179.google.com with SMTP id b62so156406985iod.3
+        for <linux-btrfs@vger.kernel.org>; Mon, 18 Jul 2016 04:23:04 -0700 (PDT)
 Subject: Re: Status of SMR with BTRFS
-To: Henk Slager <eye1tm@gmail.com>
-References: <91da7783-ffa1-7d35-a364-344c61e7ddbe@matthiasprager.de>
- <CAPmG0jb+FMOMNWhsOhE1gzsry_x862pjSO_wV8_PFbyaBoEmUg@mail.gmail.com>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>,
-        Matthias Prager <linux@matthiasprager.de>
-From: Matthias Prager <linux@matthiasprager.de>
-Message-ID: <5c31c6fd-5f4a-0fb6-07c9-a56964f30262@matthiasprager.de>
-Date: Sun, 17 Jul 2016 23:44:39 +0200
+To: Hendrik Friedel <hendrik@friedels.name>,
+        Tomasz Kusmierz <tom.kusmierz@gmail.com>
+References: <b2b863cf-214a-6774-27a4-c41208a578ff@friedels.name>
+ <56C7BB16-91D2-42AB-B81A-33403CAFE0ED@gmail.com>
+ <9d52a64a-eb5a-e626-2c62-2ff9bede2eef@friedels.name>
+ <CAKinxcUBhsh_b6en_4B9cQ77UPMTtbYPusedPegucW3ZP0Fkuw@mail.gmail.com>
+ <0e3dfcb6-c635-5904-9e97-1aa11a84dcd4@friedels.name>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>, dave@jikos.cz
+From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Message-ID: <96008b98-0100-35e5-50b0-43e923c92010@gmail.com>
+Date: Mon, 18 Jul 2016 07:22:57 -0400
 MIME-Version: 1.0
-In-Reply-To: <CAPmG0jb+FMOMNWhsOhE1gzsry_x862pjSO_wV8_PFbyaBoEmUg@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8
+In-Reply-To: <0e3dfcb6-c635-5904-9e97-1aa11a84dcd4@friedels.name>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am 17.07.2016 um 22:10 schrieb Henk Slager:
-> What kernel (version) did you use ?
-> I hope it included:
-> http://git.kernel.org/cgit/linux/kernel/git/mkp/linux.git/commit/?h=bugzilla-93581&id=7c4fbd50bfece00abf529bc96ac989dd2bb83ca4
-> 
-> so >= 4.4, as without this patch, it is quite problematic, if not
-> impossible, to use this 8TB Seagate SMR drive with linux without doing
-> other patches or setting/module changes.
-Thanks for that pointer, I tested kernels 3.18.28, 4.1.[17+19] and 4.5.0
-. I had seen task aborts on the drive when io-stressing it with kernels
-3.18 and 4.1 (and ext4), but I never figured out the exact reason. Since
-I'm currently stuck at kernel 4.1.x, I did not research this any further
-(kernels >=4.2 aren't usable in esxi-guests when using pass-through
-devices due to irq handling issues which lead to driver inits failing -
-I'm told vmware is still sitting on a fix).
+On 2016-07-17 05:08, Hendrik Friedel wrote:
+> Hi Thomasz,
+>
+> @Dave I have added you to the conversation, as I refer to your notes
+> (https://github.com/kdave/drafts/blob/master/btrfs/smr-mode.txt)
+>
+> thanks for your reply!
+>
+>>> It's a Seagate Expansion Desktop 5TB (USB3). It is probably a
+>>> ST5000DM000.
+>>
+>> this is TGMR not SMR disk:
+>> http://www.seagate.com/www-content/product-content/desktop-hdd-fam/en-us/docs/100743772a.pdf
+>>
+>> So it still confirms to standard record strategy ...
+>
+> I am not convinced. I had not heared TGMR before. But I find TGMR as a
+> technology for the head.
+> https://pics.computerbase.de/4/0/3/4/4/29-1080.455720475.jpg
+TGMR is a derivative of giant magneto-resistance, and is what's been 
+used in hard disk drives for decades now.  With limited exceptions in 
+recent years and in ancient embedded systems, all modern hard drives are 
+TGMR based.
+> In any case: the drive behaves like a SMR drive: I ran a benchmark on it
+> with up to 200MB/s.
+> When copying a file onto the drive in parallel the rate in the benchmark
+> dropped to 7MB/s, while that particular file was copied at 40MB/s.
+This type of performance degradation is actually not unexpected 
+depending on the physical location of the files on disk.  Based on the 
+numbers you gave, the datasheet for the disk itself, and some basic 
+math, I'd guess that the two files ended up on opposite edges of a 
+single platter, which means that the head is seeking back and forth 
+almost constantly, which is what's killing your performance.
+>
+>>
+>>>> There are two types:
+>>>> 1. SMR managed by device firmware. BTRFS sees that as a normal block
+>>>> device … problems you get are not related to BTRFS it self …
+>>>
+>>> That for sure. But the way BTRFS uses/writes data could cause
+>>> problems in
+>>> conjunction with these devices still, no?
+>> I'm sorry but I'm confused now, what "magical way of using/writing
+>> data" you actually mean ? AFAIK btrfs sees the disk as a block device
+>
+> Well, btrfs does write data very different to many other file systems.
+> On every write the file is copied to another place, even if just one bit
+> is changed. That's special and I am wondering whether that could cause
+> problems.
+There's two things that should be clarified here:
+1. BTRFS only copies part of the file, not the whole file.  At most, it 
+copies out a single block, which on reasonably sized filesystems is 16k 
+these days.
+2. Copy-on-write semantics are not as special as you might think, ZFS is 
+also a COW filesystem, as are all log-structured filesystems (NILFS2, 
+LogFS, LFS, WAFL, and a couple of others), and a number of filesystems 
+support it to some degree (OCFS2, XFS, and even NTFS).
+>
+>> Now think slowly and thoroughly about it: who would write a code (and
+>> maintain it) for a file system that access device specific data for X
+>> amount of vendors with each having Y amount of model specific
+>> configurations/caveats/firmwares/protocols ... S.M.A.R.T. emerged to
+>> give a unifying interface to device statistics ... this is how bad it
+>> was ...
+>
+> Well, I'm no pro. But I found this:
+> https://github.com/kdave/drafts/blob/master/btrfs/smr-mode.txt
+> And this does sound like improvements to BTRFS can be done for SMR in a
+> generic, not vendor/device specific manner.
+>
+> And I am wondering:
+> a) whether it is advisable to use BTRFS on these drives before these
+> improvements have been made already
+>   i) if not: Are there specific btrfs features that should be avoided,
+> or btrfs in general?
+It's fine to use BTRFS, you just have to give the drive time to finish 
+it's internal bookkeeping before you power it off.  The same is true 
+with any filesystem, it's just that COW filesystems that aren't log 
+structured tend to require a lot more internal bookkeeping on the drive 
+than traditional filesystems.  On a typical non-COW filesystem, this 
+takes maybe a minute or two depending on the amount of data written.  On 
+a log structured filesystem, it may take only 15-30 seconds (log 
+structured filesystems are more similar to the internal layout of an SMR 
+drive than most other filesystems).  For a COW filesystem like BTRFS, it 
+may take 10-30 minutes depending on how much data got moved because of 
+the COW semantics.  It's worth pointing out that these numbers are for 
+archival usage (write a few big files infrequently), they go up pretty 
+steeply for more traditional usage such as for a root filesystem.
+> b) whether these improvements have been made already
+Not yet.
+>
+>> care about your data, do some research ... if not ... maybe raiserFS
+>> is for you :)
+>
+> You are right for sure. And that's what I do here. But I am far away
+> from being able to judge myself, so I rely on support.
+The fact that you're doing research at all is still better than many 
+users I see.
 
-
-> Since this patch, I have been using the drive for cold storage
-> archiving, connected to a Baytrail SoC SATA port. I use bcache
-> (writethrough or writearound) on an 8TB GPT partition that has a LUKS
-> container that is Btrfs m-dup, d-single formatted and mounted
-> compress=lzo,noatine,nossd. It is only powered on once a month for a
-> day or so and then it receives incremental snapshots mostly or some
-> SSD or flash images of 10-50G.
-> I have more or less kept all the snapshots sofar, so chunks keep being
-> added to previously unwritten space, so as sequential as possible.
-Mhh, see that would be one too many layers of complexity for my taste in
-such a setup - the Seagate SMR drives are fast enough to handle Gbit-LAN
-speeds if they are served mostly large sequential chunks by the file
-system, which f2fs actually manages to do (cold storage in my scenario
-too). Btrfs does too many scattered writes for this to work without
-bandages (i.e. caching or snapshotting) (although I do see the advantage
-in having checksums for data which you write once and then read like
-once every year).
-
-
-> If free space would be heavily fragmented and also files would be
-> heavily fragmented and the disk would be very full, adding new files
-> or modifying would be very slow. You see than many seconds that the
-> drive is active but no traffic on the SATA link. Also then there is
-> the risk that the default '/sys/block/$(kerneldevname)/device/timeout'
-> of 30 secs is too low, and that the kernel might reset the SATA link.
-> A SATA link still happened 2x the last 1/2 year, I haven't really
-> looked at the details sofar, just rebooted at some point in time
-> later, but I will set the timeout at least higher, e.g. 180, and then
-> see if ata errors/resets still occur. It might be FW crashes as well.
-As far as I've tested f2fs never backed the SMR drive into a corner,
-which is probably due to it's sequential write pattern as a
-log-structured file system and it's background garbage collection (i.e.
-defragmentation) - even in a full state. I imagine this will probably
-not work out for hot data though.
-
-
-> 
-> At least this SMR drive is not advised to use in raid setups. As
-> not-so-active array it might work if you use the right timeouts and
-> scterc etc, but if have seen how long the wait on the SATA link can be
-> and that makes me realize that the stamp 'Archive Drive' done by
-> Seagate has a clear reason.
-Agreed these drives do need special handling. For archival workloads
-with cold data they can be used if the file system is kind enough. I
-wouldn't be comfortable using these drives in any scenario where they
-might be backed into a corner in which case the wait times are far to
-uncalculable for my taste.
-
-
----
-Matthias

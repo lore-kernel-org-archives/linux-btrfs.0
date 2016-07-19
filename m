@@ -1,58 +1,54 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:41719 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752187AbcGSClu (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:38263 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1752587AbcGSGk3 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 18 Jul 2016 22:41:50 -0400
-Date: Mon, 18 Jul 2016 19:41:30 -0700
-From: "Darrick J. Wong" <darrick.wong@oracle.com>
-To: Adam Borowski <kilobyte@angband.pl>
-Cc: Alexander Viro <viro@zeniv.linux.org.uk>, linux-fsdevel@vger.kernel.org,
-        linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org,
-        Mark Fasheh <mfasheh@suse.de>
-Subject: Re: [PATCH] vfs: allow FILE_EXTENT_SAME (dedupe_file_range) on a
- file opened ro
-Message-ID: <20160719024129.GE2494@birch.djwong.org>
-References: <1468793618-10496-1-git-send-email-kilobyte@angband.pl>
+	Tue, 19 Jul 2016 02:40:29 -0400
+Subject: Re: [PATCH v12.1 01/15] btrfs: expand cow_file_range() to support
+ in-band dedup and subpage-blocksize
+To: <dsterba@suse.cz>, <linux-btrfs@vger.kernel.org>,
+        Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>,
+        Chandan Rajendra <chandan@linux.vnet.ibm.com>
+References: <20160711030543.30115-1-quwenruo@cn.fujitsu.com>
+ <20160711030543.30115-2-quwenruo@cn.fujitsu.com>
+ <20160711164129.GA13336@suse.cz>
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Message-ID: <de3481c3-154b-4e0e-d489-b1d1076d7cb1@cn.fujitsu.com>
+Date: Tue, 19 Jul 2016 14:40:11 +0800
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1468793618-10496-1-git-send-email-kilobyte@angband.pl>
+In-Reply-To: <20160711164129.GA13336@suse.cz>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Jul 18, 2016 at 12:13:38AM +0200, Adam Borowski wrote:
-> Instead of checking the mode of the file descriptor, let's check whether it
-> could have been opened rw.  This allows fixing intermittent exec failures
-> when deduping a live system: anyone trying to exec a file currently being
-> deduped gets ETXTBSY.
-> 
-> Issuing this ioctl on a ro file was already allowed for root/cap.
-> 
-> Tested on btrfs and not-yet-merged xfs, as only them implement this ioctl.
-> 
-> Signed-off-by: Adam Borowski <kilobyte@angband.pl>
 
-Could you please send an xfstest to test this aspect of the dedupe ioctl?
 
---D
+At 07/12/2016 12:41 AM, David Sterba wrote:
+> On Mon, Jul 11, 2016 at 11:05:29AM +0800, Qu Wenruo wrote:
+>> From: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
+>>
+>> Extract cow_file_range() new parameters for both in-band dedupe and
+>> subpage sector size patchset.
+>>
+>> This should make conflict of both patchset to minimal, and reduce the
+>> effort needed to rebase them.
+>
+> Great, thanks. I did a test merge, there are still conflicts but they
+> seem to be resolvable more easily, picking the changes from the right
+> patchset. I haven't tested it so there's more work, but the point was to
+> get the conflict surface down.
+>
+> There's another candidate, btrfs_set_extent_delalloc as it adds a
+> parameter, can you please send a similar patch for that?
+>
+>
+It seems that due to my fault, the mail didn't reach mail list.
 
-> ---
->  fs/read_write.c | 2 +-
->  1 file changed, 1 insertion(+), 1 deletion(-)
-> 
-> diff --git a/fs/read_write.c b/fs/read_write.c
-> index 933b53a..df59dc6 100644
-> --- a/fs/read_write.c
-> +++ b/fs/read_write.c
-> @@ -1723,7 +1723,7 @@ int vfs_dedupe_file_range(struct file *file, struct file_dedupe_range *same)
->  
->  		if (info->reserved) {
->  			info->status = -EINVAL;
-> -		} else if (!(is_admin || (dst_file->f_mode & FMODE_WRITE))) {
-> +		} else if (!(is_admin || !inode_permission(dst, MAY_WRITE))) {
->  			info->status = -EINVAL;
->  		} else if (file->f_path.mnt != dst_file->f_path.mnt) {
->  			info->status = -EXDEV;
-> -- 
-> 2.8.1
-> 
+Resend the reply just in case.
+
+Of cource, I'll add a new patch for btrfs_set_extent_delalloc().
+
+Thanks,
+Qu
+
+

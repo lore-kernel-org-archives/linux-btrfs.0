@@ -1,39 +1,104 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:41355 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752401AbcGRTvv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 18 Jul 2016 15:51:51 -0400
-Date: Mon, 18 Jul 2016 12:51:47 -0700
-From: Mark Fasheh <mfasheh@suse.de>
-To: Adam Borowski <kilobyte@angband.pl>
-Cc: Alexander Viro <viro@zeniv.linux.org.uk>, linux-fsdevel@vger.kernel.org,
-        linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org,
-        "Darrick J . Wong" <darrick.wong@oracle.com>
-Subject: Re: [PATCH] vfs: allow FILE_EXTENT_SAME (dedupe_file_range) on a
- file opened ro
-Message-ID: <20160718195147.GD17171@wotan.suse.de>
-Reply-To: Mark Fasheh <mfasheh@suse.de>
-References: <1468793618-10496-1-git-send-email-kilobyte@angband.pl>
+Received: from cn.fujitsu.com ([59.151.112.132]:21101 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1751930AbcGSAfw (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 18 Jul 2016 20:35:52 -0400
+Subject: Re: mount btrfs takes 30 minutes, btrfs check runs out of memory
+To: Josef Bacik <jbacik@fb.com>, Qu Wenruo <quwenruo.btrfs@gmx.com>,
+        Christian Rohmann <crohmann@netcologne.de>,
+        John Ettedgui <john.ettedgui@gmail.com>,
+        Austin S Hemmelgarn <ahferroin7@gmail.com>
+References: <CAJ3TwYQXqUZiKhYc5rciTmvGX1RLkHnkQb5SSYAJ7AD+kbudag@mail.gmail.com>
+ <55BAFEF9.1070107@cn.fujitsu.com>
+ <CAJ3TwYR5g-JhjmGnZUXqLXc7qV1_=AN5_6sj54JQODbtgG9Aag@mail.gmail.com>
+ <55BB0A39.1050208@cn.fujitsu.com>
+ <CAJ3TwYS+yL8Tk8d3uigpXrfD+dcn2G4tWwbF7jcB=BCDZqs6+g@mail.gmail.com>
+ <CAJ3TwYQc3d5R6r+tjY9mxUzptWA_MktUbZeaQebmNRBuqB7zYA@mail.gmail.com>
+ <55C017E7.40704@cn.fujitsu.com>
+ <CAJ3TwYTd_8-uwn-osNsf6UAuxGvoJCeWmxWYNHmzXoF_+yrABA@mail.gmail.com>
+ <55C02AF9.3070600@cn.fujitsu.com>
+ <CAJ3TwYQUX-CgqSXMxxU+6tcb0_0tuJbwKqHHPufCnsDBYuXycw@mail.gmail.com>
+ <55C0A1ED.6020407@gmail.com>
+ <CAJ3TwYQgm2f4SQFOO_vgGLP0V71q+oesbjFxTjhEJnrXYLe4fQ@mail.gmail.com>
+ <55C1F3DD.7020603@gmail.com>
+ <CAJ3TwYSW+SvbBrh1u_x+c3HTRx03qSR6BoH5cj_VzCXxZYv6EA@mail.gmail.com>
+ <126f9f09-4e28-3c12-5384-63032e17942f@cn.fujitsu.com>
+ <d14c14d2-79d3-222b-59e2-ae8b38c7f2d4@netcologne.de>
+ <c14cbb3a-7eb7-11de-e502-5e7d97719f3f@gmx.com>
+ <0ac17bdc-64eb-bbbd-ae90-61cfdc16660d@fb.com>
+CC: btrfs <linux-btrfs@vger.kernel.org>, Chris Mason <clm@fb.com>,
+        David Sterba <dsterba@suse.cz>
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Message-ID: <22bd62fa-3271-6bab-9650-364fc08b3212@cn.fujitsu.com>
+Date: Tue, 19 Jul 2016 08:35:42 +0800
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1468793618-10496-1-git-send-email-kilobyte@angband.pl>
+In-Reply-To: <0ac17bdc-64eb-bbbd-ae90-61cfdc16660d@fb.com>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Jul 18, 2016 at 12:13:38AM +0200, Adam Borowski wrote:
-> Instead of checking the mode of the file descriptor, let's check whether it
-> could have been opened rw.  This allows fixing intermittent exec failures
-> when deduping a live system: anyone trying to exec a file currently being
-> deduped gets ETXTBSY.
-> 
-> Issuing this ioctl on a ro file was already allowed for root/cap.
-> 
-> Tested on btrfs and not-yet-merged xfs, as only them implement this ioctl.
-> 
-> Signed-off-by: Adam Borowski <kilobyte@angband.pl>
 
-Reviewed-by: Mark Fasheh <mfasheh@suse.de>
-	--Mark
 
---
-Mark Fasheh
+At 07/18/2016 09:42 PM, Josef Bacik wrote:
+> On 07/16/2016 07:53 PM, Qu Wenruo wrote:
+>>
+>>
+>> On 07/15/2016 07:29 PM, Christian Rohmann wrote:
+>>> Hey Qu, all
+>>>
+>>> On 07/15/2016 05:56 AM, Qu Wenruo wrote:
+>>>>
+>>>> The good news is, we have patch to slightly speedup the mount, by
+>>>> avoiding reading out unrelated tree blocks.
+>>>>
+>>>> In our test environment, it takes 15% less time to mount a fs filled
+>>>> with 16K files(2T used space).
+>>>>
+>>>> https://patchwork.kernel.org/patch/9021421/
+>>>
+>>> I have a 30TB RAID6 filesystem with compression on and I've seen mount
+>>> times of up to 20 minutes (!).
+>>>
+>>> I don't want to sound unfair, but 15% improvement is good, but not in
+>>> the league where BTRFS needs to be.
+>>> Do I understand you comments correctly that further improvement would
+>>> result in a change of the on-disk format?
+>>
+>> Yes, that's the case.
+>>
+>> The problem is, we put BLOCK_GROUP_ITEM into extent tree, along with
+>> tons of
+>> EXTENT_ITEM/METADATA_ITEM.
+>>
+>> This makes search for BLOCK_GROUP_ITEM very very very slow if extent
+>> tree is
+>> really big.
+>>
+>> On the handle, we search CHUNK_ITEM very very fast, because CHUNK_ITEM
+>> are in
+>> their own tree.
+>> (CHUNK_ITEM and BLOCK_GROUP_ITEM are 1:1 mapped)
+>>
+>> So to completely fix it, btrfs needs on-disk format change to put
+>> BLOCK_GROUP_ITEM into their own tree.
+>>
+>> IMHO there maybe be some objection from other devs though.
+>>
+>> Anyway, I add the three maintainers to Cc, and hopes we can get a
+>> better idea to
+>> fix it.
+>
+> Yeah I'm going to fix this when I do the per-block group extent tree
+> thing.  Thanks,
+>
+> Josef
+
+Awesome!
+
+Can't wait to see the implementation.
+
+Thanks,
+Qu
+
+

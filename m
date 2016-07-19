@@ -1,52 +1,63 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:50628 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1751374AbcGOVIz (ORCPT
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:44647 "EHLO
+	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1752698AbcGSLF5 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 15 Jul 2016 17:08:55 -0400
-Subject: Re: A lot warnings in dmesg while running thunderbird
-To: Gabriel C <nix.or.die@gmail.com>, <linux-btrfs@vger.kernel.org>
-References: <CAEJqkghMZDOJoyRkf_-HTfuKLnj0eaAGmtjVAPY2UftV7TxbvA@mail.gmail.com>
- <50805ba8-2681-8606-79b3-add5b47b864f@fb.com>
-CC: <quwenruo@cn.fujitsu.com>
+	Tue, 19 Jul 2016 07:05:57 -0400
+Date: Tue, 19 Jul 2016 07:05:36 -0400
 From: Chris Mason <clm@fb.com>
-Message-ID: <a17a5af4-cf5e-cb4e-de09-4aeb8282e891@fb.com>
-Date: Fri, 15 Jul 2016 17:08:37 -0400
+To: Chandan Rajendra <chandan@linux.vnet.ibm.com>
+CC: Gabriel C <nix.or.die@gmail.com>, <linux-btrfs@vger.kernel.org>,
+        <quwenruo@cn.fujitsu.com>
+Subject: Re: A lot warnings in dmesg while running thunderbird
+Message-ID: <20160719110534.GA96833@clm-mbp.thefacebook.com>
+References: <CAEJqkghMZDOJoyRkf_-HTfuKLnj0eaAGmtjVAPY2UftV7TxbvA@mail.gmail.com>
+ <47ff1ea1-d4a9-55d9-f65d-60e94be93146@gmail.com>
+ <73545420-2ce5-c4d3-d59a-98d2114bafd2@fb.com>
+ <35812568.Zn4Yz0rfXf@localhost.localdomain>
 MIME-Version: 1.0
-In-Reply-To: <50805ba8-2681-8606-79b3-add5b47b864f@fb.com>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+Content-Type: text/plain; charset="us-ascii"; format=flowed
+In-Reply-To: <35812568.Zn4Yz0rfXf@localhost.localdomain>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 07/15/2016 03:35 PM, Chris Mason wrote:
+On Mon, Jul 11, 2016 at 11:28:01AM +0530, Chandan Rajendra wrote:
+>Hi Chris,
 >
+>I am able to reproduce the issue with the 'short-write' program. But before
+>the call trace associated with btrfs_destroy_inode(), I see the following call
+>trace ...
 >
-> On 07/07/2016 06:24 AM, Gabriel C wrote:
->> Hi,
->>
->> while running thunderbird on linux 4.6.3 and 4.7.0-rc6 ( didn't tested
->> other versions )
->> I trigger the following :
->>
->>
->> [ 6393.305675] WARNING: CPU: 6 PID: 5870 at fs/btrfs/inode.c:9306
->> btrfs_destroy_inode+0x22e/0x2a0 [btrfs]
->
-> Every time I've reproduced this, I've hit a warning in extent-tree.c
-> about trying to decrement bytes_may_use too far.  Then I get enospc
-> on every operation.
->
-> Josef fixed a few corner cases here with his new enospc changes, and I'm
-> not able to trigger (yet) with those applied.  Dave Sterba has them all
-> in his for-next branch:
->
-> git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git for-next
->
-> Can you please try that on top of v4.7-rc7
+>------------[ cut here ]------------
+>WARNING: CPU: 2 PID: 2311 at /home/chandan/repos/linux/fs/btrfs/extent-tree.c:4303 btrfs_free_reserved_data_space_noquota+0xe8/0x100
 
-A few hours later and it reproduced on this kernel too.  What must be 
-happening is we're freeing too many bytes from bytes_may_use.
+[ ... ]
 
-I'll get tracing in and nail it down.
+Ok, the problem is in how we're dealing with the offset into the sector when
+we fail. The dirty_sectors variable already has this accounted in it, so
+this patch fixes it for me.  I ran overnight, but I'll let it go for a few
+days just to make sure:
 
--chris
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index fac9b839..5842423 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -1629,13 +1629,11 @@ again:
+ 		 * managed to copy.
+ 		 */
+ 		if (num_sectors > dirty_sectors) {
+-			/*
+-			 * we round down because we don't want to count
+-			 * any partial blocks actually sent through the
+-			 * IO machines
+-			 */
+-			release_bytes = round_down(release_bytes - copied,
+-				      root->sectorsize);
++
++			/* release everything except the sectors we dirtied */
++			release_bytes -= dirty_sectors <<
++				root->fs_info->sb->s_blocksize_bits;
++
+ 			if (copied > 0) {
+ 				spin_lock(&BTRFS_I(inode)->lock);
+ 				BTRFS_I(inode)->outstanding_extents++;

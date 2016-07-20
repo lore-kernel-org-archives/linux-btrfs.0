@@ -1,38 +1,90 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:60934 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751462AbcGZPmG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 26 Jul 2016 11:42:06 -0400
-Date: Tue, 26 Jul 2016 17:41:50 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs: backref: Fix soft lockup in __merge_refs function
-Message-ID: <20160726154150.GH30795@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20160720070418.3380-1-quwenruo@cn.fujitsu.com>
+Received: from cn.fujitsu.com ([222.73.24.84]:34684 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1751712AbcGTHHj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 20 Jul 2016 03:07:39 -0400
+Received: from localhost.localdomain (unknown [10.167.226.34])
+	by cn.fujitsu.com (Postfix) with ESMTP id 103F14056401
+	for <linux-btrfs@vger.kernel.org>; Wed, 20 Jul 2016 15:06:20 +0800 (CST)
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH] btrfs: backref: Fix soft lockup in __merge_refs function
+Date: Wed, 20 Jul 2016 15:04:18 +0800
+Message-Id: <20160720070418.3380-1-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20160720070418.3380-1-quwenruo@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jul 20, 2016 at 03:04:18PM +0800, Qu Wenruo wrote:
-> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
-> ---
->  fs/btrfs/backref.c | 1 +
->  1 file changed, 1 insertion(+)
-> 
-> diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
-> index 8bb3509..4197610d 100644
-> --- a/fs/btrfs/backref.c
-> +++ b/fs/btrfs/backref.c
-> @@ -589,6 +589,7 @@ static void __merge_refs(struct list_head *head, int mode)
->  
->  			list_del(&ref2->list);
->  			kmem_cache_free(btrfs_prelim_ref_cache, ref2);
-> +			cond_resched();
+When over 1000 file extents refers to one extent, find_parent_nodes()
+will be obviously slow, due to the O(n^2)~O(n^3) loops inside
+__merge_refs().
 
-For a potentially long loop it's a good idea to add the cond resched,
+The following ftrace shows the cubic growth of execution time:
 
-Reviewed-by: David Sterba <dsterba@suse.com>
+256 refs
+ 5) + 91.768 us   |  __add_keyed_refs.isra.12 [btrfs]();
+ 5)   1.447 us    |  __add_missing_keys.isra.13 [btrfs]();
+ 5) ! 114.544 us  |  __merge_refs [btrfs]();
+ 5) ! 136.399 us  |  __merge_refs [btrfs]();
+
+512 refs
+ 6) ! 279.859 us  |  __add_keyed_refs.isra.12 [btrfs]();
+ 6)   3.164 us    |  __add_missing_keys.isra.13 [btrfs]();
+ 6) ! 442.498 us  |  __merge_refs [btrfs]();
+ 6) # 2091.073 us |  __merge_refs [btrfs]();
+
+and 1024 refs
+ 7) ! 368.683 us  |  __add_keyed_refs.isra.12 [btrfs]();
+ 7)   4.810 us    |  __add_missing_keys.isra.13 [btrfs]();
+ 7) # 2043.428 us |  __merge_refs [btrfs]();
+ 7) * 18964.23 us |  __merge_refs [btrfs]();
+
+And sort them into the following char:
+(Unit: us)
+------------------------------------------------------------------------
+ Trace function        | 256 ref        | 512 refs      | 1024 refs    |
+------------------------------------------------------------------------
+ __add_keyed_refs      | 91             | 249           | 368          |
+ __add_missing_keys    | 1              | 3             | 4            |
+ __merge_refs 1st call | 114            | 442           | 2043         |
+ __merge_refs 2nd call | 136            | 2091          | 18964        |
+------------------------------------------------------------------------
+
+We can see the that __add_keyed_refs() grows almost in linear behavior.
+And __add_missing_keys() in this case doesn't change much or takes much
+time.
+
+While for the 1st __merge_refs() it's square growth
+for the 2nd __merge_refs() call it's cubic growth.
+
+It's no doubt that merge_refs() will take a long long time to execute if
+the number of refs continues its grows.
+
+So add a cond_resced() into the loop of __merge_refs().
+
+Although this will solve the problem of soft lockup, we need to use the
+new rb_tree based structure introduced by Lu Fengqi to really solve the
+long execution time.
+
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+---
+ fs/btrfs/backref.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
+index 8bb3509..4197610d 100644
+--- a/fs/btrfs/backref.c
++++ b/fs/btrfs/backref.c
+@@ -589,6 +589,7 @@ static void __merge_refs(struct list_head *head, int mode)
+ 
+ 			list_del(&ref2->list);
+ 			kmem_cache_free(btrfs_prelim_ref_cache, ref2);
++			cond_resched();
+ 		}
+ 
+ 	}
+-- 
+2.9.0
+
+
+

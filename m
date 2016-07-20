@@ -1,51 +1,87 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail02.iobjects.de ([188.40.134.68]:42736 "EHLO
-	mail02.iobjects.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752419AbcGTIqG (ORCPT
+Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:63440 "EHLO
+	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1752442AbcGTNSu (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 20 Jul 2016 04:46:06 -0400
-Subject: Re: [PATCH 0/4] update bytes_may_use timely to avoid false ENOSPC
- issue
-To: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
+	Wed, 20 Jul 2016 09:18:50 -0400
+Subject: Re: [PATCH 1/4] btrfs: use correct offset for reloc_inode in
+ prealloc_file_extent_cluster()
+To: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>, <linux-btrfs@vger.kernel.org>
 References: <20160720055637.7275-1-wangxg.fnst@cn.fujitsu.com>
-Cc: dsterba@suse.cz, jbacik@fb.com
-From: =?UTF-8?Q?Holger_Hoffst=c3=a4tte?= <holger@applied-asynchrony.com>
-Message-ID: <578F3A4C.4040702@applied-asynchrony.com>
-Date: Wed, 20 Jul 2016 10:46:04 +0200
+ <20160720055637.7275-2-wangxg.fnst@cn.fujitsu.com>
+CC: <dsterba@suse.cz>, <holger@applied-asynchrony.com>
+From: Josef Bacik <jbacik@fb.com>
+Message-ID: <5a91d751-ec98-8a2d-2d7c-8e63efbe750b@fb.com>
+Date: Wed, 20 Jul 2016 09:18:09 -0400
 MIME-Version: 1.0
-In-Reply-To: <20160720055637.7275-1-wangxg.fnst@cn.fujitsu.com>
-Content-Type: text/plain; charset=utf-8
+In-Reply-To: <20160720055637.7275-2-wangxg.fnst@cn.fujitsu.com>
+Content-Type: text/plain; charset="windows-1252"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 07/20/16 07:56, Wang Xiaoguang wrote:
-> Currently in btrfs, for data space reservation, it does not update
-> bytes_may_use in btrfs_update_reserved_bytes() and the decrease operation
-> will be delayed to be done in extent_clear_unlock_delalloc(), for
-> fallocate(2), decrease operation is even delayed to be done in end
-> of btrfs_fallocate(), which is too late. Obviously such delay will
-> cause unnecessary pressure to enospc system, in [PATCH 4/4], there is
-> a simpel test script that can reveal such false ENOSPC bug.
-> 
-> So in this patch set, it will remove RESERVE_FREE, RESERVE_ALLOC and
-> RESERVE_ALLOC_NO_ACCOUNT, and we always update bytes_may_use timely.
-> 
-> I'll also commit a fstests test case for this issue.
-> 
-> Wang Xiaoguang (4):
->   btrfs: use correct offset for reloc_inode in
->     prealloc_file_extent_cluster()
->   btrfs: divide btrfs_update_reserved_bytes() into two functions
->   btrfs: introduce new EXTENT_CLEAR_DATA_RESV flag
->   btrfs: update btrfs_space_info's bytes_may_use timely
-> 
+On 07/20/2016 01:56 AM, Wang Xiaoguang wrote:
+> In prealloc_file_extent_cluster(), btrfs_check_data_free_space() uses
+> wrong file offset for reloc_inode, it uses cluster->start and cluster->end,
+> which indeed are extent's bytenr. The correct value should be
+> cluster->[start|end] minus block group's start bytenr.
+>
+> start bytenr   cluster->start
+> |              |     extent      |   extent   | ...| extent |
+> |----------------------------------------------------------------|
+> |                block group reloc_inode                         |
+>
+> Signed-off-by: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
+> ---
+>  fs/btrfs/relocation.c | 10 ++++++----
+>  1 file changed, 6 insertions(+), 4 deletions(-)
+>
+> diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
+> index 0477dca..a0de885 100644
+> --- a/fs/btrfs/relocation.c
+> +++ b/fs/btrfs/relocation.c
+> @@ -3030,12 +3030,14 @@ int prealloc_file_extent_cluster(struct inode *inode,
+>  	u64 num_bytes;
+>  	int nr = 0;
+>  	int ret = 0;
+> +	u64 prealloc_start = cluster->start - offset;
+> +	u64 prealloc_end = cluster->end - offset;
+>
+>  	BUG_ON(cluster->start != cluster->boundary[0]);
+>  	inode_lock(inode);
+>
+> -	ret = btrfs_check_data_free_space(inode, cluster->start,
+> -					  cluster->end + 1 - cluster->start);
+> +	ret = btrfs_check_data_free_space(inode, prealloc_start,
+> +					  prealloc_end + 1 - prealloc_start);
+>  	if (ret)
+>  		goto out;
+>
+> @@ -3056,8 +3058,8 @@ int prealloc_file_extent_cluster(struct inode *inode,
+>  			break;
+>  		nr++;
+>  	}
+> -	btrfs_free_reserved_data_space(inode, cluster->start,
+> -				       cluster->end + 1 - cluster->start);
+> +	btrfs_free_reserved_data_space(inode, prealloc_start,
+> +				       prealloc_end + 1 - prealloc_start);
+>  out:
+>  	inode_unlock(inode);
+>  	return ret;
+>
 
-Just like the previous version, for all 4 patches:
+This ends up being the same amount.  Consider this scenario
 
-Tested-by: Holger Hoffstätte <holger@applied-asynchrony.com>
+bg bytenr = 4096
+cluster->start = 8192
+cluster->end = 12287
 
-via the reproducer script & some very large manual fallocates.
+cluster->end + 1 - cluster->start = 4096
 
-thanks!
-Holger
+prealloc_start = cluster->start - offset = 0
+prealloc_end = cluster->end - offset = 8191
 
+prealloc_end + 1 - prealloc_start = 4096
+
+You shift both by the same amount, which gives you the same answer.  Thanks,
+
+Josef

@@ -1,62 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail02.iobjects.de ([188.40.134.68]:42586 "EHLO
-	mail02.iobjects.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751036AbcGTHff (ORCPT
+Received: from mail-oi0-f50.google.com ([209.85.218.50]:35209 "EHLO
+	mail-oi0-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751522AbcGTUU0 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 20 Jul 2016 03:35:35 -0400
-Subject: Re: ENOSPC / no space on very large devices
-To: Stefan Priebe - Profihost AG <s.priebe@profihost.ag>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-References: <1659eb11-0025-d9d4-c590-2a4d721bb299@profihost.ag>
-Cc: Jannik Winkel <j.winkel@profihost.ag>
-From: =?UTF-8?Q?Holger_Hoffst=c3=a4tte?= <holger@applied-asynchrony.com>
-Message-ID: <578F29C4.9030808@applied-asynchrony.com>
-Date: Wed, 20 Jul 2016 09:35:32 +0200
+	Wed, 20 Jul 2016 16:20:26 -0400
+Received: by mail-oi0-f50.google.com with SMTP id l72so88163152oig.2
+        for <linux-btrfs@vger.kernel.org>; Wed, 20 Jul 2016 13:20:26 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <1659eb11-0025-d9d4-c590-2a4d721bb299@profihost.ag>
-Content-Type: text/plain; charset=utf-8
+In-Reply-To: <6acece40-1457-e4f3-646b-083780d8a251@gmail.com>
+References: <A06BAA26-44FF-4947-B552-26ED228B5BF6@gmx.net> <179e2713-cd97-213c-3476-82f0b48c6442@gmail.com>
+ <1378A988-195F-4E68-B6DE-30CEDFAC8474@gmx.net> <6acece40-1457-e4f3-646b-083780d8a251@gmail.com>
+From: Chris Murphy <lists@colorremedies.com>
+Date: Wed, 20 Jul 2016 14:20:25 -0600
+Message-ID: <CAJCQCtTQepjAtcmtC6mdrU4xmxbV4jbK2UPWr_ikaOzwjv1ntw@mail.gmail.com>
+Subject: Re: Data recovery from a linear multi-disk btrfs file system
+To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Cc: Matt <langelino@gmx.net>, Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 07/20/16 07:31, Stefan Priebe - Profihost AG wrote:
-> Hi list,
-> 
-> while i didn't had the problem for some month i'm now getting ENOSPC on
-> a regular basis on one host.
+On Fri, Jul 15, 2016 at 12:52 PM, Austin S. Hemmelgarn
+<ahferroin7@gmail.com> wrote:
 
-Well, it's getting better. :)
+> Your own 'btrfs fi df' output clearly says that more than 99% of your data
+> chunks are in a RAID0 profile, hence my statement.
 
-> if i umount the volume i get traces (i already did a clear_cache 4 days
-> ago to recalculate the space_tree):
-> 
-> [545031.675797] ------------[ cut here ]------------
-> [545031.725166] WARNING: CPU: 1 PID: 17711 at
-> fs/btrfs/extent-tree.c:5710 btrfs_free_block_groups+0x35a/0x400 [btrfs]()
+Somewhen in ancient Btrfs list history, there was a call to change the
+mkfs default for multiple device from data raid0 profile to single.
+But I just tried it and it's still raid0. That's pretty risky for a
+default as any file more than 64KiB is going to end up with an
+unrecoverable hole in the data, and it might be that the OP was
+expecting single profile when creating this file system and just
+overlooked that it's raid0, not linear.
 
-This is "only" a warning, but as we can see below it indicates a real
-problem. The warning was added only recently to for-next by the patch called
-"Btrfs: warn_on for unaccounted spaces" [1], but I've had it in my tree
-forever. Never seen the warning myself.
+Even single profile is risky. Some users might be prepared to lose
+some data on one failed device. But the safest option would be to use
+raid1 (two copies only, should we one day get n-copies) profile for
+data and metadata when the profile isn't otherwise specified. By
+default.
 
-(snip)
-> [545037.909700] BTRFS: space_info 4 has 18446743523026157568 free, is
-> not full
 
-Wow, ~18.4 exabytes really is a lot of free space. :)
-So it looks like something underflowed the space_info and now things are
-confused for about ~550 GB. Unfortunately I have no good idea how to fix
-that. :(
-
-> The kernel is something special - i'm using this one from holger:
-> https://github.com/hhoffstaette/kernel-patches
-> 
-> which is basically a 4.4.15 + several patches especially a lot of btrfs
-> patches up to 4.8 i think.
-
-More like for-next with all the pagesize/sectorsize stuff carefully
-avoided. I'm really looking forward to 4.8, this is becoming unwieldy..
-
--h
-
-[1] https://git.kernel.org/cgit/linux/kernel/git/kdave/linux.git/commit/?h=for-next&id=d555b6c380c644af63dbdaa7cc14bba041a4e4dd
-
+-- 
+Chris Murphy

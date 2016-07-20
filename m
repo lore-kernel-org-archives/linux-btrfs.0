@@ -1,67 +1,201 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:53203 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:13268 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1751194AbcGTF7M (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 20 Jul 2016 01:59:12 -0400
+	id S1751194AbcGTF7P (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 20 Jul 2016 01:59:15 -0400
 From: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
 Cc: dsterba@suse.cz, jbacik@fb.com, holger@applied-asynchrony.com
-Subject: [PATCH 1/4] btrfs: use correct offset for reloc_inode in prealloc_file_extent_cluster()
-Date: Wed, 20 Jul 2016 13:56:34 +0800
-Message-Id: <20160720055637.7275-2-wangxg.fnst@cn.fujitsu.com>
+Subject: [PATCH 2/4] btrfs: divide btrfs_update_reserved_bytes() into two functions
+Date: Wed, 20 Jul 2016 13:56:35 +0800
+Message-Id: <20160720055637.7275-3-wangxg.fnst@cn.fujitsu.com>
 In-Reply-To: <20160720055637.7275-1-wangxg.fnst@cn.fujitsu.com>
 References: <20160720055637.7275-1-wangxg.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-In prealloc_file_extent_cluster(), btrfs_check_data_free_space() uses
-wrong file offset for reloc_inode, it uses cluster->start and cluster->end,
-which indeed are extent's bytenr. The correct value should be
-cluster->[start|end] minus block group's start bytenr.
-
-start bytenr   cluster->start
-|              |     extent      |   extent   | ...| extent |
-|----------------------------------------------------------------|
-|                block group reloc_inode                         |
+This patch divides btrfs_update_reserved_bytes() into
+btrfs_add_reserved_bytes() and btrfs_free_reserved_bytes(), and
+next patch will extend btrfs_add_reserved_bytes（）to fix some
+false ENOSPC error, please see later patch for detailed info.
 
 Signed-off-by: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
 ---
- fs/btrfs/relocation.c | 10 ++++++----
- 1 file changed, 6 insertions(+), 4 deletions(-)
+ fs/btrfs/extent-tree.c | 97 +++++++++++++++++++++++++++++---------------------
+ 1 file changed, 57 insertions(+), 40 deletions(-)
 
-diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-index 0477dca..a0de885 100644
---- a/fs/btrfs/relocation.c
-+++ b/fs/btrfs/relocation.c
-@@ -3030,12 +3030,14 @@ int prealloc_file_extent_cluster(struct inode *inode,
- 	u64 num_bytes;
- 	int nr = 0;
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 82b912a..8eaac39 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -104,9 +104,10 @@ static int find_next_key(struct btrfs_path *path, int level,
+ 			 struct btrfs_key *key);
+ static void dump_space_info(struct btrfs_space_info *info, u64 bytes,
+ 			    int dump_block_groups);
+-static int btrfs_update_reserved_bytes(struct btrfs_block_group_cache *cache,
+-				       u64 num_bytes, int reserve,
+-				       int delalloc);
++static int btrfs_add_reserved_bytes(struct btrfs_block_group_cache *cache,
++				    u64 num_bytes, int reserve, int delalloc);
++static int btrfs_free_reserved_bytes(struct btrfs_block_group_cache *cache,
++				     u64 num_bytes, int delalloc);
+ static int block_rsv_use_bytes(struct btrfs_block_rsv *block_rsv,
+ 			       u64 num_bytes);
+ int btrfs_pin_extent(struct btrfs_root *root,
+@@ -6297,19 +6298,14 @@ void btrfs_wait_block_group_reservations(struct btrfs_block_group_cache *bg)
+ }
+ 
+ /**
+- * btrfs_update_reserved_bytes - update the block_group and space info counters
++ * btrfs_add_reserved_bytes - update the block_group and space info counters
+  * @cache:	The cache we are manipulating
+  * @num_bytes:	The number of bytes in question
+  * @reserve:	One of the reservation enums
+  * @delalloc:   The blocks are allocated for the delalloc write
+  *
+- * This is called by the allocator when it reserves space, or by somebody who is
+- * freeing space that was never actually used on disk.  For example if you
+- * reserve some space for a new leaf in transaction A and before transaction A
+- * commits you free that leaf, you call this with reserve set to 0 in order to
+- * clear the reservation.
+- *
+- * Metadata reservations should be called with RESERVE_ALLOC so we do the proper
++ * This is called by the allocator when it reserves space. Metadata
++ * reservations should be called with RESERVE_ALLOC so we do the proper
+  * ENOSPC accounting.  For data we handle the reservation through clearing the
+  * delalloc bits in the io_tree.  We have to do this since we could end up
+  * allocating less disk space for the amount of data we have reserved in the
+@@ -6319,44 +6315,65 @@ void btrfs_wait_block_group_reservations(struct btrfs_block_group_cache *bg)
+  * make the reservation and return -EAGAIN, otherwise this function always
+  * succeeds.
+  */
+-static int btrfs_update_reserved_bytes(struct btrfs_block_group_cache *cache,
+-				       u64 num_bytes, int reserve, int delalloc)
++static int btrfs_add_reserved_bytes(struct btrfs_block_group_cache *cache,
++				    u64 num_bytes, int reserve, int delalloc)
+ {
+ 	struct btrfs_space_info *space_info = cache->space_info;
  	int ret = 0;
-+	u64 prealloc_start = cluster->start - offset;
-+	u64 prealloc_end = cluster->end - offset;
  
- 	BUG_ON(cluster->start != cluster->boundary[0]);
- 	inode_lock(inode);
+ 	spin_lock(&space_info->lock);
+ 	spin_lock(&cache->lock);
+-	if (reserve != RESERVE_FREE) {
+-		if (cache->ro) {
+-			ret = -EAGAIN;
+-		} else {
+-			cache->reserved += num_bytes;
+-			space_info->bytes_reserved += num_bytes;
+-			if (reserve == RESERVE_ALLOC) {
+-				trace_btrfs_space_reservation(cache->fs_info,
+-						"space_info", space_info->flags,
+-						num_bytes, 0);
+-				space_info->bytes_may_use -= num_bytes;
+-			}
+-
+-			if (delalloc)
+-				cache->delalloc_bytes += num_bytes;
+-		}
++	if (cache->ro) {
++		ret = -EAGAIN;
+ 	} else {
+-		if (cache->ro)
+-			space_info->bytes_readonly += num_bytes;
+-		cache->reserved -= num_bytes;
+-		space_info->bytes_reserved -= num_bytes;
++		cache->reserved += num_bytes;
++		space_info->bytes_reserved += num_bytes;
++		if (reserve == RESERVE_ALLOC) {
++			trace_btrfs_space_reservation(cache->fs_info,
++					"space_info", space_info->flags,
++					num_bytes, 0);
++			space_info->bytes_may_use -= num_bytes;
++		}
  
--	ret = btrfs_check_data_free_space(inode, cluster->start,
--					  cluster->end + 1 - cluster->start);
-+	ret = btrfs_check_data_free_space(inode, prealloc_start,
-+					  prealloc_end + 1 - prealloc_start);
- 	if (ret)
- 		goto out;
- 
-@@ -3056,8 +3058,8 @@ int prealloc_file_extent_cluster(struct inode *inode,
- 			break;
- 		nr++;
+ 		if (delalloc)
+-			cache->delalloc_bytes -= num_bytes;
++			cache->delalloc_bytes += num_bytes;
  	}
--	btrfs_free_reserved_data_space(inode, cluster->start,
--				       cluster->end + 1 - cluster->start);
-+	btrfs_free_reserved_data_space(inode, prealloc_start,
-+				       prealloc_end + 1 - prealloc_start);
- out:
- 	inode_unlock(inode);
+ 	spin_unlock(&cache->lock);
+ 	spin_unlock(&space_info->lock);
  	return ret;
+ }
+ 
++/**
++ * btrfs_free_reserved_bytes - update the block_group and space info counters
++ * @cache:      The cache we are manipulating
++ * @num_bytes:  The number of bytes in question
++ * @delalloc:   The blocks are allocated for the delalloc write
++ *
++ * This is called by somebody who is freeing space that was never actually used
++ * on disk.  For example if you reserve some space for a new leaf in transaction
++ * A and before transaction A commits you free that leaf, you call this with
++ * reserve set to 0 in order to clear the reservation.
++ */
++
++static int btrfs_free_reserved_bytes(struct btrfs_block_group_cache *cache,
++				     u64 num_bytes, int delalloc)
++{
++	struct btrfs_space_info *space_info = cache->space_info;
++	int ret = 0;
++
++	spin_lock(&space_info->lock);
++	spin_lock(&cache->lock);
++	if (cache->ro)
++		space_info->bytes_readonly += num_bytes;
++	cache->reserved -= num_bytes;
++	space_info->bytes_reserved -= num_bytes;
++
++	if (delalloc)
++		cache->delalloc_bytes -= num_bytes;
++	spin_unlock(&cache->lock);
++	spin_unlock(&space_info->lock);
++	return ret;
++}
+ void btrfs_prepare_extent_commit(struct btrfs_trans_handle *trans,
+ 				struct btrfs_root *root)
+ {
+@@ -6976,7 +6993,7 @@ void btrfs_free_tree_block(struct btrfs_trans_handle *trans,
+ 		WARN_ON(test_bit(EXTENT_BUFFER_DIRTY, &buf->bflags));
+ 
+ 		btrfs_add_free_space(cache, buf->start, buf->len);
+-		btrfs_update_reserved_bytes(cache, buf->len, RESERVE_FREE, 0);
++		btrfs_free_reserved_bytes(cache, buf->len, 0);
+ 		btrfs_put_block_group(cache);
+ 		trace_btrfs_reserved_extent_free(root, buf->start, buf->len);
+ 		pin = 0;
+@@ -7548,8 +7565,8 @@ checks:
+ 					     search_start - offset);
+ 		BUG_ON(offset > search_start);
+ 
+-		ret = btrfs_update_reserved_bytes(block_group, num_bytes,
+-						  alloc_type, delalloc);
++		ret = btrfs_add_reserved_bytes(block_group, num_bytes,
++				alloc_type, delalloc);
+ 		if (ret == -EAGAIN) {
+ 			btrfs_add_free_space(block_group, offset, num_bytes);
+ 			goto loop;
+@@ -7781,7 +7798,7 @@ static int __btrfs_free_reserved_extent(struct btrfs_root *root,
+ 		if (btrfs_test_opt(root, DISCARD))
+ 			ret = btrfs_discard_extent(root, start, len, NULL);
+ 		btrfs_add_free_space(cache, start, len);
+-		btrfs_update_reserved_bytes(cache, len, RESERVE_FREE, delalloc);
++		btrfs_free_reserved_bytes(cache, len, delalloc);
+ 	}
+ 
+ 	btrfs_put_block_group(cache);
+@@ -8011,8 +8028,8 @@ int btrfs_alloc_logged_file_extent(struct btrfs_trans_handle *trans,
+ 	if (!block_group)
+ 		return -EINVAL;
+ 
+-	ret = btrfs_update_reserved_bytes(block_group, ins->offset,
+-					  RESERVE_ALLOC_NO_ACCOUNT, 0);
++	ret = btrfs_add_reserved_bytes(block_group, ins->offset,
++			RESERVE_ALLOC_NO_ACCOUNT, 0);
+ 	BUG_ON(ret); /* logic error */
+ 	ret = alloc_reserved_file_extent(trans, root, 0, root_objectid,
+ 					 0, owner, offset, ins, 1);
 -- 
 2.9.0
 

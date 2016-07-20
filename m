@@ -1,33 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:55354 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S932540AbcGHONr (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 8 Jul 2016 10:13:47 -0400
-Date: Fri, 8 Jul 2016 16:13:59 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Anand Jain <anand.jain@oracle.com>
-Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz,
-        holger@applied-asynchrony.com, clm@fb.com, xiaolong.ye@intel.com
-Subject: Re: [PATCH v3 2/2] btrfs: make sure device is synced before return
-Message-ID: <20160708141359.GI13336@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1465901726-15490-2-git-send-email-anand.jain@oracle.com>
- <1466686447-7780-1-git-send-email-anand.jain@oracle.com>
+Received: from cn.fujitsu.com ([222.73.24.84]:53203 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1751359AbcGTF7N (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 20 Jul 2016 01:59:13 -0400
+From: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
+To: linux-btrfs@vger.kernel.org
+Cc: dsterba@suse.cz, jbacik@fb.com, holger@applied-asynchrony.com
+Subject: [PATCH 0/4] update bytes_may_use timely to avoid false ENOSPC issue
+Date: Wed, 20 Jul 2016 13:56:33 +0800
+Message-Id: <20160720055637.7275-1-wangxg.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1466686447-7780-1-git-send-email-anand.jain@oracle.com>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Jun 23, 2016 at 08:54:07PM +0800, Anand Jain wrote:
-> An inconsistent behavior due to stale reads from the
-> disk was reported
-> 
->   mail-archive.com/linux-btrfs@vger.kernel.org/msg54188.html
-> 
-> This patch will make sure devices are synced before
-> return in the unmount thread.
-> 
-> Signed-off-by: Anand Jain <anand.jain@oracle.com>
+Currently in btrfs, for data space reservation, it does not update
+bytes_may_use in btrfs_update_reserved_bytes() and the decrease operation
+will be delayed to be done in extent_clear_unlock_delalloc(), for
+fallocate(2), decrease operation is even delayed to be done in end
+of btrfs_fallocate(), which is too late. Obviously such delay will
+cause unnecessary pressure to enospc system, in [PATCH 4/4], there is
+a simpel test script that can reveal such false ENOSPC bug.
 
-Added to for-next.
+So in this patch set, it will remove RESERVE_FREE, RESERVE_ALLOC and
+RESERVE_ALLOC_NO_ACCOUNT, and we always update bytes_may_use timely.
+
+I'll also commit a fstests test case for this issue.
+
+Wang Xiaoguang (4):
+  btrfs: use correct offset for reloc_inode in
+    prealloc_file_extent_cluster()
+  btrfs: divide btrfs_update_reserved_bytes() into two functions
+  btrfs: introduce new EXTENT_CLEAR_DATA_RESV flag
+  btrfs: update btrfs_space_info's bytes_may_use timely
+
+ fs/btrfs/ctree.h       |   2 +-
+ fs/btrfs/extent-tree.c | 131 ++++++++++++++++++++++++-------------------------
+ fs/btrfs/extent_io.h   |   1 +
+ fs/btrfs/file.c        |  26 +++++-----
+ fs/btrfs/inode-map.c   |   3 +-
+ fs/btrfs/inode.c       |  37 ++++++++++----
+ fs/btrfs/relocation.c  |  17 +++++--
+ 7 files changed, 123 insertions(+), 94 deletions(-)
+
+-- 
+2.9.0
+
+
+

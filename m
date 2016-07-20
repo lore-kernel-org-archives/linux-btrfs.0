@@ -1,87 +1,36 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:63440 "EHLO
+Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:49528 "EHLO
 	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1752442AbcGTNSu (ORCPT
+	by vger.kernel.org with ESMTP id S1754145AbcGTNV2 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 20 Jul 2016 09:18:50 -0400
-Subject: Re: [PATCH 1/4] btrfs: use correct offset for reloc_inode in
- prealloc_file_extent_cluster()
+	Wed, 20 Jul 2016 09:21:28 -0400
+Subject: Re: [PATCH 2/4] btrfs: divide btrfs_update_reserved_bytes() into two
+ functions
 To: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>, <linux-btrfs@vger.kernel.org>
 References: <20160720055637.7275-1-wangxg.fnst@cn.fujitsu.com>
- <20160720055637.7275-2-wangxg.fnst@cn.fujitsu.com>
+ <20160720055637.7275-3-wangxg.fnst@cn.fujitsu.com>
 CC: <dsterba@suse.cz>, <holger@applied-asynchrony.com>
 From: Josef Bacik <jbacik@fb.com>
-Message-ID: <5a91d751-ec98-8a2d-2d7c-8e63efbe750b@fb.com>
-Date: Wed, 20 Jul 2016 09:18:09 -0400
+Message-ID: <2fb41a9f-c074-f9f3-78a7-5ea5510d67db@fb.com>
+Date: Wed, 20 Jul 2016 09:21:04 -0400
 MIME-Version: 1.0
-In-Reply-To: <20160720055637.7275-2-wangxg.fnst@cn.fujitsu.com>
-Content-Type: text/plain; charset="windows-1252"; format=flowed
+In-Reply-To: <20160720055637.7275-3-wangxg.fnst@cn.fujitsu.com>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 On 07/20/2016 01:56 AM, Wang Xiaoguang wrote:
-> In prealloc_file_extent_cluster(), btrfs_check_data_free_space() uses
-> wrong file offset for reloc_inode, it uses cluster->start and cluster->end,
-> which indeed are extent's bytenr. The correct value should be
-> cluster->[start|end] minus block group's start bytenr.
->
-> start bytenr   cluster->start
-> |              |     extent      |   extent   | ...| extent |
-> |----------------------------------------------------------------|
-> |                block group reloc_inode                         |
+> This patch divides btrfs_update_reserved_bytes() into
+> btrfs_add_reserved_bytes() and btrfs_free_reserved_bytes(), and
+> next patch will extend btrfs_add_reserved_bytes（）to fix some
+> false ENOSPC error, please see later patch for detailed info.
 >
 > Signed-off-by: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
-> ---
->  fs/btrfs/relocation.c | 10 ++++++----
->  1 file changed, 6 insertions(+), 4 deletions(-)
->
-> diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-> index 0477dca..a0de885 100644
-> --- a/fs/btrfs/relocation.c
-> +++ b/fs/btrfs/relocation.c
-> @@ -3030,12 +3030,14 @@ int prealloc_file_extent_cluster(struct inode *inode,
->  	u64 num_bytes;
->  	int nr = 0;
->  	int ret = 0;
-> +	u64 prealloc_start = cluster->start - offset;
-> +	u64 prealloc_end = cluster->end - offset;
->
->  	BUG_ON(cluster->start != cluster->boundary[0]);
->  	inode_lock(inode);
->
-> -	ret = btrfs_check_data_free_space(inode, cluster->start,
-> -					  cluster->end + 1 - cluster->start);
-> +	ret = btrfs_check_data_free_space(inode, prealloc_start,
-> +					  prealloc_end + 1 - prealloc_start);
->  	if (ret)
->  		goto out;
->
-> @@ -3056,8 +3058,8 @@ int prealloc_file_extent_cluster(struct inode *inode,
->  			break;
->  		nr++;
->  	}
-> -	btrfs_free_reserved_data_space(inode, cluster->start,
-> -				       cluster->end + 1 - cluster->start);
-> +	btrfs_free_reserved_data_space(inode, prealloc_start,
-> +				       prealloc_end + 1 - prealloc_start);
->  out:
->  	inode_unlock(inode);
->  	return ret;
->
 
-This ends up being the same amount.  Consider this scenario
+This appears to be functionally the same
 
-bg bytenr = 4096
-cluster->start = 8192
-cluster->end = 12287
+Signed-off-by: Josef Bacik <jbacik@fb.com>
 
-cluster->end + 1 - cluster->start = 4096
-
-prealloc_start = cluster->start - offset = 0
-prealloc_end = cluster->end - offset = 8191
-
-prealloc_end + 1 - prealloc_start = 4096
-
-You shift both by the same amount, which gives you the same answer.  Thanks,
+Thanks,
 
 Josef

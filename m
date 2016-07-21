@@ -1,128 +1,150 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:17200 "EHLO
+Received: from aserp1040.oracle.com ([141.146.126.69]:26725 "EHLO
 	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754400AbcGUV3W (ORCPT
+	with ESMTP id S1752246AbcGUAaC (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 21 Jul 2016 17:29:22 -0400
-Date: Thu, 21 Jul 2016 14:33:19 -0700
+	Wed, 20 Jul 2016 20:30:02 -0400
 From: Liu Bo <bo.li.liu@oracle.com>
-To: Chris Mason <clm@fb.com>
-Cc: linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.cz>
-Subject: Re: [PATCH v2] Btrfs: fix memory leak of block group cache
-Message-ID: <20160721213319.GC22835@localhost.localdomain>
-Reply-To: bo.li.liu@oracle.com
-References: <1469061234-15337-1-git-send-email-bo.li.liu@oracle.com>
- <1469061852-21185-1-git-send-email-bo.li.liu@oracle.com>
- <9300daf6-000a-7bfa-f7a8-c0b418cbd6ba@fb.com>
- <20160721190342.GA22835@localhost.localdomain>
- <0ee2835c-17e4-08d3-69ef-280dc9e188ad@fb.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <0ee2835c-17e4-08d3-69ef-280dc9e188ad@fb.com>
+To: linux-btrfs@vger.kernel.org
+Cc: David Sterba <dsterba@suse.cz>
+Subject: [PATCH] Btrfs: fix memory leak of block group cache
+Date: Wed, 20 Jul 2016 17:33:54 -0700
+Message-Id: <1469061234-15337-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Jul 21, 2016 at 03:17:41PM -0400, Chris Mason wrote:
-> 
-> 
-> On 07/21/2016 03:03 PM, Liu Bo wrote:
-> > On Thu, Jul 21, 2016 at 11:32:26AM -0400, Chris Mason wrote:
-> > > 
-> > > 
-> > > On 07/20/2016 08:44 PM, Liu Bo wrote:
-> > > > While processing delayed refs, we may update block group's statistics
-> > > > and attach it to cur_trans->dirty_bgs, and later writing dirty block
-> > > > groups will process the list, which happens during
-> > > > btrfs_commit_transaction().
-> > > > 
-> > > > For whatever reason, the transaction is aborted and dirty_bgs
-> > > > is not processed in cleanup_transaction(), we end up with memory leak
-> > > > of these dirty block group cache.
-> > > > 
-> > > > Since btrfs_start_dirty_block_groups() doesn't make it go to the commit
-> > > > critical section, this also adds the cleanup work inside it.
-> > > 
-> > > It's the start_drity_block_groups() hunt that worries me a bit:
-> > > 
-> > > > diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-> > > > index 50bd683..7a35c9d 100644
-> > > > --- a/fs/btrfs/extent-tree.c
-> > > > +++ b/fs/btrfs/extent-tree.c
-> > > > @@ -3698,6 +3698,8 @@ again:
-> > > >  			goto again;
-> > > >  		}
-> > > >  		spin_unlock(&cur_trans->dirty_bgs_lock);
-> > > > +	} else if (ret < 0) {
-> > > > +		btrfs_cleanup_dirty_bgs(cur_trans, root);
-> > > >  	}
-> > > > 
-> > > >  	btrfs_free_path(path);
-> > > > 
-> > > 
-> > > We have checks in here to make sure only one process runs
-> > > btrfs_start_dirty_block_groups() but that doesn't mean that only one process
-> > > its messing around with the cache inode.  Is there any reason we can't let
-> > > this cleanup wait for the cleanup_transaction code?
-> > > 
-> > > btrfs_run_delayed_refs() already aborts when it fails.
-> > 
-> > update_block_group() is the only producer to add block group cache to
-> > dirty_bgs list, and if btrfs_run_delayed_refs() aborts, the transaction
-> > is aborted, so seems that there won't be anyone manipulating dirty_bgs
-> > list, am I missing?
-> > 
-> 
-> No, the dirty_bgs processing is safe I think.  My concern is with the cache
-> inode which we iput()
+While processing delayed refs, we may update block group's statistics
+and attach it to cur_trans->dirty_bgs, and later writing dirty block
+groups will process the list, which happens during
+btrfs_commit_transaction().
 
-I think iput() is OK, we're doing iput() on block group cache on the io_bgs
-list, where all block groups's inodes has been igrab()'d.  If others are
-messing around with our cache inode, they should have their own igrab,
-too.
+For whatever reason, the transaction is aborted and dirty_bgs
+is not processed in cleanup_transaction(), we end up with memory leak
+of these dirty block group cache.
 
-> 
-> > Another point is that when we fail on btrfs_start_dirty_block_groups(),
-> > btrfs_commit_transaction() won't get to cleanup_transaction error
-> > handling,
-> 
-> Right, because we don't actually finish the commit.  Someone will eventually
-> though ;)
+Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+---
+ fs/btrfs/disk-io.c     | 76 ++++++++++++++++++++++++++++++++++++++++++++++++++
+ fs/btrfs/disk-io.h     |  2 ++
+ fs/btrfs/extent-tree.c |  2 ++
+ 3 files changed, 80 insertions(+)
 
-Hmm yes, it's possible that there's a concurrent commit transaction
-running.  If that's not true, we may still resort to
-btrfs_error_commit_super(), other than that, I don't see who could
-commit/cleanup the transaction after entering into BTRFS_FS_STATE_ERROR
-state.
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index db53eb8..6a7998f 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -4434,9 +4434,85 @@ again:
+ 	return 0;
+ }
+ 
++static void btrfs_cleanup_bg_io(struct btrfs_block_group_cache *cache)
++{
++	struct inode *inode;
++
++	inode = cache->io_ctl.inode;
++	if (inode) {
++		invalidate_inode_pages2(inode->i_mapping);
++		BTRFS_I(inode)->generation = 0;
++		cache->io_ctl.inode = NULL;
++		iput(inode);
++	}
++	btrfs_put_block_group(cache);
++}
++
++void btrfs_cleanup_dirty_bgs(struct btrfs_transaction *cur_trans,
++			     struct btrfs_root *root)
++{
++	struct btrfs_block_group_cache *cache;
++
++	spin_lock(&cur_trans->dirty_bgs_lock);
++	if (list_empty(&cur_trans->dirty_bgs)) {
++		spin_unlock(&cur_trans->dirty_bgs_lock);
++		return;
++	}
++
++	while (!list_empty(&cur_trans->dirty_bgs)) {
++		cache = list_first_entry(&cur_trans->dirty_bgs,
++					 struct btrfs_block_group_cache,
++					 dirty_list);
++		if (!cache) {
++			btrfs_err(root->fs_info,
++				  "orphan block group dirty_bgs list\n");
++			spin_unlock(&cur_trans->dirty_bgs_lock);
++			return;
++		}
++
++		if (!list_empty(&cache->io_list)) {
++			spin_unlock(&cur_trans->dirty_bgs_lock);
++			list_del_init(&cache->io_list);
++			btrfs_cleanup_bg_io(cache);
++			spin_lock(&cur_trans->dirty_bgs_lock);
++		}
++
++		list_del_init(&cache->dirty_list);
++		spin_lock(&cache->lock);
++		cache->disk_cache_state = BTRFS_DC_ERROR;
++		spin_unlock(&cache->lock);
++
++		spin_unlock(&cur_trans->dirty_bgs_lock);
++		btrfs_put_block_group(cache);
++		spin_lock(&cur_trans->dirty_bgs_lock);
++	}
++	spin_unlock(&cur_trans->dirty_bgs_lock);
++
++	while (!list_empty(&cur_trans->io_bgs)) {
++		cache = list_first_entry(&cur_trans->io_bgs,
++					 struct btrfs_block_group_cache,
++					 io_list);
++		if (!cache) {
++			btrfs_err(root->fs_info,
++				  "orphan block group on io_bgs list\n");
++			return;
++		}
++
++		list_del_init(&cache->io_list);
++		spin_lock(&cache->lock);
++		cache->disk_cache_state = BTRFS_DC_ERROR;
++		spin_unlock(&cache->lock);
++		btrfs_cleanup_bg_io(cache);
++	}
++}
++
+ void btrfs_cleanup_one_transaction(struct btrfs_transaction *cur_trans,
+ 				   struct btrfs_root *root)
+ {
++	btrfs_cleanup_dirty_bgs(cur_trans, root);
++	ASSERT(list_empty(&cur_trans->dirty_bgs));
++	ASSERT(list_empty(&cur_trans->io_bgs));
++
+ 	btrfs_destroy_delayed_refs(cur_trans, root);
+ 
+ 	cur_trans->state = TRANS_STATE_COMMIT_START;
+diff --git a/fs/btrfs/disk-io.h b/fs/btrfs/disk-io.h
+index acba821..6201663 100644
+--- a/fs/btrfs/disk-io.h
++++ b/fs/btrfs/disk-io.h
+@@ -133,6 +133,8 @@ int btrfs_init_log_root_tree(struct btrfs_trans_handle *trans,
+ 			     struct btrfs_fs_info *fs_info);
+ int btrfs_add_log_tree(struct btrfs_trans_handle *trans,
+ 		       struct btrfs_root *root);
++void btrfs_cleanup_dirty_bgs(struct btrfs_transaction *trans,
++			     struct btrfs_root *root);
+ void btrfs_cleanup_one_transaction(struct btrfs_transaction *trans,
+ 				  struct btrfs_root *root);
+ struct btrfs_root *btrfs_create_tree(struct btrfs_trans_handle *trans,
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 82b912a..a6d2726 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -3698,6 +3698,8 @@ again:
+ 			goto again;
+ 		}
+ 		spin_unlock(&cur_trans->dirty_bgs_lock);
++	} else if (ret < 0) {
++		btrfs_cleanup_dirty_bgs(cur_trans, root);
+ 	}
+ 
+ 	btrfs_free_path(path);
+-- 
+2.5.5
 
-Thanks,
-
--liubo
-
-> 
-> > 
-> > btrfs_commit_transaction() {
-> > 	...
-> > 	if (!test_bit(BTRFS_TRANS_DIRTY_BG_RUN, &cur_trans->flags)) {
-> > 		...
-> > 		ret = btrfs_start_dirty_block_groups(trans, root);
-> > 	}
-> > 	if (ret) {
-> > 		btrfs_end_transaction(trans, root);
-> > 		return ret;
-> > 	}
-> > 	...
-> > 	cleanup_transaction();
-> > }
-> > 
-> > 
-> > But yes, if we delay the cleanup, we still have a chance to do cleanup
-> > in btrfs_error_commit_super(), and I have sent another patch to add
-> > several ASSERT()s to check block group related memory leak, with which
-> > we'll be warned if anything wrong.
-> > 
-> > I'm OK to remove the part that causes concerns.
-> 
-> Thanks.
-> 
-> -chris
-> 

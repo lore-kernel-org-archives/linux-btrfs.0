@@ -1,52 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail02.iobjects.de ([188.40.134.68]:45374 "EHLO
-	mail02.iobjects.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752842AbcGUOzT (ORCPT
+Received: from zaphod.cobb.me.uk ([213.138.97.131]:39810 "EHLO
+	zaphod.cobb.me.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753121AbcGUPsC (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 21 Jul 2016 10:55:19 -0400
-Received: from tux.wizards.de (pD953E552.dip0.t-ipconnect.de [217.83.229.82])
-	by mail02.iobjects.de (Postfix) with ESMTPSA id BC81C41605D8
-	for <linux-btrfs@vger.kernel.org>; Thu, 21 Jul 2016 16:55:17 +0200 (CEST)
-Received: from [192.168.100.223] (ragnarok.wizards.de [192.168.100.223])
-	by tux.wizards.de (Postfix) with ESMTP id 5723A11C01CB
-	for <linux-btrfs@vger.kernel.org>; Thu, 21 Jul 2016 16:55:17 +0200 (CEST)
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-From: =?UTF-8?Q?Holger_Hoffst=c3=a4tte?= <holger@applied-asynchrony.com>
-Subject: Finding only non-snapshots via btrfs subvol list
-Message-ID: <5790E255.50806@applied-asynchrony.com>
-Date: Thu, 21 Jul 2016 16:55:17 +0200
+	Thu, 21 Jul 2016 11:48:02 -0400
+Received: from black.home.cobb.me.uk (unknown [192.168.0.205])
+	by zaphod.cobb.me.uk (Postfix) with ESMTP id 1CD709BA10
+	for <linux-btrfs@vger.kernel.org>; Thu, 21 Jul 2016 16:47:57 +0100 (BST)
+Received: from [192.168.0.211] (novatech.home.cobb.me.uk [192.168.0.211])
+	by black.home.cobb.me.uk (Postfix) with ESMTPS id EF8AA5FB87
+	for <linux-btrfs@vger.kernel.org>; Thu, 21 Jul 2016 16:47:56 +0100 (BST)
+Subject: Re: mount btrfs takes 30 minutes, btrfs check runs out of memory
+References: <CAJ3TwYQXqUZiKhYc5rciTmvGX1RLkHnkQb5SSYAJ7AD+kbudag@mail.gmail.com>
+ <126f9f09-4e28-3c12-5384-63032e17942f@cn.fujitsu.com>
+ <CAJ3TwYRXwDVVfT0TRRiM9dEw-7TvY8qG=WvMYKczZOv6wkFWAQ@mail.gmail.com>
+ <fd718727-9b54-ba58-5f39-63066181d13e@cn.fujitsu.com>
+ <CAJ3TwYSTnQfj=qmBLtnmtXQKexMMD4x=9Gk3p3anf4uF+G26kw@mail.gmail.com>
+ <CAJ3TwYTnMPVwkrZEU-=Q_Nq+9Bn0vM3z+EFC8RP=RTyaufSoqw@mail.gmail.com>
+ <5cc93522-1bd2-bdc1-d5da-a11d5e4816a7@cn.fujitsu.com>
+ <CAJ3TwYRpc_R-wVur0T6+Uy_aPVXTGpvp_ag1Ar9K2HoB0H1ySQ@mail.gmail.com>
+ <799054c4-b4f5-2dc0-4f70-4345159d9078@cn.fujitsu.com>
+ <CAJ3TwYRH8JVkuv2Hu7FYb+BSwKGrq1spx079zwOF_FO1y=9NFA@mail.gmail.com>
+ <e51aaa6e-a4b9-c187-84fa-c57799865b0e@cn.fujitsu.com>
+ <CAJ3TwYS6UTkWf=PNku3RG7hPrXMKz3yhk2WqCRLix4v_VwgrmA@mail.gmail.com>
+ <36291cd0-64bc-8708-9e23-0aac30539785@cn.fujitsu.com>
+ <CAJ3TwYQ47SVpbO1Pb-TWjhaTCCpMFFmijwTgmV8=7+1_a6_3Ww@mail.gmail.com>
+ <e8d681cb-aa1b-6395-f968-38e8425ed8fb@cn.fujitsu.com>
+To: btrfs <linux-btrfs@vger.kernel.org>
+From: Graham Cobb <g.btrfs@cobb.uk.net>
+Message-ID: <5790EEAC.4090008@cobb.uk.net>
+Date: Thu, 21 Jul 2016 16:47:56 +0100
 MIME-Version: 1.0
+In-Reply-To: <e8d681cb-aa1b-6395-f968-38e8425ed8fb@cn.fujitsu.com>
 Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On 21/07/16 09:19, Qu Wenruo wrote:
+> We don't usually get such large extent tree dump from a real world use
+> case.
 
-I'm trying to find non-snapshots, i.e. 'top-level' subvolumes in a
-filesystem and this seems harder than it IMHO should be.
+Let us know if you want some more :-)
 
-The fs is just like:
+I have a heavily used single disk BTRFS filesystem with about 3.7TB in
+use and about 9 million extents.  I am happy to provide an extent dump
+if it is useful to you.  Particularly if you don't need me to actually
+unmount it (i.e. you can live with some inconsistencies).
 
-/mnt/stuff
- subvolA
- subvolA-date1
- subvolA-date2
- subvolB
- subvolB-date1
- subvolB-date2
-..
 
-All I want are the subvol{A,B} *without* the snapshots, but so
-far I haven't been able to accomplish this easily with "subvol list"
-and its options. -s lists only snapshots, but what I want is the
-exact opposite.
-
-So far the best I could find - except for relying on my ad-hoc naming
-conventions and inverse-grepping for that - is via -q (print parent UUID)
-and matching on that:
-
-btrfs subvol list -q /mnt/stuff | grep "parent_uuid -" | cut -f 11 -d " "
-
-gives me what I want - but eeww. So somehow I think I'm missing something
-trivial. Is there a better, non-greppy way?
-
-Holger

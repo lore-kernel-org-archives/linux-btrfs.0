@@ -1,15 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:26725 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752246AbcGUAaC (ORCPT
+Received: from userp1040.oracle.com ([156.151.31.81]:28689 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751337AbcGUAkN (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 20 Jul 2016 20:30:02 -0400
+	Wed, 20 Jul 2016 20:40:13 -0400
 From: Liu Bo <bo.li.liu@oracle.com>
 To: linux-btrfs@vger.kernel.org
 Cc: David Sterba <dsterba@suse.cz>
-Subject: [PATCH] Btrfs: fix memory leak of block group cache
-Date: Wed, 20 Jul 2016 17:33:54 -0700
-Message-Id: <1469061234-15337-1-git-send-email-bo.li.liu@oracle.com>
+Subject: [PATCH v2] Btrfs: fix memory leak of block group cache
+Date: Wed, 20 Jul 2016 17:44:12 -0700
+Message-Id: <1469061852-21185-1-git-send-email-bo.li.liu@oracle.com>
+In-Reply-To: <1469061234-15337-1-git-send-email-bo.li.liu@oracle.com>
+References: <1469061234-15337-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
@@ -22,18 +24,26 @@ For whatever reason, the transaction is aborted and dirty_bgs
 is not processed in cleanup_transaction(), we end up with memory leak
 of these dirty block group cache.
 
+Since btrfs_start_dirty_block_groups() doesn't make it go to the commit
+critical section, this also adds the cleanup work inside it.
+
 Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
 ---
- fs/btrfs/disk-io.c     | 76 ++++++++++++++++++++++++++++++++++++++++++++++++++
+v2: - remove the 'return' when dirty_bgs is empty because there
+      might be block group in list io_bgs.
+    - remove unnecessary '\n' in btrfs_err().
+    - more commit log.
+
+ fs/btrfs/disk-io.c     | 71 ++++++++++++++++++++++++++++++++++++++++++++++++++
  fs/btrfs/disk-io.h     |  2 ++
  fs/btrfs/extent-tree.c |  2 ++
- 3 files changed, 80 insertions(+)
+ 3 files changed, 75 insertions(+)
 
 diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index db53eb8..6a7998f 100644
+index db53eb8..4c110de 100644
 --- a/fs/btrfs/disk-io.c
 +++ b/fs/btrfs/disk-io.c
-@@ -4434,9 +4434,85 @@ again:
+@@ -4434,9 +4434,80 @@ again:
  	return 0;
  }
  
@@ -57,18 +67,13 @@ index db53eb8..6a7998f 100644
 +	struct btrfs_block_group_cache *cache;
 +
 +	spin_lock(&cur_trans->dirty_bgs_lock);
-+	if (list_empty(&cur_trans->dirty_bgs)) {
-+		spin_unlock(&cur_trans->dirty_bgs_lock);
-+		return;
-+	}
-+
 +	while (!list_empty(&cur_trans->dirty_bgs)) {
 +		cache = list_first_entry(&cur_trans->dirty_bgs,
 +					 struct btrfs_block_group_cache,
 +					 dirty_list);
 +		if (!cache) {
 +			btrfs_err(root->fs_info,
-+				  "orphan block group dirty_bgs list\n");
++				  "orphan block group dirty_bgs list");
 +			spin_unlock(&cur_trans->dirty_bgs_lock);
 +			return;
 +		}
@@ -97,7 +102,7 @@ index db53eb8..6a7998f 100644
 +					 io_list);
 +		if (!cache) {
 +			btrfs_err(root->fs_info,
-+				  "orphan block group on io_bgs list\n");
++				  "orphan block group on io_bgs list");
 +			return;
 +		}
 +
@@ -133,7 +138,7 @@ index acba821..6201663 100644
  				  struct btrfs_root *root);
  struct btrfs_root *btrfs_create_tree(struct btrfs_trans_handle *trans,
 diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 82b912a..a6d2726 100644
+index 50bd683..7a35c9d 100644
 --- a/fs/btrfs/extent-tree.c
 +++ b/fs/btrfs/extent-tree.c
 @@ -3698,6 +3698,8 @@ again:

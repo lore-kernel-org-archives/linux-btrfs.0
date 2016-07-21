@@ -1,25 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:34489 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753181AbcGZPzY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 26 Jul 2016 11:55:24 -0400
-Date: Tue, 26 Jul 2016 17:55:08 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Liu Bo <bo.li.liu@oracle.com>
-Cc: linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.cz>
-Subject: Re: [PATCH] Btrfs: add ASSERT for block group's memory leak
-Message-ID: <20160726155508.GI30795@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1469061224-15181-1-git-send-email-bo.li.liu@oracle.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1469061224-15181-1-git-send-email-bo.li.liu@oracle.com>
+Received: from userp1040.oracle.com ([156.151.31.81]:26445 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752225AbcGUA3s (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 20 Jul 2016 20:29:48 -0400
+From: Liu Bo <bo.li.liu@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Cc: David Sterba <dsterba@suse.cz>
+Subject: [PATCH] Btrfs: add ASSERT for block group's memory leak
+Date: Wed, 20 Jul 2016 17:33:44 -0700
+Message-Id: <1469061224-15181-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jul 20, 2016 at 05:33:44PM -0700, Liu Bo wrote:
-> This adds several ASSERT()' s to report memory leak of block group cache.
-> 
-> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+This adds several ASSERT()' s to report memory leak of block group cache.
 
-Reviewed-by: David Sterba <dsterba@suse.com>
+Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+---
+ fs/btrfs/extent-tree.c | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 82b912a..50bd683 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -9712,6 +9712,7 @@ void btrfs_put_block_group_cache(struct btrfs_fs_info *info)
+ 		block_group->iref = 0;
+ 		block_group->inode = NULL;
+ 		spin_unlock(&block_group->lock);
++		ASSERT(block_group->io_ctl.inode == NULL);
+ 		iput(inode);
+ 		last = block_group->key.objectid + block_group->key.offset;
+ 		btrfs_put_block_group(block_group);
+@@ -9769,6 +9770,10 @@ int btrfs_free_block_groups(struct btrfs_fs_info *info)
+ 			free_excluded_extents(info->extent_root, block_group);
+ 
+ 		btrfs_remove_free_space_cache(block_group);
++		ASSERT(list_empty(&block_group->dirty_list));
++		ASSERT(list_empty(&block_group->io_list));
++		ASSERT(list_empty(&block_group->bg_list));
++		ASSERT(atomic_read(&block_group->count) == 1);
+ 		btrfs_put_block_group(block_group);
+ 
+ 		spin_lock(&info->block_group_cache_lock);
+-- 
+2.5.5
+

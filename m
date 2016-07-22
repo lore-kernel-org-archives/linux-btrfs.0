@@ -1,29 +1,144 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wm0-f67.google.com ([74.125.82.67]:35984 "EHLO
-	mail-wm0-f67.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753803AbcGVNpa (ORCPT
+Received: from a4-5.smtp-out.eu-west-1.amazonses.com ([54.240.4.5]:52652 "EHLO
+	a4-5.smtp-out.eu-west-1.amazonses.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1751130AbcGVOA4 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 22 Jul 2016 09:45:30 -0400
-Received: by mail-wm0-f67.google.com with SMTP id x83so6247122wma.3
-        for <linux-btrfs@vger.kernel.org>; Fri, 22 Jul 2016 06:45:30 -0700 (PDT)
-Received: from ad (p719091-ipngn8601hodogaya.kanagawa.ocn.ne.jp. [114.145.70.91])
-        by smtp.gmail.com with ESMTPSA id a194sm12619040wmd.24.2016.07.22.06.45.26
-        for <linux-btrfs@vger.kernel.org>
-        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Fri, 22 Jul 2016 06:45:28 -0700 (PDT)
-Date: Fri, 22 Jul 2016 09:45:13 -0400
-From: Sanidhya Solanki <lkml.page@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs: Change RAID stripesize to a user-configurable
- option
-Message-ID: <20160722094514.714caf38@ad>
-In-Reply-To: <1469194967-27734-1-git-send-email-lkml.page@gmail.com>
-References: <1469194967-27734-1-git-send-email-lkml.page@gmail.com>
+	Fri, 22 Jul 2016 10:00:56 -0400
+Subject: Re: Send-recieve performance
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+References: <2282942.pRaJJzEdHC@libor-nb>
+From: Martin Raiber <martin@urbackup.org>
+Message-ID: <0102015612dc89e2-d6f79a27-4938-48b2-83af-e96a7c1797c1-000000@eu-west-1.amazonses.com>
+Date: Fri, 22 Jul 2016 13:47:38 +0000
 MIME-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+In-Reply-To: <2282942.pRaJJzEdHC@libor-nb>
+Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha-256; boundary="------------ms080303070000000407010406"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Applies to v4.7rc7 release kernel.
+This is a cryptographically signed message in MIME format.
 
-Sanidhya
+--------------ms080303070000000407010406
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: quoted-printable
+
+On 20.07.2016 11:15 Libor Klep=C3=A1=C4=8D wrote:
+> Hello,
+> we use backuppc to backup our hosting machines.
+>
+> I have recently migrated it to btrfs, so we can use send-recieve for of=
+fsite backups of our backups.
+>
+> I have several btrfs volumes, each hosts nspawn container, which runs i=
+n /system subvolume and has backuppc data in /backuppc subvolume
+> .
+> I use btrbk to do snapshots and transfer.
+> Local side is set to keep 5 daily snapshots, remote side to hold some h=
+istory. (not much yet, i'm using it this way for few weeks).
+>
+> If you know backuppc behaviour: for every backup (even incremental), it=
+ creates full directory tree of each backed up machine even if it has no =
+modified files and places one small file in each, which holds some info f=
+or backuppc.=20
+> So after few days i ran into ENOSPACE on one volume, because my metadat=
+a grow, because of inlineing.
+> I switched from mdata=3DDUP to mdata=3Dsingle (now I see it's possible =
+to change inline file size, right?).
+I am biased, but UrBackup works like BackupPC, except it has a client,
+and like btrbk puts every backup into a separate btrfs sub-volume with
+snapshotting reducing metadata workload. Then you could create read-only
+snapshots from the UrBackup sub-volumes and use e.g. buttersink to copy
+those to another btrfs.
+
+So maybe try that?
+
+Regards,
+Martin
+
+
+--------------ms080303070000000407010406
+Content-Type: application/pkcs7-signature; name="smime.p7s"
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment; filename="smime.p7s"
+Content-Description: S/MIME Cryptographic Signature
+
+MIAGCSqGSIb3DQEHAqCAMIACAQExDzANBglghkgBZQMEAgEFADCABgkqhkiG9w0BBwEAAKCC
+DGMwggYnMIIFD6ADAgECAgMPmKEwDQYJKoZIhvcNAQELBQAwgYwxCzAJBgNVBAYTAklMMRYw
+FAYDVQQKEw1TdGFydENvbSBMdGQuMSswKQYDVQQLEyJTZWN1cmUgRGlnaXRhbCBDZXJ0aWZp
+Y2F0ZSBTaWduaW5nMTgwNgYDVQQDEy9TdGFydENvbSBDbGFzcyAxIFByaW1hcnkgSW50ZXJt
+ZWRpYXRlIENsaWVudCBDQTAeFw0xNTEwMDMxNjQ0MDZaFw0xNjEwMDMxNDUwNTdaMEIxHDAa
+BgNVBAMME21hcnRpbkB1cmJhY2t1cC5vcmcxIjAgBgkqhkiG9w0BCQEWE21hcnRpbkB1cmJh
+Y2t1cC5vcmcwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDX0VVAoRHxi/9KKGVD
+i6tNQo5msj102xnYIaxQU/ya2MiVzoo+d8RbJ79BUwex+z/xKamgYxhENhBr4FAb6ipvKyDS
+CiU7kjLjTx0kTbNcvrbmKoMUBWORX7oJjfIzJoBBBcaXyELNvPwuwRgSGODmxmlEkA6GqrK3
+BG6ggBY9Do0Ow+YFpjnguG6gqi6HfIeClXgtnrZULlR4B/e5v53fHiYBMwQagJopEf5l+6Sl
+azVViAB2/guQ3aPtZr1q4qVNgnFmlsHI9rwhvPGqFxdKxgsNsjAhmgsJFTx+Irhoh7FFCjs3
+E8uZBYRNGocZKFzIwNscAysRVVUBXZ69VanZAgMBAAGjggLZMIIC1TAJBgNVHRMEAjAAMAsG
+A1UdDwQEAwIEsDAdBgNVHSUEFjAUBggrBgEFBQcDAgYIKwYBBQUHAwQwHQYDVR0OBBYEFMJh
+gPfc+Ogg9SYEYnhpDLsM2bOqMB8GA1UdIwQYMBaAFFNy7ZKc4NrLAVx8fpY1TvLUuFGCMB4G
+A1UdEQQXMBWBE21hcnRpbkB1cmJhY2t1cC5vcmcwggFMBgNVHSAEggFDMIIBPzCCATsGCysG
+AQQBgbU3AQIDMIIBKjAuBggrBgEFBQcCARYiaHR0cDovL3d3dy5zdGFydHNzbC5jb20vcG9s
+aWN5LnBkZjCB9wYIKwYBBQUHAgIwgeowJxYgU3RhcnRDb20gQ2VydGlmaWNhdGlvbiBBdXRo
+b3JpdHkwAwIBARqBvlRoaXMgY2VydGlmaWNhdGUgd2FzIGlzc3VlZCBhY2NvcmRpbmcgdG8g
+dGhlIENsYXNzIDEgVmFsaWRhdGlvbiByZXF1aXJlbWVudHMgb2YgdGhlIFN0YXJ0Q29tIENB
+IHBvbGljeSwgcmVsaWFuY2Ugb25seSBmb3IgdGhlIGludGVuZGVkIHB1cnBvc2UgaW4gY29t
+cGxpYW5jZSBvZiB0aGUgcmVseWluZyBwYXJ0eSBvYmxpZ2F0aW9ucy4wNgYDVR0fBC8wLTAr
+oCmgJ4YlaHR0cDovL2NybC5zdGFydHNzbC5jb20vY3J0dTEtY3JsLmNybDCBjgYIKwYBBQUH
+AQEEgYEwfzA5BggrBgEFBQcwAYYtaHR0cDovL29jc3Auc3RhcnRzc2wuY29tL3N1Yi9jbGFz
+czEvY2xpZW50L2NhMEIGCCsGAQUFBzAChjZodHRwOi8vYWlhLnN0YXJ0c3NsLmNvbS9jZXJ0
+cy9zdWIuY2xhc3MxLmNsaWVudC5jYS5jcnQwIwYDVR0SBBwwGoYYaHR0cDovL3d3dy5zdGFy
+dHNzbC5jb20vMA0GCSqGSIb3DQEBCwUAA4IBAQBNl1rPFJ88G1PVYD/PrOjnLVe7Eha8MIwC
+uCsZM8+Yzpyp4GGgh2vqEmbnX4dGQKsQrcn7K3OFE4uRuVX9vPUeNzbVX/69Yk506cbhAvvd
+uP/QKN55BISYK+Hxn6jOdYVX9IrznjqNXsk15OLcj/rEjaCiUr5A8B5f/AbPb+S0t2YG5j4k
+vB/cgBigB2vS0Hj9OPWcrIz4FsgPnrfJAYVT/N5BeDTosK0U64FRp9Hel2udZE0lxPdr0H8m
+55zhUzIrX3702oq5JJu5SBo0pgLgq0Pra5aQJ7Zd5Fe4NcL5AJE2eEwLh33P2FhBoZBMnPyo
+EszCKjT26IT4LstyKCODMIIGNDCCBBygAwIBAgIBHjANBgkqhkiG9w0BAQUFADB9MQswCQYD
+VQQGEwJJTDEWMBQGA1UEChMNU3RhcnRDb20gTHRkLjErMCkGA1UECxMiU2VjdXJlIERpZ2l0
+YWwgQ2VydGlmaWNhdGUgU2lnbmluZzEpMCcGA1UEAxMgU3RhcnRDb20gQ2VydGlmaWNhdGlv
+biBBdXRob3JpdHkwHhcNMDcxMDI0MjEwMTU1WhcNMTcxMDI0MjEwMTU1WjCBjDELMAkGA1UE
+BhMCSUwxFjAUBgNVBAoTDVN0YXJ0Q29tIEx0ZC4xKzApBgNVBAsTIlNlY3VyZSBEaWdpdGFs
+IENlcnRpZmljYXRlIFNpZ25pbmcxODA2BgNVBAMTL1N0YXJ0Q29tIENsYXNzIDEgUHJpbWFy
+eSBJbnRlcm1lZGlhdGUgQ2xpZW50IENBMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKC
+AQEAxwmDzM4t2BqxKaQuE6uWvooyg4ymiEGWVUet1G8SD+rqvyNH4QrvnEIaFHxOhESip7vM
+z39ScLpNLbL1QpOlPW/tFIzNHS3qd2XRNYG5Sv9RcGE+T4qbLtsjjJbi6sL7Ls/f/X9ftTyh
+xvxWkf8KW37iKrueKsxw2HqolH7GM6FX5UfNAwAu4ZifkpmZzU1slBhyWwaQPEPPZRsWoTb7
+q8hmgv6Nv3Hg9rmA1/VPBIOQ6SKRkHXG0Hhmq1dOFoAFI411+a/9nWm5rcVjGcIWZ2v/43Yk
+sq60jExipA4l5uv9/+Hm33mbgmCszdj/Dthf13tgAv2O83hLJ0exTqfrlwIDAQABo4IBrTCC
+AakwDwYDVR0TAQH/BAUwAwEB/zAOBgNVHQ8BAf8EBAMCAQYwHQYDVR0OBBYEFFNy7ZKc4NrL
+AVx8fpY1TvLUuFGCMB8GA1UdIwQYMBaAFE4L7xqkQFulF2mHMMo0aEPQQa7yMGYGCCsGAQUF
+BwEBBFowWDAnBggrBgEFBQcwAYYbaHR0cDovL29jc3Auc3RhcnRzc2wuY29tL2NhMC0GCCsG
+AQUFBzAChiFodHRwOi8vd3d3LnN0YXJ0c3NsLmNvbS9zZnNjYS5jcnQwWwYDVR0fBFQwUjAn
+oCWgI4YhaHR0cDovL3d3dy5zdGFydHNzbC5jb20vc2ZzY2EuY3JsMCegJaAjhiFodHRwOi8v
+Y3JsLnN0YXJ0c3NsLmNvbS9zZnNjYS5jcmwwgYAGA1UdIAR5MHcwdQYLKwYBBAGBtTcBAgEw
+ZjAuBggrBgEFBQcCARYiaHR0cDovL3d3dy5zdGFydHNzbC5jb20vcG9saWN5LnBkZjA0Bggr
+BgEFBQcCARYoaHR0cDovL3d3dy5zdGFydHNzbC5jb20vaW50ZXJtZWRpYXRlLnBkZjANBgkq
+hkiG9w0BAQUFAAOCAgEACoMIfXirLAZcuGOMXq4cuSN3TaFx2H2GvD5VSy/6rV55BYHbWNaP
+eQn3oBSU8KgQZn/Kck1JxbLpAxVCNtsxeW1R87ifhsYZ0qjdrA9anrW2MAWCtosmAOT4OxK9
+QPoSjCMxM3HbkZCDJgnlE8jMopH21BbyAYr7b5EfGRQJNtgWcvqSXwKHnTutR08+Kkn0KAkX
+CzeQNLeA5LlYUzFyM7kPAp8pIRMQ+seHunmyG642S2+y/qHEdMuGIwpfz3eDF1PdctL04qYK
+/zu+Qg1Bw0RwgigVZs/0c5HP2/e9DBHh7eSwtzYlk4AUr6yxLlcwSjOfOmKEQ/Q8tzh0IFiN
+u9IPuTGAPBn4CPxD0+Ru8T2wg8/s43R/PT3kd1OEqOJUl7q+h+r6fpvU0Fzxd2tC8Ga6fDEP
+me+1Nbi+03pVjuZQKbGwKJ66gEn06WqaxVZC+J8hh/jR0k9mST1iAZPNYulcNJ8tKmVtjYsv
+0L1TSm2+NwON58tO+pIVzu3DWwSEXSf+qkDavQam+QtEOZxLBXI++aMUEapSn+k3Lxm48ZCY
+fAWLb/Xj7F5JQMbZvCexglAbYR0kIHqW5DnsYSdMD/IplJMojx0NBrxJ3fN9dvX2Y6BIXRsF
+1du4qESm4/3CKuyUV7p9DW3mPlHTGLvYxnyKQy7VFBkoLINszBrOUeIxggPtMIID6QIBATCB
+lDCBjDELMAkGA1UEBhMCSUwxFjAUBgNVBAoTDVN0YXJ0Q29tIEx0ZC4xKzApBgNVBAsTIlNl
+Y3VyZSBEaWdpdGFsIENlcnRpZmljYXRlIFNpZ25pbmcxODA2BgNVBAMTL1N0YXJ0Q29tIENs
+YXNzIDEgUHJpbWFyeSBJbnRlcm1lZGlhdGUgQ2xpZW50IENBAgMPmKEwDQYJYIZIAWUDBAIB
+BQCgggIpMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE2MDcy
+MjEzNDcyNFowLwYJKoZIhvcNAQkEMSIEIPAb1E+N7XWVMGp4QdYP84YwdprZfBEwOurk76cE
+YdlEMGwGCSqGSIb3DQEJDzFfMF0wCwYJYIZIAWUDBAEqMAsGCWCGSAFlAwQBAjAKBggqhkiG
+9w0DBzAOBggqhkiG9w0DAgICAIAwDQYIKoZIhvcNAwICAUAwBwYFKw4DAgcwDQYIKoZIhvcN
+AwICASgwgaUGCSsGAQQBgjcQBDGBlzCBlDCBjDELMAkGA1UEBhMCSUwxFjAUBgNVBAoTDVN0
+YXJ0Q29tIEx0ZC4xKzApBgNVBAsTIlNlY3VyZSBEaWdpdGFsIENlcnRpZmljYXRlIFNpZ25p
+bmcxODA2BgNVBAMTL1N0YXJ0Q29tIENsYXNzIDEgUHJpbWFyeSBJbnRlcm1lZGlhdGUgQ2xp
+ZW50IENBAgMPmKEwgacGCyqGSIb3DQEJEAILMYGXoIGUMIGMMQswCQYDVQQGEwJJTDEWMBQG
+A1UEChMNU3RhcnRDb20gTHRkLjErMCkGA1UECxMiU2VjdXJlIERpZ2l0YWwgQ2VydGlmaWNh
+dGUgU2lnbmluZzE4MDYGA1UEAxMvU3RhcnRDb20gQ2xhc3MgMSBQcmltYXJ5IEludGVybWVk
+aWF0ZSBDbGllbnQgQ0ECAw+YoTANBgkqhkiG9w0BAQEFAASCAQA4oY0SJ8bh+ktMhfV1a8PX
+eYzQ3wP7FVtCC3dBF0fnMYMwu1ib++1s+QFwT1RIGi81AXZ9SfPgROW2/mXuMQ2xojYXb6BV
+zWOH4tdOty98XwjY5xQnvF6PrJGhmcwc9HCdWcnDRhw5BJtIKF5bzEkcPZsUImYrSpU36u/F
+l+PZwDSxON4pas0nx9HTw+Y/cR98dYa97KDWIJc4R71QNLT/P39NuPi8t0qA8kNtvxGFEcZk
+Ac2feaT0Ti4/W8giIRijlsy6AJBvBllz6CjoKDJr7wr6RrTQqw6rYeGCX/Vq2XA/7/u9RUtH
+OPmuRmkOoZSXpqjBnmis7kl37qX/Fcu/AAAAAAAA
+--------------ms080303070000000407010406--

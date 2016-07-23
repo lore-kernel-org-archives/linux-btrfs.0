@@ -1,20 +1,20 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtprelay04.ispgateway.de ([80.67.31.42]:53615 "EHLO
-	smtprelay04.ispgateway.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750764AbcGWIha convert rfc822-to-8bit (ORCPT
+Received: from smtprelay06.ispgateway.de ([80.67.31.95]:47654 "EHLO
+	smtprelay06.ispgateway.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751124AbcGWLP4 convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 23 Jul 2016 04:37:30 -0400
+	Sat, 23 Jul 2016 07:15:56 -0400
 Received: from p4fce2fbc.dip0.t-ipconnect.de ([79.206.47.188] helo=[127.0.0.1])
-	by smtprelay04.ispgateway.de with esmtpsa (TLSv1.2:DHE-RSA-AES128-SHA:128)
+	by smtprelay06.ispgateway.de with esmtpsa (TLSv1.2:DHE-RSA-AES128-SHA:128)
 	(Exim 4.84)
 	(envelope-from <hendrik@friedels.name>)
-	id 1bQsR3-0006Pe-N9
-	for linux-btrfs@vger.kernel.org; Sat, 23 Jul 2016 10:37:25 +0200
+	id 1bQuuO-0003T7-2X
+	for linux-btrfs@vger.kernel.org; Sat, 23 Jul 2016 13:15:52 +0200
 To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 From: Hendrik Friedel <hendrik@friedels.name>
 Subject: Chances to recover with bad partition table?
-Message-ID: <6f4623c4-3e4c-7add-aa89-3857b0d48c61@friedels.name>
-Date: Sat, 23 Jul 2016 10:37:25 +0200
+Message-ID: <14e0b114-5c5b-77f6-2c10-cad5eb799f28@friedels.name>
+Date: Sat, 23 Jul 2016 13:15:50 +0200
 MIME-Version: 1.0
 Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -55,6 +55,7 @@ bytenr mismatch, want=20987904, have=0
 Couldn't read chunk root
 Couldn't open file system
 
+
 Is there a way to let btrfs search for the start of the partiton?
 
 I do have a backup; thus it is not fatal. But some data on the disk is 
@@ -63,6 +64,7 @@ more recent than my back up (of course)
 Regards,
 
 Hendrik
+
 
 ---
 Diese E-Mail wurde von Avast Antivirus-Software auf Viren geprüft.

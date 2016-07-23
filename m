@@ -1,17 +1,18 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oi0-f41.google.com ([209.85.218.41]:33775 "EHLO
+Received: from mail-oi0-f41.google.com ([209.85.218.41]:36512 "EHLO
 	mail-oi0-f41.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751260AbcGWUFD (ORCPT
+	with ESMTP id S1751311AbcGWU2T (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 23 Jul 2016 16:05:03 -0400
-Received: by mail-oi0-f41.google.com with SMTP id j185so205768955oih.0
-        for <linux-btrfs@vger.kernel.org>; Sat, 23 Jul 2016 13:05:02 -0700 (PDT)
+	Sat, 23 Jul 2016 16:28:19 -0400
+Received: by mail-oi0-f41.google.com with SMTP id w18so206234242oiw.3
+        for <linux-btrfs@vger.kernel.org>; Sat, 23 Jul 2016 13:28:19 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <CAJCQCtQOV4gsh-Kaz6n=d9KBYCyOh9eb65-G8KBd8B_HJ_tNBg@mail.gmail.com>
+In-Reply-To: <CAJCQCtQYicoze=jBf9ptQABLZSxgd67MYUbCs2igB2PipugxaA@mail.gmail.com>
 References: <CAJCQCtQOV4gsh-Kaz6n=d9KBYCyOh9eb65-G8KBd8B_HJ_tNBg@mail.gmail.com>
+ <CAJCQCtQYicoze=jBf9ptQABLZSxgd67MYUbCs2igB2PipugxaA@mail.gmail.com>
 From: Chris Murphy <lists@colorremedies.com>
-Date: Sat, 23 Jul 2016 14:05:01 -0600
-Message-ID: <CAJCQCtQYicoze=jBf9ptQABLZSxgd67MYUbCs2igB2PipugxaA@mail.gmail.com>
+Date: Sat, 23 Jul 2016 14:28:18 -0600
+Message-ID: <CAJCQCtSy4teqx-d4iWDWRE=uP7R+0u4J2G07fwCspJipphwkqg@mail.gmail.com>
 Subject: Re: qcow2 becomes 37P in size while qemu crashes
 To: Chris Murphy <lists@colorremedies.com>
 Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
@@ -19,26 +20,17 @@ Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Using btrfs-debug-tree, I'm finding something a bit odd about some of
-the items in this 39P file.
+Kindof a rudimentary way of making a debug tree smaller, by filtering
+by inode...
 
-Seems normal
+[root@f24m images]# btrfs-debug-tree -t 583 /dev/sda5 | grep -A 50 -B
+50 994163 > inode994163_39PBfile.txt
 
-    item 71 key (994163 EXTENT_DATA 43689967616) itemoff 12467 itemsize 53
-        extent data disk byte 617349906432 nr 80805888
-        extent data offset 0 nr 80805888 ram 80805888
-        extent compression(none)
+381K gzip file
+https://drive.google.com/open?id=0B_2Asp8DGjJ9Rk1qMG54MUNDWkE
 
-Seems not normal
+But I'm going to rm this file so I can see if the problem is reproducible.
 
-    item 58 key (994163 EXTENT_DATA 38345535488) itemoff 13156 itemsize 53
-        extent data disk byte 0 nr 0
-        extent data offset 394752000 nr 61440 ram 34626881742770176
-        extent compression(none)
+---
 
-There are quite a large number of items that take the 2nd form, and in
-each case the ram value is the same as above.
-
-
--- 
 Chris Murphy

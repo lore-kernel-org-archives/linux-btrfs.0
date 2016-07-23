@@ -1,147 +1,70 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-db5eur01on0125.outbound.protection.outlook.com ([104.47.2.125]:40192
-	"EHLO EUR01-DB5-obe.outbound.protection.outlook.com"
-	rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-	id S1751166AbcGVVCW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 22 Jul 2016 17:02:22 -0400
-From: =?utf-8?B?TGlib3IgS2xlcMOhxI0=?= <libor.klepac@bcom.cz>
-To: Henk Slager <eye1tm@gmail.com>
-CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: Send-recieve performance
-Date: Fri, 22 Jul 2016 13:27:15 +0000
-Message-ID: <1836752.gta6e4fJGf@libor-nb>
-References: <2282942.pRaJJzEdHC@libor-nb>
- <CAPmG0jYbSdEFKg=u9BiNZCSh-tL=93kU=mwyBf7DbZD3xXfm_w@mail.gmail.com>
-In-Reply-To: <CAPmG0jYbSdEFKg=u9BiNZCSh-tL=93kU=mwyBf7DbZD3xXfm_w@mail.gmail.com>
-Content-Type: text/plain; charset="utf-8"
+Received: from smtprelay04.ispgateway.de ([80.67.31.42]:53615 "EHLO
+	smtprelay04.ispgateway.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750764AbcGWIha convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 23 Jul 2016 04:37:30 -0400
+Received: from p4fce2fbc.dip0.t-ipconnect.de ([79.206.47.188] helo=[127.0.0.1])
+	by smtprelay04.ispgateway.de with esmtpsa (TLSv1.2:DHE-RSA-AES128-SHA:128)
+	(Exim 4.84)
+	(envelope-from <hendrik@friedels.name>)
+	id 1bQsR3-0006Pe-N9
+	for linux-btrfs@vger.kernel.org; Sat, 23 Jul 2016 10:37:25 +0200
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+From: Hendrik Friedel <hendrik@friedels.name>
+Subject: Chances to recover with bad partition table?
+Message-ID: <6f4623c4-3e4c-7add-aa89-3857b0d48c61@friedels.name>
+Date: Sat, 23 Jul 2016 10:37:25 +0200
 MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 Hello,
 
-Dne pÃ¡tek 22. Äervence 2016 14:59:43 CEST, Henk Slager napsal(a):
-> On Wed, Jul 20, 2016 at 11:15 AM, Libor KlepÃ¡Ä <libor.klepac@bcom.cz> wrote:
-> > Hello,
-> > we use backuppc to backup our hosting machines.
-> > 
-> > I have recently migrated it to btrfs, so we can use send-recieve for
-> > offsite backups of our backups.
-> > 
-> > I have several btrfs volumes, each hosts nspawn container, which runs in
-> > /system subvolume and has backuppc data in /backuppc subvolume .
-> > I use btrbk to do snapshots and transfer.
-> > Local side is set to keep 5 daily snapshots, remote side to hold some
-> > history. (not much yet, i'm using it this way for few weeks).
-> > 
-> > If you know backuppc behaviour: for every backup (even incremental), it
-> > creates full directory tree of each backed up machine even if it has no
-> > modified files and places one small file in each, which holds some info
-> > for backuppc. So after few days i ran into ENOSPACE on one volume,
-> > because my metadata grow, because of inlineing. I switched from mdata=DUP
-> > to mdata=single (now I see it's possible to change inline file size,
-> > right?).
-> I would try mounting both send and receive volumes with max_inline=0
-> So then for all small new- and changed files, the filedata will be
-> stored in data chunks and not inline in the metadata chunks.
+this morning I had to face an unusual prompt on my machine.
 
-Ok, i will try. Is there way to move existing files from metadata to data 
-chunks? Something like btrfs balance with convert filter?
+I found that the partition table of /dev/sda had vanished.
 
-> That you changed metadata profile from dup to single is unrelated in
-> principle. single for metadata instead of dup is half the write I/O
-> for the harddisks, so in that sense it might speed up send actions a
-> bit. I guess almost all time is spend in seeks.
+I restored it with testdisk. It found one partition, but I am quite sure 
+there was a /boot partition in front of that which was not found.
 
-Yes, I just didn't realize that so much files will be in metadata structures 
-and it cought me be suprise.
+Now, running btrfsck fails:
 
-> 
-> > My problem is, that on some volumes, send-recieve is relatively fast (rate
-> > in MB/s or hundreds of kB/s) but on biggest volume (biggest in space and
-> > biggest in contained filesystem trees) rate is just 5-30kB/s.
-> > 
-> > Here is btrbk progress copyed
-> > 785MiB 47:52:00 [12.9KiB/s] [4.67KiB/s]
-> > 
-> > ie. 758MB in 48 hours.
-> > 
-> > Reciever has high IO/wait - 90-100%, when i push data using btrbk.
-> > When I run dd over ssh it can do 50-75MB/s.
-> 
-> The send part is the speed bottleneck as it looks like, you can test
-> and isolate it by doing a dummy send and pipe it to  | mbuffer >
-> /dev/null  and see what speed you get.
+root@homeserver:~# fdisk -l /dev/sda
 
-I tried it already, did incremental send to file 
-#btrfs send -v -p ./backuppc.20160712/  ./backuppc.20160720_1/ | pv > /mnt/
-data1/send
-At subvol ./backuppc.20160720_1/
-joining genl thread
-18.9GiB 21:14:45 [ 259KiB/s]
-
-Copied it over scp to reciever with speed 50.9MB/s.
-No i will try recieve.
+WARNING: GPT (GUID Partition Table) detected on '/dev/sda'! The util 
+fdisk doesn't support GPT. Use GNU Parted.
 
 
-> > Sending machine is debian jessie with kernel 4.5.0-0.bpo.2-amd64 (upstream
-> > 4.5.3) , btrfsprogs 4.4.1. It is virtual machine running on volume
-> > exported from MD3420, 4 SAS disks in RAID10.
-> > 
-> > Recieving machine is debian jessie on Dell T20 with 4x3TB disks in MD
-> > RAID5 , kernel is 4.4.0-0.bpo.1-amd64 (upstream 4.4.6), btrfsprgos 4.4.1
-> > 
-> > BTRFS volumes were created using those listed versions.
-> > 
-> > Sender:
-> > ---------
-> > #mount | grep hosting
-> > /dev/sdg on /mnt/btrfs/hosting type btrfs
-> > (rw,noatime,space_cache,subvolid=5,subvol=/) /dev/sdg on
-> > /var/lib/container/hosting type btrfs
-> > (rw,noatime,space_cache,subvolid=259,subvol=/system) /dev/sdg on
-> > /var/lib/container/hosting/var/lib/backuppc type btrfs
-> > (rw,noatime,space_cache,subvolid=260,subvol=/backuppc)
-> > 
-> > #btrfs filesystem usage /mnt/btrfs/hosting
-> > 
-> > Overall:
-> >     Device size:                 840.00GiB
-> >     Device allocated:            815.03GiB
-> >     Device unallocated:           24.97GiB
-> >     Device missing:                  0.00B
-> >     Used:                        522.76GiB
-> >     Free (estimated):            283.66GiB      (min: 271.18GiB)
-> >     Data ratio:                       1.00
-> >     Metadata ratio:                   1.00
-> >     Global reserve:              512.00MiB      (used: 0.00B)
-> > 
-> > Data,single: Size:710.98GiB, Used:452.29GiB
-> > 
-> >    /dev/sdg      710.98GiB
-> > 
-> > Metadata,single: Size:103.98GiB, Used:70.46GiB
-> > 
-> >    /dev/sdg      103.98GiB
-> 
-> This is a very large ratio metadata/data. Large and scattered
-> metadata, even on fast rotational media, will result in slow send
-> operation is my experience ( incremental send, about 10G metadata). So
-> hopefully, when all the small files and many directories from backuppc
-> are in data chunks and metadata is significantly smaller, send will be
-> faster. However, maybe it is just the huge amount of files and not
-> inlining of small files that makes metadata so big.
-Backuppc says
-"Pool is 462.30GB comprising 5140707 files and 4369 directories"
-that is only storage of files, not counting all the server trees
+Disk /dev/sda: 120.0 GB, 120034123776 bytes
+255 heads, 63 sectors/track, 14593 cylinders, total 234441648 sectors
+Units = sectors of 1 * 512 = 512 bytes
+Sector size (logical/physical): 512 bytes / 512 bytes
+I/O size (minimum/optimal): 512 bytes / 512 bytes
+Disk identifier: 0x00000000
 
-> 
-> I assume incremental send of snapshots is done.
+    Device Boot      Start         End      Blocks   Id  System
+/dev/sda1   *     1026048   234440703   116707328   83  Linux
+root@homeserver:~# btrfsck /dev/sda1
+checksum verify failed on 20987904 found E4E3BDB6 wanted 00000000
+checksum verify failed on 20987904 found E4E3BDB6 wanted 00000000
+checksum verify failed on 20987904 found E4E3BDB6 wanted 00000000
+checksum verify failed on 20987904 found E4E3BDB6 wanted 00000000
+bytenr mismatch, want=20987904, have=0
+Couldn't read chunk root
+Couldn't open file system
 
-Yes, it was incremental
+Is there a way to let btrfs search for the start of the partiton?
 
-Is anyone interested in btrfs-debug-tree -t 2 output?
-It's 2.3GB big (187MB with xz -0 compression)
+I do have a backup; thus it is not fatal. But some data on the disk is 
+more recent than my back up (of course)
 
-Libor
-ÿôèº{.nÇ+‰·Ÿ®‰­†+%ŠËÿ±éİ¶¥Šwÿº{.nÇ+‰·¥Š{±ı»k~ÏâØ^n‡r¡ö¦zËëh™¨è­Ú&£ûàz¿äz¹Ş—ú+€Ê+zf£¢·hšˆ§~†­†Ûiÿÿïêÿ‘êçz_è®æj:+v‰¨ş)ß£øm
+Regards,
+
+Hendrik
+
+---
+Diese E-Mail wurde von Avast Antivirus-Software auf Viren geprÃ¼ft.
+https://www.avast.com/antivirus
+

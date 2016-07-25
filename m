@@ -1,202 +1,68 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:12211 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:31507 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1753150AbcGZMIW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 26 Jul 2016 08:08:22 -0400
+	id S1752012AbcGYHzL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 25 Jul 2016 03:55:11 -0400
 From: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
-Cc: jbacik@fb.com
-Subject: [PATCH v3] btrfs: should block unused block groups deletion work when allocating data space
-Date: Tue, 26 Jul 2016 20:04:20 +0800
-Message-Id: <20160726120420.29692-1-wangxg.fnst@cn.fujitsu.com>
-In-Reply-To: <df0eb696-efea-0902-8e18-131a0898857c@fb.com>
-References: <df0eb696-efea-0902-8e18-131a0898857c@fb.com>
+Cc: dsterba@suse.cz, jbacik@fb.com, holger@applied-asynchrony.com
+Subject: [PATCH v2 1/4] btrfs: use correct offset for reloc_inode in prealloc_file_extent_cluster()
+Date: Mon, 25 Jul 2016 15:51:38 +0800
+Message-Id: <20160725075141.5712-2-wangxg.fnst@cn.fujitsu.com>
+In-Reply-To: <20160725075141.5712-1-wangxg.fnst@cn.fujitsu.com>
+References: <20160725075141.5712-1-wangxg.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-cleaner_kthread() may run at any time, in which it'll call btrfs_delete_unused_bgs()
-to delete unused block groups. Because this work is asynchronous, it may also result
-in false ENOSPC error. Please see below race window:
+In prealloc_file_extent_cluster(), btrfs_check_data_free_space() uses
+wrong file offset for reloc_inode, it uses cluster->start and cluster->end,
+which indeed are extent's bytenr. The correct value should be
+cluster->[start|end] minus block group's start bytenr.
 
-               CPU1                           |             CPU2
-                                              |
-|-> btrfs_alloc_data_chunk_ondemand()         |-> cleaner_kthread()
-    |-> do_chunk_alloc()                      |   |
-    |   assume it returns ENOSPC, which means |   |
-    |   btrfs_space_info is full and have free|   |
-    |   space to satisfy data request.        |   |
-    |                                         |   |- > btrfs_delete_unused_bgs()
-    |                                         |   |    it will decrease btrfs_space_info
-    |                                         |   |    total_bytes and make
-    |                                         |   |    btrfs_space_info is not full.
-    |                                         |   |
-In this case, we may get ENOSPC error, but btrfs_space_info is not full.
-
-To fix this issue, in btrfs_alloc_data_chunk_ondemand(), if we need to call
-do_chunk_alloc() to allocating new chunk, we should block btrfs_delete_unused_bgs().
-So here we introduce a new struct rw_semaphore bg_delete_sem to do this job.
+start bytenr   cluster->start
+|              |     extent      |   extent   | ...| extent |
+|----------------------------------------------------------------|
+|                block group reloc_inode                         |
 
 Signed-off-by: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
+Signed-off-by: Josef Bacik <jbacik@fb.com>
 ---
-v3: improve one code logic suggested by Josef, thanks.
----
- fs/btrfs/ctree.h       |  1 +
- fs/btrfs/disk-io.c     |  1 +
- fs/btrfs/extent-tree.c | 44 ++++++++++++++++++++++++++++++++++++++------
- 3 files changed, 40 insertions(+), 6 deletions(-)
+ fs/btrfs/relocation.c | 10 ++++++----
+ 1 file changed, 6 insertions(+), 4 deletions(-)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 7eb2913..bf0751d 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -800,6 +800,7 @@ struct btrfs_fs_info {
- 	struct mutex cleaner_mutex;
- 	struct mutex chunk_mutex;
- 	struct mutex volume_mutex;
-+	struct rw_semaphore bg_delete_sem;
- 
- 	/*
- 	 * this is taken to make sure we don't set block groups ro after
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 60ce119..f8609fd 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -2683,6 +2683,7 @@ int open_ctree(struct super_block *sb,
- 	init_rwsem(&fs_info->commit_root_sem);
- 	init_rwsem(&fs_info->cleanup_work_sem);
- 	init_rwsem(&fs_info->subvol_sem);
-+	init_rwsem(&fs_info->bg_delete_sem);
- 	sema_init(&fs_info->uuid_tree_rescan_sem, 1);
- 
- 	btrfs_init_dev_replace_locks(fs_info);
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index df8d756..50b440e 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -4111,6 +4111,7 @@ int btrfs_alloc_data_chunk_ondemand(struct inode *inode, u64 bytes)
+diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
+index 0477dca..a0de885 100644
+--- a/fs/btrfs/relocation.c
++++ b/fs/btrfs/relocation.c
+@@ -3030,12 +3030,14 @@ int prealloc_file_extent_cluster(struct inode *inode,
+ 	u64 num_bytes;
+ 	int nr = 0;
  	int ret = 0;
- 	int need_commit = 2;
- 	int have_pinned_space;
-+	int have_bg_delete_sem = 0;
++	u64 prealloc_start = cluster->start - offset;
++	u64 prealloc_end = cluster->end - offset;
  
- 	/* make sure bytes are sectorsize aligned */
- 	bytes = ALIGN(bytes, root->sectorsize);
-@@ -4121,8 +4122,11 @@ int btrfs_alloc_data_chunk_ondemand(struct inode *inode, u64 bytes)
+ 	BUG_ON(cluster->start != cluster->boundary[0]);
+ 	inode_lock(inode);
+ 
+-	ret = btrfs_check_data_free_space(inode, cluster->start,
+-					  cluster->end + 1 - cluster->start);
++	ret = btrfs_check_data_free_space(inode, prealloc_start,
++					  prealloc_end + 1 - prealloc_start);
+ 	if (ret)
+ 		goto out;
+ 
+@@ -3056,8 +3058,8 @@ int prealloc_file_extent_cluster(struct inode *inode,
+ 			break;
+ 		nr++;
  	}
- 
- 	data_sinfo = fs_info->data_sinfo;
--	if (!data_sinfo)
-+	if (!data_sinfo) {
-+		down_read(&root->fs_info->bg_delete_sem);
-+		have_bg_delete_sem = 1;
- 		goto alloc;
-+	}
- 
- again:
- 	/* make sure we have enough space to handle the data first */
-@@ -4135,6 +4139,19 @@ again:
- 		struct btrfs_trans_handle *trans;
- 
- 		/*
-+		 * We may need to allocate new chunk, so we should block
-+		 * btrfs_delete_unused_bgs()
-+		 */
-+		if (!have_bg_delete_sem) {
-+			spin_unlock(&data_sinfo->lock);
-+			down_read(&root->fs_info->bg_delete_sem);
-+			have_bg_delete_sem = 1;
-+			spin_lock(&data_sinfo->lock);
-+			if (used + bytes <= data_sinfo->total_bytes)
-+				goto done;
-+		}
-+
-+		/*
- 		 * if we don't have enough free bytes in this space then we need
- 		 * to alloc a new chunk.
- 		 */
-@@ -4156,17 +4173,20 @@ alloc:
- 			 * the fs.
- 			 */
- 			trans = btrfs_join_transaction(root);
--			if (IS_ERR(trans))
-+			if (IS_ERR(trans)) {
-+				up_read(&root->fs_info->bg_delete_sem);
- 				return PTR_ERR(trans);
-+			}
- 
- 			ret = do_chunk_alloc(trans, root->fs_info->extent_root,
- 					     alloc_target,
- 					     CHUNK_ALLOC_NO_FORCE);
- 			btrfs_end_transaction(trans, root);
- 			if (ret < 0) {
--				if (ret != -ENOSPC)
-+				if (ret != -ENOSPC) {
-+					up_read(&root->fs_info->bg_delete_sem);
- 					return ret;
--				else {
-+				} else {
- 					have_pinned_space = 1;
- 					goto commit_trans;
- 				}
-@@ -4200,15 +4220,19 @@ commit_trans:
- 			}
- 
- 			trans = btrfs_join_transaction(root);
--			if (IS_ERR(trans))
-+			if (IS_ERR(trans)) {
-+				up_read(&root->fs_info->bg_delete_sem);
- 				return PTR_ERR(trans);
-+			}
- 			if (have_pinned_space >= 0 ||
- 			    test_bit(BTRFS_TRANS_HAVE_FREE_BGS,
- 				     &trans->transaction->flags) ||
- 			    need_commit > 0) {
- 				ret = btrfs_commit_transaction(trans, root);
--				if (ret)
-+				if (ret) {
-+					up_read(&root->fs_info->bg_delete_sem);
- 					return ret;
-+				}
- 				/*
- 				 * The cleaner kthread might still be doing iput
- 				 * operations. Wait for it to finish so that
-@@ -4225,13 +4249,19 @@ commit_trans:
- 		trace_btrfs_space_reservation(root->fs_info,
- 					      "space_info:enospc",
- 					      data_sinfo->flags, bytes, 1);
-+		up_read(&root->fs_info->bg_delete_sem);
- 		return -ENOSPC;
- 	}
-+
-+done:
- 	data_sinfo->bytes_may_use += bytes;
- 	trace_btrfs_space_reservation(root->fs_info, "space_info",
- 				      data_sinfo->flags, bytes, 1);
- 	spin_unlock(&data_sinfo->lock);
- 
-+	if (have_bg_delete_sem)
-+		up_read(&root->fs_info->bg_delete_sem);
-+
+-	btrfs_free_reserved_data_space(inode, cluster->start,
+-				       cluster->end + 1 - cluster->start);
++	btrfs_free_reserved_data_space(inode, prealloc_start,
++				       prealloc_end + 1 - prealloc_start);
+ out:
+ 	inode_unlock(inode);
  	return ret;
- }
- 
-@@ -10594,6 +10624,7 @@ void btrfs_delete_unused_bgs(struct btrfs_fs_info *fs_info)
- 		spin_unlock(&fs_info->unused_bgs_lock);
- 
- 		mutex_lock(&fs_info->delete_unused_bgs_mutex);
-+		down_write(&root->fs_info->bg_delete_sem);
- 
- 		/* Don't want to race with allocators so take the groups_sem */
- 		down_write(&space_info->groups_sem);
-@@ -10721,6 +10752,7 @@ void btrfs_delete_unused_bgs(struct btrfs_fs_info *fs_info)
- end_trans:
- 		btrfs_end_transaction(trans, root);
- next:
-+		up_write(&root->fs_info->bg_delete_sem);
- 		mutex_unlock(&fs_info->delete_unused_bgs_mutex);
- 		btrfs_put_block_group(block_group);
- 		spin_lock(&fs_info->unused_bgs_lock);
 -- 
 2.9.0
 

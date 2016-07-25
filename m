@@ -1,84 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:56458 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:50764 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750739AbcGNM30 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 14 Jul 2016 08:29:26 -0400
-From: David Sterba <dsterba@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: chandan@linux.vnet.ibm.com, David Sterba <dsterba@suse.com>
-Subject: [PATCH] btrfs: allocate exact page array size in extent_buffer
-Date: Thu, 14 Jul 2016 14:29:32 +0200
-Message-Id: <1468499372-24687-1-git-send-email-dsterba@suse.com>
+	id S1750940AbcGYNBb (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 25 Jul 2016 09:01:31 -0400
+Date: Mon, 25 Jul 2016 15:01:17 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Josef Bacik <jbacik@fb.com>
+Cc: Qu Wenruo <quwenruo.btrfs@gmx.com>,
+        Christian Rohmann <crohmann@netcologne.de>,
+        Qu Wenruo <quwenruo@cn.fujitsu.com>,
+        John Ettedgui <john.ettedgui@gmail.com>,
+        Austin S Hemmelgarn <ahferroin7@gmail.com>,
+        btrfs <linux-btrfs@vger.kernel.org>, Chris Mason <clm@fb.com>
+Subject: Re: mount btrfs takes 30 minutes, btrfs check runs out of memory
+Message-ID: <20160725130117.GB30795@suse.cz>
+Reply-To: dsterba@suse.cz
+References: <55C02AF9.3070600@cn.fujitsu.com>
+ <CAJ3TwYQUX-CgqSXMxxU+6tcb0_0tuJbwKqHHPufCnsDBYuXycw@mail.gmail.com>
+ <55C0A1ED.6020407@gmail.com>
+ <CAJ3TwYQgm2f4SQFOO_vgGLP0V71q+oesbjFxTjhEJnrXYLe4fQ@mail.gmail.com>
+ <55C1F3DD.7020603@gmail.com>
+ <CAJ3TwYSW+SvbBrh1u_x+c3HTRx03qSR6BoH5cj_VzCXxZYv6EA@mail.gmail.com>
+ <126f9f09-4e28-3c12-5384-63032e17942f@cn.fujitsu.com>
+ <d14c14d2-79d3-222b-59e2-ae8b38c7f2d4@netcologne.de>
+ <c14cbb3a-7eb7-11de-e502-5e7d97719f3f@gmx.com>
+ <0ac17bdc-64eb-bbbd-ae90-61cfdc16660d@fb.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <0ac17bdc-64eb-bbbd-ae90-61cfdc16660d@fb.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The calculation of extent_buffer::pages size was done for 4k PAGE_SIZE,
-but this wastes 15 unused pointers on arches with large page size. Eg.
-on ppc64 this gives 15 * 8 = 120 bytes.
+On Mon, Jul 18, 2016 at 09:42:50AM -0400, Josef Bacik wrote:
+> >
+> > This makes search for BLOCK_GROUP_ITEM very very very slow if extent tree is
+> > really big.
+> >
+> > On the handle, we search CHUNK_ITEM very very fast, because CHUNK_ITEM are in
+> > their own tree.
+> > (CHUNK_ITEM and BLOCK_GROUP_ITEM are 1:1 mapped)
+> >
+> > So to completely fix it, btrfs needs on-disk format change to put
+> > BLOCK_GROUP_ITEM into their own tree.
+> >
+> > IMHO there maybe be some objection from other devs though.
+> >
+> > Anyway, I add the three maintainers to Cc, and hopes we can get a better idea to
+> > fix it.
+> 
+> Yeah I'm going to fix this when I do the per-block group extent tree thing.  Thanks,
 
-Signed-off-by: David Sterba <dsterba@suse.com>
----
- fs/btrfs/ctree.h     | 6 ------
- fs/btrfs/extent_io.c | 2 ++
- fs/btrfs/extent_io.h | 8 +++++++-
- 3 files changed, 9 insertions(+), 7 deletions(-)
-
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 4274a7bfdaed..f914f6187753 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -66,12 +66,6 @@ struct btrfs_ordered_sum;
- #define BTRFS_COMPAT_EXTENT_TREE_V0
- 
- /*
-- * the max metadata block size.  This limit is somewhat artificial,
-- * but the memmove costs go through the roof for larger blocks.
-- */
--#define BTRFS_MAX_METADATA_BLOCKSIZE 65536
--
--/*
-  * we can actually store much bigger names, but lets not confuse the rest
-  * of linux
-  */
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 75533adef998..6f468a1842e6 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -4660,6 +4660,8 @@ __alloc_extent_buffer(struct btrfs_fs_info *fs_info, u64 start,
- 	/*
- 	 * Sanity checks, currently the maximum is 64k covered by 16x 4k pages
- 	 */
-+	BUILD_BUG_ON(INLINE_EXTENT_BUFFER_PAGES * PAGE_SIZE
-+		!= BTRFS_MAX_METADATA_BLOCKSIZE);
- 	BUILD_BUG_ON(BTRFS_MAX_METADATA_BLOCKSIZE
- 		> MAX_INLINE_EXTENT_BUFFER_SIZE);
- 	BUG_ON(len > MAX_INLINE_EXTENT_BUFFER_SIZE);
-diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
-index c0c1c4fef6ce..edfa1a0ab82b 100644
---- a/fs/btrfs/extent_io.h
-+++ b/fs/btrfs/extent_io.h
-@@ -4,6 +4,12 @@
- #include <linux/rbtree.h>
- #include "ulist.h"
- 
-+/*
-+ * The maximum metadata block size.  This limit is somewhat artificial,
-+ * but the memmove costs go through the roof for larger blocks.
-+ */
-+#define BTRFS_MAX_METADATA_BLOCKSIZE (65536U)
-+
- /* bits for the extent state */
- #define EXTENT_DIRTY		(1U << 0)
- #define EXTENT_WRITEBACK	(1U << 1)
-@@ -118,7 +124,7 @@ struct extent_state {
- #endif
- };
- 
--#define INLINE_EXTENT_BUFFER_PAGES 16
-+#define INLINE_EXTENT_BUFFER_PAGES    (BTRFS_MAX_METADATA_BLOCKSIZE / PAGE_SIZE)
- #define MAX_INLINE_EXTENT_BUFFER_SIZE (INLINE_EXTENT_BUFFER_PAGES * PAGE_SIZE)
- struct extent_buffer {
- 	u64 start;
--- 
-2.7.1
-
+Will it be capable of "per- subvolume set" extent trees? IOW, a set of
+subvolumes will could share extents only among the members of the same
+group. The usecase is to start an isolate subvolume and allow snapshots
+(and obviously forbid reflinks outside of the group).

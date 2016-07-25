@@ -1,130 +1,102 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:39958 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1752476AbcGYNdH (ORCPT
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:13931 "EHLO
+	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1751328AbcGYNeb (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 25 Jul 2016 09:33:07 -0400
-Subject: Re: [PATCH v2 4/4] btrfs: should block unused block groups deletion
- work when allocating data space
+	Mon, 25 Jul 2016 09:34:31 -0400
+Subject: Re: [PATCH v2 3/4] btrfs: update btrfs_space_info's bytes_may_use
+ timely
 To: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>, <linux-btrfs@vger.kernel.org>
 References: <20160725075141.5712-1-wangxg.fnst@cn.fujitsu.com>
- <20160725075141.5712-5-wangxg.fnst@cn.fujitsu.com>
+ <20160725075141.5712-4-wangxg.fnst@cn.fujitsu.com>
 CC: <dsterba@suse.cz>, <holger@applied-asynchrony.com>
 From: Josef Bacik <jbacik@fb.com>
-Message-ID: <df0eb696-efea-0902-8e18-131a0898857c@fb.com>
-Date: Mon, 25 Jul 2016 09:32:43 -0400
+Message-ID: <5c5db152-e375-d1ca-5604-908d2dc61b3e@fb.com>
+Date: Mon, 25 Jul 2016 09:33:47 -0400
 MIME-Version: 1.0
-In-Reply-To: <20160725075141.5712-5-wangxg.fnst@cn.fujitsu.com>
+In-Reply-To: <20160725075141.5712-4-wangxg.fnst@cn.fujitsu.com>
 Content-Type: text/plain; charset="windows-1252"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 On 07/25/2016 03:51 AM, Wang Xiaoguang wrote:
-> cleaner_kthread() may run at any time, in which it'll call btrfs_delete_unused_bgs()
-> to delete unused block groups. Because this work is asynchronous, it may also result
-> in false ENOSPC error. Please see below race window:
+> This patch can fix some false ENOSPC errors, below test script can
+> reproduce one false ENOSPC error:
+> 	#!/bin/bash
+> 	dd if=/dev/zero of=fs.img bs=$((1024*1024)) count=128
+> 	dev=$(losetup --show -f fs.img)
+> 	mkfs.btrfs -f -M $dev
+> 	mkdir /tmp/mntpoint
+> 	mount $dev /tmp/mntpoint
+> 	cd /tmp/mntpoint
+> 	xfs_io -f -c "falloc 0 $((64*1024*1024))" testfile
 >
->                CPU1                           |             CPU2
->                                               |
-> |-> btrfs_alloc_data_chunk_ondemand()         |-> cleaner_kthread()
->     |-> do_chunk_alloc()                      |   |
->     |   assume it returns ENOSPC, which means |   |
->     |   btrfs_space_info is full and have free|   |
->     |   space to satisfy data request.        |   |
->     |                                         |   |- > btrfs_delete_unused_bgs()
->     |                                         |   |    it will decrease btrfs_space_info
->     |                                         |   |    total_bytes and make
->     |                                         |   |    btrfs_space_info is not full.
->     |                                         |   |
-> In this case, we may get ENOSPC error, but btrfs_space_info is not full.
+> Above script will fail for ENOSPC reason, but indeed fs still has free
+> space to satisfy this request. Please see call graph:
+> btrfs_fallocate()
+> |-> btrfs_alloc_data_chunk_ondemand()
+> |   bytes_may_use += 64M
+> |-> btrfs_prealloc_file_range()
+>     |-> btrfs_reserve_extent()
+>         |-> btrfs_add_reserved_bytes()
+>         |   alloc_type is RESERVE_ALLOC_NO_ACCOUNT, so it does not
+>         |   change bytes_may_use, and bytes_reserved += 64M. Now
+>         |   bytes_may_use + bytes_reserved == 128M, which is greater
+>         |   than btrfs_space_info's total_bytes, false enospc occurs.
+>         |   Note, the bytes_may_use decrease operation will be done in
+>         |   end of btrfs_fallocate(), which is too late.
 >
-> To fix this issue, in btrfs_alloc_data_chunk_ondemand(), if we need to call
-> do_chunk_alloc() to allocating new chunk, we should block btrfs_delete_unused_bgs().
-> So here we introduce a new struct rw_semaphore bg_delete_sem to do this job.
+> Here is another simple case for buffered write:
+>                     CPU 1              |              CPU 2
+>                                        |
+> |-> cow_file_range()                   |-> __btrfs_buffered_write()
+>     |-> btrfs_reserve_extent()         |   |
+>     |                                  |   |
+>     |                                  |   |
+>     |    .....                         |   |-> btrfs_check_data_free_space()
+>     |                                  |
+>     |                                  |
+>     |-> extent_clear_unlock_delalloc() |
+>
+> In CPU 1, btrfs_reserve_extent()->find_free_extent()->
+> btrfs_add_reserved_bytes() do not decrease bytes_may_use, the decrease
+> operation will be delayed to be done in extent_clear_unlock_delalloc().
+> Assume in this case, btrfs_reserve_extent() reserved 128MB data, CPU2's
+> btrfs_check_data_free_space() tries to reserve 100MB data space.
+> If
+> 	100MB > data_sinfo->total_bytes - data_sinfo->bytes_used -
+> 		data_sinfo->bytes_reserved - data_sinfo->bytes_pinned -
+> 		data_sinfo->bytes_readonly - data_sinfo->bytes_may_use
+> btrfs_check_data_free_space() will try to allcate new data chunk or call
+> btrfs_start_delalloc_roots(), or commit current transaction in order to
+> reserve some free space, obviously a lot of work. But indeed it's not
+> necessary as long as decreasing bytes_may_use timely, we still have
+> free space, decreasing 128M from bytes_may_use.
+>
+> To fix this issue, this patch chooses to update bytes_may_use for both
+> data and metadata in btrfs_add_reserved_bytes(). For compress path, real
+> extent length may not be equal to file content length, so introduce a
+> ram_bytes argument for btrfs_reserve_extent(), find_free_extent() and
+> btrfs_add_reserved_bytes(), it's becasue bytes_may_use is increased by
+> file content length. Then compress path can update bytes_may_use
+> correctly. Also now we can discard RESERVE_ALLOC_NO_ACCOUNT, RESERVE_ALLOC
+> and RESERVE_FREE.
+>
+> As we know, usually EXTENT_DO_ACCOUNTING is used for error path. In
+> run_delalloc_nocow(), for inode marked as NODATACOW or extent marked as
+> PREALLOC, we also need to update bytes_may_use, but can not pass
+> EXTENT_DO_ACCOUNTING, because it also clears metadata reservation, so
+> here we introduce EXTENT_CLEAR_DATA_RESV flag to indicate btrfs_clear_bit_hook()
+> to update btrfs_space_info's bytes_may_use.
+>
+> Meanwhile __btrfs_prealloc_file_range() will call
+> btrfs_free_reserved_data_space() internally for both sucessful and failed
+> path, btrfs_prealloc_file_range()'s callers does not need to call
+> btrfs_free_reserved_data_space() any more.
 >
 > Signed-off-by: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
-> ---
->  fs/btrfs/ctree.h       |  1 +
->  fs/btrfs/disk-io.c     |  1 +
->  fs/btrfs/extent-tree.c | 40 ++++++++++++++++++++++++++++++++++------
->  3 files changed, 36 insertions(+), 6 deletions(-)
->
-> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-> index 7eb2913..bf0751d 100644
-> --- a/fs/btrfs/ctree.h
-> +++ b/fs/btrfs/ctree.h
-> @@ -800,6 +800,7 @@ struct btrfs_fs_info {
->  	struct mutex cleaner_mutex;
->  	struct mutex chunk_mutex;
->  	struct mutex volume_mutex;
-> +	struct rw_semaphore bg_delete_sem;
->
->  	/*
->  	 * this is taken to make sure we don't set block groups ro after
-> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-> index 60ce119..65a1465 100644
-> --- a/fs/btrfs/disk-io.c
-> +++ b/fs/btrfs/disk-io.c
-> @@ -2676,6 +2676,7 @@ int open_ctree(struct super_block *sb,
->  	mutex_init(&fs_info->ordered_operations_mutex);
->  	mutex_init(&fs_info->tree_log_mutex);
->  	mutex_init(&fs_info->chunk_mutex);
-> +	init_rwsem(&fs_info->bg_delete_sem);
->  	mutex_init(&fs_info->transaction_kthread_mutex);
->  	mutex_init(&fs_info->cleaner_mutex);
->  	mutex_init(&fs_info->volume_mutex);
-> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-> index df8d756..d1f8638 100644
-> --- a/fs/btrfs/extent-tree.c
-> +++ b/fs/btrfs/extent-tree.c
-> @@ -4111,6 +4111,7 @@ int btrfs_alloc_data_chunk_ondemand(struct inode *inode, u64 bytes)
->  	int ret = 0;
->  	int need_commit = 2;
->  	int have_pinned_space;
-> +	int have_bg_delete_sem = 0;
->
->  	/* make sure bytes are sectorsize aligned */
->  	bytes = ALIGN(bytes, root->sectorsize);
-> @@ -4121,8 +4122,11 @@ int btrfs_alloc_data_chunk_ondemand(struct inode *inode, u64 bytes)
->  	}
->
->  	data_sinfo = fs_info->data_sinfo;
-> -	if (!data_sinfo)
-> +	if (!data_sinfo) {
-> +		down_read(&root->fs_info->bg_delete_sem);
-> +		have_bg_delete_sem = 1;
->  		goto alloc;
-> +	}
->
->  again:
->  	/* make sure we have enough space to handle the data first */
-> @@ -4134,10 +4138,21 @@ again:
->  	if (used + bytes > data_sinfo->total_bytes) {
->  		struct btrfs_trans_handle *trans;
->
-> +		spin_unlock(&data_sinfo->lock);
-> +		/*
-> +		 * We may need to allocate new chunk, so we should block
-> +		 * btrfs_delete_unused_bgs()
-> +		 */
-> +		if (have_bg_delete_sem == 0) {
-> +			down_read(&root->fs_info->bg_delete_sem);
-> +			have_bg_delete_sem = 1;
-> +		}
-> +
 
-We could race with somebody else doing an allocation here, so instead do 
-something like
+Yup this is good, thanks for fixing this problem
 
-if (!have_bg_delete_sem) {
-	spin_unlock(&data_sinfo->lock);
-	down_read(&root->fs_info->bg_delete_sem);
-	have_bg_delete_sem = 1;
-	spin_lock((&data_sinfo->lock);
-	if (used + bytes <= data_sinfo->total_bytes)
-		goto done; // add a done label at bytes_may_use += bytes
-}
+Signed-off-by: Josef Bacik <jbacik@fb.com>
 
-Thanks,
-
-Josef

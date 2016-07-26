@@ -1,55 +1,38 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:18641 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751842AbcGSWcI (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 19 Jul 2016 18:32:08 -0400
-From: Liu Bo <bo.li.liu@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.cz>
-Subject: [PATCH] Btrfs: fix memory leak of reloc_root
-Date: Tue, 19 Jul 2016 15:36:05 -0700
-Message-Id: <1468967765-2238-1-git-send-email-bo.li.liu@oracle.com>
+Received: from mx2.suse.de ([195.135.220.15]:60934 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751462AbcGZPmG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 26 Jul 2016 11:42:06 -0400
+Date: Tue, 26 Jul 2016 17:41:50 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs: backref: Fix soft lockup in __merge_refs function
+Message-ID: <20160726154150.GH30795@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20160720070418.3380-1-quwenruo@cn.fujitsu.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20160720070418.3380-1-quwenruo@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When some critical errors occur and FS would be flipped into RO,
-if we have an on-going balance, we can end up with a memory leak
-of root->reloc_root since btrfs_drop_snapshots() bails out
-without freeing reloc_root at the very early start.
+On Wed, Jul 20, 2016 at 03:04:18PM +0800, Qu Wenruo wrote:
+> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+> ---
+>  fs/btrfs/backref.c | 1 +
+>  1 file changed, 1 insertion(+)
+> 
+> diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
+> index 8bb3509..4197610d 100644
+> --- a/fs/btrfs/backref.c
+> +++ b/fs/btrfs/backref.c
+> @@ -589,6 +589,7 @@ static void __merge_refs(struct list_head *head, int mode)
+>  
+>  			list_del(&ref2->list);
+>  			kmem_cache_free(btrfs_prelim_ref_cache, ref2);
+> +			cond_resched();
 
-However, we're not able to free reloc_root in btrfs_drop_snapshots()
-because its caller, merge_reloc_roots(), still needs to access it to
-cleanup reloc_root's rbtree.
+For a potentially long loop it's a good idea to add the cond resched,
 
-This makes us free reloc_root when we're going to free fs/file roots.
-
-Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
----
- fs/btrfs/disk-io.c | 9 ++++++++-
- 1 file changed, 8 insertions(+), 1 deletion(-)
-
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 60ce119..db53eb8 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -3737,8 +3737,15 @@ void btrfs_drop_and_free_fs_root(struct btrfs_fs_info *fs_info,
- 	if (btrfs_root_refs(&root->root_item) == 0)
- 		synchronize_srcu(&fs_info->subvol_srcu);
- 
--	if (test_bit(BTRFS_FS_STATE_ERROR, &fs_info->fs_state))
-+	if (test_bit(BTRFS_FS_STATE_ERROR, &fs_info->fs_state)) {
- 		btrfs_free_log(NULL, root);
-+		if (root->reloc_root) {
-+			free_extent_buffer(root->reloc_root->node);
-+			free_extent_buffer(root->reloc_root->commit_root);
-+			btrfs_put_fs_root(root->reloc_root);
-+			root->reloc_root = NULL;
-+		}
-+	}
- 
- 	if (root->free_ino_pinned)
- 		__btrfs_remove_free_space_cache(root->free_ino_pinned);
--- 
-2.5.5
-
+Reviewed-by: David Sterba <dsterba@suse.com>

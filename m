@@ -1,177 +1,124 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qk0-f176.google.com ([209.85.220.176]:34410 "EHLO
-	mail-qk0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753003AbcGZJhJ (ORCPT
+Received: from mail-it0-f50.google.com ([209.85.214.50]:38126 "EHLO
+	mail-it0-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752732AbcGZOms (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 26 Jul 2016 05:37:09 -0400
-Received: by mail-qk0-f176.google.com with SMTP id o67so991167qke.1
-        for <linux-btrfs@vger.kernel.org>; Tue, 26 Jul 2016 02:37:08 -0700 (PDT)
+	Tue, 26 Jul 2016 10:42:48 -0400
+Received: by mail-it0-f50.google.com with SMTP id j124so14618665ith.1
+        for <linux-btrfs@vger.kernel.org>; Tue, 26 Jul 2016 07:42:48 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <CAJCQCtTUGxfTgjLAqCC7_k-8PK9dYZHFJMchih-zQBxApvURRA@mail.gmail.com>
+In-Reply-To: <CAAcuexC5rPpFKjiTUMjaLxn3E62k06w7t1EFhjFKmfjdGYJVGA@mail.gmail.com>
 References: <CAAcuexAaxha03vnwAC1bW6hcjEpH4GoQr2YBps=vWAu3RS8FJg@mail.gmail.com>
- <CAJCQCtTUGxfTgjLAqCC7_k-8PK9dYZHFJMchih-zQBxApvURRA@mail.gmail.com>
-From: Kurt Seo <tiger.anam.manager@gmail.com>
-Date: Tue, 26 Jul 2016 18:37:07 +0900
-Message-ID: <CAAcuexC5rPpFKjiTUMjaLxn3E62k06w7t1EFhjFKmfjdGYJVGA@mail.gmail.com>
+ <CAJCQCtTUGxfTgjLAqCC7_k-8PK9dYZHFJMchih-zQBxApvURRA@mail.gmail.com> <CAAcuexC5rPpFKjiTUMjaLxn3E62k06w7t1EFhjFKmfjdGYJVGA@mail.gmail.com>
+From: Chris Murphy <lists@colorremedies.com>
+Date: Tue, 26 Jul 2016 08:42:47 -0600
+Message-ID: <CAJCQCtTqU_Hvg4EF9xJqUDLYmU-yyk+8eAud_uK_gRQyAFWyNA@mail.gmail.com>
 Subject: Re: Any suggestions for thousands of disk image snapshots ?
-To: Chris Murphy <lists@colorremedies.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+To: Kurt Seo <tiger.anam.manager@gmail.com>
+Cc: Chris Murphy <lists@colorremedies.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-2016-07-26 5:49 GMT+09:00 Chris Murphy <lists@colorremedies.com>:
-> On Mon, Jul 25, 2016 at 1:25 AM, Kurt Seo <tiger.anam.manager@gmail.com> wrote:
->>  Hi all
+On Tue, Jul 26, 2016 at 3:37 AM, Kurt Seo <tiger.anam.manager@gmail.com> wrote:
+> 2016-07-26 5:49 GMT+09:00 Chris Murphy <lists@colorremedies.com>:
+>> On Mon, Jul 25, 2016 at 1:25 AM, Kurt Seo <tiger.anam.manager@gmail.com> wrote:
+>>>  Hi all
+>>>
+>>>
+>>>  I am currently running a project for building servers with btrfs.
+>>> Purposes of servers are exporting disk images through iscsi targets
+>>> and disk images are generated from btrfs subvolume snapshot.
+>>
+>> How is the disk image generated from Btrfs subvolume snapshot?
+>>
+>> On what file system is the disk image stored?
 >>
 >>
->>  I am currently running a project for building servers with btrfs.
->> Purposes of servers are exporting disk images through iscsi targets
->> and disk images are generated from btrfs subvolume snapshot.
 >
-> How is the disk image generated from Btrfs subvolume snapshot?
+> When i create empty original disk image on btrfs. I do like :
 >
-> On what file system is the disk image stored?
+> btrfs sub create /mnt/test/test_disk
+> chattr -R +C /mnt/test/test_disk
+> fallocate -l 50G /mnt/test/test_disk/master.img
 >
+> then do fdisk things for partitioning image.
+> And the file system of disk image is ntfs. all clients are Windows.
 >
+> i create snapshots from original subvolume when clients boot up using
+> 'btrfs sub snap'.
+> The reason i stored disk image in subvolume is that subvolume way is
+> faster than 'cp --reflink' and i needed to disable cow, so 'cp
+> --reflink' became unavailable anyway.
 
-When i create empty original disk image on btrfs. I do like :
+I don't know what it is, but there's something almost pathological
+with NTFS on Btrfs (via either Raw image or qcow2). It's neurotic
+levels of fragmentation.
 
-btrfs sub create /mnt/test/test_disk
-chattr -R +C /mnt/test/test_disk
-fallocate -l 50G /mnt/test/test_disk/master.img
+While an individual image is nocow, it becomes cow due to all the
+snapshots you're creating, so the fragmentation is going to be really
+bad. And then upon snapshot deletition all of those reference counts
+have to be individually accounted for, a thousand snapshots times
+thousands of new extents. I suspect it's the cleanup accounting that's
+really killing the performance.
 
-then do fdisk things for partitioning image.
-And the file system of disk image is ntfs. all clients are Windows.
-
-i create snapshots from original subvolume when clients boot up using
-'btrfs sub snap'.
-The reason i stored disk image in subvolume is that subvolume way is
-faster than 'cp --reflink' and i needed to disable cow, so 'cp
---reflink' became unavailable anyway.
-
+And of course nocow also means nodatasum, so there's no checksumming
+for these images.
 
 
 
 
+>  Thanks for your answer. Actually i have been trying almost every ways
+> for this project.
+> LVM thin pool is one of them. I tried zfs on linux, too. As you
+> mentioned, when metadata is full, entire lvm pool become unrepairable.
+> So i increased size of metadata LV of thin pool to 1 percent of thin
+> pool. And that problem was gone.
+
+Good to know.
+
+> Anyway, if lvm is better option than btrfs for my purpose, what about zfs?
+
+ZFS supports block devices presented via iSCSI so there's no need for
+an image file at all, and it's more mature. But there is no nocow
+option, and I suspect there's going to be as much fragmentation as
+with Btrfs but maybe not.
 
 
->> Maximum number of clients is 500 and each client uses two snapshots of
->> disk images. the first disk image's size is about 50GB and second one
->> is about 1.5TB.
->> Important thing is that the original 1.5TB disk image is mounted with
->> loop device and modified real time - eg. continuously downloading
->> torrents in it.
->> snapshots are made when clients boot up and deleted when they turned off.
->>
->> So server has two original disk images and about a thousand of
->> snapshots in total.
->> I made a list of factors affect server's performance and stability.
->>
->> 1. Raid Configuration - Mdadm raid vs btrfs raid, configuration and
->> options for them.
->> 2. How to format btrfs - nodesize, features
->> 3. Mount options - nodatacow and compression things.
->> 4. Kernel parameter tuning.
->> 5. Hardware specification.
->>
->>
->> My current setups are
->>
->> 1. mdadm raid10 with 1024k chunk and 12 disks of 512GB ssd.
->> 2. nodesize 32k and nothing else.
->> 3. nodatacow, noatime, nodiratime, nospace_cache, ssd, compress=lzo
->> 4. Ubuntu with 4.1.27 kernel without additional configurations.
->> 5.
->> CPU : Xeon E3- 1225v2 Quad Core 3.2Ghz
->> RAM : 2 x DDR3 8GB ECC  ( total 16GB)
->> NIC : 2 x 10Gbe
->>
->>
->>  The result of test so far is
->>
->> 1. btrfs-transaction and btrfs-cleaner assume cpu regularly.
->> 2. When cpu is busy for those processes, creating snapshots takes long.
->> 3. The performance is getting slow as time goes by.
->>
->>
->> So if there are any wrong and missing configurations , can you suggest some?
->> like i need to increase physical memory.
->>
->> Any idea would help me a lot.
+>  So you're saying i need to re-consider using btrfs and look for other
+> options like lvm thin pool. I think it makes sense.
+> i have two more questions.
 >
-> Off hand it sounds like you have a file system inside a disk image
-> which itself is stored on a file system. So there's two file systems.
-> And somehow you have to create the disk image from a subvolume, which
-> isn't going to be very fast. And also something I read recently on the
-> XFS list makes me wonder if loop devices are production worthy.
->
-> I'd reconsider the layout for any one of these reasons alone.
->
->
-> 1. mdadm raid10 + LVM thinp + either XFS or Btrfs. The first LV you
-> create is the one the host is constantly updating. You can use XFS
-> freeze to freeze the file system, take the snapshot, and then release
-> the freeze. You now have the original LV which is still being updated
-> by the host, but you have a 2nd LV that itself can be exported as an
-> iSCSI target to a client system. There's no need to create a disk
-> image, so the creation of the snapshot and iSCSI target is much
-> faster.
->
+> 1. If i move to lvm from btrfs, what about mdadm chunk size?
+> I am still not sure what is the best chunk size for numerous cloned disks.
+> And any recommends options of LVM thin?
 
+You'd have to benchmark it. mdadm default 512KiB which works well for
+some use cases but not others. And the LVM chunksize (for snapshots)
+defaults to 64KiB which works well for some use cases but not others.
+There are lots of levers here.
 
+I just thought of something though which is thin LV snapshots can't
+have their size limited. If you start with a 100GiB LV, each snapshot
+is 100GiB. So any wayward process in any, or all, of these 1000s of
+snapshots, could bring down the entire storage stack by consuming too
+much of the pool at once. So it's not exactly true that each LV is
+completely isolated from the others.
 
-> 2. Similar to the above, but you could make the 2nd LV (the snapshot)
-> a Btrfs seed device that all of the clients share, and they are each
-> pointed to their own additional LV used for the Btrfs sprout device.
->
-> The issue I had a year ago with LVM thin provisioning is when the
-> metadata pool gets full, the entire VG implodes very badly and I
-> didn't get any sufficient warnings in advance that the setup was
-> suboptimal, or that it was about to run out of metadata space, and it
-> wasn't repairable. But it was just a test. I haven't substantially
-> played with LVM thinp with more than a dozen snapshots. But LVM being
-> like emacs, you've got a lot of levers to adjust things depending on
-> the workload whereas Btrfs has very few.
->
-> Therefore, the plus of the 2nd option is you're only using a handful
-> of LVM thinp snapshots. And you're also not really using Btrfs
-> snapshots either, you're using the union-like fs feature of the
-> seed-sprout capability of Btrfs. The other nice thing is that when the
-> clients quit, the LV's are removed at an LVM extent level. There is no
-> need for file system cleanup processes to decrement reference counts
-> on all the affected extents. So it'd be fast.
->
 
 >
-> --
-> Chris Murphy
+> 2. What about zfs on linux? I think zol is similar with lvm in some ways.
+
+I haven't used it for anything like this use case, but it's a full
+blown file system which LVM is not. Sometimes simpler is better. All
+you really need here is a logical block device that you can snapshot,
+the actual file system of concern is NTFS which can of course exist
+directly on an LV - no disk image needed. Using LVM, other than NTFS
+fragmentation itself, you have no additional fragmentation of any
+underlying file system since there isn't one. And LVM snapshot
+deletions should be pretty fast.
 
 
- Thanks for your answer. Actually i have been trying almost every ways
-for this project.
-LVM thin pool is one of them. I tried zfs on linux, too. As you
-mentioned, when metadata is full, entire lvm pool become unrepairable.
-So i increased size of metadata LV of thin pool to 1 percent of thin
-pool. And that problem was gone.
-Anyway, if lvm is better option than btrfs for my purpose, what about zfs?
-zfs supports zvol and raid option. Furthermore, i do not need to use
-loopback device for mounting specific partition in images and devices.
-
-
- So you're saying i need to re-consider using btrfs and look for other
-options like lvm thin pool. I think it makes sense.
-i have two more questions.
-
-1. If i move to lvm from btrfs, what about mdadm chunk size?
-I am still not sure what is the best chunk size for numerous cloned disks.
-And any recommends options of LVM thin?
-
-2. What about zfs on linux? I think zol is similar with lvm in some ways.
-
- It's weird for me that btrfs is not the best choice for me and i am
-still asking btrfs mailing list. But your advice is helpful.
-
-Thank you.
-
-Seo
+-- 
+Chris Murphy

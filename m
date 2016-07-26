@@ -1,72 +1,34 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:41709 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752269AbcG2SFz (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 29 Jul 2016 14:05:55 -0400
-From: Liu Bo <bo.li.liu@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.cz>
-Subject: [PATCH v2] Btrfs: clarify do_chunk_alloc()'s return value
-Date: Fri, 29 Jul 2016 11:09:50 -0700
-Message-Id: <1469815790-13511-1-git-send-email-bo.li.liu@oracle.com>
-In-Reply-To: <1469670123-19839-1-git-send-email-bo.li.liu@oracle.com>
-References: <1469670123-19839-1-git-send-email-bo.li.liu@oracle.com>
+Received: from mx2.suse.de ([195.135.220.15]:59551 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753836AbcGZPdP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 26 Jul 2016 11:33:15 -0400
+Date: Tue, 26 Jul 2016 17:32:58 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Liu Bo <bo.li.liu@oracle.com>
+Cc: linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.cz>
+Subject: Re: [PATCH] Btrfs: fix memory leak of reloc_root
+Message-ID: <20160726153258.GG30795@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1468967765-2238-1-git-send-email-bo.li.liu@oracle.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1468967765-2238-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Function start_transaction() can return ERR_PTR(1) when flush is
-BTRFS_RESERVE_FLUSH_LIMIT, so the call graph is
+On Tue, Jul 19, 2016 at 03:36:05PM -0700, Liu Bo wrote:
+> When some critical errors occur and FS would be flipped into RO,
+> if we have an on-going balance, we can end up with a memory leak
+> of root->reloc_root since btrfs_drop_snapshots() bails out
+> without freeing reloc_root at the very early start.
+> 
+> However, we're not able to free reloc_root in btrfs_drop_snapshots()
+> because its caller, merge_reloc_roots(), still needs to access it to
+> cleanup reloc_root's rbtree.
+> 
+> This makes us free reloc_root when we're going to free fs/file roots.
+> 
+> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
 
-start_transaction (return ERR_PTR(1))
-  -> btrfs_block_rsv_add (return 1)
-     -> reserve_metadata_bytes (return 1)
-        -> flush_space (return 1)
-           -> do_chunk_alloc  (return 1)
-
-With BTRFS_RESERVE_FLUSH_LIMIT, if flush_space is already on the
-flush_state of ALLOC_CHUNK and it successfully allocates a new
-chunk, then instead of trying to reserve space again,
-reserve_metadata_bytes returns 1 immediately.
-
-Eventually the callers who call start_transaction() usually just
-do the IS_ERR() check which ERR_PTR(1) can pass, then it'll get
-a panic when dereferencing a pointer which is ERR_PTR(1).
-
-The following patch fixes the above problem.
-"btrfs: flush_space: treat return value of do_chunk_alloc properly"
-https://patchwork.kernel.org/patch/7778651/
-
-This add comments to clarify do_chunk_alloc()'s return value.
-
-Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
----
-v2: Since there is already a patch fixing the problem, lets do the 
-    comment part separately.
-
- fs/btrfs/extent-tree.c | 9 +++++++++
- 1 file changed, 9 insertions(+)
-
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 7a35c9d..921cde6 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -4457,6 +4457,15 @@ void check_system_chunk(struct btrfs_trans_handle *trans,
- 	}
- }
- 
-+/*
-+ * If force is CHUNK_ALLOC_FORCE:
-+ *    - return 1 if it successfully allocates a chunk,
-+ *    - return errors including -ENOSPC otherwise.
-+ * If force is NOT CHUNK_ALLOC_FORCE:
-+ *    - return 0 if it doesn't need to allocate a new chunk,
-+ *    - return 1 if it successfully allocates a chunk,
-+ *    - return errors including -ENOSPC otherwise.
-+ */
- static int do_chunk_alloc(struct btrfs_trans_handle *trans,
- 			  struct btrfs_root *extent_root, u64 flags, int force)
- {
--- 
-2.5.5
-
+Reviewed-by: David Sterba <dsterba@suse.com>

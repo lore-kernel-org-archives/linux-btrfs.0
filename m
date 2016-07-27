@@ -1,67 +1,92 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wm0-f65.google.com ([74.125.82.65]:34879 "EHLO
-	mail-wm0-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750719AbcG1ETG (ORCPT
+Received: from mail-qk0-f174.google.com ([209.85.220.174]:33983 "EHLO
+	mail-qk0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755398AbcG0RTE (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 28 Jul 2016 00:19:06 -0400
-Received: by mail-wm0-f65.google.com with SMTP id i5so9258581wmg.2
-        for <linux-btrfs@vger.kernel.org>; Wed, 27 Jul 2016 21:19:05 -0700 (PDT)
-Date: Thu, 28 Jul 2016 00:18:47 -0400
-From: Sanidhya Solanki <lkml.page@gmail.com>
-To: Goffredo Baroncelli <kreijack@inwind.it>
-Cc: Chris Murphy <lists@colorremedies.com>,
-        "Austin S. Hemmelgarn" <ahferroin7@gmail.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] btrfs-progs: Make RAID stripesize configurable
-Message-ID: <20160728001847.481b7e77@ad>
-In-Reply-To: <e0eb3366-7183-59b1-7cdc-3debd4e45b79@inwind.it>
-References: <1469194929-27647-1-git-send-email-lkml.page@gmail.com>
-	<f7de852d-86de-b438-e79f-c57666c7d0e4@gmail.com>
-	<CAJCQCtTFGMku4FJZN7oH4=UV+F+Tz_FLD7RbUE5JWgaQKFtH4A@mail.gmail.com>
-	<20160727021233.7e10ee48@ad>
-	<e0eb3366-7183-59b1-7cdc-3debd4e45b79@inwind.it>
+	Wed, 27 Jul 2016 13:19:04 -0400
+Received: by mail-qk0-f174.google.com with SMTP id o67so40277606qke.1
+        for <linux-btrfs@vger.kernel.org>; Wed, 27 Jul 2016 10:19:02 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+From: Nicholas D Steeves <nsteeves@gmail.com>
+Date: Wed, 27 Jul 2016 13:19:01 -0400
+Message-ID: <CAD=QJKjoSR8R_hDnr4sgWizMugp+jvmHQwT-SMDdNJH=G9HEkw@mail.gmail.com>
+Subject: Re: btrfs fi defrag does not defrag files >256kB?
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>, David Sterba <dsterba@suse.com>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
+In-Reply-To: <pan$acc$75dc71b8$532c7a5c$47aab598@cox.net>
 
-On Wed, 27 Jul 2016 18:25:48 +0200
-Goffredo Baroncelli <kreijack@inwind.it> wrote:
-> I am not able to understand this sentence: on the best of my knowledge,
-> in btrfs the RAID5/RAID6 stripe is composed by several sub-stripes (I am
-> not sure about the terminology to adopt); the number of sub-stripe is equal 
-> to the number of the disk.
-> 
-> Until now, in btrfs the size of sub-stripe is fixed to 64k, so the size
-> of a stripe is equal to 64k * <number of disks>. So for raid5 the minimum
-> stripe size is 192k, for raid6 is 256k.
-> Why you are writing that the real stripe size is 4kb (may be that you are
-> referring to the be the page size ?).
+On 26 July 2016 at 21:10, Duncan <1i5t5.duncan@cox.net> wrote:
+> Nicholas D Steeves posted on Tue, 26 Jul 2016 19:03:53 -0400 as excerpted:
+>
+>> Hi,
+>>
+>> I've been using btrfs fi defrag with out the "-r -t 32M" option for
+>> regular maintenance.  I just learned, in
+>> Documentation/btrfs-convert.asciidoc, that there is a recommendation
+>> to run with "-t 32M" after a conversion from ext2/3/4.  I then
+>> cross-referenced this with btrfs-filesystem(8), and found that:
+>>
+>>     Extents bigger than value given by -t will be skipped, otherwise
+>>     this value is used as a target extent size, but is only advisory
+>>     and may not be reached if the free space is too fragmented. Use 0
+>>     to take the kernel default, which is 256kB but may change in the
+>>     future.
+>>
+>> I understand the default behaviour of target extent size of 256kB to
+>> mean only defragment small files and metadata.  Or does this mean that
+>> the default behaviour is to defragment extent tree metadata >256kB,
+>> and then defragment the (larger than 256kB) data from many extents
+>> into a single extent?  I was surprised to read this!
+>>
+>> What's really happening with this default behaviour?  Should everyone
+>> be using -t with a much larger value to actually defragment their
+>> databases?
+>
+> Something about defrag's -t option should really be in the FAQ, as it is
+> known to be somewhat confusing and to come up from time to time, tho this
+> is the first time I've seen it in the context of convert.
+>
+> In general, you are correct in that the larger the value given to -t, the
+> more defragging you should ultimately get.  There's a practical upper
+> limit, however, the data chunk size, which is nominally 1 GiB (tho on
+> tiny btrfs it's smaller and on TB-scale it can be larger, to 8 or 10 GiB
+> IIRC).  32-bit btrfs-progs defrag also had a bug at one point that would
+> (IIRC) kill the parameter if it was set to 2+ GiB -- that has been fixed
+> by hard-coding the 32-bit max to 1 GiB, I believe.  The bug didn't affect
+> 64-bit.  In any case, 1 GiB is fine, and often the largest btrfs can do
+> anyway, due as I said to that being the normal data chunk size.
+>
+> And btrfs defrag only deals with data.  There's no metadata defrag, tho
+> balance -m (or whole filesystem) will normally consolidate the metadata
+> into the fewest (nominally 256 MiB) metadata chunks possible as it
+> rewrites them.
 
-No problem with going over the details one more time. 
-What I called and what was agreed to be called stripe size in the email sent
-originally sent by Chris Murphy (link below) is actually how a single block 
-of data is laid out on disk.
+Thank you for this metadata consolidation tip!
 
-This number is a component of the stripe element size (which you called the
-sub-stripe). This has nothing to do with how DIFFERENT but concurrent stripes
-(which you defined as 64k * <number of disk>) of data are laid out on disk.
-Their relation is such that they follow the order when they are read, but are
-otherwise unrelated to each other. The correct way to look at a stripe is as
-follows (with its current value before this patch in brackets):
+> In that regard a defrag -t 32M recommendation is reasonable for a
+> converted filesystem, tho you can certainly go larger... to 1 GiB as I
+> said.
+>
 
-Stripe Element Size (64 KiB) = 
-	    Stripe size (1024B) * Number of elements per stripe element (64)
+I only mentioned btrfs-convert.asciidoc, because that's what led me to
+the discrepancy between the default target extent size value, and a
+recommended value.  I was searching for everything I could find on
+defrag, because I had begun to suspect that it wasn't functioning as
+expected.
 
-For the stripe code, the stripe element size matters, and for the metadata,
-the stripe size matters.
+Is there any reason why defrag without -t cannot detect and default to
+the data chunk size, or why it does not default to 1 GiB?  In the same
+way that balance's default behaviour is a full balance, shouldn't
+defrag's default behaviour defrag whole chunks?  Does it not default
+to 1 GiB because that would increase the number of cases where defrag
+unreflinks and duplicates files--leading to an ENOSPC?
 
-The (64k * <number of disks>) is how concurrent stripes of data are distributed
-across the RAID disks. The order is only important when performing an I/O 
-operation.
+https://github.com/kdave/btrfsmaintenance/blob/master/btrfs-defrag.sh
+uses -t 32M ; if a default target extent size of 1GiB is too radical,
+why not set it it 32M?  If SLED ships btrfsmaintenance, then defrag -t
+32M should be well-tested, no?
 
-Reference email: https://www.spinics.net/lists/linux-btrfs/msg57471.html
-
-Hope this makes it simpler.
-
-Sanidhya
+Thank you,
+Nicholas

@@ -1,54 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wm0-f47.google.com ([74.125.82.47]:36642 "EHLO
-	mail-wm0-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750707AbcG1PnT (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 28 Jul 2016 11:43:19 -0400
-Received: by mail-wm0-f47.google.com with SMTP id q128so257170461wma.1
-        for <linux-btrfs@vger.kernel.org>; Thu, 28 Jul 2016 08:43:18 -0700 (PDT)
-Date: Thu, 28 Jul 2016 11:42:55 -0400
-From: Sanidhya Solanki <lkml.page@gmail.com>
-To: David Sterba <dsterba@suse.cz>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs: Change RAID stripesize to a user-configurable
- option
-Message-ID: <20160728114255.0e7559ef@ad>
-In-Reply-To: <20160728113227.GS30795@twin.jikos.cz>
-References: <1469194967-27734-1-git-send-email-lkml.page@gmail.com>
-	<20160728113227.GS30795@twin.jikos.cz>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+Received: from plane.gmane.org ([80.91.229.3]:56625 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1758917AbcG1R0D (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 28 Jul 2016 13:26:03 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+	id 1bSp4J-0007Ra-Tp
+	for linux-btrfs@vger.kernel.org; Thu, 28 Jul 2016 19:26:00 +0200
+Received: from ip-64-134-228-15.public.wayport.net ([64.134.228.15])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Thu, 28 Jul 2016 19:25:59 +0200
+Received: from 1i5t5.duncan by ip-64-134-228-15.public.wayport.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Thu, 28 Jul 2016 19:25:59 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: btrfs fi defrag does not defrag files >256kB?
+Date: Thu, 28 Jul 2016 17:25:53 +0000 (UTC)
+Message-ID: <pan$650d6$3849d593$f6774951$ae97703b@cox.net>
+References: <pan$acc$75dc71b8$532c7a5c$47aab598@cox.net>
+	<CAD=QJKjoSR8R_hDnr4sgWizMugp+jvmHQwT-SMDdNJH=G9HEkw@mail.gmail.com>
+	<20160728105555.GR30795@twin.jikos.cz>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, 28 Jul 2016 13:32:27 +0200
-David Sterba <dsterba@suse.cz> wrote:
+David Sterba posted on Thu, 28 Jul 2016 12:55:55 +0200 as excerpted:
 
-> I'll comment on the overall approach and skip code-specific comments.
-> 
-> The changelog does not explain why there's a need for a new blockgroup
-> type and what's the relation to the existing types. It seems that it
-> extends the data/metadata/system group, but I think this is totally
-> wrong.
+> On Wed, Jul 27, 2016 at 01:19:01PM -0400, Nicholas D Steeves wrote:
+>> > In that regard a defrag -t 32M recommendation is reasonable for a
+>> > converted filesystem, tho you can certainly go larger... to 1 GiB as
+>> > I said.
 
-I agree in principle, but I did not want to modify the existing balance
-targets, but, instead, piggyback on the existing balance implementation
-to re-balance the data.
-This approach was recommended to be by an experienced BTrFS developer
-on the IRC as the right way to implement the change. My previous
-implementation before asking on the IRC used a new ioctl call to
-change the hard coded values and then re-write the data (not a good
-approach in hindsight.)
- 
-> The proposed changes modify part of the on-disk format, that would
-> require a incompat bit and brings the usual load of unpleasant issues
-> with backward compatibility. The current data structures should be
-> enough for configurable stripe size.  If you want to make stripe size
-> configurable, then replace all hardcoded values of BTRFS_STRIPE_LEN.
+And... I see that the progs v4.7-rc1 release has the 32M default.
 
-No re-balance required after passing the stripe size change command?
-What about the on-disk metadata, that relies on the "stripesize" and
-"stripe_len" variables for calculations?
+=:^)
 
-Thanks
-Sanidhya
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

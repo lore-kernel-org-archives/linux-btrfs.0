@@ -1,18 +1,18 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
 Received: from cn.fujitsu.com ([59.151.112.132]:39654 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1163430AbcG1HJD (ORCPT
+	with ESMTP id S1163421AbcG1HJI (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 28 Jul 2016 03:09:03 -0400
+	Thu, 28 Jul 2016 03:09:08 -0400
 Received: from G08CNEXCHPEKD03.g08.fujitsu.local (unknown [10.167.33.85])
-	by cn.fujitsu.com (Postfix) with ESMTP id 3E61042BA386
+	by cn.fujitsu.com (Postfix) with ESMTP id E5E0742BA381
 	for <linux-btrfs@vger.kernel.org>; Thu, 28 Jul 2016 15:08:48 +0800 (CST)
 From: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
 CC: Lu Fengqi <lufq.fnst@cn.fujitsu.com>, Qu Wenruo <quwenruo@cn.fujitsu.com>
-Subject: [PATCH 06/13] btrfs-progs: check: introduce a function to check dir_item
-Date: Thu, 28 Jul 2016 15:08:18 +0800
-Message-ID: <1469689705-26836-7-git-send-email-lufq.fnst@cn.fujitsu.com>
+Subject: [PATCH 07/13] btrfs-progs: check: introduce function to check file extent
+Date: Thu, 28 Jul 2016 15:08:19 +0800
+Message-ID: <1469689705-26836-8-git-send-email-lufq.fnst@cn.fujitsu.com>
 In-Reply-To: <1469689705-26836-1-git-send-email-lufq.fnst@cn.fujitsu.com>
 References: <1469689705-26836-1-git-send-email-lufq.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -20,163 +20,120 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Introduce a new function check_dir_item() to check DIR_ITEM/DIR_INDEX,
-and call find_inode_ref() to find the related INODE_REF/INODE_EXTREF.
+Introduce a new function check_file_extent() to check file extent,
+such as datasum, hole, size.
 
 Signed-off-by: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- cmds-check.c | 137 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 137 insertions(+)
+ cmds-check.c | 94 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 94 insertions(+)
 
 diff --git a/cmds-check.c b/cmds-check.c
-index 501c5e0..ad261f2 100644
+index ad261f2..28ee8b6 100644
 --- a/cmds-check.c
 +++ b/cmds-check.c
-@@ -3883,6 +3883,8 @@ out:
- #define DIR_ITEM_MISSING	(1<<2)	/* DIR_ITEM not found */
- #define DIR_ITEM_MISMATCH	(1<<3)	/* DIR_ITEM found but not match */
+@@ -3885,6 +3885,9 @@ out:
  #define INODE_REF_MISSING	(1<<4)	/* INODE_REF/INODE_EXTREF not found */
-+#define INODE_ITEM_MISSING	(1<<5)	/* INODE_ITEM not found */
-+#define INODE_ITEM_MISMATCH	(1<<6)	/* INODE_ITEM found but not match */
+ #define INODE_ITEM_MISSING	(1<<5)	/* INODE_ITEM not found */
+ #define INODE_ITEM_MISMATCH	(1<<6)	/* INODE_ITEM found but not match */
++#define FILE_EXTENT_ERROR	(1<<7)	/* bad file extent */
++#define ODD_CSUM_ITEM		(1<<8)	/* CSUM_ITEM ERROR */
++#define CSUM_ITEM_MISSING	(1<<9)	/* CSUM_ITEM not found */
  
  /*
   * Find DIR_ITEM/DIR_INDEX for the given key and check it with the specified
-@@ -4324,6 +4326,141 @@ out:
- 	return ret;
+@@ -4461,6 +4464,97 @@ next:
+ 	return err;
  }
  
 +/*
-+ * Traverse the given DIR_ITEM/DIR_INDEX and check related INODE_ITEM and
-+ * call find_inode_ref() to check related INODE_REF/INODE_EXTREF.
++ * Check file extent datasum/hole, update the size of the file extents,
++ * check and update the last offset of the file extent.
 + *
-+ * @root:	the root of the fs/file tree
-+ * @key:	the key of the INODE_REF/INODE_EXTREF
-+ * @size:	the st_size of the INODE_ITEM
-+ * @ext_ref:	the EXTENDED_IREF feature
++ * @root:	the root of fs/file tree.
++ * @fkey:	the key of the file extent.
++ * @nodatasum:	INODE_NODATASUM feature.
++ * @size:	the sum of all EXTENT_DATA items size for this inode.
++ * @end:	the offset of the last extent.
 + *
 + * Return 0 if no error occurred.
 + */
-+static int check_dir_item(struct btrfs_root *root, struct btrfs_key *key,
-+			  struct extent_buffer *node, int slot, u64 *size,
-+			  unsigned int ext_ref)
++static int check_file_extent(struct btrfs_root *root, struct btrfs_key *fkey,
++			     struct extent_buffer *node, int slot,
++			     unsigned int nodatasum, u64 *size, u64 *end)
 +{
-+	struct btrfs_dir_item *di;
-+	struct btrfs_inode_item *ii;
-+	struct btrfs_path path;
-+	struct btrfs_key location;
-+	char namebuf[BTRFS_NAME_LEN] = {0};
-+	u32 total;
-+	u32 cur = 0;
-+	u32 len;
-+	u32 name_len;
-+	u32 data_len;
-+	u8 filetype;
-+	u32 mode;
-+	u64 index;
++	struct btrfs_file_extent_item *fi;
++	u64 disk_bytenr;
++	u64 disk_num_bytes;
++	u64 extent_num_bytes;
++	u64 found;
++	unsigned int extent_type;
++	unsigned int is_hole;
 +	int ret;
 +	int err = 0;
 +
-+	/*
-+	 * For DIR_ITEM set index to (u64)-1, so that find_inode_ref
-+	 * ignore index check.
-+	 */
-+	index = (key->type == BTRFS_DIR_INDEX_KEY) ? key->offset : (u64)-1;
++	fi = btrfs_item_ptr(node, slot, struct btrfs_file_extent_item);
 +
-+	di = btrfs_item_ptr(node, slot, struct btrfs_dir_item);
-+	total = btrfs_item_size_nr(node, slot);
-+
-+	while (cur < total) {
-+		data_len = btrfs_dir_data_len(node, di);
-+		if (data_len)
-+			error(
-+			"root %llu %s[%llu %llu] data_len shouldn't be %u",
-+			root->objectid,
-+			key->type == BTRFS_DIR_ITEM_KEY ?
-+			"DIR_ITEM" : "DIR_INDEX",
-+			key->objectid, key->offset, data_len);
-+
-+		name_len = btrfs_dir_name_len(node, di);
-+		if (name_len <= BTRFS_NAME_LEN) {
-+			len = name_len;
-+		} else {
-+			len = BTRFS_NAME_LEN;
-+			fprintf(stderr,
-+				"Warning: root %llu %s[%llu %llu] name too long\n",
-+				root->objectid,
-+				key->type == BTRFS_DIR_ITEM_KEY ?
-+				"DIR_ITEM" : "DIR_INDEX",
-+				key->objectid, key->offset);
-+		}
-+		(*size) += name_len;
-+
-+		read_extent_buffer(node, namebuf, (unsigned long)(di + 1), len);
-+		filetype = btrfs_dir_type(node, di);
-+
-+		btrfs_init_path(&path);
-+		btrfs_dir_item_key_to_cpu(node, di, &location);
-+
-+		/* Ignore related ROOT_ITEM check */
-+		if (location.type == BTRFS_ROOT_ITEM_KEY)
-+			goto next;
-+
-+		/* Check relative INODE_ITEM(existence/filetype) */
-+		ret = btrfs_search_slot(NULL, root, &location, &path, 0, 0);
-+		if (ret) {
-+			err |= INODE_ITEM_MISSING;
-+			error(
-+			"root %llu %s[%llu %llu] couldn't find relative INODE_ITEM[%llu] namelen %u filename %s filetype %x",
-+			root->objectid,
-+			key->type == BTRFS_DIR_ITEM_KEY ?
-+			"DIR_ITEM" : "DIR_INDEX",
-+			key->objectid, key->offset, location.objectid,
-+			name_len, namebuf, filetype);
-+			goto next;
-+		}
-+
-+		ii = btrfs_item_ptr(path.nodes[0], path.slots[0],
-+				    struct btrfs_inode_item);
-+		mode = btrfs_inode_mode(path.nodes[0], ii);
-+
-+		if (imode_to_type(mode) != filetype) {
-+			err |= INODE_ITEM_MISMATCH;
-+			error(
-+			"root %llu %s[%llu %llu] relative INODE_ITEM filetype mismatch namelen %u filename %s filetype %d",
-+			root->objectid,
-+			key->type == BTRFS_DIR_ITEM_KEY ?
-+			"DIR_ITEM" : "DIR_INDEX",
-+			key->objectid, key->offset, name_len, namebuf,
-+			filetype);
-+		}
-+
-+		/* Check relative INODE_REF/INODE_EXTREF */
-+		location.type = BTRFS_INODE_REF_KEY;
-+		location.offset = key->objectid;
-+		ret = find_inode_ref(root, &location, namebuf, len,
-+				       index, ext_ref);
-+		err |= ret;
-+		if (ret & INODE_REF_MISSING)
-+			error(
-+			"root %llu %s[%llu %llu] relative INODE_REF missing namelen %u filename %s filetype %d",
-+			root->objectid,
-+			key->type == BTRFS_DIR_ITEM_KEY ?
-+			"DIR_ITEM" : "DIR_INDEX",
-+			key->objectid, key->offset, name_len, namebuf,
-+			filetype);
-+
-+next:
-+		btrfs_release_path(&path);
-+		len = sizeof(*di) + name_len + data_len;
-+		di = (struct btrfs_dir_item *)((char *)di + len);
-+		cur += len;
-+
-+		if (key->type == BTRFS_DIR_INDEX_KEY && cur < total) {
-+			error(
-+			"root %llu DIR_INDEX[%llu %llu] should contain only one entry",
-+			root->objectid, key->objectid, key->offset);
-+			break;
-+		}
++	extent_type = btrfs_file_extent_type(node, fi);
++	/* Skip if file extent is inline */
++	if (extent_type == BTRFS_FILE_EXTENT_INLINE) {
++		extent_num_bytes = btrfs_file_extent_inline_len(node, slot, fi);
++		if (extent_num_bytes == 0)
++			err |= FILE_EXTENT_ERROR;
++		*size += extent_num_bytes;
++		return err;
 +	}
++
++	/* Check extent type */
++	if (extent_type != BTRFS_FILE_EXTENT_REG &&
++			extent_type != BTRFS_FILE_EXTENT_PREALLOC) {
++		err |= FILE_EXTENT_ERROR;
++		error("root %llu EXTENT_DATA[%llu %llu] type bad",
++		      root->objectid, fkey->objectid, fkey->offset);
++		return err;
++	}
++
++	/* Check REG_EXTENT/PREALLOC_EXTENT */
++	disk_bytenr = btrfs_file_extent_disk_bytenr(node, fi);
++	disk_num_bytes = btrfs_file_extent_disk_num_bytes(node, fi);
++	extent_num_bytes = btrfs_file_extent_num_bytes(node, fi);
++	is_hole = (disk_bytenr == 0) && (disk_num_bytes == 0);
++
++	/* Check EXTENT_DATA datasum */
++	ret = count_csum_range(root, disk_bytenr, disk_num_bytes, &found);
++	if (found > 0 && nodatasum) {
++		err |= ODD_CSUM_ITEM;
++		error(
++		"root %llu EXTENT_DATA[%llu %llu] nodatasum shouldn't have datasum",
++		root->objectid, fkey->objectid, fkey->offset);
++	} else if (extent_type == BTRFS_FILE_EXTENT_REG && !nodatasum &&
++		   !is_hole &&
++		   (ret < 0 || found == 0 || found < disk_num_bytes)) {
++		err |= CSUM_ITEM_MISSING;
++		error("root %llu EXTENT_DATA[%llu %llu] datasum missing",
++		      root->objectid, fkey->objectid, fkey->offset);
++	} else if (extent_type == BTRFS_FILE_EXTENT_PREALLOC && found > 0) {
++		err |= ODD_CSUM_ITEM;
++		error(
++		"root %llu EXTENT_DATA[%llu %llu] prealloc shouldn't have datasum",
++		root->objectid, fkey->objectid, fkey->offset);
++	}
++
++	/* Check EXTENT_DATA hole */
++	if (no_holes && is_hole) {
++		err |= FILE_EXTENT_ERROR;
++		error("root %llu EXTENT_DATA[%llu %llu] shouldn't be hole",
++				root->objectid, fkey->objectid, fkey->offset);
++	} else if (!no_holes && *end != fkey->offset) {
++		err |= FILE_EXTENT_ERROR;
++		error("root %llu EXTENT_DATA[%llu %llu] interrupt",
++				root->objectid, fkey->objectid, fkey->offset);
++	}
++
++	*end += extent_num_bytes;
++	if (!is_hole)
++		*size += extent_num_bytes;
 +
 +	return err;
 +}

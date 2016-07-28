@@ -1,115 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:51858 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1757401AbcG1Mjr (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 28 Jul 2016 08:39:47 -0400
-From: David Sterba <dsterba@suse.com>
+Received: from mail-pf0-f196.google.com ([209.85.192.196]:35103 "EHLO
+	mail-pf0-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1161087AbcG1RoZ (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 28 Jul 2016 13:44:25 -0400
+Received: by mail-pf0-f196.google.com with SMTP id h186so4037364pfg.2
+        for <linux-btrfs@vger.kernel.org>; Thu, 28 Jul 2016 10:44:25 -0700 (PDT)
+From: Justin Maggard <jmaggard10@gmail.com>
 To: linux-btrfs@vger.kernel.org
-Cc: clm@fb.com
-Subject: Btrfs progs pre-release 4.7-rc1
-Date: Thu, 28 Jul 2016 14:39:10 +0200
-Message-Id: <1469709550-2464-1-git-send-email-dsterba@suse.com>
+Cc: Justin Maggard <jmaggard@netgear.com>
+Subject: [PATCH] btrfs-progs: fix memory leak with missing device
+Date: Thu, 28 Jul 2016 10:44:11 -0700
+Message-Id: <20160728174411.4998-1-jmaggard@netgear.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+In read_one_chunk(), we may add an empty entry for a missing device.
+However, this entry wasn't being added to the dev_list, and so it never
+got freed.
 
-btrfs-progs 4.7-rc1 have been tagged. There are several new enhancements,
-a handful of bugfixes and other cleanups. The 4.7 release is planned for
-tomorrow.
+Signed-off-by: Justin Maggard <jmaggard@netgear.com>
+---
+ volumes.c | 2 ++
+ 1 file changed, 2 insertions(+)
 
-Changes:
-
-  * convert: fix creating discontig extents
-  * check: speed up traversing heavily reflinked extents within a file
-  * check: verify qgroups of higher levels
-  * check: repair can now fix wrong qgroup numbers
-  * balance: new option to run in the background
-  * defrag: default extent target size changed to 32MiB
-  * du: silently skip non-btrfs dirs/files
-  * documentation updates: btrfs(5), btrfs(8), balance, subvolume, scrub,
-    filesystem, convert
-  * bugfixes:
-    * unaligned access (reported for sparc64) in raid56 parity calculation
-    * use /bin/bash
-    * other stability fixes and cleanups
-  * more tests
-
-Tarballs: https://www.kernel.org/pub/linux/kernel/people/kdave/btrfs-progs/
-Git: git://git.kernel.org/pub/scm/linux/kernel/git/kdave/btrfs-progs.git
-
-Shortlog:
-
-Austin S. Hemmelgarn (1):
-      btrfs-progs: add option to run balance as daemon
-
-David Sterba (32):
-      btrfs-progs: tests: use /bin/bash for scripts
-      btrfs-progs: factor out repair mode
-      btrfs-progs: docs: man5, document control device
-      btrfs-progs: docs: update btrfs-balance manual page
-      btrfs-progs: docs: update btrfs-subvolume manual page
-      btrfs-progs: balance: cleanup, switch to common exit block
-      btrfs-progs: balance: use errno directly
-      btrfs-progs: do not set optind if not necessary
-      btrfs-progs: docs: update btrfs-scrub manual page
-      btrfs-progs: docs: update btrfs-filesystem manual page
-      btrfs-progs: docs: update btrfs-convert manual page
-      btrfs-progs: docs: update btrfs manual page
-      btrfs-progs: tests: add 007-unsupported-block-sizes
-      btrfs-progs: handle ulist_add errors in qgroup-verify
-      btrfs-progs: image: fix minor resource leak
-      btrfs-progs: corrupt block: pass eb as argument to debug_corrupt_block
-      btrfs-progs: corrupt block: handle block mapping errors in debug_corrupt_block
-      btrfs-progs: corrupt block: handle eb read and write errors
-      btrfs-progs: balance: silence compiler warning
-      btrfs-progs: balance: add another (shorter) option for background
-      btrfs-progs: docs: update btrfs-balance manual page
-      btrfs-progs: kerncompat: introduce put_unaligned_x helpers
-      btrfs-progs: fix unaligned access calculating raid56 data
-      btrfs-progs: use unsigned type for extent_buffer flags
-      btrfs-progs: use values directly for BLOCK_GROUP_ macros
-      btrfs-progs: refactor and extend btrfs_prepare_device arguments
-      btrfs-progs: update values of EXTENT_* bits
-      btrfs-progs: handle memory allocation error in __alloc_extent_buffer
-      btrfs-progs: handler memory allocation error in write_data_to_disk
-      btrfs-progs: fi defrag: change default extent target size to 32 MiB
-      btrfs-progs: update CHANGES for 4.7
-      Btrfs progs v4.7-rc1
-
-Hans van Kranenburg (1):
-      btrfs-progs: use the correct struct for BTRFS_IOC_LOGICAL_INO
-
-Jeff Mahoney (3):
-      btrfs-progs: check: add helpers for converting between structures
-      btrfs-progs: check: supplement extent backref list with rbtree
-      btrfs-progs: check: switch to iterating over the backref_tree
-
-Liu Bo (1):
-      Btrfs-progs: fix btrfs-map-logical to only print extent mapping info
-
-Luis Henriques (2):
-      btrfs-progs: tests: 001-simple-unmounted: fix test failure due to bashism
-      btrfs-progs: tests: 006-image-on-missing-device: fix btrfs tool path
-
-Mark Fasheh (2):
-      btrfs-progs: check: verify qgroups above level 0
-      btrfs-progs: check: write corrected qgroup info to disk
-
-Omar Sandoval (1):
-      btrfs-progs: fix btrfsck of space_cache=v2 bitmaps on big-endian
-
-Qu Wenruo (3):
-      btrfs-progs: convert: Fix a bug leads to discontinuous extents
-      btrfs-progs: convert-test: Add test case for discontinuous hole extent
-      btrfs-progs: Doc: Fix format error in btrfs-send
-
-Tsutomu Itoh (1):
-      btrfs-progs: add the error message when open fails
-
-Wang Shilong (1):
-      btrfs-progs: du: fix to skip not btrfs dir/file
-
-Wang Xiaoguang (1):
-      btrfs-progs: mkfs: fix allocation information output of block group types
+diff --git a/volumes.c b/volumes.c
+index ccfa732..b5066b9 100644
+--- a/volumes.c
++++ b/volumes.c
+@@ -1759,6 +1759,8 @@ static int read_one_chunk(struct btrfs_root *root, struct btrfs_key *key,
+ 			map->stripes[i].dev = fill_missing_device(devid);
+ 			printf("warning, device %llu is missing\n",
+ 			       (unsigned long long)devid);
++			list_add(&map->stripes[i].dev->dev_list,
++				 &root->fs_info->fs_devices->devices);
+ 		}
+ 
+ 	}
+-- 
+2.9.2
 

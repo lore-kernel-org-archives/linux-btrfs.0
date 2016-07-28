@@ -1,68 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:50186 "EHLO plane.gmane.org"
+Received: from mx2.suse.de ([195.135.220.15]:40028 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751361AbcG1FOK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 28 Jul 2016 01:14:10 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1bSde4-0004WK-HR
-	for linux-btrfs@vger.kernel.org; Thu, 28 Jul 2016 07:14:08 +0200
-Received: from ip-64-134-228-15.public.wayport.net ([64.134.228.15])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 28 Jul 2016 07:14:08 +0200
-Received: from 1i5t5.duncan by ip-64-134-228-15.public.wayport.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 28 Jul 2016 07:14:08 +0200
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
+	id S1754543AbcG1K4P (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 28 Jul 2016 06:56:15 -0400
+Date: Thu, 28 Jul 2016 12:55:55 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Nicholas D Steeves <nsteeves@gmail.com>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>, David Sterba <dsterba@suse.com>
 Subject: Re: btrfs fi defrag does not defrag files >256kB?
-Date: Thu, 28 Jul 2016 05:14:03 +0000 (UTC)
-Message-ID: <pan$aef9a$f7db9e1f$4c68e09$be53f063@cox.net>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Message-ID: <20160728105555.GR30795@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <pan$acc$75dc71b8$532c7a5c$47aab598@cox.net>
+ <CAD=QJKjoSR8R_hDnr4sgWizMugp+jvmHQwT-SMDdNJH=G9HEkw@mail.gmail.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <CAD=QJKjoSR8R_hDnr4sgWizMugp+jvmHQwT-SMDdNJH=G9HEkw@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
-References: <CAD=QJKjoSR8R_hDnr4sgWizMugp+jvmHQwT-SMDdNJH=G9HEkw@mail.gmail.com>
 
-Nicholas D Steeves posted on Wed, 27 Jul 2016 13:19:01 -0400 as excerpted:
+On Wed, Jul 27, 2016 at 01:19:01PM -0400, Nicholas D Steeves wrote:
+> > In that regard a defrag -t 32M recommendation is reasonable for a
+> > converted filesystem, tho you can certainly go larger... to 1 GiB as I
+> > said.
+> 
+> I only mentioned btrfs-convert.asciidoc, because that's what led me to
+> the discrepancy between the default target extent size value, and a
+> recommended value.  I was searching for everything I could find on
+> defrag, because I had begun to suspect that it wasn't functioning as
+> expected.
+
+Historically, the 256K size is from kernel. Defrag can create tons of
+data to write and this is noticeable on the system. However the results
+of defragmentation are not satisfactory to the user so the recommended
+value is 32M. I'd rather not change the kernel default but we can
+increase the default threshold (-t) in the userspace tools.
 
 > Is there any reason why defrag without -t cannot detect and default to
 > the data chunk size, or why it does not default to 1 GiB?
 
-I don't know the answer, but have wondered that myself.  256 KiB seems a 
-rather small default, to me.  I'd expect something in the MiB range, at 
-least, maybe the same 2 MiB that modern partitioners tend to use for 
-alignment, for the same reason, that tends to be a reasonable whole 
-multiple of most erase-block sizes, and if the partition is aligned, 
-should prevent unnecessary read-modify-write cycles on ssd, and help with 
-tiled zones on SMR drives as well.
+The 1G value wouldn't be reached on an average filesystem where the free
+space is fragmented, besides there are some smaller internal limits on
+extent sizes that may not reach the user target size.  The value 32M has
+been experimentally found and tested on various systems and it proved to
+work well. With 64M the defragmentation was less successful but as it's
+only a hint, it's not wrong to use it.
 
-As to the question in the subject line, AFAIK btrfs fi defrag works on 
-extents, not filesize per-se, so using the default 256 KiB target, yes 
-it'll defrag files larger than that, but only for extents that are 
-smaller than that.  If all the extents are 256 KiB plus, defrag won't do 
-anything with it without a larger target option or unless the compress 
-option is also used, in which case it rewrites everything it is pointed 
-at, in ordered to recompress it.
+> In the same
+> way that balance's default behaviour is a full balance, shouldn't
+> defrag's default behaviour defrag whole chunks?  Does it not default
+> to 1 GiB because that would increase the number of cases where defrag
+> unreflinks and duplicates files--leading to an ENOSPC?
 
-Talking about compression, it's worth mentioning that filefrag doesn't 
-understand btrfs compression either, and will count each 128 KiB 
-(uncompressed size) compression block as a separate extent.  To get the 
-true picture using filefrag, you need to use verbose and either eyeball 
-the results manually or feed them into a script that processes the 
-numbers and combines "extents" if they are reported as immediately 
-consecutive on the filesystem.
+Yes, this would also happen, unless the '-f' option is given (flush data
+after defragmenting each file).
 
-As such, filefrag, given the regular opportunistic compression, turns out 
-to be a good method of determining whether a file (of over 128 KiB in 
-size) is actually compressed or not, since if it is filefrag will report 
-multiple 128 KiB extents, while if it's not, extent size should be much 
-less regular, likely with larger extents unless the file is often 
-modified and rewritten in-place.
+> https://github.com/kdave/btrfsmaintenance/blob/master/btrfs-defrag.sh
+> uses -t 32M ; if a default target extent size of 1GiB is too radical,
+> why not set it it 32M?  If SLED ships btrfsmaintenance, then defrag -t
+> 32M should be well-tested, no?
 
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+It is.

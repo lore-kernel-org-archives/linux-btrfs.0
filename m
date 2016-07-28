@@ -1,59 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-vk0-f65.google.com ([209.85.213.65]:33378 "EHLO
-	mail-vk0-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1757122AbcG1L6I (ORCPT
+Received: from outpost1.zedat.fu-berlin.de ([130.133.4.66]:53401 "EHLO
+	outpost1.zedat.fu-berlin.de" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1757122AbcG1MCm (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 28 Jul 2016 07:58:08 -0400
-Received: by mail-vk0-f65.google.com with SMTP id s189so1675111vkh.0
-        for <linux-btrfs@vger.kernel.org>; Thu, 28 Jul 2016 04:58:06 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <20160728094441.GO30795@twin.jikos.cz>
+	Thu, 28 Jul 2016 08:02:42 -0400
+Subject: Re: [sparc64] mkfs.btrfs bus error / align issue?
+To: Anatoly Pugachev <matorola@gmail.com>, dsterba@suse.cz
 References: <CADxRZqyXtmf7LMB4ogwp8Af4Nd+Md7YtiTWRpC2xjM_fG3YKJw@mail.gmail.com>
  <20160727195609.GN30795@twin.jikos.cz> <20160728094441.GO30795@twin.jikos.cz>
-From: Anatoly Pugachev <matorola@gmail.com>
-Date: Thu, 28 Jul 2016 14:58:05 +0300
-Message-ID: <CADxRZqwTUaZyDipvmGcfk8Q9P2X_NLQ=9svtc8BbKeFqoFVPdw@mail.gmail.com>
-Subject: Re: [sparc64] mkfs.btrfs bus error / align issue?
-To: dsterba@suse.cz
+ <CADxRZqwTUaZyDipvmGcfk8Q9P2X_NLQ=9svtc8BbKeFqoFVPdw@mail.gmail.com>
 Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>,
         debian-sparc <debian-sparc@lists.debian.org>
-Content-Type: text/plain; charset=UTF-8
+From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+Message-ID: <d23b0f67-f982-2088-cb72-c8fbd2c73b7a@physik.fu-berlin.de>
+Date: Thu, 28 Jul 2016 14:02:35 +0200
+MIME-Version: 1.0
+In-Reply-To: <CADxRZqwTUaZyDipvmGcfk8Q9P2X_NLQ=9svtc8BbKeFqoFVPdw@mail.gmail.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Jul 28, 2016 at 12:44 PM, David Sterba <dsterba@suse.cz> wrote:
-> On Wed, Jul 27, 2016 at 09:56:09PM +0200, David Sterba wrote:
->> On Wed, Jul 27, 2016 at 04:59:27PM +0300, Anatoly Pugachev wrote:
->> > Hello!
->> >
->> > Running xfstests suite, got in logs mkfs.btrfs bus error, debugging it
->> > shows the following :
->> >
->> > Program received signal SIGBUS, Bus error.
->> > 0x000000000015e160 in write_raid56_with_parity (info=0x2b17b0,
->> > eb=0x2c7fe0, multi=0x2c2870, stripe_len=65536, raid_map=0x2c2570) at
->> > volumes.c:2156
->> > 2156                                    *(unsigned long *)(p_eb->data + i) ^=
->>
->> Yeah, clear unaligned access. We have helpers for so I'll fix it. I was
->> looking for a way to simulate and catch that on x86 or at least let gcc
->> warn but no such thing seems to exist. Which means we might accidentally
->> introduce that in the future.
->
-> Can you please test with the current 'devel' branch? Fixed by the patch
-> "btrfs-progs: fix unaligned access calculating raid56 data" (depends on
-> another patch in devel). Thanks.
+On 07/28/2016 01:58 PM, Anatoly Pugachev wrote:
+> but where do I get -devel branch of btrfs-progs?
+> I just tried git://repo.or.cz/btrfs-progs-unstable/devel.git , but
+> still seeing last commit in it:
 
-David,
+glaubitz@ikarus:~/upstream/devel$ git checkout devel
+Branch devel set up to track remote branch devel from origin.
+Switched to a new branch 'devel'
+glaubitz@ikarus:~/upstream/devel$ git log | head -n 10
+commit 8f88fca93afc870de9783b0179c6e8d1b9f0cbf3
+Merge: bf80586 366983b
+Author: David Sterba <dsterba@suse.com>
+Date:   Tue Jul 26 19:43:50 2016 +0200
 
-but where do I get -devel branch of btrfs-progs?
-I just tried git://repo.or.cz/btrfs-progs-unstable/devel.git , but
-still seeing last commit in it:
+    Merge branch 'foreign/qu/fsck-lowmem-v2.1-fixups' into devel
 
-mator@nvg5120:~/1/devel$ git log -1 --pretty=format:"%h %s, %an, %ad"
---date=short
-40650bf Btrfs progs v4.6.1, David Sterba, 2016-06-24
+commit bf80586481a4fa1c27571078dddc9392537aacf0
+Author: David Sterba <dsterba@suse.com>
+Date:   Tue Jul 26 19:33:12 2016 +0200
+glaubitz@ikarus:~/upstream/devel$
 
-so where do i pull git repo to take latest development patches?
-
-Thanks.
+-- 
+ .''`.  John Paul Adrian Glaubitz
+: :' :  Debian Developer - glaubitz@debian.org
+`. `'   Freie Universitaet Berlin - glaubitz@physik.fu-berlin.de
+  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913

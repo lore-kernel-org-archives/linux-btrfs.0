@@ -1,50 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.15.18]:59810 "EHLO mout.gmx.net"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751891AbcGaBsx (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 30 Jul 2016 21:48:53 -0400
-Subject: Re: btrfs: relocation: Fix leaking qgroups numbers on data extents
-To: Goldwyn Rodrigues <rgoldwyn@suse.de>, Qu Wenruo <quwenruo@cn.fujitsu.com>
-References: <20160614092622.15560-1-quwenruo@cn.fujitsu.com>
- <20160729184235.GA3535@merlin.lan>
- <01f5daa5-779b-954b-0d8c-1f4bd54c10fe@gmx.com>
- <bbcce409-52ee-fcc8-daea-86a4c1221cf8@suse.de>
-Cc: mfasheh@suse.de, linux-btrfs@vger.kernel.org, fdmanana@gmail.com
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <31acfc07-6db3-a04e-1999-7f8c3cb0fa39@gmx.com>
-Date: Sun, 31 Jul 2016 09:47:59 +0800
+Received: from cn.fujitsu.com ([59.151.112.132]:42349 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1163416AbcG1HI7 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 28 Jul 2016 03:08:59 -0400
+Received: from G08CNEXCHPEKD03.g08.fujitsu.local (unknown [10.167.33.85])
+	by cn.fujitsu.com (Postfix) with ESMTP id F2BEA4295F9F
+	for <linux-btrfs@vger.kernel.org>; Thu, 28 Jul 2016 15:08:43 +0800 (CST)
+From: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+CC: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
+Date: Thu, 28 Jul 2016 15:08:12 +0800
+Message-ID: <1469689705-26836-1-git-send-email-lufq.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
-In-Reply-To: <bbcce409-52ee-fcc8-daea-86a4c1221cf8@suse.de>
-Content-Type: text/plain; charset=windows-1252; format=flowed
+Content-Type: text/plain
+Subject: [PATCH 00/13] btrfs-progs: check: check fs roots in low_memory mode
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+This patchset implements check fs trees in low memory mode, and fix the
+return value bug of the function cmd_check().
+
+Lu Fengqi (13):
+  btrfs-progs: move btrfs_extref_hash() to hash.h
+  btrfs-progs: check: introduce function to find dir_item
+  btrfs-progs: check: introduce function to check inode_ref
+  btrfs-progs: check: introduce function to check inode_extref
+  btrfs-progs: check: introduce function to find inode_ref
+  btrfs-progs: check: introduce a function to check dir_item
+  btrfs-progs: check: introduce function to check file extent
+  btrfs-progs: check: introduce function to check inode item
+  btrfs-progs: check: introduce function to check fs root
+  btrfs-progs: check: introduce function to check root ref
+  btrfs-progs: check: introduce low_memory mode fs_tree check
+  btrfs-progs: check: fix the return value bug of cmd_check()
+  btrfs-progs: check: fix false warning for check_extent_item()
+
+ cmds-check.c | 1165 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++-
+ hash.h       |   10 +
+ inode-item.c |    8 +-
+ 3 files changed, 1164 insertions(+), 19 deletions(-)
+
+-- 
+2.7.4
 
 
-On 07/30/2016 11:57 PM, Goldwyn Rodrigues wrote:
->
->
-> On 07/29/2016 08:06 PM, Qu Wenruo wrote:
->> Hi, Goldwyn,
->>
->> This patch is replaced by the following patchset:
->> https://patchwork.kernel.org/patch/9213915/
->> https://patchwork.kernel.org/patch/9213913/
->>
->> Would you mind testing the new patch?
->>
->
->
-> Sorry, it fails. Actually, the previous patch fails on one of the more
-> aggressive tests by Mark. So, I would revoke my "Tested-by: " there.
->
-> Attached is Mark's test case. Make sure your /boot and /usr directories
-> have enough files.
->
->
-Thanks for the info.
 
-I'll check it further.
-
-Thanks,
-Qu

@@ -1,43 +1,40 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:56775 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751625AbcGONb4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 15 Jul 2016 09:31:56 -0400
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id 255F2ACBB
-	for <linux-btrfs@vger.kernel.org>; Fri, 15 Jul 2016 13:31:55 +0000 (UTC)
-From: David Sterba <dsterba@suse.com>
+Received: from zaphod.cobb.me.uk ([213.138.97.131]:52443 "EHLO
+	zaphod.cobb.me.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1757241AbcG1L2d (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 28 Jul 2016 07:28:33 -0400
+Received: from black.home.cobb.me.uk (unknown [192.168.0.205])
+	by zaphod.cobb.me.uk (Postfix) with ESMTP id 2E5EA9BA07
+	for <linux-btrfs@vger.kernel.org>; Thu, 28 Jul 2016 12:28:28 +0100 (BST)
+Received: from [192.168.0.211] (novatech.home.cobb.me.uk [192.168.0.211])
+	by black.home.cobb.me.uk (Postfix) with ESMTPS id 1A18B5FBA1
+	for <linux-btrfs@vger.kernel.org>; Thu, 28 Jul 2016 12:28:28 +0100 (BST)
+Subject: Re: [PATCH] btrfs-progs: fi defrag: change default extent target size
+ to 32 MiB
 To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.com>
-Subject: [PATCH] btrfs: remove obsolete part of comment in statfs
-Date: Fri, 15 Jul 2016 15:31:56 +0200
-Message-Id: <1468589516-2249-1-git-send-email-dsterba@suse.com>
+References: <1469704629-25512-1-git-send-email-dsterba@suse.com>
+From: Graham Cobb <g.btrfs@cobb.uk.net>
+Message-ID: <5799EC5B.2050108@cobb.uk.net>
+Date: Thu, 28 Jul 2016 12:28:27 +0100
+MIME-Version: 1.0
+In-Reply-To: <1469704629-25512-1-git-send-email-dsterba@suse.com>
+Content-Type: text/plain; charset=windows-1252
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The mixed blockgroup reporting has been fixed by commit
-ae02d1bd070767e109f4a6f1bb1f466e9698a355
-"btrfs: fix mixed block count of available space"
+On 28/07/16 12:17, David Sterba wrote:
+> diff --git a/cmds-filesystem.c b/cmds-filesystem.c
+> index ef1f550b51c0..6b381c582ea7 100644
+> --- a/cmds-filesystem.c
+> +++ b/cmds-filesystem.c
+> @@ -968,7 +968,7 @@ static const char * const cmd_filesystem_defrag_usage[] = {
+>  	"-f             flush data to disk immediately after defragmenting",
+>  	"-s start       defragment only from byte onward",
+>  	"-l len         defragment only up to len bytes",
+> -	"-t size        target extent size hint",
+> +	"-t size        target extent size hint (default: 32 MiB)",
 
-Signed-off-by: David Sterba <dsterba@suse.com>
----
- fs/btrfs/super.c | 3 ---
- 1 file changed, 3 deletions(-)
-
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 60e7179ed4b7..135fe88de568 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -2030,9 +2030,6 @@ static int btrfs_calc_avail_data_space(struct btrfs_root *root, u64 *free_bytes)
-  * chunk).
-  *
-  * If metadata is exhausted, f_bavail will be 0.
-- *
-- * FIXME: not accurate for mixed block groups, total and free/used are ok,
-- * available appears slightly larger.
-  */
- static int btrfs_statfs(struct dentry *dentry, struct kstatfs *buf)
- {
--- 
-2.7.1
+As a user... might it be better to say the default is 32M as that is the
+format the option requires?
 

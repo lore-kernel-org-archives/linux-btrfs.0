@@ -1,15 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:32653 "EHLO
+Received: from userp1040.oracle.com ([156.151.31.81]:41709 "EHLO
 	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932335AbcG1BiK (ORCPT
+	with ESMTP id S1752269AbcG2SFz (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 27 Jul 2016 21:38:10 -0400
+	Fri, 29 Jul 2016 14:05:55 -0400
 From: Liu Bo <bo.li.liu@oracle.com>
 To: linux-btrfs@vger.kernel.org
 Cc: David Sterba <dsterba@suse.cz>
-Subject: [PATCH] Btrfs: deal with unexpected return value in flush_space
-Date: Wed, 27 Jul 2016 18:42:03 -0700
-Message-Id: <1469670123-19839-1-git-send-email-bo.li.liu@oracle.com>
+Subject: [PATCH v2] Btrfs: clarify do_chunk_alloc()'s return value
+Date: Fri, 29 Jul 2016 11:09:50 -0700
+Message-Id: <1469815790-13511-1-git-send-email-bo.li.liu@oracle.com>
+In-Reply-To: <1469670123-19839-1-git-send-email-bo.li.liu@oracle.com>
+References: <1469670123-19839-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
@@ -31,19 +33,22 @@ Eventually the callers who call start_transaction() usually just
 do the IS_ERR() check which ERR_PTR(1) can pass, then it'll get
 a panic when dereferencing a pointer which is ERR_PTR(1).
 
-This makes flush_space() translate 'ret = 1' to 'ret = 0'.
+The following patch fixes the above problem.
+"btrfs: flush_space: treat return value of do_chunk_alloc properly"
+https://patchwork.kernel.org/patch/7778651/
+
+This add comments to clarify do_chunk_alloc()'s return value.
 
 Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
 ---
-We found this 'NULL pointer dereference' on an old 3.8 kernel but
-it's not going to happen on the upstream since there is no caller
-of btrfs_start_transaction_lflush().
+v2: Since there is already a patch fixing the problem, lets do the 
+    comment part separately.
 
- fs/btrfs/extent-tree.c | 11 ++++++++++-
- 1 file changed, 10 insertions(+), 1 deletion(-)
+ fs/btrfs/extent-tree.c | 9 +++++++++
+ 1 file changed, 9 insertions(+)
 
 diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 7a35c9d..a00fb67 100644
+index 7a35c9d..921cde6 100644
 --- a/fs/btrfs/extent-tree.c
 +++ b/fs/btrfs/extent-tree.c
 @@ -4457,6 +4457,15 @@ void check_system_chunk(struct btrfs_trans_handle *trans,
@@ -62,15 +67,6 @@ index 7a35c9d..a00fb67 100644
  static int do_chunk_alloc(struct btrfs_trans_handle *trans,
  			  struct btrfs_root *extent_root, u64 flags, int force)
  {
-@@ -4857,7 +4866,7 @@ static int flush_space(struct btrfs_root *root,
- 				     btrfs_get_alloc_profile(root, 0),
- 				     CHUNK_ALLOC_NO_FORCE);
- 		btrfs_end_transaction(trans, root);
--		if (ret == -ENOSPC)
-+		if (ret == -ENOSPC || ret == 1)
- 			ret = 0;
- 		break;
- 	case COMMIT_TRANS:
 -- 
 2.5.5
 

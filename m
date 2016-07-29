@@ -1,15 +1,18 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from outpost1.zedat.fu-berlin.de ([130.133.4.66]:60332 "EHLO
-	outpost1.zedat.fu-berlin.de" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1750917AbcG2KUz (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 29 Jul 2016 06:20:55 -0400
+Received: from mx2.suse.de ([195.135.220.15]:40604 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751168AbcG2Mlv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 29 Jul 2016 08:41:51 -0400
+Date: Fri, 29 Jul 2016 14:41:30 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Anatoly Pugachev <matorola@gmail.com>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>,
+        debian-sparc <debian-sparc@lists.debian.org>
 Subject: Re: [sparc64] mkfs.btrfs bus error / align issue?
-To: dsterba@suse.cz, Anatoly Pugachev <matorola@gmail.com>,
-        debian-sparc <debian-sparc@lists.debian.org>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-References: <CADxRZqyXtmf7LMB4ogwp8Af4Nd+Md7YtiTWRpC2xjM_fG3YKJw@mail.gmail.com>
- <20160727195609.GN30795@twin.jikos.cz> <20160728094441.GO30795@twin.jikos.cz>
+Message-ID: <20160729124129.GA30795@suse.cz>
+Reply-To: dsterba@suse.cz
+References: <20160727195609.GN30795@twin.jikos.cz>
+ <20160728094441.GO30795@twin.jikos.cz>
  <CADxRZqwTUaZyDipvmGcfk8Q9P2X_NLQ=9svtc8BbKeFqoFVPdw@mail.gmail.com>
  <5cef3bff-a0bf-e4f9-7906-1b784171e266@physik.fu-berlin.de>
  <20160728122439.GW30795@twin.jikos.cz>
@@ -17,80 +20,38 @@ References: <CADxRZqyXtmf7LMB4ogwp8Af4Nd+Md7YtiTWRpC2xjM_fG3YKJw@mail.gmail.com>
  <f56a1b71-cd68-3d83-0650-a10df01f5d5c@physik.fu-berlin.de>
  <b2ac0d76-f2e3-81d7-0ab1-35960426d412@physik.fu-berlin.de>
  <20160728180413.GY30795@suse.cz>
-From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Message-ID: <35720fc9-5b85-27c7-3d48-bad3ab3c2200@physik.fu-berlin.de>
-Date: Fri, 29 Jul 2016 12:20:47 +0200
+ <CADxRZqzt8m6j_GktpKYYmDar=hDYy07DhyiuPJ-gMgtGfiGhXQ@mail.gmail.com>
 MIME-Version: 1.0
-In-Reply-To: <20160728180413.GY30795@suse.cz>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="M7d5GDWdej7RKsWan4S4ONHGRdr2fd9Sh"
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <CADxRZqzt8m6j_GktpKYYmDar=hDYy07DhyiuPJ-gMgtGfiGhXQ@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---M7d5GDWdej7RKsWan4S4ONHGRdr2fd9Sh
-Content-Type: multipart/mixed; boundary="Ea5Vkfo4AMaG8qOqGcnggxGVP5gDSkqTr"
-From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-To: dsterba@suse.cz, Anatoly Pugachev <matorola@gmail.com>,
- debian-sparc <debian-sparc@lists.debian.org>,
- Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Message-ID: <35720fc9-5b85-27c7-3d48-bad3ab3c2200@physik.fu-berlin.de>
-Subject: Re: [sparc64] mkfs.btrfs bus error / align issue?
-References: <CADxRZqyXtmf7LMB4ogwp8Af4Nd+Md7YtiTWRpC2xjM_fG3YKJw@mail.gmail.com>
- <20160727195609.GN30795@twin.jikos.cz> <20160728094441.GO30795@twin.jikos.cz>
- <CADxRZqwTUaZyDipvmGcfk8Q9P2X_NLQ=9svtc8BbKeFqoFVPdw@mail.gmail.com>
- <5cef3bff-a0bf-e4f9-7906-1b784171e266@physik.fu-berlin.de>
- <20160728122439.GW30795@twin.jikos.cz>
- <CADxRZqyzOtHmpaO9FHhvi0DJjmabRYL0eGYBXBPXSaYa0WcWEw@mail.gmail.com>
- <f56a1b71-cd68-3d83-0650-a10df01f5d5c@physik.fu-berlin.de>
- <b2ac0d76-f2e3-81d7-0ab1-35960426d412@physik.fu-berlin.de>
- <20160728180413.GY30795@suse.cz>
-In-Reply-To: <20160728180413.GY30795@suse.cz>
+On Thu, Jul 28, 2016 at 11:34:58PM +0300, Anatoly Pugachev wrote:
+> well, I think mkfs.btrfs is fixed, since I just tested it with :
 
---Ea5Vkfo4AMaG8qOqGcnggxGVP5gDSkqTr
-Content-Type: text/plain; charset=windows-1252
-Content-Transfer-Encoding: quoted-printable
+Good news, thanks.
 
-On 07/28/2016 08:04 PM, David Sterba wrote:
-> And I've fixed it that way, now pushed to devel ("btrfs-progs: fix
-> unaligned access in raid6 calculations" [1]). Would be great if you or
-> Anatoly can test it so I can add it to the 4.7 release (ETA tomorrow).
+> Not sure what we need to do with sparc64 btrfs module TPC messages.
+> Probably fill kernel bugzilla report?
 
-Awesome, thank you very much! Much appreciated!
+Yes please.
 
-Adrian
+> [1] http://u163.east.ru/btrfs/xfstests-btrfs-06x-results.tar.gz
+> [2] http://u163.east.ru/btrfs/kernel-4.7.0+-logs-xfstests-06x.txt.gz
 
---=20
- .''`.  John Paul Adrian Glaubitz
-: :' :  Debian Developer - glaubitz@debian.org
-`. `'   Freie Universitaet Berlin - glaubitz@physik.fu-berlin.de
-  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
+quick stats of the TPC messages:
 
+     23 __btrfs_map_block+0x36c/0x1180
+      9 __remove_rbio_from_cache+0x38/0x140
+      6 lock_stripe_add+0xb0/0x360
+      4 __btrfs_map_block+0x3d4/0x1180
+      3 __btrfs_map_block+0xca0/0x1180
 
---Ea5Vkfo4AMaG8qOqGcnggxGVP5gDSkqTr--
+running in 'gdb btrfs.ko' for each of the addresses should tell us what are the
+locations:
 
---M7d5GDWdej7RKsWan4S4ONHGRdr2fd9Sh
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
+gdb> l *(__btrfs_map_block+0x36c)
+...
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2
-
-iQIcBAEBCAAGBQJXmy3/AAoJEHQmOzf1tfkTFNYQAMiejICezdM7omIMxonZ/5hw
-Cgwwk4egigj2ulvCdKae/iD1vVKHqRoJMdXOyeb2fjy7lLlzYrQHK8eRw/E546nU
-udfzV9KqVvcO0Tl+s4K8wvfvFHQZcJjUzvrh/OByRlRcd3Ia70RszUFtmCv0AIRY
-OBJlcsKT/A0OLL6V5cH0l4BOe4BzZWC/3908ZV67sla/Rf56+zAXinqBXbleRLzV
-5utfHO8GD+j4TEljPXjhJ36rDVYkbf+tQa4BnsoK7usen7AbRJzRtjaEkLTPbiqe
-iKjMKcmXYkZXXu+dknK+AthWSDLe1E7SzPnO3CqVW06iZAEYZkW3kLrlbi7gxzuu
-e+HVjgCpTBp24fke9i0Iqg7QxWU+NKHysz8uNk8TOtj2HbExzIQsrfBpfbaZYnOx
-+KZoBUDbQFTQSsGmB5Tpq6SAw9IwvnF4ehCl09R59e56mZTD1nQWzpwobz7hn4Rq
-fw65bIrX0/fsh3gcIPmabDvXekxHQHKz6JywzwFZSRC/5+GSkyUPI0gXvi0b11+n
-M+PBiuTrbAcCMrZRZKQkx1xbMo4ZSyZVJliMgqQ5ovVJkx2BBoapHg54Ph81aLc2
-vON6An4hAsaTIfVdAgOKYvobAift0iHD+OFqYJ4Pb3Ta1xS8MykgVeE3HKPefM8c
-meqCbn75AxmrdZuU3Po+
-=MTgj
------END PGP SIGNATURE-----
-
---M7d5GDWdej7RKsWan4S4ONHGRdr2fd9Sh--
+Thanks.

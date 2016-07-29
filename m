@@ -1,150 +1,160 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lf0-f67.google.com ([209.85.215.67]:34815 "EHLO
-	mail-lf0-f67.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751449AbcG2NhJ convert rfc822-to-8bit (ORCPT
+Received: from mail-ua0-f195.google.com ([209.85.217.195]:35833 "EHLO
+	mail-ua0-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752016AbcG2PDn (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 29 Jul 2016 09:37:09 -0400
-Received: by mail-lf0-f67.google.com with SMTP id l69so5310423lfg.1
-        for <linux-btrfs@vger.kernel.org>; Fri, 29 Jul 2016 06:37:08 -0700 (PDT)
+	Fri, 29 Jul 2016 11:03:43 -0400
+Received: by mail-ua0-f195.google.com with SMTP id 100so3925606uaq.2
+        for <linux-btrfs@vger.kernel.org>; Fri, 29 Jul 2016 08:03:42 -0700 (PDT)
 MIME-Version: 1.0
-From: Mordechay Kaganer <mkaganer@gmail.com>
-Date: Fri, 29 Jul 2016 16:37:05 +0300
-Message-ID: <CA+xOVSOx56oc5kF+oj18B3m23wcpy2OqbKbH9j13se+s98YvdQ@mail.gmail.com>
-Subject: BTRFS: Transaction aborted (error -28)
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+In-Reply-To: <20160729124129.GA30795@suse.cz>
+References: <20160727195609.GN30795@twin.jikos.cz> <20160728094441.GO30795@twin.jikos.cz>
+ <CADxRZqwTUaZyDipvmGcfk8Q9P2X_NLQ=9svtc8BbKeFqoFVPdw@mail.gmail.com>
+ <5cef3bff-a0bf-e4f9-7906-1b784171e266@physik.fu-berlin.de>
+ <20160728122439.GW30795@twin.jikos.cz> <CADxRZqyzOtHmpaO9FHhvi0DJjmabRYL0eGYBXBPXSaYa0WcWEw@mail.gmail.com>
+ <f56a1b71-cd68-3d83-0650-a10df01f5d5c@physik.fu-berlin.de>
+ <b2ac0d76-f2e3-81d7-0ab1-35960426d412@physik.fu-berlin.de>
+ <20160728180413.GY30795@suse.cz> <CADxRZqzt8m6j_GktpKYYmDar=hDYy07DhyiuPJ-gMgtGfiGhXQ@mail.gmail.com>
+ <20160729124129.GA30795@suse.cz>
+From: Anatoly Pugachev <matorola@gmail.com>
+Date: Fri, 29 Jul 2016 18:03:41 +0300
+Message-ID: <CADxRZqyjjBg7csWsSra8b_rmE1r=eeB8P7ZtaUSs-7hwowNu-g@mail.gmail.com>
+Subject: Re: [sparc64] mkfs.btrfs bus error / align issue?
+To: dsterba@suse.cz
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>,
+        debian-sparc <debian-sparc@lists.debian.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-B.H.
+On Fri, Jul 29, 2016 at 3:41 PM, David Sterba <dsterba@suse.cz> wrote:
+> On Thu, Jul 28, 2016 at 11:34:58PM +0300, Anatoly Pugachev wrote:
+>> well, I think mkfs.btrfs is fixed, since I just tested it with :
+>
+> Good news, thanks.
+>
+> quick stats of the TPC messages:
+>
+>      23 __btrfs_map_block+0x36c/0x1180
+>       9 __remove_rbio_from_cache+0x38/0x140
+>       6 lock_stripe_add+0xb0/0x360
+>       4 __btrfs_map_block+0x3d4/0x1180
+>       3 __btrfs_map_block+0xca0/0x1180
+>
+> running in 'gdb btrfs.ko' for each of the addresses should tell us what are the
+> locations:
+>
+> gdb> l *(__btrfs_map_block+0x36c)
+> ...
 
-Hello!
+installed fresh btrgs-progs from git
+mator@nvg5120:~/btrfs-progs$ git describe --long
+v4.7-0-g9d2ea01
 
-While saving a backup (using rsync) the FS went read only and i've got
-BTRFS: Transaction aborted (error -28) error. While writing a new
-backup i was also doing btrfs send of another subvolume on the same FS
-from this server out to another server.
+recompiled kernel with debug info... and run xfstests/check 'btrfs/06?' again
 
-After reboot, the device mounts OK. Does it mean something went wrong
-with the FS? Need to run a full balance?
+mator@nvg5120:~/linux-2.6$ git describe --long
+v4.7-0-g523d939
 
-The device actually has more than 3TB free space:
+kernel is patched with [1] to enable btrfs module loading on
+big-endian systems (not sure does current linux kernel git includes
+this patch or not, used/checkout plain v4.7 tag which is 5 days old)
 
-# btrfs fi usage .
-Overall:
-    Device size:                  43.66TiB
-    Device allocated:             40.43TiB
-    Device unallocated:            3.23TiB
-    Device missing:                  0.00B
-    Used:                         40.42TiB
-    Free (estimated):              3.24TiB      (min: 1.62TiB)
-    Data ratio:                       1.00
-    Metadata ratio:                   2.00
-    Global reserve:              512.00MiB      (used: 48.00KiB)
+root@nvg5120:/home/mator/xfstests# ./check 'btrfs/06?'
+FSTYP         -- btrfs
+PLATFORM      -- Linux/sparc64 nvg5120 4.7.0+
+MKFS_OPTIONS  -- /dev/loop0
+MOUNT_OPTIONS -- /dev/loop0 /mnt/scratch
 
-Data,single: Size:39.92TiB, Used:39.92TiB
-   /dev/md1       10.19TiB
-   /dev/md2       10.21TiB
-   /dev/md3       10.41TiB
-   /dev/md4        9.11TiB
+btrfs/060        156s
+btrfs/061        182s
+btrfs/062        312s
+btrfs/063        162s
+btrfs/064        152s
+btrfs/065        61s
+btrfs/066        65s
+btrfs/067        158s
+btrfs/068        74s
+btrfs/069        65s
+Ran: btrfs/060 btrfs/061 btrfs/062 btrfs/063 btrfs/064 btrfs/065
+btrfs/066 btrfs/067 btrfs/068 btrfs/069
+Passed all 10 tests
 
-Metadata,RAID1: Size:261.00GiB, Used:259.69GiB
-   /dev/md1      196.00GiB
-   /dev/md2      178.00GiB
-   /dev/md3       65.00GiB
-   /dev/md4       83.00GiB
-
-System,RAID1: Size:8.00MiB, Used:4.47MiB
-   /dev/md1        8.00MiB
-   /dev/md2        8.00MiB
-
-Unallocated:
-   /dev/md1      545.79GiB
-   /dev/md2      544.80GiB
-   /dev/md3      457.81GiB
-   /dev/md4        1.72TiB
-
-btrfs-tools version: btrfs-progs v4.3.1
-
-The kernel is based on Ubuntu mainline PPA 4.3.3
-(http://kernel.ubuntu.com/~kernel-ppa/mainline/v4.3.3-wily/) with a
-patch to fix RAID10 issue.
-
-The kernel log:
-[5099580.930974] ------------[ cut here ]------------
-[5099580.930989] WARNING: CPU: 1 PID: 6643 at
-/home/yemot/build/ubuntu-mainline/fs/btrfs/extent-tree.c:6362
-__btrfs_free_extent.isra.66+0x132/0xcb0 [btrfs]()
-[5099580.930990] BTRFS: Transaction aborted (error -28)
-[5099580.930991] Modules linked in: ipmi_ssif x86_pkg_temp_thermal
-intel_powerclamp coretemp kvm_intel kvm crct10dif_pclmul crc32_pclmul
-aesni_intel aes_x86_64 lrw gf128mul glue_helper ablk_helper ast
-snd_hda_codec_realtek cryptd snd_hda_codec_generic ttm sb_edac
-serio_raw drm_kms_helper edac_core joydev input_leds drm snd_hda_intel
-snd_hda_codec fb_sys_fops syscopyarea lpc_ich snd_hda_core sysfillrect
-sysimgblt snd_hwdep snd_pcm snd_timer mei_me snd soundcore mei ipmi_si
-8250_fintek ipmi_msghandler wmi nfsd shpchp auth_rpcgss lp mac_hid
-nfs_acl parport nfs lockd grace sunrpc fscache btrfs ses enclosure
-raid10 raid456 async_raid6_recov async_memcpy async_pq async_xor
-async_tx xor raid6_pq raid1 igb i2c_algo_bit hid_generic isci dca
-firewire_ohci usbhid raid0 libsas ptp firewire_core ahci psmouse hid
-multipath pps_core libahci scsi_transport_sas crc_itu_t aacraid fjes
-linear
-[5099580.931025] CPU: 1 PID: 6643 Comm: kworker/u16:19 Not tainted
-4.3.3-040303.20160107-raid10-patch-generic #patch
-[5099580.931026] Hardware name: To Be Filled By O.E.M. To Be Filled By
-O.E.M./EPC602D8A, BIOS P1.20 04/16/2014
-[5099580.931036] Workqueue: btrfs-extent-refs btrfs_extent_refs_helper [btrfs]
-[5099580.931037]  ffffffffc02aa7b0 ffff88000bfd3ab0 ffffffff813a4524
-ffff88000bfd3af8
-[5099580.931039]  ffff88000bfd3ae8 ffffffff81079226 00000000ffffffe4
-00000deed72a4000
-[5099580.931040]  ffff8805fca9a1b0 ffff880857982000 0000000000000000
-ffff88000bfd3b48
-[5099580.931041] Call Trace:
-[5099580.931045]  [<ffffffff813a4524>] dump_stack+0x44/0x60
-[5099580.931047]  [<ffffffff81079226>] warn_slowpath_common+0x86/0xc0
-[5099580.931049]  [<ffffffff810792ac>] warn_slowpath_fmt+0x4c/0x50
-[5099580.931054]  [<ffffffffc020fe32>]
-__btrfs_free_extent.isra.66+0x132/0xcb0 [btrfs]
-[5099580.931059]  [<ffffffffc0213e2c>]
-__btrfs_run_delayed_refs+0x71c/0x10e0 [btrfs]
-[5099580.931065]  [<ffffffffc021751d>] btrfs_run_delayed_refs+0x7d/0x2b0 [btrfs]
-[5099580.931070]  [<ffffffffc0217787>] delayed_ref_async_start+0x37/0x90 [btrfs]
-[5099580.931078]  [<ffffffffc025c100>] normal_work_helper+0xc0/0x270 [btrfs]
-[5099580.931080]  [<ffffffff8108ee9d>] ? pwq_activate_delayed_work+0x3d/0x80
-[5099580.931087]  [<ffffffffc025c4e2>]
-btrfs_extent_refs_helper+0x12/0x20 [btrfs]
-[5099580.931088]  [<ffffffff81091057>] process_one_work+0x157/0x3e0
-[5099580.931090]  [<ffffffff81091a3e>] worker_thread+0x4e/0x470
-[5099580.931091]  [<ffffffff810919f0>] ? rescuer_thread+0x300/0x300
-[5099580.931093]  [<ffffffff81096d09>] kthread+0xc9/0xe0
-[5099580.931095]  [<ffffffff81096c40>] ? kthread_park+0x60/0x60
-[5099580.931098]  [<ffffffff817b4acf>] ret_from_fork+0x3f/0x70
-[5099580.931100]  [<ffffffff81096c40>] ? kthread_park+0x60/0x60
-[5099580.931101] ---[ end trace 771ebb14ef31d548 ]---
-[5099580.931102] BTRFS: error (device md1) in
-__btrfs_free_extent:6362: errno=-28 No space left
-[5099580.931126] BTRFS info (device md1): forced readonly
-[5099580.931127] BTRFS: error (device md1) in
-btrfs_run_delayed_refs:2858: errno=-28 No space left
-[5099580.935938] BTRFS: error (device md1) in
-__btrfs_free_extent:6362: errno=-28 No space left
-[5099580.935939] BTRFS: error (device md1) in
-__btrfs_free_extent:6362: errno=-28 No space left
-[5099580.935941] BTRFS: error (device md1) in
-btrfs_run_delayed_refs:2858: errno=-28 No space left
-[5099580.936037] BTRFS: error (device md1) in
-btrfs_run_delayed_refs:2858: errno=-28 No space left
-[5099581.122804] BTRFS: error (device md1) in
-__btrfs_free_extent:6362: errno=-28 No space left
-[5099581.122830] BTRFS: error (device md1) in
-btrfs_run_delayed_refs:2858: errno=-28 No space left
-
-Thanks!
+$ journalctl -b -k | awk '/TPC/{print $11}' | sort | uniq -c | sort -n
+      4 __btrfs_map_block+0xa10/0x1100
+      5 lock_stripe_add+0xb0/0x340
+      7 __btrfs_map_block+0x9d4/0x1100
+      9 __remove_rbio_from_cache+0x30/0x140
+     29 __btrfs_map_block+0x96c/0x1100
 
 
--- 
-משיח NOW!
-Moshiach is coming very soon, prepare yourself!
-יחי אדוננו מורינו ורבינו מלך המשיח לעולם ועד!
+$ gdb -q /lib/modules/4.7.0+/kernel/fs/btrfs/btrfs.ko
+Reading symbols from /lib/modules/4.7.0+/kernel/fs/btrfs/btrfs.ko...done.
+(gdb) l *(__btrfs_map_block+0x96c)
+0x8498c is in __btrfs_map_block (fs/btrfs/volumes.c:5615).
+5610                    div_u64_rem(stripe_nr, num_stripes, &rot);
+5611
+5612                    /* Fill in the logical address of each stripe */
+5613                    tmp = stripe_nr * nr_data_stripes(map);
+5614                    for (i = 0; i < nr_data_stripes(map); i++)
+5615                            bbio->raid_map[(i+rot) % num_stripes] =
+5616                                    em->start + (tmp + i) * map->stripe_len;
+5617
+5618                    bbio->raid_map[(i+rot) % map->num_stripes] =
+RAID5_P_STRIPE;
+5619                    if (map->type & BTRFS_BLOCK_GROUP_RAID6)
+(gdb) l *(__btrfs_map_block+0x9d4)
+0x849f4 is in __btrfs_map_block (fs/btrfs/volumes.c:5618).
+5613                    tmp = stripe_nr * nr_data_stripes(map);
+5614                    for (i = 0; i < nr_data_stripes(map); i++)
+5615                            bbio->raid_map[(i+rot) % num_stripes] =
+5616                                    em->start + (tmp + i) * map->stripe_len;
+5617
+5618                    bbio->raid_map[(i+rot) % map->num_stripes] =
+RAID5_P_STRIPE;
+5619                    if (map->type & BTRFS_BLOCK_GROUP_RAID6)
+5620                            bbio->raid_map[(i+rot+1) % num_stripes] =
+5621                                    RAID6_Q_STRIPE;
+5622            }
+(gdb) l *(__btrfs_map_block+0xa10)
+0x84a30 is in __btrfs_map_block (fs/btrfs/volumes.c:5620).
+5615                            bbio->raid_map[(i+rot) % num_stripes] =
+5616                                    em->start + (tmp + i) * map->stripe_len;
+5617
+5618                    bbio->raid_map[(i+rot) % map->num_stripes] =
+RAID5_P_STRIPE;
+5619                    if (map->type & BTRFS_BLOCK_GROUP_RAID6)
+5620                            bbio->raid_map[(i+rot+1) % num_stripes] =
+5621                                    RAID6_Q_STRIPE;
+5622            }
+5623
+5624            if (rw & REQ_DISCARD) {
+(gdb) l *(lock_stripe_add+0xb0)
+0xe0370 is in lock_stripe_add (fs/btrfs/raid56.c:685).
+680             int walk = 0;
+681
+682             spin_lock_irqsave(&h->lock, flags);
+683             list_for_each_entry(cur, &h->hash_list, hash_list) {
+684                     walk++;
+685                     if (cur->bbio->raid_map[0] == rbio->bbio->raid_map[0]) {
+686                             spin_lock(&cur->bio_list_lock);
+687
+688                             /* can we steal this cached rbio's pages? */
+689                             if (bio_list_empty(&cur->bio_list) &&
+(gdb) l *(__remove_rbio_from_cache+0x30)
+0xdfe30 is in __remove_rbio_from_cache (include/linux/spinlock.h:302).
+297             raw_spin_lock_init(&(_lock)->rlock);            \
+298     } while (0)
+299
+300     static __always_inline void spin_lock(spinlock_t *lock)
+301     {
+302             raw_spin_lock(&lock->rlock);
+303     }
+304
+305     static __always_inline void spin_lock_bh(spinlock_t *lock)
+306     {
+
+
+Thanks.
+
+[1]. http://www.spinics.net/lists/linux-btrfs/msg57193.html

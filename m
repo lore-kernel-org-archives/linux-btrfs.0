@@ -1,269 +1,195 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cloud1-vm154.de-nserver.de ([178.250.10.56]:18784 "EHLO
+Received: from cloud1-vm154.de-nserver.de ([178.250.10.56]:50289 "EHLO
 	cloud1-vm154.de-nserver.de" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1750768AbcG2FmK (ORCPT
+	by vger.kernel.org with ESMTP id S1750799AbcG2FoH (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 29 Jul 2016 01:42:10 -0400
+	Fri, 29 Jul 2016 01:44:07 -0400
 Subject: Re: ENOSPC / no space on very large devices
-To: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>,
+To: =?UTF-8?Q?Holger_Hoffst=c3=a4tte?= <holger@applied-asynchrony.com>,
         "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 References: <1659eb11-0025-d9d4-c590-2a4d721bb299@profihost.ag>
- <578F1AB0.6090000@cn.fujitsu.com>
-Cc: =?UTF-8?Q?Holger_Hoffst=c3=a4tte?= <holger@applied-asynchrony.com>,
-        Jannik Winkel <j.winkel@profihost.ag>
+ <578F29C4.9030808@applied-asynchrony.com>
+Cc: Jannik Winkel <j.winkel@profihost.ag>
 From: Stefan Priebe - Profihost AG <s.priebe@profihost.ag>
-Message-ID: <8283d3db-d83c-a047-a6a9-828049b44d59@profihost.ag>
-Date: Fri, 29 Jul 2016 07:42:06 +0200
+Message-ID: <5fb0c92a-bdb1-9344-f10b-90069d6a2e1b@profihost.ag>
+Date: Fri, 29 Jul 2016 07:44:02 +0200
 MIME-Version: 1.0
-In-Reply-To: <578F1AB0.6090000@cn.fujitsu.com>
+In-Reply-To: <578F29C4.9030808@applied-asynchrony.com>
 Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-here we go...
 
-Am 20.07.2016 um 08:31 schrieb Wang Xiaoguang:
-> hello,
-> 
-> On 07/20/2016 01:31 PM, Stefan Priebe - Profihost AG wrote:
+Am 20.07.2016 um 09:35 schrieb Holger Hoffstätte:
+> On 07/20/16 07:31, Stefan Priebe - Profihost AG wrote:
 >> Hi list,
 >>
 >> while i didn't had the problem for some month i'm now getting ENOSPC on
 >> a regular basis on one host.
->>
->> It would be great if someone can help me debugging this.
->>
->> Some basic informations:
->> # touch /vmbackup/abc
->> touch: cannot touch `/vmbackup/abc': No space left on device
-> When touch operation failed, would you please change dir to
-> /sys/fs/btrfs/UUID/allocation/data/ and show me these files' value.
-> And also files in /sys/fs/btrfs/UUID/allocation/metadata. thanks.
-> Here UUID is your real uuid :)
+> 
+> Well, it's getting better. :)
 
-/sys/fs/btrfs/ebcb9a5e-d784-4e17-9cd0-bc67fe7b1ed6/allocation/data]#
-grep -H '' *
-bytes_may_use:0
-bytes_pinned:0
-bytes_reserved:0
-bytes_used:6175380234240
-disk_total:6641093181440
-disk_used:6175380234240
-flags:1
-grep: single: Is a directory
-total_bytes:6641093181440
-total_bytes_pinned:726104035328
-
- /sys/fs/btrfs/ebcb9a5e-d784-4e17-9cd0-bc67fe7b1ed6/allocation/metadata]# grep -H '' *
-bytes_may_use:2089625649152
-bytes_pinned:0
-bytes_reserved:0
-bytes_used:36823187456
-disk_total:95563022336
-disk_used:73646374912
-grep: dup: Is a directory
-flags:4
-total_bytes:47781511168
-total_bytes_pinned:-16792829952
-
-Greets,
-Stefan
+Again the same problem.
 
 > 
-> Regards,
-> Xiaoguang Wang
-> 
->> # df -h /vmbackup/
->> Filesystem                    Size  Used Avail Use% Mounted on
->> /dev/mapper/stripe0-vmbackup   37T   28T  8,5T  77% /vmbackup
->>
->> # btrfs filesystem df /vmbackup/
->> Data, single: total=27.87TiB, used=27.39TiB
->> System, DUP: total=8.00MiB, used=4.34MiB
->> Metadata, DUP: total=286.50GiB, used=199.91GiB
->> GlobalReserve, single: total=512.00MiB, used=0.00B
->>
->> # btrfs filesystem show /vmbackup/
->> Label: none  uuid: c8c3abf7-8280-4baa-bb51-a8c599e48002
->>          Total devices 1 FS bytes used 27.59TiB
->>          devid    1 size 36.38TiB used 28.43TiB path
->> /dev/mapper/stripe0-vmbackup
->>
->> # mount | grep vmbackup
->> /dev/mapper/stripe0-vmbackup on /vmbackup type btrfs
->> (rw,noatime,compress-force=zlib,nossd,noacl,space_cache=v2,clear_cache,commit=300,subvolid=5,subvol=/)
->>
->>
->> dmesg is empty.
->>
 >> if i umount the volume i get traces (i already did a clear_cache 4 days
 >> ago to recalculate the space_tree):
 >>
 >> [545031.675797] ------------[ cut here ]------------
 >> [545031.725166] WARNING: CPU: 1 PID: 17711 at
 >> fs/btrfs/extent-tree.c:5710 btrfs_free_block_groups+0x35a/0x400 [btrfs]()
->> [545031.778329] Modules linked in: netconsole ipt_REJECT nf_reject_ipv4
->> mpt3sas raid_class scsi_transport_sas xt_multiport iptable_filter
->> ip_tables x_tables 8021q garp bonding coretemp loop i40e(O) vxlan
->> ip6_udp_tunnel usbhid udp_tunnel sb_edac ehci_pci edac_core ehci_hcd
->> i2c_i801 i2c_core usbcore shpchp usb_common ipmi_si ipmi_msghandler
->> button btrfs dm_mod raid1 raid456 async_raid6_recov async_memcpy
->> async_pq async_xor async_tx xor raid6_pq md_mod ixgbe mdio sg sd_mod
->> ahci ptp libahci megaraid_sas pps_core
->> [545032.081037] CPU: 1 PID: 17711 Comm: umount Tainted: G           O
->> 4.4.15+43-ph #1
->> [545032.145078] Hardware name: Supermicro X10DRH/X10DRH-iT, BIOS 1.0c
->> 02/18/2015
->> [545032.210238]  0000000000000000 ffff88010c40bcd8 ffffffffbd3c712f
->> 0000000000000000
->> [545032.275650]  ffffffffc03ec603 ffff88010c40bd18 ffffffffbd0837e7
->> 00000047a0000000
->> [545032.341525]  0000000000000000 ffff88105e0ea400 ffff881054a76088
->> ffff881054a76000
->> [545032.408500] Call Trace:
->> [545032.475272]  [<ffffffffbd3c712f>] dump_stack+0x63/0x84
->> [545032.543620]  [<ffffffffbd0837e7>] warn_slowpath_common+0x97/0xe0
->> [545032.612900]  [<ffffffffbd08384a>] warn_slowpath_null+0x1a/0x20
->> [545032.682026]  [<ffffffffc034a17a>]
->> btrfs_free_block_groups+0x35a/0x400 [btrfs]
->> [545032.750297]  [<ffffffffc035ba4b>] close_ctree+0x15b/0x330 [btrfs]
->> [545032.817085]  [<ffffffffc03291f9>] btrfs_put_super+0x19/0x20 [btrfs]
->> [545032.883439]  [<ffffffffbd1cd33f>] generic_shutdown_super+0x6f/0x100
->> [545032.949302]  [<ffffffffbd1cd866>] kill_anon_super+0x16/0x30
->> [545033.014327]  [<ffffffffc032f96a>] btrfs_kill_super+0x1a/0xb0 [btrfs]
->> [545033.079031]  [<ffffffffbd1cda31>] deactivate_locked_super+0x51/0x90
->> [545033.143275]  [<ffffffffbd1ce42e>] deactivate_super+0x4e/0x70
->> [545033.206535]  [<ffffffffbd1e9373>] cleanup_mnt+0x43/0x90
->> [545033.268842]  [<ffffffffbd1e9412>] __cleanup_mnt+0x12/0x20
->> [545033.331629]  [<ffffffffbd09ef8e>] task_work_run+0x7e/0xa0
->> [545033.393350]  [<ffffffffbd07e550>] exit_to_usermode_loop+0x66/0x95
->> [545033.454685]  [<ffffffffbd002a56>] syscall_return_slowpath+0xa6/0xf0
->> [545033.515485]  [<ffffffffbd6b6f4c>] int_ret_from_sys_call+0x25/0x8f
->> [545033.575890] ---[ end trace bd985b05cc90617c ]---
->> [545033.636708] ------------[ cut here ]------------
->> [545033.696339] WARNING: CPU: 1 PID: 17711 at
->> fs/btrfs/extent-tree.c:5711 btrfs_free_block_groups+0x3f4/0x400 [btrfs]()
->> [545033.758031] Modules linked in: netconsole ipt_REJECT nf_reject_ipv4
->> mpt3sas raid_class scsi_transport_sas xt_multiport iptable_filter
->> ip_tables x_tables 8021q garp bonding coretemp loop i40e(O) vxlan
->> ip6_udp_tunnel usbhid udp_tunnel sb_edac ehci_pci edac_core ehci_hcd
->> i2c_i801 i2c_core usbcore shpchp usb_common ipmi_si ipmi_msghandler
->> button btrfs dm_mod raid1 raid456 async_raid6_recov async_memcpy
->> async_pq async_xor async_tx xor raid6_pq md_mod ixgbe mdio sg sd_mod
->> ahci ptp libahci megaraid_sas pps_core
->> [545034.095188] CPU: 1 PID: 17711 Comm: umount Tainted: G        W  O
->> 4.4.15+43-ph #1
->> [545034.166070] Hardware name: Supermicro X10DRH/X10DRH-iT, BIOS 1.0c
->> 02/18/2015
->> [545034.236259]  0000000000000000 ffff88010c40bcd8 ffffffffbd3c712f
->> 0000000000000000
->> [545034.307690]  ffffffffc03ec603 ffff88010c40bd18 ffffffffbd0837e7
->> 00000047a0000000
->> [545034.379596]  0000000000000000 ffff88105e0ea400 ffff881054a76088
->> ffff881054a76000
->> [545034.452542] Call Trace:
->> [545034.525286]  [<ffffffffbd3c712f>] dump_stack+0x63/0x84
->> [545034.599643]  [<ffffffffbd0837e7>] warn_slowpath_common+0x97/0xe0
->> [545034.674894]  [<ffffffffbd08384a>] warn_slowpath_null+0x1a/0x20
->> [545034.750338]  [<ffffffffc034a214>]
->> btrfs_free_block_groups+0x3f4/0x400 [btrfs]
->> [545034.826354]  [<ffffffffc035ba4b>] close_ctree+0x15b/0x330 [btrfs]
->> [545034.900758]  [<ffffffffc03291f9>] btrfs_put_super+0x19/0x20 [btrfs]
->> [545034.973612]  [<ffffffffbd1cd33f>] generic_shutdown_super+0x6f/0x100
->> [545035.044589]  [<ffffffffbd1cd866>] kill_anon_super+0x16/0x30
->> [545035.113505]  [<ffffffffc032f96a>] btrfs_kill_super+0x1a/0xb0 [btrfs]
->> [545035.180769]  [<ffffffffbd1cda31>] deactivate_locked_super+0x51/0x90
->> [545035.246451]  [<ffffffffbd1ce42e>] deactivate_super+0x4e/0x70
->> [545035.311231]  [<ffffffffbd1e9373>] cleanup_mnt+0x43/0x90
->> [545035.374958]  [<ffffffffbd1e9412>] __cleanup_mnt+0x12/0x20
->> [545035.437806]  [<ffffffffbd09ef8e>] task_work_run+0x7e/0xa0
->> [545035.500554]  [<ffffffffbd07e550>] exit_to_usermode_loop+0x66/0x95
->> [545035.563108]  [<ffffffffbd002a56>] syscall_return_slowpath+0xa6/0xf0
->> [545035.625033]  [<ffffffffbd6b6f4c>] int_ret_from_sys_call+0x25/0x8f
->> [545035.686864] ---[ end trace bd985b05cc90617d ]---
->> [545035.748727] ------------[ cut here ]------------
->> [545035.810850] WARNING: CPU: 1 PID: 17711 at
->> fs/btrfs/extent-tree.c:9990 btrfs_free_block_groups+0x2a4/0x400 [btrfs]()
->> [545035.875894] Modules linked in: netconsole ipt_REJECT nf_reject_ipv4
->> mpt3sas raid_class scsi_transport_sas xt_multiport iptable_filter
->> ip_tables x_tables 8021q garp bonding coretemp loop i40e(O) vxlan
->> ip6_udp_tunnel usbhid udp_tunnel sb_edac ehci_pci edac_core ehci_hcd
->> i2c_i801 i2c_core usbcore shpchp usb_common ipmi_si ipmi_msghandler
->> button btrfs dm_mod raid1 raid456 async_raid6_recov async_memcpy
->> async_pq async_xor async_tx xor raid6_pq md_mod ixgbe mdio sg sd_mod
->> ahci ptp libahci megaraid_sas pps_core
->> [545036.227082] CPU: 1 PID: 17711 Comm: umount Tainted: G        W  O
->> 4.4.15+43-ph #1
->> [545036.300440] Hardware name: Supermicro X10DRH/X10DRH-iT, BIOS 1.0c
->> 02/18/2015
->> [545036.374617]  0000000000000000 ffff88010c40bcd8 ffffffffbd3c712f
->> 0000000000000000
->> [545036.449929]  ffffffffc03ec603 ffff88010c40bd18 ffffffffbd0837e7
->> ffff88105e112c30
->> [545036.525514]  0000000000000038 0000000000000000 ffff88105e0ea888
->> ffff881054a76000
->> [545036.601698] Call Trace:
->> [545036.677124]  [<ffffffffbd3c712f>] dump_stack+0x63/0x84
->> [545036.753379]  [<ffffffffbd0837e7>] warn_slowpath_common+0x97/0xe0
->> [545036.829845]  [<ffffffffbd08384a>] warn_slowpath_null+0x1a/0x20
->> [545036.905507]  [<ffffffffc034a0c4>]
->> btrfs_free_block_groups+0x2a4/0x400 [btrfs]
->> [545036.981923]  [<ffffffffc035ba4b>] close_ctree+0x15b/0x330 [btrfs]
->> [545037.056759]  [<ffffffffc03291f9>] btrfs_put_super+0x19/0x20 [btrfs]
->> [545037.130024]  [<ffffffffbd1cd33f>] generic_shutdown_super+0x6f/0x100
->> [545037.201434]  [<ffffffffbd1cd866>] kill_anon_super+0x16/0x30
->> [545037.270737]  [<ffffffffc032f96a>] btrfs_kill_super+0x1a/0xb0 [btrfs]
->> [545037.338382]  [<ffffffffbd1cda31>] deactivate_locked_super+0x51/0x90
->> [545037.404449]  [<ffffffffbd1ce42e>] deactivate_super+0x4e/0x70
->> [545037.469597]  [<ffffffffbd1e9373>] cleanup_mnt+0x43/0x90
->> [545037.533686]  [<ffffffffbd1e9412>] __cleanup_mnt+0x12/0x20
->> [545037.596915]  [<ffffffffbd09ef8e>] task_work_run+0x7e/0xa0
->> [545037.660027]  [<ffffffffbd07e550>] exit_to_usermode_loop+0x66/0x95
->> [545037.722960]  [<ffffffffbd002a56>] syscall_return_slowpath+0xa6/0xf0
->> [545037.785270]  [<ffffffffbd6b6f4c>] int_ret_from_sys_call+0x25/0x8f
->> [545037.847443] ---[ end trace bd985b05cc90617e ]---
+> 
+> This is "only" a warning, but as we can see below it indicates a real
+> problem. The warning was added only recently to for-next by the patch called
+> "Btrfs: warn_on for unaccounted spaces" [1], but I've had it in my tree
+> forever. Never seen the warning myself.
+> 
+> (snip)
 >> [545037.909700] BTRFS: space_info 4 has 18446743523026157568 free, is
 >> not full
->> [545037.973447] BTRFS: space_info total=307627032576, used=214654500864,
->> pinned=0, reserved=0, may_use=643655794688, readonly=131072
->>
->> The workload on the FS is basically:
->> - Write file1 (50GB - 500GB)
->>
->> - cp --reflink=always file1 to file2
->> - apply changes to file2 (100MB - 5GB)
->>
->> - cp --reflink=always file2 to file3
->> - apply changes to file3 (100MB - 5GB)
->>
->> ...
->>
->> - delete file1
->>
->> - cp --reflink=always file3 to file4
->> - apply changes to file4 (100MB - 5GB)
->>
->> - delete file2
->>
->> ...
->>
->> And this for around 300 files a day. btrfs balance with dusage=5 and
->> musage=5 is running daily.
->>
+> 
+> Wow, ~18.4 exabytes really is a lot of free space. :)
+> So it looks like something underflowed the space_info and now things are
+> confused for about ~550 GB. Unfortunately I have no good idea how to fix
+> that. :(
+
+umount triggered this one:
+[983102.838217] ------------[ cut here ]------------
+[983102.864383] WARNING: CPU: 1 PID: 483 at fs/btrfs/extent-tree.c:5710
+btrfs_free_block_groups+0x35a/0x400 [btrfs]()
+[983102.894424] Modules linked in: netconsole xt_multiport
+iptable_filter ip_tables x_tables 8021q garp bonding usbhid coretemp
+loop xhci_pci ehci_pci xhci_hcd ehci_hcd i40e(O) sb_edac vxlan
+ip6_udp_tunnel usbcore ipmi_si i2c_i801 shpchp usb_common udp_tunnel
+edac_core ipmi_msghandler button btrfs dm_mod raid456 async_raid6_recov
+async_memcpy async_pq async_xor async_tx xor raid6_pq raid1 md_mod igb
+i2c_algo_bit i2c_core sg sd_mod ptp ahci libahci pps_core aacraid
+[983103.043010] CPU: 1 PID: 483 Comm: umount Tainted: G           O
+4.4.15+43-ph #1
+[983103.084441] Hardware name: Supermicro Super Server/X10SRi-F, BIOS
+2.0 12/17/2015
+[983103.127289]  0000000000000000 ffff880074673cd8 ffffffffad3c712f
+0000000000000000
+[983103.171816]  ffffffffc0298603 ffff880074673d18 ffffffffad0837e7
+0000000b20000000
+[983103.216766]  0000000000000000 ffff88103bd7e600 ffff881037c92088
+ffff881037c92000
+[983103.262776] Call Trace:
+[983103.308602]  [<ffffffffad3c712f>] dump_stack+0x63/0x84
+[983103.355609]  [<ffffffffad0837e7>] warn_slowpath_common+0x97/0xe0
+[983103.403528]  [<ffffffffad08384a>] warn_slowpath_null+0x1a/0x20
+[983103.451297]  [<ffffffffc01f617a>]
+btrfs_free_block_groups+0x35a/0x400 [btrfs]
+[983103.500439]  [<ffffffffc0207a4b>] close_ctree+0x15b/0x330 [btrfs]
+[983103.548805]  [<ffffffffc01d51f9>] btrfs_put_super+0x19/0x20 [btrfs]
+[983103.597122]  [<ffffffffad1cd33f>] generic_shutdown_super+0x6f/0x100
+[983103.645398]  [<ffffffffad1cd866>] kill_anon_super+0x16/0x30
+[983103.693384]  [<ffffffffc01db96a>] btrfs_kill_super+0x1a/0xb0 [btrfs]
+[983103.742430]  [<ffffffffad1cda31>] deactivate_locked_super+0x51/0x90
+[983103.791501]  [<ffffffffad1ce42e>] deactivate_super+0x4e/0x70
+[983103.839979]  [<ffffffffad1e9373>] cleanup_mnt+0x43/0x90
+[983103.889050]  [<ffffffffad1e9412>] __cleanup_mnt+0x12/0x20
+[983103.937756]  [<ffffffffad09ef8e>] task_work_run+0x7e/0xa0
+[983103.986032]  [<ffffffffad07e550>] exit_to_usermode_loop+0x66/0x95
+[983104.035214]  [<ffffffffad002a56>] syscall_return_slowpath+0xa6/0xf0
+[983104.084312]  [<ffffffffad6b6f4c>] int_ret_from_sys_call+0x25/0x8f
+[983104.134098] ---[ end trace ca97a745adcb888f ]---
+[983104.184540] ------------[ cut here ]------------
+[983104.235514] WARNING: CPU: 1 PID: 483 at fs/btrfs/extent-tree.c:5711
+btrfs_free_block_groups+0x3f4/0x400 [btrfs]()
+[983104.290282] Modules linked in: netconsole xt_multiport
+iptable_filter ip_tables x_tables 8021q garp bonding usbhid coretemp
+loop xhci_pci ehci_pci xhci_hcd ehci_hcd i40e(O) sb_edac vxlan
+ip6_udp_tunnel usbcore ipmi_si i2c_i801 shpchp usb_common udp_tunnel
+edac_core ipmi_msghandler button btrfs dm_mod raid456 async_raid6_recov
+async_memcpy async_pq async_xor async_tx xor raid6_pq raid1 md_mod igb
+i2c_algo_bit i2c_core sg sd_mod ptp ahci libahci pps_core aacraid
+[983104.536076] CPU: 1 PID: 483 Comm: umount Tainted: G        W  O
+4.4.15+43-ph #1
+[983104.601962] Hardware name: Supermicro Super Server/X10SRi-F, BIOS
+2.0 12/17/2015
+[983104.669312]  0000000000000000 ffff880074673cd8 ffffffffad3c712f
+0000000000000000
+[983104.738337]  ffffffffc0298603 ffff880074673d18 ffffffffad0837e7
+0000000b20000000
+[983104.807874]  0000000000000000 ffff88103bd7e600 ffff881037c92088
+ffff881037c92000
+[983104.878415] Call Trace:
+[983104.948803]  [<ffffffffad3c712f>] dump_stack+0x63/0x84
+[983105.020781]  [<ffffffffad0837e7>] warn_slowpath_common+0x97/0xe0
+[983105.093734]  [<ffffffffad08384a>] warn_slowpath_null+0x1a/0x20
+[983105.166888]  [<ffffffffc01f6214>]
+btrfs_free_block_groups+0x3f4/0x400 [btrfs]
+[983105.241461]  [<ffffffffc0207a4b>] close_ctree+0x15b/0x330 [btrfs]
+[983105.316744]  [<ffffffffc01d51f9>] btrfs_put_super+0x19/0x20 [btrfs]
+[983105.392021]  [<ffffffffad1cd33f>] generic_shutdown_super+0x6f/0x100
+[983105.465852]  [<ffffffffad1cd866>] kill_anon_super+0x16/0x30
+[983105.537829]  [<ffffffffc01db96a>] btrfs_kill_super+0x1a/0xb0 [btrfs]
+[983105.608078]  [<ffffffffad1cda31>] deactivate_locked_super+0x51/0x90
+[983105.676494]  [<ffffffffad1ce42e>] deactivate_super+0x4e/0x70
+[983105.742614]  [<ffffffffad1e9373>] cleanup_mnt+0x43/0x90
+[983105.807432]  [<ffffffffad1e9412>] __cleanup_mnt+0x12/0x20
+[983105.871301]  [<ffffffffad09ef8e>] task_work_run+0x7e/0xa0
+[983105.934048]  [<ffffffffad07e550>] exit_to_usermode_loop+0x66/0x95
+[983105.997218]  [<ffffffffad002a56>] syscall_return_slowpath+0xa6/0xf0
+[983106.060109]  [<ffffffffad6b6f4c>] int_ret_from_sys_call+0x25/0x8f
+[983106.122424] ---[ end trace ca97a745adcb8890 ]---
+[983106.184587] ------------[ cut here ]------------
+[983106.246721] WARNING: CPU: 1 PID: 483 at fs/btrfs/extent-tree.c:9990
+btrfs_free_block_groups+0x2a4/0x400 [btrfs]()
+[983106.312374] Modules linked in: netconsole xt_multiport
+iptable_filter ip_tables x_tables 8021q garp bonding usbhid coretemp
+loop xhci_pci ehci_pci xhci_hcd ehci_hcd i40e(O) sb_edac vxlan
+ip6_udp_tunnel usbcore ipmi_si i2c_i801 shpchp usb_common udp_tunnel
+edac_core ipmi_msghandler button btrfs dm_mod raid456 async_raid6_recov
+async_memcpy async_pq async_xor async_tx xor raid6_pq raid1 md_mod igb
+i2c_algo_bit i2c_core sg sd_mod ptp ahci libahci pps_core aacraid
+[983106.594248] CPU: 1 PID: 483 Comm: umount Tainted: G        W  O
+4.4.15+43-ph #1
+[983106.667057] Hardware name: Supermicro Super Server/X10SRi-F, BIOS
+2.0 12/17/2015
+[983106.740535]  0000000000000000 ffff880074673cd8 ffffffffad3c712f
+0000000000000000
+[983106.814853]  ffffffffc0298603 ffff880074673d18 ffffffffad0837e7
+ffff88107febe4b0
+[983106.889447]  0000000000000038 0000000000000000 ffff88103bd7d688
+ffff881037c92000
+[983106.964466] Call Trace:
+[983107.038878]  [<ffffffffad3c712f>] dump_stack+0x63/0x84
+[983107.114585]  [<ffffffffad0837e7>] warn_slowpath_common+0x97/0xe0
+[983107.190641]  [<ffffffffad08384a>] warn_slowpath_null+0x1a/0x20
+[983107.266153]  [<ffffffffc01f60c4>]
+btrfs_free_block_groups+0x2a4/0x400 [btrfs]
+[983107.342312]  [<ffffffffc0207a4b>] close_ctree+0x15b/0x330 [btrfs]
+[983107.418075]  [<ffffffffc01d51f9>] btrfs_put_super+0x19/0x20 [btrfs]
+[983107.494135]  [<ffffffffad1cd33f>] generic_shutdown_super+0x6f/0x100
+[983107.568733]  [<ffffffffad1cd866>] kill_anon_super+0x16/0x30
+[983107.641401]  [<ffffffffc01db96a>] btrfs_kill_super+0x1a/0xb0 [btrfs]
+[983107.712357]  [<ffffffffad1cda31>] deactivate_locked_super+0x51/0x90
+[983107.781493]  [<ffffffffad1ce42e>] deactivate_super+0x4e/0x70
+[983107.848333]  [<ffffffffad1e9373>] cleanup_mnt+0x43/0x90
+[983107.913862]  [<ffffffffad1e9412>] __cleanup_mnt+0x12/0x20
+[983107.978423]  [<ffffffffad09ef8e>] task_work_run+0x7e/0xa0
+[983108.041898]  [<ffffffffad07e550>] exit_to_usermode_loop+0x66/0x95
+[983108.105838]  [<ffffffffad002a56>] syscall_return_slowpath+0xa6/0xf0
+[983108.169494]  [<ffffffffad6b6f4c>] int_ret_from_sys_call+0x25/0x8f
+[983108.232423] ---[ end trace ca97a745adcb8891 ]---
+[983108.295201] BTRFS: space_info 4 has 18446741995579113472 free, is
+not full
+[983108.359167] BTRFS: space_info total=47781511168, used=36823171072,
+pinned=0, reserved=0, may_use=2089088778240, readonly=0
+
+> 
 >> The kernel is something special - i'm using this one from holger:
 >> https://github.com/hhoffstaette/kernel-patches
 >>
 >> which is basically a 4.4.15 + several patches especially a lot of btrfs
 >> patches up to 4.8 i think.
->>
->> Greets,
->> Stefan
->> -- 
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->>
->>
 > 
+> More like for-next with all the pagesize/sectorsize stuff carefully
+> avoided. I'm really looking forward to 4.8, this is becoming unwieldy..
 > 
+> -h
+> 
+> [1] https://git.kernel.org/cgit/linux/kernel/git/kdave/linux.git/commit/?h=for-next&id=d555b6c380c644af63dbdaa7cc14bba041a4e4dd
 > 

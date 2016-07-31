@@ -1,36 +1,74 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oi0-f45.google.com ([209.85.218.45]:34998 "EHLO
-	mail-oi0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751520AbcGaA3f (ORCPT
+Received: from syrinx.knorrie.org ([82.94.188.77]:46783 "EHLO
+	syrinx.knorrie.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752100AbcGaBlq (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 30 Jul 2016 20:29:35 -0400
-Received: by mail-oi0-f45.google.com with SMTP id l72so151817770oig.2
-        for <linux-btrfs@vger.kernel.org>; Sat, 30 Jul 2016 17:29:35 -0700 (PDT)
+	Sat, 30 Jul 2016 21:41:46 -0400
+Received: from [IPv6:2001:980:4a41:fb::12] (unknown [IPv6:2001:980:4a41:fb::12])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+	(No client certificate requested)
+	by syrinx.knorrie.org (Postfix) with ESMTPSA id CC3B3600A7
+	for <linux-btrfs@vger.kernel.org>; Sun, 31 Jul 2016 03:41:42 +0200 (CEST)
+Subject: Re: Balance and subvolume delete causes deadlock and metadata
+ corruption
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+References: <426e3db1-f06b-523a-be2c-261f47091f64@mendix.com>
+ <329413bd-0490-13bf-93db-3b495dfd5d7b@mendix.com>
+From: Hans van Kranenburg <hans.van.kranenburg@mendix.com>
+Message-ID: <af4fad32-edea-8f14-2b85-26ce482e0c6f@mendix.com>
+Date: Sun, 31 Jul 2016 03:41:42 +0200
 MIME-Version: 1.0
-In-Reply-To: <CAJCQCtQ4CXjBzR6eo0zibDCb9_p0jAiS2q_fCRUkUNVWiM9i6g@mail.gmail.com>
-References: <CAJCQCtQ4CXjBzR6eo0zibDCb9_p0jAiS2q_fCRUkUNVWiM9i6g@mail.gmail.com>
-From: Chris Murphy <lists@colorremedies.com>
-Date: Sat, 30 Jul 2016 18:29:33 -0600
-Message-ID: <CAJCQCtQ8yPQf8O2LA92-Gd95GGXQiDp-ZomKZgP4bNv-MmKHYw@mail.gmail.com>
-Subject: Re: systemd KillUserProcesses=yes and btrfs scrub
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+In-Reply-To: <329413bd-0490-13bf-93db-3b495dfd5d7b@mendix.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, Jul 30, 2016 at 2:02 PM, Chris Murphy <lists@colorremedies.com> wrote:
-> Short version: When systemd-logind login.conf KillUserProcesses=yes,
-> and the user does "sudo btrfs scrub start" in e.g. GNOME Terminal, and
+On 07/31/2016 02:13 AM, Hans van Kranenburg wrote:
+> On 07/31/2016 01:18 AM, Hans van Kranenburg wrote:
+>> blahblahblahblahblalahba
+>>
+>> Doing a btrfs check now on the block device, will fup with the output.
+>>
+> 
+> Output so far:
+> 
+> -# btrfs check /dev/xvdc 2>&1 | tee btrfs-check-xvdc
+> checking extents
+> ref mismatch on [3649516437504 16384] extent item 0, found 1
+> Backref 3649516437504 parent 4100606377984 root 4100606377984 not found
+> in extent tree
+> backpointer mismatch on [3649516437504 16384]
+> owner ref check failed [3649516437504 16384]
+> ref mismatch on [4091477114880 16384] extent item 0, found 1
+[...]
+> ref mismatch on [4103438221312 16384] extent item 0, found 1
+> Backref 4103438221312 parent 4100606377984 root 4100606377984 not found
+> in extent tree
+> backpointer mismatch on [4103438221312 16384]
+> owner ref check failed [4103438221312 16384]
+> checking free space tree
+> checking fs roots
+> [...]
+> 
 
-Same thing with Xfce, so it's not DE specific. (Unsuprising.)
+Yay...
 
-I inflated the size of the test volume, and it seems pretty clear that
-the scrub is not completing, as the kernel threads stop sooner when
-logging out vs not logging out. So the status reporting an
-interruption appears to be valid for the net operation, not merely the
-user space tool being interrupted.
-
-
+checking free space tree
+checking fs roots
+checking csums
+checking root refs
+Checking filesystem on /dev/xvdc
+UUID: 37c37071-4080-418b-a27a-29d7d15ec00d
+cache and super generation don't match, space cache will be invalidated
+found 1877500653751 bytes used err is 0
+total csum bytes: 1805473324
+total tree bytes: 28709109760
+total fs tree bytes: 26028736512
+total extent tree bytes: 589660160
+btree space waste bytes: 4777447505
+file data blocks allocated: 2809995116544
+ referenced 2809992523776
 
 -- 
-Chris Murphy
+Hans van Kranenburg - System / Network Engineer
+T +31 (0)10 2760434 | hans.van.kranenburg@mendix.com | www.mendix.com

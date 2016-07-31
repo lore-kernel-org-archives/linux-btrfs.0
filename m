@@ -1,74 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from syrinx.knorrie.org ([82.94.188.77]:46783 "EHLO
-	syrinx.knorrie.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752100AbcGaBlq (ORCPT
+Received: from mail-lf0-f47.google.com ([209.85.215.47]:33285 "EHLO
+	mail-lf0-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753275AbcGaKXs convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 30 Jul 2016 21:41:46 -0400
-Received: from [IPv6:2001:980:4a41:fb::12] (unknown [IPv6:2001:980:4a41:fb::12])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
-	(No client certificate requested)
-	by syrinx.knorrie.org (Postfix) with ESMTPSA id CC3B3600A7
-	for <linux-btrfs@vger.kernel.org>; Sun, 31 Jul 2016 03:41:42 +0200 (CEST)
-Subject: Re: Balance and subvolume delete causes deadlock and metadata
- corruption
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-References: <426e3db1-f06b-523a-be2c-261f47091f64@mendix.com>
- <329413bd-0490-13bf-93db-3b495dfd5d7b@mendix.com>
-From: Hans van Kranenburg <hans.van.kranenburg@mendix.com>
-Message-ID: <af4fad32-edea-8f14-2b85-26ce482e0c6f@mendix.com>
-Date: Sun, 31 Jul 2016 03:41:42 +0200
+	Sun, 31 Jul 2016 06:23:48 -0400
+Received: by mail-lf0-f47.google.com with SMTP id b199so97723916lfe.0
+        for <linux-btrfs@vger.kernel.org>; Sun, 31 Jul 2016 03:23:33 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <329413bd-0490-13bf-93db-3b495dfd5d7b@mendix.com>
-Content-Type: text/plain; charset=utf-8
+In-Reply-To: <pan$5fb1f$7ade4380$d83d2847$ba15621a@cox.net>
+References: <CA+xOVSOx56oc5kF+oj18B3m23wcpy2OqbKbH9j13se+s98YvdQ@mail.gmail.com>
+ <pan$5fb1f$7ade4380$d83d2847$ba15621a@cox.net>
+From: Mordechay Kaganer <mkaganer@gmail.com>
+Date: Sun, 31 Jul 2016 13:23:31 +0300
+Message-ID: <CA+xOVSMP_ZXCoyRWL5KaDvkdPJHYtLd9f9GgD-y55=cppENLhA@mail.gmail.com>
+Subject: Re: BTRFS: Transaction aborted (error -28)
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 07/31/2016 02:13 AM, Hans van Kranenburg wrote:
-> On 07/31/2016 01:18 AM, Hans van Kranenburg wrote:
->> blahblahblahblahblalahba
->>
->> Doing a btrfs check now on the block device, will fup with the output.
->>
-> 
-> Output so far:
-> 
-> -# btrfs check /dev/xvdc 2>&1 | tee btrfs-check-xvdc
-> checking extents
-> ref mismatch on [3649516437504 16384] extent item 0, found 1
-> Backref 3649516437504 parent 4100606377984 root 4100606377984 not found
-> in extent tree
-> backpointer mismatch on [3649516437504 16384]
-> owner ref check failed [3649516437504 16384]
-> ref mismatch on [4091477114880 16384] extent item 0, found 1
-[...]
-> ref mismatch on [4103438221312 16384] extent item 0, found 1
-> Backref 4103438221312 parent 4100606377984 root 4100606377984 not found
-> in extent tree
-> backpointer mismatch on [4103438221312 16384]
-> owner ref check failed [4103438221312 16384]
-> checking free space tree
-> checking fs roots
-> [...]
-> 
+B.H.
 
-Yay...
+Thanks for the detailed answer!
 
-checking free space tree
-checking fs roots
-checking csums
-checking root refs
-Checking filesystem on /dev/xvdc
-UUID: 37c37071-4080-418b-a27a-29d7d15ec00d
-cache and super generation don't match, space cache will be invalidated
-found 1877500653751 bytes used err is 0
-total csum bytes: 1805473324
-total tree bytes: 28709109760
-total fs tree bytes: 26028736512
-total extent tree bytes: 589660160
-btree space waste bytes: 4777447505
-file data blocks allocated: 2809995116544
- referenced 2809992523776
+On Fri, Jul 29, 2016 at 8:23 PM, Duncan <1i5t5.duncan@cox.net> wrote:
+> ...
+> Of course the fact that the transaction aborted /does/ indicate some sort
+> of problem, which may in fact have left the filesystem in an unknown
+> state.  However, I'd recommend a couple other checks, not balance, to be
+> sure you're good.  First, a btrfs scrub of the filesystem, just to be
+> sure the checksums all come out fine (or are fixable and fixed if not).
+> Second, a btrfs check, which will be read-only unless you add --repair or
+> similar option.
+
+OK, scrub finished with 0 errors so I assume the FS is probably in a good shape
+
+Regarding 'btrfs check' - my FS is huge and with a lot of metadata so
+btrfs check seems to consume a lot of RAM. I've added all of my system
+disk's free space as a swap but the check was killed due to OOM after
+consuming about 100GB of memory.
+
+> ...
+> So I'd recommend upgrading to the latest kernel 4.4 if you want to stay
+> with the stable series, or 4.6 or 4.7 if you want current, and then (less
+> important) upgrading the btrfs userspace as well.  It's possible the
+> newer kernel will handle the combined rsync and send stresses better, and
+> if not, you're on a better base to provide bug reports, etc.
+
+OK, upgraded to 4.4 (Ubuntu 16.04 stock kernel) and the fresh
+btrfs-progs 4.7. I'm assuming the error was due to some kind of bug or
+race condition and the FS is clean. Let's see how it behaves. Thanks!
 
 -- 
-Hans van Kranenburg - System / Network Engineer
-T +31 (0)10 2760434 | hans.van.kranenburg@mendix.com | www.mendix.com
+משיח NOW!
+Moshiach is coming very soon, prepare yourself!
+יחי אדוננו מורינו ורבינו מלך המשיח לעולם ועד!

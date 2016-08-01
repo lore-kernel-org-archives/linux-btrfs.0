@@ -1,47 +1,129 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pa0-f46.google.com ([209.85.220.46]:36084 "EHLO
-	mail-pa0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S968188AbcHBSJ1 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 2 Aug 2016 14:09:27 -0400
-Received: by mail-pa0-f46.google.com with SMTP id pp5so65526024pac.3
-        for <linux-btrfs@vger.kernel.org>; Tue, 02 Aug 2016 11:09:26 -0700 (PDT)
-Subject: Re: Fixup direct bi_rw modifiers
-To: Christoph Hellwig <hch@infradead.org>
-References: <1469915148-20452-1-git-send-email-shaun@tancheff.com>
- <20160801114713.GA16806@infradead.org>
- <36734f69-33f5-c2fd-67da-d2d867741403@kernel.dk>
- <a2fbb070-ad57-0015-45d0-2402368ba35e@kernel.dk>
- <20160802123245.GA18679@infradead.org>
-Cc: Shaun Tancheff <shaun@tancheff.com>, linux-block@vger.kernel.org,
-        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
-        Jens Axboe <axboe@fb.com>, Chris Mason <clm@fb.com>,
-        Josef Bacik <jbacik@fb.com>, David Sterba <dsterba@suse.com>,
-        Mike Christie <mchristi@redhat.com>
-From: Jens Axboe <axboe@kernel.dk>
-Message-ID: <111bfd53-d89d-d38f-32e5-5e83bad79dbc@kernel.dk>
-Date: Tue, 2 Aug 2016 11:09:23 -0700
-MIME-Version: 1.0
-In-Reply-To: <20160802123245.GA18679@infradead.org>
-Content-Type: text/plain; charset=windows-1252; format=flowed
+Received: from mail.kernel.org ([198.145.29.136]:40928 "EHLO mail.kernel.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1754166AbcHAQbJ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 1 Aug 2016 12:31:09 -0400
+Received: from mail.kernel.org (localhost [127.0.0.1])
+	by mail.kernel.org (Postfix) with ESMTP id E53932045B
+	for <linux-btrfs@vger.kernel.org>; Mon,  1 Aug 2016 16:24:56 +0000 (UTC)
+Received: from debian3.lan (bl12-226-64.dsl.telepac.pt [85.245.226.64])
+	(using TLSv1.2 with cipher AES128-SHA256 (128/128 bits))
+	(No client certificate requested)
+	by mail.kernel.org (Postfix) with ESMTPSA id B368D20451
+	for <linux-btrfs@vger.kernel.org>; Mon,  1 Aug 2016 16:24:55 +0000 (UTC)
+From: fdmanana@kernel.org
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH] Btrfs: send, don't bug on inconsistent snapshots
+Date: Mon,  1 Aug 2016 03:16:52 +0100
+Message-Id: <1470017812-11124-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 08/02/2016 05:32 AM, Christoph Hellwig wrote:
-> On Mon, Aug 01, 2016 at 01:55:36PM -0600, Jens Axboe wrote:
->>
->> Set of three patches, where the target one is an actual bug fix...
->> Temporary branch, I'll rebase it once -rc1 is out, if more
->> changes/fixups need to be made in the next week until that happens.
->>
->> http://git.kernel.dk/cgit/linux-block/log/?h=for-4.8/bi_rwf
->
-> Thanks.  Any chance to have a slightly better name for the field?
-> E.g. bi_opf or bi_op_flags if we want to be a bit more verbose.
+From: Filipe Manana <fdmanana@suse.com>
 
-bi_opf is fine with me as well, don't care too strongly about bi_rwf or 
-bi_opf. I don't like the longer variants.
+When doing an incremental send, if we find a new/modified/deleted extent,
+reference or xattr without having previously processed the corresponding
+inode item we end up exexuting a BUG_ON(). This is because whenever an
+extent, xattr or reference is added, modified or deleted, we always expect
+to have the corresponding inode item updated. However there are situations
+where this will not happen due to transient -ENOMEM or -ENOSPC errors when
+doing delayed inode updates.
 
+For example, when punching holes we can succeed in deleting and modifying
+(shrinking) extents but later fail to do the delayed inode update. So after
+such failure we close our transaction handle and right after a snapshot of
+the fs/subvol tree can be made and used later for a send operation. The
+same thing can happen during truncate, link, unlink, and xattr related
+operations.
 
+So instead of executing a BUG_ON, make send return an -EIO error and print
+an informative error message do dmesg/syslog.
+
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+ fs/btrfs/send.c | 48 +++++++++++++++++++++++++++++++++++++++++++++---
+ 1 file changed, 45 insertions(+), 3 deletions(-)
+
+diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
+index 2db8dc8..efe129f 100644
+--- a/fs/btrfs/send.c
++++ b/fs/btrfs/send.c
+@@ -273,6 +273,39 @@ struct name_cache_entry {
+ 	char name[];
+ };
+ 
++static void inconsistent_snapshot_error(struct send_ctx *sctx,
++					enum btrfs_compare_tree_result result,
++					const char *what)
++{
++	const char *result_string;
++
++	switch (result) {
++	case BTRFS_COMPARE_TREE_NEW:
++		result_string = "new";
++		break;
++	case BTRFS_COMPARE_TREE_DELETED:
++		result_string = "deleted";
++		break;
++	case BTRFS_COMPARE_TREE_CHANGED:
++		result_string = "updated";
++		break;
++	case BTRFS_COMPARE_TREE_SAME:
++		ASSERT(0);
++		result_string = "unchanged";
++		break;
++	default:
++		ASSERT(0);
++		result_string = "unexpected";
++	}
++
++	btrfs_err(sctx->send_root->fs_info,
++		  "Send: inconsistent snapshot, found %s %s for inode %llu without updated inode item, send root is %llu, parent root is %llu",
++		  result_string, what, sctx->cmp_key->objectid,
++		  sctx->send_root->root_key.objectid,
++		  (sctx->parent_root ?
++		   sctx->parent_root->root_key.objectid : 0));
++}
++
+ static int is_waiting_for_move(struct send_ctx *sctx, u64 ino);
+ 
+ static struct waiting_dir_move *
+@@ -5711,7 +5744,10 @@ static int changed_ref(struct send_ctx *sctx,
+ {
+ 	int ret = 0;
+ 
+-	BUG_ON(sctx->cur_ino != sctx->cmp_key->objectid);
++	if (sctx->cur_ino != sctx->cmp_key->objectid) {
++		inconsistent_snapshot_error(sctx, result, "reference");
++		return -EIO;
++	}
+ 
+ 	if (!sctx->cur_inode_new_gen &&
+ 	    sctx->cur_ino != BTRFS_FIRST_FREE_OBJECTID) {
+@@ -5736,7 +5772,10 @@ static int changed_xattr(struct send_ctx *sctx,
+ {
+ 	int ret = 0;
+ 
+-	BUG_ON(sctx->cur_ino != sctx->cmp_key->objectid);
++	if (sctx->cur_ino != sctx->cmp_key->objectid) {
++		inconsistent_snapshot_error(sctx, result, "xattr");
++		return -EIO;
++	}
+ 
+ 	if (!sctx->cur_inode_new_gen && !sctx->cur_inode_deleted) {
+ 		if (result == BTRFS_COMPARE_TREE_NEW)
+@@ -5760,7 +5799,10 @@ static int changed_extent(struct send_ctx *sctx,
+ {
+ 	int ret = 0;
+ 
+-	BUG_ON(sctx->cur_ino != sctx->cmp_key->objectid);
++	if (sctx->cur_ino != sctx->cmp_key->objectid) {
++		inconsistent_snapshot_error(sctx, result, "extent");
++		return -EIO;
++	}
+ 
+ 	if (!sctx->cur_inode_new_gen && !sctx->cur_inode_deleted) {
+ 		if (result != BTRFS_COMPARE_TREE_DELETED)
 -- 
-Jens Axboe
+2.7.0.rc3
 

@@ -1,36 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from bombadil.infradead.org ([198.137.202.9]:45693 "EHLO
-	bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753287AbcHALst (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 1 Aug 2016 07:48:49 -0400
-Date: Mon, 1 Aug 2016 04:47:13 -0700
-From: Christoph Hellwig <hch@infradead.org>
-To: Shaun Tancheff <shaun@tancheff.com>
-Cc: linux-block@vger.kernel.org, linux-btrfs@vger.kernel.org,
-        linux-kernel@vger.kernel.org, Jens Axboe <axboe@kernel.dk>,
-        Jens Axboe <axboe@fb.com>, Chris Mason <clm@fb.com>,
-        Josef Bacik <jbacik@fb.com>, David Sterba <dsterba@suse.com>,
-        Mike Christie <mchristi@redhat.com>
+Received: from mail-it0-f51.google.com ([209.85.214.51]:36947 "EHLO
+	mail-it0-f51.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754227AbcHAR6E (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 1 Aug 2016 13:58:04 -0400
+Received: by mail-it0-f51.google.com with SMTP id f6so178013630ith.0
+        for <linux-btrfs@vger.kernel.org>; Mon, 01 Aug 2016 10:57:55 -0700 (PDT)
 Subject: Re: Fixup direct bi_rw modifiers
-Message-ID: <20160801114713.GA16806@infradead.org>
+To: Christoph Hellwig <hch@infradead.org>, Shaun Tancheff <shaun@tancheff.com>
 References: <1469915148-20452-1-git-send-email-shaun@tancheff.com>
+ <20160801114713.GA16806@infradead.org>
+Cc: linux-block@vger.kernel.org, linux-btrfs@vger.kernel.org,
+        linux-kernel@vger.kernel.org, Jens Axboe <axboe@fb.com>,
+        Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
+        David Sterba <dsterba@suse.com>, Mike Christie <mchristi@redhat.com>
+From: Jens Axboe <axboe@kernel.dk>
+Message-ID: <36734f69-33f5-c2fd-67da-d2d867741403@kernel.dk>
+Date: Mon, 1 Aug 2016 09:17:50 -0600
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1469915148-20452-1-git-send-email-shaun@tancheff.com>
+In-Reply-To: <20160801114713.GA16806@infradead.org>
+Content-Type: text/plain; charset=windows-1252; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, Jul 30, 2016 at 04:45:48PM -0500, Shaun Tancheff wrote:
-> bi_rw should be using bio_set_op_attrs to set bi_rw.
+On 08/01/2016 05:47 AM, Christoph Hellwig wrote:
+> On Sat, Jul 30, 2016 at 04:45:48PM -0500, Shaun Tancheff wrote:
+>> bi_rw should be using bio_set_op_attrs to set bi_rw.
+>
+> Looks fine,
+>
+> Reviewed-by: Christoph Hellwig <hch@lst.de>
 
-Looks fine,
+Added, thanks Shaun.
 
-Reviewed-by: Christoph Hellwig <hch@lst.de>
+> Jens,
+>
+> what do you think about renaming bi_rw?  There aren't too many users
+> left, and any old code that would keep using it is alsmost guranteed
+> to be broken, so sending a post-rc1 patch to rename it might make
+> everyone else life easier.  Especially as it's also grossly misnamed
+> now.
 
-Jens,
+I was planning on doing that, after -rc1. Much better to get build
+breakage, than potentially much worse breakage.
 
-what do you think about renaming bi_rw?  There aren't too many users
-left, and any old code that would keep using it is alsmost guranteed
-to be broken, so sending a post-rc1 patch to rename it might make
-everyone else life easier.  Especially as it's also grossly misnamed
-now.
+-- 
+Jens Axboe
+

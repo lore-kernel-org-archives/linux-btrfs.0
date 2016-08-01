@@ -1,48 +1,82 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:59529 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1753029AbcH2RM3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 29 Aug 2016 13:12:29 -0400
-Date: Mon, 29 Aug 2016 19:11:10 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Austin S Hemmelgarn <ahferroin7@gmail.com>
-Cc: russell@coker.com.au, Qu Wenruo <quwenruo@cn.fujitsu.com>,
-        Lukas Lueg <lukas.lueg@gmail.com>, linux-btrfs@vger.kernel.org
-Subject: Re: Carefully crafted BTRFS-image causes kernel to crash
-Message-ID: <20160829171110.GZ16983@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <CAJF-kYngS4U6=oiXhs0ZF3Na3ezTGcMX1Wyd5HVVm887V61mWw@mail.gmail.com>
- <5535C11C.2050308@cn.fujitsu.com>
- <201504211938.35080.russell@coker.com.au>
- <5536380C.9080102@gmail.com>
+Received: from cn.fujitsu.com ([59.151.112.132]:19473 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1751342AbcHABa6 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 31 Jul 2016 21:30:58 -0400
+Subject: Re: Btrfs send to send out metadata and data separately
+To: =?UTF-8?B?TGlib3IgS2xlcMOhxI0=?= <libor.klepac@bcom.cz>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+References: <07e7aea4-ebc7-1c47-34fb-daaae42ab245@gmx.com>
+ <8930800.y3r4nzIv9U@libor-nb>
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Message-ID: <140dea59-c35d-dac6-0686-229e7a1e70a2@cn.fujitsu.com>
+Date: Mon, 1 Aug 2016 09:22:40 +0800
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <5536380C.9080102@gmail.com>
+In-Reply-To: <8930800.y3r4nzIv9U@libor-nb>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Apr 21, 2015 at 07:44:12AM -0400, Austin S Hemmelgarn wrote:
-> On 2015-04-21 05:38, Russell Coker wrote:
-> > On Tue, 21 Apr 2015, Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
-> >> Although we may add extra check for such problem to improve robustness,
-> >> but IMHO it's not a real world problem.
-> >
-> > Some of the ReiserFS developers gave a similar reaction to some of my bug
-> > reports.  ReiserFS wasn't the most robust filesystem.
-> >
-> > I think that it should be EXECTED that a kernel will have to occasionally deal
-> > with filesystem images that are created by hostile parties.  Userspace crash
-> > and kernel freeze is not a suitable way of dealing with it.
-> >
-> And that kind of reaction is why ReiserFS isn't taken very seriously in 
-> an enterprise environment.
-> 
-> Just because something shouldn't be possible in a 'real world' 
-> environment, doesn't mean it won't happen; never underestimate the 
-> ability of hardware to fail in new and unexpected ways, or the ability 
-> of administrators to make stupid mistakes.
 
-I agree, given the high number of random memory bitflips that I've seen
-in past years, that were stored to the disk with valid checksums.
-Whether it's a real-world or potentially a hw problem IMO adjusts the
-priority, but the issues should be fixed if possible.
+
+At 07/29/2016 09:14 PM, Libor Klepáč wrote:
+> Hello,
+>
+> just a little question on receiver point 0), see bellow
+>
+> Dne pátek 29. července 2016 20:40:38 CEST, Qu Wenruo napsal(a):
+>> Hi Filipe, and maintainers,
+>>
+>> Receive will do the following thing first before recovering the
+>> subvolume/snapshot:
+>>
+>> 0) Create temporary dir for data extents
+>>     Create a new dir with temporary name($data_extent), to put data
+>> extents into it.
+>
+> These are the directories in format "o4095916-21925-0" on receiver side?
+
+That's the temporary dir/file receive creates.
+
+If using send-test(not complied anymore), you will see that that's how 
+receive recover files/dirs:
+
+1) mkfile/mkdir with temporary name
+2) rename temporary file/dir to its final name
+
+>
+> I'm in middle of send/receive and i have over 300 thousand of them already.
+> I was always told, that directory with lots of items suffers on performance
+> (but i newer used btrfs before :), is that true?
+
+Not completely true.
+
+The fact is even worse, no matter dir or file, if there are too much 
+inodes/extents in a *subvolume/snapshot*, it will be slowed down.
+
+Unlike normal fs (ext*/xfs), btrfs put all dir/file info into one 
+subvolume tree.
+
+But that's to say, if you design the subvolume layout carefully, which 
+means never put too many things into one subvolume, then it should not 
+be a big problem though.
+
+>
+> Should it be little structured (subdirs based on extent number, for example) ?
+
+Dir and file are sharing the same subvolume/dir tree, so subdir won't help.
+
+But I can create a new subvolume for data extents, and reflink can work 
+across subvolumes.
+So that's won't cause a big problem though.
+
+Thanks,
+Qu
+
+>
+> Libor
+> N�����r��y���b�X��ǧv�^�)޺{.n�+����{�n�߲)���w*jg��������ݢj/���z�ޖ��2�ޙ���&�)ߡ�a�����G���h��j:+v���w�٥
+>
+
+

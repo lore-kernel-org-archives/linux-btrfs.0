@@ -1,50 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wm0-f66.google.com ([74.125.82.66]:35428 "EHLO
-        mail-wm0-f66.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1754418AbcHSN27 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 19 Aug 2016 09:28:59 -0400
-Date: Fri, 19 Aug 2016 15:27:51 +0200
-From: Michal Hocko <mhocko@kernel.org>
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:9950 "EHLO
+	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1752800AbcHAP2J (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 1 Aug 2016 11:28:09 -0400
+Subject: Re: qcow2 becomes 37P in size while qemu crashes
 To: Chris Murphy <lists@colorremedies.com>
-Cc: Mel Gorman <mgorman@suse.de>, Btrfs BTRFS <linux-btrfs@vger.kernel.org>,
-        linux-kernel <linux-kernel@vger.kernel.org>
-Subject: Re: OOM killer invoked during btrfs send/recieve on otherwise idle
- machine
-Message-ID: <20160819132751.GI32619@dhcp22.suse.cz>
-References: <20160731051121.GB307@x4>
- <20160731151047.GA4496@dhcp22.suse.cz>
- <20160731152522.GA311@x4>
- <20160802132855.GA24890@dhcp22.suse.cz>
- <CAJCQCtRDVr9MKC+GRWo1Ti4-7NLtY3Dj0gb0F=JJO1brX8bT6A@mail.gmail.com>
- <CAJCQCtQ57OgNgRzjcGr4OBh3y9NO1J0juZbz5p3cgt5OinRx6A@mail.gmail.com>
+References: <CAJCQCtQOV4gsh-Kaz6n=d9KBYCyOh9eb65-G8KBd8B_HJ_tNBg@mail.gmail.com>
+ <CAJCQCtQYicoze=jBf9ptQABLZSxgd67MYUbCs2igB2PipugxaA@mail.gmail.com>
+CC: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+From: Chris Mason <clm@fb.com>
+Message-ID: <dac1d283-feb1-f496-0637-8ba57398d055@fb.com>
+Date: Mon, 1 Aug 2016 11:26:56 -0400
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CAJCQCtQ57OgNgRzjcGr4OBh3y9NO1J0juZbz5p3cgt5OinRx6A@mail.gmail.com>
+In-Reply-To: <CAJCQCtQYicoze=jBf9ptQABLZSxgd67MYUbCs2igB2PipugxaA@mail.gmail.com>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue 02-08-16 09:48:01, Chris Murphy wrote:
-> On Tue, Aug 2, 2016 at 9:38 AM, Chris Murphy <lists@colorremedies.com> wrote:
-> > Yesterday I saw oom killer knocking off processes during a simple cp
-> > -a from one Btrfs to another, in a VM, with kernel
-> > 4.8.0-0.rc0.git3.1.fc25.x86_64. The call trace looks different than
-> > Markus' so I'm not sure it's the same problem. It's not always
-> > reproducible. It hasn't happened on 4.7.0 though. According ot koji
-> > this is Linux v4.7-6438-gc624c86
-> >
-> > This is 'journalctl -o short-monotonic -b-4 -k'
-> >
-> > https://drive.google.com/open?id=0B_2Asp8DGjJ9ZC1JSDJnaWpnSEE
-> 
-> Btrfs volume 2 is created at [  625.769736]  and mounted at [
-> 640.119150], with the copy starting shortly after that. OOM happens at
-> [  856.212658] . There are a bunch of earlier bug messages, BUG:
-> sleeping function called from invalid context at mm/slab.h:393.
 
-It seems that the current linux-next +
-http://lkml.kernel.org/r/f7a9ea9d-bb88-bfd6-e340-3a933559305a@suse.cz
-seems like helped other users. Could you try this as well please?
--- 
-Michal Hocko
-SUSE Labs
+
+On 07/23/2016 04:05 PM, Chris Murphy wrote:
+> Using btrfs-debug-tree, I'm finding something a bit odd about some of
+> the items in this 39P file.
+>
+> Seems normal
+>
+>     item 71 key (994163 EXTENT_DATA 43689967616) itemoff 12467 itemsize 53
+>         extent data disk byte 617349906432 nr 80805888
+>         extent data offset 0 nr 80805888 ram 80805888
+>         extent compression(none)
+>
+> Seems not normal
+>
+>     item 58 key (994163 EXTENT_DATA 38345535488) itemoff 13156 itemsize 53
+>         extent data disk byte 0 nr 0
+>         extent data offset 394752000 nr 61440 ram 34626881742770176
+>         extent compression(none)
+>
+> There are quite a large number of items that take the 2nd form, and in
+> each case the ram value is the same as above.
+>
+>
+
+Can't really blame a bit flip for that one.  Looks like our hole 
+truncation math has gone crazy there.  I'll see what I can find, but 
+please yell if you can reproduce.
+
+Thanks!
+
+-chris

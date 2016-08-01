@@ -1,49 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:53095 "EHLO mx2.suse.de"
+Received: from blaine.gmane.org ([80.91.229.8]:49570 "EHLO blaine.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751122AbcGMPqz (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 13 Jul 2016 11:46:55 -0400
-Date: Wed, 13 Jul 2016 17:46:43 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Benedikt Morbach <benedikt.morbach@googlemail.com>
-Cc: dsterba@suse.cz, Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] receive: strip root subvol path during process_clone
-Message-ID: <20160713154642.GN10595@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20160614225541.18140-1-benedikt.morbach@googlemail.com>
- <1465945606.18810.1.camel@googlemail.com>
- <20160617171807.GI4915@twin.jikos.cz>
- <CAC-H7H=_SaLg_w0uuXpG+yfxjo2zkumzhh+DQ34AqGfQj4rOXw@mail.gmail.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CAC-H7H=_SaLg_w0uuXpG+yfxjo2zkumzhh+DQ34AqGfQj4rOXw@mail.gmail.com>
+	id S1753965AbcHADsm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 31 Jul 2016 23:48:42 -0400
+Received: from list by blaine.gmane.org with local (Exim 4.84_2)
+	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+	id 1bU3yq-0008LL-Pa
+	for linux-btrfs@vger.kernel.org; Mon, 01 Aug 2016 05:33:28 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: systemd KillUserProcesses=yes and btrfs scrub
+Date: Mon, 1 Aug 2016 03:33:17 +0000 (UTC)
+Message-ID: <pan$78252$34552641$3836f6b6$31bf3e7c@cox.net>
+References: <CAJCQCtQ4CXjBzR6eo0zibDCb9_p0jAiS2q_fCRUkUNVWiM9i6g@mail.gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Jul 11, 2016 at 04:07:25PM +0200, Benedikt Morbach wrote:
-> Hi David,
-> 
-> On Fri, Jun 17, 2016 at 7:18 PM, David Sterba <dsterba@suse.cz> wrote:
-> > thanks for the fix. The mail thread holds enough information to
-> > reproduce the issue, I'll get to that on Monday. I'm not sure about the
-> > use of strstr to match the subvolume name so I want to write the tests
-> > first and craft some paths to see how it works.
-> 
-> any update on this? I've been running this patch for a few weeks now
-> with my hourly backups.
-> I could also take a stab at writing a test case but I think I'd need
-> some pointers for that. ;-)
+Chris Murphy posted on Sat, 30 Jul 2016 14:02:17 -0600 as excerpted:
 
-Sorry, I got distracted. The things with paths are a bit complicated,
-there's chroot support, explicit mountpoint (-m), so stripping the
-root_path would not work in all cases.
+> Short version: When systemd-logind login.conf KillUserProcesses=yes, and
+> the user does "sudo btrfs scrub start" in e.g. GNOME Terminal, and then
+> logs out of the shell, the user space operation is killed, and btrfs
+> scrub status reports that the scrub was aborted. [1]
 
-Apparently the full_clone_path is wrong there as it's not relative to
-root_path and thus openat(mnt_fd, ...) will fail, so instead of
-stripping the path, we would need to provide the clone path relative to
-root_path directly.
+What does btrfs scrub resume do?  Resume, or error?
 
-> I took a look at the send/receive patches that Filipe sent earlier and
-> afaict this isn't fixed in those.
+If it resumes, I'd say RESOLVED/NOTABUG as both that systemd option and 
+btrfs scrub appear to be working as intended.  If it doesn't, then 
+there's definitely a btrfs bug, even if you argue it's only in the 
+documentation, because the manpage (tho still 4.6.1, here) says it 
+resumes an interrupted scrub but won't start a new one if the scrub 
+finished successfully, and an abort is definitely an interruption, not a 
+successful finish.
 
-No, this is not related to kernel.
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

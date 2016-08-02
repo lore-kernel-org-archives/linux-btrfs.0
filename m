@@ -1,271 +1,97 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:45975 "EHLO
-        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752038AbcHXK1H (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 24 Aug 2016 06:27:07 -0400
-Subject: Re: [PATCH 05/13] btrfs-progs: two staged filesystem creation
-To: David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
-References: <1471947917-5324-1-git-send-email-dsterba@suse.com>
- <1471947917-5324-6-git-send-email-dsterba@suse.com>
-From: Anand Jain <anand.jain@oracle.com>
-Message-ID: <35455b29-a076-41ef-e8ee-ed001601395a@oracle.com>
-Date: Wed, 24 Aug 2016 18:27:44 +0800
+Received: from mail-pf0-f195.google.com ([209.85.192.195]:35661 "EHLO
+	mail-pf0-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S966405AbcHBNql (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 2 Aug 2016 09:46:41 -0400
+Date: Tue, 2 Aug 2016 15:28:55 +0200
+From: Michal Hocko <mhocko@kernel.org>
+To: Markus Trippelsdorf <markus@trippelsdorf.de>
+Cc: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
+        Mel Gorman <mgorman@suse.de>, linux-mm@kvack.org
+Subject: Re: OOM killer invoked during btrfs send/recieve on otherwise idle
+ machine
+Message-ID: <20160802132855.GA24890@dhcp22.suse.cz>
+References: <20160731051121.GB307@x4>
+ <20160731151047.GA4496@dhcp22.suse.cz>
+ <20160731152522.GA311@x4>
 MIME-Version: 1.0
-In-Reply-To: <1471947917-5324-6-git-send-email-dsterba@suse.com>
-Content-Type: text/plain; charset=windows-1252; format=flowed
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20160731152522.GA311@x4>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+JFYI http://lkml.kernel.org/r/20160801192620.GD31957@dhcp22.suse.cz
+sounds quite similar to your report. order-2 OOMs with btrfs and many
+pagecache pages wrt. to the anon. I suspect that btrfs is preventing
+the compaction for some reason.
 
+On Sun 31-07-16 17:25:22, Markus Trippelsdorf wrote:
+> On 2016.07.31 at 17:10 +0200, Michal Hocko wrote:
+> > [CC Mel and linux-mm]
+> > 
+> > On Sun 31-07-16 07:11:21, Markus Trippelsdorf wrote:
+> > > Tonight the OOM killer got invoked during backup of /:
+> > > 
+> > > [Jul31 01:56] kthreadd invoked oom-killer: gfp_mask=0x27000c0(GFP_KERNEL_ACCOUNT|__GFP_NOTRACK), order=2, oom_score_adj=0
+> > 
+> > This a kernel stack allocation.
+> > 
+> > > [  +0.000004] CPU: 3 PID: 2 Comm: kthreadd Not tainted 4.7.0-06816-g797cee982eef-dirty #37
+> > > [  +0.000000] Hardware name: System manufacturer System Product Name/M4A78T-E, BIOS 3503    04/13/2011
+> > > [  +0.000002]  0000000000000000 ffffffff813c2d58 ffff8802168e7d48 00000000002ec4ea
+> > > [  +0.000002]  ffffffff8118eb9d 00000000000001b8 0000000000000440 00000000000003b0
+> > > [  +0.000002]  ffff8802133fe400 00000000002ec4ea ffffffff81b8ac9c 0000000000000006
+> > > [  +0.000001] Call Trace:
+> > > [  +0.000004]  [<ffffffff813c2d58>] ? dump_stack+0x46/0x6e
+> > > [  +0.000003]  [<ffffffff8118eb9d>] ? dump_header.isra.11+0x4c/0x1a7
+> > > [  +0.000002]  [<ffffffff811382eb>] ? oom_kill_process+0x2ab/0x460
+> > > [  +0.000001]  [<ffffffff811387e3>] ? out_of_memory+0x2e3/0x380
+> > > [  +0.000002]  [<ffffffff81141532>] ? __alloc_pages_slowpath.constprop.124+0x1d32/0x1e40
+> > > [  +0.000001]  [<ffffffff81141b4c>] ? __alloc_pages_nodemask+0x10c/0x120
+> > > [  +0.000002]  [<ffffffff810939aa>] ? copy_process.part.72+0xea/0x17a0
+> > > [  +0.000002]  [<ffffffff810d1a55>] ? pick_next_task_fair+0x915/0x1520
+> > > [  +0.000001]  [<ffffffff810b7a00>] ? kthread_flush_work_fn+0x20/0x20
+> > > [  +0.000001]  [<ffffffff8109549a>] ? kernel_thread+0x7a/0x1c0
+> > > [  +0.000001]  [<ffffffff810b82f2>] ? kthreadd+0xd2/0x120
+> > > [  +0.000002]  [<ffffffff818d828f>] ? ret_from_fork+0x1f/0x40
+> > > [  +0.000001]  [<ffffffff810b8220>] ? kthread_stop+0x100/0x100
+> > > [  +0.000001] Mem-Info:
+> > > [  +0.000003] active_anon:5882 inactive_anon:60307 isolated_anon:0
+> > >                active_file:1523729 inactive_file:223965 isolated_file:0
+> > >                unevictable:1970 dirty:130014 writeback:40735 unstable:0
+> > >                slab_reclaimable:179690 slab_unreclaimable:8041
+> > >                mapped:6771 shmem:3 pagetables:592 bounce:0
+> > >                free:11374 free_pcp:54 free_cma:0
+> > > [  +0.000004] Node 0 active_anon:23528kB inactive_anon:241228kB active_file:6094916kB inactive_file:895860kB unevictable:7880kB isolated(anon):0kB isolated(file):0kB mapped:27084kB dirty:520056kB writeback:162940kB shmem:12kB writeback_tmp:0kB unstable:0kB pages_scanned:32 all_unreclaimable? no
+> > > [  +0.000002] DMA free:15908kB min:20kB low:32kB high:44kB active_anon:0kB inactive_anon:0kB active_file:0kB inactive_file:0kB unevictable:0kB writepending:0kB present:15992kB managed:15908kB mlocked:0kB slab_reclaimable:0kB slab_unreclaimable:0kB kernel_stack:0kB pagetables:0kB bounce:0kB free_pcp:0kB local_pcp:0kB free_cma:0kB
+> > > [  +0.000001] lowmem_reserve[]: 0 3486 7953 7953
+> > > [  +0.000004] DMA32 free:23456kB min:4996kB low:8564kB high:12132kB active_anon:2480kB inactive_anon:10564kB active_file:2559792kB inactive_file:478680kB unevictable:0kB writepending:365292kB present:3652160kB managed:3574264kB mlocked:0kB slab_reclaimable:437456kB slab_unreclaimable:12304kB kernel_stack:144kB pagetables:28kB bounce:0kB free_pcp:212kB local_pcp:0kB free_cma:0kB
+> > > [  +0.000001] lowmem_reserve[]: 0 0 4466 4466
+> > > [  +0.000003] Normal free:6132kB min:6400kB low:10972kB high:15544kB active_anon:21048kB inactive_anon:230664kB active_file:3535124kB inactive_file:417312kB unevictable:7880kB writepending:318020kB present:4718592kB managed:4574096kB mlocked:7880kB slab_reclaimable:281304kB slab_unreclaimable:19860kB kernel_stack:2944kB pagetables:2340kB bounce:0kB free_pcp:0kB local_pcp:0kB free_cma:0kB
+> > > [  +0.000000] lowmem_reserve[]: 0 0 0 0
+> > > [  +0.000002] DMA: 1*4kB (U) 0*8kB 0*16kB 1*32kB (U) 2*64kB (U) 1*128kB (U) 1*256kB (U) 0*512kB 1*1024kB (U) 1*2048kB (U) 3*4096kB (M) = 15908kB
+> > > [  +0.000005] DMA32: 4215*4kB (UMEH) 319*8kB (UMH) 5*16kB (H) 2*32kB (H) 2*64kB (H) 1*128kB (H) 0*256kB 1*512kB (H) 1*1024kB (H) 1*2048kB (H) 0*4096kB = 23396kB
+> > > [  +0.000006] Normal: 650*4kB (UMH) 4*8kB (UH) 27*16kB (H) 23*32kB (H) 17*64kB (H) 11*128kB (H) 0*256kB 0*512kB 0*1024kB 0*2048kB 0*4096kB = 6296kB
+> > 
+> > The memory is quite fragmented but there are order-2+ free blocks. They
+> > seem to be in the high atomic reserves but we should release them.
+> > Is this reproducible? If yes, could you try with the 4.7 kernel please?
+> 
+> It never happened before and it only happend once yet. I will continue
+> to run the latest git kernel and let you know if it happens again.
+> 
+> (I did copy several git trees to my root partition yesterday, so the
+> incremental btrfs stream was larger than usual.)
+> 
+> -- 
+> Markus
+> 
+> --
+> To unsubscribe, send a message with 'unsubscribe linux-mm' in
+> the body to majordomo@kvack.org.  For more info on Linux MM,
+> see: http://www.linux-mm.org/ .
+> Don't email: <a href=mailto:"dont@kvack.org"> email@kvack.org </a>
 
-On 08/23/2016 06:25 PM, David Sterba wrote:
-> The filesystem existence on a device is manifested by the signature,
-> during the mkfs process we write it first and then create other
-> structures. Such filesystem is not valid and should not be registered
-> during device scan nor listed among devices from blkid.
->
-> This patch will introduce two staged creation. In the first phase, the
-> signature is wrong, but recognized as a partially created filesystem (by
-> open or scan helpers). Once we successfully create and write everything,
-> we fixup the signature. At this point automated scanning should find
-> a valid filesystem on all devices.
->
-> We can also rely on the partially created filesystem to do better error
-> handling during creation. We can just bail out and do not need to clean
-> up.
-
-
-  Looks good to me.
-
-Reviewed-by: Anand Jain <anand.jain@oracle.com>
-
-Thanks, Anand
-
-
-> The partial signature is '!BHRfS_M', can be shown by
->
->   btrfs inspect-internal dump-super -F image
->
-> Signed-off-by: David Sterba <dsterba@suse.com>
-> ---
->  btrfs-convert.c |  7 +++++--
->  ctree.h         |  1 +
->  disk-io.c       | 35 +++++++++++++++++++++++++++++------
->  disk-io.h       | 11 ++++++++++-
->  mkfs.c          |  7 ++++++-
->  utils.c         | 10 ++++++++--
->  6 files changed, 59 insertions(+), 12 deletions(-)
->
-> diff --git a/btrfs-convert.c b/btrfs-convert.c
-> index a8852d612886..b34a413de5be 100644
-> --- a/btrfs-convert.c
-> +++ b/btrfs-convert.c
-> @@ -2345,7 +2345,7 @@ static int do_convert(const char *devname, int datacsum, int packing,
->  	}
->
->  	root = open_ctree_fd(fd, devname, mkfs_cfg.super_bytenr,
-> -			     OPEN_CTREE_WRITES);
-> +			     OPEN_CTREE_WRITES | OPEN_CTREE_FS_PARTIAL);
->  	if (!root) {
->  		fprintf(stderr, "unable to open ctree\n");
->  		goto fail;
-> @@ -2431,11 +2431,14 @@ static int do_convert(const char *devname, int datacsum, int packing,
->  	}
->  	is_btrfs = 1;
->
-> -	root = open_ctree_fd(fd, devname, 0, OPEN_CTREE_WRITES);
-> +	root = open_ctree_fd(fd, devname, 0,
-> +			OPEN_CTREE_WRITES | OPEN_CTREE_FS_PARTIAL);
->  	if (!root) {
->  		fprintf(stderr, "unable to open ctree\n");
->  		goto fail;
->  	}
-> +	root->fs_info->finalize_on_close = 1;
-> +	close_ctree(root);
->  	close(fd);
->
->  	printf("conversion complete.\n");
-> diff --git a/ctree.h b/ctree.h
-> index 89e47abd9d14..d0569835d0a2 100644
-> --- a/ctree.h
-> +++ b/ctree.h
-> @@ -1032,6 +1032,7 @@ struct btrfs_fs_info {
->  	unsigned int ignore_chunk_tree_error:1;
->  	unsigned int avoid_meta_chunk_alloc:1;
->  	unsigned int avoid_sys_chunk_alloc:1;
-> +	unsigned int finalize_on_close:1;
->
->  	int (*free_extent_hook)(struct btrfs_trans_handle *trans,
->  				struct btrfs_root *root,
-> diff --git a/disk-io.c b/disk-io.c
-> index 4874f0689228..dd4a34142496 100644
-> --- a/disk-io.c
-> +++ b/disk-io.c
-> @@ -1225,6 +1225,7 @@ static struct btrfs_fs_info *__open_ctree_fd(int fp, const char *path,
->  	struct extent_buffer *eb;
->  	int ret;
->  	int oflags;
-> +	unsigned sbflags = SBREAD_DEFAULT;
->
->  	if (sb_bytenr == 0)
->  		sb_bytenr = BTRFS_SUPER_INFO_OFFSET;
-> @@ -1247,9 +1248,18 @@ static struct btrfs_fs_info *__open_ctree_fd(int fp, const char *path,
->  	if (flags & OPEN_CTREE_IGNORE_CHUNK_TREE_ERROR)
->  		fs_info->ignore_chunk_tree_error = 1;
->
-> -	ret = btrfs_scan_fs_devices(fp, path, &fs_devices, sb_bytenr,
-> -		(flags & OPEN_CTREE_RECOVER_SUPER) ? SBREAD_RECOVER : SBREAD_DEFAULT,
-> -		(flags & OPEN_CTREE_NO_DEVICES));
-> +	if ((flags & OPEN_CTREE_RECOVER_SUPER)
-> +	     && (flags & OPEN_CTREE_FS_PARTIAL)) {
-> +		fprintf(stderr,
-> +		    "cannot open a partially created filesystem for recovery");
-> +		return NULL;
-> +	}
-> +
-> +	if (flags & OPEN_CTREE_FS_PARTIAL)
-> +		sbflags = SBREAD_PARTIAL;
-> +
-> +	ret = btrfs_scan_fs_devices(fp, path, &fs_devices, sb_bytenr, sbflags,
-> +			(flags & OPEN_CTREE_NO_DEVICES));
->  	if (ret)
->  		goto out;
->
-> @@ -1272,7 +1282,7 @@ static struct btrfs_fs_info *__open_ctree_fd(int fp, const char *path,
->  				sb_bytenr, SBREAD_RECOVER);
->  	else
->  		ret = btrfs_read_dev_super(fp, disk_super, sb_bytenr,
-> -				SBREAD_DEFAULT);
-> +				sbflags);
->  	if (ret) {
->  		printk("No valid btrfs found\n");
->  		goto out_devices;
-> @@ -1401,8 +1411,12 @@ static int check_super(struct btrfs_super_block *sb, unsigned sbflags)
->  	int csum_size;
->
->  	if (btrfs_super_magic(sb) != BTRFS_MAGIC) {
-> -		error("superblock magic doesn't match");
-> -		return -EIO;
-> +		if (btrfs_super_magic(sb) == BTRFS_MAGIC_PARTIAL) {
-> +			if (!(sbflags & SBREAD_PARTIAL)) {
-> +				error("superblock magic doesn't match");
-> +				return -EIO;
-> +			}
-> +		}
->  	}
->
->  	csum_type = btrfs_super_csum_type(sb);
-> @@ -1747,6 +1761,15 @@ int close_ctree_fs_info(struct btrfs_fs_info *fs_info)
->  		write_ctree_super(trans, root);
->  		btrfs_free_transaction(root, trans);
->  	}
-> +
-> +	if (fs_info->finalize_on_close) {
-> +		btrfs_set_super_magic(fs_info->super_copy, BTRFS_MAGIC);
-> +		root->fs_info->finalize_on_close = 0;
-> +		ret = write_all_supers(root);
-> +		if (ret)
-> +			fprintf(stderr,
-> +				"failed to write new super block err %d\n", ret);
-> +	}
->  	btrfs_free_block_groups(fs_info);
->
->  	free_fs_roots_tree(&fs_info->fs_root_tree);
-> diff --git a/disk-io.h b/disk-io.h
-> index 153ef1f49641..a73dede1e8d0 100644
-> --- a/disk-io.h
-> +++ b/disk-io.h
-> @@ -61,7 +61,10 @@ enum btrfs_open_ctree_flags {
->  	 * It's useful for chunk corruption case.
->  	 * Makes no sense for open_ctree variants returning btrfs_root.
->  	 */
-> -	OPEN_CTREE_IGNORE_CHUNK_TREE_ERROR = (1 << 11)
-> +	OPEN_CTREE_IGNORE_CHUNK_TREE_ERROR = (1 << 11),
-> +
-> +	/* Allow to open a partially created filesystem */
-> +	OPEN_CTREE_FS_PARTIAL = (1 << 12),
->  };
->
->  /*
-> @@ -71,6 +74,12 @@ enum btrfs_read_sb_flags {
->  	SBREAD_DEFAULT		= 0,
->  	/* Reading superblock during recovery */
->  	SBREAD_RECOVER		= (1 << 0),
-> +
-> +	/*
-> +	 * Read superblock with the fake signature, cannot be used with
-> +	 * SBREAD_RECOVER
-> +	 */
-> +	SBREAD_PARTIAL		= (1 << 1),
->  };
->
->  static inline u64 btrfs_sb_offset(int mirror)
-> diff --git a/mkfs.c b/mkfs.c
-> index 0b081dd44457..ee5a30daff54 100644
-> --- a/mkfs.c
-> +++ b/mkfs.c
-> @@ -1708,7 +1708,7 @@ int main(int argc, char **argv)
->  		exit(1);
->  	}
->
-> -	root = open_ctree(file, 0, OPEN_CTREE_WRITES);
-> +	root = open_ctree(file, 0, OPEN_CTREE_WRITES | OPEN_CTREE_FS_PARTIAL);
->  	if (!root) {
->  		error("open ctree failed");
->  		close(fd);
-> @@ -1858,6 +1858,11 @@ int main(int argc, char **argv)
->  		list_all_devices(root);
->  	}
->
-> +	/*
-> +	 * The filesystem is now fully set up, commit the remaining changes and
-> +	 * fix the signature as the last step before closing the devices.
-> +	 */
-> +	root->fs_info->finalize_on_close = 1;
->  out:
->  	ret = close_ctree(root);
->  	BUG_ON(ret);
-> diff --git a/utils.c b/utils.c
-> index e7195b53b015..cec7c738e088 100644
-> --- a/utils.c
-> +++ b/utils.c
-> @@ -238,6 +238,9 @@ static inline int write_temp_super(int fd, struct btrfs_super_block *sb,
->   *
->   * For now sys chunk array will be empty and dev_item is empty too.
->   * They will be re-initialized at temp chunk tree setup.
-> + *
-> + * The superblock signature is not valid, denotes a partially created
-> + * filesystem, needs to be finalized.
->   */
->  static int setup_temp_super(int fd, struct btrfs_mkfs_config *cfg,
->  			    u64 root_bytenr, u64 chunk_bytenr)
-> @@ -276,7 +279,7 @@ static int setup_temp_super(int fd, struct btrfs_mkfs_config *cfg,
->
->  	btrfs_set_super_bytenr(super, cfg->super_bytenr);
->  	btrfs_set_super_num_devices(super, 1);
-> -	btrfs_set_super_magic(super, BTRFS_MAGIC);
-> +	btrfs_set_super_magic(super, BTRFS_MAGIC_PARTIAL);
->  	btrfs_set_super_generation(super, 1);
->  	btrfs_set_super_root(super, root_bytenr);
->  	btrfs_set_super_chunk_root(super, chunk_bytenr);
-> @@ -1004,6 +1007,9 @@ static int make_convert_btrfs(int fd, struct btrfs_mkfs_config *cfg,
->
->  /*
->   * @fs_uuid - if NULL, generates a UUID, returns back the new filesystem UUID
-> + *
-> + * The superblock signature is not valid, denotes a partially created
-> + * filesystem, needs to be finalized.
->   */
->  int make_btrfs(int fd, struct btrfs_mkfs_config *cfg,
->  		struct btrfs_convert_context *cctx)
-> @@ -1064,7 +1070,7 @@ int make_btrfs(int fd, struct btrfs_mkfs_config *cfg,
->
->  	btrfs_set_super_bytenr(&super, cfg->blocks[0]);
->  	btrfs_set_super_num_devices(&super, 1);
-> -	btrfs_set_super_magic(&super, BTRFS_MAGIC);
-> +	btrfs_set_super_magic(&super, BTRFS_MAGIC_PARTIAL);
->  	btrfs_set_super_generation(&super, 1);
->  	btrfs_set_super_root(&super, cfg->blocks[1]);
->  	btrfs_set_super_chunk_root(&super, cfg->blocks[3]);
->
+-- 
+Michal Hocko
+SUSE Labs

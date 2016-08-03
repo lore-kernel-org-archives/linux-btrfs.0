@@ -1,80 +1,67 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:33858 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1757169AbcHETei (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 5 Aug 2016 15:34:38 -0400
-Subject: Re: [4.8] btrfs heats my room with lock contention
-To: Dave Chinner <david@fromorbit.com>
-References: <20160804064105.GT12670@dastard>
- <da05a44e-22f3-bbbb-4757-3f04ad98d758@fb.com>
- <20160805030127.GW12670@dastard>
-CC: <linux-btrfs@vger.kernel.org>
-From: Chris Mason <clm@fb.com>
-Message-ID: <3b07c682-e885-13fc-048c-b4b1b657e6a6@fb.com>
-Date: Fri, 5 Aug 2016 15:34:28 -0400
-MIME-Version: 1.0
-In-Reply-To: <20160805030127.GW12670@dastard>
-Content-Type: text/plain; charset="windows-1252"; format=flowed
+Received: from mail.kernel.org ([198.145.29.136]:54558 "EHLO mail.kernel.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1754496AbcHCKdX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 3 Aug 2016 06:33:23 -0400
+From: fdmanana@kernel.org
+To: linux-btrfs@vger.kernel.org
+Cc: clm@fb.com, Filipe Manana <fdmanana@suse.com>
+Subject: [GIT PULL] Btrfs fixes for 4.8
+Date: Wed,  3 Aug 2016 11:31:17 +0100
+Message-Id: <1470220277-28026-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+From: Filipe Manana <fdmanana@suse.com>
 
+Hi Chris,
 
-On 08/04/2016 11:01 PM, Dave Chinner wrote:
-> On Thu, Aug 04, 2016 at 10:28:44AM -0400, Chris Mason wrote:
->>
->>
->> On 08/04/2016 02:41 AM, Dave Chinner wrote:
->>>
->>> Simple test. 8GB pmem device on a 16p machine:
->>>
->>> # mkfs.btrfs /dev/pmem1
->>> # mount /dev/pmem1 /mnt/scratch
->>> # dbench -t 60 -D /mnt/scratch 16
->>>
->>> And heat your room with the warm air rising from your CPUs. Top
->>> half of the btrfs profile looks like:
-> .....
->>> Performance vs CPu usage is:
->>>
->>> nprocs		throughput		cpu usage
->>> 1		440MB/s			 50%
->>> 2		770MB/s			100%
->>> 4		880MB/s			250%
->>> 8		690MB/s			450%
->>> 16		280MB/s			950%
->>>
->>> In comparision, at 8-16 threads ext4 is running at ~2600MB/s and
->>> XFS is running at ~3800MB/s. Even if I throw 300-400 processes at
->>> ext4 and XFS, they only drop to ~1500-2000MB/s as they hit internal
->>> limits.
->>>
->> Yes, with dbench btrfs does much much better if you make a subvol
->> per dbench dir.  The difference is pretty dramatic.  I'm working on
->> it this month, but focusing more on database workloads right now.
->
-> You've been giving this answer to lock contention reports for the
-> past 6-7 years, Chris.  I really don't care about getting big
-> benchmark numbers with contrived setups - the "use multiple
-> subvolumes" solution is simply not practical for users or their
-> workloads.  The default config should behave sanely and not not
-> contribute to global warming like this.
->
+Please consider the following small set of fixes for the 4.8 kernel.
+These are mostly send fixes, some of them reported and sent by Robbie Ko a
+long time ago, which I reviewed, updated (specially the change logs) and
+tested. All of these already have test cases in xfstests. The rest are
+just some fsync related fixes and a cleanup. These have all been sent to
+the mailing list before and were rebased against your 'next' branch.
 
-The btree setup that makes lock contention here makes some other 
-benchmarks faster.  Needing to create subvolumes in order to fix 
-performance problems on dbench is far from ideal, but in production here 
-the tradeoffs have been worth it.
+Thanks.
 
-Basically this one definitely comes up during dbench and fs_mark and 
-much less often elsewhere.  For the workloads that hit this lock 
-contention, splitting things out into subvolumes hugely reduces metadata 
-fragmentation on reads.  So it's not just CPU we're helping with 
-subvolumes but spindle time too.
+The following changes since commit 8b8b08cbfb9021af4b54b4175fc4c51d655aac8c:
 
-It's true I haven't invested time into guessing when the admin wants to 
-split on a per-subvolume basis.  Still, I do love the polar bears, so 
-I'll take another shot at the btree lock.
+  Btrfs: fix delalloc accounting after copy_from_user faults (2016-07-21 04:03:40 -0700)
 
--chris
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/fdmanana/linux.git integration-4.8
+
+for you to fetch changes up to e6571499336e10f93a77c51a35fd1a96828eea71:
+
+  Btrfs: remove unused function btrfs_add_delayed_qgroup_reserve() (2016-08-03 11:02:51 +0100)
+
+----------------------------------------------------------------
+Filipe Manana (8):
+      Btrfs: add missing check for writeback errors on fsync
+      Btrfs: send, add missing error check for calls to path_loop()
+      Btrfs: incremental send, fix invalid paths for rename operations
+      Btrfs: send, avoid incorrect leaf accesses when sending utimes operations
+      Btrfs: send, don't bug on inconsistent snapshots
+      Btrfs: be more precise on errors when getting an inode from disk
+      Btrfs: improve performance on fsync against new inode after rename/unlink
+      Btrfs: remove unused function btrfs_add_delayed_qgroup_reserve()
+
+Robbie Ko (4):
+      Btrfs: send, fix failure to move directories with the same name around
+      Btrfs: incremental send, fix premature rmdir operations
+      Btrfs: send, fix warning due to late freeing of orphan_dir_info structures
+      Btrfs: send, fix invalid leaf accesses due to incorrect utimes operations
+
+ fs/btrfs/delayed-ref.c |  27 ---------------------
+ fs/btrfs/delayed-ref.h |   3 ---
+ fs/btrfs/file.c        |   8 +++++++
+ fs/btrfs/inode.c       |  46 ++++++++++++++++++++++++++++--------
+ fs/btrfs/send.c        | 173 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++---------
+ fs/btrfs/tree-log.c    |  85 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++-------
+ 6 files changed, 283 insertions(+), 59 deletions(-)
+
+-- 
+2.7.0.rc3
+

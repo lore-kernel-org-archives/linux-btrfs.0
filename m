@@ -1,147 +1,75 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:6383 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S934165AbcHDTMi (ORCPT
+Received: from ipmail06.adl6.internode.on.net ([150.101.137.145]:60431 "EHLO
+	ipmail06.adl6.internode.on.net" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1751024AbcHDGlK (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 4 Aug 2016 15:12:38 -0400
-Date: Thu, 4 Aug 2016 15:12:32 -0400
-From: Chris Mason <clm@fb.com>
-To: Linus Torvalds <torvalds@linux-foundation.org>,
-        linux-kernel <linux-kernel@vger.kernel.org>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: [GIT PULL] Btrfs
-Message-ID: <20160804191232.jmzrcmreu4feh64n@floor.thefacebook.com>
+	Thu, 4 Aug 2016 02:41:10 -0400
+Received: from dave by dastard with local (Exim 4.80)
+	(envelope-from <david@fromorbit.com>)
+	id 1bVCL3-0001pp-Ph
+	for linux-btrfs@vger.kernel.org; Thu, 04 Aug 2016 16:41:05 +1000
+Date: Thu, 4 Aug 2016 16:41:05 +1000
+From: Dave Chinner <david@fromorbit.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [4.8] btrfs heats my room with lock contention
+Message-ID: <20160804064105.GT12670@dastard>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset=iso-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Linus,
 
-This is part two of my btrfs pull, which is some cleanups and a batch of
-fixes.  
+Simple test. 8GB pmem device on a 16p machine:
 
-Most of the code here is from Jeff Mahoney, making the pointers
-we pass around internally more consistent and less confusing overall.  I
-noticed a small problem right before I sent this out yesterday, so I
-fixed it up and re-tested overnight.
+# mkfs.btrfs /dev/pmem1
+# mount /dev/pmem1 /mnt/scratch
+# dbench -t 60 -D /mnt/scratch 16
 
-Please pull my for-linus-4.8 branch:
+And heat your room with the warm air rising from your CPUs. Top
+half of the btrfs profile looks like:
 
-git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git for-linus-4.8
+  36.71%  [kernel]  [k] _raw_spin_unlock_irqrestore                                                                                                                    ¿
+  32.29%  [kernel]  [k] native_queued_spin_lock_slowpath                                                                                                               ¿
+   5.14%  [kernel]  [k] queued_write_lock_slowpath                                                                                                                     ¿
+   2.46%  [kernel]  [k] _raw_spin_unlock_irq                                                                                                                           ¿
+   2.15%  [kernel]  [k] queued_read_lock_slowpath                                                                                                                      ¿
+   1.54%  [kernel]  [k] _find_next_bit.part.0                                                                                                                          ¿
+   1.06%  [kernel]  [k] __crc32c_le                                                                                                                                    ¿
+   0.82%  [kernel]  [k] btrfs_tree_lock                                                                                                                                ¿
+   0.79%  [kernel]  [k] steal_from_bitmap.part.29                                                                                                                      ¿
+   0.70%  [kernel]  [k] __copy_user_nocache                                                                                                                            ¿
+   0.69%  [kernel]  [k] btrfs_tree_read_lock                                                                                                                           ¿
+   0.69%  [kernel]  [k] delay_tsc                                                                                                                                      ¿
+   0.64%  [kernel]  [k] btrfs_set_lock_blocking_rw                                                                                                                     ¿
+   0.63%  [kernel]  [k] copy_user_generic_string                                                                                                                       ¿
+   0.51%  [kernel]  [k] do_raw_read_unlock                                                                                                                             ¿
+   0.48%  [kernel]  [k] do_raw_spin_lock                                                                                                                               ¿
+   0.47%  [kernel]  [k] do_raw_read_lock                                                                                                                               ¿
+   0.46%  [kernel]  [k] btrfs_clear_lock_blocking_rw                                                                                                                   ¿
+   0.44%  [kernel]  [k] do_raw_write_lock                                                                                                                              ¿
+   0.41%  [kernel]  [k] __do_softirq                                                                                                                                   ¿
+   0.28%  [kernel]  [k] __memcpy                                                                                                                                       ¿
+   0.24%  [kernel]  [k] map_private_extent_buffer                                                                                                                      ¿
+   0.23%  [kernel]  [k] find_next_zero_bit                                                                                                                             ¿
+   0.22%  [kernel]  [k] btrfs_tree_read_unlock                                                                                                                         ¿
 
-There are some minor conflicts against Mike Christie's changes in
-your tree.  I've put the conflict resolution I used for testing here:
+Performance vs CPu usage is:
 
-git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git for-linus-4.8-merged
+nprocs		throughput		cpu usage
+1		440MB/s			 50%
+2		770MB/s			100%
+4		880MB/s			250%
+8		690MB/s			450%
+16		280MB/s			950%
 
-Jeff Mahoney (14) commits (+754/-669):
-    btrfs: tests, use BTRFS_FS_STATE_DUMMY_FS_INFO instead of dummy root (+19/-21)
-    btrfs: btrfs_relocate_chunk pass extent_root to btrfs_end_transaction (+1/-1)
-    btrfs: btrfs_test_opt and friends should take a btrfs_fs_info (+135/-130)
-    btrfs: cleanup, remove prototype for btrfs_find_root_ref (+0/-3)
-    btrfs: btrfs_abort_transaction, drop root parameter (+147/-152)
-    btrfs: convert nodesize macros to static inlines (+33/-15)
-    btrfs: tests, move initialization into tests/ (+48/-77)
-    btrfs: add btrfs_trans_handle->fs_info pointer (+6/-4)
-    btrfs: copy_to_sk drop unused root parameter (+2/-3)
-    btrfs: simpilify btrfs_subvol_inherit_props (+3/-3)
-    btrfs: prefix fsid to all trace events (+186/-158)
-    btrfs: tests, require fs_info for root (+103/-61)
-    btrfs: plumb fs_info into btrfs_work (+63/-31)
-    btrfs: introduce BTRFS_MAX_ITEM_SIZE (+8/-10)
+In comparision, at 8-16 threads ext4 is running at ~2600MB/s and
+XFS is running at ~3800MB/s. Even if I throw 300-400 processes at
+ext4 and XFS, they only drop to ~1500-2000MB/s as they hit internal
+limits.
 
-Liu Bo (10) commits (+149/-49):
-    Btrfs: change BUG_ON()'s to ASSERT()'s in backref_cache_cleanup() (+6/-6)
-    Btrfs: error out if generic_bin_search get invalid arguments (+8/-0)
-    Btrfs: check inconsistence between chunk and block group (+16/-1)
-    Btrfs: fix unexpected balance crash due to BUG_ON (+24/-4)
-    Btrfs: fix eb memory leak due to readpage failure (+22/-3)
-    Btrfs: fix BUG_ON in btrfs_submit_compressed_write (+8/-2)
-    Btrfs: fix read_node_slot to return errors (+52/-21)
-    Btrfs: fix panic in balance due to EIO (+4/-0)
-    Btrfs: cleanup BUG_ON in merge_bio (+6/-3)
-    Btrfs: fix double free of fs root (+3/-9)
+Cheers,
 
-Nikolay Borisov (4) commits (+49/-20):
-    btrfs: Ratelimit "no csum found" info message (+1/-1)
-    btrfs: Handle uninitialised inode eviction (+8/-1)
-    btrfs: Add ratelimit to btrfs printing (+24/-2)
-    btrfs: Fix slab accounting flags (+16/-16)
-
-Wang Xiaoguang (3) commits (+45/-13):
-    btrfs: expand cow_file_range() to support in-band dedup and subpage-blocksize (+41/-11)
-    btrfs: add missing bytes_readonly attribute file in sysfs (+2/-0)
-    btrfs: fix free space calculation in dump_space_info() (+2/-2)
-
-Anand Jain (2) commits (+40/-36):
-    btrfs: make sure device is synced before return (+5/-0)
-    btrfs: reorg btrfs_close_one_device() (+35/-36)
-
-David Sterba (2) commits (+4/-3):
-    btrfs: remove obsolete part of comment in statfs (+0/-3)
-    btrfs: hide test-only member under ifdef (+4/-0)
-
-Ashish Samant (1) commits (+35/-37):
-    btrfs: Cleanup compress_file_range()
-
-Chris Mason (1) commits (+3/-2):
-    Btrfs: fix __MAX_CSUM_ITEMS
-
-Chandan Rajendra (1) commits (+1/-1):
-    Btrfs: subpage-blocksize: Rate limit scrub error message
-
-Salah Triki (1) commits (+1/-2):
-    btrfs: Replace -ENOENT by -ERANGE in btrfs_get_acl()
-
-Hans van Kranenburg (1) commits (+1/-1):
-    Btrfs: use the correct struct for BTRFS_IOC_LOGICAL_INO
-
-Total: (40) commits (+1082/-833)
-
- fs/btrfs/acl.c                         |   3 +-
- fs/btrfs/async-thread.c                |  31 +++-
- fs/btrfs/async-thread.h                |   6 +-
- fs/btrfs/backref.c                     |   4 +-
- fs/btrfs/compression.c                 |  10 +-
- fs/btrfs/ctree.c                       |  91 ++++++----
- fs/btrfs/ctree.h                       | 101 ++++++-----
- fs/btrfs/dedupe.h                      |  24 +++
- fs/btrfs/delayed-inode.c               |   4 +-
- fs/btrfs/delayed-ref.c                 |  17 +-
- fs/btrfs/dev-replace.c                 |   4 +-
- fs/btrfs/disk-io.c                     | 101 +++++------
- fs/btrfs/disk-io.h                     |   3 +-
- fs/btrfs/extent-tree.c                 | 124 ++++++++------
- fs/btrfs/extent_io.c                   |  30 +++-
- fs/btrfs/extent_map.c                  |   2 +-
- fs/btrfs/file-item.c                   |   4 +-
- fs/btrfs/file.c                        |  12 +-
- fs/btrfs/free-space-cache.c            |   8 +-
- fs/btrfs/free-space-tree.c             |  16 +-
- fs/btrfs/inode-map.c                   |  16 +-
- fs/btrfs/inode.c                       | 218 ++++++++++++------------
- fs/btrfs/ioctl.c                       |  40 ++---
- fs/btrfs/ordered-data.c                |   2 +-
- fs/btrfs/props.c                       |   6 +-
- fs/btrfs/qgroup.c                      |  25 +--
- fs/btrfs/qgroup.h                      |   9 +-
- fs/btrfs/relocation.c                  |  20 ++-
- fs/btrfs/root-tree.c                   |  10 +-
- fs/btrfs/scrub.c                       |  12 +-
- fs/btrfs/super.c                       | 218 +++++++++++-------------
- fs/btrfs/sysfs.c                       |   2 +
- fs/btrfs/tests/btrfs-tests.c           |  67 +++++++-
- fs/btrfs/tests/btrfs-tests.h           |  36 +---
- fs/btrfs/tests/extent-buffer-tests.c   |  23 ++-
- fs/btrfs/tests/free-space-tests.c      |  14 +-
- fs/btrfs/tests/free-space-tree-tests.c |  18 +-
- fs/btrfs/tests/inode-tests.c           |  46 ++---
- fs/btrfs/tests/qgroup-tests.c          |  23 +--
- fs/btrfs/transaction.c                 |  37 +++--
- fs/btrfs/transaction.h                 |   1 +
- fs/btrfs/tree-log.c                    |  22 ++-
- fs/btrfs/volumes.c                     | 138 ++++++++-------
- include/trace/events/btrfs.h           | 295 ++++++++++++++++++---------------
- include/uapi/linux/btrfs.h             |   2 +-
- 45 files changed, 1072 insertions(+), 823 deletions(-)
+Dave.
+-- 
+Dave Chinner
+david@fromorbit.com

@@ -1,74 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-it0-f44.google.com ([209.85.214.44]:37127 "EHLO
-	mail-it0-f44.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754054AbcHDLf4 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 4 Aug 2016 07:35:56 -0400
-Received: by mail-it0-f44.google.com with SMTP id f6so257218034ith.0
-        for <linux-btrfs@vger.kernel.org>; Thu, 04 Aug 2016 04:34:21 -0700 (PDT)
-Subject: Re: Extents for a particular subvolume
-To: Graham Cobb <g.btrfs@cobb.uk.net>, linux-btrfs@vger.kernel.org
-References: <57A24C51.2050302@cobb.uk.net> <20160803203708.GA26505@angband.pl>
- <57A26867.5020403@cobb.uk.net>
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <24f6c93c-fc88-1a4e-4f6a-8e40655e829e@gmail.com>
-Date: Thu, 4 Aug 2016 07:34:09 -0400
+Received: from cloud1-vm154.de-nserver.de ([178.250.10.56]:60366 "EHLO
+	cloud1-vm154.de-nserver.de" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1757986AbcHDLmV (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 4 Aug 2016 07:42:21 -0400
+Subject: Re: memory overflow or undeflow in free space tree / space_info?
+To: Josef Bacik <jbacik@fb.com>, Omar Sandoval <osandov@osandov.com>
+References: <229a1d13-32f1-cd4c-975f-2db6796eb6c7@profihost.ag>
+ <20160729191153.GA28505@vader> <20160729191459.GB28505@vader>
+ <40a46d57-fe32-e745-9897-8f5c6ca2b33e@fb.com>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+From: Stefan Priebe - Profihost AG <s.priebe@profihost.ag>
+Message-ID: <6c131d33-af2e-61ae-00ed-f65ac35607c2@profihost.ag>
+Date: Thu, 4 Aug 2016 13:40:16 +0200
 MIME-Version: 1.0
-In-Reply-To: <57A26867.5020403@cobb.uk.net>
-Content-Type: text/plain; charset=windows-1252; format=flowed
+In-Reply-To: <40a46d57-fe32-e745-9897-8f5c6ca2b33e@fb.com>
+Content-Type: text/plain; charset=windows-1252
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2016-08-03 17:55, Graham Cobb wrote:
-> On 03/08/16 21:37, Adam Borowski wrote:
->> On Wed, Aug 03, 2016 at 08:56:01PM +0100, Graham Cobb wrote:
->>> Are there any btrfs commands (or APIs) to allow a script to create a
->>> list of all the extents referred to within a particular (mounted)
->>> subvolume?  And is it a reasonably efficient process (i.e. doesn't
->>> involve backrefs and, preferably, doesn't involve following directory
->>> trees)?
+Am 29.07.2016 um 23:03 schrieb Josef Bacik:
+> On 07/29/2016 03:14 PM, Omar Sandoval wrote:
+>> On Fri, Jul 29, 2016 at 12:11:53PM -0700, Omar Sandoval wrote:
+>>> On Fri, Jul 29, 2016 at 08:40:26PM +0200, Stefan Priebe - Profihost
+>>> AG wrote:
+>>>> Dear list,
+>>>>
+>>>> i'm seeing btrfs no space messages frequently on big filesystems (>
+>>>> 30TB).
+>>>>
+>>>> In all cases i'm getting a trace like this one a space_info warning.
+>>>> (since commit [1]). Could someone please be so kind and help me
+>>>> debugging / fixing this bug? I'm using space_cache=v2 on all those
+>>>> systems.
+>>>
+>>> Hm, so I think this indicates a bug in space accounting somewhere else
+>>> rather than the free space tree itself. I haven't debugged one of these
+>>> issues before, I'll see if I can reproduce it. Cc'ing Josef, too.
 >>
->> Since the size of your output is linear to the number of extents which is
->> between the number of files and sum of their sizes, I see no gain in
->> trying to avoid following the directory tree.
->
-> Thanks for the help, Adam.  There are a lot of files and a lot of
-> directories - find, "ls -R" and similar operations take a very long
-> time. I was hoping that I could query some sort of extent tree for the
-> subvolume and get the answer back in seconds instead of multiple minutes.
->
-> But I can follow the directory tree if I need to.
->
->>> I am not looking to relate the extents to files/inodes/paths.  My
->>> particular need, at the moment, is to work out how much of two snapshots
->>> is shared data, but I can think of other uses for the information.
+>> I should've asked, what sort of filesystem activity triggers this?
 >>
->> Thus, unlike the question you asked above, you're not interested in _all_
->> extents, merely those which changed.
->>
->> You may want to look at "btrfs subv find-new" and "btrfs send --no-data".
->
-> Unfortunately, the subvolumes do not have an ancestor-descendent
-> relationship (although they do have some common ancestors), so I don't
-> think find-new is much help (as far as I can see).
->
-> But just looking at the size of the output  from "send -c" would work
-> well enough for the particular problem I am trying to solve tonight!
-> Although I will need to take read-only snapshots of the subvolumes to
-> allow send to work. Thanks for the suggestion.
-FWIW, if you're not using any files in the subvolumes, you can run:
-btrfs property set <subvolume> ro true
+> 
+> Chris just fixed this I think, try his next branch from his git tree
+> 
+> git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git
 
-to mark them read-only so you don't need the snapshots, and then run the 
-same command with 'false' at the end instead of true to mark them 
-writable again.
->
-> I would still be interested in the extent list, though.  The main
-> problem with find-new and send is that they don't tell me how much has
-> been deleted, only added.  I am thinking about using the extents to get
-> a much better handle on what is using up space and what I could recover
-> if I removed (or moved to another volume) various groups of related
-> subvolumes.
-You may want to look into 'btrfs filesystem usage' and 'btrfs filesystem 
-du' commands.  I'm not sure if they'll cover what you need, but they can 
-show info about how much is shared.
+Thanks now running a 4.4 with those patches backported. If that still
+shows an error i will try that vanilla tree.
 
+Thanks!
+
+Stefan
+
+> and see if it still happens.  Thanks,
+> 
+> Josef

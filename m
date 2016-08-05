@@ -1,88 +1,107 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wm0-f65.google.com ([74.125.82.65]:35140 "EHLO
-	mail-wm0-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750977AbcHOFvG (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 15 Aug 2016 01:51:06 -0400
-Received: by mail-wm0-f65.google.com with SMTP id i5so9358697wmg.2
-        for <linux-btrfs@vger.kernel.org>; Sun, 14 Aug 2016 22:51:06 -0700 (PDT)
-Subject: Re: Likelihood of read error, recover device failure raid10
-To: Chris Murphy <lists@colorremedies.com>,
-        Wolfgang Mader <Wolfgang_Mader@brain-frog.de>
-References: <2336793.AMaAIAxWk4@discus>
- <CAJCQCtR1odXy1WjR3+tWZsb=d1=VFdpZiFk90oPeykoDTvw1Uw@mail.gmail.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-From: Andrei Borzenkov <arvidjaar@gmail.com>
-Message-ID: <f7f00f5d-4185-c235-1e73-2c608d05ee24@gmail.com>
-Date: Mon, 15 Aug 2016 08:51:02 +0300
+Received: from mail-wm0-f53.google.com ([74.125.82.53]:35177 "EHLO
+	mail-wm0-f53.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751799AbcHELIh (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 5 Aug 2016 07:08:37 -0400
+Received: by mail-wm0-f53.google.com with SMTP id f65so27147265wmi.0
+        for <linux-btrfs@vger.kernel.org>; Fri, 05 Aug 2016 04:08:35 -0700 (PDT)
+To: linux-btrfs@vger.kernel.org
+Cc: SiteGround Operations <operations@siteground.com>
+From: Nikolay Borisov <kernel@kyup.com>
+Subject: Crash in btrfs_uuid_tree_iterate during mount
+Message-ID: <57A473B0.2040203@kyup.com>
+Date: Fri, 5 Aug 2016 14:08:32 +0300
 MIME-Version: 1.0
-In-Reply-To: <CAJCQCtR1odXy1WjR3+tWZsb=d1=VFdpZiFk90oPeykoDTvw1Uw@mail.gmail.com>
 Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-14.08.2016 19:20, Chris Murphy пишет:
-> 
-> As an aside, I'm finding the size information for the data chunk in
-> 'fi us' confusing...
-> 
-> The sample file system contains one file:
-> [root@f24s ~]# ls -lh /mnt/0
-> total 1.4G
-> -rw-r--r--. 1 root root 1.4G Aug 13 19:24
-> Fedora-Workstation-Live-x86_64-25-20160810.n.0.iso
-> 
-> 
-> [root@f24s ~]# btrfs fi us /mnt/0
-> Overall:
->     Device size:         400.00GiB
->     Device allocated:           8.03GiB
->     Device unallocated:         391.97GiB
->     Device missing:             0.00B
->     Used:               2.66GiB
->     Free (estimated):         196.66GiB    (min: 196.66GiB)
->     Data ratio:                  2.00
->     Metadata ratio:              2.00
->     Global reserve:          16.00MiB    (used: 0.00B)
-> 
-> ## "Device size" is total volume or pool size, "Used" shows actual
-> usage accounting for the replication of raid1, and yet "Free" shows
-> 1/2. This can't work long term as by the time I have 100GiB in the
-> volume, Used will report 200Gib while Free will report 100GiB for a
-> total of 300GiB which does not match the device size. So that's a bug
-> in my opinion.
-> 
+Hello, 
 
-Well, it says "estimated". It shows how much you could possibly write
-using current allocation profile(s). There is no way to predict actual
-space usage if you mix allocation profiles.
+Recently I started getting the following crashes on some servers, 
+running btrfs: 
 
-I agree that having single field that is referring to virtual capacity
-among fields showing physical consumption is confusing.
+[340435.480338] BTRFS info (device loop7): disk space caching is enabled
+[340435.480509] BTRFS: has skinny extents
+[340441.716174] BTRFS: checking UUID tree
+[340441.912070] BUG: unable to handle kernel NULL pointer dereference at 0000000000000098
+[340441.912463] IP: [<ffffffffa081f774>] btrfs_uuid_tree_iterate+0xf4/0x2d0 [btrfs]
+[340441.912823] PGD 0 
+[340441.913035] Oops: 0000 [#1] SMP 
+[340441.913302] Modules linked in: 
+[340441.916996] CPU: 10 PID: 24990 Comm: btrfs-uuid Tainted: P        W  O    4.4.14-clouder1 #55
+[340441.917287] Hardware name: Supermicro X9DRD-iF/LF/X9DRD-iF, BIOS 3.2 01/16/2015
+[340441.917573] task: ffff8801b95c1b80 ti: ffff88034e504000 task.ti: ffff88034e504000
+[340441.917859] RIP: 0010:[<ffffffffa081f774>]  [<ffffffffa081f774>] btrfs_uuid_tree_iterate+0xf4/0x2d0 [btrfs]
+[340441.918212] RSP: 0018:ffff88034e507e20  EFLAGS: 00010246
+[340441.918382] RAX: 0000000000000000 RBX: 0000160000000000 RCX: ffff880000000000
+[340441.918665] RDX: 0000000000000001 RSI: ffff8801e3abd140 RDI: ffff88046f027f00
+[340441.918952] RBP: ffff88034e507ea8 R08: 000060fb80001760 R09: ffffffffa07ac1de
+[340441.919236] R10: ffffe8ffffd41760 R11: ffffea00078eaf40 R12: ffff8801b98ab750
+[340441.919521] R13: 00000000fffffffe R14: ffff8801e3abd140 R15: ffff880049586000
+[340441.919810] FS:  0000000000000000(0000) GS:ffff88047fd40000(0000) knlGS:0000000000000000
+[340441.920097] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+[340441.920267] CR2: 0000000000000098 CR3: 0000000001c0a000 CR4: 00000000000406e0
+[340441.920554] Stack:
+[340441.920717]  ffff880049586000 ffff8801b98ab750 00003f7b00014fc0 ffff8803711dec08
+[340441.921186]  ffffffffa07d0c40 ffff880332342000 0000000000000114 1b7088046d7612f8
+[340441.921655]  8cfb42689378e508 70157e0ade97f5d6 8c42689378e5081b 15157e0ade97f5d6
+[340441.922126] Call Trace:
+[340441.922315]  [<ffffffffa07d0c40>] ? find_live_mirror.isra.18+0xc0/0xc0 [btrfs]
+[340441.922614]  [<ffffffffa07d0ae0>] ? btrfs_uuid_scan_kthread+0x3c0/0x3c0 [btrfs]
+[340441.922917]  [<ffffffffa07d0afb>] btrfs_uuid_rescan_kthread+0x1b/0x60 [btrfs]
+[340441.923197]  [<ffffffff8107161f>] kthread+0xef/0x110
+[340441.923363]  [<ffffffff81071530>] ? kthread_park+0x60/0x60
+[340441.923531]  [<ffffffff816149ff>] ret_from_fork+0x3f/0x70
+[340441.923697]  [<ffffffff81071530>] ? kthread_park+0x60/0x60
+[340441.923863] Code: 0f 86 a0 00 00 00 48 bb 00 00 00 00 00 16 00 00 41 8b 44 24 40 48 b9 00 00 00 00 00 88 ff ff 8d 50 01 49 8b 04 24 41 89 54 24 40 <48> 03 98 98 00 00 00 48 89 d8 48 c1 f8 06 48 c1 e0 0c 3b 54 08 
+[340441.927296] RIP  [<ffffffffa081f774>] btrfs_uuid_tree_iterate+0xf4/0x2d0 [btrfs]
+[340441.927641]  RSP <ffff88034e507e20>
+[340441.927806] CR2: 0000000000000098
 
-> Data,RAID10: Size:2.00GiB, Used:1.33GiB
->    /dev/mapper/VG-1     512.00MiB
->    /dev/mapper/VG-2     512.00MiB
->    /dev/mapper/VG-3     512.00MiB
->    /dev/mapper/VG-4     512.00MiB
-> 
-> ## The file is 1.4GiB but the Used reported is 1.33GiB? That's weird.
 
-I think this is difference between rounding done by ls and internal
-btrfs counting. I bet if you show size in KiB (or even 512B) you will
-get better match.
+ffffffffa081f774 is in the heavily inlined btrfs_next_item. Here
+is the decoded instructions, right before the crash with annotations:
 
-> And now in this area the user is somehow expected to know that all of
-> these values are 1/2 their actual value due to the RAID10. I don't
-> like this inconsistency for one. But it's made worse by using the
-> secret decoder ring method of usage when it comes to individual device
-> allocations. Very clearly Size if really 4, and each device has a 1GiB
-> chunk. So why not say that? This is consistent with the earlier
-> "Device allocated" value of 8GiB.
-> 
-> 
+   0:	0f 86 a0 00 00 00    	jbe    0xa6
+   6:	48 bb 00 00 00 00 00 	mov    $0x160000000000,%rbx
+   d:	16 00 00 
+  10:	41 8b 44 24 40       	mov    0x40(%r12),%eax ; r12 is btrfs_path, eax points to first slot
+  15:	48 b9 00 00 00 00 00 	mov    $0xffff880000000000,%rcx
+  1c:	88 ff ff 
+  1f:	8d 50 01             	lea    0x1(%rax),%edx ; incr slot
+  22:	49 8b 04 24          	mov    (%r12),%rax ; load first extent_buffer in rax
+  26:	41 89 54 24 40       	mov    %edx,0x40(%r12) ; save incremented slot
+  2b:*	48 03 98 98 00 00 00 	add    0x98(%rax),%rbx <-- trapping instruction ; load the first page from the extent_buffer
+  32:	48 89 d8             	mov    %rbx,%rax
+  35:	48 c1 f8 06          	sar    $0x6,%rax
+  39:	48 c1 e0 0c          	shl    $0xc,%rax
+  3d:	3b                   	.byte 0x3b
+  3e:	54                   	push   %rsp
+  3f:	08                   	.byte 0x8
 
-This looks like a bug in RAID10. In RAID1 output is consistent with Size
-showing virtual size and each disk allocated size matching it. This is
-openSUSE Tumbleweed with brfsprogs 4.7 and kernel 4.7.
+So as can be seen rax is zero and naturally dereferencing it is 
+also zero. What's interesting is the content of the btrf_path:
+
+struct btrfs_path {
+  nodes = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, 
+  slots = {1, 0, 0, 0, 0, 0, 0, 0}, 
+  locks = {0, 0, 0, 0, 0, 0, 0, 0}, 
+  reada = 0, 
+  lowest_level = 0, 
+  search_for_split = 0, 
+  keep_locks = 0, 
+  skip_locking = 0, 
+  leave_spinning = 0, 
+  search_commit_root = 0, 
+  need_commit_sem = 0, 
+  skip_release_on_error = 0
+}
+
+Any ideas how come btrfs_path can be all zero, the one in
+the first slot comes from the increment in btrfs_next_old_item.
+
+Regards, 
+Nikolay 
+
 

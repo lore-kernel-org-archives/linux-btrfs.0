@@ -1,89 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lf0-f41.google.com ([209.85.215.41]:35574 "EHLO
-	mail-lf0-f41.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755571AbcHEHqg convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 5 Aug 2016 03:46:36 -0400
-Received: by mail-lf0-f41.google.com with SMTP id f93so198250003lfi.2
-        for <linux-btrfs@vger.kernel.org>; Fri, 05 Aug 2016 00:46:35 -0700 (PDT)
-MIME-Version: 1.0
-From: Mordechay Kaganer <mkaganer@gmail.com>
-Date: Fri, 5 Aug 2016 10:46:33 +0300
-Message-ID: <CA+xOVSMz0PvC0m3NDRS1AmE_ZD0tnbV077Ggc7AnL9ytMTdupQ@mail.gmail.com>
-Subject: BTRFS: Transaction aborted (ENOSPC)
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Received: from [195.159.176.226] ([195.159.176.226]:48112 "EHLO
+	blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
+	with ESMTP id S1752688AbcHEKRQ (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 5 Aug 2016 06:17:16 -0400
+Received: from list by blaine.gmane.org with local (Exim 4.84_2)
+	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+	id 1bVcBW-0000f9-Ga
+	for linux-btrfs@vger.kernel.org; Fri, 05 Aug 2016 12:16:58 +0200
+To: linux-btrfs@vger.kernel.org
+From: Erkki Seppala <flux-btrfs@inside.org>
+Subject: Re: How to stress test raid6 on 122 disk array
+Date: Fri, 05 Aug 2016 13:15:17 +0300
+Message-ID: <m49k2fvmsi2.fsf@coffee.modeemi.fi>
+References: <CAGQ70Ye3Ly0N5cZHe3_D0RX8yW6ZzcN7fVhoLnnXrPXjOKPa1Q@mail.gmail.com>
+	<274e0a56-086f-23c4-7ae9-2b6cb68ec6c8@gmail.com>
+	<CAJCQCtQAPXn714YL2R1V7q2fhn7QCsYHHceTimyFQ1TsMf-BQg@mail.gmail.com>
+	<CAGQ70Yf3R4mfPJRZWvyBXivN9qy_9WOsrZhdpx--a_27Wy3sYQ@mail.gmail.com>
+	<CAJCQCtTKsYxYH26E1a66--HiDRF3JXSdOSjLa1ira_1Ti6N+pw@mail.gmail.com>
+	<CAGQ70YfvcujVWs-Hr-jLS5DED3ti5XK=fVhx6M8K7c85UVYDhA@mail.gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-B.H.
+Martin <rc6encrypted@gmail.com> writes:
 
-Hello. I have a setup with 4 RAID10 arrays, 4 drives each (using md).
-Device usage is as follows:
+> The smallest disk of the 122 is 500GB. Is it possible to have btrfs
+> see each disk as only e.g. 10GB? That way I can corrupt and resilver
+> more disks over a month.
 
-# btrfs device usage /storage/bkp1
-/dev/md1, ID: 1
-   Device size:            10.92TiB
-   Device slack:              0.00B
-   Data,single:            10.19TiB
-   Metadata,RAID1:        199.00GiB
-   System,RAID1:            8.00MiB
-   Unallocated:           542.79GiB
+Well, at least you can easily partition the devices for that to happen.
 
-/dev/md2, ID: 2
-   Device size:            10.92TiB
-   Device slack:              0.00B
-   Data,single:            10.21TiB
-   Metadata,RAID1:        181.00GiB
-   System,RAID1:            8.00MiB
-   Unallocated:           541.80GiB
-
-/dev/md3, ID: 3
-   Device size:            10.92TiB
-   Device slack:              0.00B
-   Data,single:            10.41TiB
-   Metadata,RAID1:         65.00GiB
-   Unallocated:           457.81GiB
-
-/dev/md4, ID: 4
-   Device size:            10.92TiB
-   Device slack:              0.00B
-   Data,single:             9.89TiB
-   Metadata,RAID1:         89.00GiB
-   Unallocated:           959.81GiB
-
-Mount options: compress=zlib,commit=60,noatime
-
-This setup is used to store regular backups from 2 different sites
-(each on different subvolume with regular snapshots). The backup is
-done using rsync as the source storage is using xfs not btrfs. This
-setup has been working excellently for about 7 months. Curently, it
-has about 100 snapshots in total.
-Recently, i've started to face problems with "transaction aborted"
-messages and volume going read-only. This happens unexpectedly, after
-several hours of rsync running.
-
-As a precursor, it throws several warnings about tasks blocked for 120
-seconds, this is probably connected to a long time required to commit
-transaction.
-
-After transaction abort, i reboot the server, then restart the backup
-and it seems to continue OK until the next crash.
-
-Scrub didn't find and errors on the volume. I'm unable to run btrfs
-check as it consumes all of the RAM and crashes.
-
-Any suggestions what's going wrong and how to fix this?
-
-# uname -a
-Linux yemot-4u 4.4.0-31-generic #50-Ubuntu SMP Wed Jul 13 00:07:12 UTC
-2016 x86_64 x86_64 x86_64 GNU/Linux
-
-# btrfs --version
-btrfs-progs v4.7
-
-Thanks in advance!
+However, I would also suggest that would it be more useful use of the
+resource to run many arrays in parallel? Ie. one 6-device raid6, one
+20-device raid6, and then perhaps use the rest of the devices for a very
+large btrfs filesystem? Or if you have been using partitioning the large
+btrfs volume can also be composed of all the 122 devices; in fact you
+could even run multiple 122-device raid6s and use different kind of
+testing on each. For performance testing you might only excert one of
+the file systems at a time, though.
 
 -- 
-משיח NOW!
-Moshiach is coming very soon, prepare yourself!
-יחי אדוננו מורינו ורבינו מלך המשיח לעולם ועד!
+  _____________________________________________________________________
+     / __// /__ ____  __               http://www.modeemi.fi/~flux/\   \
+    / /_ / // // /\ \/ /                                            \  /
+   /_/  /_/ \___/ /_/\_\@modeemi.fi                                  \/
+

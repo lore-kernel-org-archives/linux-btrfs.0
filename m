@@ -1,61 +1,81 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [195.159.176.226] ([195.159.176.226]:42051 "EHLO
-	blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
-	with ESMTP id S1751799AbcHEK4T (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 5 Aug 2016 06:56:19 -0400
-Received: from list by blaine.gmane.org with local (Exim 4.84_2)
-	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1bVcnW-0005EG-80
-	for linux-btrfs@vger.kernel.org; Fri, 05 Aug 2016 12:56:14 +0200
-To: linux-btrfs@vger.kernel.org
-From: Lutz Vieweg <lvml@5t9.de>
-Subject: Re: 6TB partition, Data only 2TB - aka When you haven't hit the "usual"
- problem
-Date: Fri, 05 Aug 2016 12:56:07 +0200
-Message-ID: <57A470C7.2080304@5t9.de>
-References: <CAJCQCtSyJ8cHrmZcnLQ_fvsaaS1qZiQx_rsFt7-_6LJuvhKR-A@mail.gmail.com> <CA+9GZUiWQ2tAotFuq2Svkjnk+2Quz5B8UwZSSpm4SJfhqfoStQ@mail.gmail.com> <CAJCQCtR3Gj5K0dsAhDBo27Z6h3ki5cs6X0SrrFhC0dPPgY=4nw@mail.gmail.com> <CA+9GZUjLcRnRX_mwO-McXWFd+G4o3jtBENMLnszg-rJTn6vL1w@mail.gmail.com> <CAJCQCtRhYZi9nqWP_LYmZeg1yRQVkpnmUDQ-P5o1-gc-3w+Pdg@mail.gmail.com> <CA+9GZUg1CSFAURu05MuQvsYPVr9maiYvGMQHTzCmU5ev-C63Kg@mail.gmail.com> <20160109202659.GC6060@carfax.org.uk> <CA+9GZUjeJBhjr4ERBLHehhA2xow=-5gBYR4+y8eiMGxhiCi_mA@mail.gmail.com> <20160109210429.GD6060@carfax.org.uk> <CA+9GZUg-F1PWSAvpwy3=D6tz1gNgK88nTYzUP32D_hbg0H=rYg@mail.gmail.com> <5693A8B3.2090508@gmail.com> <CA+9GZUjj8a=drg7--p-f02+QXLo7aWMyZd3O8TA9gTyGWb3MLA@mail.gmail.com> <CA+9GZUg-6WrQTgCw_AmVb2qqr4aL4xeWH6mSq1zQ14qbxextzA@mail.gmail.com> <CA+9GZUgb=h9_t5fXH-qP_-MwKkoN4xLhhYNnCthccA114+KaeQ@mail.gmail.com> <57A372F3.5090400@5t9.de> <CAJCQCtSFcJd+ac+Awfwuzdhuf8xjf8EgMQNwq_aV3udaZmZ=5A@mail.gmail.com>
-Mime-Version: 1.0
+Received: from mail-it0-f42.google.com ([209.85.214.42]:35951 "EHLO
+	mail-it0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753459AbcHELjk (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 5 Aug 2016 07:39:40 -0400
+Received: by mail-it0-f42.google.com with SMTP id x130so19627577ite.1
+        for <linux-btrfs@vger.kernel.org>; Fri, 05 Aug 2016 04:39:40 -0700 (PDT)
+Subject: Re: How to stress test raid6 on 122 disk array
+To: Chris Murphy <lists@colorremedies.com>, Martin <rc6encrypted@gmail.com>
+References: <CAGQ70Ye3Ly0N5cZHe3_D0RX8yW6ZzcN7fVhoLnnXrPXjOKPa1Q@mail.gmail.com>
+ <274e0a56-086f-23c4-7ae9-2b6cb68ec6c8@gmail.com>
+ <CAJCQCtQAPXn714YL2R1V7q2fhn7QCsYHHceTimyFQ1TsMf-BQg@mail.gmail.com>
+ <CAGQ70Yf3R4mfPJRZWvyBXivN9qy_9WOsrZhdpx--a_27Wy3sYQ@mail.gmail.com>
+ <CAJCQCtTKsYxYH26E1a66--HiDRF3JXSdOSjLa1ira_1Ti6N+pw@mail.gmail.com>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Message-ID: <a119738d-942b-4dca-265e-5f9db15e2893@gmail.com>
+Date: Fri, 5 Aug 2016 07:39:27 -0400
+MIME-Version: 1.0
+In-Reply-To: <CAJCQCtTKsYxYH26E1a66--HiDRF3JXSdOSjLa1ira_1Ti6N+pw@mail.gmail.com>
 Content-Type: text/plain; charset=utf-8; format=flowed
-In-Reply-To: <CAJCQCtSFcJd+ac+Awfwuzdhuf8xjf8EgMQNwq_aV3udaZmZ=5A@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 08/04/2016 10:30 PM, Chris Murphy wrote:
-> Keep in mind the list is rather self-selecting for problems. People
-> who aren't having problems are unlikely to post their non-problems to
-> the list.
-
-True, but the number of people inclined to post a bug report to
-the list is also a lot smaller than the number of people who
-experienced problems.
-
-Personally, I know at least 2 Linux users who happened to
-get a btrfs filesystem as part of upgrading to a newer Suse
-distribution on their PC, and both of them experienced
-trouble with their filesystems that caused them to re-install
-without using btrfs. They weren't interested in what filesystem
-they use enough to bother investigating what happened
-in detail or to issue bug-reports.
-
-I'm afraid that btrfs' reputation has already taken damage
-from the combination of "early deployment as a root filesystem
-to unsuspecting users" and "being at a development stage where
-users are likely to experience trouble at some time".
-
-> c. Take some risk and use 4.8 rc1 once it's out. Just make sure to
-> keep backups.
-
-We sure do - actually, the possibility to "run daily backups from a
-snapshot while write performance remains acceptable" is the one and
-only reason for me to use btrfs rather than xfs for those $HOME dirs.
-In every other aspect (stability, performance, suitability for
-storing VM-images or database-files) xfs wins for me.
-And the btrfs advantage "file system based snapshot being more
-performant than block device based snapshot" may fade away
-with the replacement of magnetic disks with SSDs in the long run.
-
-
-Regards,
-
-Lutz Vieweg
+On 2016-08-04 17:12, Chris Murphy wrote:
+> On Thu, Aug 4, 2016 at 2:51 PM, Martin <rc6encrypted@gmail.com> wrote:
+>> Thanks for the benchmark tools and tips on where the issues might be.
+>>
+>> Is Fedora 24 rawhide preferred over ArchLinux?
+>
+> I'm not sure what Arch does any differently to their kernels from
+> kernel.org kernels. But bugzilla.kernel.org offers a Mainline and
+> Fedora drop down for identifying the kernel source tree.
+IIRC, they're pretty close to mainline kernels.  I don't think they have 
+any patches in the filesystem or block layer code at least, but I may be 
+wrong, it's been a long time since I looked at an Arch kernel.
+>
+>>
+>> If I want to compile a mainline kernel. Are there anything I need to tune?
+>
+> Fedora kernels do not have these options set.
+>
+> # CONFIG_BTRFS_FS_CHECK_INTEGRITY is not set
+> # CONFIG_BTRFS_FS_RUN_SANITY_TESTS is not set
+> # CONFIG_BTRFS_DEBUG is not set
+> # CONFIG_BTRFS_ASSERT is not set
+>
+> The sanity and integrity tests are both compile time and mount time
+> options, i.e. it has to be compiled enabled for the mount option to do
+> anything. I can't recall any thread where a developer asked a user to
+> set any of these options for testing though.
+FWIW, I actually have the integrity checking code built in on most 
+kernels I build.  I don't often use it, but it has near zero overhead 
+when not enabled, and it's helped me track down lower-level storage 
+configuration issues on occasion.
+>
+>
+>> When I do the tests, how do I log the info you would like to see, if I
+>> find a bug?
+>
+> bugzilla.kernel.org for tracking, and then reference the URL for the
+> bug with a summary in an email to list is how I usually do it. The
+> main thing is going to be the exact reproduce steps. It's also better,
+> I think, to have complete dmesg (or journalctl -k) attached to the bug
+> report because not all problems are directly related to Btrfs, they
+> can have contributing factors elsewhere. And various MTAs, or more
+> commonly MUAs, have a tendancy to wrap such wide text as found in
+> kernel or journald messages.
+Aside from kernel messages, the other general stuff you want to have is:
+1. Kernel version and userspace tools version (`uname -a` and `btrfs 
+--version`)
+2. Any underlying storage configuration if it's not just plain a SSD/HDD 
+or partitions (for example, usage of dm-crypt, LVM, mdadm, and similar 
+things).
+3. Output from `btrfs filesystem show` (this can be trimmed to the 
+filesystem that's having the issue).
+4. If you can still mount the filesystem, `btrfs filesystem df` output 
+can be helpful.
+5. If you can't mount the filesystem, output from `btrfs check` run 
+without any options will usually be asked for.
 

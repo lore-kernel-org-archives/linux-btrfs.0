@@ -1,120 +1,90 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wm0-f68.google.com ([74.125.82.68]:36571 "EHLO
-	mail-wm0-f68.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1946874AbcHEUE2 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 5 Aug 2016 16:04:28 -0400
-Received: by mail-wm0-f68.google.com with SMTP id x83so5138177wma.3
-        for <linux-btrfs@vger.kernel.org>; Fri, 05 Aug 2016 13:04:27 -0700 (PDT)
-Subject: Re: 6TB partition, Data only 2TB - aka When you haven't hit the
- "usual" problem
-To: Lutz Vieweg <lvml@5t9.de>, "cheater00 ." <cheater00@gmail.com>,
-        "Austin S. Hemmelgarn" <ahferroin7@gmail.com>,
-        Hugo Mills <hugo@carfax.org.uk>,
-        Chris Murphy <lists@colorremedies.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>, russell@coker.com.au
-References: <CAJCQCtSyJ8cHrmZcnLQ_fvsaaS1qZiQx_rsFt7-_6LJuvhKR-A@mail.gmail.com>
- <CA+9GZUjRWNVShW=6jfCVDTjRdQQCS9T_-cMkOF3s8846uAhn+w@mail.gmail.com>
- <CA+9GZUiWQ2tAotFuq2Svkjnk+2Quz5B8UwZSSpm4SJfhqfoStQ@mail.gmail.com>
- <CAJCQCtR3Gj5K0dsAhDBo27Z6h3ki5cs6X0SrrFhC0dPPgY=4nw@mail.gmail.com>
- <CA+9GZUjLcRnRX_mwO-McXWFd+G4o3jtBENMLnszg-rJTn6vL1w@mail.gmail.com>
- <CAJCQCtRhYZi9nqWP_LYmZeg1yRQVkpnmUDQ-P5o1-gc-3w+Pdg@mail.gmail.com>
- <CA+9GZUg1CSFAURu05MuQvsYPVr9maiYvGMQHTzCmU5ev-C63Kg@mail.gmail.com>
- <20160109202659.GC6060@carfax.org.uk>
- <CA+9GZUjeJBhjr4ERBLHehhA2xow=-5gBYR4+y8eiMGxhiCi_mA@mail.gmail.com>
- <20160109210429.GD6060@carfax.org.uk>
- <CA+9GZUg-F1PWSAvpwy3=D6tz1gNgK88nTYzUP32D_hbg0H=rYg@mail.gmail.com>
- <5693A8B3.2090508@gmail.com>
- <CA+9GZUjj8a=drg7--p-f02+QXLo7aWMyZd3O8TA9gTyGWb3MLA@mail.gmail.com>
- <CA+9GZUg-6WrQTgCw_AmVb2qqr4aL4xeWH6mSq1zQ14qbxextzA@mail.gmail.com>
- <CA+9GZUgb=h9_t5fXH-qP_-MwKkoN4xLhhYNnCthccA114+KaeQ@mail.gmail.com>
- <57A372F3.5090400@5t9.de>
-From: Gabriel C <nix.or.die@gmail.com>
-Message-ID: <5ee26e48-d949-502e-5884-6369c9e6b278@gmail.com>
-Date: Fri, 5 Aug 2016 22:03:43 +0200
+Received: from mail-lf0-f51.google.com ([209.85.215.51]:33638 "EHLO
+	mail-lf0-f51.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750980AbcHFUOw (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 6 Aug 2016 16:14:52 -0400
+Received: by mail-lf0-f51.google.com with SMTP id b199so224390658lfe.0
+        for <linux-btrfs@vger.kernel.org>; Sat, 06 Aug 2016 13:14:43 -0700 (PDT)
+Subject: Re: possible bug - wrong path in 'btrfs subvolume show' when snapshot
+ is in path below subvolume.
+To: Peter Holm <peter.g.holm@gmail.com>
+References: <CAOZhre2ZytraEyHzVb1zY6FmAJUC4xun0fpWRQS=Z8ZKWff0jg@mail.gmail.com>
+ <ccd46545-b433-1ff5-21d1-dd1bd7dd3e9f@gmail.com>
+ <CAOZhre1gA-c13O7zaUatqPeETEDJscCTpMrhrEkxGZSvB9_CiA@mail.gmail.com>
+Cc: linux-btrfs@vger.kernel.org
+From: Andrei Borzenkov <arvidjaar@gmail.com>
+Message-ID: <07b886b6-750b-26c4-dd47-cdae94e48dad@gmail.com>
+Date: Sat, 6 Aug 2016 12:15:42 +0300
 MIME-Version: 1.0
-In-Reply-To: <57A372F3.5090400@5t9.de>
+In-Reply-To: <CAOZhre1gA-c13O7zaUatqPeETEDJscCTpMrhrEkxGZSvB9_CiA@mail.gmail.com>
 Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
-On 04.08.2016 18:53, Lutz Vieweg wrote:
+06.08.2016 11:00, Peter Holm пишет:
+> You are right. Typing error. Sorry.
+> Here is from my bash_history.
 > 
-> I was today hit by what I think is probably the same bug:
-> A btrfs on a close-to-4TB sized block device, only half filled
-> to almost exactly 2 TB, suddenly says "no space left on device"
-> upon any attempt to write to it. The filesystem was NOT automatically
-> switched to read-only by the kernel, I should mention.
+> 1 btrfs su create is-this-a-bug
+> *2 btrfs su snap is-this-a-bug is-this-a-bug
+> *3 btrfs su snap is-this-a-bug /mnt/btrfs/sdc16-svid-5/
 > 
-> Re-mounting (which is a pain as this filesystem is used for
-> $HOMEs of a multitude of active users who I have to kick from
-> the server for doing things like re-mounting) removed the symptom
-> for now, but from what I can read in linux-btrfs mailing list
-> archives, it pretty likely the symptom will re-appear.
+
+As I said, in my case it fails with "File exists"
+
+> *2.When snapshot is created with the same name as subvolume, then it
+> by default creates in the subdirectory of the subvolume.
+> *3. Mountpoint for he root (subvolid=5) volume
 > 
-> Here are some more details:
+> Also I in the first post had  a link to an photo from my terminal when
+> executing thoose commands.
+> https://s31.postimg.org/9f0d7xb7f/is_this_a_bug.png
 > 
-> Software versions:
->> linux-4.6.1 (vanilla from kernel.org)
-...
+> /Peter Holm
 > 
-> dmesg output from the time the "no space left on device"-symptom
-> appeared:
 > 
->> [5171203.601620] WARNING: CPU: 4 PID: 23208 at fs/btrfs/inode.c:9261 btrfs_destroy_inode+0x263/0x2a0 [btrfs]
+> 2016-08-06 7:14 GMT+02:00, Andrei Borzenkov <arvidjaar@gmail.com>:
+>> 05.08.2016 02:32, Peter Holm пишет:
+>>> 'btrfs subvolumee show' gives no path to btrfs system root (volid=5)
+>>> when snapshot is in the folder of subvolume.
+>>>
+>>> Step to reproduce.
+>>> 1.btrfs subvolume create xyz
+>>> 2.btrfs subvolume snapshot xyz xyz/xyz
+>>> 3.btrfs subvolume snapshot <mountpoint-for-btrfs-root>/xyz
+>>
+>> This last command is wrong - snapshot name is missing. If you mean
+>>
+>> btrfs subvolume snapshot <mountpoint-for-btrfs-root> xyz
+>>
+>> - I get "File exists" (assuming that all previous commands were with
+>> <mountpoint-for-ntrfs-root> as current directory. This is on openSUSE
+>> Tumbleweed with kernel 4.6.4-2 and btrfsprogs 4.6.1-1.
+>>
+>> If my assumption is wrong, please copy and paste exact commands used to
+>> reproduce it.
+>>
+>>> 4.btrfs subvolumme show xyz
+>>> output
+>>> .....
+>>> Snapshot(s)
+>>>                          xyz
+>>>                          xyz
+>>> .....
+>>> picture from my console reproducing this. Whatchout for my personal
+>>> fs-layout
+>>> my mountpoint for volid=5 is - as seen in the findmount command  r at
+>>> top of the photo /mnt/btrfs/sdc16-svid-5
+>>> https://s31.postimg.org/9f0d7xb7f/is_this_a_bug.png
+>>>
+>>> If that can add anything, same thing happends when rootvolume is
+>>> mounted by path. (for the moment it is mounted by volid).
+>>> /Peter Holm
+>>> --
+>>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>>> the body of a message to majordomo@vger.kernel.org
+>>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>>>
+>>
+>>
 
-....
-> ...
->> [5171230.306037] WARNING: CPU: 18 PID: 12656 at fs/btrfs/extent-tree.c:4233 btrfs_free_reserved_data_space_noquota+0xf3/0x100 [btrfs]
-
-
-Sounds like the bug I hit too also ..
-
-To fix this you'll need :
-
-
-crazy@zwerg:~/Work/linux-git$ git show 8b8b08cbf
-commit 8b8b08cbfb9021af4b54b4175fc4c51d655aac8c
-Author: Chris Mason <clm@fb.com>
-Date:   Tue Jul 19 05:52:36 2016 -0700
-
-    Btrfs: fix delalloc accounting after copy_from_user faults
-
-    Commit 56244ef151c3cd11 was almost but not quite enough to fix the
-    reservation math after btrfs_copy_from_user returned partial copies.
-
-    Some users are still seeing warnings in btrfs_destroy_inode, and with a
-    long enough test run I'm able to trigger them as well.
-
-    This patch fixes the accounting math again, bringing it much closer to
-    the way it was before the sectorsize conversion Chandan did.  The
-    problem is accounting for the offset into the page/sector when we do a
-    partial copy.  This one just uses the dirty_sectors variable which
-    should already be updated properly.
-
-    Signed-off-by: Chris Mason <clm@fb.com>
-    cc: stable@vger.kernel.org # v4.6+
-
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index f3f61d1..bcfb4a2 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -1629,13 +1629,11 @@ again:
-                 * managed to copy.
-                 */
-                if (num_sectors > dirty_sectors) {
--                       /*
--                        * we round down because we don't want to count
--                        * any partial blocks actually sent through the
--                        * IO machines
--                        */
--                       release_bytes = round_down(release_bytes - copied,
--                                     root->sectorsize);
-+
-+                       /* release everything except the sectors we dirtied */
-+                       release_bytes -= dirty_sectors <<
-+                               root->fs_info->sb->s_blocksize_bits;
-+
-                        if (copied > 0) {
-                                spin_lock(&BTRFS_I(inode)->lock);
-                                BTRFS_I(inode)->outstanding_extents++;

@@ -1,61 +1,77 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lf0-f67.google.com ([209.85.215.67]:35577 "EHLO
-	mail-lf0-f67.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751976AbcHFWCO (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 6 Aug 2016 18:02:14 -0400
-Received: by mail-lf0-f67.google.com with SMTP id l89so18430283lfi.2
-        for <linux-btrfs@vger.kernel.org>; Sat, 06 Aug 2016 15:02:13 -0700 (PDT)
-Subject: Re: possible bug - wrong path in 'btrfs subvolume show' when snapshot
- is in path below subvolume.
-To: Peter Holm <peter.g.holm@gmail.com>, linux-btrfs@vger.kernel.org
-References: <CAOZhre2ZytraEyHzVb1zY6FmAJUC4xun0fpWRQS=Z8ZKWff0jg@mail.gmail.com>
-From: Andrei Borzenkov <arvidjaar@gmail.com>
-Message-ID: <ccd46545-b433-1ff5-21d1-dd1bd7dd3e9f@gmail.com>
-Date: Sat, 6 Aug 2016 08:14:41 +0300
+Received: from mail-qt0-f196.google.com ([209.85.216.196]:33774 "EHLO
+	mail-qt0-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751059AbcHFWgf (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 6 Aug 2016 18:36:35 -0400
+Received: by mail-qt0-f196.google.com with SMTP id j37so16130307qta.0
+        for <linux-btrfs@vger.kernel.org>; Sat, 06 Aug 2016 15:36:35 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <CAOZhre2ZytraEyHzVb1zY6FmAJUC4xun0fpWRQS=Z8ZKWff0jg@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8
+From: Chris McFaul <mcfaul@gmail.com>
+Date: Sat, 6 Aug 2016 23:36:14 +0100
+Message-ID: <CAPT_Aj+gzL6Pnz4JeN2Aco_Enq__3Pd=qYnC4M8=b-8Q=UPTmA@mail.gmail.com>
+Subject: Unmountable and unrepairable BTRFS
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-05.08.2016 02:32, Peter Holm пишет:
-> 'btrfs subvolumee show' gives no path to btrfs system root (volid=5)
-> when snapshot is in the folder of subvolume.
-> 
-> Step to reproduce.
-> 1.btrfs subvolume create xyz
-> 2.btrfs subvolume snapshot xyz xyz/xyz
-> 3.btrfs subvolume snapshot <mountpoint-for-btrfs-root>/xyz
+Hi, if anyone is able to help with a rather large (34TB of data on it)
+BTRFS RAID 6 I would be very grateful (pastebins below) - at this
+point I am only interested in recovery since I am obviously switching
+to RAID 1 once/if I get my data back.
 
-This last command is wrong - snapshot name is missing. If you mean
+Many thanks in advance
 
-btrfs subvolume snapshot <mountpoint-for-btrfs-root> xyz
+Chris
 
-- I get "File exists" (assuming that all previous commands were with
-<mountpoint-for-ntrfs-root> as current directory. This is on openSUSE
-Tumbleweed with kernel 4.6.4-2 and btrfsprogs 4.6.1-1.
+Linux rockstor 4.6.0-1.el7.elrepo.x86_64 #1 SMP Mon May 16 10:54:52
+EDT 2016 x86_64 x86_64 x86_64 GNU/Linux
 
-If my assumption is wrong, please copy and paste exact commands used to
-reproduce it.
+btrfs-progs v4.6
 
-> 4.btrfs subvolumme show xyz
-> output
-> .....
-> Snapshot(s)
->                          xyz
->                          xyz
-> .....
-> picture from my console reproducing this. Whatchout for my personal fs-layout
-> my mountpoint for volid=5 is - as seen in the findmount command  r at
-> top of the photo /mnt/btrfs/sdc16-svid-5
-> https://s31.postimg.org/9f0d7xb7f/is_this_a_bug.png
-> 
-> If that can add anything, same thing happends when rootvolume is
-> mounted by path. (for the moment it is mounted by volid).
-> /Peter Holm
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
 
+Label: 'rockstor_rockstor'  uuid: af53ae5b-419e-4246-9366-611b710eead6
+        Total devices 1 FS bytes used 1.50GiB
+        devid    1 size 100.12GiB used 4.02GiB path /dev/sda3
+
+
+This one is fine:
+
+Label: '2'  uuid: 815fa02f-4871-4703-9208-03ccc48cc816
+        Total devices 9 FS bytes used 38.98TiB
+        devid    1 size 7.28TiB used 6.27TiB path /dev/sdg
+        devid    2 size 7.28TiB used 6.27TiB path /dev/sdh
+        devid    3 size 7.28TiB used 6.27TiB path /dev/sdi
+        devid    4 size 7.28TiB used 6.27TiB path /dev/sdj
+        devid    5 size 7.28TiB used 6.27TiB path /dev/sdc
+        devid    6 size 7.28TiB used 6.27TiB path /dev/sdd
+        devid    7 size 7.28TiB used 6.27TiB path /dev/sde
+        devid    8 size 7.28TiB used 6.27TiB path /dev/sdf
+        devid   11 size 7.28TiB used 6.27TiB path /dev/sdb
+
+
+this one wont mount:
+
+Label: '1'  uuid: ba29167b-e0cf-4029-92a4-f12a97f7e472
+        Total devices 11 FS bytes used 34.23TiB
+        devid    2 size 5.46TiB used 3.82TiB path /dev/sdk
+        devid    3 size 5.46TiB used 3.82TiB path /dev/sdl
+        devid    4 size 5.46TiB used 3.82TiB path /dev/sdm
+        devid    5 size 5.46TiB used 3.82TiB path /dev/sdn
+        devid    6 size 5.46TiB used 3.82TiB path /dev/sdo
+        devid    7 size 5.46TiB used 3.82TiB path /dev/sdp
+        devid    8 size 5.46TiB used 3.82TiB path /dev/sdq
+        devid    9 size 5.46TiB used 3.82TiB path /dev/sdr
+        devid   10 size 5.46TiB used 3.82TiB path /dev/sds
+        devid   11 size 5.46TiB used 3.82TiB path /dev/sdt
+        devid   12 size 5.46TiB used 3.82TiB path /dev/sdu
+
+full dmesg : http://pastebin.com/xgwfkGum
+
+trying to mount: http://pastebin.com/DSfHsda6
+
+btrfs restore: http://pastebin.com/EAuPW1pg
+
+btrfs check: http://pastebin.com/FjM7amEv
+
+finding roots: http://pastebin.com/SBsn12d9

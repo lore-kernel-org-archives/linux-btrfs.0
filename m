@@ -1,129 +1,230 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.136]:40928 "EHLO mail.kernel.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754166AbcHAQbJ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 1 Aug 2016 12:31:09 -0400
-Received: from mail.kernel.org (localhost [127.0.0.1])
-	by mail.kernel.org (Postfix) with ESMTP id E53932045B
-	for <linux-btrfs@vger.kernel.org>; Mon,  1 Aug 2016 16:24:56 +0000 (UTC)
-Received: from debian3.lan (bl12-226-64.dsl.telepac.pt [85.245.226.64])
-	(using TLSv1.2 with cipher AES128-SHA256 (128/128 bits))
-	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPSA id B368D20451
-	for <linux-btrfs@vger.kernel.org>; Mon,  1 Aug 2016 16:24:55 +0000 (UTC)
-From: fdmanana@kernel.org
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] Btrfs: send, don't bug on inconsistent snapshots
-Date: Mon,  1 Aug 2016 03:16:52 +0100
-Message-Id: <1470017812-11124-1-git-send-email-fdmanana@kernel.org>
+Received: from mail-pa0-f66.google.com ([209.85.220.66]:34872 "EHLO
+	mail-pa0-f66.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751712AbcHGRrm (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 7 Aug 2016 13:47:42 -0400
+Subject: Re: [PATCH 8/9] vfs: hoist the btrfs deduplication ioctl to the vfs
+To: "Darrick J. Wong" <darrick.wong@oracle.com>,
+        Eric Biggers <ebiggers3@gmail.com>
+References: <20151219085505.12478.71157.stgit@birch.djwong.org>
+ <20151219085559.12478.33700.stgit@birch.djwong.org>
+ <20160112060714.GA4980@zzz> <20160112091432.GB7832@birch.djwong.org>
+Cc: mtk.manpages@gmail.com, david@fromorbit.com, linux-fsdevel@vger.kernel.org,
+        linux-api@vger.kernel.org, xfs@oss.sgi.com,
+        linux-btrfs@vger.kernel.org, hch@infradead.org
+From: "Michael Kerrisk (man-pages)" <mtk.manpages@gmail.com>
+Message-ID: <594f4812-e146-6a6b-60d5-91ac56d46d66@gmail.com>
+Date: Mon, 8 Aug 2016 03:47:34 +1000
+MIME-Version: 1.0
+In-Reply-To: <20160112091432.GB7832@birch.djwong.org>
+Content-Type: text/plain; charset=windows-1252; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Filipe Manana <fdmanana@suse.com>
+Hi Darrick,
 
-When doing an incremental send, if we find a new/modified/deleted extent,
-reference or xattr without having previously processed the corresponding
-inode item we end up exexuting a BUG_ON(). This is because whenever an
-extent, xattr or reference is added, modified or deleted, we always expect
-to have the corresponding inode item updated. However there are situations
-where this will not happen due to transient -ENOMEM or -ENOSPC errors when
-doing delayed inode updates.
+On 01/12/2016 08:14 PM, Darrick J. Wong wrote:
+> [adding btrfs to the cc since we're talking about a whole new dedupe interface]
 
-For example, when punching holes we can succeed in deleting and modifying
-(shrinking) extents but later fail to do the delayed inode update. So after
-such failure we close our transaction handle and right after a snapshot of
-the fs/subvol tree can be made and used later for a send operation. The
-same thing can happen during truncate, link, unlink, and xattr related
-operations.
+In the discussion below, many points of possible improvement were notedfor
+the man page.... Would you be willing to put together a patch please?
 
-So instead of executing a BUG_ON, make send return an -EIO error and print
-an informative error message do dmesg/syslog.
+Thanks,
 
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
- fs/btrfs/send.c | 48 +++++++++++++++++++++++++++++++++++++++++++++---
- 1 file changed, 45 insertions(+), 3 deletions(-)
+Michael
 
-diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-index 2db8dc8..efe129f 100644
---- a/fs/btrfs/send.c
-+++ b/fs/btrfs/send.c
-@@ -273,6 +273,39 @@ struct name_cache_entry {
- 	char name[];
- };
- 
-+static void inconsistent_snapshot_error(struct send_ctx *sctx,
-+					enum btrfs_compare_tree_result result,
-+					const char *what)
-+{
-+	const char *result_string;
-+
-+	switch (result) {
-+	case BTRFS_COMPARE_TREE_NEW:
-+		result_string = "new";
-+		break;
-+	case BTRFS_COMPARE_TREE_DELETED:
-+		result_string = "deleted";
-+		break;
-+	case BTRFS_COMPARE_TREE_CHANGED:
-+		result_string = "updated";
-+		break;
-+	case BTRFS_COMPARE_TREE_SAME:
-+		ASSERT(0);
-+		result_string = "unchanged";
-+		break;
-+	default:
-+		ASSERT(0);
-+		result_string = "unexpected";
-+	}
-+
-+	btrfs_err(sctx->send_root->fs_info,
-+		  "Send: inconsistent snapshot, found %s %s for inode %llu without updated inode item, send root is %llu, parent root is %llu",
-+		  result_string, what, sctx->cmp_key->objectid,
-+		  sctx->send_root->root_key.objectid,
-+		  (sctx->parent_root ?
-+		   sctx->parent_root->root_key.objectid : 0));
-+}
-+
- static int is_waiting_for_move(struct send_ctx *sctx, u64 ino);
- 
- static struct waiting_dir_move *
-@@ -5711,7 +5744,10 @@ static int changed_ref(struct send_ctx *sctx,
- {
- 	int ret = 0;
- 
--	BUG_ON(sctx->cur_ino != sctx->cmp_key->objectid);
-+	if (sctx->cur_ino != sctx->cmp_key->objectid) {
-+		inconsistent_snapshot_error(sctx, result, "reference");
-+		return -EIO;
-+	}
- 
- 	if (!sctx->cur_inode_new_gen &&
- 	    sctx->cur_ino != BTRFS_FIRST_FREE_OBJECTID) {
-@@ -5736,7 +5772,10 @@ static int changed_xattr(struct send_ctx *sctx,
- {
- 	int ret = 0;
- 
--	BUG_ON(sctx->cur_ino != sctx->cmp_key->objectid);
-+	if (sctx->cur_ino != sctx->cmp_key->objectid) {
-+		inconsistent_snapshot_error(sctx, result, "xattr");
-+		return -EIO;
-+	}
- 
- 	if (!sctx->cur_inode_new_gen && !sctx->cur_inode_deleted) {
- 		if (result == BTRFS_COMPARE_TREE_NEW)
-@@ -5760,7 +5799,10 @@ static int changed_extent(struct send_ctx *sctx,
- {
- 	int ret = 0;
- 
--	BUG_ON(sctx->cur_ino != sctx->cmp_key->objectid);
-+	if (sctx->cur_ino != sctx->cmp_key->objectid) {
-+		inconsistent_snapshot_error(sctx, result, "extent");
-+		return -EIO;
-+	}
- 
- 	if (!sctx->cur_inode_new_gen && !sctx->cur_inode_deleted) {
- 		if (result != BTRFS_COMPARE_TREE_DELETED)
+  
+> On Tue, Jan 12, 2016 at 12:07:14AM -0600, Eric Biggers wrote:
+>> Some feedback on the VFS portion of the FIDEDUPERANGE ioctl and its man page...
+>> (note: I realize the patch is mostly just moving the code that already existed
+>> in btrfs, but in the VFS it deserves a more thorough review):
+>
+> Wheee. :)
+>
+> Yes, let's discuss the concerns about the btrfs extent same ioctl.
+>
+> I believe Christoph dislikes about the odd return mechanism (i.e. status and
+> bytes_deduped) and doubts that the vectorization is really necessary.  There's
+> not a lot of documentation to go on aside from "Do whatever the BTRFS ioctl
+> does".  I suspect that will leave my explanations lackng, since I neither
+> designed the btrfs interface nor know all that much about the decisions made to
+> arrive at what we have now.
+>
+> (I agree with both of hch's complaints.)
+>
+> Really, the best argument for keeping this ioctl is to avoid breaking
+> duperemove.  Even then, given that current duperemove checks for btrfs before
+> trying to use BTRFS_IOC_EXTENT_SAME, we could very well design a new dedupe
+> ioctl for the VFS, hook the new dedupers (XFS) into the new VFS ioctl
+> leaving the old btrfs ioctl intact, and train duperemove to try the new
+> ioctl and fall back on the btrfs one if the VFS ioctl isn't supported.
+>
+> Frankly, I also wouldn't mind changing the VFS dedupe ioctl that to something
+> that resembles the clone_range interface:
+>
+> int ioctl(int dest_fd, FIDEDUPERANGE, struct file_dedupe_range * arg);
+>
+> struct file_dedupe_range {
+>     __s64 src_fd;
+>     __u64 src_offset;
+>     __u64 length;
+>     __u64 dest_offset;
+>     __u64 flags;
+> };
+>
+> "See if the byte range src_offset:length in src_fd matches all of
+> dest_offset:length in dest_fd; if so, share src_fd's physical storage with
+> dest_fd.  Both fds must be files; if they are the same file the ranges cannot
+> overlap; src_fd must be readable; dest_fd must be writable or append-only.
+> Offsets and lengths probably need to be block-aligned, but that is filesystem
+> dependent."
+>
+> The error conditions would be superset of the ones we know about today.  I'd
+> return EOVERFLOW or something if length is longer than the FS wants to deal
+> with.
+>
+> Now all the vectorization problems go away, and since it's a new VFS interface
+> we can define everything from the start.
+>
+> Christoph, if this new interface solves your complaints I think I'd like to get
+> started on the code/docs soon.
+>
+>> At high level, I am confused about what is meant by the "source" and
+>> "destination" files.  I understand that with more than two files, you
+>> effectively have to choose one file to treat specially and dedupe with all
+>> the other files (an NxN comparison isn't realistic).  But with just two
+>> files, a deduplication operation should be completely symmetric, should it
+>> not?  The end
+>
+> Not sure what you mean by 'symmetric', but in any case the convention seems
+> to be that src_fd's storage is shared with dest_fd if there's a match.
+>
+>> result should be that the data is deduplicated, regardless of the order in
+>> which I gave the file descriptors.  So why is there some non-symmetric
+>> behavior?  There are several examples but one is that the VFS is checking
+>> !S_ISREG() on the "source" file descriptor but not on the "destination" file
+>> descriptor.
+>
+> The dedupe_range function pointer should only be supplied for regular files.
+>
+>> Another is that different permissions are required on the source versus on
+>> the destination.  If there are good reasons for the nonsymmetry then this
+>> needs to be clearly explained in the man page; otherwise it may not be clear
+>> what to use as the "source" and what to use as the "destination".
+>>
+>> It seems odd to be adding "copy" as a system call but then have "dedupe" and
+>> "clone" as ioctls rather than system calls... it seems that they should all
+>> be one or the other (at least, if we put aside the fact that the ioctls
+>> already exist in btrfs).
+>
+> We can't put the clone ioctl aside; coreutils has already started using it.
+>
+> I'm not sure if clone_range or extent_same are all that popular, though.
+> AFAIK duperemove is the only program using extent_same, and I don't know
+> of anything using clone_range.
+>
+> (Well, xfs_io does...)
+>
+>> The range checking in clone_verify_area() appears incomplete.  Someone could
+>> provide len=UINT64_MAX and all the checks would still pass even though
+>> 'pos+len' would overflow.
+>
+> Yeah...
+>
+>> Should the ioctl be interruptible?  Right now it always goes through *all*
+>> the 'struct file_dedupe_range_info's you passed in --- potentially up to
+>> 65535 of them.
+>
+> There probably ought to be explicit signal checks, or we could just get rid
+> of the vectorization entirely. :)
+>
+>> Why 'info->bytes_deduped += deduped' rather than 'info->bytes_deduped =
+>> deduped'?  'bytes_deduped' is per file descriptor, not for the operation as a
+>> whole.
+>
+> Right, because bytes_deduped is a part of file_dedup_range_info, not
+> file_dedupe_range.
+>
+> (Note the bytes_deduped = 0 earlier in the function.)
+>
+>> What permissions do you need on the destination file descriptors?  The man
+>> page implies they must be open for writing and not appending.  The
+>> implementation differs: it requires FMODE_WRITE only for non-admin users, and
+>> it doesn't check for O_APPEND at all.
+>
+> I think the result of an earlier discussion was that src_fd must be readable,
+> and dest_fd must be writable or appendable.
+>
+>> The man page also says you get EPERM if "dest_fd is immutable" and ETXTBSY if
+>> "one of the files is a swap file", which I don't see actually happening in
+>> the implementation; it seems those error codes perhaps exist at all for this
+>> ioctl but rather be left to open(..., O_WRONLY).
+>
+> Those could be hoisted to the VFS (from the XFS implementation), I think.
+>
+>> If the filesystem doesn't support deduplication, or I pass in a strange file
+>> descriptor such as one for a named pipe, do I get EINVAL or EOPNOTSUPP?  The
+>> man page isn't clear.
+>
+> Should be EOPNOTSUPP if dest_fd isn't a regular file; EISDIR if either are
+> directories; and EINVAL for any other kind of non-file fd.  I suspect the
+> clone* manpages don't make this too clear either.
+>
+>> Under what circumstances will 'bytes_deduped' differ from the count that was
+>> passed in?
+>
+> btrfs/xfs will only compare the first 16MB.  Not documented anywhere. :(
+>
+>> If short counts are allowed, what will be the 'status' be in that case:
+>> FILE_DEDUP_RANGE_DIFFERS, FILE_DEDUPE_RANGE_SAME, or something else?
+>
+> One of those two.
+>
+>> Can data be deduped even if only a prefix of the data region matches?
+>
+> No.
+>
+>> The man page doesn't mention FILE_DEDUPE_RANGE_SAME at all, instead calling it
+>> 0; it only mentions FILE_DEDUPE_RANGE_DIFFERS.
+>
+> Oops, good catch. :(
+>
+>> The man page isn't clear about whether the ioctl stops early if an error
+>> occurs or always processes all the 'struct file_dedupe_range_info's you pass
+>> in.  And if it were, hypothetically, to stop early, how is the user meant to
+>> know on which file it stopped?
+>
+> I don't know if this should be the official behavior, but it stopped at
+> whichever file_dedupe_range_info has both status and bytes_deduped set to zero.
+>
+>> The man page says "logical_offset" but in the struct it is called
+>> "dest_offset".
+>
+> Oops.
+>
+>> There are some variables named "same" which don't really make sense now that
+>> the ioctl is called FIDEDUPERANGE instead of EXTENT_SAME.
+>
+> Perhaps not.
+>
+> I'll later take a look at how many of these issues apply to clone/clone_range.
+>
+> --D
+>
+>>
+>> Eric
+>> --
+>> To unsubscribe from this list: send the line "unsubscribe linux-api" in
+>> the body of a message to majordomo@vger.kernel.org
+>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-api" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>
+
+
 -- 
-2.7.0.rc3
-
+Michael Kerrisk
+Linux man-pages maintainer; http://www.kernel.org/doc/man-pages/
+Linux/UNIX System Programming Training: http://man7.org/training/

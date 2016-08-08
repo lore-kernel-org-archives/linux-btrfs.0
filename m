@@ -1,66 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cloud1-vm154.de-nserver.de ([178.250.10.56]:35670 "EHLO
-	cloud1-vm154.de-nserver.de" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1750888AbcHHGRn (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 8 Aug 2016 02:17:43 -0400
-Subject: Re: memory overflow or undeflow in free space tree / space_info?
-To: Josef Bacik <jbacik@fb.com>, Omar Sandoval <osandov@osandov.com>
-References: <229a1d13-32f1-cd4c-975f-2db6796eb6c7@profihost.ag>
- <20160729191153.GA28505@vader> <20160729191459.GB28505@vader>
- <40a46d57-fe32-e745-9897-8f5c6ca2b33e@fb.com>
- <6c131d33-af2e-61ae-00ed-f65ac35607c2@profihost.ag>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-From: Stefan Priebe - Profihost AG <s.priebe@profihost.ag>
-Message-ID: <265340a5-12d5-f8a0-974f-b0de69b3b243@profihost.ag>
-Date: Mon, 8 Aug 2016 08:17:38 +0200
+Received: from mail-wm0-f43.google.com ([74.125.82.43]:32942 "EHLO
+	mail-wm0-f43.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751259AbcHHLqh (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 8 Aug 2016 07:46:37 -0400
+Received: by mail-wm0-f43.google.com with SMTP id p129so19589151wmp.0
+        for <linux-btrfs@vger.kernel.org>; Mon, 08 Aug 2016 04:46:36 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <6c131d33-af2e-61ae-00ed-f65ac35607c2@profihost.ag>
-Content-Type: text/plain; charset=windows-1252
+In-Reply-To: <CAK7rSWKrquTN3TbJgcri21VAfuR_wE4nC-TRDn_eGeF+8VJdRQ@mail.gmail.com>
+References: <CAK7rSWKrquTN3TbJgcri21VAfuR_wE4nC-TRDn_eGeF+8VJdRQ@mail.gmail.com>
+From: Justin Kilpatrick <jkilpatr@redhat.com>
+Date: Mon, 8 Aug 2016 07:46:34 -0400
+Message-ID: <CANhjow8an2qzrKy7fuKSr1vdgPOHfgatqhOx0vmPiChMWK4P=g@mail.gmail.com>
+Subject: Re: Save way to migrate from raid 5/6?
+To: Karl Herler <karl.herler@gmail.com>
+Cc: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am 04.08.2016 um 13:40 schrieb Stefan Priebe - Profihost AG:
-> Am 29.07.2016 um 23:03 schrieb Josef Bacik:
->> On 07/29/2016 03:14 PM, Omar Sandoval wrote:
->>> On Fri, Jul 29, 2016 at 12:11:53PM -0700, Omar Sandoval wrote:
->>>> On Fri, Jul 29, 2016 at 08:40:26PM +0200, Stefan Priebe - Profihost
->>>> AG wrote:
->>>>> Dear list,
->>>>>
->>>>> i'm seeing btrfs no space messages frequently on big filesystems (>
->>>>> 30TB).
->>>>>
->>>>> In all cases i'm getting a trace like this one a space_info warning.
->>>>> (since commit [1]). Could someone please be so kind and help me
->>>>> debugging / fixing this bug? I'm using space_cache=v2 on all those
->>>>> systems.
->>>>
->>>> Hm, so I think this indicates a bug in space accounting somewhere else
->>>> rather than the free space tree itself. I haven't debugged one of these
->>>> issues before, I'll see if I can reproduce it. Cc'ing Josef, too.
->>>
->>> I should've asked, what sort of filesystem activity triggers this?
->>>
->>
->> Chris just fixed this I think, try his next branch from his git tree
->>
->> git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git
-> 
-> Thanks now running a 4.4 with those patches backported. If that still
-> shows an error i will try that vanilla tree.
+Do not run device delete, the issue is with parity and disk-failure
+recovery, manually
+incurring disk failure is a very bad idea.
 
-OK this didn't work. I'll start / try using the linux-btrfs next branch
-and look if this helps.
+I would suggest running a full backup of all the files before touching
+anything and then
+an in place conversion should be fine as its just reading from
+undegraded disks and
+writing in a few format. I did the same thing converting from 5 to 1
+several months ago.
+I did end up with a couple of files I had to pull from backups as they
+where marked as
+corrupted and unrecoverable.
 
-Greets,
-Stefan
-
-> 
-> Thanks!
-> 
-> Stefan
-> 
->> and see if it still happens.  Thanks,
->>
->> Josef
+On Sat, Aug 6, 2016 at 2:58 AM, Karl Herler <karl.herler@gmail.com> wrote:
+> Hello,
+>
+> What is the safest way to migrate an existing raid 5/6 setup, to say raid 10?
+>
+> Will simply running `btrfs filesystem balance start -dconvert=10
+> -mconvert=10` work or is it sensitive to the parity calculation issue?
+>
+> Can I `btrfs device delete` some of the drives, format them and copy
+> over the data from the raid 5/6, or will delete risk running into the
+> issue?
+>
+>
+> Best regards,
+> Karl Herler
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

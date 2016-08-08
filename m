@@ -1,142 +1,66 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f196.google.com ([209.85.223.196]:34620 "EHLO
-	mail-io0-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751518AbcHGWom (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 7 Aug 2016 18:44:42 -0400
-Received: by mail-io0-f196.google.com with SMTP id i199so5510708ioi.1
-        for <linux-btrfs@vger.kernel.org>; Sun, 07 Aug 2016 15:44:42 -0700 (PDT)
+Received: from cloud1-vm154.de-nserver.de ([178.250.10.56]:35670 "EHLO
+	cloud1-vm154.de-nserver.de" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1750888AbcHHGRn (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 8 Aug 2016 02:17:43 -0400
+Subject: Re: memory overflow or undeflow in free space tree / space_info?
+To: Josef Bacik <jbacik@fb.com>, Omar Sandoval <osandov@osandov.com>
+References: <229a1d13-32f1-cd4c-975f-2db6796eb6c7@profihost.ag>
+ <20160729191153.GA28505@vader> <20160729191459.GB28505@vader>
+ <40a46d57-fe32-e745-9897-8f5c6ca2b33e@fb.com>
+ <6c131d33-af2e-61ae-00ed-f65ac35607c2@profihost.ag>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+From: Stefan Priebe - Profihost AG <s.priebe@profihost.ag>
+Message-ID: <265340a5-12d5-f8a0-974f-b0de69b3b243@profihost.ag>
+Date: Mon, 8 Aug 2016 08:17:38 +0200
 MIME-Version: 1.0
-From: Dave <davestechshop@gmail.com>
-Date: Sun, 7 Aug 2016 18:44:20 -0400
-Message-ID: <CAH=dxU4BDgUjuzYsv+Lcd9XedWO_hZ+2x0XpPgp6ZYkxbjO2hA@mail.gmail.com>
-Subject: btrfs open_ctree failed - root fs will not mount
-To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+In-Reply-To: <6c131d33-af2e-61ae-00ed-f65ac35607c2@profihost.ag>
+Content-Type: text/plain; charset=windows-1252
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I am running Arch Linux on a system with full disk encryption and the
-storage is a Samsung 950 Pro NVMe drive (512 GB). The computer is a
-couple months old. No bad behavior until now. (I'm only using 21 GB of
-the 512 space on the disk.)
+Am 04.08.2016 um 13:40 schrieb Stefan Priebe - Profihost AG:
+> Am 29.07.2016 um 23:03 schrieb Josef Bacik:
+>> On 07/29/2016 03:14 PM, Omar Sandoval wrote:
+>>> On Fri, Jul 29, 2016 at 12:11:53PM -0700, Omar Sandoval wrote:
+>>>> On Fri, Jul 29, 2016 at 08:40:26PM +0200, Stefan Priebe - Profihost
+>>>> AG wrote:
+>>>>> Dear list,
+>>>>>
+>>>>> i'm seeing btrfs no space messages frequently on big filesystems (>
+>>>>> 30TB).
+>>>>>
+>>>>> In all cases i'm getting a trace like this one a space_info warning.
+>>>>> (since commit [1]). Could someone please be so kind and help me
+>>>>> debugging / fixing this bug? I'm using space_cache=v2 on all those
+>>>>> systems.
+>>>>
+>>>> Hm, so I think this indicates a bug in space accounting somewhere else
+>>>> rather than the free space tree itself. I haven't debugged one of these
+>>>> issues before, I'll see if I can reproduce it. Cc'ing Josef, too.
+>>>
+>>> I should've asked, what sort of filesystem activity triggers this?
+>>>
+>>
+>> Chris just fixed this I think, try his next branch from his git tree
+>>
+>> git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git
+> 
+> Thanks now running a 4.4 with those patches backported. If that still
+> shows an error i will try that vanilla tree.
 
-    btrfs-progs v4.5.1
+OK this didn't work. I'll start / try using the linux-btrfs next branch
+and look if this helps.
 
-Today I was using my system normally and browsing the web. Firefox
-stopped responding suddenly and for no apparent reason. Then (KDE)
-Plasma stopped responding. I could not log out of KDE.
+Greets,
+Stefan
 
-I killed my user session (pkill -u me), then I tired to startx. At
-that point I noticed my root filesystem was read-only.
-
-As a first step, I rebooted. That didn't help anything. I tried
-rebooting several more times -- no change.
-
-The root filesystem (btrfs) would not mount. (See error below.) I
-booted into a LiveUSB environment and ran this command:
-
-    cryptsetup open --type luks /dev/xxx cryptroot
-
-It opens. Then I ran:
-
-    mount -t btrfs -o
-noatime,nodiratime,ssd,compress=lzo,defaults,space_cache,subvolid=257
-/dev/mapper/cryptroot /mnt
-
-The error message is shown here:
-
-    [ 2300.967048] BTRFS info (device dm-0): use ssd allocation scheme
-    [ 2300.967058] BTRFS info (device dm-0): use lzo compression
-    [ 2300.967066] BTRFS info (device dm-0): disk space caching is enabled
-    [ 2300.967069] BTRFS: has skinny extents
-    [ 2300.995393] BTRFS: error (device dm-0) in
-btrfs_replay_log:2413: errno=-22 unknown (Failed to recover log tree)
-    [ 2300.997617] BTRFS info (device dm-0): delayed_refs has NO entry
-    [ 2300.997673] BTRFS error (device dm-0): cleaner transaction
-attach returned -30
-    [ 2301.035405] BTRFS: open_ctree failed
-
-It is exactly the same error I saw when trying to boot normally as
-mentioned above.
-
-Based on these two links:
-
-> https://btrfs.wiki.kernel.org/index.php/Problem_FAQ
-> https://btrfs.wiki.kernel.org/index.php/Btrfs-zero-log
-
-I decided to take a chance on running this command:
-
-    btrfs rescue zero-log
-
-That worked and I can mount the filesystem.
-
-I ran btrfs check --repair. Here is the output:
-
-    root@broken / # umount /mnt
-    root@broken / # btrfs check --repair /dev/mapper/cryptroot
-    enabling repair mode
-    Checking filesystem on /dev/mapper/cryptroot
-    checking extents
-    bad metadata [292414476288, 292414492672) crossing stripe boundary
-    bad metadata [292414541824, 292414558208) crossing stripe boundary
-    bad metadata [292414672896, 292414689280) crossing stripe boundary
-    bad metadata [292414869504, 292414885888) crossing stripe boundary
-    bad metadata [292415000576, 292415016960) crossing stripe boundary
-    bad metadata [292415066112, 292415082496) crossing stripe boundary
-    bad metadata [292415131648, 292415148032) crossing stripe boundary
-    bad metadata [292415262720, 292415279104) crossing stripe boundary
-    bad metadata [292415328256, 292415344640) crossing stripe boundary
-    bad metadata [292415393792, 292415410176) crossing stripe boundary
-    repaired damaged extent references
-    Fixed 0 roots.
-    checking free space cache
-    cache and super generation don't match, space cache will be invalidated
-    checking fs roots
-    checking csums
-    checking root refs
-    checking quota groups
-    Ignoring qgroup relation key 258
-    Ignoring qgroup relation key 263
-    Ignoring qgroup relation key 71776119061217538
-    Ignoring qgroup relation key 71776119061217543
-    Counts for qgroup id: 257 are different
-    our:            referenced 10412273664 referenced compressed 10412273664
-    disk:           referenced 10411311104 referenced compressed 10411311104
-    diff:           referenced 962560 referenced compressed 962560
-    our:            exclusive 10412273664 exclusive compressed 10412273664
-    disk:           exclusive 10412273664 exclusive compressed 10412273664
-    found 21570773057 bytes used err is 0
-    total csum bytes: 19563456
-    total tree bytes: 403767296
-    total fs tree bytes: 349667328
-    total extent tree bytes: 27328512
-    btree space waste bytes: 66313360
-    file data blocks allocated: 39882014720
-    referenced 28043988992
-    extent buffer leak: start 20987904 len 16384
-    extent buffer leak: start 292688068608 len 16384
-    extent buffer leak: start 60915712 len 16384
-    extent buffer leak: start 29569581056 len 16384
-    extent buffer leak: start 29569597440 len 16384
-    extent buffer leak: start 292412063744 len 16384
-    extent buffer leak: start 292405870592 len 16384
-    extent buffer leak: start 292405936128 len 16384
-    extent buffer leak: start 292413964288 len 16384
-
-Then I check dmesg and I see this error information:
-
-    [ 4925.562422] BTRFS info (device dm-0): use ssd allocation scheme
-    [ 4925.562432] BTRFS info (device dm-0): use lzo compression
-    [ 4925.562440] BTRFS info (device dm-0): disk space caching is enabled
-    [ 4925.562444] BTRFS: has skinny extents
-    [ 4925.578705] BTRFS error (device dm-0): qgroup generation
-mismatch, marked as inconsistent
-    [ 4925.584033] BTRFS: checking UUID tree
-
-What should I do next? I'm a simple user.
-
-I already ran memtest86+ overnight using 8 CPU cores in parallel (so
-it was a very thorough memory test). There were 0 RAM errors.
-
-I previously used btrfs since 2012 with no issues. I am concerned
-about the present issue because I do not understand the cause.
+> 
+> Thanks!
+> 
+> Stefan
+> 
+>> and see if it still happens.  Thanks,
+>>
+>> Josef

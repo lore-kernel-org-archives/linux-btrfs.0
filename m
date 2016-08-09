@@ -1,37 +1,116 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:60681 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:51952 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751550AbcHQMWH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 17 Aug 2016 08:22:07 -0400
+	id S1751944AbcHICIK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 8 Aug 2016 22:08:10 -0400
 Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id A392CABEF
-	for <linux-btrfs@vger.kernel.org>; Wed, 17 Aug 2016 12:22:05 +0000 (UTC)
-Date: Wed, 17 Aug 2016 14:21:11 +0200
-From: David Sterba <dsterba@suse.cz>
-To: jeffm@suse.com
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs: waiting on qgroup rescan should not always be
- interruptible
-Message-ID: <20160817122111.GX30795@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1470708486-18547-1-git-send-email-jeffm@suse.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1470708486-18547-1-git-send-email-jeffm@suse.com>
+	by mx2.suse.de (Postfix) with ESMTP id 342BCAD7F
+	for <linux-btrfs@vger.kernel.org>; Tue,  9 Aug 2016 02:08:08 +0000 (UTC)
+From: jeffm@suse.com
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH] btrfs: waiting on qgroup rescan should not always be interruptible
+Date: Mon,  8 Aug 2016 22:08:06 -0400
+Message-Id: <1470708486-18547-1-git-send-email-jeffm@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Aug 08, 2016 at 10:08:06PM -0400, jeffm@suse.com wrote:
-> From: Jeff Mahoney <jeffm@suse.com>
-> 
-> We wait on qgroup rescan completion in three places: file system
-> shutdown, the quota disable ioctl, and the rescan wait ioctl.  If the
-> user sends a signal while we're waiting, we continue happily along.  This
-> is expected behavior for the rescan wait ioctl.  It's racy in the shutdown
-> path but mostly works due to other unrelated synchronization points.
-> In the quota disable path, it Oopses the kernel pretty much immediately.
-> 
-> Cc: <stable@vger.kernel.org> # v4.4+
-> Signed-off-by: Jeff Mahoney <jeffm@suse.com>
+From: Jeff Mahoney <jeffm@suse.com>
 
-Reviewed-by: David Sterba <dsterba@suse.com>
+We wait on qgroup rescan completion in three places: file system
+shutdown, the quota disable ioctl, and the rescan wait ioctl.  If the
+user sends a signal while we're waiting, we continue happily along.  This
+is expected behavior for the rescan wait ioctl.  It's racy in the shutdown
+path but mostly works due to other unrelated synchronization points.
+In the quota disable path, it Oopses the kernel pretty much immediately.
+
+Cc: <stable@vger.kernel.org> # v4.4+
+Signed-off-by: Jeff Mahoney <jeffm@suse.com>
+---
+ fs/btrfs/disk-io.c |  2 +-
+ fs/btrfs/ioctl.c   |  2 +-
+ fs/btrfs/qgroup.c  | 12 +++++++++---
+ fs/btrfs/qgroup.h  |  3 ++-
+ 4 files changed, 13 insertions(+), 6 deletions(-)
+
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 59febfb..f35a7de 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -3851,7 +3851,7 @@ void close_ctree(struct btrfs_root *root)
+ 	smp_mb();
+ 
+ 	/* wait for the qgroup rescan worker to stop */
+-	btrfs_qgroup_wait_for_completion(fs_info);
++	btrfs_qgroup_wait_for_completion(fs_info, false);
+ 
+ 	/* wait for the uuid_scan task to finish */
+ 	down(&fs_info->uuid_tree_rescan_sem);
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 14ed1e9..b2a2da5 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -5084,7 +5084,7 @@ static long btrfs_ioctl_quota_rescan_wait(struct file *file, void __user *arg)
+ 	if (!capable(CAP_SYS_ADMIN))
+ 		return -EPERM;
+ 
+-	return btrfs_qgroup_wait_for_completion(root->fs_info);
++	return btrfs_qgroup_wait_for_completion(root->fs_info, true);
+ }
+ 
+ static long _btrfs_ioctl_set_received_subvol(struct file *file,
+diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
+index 93ee1c1..de08b12 100644
+--- a/fs/btrfs/qgroup.c
++++ b/fs/btrfs/qgroup.c
+@@ -995,7 +995,7 @@ int btrfs_quota_disable(struct btrfs_trans_handle *trans,
+ 		goto out;
+ 	fs_info->quota_enabled = 0;
+ 	fs_info->pending_quota_state = 0;
+-	btrfs_qgroup_wait_for_completion(fs_info);
++	btrfs_qgroup_wait_for_completion(fs_info, false);
+ 	spin_lock(&fs_info->qgroup_lock);
+ 	quota_root = fs_info->quota_root;
+ 	fs_info->quota_root = NULL;
+@@ -2487,7 +2487,8 @@ btrfs_qgroup_rescan(struct btrfs_fs_info *fs_info)
+ 	return 0;
+ }
+ 
+-int btrfs_qgroup_wait_for_completion(struct btrfs_fs_info *fs_info)
++int btrfs_qgroup_wait_for_completion(struct btrfs_fs_info *fs_info,
++				     bool interruptible)
+ {
+ 	int running;
+ 	int ret = 0;
+@@ -2498,9 +2499,14 @@ int btrfs_qgroup_wait_for_completion(struct btrfs_fs_info *fs_info)
+ 	spin_unlock(&fs_info->qgroup_lock);
+ 	mutex_unlock(&fs_info->qgroup_rescan_lock);
+ 
+-	if (running)
++	if (!running)
++		return 0;
++
++	if (interruptible)
+ 		ret = wait_for_completion_interruptible(
+ 					&fs_info->qgroup_rescan_completion);
++	else
++		wait_for_completion(&fs_info->qgroup_rescan_completion);
+ 
+ 	return ret;
+ }
+diff --git a/fs/btrfs/qgroup.h b/fs/btrfs/qgroup.h
+index 710887c..af3e557 100644
+--- a/fs/btrfs/qgroup.h
++++ b/fs/btrfs/qgroup.h
+@@ -46,7 +46,8 @@ int btrfs_quota_disable(struct btrfs_trans_handle *trans,
+ 			struct btrfs_fs_info *fs_info);
+ int btrfs_qgroup_rescan(struct btrfs_fs_info *fs_info);
+ void btrfs_qgroup_rescan_resume(struct btrfs_fs_info *fs_info);
+-int btrfs_qgroup_wait_for_completion(struct btrfs_fs_info *fs_info);
++int btrfs_qgroup_wait_for_completion(struct btrfs_fs_info *fs_info,
++				     bool interruptible);
+ int btrfs_add_qgroup_relation(struct btrfs_trans_handle *trans,
+ 			      struct btrfs_fs_info *fs_info, u64 src, u64 dst);
+ int btrfs_del_qgroup_relation(struct btrfs_trans_handle *trans,
+-- 
+2.7.1
+

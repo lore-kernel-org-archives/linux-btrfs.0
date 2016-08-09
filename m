@@ -1,123 +1,171 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qk0-f172.google.com ([209.85.220.172]:32901 "EHLO
-	mail-qk0-f172.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932240AbcHIM4p (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 9 Aug 2016 08:56:45 -0400
-Received: by mail-qk0-f172.google.com with SMTP id t7so11200649qkh.0
-        for <linux-btrfs@vger.kernel.org>; Tue, 09 Aug 2016 05:56:44 -0700 (PDT)
+Received: from mail-io0-f179.google.com ([209.85.223.179]:33734 "EHLO
+	mail-io0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932240AbcHIM4u (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 9 Aug 2016 08:56:50 -0400
+Received: by mail-io0-f179.google.com with SMTP id 38so10457976iol.0
+        for <linux-btrfs@vger.kernel.org>; Tue, 09 Aug 2016 05:56:50 -0700 (PDT)
+Subject: Re: Issue: errno:28 (No space left on device)
+To: Thomas <c.monty@web.de>, linux-btrfs@vger.kernel.org
+References: <e4671ca6-38bc-ce32-0bc9-c1e7bc9873cd@web.de>
+From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Message-ID: <1b31f650-6c29-7b46-eafb-0434a26f15d6@gmail.com>
+Date: Tue, 9 Aug 2016 08:56:34 -0400
 MIME-Version: 1.0
-In-Reply-To: <fbfac514-924e-215e-a81f-c0a39d69db77@gmail.com>
-References: <CAE8gLhm0-+kkwFv1-+t+tWLrZrzh4B9cJUDRrgPpwfvB_obVCA@mail.gmail.com>
- <CAEtw4r2hsCd1+bFNcXn_s5jj-8x6qer+x0gLx8wTgNi1=nAXhw@mail.gmail.com>
- <CAE8gLh=g7oUK_FAcSN2HaeFmEsK1jBMar4DEfzBwEWiUioDhAQ@mail.gmail.com>
- <CAPmG0jb0eVsg1gX4q3TMA9icRaPS9ULcs2KPBX-_biJ5KPUsrQ@mail.gmail.com>
- <CAE8gLhkR4XzNx9tarhzD2LdsCRJ3e+BPcWYpE-qA4jnJsvSrLg@mail.gmail.com>
- <CAPmG0jZj6S6TXe0xLdiJWMto=VX7NM7WhSc5T3MLf=HWvsR7+Q@mail.gmail.com>
- <0b6a094b-ccf0-36c4-aafb-12a4e9cd424d@gmail.com> <CAE8gLh=N9dP0aj+oHxGosaTNG45rvQpx=U_Mx1KT0a6MWN2o=w@mail.gmail.com>
- <fbfac514-924e-215e-a81f-c0a39d69db77@gmail.com>
-From: Noah Massey <noah.massey@gmail.com>
-Date: Tue, 9 Aug 2016 08:56:03 -0400
-Message-ID: <CADfjVrg1frbePC8NKGrmdtYT2TNkbuNxA6qy85o+LSc5-8QPhQ@mail.gmail.com>
-Subject: Re: "No space left on device" and balance doesn't work
-To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Cc: MegaBrutal <megabrutal@gmail.com>, Henk Slager <eye1tm@gmail.com>,
-        Peter Becker <floyd.net@gmail.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+In-Reply-To: <e4671ca6-38bc-ce32-0bc9-c1e7bc9873cd@web.de>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Aug 9, 2016 at 7:16 AM, Austin S. Hemmelgarn
-<ahferroin7@gmail.com> wrote:
-> On 2016-08-09 05:50, MegaBrutal wrote:
->>
->> 2016-06-03 14:43 GMT+02:00 Austin S. Hemmelgarn <ahferroin7@gmail.com>:
->>>
->>>
->>> Also, since you're on a new enough kernel, try 'lazytime' in the mount
->>> options as well, this defers all on-disk timestamp updates for up to 24
->>> hours or until the inode gets written out anyway, but keeps the updated info
->>> in memory.  The only downside to this is that mtimes might not be correct
->>> after an unclean shutdown, but most software will have no issues with this.
->>>
->>
->> Hi all,
->>
->> Sorry for reviving this old thread, and probably it's not the best
->> place to ask about this... but I added the "noatime" option in fstab,
->> restarted the system, and now I think I should try "lazytime" too (as
->> I like the idea to have proper atimes with delayed writing to disk).
->> So now I'd just like to test the "lazytime" mount option without
->> restart.
->>
->> I remounted the file system like this:
->>
->> mount -o remount,lazytime /
->>
->> But now the FS still has the "noatime" mount option, which I guess
->> renders "lazytime" ineffective. I thought they are supposed to be
->> mutually exclusive, so I'm actually surprised that I can have both
->> mount options at the same time.
+On 2016-08-09 07:50, Thomas wrote:
+> Hello!
+First things first:
+Mailing lists are asynchronous.  You will almost _never_ get an 
+immediate response, and will quite often not get a response for a few 
+hours at least.  Sending a message more than once when you don't get a 
+response does not make it more likely you get a response quickly, and in 
+fact is a good way to seriously annoy people and make them less willing 
+to help you.
 >
-> No, lazytime also affects mtime handling, not just atime, so they aren't
-> mutually exclusive, and it does make sense to have both.
->>
->>
->> Now my mount looks like this:
->>
->> /dev/mapper/centrevg-rootlv on / type btrfs
->> (rw,noatime,lazytime,space_cache,subvolid=257,subvol=/@)
->>
->> I also tried to explicitly add "atime" to negate "noatime" (man mount
->> says "atime" is the option to disable "noatime"), like this:
->>
->> mount -o remount,atime,lazytime /
->>
->> But the "noatime" option still stays. Why? Is it a BTRFS specific
->> issue, or does it reside in another layer?
->>
->> By the way, is it valid to mount BTRFS subvolumes with different atime
->> policies? Then how do child subvolumes behave?
+> I'm facing a severe issue with Debian installation using BTRFS:
+> errno:28 (No space left on device)
 >
-> I'm not entirely certain (I have my kernel patched so noatime is the
-> default, and rarely if ever use anything else, so I don't have much in the
-> way of experience with this), but my guess would be that it can't be done,
-> and that changing atime handling on remount isn't really handled. I do know
-> that adding lazytime on remount doesn't always work, but that kind of makes
-> sense, since it causes significant changes in how mtimes and atimes are
-> handled internally.
+> After a few minutes of system usage I get this error message for any
+> action, means there's really no disk space left.
 >
+> However, the output of btrfs fi usage / reports that ~10% of disk space
+> should be free.
+>
+> I have 2 questions:
+> 1. Why is the OS reporting an error "Issue: errno:28 (No space left on
+> device)" whereas "btrfs fi usage" reports free space?
+BTRFS allocates disk space in two stages.  In the first stage, it 
+allocates large chunks that then get used only for metadata or data. 
+Within those chunks, it then allocates blocks for the given type of data 
+on-demand.  In your case, the filesystem has no room to allocate new 
+chunks, but has some free space in existing chunks.  This shouldn't 
+result in allocation failures for new files, but for currently unknown 
+reasons it sometimes does, and this is a known issue that we have been 
+unable to completely fix so far (we've technically 'fixed' this about 5 
+or 6 times already, but there appear to be lots of odd corner cases that 
+haven't been found yet).
+> 2. How can I solve this issue w/o the possibility of extending the
+> partition?
+Right now, you have three options:
+1. Extend the partition, run a full balance, and then shrink the 
+partition again.
+2. Temporarily add another device (make sure it's at least 4GB), run a 
+full balance, and then remove the device.
+3. Recreate the filesystem from scratch and restore from a backup.
 
-TLDR:
+Regardless of which option you choose, you either need to free up some 
+disk space, or get a bigger storage device, as running within a few GB 
+of a full filesystem is a known trigger for this issue.  Depending on 
+how frequently you snapshot the system, just deleting some old snapshots 
+may help.  Making sure to clean out the package cache after running 
+updates will probably help too.
+>
+>
+> THX
+>
+> ---------------------------------------------------------------------------------------
+>
+>
+> thomas@pc8-nb:~$ uname -a
+> Linux pc8-nb 4.6.1-towo.1-siduction-amd64 #1 SMP PREEMPT siduction 4.6-1
+> (2016-06-04) x86_64 GNU/Linux
+>
+>
+> thomas@pc8-nb:~$ sudo btrfs --version
+> btrfs-progs v4.5.2
+>
+>
+> thomas@pc8-nb:~$ sudo btrfs fi usage /
+> Overall:
+>       Device size:          20.53GiB
+>       Device allocated:          20.53GiB
+>       Device unallocated:             0.00B
+>       Device missing:             0.00B
+>       Used:              18.25GiB
+>       Free (estimated):           1.96GiB    (min: 1.96GiB)
+>       Data ratio:                  1.00
+>       Metadata ratio:              1.00
+>       Global reserve:         160.00MiB    (used: 400.00KiB)
+>
+> Data,single: Size:19.76GiB, Used:17.81GiB
+>      /dev/sda8      19.76GiB
+>
+> Metadata,single: Size:776.00MiB, Used:455.73MiB
+>      /dev/sda8     776.00MiB
+>
+> System,single: Size:4.00MiB, Used:16.00KiB
+>      /dev/sda8       4.00MiB
+>
+> Unallocated:
+>      /dev/sda8         0.00B
+>
+>
+> thomas@pc8-nb:~$ sudo btrfs fi show
+> Label: 'siduction'  uuid: dbb9433e-a84f-4e84-9200-49350b31a3f6
+>     Total devices 1 FS bytes used 18.25GiB
+>     devid    1 size 20.53GiB used 20.53GiB path /dev/sda8
+>
+>
+> thomas@pc8-nb:~$ sudo btrfs su li /
+> ID 257 gen 5498245 top level 5 path @
+> ID 258 gen 5498245 top level 5 path @home
+> ID 259 gen 5488356 top level 5 path @tmp
+> ID 260 gen 2029641 top level 5 path @var_lib_lxc
+> ID 261 gen 5480763 top level 5 path @var_log
+> ID 262 gen 5467204 top level 5 path @var_spool
+> ID 263 gen 5467205 top level 5 path @var_tmp
+> ID 290 gen 5464299 top level 257 path .snapshots
+> ID 291 gen 2026169 top level 258 path @home/.snapshots
+> ID 293 gen 2029641 top level 260 path @var_lib_lxc/.snapshots
+> ID 355 gen 163972 top level 290 path .snapshots/17/snapshot
+> ID 356 gen 167205 top level 290 path .snapshots/18/snapshot
+> ID 357 gen 5383634 top level 5 path @var_cache_apt_archives
+> ID 358 gen 5464163 top level 290 path .snapshots/19/snapshot
+>
+>
+> thomas@pc8-nb:~$ sudo journalctl | grep space
+> [...]
+> Jun 16 17:52:39 pc8-nb unattended-upgrade-shutdown[13530]: OSError:
+> [Errno 28] No space left on device
+> Jun 16 17:52:39 pc8-nb unattended-upgrade-shutdown[13530]: OSError:
+> [Errno 28] No space left on device
+> Jun 16 17:52:39 pc8-nb unattended-upgrade-shutdown[13530]: OSError:
+> [Errno 28] No space left on device
+> [...]
+> Jul 17 04:43:02 pc8-nb cron-apt[2658]: E: Failed to fetch
+> http://ftp.fau.de/debian/dists/stable/main/Contents-i386  Write error -
+> write (28: No space left on device)
+> Jul 17 04:43:02 pc8-nb cron-apt[2658]: E: Failed to fetch
+> http://debian.mirror.lrz.de/debian/dists/stable/contrib/binary-i386/Packages.gz
+>   Write error - write (28: No space left on device)
+> Jul 17 04:43:02 pc8-nb cron-apt[2658]: E: Failed to fetch
+> http://debian.mirror.lrz.de/debian/dists/stable/contrib/i18n/Translation-en
+>   Write error - write (28: No space left on device)
+> Jul 17 04:43:02 pc8-nb cron-apt[2658]: E: Failed to fetch
+> http://debian.mirror.lrz.de/debian/dists/stable/contrib/Contents-amd64
+> Write error - write (28: No space left on device)
+> Jul 17 04:43:02 pc8-nb cron-apt[2658]: E: Failed to fetch
+> http://debian.mirror.lrz.de/debian/dists/stable/contrib/Contents-i386
+> Write error - write (28: No space left on device)
+> Jul 17 04:43:02 pc8-nb cron-apt[2658]: E: Failed to fetch
+> http://mirror.unitedcolo.de/debian/dists/stable/non-free/binary-amd64/Packages.gz
+>   Write error - write (28: No space left on device)
+> Jul 17 04:43:02 pc8-nb cron-apt[2658]: E: Failed to fetch
+> http://mirror.unitedcolo.de/debian/dists/stable/non-free/binary-i386/Packages.gz
+>   Write error - write (28: No space left on device)
+> Jul 17 04:43:02 pc8-nb cron-apt[2658]: E: Failed to fetch
+> http://debian.mirror.lrz.de/debian/dists/stable/non-free/i18n/Translation-en
+>   Write error - write (28: No space left on device)
+> Jul 17 04:43:02 pc8-nb cron-apt[2658]: E: Failed to fetch
+> http://mirror.unitedcolo.de/debian/dists/stable/non-free/Contents-amd64
+> Write error - write (28: No space left on device)
+> Jul 17 04:43:02 pc8-nb cron-apt[2658]: E: Failed to fetch
+> http://ftp.fau.de/debian/dists/stable/non-free/Contents-i386  Write
+> error - write (28: No space left on device)
+> [...]
 
-try 'mount -o remount,strictatime / && mount -o remount,relatime /'
-
-This seems strange, but on my unpatched system:
-
-$ uname -r
-4.7.0
-
-$ mount -o loop,noatime,lazytime /var/tmp/test.dd /mnt
-$ grep ^/dev/loop0 /proc/mounts
-/dev/loop0 /mnt btrfs rw,lazytime,noatime,space_cache,subvolid=5,subvol=/ 0 0
-
-$ mount -o remount,relatime /mnt
-$ grep ^/dev/loop0 /proc/mounts
-/dev/loop0 /mnt btrfs rw,lazytime,noatime,space_cache,subvolid=5,subvol=/ 0 0
-
-^^^ No change to noatime option
-
-$ mount -o remount,strictatime /mnt
-$ grep ^/dev/loop0 /proc/mounts
-/dev/loop0 /mnt btrfs rw,lazytime,space_cache,subvolid=5,subvol=/ 0 0
-
-^^^ that updated it...
-
-$ mount -o remount,relatime /mnt
-$ grep ^/dev/loop0 /proc/mounts
-
-/dev/loop0 /mnt btrfs rw,lazytime,relatime,space_cache,subvolid=5,subvol=/ 0 0
-
-^^^ now it changes
-
-~ Noah

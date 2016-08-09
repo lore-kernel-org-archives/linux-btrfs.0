@@ -1,59 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oi0-f46.google.com ([209.85.218.46]:36414 "EHLO
-	mail-oi0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752348AbcHIQuL (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 9 Aug 2016 12:50:11 -0400
-Received: by mail-oi0-f46.google.com with SMTP id f189so25278819oig.3
-        for <linux-btrfs@vger.kernel.org>; Tue, 09 Aug 2016 09:50:11 -0700 (PDT)
+Received: from mail-oi0-f50.google.com ([209.85.218.50]:34508 "EHLO
+	mail-oi0-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932238AbcHIRKQ (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 9 Aug 2016 13:10:16 -0400
+Received: by mail-oi0-f50.google.com with SMTP id l203so26158166oib.1
+        for <linux-btrfs@vger.kernel.org>; Tue, 09 Aug 2016 10:10:16 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <42f95b05-d0f8-55e0-4280-3865d7162469@web.de>
-References: <42f95b05-d0f8-55e0-4280-3865d7162469@web.de>
+In-Reply-To: <CAMG9ccwqnK63sbcF79VndBMitvFjX6pHPCU9YrrZcwEdiQxY5w@mail.gmail.com>
+References: <CAMG9ccwK93opLn=qOcceDjExwDHHRaxO=juvcXz4TuWKt_qXeg@mail.gmail.com>
+ <CAJCQCtSs5bHZu5NLjVfJLgxL45BdNq7hrmV3VdCLz+WxLEXrMw@mail.gmail.com> <CAMG9ccwqnK63sbcF79VndBMitvFjX6pHPCU9YrrZcwEdiQxY5w@mail.gmail.com>
 From: Chris Murphy <lists@colorremedies.com>
-Date: Tue, 9 Aug 2016 10:50:09 -0600
-Message-ID: <CAJCQCtQ-eqxNi0HyxyNK61KK-zsZ5XzN9+TOw2ezbwuqCVicLQ@mail.gmail.com>
-Subject: Re: Issue: errno:28 (No space left on device)
-To: Thomas <c.monty@web.de>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Date: Tue, 9 Aug 2016 11:10:08 -0600
+Message-ID: <CAJCQCtTuhTKBK=zjXsq3o0mFnU6T7hYsLLr2VD0N7gqJ7vX0FQ@mail.gmail.com>
+Subject: Re: Strange behavior after "rm -rf //"
+To: Ivan Sizov <sivan606@gmail.com>
+Cc: Chris Murphy <lists@colorremedies.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Aug 9, 2016 at 3:06 AM, Thomas <c.monty@web.de> wrote:
-
-> thomas@pc8-nb:~$ uname -a
-> Linux pc8-nb 4.6.1-towo.1-siduction-amd64 #1 SMP PREEMPT siduction 4.6-1
-> (2016-06-04) x86_64 GNU/Linux
-
-Try 4.5.7 or 4.7 and see if it fixes the problem, there's a related
-patch in both of those that's not yet in 4.6 series. The patch mainly
-permits using existing chunks for balance to consolidate extents,
-rather than requiring new chunks. So you might also have to do a
-filtered balance. I would probably start with -dusage=25 and see where
-that gets you.
-
-
->     Device size:                  20.53GiB
->     Device allocated:             20.53GiB
-
->From Btrfs perspective the volume is "fully allocated" and as such
-cannot create new data or metadata chunks. Whatever workload you're
-doing at the time of enospc may be filling up data or metadata unused
-space in existing chunks, triggering need for newly allocated chunk,
-which can't happen because there's no space left for new chunks.
-
-
-> Data,single: Size:19.76GiB, Used:17.81GiB
->    /dev/sda8      19.76GiB
+On Mon, Aug 8, 2016 at 12:38 PM, Ivan Sizov <sivan606@gmail.com> wrote:
+> 2016-08-08 20:13 GMT+03:00 Chris Murphy <lists@colorremedies.com>:
+>> Just a wild guess, the deletions may be in the tree log and haven't
+>> been applied to the other trees (fs tree, extent tree, etc). So yes
+>> I'd expect they get deleted on a rw mount.
+>>
+>> This is what kernel? Because kernel 4.6 offers mount option
+>> "nologreplay" which suggests even if you do mount -r that log replay
+>> happens, so you shouldn't see these deleted files unless you mount ro
+>> *and* use nologreplay mount option.
 >
-> Metadata,single: Size:776.00MiB, Used:455.73MiB
->    /dev/sda8     776.00MiB
+> Live USB has kernel 4.5.7. Maybe I should try to run "btrfs rescue
+> zero-log" and then mount RW? Will the files safe in that case?
 
-I'll guess there's some metadata centric workload, maybe with small
-files that are being stored inline, that's filling up the metadata
-chunks, leading to enospc.
+Depends on what's in the log that you're zeroing out. It's entirely
+possible other things are lost, not just the incomplete deletion. And
+also I have no idea if the deletion is entirely contained in only the
+tree log.
 
-If changing kernel versions doesn't work, then you'll need to add more
-space somehow. The file system is ~90% full anyway.
+>
+>> Anyway, even 5 seconds of rm -rf damages too much. If you don't have
+>> recent snapshots then it's not sanely salvageable, just reinstall.
+>
+> As I could see, almost all the "deleted" files are present. Certainly,
+> I'll make an rsync diff between two-week-ago snapshot and the current
+> FS state. But it will better if in-place recover without backup is
+> possible.
+>
+> P.S. IMHO, log replay by default is a quite dangerous thing. I didn't
+> know about that change and I could lose all files if the live USB had
+> 4.6 kernel))
+
+The change is only a mount time option to avoid log replay and that
+option only applies to ro mounts. All file systems with logs always
+replay the log on mount by default, that's the entire point of the
+log.
+
 
 
 -- 

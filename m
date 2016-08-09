@@ -1,16 +1,16 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:33062 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1751919AbcHITIu (ORCPT
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:36002 "EHLO
+	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1752611AbcHITI6 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 9 Aug 2016 15:08:50 -0400
+	Tue, 9 Aug 2016 15:08:58 -0400
 From: Josef Bacik <jbacik@fb.com>
 To: <linux-btrfs@vger.kernel.org>, <linux-fsdevel@vger.kernel.org>,
         <kernel-team@fb.com>, <jack@suse.com>, <viro@zeniv.linux.org.uk>,
         <dchinner@redhat.com>, <hch@lst.de>
-Subject: [PATCH 1/2] remove mapping from balance_dirty_pages*()
-Date: Tue, 9 Aug 2016 15:08:26 -0400
-Message-ID: <1470769707-26079-2-git-send-email-jbacik@fb.com>
+Subject: [PATCH 2/2] writeback: allow for dirty metadata accounting
+Date: Tue, 9 Aug 2016 15:08:27 -0400
+Message-ID: <1470769707-26079-3-git-send-email-jbacik@fb.com>
 In-Reply-To: <1470769707-26079-1-git-send-email-jbacik@fb.com>
 References: <1470769707-26079-1-git-send-email-jbacik@fb.com>
 MIME-Version: 1.0
@@ -18,293 +18,345 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The only reason we pass in the mapping is to get the inode in order to see if
-writeback cgroups is enabled, and even then it only checks the bdi and a super
-block flag.  balance_dirty_pages() doesn't even use the mapping.  Since
-balance_dirty_pages*() works on a bdi level, just pass in the bdi and super
-block directly so we can avoid using mapping.  This will allow us to still use
-balance_dirty_pages for dirty metadata pages that are not backed by an
-address_mapping.
+Provide a mechanism for file systems to indicate how much dirty metadata they
+are holding.  This introduces a few things
+
+1) Zone stats for dirty metadata, which is the same as the NR_FILE_DIRTY.
+2) WB stat for dirty metadata.  This way we know if we need to try and call into
+the file system to write out metadata.  This could potentially be used in the
+future to make balancing of dirty pages smarter.
+3) A super callback to handle writing back dirty metadata.
+
+A future patch will take advantage of this work in btrfs.  Thanks,
 
 Signed-off-by: Josef Bacik <jbacik@fb.com>
 ---
- fs/btrfs/disk-io.c          |  4 ++--
- fs/btrfs/file.c             |  3 ++-
- fs/btrfs/ioctl.c            |  3 ++-
- fs/btrfs/relocation.c       |  3 ++-
- fs/buffer.c                 |  3 ++-
- fs/iomap.c                  |  3 ++-
- include/linux/backing-dev.h | 23 +++++++++++++++++------
- include/linux/writeback.h   |  3 ++-
- mm/filemap.c                |  4 +++-
- mm/memory.c                 |  9 +++++++--
- mm/page-writeback.c         | 15 +++++++--------
- 11 files changed, 48 insertions(+), 25 deletions(-)
+ fs/fs-writeback.c                | 57 +++++++++++++++++++++++++++--
+ fs/super.c                       |  1 +
+ include/linux/backing-dev-defs.h |  3 ++
+ include/linux/fs.h               |  4 +++
+ include/linux/mm.h               |  4 +++
+ include/linux/mmzone.h           |  1 +
+ mm/backing-dev.c                 |  3 ++
+ mm/page-writeback.c              | 78 ++++++++++++++++++++++++++++++++++++++--
+ 8 files changed, 145 insertions(+), 6 deletions(-)
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 17346f7..c1d951a 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -4024,8 +4024,8 @@ static void __btrfs_btree_balance_dirty(struct btrfs_root *root,
- 	ret = percpu_counter_compare(&root->fs_info->dirty_metadata_bytes,
- 				     BTRFS_DIRTY_METADATA_THRESH);
- 	if (ret > 0) {
--		balance_dirty_pages_ratelimited(
--				   root->fs_info->btree_inode->i_mapping);
-+		balance_dirty_pages_ratelimited(&root->fs_info->bdi,
-+						root->fs_info->sb);
- 	}
+diff --git a/fs/fs-writeback.c b/fs/fs-writeback.c
+index 56c8fda..c670d45 100644
+--- a/fs/fs-writeback.c
++++ b/fs/fs-writeback.c
+@@ -1615,11 +1615,36 @@ static long writeback_sb_inodes(struct super_block *sb,
+ 	return wrote;
  }
  
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index 9404121..f060b08 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -1686,7 +1686,8 @@ again:
- 
- 		cond_resched();
- 
--		balance_dirty_pages_ratelimited(inode->i_mapping);
-+		balance_dirty_pages_ratelimited(inode_to_bdi(inode),
-+						inode->i_sb);
- 		if (dirty_pages < (root->nodesize >> PAGE_SHIFT) + 1)
- 			btrfs_btree_balance_dirty(root);
- 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 14ed1e9..a222bad 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -1410,7 +1410,8 @@ int btrfs_defrag_file(struct inode *inode, struct file *file,
- 		}
- 
- 		defrag_count += ret;
--		balance_dirty_pages_ratelimited(inode->i_mapping);
-+		balance_dirty_pages_ratelimited(inode_to_bdi(inode),
-+						inode->i_sb);
- 		inode_unlock(inode);
- 
- 		if (newer_than) {
-diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-index 4598e29..7fc6ea7 100644
---- a/fs/btrfs/relocation.c
-+++ b/fs/btrfs/relocation.c
-@@ -3202,7 +3202,8 @@ static int relocate_file_extent_cluster(struct inode *inode,
- 		put_page(page);
- 
- 		index++;
--		balance_dirty_pages_ratelimited(inode->i_mapping);
-+		balance_dirty_pages_ratelimited(inode_to_bdi(inode),
-+						inode->i_sb);
- 		btrfs_throttle(BTRFS_I(inode)->root);
- 	}
- 	WARN_ON(nr != cluster->nr);
-diff --git a/fs/buffer.c b/fs/buffer.c
-index 9c8eb9b..9bbe30d 100644
---- a/fs/buffer.c
-+++ b/fs/buffer.c
-@@ -2386,7 +2386,8 @@ static int cont_expand_zero(struct file *file, struct address_space *mapping,
- 		BUG_ON(err != len);
- 		err = 0;
- 
--		balance_dirty_pages_ratelimited(mapping);
-+		balance_dirty_pages_ratelimited(inode_to_bdi(inode),
-+						inode->i_sb);
- 
- 		if (unlikely(fatal_signal_pending(current))) {
- 			err = -EINTR;
-diff --git a/fs/iomap.c b/fs/iomap.c
-index 48141b8..937e266 100644
---- a/fs/iomap.c
-+++ b/fs/iomap.c
-@@ -226,7 +226,8 @@ again:
- 		written += copied;
- 		length -= copied;
- 
--		balance_dirty_pages_ratelimited(inode->i_mapping);
-+		balance_dirty_pages_ratelimited(inode_to_bdi(inode),
-+						inode->i_sb);
- 	} while (iov_iter_count(i) && length);
- 
- 	return written ? written : status;
-diff --git a/include/linux/backing-dev.h b/include/linux/backing-dev.h
-index 491a917..3b76eeb 100644
---- a/include/linux/backing-dev.h
-+++ b/include/linux/backing-dev.h
-@@ -252,8 +252,9 @@ void wb_blkcg_offline(struct blkcg *blkcg);
- int inode_congested(struct inode *inode, int cong_bits);
- 
- /**
-- * inode_cgwb_enabled - test whether cgroup writeback is enabled on an inode
-- * @inode: inode of interest
-+ * bdi_cgwb_enabled - test wether cgroup writeback is enabled on a filesystem
-+ * @bdi: the bdi we care about
-+ * @sb: the super for the bdi
-  *
-  * cgroup writeback requires support from both the bdi and filesystem.
-  * Also, both memcg and iocg have to be on the default hierarchy.  Test
-@@ -262,15 +263,25 @@ int inode_congested(struct inode *inode, int cong_bits);
-  * Note that the test result may change dynamically on the same inode
-  * depending on how memcg and iocg are configured.
-  */
--static inline bool inode_cgwb_enabled(struct inode *inode)
-+static inline bool bdi_cgwb_enabled(struct backing_dev_info *bdi,
-+				    struct super_block *sb)
- {
--	struct backing_dev_info *bdi = inode_to_bdi(inode);
--
- 	return cgroup_subsys_on_dfl(memory_cgrp_subsys) &&
- 		cgroup_subsys_on_dfl(io_cgrp_subsys) &&
- 		bdi_cap_account_dirty(bdi) &&
- 		(bdi->capabilities & BDI_CAP_CGROUP_WRITEBACK) &&
--		(inode->i_sb->s_iflags & SB_I_CGROUPWB);
-+		(sb->s_iflags & SB_I_CGROUPWB);
++static long writeback_sb_metadata(struct super_block *sb,
++				  struct bdi_writeback *wb,
++				  struct wb_writeback_work *work)
++{
++	struct writeback_control wbc = {
++		.sync_mode		= work->sync_mode,
++		.tagged_writepages	= work->tagged_writepages,
++		.for_kupdate		= work->for_kupdate,
++		.for_background		= work->for_background,
++		.for_sync		= work->for_sync,
++		.range_cyclic		= work->range_cyclic,
++		.range_start		= 0,
++		.range_end		= LLONG_MAX,
++	};
++	long write_chunk;
++
++	write_chunk = writeback_chunk_size(wb, work);
++	wbc.nr_to_write = write_chunk;
++	sb->s_op->write_metadata(sb, &wbc);
++	work->nr_pages -= write_chunk - wbc.nr_to_write;
++
++	return write_chunk - wbc.nr_to_write;
 +}
 +
-+/**
-+ * inode_cgwb_enabled - test whether cgroup writeback is enabled on an inode
-+ * @inode: inode of interest
-+ *
-+ * Does the inode have cgroup writeback support.
-+ */
-+static inline bool inode_cgwb_enabled(struct inode *inode)
-+{
-+	return bdi_cgwb_enabled(inode_to_bdi(inode), inode->i_sb);
- }
- 
- /**
-diff --git a/include/linux/writeback.h b/include/linux/writeback.h
-index fc1e16c..256ffc3 100644
---- a/include/linux/writeback.h
-+++ b/include/linux/writeback.h
-@@ -364,7 +364,8 @@ unsigned long wb_calc_thresh(struct bdi_writeback *wb, unsigned long thresh);
- 
- void wb_update_bandwidth(struct bdi_writeback *wb, unsigned long start_time);
- void page_writeback_init(void);
--void balance_dirty_pages_ratelimited(struct address_space *mapping);
-+void balance_dirty_pages_ratelimited(struct backing_dev_info *bdi,
-+				     struct super_block *sb);
- bool wb_over_bg_thresh(struct bdi_writeback *wb);
- 
- typedef int (*writepage_t)(struct page *page, struct writeback_control *wbc,
-diff --git a/mm/filemap.c b/mm/filemap.c
-index 3083ded..abb0e98 100644
---- a/mm/filemap.c
-+++ b/mm/filemap.c
-@@ -2667,6 +2667,7 @@ ssize_t generic_perform_write(struct file *file,
- 				struct iov_iter *i, loff_t pos)
+ static long __writeback_inodes_wb(struct bdi_writeback *wb,
+ 				  struct wb_writeback_work *work)
  {
- 	struct address_space *mapping = file->f_mapping;
-+	struct inode *inode = mapping->host;
- 	const struct address_space_operations *a_ops = mapping->a_ops;
- 	long status = 0;
- 	ssize_t written = 0;
-@@ -2746,7 +2747,8 @@ again:
- 		pos += copied;
- 		written += copied;
+ 	unsigned long start_time = jiffies;
+ 	long wrote = 0;
++	bool done = false;
  
--		balance_dirty_pages_ratelimited(mapping);
-+		balance_dirty_pages_ratelimited(inode_to_bdi(inode),
-+						inode->i_sb);
- 	} while (iov_iter_count(i));
+ 	while (!list_empty(&wb->b_io)) {
+ 		struct inode *inode = wb_inode(wb->b_io.prev);
+@@ -1639,11 +1664,37 @@ static long __writeback_inodes_wb(struct bdi_writeback *wb,
  
- 	return written ? written : status;
-diff --git a/mm/memory.c b/mm/memory.c
-index 83be99d..d43e73b 100644
---- a/mm/memory.c
-+++ b/mm/memory.c
-@@ -64,6 +64,7 @@
- #include <linux/debugfs.h>
- #include <linux/userfaultfd_k.h>
- #include <linux/dax.h>
-+#include <linux/backing-dev.h>
- 
- #include <asm/io.h>
- #include <asm/mmu_context.h>
-@@ -2105,11 +2106,13 @@ static inline int wp_page_reuse(struct fault_env *fe, pte_t orig_pte,
- 		put_page(page);
- 
- 		if ((dirtied || page_mkwrite) && mapping) {
-+			struct inode *inode = mapping->host;
- 			/*
- 			 * Some device drivers do not set page.mapping
- 			 * but still dirty their pages
- 			 */
--			balance_dirty_pages_ratelimited(mapping);
-+			balance_dirty_pages_ratelimited(inode_to_bdi(inode),
-+							inode->i_sb);
+ 		/* refer to the same tests at the end of writeback_sb_inodes */
+ 		if (wrote) {
+-			if (time_is_before_jiffies(start_time + HZ / 10UL))
+-				break;
+-			if (work->nr_pages <= 0)
++			if (time_is_before_jiffies(start_time + HZ / 10UL) ||
++			    work->nr_pages <= 0) {
++				done = true;
+ 				break;
++			}
++		}
++	}
++
++	if (!done && wb_stat(wb, WB_METADATA_DIRTY)) {
++		struct list_head list;
++
++		spin_unlock(&wb->list_lock);
++		spin_lock(&wb->bdi->sb_list_lock);
++		list_splice_init(&wb->bdi->sb_list, &list);
++		while (!list_empty(&list)) {
++			struct super_block *sb;
++
++			sb = list_first_entry(&list, struct super_block,
++					      s_bdi_list);
++			list_move_tail(&wb->bdi->sb_list, &sb->s_bdi_list);
++			if (!sb->s_op->write_metadata)
++				continue;
++			if (!trylock_super(sb))
++				continue;
++			spin_unlock(&wb->bdi->sb_list_lock);
++			wrote += writeback_sb_metadata(sb, wb, work);
++			spin_lock(&wb->bdi->sb_list_lock);
++			up_read(&sb->s_umount);
  		}
- 
- 		if (!page_mkwrite)
-@@ -3291,11 +3294,13 @@ static int do_shared_fault(struct fault_env *fe, pgoff_t pgoff)
- 	mapping = page_rmapping(fault_page);
- 	unlock_page(fault_page);
- 	if ((dirtied || vma->vm_ops->page_mkwrite) && mapping) {
-+		struct inode *inode = mapping->host;
- 		/*
- 		 * Some device drivers do not set page.mapping but still
- 		 * dirty their pages
- 		 */
--		balance_dirty_pages_ratelimited(mapping);
-+		balance_dirty_pages_ratelimited(inode_to_bdi(inode),
-+						inode->i_sb);
++		spin_unlock(&wb->bdi->sb_list_lock);
++		spin_lock(&wb->list_lock);
  	}
+ 	/* Leave any unwritten inodes on b_io */
+ 	return wrote;
+diff --git a/fs/super.c b/fs/super.c
+index c2ff475..940696d 100644
+--- a/fs/super.c
++++ b/fs/super.c
+@@ -215,6 +215,7 @@ static struct super_block *alloc_super(struct file_system_type *type, int flags,
+ 	spin_lock_init(&s->s_inode_list_lock);
+ 	INIT_LIST_HEAD(&s->s_inodes_wb);
+ 	spin_lock_init(&s->s_inode_wblist_lock);
++	INIT_LIST_HEAD(&s->s_bdi_list);
  
- 	if (!vma->vm_ops->page_mkwrite)
+ 	if (list_lru_init_memcg(&s->s_dentry_lru))
+ 		goto fail;
+diff --git a/include/linux/backing-dev-defs.h b/include/linux/backing-dev-defs.h
+index 3f10307..0e731a3 100644
+--- a/include/linux/backing-dev-defs.h
++++ b/include/linux/backing-dev-defs.h
+@@ -34,6 +34,7 @@ typedef int (congested_fn)(void *, int);
+ enum wb_stat_item {
+ 	WB_RECLAIMABLE,
+ 	WB_WRITEBACK,
++	WB_METADATA_DIRTY,
+ 	WB_DIRTIED,
+ 	WB_WRITTEN,
+ 	NR_WB_STAT_ITEMS
+@@ -166,6 +167,8 @@ struct backing_dev_info {
+ 
+ 	struct timer_list laptop_mode_wb_timer;
+ 
++	spinlock_t sb_list_lock;
++	struct list_head sb_list;
+ #ifdef CONFIG_DEBUG_FS
+ 	struct dentry *debug_dir;
+ 	struct dentry *debug_stats;
+diff --git a/include/linux/fs.h b/include/linux/fs.h
+index f3f0b4c8..015b06d 100644
+--- a/include/linux/fs.h
++++ b/include/linux/fs.h
+@@ -1430,6 +1430,8 @@ struct super_block {
+ 
+ 	spinlock_t		s_inode_wblist_lock;
+ 	struct list_head	s_inodes_wb;	/* writeback inodes */
++
++	struct list_head	s_bdi_list;
+ };
+ 
+ /* Helper functions so that in most cases filesystems will
+@@ -1805,6 +1807,8 @@ struct super_operations {
+ 				  struct shrink_control *);
+ 	long (*free_cached_objects)(struct super_block *,
+ 				    struct shrink_control *);
++	long (*write_metadata)(struct super_block *sb,
++			       struct writeback_control *wbc);
+ };
+ 
+ /*
+diff --git a/include/linux/mm.h b/include/linux/mm.h
+index 08ed53e..0e90fde 100644
+--- a/include/linux/mm.h
++++ b/include/linux/mm.h
+@@ -31,6 +31,7 @@ struct file_ra_state;
+ struct user_struct;
+ struct writeback_control;
+ struct bdi_writeback;
++struct backing_dev_info;
+ 
+ #ifndef CONFIG_NEED_MULTIPLE_NODES	/* Don't use mapnrs, do it properly */
+ extern unsigned long max_mapnr;
+@@ -1363,6 +1364,9 @@ int redirty_page_for_writepage(struct writeback_control *wbc,
+ void account_page_dirtied(struct page *page, struct address_space *mapping);
+ void account_page_cleaned(struct page *page, struct address_space *mapping,
+ 			  struct bdi_writeback *wb);
++void account_metadata_dirtied(struct page *page, struct backing_dev_info *bdi);
++void account_metadata_cleaned(struct page *page, struct backing_dev_info *bdi);
++void account_metadata_writeback(struct page *page, struct backing_dev_info *bdi);
+ int set_page_dirty(struct page *page);
+ int set_page_dirty_lock(struct page *page);
+ void cancel_dirty_page(struct page *page);
+diff --git a/include/linux/mmzone.h b/include/linux/mmzone.h
+index f2e4e90..c4177ef 100644
+--- a/include/linux/mmzone.h
++++ b/include/linux/mmzone.h
+@@ -167,6 +167,7 @@ enum node_stat_item {
+ 	NR_VMSCAN_IMMEDIATE,	/* Prioritise for reclaim when writeback ends */
+ 	NR_DIRTIED,		/* page dirtyings since bootup */
+ 	NR_WRITTEN,		/* page writings since bootup */
++	NR_METADATA_DIRTY,	/* Metadata dirty pages */
+ 	NR_VM_NODE_STAT_ITEMS
+ };
+ 
+diff --git a/mm/backing-dev.c b/mm/backing-dev.c
+index efe2377..0f1692c 100644
+--- a/mm/backing-dev.c
++++ b/mm/backing-dev.c
+@@ -78,6 +78,7 @@ static int bdi_debug_stats_show(struct seq_file *m, void *v)
+ 		   "BackgroundThresh:   %10lu kB\n"
+ 		   "BdiDirtied:         %10lu kB\n"
+ 		   "BdiWritten:         %10lu kB\n"
++		   "BdiMetadataDirty:	%10lu kB\n"
+ 		   "BdiWriteBandwidth:  %10lu kBps\n"
+ 		   "b_dirty:            %10lu\n"
+ 		   "b_io:               %10lu\n"
+@@ -92,6 +93,7 @@ static int bdi_debug_stats_show(struct seq_file *m, void *v)
+ 		   K(background_thresh),
+ 		   (unsigned long) K(wb_stat(wb, WB_DIRTIED)),
+ 		   (unsigned long) K(wb_stat(wb, WB_WRITTEN)),
++		   (unsigned long) K(wb_stat(wb, WB_METADATA_DIRTY)),
+ 		   (unsigned long) K(wb->write_bandwidth),
+ 		   nr_dirty,
+ 		   nr_io,
+@@ -780,6 +782,7 @@ int bdi_init(struct backing_dev_info *bdi)
+ 	bdi->max_prop_frac = FPROP_FRAC_BASE;
+ 	INIT_LIST_HEAD(&bdi->bdi_list);
+ 	INIT_LIST_HEAD(&bdi->wb_list);
++	INIT_LIST_HEAD(&bdi->sb_list);
+ 	init_waitqueue_head(&bdi->wb_waitq);
+ 
+ 	ret = cgwb_bdi_init(bdi);
 diff --git a/mm/page-writeback.c b/mm/page-writeback.c
-index f4cd7d8..121a6e3 100644
+index 121a6e3..c6492de1a 100644
 --- a/mm/page-writeback.c
 +++ b/mm/page-writeback.c
-@@ -1559,8 +1559,7 @@ static inline void wb_dirty_limits(struct dirty_throttle_control *dtc)
-  * If we're over `background_thresh' then the writeback threads are woken to
-  * perform some writeout.
-  */
--static void balance_dirty_pages(struct address_space *mapping,
--				struct bdi_writeback *wb,
-+static void balance_dirty_pages(struct bdi_writeback *wb,
- 				unsigned long pages_dirtied)
- {
- 	struct dirty_throttle_control gdtc_stor = { GDTC_INIT(wb) };
-@@ -1849,7 +1848,8 @@ DEFINE_PER_CPU(int, dirty_throttle_leaks) = 0;
+@@ -506,6 +506,7 @@ bool node_dirty_ok(struct pglist_data *pgdat)
+ 	nr_pages += node_page_state(pgdat, NR_FILE_DIRTY);
+ 	nr_pages += node_page_state(pgdat, NR_UNSTABLE_NFS);
+ 	nr_pages += node_page_state(pgdat, NR_WRITEBACK);
++	nr_pages += node_page_state(pgdat, NR_METADATA_DIRTY);
  
- /**
-  * balance_dirty_pages_ratelimited - balance dirty memory state
-- * @mapping: address_space which was dirtied
-+ * @bdi: the bdi that was dirtied
-+ * @sb: the super block that was dirtied
-  *
-  * Processes which are dirtying memory should call in here once for each page
-  * which was newly dirtied.  The function will periodically check the system's
-@@ -1860,10 +1860,9 @@ DEFINE_PER_CPU(int, dirty_throttle_leaks) = 0;
-  * limit we decrease the ratelimiting by a lot, to prevent individual processes
-  * from overshooting the limit by (ratelimit_pages) each.
-  */
--void balance_dirty_pages_ratelimited(struct address_space *mapping)
-+void balance_dirty_pages_ratelimited(struct backing_dev_info *bdi,
-+				     struct super_block *sb)
- {
--	struct inode *inode = mapping->host;
--	struct backing_dev_info *bdi = inode_to_bdi(inode);
- 	struct bdi_writeback *wb = NULL;
- 	int ratelimit;
- 	int *p;
-@@ -1871,7 +1870,7 @@ void balance_dirty_pages_ratelimited(struct address_space *mapping)
- 	if (!bdi_cap_account_dirty(bdi))
- 		return;
- 
--	if (inode_cgwb_enabled(inode))
-+	if (bdi_cgwb_enabled(bdi, sb))
- 		wb = wb_get_create_current(bdi, GFP_KERNEL);
- 	if (!wb)
- 		wb = &bdi->wb;
-@@ -1909,7 +1908,7 @@ void balance_dirty_pages_ratelimited(struct address_space *mapping)
- 	preempt_enable();
- 
- 	if (unlikely(current->nr_dirtied >= ratelimit))
--		balance_dirty_pages(mapping, wb, current->nr_dirtied);
-+		balance_dirty_pages(wb, current->nr_dirtied);
- 
- 	wb_put(wb);
+ 	return nr_pages <= limit;
  }
+@@ -1595,7 +1596,8 @@ static void balance_dirty_pages(struct bdi_writeback *wb,
+ 		 * been flushed to permanent storage.
+ 		 */
+ 		nr_reclaimable = global_node_page_state(NR_FILE_DIRTY) +
+-					global_node_page_state(NR_UNSTABLE_NFS);
++				global_node_page_state(NR_UNSTABLE_NFS) +
++				global_node_page_state(NR_METADATA_DIRTY);
+ 		gdtc->avail = global_dirtyable_memory();
+ 		gdtc->dirty = nr_reclaimable + global_node_page_state(NR_WRITEBACK);
+ 
+@@ -1935,7 +1937,8 @@ bool wb_over_bg_thresh(struct bdi_writeback *wb)
+ 	 */
+ 	gdtc->avail = global_dirtyable_memory();
+ 	gdtc->dirty = global_node_page_state(NR_FILE_DIRTY) +
+-		      global_node_page_state(NR_UNSTABLE_NFS);
++		      global_node_page_state(NR_UNSTABLE_NFS) +
++		      global_node_page_state(NR_METADATA_DIRTY);
+ 	domain_dirty_limits(gdtc);
+ 
+ 	if (gdtc->dirty > gdtc->bg_thresh)
+@@ -2009,7 +2012,8 @@ void laptop_mode_timer_fn(unsigned long data)
+ {
+ 	struct request_queue *q = (struct request_queue *)data;
+ 	int nr_pages = global_node_page_state(NR_FILE_DIRTY) +
+-		global_node_page_state(NR_UNSTABLE_NFS);
++		global_node_page_state(NR_UNSTABLE_NFS) +
++		global_node_page_state(NR_METADATA_DIRTY);
+ 	struct bdi_writeback *wb;
+ 
+ 	/*
+@@ -2473,6 +2477,74 @@ void account_page_dirtied(struct page *page, struct address_space *mapping)
+ EXPORT_SYMBOL(account_page_dirtied);
+ 
+ /*
++ * account_metadata_dirtied
++ * @page - the page being dirited
++ * @bdi - the bdi that owns this page
++ *
++ * Do the dirty page accounting for metadata pages that aren't backed by an
++ * address_space.
++ */
++void account_metadata_dirtied(struct page *page, struct backing_dev_info *bdi)
++{
++	unsigned long flags;
++
++	local_irq_save(flags);
++	__inc_node_page_state(page, NR_METADATA_DIRTY);
++	__inc_node_page_state(page, NR_FILE_DIRTY);
++	__inc_zone_page_state(page, NR_ZONE_WRITE_PENDING);
++	__inc_node_page_state(page, NR_DIRTIED);
++	__inc_wb_stat(&bdi->wb, WB_RECLAIMABLE);
++	__inc_wb_stat(&bdi->wb, WB_DIRTIED);
++	__inc_wb_stat(&bdi->wb, WB_METADATA_DIRTY);
++	current->nr_dirtied++;
++	task_io_account_write(PAGE_SIZE);
++	this_cpu_inc(bdp_ratelimits);
++	local_irq_restore(flags);
++}
++EXPORT_SYMBOL(account_metadata_dirtied);
++
++/*
++ * account_metadata_cleaned
++ * @page - the page being cleaned
++ * @bdi - the bdi that owns this page
++ *
++ * Called on a no longer dirty metadata page.
++ */
++void account_metadata_cleaned(struct page *page, struct backing_dev_info *bdi)
++{
++	unsigned long flags;
++
++	local_irq_save(flags);
++	__dec_node_page_state(page, NR_METADATA_DIRTY);
++	__dec_zone_page_state(page, NR_ZONE_WRITE_PENDING);
++	__dec_wb_stat(&bdi->wb, WB_RECLAIMABLE);
++	__dec_wb_stat(&bdi->wb, WB_METADATA_DIRTY);
++	task_io_account_cancelled_write(PAGE_SIZE);
++	local_irq_restore(flags);
++}
++EXPORT_SYMBOL(account_metadata_cleaned);
++
++/*
++ * account_metadata_writeback
++ * @page - the page being marked as writeback
++ * @bdi - the bdi that owns this page
++ *
++ * Called on a metadata page that has been marked writeback.
++ */
++void account_metadata_writeback(struct page *page, struct backing_dev_info *bdi)
++{
++	unsigned long flags;
++
++	local_irq_save(flags);
++	__inc_wb_stat(&bdi->wb, WB_WRITEBACK);
++	__dec_wb_stat(&bdi->wb, WB_METADATA_DIRTY);
++	__inc_node_page_state(page, NR_WRITEBACK);
++	__dec_node_page_state(page, NR_METADATA_DIRTY);
++	local_irq_restore(flags);
++}
++EXPORT_SYMBOL(account_metadata_writeback);
++
++/*
+  * Helper function for deaccounting dirty page without writeback.
+  *
+  * Caller must hold lock_page_memcg().
 -- 
 1.8.3.1
 

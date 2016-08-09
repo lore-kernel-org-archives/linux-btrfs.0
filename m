@@ -1,137 +1,203 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from washoe.dartmouth.edu ([129.170.30.229]:58600 "EHLO
-	smtp.onerussian.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932485AbcHIWmi convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 9 Aug 2016 18:42:38 -0400
-Received: from smtp.onerussian.com ([192.168.100.6] helo=washoe.onerussian.com)
-	by smtp.onerussian.com with esmtps (TLS1.2:RSA_AES_128_CBC_SHA1:128)
-	(Exim 4.80)
-	(envelope-from <yoh@onerussian.com>)
-	id 1bXFNI-0000iF-Fq
-	for linux-btrfs@vger.kernel.org; Tue, 09 Aug 2016 18:19:52 -0400
-Received: from yoh by washoe.onerussian.com with local (Exim 4.84)
-	(envelope-from <yoh@onerussian.com>)
-	id 1bXFNI-0000iA-29
-	for linux-btrfs@vger.kernel.org; Tue, 09 Aug 2016 18:19:52 -0400
-Date: Tue, 9 Aug 2016 18:19:52 -0400
-From: Yaroslav Halchenko <yoh@onerussian.com>
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Subject: Re: recent complete stalls of btrfs (4.7.0-rc2+) -- any advice?
-Message-ID: <20160809221951.GA26923@onerussian.com>
-References: <20160610234114.GB11174@onerussian.com>
- <CAJCQCtS1UTBx1-GELqUTbrdcxmncN3bv7X3OjGGrjvzom28m+w@mail.gmail.com>
- <20160612151531.GA28826@hopa.kiewit.dartmouth.edu>
+Received: from mail-wm0-f65.google.com ([74.125.82.65]:35769 "EHLO
+	mail-wm0-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932526AbcHIWzM (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 9 Aug 2016 18:55:12 -0400
+Received: by mail-wm0-f65.google.com with SMTP id i5so6155511wmg.2
+        for <linux-btrfs@vger.kernel.org>; Tue, 09 Aug 2016 15:54:47 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-In-Reply-To: <20160612151531.GA28826@hopa.kiewit.dartmouth.edu>
+In-Reply-To: <CAGdWbB5aRffesaje-VSEOOH=O-rCWTqupLEu=BLdXurRU7dmtw@mail.gmail.com>
+References: <CAGdWbB5aRffesaje-VSEOOH=O-rCWTqupLEu=BLdXurRU7dmtw@mail.gmail.com>
+From: Dave T <davestechshop@gmail.com>
+Date: Tue, 9 Aug 2016 18:54:46 -0400
+Message-ID: <CAGdWbB7Yu3eQTTvgKmR3Eg1RqV9nSLXP=LcqFm497uEHdjm5nA@mail.gmail.com>
+Subject: Re: system locked up with btrfs-transaction consuming 100% CPU
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+The original problem from 2 days ago just happened again. I ran btrfs
+rescue zero-log (again) and the root filesystem mounted but it was
+read-only on first boot. I rebooted again and everything seems normal.
+But clearly there is a problem that needs to be resolved.
 
-On Sun, 12 Jun 2016, Yaroslav Halchenko wrote:
-> On Fri, 10 Jun 2016, Chris Murphy wrote:
+Problem:
+The root file system becomes read-only during normal usage. See copied
+message below for more information about the error.
 
-> > > Are those issues something which was fixed since 4.6.0-rc4+ or I should
-> > > be on look out for them to come back?  What other information should I
-> > > provide if I run into them again to help you troubleshoot/fix it?
+I'm happy to provide more info upon request. I appreciate any help. Is
+this btrfs? A bad disk? Something else?
 
-> > > P.S. Please CC me the replies
+Linux x99 4.6.4-1-ARCH #1 SMP PREEMPT Mon Jul 11 19:12:32 CEST 2016
+x86_64 GNU/Linux
+
+btrfs-progs v4.6.1
 
 
-> > 4.6.2 is current and it's a lot easier to just use that and see if it
-> > still happens than for someone to track down whether it's been fixed
-> > since a six week old RC.
-
-> Dear Chris,
-
-> Thank you for the reply!  Now running v4.7-rc2-300-g3d0f0b6
-
-> The thing is that this issue doesn't happen right away, and it takes a
-> while for it to develop, and seems to be only after an intensive load.
-> So the version I run will always be "X weeks old" if I just keep hopping
-> the recent release of master, and it would be an indefinite goose
-> chase if left un-analyzed.  That is why I would still appreciate an
-> advice on what specifics to report/attempt if such crash happens next
-> time, or may be if someone is having an idea of what could have lead to
-> this crash to start with.
-
-The beast has died on me today's morning :-/  Last kern.log msg was
-
-    (Fixing recursive fault but reboot is needed!)
-
-One of the tracebacks is the same as before (ending on
-btrfs_commit_transaction), so I guess it could be the same issue as
-before?  Most probably I will perform the same kernel build/upgrade dance
-again BUT I still hope that someone might just either spot some sign of
-recently (since v4.7-rc2-300-g3d0f0b6) fixed issue or, if not spotted, actually
-looks in detail on possibly a new issue which wasn't addressed yet.  I would be
-"happy" to provide more information or enable any necessary additional
-monitoring to provide more information in case of the next crash.
-
-I have rebooted the box around 11am, and it was completely unresponsive since
-some time earlier but I think it still "somewhat functioned" after the last
-traceback reported in the kern.log which I shared at
-http://www.onerussian.com/tmp/kern-smaug-20160809.log otherwise journalctl -b
--1 doesn't show any other grave errors.   The very last oops in the kern.log I
-also cite here.  Out of academic interest?  why seems to be ext4 functionality
-within the stack for btrfs_commit_transaction?  is some logic common/reused
-between the two file systems?  Or it is just a mere fact that some partitions
-on ext4 and something in btrfs triggered them as well?
-
-Aug  9 07:46:15 smaug kernel: [5132590.362689] Oops: 0000 [#3] SMP
-Aug  9 07:46:15 smaug kernel: [5132590.367913] Modules linked in: uas usb_storage vboxdrv(O) nls_utf8 ufs qnx4 hfsplus hfs minix ntfs vfat msdos fat jfs xfs veth xt_addrtype ipt_MASQUERADE nf_nat_masquerade_ipv4 bridge stp llc cpufreq_stats cpufreq_userspace cpufreq_conservative cpufreq_powersave xt_pkttype nf_log_ipv4 nf_log_common xt_tcpudp ip6table_mangle iptable_nat nf_conntrack_ipv4 nf_defrag_ipv4 nf_nat_ipv4 nf_nat xt_TCPMSS xt_LOG ipt_REJECT nf_reject_ipv4 iptable_mangle xt_multiport xt_state xt_limit xt_conntrack nfsd nf_conntrack_ftp auth_rpcgss oid_registry nfs_acl nfs lockd grace nf_conntrack ip6table_filter ip6_tables iptable_filter ip_tables x_tables fscache sunrpc binfmt_misc intel_rapl sb_edac edac_core x86_pkg_temp_thermal intel_powerclamp coretemp ipmi_watchdog ipmi_poweroff ipmi_devintf kvm_intel iTCO_wdt iTCO_vendor_support kvm irqbypass fuse crct10dif_pclmul crc32_pclmul ghash_clmulni_intel drbg ansi_cprng aesni_intel aes_x86_64 lrw gf128mul snd_pcm glue_helper ablk_helper cryptd snd_timer snd soundcore pcspkr evdev joydev ast ttm drm_kms_helper i2c_i801 drm i2c_algo_bit mei_me lpc_ich mfd_core mei ipmi_si ioatdma shpchp wmi ipmi_msghandler ecryptfs cbc tpm_tis tpm acpi_power_meter acpi_pad button sha256_ssse3 sha256_generic hmac encrypted_keys autofs4 ext4 crc16 jbd2 mbcache btrfs dm_mod raid456 async_raid6_recov async_memcpy async_pq async_xor async_tx xor raid6_pq libcrc32c crc32c_generic raid1 md_mod ses enclosure sg sd_mod hid_generic usbhid hid crc32c_intel mpt3sas raid_class scsi_transport_sas xhci_pci xhci_hcd ehci_pci ahci ehci_hcd libahci libata usbcore ixgbe scsi_mod usb_common dca ptp pps_core mdio fjes
-Aug  9 07:46:15 smaug kernel: [5132590.538375] CPU: 6 PID: 2878531 Comm: git Tainted: G      D W IO    4.7.0-rc2+ #1
-Aug  9 07:46:15 smaug kernel: [5132590.547950] Hardware name: Supermicro X10DRi/X10DRI-T, BIOS 1.0b 09/17/2014
-Aug  9 07:46:15 smaug kernel: [5132590.557009] task: ffff8817b855b0c0 ti: ffff88000e0dc000 task.ti: ffff88000e0dc000
-Aug  9 07:46:15 smaug kernel: [5132590.566572] RIP: 0010:[<ffffffffa0444be3>]  [<ffffffffa0444be3>] jbd2__journal_start+0x33/0x1e0 [jbd2]
-Aug  9 07:46:15 smaug kernel: [5132590.578009] RSP: 0018:ffff88000e0df8f0  EFLAGS: 00010282
-Aug  9 07:46:15 smaug kernel: [5132590.585427] RAX: ffff88155eae8140 RBX: ffff881ed5a9d128 RCX: 0000000002400040
-Aug  9 07:46:15 smaug kernel: [5132590.594678] RDX: 00000000000fd0e4 RSI: 0000000000000002 RDI: ffff882034d0f000
-Aug  9 07:46:15 smaug kernel: [5132590.603929] RBP: ffff882034d0f000 R08: 0000000000000001 R09: 0000000000001569
-Aug  9 07:46:15 smaug kernel: [5132590.613264] R10: 00000000107aa8b7 R11: fffffffffffffff0 R12: ffff881ed5a9d128
-Aug  9 07:46:15 smaug kernel: [5132590.622566] R13: ffff882033909000 R14: ffff881816302a00 R15: ffff881ed5a9d128
-Aug  9 07:46:15 smaug kernel: [5132590.631846] FS:  0000000000000000(0000) GS:ffff88207fc80000(0000) knlGS:0000000000000000
-Aug  9 07:46:15 smaug kernel: [5132590.642060] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
-Aug  9 07:46:15 smaug kernel: [5132590.649898] CR2: 00000000000fd0e4 CR3: 0000000001a06000 CR4: 00000000001406e0
-Aug  9 07:46:15 smaug kernel: [5132590.659130] Stack:
-Aug  9 07:46:15 smaug kernel: [5132590.663228]  ffffffffa049cc54 0000156902020200 ffff881ed5a9d128 0000000000000801
-Aug  9 07:46:15 smaug kernel: [5132590.672811]  ffff881ed5a9d128 ffff882033909000 ffff881816302a00 ffff881ed5a9d128
-Aug  9 07:46:15 smaug kernel: [5132590.682392]  ffffffffa0470b9d ffff881ed5a9d128 0000000000000801 ffffffff8121fe67
-Aug  9 07:46:15 smaug kernel: [5132590.691981] Call Trace:
-Aug  9 07:46:15 smaug kernel: [5132590.696597]  [<ffffffffa049cc54>] ? __ext4_journal_start_sb+0x34/0xf0 [ext4]
-Aug  9 07:46:15 smaug kernel: [5132590.705791]  [<ffffffffa0470b9d>] ? ext4_dirty_inode+0x2d/0x60 [ext4]
-Aug  9 07:46:15 smaug kernel: [5132590.714340]  [<ffffffff8121fe67>] ? __mark_inode_dirty+0x177/0x360
-Aug  9 07:46:15 smaug kernel: [5132590.722623]  [<ffffffff8120e389>] ? generic_update_time+0x79/0xd0
-Aug  9 07:46:15 smaug kernel: [5132590.730814]  [<ffffffff8120da8d>] ? file_update_time+0xbd/0x110
-Aug  9 07:46:15 smaug kernel: [5132590.738845]  [<ffffffff81175f69>] ? __generic_file_write_iter+0x99/0x1e0
-Aug  9 07:46:15 smaug kernel: [5132590.747708]  [<ffffffffa04631b6>] ? ext4_file_write_iter+0x196/0x3d0 [ext4]
-Aug  9 07:46:15 smaug kernel: [5132590.756756]  [<ffffffff811f170b>] ? __vfs_write+0xeb/0x160
-Aug  9 07:46:15 smaug kernel: [5132590.764301]  [<ffffffff811f2103>] ? __kernel_write+0x53/0x100
-Aug  9 07:46:15 smaug kernel: [5132590.772081]  [<ffffffff810ff672>] ? do_acct_process+0x462/0x4e0
-Aug  9 07:46:15 smaug kernel: [5132590.780035]  [<ffffffff810ffd4c>] ? acct_process+0xdc/0x100
-Aug  9 07:46:15 smaug kernel: [5132590.787648]  [<ffffffff8107e403>] ? do_exit+0x7f3/0xb80
-Aug  9 07:46:15 smaug kernel: [5132590.794894]  [<ffffffff8102fa5c>] ? oops_end+0x9c/0xd0
-Aug  9 07:46:15 smaug kernel: [5132590.802027]  [<ffffffff81062d35>] ? no_context+0x135/0x390
-Aug  9 07:46:15 smaug kernel: [5132590.809496]  [<ffffffff815ca1f8>] ? page_fault+0x28/0x30
-Aug  9 07:46:15 smaug kernel: [5132590.816808]  [<ffffffffa0381af0>] ? btrfs_commit_transaction+0x350/0xa30 [btrfs]
-Aug  9 07:46:15 smaug kernel: [5132590.826213]  [<ffffffff810ba590>] ? wait_woken+0x90/0x90
-Aug  9 07:46:15 smaug kernel: [5132590.833501]  [<ffffffffa039a11b>] ? btrfs_sync_file+0x2fb/0x3e0 [btrfs]
-Aug  9 07:46:15 smaug kernel: [5132590.842074]  [<ffffffff81225318>] ? do_fsync+0x38/0x60
-Aug  9 07:46:15 smaug kernel: [5132590.849114]  [<ffffffff8122558c>] ? SyS_fsync+0xc/0x10
-Aug  9 07:46:15 smaug kernel: [5132590.856096]  [<ffffffff815c81f6>] ? entry_SYSCALL_64_fastpath+0x1e/0xa8
-Aug  9 07:46:15 smaug kernel: [5132590.864522] Code: 56 41 55 41 54 55 53 48 89 fd 65 48 8b 04 25 c0 d4 00 00 48 83 ec 10 48 85 ff 48 8b 80 90 06 00 00 74 20 48 85 c0 74 33 48 8b 10 <48> 3b 3a 75 29 83 40 14 01 48 83 c4 10 5b 5d 41 5c 41 5d 41 5e
-Aug  9 07:46:15 smaug kernel: [5132590.888065] RIP  [<ffffffffa0444be3>] jbd2__journal_start+0x33/0x1e0 [jbd2]
-Aug  9 07:46:15 smaug kernel: [5132590.896830]  RSP <ffff88000e0df8f0>
-Aug  9 07:46:15 smaug kernel: [5132590.902039] CR2: 00000000000fd0e4
-Aug  9 07:46:15 smaug kernel: [5132590.907032] ---[ end trace 3b9450d000ed06b4 ]---
-Aug  9 07:46:15 smaug kernel: [5132590.914612] Fixing recursive fault but reboot is needed!
-
-Thank you very much in advance for any ideas/feedback.  
-
-Please CC me the responses
--- 
-Yaroslav O. Halchenko
-Center for Open Neuroscience     http://centerforopenneuroscience.org
-Dartmouth College, 419 Moore Hall, Hinman Box 6207, Hanover, NH 03755
-Phone: +1 (603) 646-9834                       Fax: +1 (603) 646-1419
-WWW:   http://www.linkedin.com/in/yarik        
+On Tue, Aug 9, 2016 at 2:07 PM, Dave T <davestechshop@gmail.com> wrote:
+> My system locked up with btrfs-transaction consuming 100% CPU and NMI
+> watchdog reporting BUG: soft lockup with btrfs-transaction:314.
+>
+> This comes 2 days after a serious event involving BTRFS where my
+> system would not mount the root fs. (I gave details in an email to the
+> list two days ago and copied again below.)
+>
+> Here are full details of todays "bug" (or whatever it was).
+>
+> When i left work last night I left my system running and I locked the
+> session. The only things open were KDE Plasma, some terminal windows
+> and some plain text documents in Kate editor. No real work was running
+> on the local machine.
+>
+> This morning I came to work and noticed that my computer was slightly
+> warm and the fans were running at higher than normal RPM.
+>
+> I logged in and opened top in an existing terminal. I saw that
+> btrfs-transaction was consuming 100% of a CPU core and kworker was
+> consumer 100% of another CPU core.
+>
+> I tried to run a command (to view logs) in another terminal window,
+> but the system became unresponsive. I was able to switch to another
+> virtual console, but it was very slow. I took photos with my phone.
+> See link below for two images (top and virtual console):
+>
+> http://imgur.com/a/fT1RV
+>
+> These photos show what I reported above:
+> * btrfs-transaction consuming 100% CPU
+> * NMI watchdog reporting BUG: soft lockup with btrfs-transaction:314
+>
+> I hard reset my system, expecting the worst, but it rebooted normally.
+> journalctl -xb -p3 showed no entries.
+>
+> Obviously I have a serious problem. However, I have no clue about what
+> the problem might be (except that it seemingly involves btrfs). What
+> other information can I provide?
+>
+> On Sun, Aug 7, 2016 at 6:44 PM, Dave <davestechshop@gmail.com> wrote:
+>> I am running Arch Linux on a system with full disk encryption and the
+>> storage is a Samsung 950 Pro NVMe drive (512 GB). The computer is a
+>> couple months old. No bad behavior until now. (I'm only using 21 GB of
+>> the 512 space on the disk.)
+>>
+>>     btrfs-progs v4.5.1
+>>
+>> Today I was using my system normally and browsing the web. Firefox
+>> stopped responding suddenly and for no apparent reason. Then (KDE)
+>> Plasma stopped responding. I could not log out of KDE.
+>>
+>> I killed my user session (pkill -u me), then I tired to startx. At
+>> that point I noticed my root filesystem was read-only.
+>>
+>> As a first step, I rebooted. That didn't help anything. I tried
+>> rebooting several more times -- no change.
+>>
+>> The root filesystem (btrfs) would not mount. (See error below.) I
+>> booted into a LiveUSB environment and ran this command:
+>>
+>>     cryptsetup open --type luks /dev/xxx cryptroot
+>>
+>> It opens. Then I ran:
+>>
+>>     mount -t btrfs -o
+>> noatime,nodiratime,ssd,compress=lzo,defaults,space_cache,subvolid=257
+>> /dev/mapper/cryptroot /mnt
+>>
+>> The error message is shown here:
+>>
+>>     [ 2300.967048] BTRFS info (device dm-0): use ssd allocation scheme
+>>     [ 2300.967058] BTRFS info (device dm-0): use lzo compression
+>>     [ 2300.967066] BTRFS info (device dm-0): disk space caching is enabled
+>>     [ 2300.967069] BTRFS: has skinny extents
+>>     [ 2300.995393] BTRFS: error (device dm-0) in
+>> btrfs_replay_log:2413: errno=-22 unknown (Failed to recover log tree)
+>>     [ 2300.997617] BTRFS info (device dm-0): delayed_refs has NO entry
+>>     [ 2300.997673] BTRFS error (device dm-0): cleaner transaction
+>> attach returned -30
+>>     [ 2301.035405] BTRFS: open_ctree failed
+>>
+>> It is exactly the same error I saw when trying to boot normally as
+>> mentioned above.
+>>
+>> Based on these two links:
+>>
+>>> https://btrfs.wiki.kernel.org/index.php/Problem_FAQ
+>>> https://btrfs.wiki.kernel.org/index.php/Btrfs-zero-log
+>>
+>> I decided to take a chance on running this command:
+>>
+>>     btrfs rescue zero-log
+>>
+>> That worked and I can mount the filesystem.
+>>
+>> I ran btrfs check --repair. Here is the output:
+>>
+>>     root@broken / # umount /mnt
+>>     root@broken / # btrfs check --repair /dev/mapper/cryptroot
+>>     enabling repair mode
+>>     Checking filesystem on /dev/mapper/cryptroot
+>>     checking extents
+>>     bad metadata [292414476288, 292414492672) crossing stripe boundary
+>>     bad metadata [292414541824, 292414558208) crossing stripe boundary
+>>     bad metadata [292414672896, 292414689280) crossing stripe boundary
+>>     bad metadata [292414869504, 292414885888) crossing stripe boundary
+>>     bad metadata [292415000576, 292415016960) crossing stripe boundary
+>>     bad metadata [292415066112, 292415082496) crossing stripe boundary
+>>     bad metadata [292415131648, 292415148032) crossing stripe boundary
+>>     bad metadata [292415262720, 292415279104) crossing stripe boundary
+>>     bad metadata [292415328256, 292415344640) crossing stripe boundary
+>>     bad metadata [292415393792, 292415410176) crossing stripe boundary
+>>     repaired damaged extent references
+>>     Fixed 0 roots.
+>>     checking free space cache
+>>     cache and super generation don't match, space cache will be invalidated
+>>     checking fs roots
+>>     checking csums
+>>     checking root refs
+>>     checking quota groups
+>>     Ignoring qgroup relation key 258
+>>     Ignoring qgroup relation key 263
+>>     Ignoring qgroup relation key 71776119061217538
+>>     Ignoring qgroup relation key 71776119061217543
+>>     Counts for qgroup id: 257 are different
+>>     our:            referenced 10412273664 referenced compressed 10412273664
+>>     disk:           referenced 10411311104 referenced compressed 10411311104
+>>     diff:           referenced 962560 referenced compressed 962560
+>>     our:            exclusive 10412273664 exclusive compressed 10412273664
+>>     disk:           exclusive 10412273664 exclusive compressed 10412273664
+>>     found 21570773057 bytes used err is 0
+>>     total csum bytes: 19563456
+>>     total tree bytes: 403767296
+>>     total fs tree bytes: 349667328
+>>     total extent tree bytes: 27328512
+>>     btree space waste bytes: 66313360
+>>     file data blocks allocated: 39882014720
+>>     referenced 28043988992
+>>     extent buffer leak: start 20987904 len 16384
+>>     extent buffer leak: start 292688068608 len 16384
+>>     extent buffer leak: start 60915712 len 16384
+>>     extent buffer leak: start 29569581056 len 16384
+>>     extent buffer leak: start 29569597440 len 16384
+>>     extent buffer leak: start 292412063744 len 16384
+>>     extent buffer leak: start 292405870592 len 16384
+>>     extent buffer leak: start 292405936128 len 16384
+>>     extent buffer leak: start 292413964288 len 16384
+>>
+>> Then I check dmesg and I see this error information:
+>>
+>>     [ 4925.562422] BTRFS info (device dm-0): use ssd allocation scheme
+>>     [ 4925.562432] BTRFS info (device dm-0): use lzo compression
+>>     [ 4925.562440] BTRFS info (device dm-0): disk space caching is enabled
+>>     [ 4925.562444] BTRFS: has skinny extents
+>>     [ 4925.578705] BTRFS error (device dm-0): qgroup generation
+>> mismatch, marked as inconsistent
+>>     [ 4925.584033] BTRFS: checking UUID tree
+>>
+>> What should I do next? I'm a simple user.
+>>
+>> I already ran memtest86+ overnight using 8 CPU cores in parallel (so
+>> it was a very thorough memory test). There were 0 RAM errors.
+>>
+>> I previously used btrfs since 2012 with no issues. I am concerned
+>> about the present issue because I do not understand the cause.

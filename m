@@ -1,182 +1,128 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wm0-f65.google.com ([74.125.82.65]:35142 "EHLO
-	mail-wm0-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751919AbcHISWd (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 9 Aug 2016 14:22:33 -0400
-Received: by mail-wm0-f65.google.com with SMTP id i5so4831700wmg.2
-        for <linux-btrfs@vger.kernel.org>; Tue, 09 Aug 2016 11:22:32 -0700 (PDT)
-MIME-Version: 1.0
-From: Dave T <davestechshop@gmail.com>
-Date: Tue, 9 Aug 2016 14:07:46 -0400
-Message-ID: <CAGdWbB5aRffesaje-VSEOOH=O-rCWTqupLEu=BLdXurRU7dmtw@mail.gmail.com>
-Subject: system locked up with btrfs-transaction consuming 100% CPU
+Received: from [195.159.176.226] ([195.159.176.226]:45569 "EHLO
+	blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
+	with ESMTP id S932299AbcHIUbE (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 9 Aug 2016 16:31:04 -0400
+Received: from list by blaine.gmane.org with local (Exim 4.84_2)
+	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+	id 1bXDfx-0000jD-NM
+	for linux-btrfs@vger.kernel.org; Tue, 09 Aug 2016 22:31:01 +0200
 To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: Strange behavior after "rm -rf //"
+Date: Tue, 9 Aug 2016 20:30:56 +0000 (UTC)
+Message-ID: <pan$3c68e$c7a03ce$dfc0806f$7216696d@cox.net>
+References: <CAMG9ccwK93opLn=qOcceDjExwDHHRaxO=juvcXz4TuWKt_qXeg@mail.gmail.com>
+	<CAJCQCtSs5bHZu5NLjVfJLgxL45BdNq7hrmV3VdCLz+WxLEXrMw@mail.gmail.com>
+	<CAMG9ccwqnK63sbcF79VndBMitvFjX6pHPCU9YrrZcwEdiQxY5w@mail.gmail.com>
+	<CAJCQCtTuhTKBK=zjXsq3o0mFnU6T7hYsLLr2VD0N7gqJ7vX0FQ@mail.gmail.com>
+Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-My system locked up with btrfs-transaction consuming 100% CPU and NMI
-watchdog reporting BUG: soft lockup with btrfs-transaction:314.
+Chris Murphy posted on Tue, 09 Aug 2016 11:10:08 -0600 as excerpted:
 
-This comes 2 days after a serious event involving BTRFS where my
-system would not mount the root fs. (I gave details in an email to the
-list two days ago and copied again below.)
+> On Mon, Aug 8, 2016 at 12:38 PM, Ivan Sizov <sivan606@gmail.com> wrote:
+>> 2016-08-08 20:13 GMT+03:00 Chris Murphy <lists@colorremedies.com>:
+>>> Just a wild guess, the deletions may be in the tree log and haven't
+>>> been applied to the other trees (fs tree, extent tree, etc). So yes
+>>> I'd expect they get deleted on a rw mount.
+>>>
+>>> This is what kernel? Because kernel 4.6 offers mount option
+>>> "nologreplay" which suggests even if you do mount -r that log replay
+>>> happens, so you shouldn't see these deleted files unless you mount ro
+>>> *and* use nologreplay mount option.
+>>
+>> Live USB has kernel 4.5.7. Maybe I should try to run "btrfs rescue
+>> zero-log" and then mount RW? Will the files safe in that case?
+> 
+> Depends on what's in the log that you're zeroing out. It's entirely
+> possible other things are lost, not just the incomplete deletion. And
+> also I have no idea if the deletion is entirely contained in only the
+> tree log.
 
-Here are full details of todays "bug" (or whatever it was).
+It's worth noting a critical difference between btrfs replay logs and 
+conventional filesystem replay logs, however, with the result being that 
+there's a fair chance the log replay has absolutely nothing to do with 
+this case at all, and that it's simply commit vs. crash timing.
 
-When i left work last night I left my system running and I locked the
-session. The only things open were KDE Plasma, some terminal windows
-and some plain text documents in Kate editor. No real work was running
-on the local machine.
+Btrfs is copy-on-write, with commits designed to be atomic -- changes 
+work their way up the tree until a root commit finalizes them, and if a 
+crash occurs, all changes since the last successful commit (with a commit 
+every 30 seconds by default, and a mount option to change that) are 
+normally lost.  Because the filesystem is copy-on-write, that means the 
+filesystem should be consistent at that commit, and changes made after 
+that will be in different locations that haven't made it into the tree 
+yet, since the next commit wasn't able to happen due to the crash.  Thus, 
+the stuff that conventional filesystems log simply doesn't apply to btrfs 
+at all.
 
-This morning I came to work and noticed that my computer was slightly
-warm and the fans were running at higher than normal RPM.
+By contrast, conventional filesystems rewrite a lot of data and metadata 
+in-place, and logging lets them write out to a temporary area the changes 
+they intend to make before they actually write them to the permanent 
+location, so that in the event of a crash, any data partially written to 
+the permanent location will be replayed from the log, while if the crash 
+happened when writing the log so it's corrupt, that record won't be 
+replayed, and the old content will remain in place.
 
-I logged in and opened top in an existing terminal. I saw that
-btrfs-transaction was consuming 100% of a CPU core and kworker was
-consumer 100% of another CPU core.
+Tho of course writing all data twice tends to hit performance rather 
+hard, so what most event logging filesystems do is only log the metadata, 
+not the actual data.  This lets them be much faster than if they were 
+logging the data, and normally protects the filesystem structure, but 
+there's some chance that files rewritten in-place will be corrupt if a 
+crash happens at the wrong moment.  But it limits the damage to only the 
+file being written at the time, and does away with the requirement to fsck 
+the entire filesystem after every crash.
 
-I tried to run a command (to view logs) in another terminal window,
-but the system became unresponsive. I was able to switch to another
-virtual console, but it was very slow. I took photos with my phone.
-See link below for two images (top and virtual console):
+So what /does/ the btrfs log do, then?  Good question! =:^)  Rather 
+simply, keeping in mind that commits only normally trigger every 30 
+seconds, the btrfs log tracks fsyncs (individual file syncs, as opposed 
+to whole filesystem syncs), recording them in a replay log, so the 
+filesystem can return success on the fsync, that the file was actually 
+synced to permanent storage (often ssds these days, so not always "disk" 
+as it used to be), without having to either wait upto 30 seconds for the 
+next root tree commit, or forcing a full filesystem sync and commit, 
+possibly including many other files, when only the one was requested.
 
-http://imgur.com/a/fT1RV
+So with btrfs, it's *only* fsyncs that are logged to the replay log, and 
+that only to be able to truthfully return that the file was written to 
+permanent storage, not normal filesystem operations, which are already 
+atomic due to the copy-on-write semantics, and thus don't need logged.
 
-These photos show what I reported above:
-* btrfs-transaction consuming 100% CPU
-* NMI watchdog reporting BUG: soft lockup with btrfs-transaction:314
+So then, the question becomes one of whether rm -rf, or whatever other 
+actual command was used to do the deletes, called fsync, or not.  If the 
+command didn't call fsync, then it would have been the normal btrfs 
+commit mechanism, again, every 30 seconds by default, that would have 
+been in play here, and the btrfs log replay wouldn't have anything to do 
+with it.
 
-I hard reset my system, expecting the worst, but it rebooted normally.
-journalctl -xb -p3 showed no entries.
+Which I actually strongly suspect to be the case.  It's likely that the 
+last commit wasn't completed, so the btrfs reverted to the last atomic 
+commit.  That would also explain why a read-only mount /without/ the 
+nologreplay option still showed the files, since read-only does normally 
+still replay that fsync log, so if the files were caught in it, they 
+shouldn't show up at all. 
 
-Obviously I have a serious problem. However, I have no clue about what
-the problem might be (except that it seemingly involves btrfs). What
-other information can I provide?
 
-On Sun, Aug 7, 2016 at 6:44 PM, Dave <davestechshop@gmail.com> wrote:
-> I am running Arch Linux on a system with full disk encryption and the
-> storage is a Samsung 950 Pro NVMe drive (512 GB). The computer is a
-> couple months old. No bad behavior until now. (I'm only using 21 GB of
-> the 512 space on the disk.)
->
->     btrfs-progs v4.5.1
->
-> Today I was using my system normally and browsing the web. Firefox
-> stopped responding suddenly and for no apparent reason. Then (KDE)
-> Plasma stopped responding. I could not log out of KDE.
->
-> I killed my user session (pkill -u me), then I tired to startx. At
-> that point I noticed my root filesystem was read-only.
->
-> As a first step, I rebooted. That didn't help anything. I tried
-> rebooting several more times -- no change.
->
-> The root filesystem (btrfs) would not mount. (See error below.) I
-> booted into a LiveUSB environment and ran this command:
->
->     cryptsetup open --type luks /dev/xxx cryptroot
->
-> It opens. Then I ran:
->
->     mount -t btrfs -o
-> noatime,nodiratime,ssd,compress=lzo,defaults,space_cache,subvolid=257
-> /dev/mapper/cryptroot /mnt
->
-> The error message is shown here:
->
->     [ 2300.967048] BTRFS info (device dm-0): use ssd allocation scheme
->     [ 2300.967058] BTRFS info (device dm-0): use lzo compression
->     [ 2300.967066] BTRFS info (device dm-0): disk space caching is enabled
->     [ 2300.967069] BTRFS: has skinny extents
->     [ 2300.995393] BTRFS: error (device dm-0) in
-> btrfs_replay_log:2413: errno=-22 unknown (Failed to recover log tree)
->     [ 2300.997617] BTRFS info (device dm-0): delayed_refs has NO entry
->     [ 2300.997673] BTRFS error (device dm-0): cleaner transaction
-> attach returned -30
->     [ 2301.035405] BTRFS: open_ctree failed
->
-> It is exactly the same error I saw when trying to boot normally as
-> mentioned above.
->
-> Based on these two links:
->
->> https://btrfs.wiki.kernel.org/index.php/Problem_FAQ
->> https://btrfs.wiki.kernel.org/index.php/Btrfs-zero-log
->
-> I decided to take a chance on running this command:
->
->     btrfs rescue zero-log
->
-> That worked and I can mount the filesystem.
->
-> I ran btrfs check --repair. Here is the output:
->
->     root@broken / # umount /mnt
->     root@broken / # btrfs check --repair /dev/mapper/cryptroot
->     enabling repair mode
->     Checking filesystem on /dev/mapper/cryptroot
->     checking extents
->     bad metadata [292414476288, 292414492672) crossing stripe boundary
->     bad metadata [292414541824, 292414558208) crossing stripe boundary
->     bad metadata [292414672896, 292414689280) crossing stripe boundary
->     bad metadata [292414869504, 292414885888) crossing stripe boundary
->     bad metadata [292415000576, 292415016960) crossing stripe boundary
->     bad metadata [292415066112, 292415082496) crossing stripe boundary
->     bad metadata [292415131648, 292415148032) crossing stripe boundary
->     bad metadata [292415262720, 292415279104) crossing stripe boundary
->     bad metadata [292415328256, 292415344640) crossing stripe boundary
->     bad metadata [292415393792, 292415410176) crossing stripe boundary
->     repaired damaged extent references
->     Fixed 0 roots.
->     checking free space cache
->     cache and super generation don't match, space cache will be invalidated
->     checking fs roots
->     checking csums
->     checking root refs
->     checking quota groups
->     Ignoring qgroup relation key 258
->     Ignoring qgroup relation key 263
->     Ignoring qgroup relation key 71776119061217538
->     Ignoring qgroup relation key 71776119061217543
->     Counts for qgroup id: 257 are different
->     our:            referenced 10412273664 referenced compressed 10412273664
->     disk:           referenced 10411311104 referenced compressed 10411311104
->     diff:           referenced 962560 referenced compressed 962560
->     our:            exclusive 10412273664 exclusive compressed 10412273664
->     disk:           exclusive 10412273664 exclusive compressed 10412273664
->     found 21570773057 bytes used err is 0
->     total csum bytes: 19563456
->     total tree bytes: 403767296
->     total fs tree bytes: 349667328
->     total extent tree bytes: 27328512
->     btree space waste bytes: 66313360
->     file data blocks allocated: 39882014720
->     referenced 28043988992
->     extent buffer leak: start 20987904 len 16384
->     extent buffer leak: start 292688068608 len 16384
->     extent buffer leak: start 60915712 len 16384
->     extent buffer leak: start 29569581056 len 16384
->     extent buffer leak: start 29569597440 len 16384
->     extent buffer leak: start 292412063744 len 16384
->     extent buffer leak: start 292405870592 len 16384
->     extent buffer leak: start 292405936128 len 16384
->     extent buffer leak: start 292413964288 len 16384
->
-> Then I check dmesg and I see this error information:
->
->     [ 4925.562422] BTRFS info (device dm-0): use ssd allocation scheme
->     [ 4925.562432] BTRFS info (device dm-0): use lzo compression
->     [ 4925.562440] BTRFS info (device dm-0): disk space caching is enabled
->     [ 4925.562444] BTRFS: has skinny extents
->     [ 4925.578705] BTRFS error (device dm-0): qgroup generation
-> mismatch, marked as inconsistent
->     [ 4925.584033] BTRFS: checking UUID tree
->
-> What should I do next? I'm a simple user.
->
-> I already ran memtest86+ overnight using 8 CPU cores in parallel (so
-> it was a very thorough memory test). There were 0 RAM errors.
->
-> I previously used btrfs since 2012 with no issues. I am concerned
-> about the present issue because I do not understand the cause.
+Meanwhile, back to the original scenario, just another demonstration of 
+what every good sysadmin knows, often from hard experience, admin fat-
+fingering -- the human factor --  PEBKAC -- is as much of a danger to the 
+data and the system, if not more, than device or software failure.  If 
+would-be backups can't protect from that, they're not backups.  Which is 
+why simple RAID fails as a backup method, even if it can protect against 
+device failure.  And of course, there's only two cases for the value of 
+the data, it's either worth the hassle and resources to backup, or it's 
+not, and if it's not backed up, by definition of not having that backup, 
+you're defining it as the latter, no matter any claims to the contrary.  
+In this case, as too many unfortunate people eventually find out, 
+actions, or the lack of them, speak louder than words, and if the data is 
+lost due to not having a backup, well, the only thing to do is to be 
+happy that the thing your actions defined as worth more than that data, 
+the time/hassle/resources necessary to do it, was saved.
+
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

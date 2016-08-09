@@ -1,64 +1,60 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from len.romanrm.net ([195.154.117.182]:38278 "EHLO len.romanrm.net"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S932398AbcHIN4M (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 9 Aug 2016 09:56:12 -0400
-Date: Tue, 9 Aug 2016 18:56:05 +0500
-From: Roman Mamedov <rm@romanrm.net>
-To: Noah Massey <noah.massey@gmail.com>
-Cc: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>, Thomas <c.monty@web.de>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: Issue: errno:28 (No space left on device)
-Message-ID: <20160809185605.3fc06903@natsu>
-In-Reply-To: <CADfjVrgzMNrsfv=S9+zPBZEcvkfiP=fg-Pi8gB+W1gYaJTxcRA@mail.gmail.com>
-References: <e4671ca6-38bc-ce32-0bc9-c1e7bc9873cd@web.de>
-	<1b31f650-6c29-7b46-eafb-0434a26f15d6@gmail.com>
-	<CADfjVrgzMNrsfv=S9+zPBZEcvkfiP=fg-Pi8gB+W1gYaJTxcRA@mail.gmail.com>
+Received: from mail-oi0-f46.google.com ([209.85.218.46]:36414 "EHLO
+	mail-oi0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752348AbcHIQuL (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 9 Aug 2016 12:50:11 -0400
+Received: by mail-oi0-f46.google.com with SMTP id f189so25278819oig.3
+        for <linux-btrfs@vger.kernel.org>; Tue, 09 Aug 2016 09:50:11 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
- boundary="Sig_/LG6cLEq4sqUtSPCvEnVsQ_t"; protocol="application/pgp-signature"
+In-Reply-To: <42f95b05-d0f8-55e0-4280-3865d7162469@web.de>
+References: <42f95b05-d0f8-55e0-4280-3865d7162469@web.de>
+From: Chris Murphy <lists@colorremedies.com>
+Date: Tue, 9 Aug 2016 10:50:09 -0600
+Message-ID: <CAJCQCtQ-eqxNi0HyxyNK61KK-zsZ5XzN9+TOw2ezbwuqCVicLQ@mail.gmail.com>
+Subject: Re: Issue: errno:28 (No space left on device)
+To: Thomas <c.monty@web.de>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
---Sig_/LG6cLEq4sqUtSPCvEnVsQ_t
-Content-Type: text/plain; charset=US-ASCII
-Content-Transfer-Encoding: quoted-printable
+On Tue, Aug 9, 2016 at 3:06 AM, Thomas <c.monty@web.de> wrote:
 
-On Tue, 9 Aug 2016 09:39:45 -0400
-Noah Massey <noah.massey@gmail.com> wrote:
+> thomas@pc8-nb:~$ uname -a
+> Linux pc8-nb 4.6.1-towo.1-siduction-amd64 #1 SMP PREEMPT siduction 4.6-1
+> (2016-06-04) x86_64 GNU/Linux
 
-> Since your data and metadata profiles are both 'single', you may want
-> to consider creating the filesystem with the --mixed option, which
-> allows / forces BTRFS to use a single collection of data blocks for
-> both data and metadata.
+Try 4.5.7 or 4.7 and see if it fixes the problem, there's a related
+patch in both of those that's not yet in 4.6 series. The patch mainly
+permits using existing chunks for balance to consolidate extents,
+rather than requiring new chunks. So you might also have to do a
+filtered balance. I would probably start with -dusage=25 and see where
+that gets you.
 
-That also seems to be detrimental to performance, I had servers with mixed
-profile FSes which went painfully slow after a couple of years (daily snaps=
-hot
-creation and deletion, ~30-60 snapshots kept at all times), migrated them a=
-ll
-now to the regular split profile. Fresh off mkfs they are fast of course, so
-not entirely certain "mixed" was the culprit, will see.
 
-One more problem with mixed is that you can't use the leaf and nodesize of =
-16k,
-which are accepted to be faster than the older default (and mixed's only
-option) of 4k.
+>     Device size:                  20.53GiB
+>     Device allocated:             20.53GiB
 
---=20
-With respect,
-Roman
+>From Btrfs perspective the volume is "fully allocated" and as such
+cannot create new data or metadata chunks. Whatever workload you're
+doing at the time of enospc may be filling up data or metadata unused
+space in existing chunks, triggering need for newly allocated chunk,
+which can't happen because there's no space left for new chunks.
 
---Sig_/LG6cLEq4sqUtSPCvEnVsQ_t
-Content-Type: application/pgp-signature
-Content-Description: OpenPGP digital signature
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2
+> Data,single: Size:19.76GiB, Used:17.81GiB
+>    /dev/sda8      19.76GiB
+>
+> Metadata,single: Size:776.00MiB, Used:455.73MiB
+>    /dev/sda8     776.00MiB
 
-iEYEARECAAYFAlep4PcACgkQTLKSvz+PZwgN3gCeLyhFEjAqh32073LyM0uHtozE
-GIsAn2PWHJT1I5oWej1i+/2Tw0YF/A+i
-=fmH6
------END PGP SIGNATURE-----
+I'll guess there's some metadata centric workload, maybe with small
+files that are being stored inline, that's filling up the metadata
+chunks, leading to enospc.
 
---Sig_/LG6cLEq4sqUtSPCvEnVsQ_t--
+If changing kernel versions doesn't work, then you'll need to add more
+space somehow. The file system is ~90% full anyway.
+
+
+-- 
+Chris Murphy

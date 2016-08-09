@@ -1,138 +1,64 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.web.de ([212.227.15.4]:58158 "EHLO mout.web.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751454AbcHIJKC (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 9 Aug 2016 05:10:02 -0400
-Received: from [192.168.1.48] ([5.56.189.241]) by smtp.web.de (mrweb002) with
- ESMTPSA (Nemesis) id 0Lz2zw-1bAztE3NFA-014Cb6 for
- <linux-btrfs@vger.kernel.org>; Tue, 09 Aug 2016 11:09:24 +0200
-From: Thomas <c.monty@web.de>
-Subject: Issue: errno:28 (No space left on device)
-To: linux-btrfs@vger.kernel.org
-Message-ID: <a5c1aaee-1dfe-9c01-fcf8-129db266aa90@web.de>
-Date: Tue, 9 Aug 2016 11:09:24 +0200
+Received: from mail-ua0-f170.google.com ([209.85.217.170]:36146 "EHLO
+	mail-ua0-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752184AbcHIJuS convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 9 Aug 2016 05:50:18 -0400
+Received: by mail-ua0-f170.google.com with SMTP id 97so11445701uav.3
+        for <linux-btrfs@vger.kernel.org>; Tue, 09 Aug 2016 02:50:18 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8; format=flowed
+In-Reply-To: <0b6a094b-ccf0-36c4-aafb-12a4e9cd424d@gmail.com>
+References: <CAE8gLhm0-+kkwFv1-+t+tWLrZrzh4B9cJUDRrgPpwfvB_obVCA@mail.gmail.com>
+ <CAEtw4r2hsCd1+bFNcXn_s5jj-8x6qer+x0gLx8wTgNi1=nAXhw@mail.gmail.com>
+ <CAE8gLh=g7oUK_FAcSN2HaeFmEsK1jBMar4DEfzBwEWiUioDhAQ@mail.gmail.com>
+ <CAPmG0jb0eVsg1gX4q3TMA9icRaPS9ULcs2KPBX-_biJ5KPUsrQ@mail.gmail.com>
+ <CAE8gLhkR4XzNx9tarhzD2LdsCRJ3e+BPcWYpE-qA4jnJsvSrLg@mail.gmail.com>
+ <CAPmG0jZj6S6TXe0xLdiJWMto=VX7NM7WhSc5T3MLf=HWvsR7+Q@mail.gmail.com> <0b6a094b-ccf0-36c4-aafb-12a4e9cd424d@gmail.com>
+From: MegaBrutal <megabrutal@gmail.com>
+Date: Tue, 9 Aug 2016 11:50:15 +0200
+Message-ID: <CAE8gLh=N9dP0aj+oHxGosaTNG45rvQpx=U_Mx1KT0a6MWN2o=w@mail.gmail.com>
+Subject: Re: "No space left on device" and balance doesn't work
+To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Cc: Henk Slager <eye1tm@gmail.com>, Peter Becker <floyd.net@gmail.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello!
+2016-06-03 14:43 GMT+02:00 Austin S. Hemmelgarn <ahferroin7@gmail.com>:
+>
+> Also, since you're on a new enough kernel, try 'lazytime' in the mount options as well, this defers all on-disk timestamp updates for up to 24 hours or until the inode gets written out anyway, but keeps the updated info in memory.  The only downside to this is that mtimes might not be correct after an unclean shutdown, but most software will have no issues with this.
+>
 
-I'm facing a severe issue with Debian installation using BTRFS:
-errno:28 (No space left on device)
+Hi all,
 
-After a few minutes of system usage I get this error message for any 
-action, means there's really no disk space left.
+Sorry for reviving this old thread, and probably it's not the best
+place to ask about this... but I added the "noatime" option in fstab,
+restarted the system, and now I think I should try "lazytime" too (as
+I like the idea to have proper atimes with delayed writing to disk).
+So now I'd just like to test the "lazytime" mount option without
+restart.
 
-However, the output of btrfs fi usage / reports that ~10% of disk space 
-should be free.
+I remounted the file system like this:
 
-I have 2 questions:
-1. Why is the OS reporting an error "Issue: errno:28 (No space left on 
-device)" whereas "btrfs fi usage" reports free space?
-2. How can I solve this issue w/o the possibility of extending the 
-partition?
+mount -o remount,lazytime /
 
+But now the FS still has the "noatime" mount option, which I guess
+renders "lazytime" ineffective. I thought they are supposed to be
+mutually exclusive, so I'm actually surprised that I can have both
+mount options at the same time.
 
-THX
+Now my mount looks like this:
 
----------------------------------------------------------------------------------------
+/dev/mapper/centrevg-rootlv on / type btrfs
+(rw,noatime,lazytime,space_cache,subvolid=257,subvol=/@)
 
-thomas@pc8-nb:~$ uname -a
-Linux pc8-nb 4.6.1-towo.1-siduction-amd64 #1 SMP PREEMPT siduction 4.6-1 
-(2016-06-04) x86_64 GNU/Linux
+I also tried to explicitly add "atime" to negate "noatime" (man mount
+says "atime" is the option to disable "noatime"), like this:
 
+mount -o remount,atime,lazytime /
 
-thomas@pc8-nb:~$ sudo btrfs --version
-btrfs-progs v4.5.2
+But the "noatime" option still stays. Why? Is it a BTRFS specific
+issue, or does it reside in another layer?
 
-
-thomas@pc8-nb:~$ sudo btrfs fi usage /
-Overall:
-      Device size:		  20.53GiB
-      Device allocated:		  20.53GiB
-      Device unallocated:		     0.00B
-      Device missing:		     0.00B
-      Used:			  18.25GiB
-      Free (estimated):		   1.96GiB	(min: 1.96GiB)
-      Data ratio:			      1.00
-      Metadata ratio:		      1.00
-      Global reserve:		 160.00MiB	(used: 400.00KiB)
-
-Data,single: Size:19.76GiB, Used:17.81GiB
-     /dev/sda8	  19.76GiB
-
-Metadata,single: Size:776.00MiB, Used:455.73MiB
-     /dev/sda8	 776.00MiB
-
-System,single: Size:4.00MiB, Used:16.00KiB
-     /dev/sda8	   4.00MiB
-
-Unallocated:
-     /dev/sda8	     0.00B
-
-
-thomas@pc8-nb:~$ sudo btrfs fi show
-Label: 'siduction'  uuid: dbb9433e-a84f-4e84-9200-49350b31a3f6
-	Total devices 1 FS bytes used 18.25GiB
-	devid    1 size 20.53GiB used 20.53GiB path /dev/sda8
-
-
-thomas@pc8-nb:~$ sudo btrfs su li /
-ID 257 gen 5498245 top level 5 path @
-ID 258 gen 5498245 top level 5 path @home
-ID 259 gen 5488356 top level 5 path @tmp
-ID 260 gen 2029641 top level 5 path @var_lib_lxc
-ID 261 gen 5480763 top level 5 path @var_log
-ID 262 gen 5467204 top level 5 path @var_spool
-ID 263 gen 5467205 top level 5 path @var_tmp
-ID 290 gen 5464299 top level 257 path .snapshots
-ID 291 gen 2026169 top level 258 path @home/.snapshots
-ID 293 gen 2029641 top level 260 path @var_lib_lxc/.snapshots
-ID 355 gen 163972 top level 290 path .snapshots/17/snapshot
-ID 356 gen 167205 top level 290 path .snapshots/18/snapshot
-ID 357 gen 5383634 top level 5 path @var_cache_apt_archives
-ID 358 gen 5464163 top level 290 path .snapshots/19/snapshot
-
-
-thomas@pc8-nb:~$ sudo journalctl | grep space
-[...]
-Jun 16 17:52:39 pc8-nb unattended-upgrade-shutdown[13530]: OSError: 
-[Errno 28] No space left on device
-Jun 16 17:52:39 pc8-nb unattended-upgrade-shutdown[13530]: OSError: 
-[Errno 28] No space left on device
-Jun 16 17:52:39 pc8-nb unattended-upgrade-shutdown[13530]: OSError: 
-[Errno 28] No space left on device
-[...]
-Jul 17 04:43:02 pc8-nb cron-apt[2658]: E: Failed to fetch 
-http://ftp.fau.de/debian/dists/stable/main/Contents-i386  Write error - 
-write (28: No space left on device)
-Jul 17 04:43:02 pc8-nb cron-apt[2658]: E: Failed to fetch 
-http://debian.mirror.lrz.de/debian/dists/stable/contrib/binary-i386/Packages.gz 
-  Write error - write (28: No space left on device)
-Jul 17 04:43:02 pc8-nb cron-apt[2658]: E: Failed to fetch 
-http://debian.mirror.lrz.de/debian/dists/stable/contrib/i18n/Translation-en 
-  Write error - write (28: No space left on device)
-Jul 17 04:43:02 pc8-nb cron-apt[2658]: E: Failed to fetch 
-http://debian.mirror.lrz.de/debian/dists/stable/contrib/Contents-amd64 
-Write error - write (28: No space left on device)
-Jul 17 04:43:02 pc8-nb cron-apt[2658]: E: Failed to fetch 
-http://debian.mirror.lrz.de/debian/dists/stable/contrib/Contents-i386 
-Write error - write (28: No space left on device)
-Jul 17 04:43:02 pc8-nb cron-apt[2658]: E: Failed to fetch 
-http://mirror.unitedcolo.de/debian/dists/stable/non-free/binary-amd64/Packages.gz 
-  Write error - write (28: No space left on device)
-Jul 17 04:43:02 pc8-nb cron-apt[2658]: E: Failed to fetch 
-http://mirror.unitedcolo.de/debian/dists/stable/non-free/binary-i386/Packages.gz 
-  Write error - write (28: No space left on device)
-Jul 17 04:43:02 pc8-nb cron-apt[2658]: E: Failed to fetch 
-http://debian.mirror.lrz.de/debian/dists/stable/non-free/i18n/Translation-en 
-  Write error - write (28: No space left on device)
-Jul 17 04:43:02 pc8-nb cron-apt[2658]: E: Failed to fetch 
-http://mirror.unitedcolo.de/debian/dists/stable/non-free/Contents-amd64 
-Write error - write (28: No space left on device)
-Jul 17 04:43:02 pc8-nb cron-apt[2658]: E: Failed to fetch 
-http://ftp.fau.de/debian/dists/stable/non-free/Contents-i386  Write 
-error - write (28: No space left on device)
-[...]
-
+By the way, is it valid to mount BTRFS subvolumes with different atime
+policies? Then how do child subvolumes behave?

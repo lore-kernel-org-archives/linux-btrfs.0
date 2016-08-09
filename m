@@ -1,125 +1,125 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [195.159.176.226] ([195.159.176.226]:45569 "EHLO
+Received: from [195.159.176.226] ([195.159.176.226]:39011 "EHLO
 	blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
-	with ESMTP id S932299AbcHIUbE (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 9 Aug 2016 16:31:04 -0400
+	with ESMTP id S932338AbcHIVcQ (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 9 Aug 2016 17:32:16 -0400
 Received: from list by blaine.gmane.org with local (Exim 4.84_2)
 	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1bXDfx-0000jD-NM
-	for linux-btrfs@vger.kernel.org; Tue, 09 Aug 2016 22:31:01 +0200
+	id 1bXEdA-0007mb-L8
+	for linux-btrfs@vger.kernel.org; Tue, 09 Aug 2016 23:32:12 +0200
 To: linux-btrfs@vger.kernel.org
 From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: Strange behavior after "rm -rf //"
-Date: Tue, 9 Aug 2016 20:30:56 +0000 (UTC)
-Message-ID: <pan$3c68e$c7a03ce$dfc0806f$7216696d@cox.net>
-References: <CAMG9ccwK93opLn=qOcceDjExwDHHRaxO=juvcXz4TuWKt_qXeg@mail.gmail.com>
-	<CAJCQCtSs5bHZu5NLjVfJLgxL45BdNq7hrmV3VdCLz+WxLEXrMw@mail.gmail.com>
-	<CAMG9ccwqnK63sbcF79VndBMitvFjX6pHPCU9YrrZcwEdiQxY5w@mail.gmail.com>
-	<CAJCQCtTuhTKBK=zjXsq3o0mFnU6T7hYsLLr2VD0N7gqJ7vX0FQ@mail.gmail.com>
+Subject: Re: system locked up with btrfs-transaction consuming 100% CPU
+Date: Tue, 9 Aug 2016 21:32:06 +0000 (UTC)
+Message-ID: <pan$40039$460e87d$113bf211$8f82b7dd@cox.net>
+References: <CAGdWbB5aRffesaje-VSEOOH=O-rCWTqupLEu=BLdXurRU7dmtw@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Chris Murphy posted on Tue, 09 Aug 2016 11:10:08 -0600 as excerpted:
+Dave T posted on Tue, 09 Aug 2016 14:07:46 -0400 as excerpted:
 
-> On Mon, Aug 8, 2016 at 12:38 PM, Ivan Sizov <sivan606@gmail.com> wrote:
->> 2016-08-08 20:13 GMT+03:00 Chris Murphy <lists@colorremedies.com>:
->>> Just a wild guess, the deletions may be in the tree log and haven't
->>> been applied to the other trees (fs tree, extent tree, etc). So yes
->>> I'd expect they get deleted on a rw mount.
->>>
->>> This is what kernel? Because kernel 4.6 offers mount option
->>> "nologreplay" which suggests even if you do mount -r that log replay
->>> happens, so you shouldn't see these deleted files unless you mount ro
->>> *and* use nologreplay mount option.
->>
->> Live USB has kernel 4.5.7. Maybe I should try to run "btrfs rescue
->> zero-log" and then mount RW? Will the files safe in that case?
-> 
-> Depends on what's in the log that you're zeroing out. It's entirely
-> possible other things are lost, not just the incomplete deletion. And
-> also I have no idea if the deletion is entirely contained in only the
-> tree log.
+> I hard reset my system, expecting the worst, but it rebooted normally.
+> journalctl -xb -p3 showed no entries.
 
-It's worth noting a critical difference between btrfs replay logs and 
-conventional filesystem replay logs, however, with the result being that 
-there's a fair chance the log replay has absolutely nothing to do with 
-this case at all, and that it's simply commit vs. crash timing.
+I don't have any suggestions for your primary problem, tho I do have a 
+comment down below, but I do have a suggestion regarding your "hard 
+reset".
 
-Btrfs is copy-on-write, with commits designed to be atomic -- changes 
-work their way up the tree until a root commit finalizes them, and if a 
-crash occurs, all changes since the last successful commit (with a commit 
-every 30 seconds by default, and a mount option to change that) are 
-normally lost.  Because the filesystem is copy-on-write, that means the 
-filesystem should be consistent at that commit, and changes made after 
-that will be in different locations that haven't made it into the tree 
-yet, since the next commit wasn't able to happen due to the crash.  Thus, 
-the stuff that conventional filesystems log simply doesn't apply to btrfs 
-at all.
+Consider doing some reading on "magic sysrequest", aka sysrq aka srq.
 
-By contrast, conventional filesystems rewrite a lot of data and metadata 
-in-place, and logging lets them write out to a temporary area the changes 
-they intend to make before they actually write them to the permanent 
-location, so that in the event of a crash, any data partially written to 
-the permanent location will be replayed from the log, while if the crash 
-happened when writing the log so it's corrupt, that record won't be 
-replayed, and the old content will remain in place.
+$KERNDIR/Documentation/sysrq.txt , and there's lots of googlable articles 
+about it as well.
 
-Tho of course writing all data twice tends to hit performance rather 
-hard, so what most event logging filesystems do is only log the metadata, 
-not the actual data.  This lets them be much faster than if they were 
-logging the data, and normally protects the filesystem structure, but 
-there's some chance that files rewritten in-place will be corrupt if a 
-crash happens at the wrong moment.  But it limits the damage to only the 
-file being written at the time, and does away with the requirement to fsck 
-the entire filesystem after every crash.
+Basically, when you'd otherwise do a hard reset, try a series of triple-
+key chords, alt-sysrq-<otherkey> first.  (Sysrq is printscreen, if alt 
+isn't pressed with it, so alt-sysrq-thirdkey.)
 
-So what /does/ the btrfs log do, then?  Good question! =:^)  Rather 
-simply, keeping in mind that commits only normally trigger every 30 
-seconds, the btrfs log tracks fsyncs (individual file syncs, as opposed 
-to whole filesystem syncs), recording them in a replay log, so the 
-filesystem can return success on the fsync, that the file was actually 
-synced to permanent storage (often ssds these days, so not always "disk" 
-as it used to be), without having to either wait upto 30 seconds for the 
-next root tree commit, or forcing a full filesystem sync and commit, 
-possibly including many other files, when only the one was requested.
+The longer form of the emergency sequence is reisub -- you can read what 
+the r-e-i keys due in the documentation -- but from my own experience, I 
+find when the system's in bad enough shape I need to do an emergency 
+reboot, these keys don't do much for me, while the last three, sub, often 
+(but not always) do, and they're much easier to remember, so...
 
-So with btrfs, it's *only* fsyncs that are logged to the replay log, and 
-that only to be able to truthfully return that the file was written to 
-permanent storage, not normal filesystem operations, which are already 
-atomic due to the copy-on-write semantics, and thus don't need logged.
+Alt-sysrq-s alt-sysrq-u alt-sysrq-b
 
-So then, the question becomes one of whether rm -rf, or whatever other 
-actual command was used to do the deletes, called fsync, or not.  If the 
-command didn't call fsync, then it would have been the normal btrfs 
-commit mechanism, again, every 30 seconds by default, that would have 
-been in play here, and the btrfs log replay wouldn't have anything to do 
-with it.
+s=Sync.  If the kernel is still alive and believes it's still stable 
+enough to write to permanent storage without risking writing somewhere it 
+shouldn't, this will force all write-cached "dirty" data to be written 
+out.
 
-Which I actually strongly suspect to be the case.  It's likely that the 
-last commit wasn't completed, so the btrfs reverted to the last atomic 
-commit.  That would also explain why a read-only mount /without/ the 
-nologreplay option still showed the files, since read-only does normally 
-still replay that fsync log, so if the files were caught in it, they 
-shouldn't show up at all. 
+You can safely do an alt-srq-s at any time, and continue working, as it 
+forces cached writes to be written out, but doesn't otherwise interfere 
+with the running system.  As such, alt-srq-s is a useful sequence to use 
+right before you do anything you suspect /might/ crash the system, like 
+starting X with a new graphics driver.
+
+u=remoUnt-read-only.  Again, if the kernel is alive and stable, this will 
+remount all filesystems read-only, allowing them to safely clean up in 
+the process.  The action carries down to sub-filesystem layers like 
+dmcrypt as well.
+
+Note that this is an emergency remount-read-only, so it's a bit more 
+forceful regarding open files that would block an ordinary remount-
+readonly.  As such, consider the system unusable after doing an alt-srq-
+u, and shutdown or reboot immediately.
+
+b=reBoot.  This forces the kernel to do an immediate reboot, without 
+syncing or remounting, etc.  Thus the s-u- first, to sync and remount.
 
 
-Meanwhile, back to the original scenario, just another demonstration of 
-what every good sysadmin knows, often from hard experience, admin fat-
-fingering -- the human factor --  PEBKAC -- is as much of a danger to the 
-data and the system, if not more, than device or software failure.  If 
-would-be backups can't protect from that, they're not backups.  Which is 
-why simple RAID fails as a backup method, even if it can protect against 
-device failure.  And of course, there's only two cases for the value of 
-the data, it's either worth the hassle and resources to backup, or it's 
-not, and if it's not backed up, by definition of not having that backup, 
-you're defining it as the latter, no matter any claims to the contrary.  
-In this case, as too many unfortunate people eventually find out, 
-actions, or the lack of them, speak louder than words, and if the data is 
-lost due to not having a backup, well, the only thing to do is to be 
-happy that the thing your actions defined as worth more than that data, 
-the time/hassle/resources necessary to do it, was saved.
+Besides being a bit safer than a hard reset, since when it works it 
+allows the system to sync and cleanup the filesystems before the reboot, 
+this also serves as a crude but effective method of finding out just how 
+severely the system was locked up.  If the sync and remount steps light 
+up your storage I/O activity LED, you know the kernel considered itself 
+in pretty good shape, even if userspace was lost and there was no display 
+at all.  If there's no response to them but the reboot step works, you 
+know the kernel was still alive enough to respond, but either there 
+wasn't anything dirty to write out, or more likely, the kernel believed 
+itself to be corrupted, and thus didn't trust its ability to write to 
+permanent storage without risking scribbling on other parts of the device 
+(other files, perhaps even other partitions).  And of course if none of 
+them work and you /do/ have to do a hard reboot, then you know the kernel 
+itself was dead, at least to the point it could no longer respond at all 
+to magic srq.
+
+
+As to the comment... I'm running plasma/kde5 on gentoo, here, but I'm 
+running upstream-kde's live-git version, available via the gentoo/kde 
+overlay.  Some weeks ago, for a period, something wasn't working, and 
+every time I left the system alone long enough to lock the screen and 
+power-down the monitors, when I came back the system would be crashed.  
+With a bit of experimentation, I discovered that it would stay running as 
+long as I didn't let the monitors power off automatically (I could power 
+them down manually, tho), so for awhile, I was running xset -dpmi after 
+every X/plasma restart (I start X/plasma using startx from a text login 
+and don't use a *DM), to keep plasma from powering down the graphics 
+adapter, tho it could and did still run the screenlocker.
+
+Since then, they fixed whatever it was and I can let the power-downs 
+happen normally.  I don't believe the bug made it to a release, tho 
+because I'm following live-git I'm not tracking the releases closely and 
+could be mistaken.
+
+You mentioned arch, which IIRC is pretty close to upstream's release 
+cycle, so it's just possible that if this /did/ hit a release, and you're 
+running a new enough kde/plasma, the problem you're seeing may be related 
+to what I was experiencing.  Tho I doubt it since as I said it was only a 
+short period, and I don't think the defective code made it into a release.
+
+FWIW, tho, I'm running Radeon Turks graphics (hd6670, IIRC) with triple 
+monitor and the native freedomware kernel/mesa/xorg driver, not frglx or 
+whatever the proprietary thing is called.  If you're running Radeon, with 
+the freedomware driver, especially if also running multi-monitor and the 
+absolute latest plasma, you might try either downgrading a version to see 
+if the problem goes away, or doing the xset -dpmi thing I was doing, 
+temporarily.  It's just possible it'll help since your problem seems 
+similarly to be triggering when you're away from the machine, but your 
+problem does seem a bit different than mine (mine was a consistent 
+crash), and I don't believe mine made release code anyway, so it's likely 
+the similarity is just coincidence.
 
 -- 
 Duncan - List replies preferred.   No HTML msgs.

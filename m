@@ -1,26 +1,30 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wm0-f67.google.com ([74.125.82.67]:35328 "EHLO
+Received: from mail-wm0-f67.google.com ([74.125.82.67]:36776 "EHLO
 	mail-wm0-f67.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752342AbcHJWuM (ORCPT
+	with ESMTP id S932129AbcHJWxB (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 10 Aug 2016 18:50:12 -0400
-Received: by mail-wm0-f67.google.com with SMTP id i5so12380036wmg.2
-        for <linux-btrfs@vger.kernel.org>; Wed, 10 Aug 2016 15:50:11 -0700 (PDT)
+	Wed, 10 Aug 2016 18:53:01 -0400
+Received: by mail-wm0-f67.google.com with SMTP id i138so12358041wmf.3
+        for <linux-btrfs@vger.kernel.org>; Wed, 10 Aug 2016 15:53:01 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <CAJCQCtSybRPdoe1FD1bXnqto7ovhrr=N8Zvwkz_4UWO0-0qJTg@mail.gmail.com>
+In-Reply-To: <CAJCQCtS3c5u6hDjHdU92AdQvSECNT99vOMxLiM4tchv4nrwPmA@mail.gmail.com>
 References: <CAGdWbB5k_HmN2b4zzrnYN+ExiqeP_9Eu9mVBCHEtgZNKHfTARA@mail.gmail.com>
- <CAJCQCtSybRPdoe1FD1bXnqto7ovhrr=N8Zvwkz_4UWO0-0qJTg@mail.gmail.com>
+ <pan$d9b53$c31dc60$985cf806$b833643c@cox.net> <CAJCQCtTHH=q9cE-BHDYuDpUASQx4Rnzx_b3VR=v-3s_THf1f4w@mail.gmail.com>
+ <CAGdWbB72DLAkV3EwO-7Sakc4gPHRT=GmU5ftxo0YfR0wjBefNQ@mail.gmail.com> <CAJCQCtS3c5u6hDjHdU92AdQvSECNT99vOMxLiM4tchv4nrwPmA@mail.gmail.com>
 From: Dave T <davestechshop@gmail.com>
-Date: Wed, 10 Aug 2016 18:50:09 -0400
-Message-ID: <CAGdWbB7YCU8RznnN64ub8mdvZgcnWJTBxJVdyg2F=H-B71xyTw@mail.gmail.com>
+Date: Wed, 10 Aug 2016 18:52:59 -0400
+Message-ID: <CAGdWbB7qNFfKy1C3Ldb8aSCxvphZeYcmrXtdiB_ECGXNLZ-K5w@mail.gmail.com>
 Subject: Re: checksum error in metadata node - best way to move root fs to new drive?
 To: Chris Murphy <lists@colorremedies.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Cc: Duncan <1i5t5.duncan@cox.net>, Austin Hemmelgarn <ahferroin7@gmail.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-see below
+Apologies. I have to make a correction to the message I just sent.
+Disregard that message and use this one:
+
 
 On Wed, Aug 10, 2016 at 5:15 PM, Chris Murphy <lists@colorremedies.com> wrote:
 
@@ -34,7 +38,7 @@ First, a small part of the dmesg output:
 [  274.320762] BTRFS info (device dm-0): use lzo compression
 [  274.320764] BTRFS info (device dm-0): disk space caching is enabled
 [  274.320764] BTRFS: has skinny extents
-[  274.322555] BTRFS info (device dm-0): bdev /dev/mapper/sysluks
+[  274.322555] BTRFS info (device dm-0): bdev /dev/mapper/cryptroot
 errs: wr 0, rd 0, flush 0, corrupt 2, gen 0
 [  274.329965] BTRFS: detected SSD devices, enabling SSD mode
 
@@ -80,4 +84,3 @@ bad metadata [292446720000, 292446736384) crossing stripe boundary
 bad metadata [292448948224, 292448964608) crossing stripe boundary
 Error: could not find btree root extent for root 258
 Checking filesystem on /dev/mapper/cryptroot
-UUID:

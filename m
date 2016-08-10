@@ -1,86 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aquinas.techsquare.com ([75.125.237.226]:40525 "EHLO
-	techsquare.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-	with ESMTP id S932155AbcHJSq5 (ORCPT
+Received: from [195.159.176.226] ([195.159.176.226]:36164 "EHLO
+	blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
+	with ESMTP id S965064AbcHJS7C (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 10 Aug 2016 14:46:57 -0400
-To: g6094199@freenet.de, Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-References: <a70af895-6d3e-3b8a-eeb3-71d6609f8154@techsquare.com>
- <CAJCQCtReDSm46LVVZaiMO3oSRgi9EBQnY9+JkH6Fia1SFH4AWg@mail.gmail.com>
- <1c409a92-978d-a37a-75ae-8ff2e84f5674@techsquare.com>
- <cf494b45-6d2e-18a8-b579-17f14b586598@chefmail.de>
-From: Matt McKinnon <matt@techsquare.com>
-Message-ID: <5c6c7531-0dac-8f93-c466-609b4a809b93@techsquare.com>
-Date: Wed, 10 Aug 2016 07:16:43 -0400
-MIME-Version: 1.0
-In-Reply-To: <cf494b45-6d2e-18a8-b579-17f14b586598@chefmail.de>
-Content-Type: text/plain; charset=utf-8; format=flowed
+	Wed, 10 Aug 2016 14:59:02 -0400
+Received: from list by blaine.gmane.org with local (Exim 4.84_2)
+	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+	id 1bXNCi-0007PC-5B
+	for linux-btrfs@vger.kernel.org; Wed, 10 Aug 2016 08:41:28 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
 Subject: Re: BTRFS: error (device sda1) in btrfs_run_delayed_refs:2963:
  errno=-17 Object already exists
+Date: Wed, 10 Aug 2016 06:41:21 +0000 (UTC)
+Message-ID: <pan$c10ae$cb8cb4bc$c1fc453b$eddc13d5@cox.net>
+References: <a70af895-6d3e-3b8a-eeb3-71d6609f8154@techsquare.com>
+	<CAJCQCtReDSm46LVVZaiMO3oSRgi9EBQnY9+JkH6Fia1SFH4AWg@mail.gmail.com>
+	<CAJCQCtSR6S_RQ5eMjQC9qwifEakme58uw11wHcewiDxqNfq_kw@mail.gmail.com>
+	<34532105-4411-2a21-a83d-e48f4311400a@techsquare.com>
+	<CAJCQCtRJhvwS2w1iRTxZbQ0tyfDH6Ser1=DBH6w+2Rq4pguf2A@mail.gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I performed a quick balance which gave me:
+Chris Murphy posted on Tue, 09 Aug 2016 20:25:39 -0600 as excerpted:
 
-[39020.030638] BTRFS info (device sda1): relocating block group 
-25428383236096 flags 1
-[39020.206097] BTRFS warning (device sda1): block group 23113395863552 
-has wrong amount of free space
-[39020.206101] BTRFS warning (device sda1): failed to load free space 
-cache for block group 23113395863552, rebuilding it now
+> 1 size 50.93TiB used 22.67TiB path /dev/sda1
+> 
+> What is the exact nature of this block device?
+> 
+> If getting this back up and running is urgent I suggest inquiring on IRC
+> what the next steps are.
+> 
+> In the meantime I'd get a btrfs-image (which is probably going to be
+> quite large given metadata is 60GiB), if that pukes then see if 'btrfs
+> inspect-internal dump-tree /dev/sda1 > dumptree.log' which may also fail
+> but before it fails might contain something useful. Obviously btrfs
+> check shouldn't crash so that's a bug already.
 
-then a crash dump.
+I'd suggest that at 50+ TB size, 22+ TB used, given btrfs check's known 
+memory usage, the crash may well simply be due to lack of memory.  It's 
+very likely that will require well over the 16 GiB memory that's 
+reasonably common these days, and if there's no swap to fill in the gap...
 
-Remounted with -o clear_cache,nospace_cache and the balance completed. 
-Running a larger balance now.
+There's a low memory mode check under development right now, but it's not 
+complete yet.
 
-Will umount, and remount with default options to see if that works.
+(FWIW my usage is at the other extreme, quarter TB SSDs and partitioned 
+down beyond that, so the largest btrfs is well under 50 GiB usable, tho 
+it's pair-device raid1 so about 50 GiB total.  That's too small to be 
+practical for many, but at least until the low-memory btrfs check or 
+until 32 and 64 GiB RAM becomes common, single filesystems in the double-
+digit TB may arguably be too big to be practical, at least for other than 
+the lucky few with the sort of memory required, as well.)
 
--Matt
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 
-On 08/10/2016 03:09 AM, g6094199@freenet.de wrote:
-> Hi,
->
-> from what i see you have a non finished balance ongoing, since you have
-> system and metadata DUP and single information on disk.
->
-> so you should (re)run a balance for this data.
->
->
-> sash
->
->
-> Am 10.08.2016 um 02:17 schrieb Matt McKinnon:
->> -o usebackuproot worked well.
->>
->> after the file system settled, performing a sync and a clean umount, a
->> normal mount works now as well.
->>
->> Anything I should be doing going forward?
->>
->> Thanks,
->> Matt
->>
->> On 08/09/2016 08:01 PM, Chris Murphy wrote:
->>> On Tue, Aug 9, 2016 at 5:15 PM, Matt McKinnon <matt@techsquare.com>
->>> wrote:
->>>> Hello,
->>>>
->>>> Our server recently crashed and was rebooted.  When it returned our
->>>> BTRFS
->>>> volume is mounting read-only:
->>>
->>> What happens when you try mounting with -o usebackuproot ?
->>>
->>> If that fails, what output do you get for 'btrfs check' (without
->>> --repair)? If you only get some "errors 400, nbytes wrong" then
->>> --repair should fix the problem.
->>>
->>>
->>>
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
->

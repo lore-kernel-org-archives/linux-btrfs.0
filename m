@@ -1,87 +1,99 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cloud1-vm154.de-nserver.de ([178.250.10.56]:39716 "EHLO
-	cloud1-vm154.de-nserver.de" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1752411AbcHJVcT (ORCPT
+Received: from mail-wm0-f65.google.com ([74.125.82.65]:34892 "EHLO
+	mail-wm0-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751070AbcHJWBq (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 10 Aug 2016 17:32:19 -0400
-Subject: Re: memory overflow or undeflow in free space tree / space_info?
-To: Josef Bacik <jbacik@fb.com>, Omar Sandoval <osandov@osandov.com>
-References: <229a1d13-32f1-cd4c-975f-2db6796eb6c7@profihost.ag>
- <20160729191153.GA28505@vader> <20160729191459.GB28505@vader>
- <40a46d57-fe32-e745-9897-8f5c6ca2b33e@fb.com>
- <6c131d33-af2e-61ae-00ed-f65ac35607c2@profihost.ag>
- <265340a5-12d5-f8a0-974f-b0de69b3b243@profihost.ag>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-From: Stefan Priebe - Profihost AG <s.priebe@profihost.ag>
-Message-ID: <5353cc8a-4cdc-165f-2c86-f810148661f1@profihost.ag>
-Date: Wed, 10 Aug 2016 23:31:15 +0200
+	Wed, 10 Aug 2016 18:01:46 -0400
+Received: by mail-wm0-f65.google.com with SMTP id i5so12213172wmg.2
+        for <linux-btrfs@vger.kernel.org>; Wed, 10 Aug 2016 15:01:45 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <265340a5-12d5-f8a0-974f-b0de69b3b243@profihost.ag>
-Content-Type: text/plain; charset=windows-1252
+In-Reply-To: <CAJCQCtTHH=q9cE-BHDYuDpUASQx4Rnzx_b3VR=v-3s_THf1f4w@mail.gmail.com>
+References: <CAGdWbB5k_HmN2b4zzrnYN+ExiqeP_9Eu9mVBCHEtgZNKHfTARA@mail.gmail.com>
+ <pan$d9b53$c31dc60$985cf806$b833643c@cox.net> <CAJCQCtTHH=q9cE-BHDYuDpUASQx4Rnzx_b3VR=v-3s_THf1f4w@mail.gmail.com>
+From: Dave T <davestechshop@gmail.com>
+Date: Wed, 10 Aug 2016 18:01:44 -0400
+Message-ID: <CAGdWbB72DLAkV3EwO-7Sakc4gPHRT=GmU5ftxo0YfR0wjBefNQ@mail.gmail.com>
+Subject: Re: checksum error in metadata node - best way to move root fs to new drive?
+To: Chris Murphy <lists@colorremedies.com>, Duncan <1i5t5.duncan@cox.net>,
+        ahferroin7@gmail.com
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Josef,
+Thanks for all the responses, guys! I really appreciate it. This
+information is very helpful. I will be working through the suggestions
+(e.g., check without repair) for the next hour or so. I'll report back
+when I have something to report.
 
-same again with chris next branch:
+My drive is a Samsung 950 Pro nvme drive, which in most respects is
+treated like an SSD. (the only difference I am aware of is that trim
+isn't needed).
 
-ERROR: error during balancing '/vmbackup/': No space left on device
-There may be more info in syslog - try dmesg | tail
-Dumping filters: flags 0x7, state 0x0, force is off
-  DATA (flags 0x2): balancing, usage=5
-  METADATA (flags 0x2): balancing, usage=5
-  SYSTEM (flags 0x2): balancing, usage=5
+> But until recently dup mode data on single device was impossible, so I
+> doubt you were using that, and while dup mode metadata was the normal
+> default, on ssd that changes to single mode as well.
 
-dmesg:
-[203784.411189] BTRFS info (device dm-0): 114 enospc errors during balance
+Your assumptions are correct: single mode for data and metadata.
 
-uname -r 4.7.0-rc6-29043-g8b8b08c
+Does anyone have any thoughts about using dup mode for metadata on a
+Samsung 950 Pro (or any NVMe drive)?
 
-Greets,
-Stefan
+I will be very disappointed if I cannot use btrfs + dm-crypt. As far
+as I can see, there is no alternative given that I need to use
+snapshots (and LVM, as good as it is, has severe performance penalties
+for its snapshots). I'm required to use crypto. I cannot risk doing
+without snapshots. Therefore, btrfs + dm-crypt seem like my only
+viable solution. Plus it is my preferred solution. I like both tools.
 
-Am 08.08.2016 um 08:17 schrieb Stefan Priebe - Profihost AG:
-> Am 04.08.2016 um 13:40 schrieb Stefan Priebe - Profihost AG:
->> Am 29.07.2016 um 23:03 schrieb Josef Bacik:
->>> On 07/29/2016 03:14 PM, Omar Sandoval wrote:
->>>> On Fri, Jul 29, 2016 at 12:11:53PM -0700, Omar Sandoval wrote:
->>>>> On Fri, Jul 29, 2016 at 08:40:26PM +0200, Stefan Priebe - Profihost
->>>>> AG wrote:
->>>>>> Dear list,
->>>>>>
->>>>>> i'm seeing btrfs no space messages frequently on big filesystems (>
->>>>>> 30TB).
->>>>>>
->>>>>> In all cases i'm getting a trace like this one a space_info warning.
->>>>>> (since commit [1]). Could someone please be so kind and help me
->>>>>> debugging / fixing this bug? I'm using space_cache=v2 on all those
->>>>>> systems.
->>>>>
->>>>> Hm, so I think this indicates a bug in space accounting somewhere else
->>>>> rather than the free space tree itself. I haven't debugged one of these
->>>>> issues before, I'll see if I can reproduce it. Cc'ing Josef, too.
->>>>
->>>> I should've asked, what sort of filesystem activity triggers this?
->>>>
->>>
->>> Chris just fixed this I think, try his next branch from his git tree
->>>
->>> git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git
->>
->> Thanks now running a 4.4 with those patches backported. If that still
->> shows an error i will try that vanilla tree.
-> 
-> OK this didn't work. I'll start / try using the linux-btrfs next branch
-> and look if this helps.
-> 
-> Greets,
-> Stefan
-> 
->>
->> Thanks!
->>
->> Stefan
->>
->>> and see if it still happens.  Thanks,
->>>
->>> Josef
+If all goes well, we are planning to implement a production file
+server for our office with dm-crypt + btrfs (and a lot fo spinning
+disks).
+
+In the office we currently have another system identical to mine
+running the same drive with dm-crypt + btrfs, the same operating
+system, the same nvidia GPU and properitary driver and it is running
+fine. One difference is that it is overclocked substantially (mine
+isn't). I would have expected it would give a problem before mine
+would. But it seems to be rock solid. I just ran btrfs scrub on it and
+it finished in a few seconds with no errors.
+
+On my computer I have run two extensive memory tests (8 cpu cores in
+parallel, all tests). The current test has been running for 14 hrs
+with no errors. (I think that 8 cores in parallel make this equivalent
+to a much longer test with the default single cpu settings.)
+Therefore, I do not beieve this issue is caused by RAM.
+
+I'm hoping there is no configuration error or other mistake I made in
+setting these systems up that would lead to the problems I'm
+experiencing.
+
+BTW, I was able to copy all the files to another drive with no
+problem. I used "cp -a" to copy, then I ran "rsync -a" twiice to make
+sure nothing was missed. My guess is that I'll be able to copy this
+right back onto the root filesystem after I resolve whatever the
+problem is and my operating system will be back to the same state it
+was in prior to this problem.
+
+OK, I'm off to try btrfs check without --repair... thanks again!
+
+For reference:
+
+btrfs-progs v4.6.1
+Linux 4.6.4-1-ARCH #1 SMP PREEMPT Mon Jul 11 19:12:32 CEST 2016 x86_64 GNU/Linux
+
+
+
+On Wed, Aug 10, 2016 at 5:21 PM, Chris Murphy <lists@colorremedies.com> wrote:
+> I'm using LUKS, aes xts-plain64, on six devices. One is using mixed-bg
+> single device. One is dsingle mdup. And then 2x2 mraid1 draid1. I've
+> had zero problems. The two computers these run on do have aesni
+> support. Aging wise, they're all at least a  year old. But I've been
+> using Btrfs on LUKS for much longer than that.
+>
+>
+> Chris Murphy
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

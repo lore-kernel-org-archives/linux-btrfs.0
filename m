@@ -1,60 +1,77 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [195.159.176.226] ([195.159.176.226]:58648 "EHLO
-	blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
-	with ESMTP id S1750916AbcHKIUs (ORCPT
+Received: from mail-qt0-f174.google.com ([209.85.216.174]:34200 "EHLO
+	mail-qt0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932174AbcHKOMF (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 11 Aug 2016 04:20:48 -0400
-Received: from list by blaine.gmane.org with local (Exim 4.84_2)
-	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1bXlEM-0001dU-4D
-	for linux-btrfs@vger.kernel.org; Thu, 11 Aug 2016 10:20:46 +0200
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: checksum error in metadata node - best way to move root fs to
- new drive?
-Date: Thu, 11 Aug 2016 08:20:38 +0000 (UTC)
-Message-ID: <pan$89fac$51ff83ce$ca9a7014$9d3cfce9@cox.net>
+	Thu, 11 Aug 2016 10:12:05 -0400
+Received: by mail-qt0-f174.google.com with SMTP id u25so2556879qtb.1
+        for <linux-btrfs@vger.kernel.org>; Thu, 11 Aug 2016 07:12:05 -0700 (PDT)
+MIME-Version: 1.0
+In-Reply-To: <CAGdWbB7qNFfKy1C3Ldb8aSCxvphZeYcmrXtdiB_ECGXNLZ-K5w@mail.gmail.com>
 References: <CAGdWbB5k_HmN2b4zzrnYN+ExiqeP_9Eu9mVBCHEtgZNKHfTARA@mail.gmail.com>
-	<pan$d9b53$c31dc60$985cf806$b833643c@cox.net>
-	<CAJCQCtTHH=q9cE-BHDYuDpUASQx4Rnzx_b3VR=v-3s_THf1f4w@mail.gmail.com>
-	<CAGdWbB72DLAkV3EwO-7Sakc4gPHRT=GmU5ftxo0YfR0wjBefNQ@mail.gmail.com>
-	<pan$631e4$8ace778e$d2bf1967$d5b4e8cc@cox.net>
-	<CA+WRLO8MoW9kEy50u_QMvoB2Lejcjp49BjHqEjtWjZZOPtfetg@mail.gmail.com>
-Mime-Version: 1.0
+ <pan$d9b53$c31dc60$985cf806$b833643c@cox.net> <CAJCQCtTHH=q9cE-BHDYuDpUASQx4Rnzx_b3VR=v-3s_THf1f4w@mail.gmail.com>
+ <CAGdWbB72DLAkV3EwO-7Sakc4gPHRT=GmU5ftxo0YfR0wjBefNQ@mail.gmail.com>
+ <CAJCQCtS3c5u6hDjHdU92AdQvSECNT99vOMxLiM4tchv4nrwPmA@mail.gmail.com> <CAGdWbB7qNFfKy1C3Ldb8aSCxvphZeYcmrXtdiB_ECGXNLZ-K5w@mail.gmail.com>
+From: Nicholas D Steeves <nsteeves@gmail.com>
+Date: Thu, 11 Aug 2016 10:12:04 -0400
+Message-ID: <CAD=QJKjZP3V3HE_iXYcLJvq65mXKiXp_aYgZuoHmQFd7mJ7j0Q@mail.gmail.com>
+Subject: Re: checksum error in metadata node - best way to move root fs to new drive?
+To: Dave T <davestechshop@gmail.com>
+Cc: Chris Murphy <lists@colorremedies.com>, Duncan <1i5t5.duncan@cox.net>,
+        Austin Hemmelgarn <ahferroin7@gmail.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Gareth Pye posted on Thu, 11 Aug 2016 15:06:48 +1000 as excerpted:
+Why is the combination of dm-crypt|luks+btrfs+compress=lzo as
+overlooked as a potential cause?  Other than the "raid56 ate my data"
+I've noticed a bunch of "luks+btrfs+compress=lzo ate my data" threads.
 
-> Is there some simple muddling of meta data that could be done to force
-> dup meta data on deduping SSDs? Like a simple 'random' byte repeated
-> often enough it would defeat any sane dedup? I know it would waste data
-> but clearly that is considered worth it with dup metadata (what is the
-> difference between 50% metadata efficiency and 45%?)
+On 10 August 2016 at 15:46, Austin S. Hemmelgarn <ahferroin7@gmail.com> wrote:
+>
+> As far as dm-crypt goes, it looks like BTRFS is stable on top in the
+> configuration I use (aex-xts-plain64 with a long key using plain dm-crypt
+> instead of LUKS).  I have heard rumors of issues when using LUKS without
+> hardware acceleration, but I've never seen any conclusive proof, and what
+> little I've heard sounds more like it was just race conditions elsewhere
+> causing the issues.
+>
 
-Well, the FTLs are mostly proprietary, AFAIK, so it's probably hard to 
-prove the "force", but given the 512-byte sector standard (some are a 
-multiple of that these days but 512 should be the minimum), in theory one 
-random byte out of every 512 should do it... unless the compression these 
-deduping FTLs generally run as well catches that difference and 
-compresses it out to a different location where it can be compactly 
-stored, allowing multiple copies of the same 512-byte sector to be stored 
-in a single sector, so long as they only had a single byte or two 
-different.
+Austin, I'm very curious if they were also using compress=lzo, because
+my informal hypothesis is that the encryption+btrfs+compress=lzo
+combination precipitates these issues.  Maybe the combo is more likely
+to trigger these race conditions?  It might also be neat to mine the
+archive to see these seem to be more likely to occur with fast SSDs vs
+slow rotational disks.  Do you use compress=lzo?
 
-So it could probably be done, but given that the deduping and compression 
-features of these ssds are listed as just that, features, and that people 
-buy them for that, it may be that it's better to simply leave well enough 
-alone.  Folks who want dup metadata can set it, and if they haven't 
-bought one of these ssds with dedup as a feature, they can be reasonably 
-sure it'll be set.  And people who don't care will simply get the 
-defaults and can live with them the same way that people that don't care 
-generally live with defaults that may or may not be the absolute best 
-case for them, but are generally at least not horrible.
+On 10 August 2016 at 18:52, Dave T <davestechshop@gmail.com> wrote:
+> On Wed, Aug 10, 2016 at 5:15 PM, Chris Murphy <lists@colorremedies.com> wrote:
+>
+>> 1. Report 'btrfs check' without --repair, let's see what it complains
+>> about and if it might be able to plausibly fix this.
+>
+> First, a small part of the dmesg output:
+>
+> [  172.772283] Btrfs loaded
+> [  172.772632] BTRFS: device label top_level devid 1 transid 103495 /dev/dm-0
+> [  274.320762] BTRFS info (device dm-0): use lzo compression
 
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+Compress=lzo confirmed.  Corruption occurred on an SSD.
 
+On 10 August 2016 at 17:21, Chris Murphy <lists@colorremedies.com> wrote:
+> I'm using LUKS, aes xts-plain64, on six devices. One is using mixed-bg
+> single device. One is dsingle mdup. And then 2x2 mraid1 draid1. I've
+> had zero problems. The two computers these run on do have aesni
+> support. Aging wise, they're all at least a  year old. But I've been
+> using Btrfs on LUKS for much longer than that.
+>
+
+Chris, do you use compress=lzo?  SSDs or rotational disks?
+
+If a bunch of people are using this combo without issue, I'll drop the
+informal hypothesis as "just a suspicion informed by sloppy pattern
+recognition" ;-)
+
+Thank you!
+Nicholas

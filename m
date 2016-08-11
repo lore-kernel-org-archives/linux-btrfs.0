@@ -1,77 +1,69 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qt0-f174.google.com ([209.85.216.174]:34200 "EHLO
-	mail-qt0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932174AbcHKOMF (ORCPT
+Received: from mail-io0-f173.google.com ([209.85.223.173]:32817 "EHLO
+	mail-io0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751539AbcHKOrA (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 11 Aug 2016 10:12:05 -0400
-Received: by mail-qt0-f174.google.com with SMTP id u25so2556879qtb.1
-        for <linux-btrfs@vger.kernel.org>; Thu, 11 Aug 2016 07:12:05 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <CAGdWbB7qNFfKy1C3Ldb8aSCxvphZeYcmrXtdiB_ECGXNLZ-K5w@mail.gmail.com>
+	Thu, 11 Aug 2016 10:47:00 -0400
+Received: by mail-io0-f173.google.com with SMTP id 38so8161780iol.0
+        for <linux-btrfs@vger.kernel.org>; Thu, 11 Aug 2016 07:46:07 -0700 (PDT)
+Subject: Re: checksum error in metadata node - best way to move root fs to new
+ drive?
+To: Nicholas D Steeves <nsteeves@gmail.com>, Dave T <davestechshop@gmail.com>
 References: <CAGdWbB5k_HmN2b4zzrnYN+ExiqeP_9Eu9mVBCHEtgZNKHfTARA@mail.gmail.com>
- <pan$d9b53$c31dc60$985cf806$b833643c@cox.net> <CAJCQCtTHH=q9cE-BHDYuDpUASQx4Rnzx_b3VR=v-3s_THf1f4w@mail.gmail.com>
+ <pan$d9b53$c31dc60$985cf806$b833643c@cox.net>
+ <CAJCQCtTHH=q9cE-BHDYuDpUASQx4Rnzx_b3VR=v-3s_THf1f4w@mail.gmail.com>
  <CAGdWbB72DLAkV3EwO-7Sakc4gPHRT=GmU5ftxo0YfR0wjBefNQ@mail.gmail.com>
- <CAJCQCtS3c5u6hDjHdU92AdQvSECNT99vOMxLiM4tchv4nrwPmA@mail.gmail.com> <CAGdWbB7qNFfKy1C3Ldb8aSCxvphZeYcmrXtdiB_ECGXNLZ-K5w@mail.gmail.com>
-From: Nicholas D Steeves <nsteeves@gmail.com>
-Date: Thu, 11 Aug 2016 10:12:04 -0400
-Message-ID: <CAD=QJKjZP3V3HE_iXYcLJvq65mXKiXp_aYgZuoHmQFd7mJ7j0Q@mail.gmail.com>
-Subject: Re: checksum error in metadata node - best way to move root fs to new drive?
-To: Dave T <davestechshop@gmail.com>
+ <CAJCQCtS3c5u6hDjHdU92AdQvSECNT99vOMxLiM4tchv4nrwPmA@mail.gmail.com>
+ <CAGdWbB7qNFfKy1C3Ldb8aSCxvphZeYcmrXtdiB_ECGXNLZ-K5w@mail.gmail.com>
+ <CAD=QJKjZP3V3HE_iXYcLJvq65mXKiXp_aYgZuoHmQFd7mJ7j0Q@mail.gmail.com>
 Cc: Chris Murphy <lists@colorremedies.com>, Duncan <1i5t5.duncan@cox.net>,
-        Austin Hemmelgarn <ahferroin7@gmail.com>,
         Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Message-ID: <010942d8-aeca-f62f-2805-9d87c6ea802a@gmail.com>
+Date: Thu, 11 Aug 2016 10:45:45 -0400
+MIME-Version: 1.0
+In-Reply-To: <CAD=QJKjZP3V3HE_iXYcLJvq65mXKiXp_aYgZuoHmQFd7mJ7j0Q@mail.gmail.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Why is the combination of dm-crypt|luks+btrfs+compress=lzo as
-overlooked as a potential cause?  Other than the "raid56 ate my data"
-I've noticed a bunch of "luks+btrfs+compress=lzo ate my data" threads.
-
-On 10 August 2016 at 15:46, Austin S. Hemmelgarn <ahferroin7@gmail.com> wrote:
+On 2016-08-11 10:12, Nicholas D Steeves wrote:
+> Why is the combination of dm-crypt|luks+btrfs+compress=lzo as
+> overlooked as a potential cause?  Other than the "raid56 ate my data"
+> I've noticed a bunch of "luks+btrfs+compress=lzo ate my data" threads.
+I haven't personally seen one of those in at least a few months.  In 
+general, BTRFS is moving fast enough that reports older than a kernel 
+release cycle are generally out of date unless something confirms 
+otherwise, but I do distinctly recall such issues being commonly 
+reported in the past.
 >
-> As far as dm-crypt goes, it looks like BTRFS is stable on top in the
-> configuration I use (aex-xts-plain64 with a long key using plain dm-crypt
-> instead of LUKS).  I have heard rumors of issues when using LUKS without
-> hardware acceleration, but I've never seen any conclusive proof, and what
-> little I've heard sounds more like it was just race conditions elsewhere
-> causing the issues.
+> On 10 August 2016 at 15:46, Austin S. Hemmelgarn <ahferroin7@gmail.com> wrote:
+>>
+>> As far as dm-crypt goes, it looks like BTRFS is stable on top in the
+>> configuration I use (aex-xts-plain64 with a long key using plain dm-crypt
+>> instead of LUKS).  I have heard rumors of issues when using LUKS without
+>> hardware acceleration, but I've never seen any conclusive proof, and what
+>> little I've heard sounds more like it was just race conditions elsewhere
+>> causing the issues.
+>>
 >
+> Austin, I'm very curious if they were also using compress=lzo, because
+> my informal hypothesis is that the encryption+btrfs+compress=lzo
+> combination precipitates these issues.  Maybe the combo is more likely
+> to trigger these race conditions?  It might also be neat to mine the
+> archive to see these seem to be more likely to occur with fast SSDs vs
+> slow rotational disks.  Do you use compress=lzo?
+In my case, I've tested on both SSD's (both cheap low-end ones and good 
+Intel and Crucial ones) and traditional hard drives, with and without 
+compression (both zlib and lzo), and with a couple of different 
+encryption algorithms (AES, Blowfish, and Threefish).  In my case It's 
+only on plain dm-crypt, not LUKS, but I doubt that particular point will 
+make much difference.  The last test I did was when the merge window for 
+4.6 closed run as part of the regular regression testing I do, and I'll 
+be doing another one in the near future.  I think the last time I saw 
+any issues with this in my testing was prior to 4.0, but I don't 
+remember for sure (most of what I care about is comparison to the 
+previous version, so i don't keep much in the way of records of specific 
+things).
 
-Austin, I'm very curious if they were also using compress=lzo, because
-my informal hypothesis is that the encryption+btrfs+compress=lzo
-combination precipitates these issues.  Maybe the combo is more likely
-to trigger these race conditions?  It might also be neat to mine the
-archive to see these seem to be more likely to occur with fast SSDs vs
-slow rotational disks.  Do you use compress=lzo?
 
-On 10 August 2016 at 18:52, Dave T <davestechshop@gmail.com> wrote:
-> On Wed, Aug 10, 2016 at 5:15 PM, Chris Murphy <lists@colorremedies.com> wrote:
->
->> 1. Report 'btrfs check' without --repair, let's see what it complains
->> about and if it might be able to plausibly fix this.
->
-> First, a small part of the dmesg output:
->
-> [  172.772283] Btrfs loaded
-> [  172.772632] BTRFS: device label top_level devid 1 transid 103495 /dev/dm-0
-> [  274.320762] BTRFS info (device dm-0): use lzo compression
-
-Compress=lzo confirmed.  Corruption occurred on an SSD.
-
-On 10 August 2016 at 17:21, Chris Murphy <lists@colorremedies.com> wrote:
-> I'm using LUKS, aes xts-plain64, on six devices. One is using mixed-bg
-> single device. One is dsingle mdup. And then 2x2 mraid1 draid1. I've
-> had zero problems. The two computers these run on do have aesni
-> support. Aging wise, they're all at least a  year old. But I've been
-> using Btrfs on LUKS for much longer than that.
->
-
-Chris, do you use compress=lzo?  SSDs or rotational disks?
-
-If a bunch of people are using this combo without issue, I'll drop the
-informal hypothesis as "just a suspicion informed by sloppy pattern
-recognition" ;-)
-
-Thank you!
-Nicholas

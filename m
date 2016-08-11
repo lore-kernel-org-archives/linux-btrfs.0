@@ -1,52 +1,109 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qt0-f177.google.com ([209.85.216.177]:36667 "EHLO
-	mail-qt0-f177.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751356AbcHKRcE (ORCPT
+Received: from [195.159.176.226] ([195.159.176.226]:45475 "EHLO
+	blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
+	with ESMTP id S1751143AbcHKTHP (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 11 Aug 2016 13:32:04 -0400
-Received: by mail-qt0-f177.google.com with SMTP id 52so1220562qtq.3
-        for <linux-btrfs@vger.kernel.org>; Thu, 11 Aug 2016 10:32:04 -0700 (PDT)
-MIME-Version: 1.0
-From: Rakesh Sankeshi <rakesh.sankeshi@gmail.com>
-Date: Thu, 11 Aug 2016 10:32:03 -0700
-Message-ID: <CAGj_d3D2OZt2nY622rp9NzxgAfKZ2iN1kLSQ2Ras-0fM+1+-ig@mail.gmail.com>
-Subject: btrfs quota issues
+	Thu, 11 Aug 2016 15:07:15 -0400
+Received: from list by blaine.gmane.org with local (Exim 4.84_2)
+	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+	id 1bXvJw-0005Nl-PR
+	for linux-btrfs@vger.kernel.org; Thu, 11 Aug 2016 21:07:12 +0200
 To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: checksum error in metadata node - best way to move root fs to
+ new drive?
+Date: Thu, 11 Aug 2016 19:07:07 +0000 (UTC)
+Message-ID: <pan$912d3$2d5e3dbf$b96ae0e6$53dad290@cox.net>
+References: <CAGdWbB5k_HmN2b4zzrnYN+ExiqeP_9Eu9mVBCHEtgZNKHfTARA@mail.gmail.com>
+	<pan$d9b53$c31dc60$985cf806$b833643c@cox.net>
+	<CAJCQCtTHH=q9cE-BHDYuDpUASQx4Rnzx_b3VR=v-3s_THf1f4w@mail.gmail.com>
+	<CAGdWbB72DLAkV3EwO-7Sakc4gPHRT=GmU5ftxo0YfR0wjBefNQ@mail.gmail.com>
+	<CAJCQCtS3c5u6hDjHdU92AdQvSECNT99vOMxLiM4tchv4nrwPmA@mail.gmail.com>
+	<CAGdWbB7qNFfKy1C3Ldb8aSCxvphZeYcmrXtdiB_ECGXNLZ-K5w@mail.gmail.com>
+	<CAD=QJKjZP3V3HE_iXYcLJvq65mXKiXp_aYgZuoHmQFd7mJ7j0Q@mail.gmail.com>
+Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I set 200GB limit to one user and 100GB to another user.
+Nicholas D Steeves posted on Thu, 11 Aug 2016 10:12:04 -0400 as excerpted:
 
-as soon as I reached 139GB and 53GB each, hitting the quota errors.
-anyway to workaround quota functionality on btrfs LZO compressed
-filesystem?
+> Why is the combination of dm-crypt|luks+btrfs+compress=lzo as overlooked
+> as a potential cause?  Other than the "raid56 ate my data" I've noticed
+> a bunch of "luks+btrfs+compress=lzo ate my data" threads.
 
+My usage is btrfs on physical device (well, on GPT partitions on the 
+physical device), no encryption, and it's mostly raid1 on paired devices, 
+but there's definitely one kink that compress=lzo (and I believe 
+compression in general, including gzip) adds, and it's possible running 
+it on encryption compounds the issue.
 
+The compression-related problem is this:  Btrfs is considerably less 
+tolerant of checksum-related errors on btrfs-compressed data, and while 
+on uncompressed btrfs raid1 it will recover from the second copy where 
+possible and continue, on files that btrfs has compressed, if there are 
+enough checksum errors, for example in a hard-shutdown situation where 
+one of the raid1 devices had the updates written but it crashed while 
+writing the other, btrfs will crash instead of simply falling back to the 
+good copy.
 
-4.7.0-040700-generic #201608021801 SMP
+This is known to be specific to compression; uncompressed btrfs recover 
+as intended from the second copy.  And it's known to occur only when 
+there's too many checksum errors in a burst -- the filesystem apparently 
+deals correctly with just a few at a time.
 
-btrfs-progs v4.7
+This problem has been ongoing for years -- I thought it was just the way 
+btrfs worked until someone mentioned that it didn't behave that way 
+without compression -- and it reasonably regularly prevents a smooth 
+reboot here after a crash.
 
+In my case I have the system btrfs running read-only by default, so it's 
+not damaged.  However, /home and /var/log are of course mounted writable, 
+and that's where the problems come in.  If I start in (I believe) rescue 
+mode (it's that or emergency, the other won't do the mounts and won't let 
+me do them manually either, as it thinks a dependency is missing), 
+systemd will do the mounts but not start the (permanent) logging or the 
+services that need to routinely write stuff that I have symlinked into 
+/home/var/whatever so they can write with a read-only root and system 
+partition, I can then scrub the mounted home and log partitions to fix 
+the checksum errors due to one device having the update while the other 
+doesn't, and continue booting normally.  However, if I try directly 
+booting normally, the system invariably crashes due to too many checksum 
+errors, even when it /should/ simply read the other copy, which is fine 
+as demonstrated by the fact that scrub can use it to fix the errors on 
+the device triggering the checksum errors.
 
-Label: none  uuid: 66a78faf-2052-4864-8a52-c5aec7a56ab8
+This continued to happen with 4.6.  I'm on 4.7 now but am not sure I've 
+crashed with it and thus can't say for sure whether the problem is fixed 
+there.  However, I doubt it, as the problem has been there apparently 
+since the compression and raid1 features were introduced, and I didn't 
+see anything mentioning a fix for the issue in the patches going by on 
+the list.
 
-Total devices 2 FS bytes used 150.62GiB
+The problem is most obvious and reproducible in btrfs raid1 mode, since 
+there, one device /can/ be behind the other, and scrub /can/ be 
+demonstrated to fix it so it's obviously a checksum issue, but I'd 
+imagine if enough checksum mismatches happen on a single device in single 
+mode, it would crash as well, and of course then there's no second copy 
+for scrub to fix the bad copy from, so it would simply show up as a btrfs 
+that can mount but with significant corruption issues that will crash the 
+system if an attempt to read the affected blocks reads too many at a time.
 
-devid    1 size 1.00TiB used 78.01GiB path /dev/xvdc
+And to whatever possible extent an encryption layer between the physical 
+device and btrfs results in possible additional corruption in the event 
+of a crash or hard shutdown, it could easily compound an already bad 
+situation.
 
-devid    2 size 1.00TiB used 78.01GiB path /dev/xvde
+Meanwhile, /if/ that does turn out to be the root issue here, then 
+finally fixing the btrfs compression related problem where a large burst 
+of checksum failures crashes the system, even when there provably exists 
+a second valid copy, but where this only happens with compression, should 
+go quite far in stabilizing btrfs on encrypted underlayers.
 
+I know I certainly wouldn't object to the problem being fixed. =:^)
 
-Data, RAID0: total=150.00GiB, used=149.12GiB
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 
-System, RAID1: total=8.00MiB, used=16.00KiB
-
-Metadata, RAID1: total=3.00GiB, used=1.49GiB
-
-GlobalReserve, single: total=512.00MiB, used=0.00B
-
-
-Filesystem      Size  Used Avail Use% Mounted on
-
-/dev/xvdc       2.0T  153G  1.9T   8% /test_lzo

@@ -1,87 +1,51 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wm0-f65.google.com ([74.125.82.65]:33374 "EHLO
-	mail-wm0-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750888AbcHKUXr (ORCPT
+Received: from mail-oi0-f48.google.com ([209.85.218.48]:35705 "EHLO
+	mail-oi0-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932209AbcHKUdK (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 11 Aug 2016 16:23:47 -0400
-Received: by mail-wm0-f65.google.com with SMTP id o80so1354193wme.0
-        for <linux-btrfs@vger.kernel.org>; Thu, 11 Aug 2016 13:23:46 -0700 (PDT)
+	Thu, 11 Aug 2016 16:33:10 -0400
+Received: by mail-oi0-f48.google.com with SMTP id 4so9693849oih.2
+        for <linux-btrfs@vger.kernel.org>; Thu, 11 Aug 2016 13:33:10 -0700 (PDT)
 MIME-Version: 1.0
-From: Dave T <davestechshop@gmail.com>
-Date: Thu, 11 Aug 2016 16:23:45 -0400
-Message-ID: <CAGdWbB5LX5KprZYQeUiyedoaN=ggPKesw9iXqFBWTuRKFn9cZQ@mail.gmail.com>
+In-Reply-To: <CAD=QJKjZP3V3HE_iXYcLJvq65mXKiXp_aYgZuoHmQFd7mJ7j0Q@mail.gmail.com>
+References: <CAGdWbB5k_HmN2b4zzrnYN+ExiqeP_9Eu9mVBCHEtgZNKHfTARA@mail.gmail.com>
+ <pan$d9b53$c31dc60$985cf806$b833643c@cox.net> <CAJCQCtTHH=q9cE-BHDYuDpUASQx4Rnzx_b3VR=v-3s_THf1f4w@mail.gmail.com>
+ <CAGdWbB72DLAkV3EwO-7Sakc4gPHRT=GmU5ftxo0YfR0wjBefNQ@mail.gmail.com>
+ <CAJCQCtS3c5u6hDjHdU92AdQvSECNT99vOMxLiM4tchv4nrwPmA@mail.gmail.com>
+ <CAGdWbB7qNFfKy1C3Ldb8aSCxvphZeYcmrXtdiB_ECGXNLZ-K5w@mail.gmail.com> <CAD=QJKjZP3V3HE_iXYcLJvq65mXKiXp_aYgZuoHmQFd7mJ7j0Q@mail.gmail.com>
+From: Chris Murphy <lists@colorremedies.com>
+Date: Thu, 11 Aug 2016 14:33:08 -0600
+Message-ID: <CAJCQCtTF-YcDW8QzNFw4db3XyVWb3urvQ8VaAMbRUbhBy6k1QQ@mail.gmail.com>
 Subject: Re: checksum error in metadata node - best way to move root fs to new drive?
-To: Duncan <1i5t5.duncan@cox.net>
-Cc: Nicholas D Steeves <nsteeves@gmail.com>,
-        Chris Murphy <lists@colorremedies.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>,
-        "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+To: Nicholas D Steeves <nsteeves@gmail.com>
+Cc: Dave T <davestechshop@gmail.com>, Chris Murphy <lists@colorremedies.com>,
+        Duncan <1i5t5.duncan@cox.net>,
+        Austin Hemmelgarn <ahferroin7@gmail.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-What I have gathered so far is the following:
+On Thu, Aug 11, 2016 at 8:12 AM, Nicholas D Steeves <nsteeves@gmail.com> wrote:
 
-1. my RAM is not faulty and I feel comfortable ruling out a memory
-error as having anything to do with the reported problem.
+>
+> Chris, do you use compress=lzo?  SSDs or rotational disks?
 
-2. my storage device does not seem to be faulty. I have not figured
-out how to do more definitive testing, but smartctl reports it as
-healthy.
+No compression, SSD and HDD. The stuff I care about is on dmcrypt
+(LUKS) for some time. Stuff I sorta care about on plain partitions.
+Stuff I don't care much about are either on LVM LV's (usually thinp),
+or qcow2.
 
-3. this problem first happened on a normally running system in light
-use. It had not recently crashed. But the root fs went read-only for
-an unknown reason.
+I have used compression for periods measured in months not years, both
+zlib and lzo, on both SSD and HDD, to no ill effect. But it's true
+some of the more abrupt and worse damaged file systems did use
+compress=lzo. Since lzo is faster and only a bit less better
+compression than zlib, it may be more people choose lzo and that's why
+it turns out if there's a problem with compression it happens to be
+lzo, coincidence rather than causation. I'm not even sure there's
+enough information to have correlation.
 
-4. the aftermath of the initial problem may have been exacerbated by
-hard resetting the system, but that's only a guess
 
-> The compression-related problem is this:  Btrfs is considerably less tolerant of checksum-related errors on btrfs-compressed data
 
-I'm an unsophisticated user. The argument in support of this statement
-sounds convincing to me. Therefore, I think I should discontinue using
-compression. Anyone disagree?
-
-Is there anything else I should change? (Do I need to provide
-additional information?)
-
-What can I do to find out more about what caused the initial problem.
-I have heard memory errors mentioned, but that's apparently not the
-case here. I have heard crash recovery mentioned, but that isn't how
-my problem initially happened.
-
-I also have a few general questions:
-
-1. Can one discontinue using the compress mount option if it has been
-used previously? What happens to existing data if the compress mount
-option is 1) added when it wasn't used before, or 2) dropped when it
-had been used.
-
-2. I understand that the compress option generally improves btrfs
-performance (via Phoronix article I read in the past; I don't find the
-link). Since encryption has some characteristics in common with
-compression, would one expect any decrease in performance from
-dropping compression when using btrfs on dm-crypt? (For more context,
-with an i7 6700K which has aes-ni, CPU performance should not be a
-bottleneck on my computer.)
-
-3. How do I find out if it is appropriate to use dup metadata on a
-Samsung 950 Pro NVMe drive? I don't see deduplication mentioned in the
-drive's datasheet:
-http://www.samsung.com/semiconductor/minisite/ssd/downloads/document/Samsung_SSD_950_PRO_Data_Sheet_Rev_1_2.pdf
-
-4. Given that my drive is not reporting problems, does it seem
-reasonable to re-use this drive after the errors I reported? If so,
-how should I do that? Can I simply make a new btrfs filesystem and
-copy my data back? Should I start at a lower level and re-do the
-dm-crypt layer?
-
-5. Would most of you guys use btrfs + dm-crypt on a production file
-server (with spinning disks in JBOD configuration -- i.e., no RAID).
-In this situation, the data is very important, of course. My past
-experience indicated that RAID only improves uptime, which is not so
-critical in our environment. Our main criteria is that we should never
-ever have data loss. As far as I understand it, we do have to use
-encryption.
-
-Thanks for the discussion so far. It's very educational for me.
+-- 
+Chris Murphy

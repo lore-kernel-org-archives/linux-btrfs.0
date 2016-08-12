@@ -1,34 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from trent.utfs.org ([94.185.90.103]:40110 "EHLO trent.utfs.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751356AbcHLGQE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 12 Aug 2016 02:16:04 -0400
-Date: Thu, 11 Aug 2016 23:15:49 -0700 (PDT)
-From: Christian Kujau <lists@nerdbynature.de>
-To: Russell Coker <russell@coker.com.au>
-cc: Ivan Sizov <sivan606@gmail.com>, Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Subject: Re: Strange behavior after "rm -rf //"
-In-Reply-To: <A0E51DF2-D230-4847-A541-581A8A9C36DB@coker.com.au>
-Message-ID: <alpine.DEB.2.20.14.1608112315440.8131@trent.utfs.org>
-References: <CAMG9ccwK93opLn=qOcceDjExwDHHRaxO=juvcXz4TuWKt_qXeg@mail.gmail.com> <alpine.DEB.2.20.14.1608091420150.8131@trent.utfs.org> <A0E51DF2-D230-4847-A541-581A8A9C36DB@coker.com.au>
+Received: from tartarus.angband.pl ([89.206.35.136]:45461 "EHLO
+	tartarus.angband.pl" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751148AbcHLIqr (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 12 Aug 2016 04:46:47 -0400
+Date: Fri, 12 Aug 2016 10:14:26 +0200
+From: Adam Borowski <kilobyte@angband.pl>
+To: Dave T <davestechshop@gmail.com>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Subject: Re: checksum error in metadata node - best way to move root fs to
+ new drive?
+Message-ID: <20160812081426.GA27746@angband.pl>
+References: <CAGdWbB5LX5KprZYQeUiyedoaN=ggPKesw9iXqFBWTuRKFn9cZQ@mail.gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <CAGdWbB5LX5KprZYQeUiyedoaN=ggPKesw9iXqFBWTuRKFn9cZQ@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, 12 Aug 2016, Russell Coker wrote:
-> There are a variety of ways of giving the same result that rm
-> doesn't reject. "/*" Wasn't caught last time I checked. See the above 
-> URL if you want to test out various rm operations as root. ;)
+On Thu, Aug 11, 2016 at 04:23:45PM -0400, Dave T wrote:
+> 1. Can one discontinue using the compress mount option if it has been
+> used previously?
 
-Oh, yes - "rm -r /*" would work, even with a current coreutils version. 
-But since the OP stated "rm -rf //" I was curious about the userspace
-part on that.
+The mount option applies only to newly written blocks, and even then only to
+files that don't say otherwise (via chattr +c or +C, btrfs property, etc).
+You can change it on the fly (mount -o remount,...), etc.
 
-Thanks for the link to the SELinux playground, nice setup!
+> What happens to existing data if the compress mount option is 1) added
+> when it wasn't used before, or 2) dropped when it had been used.
 
-Christian.
+That data stays compressed or uncompressed, as when it was written.  You can
+defrag them to change that; balance moves extents without changing their
+compression.
+
+> 2. I understand that the compress option generally improves btrfs
+> performance (via Phoronix article I read in the past; I don't find the
+> link). Since encryption has some characteristics in common with
+> compression, would one expect any decrease in performance from
+> dropping compression when using btrfs on dm-crypt? (For more context,
+> with an i7 6700K which has aes-ni, CPU performance should not be a
+> bottleneck on my computer.)
+
+As said elsewhere, compression can drastically help or reduce performance,
+this depends on your CPU-to-IO ratio, and to whether you do small random
+writes inside files (compress has to rewrite a whole 128KB block).
+
+An extreme data point: Odroid-U2 on eMMC doing Debian archive rebuilds,
+compression improves overall throughput by a factor of around two!  On the
+other hand, this same task on typical machines tends to be CPU bound.
+
 -- 
-BOFH excuse #346:
-
-Your/our computer(s) had suffered a memory leak, and we are waiting for them to be topped up.
+An imaginary friend squared is a real enemy.

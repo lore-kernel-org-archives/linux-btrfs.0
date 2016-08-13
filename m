@@ -1,128 +1,101 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [195.159.176.226] ([195.159.176.226]:60788 "EHLO
-	blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
-	with ESMTP id S933376AbcHNLQS (ORCPT
+Received: from frost.carfax.org.uk ([85.119.82.111]:46615 "EHLO
+	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752030AbcHNNmF (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 14 Aug 2016 07:16:18 -0400
-Received: from list by blaine.gmane.org with local (Exim 4.84_2)
-	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1bYjts-0006RB-Aq
-	for linux-btrfs@vger.kernel.org; Sun, 14 Aug 2016 03:07:40 +0200
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
+	Sun, 14 Aug 2016 09:42:05 -0400
+Date: Sat, 13 Aug 2016 20:15:35 +0000
+From: Hugo Mills <hugo@carfax.org.uk>
+To: Wolfgang Mader <Wolfgang_Mader@brain-frog.de>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Subject: Re: Likelihood of read error, recover device failure raid10
-Date: Sun, 14 Aug 2016 01:07:33 +0000 (UTC)
-Message-ID: <pan$3f308$3d89ddaa$dd23cf7$c705e7d7@cox.net>
+Message-ID: <20160813201535.GA20440@carfax.org.uk>
 References: <2336793.AMaAIAxWk4@discus>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+MIME-Version: 1.0
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="AhhlLboLdkugWU4S"
+In-Reply-To: <2336793.AMaAIAxWk4@discus>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Wolfgang Mader posted on Sat, 13 Aug 2016 17:39:18 +0200 as excerpted:
 
+--AhhlLboLdkugWU4S
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+
+On Sat, Aug 13, 2016 at 05:39:18PM +0200, Wolfgang Mader wrote:
 > Hi,
 > 
 > I have two questions
 > 
-> 1) Layout of raid10 in btrfs btrfs pools all devices and than stripes
-> and mirrors across this pool. Is it therefore correct, that a raid10
-> layout consisting of 4 devices a,b,c,d is _not_
+> 1) Layout of raid10 in btrfs
+> btrfs pools all devices and than stripes and mirrors across this pool. Is it 
+> therefore correct, that a raid10 layout consisting of 4 devices a,b,c,d is 
+> _not_
 > 
 >               raid0
 >        |---------------|
-> ------------      ------------
-> |a|      |b|      |c|      |d|
->    raid1             raid1
+> ------------      -------------
+> |a|  |b|      |c|  |d|
+>    raid1            raid1
 > 
-> Rather, there is no clear distinction of device level between two
-> devices which form a raid1 set which are than paired by raid0, but
-> simply, each bit is mirrored across two different devices. Is this
-> correct?
+> Rather, there is no clear distinction of device level between two devices 
+> which form a raid1 set which are than paired by raid0, but simply, each bit is 
+> mirrored across two different devices. Is this correct?
 
-Not correct in detail, but you have the general idea, yes.
+   Correct. There's no clear hierarchy of RAID-1-then-RAID-0 vs
+RAID-0-then-RAID-1. Instead, if you look at a single device (in a
+4-device arraay), that will be one of two copies, and will be either
+the "odd" stripes or the "even" stripes. That's all you get, within a
+block group.
 
-The key thing to remember with btrfs in this context is that it's chunk-
-based raid, /not/ device-based (or for that matter, bit- or byte-based) 
-raid.  If the "each bit" in your last sentence above is substituted with 
-"each chunk", where chunks are nominally (that is, they can vary from 
-this) 1 GiB for data, 256 MiB for metadata, thus billions of times your 
-"each bit" size, /then/ your description gets much more accurate (tho 
-technically each strip is 64 KiB, I believe, with each strip mirrored at 
-the raid1 level and then combined with other strips at the raid0 level to 
-make a stripe, and multiple stripes then composing a chunk, with the 
-device assignment variable at the chunk level).
+> 2) Recover raid10 from a failed disk
+> Raid10 inherits its redundancy from the raid1 scheme. If I build a raid10 from 
+> n devices, each bit is mirrored across two devices. Therefore, in order to 
+> restore a raid10 from a single failed device, I need to read the amount of 
+> data worth this device from the remaining n-1 devices. In case, the amount of 
+> data on the failed disk is in the order of the number of bits for which I can 
+> expect an unrecoverable read error from a device, I will most likely not be 
+> able to recover from the disk failure. Is this conclusion correct, or am I am 
+> missing something here.
 
-At the chunk level, mirroring and striping is as you indicate.  Chunks 
-are allocated on-demand from the available unallocated space such that 
-the two mirrors of each strip can vary from one chunk to the next, which 
-if I'm not mistaken, was the point you were making.
+   That's right, but the unrecoverable bit rates quoted by the hard
+drive manufacturers aren't necessarily reflected in the real-life
+usage of the devices. I think that if you're doing those calculations,
+you really need to find out what the values quoted by the manufacturer
+actually mean, first. (i.e. if you read all the data once a month with
+a scrub, and allow the drive to identify and correct any transient
+errors which might indicate incipient failure, does the quoted BER
+still apply?)
 
-The effect is that btrfs raid10 doesn't have the ability to tolerate loss 
-of two devices as long as the two devices are from separate raid1s 
-underneath the raid0, that per-device raid10 has, because once there are 
-a decent amount of chunks allocated, there's no distinctive raid1s at the 
-btrfs device level, such that loss of any two devices is virtually 
-guaranteed to be the loss of both mirrors of some strip of a chunk for 
-/some/ number of chunks.
-
-
-Of course it remains possible, indeed quite viably so, to create a hybrid 
-raid, btrfs raid1 on top of md- or dm-raid0, for instance.  Altho that's 
-technically raid01 instead of raid10, btrfs raid1 has some distinctive 
-advantages that make it the preferred top layer in this sort of hybrid, 
-as opposed to btrfs raid0 on top of md/dm-raid1, the conventionally 
-preferred raid10 arrangement.
-
-Namely, btrfs raid1 has the file integrity feature in the form of 
-checksumming and checksum validation failure detection, and for raid1, 
-checksum validation failure repair from the mirror copy, assuming of 
-course that it passes checksum validation.  Few raid schemes have that, 
-and it's enough of a feature leap that it justifies making the top layer 
-btrfs raid1, as opposed to btrfs raid0, which would lack that automatic 
-error repair feature, tho it could still detect the error based on the 
-checksums, but even manual repair would be difficult as you'd have to 
-somehow figure out which was the bad copy that it read from and then 
-check the other copy and see if it was good before overwriting the bad 
-copy.
-
-> 2) Recover raid10 from a failed disk Raid10 inherits its redundancy from
-> the raid1 scheme. If I build a raid10 from n devices, each bit is
-> mirrored across two devices. Therefore, in order to restore a raid10
-> from a single failed device, I need to read the amount of data worth
-> this device from the remaining n-1 devices. In case, the amount of data
-> on the failed disk is in the order of the number of bits for which I can
-> expect an unrecoverable read error from a device, I will most likely not
-> be able to recover from the disk failure. Is this conclusion correct, or
-> am I am missing something here.
-
-Again, not each bit, but (each strip of) each chunk (with the strips 
-being 64 KiB IIRC).
-
-But your conclusion is generally correct, since the problem would be 
-quite likely to be detected by checksum verification failure, but if it 
-were to occur in the raid1 pair that was degraded, there would be no 
-second copy to fall back on to repair with.
-
-Of course that's a 50% chance, with the other possibility being that the 
-IO read error occurs in the undegraded raid1, and thus can be corrected 
-normally.
-
-Which means given a random read error, if you try the recovery enough 
-times you should eventually succeed, because eventually any occurring 
-read error will happen on the still undegraded raid1 area.
-
-Tho of course if the read error isn't random and it happens repeatedly in 
-the degraded area, you're screwed, for whatever file or metadata covering 
-multiple files it was in, at least.  You should still be able to recover 
-the rest of the filesystem, however.
-
-Which all goes to demonstrate once again that raid != backup, and there's 
-no substitute for the latter, to whatever level the value of the data in 
-question justifies.
+   Hugo.
 
 -- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+Hugo Mills             | Let me past! There's been a major scientific
+hugo@... carfax.org.uk | break-in!
+http://carfax.org.uk/  | Through! Break-through!
+PGP: E2AB1DE4          |                                          Ford Prefect
 
+--AhhlLboLdkugWU4S
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.12 (GNU/Linux)
+
+iQIcBAEBAgAGBQJXr3/nAAoJEFheFHXiqx3ki9MP/ibAQABRPFrayA83FnaNYCQK
+IvBhdfybgs8cHv3X0jzjA7MGDDLkzRijXsqTTnWCb21EMXTFe4GbdrnTp2U8wI8H
+3exoMb4nEwLNuP+bHZPoZZKjCVk5ml9eXmIdjk+hayw+cNYwClyEX48+V0YQ/gyD
+FKi3ACJQafzoDYdgqz9EUX8GEQOtB1OFU0j2LBybBudt7Pc5O8jvOcva6DfK2vTT
+VLK335RVgXm1mdPxmvp6T9UILJ/Yr5hf/IPwOPxnn+b3DVYzr3eTVdjXS8fDC/6k
+vtzRMOJ0nxzNbhcFzOMYTGBx9f46hx3ESE0/guiTorUkSLBbx4rSAIESBmi538JV
+0vQl5vjmZYyxz7/lwSj+I2izHhr8TGxi7N6l/oPU+SG/i/yc1Oag3HvSdap1Jspe
+T9GJx9fC4eijcHBQIVSD/ZcA2OdLRBTvSYO+rz+hEOvI4mEBz+2X4YWw4hE48DN8
+IjnF4PWgtdv9AiXCVz0Ed6OzFjQ4EewIRhI/a7RRiFCo5H0YN0CATPjh3/7xE3hI
+bsuDnFnsLlGUzkmQc4T2b26ASTPTE4XCCRe9QBwWMpuk+cganKczY1Qqg6kZxC/J
+7hszbDtLereTtUQ1UUJbRHJtxmGVgHVJ3J0UBcwZ261fX28Ixu7yDql+7eJ2WBHr
+Jd1erpUq4m9ukXmHhCfu
+=TRMf
+-----END PGP SIGNATURE-----
+
+--AhhlLboLdkugWU4S--

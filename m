@@ -1,38 +1,71 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:29866 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751488AbcHOHvQ (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 15 Aug 2016 03:51:16 -0400
-Received: from G08CNEXCHPEKD02.g08.fujitsu.local (unknown [10.167.33.83])
-	by cn.fujitsu.com (Postfix) with ESMTP id DAB49429594D
-	for <linux-btrfs@vger.kernel.org>; Mon, 15 Aug 2016 15:50:57 +0800 (CST)
-To: btrfs <linux-btrfs@vger.kernel.org>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Subject: About minimal device number for RAID5/6
-Message-ID: <d87a7caa-d414-1dbc-7c7e-a051e382114a@cn.fujitsu.com>
-Date: Mon, 15 Aug 2016 15:50:56 +0800
+Received: from v1.edulibre.org ([5.39.16.54]:49547 "EHLO mail.edulibre.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752772AbcHOKpS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 15 Aug 2016 06:45:18 -0400
+Received: from asus17.lairdutemps.org (did75-10-82-236-230-93.fbx.proxad.net [82.236.230.93])
+	by mail.edulibre.org (Postfix) with ESMTPSA id F16BD102179D
+	for <linux-btrfs@vger.kernel.org>; Mon, 15 Aug 2016 12:39:29 +0200 (CEST)
+Date: Mon, 15 Aug 2016 12:39:28 +0200
+From: Daniel Caillibaud <ml@lairdutemps.org>
+To: <linux-btrfs@vger.kernel.org>
+Subject: Huge load on btrfs subvolume delete
+Message-ID: <20160815123928.47bd2c03@asus17.lairdutemps.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"; format=flowed
+Content-Type: text/plain; charset=US-ASCII
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 Hi,
 
-Recently I found that manpage of mkfs is saying minimal device number 
-for RAID5 and RAID6 is 2 and 3.
+I'm newbie with btrfs, and I have pb with high load after each btrfs subvolume delete
 
-Personally speaking, although I understand that RAID5/6 only requires 
-1/2 devices for parity stripe, it is still quite strange behavior.
+I use snapshots on lxc hosts under debian jessie with
+- kernel 4.6.0-0.bpo.1-amd64
+- btrfs-progs 4.6.1-1~bpo8
 
-Under most case, user use raid5/6 for striping AND parity. For 2 devices 
-RAID5, it's just a more expensive RAID1.
+For backup, I have each day, for each subvolume
 
-IMHO it's better to warn user about 2 devices RAID5 or 3 devices RAID6.
+btrfs subvolume snapshot -r $subvol $snap
+# then later
+ionice -c3 btrfs subvolume delete $snap
 
-Any comment is welcomed.
+but ionice doesn't seems to have any effect here and after a few minutes the load grows up
+quite high (30~40), and I don't know how to make this deletion nicer with I/O
 
-Thanks,
-Qu
+Is there a better way to do so ?
+
+Is it a bad idea to set ionice -c3 on the btrfs-transacti process which seems the one doing a
+lot of I/O ?
+
+Actually my io priority on btrfs process are 
+
+ps x|awk '/[b]trfs/ {printf("%20s ", $NF); system("ionice -p" $1)}'
+      [btrfs-worker] none: prio 4
+   [btrfs-worker-hi] none: prio 4
+    [btrfs-delalloc] none: prio 4
+   [btrfs-flush_del] none: prio 4
+       [btrfs-cache] none: prio 4
+      [btrfs-submit] none: prio 4
+       [btrfs-fixup] none: prio 4
+       [btrfs-endio] none: prio 4
+   [btrfs-endio-met] none: prio 4
+   [btrfs-endio-met] none: prio 4
+   [btrfs-endio-rai] none: prio 4
+   [btrfs-endio-rep] none: prio 4
+         [btrfs-rmw] none: prio 4
+   [btrfs-endio-wri] none: prio 4
+   [btrfs-freespace] none: prio 4
+   [btrfs-delayed-m] none: prio 4
+   [btrfs-readahead] none: prio 4
+   [btrfs-qgroup-re] none: prio 4
+   [btrfs-extent-re] none: prio 4
+     [btrfs-cleaner] none: prio 0
+   [btrfs-transacti] none: prio 0
 
 
+
+Thanks
+
+-- 
+Daniel

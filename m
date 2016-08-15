@@ -1,65 +1,248 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
 Received: from cn.fujitsu.com ([59.151.112.132]:19334 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1752170AbcHOChG (ORCPT
+	with ESMTP id S1752377AbcHOChK (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 14 Aug 2016 22:37:06 -0400
+	Sun, 14 Aug 2016 22:37:10 -0400
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-CC: <rgoldwyn@suse.de>, <fdmanana@gmail.com>
-Subject: [PATCH v3.1 0/3] Qgroup fix for dirty hack routines
-Date: Mon, 15 Aug 2016 10:36:49 +0800
-Message-ID: <20160815023652.5348-1-quwenruo@cn.fujitsu.com>
+CC: <rgoldwyn@suse.de>, <fdmanana@gmail.com>, Mark Fasheh <mfasheh@suse.de>
+Subject: [PATCH v3.1 1/3] btrfs: qgroup: Refactor btrfs_qgroup_insert_dirty_extent()
+Date: Mon, 15 Aug 2016 10:36:50 +0800
+Message-ID: <20160815023652.5348-2-quwenruo@cn.fujitsu.com>
+In-Reply-To: <20160815023652.5348-1-quwenruo@cn.fujitsu.com>
+References: <20160815023652.5348-1-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This patchset contains fixes for REGRESSION introduced in 4.2.
+Refactor btrfs_qgroup_insert_dirty_extent() function, to two functions:
+1. btrfs_qgroup_insert_dirty_extent_nolock()
+   Almost the same with original code.
+   For delayed_ref usage, which has delayed refs locked.
 
-This patchset introduce 2 fixes for data extent owner hacks.
+   Change the return value type to int, since caller never needs the
+   pointer, but only needs to know if they need to free the allocated
+   memory.
 
-One can be triggered by balance, another one can be trigged by log replay
-after power loss.
+2. btrfs_qgroup_insert_dirty_extent()
+   The more encapsulated version.
 
-Root cause are all similar: EXTENT_DATA owner is changed by dirty
-hacks, from swapping tree blocks containing EXTENT_DATA to manually
-update extent backref without using inc/dec_extent_ref.
+   Will do the delayed_refs lock, memory allocation, quota enabled check
+   and other things.
 
-The first patch introduces needed functions, then 2 fixes.
+The original design is to keep exported functions to minimal, but since
+more btrfs hacks exposed, like replacing path in balance, we need to
+record dirty extents manually, so we have to add such functions.
 
-The reproducers have already been merged into xfstests, btrfs/123 and
-btrfs/119.
+Also, add comment for both functions, to info developers how to keep
+qgroup correct when doing hacks.
 
-Changelog:
-v2:
-  Update 2nd patch to handle cases where the whole subtree, not only
-  level 2 nodes get updated.
-v3:
-  Function name update. Thanks Goldwyn.
-  Rename 'btrfs_qgroup_insert_dirty_extent()' to
-  'btrfs_qgroup_insert_dirty_extent_nolock()'
-  Rename 'btrfs_qgroup_record_dirty_extent()' to
-  'btrfs_qgroup_insert_dirty_extent()'
-v3.1:
-  Update commit message for 2nd patch, to identify itself as a regression
-  fix patch, suggested by Filipe.
-  Removed commented out debug command of 2nd patch.
-  Update Tested-by and Reviewed-by tags from Goldwyn.
+Cc: Mark Fasheh <mfasheh@suse.de>
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Reviewed-and-Tested-by: Goldwyn Rodrigues <rgoldwyn@suse.com>
+---
+ fs/btrfs/delayed-ref.c |  7 ++-----
+ fs/btrfs/extent-tree.c | 37 +++++--------------------------------
+ fs/btrfs/qgroup.c      | 41 +++++++++++++++++++++++++++++++++++------
+ fs/btrfs/qgroup.h      | 33 +++++++++++++++++++++++++++++----
+ 4 files changed, 71 insertions(+), 47 deletions(-)
 
-Qu Wenruo (3):
-  btrfs: qgroup: Refactor btrfs_qgroup_insert_dirty_extent()
-  btrfs: relocation: Fix leaking qgroups numbers on data extents
-  btrfs: qgroup: Fix qgroup incorrectness caused by log replay
-
- fs/btrfs/delayed-ref.c |   7 +---
- fs/btrfs/extent-tree.c |  37 +++--------------
- fs/btrfs/qgroup.c      |  41 ++++++++++++++++---
- fs/btrfs/qgroup.h      |  33 +++++++++++++--
- fs/btrfs/relocation.c  | 109 ++++++++++++++++++++++++++++++++++++++++++++++---
- fs/btrfs/tree-log.c    |  16 ++++++++
- 6 files changed, 190 insertions(+), 53 deletions(-)
-
+diff --git a/fs/btrfs/delayed-ref.c b/fs/btrfs/delayed-ref.c
+index d9ddcfc..ac02e04 100644
+--- a/fs/btrfs/delayed-ref.c
++++ b/fs/btrfs/delayed-ref.c
+@@ -541,7 +541,6 @@ add_delayed_ref_head(struct btrfs_fs_info *fs_info,
+ 	struct btrfs_delayed_ref_head *existing;
+ 	struct btrfs_delayed_ref_head *head_ref = NULL;
+ 	struct btrfs_delayed_ref_root *delayed_refs;
+-	struct btrfs_qgroup_extent_record *qexisting;
+ 	int count_mod = 1;
+ 	int must_insert_reserved = 0;
+ 
+@@ -606,10 +605,8 @@ add_delayed_ref_head(struct btrfs_fs_info *fs_info,
+ 		qrecord->num_bytes = num_bytes;
+ 		qrecord->old_roots = NULL;
+ 
+-		qexisting = btrfs_qgroup_insert_dirty_extent(fs_info,
+-							     delayed_refs,
+-							     qrecord);
+-		if (qexisting)
++		if(btrfs_qgroup_insert_dirty_extent_nolock(fs_info,
++					delayed_refs, qrecord))
+ 			kfree(qrecord);
+ 	}
+ 
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index c2b81b0..2a860c9 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -8521,35 +8521,6 @@ reada:
+ 	wc->reada_slot = slot;
+ }
+ 
+-/*
+- * These may not be seen by the usual inc/dec ref code so we have to
+- * add them here.
+- */
+-static int record_one_subtree_extent(struct btrfs_trans_handle *trans,
+-				     struct btrfs_root *root, u64 bytenr,
+-				     u64 num_bytes)
+-{
+-	struct btrfs_qgroup_extent_record *qrecord;
+-	struct btrfs_delayed_ref_root *delayed_refs;
+-
+-	qrecord = kmalloc(sizeof(*qrecord), GFP_NOFS);
+-	if (!qrecord)
+-		return -ENOMEM;
+-
+-	qrecord->bytenr = bytenr;
+-	qrecord->num_bytes = num_bytes;
+-	qrecord->old_roots = NULL;
+-
+-	delayed_refs = &trans->transaction->delayed_refs;
+-	spin_lock(&delayed_refs->lock);
+-	if (btrfs_qgroup_insert_dirty_extent(trans->fs_info,
+-					     delayed_refs, qrecord))
+-		kfree(qrecord);
+-	spin_unlock(&delayed_refs->lock);
+-
+-	return 0;
+-}
+-
+ static int account_leaf_items(struct btrfs_trans_handle *trans,
+ 			      struct btrfs_root *root,
+ 			      struct extent_buffer *eb)
+@@ -8583,7 +8554,8 @@ static int account_leaf_items(struct btrfs_trans_handle *trans,
+ 
+ 		num_bytes = btrfs_file_extent_disk_num_bytes(eb, fi);
+ 
+-		ret = record_one_subtree_extent(trans, root, bytenr, num_bytes);
++		ret = btrfs_qgroup_insert_dirty_extent(trans, root->fs_info,
++				bytenr, num_bytes, GFP_NOFS);
+ 		if (ret)
+ 			return ret;
+ 	}
+@@ -8732,8 +8704,9 @@ walk_down:
+ 			btrfs_set_lock_blocking_rw(eb, BTRFS_READ_LOCK);
+ 			path->locks[level] = BTRFS_READ_LOCK_BLOCKING;
+ 
+-			ret = record_one_subtree_extent(trans, root, child_bytenr,
+-							root->nodesize);
++			ret = btrfs_qgroup_insert_dirty_extent(trans,
++					root->fs_info, child_bytenr,
++					root->nodesize, GFP_NOFS);
+ 			if (ret)
+ 				goto out;
+ 		}
+diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
+index 93ee1c1..1f29693 100644
+--- a/fs/btrfs/qgroup.c
++++ b/fs/btrfs/qgroup.c
+@@ -1453,10 +1453,9 @@ int btrfs_qgroup_prepare_account_extents(struct btrfs_trans_handle *trans,
+ 	return ret;
+ }
+ 
+-struct btrfs_qgroup_extent_record *
+-btrfs_qgroup_insert_dirty_extent(struct btrfs_fs_info *fs_info,
+-				 struct btrfs_delayed_ref_root *delayed_refs,
+-				 struct btrfs_qgroup_extent_record *record)
++int btrfs_qgroup_insert_dirty_extent_nolock(struct btrfs_fs_info *fs_info,
++				struct btrfs_delayed_ref_root *delayed_refs,
++				struct btrfs_qgroup_extent_record *record)
+ {
+ 	struct rb_node **p = &delayed_refs->dirty_extent_root.rb_node;
+ 	struct rb_node *parent_node = NULL;
+@@ -1475,12 +1474,42 @@ btrfs_qgroup_insert_dirty_extent(struct btrfs_fs_info *fs_info,
+ 		else if (bytenr > entry->bytenr)
+ 			p = &(*p)->rb_right;
+ 		else
+-			return entry;
++			return 1;
+ 	}
+ 
+ 	rb_link_node(&record->node, parent_node, p);
+ 	rb_insert_color(&record->node, &delayed_refs->dirty_extent_root);
+-	return NULL;
++	return 0;
++}
++
++int btrfs_qgroup_insert_dirty_extent(struct btrfs_trans_handle *trans,
++		struct btrfs_fs_info *fs_info, u64 bytenr, u64 num_bytes,
++		gfp_t gfp_flag)
++{
++	struct btrfs_qgroup_extent_record *record;
++	struct btrfs_delayed_ref_root *delayed_refs;
++	int ret;
++
++	if (!fs_info->quota_enabled || bytenr == 0 || num_bytes == 0)
++		return 0;
++	if (WARN_ON(trans == NULL))
++		return -EINVAL;
++	record = kmalloc(sizeof(*record), gfp_flag);
++	if (!record)
++		return -ENOMEM;
++
++	delayed_refs = &trans->transaction->delayed_refs;
++	record->bytenr = bytenr;
++	record->num_bytes = num_bytes;
++	record->old_roots = NULL;
++
++	spin_lock(&delayed_refs->lock);
++	ret = btrfs_qgroup_insert_dirty_extent_nolock(fs_info, delayed_refs,
++						      record);
++	spin_unlock(&delayed_refs->lock);
++	if (ret > 0)
++		kfree(record);
++	return 0;
+ }
+ 
+ #define UPDATE_NEW	0
+diff --git a/fs/btrfs/qgroup.h b/fs/btrfs/qgroup.h
+index 710887c..f6a38e4 100644
+--- a/fs/btrfs/qgroup.h
++++ b/fs/btrfs/qgroup.h
+@@ -63,10 +63,35 @@ void btrfs_free_qgroup_config(struct btrfs_fs_info *fs_info);
+ struct btrfs_delayed_extent_op;
+ int btrfs_qgroup_prepare_account_extents(struct btrfs_trans_handle *trans,
+ 					 struct btrfs_fs_info *fs_info);
+-struct btrfs_qgroup_extent_record *
+-btrfs_qgroup_insert_dirty_extent(struct btrfs_fs_info *fs_info,
+-				 struct btrfs_delayed_ref_root *delayed_refs,
+-				 struct btrfs_qgroup_extent_record *record);
++/*
++ * Insert one dirty extent record into @delayed_refs, informing qgroup to
++ * account that extent at commit trans time.
++ *
++ * No lock version, caller must acquire delayed ref lock and allocate memory.
++ *
++ * Return 0 for success insert
++ * Return >0 for existing record, caller can free @record safely.
++ * Error is not possible
++ */
++int btrfs_qgroup_insert_dirty_extent_nolock(
++		struct btrfs_fs_info *fs_info,
++		struct btrfs_delayed_ref_root *delayed_refs,
++		struct btrfs_qgroup_extent_record *record);
++
++/*
++ * Insert one dirty extent record into @delayed_refs, informing qgroup to
++ * account that extent at commit trans time.
++ *
++ * Better encapsulated version.
++ *
++ * Return 0 if the operation is done.
++ * Return <0 for error, like memory allocation failure or invalid parameter
++ * (NULL trans)
++ */
++int btrfs_qgroup_insert_dirty_extent(struct btrfs_trans_handle *trans,
++		struct btrfs_fs_info *fs_info, u64 bytenr, u64 num_bytes,
++		gfp_t gfp_flag);
++
+ int
+ btrfs_qgroup_account_extent(struct btrfs_trans_handle *trans,
+ 			    struct btrfs_fs_info *fs_info,
 -- 
 2.9.2
 

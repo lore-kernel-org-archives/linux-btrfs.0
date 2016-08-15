@@ -1,91 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qk0-f178.google.com ([209.85.220.178]:35071 "EHLO
-	mail-qk0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753182AbcHOMTF (ORCPT
+Received: from mail-qt0-f196.google.com ([209.85.216.196]:35483 "EHLO
+	mail-qt0-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752796AbcHOMTQ (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 15 Aug 2016 08:19:05 -0400
-Received: by mail-qk0-f178.google.com with SMTP id v123so40666485qkh.2
-        for <linux-btrfs@vger.kernel.org>; Mon, 15 Aug 2016 05:19:04 -0700 (PDT)
+	Mon, 15 Aug 2016 08:19:16 -0400
+Received: by mail-qt0-f196.google.com with SMTP id q11so2043816qtb.2
+        for <linux-btrfs@vger.kernel.org>; Mon, 15 Aug 2016 05:19:10 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <a119738d-942b-4dca-265e-5f9db15e2893@gmail.com>
+In-Reply-To: <m49k2fvmsi2.fsf@coffee.modeemi.fi>
 References: <CAGQ70Ye3Ly0N5cZHe3_D0RX8yW6ZzcN7fVhoLnnXrPXjOKPa1Q@mail.gmail.com>
  <274e0a56-086f-23c4-7ae9-2b6cb68ec6c8@gmail.com> <CAJCQCtQAPXn714YL2R1V7q2fhn7QCsYHHceTimyFQ1TsMf-BQg@mail.gmail.com>
  <CAGQ70Yf3R4mfPJRZWvyBXivN9qy_9WOsrZhdpx--a_27Wy3sYQ@mail.gmail.com>
- <CAJCQCtTKsYxYH26E1a66--HiDRF3JXSdOSjLa1ira_1Ti6N+pw@mail.gmail.com> <a119738d-942b-4dca-265e-5f9db15e2893@gmail.com>
+ <CAJCQCtTKsYxYH26E1a66--HiDRF3JXSdOSjLa1ira_1Ti6N+pw@mail.gmail.com>
+ <CAGQ70YfvcujVWs-Hr-jLS5DED3ti5XK=fVhx6M8K7c85UVYDhA@mail.gmail.com> <m49k2fvmsi2.fsf@coffee.modeemi.fi>
 From: Martin <rc6encrypted@gmail.com>
-Date: Mon, 15 Aug 2016 14:19:03 +0200
-Message-ID: <CAGQ70YdW+t_-vqj+uvyKMxoPLN__bxZ=b+S1oe7ujw3Ek0Cggg@mail.gmail.com>
+Date: Mon, 15 Aug 2016 14:19:09 +0200
+Message-ID: <CAGQ70Ycengg60hu3Wm5BxVHxUwhdfydmKFEy55RG8WnDZrgqqA@mail.gmail.com>
 Subject: Re: How to stress test raid6 on 122 disk array
-To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Cc: Chris Murphy <lists@colorremedies.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+To: Erkki Seppala <flux-btrfs@inside.org>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
->> I'm not sure what Arch does any differently to their kernels from
->> kernel.org kernels. But bugzilla.kernel.org offers a Mainline and
->> Fedora drop down for identifying the kernel source tree.
+>> The smallest disk of the 122 is 500GB. Is it possible to have btrfs
+>> see each disk as only e.g. 10GB? That way I can corrupt and resilver
+>> more disks over a month.
 >
-> IIRC, they're pretty close to mainline kernels.  I don't think they have any
-> patches in the filesystem or block layer code at least, but I may be wrong,
-> it's been a long time since I looked at an Arch kernel.
+> Well, at least you can easily partition the devices for that to happen.
 
-Perhaps I should use Arch then, as Fedora rawhide kernel wouldn't boot
-on my hw, so I am running the stock Fedora 24 kernel right now for the
-tests...
+Can it be done with btrfs or should I do it with gdisk?
 
->>> If I want to compile a mainline kernel. Are there anything I need to
->>> tune?
->>
->>
->> Fedora kernels do not have these options set.
->>
->> # CONFIG_BTRFS_FS_CHECK_INTEGRITY is not set
->> # CONFIG_BTRFS_FS_RUN_SANITY_TESTS is not set
->> # CONFIG_BTRFS_DEBUG is not set
->> # CONFIG_BTRFS_ASSERT is not set
->>
->> The sanity and integrity tests are both compile time and mount time
->> options, i.e. it has to be compiled enabled for the mount option to do
->> anything. I can't recall any thread where a developer asked a user to
->> set any of these options for testing though.
+> However, I would also suggest that would it be more useful use of the
+> resource to run many arrays in parallel? Ie. one 6-device raid6, one
+> 20-device raid6, and then perhaps use the rest of the devices for a very
+> large btrfs filesystem? Or if you have been using partitioning the large
+> btrfs volume can also be composed of all the 122 devices; in fact you
+> could even run multiple 122-device raid6s and use different kind of
+> testing on each. For performance testing you might only excert one of
+> the file systems at a time, though.
 
-> FWIW, I actually have the integrity checking code built in on most kernels I
-> build.  I don't often use it, but it has near zero overhead when not
-> enabled, and it's helped me track down lower-level storage configuration
-> issues on occasion.
+Very interesting idea, which leads me to the following question:
 
-I'll give that a shot tomorrow.
+For the past weeks have I had all 122 disks in one raid6 filesystem,
+and since I didn't entered any vdev (zfs term) size, I suspect only 2
+of the 122 disks are parity.
 
->>> When I do the tests, how do I log the info you would like to see, if I
->>> find a bug?
->>
->>
->> bugzilla.kernel.org for tracking, and then reference the URL for the
->> bug with a summary in an email to list is how I usually do it. The
->> main thing is going to be the exact reproduce steps. It's also better,
->> I think, to have complete dmesg (or journalctl -k) attached to the bug
->> report because not all problems are directly related to Btrfs, they
->> can have contributing factors elsewhere. And various MTAs, or more
->> commonly MUAs, have a tendancy to wrap such wide text as found in
->> kernel or journald messages.
->
-> Aside from kernel messages, the other general stuff you want to have is:
-> 1. Kernel version and userspace tools version (`uname -a` and `btrfs
-> --version`)
-> 2. Any underlying storage configuration if it's not just plain a SSD/HDD or
-> partitions (for example, usage of dm-crypt, LVM, mdadm, and similar things).
-> 3. Output from `btrfs filesystem show` (this can be trimmed to the
-> filesystem that's having the issue).
-> 4. If you can still mount the filesystem, `btrfs filesystem df` output can
-> be helpful.
-> 5. If you can't mount the filesystem, output from `btrfs check` run without
-> any options will usually be asked for.
+If, how can I make the filesystem, so for every 6 disks, 2 of them are parity?
 
-I have now had the first crash, can you take a look if I have provided
-the needed info?
-
-https://bugzilla.kernel.org/show_bug.cgi?id=153141
-
-How long should I keep the host untouched? Or is all interesting idea provided?
+Reading the mkfs.btrfs man page gives me the impression that it can't
+be done, which I find hard to believe.

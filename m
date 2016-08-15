@@ -1,47 +1,38 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from v1.edulibre.org ([5.39.16.54]:53391 "EHLO mail.edulibre.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752924AbcHOOGr (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+Received: from aserp1040.oracle.com ([141.146.126.69]:49022 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752925AbcHOOGr (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
 	Mon, 15 Aug 2016 10:06:47 -0400
-Received: from asus17.lairdutemps.org (did75-10-82-236-230-93.fbx.proxad.net [82.236.230.93])
-	by mail.edulibre.org (Postfix) with ESMTPSA id B577B1026ABE
-	for <linux-btrfs@vger.kernel.org>; Mon, 15 Aug 2016 16:06:42 +0200 (CEST)
-Date: Mon, 15 Aug 2016 16:06:41 +0200
-From: Daniel Caillibaud <ml@lairdutemps.org>
-To: btrfs ml <linux-btrfs@vger.kernel.org>
-Subject: Re: Huge load on btrfs subvolume delete
-Message-ID: <20160815160641.79063cec@asus17.lairdutemps.org>
-In-Reply-To: <95c98a1b-4484-c294-fcd6-001e73cd25d6@gmail.com>
-References: <20160815123928.47bd2c03@asus17.lairdutemps.org>
-	<95c98a1b-4484-c294-fcd6-001e73cd25d6@gmail.com>
+Subject: Re: About minimal device number for RAID5/6
+To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>,
+        Qu Wenruo <quwenruo@cn.fujitsu.com>,
+        btrfs <linux-btrfs@vger.kernel.org>
+References: <d87a7caa-d414-1dbc-7c7e-a051e382114a@cn.fujitsu.com>
+ <d27bad69-1041-7771-aff6-c15beb85fbb1@gmail.com>
+From: Anand Jain <anand.jain@oracle.com>
+Message-ID: <9fb53c9f-b6c1-6bb9-8c3b-7147b64b601f@oracle.com>
+Date: Mon, 15 Aug 2016 22:08:05 +0800
 MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+In-Reply-To: <d27bad69-1041-7771-aff6-c15beb85fbb1@gmail.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Le 15/08/16 à 08:32, "Austin S. Hemmelgarn" <ahferroin7@gmail.com> a écrit :
 
-ASH> On 2016-08-15 06:39, Daniel Caillibaud wrote:
-ASH> > I'm newbie with btrfs, and I have pb with high load after each btrfs subvolume delete
-[…]
 
-ASH> Before I start explaining possible solutions, it helps to explain what's 
-ASH> actually happening here.
-[…]
+>> IMHO it's better to warn user about 2 devices RAID5 or 3 devices RAID6.
+>>
+>> Any comment is welcomed.
+>>
+> Based on looking at the code, we do in fact support 2/3 devices for
+> raid5/6 respectively.
+>
+> Personally, I agree that we should warn when trying to do this, but I
+> absolutely don't think we should stop it from happening.
 
-Thanks a lot for these clear and detailed explanations.
 
-ASH> > Is there a better way to do so ?
+  How does 2 disks RAID5 work ?
 
-ASH> While there isn't any way I know of to do so, there are ways you can 
-ASH> reduce the impact by reducing how much your backing up:
+-Anand
 
-Thanks for these clues too !
-
-I'll use --commit-after, in order to wait for complete deletion before starting rsync the next
-snapshot, and I keep in mind the benefit of putting /var/log outside the main subvolume of the
-vm (but I guess my main pb is about databases, because their datadir are the ones with most
-writes).
-
--- 
-Daniel

@@ -1,109 +1,97 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:50292 "EHLO
-	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750791AbcHOSa7 (ORCPT
+Received: from mail-qk0-f172.google.com ([209.85.220.172]:35392 "EHLO
+	mail-qk0-f172.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753270AbcHOTL3 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 15 Aug 2016 14:30:59 -0400
-Date: Mon, 15 Aug 2016 18:30:51 +0000
-From: Hugo Mills <hugo@carfax.org.uk>
-To: Anand Jain <anand.jain@oracle.com>
-Cc: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>,
-        Qu Wenruo <quwenruo@cn.fujitsu.com>,
-        btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: About minimal device number for RAID5/6
-Message-ID: <20160815183051.GD20440@carfax.org.uk>
-References: <d87a7caa-d414-1dbc-7c7e-a051e382114a@cn.fujitsu.com>
- <d27bad69-1041-7771-aff6-c15beb85fbb1@gmail.com>
- <9fb53c9f-b6c1-6bb9-8c3b-7147b64b601f@oracle.com>
- <a12a63d2-1710-611b-7d94-35db3a2aaa3d@gmail.com>
- <089d5900-8915-bf74-ffb3-044be11b04ae@oracle.com>
+	Mon, 15 Aug 2016 15:11:29 -0400
+Received: by mail-qk0-f172.google.com with SMTP id v123so51081230qkh.2
+        for <linux-btrfs@vger.kernel.org>; Mon, 15 Aug 2016 12:11:29 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="2B/JsCI69OhZNC5r"
-In-Reply-To: <089d5900-8915-bf74-ffb3-044be11b04ae@oracle.com>
+In-Reply-To: <fe8222d8-6463-8b4d-0613-b3639455463d@cn.fujitsu.com>
+References: <CAGj_d3D2OZt2nY622rp9NzxgAfKZ2iN1kLSQ2Ras-0fM+1+-ig@mail.gmail.com>
+ <fe8222d8-6463-8b4d-0613-b3639455463d@cn.fujitsu.com>
+From: Rakesh Sankeshi <rakesh.sankeshi@gmail.com>
+Date: Mon, 15 Aug 2016 12:11:28 -0700
+Message-ID: <CAGj_d3C1nf3LGCXfWxoYNpWP2X81v-+eT22yBx17HgfMaP7ocg@mail.gmail.com>
+Subject: Re: btrfs quota issues
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+yes, subvol level.
 
---2B/JsCI69OhZNC5r
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+qgroupid         rfer         excl     max_rfer     max_excl parent  child
 
-On Mon, Aug 15, 2016 at 10:32:25PM +0800, Anand Jain wrote:
-> 
-> 
-> On 08/15/2016 10:10 PM, Austin S. Hemmelgarn wrote:
-> >On 2016-08-15 10:08, Anand Jain wrote:
-> >>
-> >>
-> >>>>IMHO it's better to warn user about 2 devices RAID5 or 3 devices RAID6.
-> >>>>
-> >>>>Any comment is welcomed.
-> >>>>
-> >>>Based on looking at the code, we do in fact support 2/3 devices for
-> >>>raid5/6 respectively.
-> >>>
-> >>>Personally, I agree that we should warn when trying to do this, but I
-> >>>absolutely don't think we should stop it from happening.
-> >>
-> >>
-> >> How does 2 disks RAID5 work ?
-> >One disk is your data, the other is your parity.
-> 
-> 
-> >In essence, it works
-> >like a really computationally expensive version of RAID1 with 2 disks,
-> >which is why it's considered a degenerate configuration.
-> 
->    How do you generate parity with only one data ?
+--------         ----         ----     --------     -------- ------  -----
 
-   For plain parity calculations, parity is the value p which solves
-the expression:
+0/5          16.00KiB     16.00KiB         none         none ---     ---
 
-x_1 XOR x_2 XOR ... XOR x_n XOR p = 0
+0/258       119.48GiB    119.48GiB    200.00GiB         none ---     ---
 
-for corresponding bits in the n data volumes. With one data volume,
-n=1, and hence p = x_1.
+0/259        92.57GiB     92.57GiB    200.00GiB         none ---     ---
 
-   What's the problem? :)
 
-   Hugo.
+although I have 200GB limit on 2 subvols, running into issue at about
+120 and 92GB itself
 
-> -Anand
-> 
-> 
-> > Three disks in
-> >RAID6 is similar, but has a slight advantage at the moment in BTRFS
-> >because it's the only way to configure three disks so you can lose two
-> >and not lose any data as we have no support for higher order replication
-> >than 2 copies yet.
 
--- 
-Hugo Mills             | I always felt that as a C programmer, I was becoming
-hugo@... carfax.org.uk | typecast.
-http://carfax.org.uk/  |
-PGP: E2AB1DE4          |
-
---2B/JsCI69OhZNC5r
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-
-iQIcBAEBAgAGBQJXsgpbAAoJEFheFHXiqx3kZpEP/3KZunLqv0rq6laKMegK/Daq
-14l2NFdVyZ3PxHgl+jUDOG2O+CglfBWQll/DBLclsVG0Dk6WPFUU35tNRP+QmUr2
-OjqXAsNu1D4pwVfh3cqrKomNr1tk2+Ngv9/wCkn/RKLrUOVsmJqXbiYs8q2gTp/T
-BbxRU/pW8PAgyHXqpqfZSi+P4FRvL24LC+kaT1NlzXxWYSK+xJAk9GHTjpjnFLMM
-mc7Xy8YcKhkWC40TPhxKLn//ms863b6ay0OpJWCtIY76Cs01+TsSTZrjb+bHDXS0
-MS8YeixvJdwTrr+WM5QT2iUn5fMRKh15iyFiV3bvrGAG6mfxUSEyDk0J8SMd6XN/
-S/NpSZGEuRxTHrAZM2W17Wd2cDZH097B7WVJccV+gM3O1v6+vYlM36G5mLyLIjUZ
-S8BuQgx2eqf76ayYidvFik3iSyHjXj36AmqLcfomSGmfNZMlY+ckW5fR1jvfXmxJ
-jfCKGPTnAwcq9xLYJrHFvq4pKwBpx8Ta3ho/6YCwfpw+ezK8bhoy6As1DYZXJpbG
-wnIYp6CPGk3qVJFEGQ+vgZhykn084hxruxpMqWVh4kgvGH8yVe/H1B5wlOxHRq3E
-TPSB0tOX87KEdVqvVXmJ5i7Gj0XHhaxM97QXzw9Ow7JzSfMpUTvTx4L+g4hw8zlA
-gi3BqanVDaVjiHiaC/qt
-=PWe7
------END PGP SIGNATURE-----
-
---2B/JsCI69OhZNC5r--
+On Sun, Aug 14, 2016 at 7:11 PM, Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
+>
+>
+> At 08/12/2016 01:32 AM, Rakesh Sankeshi wrote:
+>>
+>> I set 200GB limit to one user and 100GB to another user.
+>>
+>> as soon as I reached 139GB and 53GB each, hitting the quota errors.
+>> anyway to workaround quota functionality on btrfs LZO compressed
+>> filesystem?
+>>
+>
+> Please paste "btrfs qgroup show -prce <mnt>" output if you are using btrfs
+> qgroup/quota function.
+>
+> And, AFAIK btrfs qgroup is applied to subvolume, not user.
+>
+> So did you mean limit it to one subvolume belongs to one user?
+>
+> Thanks,
+> Qu
+>
+>>
+>>
+>> 4.7.0-040700-generic #201608021801 SMP
+>>
+>> btrfs-progs v4.7
+>>
+>>
+>> Label: none  uuid: 66a78faf-2052-4864-8a52-c5aec7a56ab8
+>>
+>> Total devices 2 FS bytes used 150.62GiB
+>>
+>> devid    1 size 1.00TiB used 78.01GiB path /dev/xvdc
+>>
+>> devid    2 size 1.00TiB used 78.01GiB path /dev/xvde
+>>
+>>
+>> Data, RAID0: total=150.00GiB, used=149.12GiB
+>>
+>> System, RAID1: total=8.00MiB, used=16.00KiB
+>>
+>> Metadata, RAID1: total=3.00GiB, used=1.49GiB
+>>
+>> GlobalReserve, single: total=512.00MiB, used=0.00B
+>>
+>>
+>> Filesystem      Size  Used Avail Use% Mounted on
+>>
+>> /dev/xvdc       2.0T  153G  1.9T   8% /test_lzo
+>> --
+>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>> the body of a message to majordomo@vger.kernel.org
+>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>>
+>>
+>
+>

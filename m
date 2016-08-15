@@ -1,47 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:44356 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S932201AbcHON1n (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 15 Aug 2016 09:27:43 -0400
-Date: Mon, 15 Aug 2016 15:26:49 +0200
-From: David Sterba <dsterba@suse.cz>
+Received: from mail.linuxfoundation.org ([140.211.169.12]:60869 "EHLO
+	mail.linuxfoundation.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752590AbcHOQXD (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 15 Aug 2016 12:23:03 -0400
+Date: Mon, 15 Aug 2016 18:23:12 +0200
+From: Greg KH <gregkh@linuxfoundation.org>
 To: Deepa Dinamani <deepa.kernel@gmail.com>
 Cc: linux-fsdevel@vger.kernel.org, linux-kernel@vger.kernel.org, arnd@arndb.de,
         tglx@linutronix.de, torvalds@linux-foundation.org, tytso@mit.edu,
         viro@zeniv.linux.org.uk, y2038@lists.linaro.org,
-        Chris Mason <clm@fb.com>, David Sterba <dsterba@suse.com>,
-        Josef Bacik <jbacik@fb.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v4 10/26] fs: btrfs: Use ktime_get_real_ts for root ctime
-Message-ID: <20160815132649.GI30795@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
+        adilger.kernel@dilger.ca, adrian.hunter@intel.com,
+        anna.schumaker@netapp.com, buchino@cisco.com,
+        ceph-devel@vger.kernel.org, clm@fb.com, cm224.lee@samsung.com,
+        dedekind1@gmail.com, dsterba@suse.com, dushistov@mail.ru,
+        elder@kernel.org, eparis@redhat.com, hiralpat@cisco.com,
+        idryomov@gmail.com, jack@suse.com, jaegeuk@kernel.org, jbacik@fb.com,
+        jejb@linux.vnet.ibm.com, jfs-discussion@lists.sourceforge.net,
+        jlbec@evilplan.org, john.stultz@linaro.org, linux-audit@redhat.com,
+        linux-btrfs@vger.kernel.org, linux-ext4@vger.kernel.org,
+        linux-f2fs-devel@lists.sourceforge.net, linux-mtd@lists.infradead.org,
+        linux-nfs@vger.kernel.org, linux-scsi@vger.kernel.org,
+        lustre-devel@lists.lustre.org, martin.petersen@oracle.com,
+        mfasheh@suse.com, ocfs2-devel@oss.oracle.com, paul@paul-moore.com,
+        sage@redhat.com, sfrench@samba.org, shaggy@kernel.org,
+        sramars@cisco.com, trond.myklebust@primarydata.com, zyan@redhat.com
+Subject: Re: [GIT PULL] [PATCH v4 00/26] Delete CURRENT_TIME and
+ CURRENT_TIME_SEC macros
+Message-ID: <20160815162312.GA19794@kroah.com>
 References: <1471128518-24075-1-git-send-email-deepa.kernel@gmail.com>
- <1471128518-24075-11-git-send-email-deepa.kernel@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1471128518-24075-11-git-send-email-deepa.kernel@gmail.com>
+In-Reply-To: <1471128518-24075-1-git-send-email-deepa.kernel@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, Aug 13, 2016 at 03:48:22PM -0700, Deepa Dinamani wrote:
-> btrfs_root_item maintains the ctime for root updates.
-> This is not part of vfs_inode.
-> 
-> Since current_time() uses struct inode* as an argument
-> as Linus suggested, this cannot be used to update root
-> times unless, we modify the signature to use inode.
-> 
-> Since btrfs uses nanosecond time granularity, it can also
-> use ktime_get_real_ts directly to obtain timestamp for
-> the root. It is necessary to use the timespec time api
-> here because the same btrfs_set_stack_timespec_*() apis
-> are used for vfs inode times as well. These can be
-> transitioned to using timespec64 when btrfs internally
-> changes to use timespec64 as well.
-> 
-> Signed-off-by: Deepa Dinamani <deepa.kernel@gmail.com>
-> Acked-by: David Sterba <dsterba@suse.com>
-> Reviewed-by: Arnd Bergmann <arnd@arndb.de>
-> Cc: Chris Mason <clm@fb.com>
-> Cc: David Sterba <dsterba@suse.com>
+On Sat, Aug 13, 2016 at 03:48:12PM -0700, Deepa Dinamani wrote:
+> The series is aimed at getting rid of CURRENT_TIME and CURRENT_TIME_SEC macros.
+> The macros are not y2038 safe. There is no plan to transition them into being
+> y2038 safe.
+> ktime_get_* api's can be used in their place. And, these are y2038 safe.
 
-Acked-by: David Sterba <dsterba@suse.com>
+Who are you execting to pull this huge patch series?
+
+Why not just introduce the new api call, wait for that to be merged, and
+then push the individual patches through the different subsystems?
+After half of those get ignored, then provide a single set of patches
+that can go through Andrew or my trees.
+
+thanks,
+
+greg k-h

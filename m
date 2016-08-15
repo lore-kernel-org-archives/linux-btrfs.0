@@ -1,66 +1,61 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:24149 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752801AbcHON5D (ORCPT
+Received: from mail-it0-f52.google.com ([209.85.214.52]:38435 "EHLO
+	mail-it0-f52.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752762AbcHOORI (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 15 Aug 2016 09:57:03 -0400
-Subject: Re: About minimal device number for RAID5/6
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>, btrfs <linux-btrfs@vger.kernel.org>
-References: <d87a7caa-d414-1dbc-7c7e-a051e382114a@cn.fujitsu.com>
-From: Anand Jain <anand.jain@oracle.com>
-Message-ID: <0bd5e1f1-40bc-95c8-0d7a-ceba5487850c@oracle.com>
-Date: Mon, 15 Aug 2016 21:58:19 +0800
+	Mon, 15 Aug 2016 10:17:08 -0400
+Received: by mail-it0-f52.google.com with SMTP id n128so8218431ith.1
+        for <linux-btrfs@vger.kernel.org>; Mon, 15 Aug 2016 07:17:08 -0700 (PDT)
+Subject: Re: Huge load on btrfs subvolume delete
+To: Daniel Caillibaud <ml@lairdutemps.org>,
+        btrfs ml <linux-btrfs@vger.kernel.org>
+References: <20160815123928.47bd2c03@asus17.lairdutemps.org>
+ <95c98a1b-4484-c294-fcd6-001e73cd25d6@gmail.com>
+ <20160815160641.79063cec@asus17.lairdutemps.org>
+From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Message-ID: <5b02565e-95b2-cc9d-154f-b9e8805dbed4@gmail.com>
+Date: Mon, 15 Aug 2016 10:16:45 -0400
 MIME-Version: 1.0
-In-Reply-To: <d87a7caa-d414-1dbc-7c7e-a051e382114a@cn.fujitsu.com>
+In-Reply-To: <20160815160641.79063cec@asus17.lairdutemps.org>
 Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
-
-Have a look at this..
-
-http://www.spinics.net/lists/linux-btrfs/msg54779.html
-
-----------
-RAID5&6 devs_min values are in the context of degraded volume.
-RAID1&10.. devs_min values are in the context of healthy volume.
-
-RAID56 is correct. We already have devs_max to know the number
-of devices in a healthy volumes. RAID1's devs_min is wrong so
-it ended up being same as devs_max.
-----------
-
-Any comments?
-Also you may use the btrfs-raid-cal simulator tool to verify.
-https://github.com/asj/btrfs-raid-cal/blob/master/state-table
-
-
-Thanks, Anand
-
-
-
-On 08/15/2016 03:50 PM, Qu Wenruo wrote:
-> Hi,
+On 2016-08-15 10:06, Daniel Caillibaud wrote:
+> Le 15/08/16 à 08:32, "Austin S. Hemmelgarn" <ahferroin7@gmail.com> a écrit :
 >
-> Recently I found that manpage of mkfs is saying minimal device number
-> for RAID5 and RAID6 is 2 and 3.
+> ASH> On 2016-08-15 06:39, Daniel Caillibaud wrote:
+> ASH> > I'm newbie with btrfs, and I have pb with high load after each btrfs subvolume delete
+> […]
 >
-> Personally speaking, although I understand that RAID5/6 only requires
-> 1/2 devices for parity stripe, it is still quite strange behavior.
+> ASH> Before I start explaining possible solutions, it helps to explain what's
+> ASH> actually happening here.
+> […]
 >
-> Under most case, user use raid5/6 for striping AND parity. For 2 devices
-> RAID5, it's just a more expensive RAID1.
+> Thanks a lot for these clear and detailed explanations.
+Glad I could help.
 >
-> IMHO it's better to warn user about 2 devices RAID5 or 3 devices RAID6.
+> ASH> > Is there a better way to do so ?
 >
-> Any comment is welcomed.
+> ASH> While there isn't any way I know of to do so, there are ways you can
+> ASH> reduce the impact by reducing how much your backing up:
 >
-> Thanks,
-> Qu
+> Thanks for these clues too !
 >
+> I'll use --commit-after, in order to wait for complete deletion before starting rsync the next
+> snapshot, and I keep in mind the benefit of putting /var/log outside the main subvolume of the
+> vm (but I guess my main pb is about databases, because their datadir are the ones with most
+> writes).
 >
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+With respect to databases, you might consider backing them up separately 
+too.  In many cases for something like an SQL database, it's a lot more 
+flexible to have a dump of the database as a backup than it is to have 
+the database files themselves, because it decouples it from the 
+filesystem level layout.  Most good databases should be able to give you 
+a stable dump (assuming of course that the application using the 
+databases is sanely written) a whole lot faster than you could back up 
+the files themselves.  For the couple of databases we use internally 
+where I work, we actually back them up separately not only to retain 
+this flexibility, but also because we have them on a separate backup 
+schedule from the rest of the systems because they change a lot more 
+frequently than anything else.

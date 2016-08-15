@@ -1,53 +1,46 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from zaphod.cobb.me.uk ([213.138.97.131]:34464 "EHLO
-	zaphod.cobb.me.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753017AbcHOTST (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 15 Aug 2016 15:18:19 -0400
-Received: from black.home.cobb.me.uk (unknown [192.168.0.205])
-	by zaphod.cobb.me.uk (Postfix) with ESMTP id 7EE3C9B976
-	for <linux-btrfs@vger.kernel.org>; Mon, 15 Aug 2016 20:18:15 +0100 (BST)
-Received: from [192.168.0.211] (novatech.home.cobb.me.uk [192.168.0.211])
-	by black.home.cobb.me.uk (Postfix) with ESMTPS id 57AE35FBA1
-	for <linux-btrfs@vger.kernel.org>; Mon, 15 Aug 2016 20:18:15 +0100 (BST)
-Subject: Re: Extents for a particular subvolume
-To: linux-btrfs@vger.kernel.org
-References: <57A24C51.2050302@cobb.uk.net> <20160803203708.GA26505@angband.pl>
- <57A26867.5020403@cobb.uk.net>
-From: Graham Cobb <g.btrfs@cobb.uk.net>
-Message-ID: <77c778fa-5495-23dc-5482-297e23f58c81@cobb.uk.net>
-Date: Mon, 15 Aug 2016 20:18:15 +0100
+Received: from v1.edulibre.org ([5.39.16.54]:59217 "EHLO mail.edulibre.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753105AbcHOT4O (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 15 Aug 2016 15:56:14 -0400
+Received: from asus17.lairdutemps.org (did75-10-82-236-230-93.fbx.proxad.net [82.236.230.93])
+	by mail.edulibre.org (Postfix) with ESMTPSA id 2D2B41026A89
+	for <linux-btrfs@vger.kernel.org>; Mon, 15 Aug 2016 21:56:11 +0200 (CEST)
+Date: Mon, 15 Aug 2016 21:56:10 +0200
+From: Daniel Caillibaud <ml@lairdutemps.org>
+To: btrfs ml <linux-btrfs@vger.kernel.org>
+Subject: Re: Huge load on btrfs subvolume delete
+Message-ID: <20160815215610.4f10d4ba@asus17.lairdutemps.org>
+In-Reply-To: <5b02565e-95b2-cc9d-154f-b9e8805dbed4@gmail.com>
+References: <20160815123928.47bd2c03@asus17.lairdutemps.org>
+	<95c98a1b-4484-c294-fcd6-001e73cd25d6@gmail.com>
+	<20160815160641.79063cec@asus17.lairdutemps.org>
+	<5b02565e-95b2-cc9d-154f-b9e8805dbed4@gmail.com>
 MIME-Version: 1.0
-In-Reply-To: <57A26867.5020403@cobb.uk.net>
-Content-Type: text/plain; charset=windows-1252
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 03/08/16 22:55, Graham Cobb wrote:
-> On 03/08/16 21:37, Adam Borowski wrote:
->> On Wed, Aug 03, 2016 at 08:56:01PM +0100, Graham Cobb wrote:
->>> Are there any btrfs commands (or APIs) to allow a script to create a
->>> list of all the extents referred to within a particular (mounted)
->>> subvolume?  And is it a reasonably efficient process (i.e. doesn't
->>> involve backrefs and, preferably, doesn't involve following directory
->>> trees)?
+Le 15/08/16 à 10:16, "Austin S. Hemmelgarn" <ahferroin7@gmail.com> a écrit :
+ASH> With respect to databases, you might consider backing them up separately 
+ASH> too.  In many cases for something like an SQL database, it's a lot more 
+ASH> flexible to have a dump of the database as a backup than it is to have 
+ASH> the database files themselves, because it decouples it from the 
+ASH> filesystem level layout.
 
-In case anyone else is interested in this, I ended up creating some
-simple scripts to allow me to do this.  They are slow because they walk
-the directory tree and they use filefrag to get the extent data, but
-they do let me answer questions like:
+With mysql|mariadb, having a consistent dump needs to lock tables during dump, not acceptable on
+production servers. 
 
-* How much space am I wasting by keeping historical snapshots?
-* How much data is being shared between two subvolumes
-* How much of the data in my latest snapshot is unique to that snapshot?
-* How much data would I actually free up if I removed (just) these
-particular subvolumes?
+Even with specialised tools for hotdump, doing the dump on prod servers is too heavy about I/O
+(I have huge db, writing the dump is expensive and long).
 
-If they are useful to anyone else you can find them at:
+I used to have a slave juste for the dump (easy to stop slave, dump, and start slave), but after
+a while it wasn't able to follow the writings all the day long (prod was on ssd and it wasn't,
+dump hd was 100% busy all the day long), so it's for me really easier to rsync the raw
+files once a day on a cheap host before dump.
 
-https://github.com/GrahamCobb/extents-lists
+(of course, I need to flush & lock table during the snapshot, before rsync, but it's just one or
+two seconds, still acceptable)
 
-If anyone knows of more efficient ways to get this information please
-let me know. And, of course, feel free to suggest improvements/bugfixes!
-
-
+-- 
+Daniel

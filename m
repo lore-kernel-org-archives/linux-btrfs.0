@@ -1,97 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qk0-f172.google.com ([209.85.220.172]:35392 "EHLO
-	mail-qk0-f172.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753270AbcHOTL3 (ORCPT
+Received: from zaphod.cobb.me.uk ([213.138.97.131]:34464 "EHLO
+	zaphod.cobb.me.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753017AbcHOTST (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 15 Aug 2016 15:11:29 -0400
-Received: by mail-qk0-f172.google.com with SMTP id v123so51081230qkh.2
-        for <linux-btrfs@vger.kernel.org>; Mon, 15 Aug 2016 12:11:29 -0700 (PDT)
+	Mon, 15 Aug 2016 15:18:19 -0400
+Received: from black.home.cobb.me.uk (unknown [192.168.0.205])
+	by zaphod.cobb.me.uk (Postfix) with ESMTP id 7EE3C9B976
+	for <linux-btrfs@vger.kernel.org>; Mon, 15 Aug 2016 20:18:15 +0100 (BST)
+Received: from [192.168.0.211] (novatech.home.cobb.me.uk [192.168.0.211])
+	by black.home.cobb.me.uk (Postfix) with ESMTPS id 57AE35FBA1
+	for <linux-btrfs@vger.kernel.org>; Mon, 15 Aug 2016 20:18:15 +0100 (BST)
+Subject: Re: Extents for a particular subvolume
+To: linux-btrfs@vger.kernel.org
+References: <57A24C51.2050302@cobb.uk.net> <20160803203708.GA26505@angband.pl>
+ <57A26867.5020403@cobb.uk.net>
+From: Graham Cobb <g.btrfs@cobb.uk.net>
+Message-ID: <77c778fa-5495-23dc-5482-297e23f58c81@cobb.uk.net>
+Date: Mon, 15 Aug 2016 20:18:15 +0100
 MIME-Version: 1.0
-In-Reply-To: <fe8222d8-6463-8b4d-0613-b3639455463d@cn.fujitsu.com>
-References: <CAGj_d3D2OZt2nY622rp9NzxgAfKZ2iN1kLSQ2Ras-0fM+1+-ig@mail.gmail.com>
- <fe8222d8-6463-8b4d-0613-b3639455463d@cn.fujitsu.com>
-From: Rakesh Sankeshi <rakesh.sankeshi@gmail.com>
-Date: Mon, 15 Aug 2016 12:11:28 -0700
-Message-ID: <CAGj_d3C1nf3LGCXfWxoYNpWP2X81v-+eT22yBx17HgfMaP7ocg@mail.gmail.com>
-Subject: Re: btrfs quota issues
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Cc: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+In-Reply-To: <57A26867.5020403@cobb.uk.net>
+Content-Type: text/plain; charset=windows-1252
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-yes, subvol level.
+On 03/08/16 22:55, Graham Cobb wrote:
+> On 03/08/16 21:37, Adam Borowski wrote:
+>> On Wed, Aug 03, 2016 at 08:56:01PM +0100, Graham Cobb wrote:
+>>> Are there any btrfs commands (or APIs) to allow a script to create a
+>>> list of all the extents referred to within a particular (mounted)
+>>> subvolume?  And is it a reasonably efficient process (i.e. doesn't
+>>> involve backrefs and, preferably, doesn't involve following directory
+>>> trees)?
 
-qgroupid         rfer         excl     max_rfer     max_excl parent  child
+In case anyone else is interested in this, I ended up creating some
+simple scripts to allow me to do this.  They are slow because they walk
+the directory tree and they use filefrag to get the extent data, but
+they do let me answer questions like:
 
---------         ----         ----     --------     -------- ------  -----
+* How much space am I wasting by keeping historical snapshots?
+* How much data is being shared between two subvolumes
+* How much of the data in my latest snapshot is unique to that snapshot?
+* How much data would I actually free up if I removed (just) these
+particular subvolumes?
 
-0/5          16.00KiB     16.00KiB         none         none ---     ---
+If they are useful to anyone else you can find them at:
 
-0/258       119.48GiB    119.48GiB    200.00GiB         none ---     ---
+https://github.com/GrahamCobb/extents-lists
 
-0/259        92.57GiB     92.57GiB    200.00GiB         none ---     ---
-
-
-although I have 200GB limit on 2 subvols, running into issue at about
-120 and 92GB itself
+If anyone knows of more efficient ways to get this information please
+let me know. And, of course, feel free to suggest improvements/bugfixes!
 
 
-On Sun, Aug 14, 2016 at 7:11 PM, Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
->
->
-> At 08/12/2016 01:32 AM, Rakesh Sankeshi wrote:
->>
->> I set 200GB limit to one user and 100GB to another user.
->>
->> as soon as I reached 139GB and 53GB each, hitting the quota errors.
->> anyway to workaround quota functionality on btrfs LZO compressed
->> filesystem?
->>
->
-> Please paste "btrfs qgroup show -prce <mnt>" output if you are using btrfs
-> qgroup/quota function.
->
-> And, AFAIK btrfs qgroup is applied to subvolume, not user.
->
-> So did you mean limit it to one subvolume belongs to one user?
->
-> Thanks,
-> Qu
->
->>
->>
->> 4.7.0-040700-generic #201608021801 SMP
->>
->> btrfs-progs v4.7
->>
->>
->> Label: none  uuid: 66a78faf-2052-4864-8a52-c5aec7a56ab8
->>
->> Total devices 2 FS bytes used 150.62GiB
->>
->> devid    1 size 1.00TiB used 78.01GiB path /dev/xvdc
->>
->> devid    2 size 1.00TiB used 78.01GiB path /dev/xvde
->>
->>
->> Data, RAID0: total=150.00GiB, used=149.12GiB
->>
->> System, RAID1: total=8.00MiB, used=16.00KiB
->>
->> Metadata, RAID1: total=3.00GiB, used=1.49GiB
->>
->> GlobalReserve, single: total=512.00MiB, used=0.00B
->>
->>
->> Filesystem      Size  Used Avail Use% Mounted on
->>
->> /dev/xvdc       2.0T  153G  1.9T   8% /test_lzo
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->>
->>
->
->

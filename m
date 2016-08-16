@@ -1,92 +1,167 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.linuxfoundation.org ([140.211.169.12]:34977 "EHLO
-	mail.linuxfoundation.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750822AbcHPSxL (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 16 Aug 2016 14:53:11 -0400
-Date: Tue, 16 Aug 2016 20:53:20 +0200
-From: Greg KH <gregkh@linuxfoundation.org>
-To: Deepa Dinamani <deepa.kernel@gmail.com>
-Cc: Linux FS-devel Mailing List <linux-fsdevel@vger.kernel.org>,
-        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
-        Arnd Bergmann <arnd@arndb.de>, Thomas Gleixner <tglx@linutronix.de>,
-        Linus Torvalds <torvalds@linux-foundation.org>,
-        "Theodore Ts'o" <tytso@mit.edu>,
-        Alexander Viro <viro@zeniv.linux.org.uk>,
-        y2038 Mailman List <y2038@lists.linaro.org>,
-        Andreas Dilger <adilger.kernel@dilger.ca>,
-        Adrian Hunter <adrian.hunter@intel.com>,
-        Anna Schumaker <anna.schumaker@netapp.com>,
-        Brian Uchino <buchino@cisco.com>,
-        ceph-devel <ceph-devel@vger.kernel.org>, Chris Mason <clm@fb.com>,
-        Changman Lee <cm224.lee@samsung.com>,
-        Artem Bityutskiy <dedekind1@gmail.com>,
-        David Sterba <dsterba@suse.com>, Evgeniy Dushistov <dushistov@mail.ru>,
-        Alex Elder <elder@kernel.org>, Eric Paris <eparis@redhat.com>,
-        Hiral Patel <hiralpat@cisco.com>, Ilya Dryomov <idryomov@gmail.com>,
-        Jan Kara <jack@suse.com>, Jaegeuk Kim <jaegeuk@kernel.org>,
-        Josef Bacik <jbacik@fb.com>,
-        "James E.J. Bottomley" <jejb@linux.vnet.ibm.com>,
-        jfs-discussion@lists.sourceforge.net, Joel Becker <jlbec@evilplan.org>,
-        John Stultz <john.stultz@linaro.org>, linux-audit@redhat.com,
-        linux-btrfs <linux-btrfs@vger.kernel.org>, linux-ext4@vger.kernel.org,
-        "Linux F2FS DEV, Mailing List"
-	<linux-f2fs-devel@lists.sourceforge.net>,
-        linux-mtd <linux-mtd@lists.infradead.org>,
-        Linux NFS Mailing List <linux-nfs@vger.kernel.org>,
-        Linux SCSI List <linux-scsi@vger.kernel.org>,
-        lustre-devel@lists.lustre.org,
-        "Martin K. Petersen" <martin.petersen@oracle.com>,
-        Mark Fasheh <mfasheh@suse.com>, ocfs2-devel@oss.oracle.com,
-        Paul Moore <paul@paul-moore.com>, Sage Weil <sage@redhat.com>,
-        Steve French <sfrench@samba.org>, Dave Kleikamp <shaggy@kernel.org>,
-        Suma Ramars <sramars@cisco.com>,
-        Trond Myklebust <trond.myklebust@primarydata.com>,
-        "Yan, Zheng" <zyan@redhat.com>
-Subject: Re: [GIT PULL] [PATCH v4 00/26] Delete CURRENT_TIME and
- CURRENT_TIME_SEC macros
-Message-ID: <20160816185320.GB6513@kroah.com>
-References: <1471128518-24075-1-git-send-email-deepa.kernel@gmail.com>
- <20160815162312.GA19794@kroah.com>
- <CABeXuvp027DZR0=zQPp86oGdi2B+Gh16z8_FyoY5UDUdHXAngA@mail.gmail.com>
+Received: from mx2.suse.de ([195.135.220.15]:47102 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750822AbcHPSno (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 16 Aug 2016 14:43:44 -0400
+To: linux-btrfs <linux-btrfs@vger.kernel.org>, fstests@vger.kernel.org
+Cc: Qu Wenruo <quwenruo@cn.fujitsu.com>
+From: Jeff Mahoney <jeffm@suse.com>
+Subject: [PATCH 1/2] btrfs/131: test for umount of read-only fs when quota
+ rescan is paused
+Message-ID: <2f102cc7-a6b2-e23d-9c56-de6c6bc5110d@suse.com>
+Date: Tue, 16 Aug 2016 14:30:21 -0400
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CABeXuvp027DZR0=zQPp86oGdi2B+Gh16z8_FyoY5UDUdHXAngA@mail.gmail.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Aug 16, 2016 at 11:18:52AM -0700, Deepa Dinamani wrote:
-> Thank you for the suggestion.
-> 
-> > Who are you execting to pull this huge patch series?
-> 
-> The last pull request was addressed to Al as per Arnd's suggestion.
-> I'm not completely sure who should it be addressed to.
-> 
-> > Why not just introduce the new api call, wait for that to be merged, and
-> > then push the individual patches through the different subsystems?
-> > After half of those get ignored, then provide a single set of patches
-> > that can go through Andrew or my trees.
-> 
-> Arnd and I tried to do this a few ways.
-> 
-> We can try to introduce the api first like you suggest.
-> 
-> There are a few Acks already on the patches.
-> And, patches 2-5 also need to be merged through some common tree like
-> yours or Andrew's as you suggest.
-> 
-> So, if everyone is ok, I could do the following:
-> 
-> 1. Post patches 1-5 for rc-2.
+Ensure that we can unmount a read-only file system when quota rescan
+is paused from a previous read-write mount.
 
--rc2 is already released, and we aren't adding new apis this late in the
-release cycle, sorry.
+If the kernel has a separate bug where we are returning early while
+waiting for the rescan worker, we can use that to un-hang the test,
+and report both errors.
 
-> 2. Post all other patches to respective maintainers after rc-2
-> 3. Then after patches get ignored or merged, post remaining as a
-> series for you or Andrew to pick up.
+This issue is resolved by the following patch for the Linux kernel:
+"btrfs: properly track when rescan worker is running"
 
-The apis need to be aimed for 4.9-rc1, it's too late for 4.8, sorry.
+Signed-off-by: Jeff Mahoney <jeffm@suse.com>
+---
+ tests/btrfs/131     | 100 ++++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/131.out |   3 ++
+ tests/btrfs/group   |   1 +
+ 3 files changed, 104 insertions(+)
+ create mode 100755 tests/btrfs/131
+ create mode 100644 tests/btrfs/131.out
 
-greg k-h
+diff --git a/tests/btrfs/131 b/tests/btrfs/131
+new file mode 100755
+index 0000000..56c38a2
+--- /dev/null
++++ b/tests/btrfs/131
+@@ -0,0 +1,100 @@
++#! /bin/bash
++# FS QA Test 131
++#
++# Test for bug where read-only mounts will hang on umount when
++# a qgroup rescan was paused.  This also tests whether that hung
++# umount can be unhung by trying to make use of a separate bug that
++# means we can interrupt the wait for the rescan worker.  If that
++# happens, we report both errors.
++#
++#-----------------------------------------------------------------------
++# Copyright (c) 2016 SUSE.  All Rights Reserved.
++#
++# This program is free software; you can redistribute it and/or
++# modify it under the terms of the GNU General Public License as
++# published by the Free Software Foundation.
++#
++# This program is distributed in the hope that it would be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write the Free Software Foundation,
++# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++#-----------------------------------------------------------------------
++#
++
++seq=`basename $0`
++seqres=$RESULT_DIR/$seq
++echo "QA output created by $seq"
++
++here=`pwd`
++tmp=/tmp/$$
++status=1	# failure is the default!
++trap "_cleanup; exit \$status" 0 1 2 3 15
++
++_cleanup()
++{
++	cd /
++	rm -f $tmp.*
++}
++
++# get standard environment, filters and checks
++. ./common/rc
++. ./common/filter
++
++# remove previous $seqres.full before test
++rm -f $seqres.full
++
++# real QA test starts here
++
++# Modify as appropriate.
++_supported_fs btrfs
++_supported_os Linux
++
++# We'll exit with a quota rescan paused
++_require_scratch_nocheck
++
++_require_btrfs
++BTRFS_DEBUG_TREE_PROG="`set_prog_path btrfs-debug-tree`"
++_require_command "$BTRFS_DEBUG_TREE_PROG" btrfs-debug-tree
++TIMEOUT_PROG="`set_prog_path timeout`"
++_require_command "$TIMEOUT_PROG" timeout
++
++rm -f $seqres.full
++_scratch_mkfs >>$seqres.full 2>&1
++
++_scratch_mount
++cp -aR /lib/modules/$(uname -r) $SCRATCH_MNT
++
++# A qgroup rescan on an empty or small file system completes nearly
++# immediately.  We need to ensure that it runs long enough that it will
++# be paused on umount.  Snapshots slow down the rescan so we should see
++# the race without a lot of data.  This is an arbitrary number that
++# works on a ramdisk so it should be sufficient for any storage.
++for n in $(seq 1 100); do
++  _run_btrfs_util_prog subvolume snapshot $SCRATCH_MNT $SCRATCH_MNT/$n
++done
++_run_btrfs_util_prog quota enable $SCRATCH_MNT
++_scratch_unmount
++
++echo "read-write umount completed"
++
++# Confirm that the rescan is paused
++if ! $BTRFS_DEBUG_TREE_PROG $SCRATCH_DEV | \
++	egrep -q 'flags ON|SCANNING|INCONSISTENT scan'; then
++	echo "qgroup rescan not paused."
++fi
++_scratch_mount -r
++
++# If the bug exists, this will hang.  If we can kill it, that's another bug.
++$TIMEOUT_PROG 10 umount $SCRATCH_MNT
++if test $? -eq 124 ; then
++    echo "umount hung but was killed"
++fi
++echo "read-only umount completed"
++
++# success, all done
++status=0
++exit
+diff --git a/tests/btrfs/131.out b/tests/btrfs/131.out
+new file mode 100644
+index 0000000..845a501
+--- /dev/null
++++ b/tests/btrfs/131.out
+@@ -0,0 +1,3 @@
++QA output created by 131
++read-write umount completed
++read-only umount completed
+diff --git a/tests/btrfs/group b/tests/btrfs/group
+index 6b29c05..929fa21 100644
+--- a/tests/btrfs/group
++++ b/tests/btrfs/group
+@@ -133,3 +133,4 @@
+ 128 auto quick send
+ 129 auto quick send
+ 130 auto clone send
++131 auto quick qgroup
+-- 
+1.8.5.6
+
+
+-- 
+Jeff Mahoney
+SUSE Labs

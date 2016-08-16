@@ -1,116 +1,108 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:51952 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751944AbcHICIK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 8 Aug 2016 22:08:10 -0400
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id 342BCAD7F
-	for <linux-btrfs@vger.kernel.org>; Tue,  9 Aug 2016 02:08:08 +0000 (UTC)
-From: jeffm@suse.com
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs: waiting on qgroup rescan should not always be interruptible
-Date: Mon,  8 Aug 2016 22:08:06 -0400
-Message-Id: <1470708486-18547-1-git-send-email-jeffm@suse.com>
+Received: from cn.fujitsu.com ([59.151.112.132]:16117 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1752258AbcHPBjQ (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 15 Aug 2016 21:39:16 -0400
+Subject: Re: [PATCH] btrfs: properly track when rescan worker is running
+To: Jeff Mahoney <jeffm@suse.com>, linux-btrfs <linux-btrfs@vger.kernel.org>
+References: <cb4fecfa-9b40-d42c-8218-f0e7f7ac7fbb@suse.com>
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Message-ID: <e842f6c5-58b0-c2f6-35e9-80ba81a43b76@cn.fujitsu.com>
+Date: Tue, 16 Aug 2016 09:39:06 +0800
+MIME-Version: 1.0
+In-Reply-To: <cb4fecfa-9b40-d42c-8218-f0e7f7ac7fbb@suse.com>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Jeff Mahoney <jeffm@suse.com>
 
-We wait on qgroup rescan completion in three places: file system
-shutdown, the quota disable ioctl, and the rescan wait ioctl.  If the
-user sends a signal while we're waiting, we continue happily along.  This
-is expected behavior for the rescan wait ioctl.  It's racy in the shutdown
-path but mostly works due to other unrelated synchronization points.
-In the quota disable path, it Oopses the kernel pretty much immediately.
 
-Cc: <stable@vger.kernel.org> # v4.4+
-Signed-off-by: Jeff Mahoney <jeffm@suse.com>
----
- fs/btrfs/disk-io.c |  2 +-
- fs/btrfs/ioctl.c   |  2 +-
- fs/btrfs/qgroup.c  | 12 +++++++++---
- fs/btrfs/qgroup.h  |  3 ++-
- 4 files changed, 13 insertions(+), 6 deletions(-)
+At 08/16/2016 12:10 AM, Jeff Mahoney wrote:
+> The qgroup_flags field is overloaded such that it reflects the on-disk
+> status of qgroups and the runtime state.  The BTRFS_QGROUP_STATUS_FLAG_RESCAN
+> flag is used to indicate that a rescan operation is in progress, but if
+> the file system is unmounted while a rescan is running, the rescan
+> operation is paused.  If the file system is then mounted read-only,
+> the flag will still be present but the rescan operation will not have
+> been resumed.  When we go to umount, btrfs_qgroup_wait_for_completion
+> will see the flag and interpret it to mean that the rescan worker is
+> still running and will wait for a completion that will never come.
+>
+> This patch uses a separate flag to indicate when the worker is
+> running.  The locking and state surrounding the qgroup rescan worker
+> needs a lot of attention beyond this patch but this is enough to
+> avoid a hung umount.
+>
+> Cc: <stable@vger.kernel.org> # v4.4+
+> Signed-off-by; Jeff Mahoney <jeffm@suse.com>
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 59febfb..f35a7de 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -3851,7 +3851,7 @@ void close_ctree(struct btrfs_root *root)
- 	smp_mb();
- 
- 	/* wait for the qgroup rescan worker to stop */
--	btrfs_qgroup_wait_for_completion(fs_info);
-+	btrfs_qgroup_wait_for_completion(fs_info, false);
- 
- 	/* wait for the uuid_scan task to finish */
- 	down(&fs_info->uuid_tree_rescan_sem);
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 14ed1e9..b2a2da5 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -5084,7 +5084,7 @@ static long btrfs_ioctl_quota_rescan_wait(struct file *file, void __user *arg)
- 	if (!capable(CAP_SYS_ADMIN))
- 		return -EPERM;
- 
--	return btrfs_qgroup_wait_for_completion(root->fs_info);
-+	return btrfs_qgroup_wait_for_completion(root->fs_info, true);
- }
- 
- static long _btrfs_ioctl_set_received_subvol(struct file *file,
-diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-index 93ee1c1..de08b12 100644
---- a/fs/btrfs/qgroup.c
-+++ b/fs/btrfs/qgroup.c
-@@ -995,7 +995,7 @@ int btrfs_quota_disable(struct btrfs_trans_handle *trans,
- 		goto out;
- 	fs_info->quota_enabled = 0;
- 	fs_info->pending_quota_state = 0;
--	btrfs_qgroup_wait_for_completion(fs_info);
-+	btrfs_qgroup_wait_for_completion(fs_info, false);
- 	spin_lock(&fs_info->qgroup_lock);
- 	quota_root = fs_info->quota_root;
- 	fs_info->quota_root = NULL;
-@@ -2487,7 +2487,8 @@ btrfs_qgroup_rescan(struct btrfs_fs_info *fs_info)
- 	return 0;
- }
- 
--int btrfs_qgroup_wait_for_completion(struct btrfs_fs_info *fs_info)
-+int btrfs_qgroup_wait_for_completion(struct btrfs_fs_info *fs_info,
-+				     bool interruptible)
- {
- 	int running;
- 	int ret = 0;
-@@ -2498,9 +2499,14 @@ int btrfs_qgroup_wait_for_completion(struct btrfs_fs_info *fs_info)
- 	spin_unlock(&fs_info->qgroup_lock);
- 	mutex_unlock(&fs_info->qgroup_rescan_lock);
- 
--	if (running)
-+	if (!running)
-+		return 0;
-+
-+	if (interruptible)
- 		ret = wait_for_completion_interruptible(
- 					&fs_info->qgroup_rescan_completion);
-+	else
-+		wait_for_completion(&fs_info->qgroup_rescan_completion);
- 
- 	return ret;
- }
-diff --git a/fs/btrfs/qgroup.h b/fs/btrfs/qgroup.h
-index 710887c..af3e557 100644
---- a/fs/btrfs/qgroup.h
-+++ b/fs/btrfs/qgroup.h
-@@ -46,7 +46,8 @@ int btrfs_quota_disable(struct btrfs_trans_handle *trans,
- 			struct btrfs_fs_info *fs_info);
- int btrfs_qgroup_rescan(struct btrfs_fs_info *fs_info);
- void btrfs_qgroup_rescan_resume(struct btrfs_fs_info *fs_info);
--int btrfs_qgroup_wait_for_completion(struct btrfs_fs_info *fs_info);
-+int btrfs_qgroup_wait_for_completion(struct btrfs_fs_info *fs_info,
-+				     bool interruptible);
- int btrfs_add_qgroup_relation(struct btrfs_trans_handle *trans,
- 			      struct btrfs_fs_info *fs_info, u64 src, u64 dst);
- int btrfs_del_qgroup_relation(struct btrfs_trans_handle *trans,
--- 
-2.7.1
+Reviewed-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+
+Looks good to me.
+
+Would you mind to submit a test case for it?
+
+Thanks,
+Qu
+> ---
+>  fs/btrfs/ctree.h   |    1 +
+>  fs/btrfs/disk-io.c |    1 +
+>  fs/btrfs/qgroup.c  |    9 ++++++++-
+>  3 files changed, 10 insertions(+), 1 deletion(-)
+>
+> --- a/fs/btrfs/ctree.h
+> +++ b/fs/btrfs/ctree.h
+> @@ -1771,6 +1771,7 @@ struct btrfs_fs_info {
+>  	struct btrfs_workqueue *qgroup_rescan_workers;
+>  	struct completion qgroup_rescan_completion;
+>  	struct btrfs_work qgroup_rescan_work;
+> +	bool qgroup_rescan_running;	/* protected by qgroup_rescan_lock */
+>
+>  	/* filesystem state */
+>  	unsigned long fs_state;
+> --- a/fs/btrfs/disk-io.c
+> +++ b/fs/btrfs/disk-io.c
+> @@ -2275,6 +2275,7 @@ static void btrfs_init_qgroup(struct btr
+>  	fs_info->quota_enabled = 0;
+>  	fs_info->pending_quota_state = 0;
+>  	fs_info->qgroup_ulist = NULL;
+> +	fs_info->qgroup_rescan_running = false;
+>  	mutex_init(&fs_info->qgroup_rescan_lock);
+>  }
+>
+> --- a/fs/btrfs/qgroup.c
+> +++ b/fs/btrfs/qgroup.c
+> @@ -2302,6 +2302,10 @@ static void btrfs_qgroup_rescan_worker(s
+>  	int err = -ENOMEM;
+>  	int ret = 0;
+>
+> +	mutex_lock(&fs_info->qgroup_rescan_lock);
+> +	fs_info->qgroup_rescan_running = true;
+> +	mutex_unlock(&fs_info->qgroup_rescan_lock);
+> +
+>  	path = btrfs_alloc_path();
+>  	if (!path)
+>  		goto out;
+> @@ -2368,6 +2372,9 @@ out:
+>  	}
+>
+>  done:
+> +	mutex_lock(&fs_info->qgroup_rescan_lock);
+> +	fs_info->qgroup_rescan_running = false;
+> +	mutex_unlock(&fs_info->qgroup_rescan_lock);
+>  	complete_all(&fs_info->qgroup_rescan_completion);
+>  }
+>
+> @@ -2494,7 +2501,7 @@ int btrfs_qgroup_wait_for_completion(str
+>
+>  	mutex_lock(&fs_info->qgroup_rescan_lock);
+>  	spin_lock(&fs_info->qgroup_lock);
+> -	running = fs_info->qgroup_flags & BTRFS_QGROUP_STATUS_FLAG_RESCAN;
+> +	running = fs_info->qgroup_rescan_running;
+>  	spin_unlock(&fs_info->qgroup_lock);
+>  	mutex_unlock(&fs_info->qgroup_rescan_lock);
+>
+>
+
 

@@ -1,223 +1,167 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:31173 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751294AbcHQI7X (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 17 Aug 2016 04:59:23 -0400
-Subject: Re: [PATCH 1/2] btrfs/131: test for umount of read-only fs when quota
- rescan is paused
-To: Eryu Guan <eguan@redhat.com>, Jeff Mahoney <jeffm@suse.com>
-References: <2f102cc7-a6b2-e23d-9c56-de6c6bc5110d@suse.com>
- <20160817084539.GS27776@eguan.usersys.redhat.com>
-CC: linux-btrfs <linux-btrfs@vger.kernel.org>, <fstests@vger.kernel.org>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <fc7adfe0-bd8e-39ba-b47d-d54b29f40e47@cn.fujitsu.com>
-Date: Wed, 17 Aug 2016 16:59:11 +0800
+Received: from mx2.suse.de ([195.135.220.15]:47103 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751266AbcHPSno (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 16 Aug 2016 14:43:44 -0400
+To: linux-btrfs <linux-btrfs@vger.kernel.org>, fstests@vger.kernel.org
+Cc: Qu Wenruo <quwenruo@cn.fujitsu.com>
+From: Jeff Mahoney <jeffm@suse.com>
+Subject: [PATCH 2/2] btrfs/132: test for crash if btrfs quota disable is
+ killed while waiting on rescan
+Message-ID: <86c01c58-09df-178b-10de-dc4fc822bb55@suse.com>
+Date: Tue, 16 Aug 2016 14:30:22 -0400
 MIME-Version: 1.0
-In-Reply-To: <20160817084539.GS27776@eguan.usersys.redhat.com>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+There was a bug in btrfs where the wait for completion of the qgroup
+rescan worker could be interrupted, resulting in a crash in the rescan
+worker when the quota root goes away.
+
+It is possible to interrupt the wait during file system umount as well,
+but effectively impossible to test.  The umount generally succeeds safely
+anyway due to other synchronization points.
+
+This issue is resolved by the following patch for the Linux kernel:
+"btrfs: waiting on qgroup rescan should not always be interruptible"
+
+Signed-off-by: Jeff Mahoney <jeffm@suse.com>
+---
+ tests/btrfs/132     | 101 ++++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/132.out |   1 +
+ tests/btrfs/group   |   1 +
+ 3 files changed, 103 insertions(+)
+ create mode 100755 tests/btrfs/132
+ create mode 100644 tests/btrfs/132.out
+
+diff --git a/tests/btrfs/132 b/tests/btrfs/132
+new file mode 100755
+index 0000000..3929afa
+--- /dev/null
++++ b/tests/btrfs/132
+@@ -0,0 +1,101 @@
++#! /bin/bash
++# FS QA Test 132
++#
++# Test for race with signal being received in btrfs_qgroup_disable and
++# the qgroup rescan worker.  The failure case is a crash due to the quota
++# root being released prematurely.
++#
++#-----------------------------------------------------------------------
++# Copyright (c) 2016 SUSE.  All Rights Reserved.
++#
++# This program is free software; you can redistribute it and/or
++# modify it under the terms of the GNU General Public License as
++# published by the Free Software Foundation.
++#
++# This program is distributed in the hope that it would be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write the Free Software Foundation,
++# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++#-----------------------------------------------------------------------
++#
++
++seq=`basename $0`
++seqres=$RESULT_DIR/$seq
++echo "QA output created by $seq"
++
++here=`pwd`
++tmp=/tmp/$$
++status=1	# failure is the default!
++trap "_cleanup; exit \$status" 0 1 2 3 15
++
++_cleanup()
++{
++	cd /
++	rm -f $tmp.*
++}
++
++# get standard environment, filters and checks
++. ./common/rc
++. ./common/filter
++
++# remove previous $seqres.full before test
++rm -f $seqres.full
++
++# real QA test starts here
++
++# Modify as appropriate.
++_supported_fs btrfs
++_supported_os Linux
++
++# We'll exit with a quota rescan paused
++_require_scratch_nocheck
++
++_require_btrfs
++BTRFS_DEBUG_TREE_PROG="`set_prog_path btrfs-debug-tree`"
++_require_command "$BTRFS_DEBUG_TREE_PROG" btrfs-debug-tree
++
++rm -f $seqres.full
++
++_scratch_mkfs >>$seqres.full 2>&1
++_scratch_mount
++cp -aR /lib/modules/$(uname -r) $SCRATCH_MNT
++
++# A qgroup rescan on an empty or small file system completes nearly
++# immediately.  We need to ensure that it runs long enough that it will
++# be running when the disable ioctl executes.  Snapshots slow down the
++# rescan so we should see the race without a lot of data.  This is an
++# arbitrary number that works on a ramdisk so it should be sufficient
++# for any storage.
++for n in $(seq 1 100); do
++    _run_btrfs_util_prog subvolume snapshot $SCRATCH_MNT $SCRATCH_MNT/$n
++done
++
++sync
++_run_btrfs_util_prog quota enable $SCRATCH_MNT
++
++# _run_btrfs_util_prog runs the command in a subshell
++# so jobs -p and $! don't work
++$BTRFS_UTIL_PROG quota disable $SCRATCH_MNT &
++
++# This is arbitrary as well but worked for me.  The goal is to let the
++# command get into the umount syscall before calling kill but not so far
++# into it that we've already waited for the rescan worker to complete.
++usleep 10000
++jobs=$(jobs -p)
++if kill -0 $jobs 2> /dev/null; then
++	kill -KILL $jobs
++else
++	echo "quota disable command exited too quickly"
++fi
++
++# wait will output the Killed message, so silence that
++wait 2> /dev/null
++_scratch_unmount
++
++# success, all done
++status=0
++exit
+diff --git a/tests/btrfs/132.out b/tests/btrfs/132.out
+new file mode 100644
+index 0000000..06c1d19
+--- /dev/null
++++ b/tests/btrfs/132.out
+@@ -0,0 +1 @@
++QA output created by 132
+diff --git a/tests/btrfs/group b/tests/btrfs/group
+index 929fa21..c4e880a 100644
+--- a/tests/btrfs/group
++++ b/tests/btrfs/group
+@@ -134,3 +134,4 @@
+ 129 auto quick send
+ 130 auto clone send
+ 131 auto quick qgroup
++132 auto quick qgroup
+-- 
+1.8.5.6
 
 
-At 08/17/2016 04:45 PM, Eryu Guan wrote:
-> On Tue, Aug 16, 2016 at 02:30:21PM -0400, Jeff Mahoney wrote:
->> Ensure that we can unmount a read-only file system when quota rescan
->> is paused from a previous read-write mount.
->>
->> If the kernel has a separate bug where we are returning early while
->> waiting for the rescan worker, we can use that to un-hang the test,
->> and report both errors.
->>
->> This issue is resolved by the following patch for the Linux kernel:
->> "btrfs: properly track when rescan worker is running"
->>
->> Signed-off-by: Jeff Mahoney <jeffm@suse.com>
->> ---
->>  tests/btrfs/131     | 100 ++++++++++++++++++++++++++++++++++++++++++++++++++++
->>  tests/btrfs/131.out |   3 ++
->>  tests/btrfs/group   |   1 +
->>  3 files changed, 104 insertions(+)
->>  create mode 100755 tests/btrfs/131
->>  create mode 100644 tests/btrfs/131.out
->>
->> diff --git a/tests/btrfs/131 b/tests/btrfs/131
->> new file mode 100755
->> index 0000000..56c38a2
->> --- /dev/null
->> +++ b/tests/btrfs/131
->> @@ -0,0 +1,100 @@
->> +#! /bin/bash
->> +# FS QA Test 131
->> +#
->> +# Test for bug where read-only mounts will hang on umount when
->> +# a qgroup rescan was paused.  This also tests whether that hung
->> +# umount can be unhung by trying to make use of a separate bug that
->> +# means we can interrupt the wait for the rescan worker.  If that
->> +# happens, we report both errors.
->> +#
->> +#-----------------------------------------------------------------------
->> +# Copyright (c) 2016 SUSE.  All Rights Reserved.
->> +#
->> +# This program is free software; you can redistribute it and/or
->> +# modify it under the terms of the GNU General Public License as
->> +# published by the Free Software Foundation.
->> +#
->> +# This program is distributed in the hope that it would be useful,
->> +# but WITHOUT ANY WARRANTY; without even the implied warranty of
->> +# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
->> +# GNU General Public License for more details.
->> +#
->> +# You should have received a copy of the GNU General Public License
->> +# along with this program; if not, write the Free Software Foundation,
->> +# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
->> +#-----------------------------------------------------------------------
->> +#
->> +
->> +seq=`basename $0`
->> +seqres=$RESULT_DIR/$seq
->> +echo "QA output created by $seq"
->> +
->> +here=`pwd`
->> +tmp=/tmp/$$
->> +status=1	# failure is the default!
->> +trap "_cleanup; exit \$status" 0 1 2 3 15
->> +
->> +_cleanup()
->> +{
->> +	cd /
->> +	rm -f $tmp.*
->> +}
->> +
->> +# get standard environment, filters and checks
->> +. ./common/rc
->> +. ./common/filter
->> +
->> +# remove previous $seqres.full before test
->> +rm -f $seqres.full
->> +
->> +# real QA test starts here
->> +
->> +# Modify as appropriate.
->> +_supported_fs btrfs
->> +_supported_os Linux
->> +
->> +# We'll exit with a quota rescan paused
->> +_require_scratch_nocheck
->> +
->> +_require_btrfs
->> +BTRFS_DEBUG_TREE_PROG="`set_prog_path btrfs-debug-tree`"
->> +_require_command "$BTRFS_DEBUG_TREE_PROG" btrfs-debug-tree
->> +TIMEOUT_PROG="`set_prog_path timeout`"
->> +_require_command "$TIMEOUT_PROG" timeout
->
-> The "set_prog_path" calls belong to common/config, we only need
-> "_require_command" calls in test.
->
->> +
->> +rm -f $seqres.full
->> +_scratch_mkfs >>$seqres.full 2>&1
->> +
->> +_scratch_mount
->> +cp -aR /lib/modules/$(uname -r) $SCRATCH_MNT
->
-> Consider populating the filesystem using _populate_fs or fsstress?
-
-If only want to increase tree level, best solution is to create a lot of 
-small 2K files.
-(Needs max_inline=2K incase user override it)
-
-_populate_fs with -s 2048 is for this case.
-
-If want normal files, -s 16384 would ensure it won't be inlined and 
-still small enough for quick population.
-
->
->> +
->> +# A qgroup rescan on an empty or small file system completes nearly
->> +# immediately.  We need to ensure that it runs long enough that it will
->> +# be paused on umount.  Snapshots slow down the rescan so we should see
->> +# the race without a lot of data.  This is an arbitrary number that
->> +# works on a ramdisk so it should be sufficient for any storage.
->> +for n in $(seq 1 100); do
->> +  _run_btrfs_util_prog subvolume snapshot $SCRATCH_MNT $SCRATCH_MNT/$n
->
-> Use tab for indention.
->
->> +done
->> +_run_btrfs_util_prog quota enable $SCRATCH_MNT
->> +_scratch_unmount
->> +
->> +echo "read-write umount completed"
->> +
->> +# Confirm that the rescan is paused
->> +if ! $BTRFS_DEBUG_TREE_PROG $SCRATCH_DEV | \
->> +	egrep -q 'flags ON|SCANNING|INCONSISTENT scan'; then
->> +	echo "qgroup rescan not paused."
->> +fi
-
-I'm a little concerned of this operation.
-As debug-tree output can change at any time, since it doesn't expect it 
-to be used as a stable tool to exam some flag.
-
-Although I don't have a better alternative though.
-
-Thanks,
-Qu
-
->> +_scratch_mount -r
->> +
->> +# If the bug exists, this will hang.  If we can kill it, that's another bug.
->> +$TIMEOUT_PROG 10 umount $SCRATCH_MNT
->> +if test $? -eq 124 ; then
->> +    echo "umount hung but was killed"
->
-> I see this log with 4.8-rc1 kernel, is that expected?
->
-> Thanks,
-> Eryu
->
->> +fi
->> +echo "read-only umount completed"
->> +
->> +# success, all done
->> +status=0
->> +exit
->> diff --git a/tests/btrfs/131.out b/tests/btrfs/131.out
->> new file mode 100644
->> index 0000000..845a501
->> --- /dev/null
->> +++ b/tests/btrfs/131.out
->> @@ -0,0 +1,3 @@
->> +QA output created by 131
->> +read-write umount completed
->> +read-only umount completed
->> diff --git a/tests/btrfs/group b/tests/btrfs/group
->> index 6b29c05..929fa21 100644
->> --- a/tests/btrfs/group
->> +++ b/tests/btrfs/group
->> @@ -133,3 +133,4 @@
->>  128 auto quick send
->>  129 auto quick send
->>  130 auto clone send
->> +131 auto quick qgroup
->> --
->> 1.8.5.6
->>
->>
->> --
->> Jeff Mahoney
->> SUSE Labs
->> --
->> To unsubscribe from this list: send the line "unsubscribe fstests" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
->
-
-
+-- 
+Jeff Mahoney
+SUSE Labs

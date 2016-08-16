@@ -1,61 +1,141 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:54113 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S932287AbcHJVkl (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 10 Aug 2016 17:40:41 -0400
-Date: Wed, 10 Aug 2016 17:39:07 -0400
-From: Tejun Heo <htejun@fb.com>
-To: Josef Bacik <jbacik@fb.com>
-CC: <linux-btrfs@vger.kernel.org>, <linux-fsdevel@vger.kernel.org>,
-        <kernel-team@fb.com>, <jack@suse.com>, <viro@zeniv.linux.org.uk>,
-        <dchinner@redhat.com>, <hch@lst.de>
-Subject: Re: [PATCH 2/2] writeback: allow for dirty metadata accounting
-Message-ID: <20160810213907.GA6139@mtj.duckdns.org>
-References: <1470769707-26079-1-git-send-email-jbacik@fb.com>
- <1470769707-26079-3-git-send-email-jbacik@fb.com>
- <20160810201233.GB3398@mtj.duckdns.org>
- <16022b26-5cc4-1cd9-c0f1-9b9b873fbce9@fb.com>
+Received: from cn.fujitsu.com ([222.73.24.84]:18755 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1750785AbcHPGVd (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 16 Aug 2016 02:21:33 -0400
+Received: from localhost.localdomain (unknown [10.167.226.107])
+	by cn.fujitsu.com (Postfix) with ESMTP id 98F7C4056401
+	for <linux-btrfs@vger.kernel.org>; Tue, 16 Aug 2016 14:21:22 +0800 (CST)
+From: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH] btrfs-progs: eliminate some unnecessary btrfs_lookup_extent_info() calls in walk_down_tree()
+Date: Tue, 16 Aug 2016 14:17:57 +0800
+Message-Id: <20160816061757.9319-1-wangxg.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-In-Reply-To: <16022b26-5cc4-1cd9-c0f1-9b9b873fbce9@fb.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello, Josef.
+In walk_down_tree(), we may call btrfs_lookup_extent_info() for same tree
+block many times, obviously unnecessary. Here we define a simple struct to
+record whether we already have gotten tree block's refs:
+        struct node_refs {
+                u64 bytenr[BTRFS_MAX_LEVEL];
+                u64 refs[BTRFS_MAX_LEVEL];
+        };
 
-On Wed, Aug 10, 2016 at 05:16:03PM -0400, Josef Bacik wrote:
-> > It bothers me a bit that sb's can actually be off bdi->sb_list while
-> > sb_list_lock is released.  Can we make this explicit?  e.g. keep
-> > separate bdi sb list for sb's pending metadata writeout (like b_dirty)
-> > or by just walking the list in a smart way?
-> > 
-> 
-> Yeah I wasn't super thrilled with this either, but since I'm only using it
-> for writeback I figured it was ok for now.  I suppose I could make it less
-> sb_list and just make it dirty_sb_list, and only add if the super says it
-> has dirty metadata.  Does that sound better?  Then us being off of the list
-> during writeback isn't that big of a deal.
+I fill a disk partition with linux kernel source codes and use below
+test script to have performance test.
+	#!/bin/bash
 
-Yeah, that feels more logical to me.
+	echo 3 > /proc/sys/vm/drop_caches
+	for ((i = 0; i < 20; i++)); do
+		time ./btrfsck  /dev/sdc5
+	done 2>&1 | grep real | awk -F "[ms]" '{run_time += $2} END{print run_time / 20}'
 
-> > I can't find where sb's are actually added to the list.  Is that
-> > supposed to happen from specific filesystems?  Also, it might make
-> > sense to split up additions of sb_list and stat into separate patches.
-> > 
-> 
-> I was going to be lazy and only add it if we cared about writing out
-> metadata, and then we could expand it to everybody if somebody else had a
-> usecase.  But I think maybe the b_sb_dirty list idea is a better fit overall
-> so I can just do that so it makes more sense.  I can split up these patches
-> as well, thanks,
+Before this patch, it averagely took 0.8447s for every btrfsck execution,
+and with this patch, it averagely took 0.7807s.
 
-b_sb_dirty list sounds good and we wouldn't have to worry too much
-about lifetime issues either as the list would be linked iff the sb is
-dirty.  It might still make sense to ensure that the list is unlinked
-when sb is putting the bdi tho.
+Signed-off-by: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
+---
+ cmds-check.c | 45 +++++++++++++++++++++++++++++++++++----------
+ 1 file changed, 35 insertions(+), 10 deletions(-)
 
-Thanks.
-
+diff --git a/cmds-check.c b/cmds-check.c
+index fbeb3a4..394f838 100644
+--- a/cmds-check.c
++++ b/cmds-check.c
+@@ -1953,8 +1953,14 @@ static int check_child_node(struct btrfs_root *root,
+ 	return ret;
+ }
+ 
++struct node_refs {
++	u64 bytenr[BTRFS_MAX_LEVEL];
++	u64 refs[BTRFS_MAX_LEVEL];
++};
++
+ static int walk_down_tree(struct btrfs_root *root, struct btrfs_path *path,
+-			  struct walk_control *wc, int *level)
++			  struct walk_control *wc, int *level,
++			  struct node_refs *nrefs)
+ {
+ 	enum btrfs_tree_block_status status;
+ 	u64 bytenr;
+@@ -1967,12 +1973,20 @@ static int walk_down_tree(struct btrfs_root *root, struct btrfs_path *path,
+ 
+ 	WARN_ON(*level < 0);
+ 	WARN_ON(*level >= BTRFS_MAX_LEVEL);
+-	ret = btrfs_lookup_extent_info(NULL, root,
++
++	if (path->nodes[*level]->start == nrefs->bytenr[*level]) {
++		refs = nrefs->refs[*level];
++		ret = 0;
++	} else {
++		ret = btrfs_lookup_extent_info(NULL, root,
+ 				       path->nodes[*level]->start,
+ 				       *level, 1, &refs, NULL);
+-	if (ret < 0) {
+-		err = ret;
+-		goto out;
++		if (ret < 0) {
++			err = ret;
++			goto out;
++		}
++		nrefs->bytenr[*level] = path->nodes[*level]->start;
++		nrefs->refs[*level] = refs;
+ 	}
+ 
+ 	if (refs > 1) {
+@@ -2003,10 +2017,19 @@ static int walk_down_tree(struct btrfs_root *root, struct btrfs_path *path,
+ 		bytenr = btrfs_node_blockptr(cur, path->slots[*level]);
+ 		ptr_gen = btrfs_node_ptr_generation(cur, path->slots[*level]);
+ 		blocksize = root->nodesize;
+-		ret = btrfs_lookup_extent_info(NULL, root, bytenr, *level - 1,
+-					       1, &refs, NULL);
+-		if (ret < 0)
+-			refs = 0;
++
++		if (bytenr == nrefs->bytenr[*level - 1]) {
++			refs = nrefs->refs[*level - 1];
++		} else {
++			ret = btrfs_lookup_extent_info(NULL, root, bytenr,
++					*level - 1, 1, &refs, NULL);
++			if (ret < 0) {
++				refs = 0;
++			} else {
++				nrefs->bytenr[*level - 1] = bytenr;
++				nrefs->refs[*level - 1] = refs;
++			}
++		}
+ 
+ 		if (refs > 1) {
+ 			ret = enter_shared_node(root, bytenr, refs,
+@@ -3619,6 +3642,7 @@ static int check_fs_root(struct btrfs_root *root,
+ 	struct orphan_data_extent *orphan;
+ 	struct orphan_data_extent *tmp;
+ 	enum btrfs_tree_block_status status;
++	struct node_refs nrefs;
+ 
+ 	/*
+ 	 * Reuse the corrupt_block cache tree to record corrupted tree block
+@@ -3640,6 +3664,7 @@ static int check_fs_root(struct btrfs_root *root,
+ 	memset(&root_node, 0, sizeof(root_node));
+ 	cache_tree_init(&root_node.root_cache);
+ 	cache_tree_init(&root_node.inode_cache);
++	memset(&nrefs, 0, sizeof(nrefs));
+ 
+ 	/* Move the orphan extent record to corresponding inode_record */
+ 	list_for_each_entry_safe(orphan, tmp,
+@@ -3689,7 +3714,7 @@ static int check_fs_root(struct btrfs_root *root,
+ 	}
+ 
+ 	while (1) {
+-		wret = walk_down_tree(root, &path, wc, &level);
++		wret = walk_down_tree(root, &path, wc, &level, &nrefs);
+ 		if (wret < 0)
+ 			ret = wret;
+ 		if (wret != 0)
 -- 
-tejun
+2.9.0
+
+
+

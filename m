@@ -1,70 +1,161 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f176.google.com ([209.85.223.176]:34074 "EHLO
-	mail-io0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753224AbcHPMIt (ORCPT
+Received: from mail-qk0-f175.google.com ([209.85.220.175]:36114 "EHLO
+	mail-qk0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753480AbcHPQFN (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 16 Aug 2016 08:08:49 -0400
-Received: by mail-io0-f176.google.com with SMTP id q83so105092867iod.1
-        for <linux-btrfs@vger.kernel.org>; Tue, 16 Aug 2016 05:08:48 -0700 (PDT)
-Subject: Re: About minimal device number for RAID5/6
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>, Anand Jain <anand.jain@oracle.com>,
-        btrfs <linux-btrfs@vger.kernel.org>
-References: <d87a7caa-d414-1dbc-7c7e-a051e382114a@cn.fujitsu.com>
- <d27bad69-1041-7771-aff6-c15beb85fbb1@gmail.com>
- <9fb53c9f-b6c1-6bb9-8c3b-7147b64b601f@oracle.com>
- <a12a63d2-1710-611b-7d94-35db3a2aaa3d@gmail.com>
- <e2b165ec-4a82-6550-82d0-46352a32c3b8@cn.fujitsu.com>
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <a995f4fc-0c42-d346-07e3-9d764d2bf9e9@gmail.com>
-Date: Tue, 16 Aug 2016 08:01:07 -0400
+	Tue, 16 Aug 2016 12:05:13 -0400
+Received: by mail-qk0-f175.google.com with SMTP id l2so75451712qkf.3
+        for <linux-btrfs@vger.kernel.org>; Tue, 16 Aug 2016 09:05:12 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <e2b165ec-4a82-6550-82d0-46352a32c3b8@cn.fujitsu.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+In-Reply-To: <4a941169-1845-ba0e-6102-39920e1364b9@cn.fujitsu.com>
+References: <CAGj_d3D2OZt2nY622rp9NzxgAfKZ2iN1kLSQ2Ras-0fM+1+-ig@mail.gmail.com>
+ <fe8222d8-6463-8b4d-0613-b3639455463d@cn.fujitsu.com> <CAGj_d3C1nf3LGCXfWxoYNpWP2X81v-+eT22yBx17HgfMaP7ocg@mail.gmail.com>
+ <4a941169-1845-ba0e-6102-39920e1364b9@cn.fujitsu.com>
+From: Rakesh Sankeshi <rakesh.sankeshi@gmail.com>
+Date: Tue, 16 Aug 2016 09:05:11 -0700
+Message-ID: <CAGj_d3C4=M7ZTvDhn+twROnf1qO4u-UXBmbP8HVQgfGiD91W6w@mail.gmail.com>
+Subject: Re: btrfs quota issues
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2016-08-15 21:32, Qu Wenruo wrote:
->
->
-> At 08/15/2016 10:10 PM, Austin S. Hemmelgarn wrote:
->> On 2016-08-15 10:08, Anand Jain wrote:
->>>
->>>
->>>>> IMHO it's better to warn user about 2 devices RAID5 or 3 devices
->>>>> RAID6.
->>>>>
->>>>> Any comment is welcomed.
->>>>>
->>>> Based on looking at the code, we do in fact support 2/3 devices for
->>>> raid5/6 respectively.
->>>>
->>>> Personally, I agree that we should warn when trying to do this, but I
->>>> absolutely don't think we should stop it from happening.
->>>
->>>
->>>  How does 2 disks RAID5 work ?
->> One disk is your data, the other is your parity.  In essence, it works
->> like a really computationally expensive version of RAID1 with 2 disks,
->> which is why it's considered a degenerate configuration.
->
-> I totally agree with the fact that 2 disk raid5 is just a slow raid1.
->
->>  Three disks in
->> RAID6 is similar, but has a slight advantage at the moment in BTRFS
->> because it's the only way to configure three disks so you can lose two
->> and not lose any data as we have no support for higher order replication
->> than 2 copies yet.
->
-> It's true that btrfs doesn't support any other raid level which can
-> provide 2 parities.
->
-> But the use case to gain the ability to lose 2 disks in a 3 disk raid6
-> setup seems more like a trick other than normal use case.
-It absolutely is a trick, but until we have support for more than 2 
-copies in raid1 mode, it is also an absolutely legitimate use case.
->
-> Either in mkfs man page, or warning at mkfs time (but still allowing to
-> do it), IMHO it's better to tell user "yes, you can do it, but it's not
-> a really good idea"
-Agreed.
+2) after EDQUOT, can't write anymore.
 
+I can delete the data, but still can't write further
+
+3) tested it without compression and also with LZO and ZLIB.. all
+behave same way with qgroup. no consistency on when it hits the quota
+limit and don't understand on how it's calculating the numbers.
+
+In case of ext4 and xfs, I can see visually that it's hitting the quota limit.
+
+
+
+On Mon, Aug 15, 2016 at 6:01 PM, Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
+>
+>
+> At 08/16/2016 03:11 AM, Rakesh Sankeshi wrote:
+>>
+>> yes, subvol level.
+>>
+>> qgroupid         rfer         excl     max_rfer     max_excl parent  child
+>>
+>> --------         ----         ----     --------     -------- ------  -----
+>>
+>> 0/5          16.00KiB     16.00KiB         none         none ---     ---
+>>
+>> 0/258       119.48GiB    119.48GiB    200.00GiB         none ---     ---
+>>
+>> 0/259        92.57GiB     92.57GiB    200.00GiB         none ---     ---
+>>
+>>
+>> although I have 200GB limit on 2 subvols, running into issue at about
+>> 120 and 92GB itself
+>
+>
+> 1) About workload
+> Would you mind to mention the work pattern of your write?
+>
+> Just dd data with LZO compression?
+> For compression part, it's a little complicated, as the reserved data size
+> and on disk extent size are different.
+>
+> It's possible that at some code we leaked some reserved data space.
+>
+>
+> 2) Behavior after EDQUOT
+> And, after EDQUOT happens, can you write data into the subvolume?
+> If you can still write a lot of data (at least several giga), it seems to be
+> something related with temporary reserved space.
+>
+> If not, and even can't remove any file due to EQUOTA, then it's almost sure
+> we have underflowed the reserved data.
+> In that case, unmount and mount again will be the only workaround.
+> (In fact, not workaround at all)
+>
+> 3) Behavior without compression
+>
+> If it's OK for you, would you mind to test it without compression?
+> Currently we mostly use the assumption that on-disk extent size are the same
+> with in-memory extent size (non-compression).
+>
+> So qgroup + compression is not the main concern before and is buggy.
+>
+> If without compression, qgroup works sanely, at least we can be sure that
+> the cause is qgroup + compression.
+>
+> Thanks,
+> Qu
+>
+>
+>>
+>>
+>> On Sun, Aug 14, 2016 at 7:11 PM, Qu Wenruo <quwenruo@cn.fujitsu.com>
+>> wrote:
+>>>
+>>>
+>>>
+>>> At 08/12/2016 01:32 AM, Rakesh Sankeshi wrote:
+>>>>
+>>>>
+>>>> I set 200GB limit to one user and 100GB to another user.
+>>>>
+>>>> as soon as I reached 139GB and 53GB each, hitting the quota errors.
+>>>> anyway to workaround quota functionality on btrfs LZO compressed
+>>>> filesystem?
+>>>>
+>>>
+>>> Please paste "btrfs qgroup show -prce <mnt>" output if you are using
+>>> btrfs
+>>> qgroup/quota function.
+>>>
+>>> And, AFAIK btrfs qgroup is applied to subvolume, not user.
+>>>
+>>> So did you mean limit it to one subvolume belongs to one user?
+>>>
+>>> Thanks,
+>>> Qu
+>>>
+>>>>
+>>>>
+>>>> 4.7.0-040700-generic #201608021801 SMP
+>>>>
+>>>> btrfs-progs v4.7
+>>>>
+>>>>
+>>>> Label: none  uuid: 66a78faf-2052-4864-8a52-c5aec7a56ab8
+>>>>
+>>>> Total devices 2 FS bytes used 150.62GiB
+>>>>
+>>>> devid    1 size 1.00TiB used 78.01GiB path /dev/xvdc
+>>>>
+>>>> devid    2 size 1.00TiB used 78.01GiB path /dev/xvde
+>>>>
+>>>>
+>>>> Data, RAID0: total=150.00GiB, used=149.12GiB
+>>>>
+>>>> System, RAID1: total=8.00MiB, used=16.00KiB
+>>>>
+>>>> Metadata, RAID1: total=3.00GiB, used=1.49GiB
+>>>>
+>>>> GlobalReserve, single: total=512.00MiB, used=0.00B
+>>>>
+>>>>
+>>>> Filesystem      Size  Used Avail Use% Mounted on
+>>>>
+>>>> /dev/xvdc       2.0T  153G  1.9T   8% /test_lzo
+>>>> --
+>>>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs"
+>>>> in
+>>>> the body of a message to majordomo@vger.kernel.org
+>>>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>>>>
+>>>>
+>>>
+>>>
+>>
+>>
+>
+>

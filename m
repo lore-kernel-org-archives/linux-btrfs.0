@@ -1,70 +1,169 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oi0-f51.google.com ([209.85.218.51]:36176 "EHLO
-	mail-oi0-f51.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752227AbcHPTj7 (ORCPT
+Received: from mail-qk0-f174.google.com ([209.85.220.174]:33328 "EHLO
+	mail-qk0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752152AbcHPXds (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 16 Aug 2016 15:39:59 -0400
-Received: by mail-oi0-f51.google.com with SMTP id f189so112677954oig.3
-        for <linux-btrfs@vger.kernel.org>; Tue, 16 Aug 2016 12:39:56 -0700 (PDT)
+	Tue, 16 Aug 2016 19:33:48 -0400
+Received: by mail-qk0-f174.google.com with SMTP id z190so54746281qkc.0
+        for <linux-btrfs@vger.kernel.org>; Tue, 16 Aug 2016 16:33:48 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <em5669168d-5565-4286-9e94-0d18f614ee57@laptophendrik>
-References: <em5669168d-5565-4286-9e94-0d18f614ee57@laptophendrik>
-From: Chris Murphy <lists@colorremedies.com>
-Date: Tue, 16 Aug 2016 13:39:54 -0600
-Message-ID: <CAJCQCtRmcHCKGRUSFfDhCs8iy5nTvW2HTQnWsDF1N7f_s03G1Q@mail.gmail.com>
-Subject: Re: Debian Jessie: How to set rootflags=degraded
-To: Hendrik Friedel <hendrik@friedels.name>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+In-Reply-To: <CAGj_d3C4=M7ZTvDhn+twROnf1qO4u-UXBmbP8HVQgfGiD91W6w@mail.gmail.com>
+References: <CAGj_d3D2OZt2nY622rp9NzxgAfKZ2iN1kLSQ2Ras-0fM+1+-ig@mail.gmail.com>
+ <fe8222d8-6463-8b4d-0613-b3639455463d@cn.fujitsu.com> <CAGj_d3C1nf3LGCXfWxoYNpWP2X81v-+eT22yBx17HgfMaP7ocg@mail.gmail.com>
+ <4a941169-1845-ba0e-6102-39920e1364b9@cn.fujitsu.com> <CAGj_d3C4=M7ZTvDhn+twROnf1qO4u-UXBmbP8HVQgfGiD91W6w@mail.gmail.com>
+From: Rakesh Sankeshi <rakesh.sankeshi@gmail.com>
+Date: Tue, 16 Aug 2016 16:33:47 -0700
+Message-ID: <CAGj_d3C9274iWJN4vqPLamsEeO+ndPcnSefD-q-PA63ToeLBrw@mail.gmail.com>
+Subject: Re: btrfs quota issues
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Aug 16, 2016 at 1:31 PM, Hendrik Friedel <hendrik@friedels.name> wrote:
-> Hello,
->
-> I am using a raid1 under debian Jessie, because I need to decrease the
-> likelyhood of unavailability of the system.
-> Unfortunately I found, that when removing one of the drives, the system will
-> not boot up. Instead initramfs will show up and tell me that the root volume
-> could not be mounted.
->
-> I read here:
-> https://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg31265.html
-> that adding rootflags=degraded.
->
-> Furthermore I see that this is not yet default -at least in Ubuntu-
-> https://bugs.launchpad.net/ubuntu/+source/grub2/+bug/1229456?comments=all
->
-> But that it should work by modifying /etc/grub.d/10_linux:
-> https://bugs.launchpad.net/ubuntu/+source/grub2/+bug/1229456/comments/3
-> GRUB_CMDLINE_LINUX="rootflags=subvol=${rootsubvol},degraded
-> ${GRUB_CMDLINE_LINUX}"
->
-> when doing that and running grub-mkconfig and update-grub, I still get no
-> entry with with "degraded" in /etc/grub.cfg.
+also is there any timeframe on when the qgroup / quota issues would be
+stabilized in btrfs?
 
-Well it belongs in /boot/grub2/grub.cfg so maybe you're looking at a
-stale file? Otherwise I'm not sure why it wouldn't include degraded.
-
->
-> Can someone tell me, how to achieve this? I've been seaching for very long
-> now and I am surprised, that I don't find any answer.
+Thanks!
 
 
-The additional issue is that there's a udev rule (check the archives)
-that prevents the volume from being considered ready unless all
-devices are found. So even with degraded, out of the box this won't
-boot on systemd systems at least, because the mount attempt never
-happens. Just be aware that booting degraded unattended really isn't a
-great idea because Btrfs doesn't have any concept right now of faulty
-devices, so it's likely to cause more problems than it solves. If for
-any reason one of the drives becomes available slightly later than the
-other, using degraded by default can cause an otherwise healthy volume
-to be mounted degraded, SILENTLY. And if this happens to alternate
-devices where both devices get separately modified while degraded,
-it'll corrupt the entire file system. So you're really better off
-choosing another solution until Btrfs matures with this use case in
-mind.
-
--- 
-Chris Murphy
+On Tue, Aug 16, 2016 at 9:05 AM, Rakesh Sankeshi
+<rakesh.sankeshi@gmail.com> wrote:
+> 2) after EDQUOT, can't write anymore.
+>
+> I can delete the data, but still can't write further
+>
+> 3) tested it without compression and also with LZO and ZLIB.. all
+> behave same way with qgroup. no consistency on when it hits the quota
+> limit and don't understand on how it's calculating the numbers.
+>
+> In case of ext4 and xfs, I can see visually that it's hitting the quota limit.
+>
+>
+>
+> On Mon, Aug 15, 2016 at 6:01 PM, Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
+>>
+>>
+>> At 08/16/2016 03:11 AM, Rakesh Sankeshi wrote:
+>>>
+>>> yes, subvol level.
+>>>
+>>> qgroupid         rfer         excl     max_rfer     max_excl parent  child
+>>>
+>>> --------         ----         ----     --------     -------- ------  -----
+>>>
+>>> 0/5          16.00KiB     16.00KiB         none         none ---     ---
+>>>
+>>> 0/258       119.48GiB    119.48GiB    200.00GiB         none ---     ---
+>>>
+>>> 0/259        92.57GiB     92.57GiB    200.00GiB         none ---     ---
+>>>
+>>>
+>>> although I have 200GB limit on 2 subvols, running into issue at about
+>>> 120 and 92GB itself
+>>
+>>
+>> 1) About workload
+>> Would you mind to mention the work pattern of your write?
+>>
+>> Just dd data with LZO compression?
+>> For compression part, it's a little complicated, as the reserved data size
+>> and on disk extent size are different.
+>>
+>> It's possible that at some code we leaked some reserved data space.
+>>
+>>
+>> 2) Behavior after EDQUOT
+>> And, after EDQUOT happens, can you write data into the subvolume?
+>> If you can still write a lot of data (at least several giga), it seems to be
+>> something related with temporary reserved space.
+>>
+>> If not, and even can't remove any file due to EQUOTA, then it's almost sure
+>> we have underflowed the reserved data.
+>> In that case, unmount and mount again will be the only workaround.
+>> (In fact, not workaround at all)
+>>
+>> 3) Behavior without compression
+>>
+>> If it's OK for you, would you mind to test it without compression?
+>> Currently we mostly use the assumption that on-disk extent size are the same
+>> with in-memory extent size (non-compression).
+>>
+>> So qgroup + compression is not the main concern before and is buggy.
+>>
+>> If without compression, qgroup works sanely, at least we can be sure that
+>> the cause is qgroup + compression.
+>>
+>> Thanks,
+>> Qu
+>>
+>>
+>>>
+>>>
+>>> On Sun, Aug 14, 2016 at 7:11 PM, Qu Wenruo <quwenruo@cn.fujitsu.com>
+>>> wrote:
+>>>>
+>>>>
+>>>>
+>>>> At 08/12/2016 01:32 AM, Rakesh Sankeshi wrote:
+>>>>>
+>>>>>
+>>>>> I set 200GB limit to one user and 100GB to another user.
+>>>>>
+>>>>> as soon as I reached 139GB and 53GB each, hitting the quota errors.
+>>>>> anyway to workaround quota functionality on btrfs LZO compressed
+>>>>> filesystem?
+>>>>>
+>>>>
+>>>> Please paste "btrfs qgroup show -prce <mnt>" output if you are using
+>>>> btrfs
+>>>> qgroup/quota function.
+>>>>
+>>>> And, AFAIK btrfs qgroup is applied to subvolume, not user.
+>>>>
+>>>> So did you mean limit it to one subvolume belongs to one user?
+>>>>
+>>>> Thanks,
+>>>> Qu
+>>>>
+>>>>>
+>>>>>
+>>>>> 4.7.0-040700-generic #201608021801 SMP
+>>>>>
+>>>>> btrfs-progs v4.7
+>>>>>
+>>>>>
+>>>>> Label: none  uuid: 66a78faf-2052-4864-8a52-c5aec7a56ab8
+>>>>>
+>>>>> Total devices 2 FS bytes used 150.62GiB
+>>>>>
+>>>>> devid    1 size 1.00TiB used 78.01GiB path /dev/xvdc
+>>>>>
+>>>>> devid    2 size 1.00TiB used 78.01GiB path /dev/xvde
+>>>>>
+>>>>>
+>>>>> Data, RAID0: total=150.00GiB, used=149.12GiB
+>>>>>
+>>>>> System, RAID1: total=8.00MiB, used=16.00KiB
+>>>>>
+>>>>> Metadata, RAID1: total=3.00GiB, used=1.49GiB
+>>>>>
+>>>>> GlobalReserve, single: total=512.00MiB, used=0.00B
+>>>>>
+>>>>>
+>>>>> Filesystem      Size  Used Avail Use% Mounted on
+>>>>>
+>>>>> /dev/xvdc       2.0T  153G  1.9T   8% /test_lzo
+>>>>> --
+>>>>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs"
+>>>>> in
+>>>>> the body of a message to majordomo@vger.kernel.org
+>>>>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>>>>>
+>>>>>
+>>>>
+>>>>
+>>>
+>>>
+>>
+>>

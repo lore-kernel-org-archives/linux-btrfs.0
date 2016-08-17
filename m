@@ -1,54 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:44847 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1754298AbcHXMut (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 24 Aug 2016 08:50:49 -0400
-Date: Wed, 24 Aug 2016 14:49:40 +0200
+Received: from mx2.suse.de ([195.135.220.15]:60027 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752106AbcHQRCG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 17 Aug 2016 13:02:06 -0400
+Date: Wed, 17 Aug 2016 19:00:18 +0200
 From: David Sterba <dsterba@suse.cz>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Cc: dsterba@suse.cz, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 1/3] btrfs-progs: Introduce new send-dump object
-Message-ID: <20160824124940.GR16983@twin.jikos.cz>
+To: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 00/13] btrfs-progs: check: check fs roots in low_memory
+ mode
+Message-ID: <20160817170018.GA16983@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <20160801062944.25355-1-quwenruo@cn.fujitsu.com>
- <20160816143130.GO30795@twin.jikos.cz>
- <22e65257-c864-aa4e-9e6b-59610aec347a@cn.fujitsu.com>
+References: <1469689705-26836-1-git-send-email-lufq.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <22e65257-c864-aa4e-9e6b-59610aec347a@cn.fujitsu.com>
+In-Reply-To: <1469689705-26836-1-git-send-email-lufq.fnst@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Aug 17, 2016 at 08:42:48AM +0800, Qu Wenruo wrote:
+On Thu, Jul 28, 2016 at 03:08:12PM +0800, Lu Fengqi wrote:
+> This patchset implements check fs trees in low memory mode, and fix the
+> return value bug of the function cmd_check().
 > 
-> 
-> At 08/16/2016 10:31 PM, David Sterba wrote:
-> > On Mon, Aug 01, 2016 at 02:29:42PM +0800, Qu Wenruo wrote:
-> >> Introduce send-dump.[ch] which implements a new btrfs_send_ops to
-> >> exam and output all operations inside a send stream.
-> >>
-> >> It has a better output format than the old and no longer compilable
-> >> send-test tool, but still tries to be script friendly.
-> >>
-> >> Provides the basis for later "inspect-internal dump-send" command.
-> >
-> > I'd rather put that into the receive subcommand, as it takes the stream
-> > as argument and it's closer to the send/receive commands, but that's
-> > a minor thing.
-> >
-> >
-> I'm OK to put it into receive command.
-> 
-> Although unlike normal receive usage, it doesn't need the <path> 
-> parameter, and make <path> to be optional.
+> Lu Fengqi (13):
+>   btrfs-progs: move btrfs_extref_hash() to hash.h
+>   btrfs-progs: check: introduce function to find dir_item
+>   btrfs-progs: check: introduce function to check inode_ref
+>   btrfs-progs: check: introduce function to check inode_extref
+>   btrfs-progs: check: introduce function to find inode_ref
+>   btrfs-progs: check: introduce a function to check dir_item
+>   btrfs-progs: check: introduce function to check file extent
+>   btrfs-progs: check: introduce function to check inode item
+>   btrfs-progs: check: introduce function to check fs root
+>   btrfs-progs: check: introduce function to check root ref
+>   btrfs-progs: check: introduce low_memory mode fs_tree check
+>   btrfs-progs: check: fix the return value bug of cmd_check()
+>   btrfs-progs: check: fix false warning for check_extent_item()
 
-That's a good point and would make the syntax work in two modes, but we
-do that in ohter commands and I hope it will not be confusing. Exmaples:
-
-Normal receive:
-
- btrfs receive -f file /mount
-
-Dump the stream:
-
- btrs receive --dump -f file
+FYI, I'm going to promote this series within devel and schedule it for
+the next release. The preparatory subset will be merged, but I might do
+some modificaions to the command line interface.

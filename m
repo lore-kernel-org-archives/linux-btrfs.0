@@ -1,70 +1,61 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:64808 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1752110AbcHIIao (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 9 Aug 2016 04:30:44 -0400
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Mark Fasheh <mfasheh@suse.de>
-Subject: [PATCH v3 3/3] btrfs: qgroup: Fix qgroup incorrectness caused by log replay
-Date: Tue,  9 Aug 2016 16:30:21 +0800
-Message-Id: <20160809083021.12612-4-quwenruo@cn.fujitsu.com>
-In-Reply-To: <20160809083021.12612-1-quwenruo@cn.fujitsu.com>
-References: <20160809083021.12612-1-quwenruo@cn.fujitsu.com>
-MIME-Version: 1.0
+Received: from mx2.suse.de ([195.135.220.15]:42772 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751839AbcHQPMM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 17 Aug 2016 11:12:12 -0400
+From: David Sterba <dsterba@suse.com>
+To: clm@fb.com
+Cc: linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.com>
+Subject: [PULL] Btrfs fixes for 4.8, part 2
+Date: Wed, 17 Aug 2016 17:11:13 +0200
+Message-Id: <cover.1471443105.git.dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When doing log replay at mount time(after power loss), qgroup will leak
-numbers of replayed data extents.
+Hi,
 
-The cause is almost the same of balance.
-So fix it by manually informing qgroup for owner changed extents.
+this is a short series, mostly small fixes that did not make it to the first
+round. Please pull, thanks.
 
-The bug can be detected by btrfs/119 test case.
+----------------------------------------------------------------
+The following changes since commit 10838816547a28696ca10e038b3b32f2efec5a42:
 
-Cc: Mark Fasheh <mfasheh@suse.de>
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
----
- fs/btrfs/tree-log.c | 16 ++++++++++++++++
- 1 file changed, 16 insertions(+)
+  Merge branch 'integration-4.8' of git://git.kernel.org/pub/scm/linux/kernel/git/fdmanana/linux into for-linus-4.8 (2016-08-05 12:25:05 -0700)
 
-diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index d31a0c4..9d9cb07 100644
---- a/fs/btrfs/tree-log.c
-+++ b/fs/btrfs/tree-log.c
-@@ -27,6 +27,7 @@
- #include "backref.h"
- #include "hash.h"
- #include "compression.h"
-+#include "qgroup.h"
- 
- /* magic values for the inode_only field in btrfs_log_inode:
-  *
-@@ -680,6 +681,21 @@ static noinline int replay_one_extent(struct btrfs_trans_handle *trans,
- 		ins.type = BTRFS_EXTENT_ITEM_KEY;
- 		offset = key->offset - btrfs_file_extent_offset(eb, item);
- 
-+		/*
-+		 * Manually record dirty extent, as here we did a shallow
-+		 * file extent item copy and skip normal backref update,
-+		 * but modifying extent tree all by ourselves.
-+		 * So need to manually record dirty extent for qgroup,
-+		 * as the owner of the file extent changed from log tree
-+		 * (doesn't affect qgroup) to fs/file tree(affects qgroup)
-+		 */
-+		ret = btrfs_qgroup_insert_dirty_extent(trans, root->fs_info,
-+				btrfs_file_extent_disk_bytenr(eb, item),
-+				btrfs_file_extent_disk_num_bytes(eb, item),
-+				GFP_NOFS);
-+		if (ret < 0)
-+			goto out;
-+
- 		if (ins.objectid > 0) {
- 			u64 csum_start;
- 			u64 csum_end;
--- 
-2.9.2
+are available in the git repository at:
 
+  git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git for-chris-4.8
 
+for you to fetch changes up to 56ee3f62c2c78b2ec541283d39208683e8ce385f:
 
+  btrfs: qgroup: Fix qgroup incorrectness caused by log replay (2016-08-17 15:41:05 +0200)
+
+----------------------------------------------------------------
+Alex Lyakas (1):
+      btrfs: flush_space: treat return value of do_chunk_alloc properly
+
+Jeff Mahoney (2):
+      btrfs: properly track when rescan worker is running
+      btrfs: waiting on qgroup rescan should not always be interruptible
+
+Liu Bo (2):
+      Btrfs: fix memory leak of reloc_root
+      Btrfs: add ASSERT for block group's memory leak
+
+Qu Wenruo (4):
+      btrfs: backref: Fix soft lockup in __merge_refs function
+      btrfs: qgroup: Refactor btrfs_qgroup_insert_dirty_extent()
+      btrfs: relocation: Fix leaking qgroups numbers on data extents
+      btrfs: qgroup: Fix qgroup incorrectness caused by log replay
+
+ fs/btrfs/backref.c     |   1 +
+ fs/btrfs/ctree.h       |   1 +
+ fs/btrfs/delayed-ref.c |   7 +---
+ fs/btrfs/disk-io.c     |  12 +++++-
+ fs/btrfs/extent-tree.c |  44 +++++---------------
+ fs/btrfs/ioctl.c       |   2 +-
+ fs/btrfs/qgroup.c      |  62 +++++++++++++++++++++++-----
+ fs/btrfs/qgroup.h      |  36 +++++++++++++---
+ fs/btrfs/relocation.c  | 109 ++++++++++++++++++++++++++++++++++++++++++++++---
+ fs/btrfs/tree-log.c    |  16 ++++++++
+ 10 files changed, 228 insertions(+), 62 deletions(-)

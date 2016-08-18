@@ -1,97 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:47924 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:58484 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752821AbcHOQKi (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 15 Aug 2016 12:10:38 -0400
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id AF855AC55
-	for <linux-btrfs@vger.kernel.org>; Mon, 15 Aug 2016 16:10:36 +0000 (UTC)
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-From: Jeff Mahoney <jeffm@suse.com>
-Subject: [PATCH] btrfs: properly track when rescan worker is running
-Message-ID: <cb4fecfa-9b40-d42c-8218-f0e7f7ac7fbb@suse.com>
-Date: Mon, 15 Aug 2016 12:10:33 -0400
+	id S1753590AbcHRMhn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 18 Aug 2016 08:37:43 -0400
+Date: Thu, 18 Aug 2016 14:36:41 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Liu Bo <bo.li.liu@oracle.com>
+Cc: linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.cz>
+Subject: Re: [PATCH v2] Btrfs: clarify do_chunk_alloc()'s return value
+Message-ID: <20160818123641.GC16983@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1469670123-19839-1-git-send-email-bo.li.liu@oracle.com>
+ <1469815790-13511-1-git-send-email-bo.li.liu@oracle.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1469815790-13511-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The qgroup_flags field is overloaded such that it reflects the on-disk
-status of qgroups and the runtime state.  The BTRFS_QGROUP_STATUS_FLAG_RESCAN
-flag is used to indicate that a rescan operation is in progress, but if
-the file system is unmounted while a rescan is running, the rescan
-operation is paused.  If the file system is then mounted read-only,
-the flag will still be present but the rescan operation will not have
-been resumed.  When we go to umount, btrfs_qgroup_wait_for_completion
-will see the flag and interpret it to mean that the rescan worker is
-still running and will wait for a completion that will never come.
+On Fri, Jul 29, 2016 at 11:09:50AM -0700, Liu Bo wrote:
+> Function start_transaction() can return ERR_PTR(1) when flush is
+> BTRFS_RESERVE_FLUSH_LIMIT, so the call graph is
+> 
+> start_transaction (return ERR_PTR(1))
+>   -> btrfs_block_rsv_add (return 1)
+>      -> reserve_metadata_bytes (return 1)
+>         -> flush_space (return 1)
+>            -> do_chunk_alloc  (return 1)
+> 
+> With BTRFS_RESERVE_FLUSH_LIMIT, if flush_space is already on the
+> flush_state of ALLOC_CHUNK and it successfully allocates a new
+> chunk, then instead of trying to reserve space again,
+> reserve_metadata_bytes returns 1 immediately.
+> 
+> Eventually the callers who call start_transaction() usually just
+> do the IS_ERR() check which ERR_PTR(1) can pass, then it'll get
+> a panic when dereferencing a pointer which is ERR_PTR(1).
+> 
+> The following patch fixes the above problem.
+> "btrfs: flush_space: treat return value of do_chunk_alloc properly"
+> https://patchwork.kernel.org/patch/7778651/
+> 
+> This add comments to clarify do_chunk_alloc()'s return value.
+> 
+> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
 
-This patch uses a separate flag to indicate when the worker is
-running.  The locking and state surrounding the qgroup rescan worker
-needs a lot of attention beyond this patch but this is enough to
-avoid a hung umount.
-
-Cc: <stable@vger.kernel.org> # v4.4+
-Signed-off-by; Jeff Mahoney <jeffm@suse.com>
----
- fs/btrfs/ctree.h   |    1 +
- fs/btrfs/disk-io.c |    1 +
- fs/btrfs/qgroup.c  |    9 ++++++++-
- 3 files changed, 10 insertions(+), 1 deletion(-)
-
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -1771,6 +1771,7 @@ struct btrfs_fs_info {
- 	struct btrfs_workqueue *qgroup_rescan_workers;
- 	struct completion qgroup_rescan_completion;
- 	struct btrfs_work qgroup_rescan_work;
-+	bool qgroup_rescan_running;	/* protected by qgroup_rescan_lock */
- 
- 	/* filesystem state */
- 	unsigned long fs_state;
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -2275,6 +2275,7 @@ static void btrfs_init_qgroup(struct btr
- 	fs_info->quota_enabled = 0;
- 	fs_info->pending_quota_state = 0;
- 	fs_info->qgroup_ulist = NULL;
-+	fs_info->qgroup_rescan_running = false;
- 	mutex_init(&fs_info->qgroup_rescan_lock);
- }
- 
---- a/fs/btrfs/qgroup.c
-+++ b/fs/btrfs/qgroup.c
-@@ -2302,6 +2302,10 @@ static void btrfs_qgroup_rescan_worker(s
- 	int err = -ENOMEM;
- 	int ret = 0;
- 
-+	mutex_lock(&fs_info->qgroup_rescan_lock);
-+	fs_info->qgroup_rescan_running = true;
-+	mutex_unlock(&fs_info->qgroup_rescan_lock);
-+
- 	path = btrfs_alloc_path();
- 	if (!path)
- 		goto out;
-@@ -2368,6 +2372,9 @@ out:
- 	}
- 
- done:
-+	mutex_lock(&fs_info->qgroup_rescan_lock);
-+	fs_info->qgroup_rescan_running = false;
-+	mutex_unlock(&fs_info->qgroup_rescan_lock);
- 	complete_all(&fs_info->qgroup_rescan_completion);
- }
- 
-@@ -2494,7 +2501,7 @@ int btrfs_qgroup_wait_for_completion(str
- 
- 	mutex_lock(&fs_info->qgroup_rescan_lock);
- 	spin_lock(&fs_info->qgroup_lock);
--	running = fs_info->qgroup_flags & BTRFS_QGROUP_STATUS_FLAG_RESCAN;
-+	running = fs_info->qgroup_rescan_running;
- 	spin_unlock(&fs_info->qgroup_lock);
- 	mutex_unlock(&fs_info->qgroup_rescan_lock);
- 
-
--- 
-Jeff Mahoney
-SUSE Labs
+Patch queued, thanks.

@@ -1,150 +1,162 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:36362 "EHLO
-	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S933321AbcHJWZt (ORCPT
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:61403 "EHLO
+	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1751442AbcHRRVt (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 10 Aug 2016 18:25:49 -0400
-Date: Wed, 10 Aug 2016 22:25:47 +0000
-From: Hugo Mills <hugo@carfax.org.uk>
-To: Chris Mason <clm@fb.com>, Btrfs mailing list <linux-btrfs@vger.kernel.org>
-Subject: Re: btrfs dev del hangs on 4.7
-Message-ID: <20160810222547.GG9644@carfax.org.uk>
-References: <20160809172758.GB9644@carfax.org.uk>
- <23be7ecd-500b-76ed-ea91-88885872031e@fb.com>
- <20160809182356.GC9644@carfax.org.uk>
- <b325a93d-47ca-be69-04b2-271cd7387506@fb.com>
- <20160809182733.GD9644@carfax.org.uk>
- <20160809191134.GE9644@carfax.org.uk>
- <4d0c6117-da81-b13f-667a-d36dcae7e979@fb.com>
- <20160809194142.GF9644@carfax.org.uk>
+	Thu, 18 Aug 2016 13:21:49 -0400
+Date: Thu, 18 Aug 2016 11:03:46 -0400
+From: Chris Mason <clm@fb.com>
+To: <fdmanana@kernel.org>
+CC: <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH v2] Btrfs: fix file/data loss caused by fsync after
+ rename and new inode
+Message-ID: <20160818150345.GA24208@clm-mbp.thefacebook.com>
+References: <1459330710-3181-1-git-send-email-fdmanana@kernel.org>
+ <1459377441-3609-1-git-send-email-fdmanana@kernel.org>
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="df+09Je9rNq3P+GE"
-In-Reply-To: <20160809194142.GF9644@carfax.org.uk>
+Content-Type: text/plain; charset="us-ascii"; format=flowed
+In-Reply-To: <1459377441-3609-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Wed, Mar 30, 2016 at 11:37:21PM +0100, fdmanana@kernel.org wrote:
+>From: Filipe Manana <fdmanana@suse.com>
+>
+>If we rename an inode A (be it a file or a directory), create a new
+>inode B with the old name of inode A and under the same parent directory,
+>fsync inode B and then power fail, at log tree replay time we end up
+>removing inode A completely. If inode A is a directory then all its files
+>are gone too.
 
---df+09Je9rNq3P+GE
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+I bisected a crash with dbench down to this patch.  The reproduction 
+was:
 
-On Tue, Aug 09, 2016 at 07:41:42PM +0000, Hugo Mills wrote:
-> On Tue, Aug 09, 2016 at 03:22:03PM -0400, Chris Mason wrote:
-> > 
-> > 
-> > On 08/09/2016 03:11 PM, Hugo Mills wrote:
-> > >On Tue, Aug 09, 2016 at 06:27:33PM +0000, Hugo Mills wrote:
-> > >>On Tue, Aug 09, 2016 at 02:26:14PM -0400, Chris Mason wrote:
-> > >>>On 08/09/2016 02:23 PM, Hugo Mills wrote:
-> > >>>>  Hi, Chris,
-> > >>>>
-> > >>>>On Tue, Aug 09, 2016 at 02:02:20PM -0400, Chris Mason wrote:
-> > >>>>>On 08/09/2016 01:27 PM, Hugo Mills wrote:
-> > >>>>>> Over the weekend, I started doing some maintenance on my server: I
-> > >>>>>>upgraded to 4.7.0, and I started deleting a device from my array,
-> > >>>>>>preparatory to putting in a larger one. About halfway through the
-> > >>>>>>operation, several kernel threads hung up for a while (resulting in
-> > >>>>>>"blocked for 120s" messages), and then the delete process seems to
-> > >>>>>>have stopped entirely, although several kernel threads are at maximum
-> > >>>>>>usage.
-> > >>>>>>
-> > >>>>>> After a few hours, I rebooted the machine, and left it for a day or
-> > >>>>>>so. I tried the delete again this afternoon, and it's done the same
-> > >>>>>>thing again. The full log is included below. I have a kworker and a
-> > >>>>>>btrfs-transaction pegged at close to 100% of a core each, and a
-> > >>>>>>btrfs-cleaner (and the btrfs dev del process) in D state.
-> > >>>>>>
-> > >>>>>> The FS was not under load at the time of the failure, and it passes
-> > >>>>>>scrub. I haven't tried a btrfs check yet.
-> > >>>>>
-> > >>>>>Thanks Hugo, can you nail down which line of code belongs to:
-> > >>>>>
-> > >>>>>btrfs_async_run_delayed_refs+0xc6
-> > >>>>
-> > >>>>  I'm having a spot of trouble with this. The btrfs on this kernel is
-> > >>>>built-in, and I've lost the contents of the build directory (it's done
-> > >>>>by an overnight build script, and it's already built a 4.8-rc1 for one
-> > >>>>of my other machines).
-> > >>>>
-> > >>>>(gdb) file /boot/vmlinuz-4.7.0-dirty
-> > >>>>BFD: /boot/vmlinuz-4.7.0-dirty: Warning: Ignoring section flag IMAGE_SCN_MEM_NOT_PAGED in section .bss
-> > >>>>Reading symbols from /boot/vmlinuz-4.7.0-dirty...(no debugging symbols found)...done.
-> > >>>>(gdb) list *btrfs_async_run_delayed_refs+0xc6
-> > >>>>No symbol table is loaded.  Use the "file" command.
-> > >>>>
-> > >>>>  There must be a way of getting this info from here, but I'm not
-> > >>>>sure I know what it is. Build a new kernel from 4.7 with this
-> > >>>>machine's config and run gdb on the btrfs.o file? Not a problem to do,
-> > >>>>but it might take a little while.
-> > >>>
-> > >>>As long as you use the same gcc and config file, it'll almost always
-> > >>>generate the same offsets/code.  You can recompile with debug
-> > >>>symbols on and it'll be accurate.
-> > >>
-> > >>   OK. Back later.
-> > >
-> > >(gdb) file fs/btrfs/btrfs.o
-> > >Reading symbols from fs/btrfs/btrfs.o...done.
-> > >(gdb) list *btrfs_async_run_delayed_refs+0xc6
-> > >0x13dae is in btrfs_async_run_delayed_refs (fs/btrfs/extent-tree.c:2915).
-> > >2910	
-> > >2911		btrfs_queue_work(root->fs_info->extent_workers, &async->work);
-> > >2912		
-> > >2913			if (wait) {
-> > >2914			   	  wait_for_completion(&async->wait);
-> > >2915						ret = async->error;
-> > >2916						      kfree(async);
-> > >2917								return ret;
-> > >2918								       }
-> > >2919									return 0;
-> > 
-> > So its waiting on the actual delayed ref work but we don't see them
-> > in the stack trace.
-> > 
-> > Can you please sysrq-w and sysrq-t?
-> 
->    Not right now -- I wanted to watch a film, and rebooted the machine
-> to get NFS working again. It's now refusing to boot. I think that's
-> unrelated to this issue (different filesystems are involved for a
-> start), but it's stopping me from doing anything else. :(
-> 
->    I'll reproduce the failure, and get back to you with the sysrq
-> dumps tomorrow.
+mkfs.btrfs -m single -f /dev/vdb
+mount /dev/vdb /btrfs
+cd /btrfs
+mkdir clients
+for x in `seq 0 100` ; do btrfs subvol create clients/client$x ; done
+sync
+dbench 100
 
-   I restarted the device delete this evening, and it's not thrown the
-error again. I'll be doing some more device reorganisation over the
-next week or two, so it may happen again, but for now, I think we'll
-have to write this report off as an undiagnosed transient error.
+In other words, run dbench with a subvol per dbench thread.  It crashes 
+immediately, most often with an invalid access in copy_from_user during 
+file_write.  The pattern of crashes and location just show general 
+memory corruption and the actual stack trace wasn't very useful.
 
-   Hugo.
+With this patch reverted the runs last much much longer, but we still 
+hit a crash eventually.  It's not clear to me if this is two different 
+bugs or if Filipe's patch just makes the corruption much easier to hit.  
+I'm still digging through it all, but here's a common backtrace with
+this patch reverted:
 
--- 
-Hugo Mills             | I thought I'd discovered a new colour, but it was
-hugo@... carfax.org.uk | just a pigment of my imagination.
-http://carfax.org.uk/  |
-PGP: E2AB1DE4          |
+BUG: unable to handle kernel paging request at 0000000000017298
+IP: [<ffffffff810ad8b9>] queued_spin_lock_slowpath+0x139/0x200
+PGD 7df68a067 PUD 7df68b067 PMD 0
+Oops: 0002 [#1] PREEMPT SMP
+Modules linked in: crc32c_intel i2c_piix4 aesni_intel i2c_core 
+aes_x86_64 glue_helper virtio_net serio_raw lrw floppy pcspkr gf128mul 
+ablk_helper button cryptd sch_fq_codel autofs4 virtio_blk
+CPU: 6 PID: 1125 Comm: dbench Not tainted 4.7.0-00001-g00cc018 #220
+Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS 1.9.0-1.fc24 
+04/01/2014
+task: ffff88072c918e40 ti: ffff88072cf50000 task.ti: ffff88072cf50000
+RIP: 0010:[<ffffffff810ad8b9>]  [<ffffffff810ad8b9>] queued_spin_lock_slowpath+0x139/0x200
+RSP: 0018:ffff8807eff83ac8  EFLAGS: 00010002
+RAX: 000000000000263d RBX: ffff8807eff97290 RCX: 00000000001d0000
+RDX: 0000000000017298 RSI: ffff8807eff83b58 RDI: ffff8807540702fc
+RBP: ffff8807eff83b88 R08: 0000000000000000 R09: 000000000001a228
+R10: ffff88080fffad80 R11: 000000000000005a R12: 0000000000010000
+R13: 0000000000000000 R14: ffff8807eff83d48 R15: 0000000000000003
+FS:  00007fb2b8810700(0000) GS:ffff8807eff80000(0000) 
+knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 0000000000017298 CR3: 00000007df689000 CR4: 00000000000406e0
+Stack:
+ 0000000000000000 ffff8807540702fc ffff8807ec37a918 0000000100000000
+ ffff8807ec37a900 ffff8807ec37a980 ffff8807eff97290 ffffffff810961da
+ 000000000000003c ffff8800ba864dd8 ffff880798f94189 ffff8807ef89a000
+Call Trace:
+ <IRQ>
+ [<ffffffff810961da>] ? select_idle_sibling+0x2a/0x120
+ [<ffffffff81091385>] ? wake_up_process+0x15/0x20
+ [<ffffffff81079c00>] ? wake_up_worker+0x30/0x40
+ [<ffffffff8107c6c8>] ? insert_work+0x78/0xc0
+ [<ffffffff8197421e>] _raw_spin_lock_irqsave+0x4e/0x50
+ [<ffffffff81090f5c>] try_to_wake_up+0x3c/0x410
+ [<ffffffff81973e76>] ? _raw_spin_unlock+0x16/0x40
+ [<ffffffff8107c8c0>] ? __queue_work+0x1b0/0x530
+ [<ffffffff8109bfcf>] ? update_cfs_shares+0xcf/0x110
+ [<ffffffff81091342>] default_wake_function+0x12/0x20
+ [<ffffffff810a5d56>] autoremove_wake_function+0x16/0x40
+ [<ffffffff810a5df4>] wake_bit_function+0x34/0x40
+ [<ffffffff810a5c06>] __wake_up_common+0x56/0x90
+ [<ffffffff810a61f8>] __wake_up+0x48/0x70
+ [<ffffffff810a6268>] __wake_up_bit+0x48/0x50
+ [<ffffffff8115d1f1>] end_page_writeback+0x81/0xa0
+ [<ffffffff813e9cb9>] end_bio_extent_writepage+0x79/0xe0
+ [<ffffffff814a17eb>] bio_endio+0x6b/0x80
+ [<ffffffff813f2d32>] btrfs_end_bio+0x102/0x190
+ [<ffffffff814a17eb>] bio_endio+0x6b/0x80
+ [<ffffffff814a6778>] blk_update_request+0x1e8/0x330
+ [<ffffffff814b434a>] blk_mq_end_request+0x1a/0x40
+ [<ffffffffa0000431>] virtblk_request_done+0x71/0xe0 [virtio_blk]
+ [<ffffffff814b3420>] ? blkdev_issue_zeroout+0x1d0/0x1d0
+ [<ffffffff814b3433>] __blk_mq_complete_request_remote+0x13/0x20
+ [<ffffffff810df62b>] flush_smp_call_function_queue+0x8b/0x180
+ [<ffffffff814f2ad7>] ? debug_smp_processor_id+0x17/0x20
+ [<ffffffff810df733>] generic_smp_call_function_single_interrupt+0x13/0x20
+ [<ffffffff810406b7>] smp_call_function_single_interrupt+0x27/0x40
+ [<ffffffff8197564f>] call_function_single_interrupt+0x7f/0x90
+ <EOI>
+ [<ffffffff810ad8cc>] ? queued_spin_lock_slowpath+0x14c/0x200
+ [<ffffffff810ad841>] ? queued_spin_lock_slowpath+0xc1/0x200
+ [<ffffffff81973e2e>] ? _raw_spin_unlock_irqrestore+0xe/0x40
+ [<ffffffff810af1f5>] queued_write_lock_slowpath+0x95/0xa0
+ [<ffffffff810a5faf>] ? finish_wait+0x6f/0x90
+ [<ffffffff8108feb8>] ? preempt_count_add+0xb8/0xd0
+ [<ffffffff81974142>] _raw_write_lock+0x32/0x40
+ [<ffffffff81409246>] btrfs_tree_lock+0x146/0x2c0
+ [<ffffffff810a5d40>] ? woken_wake_function+0x20/0x20
+ [<ffffffff8108feb8>] ? preempt_count_add+0xb8/0xd0
+ [<ffffffff8197418e>] ? _raw_read_lock+0x3e/0x40
+ [<ffffffff81409708>] ? btrfs_tree_read_lock+0x78/0x170
+ [<ffffffff810a5d40>] ? woken_wake_function+0x20/0x20
+ [<ffffffff810a5d56>] ? autoremove_wake_function+0x16/0x40
+ [<ffffffff81396aaf>] ? btrfs_root_node+0x4f/0x90
+ [<ffffffff81396c44>] btrfs_lock_root_node+0x34/0x50
+ [<ffffffff8139f3d9>] btrfs_search_slot+0x769/0x9c0
+ [<ffffffff8140909c>] ? btrfs_tree_unlock+0x6c/0xd0
+ [<ffffffff813b8129>] btrfs_del_csums+0x239/0x330
+ [<ffffffff813affaf>] __btrfs_free_extent+0x73f/0xe00
+ [<ffffffff811c924d>] ? kmem_cache_free+0x22d/0x240
+ [<ffffffff813b1237>] __btrfs_run_delayed_refs+0xbc7/0x1300
+ [<ffffffff8115f2bf>] ? find_get_pages_tag+0x18f/0x2f0
+ [<ffffffff813efd2d>] ? extent_write_cache_pages.clone.0+0x3dd/0x460
+ [<ffffffff813b19fa>] btrfs_run_delayed_refs+0x8a/0x2b0
+ [<ffffffff813c6c21>] btrfs_commit_transaction+0x51/0xcb0
+ [<ffffffff8115d6ab>] ? __filemap_fdatawait_range+0x9b/0x170
+ [<ffffffff8108feb8>] ? preempt_count_add+0xb8/0xd0
+ [<ffffffff81973df7>] ? _raw_spin_unlock_irq+0x17/0x40
+ [<ffffffff813e62d7>] ? btrfs_lookup_first_ordered_extent+0x97/0xd0
+ [<ffffffff813e6401>] ? btrfs_wait_ordered_range+0xf1/0x130
+ [<ffffffff813dc34e>] btrfs_sync_file+0x3ce/0x4b0
+ [<ffffffff81102040>] ? __audit_syscall_entry+0xb0/0x110
+ [<ffffffff8121d8cc>] vfs_fsync_range+0x4c/0xb0
+ [<ffffffff810026ab>] ? syscall_trace_enter_phase1+0xfb/0x120
+ [<ffffffff8121d94c>] vfs_fsync+0x1c/0x20
+ [<ffffffff8121d98d>] do_fsync+0x3d/0x70
+ [<ffffffff8121d9f0>] SyS_fsync+0x10/0x20
+ [<ffffffff81002d97>] do_syscall_64+0x57/0xb0
+ [<ffffffff81002531>] ? prepare_exit_to_usermode+0x31/0x40
+ [<ffffffff819744bc>] entry_SYSCALL64_slow_path+0x25/0x25
+Code: 48 89 9d 70 ff ff ff 48 89 c2 48 8d 75 d0 48 c1 ea 0c c1 e8 12 83 
+e2 30 ff c8 48 81 c2 80 72 01 00 48 98 48 03 14 c5 c0 ba f3 81 <48> 89 
+1a 48 8d 53 08 8b 43 08 89 45 d0 85 c0 75 0a f3 90 8b 02
+RIP  [<ffffffff810ad8b9>] queued_spin_lock_slowpath+0x139/0x200
+ RSP <ffff8807eff83ac8>
+CR2: 0000000000017298
+---[ end trace b53934847871f7b8 ]---
+Kernel panic - not syncing: Fatal exception in interrupt
 
---df+09Je9rNq3P+GE
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-
-iQIcBAEBAgAGBQJXq6nqAAoJEFheFHXiqx3kfk0P/j3h02h7+rmYrhIx5L6AOQXD
-8Xzx+jkM8kGgjHWtNfsxOa+qSBi9fyA9NvbfWSITDsOXlaAaPgPFsswH25tmCjjV
-mRDzXCU42uKaB4KgDOqwh3Ms60TthgoGqARhjPaV4eJuKYMyg5t22rplfwotJd1d
-eA7GyQmHjCXlVe4RT8vkCVO8Y0UPnG0PP6VJHVvj0PaEFQMtwmT8RsF1SD3VC0lK
-29b8CXKWis/UQjCFAcrPPCdStKQdNK8GTbVJnMaLvz8zYwpxPQO1ZRVyxKM0Znxg
-IijUHgx4BMfETlbSrzeeRHfvMxWWMXdKEkzRJCpjvKRNxdBLagjMtJ9uI9lZL4d4
-oM1XEGkp83x1uQC5ieCTIGzqTmiGaOpXqUWpLEq2z5enRg9tIgfn/rp3ROUFGnSm
-fiXI/qFB7tB/W8LWmUvXetwgkdavuHpekw4OfXB21zWesKQQEji93Fbba9kWLJk/
-EKG1B61GrG/2XmsjeICpyUfXl+GUstmzri44BpaAQZS9gOp465rvNpS+XOsn4L31
-VCweS7Q3vLq6iZZAh7BEMYuZN9C8VXR288i9DG+BUGyl/y88UQnNAbVk5Z+XmtM0
-Td/WoqZFSBMrMKNHGJsMUdk87Zwz6LjnBIZRsq5XhzDXdDIwLc401qvKOR5oXKlv
-ToSUPltN3OuFN6dFy2XE
-=NnuA
------END PGP SIGNATURE-----
-
---df+09Je9rNq3P+GE--
+-chris

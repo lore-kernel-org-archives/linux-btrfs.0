@@ -1,36 +1,116 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:44382 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1757947AbcHWLsR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 23 Aug 2016 07:48:17 -0400
+Received: from mx2.suse.de ([195.135.220.15]:37867 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753640AbcHRB6i (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 17 Aug 2016 21:58:38 -0400
 Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 88089AD2D
-        for <linux-btrfs@vger.kernel.org>; Tue, 23 Aug 2016 11:48:16 +0000 (UTC)
-Date: Tue, 23 Aug 2016 13:47:11 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Jeff Mahoney <jeffm@suse.com>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>,
-        Filipe Manana <fdmanana@suse.com>
-Subject: Re: [PATCH] btrfs: don't create or leak aliased root while cleaning
- up orphans
-Message-ID: <20160823114711.GK16983@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <b17bdd58-a727-5995-ce8d-266bbe2917f3@suse.com>
+	by mx2.suse.de (Postfix) with ESMTP id B5711AAAD
+	for <linux-btrfs@vger.kernel.org>; Thu, 18 Aug 2016 01:58:36 +0000 (UTC)
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Cc: Filipe Manana <fdmanana@suse.com>
+From: Jeff Mahoney <jeffm@suse.com>
+Subject: [PATCH] btrfs: don't create or leak aliased root while cleaning up
+ orphans
+Message-ID: <b17bdd58-a727-5995-ce8d-266bbe2917f3@suse.com>
+Date: Wed, 17 Aug 2016 21:58:33 -0400
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <b17bdd58-a727-5995-ce8d-266bbe2917f3@suse.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Aug 17, 2016 at 09:58:33PM -0400, Jeff Mahoney wrote:
-> commit 909c3a22da3 (Btrfs: fix loading of orphan roots leading to BUG_ON)
-> avoids the BUG_ON but can add an aliased root to the dead_roots list or
-> leak the root.
-> 
-> Since we've already been loading roots into the radix tree, we should
-> use it before looking the root up on disk.
-> 
-> Cc: <stable@vger.kernel.org> # 4.5
-> Signed-off-by: Jeff Mahoney <jeffm@suse.com>
+commit 909c3a22da3 (Btrfs: fix loading of orphan roots leading to BUG_ON)
+avoids the BUG_ON but can add an aliased root to the dead_roots list or
+leak the root.
 
-Reviewed-by: David Sterba <dsterba@suse.com>
+Since we've already been loading roots into the radix tree, we should
+use it before looking the root up on disk.
+
+Cc: <stable@vger.kernel.org> # 4.5
+Signed-off-by: Jeff Mahoney <jeffm@suse.com>
+---
+ fs/btrfs/disk-io.c   |  4 ++--
+ fs/btrfs/disk-io.h   |  2 ++
+ fs/btrfs/root-tree.c | 27 ++++++++++++++++++---------
+ 3 files changed, 22 insertions(+), 11 deletions(-)
+
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 59febfb..dd640b5 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -1618,8 +1618,8 @@ fail:
+ 	return ret;
+ }
+ 
+-static struct btrfs_root *btrfs_lookup_fs_root(struct btrfs_fs_info *fs_info,
+-					       u64 root_id)
++struct btrfs_root *btrfs_lookup_fs_root(struct btrfs_fs_info *fs_info,
++					u64 root_id)
+ {
+ 	struct btrfs_root *root;
+ 
+diff --git a/fs/btrfs/disk-io.h b/fs/btrfs/disk-io.h
+index b3207a0e..f19a982 100644
+--- a/fs/btrfs/disk-io.h
++++ b/fs/btrfs/disk-io.h
+@@ -68,6 +68,8 @@ struct extent_buffer *btrfs_find_tree_block(struct btrfs_fs_info *fs_info,
+ struct btrfs_root *btrfs_read_fs_root(struct btrfs_root *tree_root,
+ 				      struct btrfs_key *location);
+ int btrfs_init_fs_root(struct btrfs_root *root);
++struct btrfs_root *btrfs_lookup_fs_root(struct btrfs_fs_info *fs_info,
++					u64 root_id);
+ int btrfs_insert_fs_root(struct btrfs_fs_info *fs_info,
+ 			 struct btrfs_root *root);
+ void btrfs_free_fs_roots(struct btrfs_fs_info *fs_info);
+diff --git a/fs/btrfs/root-tree.c b/fs/btrfs/root-tree.c
+index 7fd7e18..0912960 100644
+--- a/fs/btrfs/root-tree.c
++++ b/fs/btrfs/root-tree.c
+@@ -272,6 +272,23 @@ int btrfs_find_orphan_roots(struct btrfs_root *tree_root)
+ 		root_key.objectid = key.offset;
+ 		key.offset++;
+ 
++		/*
++		 * The root might have been inserted already, as before we look
++		 * for orphan roots, log replay might have happened, which
++		 * triggers a transaction commit and qgroup accounting, which
++		 * in turn reads and inserts fs roots while doing backref
++		 * walking.
++		 */
++		root = btrfs_lookup_fs_root(tree_root->fs_info,
++					    root_key.objectid);
++		if (root) {
++			WARN_ON(!test_bit(BTRFS_ROOT_ORPHAN_ITEM_INSERTED,
++					  &root->state));
++			if (btrfs_root_refs(&root->root_item) == 0)
++				btrfs_add_dead_root(root);
++			continue;
++		}
++
+ 		root = btrfs_read_fs_root(tree_root, &root_key);
+ 		err = PTR_ERR_OR_ZERO(root);
+ 		if (err && err != -ENOENT) {
+@@ -310,16 +327,8 @@ int btrfs_find_orphan_roots(struct btrfs_root *tree_root)
+ 		set_bit(BTRFS_ROOT_ORPHAN_ITEM_INSERTED, &root->state);
+ 
+ 		err = btrfs_insert_fs_root(root->fs_info, root);
+-		/*
+-		 * The root might have been inserted already, as before we look
+-		 * for orphan roots, log replay might have happened, which
+-		 * triggers a transaction commit and qgroup accounting, which
+-		 * in turn reads and inserts fs roots while doing backref
+-		 * walking.
+-		 */
+-		if (err == -EEXIST)
+-			err = 0;
+ 		if (err) {
++			BUG_ON(err == -EEXIST);
+ 			btrfs_free_fs_root(root);
+ 			break;
+ 		}
+-- 
+2.7.1
+
+
+-- 
+Jeff Mahoney
+SUSE Labs

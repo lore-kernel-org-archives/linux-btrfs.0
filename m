@@ -1,76 +1,33 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:18919 "EHLO
-        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750879AbcHXAeF (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 23 Aug 2016 20:34:05 -0400
-From: Liu Bo <bo.li.liu@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.cz>,
-        =?UTF-8?q?Holger=20Hoffst=C3=A4tte?=
-        <holger@applied-asynchrony.com>
-Subject: [PATCH v2] Btrfs: check btree node's nritems
-Date: Tue, 23 Aug 2016 17:37:45 -0700
-Message-Id: <1471999065-8788-1-git-send-email-bo.li.liu@oracle.com>
-In-Reply-To: <1470254248-24041-1-git-send-email-bo.li.liu@oracle.com>
-References: <1470254248-24041-1-git-send-email-bo.li.liu@oracle.com>
+Received: from mx2.suse.de ([195.135.220.15]:59974 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752449AbcHRMsI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 18 Aug 2016 08:48:08 -0400
+Date: Thu, 18 Aug 2016 14:46:29 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Anand Jain <anand.jain@oracle.com>
+Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz
+Subject: Re: [PATCH] btrfs: do not background blkdev_put()
+Message-ID: <20160818124629.GD16983@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1469138693-810-1-git-send-email-anand.jain@oracle.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1469138693-810-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When btree node (level = 1) has nritems which equals to zero,
-we can end up with panic due to insert_ptr()'s
+On Fri, Jul 22, 2016 at 06:04:53AM +0800, Anand Jain wrote:
+> From: Anand Jain <Anand.Jain@oracle.com>
+> 
+> At the end of unmount/dev-delete, if the device exclusive open is not
+> actually closed, then there might be a race with another program in
+> the userland who is trying to open the device in exclusive mode and
+> it may fail for eg:
+>       unmount /btrfs; fsck /dev/x
+>       btrfs dev del /dev/x /btrfs; fsck /dev/x
+> so here background blkdev_put() is not a choice
 
-BUG_ON(slot > nritems);
+missing signed-off, I'll add it
 
-where slot is 1 and nritems is 0, as copy_for_split() calls
-insert_ptr(.., path->slots[1] + 1, ...);
-
-A invalid value results in the whole mess, this adds the check
-for btree's node nritems so that we stop reading block when
-when something is wrong.
-
-Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
----
-v2: - remove unnecessary "noinline"
-    - fix to do the proper check as BTRFS_NODEPTRS_PER_BLOCK(root) is inclusive and nr is unsigned.
-
- fs/btrfs/disk-io.c | 16 ++++++++++++++++
- 1 file changed, 16 insertions(+)
-
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 90f57fa..682816d 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -633,6 +633,19 @@ static noinline int check_leaf(struct btrfs_root *root,
- 	return 0;
- }
- 
-+static int check_node(struct btrfs_root *root, struct extent_buffer *node)
-+{
-+	unsigned long nr = btrfs_header_nritems(node);
-+
-+	if (nr == 0 || nr > BTRFS_NODEPTRS_PER_BLOCK(root)) {
-+		btrfs_crit(root->fs_info,
-+			   "corrupt node: block %llu root %llu nritems %lu\n",
-+			   node->start, root->objectid, nr);
-+		return -EIO;
-+	}
-+	return 0;
-+}
-+
- static int btree_readpage_end_io_hook(struct btrfs_io_bio *io_bio,
- 				      u64 phy_offset, struct page *page,
- 				      u64 start, u64 end, int mirror)
-@@ -703,6 +716,9 @@ static int btree_readpage_end_io_hook(struct btrfs_io_bio *io_bio,
- 		ret = -EIO;
- 	}
- 
-+	if (found_level > 0 && check_node(root, eb))
-+		ret = -EIO;
-+
- 	if (!ret)
- 		set_extent_buffer_uptodate(eb);
- err:
--- 
-2.5.5
-
+Reviewed-by: David Sterba <dsterba@suse.com>

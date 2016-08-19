@@ -1,64 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ua0-f193.google.com ([209.85.217.193]:34679 "EHLO
-        mail-ua0-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751152AbcH0HQx (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 27 Aug 2016 03:16:53 -0400
+Received: from mx2.suse.de ([195.135.220.15]:55277 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1753471AbcHSLbB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 19 Aug 2016 07:31:01 -0400
+Date: Fri, 19 Aug 2016 13:28:23 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Liu Bo <bo.li.liu@oracle.com>
+Cc: Chris Mason <clm@fb.com>, linux-btrfs@vger.kernel.org,
+        David Sterba <dsterba@suse.cz>
+Subject: Re: [PATCH v2] Btrfs: fix memory leak of block group cache
+Message-ID: <20160819112823.GG16983@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1469061234-15337-1-git-send-email-bo.li.liu@oracle.com>
+ <1469061852-21185-1-git-send-email-bo.li.liu@oracle.com>
+ <9300daf6-000a-7bfa-f7a8-c0b418cbd6ba@fb.com>
+ <20160721190342.GA22835@localhost.localdomain>
+ <0ee2835c-17e4-08d3-69ef-280dc9e188ad@fb.com>
+ <20160721213319.GC22835@localhost.localdomain>
 MIME-Version: 1.0
-In-Reply-To: <20160827005656.GA8439@vader.DHCP.thefacebook.com>
-References: <cover.1468538030.git.osandov@fb.com> <399ec92c-9905-0ede-d5b0-ea3b0bf922e4@fb.com>
- <20160718223104.GA6681@vader.DHCP.thefacebook.com> <2544227.upOtQjWuiQ@localhost.localdomain>
- <83e50f77-ae10-4c8d-4a03-3c9af298d9c7@fb.com> <20160818203327.GA7696@vader.DHCP.thefacebook.com>
- <CADxRZqwHPVTdiKQa89Y0gbBWS-UMWwYzqLSnBNRhx9U33iSdKw@mail.gmail.com> <20160827005656.GA8439@vader.DHCP.thefacebook.com>
-From: Anatoly Pugachev <matorola@gmail.com>
-Date: Sat, 27 Aug 2016 10:16:25 +0300
-Message-ID: <CADxRZqxUavad99jMQhftFzzpjnz4cC93m2jBwk=Fe5+H7wAdFA@mail.gmail.com>
-Subject: Re: [PATCH 0/3] Btrfs: fix free space tree bitmaps+tests on
- big-endian systems
-To: Omar Sandoval <osandov@osandov.com>
-Cc: Chris Mason <clm@fb.com>, Chandan Rajendra <chandan@linux.vnet.ibm.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>, kernel-team@fb.com,
-        sparclinux@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20160721213319.GC22835@localhost.localdomain>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, Aug 27, 2016 at 3:56 AM, Omar Sandoval <osandov@osandov.com> wrote:
-> On Fri, Aug 26, 2016 at 02:06:29PM +0300, Anatoly Pugachev wrote:
->>
->> I can't load btrfs module with this patch applied to 4.8.0-rc3+ (git
->> v4.8-rc3-39-g61c0457)
->> on "modprobe btrfs" i'm getting the following in the logs and module
->> does not load:
->>
->> Btrfs loaded, crc32c=crc32c-generic, debug=on, assert=on
->> BTRFS: selftest: sectorsize: 8192  nodesize: 8192
->> BTRFS: selftest: Running btrfs free space cache tests
->> BTRFS: selftest: Running extent only tests
->> BTRFS: selftest: Running bitmap only tests
->> BTRFS: selftest: Running bitmap and extent tests
->> BTRFS: selftest: Running space stealing from bitmap to extent
->> BTRFS: selftest: Free space cache tests finished
->> BTRFS: selftest: Running extent buffer operation tests
->> BTRFS: selftest: Running btrfs_split_item tests
->> BTRFS: selftest: Running extent I/O tests
->> BTRFS: selftest: Running find delalloc tests
->> BTRFS: selftest: Running extent buffer bitmap tests
->> BTRFS: selftest: Setting straddling pages failed
->> BTRFS: selftest: Extent I/O tests finished
->
-> Is this with the whole patchset + this patch? You still need the patch
-> set for this to actually work, the extra patch is just some extra
-> checks.
+On Thu, Jul 21, 2016 at 02:33:19PM -0700, Liu Bo wrote:
+> > > update_block_group() is the only producer to add block group cache to
+> > > dirty_bgs list, and if btrfs_run_delayed_refs() aborts, the transaction
+> > > is aborted, so seems that there won't be anyone manipulating dirty_bgs
+> > > list, am I missing?
+> > > 
+> > 
+> > No, the dirty_bgs processing is safe I think.  My concern is with the cache
+> > inode which we iput()
+> 
+> I think iput() is OK, we're doing iput() on block group cache on the io_bgs
+> list, where all block groups's inodes has been igrab()'d.  If others are
+> messing around with our cache inode, they should have their own igrab,
+> too.
+> 
+> > 
+> > > Another point is that when we fail on btrfs_start_dirty_block_groups(),
+> > > btrfs_commit_transaction() won't get to cleanup_transaction error
+> > > handling,
+> > 
+> > Right, because we don't actually finish the commit.  Someone will eventually
+> > though ;)
+> 
+> Hmm yes, it's possible that there's a concurrent commit transaction
+> running.  If that's not true, we may still resort to
+> btrfs_error_commit_super(), other than that, I don't see who could
+> commit/cleanup the transaction after entering into BTRFS_FS_STATE_ERROR
+> state.
 
-Omar,
-
-sorry, I don't get what do you mean by the whole patchset ? I used git
-kernel (git://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux-2.6.git)
-and applied patch from your mail from August 18,
-https://www.spinics.net/lists/linux-btrfs/msg58023.html
-
-Tell me what patches do I need or point to btrfs git repo with all
-patches included and I'll test it.
-
-Thanks.
+What's the resume of this patch? I don't see a followup patch or a (to
+me) clear yes/no whether to merge it. Please let me know, thanks.

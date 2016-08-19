@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:28015 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:17031 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1753844AbcHSIOa (ORCPT
+        with ESMTP id S1753873AbcHSIOb (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 19 Aug 2016 04:14:30 -0400
+        Fri, 19 Aug 2016 04:14:31 -0400
 Received: from G08CNEXCHPEKD02.g08.fujitsu.local (unknown [10.167.33.83])
-        by cn.fujitsu.com (Postfix) with ESMTP id F0C1942BC534
-        for <linux-btrfs@vger.kernel.org>; Fri, 19 Aug 2016 16:13:17 +0800 (CST)
+        by cn.fujitsu.com (Postfix) with ESMTP id AA41742BC535
+        for <linux-btrfs@vger.kernel.org>; Fri, 19 Aug 2016 16:13:18 +0800 (CST)
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH 3/4] btrfs-progs: print-tree: Print human readable inode flags
-Date: Fri, 19 Aug 2016 16:13:07 +0800
-Message-ID: <20160819081308.21348-4-quwenruo@cn.fujitsu.com>
+Subject: [PATCH 4/4] btrfs-progs: print-tree: Print hex and human readable root flags
+Date: Fri, 19 Aug 2016 16:13:08 +0800
+Message-ID: <20160819081308.21348-5-quwenruo@cn.fujitsu.com>
 In-Reply-To: <20160819081308.21348-1-quwenruo@cn.fujitsu.com>
 References: <20160819081308.21348-1-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -21,71 +21,54 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- print-tree.c | 34 ++++++++++++++++++++++++++++++++--
- 1 file changed, 32 insertions(+), 2 deletions(-)
+ print-tree.c | 15 +++++++++++++++
+ 1 file changed, 15 insertions(+)
 
 diff --git a/print-tree.c b/print-tree.c
-index 9f9e11e..f33ddad 100644
+index f33ddad..81ab81f 100644
 --- a/print-tree.c
 +++ b/print-tree.c
-@@ -835,6 +835,33 @@ static void print_uuid_item(struct extent_buffer *l, unsigned long offset,
- 	}
+@@ -496,18 +496,31 @@ static int count_bytes(void *buf, int len, char b)
+ 	return cnt;
  }
  
-+/* Caller should ensure sizeof(*ret) >= 29 "NODATASUM|NODATACOW|READONLY" */
-+static void inode_flags_to_str(u64 flags, char *ret)
++/*
++ * Caller must ensure sizeof(*ret) >= 7 "RDONLY"
++ */
++static void root_flags_to_str(u64 flags, char *ret)
 +{
-+	int empty = 1;
-+
-+	if (flags & BTRFS_INODE_NODATASUM) {
-+		empty = 0;
-+		strcpy(ret, "NODATASUM");
-+	}
-+	if (flags & BTRFS_INODE_NODATACOW) {
-+		if (!empty) {
-+			empty = 0;
-+			strcat(ret, "|");
-+		}
-+		strcat(ret, "NODATACOW");
-+	}
-+	if (flags & BTRFS_INODE_READONLY) {
-+		if (!empty) {
-+			empty = 0;
-+			strcat(ret, "|");
-+		}
-+		strcat(ret, "READONLY");
-+	}
-+	if (empty)
++	if (flags & BTRFS_ROOT_SUBVOL_RDONLY)
++		strcat(ret, "RDONLY");
++	else
 +		strcat(ret, "none");
 +}
 +
- void btrfs_print_leaf(struct btrfs_root *root, struct extent_buffer *l)
+ static void print_root(struct extent_buffer *leaf, int slot)
  {
- 	int i;
-@@ -884,10 +911,12 @@ void btrfs_print_leaf(struct btrfs_root *root, struct extent_buffer *l)
+ 	struct btrfs_root_item *ri;
+ 	struct btrfs_root_item root_item;
+ 	int len;
+ 	char uuid_str[BTRFS_UUID_UNPARSED_SIZE];
++	char flags_str[32] = {0};
  
- 		switch (type) {
- 		case BTRFS_INODE_ITEM_KEY:
-+			memset(flags_str, 0, sizeof(flags_str));
- 			ii = btrfs_item_ptr(l, i, struct btrfs_inode_item);
-+			inode_flags_to_str(btrfs_inode_flags(l, ii), flags_str);
- 			printf("\t\tinode generation %llu transid %llu size %llu nbytes %llu\n"
- 			       "\t\tblock group %llu mode %o links %u uid %u gid %u\n"
--			       "\t\trdev %llu flags 0x%llx\n",
-+			       "\t\trdev %llu flags 0x%llx(%s)\n",
- 			       (unsigned long long)btrfs_inode_generation(l, ii),
- 			       (unsigned long long)btrfs_inode_transid(l, ii),
- 			       (unsigned long long)btrfs_inode_size(l, ii),
-@@ -898,7 +927,8 @@ void btrfs_print_leaf(struct btrfs_root *root, struct extent_buffer *l)
- 			       btrfs_inode_uid(l, ii),
- 			       btrfs_inode_gid(l, ii),
- 			       (unsigned long long)btrfs_inode_rdev(l,ii),
--			       (unsigned long long)btrfs_inode_flags(l,ii));
-+			       (unsigned long long)btrfs_inode_flags(l,ii),
-+			       flags_str);
- 			break;
- 		case BTRFS_INODE_REF_KEY:
- 			iref = btrfs_item_ptr(l, i, struct btrfs_inode_ref);
+ 	ri = btrfs_item_ptr(leaf, slot, struct btrfs_root_item);
+ 	len = btrfs_item_size_nr(leaf, slot);
+ 
+ 	memset(&root_item, 0, sizeof(root_item));
+ 	read_extent_buffer(leaf, &root_item, (unsigned long)ri, len);
++	root_flags_to_str(btrfs_root_flags(&root_item), flags_str);
+ 
+ 	printf("\t\troot data bytenr %llu level %d dirid %llu refs %u gen %llu lastsnap %llu\n",
+ 		(unsigned long long)btrfs_root_bytenr(&root_item),
+@@ -516,6 +529,8 @@ static void print_root(struct extent_buffer *leaf, int slot)
+ 		btrfs_root_refs(&root_item),
+ 		(unsigned long long)btrfs_root_generation(&root_item),
+ 		(unsigned long long)btrfs_root_last_snapshot(&root_item));
++	printf("\t\tflags 0x%llx(%s)\n", btrfs_root_flags(&root_item),
++	       flags_str);
+ 
+ 	if (root_item.generation == root_item.generation_v2) {
+ 		uuid_unparse(root_item.uuid, uuid_str);
 -- 
 2.9.3
 

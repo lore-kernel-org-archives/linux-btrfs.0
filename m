@@ -1,54 +1,101 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oi0-f66.google.com ([209.85.218.66]:35187 "EHLO
-        mail-oi0-f66.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752796AbcHTPhT (ORCPT
+Received: from mail-ua0-f193.google.com ([209.85.217.193]:33045 "EHLO
+        mail-ua0-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752796AbcHTPwK (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 20 Aug 2016 11:37:19 -0400
-Received: by mail-oi0-f66.google.com with SMTP id e80so8375955oig.2
-        for <linux-btrfs@vger.kernel.org>; Sat, 20 Aug 2016 08:37:19 -0700 (PDT)
+        Sat, 20 Aug 2016 11:52:10 -0400
+Received: by mail-ua0-f193.google.com with SMTP id u13so7690693uau.0
+        for <linux-btrfs@vger.kernel.org>; Sat, 20 Aug 2016 08:52:10 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <CAJCQCtTQAG+0M9AsNj5LNWXTAKd8V-6DL=5kS80dPt59S1uiAA@mail.gmail.com>
-References: <CAMPo9spd+GF18K7sDZDsfvqLQJYwt_YuYM_05KOnVFmw_Vsrhw@mail.gmail.com>
- <CAJCQCtTQAG+0M9AsNj5LNWXTAKd8V-6DL=5kS80dPt59S1uiAA@mail.gmail.com>
-From: Chris Murphy <lists@colorremedies.com>
-Date: Sat, 20 Aug 2016 09:37:17 -0600
-Message-ID: <CAJCQCtR8rWJHePsBH_oG-V=pSLLztnZY35JyST88_ggasdNrxA@mail.gmail.com>
-Subject: Re: Mixing partitioned and non-partitioned discs in a RAID?
-To: Chris Murphy <lists@colorremedies.com>
-Cc: =?UTF-8?B?QmVhcmNhdCDFnsOhbmRvcg==?= <bearcatsandor@gmail.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+From: Ilya Dryomov <idryomov@gmail.com>
+Date: Sat, 20 Aug 2016 17:52:09 +0200
+Message-ID: <CAOi1vP_3j6jRTpcNhuFNNVapdJVc0fhfB53wHN1Pzotcp72m+Q@mail.gmail.com>
+Subject: Possible recursive locking on btrfs_inode::log_mutex
+To: linux-btrfs@vger.kernel.org
+Cc: Chris Mason <clm@fb.com>
+Content-Type: multipart/mixed; boundary=94eb2c19228834dc40053a82ccfd
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, Aug 20, 2016 at 9:21 AM, Chris Murphy <lists@colorremedies.com> wrote:
+--94eb2c19228834dc40053a82ccfd
+Content-Type: text/plain; charset=UTF-8
 
->If you
-> deleted this udev rule, you run the risk of some boots sometimes
-> having a slightly delayed drive becoming available and the volume
-> wrongly being mounted degraded when it's not necessary.
+Hi,
 
-Yuck. Revision time!
+I'm seeing the attached lockdep splat on 4.8-rc2 - I'm guessing it got
+introduced in 4.8-rc.  It appears to be very easy to trigger and shows up
+within seconds after mkfs + mount.
 
-If you were to delete this udev rule, it's possible to end up with an
-unnecessary degraded mount, simply due to a drive spinning up slower
-or otherwise having delayed readiness.
+Thanks,
 
-Add on: Silently always mounting degraded in order to anticipate
-needing unattended degraded mounts will almost certainly lead to data
-loss. Btrfs just isn't ready for this yet. It has no concept of device
-faulty state still although patches for this are available for testing
-(not merged). So yeah, buyer beware. If you don't care about uptime
-and unattended operation, just self-healing during normal operation,
-then it's OK but you have to remain vigilant, and aware of Btrfs
-limitations, including it's lazy repair of formerly missing devices
-that reappear. It only fixes passively on reads. To completely fix it,
-you have to do a scrub, and you must do it before another drive goes
-missing or you can lose the whole file system. Btrfs has no partial
-resync like what's offered with mdadm arrays with a write-intent
-bitmap.
+                Ilya
 
+--94eb2c19228834dc40053a82ccfd
+Content-Type: text/plain; charset=US-ASCII; name="btrfs-lockdep.txt"
+Content-Disposition: attachment; filename="btrfs-lockdep.txt"
+Content-Transfer-Encoding: base64
+X-Attachment-Id: f_is3cvom70
 
-
--- 
-Chris Murphy
+a2VybmVsOiA9PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT0Ka2Vy
+bmVsOiBbIElORk86IHBvc3NpYmxlIHJlY3Vyc2l2ZSBsb2NraW5nIGRldGVjdGVkIF0Ka2VybmVs
+OiA0LjguMC1yYzItY2VwaC0wMDI5Ny1nYWI5ZjhkMiAjMSBOb3QgdGFpbnRlZAprZXJuZWw6IC0t
+LS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLQprZXJuZWw6IGNlcGgt
+b3NkLzI1MDE2IGlzIHRyeWluZyB0byBhY3F1aXJlIGxvY2s6Cmtlcm5lbDogKCZlaS0+bG9nX211
+dGV4KXsrLisuLi59LCBhdDogWzxmZmZmZmZmZmEwMmM0YjNlPl0gYnRyZnNfbG9nX2lub2RlKzB4
+MTdlLzB4YjUwIFtidHJmc10Ka2VybmVsOiAjMDEyYnV0IHRhc2sgaXMgYWxyZWFkeSBob2xkaW5n
+IGxvY2s6Cmtlcm5lbDogKCZlaS0+bG9nX211dGV4KXsrLisuLi59LCBhdDogWzxmZmZmZmZmZmEw
+MmM0YjNlPl0gYnRyZnNfbG9nX2lub2RlKzB4MTdlLzB4YjUwIFtidHJmc10Ka2VybmVsOiAjMDEy
+b3RoZXIgaW5mbyB0aGF0IG1pZ2h0IGhlbHAgdXMgZGVidWcgdGhpczoKa2VybmVsOiBQb3NzaWJs
+ZSB1bnNhZmUgbG9ja2luZyBzY2VuYXJpbzoKa2VybmVsOiAgICAgICBDUFUwCmtlcm5lbDogICAg
+ICAgLS0tLQprZXJuZWw6ICBsb2NrKCZlaS0+bG9nX211dGV4KTsKa2VybmVsOiAgbG9jaygmZWkt
+PmxvZ19tdXRleCk7Cmtlcm5lbDogIzAxMiAqKiogREVBRExPQ0sgKioqCmtlcm5lbDogTWF5IGJl
+IGR1ZSB0byBtaXNzaW5nIGxvY2sgbmVzdGluZyBub3RhdGlvbgprZXJuZWw6IDYgbG9ja3MgaGVs
+ZCBieSBjZXBoLW9zZC8yNTAxNjoKa2VybmVsOiAjMDogIChzYl93cml0ZXJzIzE1KXsuKy4rLit9
+LCBhdDogWzxmZmZmZmZmZjgxMjc0NjNkPl0gX19zYl9zdGFydF93cml0ZSsweGFkLzB4ZTAKa2Vy
+bmVsOiAjMTogICgmdHlwZS0+aV9tdXRleF9kaXJfa2V5IzQvMSl7Ky4rLisufSwgYXQ6IFs8ZmZm
+ZmZmZmY4MTI3YzM3ZT5dIGxvY2tfcmVuYW1lKzB4MmUvMHgxMDAKa2VybmVsOiAjMjogICgmc2It
+PnNfdHlwZS0+aV9tdXRleF9rZXkjMTkpeysuKy4rLn0sIGF0OiBbPGZmZmZmZmZmODEyOGZiNWU+
+XSBsb2NrX3R3b19ub25kaXJlY3RvcmllcysweDNlLzB4NzAKa2VybmVsOiAjMzogICgmc2ItPnNf
+dHlwZS0+aV9tdXRleF9rZXkjMTkvNCl7Ky4rLi4ufSwgYXQ6IFs8ZmZmZmZmZmY4MTI4ZmI4Nj5d
+IGxvY2tfdHdvX25vbmRpcmVjdG9yaWVzKzB4NjYvMHg3MAprZXJuZWw6ICM0OiAgKHNiX2ludGVy
+bmFsIzIpey4rLisuK30sIGF0OiBbPGZmZmZmZmZmODEyNzQ2MGI+XSBfX3NiX3N0YXJ0X3dyaXRl
+KzB4N2IvMHhlMAprZXJuZWw6ICM1OiAgKCZlaS0+bG9nX211dGV4KXsrLisuLi59LCBhdDogWzxm
+ZmZmZmZmZmEwMmM0YjNlPl0gYnRyZnNfbG9nX2lub2RlKzB4MTdlLzB4YjUwIFtidHJmc10Ka2Vy
+bmVsOiAjMDEyc3RhY2sgYmFja3RyYWNlOgprZXJuZWw6IENQVTogMCBQSUQ6IDI1MDE2IENvbW06
+IGNlcGgtb3NkIE5vdCB0YWludGVkIDQuOC4wLXJjMi1jZXBoLTAwMjk3LWdhYjlmOGQyICMxCmtl
+cm5lbDogSGFyZHdhcmUgbmFtZTogU3VwZXJtaWNybyBYOFNJTC9YOFNJTCwgQklPUyAxLjBjIDAy
+LzI1LzIwMTAKa2VybmVsOiAwMDAwMDAwMDAwMDAwMDg2IDAwMDAwMDAwNjY4ZGJjYTQgZmZmZjg4
+MDQyYTI3Nzg3MCBmZmZmZmZmZjgxNDEzZTUxCmtlcm5lbDogZmZmZmZmZmY4MjhmNDYzMCBmZmZm
+ZmZmZjgyOGY0NjMwIGZmZmY4ODA0MmEyNzc5MzAgZmZmZmZmZmY4MTEwNjljMAprZXJuZWw6IGRm
+YzVjMTUwMDAwMDAwMDEgZmZmZjg4MDQwMDAwMDAwMCA0ZWZlMzgxMzQzMGUzMmNmIGZmZmY4ODA0
+MjlmMzgwMDAKa2VybmVsOiBDYWxsIFRyYWNlOgprZXJuZWw6IFs8ZmZmZmZmZmY4MTQxM2U1MT5d
+IGR1bXBfc3RhY2srMHg4NS8weGM0Cmtlcm5lbDogWzxmZmZmZmZmZjgxMTA2OWMwPl0gX19sb2Nr
+X2FjcXVpcmUrMHhjZTAvMHgxNjgwCmtlcm5lbDogWzxmZmZmZmZmZjgxODEwYWZlPl0gPyBtdXRl
+eF91bmxvY2srMHhlLzB4MTAKa2VybmVsOiBbPGZmZmZmZmZmODExMDc4NDc+XSBsb2NrX2FjcXVp
+cmUrMHgxOTcvMHgxZjAKa2VybmVsOiBbPGZmZmZmZmZmYTAyYzRiM2U+XSA/IGJ0cmZzX2xvZ19p
+bm9kZSsweDE3ZS8weGI1MCBbYnRyZnNdCmtlcm5lbDogWzxmZmZmZmZmZjgxODBmYWU5Pl0gbXV0
+ZXhfbG9ja19uZXN0ZWQrMHg3OS8weDM3MAprZXJuZWw6IFs8ZmZmZmZmZmZhMDJjNGIzZT5dID8g
+YnRyZnNfbG9nX2lub2RlKzB4MTdlLzB4YjUwIFtidHJmc10Ka2VybmVsOiBbPGZmZmZmZmZmYTAy
+YzRiM2U+XSBidHJmc19sb2dfaW5vZGUrMHgxN2UvMHhiNTAgW2J0cmZzXQprZXJuZWw6IFs8ZmZm
+ZmZmZmY4MTBkN2E3MD5dID8gX19taWdodF9zbGVlcCsweDcwLzB4OTAKa2VybmVsOiBbPGZmZmZm
+ZmZmYTAyN2U1OTA+XSA/IGJ0cmZzX2lfY2FsbGJhY2srMHgyMC8weDIwIFtidHJmc10Ka2VybmVs
+OiBbPGZmZmZmZmZmYTAyODllMTg+XSA/IGJ0cmZzX2ludmFsaWRhdGVfaW5vZGVzKzB4MTk4LzB4
+MWYwIFtidHJmc10Ka2VybmVsOiBbPGZmZmZmZmZmODE4MTMzMDc+XSA/IF9yYXdfc3Bpbl91bmxv
+Y2srMHgyNy8weDQwCmtlcm5lbDogWzxmZmZmZmZmZmEwMmM0ZWY0Pl0gYnRyZnNfbG9nX2lub2Rl
+KzB4NTM0LzB4YjUwIFtidHJmc10Ka2VybmVsOiBbPGZmZmZmZmZmODExMDU5MTg+XSA/IHRyYWNl
+X2hhcmRpcnFzX29uX2NhbGxlcisweDE3OC8weDFkMAprZXJuZWw6IFs8ZmZmZmZmZmZhMDJjNWUy
+MT5dIGJ0cmZzX2xvZ19pbm9kZV9wYXJlbnQrMHg4ODEvMHg5NzAgW2J0cmZzXQprZXJuZWw6IFs8
+ZmZmZmZmZmY4MTgxMzMwNz5dID8gX3Jhd19zcGluX3VubG9jaysweDI3LzB4NDAKa2VybmVsOiBb
+PGZmZmZmZmZmYTAyODM1ZTc+XSA/IGJ0cmZzX3VwZGF0ZV9pbm9kZSsweGQ3LzB4MTEwIFtidHJm
+c10Ka2VybmVsOiBbPGZmZmZmZmZmYTAyYzczOGI+XSBidHJmc19sb2dfbmV3X25hbWUrMHg3Yi8w
+eDgwIFtidHJmc10Ka2VybmVsOiBbPGZmZmZmZmZmYTAyOGNjODI+XSBidHJmc19yZW5hbWUyKzB4
+ZmQyLzB4MTZjMCBbYnRyZnNdCmtlcm5lbDogWzxmZmZmZmZmZjgxMjhmYjg2Pl0gPyBsb2NrX3R3
+b19ub25kaXJlY3RvcmllcysweDY2LzB4NzAKa2VybmVsOiBbPGZmZmZmZmZmODExMDFkNmY+XSA/
+IGRvd25fd3JpdGVfbmVzdGVkKzB4NGYvMHg4MAprZXJuZWw6IFs8ZmZmZmZmZmY4MTI4ZmI4Nj5d
+ID8gbG9ja190d29fbm9uZGlyZWN0b3JpZXMrMHg2Ni8weDcwCmtlcm5lbDogWzxmZmZmZmZmZjgx
+MjdmODU3Pl0gdmZzX3JlbmFtZSsweDQ2Ny8weDgzMAprZXJuZWw6IFs8ZmZmZmZmZmY4MTI3YzIw
+MD5dID8gcmVhZF9zZXFjb3VudF9iZWdpbisweDkwLzB4YTAKa2VybmVsOiBbPGZmZmZmZmZmODEy
+ODQ4MWU+XSBTeVNfcmVuYW1lKzB4MWVlLzB4M2MwCmtlcm5lbDogWzxmZmZmZmZmZjgxMDAzYjRh
+Pl0gZG9fc3lzY2FsbF82NCsweDdhLzB4MWMwCmtlcm5lbDogWzxmZmZmZmZmZjgxODEzYzNmPl0g
+ZW50cnlfU1lTQ0FMTDY0X3Nsb3dfcGF0aCsweDI1LzB4MjUK
+--94eb2c19228834dc40053a82ccfd--

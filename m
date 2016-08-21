@@ -1,69 +1,135 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ua0-f170.google.com ([209.85.217.170]:35762 "EHLO
-        mail-ua0-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751764AbcHUC27 (ORCPT
+Received: from mail-oi0-f41.google.com ([209.85.218.41]:36033 "EHLO
+        mail-oi0-f41.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751573AbcHURzv (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 20 Aug 2016 22:28:59 -0400
-Received: by mail-ua0-f170.google.com with SMTP id n59so138267367uan.2
-        for <linux-btrfs@vger.kernel.org>; Sat, 20 Aug 2016 19:28:59 -0700 (PDT)
+        Sun, 21 Aug 2016 13:55:51 -0400
+Received: by mail-oi0-f41.google.com with SMTP id f189so124170599oig.3
+        for <linux-btrfs@vger.kernel.org>; Sun, 21 Aug 2016 10:54:30 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <pan$37954$2a2891c6$a583cdc5$350ef358@cox.net>
-References: <CAMPo9spd+GF18K7sDZDsfvqLQJYwt_YuYM_05KOnVFmw_Vsrhw@mail.gmail.com>
- <CAJCQCtTQAG+0M9AsNj5LNWXTAKd8V-6DL=5kS80dPt59S1uiAA@mail.gmail.com>
- <BLU437-SMTP168169D258F02597287B2E92170@phx.gbl> <CAJCQCtS1LPmYN2JY0cayWpCPVzaPq+KQSZZU4g9ifVGT9HCZCg@mail.gmail.com>
- <pan$37954$2a2891c6$a583cdc5$350ef358@cox.net>
-From: =?UTF-8?B?QmVhcmNhdCDFnsOhbmRvcg==?= <bearcatsandor@gmail.com>
-Date: Sat, 20 Aug 2016 20:28:18 -0600
-Message-ID: <CAMPo9sq2v=-VrTfjqOe+fAuWGnOEKDX1UoeW9fJAb6KBzr_SMw@mail.gmail.com>
-Subject: Re: Mixing partitioned and non-partitioned discs in a RAID?
+In-Reply-To: <pan$3c68e$c7a03ce$dfc0806f$7216696d@cox.net>
+References: <CAMG9ccwK93opLn=qOcceDjExwDHHRaxO=juvcXz4TuWKt_qXeg@mail.gmail.com>
+ <CAJCQCtSs5bHZu5NLjVfJLgxL45BdNq7hrmV3VdCLz+WxLEXrMw@mail.gmail.com>
+ <CAMG9ccwqnK63sbcF79VndBMitvFjX6pHPCU9YrrZcwEdiQxY5w@mail.gmail.com>
+ <CAJCQCtTuhTKBK=zjXsq3o0mFnU6T7hYsLLr2VD0N7gqJ7vX0FQ@mail.gmail.com> <pan$3c68e$c7a03ce$dfc0806f$7216696d@cox.net>
+From: Ivan Sizov <sivan606@gmail.com>
+Date: Sun, 21 Aug 2016 20:54:09 +0300
+Message-ID: <CAMG9ccyPduc+eSspQUG04c12N2hiUik9ts7x25Wm-MkJF4QPKw@mail.gmail.com>
+Subject: Re: Strange behavior after "rm -rf //"
 To: Duncan <1i5t5.duncan@cox.net>
 Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Thanks for the responses all. I'm on Gentoo as well for what that
-matters. I think what i'm going to do (if i don't abandon EFI
-entirely) is just to get a small (16gb), $25 m.2 since my board
-supports that, and use that as my boot drive. Then mkfs other all
-discs to be partitionless and away i go.
+Duncan, you was right. The commit didn't happen and nothing was
+deleted except ext4 /boot. the System booted normally after GRUB2 and
+kernel recovery.
 
-Not sure what i'll use the extra 15g on that m.2 for.
+Thank you much.
 
-I learned a lot from your long response Chris. Thank you.
+P.S. I'm sorry for the late answer.
 
-On Sat, Aug 20, 2016 at 8:19 PM, Duncan <1i5t5.duncan@cox.net> wrote:
-> Chris Murphy posted on Sat, 20 Aug 2016 18:36:21 -0600 as excerpted:
+2016-08-09 23:30 GMT+03:00 Duncan <1i5t5.duncan@cox.net>:
+> Chris Murphy posted on Tue, 09 Aug 2016 11:10:08 -0600 as excerpted:
 >
->> FAT leaves a lot to be desired but it's pretty universally supported and
->> almost trivial to repair *if* the volume is repairable in the first
->> place. The much bigger issue with ESP on Linux is this neurotic tendency
->> of distros to persistently mount shit that does not need to be mounted.
->> Like the ESP, and even the dedicated boot volume. They only need to be
->> mounted when being updated and then should be umounted. And worse the
->> convention is to do nested mount with /boot and then /boot/efi for the
->> ESP so it's twice as bad a practice. By virtue of mounting the ESP the
->> dirty bit is set, so any crash means it must be fsck'd and if that
->> doesn't work, it's game over for that volume. Fragile setup.
+>> On Mon, Aug 8, 2016 at 12:38 PM, Ivan Sizov <sivan606@gmail.com> wrote:
+>>> 2016-08-08 20:13 GMT+03:00 Chris Murphy <lists@colorremedies.com>:
+>>>> Just a wild guess, the deletions may be in the tree log and haven't
+>>>> been applied to the other trees (fs tree, extent tree, etc). So yes
+>>>> I'd expect they get deleted on a rw mount.
+>>>>
+>>>> This is what kernel? Because kernel 4.6 offers mount option
+>>>> "nologreplay" which suggests even if you do mount -r that log replay
+>>>> happens, so you shouldn't see these deleted files unless you mount ro
+>>>> *and* use nologreplay mount option.
+>>>
+>>> Live USB has kernel 4.5.7. Maybe I should try to run "btrfs rescue
+>>> zero-log" and then mount RW? Will the files safe in that case?
+>>
+>> Depends on what's in the log that you're zeroing out. It's entirely
+>> possible other things are lost, not just the incomplete deletion. And
+>> also I have no idea if the deletion is entirely contained in only the
+>> tree log.
 >
-> Depends on the distro.  On gentoo, you set it up the way you want of
-> course, but the recommendation has always been /boot, and now the ESP,
-> not mounted by default.
+> It's worth noting a critical difference between btrfs replay logs and
+> conventional filesystem replay logs, however, with the result being that
+> there's a fair chance the log replay has absolutely nothing to do with
+> this case at all, and that it's simply commit vs. crash timing.
 >
-> But that would be /expected/ on gentoo, since being able to configure it
-> the way you want is the whole /point/ of running gentoo in the first
-> place.  Sort of like arch, only much more so.
+> Btrfs is copy-on-write, with commits designed to be atomic -- changes
+> work their way up the tree until a root commit finalizes them, and if a
+> crash occurs, all changes since the last successful commit (with a commit
+> every 30 seconds by default, and a mount option to change that) are
+> normally lost.  Because the filesystem is copy-on-write, that means the
+> filesystem should be consistent at that commit, and changes made after
+> that will be in different locations that haven't made it into the tree
+> yet, since the next commit wasn't able to happen due to the crash.  Thus,
+> the stuff that conventional filesystems log simply doesn't apply to btrfs
+> at all.
 >
-> Meanwhile, I'm kinda partial to booting in legacy mode in grub2, with
-> grub2 installed to the legacy-BIOS partion on multiple gpt-partitioned
-> devices, which each one having its own /boot as well, setup so the
-> firmware boot device selector can choose which device and thus which
-> grub2 installation on that device, I boot from.  That gives me as many
-> backup grub2 installations on the legacy BIOS partitions, pointing at as
-> many backup /boots on the same device by default, as I care to setup.  Of
-> course what's extra nice about that is that you can switch to the /boot
-> on another device direct from the grub2 prompt, emergency mode if it
-> can't load the /boot off that device, if you like.
+> By contrast, conventional filesystems rewrite a lot of data and metadata
+> in-place, and logging lets them write out to a temporary area the changes
+> they intend to make before they actually write them to the permanent
+> location, so that in the event of a crash, any data partially written to
+> the permanent location will be replayed from the log, while if the crash
+> happened when writing the log so it's corrupt, that record won't be
+> replayed, and the old content will remain in place.
+>
+> Tho of course writing all data twice tends to hit performance rather
+> hard, so what most event logging filesystems do is only log the metadata,
+> not the actual data.  This lets them be much faster than if they were
+> logging the data, and normally protects the filesystem structure, but
+> there's some chance that files rewritten in-place will be corrupt if a
+> crash happens at the wrong moment.  But it limits the damage to only the
+> file being written at the time, and does away with the requirement to fsck
+> the entire filesystem after every crash.
+>
+> So what /does/ the btrfs log do, then?  Good question! =:^)  Rather
+> simply, keeping in mind that commits only normally trigger every 30
+> seconds, the btrfs log tracks fsyncs (individual file syncs, as opposed
+> to whole filesystem syncs), recording them in a replay log, so the
+> filesystem can return success on the fsync, that the file was actually
+> synced to permanent storage (often ssds these days, so not always "disk"
+> as it used to be), without having to either wait upto 30 seconds for the
+> next root tree commit, or forcing a full filesystem sync and commit,
+> possibly including many other files, when only the one was requested.
+>
+> So with btrfs, it's *only* fsyncs that are logged to the replay log, and
+> that only to be able to truthfully return that the file was written to
+> permanent storage, not normal filesystem operations, which are already
+> atomic due to the copy-on-write semantics, and thus don't need logged.
+>
+> So then, the question becomes one of whether rm -rf, or whatever other
+> actual command was used to do the deletes, called fsync, or not.  If the
+> command didn't call fsync, then it would have been the normal btrfs
+> commit mechanism, again, every 30 seconds by default, that would have
+> been in play here, and the btrfs log replay wouldn't have anything to do
+> with it.
+>
+> Which I actually strongly suspect to be the case.  It's likely that the
+> last commit wasn't completed, so the btrfs reverted to the last atomic
+> commit.  That would also explain why a read-only mount /without/ the
+> nologreplay option still showed the files, since read-only does normally
+> still replay that fsync log, so if the files were caught in it, they
+> shouldn't show up at all.
+>
+>
+> Meanwhile, back to the original scenario, just another demonstration of
+> what every good sysadmin knows, often from hard experience, admin fat-
+> fingering -- the human factor --  PEBKAC -- is as much of a danger to the
+> data and the system, if not more, than device or software failure.  If
+> would-be backups can't protect from that, they're not backups.  Which is
+> why simple RAID fails as a backup method, even if it can protect against
+> device failure.  And of course, there's only two cases for the value of
+> the data, it's either worth the hassle and resources to backup, or it's
+> not, and if it's not backed up, by definition of not having that backup,
+> you're defining it as the latter, no matter any claims to the contrary.
+> In this case, as too many unfortunate people eventually find out,
+> actions, or the lack of them, speak louder than words, and if the data is
+> lost due to not having a backup, well, the only thing to do is to be
+> happy that the thing your actions defined as worth more than that data,
+> the time/hassle/resources necessary to do it, was saved.
 >
 > --
 > Duncan - List replies preferred.   No HTML msgs.
@@ -78,7 +144,4 @@ On Sat, Aug 20, 2016 at 8:19 PM, Duncan <1i5t5.duncan@cox.net> wrote:
 
 
 -- 
-Bearcat M. Şándor
-Feline Soul Systems LLC
-Voice: 872.CAT.SOUL (872.228.7685)
-Fax: 406.235.7070
+Ivan Sizov

@@ -1,101 +1,91 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ua0-f193.google.com ([209.85.217.193]:33045 "EHLO
-        mail-ua0-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752796AbcHTPwK (ORCPT
+Received: from mail-oi0-f45.google.com ([209.85.218.45]:35067 "EHLO
+        mail-oi0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751222AbcHUAgY (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 20 Aug 2016 11:52:10 -0400
-Received: by mail-ua0-f193.google.com with SMTP id u13so7690693uau.0
-        for <linux-btrfs@vger.kernel.org>; Sat, 20 Aug 2016 08:52:10 -0700 (PDT)
+        Sat, 20 Aug 2016 20:36:24 -0400
+Received: by mail-oi0-f45.google.com with SMTP id 4so109541374oih.2
+        for <linux-btrfs@vger.kernel.org>; Sat, 20 Aug 2016 17:36:23 -0700 (PDT)
 MIME-Version: 1.0
-From: Ilya Dryomov <idryomov@gmail.com>
-Date: Sat, 20 Aug 2016 17:52:09 +0200
-Message-ID: <CAOi1vP_3j6jRTpcNhuFNNVapdJVc0fhfB53wHN1Pzotcp72m+Q@mail.gmail.com>
-Subject: Possible recursive locking on btrfs_inode::log_mutex
-To: linux-btrfs@vger.kernel.org
-Cc: Chris Mason <clm@fb.com>
-Content-Type: multipart/mixed; boundary=94eb2c19228834dc40053a82ccfd
+In-Reply-To: <BLU437-SMTP168169D258F02597287B2E92170@phx.gbl>
+References: <CAMPo9spd+GF18K7sDZDsfvqLQJYwt_YuYM_05KOnVFmw_Vsrhw@mail.gmail.com>
+ <CAJCQCtTQAG+0M9AsNj5LNWXTAKd8V-6DL=5kS80dPt59S1uiAA@mail.gmail.com> <BLU437-SMTP168169D258F02597287B2E92170@phx.gbl>
+From: Chris Murphy <lists@colorremedies.com>
+Date: Sat, 20 Aug 2016 18:36:21 -0600
+Message-ID: <CAJCQCtS1LPmYN2JY0cayWpCPVzaPq+KQSZZU4g9ifVGT9HCZCg@mail.gmail.com>
+Subject: Re: Mixing partitioned and non-partitioned discs in a RAID?
+To: Alberto Bursi <alberto.bursi@outlook.it>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
---94eb2c19228834dc40053a82ccfd
-Content-Type: text/plain; charset=UTF-8
+On Sat, Aug 20, 2016 at 1:38 PM, Alberto Bursi <alberto.bursi@outlook.it> wrote:
+>
+>
+> On 08/20/2016 05:21 PM, Chris Murphy wrote:
+>>
+>> On Fri, Aug 19, 2016 at 10:00 PM, Bearcat Şándor
+>> <bearcatsandor@gmail.com> wrote:
+>>>
+>>> I have a btrfs non-raid file system that i'd like to convert to
+>>> raid10. This single device has my efi boot partion on it, so it's
+>>> partitioned into sda1 and sda2. I have 3 other discs (sdc-sde) that
+>>> i'd like to make partition-less systems and then add them to the first
+>>> disc (sda) using the steps in the conversion section of the wiki
+>>>
+>>> (https://btrfs.wiki.kernel.org/index.php/Using_Btrfs_with_Multiple_Devices#Conversion).
+>>>
+>>> My concern in that i'll be mixing a partitioned and partition-less
+>>> system.  Will that work or will i hose myself?
+>>
+>> That will work, but you'll likely be in a hosed situation later should
+>> you ever lose a drive so I don't recommend this layout.
+>>
+>> a. You have the ESP on only one drive, so it's still a single point of
+>> failure. If that drive dies you can't boot. There are various ways
+>> around that but they all pretty much suck right now from an end user
+>> perspective. Basically redundant boot on UEFI with Linux right now is
+>> pretty much shit. You have to be a bootloader expert to set it up,
+>> maintain it with software updates, and fix it should things go bad.
+>
+> The usual solution to this is keeping the ESP on a separate (small) flash
+> drive.
 
-Hi,
+It's a good idea. It'd be nice if installers offered to put the ESP on
+non-boot USB (so it's not overwriting the installer media).
 
-I'm seeing the attached lockdep splat on 4.8-rc2 - I'm guessing it got
-introduced in 4.8-rc.  It appears to be very easy to trigger and shows up
-within seconds after mkfs + mount.
 
-Thanks,
 
-                Ilya
+> I still vehemently hate the fact that they couldn't provide like 2 MB of
+> space on an onboard NOR flash chip to store a bootloader. Seriously, rEFInd
+> with filesystem drivers to boot off btrfs and ext and whatever needs like
+> 1.5 MB.
 
---94eb2c19228834dc40053a82ccfd
-Content-Type: text/plain; charset=US-ASCII; name="btrfs-lockdep.txt"
-Content-Disposition: attachment; filename="btrfs-lockdep.txt"
-Content-Transfer-Encoding: base64
-X-Attachment-Id: f_is3cvom70
 
-a2VybmVsOiA9PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT0Ka2Vy
-bmVsOiBbIElORk86IHBvc3NpYmxlIHJlY3Vyc2l2ZSBsb2NraW5nIGRldGVjdGVkIF0Ka2VybmVs
-OiA0LjguMC1yYzItY2VwaC0wMDI5Ny1nYWI5ZjhkMiAjMSBOb3QgdGFpbnRlZAprZXJuZWw6IC0t
-LS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLQprZXJuZWw6IGNlcGgt
-b3NkLzI1MDE2IGlzIHRyeWluZyB0byBhY3F1aXJlIGxvY2s6Cmtlcm5lbDogKCZlaS0+bG9nX211
-dGV4KXsrLisuLi59LCBhdDogWzxmZmZmZmZmZmEwMmM0YjNlPl0gYnRyZnNfbG9nX2lub2RlKzB4
-MTdlLzB4YjUwIFtidHJmc10Ka2VybmVsOiAjMDEyYnV0IHRhc2sgaXMgYWxyZWFkeSBob2xkaW5n
-IGxvY2s6Cmtlcm5lbDogKCZlaS0+bG9nX211dGV4KXsrLisuLi59LCBhdDogWzxmZmZmZmZmZmEw
-MmM0YjNlPl0gYnRyZnNfbG9nX2lub2RlKzB4MTdlLzB4YjUwIFtidHJmc10Ka2VybmVsOiAjMDEy
-b3RoZXIgaW5mbyB0aGF0IG1pZ2h0IGhlbHAgdXMgZGVidWcgdGhpczoKa2VybmVsOiBQb3NzaWJs
-ZSB1bnNhZmUgbG9ja2luZyBzY2VuYXJpbzoKa2VybmVsOiAgICAgICBDUFUwCmtlcm5lbDogICAg
-ICAgLS0tLQprZXJuZWw6ICBsb2NrKCZlaS0+bG9nX211dGV4KTsKa2VybmVsOiAgbG9jaygmZWkt
-PmxvZ19tdXRleCk7Cmtlcm5lbDogIzAxMiAqKiogREVBRExPQ0sgKioqCmtlcm5lbDogTWF5IGJl
-IGR1ZSB0byBtaXNzaW5nIGxvY2sgbmVzdGluZyBub3RhdGlvbgprZXJuZWw6IDYgbG9ja3MgaGVs
-ZCBieSBjZXBoLW9zZC8yNTAxNjoKa2VybmVsOiAjMDogIChzYl93cml0ZXJzIzE1KXsuKy4rLit9
-LCBhdDogWzxmZmZmZmZmZjgxMjc0NjNkPl0gX19zYl9zdGFydF93cml0ZSsweGFkLzB4ZTAKa2Vy
-bmVsOiAjMTogICgmdHlwZS0+aV9tdXRleF9kaXJfa2V5IzQvMSl7Ky4rLisufSwgYXQ6IFs8ZmZm
-ZmZmZmY4MTI3YzM3ZT5dIGxvY2tfcmVuYW1lKzB4MmUvMHgxMDAKa2VybmVsOiAjMjogICgmc2It
-PnNfdHlwZS0+aV9tdXRleF9rZXkjMTkpeysuKy4rLn0sIGF0OiBbPGZmZmZmZmZmODEyOGZiNWU+
-XSBsb2NrX3R3b19ub25kaXJlY3RvcmllcysweDNlLzB4NzAKa2VybmVsOiAjMzogICgmc2ItPnNf
-dHlwZS0+aV9tdXRleF9rZXkjMTkvNCl7Ky4rLi4ufSwgYXQ6IFs8ZmZmZmZmZmY4MTI4ZmI4Nj5d
-IGxvY2tfdHdvX25vbmRpcmVjdG9yaWVzKzB4NjYvMHg3MAprZXJuZWw6ICM0OiAgKHNiX2ludGVy
-bmFsIzIpey4rLisuK30sIGF0OiBbPGZmZmZmZmZmODEyNzQ2MGI+XSBfX3NiX3N0YXJ0X3dyaXRl
-KzB4N2IvMHhlMAprZXJuZWw6ICM1OiAgKCZlaS0+bG9nX211dGV4KXsrLisuLi59LCBhdDogWzxm
-ZmZmZmZmZmEwMmM0YjNlPl0gYnRyZnNfbG9nX2lub2RlKzB4MTdlLzB4YjUwIFtidHJmc10Ka2Vy
-bmVsOiAjMDEyc3RhY2sgYmFja3RyYWNlOgprZXJuZWw6IENQVTogMCBQSUQ6IDI1MDE2IENvbW06
-IGNlcGgtb3NkIE5vdCB0YWludGVkIDQuOC4wLXJjMi1jZXBoLTAwMjk3LWdhYjlmOGQyICMxCmtl
-cm5lbDogSGFyZHdhcmUgbmFtZTogU3VwZXJtaWNybyBYOFNJTC9YOFNJTCwgQklPUyAxLjBjIDAy
-LzI1LzIwMTAKa2VybmVsOiAwMDAwMDAwMDAwMDAwMDg2IDAwMDAwMDAwNjY4ZGJjYTQgZmZmZjg4
-MDQyYTI3Nzg3MCBmZmZmZmZmZjgxNDEzZTUxCmtlcm5lbDogZmZmZmZmZmY4MjhmNDYzMCBmZmZm
-ZmZmZjgyOGY0NjMwIGZmZmY4ODA0MmEyNzc5MzAgZmZmZmZmZmY4MTEwNjljMAprZXJuZWw6IGRm
-YzVjMTUwMDAwMDAwMDEgZmZmZjg4MDQwMDAwMDAwMCA0ZWZlMzgxMzQzMGUzMmNmIGZmZmY4ODA0
-MjlmMzgwMDAKa2VybmVsOiBDYWxsIFRyYWNlOgprZXJuZWw6IFs8ZmZmZmZmZmY4MTQxM2U1MT5d
-IGR1bXBfc3RhY2srMHg4NS8weGM0Cmtlcm5lbDogWzxmZmZmZmZmZjgxMTA2OWMwPl0gX19sb2Nr
-X2FjcXVpcmUrMHhjZTAvMHgxNjgwCmtlcm5lbDogWzxmZmZmZmZmZjgxODEwYWZlPl0gPyBtdXRl
-eF91bmxvY2srMHhlLzB4MTAKa2VybmVsOiBbPGZmZmZmZmZmODExMDc4NDc+XSBsb2NrX2FjcXVp
-cmUrMHgxOTcvMHgxZjAKa2VybmVsOiBbPGZmZmZmZmZmYTAyYzRiM2U+XSA/IGJ0cmZzX2xvZ19p
-bm9kZSsweDE3ZS8weGI1MCBbYnRyZnNdCmtlcm5lbDogWzxmZmZmZmZmZjgxODBmYWU5Pl0gbXV0
-ZXhfbG9ja19uZXN0ZWQrMHg3OS8weDM3MAprZXJuZWw6IFs8ZmZmZmZmZmZhMDJjNGIzZT5dID8g
-YnRyZnNfbG9nX2lub2RlKzB4MTdlLzB4YjUwIFtidHJmc10Ka2VybmVsOiBbPGZmZmZmZmZmYTAy
-YzRiM2U+XSBidHJmc19sb2dfaW5vZGUrMHgxN2UvMHhiNTAgW2J0cmZzXQprZXJuZWw6IFs8ZmZm
-ZmZmZmY4MTBkN2E3MD5dID8gX19taWdodF9zbGVlcCsweDcwLzB4OTAKa2VybmVsOiBbPGZmZmZm
-ZmZmYTAyN2U1OTA+XSA/IGJ0cmZzX2lfY2FsbGJhY2srMHgyMC8weDIwIFtidHJmc10Ka2VybmVs
-OiBbPGZmZmZmZmZmYTAyODllMTg+XSA/IGJ0cmZzX2ludmFsaWRhdGVfaW5vZGVzKzB4MTk4LzB4
-MWYwIFtidHJmc10Ka2VybmVsOiBbPGZmZmZmZmZmODE4MTMzMDc+XSA/IF9yYXdfc3Bpbl91bmxv
-Y2srMHgyNy8weDQwCmtlcm5lbDogWzxmZmZmZmZmZmEwMmM0ZWY0Pl0gYnRyZnNfbG9nX2lub2Rl
-KzB4NTM0LzB4YjUwIFtidHJmc10Ka2VybmVsOiBbPGZmZmZmZmZmODExMDU5MTg+XSA/IHRyYWNl
-X2hhcmRpcnFzX29uX2NhbGxlcisweDE3OC8weDFkMAprZXJuZWw6IFs8ZmZmZmZmZmZhMDJjNWUy
-MT5dIGJ0cmZzX2xvZ19pbm9kZV9wYXJlbnQrMHg4ODEvMHg5NzAgW2J0cmZzXQprZXJuZWw6IFs8
-ZmZmZmZmZmY4MTgxMzMwNz5dID8gX3Jhd19zcGluX3VubG9jaysweDI3LzB4NDAKa2VybmVsOiBb
-PGZmZmZmZmZmYTAyODM1ZTc+XSA/IGJ0cmZzX3VwZGF0ZV9pbm9kZSsweGQ3LzB4MTEwIFtidHJm
-c10Ka2VybmVsOiBbPGZmZmZmZmZmYTAyYzczOGI+XSBidHJmc19sb2dfbmV3X25hbWUrMHg3Yi8w
-eDgwIFtidHJmc10Ka2VybmVsOiBbPGZmZmZmZmZmYTAyOGNjODI+XSBidHJmc19yZW5hbWUyKzB4
-ZmQyLzB4MTZjMCBbYnRyZnNdCmtlcm5lbDogWzxmZmZmZmZmZjgxMjhmYjg2Pl0gPyBsb2NrX3R3
-b19ub25kaXJlY3RvcmllcysweDY2LzB4NzAKa2VybmVsOiBbPGZmZmZmZmZmODExMDFkNmY+XSA/
-IGRvd25fd3JpdGVfbmVzdGVkKzB4NGYvMHg4MAprZXJuZWw6IFs8ZmZmZmZmZmY4MTI4ZmI4Nj5d
-ID8gbG9ja190d29fbm9uZGlyZWN0b3JpZXMrMHg2Ni8weDcwCmtlcm5lbDogWzxmZmZmZmZmZjgx
-MjdmODU3Pl0gdmZzX3JlbmFtZSsweDQ2Ny8weDgzMAprZXJuZWw6IFs8ZmZmZmZmZmY4MTI3YzIw
-MD5dID8gcmVhZF9zZXFjb3VudF9iZWdpbisweDkwLzB4YTAKa2VybmVsOiBbPGZmZmZmZmZmODEy
-ODQ4MWU+XSBTeVNfcmVuYW1lKzB4MWVlLzB4M2MwCmtlcm5lbDogWzxmZmZmZmZmZjgxMDAzYjRh
-Pl0gZG9fc3lzY2FsbF82NCsweDdhLzB4MWMwCmtlcm5lbDogWzxmZmZmZmZmZjgxODEzYzNmPl0g
-ZW50cnlfU1lTQ0FMTDY0X3Nsb3dfcGF0aCsweDI1LzB4MjUK
---94eb2c19228834dc40053a82ccfd--
+Needs to be bigger. The secure boot stuff takes up more room than
+this, about 6-8MiB depending on the distro. And then more room needed
+for dual booting let alone triple, which of course no manufacturer
+really cares about.
+
+
+> But no, they need to make a stupid system that is hardcoded to a disk, and
+> to a crappy filesystem.
+
+Ahh well the onboard flash could just appear as a small SATA or sdcard
+or USB mass storage devices, whatever's easiest to implement.
+
+FAT leaves a lot to be desired but it's pretty universally supported
+and almost trivial to repair *if* the volume is repairable in the
+first place. The much bigger issue with ESP on Linux is this neurotic
+tendency of distros to persistently mount shit that does not need to
+be mounted. Like the ESP, and even the dedicated boot volume. They
+only need to be mounted when being updated and then should be
+umounted. And worse the convention is to do nested mount with /boot
+and then /boot/efi for the ESP so it's twice as bad a practice. By
+virtue of mounting the ESP the dirty bit is set, so any crash means it
+must be fsck'd and if that doesn't work, it's game over for that
+volume. Fragile setup.
+
+-- 
+Chris Murphy

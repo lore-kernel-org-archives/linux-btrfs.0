@@ -1,152 +1,233 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [195.159.176.226] ([195.159.176.226]:53627 "EHLO
+Received: from [195.159.176.226] ([195.159.176.226]:50843 "EHLO
         blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
-        with ESMTP id S1753659AbcHVCAq (ORCPT
+        with ESMTP id S1751532AbcHVDj7 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 21 Aug 2016 22:00:46 -0400
+        Sun, 21 Aug 2016 23:39:59 -0400
 Received: from list by blaine.gmane.org with local (Exim 4.84_2)
         (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-        id 1bbeXZ-0005gh-Pm
-        for linux-btrfs@vger.kernel.org; Mon, 22 Aug 2016 04:00:41 +0200
+        id 1bbg5b-0006k6-7L
+        for linux-btrfs@vger.kernel.org; Mon, 22 Aug 2016 05:39:55 +0200
 To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: Will Btrfs have an official command to "uncow" existing files?
-Date: Mon, 22 Aug 2016 02:00:35 +0000 (UTC)
-Message-ID: <pan$3c21f$ab5f3fdc$db27222f$e3bd5a66@cox.net>
-References: <126611471805976@web2j.yandex.ru>
+From: Jean-Denis Girard <jd.girard@sysnux.pf>
+Subject: Stuck btrfs-cleaner on 4.7 and 4.6
+Date: Sun, 21 Aug 2016 17:39:48 -1000
+Message-ID: <npds64$nu3$1@blaine.gmane.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Content-Type: multipart/mixed;
+ boundary="------------6A6DFC6A4A6E31E461C8D3BE"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Tomokhov Alexander posted on Sun, 21 Aug 2016 21:59:36 +0300 as excerpted:
+This is a multi-part message in MIME format.
+--------------6A6DFC6A4A6E31E461C8D3BE
+Content-Type: text/plain; charset=utf-8
+Content-Transfer-Encoding: 8bit
 
-> Btrfs wiki FAQ gives a link to example Python script:
-> https://github.com/stsquad/scripts/blob/master/uncow.py
-> 
-> But such a crucial and fundamental tool must exist in stock btrfs-progs.
-> Filesystem with CoW technology at it's core must provide user sufficient
-> control over CoW aspects. Running 3rd-party or manually written scripts
-> for filesystem properties/metadata manipulation is not convenient, not
-> safe and definitely not the way it must be done.
+Hi list,
 
-Why?  No script or dedicated tool needed as it's a simple enough process.
+After upgrading my Fedora 23 system from 4.4.12 to 4.7.2, I'm seeing one
+btrfs-cleaner process stuck at 100% CPU. The problem disappears when
+going back to 4.4 kernel (4.4.17), but is also present with Fedora
+kernel 4.6.6-200.fc23.
 
-Simply:
+4.4.12 and 4.4.17 are built from source, with 2 patches (see attached).
+4.7.2 is built from source without any patch.
 
-1. chattr +C (that being nocow) the containing directory.
+Main Btrfs is RAID1 on 2 disks behind bcache, with 13 sub-volumes, and
+less than 300 snapshots (more details below). There are 2 other Btrfs
+used for backup, so not mounted when the problem appears.
 
-Then either:
+The btrfs-cleaner jumps at 100% after about ~15 min uptime. I let it run
+about ~18 hours, btrfs-cleaner stayed at 100%. Unmounting all the
+sub-volumes clears the problem. There is no error in the logs, all the
+sub-volumes are mounted ok, I can use the system. I did a scrub and
+balance, which finished without any error.
 
-2a. mv the file to and from another filesystem, so it's actually created 
-new in the directory and thus inherits the nocow attribute at file 
-creation,
-
-or
-
-2b. mv out and then cp the file back into place with --reflink=never, 
-again, forcing the file to be created new in the directory, so it 
-inherits the nocow attribute at creation,
-
-OR (replacing both steps above)
-
-Create the empty file (using touch or similar), set it nocow, and use cat 
-srcfile >> destfile style redirection to fill it, so the file again gets 
-the nocow attribute set before it has content, but allowing you to set 
-only the file nocow, without setting the containing directory nocow.
+I'm back on 4.4.17 now, but what can I do to debug this problem ?
 
 
-Of course there's no exception here to the general case, if you're doing 
-the same thing to a whole bunch of files, setting up a script to do it 
-may be more efficient than doing it to each one manually one by one, and 
-a script could be useful there, but that's a general rule, nothing 
-exceptional for btrfs nocow, and a script or fancy tool isn't actually 
-required, regardless.
+[jdg@tiare ~]$ sudo btrfs fi sh
+Label: none  uuid: c5b8386b-b81d-4473-9340-7b8a74fc3a3c
+        Total devices 2 FS bytes used 1.04TiB
+        devid    1 size 1.82TiB used 1.08TiB path /dev/bcache0
+        devid    2 size 1.82TiB used 1.08TiB path /dev/bcache1
+
+Label: none  uuid: e86cf0f5-ae16-408c-a4f8-19727aa2a3d4
+        Total devices 1 FS bytes used 191.20GiB
+        devid    1 size 279.46GiB used 240.06GiB path /dev/sdd
+
+Label: none  uuid: d0d09c79-42d7-4958-bccb-480eb27aec38
+        Total devices 1 FS bytes used 611.38GiB
+        devid    1 size 931.51GiB used 620.07GiB path /dev/sde
+
+[jdg@tiare ~]$ sudo btrfs fi usage /home/jdg/
+Overall:
+    Device size:                   3.64TiB
+    Device allocated:              2.16TiB
+    Device unallocated:            1.48TiB
+    Device missing:                  0.00B
+    Used:                          2.08TiB
+    Free (estimated):            798.35GiB      (min: 798.35GiB)
+    Data ratio:                       2.00
+    Metadata ratio:                   2.00
+    Global reserve:              512.00MiB      (used: 0.00B)
+
+Data,RAID1: Size:1.08TiB, Used:1.04TiB
+   /dev/bcache0    1.08TiB
+   /dev/bcache1    1.08TiB
+
+Metadata,RAID1: Size:4.00GiB, Used:2.74GiB
+   /dev/bcache0    4.00GiB
+   /dev/bcache1    4.00GiB
+
+System,RAID1: Size:32.00MiB, Used:256.00KiB
+   /dev/bcache0   32.00MiB
+   /dev/bcache1   32.00MiB
+
+Unallocated:
+   /dev/bcache0  757.99GiB
+   /dev/bcache1  757.99GiB
+
+[jdg@tiare ~]$ mount -t btrfs
+/dev/bcache0 on /var/lib/pgsql type btrfs
+(rw,noatime,nodiratime,seclabel,compress=zlib,ssd,space_cache,autodefrag,skip_balance,subvolid=1131,subvol=/pgsql)
+/dev/bcache0 on /home/SysNux type btrfs
+(rw,noatime,nodiratime,seclabel,compress=zlib,ssd,space_cache,autodefrag,skip_balance,subvolid=1062,subvol=/SysNux)
+/dev/bcache0 on /home/Vidéos type btrfs
+(rw,noatime,nodiratime,seclabel,compress=zlib,ssd,space_cache,autodefrag,skip_balance,subvolid=1281,subvol=/Vidéos)
+/dev/bcache0 on /var/lib/libvirt/images type btrfs
+(rw,noatime,nodiratime,seclabel,compress=zlib,ssd,space_cache,autodefrag,skip_balance,subvolid=1136,subvol=/images-vm)
+/dev/bcache0 on /mnt/snapshots type btrfs
+(rw,noatime,nodiratime,seclabel,compress=zlib,ssd,space_cache,autodefrag,skip_balance,subvolid=1292,subvol=/Snapshots)
+/dev/bcache0 on /home/Photos type btrfs
+(rw,noatime,nodiratime,seclabel,compress=zlib,ssd,space_cache,autodefrag,skip_balance,subvolid=676,subvol=/Photos)
+/dev/bcache0 on /home/vaiana type btrfs
+(rw,noatime,nodiratime,seclabel,compress=zlib,ssd,space_cache,autodefrag,skip_balance,subvolid=1076,subvol=/vaiana)
+/dev/bcache0 on /home/Films type btrfs
+(rw,noatime,nodiratime,seclabel,compress=zlib,ssd,space_cache,autodefrag,skip_balance,subvolid=258,subvol=/Films)
+/dev/bcache0 on /home/Partage type btrfs
+(rw,noatime,nodiratime,seclabel,compress=zlib,ssd,space_cache,autodefrag,skip_balance,subvolid=1059,subvol=/Partage)
+/dev/bcache0 on /home/jdg type btrfs
+(rw,noatime,nodiratime,seclabel,compress=zlib,ssd,space_cache,autodefrag,skip_balance,subvolid=1073,subvol=/jdg)
+/dev/bcache0 on /home/michael type btrfs
+(rw,noatime,nodiratime,seclabel,compress=zlib,ssd,space_cache,autodefrag,skip_balance,subvolid=1075,subvol=/michael)
+/dev/bcache0 on /home/cathy type btrfs
+(rw,noatime,nodiratime,seclabel,compress=zlib,ssd,space_cache,autodefrag,skip_balance,subvolid=1074,subvol=/cathy)
+/dev/bcache0 on /home/Musique type btrfs
+(rw,noatime,nodiratime,seclabel,compress=zlib,ssd,space_cache,autodefrag,skip_balance,subvolid=961,subvol=/Musique)
 
 
-The point being, cow is the default case, and should work /reasonably/ 
-well in most cases, certainly well enough so that normal people doing 
-normal things shouldn't need to worry about it.  The only people who will 
-need to worry about it, therefore, are people worried about the last bit 
-of optimization possible to various corner-case use-cases that don't 
-match default assumptions very well, and it's precisely these sorts of 
-people that are /technical/ enough to be able to understand both why they 
-might want nocow (and what the positives and negatives are going to be), 
-and how to actually get it.
 
-> Also is it possible (at least in theory) to "uncow" files being
-> currently opened in-place? Without the trickery with creation & renaming
-> of files or directories. So that running "chattr +C" on a file would be
-> sufficient. If possible, is it going to be implemented?
-
-It's software.  Of course it's possible, tho it's also possible the 
-negatives make it not worth the trouble.  If the implementation simply 
-creates a new file and does a --reflink=never cp in the background when 
-the nocow file attribute is set, it may not be worth it.
-
-As to whether it'll ultimately be implemented, I don't know as I'm not a 
-dev.  But even if it is ultimately implemented, it might well be five 
-years out or longer, because there's simply way more "it'd be nice" btrfs-
-related ideas out there than there are devs working on implementations, 
-and projecting more than five years out in a software development 
-environment like the Linux kernel doesn't make a lot of sense, so five 
-years out or longer is likely, but beyond that, nobody really knows.
-
-Add to that the fact that a lot of existing btrfs features took rather 
-longer to implement and stabilize than originally projected, and...
-
-
-Meanwhile, if you aren't already, be aware that the basic concepts of 
-snapshots locking in references to existing extents as unchangeable 
-(snapshots being a btrfs feature that depends on its cow nature), and 
-nocow setting files as rewrite-in-place, basically can't work with each 
-other at the concept level, because once a snapshot is taken, extents 
-referenced by that snapshot really /cannot/ change until that snapshot is 
-deleted, something that can only be true if the extents are copy-on-write.
-
-To work around this btrfs makes the nocow attribute weaker than the 
-snapshot locking a particular extent in place, using a process sometimes 
-referred to as cow-once or cow1.  When a change is written to a(n 
-otherwise) nocow file that has been snapshotted and thus has its extents 
-locked in place, the block of the file that is changed will have to be 
-cowed, despite the nocow attribute.  However, the nocow attribute is 
-kept, and any further changes to that block will be rewritten to the new 
-location it was copied to without further cowing of that block, of course 
-until the next snapshot locks that location in place as well, at which 
-further writes to the same block will of course cow it once more, to a 
-third location, which will again remain in place until yet another 
-snapshot...
-
-So snapshotting a nocow file means it's no longer absolutely nocow, it's 
-now cow1.  If the rewrite rate is higher than the snapshot rate, the nocow 
-should still have some effect, but where the snapshot rate is higher than 
-the rewrite rate, the effect will be as if the file wasn't nocow at all, 
-because each snapshot will lock in the file as it then exists.
-
-It is for this reason that the recommendation is to keep nocow files in a 
-dedicated subvolume, so snapshots to the parent subvolume exclude the 
-nocow files, and to minimize snapshotting of the nocow subvolume.  As 
-long as snapshotting is occurring at all, however, there will be some 
-fragmentation over time, but by combining a limited snapshotting rate 
-with a reasonable defrag schedule targeting the nowcow files as well, 
-fragmentation should at least remain under control.
-
-And of course nocow has other negatives as well.  Setting nocow turns off 
-both compression (if you otherwise have compression on) and checksumming, 
-thus killing two other major btrfs features, including its realtime file 
-integrity validation via checksumming.
-
-So there are definitely negatives to nocow that must be weighed before 
-setting it.  But it's worth keeping in mind that all of these features 
-are really practical due to cow in the first place, the reason other 
-filesystems don't tend to have them, and that while there is definitely a 
-tradeoff to cow vs. nocow, setting nocow doesn't turn off features you'd 
-have in conventional filesystems anyway, so it's not as if you're losing 
-features you'd have if you weren't using btrfs with its cow by default, 
-in the first place.
-
+Thanks,
 -- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+Jean-Denis Girard
+
+SysNux                   Systèmes   Linux   en   Polynésie  française
+https://www.sysnux.pf/   Tél: +689 40.50.10.40 / GSM: +689 87.797.527
+
+
+--------------6A6DFC6A4A6E31E461C8D3BE
+Content-Type: text/x-patch;
+ name="btrfs-4.4.1.patch"
+Content-Transfer-Encoding: 7bit
+Content-Disposition: attachment;
+ filename="btrfs-4.4.1.patch"
+
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index 977e715..11fd981 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -1516,27 +1516,24 @@  static noinline ssize_t __btrfs_buffered_write(struct file *file,
+ 
+ 		reserve_bytes = num_pages << PAGE_CACHE_SHIFT;
+ 
+-		if (BTRFS_I(inode)->flags & (BTRFS_INODE_NODATACOW |
+-					     BTRFS_INODE_PREALLOC)) {
+-			ret = check_can_nocow(inode, pos, &write_bytes);
+-			if (ret < 0)
+-				break;
+-			if (ret > 0) {
+-				/*
+-				 * For nodata cow case, no need to reserve
+-				 * data space.
+-				 */
+-				only_release_metadata = true;
+-				/*
+-				 * our prealloc extent may be smaller than
+-				 * write_bytes, so scale down.
+-				 */
+-				num_pages = DIV_ROUND_UP(write_bytes + offset,
+-							 PAGE_CACHE_SIZE);
+-				reserve_bytes = num_pages << PAGE_CACHE_SHIFT;
+-				goto reserve_metadata;
+-			}
++		if ((BTRFS_I(inode)->flags & (BTRFS_INODE_NODATACOW |
++					      BTRFS_INODE_PREALLOC)) &&
++		    check_can_nocow(inode, pos, &write_bytes) > 0) {
++			/*
++			 * For nodata cow case, no need to reserve
++			 * data space.
++			 */
++			only_release_metadata = true;
++			/*
++			 * our prealloc extent may be smaller than
++			 * write_bytes, so scale down.
++			 */
++			num_pages = DIV_ROUND_UP(write_bytes + offset,
++						 PAGE_CACHE_SIZE);
++			reserve_bytes = num_pages << PAGE_CACHE_SHIFT;
++			goto reserve_metadata;
+ 		}
++
+ 		ret = btrfs_check_data_free_space(inode, pos, write_bytes);
+ 		if (ret < 0)
+ 			break;
+
+--------------6A6DFC6A4A6E31E461C8D3BE
+Content-Type: text/x-patch;
+ name="btrfs-alloc.patch"
+Content-Transfer-Encoding: 7bit
+Content-Disposition: attachment;
+ filename="btrfs-alloc.patch"
+
+diff -Naur linux-4.4.6.ORIG/fs/btrfs/ctree.c linux-4.4.6/fs/btrfs/ctree.c
+--- linux-4.4.6.ORIG/fs/btrfs/ctree.c	2016-01-10 13:01:32.000000000 -1000
++++ linux-4.4.6/fs/btrfs/ctree.c	2016-03-30 06:19:16.397973820 -1000
+@@ -20,6 +20,7 @@
+ #include <linux/slab.h>
+ #include <linux/rbtree.h>
+ #include "ctree.h"
++#include <linux/vmalloc.h>
+ #include "disk-io.h"
+ #include "transaction.h"
+ #include "print-tree.h"
+@@ -5362,10 +5363,13 @@
+ 		goto out;
+ 	}
+ 
+-	tmp_buf = kmalloc(left_root->nodesize, GFP_NOFS);
++	tmp_buf = kmalloc(left_root->nodesize, GFP_KERNEL | __GFP_NOWARN);
+ 	if (!tmp_buf) {
+-		ret = -ENOMEM;
+-		goto out;
++      tmp_buf = vmalloc(left_root->nodesize);
++      if (!tmp_buf) {
++		   ret = -ENOMEM;
++   		goto out;
++      }
+ 	}
+ 
+ 	left_path->search_commit_root = 1;
+@@ -5566,7 +5570,7 @@
+ out:
+ 	btrfs_free_path(left_path);
+ 	btrfs_free_path(right_path);
+-	kfree(tmp_buf);
++	kvfree(tmp_buf);
+ 	return ret;
+ }
+ 
+
+--------------6A6DFC6A4A6E31E461C8D3BE--
 

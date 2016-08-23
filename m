@@ -1,168 +1,179 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from forward2p.cmail.yandex.net ([77.88.31.17]:50008 "EHLO
-        forward2p.cmail.yandex.net" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1756976AbcHWADL (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 22 Aug 2016 20:03:11 -0400
-From: Tomokhov Alexander <alexoundos@ya.ru>
-To: Duncan <1i5t5.duncan@cox.net>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-In-Reply-To: <pan$3c21f$ab5f3fdc$db27222f$e3bd5a66@cox.net>
-References: <126611471805976@web2j.yandex.ru> <pan$3c21f$ab5f3fdc$db27222f$e3bd5a66@cox.net>
-Subject: Re: Will Btrfs have an official command to "uncow" existing files?
+Received: from mx2.suse.de ([195.135.220.15]:33758 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S933234AbcHWAno (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 22 Aug 2016 20:43:44 -0400
+Subject: Re: possible recursive locking detected,
+ 4.8.0-0.rc3.git0.1.fc25.x86_64+debug
+To: Chris Murphy <lists@colorremedies.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+References: <CAJCQCtQZajfwrb-JGjLVzLk2eCvqDA_tqLbBSn81bHvT8XFFVw@mail.gmail.com>
+From: Jeff Mahoney <jeffm@suse.com>
+Message-ID: <57BB9826.6050001@suse.com>
+Date: Mon, 22 Aug 2016 20:26:14 -0400
 MIME-Version: 1.0
-Message-Id: <59621471910096@web8m.yandex.ru>
-Date: Tue, 23 Aug 2016 02:54:56 +0300
-Content-Type: text/plain; charset=utf-8
+In-Reply-To: <CAJCQCtQZajfwrb-JGjLVzLk2eCvqDA_tqLbBSn81bHvT8XFFVw@mail.gmail.com>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="334KsO8AnxuWarFdSbt9HsQM21ckLXRcH"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Thanks for the in-depth answer.
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--334KsO8AnxuWarFdSbt9HsQM21ckLXRcH
+Content-Type: multipart/mixed; boundary="MKL9VnqeIKFRe5o4pxAQ9UC3hK2nwjSUI"
+From: Jeff Mahoney <jeffm@suse.com>
+To: Chris Murphy <lists@colorremedies.com>,
+ Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Message-ID: <57BB9826.6050001@suse.com>
+Subject: Re: possible recursive locking detected,
+ 4.8.0-0.rc3.git0.1.fc25.x86_64+debug
+References: <CAJCQCtQZajfwrb-JGjLVzLk2eCvqDA_tqLbBSn81bHvT8XFFVw@mail.gmail.com>
+In-Reply-To: <CAJCQCtQZajfwrb-JGjLVzLk2eCvqDA_tqLbBSn81bHvT8XFFVw@mail.gmail.com>
 
-Well, "simple enough process" is still a sequence of steps which must be carefully done. In a proper order with correct parameters depending on environment. It's work with data, data which can be invaluable.
-No, really, I'm not a beginner user. I use Arch Linux everyday from 2009, program in different languages and so on. But even a few ordered manual commands for changing file attribute involving quite dangerous "mv" and "cp" (overwrite case) is something very suspicious.
+--MKL9VnqeIKFRe5o4pxAQ9UC3hK2nwjSUI
+Content-Type: text/plain; charset=utf-8
+Content-Transfer-Encoding: quoted-printable
 
-"2a" - step depends on whether another filesystem simply exists, better if it's free, has enough space, supports same file permission features, etc. Requires time to figure out these conditions, not suitable for all systems.
+On 8/22/16 6:51 PM, Chris Murphy wrote:
+> Trivially reproducible every boot, shortly after mount happens. Also
+> happened with rc2.
+>=20
 
-"2b" - step with "mv out". Out to where? What if the file with the same name already exists in a destination directory you "mv out". Not reliable. Ok, need to create temporary directory. Where, how to call it then - involves conditional checks performed by user.
+Yep.  We've disabled this in our kernels.  It can actually deadlock.
 
-Similarly creation of empty file should also satisfy the condition that it's name is unique in the directory.
+-Jeff
 
-Additionally all existing ways of "uncow" require manual free space check beforehand. User must control and monitor if the file is currently not opened. I'm sure I missed something else.
-These all are problems that are unrelated to file attributes itself, but user must think of them for some reason. An official specialized tool could automatically track all these conditions, perform the right sequence of actions and report to user results.
+>=20
+> [   13.225891] virbr0: port 1(virbr0-nic) entered blocking state
+> [   13.225895] virbr0: port 1(virbr0-nic) entered listening state
+> [   13.299806] virbr0: port 1(virbr0-nic) entered disabled state
+>=20
+> [   13.309179] =3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=
+=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=
+=3D
+> [   13.309181] [ INFO: possible recursive locking detected ]
+> [   13.309182] 4.8.0-0.rc3.git0.1.fc25.x86_64+debug #1 Not tainted
+> [   13.309183] ---------------------------------------------
+> [   13.309185] libvirt_leasesh/1174 is trying to acquire lock:
+> [   13.309186]  (&ei->log_mutex){+.+...}, at: [<ffffffffc0737e12>]
+> btrfs_log_inode+0x162/0x10f0 [btrfs]
+> [   13.309212]
+>                but task is already holding lock:
+> [   13.309213]  (&ei->log_mutex){+.+...}, at: [<ffffffffc0737e12>]
+> btrfs_log_inode+0x162/0x10f0 [btrfs]
+> [   13.309229]
+>                other info that might help us debug this:
+> [   13.309230]  Possible unsafe locking scenario:
+>=20
+> [   13.309231]        CPU0
+> [   13.309232]        ----
+> [   13.309233]   lock(&ei->log_mutex);
+> [   13.309235]   lock(&ei->log_mutex);
+> [   13.309237]
+>                 *** DEADLOCK ***
+>=20
+> [   13.309238]  May be due to missing lock nesting notation
+>=20
+> [   13.309240] 6 locks held by libvirt_leasesh/1174:
+> [   13.309241]  #0:  (sb_writers#8){.+.+.+}, at: [<ffffffff9f2a5944>]
+> __sb_start_write+0xb4/0xf0
+> [   13.309247]  #1:  (&type->i_mutex_dir_key#3/1){+.+.+.}, at:
+> [<ffffffff9f2ae2ba>] lock_rename+0xda/0x100
+> [   13.309252]  #2:  (&sb->s_type->i_mutex_key#14){+.+.+.}, at:
+> [<ffffffff9f2c2a2e>] lock_two_nondirectories+0x3e/0x70
+> [   13.309258]  #3:  (&sb->s_type->i_mutex_key#14/4){+.+...}, at:
+> [<ffffffff9f2c2a56>] lock_two_nondirectories+0x66/0x70
+> [   13.309263]  #4:  (sb_internal){.+.+.+}, at: [<ffffffff9f2a5908>]
+> __sb_start_write+0x78/0xf0
+> [   13.309266]  #5:  (&ei->log_mutex){+.+...}, at:
+> [<ffffffffc0737e12>] btrfs_log_inode+0x162/0x10f0 [btrfs]
+> [   13.309282]
+>                stack backtrace:
+> [   13.309284] CPU: 2 PID: 1174 Comm: libvirt_leasesh Not tainted
+> 4.8.0-0.rc3.git0.1.fc25.x86_64+debug #1
+> [   13.309285] Hardware name: Apple Inc.
+> MacBookPro8,2/Mac-94245A3940C91C80, BIOS
+> MBP81.88Z.0047.B2C.1510261540 10/26/15
+> [   13.309287]  0000000000000086 0000000003b4acd5 ffff891b0a1d77a0
+> ffffffff9f466723
+> [   13.309290]  ffffffffa0b07910 ffff891adcf44000 ffff891b0a1d7868
+> ffffffff9f10f01e
+> [   13.309294]  00000000dcf44a78 ffffffff00000006 00000000b967c054
+> ffffffffa0408900
+> [   13.309297] Call Trace:
+> [   13.309301]  [<ffffffff9f466723>] dump_stack+0x86/0xc3
+> [   13.309303]  [<ffffffff9f10f01e>] __lock_acquire+0x78e/0x1290
+> [   13.309306]  [<ffffffff9f037f29>] ? sched_clock+0x9/0x10
+> [   13.309309]  [<ffffffff9f0ea5c7>] ? sched_clock_cpu+0xa7/0xc0
+> [   13.309312]  [<ffffffff9f8f561e>] ? mutex_unlock+0xe/0x10
+> [   13.309314]  [<ffffffff9f10ff86>] lock_acquire+0xf6/0x1f0
+> [   13.309326]  [<ffffffffc0737e12>] ? btrfs_log_inode+0x162/0x10f0 [bt=
+rfs]
+> [   13.309328]  [<ffffffff9f8f49a6>] mutex_lock_nested+0x86/0x3f0
+> [   13.309340]  [<ffffffffc0737e12>] ? btrfs_log_inode+0x162/0x10f0 [bt=
+rfs]
+> [   13.309341]  [<ffffffff9f8f561e>] ? mutex_unlock+0xe/0x10
+> [   13.309353]  [<ffffffffc0737e12>] ? btrfs_log_inode+0x162/0x10f0 [bt=
+rfs]
+> [   13.309365]  [<ffffffffc0737e12>] btrfs_log_inode+0x162/0x10f0 [btrf=
+s]
+> [   13.309368]  [<ffffffff9f0deaa9>] ? __might_sleep+0x49/0x80
+> [   13.309380]  [<ffffffffc073893c>] btrfs_log_inode+0xc8c/0x10f0 [btrf=
+s]
+> [   13.309382]  [<ffffffff9f037f29>] ? sched_clock+0x9/0x10
+> [   13.309394]  [<ffffffffc0739070>] btrfs_log_inode_parent+0x240/0x940=
+ [btrfs]
+> [   13.309396]  [<ffffffff9f8f82e7>] ? _raw_spin_unlock+0x27/0x40
+> [   13.309408]  [<ffffffffc06f3dba>] ? btrfs_update_inode+0xda/0x110 [b=
+trfs]
+> [   13.309420]  [<ffffffffc073acf1>] btrfs_log_new_name+0x71/0x90 [btrf=
+s]
+> [   13.309432]  [<ffffffffc06fdcd0>] btrfs_rename2+0x1090/0x17a0 [btrfs=
+]
+> [   13.309434]  [<ffffffff9f12dc1d>] ? debug_lockdep_rcu_enabled+0x1d/0=
+x20
+> [   13.309437]  [<ffffffff9f2c2a56>] ? lock_two_nondirectories+0x66/0x7=
+0
+> [   13.309439]  [<ffffffff9f2afef2>] vfs_rename+0x5c2/0x970
+> [   13.309441]  [<ffffffff9f2ae100>] ? legitimize_path.isra.34+0x20/0x6=
+0
+> [   13.309443]  [<ffffffff9f2b6a77>] SyS_rename+0x3a7/0x3d0
+> [   13.309445]  [<ffffffff9f8f8c3c>] entry_SYSCALL_64_fastpath+0x1f/0xb=
+d
+> [   13.318819] device virbr0-nic left promiscuous mode
+> [   13.318854] virbr0: port 1(virbr0-nic) entered disabled state
+>=20
 
-Yes I do take into consideration that there are situations when "uncow" cannot be actually applied to a file for the reasons you described. No snapshots atm in my case and, for example, I have firefox sqlite database file with 900+ extents on a rotational disk. I wouldn't say it's noticeable, but at least desire the number of extents not to increase further so that I won't notice it ever. I admit that Btrfs may defragment it, but may not. Sometimes we need a more controllable approach.
 
-22.08.2016, 05:00, "Duncan" <1i5t5.duncan@cox.net>:
-> Tomokhov Alexander posted on Sun, 21 Aug 2016 21:59:36 +0300 as excerpted:
->
->>  Btrfs wiki FAQ gives a link to example Python script:
->>  https://github.com/stsquad/scripts/blob/master/uncow.py
->>
->>  But such a crucial and fundamental tool must exist in stock btrfs-progs.
->>  Filesystem with CoW technology at it's core must provide user sufficient
->>  control over CoW aspects. Running 3rd-party or manually written scripts
->>  for filesystem properties/metadata manipulation is not convenient, not
->>  safe and definitely not the way it must be done.
->
-> Why? No script or dedicated tool needed as it's a simple enough process.
->
-> Simply:
->
-> 1. chattr +C (that being nocow) the containing directory.
->
-> Then either:
->
-> 2a. mv the file to and from another filesystem, so it's actually created
-> new in the directory and thus inherits the nocow attribute at file
-> creation,
->
-> or
->
-> 2b. mv out and then cp the file back into place with --reflink=never,
-> again, forcing the file to be created new in the directory, so it
-> inherits the nocow attribute at creation,
->
-> OR (replacing both steps above)
->
-> Create the empty file (using touch or similar), set it nocow, and use cat
-> srcfile >> destfile style redirection to fill it, so the file again gets
-> the nocow attribute set before it has content, but allowing you to set
-> only the file nocow, without setting the containing directory nocow.
->
-> Of course there's no exception here to the general case, if you're doing
-> the same thing to a whole bunch of files, setting up a script to do it
-> may be more efficient than doing it to each one manually one by one, and
-> a script could be useful there, but that's a general rule, nothing
-> exceptional for btrfs nocow, and a script or fancy tool isn't actually
-> required, regardless.
->
-> The point being, cow is the default case, and should work /reasonably/
-> well in most cases, certainly well enough so that normal people doing
-> normal things shouldn't need to worry about it. The only people who will
-> need to worry about it, therefore, are people worried about the last bit
-> of optimization possible to various corner-case use-cases that don't
-> match default assumptions very well, and it's precisely these sorts of
-> people that are /technical/ enough to be able to understand both why they
-> might want nocow (and what the positives and negatives are going to be),
-> and how to actually get it.
->
->>  Also is it possible (at least in theory) to "uncow" files being
->>  currently opened in-place? Without the trickery with creation & renaming
->>  of files or directories. So that running "chattr +C" on a file would be
->>  sufficient. If possible, is it going to be implemented?
->
-> It's software. Of course it's possible, tho it's also possible the
-> negatives make it not worth the trouble. If the implementation simply
-> creates a new file and does a --reflink=never cp in the background when
-> the nocow file attribute is set, it may not be worth it.
->
-> As to whether it'll ultimately be implemented, I don't know as I'm not a
-> dev. But even if it is ultimately implemented, it might well be five
-> years out or longer, because there's simply way more "it'd be nice" btrfs-
-> related ideas out there than there are devs working on implementations,
-> and projecting more than five years out in a software development
-> environment like the Linux kernel doesn't make a lot of sense, so five
-> years out or longer is likely, but beyond that, nobody really knows.
->
-> Add to that the fact that a lot of existing btrfs features took rather
-> longer to implement and stabilize than originally projected, and...
->
-> Meanwhile, if you aren't already, be aware that the basic concepts of
-> snapshots locking in references to existing extents as unchangeable
-> (snapshots being a btrfs feature that depends on its cow nature), and
-> nocow setting files as rewrite-in-place, basically can't work with each
-> other at the concept level, because once a snapshot is taken, extents
-> referenced by that snapshot really /cannot/ change until that snapshot is
-> deleted, something that can only be true if the extents are copy-on-write.
->
-> To work around this btrfs makes the nocow attribute weaker than the
-> snapshot locking a particular extent in place, using a process sometimes
-> referred to as cow-once or cow1. When a change is written to a(n
-> otherwise) nocow file that has been snapshotted and thus has its extents
-> locked in place, the block of the file that is changed will have to be
-> cowed, despite the nocow attribute. However, the nocow attribute is
-> kept, and any further changes to that block will be rewritten to the new
-> location it was copied to without further cowing of that block, of course
-> until the next snapshot locks that location in place as well, at which
-> further writes to the same block will of course cow it once more, to a
-> third location, which will again remain in place until yet another
-> snapshot...
->
-> So snapshotting a nocow file means it's no longer absolutely nocow, it's
-> now cow1. If the rewrite rate is higher than the snapshot rate, the nocow
-> should still have some effect, but where the snapshot rate is higher than
-> the rewrite rate, the effect will be as if the file wasn't nocow at all,
-> because each snapshot will lock in the file as it then exists.
->
-> It is for this reason that the recommendation is to keep nocow files in a
-> dedicated subvolume, so snapshots to the parent subvolume exclude the
-> nocow files, and to minimize snapshotting of the nocow subvolume. As
-> long as snapshotting is occurring at all, however, there will be some
-> fragmentation over time, but by combining a limited snapshotting rate
-> with a reasonable defrag schedule targeting the nowcow files as well,
-> fragmentation should at least remain under control.
->
-> And of course nocow has other negatives as well. Setting nocow turns off
-> both compression (if you otherwise have compression on) and checksumming,
-> thus killing two other major btrfs features, including its realtime file
-> integrity validation via checksumming.
->
-> So there are definitely negatives to nocow that must be weighed before
-> setting it. But it's worth keeping in mind that all of these features
-> are really practical due to cow in the first place, the reason other
-> filesystems don't tend to have them, and that while there is definitely a
-> tradeoff to cow vs. nocow, setting nocow doesn't turn off features you'd
-> have in conventional filesystems anyway, so it's not as if you're losing
-> features you'd have if you weren't using btrfs with its cow by default,
-> in the first place.
->
-> --
-> Duncan - List replies preferred. No HTML msgs.
-> "Every nonfree program has a lord, a master --
-> and if you use the program, he is your master." Richard Stallman
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at http://vger.kernel.org/majordomo-info.html
+--=20
+Jeff Mahoney
+SUSE Labs
+
+
+--MKL9VnqeIKFRe5o4pxAQ9UC3hK2nwjSUI--
+
+--334KsO8AnxuWarFdSbt9HsQM21ckLXRcH
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG/MacGPG2 v2
+
+iQIcBAEBCAAGBQJXu5gqAAoJEB57S2MheeWytBgP/04y6tf6bNk3xGZkRhGLZgbs
+Q3weYrpWG6CK3LBXhhf3rkT13U6QBHzVkih3BaIGmEbMsz2wJvA8bC+LeTR8chOn
+uiP5iCKZAU7gVlCjVx3W+ip0MorC5Oy/5F+uuKz2PXG0/kVpIqBRojTn9MUOCgro
+op9vw578NMgIZdRKuKeqwig+oTczcizn/bAfyebyMD/PzC5k/Icl/AAAkKXcU6eQ
+8Vqy+gmwAKNTFiIobjYqB5JgcuPzupclZx8Yeonax0bOSdrCNolvkB453EV0w4Mi
+rk6ZxW2qkW7qPo627w7USJCEKb6IqSMu1996POgroWyD0dGCmujnneujZ77tjg/O
+UWgaq/SSD9c/T5n/IVuk8ACBSDpbHTJLYj5VWHcZYssrr0bOdHCsILu3BoefyMJA
+Sxc9gTdNXZSBGHnN1Yd7KIa4htZnVr6G74Dzan20dKSysR1bMimu3T1hdyvjcNRM
+EPb8lghzvALxtIX4CwBh4hetrCbjK14sFiYlxnvZCCC5lXDrhInFaIhDwOh9DNXF
+lQF/y5DcTp0IdGIVU8CD+xqvDUySajBgE+HIZ1Dm1hgqRhO699aYJ9Q9ObFA+5sM
+0FumnbG/DzHxyGQw7Pq98ZIsqjweg4O3oM+LsF9ngkqD5PBDyKNyZns3yJtJ4chG
+iYnIaRLDrzIFZuNz47Vw
+=Pozb
+-----END PGP SIGNATURE-----
+
+--334KsO8AnxuWarFdSbt9HsQM21ckLXRcH--

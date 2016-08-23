@@ -1,86 +1,194 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from ipmail06.adl6.internode.on.net ([150.101.137.145]:63770 "EHLO
-        ipmail06.adl6.internode.on.net" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1753214AbcHWFyV (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:14997 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1752476AbcHWIbr (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 23 Aug 2016 01:54:21 -0400
-Date: Tue, 23 Aug 2016 15:54:16 +1000
-From: Dave Chinner <david@fromorbit.com>
-To: "Darrick J. Wong" <darrick.wong@oracle.com>
-Cc: Jeff Mahoney <jeffm@suse.com>, Tomokhov Alexander <alexoundos@ya.ru>,
-        linux-btrfs@vger.kernel.org, Christoph Hellwig <hch@infradead.org>
-Subject: Re: Will Btrfs have an official command to "uncow" existing files?
-Message-ID: <20160823055416.GL22388@dastard>
-References: <126611471805976@web2j.yandex.ru>
- <57BB5D1B.8040305@suse.com>
- <20160822230613.GA8256@birch.djwong.org>
+        Tue, 23 Aug 2016 04:31:47 -0400
+Subject: Re: [dm-devel] [Regression/Behavior change]dm-flakey corrupt read
+ bio, even the feature is drop_writes
+To: Lukas Herbolt <lherbolt@redhat.com>
+References: <cc2b06b5-7598-67ab-d528-9087cbf75f45@cn.fujitsu.com>
+ <CAM4Jq_4t0uGMA2KtGJWgM36wyu7czWjZQD0Lchh6n=gGZ9F+WQ@mail.gmail.com>
+ <CAM4Jq_424FJSogLYj5gcf_JsQTF8U8UjdpCbs_vpqjCtqFqXXw@mail.gmail.com>
+CC: Mike Snitzer <snitzer@redhat.com>,
+        device-mapper development <dm-devel@redhat.com>,
+        btrfs <linux-btrfs@vger.kernel.org>
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Message-ID: <c66a14e2-0c62-bf1c-bcf6-9567d5cc87ba@cn.fujitsu.com>
+Date: Tue, 23 Aug 2016 16:30:29 +0800
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20160822230613.GA8256@birch.djwong.org>
+In-Reply-To: <CAM4Jq_424FJSogLYj5gcf_JsQTF8U8UjdpCbs_vpqjCtqFqXXw@mail.gmail.com>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Aug 22, 2016 at 04:06:13PM -0700, Darrick J. Wong wrote:
-> [add Dave and Christoph to cc]
-> 
-> On Mon, Aug 22, 2016 at 04:14:19PM -0400, Jeff Mahoney wrote:
-> > On 8/21/16 2:59 PM, Tomokhov Alexander wrote:
-> > > Btrfs wiki FAQ gives a link to example Python script: https://github.com/stsquad/scripts/blob/master/uncow.py
-> > > 
-> > > But such a crucial and fundamental tool must exist in stock btrfs-progs. Filesystem with CoW technology at it's core must provide user sufficient control over CoW aspects. Running 3rd-party or manually written scripts for filesystem properties/metadata manipulation is not convenient, not safe and definitely not the way it must be done.
-> > > 
-> > > Also is it possible (at least in theory) to "uncow" files being currently opened in-place? Without the trickery with creation & renaming of files or directories. So that running "chattr +C" on a file would be sufficient. If possible, is it going to be implemented?
-> > 
-> > XFS is looking to do this via fallocate using a flag that all file
-> > systems can choose to honor.  Once that lands, it would make sense for
-> > btrfs to use it as well.  The idea is that when you pass the flag in, we
-> > examine the range and CoW anything that has a refcount != 1.
-> 
-> There /was/ a flag to do that -- FALLOC_FL_UNSHARE_RANGE.  However,
-> Christoph and Dave felt[1] that the fallocate call didn't need to have
-> an explicit 'unshare' mode because unsharing shared blocks is
-> necessary to guarantee that a subsequent write will not ENOSPC.  I
-> felt that was sufficient justification to withdraw the unshare mode
-> flag.  If you fallocate the entire length of a shared file on XFS, it
-> will turn off CoW for that file until you reflink/dedupe it again.
+Hi Lukas,
 
->From the XFS POV that's all good...
+Thanks for your patch, while I am a little concerned of it, even I'm a 
+newbie to flakey code.
 
-> At the time I wondered whether or not the btrfs developers (the list
-> was cc'd) would pipe up in support of the unshare flag, but nobody
-> did.  Consequently it remains nonexistent.  Christoph commented a few
-> months ago about unsharing fallocate over NFS atop XFS blocking for a
-> long time, though nobody asked for 'unshare' to be reinstated as a
-> separate fallocate mode, much less a 'don't unshare' flag for regular
-> fallocate mode.
+At 08/22/2016 10:53 PM, Lukas Herbolt wrote:
+> Hi Qu,
+>
+> Sorry for the confusion. Reading the email again and the code it seems
+> that the READS are really returned as -EIO if you set the drop_writes.
+> I just tested it and you are right.
+>
+> If I was reading the fstest correctly the flakey is created as:
+> ---
+> flakey: 0 409600 flakey 8:64 0 0 180 1 drop_writes
+> ---
+>
+> I believe the READs are dropped because it does not have any flags set.
+>
+> ---
+>         if (bio_data_dir(bio) == READ) {
+>             /* If flags were specified, only corrupt those that match. */
+>             if (fc->corrupt_bio_byte && (fc->corrupt_bio_rw == READ) &&
+>                 all_corrupt_bio_flags_match(bio, fc))
+>                 goto map_bio;
+>             else
+>                 return -EIO;
+>         }
+> ---
+>
+> with conclusion of setting:
+> ---
+>                 /*
+>                  * Flag this bio as submitted while down.
+>                  */
+>                 pb->bio_submitted = true;
+> ---
+>
+> I have quick test patch ready, but it probably broke more thing than
+> fixes so I will continue on it.
+> Just in case you want to test it. Diff is done again 4.8-rc1
+>
+> --- a/drivers/md/dm-flakey.c
+> +++ b/drivers/md/dm-flakey.c
+> @@ -292,6 +292,11 @@ static int flakey_map(struct dm_target *ti,
+> struct bio *bio)
+>                  * Map reads as normal only if corrupt_bio_byte set.
+>                  */
+>                 if (bio_data_dir(bio) == READ) {
+> +                        /* We should retunr all READS as ok in case
+> of DROP WRITES flag is set. */
+> +                       if (test_bit(DROP_WRITES, &fc->flags)) {
+> +                               pb->bio_submitted = false;
+> +                               goto map_bio;
+> +                       }
 
-If there are other use cases, then we can easily implement it in
-XFS. However, let's not overload the XFS reflink code with things
-other fs devs have once said "that'd be nice to do"....
+According to my personal understanding, drop_writes should:
+1) Drop any write bio silently
+    Just as its name
+2) For read
+2.1) Read out data if the range doesn't include corrupt_bio_byte
 
-> (FWIW I'm ok with not having to fight for more VFS changes. :))
-> 
-> > That code hasn't landed yet though.  The last time I saw it posted was
-> > June.  I don't speak with knowledge of the integration plan, but it
-> > might just be queued up for the next merge window now that the reverse
-> > mapping patches have landed in 4.8.
-> 
-> I am going to try to land XFS reflink in 4.9; I hope to have an eighth
-> patchset out for review at the end of the week.
-> 
-> So... if the btrfs folks really want an unshare flag I can trivially
-> re-add it to the VFS headers and re-enable it in the XFS
-> implementation <cough> but y'all better speak up now and hammer out an
-> acceptable definition.  I don't think XFS needs a new flag.
+2.2) Read out corrupted data if the range contains corrupt_bio_byte.
 
-It's not urgent - it can be added at any time so I'd say it
-something we should ignore on the XFS side of things until someone
-actually requires an explicit "unshare" operation for another
-filesystem....
+So it seems that 2.2) is not fulfilled.
 
-Cheers,
+While it solves the problem I reported, I'm still concerned if it 
+matches the correct/designed behavior of flakey.
 
-Dave.
--- 
-Dave Chinner
-david@fromorbit.com
+Thanks,
+Qu
+>                         /* If flags were specified, only corrupt those
+> that match. */
+>                         if (fc->corrupt_bio_byte &&
+> (fc->corrupt_bio_rw == READ) &&
+>                             all_corrupt_bio_flags_match(bio, fc))
+>
+>
+>
+> On Mon, Aug 22, 2016 at 10:05 AM, Lukas Herbolt <lherbolt@redhat.com> wrote:
+>> Hello,
+>>
+>> There is patch from Mike. It's part of current pull request to 4.8-rc1
+>> For more details check:
+>>  - https://www.redhat.com/archives/dm-devel/2016-July/msg00561.html
+>>  - https://www.redhat.com/archives/dm-devel/2016-August/msg00109.html
+>>
+>> Lukas
+>>
+>> On Mon, Aug 22, 2016 at 9:31 AM, Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
+>>> Hi, Mike and btrfs and dm guys
+>>>
+>>> When doing regression test on v4.8-rc1, we found that fstests/btrfs/056
+>>> always fails. With the following dmesg:
+>>> ---
+>>> Buffer I/O error on dev dm-0, logical block 1310704, async page read
+>>> Buffer I/O error on dev dm-0, logical block 16, async page read
+>>> Buffer I/O error on dev dm-0, logical block 16, async page read
+>>> ---
+>>>
+>>> And bisect leads to the following commits:
+>>> ---
+>>> commit 99f3c90d0d85708e7401a81ce3314e50bf7f2819
+>>> Author: Mike Snitzer <snitzer@redhat.com>
+>>> Date:   Fri Jul 29 13:19:55 2016 -0400
+>>>
+>>>     dm flakey: error READ bios during the down_interval
+>>> ---
+>>>
+>>> While according to the document of dm-flakey, it says that when using
+>>> drop_writes feature, read bios are not affected:
+>>> ---
+>>>   drop_writes:
+>>>         All write I/O is silently ignored.
+>>>         Read I/O is handled correctly.
+>>> ---
+>>>
+>>> If I understand the word "correctly" correctly, it should means READ I/0 is
+>>> handled without problem.
+>>>
+>>> However with this commit, it also corrupt the read bio, leading to the test
+>>> failure.
+>>>
+>>>
+>>> At least there are two fixes available here;
+>>> 1) Fix fstest scripts
+>>>    The related macro is "_flakey_drop_and_remount yes", which will
+>>>    check the fs during the "drop_writes" time.
+>>>
+>>>    Currently, only btrfs/056 calls "_flakey_drop_and_remount" with
+>>>    "yes". So other test cases are not affected.
+>>>
+>>>    However, even we move the fsck outside of the "drop_writes" range,
+>>>    although test case can pass without problem, but we will still
+>>>    get a dmesg error:
+>>>    "Buffer I/O error on dev dm-0, logical block 1310704, async page read"
+>>>
+>>> 2) Revert to flakey behavior to allow READ bio
+>>>    Then everything is back to the old good days.
+>>>
+>>> Not sure which one is correct for current use case, as I'm not familiar with
+>>> dm codes.
+>>>
+>>> Any idea to fix dm-flaky and keep the READ bio behavior?
+>>>
+>>> Thanks,
+>>> Qu
+>>>
+>>>
+>>>
+>>>
+>>>
+>>> --
+>>> dm-devel mailing list
+>>> dm-devel@redhat.com
+>>> https://www.redhat.com/mailman/listinfo/dm-devel
+>>
+>>
+>>
+>> --
+>> Lukas Herbolt
+>> RHCE, RH436, BSc, SSc
+>> Senior Technical Support Engineer
+>> Global Support Services (GSS)
+>> Email:    lherbolt@redhat.com
+>
+>
+>
+
+

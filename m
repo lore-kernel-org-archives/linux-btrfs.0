@@ -1,28 +1,46 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:58815 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1753142AbcHXL44 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 24 Aug 2016 07:56:56 -0400
-Date: Wed, 24 Aug 2016 13:55:42 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Luis Henriques <luis.henriques@canonical.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 1/2] btrfs: Fix =?utf-8?Q?warni?=
- =?utf-8?B?bmcgInZhcmlhYmxlIOKAmGdlbuKAmQ==?= set but not used"
-Message-ID: <20160824115542.GO16983@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20160823222323.9613-1-luis.henriques@canonical.com>
+Received: from youngberry.canonical.com ([91.189.89.112]:38978 "EHLO
+        youngberry.canonical.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1755515AbcHWWXs (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 23 Aug 2016 18:23:48 -0400
+From: Luis Henriques <luis.henriques@canonical.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Luis Henriques <luis.henriques@canonical.com>
+Subject: [PATCH 1/2] =?UTF-8?q?btrfs:=20Fix=20warning=20"variable=20?= =?UTF-8?q?=E2=80=98gen=E2=80=99=20set=20but=20not=20used"?=
+Date: Tue, 23 Aug 2016 23:23:23 +0100
+Message-Id: <20160823222323.9613-1-luis.henriques@canonical.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20160823222323.9613-1-luis.henriques@canonical.com>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Aug 23, 2016 at 11:23:23PM +0100, Luis Henriques wrote:
-> Variable 'gen' in reada_for_search() is not used since commit 58dc4ce43251
-> ("btrfs: remove unused parameter from readahead_tree_block").  This patch
-> simply removes this variable.
-> 
-> Signed-off-by: Luis Henriques <luis.henriques@canonical.com>
+Variable 'gen' in reada_for_search() is not used since commit 58dc4ce43251
+("btrfs: remove unused parameter from readahead_tree_block").  This patch
+simply removes this variable.
 
-Reviewed-by: David Sterba <dsterba@suse.com>
+Signed-off-by: Luis Henriques <luis.henriques@canonical.com>
+---
+ fs/btrfs/ctree.c | 2 --
+ 1 file changed, 2 deletions(-)
+
+diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
+index d1c56c94dd5a..dcd39cca7e43 100644
+--- a/fs/btrfs/ctree.c
++++ b/fs/btrfs/ctree.c
+@@ -2268,7 +2268,6 @@ static void reada_for_search(struct btrfs_root *root,
+ 	u64 search;
+ 	u64 target;
+ 	u64 nread = 0;
+-	u64 gen;
+ 	struct extent_buffer *eb;
+ 	u32 nr;
+ 	u32 blocksize;
+@@ -2313,7 +2312,6 @@ static void reada_for_search(struct btrfs_root *root,
+ 		search = btrfs_node_blockptr(node, nr);
+ 		if ((search <= target && target - search <= 65536) ||
+ 		    (search > target && search - target <= 65536)) {
+-			gen = btrfs_node_ptr_generation(node, nr);
+ 			readahead_tree_block(root, search);
+ 			nread += blocksize;
+ 		}

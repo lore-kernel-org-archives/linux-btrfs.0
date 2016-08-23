@@ -1,62 +1,182 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:6898 "EHLO song.cn.fujitsu.com"
-        rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-        id S932796AbcHaLu2 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 31 Aug 2016 07:50:28 -0400
-From: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
+Received: from mail.kernel.org ([198.145.29.136]:41140 "EHLO mail.kernel.org"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1754826AbcHXI5m (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 24 Aug 2016 04:57:42 -0400
+Received: from mail.kernel.org (localhost [127.0.0.1])
+        by mail.kernel.org (Postfix) with ESMTP id 292312025A
+        for <linux-btrfs@vger.kernel.org>; Wed, 24 Aug 2016 08:57:29 +0000 (UTC)
+Received: from debian3.lan (bl12-226-64.dsl.telepac.pt [85.245.226.64])
+        (using TLSv1.2 with cipher AES128-SHA256 (128/128 bits))
+        (No client certificate requested)
+        by mail.kernel.org (Postfix) with ESMTPSA id 871222022D
+        for <linux-btrfs@vger.kernel.org>; Wed, 24 Aug 2016 08:57:27 +0000 (UTC)
+From: fdmanana@kernel.org
 To: linux-btrfs@vger.kernel.org
-Cc: jbacik@fb.com, dsterba@suse.com
-Subject: [PATCH] btrfs: fix one bug that process may endlessly wait for ticket in wait_reserve_ticket()
-Date: Wed, 31 Aug 2016 19:46:16 +0800
-Message-Id: <20160831114616.2053-1-wangxg.fnst@cn.fujitsu.com>
-MIME-Version: 1.0
+Subject: [PATCH] Btrfs: fix lockdep warning on deadlock against an inode's log mutex
+Date: Tue, 23 Aug 2016 21:13:51 +0100
+Message-Id: <1471983231-2966-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-If can_overcommit() in btrfs_calc_reclaim_metadata_size() returns true,
-btrfs_async_reclaim_metadata_space() will not reclaim metadata space, just
-return directly and also forget to wake up process which are waiting for
-their tickets, so these processes will wait endlessly.
+From: Filipe Manana <fdmanana@suse.com>
 
-Fstests case generic/172 with mount option "-o compress=lzo" have revealed
-this bug in my test machine. Here if we have tickets to handle, we must
-handle them first.
+Commit 44f714dae50a ("Btrfs: improve performance on fsync against new
+inode after rename/unlink"), which landed in 4.8-rc2, introduced a
+possibility for a deadlock due to double locking of an inode's log mutex
+by the same task, which lockdep reports with:
 
-Signed-off-by: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
+[23045.433975] =============================================
+[23045.434748] [ INFO: possible recursive locking detected ]
+[23045.435426] 4.7.0-rc6-btrfs-next-34+ #1 Not tainted
+[23045.436044] ---------------------------------------------
+[23045.436044] xfs_io/3688 is trying to acquire lock:
+[23045.436044]  (&ei->log_mutex){+.+...}, at: [<ffffffffa038552d>] btrfs_log_inode+0x13a/0xc95 [btrfs]
+[23045.436044]
+               but task is already holding lock:
+[23045.436044]  (&ei->log_mutex){+.+...}, at: [<ffffffffa038552d>] btrfs_log_inode+0x13a/0xc95 [btrfs]
+[23045.436044]
+               other info that might help us debug this:
+[23045.436044]  Possible unsafe locking scenario:
+
+[23045.436044]        CPU0
+[23045.436044]        ----
+[23045.436044]   lock(&ei->log_mutex);
+[23045.436044]   lock(&ei->log_mutex);
+[23045.436044]
+                *** DEADLOCK ***
+
+[23045.436044]  May be due to missing lock nesting notation
+
+[23045.436044] 3 locks held by xfs_io/3688:
+[23045.436044]  #0:  (&sb->s_type->i_mutex_key#15){+.+...}, at: [<ffffffffa035f2ae>] btrfs_sync_file+0x14e/0x425 [btrfs]
+[23045.436044]  #1:  (sb_internal#2){.+.+.+}, at: [<ffffffff8118446b>] __sb_start_write+0x5f/0xb0
+[23045.436044]  #2:  (&ei->log_mutex){+.+...}, at: [<ffffffffa038552d>] btrfs_log_inode+0x13a/0xc95 [btrfs]
+[23045.436044]
+               stack backtrace:
+[23045.436044] CPU: 4 PID: 3688 Comm: xfs_io Not tainted 4.7.0-rc6-btrfs-next-34+ #1
+[23045.436044] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS rel-1.9.1-0-gb3ef39f-prebuilt.qemu-project.org 04/01/2014
+[23045.436044]  0000000000000000 ffff88022f5f7860 ffffffff8127074d ffffffff82a54b70
+[23045.436044]  ffffffff82a54b70 ffff88022f5f7920 ffffffff81092897 ffff880228015d68
+[23045.436044]  0000000000000000 ffffffff82a54b70 ffffffff829c3f00 ffff880228015d68
+[23045.436044] Call Trace:
+[23045.436044]  [<ffffffff8127074d>] dump_stack+0x67/0x90
+[23045.436044]  [<ffffffff81092897>] __lock_acquire+0xcbb/0xe4e
+[23045.436044]  [<ffffffff8109155f>] ? mark_lock+0x24/0x201
+[23045.436044]  [<ffffffff8109179a>] ? mark_held_locks+0x5e/0x74
+[23045.436044]  [<ffffffff81092de0>] lock_acquire+0x12f/0x1c3
+[23045.436044]  [<ffffffff81092de0>] ? lock_acquire+0x12f/0x1c3
+[23045.436044]  [<ffffffffa038552d>] ? btrfs_log_inode+0x13a/0xc95 [btrfs]
+[23045.436044]  [<ffffffffa038552d>] ? btrfs_log_inode+0x13a/0xc95 [btrfs]
+[23045.436044]  [<ffffffff814a51a4>] mutex_lock_nested+0x77/0x3a7
+[23045.436044]  [<ffffffffa038552d>] ? btrfs_log_inode+0x13a/0xc95 [btrfs]
+[23045.436044]  [<ffffffffa039705e>] ? btrfs_release_delayed_node+0xb/0xd [btrfs]
+[23045.436044]  [<ffffffffa038552d>] btrfs_log_inode+0x13a/0xc95 [btrfs]
+[23045.436044]  [<ffffffffa038552d>] ? btrfs_log_inode+0x13a/0xc95 [btrfs]
+[23045.436044]  [<ffffffff810a0ed1>] ? vprintk_emit+0x453/0x465
+[23045.436044]  [<ffffffffa0385a61>] btrfs_log_inode+0x66e/0xc95 [btrfs]
+[23045.436044]  [<ffffffffa03c084d>] log_new_dir_dentries+0x26c/0x359 [btrfs]
+[23045.436044]  [<ffffffffa03865aa>] btrfs_log_inode_parent+0x4a6/0x628 [btrfs]
+[23045.436044]  [<ffffffffa0387552>] btrfs_log_dentry_safe+0x5a/0x75 [btrfs]
+[23045.436044]  [<ffffffffa035f464>] btrfs_sync_file+0x304/0x425 [btrfs]
+[23045.436044]  [<ffffffff811acaf4>] vfs_fsync_range+0x8c/0x9e
+[23045.436044]  [<ffffffff811acb22>] vfs_fsync+0x1c/0x1e
+[23045.436044]  [<ffffffff811acc79>] do_fsync+0x31/0x4a
+[23045.436044]  [<ffffffff811ace99>] SyS_fsync+0x10/0x14
+[23045.436044]  [<ffffffff814a88e5>] entry_SYSCALL_64_fastpath+0x18/0xa8
+[23045.436044]  [<ffffffff8108f039>] ? trace_hardirqs_off_caller+0x3f/0xaa
+
+An example reproducer for this is:
+
+   $ mkfs.btrfs -f /dev/sdb
+   $ mount /dev/sdb /mnt
+   $ mkdir /mnt/dir
+   $ touch /mnt/dir/foo
+   $ sync
+   $ mv /mnt/dir/foo /mnt/dir/bar
+   $ touch /mnt/dir/foo
+   $ xfs_io -c "fsync" /mnt/dir/bar
+
+This is because while logging the inode of file bar we end up logging its
+parent directory (since its inode has an unlink_trans field matching the
+current transaction id due to the rename operation), which in turn logs
+the inodes for all its new dentries, so that the new inode for the new
+file named foo gets logged which in turn triggered another logging attempt
+for the inode we are fsync'ing, since that inode had an old name that
+corresponds to the name of the new inode.
+
+So fix this by ensuring that when logging the inode for a new dentry that
+has a name matching an old name of some other inode, we don't log again
+the original inode that we are fsync'ing.
+
+Fixes: 44f714dae50a ("Btrfs: improve performance on fsync against new inode after rename/unlink")
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/extent-tree.c | 10 +++++-----
- 1 file changed, 5 insertions(+), 5 deletions(-)
+ fs/btrfs/file.c     | 2 +-
+ fs/btrfs/tree-log.c | 5 +++--
+ fs/btrfs/tree-log.h | 5 ++++-
+ 3 files changed, 8 insertions(+), 4 deletions(-)
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 0450dc4..8c8a4d1 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -4901,11 +4901,6 @@ btrfs_calc_reclaim_metadata_size(struct btrfs_root *root,
- 	u64 expected;
- 	u64 to_reclaim = 0;
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index 6f04910..5de638a 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -2070,7 +2070,7 @@ int btrfs_sync_file(struct file *file, loff_t start, loff_t end, int datasync)
+ 	}
+ 	trans->sync = true;
  
--	to_reclaim = min_t(u64, num_online_cpus() * SZ_1M, SZ_16M);
--	if (can_overcommit(root, space_info, to_reclaim,
--			   BTRFS_RESERVE_FLUSH_ALL))
--		return 0;
--
- 	list_for_each_entry(ticket, &space_info->tickets, list)
- 		to_reclaim += ticket->bytes;
- 	list_for_each_entry(ticket, &space_info->priority_tickets, list)
-@@ -4913,6 +4908,11 @@ btrfs_calc_reclaim_metadata_size(struct btrfs_root *root,
- 	if (to_reclaim)
- 		return to_reclaim;
+-	btrfs_init_log_ctx(&ctx);
++	btrfs_init_log_ctx(&ctx, inode);
  
-+	to_reclaim = min_t(u64, num_online_cpus() * SZ_1M, SZ_16M);
-+	if (can_overcommit(root, space_info, to_reclaim,
-+			   BTRFS_RESERVE_FLUSH_ALL))
-+		return 0;
-+
- 	used = space_info->bytes_used + space_info->bytes_reserved +
- 	       space_info->bytes_pinned + space_info->bytes_readonly +
- 	       space_info->bytes_may_use;
+ 	ret = btrfs_log_dentry_safe(trans, root, dentry, start, end, &ctx);
+ 	if (ret < 0) {
+diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+index 5fa624c..7293714 100644
+--- a/fs/btrfs/tree-log.c
++++ b/fs/btrfs/tree-log.c
+@@ -2807,7 +2807,7 @@ int btrfs_sync_log(struct btrfs_trans_handle *trans,
+ 	 */
+ 	mutex_unlock(&root->log_mutex);
+ 
+-	btrfs_init_log_ctx(&root_log_ctx);
++	btrfs_init_log_ctx(&root_log_ctx, NULL);
+ 
+ 	mutex_lock(&log_root_tree->log_mutex);
+ 	atomic_inc(&log_root_tree->log_batch);
+@@ -4737,7 +4737,8 @@ again:
+ 			if (ret < 0) {
+ 				err = ret;
+ 				goto out_unlock;
+-			} else if (ret > 0) {
++			} else if (ret > 0 && ctx &&
++				   other_ino != btrfs_ino(ctx->inode)) {
+ 				struct btrfs_key inode_key;
+ 				struct inode *other_inode;
+ 
+diff --git a/fs/btrfs/tree-log.h b/fs/btrfs/tree-log.h
+index a9f1b75..ab858e3 100644
+--- a/fs/btrfs/tree-log.h
++++ b/fs/btrfs/tree-log.h
+@@ -30,15 +30,18 @@ struct btrfs_log_ctx {
+ 	int log_transid;
+ 	int io_err;
+ 	bool log_new_dentries;
++	struct inode *inode;
+ 	struct list_head list;
+ };
+ 
+-static inline void btrfs_init_log_ctx(struct btrfs_log_ctx *ctx)
++static inline void btrfs_init_log_ctx(struct btrfs_log_ctx *ctx,
++				      struct inode *inode)
+ {
+ 	ctx->log_ret = 0;
+ 	ctx->log_transid = 0;
+ 	ctx->io_err = 0;
+ 	ctx->log_new_dentries = false;
++	ctx->inode = inode;
+ 	INIT_LIST_HEAD(&ctx->list);
+ }
+ 
 -- 
-2.9.0
-
-
+2.7.0.rc3
 

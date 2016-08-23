@@ -1,54 +1,58 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:18708 "EHLO
-        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1754305AbcHSVyE (ORCPT
+Received: from mout.kundenserver.de ([212.227.126.135]:59472 "EHLO
+        mout.kundenserver.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1754258AbcHWPCc (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 19 Aug 2016 17:54:04 -0400
-Date: Fri, 19 Aug 2016 14:53:54 -0700
-From: "Darrick J. Wong" <darrick.wong@oracle.com>
-To: Dave Chinner <david@fromorbit.com>
-Cc: Eryu Guan <eguan@redhat.com>, linux-btrfs@vger.kernel.org,
-        fstests@vger.kernel.org, xfs@oss.sgi.com
-Subject: Re: [PATCH 13/17] xfs: test swapext with reflink
-Message-ID: <20160819215354.GA15174@birch.djwong.org>
-References: <146914477514.11762.3144320628851923350.stgit@birch.djwong.org>
- <146914485888.11762.1688573359701830686.stgit@birch.djwong.org>
- <20160808081359.GB27776@eguan.usersys.redhat.com>
- <20160808174132.GC11291@birch.djwong.org>
- <20160809062943.GF19025@dastard>
+        Tue, 23 Aug 2016 11:02:32 -0400
+From: Arnd Bergmann <arnd@arndb.de>
+To: Greg KH <gregkh@linuxfoundation.org>
+Cc: Deepa Dinamani <deepa.kernel@gmail.com>, linux-fsdevel@vger.kernel.org,
+        linux-kernel@vger.kernel.org, tglx@linutronix.de,
+        torvalds@linux-foundation.org, tytso@mit.edu, viro@zeniv.linux.org.uk,
+        y2038@lists.linaro.org, adilger.kernel@dilger.ca,
+        adrian.hunter@intel.com, anna.schumaker@netapp.com, buchino@cisco.com,
+        ceph-devel@vger.kernel.org, clm@fb.com, cm224.lee@samsung.com,
+        dedekind1@gmail.com, dsterba@suse.com, dushistov@mail.ru,
+        elder@kernel.org, eparis@redhat.com, hiralpat@cisco.com,
+        idryomov@gmail.com, jack@suse.com, jaegeuk@kernel.org, jbacik@fb.com,
+        jejb@linux.vnet.ibm.com, jfs-discussion@lists.sourceforge.net,
+        jlbec@evilplan.org, john.stultz@linaro.org, linux-audit@redhat.com,
+        linux-btrfs@vger.kernel.org, linux-ext4@vger.kernel.org,
+        linux-f2fs-devel@lists.sourceforge.net, linux-mtd@lists.infradead.org,
+        linux-nfs@vger.kernel.org, linux-scsi@vger.kernel.org,
+        lustre-devel@lists.lustre.org, martin.petersen@oracle.com,
+        mfasheh@suse.com, ocfs2-devel@oss.oracle.com, paul@paul-moore.com,
+        sage@redhat.com, sfrench@samba.org, shaggy@kernel.org,
+        sramars@cisco.com, trond.myklebust@primarydata.com, zyan@redhat.com
+Subject: Re: [GIT PULL] [PATCH v4 00/26] Delete CURRENT_TIME and CURRENT_TIME_SEC macros
+Date: Tue, 23 Aug 2016 16:51:39 +0200
+Message-ID: <2295046.g7jOF3qsLW@wuerfel>
+In-Reply-To: <20160815162312.GA19794@kroah.com>
+References: <1471128518-24075-1-git-send-email-deepa.kernel@gmail.com> <20160815162312.GA19794@kroah.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20160809062943.GF19025@dastard>
+Content-Type: text/plain; charset="us-ascii"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Aug 09, 2016 at 04:29:43PM +1000, Dave Chinner wrote:
-> On Mon, Aug 08, 2016 at 10:41:32AM -0700, Darrick J. Wong wrote:
-> > On Mon, Aug 08, 2016 at 04:13:59PM +0800, Eryu Guan wrote:
-> > > On Thu, Jul 21, 2016 at 04:47:38PM -0700, Darrick J. Wong wrote:
-> > > > Add a few tests to stress the new swapext code for reflink and rmap.
-> > > > +_reflink_range "$testdir/file1" 0 "$testdir/file2" 0 $bytes >> "$seqres.full"
-> > > > +
-> > > > +echo "Defrag the big file"
-> > > > +old_nextents=$(xfs_io -c 'stat -v' $testdir/file1 | grep 'nextents' | cut -d ' ' -f 3)
-> > > 
-> > > There's a "_count_extents" helper, does that work for this case?
-> > 
-> > It can, though stat -v reports GETFSXATTR results, which should be faster than
-> > _count_extents because the latter FIEMAPs the entire file and counts lines.
-> > Seeing as XFS records the extent count in the inode, we might as well use it.
+On Monday, August 15, 2016 6:23:12 PM CEST Greg KH wrote:
+> On Sat, Aug 13, 2016 at 03:48:12PM -0700, Deepa Dinamani wrote:
+> > The series is aimed at getting rid of CURRENT_TIME and CURRENT_TIME_SEC macros.
+> > The macros are not y2038 safe. There is no plan to transition them into being
+> > y2038 safe.
+> > ktime_get_* api's can be used in their place. And, these are y2038 safe.
 > 
-> perhaps put a special xfs case in _count_extents() that does this
-> rather than FIEMAP?
+> Who are you execting to pull this huge patch series?
 
-Ok.  Seems simple enough to do.
+Dave Chinner suggested to have Al Viro pick up the whole series.
 
---D
+> Why not just introduce the new api call, wait for that to be merged, and
+> then push the individual patches through the different subsystems?
+> After half of those get ignored, then provide a single set of patches
+> that can go through Andrew or my trees.
 
-> 
-> Cheers,
-> 
-> Dave.
-> -- 
-> Dave Chinner
-> david@fromorbit.com
+That was the original approach for v4.7, but (along with requesting
+a number of reworks that Deepa incorporated), Linus preferred doing
+the API change done in one chunk, see
+https://patchwork.kernel.org/patch/9134249/
+
+	Arnd

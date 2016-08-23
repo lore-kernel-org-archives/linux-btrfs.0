@@ -1,45 +1,237 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [195.159.176.226] ([195.159.176.226]:50780 "EHLO
-        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
-        with ESMTP id S1751268AbcHWRR1 (ORCPT
+Received: from mail-qk0-f175.google.com ([209.85.220.175]:35068 "EHLO
+        mail-qk0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751292AbcHWSp3 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 23 Aug 2016 13:17:27 -0400
-Received: from list by blaine.gmane.org with local (Exim 4.84_2)
-        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-        id 1bcFKG-0000iK-8u
-        for linux-btrfs@vger.kernel.org; Tue, 23 Aug 2016 19:17:24 +0200
-To: linux-btrfs@vger.kernel.org
-From: Jean-Denis Girard <jd.girard@sysnux.pf>
-Subject: Re: Stuck btrfs-cleaner on 4.7 and 4.6
-Date: Tue, 23 Aug 2016 07:17:16 -1000
-Message-ID: <npi0er$aqo$1@blaine.gmane.org>
-References: <npds64$nu3$1@blaine.gmane.org>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-In-Reply-To: <npds64$nu3$1@blaine.gmane.org>
+        Tue, 23 Aug 2016 14:45:29 -0400
+Received: by mail-qk0-f175.google.com with SMTP id v123so115453281qkh.2
+        for <linux-btrfs@vger.kernel.org>; Tue, 23 Aug 2016 11:45:29 -0700 (PDT)
+MIME-Version: 1.0
+In-Reply-To: <f150f0b6-ed88-5e3a-240f-d92a629f381e@cn.fujitsu.com>
+References: <CAGj_d3D2OZt2nY622rp9NzxgAfKZ2iN1kLSQ2Ras-0fM+1+-ig@mail.gmail.com>
+ <fe8222d8-6463-8b4d-0613-b3639455463d@cn.fujitsu.com> <CAGj_d3C1nf3LGCXfWxoYNpWP2X81v-+eT22yBx17HgfMaP7ocg@mail.gmail.com>
+ <4a941169-1845-ba0e-6102-39920e1364b9@cn.fujitsu.com> <CAGj_d3C4=M7ZTvDhn+twROnf1qO4u-UXBmbP8HVQgfGiD91W6w@mail.gmail.com>
+ <f150f0b6-ed88-5e3a-240f-d92a629f381e@cn.fujitsu.com>
+From: Rakesh Sankeshi <rakesh.sankeshi@gmail.com>
+Date: Tue, 23 Aug 2016 11:38:03 -0700
+Message-ID: <CAGj_d3DcUKOj6xJ0O93nSzvyQUtzxwfb5WzxnfVLcZUXw4p8rA@mail.gmail.com>
+Subject: Re: btrfs quota issues
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Le 21/08/2016 à 17:39, Jean-Denis Girard a écrit :
-> Hi list,
-> 
-> After upgrading my Fedora 23 system from 4.4.12 to 4.7.2, I'm seeing one
-> btrfs-cleaner process stuck at 100% CPU. The problem disappears when
-> going back to 4.4 kernel (4.4.17), but is also present with Fedora
-> kernel 4.6.6-200.fc23.
+sorry, was out of the town.
 
-Just for the archives, I found that the problem was related to
-fragmentation. Mounting without autodefrag on 4.7.2 avoided
-btrfs-cleaner stuck at 100 % CPU. Then I did manually defragment all
-Btrfs volumes, and could then remount with autodefrag. Every thing is ok
-after ~12 hours uptime.
+not much load on the system at all.
 
+As we are hitting many issues in production, just using this system
+for my test purpose. Built few different filesystems. 1 with LZO
+compression, second one with ZLIB and third one without any
+compression. All has issues related to quota.
 
-Thanks,
--- 
-Jean-Denis Girard
+whenever there is an issue, I am getting quota exceeded error (EDQUOT).
 
-SysNux                   Systèmes   Linux   en   Polynésie  française
-https://www.sysnux.pf/   Tél: +689 40.50.10.40 / GSM: +689 87.797.527
+Please let me know if you still need more info.
 
 
+
+On Tue, Aug 16, 2016 at 5:56 PM, Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
+>
+>
+> At 08/17/2016 12:05 AM, Rakesh Sankeshi wrote:
+>>
+>> 2) after EDQUOT, can't write anymore.
+>>
+>> I can delete the data, but still can't write further
+>
+>
+> So it's a underflow now.
+>
+>>
+>> 3) tested it without compression and also with LZO and ZLIB.. all
+>> behave same way with qgroup. no consistency on when it hits the quota
+>> limit and don't understand on how it's calculating the numbers.
+>
+>
+> Even without compression?!
+>
+> That's a really big problem then.
+> Workload please, it's an urgent bug now.
+>
+> It's better to provide the scripts to reproduce it.
+>
+>
+>
+> And for the meaning of the numbers, for rfer(reference) it means the size of
+> all extents the subvolume has referred to, including both data and metadata.
+>
+> For excl(exclusive), it means the size of all extents that only belongs to
+> the subvolume.
+>
+> And since it's all about size of extents(on-disk), for compression case,
+> it's the size after compression.
+>
+> Also, if one subvolume only referred to part of an extent, the whole extent
+> size will be accounted.
+>
+>
+> Last but not least.
+> Considering there is quite a lot of report about hitting ENOSPC while there
+> is still a lot of unallocated space,
+> is it reporting error message like "No space left on device" (ENOSPC) or
+> "Quota exceeded"(EDQUOT)?
+>
+> Thanks,
+> Qu
+>
+>
+>>
+>> In case of ext4 and xfs, I can see visually that it's hitting the quota
+>> limit.
+>>
+>>
+>>
+>> On Mon, Aug 15, 2016 at 6:01 PM, Qu Wenruo <quwenruo@cn.fujitsu.com>
+>> wrote:
+>>>
+>>>
+>>>
+>>> At 08/16/2016 03:11 AM, Rakesh Sankeshi wrote:
+>>>>
+>>>>
+>>>> yes, subvol level.
+>>>>
+>>>> qgroupid         rfer         excl     max_rfer     max_excl parent
+>>>> child
+>>>>
+>>>> --------         ----         ----     --------     -------- ------
+>>>> -----
+>>>>
+>>>> 0/5          16.00KiB     16.00KiB         none         none ---     ---
+>>>>
+>>>> 0/258       119.48GiB    119.48GiB    200.00GiB         none ---     ---
+>>>>
+>>>> 0/259        92.57GiB     92.57GiB    200.00GiB         none ---     ---
+>>>>
+>>>>
+>>>> although I have 200GB limit on 2 subvols, running into issue at about
+>>>> 120 and 92GB itself
+>>>
+>>>
+>>>
+>>> 1) About workload
+>>> Would you mind to mention the work pattern of your write?
+>>>
+>>> Just dd data with LZO compression?
+>>> For compression part, it's a little complicated, as the reserved data
+>>> size
+>>> and on disk extent size are different.
+>>>
+>>> It's possible that at some code we leaked some reserved data space.
+>>>
+>>>
+>>> 2) Behavior after EDQUOT
+>>> And, after EDQUOT happens, can you write data into the subvolume?
+>>> If you can still write a lot of data (at least several giga), it seems to
+>>> be
+>>> something related with temporary reserved space.
+>>>
+>>> If not, and even can't remove any file due to EQUOTA, then it's almost
+>>> sure
+>>> we have underflowed the reserved data.
+>>> In that case, unmount and mount again will be the only workaround.
+>>> (In fact, not workaround at all)
+>>>
+>>> 3) Behavior without compression
+>>>
+>>> If it's OK for you, would you mind to test it without compression?
+>>> Currently we mostly use the assumption that on-disk extent size are the
+>>> same
+>>> with in-memory extent size (non-compression).
+>>>
+>>> So qgroup + compression is not the main concern before and is buggy.
+>>>
+>>> If without compression, qgroup works sanely, at least we can be sure that
+>>> the cause is qgroup + compression.
+>>>
+>>> Thanks,
+>>> Qu
+>>>
+>>>
+>>>>
+>>>>
+>>>> On Sun, Aug 14, 2016 at 7:11 PM, Qu Wenruo <quwenruo@cn.fujitsu.com>
+>>>> wrote:
+>>>>>
+>>>>>
+>>>>>
+>>>>>
+>>>>> At 08/12/2016 01:32 AM, Rakesh Sankeshi wrote:
+>>>>>>
+>>>>>>
+>>>>>>
+>>>>>> I set 200GB limit to one user and 100GB to another user.
+>>>>>>
+>>>>>> as soon as I reached 139GB and 53GB each, hitting the quota errors.
+>>>>>> anyway to workaround quota functionality on btrfs LZO compressed
+>>>>>> filesystem?
+>>>>>>
+>>>>>
+>>>>> Please paste "btrfs qgroup show -prce <mnt>" output if you are using
+>>>>> btrfs
+>>>>> qgroup/quota function.
+>>>>>
+>>>>> And, AFAIK btrfs qgroup is applied to subvolume, not user.
+>>>>>
+>>>>> So did you mean limit it to one subvolume belongs to one user?
+>>>>>
+>>>>> Thanks,
+>>>>> Qu
+>>>>>
+>>>>>>
+>>>>>>
+>>>>>> 4.7.0-040700-generic #201608021801 SMP
+>>>>>>
+>>>>>> btrfs-progs v4.7
+>>>>>>
+>>>>>>
+>>>>>> Label: none  uuid: 66a78faf-2052-4864-8a52-c5aec7a56ab8
+>>>>>>
+>>>>>> Total devices 2 FS bytes used 150.62GiB
+>>>>>>
+>>>>>> devid    1 size 1.00TiB used 78.01GiB path /dev/xvdc
+>>>>>>
+>>>>>> devid    2 size 1.00TiB used 78.01GiB path /dev/xvde
+>>>>>>
+>>>>>>
+>>>>>> Data, RAID0: total=150.00GiB, used=149.12GiB
+>>>>>>
+>>>>>> System, RAID1: total=8.00MiB, used=16.00KiB
+>>>>>>
+>>>>>> Metadata, RAID1: total=3.00GiB, used=1.49GiB
+>>>>>>
+>>>>>> GlobalReserve, single: total=512.00MiB, used=0.00B
+>>>>>>
+>>>>>>
+>>>>>> Filesystem      Size  Used Avail Use% Mounted on
+>>>>>>
+>>>>>> /dev/xvdc       2.0T  153G  1.9T   8% /test_lzo
+>>>>>> --
+>>>>>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs"
+>>>>>> in
+>>>>>> the body of a message to majordomo@vger.kernel.org
+>>>>>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>>>>>>
+>>>>>>
+>>>>>
+>>>>>
+>>>>
+>>>>
+>>>
+>>>
+>>
+>>
+>
+>

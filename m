@@ -1,80 +1,98 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from len.romanrm.net ([195.154.117.182]:37726 "EHLO len.romanrm.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751139AbcHWQHQ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 23 Aug 2016 12:07:16 -0400
-Date: Tue, 23 Aug 2016 21:06:15 +0500
-From: Roman Mamedov <rm@romanrm.net>
-To: Malte Westerhoff <MWesterhoff@visageimaging.com>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: btrfs partition fails to mount after power outage
-Message-ID: <20160823210615.06e30854@natsu>
-In-Reply-To: <FBA93BA3BE574649A3C97265F3CE0D54013A625685@ber-vi4.ad.vi>
-References: <FBA93BA3BE574649A3C97265F3CE0D54013A625685@ber-vi4.ad.vi>
+Received: from mail-oi0-f54.google.com ([209.85.218.54]:34352 "EHLO
+        mail-oi0-f54.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750862AbcHWQLA (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 23 Aug 2016 12:11:00 -0400
+Received: by mail-oi0-f54.google.com with SMTP id l203so202785271oib.1
+        for <linux-btrfs@vger.kernel.org>; Tue, 23 Aug 2016 09:10:59 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
- boundary="Sig_/G2WY+r1WOg7/qGuTFHasDNi"; protocol="application/pgp-signature"
+In-Reply-To: <E80D3AE3-69A9-40E7-9946-D2F66214828B@visageimaging.com>
+References: <FBA93BA3BE574649A3C97265F3CE0D54013A625685@ber-vi4.ad.vi>
+ <CAJCQCtQf2bhxWc6+nYoxYz8HquMOsj5hAfTc=5B2w0_1d8U9rQ@mail.gmail.com>
+ <B26BAB7E-A049-4730-B7AD-3E906026F25C@visageimaging.com> <CAJCQCtSuiSrLVLVmF9wktcMJqApET0DoOf=_2V=oEb=5sPPTgg@mail.gmail.com>
+ <E80D3AE3-69A9-40E7-9946-D2F66214828B@visageimaging.com>
+From: Chris Murphy <lists@colorremedies.com>
+Date: Tue, 23 Aug 2016 10:05:19 -0600
+Message-ID: <CAJCQCtTyuxQee_GzgZCY2WRC04LEXAOvbg_BW_uBVh+iTTgrEQ@mail.gmail.com>
+Subject: Re: btrfs partition fails to mount after power outage
+To: Malte Westerhoff <MWesterhoff@visageimaging.com>
+Cc: Chris Murphy <lists@colorremedies.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
---Sig_/G2WY+r1WOg7/qGuTFHasDNi
-Content-Type: text/plain; charset=US-ASCII
-Content-Transfer-Encoding: quoted-printable
+On Tue, Aug 23, 2016 at 9:51 AM, Malte Westerhoff
+<MWesterhoff@visageimaging.com> wrote:
+>     >>     btrfs-show-super -fa /d/dev/mapper/VGBIGRAID6-DATA1
+>
+>>    Where is this output?
+>
+> I had attached it as a separate file. Here it is again:
 
-On Tue, 23 Aug 2016 12:30:35 +0000
-Malte Westerhoff <MWesterhoff@visageimaging.com> wrote:
+Sorry, missed that there was an attachment.
 
-> parent transid verify failed on 7375567323136 wanted 52059 found 52045
-> parent transid verify failed on 7375567323136 wanted 52059 found 52045
-> Error: could not find btree root extent for root 12974
->=20
-> This is kernel 4.1.27 and btrfs-progs 4.1.2. We also tried the btrfs chec=
-k --repair with btrfs-progs 4.7 with the same result.
->=20
-> The partition with the problem is /dev/mapper/VGBIGRAID6-DATA1
-> (The partition is an LVM logical volume that is on top of an md raid6.)
->=20
-> Anything else that we can try in order to recover the volume?
 
-In my experience the last resort solution to this is to simply kill the
-problematic block with the "btrfs-corrupt-block" tool (compile from
-btrfs-progs source), then run "btrfs check --repair" again, and this time it
-should quite trivially set things right. See my success story about that:
-http://www.spinics.net/lists/linux-btrfs/msg53061.html
-and especially note the part about making COW snapshots of the entire block
-device (should be easier since you already run LVM), which will allow you to
-experiment while having an ability to undo.
 
-Some files will be lost or corrupted (likely only an extremely tiny portion,
-but not knowing which -- sucks), so ideally you should always have means to
-verify the integrity of user data on any FS. At least for those which change
-infrequently, e.g. media file libraries, always keep '*.sfv' files produced=
- by
-the 'cfv' tool beside everything. Also something along the lines of
+> backup_roots[4]:
+>         backup 0:
+>                 backup_tree_root:       3421559472128   gen: 52059      level: 1
+>                 backup_chunk_root:      20971520        gen: 52005      level: 1
+>                 backup_extent_root:     3421770170368   gen: 52059      level: 3
+>                 backup_fs_root:         29556736        gen: 6  level: 0
+>                 backup_dev_root:        7304828502016   gen: 52059      level: 1
+>                 backup_csum_root:       7315970588672   gen: 52059      level: 3
+>                 backup_total_bytes:     17592186044416
+>                 backup_bytes_used:      7386753196032
+>                 backup_num_devices:     1
+>
+>         backup 1:
+>                 backup_tree_root:       7442297503744   gen: 52056      level: 1
+>                 backup_chunk_root:      20971520        gen: 52005      level: 1
+>                 backup_extent_root:     7442294161408   gen: 52056      level: 3
+>                 backup_fs_root:         29556736        gen: 6  level: 0
+>                 backup_dev_root:        7254075654144   gen: 52005      level: 1
+>                 backup_csum_root:       7442298175488   gen: 52056      level: 3
+>                 backup_total_bytes:     17592186044416
+>                 backup_bytes_used:      7386753163264
+>                 backup_num_devices:     1
+>
+>         backup 2:
+>                 backup_tree_root:       7442289229824   gen: 52057      level: 1
+>                 backup_chunk_root:      20971520        gen: 52005      level: 1
+>                 backup_extent_root:     7442283692032   gen: 52057      level: 3
+>                 backup_fs_root:         29556736        gen: 6  level: 0
+>                 backup_dev_root:        7254075654144   gen: 52005      level: 1
+>                 backup_csum_root:       7442294063104   gen: 52057      level: 3
+>                 backup_total_bytes:     17592186044416
+>                 backup_bytes_used:      7386753179648
+>                 backup_num_devices:     1
+>
+>         backup 3:
+>                 backup_tree_root:       7442297503744   gen: 52058      level: 1
+>                 backup_chunk_root:      20971520        gen: 52005      level: 1
+>                 backup_extent_root:     7442284920832   gen: 52058      level: 3
+>                 backup_fs_root:         29556736        gen: 6  level: 0
+>                 backup_dev_root:        7254075654144   gen: 52005      level: 1
+>                 backup_csum_root:       7442299355136   gen: 52058      level: 3
+>                 backup_total_bytes:     17592186044416
+>                 backup_bytes_used:      7386753179648
+>                 backup_num_devices:     1
 
-  cd /mnt/mydata && find > /somewhereelse/mydata-`date -Iseconds`.lst
 
-in crontab.
+Uhhhh, is anyone else having a WTF moment? Why is the backup_fs_root
+generation 6 on all of these backup roots? Doesn't that seem really
+unlikely? On all of my filesystems, the fs_root has a lower
+generation, but isn't separated by this many generations.
 
-Before starting you can also try checking what kind of data the problematic
-block contains, IIRC it would be (but not guaranteed to be helpful):
+What do you get for:
 
-  btrfs-debug-tree -b 7375567323136 /dev/mapper/VGBIGRAID6-DATA1
+btrfs-debug-tree -b 29556736 /dev/mapper/VGBIGRAID6-DATA1
 
---=20
-With respect,
-Roman
 
---Sig_/G2WY+r1WOg7/qGuTFHasDNi
-Content-Type: application/pgp-signature
-Content-Description: OpenPGP digital signature
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2
 
-iEYEARECAAYFAle8dH8ACgkQTLKSvz+PZwhnHgCfR2XrkMkHjAC1lZTTg2UchOfD
-WXMAn0HeaxKcMuaoia9oeRnVTybs0qBl
-=G5wF
------END PGP SIGNATURE-----
 
---Sig_/G2WY+r1WOg7/qGuTFHasDNi--
+-- 
+Chris Murphy

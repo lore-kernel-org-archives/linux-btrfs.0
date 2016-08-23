@@ -1,28 +1,46 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:58507 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S932574AbcHXLyj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 24 Aug 2016 07:54:39 -0400
-Date: Wed, 24 Aug 2016 13:53:30 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Luis Henriques <luis.henriques@canonical.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs: Fix =?utf-8?Q?warning_?=
- =?utf-8?B?InZhcmlhYmxlIOKAmGJsb2Nrc2l6ZeKAmQ==?= set but not used"
-Message-ID: <20160824115330.GN16983@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20160823222353.9698-1-luis.henriques@canonical.com>
+Received: from youngberry.canonical.com ([91.189.89.112]:38984 "EHLO
+        youngberry.canonical.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1755808AbcHWWYY (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 23 Aug 2016 18:24:24 -0400
+From: Luis Henriques <luis.henriques@canonical.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Luis Henriques <luis.henriques@canonical.com>
+Subject: [PATCH] =?UTF-8?q?btrfs:=20Fix=20warning=20"variable=20?= =?UTF-8?q?=E2=80=98blocksize=E2=80=99=20set=20but=20not=20used"?=
+Date: Tue, 23 Aug 2016 23:23:53 +0100
+Message-Id: <20160823222353.9698-1-luis.henriques@canonical.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20160823222353.9698-1-luis.henriques@canonical.com>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Aug 23, 2016 at 11:23:53PM +0100, Luis Henriques wrote:
-> Variable 'blocksize' in reada_walk_down() is not used since commit
-> d3e46fea1b1e ("btrfs: sink blocksize parameter to readahead_tree_block").
-> This patch simply removes this variable.
-> 
-> Signed-off-by: Luis Henriques <luis.henriques@canonical.com>
+Variable 'blocksize' in reada_walk_down() is not used since commit
+d3e46fea1b1e ("btrfs: sink blocksize parameter to readahead_tree_block").
+This patch simply removes this variable.
 
-Reviewed-by: David Sterba <dsterba@suse.com>
+Signed-off-by: Luis Henriques <luis.henriques@canonical.com>
+---
+ fs/btrfs/extent-tree.c | 2 --
+ 1 file changed, 2 deletions(-)
+
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 61b494e8e604..41d03a50056f 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -8450,7 +8450,6 @@ static noinline void reada_walk_down(struct btrfs_trans_handle *trans,
+ 	u64 refs;
+ 	u64 flags;
+ 	u32 nritems;
+-	u32 blocksize;
+ 	struct btrfs_key key;
+ 	struct extent_buffer *eb;
+ 	int ret;
+@@ -8468,7 +8467,6 @@ static noinline void reada_walk_down(struct btrfs_trans_handle *trans,
+ 
+ 	eb = path->nodes[wc->level];
+ 	nritems = btrfs_header_nritems(eb);
+-	blocksize = root->nodesize;
+ 
+ 	for (slot = path->slots[wc->level]; slot < nritems; slot++) {
+ 		if (nread >= wc->reada_count)

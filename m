@@ -1,46 +1,79 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from youngberry.canonical.com ([91.189.89.112]:38984 "EHLO
-        youngberry.canonical.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1755808AbcHWWYY (ORCPT
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:64022 "EHLO
+        mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
+        by vger.kernel.org with ESMTP id S1753322AbcHXP6K (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 23 Aug 2016 18:24:24 -0400
-From: Luis Henriques <luis.henriques@canonical.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Luis Henriques <luis.henriques@canonical.com>
-Subject: [PATCH] =?UTF-8?q?btrfs:=20Fix=20warning=20"variable=20?= =?UTF-8?q?=E2=80=98blocksize=E2=80=99=20set=20but=20not=20used"?=
-Date: Tue, 23 Aug 2016 23:23:53 +0100
-Message-Id: <20160823222353.9698-1-luis.henriques@canonical.com>
+        Wed, 24 Aug 2016 11:58:10 -0400
+Received: from pps.filterd (m0089730.ppops.net [127.0.0.1])
+        by m0089730.ppops.net (8.16.0.17/8.16.0.17) with SMTP id u7OFsZe0006000
+        for <linux-btrfs@vger.kernel.org>; Wed, 24 Aug 2016 08:58:09 -0700
+Received: from mail.thefacebook.com ([199.201.64.23])
+        by m0089730.ppops.net with ESMTP id 250upxfwb3-3
+        (version=TLSv1 cipher=ECDHE-RSA-AES256-SHA bits=256 verify=NOT)
+        for <linux-btrfs@vger.kernel.org>; Wed, 24 Aug 2016 08:58:09 -0700
+From: Josef Bacik <jbacik@fb.com>
+To: <linux-btrfs@vger.kernel.org>, <kernel-team@fb.com>
+Subject: [PATCH][v2] Btrfs: kill invalid ASSERT() in process_all_refs()
+Date: Wed, 24 Aug 2016 11:57:52 -0400
+Message-ID: <1472054272-23792-1-git-send-email-jbacik@fb.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Variable 'blocksize' in reada_walk_down() is not used since commit
-d3e46fea1b1e ("btrfs: sink blocksize parameter to readahead_tree_block").
-This patch simply removes this variable.
+Suppose you have the following tree in snap1 on a file system mounted with -o
+inode_cache so that inode numbers are recycled
 
-Signed-off-by: Luis Henriques <luis.henriques@canonical.com>
+└── [    258]  a
+    └── [    257]  b
+
+and then you remove b, rename a to c, and then re-create b in c so you have the
+following tree
+
+└── [    258]  c
+    └── [    257]  b
+
+and then you try to do an incremental send you will hit
+
+ASSERT(pending_move == 0);
+
+in process_all_refs().  This is because we assume that any recycling of inodes
+will not have a pending change in our path, which isn't the case.  This is the
+case for the DELETE side, since we want to remove the old file using the old
+path, but on the create side we could have a pending move and need to do the
+normal pending rename dance.  So remove this ASSERT() and put a comment about
+why we ignore pending_move.  Thanks,
+
+Signed-off-by: Josef Bacik <jbacik@fb.com>
 ---
- fs/btrfs/extent-tree.c | 2 --
- 1 file changed, 2 deletions(-)
+v1->v2:
+-turns out send does the right thing without the ASSERT() in place, I must have
+ loaded the wrong module when testing, so just kill the ASSERT().
+-adjusted the changelog to reflect the actual fix.
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 61b494e8e604..41d03a50056f 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -8450,7 +8450,6 @@ static noinline void reada_walk_down(struct btrfs_trans_handle *trans,
- 	u64 refs;
- 	u64 flags;
- 	u32 nritems;
--	u32 blocksize;
- 	struct btrfs_key key;
- 	struct extent_buffer *eb;
- 	int ret;
-@@ -8468,7 +8467,6 @@ static noinline void reada_walk_down(struct btrfs_trans_handle *trans,
+ fs/btrfs/send.c | 8 +++++---
+ 1 file changed, 5 insertions(+), 3 deletions(-)
+
+diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
+index b71dd29..375c45b 100644
+--- a/fs/btrfs/send.c
++++ b/fs/btrfs/send.c
+@@ -4126,10 +4126,12 @@ static int process_all_refs(struct send_ctx *sctx,
+ 	}
+ 	btrfs_release_path(path);
  
- 	eb = path->nodes[wc->level];
- 	nritems = btrfs_header_nritems(eb);
--	blocksize = root->nodesize;
- 
- 	for (slot = path->slots[wc->level]; slot < nritems; slot++) {
- 		if (nread >= wc->reada_count)
++	/*
++	 * We don't actually care about pending_move as we are simply
++	 * re-creating this inode and will be rename'ing it into place once we
++	 * rename the parent directory.
++	 */
+ 	ret = process_recorded_refs(sctx, &pending_move);
+-	/* Only applicable to an incremental send. */
+-	ASSERT(pending_move == 0);
+-
+ out:
+ 	btrfs_free_path(path);
+ 	return ret;
+-- 
+1.8.3.1
+

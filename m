@@ -1,82 +1,155 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:59416 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1756916AbcHWKnp (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 23 Aug 2016 06:43:45 -0400
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 3EAA7AD9D
-        for <linux-btrfs@vger.kernel.org>; Tue, 23 Aug 2016 10:26:26 +0000 (UTC)
-From: David Sterba <dsterba@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.com>
-Subject: [PATCH 12/13] btrfs-progs: mkfs: help and usage now to to stdout
-Date: Tue, 23 Aug 2016 12:25:16 +0200
-Message-Id: <1471947917-5324-13-git-send-email-dsterba@suse.com>
-In-Reply-To: <1471947917-5324-1-git-send-email-dsterba@suse.com>
+Received: from aserp1040.oracle.com ([141.146.126.69]:21434 "EHLO
+        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1753890AbcHXKYI (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 24 Aug 2016 06:24:08 -0400
+Subject: Re: [PATCH 01/13] btrfs-progs: pass OPEN_CTREE flags as unsigned
+To: David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
 References: <1471947917-5324-1-git-send-email-dsterba@suse.com>
+ <1471947917-5324-2-git-send-email-dsterba@suse.com>
+From: Anand Jain <anand.jain@oracle.com>
+Message-ID: <1517b296-770a-983c-bbbf-0cb5520173c4@oracle.com>
+Date: Wed, 24 Aug 2016 18:24:44 +0800
+MIME-Version: 1.0
+In-Reply-To: <1471947917-5324-2-git-send-email-dsterba@suse.com>
+Content-Type: text/plain; charset=windows-1252; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Signed-off-by: David Sterba <dsterba@suse.com>
----
- mkfs.c | 38 +++++++++++++++++++-------------------
- 1 file changed, 19 insertions(+), 19 deletions(-)
 
-diff --git a/mkfs.c b/mkfs.c
-index f063323903dc..ef0b099a58d7 100644
---- a/mkfs.c
-+++ b/mkfs.c
-@@ -344,31 +344,31 @@ static int create_data_reloc_tree(struct btrfs_trans_handle *trans,
- 
- static void print_usage(int ret)
- {
--	fprintf(stderr, "usage: mkfs.btrfs [options] dev [ dev ... ]\n");
--	fprintf(stderr, "options:\n");
--	fprintf(stderr, "\t-A|--alloc-start START  the offset to start the FS\n");
--	fprintf(stderr, "\t-b|--byte-count SIZE    total number of bytes in the FS\n");
--	fprintf(stderr, "\t-d|--data PROFILE       data profile, raid0, raid1, raid5, raid6, raid10, dup or single\n");
--	fprintf(stderr, "\t-f|--force              force overwrite of existing filesystem\n");
--	fprintf(stderr, "\t-l|--leafsize SIZE      deprecated, alias for nodesize\n");
--	fprintf(stderr, "\t-L|--label LABEL        set a label\n");
--	fprintf(stderr, "\t-m|--metadata PROFILE   metadata profile, values like data profile\n");
--	fprintf(stderr, "\t-M|--mixed              mix metadata and data together\n");
--	fprintf(stderr, "\t-n|--nodesize SIZE      size of btree nodes\n");
--	fprintf(stderr, "\t-s|--sectorsize SIZE    min block allocation (may not mountable by current kernel)\n");
--	fprintf(stderr, "\t-r|--rootdir DIR        the source directory\n");
--	fprintf(stderr, "\t-K|--nodiscard          do not perform whole device TRIM\n");
--	fprintf(stderr, "\t-O|--features LIST      comma separated list of filesystem features, use '-O list-all' to list features\n");
--	fprintf(stderr, "\t-U|--uuid UUID          specify the filesystem UUID\n");
--	fprintf(stderr, "\t-q|--quiet              no messages except errors\n");
--	fprintf(stderr, "\t-V|--version            print the mkfs.btrfs version and exit\n");
-+	printf("usage: mkfs.btrfs [options] dev [ dev ... ]\n");
-+	printf("options:\n");
-+	printf("\t-A|--alloc-start START  the offset to start the FS\n");
-+	printf("\t-b|--byte-count SIZE    total number of bytes in the FS\n");
-+	printf("\t-d|--data PROFILE       data profile, raid0, raid1, raid5, raid6, raid10, dup or single\n");
-+	printf("\t-f|--force              force overwrite of existing filesystem\n");
-+	printf("\t-l|--leafsize SIZE      deprecated, alias for nodesize\n");
-+	printf("\t-L|--label LABEL        set a label\n");
-+	printf("\t-m|--metadata PROFILE   metadata profile, values like data profile\n");
-+	printf("\t-M|--mixed              mix metadata and data together\n");
-+	printf("\t-n|--nodesize SIZE      size of btree nodes\n");
-+	printf("\t-s|--sectorsize SIZE    min block allocation (may not mountable by current kernel)\n");
-+	printf("\t-r|--rootdir DIR        the source directory\n");
-+	printf("\t-K|--nodiscard          do not perform whole device TRIM\n");
-+	printf("\t-O|--features LIST      comma separated list of filesystem features, use '-O list-all' to list features\n");
-+	printf("\t-U|--uuid UUID          specify the filesystem UUID\n");
-+	printf("\t-q|--quiet              no messages except errors\n");
-+	printf("\t-V|--version            print the mkfs.btrfs version and exit\n");
- 	exit(ret);
- }
- 
- static void print_version(void) __attribute__((noreturn));
- static void print_version(void)
- {
--	fprintf(stderr, "mkfs.btrfs, part of %s\n", PACKAGE_STRING);
-+	printf("mkfs.btrfs, part of %s\n", PACKAGE_STRING);
- 	exit(0);
- }
- 
--- 
-2.7.1
 
+All patches looks good. nice cleanups.
+
+
+Reviewed-by: Anand Jain <anand.jain@oracle.com>
+
+Thanks.
+
+
+On 08/23/2016 06:25 PM, David Sterba wrote:
+> As we're passing a set of flags, the enum type is not appropriate.
+>
+> Signed-off-by: David Sterba <dsterba@suse.com>
+> ---
+>  btrfstune.c  |  2 +-
+>  cmds-check.c |  2 +-
+>  disk-io.c    | 12 ++++++------
+>  disk-io.h    |  8 ++++----
+>  4 files changed, 12 insertions(+), 12 deletions(-)
+>
+> diff --git a/btrfstune.c b/btrfstune.c
+> index ac559fb9e3de..93b25e8cece8 100644
+> --- a/btrfstune.c
+> +++ b/btrfstune.c
+> @@ -389,7 +389,7 @@ static void print_usage(void)
+>  int main(int argc, char *argv[])
+>  {
+>  	struct btrfs_root *root;
+> -	enum btrfs_open_ctree_flags ctree_flags = OPEN_CTREE_WRITES;
+> +	unsigned ctree_flags = OPEN_CTREE_WRITES;
+>  	int success = 0;
+>  	int total = 0;
+>  	int seeding_flag = 0;
+> diff --git a/cmds-check.c b/cmds-check.c
+> index fc15ce98f4bb..0ddfd24a4d8e 100644
+> --- a/cmds-check.c
+> +++ b/cmds-check.c
+> @@ -11178,7 +11178,7 @@ int cmd_check(int argc, char **argv)
+>  	int readonly = 0;
+>  	int qgroup_report = 0;
+>  	int qgroups_repaired = 0;
+> -	enum btrfs_open_ctree_flags ctree_flags = OPEN_CTREE_EXCLUSIVE;
+> +	unsigned ctree_flags = OPEN_CTREE_EXCLUSIVE;
+>
+>  	while(1) {
+>  		int c;
+> diff --git a/disk-io.c b/disk-io.c
+> index 3647ecca7e63..279e38b74c39 100644
+> --- a/disk-io.c
+> +++ b/disk-io.c
+> @@ -932,7 +932,7 @@ static int find_best_backup_root(struct btrfs_super_block *super)
+>  }
+>
+>  static int setup_root_or_create_block(struct btrfs_fs_info *fs_info,
+> -				      enum btrfs_open_ctree_flags flags,
+> +				      unsigned flags,
+>  				      struct btrfs_root *info_root,
+>  				      u64 objectid, char *str)
+>  {
+> @@ -961,7 +961,7 @@ static int setup_root_or_create_block(struct btrfs_fs_info *fs_info,
+>  }
+>
+>  int btrfs_setup_all_roots(struct btrfs_fs_info *fs_info, u64 root_tree_bytenr,
+> -			  enum btrfs_open_ctree_flags flags)
+> +			  unsigned flags)
+>  {
+>  	struct btrfs_super_block *sb = fs_info->super_copy;
+>  	struct btrfs_root *root;
+> @@ -1217,7 +1217,7 @@ static struct btrfs_fs_info *__open_ctree_fd(int fp, const char *path,
+>  					     u64 sb_bytenr,
+>  					     u64 root_tree_bytenr,
+>  					     u64 chunk_root_bytenr,
+> -					     enum btrfs_open_ctree_flags flags)
+> +					     unsigned flags)
+>  {
+>  	struct btrfs_fs_info *fs_info;
+>  	struct btrfs_super_block *disk_super;
+> @@ -1323,7 +1323,7 @@ static struct btrfs_fs_info *__open_ctree_fd(int fp, const char *path,
+>  struct btrfs_fs_info *open_ctree_fs_info(const char *filename,
+>  					 u64 sb_bytenr, u64 root_tree_bytenr,
+>  					 u64 chunk_root_bytenr,
+> -					 enum btrfs_open_ctree_flags flags)
+> +					 unsigned flags)
+>  {
+>  	int fp;
+>  	int ret;
+> @@ -1356,7 +1356,7 @@ struct btrfs_fs_info *open_ctree_fs_info(const char *filename,
+>  }
+>
+>  struct btrfs_root *open_ctree(const char *filename, u64 sb_bytenr,
+> -			      enum btrfs_open_ctree_flags flags)
+> +			      unsigned flags)
+>  {
+>  	struct btrfs_fs_info *info;
+>
+> @@ -1371,7 +1371,7 @@ struct btrfs_root *open_ctree(const char *filename, u64 sb_bytenr,
+>  }
+>
+>  struct btrfs_root *open_ctree_fd(int fp, const char *path, u64 sb_bytenr,
+> -				 enum btrfs_open_ctree_flags flags)
+> +				 unsigned flags)
+>  {
+>  	struct btrfs_fs_info *info;
+>
+> diff --git a/disk-io.h b/disk-io.h
+> index d6fb9822614f..9ebb2366b933 100644
+> --- a/disk-io.h
+> +++ b/disk-io.h
+> @@ -103,7 +103,7 @@ void btrfs_free_fs_info(struct btrfs_fs_info *fs_info);
+>  struct btrfs_fs_info *btrfs_new_fs_info(int writable, u64 sb_bytenr);
+>  int btrfs_check_fs_compatibility(struct btrfs_super_block *sb, int writable);
+>  int btrfs_setup_all_roots(struct btrfs_fs_info *fs_info, u64 root_tree_bytenr,
+> -			  enum btrfs_open_ctree_flags flags);
+> +			  unsigned flags);
+>  void btrfs_release_all_roots(struct btrfs_fs_info *fs_info);
+>  void btrfs_cleanup_all_caches(struct btrfs_fs_info *fs_info);
+>  int btrfs_scan_fs_devices(int fd, const char *path,
+> @@ -113,13 +113,13 @@ int btrfs_setup_chunk_tree_and_device_map(struct btrfs_fs_info *fs_info,
+>  			  u64 chunk_root_bytenr);
+>
+>  struct btrfs_root *open_ctree(const char *filename, u64 sb_bytenr,
+> -			      enum btrfs_open_ctree_flags flags);
+> +			      unsigned flags);
+>  struct btrfs_root *open_ctree_fd(int fp, const char *path, u64 sb_bytenr,
+> -				 enum btrfs_open_ctree_flags flags);
+> +				 unsigned flags);
+>  struct btrfs_fs_info *open_ctree_fs_info(const char *filename,
+>  					 u64 sb_bytenr, u64 root_tree_bytenr,
+>  					 u64 chunk_root_bytenr,
+> -					 enum btrfs_open_ctree_flags flags);
+> +					 unsigned flags);
+>  int close_ctree_fs_info(struct btrfs_fs_info *fs_info);
+>  static inline int close_ctree(struct btrfs_root *root)
+>  {
+>

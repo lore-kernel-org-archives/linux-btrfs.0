@@ -1,58 +1,72 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.kundenserver.de ([212.227.126.135]:59472 "EHLO
-        mout.kundenserver.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1754258AbcHWPCc (ORCPT
+Received: from mail-it0-f68.google.com ([209.85.214.68]:33090 "EHLO
+        mail-it0-f68.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1753198AbcHXJJB (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 23 Aug 2016 11:02:32 -0400
-From: Arnd Bergmann <arnd@arndb.de>
-To: Greg KH <gregkh@linuxfoundation.org>
-Cc: Deepa Dinamani <deepa.kernel@gmail.com>, linux-fsdevel@vger.kernel.org,
-        linux-kernel@vger.kernel.org, tglx@linutronix.de,
-        torvalds@linux-foundation.org, tytso@mit.edu, viro@zeniv.linux.org.uk,
-        y2038@lists.linaro.org, adilger.kernel@dilger.ca,
-        adrian.hunter@intel.com, anna.schumaker@netapp.com, buchino@cisco.com,
-        ceph-devel@vger.kernel.org, clm@fb.com, cm224.lee@samsung.com,
-        dedekind1@gmail.com, dsterba@suse.com, dushistov@mail.ru,
-        elder@kernel.org, eparis@redhat.com, hiralpat@cisco.com,
-        idryomov@gmail.com, jack@suse.com, jaegeuk@kernel.org, jbacik@fb.com,
-        jejb@linux.vnet.ibm.com, jfs-discussion@lists.sourceforge.net,
-        jlbec@evilplan.org, john.stultz@linaro.org, linux-audit@redhat.com,
-        linux-btrfs@vger.kernel.org, linux-ext4@vger.kernel.org,
-        linux-f2fs-devel@lists.sourceforge.net, linux-mtd@lists.infradead.org,
-        linux-nfs@vger.kernel.org, linux-scsi@vger.kernel.org,
-        lustre-devel@lists.lustre.org, martin.petersen@oracle.com,
-        mfasheh@suse.com, ocfs2-devel@oss.oracle.com, paul@paul-moore.com,
-        sage@redhat.com, sfrench@samba.org, shaggy@kernel.org,
-        sramars@cisco.com, trond.myklebust@primarydata.com, zyan@redhat.com
-Subject: Re: [GIT PULL] [PATCH v4 00/26] Delete CURRENT_TIME and CURRENT_TIME_SEC macros
-Date: Tue, 23 Aug 2016 16:51:39 +0200
-Message-ID: <2295046.g7jOF3qsLW@wuerfel>
-In-Reply-To: <20160815162312.GA19794@kroah.com>
-References: <1471128518-24075-1-git-send-email-deepa.kernel@gmail.com> <20160815162312.GA19794@kroah.com>
+        Wed, 24 Aug 2016 05:09:01 -0400
+Received: by mail-it0-f68.google.com with SMTP id d65so1490455ith.0
+        for <linux-btrfs@vger.kernel.org>; Wed, 24 Aug 2016 02:08:10 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Reply-To: fdmanana@gmail.com
+In-Reply-To: <20160824041300.20072-1-quwenruo@cn.fujitsu.com>
+References: <20160824041300.20072-1-quwenruo@cn.fujitsu.com>
+From: Filipe Manana <fdmanana@gmail.com>
+Date: Wed, 24 Aug 2016 09:54:16 +0100
+Message-ID: <CAL3q7H5joucRg1V_Ddmw0CU_rPfQ0AsEYW8qw1KRxO+hnZm5cA@mail.gmail.com>
+Subject: Re: [PATCH] btrfs: Fix extent map leak in find_first_block_group
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        Liu Bo <bo.li.liu@oracle.com>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Monday, August 15, 2016 6:23:12 PM CEST Greg KH wrote:
-> On Sat, Aug 13, 2016 at 03:48:12PM -0700, Deepa Dinamani wrote:
-> > The series is aimed at getting rid of CURRENT_TIME and CURRENT_TIME_SEC macros.
-> > The macros are not y2038 safe. There is no plan to transition them into being
-> > y2038 safe.
-> > ktime_get_* api's can be used in their place. And, these are y2038 safe.
-> 
-> Who are you execting to pull this huge patch series?
+On Wed, Aug 24, 2016 at 5:13 AM, Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
+> The following commit introduced the extent map leak:
+> commit 6fb37b756acce6d6e045f79c3764206033f617b4
+> Author: Liu Bo <bo.li.liu@oracle.com>
+> Date:   Wed Jun 22 18:31:27 2016 -0700
+>
+>     Btrfs: check inconsistence between chunk and block group
+>
+> This leads to slab warning at rmmod time.
+>
+> Cc: Liu Bo <bo.li.liu@oracle.com>
+> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 
-Dave Chinner suggested to have Al Viro pick up the whole series.
+https://patchwork.kernel.org/patch/9288751/
 
-> Why not just introduce the new api call, wait for that to be merged, and
-> then push the individual patches through the different subsystems?
-> After half of those get ignored, then provide a single set of patches
-> that can go through Andrew or my trees.
+> ---
+>  fs/btrfs/extent-tree.c | 1 +
+>  1 file changed, 1 insertion(+)
+>
+> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+> index c2b81b0..e621823 100644
+> --- a/fs/btrfs/extent-tree.c
+> +++ b/fs/btrfs/extent-tree.c
+> @@ -9905,6 +9905,7 @@ static int find_first_block_group(struct btrfs_root *root,
+>                                 ret = -ENOENT;
+>                         } else {
+>                                 ret = 0;
+> +                               free_extent_map(em);
+>                         }
+>                         goto out;
+>                 }
+> --
+> 2.7.4
+>
+>
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 
-That was the original approach for v4.7, but (along with requesting
-a number of reworks that Deepa incorporated), Linus preferred doing
-the API change done in one chunk, see
-https://patchwork.kernel.org/patch/9134249/
 
-	Arnd
+
+-- 
+Filipe David Manana,
+
+"People will forget what you said,
+ people will forget what you did,
+ but people will never forget how you made them feel."

@@ -1,65 +1,28 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:48730 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755340AbcHCT3M (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 3 Aug 2016 15:29:12 -0400
-From: Liu Bo <bo.li.liu@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.cz>
-Subject: [PATCH] Btrfs: fix memory leak in reading btree blocks
-Date: Wed,  3 Aug 2016 12:33:01 -0700
-Message-Id: <1470252781-9455-1-git-send-email-bo.li.liu@oracle.com>
+Received: from mx2.suse.de ([195.135.220.15]:58815 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1753142AbcHXL44 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 24 Aug 2016 07:56:56 -0400
+Date: Wed, 24 Aug 2016 13:55:42 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Luis Henriques <luis.henriques@canonical.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 1/2] btrfs: Fix =?utf-8?Q?warni?=
+ =?utf-8?B?bmcgInZhcmlhYmxlIOKAmGdlbuKAmQ==?= set but not used"
+Message-ID: <20160824115542.GO16983@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20160823222323.9613-1-luis.henriques@canonical.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20160823222323.9613-1-luis.henriques@canonical.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-So we can read a btree block via readahead or intentional read,
-and we can end up with a memory leak when something happens as
-follows,
-1) readahead starts to read block A but does not wait for read
-   completion,
-2) btree_readpage_end_io_hook finds that block A is corrupted,
-   and it needs to clear all block A's pages' uptodate bit.
-3) meanwhile an intentional read kicks in and checks block A's
-   pages' uptodate to decide which page needs to be read.
-4) when some pages have the uptodate bit during 3)'s check so
-   3) doesn't count them for eb->io_pages, but they are later
-   cleared by 2) so we has to readpage on the page, we get
-   the wrong eb->io_pages which results in a memory leak of
-   this block.
+On Tue, Aug 23, 2016 at 11:23:23PM +0100, Luis Henriques wrote:
+> Variable 'gen' in reada_for_search() is not used since commit 58dc4ce43251
+> ("btrfs: remove unused parameter from readahead_tree_block").  This patch
+> simply removes this variable.
+> 
+> Signed-off-by: Luis Henriques <luis.henriques@canonical.com>
 
-This fixes the problem by firstly getting all pages's locking and
-then checking pages' uptodate bit.
-
-Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
----
- fs/btrfs/extent_io.c | 9 +++++++++
- 1 file changed, 9 insertions(+)
-
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index bd29b9b..a77050e 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -5215,11 +5215,20 @@ int read_extent_buffer_pages(struct extent_io_tree *tree,
- 			lock_page(page);
- 		}
- 		locked_pages++;
-+	}
-+	/*
-+	 * We need to firstly lock all pages to make sure that
-+	 * the uptodate bit of our pages won't be affected by
-+	 * clear_extent_buffer_uptodate().
-+	 */
-+	for (i = start_i; i < num_pages; i++) {
-+		page = eb->pages[i];
- 		if (!PageUptodate(page)) {
- 			num_reads++;
- 			all_uptodate = 0;
- 		}
- 	}
-+
- 	if (all_uptodate) {
- 		if (start_i == 0)
- 			set_bit(EXTENT_BUFFER_UPTODATE, &eb->bflags);
--- 
-2.5.5
-
+Reviewed-by: David Sterba <dsterba@suse.com>

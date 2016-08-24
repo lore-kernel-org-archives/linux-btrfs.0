@@ -1,87 +1,165 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:55305 "EHLO
-        mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1754508AbcHZXpI (ORCPT
+Received: from mail-it0-f66.google.com ([209.85.214.66]:34037 "EHLO
+        mail-it0-f66.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752389AbcHXJJB (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 26 Aug 2016 19:45:08 -0400
-Date: Fri, 26 Aug 2016 19:36:24 -0400
-From: Chris Mason <clm@fb.com>
-To: Linus Torvalds <torvalds@linux-foundation.org>,
-        LKML <linux-kernel@vger.kernel.org>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: [GIT PULL] Btrfs
-Message-ID: <20160826233624.jao5mztbxhjikm7e@floor.thefacebook.com>
+        Wed, 24 Aug 2016 05:09:01 -0400
+Received: by mail-it0-f66.google.com with SMTP id e63so1487304ith.1
+        for <linux-btrfs@vger.kernel.org>; Wed, 24 Aug 2016 02:07:30 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Reply-To: fdmanana@gmail.com
+In-Reply-To: <1471972923-4833-1-git-send-email-jbacik@fb.com>
+References: <1471972923-4833-1-git-send-email-jbacik@fb.com>
+From: Filipe Manana <fdmanana@gmail.com>
+Date: Wed, 24 Aug 2016 10:07:29 +0100
+Message-ID: <CAL3q7H6pnkr+BDyAc4sMo7i15Lrmee+GUfc6cJnBFfpOFJVZiQ@mail.gmail.com>
+Subject: Re: [PATCH] Btrfs: handle pending renames with recycled inodes properly
+To: Josef Bacik <jbacik@fb.com>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        kernel-team@fb.com
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Linus,
+On Tue, Aug 23, 2016 at 6:22 PM, Josef Bacik <jbacik@fb.com> wrote:
+> Suppose you have the following tree in snap1 on a file system mounted with -o
+> inode_cache so that inode numbers are recycled
+>
+> └── [    258]  a
+>     └── [    257]  b
+>
+> and then you remove b, rename a to c, and then re-create b in c so you have the
+> following tree
+>
+> └── [    258]  c
+>     └── [    257]  b
+>
+> and then you try to do an incremental send you will hit
+>
+> ASSERT(pending_move == 0);
 
-Please pull my for-linus-4.8 branch:
+Hi Josef,
 
-git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git for-linus-4.8
+Would you care submitting a regression test for xfstests?
+The change looks good to me.
 
-We've queued up a few different fixes in here.  These range from enospc
-corners to fsync and quota fixes, and a few targeted at
-error handling for corrupt metadata/fuzzing.
+thanks
+>
+> in process_all_refs().  This is because we assume that any recycling of inodes
+> will not have a pending change in our path, which isn't the case.  This is the
+> case for the DELETE side, since we want to remove the old file using the old
+> path, but on the create side we could have a pending move and need to do the
+> normal pending rename dance.  So remove this ASSERT() and put it after the
+> DELETE phase as it makes sense there, and change the CREATE stage to bail if we
+> have pending_move set.  This fixes the ASSERT() and results in the proper send
+> stream.
+>
+> Signed-off-by: Josef Bacik <jbacik@fb.com>
+> ---
+>  fs/btrfs/send.c | 36 +++++++++++++++++++++++++++---------
+>  1 file changed, 27 insertions(+), 9 deletions(-)
+>
+> diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
+> index b71dd29..2992ff1 100644
+> --- a/fs/btrfs/send.c
+> +++ b/fs/btrfs/send.c
+> @@ -4063,7 +4063,8 @@ out:
+>   * generation number, which means that it was deleted and recreated.
+>   */
+>  static int process_all_refs(struct send_ctx *sctx,
+> -                           enum btrfs_compare_tree_result cmd)
+> +                           enum btrfs_compare_tree_result cmd,
+> +                           int *pending_move)
+>  {
+>         int ret;
+>         struct btrfs_root *root;
+> @@ -4073,7 +4074,6 @@ static int process_all_refs(struct send_ctx *sctx,
+>         struct extent_buffer *eb;
+>         int slot;
+>         iterate_inode_ref_t cb;
+> -       int pending_move = 0;
+>
+>         path = alloc_path_for_send();
+>         if (!path)
+> @@ -4126,10 +4126,7 @@ static int process_all_refs(struct send_ctx *sctx,
+>         }
+>         btrfs_release_path(path);
+>
+> -       ret = process_recorded_refs(sctx, &pending_move);
+> -       /* Only applicable to an incremental send. */
+> -       ASSERT(pending_move == 0);
+> -
+> +       ret = process_recorded_refs(sctx, pending_move);
+>  out:
+>         btrfs_free_path(path);
+>         return ret;
+> @@ -5521,6 +5518,8 @@ static int changed_inode(struct send_ctx *sctx,
+>                  * deleted and the new one as new.
+>                  */
+>                 if (sctx->cur_inode_new_gen) {
+> +                       int pending_move = 0;
+> +
+>                         /*
+>                          * First, process the inode as if it was deleted.
+>                          */
+> @@ -5532,11 +5531,19 @@ static int changed_inode(struct send_ctx *sctx,
+>                         sctx->cur_inode_mode = btrfs_inode_mode(
+>                                         sctx->right_path->nodes[0], right_ii);
+>                         ret = process_all_refs(sctx,
+> -                                       BTRFS_COMPARE_TREE_DELETED);
+> +                                       BTRFS_COMPARE_TREE_DELETED, &pending_move);
+>                         if (ret < 0)
+>                                 goto out;
+>
+>                         /*
+> +                        * We are deleting the old inode, which shouldn't have
+> +                        * pending moves affecting it for the delete phase, as
+> +                        * the pending stuff doesn't matter until we are talking
+> +                        * about adding the new inode.
+> +                        */
+> +                       ASSERT(pending_move == 0);
+> +
+> +                       /*
+>                          * Now process the inode as if it was new.
+>                          */
+>                         sctx->cur_inode_gen = left_gen;
+> @@ -5551,10 +5558,21 @@ static int changed_inode(struct send_ctx *sctx,
+>                         ret = send_create_inode_if_needed(sctx);
+>                         if (ret < 0)
+>                                 goto out;
+> -
+> -                       ret = process_all_refs(sctx, BTRFS_COMPARE_TREE_NEW);
+> +                       ret = process_all_refs(sctx, BTRFS_COMPARE_TREE_NEW, &pending_move);
+>                         if (ret < 0)
+>                                 goto out;
+> +
+> +                       /*
+> +                        * This can happen if we have deleted the old inode from
+> +                        * it's parent directory, moved that parent directory
+> +                        * somewhere else, and re-created the inode in that same
+> +                        * parent directory.  If this occurs we need to treat
+> +                        * this like any other new inode that needs pending
+> +                        * renames processed before we process this inode.
+> +                        */
+> +                       if (pending_move)
+> +                               goto out;
+> +
+>                         /*
+>                          * Advance send_progress now as we did not get into
+>                          * process_recorded_refs_if_needed in the new_gen case.
+> --
+> 1.8.3.1
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 
-Liu Bo (5) commits (+60/-2):
-    Btrfs: detect corruption when non-root leaf has zero item (+22/-1)
-    Btrfs: add ASSERT for block group's memory leak (+5/-0)
-    Btrfs: clarify do_chunk_alloc()'s return value (+9/-0)
-    Btrfs: fix memory leak of reloc_root (+8/-1)
-    Btrfs: check btree node's nritems (+16/-0)
 
-Qu Wenruo (4) commits (+191/-53):
-    btrfs: relocation: Fix leaking qgroups numbers on data extents (+103/-6)
-    btrfs: qgroup: Fix qgroup incorrectness caused by log replay (+16/-0)
-    btrfs: qgroup: Refactor btrfs_qgroup_insert_dirty_extent() (+71/-47)
-    btrfs: backref: Fix soft lockup in __merge_refs function (+1/-0)
 
-Wang Xiaoguang (4) commits (+161/-108):
-    btrfs: use correct offset for reloc_inode in prealloc_file_extent_cluster() (+6/-4)
-    btrfs: divide btrfs_update_reserved_bytes() into two functions (+57/-40)
-    btrfs: update btrfs_space_info's bytes_may_use timely (+73/-63)
-    btrfs: fix fsfreeze hang caused by delayed iputs deal (+25/-1)
+-- 
+Filipe David Manana,
 
-Jeff Mahoney (3) commits (+45/-18):
-    btrfs: don't create or leak aliased root while cleaning up orphans (+22/-11)
-    btrfs: waiting on qgroup rescan should not always be interruptible (+13/-6)
-    btrfs: properly track when rescan worker is running (+10/-1)
-
-Filipe Manana (1) commits (+8/-4):
-    Btrfs: fix lockdep warning on deadlock against an inode's log mutex
-
-Anand Jain (1) commits (+19/-8):
-    btrfs: do not background blkdev_put()
-
-Alex Lyakas (1) commits (+1/-1):
-    btrfs: flush_space: treat return value of do_chunk_alloc properly
-
-Josef Bacik (1) commits (+1/-0):
-    Btrfs: fix em leak in find_first_block_group
-
-Total: (20) commits
-
- fs/btrfs/backref.c     |   1 +
- fs/btrfs/ctree.h       |   5 +-
- fs/btrfs/delayed-ref.c |   7 +-
- fs/btrfs/disk-io.c     |  56 +++++++++++++--
- fs/btrfs/disk-io.h     |   2 +
- fs/btrfs/extent-tree.c | 185 +++++++++++++++++++++++--------------------------
- fs/btrfs/extent_io.h   |   1 +
- fs/btrfs/file.c        |  28 ++++----
- fs/btrfs/inode-map.c   |   3 +-
- fs/btrfs/inode.c       |  37 +++++++---
- fs/btrfs/ioctl.c       |   2 +-
- fs/btrfs/qgroup.c      |  62 ++++++++++++++---
- fs/btrfs/qgroup.h      |  36 ++++++++--
- fs/btrfs/relocation.c  | 126 ++++++++++++++++++++++++++++++---
- fs/btrfs/root-tree.c   |  27 +++++---
- fs/btrfs/super.c       |  16 +++++
- fs/btrfs/transaction.c |   7 +-
- fs/btrfs/tree-log.c    |  21 +++++-
- fs/btrfs/tree-log.h    |   5 +-
- fs/btrfs/volumes.c     |  27 +++++---
- 20 files changed, 473 insertions(+), 181 deletions(-)
+"People will forget what you said,
+ people will forget what you did,
+ but people will never forget how you made them feel."

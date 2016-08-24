@@ -1,14 +1,14 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:46086 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751774AbcHQLjp (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 17 Aug 2016 07:39:45 -0400
-Date: Wed, 17 Aug 2016 13:38:49 +0200
+Received: from mx2.suse.de ([195.135.220.15]:44847 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1754298AbcHXMut (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 24 Aug 2016 08:50:49 -0400
+Date: Wed, 24 Aug 2016 14:49:40 +0200
 From: David Sterba <dsterba@suse.cz>
 To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Cc: linux-btrfs@vger.kernel.org
+Cc: dsterba@suse.cz, linux-btrfs@vger.kernel.org
 Subject: Re: [PATCH 1/3] btrfs-progs: Introduce new send-dump object
-Message-ID: <20160817113849.GU30795@suse.cz>
+Message-ID: <20160824124940.GR16983@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
 References: <20160801062944.25355-1-quwenruo@cn.fujitsu.com>
  <20160816143130.GO30795@twin.jikos.cz>
@@ -41,8 +41,14 @@ On Wed, Aug 17, 2016 at 08:42:48AM +0800, Qu Wenruo wrote:
 > 
 > Although unlike normal receive usage, it doesn't need the <path> 
 > parameter, and make <path> to be optional.
-> 
-> If it's fine to you, then I can update the patchset to merge it into 
-> receive subcommand.
 
-Hold on, I want to go through the whole patchset still.
+That's a good point and would make the syntax work in two modes, but we
+do that in ohter commands and I hope it will not be confusing. Exmaples:
+
+Normal receive:
+
+ btrfs receive -f file /mount
+
+Dump the stream:
+
+ btrs receive --dump -f file

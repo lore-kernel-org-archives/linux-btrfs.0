@@ -1,122 +1,79 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qk0-f169.google.com ([209.85.220.169]:32796 "EHLO
-        mail-qk0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753819AbcHXAsX (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 23 Aug 2016 20:48:23 -0400
-Received: by mail-qk0-f169.google.com with SMTP id z190so1453986qkc.0
-        for <linux-btrfs@vger.kernel.org>; Tue, 23 Aug 2016 17:48:22 -0700 (PDT)
-From: Jeff Mahoney <jeffm@jeffm.io>
-Subject: Re: Will Btrfs have an official command to "uncow" existing files?
-To: "Darrick J. Wong" <darrick.wong@oracle.com>
-References: <126611471805976@web2j.yandex.ru> <57BB5D1B.8040305@suse.com>
- <20160822230613.GA8256@birch.djwong.org>
-Cc: Tomokhov Alexander <alexoundos@ya.ru>, linux-btrfs@vger.kernel.org,
-        Dave Chinner <david@fromorbit.com>,
-        Christoph Hellwig <hch@infradead.org>
-Message-ID: <57BCEED4.8070703@jeffm.io>
-Date: Tue, 23 Aug 2016 20:48:20 -0400
+Received: from mx2.suse.de ([195.135.220.15]:37492 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1754990AbcHXAyD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 23 Aug 2016 20:54:03 -0400
+Subject: Re: BTRFS constantly reports "No space left on device" even with a
+ huge unallocated space
+To: Ronan Arraes Jardim Chagas <ronisbr@gmail.com>,
+        Chris Murphy <lists@colorremedies.com>
+References: <1471023419.16857.9.camel@gmail.com>
+ <CAJCQCtSwHCkW_nUNp4-R=S+ExZMk97i2qr6MwSuRU540c6xtfg@mail.gmail.com>
+ <1471028417.16857.12.camel@gmail.com>
+ <CAJCQCtTrEqR=UNpHp7ApbdBkwRRT6U5tiSHcs2y4N-P_G5u=Fw@mail.gmail.com>
+ <CAJCQCtS51syrzxvpZXGzS=Ge=rW1iEfZDj6VrVmON39ww-Hmdg@mail.gmail.com>
+ <CAKdnfRJeOXHmrumDkfxLTf-nU=KwZ0f7ybET-3o7kwwJDOZ2aw@mail.gmail.com>
+ <CAJCQCtTrGTjOMaNNV7JKBybgbyn=_pYP=KvE1zc4AuPs=mo2=A@mail.gmail.com>
+ <1471898393.23345.0.camel@gmail.com>
+ <CAJCQCtS7A+eWhg+agC3PJQn0g9Bgchb6C6LPt=NH1OF97xuhaw@mail.gmail.com>
+ <1471899855.14025.2.camel@gmail.com>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+From: Jeff Mahoney <jeffm@suse.com>
+Message-ID: <57BCED09.9070709@suse.com>
+Date: Tue, 23 Aug 2016 20:40:41 -0400
 MIME-Version: 1.0
-In-Reply-To: <20160822230613.GA8256@birch.djwong.org>
+In-Reply-To: <1471899855.14025.2.camel@gmail.com>
 Content-Type: multipart/signed; micalg=pgp-sha256;
  protocol="application/pgp-signature";
- boundary="uQIoxH0kHfj7JMLfBewI0TR2A6Wo4pJw5"
+ boundary="JSBWkthcGiLkjRFniRkUqJiNt6vdukPL2"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---uQIoxH0kHfj7JMLfBewI0TR2A6Wo4pJw5
-Content-Type: multipart/mixed; boundary="jLol872wbGP5v4vXGQSdHTkdiHqLsjf0m"
-From: Jeff Mahoney <jeffm@jeffm.io>
-To: "Darrick J. Wong" <darrick.wong@oracle.com>
-Cc: Tomokhov Alexander <alexoundos@ya.ru>, linux-btrfs@vger.kernel.org,
- Dave Chinner <david@fromorbit.com>, Christoph Hellwig <hch@infradead.org>
-Message-ID: <57BCEED4.8070703@jeffm.io>
-Subject: Re: Will Btrfs have an official command to "uncow" existing files?
-References: <126611471805976@web2j.yandex.ru> <57BB5D1B.8040305@suse.com>
- <20160822230613.GA8256@birch.djwong.org>
-In-Reply-To: <20160822230613.GA8256@birch.djwong.org>
+--JSBWkthcGiLkjRFniRkUqJiNt6vdukPL2
+Content-Type: multipart/mixed; boundary="5dOq7W6IQVVFprh3C6BhNknx8o4ixFVRw"
+From: Jeff Mahoney <jeffm@suse.com>
+To: Ronan Arraes Jardim Chagas <ronisbr@gmail.com>,
+ Chris Murphy <lists@colorremedies.com>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Message-ID: <57BCED09.9070709@suse.com>
+Subject: Re: BTRFS constantly reports "No space left on device" even with a
+ huge unallocated space
+References: <1471023419.16857.9.camel@gmail.com>
+ <CAJCQCtSwHCkW_nUNp4-R=S+ExZMk97i2qr6MwSuRU540c6xtfg@mail.gmail.com>
+ <1471028417.16857.12.camel@gmail.com>
+ <CAJCQCtTrEqR=UNpHp7ApbdBkwRRT6U5tiSHcs2y4N-P_G5u=Fw@mail.gmail.com>
+ <CAJCQCtS51syrzxvpZXGzS=Ge=rW1iEfZDj6VrVmON39ww-Hmdg@mail.gmail.com>
+ <CAKdnfRJeOXHmrumDkfxLTf-nU=KwZ0f7ybET-3o7kwwJDOZ2aw@mail.gmail.com>
+ <CAJCQCtTrGTjOMaNNV7JKBybgbyn=_pYP=KvE1zc4AuPs=mo2=A@mail.gmail.com>
+ <1471898393.23345.0.camel@gmail.com>
+ <CAJCQCtS7A+eWhg+agC3PJQn0g9Bgchb6C6LPt=NH1OF97xuhaw@mail.gmail.com>
+ <1471899855.14025.2.camel@gmail.com>
+In-Reply-To: <1471899855.14025.2.camel@gmail.com>
 
---jLol872wbGP5v4vXGQSdHTkdiHqLsjf0m
-Content-Type: text/plain; charset=windows-1252
+--5dOq7W6IQVVFprh3C6BhNknx8o4ixFVRw
+Content-Type: text/plain; charset=utf-8
 Content-Transfer-Encoding: quoted-printable
 
-On 8/22/16 7:06 PM, Darrick J. Wong wrote:
-> [add Dave and Christoph to cc]
->=20
-> On Mon, Aug 22, 2016 at 04:14:19PM -0400, Jeff Mahoney wrote:
->> On 8/21/16 2:59 PM, Tomokhov Alexander wrote:
->>> Btrfs wiki FAQ gives a link to example Python script: https://github.=
-com/stsquad/scripts/blob/master/uncow.py
->>>
->>> But such a crucial and fundamental tool must exist in stock btrfs-pro=
-gs. Filesystem with CoW technology at it's core must provide user suffici=
-ent control over CoW aspects. Running 3rd-party or manually written scrip=
-ts for filesystem properties/metadata manipulation is not convenient, not=
- safe and definitely not the way it must be done.
->>>
->>> Also is it possible (at least in theory) to "uncow" files being curre=
-ntly opened in-place? Without the trickery with creation & renaming of fi=
-les or directories. So that running "chattr +C" on a file would be suffic=
-ient. If possible, is it going to be implemented?
+On 8/22/16 5:04 PM, Ronan Arraes Jardim Chagas wrote:
+> Em Seg, 2016-08-22 =C3=A0s 14:49 -0600, Chris Murphy escreveu:
+>> This is really weird. I'm running 4.7.0 (Fedora) and I'm not
+>> experiencing problems, let alone this. What is this kernel's
+>> provenance? Is it a plain mainline 4.7.0 that you built? I'm not
+>> really sure what to recommend except maybe going back to 4.5.7 or
+>> 4.6.7 as it's a production machine. Heck even 4.4.19 is OK for me in
+>> this regard.
 >>
->> XFS is looking to do this via fallocate using a flag that all file
->> systems can choose to honor.  Once that lands, it would make sense for=
-
->> btrfs to use it as well.  The idea is that when you pass the flag in, =
-we
->> examine the range and CoW anything that has a refcount !=3D 1.
 >=20
-> There /was/ a flag to do that -- FALLOC_FL_UNSHARE_RANGE.  However,
-> Christoph and Dave felt[1] that the fallocate call didn't need to have
-> an explicit 'unshare' mode because unsharing shared blocks is
-> necessary to guarantee that a subsequent write will not ENOSPC.  I
-> felt that was sufficient justification to withdraw the unshare mode
-> flag.  If you fallocate the entire length of a shared file on XFS, it
-> will turn off CoW for that file until you reflink/dedupe it again.
+> Well, I'm using the default openSUSE kernel here. And I have been seen
+> this errors for sometimes. When I reported it, I was using v4.6.1.
+> Hence, I think the version of btrfs-progs is not the problem.
 
-Is that a flag or just that it's reverting to "normal" XFS operation?
-We have a nocow flag for btrfs, but it's more like nocow* because it's
-still possible to create new references to the extents and those must be
-CoW'd later.  I think that's about all we can offer since the nocow flag
-set otherwise would imply that /every/ snapshot does a full copy of
-anything marked nocow and I don't think that's the expectation either.
-
-> At the time I wondered whether or not the btrfs developers (the list
-> was cc'd) would pipe up in support of the unshare flag, but nobody
-> did.  Consequently it remains nonexistent.  Christoph commented a few
-> months ago about unsharing fallocate over NFS atop XFS blocking for a
-> long time, though nobody asked for 'unshare' to be reinstated as a
-> separate fallocate mode, much less a 'don't unshare' flag for regular
-> fallocate mode.
->=20
-> (FWIW I'm ok with not having to fight for more VFS changes. :))
-
-Agreed. :)
-
->> That code hasn't landed yet though.  The last time I saw it posted was=
-
->> June.  I don't speak with knowledge of the integration plan, but it
->> might just be queued up for the next merge window now that the reverse=
-
->> mapping patches have landed in 4.8.
->=20
-> I am going to try to land XFS reflink in 4.9; I hope to have an eighth
-> patchset out for review at the end of the week.
->=20
-> So... if the btrfs folks really want an unshare flag I can trivially
-> re-add it to the VFS headers and re-enable it in the XFS
-> implementation <cough> but y'all better speak up now and hammer out an
-> acceptable definition.  I don't think XFS needs a new flag.
-
-Thanks for the explanation, Darrick.  I'm not advocating for a flag.
-That was just the last state of the implementation as I remember it.  I
-missed the discussion turning to not needing it at all.
-
-I suppose the only thing missing, and this applies to both XFS and a
-future btrfs implementation, is documentation for the user explaining
-that the guarantees fallocate makes about ENOSPC not failing are voided
-by operations that can re-share extents.
+The openSUSE Tumbleweed kernel is effectively vanilla for btrfs.  The
+4.6-based kernel had two btrfs patches, the crc32c implementation
+publishing patch that landed in 4.7, and the super_operation callback
+that lets us publish the per-root anon dev via stat().  The problem
+you're encountering isn't due to our patches.
 
 -Jeff
 
@@ -125,10 +82,9 @@ Jeff Mahoney
 SUSE Labs
 
 
+--5dOq7W6IQVVFprh3C6BhNknx8o4ixFVRw--
 
---jLol872wbGP5v4vXGQSdHTkdiHqLsjf0m--
-
---uQIoxH0kHfj7JMLfBewI0TR2A6Wo4pJw5
+--JSBWkthcGiLkjRFniRkUqJiNt6vdukPL2
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: OpenPGP digital signature
 Content-Disposition: attachment; filename="signature.asc"
@@ -136,19 +92,19 @@ Content-Disposition: attachment; filename="signature.asc"
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG/MacGPG2 v2
 
-iQIcBAEBCAAGBQJXvO7UAAoJEB57S2MheeWyjaYP/1UiOouIjQppz5FWSnBStPUQ
-VryXior5q1pjhlBXJCvi4QZke4Fx5boBWt/ohqIr7Qwp8OBSuA+GCLDIaqV856N2
-xz9EuFHwXsPy5NDEeX799nwGv0xsue3bGfo509jOBdCvj3EU2xWZzCcddLB/sq8Q
-z5sOQAat/t1KJACddU14PHWhR0/7s/ScdOmx/YD/Q1H59pI2pqXg+nbgx0OpXYwE
-cQZJWgc02XP/9CHiFI2d/6EkcfddAytKNUshSjFS9AdhvdW7T6CfVUG5VyHg5WRY
-ph0Rxm5BDkahFcux1lz9hNmYI4xc21hRkgFl7Odm+/+RY3BtFM8wIKdf1NywZn38
-hJ2WDcG9uu8a9e/y1hHhVJSEtHrG0U+xvV4B4NDZBVR/Z9PGpWQ8Ym0y6ThOX46+
-Ywl4SR/KoY8UMkyywbnOyfkiyxZS9GZDmjLg8y7lKh5no9l/TgfwXb2r0Jo+KDEd
-HvVzr+VpY0nM/XYEAlf6oKnXUn+gfaWgyIaXQTFd5XAbLuLyb+SoNwADukGguL7g
-9eSexlvQru2qKDhQRehED8da1fYyd4B3FgnZHLcchb3b1EGEpin16ia5f2UZA6m1
-dBACHHCGReITrSnqVq9sVTd4OCZ5fV+4azpFUZ0/izgFlU4RU1Ncby71emQ0DX4v
-2naTixE0ZJzknFxV3yPL
-=jdQh
+iQIcBAEBCAAGBQJXvO0NAAoJEB57S2MheeWy/9AP/R694/DhZiozTvkx8cVgSD7H
+AgyxFHvDvdw+Q9R3dbVkoilkr4+SrDCgy86bzgdOvdZE0cTEaRYJtPHgZPGG2JkS
+YKp91oTqg9+mC0iF35zynoZD50rZt6wYp0klPAZHMj+lnU6ylBioqHZZb5A4ymIa
+LRtZ+KQ1WkNRczSlH7wu7Ft/kzY8OZS+psZlwsLi3fWaQqQNmcRE7DPrxweNyJCH
+PJJiTINt5N9WwfVDCH2twkZ3djgFrjlaokstJ5+JlV+w5XFKKR0URY6l5ByT4Tzn
+euY+dWhFZNDLF3XLY1datfVCCnbcfj8kaiyU/Qe9FpavDk4AgU809gHSfuolQQkJ
+p5EzURFnYTyi3vG5s9pu6l7xx2D7/dchy6c4H2egvpGwOCJlJhaLCQbwNKsVFR03
+FSSOePpdwGStFaNE4exQNG+x6rueB1MZ9WHSmBUieL1yppqn6vTn4/Ue+l1CeW08
+k2ufgvJIEe3DMu5K8HbyrNAIbRl/5zgomlJDa197VdUnCTJmZANy1msNvJ1sVSca
+wh23xTI1rBI1PGxDuR5uehDdlj2ClALcy875i6saSlk1yHNqlwLIskl341hW88iG
+bgpfU4AP6AHU9x/tdNtj+/bgjtv1f1XrHnIVAgFATv//Lz2IpXZq4WF8bUnUaYqe
+0HyDSykH0wI1W+bmlPu2
+=Q841
 -----END PGP SIGNATURE-----
 
---uQIoxH0kHfj7JMLfBewI0TR2A6Wo4pJw5--
+--JSBWkthcGiLkjRFniRkUqJiNt6vdukPL2--

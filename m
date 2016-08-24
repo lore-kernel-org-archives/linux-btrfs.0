@@ -1,107 +1,114 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1050.oracle.com ([156.151.31.82]:45412 "EHLO
-        userp1050.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1756586AbcHXWps (ORCPT
+Received: from mail-lf0-f42.google.com ([209.85.215.42]:34144 "EHLO
+        mail-lf0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1753174AbcHXXAZ (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 24 Aug 2016 18:45:48 -0400
-Received: from userp1040.oracle.com (userp1040.oracle.com [156.151.31.81])
-        by userp1050.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id u7OMj5k1004208
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Wed, 24 Aug 2016 22:45:05 GMT
-Date: Wed, 24 Aug 2016 15:42:58 -0700
-From: "Darrick J. Wong" <darrick.wong@oracle.com>
-To: Omar Sandoval <osandov@osandov.com>
-Cc: Chris Murphy <lists@colorremedies.com>, Jeff Mahoney <jeffm@suse.com>,
-        Tomokhov Alexander <alexoundos@ya.ru>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>,
-        Dave Chinner <david@fromorbit.com>,
-        Christoph Hellwig <hch@infradead.org>
-Subject: Re: Will Btrfs have an official command to "uncow" existing files?
-Message-ID: <20160824224258.GB20705@birch.djwong.org>
-References: <126611471805976@web2j.yandex.ru>
- <57BB5D1B.8040305@suse.com>
- <20160822230613.GA8256@birch.djwong.org>
- <CAJCQCtQL-ZG0MoeTM=eXmP2pE3Eq+DmSnr8AMuNicWWtJiS7gQ@mail.gmail.com>
- <20160824183427.GA12630@vader>
+        Wed, 24 Aug 2016 19:00:25 -0400
+Received: by mail-lf0-f42.google.com with SMTP id l89so22514143lfi.1
+        for <linux-btrfs@vger.kernel.org>; Wed, 24 Aug 2016 16:00:24 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20160824183427.GA12630@vader>
+In-Reply-To: <20160824210919.GA1986@vader>
+References: <CAGmahrRYDVaJ3eGLZhe=fEtbE_5fx51hxX3KuUxK3i8Kt=3Wxw@mail.gmail.com>
+ <20160824210919.GA1986@vader>
+From: Sverd Johnsen <sverd.johnsen@googlemail.com>
+Date: Thu, 25 Aug 2016 01:00:23 +0200
+Message-ID: <CAGmahrTvBmq51eWi9J8pUkQz4Y9cHf1C8PngBSJMiYckVSc1AA@mail.gmail.com>
+Subject: Re: kernel BUG at fs/btrfs/delayed-inode.c:1579!
+To: Omar Sandoval <osandov@osandov.com>
+Cc: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Aug 24, 2016 at 11:34:27AM -0700, Omar Sandoval wrote:
-> On Mon, Aug 22, 2016 at 08:43:18PM -0600, Chris Murphy wrote:
-> > On Mon, Aug 22, 2016 at 5:06 PM, Darrick J. Wong
-> > <darrick.wong@oracle.com> wrote:
-> > > [add Dave and Christoph to cc]
-> > >
-> > > On Mon, Aug 22, 2016 at 04:14:19PM -0400, Jeff Mahoney wrote:
-> > >> On 8/21/16 2:59 PM, Tomokhov Alexander wrote:
-> > >> > Btrfs wiki FAQ gives a link to example Python script: https://github.com/stsquad/scripts/blob/master/uncow.py
-> > >> >
-> > >> > But such a crucial and fundamental tool must exist in stock btrfs-progs. Filesystem with CoW technology at it's core must provide user sufficient control over CoW aspects. Running 3rd-party or manually written scripts for filesystem properties/metadata manipulation is not convenient, not safe and definitely not the way it must be done.
-> > >> >
-> > >> > Also is it possible (at least in theory) to "uncow" files being currently opened in-place? Without the trickery with creation & renaming of files or directories. So that running "chattr +C" on a file would be sufficient. If possible, is it going to be implemented?
-> > >>
-> > >> XFS is looking to do this via fallocate using a flag that all file
-> > >> systems can choose to honor.  Once that lands, it would make sense for
-> > >> btrfs to use it as well.  The idea is that when you pass the flag in, we
-> > >> examine the range and CoW anything that has a refcount != 1.
-> > >
-> > > There /was/ a flag to do that -- FALLOC_FL_UNSHARE_RANGE.  However,
-> > > Christoph and Dave felt[1] that the fallocate call didn't need to have
-> > > an explicit 'unshare' mode because unsharing shared blocks is
-> > > necessary to guarantee that a subsequent write will not ENOSPC.  I
-> > > felt that was sufficient justification to withdraw the unshare mode
-> > > flag.  If you fallocate the entire length of a shared file on XFS, it
-> > > will turn off CoW for that file until you reflink/dedupe it again.
-> > >
-> > > At the time I wondered whether or not the btrfs developers (the list
-> > > was cc'd) would pipe up in support of the unshare flag, but nobody
-> > > did.  Consequently it remains nonexistent.  Christoph commented a few
-> > > months ago about unsharing fallocate over NFS atop XFS blocking for a
-> > > long time, though nobody asked for 'unshare' to be reinstated as a
-> > > separate fallocate mode, much less a 'don't unshare' flag for regular
-> > > fallocate mode.
-> > >
-> > > (FWIW I'm ok with not having to fight for more VFS changes. :))
-> > >
-> > >> That code hasn't landed yet though.  The last time I saw it posted was
-> > >> June.  I don't speak with knowledge of the integration plan, but it
-> > >> might just be queued up for the next merge window now that the reverse
-> > >> mapping patches have landed in 4.8.
-> > >
-> > > I am going to try to land XFS reflink in 4.9; I hope to have an eighth
-> > > patchset out for review at the end of the week.
-> > >
-> > > So... if the btrfs folks really want an unshare flag I can trivially
-> > > re-add it to the VFS headers and re-enable it in the XFS
-> > > implementation <cough> but y'all better speak up now and hammer out an
-> > > acceptable definition.  I don't think XFS needs a new flag.
-> > 
-> > Use case wise I can't think of why I'd want to do unshare. There is a
-> > use case for wanting to set nocow after the fact. I have no idea what
-> > complexity is added on the Btrfs side for either operation, it seems
-> > like at the least to set it, data csum needs a way to be ignored or
-> > removed; and conversely to unset nocow it's a question whether that
-> > means the file should have csum's computed, strictly speaking I guess
-> > you could have cow without datacsum.
-> 
-> One use case is for swapfile support on Btrfs -- I implemented it with
-> the requirement that the file was nocow with no shared extents. I think
-> there was some discussion about having the swapon operation do that
-> unshare, but I decided against that [1]. (I should take a look at
-> reviving that patch series.)
-> 
-> Darrick, what's XFS doing for reflink + swap files?
-> 
-> 1: http://www.mail-archive.com/linux-kernel@vger.kernel.org/msg785536.html
+pstore to the rescue.
 
-We neither allow swapon() for file with shared extents, nor reflinking/deduping
-files currently being used as swap.
+BTRFS error (device dm-1): err add delayed dir index item(index: 3864)
+into the deletion tree of the delayed node(root id: 452, inode id:
+1299522, errno: -17)
 
---D
-
-> 
-> -- 
+On 24 August 2016 at 23:09, Omar Sandoval <osandov@osandov.com> wrote:
+> On Wed, Aug 24, 2016 at 09:27:16PM +0200, Sverd Johnsen wrote:
+>> https://bugzilla.kernel.org/show_bug.cgi?id=153891
+>>
+>> [  879.935385] ------------[ cut here ]------------
+>> [  879.935400] kernel BUG at fs/btrfs/delayed-inode.c:1579!
+>> [  879.935414] invalid opcode: 0000 [#1] PREEMPT SMP
+>> [  879.935425] Modules linked in: veth binfmt_misc nft_reject_inet
+>> nf_reject_ipv4 nf_reject_ipv6 nft_reject nf_log_ipv6 nf_log_ipv4
+>> nf_log_common nf_conntrack_ipv6 nf_defrag_ipv6 nf_conntrack_ipv4
+>> nf_defrag_ipv4 nft_ct nf_conntrack nft_log nft_counter nft_meta
+>> nft_hash nft_rbtree nf_tables_inet nf_tables_ipv6 nf_tables_ipv4
+>> nf_tables nfnetlink algif_skcipher af_alg af_packet bridge hid_generic
+>> usbhid hid ghash_clmulni_intel stp intel_cstate llc intel_uncore
+>> psmouse intel_rapl_perf efi_pstore efivarfs snd_hda_codec_hdmi
+>> snd_hda_codec_realtek snd_hda_codec_generic x86_pkg_temp_thermal
+>> intel_powerclamp atkbd libps2 kvm_intel kvm irqbypass crct10dif_pclmul
+>> crc32_pclmul crc32c_intel aesni_intel aes_x86_64 glue_helper lrw
+>> gf128mul ablk_helper cryptd efivars snd_hda_intel snd_hda_codec
+>> snd_hda_core snd_pcm
+>> [  879.935636]  snd_timer i915 shpchp sd_mod xhci_pci xhci_hcd usbcore
+>> mei_me mei usb_common intel_gtt fan thermal battery i8042 serio
+>> pinctrl_sunrisepoint pinctrl_intel acpi_pad tpm_infineon tpm_tis tpm
+>> [  879.935694] CPU: 2 PID: 3125 Comm: CJobMgr::m_Work Tainted: G
+>>  W       4.7.2-1-ph #1
+>> [  879.935713] Hardware name: Gigabyte Technology Co., Ltd.
+>> Z170X-UD3/Z170X-UD3-CF, BIOS F6 03/01/2016
+>> [  879.935733] task: ffff88045cae9a80 ti: ffff880070910000 task.ti:
+>> ffff880070910000
+>> [  879.935750] RIP: 0010:[<ffffffffa5276355>]  [<ffffffffa5276355>]
+>> btrfs_delete_delayed_dir_index+0x215/0x220
+>> [  879.935775] RSP: 0018:ffff880070913d48  EFLAGS: 00010246
+>> [  879.935787] RAX: 0000000000000000 RBX: ffff880461fc6180 RCX: 0000000000000000
+>> [  879.935804] RDX: 0000000000000000 RSI: ffff880475d0c9e8 RDI: ffff880475d0c9e8
+>> [  879.935820] RBP: ffff8803ef4de4c0 R08: 0000000000000533 R09: 0000000000000005
+>> [  879.935842] R10: 0000000000000000 R11: ffffffffa597e28d R12: ffff8803ef4de508
+>> [  879.935858] R13: 0000000000000f18 R14: ffff880463326000 R15: ffff880458ebac78
+>> [  879.935874] FS:  0000000000000000(0000) GS:ffff880475d00000(0063)
+>> knlGS:00000000ed7ffb40
+>> [  879.935893] CS:  0010 DS: 002b ES: 002b CR0: 0000000080050033
+>> [  879.935906] CR2: 00007f0bfe6b7000 CR3: 00000003fd5ae000 CR4: 00000000003406e0
+>> [  879.935922] DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+>> [  879.935938] DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+>> [  879.935955] Stack:
+>> [  879.935961]  0000000000040000 42ffffffa5275611 60000000000013d4
+>> 0000000000000f18
+>> [  879.935981]  00000000cfbff096 ffff8803f16ac788 ffff880070913e20
+>> ffff8804601a01f0
+>> [  879.936001]  000000000013d6da 000000000013d442 ffff880458ed3000
+>> ffffffffa5224fbe
+>> [  879.936021] Call Trace:
+>> [  879.936030]  [<ffffffffa5224fbe>] ? __btrfs_unlink_inode+0x1ae/0x470
+>> [  879.936045]  [<ffffffffa5228be2>] ? btrfs_unlink_inode+0x12/0x40
+>> [  879.936060]  [<ffffffffa5228c71>] ? btrfs_unlink+0x61/0xb0
+>> [  879.936074]  [<ffffffffa5139c0d>] ? vfs_unlink+0xed/0x180
+>> [  879.936087]  [<ffffffffa513f195>] ? do_unlinkat+0x295/0x310
+>> [  879.936101]  [<ffffffffa500277d>] ? do_fast_syscall_32+0x8d/0x150
+>> [  879.936116]  [<ffffffffa55d1d7c>] ? entry_SYSENTER_compat+0x4c/0x5b
+>> [  879.936130] Code: ff 0f 0b 48 8b 55 10 41 89 c1 49 8b be f0 01 00
+>> 00 48 c7 c6 78 5b 73 a5 4c 8b 45 00 48 8b 8a 48 03 00 00 4c 89 ea e8
+>> eb 84 f7 ff <0f> 0b e8 e4 0b dd ff 0f 1f 40 00 53 48 89 fb e8 e7 e1 ff
+>> ff 48
+>> [  879.936234] RIP  [<ffffffffa5276355>]
+>> btrfs_delete_delayed_dir_index+0x215/0x220
+>> [  879.936253]  RSP <ffff880070913d48>
+>> [  879.939739] ---[ end trace b01dc7191bc4c300 ]---
+>
+> That's here:
+>
+> 1572         ret = __btrfs_add_delayed_deletion_item(node, item);
+> 1573         if (unlikely(ret)) {
+> 1574                 btrfs_err(root->fs_info, "err add delayed dir index item(index: %llu) "
+> 1575                                 "into the deletion tree of the delayed node"
+> 1576                                 "(root id: %llu, inode id: %llu, errno: %d)",
+> 1577                                 index, node->root->objectid, node->inode_id,
+> 1578                                 ret);
+> 1579                 BUG();
+> 1580         }
+>
+> As far as I can tell, the only way that __btrfs_add_delayed_deletion_item()
+> will fail is with -EEXIST, which would be a bug, but your trace doesn't include
+> the btrfs_err message right before the BUG(). Do you still have that dmesg
+> lying around just to be sure?
+>
+> --
 > Omar

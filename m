@@ -1,46 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-it0-f47.google.com ([209.85.214.47]:37296 "EHLO
-        mail-it0-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1754797AbcHYSy7 (ORCPT
+Received: from syrinx.knorrie.org ([82.94.188.77]:57234 "EHLO
+        syrinx.knorrie.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750933AbcHYTju (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 25 Aug 2016 14:54:59 -0400
-Received: by mail-it0-f47.google.com with SMTP id f6so106211831ith.0
-        for <linux-btrfs@vger.kernel.org>; Thu, 25 Aug 2016 11:54:38 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <bd6d731e-583c-b5f7-d95f-3ad70242297a@mendix.com>
-References: <CAOE4rSwPNAY7fXjVa=Hyeb1yVMtVmpPhUvMVbZt6Qq9P+a0LCA@mail.gmail.com>
- <CAOE4rSxn756hHWJB9T32__dbRNeF0aQOCvCe1738G_HHqy3+Xw@mail.gmail.com> <bd6d731e-583c-b5f7-d95f-3ad70242297a@mendix.com>
-From: =?UTF-8?B?RMSBdmlzIE1vc8SBbnM=?= <davispuh@gmail.com>
-Date: Thu, 25 Aug 2016 21:54:37 +0300
-Message-ID: <CAOE4rSyGW3TUG75_iRuBRJ-Ekmrmwt_BhOoXgRDNvgEL62M53g@mail.gmail.com>
+        Thu, 25 Aug 2016 15:39:50 -0400
 Subject: Re: [BUG] kernel BUG at fs/btrfs/extent_io.c:2062 (v4.2.0-rc8)
-To: Hans van Kranenburg <hans.van.kranenburg@mendix.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+To: =?UTF-8?B?RMSBdmlzIE1vc8SBbnM=?= <davispuh@gmail.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+References: <CAOE4rSwPNAY7fXjVa=Hyeb1yVMtVmpPhUvMVbZt6Qq9P+a0LCA@mail.gmail.com>
+ <CAOE4rSxn756hHWJB9T32__dbRNeF0aQOCvCe1738G_HHqy3+Xw@mail.gmail.com>
+From: Hans van Kranenburg <hans.van.kranenburg@mendix.com>
+Message-ID: <bd6d731e-583c-b5f7-d95f-3ad70242297a@mendix.com>
+Date: Thu, 25 Aug 2016 19:45:11 +0200
+MIME-Version: 1.0
+In-Reply-To: <CAOE4rSxn756hHWJB9T32__dbRNeF0aQOCvCe1738G_HHqy3+Xw@mail.gmail.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-2016-08-25 20:45 GMT+03:00 Hans van Kranenburg <hans.van.kranenburg@mendix.com>:
-> On 08/25/2016 07:26 PM, Dāvis Mosāns wrote:
->> 2015-08-31 9:28 GMT+03:00 Dāvis Mosāns <davispuh@gmail.com>:
->>> I'm getting kernel crash and complete system lockup when trying to access
->>> journal on two disk btrfs filesystem with data/metadata as RAID1.
->>
->> I kept those drives untouched and now I tried again with Linux 4.7.1
->> and accessing that file it didn't crashed but shows Input/output error
->
-> I don't see "Input/output error" anywhere in the messages?
->
+On 08/25/2016 07:26 PM, Dāvis Mosāns wrote:
+> 2015-08-31 9:28 GMT+03:00 Dāvis Mosāns <davispuh@gmail.com>:
+>> I'm getting kernel crash and complete system lockup when trying to access
+>> journal on two disk btrfs filesystem with data/metadata as RAID1.
+> 
+> I kept those drives untouched and now I tried again with Linux 4.7.1
+> and accessing that file it didn't crashed but shows Input/output error
 
-I didn't included it here, it's very simple, any access to that file shows it
+I don't see "Input/output error" anywhere in the messages?
 
-$ cat system@00051e80d8810e86-e5a1ec29d9167e9f.journal~
-cat: system@00051e80d8810e86-e5a1ec29d9167e9f.journal~: Input/output error
+> $ btrfs check --repair --check-data-csum  /dev/vda
+> enabling repair mode
+> Checking filesystem on /dev/vda
+> UUID: 247e6249-6de1-45cb-9dd0-fa8a654234bf
+> checking extents
+> Incorrect local backref count on 99753574400 root 261 owner 523015
+> offset 4063232 found 2 wanted 4 back 0xf1bd3c0
+> Incorrect global backref count on 99753574400 found 2 wanted 4
+> backpointer mismatch on [99753574400 8192]
+> repair deleting extent record: key 99753574400 168 8192
+> adding new data backref on 99753574400 root 261 owner 523015 offset
+> 4063232 found 2
+> [...]
 
-even if scrub completed successfully without any errors.
+These messages might be unrelated. Also see this email thread from
+yesterday, reporting the same, for more info:
 
-also I just noticed this thread
-"btrfs partition fails to mount - kernel BUG at ../fs/btrfs/extent-tree.c:1872"
-it's this same crash I'm hinting here with balance.
+btrfs-progs 4.7, check reports many "incorrect local backref count" messages
 
-kernel: kernel BUG at fs/btrfs/extent-tree.c:1872!
+-- 
+Hans van Kranenburg - System / Network Engineer
+T +31 (0)10 2760434 | hans.van.kranenburg@mendix.com | www.mendix.com

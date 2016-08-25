@@ -1,52 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from syrinx.knorrie.org ([82.94.188.77]:57234 "EHLO
-        syrinx.knorrie.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750933AbcHYTju (ORCPT
+Received: from mail-oi0-f50.google.com ([209.85.218.50]:35101 "EHLO
+        mail-oi0-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1756082AbcHYTuf (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 25 Aug 2016 15:39:50 -0400
-Subject: Re: [BUG] kernel BUG at fs/btrfs/extent_io.c:2062 (v4.2.0-rc8)
-To: =?UTF-8?B?RMSBdmlzIE1vc8SBbnM=?= <davispuh@gmail.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-References: <CAOE4rSwPNAY7fXjVa=Hyeb1yVMtVmpPhUvMVbZt6Qq9P+a0LCA@mail.gmail.com>
- <CAOE4rSxn756hHWJB9T32__dbRNeF0aQOCvCe1738G_HHqy3+Xw@mail.gmail.com>
-From: Hans van Kranenburg <hans.van.kranenburg@mendix.com>
-Message-ID: <bd6d731e-583c-b5f7-d95f-3ad70242297a@mendix.com>
-Date: Thu, 25 Aug 2016 19:45:11 +0200
+        Thu, 25 Aug 2016 15:50:35 -0400
+Received: by mail-oi0-f50.google.com with SMTP id 4so82115423oih.2
+        for <linux-btrfs@vger.kernel.org>; Thu, 25 Aug 2016 12:50:31 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <CAOE4rSxn756hHWJB9T32__dbRNeF0aQOCvCe1738G_HHqy3+Xw@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8
+In-Reply-To: <efe09b37f04cbc7754f6c6d84c9070f0@durkon.lan>
+References: <efe09b37f04cbc7754f6c6d84c9070f0@durkon.lan>
+From: Chris Murphy <lists@colorremedies.com>
+Date: Thu, 25 Aug 2016 13:50:30 -0600
+Message-ID: <CAJCQCtRuQvgTj-jj=k8Ehsnq0uEkbbzJJwRR6T16H+R4d6SeTw@mail.gmail.com>
+Subject: Re: Switch raid mode without rebalance?
+To: Gert Menke <gert@menke.ac>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 08/25/2016 07:26 PM, Dāvis Mosāns wrote:
-> 2015-08-31 9:28 GMT+03:00 Dāvis Mosāns <davispuh@gmail.com>:
->> I'm getting kernel crash and complete system lockup when trying to access
->> journal on two disk btrfs filesystem with data/metadata as RAID1.
-> 
-> I kept those drives untouched and now I tried again with Linux 4.7.1
-> and accessing that file it didn't crashed but shows Input/output error
+On Thu, Aug 25, 2016 at 12:16 PM, Gert Menke <gert@menke.ac> wrote:
 
-I don't see "Input/output error" anywhere in the messages?
+> However, I know that btrfs can have different raid modes on the same
+> filesystem at the same time.
 
-> $ btrfs check --repair --check-data-csum  /dev/vda
-> enabling repair mode
-> Checking filesystem on /dev/vda
-> UUID: 247e6249-6de1-45cb-9dd0-fa8a654234bf
-> checking extents
-> Incorrect local backref count on 99753574400 root 261 owner 523015
-> offset 4063232 found 2 wanted 4 back 0xf1bd3c0
-> Incorrect global backref count on 99753574400 found 2 wanted 4
-> backpointer mismatch on [99753574400 8192]
-> repair deleting extent record: key 99753574400 168 8192
-> adding new data backref on 99753574400 root 261 owner 523015 offset
-> 4063232 found 2
-> [...]
+It's incidental right now. It's not something controllable or intended
+to have enduring mixed profile block groups.
 
-These messages might be unrelated. Also see this email thread from
-yesterday, reporting the same, for more info:
+>So I was hoping I could just tell it to "switch
+> to single mode for all new data", but I don't have a clue how to do that.
 
-btrfs-progs 4.7, check reports many "incorrect local backref count" messages
+Such a switch doesn't exist, there's no way to define what files,
+directories, or subvolumes, have what profiles.
+
+
+>I
+> *could* rebalance, of course, but is that really necessary?
+
+Yes.
+
+> How does btrfs
+> find out which raid mode to use when writing new data?
+
+That's kindof an interesting question. If you were to do 'btrfs
+balance start -dconvert=single -mconvert=raid1' and very soon after
+that do 'btrfs balance cancel' you'll end up with one or a few new
+chunks with those profiles. When data is allocated to those chunks,
+they will have those profile characteristics. When data is allocated
+to old chunks that are still raid0, it will be raid0. The thing is,
+you can't really tell or control what data will be placed in what
+chunk. So it's plausible that some new data goes in old raid0 chunk,
+and some old data goes in new single/raid1 chunks.
+
 
 -- 
-Hans van Kranenburg - System / Network Engineer
-T +31 (0)10 2760434 | hans.van.kranenburg@mendix.com | www.mendix.com
+Chris Murphy

@@ -1,108 +1,43 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pf0-f169.google.com ([209.85.192.169]:32776 "EHLO
-        mail-pf0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1758434AbcHYHmg (ORCPT
+Received: from [195.159.176.226] ([195.159.176.226]:38977 "EHLO
+        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
+        with ESMTP id S1756386AbcHYP7n (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 25 Aug 2016 03:42:36 -0400
-Received: by mail-pf0-f169.google.com with SMTP id y134so15365355pfg.0
-        for <linux-btrfs@vger.kernel.org>; Thu, 25 Aug 2016 00:41:39 -0700 (PDT)
-Date: Wed, 24 Aug 2016 15:47:43 -0700
-From: Omar Sandoval <osandov@osandov.com>
-To: "Darrick J. Wong" <darrick.wong@oracle.com>
-Cc: Chris Murphy <lists@colorremedies.com>, Jeff Mahoney <jeffm@suse.com>,
-        Tomokhov Alexander <alexoundos@ya.ru>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>,
-        Dave Chinner <david@fromorbit.com>,
-        Christoph Hellwig <hch@infradead.org>
-Subject: Re: Will Btrfs have an official command to "uncow" existing files?
-Message-ID: <20160824224743.GB1986@vader>
-References: <126611471805976@web2j.yandex.ru>
- <57BB5D1B.8040305@suse.com>
- <20160822230613.GA8256@birch.djwong.org>
- <CAJCQCtQL-ZG0MoeTM=eXmP2pE3Eq+DmSnr8AMuNicWWtJiS7gQ@mail.gmail.com>
- <20160824183427.GA12630@vader>
- <20160824224258.GB20705@birch.djwong.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20160824224258.GB20705@birch.djwong.org>
+        Thu, 25 Aug 2016 11:59:43 -0400
+Received: from list by blaine.gmane.org with local (Exim 4.84_2)
+        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+        id 1bcx3E-0004vd-A2
+        for linux-btrfs@vger.kernel.org; Thu, 25 Aug 2016 17:58:44 +0200
+To: linux-btrfs@vger.kernel.org
+From: Lutz Vieweg <lvml@5t9.de>
+Subject: Re: BTRFS constantly reports "No space left on device" even with
+ a huge unallocated space
+Date: Thu, 25 Aug 2016 17:58:39 +0200
+Message-ID: <57BF15AF.40406@5t9.de>
+References: <1471023419.16857.9.camel@gmail.com> <CAJCQCtSwHCkW_nUNp4-R=S+ExZMk97i2qr6MwSuRU540c6xtfg@mail.gmail.com> <1471028417.16857.12.camel@gmail.com> <CAJCQCtTrEqR=UNpHp7ApbdBkwRRT6U5tiSHcs2y4N-P_G5u=Fw@mail.gmail.com> <CAJCQCtS51syrzxvpZXGzS=Ge=rW1iEfZDj6VrVmON39ww-Hmdg@mail.gmail.com> <CAKdnfRJeOXHmrumDkfxLTf-nU=KwZ0f7ybET-3o7kwwJDOZ2aw@mail.gmail.com> <CAJCQCtTrGTjOMaNNV7JKBybgbyn=_pYP=KvE1zc4AuPs=mo2=A@mail.gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=utf-8; format=flowed
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+In-Reply-To: <CAJCQCtTrGTjOMaNNV7JKBybgbyn=_pYP=KvE1zc4AuPs=mo2=A@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Aug 24, 2016 at 03:42:58PM -0700, Darrick J. Wong wrote:
-> On Wed, Aug 24, 2016 at 11:34:27AM -0700, Omar Sandoval wrote:
-> > On Mon, Aug 22, 2016 at 08:43:18PM -0600, Chris Murphy wrote:
-> > > On Mon, Aug 22, 2016 at 5:06 PM, Darrick J. Wong
-> > > <darrick.wong@oracle.com> wrote:
-> > > > [add Dave and Christoph to cc]
-> > > >
-> > > > On Mon, Aug 22, 2016 at 04:14:19PM -0400, Jeff Mahoney wrote:
-> > > >> On 8/21/16 2:59 PM, Tomokhov Alexander wrote:
-> > > >> > Btrfs wiki FAQ gives a link to example Python script: https://github.com/stsquad/scripts/blob/master/uncow.py
-> > > >> >
-> > > >> > But such a crucial and fundamental tool must exist in stock btrfs-progs. Filesystem with CoW technology at it's core must provide user sufficient control over CoW aspects. Running 3rd-party or manually written scripts for filesystem properties/metadata manipulation is not convenient, not safe and definitely not the way it must be done.
-> > > >> >
-> > > >> > Also is it possible (at least in theory) to "uncow" files being currently opened in-place? Without the trickery with creation & renaming of files or directories. So that running "chattr +C" on a file would be sufficient. If possible, is it going to be implemented?
-> > > >>
-> > > >> XFS is looking to do this via fallocate using a flag that all file
-> > > >> systems can choose to honor.  Once that lands, it would make sense for
-> > > >> btrfs to use it as well.  The idea is that when you pass the flag in, we
-> > > >> examine the range and CoW anything that has a refcount != 1.
-> > > >
-> > > > There /was/ a flag to do that -- FALLOC_FL_UNSHARE_RANGE.  However,
-> > > > Christoph and Dave felt[1] that the fallocate call didn't need to have
-> > > > an explicit 'unshare' mode because unsharing shared blocks is
-> > > > necessary to guarantee that a subsequent write will not ENOSPC.  I
-> > > > felt that was sufficient justification to withdraw the unshare mode
-> > > > flag.  If you fallocate the entire length of a shared file on XFS, it
-> > > > will turn off CoW for that file until you reflink/dedupe it again.
-> > > >
-> > > > At the time I wondered whether or not the btrfs developers (the list
-> > > > was cc'd) would pipe up in support of the unshare flag, but nobody
-> > > > did.  Consequently it remains nonexistent.  Christoph commented a few
-> > > > months ago about unsharing fallocate over NFS atop XFS blocking for a
-> > > > long time, though nobody asked for 'unshare' to be reinstated as a
-> > > > separate fallocate mode, much less a 'don't unshare' flag for regular
-> > > > fallocate mode.
-> > > >
-> > > > (FWIW I'm ok with not having to fight for more VFS changes. :))
-> > > >
-> > > >> That code hasn't landed yet though.  The last time I saw it posted was
-> > > >> June.  I don't speak with knowledge of the integration plan, but it
-> > > >> might just be queued up for the next merge window now that the reverse
-> > > >> mapping patches have landed in 4.8.
-> > > >
-> > > > I am going to try to land XFS reflink in 4.9; I hope to have an eighth
-> > > > patchset out for review at the end of the week.
-> > > >
-> > > > So... if the btrfs folks really want an unshare flag I can trivially
-> > > > re-add it to the VFS headers and re-enable it in the XFS
-> > > > implementation <cough> but y'all better speak up now and hammer out an
-> > > > acceptable definition.  I don't think XFS needs a new flag.
-> > > 
-> > > Use case wise I can't think of why I'd want to do unshare. There is a
-> > > use case for wanting to set nocow after the fact. I have no idea what
-> > > complexity is added on the Btrfs side for either operation, it seems
-> > > like at the least to set it, data csum needs a way to be ignored or
-> > > removed; and conversely to unset nocow it's a question whether that
-> > > means the file should have csum's computed, strictly speaking I guess
-> > > you could have cow without datacsum.
-> > 
-> > One use case is for swapfile support on Btrfs -- I implemented it with
-> > the requirement that the file was nocow with no shared extents. I think
-> > there was some discussion about having the swapon operation do that
-> > unshare, but I decided against that [1]. (I should take a look at
-> > reviving that patch series.)
-> > 
-> > Darrick, what's XFS doing for reflink + swap files?
-> > 
-> > 1: http://www.mail-archive.com/linux-kernel@vger.kernel.org/msg785536.html
-> 
-> We neither allow swapon() for file with shared extents, nor reflinking/deduping
-> files currently being used as swap.
-> 
-> --D
+On 08/16/2016 01:24 AM, Chris Murphy wrote:
+> On Mon, Aug 15, 2016 at 5:12 PM, Ronan Chagas <ronisbr@gmail.com> wrote:
+>> It happened again. The computer was completely unusable. The only useful
+>> message I saw was this one:
+>>
+>> http://img.ctrlv.in/img/16/08/16/57b24b0bb2243.jpg
+>
+> Looks similar to this:
+> https://lkml.org/lkml/2016/3/28/230
 
-Perfect, so that's consistent with the behavior from my series.
+Looks also similar to the subject of the lenghty thread titled
+"6TB partition, Data only 2TB - aka When you haven't hit the "usual" problem"
+that started with:
+> http://www.spinics.net/lists/linux-btrfs/msg50599.html
 
--- 
-Omar
+Regards,
+
+Lutz Vieweg
+

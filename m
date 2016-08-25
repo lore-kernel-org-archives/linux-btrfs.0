@@ -1,38 +1,33 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ua0-f174.google.com ([209.85.217.174]:36256 "EHLO
-        mail-ua0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1755279AbcHYG3P (ORCPT
+Received: from mail-oi0-f44.google.com ([209.85.218.44]:34440 "EHLO
+        mail-oi0-f44.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1756628AbcHYHXb (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 25 Aug 2016 02:29:15 -0400
-Received: by mail-ua0-f174.google.com with SMTP id m60so27828863uam.3
-        for <linux-btrfs@vger.kernel.org>; Wed, 24 Aug 2016 23:29:15 -0700 (PDT)
+        Thu, 25 Aug 2016 03:23:31 -0400
+Received: by mail-oi0-f44.google.com with SMTP id l203so55918095oib.1
+        for <linux-btrfs@vger.kernel.org>; Thu, 25 Aug 2016 00:23:31 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <CAC8ULPbST1tMtfW8MBdEXiFSxknQtUHYneZu8FpQij5DRon_gg@mail.gmail.com>
-References: <CAC8ULPbST1tMtfW8MBdEXiFSxknQtUHYneZu8FpQij5DRon_gg@mail.gmail.com>
-From: Robert Munteanu <robert.munteanu@gmail.com>
-Date: Thu, 25 Aug 2016 09:29:14 +0300
-Message-ID: <CAC8ULPaFE1oNRGnjGDhLHgtVf+HZ=+omAGoQr_GmmUSUAqB08Q@mail.gmail.com>
-Subject: Re: btrfs partition fails to mount - kernel BUG at ../fs/btrfs/extent-tree.c:1872
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+From: Gareth Pye <gareth@cerberos.id.au>
+Date: Thu, 25 Aug 2016 17:23:25 +1000
+Message-ID: <CA+WRLO8KuP8LS77NUbZLAs3e120oFudES_R3tYQjjYiCXH4BOA@mail.gmail.com>
+Subject: Recommendation on raid5 drive error resolution
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-(Replying to myself as I'm not subscribed and can't reply to Duncan's message)
+So I've been living on the reckless-side (meta RAID6, data RAID5) and
+I have a drive or two that isn't playing nicely any more.
 
-Hi Duncan,
+dmesg of the system running for a few minutes: http://pastebin.com/9pHBRQVe
 
-Good catch, mounting with -o skip_balance does allow me to mount the
-disk properly.
+Everything of value is backed up, but I'd rather keep data than
+download it all again. When I only saw one disk having troubles I was
+concerned. Now I notice both sda and sdc having issues I'm thinking I
+might be about to have a bad time.
 
-Scrubbing the partition once mounted results in 0 errors.
-
-I'm still going to keep this untouched for further investigation.
-
-Thanks,
-
-Robert
-
+What else should I provide?
 
 -- 
-http://robert.muntea.nu/
+Gareth Pye - blog.cerberos.id.au
+Level 2 MTG Judge, Melbourne, Australia

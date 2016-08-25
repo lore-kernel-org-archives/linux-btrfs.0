@@ -1,46 +1,70 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
 Received: from cn.fujitsu.com ([222.73.24.84]:31551 "EHLO song.cn.fujitsu.com"
         rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-        id S1757612AbcHYFZO (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 25 Aug 2016 01:25:14 -0400
+        id S1757363AbcHYFZM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 25 Aug 2016 01:25:12 -0400
 From: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
 Cc: dsterba@suse.cz
-Subject: [PATCH 1/3] btrfs-progs: check: remove unused found_key variable in walk_down_tree()
-Date: Thu, 25 Aug 2016 13:20:59 +0800
-Message-Id: <20160825052101.25864-1-wangxg.fnst@cn.fujitsu.com>
+Subject: [PATCH 2/3] btrfs-progs: check: make low memory mode support partially dropped snapshots
+Date: Thu, 25 Aug 2016 13:21:00 +0800
+Message-Id: <20160825052101.25864-2-wangxg.fnst@cn.fujitsu.com>
+In-Reply-To: <20160825052101.25864-1-wangxg.fnst@cn.fujitsu.com>
+References: <20160825052101.25864-1-wangxg.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 Signed-off-by: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
 ---
- cmds-check.c | 5 -----
- 1 file changed, 5 deletions(-)
+ cmds-check.c | 11 ++++++++++-
+ 1 file changed, 10 insertions(+), 1 deletion(-)
 
 diff --git a/cmds-check.c b/cmds-check.c
-index 0ddfd24..1cd0421 100644
+index 1cd0421..bce586c 100644
 --- a/cmds-check.c
 +++ b/cmds-check.c
-@@ -3737,7 +3737,6 @@ static int check_fs_root(struct btrfs_root *root,
- 		path.slots[level] = 0;
- 	} else {
- 		struct btrfs_key key;
--		struct btrfs_disk_key found_key;
+@@ -9016,9 +9016,10 @@ static int check_tree_block_backref(struct btrfs_fs_info *fs_info, u64 root_id,
+ 	free_extent_buffer(eb);
  
- 		btrfs_disk_key_to_cpu(&key, &root_item->drop_progress);
- 		level = root_item->drop_level;
-@@ -3745,10 +3744,6 @@ static int check_fs_root(struct btrfs_root *root,
- 		wret = btrfs_search_slot(NULL, root, &key, &path, 0, 0);
- 		if (wret < 0)
- 			goto skip_walking;
--		btrfs_node_key(path.nodes[level], &found_key,
--				path.slots[level]);
--		WARN_ON(memcmp(&found_key, &root_item->drop_progress,
--					sizeof(found_key)));
+ 	btrfs_init_path(&path);
++	path.lowest_level = level;
+ 	/* Search with the first key, to ensure we can reach it */
+ 	ret = btrfs_search_slot(NULL, root, &key, &path, 0, 0);
+-	if (ret) {
++	if (ret < 0) {
+ 		err |= REFERENCER_MISSING;
+ 		goto release_out;
+ 	}
+@@ -9901,6 +9902,8 @@ static int traverse_tree_block(struct btrfs_root *root,
+ 				struct extent_buffer *node)
+ {
+ 	struct extent_buffer *eb;
++	struct btrfs_key key;
++	struct btrfs_key drop_key;
+ 	int level;
+ 	u64 nr;
+ 	int i;
+@@ -9946,6 +9949,7 @@ static int traverse_tree_block(struct btrfs_root *root,
  	}
  
- 	while (1) {
+ 	nr = btrfs_header_nritems(node);
++	btrfs_disk_key_to_cpu(&drop_key, &root->root_item.drop_progress);
+ 	btree_space_waste += (BTRFS_NODEPTRS_PER_BLOCK(root) - nr) *
+ 		sizeof(struct btrfs_key_ptr);
+ 
+@@ -9953,6 +9957,11 @@ static int traverse_tree_block(struct btrfs_root *root,
+ 	for (i = 0; i < nr; i++) {
+ 		u64 blocknr = btrfs_node_blockptr(node, i);
+ 
++		btrfs_node_key_to_cpu(node, &key, i);
++		if (level == root->root_item.drop_level &&
++		    is_dropped_key(&key, &drop_key))
++			continue;
++
+ 		/*
+ 		 * As a btrfs tree has most 8 levels (0..7), so it's quite safe
+ 		 * to call the function itself.
 -- 
 2.9.0
 

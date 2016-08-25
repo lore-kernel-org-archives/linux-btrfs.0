@@ -1,70 +1,38 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:2889 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1755808AbcHYFev (ORCPT
+Received: from mail-ua0-f174.google.com ([209.85.217.174]:36256 "EHLO
+        mail-ua0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1755279AbcHYG3P (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 25 Aug 2016 01:34:51 -0400
-Subject: Re: [PATCH] btrfs-progs: check: skip shared node or leaf check for
- low_memory mode
-To: <dsterba@suse.cz>, <linux-btrfs@vger.kernel.org>
-References: <20160819095946.31917-1-wangxg.fnst@cn.fujitsu.com>
- <20160824124431.GQ16983@twin.jikos.cz>
-From: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
-Message-ID: <57BE8261.4040308@cn.fujitsu.com>
-Date: Thu, 25 Aug 2016 13:30:09 +0800
+        Thu, 25 Aug 2016 02:29:15 -0400
+Received: by mail-ua0-f174.google.com with SMTP id m60so27828863uam.3
+        for <linux-btrfs@vger.kernel.org>; Wed, 24 Aug 2016 23:29:15 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <20160824124431.GQ16983@twin.jikos.cz>
-Content-Type: text/plain; charset="windows-1252"; format=flowed
+In-Reply-To: <CAC8ULPbST1tMtfW8MBdEXiFSxknQtUHYneZu8FpQij5DRon_gg@mail.gmail.com>
+References: <CAC8ULPbST1tMtfW8MBdEXiFSxknQtUHYneZu8FpQij5DRon_gg@mail.gmail.com>
+From: Robert Munteanu <robert.munteanu@gmail.com>
+Date: Thu, 25 Aug 2016 09:29:14 +0300
+Message-ID: <CAC8ULPaFE1oNRGnjGDhLHgtVf+HZ=+omAGoQr_GmmUSUAqB08Q@mail.gmail.com>
+Subject: Re: btrfs partition fails to mount - kernel BUG at ../fs/btrfs/extent-tree.c:1872
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+(Replying to myself as I'm not subscribed and can't reply to Duncan's message)
 
-On 08/24/2016 08:44 PM, David Sterba wrote:
-> On Fri, Aug 19, 2016 at 05:59:46PM +0800, Wang Xiaoguang wrote:
->> The basic idea is simple. Assume a middle tree node A is shared and
->> its referenceing fs/file tree root ids are 5, 258 and 260, then we
->> only check node A in the tree who has the smallest root id. That means
->> in this case, when checking root tree(5), we check inode A, for root
->> tree 258 and 260, we can just skip it.
->>
->> Notice even with this patch, we still may visit a shared node or leaf
->> multiple times. This happens when a inode metadata occupies multiple
->> leaves.
->>
->>                   leaf_A     leaf_B
->> When checking inode item in leaf_A, assume inode[512] have file extents
->> in leaf_B, and leaf_B is shared. In the case, for inode[512], we must
->> visit leaf_B to have inode item check. After finishing inode[512] check,
->> here we walk down tree root to leaf_B to check whether node or leaf
->> is shared, if some node or leaf is shared, we can just skip it and below
->> nodes or leaf's check.
->>
->> I also fill a disk partition with linux source codes and create 3 snapshots
->> in it. Before this patch, it averagely took 46s to finish one btrfsck
->> execution, with this patch, it averagely took 15s.
->>
->> Signed-off-by: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
-> Can you please refresh the patch on top of current devel branch? I get
-> too many conflicts to resolve.
-This patch is to improve low memory mode fs/file tree check, but it seems
-Lu Fengqi's low memory fs/file tree check patches are not merged into your
-devel branch :)
+Hi Duncan,
 
->
->> @@ -2001,6 +2081,7 @@ static int walk_down_tree(struct btrfs_root *root, struct btrfs_path *path,
->>   				       path->nodes[*level]->start,
->>   				       *level, 1, &refs, NULL);
->>   		if (ret < 0) {
->> +			fprintf(stderr, "zhaoyan\n");
-> Probably a debugging leftover
-:)  I'll remove it.
+Good catch, mounting with -o skip_balance does allow me to mount the
+disk properly.
 
-Regards,
-Xiaoguang Wang
+Scrubbing the partition once mounted results in 0 errors.
 
->
->
+I'm still going to keep this untouched for further investigation.
+
+Thanks,
+
+Robert
 
 
-
+-- 
+http://robert.muntea.nu/

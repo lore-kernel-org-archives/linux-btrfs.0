@@ -1,72 +1,60 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1050.oracle.com ([156.151.31.82]:44520 "EHLO
-        userp1050.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753122AbcHZDrO (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 25 Aug 2016 23:47:14 -0400
-Received: from userp1040.oracle.com (userp1040.oracle.com [156.151.31.81])
-        by userp1050.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id u7Q15tsB023152
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Fri, 26 Aug 2016 01:05:55 GMT
-From: Liu Bo <bo.li.liu@oracle.com>
+Received: from cn.fujitsu.com ([222.73.24.84]:57317 "EHLO song.cn.fujitsu.com"
+        rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+        id S1750881AbcHZDmA (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 25 Aug 2016 23:42:00 -0400
+From: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.cz>
-Subject: [PATCH] Btrfs: bail out if block group has different mixed flag
-Date: Thu, 25 Aug 2016 18:08:27 -0700
-Message-Id: <1472173707-4533-1-git-send-email-bo.li.liu@oracle.com>
+Cc: clm@fb.com, dsterba@suse.com
+Subject: [PATCH] btrfs: do not decrease bytes_may_use when replaying extents
+Date: Fri, 26 Aug 2016 11:33:14 +0800
+Message-Id: <1472182394-7785-1-git-send-email-wangxg.fnst@cn.fujitsu.com>
+MIME-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Currently we allow inconsistence about mixed flag
- (BTRFS_BLOCK_GROUP_METADATA | BTRFS_BLOCK_GROUP_DATA).
+When replaying extents, there is no need to update bytes_may_use
+in btrfs_alloc_logged_file_extent(), otherwise it'll trigger a
+WARN_ON about bytes_may_use.
 
-We'd get ENOSPC if block group has mixed flag and btrfs doesn't.
-If that happens, we have one space_info with mixed flag and another
-space_info only with BTRFS_BLOCK_GROUP_METADATA, and
-global_block_rsv.space_info points to the latter one, but all bytes
-from block_group contributes to the mixed space_info, thus all the
-allocation will fail with ENOSPC.
-
-This adds a check for the above case.
-
-Reported-by: Vegard Nossum <vegard.nossum@oracle.com>
-Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+Fixes: ("btrfs: update btrfs_space_info's bytes_may_use timely")
+Signed-off-by: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
 ---
- fs/btrfs/extent-tree.c | 14 ++++++++++++++
- 1 file changed, 14 insertions(+)
+ fs/btrfs/extent-tree.c | 12 +++++++++---
+ 1 file changed, 9 insertions(+), 3 deletions(-)
 
 diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 806921f..642e0f0 100644
+index ae8f9aa..7a15990 100644
 --- a/fs/btrfs/extent-tree.c
 +++ b/fs/btrfs/extent-tree.c
-@@ -10150,6 +10150,11 @@ int btrfs_read_block_groups(struct btrfs_root *root)
- 	struct extent_buffer *leaf;
- 	int need_clear = 0;
- 	u64 cache_gen;
-+	u64 feature;
-+	int mixed;
+@@ -8242,6 +8242,7 @@ int btrfs_alloc_logged_file_extent(struct btrfs_trans_handle *trans,
+ {
+ 	int ret;
+ 	struct btrfs_block_group_cache *block_group;
++	struct btrfs_space_info *space_info;
+ 
+ 	/*
+ 	 * Mixed block groups will exclude before processing the log so we only
+@@ -8257,9 +8258,14 @@ int btrfs_alloc_logged_file_extent(struct btrfs_trans_handle *trans,
+ 	if (!block_group)
+ 		return -EINVAL;
+ 
+-	ret = btrfs_add_reserved_bytes(block_group, ins->offset,
+-				       ins->offset, 0);
+-	BUG_ON(ret); /* logic error */
++	space_info = block_group->space_info;
++	spin_lock(&space_info->lock);
++	spin_lock(&block_group->lock);
++	space_info->bytes_reserved += ins->offset;
++	block_group->reserved += ins->offset;
++	spin_unlock(&block_group->lock);
++	spin_unlock(&space_info->lock);
 +
-+	feature = btrfs_super_incompat_flags(info->super_copy);
-+	mixed = !!(feature & BTRFS_FEATURE_INCOMPAT_MIXED_GROUPS);
- 
- 	root = info->extent_root;
- 	key.objectid = 0;
-@@ -10203,6 +10208,15 @@ int btrfs_read_block_groups(struct btrfs_root *root)
- 				   btrfs_item_ptr_offset(leaf, path->slots[0]),
- 				   sizeof(cache->item));
- 		cache->flags = btrfs_block_group_flags(&cache->item);
-+		if (!mixed &&
-+		    ((cache->flags & BTRFS_BLOCK_GROUP_METADATA) &&
-+		    (cache->flags & BTRFS_BLOCK_GROUP_DATA))) {
-+			btrfs_err(info,
-+	 "bg(%llu) is a mixed block group but this is not a mixed btrfs image.",
-+				  cache->key.objectid);
-+			ret = -EINVAL;
-+			goto error;
-+		}
- 
- 		key.objectid = found_key.objectid + found_key.offset;
- 		btrfs_release_path(path);
+ 	ret = alloc_reserved_file_extent(trans, root, 0, root_objectid,
+ 					 0, owner, offset, ins, 1);
+ 	btrfs_put_block_group(block_group);
 -- 
-2.5.5
+2.9.0
+
+
 

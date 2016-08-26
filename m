@@ -1,46 +1,76 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ua0-f176.google.com ([209.85.217.176]:36520 "EHLO
-        mail-ua0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751554AbcHZUW2 (ORCPT
+Received: from mail-oi0-f50.google.com ([209.85.218.50]:36206 "EHLO
+        mail-oi0-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752988AbcHZUcb (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 26 Aug 2016 16:22:28 -0400
-Received: by mail-ua0-f176.google.com with SMTP id m60so116430452uam.3
-        for <linux-btrfs@vger.kernel.org>; Fri, 26 Aug 2016 13:21:53 -0700 (PDT)
+        Fri, 26 Aug 2016 16:32:31 -0400
+Received: by mail-oi0-f50.google.com with SMTP id f189so125783667oig.3
+        for <linux-btrfs@vger.kernel.org>; Fri, 26 Aug 2016 13:31:50 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <20160826190259.GB1470521@mother.pipebreaker.pl>
-References: <CAJtFHUSSEd0ABBRi1-Ko4ciu+-tr62KvkBDVRc4zYf8PF_g4cA@mail.gmail.com>
- <20160826190259.GB1470521@mother.pipebreaker.pl>
-From: E V <eliventer@gmail.com>
-Date: Fri, 26 Aug 2016 16:21:52 -0400
-Message-ID: <CAJtFHURV8pu-YaevrfRQ-=MtO04wecjD6=Pe86fXHfOC6Y32CQ@mail.gmail.com>
-Subject: Re: linux 4.7.2 & btrfs & rsync & OOM gone crazy
-To: Tomasz Torcz <tomek@pipebreaker.pl>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
+In-Reply-To: <ab0b6d021c60d76e32b69de6019adecb@durkon.lan>
+References: <efe09b37f04cbc7754f6c6d84c9070f0@durkon.lan> <CAJCQCtRuQvgTj-jj=k8Ehsnq0uEkbbzJJwRR6T16H+R4d6SeTw@mail.gmail.com>
+ <392b5e39596611f0ec15501dbf300c0e@durkon.lan> <CAJCQCtR=pjcCWYqpA=X5RG8RmpJ7Sk=hR-34obXyKjLw=JJcgg@mail.gmail.com>
+ <ab0b6d021c60d76e32b69de6019adecb@durkon.lan>
+From: Chris Murphy <lists@colorremedies.com>
+Date: Fri, 26 Aug 2016 14:31:48 -0600
+Message-ID: <CAJCQCtQ7krkcSisQ0MYtk7_Eb=7OQLeG+JYBjJQPUApnYNqVpA@mail.gmail.com>
+Subject: Re: Switch raid mode without rebalance?
+To: Gert Menke <gert@menke.ac>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Interesting, thanks. Patch doesn't apply clean to 4.7.2, but I get the
-gist, delete one version of should_compact_retry() and move ifdef so
-it only has __alloc_pages_direct_compact(). I'll try it out if my
-rsync gets OOM'd again.
+On Fri, Aug 26, 2016 at 1:18 PM, Gert Menke <gert@menke.ac> wrote:
+> Hi Chris,
+>
+> first off, thank you for the detailled explanations!
+>
+> On 2016-08-26 01:04, Chris Murphy wrote:
+>>
+>> No, it's not a file, directory or subvolume specific command. It
+>> applies to a whole volume.
+>
+> You are right, but all I was after in the first place was a way to change
+> the mode for new data on the whole volume.
 
-On Fri, Aug 26, 2016 at 3:02 PM, Tomasz Torcz <tomek@pipebreaker.pl> wrote:
-> On Fri, Aug 26, 2016 at 03:00:48PM -0400, E V wrote:
->> Just upgraded from 4.6.5 to 4.7.2 for my btrfs backup server with 32GB
->> of ram. Only thing that run's on it is an rsync of an NFS filesystem
->> to the local btrfs. Cached mem tends to hang out around 26-30GB, but
->> with 4.7.2 the OOM is now going crazy and trying to kill whatever it
->> can including my ssh and rsync process. Anyone seen anything similar?
+New chunks, yes in a rudimentary sense (btrfs balance start then
+cancel with a dconvert/mconvert), but there's no user control to
+provide a hint to the allocator which chunks to put new data into. It
+can go into new chunks or old chunks.
+
+Also, I *think* if you cancel the balance, a new balance is not going
+to complete the conversion - it will do the balance maintaining the
+mixed profile state of existing chunks. So you'd want to do something
+like -dconvert=profile,soft -mconvert=profile,soft
+
+
+
+>> If I add another file, I'll get another data chunk allocated, and
+>> it'll be added to the chunk tree as item 5, and it'll have its own
+>> physical  offset on each device.
 >
->   That's probably OOM regression in 4.7. Could you please test this patch:
-> https://lkml.org/lkml/2016/8/23/145
->
-> --
-> Tomasz Torcz              ,,If you try to upissue this patchset I shall be seeking
-> xmpp: zdzichubg@chrome.pl   an IP-routable hand grenade.'' -- Andrew Morton (LKML)
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> And this chunk just uses the same profile as the last one (or the parent in
+> the tree), I suppose.
+
+I honestly don't know how it determines what the profile will be; it
+might be the profile of the chunk with the most recent generation.
+
+
+
+https://btrfs.wiki.kernel.org/index.php/Compression#Why_does_not_du_report_the_compressed_size.3F
+> that du will not tell me the compressed size of a file. This is very
+> counter-intuitive, isn't it?
+> The reason stated is that some tools apparently determine the sparse-ness of
+> a file by comparing the size with the stat.st_blocks value.
+> I do not know if there is a better way to do that, so maybe my argument
+> falls apart right here, BUT: this looks to me like working around one bug by
+> introducing another. Wouldn't it be better to have a mount option
+> "make_du_lie_for_buggy_tools" for those that really need it? BTW, which
+> tools would an honest du break, and how? (What harm is there in thinking
+> that a compressed file is sparse?)
+
+I don't know anything about this so someone else will have to chime in.
+
+-- 
+Chris Murphy

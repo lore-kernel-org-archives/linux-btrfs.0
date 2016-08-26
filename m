@@ -1,48 +1,67 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from torres.zugschlus.de ([85.214.131.164]:38690 "EHLO
-        torres.zugschlus.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751126AbcHZGZp (ORCPT
+Received: from mail-it0-f50.google.com ([209.85.214.50]:34662 "EHLO
+        mail-it0-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750999AbcHZL7W (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 26 Aug 2016 02:25:45 -0400
-Date: Fri, 26 Aug 2016 07:59:59 +0200
-From: Marc Haber <mh+linux-btrfs@zugschlus.de>
-To: Chris Murphy <lists@colorremedies.com>
-Cc: Lutz Vieweg <lvml@5t9.de>, Ronan Chagas <ronisbr@gmail.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Subject: Re: BTRFS constantly reports "No space left on device" even with a
- huge unallocated space
-Message-ID: <20160826055959.GD2471@torres.zugschlus.de>
-References: <1471023419.16857.9.camel@gmail.com>
- <CAJCQCtSwHCkW_nUNp4-R=S+ExZMk97i2qr6MwSuRU540c6xtfg@mail.gmail.com>
- <1471028417.16857.12.camel@gmail.com>
- <CAJCQCtTrEqR=UNpHp7ApbdBkwRRT6U5tiSHcs2y4N-P_G5u=Fw@mail.gmail.com>
- <CAJCQCtS51syrzxvpZXGzS=Ge=rW1iEfZDj6VrVmON39ww-Hmdg@mail.gmail.com>
- <CAKdnfRJeOXHmrumDkfxLTf-nU=KwZ0f7ybET-3o7kwwJDOZ2aw@mail.gmail.com>
- <CAJCQCtTrGTjOMaNNV7JKBybgbyn=_pYP=KvE1zc4AuPs=mo2=A@mail.gmail.com>
- <57BF15AF.40406@5t9.de>
- <CAJCQCtT=X4bU42RUQfY3ogjvpd65YZKQ7_R+PEj8vO-e91n4FQ@mail.gmail.com>
+        Fri, 26 Aug 2016 07:59:22 -0400
+Received: by mail-it0-f50.google.com with SMTP id e63so3224195ith.1
+        for <linux-btrfs@vger.kernel.org>; Fri, 26 Aug 2016 04:58:25 -0700 (PDT)
+Subject: Re: Switch raid mode without rebalance?
+To: Gert Menke <gert@menke.ac>, Justin Kilpatrick <jkilpatr@redhat.com>
+References: <efe09b37f04cbc7754f6c6d84c9070f0@durkon.lan>
+ <CANhjow-uihWAQ-MREsT9oAHWoFSHgqi=bXJwV8FJOStyMpC6sw@mail.gmail.com>
+ <0981faee57e9de5b29a7150dc89c4092@durkon.lan>
+Cc: linux-btrfs@vger.kernel.org
+From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Message-ID: <456dc4ab-f6ae-48d6-94d6-782e56e284e0@gmail.com>
+Date: Fri, 26 Aug 2016 07:52:57 -0400
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-In-Reply-To: <CAJCQCtT=X4bU42RUQfY3ogjvpd65YZKQ7_R+PEj8vO-e91n4FQ@mail.gmail.com>
+In-Reply-To: <0981faee57e9de5b29a7150dc89c4092@durkon.lan>
+Content-Type: text/plain; charset=UTF-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-hi,
+On 2016-08-25 18:32, Gert Menke wrote:
+> Hi,
+>
+> On 2016-08-25 20:26, Justin Kilpatrick wrote:
+>
+>> I'm not sure why you want to avoid a balance,
+> I didn't check, but I imagined it would slow down my rsync significantly.
+It will slow it down, but I can't tell you exactly how much (there are 
+too many variables to give a good answer in this case).
+>
+>> Once you start this command all the new data should follow the new rules.
+> Ah, now that's interesting.
+> When the balance is running, df shows 4TB free space; when I cancel the
+> balance, the free space goes back to a few 100GB.
+Regular 'df' isn't to be trusted when dealing with BTRFS, the only 
+reason we report anything there is because many things break horribly if 
+we don't.
+>
+> But if the balancing only happens when the disk would otherwise be idle,
+> and the mere fact that there is a balance process running will cause the
+> new data to be written in single mode, I'm all set. I would not even
+> have to wait for the balance to finish after the rsync is done; I could
+> just cancel it and unmount the disks. A bit hacky, but in this case
+> totally acceptable.
+The balancing operation runs in the foreground (unless you daemonize it 
+in a new enough btrfs-progs), it isn't restricted to just using idle 
+time, and as explained by Chris Murphy in the other branch of this 
+thread, it's not flipping some binary switch telling the FS to write all 
+new data in the new profile.
 
-On Thu, Aug 25, 2016 at 05:56:18PM -0600, Chris Murphy wrote:
-> Anyway it's a known problem, I don't think it's fixed still. There's a
-> lot of enospc work in 4.8 so eventually it'll make sense to give it a
-> shot with that kernel.
+Additionally, while running with multiple profiles while not balancing 
+should work, it's pretty much untested, and any number of things may 
+break.  Assuming your two disks have similar latency and transfer speed, 
+you're almost certainly better off just converting completely to single 
+mode (which works like raid0, just at the chunk level instead of the 
+block level).  Doing so will likely have near zero impact on 
+performance, will also be easier to recover data from if one disk dies, 
+and will avoid the mostly untested situation of running with multiple 
+chunk profiles.
 
-assuming that I'm willing to try that, will a successful rebalance
-with 4.8 fix a filesystem, or is the recommended way still "backup,
-format, restore, lose all snapshots"?
-
-Greetings
-Marc
-
--- 
------------------------------------------------------------------------------
-Marc Haber         | "I don't trust Computers. They | Mailadresse im Header
-Leimen, Germany    |  lose things."    Winona Ryder | Fon: *49 6224 1600402
-Nordisch by Nature |  How to make an American Quilt | Fax: *49 6224 1600421
+On a slightly separate note, if your doing backups more frequently than 
+once a week, your probably better off just leaving the disks connected 
+and running.  Regular load/unload cycles are generally harder on the 
+mechanical components in modern disks than just leaving them running 24/7.

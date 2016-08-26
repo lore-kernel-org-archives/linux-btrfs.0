@@ -1,58 +1,46 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.kundenserver.de ([212.227.126.130]:55080 "EHLO
-        mout.kundenserver.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751671AbcHZUBA (ORCPT
+Received: from mail-ua0-f176.google.com ([209.85.217.176]:36520 "EHLO
+        mail-ua0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751554AbcHZUW2 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 26 Aug 2016 16:01:00 -0400
-Received: from durkon.lan ([37.201.97.218]) by mrelayeu.kundenserver.de
- (mreue001) with ESMTPSA (Nemesis) id 0MUxAq-1bcLWM02lI-00YC2Z for
- <linux-btrfs@vger.kernel.org>; Fri, 26 Aug 2016 21:53:58 +0200
-Received: from haley.lan (haley.lan [192.168.2.21])
-        by durkon.lan (Postfix) with ESMTPSA id 37EA81744
-        for <linux-btrfs@vger.kernel.org>; Fri, 26 Aug 2016 21:53:56 +0200 (CEST)
+        Fri, 26 Aug 2016 16:22:28 -0400
+Received: by mail-ua0-f176.google.com with SMTP id m60so116430452uam.3
+        for <linux-btrfs@vger.kernel.org>; Fri, 26 Aug 2016 13:21:53 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII;
- format=flowed
-Date: Fri, 26 Aug 2016 21:53:55 +0200
-From: Gert Menke <gert@menke.ac>
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: Switch raid mode without rebalance?
-In-Reply-To: <456dc4ab-f6ae-48d6-94d6-782e56e284e0@gmail.com>
-References: <efe09b37f04cbc7754f6c6d84c9070f0@durkon.lan>
- <CANhjow-uihWAQ-MREsT9oAHWoFSHgqi=bXJwV8FJOStyMpC6sw@mail.gmail.com>
- <0981faee57e9de5b29a7150dc89c4092@durkon.lan>
- <456dc4ab-f6ae-48d6-94d6-782e56e284e0@gmail.com>
-Message-ID: <adffdbf3b833f464a36a0e38a27d4608@durkon.lan>
+In-Reply-To: <20160826190259.GB1470521@mother.pipebreaker.pl>
+References: <CAJtFHUSSEd0ABBRi1-Ko4ciu+-tr62KvkBDVRc4zYf8PF_g4cA@mail.gmail.com>
+ <20160826190259.GB1470521@mother.pipebreaker.pl>
+From: E V <eliventer@gmail.com>
+Date: Fri, 26 Aug 2016 16:21:52 -0400
+Message-ID: <CAJtFHURV8pu-YaevrfRQ-=MtO04wecjD6=Pe86fXHfOC6Y32CQ@mail.gmail.com>
+Subject: Re: linux 4.7.2 & btrfs & rsync & OOM gone crazy
+To: Tomasz Torcz <tomek@pipebreaker.pl>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+Interesting, thanks. Patch doesn't apply clean to 4.7.2, but I get the
+gist, delete one version of should_compact_retry() and move ifdef so
+it only has __alloc_pages_direct_compact(). I'll try it out if my
+rsync gets OOM'd again.
 
-On 2016-08-26 13:52, Austin S. Hemmelgarn wrote:
-
-> Regular 'df' isn't to be trusted when dealing with BTRFS, the only
-> reason we report anything there is because many things break horribly
-> if we don't.
-Yeah, I noticed. Seems to produce a reasonable guess, though.
-
-> Additionally, while running with multiple profiles while not balancing
-> should work, it's pretty much untested, and any number of things may
-> break.
-Oh. Good to know.
-
-> Assuming your two disks have similar latency and transfer
-> speed, you're almost certainly better off just converting completely
-> to single mode (which works like raid0, just at the chunk level
-> instead of the block level).
-Okay, I see.
-
-> On a slightly separate note, if your doing backups more frequently
-> than once a week, your probably better off just leaving the disks
-> connected and running.  Regular load/unload cycles are generally
-> harder on the mechanical components in modern disks than just leaving
-> them running 24/7.
-True. A bit of context: I first want to make a full backup locally, then 
-use the disks off-site for nightly incremental backups via internet.
-
-Cheers
-Gert
+On Fri, Aug 26, 2016 at 3:02 PM, Tomasz Torcz <tomek@pipebreaker.pl> wrote:
+> On Fri, Aug 26, 2016 at 03:00:48PM -0400, E V wrote:
+>> Just upgraded from 4.6.5 to 4.7.2 for my btrfs backup server with 32GB
+>> of ram. Only thing that run's on it is an rsync of an NFS filesystem
+>> to the local btrfs. Cached mem tends to hang out around 26-30GB, but
+>> with 4.7.2 the OOM is now going crazy and trying to kill whatever it
+>> can including my ssh and rsync process. Anyone seen anything similar?
+>
+>   That's probably OOM regression in 4.7. Could you please test this patch:
+> https://lkml.org/lkml/2016/8/23/145
+>
+> --
+> Tomasz Torcz              ,,If you try to upissue this patchset I shall be seeking
+> xmpp: zdzichubg@chrome.pl   an IP-routable hand grenade.'' -- Andrew Morton (LKML)
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

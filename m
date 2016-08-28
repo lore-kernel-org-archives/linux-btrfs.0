@@ -1,29 +1,40 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cloud1-vm154.de-nserver.de ([178.250.10.56]:37099 "EHLO
-        cloud1-vm154.de-nserver.de" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1756036AbcH1UP1 (ORCPT
+Received: from tartarus.angband.pl ([89.206.35.136]:35483 "EHLO
+        tartarus.angband.pl" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751610AbcH1UTM (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 28 Aug 2016 16:15:27 -0400
-To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-From: Stefan Priebe - Profihost AG <s.priebe@profihost.ag>
-Subject: btrfs and systemd
-Message-ID: <47ee55de-a77b-185a-1a01-b8b39899b188@profihost.ag>
-Date: Sun, 28 Aug 2016 22:15:21 +0200
+        Sun, 28 Aug 2016 16:19:12 -0400
+Received: from kilobyte by tartarus.angband.pl with local (Exim 4.84_2)
+        (envelope-from <kilobyte@angband.pl>)
+        id 1be6Xs-0005Zh-Nj
+        for linux-btrfs@vger.kernel.org; Sun, 28 Aug 2016 22:19:08 +0200
+Date: Sun, 28 Aug 2016 22:19:08 +0200
+From: Adam Borowski <kilobyte@angband.pl>
+To: linux-btrfs@vger.kernel.org
+Subject: Re: does btrfs-receive use/compare the checksums from the btrfs-send
+ side?
+Message-ID: <20160828201908.GA19993@angband.pl>
+References: <1472355960.16760.9.camel@scientia.net>
+ <CAJCQCtQ9fv9ewj_E7W69d9UR1YzdE87ZSPrSWmjJJhN3cwtb1g@mail.gmail.com>
+ <1472406642.7253.1.camel@scientia.net>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1472406642.7253.1.camel@scientia.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+On Sun, Aug 28, 2016 at 07:50:42PM +0200, Christoph Anton Mitterer wrote:
+> On Sun, 2016-08-28 at 11:35 -0600, Chris Murphy wrote:
+> > I don't see evidence of them in the btrfs send file, so I don't think
+> > csums are in the stream.
+> 
+> hmm... isn't that kinda unfortunate not to make use of the information
+> that's already there?
 
-i'm trying to get my 60TB btrfs volume to mount with systemd at boot.
-But this always fails with: "mounting timed out. Stopping." after 90s.
+Transports over which you're likely to send a filesystem stream already
+protect against corruption.
 
-I can't find any fstab setting for systemd to higher this timeout.
-There's just  the x-systemd.device-timeout but this controls how long to
-wait for the device and not for the mount command.
+It'd still be nice to have something for those which don't, of course.
 
-Is there any solution for big btrfs volumes and systemd?
-
-Greets,
-Stefan
+-- 
+An imaginary friend squared is a real enemy.

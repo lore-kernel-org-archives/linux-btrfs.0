@@ -1,94 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtprelay03.ispgateway.de ([80.67.31.26]:35326 "EHLO
-        smtprelay03.ispgateway.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1755677AbcH1SEd (ORCPT
+Received: from mail-wm0-f50.google.com ([74.125.82.50]:37651 "EHLO
+        mail-wm0-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752619AbcH1SLr (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 28 Aug 2016 14:04:33 -0400
-From: "Hendrik Friedel" <hendrik@friedels.name>
-To: "Chris Murphy" <lists@colorremedies.com>
-Subject: Re[2]: btrfs check "Couldn't open file system" after error in transaction.c
-Cc: "Btrfs BTRFS" <linux-btrfs@vger.kernel.org>
-Date: Sun, 28 Aug 2016 18:04:26 +0000
-Message-Id: <em6202fbe3-160c-4002-9576-59e892fedcd0@laptophendrik>
-In-Reply-To: <CAJCQCtRDJ0_pEqtNiQWJoibO=QT-TfF8c7RE7KmF0KZU4T-=OA@mail.gmail.com>
-References: <em54d2d608-3b06-4e46-b795-214cf333e788@laptophendrik>
- <CAJCQCtRDJ0_pEqtNiQWJoibO=QT-TfF8c7RE7KmF0KZU4T-=OA@mail.gmail.com>
-Reply-To: "Hendrik Friedel" <hendrik@friedels.name>
-Mime-Version: 1.0
-Content-Type: text/plain; format=flowed; charset=utf-8
+        Sun, 28 Aug 2016 14:11:47 -0400
+Received: by mail-wm0-f50.google.com with SMTP id i5so60428814wmg.0
+        for <linux-btrfs@vger.kernel.org>; Sun, 28 Aug 2016 11:10:40 -0700 (PDT)
+References: <20160828193559.09534344@jupiter.sol.kaishome.de>
+Subject: Re: btrfstune settings
+To: linux-btrfs@vger.kernel.org
+Cc: Oliver Freyermuth <o.freyermuth@googlemail.com>
+From: Oliver Freyermuth <o.freyermuth@googlemail.com>
+Message-ID: <18fb1730-2820-81b1-781e-02ee9435d308@googlemail.com>
+Date: Sun, 28 Aug 2016 20:10:38 +0200
+MIME-Version: 1.0
+In-Reply-To: <20160828193559.09534344@jupiter.sol.kaishome.de>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Chris,
+> Try borgbackup, I'm using it very successfully. It is very fast,
+> supports very impressive deduplication and compression, retention
+> policies, and remote backups - and it is available as a single binary
+> version so you can more easily use it for disaster recovery. One
+> downside: while it seems to restore nocow attributes, it seems to do it
+> in a silly way (it first creates the file, then sets the attributes,
+> which of course won't work for nocow). I have not checked that
+> extensively, only had to restore once yet.
 
-thanks for your reply -especially on a Sunday.
->>  I have a filesystem (three disks with no raid)
->
->So it's data single *and* metadata single?
->
-No:
-Data, single: total=8.14TiB, used=7.64TiB
-System, RAID1: total=32.00MiB, used=912.00KiB
-Metadata, RAID1: total=18.00GiB, used=16.45GiB
-GlobalReserve, single: total=512.00MiB, used=0.00B
->
->
->>  btrfs check will lead to  "Couldn't open file system"
->
->Try btrfs-progs all the most recent btrfs-progs to see if it's any
->different: 4.5.3, 4.6.1, 4.7 (or 4.7.1 if you can get it, it's days
->old).
-Ok, I will try.
->>  [   98.534830] BTRFS error (device sde): parent transid verify failed 
->>on
->>  22168481054720 wanted 1826943 found 1828546
->
->
->That's pretty weird. It wants a LOWER generation number than what it
->found? By quite a bit. It's nearly 1500 generations different. I don't
->know what can cause this kind of confusion or how to fix it.
-Ok, time to get the data off it (I do have backups, but of course some 
-weeks old). Answering this question:
--If possible repair the filesystem
-NO
+Wow - this looks like the holy grail I've been waiting for, not sure how
+I have missed that up to now. 
+Especially the deduplication across several backupped systems on the backup target
+is interesting, I originally planned to do that using duperemove on the backup target
+to dedupe across the readonly snapshots. 
+I'll certainly give borgbackup a spin as soon as I have time to look into it! 
 
->  Maybe
->take advantage of the fact it does read only and recreate it. You
->could take a btrfs-image and btrfs-debug-tree first,
-And what do I do with it?
+> It's probably not worth the hassle... Wait until you are forced to
+> recreate the filesystem or you are having enough spare time to do it.
+> However, some settings can be changed for existing filesystems and I
+> would simply ignore the fact existing meta data needs to be converted.
 
->because there's
->some bug somewhere: somehow it became inconsistent, and can't be fixed
->at mount time or even with btrfs check.
-Ok, so is there any way to help you finding this bug?
-Coming back to my objectives:
--Understand the reason behind the issue and prevent it in future
-Finding the but would help on the above
+Thanks a lot for this hint and also your other points. I think I'll go that way,
+comparing a "similar" system with skinny metadata and one without the space usage for metadata
+seems not to be different by a noticeable factor. 
+Since my systems are SSD only, to avoid unnecessary writes I'll then just wait until
+I really need to replay a backup. 
 
--If not possible to repair the filesystem:
-    -understand if the data that I read from the drive is valid or 
-corrupted
-Can you answer this?
-
-As mentioned: I do have a backup, a month old. The data does not change 
-so regularly, so most should be ok.
-Now I have two sources of data:
-the backup and the current degraded filesystem.
-If data differs, which one do I take? Is it safe to use the more recent 
-one from the degraded filesystem?
-
-Greetings,
-Hendrik
-
->
->
->
->
->--
->Chris Murphy
-
-
----
-Diese E-Mail wurde von Avast Antivirus-Software auf Viren geprüft.
-https://www.avast.com/antivirus
-
+Thanks a lot and best regards, 
+	Oliver

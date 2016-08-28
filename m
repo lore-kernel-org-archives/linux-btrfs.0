@@ -1,27 +1,24 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lf0-f41.google.com ([209.85.215.41]:34923 "EHLO
-        mail-lf0-f41.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751449AbcHZW6U (ORCPT
+Received: from forward8m.cmail.yandex.net ([5.255.216.201]:56726 "EHLO
+        forward8m.cmail.yandex.net" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1755337AbcH1LxF (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 26 Aug 2016 18:58:20 -0400
-Received: by mail-lf0-f41.google.com with SMTP id f93so66251201lfi.2
-        for <linux-btrfs@vger.kernel.org>; Fri, 26 Aug 2016 15:58:19 -0700 (PDT)
-MIME-Version: 1.0
-From: Lukas Lueg <lukas.lueg@gmail.com>
-Date: Sat, 27 Aug 2016 00:57:57 +0200
-Message-ID: <CAJF-kY=8TG9hD-A6-YfX-2Y=O=mC6KJQpm8+V5A+SgDE7dQctg@mail.gmail.com>
-Subject: fuzzed segv in btrfsck
+        Sun, 28 Aug 2016 07:53:05 -0400
+Received: from mxback6m.mail.yandex.net (mxback6m.mail.yandex.net [37.140.138.66])
+        by forward8m.cmail.yandex.net (Yandex) with ESMTP id 3E601214A0
+        for <linux-btrfs@vger.kernel.org>; Sun, 28 Aug 2016 14:17:11 +0300 (MSK)
+From: Alexander Tomokhov <alexoundos@ya.ru>
 To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+Subject: Is there a performance advantage in using Btrfs subvolumes over raw (MBR/GPT) partitions on rotational disks?
+MIME-Version: 1.0
+Message-Id: <17621472383031@web11m.yandex.ru>
+Date: Sun, 28 Aug 2016 14:17:11 +0300
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+Let's say I use a 128GiB MBR partition for OS and remaining 800GiB+ on disk serves another purpose. Then all OS files will be physically close to each other on the disk, thus reducing seek times.
+If I use the whole disk for OS partition, then files will be spread across the disk and even OS-only operations will require hard drive heads to perform longer seeks.
 
-let me draw your attention to
-https://bugzilla.kernel.org/show_bug.cgi?id=154021 which is a
-reproducible segv in btrfs-progs v4.7-42-g56e9586 I found while
-fuzzing btrfs.
-
-Best regards
-Lukas
+What effect have Btrfs subvolumes in this case if I use them instead of MBR partitions?
+Btrfs wiki says: "btrfs does write optimisation (sequential writes) across a filesystem", "subvolume write performance will benefit from this algorithm". I don't understand what it means and couldn't find explanation. Does Btrfs optimize file data placement on rotational disk inside single subvolume, so that storing similar (accessed together) data inside single subvolume will benefit in terms of performance?

@@ -1,41 +1,51 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [195.159.176.226] ([195.159.176.226]:36481 "EHLO
-        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
-        with ESMTP id S1752371AbcH1NgC (ORCPT
+Received: from mail-wm0-f52.google.com ([74.125.82.52]:36368 "EHLO
+        mail-wm0-f52.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752567AbcH1QP6 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 28 Aug 2016 09:36:02 -0400
-Received: from list by blaine.gmane.org with local (Exim 4.84_2)
-        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-        id 1be0Es-0001ld-5B
-        for linux-btrfs@vger.kernel.org; Sun, 28 Aug 2016 15:35:06 +0200
+        Sun, 28 Aug 2016 12:15:58 -0400
+Received: by mail-wm0-f52.google.com with SMTP id q128so49990456wma.1
+        for <linux-btrfs@vger.kernel.org>; Sun, 28 Aug 2016 09:15:58 -0700 (PDT)
 To: linux-btrfs@vger.kernel.org
-From: Kai Krakow <hurikhan77@gmail.com>
-Subject: Re: btrfstune settings
-Date: Sun, 28 Aug 2016 15:30:55 +0200
-Message-ID: <20160828153055.41ac2d39@jupiter.sol.kaishome.de>
-References: <fac36170-075c-db45-5aff-afa55bcd9e34@googlemail.com>
-        <pan$852e9$bd44e66c$65d119d9$c6922137@cox.net>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+Cc: Oliver Freyermuth <o.freyermuth@googlemail.com>
+From: Oliver Freyermuth <o.freyermuth@googlemail.com>
+Subject: Re: btrfs send extremely slow (almost stuck)
+Message-ID: <c7cb948d-5831-7b97-937e-c21c5335e76c@googlemail.com>
+Date: Sun, 28 Aug 2016 18:15:55 +0200
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am Sun, 28 Aug 2016 08:27:59 +0000 (UTC)
-schrieb Duncan <1i5t5.duncan@cox.net>:
+(sorry if my Message-ID header is missing, I am not subscribed to the mailing list, 
+so I reply using mail-archive)
 
-> > However, I miss two things:
-> > - How do I see on an existing FS which of these features are on?
-> >   btrfstune (it seems) can only "set", but not "get" the feature
-> > flags.  
-> 
-> Try btrfs-show-super <device>.  The incompat_flags section enumerates
-> the flags that are on (at least with a reasonably new btrfs-progs).
+> So a workaround would be reducing your duperemove usage and possibly 
+> rewriting (for instance via defrag) the deduped files to kill the 
+> multiple reflinks.  Or simply delete the additional reflinked copies, if 
+> your use-case allows it.
 
-It's also in the sub directories of /sys/fs/btrfs...
+Sadly, I need the extra space (that's why I was using duperemove in the first place)
+and can not delete all duped copies. These are mainly several checkouts of different repositories
+with partially common (partially large binary) content. 
 
--- 
-Regards,
-Kai
+> And thin down your snapshot retention if you have many snapshots per 
+> subvolume.  With the geometric scaling issues, thinning to under 300 per 
+> subvolume should be quite reasonable in nearly all circumstances, and 
+> thinning to under 100 per subvolume may be possible and should result in 
+> dramatically reduced scaling issues.
 
-Replies to list-only preferred.
+In addition, I have only ~ 5 snapshots for both those volumes, which should certainly not be too much. 
 
+
+So in short, this just means btrfs send is (still) unusable
+for filesystems which rely on the offline dedupe feature (in the past 'btrfs send' got broken
+after dedupe which got fixed, now it is just extremely slow). 
+
+
+For me, this means I have to stay with rsync backups, which are sadly incomplete since special FS attrs
+like "C" for nocow are not backed up. 
+
+
+Cheers and thanks for your reply, 
+	Oliver

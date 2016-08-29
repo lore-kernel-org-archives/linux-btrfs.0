@@ -1,128 +1,73 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:48372 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1752154AbcH2CNC (ORCPT
+Received: from cloud1-vm154.de-nserver.de ([178.250.10.56]:52823 "EHLO
+        cloud1-vm154.de-nserver.de" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1750730AbcH2G21 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 28 Aug 2016 22:13:02 -0400
-Subject: Re: btrfs send extremely slow (almost stuck)
-To: Oliver Freyermuth <o.freyermuth@googlemail.com>,
-        <linux-btrfs@vger.kernel.org>
-References: <03b9d0b0-7001-7dd9-75cd-69d58b94d553@googlemail.com>
- <6bebd709-8fdd-5e88-650d-f1c551946505@cn.fujitsu.com>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <d7346353-8e61-27b1-df2f-aabcad0580f4@cn.fujitsu.com>
-Date: Mon, 29 Aug 2016 10:12:49 +0800
+        Mon, 29 Aug 2016 02:28:27 -0400
+Subject: Re: btrfs and systemd
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+References: <47ee55de-a77b-185a-1a01-b8b39899b188@profihost.ag>
+ <0fa90a35-587e-7bfc-9418-ea8416b8f02e@cn.fujitsu.com>
+From: Stefan Priebe - Profihost AG <s.priebe@profihost.ag>
+Message-ID: <f3a27bf7-fecd-e295-991a-8b69c3b92f12@profihost.ag>
+Date: Mon, 29 Aug 2016 08:28:22 +0200
 MIME-Version: 1.0
-In-Reply-To: <6bebd709-8fdd-5e88-650d-f1c551946505@cn.fujitsu.com>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+In-Reply-To: <0fa90a35-587e-7bfc-9418-ea8416b8f02e@cn.fujitsu.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hi Qu,
 
+Am 29.08.2016 um 03:48 schrieb Qu Wenruo:
+> 
+> 
+> At 08/29/2016 04:15 AM, Stefan Priebe - Profihost AG wrote:
+>> Hi,
+>>
+>> i'm trying to get my 60TB btrfs volume to mount with systemd at boot.
+>> But this always fails with: "mounting timed out. Stopping." after 90s.
+> 
+> 60TB is quite large, and under most case it will already cause mount
+> speed problem.
+> 
+> In our test environment, filling a fs with 16K small files to 2T (just
+> 128K files)will already slow the mount process to 10s.
+> 
+> For larger fs, or more specifically, large extent tree, will slow the
+> mount process obviously.
+> 
+> The root fix will need a rework of extent tree.
+> AFAIK Josef is working on the rework.
+> 
+> So the btrfs fix will need some time.
 
-At 08/29/2016 10:11 AM, Qu Wenruo wrote:
->
->
-> At 08/28/2016 11:38 AM, Oliver Freyermuth wrote:
->> Dear btrfs experts,
->>
->> I just tried to make use of btrfs send / receive for incremental
->> backups (using btrbk to simplify the process).
->> It seems that on my two machines, btrfs send gets stuck after
->> transferring some GiB - it's not fully halted, but instead of making
->> full use of the available I/O, I get something < 500 kiB on average,
->> which are just some "full speed spikes" with many seconds / minutes of
->> no I/O in between.
->>
->> During this "halting", btrfs send eats one full CPU core.
->> A "perf top" shows this is spent in "find_parent_nodes" and
->> "__merge_refs" inside the kernel.
->> I am using btrfs-progs 4.7 and kernel 4.7.0.
->
-> Unknown bug, while unfortunately no good idea to solve yet.
+thanks but i've no problem with the long mount time (in my case 6
+minutes) i'm just wondering how to live with it with systemd. As it
+always cancels the mount process after 90s and i see no fstab option to
+change this.
 
-Sorry, known bug, not unknown....
+Greets,
+Stefan
 
-Thanks,
-Qu
->
-> I sent a RFC patch to completely disable shared extent detection, while
-> got strong objection.
->
-> I also submitted some other ideas on fixing it, while still got strong
-> objection. Objection includes this is a performance problem, not a
-> function problem and we should focus on function problem first and
-> postpone such performance problem.
->
-> And further more, Btrfs from the beginning of its design, focuses on
-> fast snapshot creation, and takes backref walk as sacrifice.
-> So it's not an easy thing to fix.
->
->>
->> I googled a bit and found related patchwork
->> (https://patchwork.kernel.org/patch/9238987/) which seems to
->> workaround high load in this area and mentions a real solution is
->> proposed but not yet there.
->>
->> Since this affects two machines of mine and backupping my root volume
->> would take about 80 hours in case I can extrapolate the average rate,
->> this means btrfs send is unusable to me.
->>
->> Can I assume this is a common issue which will be fixed in a later
->> kernel release (4.8, 4.9) or can I do something to my FS's to
->> workaround this issue?
->
-> I don't expect there will be even an agreement on how to fix the problem
-> in v4.1x.
->
-> Fixes in send will lead to obvious speed improvement, while cause
-> incompatibility or super complex design.
-> Fixes in backref will lead to a backref rework, which normally comes
-> with new regression, and we are even unsure if it will really help.
->
-> If you just hate the super slow send, and can accept the extra space
-> usage, please try this RFC patch:
->
-> https://patchwork.kernel.org/patch/9245287/
->
->
-> This patch, just as its name, will completely stop same extent(reflink)
-> detection.
-> Which will cause more space usage, while it skipped the super time
-> consuming find_parent_nodes(), it should at least workaround your problem.
->
-> I have some other idea to fix it with less aggressive idea, while since
-> there is objection against it, I didn't code it further.
->
-> But, since there are *REAL* *WORLD* users reporting such problem, I
-> think I'd better restart the fix as an RFC.
->
+> 
 > Thanks,
 > Qu
 >>
->> One FS is only two weeks old, the other one now about 1 year. I did
->> some balancing at some points of time to have more unallocated space
->> for trimming,
->> and used duperemove regularly to free space. One FS has skinny
->> extents, the other has not.
+>> I can't find any fstab setting for systemd to higher this timeout.
+>> There's just  the x-systemd.device-timeout but this controls how long to
+>> wait for the device and not for the mount command.
 >>
->> Mount options are "rw,noatime,compress=zlib,ssd,space_cache,commit=120".
+>> Is there any solution for big btrfs volumes and systemd?
 >>
->> Apart from that: No RAID or any other special configuration involved.
->>
->> Cheers and any help appreciated,
->>     Oliver
->> --
+>> Greets,
+>> Stefan
+>> -- 
 >> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
 >> the body of a message to majordomo@vger.kernel.org
 >> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 >>
 >>
->
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-
-
+> 
+> 

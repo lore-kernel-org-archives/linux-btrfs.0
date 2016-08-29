@@ -1,73 +1,59 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cloud1-vm154.de-nserver.de ([178.250.10.56]:52823 "EHLO
-        cloud1-vm154.de-nserver.de" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1750730AbcH2G21 (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:34401 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1756577AbcH2IZP (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 29 Aug 2016 02:28:27 -0400
-Subject: Re: btrfs and systemd
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-References: <47ee55de-a77b-185a-1a01-b8b39899b188@profihost.ag>
- <0fa90a35-587e-7bfc-9418-ea8416b8f02e@cn.fujitsu.com>
-From: Stefan Priebe - Profihost AG <s.priebe@profihost.ag>
-Message-ID: <f3a27bf7-fecd-e295-991a-8b69c3b92f12@profihost.ag>
-Date: Mon, 29 Aug 2016 08:28:22 +0200
+        Mon, 29 Aug 2016 04:25:15 -0400
+Subject: Re: does btrfs-receive use/compare the checksums from the btrfs-send
+ side?
+To: Christoph Anton Mitterer <calestyo@scientia.net>,
+        <linux-btrfs@vger.kernel.org>
+References: <1472355960.16760.9.camel@scientia.net>
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Message-ID: <640da4f0-4854-5135-aacc-350bfa99c6ed@cn.fujitsu.com>
+Date: Mon, 29 Aug 2016 16:25:10 +0800
 MIME-Version: 1.0
-In-Reply-To: <0fa90a35-587e-7bfc-9418-ea8416b8f02e@cn.fujitsu.com>
-Content-Type: text/plain; charset=utf-8
+In-Reply-To: <1472355960.16760.9.camel@scientia.net>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Qu,
 
-Am 29.08.2016 um 03:48 schrieb Qu Wenruo:
-> 
-> 
-> At 08/29/2016 04:15 AM, Stefan Priebe - Profihost AG wrote:
->> Hi,
->>
->> i'm trying to get my 60TB btrfs volume to mount with systemd at boot.
->> But this always fails with: "mounting timed out. Stopping." after 90s.
-> 
-> 60TB is quite large, and under most case it will already cause mount
-> speed problem.
-> 
-> In our test environment, filling a fs with 16K small files to 2T (just
-> 128K files)will already slow the mount process to 10s.
-> 
-> For larger fs, or more specifically, large extent tree, will slow the
-> mount process obviously.
-> 
-> The root fix will need a rework of extent tree.
-> AFAIK Josef is working on the rework.
-> 
-> So the btrfs fix will need some time.
 
-thanks but i've no problem with the long mount time (in my case 6
-minutes) i'm just wondering how to live with it with systemd. As it
-always cancels the mount process after 90s and i see no fstab option to
-change this.
+At 08/28/2016 11:46 AM, Christoph Anton Mitterer wrote:
+> Hey.
+>
+> I've often wondered:
+> When I do a send/receive, does the receiving side use the checksums
+> from the sending side (either by directly storing them or by comparing
+> them with calculated checksums and failing if they don't match after
+> the transfer)?
 
-Greets,
-Stefan
+Send will generate checksum for each command.
 
-> 
-> Thanks,
-> Qu
->>
->> I can't find any fstab setting for systemd to higher this timeout.
->> There's just  the x-systemd.device-timeout but this controls how long to
->> wait for the device and not for the mount command.
->>
->> Is there any solution for big btrfs volumes and systemd?
->>
->> Greets,
->> Stefan
->> -- 
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->>
->>
-> 
-> 
+https://btrfs.wiki.kernel.org/index.php/Design_notes_on_Send/Receive#Overal_strucutre
+
+(Finally the new page is useful now)
+
+Although the checksum is not the same way for btrfs.
+For btrfs, data checksum is CRC32 per sectorsize(4K for x86_64), and 
+CRC32 for the whole tree block.
+
+For send stream, it's CRC32 for the whole command.
+
+Thanks,
+Qu
+
+>
+> Cause that would effectively secure any transport in between against
+> transmission errors ... and also against badblocks/etc. on the
+> receiving fs.
+>
+> If btrfs is already that smart, then I think this feature should be
+> mentioned in the send/receive manpages.
+>
+> Cheers,
+> Chris.
+>
+
+

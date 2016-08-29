@@ -1,30 +1,32 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ua0-f179.google.com ([209.85.217.179]:33760 "EHLO
-        mail-ua0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1756097AbcH1VlY (ORCPT
+Received: from mail-oi0-f41.google.com ([209.85.218.41]:36506 "EHLO
+        mail-oi0-f41.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1756089AbcH2APM (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 28 Aug 2016 17:41:24 -0400
-Received: by mail-ua0-f179.google.com with SMTP id l94so154809516ual.0
-        for <linux-btrfs@vger.kernel.org>; Sun, 28 Aug 2016 14:41:23 -0700 (PDT)
+        Sun, 28 Aug 2016 20:15:12 -0400
+Received: by mail-oi0-f41.google.com with SMTP id f189so176579879oig.3
+        for <linux-btrfs@vger.kernel.org>; Sun, 28 Aug 2016 17:15:11 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <c7cb948d-5831-7b97-937e-c21c5335e76c@googlemail.com>
-References: <c7cb948d-5831-7b97-937e-c21c5335e76c@googlemail.com>
-From: james harvey <jamespharvey20@gmail.com>
-Date: Sun, 28 Aug 2016 17:41:22 -0400
-Message-ID: <CA+X5Wn6BPhSR4Zsjp9xOgOap=GXKE2bCcgFtbpouMJ2y+++Qwg@mail.gmail.com>
-Subject: Re: btrfs send extremely slow (almost stuck)
-To: Oliver Freyermuth <o.freyermuth@googlemail.com>
-Cc: linux-btrfs@vger.kernel.org
+In-Reply-To: <CAJCQCtSUVeXwuKn8rR_Rw24anzHNSLgVo_wYkot1mZYXiGkJ1w@mail.gmail.com>
+References: <CA+WRLO8KuP8LS77NUbZLAs3e120oFudES_R3tYQjjYiCXH4BOA@mail.gmail.com>
+ <CAJCQCtSUVeXwuKn8rR_Rw24anzHNSLgVo_wYkot1mZYXiGkJ1w@mail.gmail.com>
+From: Gareth Pye <gareth@cerberos.id.au>
+Date: Mon, 29 Aug 2016 10:15:10 +1000
+Message-ID: <CA+WRLO_6q2cZqPPkmtqjjkq7tfdh5DDyE_oHFswFoQVz8FguKw@mail.gmail.com>
+Subject: Re: Recommendation on raid5 drive error resolution
+To: Chris Murphy <lists@colorremedies.com>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Aug 28, 2016 at 12:15 PM, Oliver Freyermuth
-<o.freyermuth@googlemail.com> wrote:
-> For me, this means I have to stay with rsync backups, which are sadly incomplete since special FS attrs
-> like "C" for nocow are not backed up.
+Current status:
 
-Should be able to make a script that creates a textfile with lsattr
-for every file.  Then either just leave that file as part of the
-backup in case it's needed some day, or making a corresponding script
-on the backup machine to restore those.
+Knowing things were bad I did set the scterc values sanely, but the
+box was getting less stable so I thought a reboot was a good idea.
+That reboot failed to mount the partition at all and eveything
+triggered my 'is this a psu issue' sense so I've left the box off till
+I've got time to check if a psu replacement makes anything happier.
+That might happen tonight or tomorrow.
+
+I'll update the thread when I do that.

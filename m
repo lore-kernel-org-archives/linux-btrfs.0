@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:7029 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:16776 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S932681AbcH2IJL (ORCPT
+        with ESMTP id S932862AbcH2IJP (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 29 Aug 2016 04:09:11 -0400
+        Mon, 29 Aug 2016 04:09:15 -0400
 Received: from G08CNEXCHPEKD02.g08.fujitsu.local (unknown [10.167.33.83])
-        by cn.fujitsu.com (Postfix) with ESMTP id 050DA4334C85
-        for <linux-btrfs@vger.kernel.org>; Mon, 29 Aug 2016 16:09:08 +0800 (CST)
+        by cn.fujitsu.com (Postfix) with ESMTP id 06CCD4334C72
+        for <linux-btrfs@vger.kernel.org>; Mon, 29 Aug 2016 16:09:09 +0800 (CST)
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH 3/4] btrfs-progs: Ignore invalid key in invalid root
-Date: Mon, 29 Aug 2016 16:09:01 +0800
-Message-ID: <20160829080902.2952-4-quwenruo@cn.fujitsu.com>
+Subject: [PATCH 4/4] btrfs-progs: Do extra chunk check before processing chunk item
+Date: Mon, 29 Aug 2016 16:09:02 +0800
+Message-ID: <20160829080902.2952-5-quwenruo@cn.fujitsu.com>
 In-Reply-To: <20160829080902.2952-1-quwenruo@cn.fujitsu.com>
 References: <20160829080902.2952-1-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -19,99 +19,88 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Btrfs tree implies a lot of restriction on which key types are allowed
-in specific roots.
+Current we only do chunk validation check at mount time.
 
-Like CHUNK_ITEM keys are only valid in chunk root.
+It's good for most case, but for fuzzed or manually crafted images, we
+can insert a CHUNK_ITEM key into root tree.
 
-This patch will add such check at run_next_block() for original mode.
+Since mount time check will only check chunk tree, it will not check
+CHUNK_ITEM in root tree.
+
+Even with previous key type check against leaf owner, it is still
+possible to modify the leaf owner to by-pass it.
+
+So we still need to check chunk validation before processing it.
 
 Reported-by: Lukas Lueg <lukas.lueg@gmail.com>
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- cmds-check.c | 62 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 62 insertions(+)
+ cmds-check.c | 16 ++++++++++++++++
+ volumes.c    |  8 ++++----
+ volumes.h    |  4 ++++
+ 3 files changed, 24 insertions(+), 4 deletions(-)
 
 diff --git a/cmds-check.c b/cmds-check.c
-index 0ddfd24..617b867 100644
+index 617b867..1e1f7c9 100644
 --- a/cmds-check.c
 +++ b/cmds-check.c
-@@ -6122,6 +6122,58 @@ full_backref:
- 	return 0;
- }
+@@ -5220,8 +5220,24 @@ static int process_chunk_item(struct cache_tree *chunk_cache,
+ 			      int slot)
+ {
+ 	struct chunk_record *rec;
++	struct btrfs_chunk *chunk;
+ 	int ret = 0;
  
-+static void report_mismatch_key_root(u8 key_type, u64 rootid)
-+{
-+	fprintf(stderr, "Invalid key type(");
-+	print_key_type(stderr, 0, key_type);
-+	fprintf(stderr, ") found in root(");
-+	print_objectid(stderr, rootid, 0);
-+	fprintf(stderr, ")\n");
-+}
-+
-+/*
-+ * Check if the key is valid with its extent buffer.
-+ *
-+ * This is a early check in case invalid key exists in a extent buffer
-+ * This is not comprehensive yet, but should prevent wrong key/item passed
-+ * further
-+ */
-+static int check_type_with_root(u64 rootid, u8 key_type)
-+{
-+	switch (key_type) {
-+	/* Only valid in chunk tree */
-+	case BTRFS_DEV_ITEM_KEY:
-+	case BTRFS_CHUNK_ITEM_KEY:
-+		if (rootid != BTRFS_CHUNK_TREE_OBJECTID)
-+			goto err;
-+		break;
-+	/* valid in csum and log tree */
-+	case BTRFS_CSUM_TREE_OBJECTID:
-+		if (!(rootid == BTRFS_TREE_LOG_OBJECTID ||
-+		      is_fstree(rootid)))
-+			goto err;
-+		break;
-+	case BTRFS_EXTENT_ITEM_KEY:
-+	case BTRFS_METADATA_ITEM_KEY:
-+	case BTRFS_BLOCK_GROUP_ITEM_KEY:
-+		if (rootid != BTRFS_EXTENT_TREE_OBJECTID)
-+			goto err;
-+		break;
-+	case BTRFS_ROOT_ITEM_KEY:
-+		if (rootid != BTRFS_ROOT_TREE_OBJECTID)
-+			goto err;
-+		break;
-+	case BTRFS_DEV_EXTENT_KEY:
-+		if (rootid != BTRFS_DEV_TREE_OBJECTID)
-+			goto err;
-+		break;
++	chunk = btrfs_item_ptr(eb, slot, struct btrfs_chunk);
++	/*
++	 * Do extra check for this chunk item,
++	 *
++	 * It's still possible one can craft a leaf with CHUNK_ITEM, with
++	 * wrong onwer(3) out of chunk tree, to pass both chunk tree check
++	 * and owner<->key_type check.
++	 */
++	ret = btrfs_check_chunk_valid(global_info->tree_root, eb, chunk, slot,
++				      key->offset);
++	if (ret < 0) {
++		error("chunk(%llu, %llu) is not valid, ignore it",
++		      key->offset, btrfs_chunk_length(eb, chunk));
++		return 0;
 +	}
-+	return 0;
-+err:
-+	report_mismatch_key_root(key_type, rootid);
-+	return -EINVAL;
-+}
-+
- static int run_next_block(struct btrfs_root *root,
- 			  struct block_info *bits,
- 			  int bits_nr,
-@@ -6271,6 +6323,16 @@ static int run_next_block(struct btrfs_root *root,
- 		for (i = 0; i < nritems; i++) {
- 			struct btrfs_file_extent_item *fi;
- 			btrfs_item_key_to_cpu(buf, &key, i);
-+			/*
-+			 * Check key type against the leaf owner.
-+			 * Could filter quite a lot of early error if
-+			 * owner is correct
-+			 */
-+			if (check_type_with_root(btrfs_header_owner(buf),
-+						 key.type)) {
-+				fprintf(stderr, "ignoring invalid key\n");
-+				continue;
-+			}
- 			if (key.type == BTRFS_EXTENT_ITEM_KEY) {
- 				process_extent_item(root, extent_cache, buf,
- 						    i);
+ 	rec = btrfs_new_chunk_record(eb, key, slot);
+ 	ret = insert_cache_extent(chunk_cache, &rec->cache);
+ 	if (ret) {
+diff --git a/volumes.c b/volumes.c
+index 9a5580a..2d07e66 100644
+--- a/volumes.c
++++ b/volumes.c
+@@ -1614,10 +1614,10 @@ static struct btrfs_device *fill_missing_device(u64 devid)
+  * slot == -1: SYSTEM chunk
+  * return -EIO on error, otherwise return 0
+  */
+-static int btrfs_check_chunk_valid(struct btrfs_root *root,
+-				   struct extent_buffer *leaf,
+-				   struct btrfs_chunk *chunk,
+-				   int slot, u64 logical)
++int btrfs_check_chunk_valid(struct btrfs_root *root,
++			    struct extent_buffer *leaf,
++			    struct btrfs_chunk *chunk,
++			    int slot, u64 logical)
+ {
+ 	u64 length;
+ 	u64 stripe_len;
+diff --git a/volumes.h b/volumes.h
+index af7182b..d7b7d3c 100644
+--- a/volumes.h
++++ b/volumes.h
+@@ -226,4 +226,8 @@ int write_raid56_with_parity(struct btrfs_fs_info *info,
+ 			     struct extent_buffer *eb,
+ 			     struct btrfs_multi_bio *multi,
+ 			     u64 stripe_len, u64 *raid_map);
++int btrfs_check_chunk_valid(struct btrfs_root *root,
++			    struct extent_buffer *leaf,
++			    struct btrfs_chunk *chunk,
++			    int slot, u64 logical);
+ #endif
 -- 
 2.9.3
 

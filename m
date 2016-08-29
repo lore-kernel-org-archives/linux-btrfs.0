@@ -1,79 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:40864 "EHLO
-        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751702AbcHXSZv (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:30940 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+        with ESMTP id S932626AbcH2IJM (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 24 Aug 2016 14:25:51 -0400
-Date: Wed, 24 Aug 2016 11:24:59 -0700
-From: Liu Bo <bo.li.liu@oracle.com>
-To: Filipe Manana <fdmanana@gmail.com>
-Cc: Qu Wenruo <quwenruo@cn.fujitsu.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] btrfs: Fix extent map leak in find_first_block_group
-Message-ID: <20160824182459.GD1361@localhost.localdomain>
-Reply-To: bo.li.liu@oracle.com
-References: <20160824041300.20072-1-quwenruo@cn.fujitsu.com>
- <CAL3q7H5joucRg1V_Ddmw0CU_rPfQ0AsEYW8qw1KRxO+hnZm5cA@mail.gmail.com>
+        Mon, 29 Aug 2016 04:09:12 -0400
+Received: from G08CNEXCHPEKD02.g08.fujitsu.local (unknown [10.167.33.83])
+        by cn.fujitsu.com (Postfix) with ESMTP id 48D494334C72
+        for <linux-btrfs@vger.kernel.org>; Mon, 29 Aug 2016 16:09:05 +0800 (CST)
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH 0/4] Fix chunk num_stripes FPE error found by fuzzed image
+Date: Mon, 29 Aug 2016 16:08:58 +0800
+Message-ID: <20160829080902.2952-1-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CAL3q7H5joucRg1V_Ddmw0CU_rPfQ0AsEYW8qw1KRxO+hnZm5cA@mail.gmail.com>
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Aug 24, 2016 at 09:54:16AM +0100, Filipe Manana wrote:
-> On Wed, Aug 24, 2016 at 5:13 AM, Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
-> > The following commit introduced the extent map leak:
-> > commit 6fb37b756acce6d6e045f79c3764206033f617b4
-> > Author: Liu Bo <bo.li.liu@oracle.com>
-> > Date:   Wed Jun 22 18:31:27 2016 -0700
-> >
-> >     Btrfs: check inconsistence between chunk and block group
-> >
-> > This leads to slab warning at rmmod time.
-> >
-> > Cc: Liu Bo <bo.li.liu@oracle.com>
-> > Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
-> 
-> https://patchwork.kernel.org/patch/9288751/
+This patchset will fix chunk num_stripes FPE error, by introducing another 2
+layers of check.
 
-Thanks to all for fixing this.
+1) Check key type validation against leaf owner(for original mode)
+   This will prevent invalid key, like CHUNK_ITEM key in root tree, to be
+   passed to later check.
 
-Thanks,
+   For original mode, it uses leaf's owner as standard.
+   For low memory mode, it will use root->objectid(while not in devel
+   branch yet)
 
--liubo
+   This is an extra early check layer, which could benefit other part.
 
-> 
-> > ---
-> >  fs/btrfs/extent-tree.c | 1 +
-> >  1 file changed, 1 insertion(+)
-> >
-> > diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-> > index c2b81b0..e621823 100644
-> > --- a/fs/btrfs/extent-tree.c
-> > +++ b/fs/btrfs/extent-tree.c
-> > @@ -9905,6 +9905,7 @@ static int find_first_block_group(struct btrfs_root *root,
-> >                                 ret = -ENOENT;
-> >                         } else {
-> >                                 ret = 0;
-> > +                               free_extent_map(em);
-> >                         }
-> >                         goto out;
-> >                 }
-> > --
-> > 2.7.4
-> >
-> >
-> >
-> > --
-> > To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> > the body of a message to majordomo@vger.kernel.org
-> > More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
-> 
-> 
-> -- 
-> Filipe David Manana,
-> 
-> "People will forget what you said,
->  people will forget what you did,
->  but people will never forget how you made them feel."
+2) Check chunk item again before processing it
+   This is the root fix, as final defense for chunk item.
+   This check itself can already fix the problem.
+   But 1) can give more info on which is really going wrong in the fs.
+
+Thanks for Lukas for his fuzzed images and report.
+
+Qu Wenruo (4):
+  btrfs-progs: Enhance and export print_objectid function
+  btrfs-progs: Enhance and export print_key_type function
+  btrfs-progs: Ignore invalid key in invalid root
+  btrfs-progs: Do extra chunk check before processing chunk item
+
+ cmds-check.c |  78 ++++++++++++++++++++++++++++++++
+ print-tree.c | 145 ++++++++++++++++++++++++++++++-----------------------------
+ print-tree.h |   2 +
+ volumes.c    |   8 ++--
+ volumes.h    |   4 ++
+ 5 files changed, 161 insertions(+), 76 deletions(-)
+
+-- 
+2.9.3
+
+
+

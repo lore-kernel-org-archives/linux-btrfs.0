@@ -1,15 +1,15 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ua0-f177.google.com ([209.85.217.177]:34583 "EHLO
-        mail-ua0-f177.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1754105AbcH2QCo (ORCPT
+Received: from mail-ua0-f170.google.com ([209.85.217.170]:35534 "EHLO
+        mail-ua0-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1755505AbcH2QEu (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 29 Aug 2016 12:02:44 -0400
-Received: by mail-ua0-f177.google.com with SMTP id k90so253540370uak.1
-        for <linux-btrfs@vger.kernel.org>; Mon, 29 Aug 2016 09:02:43 -0700 (PDT)
+        Mon, 29 Aug 2016 12:04:50 -0400
+Received: by mail-ua0-f170.google.com with SMTP id i32so83381781uai.2
+        for <linux-btrfs@vger.kernel.org>; Mon, 29 Aug 2016 09:04:49 -0700 (PDT)
 MIME-Version: 1.0
 From: "ojab //" <ojab@ojab.ru>
-Date: Mon, 29 Aug 2016 16:02:42 +0000
-Message-ID: <CAKzrAgSNa2SkGRckC47KeKuTdHA3H7QTeNPfuGrfUC6D7v+3Bg@mail.gmail.com>
+Date: Mon, 29 Aug 2016 16:04:48 +0000
+Message-ID: <CAKzrAgTcrjN_qLqzqQ_izpB_AvypaGV=TGNEeH=-18GmOVjAAg@mail.gmail.com>
 Subject: `btrfs dev del` fails with `No space left on device`
 To: linux-btrfs <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
@@ -17,7 +17,7 @@ Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 Hi,
-
+[and I hope that this message will not be sent during compose]
 I've had BTRFS filesystem with two 1Tb drives (sdb1 & sdc1), data
 raid0 & metadata raid1. I need to replace one drive with 2Tb drive, so
 I've done `btrfs dev add /dev/sdd /mnt/xxx` and now trying to do
@@ -56,5 +56,14 @@ $ sudo btrfs device usage /mnt/xxx/
 
 As far as I understand, no data is allocated on `/dev/sdc1`, so it
 should be no space for metadata, but I don't really understand how can
-I balance only metadata:
-$btrfs fi balance start -musage=1 -dusage=0 /mnt/torrents/
+I balance only metadata, both:
+
+$ btrfs fi balance start -musage=1 -dusage=0 /mnt/xxx/
+$ sudo btrfs fi balance start -musage=1 -dusage=0 -mconvert=raid1 /mnt/xxx/
+
+fails with something like `BTRFS info (device sdb1): 1 enospc errors
+during balance` in dmesg.
+
+Is there any way to delete /dev/sdc1 without full rebalance?
+
+//wbr ojab

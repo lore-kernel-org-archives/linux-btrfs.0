@@ -1,63 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from zeniv.linux.org.uk ([195.92.253.2]:46982 "EHLO
-	ZenIV.linux.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932146AbcHKCT1 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 10 Aug 2016 22:19:27 -0400
-Date: Thu, 11 Aug 2016 03:19:09 +0100
-From: Al Viro <viro@ZenIV.linux.org.uk>
-To: Josef Bacik <jbacik@fb.com>
-Cc: Linus Torvalds <torvalds@linux-foundation.org>,
-        kernel test robot <xiaolong.ye@intel.com>, Chris Mason <clm@fb.com>,
-        David Sterba <dsterba@suse.com>,
-        "J. Bruce Fields" <bfields@redhat.com>,
-        LKML <linux-kernel@vger.kernel.org>, LKP <lkp@01.org>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>,
-        Linux NFS Mailing List <linux-nfs@vger.kernel.org>
-Subject: Re: [lkp] [nfsd] b44061d0b9: BUG: Dentry
- ffff880027d7c540{i=1846f,n=0a} still in use (1) [unmount of btrfs vda]
-Message-ID: <20160811021909.GR2356@ZenIV.linux.org.uk>
-References: <20160810053947.GG21941@yexl-desktop>
- <CA+55aFxdcG4y4zWTFFT8SekEtxsvx12P+e=11kTCFc=zS__bXQ@mail.gmail.com>
- <dc406145-b465-b7e9-e370-91910abb8e6a@fb.com>
- <CA+55aFzdTMBc7f5=bQLRUtceu-Kg-MGmzWrAv1r96_ra8yutJA@mail.gmail.com>
- <e6fb50d4-2a27-13cd-02c8-5b8439a16b3f@fb.com>
+Received: from mx2.suse.de ([195.135.220.15]:59529 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1753029AbcH2RM3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 29 Aug 2016 13:12:29 -0400
+Date: Mon, 29 Aug 2016 19:11:10 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Austin S Hemmelgarn <ahferroin7@gmail.com>
+Cc: russell@coker.com.au, Qu Wenruo <quwenruo@cn.fujitsu.com>,
+        Lukas Lueg <lukas.lueg@gmail.com>, linux-btrfs@vger.kernel.org
+Subject: Re: Carefully crafted BTRFS-image causes kernel to crash
+Message-ID: <20160829171110.GZ16983@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <CAJF-kYngS4U6=oiXhs0ZF3Na3ezTGcMX1Wyd5HVVm887V61mWw@mail.gmail.com>
+ <5535C11C.2050308@cn.fujitsu.com>
+ <201504211938.35080.russell@coker.com.au>
+ <5536380C.9080102@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <e6fb50d4-2a27-13cd-02c8-5b8439a16b3f@fb.com>
+In-Reply-To: <5536380C.9080102@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Aug 10, 2016 at 02:46:27PM -0400, Josef Bacik wrote:
-> On 08/10/2016 02:25 PM, Linus Torvalds wrote:
-> > On Wed, Aug 10, 2016 at 11:22 AM, Josef Bacik <jbacik@fb.com> wrote:
-> > > On 08/10/2016 02:06 PM, Linus Torvalds wrote:
-> > > > 
-> > > > More information in the original email on lkml.
-> > > 
-> > > I'm not subscribed to lkml and for some reason I can't find the original
-> > > email in any of the lkml/linux-nfs archives.  Could you forward more of the
-> > > details?
-> > 
-> > Done.
-> > 
+On Tue, Apr 21, 2015 at 07:44:12AM -0400, Austin S Hemmelgarn wrote:
+> On 2015-04-21 05:38, Russell Coker wrote:
+> > On Tue, 21 Apr 2015, Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
+> >> Although we may add extra check for such problem to improve robustness,
+> >> but IMHO it's not a real world problem.
+> >
+> > Some of the ReiserFS developers gave a similar reaction to some of my bug
+> > reports.  ReiserFS wasn't the most robust filesystem.
+> >
+> > I think that it should be EXECTED that a kernel will have to occasionally deal
+> > with filesystem images that are created by hostile parties.  Userspace crash
+> > and kernel freeze is not a suitable way of dealing with it.
+> >
+> And that kind of reaction is why ReiserFS isn't taken very seriously in 
+> an enterprise environment.
 > 
-> So my naive fix would be something like this
-> 
-> 
-> From: Josef Bacik <jbacik@fb.com>
-> Date: Wed, 10 Aug 2016 14:43:08 -0400
-> Subject: [PATCH] nfsd: fix dentry refcounting problem
-> 
-> b44061d0b9 introduced a dentry ref counting bug, previously we were grabbing one
-> ref to dchild in nfsd_create(), but with the creation of nfsd_create_locked() we
-> have a ref for dchild from the lookup in nfsd_create(), and then another ref in
-> nfsd_create_locked().  The ref from the lookup in nfsd_create() is never dropped
-> and results in dentries still in use at unmount.
-> 
-> Signed-off-by: Josef Bacik <jbacik@fb.com>
+> Just because something shouldn't be possible in a 'real world' 
+> environment, doesn't mean it won't happen; never underestimate the 
+> ability of hardware to fail in new and unexpected ways, or the ability 
+> of administrators to make stupid mistakes.
 
-[sorry, had been off-line since yesterday]
-
-Patch looks sane; feel free to slap Acked-by: Al Viro <viro@zeniv.linux.org.uk>
-on it.  I think it should go through nfsd tree.
+I agree, given the high number of random memory bitflips that I've seen
+in past years, that were stored to the disk with valid checksums.
+Whether it's a real-world or potentially a hw problem IMO adjusts the
+priority, but the issues should be fixed if possible.

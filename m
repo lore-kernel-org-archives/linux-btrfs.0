@@ -1,16 +1,16 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ua0-f180.google.com ([209.85.217.180]:35441 "EHLO
-        mail-ua0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751559AbcH2QBw (ORCPT
+Received: from mail-ua0-f177.google.com ([209.85.217.177]:34583 "EHLO
+        mail-ua0-f177.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1754105AbcH2QCo (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 29 Aug 2016 12:01:52 -0400
-Received: by mail-ua0-f180.google.com with SMTP id i32so83216764uai.2
-        for <linux-btrfs@vger.kernel.org>; Mon, 29 Aug 2016 09:01:51 -0700 (PDT)
+        Mon, 29 Aug 2016 12:02:44 -0400
+Received: by mail-ua0-f177.google.com with SMTP id k90so253540370uak.1
+        for <linux-btrfs@vger.kernel.org>; Mon, 29 Aug 2016 09:02:43 -0700 (PDT)
 MIME-Version: 1.0
 From: "ojab //" <ojab@ojab.ru>
-Date: Mon, 29 Aug 2016 16:01:50 +0000
-Message-ID: <CAKzrAgSXK2ejcJ1bZ2M7-L6kJcmrVv1rtHzHQL--Pf87ENzwLg@mail.gmail.com>
-Subject: `btrfs dev delz fails with `No space left on device`
+Date: Mon, 29 Aug 2016 16:02:42 +0000
+Message-ID: <CAKzrAgSNa2SkGRckC47KeKuTdHA3H7QTeNPfuGrfUC6D7v+3Bg@mail.gmail.com>
+Subject: `btrfs dev del` fails with `No space left on device`
 To: linux-btrfs <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org

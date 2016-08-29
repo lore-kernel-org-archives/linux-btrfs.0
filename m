@@ -1,266 +1,109 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wm0-f49.google.com ([74.125.82.49]:33015 "EHLO
-        mail-wm0-f49.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S932628AbcH2Ll2 (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:64503 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+        with ESMTP id S932946AbcH2MQj (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 29 Aug 2016 07:41:28 -0400
-Received: by mail-wm0-f49.google.com with SMTP id d196so15506843wmd.0
-        for <linux-btrfs@vger.kernel.org>; Mon, 29 Aug 2016 04:41:27 -0700 (PDT)
+        Mon, 29 Aug 2016 08:16:39 -0400
+Subject: Re: BTRFS constantly reports "No space left on device" even with a
+ huge unallocated space
+To: Ronan Arraes Jardim Chagas <ronisbr@gmail.com>,
+        <linux-btrfs@vger.kernel.org>
+References: <1471023419.16857.9.camel@gmail.com>
+From: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
+Message-ID: <57C426AB.3020607@cn.fujitsu.com>
+Date: Mon, 29 Aug 2016 20:12:27 +0800
 MIME-Version: 1.0
-In-Reply-To: <CAGf6y9gUcEqMDnuhnE77edUja-LdkaEGpoY3pNL5+vrmq3K7tA@mail.gmail.com>
-References: <CAGf6y9gUcEqMDnuhnE77edUja-LdkaEGpoY3pNL5+vrmq3K7tA@mail.gmail.com>
-From: Justin Kilpatrick <jkilpatr@redhat.com>
-Date: Mon, 29 Aug 2016 07:41:25 -0400
-Message-ID: <CANhjow9n6FqHpK8y2zvfwq8-ptVHJMs4=+tP1qy1hNu-5veF3g@mail.gmail.com>
-Subject: Re: Raid 5 to raid 1: balance hangs and scrub aborts. Is this salvageable?
-To: h.gersen@gmail.com
-Cc: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+In-Reply-To: <1471023419.16857.9.camel@gmail.com>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I converted my significantly smaller raid 5 array to raid 1 a little
-less than a year ago now and I encountered some similar issues.
+hello,
 
-What i ended up doing was starting balance again and again with
-slightly different arguments (usually thresholds for what blocks to
-move) and eventually (a week or two, even with a small array) I
-managed a full conversion with only some data loss, which I was able
-to find and correct from backups with scrub.
-
-On Mon, Aug 29, 2016 at 5:57 AM, henkjan gersen <h.gersen@gmail.com> wrote:
-> Following the recent posts on the mailing list I'm trying to convert a
-> running raid5 system to raid1. This conversion  fails to complete with
-> checksum verify failures. Running a scrub does not fix these checksum
-> failures and moreover scrub itself aborts after ~9TB (despite repeated
-> tries).
+On 08/13/2016 01:36 AM, Ronan Arraes Jardim Chagas wrote:
+> Hi guys,
 >
-> All disks in the array complete a long smartctl test without any
-> errors. Running a scrub after remounting the array with the
-> recovery-option also makes no difference, it still aborts. For
-> clarity:  I can mount the array without issues and copying all files
-> and directories to /dev/zero completes without any errors in the logs.
+> I'm facing a daily problem with BTRFS. Almost everyday, I get the
+> message "No space left on device". Sometimes I can recover by balancing
+> the system but sometimes even balancing does not work due to the lack
+> of space. In this case, only a hard reset works if I can't delete some
+> files. The problem is that I have a huge unallocated space as you can
+> see here:
 >
-> Any suggestions on how to salvage the array would be highly
-> appreciated as I'm out of options/ideas for this. I do have a backup
-> of the important bits, but still restoring it will take time.
+> # btrfs fi usage /
+> Overall:
+>      Device size:		   1.26TiB
+>      Device allocated:		 119.07GiB
+>      Device unallocated:		   1.14TiB
+>      Device missing:		     0.00B
+>      Used:			 115.08GiB
+>      Free (estimated):		   1.14TiB	(min: 586.21GiB)
+>      Data ratio:			      1.00
+>      Metadata ratio:		      2.00
+>      Global reserve:		 512.00MiB	(used: 0.00B)
 >
-> The information of the system:
+> Data,single: Size:113.01GiB, Used:111.19GiB
+>     /dev/sda6	 113.01GiB
 >
-> --
+> Metadata,DUP: Size:3.00GiB, Used:1.94GiB
+>     /dev/sda6	   6.00GiB
 >
-> Linux-kernel: 4.4.6 (Slackware)
-> btrfs-progs v4.5.3
+> System,DUP: Size:32.00MiB, Used:16.00KiB
+>     /dev/sda6	  64.00MiB
 >
-> [root@quasar:~] # btrfs fi show
-> Label: 'btr_pool2'  uuid: 7c9b2b91-1e89-45fe-8726-91a97663bb5c
->     Total devices 7 FS bytes used 9.97TiB
->     devid    3 size 3.64TiB used 3.34TiB path /dev/sdh
->     devid    4 size 3.64TiB used 3.34TiB path /dev/sdd
->     devid    5 size 1.82TiB used 1.53TiB path /dev/sdb
->     devid    6 size 1.82TiB used 1.53TiB path /dev/sdc
->     devid    7 size 3.64TiB used 3.34TiB path /dev/sdg
->     devid   10 size 3.64TiB used 3.34TiB path /dev/sde
->     devid   11 size 3.64TiB used 3.34TiB path /dev/sdf
+> Unallocated:
+>     /dev/sda6	   1.14TiB
 >
-> [root@quasar:~] # btrfs fi df /storage
-> Data, RAID1: total=9.50TiB, used=9.48TiB
-> Data, RAID5: total=1.72GiB, used=1.72GiB
-> Data, RAID6: total=496.76GiB, used=490.45GiB
-> System, RAID1: total=32.00MiB, used=1.44MiB
-> Metadata, RAID1: total=10.00GiB, used=7.68GiB
-> Metadata, RAID5: total=4.09GiB, used=3.22GiB
+> It is not easy to trigger the problem. But I do find some correlation
+> between two things:
+>
+> 1) When I started to create jails to build openSUSE packages locally,
+> then the problem happens more often. In these jails, some directories
+> like /dev/, /dev/pts, /proc, are mounted inside the jail.
+>
+> 2) When I open my KVM, I also see this problem more often. Notice,
+> however, that the KVM disk is stored in another EXT4 partition.
+>
+> I would be glad if anyone can help me to fix it. In the following, I'm
+> providing more information about my system:
+>
+> # uname -a
+> Linux ronanarraes-osd 4.7.0-1-default #1 SMP PREEMPT Mon Jul 25
+> 08:42:47 UTC 2016 (89a2ada) x86_64 x86_64 x86_64 GNU/Linux
+>
+> # btrfs --version
+> btrfs-progs v4.6.1+20160714
+>
+> # btrfs fi show
+> Label: none  uuid: 80381f7f-8cef-4bd8-bdbc-3487253ee566
+> 	Total devices 1 FS bytes used 113.13GiB
+> 	devid    1 size 1.26TiB used 119.07GiB path /dev/sda6
+>
+> # btrfs fi df /
+> Data, single: total=113.01GiB, used=111.19GiB
+> System, DUP: total=32.00MiB, used=16.00KiB
+> Metadata, DUP: total=3.00GiB, used=1.94GiB
 > GlobalReserve, single: total=512.00MiB, used=0.00B
+When strange ENOSPC errors occur, I think "btrfs fi usage"
+or "btrfs di df" do not help too much. Their output do not
+reflect btrfs kernel current status :)
+
+Would you please provide attribute files' values in 
+/sys/fs/btrfs/$UUID/allocation/data
+and /sys/fs/btrfs/$UUID/allocation/metadata when ENOSPC error occurs.
+
+Regards,
+Xiaoguang Wang
+
 >
-> --
->
-> The mixture of raid1 and raid5 is the result of the balancing
-> operation stopping. If I try to restart the balance with the
-> soft-option it aborts when balancing only meta-data. For the
-> datablocks it hangs with no IO-activity in iostat for many hours once
-> hitting the logical address that fails checksum verify
->
-> The output from the scrub operation shows that it almost fully
-> completes. Note how the errors are on a different devices than flagged
-> up in dmesg when given per device.
->
-> --
->
-> [root@quasar:~] # btrfs scrub status /storage/
-> scrub status for 7c9b2b91-1e89-45fe-8726-91a97663bb5c
->     scrub started at Sun Aug 28 14:58:27 2016 and was aborted after 08:15:15
->     total bytes scrubbed: 8.91TiB with 33 errors
->     error details: read=32 csum=1
->     corrected errors: 0, uncorrectable errors: 33, unverified errors: 0
->
-> [root@quasar:~] # btrfs scrub status -d /storage/
-> scrub status for 7c9b2b91-1e89-45fe-8726-91a97663bb5c
-> scrub device /dev/sdh (id 3) history
->     scrub started at Sun Aug 28 14:58:27 2016 and was aborted after 01:04:54
->     total bytes scrubbed: 429.36GiB with 0 errors
-> scrub device /dev/sdd (id 4) history
->     scrub started at Sun Aug 28 14:58:27 2016 and was aborted after 01:04:24
->     total bytes scrubbed: 425.46GiB with 16 errors
->     error details: read=16
->     corrected errors: 0, uncorrectable errors: 16, unverified errors: 0
-> scrub device /dev/sdb (id 5) history
->     scrub started at Sun Aug 28 14:58:27 2016 and finished after 08:15:15
->     total bytes scrubbed: 1.52TiB with 0 errors
-> scrub device /dev/sdc (id 6) history
->     scrub started at Sun Aug 28 14:58:27 2016 and finished after 08:02:51
->     total bytes scrubbed: 1.52TiB with 1 errors
->     error details: csum=1
->     corrected errors: 0, uncorrectable errors: 1, unverified errors: 0
-> scrub device /dev/sdg (id 7) history
->     scrub started at Sun Aug 28 14:58:27 2016 and was aborted after 03:07:32
->     total bytes scrubbed: 1.16TiB with 0 errors
-> scrub device /dev/sde (id 10) history
->     scrub started at Sun Aug 28 14:58:27 2016 and was aborted after 06:51:31
->     total bytes scrubbed: 1.94TiB with 0 errors
-> scrub device /dev/sdf (id 11) history
->     scrub started at Sun Aug 28 14:58:27 2016 and was aborted after 06:03:00
->     total bytes scrubbed: 1.94TiB with 16 errors
->     error details: read=16
->     corrected errors: 0, uncorrectable errors: 16, unverified errors: 0
->
-> --
->
-> The relevant chunk from dmesg when mounting the array itself. I'm not
-> sure what the corrupt errs for device sdb and sdc are as there seems
-> no documentation for it. Both drives pass a smartctl -t long without
-> errors as said.
->
-> I needed to reboot when the balancing hanged, but errors in dmesg
-> looked similar to these.
->
-> --
->
-> [ 1067.179062] BTRFS info (device sde): disk space caching is enabled
-> [ 1067.414416] BTRFS info (device sde): bdev /dev/sdc errs: wr 0, rd
-> 0, flush 0, corrupt 47, gen 0
-> [ 1067.414423] BTRFS info (device sde): bdev /dev/sdb errs: wr 0, rd
-> 0, flush 0, corrupt 337, gen 0
-> [ 1111.375181] BTRFS: checking UUID tree
-> [ 1111.375206] BTRFS info (device sde): continuing balance
-> [ 1116.413445] BTRFS info (device sde): relocating block group
-> 95050853777408 flags 257
-> [ 1134.882061] BTRFS warning (device sde): sde checksum verify failed
-> on 99586523447296 wanted D883E9B found DF677297 level 0
-> [ 1135.032077] BTRFS warning (device sde): sde checksum verify failed
-> on 99586523447296 wanted D883E9B found DF677297 level 0
-> [ 1135.032318] BTRFS warning (device sde): sde checksum verify failed
-> on 99586523447296 wanted D883E9B found DF677297 level 0
-> [ 1135.032455] BTRFS warning (device sde): sde checksum verify failed
-> on 99586523447296 wanted D883E9B found DF677297 level 0
-> [ 1135.032646] BTRFS warning (device sde): sde checksum verify failed
-> on 99586523447296 wanted D883E9B found DF677297 level 0
-> [ 1135.032742] BTRFS warning (device sde): sde checksum verify failed
-> on 99586523447296 wanted D883E9B found DF677297 level 0
-> [ 1135.032907] BTRFS warning (device sde): sde checksum verify failed
-> on 99586523447296 wanted D883E9B found DF677297 level 0
-> [ 1135.033035] BTRFS warning (device sde): sde checksum verify failed
-> on 99586523447296 wanted D883E9B found DF677297 level 0
-> [ 1135.033227] BTRFS warning (device sde): sde checksum verify failed
-> on 99586523447296 wanted D883E9B found DF677297 level 0
-> [ 1135.033330] BTRFS warning (device sde): sde checksum verify failed
-> on 99586523447296 wanted D883E9B found DF677297 level 0
-> [ 1143.682132] BTRFS info (device sde): found 455 extents
-> [ 1143.823628] csum_tree_block: 8106 callbacks suppressed
-> [ 1143.823635] BTRFS warning (device sde): sde checksum verify failed
-> on 99586523447296 wanted D883E9B found DF677297 level 0
-> [ 1143.823754] BTRFS warning (device sde): sde checksum verify failed
-> on 99586523447296 wanted D883E9B found DF677297 level 0
->
-> --
->
-> The output of btrfs check shows checksum failures all relating to the
-> same logical address:
->
-> --
-> [root@quasar:~] # btrfs check -p /dev/sdc
-> Checking filesystem on /dev/sdc
-> UUID: 7c9b2b91-1e89-45fe-8726-91a97663bb5c
-> checksum verify failed on 99586523447296 found DF677297 wanted 0D883E9B
-> checksum verify failed on 99586523447296 found DF677297 wanted 0D883E9B
-> checksum verify failed on 99586523447296 found 87B38132 wanted B1BF7088
-> checksum verify failed on 99586523447296 found 87B38132 wanted B1BF7088
-> bytenr mismatch, want=99586523447296, have=458752
-> owner ref check failed [99586523447296 16384]
->
-> cache and super generation don't match, space cache will be invalidated
-> checksum verify failed on 99586523447296 found DF677297 wanted 0D883E9B
-> checksum verify failed on 99586523447296 found DF677297 wanted 0D883E9B
-> checksum verify failed on 99586523447296 found 87B38132 wanted B1BF7088
-> checksum verify failed on 99586523447296 found 87B38132 wanted B1BF7088
-> bytenr mismatch, want=99586523447296, have=458752
-> checking fs roots [O]
-> checking csums
-> checksum verify failed on 99586523447296 found DF677297 wanted 0D883E9B
-> checksum verify failed on 99586523447296 found DF677297 wanted 0D883E9B
-> checksum verify failed on 99586523447296 found 87B38132 wanted B1BF7088
-> checksum verify failed on 99586523447296 found 87B38132 wanted B1BF7088
-> bytenr mismatch, want=99586523447296, have=458752
-> Error going to next leaf -5
-> checking root refs
-> found 10966788235264 bytes used err is 0
-> total csum bytes: 10698166420
-> total tree bytes: 11712806912
-> total fs tree bytes: 405241856
-> total extent tree bytes: 265453568
-> btree space waste bytes: 347751364
-> file data blocks allocated: 10955252420608
->  referenced 10992993153024
->
-> --
->
-> Trying to relate that logical address to any real file or directory
-> fail. I've seen messages on this mailing list that I would need to
-> give in subvolumes, but that doesn't seem to make any difference. That
-> gives me the same error
->
-> --
-> [root@quasar:~] # btrfs inspect-internal logical-resolve
-> 99586523447296 /storage/
-> ERROR: logical ino ioctl: No such file or directory
-> --
->
-> With the above things completed I've tried running btrfs check with
-> the repair enabled, but that crashes with an assertion failure. So
-> that doesn't help either.
->
-> --
->
-> [root@quasar:~] # btrfs check -p --repair /dev/sdc
-> enabling repair mode
-> Checking filesystem on /dev/sdc
-> UUID: 7c9b2b91-1e89-45fe-8726-91a97663bb5c
-> checksum verify failed on 99586523447296 found DF677297 wanted 0D883E9B
-> checksum verify failed on 99586523447296 found DF677297 wanted 0D883E9B
-> checksum verify failed on 99586523447296 found 87B38132 wanted B1BF7088
-> checksum verify failed on 99586523447296 found 87B38132 wanted B1BF7088
-> bytenr mismatch, want=99586523447296, have=458752
-> owner ref check failed [99586523447296 16384]
-> Unable to find block group for 0
-> extent-tree.c:289: find_search_start: Assertion `1` failed.
-> btrfs(btrfs_reserve_extent+0x993)[0x44ef37]
-> btrfs(btrfs_alloc_free_block+0x50)[0x44f2c7]
-> btrfs(__btrfs_cow_block+0x19d)[0x43eca8]
-> btrfs(btrfs_cow_block+0xec)[0x43f6ff]
-> btrfs(btrfs_search_slot+0x1b9)[0x442004]
-> btrfs[0x42080b]
-> btrfs[0x42a1e9]
-> btrfs(cmd_check+0x156e)[0x42c461]
-> btrfs(main+0x155)[0x40a75d]
-> /lib64/libc.so.6(__libc_start_main+0xf0)[0x7fb45d9b17d0]
-> btrfs(_start+0x29)[0x40a2e9]
->
-> --
-> Any suggestion would be much appreciated. Thanks for getting this far
-> in reading!
->
-> Best wishes,
-> Henkjan Gersen
+> Regards,
+> Ronan Arraes
 > --
 > To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
 > the body of a message to majordomo@vger.kernel.org
 > More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>
+>
+
+
+

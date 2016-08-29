@@ -1,62 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [195.159.176.226] ([195.159.176.226]:56896 "EHLO
-        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
-        with ESMTP id S1755123AbcH2Ru1 (ORCPT
+Received: from mail-oi0-f41.google.com ([209.85.218.41]:34510 "EHLO
+        mail-oi0-f41.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751950AbcH2VFY (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 29 Aug 2016 13:50:27 -0400
-Received: from list by blaine.gmane.org with local (Exim 4.84_2)
-        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-        id 1beQhU-0002pO-FF
-        for linux-btrfs@vger.kernel.org; Mon, 29 Aug 2016 19:50:24 +0200
-To: linux-btrfs@vger.kernel.org
-From: Kai Krakow <hurikhan77@gmail.com>
-Subject: Re: btrfs send extremely slow (almost stuck)
-Date: Mon, 29 Aug 2016 19:50:18 +0200
-Message-ID: <20160829195018.7a87a1fd@jupiter.sol.kaishome.de>
-References: <c7cb948d-5831-7b97-937e-c21c5335e76c@googlemail.com>
-        <CA+X5Wn6BPhSR4Zsjp9xOgOap=GXKE2bCcgFtbpouMJ2y+++Qwg@mail.gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+        Mon, 29 Aug 2016 17:05:24 -0400
+Received: by mail-oi0-f41.google.com with SMTP id l203so214061298oib.1
+        for <linux-btrfs@vger.kernel.org>; Mon, 29 Aug 2016 14:05:23 -0700 (PDT)
+MIME-Version: 1.0
+In-Reply-To: <CAKzrAgTcrjN_qLqzqQ_izpB_AvypaGV=TGNEeH=-18GmOVjAAg@mail.gmail.com>
+References: <CAKzrAgTcrjN_qLqzqQ_izpB_AvypaGV=TGNEeH=-18GmOVjAAg@mail.gmail.com>
+From: Chris Murphy <lists@colorremedies.com>
+Date: Mon, 29 Aug 2016 15:05:20 -0600
+Message-ID: <CAJCQCtQhFHX2ba3gYUHw0XtbLousVz8s7ZxMnT1ThU46iOxNOA@mail.gmail.com>
+Subject: Re: `btrfs dev del` fails with `No space left on device`
+To: "ojab //" <ojab@ojab.ru>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am Sun, 28 Aug 2016 17:41:22 -0400
-schrieb james harvey <jamespharvey20@gmail.com>:
+On Mon, Aug 29, 2016 at 10:04 AM, ojab // <ojab@ojab.ru> wrote:
+> Hi,
+> [and I hope that this message will not be sent during compose]
+> I've had BTRFS filesystem with two 1Tb drives (sdb1 & sdc1), data
+> raid0 & metadata raid1. I need to replace one drive with 2Tb drive, so
+> I've done `btrfs dev add /dev/sdd /mnt/xxx` and now trying to do
+> `btrfs dev del /dev/sdc1 /mnt/xxx` which fails due to `ERROR: error
+> removing device '/dev/sdc1': No space left on device`. Right now FS
+> looks like:
+>
+> $ sudo btrfs fi show /mnt/xxx
+> Label: none  uuid: 8a65465d-1a8c-4f80-abc6-c818c38567c3
+>            Total devices 3 FS bytes used 1.80TiB
+>            devid    1 size 931.51GiB used 931.51GiB path /dev/sdc1
+>            devid    2 size 931.51GiB used 931.51GiB path /dev/sdb1
+>            devid    3 size 1.82TiB used 0.00B path /dev/sdd1
 
-> On Sun, Aug 28, 2016 at 12:15 PM, Oliver Freyermuth
-> <o.freyermuth@googlemail.com> wrote:
-> > For me, this means I have to stay with rsync backups, which are
-> > sadly incomplete since special FS attrs like "C" for nocow are not
-> > backed up.  
-> 
-> Should be able to make a script that creates a textfile with lsattr
-> for every file.  Then either just leave that file as part of the
-> backup in case it's needed some day, or making a corresponding script
-> on the backup machine to restore those.
 
-The problem with this idea is that chattr +C will only work on empty
-files, so it needs to be applied in the "middle", read: upon creating
-the file and before filling it with content.
+sdc1 and sdb1 are completely allocated so no new chunks can be made,
+it's not clear what's going on with sdd1 but the first two might be so
+full that sdd1 is just stuck being part of the volume
 
-It would be possible to let a script first create empty files according
-to this list and then use "rsync --no-whole-file --inplace" so it will
-build upon the empty files instead of its usual behavior to create
-files temporarily and then rename them into place. I'd recommend to use
-these options anyways if writing to btrfs snapshots to take advantage
-of shared extents. Apparently rsync cannot handle sparse files in this
-mode (tho there should be a patch to make this possible by using the
-hole-punching feature of newer kernels but it makes the rsync protocol
-incompatible to unpatched versions AFAIR).
+What do you get for 'btrfs fi us <mp>'
 
-I think borgbackup suffers from the same problem. While in latest
-version it seems to support attrs, it does apply them after filling the
-files with contents (as most programs do, also attributes like mtime,
-owner etc are applied after closing the written file, for obvious
-reasons). This simply doesn't work for +C on btrfs.
+>
+> Is there any way to delete /dev/sdc1 without full rebalance?
+
+You can see what the state of block groups are with btrfs-debugfs
+which is in kdave btrfs-progs git. Chances are you need a larger
+value, -dusage=15 -musage=15 to free up space on devid 1 and 2. Then
+maybe devid 3 can be removed.
+
 
 -- 
-Regards,
-Kai
-
-Replies to list-only preferred.
-
+Chris Murphy

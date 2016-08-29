@@ -1,69 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ua0-f170.google.com ([209.85.217.170]:35534 "EHLO
-        mail-ua0-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1755505AbcH2QEu (ORCPT
+Received: from [195.159.176.226] ([195.159.176.226]:56896 "EHLO
+        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
+        with ESMTP id S1755123AbcH2Ru1 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 29 Aug 2016 12:04:50 -0400
-Received: by mail-ua0-f170.google.com with SMTP id i32so83381781uai.2
-        for <linux-btrfs@vger.kernel.org>; Mon, 29 Aug 2016 09:04:49 -0700 (PDT)
-MIME-Version: 1.0
-From: "ojab //" <ojab@ojab.ru>
-Date: Mon, 29 Aug 2016 16:04:48 +0000
-Message-ID: <CAKzrAgTcrjN_qLqzqQ_izpB_AvypaGV=TGNEeH=-18GmOVjAAg@mail.gmail.com>
-Subject: `btrfs dev del` fails with `No space left on device`
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+        Mon, 29 Aug 2016 13:50:27 -0400
+Received: from list by blaine.gmane.org with local (Exim 4.84_2)
+        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+        id 1beQhU-0002pO-FF
+        for linux-btrfs@vger.kernel.org; Mon, 29 Aug 2016 19:50:24 +0200
+To: linux-btrfs@vger.kernel.org
+From: Kai Krakow <hurikhan77@gmail.com>
+Subject: Re: btrfs send extremely slow (almost stuck)
+Date: Mon, 29 Aug 2016 19:50:18 +0200
+Message-ID: <20160829195018.7a87a1fd@jupiter.sol.kaishome.de>
+References: <c7cb948d-5831-7b97-937e-c21c5335e76c@googlemail.com>
+        <CA+X5Wn6BPhSR4Zsjp9xOgOap=GXKE2bCcgFtbpouMJ2y+++Qwg@mail.gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=US-ASCII
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
-[and I hope that this message will not be sent during compose]
-I've had BTRFS filesystem with two 1Tb drives (sdb1 & sdc1), data
-raid0 & metadata raid1. I need to replace one drive with 2Tb drive, so
-I've done `btrfs dev add /dev/sdd /mnt/xxx` and now trying to do
-`btrfs dev del /dev/sdc1 /mnt/xxx` which fails due to `ERROR: error
-removing device '/dev/sdc1': No space left on device`. Right now FS
-looks like:
+Am Sun, 28 Aug 2016 17:41:22 -0400
+schrieb james harvey <jamespharvey20@gmail.com>:
 
-$ sudo btrfs fi show /mnt/xxx
-Label: none  uuid: 8a65465d-1a8c-4f80-abc6-c818c38567c3
-           Total devices 3 FS bytes used 1.80TiB
-           devid    1 size 931.51GiB used 931.51GiB path /dev/sdc1
-           devid    2 size 931.51GiB used 931.51GiB path /dev/sdb1
-           devid    3 size 1.82TiB used 0.00B path /dev/sdd1
+> On Sun, Aug 28, 2016 at 12:15 PM, Oliver Freyermuth
+> <o.freyermuth@googlemail.com> wrote:
+> > For me, this means I have to stay with rsync backups, which are
+> > sadly incomplete since special FS attrs like "C" for nocow are not
+> > backed up.  
+> 
+> Should be able to make a script that creates a textfile with lsattr
+> for every file.  Then either just leave that file as part of the
+> backup in case it's needed some day, or making a corresponding script
+> on the backup machine to restore those.
 
-$ sudo btrfs device usage /mnt/xxx/
-/dev/sdb1, ID: 2
-   Device size:           931.51GiB
-   Device slack:              0.00B
-   Data,RAID0:            928.48GiB
-   Metadata,RAID1:          3.00GiB
-   System,RAID1:           32.00MiB
-   Unallocated:             1.01MiB
+The problem with this idea is that chattr +C will only work on empty
+files, so it needs to be applied in the "middle", read: upon creating
+the file and before filling it with content.
 
-/dev/sdc1, ID: 1
-   Device size:           931.51GiB
-   Device slack:            3.50KiB
-   Data,RAID0:            928.48GiB
-   Metadata,RAID1:          3.00GiB
-   System,RAID1:           32.00MiB
-   Unallocated:             1.00MiB
+It would be possible to let a script first create empty files according
+to this list and then use "rsync --no-whole-file --inplace" so it will
+build upon the empty files instead of its usual behavior to create
+files temporarily and then rename them into place. I'd recommend to use
+these options anyways if writing to btrfs snapshots to take advantage
+of shared extents. Apparently rsync cannot handle sparse files in this
+mode (tho there should be a patch to make this possible by using the
+hole-punching feature of newer kernels but it makes the rsync protocol
+incompatible to unpatched versions AFAIR).
 
-/dev/sdd1, ID: 3
-   Device size:             1.82TiB
-   Device slack:              0.00B
-   Unallocated:             1.82TiB
+I think borgbackup suffers from the same problem. While in latest
+version it seems to support attrs, it does apply them after filling the
+files with contents (as most programs do, also attributes like mtime,
+owner etc are applied after closing the written file, for obvious
+reasons). This simply doesn't work for +C on btrfs.
 
-As far as I understand, no data is allocated on `/dev/sdc1`, so it
-should be no space for metadata, but I don't really understand how can
-I balance only metadata, both:
+-- 
+Regards,
+Kai
 
-$ btrfs fi balance start -musage=1 -dusage=0 /mnt/xxx/
-$ sudo btrfs fi balance start -musage=1 -dusage=0 -mconvert=raid1 /mnt/xxx/
+Replies to list-only preferred.
 
-fails with something like `BTRFS info (device sdb1): 1 enospc errors
-during balance` in dmesg.
-
-Is there any way to delete /dev/sdc1 without full rebalance?
-
-//wbr ojab

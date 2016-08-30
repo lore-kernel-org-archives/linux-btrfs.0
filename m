@@ -1,106 +1,75 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:16776 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:46487 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S932862AbcH2IJP (ORCPT
+        with ESMTP id S1754321AbcH3D3p (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 29 Aug 2016 04:09:15 -0400
+        Mon, 29 Aug 2016 23:29:45 -0400
 Received: from G08CNEXCHPEKD02.g08.fujitsu.local (unknown [10.167.33.83])
-        by cn.fujitsu.com (Postfix) with ESMTP id 06CCD4334C72
-        for <linux-btrfs@vger.kernel.org>; Mon, 29 Aug 2016 16:09:09 +0800 (CST)
+        by cn.fujitsu.com (Postfix) with ESMTP id 8CEC342EB26E
+        for <linux-btrfs@vger.kernel.org>; Tue, 30 Aug 2016 11:29:35 +0800 (CST)
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH 4/4] btrfs-progs: Do extra chunk check before processing chunk item
-Date: Mon, 29 Aug 2016 16:09:02 +0800
-Message-ID: <20160829080902.2952-5-quwenruo@cn.fujitsu.com>
-In-Reply-To: <20160829080902.2952-1-quwenruo@cn.fujitsu.com>
-References: <20160829080902.2952-1-quwenruo@cn.fujitsu.com>
+Subject: [PATCH 1/2] btrfs-progs: fsck: Do early check for read_tree_block
+Date: Tue, 30 Aug 2016 11:29:32 +0800
+Message-ID: <20160830032933.22194-1-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Current we only do chunk validation check at mount time.
+Although we have enhanced read_tree_block() from a lot of different
+aspects, it lacks the early bytenr/blocksize alignment check.
 
-It's good for most case, but for fuzzed or manually crafted images, we
-can insert a CHUNK_ITEM key into root tree.
+And the lack of such check can lead to strange use-after-free bugs, due
+to the fact that alloc_extent_buffer() will free overlapping extent
+buffers, and allocate new eb for the usage.
 
-Since mount time check will only check chunk tree, it will not check
-CHUNK_ITEM in root tree.
+So we should not allow invalid bytenr/blocksize even passed to
+btrfs_find_create_tree_block().
 
-Even with previous key type check against leaf owner, it is still
-possible to modify the leaf owner to by-pass it.
-
-So we still need to check chunk validation before processing it.
+This patch will add such check so we won't trigger use-after-free bug
+then.
 
 Reported-by: Lukas Lueg <lukas.lueg@gmail.com>
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- cmds-check.c | 16 ++++++++++++++++
- volumes.c    |  8 ++++----
- volumes.h    |  4 ++++
- 3 files changed, 24 insertions(+), 4 deletions(-)
+ disk-io.c | 18 ++++++++++++++++++
+ 1 file changed, 18 insertions(+)
 
-diff --git a/cmds-check.c b/cmds-check.c
-index 617b867..1e1f7c9 100644
---- a/cmds-check.c
-+++ b/cmds-check.c
-@@ -5220,8 +5220,24 @@ static int process_chunk_item(struct cache_tree *chunk_cache,
- 			      int slot)
- {
- 	struct chunk_record *rec;
-+	struct btrfs_chunk *chunk;
- 	int ret = 0;
+diff --git a/disk-io.c b/disk-io.c
+index ca4578f..f5340c3 100644
+--- a/disk-io.c
++++ b/disk-io.c
+@@ -313,11 +313,29 @@ struct extent_buffer* read_tree_block_fs_info(
+ 	int ret;
+ 	struct extent_buffer *eb;
+ 	u64 best_transid = 0;
++	u32 sectorsize = btrfs_super_sectorsize(fs_info->super_copy);
++	u32 nodesize = btrfs_super_nodesize(fs_info->super_copy);
+ 	int mirror_num = 0;
+ 	int good_mirror = 0;
+ 	int num_copies;
+ 	int ignore = 0;
  
-+	chunk = btrfs_item_ptr(eb, slot, struct btrfs_chunk);
 +	/*
-+	 * Do extra check for this chunk item,
-+	 *
-+	 * It's still possible one can craft a leaf with CHUNK_ITEM, with
-+	 * wrong onwer(3) out of chunk tree, to pass both chunk tree check
-+	 * and owner<->key_type check.
++	 * Don't even try to create tree block for unaligned tree block
++	 * bytenr.
++	 * Such unaligned tree block will free overlapping extent buffer,
++	 * causing use-after-free bugs for fuzzed images.
 +	 */
-+	ret = btrfs_check_chunk_valid(global_info->tree_root, eb, chunk, slot,
-+				      key->offset);
-+	if (ret < 0) {
-+		error("chunk(%llu, %llu) is not valid, ignore it",
-+		      key->offset, btrfs_chunk_length(eb, chunk));
-+		return 0;
++	if (!IS_ALIGNED(bytenr, sectorsize)) {
++		error("tree block bytenr %llu is not aligned to sectorsize %u",
++		      bytenr, sectorsize);
++		return ERR_PTR(-EIO);
 +	}
- 	rec = btrfs_new_chunk_record(eb, key, slot);
- 	ret = insert_cache_extent(chunk_cache, &rec->cache);
- 	if (ret) {
-diff --git a/volumes.c b/volumes.c
-index 9a5580a..2d07e66 100644
---- a/volumes.c
-+++ b/volumes.c
-@@ -1614,10 +1614,10 @@ static struct btrfs_device *fill_missing_device(u64 devid)
-  * slot == -1: SYSTEM chunk
-  * return -EIO on error, otherwise return 0
-  */
--static int btrfs_check_chunk_valid(struct btrfs_root *root,
--				   struct extent_buffer *leaf,
--				   struct btrfs_chunk *chunk,
--				   int slot, u64 logical)
-+int btrfs_check_chunk_valid(struct btrfs_root *root,
-+			    struct extent_buffer *leaf,
-+			    struct btrfs_chunk *chunk,
-+			    int slot, u64 logical)
- {
- 	u64 length;
- 	u64 stripe_len;
-diff --git a/volumes.h b/volumes.h
-index af7182b..d7b7d3c 100644
---- a/volumes.h
-+++ b/volumes.h
-@@ -226,4 +226,8 @@ int write_raid56_with_parity(struct btrfs_fs_info *info,
- 			     struct extent_buffer *eb,
- 			     struct btrfs_multi_bio *multi,
- 			     u64 stripe_len, u64 *raid_map);
-+int btrfs_check_chunk_valid(struct btrfs_root *root,
-+			    struct extent_buffer *leaf,
-+			    struct btrfs_chunk *chunk,
-+			    int slot, u64 logical);
- #endif
++	if (!IS_ALIGNED(blocksize, nodesize)) {
++		error("tree block size %u is not aligned to nodesize %u",
++		      blocksize, nodesize);
++		return ERR_PTR(-EIO);
++	}
+ 	eb = btrfs_find_create_tree_block(fs_info, bytenr, blocksize);
+ 	if (!eb)
+ 		return ERR_PTR(-ENOMEM);
 -- 
 2.9.3
 

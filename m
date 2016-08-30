@@ -1,63 +1,67 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:33764 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1758289AbcH3MKK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 30 Aug 2016 08:10:10 -0400
-Date: Tue, 30 Aug 2016 14:08:50 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
-Cc: Qu Wenruo <quwenruo@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs-progs: check: skip shared node or leaf check for
- low_memory mode
-Message-ID: <20160830120850.GD16983@suse.cz>
-Reply-To: dsterba@suse.cz
-References: <20160819095946.31917-1-wangxg.fnst@cn.fujitsu.com>
- <20160824124431.GQ16983@twin.jikos.cz>
- <57BE8261.4040308@cn.fujitsu.com>
- <20160829152035.GV16983@twin.jikos.cz>
- <0158e565-3bb8-01fb-362f-6d5d8ec4cf35@cn.fujitsu.com>
- <20160830113202.GB16983@suse.cz>
- <57C57191.1030909@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <57C57191.1030909@cn.fujitsu.com>
+Received: from mail-qk0-f181.google.com ([209.85.220.181]:36671 "EHLO
+        mail-qk0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1757333AbcH3MuL (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 30 Aug 2016 08:50:11 -0400
+Received: by mail-qk0-f181.google.com with SMTP id l2so16760231qkf.3
+        for <linux-btrfs@vger.kernel.org>; Tue, 30 Aug 2016 05:50:11 -0700 (PDT)
+Message-ID: <1472561404.3179.3.camel@gmail.com>
+Subject: Re: BTRFS constantly reports "No space left on device" even with a
+ huge unallocated space
+From: Ronan Arraes Jardim Chagas <ronisbr@gmail.com>
+To: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
+Date: Tue, 30 Aug 2016 09:50:04 -0300
+In-Reply-To: <57C4EB85.7030000@cn.fujitsu.com>
+References: <1471023419.16857.9.camel@gmail.com>
+         <57C426AB.3020607@cn.fujitsu.com> <1472485953.3290.0.camel@gmail.com>
+         <57C4EB85.7030000@cn.fujitsu.com>
+Content-Type: text/plain; charset="UTF-8"
+Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Aug 30, 2016 at 07:44:17PM +0800, Wang Xiaoguang wrote:
-> Hi,
-> 
-> On 08/30/2016 07:32 PM, David Sterba wrote:
-> > On Tue, Aug 30, 2016 at 09:50:20AM +0800, Qu Wenruo wrote:
-> >>> Are they not? The low-memory patchset has been released in 4.7.1, the
-> >>> devel branch is always on top of master branch. I see both branches
-> >>> pushed to the public git repos so I don't see what you mean.
-> >> Unfortunately, the low memory mode is not fully merged into devel branch.
-> >>
-> >> Only the first part (extent and chunk tree) is merged.
-> >>
-> >> The second part(fs tree) is not merged yet.
-> >>
-> >> Patches like the following is not in either devel/master branch:
-> >> Lu Fengqi (13):
-> >>     btrfs-progs: move btrfs_extref_hash() to hash.h
-> >>     btrfs-progs: check: introduce function to find dir_item
-> >>     btrfs-progs: check: introduce function to check inode_ref
-> >>     btrfs-progs: check: introduce function to check inode_extref
-> >>     btrfs-progs: check: introduce function to find inode_ref
-> >>     btrfs-progs: check: introduce a function to check dir_item
-> >>     btrfs-progs: check: introduce function to check file extent
-> >>     btrfs-progs: check: introduce function to check inode item
-> >>     btrfs-progs: check: introduce function to check fs root
-> >>     btrfs-progs: check: introduce function to check root ref
-> >>     btrfs-progs: check: introduce low_memory mode fs_tree check
-> >>     btrfs-progs: check: fix the return value bug of cmd_check()
-> >>     btrfs-progs: check: fix false warning for check_extent_item()
-> >>
-> >> So Wang found it confusing and unable to apply his patch to devel branch.
-> > He could have replied himself, I think the conversation would feel
-> > better when we can talk directly :)
-> Yes, I agree. I was on leave for a while this morning :)
+Hi!
 
-Doh, I may be confused by the names, I mean that I've never seen a mail
-from 'Lu Fengqi'.
+Em Ter, 2016-08-30 às 10:12 +0800, Wang Xiaoguang escreveu:
+> For metadata, "bytes_may_use" is about 80GB, it's very big,
+> I think this value is very abnormal.
+> 
+> So this explains why you have huge unallocated space, you still
+> get ENOSPC error. In kernel btrfs, there is a function
+> should_alloc_chunk()
+> to determine whether to allocate new chunks(new device space)
+>   num_bytes = total_bytes - bytes_readonly; it's 2147483648
+>   num_allocated = bytes_used + bytes_reserved; it's 977354752
+> 
+> if num_allocated < num_bytes * 0.8, it will not allocate new device 
+> space :) even you
+> have huge unallocated space.
+> 
+> I think the root reason is that bytes_may_use has some computation
+> error and
+> is not be converted to bytes_used or bytes_reserved.
+> 
+> I just explain why you get ENOSPC error even with huge unallocated
+> space 
+> from
+> codes :)
+> 
+
+Thanks! At least we known why ENOSPC is happening.
+
+> Can you work out a reproducer for this ENOSPC error, then I can
+> dig into codes to figure out the true reason.
+
+Unfortunately I failed in every attempt to trigger the problem. It
+happens randomly and I could not figure out yet what was triggering it.
+First, I though it was related to a build process inside a chroot jail,
+but then I see the problem happening after the computer being idle for
+a long time (+- 1h). So, no clues yet :(
+
+Is there any workaround I can do?
+
+Best regards,
+Ronan Arraes
+
+

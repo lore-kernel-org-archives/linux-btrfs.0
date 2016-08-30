@@ -1,99 +1,134 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:50347 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:17313 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1756968AbcH3Buc (ORCPT
+        with ESMTP id S1754185AbcH3CQ3 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 29 Aug 2016 21:50:32 -0400
-Subject: Re: [PATCH] btrfs-progs: check: skip shared node or leaf check for
- low_memory mode
-To: <dsterba@suse.cz>, Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>,
+        Mon, 29 Aug 2016 22:16:29 -0400
+Subject: Re: BTRFS constantly reports "No space left on device" even with a
+ huge unallocated space
+To: Ronan Arraes Jardim Chagas <ronisbr@gmail.com>,
         <linux-btrfs@vger.kernel.org>
-References: <20160819095946.31917-1-wangxg.fnst@cn.fujitsu.com>
- <20160824124431.GQ16983@twin.jikos.cz> <57BE8261.4040308@cn.fujitsu.com>
- <20160829152035.GV16983@twin.jikos.cz>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <0158e565-3bb8-01fb-362f-6d5d8ec4cf35@cn.fujitsu.com>
-Date: Tue, 30 Aug 2016 09:50:20 +0800
+References: <1471023419.16857.9.camel@gmail.com>
+ <57C426AB.3020607@cn.fujitsu.com> <1472485953.3290.0.camel@gmail.com>
+From: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
+Message-ID: <57C4EB85.7030000@cn.fujitsu.com>
+Date: Tue, 30 Aug 2016 10:12:21 +0800
 MIME-Version: 1.0
-In-Reply-To: <20160829152035.GV16983@twin.jikos.cz>
+In-Reply-To: <1472485953.3290.0.camel@gmail.com>
 Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+hello,
 
-
-At 08/29/2016 11:20 PM, David Sterba wrote:
-> On Thu, Aug 25, 2016 at 01:30:09PM +0800, Wang Xiaoguang wrote:
->> Hi,
->>
->> On 08/24/2016 08:44 PM, David Sterba wrote:
->>> On Fri, Aug 19, 2016 at 05:59:46PM +0800, Wang Xiaoguang wrote:
->>>> The basic idea is simple. Assume a middle tree node A is shared and
->>>> its referenceing fs/file tree root ids are 5, 258 and 260, then we
->>>> only check node A in the tree who has the smallest root id. That means
->>>> in this case, when checking root tree(5), we check inode A, for root
->>>> tree 258 and 260, we can just skip it.
->>>>
->>>> Notice even with this patch, we still may visit a shared node or leaf
->>>> multiple times. This happens when a inode metadata occupies multiple
->>>> leaves.
->>>>
->>>>                   leaf_A     leaf_B
->>>> When checking inode item in leaf_A, assume inode[512] have file extents
->>>> in leaf_B, and leaf_B is shared. In the case, for inode[512], we must
->>>> visit leaf_B to have inode item check. After finishing inode[512] check,
->>>> here we walk down tree root to leaf_B to check whether node or leaf
->>>> is shared, if some node or leaf is shared, we can just skip it and below
->>>> nodes or leaf's check.
->>>>
->>>> I also fill a disk partition with linux source codes and create 3 snapshots
->>>> in it. Before this patch, it averagely took 46s to finish one btrfsck
->>>> execution, with this patch, it averagely took 15s.
->>>>
->>>> Signed-off-by: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
->>> Can you please refresh the patch on top of current devel branch? I get
->>> too many conflicts to resolve.
->> This patch is to improve low memory mode fs/file tree check, but it seems
->> Lu Fengqi's low memory fs/file tree check patches are not merged into your
->> devel branch :)
+On 08/29/2016 11:52 PM, Ronan Arraes Jardim Chagas wrote:
+> Hi guys,
 >
-> Are they not? The low-memory patchset has been released in 4.7.1, the
-> devel branch is always on top of master branch. I see both branches
-> pushed to the public git repos so I don't see what you mean.
+> I just have the problem again. Now, it happens during the lunch time
+> when the machine was idle. Only the system processes were running. It
+> was not the first time that I saw this problem just after lunch when
+> the machine stayed idle for a long period (+- 1h).
+>
+> Here is the information requested:
+>
+> /sys/fs/btrfs/$UUID/allocation/data
+>
+> ./bytes_may_use
+> 0
+> ./bytes_pinned
+> 0
+> ./bytes_reserved
+> 0
+> ./bytes_used
+> 36128374784
+> ./disk_total
+> 37589352448
+> ./disk_used
+> 36128374784
+> ./flags
+> 1
+> ./total_bytes
+> 37589352448
+> ./total_bytes_pinned
+> 20339560448
+> ./single/total_bytes
+> 37589352448
+> ./single/used_bytes
+> 36128374784
+>
+> /sys/fs/btrfs/$UUID/allocation/metadata
+>
+> ./bytes_may_use
+> 84974452736
+> ./bytes_pinned
+> 0
+> ./bytes_reserved
+> 0
+> ./bytes_used
+> 977354752
+> ./disk_total
+> 4294967296
+> ./disk_used
+> 1954709504
+> ./flags
+> 4
+> ./total_bytes
+> 2147483648
+> ./total_bytes_pinned
+> -57851904
+> ./dup/total_bytes
+> 2147483648
+> ./dup/used_bytes
+> 977354752
 
-Unfortunately, the low memory mode is not fully merged into devel branch.
+For metadata, "bytes_may_use" is about 80GB, it's very big,
+I think this value is very abnormal.
 
-Only the first part (extent and chunk tree) is merged.
+So this explains why you have huge unallocated space, you still
+get ENOSPC error. In kernel btrfs, there is a function should_alloc_chunk()
+to determine whether to allocate new chunks(new device space)
+  num_bytes = total_bytes - bytes_readonly; it's 2147483648
+  num_allocated = bytes_used + bytes_reserved; it's 977354752
 
-The second part(fs tree) is not merged yet.
+if num_allocated < num_bytes * 0.8, it will not allocate new device 
+space :) even you
+have huge unallocated space.
 
-Patches like the following is not in either devel/master branch:
-Lu Fengqi (13):
-   btrfs-progs: move btrfs_extref_hash() to hash.h
-   btrfs-progs: check: introduce function to find dir_item
-   btrfs-progs: check: introduce function to check inode_ref
-   btrfs-progs: check: introduce function to check inode_extref
-   btrfs-progs: check: introduce function to find inode_ref
-   btrfs-progs: check: introduce a function to check dir_item
-   btrfs-progs: check: introduce function to check file extent
-   btrfs-progs: check: introduce function to check inode item
-   btrfs-progs: check: introduce function to check fs root
-   btrfs-progs: check: introduce function to check root ref
-   btrfs-progs: check: introduce low_memory mode fs_tree check
-   btrfs-progs: check: fix the return value bug of cmd_check()
-   btrfs-progs: check: fix false warning for check_extent_item()
+I think the root reason is that bytes_may_use has some computation error and
+is not be converted to bytes_used or bytes_reserved.
 
-So Wang found it confusing and unable to apply his patch to devel branch.
+I just explain why you get ENOSPC error even with huge unallocated space 
+from
+codes :)
 
-Thanks,
-Qu
+>
+> # btrfs fi usage /
+>
+> btrfs_destroy_inode+0x23f/0x2b0 [btrfs]
+> Ago 29 12:06:07 ronanarraes-osd kernel:  [<ffffffff8121f6d1>]
+> do_unlinkat+0x131/0x310
+> Ago 29 12:06:07 ronanarraes-osd kernel:  [<ffffffff816bb4f6>]
+> entry_SYSCALL_64_fastpath+0x1e/0xa8
+> Ago 29 12:06:07 ronanarraes-osd kernel: DWARF2 unwinder stuck at
+> entry_SYSCALL_64_fastpath+0x1e/0xa8
+> Ago 29 12:06:07 ronanarraes-osd kernel:
+> Ago 29 12:06:07 ronanarraes-osd kernel: Leftover inexact backtrace:
+> Ago 29 12:06:07 ronanarraes-osd kernel: ---[ end trace 5774bd3049f78a63
+> ]---
+Yes, I know these WARNINGs, but indeed they are already results,
+we don't know the procedures which cause these results.
 
+Can you work out a reproducer for this ENOSPC error, then I can
+dig into codes to figure out the true reason.
 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Regards,
+Xiaoguang Wang
+
+>
+> Best regards,
+> Ronan Arraes
 >
 >
+
 
 

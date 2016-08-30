@@ -1,57 +1,115 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oi0-f68.google.com ([209.85.218.68]:36035 "EHLO
-        mail-oi0-f68.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1758926AbcH3S2n (ORCPT
+Received: from mail-ua0-f179.google.com ([209.85.217.179]:35202 "EHLO
+        mail-ua0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750855AbcH3UKX (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 30 Aug 2016 14:28:43 -0400
-Received: by mail-oi0-f68.google.com with SMTP id b22so2554100oii.3
-        for <linux-btrfs@vger.kernel.org>; Tue, 30 Aug 2016 11:28:38 -0700 (PDT)
+        Tue, 30 Aug 2016 16:10:23 -0400
+Received: by mail-ua0-f179.google.com with SMTP id i32so52698995uai.2
+        for <linux-btrfs@vger.kernel.org>; Tue, 30 Aug 2016 13:10:22 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <CAJCQCtQddXz26cjp=tGcO5d5E9N=Zmjdd=qwonjGdh+NJ7aLQQ@mail.gmail.com>
-References: <CA+WRLO8KuP8LS77NUbZLAs3e120oFudES_R3tYQjjYiCXH4BOA@mail.gmail.com>
- <CAJCQCtSUVeXwuKn8rR_Rw24anzHNSLgVo_wYkot1mZYXiGkJ1w@mail.gmail.com>
- <CA+WRLO_6q2cZqPPkmtqjjkq7tfdh5DDyE_oHFswFoQVz8FguKw@mail.gmail.com>
- <CA+WRLO8XVaK5FK9VUt=pOgoyqYm30_yxTnCd+5zdYx5Xx6jAcw@mail.gmail.com>
- <CA+WRLO-cvepjj53xCoq=RiEmTV-6cqL+G6nQe+WnTPyWNDOUZA@mail.gmail.com>
- <CA+WRLO-1oJLZ56EivVTg=bycNhfpOt8ovLrLbgnNeCVKgvbxhQ@mail.gmail.com> <CAJCQCtQddXz26cjp=tGcO5d5E9N=Zmjdd=qwonjGdh+NJ7aLQQ@mail.gmail.com>
-From: Chris Murphy <lists@colorremedies.com>
-Date: Tue, 30 Aug 2016 12:28:36 -0600
-Message-ID: <CAJCQCtRGpAgGq9dpv432ES9OUHG4fDkt+DviapaCyg0Jtc2gVA@mail.gmail.com>
-Subject: Re: Recommendation on raid5 drive error resolution
+In-Reply-To: <CAJCQCtTcvcCPFk70wGw8McvGpz-miXvRcMq1OkQ=rn+d14R25A@mail.gmail.com>
+References: <CAKzrAgTcrjN_qLqzqQ_izpB_AvypaGV=TGNEeH=-18GmOVjAAg@mail.gmail.com>
+ <CAJCQCtQhFHX2ba3gYUHw0XtbLousVz8s7ZxMnT1ThU46iOxNOA@mail.gmail.com>
+ <CAKzrAgRQ6gkEgWZwG1emf0w5RURkj93L_A4--OK-PaPEf17XvQ@mail.gmail.com> <CAJCQCtTcvcCPFk70wGw8McvGpz-miXvRcMq1OkQ=rn+d14R25A@mail.gmail.com>
+From: "ojab //" <ojab@ojab.ru>
+Date: Tue, 30 Aug 2016 20:10:21 +0000
+Message-ID: <CAKzrAgTn73EKF045LWjtU-W3HWjUx4KSfni-YanJ=oJzG6CVRg@mail.gmail.com>
+Subject: Re: `btrfs dev del` fails with `No space left on device`
 To: Chris Murphy <lists@colorremedies.com>
-Cc: Gareth Pye <gareth@cerberos.id.au>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Aug 30, 2016 at 12:04 PM, Chris Murphy <lists@colorremedies.com> wrote:
+On Tue, Aug 30, 2016 at 5:13 PM, Chris Murphy <lists@colorremedies.com> wrote:
+> On Tue, Aug 30, 2016 at 4:22 AM, ojab // <ojab@ojab.ru> wrote:
+>> On Mon, Aug 29, 2016 at 9:05 PM, Chris Murphy <lists@colorremedies.com> wrote:
+>>> On Mon, Aug 29, 2016 at 10:04 AM, ojab // <ojab@ojab.ru> wrote:
+>>> What do you get for 'btrfs fi us <mp>'
+>>
+>> $ sudo btrfs fi us /mnt/xxx/
+>> Overall:
+>>     Device size:                  3.64TiB
+>>     Device allocated:             1.82TiB
+>>     Device unallocated:           1.82TiB
+>>     Device missing:                 0.00B
+>>     Used:                     1.81TiB
+>>     Free (estimated):             1.83TiB         (min: 943.55GiB)
+>>     Data ratio:                  1.00
+>>     Metadata ratio:                  2.00
+>>     Global reserve:             512.00MiB         (used: 0.00B)
+>>
+>> Data,RAID0: Size:1.81TiB, Used:1.80TiB
+>>    /dev/sdb1        928.48GiB
+>>    /dev/sdc1        928.48GiB
+>>
+>> Metadata,RAID1: Size:3.00GiB, Used:2.15GiB
+>>    /dev/sdb1          3.00GiB
+>>    /dev/sdc1          3.00GiB
+>>
+>> System,RAID1: Size:32.00MiB, Used:176.00KiB
+>>    /dev/sdb1         32.00MiB
+>>    /dev/sdc1         32.00MiB
+>>
+>> Unallocated:
+>>    /dev/sdb1          1.01MiB
+>>    /dev/sdc1          1.00MiB
+>>    /dev/sdd1          1.82TiB
+>
+>
+> The confusion is understandable because sdd1 is bigger than sdc1, so
+> why can't everything on sdc1 be moved to sdd1? Well, dev add > dev del
+> doesn't really do that, it's going to end up rewriting metadata to
+> sdb1 also, and there isn't enough space. Yes, there's 800MiB of unused
+> space in metadata chunks on sdb1 and sdc1, it should be enough (?) but
+> clearly it wants more than this for whatever reason. You could argue
+> it's a bug or some suboptimal behavior, but because this is a 99% full
+> file system, I'm willing to be it's a low priority bug. Because this
+> is raid0 you really need to add two devices, not just one.
+>
+>> I don't quite understand what exactly btrfs is trying to do: I assume
+>> that block groups should be relocated to the new/empty drive,
+>
+> There is a scant chance 'btrfs replace' will work better here. But
+> still the real problem remains, even if you replace sdc1 with sdd1,
+> sdb1 is still 99% full which in effect makes the file system 99% full
+> because it can't do anymore raid0 on sdb1, and it's not possible to do
+> raid0 chunks on a single sdd1 device.
+>
+> If you can't add a 4th drive, you're going to have to convert to
+> single profile. Keep all three drives attached, 'btrfs balance start
+> -dconvert=single' and then once that's complete you should be able to
+> remove /dev/sdc1, although this will take a while because first
+> conversion will use space on all three drives, and then the removable
+> of sdc1 will have to copy chunks off before it can be removed.
+>
+>> but
+>> during the delete `btrfs fi us` shows
+>> Unallocated:
+>> /dev/sdc1         16.00EiB
+>
+> Known bug, also happens when resizing and conversions.
+>
+>
+>
+>> so deleted partition is counted as maximum possible empty drive and
+>> blocks are relocated to it instead of new/empty drive? (kernel-4.7.2 &
+>> btrfs-progs-4.7.1 here)
+>> Is there any way to see where and why block groups are relocated
+>> during `delete`?
+>
+> The two reasons this isn't working is a.) it's 99% full already and
+> b.) it's raid0, so merely adding one device isn't sufficient. It's
+> probably too full even to do a 3 device balance to restripe raid0
+> across 3 devices, which is still inefficient because it would leave
+> 50% of the space on sdd as unusable. To do this with uneven devices
+> and use all the space, you're going to have to use single profile.
+>
+>
+>
+> --
+> Chris Murphy
 
-> One of us would have to go look in source to see what causes "[
-> 163.612313] BTRFS: failed to read the system array on sdd" to appear
+Ah, thanks for the elaboration, it makes things much more meaningful now!
 
-https://git.kernel.org/cgit/linux/kernel/git/stable/linux-stable.git/tree/fs/btrfs/disk-io.c?id=refs/tags/v4.7.2
-line 2864
-
-And btrfs_read_sys_array is found here on 6587. So
-https://git.kernel.org/cgit/linux/kernel/git/stable/linux-stable.git/tree/fs/btrfs/volumes.c?id=refs/tags/v4.7.2
-
-And then comparing your 4.4.13 to 4.7.2....
-https://git.kernel.org/cgit/linux/kernel/git/stable/linux-stable.git/diff/fs/btrfs/disk-io.c?id=v4.7.2&id2=v4.4.13
-
-There are changes in these areas but looks like they're mainly
-printk's becoming btrfs_err. But I'd try a newer kernel before you
-give up on it.
-
-https://git.kernel.org/cgit/linux/kernel/git/stable/linux-stable.git/diff/fs/btrfs/volumes.c?id=v4.7.2&id2=v4.4.13
-More changes here too.
-
-I suggest using btrfs-progs 4.5.3 or 4.6.1. You could also try 4.7 but
-I'm getting some weird unexplained errors that only progs 4.7
-complains about (clean scrubs, clean mounts, completely working file
-system, but a buncha backref complaints from 4.7's btrfs check). But I
-think the super-recover -v output should be reliable with any version
-in the last ~year.
-
--- 
-Chris Murphy
+//wbr ojab

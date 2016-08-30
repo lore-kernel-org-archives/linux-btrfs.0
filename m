@@ -1,52 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oi0-f44.google.com ([209.85.218.44]:35199 "EHLO
-        mail-oi0-f44.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751158AbcH3SE3 (ORCPT
+Received: from mail-oi0-f68.google.com ([209.85.218.68]:36035 "EHLO
+        mail-oi0-f68.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1758926AbcH3S2n (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 30 Aug 2016 14:04:29 -0400
-Received: by mail-oi0-f44.google.com with SMTP id p186so2178848oia.2
-        for <linux-btrfs@vger.kernel.org>; Tue, 30 Aug 2016 11:04:28 -0700 (PDT)
+        Tue, 30 Aug 2016 14:28:43 -0400
+Received: by mail-oi0-f68.google.com with SMTP id b22so2554100oii.3
+        for <linux-btrfs@vger.kernel.org>; Tue, 30 Aug 2016 11:28:38 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <CA+WRLO-1oJLZ56EivVTg=bycNhfpOt8ovLrLbgnNeCVKgvbxhQ@mail.gmail.com>
+In-Reply-To: <CAJCQCtQddXz26cjp=tGcO5d5E9N=Zmjdd=qwonjGdh+NJ7aLQQ@mail.gmail.com>
 References: <CA+WRLO8KuP8LS77NUbZLAs3e120oFudES_R3tYQjjYiCXH4BOA@mail.gmail.com>
  <CAJCQCtSUVeXwuKn8rR_Rw24anzHNSLgVo_wYkot1mZYXiGkJ1w@mail.gmail.com>
  <CA+WRLO_6q2cZqPPkmtqjjkq7tfdh5DDyE_oHFswFoQVz8FguKw@mail.gmail.com>
  <CA+WRLO8XVaK5FK9VUt=pOgoyqYm30_yxTnCd+5zdYx5Xx6jAcw@mail.gmail.com>
- <CA+WRLO-cvepjj53xCoq=RiEmTV-6cqL+G6nQe+WnTPyWNDOUZA@mail.gmail.com> <CA+WRLO-1oJLZ56EivVTg=bycNhfpOt8ovLrLbgnNeCVKgvbxhQ@mail.gmail.com>
+ <CA+WRLO-cvepjj53xCoq=RiEmTV-6cqL+G6nQe+WnTPyWNDOUZA@mail.gmail.com>
+ <CA+WRLO-1oJLZ56EivVTg=bycNhfpOt8ovLrLbgnNeCVKgvbxhQ@mail.gmail.com> <CAJCQCtQddXz26cjp=tGcO5d5E9N=Zmjdd=qwonjGdh+NJ7aLQQ@mail.gmail.com>
 From: Chris Murphy <lists@colorremedies.com>
-Date: Tue, 30 Aug 2016 12:04:27 -0600
-Message-ID: <CAJCQCtQddXz26cjp=tGcO5d5E9N=Zmjdd=qwonjGdh+NJ7aLQQ@mail.gmail.com>
+Date: Tue, 30 Aug 2016 12:28:36 -0600
+Message-ID: <CAJCQCtRGpAgGq9dpv432ES9OUHG4fDkt+DviapaCyg0Jtc2gVA@mail.gmail.com>
 Subject: Re: Recommendation on raid5 drive error resolution
-To: Gareth Pye <gareth@cerberos.id.au>
-Cc: Chris Murphy <lists@colorremedies.com>,
+To: Chris Murphy <lists@colorremedies.com>
+Cc: Gareth Pye <gareth@cerberos.id.au>,
         linux-btrfs <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Aug 30, 2016 at 3:58 AM, Gareth Pye <gareth@cerberos.id.au> wrote:
-> Okay, things aren't looking good. The FS wont mount for me:
-> http://pastebin.com/sEEdRxsN
+On Tue, Aug 30, 2016 at 12:04 PM, Chris Murphy <lists@colorremedies.com> wrote:
 
-Try to mount with -o ro,degraded. I have no idea which device it'll
-end up dropping, but it might at least get you a read only mount so
-you can get stuff off - if you want - without modifying the file
-system.
+> One of us would have to go look in source to see what causes "[
+> 163.612313] BTRFS: failed to read the system array on sdd" to appear
 
-One of us would have to go look in source to see what causes "[
-163.612313] BTRFS: failed to read the system array on sdd" to appear
-for each device. It's suspicious that every drive produces that
-message, and there are no fixup messages at all ever. So it sounds
-like it's not even getting far enough to figure out what's bad and
-reconstruct from parity. And I don't even see csum errors either,
-which is also suspicious. It's like the boot strapping itself is
-failing which kinda implicates superblocks?
+https://git.kernel.org/cgit/linux/kernel/git/stable/linux-stable.git/tree/fs/btrfs/disk-io.c?id=refs/tags/v4.7.2
+line 2864
 
-What do you get for
+And btrfs_read_sys_array is found here on 6587. So
+https://git.kernel.org/cgit/linux/kernel/git/stable/linux-stable.git/tree/fs/btrfs/volumes.c?id=refs/tags/v4.7.2
 
-btrfs rescue super-recover -v /dev/sdX ?
+And then comparing your 4.4.13 to 4.7.2....
+https://git.kernel.org/cgit/linux/kernel/git/stable/linux-stable.git/diff/fs/btrfs/disk-io.c?id=v4.7.2&id2=v4.4.13
 
+There are changes in these areas but looks like they're mainly
+printk's becoming btrfs_err. But I'd try a newer kernel before you
+give up on it.
 
+https://git.kernel.org/cgit/linux/kernel/git/stable/linux-stable.git/diff/fs/btrfs/volumes.c?id=v4.7.2&id2=v4.4.13
+More changes here too.
+
+I suggest using btrfs-progs 4.5.3 or 4.6.1. You could also try 4.7 but
+I'm getting some weird unexplained errors that only progs 4.7
+complains about (clean scrubs, clean mounts, completely working file
+system, but a buncha backref complaints from 4.7's btrfs check). But I
+think the super-recover -v output should be reliable with any version
+in the last ~year.
 
 -- 
 Chris Murphy

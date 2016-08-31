@@ -1,67 +1,60 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oi0-f51.google.com ([209.85.218.51]:34679 "EHLO
-        mail-oi0-f51.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753967AbcHaXEN (ORCPT
+Received: from mail-oi0-f65.google.com ([209.85.218.65]:36792 "EHLO
+        mail-oi0-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1753015AbcHaXJ7 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 31 Aug 2016 19:04:13 -0400
-Received: by mail-oi0-f51.google.com with SMTP id l203so92577549oib.1
-        for <linux-btrfs@vger.kernel.org>; Wed, 31 Aug 2016 16:04:13 -0700 (PDT)
+        Wed, 31 Aug 2016 19:09:59 -0400
+Received: by mail-oi0-f65.google.com with SMTP id b22so6133537oii.3
+        for <linux-btrfs@vger.kernel.org>; Wed, 31 Aug 2016 16:09:40 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <CA+WRLO-WwM8hN9OxWZfbac60iXDZ8=WZ8=fokKdCqYcSpEdu6g@mail.gmail.com>
-References: <CA+WRLO8KuP8LS77NUbZLAs3e120oFudES_R3tYQjjYiCXH4BOA@mail.gmail.com>
- <CAJCQCtSUVeXwuKn8rR_Rw24anzHNSLgVo_wYkot1mZYXiGkJ1w@mail.gmail.com>
- <CA+WRLO_6q2cZqPPkmtqjjkq7tfdh5DDyE_oHFswFoQVz8FguKw@mail.gmail.com>
- <CA+WRLO8XVaK5FK9VUt=pOgoyqYm30_yxTnCd+5zdYx5Xx6jAcw@mail.gmail.com>
- <CA+WRLO-cvepjj53xCoq=RiEmTV-6cqL+G6nQe+WnTPyWNDOUZA@mail.gmail.com>
- <CA+WRLO-1oJLZ56EivVTg=bycNhfpOt8ovLrLbgnNeCVKgvbxhQ@mail.gmail.com>
- <CAJCQCtQddXz26cjp=tGcO5d5E9N=Zmjdd=qwonjGdh+NJ7aLQQ@mail.gmail.com>
- <CAJCQCtRGpAgGq9dpv432ES9OUHG4fDkt+DviapaCyg0Jtc2gVA@mail.gmail.com>
- <CA+WRLO8kTBoPHx3jkeN+zdygEMZz9ejTeWGwQireRtDGDNrncQ@mail.gmail.com> <CA+WRLO-WwM8hN9OxWZfbac60iXDZ8=WZ8=fokKdCqYcSpEdu6g@mail.gmail.com>
-From: Gareth Pye <gareth@cerberos.id.au>
-Date: Thu, 1 Sep 2016 09:04:12 +1000
-Message-ID: <CA+WRLO9ZazygSMfLjpfXO_bYMmJVecd3be44EKJWMDORFXiVKg@mail.gmail.com>
-Subject: Re: Recommendation on raid5 drive error resolution
-To: Chris Murphy <lists@colorremedies.com>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+In-Reply-To: <a61878b9-7b88-7aee-40cf-05368cd01d78@suse.com>
+References: <1471023419.16857.9.camel@gmail.com> <57C426AB.3020607@cn.fujitsu.com>
+ <1472485953.3290.0.camel@gmail.com> <57C4EB85.7030000@cn.fujitsu.com>
+ <1472561404.3179.3.camel@gmail.com> <CAJCQCtTn6y1Qy5J_Wuef-bbwJ9g50NgM-a2UtWvh=01S_JntKA@mail.gmail.com>
+ <1472676550.8145.1.camel@gmail.com> <CAJCQCtR8EKENcy0ApONzDTX0RNZb8Dh-+_au4cMkyK24RzDoNw@mail.gmail.com>
+ <CAJCQCtTWJMigkeLUP0+aTFPwdpuJtMa3C4isercAfE_Wh3b=PQ@mail.gmail.com>
+ <52290114-3b37-2de5-9c9f-ceda6dff955b@suse.com> <CAJCQCtSPLw5Kwunm6WdhDCiE8Kc7BcfZy6W9veuns7kBmgyivw@mail.gmail.com>
+ <a61878b9-7b88-7aee-40cf-05368cd01d78@suse.com>
+From: Chris Murphy <lists@colorremedies.com>
+Date: Wed, 31 Aug 2016 17:09:38 -0600
+Message-ID: <CAJCQCtTBfhXOLg3URfreG29NVfujPjEc0O_cnDFCzDQm0iRtaA@mail.gmail.com>
+Subject: Re: BTRFS constantly reports "No space left on device" even with a
+ huge unallocated space
+To: Jeff Mahoney <jeffm@suse.com>
+Cc: Chris Murphy <lists@colorremedies.com>,
+        Ronan Arraes Jardim Chagas <ronisbr@gmail.com>,
+        Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>,
+        Qu Wenruo <quwenruo@cn.fujitsu.com>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-ro,degraded has mounted it nicely and my rsync of the more useful data
-is progressing at the speed of WiFi.
+On Wed, Aug 31, 2016 at 5:03 PM, Jeff Mahoney <jeffm@suse.com> wrote:
+> On 8/31/16 6:58 PM, Chris Murphy wrote:
 
-There are repeated read errors from one drive still but the rsync
-hasn't bailed yet, which I think means there isn't any overlapping
-errors in any of the files it has touched thus far. Am I right or is
-their likely to be corrupt data in the files I've synced off?
-
-On Wed, Aug 31, 2016 at 7:46 AM, Gareth Pye <gareth@cerberos.id.au> wrote:
-> Or I could just once again select the right boot device in the bios. I
-> think I want some new hardware :)
->
-> On Wed, Aug 31, 2016 at 7:23 AM, Gareth Pye <gareth@cerberos.id.au> wrote:
->> On Wed, Aug 31, 2016 at 4:28 AM, Chris Murphy <lists@colorremedies.com> wrote:
->>> But I'd try a newer kernel before you
->>> give up on it.
+> Does Ronan's call trace showing
+>> /fs/btrfs/qgroup.c:2667
+>>> btrfs_qgroup_free_meta implicate qgroups as a possible source of his problem? That trace would only happen if quotas were enabled, right?
 >>
->>
->> Any recommendations on liveCDs that have recent kernels & btrfs tools?
->> For no apparent reason system isn't booting normally either, and I'm
->> reluctant to fix that before at least confirming the things I at least
->> partially care about have a recent backup.
->>
->> --
->> Gareth Pye - blog.cerberos.id.au
->> Level 2 MTG Judge, Melbourne, Australia
 >
->
->
-> --
-> Gareth Pye - blog.cerberos.id.au
-> Level 2 MTG Judge, Melbourne, Australia
+> Yeah.  That warning doesn't get checked unless they're enabled.
+
+OK so Ronan, I'm gonna guess the simplest work around for your problem
+is to disable quota support, and see if the problem happens again.
+
+If it doesn't happen again then it sounds like the reproduce steps are:
+
+a. enable quota support
+b. do something metadata heavy workload that's also maybe hitting
+fsync; from opensuse list the example that sometimes causes it:
 
 
+  osc co home:Ronis_BR/julia
+  cd home:Ronis_BR/julia
+  osc build --root=`pwd`/jail openSUSE_Tumbleweed x86_64
+
+I wonder if it's easier to hit it on a hard drive, slower fsyncs?
 
 -- 
-Gareth Pye - blog.cerberos.id.au
-Level 2 MTG Judge, Melbourne, Australia
+Chris Murphy

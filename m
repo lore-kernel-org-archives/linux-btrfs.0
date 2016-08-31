@@ -1,39 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:57776 "EHLO
-        mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
-        by vger.kernel.org with ESMTP id S935371AbcHaPly (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 31 Aug 2016 11:41:54 -0400
-Subject: Re: [PATCH] btrfs: fix one bug that process may endlessly wait for
- ticket in wait_reserve_ticket()
-To: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>, <linux-btrfs@vger.kernel.org>
-References: <20160831114616.2053-1-wangxg.fnst@cn.fujitsu.com>
-CC: <dsterba@suse.com>
-From: Josef Bacik <jbacik@fb.com>
-Message-ID: <2c6713aa-6560-62ee-5a0d-c26942ff7390@fb.com>
-Date: Wed, 31 Aug 2016 11:41:06 -0400
+Received: from cn.fujitsu.com ([222.73.24.84]:6898 "EHLO song.cn.fujitsu.com"
+        rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+        id S932796AbcHaLu2 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 31 Aug 2016 07:50:28 -0400
+From: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
+To: linux-btrfs@vger.kernel.org
+Cc: jbacik@fb.com, dsterba@suse.com
+Subject: [PATCH] btrfs: fix one bug that process may endlessly wait for ticket in wait_reserve_ticket()
+Date: Wed, 31 Aug 2016 19:46:16 +0800
+Message-Id: <20160831114616.2053-1-wangxg.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
-In-Reply-To: <20160831114616.2053-1-wangxg.fnst@cn.fujitsu.com>
-Content-Type: text/plain; charset="windows-1252"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 08/31/2016 07:46 AM, Wang Xiaoguang wrote:
-> If can_overcommit() in btrfs_calc_reclaim_metadata_size() returns true,
-> btrfs_async_reclaim_metadata_space() will not reclaim metadata space, just
-> return directly and also forget to wake up process which are waiting for
-> their tickets, so these processes will wait endlessly.
->
-> Fstests case generic/172 with mount option "-o compress=lzo" have revealed
-> this bug in my test machine. Here if we have tickets to handle, we must
-> handle them first.
->
-> Signed-off-by: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
+If can_overcommit() in btrfs_calc_reclaim_metadata_size() returns true,
+btrfs_async_reclaim_metadata_space() will not reclaim metadata space, just
+return directly and also forget to wake up process which are waiting for
+their tickets, so these processes will wait endlessly.
 
-Yup good catch, you can add
+Fstests case generic/172 with mount option "-o compress=lzo" have revealed
+this bug in my test machine. Here if we have tickets to handle, we must
+handle them first.
 
-Reviewed-by: Josef Bacik <jbacik@fb.com>
+Signed-off-by: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
+---
+ fs/btrfs/extent-tree.c | 10 +++++-----
+ 1 file changed, 5 insertions(+), 5 deletions(-)
 
-Thanks,
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 0450dc4..8c8a4d1 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -4901,11 +4901,6 @@ btrfs_calc_reclaim_metadata_size(struct btrfs_root *root,
+ 	u64 expected;
+ 	u64 to_reclaim = 0;
+ 
+-	to_reclaim = min_t(u64, num_online_cpus() * SZ_1M, SZ_16M);
+-	if (can_overcommit(root, space_info, to_reclaim,
+-			   BTRFS_RESERVE_FLUSH_ALL))
+-		return 0;
+-
+ 	list_for_each_entry(ticket, &space_info->tickets, list)
+ 		to_reclaim += ticket->bytes;
+ 	list_for_each_entry(ticket, &space_info->priority_tickets, list)
+@@ -4913,6 +4908,11 @@ btrfs_calc_reclaim_metadata_size(struct btrfs_root *root,
+ 	if (to_reclaim)
+ 		return to_reclaim;
+ 
++	to_reclaim = min_t(u64, num_online_cpus() * SZ_1M, SZ_16M);
++	if (can_overcommit(root, space_info, to_reclaim,
++			   BTRFS_RESERVE_FLUSH_ALL))
++		return 0;
++
+ 	used = space_info->bytes_used + space_info->bytes_reserved +
+ 	       space_info->bytes_pinned + space_info->bytes_readonly +
+ 	       space_info->bytes_may_use;
+-- 
+2.9.0
 
-Josef
+
+

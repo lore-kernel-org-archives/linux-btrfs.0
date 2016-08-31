@@ -1,63 +1,107 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oi0-f54.google.com ([209.85.218.54]:34081 "EHLO
-        mail-oi0-f54.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1758551AbcH3VqF (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 30 Aug 2016 17:46:05 -0400
-Received: by mail-oi0-f54.google.com with SMTP id l203so45361133oib.1
-        for <linux-btrfs@vger.kernel.org>; Tue, 30 Aug 2016 14:45:59 -0700 (PDT)
+Received: from mx2.suse.de ([195.135.220.15]:36497 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751729AbcHaBfp (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 30 Aug 2016 21:35:45 -0400
+Subject: Re: btrfs send extremely slow (almost stuck)
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>,
+        Oliver Freyermuth <o.freyermuth@googlemail.com>,
+        linux-btrfs@vger.kernel.org
+References: <03b9d0b0-7001-7dd9-75cd-69d58b94d553@googlemail.com>
+ <6bebd709-8fdd-5e88-650d-f1c551946505@cn.fujitsu.com>
+ <d7346353-8e61-27b1-df2f-aabcad0580f4@cn.fujitsu.com>
+From: Jeff Mahoney <jeffm@suse.com>
+Message-ID: <57C6345E.5010006@suse.com>
+Date: Tue, 30 Aug 2016 21:35:26 -0400
 MIME-Version: 1.0
-In-Reply-To: <CA+WRLO8kTBoPHx3jkeN+zdygEMZz9ejTeWGwQireRtDGDNrncQ@mail.gmail.com>
-References: <CA+WRLO8KuP8LS77NUbZLAs3e120oFudES_R3tYQjjYiCXH4BOA@mail.gmail.com>
- <CAJCQCtSUVeXwuKn8rR_Rw24anzHNSLgVo_wYkot1mZYXiGkJ1w@mail.gmail.com>
- <CA+WRLO_6q2cZqPPkmtqjjkq7tfdh5DDyE_oHFswFoQVz8FguKw@mail.gmail.com>
- <CA+WRLO8XVaK5FK9VUt=pOgoyqYm30_yxTnCd+5zdYx5Xx6jAcw@mail.gmail.com>
- <CA+WRLO-cvepjj53xCoq=RiEmTV-6cqL+G6nQe+WnTPyWNDOUZA@mail.gmail.com>
- <CA+WRLO-1oJLZ56EivVTg=bycNhfpOt8ovLrLbgnNeCVKgvbxhQ@mail.gmail.com>
- <CAJCQCtQddXz26cjp=tGcO5d5E9N=Zmjdd=qwonjGdh+NJ7aLQQ@mail.gmail.com>
- <CAJCQCtRGpAgGq9dpv432ES9OUHG4fDkt+DviapaCyg0Jtc2gVA@mail.gmail.com> <CA+WRLO8kTBoPHx3jkeN+zdygEMZz9ejTeWGwQireRtDGDNrncQ@mail.gmail.com>
-From: Chris Murphy <lists@colorremedies.com>
-Date: Tue, 30 Aug 2016 15:45:58 -0600
-Message-ID: <CAJCQCtRUhjSCKRm5cYEqQy6WstthnrwzjKYo6Ck0xzG2LhmPxw@mail.gmail.com>
-Subject: Re: Recommendation on raid5 drive error resolution
-To: Gareth Pye <gareth@cerberos.id.au>
-Cc: Chris Murphy <lists@colorremedies.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+In-Reply-To: <d7346353-8e61-27b1-df2f-aabcad0580f4@cn.fujitsu.com>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="274wcNm061AOGD0DEQ3Bpica3Jk2sA1oq"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Aug 30, 2016 at 3:23 PM, Gareth Pye <gareth@cerberos.id.au> wrote:
-> On Wed, Aug 31, 2016 at 4:28 AM, Chris Murphy <lists@colorremedies.com> wrote:
->> But I'd try a newer kernel before you
->> give up on it.
->
->
-> Any recommendations on liveCDs that have recent kernels & btrfs tools?
-> For no apparent reason system isn't booting normally either, and I'm
-> reluctant to fix that before at least confirming the things I at least
-> partially care about have a recent backup.
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--274wcNm061AOGD0DEQ3Bpica3Jk2sA1oq
+Content-Type: multipart/mixed; boundary="L5oAOovJGF2mpTSHkJEmXRVjxFMcV381e"
+From: Jeff Mahoney <jeffm@suse.com>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>,
+ Oliver Freyermuth <o.freyermuth@googlemail.com>, linux-btrfs@vger.kernel.org
+Message-ID: <57C6345E.5010006@suse.com>
+Subject: Re: btrfs send extremely slow (almost stuck)
+References: <03b9d0b0-7001-7dd9-75cd-69d58b94d553@googlemail.com>
+ <6bebd709-8fdd-5e88-650d-f1c551946505@cn.fujitsu.com>
+ <d7346353-8e61-27b1-df2f-aabcad0580f4@cn.fujitsu.com>
+In-Reply-To: <d7346353-8e61-27b1-df2f-aabcad0580f4@cn.fujitsu.com>
 
-Fedora 25 Alpha released today with kernel 4.8rc2 and btrfs-progs 4.6.1.
-https://getfedora.org/en/workstation/prerelease/
+--L5oAOovJGF2mpTSHkJEmXRVjxFMcV381e
+Content-Type: text/plain; charset=utf-8
+Content-Transfer-Encoding: quoted-printable
 
-The top green "Download" button offers GNOME. If you want something
-smaller, on the right hand side are netinstall images with the same
-kernel and progs, but no GUI. You can choose the Troubleshooting menu,
-and then the Rescue a Fedora System option. It boots, and then you're
-at a text UI where you can just get to a shell, option 3.
+On 8/28/16 10:12 PM, Qu Wenruo wrote:
+>=20
+>=20
+> At 08/29/2016 10:11 AM, Qu Wenruo wrote:
+>>
+>>
+>> At 08/28/2016 11:38 AM, Oliver Freyermuth wrote:
+>>> Dear btrfs experts,
+>>>
+>>> I just tried to make use of btrfs send / receive for incremental
+>>> backups (using btrbk to simplify the process).
+>>> It seems that on my two machines, btrfs send gets stuck after
+>>> transferring some GiB - it's not fully halted, but instead of making
+>>> full use of the available I/O, I get something < 500 kiB on average,
+>>> which are just some "full speed spikes" with many seconds / minutes o=
+f
+>>> no I/O in between.
+>>>
+>>> During this "halting", btrfs send eats one full CPU core.
+>>> A "perf top" shows this is spent in "find_parent_nodes" and
+>>> "__merge_refs" inside the kernel.
+>>> I am using btrfs-progs 4.7 and kernel 4.7.0.
+>>
+>> Unknown bug, while unfortunately no good idea to solve yet.
+>=20
+> Sorry, known bug, not unknown....
 
-The easiest way to create a USB stick is with dd and it'll boot
-practically anything, BIOS, UEFI, even Macs. Not all wireless firmware
-is included in these media, if you have a wired connection it'll be
-easier to get dmesg and and contents of btrfs check off. If you opt
-for the larger image (GNOME), it's a bit easier to get the terminal
-output into a file and either scp it to another computer or you can
-also use fpaste <filename> and it'll spit back a URL where it uploaded
-the text.
+I'm working on a patch to replace the lists with a pair of trees that
+get merged after filling in the missing parents.
+
+The reflink xfstests don't complete, ever.  btrfs/130 triggers soft
+lockups but do complete eventually -- and that's only with ~4k list
+elements.
+
+-Jeff
+
+--=20
+Jeff Mahoney
+SUSE Labs
 
 
+--L5oAOovJGF2mpTSHkJEmXRVjxFMcV381e--
 
+--274wcNm061AOGD0DEQ3Bpica3Jk2sA1oq
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
 
--- 
-Chris Murphy
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG/MacGPG2 v2
+
+iQIcBAEBCAAGBQJXxjRhAAoJEB57S2MheeWyf5sP/A/y1U9/EHucpUQSIR6u5f/O
+zquyxPsKzlUImi5gGwG5PfcfJdqXWoLrH7bjBPByKP4ozSiOGJR9PSZiCQNr9ixl
++TurZszCD0DSxEZ++Zs2Gkm8L+HGAM0X9J+tELlC0kqc2CFwY4V/FX580vNVvL+X
+hW7kc5OmpUxGspqhaJ6tQrP+UBFsE0BVcTWYk+coSvjcIeJqEus6jY/+/BZALia1
+GOO0qkgixPytG8C2b2I06+J/fx3tCuPk6JKAFSWw/bVqCmXc95myF5tHBnywt678
+xh9nVGBSvZTFXmv7/c0xEJqMLghUPtDVN2A1J6Y1XpozEsy5QlybmplVYZUGR6Tf
+yrdvoEqohnM9ZGIIZYNDs/RK/lbhUjpqv0UAestCMe/P+B/Y6nNJSV3AlKt9oELB
+5kVw979me4H23vO7Mgl2gIVXMcQgKLxooqTcXGfDnVhuyp1dqIzez6NZ/45NoJku
+7Ur+lu/ekN99tPWXCYochzBM2M/vIhDmC9UX7bnWhKH6hQBVKRwTS2BC1/XU++LT
+Lcpstvfao9wRT8CoM4PmURvTmFuFZ5I0DZGVQKUeKBvo+egIXKitKz6Dx2tpOlCz
+2IQ8Mcs3wB3ipvp8j2crzj0NsOCFhJChE7UjNy/Ud6Q8w8Oq+Hl7cbUE2SLoZvsw
+JWNB+bNfYkpbucsDPCdR
+=q6ae
+-----END PGP SIGNATURE-----
+
+--274wcNm061AOGD0DEQ3Bpica3Jk2sA1oq--

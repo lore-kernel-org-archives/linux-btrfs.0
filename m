@@ -1,60 +1,39 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:57317 "EHLO song.cn.fujitsu.com"
-        rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-        id S1750881AbcHZDmA (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 25 Aug 2016 23:42:00 -0400
-From: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
-To: linux-btrfs@vger.kernel.org
-Cc: clm@fb.com, dsterba@suse.com
-Subject: [PATCH] btrfs: do not decrease bytes_may_use when replaying extents
-Date: Fri, 26 Aug 2016 11:33:14 +0800
-Message-Id: <1472182394-7785-1-git-send-email-wangxg.fnst@cn.fujitsu.com>
+Received: from mx2.suse.de ([195.135.220.15]:60992 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1753474AbcHaTKV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 31 Aug 2016 15:10:21 -0400
+Date: Wed, 31 Aug 2016 21:08:58 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Eric Sandeen <sandeen@redhat.com>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH] btrfs: remove pointless debugfs interface
+Message-ID: <20160831190858.GJ16983@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <d6715b5b-0aa3-3032-43c6-eccd907a60b8@redhat.com>
 MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <d6715b5b-0aa3-3032-43c6-eccd907a60b8@redhat.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When replaying extents, there is no need to update bytes_may_use
-in btrfs_alloc_logged_file_extent(), otherwise it'll trigger a
-WARN_ON about bytes_may_use.
+On Wed, Aug 31, 2016 at 10:13:49AM -0500, Eric Sandeen wrote:
+> A /sys/kernel/debug/btrfs/test file was added nearly
+> two and a half years ago, but it serves no purpose;
 
-Fixes: ("btrfs: update btrfs_space_info's bytes_may_use timely")
-Signed-off-by: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
----
- fs/btrfs/extent-tree.c | 12 +++++++++---
- 1 file changed, 9 insertions(+), 3 deletions(-)
+It does. Introduced in 1bae30982bc86ab66d61ccb6e22792593b45d44d says
+something about helping developers to easily export information from the
+filesystem, to aid debugging. Writing the debugfs support code is not
+obviously trivial, so it's idling in the source. Exporing a new value is
+as easy as copy and update 3 lines of code. If you have no use for it,
+fine.
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index ae8f9aa..7a15990 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -8242,6 +8242,7 @@ int btrfs_alloc_logged_file_extent(struct btrfs_trans_handle *trans,
- {
- 	int ret;
- 	struct btrfs_block_group_cache *block_group;
-+	struct btrfs_space_info *space_info;
- 
- 	/*
- 	 * Mixed block groups will exclude before processing the log so we only
-@@ -8257,9 +8258,14 @@ int btrfs_alloc_logged_file_extent(struct btrfs_trans_handle *trans,
- 	if (!block_group)
- 		return -EINVAL;
- 
--	ret = btrfs_add_reserved_bytes(block_group, ins->offset,
--				       ins->offset, 0);
--	BUG_ON(ret); /* logic error */
-+	space_info = block_group->space_info;
-+	spin_lock(&space_info->lock);
-+	spin_lock(&block_group->lock);
-+	space_info->bytes_reserved += ins->offset;
-+	block_group->reserved += ins->offset;
-+	spin_unlock(&block_group->lock);
-+	spin_unlock(&space_info->lock);
-+
- 	ret = alloc_reserved_file_extent(trans, root, 0, root_objectid,
- 					 0, owner, offset, ins, 1);
- 	btrfs_put_block_group(block_group);
--- 
-2.9.0
+> it stores and returns a value, but nothing in the btrfs
+> code uses this value in any way.  There are no other btrfs
+> files in this debugfs dir.
+> 
+> This was brought to my attention because it is world-writable;
+> it is the only such file under /sys/kernel/debug, and without
+> knowledge of its purpose, some users were alarmed by this.
 
-
-
+So let's fix the permissions.

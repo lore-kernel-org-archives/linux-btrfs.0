@@ -1,50 +1,33 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oi0-f68.google.com ([209.85.218.68]:34010 "EHLO
-        mail-oi0-f68.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753708AbcHaVsx (ORCPT
+Received: from mail-oi0-f54.google.com ([209.85.218.54]:34947 "EHLO
+        mail-oi0-f54.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S932719AbcHaV7H (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 31 Aug 2016 17:48:53 -0400
-Received: by mail-oi0-f68.google.com with SMTP id t127so5974538oie.1
-        for <linux-btrfs@vger.kernel.org>; Wed, 31 Aug 2016 14:48:53 -0700 (PDT)
+        Wed, 31 Aug 2016 17:59:07 -0400
+Received: by mail-oi0-f54.google.com with SMTP id p186so55559721oia.2
+        for <linux-btrfs@vger.kernel.org>; Wed, 31 Aug 2016 14:59:06 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <CAJCQCtR8EKENcy0ApONzDTX0RNZb8Dh-+_au4cMkyK24RzDoNw@mail.gmail.com>
-References: <1471023419.16857.9.camel@gmail.com> <57C426AB.3020607@cn.fujitsu.com>
- <1472485953.3290.0.camel@gmail.com> <57C4EB85.7030000@cn.fujitsu.com>
- <1472561404.3179.3.camel@gmail.com> <CAJCQCtTn6y1Qy5J_Wuef-bbwJ9g50NgM-a2UtWvh=01S_JntKA@mail.gmail.com>
- <1472676550.8145.1.camel@gmail.com> <CAJCQCtR8EKENcy0ApONzDTX0RNZb8Dh-+_au4cMkyK24RzDoNw@mail.gmail.com>
+In-Reply-To: <CAJCQCtTo7nS7grh-9XWTKXX_h2pXPXCbLMRGmTfa=NzHq2Aa6g@mail.gmail.com>
+References: <CAJCQCtT5YA9EMq1ZC-qeZcNLUeg1GocBm3nT2nZFEBigmV4BxQ@mail.gmail.com>
+ <CAJCQCtQjX+0nAWRNPK2gYNoi8wvHxTMEzm6v84PZKXnTLxc50Q@mail.gmail.com>
+ <CAJCQCtT0=gEwBerYXYnyueMk3JnmGZp71qBJFB5N4qR4ASF7cg@mail.gmail.com>
+ <CAJCQCtRZNNTZ5ymH-X9Cq=h+_aaATym40W42BJ-xM5ECJOQnDg@mail.gmail.com> <CAJCQCtTo7nS7grh-9XWTKXX_h2pXPXCbLMRGmTfa=NzHq2Aa6g@mail.gmail.com>
 From: Chris Murphy <lists@colorremedies.com>
-Date: Wed, 31 Aug 2016 15:48:51 -0600
-Message-ID: <CAJCQCtTWJMigkeLUP0+aTFPwdpuJtMa3C4isercAfE_Wh3b=PQ@mail.gmail.com>
-Subject: Re: BTRFS constantly reports "No space left on device" even with a
- huge unallocated space
-Cc: Ronan Arraes Jardim Chagas <ronisbr@gmail.com>,
-        Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>,
-        Qu Wenruo <quwenruo@cn.fujitsu.com>
+Date: Wed, 31 Aug 2016 15:59:02 -0600
+Message-ID: <CAJCQCtS374FCEqSx0qBdF1oa6=y48A4p0pMN0u456adQETyS_Q@mail.gmail.com>
+Subject: Re: btrfs-progs 4.7, check reports many "incorrect local backref
+ count" messages
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
-To: unlisted-recipients:; (no To-header on input)
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-OK it looks like with -w flag I can get a reliable indication of
-whether quota is enabled or not:
-
-[root@f24s ~]# btrfs quota enable /mnt/0
-[root@f24s ~]# btrfs quota rescan -w /mnt/0
-quota rescan started
-[root@f24s ~]# btrfs quota disable /mnt/0
-[root@f24s ~]# btrfs quota rescan -w /mnt/0
-ERROR: quota rescan failed: Invalid argument
-
-
-So if you did not enable quota support, and aren't sure if it's
-enabled you can try 'btrfs quota rescan -w <mp>' but this might
-actually be a bad idea, a rescan could take a while if you're actually
-using quotas, I have no idea because I don't use them.
-
-Perhaps someone can point out an easier way to determine whether
-quotas are enabled?
+This is still happening with btrfs-progs 4.7.1 and there is zero
+information in the long result what to do about the problem, and
+whether it's sane to try have --repair fix it, let alone what the
+original cause of the problem was.
 
 
 
+-- 
 Chris Murphy

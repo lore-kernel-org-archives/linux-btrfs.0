@@ -1,39 +1,49 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:55992 "EHLO
-        mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1754049AbcIAVtU (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 1 Sep 2016 17:49:20 -0400
-Subject: Re: [PATCH] btrfs: do not decrease bytes_may_use when replaying
- extents
-To: <dsterba@suse.cz>, Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>,
-        <linux-btrfs@vger.kernel.org>, <clm@fb.com>, <dsterba@suse.com>
-References: <1472182394-7785-1-git-send-email-wangxg.fnst@cn.fujitsu.com>
- <20160901153629.GT16983@twin.jikos.cz>
-From: Josef Bacik <jbacik@fb.com>
-Message-ID: <a06cbb7f-4337-9ecc-9ba7-fe3cb990110c@fb.com>
-Date: Thu, 1 Sep 2016 13:30:05 -0400
+Received: from mx1.redhat.com ([209.132.183.28]:55064 "EHLO mx1.redhat.com"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1752513AbcHaW3G (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 31 Aug 2016 18:29:06 -0400
+Subject: Re: [PATCH] btrfs: remove pointless debugfs interface
+To: dsterba@suse.cz,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+References: <d6715b5b-0aa3-3032-43c6-eccd907a60b8@redhat.com>
+ <20160831190858.GJ16983@twin.jikos.cz>
+From: Eric Sandeen <sandeen@redhat.com>
+Message-ID: <d3e6540b-903d-4d35-e7b0-07a41f1feec5@redhat.com>
+Date: Wed, 31 Aug 2016 16:38:16 -0500
 MIME-Version: 1.0
-In-Reply-To: <20160901153629.GT16983@twin.jikos.cz>
-Content-Type: text/plain; charset="windows-1252"; format=flowed
+In-Reply-To: <20160831190858.GJ16983@twin.jikos.cz>
+Content-Type: text/plain; charset=windows-1252
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 09/01/2016 11:36 AM, David Sterba wrote:
-> CC Josef. It's a followup of patch that went to 4.8-rc4 so we'd better
-> get it to 4.8.
->
-> On Fri, Aug 26, 2016 at 11:33:14AM +0800, Wang Xiaoguang wrote:
->> When replaying extents, there is no need to update bytes_may_use
->> in btrfs_alloc_logged_file_extent(), otherwise it'll trigger a
->> WARN_ON about bytes_may_use.
+On 8/31/16 2:08 PM, David Sterba wrote:
+> On Wed, Aug 31, 2016 at 10:13:49AM -0500, Eric Sandeen wrote:
+>> A /sys/kernel/debug/btrfs/test file was added nearly
+>> two and a half years ago, but it serves no purpose;
+> 
+> It does. Introduced in 1bae30982bc86ab66d61ccb6e22792593b45d44d says
+> something about helping developers to easily export information from the
+> filesystem, to aid debugging. Writing the debugfs support code is not
+> obviously trivial, so it's idling in the source. Exporing a new value is
+> as easy as copy and update 3 lines of code. If you have no use for it,
+> fine.
+
+I had thought that Documentation/filesystems/debugfs.txt would suffice,
+but if you keep stuff lying around in btrfs just in case somebody needs
+to export a global variable in the future, I suppose that's cool too.  ;)
+
+>> it stores and returns a value, but nothing in the btrfs
+>> code uses this value in any way.  There are no other btrfs
+>> files in this debugfs dir.
 >>
->> Fixes: ("btrfs: update btrfs_space_info's bytes_may_use timely")
->> Signed-off-by: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
+>> This was brought to my attention because it is world-writable;
+>> it is the only such file under /sys/kernel/debug, and without
+>> knowledge of its purpose, some users were alarmed by this.
+> 
+> So let's fix the permissions.
 
-Reviewed-by: Josef Bacik <jbacik@fb.com>
+*shrug* ok.
 
-Thanks,
-
-Josef
+-Eric
 

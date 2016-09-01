@@ -1,68 +1,72 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-it0-f51.google.com ([209.85.214.51]:36228 "EHLO
-        mail-it0-f51.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1755163AbcIALRr (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 1 Sep 2016 07:17:47 -0400
-Received: by mail-it0-f51.google.com with SMTP id i184so61065343itf.1
-        for <linux-btrfs@vger.kernel.org>; Thu, 01 Sep 2016 04:17:46 -0700 (PDT)
-Received: from [191.9.212.201] (rrcs-70-62-41-24.central.biz.rr.com. [70.62.41.24])
-        by smtp.gmail.com with ESMTPSA id 15sm8593439itl.0.2016.09.01.04.17.44
-        for <linux-btrfs@vger.kernel.org>
-        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Thu, 01 Sep 2016 04:17:44 -0700 (PDT)
-Subject: Re: your mail
-To: linux-btrfs@vger.kernel.org
-References: <CAD1x5BA5k9MUdzT-s0kzFfb5+idoJSFaOux0xQS-jd_D0HTDWA@mail.gmail.com>
- <20160901074415.pz32d72d4h6pk77t@invalid>
+Received: from mail-it0-f42.google.com ([209.85.214.42]:35124 "EHLO
+        mail-it0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S933471AbcIALZX (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 1 Sep 2016 07:25:23 -0400
+Received: by mail-it0-f42.google.com with SMTP id e124so96326573ith.0
+        for <linux-btrfs@vger.kernel.org>; Thu, 01 Sep 2016 04:25:22 -0700 (PDT)
+Subject: Re: Recommendation on raid5 drive error resolution
+To: Gareth Pye <gareth@cerberos.id.au>, Chris Murphy <lists@colorremedies.com>
+References: <CA+WRLO8KuP8LS77NUbZLAs3e120oFudES_R3tYQjjYiCXH4BOA@mail.gmail.com>
+ <CAJCQCtSUVeXwuKn8rR_Rw24anzHNSLgVo_wYkot1mZYXiGkJ1w@mail.gmail.com>
+ <CA+WRLO_6q2cZqPPkmtqjjkq7tfdh5DDyE_oHFswFoQVz8FguKw@mail.gmail.com>
+ <CA+WRLO8XVaK5FK9VUt=pOgoyqYm30_yxTnCd+5zdYx5Xx6jAcw@mail.gmail.com>
+ <CA+WRLO-cvepjj53xCoq=RiEmTV-6cqL+G6nQe+WnTPyWNDOUZA@mail.gmail.com>
+ <CA+WRLO-1oJLZ56EivVTg=bycNhfpOt8ovLrLbgnNeCVKgvbxhQ@mail.gmail.com>
+ <CAJCQCtQddXz26cjp=tGcO5d5E9N=Zmjdd=qwonjGdh+NJ7aLQQ@mail.gmail.com>
+ <CAJCQCtRGpAgGq9dpv432ES9OUHG4fDkt+DviapaCyg0Jtc2gVA@mail.gmail.com>
+ <CA+WRLO8kTBoPHx3jkeN+zdygEMZz9ejTeWGwQireRtDGDNrncQ@mail.gmail.com>
+ <CA+WRLO-WwM8hN9OxWZfbac60iXDZ8=WZ8=fokKdCqYcSpEdu6g@mail.gmail.com>
+ <CA+WRLO9ZazygSMfLjpfXO_bYMmJVecd3be44EKJWMDORFXiVKg@mail.gmail.com>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
 From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <31a75b1a-445a-47cd-816e-1e7e9d1c4bb8@gmail.com>
-Date: Thu, 1 Sep 2016 07:17:38 -0400
+Message-ID: <0cad7942-096c-1ea4-bf31-a4e959bcc4f8@gmail.com>
+Date: Thu, 1 Sep 2016 07:25:14 -0400
 MIME-Version: 1.0
-In-Reply-To: <20160901074415.pz32d72d4h6pk77t@invalid>
+In-Reply-To: <CA+WRLO9ZazygSMfLjpfXO_bYMmJVecd3be44EKJWMDORFXiVKg@mail.gmail.com>
 Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2016-09-01 03:44, M G Berberich wrote:
-> Am Mittwoch, den 31. August schrieb Fennec Fox:
->> Linux Titanium 4.7.2-1-MANJARO #1 SMP PREEMPT Sun Aug 21 15:04:37 UTC
->> 2016 x86_64 GNU/Linux
->> btrfs-progs v4.7
->>
->> Data, single: total=30.01GiB, used=18.95GiB
->> System, single: total=4.00MiB, used=16.00KiB
->> Metadata, single: total=1.01GiB, used=422.17MiB
->> GlobalReserve, single: total=144.00MiB, used=0.00B
->>
->> {02:50} Wed Aug 31
->> [fennectech@Titanium ~]$  sudo fstrim -v /
->> [sudo] password for fennectech:
->> Sorry, try again.
->> [sudo] password for fennectech:
->> /: 99.8 GiB (107167244288 bytes) trimmed
->>
->> {03:08} Wed Aug 31
->> [fennectech@Titanium ~]$  sudo fstrim -v /
->> [sudo] password for fennectech:
->> /: 99.9 GiB (107262181376 bytes) trimmed
->>
->>   I ran these commands minutes after echother ane each time it is
->> trimming the entire free space
->>
->> Anyone else seen this?   the filesystem is the root FS and is compressed
+On 2016-08-31 19:04, Gareth Pye wrote:
+> ro,degraded has mounted it nicely and my rsync of the more useful data
+> is progressing at the speed of WiFi.
 >
-> You should be very happy that it is trimming at all. Typical situation
-> on a used btrfs is
+> There are repeated read errors from one drive still but the rsync
+> hasn't bailed yet, which I think means there isn't any overlapping
+> errors in any of the files it has touched thus far. Am I right or is
+> their likely to be corrupt data in the files I've synced off?
+Unless you've been running with nocow or nodatasum in your mount 
+options, then what you've concluded should be correct.  I would still 
+suggest verifying the data by some external means if possible, this type 
+of situation is not something that's well tested, and TBH I'm amazed 
+that things are working to the degree that they are.
 >
->   # fstrim -v /
->   /: 0 B (0 bytes) trimmed
+> On Wed, Aug 31, 2016 at 7:46 AM, Gareth Pye <gareth@cerberos.id.au> wrote:
+>> Or I could just once again select the right boot device in the bios. I
+>> think I want some new hardware :)
+>>
+>> On Wed, Aug 31, 2016 at 7:23 AM, Gareth Pye <gareth@cerberos.id.au> wrote:
+>>> On Wed, Aug 31, 2016 at 4:28 AM, Chris Murphy <lists@colorremedies.com> wrote:
+>>>> But I'd try a newer kernel before you
+>>>> give up on it.
+>>>
+>>>
+>>> Any recommendations on liveCDs that have recent kernels & btrfs tools?
+>>> For no apparent reason system isn't booting normally either, and I'm
+>>> reluctant to fix that before at least confirming the things I at least
+>>> partially care about have a recent backup.
+>>>
+>>> --
+>>> Gareth Pye - blog.cerberos.id.au
+>>> Level 2 MTG Judge, Melbourne, Australia
+>>
+>>
+>>
+>> --
+>> Gareth Pye - blog.cerberos.id.au
+>> Level 2 MTG Judge, Melbourne, Australia
 >
-> even if there is 33G unused space ob the fs:
 >
->   # df -h /
->   Filesystem      Size  Used Avail Use% Mounted on
->   /dev/sda2        96G   61G   33G  66% /
 >
-I think you're using an old kernel, this has been working since at least 
-4.5, but was broken in some older releases.
 

@@ -1,95 +1,59 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [195.159.176.226] ([195.159.176.226]:35807 "EHLO
+Received: from [195.159.176.226] ([195.159.176.226]:35775 "EHLO
         blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
-        with ESMTP id S1756159AbcIAVDM (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 1 Sep 2016 17:03:12 -0400
+        with ESMTP id S1756138AbcIAVDL (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 1 Sep 2016 17:03:11 -0400
 Received: from list by blaine.gmane.org with local (Exim 4.84_2)
         (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-        id 1bfXjL-00051K-8l
-        for linux-btrfs@vger.kernel.org; Thu, 01 Sep 2016 21:32:55 +0200
+        id 1bfXxb-0002Tw-SD
+        for linux-btrfs@vger.kernel.org; Thu, 01 Sep 2016 21:47:39 +0200
 To: linux-btrfs@vger.kernel.org
 From: Kai Krakow <hurikhan77@gmail.com>
-Subject: Re:
-Date: Thu, 1 Sep 2016 21:32:37 +0200
-Message-ID: <20160901213237.4f46ab5c@jupiter.sol.kaishome.de>
-References: <CAD1x5BA5k9MUdzT-s0kzFfb5+idoJSFaOux0xQS-jd_D0HTDWA@mail.gmail.com>
-        <57C79C15.4020508@suse.com>
+Subject: [OT] Re: Balancing subvolume on a specific device
+Date: Thu, 1 Sep 2016 21:45:19 +0200
+Message-ID: <20160901214519.79d27445@jupiter.sol.kaishome.de>
+References: <df03a71c-8558-520c-af1b-ffb152f65a7d@davideddu.org>
+        <20160819171734.GJ20440@carfax.org.uk>
+        <pan$dbf6f$52e9f6f3$42f8cce4$2ebbbbc6@cox.net>
 Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
- boundary="Sig_/wvf.wCTc1shy=FbHRSO3SqG"; protocol="application/pgp-signature"
+Content-Type: text/plain; charset=US-ASCII
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
---Sig_/wvf.wCTc1shy=FbHRSO3SqG
-Content-Type: text/plain; charset=US-ASCII
-Content-Transfer-Encoding: quoted-printable
+Am Sat, 20 Aug 2016 06:30:11 +0000 (UTC)
+schrieb Duncan <1i5t5.duncan@cox.net>:
 
-Am Wed, 31 Aug 2016 23:10:13 -0400
-schrieb Jeff Mahoney <jeffm@suse.com>:
+> There's at least three other options to try to get what you mention, 
+> however.  FWIW, I'm a gentooer and thus build everything from sources 
+> here, and use ccache myself.  What I do is put all my build stuff,
+> the gentoo git and assorted overlay git trees, ccache, kernel
+> sources, the binpkg cache, etc, all on a separate "build" btrfs on
+> normal partitions, / not/ a subvolume.  That way it can go wherever I
+> want, and it, along with the main system (/) and /home, but /not/ my
+> media partition (all of which are fully independent filesystems on
+> their own partitions, most of them btrfs raid1 on a parallel set of
+> partitions on a pair of ssds), on ssd. Works great. =:^)
 
-> On 8/31/16 10:02 PM, Fennec Fox wrote:
-> > Linux Titanium 4.7.2-1-MANJARO #1 SMP PREEMPT Sun Aug 21 15:04:37
-> > UTC 2016 x86_64 GNU/Linux
-> > btrfs-progs v4.7
-> >=20
-> > Data, single: total=3D30.01GiB, used=3D18.95GiB
-> > System, single: total=3D4.00MiB, used=3D16.00KiB
-> > Metadata, single: total=3D1.01GiB, used=3D422.17MiB
-> > GlobalReserve, single: total=3D144.00MiB, used=3D0.00B
-> >=20
-> > {02:50} Wed Aug 31
-> > [fennectech@Titanium ~]$  sudo fstrim -v /
-> > [sudo] password for fennectech:
-> > Sorry, try again.
-> > [sudo] password for fennectech:
-> > /: 99.8 GiB (107167244288 bytes) trimmed
-> >=20
-> > {03:08} Wed Aug 31
-> > [fennectech@Titanium ~]$  sudo fstrim -v /
-> > [sudo] password for fennectech:
-> > /: 99.9 GiB (107262181376 bytes) trimmed
-> >=20
-> >   I ran these commands minutes after echother ane each time it is
-> > trimming the entire free space
-> >=20
-> > Anyone else seen this?   the filesystem is the root FS and is
-> > compressed=20
->=20
-> Yes.  It's working as intended.  We don't track what space has already
-> been trimmed anywhere, so it trims all unallocated space.
+Off topic: Is ccache really that helpful? I dumped it a few years ago
+after getting some build errors and/or packaging bugs with it (software
+that would just segfault when built with ccache), and in the end it
+didn't give a serious speed boost anyways after comparing the genlop
+results. What would help a whole lot more would be to cache this really
+really inefficient configure tool of hell which often runs much longer
+than the build phase of the whole source itself.
 
-I wonder, does it work in a multi device scenario? When btrfs pools
-multiple devices together?
+I now moved to building inside tmpfs (/var/tmp/portage mounted as 32GB
+tmpfs with x-systemd.automount), added around 30GB of swap space just
+in case. I'm running on 16GB of RAM and found around half of my RAM
+almost always sits there doing nothing. Even building chromium and
+libreoffice at the same time shows no problems with this setup. Plus,
+it's a whole lot faster than building on the native fs (even if I'm
+using bcache). And I'm building more relaxed since my SSD is wearing
+slower - Gentoo emerge can put a lot of burden on the storage.
 
-I ask because fstrim seems to always report the estimated free space,
-not the raw free space, as trimmed.
-
-OTOH, this may simply be because btrfs reports 1.08 TiB unallocated
-while fstrim reports 1.2 TB trimmed (and not TiB) - which when
-"converted" (1.08 * 1024^4 / 1000^4 ~=3D 1.18) perfectly rounds to 1.2.
-Coincidence is free estimated space is 1.19 TiB for me (which would also
-round to 1.2) and these numbers, as they are in the TB range, won't
-change so fast for me.
-
-
---=20
+-- 
 Regards,
 Kai
 
 Replies to list-only preferred.
-
---Sig_/wvf.wCTc1shy=FbHRSO3SqG
-Content-Type: application/pgp-signature
-Content-Description: Digitale Signatur von OpenPGP
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2
-
-iEYEARECAAYFAlfIglYACgkQ+D7cQ/kIzAWUGQCggJ6dwkM+4hvkB3zXKdDGohVS
-OAIAn15scDuE0YIfAGNR9K3rQP2byRdH
-=TtRW
------END PGP SIGNATURE-----
-
---Sig_/wvf.wCTc1shy=FbHRSO3SqG--
-
 

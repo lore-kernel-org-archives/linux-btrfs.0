@@ -1,12 +1,12 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:44432 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:45814 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1756239AbcIAVDo (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 1 Sep 2016 17:03:44 -0400
+        id S1754500AbcIAVNn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 1 Sep 2016 17:13:43 -0400
 Subject: Re: BTRFS constantly reports "No space left on device" even with a
  huge unallocated space
-To: Ronan Arraes Jardim Chagas <ronisbr@gmail.com>,
-        "Austin S. Hemmelgarn" <ahferroin7@gmail.com>,
+To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>,
+        Ronan Arraes Jardim Chagas <ronisbr@gmail.com>,
         Chris Murphy <lists@colorremedies.com>
 References: <1471023419.16857.9.camel@gmail.com>
  <57C426AB.3020607@cn.fujitsu.com> <1472485953.3290.0.camel@gmail.com>
@@ -23,34 +23,32 @@ References: <1471023419.16857.9.camel@gmail.com>
  <0778dff0-cb43-d279-adb2-0e314b61110d@gmail.com>
  <1472747695.3137.7.camel@gmail.com>
  <b0ec9154-16a5-5293-952a-0d5a988488e8@gmail.com>
- <ab83503e-58c5-e1b4-b1ba-1e1ea8313607@suse.com>
- <1472751548.3137.9.camel@gmail.com>
 Cc: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>,
         Btrfs BTRFS <linux-btrfs@vger.kernel.org>,
         Qu Wenruo <quwenruo@cn.fujitsu.com>
 From: Jeff Mahoney <jeffm@suse.com>
-Message-ID: <416ba17a-24ad-9dd2-3513-31a8600850b0@suse.com>
-Date: Thu, 1 Sep 2016 13:43:47 -0400
+Message-ID: <ab83503e-58c5-e1b4-b1ba-1e1ea8313607@suse.com>
+Date: Thu, 1 Sep 2016 13:12:34 -0400
 MIME-Version: 1.0
-In-Reply-To: <1472751548.3137.9.camel@gmail.com>
+In-Reply-To: <b0ec9154-16a5-5293-952a-0d5a988488e8@gmail.com>
 Content-Type: multipart/signed; micalg=pgp-sha1;
  protocol="application/pgp-signature";
- boundary="Cnf1W7RUjfMQDE6e3l8fUCrM7JjcbbSuU"
+ boundary="tdImtoupxGXTsjAtckErMhdJfGFOSsnR4"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---Cnf1W7RUjfMQDE6e3l8fUCrM7JjcbbSuU
-Content-Type: multipart/mixed; boundary="2tgPqgfseF87scFPQPGGqfLhATn9i70ks";
+--tdImtoupxGXTsjAtckErMhdJfGFOSsnR4
+Content-Type: multipart/mixed; boundary="S4c5CCaplMBhciGITx7tfTCf0a8D6EdKM";
  protected-headers="v1"
 From: Jeff Mahoney <jeffm@suse.com>
-To: Ronan Arraes Jardim Chagas <ronisbr@gmail.com>,
- "Austin S. Hemmelgarn" <ahferroin7@gmail.com>,
+To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>,
+ Ronan Arraes Jardim Chagas <ronisbr@gmail.com>,
  Chris Murphy <lists@colorremedies.com>
 Cc: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>,
  Btrfs BTRFS <linux-btrfs@vger.kernel.org>,
  Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <416ba17a-24ad-9dd2-3513-31a8600850b0@suse.com>
+Message-ID: <ab83503e-58c5-e1b4-b1ba-1e1ea8313607@suse.com>
 Subject: Re: BTRFS constantly reports "No space left on device" even with a
  huge unallocated space
 References: <1471023419.16857.9.camel@gmail.com>
@@ -68,48 +66,80 @@ References: <1471023419.16857.9.camel@gmail.com>
  <0778dff0-cb43-d279-adb2-0e314b61110d@gmail.com>
  <1472747695.3137.7.camel@gmail.com>
  <b0ec9154-16a5-5293-952a-0d5a988488e8@gmail.com>
- <ab83503e-58c5-e1b4-b1ba-1e1ea8313607@suse.com>
- <1472751548.3137.9.camel@gmail.com>
-In-Reply-To: <1472751548.3137.9.camel@gmail.com>
+In-Reply-To: <b0ec9154-16a5-5293-952a-0d5a988488e8@gmail.com>
 
---2tgPqgfseF87scFPQPGGqfLhATn9i70ks
+--S4c5CCaplMBhciGITx7tfTCf0a8D6EdKM
 Content-Type: text/plain; charset=utf-8
 Content-Transfer-Encoding: quoted-printable
 
-On 9/1/16 1:39 PM, Ronan Arraes Jardim Chagas wrote:
-> Hi Jeff,
->=20
-> Em Qui, 2016-09-01 =C3=A0s 13:12 -0400, Jeff Mahoney escreveu:
->> It's not.  We use qgroups because that's the only way we can track
->> how
->> much space each subvolume is using, regardless of whether anyone
->> wants
->> to do enforcement.  When it's working properly, snapper can make use
->> of
->> that information to make informed decisions on how much space will
->> actually be released when removing old snapshots.
->>
->=20
-> Given that, what am I loosing by disabling qgroups here? Will I still
-> be able to recover my machine using snapshots (this saved my two or
-> three times)?
+On 9/1/16 1:04 PM, Austin S. Hemmelgarn wrote:
+> On 2016-09-01 12:34, Ronan Arraes Jardim Chagas wrote:
+>> Em Qui, 2016-09-01 =C3=A0s 09:21 -0400, Austin S. Hemmelgarn escreveu:=
 
-Absolutely.  It doesn't affect the ability to take, retain, or recover
-using snapshots.  It only affects the ability to see how much space a
-particular snapshot is using on disk, both from the user wanting to know
-and snapper using it to make retention decisions.  Snapper can handle
-qgroups not being there.
+>>> Yes, you can just run `btrfs quota disable /` and it should
+>>> work.  This
+>>> ironically reiterates that one of the bigger problems with BTRFS is
+>>> that
+>>> distros are enabling unstable and known broken features by default
+>>> on
+>>> install.  I was pretty much dumbfounded when I first learned that
+>>> OpenSUSE is enabling BTRFS qgroups by default since they are known
+>>> to
+>>> not work reliably and cause all kinds of issues.
+>>
+>> Thanks Austin! I executed the command and now I get:
+>>
+>> btrfs qgroup show /
+>> ERROR: can't perform the search - No such file or directory
+>> ERROR: can't list qgroups: No such file or directory
+>>
+>> as expected. Now I will wait for +- 1 week to see if the problem will
+>> occur and, if not, I will send an e-mail to openSUSE factory mailing
+>> list to start a discussion if it is better to not enable qgroups by
+>> default.
+> I have a feeling that you'll probably have no issues.
+>=20
+> As far as having qgroups enabled by default, I think the reasoning is t=
+o
+> emulate having separate filesystems with their own space limits.  I can=
+
+
+It's not.  We use qgroups because that's the only way we can track how
+much space each subvolume is using, regardless of whether anyone wants
+to do enforcement.  When it's working properly, snapper can make use of
+that information to make informed decisions on how much space will
+actually be released when removing old snapshots.
+
+> entirely understand this use case, and TBH it's about the only use case=
+
+> I'd consider quota groups for (per-user subvolumes for home directories=
+
+> are great, but there are numerous perfectly legitimate reasons to have
+> very large amounts of data in your home directory for very short period=
+s
+> of time, so I wouldn't personally use qgroups there).  The problem
+> arises from the fact that it doesn't _look_ like separate filesystems
+> (single entry in df, all the mounts point at the same device, etc), and=
+
+
+On SUSE-based kernels, the inodes on different subvolumes report the
+anonymous device associated with the subvolume.
+
+That said, I have a WIP that creates (and auto-tears down) vfsmounts for
+each subvolume.  It's not all the way to a working df that would use the
+qgroup information to report space usage, but it's a start.
 
 -Jeff
+
 
 --=20
 Jeff Mahoney
 SUSE Labs
 
 
---2tgPqgfseF87scFPQPGGqfLhATn9i70ks--
+--S4c5CCaplMBhciGITx7tfTCf0a8D6EdKM--
 
---Cnf1W7RUjfMQDE6e3l8fUCrM7JjcbbSuU
+--tdImtoupxGXTsjAtckErMhdJfGFOSsnR4
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: OpenPGP digital signature
 Content-Disposition: attachment; filename="signature.asc"
@@ -118,19 +148,19 @@ Content-Disposition: attachment; filename="signature.asc"
 Version: GnuPG/MacGPG2 v2.0.19 (Darwin)
 Comment: GPGTools - http://gpgtools.org
 
-iQIcBAEBAgAGBQJXyGjUAAoJEB57S2MheeWyIBkQALDsd9xwLv9z2fY64aMYEh/f
-tsIaJyfwKPIHy1JWQo6T03yJ2NLMwZ9cXBwRG0AePdhKlT7x3r8Sf+cyaF/Bea+7
-XQ/vRzPdpwGcUQPzyc+UtJiumyED5HCmTUsM7CBoDrziHlWzqOngy4QfB84eoqLg
-NPGCj/32jcSCtSirnYZvU/lrcXMZNpkG65hwYFqwgDyQFi5PfrAH1cWN/6ryRsK0
-rz5V+iMh6s9IhGph9Myvyi9eCCNXmJULBY156FS6UvmzluVRR0/ehR1keymOhypU
-Yok9nZ5z+4qIa7CbB+MsvNe2qmTlBsmUkhoYwgd/RN1sv2kiInrThgjdDdRst++K
-xaTFGnD1eIcOpcWZaexyl4n5c9/GIVlobNbbwmBHQXgrf0/5RH4ZTaaJh+dj4q7E
-A5CyGofXFTRfD9dhcKbZDF3H+nghIINHL2H74FzkGZl3XBRklQwPolrFWOyGdoQL
-Sod9bzPtXyWJ6ML4g/r+rDlP4e8kbBFnJgfFwNKH6w5ebsvceSyFN93TdMALWK97
-ynT4M7g5zLm+1sWTauxCVeRfz+IZa5Tmh9ueYOpnFWQze//irvyUR/NtZE3JSHxd
-jWHXVf16sSfe6yu31zvMytbaIQolG4h30DsBPaiBhF3pv/I9m/QOxtfblx0Nhf4f
-CaOVdxdSw/IvM0yCnYfD
-=4pdd
+iQIcBAEBAgAGBQJXyGGGAAoJEB57S2MheeWyuBwQALUtECd9woeZWBfN+cKFdLCh
+yWoCAm6X/7u6AQzr7G3nmHWm1R7OjS6JbgB+erm4ALR3jovyKJJL9R6Z51q/tVul
+ed147d3vRhP06BUM376NceRZ/YKFT3i3aGGUB0CtRnXO8sNzJvFKgePIBZu0xbZw
+F8eyc4NiypxkU+jku6OQGMocrHr6e1fcvWtD7WYApKGaAEV3EILP2o0fSxeyrEFD
+o2G7KsBL6Kx17p45mRNkFat/1+DSDlsLGryZlx7pTCGB1r4bA8+S9qPbBklJV/sn
+bIBLAu0ZI4y+o17jif8MKmFfW1l5V2A2OaDdPmmAQHvbHQ7lPQeCmR3cAERCr+ON
+yWx/21HxRlp8xnale7Npa4/Cbb2lpVhSNzZc7kIaOFddaf4FzGKuJNjAyASucfuB
+wfb2/xMZNLJQr0wlkGfNl/+BF8NHLRL0fCb8dTE7+lythc4Y1jMSSxq7FYJdzXbR
+i1pPQ2ne+ATRlm8AYkYiXNp13XqGcQ08DNTonBAvkUA1Ac9h4/K8P2nWcvtftSJI
++OcQsWUpEIAytBUFJVnPWu0289AaNs8aCzAYd1SKG1GYhjgo5czxCvbHHX237jd3
+N1z5kAgMsKF67c7q4Kkvli8/+Xe1EAMtkZQ7ftuGW73fAZy4OU85rNt/ROsPC5vU
+3H6XehtYmbQUzy+p2pnd
+=4cBu
 -----END PGP SIGNATURE-----
 
---Cnf1W7RUjfMQDE6e3l8fUCrM7JjcbbSuU--
+--tdImtoupxGXTsjAtckErMhdJfGFOSsnR4--

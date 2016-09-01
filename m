@@ -1,152 +1,78 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:41671 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1754283AbcIBOsZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 2 Sep 2016 10:48:25 -0400
-Subject: Re: BTRFS constantly reports "No space left on device" even with a
- huge unallocated space
-To: Ronan Arraes Jardim Chagas <ronisbr@gmail.com>,
-        Chris Murphy <lists@colorremedies.com>,
-        "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-References: <1471023419.16857.9.camel@gmail.com>
- <1472561404.3179.3.camel@gmail.com>
- <CAJCQCtTn6y1Qy5J_Wuef-bbwJ9g50NgM-a2UtWvh=01S_JntKA@mail.gmail.com>
- <1472676550.8145.1.camel@gmail.com>
- <CAJCQCtR8EKENcy0ApONzDTX0RNZb8Dh-+_au4cMkyK24RzDoNw@mail.gmail.com>
- <CAJCQCtTWJMigkeLUP0+aTFPwdpuJtMa3C4isercAfE_Wh3b=PQ@mail.gmail.com>
- <52290114-3b37-2de5-9c9f-ceda6dff955b@suse.com>
- <CAJCQCtSPLw5Kwunm6WdhDCiE8Kc7BcfZy6W9veuns7kBmgyivw@mail.gmail.com>
- <a61878b9-7b88-7aee-40cf-05368cd01d78@suse.com>
- <CAJCQCtTBfhXOLg3URfreG29NVfujPjEc0O_cnDFCzDQm0iRtaA@mail.gmail.com>
- <1472734635.3137.4.camel@gmail.com>
- <0778dff0-cb43-d279-adb2-0e314b61110d@gmail.com>
- <1472747695.3137.7.camel@gmail.com>
- <b0ec9154-16a5-5293-952a-0d5a988488e8@gmail.com>
- <ab83503e-58c5-e1b4-b1ba-1e1ea8313607@suse.com>
- <b9bd0a3d-0ae0-a30c-c14d-c85434134890@gmail.com>
- <CAJCQCtT1RptgW-_esKmm2_5eRTxd10wHNxwgNWHSD86LZJ7edQ@mail.gmail.com>
- <d1319d2e-3016-7eef-5f3f-87677600e13c@suse.com>
- <1472827395.3713.6.camel@gmail.com>
-Cc: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>,
-        Qu Wenruo <quwenruo@cn.fujitsu.com>
-From: Jeff Mahoney <jeffm@suse.com>
-Message-ID: <9dee919a-0e81-5ba7-ddc6-7dcdb3a6b873@suse.com>
-Date: Fri, 2 Sep 2016 10:48:17 -0400
+Received: from mail-oi0-f44.google.com ([209.85.218.44]:33641 "EHLO
+        mail-oi0-f44.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1753563AbcIBPEl (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 2 Sep 2016 11:04:41 -0400
+Received: by mail-oi0-f44.google.com with SMTP id c15so165216457oig.0
+        for <linux-btrfs@vger.kernel.org>; Fri, 02 Sep 2016 08:04:41 -0700 (PDT)
+Subject: Re: your mail
+To: Kyle Gates <kylegates@live.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+References: <CAD1x5BA5k9MUdzT-s0kzFfb5+idoJSFaOux0xQS-jd_D0HTDWA@mail.gmail.com>
+ <20160901074415.pz32d72d4h6pk77t@invalid>
+ <31a75b1a-445a-47cd-816e-1e7e9d1c4bb8@gmail.com>
+ <CY4PR06MB2726B15A26AA728457B155B9B0E20@CY4PR06MB2726.namprd06.prod.outlook.com>
+From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Message-ID: <34ee2549-1cf4-cfb3-6818-a342aa9d27d2@gmail.com>
+Date: Thu, 1 Sep 2016 13:06:14 -0400
 MIME-Version: 1.0
-In-Reply-To: <1472827395.3713.6.camel@gmail.com>
-Content-Type: multipart/signed; micalg=pgp-sha1;
- protocol="application/pgp-signature";
- boundary="CatmxvNjmomLgOncLgvnnjWn0I8mUToqR"
+In-Reply-To: <CY4PR06MB2726B15A26AA728457B155B9B0E20@CY4PR06MB2726.namprd06.prod.outlook.com>
+Content-Type: text/plain; charset=windows-1252; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---CatmxvNjmomLgOncLgvnnjWn0I8mUToqR
-Content-Type: multipart/mixed; boundary="NAssB08FWcId3vs93wVwOI9qI4ndv04Vq";
- protected-headers="v1"
-From: Jeff Mahoney <jeffm@suse.com>
-To: Ronan Arraes Jardim Chagas <ronisbr@gmail.com>,
- Chris Murphy <lists@colorremedies.com>,
- "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Cc: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>,
- Btrfs BTRFS <linux-btrfs@vger.kernel.org>,
- Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <9dee919a-0e81-5ba7-ddc6-7dcdb3a6b873@suse.com>
-Subject: Re: BTRFS constantly reports "No space left on device" even with a
- huge unallocated space
-References: <1471023419.16857.9.camel@gmail.com>
- <1472485953.3290.0.camel@gmail.com> <57C4EB85.7030000@cn.fujitsu.com>
- <1472561404.3179.3.camel@gmail.com>
- <CAJCQCtTn6y1Qy5J_Wuef-bbwJ9g50NgM-a2UtWvh=01S_JntKA@mail.gmail.com>
- <1472676550.8145.1.camel@gmail.com>
- <CAJCQCtR8EKENcy0ApONzDTX0RNZb8Dh-+_au4cMkyK24RzDoNw@mail.gmail.com>
- <CAJCQCtTWJMigkeLUP0+aTFPwdpuJtMa3C4isercAfE_Wh3b=PQ@mail.gmail.com>
- <52290114-3b37-2de5-9c9f-ceda6dff955b@suse.com>
- <CAJCQCtSPLw5Kwunm6WdhDCiE8Kc7BcfZy6W9veuns7kBmgyivw@mail.gmail.com>
- <a61878b9-7b88-7aee-40cf-05368cd01d78@suse.com>
- <CAJCQCtTBfhXOLg3URfreG29NVfujPjEc0O_cnDFCzDQm0iRtaA@mail.gmail.com>
- <1472734635.3137.4.camel@gmail.com>
- <0778dff0-cb43-d279-adb2-0e314b61110d@gmail.com>
- <1472747695.3137.7.camel@gmail.com>
- <b0ec9154-16a5-5293-952a-0d5a988488e8@gmail.com>
- <ab83503e-58c5-e1b4-b1ba-1e1ea8313607@suse.com>
- <b9bd0a3d-0ae0-a30c-c14d-c85434134890@gmail.com>
- <CAJCQCtT1RptgW-_esKmm2_5eRTxd10wHNxwgNWHSD86LZJ7edQ@mail.gmail.com>
- <d1319d2e-3016-7eef-5f3f-87677600e13c@suse.com>
- <1472827395.3713.6.camel@gmail.com>
-In-Reply-To: <1472827395.3713.6.camel@gmail.com>
-
---NAssB08FWcId3vs93wVwOI9qI4ndv04Vq
-Content-Type: text/plain; charset=utf-8
-Content-Transfer-Encoding: quoted-printable
-
-On 9/2/16 10:43 AM, Ronan Arraes Jardim Chagas wrote:
-> Hi Jeff,
->=20
-> Em Sex, 2016-09-02 =C3=A0s 10:26 -0400, Jeff Mahoney escreveu:
->> I explained what I think Ronan's issue is in another part of the
->> thread
->> just now.  I don't think that's a severe issue at
->> all.  Annoying?  Sure,
->> but I'm more concerned with the underlying ENOSPC issue.  Without
->> more
->> info, I don't know what the cause of it is and when it was
->> introduced.
->=20
-> Sorry, but I really need to humbly disagree with you. Look to what has
-> already happened to me when the problem occurred (which is almost every=
-
-> day):
->=20
-> 1) Firefox crash;
-> 2) Libreoffice crash (auto-save stop working);
-> 3) Can't save my work in any text editor (vim, neovim, gedit, etc.);
-> 4) Sometimes I can't even log as root (in TTY or by `su`);
-> 5) Sometimes only a hard-reset solves the problem;
-> 6) I was left with a broken operational system when the problem
-> occurred during a `zypper dup`.
->=20
-> I just can't tell you how much work I lost during those situations. So,=
-
-> I think we cannot call this issue just annoying. I think it is very
-> severe.
-
-Sorry, I miscommunicated there.  The WARN_ON is annoying.  It's the
-underlying issue that's causing you to lose work that is the one that
-concerns me.
-
--Jeff
-
---=20
-Jeff Mahoney
-SUSE Labs
-
-
---NAssB08FWcId3vs93wVwOI9qI4ndv04Vq--
-
---CatmxvNjmomLgOncLgvnnjWn0I8mUToqR
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG/MacGPG2 v2.0.19 (Darwin)
-Comment: GPGTools - http://gpgtools.org
-
-iQIcBAEBAgAGBQJXyZExAAoJEB57S2MheeWy0PMQALJkBYM6+LSUTQaABqs0o2mt
-F2k0slJdq1y63z2BX0Cyg2qhzt65WUKz9yYLgSae4KACfCs1LBXGkrk75ABn2hNs
-qX33FpxDqGb9uDhvNhm9dwRnQqEgtGLzAGQmP409C9aOXj5HJUXBWag5wZpR4pPq
-eGBYf4Bqs3Ww9ixobug3AmNJJDtTwsg+O6jTsSDuXycqOb7wnx8VK9qIEEv8Sdm+
-aZl6TDLCRMTz0u+1dh1fvj8xrsY6061ll0oKOr94DVqbvahgdTNSsbCeK2Fa5cHy
-GGA80dkEZLGgFIOVMryehMlmOzj4dUI8xSCx8rDpzRgg+u5rxtWAzKJZXUfPuhsH
-k/5duuu2bjjXNgAUnY2vpTiymqiNgQgWoE4ItX6TBbijnX8Nen8HDboMgNrqoWpi
-MOVG71jtee5yuerfXLcj5Ac6G7ZluyIbMsCBsclDimGUQu5sBaBSdX8XtraQsb3i
-2IrloCn2l7gPuIEayqy9bFmVl/2RhMrRk60FVKjyGmXLyfLWg3hZFHIdCNW3nERw
-I7akvDM3Qr7BU7rSfK/v8lTUpQxi9QeOcK+ZoQoDM7BKwC9tdlblh33Vi6c0Vmku
-Dvg9hFNbvIYNrBEVbE4JjaCVZPMSlTIZNddRnCxOgESkiZAHQa0SY5WtrJV0vLBo
-ElsZj/FSMGCCFA+2ONPo
-=AGqM
------END PGP SIGNATURE-----
-
---CatmxvNjmomLgOncLgvnnjWn0I8mUToqR--
+On 2016-09-01 12:44, Kyle Gates wrote:
+>> -----Original Message-----
+>> From: linux-btrfs-owner@vger.kernel.org [mailto:linux-btrfs-
+>> owner@vger.kernel.org] On Behalf Of Austin S. Hemmelgarn
+>> Sent: Thursday, September 01, 2016 6:18 AM
+>> To: linux-btrfs@vger.kernel.org
+>> Subject: Re: your mail
+>>
+>> On 2016-09-01 03:44, M G Berberich wrote:
+>>> Am Mittwoch, den 31. August schrieb Fennec Fox:
+>>>> Linux Titanium 4.7.2-1-MANJARO #1 SMP PREEMPT Sun Aug 21 15:04:37
+>> UTC
+>>>> 2016 x86_64 GNU/Linux
+>>>> btrfs-progs v4.7
+>>>>
+>>>> Data, single: total=30.01GiB, used=18.95GiB System, single:
+>>>> total=4.00MiB, used=16.00KiB Metadata, single: total=1.01GiB,
+>>>> used=422.17MiB GlobalReserve, single: total=144.00MiB, used=0.00B
+>>>>
+>>>> {02:50} Wed Aug 31
+>>>> [fennectech@Titanium ~]$  sudo fstrim -v / [sudo] password for
+>>>> fennectech:
+>>>> Sorry, try again.
+>>>> [sudo] password for fennectech:
+>>>> /: 99.8 GiB (107167244288 bytes) trimmed
+>>>>
+>>>> {03:08} Wed Aug 31
+>>>> [fennectech@Titanium ~]$  sudo fstrim -v / [sudo] password for
+>>>> fennectech:
+>>>> /: 99.9 GiB (107262181376 bytes) trimmed
+>>>>
+>>>>   I ran these commands minutes after echother ane each time it is
+>>>> trimming the entire free space
+>>>>
+>>>> Anyone else seen this?   the filesystem is the root FS and is compressed
+>>>
+>>> You should be very happy that it is trimming at all. Typical situation
+>>> on a used btrfs is
+>>>
+>>>   # fstrim -v /
+>>>   /: 0 B (0 bytes) trimmed
+>>>
+>>> even if there is 33G unused space ob the fs:
+>>>
+>>>   # df -h /
+>>>   Filesystem      Size  Used Avail Use% Mounted on
+>>>   /dev/sda2        96G   61G   33G  66% /
+>>>
+>> I think you're using an old kernel, this has been working since at least 4.5, but
+>> was broken in some older releases.
+>
+> M G is running 4.7.2
+> The problem is that all space has been allocated by block groups and fstrim will only work on unallocated space.
+Yep, that would do so also, and this behavior really could be much 
+better documented.

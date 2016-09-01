@@ -1,98 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:53534 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1754052AbcIADKW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 31 Aug 2016 23:10:22 -0400
-Subject: Re:
-To: Fennec Fox <fennectech@gmail.com>, linux-btrfs@vger.kernel.org
-References: <CAD1x5BA5k9MUdzT-s0kzFfb5+idoJSFaOux0xQS-jd_D0HTDWA@mail.gmail.com>
-From: Jeff Mahoney <jeffm@suse.com>
-Message-ID: <57C79C15.4020508@suse.com>
-Date: Wed, 31 Aug 2016 23:10:13 -0400
+Received: from mail-me1aus01on0043.outbound.protection.outlook.com ([104.47.116.43]:23661
+        "EHLO AUS01-ME1-obe.outbound.protection.outlook.com"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1752008AbcIAHHg (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 1 Sep 2016 03:07:36 -0400
+From: Paul Jones <paul@pauljones.id.au>
+To: Chris Murphy <lists@colorremedies.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Subject: RE: btrfs-progs 4.7, check reports many "incorrect local backref
+ count" messages
+Date: Thu, 1 Sep 2016 06:51:15 +0000
+Message-ID: <SY3PR01MB13864A03DC2503EF7E0381A49EE20@SY3PR01MB1386.ausprd01.prod.outlook.com>
+References: <CAJCQCtT5YA9EMq1ZC-qeZcNLUeg1GocBm3nT2nZFEBigmV4BxQ@mail.gmail.com>
+ <CAJCQCtQjX+0nAWRNPK2gYNoi8wvHxTMEzm6v84PZKXnTLxc50Q@mail.gmail.com>
+ <CAJCQCtT0=gEwBerYXYnyueMk3JnmGZp71qBJFB5N4qR4ASF7cg@mail.gmail.com>
+ <CAJCQCtRZNNTZ5ymH-X9Cq=h+_aaATym40W42BJ-xM5ECJOQnDg@mail.gmail.com>
+ <CAJCQCtTo7nS7grh-9XWTKXX_h2pXPXCbLMRGmTfa=NzHq2Aa6g@mail.gmail.com>
+ <CAJCQCtS374FCEqSx0qBdF1oa6=y48A4p0pMN0u456adQETyS_Q@mail.gmail.com>
+In-Reply-To: <CAJCQCtS374FCEqSx0qBdF1oa6=y48A4p0pMN0u456adQETyS_Q@mail.gmail.com>
+Content-Type: text/plain; charset="utf-8"
 MIME-Version: 1.0
-In-Reply-To: <CAD1x5BA5k9MUdzT-s0kzFfb5+idoJSFaOux0xQS-jd_D0HTDWA@mail.gmail.com>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="WmeA7ohbmPnOrfke7jwni4jLxixbRHoJA"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---WmeA7ohbmPnOrfke7jwni4jLxixbRHoJA
-Content-Type: multipart/mixed; boundary="mfI8467PavOit59AsxnPusQccriqFSG83"
-From: Jeff Mahoney <jeffm@suse.com>
-To: Fennec Fox <fennectech@gmail.com>, linux-btrfs@vger.kernel.org
-Message-ID: <57C79C15.4020508@suse.com>
-Subject: Re:
-References: <CAD1x5BA5k9MUdzT-s0kzFfb5+idoJSFaOux0xQS-jd_D0HTDWA@mail.gmail.com>
-In-Reply-To: <CAD1x5BA5k9MUdzT-s0kzFfb5+idoJSFaOux0xQS-jd_D0HTDWA@mail.gmail.com>
+> -----Original Message-----
+> From: linux-btrfs-owner@vger.kernel.org [mailto:linux-btrfs-
+> owner@vger.kernel.org] On Behalf Of Chris Murphy
+> Sent: Thursday, 1 September 2016 7:59 AM
+> To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+> Subject: Re: btrfs-progs 4.7, check reports many "incorrect local backref
+> count" messages
+> 
+> This is still happening with btrfs-progs 4.7.1 and there is zero information in
+> the long result what to do about the problem, and whether it's sane to try
+> have --repair fix it, let alone what the original cause of the problem was.
 
---mfI8467PavOit59AsxnPusQccriqFSG83
-Content-Type: text/plain; charset=utf-8
-Content-Transfer-Encoding: quoted-printable
+I just potentially damaged a perfectly good filesystem because of this. I was getting hundreds of "Incorrect local backref count" so I decided to try repair, which seemed to complete ok. I then rescanned without repair and btrfs check eventually crashed with an assertion. That's when I figured something may be wrong.
 
-On 8/31/16 10:02 PM, Fennec Fox wrote:
-> Linux Titanium 4.7.2-1-MANJARO #1 SMP PREEMPT Sun Aug 21 15:04:37 UTC
-> 2016 x86_64 GNU/Linux
-> btrfs-progs v4.7
->=20
-> Data, single: total=3D30.01GiB, used=3D18.95GiB
-> System, single: total=3D4.00MiB, used=3D16.00KiB
-> Metadata, single: total=3D1.01GiB, used=3D422.17MiB
-> GlobalReserve, single: total=3D144.00MiB, used=3D0.00B
->=20
-> {02:50} Wed Aug 31
-> [fennectech@Titanium ~]$  sudo fstrim -v /
-> [sudo] password for fennectech:
-> Sorry, try again.
-> [sudo] password for fennectech:
-> /: 99.8 GiB (107167244288 bytes) trimmed
->=20
-> {03:08} Wed Aug 31
-> [fennectech@Titanium ~]$  sudo fstrim -v /
-> [sudo] password for fennectech:
-> /: 99.9 GiB (107262181376 bytes) trimmed
->=20
->   I ran these commands minutes after echother ane each time it is
-> trimming the entire free space
->=20
-> Anyone else seen this?   the filesystem is the root FS and is compresse=
-d
->=20
+Thankfully I have an offsite backup (this was the onsite backup), but what a pain....
 
-Yes.  It's working as intended.  We don't track what space has already
-been trimmed anywhere, so it trims all unallocated space.
+Paul.
 
--Jeff
-
---=20
-Jeff Mahoney
-SUSE Labs
-
-
---mfI8467PavOit59AsxnPusQccriqFSG83--
-
---WmeA7ohbmPnOrfke7jwni4jLxixbRHoJA
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG/MacGPG2 v2
-
-iQIcBAEBCAAGBQJXx5wZAAoJEB57S2MheeWy/HIP+gPYLN3Ps+GVsfYUJjBUBR2q
-hvwZuTpcdwkIBnaSDNAtYs1ZfVWeLtmM2uwv+KpDEyym30fsey3VRHecdwOmv1Bs
-fTfSS9aeMFp4vCe8FHhVmPikJ6lpyk1TOszJikSmw11Bzj6DnErrwQv79gvTXq1r
-+RxPlJJ1RA1n5GO1krR/oWx9xmnwMMHKYTfCN1o6piPThB8+bX0WvLgljaftaMXM
-YjCMmDcOr7RSqV3zaQweSZp1WnXjKY2JAd8xnpf5x6ybZVoRTPFv9XczAMDP/PA2
-NnPRSFgD46IIKRzhgKzYrRfgne7GSA/808U/iYiBbcNVJ3GMnGHL0ZDjUd2c1qvT
-6MMCPfDYeGiamvNYPCwowWQJRJTs+S9mFyQIMD8614DIP8z9O1FOZRgFJdP5TrsA
-dlbaURGBbwe00ihyY5nrn3FaicfYlZRIMOazz05lLFYJs9ROX4fCYDxoL0zx2Wzd
-wc5r6zda50eEcKs6RIFJBe6UOBA9CAnk3eWgdZIXOewwKKaUvMFI0PR2hCnZoIGa
-OsSuRnPxKDyd1KOL4shlWPzZysvtkpz+YF4FUvBZEttuNIvwyU2lT8u7zBh/A21M
-6kHpJk61aCbV9N1R3hE+jIlUWkcIssjZkAWLJNjUSGQlRTU18sOzJim7Ge00tmvj
-5C30ba1XYdXpqf8+2KF8
-=D4Ws
------END PGP SIGNATURE-----
-
---WmeA7ohbmPnOrfke7jwni4jLxixbRHoJA--
+ˇÙË∫{.n«+â∑üÆâ≠Ü+%äÀˇ±È›∂•äwˇ∫{.n«+â∑•ä{±˝ªk~œ‚ûÿ^nár°ˆ¶zÀÅÎhô®Ë≠⁄&£˚‡zø‰zπﬁó˙+Ä +zf£¢∑höàß~Ü≠Ü€iˇˇÔÅÍˇëÍÁz_ËÆÊj:+vâ®˛)ﬂ£¯m

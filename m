@@ -1,66 +1,73 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:52064 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1750882AbcIIOmY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 9 Sep 2016 10:42:24 -0400
-Date: Fri, 9 Sep 2016 16:40:46 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Tomasz Kusmierz <tom.kusmierz@gmail.com>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: Some help with the code.
-Message-ID: <20160909144046.GU16983@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <CAKinxcXinpdj5ZNrXSBegLn+2LnbYtwChX=3wBP_UELSPa+yig@mail.gmail.com>
+Received: from cn.fujitsu.com ([59.151.112.132]:11440 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1753623AbcIAAcH (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 31 Aug 2016 20:32:07 -0400
+Subject: Re: [PATCH] Btrfs: fix endless loop in balancing block groups
+To: Liu Bo <bo.li.liu@oracle.com>, <linux-btrfs@vger.kernel.org>
+References: <1472687013-463-1-git-send-email-bo.li.liu@oracle.com>
+CC: David Sterba <dsterba@suse.cz>
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Message-ID: <1c3b14d3-dd15-238f-8378-a10bdcba394d@cn.fujitsu.com>
+Date: Thu, 1 Sep 2016 08:32:00 +0800
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CAKinxcXinpdj5ZNrXSBegLn+2LnbYtwChX=3wBP_UELSPa+yig@mail.gmail.com>
+In-Reply-To: <1472687013-463-1-git-send-email-bo.li.liu@oracle.com>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Sep 06, 2016 at 04:22:25PM +0100, Tomasz Kusmierz wrote:
-> This is predominantly for maintainers:
-> 
-> I've noticed that there is a lot of code for btrfs ... and after few
-> glimpses I've noticed that there are occurrences which beg for some
-> refactoring to make it less of a pain to maintain.
-> 
-> I'm speaking of occurrences where:
-> - within a function there are multiple checks for null pointer and
-> then whenever there is anything hanging on the end of that pointer to
-> finally call the function, pass the pointer to it and watch it perform
-> same checks to finally deallocate stuff on the end of a pointer.
 
-Can you please point me to an example? If it's a bad pattern it would be
-worth cleaning up.
 
-> - single line functions ... called only in two places
+At 09/01/2016 07:43 AM, Liu Bo wrote:
+> Qgroup function may overwrite the saved error 'err' with 0
+> in case quota is not enabled, and this ends up with a
+> endless loop in balance because we keep going back to balance
+> the same block group.
 
-That might not be always useless, as the function name tells us what it
-does, not how, so it's a form of selfdocumenting code. If the function
-body is some common code construct, it would be harder to grep for it.
+In which case?
 
-But I understand what you mean. This could be also a leftover from some
-broader changes that removed calls, reduced function size to the
-one line.
+If join_trans() fails, we won't go through qgroup fix.
+And before join_trans(), they all go to out_free/out tag.
+Nothing to do with qgroup fix.
 
-> and so on.
-> 
-> I know that you guys are busy, but maintaining code that is only
-> growing must be a pain.
+And if we hit qgroup_fix_relocated_data_extents(), then 'err' is alreayd 
+0, nothing we need to save.
 
-Depends. Standalone features bring a lot of new code, but it's
-separated. Random sample of patches from recent releases tells me that
-net line growth is spread accross many patches that add just a few lines
-(eg. enhanced tests, more helpers).
+And even for quota disabled case, qgroup_fix_relocated_data_extents() 
+will just return 0. Nothing wrong at all.
 
-https://btrfs.wiki.kernel.org/index.php/Contributors#Statistics
+Or did I miss something?
 
-Doing broader cleanups is good when done from time to time, as it tends
-to interfere with other patches, so it's more a matter of scheduling
-when to do it. The beginning or end of the particular development cycle
-are good candidates.
+Thanks,
+Qu
+>
+> It really should use 'ret' instead.
+>
+> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+> ---
+>  fs/btrfs/relocation.c | 8 +++++---
+>  1 file changed, 5 insertions(+), 3 deletions(-)
+>
+> diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
+> index 8a2c2a0..c0c13dc 100644
+> --- a/fs/btrfs/relocation.c
+> +++ b/fs/btrfs/relocation.c
+> @@ -4200,9 +4200,11 @@ restart:
+>  		err = PTR_ERR(trans);
+>  		goto out_free;
+>  	}
+> -	err = qgroup_fix_relocated_data_extents(trans, rc);
+> -	if (err < 0) {
+> -		btrfs_abort_transaction(trans, err);
+> +	ret = qgroup_fix_relocated_data_extents(trans, rc);
+> +	if (ret < 0) {
+> +		btrfs_abort_transaction(trans, ret);
+> +		if (!err)
+> +			err = ret;
+>  		goto out_free;
+>  	}
+>  	btrfs_commit_transaction(trans, rc->extent_root);
+>
 
-Reducing size should be done in the way that does not make the code less
-readable, which is kind of subjective metric but should be sorted when
-patches (or samples) are posted. That said, cleanups and refactoring
-patches are welcome.
+

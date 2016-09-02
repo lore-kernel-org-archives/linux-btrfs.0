@@ -1,40 +1,38 @@
-Content-Type: text/plain; charset="utf-8"
+Return-Path: <linux-btrfs-owner@vger.kernel.org>
+Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:42468 "EHLO
+        mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S932555AbcIBTkP (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 2 Sep 2016 15:40:15 -0400
+Received: from pps.filterd (m0044012.ppops.net [127.0.0.1])
+        by mx0a-00082601.pphosted.com (8.16.0.17/8.16.0.17) with SMTP id u82JZCuE010616
+        for <linux-btrfs@vger.kernel.org>; Fri, 2 Sep 2016 12:40:15 -0700
+Received: from maileast.thefacebook.com ([199.201.65.23])
+        by mx0a-00082601.pphosted.com with ESMTP id 257b5sssyx-1
+        (version=TLSv1 cipher=ECDHE-RSA-AES256-SHA bits=256 verify=NOT)
+        for <linux-btrfs@vger.kernel.org>; Fri, 02 Sep 2016 12:40:15 -0700
+From: Josef Bacik <jbacik@fb.com>
+To: <linux-btrfs@vger.kernel.org>, <kernel-team@fb.com>
+Subject: [PATCH 0/7] Kill the btree inode
+Date: Fri, 2 Sep 2016 15:39:59 -0400
+Message-ID: <1472845206-22870-1-git-send-email-jbacik@fb.com>
 MIME-Version: 1.0
-Subject: [PATCH] btrfs: remove useless comments
-From: Xiaoguang Wang <wangxg.fnst@cn.fujitsu.com>
-Message-Id: <20160923043850.17844-1-wangxg.fnst@cn.fujitsu.com>
-To: linux-btrfs@vger.kernel.org
-Date: Fri, 23 Sep 2016 12:38:50 +0800
+Content-Type: text/plain
+Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Fixes: ("btrfs: update btrfs_space_info's bytes_may_use timely")
+In order to provide a better way to do subpage blocksizes we need to stop
+allocating pages from a per fs btree inode and instead allocate our own pages.
+This work depends on 3 generic patches that I've sent previously
 
-Signed-off-by: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
----
- fs/btrfs/extent-tree.c | 13 +++----------
- 1 file changed, 3 insertions(+), 10 deletions(-)
+remove mapping from balance_dirty_pages*()
+writeback: allow for dirty metadata accounting
+writeback: introduce super_operations->write_metadata
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 38c2df8..9fbcfaa 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -6499,16 +6499,9 @@ void btrfs_wait_block_group_reservations(struct btrfs_block_group_cache *bg)
-  * @num_bytes:	The number of bytes in question
-  * @delalloc:   The blocks are allocated for the delalloc write
-  *
-- * This is called by the allocator when it reserves space. Metadata
-- * reservations should be called with RESERVE_ALLOC so we do the proper
-- * ENOSPC accounting.  For data we handle the reservation through clearing the
-- * delalloc bits in the io_tree.  We have to do this since we could end up
-- * allocating less disk space for the amount of data we have reserved in the
-- * case of compression.
-- *
-- * If this is a reservation and the block group has become read only we cannot
-- * make the reservation and return -EAGAIN, otherwise this function always
-- * succeeds.
-+ * This is called by the allocator when it reserves space. If this is a
-+ * reservation and the block group has become read only we cannot make the
-+ * reservation and return -EAGAIN, otherwise this function always succeeds.
-  */
- static int btrfs_add_reserved_bytes(struct btrfs_block_group_cache *cache,
- 				    u64 ram_bytes, u64 num_bytes, int delalloc)
+This is a pretty big change but ultimately makes extent_buffer reclaim much
+cleaner and will make the sub-pagesize blocksize work significantly cleaner.
+I've been hammering on this for a few weeks now and seems to be pretty solid.
+Thanks,
+
+Josef
+

@@ -1,190 +1,173 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [195.159.176.226] ([195.159.176.226]:57012 "EHLO
-        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
-        with ESMTP id S1751836AbcIBKzj (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 2 Sep 2016 06:55:39 -0400
-Received: from list by blaine.gmane.org with local (Exim 4.84_2)
-        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-        id 1bfm8D-0001pH-UQ
-        for linux-btrfs@vger.kernel.org; Fri, 02 Sep 2016 12:55:33 +0200
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: [OT] Re: Balancing subvolume on a specific device
-Date: Fri, 2 Sep 2016 10:55:23 +0000 (UTC)
-Message-ID: <pan$97e1b$477b3a63$5742ac9b$a63fe8a6@cox.net>
-References: <df03a71c-8558-520c-af1b-ffb152f65a7d@davideddu.org>
-        <20160819171734.GJ20440@carfax.org.uk>
-        <pan$dbf6f$52e9f6f3$42f8cce4$2ebbbbc6@cox.net>
-        <20160901214519.79d27445@jupiter.sol.kaishome.de>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Received: from mx2.suse.de ([195.135.220.15]:38140 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1753986AbcIBOJ0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 2 Sep 2016 10:09:26 -0400
+Subject: Re: BTRFS constantly reports "No space left on device" even with a
+ huge unallocated space
+To: Ronan Arraes Jardim Chagas <ronisbr@gmail.com>,
+        Chris Murphy <lists@colorremedies.com>
+References: <1471023419.16857.9.camel@gmail.com>
+ <57C426AB.3020607@cn.fujitsu.com> <1472485953.3290.0.camel@gmail.com>
+ <57C4EB85.7030000@cn.fujitsu.com> <1472561404.3179.3.camel@gmail.com>
+ <CAJCQCtTn6y1Qy5J_Wuef-bbwJ9g50NgM-a2UtWvh=01S_JntKA@mail.gmail.com>
+ <1472676550.8145.1.camel@gmail.com>
+Cc: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+From: Jeff Mahoney <jeffm@suse.com>
+Message-ID: <93618edf-7a7b-b55c-4233-a845ad730941@suse.com>
+Date: Fri, 2 Sep 2016 10:09:18 -0400
+MIME-Version: 1.0
+In-Reply-To: <1472676550.8145.1.camel@gmail.com>
+Content-Type: multipart/signed; micalg=pgp-sha1;
+ protocol="application/pgp-signature";
+ boundary="H0XtlOx4dcFTWIaoLdIujAkRT6N0F3O8P"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Kai Krakow posted on Thu, 01 Sep 2016 21:45:19 +0200 as excerpted:
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--H0XtlOx4dcFTWIaoLdIujAkRT6N0F3O8P
+Content-Type: multipart/mixed; boundary="L3Hji8dxwRoT4XikI9HoVrSXKgDMVawM8";
+ protected-headers="v1"
+From: Jeff Mahoney <jeffm@suse.com>
+To: Ronan Arraes Jardim Chagas <ronisbr@gmail.com>,
+ Chris Murphy <lists@colorremedies.com>
+Cc: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>,
+ Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Message-ID: <93618edf-7a7b-b55c-4233-a845ad730941@suse.com>
+Subject: Re: BTRFS constantly reports "No space left on device" even with a
+ huge unallocated space
+References: <1471023419.16857.9.camel@gmail.com>
+ <57C426AB.3020607@cn.fujitsu.com> <1472485953.3290.0.camel@gmail.com>
+ <57C4EB85.7030000@cn.fujitsu.com> <1472561404.3179.3.camel@gmail.com>
+ <CAJCQCtTn6y1Qy5J_Wuef-bbwJ9g50NgM-a2UtWvh=01S_JntKA@mail.gmail.com>
+ <1472676550.8145.1.camel@gmail.com>
+In-Reply-To: <1472676550.8145.1.camel@gmail.com>
 
-> Am Sat, 20 Aug 2016 06:30:11 +0000 (UTC)
-> schrieb Duncan <1i5t5.duncan@cox.net>:
-> 
->> There's at least three other options to try to get what you mention,
->> however.  FWIW, I'm a gentooer and thus build everything from sources
->> here, and use ccache myself.  What I do is put all my build stuff, the
->> gentoo git and assorted overlay git trees, ccache, kernel sources, the
->> binpkg cache, etc, all on a separate "build" btrfs on normal
->> partitions, / not/ a subvolume.  That way it can go wherever I want,
->> and it, along with the main system (/) and /home, but /not/ my media
->> partition (all of which are fully independent filesystems on their own
->> partitions, most of them btrfs raid1 on a parallel set of partitions on
->> a pair of ssds), on ssd. Works great. =:^)
-> 
-> Off topic: Is ccache really that helpful? I dumped it a few years ago
-> after getting some build errors and/or packaging bugs with it (software
-> that would just segfault when built with ccache), and in the end it
-> didn't give a serious speed boost anyways after comparing the genlop
-> results.
+--L3Hji8dxwRoT4XikI9HoVrSXKgDMVawM8
+Content-Type: text/plain; charset=utf-8
+Content-Transfer-Encoding: quoted-printable
 
-Two comments on ccache...
+On 8/31/16 4:49 PM, Ronan Arraes Jardim Chagas wrote:
+> Hi guys!
+>=20
+> And the problem happened again. This time, I was only using Mozilla
+> Firefox. I could get the very first message after the error. I hope it
+> brings more information:
 
-1) ccache hasn't caused me any serious issues in over a decade of gentoo 
-usage, including some periods with various hardware issues.  The few 
-problems I /did/ have at one point were related to crashes while building 
-and thus corruption of the ccache, but those errors were pretty easily 
-identified as ccache errors (IDR what the specifics were, but something 
-about corrupted input files that really made no sense /except/ in the 
-context of ccache or serious hardware error and I wasn't seeing anything 
-else related to the latter, so it was pretty clear) and easily enough 
-fixed by setting CCACHE_RECACHE=1 (write-only mode, basically) for the 
-specific packages in question, to flush out the corruption by writing 
-uncorrupted new copies of the files in question.
+Ok, so I think this is a race that can happen when one thread is
+starting a transaction and another thread is committing a transaction
+that involves creating a snapshot.
 
-2a) ccache won't help a lot with ordinary new-version upgrade-cycle 
-builds, at least with portage, because the build-path is part of the 
-hash, and portage's default build path includes the package and version 
-number, so for upgrades, the path and therefore the hash will be 
-different, resulting in a ccache miss on a new version build, even if 
-it's the exact same command building the exact same sources.
+We reserve blocks at the top of start_transaction and that reservation
+stays with the root.  In: btrfs_commit_transaction->
+create_pending_snapshots-> create_pending_snapshot->
+qgroup_account_snapshot-> commit_fs_roots, we clear that reservation
+from the root via btrfs_qgroup_free_meta_all, potentially while
+start_transaction is waiting to join a new transaction.  Or not.  It can
+happen asynchronously, which is the point of having the reservation
+prior to that.
 
-Similarly, rebuilds of the same sources using the same commands but after 
-tool (gcc, etc) upgrades won't hash-match (nor would you want them to as 
-rebuilding with the new version is usually the point), because the hashes 
-on the tools themselves don't match.
+So the thing is that this error can only occur if start_transaction
+fails after this race occurs.  That, combined with your report that you
+were seeing ENOSPC instead of EDQUOT, leads me to believe that this is
+just a side effect of whatever is causing you to not hit ENOSPC.  I
+expect that you'll see it again -- you just won't see the WARN_ON
+anymore since quotas are disabled.  I suspect it's probably the
+btrfs_block_rsv_add call immediately after the reservation, but there's
+no way to tell without tracing.
 
-This is why ccache is no longer recommended for ordinary gentooers -- the 
-hit rate simply doesn't justify it.
-
-2b) cache *does*, however, help in two types of circumstances:
-
-2bi) In ordinary usage, particularly during test compiles in the 
-configure step, some limited code (here test code) is repeatedly built 
-with identical commands and paths.  This is where the hits that /are/ 
-generated during normal upgrade usage normally come from, and they can 
-speed things up somewhat.  However, it's a pretty limited effect and this 
-by itself doesn't really justify usage.
-
-More measurably practical would be rebuilds of existing versions with 
-existing tools, perhaps because a library dep upgrade forces it 
-(intermediate objects involving that library will hash-fail and be 
-rebuilt, but objects internal to the package itself or only involving 
-other libs should hash-check and cache-hit), or due to some ebuild change 
-(like a USE flag change with --newuse) not involving a version bump.  
-There is often a rather marked ccache related speedup in this sort of 
-rebuild, but again, while it does happen for most users, it normally 
-doesn't happen /enough/ to be worth the trouble.
-
-But some users do still run ccache for this case, particularly if like me 
-they really REALLY hate to see a big build like firefox taking the same 
-long time it did before, just to change a single USE flag or something.
-
-2bii) Where ccache makes the MOST sense is where people are running large 
-numbers of live-vcs builds with unchanging (9999) version numbers, 
-probably via smart-live-rebuild checking to see what packages actually 
-have new commits since the last build.
-
-I'm running live-git kde, tho a relatively lite version without packages 
-I don't use and with (my own) patches to kill the core plasma semantic-
-desktop (baloo and friends) dependencies, since in my experience semantic-
-desktop and its deps simply *are* *not* *worth* *it* !!  That's 170+ kde-
-related packages, plus a few misc others, all live-git 9999 version, 
-which means they build with the same version path and the upstream commit 
-changes may be as small/simple as some minversion dep bump or l10n 
-changes to some *.desktop file, neither of which change the code at all, 
-so in those cases rebuilds should be 100% ccache hits, provided the 
-ccache is big enough, of course.
-
-Again, live-git (or other live-vcs) rebuilds are where ccache REALLY 
-shines, and because I run live-kde and other live-git builds, ccache 
-still makes serious sense for me here.  Tho personally, I'd still be 
-using it for the 2bi case of same-version and limited same-call within 
-the same package build, as well, simply because I'm both already familiar 
-with it, and would rather take a small overhead hit on other builds to 
-speed up the relatively rare same-package-same-tools-rebuild case.
+-Jeff
 
 
-> What would help a whole lot more would be to cache this really
-> really inefficient configure tool of hell which often runs much longer
-> than the build phase of the whole source itself.
+> [28039.672199] ------------[ cut here ]------------
+> [28039.672253] WARNING: CPU: 3 PID: 31800 at ../fs/btrfs/qgroup.c:2667
+> btrfs_qgroup_free_meta+0x88/0x90 [btrfs]
+> [28039.672255] Modules linked in: fuse nf_log_ipv6 xt_pkttype
+> nf_log_ipv4 nf_log_common xt_LOG xt_limit af_packet iscsi_ibft
+> iscsi_boot_sysfs msr ip6t_REJECT nf_reject_ipv6 xt_tcpudp
+> nf_conntrack_ipv6 nf_defrag_ipv6 ip6table_raw ipt_REJECT nf_reject_ipv4=
 
-IDK if you were around back then, but some time ago there was a confcache 
-project that tried to do just that.  But unfortunately, it was enough of 
-a niche use-case (most folks just run binary distros and don't care, and 
-others have switched to cmake or the like and don't care) and came with 
-enough problem corner-cases that required upstream cooperation that 
-wasn't coming as they didn't care, to fix, that the project was 
-eventually given up.  =:^(
+> iptable_raw xt_CT nvidia_drm(PO) nvidia_modeset(PO) iptable_filter
+> nvidia(PO) ip6table_mangle nf_conntrack_netbios_ns
+> nf_conntrack_broadcast drm_kms_helper nf_conntrack_ipv4 drm
+> nf_defrag_ipv4 fb_sys_fops snd_hda_codec_hdmi joydev
+> snd_hda_codec_realtek ip_tables syscopyarea snd_hda_codec_generic
+> xt_conntrack snd_hda_intel sysfillrect intel_rapl sb_edac edac_core
+> snd_hda_codec hp_wmi x86_pkg_temp_thermal intel_powerclamp snd_hda_core=
 
-The more modern workaround (not really a fix) for that problem seems to 
-be parallel package builds.  Run enough at once and the configure stage 
-latency doesn't seem so bad.
+> snd_hwdep nf_conntrack sparse_keymap sysimgblt coretemp kvm_intel kvm
+> rfkill irqbypass snd_pcm snd_timer crct10dif_pclmul
+> [28039.672305]  e1000e crc32_pclmul ghash_clmulni_intel snd aesni_intel=
 
-Of course on standard gentoo, that's severely limited by the fact that 
-the @system set and its deps are forced serial, the frustration of which 
-built here until I got tired of it and very carefully negated the entire 
-@system set, adding @world entries where necessary so critical packages 
-weren't depcleaned.  Now even the core would-be @system set builds in 
-parallel.  
+> ip6table_filter aes_x86_64 lrw gf128mul glue_helper ablk_helper
+> iTCO_wdt iTCO_vendor_support mei_wdt ioatdma pcspkr cryptd ip6_tables
+> ptp lpc_ich fjes i2c_i801 dca mfd_core soundcore pps_core shpchp
+> tpm_infineon tpm_tis tpm mei_me mei x_tables btrfs xor raid6_pq
+> hid_generic usbhid crc32c_intel serio_raw xhci_pci ehci_pci sr_mod
+> firewire_ohci xhci_hcd ehci_hcd cdrom firewire_core crc_itu_t isci
+> usbcore usb_common libsas ata_generic mpt3sas raid_class
+> scsi_transport_sas wmi button sg
+> [28039.672373] CPU: 3 PID: 31800 Comm: gnome-terminal- Tainted:
+> P        W  O    4.7.1-1-default #1
+> [28039.672375] Hardware name: Hewlett-Packard HP Z820 Workstation/158B,=
 
-Of course there are some risks to that in theory, but in practice, once 
-the system is built and running in mostly just ongoing maintenance mode, 
-I've not had a problem.  Maybe it's just because I know where to be 
-careful, but it has worked fine for me, and it SURE reduced the 
-frustration of watching all those forced-serial core update builds go by 
-one-at-a-time.
+> BIOS J63 v03.65 12/19/2013
+> [28039.672378]  0000000000000000 ffffffff81393104 0000000000000000
+> 0000000000000000
+> [28039.672382]  ffffffff8107ca1e ffff881008780800 0000000000014000
+> ffff881008780800
+> [28039.672386]  ffffffffffffffe4 ffff88100b297c00 ffff88053b7e3540
+> ffffffffa02c9f58
+> [28039.672390] Call Trace:
+> [28039.672406]  [<ffffffff8102ed5e>] dump_trace+0x5e/0x320
+> [28039.672413]  [<ffffffff8102f12c>] show_stack_log_lvl+0x10c/0x180
+> [28039.672419]  [<ffffffff8102fe41>] show_stack+0x21/0x40
+> [28039.672425]  [<ffffffff81393104>] dump_stack+0x5c/0x78
+> [28039.672430]  [<ffffffff8107ca1e>] __warn+0xbe/0xe0
+> [28039.672461]  [<ffffffffa02c9f58>] btrfs_qgroup_free_meta+0x88/0x90
+> [btrfs]
+> [28039.672492]  [<ffffffffa0261023>] start_transaction+0x3c3/0x4f0
+> [btrfs]
+> [28039.672521]  [<ffffffffa0271078>] btrfs_create+0x38/0x1d0 [btrfs]
+> [28039.672528]  [<ffffffff8121e8fb>] path_openat+0x139b/0x14a0
+> [28039.672535]  [<ffffffff8121fb2e>] do_filp_open+0x7e/0xe0
+> [28039.672541]  [<ffffffff8120e7a4>] do_sys_open+0x124/0x1f0
+> [28039.672547]  [<ffffffff816bb4f6>]
+> entry_SYSCALL_64_fastpath+0x1e/0xa8
+> [28039.676186] DWARF2 unwinder stuck at
+> entry_SYSCALL_64_fastpath+0x1e/0xa8
 
-> I now moved to building inside tmpfs (/var/tmp/portage mounted as 32GB
-> tmpfs with x-systemd.automount), added around 30GB of swap space just in
-> case. I'm running on 16GB of RAM and found around half of my RAM almost
-> always sits there doing nothing. Even building chromium and libreoffice
-> at the same time shows no problems with this setup. Plus, it's a whole
-> lot faster than building on the native fs (even if I'm using bcache).
-> And I'm building more relaxed since my SSD is wearing slower - Gentoo
-> emerge can put a lot of burden on the storage.
 
-I've run with PORTAGE_TMPDIR and PKG_TMPDIR pointed at tmpfs for I guess 
-half a decade at least, now.  No swap and 16 GiB RAM now, tho I was 
-running it with 6 GiB RAM and generally not going much into swap (even 
-with swappiness=100) for quite awhile.  Tmpfs size now the default half 
-of memory, so 8 gig.
+--=20
+Jeff Mahoney
+SUSE Labs
 
-But I don't have chromium or libreoffice installed, and recently I 
-switched to upstream binpkg firefox due to gentoo package upgrade 
-availability delays even of hard-masked in the mozilla overlay, so I 
-don't even have to worry about firefox these days.  I guess my longest 
-taking builds are now qtwebkit, both 4.x and 5.x, these days, and I've 
-never had a problem with them and other builds in parallel.
 
-But part of the lack of parallel build problems may be because while I do 
-have it active, I'm only running a 6-core, and I've found increasing load 
-average significantly above the number of cores to be counterproductive, 
-so I have MAKEOPTS="-j10 -l8" and portage configured with --jobs=12 
---load-average=6, so emphasis is clearly on giving existing builds more 
-threads if they'll use them, to cores+2 load, and only going parallel 
-package build if the load average drops under the number of cores.  That 
-doesn't tend to test the tmpfs capacity limits at all.
+--L3Hji8dxwRoT4XikI9HoVrSXKgDMVawM8--
 
-But for sure, PORTAGE_TMPDIR on tmpfs makes a **BIG** difference! =:^)
+--H0XtlOx4dcFTWIaoLdIujAkRT6N0F3O8P
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
 
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG/MacGPG2 v2.0.19 (Darwin)
+Comment: GPGTools - http://gpgtools.org
 
+iQIcBAEBAgAGBQJXyYgPAAoJEB57S2MheeWyrFgP/jl+ai0XbcuUVt88yrYyj/dw
+48VIDIreJf0FLJVEFRt0Yj9PznjLC2lgX/tbKhTES+9yWPyF3jnovLG55Qqun3RN
+7NkA+Mb+/nNdeWUe//YP0Pc24hNYlU5oPyRid6tsbuEPiBm9wvD1vlHsHcx3/3Xx
+hgAAsbXizk16kL0Na8yNTz8TSw0A5M/93X5zc+Z5FjxxPKgLXB6krCPFxGB/SskF
+aj3HkzJ+M9K3/n7JihQZqxwcooXmS6QMpbvx4QwOisQcSbSh3OT7KLpbcd0IzffO
+E77w8b02WdtoMw+2HYMAxSRk5xOhyxykHlVbJxe7Y/ChB/P3CuKoFHd2iBDBRSWl
+rTdn5u89zt2g/JHr1aV72f34Ry5ndsO2m4kJCdcK8/p3wKpv46DbYLNWkFiRlACi
+IN2HMcYNE/L2u54zmUX+isUK5d3gefATQ+S85VjmMQbA3uwINaVOzwdxa2g3iidL
+SjYDu23OXu71/ZqxD9EKbLsRsh0yqfW8DJ5kedGNwsamhbB7guSs/SQad7AjMmDY
++TWw0K99pU+pA3lyUd/EkIt2Tpjf4OWN6ikdFjZbCwr5VWycYIRjza0e5ZeDlfMd
+BR/MvUrRxvsMk8dz/6guF6kn3hmDjPI/SibWFxojndxPCrFK549fpuJ/CcpFFyRj
+vdguaUXJhgVOmqLUvmnc
+=X7Bv
+-----END PGP SIGNATURE-----
+
+--H0XtlOx4dcFTWIaoLdIujAkRT6N0F3O8P--

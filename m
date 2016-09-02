@@ -1,62 +1,152 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:39673 "EHLO
-        mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1753684AbcICUF5 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 3 Sep 2016 16:05:57 -0400
-Subject: Re: [PATCH v2] Btrfs: fix file/data loss caused by fsync after rename
- and new inode
-To: <fdmanana@kernel.org>
-References: <1459330710-3181-1-git-send-email-fdmanana@kernel.org>
- <1459377441-3609-1-git-send-email-fdmanana@kernel.org>
- <20160818150345.GA24208@clm-mbp.thefacebook.com>
-CC: <linux-btrfs@vger.kernel.org>
-From: Chris Mason <clm@fb.com>
-Message-ID: <c0436515-a21d-1bc0-7064-1e82e86862b3@fb.com>
-Date: Sat, 3 Sep 2016 16:05:43 -0400
-MIME-Version: 1.0
-In-Reply-To: <20160818150345.GA24208@clm-mbp.thefacebook.com>
-Content-Type: text/plain; charset="windows-1252"; format=flowed
+Received: from mx2.suse.de ([195.135.220.15]:43090 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1753017AbcIBPG0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 2 Sep 2016 11:06:26 -0400
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id 23102ABE8
+        for <linux-btrfs@vger.kernel.org>; Fri,  2 Sep 2016 15:06:24 +0000 (UTC)
+From: David Sterba <dsterba@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: David Sterba <dsterba@suse.com>
+Subject: [PATCH] btrfs-progs: dump-super: changes in options to specify superblocks
+Date: Fri,  2 Sep 2016 17:04:58 +0200
+Message-Id: <1472828698-7618-1-git-send-email-dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 08/18/2016 11:03 AM, Chris Mason wrote:
-> On Wed, Mar 30, 2016 at 11:37:21PM +0100, fdmanana@kernel.org wrote:
->> From: Filipe Manana <fdmanana@suse.com>
->>
->> If we rename an inode A (be it a file or a directory), create a new
->> inode B with the old name of inode A and under the same parent directory,
->> fsync inode B and then power fail, at log tree replay time we end up
->> removing inode A completely. If inode A is a directory then all its files
->> are gone too.
->
-> I bisected a crash with dbench down to this patch.  The reproduction was:
->
-> mkfs.btrfs -m single -f /dev/vdb
-> mount /dev/vdb /btrfs
-> cd /btrfs
-> mkdir clients
-> for x in `seq 0 100` ; do btrfs subvol create clients/client$x ; done
-> sync
-> dbench 100
->
-> In other words, run dbench with a subvol per dbench thread.  It crashes
-> immediately, most often with an invalid access in copy_from_user during
-> file_write.  The pattern of crashes and location just show general
-> memory corruption and the actual stack trace wasn't very useful.
->
-> With this patch reverted the runs last much much longer, but we still
-> hit a crash eventually.  It's not clear to me if this is two different
-> bugs or if Filipe's patch just makes the corruption much easier to hit.
-> I'm still digging through it all, but here's a common backtrace with
-> this patch reverted:
->
+Some tools (check, select-super, dump-super) can use the alternate
+superblocks, but the options are not consistent. To make it less
+confusing, change the meaning of option -s in 'dump-super' to specify
+the superblock copy, instead of taking the offset.
 
-Lots of debugging later, we're leaving btrfs_log_ctx structures from the 
-stack in lists without taking them out before btrfs_sync_file() or 
-btrfs_sync_log() exit.  I'm still figuring out all of the corner cases 
-where it happens, but at least things are starting to make sense again.
+Though this is a change in UI, the old usage is detected and the result
+would be the same, no breakage in existing scripts.
 
-I should have a patch out the door on Tuesday.
+Signed-off-by: David Sterba <dsterba@suse.com>
+---
+ Documentation/btrfs-inspect-internal.asciidoc | 29 ++++++++++++++++--------
+ cmds-inspect-dump-super.c                     | 32 +++++++++++++++++++++------
+ 2 files changed, 45 insertions(+), 16 deletions(-)
 
--chris
+diff --git a/Documentation/btrfs-inspect-internal.asciidoc b/Documentation/btrfs-inspect-internal.asciidoc
+index 74f6dea821a2..44615e767942 100644
+--- a/Documentation/btrfs-inspect-internal.asciidoc
++++ b/Documentation/btrfs-inspect-internal.asciidoc
+@@ -30,25 +30,36 @@ Besides verifictaion of the filesystem signature, there are no other sanity
+ checks. The superblock checksum status is reported, the device item and
+ filesystem UUIDs are checked and reported.
+ +
++NOTE: the meaning of option '-s' has changed in version 4.8 to be consistent
++with other tools to specify superblock copy rather the offset. The old way still
++works, but prints a warning. Please update your scripts to use '--bytenr'
++instead. The option '-i' has been deprecated.
+++
+ `Options`
+ +
+ -f|--full::::
+ print full superblock information, including the system chunk array and backup roots
+ -a|--all::::
+-print information about all present superblock copies (cannot be used together with '-i' option)
+--i <super_mirror>::::
+-specify which mirror to print, valid values are 0, 1 and 2 and the superblock must be present on the device
++print information about all present superblock copies (cannot be used together
++with '-s' option)
++-i <super>::::
++(deprecated since 4.8, same behaviour as '--super')
++--bytenr <bytenr>::::
++specify offset to a superblock in a non-standard location at 'bytenr', useful
++for debugging (disables the '-f' option)
+ +
+-If there are multiple options specified, only the last one is applies.
++If there are multiple options specified, only the last one applies.
+ +
+ -F|--force::::
+-attempt to print the superblock even if thre's no valid BTRFS signature found
++attempt to print the superblock even if thre's no valid BTRFS signature found,
++the result may be completely wrong if the data do not resemble a superblock
+ +
+-The result may be completely wrong if the data do not resemble a superblock.
++-s|--super <bytenr>::::
++(see compatibility note above)
+ +
+--s <bytenr>::::
+-specify offset to a superblock in a non-standard location at 'bytenr', useful
+-for debugging (disables the '-f' option)
++specify which mirror to print, valid values are 0, 1 and 2 and the superblock
++must be present on the device with a valid signature, can be used together with
++'--force'
+ 
+ *dump-tree* [options] <device>::
+ (replaces the standalone tool *btrfs-debug-tree*)
+diff --git a/cmds-inspect-dump-super.c b/cmds-inspect-dump-super.c
+index aab507523698..b9409d31ceae 100644
+--- a/cmds-inspect-dump-super.c
++++ b/cmds-inspect-dump-super.c
+@@ -458,11 +458,18 @@ static int load_and_dump_sb(char *filename, int fd, u64 sb_bytenr, int full,
+ const char * const cmd_inspect_dump_super_usage[] = {
+ 	"btrfs inspect-internal dump-super [options] device [device...]",
+ 	"Dump superblock from a device in a textual form",
+-	"-f|--full           print full superblock information",
+-	"-a|--all            print information about all superblocks",
+-	"-i <super_mirror>   specify which mirror to print out",
+-	"-F|--force          attempt to dump superblocks with bad magic",
+-	"-s <bytenr>         specify alternate superblock offset",
++	"-f|--full             print full superblock information, backup roots etc.",
++	"-a|--all              print information about all superblocks",
++	"-s|--super <super>    specify which copy to print out (values: 0, 1, 2)",
++	"-F|--force            attempt to dump superblocks with bad magic",
++	"--bytenr <offset>     specify alternate superblock offset",
++	"",
++	"Deprecated syntax:",
++	"-s <bytenr>           specify alternate superblock offset, values other than 0, 1, 2",
++	"                      will be interpreted as --bytenr for backward compatibility,",
++	"                      option renamed for consistency with other tools (eg. check)",
++	"-i <super>            specify which copy to print out (values: 0, 1, 2), now moved",
++	"                      to -s|--super",
+ 	NULL
+ };
+ 
+@@ -484,6 +491,7 @@ int cmd_inspect_dump_super(int argc, char **argv)
+ 			{"all", no_argument, NULL, 'a'},
+ 			{"full", no_argument, NULL, 'f'},
+ 			{"force", no_argument, NULL, 'F'},
++			{"super", required_argument, NULL, 's' },
+ 			{NULL, 0, NULL, 0}
+ 		};
+ 
+@@ -493,11 +501,13 @@ int cmd_inspect_dump_super(int argc, char **argv)
+ 
+ 		switch (c) {
+ 		case 'i':
++			warning(
++			    "option -i is deprecated, please use -s or --super");
+ 			arg = arg_strtou64(optarg);
+ 			if (arg >= BTRFS_SUPER_MIRROR_MAX) {
+ 				error("super mirror too big: %llu >= %d",
+ 					arg, BTRFS_SUPER_MIRROR_MAX);
+-				usage(cmd_inspect_dump_super_usage);
++				return 1;
+ 			}
+ 			sb_bytenr = btrfs_sb_offset(arg);
+ 			break;
+@@ -512,7 +522,15 @@ int cmd_inspect_dump_super(int argc, char **argv)
+ 			force = 1;
+ 			break;
+ 		case 's':
+-			sb_bytenr = arg_strtou64(optarg);
++			arg = arg_strtou64(optarg);
++			if (0 <= arg && BTRFS_SUPER_MIRROR_MAX < arg) {
++				warning(
++		"deprecated use of -s <bytenr> with %llu, assuming --bytenr",
++						(unsigned long long)arg);
++				sb_bytenr = arg;
++			} else {
++				sb_bytenr = btrfs_sb_offset(arg);
++			}
+ 			all = 0;
+ 			break;
+ 		default:
+-- 
+2.7.1
+

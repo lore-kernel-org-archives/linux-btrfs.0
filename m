@@ -1,40 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:38140 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:39878 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1753986AbcIBOJ0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 2 Sep 2016 10:09:26 -0400
+        id S932254AbcIBO0o (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 2 Sep 2016 10:26:44 -0400
 Subject: Re: BTRFS constantly reports "No space left on device" even with a
  huge unallocated space
-To: Ronan Arraes Jardim Chagas <ronisbr@gmail.com>,
-        Chris Murphy <lists@colorremedies.com>
+To: Chris Murphy <lists@colorremedies.com>,
+        "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
 References: <1471023419.16857.9.camel@gmail.com>
- <57C426AB.3020607@cn.fujitsu.com> <1472485953.3290.0.camel@gmail.com>
- <57C4EB85.7030000@cn.fujitsu.com> <1472561404.3179.3.camel@gmail.com>
+ <1472485953.3290.0.camel@gmail.com> <57C4EB85.7030000@cn.fujitsu.com>
+ <1472561404.3179.3.camel@gmail.com>
  <CAJCQCtTn6y1Qy5J_Wuef-bbwJ9g50NgM-a2UtWvh=01S_JntKA@mail.gmail.com>
  <1472676550.8145.1.camel@gmail.com>
-Cc: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+ <CAJCQCtR8EKENcy0ApONzDTX0RNZb8Dh-+_au4cMkyK24RzDoNw@mail.gmail.com>
+ <CAJCQCtTWJMigkeLUP0+aTFPwdpuJtMa3C4isercAfE_Wh3b=PQ@mail.gmail.com>
+ <52290114-3b37-2de5-9c9f-ceda6dff955b@suse.com>
+ <CAJCQCtSPLw5Kwunm6WdhDCiE8Kc7BcfZy6W9veuns7kBmgyivw@mail.gmail.com>
+ <a61878b9-7b88-7aee-40cf-05368cd01d78@suse.com>
+ <CAJCQCtTBfhXOLg3URfreG29NVfujPjEc0O_cnDFCzDQm0iRtaA@mail.gmail.com>
+ <1472734635.3137.4.camel@gmail.com>
+ <0778dff0-cb43-d279-adb2-0e314b61110d@gmail.com>
+ <1472747695.3137.7.camel@gmail.com>
+ <b0ec9154-16a5-5293-952a-0d5a988488e8@gmail.com>
+ <ab83503e-58c5-e1b4-b1ba-1e1ea8313607@suse.com>
+ <b9bd0a3d-0ae0-a30c-c14d-c85434134890@gmail.com>
+ <CAJCQCtT1RptgW-_esKmm2_5eRTxd10wHNxwgNWHSD86LZJ7edQ@mail.gmail.com>
+Cc: Ronan Arraes Jardim Chagas <ronisbr@gmail.com>,
+        Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>,
+        Qu Wenruo <quwenruo@cn.fujitsu.com>
 From: Jeff Mahoney <jeffm@suse.com>
-Message-ID: <93618edf-7a7b-b55c-4233-a845ad730941@suse.com>
-Date: Fri, 2 Sep 2016 10:09:18 -0400
+Message-ID: <d1319d2e-3016-7eef-5f3f-87677600e13c@suse.com>
+Date: Fri, 2 Sep 2016 10:26:37 -0400
 MIME-Version: 1.0
-In-Reply-To: <1472676550.8145.1.camel@gmail.com>
+In-Reply-To: <CAJCQCtT1RptgW-_esKmm2_5eRTxd10wHNxwgNWHSD86LZJ7edQ@mail.gmail.com>
 Content-Type: multipart/signed; micalg=pgp-sha1;
  protocol="application/pgp-signature";
- boundary="H0XtlOx4dcFTWIaoLdIujAkRT6N0F3O8P"
+ boundary="gSpQfkU7sfumSi9MS4w9XpqD1Ctm2t85L"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---H0XtlOx4dcFTWIaoLdIujAkRT6N0F3O8P
-Content-Type: multipart/mixed; boundary="L3Hji8dxwRoT4XikI9HoVrSXKgDMVawM8";
+--gSpQfkU7sfumSi9MS4w9XpqD1Ctm2t85L
+Content-Type: multipart/mixed; boundary="XufrWlNxWr97FSFg4nWQPFm7nOeKmx7Li";
  protected-headers="v1"
 From: Jeff Mahoney <jeffm@suse.com>
-To: Ronan Arraes Jardim Chagas <ronisbr@gmail.com>,
- Chris Murphy <lists@colorremedies.com>
-Cc: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>,
- Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Message-ID: <93618edf-7a7b-b55c-4233-a845ad730941@suse.com>
+To: Chris Murphy <lists@colorremedies.com>,
+ "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Cc: Ronan Arraes Jardim Chagas <ronisbr@gmail.com>,
+ Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>,
+ Btrfs BTRFS <linux-btrfs@vger.kernel.org>,
+ Qu Wenruo <quwenruo@cn.fujitsu.com>
+Message-ID: <d1319d2e-3016-7eef-5f3f-87677600e13c@suse.com>
 Subject: Re: BTRFS constantly reports "No space left on device" even with a
  huge unallocated space
 References: <1471023419.16857.9.camel@gmail.com>
@@ -42,111 +59,113 @@ References: <1471023419.16857.9.camel@gmail.com>
  <57C4EB85.7030000@cn.fujitsu.com> <1472561404.3179.3.camel@gmail.com>
  <CAJCQCtTn6y1Qy5J_Wuef-bbwJ9g50NgM-a2UtWvh=01S_JntKA@mail.gmail.com>
  <1472676550.8145.1.camel@gmail.com>
-In-Reply-To: <1472676550.8145.1.camel@gmail.com>
+ <CAJCQCtR8EKENcy0ApONzDTX0RNZb8Dh-+_au4cMkyK24RzDoNw@mail.gmail.com>
+ <CAJCQCtTWJMigkeLUP0+aTFPwdpuJtMa3C4isercAfE_Wh3b=PQ@mail.gmail.com>
+ <52290114-3b37-2de5-9c9f-ceda6dff955b@suse.com>
+ <CAJCQCtSPLw5Kwunm6WdhDCiE8Kc7BcfZy6W9veuns7kBmgyivw@mail.gmail.com>
+ <a61878b9-7b88-7aee-40cf-05368cd01d78@suse.com>
+ <CAJCQCtTBfhXOLg3URfreG29NVfujPjEc0O_cnDFCzDQm0iRtaA@mail.gmail.com>
+ <1472734635.3137.4.camel@gmail.com>
+ <0778dff0-cb43-d279-adb2-0e314b61110d@gmail.com>
+ <1472747695.3137.7.camel@gmail.com>
+ <b0ec9154-16a5-5293-952a-0d5a988488e8@gmail.com>
+ <ab83503e-58c5-e1b4-b1ba-1e1ea8313607@suse.com>
+ <b9bd0a3d-0ae0-a30c-c14d-c85434134890@gmail.com>
+ <CAJCQCtT1RptgW-_esKmm2_5eRTxd10wHNxwgNWHSD86LZJ7edQ@mail.gmail.com>
+In-Reply-To: <CAJCQCtT1RptgW-_esKmm2_5eRTxd10wHNxwgNWHSD86LZJ7edQ@mail.gmail.com>
 
---L3Hji8dxwRoT4XikI9HoVrSXKgDMVawM8
+--XufrWlNxWr97FSFg4nWQPFm7nOeKmx7Li
 Content-Type: text/plain; charset=utf-8
 Content-Transfer-Encoding: quoted-printable
 
-On 8/31/16 4:49 PM, Ronan Arraes Jardim Chagas wrote:
-> Hi guys!
+On 9/1/16 8:12 PM, Chris Murphy wrote:
+> On Thu, Sep 1, 2016 at 12:47 PM, Austin S. Hemmelgarn
+> <ahferroin7@gmail.com> wrote:
 >=20
-> And the problem happened again. This time, I was only using Mozilla
-> Firefox. I could get the very first message after the error. I hope it
-> brings more information:
+>=20
+>> 2. Snapper's default snapshot creation configuration is absolutely
+>> pathological in nature, generating insane amounts of background resour=
+ce
+>> usage and taking up huge amounts of space.  If this were changed, you =
+would
+>> be a lot less dependent on being able to free up snapshots based on sp=
+ace
+>> usage.
+>=20
+> That's diplomatic.
+>=20
+> They know all of this already though, but instead of toning down
+> snapper defaults, they're amping up the voluming by enabling quotas
+> instead.
+>=20
+> There is only one logical reason for this that I can thing of. They're
+> trying to increase problem reports, presumably in order to smooth out
+> noisy data, maybe even by getting better bug reports like Ronan's. But
+> I think this is a specious policy.
 
-Ok, so I think this is a race that can happen when one thread is
-starting a transaction and another thread is committing a transaction
-that involves creating a snapshot.
+There's no conspiracy to leverage the openSUSE user base to generate bug
+reports any more than enabling any other feature in Tumbleweed before
+SLES is.  We've enabled qgroups by default so that snapper can make sane
+decisions based on space usage.  That's it.
 
-We reserve blocks at the top of start_transaction and that reservation
-stays with the root.  In: btrfs_commit_transaction->
-create_pending_snapshots-> create_pending_snapshot->
-qgroup_account_snapshot-> commit_fs_roots, we clear that reservation
-from the root via btrfs_qgroup_free_meta_all, potentially while
-start_transaction is waiting to join a new transaction.  Or not.  It can
-happen asynchronously, which is the point of having the reservation
-prior to that.
+>> It's poor choices like this that fall into the category of 'Ooh, this =
+looks
+>> cool, let's do it!' made by major distros that are most of the reason =
+that
+>> BTRFS has such a bad reputation right now.
+>=20
+> Over on Factory list, they're trying to have this two ways. First
+> they're saying quotas are stable as they've implemented them in the
+> Leap 4.4 kernel. And they consider the btrfs-progs man page warning
+> that quotas aren't yet stable even in 4.7, and aren't recommended
+> unless the user will use them, is a bug that should be removed from
+> their copy of the man page.
 
-So the thing is that this error can only occur if start_transaction
-fails after this race occurs.  That, combined with your report that you
-were seeing ENOSPC instead of EDQUOT, leads me to believe that this is
-just a side effect of whatever is causing you to not hit ENOSPC.  I
-expect that you'll see it again -- you just won't see the WARN_ON
-anymore since quotas are disabled.  I suspect it's probably the
-btrfs_block_rsv_add call immediately after the reservation, but there's
-no way to tell without tracing.
+Yep.  That's a bug in the man page.  We do consider them stable.  I see
+every btrfs bug that gets reported against SLE12 SP2, upon which the
+Leap kernel is based.  Have there been qgroups bugs over the development
+cycle?  You bet.  There's a reason if you look at the commit log for
+qgroups over the past year, you'll see a bunch of fixes from SUSE
+developers.
+
+I explained what I think Ronan's issue is in another part of the thread
+just now.  I don't think that's a severe issue at all.  Annoying?  Sure,
+but I'm more concerned with the underlying ENOSPC issue.  Without more
+info, I don't know what the cause of it is and when it was introduced.
+
+We, like every other group of file system developers, run xfstests
+pretty religiously.  Since qgroups are becoming a bigger part of the
+btrfs experience for our products, we test them specifically.  Yes,
+there are xfstests /just/ for qgroups, but we also make it a point to
+run the entire xfstests suite with and without qgroups enabled.  Since
+the requirement for snapper was to have accurate space tracking, that's
+what we've focused on.
+
+I obviously can't open up the SLES bugzilla to the world, so you're
+going to have to take my word on this.  For our 4.4-based kernel there
+are currently 3 qgroup related bugs.  The first is a report about how
+annoying it is to see old qgroup items for removed subvolumes.  The
+second is an accounting bug that is old and the developer just hasn't
+gotten around to closing it yet.  The third is a real issue, where users
+can hit the qgroup limit and are then stuck, similar to how it used to
+be when you'd hit ENOSPC and couldn't remove files or subvolumes.  My
+gut feeling is that it's the same kind of problem:  Removing files
+involves allocating blocks to CoW the metadata and when you've hit your
+quota limit, you can't allocate the blocks.  I expect the solution will
+be similar to the ENOSPC issue except that rather than keeping a pool
+around, we can just CoW knowing full well the intention is to release
+space.  My team is working on that today and I expect a fix shortly.
 
 -Jeff
-
-
-> [28039.672199] ------------[ cut here ]------------
-> [28039.672253] WARNING: CPU: 3 PID: 31800 at ../fs/btrfs/qgroup.c:2667
-> btrfs_qgroup_free_meta+0x88/0x90 [btrfs]
-> [28039.672255] Modules linked in: fuse nf_log_ipv6 xt_pkttype
-> nf_log_ipv4 nf_log_common xt_LOG xt_limit af_packet iscsi_ibft
-> iscsi_boot_sysfs msr ip6t_REJECT nf_reject_ipv6 xt_tcpudp
-> nf_conntrack_ipv6 nf_defrag_ipv6 ip6table_raw ipt_REJECT nf_reject_ipv4=
-
-> iptable_raw xt_CT nvidia_drm(PO) nvidia_modeset(PO) iptable_filter
-> nvidia(PO) ip6table_mangle nf_conntrack_netbios_ns
-> nf_conntrack_broadcast drm_kms_helper nf_conntrack_ipv4 drm
-> nf_defrag_ipv4 fb_sys_fops snd_hda_codec_hdmi joydev
-> snd_hda_codec_realtek ip_tables syscopyarea snd_hda_codec_generic
-> xt_conntrack snd_hda_intel sysfillrect intel_rapl sb_edac edac_core
-> snd_hda_codec hp_wmi x86_pkg_temp_thermal intel_powerclamp snd_hda_core=
-
-> snd_hwdep nf_conntrack sparse_keymap sysimgblt coretemp kvm_intel kvm
-> rfkill irqbypass snd_pcm snd_timer crct10dif_pclmul
-> [28039.672305]  e1000e crc32_pclmul ghash_clmulni_intel snd aesni_intel=
-
-> ip6table_filter aes_x86_64 lrw gf128mul glue_helper ablk_helper
-> iTCO_wdt iTCO_vendor_support mei_wdt ioatdma pcspkr cryptd ip6_tables
-> ptp lpc_ich fjes i2c_i801 dca mfd_core soundcore pps_core shpchp
-> tpm_infineon tpm_tis tpm mei_me mei x_tables btrfs xor raid6_pq
-> hid_generic usbhid crc32c_intel serio_raw xhci_pci ehci_pci sr_mod
-> firewire_ohci xhci_hcd ehci_hcd cdrom firewire_core crc_itu_t isci
-> usbcore usb_common libsas ata_generic mpt3sas raid_class
-> scsi_transport_sas wmi button sg
-> [28039.672373] CPU: 3 PID: 31800 Comm: gnome-terminal- Tainted:
-> P        W  O    4.7.1-1-default #1
-> [28039.672375] Hardware name: Hewlett-Packard HP Z820 Workstation/158B,=
-
-> BIOS J63 v03.65 12/19/2013
-> [28039.672378]  0000000000000000 ffffffff81393104 0000000000000000
-> 0000000000000000
-> [28039.672382]  ffffffff8107ca1e ffff881008780800 0000000000014000
-> ffff881008780800
-> [28039.672386]  ffffffffffffffe4 ffff88100b297c00 ffff88053b7e3540
-> ffffffffa02c9f58
-> [28039.672390] Call Trace:
-> [28039.672406]  [<ffffffff8102ed5e>] dump_trace+0x5e/0x320
-> [28039.672413]  [<ffffffff8102f12c>] show_stack_log_lvl+0x10c/0x180
-> [28039.672419]  [<ffffffff8102fe41>] show_stack+0x21/0x40
-> [28039.672425]  [<ffffffff81393104>] dump_stack+0x5c/0x78
-> [28039.672430]  [<ffffffff8107ca1e>] __warn+0xbe/0xe0
-> [28039.672461]  [<ffffffffa02c9f58>] btrfs_qgroup_free_meta+0x88/0x90
-> [btrfs]
-> [28039.672492]  [<ffffffffa0261023>] start_transaction+0x3c3/0x4f0
-> [btrfs]
-> [28039.672521]  [<ffffffffa0271078>] btrfs_create+0x38/0x1d0 [btrfs]
-> [28039.672528]  [<ffffffff8121e8fb>] path_openat+0x139b/0x14a0
-> [28039.672535]  [<ffffffff8121fb2e>] do_filp_open+0x7e/0xe0
-> [28039.672541]  [<ffffffff8120e7a4>] do_sys_open+0x124/0x1f0
-> [28039.672547]  [<ffffffff816bb4f6>]
-> entry_SYSCALL_64_fastpath+0x1e/0xa8
-> [28039.676186] DWARF2 unwinder stuck at
-> entry_SYSCALL_64_fastpath+0x1e/0xa8
-
 
 --=20
 Jeff Mahoney
 SUSE Labs
 
 
---L3Hji8dxwRoT4XikI9HoVrSXKgDMVawM8--
+--XufrWlNxWr97FSFg4nWQPFm7nOeKmx7Li--
 
---H0XtlOx4dcFTWIaoLdIujAkRT6N0F3O8P
+--gSpQfkU7sfumSi9MS4w9XpqD1Ctm2t85L
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: OpenPGP digital signature
 Content-Disposition: attachment; filename="signature.asc"
@@ -155,19 +174,19 @@ Content-Disposition: attachment; filename="signature.asc"
 Version: GnuPG/MacGPG2 v2.0.19 (Darwin)
 Comment: GPGTools - http://gpgtools.org
 
-iQIcBAEBAgAGBQJXyYgPAAoJEB57S2MheeWyrFgP/jl+ai0XbcuUVt88yrYyj/dw
-48VIDIreJf0FLJVEFRt0Yj9PznjLC2lgX/tbKhTES+9yWPyF3jnovLG55Qqun3RN
-7NkA+Mb+/nNdeWUe//YP0Pc24hNYlU5oPyRid6tsbuEPiBm9wvD1vlHsHcx3/3Xx
-hgAAsbXizk16kL0Na8yNTz8TSw0A5M/93X5zc+Z5FjxxPKgLXB6krCPFxGB/SskF
-aj3HkzJ+M9K3/n7JihQZqxwcooXmS6QMpbvx4QwOisQcSbSh3OT7KLpbcd0IzffO
-E77w8b02WdtoMw+2HYMAxSRk5xOhyxykHlVbJxe7Y/ChB/P3CuKoFHd2iBDBRSWl
-rTdn5u89zt2g/JHr1aV72f34Ry5ndsO2m4kJCdcK8/p3wKpv46DbYLNWkFiRlACi
-IN2HMcYNE/L2u54zmUX+isUK5d3gefATQ+S85VjmMQbA3uwINaVOzwdxa2g3iidL
-SjYDu23OXu71/ZqxD9EKbLsRsh0yqfW8DJ5kedGNwsamhbB7guSs/SQad7AjMmDY
-+TWw0K99pU+pA3lyUd/EkIt2Tpjf4OWN6ikdFjZbCwr5VWycYIRjza0e5ZeDlfMd
-BR/MvUrRxvsMk8dz/6guF6kn3hmDjPI/SibWFxojndxPCrFK549fpuJ/CcpFFyRj
-vdguaUXJhgVOmqLUvmnc
-=X7Bv
+iQIcBAEBAgAGBQJXyYwdAAoJEB57S2MheeWy1N4P/idwFuzfQXwpti6rJTYKN6SX
+TbBydP4N2Cziws42URTQeK4nSIBGpXVLjSPT6rkl8P3GEgKJgJPApPX/rle8yAHB
+lG4Isdix8cZK8B7vgcC6iENbNe3He1M1CQOqTNf8ieKhQ9vINWCfDYSg5Cfco+Le
+UlaAH2uvlu7GL22Spv0P1oygcrTi/9ZORycBXvhy4hSPUdDSbua/lJJks3gXBgbO
+yq00N/YnEKz9zDe0XOOTuQ+PbiuEc5GBPIH8wNBTUkG/czmKIg4Vt8XWtQz/16Li
+lRtqVC7LXKm6UEbzaq89VFGEQ7Tfk6ZsC/siZqlIHU0dsvEcg3QRzY0kd2pJboj6
+pj23toBqnUOj+Eav8HhsTB22KPOBdw9/J5jPy2r5kO8Bqo9XDeaIMEBQk7d98b4a
+3sp9K5uERx3DkycEfg6w71VyeY5xU3p+0qHuXarxD3aQ+Zj+8ocM3GniNIOmj1Xn
+4Pk1EGqmMRVTbt+fltgtCb6LcWmvXzbH8xKG2R3qR3X3FY6RxzcQgX4K+kfiMOns
+e+83npxCP/YIYy/+7tDZK8nXM+JqpKQM9WCrllm+w3NOfoS0URb//SU4IoyZ3BPm
+R9/CN67uzmXQuYvoXgNOhTPPS4W6pcF6eOxuu48GQx0E8+XNfRwsD13BWTqIU7P7
+dBqO/WQI9YYVbsgJyCxO
+=kdSF
 -----END PGP SIGNATURE-----
 
---H0XtlOx4dcFTWIaoLdIujAkRT6N0F3O8P--
+--gSpQfkU7sfumSi9MS4w9XpqD1Ctm2t85L--

@@ -1,182 +1,190 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:38985 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1750992AbcIBCEH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 1 Sep 2016 22:04:07 -0400
-Subject: Re: your mail
-To: Kyle Gates <kylegates@live.com>,
-        "Austin S. Hemmelgarn" <ahferroin7@gmail.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-References: <CAD1x5BA5k9MUdzT-s0kzFfb5+idoJSFaOux0xQS-jd_D0HTDWA@mail.gmail.com>
- <20160901074415.pz32d72d4h6pk77t@invalid>
- <31a75b1a-445a-47cd-816e-1e7e9d1c4bb8@gmail.com>
- <CY4PR06MB2726B15A26AA728457B155B9B0E20@CY4PR06MB2726.namprd06.prod.outlook.com>
-From: Jeff Mahoney <jeffm@suse.com>
-Message-ID: <2c480ed1-dc46-2756-1e05-380d6dd3e0f9@suse.com>
-Date: Thu, 1 Sep 2016 21:51:25 -0400
-MIME-Version: 1.0
-In-Reply-To: <CY4PR06MB2726B15A26AA728457B155B9B0E20@CY4PR06MB2726.namprd06.prod.outlook.com>
-Content-Type: multipart/signed; micalg=pgp-sha1;
- protocol="application/pgp-signature";
- boundary="VD5AQaNJWXLe5ueXS4gRTh126iQX4quuk"
+Received: from [195.159.176.226] ([195.159.176.226]:57012 "EHLO
+        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
+        with ESMTP id S1751836AbcIBKzj (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 2 Sep 2016 06:55:39 -0400
+Received: from list by blaine.gmane.org with local (Exim 4.84_2)
+        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+        id 1bfm8D-0001pH-UQ
+        for linux-btrfs@vger.kernel.org; Fri, 02 Sep 2016 12:55:33 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: [OT] Re: Balancing subvolume on a specific device
+Date: Fri, 2 Sep 2016 10:55:23 +0000 (UTC)
+Message-ID: <pan$97e1b$477b3a63$5742ac9b$a63fe8a6@cox.net>
+References: <df03a71c-8558-520c-af1b-ffb152f65a7d@davideddu.org>
+        <20160819171734.GJ20440@carfax.org.uk>
+        <pan$dbf6f$52e9f6f3$42f8cce4$2ebbbbc6@cox.net>
+        <20160901214519.79d27445@jupiter.sol.kaishome.de>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---VD5AQaNJWXLe5ueXS4gRTh126iQX4quuk
-Content-Type: multipart/mixed; boundary="14OlQosvoVxAmogV9xiWS3KpOsluMm2Ki";
- protected-headers="v1"
-From: Jeff Mahoney <jeffm@suse.com>
-To: Kyle Gates <kylegates@live.com>,
- "Austin S. Hemmelgarn" <ahferroin7@gmail.com>,
- "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Message-ID: <2c480ed1-dc46-2756-1e05-380d6dd3e0f9@suse.com>
-Subject: Re: your mail
-References: <CAD1x5BA5k9MUdzT-s0kzFfb5+idoJSFaOux0xQS-jd_D0HTDWA@mail.gmail.com>
- <20160901074415.pz32d72d4h6pk77t@invalid>
- <31a75b1a-445a-47cd-816e-1e7e9d1c4bb8@gmail.com>
- <CY4PR06MB2726B15A26AA728457B155B9B0E20@CY4PR06MB2726.namprd06.prod.outlook.com>
-In-Reply-To: <CY4PR06MB2726B15A26AA728457B155B9B0E20@CY4PR06MB2726.namprd06.prod.outlook.com>
+Kai Krakow posted on Thu, 01 Sep 2016 21:45:19 +0200 as excerpted:
 
---14OlQosvoVxAmogV9xiWS3KpOsluMm2Ki
-Content-Type: text/plain; charset=windows-1252
-Content-Transfer-Encoding: quoted-printable
+> Am Sat, 20 Aug 2016 06:30:11 +0000 (UTC)
+> schrieb Duncan <1i5t5.duncan@cox.net>:
+> 
+>> There's at least three other options to try to get what you mention,
+>> however.  FWIW, I'm a gentooer and thus build everything from sources
+>> here, and use ccache myself.  What I do is put all my build stuff, the
+>> gentoo git and assorted overlay git trees, ccache, kernel sources, the
+>> binpkg cache, etc, all on a separate "build" btrfs on normal
+>> partitions, / not/ a subvolume.  That way it can go wherever I want,
+>> and it, along with the main system (/) and /home, but /not/ my media
+>> partition (all of which are fully independent filesystems on their own
+>> partitions, most of them btrfs raid1 on a parallel set of partitions on
+>> a pair of ssds), on ssd. Works great. =:^)
+> 
+> Off topic: Is ccache really that helpful? I dumped it a few years ago
+> after getting some build errors and/or packaging bugs with it (software
+> that would just segfault when built with ccache), and in the end it
+> didn't give a serious speed boost anyways after comparing the genlop
+> results.
 
-On 9/1/16 12:44 PM, Kyle Gates wrote:
->> -----Original Message-----
->> From: linux-btrfs-owner@vger.kernel.org [mailto:linux-btrfs-
->> owner@vger.kernel.org] On Behalf Of Austin S. Hemmelgarn
->> Sent: Thursday, September 01, 2016 6:18 AM
->> To: linux-btrfs@vger.kernel.org
->> Subject: Re: your mail
->>
->> On 2016-09-01 03:44, M G Berberich wrote:
->>> Am Mittwoch, den 31. August schrieb Fennec Fox:
->>>> Linux Titanium 4.7.2-1-MANJARO #1 SMP PREEMPT Sun Aug 21 15:04:37
->> UTC
->>>> 2016 x86_64 GNU/Linux
->>>> btrfs-progs v4.7
->>>>
->>>> Data, single: total=3D30.01GiB, used=3D18.95GiB System, single:
->>>> total=3D4.00MiB, used=3D16.00KiB Metadata, single: total=3D1.01GiB,
->>>> used=3D422.17MiB GlobalReserve, single: total=3D144.00MiB, used=3D0.=
-00B
->>>>
->>>> {02:50} Wed Aug 31
->>>> [fennectech@Titanium ~]$  sudo fstrim -v / [sudo] password for
->>>> fennectech:
->>>> Sorry, try again.
->>>> [sudo] password for fennectech:
->>>> /: 99.8 GiB (107167244288 bytes) trimmed
->>>>
->>>> {03:08} Wed Aug 31
->>>> [fennectech@Titanium ~]$  sudo fstrim -v / [sudo] password for
->>>> fennectech:
->>>> /: 99.9 GiB (107262181376 bytes) trimmed
->>>>
->>>>   I ran these commands minutes after echother ane each time it is
->>>> trimming the entire free space
->>>>
->>>> Anyone else seen this?   the filesystem is the root FS and is compre=
-ssed
->>>
->>> You should be very happy that it is trimming at all. Typical situatio=
-n
->>> on a used btrfs is
->>>
->>>   # fstrim -v /
->>>   /: 0 B (0 bytes) trimmed
->>>
->>> even if there is 33G unused space ob the fs:
->>>
->>>   # df -h /
->>>   Filesystem      Size  Used Avail Use% Mounted on
->>>   /dev/sda2        96G   61G   33G  66% /
->>>
->> I think you're using an old kernel, this has been working since at lea=
-st 4.5, but
->> was broken in some older releases.
->=20
-> M G is running 4.7.2
-> The problem is that all space has been allocated by block groups and fs=
-trim will only work on unallocated space.
+Two comments on ccache...
 
-Historically it was the opposite problem.  My fixes made it so it would
-work on unallocated space.  We probably need some debugging to see why
-it's not discarding extents that are allocated as block groups but
-unallocated within them.
+1) ccache hasn't caused me any serious issues in over a decade of gentoo 
+usage, including some periods with various hardware issues.  The few 
+problems I /did/ have at one point were related to crashes while building 
+and thus corruption of the ccache, but those errors were pretty easily 
+identified as ccache errors (IDR what the specifics were, but something 
+about corrupted input files that really made no sense /except/ in the 
+context of ccache or serious hardware error and I wasn't seeing anything 
+else related to the latter, so it was pretty clear) and easily enough 
+fixed by setting CCACHE_RECACHE=1 (write-only mode, basically) for the 
+specific packages in question, to flush out the corruption by writing 
+uncorrupted new copies of the files in question.
 
--Jeff
+2a) ccache won't help a lot with ordinary new-version upgrade-cycle 
+builds, at least with portage, because the build-path is part of the 
+hash, and portage's default build path includes the package and version 
+number, so for upgrades, the path and therefore the hash will be 
+different, resulting in a ccache miss on a new version build, even if 
+it's the exact same command building the exact same sources.
 
-> On my system all space has been allocated on my root filesystem so 0 B =
-are trimmed:
-> kyle@home:~$  uname -a
-> Linux home 4.7.2-040702-generic #201608201334 SMP Sat Aug 20 17:37:03 U=
-TC 2016 x86_64 x86_64 x86_64 GNU/Linux
-> kyle@home:~$  sudo btrfs fi show /
-> Label: 'root'  uuid: 6af4ebde-81ef-428a-a45f-0e8480ad969a
->         Total devices 2 FS bytes used 13.44GiB
->         devid   14 size 20.00GiB used 20.00GiB path /dev/sde2
->         devid   15 size 20.00GiB used 20.00GiB path /dev/sdb2
-> kyle@home:~$  btrfs fi df /
-> Data, RAID1: total=3D18.97GiB, used=3D12.98GiB
-> System, RAID1: total=3D32.00MiB, used=3D16.00KiB
-> Metadata, RAID1: total=3D1.00GiB, used=3D473.83MiB
-> GlobalReserve, single: total=3D160.00MiB, used=3D0.00B
-> kyle@home:~$  sudo fstrim -v /
-> [sudo] password for kyle:
-> /: 0 B (0 bytes) trimmed
->=20
-> But I do have space trimmed on my home filesystem:
-> kyle@home:~$  sudo btrfs fi show /home/
-> Label: 'home'  uuid: b75fb450-4a28-434a-a483-e784940d463a
->         Total devices 2 FS bytes used 18.63GiB
->         devid   11 size 64.00GiB used 29.03GiB path /dev/sde3
->         devid   12 size 64.00GiB used 29.03GiB path /dev/sdb3
-> kyle@home:~$  btrfs fi df /home/
-> Data, RAID1: total=3D27.00GiB, used=3D18.46GiB
-> System, RAID1: total=3D32.00MiB, used=3D16.00KiB
-> Metadata, RAID1: total=3D2.00GiB, used=3D168.62MiB
-> GlobalReserve, single: total=3D64.00MiB, used=3D0.00B
-> kyle@home:~$  sudo fstrim -v /home
-> /home: 70 GiB (75092721664 bytes) trimmed
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->=20
+Similarly, rebuilds of the same sources using the same commands but after 
+tool (gcc, etc) upgrades won't hash-match (nor would you want them to as 
+rebuilding with the new version is usually the point), because the hashes 
+on the tools themselves don't match.
+
+This is why ccache is no longer recommended for ordinary gentooers -- the 
+hit rate simply doesn't justify it.
+
+2b) cache *does*, however, help in two types of circumstances:
+
+2bi) In ordinary usage, particularly during test compiles in the 
+configure step, some limited code (here test code) is repeatedly built 
+with identical commands and paths.  This is where the hits that /are/ 
+generated during normal upgrade usage normally come from, and they can 
+speed things up somewhat.  However, it's a pretty limited effect and this 
+by itself doesn't really justify usage.
+
+More measurably practical would be rebuilds of existing versions with 
+existing tools, perhaps because a library dep upgrade forces it 
+(intermediate objects involving that library will hash-fail and be 
+rebuilt, but objects internal to the package itself or only involving 
+other libs should hash-check and cache-hit), or due to some ebuild change 
+(like a USE flag change with --newuse) not involving a version bump.  
+There is often a rather marked ccache related speedup in this sort of 
+rebuild, but again, while it does happen for most users, it normally 
+doesn't happen /enough/ to be worth the trouble.
+
+But some users do still run ccache for this case, particularly if like me 
+they really REALLY hate to see a big build like firefox taking the same 
+long time it did before, just to change a single USE flag or something.
+
+2bii) Where ccache makes the MOST sense is where people are running large 
+numbers of live-vcs builds with unchanging (9999) version numbers, 
+probably via smart-live-rebuild checking to see what packages actually 
+have new commits since the last build.
+
+I'm running live-git kde, tho a relatively lite version without packages 
+I don't use and with (my own) patches to kill the core plasma semantic-
+desktop (baloo and friends) dependencies, since in my experience semantic-
+desktop and its deps simply *are* *not* *worth* *it* !!  That's 170+ kde-
+related packages, plus a few misc others, all live-git 9999 version, 
+which means they build with the same version path and the upstream commit 
+changes may be as small/simple as some minversion dep bump or l10n 
+changes to some *.desktop file, neither of which change the code at all, 
+so in those cases rebuilds should be 100% ccache hits, provided the 
+ccache is big enough, of course.
+
+Again, live-git (or other live-vcs) rebuilds are where ccache REALLY 
+shines, and because I run live-kde and other live-git builds, ccache 
+still makes serious sense for me here.  Tho personally, I'd still be 
+using it for the 2bi case of same-version and limited same-call within 
+the same package build, as well, simply because I'm both already familiar 
+with it, and would rather take a small overhead hit on other builds to 
+speed up the relatively rare same-package-same-tools-rebuild case.
 
 
---=20
-Jeff Mahoney
-SUSE Labs
+> What would help a whole lot more would be to cache this really
+> really inefficient configure tool of hell which often runs much longer
+> than the build phase of the whole source itself.
 
+IDK if you were around back then, but some time ago there was a confcache 
+project that tried to do just that.  But unfortunately, it was enough of 
+a niche use-case (most folks just run binary distros and don't care, and 
+others have switched to cmake or the like and don't care) and came with 
+enough problem corner-cases that required upstream cooperation that 
+wasn't coming as they didn't care, to fix, that the project was 
+eventually given up.  =:^(
 
---14OlQosvoVxAmogV9xiWS3KpOsluMm2Ki--
+The more modern workaround (not really a fix) for that problem seems to 
+be parallel package builds.  Run enough at once and the configure stage 
+latency doesn't seem so bad.
 
---VD5AQaNJWXLe5ueXS4gRTh126iQX4quuk
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
+Of course on standard gentoo, that's severely limited by the fact that 
+the @system set and its deps are forced serial, the frustration of which 
+built here until I got tired of it and very carefully negated the entire 
+@system set, adding @world entries where necessary so critical packages 
+weren't depcleaned.  Now even the core would-be @system set builds in 
+parallel.  
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG/MacGPG2 v2.0.19 (Darwin)
-Comment: GPGTools - http://gpgtools.org
+Of course there are some risks to that in theory, but in practice, once 
+the system is built and running in mostly just ongoing maintenance mode, 
+I've not had a problem.  Maybe it's just because I know where to be 
+careful, but it has worked fine for me, and it SURE reduced the 
+frustration of watching all those forced-serial core update builds go by 
+one-at-a-time.
 
-iQIcBAEBAgAGBQJXyNskAAoJEB57S2MheeWyOv0P/ROLnM6BtHG+6Ye360UWEdhp
-0PBCITPgMJ6foay9dj0FXp00g7FbqJtwRySsfMNXnvB16S/naYv6Og2bPGIsigOU
-ISjLLEz0vC3gZIoL0kh7+MUJL5rYX++rDFoTRIH0muUZZjCq/rVBb93Yewywh78P
-adzTAu2aX8Dd419RGo5t91YMZpHSHzdRTTyxB/WD2S9QLnz0p2Z+6AtlyIi10TpY
-gGxl/FJXE4lqr7TrukdyyEe44mZJVstJk8y7oESdPC6uB3niCeLWsdRos2pwM2KD
-mXmP3vt31BvIVgtxnyFFgNRAV0sMasYKR5q1RZ7jVKpY24uC/Mb5mmsMYtM6A8kU
-8OV529TbEesgh5PRusqUviWEjKP/hgG+jQv/ucvt4MnaNhYZYiQE09XXlai0R9hy
-bv6DVZSI92kARTCxAGjbsexhTvbGttRHn+AB0ihdfeceHI57LR704E0NNPy4O3q/
-YClDyFE5IGR5VM/uINmPX3LZ4VxDQQn6hmQEI2I3oSDSBxdDdvhdVWA7M8VHoOEu
-HZzek+q59OR0AapjE1aLDdMpQVeQcXDeE0gyVKFtwnBOkayD3Lm/3x7FESg2YyW0
-dAsYsEozji7sLjMo2wRmBpbyYvh1QHDvH01v6YEIfN7NrvrNThbeATdE13luuchw
-Su17rCdOy5K4tWk+BPmX
-=tAyk
------END PGP SIGNATURE-----
+> I now moved to building inside tmpfs (/var/tmp/portage mounted as 32GB
+> tmpfs with x-systemd.automount), added around 30GB of swap space just in
+> case. I'm running on 16GB of RAM and found around half of my RAM almost
+> always sits there doing nothing. Even building chromium and libreoffice
+> at the same time shows no problems with this setup. Plus, it's a whole
+> lot faster than building on the native fs (even if I'm using bcache).
+> And I'm building more relaxed since my SSD is wearing slower - Gentoo
+> emerge can put a lot of burden on the storage.
 
---VD5AQaNJWXLe5ueXS4gRTh126iQX4quuk--
+I've run with PORTAGE_TMPDIR and PKG_TMPDIR pointed at tmpfs for I guess 
+half a decade at least, now.  No swap and 16 GiB RAM now, tho I was 
+running it with 6 GiB RAM and generally not going much into swap (even 
+with swappiness=100) for quite awhile.  Tmpfs size now the default half 
+of memory, so 8 gig.
+
+But I don't have chromium or libreoffice installed, and recently I 
+switched to upstream binpkg firefox due to gentoo package upgrade 
+availability delays even of hard-masked in the mozilla overlay, so I 
+don't even have to worry about firefox these days.  I guess my longest 
+taking builds are now qtwebkit, both 4.x and 5.x, these days, and I've 
+never had a problem with them and other builds in parallel.
+
+But part of the lack of parallel build problems may be because while I do 
+have it active, I'm only running a 6-core, and I've found increasing load 
+average significantly above the number of cores to be counterproductive, 
+so I have MAKEOPTS="-j10 -l8" and portage configured with --jobs=12 
+--load-average=6, so emphasis is clearly on giving existing builds more 
+threads if they'll use them, to cores+2 load, and only going parallel 
+package build if the load average drops under the number of cores.  That 
+doesn't tend to test the tmpfs capacity limits at all.
+
+But for sure, PORTAGE_TMPDIR on tmpfs makes a **BIG** difference! =:^)
+
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

@@ -1,121 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:6061 "EHLO song.cn.fujitsu.com"
-        rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-        id S1750697AbcIBDDP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 1 Sep 2016 23:03:15 -0400
-From: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
-To: linux-btrfs@vger.kernel.org
-Cc: jbacik@fb.com, dsterba@suse.com
-Subject: [PATCH] btrfs: introduce tickets_id to determine whether asynchronous metadata reclaim work makes progress
-Date: Fri,  2 Sep 2016 10:58:46 +0800
-Message-Id: <20160902025846.4133-1-wangxg.fnst@cn.fujitsu.com>
+Received: from userp1040.oracle.com ([156.151.31.81]:21142 "EHLO
+        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751765AbcICBIo (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 2 Sep 2016 21:08:44 -0400
+Date: Fri, 2 Sep 2016 18:08:35 -0700
+From: Liu Bo <bo.li.liu@oracle.com>
+To: Josef Bacik <jbacik@fb.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] Btrfs: don't leak reloc root nodes on error
+Message-ID: <20160903010827.GA7758@localhost.localdomain>
+Reply-To: bo.li.liu@oracle.com
+References: <1472844343-19086-1-git-send-email-jbacik@fb.com>
 MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1472844343-19086-1-git-send-email-jbacik@fb.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-In btrfs_async_reclaim_metadata_space(), we use ticket's address to
-determine whether asynchronous metadata reclaim work is making progress.
+On Fri, Sep 02, 2016 at 03:25:43PM -0400, Josef Bacik wrote:
+> We don't track the reloc roots in any sort of normal way, so the only way the
+> root/commit_root nodes get free'd is if the relocation finishes successfully and
+> the reloc root is deleted.  Fix this by free'ing them in free_reloc_roots.
+> Thanks,
 
-	ticket = list_first_entry(&space_info->tickets,
-				  struct reserve_ticket, list);
-	if (last_ticket == ticket) {
-		flush_state++;
-	} else {
-		last_ticket = ticket;
-		flush_state = FLUSH_DELAYED_ITEMS_NR;
-		if (commit_cycles)
-			commit_cycles--;
-	}
+Looks good.
 
-But indeed it's wrong, we should not rely on local variable's address to
-do this check, because addresses may be same. In my test environment, I
-dd one 168MB file in a 256MB fs, found that for this file, every time
-wait_reserve_ticket() called, local variable ticket's address is same,
+> 
+> Signed-off-by: Josef Bacik <jbacik@fb.com>
+> ---
+>  fs/btrfs/relocation.c | 4 ++++
+>  1 file changed, 4 insertions(+)
+> 
+> diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
+> index 7fc6ea7..62dfc2c 100644
+> --- a/fs/btrfs/relocation.c
+> +++ b/fs/btrfs/relocation.c
+> @@ -2349,6 +2349,10 @@ void free_reloc_roots(struct list_head *list)
+>  	while (!list_empty(list)) {
+>  		reloc_root = list_entry(list->next, struct btrfs_root,
+>  					root_list);
+> +		free_extent_buffer(reloc_root->node);
+> +		free_extent_buffer(reloc_root->commit_root);
+> +		reloc_root->node = NULL;
+> +		reloc_root->commit_root = NULL;
 
-For above codes, assume a previous ticket's address is addrA, last_ticket
-is addrA. Btrfs_async_reclaim_metadata_space() finished this ticket and
-wake up it, then another ticket is added, but with the same address addrA,
-now last_ticket will be same to current ticket, then current ticket's flush
-work will start from current flush_state, not initial FLUSH_DELAYED_ITEMS_NR,
-which may result in some enospc issues(I have seen this in my test machine).
+What about reloc_root itself?
 
-Signed-off-by: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
----
- fs/btrfs/ctree.h       |  1 +
- fs/btrfs/extent-tree.c | 11 ++++++-----
- 2 files changed, 7 insertions(+), 5 deletions(-)
+Thanks,
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index eff3993..33fe035 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -427,6 +427,7 @@ struct btrfs_space_info {
- 	struct list_head ro_bgs;
- 	struct list_head priority_tickets;
- 	struct list_head tickets;
-+	u64 tickets_id;
- 
- 	struct rw_semaphore groups_sem;
- 	/* for block groups in our same type */
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 8c8a4d1..2f9a18f 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -4966,12 +4966,12 @@ static void wake_all_tickets(struct list_head *head)
-  */
- static void btrfs_async_reclaim_metadata_space(struct work_struct *work)
- {
--	struct reserve_ticket *last_ticket = NULL;
- 	struct btrfs_fs_info *fs_info;
- 	struct btrfs_space_info *space_info;
- 	u64 to_reclaim;
- 	int flush_state;
- 	int commit_cycles = 0;
-+	u64 last_tickets_id;
- 
- 	fs_info = container_of(work, struct btrfs_fs_info, async_reclaim_work);
- 	space_info = __find_space_info(fs_info, BTRFS_BLOCK_GROUP_METADATA);
-@@ -4984,8 +4984,7 @@ static void btrfs_async_reclaim_metadata_space(struct work_struct *work)
- 		spin_unlock(&space_info->lock);
- 		return;
- 	}
--	last_ticket = list_first_entry(&space_info->tickets,
--				       struct reserve_ticket, list);
-+	last_tickets_id = space_info->tickets_id;
- 	spin_unlock(&space_info->lock);
- 
- 	flush_state = FLUSH_DELAYED_ITEMS_NR;
-@@ -5005,10 +5004,10 @@ static void btrfs_async_reclaim_metadata_space(struct work_struct *work)
- 							      space_info);
- 		ticket = list_first_entry(&space_info->tickets,
- 					  struct reserve_ticket, list);
--		if (last_ticket == ticket) {
-+		if (last_tickets_id == space_info->tickets_id) {
- 			flush_state++;
- 		} else {
--			last_ticket = ticket;
-+			last_tickets_id = space_info->tickets_id;
- 			flush_state = FLUSH_DELAYED_ITEMS_NR;
- 			if (commit_cycles)
- 				commit_cycles--;
-@@ -5384,6 +5383,7 @@ again:
- 			list_del_init(&ticket->list);
- 			num_bytes -= ticket->bytes;
- 			ticket->bytes = 0;
-+			space_info->tickets_id++;
- 			wake_up(&ticket->wait);
- 		} else {
- 			ticket->bytes -= num_bytes;
-@@ -5426,6 +5426,7 @@ again:
- 			num_bytes -= ticket->bytes;
- 			space_info->bytes_may_use += ticket->bytes;
- 			ticket->bytes = 0;
-+			space_info->tickets_id++;
- 			wake_up(&ticket->wait);
- 		} else {
- 			trace_btrfs_space_reservation(fs_info, "space_info",
--- 
-2.9.0
+-liubo
 
-
-
+>  		__del_reloc_root(reloc_root);
+>  	}
+>  }
+> -- 
+> 2.7.4
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

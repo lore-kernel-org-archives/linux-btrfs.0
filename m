@@ -1,160 +1,167 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:43190 "EHLO
-        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S932360AbcIBTel (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 2 Sep 2016 15:34:41 -0400
-Date: Fri, 2 Sep 2016 12:33:30 -0700
-From: Liu Bo <bo.li.liu@oracle.com>
-To: Jeff Mahoney <jeffm@suse.com>
-Cc: linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.cz>
-Subject: Re: [PATCH v2] Btrfs: detect corruption when non-root leaf has zero
- item
-Message-ID: <20160902193330.GA28360@localhost.localdomain>
-Reply-To: bo.li.liu@oracle.com
-References: <1470286628-4123-1-git-send-email-bo.li.liu@oracle.com>
- <1471990978-27124-1-git-send-email-bo.li.liu@oracle.com>
- <fe9b1bde-9069-b75f-eb53-83b729cde711@suse.com>
+Received: from mail-it0-f68.google.com ([209.85.214.68]:35997 "EHLO
+        mail-it0-f68.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S932448AbcIEP2L (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 5 Sep 2016 11:28:11 -0400
+Received: by mail-it0-f68.google.com with SMTP id i184so9193282itf.3
+        for <linux-btrfs@vger.kernel.org>; Mon, 05 Sep 2016 08:28:10 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <fe9b1bde-9069-b75f-eb53-83b729cde711@suse.com>
+Reply-To: fdmanana@gmail.com
+In-Reply-To: <1472844934-32343-1-git-send-email-bo.li.liu@oracle.com>
+References: <fe9b1bde-9069-b75f-eb53-83b729cde711@suse.com> <1472844934-32343-1-git-send-email-bo.li.liu@oracle.com>
+From: Filipe Manana <fdmanana@gmail.com>
+Date: Mon, 5 Sep 2016 16:28:09 +0100
+Message-ID: <CAL3q7H5oCqgd9im-2AZA=zsOv+SCObon2f5wECA7hr58MNXTGw@mail.gmail.com>
+Subject: Re: [PATCH] Btrfs: fix BUG_ON in btrfs_mark_buffer_dirty
+To: Liu Bo <bo.li.liu@oracle.com>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        David Sterba <dsterba@suse.cz>, Jeff Mahoney <jeffm@suse.com>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+On Fri, Sep 2, 2016 at 8:35 PM, Liu Bo <bo.li.liu@oracle.com> wrote:
+> This can only happen with CONFIG_BTRFS_FS_CHECK_INTEGRITY=y.
+>
+> Commit 1ba98d0 ("Btrfs: detect corruption when non-root leaf has zero item")
+> assumes that a leaf is its root when leaf->bytenr == btrfs_root_bytenr(root),
+> however, we should not use btrfs_root_bytenr(root) since it's mainly got
+> updated during committing transaction.  So the check can fail when doing
+> COW on this leaf while it is a root.
+>
+> This changes to use "if (leaf == btrfs_root_node(root))" instead, just like
+> how we check whether leaf is a root in __btrfs_cow_block().
+>
+> Reported-by: Jeff Mahoney <jeffm@suse.com>
+> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
 
-On Fri, Sep 02, 2016 at 01:26:10AM -0400, Jeff Mahoney wrote:
-> On 8/23/16 6:22 PM, Liu Bo wrote:
-> > Right now we treat leaf which has zero item as a valid one
-> > because we could have an empty tree, that is, a root that is
-> > also a leaf without any item, however, in the same case but
-> > when the leaf is not a root, we can end up with hitting the
-> > BUG_ON(1) in btrfs_extend_item() called by
-> > setup_inline_extent_backref().
-> > 
-> > This makes us check the situation as a corruption if leaf is
-> > not its own root.
-> > 
-> > Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
-> > ---
-> > v2: fix code style.
-> > 
-> >  fs/btrfs/disk-io.c | 23 ++++++++++++++++++++++-
-> >  1 file changed, 22 insertions(+), 1 deletion(-)
-> > 
-> > diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-> > index a5a22be..8df7e73 100644
-> > --- a/fs/btrfs/disk-io.c
-> > +++ b/fs/btrfs/disk-io.c
-> > @@ -559,8 +559,29 @@ static noinline int check_leaf(struct btrfs_root *root,
-> >  	u32 nritems = btrfs_header_nritems(leaf);
-> >  	int slot;
-> >  
-> > -	if (nritems == 0)
-> > +	if (nritems == 0) {
-> > +		struct btrfs_root *check_root;
-> > +
-> > +		key.objectid = btrfs_header_owner(leaf);
-> > +		key.type = BTRFS_ROOT_ITEM_KEY;
-> > +		key.offset = (u64)-1;
-> > +
-> > +		check_root = btrfs_get_fs_root(root->fs_info, &key, false);
-> > +		/*
-> > +		 * The only reason we also check NULL here is that during
-> > +		 * open_ctree() some roots has not yet been set up.
-> > +		 */
-> > +		if (!IS_ERR_OR_NULL(check_root)) {
-> > +			/* if leaf is the root, then it's fine */
-> > +			if (leaf->start !=
-> > +			    btrfs_root_bytenr(&check_root->root_item)) {
-> > +				CORRUPT("non-root leaf's nritems is 0",
-> > +					leaf, root, 0);
-> > +				return -EIO;
-> > +			}
-> > +		}
-> >  		return 0;
-> > +	}
-> >  
-> >  	/* Check the 0 item */
-> >  	if (btrfs_item_offset_nr(leaf, 0) + btrfs_item_size_nr(leaf, 0) !=
-> > 
-> 
-> Hi Liu -
-> 
-> This is causing probs with integrity checking turned on.
+Hi Bo,
 
-Thanks a lot for the report, just sent a fix, with which it doesn't panic any
-more here.
+Even with this patch applied against latest branch for-linus-4.8, at
+least on a build with CONFIG_BTRFS_FS_CHECK_INTEGRITY=y,
+the issue still happens for me when running fsstress with balance in parallel:
 
-Luckily it doesn't panic without integrity checking, otherwise we kind of
-screw up every btrfs.
-
-Thanks,
-
--liubo
-
-> 
-> [  124.716069] ------------[ cut here ]------------
-> [  124.725914] kernel BUG at fs/btrfs/ctree.h:3396!
-> [  124.739316] invalid opcode: 0000 [#1] PREEMPT SMP
-> [  124.746888] Modules linked in: rpcsec_gss_krb5 nfsv4 dns_resolver nfs fscache iscsi_ibft iscsi_boot_sysfs af_packet ipmi_ssif igb ptp pps_core dca sp5100_tco fjes acpi_cpufreq shpchp i2c_piix4 kvm_amd kvm k10temp tpm_infineon tpm_tis tpm_tis_core ipmi_si button pcspkr serio_raw ipmi_msghandler tpm irqbypass nfsd auth_rpcgss nfs_acl lockd grace sunrpc dm_mod btrfs xor zlib_deflate ohci_pci raid6_pq ohci_hcd ehci_pci ata_generic ehci_hcd mgag200 i2c_algo_bit drm_kms_helper usbcore syscopyarea pata_atiixp sysfillrect sysimgblt usb_common fb_sys_fops ttm drm sg
-> [  124.815657] CPU: 9 PID: 2972 Comm: mount Not tainted 4.8.0-rc4-vanilla+ #18
-> [  124.826173] Hardware name: HP ProLiant DL165 G7, BIOS O37 10/17/2012
-> [  124.836043] task: ffff88033b450200 task.stack: ffff880337a70000
-> [  124.845445] RIP: 0010:[<ffffffffa0424171>]  [<ffffffffa0424171>] assfail.constprop.60+0x1e/0x20 [btrfs]
-> [  124.858936] RSP: 0018:ffff880337a73570  EFLAGS: 00010292
-> [  124.867793] RAX: 0000000000000076 RBX: ffff8804376ef250 RCX: ffffffff81c52f08
-> [  124.878735] RDX: 0000000000000001 RSI: 0000000000000286 RDI: 0000000000000286
-> [  124.889661] RBP: ffff880337a73570 R08: 000000000000041a R09: 0000000000000000
-> [  124.900597] R10: 0000000000000003 R11: 0000000000000006 R12: ffff880337f97800
-> [  124.911563] R13: 0000000000000007 R14: 0000000000000000 R15: ffff880435024000
-> [  124.922522] FS:  00007fa4662c1840(0000) GS:ffff88043fc40000(0000) knlGS:0000000000000000
-> [  124.934581] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
-> [  124.944015] CR2: 00007ff68dcd2095 CR3: 000000033ae32000 CR4: 00000000000006e0
-> [  124.955036] Stack:
-> [  124.960294]  ffff880337a73598 ffffffffa038fb04 ffff8804376ef250 ffff88043b45ebd0
-> [  124.971723]  ffff88042c6225a0 ffff880337a73618 ffffffffa036a5f1 0000000000000000
-> [  124.983186]  0000000000000000 ffff880100000000 ffff880337a736d8 ffff88043b45ebd0
-> [  124.994675] Call Trace:
-> [  125.000638]  [<ffffffffa038fb04>] btrfs_mark_buffer_dirty+0xf4/0x120 [btrfs]
-> [  125.011816]  [<ffffffffa036a5f1>] __btrfs_cow_block+0x311/0x5a0 [btrfs]
-> [  125.022524]  [<ffffffffa036aa36>] btrfs_cow_block+0x136/0x210 [btrfs]
-> [  125.033025]  [<ffffffffa036e4ba>] btrfs_search_slot+0x1ea/0x960 [btrfs]
-> [  125.043731]  [<ffffffffa0389636>] btrfs_del_csums+0xd6/0x2b0 [btrfs]
-> [  125.054169]  [<ffffffffa03bbf5b>] ? free_extent_buffer+0x4b/0x90 [btrfs]
-> [  125.064999]  [<ffffffffa03776f5>] __btrfs_free_extent.isra.72+0x675/0xc60 [btrfs]
-> [  125.076739]  [<ffffffffa037bcb7>] __btrfs_run_delayed_refs.constprop.81+0x467/0x12b0 [btrfs]
-> [  125.089591]  [<ffffffffa03b15c9>] ? btrfs_get_token_32+0x59/0xe0 [btrfs]
-> [  125.100486]  [<ffffffffa037fa23>] btrfs_run_delayed_refs+0x93/0x2a0 [btrfs]
-> [  125.111676]  [<ffffffffa03842a9>] btrfs_start_dirty_block_groups+0x299/0x410 [btrfs]
-> [  125.123752]  [<ffffffffa03966d5>] btrfs_commit_transaction+0x155/0xae0 [btrfs]
-> [  125.135289]  [<ffffffffa03c27b9>] btrfs_create_uuid_tree+0x59/0x130 [btrfs]
-> [  125.146532]  [<ffffffffa039386d>] open_ctree+0x266d/0x2860 [btrfs]
-> [  125.156916]  [<ffffffffa0366ab4>] btrfs_mount+0xca4/0xec0 [btrfs]
-> [  125.167162]  [<ffffffff813cd4ae>] ? find_next_zero_bit+0x1e/0x20
-> [  125.177329]  [<ffffffff811bedfe>] ? pcpu_next_unpop+0x3e/0x50
-> [  125.187204]  [<ffffffff813cd489>] ? find_next_bit+0x19/0x20
-> [  125.196875]  [<ffffffff81227aa9>] mount_fs+0x39/0x160
-> [  125.205958]  [<ffffffff811c0035>] ? __alloc_percpu+0x15/0x20
-> [  125.215737]  [<ffffffff81243767>] vfs_kern_mount+0x67/0x110
-> [  125.225456]  [<ffffffffa0365f9b>] btrfs_mount+0x18b/0xec0 [btrfs]
-> [  125.235721]  [<ffffffff813cd4ae>] ? find_next_zero_bit+0x1e/0x20
-> [  125.245827]  [<ffffffff81227aa9>] mount_fs+0x39/0x160
-> [  125.254789]  [<ffffffff811c0035>] ? __alloc_percpu+0x15/0x20
-> [  125.264359]  [<ffffffff81243767>] vfs_kern_mount+0x67/0x110
-> [  125.273734]  [<ffffffff81246461>] do_mount+0x1c1/0xbe0
-> [  125.282527]  [<ffffffff81247163>] SyS_mount+0x83/0xd0
-> [  125.291119]  [<ffffffff816fee76>] entry_SYSCALL_64_fastpath+0x1e/0xa8
-> [  125.301200] Code: 88 00 00 00 31 c0 eb 03 83 c8 ff 5d c3 55 89 f1 48 c7 c2 20 eb 42 a0 48 89 fe 31 c0 48 c7 c7 70 eb 42 a0 48 89 e5 e8 97 2a d7 e0 <0f> 0b 55 89 f1 48 c7 c2 68 f8 42 a0 48 89 fe 31 c0 48 c7 c7 58
-> [  125.328902] RIP  [<ffffffffa0424171>] assfail.constprop.60+0x1e/0x20 [btrfs]
-> [  125.339842]  RSP <ffff880337a73570>
-> [  125.361059] ---[ end trace e840015104025162 ]---
-> 
-> -Jeff
-> 
-> -- 
-> Jeff Mahoney
-> SUSE Labs
-> 
+[  366.998044] BTRFS: device fsid 69759b3a-96ae-467d-aa63-364144e73a28
+devid 1 transid 3 /dev/sdc
+[  367.023652] BTRFS info (device sdc): turning on discard
+[  367.025036] BTRFS info (device sdc): disk space caching is enabled
+[  367.026360] BTRFS info (device sdc): has skinny extents
+[  367.069415] BTRFS info (device sdc): creating UUID tree
+[  367.133704] BTRFS info (device sdc): relocating block group 29360128 flags 36
+[  367.142196] BTRFS info (device sdc): found 2 extents
+[  367.147932] BTRFS info (device sdc): relocating block group 20971520 flags 34
+[  367.157947] BTRFS info (device sdc): found 1 extents
+[  367.162649] BTRFS info (device sdc): relocating block group 12582912 flags 1
+[  367.182872] BTRFS info (device sdc): found 1 extents
+[  367.189932] BTRFS info (device sdc): found 1 extents
+[  367.200983] BTRFS info (device sdc): relocating block group
+1270874112 flags 1
+[  367.235862] BTRFS critical (device sdc): corrupt leaf, non-root
+leaf's nritems is 0: block=1103937536,root=5, slot=0
+[  367.238223] BTRFS info (device sdc): leaf 1103937536 total ptrs 0
+free space 3995
+[  367.239371] BTRFS: assertion failed: 0, file: fs/btrfs/disk-io.c, line: 4059
+[  367.240321] ------------[ cut here ]------------
+[  367.241245] kernel BUG at fs/btrfs/ctree.h:3367!
+[  367.241961] invalid opcode: 0000 [#1] PREEMPT SMP
+[  367.242685] Modules linked in: btrfs crc32c_generic xor raid6_pq
+acpi_cpufreq tpm_tis tpm sg i2c_piix4 i2c_core psmouse ppdev processor
+evdev parport_pc parport serio_raw pcspkr button loop autofs4 ext4
+crc16 jbd2 mbcache sr_mod cdrom sd_mod ata_generic virtio_scsi
+ata_piix libata virtio_pci virtio_ring e1000 virtio scsi_mod floppy
+[last unloaded: btrfs]
+[  367.244302] CPU: 11 PID: 3451 Comm: fdm-stress Not tainted
+4.7.0-rc6-btrfs-next-34+ #1
+[  367.244302] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996),
+BIOS rel-1.9.1-0-gb3ef39f-prebuilt.qemu-project.org 04/01/2014
+[  367.244302] task: ffff880183ef8bc0 ti: ffff880183fe0000 task.ti:
+ffff880183fe0000
+[  367.244302] RIP: 0010:[<ffffffffa04601d5>]  [<ffffffffa04601d5>]
+assfail.constprop.42+0x1c/0x1e [btrfs]
+[  367.244302] RSP: 0018:ffff880183fe3c78  EFLAGS: 00010296
+[  367.244302] RAX: 0000000000000040 RBX: ffff880222a66ab0 RCX: 0000000000000001
+[  367.244302] RDX: ffffffff810a0a23 RSI: ffffffff814a82cb RDI: 00000000ffffffff
+[  367.244302] RBP: ffff880183fe3c78 R08: 0000000000000001 R09: 0000000000000000
+[  367.244302] R10: ffff880183fe3b70 R11: ffffffff82f3650d R12: ffff880183e8e000
+[  367.244302] R13: ffff8800b3e7d000 R14: 0000000000000a59 R15: 0000000000000017
+[  367.244302] FS:  00007f0b85310700(0000) GS:ffff88023f4c0000(0000)
+knlGS:0000000000000000
+[  367.244302] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+[  367.244302] CR2: 00007f0b7800ea28 CR3: 000000022da9b000 CR4: 00000000000006e0
+[  367.244302] Stack:
+[  367.244302]  ffff880183fe3ca0 ffffffffa03e51e3 0000000000000023
+ffff880222a66ab0
+[  367.244302]  ffff880183885bb8 ffff880183fe3d38 ffffffffa03c9540
+0000000083fe3d08
+[  367.244302]  ffff8800b3e7d2d8 0000000000001000 ffff880183fe3e7f
+ffff880183ff8000
+[  367.244302] Call Trace:
+[  367.244302]  [<ffffffffa03e51e3>] btrfs_mark_buffer_dirty+0xdf/0xe5 [btrfs]
+[  367.244302]  [<ffffffffa03c9540>] split_leaf+0x47c/0x566 [btrfs]
+[  367.244302]  [<ffffffffa03c9c09>] btrfs_search_slot+0x5df/0x755 [btrfs]
+[  367.244302]  [<ffffffff8116daf7>] ? slab_post_alloc_hook+0x42/0x52
+[  367.244302]  [<ffffffffa03caf5a>] btrfs_insert_empty_items+0x5d/0xa6 [btrfs]
+[  367.244302]  [<ffffffffa03f783b>] btrfs_symlink+0x17f/0x34f [btrfs]
+[  367.244302]  [<ffffffff8118bcf5>] vfs_symlink+0x51/0x6e
+[  367.244302]  [<ffffffff8118fc4c>] SYSC_symlinkat+0x6d/0xb2
+[  367.244302]  [<ffffffff8100101a>] ? trace_hardirqs_on_thunk+0x1a/0x1c
+[  367.244302]  [<ffffffff811904b6>] SyS_symlink+0x16/0x18
+[  367.244302]  [<ffffffff814a88e5>] entry_SYSCALL_64_fastpath+0x18/0xa8
+[  367.244302]  [<ffffffff81102507>] ? time_hardirqs_off+0x9/0x14
+[  367.244302]  [<ffffffff8108f019>] ? trace_hardirqs_off_caller+0x1f/0xaa
+[  367.244302] Code: 89 83 88 00 00 00 31 c0 5b 41 5c 41 5d 5d c3 55
+89 f1 48 c7 c2 14 8b 46 a0 48 89 fe 48 c7 c7 27 8c 46 a0 48 89 e5 e8
+e5 2f cc e0 <0f> 0b 55 89 f1 48 c7 c2 03 a2 46 a0 48 89 fe 48 c7 c7 dc
+a3 46
+[  367.244302] RIP  [<ffffffffa04601d5>] assfail.constprop.42+0x1c/0x1e [btrfs]
+[  367.244302]  RSP <ffff880183fe3c78>
+[  367.289039] ---[ end trace a3e4ce9819ed383b ]---
 
 
+thanks
 
+> ---
+>  fs/btrfs/disk-io.c | 10 +++++++---
+>  1 file changed, 7 insertions(+), 3 deletions(-)
+>
+> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+> index 9367c31..b401e6d 100644
+> --- a/fs/btrfs/disk-io.c
+> +++ b/fs/btrfs/disk-io.c
+> @@ -572,13 +572,17 @@ static noinline int check_leaf(struct btrfs_root *root,
+>                  * open_ctree() some roots has not yet been set up.
+>                  */
+>                 if (!IS_ERR_OR_NULL(check_root)) {
+> +                       struct extent_buffer *eb;
+> +
+> +                       eb = btrfs_root_node(check_root);
+>                         /* if leaf is the root, then it's fine */
+> -                       if (leaf->start !=
+> -                           btrfs_root_bytenr(&check_root->root_item)) {
+> +                       if (leaf != eb) {
+>                                 CORRUPT("non-root leaf's nritems is 0",
+> -                                       leaf, root, 0);
+> +                                       leaf, check_root, 0);
+> +                               free_extent_buffer(eb);
+>                                 return -EIO;
+>                         }
+> +                       free_extent_buffer(eb);
+>                 }
+>                 return 0;
+>         }
+> --
+> 2.5.5
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+
+
+
+-- 
+Filipe David Manana,
+
+"People will forget what you said,
+ people will forget what you did,
+ but people will never forget how you made them feel."

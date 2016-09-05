@@ -1,88 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:47949 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1754773AbcIEItn (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 5 Sep 2016 04:49:43 -0400
-Subject: Re: BTRFS constantly reports "No space left on device" even with a
- huge unallocated space
-To: Ronan Arraes Jardim Chagas <ronisbr@gmail.com>,
-        Jeff Mahoney <jeffm@suse.com>, Chris Murphy <lists@colorremedies.com>,
-        "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-References: <1471023419.16857.9.camel@gmail.com>
- <CAJCQCtTWJMigkeLUP0+aTFPwdpuJtMa3C4isercAfE_Wh3b=PQ@mail.gmail.com>
- <52290114-3b37-2de5-9c9f-ceda6dff955b@suse.com>
- <CAJCQCtSPLw5Kwunm6WdhDCiE8Kc7BcfZy6W9veuns7kBmgyivw@mail.gmail.com>
- <a61878b9-7b88-7aee-40cf-05368cd01d78@suse.com>
- <CAJCQCtTBfhXOLg3URfreG29NVfujPjEc0O_cnDFCzDQm0iRtaA@mail.gmail.com>
- <1472734635.3137.4.camel@gmail.com>
- <0778dff0-cb43-d279-adb2-0e314b61110d@gmail.com>
- <1472747695.3137.7.camel@gmail.com>
- <b0ec9154-16a5-5293-952a-0d5a988488e8@gmail.com>
- <ab83503e-58c5-e1b4-b1ba-1e1ea8313607@suse.com>
- <b9bd0a3d-0ae0-a30c-c14d-c85434134890@gmail.com>
- <CAJCQCtT1RptgW-_esKmm2_5eRTxd10wHNxwgNWHSD86LZJ7edQ@mail.gmail.com>
- <d1319d2e-3016-7eef-5f3f-87677600e13c@suse.com>
- <1472827395.3713.6.camel@gmail.com>
- <9dee919a-0e81-5ba7-ddc6-7dcdb3a6b873@suse.com>
- <1472829630.3713.8.camel@gmail.com>
- <506f2875-8cea-2d99-3664-52ee546adcfd@suse.com>
- <1472844353.3083.1.camel@gmail.com>
-CC: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <356a9e31-047e-d4c9-00ba-d01b6e92b266@cn.fujitsu.com>
-Date: Mon, 5 Sep 2016 16:49:33 +0800
+Received: from zaphod.cobb.me.uk ([213.138.97.131]:58902 "EHLO
+        zaphod.cobb.me.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S933253AbcIEJ7d (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 5 Sep 2016 05:59:33 -0400
+Received: from black.home.cobb.me.uk (unknown [192.168.0.205])
+        by zaphod.cobb.me.uk (Postfix) with ESMTP id 9A0499B96E
+        for <linux-btrfs@vger.kernel.org>; Mon,  5 Sep 2016 10:59:30 +0100 (BST)
+Received: from [192.168.0.211] (novatech.home.cobb.me.uk [192.168.0.211])
+        by black.home.cobb.me.uk (Postfix) with ESMTPS id 4B8D35FB5B
+        for <linux-btrfs@vger.kernel.org>; Mon,  5 Sep 2016 10:59:30 +0100 (BST)
+To: linux-btrfs@vger.kernel.org
+From: Graham Cobb <g.btrfs@cobb.uk.net>
+Subject: Security implications of btrfs receive?
+Message-ID: <c04c596d-4cb9-ed98-513a-c550b1be18b2@cobb.uk.net>
+Date: Mon, 5 Sep 2016 10:59:30 +0100
 MIME-Version: 1.0
-In-Reply-To: <1472844353.3083.1.camel@gmail.com>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Just like what Wang has mentioned, would you please paste all the output 
-of the contents of /sys/fs/btrfs/<your fs uuid>/allocation?
+Does anyone know of a security analysis of btrfs receive?
 
-It's recommended to use "grep . -IR <path>" to get all the data as it 
-will show the file name.
+I assume that just using btrfs receive requires root (is that so?).  But
+I was thinking of setting up a backup server which would receive
+snapshots from various client systems, each in their own path, and I
+wondered how much the security of the backup server (and other clients'
+backups) was dependent on the security of the client.
 
-Thanks,
-Qu
+Does the "path" argument of btrfs-receive mean that *all* operations are
+confined to that path?  For example, if a UUID or transid is sent which
+refers to an entity outside the path will that other entity be affected
+or used? Is it possible for a file to be created containing shared
+extents from outside the path? Is it possible to confuse/affect
+filesystem metadata which would affect the integrity of subvolumes or
+files outside the path or prevent other clients from doing something
+legitimate?
 
-At 09/03/2016 03:25 AM, Ronan Arraes Jardim Chagas wrote:
-> Hi guys!
->
-> Jeff was right. I had the problem again today and quotas are disabled
-> now. I couldn't get any useful message in log this time. Look at the
-> metadata:
->
-> btrfs fi usage /
-> Overall:
->     Device size:		   1.26TiB
->     Device allocated:		  43.07GiB
->     Device unallocated:		   1.21TiB
->     Device missing:		     0.00B
->     Used:			  41.94GiB
->     Free (estimated):		   1.21TiB	(min: 622.46GiB)
->     Data ratio:			      1.00
->     Metadata ratio:		      2.00
->     Global reserve:		 352.00MiB	(used: 0.00B)
->
-> Data,single: Size:40.01GiB, Used:39.94GiB
->    /dev/sda6	  40.01GiB
->
-> Metadata,DUP: Size:1.50GiB, Used:1.00GiB
->    /dev/sda6	   3.00GiB
->
-> System,DUP: Size:32.00MiB, Used:16.00KiB
->    /dev/sda6	  64.00MiB
->
-> Unallocated:
->    /dev/sda6	   1.21TiB
->
-> Any ideas to help me?
->
-> Regards,
-> Ronan Arraes
->
->
+Do the answers change if the --chroot option is given?  I am confused
+about the -m option -- does that mean that the root mount point has to
+be visible in the chroot?
 
+Lastly, even if receive is designed to be very secure, it is possible
+that it could trigger/use code paths in the btrfs kernel code which are
+not normally used during normal file operations and so could trigger
+bugs not normally seen.  Has any work been done on testing for that (for
+example tests using malicious streams, including ones which btrfs-send
+cannot generate)?
 
+I am just wondering whether any work has been done/published on this area.
+
+Regards
+Graham

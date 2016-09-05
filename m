@@ -1,108 +1,88 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:42328 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:47949 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1752686AbcIEHpb (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 5 Sep 2016 03:45:31 -0400
-Subject: Re: does btrfs-receive use/compare the checksums from the btrfs-send
- side?
-To: Christoph Anton Mitterer <calestyo@scientia.net>,
-        <linux-btrfs@vger.kernel.org>
-References: <1472355960.16760.9.camel@scientia.net>
- <640da4f0-4854-5135-aacc-350bfa99c6ed@cn.fujitsu.com>
- <1472963361.8683.14.camel@scientia.net>
+        with ESMTP id S1754773AbcIEItn (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 5 Sep 2016 04:49:43 -0400
+Subject: Re: BTRFS constantly reports "No space left on device" even with a
+ huge unallocated space
+To: Ronan Arraes Jardim Chagas <ronisbr@gmail.com>,
+        Jeff Mahoney <jeffm@suse.com>, Chris Murphy <lists@colorremedies.com>,
+        "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+References: <1471023419.16857.9.camel@gmail.com>
+ <CAJCQCtTWJMigkeLUP0+aTFPwdpuJtMa3C4isercAfE_Wh3b=PQ@mail.gmail.com>
+ <52290114-3b37-2de5-9c9f-ceda6dff955b@suse.com>
+ <CAJCQCtSPLw5Kwunm6WdhDCiE8Kc7BcfZy6W9veuns7kBmgyivw@mail.gmail.com>
+ <a61878b9-7b88-7aee-40cf-05368cd01d78@suse.com>
+ <CAJCQCtTBfhXOLg3URfreG29NVfujPjEc0O_cnDFCzDQm0iRtaA@mail.gmail.com>
+ <1472734635.3137.4.camel@gmail.com>
+ <0778dff0-cb43-d279-adb2-0e314b61110d@gmail.com>
+ <1472747695.3137.7.camel@gmail.com>
+ <b0ec9154-16a5-5293-952a-0d5a988488e8@gmail.com>
+ <ab83503e-58c5-e1b4-b1ba-1e1ea8313607@suse.com>
+ <b9bd0a3d-0ae0-a30c-c14d-c85434134890@gmail.com>
+ <CAJCQCtT1RptgW-_esKmm2_5eRTxd10wHNxwgNWHSD86LZJ7edQ@mail.gmail.com>
+ <d1319d2e-3016-7eef-5f3f-87677600e13c@suse.com>
+ <1472827395.3713.6.camel@gmail.com>
+ <9dee919a-0e81-5ba7-ddc6-7dcdb3a6b873@suse.com>
+ <1472829630.3713.8.camel@gmail.com>
+ <506f2875-8cea-2d99-3664-52ee546adcfd@suse.com>
+ <1472844353.3083.1.camel@gmail.com>
+CC: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <cc8972c4-6049-9102-fe4f-6dea13096b55@cn.fujitsu.com>
-Date: Mon, 5 Sep 2016 15:45:19 +0800
+Message-ID: <356a9e31-047e-d4c9-00ba-d01b6e92b266@cn.fujitsu.com>
+Date: Mon, 5 Sep 2016 16:49:33 +0800
 MIME-Version: 1.0
-In-Reply-To: <1472963361.8683.14.camel@scientia.net>
+In-Reply-To: <1472844353.3083.1.camel@gmail.com>
 Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Just like what Wang has mentioned, would you please paste all the output 
+of the contents of /sys/fs/btrfs/<your fs uuid>/allocation?
 
-
-At 09/04/2016 12:29 PM, Christoph Anton Mitterer wrote:
-> On Mon, 2016-08-29 at 16:25 +0800, Qu Wenruo wrote:
->> Send will generate checksum for each command.
-> What does "command" mean here? Or better said how much data is secured
-> with one CRC32?
-
-Command is one send command stream, containing all needed info for a 
-operation,
-like subvolume command, containing UUID,tranid,
-chown command, containing gid/uid,
-chmod command, containing mode,
-utimes command, containting acm times and a lot of others.
-
-For how much data is secured by 1 CRC32, it depends on the size of the 
-command.
-
-Normal command is quite small, but the exception would be write command.
-More than 48K bytes can be secured by one CRC32.
-
->
->
->> For send stream, it's CRC32 for the whole command.
-> And this is verified then on the receiving end?
-
-Yes.
-
->
->
-> Wouldn't it be useful (if this technically possibly) to use the
-> checksums directly from the sent blocks? That way one could also catch
-> any errors on the receiving side, that occurred after the checksum from
-> the receive was verified (e.g. memory errors).
->
-> And couldn't one do something similar locally, when btrfs copies
-> blocks?
->
-> At least something like this would seem to me like the most native way:
-> - One want's checksum protection
-> - One copies data
-> - One has already checksums for that data
-
-You can try my dump-send command branch, to verify how send/receive works:
-https://github.com/adam900710/btrfs-progs/tree/dump_send_stream
-
-With several try, you could find at least the following reasons:
-
-1) Not all data has checksum
-    Only non-inlined data has checksum.
-    Inlined data has no checksum (protected by leaf checksum then)
-
-2) Send doesn't following sectorsize unit for non-inlined data
-    Just create a 6K file, send the subvolume out, and use dump-send
-    to exam it.
-    You'll find that, send stream contains exactly 6K data, not 8K
-    (2* 4K, which 4K is sectorsize).
-
-    While for data checksum, that are all in sectorsize unit.
-
-3) We need to protect the whole command, not file data only.
-    Even write command contains metadata info, like the offset and length
-    of the write.
-    Since we need to protect the whole command, why not introduce the
-    complexity to use TWO CRC32 for meta and data?
-
->
-> => thus that should be used, as it's the most canonical version of a
->    checksum for that data... anything that is newly calculated could
->    in the best case just be good, and in the worst add new errors
->    (unnoticed),... e.g. when memory is broken and the new checksum is
->    calculated over that.
-
-However most bugs are not caused by memory corruption, but humans.
-So the command checksum design seems quite good for me though.
-It's unified, simple structure and expandable.
+It's recommended to use "grep . -IR <path>" to get all the data as it 
+will show the file name.
 
 Thanks,
 Qu
 
+At 09/03/2016 03:25 AM, Ronan Arraes Jardim Chagas wrote:
+> Hi guys!
 >
+> Jeff was right. I had the problem again today and quotas are disabled
+> now. I couldn't get any useful message in log this time. Look at the
+> metadata:
 >
-> Cheers,
-> Chris.
+> btrfs fi usage /
+> Overall:
+>     Device size:		   1.26TiB
+>     Device allocated:		  43.07GiB
+>     Device unallocated:		   1.21TiB
+>     Device missing:		     0.00B
+>     Used:			  41.94GiB
+>     Free (estimated):		   1.21TiB	(min: 622.46GiB)
+>     Data ratio:			      1.00
+>     Metadata ratio:		      2.00
+>     Global reserve:		 352.00MiB	(used: 0.00B)
+>
+> Data,single: Size:40.01GiB, Used:39.94GiB
+>    /dev/sda6	  40.01GiB
+>
+> Metadata,DUP: Size:1.50GiB, Used:1.00GiB
+>    /dev/sda6	   3.00GiB
+>
+> System,DUP: Size:32.00MiB, Used:16.00KiB
+>    /dev/sda6	  64.00MiB
+>
+> Unallocated:
+>    /dev/sda6	   1.21TiB
+>
+> Any ideas to help me?
+>
+> Regards,
+> Ronan Arraes
+>
 >
 
 

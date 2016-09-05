@@ -1,202 +1,160 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:31405 "EHLO
-        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751428AbcIBSgZ (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 2 Sep 2016 14:36:25 -0400
-Date: Fri, 2 Sep 2016 11:36:16 -0700
-From: Liu Bo <bo.li.liu@oracle.com>
-To: stek14@srv1.eu
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: kernel BUG at fs/btrfs/ctree.c:5213
-Message-ID: <20160902183601.GA13406@localhost.localdomain>
-Reply-To: bo.li.liu@oracle.com
-References: <82bc05ea-f3eb-422f-6688-be8404d12a12@srv1.eu>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <82bc05ea-f3eb-422f-6688-be8404d12a12@srv1.eu>
+Received: from mailgw-02.dd24.net ([193.46.215.43]:56587 "EHLO
+        mailgw-02.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1754240AbcIEOdt (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 5 Sep 2016 10:33:49 -0400
+Received: from mailpolicy-01.live.igb.homer.key-systems.net (mailpolicy-02.live.igb.homer.key-systems.net [192.168.1.27])
+        by mailgw-02.dd24.net (Postfix) with ESMTP id 139725FEDB
+        for <linux-btrfs@vger.kernel.org>; Mon,  5 Sep 2016 14:33:47 +0000 (UTC)
+Received: from mailgw-02.dd24.net ([192.168.1.36])
+        by mailpolicy-01.live.igb.homer.key-systems.net (mailpolicy-02.live.igb.homer.key-systems.net [192.168.1.25]) (amavisd-new, port 10236)
+        with ESMTP id LEkFmvwEz1Fz for <linux-btrfs@vger.kernel.org>;
+        Mon,  5 Sep 2016 14:33:45 +0000 (UTC)
+Received: from heisenberg.fritz.box (ppp-46-244-219-227.dynamic.mnet-online.de [46.244.219.227])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+        (No client certificate requested)
+        by mailgw-02.dd24.net (Postfix) with ESMTPSA
+        for <linux-btrfs@vger.kernel.org>; Mon,  5 Sep 2016 14:33:45 +0000 (UTC)
+Message-ID: <1473086024.8398.1.camel@scientia.net>
+Subject: Re: gazillions of Incorrect local/global backref count
+From: Christoph Anton Mitterer <calestyo@scientia.net>
+To: linux-btrfs@vger.kernel.org
+Date: Mon, 05 Sep 2016 16:33:44 +0200
+In-Reply-To: <20160905072757.GW16983@twin.jikos.cz>
+References: <1472964653.8683.17.camel@scientia.net>
+         <20160905072757.GW16983@twin.jikos.cz>
+Content-Type: multipart/signed; micalg="sha-512";
+        protocol="application/x-pkcs7-signature";
+        boundary="=-TPmh0qVo7aD+KUDIQhiG"
+Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Sep 02, 2016 at 04:58:43PM +0200, stek14@srv1.eu wrote:
-> Hi,
-> 
-> since a few weeks ago, my BTRFS (the root file system) sporadically crashes
-> leaving a "kernel BUG" message in dmesg. I also noticed some files behaving
-> like this:
-> 
-> $ ls -lai
-> ls: cannot access 'nlpsolver.jar': Stale file handle
-> ls: cannot access 'EvolutionarySolver.jar': Stale file handle
-> ls: cannot access 'description-en-US.txt': Stale file handle
-> ls: cannot access 'components.rdb': Stale file handle
-> ls: cannot access 'description.xml': Stale file handle
-> total 0
-> 1546821 drwxr-xr-x 1 root root 230 Apr 17 11:44 .
-> 1546727 drwxr-xr-x 1 root root  68 Apr 17 11:44 ..
->       ? -????????? ? ?    ?      ?            ? components.rdb
->       ? -????????? ? ?    ?      ?            ? description-en-US.txt
->       ? -????????? ? ?    ?      ?            ? description.xml
->       ? -????????? ? ?    ?      ?            ? EvolutionarySolver.jar
-> 1546828 drwxr-xr-x 1 root root  58 Apr 17 11:44 help
-> 1546829 drwxr-xr-x 1 root root 268 Apr 17 11:44 locale
-> 1546825 drwxr-xr-x 1 root root  24 Apr 17 11:44 META-INF
->       ? -????????? ? ?    ?      ?            ? nlpsolver.jar
-> 1546826 drwxr-xr-x 1 root root  14 Apr 17 11:44 registration
-> 
-> 
-> Every time I try to access them, I get the following in dmesg, always with
-> the same numbers:
-> 
-> [  274.448070] BTRFS error (device sda8): parent transid verify failed on
-> 31042928640 wanted 18412968017025564884 found 135380
-> 
 
-We have a commit[1] in 4.8 which has cleaned up this BUG_ON(), but
-apparently some metadata blocks have invalid content, I'd recommand trying
-btrfsck --repair, it's offline.
+--=-TPmh0qVo7aD+KUDIQhiG
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
-[1]:
-https://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/commit/?id=fb770ae414d018255afa7a70b14ba1f8620762dd
+On Mon, 2016-09-05 at 09:27 +0200, David Sterba wrote:
+> As others replied, it's a false positive. There's a fix on the way,
+> once
+> it's done I'll release 4.7.2.
+Yeah... thanks again for confirming... and sorry that I've missed the
+obvious earlier post :-/
 
-Thanks,
+Best wishes,
+Chris.
+--=-TPmh0qVo7aD+KUDIQhiG
+Content-Type: application/x-pkcs7-signature; name="smime.p7s"
+Content-Disposition: attachment; filename="smime.p7s"
+Content-Transfer-Encoding: base64
 
--liubo
+MIAGCSqGSIb3DQEHAqCAMIACAQExDzANBglghkgBZQMEAgMFADCABgkqhkiG9w0BBwEAAKCCEmow
+ggXiMIIDyqADAgECAhBctkhuRwyYxn/2gNtkSuKNMA0GCSqGSIb3DQEBCwUAMH0xCzAJBgNVBAYT
+AklMMRYwFAYDVQQKEw1TdGFydENvbSBMdGQuMSswKQYDVQQLEyJTZWN1cmUgRGlnaXRhbCBDZXJ0
+aWZpY2F0ZSBTaWduaW5nMSkwJwYDVQQDEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0
+eTAeFw0xNTEyMTYwMTAwMDVaFw0zMDEyMTYwMTAwMDVaMHUxCzAJBgNVBAYTAklMMRYwFAYDVQQK
+Ew1TdGFydENvbSBMdGQuMSkwJwYDVQQLEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0
+eTEjMCEGA1UEAxMaU3RhcnRDb20gQ2xhc3MgMiBDbGllbnQgQ0EwggEiMA0GCSqGSIb3DQEBAQUA
+A4IBDwAwggEKAoIBAQDuD1CMlQkjhKz1UGqP1jeiTiH9MgllRz6vOPrVG/eE0H/J4QQLV/PeL8RT
+4xc44bEzsoJu0IhwnEchb+TxE/qw88w7hxODuw3N8Faxix6a1jp83+RWvZHZf78+O+3GYBpekZfT
+Oe9A/FoTXbcgwZfLTMQodn+ckNnX31M/1M2f2/7VA7QBlvihontyHQOlIlryQXnGI0UMCD21oopK
+tW48ckv0wUVg8irBKGMeD65gTON/Fsw/ZBbBqadoD1jt85FIM1ql24WUBEBwO1d0ykCKOIbgcqes
+3fbcjQpruUNMBbIu1MMIRMqwjx/M7IvSKcS7VYRWl0/K2byzWvBAHh/1AgMBAAGjggFkMIIBYDAO
+BgNVHQ8BAf8EBAMCAQYwHQYDVR0lBBYwFAYIKwYBBQUHAwIGCCsGAQUFBwMEMBIGA1UdEwEB/wQI
+MAYBAf8CAQAwMgYDVR0fBCswKTAnoCWgI4YhaHR0cDovL2NybC5zdGFydHNzbC5jb20vc2ZzY2Eu
+Y3JsMGYGCCsGAQUFBwEBBFowWDAkBggrBgEFBQcwAYYYaHR0cDovL29jc3Auc3RhcnRzc2wuY29t
+MDAGCCsGAQUFBzAChiRodHRwOi8vYWlhLnN0YXJ0c3NsLmNvbS9jZXJ0cy9jYS5jcnQwHQYDVR0O
+BBYEFJmXqxg1OotZRUOYsnJxyPT7Cc8WMB8GA1UdIwQYMBaAFE4L7xqkQFulF2mHMMo0aEPQQa7y
+MD8GA1UdIAQ4MDYwNAYEVR0gADAsMCoGCCsGAQUFBwIBFh5odHRwOi8vd3d3LnN0YXJ0c3NsLmNv
+bS9wb2xpY3kwDQYJKoZIhvcNAQELBQADggIBAJlBQQTO9iT1TjA0eEO7V/1AbBvMAfibjAgofxmJ
+01jBmHKg0pbTjWInTTYoxb3LBgz3mfjvvS1PjnIfb29MyVm0G/PSHjgq7Ews1dEJMPC9XTuxPf2c
++MWLkynBlotW542JprW+iTWfZafyUtzIKW1hk0YASJ8zSSj8D++9yR+0UhkbvlECJkdi1+et0EaI
+7HIX6ccj1rfcFFflWX/fPT64dn9jpg9s0nuJug4WsVkEK236WndZoMHrZmgF7CIyZ3T0muqYwkAS
+DDcRt9A21o/Mc+D8Q6GVmKRGB3gEKvOtsioHZEqJv6CdAm3a6gloo5pX3RL1eCzc8Lzfs4T0ISZj
+r8xNMbTGlsuHaFH+stDewKsfnpo4N64OtAGrzmVfFFsMIRENRHsVlSEe/6LVpBpjn00+7bqEN3qe
+qSxIOraYJ12mJ08G4YnP2U1fadHIaS50O5ZXqAivoBl9pi/6CBNc5wIMlkXMyFZ0sLsI+9ErFDu9
+OJhX7iWCo69X0ydlzXj08+2K1PKyr+g6/vTPHur63JotNrhyoWEJyWEjBLA4QmJXfGpB5u+bCwNf
+sFpcYAlkiFt1Rs2vemgSBy3q4DHDbPKvr1YImZNRSHP+TX9NP94JRkmqcyD/qaN7u2JV1pRAlwG0
+npyrn6ZQM1QHV+iFbwQ4VqLMWk//QVo/rZy1MIIGPjCCBSagAwIBAgIQPZ6tDP/RHLwcz1F+2kRA
+DzANBgkqhkiG9w0BAQsFADB1MQswCQYDVQQGEwJJTDEWMBQGA1UEChMNU3RhcnRDb20gTHRkLjEp
+MCcGA1UECxMgU3RhcnRDb20gQ2VydGlmaWNhdGlvbiBBdXRob3JpdHkxIzAhBgNVBAMTGlN0YXJ0
+Q29tIENsYXNzIDIgQ2xpZW50IENBMB4XDTE2MDEwMjAyMDIzNloXDTE4MDEwMjAyMDIzNlowejEL
+MAkGA1UEBhMCREUxDzANBgNVBAgMBkJheWVybjERMA8GA1UEBwwITcO8bmNoZW4xITAfBgNVBAMM
+GENocmlzdG9waCBBbnRvbiBNaXR0ZXJlcjEkMCIGCSqGSIb3DQEJARYVY2FsZXN0eW9Ac2NpZW50
+aWEubmV0MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAsoxs789VtR81tlqeP2vwE3Cp
+YosZYRfrovj+Wb91paoV5OQcFuXA7yONnLsWxOnJ3AGgy1/wG79Ko+yHSmF2K88pEWjrFe0zmZWZ
+0b2OtMoKLEjxz7Nz2N7/lmgss8XinJ083LwLKSe4f+JLjnF5hX/g6wG4NkFXVOIf2YFZ0+c1NYFQ
+T6Vy42EWdk+JLDoXjyd2hEperLCz9rQr2k3wh0cn8R1FDUGerBGpMnvyKV6JXj5vZsqJnmiiId9e
+0IdBj4Wcs3hT2usk6dJYwHrZ8b7Fkv6BRq90DUI7i8+ukTdp5hnAb8TPSbe1JS4h3Jc7r2NVLkpo
+Gbuw98er9s2PEAvpECD3toO3ojBevL56vEDbGa5tXpvvcWCz6t3QyEKJ2E54hWw1fbUA0BtydQC0
+mhKBtrENVnnCDrSgiyBMnd8y+kw6iPKeJEjNObGubc4BZp47zPn/ZiDBaHue6S0MXsoS7XEGOuCU
+09S/8kD8wTecBg+KdlLSNkLm+xqx6Cy7zwcj3IuQv0PeWi4kfEkAJfl8IeAP/4049iA6a1rkhJl7
+1rDjpEGBCG+i9BAgBeNdHLtQ7bugdvU+GfHjFXEU1emUk91E2liML8kpCvhUAXcLhhL8bxPJiX2/
+VQ2esrpQVO56OzpivNauonLaWmHEKOSfPC3s5AKMytMTiUiszEUCAwEAAaOCAcMwggG/MAsGA1Ud
+DwQEAwIEsDAdBgNVHSUEFjAUBggrBgEFBQcDAgYIKwYBBQUHAwQwCQYDVR0TBAIwADAdBgNVHQ4E
+FgQUwRklxF1ZV2ooSMkFwLiK13apkK0wHwYDVR0jBBgwFoAUmZerGDU6i1lFQ5iycnHI9PsJzxYw
+bwYIKwYBBQUHAQEEYzBhMCQGCCsGAQUFBzABhhhodHRwOi8vb2NzcC5zdGFydHNzbC5jb20wOQYI
+KwYBBQUHMAKGLWh0dHA6Ly9haWEuc3RhcnRzc2wuY29tL2NlcnRzL3NjYS5jbGllbnQyLmNydDA4
+BgNVHR8EMTAvMC2gK6AphidodHRwOi8vY3JsLnN0YXJ0c3NsLmNvbS9zY2EtY2xpZW50Mi5jcmww
+IAYDVR0RBBkwF4EVY2FsZXN0eW9Ac2NpZW50aWEubmV0MCMGA1UdEgQcMBqGGGh0dHA6Ly93d3cu
+c3RhcnRzc2wuY29tLzBUBgNVHSAETTBLMAwGCisGAQQBgbU3BgEwOwYLKwYBBAGBtTcBAgQwLDAq
+BggrBgEFBQcCARYeaHR0cDovL3d3dy5zdGFydHNzbC5jb20vcG9saWN5MA0GCSqGSIb3DQEBCwUA
+A4IBAQBb8EIsoUN/tgUgQqrNXNtlksPep84kx5yRBgr71uf3ITLddGtzfDBj6KdZUoy7SG3MQkyO
+kvYmXBClj23rv8Iol48/3oi9XWZw5EV3uHrRse1TzQgMPZE0hZsDgkqXVoxMQfk55ndjZIHMfSkn
+hdnqSP5zZ4TCmDEKLppPMDcQSSrjilnbthpxlIJzeGeEFtrh6ssh/oF6mUaEGFcd8kx9RS51K1gt
+H4J36y4E6pKB7EdxG2+0yVzAIta8dkD/BiMCKRWhp1EmzQ2uIh2nX5y8t4e2xHHuiy11Yeq6UTW/
+JmfxF4xcbkNK/rv9ISBg9K+mZtg2QXr+P/CJBtej2RLUMIIGPjCCBSagAwIBAgIQPZ6tDP/RHLwc
+z1F+2kRADzANBgkqhkiG9w0BAQsFADB1MQswCQYDVQQGEwJJTDEWMBQGA1UEChMNU3RhcnRDb20g
+THRkLjEpMCcGA1UECxMgU3RhcnRDb20gQ2VydGlmaWNhdGlvbiBBdXRob3JpdHkxIzAhBgNVBAMT
+GlN0YXJ0Q29tIENsYXNzIDIgQ2xpZW50IENBMB4XDTE2MDEwMjAyMDIzNloXDTE4MDEwMjAyMDIz
+NlowejELMAkGA1UEBhMCREUxDzANBgNVBAgMBkJheWVybjERMA8GA1UEBwwITcO8bmNoZW4xITAf
+BgNVBAMMGENocmlzdG9waCBBbnRvbiBNaXR0ZXJlcjEkMCIGCSqGSIb3DQEJARYVY2FsZXN0eW9A
+c2NpZW50aWEubmV0MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAsoxs789VtR81tlqe
+P2vwE3CpYosZYRfrovj+Wb91paoV5OQcFuXA7yONnLsWxOnJ3AGgy1/wG79Ko+yHSmF2K88pEWjr
+Fe0zmZWZ0b2OtMoKLEjxz7Nz2N7/lmgss8XinJ083LwLKSe4f+JLjnF5hX/g6wG4NkFXVOIf2YFZ
+0+c1NYFQT6Vy42EWdk+JLDoXjyd2hEperLCz9rQr2k3wh0cn8R1FDUGerBGpMnvyKV6JXj5vZsqJ
+nmiiId9e0IdBj4Wcs3hT2usk6dJYwHrZ8b7Fkv6BRq90DUI7i8+ukTdp5hnAb8TPSbe1JS4h3Jc7
+r2NVLkpoGbuw98er9s2PEAvpECD3toO3ojBevL56vEDbGa5tXpvvcWCz6t3QyEKJ2E54hWw1fbUA
+0BtydQC0mhKBtrENVnnCDrSgiyBMnd8y+kw6iPKeJEjNObGubc4BZp47zPn/ZiDBaHue6S0MXsoS
+7XEGOuCU09S/8kD8wTecBg+KdlLSNkLm+xqx6Cy7zwcj3IuQv0PeWi4kfEkAJfl8IeAP/4049iA6
+a1rkhJl71rDjpEGBCG+i9BAgBeNdHLtQ7bugdvU+GfHjFXEU1emUk91E2liML8kpCvhUAXcLhhL8
+bxPJiX2/VQ2esrpQVO56OzpivNauonLaWmHEKOSfPC3s5AKMytMTiUiszEUCAwEAAaOCAcMwggG/
+MAsGA1UdDwQEAwIEsDAdBgNVHSUEFjAUBggrBgEFBQcDAgYIKwYBBQUHAwQwCQYDVR0TBAIwADAd
+BgNVHQ4EFgQUwRklxF1ZV2ooSMkFwLiK13apkK0wHwYDVR0jBBgwFoAUmZerGDU6i1lFQ5iycnHI
+9PsJzxYwbwYIKwYBBQUHAQEEYzBhMCQGCCsGAQUFBzABhhhodHRwOi8vb2NzcC5zdGFydHNzbC5j
+b20wOQYIKwYBBQUHMAKGLWh0dHA6Ly9haWEuc3RhcnRzc2wuY29tL2NlcnRzL3NjYS5jbGllbnQy
+LmNydDA4BgNVHR8EMTAvMC2gK6AphidodHRwOi8vY3JsLnN0YXJ0c3NsLmNvbS9zY2EtY2xpZW50
+Mi5jcmwwIAYDVR0RBBkwF4EVY2FsZXN0eW9Ac2NpZW50aWEubmV0MCMGA1UdEgQcMBqGGGh0dHA6
+Ly93d3cuc3RhcnRzc2wuY29tLzBUBgNVHSAETTBLMAwGCisGAQQBgbU3BgEwOwYLKwYBBAGBtTcB
+AgQwLDAqBggrBgEFBQcCARYeaHR0cDovL3d3dy5zdGFydHNzbC5jb20vcG9saWN5MA0GCSqGSIb3
+DQEBCwUAA4IBAQBb8EIsoUN/tgUgQqrNXNtlksPep84kx5yRBgr71uf3ITLddGtzfDBj6KdZUoy7
+SG3MQkyOkvYmXBClj23rv8Iol48/3oi9XWZw5EV3uHrRse1TzQgMPZE0hZsDgkqXVoxMQfk55ndj
+ZIHMfSknhdnqSP5zZ4TCmDEKLppPMDcQSSrjilnbthpxlIJzeGeEFtrh6ssh/oF6mUaEGFcd8kx9
+RS51K1gtH4J36y4E6pKB7EdxG2+0yVzAIta8dkD/BiMCKRWhp1EmzQ2uIh2nX5y8t4e2xHHuiy11
+Yeq6UTW/JmfxF4xcbkNK/rv9ISBg9K+mZtg2QXr+P/CJBtej2RLUMYIEfjCCBHoCAQEwgYkwdTEL
+MAkGA1UEBhMCSUwxFjAUBgNVBAoTDVN0YXJ0Q29tIEx0ZC4xKTAnBgNVBAsTIFN0YXJ0Q29tIENl
+cnRpZmljYXRpb24gQXV0aG9yaXR5MSMwIQYDVQQDExpTdGFydENvbSBDbGFzcyAyIENsaWVudCBD
+QQIQPZ6tDP/RHLwcz1F+2kRADzANBglghkgBZQMEAgMFAKCCAcUwGAYJKoZIhvcNAQkDMQsGCSqG
+SIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTYwOTA1MTQzMzQ0WjBPBgkqhkiG9w0BCQQxQgRAkPB0
+Smuw85EKme4Aa8gaHm/4s/esHyJ0pN/47+eWQCsPeIjFcpF45kEWUfoL4I860U8v8Ul0I4qGdxNs
+kbh+BDCBmgYJKwYBBAGCNxAEMYGMMIGJMHUxCzAJBgNVBAYTAklMMRYwFAYDVQQKEw1TdGFydENv
+bSBMdGQuMSkwJwYDVQQLEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0eTEjMCEGA1UE
+AxMaU3RhcnRDb20gQ2xhc3MgMiBDbGllbnQgQ0ECED2erQz/0Ry8HM9RftpEQA8wgZwGCyqGSIb3
+DQEJEAILMYGMoIGJMHUxCzAJBgNVBAYTAklMMRYwFAYDVQQKEw1TdGFydENvbSBMdGQuMSkwJwYD
+VQQLEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0eTEjMCEGA1UEAxMaU3RhcnRDb20g
+Q2xhc3MgMiBDbGllbnQgQ0ECED2erQz/0Ry8HM9RftpEQA8wDQYJKoZIhvcNAQEBBQAEggIAmiTZ
+YB3s8NgdzRfmwdef95CTIM3S/ZdG1YzfwXt/KuR9NjjlkxL91lKaAdQaKtGZZQHb2livlNR2t67w
+2UAPGObX2K90zdLY7pSpZfviQRPmWeF02r+RACV6Tq47s51Qn3AK5VFR2UN2ZLxQ2tU1UAek1Fe9
+XgTFUIyur2OO1EyWj9PTy5NgwwdC0KhZD923NlaGwj236OzREif3i1BTdTU0RkSOeD4yuCs+bJZZ
+JyGP9EeP0MR6b7c6z/z+RxtnNzJPJyMzTPfEgyhevDsZarB27nwOz6DyEOeWbAf3N8p5ocZRVpKO
+cJQkv/smz+431vkfP+Ew/0EJv38X8eBohT6RACtbAWsheoKQUixB0arE/Lep5SXrdBg0eqr3EAqv
+iBRoJ5OLzhfhGhxqcA2o5xmnbCNLmHuns7465fFjRBOg3oE2Wl6P8KGSntMdRZAk4Gq0XoleuIDq
+1tZAkgxUfe4fiGNP6WVSO41u8AeiA+bdvQfkCJC5albzitDR+Sn69INhz3Ao6M9zZ4Ovg4NRb0Uv
+dtracFm9NQpf2tECFtuwsBk35kopPXsVgGZXsp8eCgf1+TljoZaODz903JSO89GPBQcqiA0l4vAN
+gQ9Q4zEiPcUGwdVVlZOjrzKqeC8FW7jZo9pu+E2Vxf3uNl4ZbSNQNud1u/zQ4tiz8MzIOhoAAAAA
+AAA=
 
-> 
-> Then suddenly, usually while doing something unrelated like loading a
-> website in my browser, a "kernel BUG" appears in dmesg, most programs freeze
-> and I can only recover by rebooting. It was still possible to save the
-> output of dmesg, which I copied below. I guess that even if my file system
-> is currupted, this should not happen?
-> 
-> In addition to reporting this bug, I would like to ask what I can do to
-> repair the file system? btrfs scrub does not return any errors, and the
-> usual articles describing the "parent transid verify failed" error assume
-> the "wanted" and "found" IDs differ only by a small number, so I guess they
-> don't apply to my situation? Can someone give me some advice? If I can't
-> repair it, it would at least be good to have a list which files are currupt,
-> so I can set up a new file system and restore them from a backup.
-> 
-> Thank you!
-> 
-> Florian
-> 
-> 
-> 
-> Here is some more information:
-> 
-> dmesg output:
-> [18101.021285] BTRFS error (device sda8): parent transid verify failed on
-> 31042928640 wanted 18412968017025564884 found 135380
-> [18101.021479] BTRFS error (device sda8): parent transid verify failed on
-> 31042928640 wanted 18412968017025564884 found 135380
-> [27168.533582] verify_parent_transid: 12 callbacks suppressed
-> [27168.533587] BTRFS error (device sda8): parent transid verify failed on
-> 31042928640 wanted 18412968017025564884 found 135380
-> [27168.533627] ------------[ cut here ]------------
-> [27168.534696] kernel BUG at fs/btrfs/ctree.c:5213!
-> [27168.535684] invalid opcode: 0000 [#1] PREEMPT SMP
-> [27168.536613] Modules linked in: sha256_ssse3 sha256_generic hmac drbg
-> ansi_cprng ctr ccm joydev snd_hda_codec_hdmi mousedev snd_hda_codec_realtek
-> snd_hda_codec_generic mei_wdt dell_wmi sparse_keymap iTCO_wdt
-> iTCO_vendor_support ppdev intel_rapl x86_pkg_temp_thermal intel_powerclamp
-> coretemp kvm_intel kvm arc4 irqbypass crct10dif_pclmul crc32_pclmul
-> dell_laptop ghash_clmulni_intel dell_smbios nls_iso8859_1 dcdbas
-> dell_smm_hwmon nls_cp437 vfat i915 fat aesni_intel aes_x86_64 lrw gf128mul
-> glue_helper ablk_helper cryptd intel_cstate iwlmvm intel_rapl_perf uvcvideo
-> mac80211 evdev input_leds mac_hid videobuf2_vmalloc drm_kms_helper pcspkr
-> videobuf2_memops videobuf2_v4l2 videobuf2_core psmouse btusb serio_raw btrtl
-> drm btbcm btintel iwlwifi videodev snd_hda_intel i2c_i801 snd_hda_codec
-> bluetooth intel_gtt
-> [27168.539869]  syscopyarea media sysfillrect sysimgblt cfg80211
-> snd_soc_rt5640 fb_sys_fops i2c_algo_bit mei_me crc16 e1000e lpc_ich mei
-> snd_hda_core snd_soc_rl6231 parport_pc snd_soc_ssm4567 ptp snd_soc_core
-> parport pps_core snd_hwdep shpchp wmi snd_compress thermal battery
-> int3403_thermal dell_smo8800 fan snd_pcm_dmaengine ac97_bus snd_pcm
-> snd_soc_sst_acpi snd_soc_sst_match snd_timer elan_i2c fjes i2c_hid 8250_dw
-> snd hid soundcore spi_pxa2xx_platform processor_thermal_device
-> i2c_designware_platform dell_rbtn int3406_thermal i2c_designware_core
-> int3400_thermal video tpm_tis acpi_als kfifo_buf industrialio tpm
-> int3402_thermal acpi_pad int340x_thermal_zone intel_soc_dts_iosf ac button
-> acpi_thermal_rel rfkill sch_fq_codel ip_tables x_tables btrfs xor raid6_pq
-> sd_mod atkbd libps2 crc32c_intel ahci libahci
-> [27168.543479]  libata scsi_mod ehci_pci ehci_hcd xhci_pci xhci_hcd
-> sdhci_pci usbcore usb_common i8042 serio sdhci_acpi sdhci led_class mmc_core
-> [27168.546045] CPU: 2 PID: 1012 Comm: mozStorage #1 Tainted: G U
-> 4.7.2-1-ARCH #1
-> [27168.547318] Hardware name: Dell Inc. Latitude E7450/0D8H72, BIOS A06
-> 08/31/2015
-> [27168.548587] task: ffff8800c2afaac0 ti: ffff8800c1344000 task.ti:
-> ffff8800c1344000
-> [27168.549845] RIP: 0010:[<ffffffffa01f5661>] [<ffffffffa01f5661>]
-> btrfs_search_forward+0x251/0x330 [btrfs]
-> [27168.551109] RSP: 0018:ffff8800c1347a90  EFLAGS: 00010246
-> [27168.552368] RAX: 0000000000000000 RBX: 0000000000000000 RCX:
-> 0000000000000000
-> [27168.553644] RDX: 0000000000000001 RSI: 0000000000000000 RDI:
-> ffff8800da2251a0
-> [27168.554910] RBP: ffff8800c1347af8 R08: 0000000701400000 R09:
-> 0000000741400000
-> [27168.556176] R10: 0000000000000000 R11: ffffffff81a7ba4d R12:
-> ffff8800b310fc40
-> [27168.557447] R13: 0000000000000001 R14: 0000000000000000 R15:
-> 000000000003a9f1
-> [27168.558718] FS:  00007f616b2ff700(0000) GS:ffff88021e500000(0000)
-> knlGS:0000000000000000
-> [27168.560040] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
-> [27168.561308] CR2: 00007f615d790000 CR3: 00000001f7432000 CR4:
-> 00000000003406e0
-> [27168.562574] DR0: 0000000000000000 DR1: 0000000000000000 DR2:
-> 0000000000000000
-> [27168.563841] DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7:
-> 0000000000000400
-> [27168.565087] Stack:
-> [27168.566321]  01b16b0056bdd1d0 00ff480000000000 ffff8800c1347bc3
-> ffff880214045000
-> [27168.567561]  46000000000000b1 010000000000431b 0000000000000000
-> 00000000f358f9a8
-> [27168.568797]  ffff8801f2660a50 ffff8800da101688 ffff8801f2660a50
-> ffff8800b310fc40
-> [27168.570033] Call Trace:
-> [27168.571270]  [<ffffffffa029b2cd>] btrfs_log_inode+0x394/0xb57 [btrfs]
-> [27168.572498]  [<ffffffffa021af50>] ? do_async_commit+0x40/0x40 [btrfs]
-> [27168.573723]  [<ffffffffa029bc81>] log_new_dir_dentries+0x1f1/0x528
-> [btrfs]
-> [27168.574946]  [<ffffffffa025e385>] btrfs_log_inode_parent+0x8b5/0x960
-> [btrfs]
-> [27168.576163]  [<ffffffffa0217a98>] ? wait_current_trans.isra.8+0x58/0x110
-> [btrfs]
-> [27168.577384]  [<ffffffffa02173c2>] ? join_transaction.isra.2+0x112/0x410
-> [btrfs]
-> [27168.578606]  [<ffffffffa025f422>] btrfs_log_dentry_safe+0x62/0x80 [btrfs]
-> [27168.579811]  [<ffffffffa023230f>] btrfs_sync_file+0x2af/0x3f0 [btrfs]
-> [27168.580986]  [<ffffffff8122db6b>] vfs_fsync_range+0x4b/0xb0
-> [27168.582158]  [<ffffffff8122dc2d>] do_fsync+0x3d/0x70
-> [27168.583363]  [<ffffffff8122dee3>] SyS_fdatasync+0x13/0x20
-> [27168.584593]  [<ffffffff815de7b2>] entry_SYSCALL_64_fastpath+0x1a/0xa4
-> [27168.585759] Code: 48 8b 55 a8 48 8b 7d b0 4d 89 f8 44 89 e9 4c 89 e6 e8
-> 44 fb ff ff 85 c0 0f 85 c1 00 00 00 4c 89 e7 e8 d4 7d ff ff e9 f8 fd ff ff
-> <0f> 0b 48 8d 04 92 43 89 54 ac 40 48 8d 75 bf b9 11 00 00 00 48
-> [27168.587061] RIP  [<ffffffffa01f5661>] btrfs_search_forward+0x251/0x330
-> [btrfs]
-> [27168.588311]  RSP <ffff8800c1347a90>
-> [27168.595772] ---[ end trace a1ed8484eb98289b ]---
-> [27393.213272] systemd[1]: systemd-journald.service: State 'stop-sigabrt'
-> timed out. Terminating.
-> 
-> $ uname -a
-> Linux dell 4.7.2-1-ARCH #1 SMP PREEMPT Sat Aug 20 23:02:56 CEST 2016 x86_64
-> GNU/Linux
-> $ btrfs --version
-> btrfs-progs v4.7
-> $ btrfs fi show
-> $ btrfs fi df /
-> Data, single: total=107.01GiB, used=78.94GiB
-> System, single: total=32.00MiB, used=16.00KiB
-> Metadata, single: total=2.01GiB, used=639.95MiB
-> GlobalReserve, single: total=224.00MiB, used=0.00B
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+
+--=-TPmh0qVo7aD+KUDIQhiG--
+

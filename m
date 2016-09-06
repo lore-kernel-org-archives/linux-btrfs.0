@@ -1,29 +1,27 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:45203 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:42755 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S934130AbcIEQte (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 5 Sep 2016 12:49:34 -0400
-Date: Mon, 5 Sep 2016 18:48:02 +0200
+        id S1755955AbcIFPmE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 6 Sep 2016 11:42:04 -0400
+Date: Tue, 6 Sep 2016 17:40:30 +0200
 From: David Sterba <dsterba@suse.cz>
-To: Steven Haigh <netwiz@crc.id.au>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
 Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 1/2] btrfs-progs: mkfs: Warn user for minimal RAID5/6
- devices setup
-Message-ID: <20160905164802.GZ16983@twin.jikos.cz>
+Subject: Re: [PATCH 2/2] btrfs-progs: Doc: Add warning for build RAID btrfs
+ on partions from the same device
+Message-ID: <20160906154030.GD16983@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
 References: <20160902014145.7817-1-quwenruo@cn.fujitsu.com>
- <8dc214ad-1ebf-c380-95b7-bdc36bcc9c31@crc.id.au>
+ <20160902014145.7817-2-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <8dc214ad-1ebf-c380-95b7-bdc36bcc9c31@crc.id.au>
+In-Reply-To: <20160902014145.7817-2-quwenruo@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Sep 02, 2016 at 11:59:07AM +1000, Steven Haigh wrote:
-> Is it worthwhile adding a note that RAID5 / RAID6 may very well eat your
-> data at this stage?
+On Fri, Sep 02, 2016 at 09:41:45AM +0800, Qu Wenruo wrote:
+> Quite a common sense for any RAID-like multi-device setup, just in case.
+> 
+> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 
-This depends on the kernel implementation, so it needs to take that into
-account. There's a patchset in the works to automatically select mkfs
-features based on kernel so a warning for features like raid56 will be
-built on top of that.
+Both applied, thanks.

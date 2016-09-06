@@ -1,41 +1,63 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:40163 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:51512 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S933062AbcIFRmL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 6 Sep 2016 13:42:11 -0400
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 9DAABAB1A
-        for <linux-btrfs@vger.kernel.org>; Tue,  6 Sep 2016 17:42:09 +0000 (UTC)
-Date: Tue, 6 Sep 2016 19:40:38 +0200
+        id S1750940AbcIFQvx (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 6 Sep 2016 12:51:53 -0400
+Date: Tue, 6 Sep 2016 18:50:19 +0200
 From: David Sterba <dsterba@suse.cz>
-To: jeffm@suse.com
+To: Liu Bo <bo.li.liu@oracle.com>
 Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 15/31] btrfs: call functions that overwrite their root
- parameter with fs_info
-Message-ID: <20160906174038.GG16983@twin.jikos.cz>
+Subject: Re: [PATCH 7/7] Btrfs: fix memory leak due to invalid btree height
+Message-ID: <20160906165019.GE16983@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <1466806524-27508-1-git-send-email-jeffm@suse.com>
- <1466806524-27508-16-git-send-email-jeffm@suse.com>
+References: <1463184422-13584-1-git-send-email-bo.li.liu@oracle.com>
+ <1463184422-13584-7-git-send-email-bo.li.liu@oracle.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1466806524-27508-16-git-send-email-jeffm@suse.com>
+In-Reply-To: <1463184422-13584-7-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+On Fri, May 13, 2016 at 05:07:02PM -0700, Liu Bo wrote:
+> Thanks to fuzz testing, we can have invalid btree root node height.
 
-On Fri, Jun 24, 2016 at 06:15:08PM -0400, jeffm@suse.com wrote:
-> From: Jeff Mahoney <jeffm@suse.com>
+Shouldn't we do this kind of sanity checks earlier? Not at the search
+slot time but when it's read from disk. The check that you're adding can
+stay, but without the early check we could hit it very often thus making
+it very noisy.
+
+> Btrfs limits btree height to 7 and if the given height is 9, then btrfs
+> will have problems in both releasing root node's lock and freeing the node.
+
+
 > 
-> There are 11 functions that accept a root parameter and immediately
-> overwrite it.  We can pass those an fs_info pointer instead.
+> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+> ---
+>  fs/btrfs/ctree.c | 7 +++++++
+>  1 file changed, 7 insertions(+)
 > 
-> Signed-off-by: Jeff Mahoney <jeffm@suse.com>
-
-including this patch, the rest of the series hasn't been merged in the
-last cycle.
-
-The first batch of 4.9 patches is done, please refresh the series on top
-of that. Branch misc-4.9 in
-http://repo.or.cz/linux-2.6/btrfs-unstable.git or
-https://github.com/kdave/btrfs-devel . Thanks.
+> diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
+> index ec7928a..3fccbcc 100644
+> --- a/fs/btrfs/ctree.c
+> +++ b/fs/btrfs/ctree.c
+> @@ -2756,6 +2756,13 @@ again:
+>  			}
+>  		}
+>  	}
+> +	if (level > BTRFS_MAX_LEVEL - 1 || level < 0) {
+> +		WARN_ONCE(1, KERN_WARNING "Invalid btree height %d\n", level);
+> +		if (!p->skip_locking)
+> +			btrfs_tree_unlock_rw(b, root_lock);
+> +		free_extent_buffer(b);
+> +		return -EINVAL;
+> +	}
+>  	p->nodes[level] = b;
+>  	if (!p->skip_locking)
+>  		p->locks[level] = root_lock;
+> -- 
+> 2.5.5
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

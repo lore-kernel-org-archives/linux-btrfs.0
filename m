@@ -1,136 +1,98 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [195.159.176.226] ([195.159.176.226]:38477 "EHLO
-        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
-        with ESMTP id S1755152AbcIFRxU (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 6 Sep 2016 13:53:20 -0400
-Received: from list by blaine.gmane.org with local (Exim 4.84_2)
-        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-        id 1bhKYb-0007MH-2L
-        for linux-btrfs@vger.kernel.org; Tue, 06 Sep 2016 19:53:13 +0200
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: [OT] ccache and tmpfs builds Was: Balancing subvolume on a
- specific device
-Date: Tue, 6 Sep 2016 17:53:06 +0000 (UTC)
-Message-ID: <pan$61e17$eb30f82d$a4aee2d7$72847bb2@cox.net>
-References: <df03a71c-8558-520c-af1b-ffb152f65a7d@davideddu.org>
-        <20160819171734.GJ20440@carfax.org.uk>
-        <pan$dbf6f$52e9f6f3$42f8cce4$2ebbbbc6@cox.net>
-        <20160901214519.79d27445@jupiter.sol.kaishome.de>
-        <pan$97e1b$477b3a63$5742ac9b$a63fe8a6@cox.net>
-        <ba97bb60-7b59-9fe0-b255-a39c6ab4e420@gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Received: from mail-wm0-f50.google.com ([74.125.82.50]:34724 "EHLO
+        mail-wm0-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1753827AbcIFVxw (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 6 Sep 2016 17:53:52 -0400
+Received: by mail-wm0-f50.google.com with SMTP id w207so36849756wmw.1
+        for <linux-btrfs@vger.kernel.org>; Tue, 06 Sep 2016 14:53:52 -0700 (PDT)
+Subject: Re: btrfs send extremely slow (almost stuck)
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
+References: <03b9d0b0-7001-7dd9-75cd-69d58b94d553@googlemail.com>
+ <6bebd709-8fdd-5e88-650d-f1c551946505@cn.fujitsu.com>
+ <2926d118-6a2f-2066-529d-1dd8335200dc@googlemail.com>
+ <a7ead62b-38f5-2ed6-c24b-1960a8fc6ba8@cn.fujitsu.com>
+ <5e6e606d-e75c-b7f1-0a9f-4e36090659eb@googlemail.com>
+ <2ae7659b-ebb2-200b-174e-9ca186cb22cd@cn.fujitsu.com>
+ <22d296fa-7673-780a-0171-d87f2d7bbce6@googlemail.com>
+ <d42a9f0a-5e30-3977-f74e-eece05308537@cn.fujitsu.com>
+From: Oliver Freyermuth <o.freyermuth@googlemail.com>
+Message-ID: <5ef3f999-c714-bb03-aca7-719aff0d39a7@googlemail.com>
+Date: Tue, 6 Sep 2016 23:53:49 +0200
+MIME-Version: 1.0
+In-Reply-To: <d42a9f0a-5e30-3977-f74e-eece05308537@cn.fujitsu.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Austin S. Hemmelgarn posted on Tue, 06 Sep 2016 08:32:02 -0400 as
-excerpted:
+Am 06.09.2016 um 04:46 schrieb Qu Wenruo:
+> But your idea to locate the inode seems good enough for debugging though.
 
-> On 2016-09-02 06:55, Duncan wrote:
->> Kai Krakow posted on Thu, 01 Sep 2016 21:45:19 +0200 as excerpted:
->>
->>> Off topic: Is ccache really that helpful? I dumped it a few years ago
+Based on this I even had another idea which seems to have worked well - and I am now also able to provide any additional debug output you may need. 
 
->>> What would help a whole lot more would be to cache this really really
->>> inefficient configure tool of hell which often runs much longer than
->>> the build phase of the whole source itself.
->>
->> IDK if you were around back then, but some time ago there was a
->> confcache project that tried to do just that.  But unfortunately, it
->> was enough of a niche use-case (most folks just run binary distros and
->> don't care, and others have switched to cmake or the like and don't
->> care) and came with enough problem corner-cases that required upstream
->> cooperation that wasn't coming as they didn't care, to fix, that the
->> project was eventually given up.  =:^(
 
-> Alternatively, there's a mechanism (I think it's called something like
-> config.local) that lets you pre-load certain things in the configure
-> script.  Some things aren't safe to load here, but many package
-> invariant things (like if you have working headers, or how malloc(0)
-> returns, or similar things that are never going to change unless you
-> change your CHOST) can be put here.  I don't know how much it may help
-> speed things up (I don't use it right now myself), but it may be worth
-> trying.
+Since my procedure may be interesting / helpful for other "debugging users", I'll shortly outline it here. 
+I had enough extra space on an external HDD. I cloned the full btrfs partition with 'dd' to an image on this HDD.
+I loop'ed that image read-only on another machine, created an overlay-file and used device mapper
+to get a read-write block device for any experiment (based on the read-only image).
+Details on that e.g. at https://raid.wiki.kernel.org/index.php/Recovering_a_failed_software_RAID#Making_the_harddisks_read-only_using_an_overlay_file . 
 
-Good point.  I'm not far enough to the developer side to know the 
-details, but IIRC confcache actually worked by prepopulating 
-config.local, thereby bypassing various tests where the result was 
-already cached.  The problem was, however, that there were too many 
-corner-cases that should have invalidated the cache or part of it that 
-were too hard to catch reliably, making it a maintainability nightmare as 
-code was added to take care of all these corner-cases.  I strongly 
-believe that's what ultimately did the project in.  Well, that and the 
-primary guy behind it graduating or whatever and moving on, I think, but 
-it made enough difference that were it /easy/ to maintain, someone would 
-have definitely done so.
 
-[On parallel builds as a work-around]
+> In this case, before reverting to a backup, would you please run a "btrfsck check" and paste the output?
 
-> Pretty much the same here, I just don't use parallel builds ATM (I've
-> had lots of ebuild bugs hit me recently, and it's a bit easier to debug
-> such things if everything is serialized)
+Now, I ran 'btrfs check' on that device. I'm using the very fresh btrfs-progs 4.7.2. 
+The output is here:
+http://pastebin.com/rMrW40RU
+Notably, it claims to have found some other issues, mainly wrong link counts and dir isizes, but for various inodes...
 
-I've pretty much gone the other way.  Parallel by default (I have 
-scriptlets that handle the emerge commandline details and all the default 
-ones add the --jobs and --load-average options), but with builds in tmpfs 
-and ccache, when something fails, 90%+ of the time I simply rebuild it 
-individually instead of finding the log.  In fact, with the defaults 
-including continue as well, so portage continues on to build other 
-packages even if one fails, most of the time it's continuing on after 
-I've caught the failed build and am rerunning it in a different terminal 
-window with full output to the terminal.
+Now, I could also safely run 'btrfs check --repair' on this device without any risks.
+The output from that is here:
+http://pastebin.com/XW9ChuqU
 
-Say there's 50 packages to update and #13 fails.  But by the time it 
-fails 14-16 are already building and complete just fine, and while it 
-won't schedule any new builds after a failure until it recalculates the 
-build graph and removes deps of the failed, once it does that it 
-continues on.  So in our example original #20 and 21 are dropped as 
-reverse deps of the failed, but of the first 16, 15 succeeded and one 
-failed, and of the entire 50, two more are dropped.  After the 
-recalulation it then has (original) #17-19 and 22-50 to build.  So then 
-it starts the recalculated set with 32 (if I did my math right), and 
-continues building from there.
+Another 'btrfs check' run afterwards now reveals different issues:
+http://pastebin.com/TFKJa81e
 
-But by this time I've noticed the failed #13 and set it rebuilding with 
-output to a different terminal.  Because of the load-average limits that 
-simply slows up the continuing rebuild of the 32 a bit, but with the 
-builds in tmpfs, the rebuild now ccached, and the rebuild's reads all in 
-system cache, the rebuild will go quite fast even with a heavy load from 
-the continuing build in the other terminal, and it's simply easier to 
-redo the single failed build and get the log on-terminal this time, than 
-it is to load the failed build log in a text editor.
+Now, another repair:
+http://pastebin.com/33iqaE9E
 
-So I rebuild the failed one by itself, and sometimes it'll build fine the 
-second time around -- maybe it was just an undeclared dep that's built 
-now or something.  (Since I'm running live-git kde, sometimes those live-
-build deps in particular have changed and it simply hasn't been reflected 
-in the ebuild yet.)
+Now, finally, btrfs check is happy:
+http://pastebin.com/izkERtKp
 
-Or with a live-git package sometimes the dev has already caught and fixed 
-the problem and a rebuild "just works".
+After mounting, finally (kernel 4.7.2) I see in kernel log:
+[12108.696912] BTRFS info (device dm-0): disk space caching is enabled
+[12108.713176] BTRFS info (device dm-0): checking UUID tree
 
-Or it may be something easily solved by a simple patch, often quickly 
-googled from bugzie or whatever, that I can simply drop in /etc/portage/
-patches, and again rebuild.  Or I can bypass the problem with a quick 
-entry in package.use or package.env.
+I can now delete the "broken" .thunderbird folder on this "repaired" fs.
+I can also mount it and write data on it.
 
-In these cases I'll often have the problem solved and the package and any 
-reverse deps that dropped out of the automatic build due to the failure, 
-manually rebuilt or well on the way, before the rest of those 32 packages 
-in the automatic rebuild have finished.
+Concluding from these results that it should be safe to do the same to my original block device with the same btrfs-progs version
+I did just that (check, repair, check, repair, check) from a live system directly on the machine. 
+Up until now, the FS seems to be doing well again - I took the chance to enable skinny extents and am now doing a full metadata balance,
+saving me about 0.25 % of metadata space. 
+So finally, first time in my life, 'btrfs check --repair' did not eat my data! :-) 
 
-Of course if it's something like qtwebkit, that takes "forever" to build, 
-I'll sometimes just look at the log file rather than just restarting the 
-build to get a live log.  But most of the time it's just easier to do the 
-manual rebuild with the live-log to terminal, and see what failed (and if 
-it was just a temp failure that's already fixed) that way.  Let the multi-
-core cpu and build in tmpfs do the grunt work, while I focus on fixing 
-the real problems instead of bothering with tab completion to get the 
-log.  That's what I bought both the cpu and extra memory for, after all.
 
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+The cool thing is that now I still have the broken image (extracted with dd) around and can play with it to provide you with any debug-info
+without having to work directly with the broken FS on the machine itself. 
 
+
+Now, let's get started on that.
+
+ls -aldi .thunderbird-broken/p6bm45oa.default/
+162786 drwx------ 1 olifre olifre 2482  5. Sep 23:07 .thunderbird-broken/p6bm45oa.default/
+As you can see, I had renamed .thunderbird to .thunderbird-broken. The real issue is in any case the profile-subfolder within.
+So the affected ino is indeed 162786 which also shows up (as one of several issues...) in the btrfs check (and repair) output.
+
+> Further more, your btrfs-debug-tree dump should provide more help for this case.
+
+Just to make sure the debug-tree output matches the rest of all the information I'm giving you, I re-ran that on the dd'ed image from the broken FS like so:
+btrfs-debug-tree -t 442 xmg13.img | sed "s/name:.*//" > debug-tree
+
+I ran the output through xz (or rather, pixz) and here it is:
+https://cernbox.cern.ch/index.php/s/imjwqsOFerUklqr/download
+I'll probably not keep the file up there forever, but at least for quite some days.
+
+If you can think of any other information which may be useful to diagnose the underlying issue which caused that corruption
+just let me know. I'll keep the image of the broken FS around for a few weeks.
+
+Cheers, 
+	Oliver

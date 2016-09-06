@@ -1,57 +1,34 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:49344 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1750899AbcIIOCh (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 9 Sep 2016 10:02:37 -0400
-Date: Fri, 9 Sep 2016 16:00:59 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Lukas Lueg <lukas.lueg@gmail.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: State of the fuzzer
-Message-ID: <20160909140059.GT16983@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <CAJF-kYmnBt6yRLJ+R3HdJ03oqp_ptwXpat40vXoD_b=MUvJZUw@mail.gmail.com>
+Received: from mail-lf0-f44.google.com ([209.85.215.44]:36368 "EHLO
+        mail-lf0-f44.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S932870AbcIFPW1 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 6 Sep 2016 11:22:27 -0400
+Received: by mail-lf0-f44.google.com with SMTP id g62so148856699lfe.3
+        for <linux-btrfs@vger.kernel.org>; Tue, 06 Sep 2016 08:22:27 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CAJF-kYmnBt6yRLJ+R3HdJ03oqp_ptwXpat40vXoD_b=MUvJZUw@mail.gmail.com>
+From: Tomasz Kusmierz <tom.kusmierz@gmail.com>
+Date: Tue, 6 Sep 2016 16:22:25 +0100
+Message-ID: <CAKinxcXinpdj5ZNrXSBegLn+2LnbYtwChX=3wBP_UELSPa+yig@mail.gmail.com>
+Subject: Some help with the code.
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Sep 06, 2016 at 10:32:28PM +0200, Lukas Lueg wrote:
-> I'm currently fuzzing rev 2076992 and things start to slowly, slowly
-> quiet down. We will probably run out of steam at the end of the week
-> when a total of (roughly) half a billion BTRFS-images have passed by.
-> I will switch revisions to current HEAD and restart the whole process
-> then. A few things:
-> 
-> * There are a couple of crashes (mostly segfaults) I have not reported
-> yet. I'll report them if they show up again with the latest revision.
+This is predominantly for maintainers:
 
-Ok.
+I've noticed that there is a lot of code for btrfs ... and after few
+glimpses I've noticed that there are occurrences which beg for some
+refactoring to make it less of a pain to maintain.
 
-> * The coverage-analysis shows assertion failures which are currently
-> silenced. An assertion failure is technically a worse disaster
-> successfully prevented, it still constitutes unexpected/unusable
-> behaviour, though. Do you want assertions to be enabled and images
-> triggering those assertions reported? This is basically the same
-> conundrum as with BUG_ON and abort().
+I'm speaking of occurrences where:
+- within a function there are multiple checks for null pointer and
+then whenever there is anything hanging on the end of that pointer to
+finally call the function, pass the pointer to it and watch it perform
+same checks to finally deallocate stuff on the end of a pointer.
+- single line functions ... called only in two places
 
-Yes please. I'd like to turn most bugons/assertions into a normal
-failure report if it would make sense.
+and so on.
 
-> * A few endless loops entered into by btrfsck are currently
-> unmitigated (see bugs 155621, 155571, 155551 and 155151). It would be
-> nice if those had been taken care of by next week if possible.
-
-Two of them are fixed, the other two need more work, updating all
-callers of read_node_slot and the callchain. So you may still see that
-kind of looping in more images. I don't have an ETA for the fix, I won't
-be available during the next week.
-
-At the moment, the initial sanity checks should catch most of the
-corrupted values, so I'm expecting that you'll see different classes of
-problems in the next rounds.
-
-The testsuite now contains all images that you reported and we have a
-fix in git. There are more utilities run on the images, there may be
-more problems for us to fix.
+I know that you guys are busy, but maintaining code that is only
+growing must be a pain.

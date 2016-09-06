@@ -1,78 +1,58 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:49467 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:38267 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S932810AbcI3PlI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 30 Sep 2016 11:41:08 -0400
-From: Goldwyn Rodrigues <rgoldwyn@suse.de>
-To: linux-btrfs@vger.kernel.org
-Cc: quwenruo@cn.fujitsu.com, Goldwyn Rodrigues <rgoldwyn@suse.com>
-Subject: [PATCH] qgroup: Prevent qgroup->reserved from going subzero
-Date: Fri, 30 Sep 2016 10:40:52 -0500
-Message-Id: <20160930154052.6827-1-rgoldwyn@suse.de>
+        id S934912AbcIFRgC (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 6 Sep 2016 13:36:02 -0400
+Date: Tue, 6 Sep 2016 19:34:27 +0200
+From: David Sterba <dsterba@suse.cz>
+To: jbacik@fb.com
+Cc: linux-btrfs@vger.kernel.org, fdmanana@kernel.org,
+        Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
+Subject: Re: [PATCH] btrfs: fix WARNING in btrfs_select_ref_head()
+Message-ID: <20160906173427.GF16983@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1466385532-6005-1-git-send-email-wangxg.fnst@cn.fujitsu.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
+In-Reply-To: <1466385532-6005-1-git-send-email-wangxg.fnst@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Goldwyn Rodrigues <rgoldwyn@suse.com>
+Josef, can you please review this?
 
-While free'ing qgroup->reserved resources, we much check if
-the page has not been invalidated by a truncate operation
-by checking if the page is still dirty before reducing the
-qgroup resources. Resources in such a case are free'd when
-the entire extent is released by delayed_ref.
-
-This fixes a double accounting while releasing resources
-in case of truncating a file, reproduced by the following testcase.
-
-SCRATCH_DEV=/dev/vdb
-SCRATCH_MNT=/mnt
-mkfs.btrfs -f $SCRATCH_DEV
-mount -t btrfs $SCRATCH_DEV $SCRATCH_MNT
-cd $SCRATCH_MNT
-btrfs quota enable $SCRATCH_MNT
-btrfs subvolume create a
-btrfs qgroup limit 500m a $SCRATCH_MNT
-sync
-for c in {1..15}; do
-dd if=/dev/zero  bs=1M count=40 of=$SCRATCH_MNT/a/file;
-done
-
-sleep 10
-sync
-sleep 5
-
-touch $SCRATCH_MNT/a/newfile
-
-echo "Removing file"
-rm $SCRATCH_MNT/a/file
-
-Fixes: b9d0b38928 ("btrfs: Add handler for invalidate page")
-Signed-off-by: Goldwyn Rodrigues <rgoldwyn@suse.com>
-Reviewed-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
----
- fs/btrfs/inode.c | 9 +++++++--
- 1 file changed, 7 insertions(+), 2 deletions(-)
-
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index e6811c4..bc1a004 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -8915,9 +8915,14 @@ again:
- 	 *    So even we call qgroup_free_data(), it won't decrease reserved
- 	 *    space.
- 	 * 2) Not written to disk
--	 *    This means the reserved space should be freed here.
-+	 *    This means the reserved space should be freed here. However,
-+	 *    if a truncate invalidates the page (by clearing PageDirty)
-+	 *    and the page is accounted for while allocating extent
-+	 *    in btrfs_check_data_free_space() we let delayed_ref to
-+	 *    free the entire extent.
- 	 */
--	btrfs_qgroup_free_data(inode, page_start, PAGE_SIZE);
-+	if (PageDirty(page))
-+		btrfs_qgroup_free_data(inode, page_start, PAGE_SIZE);
- 	if (!inode_evicting) {
- 		clear_extent_bit(tree, page_start, page_end,
- 				 EXTENT_LOCKED | EXTENT_DIRTY |
--- 
-2.10.0
-
+On Mon, Jun 20, 2016 at 09:18:52AM +0800, Wang Xiaoguang wrote:
+> This issue was found when testing in-band dedupe enospc behaviour,
+> sometimes run_one_delayed_ref() may fail for enospc reason, then
+> __btrfs_run_delayed_refs（）will return, but forget to add num_heads_read
+> back, which will trigger "WARN_ON(delayed_refs->num_heads_ready == 0)" in
+> btrfs_select_ref_head().
+> 
+> Signed-off-by: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
+> ---
+>  fs/btrfs/extent-tree.c | 3 +++
+>  1 file changed, 3 insertions(+)
+> 
+> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+> index 6146729..eeedff3 100644
+> --- a/fs/btrfs/extent-tree.c
+> +++ b/fs/btrfs/extent-tree.c
+> @@ -2665,7 +2665,10 @@ static noinline int __btrfs_run_delayed_refs(struct btrfs_trans_handle *trans,
+>  
+>  		btrfs_free_delayed_extent_op(extent_op);
+>  		if (ret) {
+> +			spin_lock(&delayed_refs->lock);
+>  			locked_ref->processing = 0;
+> +			delayed_refs->num_heads_ready++;
+> +			spin_unlock(&delayed_refs->lock);
+>  			btrfs_delayed_ref_unlock(locked_ref);
+>  			btrfs_put_delayed_ref(ref);
+>  			btrfs_debug(fs_info, "run_one_delayed_ref returned %d", ret);
+> -- 
+> 1.8.3.1
+> 
+> 
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

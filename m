@@ -1,67 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:36847 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1753180AbcIFCIS (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 5 Sep 2016 22:08:18 -0400
-Subject: Re: [PATCH 1/3] btrfs-progs: Introduce new send-dump object
-To: <dsterba@suse.cz>, <linux-btrfs@vger.kernel.org>
-References: <20160801062944.25355-1-quwenruo@cn.fujitsu.com>
- <20160816143130.GO30795@twin.jikos.cz>
- <22e65257-c864-aa4e-9e6b-59610aec347a@cn.fujitsu.com>
- <20160824124940.GR16983@twin.jikos.cz>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <f8f09829-4cac-051b-6f5a-099cd03e6250@cn.fujitsu.com>
-Date: Tue, 6 Sep 2016 10:08:12 +0800
+Received: from mx2.suse.de ([195.135.220.15]:55991 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S932231AbcIFPJq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 6 Sep 2016 11:09:46 -0400
+Date: Tue, 6 Sep 2016 17:08:13 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org, Qu Wenruo <quwenruo@cn.fujitsu.com>
+Subject: Re: [PATCH 02/13] btrfs-progs: check: introduce function to find
+ dir_item
+Message-ID: <20160906150813.GB16983@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1469689705-26836-1-git-send-email-lufq.fnst@cn.fujitsu.com>
+ <1469689705-26836-3-git-send-email-lufq.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
-In-Reply-To: <20160824124940.GR16983@twin.jikos.cz>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1469689705-26836-3-git-send-email-lufq.fnst@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Thu, Jul 28, 2016 at 03:08:14PM +0800, Lu Fengqi wrote:
+> +static int find_dir_item(struct btrfs_root *root, struct btrfs_key *ref_key,
+> +			 struct btrfs_key *key, u64 index, char *name,
+> +			 u32 namelen, u32 mode)
+> +{
+> +	struct btrfs_path *path;
+> +	struct extent_buffer *node;
+> +	struct btrfs_dir_item *di;
+> +	struct btrfs_key location;
+> +	char namebuf[BTRFS_NAME_LEN] = {0};
+> +	u32 total;
+> +	u32 cur = 0;
+> +	u32 len;
+> +	u32 name_len;
+> +	u32 data_len;
+> +	u8 filetype;
+> +	int slot;
+> +	int ret;
+> +
+> +	path = btrfs_alloc_path();
 
+Unhandled error (and there's one more in check_root_ref). Also, the
+function can return negative values, but the caller does not propagate
+the falue as it rather expects the bitmask of the specific errors.
 
-At 08/24/2016 08:49 PM, David Sterba wrote:
-> On Wed, Aug 17, 2016 at 08:42:48AM +0800, Qu Wenruo wrote:
->>
->>
->> At 08/16/2016 10:31 PM, David Sterba wrote:
->>> On Mon, Aug 01, 2016 at 02:29:42PM +0800, Qu Wenruo wrote:
->>>> Introduce send-dump.[ch] which implements a new btrfs_send_ops to
->>>> exam and output all operations inside a send stream.
->>>>
->>>> It has a better output format than the old and no longer compilable
->>>> send-test tool, but still tries to be script friendly.
->>>>
->>>> Provides the basis for later "inspect-internal dump-send" command.
->>>
->>> I'd rather put that into the receive subcommand, as it takes the stream
->>> as argument and it's closer to the send/receive commands, but that's
->>> a minor thing.
->>>
->>>
->> I'm OK to put it into receive command.
->>
->> Although unlike normal receive usage, it doesn't need the <path>
->> parameter, and make <path> to be optional.
->
-> That's a good point and would make the syntax work in two modes, but we
-> do that in ohter commands and I hope it will not be confusing. Exmaples:
->
-> Normal receive:
->
->  btrfs receive -f file /mount
->
-> Dump the stream:
->
->  btrs receive --dump -f file
+Fixing that seems to be more intrusive, as the whole callchain does not
+expect that consistently.
 
-Sorry for the late reply.
-
-I'm OK for the new syntax.
-
-If no other problem I'll begin to change the syntax and rebase it to devel.
-
-Thanks,
-Qu
-
-
+Please fix that and resend the whole patchset.

@@ -1,98 +1,81 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wm0-f50.google.com ([74.125.82.50]:34724 "EHLO
-        mail-wm0-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753827AbcIFVxw (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 6 Sep 2016 17:53:52 -0400
-Received: by mail-wm0-f50.google.com with SMTP id w207so36849756wmw.1
-        for <linux-btrfs@vger.kernel.org>; Tue, 06 Sep 2016 14:53:52 -0700 (PDT)
+Received: from mail-wm0-f45.google.com ([74.125.82.45]:37276 "EHLO
+        mail-wm0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S933062AbcIFWZC (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 6 Sep 2016 18:25:02 -0400
+Received: by mail-wm0-f45.google.com with SMTP id w12so565854wmf.0
+        for <linux-btrfs@vger.kernel.org>; Tue, 06 Sep 2016 15:25:01 -0700 (PDT)
+References: <pan$8ec2c$ff524e2$2c7a6f41$1fe67610@cox.net>
 Subject: Re: btrfs send extremely slow (almost stuck)
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
-References: <03b9d0b0-7001-7dd9-75cd-69d58b94d553@googlemail.com>
- <6bebd709-8fdd-5e88-650d-f1c551946505@cn.fujitsu.com>
- <2926d118-6a2f-2066-529d-1dd8335200dc@googlemail.com>
- <a7ead62b-38f5-2ed6-c24b-1960a8fc6ba8@cn.fujitsu.com>
- <5e6e606d-e75c-b7f1-0a9f-4e36090659eb@googlemail.com>
- <2ae7659b-ebb2-200b-174e-9ca186cb22cd@cn.fujitsu.com>
- <22d296fa-7673-780a-0171-d87f2d7bbce6@googlemail.com>
- <d42a9f0a-5e30-3977-f74e-eece05308537@cn.fujitsu.com>
+To: 1i5t5.duncan@cox.net, linux-btrfs@vger.kernel.org
 From: Oliver Freyermuth <o.freyermuth@googlemail.com>
-Message-ID: <5ef3f999-c714-bb03-aca7-719aff0d39a7@googlemail.com>
-Date: Tue, 6 Sep 2016 23:53:49 +0200
+Message-ID: <0d49b31c-4cab-f36e-dfec-a414a2ed175f@googlemail.com>
+Date: Wed, 7 Sep 2016 00:24:59 +0200
 MIME-Version: 1.0
-In-Reply-To: <d42a9f0a-5e30-3977-f74e-eece05308537@cn.fujitsu.com>
+In-Reply-To: <pan$8ec2c$ff524e2$2c7a6f41$1fe67610@cox.net>
 Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am 06.09.2016 um 04:46 schrieb Qu Wenruo:
-> But your idea to locate the inode seems good enough for debugging though.
+Duncan wrote on Mon, 05 Sep 2016 19:14:30 -0700: 
+> I had something very similar happen here a few weeks ago, except with my 
+> firefox profile dir (I don't run thunderbird, preferring claws-mail, but 
+> I do run firefox as my browser).
 
-Based on this I even had another idea which seems to have worked well - and I am now also able to provide any additional debug output you may need. 
+Indeed, I also note Firefox doing a lot of IO especially if session recovery is enabled,
+so I can totally imagine this causing similar issues... 
 
+> My use-case does neither snapshots nor send/receive, however, so it was 
+> just the single root subvolume (5).  But there was supposedly a file in 
+> that dir according to bash's tab-completion, that would neither list, nor 
+> rm, which meant the dir couldn't rm -r either.  (Interestingly enough, rm 
+> -i asked if I wanted to rm "weird file" whatever, and weird it indeed was!
+> )
 
-Since my procedure may be interesting / helpful for other "debugging users", I'll shortly outline it here. 
-I had enough extra space on an external HDD. I cloned the full btrfs partition with 'dd' to an image on this HDD.
-I loop'ed that image read-only on another machine, created an overlay-file and used device mapper
-to get a read-write block device for any experiment (based on the read-only image).
-Details on that e.g. at https://raid.wiki.kernel.org/index.php/Recovering_a_failed_software_RAID#Making_the_harddisks_read-only_using_an_overlay_file . 
+Sadly, for me there is / was no file at all "visible", neither via tab nor via 'rm -i'. 
 
+> So I immediately copied all the normal files to a new dir, and deleted 
+> the normal files from the problem dir, leaving only the weird one.
+> Then I renamed the problem dir in ordered to be able to rename the new 
+> dir (with the good files) back to the name firefox expected.
 
-> In this case, before reverting to a backup, would you please run a "btrfsck check" and paste the output?
+That was exactly my "backup plan" I applied yesterday. In my case, luckily,
+I even had a full backup of the profile just a few hours old, so I just took that
+to replace the folder with a fresh one after renaming it. 
 
-Now, I ran 'btrfs check' on that device. I'm using the very fresh btrfs-progs 4.7.2. 
-The output is here:
-http://pastebin.com/rMrW40RU
-Notably, it claims to have found some other issues, mainly wrong link counts and dir isizes, but for various inodes...
+> Then I decided to see what I could do with the renamed dir.  I believe I 
+> rebooted (or umount/mount cycled the filesystem) as well.  I think I had 
+> to use the magic-sysrq m/remount-ro key as it refused to umount even from 
+> systemd emergency mode.  But here's the interesting part.  At least after 
+> the rename and a reboot, it *DID* let me delete (using mc) the dir!  I 
+> honestly didn't expect it'd let me, but it did.
 
-Now, I could also safely run 'btrfs check --repair' on this device without any risks.
-The output from that is here:
-http://pastebin.com/XW9ChuqU
+For me all the shutdowns went fine (the problem must / may have been present for weeks, 
+I only noticed now that btrfs send finally did something - and errored out) 
+- and the problem, sadly, was not fixed after any reboot. 
+I guess after all for me it was corruption on the directory itself
+(or rather its isize), 
+while for you it was some other sort of metadata corruption causing 
+a "weirdly behaving" file. 
 
-Another 'btrfs check' run afterwards now reveals different issues:
-http://pastebin.com/TFKJa81e
+> The difference, however, is that I didn't have any snapshots/subvolumes 
+> or other reflinks to the "weird" file, only the one normal hardlink.  So 
+> even if it's the same thing, I'm not sure if it'll work for you given the 
+> multiple snapshot reflinks to the file, as it did for me with just the 
+> one.
 
-Now, another repair:
-http://pastebin.com/33iqaE9E
+I did at least try to delete all snapshots which could reference that file - did not help. 
+I also tried running 'btrfs defrag' on that folder, which should have broken up any reflinks, 
+this also did not help. 
 
-Now, finally, btrfs check is happy:
-http://pastebin.com/izkERtKp
+But luckily (as you can see from my other mail) two "btrfs check --repair" iterations finally
+fixed my issue. I hope the experts can figure out something from my uploaded debug info
+to prevent such things in the future. 
 
-After mounting, finally (kernel 4.7.2) I see in kernel log:
-[12108.696912] BTRFS info (device dm-0): disk space caching is enabled
-[12108.713176] BTRFS info (device dm-0): checking UUID tree
+Thanks a lot in any case for your experience report! 
 
-I can now delete the "broken" .thunderbird folder on this "repaired" fs.
-I can also mount it and write data on it.
+I hope my "repair experience" from my other mail made from my user's perspective may at some point
+of time also be of help to you (even though, I hope, you'll never need it). 
 
-Concluding from these results that it should be safe to do the same to my original block device with the same btrfs-progs version
-I did just that (check, repair, check, repair, check) from a live system directly on the machine. 
-Up until now, the FS seems to be doing well again - I took the chance to enable skinny extents and am now doing a full metadata balance,
-saving me about 0.25 % of metadata space. 
-So finally, first time in my life, 'btrfs check --repair' did not eat my data! :-) 
-
-
-The cool thing is that now I still have the broken image (extracted with dd) around and can play with it to provide you with any debug-info
-without having to work directly with the broken FS on the machine itself. 
-
-
-Now, let's get started on that.
-
-ls -aldi .thunderbird-broken/p6bm45oa.default/
-162786 drwx------ 1 olifre olifre 2482  5. Sep 23:07 .thunderbird-broken/p6bm45oa.default/
-As you can see, I had renamed .thunderbird to .thunderbird-broken. The real issue is in any case the profile-subfolder within.
-So the affected ino is indeed 162786 which also shows up (as one of several issues...) in the btrfs check (and repair) output.
-
-> Further more, your btrfs-debug-tree dump should provide more help for this case.
-
-Just to make sure the debug-tree output matches the rest of all the information I'm giving you, I re-ran that on the dd'ed image from the broken FS like so:
-btrfs-debug-tree -t 442 xmg13.img | sed "s/name:.*//" > debug-tree
-
-I ran the output through xz (or rather, pixz) and here it is:
-https://cernbox.cern.ch/index.php/s/imjwqsOFerUklqr/download
-I'll probably not keep the file up there forever, but at least for quite some days.
-
-If you can think of any other information which may be useful to diagnose the underlying issue which caused that corruption
-just let me know. I'll keep the image of the broken FS around for a few weeks.
-
-Cheers, 
+Cheers and thanks again, 
 	Oliver

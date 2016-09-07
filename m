@@ -1,104 +1,58 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pa0-f66.google.com ([209.85.220.66]:33503 "EHLO
-        mail-pa0-f66.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S932133AbcIGBiw (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 6 Sep 2016 21:38:52 -0400
-Date: Wed, 7 Sep 2016 09:38:44 +0800
+Received: from mail-pf0-f193.google.com ([209.85.192.193]:36305 "EHLO
+        mail-pf0-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1756046AbcIGBpI (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 6 Sep 2016 21:45:08 -0400
+Date: Wed, 7 Sep 2016 09:44:36 +0800
 From: Sean Fu <fxinrong@gmail.com>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Cc: Zhao Lei <zhaolei@cn.fujitsu.com>, dsterba@suse.com, clm@fb.com,
-        anand.jain@oracle.com, fdmanana@suse.com, linux-btrfs@vger.kernel.org,
+To: Jeff Mahoney <jeffm@suse.com>
+Cc: dsterba@suse.cz, Qu Wenruo <quwenruo@cn.fujitsu.com>,
+        Zhao Lei <zhaolei@cn.fujitsu.com>, clm@fb.com, anand.jain@oracle.com,
+        Filipe Manana <FdManana@suse.com>, linux-btrfs@vger.kernel.org,
         linux-kernel@vger.kernel.org
 Subject: Re: [PATCH] Btrfs: remove unnecessary code of chunk_root assignment
  in btrfs_read_chunk_tree.
-Message-ID: <20160907013843.GA3907@linux-zmni.apac.novell.com>
+Message-ID: <20160907014435.GC3907@linux-zmni.apac.novell.com>
 References: <1472990010-10707-1-git-send-email-fxinrong@gmail.com>
  <002501d20713$7ee67050$7cb350f0$@cn.fujitsu.com>
  <e48353fc-cd00-789c-291e-80c684afe2e2@cn.fujitsu.com>
+ <57CE326C.8000105@suse.com>
+ <57CE3464.7090107@suse.com>
+ <20160906095858.GA16983@suse.cz>
+ <61eeb5da-c537-2392-74e4-eac77eda6264@suse.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-In-Reply-To: <e48353fc-cd00-789c-291e-80c684afe2e2@cn.fujitsu.com>
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <61eeb5da-c537-2392-74e4-eac77eda6264@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Sep 05, 2016 at 03:56:41PM +0800, Qu Wenruo wrote:
-> 
-> 
-> At 09/05/2016 09:19 AM, Zhao Lei wrote:
-> >Hi, Sean Fu
-> >
-> >>From: Sean Fu [mailto:fxinrong@gmail.com]
-> >>Sent: Sunday, September 04, 2016 7:54 PM
-> >>To: dsterba@suse.com
-> >>Cc: clm@fb.com; anand.jain@oracle.com; fdmanana@suse.com;
-> >>zhaolei@cn.fujitsu.com; linux-btrfs@vger.kernel.org;
-> >>linux-kernel@vger.kernel.org; Sean Fu <fxinrong@gmail.com>
-> >>Subject: [PATCH] Btrfs: remove unnecessary code of chunk_root assignment in
-> >>btrfs_read_chunk_tree.
+On Tue, Sep 06, 2016 at 11:12:20AM -0400, Jeff Mahoney wrote:
+> On 9/6/16 5:58 AM, David Sterba wrote:
+> > On Mon, Sep 05, 2016 at 11:13:40PM -0400, Jeff Mahoney wrote:
+> >>>> Since root is only used to get fs_info->chunk_root, why not use fs_info
+> >>>> directly?
+> >>>
+> >>> Weird.  Exactly this was a part of my fs_info patchset.  I guess I need
+> >>> to go back and check what else is missing.
 > >>
-> >>The input argument root is already set with "fs_info->chunk_root".
-> >>"chunk_root = fs_info->chunk_root = btrfs_alloc_root(fs_info)" in caller
-> >>"open_ctree".
-> >>“root->fs_info = fs_info” in "btrfs_alloc_root".
-> >>
-> >The root argument of this function means "any root".
-> >And the function is designed getting chunk root from
-> >"any root" in head.
-> >
-> >Since there is only one caller of this function,
-> >and the caller always send chunk_root as root argument in
-> >current code, we can remove above conversion,
-> >and I suggest renaming root to chunk_root to make it clear,
-> >something like:
-> >
-> >- btrfs_read_chunk_tree(struct btrfs_root *root)
-> >+ btrfs_read_chunk_tree(struct btrfs_root *chunk_root)
+> >> Actually, most of this didn't land.  Pretty much anything that's a root
+> >> ->fs_info conversion is in there.
+> > 
+> > Only half of the patchset has been merged so far because it did not pass
+> > testing, so I bisected to some point. I was about to let you know once
+> > most of 4.9 patches are prepared so there are less merge conflicts.
 > 
-> Since root is only used to get fs_info->chunk_root, why not use fs_info
-> directly?
+> Ok, thanks.  I was going to start the rebase today but I'll hold off
+> until you're set for 4.9.
 Sorry for late reply.
-chunk_root is processed in btrfs_read_chunk_tree.
-Why should we pass fs_info directly to btrfs_read_chunk_tree?
-Could you give me more detail?
+Many thanks to all of you.
+> 
+> -Jeff
+> 
+> -- 
+> Jeff Mahoney
+> SUSE Labs
+> 
 
-Many thanks
-> 
-> Thanks,
-> Qu
-> 
-> >
-> >Thanks
-> >Zhaolei
-> >
-> >>Signed-off-by: Sean Fu <fxinrong@gmail.com>
-> >>---
-> >> fs/btrfs/volumes.c | 2 --
-> >> 1 file changed, 2 deletions(-)
-> >>
-> >>diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-> >>index 366b335..384a6d2 100644
-> >>--- a/fs/btrfs/volumes.c
-> >>+++ b/fs/btrfs/volumes.c
-> >>@@ -6600,8 +6600,6 @@ int btrfs_read_chunk_tree(struct btrfs_root *root)
-> >> 	int ret;
-> >> 	int slot;
-> >>
-> >>-	root = root->fs_info->chunk_root;
-> >>-
-> >> 	path = btrfs_alloc_path();
-> >> 	if (!path)
-> >> 		return -ENOMEM;
-> >>--
-> >>2.6.2
-> >>
-> >
-> >
-> >
-> >
-> >--
-> >To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> >the body of a message to majordomo@vger.kernel.org
-> >More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> >
-> 
-> 
+
+

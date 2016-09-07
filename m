@@ -1,81 +1,98 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wm0-f45.google.com ([74.125.82.45]:37276 "EHLO
-        mail-wm0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S933062AbcIFWZC (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 6 Sep 2016 18:25:02 -0400
-Received: by mail-wm0-f45.google.com with SMTP id w12so565854wmf.0
-        for <linux-btrfs@vger.kernel.org>; Tue, 06 Sep 2016 15:25:01 -0700 (PDT)
-References: <pan$8ec2c$ff524e2$2c7a6f41$1fe67610@cox.net>
-Subject: Re: btrfs send extremely slow (almost stuck)
-To: 1i5t5.duncan@cox.net, linux-btrfs@vger.kernel.org
-From: Oliver Freyermuth <o.freyermuth@googlemail.com>
-Message-ID: <0d49b31c-4cab-f36e-dfec-a414a2ed175f@googlemail.com>
-Date: Wed, 7 Sep 2016 00:24:59 +0200
+Received: from mail-oi0-f47.google.com ([209.85.218.47]:36042 "EHLO
+        mail-oi0-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1753495AbcIGAf1 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 6 Sep 2016 20:35:27 -0400
+Received: by mail-oi0-f47.google.com with SMTP id w78so577665oie.3
+        for <linux-btrfs@vger.kernel.org>; Tue, 06 Sep 2016 17:35:26 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <pan$8ec2c$ff524e2$2c7a6f41$1fe67610@cox.net>
-Content-Type: text/plain; charset=utf-8
+In-Reply-To: <0cad7942-096c-1ea4-bf31-a4e959bcc4f8@gmail.com>
+References: <CA+WRLO8KuP8LS77NUbZLAs3e120oFudES_R3tYQjjYiCXH4BOA@mail.gmail.com>
+ <CAJCQCtSUVeXwuKn8rR_Rw24anzHNSLgVo_wYkot1mZYXiGkJ1w@mail.gmail.com>
+ <CA+WRLO_6q2cZqPPkmtqjjkq7tfdh5DDyE_oHFswFoQVz8FguKw@mail.gmail.com>
+ <CA+WRLO8XVaK5FK9VUt=pOgoyqYm30_yxTnCd+5zdYx5Xx6jAcw@mail.gmail.com>
+ <CA+WRLO-cvepjj53xCoq=RiEmTV-6cqL+G6nQe+WnTPyWNDOUZA@mail.gmail.com>
+ <CA+WRLO-1oJLZ56EivVTg=bycNhfpOt8ovLrLbgnNeCVKgvbxhQ@mail.gmail.com>
+ <CAJCQCtQddXz26cjp=tGcO5d5E9N=Zmjdd=qwonjGdh+NJ7aLQQ@mail.gmail.com>
+ <CAJCQCtRGpAgGq9dpv432ES9OUHG4fDkt+DviapaCyg0Jtc2gVA@mail.gmail.com>
+ <CA+WRLO8kTBoPHx3jkeN+zdygEMZz9ejTeWGwQireRtDGDNrncQ@mail.gmail.com>
+ <CA+WRLO-WwM8hN9OxWZfbac60iXDZ8=WZ8=fokKdCqYcSpEdu6g@mail.gmail.com>
+ <CA+WRLO9ZazygSMfLjpfXO_bYMmJVecd3be44EKJWMDORFXiVKg@mail.gmail.com> <0cad7942-096c-1ea4-bf31-a4e959bcc4f8@gmail.com>
+From: Gareth Pye <gareth@cerberos.id.au>
+Date: Wed, 7 Sep 2016 10:35:25 +1000
+Message-ID: <CA+WRLO9dHYNs4OY8jLxSqF_NOm2H+5qCoDX1CzXR6Qtx-UKyug@mail.gmail.com>
+Subject: Re: Recommendation on raid5 drive error resolution
+To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Cc: Chris Murphy <lists@colorremedies.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Duncan wrote on Mon, 05 Sep 2016 19:14:30 -0700: 
-> I had something very similar happen here a few weeks ago, except with my 
-> firefox profile dir (I don't run thunderbird, preferring claws-mail, but 
-> I do run firefox as my browser).
+Things have been copying off really well.
 
-Indeed, I also note Firefox doing a lot of IO especially if session recovery is enabled,
-so I can totally imagine this causing similar issues... 
+I'm starting to suspect the issue was the PSU which I've swapped out.
+What is the line I should see in dmesg if the degraded option was
+actually used when mounting the file system?
 
-> My use-case does neither snapshots nor send/receive, however, so it was 
-> just the single root subvolume (5).  But there was supposedly a file in 
-> that dir according to bash's tab-completion, that would neither list, nor 
-> rm, which meant the dir couldn't rm -r either.  (Interestingly enough, rm 
-> -i asked if I wanted to rm "weird file" whatever, and weird it indeed was!
-> )
+On Thu, Sep 1, 2016 at 9:25 PM, Austin S. Hemmelgarn
+<ahferroin7@gmail.com> wrote:
+> On 2016-08-31 19:04, Gareth Pye wrote:
+>>
+>> ro,degraded has mounted it nicely and my rsync of the more useful data
+>> is progressing at the speed of WiFi.
+>>
+>> There are repeated read errors from one drive still but the rsync
+>> hasn't bailed yet, which I think means there isn't any overlapping
+>> errors in any of the files it has touched thus far. Am I right or is
+>> their likely to be corrupt data in the files I've synced off?
+>
+> Unless you've been running with nocow or nodatasum in your mount options,
+> then what you've concluded should be correct.  I would still suggest
+> verifying the data by some external means if possible, this type of
+> situation is not something that's well tested, and TBH I'm amazed that
+> things are working to the degree that they are.
+>
+>>
+>> On Wed, Aug 31, 2016 at 7:46 AM, Gareth Pye <gareth@cerberos.id.au> wrote:
+>>>
+>>> Or I could just once again select the right boot device in the bios. I
+>>> think I want some new hardware :)
+>>>
+>>> On Wed, Aug 31, 2016 at 7:23 AM, Gareth Pye <gareth@cerberos.id.au>
+>>> wrote:
+>>>>
+>>>> On Wed, Aug 31, 2016 at 4:28 AM, Chris Murphy <lists@colorremedies.com>
+>>>> wrote:
+>>>>>
+>>>>> But I'd try a newer kernel before you
+>>>>> give up on it.
+>>>>
+>>>>
+>>>>
+>>>> Any recommendations on liveCDs that have recent kernels & btrfs tools?
+>>>> For no apparent reason system isn't booting normally either, and I'm
+>>>> reluctant to fix that before at least confirming the things I at least
+>>>> partially care about have a recent backup.
+>>>>
+>>>> --
+>>>> Gareth Pye - blog.cerberos.id.au
+>>>> Level 2 MTG Judge, Melbourne, Australia
+>>>
+>>>
+>>>
+>>>
+>>> --
+>>> Gareth Pye - blog.cerberos.id.au
+>>> Level 2 MTG Judge, Melbourne, Australia
+>>
+>>
+>>
+>>
+>
 
-Sadly, for me there is / was no file at all "visible", neither via tab nor via 'rm -i'. 
 
-> So I immediately copied all the normal files to a new dir, and deleted 
-> the normal files from the problem dir, leaving only the weird one.
-> Then I renamed the problem dir in ordered to be able to rename the new 
-> dir (with the good files) back to the name firefox expected.
 
-That was exactly my "backup plan" I applied yesterday. In my case, luckily,
-I even had a full backup of the profile just a few hours old, so I just took that
-to replace the folder with a fresh one after renaming it. 
-
-> Then I decided to see what I could do with the renamed dir.  I believe I 
-> rebooted (or umount/mount cycled the filesystem) as well.  I think I had 
-> to use the magic-sysrq m/remount-ro key as it refused to umount even from 
-> systemd emergency mode.  But here's the interesting part.  At least after 
-> the rename and a reboot, it *DID* let me delete (using mc) the dir!  I 
-> honestly didn't expect it'd let me, but it did.
-
-For me all the shutdowns went fine (the problem must / may have been present for weeks, 
-I only noticed now that btrfs send finally did something - and errored out) 
-- and the problem, sadly, was not fixed after any reboot. 
-I guess after all for me it was corruption on the directory itself
-(or rather its isize), 
-while for you it was some other sort of metadata corruption causing 
-a "weirdly behaving" file. 
-
-> The difference, however, is that I didn't have any snapshots/subvolumes 
-> or other reflinks to the "weird" file, only the one normal hardlink.  So 
-> even if it's the same thing, I'm not sure if it'll work for you given the 
-> multiple snapshot reflinks to the file, as it did for me with just the 
-> one.
-
-I did at least try to delete all snapshots which could reference that file - did not help. 
-I also tried running 'btrfs defrag' on that folder, which should have broken up any reflinks, 
-this also did not help. 
-
-But luckily (as you can see from my other mail) two "btrfs check --repair" iterations finally
-fixed my issue. I hope the experts can figure out something from my uploaded debug info
-to prevent such things in the future. 
-
-Thanks a lot in any case for your experience report! 
-
-I hope my "repair experience" from my other mail made from my user's perspective may at some point
-of time also be of help to you (even though, I hope, you'll never need it). 
-
-Cheers and thanks again, 
-	Oliver
+-- 
+Gareth Pye - blog.cerberos.id.au
+Level 2 MTG Judge, Melbourne, Australia

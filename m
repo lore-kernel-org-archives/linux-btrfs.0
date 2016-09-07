@@ -1,50 +1,70 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from zaphod.cobb.me.uk ([213.138.97.131]:42035 "EHLO
-        zaphod.cobb.me.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S933159AbcIGQ1y (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 7 Sep 2016 12:27:54 -0400
-Received: from black.home.cobb.me.uk (unknown [192.168.0.205])
-        by zaphod.cobb.me.uk (Postfix) with ESMTP id 0EC7C9B98A
-        for <linux-btrfs@vger.kernel.org>; Wed,  7 Sep 2016 17:27:51 +0100 (BST)
-Received: from [192.168.0.211] (novatech.home.cobb.me.uk [192.168.0.211])
-        by black.home.cobb.me.uk (Postfix) with ESMTPS id AE7825FB5B
-        for <linux-btrfs@vger.kernel.org>; Wed,  7 Sep 2016 17:27:50 +0100 (BST)
+Received: from mail-it0-f45.google.com ([209.85.214.45]:33839 "EHLO
+        mail-it0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752990AbcIGRdk (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 7 Sep 2016 13:33:40 -0400
+Received: by mail-it0-f45.google.com with SMTP id i184so31877054itf.1
+        for <linux-btrfs@vger.kernel.org>; Wed, 07 Sep 2016 10:33:39 -0700 (PDT)
 Subject: Re: Security implications of btrfs receive?
-To: linux-btrfs@vger.kernel.org
+To: Graham Cobb <g.btrfs@cobb.uk.net>, linux-btrfs@vger.kernel.org
 References: <c04c596d-4cb9-ed98-513a-c550b1be18b2@cobb.uk.net>
  <2d59a472-4e74-d64c-27c4-28677d761316@gmail.com>
  <4afee621-0493-1ffc-31fe-fb81643f2374@cobb.uk.net>
- <1473259316.24874.3.camel@scientia.net>
- <12cfbaf0-77ff-a4d2-d9d7-64c5c795ce4b@gmail.com>
-From: Graham Cobb <g.btrfs@cobb.uk.net>
-Message-ID: <31a3fc6c-dd8a-e5f6-6248-ec28644d8189@cobb.uk.net>
-Date: Wed, 7 Sep 2016 17:27:50 +0100
+ <4a00b682-c674-a46f-798e-d98b3e517f02@gmail.com>
+ <f954e01c-3ccf-5b44-3fde-e627537f2af2@gmail.com>
+ <f03940e1-cf4c-7354-97f4-8801ca4b4304@cobb.uk.net>
+From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Message-ID: <6b29e923-4cef-cd78-cd98-d59419cc2341@gmail.com>
+Date: Wed, 7 Sep 2016 13:33:24 -0400
 MIME-Version: 1.0
-In-Reply-To: <12cfbaf0-77ff-a4d2-d9d7-64c5c795ce4b@gmail.com>
-Content-Type: text/plain; charset=utf-8
+In-Reply-To: <f03940e1-cf4c-7354-97f4-8801ca4b4304@cobb.uk.net>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 07/09/16 16:06, Austin S. Hemmelgarn wrote:
-> It hasn't, because there's not any way it can be completely fixed.  This
-> particular case is an excellent example of why it's so hard to fix.  To
-> close this particular hole, BTRFS itself would have to become aware of
-> whether whoever is running an ioctl is running in a chroot or not, which
-> is non-trivial to determine to begin with, and even harder when you
-> factor in the fact that chroot() is a VFS level thing, not a underlying
-> filesystem thing, while ioctls are much lower level.
-
-Actually, I think the btrfs-receive case might be a little easier to fix
-and, in my quick reading of the code before doing a test, I thought it
-even did work this way...
-
-I think the fix would be to require that the action of cloning disk
-blocks required user-mode to provide an FD which has read access to the
-source blocks.  There is little problem with allowing the ioctl to
-identify the matching subvolume for a UUID but it should require user
-mode to open the source file for read access using a path before
-allowing any blocks to be cloned.  That way, any VFS-level checks would
-be done.  And, what is more, btrfs-receive could do a file path check to
-make sure the file being cloned from is within the path that was
-provided on the command line.
+On 2016-09-07 12:10, Graham Cobb wrote:
+> On 07/09/16 16:20, Austin S. Hemmelgarn wrote:
+>> I should probably add to this that you shouldn't be accepting
+>> send/receive data streams from untrusted sources anyway.  While it
+>> probably won't crash your system, it's not intended for use as something
+>> like a network service.  If you're sending a subvolume over an untrusted
+>> network, you should be tunneling it through SSH or something similar,
+>> and then using that to provide source verification and data integrity
+>> guarantees, and if you can't trust the system's your running backups
+>> for, then you have bigger issues to deal with.
+>
+> In my personal case I'm not talking about accepting streams from
+> untrusted sources (although that is also a perfectly reasonable question
+> to discuss).  My concern is if one of my (well managed and trusted but
+> never perfect) systems is hacked, can the intruder use that as an entry
+> to attack others of my systems?
+Probably not directly.  They could get data from the other systems 
+backups, but unless something's seriously broken, there should be no way 
+for them to inject data into those backups.  IOW, it should be about the 
+same level of security you would get from doing this with tar based 
+backups with an individual user for each system and world readable files.
+>
+> In particular, I never trust my systems which live on the internet with
+> automated access to my personal systems (without a human providing
+> additional passwords/keys) although I do allow some automated accesses
+> the other way around.  I am trying to determine if sharing
+> btrfs-send-based backups would open a vulnerability.
+As far as I can tell, the only vulnerability would be through 
+information leaks.  In essence, this should in theory only be usable as 
+a side-channel to obtain information to then use for a real attack 
+(assuming of course that you have proper at-rest encryption for any 
+sensitive data on your system).
+>
+> There are articles on the web suggesting that centralised
+> btrfs-send-based backups are a good idea (using ssh access with separate
+> keys for each system which automatically invoke btrfs-receive into a
+> system-specific path).  My tests so far suggest that this may not be as
+> secure as the articles imply.
+While just doing that in general is not all that secure, if you make 
+sure each system-specific path is on it's own filesystem (this can be 
+done with thin provisioning if you are short on space), then that should 
+eliminate most of the security issues.  If you're feeling really 
+adventurous and don't entirely trust the stability of the code involved, 
+you could instead force it to run a script which invokes btrfs-receive 
+in a per-instance dedicated sandbox constrained to that filesystem.
 

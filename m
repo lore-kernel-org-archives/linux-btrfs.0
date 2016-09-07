@@ -1,61 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mailgw-01.dd24.net ([193.46.215.41]:36609 "EHLO
+Received: from mailgw-01.dd24.net ([193.46.215.41]:36697 "EHLO
         mailgw-01.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1757328AbcIGOmU (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 7 Sep 2016 10:42:20 -0400
-Received: from mailpolicy-01.live.igb.homer.key-systems.net (mailpolicy-02.live.igb.homer.key-systems.net [192.168.1.27])
-        by mailgw-01.dd24.net (Postfix) with ESMTP id 2E2125FFE8
-        for <linux-btrfs@vger.kernel.org>; Wed,  7 Sep 2016 14:42:17 +0000 (UTC)
-Received: from mailgw-01.dd24.net ([192.168.1.35])
-        by mailpolicy-01.live.igb.homer.key-systems.net (mailpolicy-02.live.igb.homer.key-systems.net [192.168.1.25]) (amavisd-new, port 10235)
-        with ESMTP id WQVt6Up41CBL for <linux-btrfs@vger.kernel.org>;
-        Wed,  7 Sep 2016 14:42:15 +0000 (UTC)
-Received: from gar-nb-etp06.garching.physik.uni-muenchen.de (unknown [141.84.41.132])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
-        (No client certificate requested)
-        by mailgw-01.dd24.net (Postfix) with ESMTPSA
-        for <linux-btrfs@vger.kernel.org>; Wed,  7 Sep 2016 14:42:15 +0000 (UTC)
-Message-ID: <1473259316.24874.3.camel@scientia.net>
+        with ESMTP id S935667AbcIGOob (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 7 Sep 2016 10:44:31 -0400
+Message-ID: <1473259452.24874.5.camel@scientia.net>
 Subject: Re: Security implications of btrfs receive?
 From: Christoph Anton Mitterer <calestyo@scientia.net>
-To: linux-btrfs@vger.kernel.org
-Date: Wed, 07 Sep 2016 16:41:56 +0200
-In-Reply-To: <4afee621-0493-1ffc-31fe-fb81643f2374@cobb.uk.net>
+To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>,
+        Graham Cobb <g.btrfs@cobb.uk.net>, linux-btrfs@vger.kernel.org
+Date: Wed, 07 Sep 2016 16:44:12 +0200
+In-Reply-To: <4a00b682-c674-a46f-798e-d98b3e517f02@gmail.com>
 References: <c04c596d-4cb9-ed98-513a-c550b1be18b2@cobb.uk.net>
          <2d59a472-4e74-d64c-27c4-28677d761316@gmail.com>
          <4afee621-0493-1ffc-31fe-fb81643f2374@cobb.uk.net>
+         <4a00b682-c674-a46f-798e-d98b3e517f02@gmail.com>
 Content-Type: multipart/signed; micalg="sha-512";
         protocol="application/x-pkcs7-signature";
-        boundary="=-8xURWU8z3rnslI706m/z"
+        boundary="=-HF0gvqcFGAUTa/q2Iakl"
 Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---=-8xURWU8z3rnslI706m/z
+--=-HF0gvqcFGAUTa/q2Iakl
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
 
-On Tue, 2016-09-06 at 18:20 +0100, Graham Cobb wrote:
-> they know the UUID of the subvolume?
+On Wed, 2016-09-07 at 07:58 -0400, Austin S. Hemmelgarn wrote:
+> if you want proper security you should
+> be=C2=A0
+> using a real container system
 
-Unfortunately, btrfs seems to be pretty problematic when anyone knows
-your UUIDs...
-Look for my thread "attacking btrfs filesystems via UUID collisions?"
-in the list archives.
-=46rom accidental corruptions to intentional attacks, a lot seemed to be
-quite possible... and I do not even talk about general attacks that any
-such systems that may do auto-assembly/auto-rebuilds (e.g. of multi-
-device containers/fs) or similar likely suffer from (I've also
-discussed this in the thread back then at some of the later mails).
+Won't these probably use the same filesystems?
 
-Don't think anything has happened in that area yet (or ever?)... at
-least I wouldn't have noticed that these security showstoppers would
-have got fixed.
 
 Cheers,
 Chris.
---=-8xURWU8z3rnslI706m/z
+--=-HF0gvqcFGAUTa/q2Iakl
 Content-Type: application/x-pkcs7-signature; name="smime.p7s"
 Content-Disposition: attachment; filename="smime.p7s"
 Content-Transfer-Encoding: base64
@@ -147,25 +128,25 @@ Yeq6UTW/JmfxF4xcbkNK/rv9ISBg9K+mZtg2QXr+P/CJBtej2RLUMYIEfjCCBHoCAQEwgYkwdTEL
 MAkGA1UEBhMCSUwxFjAUBgNVBAoTDVN0YXJ0Q29tIEx0ZC4xKTAnBgNVBAsTIFN0YXJ0Q29tIENl
 cnRpZmljYXRpb24gQXV0aG9yaXR5MSMwIQYDVQQDExpTdGFydENvbSBDbGFzcyAyIENsaWVudCBD
 QQIQPZ6tDP/RHLwcz1F+2kRADzANBglghkgBZQMEAgMFAKCCAcUwGAYJKoZIhvcNAQkDMQsGCSqG
-SIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTYwOTA3MTQ0MTU2WjBPBgkqhkiG9w0BCQQxQgRA6GIZ
-QeKEYrhBZYDK8gqWKQTAQ6k+3pO+fP3T1YdyzNOBgMvR58R/8vkkn+x6g9Osd2xVYTnIWsut/Oy8
-dSvokjCBmgYJKwYBBAGCNxAEMYGMMIGJMHUxCzAJBgNVBAYTAklMMRYwFAYDVQQKEw1TdGFydENv
+SIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTYwOTA3MTQ0NDEyWjBPBgkqhkiG9w0BCQQxQgRAsGXS
+ZrpaOmaqX6SU6qvt1kET4cvx6njSQS3UDER75Sg5OfIqQPqTRwh+rvWA9Er+TvCexARztWm+WogR
++uODcjCBmgYJKwYBBAGCNxAEMYGMMIGJMHUxCzAJBgNVBAYTAklMMRYwFAYDVQQKEw1TdGFydENv
 bSBMdGQuMSkwJwYDVQQLEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0eTEjMCEGA1UE
 AxMaU3RhcnRDb20gQ2xhc3MgMiBDbGllbnQgQ0ECED2erQz/0Ry8HM9RftpEQA8wgZwGCyqGSIb3
 DQEJEAILMYGMoIGJMHUxCzAJBgNVBAYTAklMMRYwFAYDVQQKEw1TdGFydENvbSBMdGQuMSkwJwYD
 VQQLEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0eTEjMCEGA1UEAxMaU3RhcnRDb20g
-Q2xhc3MgMiBDbGllbnQgQ0ECED2erQz/0Ry8HM9RftpEQA8wDQYJKoZIhvcNAQEBBQAEggIAVZ11
-ai9yePwlgXE27ecwd6CRxCfUndvvMpHgB2hnWXBbVgOppyLvu+Dbrqx+tQ6Y2S5CIyFOSbVYCtEN
-6SmPJsYAIEHgCFU7p+6BY/BOeVCCfx++JzUZXtxEarNN3sX8qVBScrw+eHI18FEAG6j2R8jFTj3q
-iRPwdtYGyMrm7SD/nepp74m2mO3YzUdTUQgkPvtRN5Yb1V9kAIXFzhoncU+ND3O0Yi8Nez4zxJmP
-mUPRjwkNB010Yt8Z4X4faLWeX6Kxjp5EB+JkI7Ejrt/auWt6eMPCmRNcbBppClv2BUsRhJxU4xva
-2AIaHGFAZGMc0klgdmvkQPgJMaStkAaAbjWXcZrWzTaJ82rdPP28TI3NX9XQzKln0GMfZuKfpG/S
-lZREcIHnLYUR6N2EzGtzqsaxlk5rExApgABvkBCy08U2ELJpy5qQDzWT4YHWjrCkT48m6XSvz287
-1wNBqvkUPdM36BuJ0C41IlWH5hW2DAWwKtjbFOIfo9TyrphB5m5WnDfXplwZwA98i8L/25Vgi8jD
-pP2vbI1S70gB5AS3/M37cOFO3GpwKETCHsRl6LfoPTaj/tULfjpJuDOOznzURkZLQ0MFHKSrVsCH
-LTtprwg0IWKyE4gBOVVTUJxrC6UyvzTfr5XQjm13fqgjh2khxRk/da9u1wYCn7eOzOPBitgAAAAA
+Q2xhc3MgMiBDbGllbnQgQ0ECED2erQz/0Ry8HM9RftpEQA8wDQYJKoZIhvcNAQEBBQAEggIAsf+m
+NwNvSC5hne04g1xwtv5VaiDYkP6hgLn1WtoqbK/y98qLhgja6hvvNyIQ9f+4i539ZQ9YvTXJg5yt
+DEZ0Q/ftd416k8/q1iQgu9EpJDMYVobviVpo2+Q+0YrIB2u6ngSgI3H7YN6BWN4ayQHrS6DUJpd6
+K94y2KpYawEhsEQpgZzFZA6FKzCSwW4XWsm70f6qQLsyxhBqAph4Ur9lMtZgTIuWqMK6Y2ONnR/d
+Y9i6KB9oJ/zBbSW7knIy1kByRQzjPuIr6hfQ3VqzTNrpbZZAGguyMYQ/2VH8BdKcWDhUYbLZPTKU
+in1vgfD3cZU9yNEMzV5d3HCTrj03i1VJK/2CtNAydrHqbRii/GUldJUTgj8MB3BHf93aa+g3l0bR
+zeNZfx6+NLKrLOc5q3Q7LmgNNuoTLjyzstPaxptp/P9dt8v33+2K2j0Fj9Q4DguK1pqsQ0uq+9BZ
+A+XYPH0Y1Mo36kiZB5FvBKg3Sc/FHALwqHv/aHSSG7zcVenqC1uGGBD1hjKFyAILKvLtOQP19npe
+LWJctYGYOFMmSIDUJ3s9cl66wxrzntW7YgoSzIZBTS7f4FamTYy8AEnypJgcULgdqerSssZ53P7x
+f80dmvr7nNTC5JrhiboEQ3S50qXTILrCECeQztvNH57GnxFyl59ZeXGRWYPteyZdtsZMNJYAAAAA
 AAA=
 
 
---=-8xURWU8z3rnslI706m/z--
+--=-HF0gvqcFGAUTa/q2Iakl--
 

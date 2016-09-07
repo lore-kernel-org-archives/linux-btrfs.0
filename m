@@ -1,41 +1,458 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:37957 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751872AbcIHJ5t (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 8 Sep 2016 05:57:49 -0400
-Date: Thu, 8 Sep 2016 11:56:13 +0200
-From: David Sterba <dsterba@suse.cz>
-To: David Sterba <dsterba@suse.cz>
-Cc: Qu Wenruo <quwenruo@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v2 2/3] btrfs-progs: receive: Introduce option to exam
- and dump send stream
-Message-ID: <20160908095613.GL16983@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
+Received: from cn.fujitsu.com ([59.151.112.132]:13223 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+        with ESMTP id S934617AbcIGA3q (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 6 Sep 2016 20:29:46 -0400
+Received: from G08CNEXCHPEKD02.g08.fujitsu.local (unknown [10.167.33.83])
+        by cn.fujitsu.com (Postfix) with ESMTP id 38D854042401
+        for <linux-btrfs@vger.kernel.org>; Wed,  7 Sep 2016 08:29:38 +0800 (CST)
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH 1/3] btrfs-progs: Introduce new send-dump object
+Date: Wed, 7 Sep 2016 08:29:33 +0800
+Message-ID: <20160907002935.8539-2-quwenruo@cn.fujitsu.com>
+In-Reply-To: <20160907002935.8539-1-quwenruo@cn.fujitsu.com>
 References: <20160907002935.8539-1-quwenruo@cn.fujitsu.com>
- <20160907002935.8539-3-quwenruo@cn.fujitsu.com>
- <20160908094228.GK16983@twin.jikos.cz>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20160908094228.GK16983@twin.jikos.cz>
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Sep 08, 2016 at 11:42:29AM +0200, David Sterba wrote:
-> On Wed, Sep 07, 2016 at 08:29:34AM +0800, Qu Wenruo wrote:
-> > @@ -1265,19 +1274,37 @@ int cmd_receive(int argc, char **argv)
-> >  		}
-> >  	}
-> >  
-> > -	ret = do_receive(&r, tomnt, realmnt, receive_fd, max_errors);
-> > +	if (dump) {
-> > +		struct btrfs_dump_send_args dump_args;
-> > +
-> > +		dump_args.root_path = malloc(PATH_MAX);
-> > +		dump_args.root_path[0] = '.';
-> > +		dump_args.root_path[1] = '\0';
-> > +		dump_args.full_subvol_path = malloc(PATH_MAX);
-> 
-> Please always check malloc return values. I'm fixing this for now.
+Introduce send-dump.[ch] which implements a new btrfs_send_ops to
+exam and output all operations inside a send stream.
 
-Uh and the buffers are not freed either. Anyway, I'm switching it to an
-array, there's no reason to allocate the memory dynamically.
+It has a better output format than the old and no longer compilable
+send-test tool, but still tries to be script friendly.
+
+Provides the basis for later "inspect-internal dump-send" command.
+
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+---
+ Makefile.in |   2 +-
+ send-dump.c | 367 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ send-dump.h |  24 ++++
+ 3 files changed, 392 insertions(+), 1 deletion(-)
+ create mode 100644 send-dump.c
+ create mode 100644 send-dump.h
+
+diff --git a/Makefile.in b/Makefile.in
+index ac6b353..97caf95 100644
+--- a/Makefile.in
++++ b/Makefile.in
+@@ -80,7 +80,7 @@ objects = ctree.o disk-io.o radix-tree.o extent-tree.o print-tree.o \
+ 	  extent-cache.o extent_io.o volumes.o utils.o repair.o \
+ 	  qgroup.o raid6.o free-space-cache.o list_sort.o props.o \
+ 	  ulist.o qgroup-verify.o backref.o string-table.o task-utils.o \
+-	  inode.o file.o find-root.o free-space-tree.o help.o
++	  inode.o file.o find-root.o free-space-tree.o help.o send-dump.o
+ cmds_objects = cmds-subvolume.o cmds-filesystem.o cmds-device.o cmds-scrub.o \
+ 	       cmds-inspect.o cmds-balance.o cmds-send.o cmds-receive.o \
+ 	       cmds-quota.o cmds-qgroup.o cmds-replace.o cmds-check.o \
+diff --git a/send-dump.c b/send-dump.c
+new file mode 100644
+index 0000000..bf451c7
+--- /dev/null
++++ b/send-dump.c
+@@ -0,0 +1,367 @@
++/*
++ * Copyright (C) 2016 Fujitsu.  All rights reserved.
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public
++ * License v2 as published by the Free Software Foundation.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++ * General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public
++ * License along with this program.
++ */
++
++#include <unistd.h>
++#include <stdint.h>
++#include <dirent.h>
++#include <pthread.h>
++#include <math.h>
++#include <sys/types.h>
++#include <sys/stat.h>
++#include <fcntl.h>
++#include <sys/ioctl.h>
++#include <libgen.h>
++#include <mntent.h>
++#include <limits.h>
++#include <stdlib.h>
++#include <asm/types.h>
++#include <uuid/uuid.h>
++#include "utils.h"
++#include "commands.h"
++#include "send-utils.h"
++#include "send-stream.h"
++#include "send-dump.h"
++
++#define path_cat_out_with_error(function_name, out_path, path1, path2, ret) \
++ret = path_cat_out(out_path, path1, path2);			\
++if (ret < 0) {							\
++	error("%s: path invalid: %s\n", function_name, path2);	\
++	return ret;						\
++}
++
++#define TITLE_WIDTH	16
++#define PATH_WIDTH	32
++
++static void print_dump(const char *title, const char *path,
++	  	       const char *fmt, ...)
++{
++	va_list args;
++	char real_title[TITLE_WIDTH + 1];
++
++	real_title[0]='\0';
++	/* Append ':' to title*/
++	strncpy(real_title, title, TITLE_WIDTH - 1);
++	strncat(real_title, ":", TITLE_WIDTH);
++
++	/* Unified output */
++	printf("%-*s%-*s", TITLE_WIDTH, real_title, PATH_WIDTH, path);
++	va_start(args, fmt);
++	/* Command specified output */
++	vprintf(fmt, args);
++	va_end(args);
++	printf("\n");
++}
++
++static int print_subvol(const char *path, const u8 *uuid, u64 ctransid,
++			void *user)
++{
++	struct btrfs_dump_send_args *r = user;
++	char uuid_str[BTRFS_UUID_UNPARSED_SIZE];
++	int ret;
++
++	path_cat_out_with_error("subvol", r->full_subvol_path, r->root_path,
++				path, ret);
++	uuid_unparse(uuid, uuid_str);
++
++	print_dump("subvol", r->full_subvol_path, "uuid: %s, transid: %llu",
++		   uuid_str, ctransid);
++	return 0;
++}
++
++static int print_snapshot(const char *path, const u8 *uuid, u64 ctransid,
++			  const u8 *parent_uuid, u64 parent_ctransid,
++			  void *user)
++{
++	struct btrfs_dump_send_args *r = user;
++	char uuid_str[BTRFS_UUID_UNPARSED_SIZE];
++	char parent_uuid_str[BTRFS_UUID_UNPARSED_SIZE];
++	int ret;
++
++	path_cat_out_with_error("snapshot", r->full_subvol_path, r->root_path,
++				path, ret);
++	uuid_unparse(uuid, uuid_str);
++	uuid_unparse(parent_uuid, parent_uuid_str);
++
++	print_dump("snapshot", r->full_subvol_path,
++		   "uuid: %s, transid: %llu, parent_uuid: %s, parent_transid: %llu",
++		   uuid_str, ctransid, parent_uuid_str, parent_ctransid);
++	return 0;
++}
++
++static int print_mkfile(const char *path, void *user)
++{
++	struct btrfs_dump_send_args *r = user;
++	char full_path[PATH_MAX];
++	int ret;
++
++	path_cat_out_with_error("mkfile", full_path, r->full_subvol_path, path,
++				ret);
++	print_dump("mkfile", full_path, "");
++	return 0;
++}
++
++static int print_mkdir(const char *path, void *user)
++{
++	struct btrfs_dump_send_args *r = user;
++	char full_path[PATH_MAX];
++	int ret;
++
++	path_cat_out_with_error("mkdir", full_path, r->full_subvol_path, path,
++				ret);
++	print_dump("mkdir", full_path, "");
++	return 0;
++}
++
++static int print_mknod(const char *path, u64 mode, u64 dev, void *user)
++{
++	struct btrfs_dump_send_args *r = user;
++	char full_path[PATH_MAX];
++	int ret;
++
++	path_cat_out_with_error("mkdir", full_path, r->full_subvol_path, path,
++				ret);
++	print_dump("mknod", full_path, "mode: %llo, dev: 0x%llx", mode, dev);
++	return 0;
++}
++
++static int print_mkfifo(const char *path, void *user)
++{
++	struct btrfs_dump_send_args *r = user;
++	char full_path[PATH_MAX];
++	int ret;
++
++	path_cat_out_with_error("mkfifo", full_path, r->full_subvol_path, path,
++				ret);
++	print_dump("mkfifo", full_path, "");
++	return 0;
++}
++
++static int print_mksock(const char *path, void *user)
++{
++	struct btrfs_dump_send_args *r = user;
++	char full_path[PATH_MAX];
++	int ret;
++
++	path_cat_out_with_error("mksock", full_path, r->full_subvol_path, path,
++				ret);
++	print_dump("mksock", full_path, "");
++	return 0;
++}
++
++static int print_symlink(const char *path, const char *lnk, void *user)
++{
++	struct btrfs_dump_send_args *r = user;
++	char full_path[PATH_MAX];
++	int ret;
++
++	path_cat_out_with_error("symlink", full_path, r->full_subvol_path, path,
++				ret);
++	print_dump("symlink", full_path, "lnk: %s", lnk);
++	return 0;
++}
++
++static int print_rename(const char *from, const char *to, void *user)
++{
++	struct btrfs_dump_send_args *r = user;
++	char full_from[PATH_MAX];
++	char full_to[PATH_MAX];
++	int ret;
++
++	path_cat_out_with_error("rename", full_from, r->full_subvol_path, from,
++				ret);
++	path_cat_out_with_error("rename", full_to, r->full_subvol_path, to,
++				ret);
++	print_dump("rename", full_from, "to %s", full_to);
++	return 0;
++}
++
++static int print_link(const char *path, const char *lnk, void *user)
++{
++	struct btrfs_dump_send_args *r = user;
++	char full_path[PATH_MAX];
++	int ret;
++
++	path_cat_out_with_error("link", full_path, r->full_subvol_path, path,
++				ret);
++	print_dump("link", full_path, "lnk: %s", lnk);
++	return 0;
++}
++
++static int print_unlink(const char *path, void *user)
++{
++	struct btrfs_dump_send_args *r = user;
++	char full_path[PATH_MAX];
++	int ret;
++
++	path_cat_out_with_error("unlink", full_path, r->full_subvol_path, path,
++				ret);
++	print_dump("unlink", full_path, "");
++	return 0;
++}
++
++static int print_rmdir(const char *path, void *user)
++{
++	struct btrfs_dump_send_args *r = user;
++	char full_path[PATH_MAX];
++	int ret;
++
++	path_cat_out_with_error("rmdir", full_path, r->full_subvol_path, path,
++				ret);
++	print_dump("rmdir", full_path, "");
++	return 0;
++}
++
++static int print_write(const char *path, const void *data, u64 offset,
++		       u64 len, void *user)
++{
++	struct btrfs_dump_send_args *r = user;
++	char full_path[PATH_MAX];
++	int ret;
++
++	path_cat_out_with_error("write", full_path, r->full_subvol_path, path,
++				ret);
++	print_dump("write", full_path, "offset: %llu, len: %llu", offset, len);
++	return 0;
++}
++
++static int print_clone(const char *path, u64 offset, u64 len,
++		       const u8 *clone_uuid, u64 clone_ctransid,
++		       const char *clone_path, u64 clone_offset,
++		       void *user)
++{
++	struct btrfs_dump_send_args *r = user;
++	char full_path[PATH_MAX];
++	int ret;
++
++	path_cat_out_with_error("clone", full_path, r->full_subvol_path, path,
++				ret);
++	print_dump("clone", full_path, "offset: %llu, len: %llu from: %s, offset: %llu",
++		   offset, len, clone_path, clone_offset);
++	return 0;
++}
++
++static int print_set_xattr(const char *path, const char *name,
++			   const void *data, int len, void *user)
++{
++	struct btrfs_dump_send_args *r = user;
++	char full_path[PATH_MAX];
++	int ret;
++
++	path_cat_out_with_error("set_xattr", full_path, r->full_subvol_path,
++				path, ret);
++	print_dump("set_xattr", full_path, "name: %s, len: %s", name, len);
++	return 0;
++}
++
++static int print_remove_xattr(const char *path, const char *name, void *user)
++{
++	struct btrfs_dump_send_args *r = user;
++	char full_path[PATH_MAX];
++	int ret;
++
++	path_cat_out_with_error("remove_xattr", full_path, r->full_subvol_path,
++				path, ret);
++	print_dump("remove_xattr", full_path, name);
++	return 0;
++}
++
++static int print_truncate(const char *path, u64 size, void *user)
++{
++	struct btrfs_dump_send_args *r = user;
++	char full_path[PATH_MAX];
++	int ret;
++
++	path_cat_out_with_error("truncate", full_path, r->full_subvol_path,
++				path, ret);
++	print_dump("truncate", full_path, "size: %llu", size);
++	return 0;
++}
++
++static int print_chmod(const char *path, u64 mode, void *user)
++{
++	struct btrfs_dump_send_args *r = user;
++	char full_path[PATH_MAX];
++	int ret;
++
++	path_cat_out_with_error("chmod", full_path, r->full_subvol_path, path,
++				ret);
++	print_dump("chmod", full_path, "mode: %llo", mode);
++	return 0;
++}
++
++static int print_chown(const char *path, u64 uid, u64 gid, void *user)
++{
++	struct btrfs_dump_send_args *r = user;
++	char full_path[PATH_MAX];
++	int ret;
++
++	path_cat_out_with_error("chown", full_path, r->full_subvol_path, path,
++				ret);
++	print_dump("chown", full_path, "gid: %llu, uid: %llu", gid, uid);
++	return 0;
++}
++
++static int print_utimes(const char *path, struct timespec *at,
++			struct timespec *mt, struct timespec *ct,
++			void *user)
++{
++	struct btrfs_dump_send_args *r = user;
++	char full_path[PATH_MAX];
++	int ret;
++
++	path_cat_out_with_error("utimes", full_path, r->full_subvol_path, path,
++				ret);
++	print_dump("utimes", full_path, "");
++	return 0;
++}
++
++static int print_update_extent(const char *path, u64 offset, u64 len,
++			       void *user)
++{
++	struct btrfs_dump_send_args *r = user;
++	char full_path[PATH_MAX];
++	int ret;
++
++	path_cat_out_with_error("update_extent", full_path, r->full_subvol_path,
++				path, ret);
++	print_dump("update_extent", full_path, "offset: %llu, len: %llu",
++		   offset, len);
++	return 0;
++}
++
++struct btrfs_send_ops btrfs_print_send_ops = {
++	.subvol = print_subvol,
++	.snapshot = print_snapshot,
++	.mkfile = print_mkfile,
++	.mkdir = print_mkdir,
++	.mknod = print_mknod,
++	.mkfifo = print_mkfifo,
++	.mksock = print_mksock,
++	.symlink = print_symlink,
++	.rename = print_rename,
++	.link = print_link,
++	.unlink = print_unlink,
++	.rmdir = print_rmdir,
++	.write = print_write,
++	.clone = print_clone,
++	.set_xattr = print_set_xattr,
++	.remove_xattr = print_remove_xattr,
++	.truncate = print_truncate,
++	.chmod = print_chmod,
++	.chown = print_chown,
++	.utimes = print_utimes,
++	.update_extent = print_update_extent
++};
+diff --git a/send-dump.h b/send-dump.h
+new file mode 100644
+index 0000000..48d821f
+--- /dev/null
++++ b/send-dump.h
+@@ -0,0 +1,24 @@
++/*
++ * Copyright (C) 2016 Fujitsu.  All rights reserved.
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public
++ * License v2 as published by the Free Software Foundation.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++ * General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public
++ * License along with this program.
++ */
++
++#ifndef __BTRFS_SEND_DUMP_H__
++#define __BTRFS_SEND_DUMP_H__
++struct btrfs_dump_send_args {
++	char *full_subvol_path;
++	char *root_path;
++};
++extern struct btrfs_send_ops btrfs_print_send_ops;
++#endif
+-- 
+2.9.3
+
+
+

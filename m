@@ -1,334 +1,285 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:39600 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:54187 "EHLO song.cn.fujitsu.com"
         rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-        id S932580AbcIHHNu (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 8 Sep 2016 03:13:50 -0400
-Received: from localhost.localdomain (unknown [10.167.226.34])
-        by cn.fujitsu.com (Postfix) with ESMTP id AD563401E88B
-        for <linux-btrfs@vger.kernel.org>; Thu,  8 Sep 2016 15:13:08 +0800 (CST)
+        id S932646AbcIHHNp (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 8 Sep 2016 03:13:45 -0400
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v13 15/15] btrfs: dedupe: Introduce new reconfigure ioctl
-Date: Thu,  8 Sep 2016 15:13:04 +0800
-Message-Id: <20160908071304.25616-16-quwenruo@cn.fujitsu.com>
+Cc: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
+Subject: [PATCH v13 03/15] btrfs: dedupe: Introduce function to initialize dedupe info
+Date: Thu,  8 Sep 2016 15:12:52 +0800
+Message-Id: <20160908071304.25616-4-quwenruo@cn.fujitsu.com>
 In-Reply-To: <20160908071304.25616-1-quwenruo@cn.fujitsu.com>
 References: <20160908071304.25616-1-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Introduce new reconfigure ioctl, and new FORCE flag for in-band dedupe
-ioctls.
+From: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
 
-Now dedupe enable and reconfigure ioctl are stateful.
+Add generic function to initialize dedupe info.
 
---------------------------------------------
-| Current state |   Ioctl    | Next state  |
---------------------------------------------
-| Disabled	|  enable    | Enabled     |
-| Enabled       |  enable    | Not allowed |
-| Enabled       |  reconf    | Enabled     |
-| Enabled       |  disable   | Disabled    |
-| Disabled      |  dsiable   | Disabled    |
-| Disabled      |  reconf    | Not allowed |
---------------------------------------------
-(While disbale is always stateless)
-
-While for guys prefer stateless ioctl (myself for example), new FORCE
-flag is introduced.
-
-In FORCE mode, enable/disable is completely stateless.
---------------------------------------------
-| Current state |   Ioctl    | Next state  |
---------------------------------------------
-| Disabled	|  enable    | Enabled     |
-| Enabled       |  enable    | Enabled     |
-| Enabled       |  disable   | Disabled    |
-| Disabled      |  disable   | Disabled    |
---------------------------------------------
-
-Also, re-configure ioctl will only modify specified fields.
-Unlike enable, un-specified fields will be filled with default value.
-
-For example:
- # btrfs dedupe enable --block-size 64k /mnt
- # btrfs dedupe reconfigure --limit-hash 1m /mnt
-Will leads to:
- dedupe blocksize: 64K
- dedupe hash limit nr: 1m
-
-While for enable:
- # btrfs dedupe enable --force --block-size 64k /mnt
- # btrfs dedupe enable --force --limit-hash 1m /mnt
-Will reset blocksize to default value:
- dedupe blocksize: 128K     << reset
- dedupe hash limit nr: 1m
-
-Suggested-by: David Sterba <dsterba@suse.cz>
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Signed-off-by: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
+Reviewed-by: Josef Bacik <jbacik@fb.com>
 ---
- fs/btrfs/dedupe.c          | 131 ++++++++++++++++++++++++++++++++++++---------
- fs/btrfs/dedupe.h          |  13 +++++
- fs/btrfs/ioctl.c           |  13 +++++
- include/uapi/linux/btrfs.h |  11 +++-
- 4 files changed, 143 insertions(+), 25 deletions(-)
+ fs/btrfs/Makefile          |   2 +-
+ fs/btrfs/dedupe.c          | 185 +++++++++++++++++++++++++++++++++++++++++++++
+ fs/btrfs/dedupe.h          |  13 +++-
+ include/uapi/linux/btrfs.h |   4 +-
+ 4 files changed, 200 insertions(+), 4 deletions(-)
+ create mode 100644 fs/btrfs/dedupe.c
 
-diff --git a/fs/btrfs/dedupe.c b/fs/btrfs/dedupe.c
-index 37b5a05..5fd4a9c 100644
---- a/fs/btrfs/dedupe.c
-+++ b/fs/btrfs/dedupe.c
-@@ -41,6 +41,40 @@ static inline struct inmem_hash *inmem_alloc_hash(u16 algo)
- 			GFP_NOFS);
- }
+diff --git a/fs/btrfs/Makefile b/fs/btrfs/Makefile
+index 128ce17..1b8c627 100644
+--- a/fs/btrfs/Makefile
++++ b/fs/btrfs/Makefile
+@@ -9,7 +9,7 @@ btrfs-y += super.o ctree.o extent-tree.o print-tree.o root-tree.o dir-item.o \
+ 	   export.o tree-log.o free-space-cache.o zlib.o lzo.o \
+ 	   compression.o delayed-ref.o relocation.o delayed-inode.o scrub.o \
+ 	   reada.o backref.o ulist.o qgroup.o send.o dev-replace.o raid56.o \
+-	   uuid-tree.o props.o hash.o free-space-tree.o
++	   uuid-tree.o props.o hash.o free-space-tree.o dedupe.o
  
+ btrfs-$(CONFIG_BTRFS_FS_POSIX_ACL) += acl.o
+ btrfs-$(CONFIG_BTRFS_FS_CHECK_INTEGRITY) += check-integrity.o
+diff --git a/fs/btrfs/dedupe.c b/fs/btrfs/dedupe.c
+new file mode 100644
+index 0000000..b14166a
+--- /dev/null
++++ b/fs/btrfs/dedupe.c
+@@ -0,0 +1,185 @@
 +/*
-+ * Copy from current dedupe info to fill dargs.
-+ * For reconf case, only fill members which is uninitialized.
++ * Copyright (C) 2016 Fujitsu.  All rights reserved.
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public
++ * License v2 as published by the Free Software Foundation.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++ * General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public
++ * License along with this program; if not, write to the
++ * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
++ * Boston, MA 021110-1307, USA.
 + */
-+static void get_dedupe_status(struct btrfs_dedupe_info *dedupe_info,
-+			      struct btrfs_ioctl_dedupe_args *dargs)
++#include "ctree.h"
++#include "dedupe.h"
++#include "btrfs_inode.h"
++#include "transaction.h"
++#include "delayed-ref.h"
++
++struct inmem_hash {
++	struct rb_node hash_node;
++	struct rb_node bytenr_node;
++	struct list_head lru_list;
++
++	u64 bytenr;
++	u32 num_bytes;
++
++	u8 hash[];
++};
++
++static int init_dedupe_info(struct btrfs_dedupe_info **ret_info,
++			    struct btrfs_ioctl_dedupe_args *dargs)
 +{
-+	int reconf = (dargs->cmd == BTRFS_DEDUPE_CTL_RECONF);
++	struct btrfs_dedupe_info *dedupe_info;
 +
-+	dargs->status = 1;
++	dedupe_info = kzalloc(sizeof(*dedupe_info), GFP_NOFS);
++	if (!dedupe_info)
++		return -ENOMEM;
 +
-+	if (!reconf || (reconf && dargs->blocksize == (u64)-1))
-+		dargs->blocksize = dedupe_info->blocksize;
-+	if (!reconf || (reconf && dargs->backend == (u16)-1))
-+		dargs->backend = dedupe_info->backend;
-+	if (!reconf || (reconf && dargs->hash_algo ==(u16)-1))
-+		dargs->hash_algo = dedupe_info->hash_algo;
++	dedupe_info->hash_algo = dargs->hash_algo;
++	dedupe_info->backend = dargs->backend;
++	dedupe_info->blocksize = dargs->blocksize;
++	dedupe_info->limit_nr = dargs->limit_nr;
 +
-+	/*
-+	 * For re-configure case, if not modifying limit,
-+	 * therir limit will be set to 0, unlike other fields
-+	 */
-+	if (!reconf || !(dargs->limit_nr || dargs->limit_mem)) {
-+		dargs->limit_nr = dedupe_info->limit_nr;
-+		dargs->limit_mem = dedupe_info->limit_nr *
-+			(sizeof(struct inmem_hash) +
-+			 btrfs_hash_sizes[dedupe_info->hash_algo]);
++	/* only support SHA256 yet */
++	dedupe_info->dedupe_driver = crypto_alloc_shash("sha256", 0, 0);
++	if (IS_ERR(dedupe_info->dedupe_driver)) {
++		int ret;
++
++		ret = PTR_ERR(dedupe_info->dedupe_driver);
++		kfree(dedupe_info);
++		return ret;
 +	}
 +
-+	/* current_nr doesn't makes sense for reconfig case */
-+	if (!reconf)
-+		dargs->current_nr = dedupe_info->current_nr;
++	dedupe_info->hash_root = RB_ROOT;
++	dedupe_info->bytenr_root = RB_ROOT;
++	dedupe_info->current_nr = 0;
++	INIT_LIST_HEAD(&dedupe_info->lru_list);
++	mutex_init(&dedupe_info->lock);
++
++	*ret_info = dedupe_info;
++	return 0;
 +}
 +
- void btrfs_dedupe_status(struct btrfs_fs_info *fs_info,
- 			 struct btrfs_ioctl_dedupe_args *dargs)
- {
-@@ -57,15 +91,7 @@ void btrfs_dedupe_status(struct btrfs_fs_info *fs_info,
- 		return;
- 	}
- 	mutex_lock(&dedupe_info->lock);
--	dargs->status = 1;
--	dargs->blocksize = dedupe_info->blocksize;
--	dargs->backend = dedupe_info->backend;
--	dargs->hash_algo = dedupe_info->hash_algo;
--	dargs->limit_nr = dedupe_info->limit_nr;
--	dargs->limit_mem = dedupe_info->limit_nr *
--		(sizeof(struct inmem_hash) +
--		 btrfs_hash_sizes[dedupe_info->hash_algo]);
--	dargs->current_nr = dedupe_info->current_nr;
-+	get_dedupe_status(dedupe_info, dargs);
- 	mutex_unlock(&dedupe_info->lock);
- 	memset(dargs->__unused, -1, sizeof(dargs->__unused));
- }
-@@ -114,17 +140,50 @@ static int init_dedupe_info(struct btrfs_dedupe_info **ret_info,
- static int check_dedupe_parameter(struct btrfs_fs_info *fs_info,
- 				  struct btrfs_ioctl_dedupe_args *dargs)
- {
--	u64 blocksize = dargs->blocksize;
--	u64 limit_nr = dargs->limit_nr;
--	u64 limit_mem = dargs->limit_mem;
--	u16 hash_algo = dargs->hash_algo;
--	u8 backend = dargs->backend;
-+	struct btrfs_dedupe_info *dedupe_info = fs_info->dedupe_info;
-+
-+	u64 blocksize;
-+	u64 limit_nr;
-+	u64 limit_mem;
-+	u16 hash_algo;
-+	u8 backend;
- 
- 	/*
- 	 * Set all reserved fields to -1, allow user to detect
- 	 * unsupported optional parameters.
- 	 */
- 	memset(dargs->__unused, -1, sizeof(dargs->__unused));
++/*
++ * Helper to check if parameters are valid.
++ * The first invalid field will be set to (-1), to info user which parameter
++ * is invalid.
++ * Except dargs->limit_nr or dargs->limit_mem, in that case, 0 will returned
++ * to info user, since user can specify any value to limit, except 0.
++ */
++static int check_dedupe_parameter(struct btrfs_fs_info *fs_info,
++				  struct btrfs_ioctl_dedupe_args *dargs)
++{
++	u64 blocksize = dargs->blocksize;
++	u64 limit_nr = dargs->limit_nr;
++	u64 limit_mem = dargs->limit_mem;
++	u16 hash_algo = dargs->hash_algo;
++	u8 backend = dargs->backend;
 +
 +	/*
-+	 * For dedupe enabled fs, enable without FORCE flag is not allowed
++	 * Set all reserved fields to -1, allow user to detect
++	 * unsupported optional parameters.
 +	 */
-+	if (dargs->cmd == BTRFS_DEDUPE_CTL_ENABLE && dedupe_info &&
-+	    !(dargs->flags & BTRFS_DEDUPE_FLAG_FORCE)) {
-+		dargs->status = 1;
-+		dargs->flags = (u8)-1;
++	memset(dargs->__unused, -1, sizeof(dargs->__unused));
++	if (blocksize > BTRFS_DEDUPE_BLOCKSIZE_MAX ||
++	    blocksize < BTRFS_DEDUPE_BLOCKSIZE_MIN ||
++	    blocksize < fs_info->tree_root->sectorsize ||
++	    !is_power_of_2(blocksize) ||
++	    blocksize < PAGE_SIZE) {
++		dargs->blocksize = (u64)-1;
++		return -EINVAL;
++	}
++	if (hash_algo >= ARRAY_SIZE(btrfs_hash_sizes)) {
++		dargs->hash_algo = (u16)-1;
++		return -EINVAL;
++	}
++	if (backend >= BTRFS_DEDUPE_BACKEND_COUNT) {
++		dargs->backend = (u8)-1;
 +		return -EINVAL;
 +	}
 +
-+	/* Check and copy parameters from existing dedupe info */
-+	if (dargs->cmd == BTRFS_DEDUPE_CTL_RECONF) {
-+		if (!dedupe_info) {
-+			/* Info caller that dedupe is not enabled */
-+			dargs->status = 0;
++	/* Backend specific check */
++	if (backend == BTRFS_DEDUPE_BACKEND_INMEMORY) {
++		/* only one limit is accepted for enable*/
++		if (dargs->limit_nr && dargs->limit_mem) {
++			dargs->limit_nr = 0;
++			dargs->limit_mem = 0;
 +			return -EINVAL;
 +		}
-+		get_dedupe_status(dedupe_info, dargs);
-+		/*
-+		 * All unmodified parameter are already copied out
-+		 * go through normal validation check.
-+		 */
++
++		if (!limit_nr && !limit_mem)
++			dargs->limit_nr = BTRFS_DEDUPE_LIMIT_NR_DEFAULT;
++		else {
++			u64 tmp = (u64)-1;
++
++			if (limit_mem) {
++				tmp = limit_mem / (sizeof(struct inmem_hash) +
++					btrfs_hash_sizes[hash_algo]);
++				/* Too small limit_mem to fill a hash item */
++				if (!tmp) {
++					dargs->limit_mem = 0;
++					dargs->limit_nr = 0;
++					return -EINVAL;
++				}
++			}
++			if (!limit_nr)
++				limit_nr = (u64)-1;
++
++			dargs->limit_nr = min(tmp, limit_nr);
++		}
 +	}
++	if (backend == BTRFS_DEDUPE_BACKEND_ONDISK)
++		dargs->limit_nr = 0;
 +
-+	blocksize = dargs->blocksize;
-+	limit_nr = dargs->limit_nr;
-+	limit_mem = dargs->limit_mem;
-+	hash_algo = dargs->hash_algo;
-+	backend = dargs->backend;
++	return 0;
++}
 +
- 	if (blocksize > BTRFS_DEDUPE_BLOCKSIZE_MAX ||
- 	    blocksize < BTRFS_DEDUPE_BLOCKSIZE_MIN ||
- 	    blocksize < fs_info->tree_root->sectorsize ||
-@@ -145,7 +204,8 @@ static int check_dedupe_parameter(struct btrfs_fs_info *fs_info,
- 	/* Backend specific check */
- 	if (backend == BTRFS_DEDUPE_BACKEND_INMEMORY) {
- 		/* only one limit is accepted for enable*/
--		if (dargs->limit_nr && dargs->limit_mem) {
-+		if (dargs->cmd == BTRFS_DEDUPE_CTL_ENABLE &&
-+		    dargs->limit_nr && dargs->limit_mem) {
- 			dargs->limit_nr = 0;
- 			dargs->limit_mem = 0;
- 			return -EINVAL;
-@@ -178,18 +238,19 @@ static int check_dedupe_parameter(struct btrfs_fs_info *fs_info,
- 	return 0;
- }
- 
--int btrfs_dedupe_enable(struct btrfs_fs_info *fs_info,
--			struct btrfs_ioctl_dedupe_args *dargs)
-+/*
-+ * Enable or re-configure dedupe.
-+ *
-+ * Caller must call check_dedupe_parameters first
-+ */
-+static int enable_reconfig_dedupe(struct btrfs_fs_info *fs_info,
-+				  struct btrfs_ioctl_dedupe_args *dargs)
- {
--	struct btrfs_dedupe_info *dedupe_info;
--	int ret = 0;
--
--	ret = check_dedupe_parameter(fs_info, dargs);
--	if (ret < 0)
--		return ret;
-+	struct btrfs_dedupe_info *dedupe_info = fs_info->dedupe_info;
-+	int ret;
- 
--	dedupe_info = fs_info->dedupe_info;
- 	if (dedupe_info) {
-+
- 		/* Check if we are re-enable for different dedupe config */
- 		if (dedupe_info->blocksize != dargs->blocksize ||
- 		    dedupe_info->hash_algo != dargs->hash_algo ||
-@@ -216,6 +277,28 @@ enable:
- 	return ret;
- }
- 
 +int btrfs_dedupe_enable(struct btrfs_fs_info *fs_info,
 +			struct btrfs_ioctl_dedupe_args *dargs)
 +{
++	struct btrfs_dedupe_info *dedupe_info;
 +	int ret = 0;
 +
 +	ret = check_dedupe_parameter(fs_info, dargs);
 +	if (ret < 0)
 +		return ret;
-+	return enable_reconfig_dedupe(fs_info, dargs);
++
++	dedupe_info = fs_info->dedupe_info;
++	if (dedupe_info) {
++		/* Check if we are re-enable for different dedupe config */
++		if (dedupe_info->blocksize != dargs->blocksize ||
++		    dedupe_info->hash_algo != dargs->hash_algo ||
++		    dedupe_info->backend != dargs->backend) {
++			btrfs_dedupe_disable(fs_info);
++			goto enable;
++		}
++
++		/* On-fly limit change is OK */
++		mutex_lock(&dedupe_info->lock);
++		fs_info->dedupe_info->limit_nr = dargs->limit_nr;
++		mutex_unlock(&dedupe_info->lock);
++		return 0;
++	}
++
++enable:
++	ret = init_dedupe_info(&dedupe_info, dargs);
++	if (ret < 0)
++		return ret;
++	fs_info->dedupe_info = dedupe_info;
++	/* We must ensure dedupe_bs is modified after dedupe_info */
++	smp_wmb();
++	fs_info->dedupe_enabled = 1;
++	return ret;
 +}
 +
-+int btrfs_dedupe_reconfigure(struct btrfs_fs_info *fs_info,
-+			     struct btrfs_ioctl_dedupe_args *dargs)
++int btrfs_dedupe_disable(struct btrfs_fs_info *fs_info)
 +{
-+	/*
-+	 * btrfs_dedupe_enable will handle everything well,
-+	 * since dargs contains all info we need to distinguish enable
-+	 * and reconfigure
-+	 */
-+	return btrfs_dedupe_enable(fs_info, dargs);
++	/* Place holder for bisect, will be implemented in later patches */
++	return 0;
 +}
-+
- static int inmem_insert_hash(struct rb_root *root,
- 			     struct inmem_hash *hash, int hash_len)
- {
 diff --git a/fs/btrfs/dedupe.h b/fs/btrfs/dedupe.h
-index 6a25ba2..8bd5687 100644
+index 5ecc321..8311ee1 100644
 --- a/fs/btrfs/dedupe.h
 +++ b/fs/btrfs/dedupe.h
-@@ -126,6 +126,19 @@ static inline struct btrfs_dedupe_hash *btrfs_dedupe_alloc_hash(u16 algo)
- int btrfs_dedupe_enable(struct btrfs_fs_info *fs_info,
- 			struct btrfs_ioctl_dedupe_args *dargs);
+@@ -68,8 +68,17 @@ static inline int btrfs_dedupe_hash_hit(struct btrfs_dedupe_hash *hash)
+ 	return (hash && hash->bytenr);
+ }
  
-+/*
-+ * Reconfigure given parameter for dedupe
-+ * Can only be called when dedupe is already enabled
-+ *
-+ * dargs member which don't need to be modified should be left
-+ * with 0 for limit_nr/limit_offset or -1 for other fields
-+ *
-+ * Return 0 for success
-+ * Return <0 for any error
-+ * (Same error return value with dedupe_enable)
-+ */
-+int btrfs_dedupe_reconfigure(struct btrfs_fs_info *fs_info,
-+			     struct btrfs_ioctl_dedupe_args *dargs);
+-int btrfs_dedupe_hash_size(u16 algo);
+-struct btrfs_dedupe_hash *btrfs_dedupe_alloc_hash(u16 algo);
++static inline int btrfs_dedupe_hash_size(u16 algo)
++{
++	if (WARN_ON(algo >= ARRAY_SIZE(btrfs_hash_sizes)))
++		return -EINVAL;
++	return sizeof(struct btrfs_dedupe_hash) + btrfs_hash_sizes[algo];
++}
++
++static inline struct btrfs_dedupe_hash *btrfs_dedupe_alloc_hash(u16 algo)
++{
++	return kzalloc(btrfs_dedupe_hash_size(algo), GFP_NOFS);
++}
  
-  /*
-  * Get inband dedupe info
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 1c44b4c3..5e3ec1d 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -3311,6 +3311,19 @@ static long btrfs_ioctl_dedupe_ctl(struct btrfs_root *root, void __user *args)
- 		btrfs_dedupe_status(fs_info, dargs);
- 		mutex_unlock(&fs_info->dedupe_ioctl_lock);
- 		break;
-+	case BTRFS_DEDUPE_CTL_RECONF:
-+		mutex_lock(&fs_info->dedupe_ioctl_lock);
-+		ret = btrfs_dedupe_reconfigure(fs_info, dargs);
-+		/*
-+		 * Also copy the result to caller for further use
-+		 * if enable succeeded.
-+		 * For error case, dargs is already set up with
-+		 * special values indicating error reason.
-+		 */
-+		if (!ret)
-+			btrfs_dedupe_status(fs_info, dargs);
-+		mutex_unlock(&fs_info->dedupe_ioctl_lock);
-+		break;
- 	default:
- 		/*
- 		 * Use this return value to inform progs that kernel
+ /*
+  * Initial inband dedupe info
 diff --git a/include/uapi/linux/btrfs.h b/include/uapi/linux/btrfs.h
-index 02c06a7..dfab780 100644
+index ddd7f41..79130ec 100644
 --- a/include/uapi/linux/btrfs.h
 +++ b/include/uapi/linux/btrfs.h
-@@ -644,7 +644,16 @@ struct btrfs_ioctl_get_dev_stats {
- #define BTRFS_DEDUPE_CTL_ENABLE	1
- #define BTRFS_DEDUPE_CTL_DISABLE 2
- #define BTRFS_DEDUPE_CTL_STATUS	3
--#define BTRFS_DEDUPE_CTL_LAST	4
-+#define BTRFS_DEDUPE_CTL_RECONF	4
-+#define BTRFS_DEDUPE_CTL_LAST	5
+@@ -634,6 +634,9 @@ struct btrfs_ioctl_get_dev_stats {
+ /* Hash algorithm, only support SHA256 yet */
+ #define BTRFS_DEDUPE_HASH_SHA256		0
+ 
++/* Default dedupe limit on number of hash */
++#define BTRFS_DEDUPE_LIMIT_NR_DEFAULT	(32 * 1024)
 +
-+/*
-+ * Allow enable command to be executed on dedupe enabled fs.
-+ * Make dedupe_enable ioctl to be stateless.
-+ *
-+ * Or only dedup_reconf ioctl can be executed on dedupe enabled fs
-+ */
-+#define BTRFS_DEDUPE_FLAG_FORCE		(1 << 0)
  /*
   * This structure is used for dedupe enable/disable/configure
   * and status ioctl.
+@@ -652,7 +655,6 @@ struct btrfs_ioctl_dedupe_args {
+ 	u8 __unused[472];	/* Pad to 512 bytes */
+ };
+ 
+-
+ #define BTRFS_QUOTA_CTL_ENABLE	1
+ #define BTRFS_QUOTA_CTL_DISABLE	2
+ #define BTRFS_QUOTA_CTL_RESCAN__NOTUSED	3
 -- 
 2.9.3
 

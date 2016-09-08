@@ -1,49 +1,33 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:32171 "EHLO
-        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750878AbcIGVnV (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 7 Sep 2016 17:43:21 -0400
-From: Liu Bo <bo.li.liu@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.cz>, Filipe Manana <fdmanana@gmail.com>,
-        Jeff Mahoney <jeffm@suse.com>
-Subject: [PATCH] Btrfs: remove unnecessary btrfs_mark_buffer_dirty in split_leaf
-Date: Wed,  7 Sep 2016 14:48:28 -0700
-Message-Id: <1473284908-22942-1-git-send-email-bo.li.liu@oracle.com>
+Received: from mx2.suse.de ([195.135.220.15]:53152 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S932443AbcIHRCq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 8 Sep 2016 13:02:46 -0400
+Date: Thu, 8 Sep 2016 19:01:10 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Josef Bacik <jbacik@fb.com>
+Cc: linux-btrfs@vger.kernel.org, kernel-team@fb.com
+Subject: Re: [PATCH 3/7] Btrfs: add a flags field to btrfs_fs_info
+Message-ID: <20160908170110.GM16983@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1472845206-22870-1-git-send-email-jbacik@fb.com>
+ <1472845206-22870-4-git-send-email-jbacik@fb.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1472845206-22870-4-git-send-email-jbacik@fb.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When we're not able to get enough space through splitting leaf,
-we'd create a new sibling leaf instead, and it's possible that we return
- a zero-nritem sibling leaf and mark it dirty before it's in a consistent
-state.  With CONFIG_BTRFS_FS_CHECK_INTEGRITY=y, the integrity check of
-check_leaf will report panic due to this zero-nritem non-root leaf.
+On Fri, Sep 02, 2016 at 03:40:02PM -0400, Josef Bacik wrote:
+> We have a lot of random ints in btrfs_fs_info that can be put into flags.  This
+> is mostly equivalent with the exception of how we deal with quota going on or
+> off, now instead we set a flag when we are turning it on or off and deal with
+> that appropriately, rather than just having a pending state that the current
+> quota_enabled gets set to.  Thanks,
+> 
+> Signed-off-by: Josef Bacik <jbacik@fb.com>
 
-This removes the unnecessary btrfs_mark_buffer_dirty.
+Reviewed-by: David Sterba <dsterba@suse.com>
 
-Reported-by: Filipe Manana <fdmanana@gmail.com>
-Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
----
- fs/btrfs/ctree.c | 6 +++++-
- 1 file changed, 5 insertions(+), 1 deletion(-)
-
-diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-index d1c56c9..5e5ceb5 100644
---- a/fs/btrfs/ctree.c
-+++ b/fs/btrfs/ctree.c
-@@ -4341,7 +4341,11 @@ again:
- 			if (path->slots[1] == 0)
- 				fixup_low_keys(fs_info, path, &disk_key, 1);
- 		}
--		btrfs_mark_buffer_dirty(right);
-+		/*
-+		 * We create a new leaf 'right' for the required ins_len and
-+		 * we'll do btrfs_mark_buffer_dirty() on this leaf after copying
-+		 * the content of ins_len to 'right'.
-+		 */
- 		return ret;
- 	}
- 
--- 
-2.5.5
-
+I'm picking this patch independently to 4.9, but feel free to include it
+in the patch series if you send more revisions.

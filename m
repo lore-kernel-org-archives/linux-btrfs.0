@@ -1,99 +1,88 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:44324 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752956AbcIII3i (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 9 Sep 2016 04:29:38 -0400
-Date: Fri, 9 Sep 2016 10:29:29 +0200
-From: Jan Kara <jack@suse.cz>
-To: Josef Bacik <jbacik@fb.com>
-Cc: linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
-        kernel-team@fb.com, jack@suse.com, viro@zeniv.linux.org.uk,
-        dchinner@redhat.com, hch@lst.de, linux-mm@kvack.org
-Subject: Re: [PATCH 3/3] writeback: introduce super_operations->write_metadata
-Message-ID: <20160909082929.GD22777@quack2.suse.cz>
-References: <1471887302-12730-1-git-send-email-jbacik@fb.com>
- <1471887302-12730-4-git-send-email-jbacik@fb.com>
+Received: from mx0a-001b2d01.pphosted.com ([148.163.156.1]:59967 "EHLO
+        mx0a-001b2d01.pphosted.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1751792AbcIHLsJ (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 8 Sep 2016 07:48:09 -0400
+Received: from pps.filterd (m0098409.ppops.net [127.0.0.1])
+        by mx0a-001b2d01.pphosted.com (8.16.0.17/8.16.0.17) with SMTP id u88BhQLl052502
+        for <linux-btrfs@vger.kernel.org>; Thu, 8 Sep 2016 07:48:09 -0400
+Received: from e06smtp13.uk.ibm.com (e06smtp13.uk.ibm.com [195.75.94.109])
+        by mx0a-001b2d01.pphosted.com with ESMTP id 25axe6y2sx-1
+        (version=TLSv1.2 cipher=AES256-SHA bits=256 verify=NOT)
+        for <linux-btrfs@vger.kernel.org>; Thu, 08 Sep 2016 07:48:09 -0400
+Received: from localhost
+        by e06smtp13.uk.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
+        for <linux-btrfs@vger.kernel.org> from <borntraeger@de.ibm.com>;
+        Thu, 8 Sep 2016 12:48:06 +0100
+Subject: lockdep warning in btrfs in 4.8-rc3
+To: Chris Mason <clm@fb.com>, LKML <linux-kernel@vger.kernel.org>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+References: <20160826233624.jao5mztbxhjikm7e@floor.thefacebook.com>
+From: Christian Borntraeger <borntraeger@de.ibm.com>
+Date: Thu, 8 Sep 2016 13:48:02 +0200
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1471887302-12730-4-git-send-email-jbacik@fb.com>
+In-Reply-To: <20160826233624.jao5mztbxhjikm7e@floor.thefacebook.com>
+Content-Type: text/plain; charset=windows-1252
+Message-Id: <6a3eed93-fb4d-817a-6a59-7e7f91c8ea6d@de.ibm.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon 22-08-16 13:35:02, Josef Bacik wrote:
-> Now that we have metadata counters in the VM, we need to provide a way to kick
-> writeback on dirty metadata.  Introduce super_operations->write_metadata.  This
-> allows file systems to deal with writing back any dirty metadata we need based
-> on the writeback needs of the system.  Since there is no inode to key off of we
-> need a list in the bdi for dirty super blocks to be added.  From there we can
-> find any dirty sb's on the bdi we are currently doing writeback on and call into
-> their ->write_metadata callback.
-> 
-> Signed-off-by: Josef Bacik <jbacik@fb.com>
-...
-> @@ -1639,11 +1664,38 @@ static long __writeback_inodes_wb(struct bdi_writeback *wb,
->  
->  		/* refer to the same tests at the end of writeback_sb_inodes */
->  		if (wrote) {
-> -			if (time_is_before_jiffies(start_time + HZ / 10UL))
-> -				break;
-> -			if (work->nr_pages <= 0)
-> +			if (time_is_before_jiffies(start_time + HZ / 10UL) ||
-> +			    work->nr_pages <= 0) {
-> +				done = true;
->  				break;
-> +			}
-> +		}
-> +	}
-> +
-> +	if (!done && wb_stat(wb, WB_METADATA_DIRTY)) {
-> +		LIST_HEAD(list);
-> +
-> +		spin_unlock(&wb->list_lock);
-> +		spin_lock(&wb->bdi->sb_list_lock);
-> +		list_splice_init(&wb->bdi->dirty_sb_list, &list);
-> +		while (!list_empty(&list)) {
-> +			struct super_block *sb;
-> +
-> +			sb = list_first_entry(&list, struct super_block,
-> +					      s_bdi_list);
-> +			list_move_tail(&sb->s_bdi_list,
-> +				       &wb->bdi->dirty_sb_list);
-> +			if (!sb->s_op->write_metadata)
-> +				continue;
-> +			if (!trylock_super(sb))
-> +				continue;
-> +			spin_unlock(&wb->bdi->sb_list_lock);
-> +			wrote += writeback_sb_metadata(sb, wb, work);
-> +			spin_lock(&wb->bdi->sb_list_lock);
-> +			up_read(&sb->s_umount);
->  		}
-> +		spin_unlock(&wb->bdi->sb_list_lock);
-> +		spin_lock(&wb->list_lock);
->  	}
->  	/* Leave any unwritten inodes on b_io */
->  	return wrote;
+Chris,
 
-So this will hook metadata writeback into the periodic writeback but when
-work->sb is set, metadata won't be written because in that case we call
-writeback_sb_inodes() directly. So you need to call writeback_sb_metadata()
-from wb_writeback() in that case as well. 
+with 4.8-rc3 I get the following on an s390 box:
 
-...
 
-> diff --git a/include/linux/fs.h b/include/linux/fs.h
-> index f3f0b4c8..c063ac6 100644
-> --- a/include/linux/fs.h
-> +++ b/include/linux/fs.h
-> @@ -1430,6 +1430,8 @@ struct super_block {
->  
->  	spinlock_t		s_inode_wblist_lock;
->  	struct list_head	s_inodes_wb;	/* writeback inodes */
-> +
-> +	struct list_head	s_bdi_list;
+[ 1094.009172] =============================================
+[ 1094.009174] [ INFO: possible recursive locking detected ]
+[ 1094.009177] 4.8.0-rc3 #126 Tainted: G        W      
+[ 1094.009179] ---------------------------------------------
+[ 1094.009180] vim/12891 is trying to acquire lock:
+[ 1094.009182]  (&ei->log_mutex){+.+...}, at: [<000003ff817e83c6>] btrfs_log_inode+0x126/0x1010 [btrfs]
+[ 1094.009256] 
+               but task is already holding lock:
+[ 1094.009258]  (&ei->log_mutex){+.+...}, at: [<000003ff817e83c6>] btrfs_log_inode+0x126/0x1010 [btrfs]
+[ 1094.009276] 
+               other info that might help us debug this:
+[ 1094.009278]  Possible unsafe locking scenario:
 
-Maybe call this s_bdi_dirty_list?
+[ 1094.009280]        CPU0
+[ 1094.009281]        ----
+[ 1094.009282]   lock(&ei->log_mutex);
+[ 1094.009284]   lock(&ei->log_mutex);
+[ 1094.009286] 
+                *** DEADLOCK ***
 
-								Honza
--- 
-Jan Kara <jack@suse.com>
-SUSE Labs, CR
+[ 1094.009288]  May be due to missing lock nesting notation
+
+[ 1094.009290] 3 locks held by vim/12891:
+[ 1094.009291]  #0:  (&sb->s_type->i_mutex_key#15){+.+.+.}, at: [<000003ff817afbd6>] btrfs_sync_file+0x1de/0x5e8 [btrfs]
+[ 1094.009311]  #1:  (sb_internal#2){.+.+..}, at: [<000000000035e0ba>] __sb_start_write+0x122/0x138
+[ 1094.009320]  #2:  (&ei->log_mutex){+.+...}, at: [<000003ff817e83c6>] btrfs_log_inode+0x126/0x1010 [btrfs]
+[ 1094.009370] 
+               stack backtrace:
+[ 1094.009375] CPU: 14 PID: 12891 Comm: vim Tainted: G        W       4.8.0-rc3 #126
+[ 1094.009377] Hardware name: IBM              2964 NC9              704              (LPAR)
+[ 1094.009380]        000000f061367608 000000f061367698 0000000000000002 0000000000000000 
+                      000000f061367738 000000f0613676b0 000000f0613676b0 00000000001133ec 
+                      0000000000000000 0000000000000000 000000f70000000a 000000f70000000a 
+                      000000f0613676f8 000000f061367698 0000000000000000 0000000000000000 
+                      0400000001d821c8 00000000001133ec 000000f061367698 000000f0613676e8 
+[ 1094.009396] Call Trace:
+[ 1094.009401] ([<0000000000113334>] show_trace+0xec/0xf0)
+[ 1094.009403] ([<000000000011339a>] show_stack+0x62/0xe8)
+[ 1094.009406] ([<000000000055211c>] dump_stack+0x9c/0xe0)
+[ 1094.009411] ([<00000000001d9930>] validate_chain.isra.22+0xc00/0xd70)
+[ 1094.009413] ([<00000000001dad9c>] __lock_acquire+0x39c/0x7d8)
+[ 1094.009414] ([<00000000001db8d0>] lock_acquire+0x108/0x320)
+[ 1094.009420] ([<00000000008845c6>] mutex_lock_nested+0x86/0x3f8)
+[ 1094.009440] ([<000003ff817e83c6>] btrfs_log_inode+0x126/0x1010 [btrfs])
+[ 1094.009457] ([<000003ff817e8fb2>] btrfs_log_inode+0xd12/0x1010 [btrfs])
+[ 1094.009474] ([<000003ff817e95b4>] btrfs_log_inode_parent+0x244/0x980 [btrfs])
+[ 1094.009490] ([<000003ff817eafea>] btrfs_log_dentry_safe+0x7a/0xa0 [btrfs])
+[ 1094.009506] ([<000003ff817afe1a>] btrfs_sync_file+0x422/0x5e8 [btrfs])
+[ 1094.009512] ([<000000000039e64e>] do_fsync+0x5e/0x90)
+[ 1094.009514] ([<000000000039e9e2>] SyS_fsync+0x32/0x40)
+[ 1094.009517] ([<000000000088a336>] system_call+0xd6/0x270)
+[ 1094.009518] INFO: lockdep is turned off.
+

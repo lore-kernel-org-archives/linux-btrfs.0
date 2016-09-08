@@ -1,14 +1,15 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
 Received: from cn.fujitsu.com ([222.73.24.84]:54187 "EHLO song.cn.fujitsu.com"
         rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-        id S932580AbcIHHNi (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 8 Sep 2016 03:13:38 -0400
+        id S1757108AbcIHHNc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 8 Sep 2016 03:13:32 -0400
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
-Cc: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
-Subject: [PATCH v13 07/15] btrfs: dedupe: Introduce function to search for an existing hash
-Date: Thu,  8 Sep 2016 15:12:56 +0800
-Message-Id: <20160908071304.25616-8-quwenruo@cn.fujitsu.com>
+Cc: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>, Mark Fasheh <mfasheh@suse.de>,
+        Josef Bacik <jbacik@fb.com>
+Subject: [PATCH v13 13/15] btrfs: improve inode's outstanding_extents computation
+Date: Thu,  8 Sep 2016 15:13:02 +0800
+Message-Id: <20160908071304.25616-14-quwenruo@cn.fujitsu.com>
 In-Reply-To: <20160908071304.25616-1-quwenruo@cn.fujitsu.com>
 References: <20160908071304.25616-1-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -17,222 +18,253 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
 
-Introduce static function inmem_search() to handle the job for in-memory
-hash tree.
+This issue was revealed by modifying BTRFS_MAX_EXTENT_SIZE(128MB) to 64KB,
+When modifying BTRFS_MAX_EXTENT_SIZE(128MB) to 64KB, fsstress test often
+gets these warnings from btrfs_destroy_inode():
+	WARN_ON(BTRFS_I(inode)->outstanding_extents);
+	WARN_ON(BTRFS_I(inode)->reserved_extents);
 
-The trick is, we must ensure the delayed ref head is not being run at
-the time we search the for the hash.
+Simple test program below can reproduce this issue steadily.
+Note: you need to modify BTRFS_MAX_EXTENT_SIZE to 64KB to have test,
+otherwise there won't be such WARNING.
+	#include <string.h>
+	#include <unistd.h>
+	#include <sys/types.h>
+	#include <sys/stat.h>
+	#include <fcntl.h>
 
-With inmem_search(), we can implement the btrfs_dedupe_search()
-interface.
+	int main(void)
+	{
+		int fd;
+		char buf[68 *1024];
 
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+		memset(buf, 0, 68 * 1024);
+		fd = open("testfile", O_CREAT | O_EXCL | O_RDWR);
+		pwrite(fd, buf, 68 * 1024, 64 * 1024);
+		return;
+	}
+
+When BTRFS_MAX_EXTENT_SIZE is 64KB, and buffered data range is:
+64KB						128K		132KB
+|-----------------------------------------------|---------------|
+                         64 + 4KB
+
+1) for above data range, btrfs_delalloc_reserve_metadata() will reserve
+metadata and set BTRFS_I(inode)->outstanding_extents to 2.
+(68KB + 64KB - 1) / 64KB == 2
+
+Outstanding_extents: 2
+
+2) then btrfs_dirty_page() will be called to dirty pages and set
+EXTENT_DELALLOC flag. In this case, btrfs_set_bit_hook() will be called
+twice.
+The 1st set_bit_hook() call will set DEALLOC flag for the first 64K.
+64KB						128KB
+|-----------------------------------------------|
+	64KB DELALLOC
+Outstanding_extents: 2
+
+Set_bit_hooks() uses FIRST_DELALLOC flag to avoid re-increase
+outstanding_extents counter.
+So for 1st set_bit_hooks() call, it won't modify outstanding_extents,
+it's still 2.
+
+Then FIRST_DELALLOC flag is *CLEARED*.
+
+3) 2nd btrfs_set_bit_hook() call.
+Because FIRST_DELALLOC have been cleared by previous set_bit_hook(),
+btrfs_set_bit_hook() will increase BTRFS_I(inode)->outstanding_extents by
+one, so now BTRFS_I(inode)->outstanding_extents is 3.
+64KB                                            128KB            132KB
+|-----------------------------------------------|----------------|
+	64K DELALLOC				   4K DELALLOC
+Outstanding_extents: 3
+
+But the correct outstanding_extents number should be 2, not 3.
+The 2nd btrfs_set_bit_hook() call just screwed up this, and leads to the
+WARN_ON().
+
+Normally, we can solve it by only increasing outstanding_extents in
+set_bit_hook().
+But the problem is for delalloc_reserve/release_metadata(), we only have
+a 'length' parameter, and calculate in-accurate outstanding_extents.
+If we only rely on set_bit_hook() release_metadata() will crew things up
+as it will decrease inaccurate number.
+
+So the fix we use is:
+1) Increase *INACCURATE* outstanding_extents at delalloc_reserve_meta
+   Just as a place holder.
+2) Increase *accurate* outstanding_extents at set_bit_hooks()
+   This is the real increaser.
+3) Decrease *INACCURATE* outstanding_extents before returning
+   This makes outstanding_extents to correct value.
+
+For 128M BTRFS_MAX_EXTENT_SIZE, due to limitation of
+__btrfs_buffered_write(), each iteration will only handle about 2MB
+data.
+So btrfs_dirty_pages() won't need to handle cases cross 2 extents.
+
+Cc: Mark Fasheh <mfasheh@suse.de>
+Cc: Josef Bacik <jbacik@fb.com>
 Signed-off-by: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
-Reviewed-by: Josef Bacik <jbacik@fb.com>
 ---
- fs/btrfs/dedupe.c | 185 ++++++++++++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 185 insertions(+)
+ fs/btrfs/ctree.h |  2 ++
+ fs/btrfs/inode.c | 68 +++++++++++++++++++++++++++++++++++++++++++++++++++-----
+ fs/btrfs/ioctl.c |  6 ++---
+ 3 files changed, 66 insertions(+), 10 deletions(-)
 
-diff --git a/fs/btrfs/dedupe.c b/fs/btrfs/dedupe.c
-index 14c57fa..ef4968f 100644
---- a/fs/btrfs/dedupe.c
-+++ b/fs/btrfs/dedupe.c
-@@ -20,6 +20,7 @@
- #include "btrfs_inode.h"
- #include "transaction.h"
- #include "delayed-ref.h"
-+#include "qgroup.h"
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index e4a7489..891a583 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -3129,6 +3129,8 @@ int btrfs_start_delalloc_roots(struct btrfs_fs_info *fs_info, int delay_iput,
+ 			       int nr);
+ int btrfs_set_extent_delalloc(struct inode *inode, u64 start, u64 end,
+ 			      struct extent_state **cached_state, int dedupe);
++int btrfs_set_extent_defrag(struct inode *inode, u64 start, u64 end,
++			    struct extent_state **cached_state);
+ int btrfs_create_subvol_root(struct btrfs_trans_handle *trans,
+ 			     struct btrfs_root *new_root,
+ 			     struct btrfs_root *parent_root,
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index ed37204..ef6abb2 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -1750,11 +1750,15 @@ static void btrfs_split_extent_hook(void *private_data,
+ {
+ 	struct inode *inode = private_data;
+ 	u64 size;
++	struct btrfs_root *root = BTRFS_I(inode)->root;
  
- struct inmem_hash {
- 	struct rb_node hash_node;
-@@ -454,3 +455,187 @@ int btrfs_dedupe_disable(struct btrfs_fs_info *fs_info)
- 	kfree(dedupe_info);
- 	return 0;
- }
+ 	/* not delalloc, ignore it */
+ 	if (!(orig->state & EXTENT_DELALLOC))
+ 		return;
+ 
++	if (root == root->fs_info->tree_root)
++		return;
 +
-+/*
-+ * Caller must ensure the corresponding ref head is not being run.
-+ */
-+static struct inmem_hash *
-+inmem_search_hash(struct btrfs_dedupe_info *dedupe_info, u8 *hash)
-+{
-+	struct rb_node **p = &dedupe_info->hash_root.rb_node;
-+	struct rb_node *parent = NULL;
-+	struct inmem_hash *entry = NULL;
-+	u16 hash_algo = dedupe_info->hash_algo;
-+	int hash_len = btrfs_hash_sizes[hash_algo];
+ 	size = orig->end - orig->start + 1;
+ 	if (size > BTRFS_MAX_EXTENT_SIZE) {
+ 		u64 num_extents;
+@@ -1793,11 +1797,15 @@ static void btrfs_merge_extent_hook(void *private_data,
+ 	struct inode *inode = private_data;
+ 	u64 new_size, old_size;
+ 	u64 num_extents;
++	struct btrfs_root *root = BTRFS_I(inode)->root;
+ 
+ 	/* not delalloc, ignore it */
+ 	if (!(other->state & EXTENT_DELALLOC))
+ 		return;
+ 
++	if (root == root->fs_info->tree_root)
++		return;
 +
-+	while (*p) {
-+		parent = *p;
-+		entry = rb_entry(parent, struct inmem_hash, hash_node);
+ 	if (new->start > other->start)
+ 		new_size = new->end - other->start + 1;
+ 	else
+@@ -1905,13 +1913,16 @@ static void btrfs_set_bit_hook(void *private_data,
+ 	if (!(state->state & EXTENT_DELALLOC) && (*bits & EXTENT_DELALLOC)) {
+ 		struct btrfs_root *root = BTRFS_I(inode)->root;
+ 		u64 len = state->end + 1 - state->start;
++		u64 num_extents = div64_u64(len + BTRFS_MAX_EXTENT_SIZE - 1,
++					    BTRFS_MAX_EXTENT_SIZE);
+ 		bool do_list = !btrfs_is_free_space_inode(inode);
+ 
+-		if (*bits & EXTENT_FIRST_DELALLOC) {
++		if (*bits & EXTENT_FIRST_DELALLOC)
+ 			*bits &= ~EXTENT_FIRST_DELALLOC;
+-		} else {
 +
-+		if (memcmp(hash, entry->hash, hash_len) < 0) {
-+			p = &(*p)->rb_left;
-+		} else if (memcmp(hash, entry->hash, hash_len) > 0) {
-+			p = &(*p)->rb_right;
-+		} else {
-+			/* Found, need to re-add it to LRU list head */
-+			list_del(&entry->lru_list);
-+			list_add(&entry->lru_list, &dedupe_info->lru_list);
-+			return entry;
-+		}
++		if (root != root->fs_info->tree_root) {
+ 			spin_lock(&BTRFS_I(inode)->lock);
+-			BTRFS_I(inode)->outstanding_extents++;
++			BTRFS_I(inode)->outstanding_extents += num_extents;
+ 			spin_unlock(&BTRFS_I(inode)->lock);
+ 		}
+ 
+@@ -1961,7 +1972,7 @@ static void btrfs_clear_bit_hook(void *private_data,
+ 
+ 		if (*bits & EXTENT_FIRST_DELALLOC) {
+ 			*bits &= ~EXTENT_FIRST_DELALLOC;
+-		} else if (!(*bits & EXTENT_DO_ACCOUNTING)) {
++		} else if (!(*bits & EXTENT_DO_ACCOUNTING) && do_list) {
+ 			spin_lock(&BTRFS_I(inode)->lock);
+ 			BTRFS_I(inode)->outstanding_extents -= num_extents;
+ 			spin_unlock(&BTRFS_I(inode)->lock);
+@@ -2162,9 +2173,54 @@ static noinline int add_pending_csums(struct btrfs_trans_handle *trans,
+ int btrfs_set_extent_delalloc(struct inode *inode, u64 start, u64 end,
+ 			      struct extent_state **cached_state, int dedupe)
+ {
++	int ret;
++	struct btrfs_root *root = BTRFS_I(inode)->root;
++	u64 num_extents = div64_u64(end - start + BTRFS_MAX_EXTENT_SIZE,
++				    BTRFS_MAX_EXTENT_SIZE);
++
+ 	WARN_ON((end & (PAGE_SIZE - 1)) == 0);
+-	return set_extent_delalloc(&BTRFS_I(inode)->io_tree, start, end,
+-				   cached_state);
++	ret = set_extent_delalloc(&BTRFS_I(inode)->io_tree, start, end,
++				  cached_state);
++
++	/*
++	 * btrfs_delalloc_reserve_metadata() will first add number of
++	 * outstanding extents according to data length, which is inaccurate
++	 * for case like dirtying already dirty pages.
++	 * so here we will decrease such inaccurate numbers, to make
++	 * outstanding_extents only rely on the correct values added by
++	 * set_bit_hook()
++	 *
++	 * Also, we skipped the metadata space reserve for space cache inodes,
++	 * so don't modify the outstanding_extents value.
++	 */
++	if (ret == 0 && root != root->fs_info->tree_root) {
++		spin_lock(&BTRFS_I(inode)->lock);
++		BTRFS_I(inode)->outstanding_extents -= num_extents;
++		spin_unlock(&BTRFS_I(inode)->lock);
 +	}
-+	return NULL;
++
++	return ret;
 +}
 +
-+static int inmem_search(struct btrfs_dedupe_info *dedupe_info,
-+			struct inode *inode, u64 file_pos,
-+			struct btrfs_dedupe_hash *hash)
++int btrfs_set_extent_defrag(struct inode *inode, u64 start, u64 end,
++			    struct extent_state **cached_state)
 +{
 +	int ret;
 +	struct btrfs_root *root = BTRFS_I(inode)->root;
-+	struct btrfs_trans_handle *trans;
-+	struct btrfs_delayed_ref_root *delayed_refs;
-+	struct btrfs_delayed_ref_head *head;
-+	struct btrfs_delayed_ref_head *insert_head;
-+	struct btrfs_delayed_data_ref *insert_dref;
-+	struct btrfs_qgroup_extent_record *insert_qrecord = NULL;
-+	struct inmem_hash *found_hash;
-+	int free_insert = 1;
-+	u64 bytenr;
-+	u32 num_bytes;
++	u64 num_extents = div64_u64(end - start + BTRFS_MAX_EXTENT_SIZE,
++				    BTRFS_MAX_EXTENT_SIZE);
 +
-+	insert_head = kmem_cache_alloc(btrfs_delayed_ref_head_cachep, GFP_NOFS);
-+	if (!insert_head)
-+		return -ENOMEM;
-+	insert_head->extent_op = NULL;
-+	insert_dref = kmem_cache_alloc(btrfs_delayed_data_ref_cachep, GFP_NOFS);
-+	if (!insert_dref) {
-+		kmem_cache_free(btrfs_delayed_ref_head_cachep, insert_head);
-+		return -ENOMEM;
-+	}
-+	if (test_bit(BTRFS_FS_QUOTA_ENABLED, &root->fs_info->flags) &&
-+	    is_fstree(root->root_key.objectid)) {
-+		insert_qrecord = kmalloc(sizeof(*insert_qrecord), GFP_NOFS);
-+		if (!insert_qrecord) {
-+			kmem_cache_free(btrfs_delayed_ref_head_cachep,
-+					insert_head);
-+			kmem_cache_free(btrfs_delayed_data_ref_cachep,
-+					insert_dref);
-+			return -ENOMEM;
-+		}
++	WARN_ON((end & (PAGE_SIZE - 1)) == 0);
++	ret = set_extent_defrag(&BTRFS_I(inode)->io_tree, start, end,
++				cached_state);
++
++	if (ret == 0 && root != root->fs_info->tree_root) {
++		spin_lock(&BTRFS_I(inode)->lock);
++		BTRFS_I(inode)->outstanding_extents -= num_extents;
++		spin_unlock(&BTRFS_I(inode)->lock);
 +	}
 +
-+	trans = btrfs_join_transaction(root);
-+	if (IS_ERR(trans)) {
-+		ret = PTR_ERR(trans);
-+		goto free_mem;
-+	}
-+
-+again:
-+	mutex_lock(&dedupe_info->lock);
-+	found_hash = inmem_search_hash(dedupe_info, hash->hash);
-+	/* If we don't find a duplicated extent, just return. */
-+	if (!found_hash) {
-+		ret = 0;
-+		goto out;
-+	}
-+	bytenr = found_hash->bytenr;
-+	num_bytes = found_hash->num_bytes;
-+
-+	delayed_refs = &trans->transaction->delayed_refs;
-+
-+	spin_lock(&delayed_refs->lock);
-+	head = btrfs_find_delayed_ref_head(trans, bytenr);
-+	if (!head) {
-+		/*
-+		 * We can safely insert a new delayed_ref as long as we
-+		 * hold delayed_refs->lock.
-+		 * Only need to use atomic inc_extent_ref()
-+		 */
-+		btrfs_add_delayed_data_ref_locked(root->fs_info, trans,
-+				insert_dref, insert_head, insert_qrecord,
-+				bytenr, num_bytes, 0, root->root_key.objectid,
-+				btrfs_ino(inode), file_pos, 0,
-+				BTRFS_ADD_DELAYED_REF);
-+		spin_unlock(&delayed_refs->lock);
-+
-+		/* add_delayed_data_ref_locked will free unused memory */
-+		free_insert = 0;
-+		hash->bytenr = bytenr;
-+		hash->num_bytes = num_bytes;
-+		ret = 1;
-+		goto out;
-+	}
-+
-+	/*
-+	 * We can't lock ref head with dedupe_info->lock hold or we will cause
-+	 * ABBA dead lock.
-+	 */
-+	mutex_unlock(&dedupe_info->lock);
-+	ret = btrfs_delayed_ref_lock(trans, head);
-+	spin_unlock(&delayed_refs->lock);
-+	if (ret == -EAGAIN)
-+		goto again;
-+
-+	mutex_lock(&dedupe_info->lock);
-+	/* Search again to ensure the hash is still here */
-+	found_hash = inmem_search_hash(dedupe_info, hash->hash);
-+	if (!found_hash) {
-+		ret = 0;
-+		mutex_unlock(&head->mutex);
-+		goto out;
-+	}
-+	ret = 1;
-+	hash->bytenr = bytenr;
-+	hash->num_bytes = num_bytes;
-+
-+	/*
-+	 * Increase the extent ref right now, to avoid delayed ref run
-+	 * Or we may increase ref on non-exist extent.
-+	 */
-+	btrfs_inc_extent_ref(trans, root, bytenr, num_bytes, 0,
-+			     root->root_key.objectid,
-+			     btrfs_ino(inode), file_pos);
-+	mutex_unlock(&head->mutex);
-+out:
-+	mutex_unlock(&dedupe_info->lock);
-+	btrfs_end_transaction(trans, root);
-+
-+free_mem:
-+	if (free_insert) {
-+		kmem_cache_free(btrfs_delayed_ref_head_cachep, insert_head);
-+		kmem_cache_free(btrfs_delayed_data_ref_cachep, insert_dref);
-+		kfree(insert_qrecord);
-+	}
 +	return ret;
-+}
-+
-+int btrfs_dedupe_search(struct btrfs_fs_info *fs_info,
-+			struct inode *inode, u64 file_pos,
-+			struct btrfs_dedupe_hash *hash)
-+{
-+	struct btrfs_dedupe_info *dedupe_info = fs_info->dedupe_info;
-+	int ret = -EINVAL;
-+
-+	if (!hash)
-+		return 0;
-+
-+	/*
-+	 * This function doesn't follow fs_info->dedupe_enabled as it will need
-+	 * to ensure any hashed extent to go through dedupe routine
-+	 */
-+	if (WARN_ON(dedupe_info == NULL))
-+		return -EINVAL;
-+
-+	if (WARN_ON(btrfs_dedupe_hash_hit(hash)))
-+		return -EINVAL;
-+
-+	if (dedupe_info->backend == BTRFS_DEDUPE_BACKEND_INMEMORY)
-+		ret = inmem_search(dedupe_info, inode, file_pos, hash);
-+
-+	/* It's possible hash->bytenr/num_bytenr already changed */
-+	if (ret == 0) {
-+		hash->num_bytes = 0;
-+		hash->bytenr = 0;
-+	}
-+	return ret;
-+}
+ }
+ 
+ /* see btrfs_writepage_start_hook for details on why this is required */
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index dc295a7..0cb76a4 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -1236,10 +1236,8 @@ again:
+ 				(page_cnt - i_done) << PAGE_SHIFT);
+ 	}
+ 
+-
+-	set_extent_defrag(&BTRFS_I(inode)->io_tree, page_start, page_end - 1,
+-			  &cached_state);
+-
++	btrfs_set_extent_defrag(inode, page_start,
++				page_end - 1, &cached_state);
+ 	unlock_extent_cached(&BTRFS_I(inode)->io_tree,
+ 			     page_start, page_end - 1, &cached_state,
+ 			     GFP_NOFS);
 -- 
 2.9.3
 

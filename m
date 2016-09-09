@@ -1,106 +1,86 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oi0-f42.google.com ([209.85.218.42]:33685 "EHLO
-        mail-oi0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752015AbcIIS6m (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 9 Sep 2016 14:58:42 -0400
-Received: by mail-oi0-f42.google.com with SMTP id y2so159292751oie.0
-        for <linux-btrfs@vger.kernel.org>; Fri, 09 Sep 2016 11:58:42 -0700 (PDT)
+Received: from mail-it0-f54.google.com ([209.85.214.54]:36172 "EHLO
+        mail-it0-f54.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1753226AbcIITVD (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 9 Sep 2016 15:21:03 -0400
+Received: by mail-it0-f54.google.com with SMTP id i184so28360284itf.1
+        for <linux-btrfs@vger.kernel.org>; Fri, 09 Sep 2016 12:21:02 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <8049c767-5cf0-7abc-8e44-828a15619546@gmail.com>
-References: <c04c596d-4cb9-ed98-513a-c550b1be18b2@cobb.uk.net>
- <2d59a472-4e74-d64c-27c4-28677d761316@gmail.com> <4afee621-0493-1ffc-31fe-fb81643f2374@cobb.uk.net>
- <1473259316.24874.3.camel@scientia.net> <12cfbaf0-77ff-a4d2-d9d7-64c5c795ce4b@gmail.com>
- <1473271679.24874.36.camel@scientia.net> <d6f659e7-25bf-c732-a7db-0cef8450b346@gmail.com>
- <CAJCQCtSmFA2iRDN33u9XF1b4nN_xA5sy44tS3n5mnA4f+go_hg@mail.gmail.com> <8049c767-5cf0-7abc-8e44-828a15619546@gmail.com>
+In-Reply-To: <51221d34-b417-045d-46f6-6965883574bd@moparisthebest.com>
+References: <6fa4d5f1-1697-8817-c1b8-098afc011902@moparisthebest.com>
+ <CAJCQCtS7y0qSsth4JwoRaCDig7nP-nRDs5ShEtudDR8JUNPaNw@mail.gmail.com> <51221d34-b417-045d-46f6-6965883574bd@moparisthebest.com>
 From: Chris Murphy <lists@colorremedies.com>
-Date: Fri, 9 Sep 2016 12:58:40 -0600
-Message-ID: <CAJCQCtRFer9UGjqwqZS3xZnQGC6hqVRHyeaQjmy6+nnMfJUKKQ@mail.gmail.com>
-Subject: Re: Security implications of btrfs receive?
-To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Date: Fri, 9 Sep 2016 13:21:00 -0600
+Message-ID: <CAJCQCtQw17cibOc6tnMvfOws=8PHuuwUvX35sY4WuRCAm=Ojyw@mail.gmail.com>
+Subject: Re: btrfs kernel oops on mount
+To: moparisthebest <admin@moparisthebest.com>
 Cc: Chris Murphy <lists@colorremedies.com>,
         Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Sep 8, 2016 at 5:48 AM, Austin S. Hemmelgarn
-<ahferroin7@gmail.com> wrote:
-> On 2016-09-07 15:34, Chris Murphy wrote:
+On Fri, Sep 9, 2016 at 12:32 PM, moparisthebest
+<admin@moparisthebest.com> wrote:
 
-> I like the idea of matching WWN as part of the check, with a couple of
-> caveats:
-> 1. We need to keep in mind that in some environments, this can be spoofed
-> (Virtualization for example, although doing so would require source level
-> modifications to most hypervisors).
-> 2. There needs to be a way to forcibly mount in the case of a mismatch, as
-> well as a way to update the filesystem to match the current WWN's of all of
-> it's disks.  I also specifically think that these should be separate
-> options, the first is useful for debugging a filesystem using image files,
-> while the second is useful for external clones of disks.
-> 3. single device filesystems should store the WWN, and ideally keep it
-> up-to-date, but not check it.  They have no need to check it, and single
-> device is the primary use case for a traditional user, so it should be as
-> simple as possible.
-> 4. We should be matching on more than just fsuuid, devuuid, and WWN, because
-> just matching those would allow a second partition on the same device to
-> cause issues.
-
-Probably a different abstraction is necessary: WWN is appropriate
-where member devices are drives; but maybe it's an LVM UUID in other
-cases, e.g. where there's LVM snapshots. I'm not sure how drdb devices
-are uniquely identified, but that'd also be in the "one of these"
-list.
-
-
-
-
->> It is also kinda important to see things like udisks and storaged as
->> user agents, ensuring they have a way to communicate with the helper
->> so things are mounted and umounted correctly as most DE's now expect
->> to just automount everything. I still get weird behaviors on GNOME
->> with udisks2 and multiple device Btrfs volumes with current upstream
->> GNOME stuff.
+> This is indeed an lzo compressed system, it's always been mounted with
+> that option anyhow.
 >
-> DE's expect the ability to automount things as a regular user, not
-> necessarily that it has to happen.  I'm not all that worried personally
-> about automounting of multi-device filesystems, largely because the type of
-> person who automounting in the desktop primarily caters to is not likely to
-> have a multi-device filesystem to begin with.
+> btrfs check has been running for ~6 hours so far, I'll follow up with
+> output on that when it finishes.
+>
+> Hmm, the problem with the 4.7.2/systemd system is it's a live usb system
+> so the log/journal wouldn't be saved anywhere except tmpfs, I'll see
+> what I can rig up unless someone has any amazing ideas?  I'm still brand
+> new to systemd...
 
-It should work better than it does because it works well for LVM and
-mdadm arrays.
+Pick the easier of:
+1.
+ssh with a remote computer; the blocked tasks will slow down sshd and
+the responsiveness of everything; but it shouldn't totally inhibit it
+and may be more reliable than a local VT if the command is pretyped
+and ready to go before you initiate the mount. Use journalctl -fk to
+follow, and save out the output as  text file from that remote
+computer.
+2.
+netconsole might be more reliable than sshd in this case, again just
+connect with a remote computer, and in its Terminal you can do:
+journalctl -fk
+3.
+Create a file system on a USB stick partition, copy live's /var to the
+stick, then mount the stick over the live's /var, and now it's read
+writeable. And then:
+           mkdir -p /var/log/journal
+           systemd-tmpfiles --create --prefix /var/log/journal
 
-I think what's going on is the DE's mounter (udisksd) tries to mount
-each Btrfs device node, even though those nodes make up a single fs
-volume. It issues multiple mount and umount commands for that one
-array. This doesn't happen with LVM and mdadm because an array has one
-node. That's not true with Btrfs, it has one or many, depending on
-your point of view. There's no way to mount just an fs volume UUID as
-far as I know.
+I think that will cause systemd-journald to flush to /var now, you can do:
+journalctl -b | grep journald
+
+And see if you have lines like this:
+Sep 09 09:11:05 f24m systemd-journald[238]: Journal stopped
+Sep 09 09:11:06 f24m systemd-journald[549]: Runtime journal
+(/run/log/journal/) is 8.0M, max 393.2M, 385.2M free.
+Sep 09 09:11:06 f24m systemd-journald[549]: System journal
+(/var/log/journal/) is 999.7M, max 1.0G, 24.2M free.
+Sep 09 09:11:07 f24m systemd-journald[549]: Time spent on flushing to
+/var is 1.040757s for 1490 entries.
+Sep 09 09:11:07 f24m systemd-journald[238]: Received SIGTERM from PID
+1 (systemd).
+
+So what happens when you force reboot? Mount this stick, and use
+'journalctl -D /mnt/log/journal/machineid/ > outputfile.txt' which
+will point to the journal binary file and write it out to a text file.
+You could try -k to filter out just kernel messages but since that
+implies -b and you have a different boot than what's in this journal I
+have no idea off hand if that will work;  you could also filter by |
+grep kernel > outputfile.txt but maybe not every line will have kernel
+in it? I just tried it  with sysrq t and everything relevant seems to
+have "kernel" in each line.
 
 
->For that matter, the primary
-> (only realistic?) use for multi-device filesystems on removable media is
-> backups, and the few people who are going to set things up to automatically
-> run backups when the disks get plugged in will be smart enough to get things
-> working correctly themselves, while anyone else is going to be running the
-> backup manually and can mount the FS by hand if they aren't using something
-> like autofs.
-
-Yeah I  am that person but it's the DE that's getting confused, and
-then confusing me with its confusion, so it's bad Ux. GNOME automounts
-a Btrfs raid1 by showing two disk icons with the exact same name, and
-gets confused upon ejecting either with the GUI eject button or via
-the CLI. So we can say udisks is doing something wrong, but what, and
-is there anything we can do to make it easier for it to do the right
-thing seeing as Btrfs is so different?
+They're probably in order of ease; but not sure which is more reliable
+when things are being blocked. Network may be more or less blocked
+*shrug* I'd use XFS for the stick file system for /var.
 
 
-Here's some 2 to 6 year old bugs related to this:
-https://bugs.freedesktop.org/show_bug.cgi?id=87277
-https://bugzilla.gnome.org/show_bug.cgi?id=746769
-https://bugzilla.gnome.org/show_bug.cgi?id=608204
-
-
--- 
 Chris Murphy

@@ -1,222 +1,97 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:41736 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:44324 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751944AbcIIIRv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 9 Sep 2016 04:17:51 -0400
-Date: Fri, 9 Sep 2016 10:17:43 +0200
+        id S1752956AbcIII3i (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 9 Sep 2016 04:29:38 -0400
+Date: Fri, 9 Sep 2016 10:29:29 +0200
 From: Jan Kara <jack@suse.cz>
 To: Josef Bacik <jbacik@fb.com>
 Cc: linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
         kernel-team@fb.com, jack@suse.com, viro@zeniv.linux.org.uk,
         dchinner@redhat.com, hch@lst.de, linux-mm@kvack.org
-Subject: Re: [PATCH 2/3] writeback: allow for dirty metadata accounting
-Message-ID: <20160909081743.GC22777@quack2.suse.cz>
+Subject: Re: [PATCH 3/3] writeback: introduce super_operations->write_metadata
+Message-ID: <20160909082929.GD22777@quack2.suse.cz>
 References: <1471887302-12730-1-git-send-email-jbacik@fb.com>
- <1471887302-12730-3-git-send-email-jbacik@fb.com>
+ <1471887302-12730-4-git-send-email-jbacik@fb.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1471887302-12730-3-git-send-email-jbacik@fb.com>
+In-Reply-To: <1471887302-12730-4-git-send-email-jbacik@fb.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon 22-08-16 13:35:01, Josef Bacik wrote:
-> Provide a mechanism for file systems to indicate how much dirty metadata they
-> are holding.  This introduces a few things
+On Mon 22-08-16 13:35:02, Josef Bacik wrote:
+> Now that we have metadata counters in the VM, we need to provide a way to kick
+> writeback on dirty metadata.  Introduce super_operations->write_metadata.  This
+> allows file systems to deal with writing back any dirty metadata we need based
+> on the writeback needs of the system.  Since there is no inode to key off of we
+> need a list in the bdi for dirty super blocks to be added.  From there we can
+> find any dirty sb's on the bdi we are currently doing writeback on and call into
+> their ->write_metadata callback.
 > 
-> 1) Zone stats for dirty metadata, which is the same as the NR_FILE_DIRTY.
-> 2) WB stat for dirty metadata.  This way we know if we need to try and call into
-> the file system to write out metadata.  This could potentially be used in the
-> future to make balancing of dirty pages smarter.
-
-So I'm curious about one thing: In the previous posting you have mentioned
-that the main motivation for this work is to have a simple support for
-sub-pagesize dirty metadata blocks that need tracking in btrfs. However you
-do the dirty accounting at page granularity. What are your plans to handle
-this mismatch?
-
-The thing is you actually shouldn't miscount by too much as that could
-upset some checks in mm checking how much dirty pages a node has directing
-how reclaim should be done... But it's a question whether NR_METADATA_DIRTY
-should be actually used in the checks in node_limits_ok() or in
-node_pagecache_reclaimable() at all because once you start accounting dirty
-slab objects, you are really on a thin ice...
-
-> diff --git a/fs/fs-writeback.c b/fs/fs-writeback.c
-> index 56c8fda..d329f89 100644
-> --- a/fs/fs-writeback.c
-> +++ b/fs/fs-writeback.c
-> @@ -1809,6 +1809,7 @@ static unsigned long get_nr_dirty_pages(void)
->  {
->  	return global_node_page_state(NR_FILE_DIRTY) +
->  		global_node_page_state(NR_UNSTABLE_NFS) +
-> +		global_node_page_state(NR_METADATA_DIRTY) +
->  		get_nr_dirty_inodes();
-
-With my question is also connected this - when we have NR_METADATA_DIRTY,
-we could just account dirty inodes there and get rid of this
-get_nr_dirty_inodes() hack...
-
-But actually getting this to work right to be able to track dirty inodes would
-be useful on its own - some throlling of creation of dirty inodes would be
-useful for several filesystems (ext4, xfs, ...).
-
-> diff --git a/mm/page-writeback.c b/mm/page-writeback.c
-> index 121a6e3..6a52723 100644
-> --- a/mm/page-writeback.c
-> +++ b/mm/page-writeback.c
-> @@ -506,6 +506,7 @@ bool node_dirty_ok(struct pglist_data *pgdat)
->  	nr_pages += node_page_state(pgdat, NR_FILE_DIRTY);
->  	nr_pages += node_page_state(pgdat, NR_UNSTABLE_NFS);
->  	nr_pages += node_page_state(pgdat, NR_WRITEBACK);
-> +	nr_pages += node_page_state(pgdat, NR_METADATA_DIRTY);
->  
->  	return nr_pages <= limit;
->  }
-> @@ -1595,7 +1596,8 @@ static void balance_dirty_pages(struct bdi_writeback *wb,
->  		 * been flushed to permanent storage.
->  		 */
->  		nr_reclaimable = global_node_page_state(NR_FILE_DIRTY) +
-> -					global_node_page_state(NR_UNSTABLE_NFS);
-> +				global_node_page_state(NR_UNSTABLE_NFS) +
-> +				global_node_page_state(NR_METADATA_DIRTY);
->  		gdtc->avail = global_dirtyable_memory();
->  		gdtc->dirty = nr_reclaimable + global_node_page_state(NR_WRITEBACK);
->  
-> @@ -1935,7 +1937,8 @@ bool wb_over_bg_thresh(struct bdi_writeback *wb)
->  	 */
->  	gdtc->avail = global_dirtyable_memory();
->  	gdtc->dirty = global_node_page_state(NR_FILE_DIRTY) +
-> -		      global_node_page_state(NR_UNSTABLE_NFS);
-> +		      global_node_page_state(NR_UNSTABLE_NFS) +
-> +		      global_node_page_state(NR_METADATA_DIRTY);
->  	domain_dirty_limits(gdtc);
->  
->  	if (gdtc->dirty > gdtc->bg_thresh)
-> @@ -2009,7 +2012,8 @@ void laptop_mode_timer_fn(unsigned long data)
->  {
->  	struct request_queue *q = (struct request_queue *)data;
->  	int nr_pages = global_node_page_state(NR_FILE_DIRTY) +
-> -		global_node_page_state(NR_UNSTABLE_NFS);
-> +		global_node_page_state(NR_UNSTABLE_NFS) +
-> +		global_node_page_state(NR_METADATA_DIRTY);
->  	struct bdi_writeback *wb;
->  
->  	/*
-> @@ -2473,6 +2477,96 @@ void account_page_dirtied(struct page *page, struct address_space *mapping)
->  EXPORT_SYMBOL(account_page_dirtied);
->  
->  /*
-> + * account_metadata_dirtied
-> + * @page - the page being dirited
-> + * @bdi - the bdi that owns this page
-> + *
-> + * Do the dirty page accounting for metadata pages that aren't backed by an
-> + * address_space.
-> + */
-> +void account_metadata_dirtied(struct page *page, struct backing_dev_info *bdi)
-> +{
-> +	unsigned long flags;
-> +
-
-A bdi_cap_account_dirty() check here and in following functions?
-
-> +	local_irq_save(flags);
-> +	__inc_node_page_state(page, NR_METADATA_DIRTY);
-> +	__inc_zone_page_state(page, NR_ZONE_WRITE_PENDING);
-> +	__inc_node_page_state(page, NR_DIRTIED);
-> +	__inc_wb_stat(&bdi->wb, WB_RECLAIMABLE);
-> +	__inc_wb_stat(&bdi->wb, WB_DIRTIED);
-> +	__inc_wb_stat(&bdi->wb, WB_METADATA_DIRTY);
-> +	current->nr_dirtied++;
-> +	task_io_account_write(PAGE_SIZE);
-> +	this_cpu_inc(bdp_ratelimits);
-> +	local_irq_restore(flags);
-> +}
-> +EXPORT_SYMBOL(account_metadata_dirtied);
-> +
-> +/*
-> + * account_metadata_cleaned
-> + * @page - the page being cleaned
-> + * @bdi - the bdi that owns this page
-> + *
-> + * Called on a no longer dirty metadata page.
-> + */
-> +void account_metadata_cleaned(struct page *page, struct backing_dev_info *bdi)
-> +{
-> +	unsigned long flags;
-> +
-> +	local_irq_save(flags);
-> +	__dec_node_page_state(page, NR_METADATA_DIRTY);
-> +	__dec_zone_page_state(page, NR_ZONE_WRITE_PENDING);
-> +	__dec_wb_stat(&bdi->wb, WB_RECLAIMABLE);
-> +	__dec_wb_stat(&bdi->wb, WB_METADATA_DIRTY);
-> +	task_io_account_cancelled_write(PAGE_SIZE);
-> +	local_irq_restore(flags);
-> +}
-> +EXPORT_SYMBOL(account_metadata_cleaned);
-> +
-> +/*
-> + * account_metadata_writeback
-> + * @page - the page being marked as writeback
-> + * @bdi - the bdi that owns this page
-> + *
-> + * Called on a metadata page that has been marked writeback.
-> + */
-> +void account_metadata_writeback(struct page *page,
-> +				struct backing_dev_info *bdi)
-> +{
-> +	unsigned long flags;
-> +
-> +	local_irq_save(flags);
-> +	__inc_wb_stat(&bdi->wb, WB_WRITEBACK);
-> +	__inc_node_page_state(page, NR_WRITEBACK);
-> +	__dec_node_page_state(page, NR_METADATA_DIRTY);
-> +	__dec_wb_stat(&bdi->wb, WB_METADATA_DIRTY);
-> +	__dec_wb_stat(&bdi->wb, WB_RECLAIMABLE);
-> +	local_irq_restore(flags);
-> +}
-> +EXPORT_SYMBOL(account_metadata_writeback);
-> +
-> +/*
-> + * account_metadata_end_writeback
-> + * @page - the page we are ending writeback on
-> + * @bdi - the bdi that owns this page
-> + *
-> + * Called on a metadata page that has completed writeback.
-> + */
-> +void account_metadata_end_writeback(struct page *page,
-> +				    struct backing_dev_info *bdi)
-> +{
-> +	unsigned long flags;
-> +
-> +	local_irq_save(flags);
-> +	__dec_wb_stat(&bdi->wb, WB_WRITEBACK);
-> +	__dec_node_page_state(page, NR_WRITEBACK);
-> +	__dec_zone_page_state(page, NR_ZONE_WRITE_PENDING);
-> +	__inc_node_page_state(page, NR_WRITTEN);
-> +	local_irq_restore(flags);
-> +}
-> +EXPORT_SYMBOL(account_metadata_end_writeback);
-> +
-> +/*
->   * Helper function for deaccounting dirty page without writeback.
->   *
->   * Caller must hold lock_page_memcg().
+> Signed-off-by: Josef Bacik <jbacik@fb.com>
 ...
-> diff --git a/mm/vmscan.c b/mm/vmscan.c
-> index 374d95d..fb3eb62 100644
-> --- a/mm/vmscan.c
-> +++ b/mm/vmscan.c
-> @@ -3714,7 +3714,8 @@ static unsigned long node_pagecache_reclaimable(struct pglist_data *pgdat)
+> @@ -1639,11 +1664,38 @@ static long __writeback_inodes_wb(struct bdi_writeback *wb,
 >  
->  	/* If we can't clean pages, remove dirty pages from consideration */
->  	if (!(node_reclaim_mode & RECLAIM_WRITE))
-> -		delta += node_page_state(pgdat, NR_FILE_DIRTY);
-> +		delta += node_page_state(pgdat, NR_FILE_DIRTY) +
-> +			node_page_state(pgdat, NR_METADATA_DIRTY);
+>  		/* refer to the same tests at the end of writeback_sb_inodes */
+>  		if (wrote) {
+> -			if (time_is_before_jiffies(start_time + HZ / 10UL))
+> -				break;
+> -			if (work->nr_pages <= 0)
+> +			if (time_is_before_jiffies(start_time + HZ / 10UL) ||
+> +			    work->nr_pages <= 0) {
+> +				done = true;
+>  				break;
+> +			}
+> +		}
+> +	}
+> +
+> +	if (!done && wb_stat(wb, WB_METADATA_DIRTY)) {
+> +		LIST_HEAD(list);
+> +
+> +		spin_unlock(&wb->list_lock);
+> +		spin_lock(&wb->bdi->sb_list_lock);
+> +		list_splice_init(&wb->bdi->dirty_sb_list, &list);
+> +		while (!list_empty(&list)) {
+> +			struct super_block *sb;
+> +
+> +			sb = list_first_entry(&list, struct super_block,
+> +					      s_bdi_list);
+> +			list_move_tail(&sb->s_bdi_list,
+> +				       &wb->bdi->dirty_sb_list);
+> +			if (!sb->s_op->write_metadata)
+> +				continue;
+> +			if (!trylock_super(sb))
+> +				continue;
+> +			spin_unlock(&wb->bdi->sb_list_lock);
+> +			wrote += writeback_sb_metadata(sb, wb, work);
+> +			spin_lock(&wb->bdi->sb_list_lock);
+> +			up_read(&sb->s_umount);
+>  		}
+> +		spin_unlock(&wb->bdi->sb_list_lock);
+> +		spin_lock(&wb->list_lock);
+>  	}
+>  	/* Leave any unwritten inodes on b_io */
+>  	return wrote;
+
+So this will hook metadata writeback into the periodic writeback but when
+work->sb is set, metadata won't be written because in that case we call
+writeback_sb_inodes() directly. So you need to call writeback_sb_metadata()
+from wb_writeback() in that case as well. 
+
+...
+
+> diff --git a/include/linux/fs.h b/include/linux/fs.h
+> index f3f0b4c8..c063ac6 100644
+> --- a/include/linux/fs.h
+> +++ b/include/linux/fs.h
+> @@ -1430,6 +1430,8 @@ struct super_block {
 >  
->  	/* Watch for any possible underflows due to delta */
->  	if (unlikely(delta > nr_pagecache_reclaimable))
+>  	spinlock_t		s_inode_wblist_lock;
+>  	struct list_head	s_inodes_wb;	/* writeback inodes */
+> +
+> +	struct list_head	s_bdi_list;
+
+Maybe call this s_bdi_dirty_list?
 
 								Honza
 -- 

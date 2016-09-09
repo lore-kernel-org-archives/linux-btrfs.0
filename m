@@ -1,352 +1,224 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:49101 "EHLO
-        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750841AbcIIGRX (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 9 Sep 2016 02:17:23 -0400
-Date: Thu, 8 Sep 2016 23:17:07 -0700
-From: "Darrick J. Wong" <darrick.wong@oracle.com>
-To: Dave Chinner <david@fromorbit.com>, "Theodore Ts'o" <tytso@mit.edu>,
-        Josef Bacik <jbacik@fb.com>, Mark Fasheh <mfasheh@suse.de>
-Cc: linux-fsdevel@vger.kernel.org, linux-api@vger.kernel.org,
-        linux-man@vger.kernel.org, adilger@dilger.ca,
-        linux-xfs@vger.kernel.org, xfs@oss.sgi.com,
-        linux-btrfs@vger.kernel.org, mtk.manpages@gmail.com,
-        linux-ext4 <linux-ext4@vger.kernel.org>
-Subject: [PATCH v3 3/3] ioctl_getfsmap.2: document the GETFSMAP ioctl
-Message-ID: <20160909061707.GB9312@birch.djwong.org>
-References: <147216758326.32321.8525481353986871349.stgit@birch.djwong.org>
- <147216760214.32321.8331561706153372268.stgit@birch.djwong.org>
+Received: from mx2.suse.de ([195.135.220.15]:41736 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751944AbcIIIRv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 9 Sep 2016 04:17:51 -0400
+Date: Fri, 9 Sep 2016 10:17:43 +0200
+From: Jan Kara <jack@suse.cz>
+To: Josef Bacik <jbacik@fb.com>
+Cc: linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
+        kernel-team@fb.com, jack@suse.com, viro@zeniv.linux.org.uk,
+        dchinner@redhat.com, hch@lst.de, linux-mm@kvack.org
+Subject: Re: [PATCH 2/3] writeback: allow for dirty metadata accounting
+Message-ID: <20160909081743.GC22777@quack2.suse.cz>
+References: <1471887302-12730-1-git-send-email-jbacik@fb.com>
+ <1471887302-12730-3-git-send-email-jbacik@fb.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <147216760214.32321.8331561706153372268.stgit@birch.djwong.org>
+In-Reply-To: <1471887302-12730-3-git-send-email-jbacik@fb.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Document the new GETFSMAP ioctl that returns the physical layout of a
-(disk-based) filesystem.
+On Mon 22-08-16 13:35:01, Josef Bacik wrote:
+> Provide a mechanism for file systems to indicate how much dirty metadata they
+> are holding.  This introduces a few things
+> 
+> 1) Zone stats for dirty metadata, which is the same as the NR_FILE_DIRTY.
+> 2) WB stat for dirty metadata.  This way we know if we need to try and call into
+> the file system to write out metadata.  This could potentially be used in the
+> future to make balancing of dirty pages smarter.
 
-Signed-off-by: Darrick J. Wong <darrick.wong@oracle.com>
----
- man2/ioctl_getfsmap.2 |  313 +++++++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 313 insertions(+)
- create mode 100644 man2/ioctl_getfsmap.2
+So I'm curious about one thing: In the previous posting you have mentioned
+that the main motivation for this work is to have a simple support for
+sub-pagesize dirty metadata blocks that need tracking in btrfs. However you
+do the dirty accounting at page granularity. What are your plans to handle
+this mismatch?
 
-diff --git a/man2/ioctl_getfsmap.2 b/man2/ioctl_getfsmap.2
-new file mode 100644
-index 0000000..fac3ff4
---- /dev/null
-+++ b/man2/ioctl_getfsmap.2
-@@ -0,0 +1,313 @@
-+.\" Copyright (c) 2016, Oracle.  All rights reserved.
-+.\"
-+.\" %%%LICENSE_START(GPLv2+_DOC_FULL)
-+.\" This is free documentation; you can redistribute it and/or
-+.\" modify it under the terms of the GNU General Public License as
-+.\" published by the Free Software Foundation; either version 2 of
-+.\" the License, or (at your option) any later version.
-+.\"
-+.\" The GNU General Public License's references to "object code"
-+.\" and "executables" are to be interpreted as the output of any
-+.\" document formatting or typesetting system, including
-+.\" intermediate and printed output.
-+.\"
-+.\" This manual is distributed in the hope that it will be useful,
-+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
-+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+.\" GNU General Public License for more details.
-+.\"
-+.\" You should have received a copy of the GNU General Public
-+.\" License along with this manual; if not, see
-+.\" <http://www.gnu.org/licenses/>.
-+.\" %%%LICENSE_END
-+.TH IOCTL-GETFSMAP 2 2016-09-08 "Linux" "Linux Programmer's Manual"
-+.SH NAME
-+ioctl_getfsmap \- retrieve the physical layout of the filesystem
-+.SH SYNOPSIS
-+.br
-+.B #include <sys/ioctl.h>
-+.br
-+.B #include <linux/fs.h>
-+.sp
-+.BI "int ioctl(int " fd ", GETFSMAP, struct fsmap_head * " arg );
-+.SH DESCRIPTION
-+This
-+.BR ioctl (2)
-+retrieves physical extent mappings for a filesystem.
-+This information can be used to discover which files are mapped to a physical
-+block, examine free space, or find known bad blocks, among other things.
-+
-+The sole argument to this ioctl should be a pointer to a single
-+.BR "struct fsmap_head" ":"
-+.in +4n
-+.nf
-+
-+struct fsmap {
-+	__u32		fmr_device;	/* device id */
-+	__u32		fmr_flags;	/* mapping flags */
-+	__u64		fmr_physical;	/* device offset of segment */
-+	__u64		fmr_owner;	/* owner id */
-+	__u64		fmr_offset;	/* file offset of segment */
-+	__u64		fmr_length;	/* length of segment */
-+	__u64		fmr_reserved[3];	/* must be zero */
-+};
-+
-+struct fsmap_head {
-+	__u32		fmh_iflags;	/* control flags */
-+	__u32		fmh_oflags;	/* output flags */
-+	__u32		fmh_count;	/* # of entries in array incl. input */
-+	__u32		fmh_entries;	/* # of entries filled in (output). */
-+	__u64		fmh_reserved[6];	/* must be zero */
-+
-+	struct fsmap	fmh_keys[2];	/* low and high keys for the mapping search */
-+	struct fsmap	fmh_recs[];	/* returned records */
-+};
-+
-+.fi
-+.in
-+The two
-+.I fmh_keys
-+array elements specify the lowest and highest reverse-mapping
-+keys, respectively, for which userspace would like physical mapping
-+information.
-+A reverse mapping key consists of the tuple (device, block, owner, offset).
-+The owner and offset fields are part of the key because some filesystems
-+support sharing physical blocks between multiple files and
-+therefore may return multiple mappings for a given physical block.
-+.PP
-+Filesystem mappings are copied into the
-+.I fmh_recs
-+array, which immediately follows the header data.
-+.SS Fields of struct fsmap_head
-+.PP
-+The
-+.I fmh_iflags
-+field is a bitmask passed to the kernel to alter the output.
-+There are no flags defined, so this value must be zero.
-+
-+.PP
-+The
-+.I fmh_oflags
-+field is a bitmask of flags that concern all output mappings.
-+If
-+.B FMH_OF_DEV_T
-+is set, then the
-+.I fmr_device
-+field represents a
-+.B dev_t
-+structure containing the major and minor numbers of the block device.
-+
-+.PP
-+The
-+.I fmh_count
-+field contains the number of elements in the array being passed to the
-+kernel.
-+If this value is 0,
-+.I fmh_entries
-+will be set to the number of records that would have been returned had
-+the array been large enough;
-+no mapping information will be returned.
-+
-+.PP
-+The
-+.I fmh_entries
-+field contains the number of elements in the
-+.I fmh_recs
-+array that contain useful information.
-+
-+.PP
-+The
-+.I fmh_reserved
-+fields must be set to zero.
-+
-+.SS Keys
-+.PP
-+The two key records in
-+.B fsmap_head.fmh_keys
-+specify the lowest and highest extent records in the keyspace that the caller
-+wants returned.
-+A filesystem that can share blocks between files likely requires the tuple
-+.RI "(" "device" ", " "physical" ", " "owner" ", " "offset" ", " "flags" ")"
-+to uniquely index any filesystem mapping record.
-+Classic non-sharing filesystems might be able to identify any record with only
-+.RI "(" "device" ", " "physical" ", " "flags" ")."
-+For example, if the low key is set to (0, 36864, 0, 0, 0), the filesystem will
-+only return records for extents starting at or above 36KiB on disk.
-+If the high key is set to (0, 1048576, 0, 0, 0), only records below 1MiB will
-+be returned.
-+By convention, the field
-+.B fsmap_head.fmh_keys[0]
-+must contain the low key and
-+.B fsmap_head.fmh_keys[1]
-+must contain the high key for the request.
-+.PP
-+For convenience, if
-+.B fmr_length
-+is set in the low key, it will be added to
-+.IR fmr_block " or " fmr_offset
-+as appropriate.
-+The caller can take advantage of this subtlety to set up subsequent calls
-+by copying
-+.B fsmap_head.fmh_recs[fsmap_head.fmh_entries - 1]
-+into the low key.
-+
-+.SS Fields of struct fsmap
-+.PP
-+The
-+.I fmr_device
-+field contains a 32-bit cookie to uniquely identify the underlying storage
-+device.
-+If the
-+.B FMH_OF_DEV_T
-+flag is set in the header's
-+.I fmh_oflags
-+field, this field contains a
-+.B dev_t
-+from which major and minor numbers can be extracted.
-+If the flag is not set, this field contains a value that must be unique
-+for each unique storage device.
-+
-+.PP
-+The
-+.I fmr_physical
-+field contains the disk address of the extent in bytes.
-+
-+.PP
-+The
-+.I fmr_owner
-+field contains the owner of the extent.
-+This is an inode number unless
-+.B FMR_OF_SPECIAL_OWNER
-+is set in the
-+.I fmr_flags
-+field, in which case the owner value is one of the following special values:
-+.RS 0.4i
-+.TP
-+.B FMR_OWN_FREE
-+Free space.
-+.TP
-+.B FMR_OWN_UNKNOWN
-+This extent is in use but its owner is not known.
-+.TP
-+.B FMR_OWN_FS
-+Static filesystem metadata which exists at a fixed address.
-+On XFS these are the AG superblock, AGF, AGFL, and AGI headers.
-+.TP
-+.B FMR_OWN_LOG
-+The filesystem journal.
-+.TP
-+.B FMR_OWN_AG
-+Allocation group metadata.
-+On XFS these are the free space btrees or the reverse mapping btrees.
-+.TP
-+.B FMR_OWN_INOBT
-+Inode indexing, if any are provided.
-+On XFS these are the inode and free inode btrees.
-+.TP
-+.B FMR_OWN_INODES
-+Inode records.
-+.TP
-+.B FMR_OWN_REFC
-+Reference count information.
-+On XFS this is the reference count btree.
-+.TP
-+.B FMR_OWN_COW
-+This extent is being used to stage a copy-on-write.
-+.TP
-+.B FMR_OWN_DEFECTIVE:
-+This extent has been marked defective either by the filesystem or the
-+underlying device.
-+.RE
-+
-+.PP
-+The
-+.I fmr_offset
-+field contains the logical address in the mapping record in bytes.
-+This field has no meaning if the
-+.BR FMR_OF_SPECIAL_OWNER " or " FMR_OF_EXTENT_MAP
-+flags are set in
-+.IR fmr_flags "."
-+
-+.PP
-+The
-+.I fmr_length
-+field contains the length of the extent in bytes.
-+
-+.PP
-+The
-+.I fmr_flags
-+field is a bitmask of extent state flags.
-+The bits are:
-+.RS 0.4i
-+.TP
-+.B FMR_OF_PREALLOC
-+The extent is allocated but not yet written.
-+.TP
-+.B FMR_OF_ATTR_FORK
-+This extent contains extended attribute data.
-+.TP
-+.B FMR_OF_EXTENT_MAP
-+This extent contains extent map information for the owner.
-+.TP
-+.B FMR_OF_SHARED
-+Parts of this extent may be shared.
-+.TP
-+.B FMR_OF_SPECIAL_OWNER
-+The
-+.I fmr_owner
-+field contains a special value instead of an inode number.
-+.TP
-+.B FMR_OF_LAST
-+This is the last record in the filesystem.
-+.RE
-+
-+.PP
-+The
-+.I fmr_reserved
-+field will be set to zero.
-+
-+.SH RETURN VALUE
-+On error, \-1 is returned, and
-+.I errno
-+is set to indicate the error.
-+.PP
-+.SH ERRORS
-+Error codes can be one of, but are not limited to, the following:
-+.TP
-+.B EINVAL
-+The array is not long enough, or a non-zero value was passed in one of the
-+fields that must be zero.
-+.TP
-+.B EFAULT
-+The pointer passed in was not mapped to a valid memory address.
-+.TP
-+.B EBADF
-+.IR fd
-+is not open for reading.
-+.TP
-+.B EPERM
-+This query is not allowed.
-+.TP
-+.B EOPNOTSUPP
-+The filesystem does not support this command.
-+.TP
-+.B EUCLEAN
-+The filesystem metadata is corrupt and needs repair.
-+.TP
-+.B EBADMSG
-+The filesystem has detected a checksum error in the metadata.
-+.TP
-+.B ENOMEM
-+Insufficient memory to process the request.
-+
-+.SH EXAMPLE
-+.TP
-+Please see io/fsmap.c in the xfsprogs distribution for a sample program.
-+
-+.SH CONFORMING TO
-+This API is Linux-specific.
-+Not all filesystems support it.
-+.fi
-+.in
-+.SH SEE ALSO
-+.BR ioctl (2)
+The thing is you actually shouldn't miscount by too much as that could
+upset some checks in mm checking how much dirty pages a node has directing
+how reclaim should be done... But it's a question whether NR_METADATA_DIRTY
+should be actually used in the checks in node_limits_ok() or in
+node_pagecache_reclaimable() at all because once you start accounting dirty
+slab objects, you are really on a thin ice...
+
+> diff --git a/fs/fs-writeback.c b/fs/fs-writeback.c
+> index 56c8fda..d329f89 100644
+> --- a/fs/fs-writeback.c
+> +++ b/fs/fs-writeback.c
+> @@ -1809,6 +1809,7 @@ static unsigned long get_nr_dirty_pages(void)
+>  {
+>  	return global_node_page_state(NR_FILE_DIRTY) +
+>  		global_node_page_state(NR_UNSTABLE_NFS) +
+> +		global_node_page_state(NR_METADATA_DIRTY) +
+>  		get_nr_dirty_inodes();
+
+With my question is also connected this - when we have NR_METADATA_DIRTY,
+we could just account dirty inodes there and get rid of this
+get_nr_dirty_inodes() hack...
+
+But actually getting this to work right to be able to track dirty inodes would
+be useful on its own - some throlling of creation of dirty inodes would be
+useful for several filesystems (ext4, xfs, ...).
+
+> diff --git a/mm/page-writeback.c b/mm/page-writeback.c
+> index 121a6e3..6a52723 100644
+> --- a/mm/page-writeback.c
+> +++ b/mm/page-writeback.c
+> @@ -506,6 +506,7 @@ bool node_dirty_ok(struct pglist_data *pgdat)
+>  	nr_pages += node_page_state(pgdat, NR_FILE_DIRTY);
+>  	nr_pages += node_page_state(pgdat, NR_UNSTABLE_NFS);
+>  	nr_pages += node_page_state(pgdat, NR_WRITEBACK);
+> +	nr_pages += node_page_state(pgdat, NR_METADATA_DIRTY);
+>  
+>  	return nr_pages <= limit;
+>  }
+> @@ -1595,7 +1596,8 @@ static void balance_dirty_pages(struct bdi_writeback *wb,
+>  		 * been flushed to permanent storage.
+>  		 */
+>  		nr_reclaimable = global_node_page_state(NR_FILE_DIRTY) +
+> -					global_node_page_state(NR_UNSTABLE_NFS);
+> +				global_node_page_state(NR_UNSTABLE_NFS) +
+> +				global_node_page_state(NR_METADATA_DIRTY);
+>  		gdtc->avail = global_dirtyable_memory();
+>  		gdtc->dirty = nr_reclaimable + global_node_page_state(NR_WRITEBACK);
+>  
+> @@ -1935,7 +1937,8 @@ bool wb_over_bg_thresh(struct bdi_writeback *wb)
+>  	 */
+>  	gdtc->avail = global_dirtyable_memory();
+>  	gdtc->dirty = global_node_page_state(NR_FILE_DIRTY) +
+> -		      global_node_page_state(NR_UNSTABLE_NFS);
+> +		      global_node_page_state(NR_UNSTABLE_NFS) +
+> +		      global_node_page_state(NR_METADATA_DIRTY);
+>  	domain_dirty_limits(gdtc);
+>  
+>  	if (gdtc->dirty > gdtc->bg_thresh)
+> @@ -2009,7 +2012,8 @@ void laptop_mode_timer_fn(unsigned long data)
+>  {
+>  	struct request_queue *q = (struct request_queue *)data;
+>  	int nr_pages = global_node_page_state(NR_FILE_DIRTY) +
+> -		global_node_page_state(NR_UNSTABLE_NFS);
+> +		global_node_page_state(NR_UNSTABLE_NFS) +
+> +		global_node_page_state(NR_METADATA_DIRTY);
+>  	struct bdi_writeback *wb;
+>  
+>  	/*
+> @@ -2473,6 +2477,96 @@ void account_page_dirtied(struct page *page, struct address_space *mapping)
+>  EXPORT_SYMBOL(account_page_dirtied);
+>  
+>  /*
+> + * account_metadata_dirtied
+> + * @page - the page being dirited
+> + * @bdi - the bdi that owns this page
+> + *
+> + * Do the dirty page accounting for metadata pages that aren't backed by an
+> + * address_space.
+> + */
+> +void account_metadata_dirtied(struct page *page, struct backing_dev_info *bdi)
+> +{
+> +	unsigned long flags;
+> +
+
+A bdi_cap_account_dirty() check here and in following functions?
+
+> +	local_irq_save(flags);
+> +	__inc_node_page_state(page, NR_METADATA_DIRTY);
+> +	__inc_zone_page_state(page, NR_ZONE_WRITE_PENDING);
+> +	__inc_node_page_state(page, NR_DIRTIED);
+> +	__inc_wb_stat(&bdi->wb, WB_RECLAIMABLE);
+> +	__inc_wb_stat(&bdi->wb, WB_DIRTIED);
+> +	__inc_wb_stat(&bdi->wb, WB_METADATA_DIRTY);
+> +	current->nr_dirtied++;
+> +	task_io_account_write(PAGE_SIZE);
+> +	this_cpu_inc(bdp_ratelimits);
+> +	local_irq_restore(flags);
+> +}
+> +EXPORT_SYMBOL(account_metadata_dirtied);
+> +
+> +/*
+> + * account_metadata_cleaned
+> + * @page - the page being cleaned
+> + * @bdi - the bdi that owns this page
+> + *
+> + * Called on a no longer dirty metadata page.
+> + */
+> +void account_metadata_cleaned(struct page *page, struct backing_dev_info *bdi)
+> +{
+> +	unsigned long flags;
+> +
+> +	local_irq_save(flags);
+> +	__dec_node_page_state(page, NR_METADATA_DIRTY);
+> +	__dec_zone_page_state(page, NR_ZONE_WRITE_PENDING);
+> +	__dec_wb_stat(&bdi->wb, WB_RECLAIMABLE);
+> +	__dec_wb_stat(&bdi->wb, WB_METADATA_DIRTY);
+> +	task_io_account_cancelled_write(PAGE_SIZE);
+> +	local_irq_restore(flags);
+> +}
+> +EXPORT_SYMBOL(account_metadata_cleaned);
+> +
+> +/*
+> + * account_metadata_writeback
+> + * @page - the page being marked as writeback
+> + * @bdi - the bdi that owns this page
+> + *
+> + * Called on a metadata page that has been marked writeback.
+> + */
+> +void account_metadata_writeback(struct page *page,
+> +				struct backing_dev_info *bdi)
+> +{
+> +	unsigned long flags;
+> +
+> +	local_irq_save(flags);
+> +	__inc_wb_stat(&bdi->wb, WB_WRITEBACK);
+> +	__inc_node_page_state(page, NR_WRITEBACK);
+> +	__dec_node_page_state(page, NR_METADATA_DIRTY);
+> +	__dec_wb_stat(&bdi->wb, WB_METADATA_DIRTY);
+> +	__dec_wb_stat(&bdi->wb, WB_RECLAIMABLE);
+> +	local_irq_restore(flags);
+> +}
+> +EXPORT_SYMBOL(account_metadata_writeback);
+> +
+> +/*
+> + * account_metadata_end_writeback
+> + * @page - the page we are ending writeback on
+> + * @bdi - the bdi that owns this page
+> + *
+> + * Called on a metadata page that has completed writeback.
+> + */
+> +void account_metadata_end_writeback(struct page *page,
+> +				    struct backing_dev_info *bdi)
+> +{
+> +	unsigned long flags;
+> +
+> +	local_irq_save(flags);
+> +	__dec_wb_stat(&bdi->wb, WB_WRITEBACK);
+> +	__dec_node_page_state(page, NR_WRITEBACK);
+> +	__dec_zone_page_state(page, NR_ZONE_WRITE_PENDING);
+> +	__inc_node_page_state(page, NR_WRITTEN);
+> +	local_irq_restore(flags);
+> +}
+> +EXPORT_SYMBOL(account_metadata_end_writeback);
+> +
+> +/*
+>   * Helper function for deaccounting dirty page without writeback.
+>   *
+>   * Caller must hold lock_page_memcg().
+...
+> diff --git a/mm/vmscan.c b/mm/vmscan.c
+> index 374d95d..fb3eb62 100644
+> --- a/mm/vmscan.c
+> +++ b/mm/vmscan.c
+> @@ -3714,7 +3714,8 @@ static unsigned long node_pagecache_reclaimable(struct pglist_data *pgdat)
+>  
+>  	/* If we can't clean pages, remove dirty pages from consideration */
+>  	if (!(node_reclaim_mode & RECLAIM_WRITE))
+> -		delta += node_page_state(pgdat, NR_FILE_DIRTY);
+> +		delta += node_page_state(pgdat, NR_FILE_DIRTY) +
+> +			node_page_state(pgdat, NR_METADATA_DIRTY);
+>  
+>  	/* Watch for any possible underflows due to delta */
+>  	if (unlikely(delta > nr_pagecache_reclaimable))
+
+								Honza
+-- 
+Jan Kara <jack@suse.com>
+SUSE Labs, CR

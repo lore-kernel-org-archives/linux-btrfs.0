@@ -1,116 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:56091 "EHLO
-        mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S932780AbcIBTmM (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 2 Sep 2016 15:42:12 -0400
-Received: from pps.filterd (m0044008.ppops.net [127.0.0.1])
-        by mx0a-00082601.pphosted.com (8.16.0.17/8.16.0.17) with SMTP id u82JYgpY003885
-        for <linux-btrfs@vger.kernel.org>; Fri, 2 Sep 2016 12:42:11 -0700
-Received: from mail.thefacebook.com ([199.201.64.23])
-        by mx0a-00082601.pphosted.com with ESMTP id 257dbc0yj9-1
-        (version=TLSv1 cipher=ECDHE-RSA-AES256-SHA bits=256 verify=NOT)
-        for <linux-btrfs@vger.kernel.org>; Fri, 02 Sep 2016 12:42:11 -0700
-From: Josef Bacik <jbacik@fb.com>
-To: <linux-btrfs@vger.kernel.org>, <kernel-team@fb.com>
-Subject: [PATCH 7/7] Btrfs: kill BUG_ON()'s in btrfs_mark_extent_written
-Date: Fri, 2 Sep 2016 15:40:06 -0400
-Message-ID: <1472845206-22870-8-git-send-email-jbacik@fb.com>
-In-Reply-To: <1472845206-22870-1-git-send-email-jbacik@fb.com>
-References: <1472845206-22870-1-git-send-email-jbacik@fb.com>
+Received: from mx2.suse.de ([195.135.220.15]:37925 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1754841AbcIIMyv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 9 Sep 2016 08:54:51 -0400
+Date: Fri, 9 Sep 2016 14:53:13 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Anand Jain <anand.jain@oracle.com>
+Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz, clm@fb.com,
+        idryomov@gmail.com
+Subject: Re: [PATCH] btrfs: fix a possible umount deadlock
+Message-ID: <20160909125313.GS16983@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20160909083104.10383-1-anand.jain@oracle.com>
 MIME-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20160909083104.10383-1-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-No reason to bug on in here, fs corruption could easily cause these things to
-happen.
+On Fri, Sep 09, 2016 at 04:31:04PM +0800, Anand Jain wrote:
+>  static int __btrfs_close_devices(struct btrfs_fs_devices *fs_devices)
+>  {
+>  	struct btrfs_device *device, *tmp;
+> +	static LIST_HEAD(pending_put);
 
-Signed-off-by: Josef Bacik <jbacik@fb.com>
----
- fs/btrfs/file.c | 41 +++++++++++++++++++++++++++++++++--------
- 1 file changed, 33 insertions(+), 8 deletions(-)
+Why is it static?
 
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index f060b08..85bf035 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -1110,13 +1110,25 @@ again:
- 
- 	leaf = path->nodes[0];
- 	btrfs_item_key_to_cpu(leaf, &key, path->slots[0]);
--	BUG_ON(key.objectid != ino || key.type != BTRFS_EXTENT_DATA_KEY);
-+	if (key.objectid != ino ||
-+	    key.type != BTRFS_EXTENT_DATA_KEY) {
-+		ret = -EINVAL;
-+		btrfs_abort_transaction(trans, ret);
-+		goto out;
-+	}
- 	fi = btrfs_item_ptr(leaf, path->slots[0],
- 			    struct btrfs_file_extent_item);
--	BUG_ON(btrfs_file_extent_type(leaf, fi) !=
--	       BTRFS_FILE_EXTENT_PREALLOC);
-+	if (btrfs_file_extent_type(leaf, fi) != BTRFS_FILE_EXTENT_PREALLOC) {
-+		ret = -EINVAL;
-+		btrfs_abort_transaction(trans, ret);
-+		goto out;
-+	}
- 	extent_end = key.offset + btrfs_file_extent_num_bytes(leaf, fi);
--	BUG_ON(key.offset > start || extent_end < end);
-+	if (key.offset > start || extent_end < end) {
-+		ret = -EINVAL;
-+		btrfs_abort_transaction(trans, ret);
-+		goto out;
-+	}
- 
- 	bytenr = btrfs_file_extent_disk_bytenr(leaf, fi);
- 	num_bytes = btrfs_file_extent_disk_num_bytes(leaf, fi);
-@@ -1213,12 +1225,19 @@ again:
- 		ret = btrfs_inc_extent_ref(trans, root, bytenr, num_bytes, 0,
- 					   root->root_key.objectid,
- 					   ino, orig_offset);
--		BUG_ON(ret); /* -ENOMEM */
-+		if (ret) {
-+			btrfs_abort_transaction(trans, ret);
-+			goto out;
-+		}
- 
- 		if (split == start) {
- 			key.offset = start;
- 		} else {
--			BUG_ON(start != key.offset);
-+			if (start != key.offset) {
-+				ret = -EINVAL;
-+				btrfs_abort_transaction(trans, ret);
-+				goto out;
-+			}
- 			path->slots[0]--;
- 			extent_end = end;
- 		}
-@@ -1240,7 +1259,10 @@ again:
- 		ret = btrfs_free_extent(trans, root, bytenr, num_bytes,
- 					0, root->root_key.objectid,
- 					ino, orig_offset);
--		BUG_ON(ret); /* -ENOMEM */
-+		if (ret) {
-+			btrfs_abort_transaction(trans, ret);
-+			goto out;
-+		}
- 	}
- 	other_start = 0;
- 	other_end = start;
-@@ -1257,7 +1279,10 @@ again:
- 		ret = btrfs_free_extent(trans, root, bytenr, num_bytes,
- 					0, root->root_key.objectid,
- 					ino, orig_offset);
--		BUG_ON(ret); /* -ENOMEM */
-+		if (ret) {
-+			btrfs_abort_transaction(trans, ret);
-+			goto out;
-+		}
- 	}
- 	if (del_nr == 0) {
- 		fi = btrfs_item_ptr(leaf, path->slots[0],
--- 
-2.7.4
-
+> +	INIT_LIST_HEAD(&pending_put);
+>  
+>  	if (--fs_devices->opened > 0)
+>  		return 0;
+> @@ -906,9 +904,24 @@ static int __btrfs_close_devices(struct btrfs_fs_devices *fs_devices)
+>  	mutex_lock(&fs_devices->device_list_mutex);
+>  	list_for_each_entry_safe(device, tmp, &fs_devices->devices, dev_list) {
+>  		btrfs_close_one_device(device);
+> +		list_add(&device->dev_list, &pending_put);
+>  	}
+>  	mutex_unlock(&fs_devices->device_list_mutex);
+>  
+> +	/*
+> +	 * btrfs_show_devname() is using the device_list_mutex,
+> +	 * sometimes a call to blkdev_put() leads vfs calling
+> +	 * into this func. So do put outside of device_list_mutex,
+> +	 * as of now.
+> +	 */
+> +	while (!list_empty(&pending_put)) {
+> +		device = list_entry(pending_put.next,
+> +					struct btrfs_device, dev_list);
+> +		list_del(&device->dev_list);
+> +		btrfs_close_bdev(device);
+> +		call_rcu(&device->rcu, free_device);
+> +	}
+> +
+>  	WARN_ON(fs_devices->open_devices);
+>  	WARN_ON(fs_devices->rw_devices);
+>  	fs_devices->opened = 0;

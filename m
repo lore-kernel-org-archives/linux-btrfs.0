@@ -1,23 +1,23 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:45845 "EHLO
-        mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
-        by vger.kernel.org with ESMTP id S932780AbcIBTlt (ORCPT
+Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:58048 "EHLO
+        mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1751121AbcIIRlF (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 2 Sep 2016 15:41:49 -0400
-Received: from pps.filterd (m0001303.ppops.net [127.0.0.1])
-        by m0001303.ppops.net (8.16.0.17/8.16.0.17) with SMTP id u82JatOW024488
-        for <linux-btrfs@vger.kernel.org>; Fri, 2 Sep 2016 12:41:49 -0700
+        Fri, 9 Sep 2016 13:41:05 -0400
+Received: from pps.filterd (m0044010.ppops.net [127.0.0.1])
+        by mx0a-00082601.pphosted.com (8.16.0.17/8.16.0.17) with SMTP id u89HeHRh028823
+        for <linux-btrfs@vger.kernel.org>; Fri, 9 Sep 2016 10:41:04 -0700
 Received: from mail.thefacebook.com ([199.201.64.23])
-        by m0001303.ppops.net with ESMTP id 25651ex287-1
+        by mx0a-00082601.pphosted.com with ESMTP id 25bybw16qv-1
         (version=TLSv1 cipher=ECDHE-RSA-AES256-SHA bits=256 verify=NOT)
-        for <linux-btrfs@vger.kernel.org>; Fri, 02 Sep 2016 12:41:48 -0700
+        for <linux-btrfs@vger.kernel.org>; Fri, 09 Sep 2016 10:41:04 -0700
 From: Josef Bacik <jbacik@fb.com>
 To: <linux-btrfs@vger.kernel.org>, <kernel-team@fb.com>
-Subject: [PATCH 6/7] Btrfs: kill the btree_inode
-Date: Fri, 2 Sep 2016 15:40:05 -0400
-Message-ID: <1472845206-22870-7-git-send-email-jbacik@fb.com>
-In-Reply-To: <1472845206-22870-1-git-send-email-jbacik@fb.com>
-References: <1472845206-22870-1-git-send-email-jbacik@fb.com>
+Subject: [PATCH 6/7][V2] Btrfs: kill the btree_inode
+Date: Fri, 9 Sep 2016 13:40:49 -0400
+Message-ID: <1473442849-9413-1-git-send-email-jbacik@fb.com>
+In-Reply-To: <1472845206-22870-7-git-send-email-jbacik@fb.com>
+References: <1472845206-22870-7-git-send-email-jbacik@fb.com>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -34,9 +34,13 @@ simply kmalloc() our data for sub-page blocksizes.
 
 Signed-off-by: Josef Bacik <jbacik@fb.com>
 ---
+V1->V2
+-fixed the unlock_start as pointed out by Chandan.
+-fixed a panic when fs_info->eb_info is null.
+
  fs/btrfs/btrfs_inode.h                 |   3 +-
  fs/btrfs/ctree.c                       |  10 +-
- fs/btrfs/ctree.h                       |  13 +-
+ fs/btrfs/ctree.h                       |  14 +-
  fs/btrfs/disk-io.c                     | 389 ++++----------
  fs/btrfs/extent_io.c                   | 913 ++++++++++++++++++---------------
  fs/btrfs/extent_io.h                   |  49 +-
@@ -48,7 +52,7 @@ Signed-off-by: Josef Bacik <jbacik@fb.com>
  fs/btrfs/tests/free-space-tree-tests.c |   4 +-
  fs/btrfs/tests/qgroup-tests.c          |   4 +-
  fs/btrfs/transaction.c                 |  11 +-
- 14 files changed, 726 insertions(+), 748 deletions(-)
+ 14 files changed, 727 insertions(+), 748 deletions(-)
 
 diff --git a/fs/btrfs/btrfs_inode.h b/fs/btrfs/btrfs_inode.h
 index 1a8fa46..ad7b185 100644
@@ -102,7 +106,7 @@ index d1c56c9..b267053 100644
  			  __func__, low, high, eb->start,
  			  btrfs_header_owner(eb), btrfs_header_level(eb));
 diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 282a031..ee6956c 100644
+index 282a031..b9ee7cf 100644
 --- a/fs/btrfs/ctree.h
 +++ b/fs/btrfs/ctree.h
 @@ -37,6 +37,7 @@
@@ -141,16 +145,17 @@ index 282a031..ee6956c 100644
  	/* next backup root to be overwritten */
  	int backup_root_index;
  
-@@ -2884,6 +2882,8 @@ static inline int btrfs_need_cleaner_sleep(struct btrfs_root *root)
+@@ -2884,6 +2882,9 @@ static inline int btrfs_need_cleaner_sleep(struct btrfs_root *root)
  
  static inline void free_fs_info(struct btrfs_fs_info *fs_info)
  {
-+	list_lru_destroy(&fs_info->eb_info->lru_list);
++	if (fs_info->eb_info)
++		list_lru_destroy(&fs_info->eb_info->lru_list);
 +	kfree(fs_info->eb_info);
  	kfree(fs_info->balance_ctl);
  	kfree(fs_info->delayed_root);
  	kfree(fs_info->extent_root);
-@@ -3121,9 +3121,6 @@ int btrfs_create_subvol_root(struct btrfs_trans_handle *trans,
+@@ -3121,9 +3122,6 @@ int btrfs_create_subvol_root(struct btrfs_trans_handle *trans,
  			     struct btrfs_root *new_root,
  			     struct btrfs_root *parent_root,
  			     u64 new_dirid);
@@ -901,7 +906,7 @@ index 9c42e53..03ac601 100644
  	.set_range_writeback = btrfs_set_range_writeback,
  };
 diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 5dcdd3e..5c18a49 100644
+index 5dcdd3e..f669240 100644
 --- a/fs/btrfs/extent_io.c
 +++ b/fs/btrfs/extent_io.c
 @@ -75,8 +75,8 @@ void btrfs_leak_debug_check(void)
@@ -2157,7 +2162,7 @@ index 5dcdd3e..5c18a49 100644
  			}
 -		} else {
 -			unlock_page(page);
-+			unlock_start = eb->start;
++			unlock_start = offset;
 +			unlock_len = PAGE_SIZE;
  		}
 +		offset += PAGE_SIZE;

@@ -1,9 +1,10 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pf0-f193.google.com ([209.85.192.193]:33990 "EHLO
-        mail-pf0-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751372AbcIIDpS (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 8 Sep 2016 23:45:18 -0400
-Date: Fri, 9 Sep 2016 11:45:09 +0800
+Received: from mail-pa0-f68.google.com ([209.85.220.68]:36638 "EHLO
+        mail-pa0-f68.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1754784AbcIJP6M (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Sat, 10 Sep 2016 11:58:12 -0400
+Date: Sat, 10 Sep 2016 23:58:05 +0800
 From: Sean Fu <fxinrong@gmail.com>
 To: Jeff Mahoney <jeffm@suse.com>
 Cc: dsterba@suse.cz, Qu Wenruo <quwenruo@cn.fujitsu.com>,
@@ -12,7 +13,7 @@ Cc: dsterba@suse.cz, Qu Wenruo <quwenruo@cn.fujitsu.com>,
         linux-kernel@vger.kernel.org
 Subject: Re: [PATCH] Btrfs: remove unnecessary code of chunk_root assignment
  in btrfs_read_chunk_tree.
-Message-ID: <20160909034502.GB15304@linux-zmni.apac.novell.com>
+Message-ID: <20160910155804.GB5659@linux-zmni.DHCP>
 References: <1472990010-10707-1-git-send-email-fxinrong@gmail.com>
  <002501d20713$7ee67050$7cb350f0$@cn.fujitsu.com>
  <e48353fc-cd00-789c-291e-80c684afe2e2@cn.fujitsu.com>
@@ -62,10 +63,15 @@ On Thu, Sep 08, 2016 at 11:25:48PM -0400, Jeff Mahoney wrote:
 > ... I still need to do clean up some commits that need merging.
 > 
 > https://git.kernel.org/cgit/linux/kernel/git/jeffm/linux-btrfs.git/log/?h=btrfs-testing/kdave/misc-4.9/root-fsinfo-cleanup
->
-Nice work.
-Thanks
+> 
+Nice work. Thanks for your explaination.
+I have one more question about it.
+Although the total text size of this function is not changed, using
+fs_info should need one more instruction to get chunk_root field of
+fs_info than using chunk_root directly.
+Does it cause any performance impact?
 
+Sean
 > -Jeff
 > 
 > 

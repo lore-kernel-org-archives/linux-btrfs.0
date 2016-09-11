@@ -1,60 +1,77 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oi0-f50.google.com ([209.85.218.50]:33115 "EHLO
-        mail-oi0-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751618AbcIJT1E (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 10 Sep 2016 15:27:04 -0400
-Received: by mail-oi0-f50.google.com with SMTP id y2so219323407oie.0
-        for <linux-btrfs@vger.kernel.org>; Sat, 10 Sep 2016 12:27:04 -0700 (PDT)
+Received: from nmsh1.e.nsc.no ([193.213.121.72]:38311 "EHLO nmsh1.e.nsc.no"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1753125AbcIKJKU (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sun, 11 Sep 2016 05:10:20 -0400
+Received: from [10.0.0.10] (ti0210a400-1153.bb.online.no [80.213.43.133])
+        (authenticated bits=0)
+        by nmsh1.nsc.no (8.14.7/8.14.7) with ESMTP id u8B8tLsE024005
+        for <linux-btrfs@vger.kernel.org>; Sun, 11 Sep 2016 10:55:21 +0200 (MEST)
+To: linux-btrfs@vger.kernel.org
+From: Waxhead <waxhead@online.no>
+Subject: Is stability a joke?
+Message-ID: <57D51BF9.2010907@online.no>
+Date: Sun, 11 Sep 2016 10:55:21 +0200
 MIME-Version: 1.0
-In-Reply-To: <CAJCQCtRFer9UGjqwqZS3xZnQGC6hqVRHyeaQjmy6+nnMfJUKKQ@mail.gmail.com>
-References: <c04c596d-4cb9-ed98-513a-c550b1be18b2@cobb.uk.net>
- <2d59a472-4e74-d64c-27c4-28677d761316@gmail.com> <4afee621-0493-1ffc-31fe-fb81643f2374@cobb.uk.net>
- <1473259316.24874.3.camel@scientia.net> <12cfbaf0-77ff-a4d2-d9d7-64c5c795ce4b@gmail.com>
- <1473271679.24874.36.camel@scientia.net> <d6f659e7-25bf-c732-a7db-0cef8450b346@gmail.com>
- <CAJCQCtSmFA2iRDN33u9XF1b4nN_xA5sy44tS3n5mnA4f+go_hg@mail.gmail.com>
- <8049c767-5cf0-7abc-8e44-828a15619546@gmail.com> <CAJCQCtRFer9UGjqwqZS3xZnQGC6hqVRHyeaQjmy6+nnMfJUKKQ@mail.gmail.com>
-From: Chris Murphy <lists@colorremedies.com>
-Date: Sat, 10 Sep 2016 13:27:02 -0600
-Message-ID: <CAJCQCtSt=rH59nu5ttOdqZkDLdLn60hd0=LL0-oECrzVhk0K-A@mail.gmail.com>
-Subject: Re: Security implications of btrfs receive?
-To: Chris Murphy <lists@colorremedies.com>
-Cc: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=UTF-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Sep 9, 2016 at 12:58 PM, Chris Murphy <lists@colorremedies.com> wrote:
+I have been following BTRFS for years and have recently been starting to 
+use BTRFS more and more and as always BTRFS' stability is a hot topic.
+Some says that BTRFS is a dead end research project while others claim 
+the opposite.
 
->
-> It should work better than it does because it works well for LVM and
-> mdadm arrays.
->
-> I think what's going on is the DE's mounter (udisksd) tries to mount
-> each Btrfs device node, even though those nodes make up a single fs
-> volume.
+Taking a quick glance at the wiki does not say much about what is safe 
+to use or not and it also points to some who are using BTRFS in production.
+While BTRFS can apparently work well in production it does have some 
+caveats, and finding out what features is safe or not can be problematic 
+and I especially think that new users of BTRFS can easily be bitten if 
+they do not do a lot of research on it first.
 
-I updated this bug but it looks like it's going to a maintainer whose
-not reading these mails.
-https://bugs.freedesktop.org/show_bug.cgi?id=87277#c3
+The Debian wiki for BTRFS (which is recent by the way) contains a bunch 
+of warnings and recommendations and is for me a bit better than the 
+official BTRFS wiki when it comes to how to decide what features to use.
 
-Anyway the problem is pretty bad as I describe in that bug. It pretty
-much will always cause some kind of Btrfs corruption, which does get
-fixed if everything is raid1. The main flaw is that it uses sysfs to
-delete the device node before umounting the file system, so it causes
-any multiple device Btrfs array that's automounted to become degraded.
-There's something of a silver lining so long as the metadata at least
-is raid1, which it probably ought to be, rather than single, dup, or
-raid0.
+The Nouveau graphics driver have a nice feature matrix on it's webpage 
+and I think that BTRFS perhaps should consider doing something like that 
+on it's official wiki as well
 
-In any case, it's far worse and more dangerous than LVM or mdadm raid
-which don't exhibit this behavior. So of the available short term
-options I see, udisks2 (and now storaged) needs to black list Btrfs
-from automounting. It's just not smart enough to make sure it's not
-doing really wrong things.
+For example something along the lines of .... (the statuses are taken 
+our of thin air just for demonstration purposes)
 
+Kernel version 4.7
++----------------------------+--------+-----+-------+-------+--------+-------+--------+
+| Feature / Redundancy level | Single | Dup | Raid0 | Raid1 | Raid10 | 
+Raid5 | Raid 6 |
++----------------------------+--------+-----+-------+-------+--------+-------+--------+
+| Subvolumes                 | Ok     | Ok  | Ok    | Ok    | Ok   | Bad 
+   | Bad    |
++----------------------------+--------+-----+-------+-------+--------+-------+--------+
+| Snapshots                  | Ok     | Ok  | Ok    | Ok    | Ok     | 
+Bad   | Bad    |
++----------------------------+--------+-----+-------+-------+--------+-------+--------+
+| LZO Compression            | Bad(1) | Bad | Bad   | Bad(2)| Bad    | 
+Bad   | Bad    |
++----------------------------+--------+-----+-------+-------+--------+-------+--------+
+| ZLIB Compression           | Ok     | Ok  | Ok    | Ok    | Ok     | 
+Bad   | Bad    |
++----------------------------+--------+-----+-------+-------+--------+-------+--------+
+| Autodefrag                 | Ok     | Bad | Bad(3)| Ok    | Ok     | 
+Bad   | Bad    |
++----------------------------+--------+-----+-------+-------+--------+-------+--------+
 
+(1) Some explanation here...
+(2) Some explanation there....
+(3) And some explanation elsewhere...
 
--- 
-Chris Murphy
+...etc...etc...
+
+I therefore would like to propose that some sort of feature / stability 
+matrix for the latest kernel is added to the wiki preferably somewhere 
+where it is easy to find. It would be nice to archive old matrix'es as 
+well in case someone runs on a bit older kernel (we who use Debian tend 
+to like older kernels). In my opinion it would make things bit easier 
+and perhaps a bit less scary too. Remember if you get bitten badly once 
+you tend to stay away from from it all just in case, if you on the other 
+hand know what bites you can safely pet the fluffy end instead :)

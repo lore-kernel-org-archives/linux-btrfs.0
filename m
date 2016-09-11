@@ -1,170 +1,125 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.crc.id.au ([203.56.246.92]:41224 "EHLO mail.crc.id.au"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751425AbcIKJ5D (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 11 Sep 2016 05:57:03 -0400
-Received: from dhcp-10-1-1-187.lan.crc.id.au (2407-e400-b000-201-4175-b1e5-ad5-c0ce-cpe.spintel.net.au [IPv6:2407:e400:b000:201:4175:b1e5:ad5:c0ce])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES256-SHA (256/256 bits))
-        (Client did not present a certificate)
-        by mail.crc.id.au (Postfix) with ESMTPSA id 6B5E13A00E9
-        for <linux-btrfs@vger.kernel.org>; Sun, 11 Sep 2016 19:56:57 +1000 (AEST)
+Received: from mondschein.lichtvoll.de ([194.150.191.11]:34545 "EHLO
+        mail.lichtvoll.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752381AbcIKKX2 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Sun, 11 Sep 2016 06:23:28 -0400
+From: Martin Steigerwald <martin@lichtvoll.de>
+To: Waxhead <waxhead@online.no>
+Cc: linux-btrfs@vger.kernel.org
 Subject: Re: Is stability a joke?
-To: linux-btrfs@vger.kernel.org
-References: <57D51BF9.2010907@online.no>
-From: Steven Haigh <netwiz@crc.id.au>
-Message-ID: <02c31694-a4a7-3b49-11c1-6df9dd08e4f6@crc.id.au>
-Date: Sun, 11 Sep 2016 19:56:52 +1000
-MIME-Version: 1.0
+Date: Sun, 11 Sep 2016 12:23:23 +0200
+Message-ID: <13278435.QSGp0b77ZB@merkaba>
 In-Reply-To: <57D51BF9.2010907@online.no>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="tK6GBOCCKr5rG6pFhVVtmshlIgxUETe3j"
+References: <57D51BF9.2010907@online.no>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---tK6GBOCCKr5rG6pFhVVtmshlIgxUETe3j
-Content-Type: multipart/mixed; boundary="cgR0Rw4h0glQscUsXqCrb0vHLGE31MwP1"
-From: Steven Haigh <netwiz@crc.id.au>
-To: linux-btrfs@vger.kernel.org
-Message-ID: <02c31694-a4a7-3b49-11c1-6df9dd08e4f6@crc.id.au>
-Subject: Re: Is stability a joke?
-References: <57D51BF9.2010907@online.no>
-In-Reply-To: <57D51BF9.2010907@online.no>
-
---cgR0Rw4h0glQscUsXqCrb0vHLGE31MwP1
-Content-Type: text/plain; charset=utf-8
-Content-Transfer-Encoding: quoted-printable
-
-This. So much this.
-
-After being burned badly by the documentation / wiki etc making RAID5/6
-seem stable, I think its a joke how the features of BTRFS are promoted.
-
-A lot that is marked as 'Implemented' or 'Complete' is little more than
-a "In theory, it works" - but will eat your data.
-
-Having a simple reference as to the status of what is going on, and what
-will eat your data would probably save Tb's of data in the next few
-months and lots of reputation for BTRFS...
-
-On 11/09/16 18:55, Waxhead wrote:
-> I have been following BTRFS for years and have recently been starting t=
-o
+Am Sonntag, 11. September 2016, 10:55:21 CEST schrieb Waxhead:
+> I have been following BTRFS for years and have recently been starting to
 > use BTRFS more and more and as always BTRFS' stability is a hot topic.
 > Some says that BTRFS is a dead end research project while others claim
 > the opposite.
->=20
-> Taking a quick glance at the wiki does not say much about what is safe
-> to use or not and it also points to some who are using BTRFS in product=
-ion.
-> While BTRFS can apparently work well in production it does have some
-> caveats, and finding out what features is safe or not can be problemati=
-c
-> and I especially think that new users of BTRFS can easily be bitten if
-> they do not do a lot of research on it first.
->=20
-> The Debian wiki for BTRFS (which is recent by the way) contains a bunch=
 
+First off: On my systems BTRFS definately runs too stable for a research 
+project. Actually: I have zero issues with stability of BTRFS on *any* of my 
+systems at the moment and in the last half year.
+
+The only issue I had till about half an year ago was BTRFS getting stuck at 
+seeking free space on a highly fragmented RAID 1 + compress=lzo /home. This 
+went away with either kernel 4.4 or 4.5.
+
+Additionally I never ever lost even a single byte of data on my own BTRFS 
+filesystems. I had a checksum failure on one of the SSDs, but BTRFS RAID 1 
+repaired it.
+
+
+Where do I use BTRFS?
+
+1) On this ThinkPad T520 with two SSDs. /home and / in RAID 1, another data 
+volume as single. In case you can read german, search blog.teamix.de for 
+BTRFS.
+
+2) On my music box ThinkPad T42 for /home. I did not bother to change / so far 
+and may never to so for this laptop. It has a slow 2,5 inch harddisk.
+
+3) I used it on Workstation at work as well for a data volume in RAID 1. But 
+workstation is no more (not due to a filesystem failure).
+
+4) On a server VM for /home with Maildirs and Owncloud data. /var is still on 
+Ext4, but I want to migrate it as well. Whether I ever change /, I don´t know.
+
+5) On another server VM, a backup VM which I currently use with borgbackup. 
+With borgbackup I actually wouldn´t really need BTRFS, but well…
+
+6) On *all* of my externel eSATA based backup harddisks for snapshotting older 
+states of the backups.
+
+> The Debian wiki for BTRFS (which is recent by the way) contains a bunch
 > of warnings and recommendations and is for me a bit better than the
-> official BTRFS wiki when it comes to how to decide what features to use=
-=2E
->=20
+> official BTRFS wiki when it comes to how to decide what features to use.
+
+Nice page. I wasn´t aware of this one.
+
+If you use BTRFS with Debian, I suggest to usually use the recent backport 
+kernel, currently 4.6.
+
+Hmmm, maybe I better remove that compress=lzo mount option. Never saw any 
+issue with it, tough. Will research what they say about it.
+
 > The Nouveau graphics driver have a nice feature matrix on it's webpage
-> and I think that BTRFS perhaps should consider doing something like tha=
-t
+> and I think that BTRFS perhaps should consider doing something like that
 > on it's official wiki as well
->=20
+
+BTRFS also has a feature matrix. The links to it are in the "News" section 
+however:
+
+https://btrfs.wiki.kernel.org/index.php/Changelog#By_feature
+
+Thing is: This just seems to be when has a feature been implemented matrix. 
+Not when it is considered to be stable. I think this could be done with colors 
+or so. Like red for not supported, yellow for implemented and green for 
+production ready.
+
+Another hint you can get by reading SLES 12 releasenotes. SUSE dares to 
+support BTRFS since quite a while – frankly, I think for SLES 11 SP 3 this was 
+premature, at least for the initial release without updates, I have a VM that 
+with BTRFS I can break very easily having BTRFS say it is full, while it is 
+has still 2 GB free. But well… this still seems to happen for some people 
+according to the threads on BTRFS mailing list.
+
+SUSE doesn´t support all of BTRFS. They even put features they do not support 
+behind a "allow_unsupported=1" module option:
+
+https://www.suse.com/releasenotes/x86_64/SUSE-SLES/12/#fate-314697
+
+But they even seem to contradict themselves by claiming they support RAID 0, 
+RAID 1 and RAID10, but not RAID 5 or RAID 6, but then putting RAID behind that 
+module option – or I misunderstood their RAID statement
+
+"Btrfs is supported on top of MD (multiple devices) and DM (device mapper) 
+configurations. Use the YaST partitioner to achieve a proper setup. 
+Multivolume Btrfs is supported in RAID0, RAID1, and RAID10 profiles in SUSE 
+Linux Enterprise 12, higher RAID levels are not yet supported, but might be 
+enabled with a future service pack."
+
+and they only support BTRFS on MD for RAID. They also do not support 
+compression yet. They even do not support big metadata.
+
+https://www.suse.com/releasenotes/x86_64/SUSE-SLES/12/#fate-317221
+
+Interestingly enough RedHat only supports BTRFS as a technology preview, even 
+with RHEL 7.
+
 > For example something along the lines of .... (the statuses are taken
 > our of thin air just for demonstration purposes)
->=20
-> Kernel version 4.7
-> +----------------------------+--------+-----+-------+-------+--------+-=
-------+--------+
->=20
-> | Feature / Redundancy level | Single | Dup | Raid0 | Raid1 | Raid10 |
-> Raid5 | Raid 6 |
-> +----------------------------+--------+-----+-------+-------+--------+-=
-------+--------+
->=20
-> | Subvolumes                 | Ok     | Ok  | Ok    | Ok    | Ok   | Ba=
-d
->   | Bad    |
-> +----------------------------+--------+-----+-------+-------+--------+-=
-------+--------+
->=20
-> | Snapshots                  | Ok     | Ok  | Ok    | Ok    | Ok     |
-> Bad   | Bad    |
-> +----------------------------+--------+-----+-------+-------+--------+-=
-------+--------+
->=20
-> | LZO Compression            | Bad(1) | Bad | Bad   | Bad(2)| Bad    |
-> Bad   | Bad    |
-> +----------------------------+--------+-----+-------+-------+--------+-=
-------+--------+
->=20
-> | ZLIB Compression           | Ok     | Ok  | Ok    | Ok    | Ok     |
-> Bad   | Bad    |
-> +----------------------------+--------+-----+-------+-------+--------+-=
-------+--------+
->=20
-> | Autodefrag                 | Ok     | Bad | Bad(3)| Ok    | Ok     |
-> Bad   | Bad    |
-> +----------------------------+--------+-----+-------+-------+--------+-=
-------+--------+
->=20
->=20
-> (1) Some explanation here...
-> (2) Some explanation there....
-> (3) And some explanation elsewhere...
->=20
-> ...etc...etc...
->=20
-> I therefore would like to propose that some sort of feature / stability=
 
-> matrix for the latest kernel is added to the wiki preferably somewhere
-> where it is easy to find. It would be nice to archive old matrix'es as
-> well in case someone runs on a bit older kernel (we who use Debian tend=
+I´d say feel free to work with the feature matrix already there and fill in 
+information about stability. I think it makes sense tough to discuss first on 
+how to do it with still keeping it manageable.
 
-> to like older kernels). In my opinion it would make things bit easier
-> and perhaps a bit less scary too. Remember if you get bitten badly once=
-
-> you tend to stay away from from it all just in case, if you on the othe=
-r
-> hand know what bites you can safely pet the fluffy end instead :)
-
-
---=20
-Steven Haigh
-
-Email: netwiz@crc.id.au
-Web: https://www.crc.id.au
-Phone: (03) 9001 6090 - 0412 935 897
-
-
---cgR0Rw4h0glQscUsXqCrb0vHLGE31MwP1--
-
---tK6GBOCCKr5rG6pFhVVtmshlIgxUETe3j
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2
-
-iQIcBAEBCAAGBQJX1SpoAAoJEEGvNdV6fTHcqEMP/12/NHsOYrCCiotF38vEZHCm
-/JdvFpGsDiZ0sGvLMWKKBM3Aza7gKlZRyVjrUGImluCo5MB1Ws3OIh2+uhJUQk7r
-C2qSddqxxRXz8UC/9ycCL6HL+2xI4FrOJL4XCyG0Bs/DiiGc1CWBB64A+V73SmxM
-Og7N34i/aRS62sJMKPBlTBUAJoP/GprjUP5Yn5xq0lTE1hOnCVMGVHNOn1K3SGxw
-bfMyoLIGgC9Koywd3OEe8M9p5xYQONn/bMl0NOxh7j1nuPLAWgdVJEpSqxaa7E25
-MwBrB55vzP9vSDe2oV9c8Cd07Xv/qWltJ6LgK4qFw7kR/6f3ygV84GXGhbSSrJUX
-cQBL/7ZreUML4spP//z06cNwpJ+Q+L1e5/PPN+FPHX2CODS2heEvm5dkzCTckqye
-AjmAlOt8uRuiP8OBZWrnTsyj6Odv0Hmqwq3xDBJJO/2h5mbe/8/YGFvgMOgj1Z0W
-PhUvHAISLt96rOEMGowtC6kuTMIC4EEDI5cfjE3u/a14694I3W3WQcZy6TVNb5N7
-ZLNq2r2zwYA/Shge91nvrDotnVX1VcL/wvIFM3FxbiS5NHQMsOV66rixVuyt3uur
-WjmweUMVPNP2iDi3tEKx+KrZBasnI0wIGE7p3NF2bU0jQVdrBovun5r86PJk3vkJ
-h+Gu3QCXf+//aKAK1eim
-=IIws
------END PGP SIGNATURE-----
-
---tK6GBOCCKr5rG6pFhVVtmshlIgxUETe3j--
+Thanks,
+-- 
+Martin

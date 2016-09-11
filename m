@@ -1,84 +1,87 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:49771 "EHLO
-        frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S932160AbcIKTqf (ORCPT
+Received: from mondschein.lichtvoll.de ([194.150.191.11]:50791 "EHLO
+        mail.lichtvoll.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1756227AbcIKTsj (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 11 Sep 2016 15:46:35 -0400
-Date: Sun, 11 Sep 2016 19:46:32 +0000
-From: Hugo Mills <hugo@carfax.org.uk>
-To: Martin Steigerwald <martin@lichtvoll.de>
+        Sun, 11 Sep 2016 15:48:39 -0400
+From: Martin Steigerwald <martin@lichtvoll.de>
+To: Steven Haigh <netwiz@crc.id.au>
 Cc: linux-btrfs@vger.kernel.org
-Subject: Re: Small fs
-Message-ID: <20160911194632.GF7138@carfax.org.uk>
-References: <CAK5rZE49j5QYZJSriG70LVo-9JnRJRfwFA0qRZSEotXpCxJC6A@mail.gmail.com>
- <5440522.9CHaGU5Wjs@merkaba>
- <pan$238e8$d4dacca2$71255eb4$9f2e5ec1@cox.net>
- <14309857.N6fGUh6qoJ@merkaba>
+Subject: compress=lzo safe to use? (was: Re: Trying to rescue my data :()
+Date: Sun, 11 Sep 2016 21:48:35 +0200
+Message-ID: <4096253.hu8ZAHGEqT@merkaba>
+In-Reply-To: <21b8852b-fba6-6f8f-feed-7bbfa12312d2@crc.id.au>
+References: <15415597-7f29-396e-8425-8cbbeb32e897@crc.id.au> <pan$e8a2$15460093$3bb59e30$70ebaf89@cox.net> <21b8852b-fba6-6f8f-feed-7bbfa12312d2@crc.id.au>
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-        protocol="application/pgp-signature"; boundary="3Pql8miugIZX0722"
-In-Reply-To: <14309857.N6fGUh6qoJ@merkaba>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Am Sonntag, 26. Juni 2016, 13:13:04 CEST schrieb Steven Haigh:
+> On 26/06/16 12:30, Duncan wrote:
+> > Steven Haigh posted on Sun, 26 Jun 2016 02:39:23 +1000 as excerpted:
+> >> In every case, it was a flurry of csum error messages, then instant
+> >> death.
+> > 
+> > This is very possibly a known bug in btrfs, that occurs even in raid1
+> > where a later scrub repairs all csum errors.  While in theory btrfs raid1
+> > should simply pull from the mirrored copy if its first try fails checksum
+> > (assuming the second one passes, of course), and it seems to do this just
+> > fine if there's only an occasional csum error, if it gets too many at
+> > once, it *does* unfortunately crash, despite the second copy being
+> > available and being just fine as later demonstrated by the scrub fixing
+> > the bad copy from the good one.
+> > 
+> > I'm used to dealing with that here any time I have a bad shutdown (and
+> > I'm running live-git kde, which currently has a bug that triggers a
+> > system crash if I let it idle and shut off the monitors, so I've been
+> > getting crash shutdowns and having to deal with this unfortunately often,
+> > recently).  Fortunately I keep my root, with all system executables, etc,
+> > mounted read-only by default, so it's not affected and I can /almost/
+> > boot normally after such a crash.  The problem is /var/log and /home
+> > (which has some parts of /var that need to be writable symlinked into /
+> > home/var, so / can stay read-only).  Something in the normal after-crash
+> > boot triggers enough csum errors there that I often crash again.
+> > 
+> > So I have to boot to emergency mode and manually mount the filesystems in
+> > question, so nothing's trying to access them until I run the scrub and
+> > fix the csum errors.  Scrub itself doesn't trigger the crash, thankfully,
+> > and once it has repaired all the csum errors due to partial writes on one
+> > mirror that either were never made or were properly completed on the
+> > other mirror, I can exit emergency mode and complete the normal boot (to
+> > the multi-user default target).  As there's no more csum errors then
+> > because scrub fixed them all, the boot doesn't crash due to too many such
+> > errors, and I'm back in business.
+> > 
+> > 
+> > Tho I believe at least the csum bug that affects me may only trigger if
+> > compression is (or perhaps has been in the past) enabled.  Since I run
+> > compress=lzo everywhere, that would certainly affect me.  It would also
+> > explain why the bug has remained around for quite some time as well,
+> > since presumably the devs don't run with compression on enough for this
+> > to have become a personal itch they needed to scratch, thus its remaining
+> > untraced and unfixed.
+> > 
+> > So if you weren't using the compress option, your bug is probably
+> > different, but either way, the whole thing about too many csum errors at
+> > once triggering a system crash sure does sound familiar, here.
+> 
+> Yes, I was running the compress=lzo option as well... Maybe here lays a
+> common problem?
 
---3Pql8miugIZX0722
-Content-Type: text/plain; charset=iso-8859-1
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+Hmm… I found this from being referred to by reading Debian wiki page on 
+BTRFS¹.
 
-On Sun, Sep 11, 2016 at 09:13:28PM +0200, Martin Steigerwald wrote:
-> Am Sonntag, 11. September 2016, 16:44:23 CEST schrieb Duncan:
-> > * Metadata, and thus mixed-bg, defaults to DUP mode on a single-device=
-=20
-> > filesystem (except on ssd where I actually still use it myself, and=20
-> > recommend it except for ssds that do firmware dedupe).  In mixed-mode=
-=20
-> > this means two copies of data as well, which halves the usable space.
-> >=20
-> > IOW, when using mixed-mode, which is recommended under a gig, and dup=
-=20
-> > replication which is then the single-device default, effective usable=
-=20
-> > space is **HALVED**, so 256 MiB btrfs size becomes 128 MiB usable. (!!)
->=20
-> I don=B4t get this part. That is just *metadata* being duplicated, not th=
-e=20
-> actual *data* inside the files. Or am I missing something here?
+I use compress=lzo on BTRFS RAID 1 since April 2014 and I never found an 
+issue. Steven, your filesystem wasn´t RAID 1 but RAID 5 or 6?
 
-   In mixed mode, there's no distinction: Data and metadata both use
-the same chunks. If those chunks are DUP, then both data and metadata
-are duplicated, and you get half the space available.
+I just want to assess whether using compress=lzo might be dangerous to use in 
+my setup. Actually right now I like to keep using it, since I think at least 
+one of the SSDs does not compress. And… well… /home and / where I use it are 
+both quite full already.
 
-   Hugo.
+[1] https://wiki.debian.org/Btrfs#WARNINGS
 
---=20
-Hugo Mills             | Questions are a burden, and answers a prison for
-hugo@... carfax.org.uk | oneself
-http://carfax.org.uk/  |
-PGP: E2AB1DE4          |                                          The Priso=
-ner
-
---3Pql8miugIZX0722
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-
-iQIcBAEBAgAGBQJX1bSYAAoJEFheFHXiqx3kt/QQAKJ2cgBNHRBlSjlte732aHlX
-7yhMaqttbVDjTAS10vRwFBBPTTW2HI9TA6ZueEmoKrARlydhbRJ6zvZ+hB85mgnn
-Z3ooSzVmmQtXWjI9vvepp7fYS8YEPFuJBEKX3+hNZR8ogs8+dJLdYjOlK11j0yFZ
-0qLRpVr1iz/UDEflUHrLsctrkCY/sbadM+XsjiwivszJCjr6wWf1K/vaLP48l71T
-1hPhg1EMRUK2TK3krm8QVnJKj/qy9tNY5SKzS8FAioFH8sxlHCfKv7BbeSUViBCf
-QAzW3gr1H4XrpORm9ih6BKTAn3EtDf0uxpH8/MPCk1fRePduXZoWQlHyqNzd7PgF
-vO3a1I/ledudPxVosACg3GeoFdBz1NI7N8w1YJ3kC94reeUg7Zq2+BvInJ9iPrw+
-OMB3Zv9mlU2InrIwQa+M7nIBQY9e1hhwGLub/6goUHRdKiwQ4QMmuD4sp3HIG7Sx
-i4YEGHhSR2DUhUEZKLHlJrvBt7YgONhcobAIOmoawOV07YB3piVXt6CWUGGjPJ9v
-oaGqStdUbjgODd7m5H5e8D/EDR7x5gspymQlI+PLfenFDu5ZIYO8tlln1bheRCqD
-cNx6vSTZHoAejn1FWAaEZPyfMsm6XP2hCpF+GosHZ//cfyEUrTgoHvUM/7Wqt6Ju
-q7X4JsYQnlAEt6mVwLoC
-=1fg6
------END PGP SIGNATURE-----
-
---3Pql8miugIZX0722--
+Thanks,
+-- 
+Martin

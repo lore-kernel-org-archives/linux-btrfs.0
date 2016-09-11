@@ -1,40 +1,75 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mondschein.lichtvoll.de ([194.150.191.11]:47925 "EHLO
+Received: from mondschein.lichtvoll.de ([194.150.191.11]:41495 "EHLO
         mail.lichtvoll.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1755868AbcIKOgr (ORCPT
+        with ESMTP id S1755868AbcIKOya (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 11 Sep 2016 10:36:47 -0400
+        Sun, 11 Sep 2016 10:54:30 -0400
 From: Martin Steigerwald <martin@lichtvoll.de>
 To: Waxhead <waxhead@online.no>
 Cc: linux-btrfs@vger.kernel.org
 Subject: Re: Is stability a joke?
-Date: Sun, 11 Sep 2016 16:36:42 +0200
-Message-ID: <1819876.6i0n7pb72V@merkaba>
-In-Reply-To: <57D54E7B.5040202@online.no>
-References: <57D51BF9.2010907@online.no> <15194548.valIGHoaRh@merkaba> <57D54E7B.5040202@online.no>
+Date: Sun, 11 Sep 2016 16:54:25 +0200
+Message-ID: <3528227.b3qLKf8xnv@merkaba>
+In-Reply-To: <57D55072.2010701@online.no>
+References: <57D51BF9.2010907@online.no> <2682119.DRdtbgPpNZ@merkaba> <57D55072.2010701@online.no>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am Sonntag, 11. September 2016, 14:30:51 CEST schrieb Waxhead:
-> > I think what would be a good next step would be to ask developers / users
-> > about feature stability and then update the wiki. If thats important to
-> > you, I suggest you invest some energy in doing that. And ask for help.
-> > This mailinglist is a good idea.
+Am Sonntag, 11. September 2016, 14:39:14 CEST schrieb Waxhead:
+> Martin Steigerwald wrote:
+> > Am Sonntag, 11. September 2016, 13:43:59 CEST schrieb Martin Steigerwald:
+> >>>>> The Nouveau graphics driver have a nice feature matrix on it's webpage
+> >>>>> and I think that BTRFS perhaps should consider doing something like
+> >>>>> that
+> >>>>> on it's official wiki as well
+> >>>> 
+> >>>> BTRFS also has a feature matrix. The links to it are in the "News"
+> >>>> section
+> >>>> however:
+> >>>> 
+> >>>> https://btrfs.wiki.kernel.org/index.php/Changelog#By_feature
+[…]
+> > I mentioned this matrix as a good *starting* point. And I think it would
+> > be
+> > easy to extent it:
 > > 
-> > I already gave you my idea on what works for me.
+> > Just add another column called "Production ready". Then research / ask
+> > about production stability of each feature. The only challenge is: Who is
+> > authoritative on that? I´d certainly ask the developer of a feature, but
+> > I´d also consider user reports to some extent.
 > > 
-> > There is just one thing I won�t go further even a single step: The
-> > complaining path. As it leads to no desirable outcome.
+> > Maybe thats the real challenge.
 > > 
-> > Thanks,
+> > If you wish, I´d go through each feature there and give my own estimation.
+> > But I think there are others who are deeper into this.
 > 
-> My intention was not to be hostile and if my response sound a bit harsh 
-> for you then by all means I do apologize for that.
+> That is exactly the same reason I don't edit the wiki myself. I could of
+> course get it started and hopefully someone will correct what I write,
+> but I feel that if I start this off I don't have deep enough knowledge
+> to do a proper start. Perhaps I will change my mind about this.
 
-Okay, maybe I read something into your mail that you didn�t intend to put 
-there. Sorry. Let us focus on the constructive way to move forward with this.
+Well one thing would be to start with the column and start filling the more 
+easy stuff. And if its not known since what kernel version, but its known to 
+be stable I suggest to conservatively just put the first kernel version into 
+it where people think it is stable or in doubt even put 4.7 into it. It can 
+still be reduced to lower kernel versions.
+
+Well: I made a tiny start. I linked "Features by kernel version" more 
+prominently on the main page, so it is easier to find and also added the 
+following warning just above the table:
+
+"WARNING: The "Version" row states at which version a feature has been merged 
+into the mainline kernel. It does not tell anything about at which kernel 
+version it is considered mature enough for production use."
+
+Now I wonder: Would adding a "Production ready" column, stating the first 
+known to be stable kernel version make sense in this table? What do you think? 
+I can add the column and give some first rough, conservative estimations on a 
+few features.
+
+What do you think? Is this a good place?
 
 Thanks,
 -- 

@@ -1,96 +1,60 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oi0-f51.google.com ([209.85.218.51]:33248 "EHLO
-        mail-oi0-f51.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753693AbcIKUVR (ORCPT
+Received: from mail-oi0-f48.google.com ([209.85.218.48]:34814 "EHLO
+        mail-oi0-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1753693AbcIKU1e (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 11 Sep 2016 16:21:17 -0400
-Received: by mail-oi0-f51.google.com with SMTP id y2so267893276oie.0
-        for <linux-btrfs@vger.kernel.org>; Sun, 11 Sep 2016 13:21:16 -0700 (PDT)
+        Sun, 11 Sep 2016 16:27:34 -0400
+Received: by mail-oi0-f48.google.com with SMTP id m11so267666777oif.1
+        for <linux-btrfs@vger.kernel.org>; Sun, 11 Sep 2016 13:27:34 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <3528227.b3qLKf8xnv@merkaba>
-References: <57D51BF9.2010907@online.no> <2682119.DRdtbgPpNZ@merkaba>
- <57D55072.2010701@online.no> <3528227.b3qLKf8xnv@merkaba>
+In-Reply-To: <20160911200635.GA19703@angband.pl>
+References: <15415597-7f29-396e-8425-8cbbeb32e897@crc.id.au>
+ <pan$e8a2$15460093$3bb59e30$70ebaf89@cox.net> <21b8852b-fba6-6f8f-feed-7bbfa12312d2@crc.id.au>
+ <4096253.hu8ZAHGEqT@merkaba> <20160911200635.GA19703@angband.pl>
 From: Chris Murphy <lists@colorremedies.com>
-Date: Sun, 11 Sep 2016 14:21:14 -0600
-Message-ID: <CAJCQCtRQrXGDbR65ZwDw6nUbxGsTM3dFhPVh+MqU5gomuN-X2g@mail.gmail.com>
-Subject: Re: Is stability a joke?
-To: Martin Steigerwald <martin@lichtvoll.de>
-Cc: Waxhead <waxhead@online.no>, Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Date: Sun, 11 Sep 2016 14:27:33 -0600
+Message-ID: <CAJCQCtSH-eeohtGVZrgHrUkHRUqoc-y0g5OUNbpFQeK2ji+gWw@mail.gmail.com>
+Subject: Re: compress=lzo safe to use? (was: Re: Trying to rescue my data :()
+To: Adam Borowski <kilobyte@angband.pl>
+Cc: Martin Steigerwald <martin@lichtvoll.de>, Steven Haigh <netwiz@crc.id.au>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Sep 11, 2016 at 8:54 AM, Martin Steigerwald <martin@lichtvoll.de> wrote:
-> Am Sonntag, 11. September 2016, 14:39:14 CEST schrieb Waxhead:
->> Martin Steigerwald wrote:
->> > Am Sonntag, 11. September 2016, 13:43:59 CEST schrieb Martin Steigerwald:
->> >>>>> The Nouveau graphics driver have a nice feature matrix on it's webpage
->> >>>>> and I think that BTRFS perhaps should consider doing something like
->> >>>>> that
->> >>>>> on it's official wiki as well
->> >>>>
->> >>>> BTRFS also has a feature matrix. The links to it are in the "News"
->> >>>> section
->> >>>> however:
->> >>>>
->> >>>> https://btrfs.wiki.kernel.org/index.php/Changelog#By_feature
-> […]
->> > I mentioned this matrix as a good *starting* point. And I think it would
->> > be
->> > easy to extent it:
->> >
->> > Just add another column called "Production ready". Then research / ask
->> > about production stability of each feature. The only challenge is: Who is
->> > authoritative on that? I´d certainly ask the developer of a feature, but
->> > I´d also consider user reports to some extent.
->> >
->> > Maybe thats the real challenge.
->> >
->> > If you wish, I´d go through each feature there and give my own estimation.
->> > But I think there are others who are deeper into this.
+On Sun, Sep 11, 2016 at 2:06 PM, Adam Borowski <kilobyte@angband.pl> wrote:
+> On Sun, Sep 11, 2016 at 09:48:35PM +0200, Martin Steigerwald wrote:
+>> Hmm… I found this from being referred to by reading Debian wiki page on
+>> BTRFS¹.
 >>
->> That is exactly the same reason I don't edit the wiki myself. I could of
->> course get it started and hopefully someone will correct what I write,
->> but I feel that if I start this off I don't have deep enough knowledge
->> to do a proper start. Perhaps I will change my mind about this.
+>> I use compress=lzo on BTRFS RAID 1 since April 2014 and I never found an
+>> issue. Steven, your filesystem wasn´t RAID 1 but RAID 5 or 6?
+>>
+>> I just want to assess whether using compress=lzo might be dangerous to use in
+>> my setup. Actually right now I like to keep using it, since I think at least
+>> one of the SSDs does not compress. And… well… /home and / where I use it are
+>> both quite full already.
+>>
+>> [1] https://wiki.debian.org/Btrfs#WARNINGS
 >
-> Well one thing would be to start with the column and start filling the more
-> easy stuff. And if its not known since what kernel version, but its known to
-> be stable I suggest to conservatively just put the first kernel version into
-> it where people think it is stable or in doubt even put 4.7 into it. It can
-> still be reduced to lower kernel versions.
+> I have used compress=lzo for years, kernels 3.8, 3.13 and 3.14 (a bunch of
+> machines), without a single glitch; heavy snapshotting, single dev only, no
+> quota.  Until recently I did never balanced.
 >
-> Well: I made a tiny start. I linked "Features by kernel version" more
-> prominently on the main page, so it is easier to find and also added the
-> following warning just above the table:
->
-> "WARNING: The "Version" row states at which version a feature has been merged
-> into the mainline kernel. It does not tell anything about at which kernel
-> version it is considered mature enough for production use."
->
-> Now I wonder: Would adding a "Production ready" column, stating the first
-> known to be stable kernel version make sense in this table? What do you think?
-> I can add the column and give some first rough, conservative estimations on a
-> few features.
->
-> What do you think? Is this a good place?
+> I did have a case of ENOSPC with <80% full on 4.7 which might or might not
+> be related to compress=lzo.
 
-Yes. Again I'd emphasize keeping it simple, even at some risk of
-oversimplification. There can be the "bird's eye view" matrix, with
-some footnotes to further qualify things. And the rest of the wiki for
-details that are often repeated on the list but shouldn't need to be
-repeated on the list. And then the list for conversations/evaluations.
-It is really a lot easier to make the wiki too verbose, making good
-info harder to find. Wherever possible just take a stand, have an
-opinion, defer explanations to links to posts. That way people who
-want to read volumes of source material can, those who just need to
-get on with business can too, rather than having to filter a volume of
-stale material.
-
-Production ready comes with some assumptions, like stable hardware. In
-what ways is Btrfs less tolerant of device problems than other
-configurations? In what was is Btrfs more tolerant? That might be a
-good thread down the road.
+I'm not finding it off hand, but Duncan has some experience with this
+issue, where he'd occasionally have some sort of problem (hand wave),
+I don't know how serious it was, maybe just scary warnings like a call
+trace or something, but no actual problem? My recollection is that
+compression might be making certain edge case problems more difficult
+to recover from. I don't know why that would be, as metadata itself
+isn't compressed (the inline data saved in metadata nodes can be
+compressed). But there you go, if things start going wonky compression
+might make it more difficult. But that's speculative. And I also don't
+know if there's any difference between lzo and zlib in this regard
+either.
 
 
 -- 

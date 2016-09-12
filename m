@@ -1,82 +1,58 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from syrinx.knorrie.org ([82.94.188.77]:51321 "EHLO
-        syrinx.knorrie.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1755843AbcILMqo (ORCPT
+Received: from relay4-d.mail.gandi.net ([217.70.183.196]:55570 "EHLO
+        relay4-d.mail.gandi.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1758481AbcILMsI (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 12 Sep 2016 08:46:44 -0400
-Subject: Re: btrfstune -x -> extent-tree.c:2688: btrfs_reserve_extent:
- Assertion `ret` failed.
-To: dsterba@suse.cz, linux-btrfs@vger.kernel.org
-References: <478c1cee-80f0-c8f3-0bb9-c8c8932a9fb5@mendix.com>
- <20160912123946.GC16983@twin.jikos.cz>
-From: Hans van Kranenburg <hans.van.kranenburg@mendix.com>
-Message-ID: <a6c78673-935e-7774-e2f8-f6f80130d5f5@mendix.com>
-Date: Mon, 12 Sep 2016 14:46:37 +0200
+        Mon, 12 Sep 2016 08:48:08 -0400
+From: =?ISO-8859-1?Q?Sw=E2mi?= Petaramesh <swami@petaramesh.org>
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Subject: Re: Is stability a joke?
+Date: Mon, 12 Sep 2016 14:48:02 +0200
+Message-ID: <7968417.Q5EYAiftLn@vajra>
+In-Reply-To: <13278435.QSGp0b77ZB@merkaba>
+References: <57D51BF9.2010907@online.no> <13278435.QSGp0b77ZB@merkaba>
 MIME-Version: 1.0
-In-Reply-To: <20160912123946.GC16983@twin.jikos.cz>
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain; charset="utf-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 09/12/2016 02:39 PM, David Sterba wrote:
-> On Fri, Sep 09, 2016 at 11:37:21PM +0200, Hans van Kranenburg wrote:
->> Hi,
->>
->> While trying to enable skinny metadata on a filesystem, I got this error
->> (after minutes of reading from disk by the program):
->>
->> -# btrfstune -x /dev/xvdb
->> extent-tree.c:2688: btrfs_reserve_extent: Assertion `ret` failed.
->> btrfstune[0x410ef6]
->> btrfstune[0x410f1d]
->> btrfstune(btrfs_reserve_extent+0x781)[0x41522e]
->> btrfstune(btrfs_alloc_free_block+0x63)[0x415413]
->> btrfstune(__btrfs_cow_block+0xfc)[0x409176]
->> btrfstune(btrfs_cow_block+0x8b)[0x409718]
->> btrfstune[0x40d8ad]
->> btrfstune(btrfs_commit_transaction+0xb8)[0x40f10d]
->> btrfstune(main+0x3b3)[0x407e31]
->> /lib/x86_64-linux-gnu/libc.so.6(__libc_start_main+0xf0)[0x7f945fa06700]
->> btrfstune(_start+0x29)[0x408509]
->>
->> This is a ~40TiB filesystem that was created about one and a half year
->> ago, has grown from 1TiB to this size now and has always been running
->> with the Debian 3.16-ckt kernel.
->>
->> # uname -a
->> Linux backups-dolly 4.7.0-1-amd64 #1 SMP Debian 4.7.2-1 (2016-08-28)
->> x86_64 GNU/Linux
->>
->> # btrfs version
->> btrfs-progs v4.7.1
->>
->> One of the things I already did earlier today was switching to
->> space_cache=v2
->>
->> Does the shown error ring a bell? What's the next step to debug this?
-> 
-> It's a bug in the incompat bit handling the free-space-tree. Opening the
-> filesystem for read-write should not be allowed, but was mistakenly
-> enabled by me.
-> 
->> The filesystem is a clone of the production filesystem (not btrfs clone,
->> but lower level, on iSCSI storage) meant to be used for upgrade-testing
->> and performance testing, so if anything goes wrong in whatever way,
->> there will be no panicing involved.
-> 
-> The fix is in devel, but it'd mean that writing to a v2-enabled
-> filesystem will not work (which also means changing some fatures via
-> btrfstune as it uses the transaction mechanism that needs to cow blocks
-> and update free space etc).
+Le dimanche 11 septembre 2016 12:23:23, vous avez écrit :
+> First off: On my systems BTRFS definately runs too stable for a research 
+> project. Actually: I have zero issues with stability of BTRFS on *any* of
+> my  systems at the moment and in the last half year.
 
-As I replied this morning, I tried it again on a fresh clone of the
-underlying snapshot, before doing anything else first with it.
+I have been using BTRFS for 3+ years on 10+ machines.
 
-So that means at that point it's a filesystem that has only seen 3.16
-kernels before, and does still have old free space cache in place, no v2
-tree.
+I have never lost any serious data.
 
-And, it still blows up.
+My usual mount options are « noatime, autodefrag, compress=lzo » on mechanical 
+HDs and « ssd, noatime, compress=lzo » on SSDs.
+
+I usually use automated snapshotting, using SuSE’s excellent « snapper » tool, 
+even though the distros I use are not SuSE, but Arch, Fedora, Mint and Ubuntu.
+
+I use « chattr +C » and no snapshots on database dirs, VM dirs and the like.
+
+In such conditions, BTRFS performs pretty well on all of my SSD machines. For 
+years it has stayed OK - and the SSD wear reported by SMART seems normal.
+
+On all my machines with mechanical HDs, the systems progressively slows down 
+over months, to the point that it becomes hardly usable (i.e. 10 minutes 
+booting…).
+
+It is worth noting that even destroying all snapshots, performing manual 
+defrags + rebalance doesn’t help. Once a given FS has become slow to death, it 
+remains slow to death.
+
+I’ve also experienced corruption of a dozen files with a power failures, that « 
+btrfs check » could not fix. These files have remain broken since (with no 
+further effect).
+
+I also use a BTRFS RAID 1 on top of 2 bcache devices, works perfectly — and 
+the cache SSD prevents the system from the slowdown effect…
+
+My 2 cents.
 
 -- 
-Hans van Kranenburg
+Swâmi Petaramesh <swami@petaramesh.org> http://petaramesh.org PGP 9076E32E
+

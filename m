@@ -1,177 +1,171 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:46583 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1754821AbcIJQCE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 10 Sep 2016 12:02:04 -0400
-Subject: Re: [PATCH] Btrfs: remove unnecessary code of chunk_root assignment
- in btrfs_read_chunk_tree.
-To: dsterba@suse.cz, Qu Wenruo <quwenruo@cn.fujitsu.com>,
-        Zhao Lei <zhaolei@cn.fujitsu.com>, clm@fb.com, anand.jain@oracle.com,
-        Filipe Manana <FdManana@suse.com>, linux-btrfs@vger.kernel.org,
-        linux-kernel@vger.kernel.org
-References: <1472990010-10707-1-git-send-email-fxinrong@gmail.com>
- <002501d20713$7ee67050$7cb350f0$@cn.fujitsu.com>
- <e48353fc-cd00-789c-291e-80c684afe2e2@cn.fujitsu.com>
- <57CE326C.8000105@suse.com> <57CE3464.7090107@suse.com>
- <20160906095858.GA16983@suse.cz>
- <61eeb5da-c537-2392-74e4-eac77eda6264@suse.com>
- <20160909030836.GA15304@linux-zmni.apac.novell.com>
- <e1d0adbb-922d-0778-a59d-6e6922c2ab68@suse.com>
- <20160910155804.GB5659@linux-zmni.DHCP>
-From: Jeff Mahoney <jeffm@suse.com>
-Message-ID: <55120216-6af9-b79d-2bbb-9530ed608ecd@suse.com>
-Date: Sat, 10 Sep 2016 12:01:55 -0400
+Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:53218 "EHLO
+        mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S933084AbcILOYl (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 12 Sep 2016 10:24:41 -0400
+Subject: Re: [PATCH 2/3] writeback: allow for dirty metadata accounting
+To: Jan Kara <jack@suse.cz>, Dave Chinner <david@fromorbit.com>
+References: <1471887302-12730-1-git-send-email-jbacik@fb.com>
+ <1471887302-12730-3-git-send-email-jbacik@fb.com>
+ <20160909081743.GC22777@quack2.suse.cz> <20160912004656.GA30497@dastard>
+ <20160912073418.GA23870@quack2.suse.cz>
+CC: <linux-btrfs@vger.kernel.org>, <linux-fsdevel@vger.kernel.org>,
+        <kernel-team@fb.com>, <jack@suse.com>, <viro@zeniv.linux.org.uk>,
+        <dchinner@redhat.com>, <hch@lst.de>, <linux-mm@kvack.org>
+From: Josef Bacik <jbacik@fb.com>
+Message-ID: <fc294980-dad2-512b-7768-165f4c7460f8@fb.com>
+Date: Mon, 12 Sep 2016 10:24:12 -0400
 MIME-Version: 1.0
-In-Reply-To: <20160910155804.GB5659@linux-zmni.DHCP>
-Content-Type: multipart/signed; micalg=pgp-sha1;
- protocol="application/pgp-signature";
- boundary="oF5uUm2IAHOr0m3aB9tJD33Lj2A216SXk"
+In-Reply-To: <20160912073418.GA23870@quack2.suse.cz>
+Content-Type: text/plain; charset="windows-1252"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---oF5uUm2IAHOr0m3aB9tJD33Lj2A216SXk
-Content-Type: multipart/mixed; boundary="SLbaTdVxEM1TRcT4hVJx4EjBX2wVpkKpl";
- protected-headers="v1"
-From: Jeff Mahoney <jeffm@suse.com>
-To: dsterba@suse.cz, Qu Wenruo <quwenruo@cn.fujitsu.com>,
- Zhao Lei <zhaolei@cn.fujitsu.com>, clm@fb.com, anand.jain@oracle.com,
- Filipe Manana <FdManana@suse.com>, linux-btrfs@vger.kernel.org,
- linux-kernel@vger.kernel.org
-Message-ID: <55120216-6af9-b79d-2bbb-9530ed608ecd@suse.com>
-Subject: Re: [PATCH] Btrfs: remove unnecessary code of chunk_root assignment
- in btrfs_read_chunk_tree.
-References: <1472990010-10707-1-git-send-email-fxinrong@gmail.com>
- <002501d20713$7ee67050$7cb350f0$@cn.fujitsu.com>
- <e48353fc-cd00-789c-291e-80c684afe2e2@cn.fujitsu.com>
- <57CE326C.8000105@suse.com> <57CE3464.7090107@suse.com>
- <20160906095858.GA16983@suse.cz>
- <61eeb5da-c537-2392-74e4-eac77eda6264@suse.com>
- <20160909030836.GA15304@linux-zmni.apac.novell.com>
- <e1d0adbb-922d-0778-a59d-6e6922c2ab68@suse.com>
- <20160910155804.GB5659@linux-zmni.DHCP>
-In-Reply-To: <20160910155804.GB5659@linux-zmni.DHCP>
+Dave your reply got eaten somewhere along the way for me, so all i have is this 
+email.  I'm going to respond to your stuff here.
 
---SLbaTdVxEM1TRcT4hVJx4EjBX2wVpkKpl
-Content-Type: text/plain; charset=windows-1252
-Content-Transfer-Encoding: quoted-printable
-
-On 9/10/16 11:58 AM, Sean Fu wrote:
-> On Thu, Sep 08, 2016 at 11:25:48PM -0400, Jeff Mahoney wrote:
->> On 9/8/16 11:08 PM, Sean Fu wrote:
->>> On Tue, Sep 06, 2016 at 11:12:20AM -0400, Jeff Mahoney wrote:
->>>> On 9/6/16 5:58 AM, David Sterba wrote:
->>>>> On Mon, Sep 05, 2016 at 11:13:40PM -0400, Jeff Mahoney wrote:
->>>>>>>> Since root is only used to get fs_info->chunk_root, why not use =
-fs_info
->>>>>>>> directly?
->>>>>>>
->>>>>>> Weird.  Exactly this was a part of my fs_info patchset.  I guess =
-I need
->>>>>>> to go back and check what else is missing.
->>>>>>
->>>>>> Actually, most of this didn't land.  Pretty much anything that's a=
- root
->>>>>> ->fs_info conversion is in there.
->>>>>
->>>>> Only half of the patchset has been merged so far because it did not=
- pass
->>>>> testing, so I bisected to some point. I was about to let you know o=
-nce
->>>>> most of 4.9 patches are prepared so there are less merge conflicts.=
-
+On 09/12/2016 03:34 AM, Jan Kara wrote:
+> On Mon 12-09-16 10:46:56, Dave Chinner wrote:
+>> On Fri, Sep 09, 2016 at 10:17:43AM +0200, Jan Kara wrote:
+>>> On Mon 22-08-16 13:35:01, Josef Bacik wrote:
+>>>> Provide a mechanism for file systems to indicate how much dirty metadata they
+>>>> are holding.  This introduces a few things
 >>>>
->>>> Ok, thanks.  I was going to start the rebase today but I'll hold off=
-
->>>> until you're set for 4.9.
->>>>
->>> Hi Jeff, Could you please share your patch? Where can i get it?
->>> I wanna have a look at it.
->>
->> Sure, it's the whole series that starts with this commit:
->> commit 160ceedfd40085cfb1e08305917fcc24cefdad93
->> Author: Jeff Mahoney <jeffm@suse.com>
->> Date:   Wed Aug 31 23:55:33 2016 -0400
->>
->>     btrfs: add dynamic debug support
->>
->> ... I still need to do clean up some commits that need merging.
->>
->> https://git.kernel.org/cgit/linux/kernel/git/jeffm/linux-btrfs.git/log=
-/?h=3Dbtrfs-testing/kdave/misc-4.9/root-fsinfo-cleanup
->>
-> Nice work. Thanks for your explaination.
-> I have one more question about it.
-> Although the total text size of this function is not changed, using
-> fs_info should need one more instruction to get chunk_root field of
-> fs_info than using chunk_root directly.
-> Does it cause any performance impact?
-
-I doubt it.  The caller had to do the dereference before.
-
--Jeff
-
-> Sean
->> -Jeff
->>
->>
->>> Thanks
->>>> -Jeff
->>>>
->>>> --=20
->>>> Jeff Mahoney
->>>> SUSE Labs
->>>>
+>>>> 1) Zone stats for dirty metadata, which is the same as the NR_FILE_DIRTY.
+>>>> 2) WB stat for dirty metadata.  This way we know if we need to try and call into
+>>>> the file system to write out metadata.  This could potentially be used in the
+>>>> future to make balancing of dirty pages smarter.
 >>>
+>>> So I'm curious about one thing: In the previous posting you have mentioned
+>>> that the main motivation for this work is to have a simple support for
+>>> sub-pagesize dirty metadata blocks that need tracking in btrfs. However you
+>>> do the dirty accounting at page granularity. What are your plans to handle
+>>> this mismatch?
 >>>
+>>> The thing is you actually shouldn't miscount by too much as that could
+>>> upset some checks in mm checking how much dirty pages a node has directing
+>>> how reclaim should be done... But it's a question whether NR_METADATA_DIRTY
+>>> should be actually used in the checks in node_limits_ok() or in
+>>> node_pagecache_reclaimable() at all because once you start accounting dirty
+>>> slab objects, you are really on a thin ice...
+>>
+>> The other thing I'm concerned about is that it's a btrfs-only thing,
+>> which means having dirty btrfs metadata on a system with different
+>> filesystems (e.g. btrfs root/home, XFS data) is going to affect how
+>> memory balance and throttling is run on other filesystems. i.e. it's
+>> going ot make a filesystem specific issue into a problem that
+>> affects global behaviour.
+>
+> Umm, I don't think it will be different than currently. Currently btrfs
+> dirty metadata is accounted as dirty page cache because they have this
+> virtual fs inode which owns all metadata pages. It is pretty similar to
+> e.g. ext2 where you have bdev inode which effectively owns all metadata
+> pages and these dirty pages account towards the dirty limits. For ext4
+> things are more complicated due to journaling and thus ext4 hides the fact
+> that a metadata page is dirty until the corresponding transaction is
+> committed.  But from that moment on dirty metadata is again just a dirty
+> pagecache page in the bdev inode.
+>
+> So current Josef's patch just splits the counter in which btrfs metadata
+> pages would be accounted but effectively there should be no change in the
+> behavior. It is just a question whether this approach is workable in the
+> future when they'd like to track different objects than just pages in the
+> counter.
+
++1 to what Jan said.  Btrfs's dirty metadata is always going to affect any other 
+file systems in the system, no matter how we deal with it.  In fact it's worse 
+with our btree_inode approach as the dirtied_when thing will likely screw 
+somebody and make us skip writing out dirty metadata when we want to.  At least 
+with this framework in place we can start to make the throttling smarter, so say 
+make us flush metadata if that is the bigger % of the dirty pages in the system. 
+  All I do now is move the status quo around, we are no worse, and arguably 
+better with these patches than we were without them.
+
+>
+>>>> diff --git a/fs/fs-writeback.c b/fs/fs-writeback.c
+>>>> index 56c8fda..d329f89 100644
+>>>> --- a/fs/fs-writeback.c
+>>>> +++ b/fs/fs-writeback.c
+>>>> @@ -1809,6 +1809,7 @@ static unsigned long get_nr_dirty_pages(void)
+>>>>  {
+>>>>  	return global_node_page_state(NR_FILE_DIRTY) +
+>>>>  		global_node_page_state(NR_UNSTABLE_NFS) +
+>>>> +		global_node_page_state(NR_METADATA_DIRTY) +
+>>>>  		get_nr_dirty_inodes();
 >>>
->>> --
->>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs=
-" in
->>> the body of a message to majordomo@vger.kernel.org
->>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->>>
+>>> With my question is also connected this - when we have NR_METADATA_DIRTY,
+>>> we could just account dirty inodes there and get rid of this
+>>> get_nr_dirty_inodes() hack...
 >>
+>> Accounting of dirty inodes would have to applied to every
+>> filesystem before that could be done, but....
+>
+> Well, this particular hack of adding get_nr_dirty_inodes() into the result
+> of get_nr_dirty_pages() is there only so that we do writeback even if there
+> are only dirty inodes without dirty pages. Since XFS doesn't care about
+> writeback for dirty inodes, it would be fine regardless what we do here,
+> won't it?
+>
+>>> But actually getting this to work right to be able to track dirty inodes would
+>>> be useful on its own - some throlling of creation of dirty inodes would be
+>>> useful for several filesystems (ext4, xfs, ...).
 >>
->> --=20
->> Jeff Mahoney
->> SUSE Labs
+>> ... this relies on the VFS being able to track and control all
+>> dirtying of inodes and metadata.
 >>
->=20
->=20
->=20
->=20
+>> Which, it should be noted, cannot be done unconditionally because
+>> some filesystems /explicitly avoid/ dirtying VFS inodes for anything
+>> other than dirty data and provide no mechanism to the VFS for
+>> writeback inodes or their related metadata. e.g. XFS, where all
+>> metadata changes are transactional and so all dirty inode tracking
+>> and writeback control is internal the to the XFS transaction
+>> subsystem.
+>>
+>> Adding an external throttle to dirtying of metadata doesn't make any
+>> sense in this sort of architecture - in XFS we already have all the
+>> throttles and expedited writeback triggers integrated into the
+>> transaction subsystem (e.g transaction reservation limits, log space
+>> limits, periodic background writeback, memory reclaim triggers,
+>> etc). It's all so tightly integrated around the physical structure
+>> of the filesystem I can't see any way to sanely abstract it to work
+>> with a generic "dirty list" accounting and writeback engine at this
+>> point...
+>
+> OK, thanks for providing the details about XFS. So my idea was (and Josef's
+> patches seem to be working towards this), that filesystems that decide to
+> use the generic throttling, would just account the dirty metadata in some
+> counter. That counter would be included in the limits checked by
+> balance_dirty_pages(). Filesystem that don't want to use generic throttling
+> would have the counter 0 and thus for them there'd be no difference. And in
+> appropriate points after metadata was dirtied, filesystems that care could
+> call balance_dirty_pages() to throttle the process creating dirty
+> metadata.
+>
+>> I can see how tracking of information such as the global amount of
+>> dirty metadata is useful for diagnostics, but I'm not convinced we
+>> should be using it for globally scoped external control of deeply
+>> integrated and highly specific internal filesystem functionality.
+>
+> You are right that when journalling comes in, things get more complex. But
+> btrfs already uses a scheme similar to the above and I believe ext4 could
+> be made to use a similar scheme as well. If you have something better for
+> XFS, then that's good for you and we should make sure we don't interfere
+> with that. Currently I don't think we will.
 
+XFS doesn't have the problem that btrfs has, so I don't expect it to take 
+advantage of this.  Your writeback throttling is tied to your journal 
+transactions, which are already limited in size.  Btrfs on the other hand is 
+only limited by the amount of memory in the system, which is why I want to 
+leverage the global throttling code.  I went down this path years ago and tried 
+to build the throttling intelligence into btrfs itself and that way lies 
+dragons.  I cycled between OOM'ing the box and duplicating a bunch of the global 
+counters inside btrfs.
 
---=20
-Jeff Mahoney
-SUSE Labs
+Btrfs doesn't have the benefit of a arbitrary journal size constraint on it's 
+dirty metadata, so we have to rely on the global limits to make sure we're kept 
+in check.  The only thing my patches do is allow us to account for this 
+separately and trigger writeback specifically.  Thanks,
 
+Josef
 
---SLbaTdVxEM1TRcT4hVJx4EjBX2wVpkKpl--
-
---oF5uUm2IAHOr0m3aB9tJD33Lj2A216SXk
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG/MacGPG2 v2.0.19 (Darwin)
-Comment: GPGTools - http://gpgtools.org
-
-iQIcBAEBAgAGBQJX1C53AAoJEB57S2MheeWyk14QAJtiFW1PnrsX4mGFtNMhVbwY
-5YgpsbiJUziE13DNW8dvIVlVX2CUl38PB59mAVMdQi697ssjNMegjCfJ/hfBO0RH
-Cw2YAlpM+Ow5R8PHZDB9Cq/fVc6wMmrbAtxQDGeUhBWoOZ3IoITB3b06k4qMMlXD
-f+qWSB7cTauMooehk5PmBodroi38ZymZvzPV46JPSndiPL+tCShTF81H10yHnENf
-XhXXcnHYFJ74NLmy48XfI+tkcNyCqS+wpTwnzh4W6eBvYgDGlwf8FFWCtlkIlxU7
-GiIJOuOEKlTkt3D7Gw14y6pvCChkYPABJo5Wbahcuz/Nt+VDweoCuqoCxjcHVJq0
-UWt+wkQdduTR9KZJIU2pdzqWghPE9KXMbkto45JMGvGlOQb56lyhksE9D3pVud+h
-N6PzZQ0aQKSCI3tzKnc7yiDdTlREPWCdw2eZqVsX5XuXNpN9Obc5WMMd+szzul+6
-Ysfy9jrXsiDwE9IZbgCYJaUo1WZDCywECFzW3UPcAP8dTlq30zH6EmPBiYcp0oY3
-zvBKgQ8EOqFwnD1n8i4oR1URCVD7gPKrX3mkf7nMoP6mBcSksPB+VVuEiJqdaNxz
-Z0zDlrFB/GIH48gGNBNInmu61O4ndZ38ifOLi6xziKttjYw4EAAuhJnQu0foe0VO
-Fai/3zjHVWWjQlVBeFpB
-=XXiU
------END PGP SIGNATURE-----
-
---oF5uUm2IAHOr0m3aB9tJD33Lj2A216SXk--

@@ -1,58 +1,61 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from relay4-d.mail.gandi.net ([217.70.183.196]:55570 "EHLO
-        relay4-d.mail.gandi.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1758481AbcILMsI (ORCPT
+Received: from mail-it0-f48.google.com ([209.85.214.48]:38782 "EHLO
+        mail-it0-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S932943AbcILMy4 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 12 Sep 2016 08:48:08 -0400
-From: =?ISO-8859-1?Q?Sw=E2mi?= Petaramesh <swami@petaramesh.org>
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Subject: Re: Is stability a joke?
-Date: Mon, 12 Sep 2016 14:48:02 +0200
-Message-ID: <7968417.Q5EYAiftLn@vajra>
-In-Reply-To: <13278435.QSGp0b77ZB@merkaba>
-References: <57D51BF9.2010907@online.no> <13278435.QSGp0b77ZB@merkaba>
+        Mon, 12 Sep 2016 08:54:56 -0400
+Received: by mail-it0-f48.google.com with SMTP id n143so5468920ita.1
+        for <linux-btrfs@vger.kernel.org>; Mon, 12 Sep 2016 05:54:56 -0700 (PDT)
+Subject: Re: btrfs kernel oops on mount
+To: Jeff Mahoney <jeffm@suse.com>, moparisthebest <admin@moparisthebest.com>,
+        linux-btrfs@vger.kernel.org
+References: <6fa4d5f1-1697-8817-c1b8-098afc011902@moparisthebest.com>
+ <48fdc597-2431-0335-a6e5-da413615ecd0@gmail.com>
+ <357b5b17-f84e-7f09-ad2d-c4700da0bf9c@suse.com>
+From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Message-ID: <84b8f928-48e3-00dc-1d16-fedb04f8d180@gmail.com>
+Date: Mon, 12 Sep 2016 08:54:50 -0400
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
+In-Reply-To: <357b5b17-f84e-7f09-ad2d-c4700da0bf9c@suse.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Le dimanche 11 septembre 2016 12:23:23, vous avez écrit :
-> First off: On my systems BTRFS definately runs too stable for a research 
-> project. Actually: I have zero issues with stability of BTRFS on *any* of
-> my  systems at the moment and in the last half year.
+On 2016-09-12 08:33, Jeff Mahoney wrote:
+> On 9/9/16 8:47 PM, Austin S. Hemmelgarn wrote:
+>> A couple of other things to comment about on this:
+>> 1. 'can_overcommit' (the function that the Arch kernel choked on) is
+>> from the memory management subsystem.  The fact that that's throwing a
+>> null pointer says to me either your hardware has issues, or the Arch
+>> kernel itself has problems (which would probably mean the kernel image
+>> is corrupted).
+>
+> fs/btrfs/extent-tree.c:
+> static int can_overcommit(struct btrfs_root *root,
+>                           struct btrfs_space_info *space_info, u64 bytes,
+>                           enum btrfs_reserve_flush_enum flush)
+>
+OK, my bad there, but that begs the question: why does a BTRFS function 
+not have a BTRFS prefix?  The name blatantly sounds like a mm function 
+(and I could have sworn I can across one with an almost identical name 
+when I was trying to understand the mm code a couple months ago), and 
+the lack of a prefix combined with that heavily implies that it's a core 
+kernel function.
 
-I have been using BTRFS for 3+ years on 10+ machines.
-
-I have never lost any serious data.
-
-My usual mount options are « noatime, autodefrag, compress=lzo » on mechanical 
-HDs and « ssd, noatime, compress=lzo » on SSDs.
-
-I usually use automated snapshotting, using SuSE’s excellent « snapper » tool, 
-even though the distros I use are not SuSE, but Arch, Fedora, Mint and Ubuntu.
-
-I use « chattr +C » and no snapshots on database dirs, VM dirs and the like.
-
-In such conditions, BTRFS performs pretty well on all of my SSD machines. For 
-years it has stayed OK - and the SSD wear reported by SMART seems normal.
-
-On all my machines with mechanical HDs, the systems progressively slows down 
-over months, to the point that it becomes hardly usable (i.e. 10 minutes 
-booting…).
-
-It is worth noting that even destroying all snapshots, performing manual 
-defrags + rebalance doesn’t help. Once a given FS has become slow to death, it 
-remains slow to death.
-
-I’ve also experienced corruption of a dozen files with a power failures, that « 
-btrfs check » could not fix. These files have remain broken since (with no 
-further effect).
-
-I also use a BTRFS RAID 1 on top of 2 bcache devices, works perfectly — and 
-the cache SSD prevents the system from the slowdown effect…
-
-My 2 cents.
-
--- 
-Swâmi Petaramesh <swami@petaramesh.org> http://petaramesh.org PGP 9076E32E
-
+Given this, it's almost certainly the balance choking on corrupted 
+metadata that's causing the issue.
+>> 3. In general, it's a good idea to keep an eye on space usage on your
+>> filesystems.  If it's getting to be more than about 95% full, you should
+>> be looking at getting some more storage space.  This is especially true
+>> for BTRFS, as a 100% full BTRFS filesystem functionally becomes
+>> permanently read-only because there's nowhere for the copy-on-write
+>> updates to write to.
+>
+> The entire point of having the global metadata reserve is to avoid that
+> situation.
+Except that the global metadata reserve is usually only just barely big 
+enough, and it only works for metadata.  While I get that this issue is 
+what it's supposed to fix, it doesn't do so in a way that makes it easy 
+to get out of that situation.  The reserve itself is often not big 
+enough to do anything in any reasonable amount of time once the FS gets 
+beyond about a hundred GB and yous tart talking about very large files.

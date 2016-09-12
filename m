@@ -1,52 +1,66 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mailer.moparisthebest.com ([144.76.72.168]:38220 "EHLO
-        mailer.moparisthebest.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1758049AbcILNcm (ORCPT
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:44878 "EHLO
+        mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
+        by vger.kernel.org with ESMTP id S1757879AbcILNyB (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 12 Sep 2016 09:32:42 -0400
-Subject: Re: btrfs kernel oops on mount
-To: linux-btrfs@vger.kernel.org
-References: <6fa4d5f1-1697-8817-c1b8-098afc011902@moparisthebest.com>
- <48fdc597-2431-0335-a6e5-da413615ecd0@gmail.com>
- <a6bbb384-f51a-34f8-0789-27a9945a20f6@moparisthebest.com>
- <e659931f-5af8-b60c-b71a-4dbf24a44c1d@gmail.com>
-From: moparisthebest <admin@moparisthebest.com>
-Message-ID: <8b56b4dd-3095-d59c-3760-a34fabb3d1f7@moparisthebest.com>
-Date: Mon, 12 Sep 2016 09:32:30 -0400
+        Mon, 12 Sep 2016 09:54:01 -0400
+Subject: Re: Is stability a joke?
+To: Waxhead <waxhead@online.no>, <linux-btrfs@vger.kernel.org>
+References: <57D51BF9.2010907@online.no>
+From: Chris Mason <clm@fb.com>
+Message-ID: <b40d108d-004f-827b-7d4b-0b93be853e73@fb.com>
+Date: Mon, 12 Sep 2016 09:53:32 -0400
 MIME-Version: 1.0
-In-Reply-To: <e659931f-5af8-b60c-b71a-4dbf24a44c1d@gmail.com>
-Content-Type: text/plain; charset=utf-8
+In-Reply-To: <57D51BF9.2010907@online.no>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 09/12/2016 07:37 AM, Austin S. Hemmelgarn wrote:
->> On 2016-09-09 15:23, moparisthebest wrote:
->> Didn't ubuntu on kernel 4.4 die in the same can_overcommit function?
->> (https://www.moparisthebest.com/btrfsoops.jpg) what kind of hardware
->> issues would cause a repeatable kernel crash like that?  Like am I
->> looking at memory issues or the SAS controller or what?
-> It doesn't look like it died in can_overcommit, as that's not anywhere
-> on the stack trace.  The second item on the stack though
-> (btrfs_async_reclaim_metadata_space) at least partly reinforces the
-> suspicion that something is messed up in the filesystems metadata (which
-> could explain the allocations in GlobalReserve, which is a subset of the
-> Metadata chunks).  It looks like each crash was in a different place,
-> but at least the first two could easily be different parts of the kernel
-> choking on the same thing.  As far as the crash in can_overcommit, that
-> combined with the apparent corrupted metadata makes me think there may
-> be a hardware problem.  The first thing I'd check in that respect is the
-> cabling to the drives themselves, followed by system RAM, the PSU, and
-> the the storage controller.  I generally check in that order because
-> it's trivial to check the cabling, and not all that difficult to check
-> the RAM and PSU (and RAM is more likely to go bad than the PSU), and
-> properly checking a storage controller is extremely dificult unless you
-> have another known working one you can swap it for (and even then, it's
-> only practical to check if you know the state on disk won't cause the
-> kernel to choke).
 
-The first RIP: line (https://www.moparisthebest.com/btrfsoops.jpg) ends
-in 'can_overcommit+0x1e/0xf0 [btrfs]', apologies for that being a
-literal picture of a CRT instead of a searchable text file, doesn't
-exactly make things easy... :(
 
-Still I'm relieved that more points to bad metadata than to bad hardware.
+On 09/11/2016 04:55 AM, Waxhead wrote:
+> I have been following BTRFS for years and have recently been starting to
+> use BTRFS more and more and as always BTRFS' stability is a hot topic.
+> Some says that BTRFS is a dead end research project while others claim
+> the opposite.
+>
+> Taking a quick glance at the wiki does not say much about what is safe
+> to use or not and it also points to some who are using BTRFS in production.
+> While BTRFS can apparently work well in production it does have some
+> caveats, and finding out what features is safe or not can be problematic
+> and I especially think that new users of BTRFS can easily be bitten if
+> they do not do a lot of research on it first.
+>
+> The Debian wiki for BTRFS (which is recent by the way) contains a bunch
+> of warnings and recommendations and is for me a bit better than the
+> official BTRFS wiki when it comes to how to decide what features to use.
+>
+> The Nouveau graphics driver have a nice feature matrix on it's webpage
+> and I think that BTRFS perhaps should consider doing something like that
+> on it's official wiki as well
+>
+> For example something along the lines of .... (the statuses are taken
+> our of thin air just for demonstration purposes)
+>
+
+The out of thin air part is a little confusing, I'm not sure if you're 
+basing this on reports you've read?
+
+I'm in favor flagged device replace with raid5/6 as not supported yet. 
+That seems to be where most of the problems are coming in.
+
+The compression framework shouldn't allow one to work well with the 
+other unusable.
+
+There were  problems with autodefrag related to snapshot-aware defrag, 
+so Josef disabled the snapshot aware part.
+
+In general, we put btrfs through heavy use at facebook.  The crcs have 
+found serious hardware problems the other filesystems missed.
+
+We've also uncovered performance problems and a some serious bugs, both 
+in btrfs and the other filesystems.  With the other filesystems the 
+fixes were usually upstream (doubly true for the most serious problems), 
+and with btrfs we usually had to make the fixes ourselves.
+
+-chris

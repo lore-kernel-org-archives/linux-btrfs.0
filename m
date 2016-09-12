@@ -1,89 +1,69 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oi0-f48.google.com ([209.85.218.48]:33722 "EHLO
-        mail-oi0-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1757879AbcILMlM (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 12 Sep 2016 08:41:12 -0400
-Received: by mail-oi0-f48.google.com with SMTP id y2so310713050oie.0
-        for <linux-btrfs@vger.kernel.org>; Mon, 12 Sep 2016 05:41:11 -0700 (PDT)
-Subject: Re: Small fs
-To: Martin Steigerwald <martin@lichtvoll.de>,
-        Imran Geriskovan <imran.geriskovan@gmail.com>,
-        linux-btrfs@vger.kernel.org
-References: <CAK5rZE49j5QYZJSriG70LVo-9JnRJRfwFA0qRZSEotXpCxJC6A@mail.gmail.com>
- <pan$238e8$d4dacca2$71255eb4$9f2e5ec1@cox.net>
- <CAK5rZE6X_m6wyTmqRZ8B3TTZsXtEtPT5TaanFfgXKycJoBfsTA@mail.gmail.com>
- <1771908.LWBdy5fQ5X@merkaba>
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <3e8e686c-9c42-a1e1-a0ac-9eb27208360d@gmail.com>
-Date: Mon, 12 Sep 2016 08:41:07 -0400
+Received: from mx2.suse.de ([195.135.220.15]:35572 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1757879AbcILMl3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 12 Sep 2016 08:41:29 -0400
+Date: Mon, 12 Sep 2016 14:39:46 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Hans van Kranenburg <hans.van.kranenburg@mendix.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: btrfstune -x -> extent-tree.c:2688: btrfs_reserve_extent:
+ Assertion `ret` failed.
+Message-ID: <20160912123946.GC16983@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <478c1cee-80f0-c8f3-0bb9-c8c8932a9fb5@mendix.com>
 MIME-Version: 1.0
-In-Reply-To: <1771908.LWBdy5fQ5X@merkaba>
-Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <478c1cee-80f0-c8f3-0bb9-c8c8932a9fb5@mendix.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2016-09-11 15:21, Martin Steigerwald wrote:
-> Am Sonntag, 11. September 2016, 21:56:07 CEST schrieb Imran Geriskovan:
->> On 9/11/16, Duncan <1i5t5.duncan@cox.net> wrote:
->>> Martin Steigerwald posted on Sun, 11 Sep 2016 17:32:44 +0200 as excerpted:
->>>>> What is the smallest recommended fs size for btrfs?
->>>>> Can we say size should be in multiples of 64MB?
->>>>
->>>> Do you want to know the smalled *recommended* or the smallest *possible*
->>>> size?
->>
->> In fact both.
->> I'm reconsidering my options for /boot
->
-> Well my stance on boot still is: Ext4. Done.
->
-> :)
->
-> It just does not bother me. It practically makes no difference at all. It has
-> no visible effect on my user experience and I never saw the need to snapshot /
-> boot.
-FWIW, I use BTRFS for /boot, but it's not for snapshotting or even the 
-COW, it's for DUP mode and the error recovery it provides.  Most people 
-don't think about this if it hasn't happened to them, but if you get a 
-bad read from /boot when loading the kernel or initrd, it can 
-essentially nuke your whole system.  I run BTRFS for /boot in DUP mode 
-with mixed-bg (because I only use 512MB for boot) to mitigate the chance 
-that a failed read has any impact, and ensure that if it does, it will 
-refuse to boot instead of booting with a corrupted kernel or initrd.
->
-> But another approach in case you want to use BTRFS for /boot is to use a
-> subvolume. Thats IMHO the SLES 12 default setup. They basically create
-> subvolumes for /boot, /var, /var/lib/mysql – you name it. Big advantage: You
-> have one big FS and do not need to plan space for partitions or LVs.
-> Disadvantage: If it breaks, it breaks.
->
-> That said, I think at a new installation I may do this for /boot. Just put it
-> inside a subvolume.
->
-> From my experiences at work with customer systems and even some systems I
-> setup myself, I often do not use little partitions anymore. I did so for a
-> CentOS 7 training VM, just 2 GiB XFS for /var. Guess what happened? Last
-> update was too long ago, so… yum tried to download a ton of packages and then
-> complained it has not enough space in /var. Luckily I used LVM, so I enlarged
-> partition LVM resides on, enlarged PV and then enlarged /var. There may be
-> valid reasons to split things up, and I am quite comfortable with splitting /
-> boot out, cause its, well, plannable easily enough. And it may make sense to
-> split /var or /var/log out. But on BTRFS I would likely use subvolumes. Only
-> thing I may separate would be /home to make it easier on a re-installation of
-> the OS to keep it around. That said, I never ever reinstalled the Debian on
-> this ThinkPad T520 since I initially installed it. And on previous laptops I
-> even copied the Debian on the older laptop onto the newer laptop. With the
-> T520 I reinstalled, cause I wanted to switch to 64 bit cleanly.
->
-Yeah, small partitions make sense in some cases, but in a lot of places 
-they're typically used, there are perfectly legitimate reasons to 
-suddenly need multiple gigabytes of extra space for a short period of 
-time.  In my case, the only partition that I have split out that's less 
-than a few GB is /boot, but I usually split out /usr/src and 
-/usr/portage, because I need them to be fast, and run /tmp and /var/tmp 
-on tmpfs (so technically split out).  I personally see little value in 
-splitting out /home on a single user system unless you're multi-booting 
-or planning to switch distros at some point (or are running a distro 
-that needs special handling to do release upgrades).
+On Fri, Sep 09, 2016 at 11:37:21PM +0200, Hans van Kranenburg wrote:
+> Hi,
+> 
+> While trying to enable skinny metadata on a filesystem, I got this error
+> (after minutes of reading from disk by the program):
+> 
+> -# btrfstune -x /dev/xvdb
+> extent-tree.c:2688: btrfs_reserve_extent: Assertion `ret` failed.
+> btrfstune[0x410ef6]
+> btrfstune[0x410f1d]
+> btrfstune(btrfs_reserve_extent+0x781)[0x41522e]
+> btrfstune(btrfs_alloc_free_block+0x63)[0x415413]
+> btrfstune(__btrfs_cow_block+0xfc)[0x409176]
+> btrfstune(btrfs_cow_block+0x8b)[0x409718]
+> btrfstune[0x40d8ad]
+> btrfstune(btrfs_commit_transaction+0xb8)[0x40f10d]
+> btrfstune(main+0x3b3)[0x407e31]
+> /lib/x86_64-linux-gnu/libc.so.6(__libc_start_main+0xf0)[0x7f945fa06700]
+> btrfstune(_start+0x29)[0x408509]
+> 
+> This is a ~40TiB filesystem that was created about one and a half year
+> ago, has grown from 1TiB to this size now and has always been running
+> with the Debian 3.16-ckt kernel.
+> 
+> # uname -a
+> Linux backups-dolly 4.7.0-1-amd64 #1 SMP Debian 4.7.2-1 (2016-08-28)
+> x86_64 GNU/Linux
+> 
+> # btrfs version
+> btrfs-progs v4.7.1
+> 
+> One of the things I already did earlier today was switching to
+> space_cache=v2
+> 
+> Does the shown error ring a bell? What's the next step to debug this?
 
+It's a bug in the incompat bit handling the free-space-tree. Opening the
+filesystem for read-write should not be allowed, but was mistakenly
+enabled by me.
+
+> The filesystem is a clone of the production filesystem (not btrfs clone,
+> but lower level, on iSCSI storage) meant to be used for upgrade-testing
+> and performance testing, so if anything goes wrong in whatever way,
+> there will be no panicing involved.
+
+The fix is in devel, but it'd mean that writing to a v2-enabled
+filesystem will not work (which also means changing some fatures via
+btrfstune as it uses the transaction mechanism that needs to cow blocks
+and update free space etc).

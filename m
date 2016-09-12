@@ -1,126 +1,108 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:37056 "EHLO song.cn.fujitsu.com"
-        rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-        id S1754119AbcILGmB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 12 Sep 2016 02:42:01 -0400
-From: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
-To: fstests@vger.kernel.org
-Cc: linux-btrfs@vger.kernel.org
-Subject: [PATCH] generic: check whether we can truncate heavily reflinked file
-Date: Mon, 12 Sep 2016 14:36:59 +0800
-Message-Id: <20160912063659.4112-1-wangxg.fnst@cn.fujitsu.com>
+Received: from ipmail05.adl6.internode.on.net ([150.101.137.143]:25840 "EHLO
+        ipmail05.adl6.internode.on.net" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1755329AbcILArc (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Sun, 11 Sep 2016 20:47:32 -0400
+Date: Mon, 12 Sep 2016 10:46:56 +1000
+From: Dave Chinner <david@fromorbit.com>
+To: Jan Kara <jack@suse.cz>
+Cc: Josef Bacik <jbacik@fb.com>, linux-btrfs@vger.kernel.org,
+        linux-fsdevel@vger.kernel.org, kernel-team@fb.com, jack@suse.com,
+        viro@zeniv.linux.org.uk, dchinner@redhat.com, hch@lst.de,
+        linux-mm@kvack.org
+Subject: Re: [PATCH 2/3] writeback: allow for dirty metadata accounting
+Message-ID: <20160912004656.GA30497@dastard>
+References: <1471887302-12730-1-git-send-email-jbacik@fb.com>
+ <1471887302-12730-3-git-send-email-jbacik@fb.com>
+ <20160909081743.GC22777@quack2.suse.cz>
 MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20160909081743.GC22777@quack2.suse.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Signed-off-by: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
----
- tests/generic/377     | 74 +++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/generic/377.out |  2 ++
- tests/generic/group   |  1 +
- 3 files changed, 77 insertions(+)
- create mode 100755 tests/generic/377
- create mode 100644 tests/generic/377.out
+On Fri, Sep 09, 2016 at 10:17:43AM +0200, Jan Kara wrote:
+> On Mon 22-08-16 13:35:01, Josef Bacik wrote:
+> > Provide a mechanism for file systems to indicate how much dirty metadata they
+> > are holding.  This introduces a few things
+> > 
+> > 1) Zone stats for dirty metadata, which is the same as the NR_FILE_DIRTY.
+> > 2) WB stat for dirty metadata.  This way we know if we need to try and call into
+> > the file system to write out metadata.  This could potentially be used in the
+> > future to make balancing of dirty pages smarter.
+> 
+> So I'm curious about one thing: In the previous posting you have mentioned
+> that the main motivation for this work is to have a simple support for
+> sub-pagesize dirty metadata blocks that need tracking in btrfs. However you
+> do the dirty accounting at page granularity. What are your plans to handle
+> this mismatch?
+> 
+> The thing is you actually shouldn't miscount by too much as that could
+> upset some checks in mm checking how much dirty pages a node has directing
+> how reclaim should be done... But it's a question whether NR_METADATA_DIRTY
+> should be actually used in the checks in node_limits_ok() or in
+> node_pagecache_reclaimable() at all because once you start accounting dirty
+> slab objects, you are really on a thin ice...
 
-diff --git a/tests/generic/377 b/tests/generic/377
-new file mode 100755
-index 0000000..3a0c27e
---- /dev/null
-+++ b/tests/generic/377
-@@ -0,0 +1,74 @@
-+#! /bin/bash
-+# FS QA Test 377
-+#
-+# Create a heavily reflinked file, then check whether we can truncate
-+# it correctly.
-+#
-+#-----------------------------------------------------------------------
-+# Copyright (c) 2016 Fujitsu.  All Rights Reserved.
-+#
-+# This program is free software; you can redistribute it and/or
-+# modify it under the terms of the GNU General Public License as
-+# published by the Free Software Foundation.
-+#
-+# This program is distributed in the hope that it would be useful,
-+# but WITHOUT ANY WARRANTY; without even the implied warranty of
-+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+# GNU General Public License for more details.
-+#
-+# You should have received a copy of the GNU General Public License
-+# along with this program; if not, write the Free Software Foundation,
-+# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-+#-----------------------------------------------------------------------
-+#
-+
-+seq=`basename $0`
-+seqres=$RESULT_DIR/$seq
-+echo "QA output created by $seq"
-+
-+here=`pwd`
-+tmp=/tmp/$$
-+status=1	# failure is the default!
-+trap "_cleanup; exit \$status" 0 1 2 3 15
-+
-+_cleanup()
-+{
-+	cd /
-+	rm -f $tmp.*
-+}
-+
-+# get standard environment, filters and checks
-+. ./common/rc
-+. ./common/filter
-+. ./common/reflink
-+
-+# remove previous $seqres.full before test
-+rm -f $seqres.full
-+
-+# Modify as appropriate.
-+_supported_fs generic
-+_supported_os Linux
-+_require_scratch
-+_require_scratch_reflink
-+_require_cp_reflink
-+
-+_scratch_mkfs_sized $((128 * 1024 * 1024)) >> $seqres.full 2>&1
-+_scratch_mount
-+
-+file=$SCRATCH_MNT/testfile
-+blocksize=$((128 * 1024))
-+
-+# create the initial file.
-+_pwrite_byte 0xcdcdcdcd 0 $blocksize  $file > /dev/null
-+
-+echo "Silence is golden"
-+# filesize is 20GB, and here 20GB is choosen deliberately, so it
-+# can consume enough fs free space.
-+for ((i=1; i<163840; i++)); do
-+	_reflink_range $file 0 $file $(($i * $blocksize)) $blocksize \
-+		>> $seqres.full 2>&1
-+done
-+$XFS_IO_PROG -f -c 'truncate 0' $file
-+
-+status=0
-+exit
-diff --git a/tests/generic/377.out b/tests/generic/377.out
-new file mode 100644
-index 0000000..d14a512
---- /dev/null
-+++ b/tests/generic/377.out
-@@ -0,0 +1,2 @@
-+QA output created by 377
-+Silence is golden
-diff --git a/tests/generic/group b/tests/generic/group
-index bad71bc..ea98752 100644
---- a/tests/generic/group
-+++ b/tests/generic/group
-@@ -379,3 +379,4 @@
- 374 auto quick clone dedupe
- 375 auto quick acl
- 376 auto quick metadata
-+377 auto clone
+The other thing I'm concerned about is that it's a btrfs-only thing,
+which means having dirty btrfs metadata on a system with different
+filesystems (e.g. btrfs root/home, XFS data) is going to affect how
+memory balance and throttling is run on other filesystems. i.e. it's
+going ot make a filesystem specific issue into a problem that
+affects global behaviour.
+> 
+> > diff --git a/fs/fs-writeback.c b/fs/fs-writeback.c
+> > index 56c8fda..d329f89 100644
+> > --- a/fs/fs-writeback.c
+> > +++ b/fs/fs-writeback.c
+> > @@ -1809,6 +1809,7 @@ static unsigned long get_nr_dirty_pages(void)
+> >  {
+> >  	return global_node_page_state(NR_FILE_DIRTY) +
+> >  		global_node_page_state(NR_UNSTABLE_NFS) +
+> > +		global_node_page_state(NR_METADATA_DIRTY) +
+> >  		get_nr_dirty_inodes();
+> 
+> With my question is also connected this - when we have NR_METADATA_DIRTY,
+> we could just account dirty inodes there and get rid of this
+> get_nr_dirty_inodes() hack...
+
+Accounting of dirty inodes would have to applied to every
+filesystem before that could be done, but....
+
+> But actually getting this to work right to be able to track dirty inodes would
+> be useful on its own - some throlling of creation of dirty inodes would be
+> useful for several filesystems (ext4, xfs, ...).
+
+... this relies on the VFS being able to track and control all
+dirtying of inodes and metadata.
+
+Which, it should be noted, cannot be done unconditionally because
+some filesystems /explicitly avoid/ dirtying VFS inodes for anything
+other than dirty data and provide no mechanism to the VFS for
+writeback inodes or their related metadata. e.g. XFS, where all
+metadata changes are transactional and so all dirty inode tracking
+and writeback control is internal the to the XFS transaction
+subsystem.
+
+Adding an external throttle to dirtying of metadata doesn't make any
+sense in this sort of architecture - in XFS we already have all the
+throttles and expedited writeback triggers integrated into the
+transaction subsystem (e.g transaction reservation limits, log space
+limits, periodic background writeback, memory reclaim triggers,
+etc). It's all so tightly integrated around the physical structure
+of the filesystem I can't see any way to sanely abstract it to work
+with a generic "dirty list" accounting and writeback engine at this
+point...
+
+I can see how tracking of information such as the global amount of
+dirty metadata is useful for diagnostics, but I'm not convinced we
+should be using it for globally scoped external control of deeply
+integrated and highly specific internal filesystem functionality.
+
+Cheers,
+
+Dave.
 -- 
-2.9.0
-
-
-
+Dave Chinner
+david@fromorbit.com

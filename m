@@ -1,94 +1,118 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from nmsh1.e.nsc.no ([193.213.121.72]:39036 "EHLO nmsh1.e.nsc.no"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1756243AbcILRhG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 12 Sep 2016 13:37:06 -0400
-Subject: Re: Is stability a joke?
-To: Chris Mason <clm@fb.com>, Waxhead <waxhead@online.no>,
-        linux-btrfs@vger.kernel.org
+Received: from mail-it0-f52.google.com ([209.85.214.52]:36121 "EHLO
+        mail-it0-f52.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1755356AbcILRmX (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 12 Sep 2016 13:42:23 -0400
+Received: by mail-it0-f52.google.com with SMTP id o3so18419923ita.1
+        for <linux-btrfs@vger.kernel.org>; Mon, 12 Sep 2016 10:42:23 -0700 (PDT)
+Subject: Re: Is stability a joke? (wiki updated)
+To: fdmanana@gmail.com
 References: <57D51BF9.2010907@online.no>
- <b40d108d-004f-827b-7d4b-0b93be853e73@fb.com>
-From: Zoiled <zoiled@online.no>
-Message-ID: <57D6E7B9.60207@online.no>
-Date: Mon, 12 Sep 2016 19:36:57 +0200
+ <20160912142714.GE16983@twin.jikos.cz> <20160912162747.GF16983@twin.jikos.cz>
+ <8df2691f-94c1-61de-881f-075682d4a28d@gmail.com>
+ <CAL3q7H7TP=XtUZkEcAfOc-qTHvncU=coTiB+EeYUEOFYeSk2-A@mail.gmail.com>
+Cc: "dsterba@suse.cz" <dsterba@suse.cz>, Waxhead <waxhead@online.no>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Message-ID: <6315ec53-40e8-d32f-a3e4-8589b6a5e3e1@gmail.com>
+Date: Mon, 12 Sep 2016 13:42:18 -0400
 MIME-Version: 1.0
-In-Reply-To: <b40d108d-004f-827b-7d4b-0b93be853e73@fb.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
+In-Reply-To: <CAL3q7H7TP=XtUZkEcAfOc-qTHvncU=coTiB+EeYUEOFYeSk2-A@mail.gmail.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Chris Mason wrote:
->
->
-> On 09/11/2016 04:55 AM, Waxhead wrote:
->> I have been following BTRFS for years and have recently been starting to
->> use BTRFS more and more and as always BTRFS' stability is a hot topic.
->> Some says that BTRFS is a dead end research project while others claim
->> the opposite.
+On 2016-09-12 13:29, Filipe Manana wrote:
+> On Mon, Sep 12, 2016 at 5:56 PM, Austin S. Hemmelgarn
+> <ahferroin7@gmail.com> wrote:
+>> On 2016-09-12 12:27, David Sterba wrote:
+>>>
+>>> On Mon, Sep 12, 2016 at 04:27:14PM +0200, David Sterba wrote:
+>>>>>
+>>>>> I therefore would like to propose that some sort of feature / stability
+>>>>> matrix for the latest kernel is added to the wiki preferably somewhere
+>>>>> where it is easy to find. It would be nice to archive old matrix'es as
+>>>>> well in case someone runs on a bit older kernel (we who use Debian tend
+>>>>> to like older kernels). In my opinion it would make things bit easier
+>>>>> and perhaps a bit less scary too. Remember if you get bitten badly once
+>>>>> you tend to stay away from from it all just in case, if you on the other
+>>>>> hand know what bites you can safely pet the fluffy end instead :)
+>>>>
+>>>>
+>>>> Somebody has put that table on the wiki, so it's a good starting point.
+>>>> I'm not sure we can fit everything into one table, some combinations do
+>>>> not bring new information and we'd need n-dimensional matrix to get the
+>>>> whole picture.
+>>>
+>>>
+>>> https://btrfs.wiki.kernel.org/index.php/Status
 >>
->> Taking a quick glance at the wiki does not say much about what is safe
->> to use or not and it also points to some who are using BTRFS in 
->> production.
->> While BTRFS can apparently work well in production it does have some
->> caveats, and finding out what features is safe or not can be problematic
->> and I especially think that new users of BTRFS can easily be bitten if
->> they do not do a lot of research on it first.
 >>
->> The Debian wiki for BTRFS (which is recent by the way) contains a bunch
->> of warnings and recommendations and is for me a bit better than the
->> official BTRFS wiki when it comes to how to decide what features to use.
+>> Some things to potentially add based on my own experience:
 >>
->> The Nouveau graphics driver have a nice feature matrix on it's webpage
->> and I think that BTRFS perhaps should consider doing something like that
->> on it's official wiki as well
->>
->> For example something along the lines of .... (the statuses are taken
->> our of thin air just for demonstration purposes)
->>
+>> Things listed as TBD status:
+>> 1. Seeding: Seems to work fine the couple of times I've tested it, however
+>> I've only done very light testing, and the whole feature is pretty much
+>> undocumented.
+>> 2. Device Replace: Works perfectly as long as the filesystem itself is not
+>> corrupted, all the component devices are working, and the FS isn't using any
+>> raid56 profiles.  Works fine if only the device being replaced is failing.
+>> I've not done much testing WRT replacement when multiple devices are
+>> suspect, but what I've done seems to suggest that it might be possible to
+>> make it work, but it doesn't currently.  On raid56 it sometimes works fine,
+>> sometimes corrupts data, and sometimes takes an insanely long time to
+>> complete (putting data at risk from subsequent failures while the replace is
+>> running).
+>> 3. Balance: Works perfectly as long as the filesystem is not corrupted and
+>> nothing throws any read or write errors.  IOW, only run this on a generally
+>> healthy filesystem.  Similar caveats to those for replace with raid56 apply
+>> here too.
+>> 4. File Range Cloning and Out-of-band Dedupe: Similarly, work fine if the FS
+>> is healthy.
 >
-> The out of thin air part is a little confusing, I'm not sure if you're 
-> basing this on reports you've read?
->
-Well to be honest I used "whatever I felt was right" more or less in 
-that table and as I wrote it was only for demonstration purposes only to 
-show how such a table could look.
-> I'm in favor flagged device replace with raid5/6 as not supported yet. 
-> That seems to be where most of the problems are coming in.
->
-> The compression framework shouldn't allow one to work well with the 
-> other unusable.
-Ok good to know , however from the Debian wiki as well as the link to 
-the mailing list only LZO compression are mentioned (as far as I 
-remember) and I have no idea myself how much difference there is between 
-LZO and the ZLIB code,
->
-> There were  problems with autodefrag related to snapshot-aware defrag, 
-> so Josef disabled the snapshot aware part.
->
-> In general, we put btrfs through heavy use at facebook.  The crcs have 
-> found serious hardware problems the other filesystems missed.
->
-> We've also uncovered performance problems and a some serious bugs, 
-> both in btrfs and the other filesystems.  With the other filesystems 
-> the fixes were usually upstream (doubly true for the most serious 
-> problems), and with btrfs we usually had to make the fixes ourselves.
->
-> -chris
-> -- 
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
-I'll just pop this in here since I assume most people will read the 
-response from your comment:
+> Virtually all other features work fine if the fs is healthy...
+I would add more, but I don't often have the time to test broken 
+filesystems...
 
-I think I made my point. The wiki lacks some good documentation on 
-what's safe to use and what's not. Yesterday I (Svein Engelsgjerd) did 
-put a table on the main wiki and someone have moved that away to a 
-status page and also improved the layout a bit. It is a tad more complex 
-than my version, but also a lot better for the slightly more advanced 
-users and it actually made my view on things a bit clearer as well.
+TBH though, that's most of the issue I see with BTRFS in general at the 
+moment.  RAID5/6 works fine, as long as all the devices keep working and 
+you don't try to replace them and don't lose power.  Qgroups appear to 
+work fine as long as no other bug shows up (other than the issues with 
+accounting and returning ENOSPC instead of EDQUOT).  We do so much 
+testing on pristine filesystems, but most of the utilities and less 
+widely used features have had near zero testing on filesystems that are 
+in bad shape.  If you pay attention, many (possibly most?) of the 
+recently reported bugs are from broken (or poorly curated) filesystems, 
+not some random kernel bug.  New features are nice, but they generally 
+don't improve stability, and for BTRFS to be truly production ready 
+outside of constrained environments like FaceBook, it needs to not choke 
+on encountering a FS with some small amount of corruption.
+>
+>>
+>> Other stuff:
+>> 1. Compression: The specific known issue is that compressed extents don't
+>> always get recovered properly on failed reads when dealing with lots of
+>> failed reads.  This can be demonstrated by generating a large raid1
+>> filesystem image with huge numbers of small (1MB) readliy compressible
+>> files, then putting that on top of a dm-flaky or dm-error target set to give
+>> a high read-error rate, then mounting and running cat `find .` > /dev/null
+>> from the top level of the FS multiple times in a row.
+>
+>> 2. Send: The particular edge case appears to be caused by metadata
+>> corruption on the sender and results in send choking on the same file every
+>> time you try to run it.  The quick fix is to copy the contents of the file
+>> to another file and rename that over the original.
+>
+> I don't remember having seen such case at least for the last 2 or 3
+> years, all the problems I've seen/solved or seen fixes from others
+> were all related to bugs in the send algorithm and definitely not any
+> metadata corruption.
+> So I wonder what evidence you have about this.
+For the compression related issues, I can still reproduce it, but it 
+takes a while.
 
-I am glad that I by bringing this up (hopefully) contributed slightly to 
-improving the documentation a tiny bit! :)
+As for the send issues, I do still see these on rare occasion, but only 
+on 2+ year old filesystems, but I think the last time I saw it happen 
+was more than 3 months ago.
 

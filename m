@@ -1,94 +1,71 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-it0-f42.google.com ([209.85.214.42]:35911 "EHLO
-        mail-it0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750998AbcILUIQ (ORCPT
+Received: from mail-oi0-f53.google.com ([209.85.218.53]:34191 "EHLO
+        mail-oi0-f53.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750832AbcILUZa (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 12 Sep 2016 16:08:16 -0400
-Received: by mail-it0-f42.google.com with SMTP id o3so23495743ita.1
-        for <linux-btrfs@vger.kernel.org>; Mon, 12 Sep 2016 13:08:16 -0700 (PDT)
+        Mon, 12 Sep 2016 16:25:30 -0400
+Received: by mail-oi0-f53.google.com with SMTP id m11so333720584oif.1
+        for <linux-btrfs@vger.kernel.org>; Mon, 12 Sep 2016 13:25:30 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <8df2691f-94c1-61de-881f-075682d4a28d@gmail.com>
-References: <57D51BF9.2010907@online.no> <20160912142714.GE16983@twin.jikos.cz>
- <20160912162747.GF16983@twin.jikos.cz> <8df2691f-94c1-61de-881f-075682d4a28d@gmail.com>
+In-Reply-To: <03d03ce6-4dad-bad9-311d-a040e4122128@gmail.com>
+References: <c04c596d-4cb9-ed98-513a-c550b1be18b2@cobb.uk.net>
+ <2d59a472-4e74-d64c-27c4-28677d761316@gmail.com> <4afee621-0493-1ffc-31fe-fb81643f2374@cobb.uk.net>
+ <1473259316.24874.3.camel@scientia.net> <12cfbaf0-77ff-a4d2-d9d7-64c5c795ce4b@gmail.com>
+ <1473271679.24874.36.camel@scientia.net> <d6f659e7-25bf-c732-a7db-0cef8450b346@gmail.com>
+ <CAJCQCtSmFA2iRDN33u9XF1b4nN_xA5sy44tS3n5mnA4f+go_hg@mail.gmail.com>
+ <8049c767-5cf0-7abc-8e44-828a15619546@gmail.com> <CAJCQCtRFer9UGjqwqZS3xZnQGC6hqVRHyeaQjmy6+nnMfJUKKQ@mail.gmail.com>
+ <03d03ce6-4dad-bad9-311d-a040e4122128@gmail.com>
 From: Chris Murphy <lists@colorremedies.com>
-Date: Mon, 12 Sep 2016 14:08:14 -0600
-Message-ID: <CAJCQCtQUS-8F+pOtQ2VA9=j=-TGV=wOfj+3SnnMvY3HMTzd=9g@mail.gmail.com>
-Subject: Re: Is stability a joke? (wiki updated)
+Date: Mon, 12 Sep 2016 14:25:28 -0600
+Message-ID: <CAJCQCtSLVvvywicedgYUWYY2a-DdWm9bW6=Vct-hX462vpQnKg@mail.gmail.com>
+Subject: Re: Security implications of btrfs receive?
 To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Cc: David Sterba <dsterba@suse.cz>, Waxhead <waxhead@online.no>,
+Cc: Chris Murphy <lists@colorremedies.com>,
         Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Sep 12, 2016 at 10:56 AM, Austin S. Hemmelgarn
+On Mon, Sep 12, 2016 at 5:24 AM, Austin S. Hemmelgarn
 <ahferroin7@gmail.com> wrote:
-
 >
-> Things listed as TBD status:
-> 1. Seeding: Seems to work fine the couple of times I've tested it, however
-> I've only done very light testing, and the whole feature is pretty much
-> undocumented.
+> After device discovery, specify UUID=<volume UUID> instead of a device node.
 
-Mostly OK.
-
-Odd behaviors:
-- mount seed (ro), add device, remount mountpoint: this just changed
-the mounted fs volume UUID
-- if two sprouts for a seed exist, ambiguous which is remounted rw,
-you'd have to check
-- remount should probably be disallowed in this case somehow; require
-explicit mount of the sprout
-
-btrfs fi usage crash when multiple device volume contains seed device
-https://bugzilla.kernel.org/show_bug.cgi?id=115851
+Oh yeah good point, -U --uuid is also doable. I'm not sure what the
+benefit is of using sysfs to delete a device's node after umounting.
+If the umount isn't successful or the accounting for all mount points
+isn't right, there is no warning for device delete, it's gone and it's
+like physically yanking the device out of the port. Seems dangerous
+for udisksd to use that?
 
 
-> 2. Device Replace: Works perfectly as long as the filesystem itself is not
-> corrupted, all the component devices are working, and the FS isn't using any
-> raid56 profiles.  Works fine if only the device being replaced is failing.
-> I've not done much testing WRT replacement when multiple devices are
-> suspect, but what I've done seems to suggest that it might be possible to
-> make it work, but it doesn't currently.  On raid56 it sometimes works fine,
-> sometimes corrupts data, and sometimes takes an insanely long time to
-> complete (putting data at risk from subsequent failures while the replace is
-> running).
-> 3. Balance: Works perfectly as long as the filesystem is not corrupted and
-> nothing throws any read or write errors.  IOW, only run this on a generally
-> healthy filesystem.  Similar caveats to those for replace with raid56 apply
-> here too.
-> 4. File Range Cloning and Out-of-band Dedupe: Similarly, work fine if the FS
-> is healthy.
 
-Concur.
+> I personally feel it's more important that we fix the whole UUID issue
+> first.  If we fix that, it is likely to at least make things better in this
+> particular case as well.
 
+Fair enough.
 
-Missing from the matrix:
+> The problem with trying to get this fixed upstream
+> in userspace is that udisks is essentially deprecated because of the work on
+> storaged (which will almost certainly depend on systemd), so you're almost
+> certainly get nothing fixed until someone decides to fork it and maintain it
+> themselves like happened for ConsoleKit.
+>
+> As far as what udisks is doing wrong, based on what you've said and minimal
+> experimentation on my systems, the issue is that it's not identifying the
+> array as one filesystem.  They mount by device node to try and avoid the
+> UUID issues (because they affect every filesystem to some degree), but
+> because of that they see a bunch of filesystems.
 
-- default file system for distros recommendation
-e.g. between enospc and btrfsck status, I'd say in general this is not
-currently recommended by upstream (short of having a Btrfs kernel
-developer on staff)
+By trying to avoid the UUID issues, they end up with another problem.
+I guess right now the only sure fire options they have:
 
-- enospc status
-e.g. there's new stuff in 4.8 that probably still needs to shake out,
-and Jeff's found some metadata accounting problem resulting in enospc
-where there's tons of unallocated space available.
-e.g. I have empty block groups, and they are not being deallocated,
-they just stick around, and this is with 4.7 and 4.8 kernels; so
-whatever was at one time automatically removing totally empty bg's
-isn't happening anymore.
+a. Don't automount any Btrfs. (This is what I've recommended.)
+b. pass --uuid as well as device= for each device in the array as
+discovered by BTRFS_IOC_FS_INFO and BTRFS_IOC_DEV_INFO: while also not
+mounting by device node alone for Btrfs.
 
-- btrfsck status
-e.g. btrfs-progs 4.7.2 still warns against using --repair, and lists
-it under dangerous options also;  while that's true, Btrfs can't be
-considered stable or recommended by default
-e.g. There's still way too many separate repair tools for Btrfs.
-Depending on how you count there's at least 4, and more realistically
-8 ways, scattered across multiple commands. This excludes btrfs
-check's -E, -r, and -s flags. And it ignores sequence in the success
-rate. The permutations are just excessive. It's definitely not easy to
-know how to fix a Btrfs volume should things go wrong.
 
 
 -- 

@@ -1,62 +1,82 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oi0-f43.google.com ([209.85.218.43]:33156 "EHLO
-        mail-oi0-f43.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1756551AbcILMpz (ORCPT
+Received: from syrinx.knorrie.org ([82.94.188.77]:51321 "EHLO
+        syrinx.knorrie.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1755843AbcILMqo (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 12 Sep 2016 08:45:55 -0400
-Received: by mail-oi0-f43.google.com with SMTP id y2so310942202oie.0
-        for <linux-btrfs@vger.kernel.org>; Mon, 12 Sep 2016 05:45:55 -0700 (PDT)
-Subject: Re: Small fs
-To: Martin Steigerwald <martin@lichtvoll.de>, Hugo Mills <hugo@carfax.org.uk>,
-        linux-btrfs@vger.kernel.org
-References: <CAK5rZE49j5QYZJSriG70LVo-9JnRJRfwFA0qRZSEotXpCxJC6A@mail.gmail.com>
- <14309857.N6fGUh6qoJ@merkaba> <20160911194632.GF7138@carfax.org.uk>
- <34273168.IdA9o4YR3V@merkaba>
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <7efbc874-d1e8-011e-20c8-f887aef8a4ac@gmail.com>
-Date: Mon, 12 Sep 2016 08:45:51 -0400
+        Mon, 12 Sep 2016 08:46:44 -0400
+Subject: Re: btrfstune -x -> extent-tree.c:2688: btrfs_reserve_extent:
+ Assertion `ret` failed.
+To: dsterba@suse.cz, linux-btrfs@vger.kernel.org
+References: <478c1cee-80f0-c8f3-0bb9-c8c8932a9fb5@mendix.com>
+ <20160912123946.GC16983@twin.jikos.cz>
+From: Hans van Kranenburg <hans.van.kranenburg@mendix.com>
+Message-ID: <a6c78673-935e-7774-e2f8-f6f80130d5f5@mendix.com>
+Date: Mon, 12 Sep 2016 14:46:37 +0200
 MIME-Version: 1.0
-In-Reply-To: <34273168.IdA9o4YR3V@merkaba>
-Content-Type: text/plain; charset=windows-1252; format=flowed
+In-Reply-To: <20160912123946.GC16983@twin.jikos.cz>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2016-09-11 15:51, Martin Steigerwald wrote:
-> Am Sonntag, 11. September 2016, 19:46:32 CEST schrieb Hugo Mills:
->> On Sun, Sep 11, 2016 at 09:13:28PM +0200, Martin Steigerwald wrote:
->>> Am Sonntag, 11. September 2016, 16:44:23 CEST schrieb Duncan:
->>>> * Metadata, and thus mixed-bg, defaults to DUP mode on a single-device
->>>> filesystem (except on ssd where I actually still use it myself, and
->>>> recommend it except for ssds that do firmware dedupe).  In mixed-mode
->>>> this means two copies of data as well, which halves the usable space.
->>>>
->>>> IOW, when using mixed-mode, which is recommended under a gig, and dup
->>>> replication which is then the single-device default, effective usable
->>>> space is **HALVED**, so 256 MiB btrfs size becomes 128 MiB usable. (!!)
->>>
->>> I don´t get this part. That is just *metadata* being duplicated, not the
->>> actual *data* inside the files. Or am I missing something here?
+On 09/12/2016 02:39 PM, David Sterba wrote:
+> On Fri, Sep 09, 2016 at 11:37:21PM +0200, Hans van Kranenburg wrote:
+>> Hi,
 >>
->>    In mixed mode, there's no distinction: Data and metadata both use
->> the same chunks. If those chunks are DUP, then both data and metadata
->> are duplicated, and you get half the space available.
->
-> In german I´d say "autsch", in english according to pda.leo.org "ouch", to
-> this.
->
-> Okay, I just erased using mixed mode as an idea from my mind altogether :).
-Until recently (when DUP mode for data on a single device got added), it 
-did have advantages.  If you're running on a single disk and need 
-replication, it's a lot more efficient to just run a single partition in 
-DUP mode than two in RAID1 mode.  It also makes it a bit less likely to 
-hit ENOSPC issues on small filesystems.
->
-> Just like I think I will never use a BTRFS below 5 GiB. Well, with one
-> exception, maybe on the eMMC flash of the new Omnia Turris router that I hope
-> will arrive soon at my place.
->
-FWIW, I don't use anything smaller than 8G unless I have to (with the 
-notable exception of /boot), and when I do need to, I usually just use 
-mixed mode because once you get that small, you need all the help you 
-can get to keep from the whole FS being allocated to chunks.
+>> While trying to enable skinny metadata on a filesystem, I got this error
+>> (after minutes of reading from disk by the program):
+>>
+>> -# btrfstune -x /dev/xvdb
+>> extent-tree.c:2688: btrfs_reserve_extent: Assertion `ret` failed.
+>> btrfstune[0x410ef6]
+>> btrfstune[0x410f1d]
+>> btrfstune(btrfs_reserve_extent+0x781)[0x41522e]
+>> btrfstune(btrfs_alloc_free_block+0x63)[0x415413]
+>> btrfstune(__btrfs_cow_block+0xfc)[0x409176]
+>> btrfstune(btrfs_cow_block+0x8b)[0x409718]
+>> btrfstune[0x40d8ad]
+>> btrfstune(btrfs_commit_transaction+0xb8)[0x40f10d]
+>> btrfstune(main+0x3b3)[0x407e31]
+>> /lib/x86_64-linux-gnu/libc.so.6(__libc_start_main+0xf0)[0x7f945fa06700]
+>> btrfstune(_start+0x29)[0x408509]
+>>
+>> This is a ~40TiB filesystem that was created about one and a half year
+>> ago, has grown from 1TiB to this size now and has always been running
+>> with the Debian 3.16-ckt kernel.
+>>
+>> # uname -a
+>> Linux backups-dolly 4.7.0-1-amd64 #1 SMP Debian 4.7.2-1 (2016-08-28)
+>> x86_64 GNU/Linux
+>>
+>> # btrfs version
+>> btrfs-progs v4.7.1
+>>
+>> One of the things I already did earlier today was switching to
+>> space_cache=v2
+>>
+>> Does the shown error ring a bell? What's the next step to debug this?
+> 
+> It's a bug in the incompat bit handling the free-space-tree. Opening the
+> filesystem for read-write should not be allowed, but was mistakenly
+> enabled by me.
+> 
+>> The filesystem is a clone of the production filesystem (not btrfs clone,
+>> but lower level, on iSCSI storage) meant to be used for upgrade-testing
+>> and performance testing, so if anything goes wrong in whatever way,
+>> there will be no panicing involved.
+> 
+> The fix is in devel, but it'd mean that writing to a v2-enabled
+> filesystem will not work (which also means changing some fatures via
+> btrfstune as it uses the transaction mechanism that needs to cow blocks
+> and update free space etc).
 
+As I replied this morning, I tried it again on a fresh clone of the
+underlying snapshot, before doing anything else first with it.
+
+So that means at that point it's a filesystem that has only seen 3.16
+kernels before, and does still have old free space cache in place, no v2
+tree.
+
+And, it still blows up.
+
+-- 
+Hans van Kranenburg

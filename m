@@ -1,186 +1,157 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [195.159.176.226] ([195.159.176.226]:42089 "EHLO
+Received: from [195.159.176.226] ([195.159.176.226]:38273 "EHLO
         blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
-        with ESMTP id S1756052AbcILDd6 (ORCPT
+        with ESMTP id S1751712AbcILEgX (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 11 Sep 2016 23:33:58 -0400
+        Mon, 12 Sep 2016 00:36:23 -0400
 Received: from list by blaine.gmane.org with local (Exim 4.84_2)
         (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-        id 1bjI0I-0007Ln-JF
-        for linux-btrfs@vger.kernel.org; Mon, 12 Sep 2016 05:33:54 +0200
+        id 1bjIyf-00023x-Op
+        for linux-btrfs@vger.kernel.org; Mon, 12 Sep 2016 06:36:17 +0200
 To: linux-btrfs@vger.kernel.org
 From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: Small fs
-Date: Mon, 12 Sep 2016 03:33:47 +0000 (UTC)
-Message-ID: <pan$10305$d0b1bd23$a49643ee$465d6f6c@cox.net>
-References: <CAK5rZE49j5QYZJSriG70LVo-9JnRJRfwFA0qRZSEotXpCxJC6A@mail.gmail.com>
-        <5440522.9CHaGU5Wjs@merkaba>
-        <pan$238e8$d4dacca2$71255eb4$9f2e5ec1@cox.net>
-        <CAK5rZE6X_m6wyTmqRZ8B3TTZsXtEtPT5TaanFfgXKycJoBfsTA@mail.gmail.com>
+Subject: Re: compress=lzo safe to use?
+Date: Mon, 12 Sep 2016 04:36:07 +0000 (UTC)
+Message-ID: <pan$56316$8902276c$b806652$f5dac40c@cox.net>
+References: <15415597-7f29-396e-8425-8cbbeb32e897@crc.id.au>
+        <pan$e8a2$15460093$3bb59e30$70ebaf89@cox.net>
+        <21b8852b-fba6-6f8f-feed-7bbfa12312d2@crc.id.au>
+        <4096253.hu8ZAHGEqT@merkaba>
+        <6ef80ffd-6a56-3538-0778-a99cb4b9851e@mendix.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Imran Geriskovan posted on Sun, 11 Sep 2016 21:56:07 +0300 as excerpted:
+Hans van Kranenburg posted on Sun, 11 Sep 2016 22:49:58 +0200 as
+excerpted:
 
-> On 9/11/16, Duncan <1i5t5.duncan@cox.net> wrote:
->> Martin Steigerwald posted on Sun, 11 Sep 2016 17:32:44 +0200 as
->> excerpted:
->>>> What is the smallest recommended fs size for btrfs?
->>>> Can we say size should be in multiples of 64MB?
->>> Do you want to know the smalled *recommended* or the smallest
->>> *possible*
->>> size?
+> So, you can use a lot of compress without problems for years.
 > 
-> In fact both.
-> I'm reconsidering my options for /boot
-
->> [Snip my detail points, leaving just the summary...]
- 
->> So of my 256 MiB btrfs mixed-mode /boot, 31+4=35 MiB is overhead,
->> leaving 221 MiB for actual data and metadata.  But due to dup mode
->> that's halved, to 110.5 MiB usable space.
+> Only if your hardware is starting to break in a specific way, causing
+> lots and lots of checksum errors, the kernel might not be able to handle
+> all of them at the same time currently.
 > 
-> That's quite an info.. Thanks a lot..
-> 
-> Just to note again:
-> Ordinary 127MB btrfs gives "Out of space" around 64MB payload. 128MB is
-> usable to the end.
+> The compress might be super stable itself, but in this case another part
+> of the filesystem is not perfecty able to handle certain failure
+> scenario's involving it.
 
-Thanks, and just to clarify for others possibly following along or 
-googling it up later, that's single mode (as opposed to dup mode) for at 
-least data, if in normal separate data/metadata mode, and single for the 
-combined mixed-mode chunks if in mixed-bg mode, correct?
+Well put.
 
-Because if the data is dup mode as well, as it would be by default in 
-mixed-bg mode (unless on ssd), 128 MiB should allow storing only 64 MiB 
-(and that's not accounting for the system chunk or global reserve 
-metadata, so it'd be less than that) data.
+In my case I had problems trigger due to exactly two things, tho there 
+are obviously other ways of triggering the same issues, including a crash 
+in the middle of a commit, with one copy of the raid1 already updated 
+while the other is still being written.:
 
-> I'm experimenting with an extracted (and customized) initrd on /boot.
-> That is, /boot is a "minimal root on its own" which can switch to real
-> root or do other things. Kernel and modules at /boot will not support
-> any fs other than btrfs. (Or it may)
-> 
-> It seems a minimally usable root around 10MB is possible.
-> And it is free of udev and systemd..
+1) I first discovered the problem when one of my pair of ssds was going 
+bad.  Because I had btrfs raid1 and could normally scrub-fix things, and 
+because I had backups anyway, I chose to continue running it for some 
+time, just to see how it handled things, as more and more sectors became 
+unwritable and were replaced by spares.  By the end I had several MiB 
+worth of spares in-use, altho smart reported I had only used about 15% of 
+the available spares, but by then it was getting bad enough and the 
+newness had worn off, so I just replaced it and got rid of the hassle.
 
-You don't specifically mention the distro, but given that gentoo's one of 
-the only general-purpose distros that hasn't switched to systemd yet (tho 
-it offers the choice for those who want it, and I've taken that choice 
-here), there's a fair chance that's what you're running, as both I and 
-Martin Steigerwald (based on earlier threads) are.
+But as a result of the above, I had a *LOT* of practice with btrfs 
+recovery, mostly running scrub.
 
-FWIW, a bit more about my /boot (and kernel/initr*) layout, then, since 
-it may be apropos... both because you're dealing with /boot, and because 
-you might be on gentoo, as well, in which case you may find even more 
-useful hints in the below.  Of course you can set it up how you like, but 
-this is what I've found works very well for me. =:^)
+And what I found was that if btrfs raid1 encounters too many checksum 
+errors in compressed data it will crash btrfs and the kernel, even when 
+it *SHOULD* recover from the other device because it has a good copy, as 
+demonstrated by the fact that after a reboot, I could run a scrub and fix 
+everything, no uncorrected errors at all.
 
-1) Since I custom-configure and build my own kernels anyway, I build 
-monolithic, no kernel modules, and indeed, the kernel options allowing 
-loading modules are turned off -- more secure that way since I don't load 
-modules anyway.
+At first I thought it was just the way btrfs worked -- that it could 
+handle a few checksum errors but not too many at once.  I had no idea it 
+was compression related.  But nobody else seemed to mention the problem, 
+which I though a bit strange, until someone /did/ mention it, and 
+furthermore, actually tested both compressed and uncompressed btrfs, and 
+found the problem only when btrfs was reading compressed data.  If the 
+data wasn't compressed, btrfs went ahead and read the second copy 
+correctly, without crashing the system, every time.
 
-That simplifies a lot of stuff, including no longer needing module-init-
-tools or whatever installed at all.  So it's not. (I negated the @system 
-listing for it; actually I negated @system entirely and added what I 
-actually needed to my @world via world-sets, but that's beside the point.)
+The extra kink in this is that at the time, I had a boot-time service 
+setup to cache (via cat > /dev/null) a bunch of files in a particular 
+directory.  This particular directory is a cache for news archives, with 
+articles on some groups going back over a decade to 2002, and my news 
+client (pan) is slow to startup with several gigs of cached messages like 
+that, so I had the boot-time service pre-cache everything, so by the time 
+I started X and pan, it would be done or nearly so and I'd not have to 
+wait for pan to startup.
 
-2) Since a multi-device btrfs / effectively requires an initr*, I do run 
-one, using dracut to generate it, but I don't boot it as a separate 
-file.  Instead I have the kernel configured to pull it in and append it 
-as an initramfs to each built kernel.
+The problem was that many of the new files were in this directory, and 
+all that activity tended to hit the going-bad sectors on that ssd rather 
+frequently, making one copy often bad.  Additionally, these are mostly 
+text messages, so they compress quite well, meaning compress=lzo would 
+trigger compression on many of them.
 
-The idea here is that I keep tested-bootable kernels along with their 
-tested-bootable initr*s around, so whatever I may be upgrading, kernel, 
-dracut, the initr* itself, or some package with a binary in the initr*, I 
-always have a fallback kernel and its attached initramfs that's tested 
-bootable.  That way, should some kernel/initr* component fail, I know I 
-can simply pick an older/tested kernel/initramfs file, since they're a 
-single file, and boot with it, using that boot to investigate and fix the 
-problem with the kernel/initramfs.  And I also know that once I've tested 
-a kernel/initramfs to work, if it suddenly fails, it can't be something 
-in the initramfs or kernel itself, as that is known to work, it must 
-instead be some problem with the hardware or in the boot after handover 
-to the main /.
+And because I had it reading them at boot, the kernel tended to overload 
+on checksum errors before it finished booting, far more frequently than 
+it would have otherwise.  Of course, that would crash the system before I 
+could get a login in ordered to run btrfs scrub and fix the problem.
 
-One additional detail here regarding dracut:  Even if you've configured 
-dracut to not worry about modules as you run a monolithic kernel, for 
-some reason (bug?) it still requires (as opposed to uses if installed) 
-rmmod for an initr* build.  Why it requires rmmod but not modprobe is 
-beyond me, but it does.  So now I have a no-rmmod.patch in
-/etc/portage/patches/sys-kernel/dracut , and I can use dracut setup for a 
-monolithic kernel initr*, without having to have the useless rmmod from 
-module-init-tools around for it to pull in when I build a new initr*.
+What I had to do then was boot to rescue mode, with the filesystems 
+mounted but before normal services (including this caching service) ran, 
+run the scrub from there, and then continue boot, which would then work 
+just fine because I'd fixed all the checksum errors.
 
-3) Due to btrfs dup-mode halving my usable space on /boot, something I 
-should have anticipated but didn't, I have only ~110 MiB of space on /
-boot, and the grub2 installation eats up some of it.  Of course that 
-leaves me way less room for kernels than I expected, particularly when I 
-had the uncompressed initr* (that the kernel build compresses and appends 
-as an initramfs to every built kernel) stored on /boot as well.
+But, as I said I eventually got tired of the hassle and just replaced the 
+failing device.  Btrfs replace worked nicely. =:^)
 
-Eventually that crimped my style sufficiently that I moved the 
-uncompressed initr* elsewhere.  I ended up with it on /p, my packages/
-build partition, which has the kernel sources on it too, so it'd need to 
-be mounted to build the kernel anyway.  Without the uncompressed initr* 
-on /boot, the 256 MiB btrfs dup-mode, thus ~110 MiB usable, has been fine 
--- I don't find myself running out of space for new kernel builds as much 
-any more, making it much easier to git-bisect a kernel bug, for instance. 
-=:^)
+2a) My second trigger is that I've found that with multiple devices, as 
+in multi-device btrfs, but also when I used to run mdraid, don't always 
+resume from suspend-to-RAM very well.  Often one device takes longer to 
+wake up than the other(s), and the kernel will try to resume while one 
+still isn't responding properly.  (FWIW, I ran into this problem on 
+spinning rust back on mdraid, but I see it now on ssds on btrfs as well, 
+so it seems to be a common issue, which probably remains relatively 
+obscure I'd guess because relatively few people with multi-device btrfs 
+or mdraid do suspend-to-ram.)
 
-So if you're going to do an uncompressed initr* on /boot, if you're using 
-btrfs in mixed-bg dup mode as I am, better make it 384 MiB or even 512 
-MiB, because 256 MiB will definitely crimp your style.  If OTOH you're 
-using single mode data, presumably because you're doing mixed-mode but 
-only single (I still wouldn't recommend non-mixed-mode at that size), 256 
-MiB ends up being much more reasonable.
+The result is that btrfs will try to write to the remaining device(s), 
+getting them out of sync with the one that isn't responding properly 
+yet.  Ultimately this leads to a crash if I don't catch it and complete a 
+controlled shutdown before that, and sometimes I see the same crash-on-
+boot-due-to-too-many-checksum-errors problem I saw with #1.  I no longer 
+have that caching job running at boot and thus don't see it as often, but 
+it still happens occasionally.  Again, once I boot to rescue mode and run 
+scrub, it fixes the problem and I can resume the normal mode boot without 
+further issue.
 
-4) I use gpt partition tables on everything.  They're far more flexible 
-and reliable than the old MBR, and because they have a checksummed second 
-copy at the end of the device as well, they're far easier to recover if 
-the primary copy gets corrupted (plus with the checksumming the 
-corruption is actually detected).
+So I pretty much quit suspending to RAM, at least for any longer period, 
+and just shutdown and reboot, now.  With systemd and ssds, the boot 
+doesn't take significantly longer anyway, tho it does mean I can't simply 
+resume and pick up where I was, I have to reopen my work, etc.
 
-In gpt, I actually setup both an EFI partition and a legacy BIOS 
-partition.  They're both very small and it increases your flexibility 
-dramatically.  As it happens, my current main system was purchased just a 
-bit before EFI replaced BIOS, and I have grub2 installed to the legacy 
-BIOS area and the EFI unused, but both are available should that change 
-and I decide to use EFI booting.  (I may not, it sounds like more trouble 
-than it's worth for those building their own grub, etc, but the 
-flexibility is there should I decide to use it.)
+2b) Closely related to #2a and most recent, since I'm no longer trying to 
+suspend to RAM, I think one of the ssds now has a bad backup capacitor or 
+something, as if I leave it idle for too long it'll fail to respond once 
+I start trying to use it again.  Same story, the other device gets writes 
+that the unresponsive device is missing, and eventually if I don't reboot 
+I crash.  Upon reboot, again, if there were too many things written to 
+the device that stayed up that didn't make it to the other one, it can 
+trigger a crash due to checksum failure.  However, if I can get a command 
+prompt, either because it boots all the way or because I boot to rescue 
+mode, I can run a scrub and update the bad device from the good one, and 
+then everything works fine once again... until the device goes 
+unresponsive, again.
 
-5) The BIOS does have a hotkey to select the boot device, however, and I 
-keep a backup /boot installed to the other ssd (primary backup) and to 
-the spinning rust (secondary backup), just in case.
 
-That allows me to upgrade grub without worrying about killing bootability 
-due to a corrupted grub install.  I upgrade the package, then install it 
-to one device first, then test booting to it before trying to install to 
-the backups.
+Again, I once thought all this was just the stage at which btrfs was, 
+until I found out that it doesn't seem to happen if btrfs compression 
+isn't being used.  Something about the way it recovers from checksum 
+errors on compressed data differs from the way it recovers from checksum 
+errors on uncompressed data, and there's a bug in the compressed data 
+processing path.  But beyond that, I'm not a dev and it gets a bit fuzzy, 
+which also explains why I've not gone code diving and submitted patches 
+to try to fix it, myself.
 
-6) In ordered to facilitate installing grub2 to the backups as well as my 
-working /boot, /boot itself is actually a symlink.  By default, it points 
-to /bt, the mountpoint for my working /boot.  That way I can tell grub2 
-to install to /dev/sda, and it installs grub2-core to the dedicated BIOS 
-boot partition on that device, while installing the various other grub 
-files to the /boot, which is pointed at the mounted /bt.
-
-When I want to install grub2 to a backup, I point the /boot symlink at 
-/bk/bt, the back-boot mountpoint, instead.  Then with the appropriate 
-backup boot mounted, I can install grub2 to either sdb or sdc as 
-appropriate, and again have it install both grub-core to the appropriate 
-device's dedicated BIOS boot partition, and the various grub files to /
-boot, which is now pointing at /bk/bt, which is where the backup /boot 
-for the appropriate device is mounted.
-
-Because it's far easier and easier to keep track of without getting 
-confused, to simply switch the symlink pointer and keep the backup /boots 
-mounting in the backup location, than it would be to switch the 
-mountpoints themselves around.
+But if I'm correct, it probably doesn't matter what the compression type 
+is, only how much of it there is.  So compress-force would tend to 
+trigger the issue far more frequently than simply compress, unless of 
+course your use-case is a corner-case like my trying to read all those 
+compressible text messages into cache at boot was, but compress (or 
+compress-force) =lzo vs =zlib shouldn't matter.
 
 -- 
 Duncan - List replies preferred.   No HTML msgs.

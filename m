@@ -1,93 +1,149 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-it0-f49.google.com ([209.85.214.49]:37015 "EHLO
-        mail-it0-f49.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1757251AbcILNOJ (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 12 Sep 2016 09:14:09 -0400
-Received: by mail-it0-f49.google.com with SMTP id 186so10686550itf.0
-        for <linux-btrfs@vger.kernel.org>; Mon, 12 Sep 2016 06:14:09 -0700 (PDT)
-Subject: Re: Is stability a joke?
-To: Michel Bouissou <michel.bouissou@umontpellier.fr>
-References: <57D51BF9.2010907@online.no> <20160911130221.GE7138@carfax.org.uk>
- <be04c51d-c35d-39fe-c5f7-a7ab13d72cc5@gmail.com> <13278997.DcMfnd2pLu@vajra>
-Cc: Hugo Mills <hugo@carfax.org.uk>, Waxhead <waxhead@online.no>,
-        Martin Steigerwald <martin@lichtvoll.de>, linux-btrfs@vger.kernel.org
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <f923a129-1097-8f89-049d-267840ccb205@gmail.com>
-Date: Mon, 12 Sep 2016 09:14:04 -0400
+Received: from mx2.suse.de ([195.135.220.15]:44910 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1759141AbcILN1x (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 12 Sep 2016 09:27:53 -0400
+Subject: Re: btrfs kernel oops on mount
+To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>,
+        moparisthebest <admin@moparisthebest.com>, linux-btrfs@vger.kernel.org
+References: <6fa4d5f1-1697-8817-c1b8-098afc011902@moparisthebest.com>
+ <48fdc597-2431-0335-a6e5-da413615ecd0@gmail.com>
+ <357b5b17-f84e-7f09-ad2d-c4700da0bf9c@suse.com>
+ <84b8f928-48e3-00dc-1d16-fedb04f8d180@gmail.com>
+From: Jeff Mahoney <jeffm@suse.com>
+Message-ID: <e03a83f1-1a1e-30f7-379a-47f8de057187@suse.com>
+Date: Mon, 12 Sep 2016 15:27:50 +0200
 MIME-Version: 1.0
-In-Reply-To: <13278997.DcMfnd2pLu@vajra>
-Content-Type: text/plain; charset=utf-8; format=flowed
+In-Reply-To: <84b8f928-48e3-00dc-1d16-fedb04f8d180@gmail.com>
+Content-Type: multipart/signed; micalg=pgp-sha1;
+ protocol="application/pgp-signature";
+ boundary="BtRIahjUur7w5xtArw3bGUP0iGLTU65Qx"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2016-09-12 08:59, Michel Bouissou wrote:
-> Le lundi 12 septembre 2016, 08:20:20 Austin S. Hemmelgarn a écrit :
->> FWIW, here's a list of what I personally consider stable (as in, I'm
->> willing to bet against reduced uptime to use this stuff on production
->> systems at work and personal systems at home):
->> 1. Single device mode, including DUP data profiles on single device
->> without mixed-bg.
->> 2. Multi-device … raid1, … with symmetrical
->> devices (all devices are the same size).
->> 4. Small numbers (max double digit) of snapshots, taken at infrequent
->> intervals (no more than once an hour).  I use single snapshots regularly
->> to get stable images of the filesystem for backups, and I keep hourly
->> ones of my home directory for about 48 hours.
->> 5. Subvolumes used to isolate parts of a filesystem from snapshots.  I
->> use this regularly to isolate areas of my filesystems from backups.
->> 6. Non-incremental send/receive (no clone source, no parent's, no
->> deduplication).  I use this regularly for cloning virtual machines.
->> 7. Checksumming and scrubs using any of the profiles I've listed above.
->> 8. Defragmentation, including autodefrag.
->> 9. All of the compat_features, including no-holes and skinny-metadata.
->
-> I would also agree that all this is perfectly stable in my own experience. (I
-> removed above what I didn’t personnally use, or didn’t use long enough to
-> vouch for it).
-FWIW, the multi-device single and raid0 profiles that I listed are not 
-something I personally use, but I do include testing of them in my 
-regular testing of BTRFS, and it's never hit anything unique to that 
-configuration, so I'd be willing to use them if I had a use case for it. 
-  The raid10 profile I have used in the past, but these days I usually 
-run raid1 on top of LVM raid0 volumes, which gives the essentially the 
-same net result, but with better performance and slightly better 
-reliability (I can actually fix a double device loss in this 
-configuration half the time, albeit with a lot of manual work).
->
->> Things I consider stable enough that I'm willing to use them on my
->> personal systems but not systems at work:
->> 1. In-line data compression with compress=lzo.  I use this on my laptop
->> and home server system.  I've never had any issues with it myself, but I
->> know that other people have, and it does seem to make other things more
->> likely to have issues.
->
-> I never had problems with lzo compression, although I suspect that it (in
-> conjuction with snapshots) adds much fragmentation that may relate to the
-> extremely bad performance I get over time with mechanical HDs.
-FWIW, the issues with compression in general (everyone talks about lzo 
-compression, but almost nobody uses zlib even in testing, so we really 
-have no indication that it doesn't have the same issue) seem to only be 
-when there's lots of read errors on compressed data.  I usually replace 
-my storage devices before they get to that point, so it makes sense that 
-I've never seen any issues.
->
->> 2. Batch deduplication.
->
-> Every time I tried to use any of the available dedup tools, either it
-> immediately failed miserably, or it failed after eating all of my machine’s
-> RAM. It didn’t eat my data, although.
-Like I said, I only use it on one set of filesystems, and in this case, 
-I've been using it through a script which finds files with duplicate 
-data.  Instead of running duperemove over the whole filesystem, I use 
-this script to call it directly on a list of files which have duplicate 
-data, which speeds up the scanning phase in duperemove and really cuts 
-down on the RAM usage, albeit at the cost of taking longer in the 
-initial phase to find duplicates.  Some day I may post the script, but 
-at the moment it looks horrible, isn't all that efficient itself, and 
-has a couple of bugs that cause it to not reliably catch all the 
-duplicated data, so I'm not too keen to share it in it's current 
-condition.  The actual process itself isn't all that hard though, you 
-can parse the output of diff to get the info, or you can do a manual 
-block comparison like duperemove and use files to store the results to 
-save on RAM usage.
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--BtRIahjUur7w5xtArw3bGUP0iGLTU65Qx
+Content-Type: multipart/mixed; boundary="uG5pURVG97sJk9twVksCvu6evxEFqS4VH";
+ protected-headers="v1"
+From: Jeff Mahoney <jeffm@suse.com>
+To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>,
+ moparisthebest <admin@moparisthebest.com>, linux-btrfs@vger.kernel.org
+Message-ID: <e03a83f1-1a1e-30f7-379a-47f8de057187@suse.com>
+Subject: Re: btrfs kernel oops on mount
+References: <6fa4d5f1-1697-8817-c1b8-098afc011902@moparisthebest.com>
+ <48fdc597-2431-0335-a6e5-da413615ecd0@gmail.com>
+ <357b5b17-f84e-7f09-ad2d-c4700da0bf9c@suse.com>
+ <84b8f928-48e3-00dc-1d16-fedb04f8d180@gmail.com>
+In-Reply-To: <84b8f928-48e3-00dc-1d16-fedb04f8d180@gmail.com>
+
+--uG5pURVG97sJk9twVksCvu6evxEFqS4VH
+Content-Type: text/plain; charset=utf-8
+Content-Transfer-Encoding: quoted-printable
+
+On 9/12/16 2:54 PM, Austin S. Hemmelgarn wrote:
+> On 2016-09-12 08:33, Jeff Mahoney wrote:
+>> On 9/9/16 8:47 PM, Austin S. Hemmelgarn wrote:
+>>> A couple of other things to comment about on this:
+>>> 1. 'can_overcommit' (the function that the Arch kernel choked on) is
+>>> from the memory management subsystem.  The fact that that's throwing =
+a
+>>> null pointer says to me either your hardware has issues, or the Arch
+>>> kernel itself has problems (which would probably mean the kernel imag=
+e
+>>> is corrupted).
+>>
+>> fs/btrfs/extent-tree.c:
+>> static int can_overcommit(struct btrfs_root *root,
+>>                           struct btrfs_space_info *space_info, u64 byt=
+es,
+>>                           enum btrfs_reserve_flush_enum flush)
+>>
+> OK, my bad there, but that begs the question: why does a BTRFS function=
+
+> not have a BTRFS prefix?  The name blatantly sounds like a mm function
+> (and I could have sworn I can across one with an almost identical name
+> when I was trying to understand the mm code a couple months ago), and
+> the lack of a prefix combined with that heavily implies that it's a cor=
+e
+> kernel function.
+>=20
+> Given this, it's almost certainly the balance choking on corrupted
+> metadata that's causing the issue.
+
+Because it's a static function and has a namespace limited to the
+current C file.  If we prefixed every function in a local namespace with
+the subsystem, the code would be unreadable.  At any rate, the full
+symbol name in the Oops is:
+
+can_overcommit+0x1e/0x110 [btrfs]
+
+So we do identify the proper namespace in the Oops already.
+
+>>> 3. In general, it's a good idea to keep an eye on space usage on your=
+
+>>> filesystems.  If it's getting to be more than about 95% full, you sho=
+uld
+>>> be looking at getting some more storage space.  This is especially tr=
+ue
+>>> for BTRFS, as a 100% full BTRFS filesystem functionally becomes
+>>> permanently read-only because there's nowhere for the copy-on-write
+>>> updates to write to.
+>>
+>> The entire point of having the global metadata reserve is to avoid tha=
+t
+>> situation.
+> Except that the global metadata reserve is usually only just barely big=
+
+> enough, and it only works for metadata.  While I get that this issue is=
+
+> what it's supposed to fix, it doesn't do so in a way that makes it easy=
+
+> to get out of that situation.  The reserve itself is often not big
+> enough to do anything in any reasonable amount of time once the FS gets=
+
+> beyond about a hundred GB and yous tart talking about very large files.=
+
+
+Why would it need to apply to data?  The reserve is used to meet the
+reservation requirements to CoW metadata blocks needed to release the
+data blocks.  The data blocks themselves aren't touched; they're only
+released.  The size of the file really should only matter in terms of
+how many extent items need to be released but it shouldn't matter at all
+in terms of how many blocks the file's data occupies.  E.g. a 100 GB
+file that uses a handful of extents would be essentially free in this
+context.
+
+-Jeff
+
+--=20
+Jeff Mahoney
+SUSE Labs
+
+
+--uG5pURVG97sJk9twVksCvu6evxEFqS4VH--
+
+--BtRIahjUur7w5xtArw3bGUP0iGLTU65Qx
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG/MacGPG2 v2.0.19 (Darwin)
+Comment: GPGTools - http://gpgtools.org
+
+iQIcBAEBAgAGBQJX1q1WAAoJEB57S2MheeWypQgQAJYBpsFhpJemxPgliHwry7Zm
+95IQSsdi9nGAuU8buSUHF0s+Gg5W7KMjBLN6g4wNjcBMpzmcGs0N33PSrbrN9Axa
+s3zyvqodOOFHFmUaofwow8/xa0N1SxQq7L/FpF3IfchQJ1GBae9tcxGX1fJRfcm1
+YbiJ+PO7esy/gwAei9GbfZ6Nnfc2liJOC3tm4s02WN4RPsxL2Ox6KZsl9OB9pl2+
+n6LAgGlfjL8gBJGpOkbaJiIZ0Aga42YtN7TcrSUycy+xbJAq5SCedt7Aia5/c3Q8
+YXVQuQukC26EwlzL6Qa0wIlzvq5YVeI/HHOPJVbsZ0zlDMsECaLATaCpx6HJQAQ2
+aVeoiBPO4BA0g52AxdWxnL3IUn6wjnkKEBZG39eaPrwiANOwEiRgZ9G5qdq5K718
+IXWZ2Ckmo5vEJl5mQW0+urNE4zIyIHcqv02KIxmIZ7/b3iBrDDJ62Gzh5BcsIrUo
+tvQOIe+cc/lz6yoAnFBLu6e88Auc+f6aAouzKBdsCPDgznHb4lw4o7IgoZ0QaSvr
+ISmHaeBRqcH6QF3prLiW+92Gq+xPvLP64zryzhbllwT0hD5txMXi/ctyiI1x2hBC
+ju6HW5XNf1HoX3ecMNbzDwmg8N8ewyjbMA6gjjL4DoeolsvogUG39WZ/CisoEAvO
+p83Lr74wL3GsvFt/AzRV
+=BmoP
+-----END PGP SIGNATURE-----
+
+--BtRIahjUur7w5xtArw3bGUP0iGLTU65Qx--

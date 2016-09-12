@@ -1,59 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oi0-f43.google.com ([209.85.218.43]:34138 "EHLO
-        mail-oi0-f43.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1755820AbcILSzx (ORCPT
+Received: from mondschein.lichtvoll.de ([194.150.191.11]:39713 "EHLO
+        mail.lichtvoll.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751092AbcILT5V (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 12 Sep 2016 14:55:53 -0400
-Received: by mail-oi0-f43.google.com with SMTP id m11so329198047oif.1
-        for <linux-btrfs@vger.kernel.org>; Mon, 12 Sep 2016 11:55:52 -0700 (PDT)
-Subject: Re: Small fs
-To: Imran Geriskovan <imran.geriskovan@gmail.com>,
-        Duncan <1i5t5.duncan@cox.net>
-References: <CAK5rZE49j5QYZJSriG70LVo-9JnRJRfwFA0qRZSEotXpCxJC6A@mail.gmail.com>
- <5440522.9CHaGU5Wjs@merkaba> <pan$238e8$d4dacca2$71255eb4$9f2e5ec1@cox.net>
- <CAK5rZE6X_m6wyTmqRZ8B3TTZsXtEtPT5TaanFfgXKycJoBfsTA@mail.gmail.com>
- <pan$10305$d0b1bd23$a49643ee$465d6f6c@cox.net>
- <CAK5rZE7SMLgPpe8tAQZ9qu=vm+3Gk=73L_h2+tOPEag-0tS0Bg@mail.gmail.com>
- <CAK5rZE7V46=y9is5rmD2HDV2d5MNMiWd++xUszgSqAOY5VQxsA@mail.gmail.com>
- <CAK5rZE55nTKh7u6B56MaGcoezmgOrbjrkzSt+WipcGO1mjEGsw@mail.gmail.com>
-Cc: linux-btrfs@vger.kernel.org
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <8dc76c71-aa15-8b9d-87e1-c21732a97779@gmail.com>
-Date: Mon, 12 Sep 2016 14:55:47 -0400
+        Mon, 12 Sep 2016 15:57:21 -0400
+From: Martin Steigerwald <martin@lichtvoll.de>
+To: dsterba@suse.cz, Waxhead <waxhead@online.no>, linux-btrfs@vger.kernel.org
+Subject: Re: Is stability a joke? (wiki updated)
+Date: Mon, 12 Sep 2016 21:57:17 +0200
+Message-ID: <6762481.5JxuKd9axT@merkaba>
+In-Reply-To: <20160912162747.GF16983@twin.jikos.cz>
+References: <57D51BF9.2010907@online.no> <20160912142714.GE16983@twin.jikos.cz> <20160912162747.GF16983@twin.jikos.cz>
 MIME-Version: 1.0
-In-Reply-To: <CAK5rZE55nTKh7u6B56MaGcoezmgOrbjrkzSt+WipcGO1mjEGsw@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Type: text/plain; charset="us-ascii"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2016-09-12 14:46, Imran Geriskovan wrote:
->> Wait wait wait a second:
->> This is 256 MB SINGLE created
->> by GPARTED, which is the replacement of MANUALLY
->> CREATED 127MB DUP which is now non-existant..
->> Which I was not aware it was a DUP at the time..
->> Peeww... Small btrfs is full of surprises.. ;)
->
-> What's more, I also have another 128MB SINGLE
-> which I've been using for some years and did not
-> bother with its DUP/SINGLENESS. And I compared
-> them all to draw some conclusions. Heh..
-> That's the story.
->
-> Verdict is: DUP/SINGLE is a very serious fun stuff
-> when used unknowingly. Small btrfs is such a case.
-> And third party tools (ex: gparted) plays with it.
->
-> Let's warn users with some documentation,
-> together with "A formal small fs" behaviour..
-I'm not sure about gparted, but the default behavior for mkfs is as follows:
-1. Is the device rotational? (check /sys/block/<device>/rotational).  If 
-not, do some extra stuff to try and ID it as an SSD.  If it is an SSD, 
-use SINGLE mode for metadata, otherwise use DUP mode for metadata.
-2. Is the FS set for mixed-bg?  If so, use the same profile for data as 
-metadata, otherwise use SINGLE mode for data.
+Am Montag, 12. September 2016, 18:27:47 CEST schrieb David Sterba:
+> On Mon, Sep 12, 2016 at 04:27:14PM +0200, David Sterba wrote:
+> > > I therefore would like to propose that some sort of feature / stability
+> > > matrix for the latest kernel is added to the wiki preferably somewhere
+> > > where it is easy to find. It would be nice to archive old matrix'es as
+> > > well in case someone runs on a bit older kernel (we who use Debian tend
+> > > to like older kernels). In my opinion it would make things bit easier
+> > > and perhaps a bit less scary too. Remember if you get bitten badly once
+> > > you tend to stay away from from it all just in case, if you on the other
+> > > hand know what bites you can safely pet the fluffy end instead :)
+> > 
+> > Somebody has put that table on the wiki, so it's a good starting point.
+> > I'm not sure we can fit everything into one table, some combinations do
+> > not bring new information and we'd need n-dimensional matrix to get the
+> > whole picture.
+> 
+> https://btrfs.wiki.kernel.org/index.php/Status
 
-It would not surprise me if gparted switches to single metadata mode for 
-a small enough FS, but I'm not certain.  I do think that they just use 
-the default selection for mixed-bg though, which means not using it in 
-current btrfs-progs versions.
+Great.
+
+I made to minor adaption. I added a link to the Status page to my warning in 
+before the kernel log by feature page. And I also mentioned that at the time 
+the page was last updated the latest kernel version was 4.7. Yes, thats some 
+extra work to update the kernel version, but I think its beneficial to 
+explicitely mention the kernel version the page talks about. Everyone who 
+updates the page can update the version within a second.
+
+-- 
+Martin

@@ -1,50 +1,94 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oi0-f48.google.com ([209.85.218.48]:34859 "EHLO
-        mail-oi0-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1756512AbcILRbr (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 12 Sep 2016 13:31:47 -0400
-Received: by mail-oi0-f48.google.com with SMTP id d191so108797243oih.2
-        for <linux-btrfs@vger.kernel.org>; Mon, 12 Sep 2016 10:31:47 -0700 (PDT)
+Received: from nmsh1.e.nsc.no ([193.213.121.72]:39036 "EHLO nmsh1.e.nsc.no"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1756243AbcILRhG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 12 Sep 2016 13:37:06 -0400
 Subject: Re: Is stability a joke?
-To: dsterba@suse.cz, Waxhead <waxhead@online.no>, linux-btrfs@vger.kernel.org
+To: Chris Mason <clm@fb.com>, Waxhead <waxhead@online.no>,
+        linux-btrfs@vger.kernel.org
 References: <57D51BF9.2010907@online.no>
- <20160912142714.GE16983@twin.jikos.cz>
- <52304724-5bca-a1e6-527f-040085c7ab19@gmail.com>
- <20160912165107.GG16983@twin.jikos.cz>
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <58a954fc-bbd5-3fb5-9f23-008ed7f7121d@gmail.com>
-Date: Mon, 12 Sep 2016 13:31:42 -0400
+ <b40d108d-004f-827b-7d4b-0b93be853e73@fb.com>
+From: Zoiled <zoiled@online.no>
+Message-ID: <57D6E7B9.60207@online.no>
+Date: Mon, 12 Sep 2016 19:36:57 +0200
 MIME-Version: 1.0
-In-Reply-To: <20160912165107.GG16983@twin.jikos.cz>
-Content-Type: text/plain; charset=windows-1252; format=flowed
+In-Reply-To: <b40d108d-004f-827b-7d4b-0b93be853e73@fb.com>
+Content-Type: text/plain; charset=UTF-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2016-09-12 12:51, David Sterba wrote:
-> On Mon, Sep 12, 2016 at 10:54:40AM -0400, Austin S. Hemmelgarn wrote:
->>> Somebody has put that table on the wiki, so it's a good starting point.
->>> I'm not sure we can fit everything into one table, some combinations do
->>> not bring new information and we'd need n-dimensional matrix to get the
->>> whole picture.
->> Agreed, especially because some things are only bad in specific
->> circumstances (For example, snapshots generally work fine on almost
->> anything, until you get into the range of more than about 250, then they
->> start causing issues).
+Chris Mason wrote:
 >
-> The performance aspect could be hard to estimate. Each feature has some
-> cost, we can document what's expected hit but various combinations and
-> actual runtime performance is unpredictable. I'd rather let the tools do
-> what the user asks for, as we might not be able to even detect there are
-> some bad external factors. I think that 250 snapshots would perform
-> better on an ssd than a rotational disk. In the end this leads to the
-> "dos & don'ts".
 >
-In general yes in this case, but performance starts to degrade 
-exponentially beyond a certain point.  The difference between (for 
-example) 10 and 20 snapshots is not as much as between 1000 and 1010. 
-The problem here is that we don't really have a BCP document that anyone 
-ever reads.  A lot of stuff that may seem obvious to us after years of 
-working with BTRFS isn't going to be to a newcomer, and it's a lot more 
-likely that some random person will get things write if we have a good, 
-central BCP document than if it stays as scattered tribal knowledge.
+> On 09/11/2016 04:55 AM, Waxhead wrote:
+>> I have been following BTRFS for years and have recently been starting to
+>> use BTRFS more and more and as always BTRFS' stability is a hot topic.
+>> Some says that BTRFS is a dead end research project while others claim
+>> the opposite.
+>>
+>> Taking a quick glance at the wiki does not say much about what is safe
+>> to use or not and it also points to some who are using BTRFS in 
+>> production.
+>> While BTRFS can apparently work well in production it does have some
+>> caveats, and finding out what features is safe or not can be problematic
+>> and I especially think that new users of BTRFS can easily be bitten if
+>> they do not do a lot of research on it first.
+>>
+>> The Debian wiki for BTRFS (which is recent by the way) contains a bunch
+>> of warnings and recommendations and is for me a bit better than the
+>> official BTRFS wiki when it comes to how to decide what features to use.
+>>
+>> The Nouveau graphics driver have a nice feature matrix on it's webpage
+>> and I think that BTRFS perhaps should consider doing something like that
+>> on it's official wiki as well
+>>
+>> For example something along the lines of .... (the statuses are taken
+>> our of thin air just for demonstration purposes)
+>>
+>
+> The out of thin air part is a little confusing, I'm not sure if you're 
+> basing this on reports you've read?
+>
+Well to be honest I used "whatever I felt was right" more or less in 
+that table and as I wrote it was only for demonstration purposes only to 
+show how such a table could look.
+> I'm in favor flagged device replace with raid5/6 as not supported yet. 
+> That seems to be where most of the problems are coming in.
+>
+> The compression framework shouldn't allow one to work well with the 
+> other unusable.
+Ok good to know , however from the Debian wiki as well as the link to 
+the mailing list only LZO compression are mentioned (as far as I 
+remember) and I have no idea myself how much difference there is between 
+LZO and the ZLIB code,
+>
+> There were  problems with autodefrag related to snapshot-aware defrag, 
+> so Josef disabled the snapshot aware part.
+>
+> In general, we put btrfs through heavy use at facebook.  The crcs have 
+> found serious hardware problems the other filesystems missed.
+>
+> We've also uncovered performance problems and a some serious bugs, 
+> both in btrfs and the other filesystems.  With the other filesystems 
+> the fixes were usually upstream (doubly true for the most serious 
+> problems), and with btrfs we usually had to make the fixes ourselves.
+>
+> -chris
+> -- 
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>
+I'll just pop this in here since I assume most people will read the 
+response from your comment:
+
+I think I made my point. The wiki lacks some good documentation on 
+what's safe to use and what's not. Yesterday I (Svein Engelsgjerd) did 
+put a table on the main wiki and someone have moved that away to a 
+status page and also improved the layout a bit. It is a tad more complex 
+than my version, but also a lot better for the slightly more advanced 
+users and it actually made my view on things a bit clearer as well.
+
+I am glad that I by bringing this up (hopefully) contributed slightly to 
+improving the documentation a tiny bit! :)
+

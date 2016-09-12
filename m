@@ -1,118 +1,37 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-it0-f52.google.com ([209.85.214.52]:36121 "EHLO
-        mail-it0-f52.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1755356AbcILRmX (ORCPT
+Received: from mail-lf0-f41.google.com ([209.85.215.41]:34041 "EHLO
+        mail-lf0-f41.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S932302AbcILRnL (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 12 Sep 2016 13:42:23 -0400
-Received: by mail-it0-f52.google.com with SMTP id o3so18419923ita.1
-        for <linux-btrfs@vger.kernel.org>; Mon, 12 Sep 2016 10:42:23 -0700 (PDT)
-Subject: Re: Is stability a joke? (wiki updated)
-To: fdmanana@gmail.com
-References: <57D51BF9.2010907@online.no>
- <20160912142714.GE16983@twin.jikos.cz> <20160912162747.GF16983@twin.jikos.cz>
- <8df2691f-94c1-61de-881f-075682d4a28d@gmail.com>
- <CAL3q7H7TP=XtUZkEcAfOc-qTHvncU=coTiB+EeYUEOFYeSk2-A@mail.gmail.com>
-Cc: "dsterba@suse.cz" <dsterba@suse.cz>, Waxhead <waxhead@online.no>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <6315ec53-40e8-d32f-a3e4-8589b6a5e3e1@gmail.com>
-Date: Mon, 12 Sep 2016 13:42:18 -0400
+        Mon, 12 Sep 2016 13:43:11 -0400
+Received: by mail-lf0-f41.google.com with SMTP id u14so93395820lfd.1
+        for <linux-btrfs@vger.kernel.org>; Mon, 12 Sep 2016 10:43:10 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <CAL3q7H7TP=XtUZkEcAfOc-qTHvncU=coTiB+EeYUEOFYeSk2-A@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+In-Reply-To: <CAK5rZE7SMLgPpe8tAQZ9qu=vm+3Gk=73L_h2+tOPEag-0tS0Bg@mail.gmail.com>
+References: <CAK5rZE49j5QYZJSriG70LVo-9JnRJRfwFA0qRZSEotXpCxJC6A@mail.gmail.com>
+ <5440522.9CHaGU5Wjs@merkaba> <pan$238e8$d4dacca2$71255eb4$9f2e5ec1@cox.net>
+ <CAK5rZE6X_m6wyTmqRZ8B3TTZsXtEtPT5TaanFfgXKycJoBfsTA@mail.gmail.com>
+ <pan$10305$d0b1bd23$a49643ee$465d6f6c@cox.net> <CAK5rZE7SMLgPpe8tAQZ9qu=vm+3Gk=73L_h2+tOPEag-0tS0Bg@mail.gmail.com>
+From: Imran Geriskovan <imran.geriskovan@gmail.com>
+Date: Mon, 12 Sep 2016 20:43:08 +0300
+Message-ID: <CAK5rZE7V46=y9is5rmD2HDV2d5MNMiWd++xUszgSqAOY5VQxsA@mail.gmail.com>
+Subject: Re: Small fs
+To: Duncan <1i5t5.duncan@cox.net>
+Cc: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2016-09-12 13:29, Filipe Manana wrote:
-> On Mon, Sep 12, 2016 at 5:56 PM, Austin S. Hemmelgarn
-> <ahferroin7@gmail.com> wrote:
->> On 2016-09-12 12:27, David Sterba wrote:
->>>
->>> On Mon, Sep 12, 2016 at 04:27:14PM +0200, David Sterba wrote:
->>>>>
->>>>> I therefore would like to propose that some sort of feature / stability
->>>>> matrix for the latest kernel is added to the wiki preferably somewhere
->>>>> where it is easy to find. It would be nice to archive old matrix'es as
->>>>> well in case someone runs on a bit older kernel (we who use Debian tend
->>>>> to like older kernels). In my opinion it would make things bit easier
->>>>> and perhaps a bit less scary too. Remember if you get bitten badly once
->>>>> you tend to stay away from from it all just in case, if you on the other
->>>>> hand know what bites you can safely pet the fluffy end instead :)
->>>>
->>>>
->>>> Somebody has put that table on the wiki, so it's a good starting point.
->>>> I'm not sure we can fit everything into one table, some combinations do
->>>> not bring new information and we'd need n-dimensional matrix to get the
->>>> whole picture.
->>>
->>>
->>> https://btrfs.wiki.kernel.org/index.php/Status
->>
->>
->> Some things to potentially add based on my own experience:
->>
->> Things listed as TBD status:
->> 1. Seeding: Seems to work fine the couple of times I've tested it, however
->> I've only done very light testing, and the whole feature is pretty much
->> undocumented.
->> 2. Device Replace: Works perfectly as long as the filesystem itself is not
->> corrupted, all the component devices are working, and the FS isn't using any
->> raid56 profiles.  Works fine if only the device being replaced is failing.
->> I've not done much testing WRT replacement when multiple devices are
->> suspect, but what I've done seems to suggest that it might be possible to
->> make it work, but it doesn't currently.  On raid56 it sometimes works fine,
->> sometimes corrupts data, and sometimes takes an insanely long time to
->> complete (putting data at risk from subsequent failures while the replace is
->> running).
->> 3. Balance: Works perfectly as long as the filesystem is not corrupted and
->> nothing throws any read or write errors.  IOW, only run this on a generally
->> healthy filesystem.  Similar caveats to those for replace with raid56 apply
->> here too.
->> 4. File Range Cloning and Out-of-band Dedupe: Similarly, work fine if the FS
->> is healthy.
->
-> Virtually all other features work fine if the fs is healthy...
-I would add more, but I don't often have the time to test broken 
-filesystems...
+> btrfs filesystem df /mnt/back/boot
+> Data, single: total=8.00MiB, used=0.00B
+> System, DUP: total=8.00MiB, used=16.00KiB
+> Metadata, DUP: total=32.00MiB, used=112.00KiB
+> GlobalReserve, single: total=16.00MiB, used=0.00B
+> IT IS DUP!!
 
-TBH though, that's most of the issue I see with BTRFS in general at the 
-moment.  RAID5/6 works fine, as long as all the devices keep working and 
-you don't try to replace them and don't lose power.  Qgroups appear to 
-work fine as long as no other bug shows up (other than the issues with 
-accounting and returning ENOSPC instead of EDQUOT).  We do so much 
-testing on pristine filesystems, but most of the utilities and less 
-widely used features have had near zero testing on filesystems that are 
-in bad shape.  If you pay attention, many (possibly most?) of the 
-recently reported bugs are from broken (or poorly curated) filesystems, 
-not some random kernel bug.  New features are nice, but they generally 
-don't improve stability, and for BTRFS to be truly production ready 
-outside of constrained environments like FaceBook, it needs to not choke 
-on encountering a FS with some small amount of corruption.
->
->>
->> Other stuff:
->> 1. Compression: The specific known issue is that compressed extents don't
->> always get recovered properly on failed reads when dealing with lots of
->> failed reads.  This can be demonstrated by generating a large raid1
->> filesystem image with huge numbers of small (1MB) readliy compressible
->> files, then putting that on top of a dm-flaky or dm-error target set to give
->> a high read-error rate, then mounting and running cat `find .` > /dev/null
->> from the top level of the FS multiple times in a row.
->
->> 2. Send: The particular edge case appears to be caused by metadata
->> corruption on the sender and results in send choking on the same file every
->> time you try to run it.  The quick fix is to copy the contents of the file
->> to another file and rename that over the original.
->
-> I don't remember having seen such case at least for the last 2 or 3
-> years, all the problems I've seen/solved or seen fixes from others
-> were all related to bugs in the send algorithm and definitely not any
-> metadata corruption.
-> So I wonder what evidence you have about this.
-For the compression related issues, I can still reproduce it, but it 
-takes a while.
-
-As for the send issues, I do still see these on rare occasion, but only 
-on 2+ year old filesystems, but I think the last time I saw it happen 
-was more than 3 months ago.
-
+Wait wait wait a second:
+This is 256 MB SINGLE created
+by GPARTED, which is the replacement of MANUALLY
+CREATED 127MB DUP which is now non-existant..
+Which I was not aware it was a DUP at the time..
+Peeww... Small btrfs is full of surprises.. ;)

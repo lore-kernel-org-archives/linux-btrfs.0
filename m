@@ -1,108 +1,126 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:34485 "EHLO
-        mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1753461AbcIIPTU (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 9 Sep 2016 11:19:20 -0400
-Subject: Re: lockdep warning in btrfs in 4.8-rc3
-To: Dave Jones <davej@codemonkey.org.uk>,
-        Christian Borntraeger <borntraeger@de.ibm.com>,
-        LKML <linux-kernel@vger.kernel.org>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-References: <20160826233624.jao5mztbxhjikm7e@floor.thefacebook.com>
- <6a3eed93-fb4d-817a-6a59-7e7f91c8ea6d@de.ibm.com>
- <624b2c3a-5030-3f7f-70d6-4507308d785b@de.ibm.com>
- <d42383bb-399f-1794-3574-dc83c959b02b@fb.com>
- <20160909005055.n6be4cvwvi7byk3j@codemonkey.org.uk>
-From: Chris Mason <clm@fb.com>
-Message-ID: <03c4ab5c-11bf-9bf5-dd6f-94e913e6efb1@fb.com>
-Date: Fri, 9 Sep 2016 11:19:03 -0400
+Received: from cn.fujitsu.com ([222.73.24.84]:37056 "EHLO song.cn.fujitsu.com"
+        rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+        id S1754119AbcILGmB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 12 Sep 2016 02:42:01 -0400
+From: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
+To: fstests@vger.kernel.org
+Cc: linux-btrfs@vger.kernel.org
+Subject: [PATCH] generic: check whether we can truncate heavily reflinked file
+Date: Mon, 12 Sep 2016 14:36:59 +0800
+Message-Id: <20160912063659.4112-1-wangxg.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
-In-Reply-To: <20160909005055.n6be4cvwvi7byk3j@codemonkey.org.uk>
-Content-Type: text/plain; charset="windows-1252"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 09/08/2016 08:50 PM, Dave Jones wrote:
-> On Thu, Sep 08, 2016 at 08:58:48AM -0400, Chris Mason wrote:
->  > On 09/08/2016 07:50 AM, Christian Borntraeger wrote:
->  > > On 09/08/2016 01:48 PM, Christian Borntraeger wrote:
->  > >> Chris,
->  > >>
->  > >> with 4.8-rc3 I get the following on an s390 box:
->  > >
->  > > Sorry for the noise, just saw the fix in your pull request.
->  > >
->  >
->  > The lockdep splat is still there, we'll need to annotate this one a little.
->
-> Here's another one (unrelated?) that I've not seen before today:
->
-> WARNING: CPU: 1 PID: 10664 at kernel/locking/lockdep.c:704 register_lock_class+0x33f/0x510
-> CPU: 1 PID: 10664 Comm: kworker/u8:5 Not tainted 4.8.0-rc5-think+ #2
-> Workqueue: writeback wb_workfn (flush-btrfs-1)
->  0000000000000097 00000000b97fbad3 ffff88013b8c3770 ffffffffa63d3ab1
->  0000000000000000 0000000000000000 ffffffffa6bf1792 ffffffffa60df22f
->  ffff88013b8c37b0 ffffffffa60897a0 000002c0b97fbad3 ffffffffa6bf1792
-> Call Trace:
->  [<ffffffffa63d3ab1>] dump_stack+0x6c/0x9b
->  [<ffffffffa60df22f>] ? register_lock_class+0x33f/0x510
->  [<ffffffffa60897a0>] __warn+0x110/0x130
->  [<ffffffffa608992c>] warn_slowpath_null+0x2c/0x40
->  [<ffffffffa60df22f>] register_lock_class+0x33f/0x510
->  [<ffffffffa639d9ce>] ? bio_add_page+0x7e/0x120
->  [<ffffffffa60e082b>] __lock_acquire.isra.32+0x5b/0x8c0
->  [<ffffffffa60e1438>] lock_acquire+0x58/0x70
->  [<ffffffffc041c08a>] ? btrfs_try_tree_write_lock+0x4a/0xb0 [btrfs]
->  [<ffffffffa69c5728>] _raw_write_lock+0x38/0x70
->  [<ffffffffc041c08a>] ? btrfs_try_tree_write_lock+0x4a/0xb0 [btrfs]
->  [<ffffffffc041c08a>] btrfs_try_tree_write_lock+0x4a/0xb0 [btrfs]
->  [<ffffffffc03f25f8>] lock_extent_buffer_for_io+0x28/0x2e0 [btrfs]
->  [<ffffffffc03fc261>] btree_write_cache_pages+0x231/0x550 [btrfs]
->  [<ffffffffc03c0cf0>] ? btree_set_page_dirty+0x20/0x20 [btrfs]
->  [<ffffffffc03c0d64>] btree_writepages+0x74/0x90 [btrfs]
->  [<ffffffffa619eb6e>] do_writepages+0x3e/0x80
->  [<ffffffffa6266ba2>] __writeback_single_inode+0x42/0x220
->  [<ffffffffa6267601>] writeback_sb_inodes+0x351/0x730
->  [<ffffffffa619aae1>] ? __wb_update_bandwidth+0x1c1/0x2b0
->  [<ffffffffa6267cd8>] wb_writeback+0x138/0x2a0
->  [<ffffffffa626854e>] wb_workfn+0x10e/0x340
->  [<ffffffffa60e099f>] ? __lock_acquire.isra.32+0x1cf/0x8c0
->  [<ffffffffa60aa05f>] process_one_work+0x24f/0x5d0
->  [<ffffffffa60a9ff0>] ? process_one_work+0x1e0/0x5d0
->  [<ffffffffa60aa433>] worker_thread+0x53/0x5b0
->  [<ffffffffa60aa3e0>] ? process_one_work+0x5d0/0x5d0
->  [<ffffffffa60b11a0>] kthread+0x120/0x140
->  [<ffffffffa60b782a>] ? finish_task_switch+0x6a/0x200
->  [<ffffffffa69c5d1f>] ret_from_fork+0x1f/0x40
->  [<ffffffffa60b1080>] ? kthread_create_on_node+0x270/0x270
-> ---[ end trace 7b39395c07435bf1 ]---
->
->
->  700                         /*
->  701                          * Huh! same key, different name? Did someone trample
->  702                          * on some memory? We're most confused.
->  703                          */
->  704                         WARN_ON_ONCE(class->name != lock->name);
->
-> That seems kinda scary. There was a trinity run going on at the same time,
-> so this _might_ be a random scribble from something unrelated to btrfs,
-> but just in case..
->
-> IWBNI that code printed out both cases so I could see if this was
-> corruption or two unrelated keys. I'll make it do that in case it
-> happens again.
+Signed-off-by: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
+---
+ tests/generic/377     | 74 +++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/generic/377.out |  2 ++
+ tests/generic/group   |  1 +
+ 3 files changed, 77 insertions(+)
+ create mode 100755 tests/generic/377
+ create mode 100644 tests/generic/377.out
+
+diff --git a/tests/generic/377 b/tests/generic/377
+new file mode 100755
+index 0000000..3a0c27e
+--- /dev/null
++++ b/tests/generic/377
+@@ -0,0 +1,74 @@
++#! /bin/bash
++# FS QA Test 377
++#
++# Create a heavily reflinked file, then check whether we can truncate
++# it correctly.
++#
++#-----------------------------------------------------------------------
++# Copyright (c) 2016 Fujitsu.  All Rights Reserved.
++#
++# This program is free software; you can redistribute it and/or
++# modify it under the terms of the GNU General Public License as
++# published by the Free Software Foundation.
++#
++# This program is distributed in the hope that it would be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write the Free Software Foundation,
++# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++#-----------------------------------------------------------------------
++#
++
++seq=`basename $0`
++seqres=$RESULT_DIR/$seq
++echo "QA output created by $seq"
++
++here=`pwd`
++tmp=/tmp/$$
++status=1	# failure is the default!
++trap "_cleanup; exit \$status" 0 1 2 3 15
++
++_cleanup()
++{
++	cd /
++	rm -f $tmp.*
++}
++
++# get standard environment, filters and checks
++. ./common/rc
++. ./common/filter
++. ./common/reflink
++
++# remove previous $seqres.full before test
++rm -f $seqres.full
++
++# Modify as appropriate.
++_supported_fs generic
++_supported_os Linux
++_require_scratch
++_require_scratch_reflink
++_require_cp_reflink
++
++_scratch_mkfs_sized $((128 * 1024 * 1024)) >> $seqres.full 2>&1
++_scratch_mount
++
++file=$SCRATCH_MNT/testfile
++blocksize=$((128 * 1024))
++
++# create the initial file.
++_pwrite_byte 0xcdcdcdcd 0 $blocksize  $file > /dev/null
++
++echo "Silence is golden"
++# filesize is 20GB, and here 20GB is choosen deliberately, so it
++# can consume enough fs free space.
++for ((i=1; i<163840; i++)); do
++	_reflink_range $file 0 $file $(($i * $blocksize)) $blocksize \
++		>> $seqres.full 2>&1
++done
++$XFS_IO_PROG -f -c 'truncate 0' $file
++
++status=0
++exit
+diff --git a/tests/generic/377.out b/tests/generic/377.out
+new file mode 100644
+index 0000000..d14a512
+--- /dev/null
++++ b/tests/generic/377.out
+@@ -0,0 +1,2 @@
++QA output created by 377
++Silence is golden
+diff --git a/tests/generic/group b/tests/generic/group
+index bad71bc..ea98752 100644
+--- a/tests/generic/group
++++ b/tests/generic/group
+@@ -379,3 +379,4 @@
+ 374 auto quick clone dedupe
+ 375 auto quick acl
+ 376 auto quick metadata
++377 auto clone
+-- 
+2.9.0
 
 
-I haven't seen this one before, if you could make it happen again, that 
-would be great ;)
 
--chris
-
->
-> 	Dave
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->

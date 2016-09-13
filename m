@@ -1,63 +1,74 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from relay5-d.mail.gandi.net ([217.70.183.197]:42254 "EHLO
-        relay5-d.mail.gandi.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753020AbcITWlC (ORCPT
+Received: from mail-wm0-f41.google.com ([74.125.82.41]:37516 "EHLO
+        mail-wm0-f41.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750940AbcIMU2k (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 20 Sep 2016 18:41:02 -0400
-Date: Wed, 21 Sep 2016 00:40:57 +0200
-From: Mathieu Chouquet-Stringer <m2n@csetco.com>
-To: Kent Overstreet <kent.overstreet@gmail.com>
-Cc: "Theodore Ts'o" <tytso@mit.edu>, linux-btrfs@vger.kernel.org
-Subject: Re: ChaCha20 vs. AES performance
-Message-ID: <20160920224057.GA28476@bosco>
+        Tue, 13 Sep 2016 16:28:40 -0400
+Received: by mail-wm0-f41.google.com with SMTP id c131so132747849wmh.0
+        for <linux-btrfs@vger.kernel.org>; Tue, 13 Sep 2016 13:28:39 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20160920155152.eopgz7h2z6kpsfdy@kmo-pixel>
+In-Reply-To: <20160909140059.GT16983@twin.jikos.cz>
+References: <CAJF-kYmnBt6yRLJ+R3HdJ03oqp_ptwXpat40vXoD_b=MUvJZUw@mail.gmail.com>
+ <20160909140059.GT16983@twin.jikos.cz>
+From: Lukas Lueg <lukas.lueg@gmail.com>
+Date: Tue, 13 Sep 2016 22:28:18 +0200
+Message-ID: <CAJF-kYnXjz_dg2eev3WUqg3=XTBX=W8e2qnLQKtpnC6cCHvR+Q@mail.gmail.com>
+Subject: Re: State of the fuzzer
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-kent.overstreet@gmail.com (Kent Overstreet) writes:
-> On Tue, Sep 20, 2016 at 10:23:20AM -0400, Theodore Ts'o wrote:
->> On Tue, Sep 20, 2016 at 03:15:19AM -0800, Kent Overstreet wrote:
->> > Not on the list or I would've replied directly, but on Haswell, ChaCha20 (in
->> > software) is over 2x as fast as AES (in hardware), at realistic (for a
->> > filesystem) block sizes:
->> 
->> On Skylake and Broadwell processors, AES is faster (the posting is
->> from a ChaCha20 enthusiast):
->> 
->>      https://blog.cloudflare.com/it-takes-two-to-chacha-poly/
+I've booted another instance with btrfs-progs checked out to 2b7c507
+and collected some bugs which remained from the run before the current
+one. The current run discovered what qgroups are just three days ago
+and will spend some time on that. I've also added UBSAN- and
+MSAN-logging to my setup and there were three bugs found so far (one
+is already fixed). I will boot a third instance to run lowmem-mode
+exclusively in the next few days.
+
+There are 11 bugs open at the moment, all have a reproducing image
+attached to them. The whole list is at
+
+https://bugzilla.kernel.org/buglist.cgi?bug_status=NEW&bug_status=ASSIGNED&bug_status=REOPENED&component=btrfs&email1=lukas.lueg%40gmail.com&emailreporter1=1&emailtype1=exact&list_id=858441&query_format=advanced
+
+
+2016-09-09 16:00 GMT+02:00 David Sterba <dsterba@suse.cz>:
+> On Tue, Sep 06, 2016 at 10:32:28PM +0200, Lukas Lueg wrote:
+>> I'm currently fuzzing rev 2076992 and things start to slowly, slowly
+>> quiet down. We will probably run out of steam at the end of the week
+>> when a total of (roughly) half a billion BTRFS-images have passed by.
+>> I will switch revisions to current HEAD and restart the whole process
+>> then. A few things:
+>>
+>> * There are a couple of crashes (mostly segfaults) I have not reported
+>> yet. I'll report them if they show up again with the latest revision.
 >
-> The performance delta in his graphs isn't near as big as what I've measured,
-> which makes me suspect OpenSSL's ChaCha20 implementation isn't nearly as fast as
-> the kernel's.
-
-The other thing to keep in mind is this (aka what's true for a big intel
-cpu isn't true everywhere): "The new cipher suites are fast. As Adam
-Langley described, ChaCha20-Poly1305 is three times faster than
-AES-128-GCM on mobile devices. Spending less time on decryption means
-faster page rendering and better battery life."
-
-https://blog.cloudflare.com/do-the-chacha-better-mobile-performance-with-cryptography/
-
-The argument made by Bernstein is in a nutshell than "CPUs are optimized
-for video games and thus ciphers should use the same instructions which
-makes games 'faster'" (I'd recommend to read his whole email to understand
-what he means):
-https://moderncrypto.org/mail-archive/noise/2016/000699.html )
-
-Or as one person commented on the net
-https://news.ycombinator.com/item?id=12264321 :
-
-Bernstein agrees with you. His point isn't that it's dumb that CPUs are
-optimized for games. It's that cipher designers should have enough
-awareness of trends in CPU development to design ciphers that take
-advantage of the same features that games do. That's what he did with
-Salsa/ChaCha. *His subtext is that over the medium term he believes his
-ciphers will outperform AES, despite AES having AES-NI hardware
-support.* (emphasis mine)
-
--- 
-Mathieu Chouquet-Stringer
-            The sun itself sees not till heaven clears.
-	             -- William Shakespeare --
+> Ok.
+>
+>> * The coverage-analysis shows assertion failures which are currently
+>> silenced. An assertion failure is technically a worse disaster
+>> successfully prevented, it still constitutes unexpected/unusable
+>> behaviour, though. Do you want assertions to be enabled and images
+>> triggering those assertions reported? This is basically the same
+>> conundrum as with BUG_ON and abort().
+>
+> Yes please. I'd like to turn most bugons/assertions into a normal
+> failure report if it would make sense.
+>
+>> * A few endless loops entered into by btrfsck are currently
+>> unmitigated (see bugs 155621, 155571, 155551 and 155151). It would be
+>> nice if those had been taken care of by next week if possible.
+>
+> Two of them are fixed, the other two need more work, updating all
+> callers of read_node_slot and the callchain. So you may still see that
+> kind of looping in more images. I don't have an ETA for the fix, I won't
+> be available during the next week.
+>
+> At the moment, the initial sanity checks should catch most of the
+> corrupted values, so I'm expecting that you'll see different classes of
+> problems in the next rounds.
+>
+> The testsuite now contains all images that you reported and we have a
+> fix in git. There are more utilities run on the images, there may be
+> more problems for us to fix.

@@ -1,31 +1,30 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qt0-f178.google.com ([209.85.216.178]:35419 "EHLO
-        mail-qt0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1755330AbcIMUtf (ORCPT
+Received: from mail-qt0-f169.google.com ([209.85.216.169]:35795 "EHLO
+        mail-qt0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1755300AbcIMUu4 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 13 Sep 2016 16:49:35 -0400
-Received: by mail-qt0-f178.google.com with SMTP id 93so95792756qtg.2
-        for <linux-btrfs@vger.kernel.org>; Tue, 13 Sep 2016 13:49:35 -0700 (PDT)
-Message-ID: <1473799768.3344.1.camel@gmail.com>
-Subject: Re: BTRFS constantly reports "No space left on device" even with a
- huge unallocated space
-From: Ronan Arraes Jardim Chagas <ronisbr@gmail.com>
-To: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
-Date: Tue, 13 Sep 2016 17:49:28 -0300
-In-Reply-To: <57D76FB0.4060908@cn.fujitsu.com>
-References: <1471023419.16857.9.camel@gmail.com>
-         <57D76FB0.4060908@cn.fujitsu.com>
-Content-Type: text/plain; charset="UTF-8"
-Mime-Version: 1.0
+        Tue, 13 Sep 2016 16:50:56 -0400
+Received: by mail-qt0-f169.google.com with SMTP id 93so95811268qtg.2
+        for <linux-btrfs@vger.kernel.org>; Tue, 13 Sep 2016 13:50:56 -0700 (PDT)
+Subject: Re: Filesystem forced to readonly after use
+To: Chris Murphy <lists@colorremedies.com>
+References: <a74b20fd-9640-b543-c31c-d475a51dcc57@gmail.com>
+ <CAJCQCtQOAzx5fgpaDs6_hy1cPED=nPLE87bkji+VgGeoqG2+pw@mail.gmail.com>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+From: Cesar Strauss <cestrauss@gmail.com>
+Message-ID: <8ab42458-f60f-ff1d-5b99-f6d1418c71b8@gmail.com>
+Date: Tue, 13 Sep 2016 17:50:53 -0300
+MIME-Version: 1.0
+In-Reply-To: <CAJCQCtQOAzx5fgpaDs6_hy1cPED=nPLE87bkji+VgGeoqG2+pw@mail.gmail.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi guys,
+On 13-09-2016 16:39, Chris Murphy wrote:
+> I just wouldn't use btrfs repair with this version of progs, go back
+> to v4.6.1 or upgrade to 4.7.2.
 
-One more time I saw the problem. It begins to happen on a daily basis
-now. Unfortunately the `enospc_debug` flag did not help. I did not see
-any new information in the logs. This time, only a hard reset worked. I
-could not even reboot using gnome panel.
+Thanks for the tip. I upgraded to 4.7.2.
 
-Best regards,
-Ronan Arraes
+Cesar
+

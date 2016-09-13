@@ -1,204 +1,117 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wm0-f65.google.com ([74.125.82.65]:35661 "EHLO
-        mail-wm0-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1755062AbcIMQmt (ORCPT
+Received: from mail-qk0-f170.google.com ([209.85.220.170]:35323 "EHLO
+        mail-qk0-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1758962AbcIMTUG (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 13 Sep 2016 12:42:49 -0400
-Received: by mail-wm0-f65.google.com with SMTP id c131so3808495wmh.2
-        for <linux-btrfs@vger.kernel.org>; Tue, 13 Sep 2016 09:42:48 -0700 (PDT)
-From: Wilson Meier <wilson.meier@gmail.com>
-Content-Type: text/plain;
-        charset=utf-8
-Mime-Version: 1.0 (1.0)
-Subject: Re: [RFC] Preliminary BTRFS Encryption
-In-Reply-To: <1473773990-3071-1-git-send-email-anand.jain@oracle.com>
-Date: Tue, 13 Sep 2016 18:42:44 +0200
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        "clm@fb.com" <clm@fb.com>, "dsterba@suse.cz" <dsterba@suse.cz>
-Message-Id: <D92920CA-256D-4E11-A08C-2EF775701670@googlemail.com>
-References: <1473773990-3071-1-git-send-email-anand.jain@oracle.com>
-To: Anand Jain <anand.jain@oracle.com>
+        Tue, 13 Sep 2016 15:20:06 -0400
+Received: by mail-qk0-f170.google.com with SMTP id t7so83484695qkh.2
+        for <linux-btrfs@vger.kernel.org>; Tue, 13 Sep 2016 12:20:05 -0700 (PDT)
+Received: from [172.16.43.119] ([150.163.68.19])
+        by smtp.gmail.com with ESMTPSA id t21sm166983qkg.4.2016.09.13.12.20.03
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
+        Tue, 13 Sep 2016 12:20:04 -0700 (PDT)
+To: linux-btrfs@vger.kernel.org
+From: Cesar Strauss <cestrauss@gmail.com>
+Subject: Filesystem forced to readonly after use
+Message-ID: <a74b20fd-9640-b543-c31c-d475a51dcc57@gmail.com>
+Date: Tue, 13 Sep 2016 16:20:02 -0300
+MIME-Version: 1.0
+Content-Type: multipart/mixed;
+ boundary="------------0276B4ADD9C98B6F7CC03E4E"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Anand,
+This is a multi-part message in MIME format.
+--------------0276B4ADD9C98B6F7CC03E4E
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Transfer-Encoding: 7bit
 
-these are great news! Thanks for yor work. I'm looking forward to use the encryption.
+Hello,
 
-I would like to ask a few question regarding the feature set.
+I have a BTRFS filesystem that is reverting to read-only after a few 
+moments of use. There is a stack trace visible in the kernel log, which 
+is attached.
 
-1. is encryption of an existing, filled and unencrypted subvolume without manually moving the data possible?
+Here is my system information:
 
-2. What about encrypting the root and boot subvolume? Will it work with grub2?
+# uname -a
 
-3. How does btrfs rescue handle the encrypted subvolume to recover data in case of an emergency? 
+Linux rescue 4.7.2-1-ARCH #1 SMP PREEMPT Sat Aug 20 23:02:56 CEST 2016 
+x86_64 GNU/Linux
 
-4. Is it possible to unlock a subvolume using a keyfile?
+# btrfs --version
 
-Thanks in advance,
+btrfs-progs v4.7
 
-Wilson
+# btrfs fi show
+
+Label: 'linux'  uuid: 79862c20-d0b0-4ffa-a9af-e3a40868a243
+         Total devices 1 FS bytes used 284.60GiB
+         devid    1 size 300.03GiB used 300.03GiB path /dev/sdb5
+
+# btrfs fi df /mnt
+
+Data, single: total=278.00GiB, used=274.68GiB
+System, DUP: total=8.00MiB, used=64.00KiB
+System, single: total=4.00MiB, used=0.00B
+Metadata, DUP: total=11.00GiB, used=9.92GiB
+Metadata, single: total=8.00MiB, used=0.00B
+GlobalReserve, single: total=512.00MiB, used=0.00B
+
+As soon as the problem started, I saw that the Metadata, DUP was 
+completely used. It become a little better (like above) after a scrub.
+I can easily recover disk space by removing old snapshots, if needed.
+
+The dmesg output is attached.
+
+Before making further recovery attempts, or even restoring from backup, 
+I would like to ask for the best option to proceed.
+
+Thanks,
+
+Cesar
 
 
-> Am 13.09.2016 um 15:39 schrieb Anand Jain <anand.jain@oracle.com>:
-> 
-> 
-> This patchset adds btrfs encryption support.
-> 
-> The main objective of this series is to have bugs fixed and stability.
-> I have verified with fstests to confirm that there is no regression.
-> 
-> A design write-up is coming next, however here below is the quick example
-> on the cli usage. Please try out, let me know if I have missed something.
-> 
-> Also would like to mention that a review from the security experts is due,
-> which is important and I believe those review comments can be accommodated
-> without major changes from here.
-> 
-> Also yes, thanks for the emails, I hear, per file encryption and inline
-> with vfs layer is also important, which is wip among other things in the
-> list.
-> 
-> As of now these patch set supports encryption on per subvolume, as
-> managing properties on per subvolume is a kind of core to btrfs, which is
-> easier for data center solution-ing, seamlessly persistent and easy to
-> manage.
-> 
-> 
-> Steps:
-> -----
-> 
-> Make sure following kernel TFMs are compiled in.
-> # cat /proc/crypto | egrep 'cbc\(aes\)|ctr\(aes\)'
-> name         : ctr(aes)
-> name         : cbc(aes)
-> 
-> Create encrypted subvolume.
-> # btrfs su create -e 'ctr(aes)' /btrfs/e1
-> Create subvolume '/btrfs/e1'
-> Passphrase: 
-> Again passphrase: 
-> 
-> A key is created and its hash is updated into the subvolume item,
-> and then added to the system keyctl.
-> # btrfs su show /btrfs/e1 | egrep -i encrypt
->    Encryption:        ctr(aes)@btrfs:75197c8e (594790215)
-> 
-> # keyctl show 594790215
-> Keyring
-> 594790215 --alsw-v      0     0  logon: btrfs:75197c8e
-> 
-> 
-> Now any file data extents under the subvol /btrfs/e1 will be
-> encrypted.
-> 
-> You may revoke key using keyctl or btrfs(8) as below.
-> # btrfs su encrypt -k out /btrfs/e1
-> 
-> # btrfs su show /btrfs/e1 | egrep -i encrypt
->    Encryption:        ctr(aes)@btrfs:75197c8e (Required key not available)
-> 
-> # keyctl show 594790215
-> Keyring
-> Unable to dump key: Key has been revoked
-> 
-> As the key hash is updated, If you provide wrong passphrase in the next
-> key in, it won't add key to the system. So we have key verification
-> from the day1.
-> 
-> # btrfs su encrypt -k in /btrfs/e1
-> Passphrase: 
-> Again passphrase: 
-> ERROR: failed to set attribute 'btrfs.encrypt' to 'ctr(aes)@btrfs:75197c8e' : Key was rejected by service
-> 
-> ERROR: key set failed: Key was rejected by service
-> 
-> # btrfs su encrypt -k in /btrfs/e1
-> Passphrase: 
-> Again passphrase: 
-> key for '/btrfs/e1' has  logged in with keytag 'btrfs:75197c8e'
-> 
-> Now if you revoke the key the read / write fails with key error.
-> 
-> # md5sum /btrfs/e1/2k-test-file 
-> 8c9fbc69125ebe84569a5c1ca088cb14  /btrfs/e1/2k-test-file
-> 
-> # btrfs su encrypt -k out /btrfs/e1
-> 
-> # md5sum /btrfs/e1/2k-test-file 
-> md5sum: /btrfs/e1/2k-test-file: Key has been revoked
-> 
-> # cp /tfs/1k-test-file /btrfs/e1/
-> cp: cannot create regular file ‘/btrfs/e1/1k-test-file’: Key has been revoked
-> 
-> Plain text memory scratches for security reason is pending. As there are some
-> key revoke notification challenges to coincide with encryption context switch,
-> which I do believe should be fixed in the due course, but is not a roadblock
-> at this stage.
-> 
-> Thanks, Anand
-> 
-> 
-> Anand Jain (1):
->  btrfs: Encryption: Add btrfs encryption support
-> 
-> fs/btrfs/Makefile               |   4 +-
-> fs/btrfs/btrfs_inode.h          |   6 +
-> fs/btrfs/compression.c          |  30 +-
-> fs/btrfs/compression.h          |  10 +-
-> fs/btrfs/ctree.h                |   4 +
-> fs/btrfs/disk-io.c              |   3 +
-> fs/btrfs/encrypt.c              | 807 ++++++++++++++++++++++++++++++++++++++++
-> fs/btrfs/encrypt.h              |  94 +++++
-> fs/btrfs/inode.c                | 255 ++++++++++++-
-> fs/btrfs/ioctl.c                |  67 ++++
-> fs/btrfs/lzo.c                  |   2 +-
-> fs/btrfs/props.c                | 331 +++++++++++++++-
-> fs/btrfs/super.c                |  27 +-
-> fs/btrfs/tests/crypto-tests.c   | 376 +++++++++++++++++++
-> fs/btrfs/tests/crypto-tests.h   |  38 ++
-> fs/btrfs/zlib.c                 |   2 +-
-> include/uapi/linux/btrfs_tree.h |   6 +-
-> 17 files changed, 2027 insertions(+), 35 deletions(-)
-> create mode 100644 fs/btrfs/encrypt.c
-> create mode 100644 fs/btrfs/encrypt.h
-> create mode 100755 fs/btrfs/tests/crypto-tests.c
-> create mode 100755 fs/btrfs/tests/crypto-tests.h
-> 
-> Anand Jain (2):
->  btrfs-progs: make wait_for_commit non static
->  btrfs-progs: add encryption support
-> 
-> Makefile.in       |   5 +-
-> btrfs-list.c      |  33 ++++
-> cmds-filesystem.c |   4 +-
-> cmds-restore.c    |  16 ++
-> cmds-subvolume.c  | 112 ++++++++++++--
-> commands.h        |   1 +
-> ctree.h           |   5 +-
-> encrypt.c         | 455 ++++++++++++++++++++++++++++++++++++++++++++++++++++++
-> encrypt.h         |  46 ++++++
-> props.c           |   4 +
-> utils.h           |   2 +
-> 11 files changed, 665 insertions(+), 18 deletions(-)
-> create mode 100644 encrypt.c
-> create mode 100644 encrypt.h
-> 
-> Anand Jain (1):
->  fstests: btrfs: support encryption
-> 
-> common/filter.btrfs |   2 +-
-> common/rc           |   2 +-
-> tests/btrfs/041     |   2 +
-> tests/btrfs/041.out |  13 ++++
-> tests/btrfs/052     |  12 +++
-> tests/btrfs/052.out | 214 ++++++++++++++++++++++++++++++++++++++++++++++++++++
-> tests/btrfs/079     |   2 +
-> tests/btrfs/125     |   2 +-
-> tests/generic/297   |   6 +-
-> tests/generic/298   |   2 +-
-> 10 files changed, 251 insertions(+), 6 deletions(-)
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+--------------0276B4ADD9C98B6F7CC03E4E
+Content-Type: text/x-log;
+ name="dmesg.log"
+Content-Transfer-Encoding: 7bit
+Content-Disposition: attachment;
+ filename="dmesg.log"
+
+[20048.035688] BTRFS info (device sdb5): disk space caching is enabled
+[20190.871802] BTRFS error (device sdb5): parent transid verify failed on 160420773888 wanted 181826 found 181573
+[20190.882573] BTRFS error (device sdb5): parent transid verify failed on 160420773888 wanted 181826 found 181573
+[20190.882607] ------------[ cut here ]------------
+[20190.882642] WARNING: CPU: 3 PID: 5026 at fs/btrfs/extent-tree.c:2963 btrfs_run_delayed_refs+0x28c/0x2c0 [btrfs]
+[20190.882645] BTRFS: Transaction aborted (error -5)
+[20190.882648] Modules linked in: hid_generic usbhid hid btrfs xor raid6_pq sr_mod cdrom intel_rapl x86_pkg_temp_thermal intel_powerclamp coretemp kvm_intel kvm irqbypass joydev mousedev crct10dif_pclmul crc32_pclmul crc32c_intel ghash_clmulni_intel aesni_intel aes_x86_64 lrw gf128mul dell_wmi dell_laptop amdkfd amd_iommu_v2 glue_helper sparse_keymap dell_smbios uvcvideo videobuf2_vmalloc videobuf2_memops videobuf2_v4l2 videobuf2_core videodev radeon media ums_realtek ablk_helper ttm cryptd snd_hda_codec_hdmi arc4 snd_hda_codec_realtek snd_hda_codec_generic dcdbas dell_smm_hwmon iwldvm iTCO_wdt mac80211 iTCO_vendor_support xhci_pci xhci_hcd r8169 snd_hda_intel snd_hda_codec mii iwlwifi evdev i915 input_leds led_class btusb btrtl btbcm btintel bluetooth intel_cstate intel_rapl_perf cfg80211 psmouse pcspkr
+[20190.882725]  snd_hda_core mac_hid rfkill snd_hwdep thermal wmi snd_pcm drm_kms_helper snd_timer drm snd soundcore intel_gtt shpchp syscopyarea ahci sysfillrect sysimgblt fb_sys_fops i2c_algo_bit libahci fjes libata button ac battery mei_me video mei i2c_i801 lpc_ich dell_smo8800 tpm_tis tpm sch_fq_codel ip_tables x_tables ext4 crc16 jbd2 mbcache sd_mod uas usb_storage scsi_mod serio_raw atkbd libps2 ehci_pci ehci_hcd usbcore usb_common i8042 serio
+[20190.882782] CPU: 3 PID: 5026 Comm: kworker/u16:2 Tainted: G        W       4.7.2-1-ARCH #1
+[20190.882785] Hardware name: Dell Inc.          Dell System Vostro 3450/0GG0VM, BIOS A05 05/24/2011
+[20190.882814] Workqueue: btrfs-extent-refs btrfs_extent_refs_helper [btrfs]
+[20190.882818]  0000000000000286 00000000860a9f71 ffff88015420fc90 ffffffff812eb132
+[20190.882824]  ffff88015420fce0 0000000000000000 ffff88015420fcd0 ffffffff8107a3ab
+[20190.882828]  00000b938efd7800 ffffffffa0c0be15 ffff880085917688 000000000000034c
+[20190.882834] Call Trace:
+[20190.882842]  [<ffffffff812eb132>] dump_stack+0x63/0x81
+[20190.882847]  [<ffffffff8107a3ab>] __warn+0xcb/0xf0
+[20190.882852]  [<ffffffff8107a42f>] warn_slowpath_fmt+0x5f/0x80
+[20190.882875]  [<ffffffffa0b6dc5c>] btrfs_run_delayed_refs+0x28c/0x2c0 [btrfs]
+[20190.882895]  [<ffffffffa0b6dd24>] delayed_ref_async_start+0x94/0xb0 [btrfs]
+[20190.882920]  [<ffffffffa0bb8437>] btrfs_scrubparity_helper+0x77/0x350 [btrfs]
+[20190.882943]  [<ffffffffa0bb874e>] btrfs_extent_refs_helper+0xe/0x10 [btrfs]
+[20190.882948]  [<ffffffff81093615>] process_one_work+0x1e5/0x480
+[20190.882953]  [<ffffffff810938f8>] worker_thread+0x48/0x4e0
+[20190.882958]  [<ffffffff810938b0>] ? process_one_work+0x480/0x480
+[20190.882962]  [<ffffffff810938b0>] ? process_one_work+0x480/0x480
+[20190.882968]  [<ffffffff81099598>] kthread+0xd8/0xf0
+[20190.882975]  [<ffffffff815de9bf>] ret_from_fork+0x1f/0x40
+[20190.882981]  [<ffffffff810994c0>] ? kthread_worker_fn+0x170/0x170
+[20190.882985] ---[ end trace 99d6d7ec847d19d4 ]---
+[20190.882990] BTRFS: error (device sdb5) in btrfs_run_delayed_refs:2963: errno=-5 IO failure
+[20190.882994] BTRFS info (device sdb5): forced readonly
+[20295.373706] BTRFS error (device sdb5): cleaner transaction attach returned -30
+
+--------------0276B4ADD9C98B6F7CC03E4E--

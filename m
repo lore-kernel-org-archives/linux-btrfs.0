@@ -1,62 +1,146 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [195.159.176.226] ([195.159.176.226]:43839 "EHLO
-        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
-        with ESMTP id S1751936AbcILWV1 (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:39070 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1751311AbcIMAje (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 12 Sep 2016 18:21:27 -0400
-Received: from list by blaine.gmane.org with local (Exim 4.84_2)
-        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-        id 1bjZbP-0004lQ-DC
-        for linux-btrfs@vger.kernel.org; Tue, 13 Sep 2016 00:21:23 +0200
-To: linux-btrfs@vger.kernel.org
-From: Kai Krakow <hurikhan77@gmail.com>
-Subject: Re: Mixing partitioned and non-partitioned discs in a RAID?
-Date: Tue, 13 Sep 2016 00:21:10 +0200
-Message-ID: <20160913002110.0c621dc2@jupiter.sol.kaishome.de>
-References: <CAMPo9spd+GF18K7sDZDsfvqLQJYwt_YuYM_05KOnVFmw_Vsrhw@mail.gmail.com>
-        <CAJCQCtTQAG+0M9AsNj5LNWXTAKd8V-6DL=5kS80dPt59S1uiAA@mail.gmail.com>
-        <BLU437-SMTP168169D258F02597287B2E92170@phx.gbl>
-        <CAJCQCtS1LPmYN2JY0cayWpCPVzaPq+KQSZZU4g9ifVGT9HCZCg@mail.gmail.com>
-        <pan$37954$2a2891c6$a583cdc5$350ef358@cox.net>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+        Mon, 12 Sep 2016 20:39:34 -0400
+Subject: Re: Unable to repair "bad key order": Cyclic bad block flip-flop
+To: Heinz Werner Kramski-Grote <kramski@web.de>, <linux-btrfs@vger.kernel.org>
+References: <4818221.8fBhXcTYy5@sandl.hnstr58.local>
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Message-ID: <6c6c8a43-e443-f6ce-4778-24398d118c9b@cn.fujitsu.com>
+Date: Tue, 13 Sep 2016 08:39:27 +0800
+MIME-Version: 1.0
+In-Reply-To: <4818221.8fBhXcTYy5@sandl.hnstr58.local>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am Sun, 21 Aug 2016 02:19:33 +0000 (UTC)
-schrieb Duncan <1i5t5.duncan@cox.net>:
+Normally, bad key order can be fixed automatically (btrfs check --repair).
 
-> Chris Murphy posted on Sat, 20 Aug 2016 18:36:21 -0600 as excerpted:
-> 
-> > FAT leaves a lot to be desired but it's pretty universally
-> > supported and almost trivial to repair *if* the volume is
-> > repairable in the first place. The much bigger issue with ESP on
-> > Linux is this neurotic tendency of distros to persistently mount
-> > shit that does not need to be mounted. Like the ESP, and even the
-> > dedicated boot volume. They only need to be mounted when being
-> > updated and then should be umounted. And worse the convention is to
-> > do nested mount with /boot and then /boot/efi for the ESP so it's
-> > twice as bad a practice. By virtue of mounting the ESP the dirty
-> > bit is set, so any crash means it must be fsck'd and if that
-> > doesn't work, it's game over for that volume. Fragile setup.  
-> 
-> Depends on the distro.  On gentoo, you set it up the way you want of 
-> course, but the recommendation has always been /boot, and now the
-> ESP, not mounted by default.
-> 
-> But that would be /expected/ on gentoo, since being able to configure
-> it the way you want is the whole /point/ of running gentoo in the
-> first place.  Sort of like arch, only much more so.
+Since btrfs has no idea what key order is correct.
 
-systemd systems (I'm booting Gentoo with systemd) should auto-mount ESP
-to /boot on access, and auto-unmount after a short timeout. So the
-solution to this problem is already wired into systemd if you use (a)
-proper GPT setup (with correct GUIDs) and (b) do not mention /boot in
-fstab.
+Normally for such case, btrfs uses DUP/RAID1/5/6/10 to recover bad 
+metadata block, but since it's caused by bad RAM, backup is all corrupted.
 
--- 
-Regards,
-Kai
+So for common case, it's not fixable by btrfs check.
+If you're experienced enough, you could try manually fix them.
 
-Replies to list-only preferred.
+
+
+And in your case, btrfs kernel tells that the root tree is corrupted and 
+btrfsck tells that extent tree is also corrupted.
+
+If only extent tree is corrupted, btrfs repair --init-extent-tree would 
+work, but when root tree is involved, it's a little tricky.
+
+You could try using backup roots to avoid corrupted tree root.
+And it may also fix your extent tree.
+---
+# btrfs-show-super -f
+...
+backup_roots[4]:
+	backup 0:
+		backup_tree_root:	31932416	gen: 10	level: 0
+		backup_chunk_root:	20971520	gen: 7	level: 0
+		backup_extent_root:	31899648	gen: 10	level: 1
+		backup_fs_root:		31834112	gen: 9	level: 1
+		backup_dev_root:	30425088	gen: 7	level: 0
+		backup_csum_root:	31965184	gen: 10	level: 0
+		backup_total_bytes:	10737418240
+		backup_bytes_used:	16568320
+		backup_num_devices:	1
+
+...
+---
+
+That "backup_tree_root" is what you're looking for.
+
+And use btrfsck with "-r <backup_tree_root_bytenr>" to check if the bad 
+order problem disappear.
+
+Thanks,
+Qu
+
+At 09/13/2016 05:27 AM, Heinz Werner Kramski-Grote wrote:
+> Due to bad RAM (now fixed), my (single disk) root partition got corrupted and
+> no longer mounts with "corrupt leaf, bad key order":
+>
+>     root@archiso ~ # mount /dev/sdh2 /mnt
+>     mount: wrong fs type, bad option, bad superblock on /dev/sdh2,
+>         missing codepage or helper program, or other error
+>
+>         In some cases useful info is found in syslog - try
+>         dmesg | tail or so.
+>
+>     root@archiso ~ # dmesg | grep -i btrfs
+>     [    8.513028] Btrfs loaded, crc32c=crc32c-generic
+>     [    8.513033] BTRFS: selftest: sectorsize: 4096  nodesize: 4096
+>     [    8.513035] BTRFS: selftest: sectorsize: 4096  nodesize: 8192
+>     [    8.513037] BTRFS: selftest: sectorsize: 4096  nodesize: 16384
+>     [    8.513039] BTRFS: selftest: sectorsize: 4096  nodesize: 32768
+>     [    8.513041] BTRFS: selftest: sectorsize: 4096  nodesize: 65536
+>     [    8.514927] BTRFS: device label btrfs devid 1 transid 36706 /dev/sdh2
+>     [    8.515047] BTRFS: device label data01 devid 1 transid 645 /dev/sdg1
+>     [  546.218691] BTRFS info (device sdh2): disk space caching is enabled
+>     [  546.218697] BTRFS info (device sdh2): has skinny extents
+>     [  546.225228] BTRFS critical (device sdh2): corrupt leaf, bad key order:
+> block=75182981120,root=1, slot=0
+>     [  546.225303] BTRFS error (device sdh2): failed to recover balance: -5
+>     [  546.253399] BTRFS: open_ctree failed
+>
+> Trying to repair the FS gets into a loop of two alternating bad blocks but
+> never succeeds:
+>
+>     root@archiso ~ # btrfs check --repair /dev/sdh2
+>     enabling repair mode
+>     Checking filesystem on /dev/sdh2
+>     UUID: e961bc76-09bb-4616-9263-dab61b8d0ef6
+>     checking extents
+>     bad key ordering 0 1
+>     bad block 75182981120
+>     Errors found in extent allocation tree or chunk allocation
+>     bad key ordering 0 1
+>
+>     root@archiso ~ # btrfs check --repair /dev/sdh2
+>     enabling repair mode
+>     Checking filesystem on /dev/sdh2
+>     UUID: e961bc76-09bb-4616-9263-dab61b8d0ef6
+>     checking extents
+>     bad key ordering 0 1
+>     bad block 75183144960
+>     Errors found in extent allocation tree or chunk allocation
+>     bad key ordering 0 1
+>
+>     root@archiso ~ # btrfs check --repair /dev/sdh2
+>     enabling repair mode
+>     Checking filesystem on /dev/sdh2
+>     UUID: e961bc76-09bb-4616-9263-dab61b8d0ef6
+>     checking extents
+>     bad key ordering 0 1
+>     bad block 75182981120
+>     Errors found in extent allocation tree or chunk allocation
+>     bad key ordering 0 1
+>
+>     root@archiso ~ # btrfs check --repair /dev/sdh2
+>     enabling repair mode
+>     Checking filesystem on /dev/sdh2
+>     UUID: e961bc76-09bb-4616-9263-dab61b8d0ef6
+>     checking extents
+>     bad key ordering 0 1
+>     bad block 75183144960
+>     Errors found in extent allocation tree or chunk allocation
+>     bad key ordering 0 1
+>
+>     [etc...]
+>
+> According to smartctl, the disk itself (a quite new Samsung SSD) is healthy.
+>
+> This is not a critical machine, but I would prefer to solve this issue over a
+> new install. (I'm quite new to btrfs, though)
+>
+> TIA
+>    Heinz
+>
+
 

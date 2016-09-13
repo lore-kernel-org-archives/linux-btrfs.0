@@ -1,39 +1,34 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:54365 "EHLO
-        mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
-        by vger.kernel.org with ESMTP id S1755537AbcIMVBV (ORCPT
+Received: from mail-oi0-f54.google.com ([209.85.218.54]:35836 "EHLO
+        mail-oi0-f54.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752651AbcIMVG5 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 13 Sep 2016 17:01:21 -0400
-Subject: Re: BTRFS constantly reports "No space left on device" even with a
- huge unallocated space
-To: Ronan Arraes Jardim Chagas <ronisbr@gmail.com>,
-        Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>,
-        <linux-btrfs@vger.kernel.org>
-References: <1471023419.16857.9.camel@gmail.com>
- <57D76FB0.4060908@cn.fujitsu.com> <1473799768.3344.1.camel@gmail.com>
-From: Josef Bacik <jbacik@fb.com>
-Message-ID: <41e0d253-133f-ac0e-eda6-95a927736fc6@fb.com>
-Date: Tue, 13 Sep 2016 17:01:06 -0400
+        Tue, 13 Sep 2016 17:06:57 -0400
+Received: by mail-oi0-f54.google.com with SMTP id w11so31211325oia.2
+        for <linux-btrfs@vger.kernel.org>; Tue, 13 Sep 2016 14:06:57 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <1473799768.3344.1.camel@gmail.com>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+In-Reply-To: <3756c0ee-4f64-7974-932c-0a1615c658c8@gmail.com>
+References: <a74b20fd-9640-b543-c31c-d475a51dcc57@gmail.com>
+ <53969836-4a5a-f842-6156-3f88a78bfc4e@gmail.com> <3756c0ee-4f64-7974-932c-0a1615c658c8@gmail.com>
+From: Chris Murphy <lists@colorremedies.com>
+Date: Tue, 13 Sep 2016 15:06:55 -0600
+Message-ID: <CAJCQCtSckyab3JzmW+82GWCCdmMNnNVauT9bs8da1BTGdm0v_g@mail.gmail.com>
+Subject: Re: Filesystem forced to readonly after use
+To: Cesar Strauss <cestrauss@gmail.com>
+Cc: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 09/13/2016 04:49 PM, Ronan Arraes Jardim Chagas wrote:
-> Hi guys,
->
-> One more time I saw the problem. It begins to happen on a daily basis
-> now. Unfortunately the `enospc_debug` flag did not help. I did not see
-> any new information in the logs. This time, only a hard reset worked. I
-> could not even reboot using gnome panel.
+>From the fsck...
 
-I just started paying attention to this, the last kernel I saw you were running 
-was 4.7.  Have you tried a recent kernel, like chris's tree?
+bad block 160420741120
 
+I can't tell though if that's a bad Btrfs leaf/node where both dup
+copies are bad; or if it's a bad sector.
 
-git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git for-linus-4.8
+I'd mount it ro, and take a backup of anything you care about before
+proceeding further.
 
-is what I would like you to try if not.  Thanks,
-
-Josef
+smartctl -x might reveal if there are problems the drive itself is aware of.

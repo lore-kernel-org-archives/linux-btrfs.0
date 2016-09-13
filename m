@@ -1,146 +1,103 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:39070 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:27399 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1751311AbcIMAje (ORCPT
+        with ESMTP id S1750975AbcIMDV5 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 12 Sep 2016 20:39:34 -0400
-Subject: Re: Unable to repair "bad key order": Cyclic bad block flip-flop
-To: Heinz Werner Kramski-Grote <kramski@web.de>, <linux-btrfs@vger.kernel.org>
-References: <4818221.8fBhXcTYy5@sandl.hnstr58.local>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <6c6c8a43-e443-f6ce-4778-24398d118c9b@cn.fujitsu.com>
-Date: Tue, 13 Sep 2016 08:39:27 +0800
+        Mon, 12 Sep 2016 23:21:57 -0400
+Subject: Re: BTRFS constantly reports "No space left on device" even with a
+ huge unallocated space
+To: Ronan Arraes Jardim Chagas <ronisbr@gmail.com>,
+        <linux-btrfs@vger.kernel.org>
+References: <1471023419.16857.9.camel@gmail.com>
+From: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
+Message-ID: <57D76FB0.4060908@cn.fujitsu.com>
+Date: Tue, 13 Sep 2016 11:17:04 +0800
 MIME-Version: 1.0
-In-Reply-To: <4818221.8fBhXcTYy5@sandl.hnstr58.local>
+In-Reply-To: <1471023419.16857.9.camel@gmail.com>
 Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Normally, bad key order can be fixed automatically (btrfs check --repair).
+hello,
 
-Since btrfs has no idea what key order is correct.
+On 08/13/2016 01:36 AM, Ronan Arraes Jardim Chagas wrote:
+> Hi guys,
+>
+> I'm facing a daily problem with BTRFS. Almost everyday, I get the
+> message "No space left on device". Sometimes I can recover by balancing
+> the system but sometimes even balancing does not work due to the lack
+> of space. In this case, only a hard reset works if I can't delete some
+> files. The problem is that I have a huge unallocated space as you can
+> see here:
+>
+> # btrfs fi usage /
+> Overall:
+>      Device size:		   1.26TiB
+>      Device allocated:		 119.07GiB
+>      Device unallocated:		   1.14TiB
+>      Device missing:		     0.00B
+>      Used:			 115.08GiB
+>      Free (estimated):		   1.14TiB	(min: 586.21GiB)
+>      Data ratio:			      1.00
+>      Metadata ratio:		      2.00
+>      Global reserve:		 512.00MiB	(used: 0.00B)
+>
+> Data,single: Size:113.01GiB, Used:111.19GiB
+>     /dev/sda6	 113.01GiB
+>
+> Metadata,DUP: Size:3.00GiB, Used:1.94GiB
+>     /dev/sda6	   6.00GiB
+>
+> System,DUP: Size:32.00MiB, Used:16.00KiB
+>     /dev/sda6	  64.00MiB
+>
+> Unallocated:
+>     /dev/sda6	   1.14TiB
+>
+> It is not easy to trigger the problem. But I do find some correlation
+> between two things:
+>
+> 1) When I started to create jails to build openSUSE packages locally,
+> then the problem happens more often. In these jails, some directories
+> like /dev/, /dev/pts, /proc, are mounted inside the jail.
+>
+> 2) When I open my KVM, I also see this problem more often. Notice,
+> however, that the KVM disk is stored in another EXT4 partition.
+>
+> I would be glad if anyone can help me to fix it. In the following, I'm
+> providing more information about my system:
+>
+> # uname -a
+> Linux ronanarraes-osd 4.7.0-1-default #1 SMP PREEMPT Mon Jul 25
+> 08:42:47 UTC 2016 (89a2ada) x86_64 x86_64 x86_64 GNU/Linux
+>
+> # btrfs --version
+> btrfs-progs v4.6.1+20160714
+>
+> # btrfs fi show
+> Label: none  uuid: 80381f7f-8cef-4bd8-bdbc-3487253ee566
+> 	Total devices 1 FS bytes used 113.13GiB
+> 	devid    1 size 1.26TiB used 119.07GiB path /dev/sda6
+>
+> # btrfs fi df /
+> Data, single: total=113.01GiB, used=111.19GiB
+> System, DUP: total=32.00MiB, used=16.00KiB
+> Metadata, DUP: total=3.00GiB, used=1.94GiB
+> GlobalReserve, single: total=512.00MiB, used=0.00B
+>
+> Regards,
+> Ronan Arraes
+It maybe a irrelevant question, but do you have compression enabled?
 
-Normally for such case, btrfs uses DUP/RAID1/5/6/10 to recover bad 
-metadata block, but since it's caused by bad RAM, backup is all corrupted.
+Regards,
+Xiaoguang Wang
 
-So for common case, it's not fixable by btrfs check.
-If you're experienced enough, you could try manually fix them.
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>
+>
 
-
-
-And in your case, btrfs kernel tells that the root tree is corrupted and 
-btrfsck tells that extent tree is also corrupted.
-
-If only extent tree is corrupted, btrfs repair --init-extent-tree would 
-work, but when root tree is involved, it's a little tricky.
-
-You could try using backup roots to avoid corrupted tree root.
-And it may also fix your extent tree.
----
-# btrfs-show-super -f
-...
-backup_roots[4]:
-	backup 0:
-		backup_tree_root:	31932416	gen: 10	level: 0
-		backup_chunk_root:	20971520	gen: 7	level: 0
-		backup_extent_root:	31899648	gen: 10	level: 1
-		backup_fs_root:		31834112	gen: 9	level: 1
-		backup_dev_root:	30425088	gen: 7	level: 0
-		backup_csum_root:	31965184	gen: 10	level: 0
-		backup_total_bytes:	10737418240
-		backup_bytes_used:	16568320
-		backup_num_devices:	1
-
-...
----
-
-That "backup_tree_root" is what you're looking for.
-
-And use btrfsck with "-r <backup_tree_root_bytenr>" to check if the bad 
-order problem disappear.
-
-Thanks,
-Qu
-
-At 09/13/2016 05:27 AM, Heinz Werner Kramski-Grote wrote:
-> Due to bad RAM (now fixed), my (single disk) root partition got corrupted and
-> no longer mounts with "corrupt leaf, bad key order":
->
->     root@archiso ~ # mount /dev/sdh2 /mnt
->     mount: wrong fs type, bad option, bad superblock on /dev/sdh2,
->         missing codepage or helper program, or other error
->
->         In some cases useful info is found in syslog - try
->         dmesg | tail or so.
->
->     root@archiso ~ # dmesg | grep -i btrfs
->     [    8.513028] Btrfs loaded, crc32c=crc32c-generic
->     [    8.513033] BTRFS: selftest: sectorsize: 4096  nodesize: 4096
->     [    8.513035] BTRFS: selftest: sectorsize: 4096  nodesize: 8192
->     [    8.513037] BTRFS: selftest: sectorsize: 4096  nodesize: 16384
->     [    8.513039] BTRFS: selftest: sectorsize: 4096  nodesize: 32768
->     [    8.513041] BTRFS: selftest: sectorsize: 4096  nodesize: 65536
->     [    8.514927] BTRFS: device label btrfs devid 1 transid 36706 /dev/sdh2
->     [    8.515047] BTRFS: device label data01 devid 1 transid 645 /dev/sdg1
->     [  546.218691] BTRFS info (device sdh2): disk space caching is enabled
->     [  546.218697] BTRFS info (device sdh2): has skinny extents
->     [  546.225228] BTRFS critical (device sdh2): corrupt leaf, bad key order:
-> block=75182981120,root=1, slot=0
->     [  546.225303] BTRFS error (device sdh2): failed to recover balance: -5
->     [  546.253399] BTRFS: open_ctree failed
->
-> Trying to repair the FS gets into a loop of two alternating bad blocks but
-> never succeeds:
->
->     root@archiso ~ # btrfs check --repair /dev/sdh2
->     enabling repair mode
->     Checking filesystem on /dev/sdh2
->     UUID: e961bc76-09bb-4616-9263-dab61b8d0ef6
->     checking extents
->     bad key ordering 0 1
->     bad block 75182981120
->     Errors found in extent allocation tree or chunk allocation
->     bad key ordering 0 1
->
->     root@archiso ~ # btrfs check --repair /dev/sdh2
->     enabling repair mode
->     Checking filesystem on /dev/sdh2
->     UUID: e961bc76-09bb-4616-9263-dab61b8d0ef6
->     checking extents
->     bad key ordering 0 1
->     bad block 75183144960
->     Errors found in extent allocation tree or chunk allocation
->     bad key ordering 0 1
->
->     root@archiso ~ # btrfs check --repair /dev/sdh2
->     enabling repair mode
->     Checking filesystem on /dev/sdh2
->     UUID: e961bc76-09bb-4616-9263-dab61b8d0ef6
->     checking extents
->     bad key ordering 0 1
->     bad block 75182981120
->     Errors found in extent allocation tree or chunk allocation
->     bad key ordering 0 1
->
->     root@archiso ~ # btrfs check --repair /dev/sdh2
->     enabling repair mode
->     Checking filesystem on /dev/sdh2
->     UUID: e961bc76-09bb-4616-9263-dab61b8d0ef6
->     checking extents
->     bad key ordering 0 1
->     bad block 75183144960
->     Errors found in extent allocation tree or chunk allocation
->     bad key ordering 0 1
->
->     [etc...]
->
-> According to smartctl, the disk itself (a quite new Samsung SSD) is healthy.
->
-> This is not a critical machine, but I would prefer to solve this issue over a
-> new install. (I'm quite new to btrfs, though)
->
-> TIA
->    Heinz
->
 
 

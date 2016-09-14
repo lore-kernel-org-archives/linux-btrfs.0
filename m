@@ -1,50 +1,46 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:55991 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:53290 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S932231AbcIFPJq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 6 Sep 2016 11:09:46 -0400
-Date: Tue, 6 Sep 2016 17:08:13 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
-Cc: linux-btrfs@vger.kernel.org, Qu Wenruo <quwenruo@cn.fujitsu.com>
-Subject: Re: [PATCH 02/13] btrfs-progs: check: introduce function to find
- dir_item
-Message-ID: <20160906150813.GB16983@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1469689705-26836-1-git-send-email-lufq.fnst@cn.fujitsu.com>
- <1469689705-26836-3-git-send-email-lufq.fnst@cn.fujitsu.com>
+        id S1755898AbcINIxN (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 14 Sep 2016 04:53:13 -0400
+Date: Wed, 14 Sep 2016 10:52:25 +0200
+From: Johannes Thumshirn <jthumshirn@suse.de>
+To: Bart Van Assche <bart.vanassche@sandisk.com>
+Cc: Jens Axboe <axboe@fb.com>, Mike Christie <mchristi@redhat.com>,
+        Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
+        Mike Snitzer <snitzer@redhat.com>, Christoph Hellwig <hch@lst.de>,
+        Hannes Reinecke <hare@suse.de>,
+        Damien Le Moal <Damien.LeMoal@hgst.com>,
+        "linux-block@vger.kernel.org" <linux-block@vger.kernel.org>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        device-mapper development <dm-devel@redhat.com>
+Subject: Re: [PATCH 1/3] block: Document that bio_op() uses the data type of
+ bio.bi_opf
+Message-ID: <20160914085225.f5jqwgzhin2dphm6@linux-x5ow.site>
+References: <35e3cdd6-8983-6c84-cb4c-9a7be15aea55@sandisk.com>
+ <5e51ae40-994c-1f83-0575-6505662fb138@sandisk.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1469689705-26836-3-git-send-email-lufq.fnst@cn.fujitsu.com>
+Content-Type: text/plain; charset=iso-8859-1
+In-Reply-To: <5e51ae40-994c-1f83-0575-6505662fb138@sandisk.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Jul 28, 2016 at 03:08:14PM +0800, Lu Fengqi wrote:
-> +static int find_dir_item(struct btrfs_root *root, struct btrfs_key *ref_key,
-> +			 struct btrfs_key *key, u64 index, char *name,
-> +			 u32 namelen, u32 mode)
-> +{
-> +	struct btrfs_path *path;
-> +	struct extent_buffer *node;
-> +	struct btrfs_dir_item *di;
-> +	struct btrfs_key location;
-> +	char namebuf[BTRFS_NAME_LEN] = {0};
-> +	u32 total;
-> +	u32 cur = 0;
-> +	u32 len;
-> +	u32 name_len;
-> +	u32 data_len;
-> +	u8 filetype;
-> +	int slot;
-> +	int ret;
-> +
-> +	path = btrfs_alloc_path();
+On Wed, Sep 14, 2016 at 10:44:12AM +0200, Bart Van Assche wrote:
+> Make it clear that the sizeof(unsigned int) expression in BIO_OP_SHIFT
+> refers to the bi_opf member of struct bio.
+> 
+> Signed-off-by: Bart Van Assche <bart.vanassche@sandisk.com>
+> Cc: Mike Christie <mchristi@redhat.com>
+> Cc: Christoph Hellwig <hch@lst.de>
+> Cc: Hannes Reinecke <hare@suse.de>
+> Cc: Damien Le Moal <damien.lemoal@hgst.com>
+> ---
 
-Unhandled error (and there's one more in check_root_ref). Also, the
-function can return negative values, but the caller does not propagate
-the falue as it rather expects the bitmask of the specific errors.
-
-Fixing that seems to be more intrusive, as the whole callchain does not
-expect that consistently.
-
-Please fix that and resend the whole patchset.
+Reviewed-by: Johannes Thumshirn <jthumshirn@suse.de>
+-- 
+Johannes Thumshirn                                          Storage
+jthumshirn@suse.de                                +49 911 74053 689
+SUSE LINUX GmbH, Maxfeldstr. 5, 90409 Nürnberg
+GF: Felix Imendörffer, Jane Smithard, Graham Norton
+HRB 21284 (AG Nürnberg)
+Key fingerprint = EC38 9CAB C2C4 F25D 8600 D0D0 0393 969D 2D76 0850

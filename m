@@ -1,512 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:31228 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S935221AbcIGA3r (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 6 Sep 2016 20:29:47 -0400
-Received: from G08CNEXCHPEKD02.g08.fujitsu.local (unknown [10.167.33.83])
-        by cn.fujitsu.com (Postfix) with ESMTP id 63D2F4042403
-        for <linux-btrfs@vger.kernel.org>; Wed,  7 Sep 2016 08:29:39 +0800 (CST)
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH 3/3] btrfs-progs: Remove send-test tool
-Date: Wed, 7 Sep 2016 08:29:35 +0800
-Message-ID: <20160907002935.8539-4-quwenruo@cn.fujitsu.com>
-In-Reply-To: <20160907002935.8539-1-quwenruo@cn.fujitsu.com>
-References: <20160907002935.8539-1-quwenruo@cn.fujitsu.com>
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:43636 "EHLO
+        mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
+        by vger.kernel.org with ESMTP id S1761011AbcINROZ (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 14 Sep 2016 13:14:25 -0400
+Subject: Re: [PATCH] Btrfs: kill BUG_ON in do_relocation
+To: Liu Bo <bo.li.liu@oracle.com>, <linux-btrfs@vger.kernel.org>
+References: <1473870467-18721-1-git-send-email-bo.li.liu@oracle.com>
+CC: David Sterba <dsterba@suse.cz>
+From: Josef Bacik <jbacik@fb.com>
+Message-ID: <9426999a-06a8-d169-753a-0c4df5c7c4f8@fb.com>
+Date: Wed, 14 Sep 2016 13:13:34 -0400
 MIME-Version: 1.0
-Content-Type: text/plain
+In-Reply-To: <1473870467-18721-1-git-send-email-bo.li.liu@oracle.com>
+Content-Type: text/plain; charset="windows-1252"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Since new "receive --dump" has better output and structure, it's time
-to remove old and function-weak send-test tool.
+On 09/14/2016 12:27 PM, Liu Bo wrote:
+> While updating btree, we try to push items between sibling
+> nodes/leaves in order to keep height as low as possible.
+> But we don't memset the original places with zero when
+> pushing items so that we could end up leaving stale content
+> in nodes/leaves.  One may read the above stale content by
+> increasing btree blocks' @nritems.
+>
 
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
----
- Makefile.in |   6 +-
- send-test.c | 447 ------------------------------------------------------------
- 2 files changed, 1 insertion(+), 452 deletions(-)
- delete mode 100644 send-test.c
+Ok this sounds really bad.  Is this as bad as I think it sounds?  We should 
+probably fix this like right now right?
 
-diff --git a/Makefile.in b/Makefile.in
-index 97caf95..5ae860d 100644
---- a/Makefile.in
-+++ b/Makefile.in
-@@ -346,10 +346,6 @@ ioctl-test: $(objects) $(libs) ioctl-test.o
- 	@echo "    [LD]     $@"
- 	$(Q)$(CC) $(CFLAGS) -o ioctl-test $(objects) $(libs) ioctl-test.o $(LDFLAGS) $(LIBS)
- 
--send-test: $(objects) $(libs) send-test.o
--	@echo "    [LD]     $@"
--	$(Q)$(CC) $(CFLAGS) -o send-test $(objects) $(libs) send-test.o $(LDFLAGS) $(LIBS)
--
- library-test: $(libs_shared) library-test.o
- 	@echo "    [LD]     $@"
- 	$(Q)$(CC) $(CFLAGS) -o library-test library-test.o $(LDFLAGS) -lbtrfs
-@@ -381,7 +377,7 @@ clean-all: clean clean-doc clean-gen
- clean: $(CLEANDIRS)
- 	@echo "Cleaning"
- 	$(Q)$(RM) -f $(progs) cscope.out *.o *.o.d \
--	      dir-test ioctl-test quick-test send-test library-test library-test-static \
-+	      dir-test ioctl-test quick-test library-test library-test-static \
- 	      btrfs.static mkfs.btrfs.static \
- 	      $(check_defs) \
- 	      $(libs) $(lib_links) \
-diff --git a/send-test.c b/send-test.c
-deleted file mode 100644
-index 4645b89..0000000
---- a/send-test.c
-+++ /dev/null
-@@ -1,447 +0,0 @@
--/*
-- * Copyright (C) 2013 SUSE.  All rights reserved.
-- *
-- * This code is adapted from cmds-send.c and cmds-receive.c,
-- * Both of which are:
-- *
-- * Copyright (C) 2012 Alexander Block.  All rights reserved.
-- *
-- * This program is free software; you can redistribute it and/or
-- * modify it under the terms of the GNU General Public
-- * License v2 as published by the Free Software Foundation.
-- *
-- * This program is distributed in the hope that it will be useful,
-- * but WITHOUT ANY WARRANTY; without even the implied warranty of
-- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-- * General Public License for more details.
-- *
-- * You should have received a copy of the GNU General Public
-- * License along with this program; if not, write to the
-- * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
-- * Boston, MA 021110-1307, USA.
-- */
--
--#include <unistd.h>
--#include <stdint.h>
--#include <dirent.h>
--#include <pthread.h>
--#include <math.h>
--#include <sys/types.h>
--#include <sys/stat.h>
--#include <fcntl.h>
--#include <sys/ioctl.h>
--#include <libgen.h>
--#include <mntent.h>
--#include <limits.h>
--#include <stdlib.h>
--#include <asm/types.h>
--#include <uuid/uuid.h>
--
--/*
-- * This should be compilable without the rest of the btrfs-progs
-- * source distribution.
-- */
--#if BTRFS_FLAT_INCLUDES
--#include "send-utils.h"
--#include "send-stream.h"
--#else
--#include <btrfs/send-utils.h>
--#include <btrfs/send-stream.h>
--#endif /* BTRFS_FLAT_INCLUDES */
--
--static int pipefd[2];
--struct btrfs_ioctl_send_args io_send = {0, };
--static char *subvol_path;
--static char *root_path;
--
--struct recv_args {
--	char *full_subvol_path;
--	char *root_path;
--};
--
--void usage(int error)
--{
--	printf("send-test <btrfs root> <subvol>\n");
--	if (error)
--		exit(error);
--}
--
--static int print_subvol(const char *path, const u8 *uuid, u64 ctransid,
--			void *user)
--{
--	struct recv_args *r = user;
--	char uuid_str[BTRFS_UUID_UNPARSED_SIZE];
--
--	r->full_subvol_path = path_cat(r->root_path, path);
--	uuid_unparse(uuid, uuid_str);
--
--	printf("subvol\t%s\t%llu\t%s\n", uuid_str,
--	       (unsigned long long)ctransid, r->full_subvol_path);
--
--	return 0;
--}
--
--static int print_snapshot(const char *path, const u8 *uuid, u64 ctransid,
--			  const u8 *parent_uuid, u64 parent_ctransid,
--			  void *user)
--{
--	struct recv_args *r = user;
--	char uuid_str[BTRFS_UUID_UNPARSED_SIZE];
--	char parent_uuid_str[BTRFS_UUID_UNPARSED_SIZE];
--
--	r->full_subvol_path = path_cat(r->root_path, path);
--	uuid_unparse(uuid, uuid_str);
--	uuid_unparse(parent_uuid, parent_uuid_str);
--
--	printf("snapshot\t%s\t%llu\t%s\t%llu\t%s\n", uuid_str,
--	       (unsigned long long)ctransid, parent_uuid_str,
--	       (unsigned long long)parent_ctransid, r->full_subvol_path);
--
--	return 0;
--}
--
--static int print_mkfile(const char *path, void *user)
--{
--	struct recv_args *r = user;
--	char *full_path = path_cat(r->full_subvol_path, path);
--
--	printf("mkfile\t%s\n", full_path);
--
--	free(full_path);
--	return 0;
--}
--
--static int print_mkdir(const char *path, void *user)
--{
--	struct recv_args *r = user;
--	char *full_path = path_cat(r->full_subvol_path, path);
--
--	printf("mkdir\t%s\n", full_path);
--
--	free(full_path);
--	return 0;
--}
--
--static int print_mknod(const char *path, u64 mode, u64 dev, void *user)
--{
--	struct recv_args *r = user;
--	char *full_path = path_cat(r->full_subvol_path, path);
--
--	printf("mknod\t%llo\t0x%llx\t%s\n", (unsigned long long)mode,
--	       (unsigned long long)dev, full_path);
--
--	free(full_path);
--	return 0;
--}
--
--static int print_mkfifo(const char *path, void *user)
--{
--	struct recv_args *r = user;
--	char *full_path = path_cat(r->full_subvol_path, path);
--
--	printf("mkfifo\t%s\n", full_path);
--
--	free(full_path);
--	return 0;
--}
--
--static int print_mksock(const char *path, void *user)
--{
--	struct recv_args *r = user;
--	char *full_path = path_cat(r->full_subvol_path, path);
--
--	printf("mksock\t%s\n", full_path);
--
--	free(full_path);
--	return 0;
--}
--
--static int print_symlink(const char *path, const char *lnk, void *user)
--{
--	struct recv_args *r = user;
--	char *full_path = path_cat(r->full_subvol_path, path);
--
--	printf("symlink\t%s\t%s\n", lnk, full_path);
--
--	free(full_path);
--	return 0;
--}
--
--static int print_rename(const char *from, const char *to, void *user)
--{
--	struct recv_args *r = user;
--	char *full_from = path_cat(r->full_subvol_path, from);
--	char *full_to = path_cat(r->full_subvol_path, to);
--
--	printf("rename\t%s\t%s\n", from, to);
--
--	free(full_from);
--	free(full_to);
--	return 0;
--}
--
--static int print_link(const char *path, const char *lnk, void *user)
--{
--	struct recv_args *r = user;
--	char *full_path = path_cat(r->full_subvol_path, path);
--
--	printf("link\t%s\t%s\n", lnk, full_path);
--
--	free(full_path);
--	return 0;
--}
--
--static int print_unlink(const char *path, void *user)
--{
--	struct recv_args *r = user;
--	char *full_path = path_cat(r->full_subvol_path, path);
--
--	printf("unlink\t%s\n", full_path);
--
--	free(full_path);
--	return 0;
--}
--
--static int print_rmdir(const char *path, void *user)
--{
--	struct recv_args *r = user;
--	char *full_path = path_cat(r->full_subvol_path, path);
--
--	printf("rmdir\t%s\n", full_path);
--
--	free(full_path);
--	return 0;
--}
--
--static int print_write(const char *path, const void *data, u64 offset,
--		       u64 len, void *user)
--{
--	struct recv_args *r = user;
--	char *full_path = path_cat(r->full_subvol_path, path);
--
--	printf("write\t%llu\t%llu\t%s\n", (unsigned long long)offset,
--	       (unsigned long long)len, full_path);
--
--	free(full_path);
--	return 0;
--}
--
--static int print_clone(const char *path, u64 offset, u64 len,
--		       const u8 *clone_uuid, u64 clone_ctransid,
--		       const char *clone_path, u64 clone_offset,
--		       void *user)
--{
--	struct recv_args *r = user;
--	char *full_path = path_cat(r->full_subvol_path, path);
--
--	printf("clone\t%s\t%s\n", full_path, clone_path);
--
--	free(full_path);
--	return 0;
--}
--
--static int print_set_xattr(const char *path, const char *name,
--			   const void *data, int len, void *user)
--{
--	struct recv_args *r = user;
--	char *full_path = path_cat(r->full_subvol_path, path);
--
--	printf("set_xattr\t%s\t%s\t%d\n", full_path,
--	       name, len);
--
--	free(full_path);
--	return 0;
--}
--
--static int print_remove_xattr(const char *path, const char *name, void *user)
--{
--	struct recv_args *r = user;
--	char *full_path = path_cat(r->full_subvol_path, path);
--
--	printf("remove_xattr\t%s\t%s\n", full_path, name);
--
--	free(full_path);
--	return 0;
--}
--
--static int print_truncate(const char *path, u64 size, void *user)
--{
--	struct recv_args *r = user;
--	char *full_path = path_cat(r->full_subvol_path, path);
--
--	printf("truncate\t%llu\t%s\n", (unsigned long long)size, full_path);
--
--	free(full_path);
--	return 0;
--}
--
--static int print_chmod(const char *path, u64 mode, void *user)
--{
--	struct recv_args *r = user;
--	char *full_path = path_cat(r->full_subvol_path, path);
--
--	printf("chmod\t%llo\t%s\n", (unsigned long long)mode, full_path);
--
--	free(full_path);
--	return 0;
--}
--
--static int print_chown(const char *path, u64 uid, u64 gid, void *user)
--{
--	struct recv_args *r = user;
--	char *full_path = path_cat(r->full_subvol_path, path);
--
--	printf("chown\t%llu\t%llu\t%s\n", (unsigned long long)uid,
--	       (unsigned long long)gid, full_path);
--
--	free(full_path);
--	return 0;
--}
--
--static int print_utimes(const char *path, struct timespec *at,
--			struct timespec *mt, struct timespec *ct,
--			void *user)
--{
--	struct recv_args *r = user;
--	char *full_path = path_cat(r->full_subvol_path, path);
--
--	printf("utimes\t%s\n", full_path);
--
--	free(full_path);
--	return 0;
--}
--
--static int print_update_extent(const char *path, u64 offset, u64 len,
--			       void *user)
--{
--	struct recv_args *r = user;
--	char *full_path = path_cat(r->full_subvol_path, path);
--
--	printf("update_extent\t%s\t%llu\t%llu\n", full_path, offset, len);
--
--	free(full_path);
--	return 0;
--}
--
--static struct btrfs_send_ops send_ops_print = {
--	.subvol = print_subvol,
--	.snapshot = print_snapshot,
--	.mkfile = print_mkfile,
--	.mkdir = print_mkdir,
--	.mknod = print_mknod,
--	.mkfifo = print_mkfifo,
--	.mksock = print_mksock,
--	.symlink = print_symlink,
--	.rename = print_rename,
--	.link = print_link,
--	.unlink = print_unlink,
--	.rmdir = print_rmdir,
--	.write = print_write,
--	.clone = print_clone,
--	.set_xattr = print_set_xattr,
--	.remove_xattr = print_remove_xattr,
--	.truncate = print_truncate,
--	.chmod = print_chmod,
--	.chown = print_chown,
--	.utimes = print_utimes,
--	.update_extent = print_update_extent,
--};
--
--static void *process_thread(void *arg_)
--{
--	int ret;
--
--	while (1) {
--		ret = btrfs_read_and_process_send_stream(pipefd[0],
--							 &send_ops_print, arg_, 0);
--		if (ret)
--			break;
--	}
--
--	if (ret > 0)
--		ret = 0;
--
--	return ERR_PTR(ret);
--}
--
--int main(int argc, char **argv)
--{
--	int ret = 0;
--	int subvol_fd;
--	pthread_t t_read;
--	void *t_err = NULL;
--	struct recv_args r;
--
--	if (argc != 3)
--		usage(EINVAL);
--
--	root_path = realpath(argv[1], NULL);
--	if (!root_path) {
--		ret = errno;
--		usage(ret);
--	}
--
--	subvol_path = realpath(argv[2], NULL);
--	if (!subvol_path) {
--		ret = errno;
--		usage(ret);
--	}
--
--	r.full_subvol_path = subvol_path;
--	r.root_path = root_path;
--
--	subvol_fd = open(subvol_path, O_RDONLY|O_NOATIME);
--	if (subvol_fd < 0) {
--		ret = errno;
--		fprintf(stderr, "ERROR: Subvolume open failed. %s\n",
--			strerror(ret));
--		goto out;
--	}
--
--	ret = pipe(pipefd);
--	if (ret < 0) {
--		ret = errno;
--		fprintf(stderr, "ERROR: pipe failed. %s\n", strerror(ret));
--		goto out;
--	}
--
--	ret = pthread_create(&t_read, NULL, process_thread, &r);
--	if (ret < 0) {
--		ret = errno;
--		fprintf(stderr, "ERROR: pthread create failed. %s\n",
--			strerror(ret));
--		goto out;
--	}
--
--	io_send.send_fd = pipefd[1];
--	io_send.clone_sources_count = 0;
--	io_send.clone_sources = NULL;
--	io_send.parent_root = 0;
--	io_send.flags = BTRFS_SEND_FLAG_NO_FILE_DATA;
--
--	ret = ioctl(subvol_fd, BTRFS_IOC_SEND, &io_send);
--	if (ret < 0) {
--		ret = errno;
--		fprintf(stderr, "ERROR: send ioctl failed with %d: %s\n", ret,
--			strerror(ret));
--		goto out;
--	}
--
--	close(pipefd[1]);
--
--	ret = pthread_join(t_read, &t_err);
--	if (ret) {
--		fprintf(stderr, "ERROR: pthread_join failed: %s\n",
--			strerror(ret));
--		goto out;
--	}
--	if (t_err) {
--		ret = (long int)t_err;
--		fprintf(stderr, "ERROR: failed to process send stream, ret=%ld "
--			"(%s)\n", (long int)t_err, strerror(ret));
--		goto out;
--	}
--
--out:
--	return !!ret;
--}
--- 
-2.9.3
+> One case I've come across is that in fs tree, a leaf has two
+> parent nodes, hence running balance ends up with processing
+> this leaf with two parent nodes, but it can only reach the
+> valid parent node through btrfs_search_slot, so it'd be like,
+>
+> do_relocation
+>     for P in all parent nodes of block A:
+>         if !P->eb:
+>             btrfs_search_slot(key);   --> get path from P to A.
+>         if lowest:
+>             BUG_ON(A->bytenr != bytenr of A recorded in P);
+>         btrfs_cow_block(P, A);   --> change A's bytenr in P.
+>
+> After btrfs_cow_block, P has the new bytenr of A, but with the
+> same @key, we get the same path again, and get panic by BUG_ON.
+>
 
+Ok so this happens because of the problem you described above right?  Because 
+this shouldn't actually happen.  We should go down the next parent and still get 
+to the original block where A->bytenr == node->bytenr.  So I'm all for killing 
+this BUG_ON(), but the problem description is wrong.  We need to keep this 
+scenario from happening in the first place.  And then we kill this BUG_ON() 
+because it can happen if there is FS corruption or something.  Thanks,
 
-
+Josef

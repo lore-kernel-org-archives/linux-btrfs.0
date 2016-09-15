@@ -1,112 +1,91 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mondschein.lichtvoll.de ([194.150.191.11]:35785 "EHLO
-        mail.lichtvoll.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1759340AbcIOIFe (ORCPT
+Received: from syrinx.knorrie.org ([82.94.188.77]:41705 "EHLO
+        syrinx.knorrie.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1755904AbcIOJti (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 15 Sep 2016 04:05:34 -0400
-From: Martin Steigerwald <martin@lichtvoll.de>
-To: Kai Krakow <hurikhan77@gmail.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: Is stability a joke?
-Date: Thu, 15 Sep 2016 10:05:29 +0200
-Message-ID: <2471654.cnhj6IAGL9@merkaba>
-In-Reply-To: <20160915075536.67ae74b9@jupiter.sol.kaishome.de>
-References: <57D51BF9.2010907@online.no> <be04c51d-c35d-39fe-c5f7-a7ab13d72cc5@gmail.com> <20160915075536.67ae74b9@jupiter.sol.kaishome.de>
+        Thu, 15 Sep 2016 05:49:38 -0400
+Subject: Re: stability matrix
+To: Christoph Anton Mitterer <calestyo@scientia.net>,
+        linux-btrfs@vger.kernel.org
+References: <57D51BF9.2010907@online.no>
+ <20160912142714.GE16983@twin.jikos.cz>
+ <52304724-5bca-a1e6-527f-040085c7ab19@gmail.com>
+ <20160912165107.GG16983@twin.jikos.cz>
+ <58a954fc-bbd5-3fb5-9f23-008ed7f7121d@gmail.com>
+ <20160915010759.GD32452@DigitalMercury.dynalias.net>
+ <5dec6544a78a0301a8e0cd9086179f99@crc.id.au>
+ <1473905644.8603.44.camel@scientia.net>
+From: Hans van Kranenburg <hans.van.kranenburg@mendix.com>
+Message-ID: <c58cd350-a1e8-7d1c-cf8c-84f7f0c05682@mendix.com>
+Date: Thu, 15 Sep 2016 11:49:05 +0200
 MIME-Version: 1.0
-Content-Type: text/plain; charset="UTF-8"
+In-Reply-To: <1473905644.8603.44.camel@scientia.net>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am Donnerstag, 15. September 2016, 07:55:36 CEST schrieb Kai Krakow:
-> Am Mon, 12 Sep 2016 08:20:20 -0400
+On 09/15/2016 04:14 AM, Christoph Anton Mitterer wrote:
+> Hey.
 > 
-> schrieb "Austin S. Hemmelgarn" <ahferroin7@gmail.com>:
-> > On 2016-09-11 09:02, Hugo Mills wrote:
-> > > On Sun, Sep 11, 2016 at 02:39:14PM +0200, Waxhead wrote:
-> > >> Martin Steigerwald wrote:
-> >  [...]
-> >  [...]
-> >  [...]
-> >  [...]
-> >  
-> > >> That is exactly the same reason I don't edit the wiki myself. I
-> > >> could of course get it started and hopefully someone will correct
-> > >> what I write, but I feel that if I start this off I don't have deep
-> > >> enough knowledge to do a proper start. Perhaps I will change my
-> > >> mind about this.
-> > >> 
-> > >    Given that nobody else has done it yet, what are the odds that
-> > > 
-> > > someone else will step up to do it now? I would say that you should
-> > > at least try. Yes, you don't have as much knowledge as some others,
-> > > but if you keep working at it, you'll gain that knowledge. Yes,
-> > > you'll probably get it wrong to start with, but you probably won't
-> > > get it *very* wrong. You'll probably get it horribly wrong at some
-> > > point, but even the more knowledgable people you're deferring to
-> > > didn't identify the problems with parity RAID until Zygo and Austin
-> > > and Chris (and others) put in the work to pin down the exact
-> > > issues.
-> > 
-> > FWIW, here's a list of what I personally consider stable (as in, I'm
-> > willing to bet against reduced uptime to use this stuff on production
-> > systems at work and personal systems at home):
-> > 1. Single device mode, including DUP data profiles on single device
-> > without mixed-bg.
-> > 2. Multi-device raid0, raid1, and raid10 profiles with symmetrical
-> > devices (all devices are the same size).
-> > 3. Multi-device single profiles with asymmetrical devices.
-> > 4. Small numbers (max double digit) of snapshots, taken at infrequent
-> > intervals (no more than once an hour).  I use single snapshots
-> > regularly to get stable images of the filesystem for backups, and I
-> > keep hourly ones of my home directory for about 48 hours.
-> > 5. Subvolumes used to isolate parts of a filesystem from snapshots.
-> > I use this regularly to isolate areas of my filesystems from backups.
-> > 6. Non-incremental send/receive (no clone source, no parent's, no
-> > deduplication).  I use this regularly for cloning virtual machines.
-> > 7. Checksumming and scrubs using any of the profiles I've listed
-> > above. 8. Defragmentation, including autodefrag.
-> > 9. All of the compat_features, including no-holes and skinny-metadata.
-> > 
-> > Things I consider stable enough that I'm willing to use them on my
-> > personal systems but not systems at work:
-> > 1. In-line data compression with compress=lzo.  I use this on my
-> > laptop and home server system.  I've never had any issues with it
-> > myself, but I know that other people have, and it does seem to make
-> > other things more likely to have issues.
-> > 2. Batch deduplication.  I only use this on the back-end filesystems
-> > for my personal storage cluster, and only because I have multiple
-> > copies as a result of GlusterFS on top of BTRFS.  I've not had any
-> > significant issues with it, and I don't remember any reports of data
-> > loss resulting from it, but it's something that people should not be
-> > using if they don't understand all the implications.
+> As for the stability matrix...
 > 
-> I could at least add one "don't do it":
-> 
-> Don't use BFQ patches (it's an IO scheduler) if you're using btrfs.
-> Some people like to use it especially for running VMs and desktops
-> because it provides very good interactivity while maintaining very good
-> throughput. But it completely destroyed my btrfs beyond repair at least
-> twice, either while actually using a VM (in VirtualBox) or during high
-> IO loads. I now stick to the deadline scheduler instead which provides
-> very good interactivity for me, too, and the corruptions didn't occur
-> again so far.
-> 
-> The story with BFQ has always been the same: System suddenly freezes
-> during moderate to high IO until all processes stop working (no process
-> shows D state, tho). Only hard reboot possible. After rebooting, access
-> to some (unrelated) files may fail with "errno=-17 Object already
-> exists" which cannot be repaired. If it affects files needed during
-> boot, you are screwed because file system goes RO.
+> In general:
+> - I think another column should be added, which tells when and for
+>   which kernel version the feature-status of each row was 
+>   revised/updated the last time and especially by whom.
+>   If a core dev makes a statement on a particular feature, this
+>   probably means much more, than if it was made by "just" a list
+>   regular.
+>   And yes I know, in the beginning it already says "this is for 4.7"...
+>   but let's be honest, it's pretty likely when this is bumped to 4.8
+>   that not each and every point will be thoroughly checked again.
+> - Optionally even one further column could be added, that lists bugs
+>   where the specific cases are kept record of (if any).
+> - Perhaps a 3rd Status like "eats-your-data" which is worse than
+>   critical, e.g. for things were it's known that there is a high
+>   chance for still getting data corruption (RAID56?)
 
-This could be a further row in the table. And well…
+About the "for 4.7" issue... The Status page could have an extra column,
+which for every OK labeled row lists the first version (kernel.org x.y.0
+release) it's OK for.
 
-as for CFQ Jens Axboe currently works on bandwidth throttling patches 
-*exactly* for the reason to provide more interactivity and fairness to I/O 
-operations in between.
+The bugs make it more complicated.
 
-Right now, Completely Fair in CFQ is a *huge* exaggeration, at least while you 
-have a dd bs=1M thing running.
+* Feature A is labeled OK in kernel 5.0
+* During development of kernel 8-rc, an eat my data bug is fixed. The OK
+for this feature in the table is bumped to 8.0?
+* kernel 5 is EOL
+* kernel 6 is still supported, and the fix is applied to 6.12
+* then there's distros which have their own old kernels, applying fixes
+on them whenever they like, for example 5.6-distro4 which is leading its
+own life
 
-Thanks,
+"Normal" users are using distro kernels. They shouldn't be panicing
+about their data if they're running 6.14 or 5.6-distro4, but the OK in
+the table is bumped to 8.0 because of the serious bugs.
+
+At least the official kernels should be tracked in the table I think.
+
+Separately, a list of known serious bugs per feature (like the 4 about
+compression, http://www.spinics.net/lists/linux-btrfs/msg58674.html )
+could be listed on another Bugs! page (lots of work) so a user, or
+someone helping the user can see if the listed commits are or aren't
+included in the actual whatever kernel a user is using.
+
+This list of serious bugs could also help disussions that now sound like
+"yeah, there were issues with compression which some time ago got fixed,
+but noone knows what it was and when, so don't use compression".
+
+Many of the commits which fix serious bugs (even if they're only
+triggered in an edge case) have some explanation about how to trigger
+them, like the excellent commit messages of Filipe in the commits
+mentioned above. This helps setting up and maintaining the bug page, and
+helps advanced users to decide if they're hitting the edge case or not
+with their usage pattern.
+
+I'd like to help creating/maintaining this bug overview. A good start
+would be to just crawl through all stable kernels and some distro
+kernels and see which commits show up in fs/btrfs.
+
 -- 
-Martin
+Hans van Kranenburg

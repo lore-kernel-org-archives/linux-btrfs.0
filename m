@@ -1,122 +1,84 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oi0-f44.google.com ([209.85.218.44]:33363 "EHLO
-        mail-oi0-f44.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751968AbcIOVyI (ORCPT
+Received: from mail-vk0-f49.google.com ([209.85.213.49]:35050 "EHLO
+        mail-vk0-f49.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751704AbcIOX7G (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 15 Sep 2016 17:54:08 -0400
-Received: by mail-oi0-f44.google.com with SMTP id r126so89379758oib.0
-        for <linux-btrfs@vger.kernel.org>; Thu, 15 Sep 2016 14:54:07 -0700 (PDT)
+        Thu, 15 Sep 2016 19:59:06 -0400
+Received: by mail-vk0-f49.google.com with SMTP id b133so3773470vka.2
+        for <linux-btrfs@vger.kernel.org>; Thu, 15 Sep 2016 16:59:06 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <760be1b7-79b2-a25d-7c60-04ceac1b6e40@gmail.com>
-References: <1634818f-ff1d-722c-6d73-747ed7203a13@gmail.com>
- <CAJCQCtQHBkx8kjcAdSbmgYcHCo_w3VPj8jvgby3cE-S6rLAPdw@mail.gmail.com>
- <ecac8c64-8ed4-7c8d-29ad-5b3687981a33@gmail.com> <CAJCQCtSupa8LT+RK3=w3t7+T_nDcgUzzjSdfEi16DpiQxbm0hQ@mail.gmail.com>
- <760be1b7-79b2-a25d-7c60-04ceac1b6e40@gmail.com>
-From: Chris Murphy <lists@colorremedies.com>
-Date: Thu, 15 Sep 2016 15:54:06 -0600
-Message-ID: <CAJCQCtR2t+3w6ovo88L0_2GqnVWveK5DNJ-vWdw18y+Sng4chQ@mail.gmail.com>
-Subject: Re: multi-device btrfs with single data mode and disk failure
-To: Alexandre Poux <pums974@gmail.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+From: GWB <gwb@2realms.com>
+Date: Thu, 15 Sep 2016 18:58:24 -0500
+Message-ID: <CAP8EXU2fx5ipNQ77WrntCvMZ8GWSke0yNs-jduaetpM_=RDGVw@mail.gmail.com>
+Subject: df -i shows 0 inodes 0 used 0 free on 4.4.0-36-generic Ubuntu 14 -
+ Bug or not?
+To: linux-btrfs@vger.kernel.org
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Sep 15, 2016 at 3:48 PM, Alexandre Poux <pums974@gmail.com> wrote:
->
-> Le 15/09/2016 à 18:54, Chris Murphy a écrit :
->> On Thu, Sep 15, 2016 at 10:30 AM, Alexandre Poux <pums974@gmail.com> wrote:
->>> Thank you very much for your answers
->>>
->>> Le 15/09/2016 à 17:38, Chris Murphy a écrit :
->>>> On Thu, Sep 15, 2016 at 1:44 AM, Alexandre Poux <pums974@gmail.com> wrote:
->>>>>     Is it possible to do some king of a "btrfs delete missing" on this
->>>>>     kind of setup, in order to recover access in rw to my other data, or
->>>>>     I must copy all my data on a new partition
->>>> That *should* work :) Except that your file system with 6 drives is
->>>> too full to be shrunk to 5 drives. Btrfs will either refuse, or get
->>>> confused, about how to shrink a nearly full 6 drive volume into 5.
->>>>
->>>> So you'll have to do one of three things:
->>>>
->>>> 1. Add a 2+TB drive, then remove the missing one; OR
->>>> 2. btrfs replace is faster and is raid10 reliable; OR
->>>> 3. Read only scrub to get a file listing of bad files, then remount
->>>> read-write degraded and delete them all. Now you maybe can do a device
->>>> delete missing. But it's still a tight fit, it basically has to
->>>> balance things out to get it to fit on an odd number of drives, it may
->>>> actually not work even though there seems to be enough total space,
->>>> there has to be enough space on FOUR drives.
->>>>
->>> Are you sure you are talking about data in single mode ?
->>> I don't understand why you are talking about raid10,
->>> or the fact that it will have to rebalance everything.
->> Yeah sorry I got confused in that very last sentence. Single, it will
->> find space in 1GiB increments. Of course this fails because that data
->> doesn't exist anymore, but to start the operation it needs to be
->> possible.
-> No problem
->>> Moreover, even in degraded mode I cannot mount it in rw
->>> It tells me
->>> "too many missing devices, writeable remount is not allowed"
->>> due to the fact I'm in single mode.
->> Oh you're in that trap. Well now you're stuck. I've had the case where
->> I could mount read write degraded with metadata raid1 and data single,
->> but it was good for only one mount and then I get the same message you
->> get and it was only possible to mount read only. At that point it's
->> totally suck unless you're adept at manipulating the file system with
->> a hex editor...
->>
->> Someone might have a patch somewhere that drops this check and lets
->> too many missing devices to mount anyway... I seem to recall this.
->> It'd be in the archives if it exists.
->>
->>
->>
->>> And as far as as know, btrfs replace and btrfs delete, are not supposed
->>> to work in read only...
->> It doesn't. Must be read write mounted.
->>
->>
->>> I would like to tell him forgot about the missing data, and give me back
->>> my partition.
->> This feature doesn't exist yet. I really want to see this, it'd be
->> great for ceph and gluster if the volume could lose a drive, report
->> all the missing files to the cluster file system, delete the device
->> and the file references, and then the cluster knows that brick doesn't
->> have those files and can replicate them somewhere else or even back to
->> the brick that had them.
->>
-> So I found this patch : https://patchwork.kernel.org/patch/7014141/
->
-> Does this seems ok ?
+I don't expect accurate data on a btrfs file system when using df, but
+after upgrading to kernel 4.4.0 I get the following:
 
-No idea I haven't tried it.
+$ df -i
+...
+/dev/sdc3               0       0          0     - /home
+/dev/sdc4               0       0          0     - /vm0
+...
 
->
-> So after patching my kernel with it,
-> I should be able to mount in rw my partition, and thus,
-> I will be able to do a btrfs delete missing
-> Which will just forgot about the old disk and everything should be fine
-> afterward ?
+Where /dev/sdc3 and /dev/sdc4 are btrfs filesystems.
 
-It will forget about the old disk but it will try to migrate all
-metadata and data that was on that disk to the remaining drives; so
-until you delete all files that are corrupt, you'll continue to get
-corruption messages about them.
+So is this a bug or not?  I ask because root (/dev/sdc3) began to
+display the error message "no space left on device", which was
+eventually cured by deleting old snapshots then btrfs fi sync and
+btrfs balance.  fi show and fi df show space, even when df -i shows 0
+inodes:
 
->
-> Is this risky ? or not so much ?
+sudo btrfs fi show /
+...
+Label: none  uuid: 9acdb642-d743-4c2a-a59f-811022c2a2b0
+        Total devices 1 FS bytes used 23.86GiB
+        devid    1 size 60.00GiB used 42.03GiB path /dev/sdc3
 
-Probably. If you care about the data, mount read only, back up what
-you can, then see if you can fix it after that.
 
-> The scrubing is almost finished, and as I was expecting, I lost no data
-> at all.
+ sudo btrfs fi df /
+Data, single: total=37.00GiB, used=21.11GiB
+System, single: total=32.00MiB, used=16.00KiB
+Metadata, single: total=5.00GiB, used=2.75GiB
+unknown, single: total=512.00MiB, used=0.00
 
-Well I'd guess the device delete should work then, but I still have no
-idea if that patch will let you mount it degraded read-write. Worth a
-shot though, it'll save time.
+Please excuse my inexperience here; I don't know how to use btrfs
+commands to show inodes.  btrfs inspect-internal will reference an
+inode as near as I can tell, but won't list the used and free inodes
+("free" may not be the correct word here, given btrfs architecture).
 
--- 
-Chris Murphy
+Many Thanks,
+
+Gordon
+
+Machine Specs:
+
+% uname -a
+Linux Bon-E 4.4.0-36-generic #55~14.04.1-Ubuntu SMP Fri Aug 12
+11:49:30 UTC 2016 x86_64 x86_64 x86_64 GNU/Linux
+
+% btrfs --version
+Btrfs v3.12
+
+% sudo btrfs fi show
+Label: none  uuid: 9acdb642-d743-4c2a-a59f-811022c2a2b0
+        Total devices 1 FS bytes used 23.86GiB
+        devid    1 size 60.00GiB used 42.03GiB path /dev/sdc3
+
+%Label: vm0  uuid: 72539416-d30e-4a34-8b2d-b2369d1fb075
+        Total devices 1 FS bytes used 349.96GiB
+        devid    1 size 374.66GiB used 374.66GiB path /dev/sdc4
+
+dmesg does not appear to show anything useful for btrfs or device, but
+mount shows:
+
+% mount | grep btrfs
+/dev/sdc3 on / type btrfs (rw,ssd,subvol=@)
+/dev/sdc3 on /home type btrfs (rw,ssd,subvol=@home)
+/dev/sdc4 on /vm0 type btrfs (rw,ssd,space_cache,compress=lzo,subvol=@vm0)
+/dev/sdc3 on /mnt/btrfs-root type btrfs (rw)

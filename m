@@ -1,86 +1,86 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wm0-f46.google.com ([74.125.82.46]:35214 "EHLO
-        mail-wm0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1754112AbcIOHoV (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 15 Sep 2016 03:44:21 -0400
-Received: by mail-wm0-f46.google.com with SMTP id i130so85041268wmf.0
-        for <linux-btrfs@vger.kernel.org>; Thu, 15 Sep 2016 00:44:21 -0700 (PDT)
-Received: from [192.168.0.1] (alexandrepoux.fr. [82.239.190.36])
-        by smtp.googlemail.com with ESMTPSA id r8sm2051152wjs.22.2016.09.15.00.44.18
-        for <linux-btrfs@vger.kernel.org>
-        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Thu, 15 Sep 2016 00:44:18 -0700 (PDT)
-To: linux-btrfs@vger.kernel.org
-From: Alexandre Poux <pums974@gmail.com>
-Subject: multi-device btrfs with single data mode and disk failure
-Message-ID: <1634818f-ff1d-722c-6d73-747ed7203a13@gmail.com>
-Date: Thu, 15 Sep 2016 09:44:18 +0200
+Received: from len.romanrm.net ([195.154.117.182]:48914 "EHLO len.romanrm.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1752746AbcIOICU (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 15 Sep 2016 04:02:20 -0400
+Date: Thu, 15 Sep 2016 13:02:13 +0500
+From: Roman Mamedov <rm@romanrm.net>
+To: Tomasz Chmielewski <tch@virtall.com>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>, Chris Mason <clm@fb.com>,
+        Zhao Lei <zhaolei@cn.fujitsu.com>
+Subject: Re: 4.4.0 - no space left with >1.7 TB free space left
+Message-ID: <20160915130213.1734d462@natsu>
+In-Reply-To: <20160408165332.450659c4@natsu>
+References: <0c19f800da3013f22f2ab0d77d5a9efb@admin.virtall.com>
+        <20160208162410.58cb2b4a@natsu>
+        <eaeffce90cd04fa5b91284ca580b5969@admin.virtall.com>
+        <20160408165332.450659c4@natsu>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
+Content-Type: multipart/signed; micalg=pgp-sha1;
+ boundary="Sig_/B5djnWnQpWuyRwb7jCnannb"; protocol="application/pgp-signature"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I had a btrfs partition on a 6 disk array without raid (metadata in
-raid10, but data in single), and one of the disks just died.
+--Sig_/B5djnWnQpWuyRwb7jCnannb
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: quoted-printable
 
-So I lost some of my data, ok, I knew that.
+On Fri, 8 Apr 2016 16:53:32 +0500
+Roman Mamedov <rm@romanrm.net> wrote:
 
-But two question :
+> On Fri, 08 Apr 2016 20:36:26 +0900
+> Tomasz Chmielewski <tch@virtall.com> wrote:
+>=20
+> > On 2016-02-08 20:24, Roman Mamedov wrote:
+> >=20
+> > >> Linux 4.4.0 - btrfs is mainly used to host lots of test containers,
+> > >> often snapshots, and at times, there is heavy IO in many of them for
+> > >> extended periods of time. btrfs is on HDDs.
+> > >>=20
+> > >>=20
+> > >> Every few days I'm getting "no space left" in a container running=20
+> > >> mongo
+> > >> 3.2.1 database. Interestingly, haven't seen this issue in containers
+> > >> with MySQL. All databases have chattr +C set on their directories.
+> > >=20
+> > > Hello,
+> > >=20
+> > > Do you snapshot the parent subvolume which holds the databases? Can y=
+ou
+> > > correlate that perhaps ENOSPC occurs at the time of snapshotting? If=
+=20
+> > > yes, then
+> > > you should try the patch https://patchwork.kernel.org/patch/7967161/
+> > >=20
+> > > (Too bad this was not included into 4.4.1.)
+> >=20
+> > By the way - was it included in any later kernel? I'm running 4.4.5 on=
+=20
+> > that server, but still hitting the same issue.
+>=20
+> It's not in 4.4.6 either. I don't know why it doesn't get included, or wh=
+at
+> we need to do. Last time I asked, it was queued:
+> http://www.spinics.net/lists/linux-btrfs/msg52478.html
+> But maybe that meant 4.5 or 4.6 only? While the bug is affecting people on
+> 4.4.x today.
 
-  *
+This got applied now in 4.4.21, thanks.
 
-    Is it possible to know (using metadata I suppose) what data I have
-    lost ?
+--=20
+With respect,
+Roman
 
-  *
+--Sig_/B5djnWnQpWuyRwb7jCnannb
+Content-Type: application/pgp-signature
+Content-Description: OpenPGP digital signature
 
-    Is it possible to do some king of a "btrfs delete missing" on this
-    kind of setup, in order to recover access in rw to my other data, or
-    I must copy all my data on a new partition
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2
 
-I haven't been able to get any answer on google or in the wiki, so I
-send here an e-mail, hoping that's the right place. Excuse me, if I'm wrong.
+iEYEARECAAYFAlfaVYgACgkQTLKSvz+PZwjCwACff06f/0P/5tVPW0g09hRw303R
+rfwAoI0dZn6kkchHxh2vMnbLfVnlkuRQ
+=NvsG
+-----END PGP SIGNATURE-----
 
-Thank you for any help
-
-(Sorry for my poor english)
-
-uname -a :
-Linux Grand-PC 4.7.2-1-ARCH #1 SMP PREEMPT Sat Aug 20 23:02:56 CEST 2016
-x86_64 GNU/Linux
-
-btrfs --version :
-btrfs-progs v4.7.1
-
-btrfs fi show :
-Label: 'Data'  uuid: 62db560b-a040-4c64-b613-6e7db033dc4d
-    Total devices 6 FS bytes used 6.66TiB
-    devid    1 size 2.53TiB used 2.12TiB path /dev/sdd6
-    devid    7 size 2.53TiB used 2.12TiB path /dev/sdb6
-    devid    9 size 262.57GiB used 0.00B path /dev/sde6
-    devid   11 size 2.53TiB used 2.12TiB path /dev/sdc6
-    devid   12 size 728.32GiB used 312.03GiB path /dev/sda6
-    *** Some devices missing
-
-
-mount -o recovery,ro,degraded /dev/sda6 /Data
-
-relevant part of dmesg :
-[ 1828.093704] BTRFS warning (device sda6): 'recovery' is deprecated,
-use 'usebackuproot' instead
-[ 1828.093708] BTRFS info (device sda6): trying to use backup root at
-mount time
-[ 1828.093718] BTRFS info (device sda6): allowing degraded mounts
-[ 1828.093719] BTRFS info (device sda6): disk space caching is enabled
-[ 1828.107763] BTRFS warning (device sda6): devid 8 uuid
-950378c0-307c-413d-9805-ab2bb899aa78 missing
-
-btrfs fi df /Data
-Data, single: total=6.65TiB, used=6.65TiB
-System, RAID1: total=32.00MiB, used=768.00KiB
-Metadata, RAID1: total=13.00GiB, used=10.99GiB
-GlobalReserve, single: total=512.00MiB, used=0.00B
-
-
-
+--Sig_/B5djnWnQpWuyRwb7jCnannb--

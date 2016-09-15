@@ -1,47 +1,86 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mondschein.lichtvoll.de ([194.150.191.11]:56259 "EHLO
-        mail.lichtvoll.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751127AbcIOO4M (ORCPT
+Received: from mail-oi0-f47.google.com ([209.85.218.47]:34577 "EHLO
+        mail-oi0-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751613AbcIOPiI (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 15 Sep 2016 10:56:12 -0400
-From: Martin Steigerwald <martin@lichtvoll.de>
-To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Cc: Hans van Kranenburg <hans.van.kranenburg@mendix.com>,
-        Christoph Anton Mitterer <calestyo@scientia.net>,
-        linux-btrfs@vger.kernel.org
-Subject: Re: stability matrix
-Date: Thu, 15 Sep 2016 16:56:08 +0200
-Message-ID: <2744649.NKL5C81YJK@merkaba>
-In-Reply-To: <b21c740b-5d71-7edd-f2fd-1ba6ea156dba@gmail.com>
-References: <57D51BF9.2010907@online.no> <c58cd350-a1e8-7d1c-cf8c-84f7f0c05682@mendix.com> <b21c740b-5d71-7edd-f2fd-1ba6ea156dba@gmail.com>
+        Thu, 15 Sep 2016 11:38:08 -0400
+Received: by mail-oi0-f47.google.com with SMTP id m11so75058451oif.1
+        for <linux-btrfs@vger.kernel.org>; Thu, 15 Sep 2016 08:38:07 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset="UTF-8"
+In-Reply-To: <1634818f-ff1d-722c-6d73-747ed7203a13@gmail.com>
+References: <1634818f-ff1d-722c-6d73-747ed7203a13@gmail.com>
+From: Chris Murphy <lists@colorremedies.com>
+Date: Thu, 15 Sep 2016 09:38:04 -0600
+Message-ID: <CAJCQCtQHBkx8kjcAdSbmgYcHCo_w3VPj8jvgby3cE-S6rLAPdw@mail.gmail.com>
+Subject: Re: multi-device btrfs with single data mode and disk failure
+To: Alexandre Poux <pums974@gmail.com>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am Donnerstag, 15. September 2016, 07:54:26 CEST schrieb Austin S. Hemmelgarn:
-> On 2016-09-15 05:49, Hans van Kranenburg wrote:
-> > On 09/15/2016 04:14 AM, Christoph Anton Mitterer wrote:
-[…]
-> I specifically do not think we should worry about distro kernels though.
->   If someone is using a specific distro, that distro's documentation
-> should cover what they support and what works and what doesn't.  Some
-> (like Arch and to a lesser extent Gentoo) use almost upstream kernels,
-> so there's very little point in tracking them.  Some (like Ubuntu and
-> Debian) use almost upstream LTS kernels, so there's little point
-> tracking them either.  Many others though (like CentOS, RHEL, and OEL)
-> Use forked kernels that have so many back-ported patches that it's
-> impossible to track up-date to up-date what the hell they've got.  A
-> rather ridiculous expression regarding herding of cats comes to mind
-> with respect to the last group.
+On Thu, Sep 15, 2016 at 1:44 AM, Alexandre Poux <pums974@gmail.com> wrote:
+> I had a btrfs partition on a 6 disk array without raid (metadata in
+> raid10, but data in single), and one of the disks just died.
+>
+> So I lost some of my data, ok, I knew that.
+>
+> But two question :
+>
+>   *
+>
+>     Is it possible to know (using metadata I suppose) what data I have
+>     lost ?
 
-Yep. I just read through RHEL releasenotes for a RHEL 7 workshop I will hold 
-for a customer… and noted that newer RHEL 7 kernels for example have device 
-mapper from Kernel 4.1 (while the kernel still says its a 3.10 one), XFS from 
-kernel this.that, including new incompat CRC disk format and the need to also 
-upgrade xfsprogs in lockstep, and this and that from kernel this.that and so 
-on. Frankenstein as an association comes to my mind, but I bet RHEL kernel 
-engineers know what they are doing.
+The safest option is to remount read only and do a read only scrub.
+That will spit out messages for corrupt (missing) metadata and data,
+to the kernel message buffer.  The  missing data will appear as
+corrupt files that can't be fixed with full file paths. There will
+likely be so many that dmesg will be useless so you'll need to use
+journalctl -fk to follow the scrub; or journalctl -bk after the fact
+or even -b-1 -k or -b-2 -k, etc.; or /var/log/messages as it's
+probably going to exceed the kernel message buffer, so dmesg won't
+help.
+
+
+
+
+>     Is it possible to do some king of a "btrfs delete missing" on this
+>     kind of setup, in order to recover access in rw to my other data, or
+>     I must copy all my data on a new partition
+
+That *should* work :) Except that your file system with 6 drives is
+too full to be shrunk to 5 drives. Btrfs will either refuse, or get
+confused, about how to shrink a nearly full 6 drive volume into 5.
+
+So you'll have to do one of three things:
+
+1. Add a 2+TB drive, then remove the missing one; OR
+2. btrfs replace is faster and is raid10 reliable; OR
+3. Read only scrub to get a file listing of bad files, then remount
+read-write degraded and delete them all. Now you maybe can do a device
+delete missing. But it's still a tight fit, it basically has to
+balance things out to get it to fit on an odd number of drives, it may
+actually not work even though there seems to be enough total space,
+there has to be enough space on FOUR drives.
+
+
+I'd go with option 2.  And that should still spit out the paths to bad
+files. If the replace works, I'm pretty sure you still need to delete
+all of the files that are missing in order to get rid of the
+corruption warnings on any subsequent scrub or balance.
+
+
+
+>
+> btrfs --version :
+> btrfs-progs v4.7.1
+
+You should upgrade to 4.7.2 or downgrade to 4.6.1 before doing btrfs
+check. Not urgent so long as you don't actually do a repair with this
+version.
+
+
 
 -- 
-Martin
+Chris Murphy

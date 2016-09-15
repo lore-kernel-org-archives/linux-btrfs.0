@@ -1,65 +1,88 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:27786 "EHLO
-        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1034290AbcIZSCW (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:31503 "EHLO
+        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1756232AbcIOASE (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 26 Sep 2016 14:02:22 -0400
-Date: Mon, 26 Sep 2016 11:07:35 -0700
+        Wed, 14 Sep 2016 20:18:04 -0400
 From: Liu Bo <bo.li.liu@oracle.com>
-To: dsterba@suse.cz
-Cc: linux-btrfs@vger.kernel.org, Chris Mason <clm@fb.com>
-Subject: Re: [PATCH] Btrfs: memset to avoid stale content in btree leaf
-Message-ID: <20160926180735.GA23858@localhost.localdomain>
-Reply-To: bo.li.liu@oracle.com
-References: <1474663484-23245-1-git-send-email-bo.li.liu@oracle.com>
- <20160926165444.GD16983@twin.jikos.cz>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20160926165444.GD16983@twin.jikos.cz>
+To: linux-btrfs@vger.kernel.org
+Cc: David Sterba <dsterba@suse.cz>
+Subject: [PATCH] Btrfs: improve check_node to avoid reading corrupted nodes
+Date: Wed, 14 Sep 2016 17:23:24 -0700
+Message-Id: <1473899004-29697-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Sep 26, 2016 at 06:54:44PM +0200, David Sterba wrote:
-> On Fri, Sep 23, 2016 at 01:44:44PM -0700, Liu Bo wrote:
-> > @@ -3732,15 +3734,21 @@ static noinline_for_stack int write_one_eb(struct extent_buffer *eb,
-> >  	if (btrfs_header_owner(eb) == BTRFS_TREE_LOG_OBJECTID)
-> >  		bio_flags = EXTENT_BIO_TREE_LOG;
-> >  
-> > -	/* set btree node beyond nritems with 0 to avoid stale content */
-> > +	/* set btree blocks beyond nritems with 0 to avoid stale content. */
-> > +	nritems = btrfs_header_nritems(eb);
-> >  	if (btrfs_header_level(eb) > 0) {
-> > -		u32 nritems;
-> > -		unsigned long end;
-> > -
-> > -		nritems = btrfs_header_nritems(eb);
-> >  		end = btrfs_node_key_ptr_offset(nritems);
-> >  
-> >  		memset_extent_buffer(eb, 0, end, eb->len - end);
-> > +	} else {
-> > +		/*
-> > +		 * leaf:
-> > +		 * header 0 1 2 .. N ... data_N .. data_2 data_1 data_0
-> > +		 */
-> > +		start = btrfs_item_nr_offset(nritems);
-> 
-> So, AFAICS this also works for empty root nodes (nritems == 0). It's
-> hidden in leaf_data_end that actually looks at nritems and decides.
-> 
-> Reviewed-by: David Sterba <dsterba@suse.com>
+We need to check items in a node to make sure that we're reading
+a valid one, otherwise we could get various crashes while processing
+delayed_refs.
 
-Yeah, you're right, case (nritems == 0) has already been taken care in this patch.
+Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+---
+ fs/btrfs/disk-io.c | 32 ++++++++++++++++++++++++++++----
+ 1 file changed, 28 insertions(+), 4 deletions(-)
 
-Thanks a lot for reviewing it.
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index b401e6d..1059e5d 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -547,9 +547,10 @@ static int check_tree_block_fsid(struct btrfs_fs_info *fs_info,
+ }
+ 
+ #define CORRUPT(reason, eb, root, slot)				\
+-	btrfs_crit(root->fs_info, "corrupt leaf, %s: block=%llu,"	\
+-		   "root=%llu, slot=%d", reason,			\
+-	       btrfs_header_bytenr(eb),	root->objectid, slot)
++	btrfs_crit(root->fs_info, "corrupt %s, %s: block=%llu,"	\
++		   " root=%llu, slot=%d",			\
++		   btrfs_header_level(eb) == 0 ? "leaf" : "node",\
++		   reason, btrfs_header_bytenr(eb), root->objectid, slot)
+ 
+ static noinline int check_leaf(struct btrfs_root *root,
+ 			       struct extent_buffer *leaf)
+@@ -640,6 +641,10 @@ static noinline int check_leaf(struct btrfs_root *root,
+ static int check_node(struct btrfs_root *root, struct extent_buffer *node)
+ {
+ 	unsigned long nr = btrfs_header_nritems(node);
++	struct btrfs_key key, next_key;
++	int slot;
++	u64 bytenr;
++	int ret = 0;
+ 
+ 	if (nr == 0 || nr > BTRFS_NODEPTRS_PER_BLOCK(root)) {
+ 		btrfs_crit(root->fs_info,
+@@ -647,7 +652,26 @@ static int check_node(struct btrfs_root *root, struct extent_buffer *node)
+ 			   node->start, root->objectid, nr);
+ 		return -EIO;
+ 	}
+-	return 0;
++
++	for (slot = 0; slot < nr - 1; slot++) {
++		bytenr = btrfs_node_blockptr(node, slot);
++		btrfs_node_key_to_cpu(node, &key, slot);
++		btrfs_node_key_to_cpu(node, &next_key, slot + 1);
++
++		if (!bytenr) {
++			CORRUPT("invalid item slot", node, root, slot);
++			ret = -EIO;
++			goto out;
++		}
++
++		if (btrfs_comp_cpu_keys(&key, &next_key) >= 0) {
++			CORRUPT("bad key order", node, root, slot);
++			ret = -EIO;
++			goto out;
++		}
++	}
++out:
++	return ret;
+ }
+ 
+ static int btree_readpage_end_io_hook(struct btrfs_io_bio *io_bio,
+-- 
+2.5.5
 
-Thanks,
-
--liubo
-> 
-> > +		end = btrfs_leaf_data(eb) +
-> > +		      leaf_data_end(fs_info->tree_root, eb);
-> > +		memset_extent_buffer(eb, 0, start, end - start);
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-

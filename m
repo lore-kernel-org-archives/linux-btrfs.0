@@ -1,161 +1,109 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [195.159.176.226] ([195.159.176.226]:57755 "EHLO
-        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
-        with ESMTP id S1755261AbcIOLrh (ORCPT
+Received: from mail-it0-f47.google.com ([209.85.214.47]:38276 "EHLO
+        mail-it0-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1754591AbcIOLyd (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 15 Sep 2016 07:47:37 -0400
-Received: from list by blaine.gmane.org with local (Exim 4.84_2)
-        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-        id 1bkV8d-0000ht-Ru
-        for linux-btrfs@vger.kernel.org; Thu, 15 Sep 2016 13:47:31 +0200
-To: linux-btrfs@vger.kernel.org
-From: Alex Elsayed <eternaleye@gmail.com>
-Subject: Re: [RFC] Preliminary BTRFS Encryption
-Date: Thu, 15 Sep 2016 11:47:21 +0000 (UTC)
-Message-ID: <nre1o9$hdn$2@blaine.gmane.org>
-References: <1473773990-3071-1-git-send-email-anand.jain@oracle.com>
-        <nrd9ge$hdn$1@blaine.gmane.org>
-        <542bb47d-c035-2b49-a39a-074a792af215@oracle.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+        Thu, 15 Sep 2016 07:54:33 -0400
+Received: by mail-it0-f47.google.com with SMTP id n143so70993109ita.1
+        for <linux-btrfs@vger.kernel.org>; Thu, 15 Sep 2016 04:54:32 -0700 (PDT)
+Subject: Re: stability matrix
+To: Hans van Kranenburg <hans.van.kranenburg@mendix.com>,
+        Christoph Anton Mitterer <calestyo@scientia.net>,
+        linux-btrfs@vger.kernel.org
+References: <57D51BF9.2010907@online.no>
+ <20160912142714.GE16983@twin.jikos.cz>
+ <52304724-5bca-a1e6-527f-040085c7ab19@gmail.com>
+ <20160912165107.GG16983@twin.jikos.cz>
+ <58a954fc-bbd5-3fb5-9f23-008ed7f7121d@gmail.com>
+ <20160915010759.GD32452@DigitalMercury.dynalias.net>
+ <5dec6544a78a0301a8e0cd9086179f99@crc.id.au>
+ <1473905644.8603.44.camel@scientia.net>
+ <c58cd350-a1e8-7d1c-cf8c-84f7f0c05682@mendix.com>
+From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Message-ID: <b21c740b-5d71-7edd-f2fd-1ba6ea156dba@gmail.com>
+Date: Thu, 15 Sep 2016 07:54:26 -0400
+MIME-Version: 1.0
+In-Reply-To: <c58cd350-a1e8-7d1c-cf8c-84f7f0c05682@mendix.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, 15 Sep 2016 19:33:48 +0800, Anand Jain wrote:
-
-> Thanks for commenting. pls see inline below.
-> 
-> On 09/15/2016 12:53 PM, Alex Elsayed wrote:
->> On Tue, 13 Sep 2016 21:39:46 +0800, Anand Jain wrote:
+On 2016-09-15 05:49, Hans van Kranenburg wrote:
+> On 09/15/2016 04:14 AM, Christoph Anton Mitterer wrote:
+>> Hey.
 >>
->>> This patchset adds btrfs encryption support.
->>>
->>> The main objective of this series is to have bugs fixed and stability.
->>> I have verified with fstests to confirm that there is no regression.
->>>
->>> A design write-up is coming next, however here below is the quick
->>> example on the cli usage. Please try out, let me know if I have missed
->>> something.
->>>
->>> Also would like to mention that a review from the security experts is
->>> due,
->>> which is important and I believe those review comments can be
->>> accommodated without major changes from here.
->>>
->>> Also yes, thanks for the emails, I hear, per file encryption and
->>> inline with vfs layer is also important, which is wip among other
->>> things in the list.
->>>
->>> As of now these patch set supports encryption on per subvolume, as
->>> managing properties on per subvolume is a kind of core to btrfs, which
->>> is easier for data center solution-ing, seamlessly persistent and easy
->>> to manage.
->>>
->>>
->>> Steps:
->>> -----
->>>
->>> Make sure following kernel TFMs are compiled in.
->>> # cat /proc/crypto | egrep 'cbc\(aes\)|ctr\(aes\)'
->>> name         : ctr(aes)
->>> name         : cbc(aes)
+>> As for the stability matrix...
 >>
->> First problem: These are purely encryption algorithms, rather than AE
->> (Authenticated Encryption) or AEAD (Authenticated Encryption with
->> Associated Data). As a result, they are necessarily vulnerable to
->> adaptive chosen-ciphertext attacks, and CBC has historically had other
->> issues. I highly recommend using a well-reviewed AE or AEAD mode, such
->> as AES-GCM (as ecryptfs does), as long as the code can handle the
->> ciphertext being longer than the plaintext.
->>
->> If it _cannot_ handle the ciphertext being longer than the plaintext,
->> please consider that a very serious red flag: It means that you cannot
->> provide better security than block-level encryption, which greatly
->> reduces the benefit of filesystem-integrated encryption. Being at the
->> extent level _should_ permit using AEAD - if it does not, something is
->> wrong.
->>
->> If at all possible, I'd suggest _only_ permitting AEAD cipher modes to
->> be used.
->>
->> Anyway, even for block-level encryption, CTR and CBC have been
->> considered obsolete and potentially dangerous to use in disk encryption
->> for quite a while - current recommendations for block-level encryption
->> are to use either a narrow-block tweakable cipher mode (such as XTS),
->> or a wide- block one (such as EME or CMC), with the latter providing
->> slightly better security, but worse performance.
-> 
->    Yes. CTR should be changed, so I have kept it as a cli option. And
->    with the current internal design, hope we can plugin more algorithms
->    as suggested/if-its-outdated and yes code can handle (or with a
->    little tweak) bigger ciphertext (than plaintext) as well.
-> 
->    encryption + keyhash (as below) + Btrfs-data-checksum provides
->    similar to AE,  right ?
+>> In general:
+>> - I think another column should be added, which tells when and for
+>>   which kernel version the feature-status of each row was
+>>   revised/updated the last time and especially by whom.
+>>   If a core dev makes a statement on a particular feature, this
+>>   probably means much more, than if it was made by "just" a list
+>>   regular.
+>>   And yes I know, in the beginning it already says "this is for 4.7"...
+>>   but let's be honest, it's pretty likely when this is bumped to 4.8
+>>   that not each and every point will be thoroughly checked again.
+>> - Optionally even one further column could be added, that lists bugs
+>>   where the specific cases are kept record of (if any).
+>> - Perhaps a 3rd Status like "eats-your-data" which is worse than
+>>   critical, e.g. for things were it's known that there is a high
+>>   chance for still getting data corruption (RAID56?)
+>
+> About the "for 4.7" issue... The Status page could have an extra column,
+> which for every OK labeled row lists the first version (kernel.org x.y.0
+> release) it's OK for.
+>
+> The bugs make it more complicated.
+>
+> * Feature A is labeled OK in kernel 5.0
+> * During development of kernel 8-rc, an eat my data bug is fixed. The OK
+> for this feature in the table is bumped to 8.0?
+> * kernel 5 is EOL
+> * kernel 6 is still supported, and the fix is applied to 6.12
+> * then there's distros which have their own old kernels, applying fixes
+> on them whenever they like, for example 5.6-distro4 which is leading its
+> own life
+>
+> "Normal" users are using distro kernels. They shouldn't be panicing
+> about their data if they're running 6.14 or 5.6-distro4, but the OK in
+> the table is bumped to 8.0 because of the serious bugs.
+>
+> At least the official kernels should be tracked in the table I think.
+>
+> Separately, a list of known serious bugs per feature (like the 4 about
+> compression, http://www.spinics.net/lists/linux-btrfs/msg58674.html )
+> could be listed on another Bugs! page (lots of work) so a user, or
+> someone helping the user can see if the listed commits are or aren't
+> included in the actual whatever kernel a user is using.
+>
+> This list of serious bugs could also help disussions that now sound like
+> "yeah, there were issues with compression which some time ago got fixed,
+> but noone knows what it was and when, so don't use compression".
+>
+> Many of the commits which fix serious bugs (even if they're only
+> triggered in an edge case) have some explanation about how to trigger
+> them, like the excellent commit messages of Filipe in the commits
+> mentioned above. This helps setting up and maintaining the bug page, and
+> helps advanced users to decide if they're hitting the edge case or not
+> with their usage pattern.
+>
+> I'd like to help creating/maintaining this bug overview. A good start
+> would be to just crawl through all stable kernels and some distro
+> kernels and see which commits show up in fs/btrfs.
+>
+As of right now, we kind of do have such a page:
+https://btrfs.wiki.kernel.org/index.php/Gotchas
+It's not really well labeled though, ans it's easy to overlook.
 
-No, it does not provide anything remotely similar to AE. AE requires 
-_cryptographic_ authentication of the data. Not only is a CRC (as Btrfs 
-uses for the data checksum) not enough, a _cryptographic hash_ (such as 
-SHA256) isn't even enough. A MAC (message authentication code) is 
-necessary.
-
-Moreover, combining an encryption algorithm and a MAC is very easy to get 
-wrong, in ways that absolutely ruin security - as an example, see the 
-Vaudenay/Lucky13 padding oracle attacks on TLS.
-
-In order for this to be secure, you need to use a secure encryption 
-system that also authenticates the data in a cryptographically secure 
-manner. Certain schemes are well-studied and believed to be secure - AES-
-GCM and ChaCha20-Poly1305 are common and well-regarded, and there's a 
-generic security reduction for Encrypt-then-MAC constructions (using CTR 
-together with HMAC in such a construction is generally acceptable).
-
-The Btrfs data checksum is wholly inadequate, and the keyhash is a non-
-sequitur - it prevents accidentally opening the subvolume with the wrong 
-key, but neither it (nor the btrfs data checksum, which is a CRC rather 
-than a cryptographic MAC) protect adequately against malicious corruption 
-of the ciphertext.
-
-I'd suggest pulling in Herbert Xu, as he'd likely be able to tell you 
-what of the Crypto API is actually sane to use for this.
-
->>> Create encrypted subvolume.
->>> # btrfs su create -e 'ctr(aes)' /btrfs/e1 Create subvolume '/btrfs/e1'
->>> Passphrase:
->>> Again passphrase:
->>
->> I presume the command first creates a key, then creates a subvolume
->> referencing that key? If so, that seems sensible.
-> 
->   Hmm I didn't get the why part, any help ? (this doesn't encrypt
->   metadata part).
-
-Basically, if your tool merely sets up an entry in the kernel keyring, 
-then calls the subvolume creation interface (passing in the key ID), then 
-it can be composed with more advanced tooling that generates the key in a 
-different manner.
-
-If, instead, you call the subvolume creation API with a flag saying 
-"please also create a key", then it does not compose and is inflexible.
-
-That then becomes an obstacle to later extensions, such as trusted & 
-encrypted keys.
-
->>> A key is created and its hash is updated into the subvolume item,
->>> and then added to the system keyctl.
->>> # btrfs su show /btrfs/e1 | egrep -i encrypt
->>> 	Encryption: 		ctr(aes)@btrfs:75197c8e (594790215)
->>>
->>> # keyctl show 594790215 Keyring
->>>  594790215 --alsw-v      0     0  logon: btrfs:75197c8e
->>
->> That's entirely reasonable, though you may want to support "trusted and
->> encrypted keys" (Documentation/security/keys-trusted-encrypted.txt)
-> 
->    Yes. that's in the list.
-> 
-
-Okay, good to hear!
-
-<snip>
-
+I specifically do not think we should worry about distro kernels though. 
+  If someone is using a specific distro, that distro's documentation 
+should cover what they support and what works and what doesn't.  Some 
+(like Arch and to a lesser extent Gentoo) use almost upstream kernels, 
+so there's very little point in tracking them.  Some (like Ubuntu and 
+Debian) use almost upstream LTS kernels, so there's little point 
+tracking them either.  Many others though (like CentOS, RHEL, and OEL) 
+Use forked kernels that have so many back-ported patches that it's 
+impossible to track up-date to up-date what the hell they've got.  A 
+rather ridiculous expression regarding herding of cats comes to mind 
+with respect to the last group.

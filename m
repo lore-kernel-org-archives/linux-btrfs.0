@@ -1,155 +1,91 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:30095 "EHLO
-        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753565AbcIOOEV (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 15 Sep 2016 10:04:21 -0400
-Subject: Re: [RFC] Preliminary BTRFS Encryption
-To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>, linux-btrfs@vger.kernel.org
-References: <1473773990-3071-1-git-send-email-anand.jain@oracle.com>
- <bce627a8-7dcc-71f6-dd44-0444f7993725@gmail.com>
-Cc: clm@fb.com, dsterba@suse.cz
-From: Anand Jain <anand.jain@oracle.com>
-Message-ID: <69c23d9b-c1be-41ba-1382-3505ba88fdf9@oracle.com>
-Date: Thu, 15 Sep 2016 22:06:06 +0800
+Received: from mx1.redhat.com ([209.132.183.28]:60808 "EHLO mx1.redhat.com"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1757352AbcIOOHc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 15 Sep 2016 10:07:32 -0400
+Received: from int-mx14.intmail.prod.int.phx2.redhat.com (int-mx14.intmail.prod.int.phx2.redhat.com [10.5.11.27])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+        (No client certificate requested)
+        by mx1.redhat.com (Postfix) with ESMTPS id C1B6E7F6A4
+        for <linux-btrfs@vger.kernel.org>; Thu, 15 Sep 2016 14:07:31 +0000 (UTC)
+Received: from [IPv6:::1] (ovpn03.gateway.prod.ext.phx2.redhat.com [10.5.9.3])
+        by int-mx14.intmail.prod.int.phx2.redhat.com (8.14.4/8.14.4) with ESMTP id u8FE7UvL027959
+        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
+        for <linux-btrfs@vger.kernel.org>; Thu, 15 Sep 2016 10:07:31 -0400
+Subject: Re: mkfs+mount failure of small fs on ppc64
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+References: <2210b649-c379-106a-2de4-923a0ce55593@redhat.com>
+From: Eric Sandeen <sandeen@redhat.com>
+Message-ID: <e5b1dbda-c244-a550-0a58-443b17408d59@redhat.com>
+Date: Thu, 15 Sep 2016 09:07:30 -0500
 MIME-Version: 1.0
-In-Reply-To: <bce627a8-7dcc-71f6-dd44-0444f7993725@gmail.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+In-Reply-To: <2210b649-c379-106a-2de4-923a0ce55593@redhat.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On 9/13/16 4:44 PM, Eric Sandeen wrote:
+> on ppc64, 4.7-rc kernel, git btrfs-progs, v4.7.2:
+> 
+> # truncate --size=500m testfile
+> # ./mkfs.btrfs testfile
+> # mkdir -p mnt
+> # mount -o loop testfile mnt
 
-Thanks for comments.
-Pls see inline as below.
+Same failure on aarch64 if that makes it any more interesting.  ;)
 
-On 09/15/2016 07:37 PM, Austin S. Hemmelgarn wrote:
-> On 2016-09-13 09:39, Anand Jain wrote:
->>
->> This patchset adds btrfs encryption support.
->>
->> The main objective of this series is to have bugs fixed and stability.
->> I have verified with fstests to confirm that there is no regression.
->>
->> A design write-up is coming next, however here below is the quick example
->> on the cli usage. Please try out, let me know if I have missed something.
->>
->> Also would like to mention that a review from the security experts is
->> due,
->> which is important and I believe those review comments can be
->> accommodated
->> without major changes from here.
->>
->> Also yes, thanks for the emails, I hear, per file encryption and inline
->> with vfs layer is also important, which is wip among other things in the
->> list.
->>
->> As of now these patch set supports encryption on per subvolume, as
->> managing properties on per subvolume is a kind of core to btrfs, which is
->> easier for data center solution-ing, seamlessly persistent and easy to
->> manage.
->>
->>
->> Steps:
->> -----
->>
->> Make sure following kernel TFMs are compiled in.
->> # cat /proc/crypto | egrep 'cbc\(aes\)|ctr\(aes\)'
->> name         : ctr(aes)
->> name         : cbc(aes)
->>
->> Create encrypted subvolume.
->> # btrfs su create -e 'ctr(aes)' /btrfs/e1
->> Create subvolume '/btrfs/e1'
->> Passphrase:
->> Again passphrase:
->>
->> A key is created and its hash is updated into the subvolume item,
->> and then added to the system keyctl.
->> # btrfs su show /btrfs/e1 | egrep -i encrypt
->>     Encryption:         ctr(aes)@btrfs:75197c8e (594790215)
->>
->> # keyctl show 594790215
->> Keyring
->>  594790215 --alsw-v      0     0  logon: btrfs:75197c8e
->>
->>
->> Now any file data extents under the subvol /btrfs/e1 will be
->> encrypted.
->>
->> You may revoke key using keyctl or btrfs(8) as below.
->> # btrfs su encrypt -k out /btrfs/e1
->>
->> # btrfs su show /btrfs/e1 | egrep -i encrypt
->>     Encryption:         ctr(aes)@btrfs:75197c8e (Required key not
->> available)
->>
->> # keyctl show 594790215
->> Keyring
->> Unable to dump key: Key has been revoked
->>
->> As the key hash is updated, If you provide wrong passphrase in the next
->> key in, it won't add key to the system. So we have key verification
->> from the day1.
->>
->> # btrfs su encrypt -k in /btrfs/e1
->> Passphrase:
->> Again passphrase:
->> ERROR: failed to set attribute 'btrfs.encrypt' to
->> 'ctr(aes)@btrfs:75197c8e' : Key was rejected by service
->>
->> ERROR: key set failed: Key was rejected by service
->>
->> # btrfs su encrypt -k in /btrfs/e1
->> Passphrase:
->> Again passphrase:
->> key for '/btrfs/e1' has  logged in with keytag 'btrfs:75197c8e'
->>
->> Now if you revoke the key the read / write fails with key error.
->>
->> # md5sum /btrfs/e1/2k-test-file
->> 8c9fbc69125ebe84569a5c1ca088cb14  /btrfs/e1/2k-test-file
->>
->> # btrfs su encrypt -k out /btrfs/e1
->>
->> # md5sum /btrfs/e1/2k-test-file
->> md5sum: /btrfs/e1/2k-test-file: Key has been revoked
->>
->> # cp /tfs/1k-test-file /btrfs/e1/
->> cp: cannot create regular file ‘/btrfs/e1/1k-test-file’: Key has been
->> revoked
->>
->> Plain text memory scratches for security reason is pending. As there
->> are some
->> key revoke notification challenges to coincide with encryption context
->> switch,
->> which I do believe should be fixed in the due course, but is not a
->> roadblock
->> at this stage.
->>
+# mount -o loop testfile mnt
+mount: mount /dev/loop0 on /root/mnt failed: No space left on device
 
+Sector size issue I guess, driven by page size.
 
+-Eric
 
-> Before I make any other comments, I should state that I asbolutely agree
-> with Alex Elsayed about the issues with using CBC or CTR mode, and not
-> supporting AE or AEAD modes.
-
-   Alex comments was quite detailed, I did reply to it.
-   Looks like you missed my reply to Alex's comments ?
-
-> How does this handle cloning of extents?  Can extents be cloned across
-> subvolume boundaries when one of the subvolumes is encrypted?
-
-  Yes only if both the subvol keys match.
-
-> Can they
-> be cloned within an encrypted subvolume?
-
-  Yes. That's things as usual.
-
-> What happens when you try to
-> clone them in either case if it isn't supported?
-
-  Gets -EOPNOTSUPP.
-
-Thanks, Anand
+> btrfs-progs v4.7.2
+> See http://btrfs.wiki.kernel.org for more information.
+> 
+> Label:              (null)
+> UUID:               c531b759-a491-4c9f-a954-4787cea9106d
+> Node size:          65536
+> Sector size:        65536
+> Filesystem size:    500.00MiB
+> Block group profiles:
+>   Data:             single            8.00MiB
+>   Metadata:         DUP              32.00MiB
+>   System:           DUP               8.00MiB
+> SSD detected:       no
+> Incompat features:  extref, skinny-metadata
+> Number of devices:  1
+> Devices:
+>    ID        SIZE  PATH
+>     1   500.00MiB  testfile
+> 
+> 
+> # dmesg -c
+> [   61.210287] loop: module loaded
+> [   61.247105] BTRFS: device fsid a8d79cd0-977f-4b93-8410-246dc08b3683 devid 1 transid 5 /dev/loop0
+> [   61.247391] BTRFS info (device loop0): disk space caching is enabled
+> [   61.247397] BTRFS info (device loop0): has skinny extents
+> [   61.270492] BTRFS info (device loop0): creating UUID tree
+> [   61.312149] BTRFS warning (device loop0): failed to create the UUID tree: -28
+> [   61.483028] BTRFS: open_ctree failed
+> 
+> 2nd mount works:
+> 
+> # mount -o loop testfile mnt
+> # dmesg -c
+> [   87.504564] BTRFS info (device loop0): disk space caching is enabled
+> [   87.504579] BTRFS info (device loop0): has skinny extents
+> [   87.506979] BTRFS info (device loop0): creating UUID tree
+> 
+> Any ideas?  This seems to have regressed since 3.9.1, but there are a couple
+> other mkfs breakages in between, and my bisect was not fruitful.
+> 
+> Thanks,
+> -Eric
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
 

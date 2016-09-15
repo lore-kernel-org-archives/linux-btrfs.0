@@ -1,109 +1,155 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-it0-f47.google.com ([209.85.214.47]:38276 "EHLO
-        mail-it0-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1754591AbcIOLyd (ORCPT
+Received: from userp1040.oracle.com ([156.151.31.81]:30095 "EHLO
+        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1753565AbcIOOEV (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 15 Sep 2016 07:54:33 -0400
-Received: by mail-it0-f47.google.com with SMTP id n143so70993109ita.1
-        for <linux-btrfs@vger.kernel.org>; Thu, 15 Sep 2016 04:54:32 -0700 (PDT)
-Subject: Re: stability matrix
-To: Hans van Kranenburg <hans.van.kranenburg@mendix.com>,
-        Christoph Anton Mitterer <calestyo@scientia.net>,
-        linux-btrfs@vger.kernel.org
-References: <57D51BF9.2010907@online.no>
- <20160912142714.GE16983@twin.jikos.cz>
- <52304724-5bca-a1e6-527f-040085c7ab19@gmail.com>
- <20160912165107.GG16983@twin.jikos.cz>
- <58a954fc-bbd5-3fb5-9f23-008ed7f7121d@gmail.com>
- <20160915010759.GD32452@DigitalMercury.dynalias.net>
- <5dec6544a78a0301a8e0cd9086179f99@crc.id.au>
- <1473905644.8603.44.camel@scientia.net>
- <c58cd350-a1e8-7d1c-cf8c-84f7f0c05682@mendix.com>
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <b21c740b-5d71-7edd-f2fd-1ba6ea156dba@gmail.com>
-Date: Thu, 15 Sep 2016 07:54:26 -0400
+        Thu, 15 Sep 2016 10:04:21 -0400
+Subject: Re: [RFC] Preliminary BTRFS Encryption
+To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>, linux-btrfs@vger.kernel.org
+References: <1473773990-3071-1-git-send-email-anand.jain@oracle.com>
+ <bce627a8-7dcc-71f6-dd44-0444f7993725@gmail.com>
+Cc: clm@fb.com, dsterba@suse.cz
+From: Anand Jain <anand.jain@oracle.com>
+Message-ID: <69c23d9b-c1be-41ba-1382-3505ba88fdf9@oracle.com>
+Date: Thu, 15 Sep 2016 22:06:06 +0800
 MIME-Version: 1.0
-In-Reply-To: <c58cd350-a1e8-7d1c-cf8c-84f7f0c05682@mendix.com>
+In-Reply-To: <bce627a8-7dcc-71f6-dd44-0444f7993725@gmail.com>
 Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2016-09-15 05:49, Hans van Kranenburg wrote:
-> On 09/15/2016 04:14 AM, Christoph Anton Mitterer wrote:
->> Hey.
->>
->> As for the stability matrix...
->>
->> In general:
->> - I think another column should be added, which tells when and for
->>   which kernel version the feature-status of each row was
->>   revised/updated the last time and especially by whom.
->>   If a core dev makes a statement on a particular feature, this
->>   probably means much more, than if it was made by "just" a list
->>   regular.
->>   And yes I know, in the beginning it already says "this is for 4.7"...
->>   but let's be honest, it's pretty likely when this is bumped to 4.8
->>   that not each and every point will be thoroughly checked again.
->> - Optionally even one further column could be added, that lists bugs
->>   where the specific cases are kept record of (if any).
->> - Perhaps a 3rd Status like "eats-your-data" which is worse than
->>   critical, e.g. for things were it's known that there is a high
->>   chance for still getting data corruption (RAID56?)
->
-> About the "for 4.7" issue... The Status page could have an extra column,
-> which for every OK labeled row lists the first version (kernel.org x.y.0
-> release) it's OK for.
->
-> The bugs make it more complicated.
->
-> * Feature A is labeled OK in kernel 5.0
-> * During development of kernel 8-rc, an eat my data bug is fixed. The OK
-> for this feature in the table is bumped to 8.0?
-> * kernel 5 is EOL
-> * kernel 6 is still supported, and the fix is applied to 6.12
-> * then there's distros which have their own old kernels, applying fixes
-> on them whenever they like, for example 5.6-distro4 which is leading its
-> own life
->
-> "Normal" users are using distro kernels. They shouldn't be panicing
-> about their data if they're running 6.14 or 5.6-distro4, but the OK in
-> the table is bumped to 8.0 because of the serious bugs.
->
-> At least the official kernels should be tracked in the table I think.
->
-> Separately, a list of known serious bugs per feature (like the 4 about
-> compression, http://www.spinics.net/lists/linux-btrfs/msg58674.html )
-> could be listed on another Bugs! page (lots of work) so a user, or
-> someone helping the user can see if the listed commits are or aren't
-> included in the actual whatever kernel a user is using.
->
-> This list of serious bugs could also help disussions that now sound like
-> "yeah, there were issues with compression which some time ago got fixed,
-> but noone knows what it was and when, so don't use compression".
->
-> Many of the commits which fix serious bugs (even if they're only
-> triggered in an edge case) have some explanation about how to trigger
-> them, like the excellent commit messages of Filipe in the commits
-> mentioned above. This helps setting up and maintaining the bug page, and
-> helps advanced users to decide if they're hitting the edge case or not
-> with their usage pattern.
->
-> I'd like to help creating/maintaining this bug overview. A good start
-> would be to just crawl through all stable kernels and some distro
-> kernels and see which commits show up in fs/btrfs.
->
-As of right now, we kind of do have such a page:
-https://btrfs.wiki.kernel.org/index.php/Gotchas
-It's not really well labeled though, ans it's easy to overlook.
 
-I specifically do not think we should worry about distro kernels though. 
-  If someone is using a specific distro, that distro's documentation 
-should cover what they support and what works and what doesn't.  Some 
-(like Arch and to a lesser extent Gentoo) use almost upstream kernels, 
-so there's very little point in tracking them.  Some (like Ubuntu and 
-Debian) use almost upstream LTS kernels, so there's little point 
-tracking them either.  Many others though (like CentOS, RHEL, and OEL) 
-Use forked kernels that have so many back-ported patches that it's 
-impossible to track up-date to up-date what the hell they've got.  A 
-rather ridiculous expression regarding herding of cats comes to mind 
-with respect to the last group.
+Thanks for comments.
+Pls see inline as below.
+
+On 09/15/2016 07:37 PM, Austin S. Hemmelgarn wrote:
+> On 2016-09-13 09:39, Anand Jain wrote:
+>>
+>> This patchset adds btrfs encryption support.
+>>
+>> The main objective of this series is to have bugs fixed and stability.
+>> I have verified with fstests to confirm that there is no regression.
+>>
+>> A design write-up is coming next, however here below is the quick example
+>> on the cli usage. Please try out, let me know if I have missed something.
+>>
+>> Also would like to mention that a review from the security experts is
+>> due,
+>> which is important and I believe those review comments can be
+>> accommodated
+>> without major changes from here.
+>>
+>> Also yes, thanks for the emails, I hear, per file encryption and inline
+>> with vfs layer is also important, which is wip among other things in the
+>> list.
+>>
+>> As of now these patch set supports encryption on per subvolume, as
+>> managing properties on per subvolume is a kind of core to btrfs, which is
+>> easier for data center solution-ing, seamlessly persistent and easy to
+>> manage.
+>>
+>>
+>> Steps:
+>> -----
+>>
+>> Make sure following kernel TFMs are compiled in.
+>> # cat /proc/crypto | egrep 'cbc\(aes\)|ctr\(aes\)'
+>> name         : ctr(aes)
+>> name         : cbc(aes)
+>>
+>> Create encrypted subvolume.
+>> # btrfs su create -e 'ctr(aes)' /btrfs/e1
+>> Create subvolume '/btrfs/e1'
+>> Passphrase:
+>> Again passphrase:
+>>
+>> A key is created and its hash is updated into the subvolume item,
+>> and then added to the system keyctl.
+>> # btrfs su show /btrfs/e1 | egrep -i encrypt
+>>     Encryption:         ctr(aes)@btrfs:75197c8e (594790215)
+>>
+>> # keyctl show 594790215
+>> Keyring
+>>  594790215 --alsw-v      0     0  logon: btrfs:75197c8e
+>>
+>>
+>> Now any file data extents under the subvol /btrfs/e1 will be
+>> encrypted.
+>>
+>> You may revoke key using keyctl or btrfs(8) as below.
+>> # btrfs su encrypt -k out /btrfs/e1
+>>
+>> # btrfs su show /btrfs/e1 | egrep -i encrypt
+>>     Encryption:         ctr(aes)@btrfs:75197c8e (Required key not
+>> available)
+>>
+>> # keyctl show 594790215
+>> Keyring
+>> Unable to dump key: Key has been revoked
+>>
+>> As the key hash is updated, If you provide wrong passphrase in the next
+>> key in, it won't add key to the system. So we have key verification
+>> from the day1.
+>>
+>> # btrfs su encrypt -k in /btrfs/e1
+>> Passphrase:
+>> Again passphrase:
+>> ERROR: failed to set attribute 'btrfs.encrypt' to
+>> 'ctr(aes)@btrfs:75197c8e' : Key was rejected by service
+>>
+>> ERROR: key set failed: Key was rejected by service
+>>
+>> # btrfs su encrypt -k in /btrfs/e1
+>> Passphrase:
+>> Again passphrase:
+>> key for '/btrfs/e1' has  logged in with keytag 'btrfs:75197c8e'
+>>
+>> Now if you revoke the key the read / write fails with key error.
+>>
+>> # md5sum /btrfs/e1/2k-test-file
+>> 8c9fbc69125ebe84569a5c1ca088cb14  /btrfs/e1/2k-test-file
+>>
+>> # btrfs su encrypt -k out /btrfs/e1
+>>
+>> # md5sum /btrfs/e1/2k-test-file
+>> md5sum: /btrfs/e1/2k-test-file: Key has been revoked
+>>
+>> # cp /tfs/1k-test-file /btrfs/e1/
+>> cp: cannot create regular file ‘/btrfs/e1/1k-test-file’: Key has been
+>> revoked
+>>
+>> Plain text memory scratches for security reason is pending. As there
+>> are some
+>> key revoke notification challenges to coincide with encryption context
+>> switch,
+>> which I do believe should be fixed in the due course, but is not a
+>> roadblock
+>> at this stage.
+>>
+
+
+
+> Before I make any other comments, I should state that I asbolutely agree
+> with Alex Elsayed about the issues with using CBC or CTR mode, and not
+> supporting AE or AEAD modes.
+
+   Alex comments was quite detailed, I did reply to it.
+   Looks like you missed my reply to Alex's comments ?
+
+> How does this handle cloning of extents?  Can extents be cloned across
+> subvolume boundaries when one of the subvolumes is encrypted?
+
+  Yes only if both the subvol keys match.
+
+> Can they
+> be cloned within an encrypted subvolume?
+
+  Yes. That's things as usual.
+
+> What happens when you try to
+> clone them in either case if it isn't supported?
+
+  Gets -EOPNOTSUPP.
+
+Thanks, Anand
+

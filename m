@@ -1,103 +1,147 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oi0-f42.google.com ([209.85.218.42]:36390 "EHLO
-        mail-oi0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1755163AbcIOU0c (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 15 Sep 2016 16:26:32 -0400
-Received: by mail-oi0-f42.google.com with SMTP id q188so86428599oia.3
-        for <linux-btrfs@vger.kernel.org>; Thu, 15 Sep 2016 13:26:32 -0700 (PDT)
+Received: from mout1.freenet.de ([195.4.92.91]:42620 "EHLO mout1.freenet.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1754485AbcIOUlw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 15 Sep 2016 16:41:52 -0400
+Received: from [195.4.92.141] (helo=mjail1.freenet.de)
+        by mout1.freenet.de with esmtpa (ID master.b.at.raven@chefmail.de) (port 25) (Exim 4.85 #1)
+        id 1bkd4K-0008L9-7P
+        for linux-btrfs@vger.kernel.org; Thu, 15 Sep 2016 22:15:36 +0200
+Received: from localhost ([::1]:36540 helo=mjail1.freenet.de)
+        by mjail1.freenet.de with esmtpa (ID master.b.at.raven@chefmail.de) (Exim 4.85 #1)
+        id 1bkd4K-0008Q7-2y
+        for linux-btrfs@vger.kernel.org; Thu, 15 Sep 2016 22:15:36 +0200
+Received: from mx1.freenet.de ([195.4.92.11]:35329)
+        by mjail1.freenet.de with esmtpa (ID master.b.at.raven@chefmail.de) (Exim 4.85 #1)
+        id 1bkd0Q-0003Pi-Bq
+        for linux-btrfs@vger.kernel.org; Thu, 15 Sep 2016 22:11:34 +0200
+Received: from ppp-88-217-2-152.dynamic.mnet-online.de ([88.217.2.152]:55604 helo=[192.168.1.206])
+        by mx1.freenet.de with esmtpsa (ID master.b.at.raven@chefmail.de) (TLSv1.2:DHE-RSA-AES128-SHA:128) (port 465) (Exim 4.85 #1)
+        id 1bkd0Q-0005zv-6y
+        for linux-btrfs@vger.kernel.org; Thu, 15 Sep 2016 22:11:34 +0200
+Subject: Re: Size of scrubbed Data
+References: <CAA3ktqmQ+kGddhuw6gC9Hoct+eayxjZFrDjigffCgmDa09=PBA@mail.gmail.com>
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+From: g6094199@freenet.de
+Message-ID: <1fedb20d-9137-53f2-8d40-fcbf466b658d@chefmail.de>
+Date: Thu, 15 Sep 2016 22:11:51 +0200
 MIME-Version: 1.0
-In-Reply-To: <20160915201657.GK7138@carfax.org.uk>
-References: <57D51BF9.2010907@online.no> <20160912142714.GE16983@twin.jikos.cz>
- <20160912162747.GF16983@twin.jikos.cz> <8df2691f-94c1-61de-881f-075682d4a28d@gmail.com>
- <CAJCQCtQUS-8F+pOtQ2VA9=j=-TGV=wOfj+3SnnMvY3HMTzd=9g@mail.gmail.com>
- <1ef8e6db-89a1-6639-cd9a-4e81590456c5@gmail.com> <CAJCQCtQq08bOpRbZq90wRLUGD62Rnqwx6vjJOv5hvPVwp=jz0w@mail.gmail.com>
- <24d64f38-f036-3ae9-71fd-0c626cfbb52c@gmail.com> <CAJCQCtR_hMPj8Nrf=U1L=WvDWq48Ns1K25p4JtKEJnVwb1231Q@mail.gmail.com>
- <20160915201657.GK7138@carfax.org.uk>
-From: Chris Murphy <lists@colorremedies.com>
-Date: Thu, 15 Sep 2016 14:26:30 -0600
-Message-ID: <CAJCQCtSKU78Tvak_q=3xnh-Hm6=zXs6ffd1o=uYMpBmp6CxWtA@mail.gmail.com>
-Subject: Re: Is stability a joke? (wiki updated)
-To: Hugo Mills <hugo@carfax.org.uk>, Chris Murphy <lists@colorremedies.com>,
-        "Austin S. Hemmelgarn" <ahferroin7@gmail.com>,
-        David Sterba <dsterba@suse.cz>, Waxhead <waxhead@online.no>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+In-Reply-To: <CAA3ktqmQ+kGddhuw6gC9Hoct+eayxjZFrDjigffCgmDa09=PBA@mail.gmail.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Sep 15, 2016 at 2:16 PM, Hugo Mills <hugo@carfax.org.uk> wrote:
-> On Thu, Sep 15, 2016 at 01:02:43PM -0600, Chris Murphy wrote:
->> On Thu, Sep 15, 2016 at 12:20 PM, Austin S. Hemmelgarn
->> <ahferroin7@gmail.com> wrote:
->>
->> > 2. We're developing new features without making sure that check can fix
->> > issues in any associated metadata.  Part of merging a new feature needs to
->> > be proving that fsck can handle fixing any issues in the metadata for that
->> > feature short of total data loss or complete corruption.
->> >
->> > 3. Fsck should be needed only for un-mountable filesystems.  Ideally, we
->> > should be handling things like Windows does.  Preform slightly better
->> > checking when reading data, and if we see an error, flag the filesystem for
->> > expensive repair on the next mount.
->>
->> Right, well I'm vaguely curious why ZFS, as different as it is,
->> basically take the position that if the hardware went so batshit that
->> they can't unwind it on a normal mount, then an fsck probably can't
->> help either... they still don't have an fsck and don't appear to want
->> one.
->>
->> I'm not sure if the brfsck is really all that helpful to user as much
->> as it is for developers to better learn about the failure vectors of
->> the file system.
->>
->>
->> > 4. Btrfs check should know itself if it can fix something or not, and that
->> > should be reported.  I have an otherwise perfectly fine filesystem that
->> > throws some (apparently harmless) errors in check, and check can't repair
->> > them.  Despite this, it gives zero indication that it can't repair them,
->> > zero indication that it didn't repair them, and doesn't even seem to give a
->> > non-zero exit status for this filesystem.
->>
->> Yeah, it's really not a user tool in my view...
->>
->>
->>
->> >
->> > As far as the other tools:
->> > - Self-repair at mount time: This isn't a repair tool, if the FS mounts,
->> > it's not broken, it's just a messy and the kernel is tidying things up.
->> > - btrfsck/btrfs check: I think I covered the issues here well.
->> > - Mount options: These are mostly just for expensive checks during mount,
->> > and most people should never need them except in very unusual circumstances.
->> > - btrfs rescue *: These are all fixes for very specific issues.  They should
->> > be folded into check with special aliases, and not be separate tools.  The
->> > first fixes an issue that's pretty much non-existent in any modern kernel,
->> > and the other two are for very low-level data recovery of horribly broken
->> > filesystems.
->> > - scrub: This is a very purpose specific tool which is supposed to be part
->> > of regular maintainence, and only works to fix things as a side effect of
->> > what it does.
->> > - balance: This is also a relatively purpose specific tool, and again only
->> > fixes things as a side effect of what it does.
+Hi Stefan,
+
+1st you should run an balance on system data to move the single data to
+raid1. imho.
+then do the scrub again.
+btw are there any scrubbing errors in dmesg? disks are ok?! any
+compression involved? changed freespacecache to v2?
+
+
+sash
+
+
+
+Am 15.09.2016 um 17:48 schrieb Stefan Malte Schumacher:
+> Hello
 >
->    You've forgotten btrfs-zero-log, which seems to have built itself a
-> reputation on the internet as the tool you run to fix all btrfs ills,
-> rather than a very finely-targeted tool that was introduced to deal
-> with approximately one bug somewhere back in the 2.x era (IIRC).
 >
->    Hugo.
+> I have encountered a very strange phenomenon while using btrfs-scrub.
+> I believe it may be a result of replacing my old installation of
+> Debian Jessie with Debian Stretch, resulting in a Kernel Switch from
+> 3.16+63 to 4.6.0-1. I scrub my filesystem once a month and let anacron
+> send me the results. My filesystem, consisting of four four-gigabyte
+> drives with both data and metadata as RAID1 was reported as containing
+> nearly 12TiB of data in scrubs done in May, June, July and August. But
+> then it changed and suddenly shows only 9TiB in size, despite the fact
+> that I did not delete any large files. If I remember correctly my
+> switch from Debian Jessie to Stretch was around that time period.
+> Could someone explain this behavior to me? Was a new way of
+> calculating the size of scrubed data introduced? How can I check if I
+> have lost data? I have a backup, but only one generation and rsync
+> will by now have deleted files on the NAS, which might have lost on
+> the fileserver. According to the long and short self-tests, which I
+> run with smartmontools my drives are alright. How do I proceed?
+>
+>
+>
+> Yours
+>
+> Stefan
+>
+> uname -a
+> Linux mars 4.6.0-1-amd64 #1 SMP Debian 4.6.4-1 (2016-07-18) x86_64 GNU/Linux
+>
+> btrfs --version
+> btrfs-progs v4.7.1
+>
+>  btrfs fi show
+> Label: none  uuid: 8c668854-db5d-45a7-875d-43c4e82a829e
+>         Total devices 4 FS bytes used 6.06TiB
+>         devid    1 size 3.64TiB used 3.09TiB path /dev/sde
+>         devid    2 size 3.64TiB used 3.09TiB path /dev/sdc
+>         devid    3 size 3.64TiB used 3.09TiB path /dev/sdd
+>         devid    4 size 3.64TiB used 3.09TiB path /dev/sda
+>
+>
+>  btrfs fi df /mnt/btrfs-raid/
+> Data, RAID1: total=6.17TiB, used=6.05TiB
+> System, RAID1: total=32.00MiB, used=916.00KiB
+> System, single: total=4.00MiB, used=0.00B
+> Metadata, RAID1: total=10.00GiB, used=8.14GiB
+> GlobalReserve, single: total=512.00MiB, used=0.00B
+>
+> Maybe this is also of use in identifying the problem:
+> grep btrfs *
+> grep: apt: Ist ein Verzeichnis
+> grep: cups: Ist ein Verzeichnis
+> dpkg.log:2016-09-03 15:20:16 upgrade btrfs-progs:amd64 4.7-1 4.7.1-1
+> dpkg.log:2016-09-03 15:20:16 status triggers-awaited btrfs-progs:amd64 4.7-1
+> dpkg.log:2016-09-03 15:20:16 status half-configured btrfs-progs:amd64 4.7-1
+> dpkg.log:2016-09-03 15:20:16 status unpacked btrfs-progs:amd64 4.7-1
+> dpkg.log:2016-09-03 15:20:16 status half-installed btrfs-progs:amd64 4.7-1
+> dpkg.log:2016-09-03 15:20:16 status half-installed btrfs-progs:amd64 4.7-1
+> dpkg.log:2016-09-03 15:20:17 status unpacked btrfs-progs:amd64 4.7.1-1
+> dpkg.log:2016-09-03 15:20:17 status unpacked btrfs-progs:amd64 4.7.1-1
+> dpkg.log:2016-09-03 15:20:45 configure btrfs-progs:amd64 4.7.1-1 <keine>
+> dpkg.log:2016-09-03 15:20:45 status unpacked btrfs-progs:amd64 4.7.1-1
+> dpkg.log:2016-09-03 15:20:45 status unpacked btrfs-progs:amd64 4.7.1-1
+> dpkg.log:2016-09-03 15:20:45 status half-configured btrfs-progs:amd64 4.7.1-1
+> dpkg.log:2016-09-03 15:20:46 status triggers-awaited btrfs-progs:amd64 4.7.1-1
+> dpkg.log:2016-09-03 15:20:51 status installed btrfs-progs:amd64 4.7.1-1
+> dpkg.log.1:2016-08-10 16:58:23 upgrade btrfs-progs:amd64 4.5.2-1 4.6.1-1
+> dpkg.log.1:2016-08-10 16:58:23 status triggers-awaited btrfs-progs:amd64 4.5.2-1
+> dpkg.log.1:2016-08-10 16:58:23 status half-configured btrfs-progs:amd64 4.5.2-1
+> dpkg.log.1:2016-08-10 16:58:23 status unpacked btrfs-progs:amd64 4.5.2-1
+> dpkg.log.1:2016-08-10 16:58:23 status half-installed btrfs-progs:amd64 4.5.2-1
+> dpkg.log.1:2016-08-10 16:58:24 status half-installed btrfs-progs:amd64 4.5.2-1
+> dpkg.log.1:2016-08-10 16:58:24 status unpacked btrfs-progs:amd64 4.6.1-1
+> dpkg.log.1:2016-08-10 16:58:24 status unpacked btrfs-progs:amd64 4.6.1-1
+> dpkg.log.1:2016-08-10 17:01:25 configure btrfs-progs:amd64 4.6.1-1 <keine>
+> dpkg.log.1:2016-08-10 17:01:25 status unpacked btrfs-progs:amd64 4.6.1-1
+> dpkg.log.1:2016-08-10 17:01:26 status unpacked btrfs-progs:amd64 4.6.1-1
+> dpkg.log.1:2016-08-10 17:01:26 status half-configured btrfs-progs:amd64 4.6.1-1
+> dpkg.log.1:2016-08-10 17:01:26 status triggers-awaited btrfs-progs:amd64 4.6.1-1
+> dpkg.log.1:2016-08-10 17:02:34 status installed btrfs-progs:amd64 4.6.1-1
+> dpkg.log.1:2016-08-19 00:45:05 upgrade btrfs-progs:amd64 4.6.1-1 4.7-1
+> dpkg.log.1:2016-08-19 00:45:05 status triggers-awaited btrfs-progs:amd64 4.6.1-1
+> dpkg.log.1:2016-08-19 00:45:05 status half-configured btrfs-progs:amd64 4.6.1-1
+> dpkg.log.1:2016-08-19 00:45:05 status unpacked btrfs-progs:amd64 4.6.1-1
+> dpkg.log.1:2016-08-19 00:45:05 status half-installed btrfs-progs:amd64 4.6.1-1
+> dpkg.log.1:2016-08-19 00:45:06 status half-installed btrfs-progs:amd64 4.6.1-1
+> dpkg.log.1:2016-08-19 00:45:06 status unpacked btrfs-progs:amd64 4.7-1
+> dpkg.log.1:2016-08-19 00:45:06 status unpacked btrfs-progs:amd64 4.7-1
+> dpkg.log.1:2016-08-19 00:47:06 configure btrfs-progs:amd64 4.7-1 <keine>
+> dpkg.log.1:2016-08-19 00:47:06 status unpacked btrfs-progs:amd64 4.7-1
+> dpkg.log.1:2016-08-19 00:47:06 status unpacked btrfs-progs:amd64 4.7-1
+> dpkg.log.1:2016-08-19 00:47:06 status half-configured btrfs-progs:amd64 4.7-1
+> dpkg.log.1:2016-08-19 00:47:06 status triggers-awaited btrfs-progs:amd64 4.7-1
+> dpkg.log.1:2016-08-19 00:49:22 status installed btrfs-progs:amd64 4.7-1
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 
-:-) It's in my original list, and it's in Austin's by way of being
-lumped into 'btrfs rescue *' along with chunk and super recover. Seems
-like super recover should be built into Btrfs check, and would be one
-of the first ambiguities to get out of the way but I'm just an ape
-that wears pants so what do I know.
 
-Thing is?? zero log has fixed file systems in cases where I never
-would have expected it to, and the user was recommended not to use it,
-or use it as a 2nd to last resort. So, pfff....It's like throwing salt
-around.
-
--- 
-Chris Murphy

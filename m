@@ -1,79 +1,64 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:56791 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752263AbcIUMbe (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 21 Sep 2016 08:31:34 -0400
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id D2443AC29
-        for <linux-btrfs@vger.kernel.org>; Wed, 21 Sep 2016 12:31:31 +0000 (UTC)
-From: jeffm@suse.com
+Received: from [195.159.176.226] ([195.159.176.226]:46318 "EHLO
+        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
+        with ESMTP id S1752756AbcIPJCr (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 16 Sep 2016 05:02:47 -0400
+Received: from list by blaine.gmane.org with local (Exim 4.84_2)
+        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+        id 1bkp2X-0002fp-Jm
+        for linux-btrfs@vger.kernel.org; Fri, 16 Sep 2016 11:02:33 +0200
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs: ensure that file descriptor used with subvol ioctls is a dir
-Date: Wed, 21 Sep 2016 08:31:29 -0400
-Message-Id: <1474461089-1526-1-git-send-email-jeffm@suse.com>
+From: Holger =?iso-8859-1?q?Hoffst=E4tte?=
+        <holger@applied-asynchrony.com>
+Subject: Re: [PATCH] Btrfs: handle quota reserve failure properly
+Date: Fri, 16 Sep 2016 09:02:22 +0000 (UTC)
+Message-ID: <pan$e2095$fbe056c8$f4eac82$cda700a2@applied-asynchrony.com>
+References: <1473965868-9675-1-git-send-email-jbacik@fb.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Jeff Mahoney <jeffm@suse.com>
+On Thu, 15 Sep 2016 14:57:48 -0400, Josef Bacik wrote:
 
-If the subvol/snapshot create/destroy ioctls are passed a regular file
-with execute permissions set, we'll eventually Oops while trying to do
-inode->i_op->lookup via lookup_one_len.
+> btrfs/022 was spitting a warning for the case that we exceed the quota.  If we
+> fail to make our quota reservation we need to clean up our data space
+> reservation.  Thanks,
+> 
+> Signed-off-by: Josef Bacik <jbacik@fb.com>
+> ---
+>  fs/btrfs/extent-tree.c | 9 +++------
+>  1 file changed, 3 insertions(+), 6 deletions(-)
+> 
+> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+> index 03da2f6..d72eaae 100644
+> --- a/fs/btrfs/extent-tree.c
+> +++ b/fs/btrfs/extent-tree.c
+> @@ -4286,13 +4286,10 @@ int btrfs_check_data_free_space(struct inode *inode, u64 start, u64 len)
+>  	if (ret < 0)
+>  		return ret;
+>  
+> -	/*
+> -	 * Use new btrfs_qgroup_reserve_data to reserve precious data space
+> -	 *
+> -	 * TODO: Find a good method to avoid reserve data space for NOCOW
+> -	 * range, but don't impact performance on quota disable case.
+> -	 */
+> +	/* Use new btrfs_qgroup_reserve_data to reserve precious data space. */
+>  	ret = btrfs_qgroup_reserve_data(inode, start, len);
+> +	if (ret)
+> +		btrfs_free_reserved_data_space_noquota(inode, start, len);
+>  	return ret;
+>  }
+>  
+> -- 
+> 2.7.4
 
-This patch ensures that the file descriptor refers to a directory.
+This came up before, though slightly different:
+http://www.spinics.net/lists/linux-btrfs/msg56644.html
 
-Fixes: cb8e70901d (Btrfs: Fix subvolume creation locking rules)
-Fixes: 76dda93c6a (Btrfs: add snapshot/subvolume destroy ioctl)
-Cc: <stable@vger.kernel.org> #v2.6.29+
-Signed-off-by: Jeff Mahoney <jeffm@suse.com>
----
- fs/btrfs/ioctl.c | 12 ++++++++++++
- 1 file changed, 12 insertions(+)
+Which version is correct - with or without _noquota ?
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index b2a2da5..7fd939b 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -1634,6 +1634,9 @@ static noinline int btrfs_ioctl_snap_create_transid(struct file *file,
- 	int namelen;
- 	int ret = 0;
- 
-+	if (!S_ISDIR(file_inode(file)->i_mode))
-+		return -ENOTDIR;
-+
- 	ret = mnt_want_write_file(file);
- 	if (ret)
- 		goto out;
-@@ -1691,6 +1694,9 @@ static noinline int btrfs_ioctl_snap_create(struct file *file,
- 	struct btrfs_ioctl_vol_args *vol_args;
- 	int ret;
- 
-+	if (!S_ISDIR(file_inode(file)->i_mode))
-+		return -ENOTDIR;
-+
- 	vol_args = memdup_user(arg, sizeof(*vol_args));
- 	if (IS_ERR(vol_args))
- 		return PTR_ERR(vol_args);
-@@ -1714,6 +1720,9 @@ static noinline int btrfs_ioctl_snap_create_v2(struct file *file,
- 	bool readonly = false;
- 	struct btrfs_qgroup_inherit *inherit = NULL;
- 
-+	if (!S_ISDIR(file_inode(file)->i_mode))
-+		return -ENOTDIR;
-+
- 	vol_args = memdup_user(arg, sizeof(*vol_args));
- 	if (IS_ERR(vol_args))
- 		return PTR_ERR(vol_args);
-@@ -2357,6 +2366,9 @@ static noinline int btrfs_ioctl_snap_destroy(struct file *file,
- 	int ret;
- 	int err = 0;
- 
-+	if (!S_ISDIR(dir->i_mode))
-+		return -ENOTDIR;
-+
- 	vol_args = memdup_user(arg, sizeof(*vol_args));
- 	if (IS_ERR(vol_args))
- 		return PTR_ERR(vol_args);
--- 
-2.7.1
+-h
 

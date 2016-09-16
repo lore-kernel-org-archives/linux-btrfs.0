@@ -1,39 +1,51 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wm0-f45.google.com ([74.125.82.45]:38011 "EHLO
-        mail-wm0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1756329AbcIPHNu (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 16 Sep 2016 03:13:50 -0400
-Received: by mail-wm0-f45.google.com with SMTP id 1so23910502wmz.1
-        for <linux-btrfs@vger.kernel.org>; Fri, 16 Sep 2016 00:13:49 -0700 (PDT)
-From: Helmut Eller <eller.helmut@gmail.com>
-To: Nicholas D Steeves <nsteeves@gmail.com>
-Subject: Re: Is stability a joke?
-References: <57D51BF9.2010907@online.no> <57D53E3A.1030106@online.no>
-        <15194548.valIGHoaRh@merkaba> <2682119.DRdtbgPpNZ@merkaba>
-        <57D55072.2010701@online.no> <20160911130221.GE7138@carfax.org.uk>
-        <be04c51d-c35d-39fe-c5f7-a7ab13d72cc5@gmail.com>
-        <20160915010552.GC32452@DigitalMercury.dynalias.net>
-CC: linux-btrfs@vger.kernel.org
-Date: Fri, 16 Sep 2016 09:13:47 +0200
-In-Reply-To: <20160915010552.GC32452@DigitalMercury.dynalias.net> (Nicholas
-        D. Steeves's message of "Wed, 14 Sep 2016 21:05:52 -0400")
-Message-ID: <m2fup0uxjo.fsf@gmail.com>
+Received: from twin.jikos.cz ([89.185.236.188]:42744 "EHLO twin.jikos.cz"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751180AbcIPIuQ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 16 Sep 2016 04:50:16 -0400
+Date: Fri, 16 Sep 2016 10:49:58 +0200
+From: David Sterba <dave@jikos.cz>
+To: Anand Jain <anand.jain@oracle.com>
+Cc: linux-btrfs@vger.kernel.org, clm@fb.com, dsterba@suse.cz
+Subject: Re: [RFC] Preliminary BTRFS Encryption
+Message-ID: <20160916084958.GA933@twin.jikos.cz>
+Reply-To: dave@jikos.cz
+References: <1473773990-3071-1-git-send-email-anand.jain@oracle.com>
 MIME-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1473773990-3071-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Sep 14 2016, Nicholas D Steeves wrote:
+On Tue, Sep 13, 2016 at 09:39:46PM +0800, Anand Jain wrote:
+> This patchset adds btrfs encryption support.
+> 
+> The main objective of this series is to have bugs fixed and stability.
+> I have verified with fstests to confirm that there is no regression.
+> 
+> A design write-up is coming next,
 
+You're approaching it from the wrong side. The detailed specification
+must come first. Don't bother to send the code again.
 
-> Do you think the broader btrfs
-> community is interested in citations and curated links to discussions?
+> however here below is the quick example
+> on the cli usage. Please try out, let me know if I have missed something.
+> 
+> Also would like to mention that a review from the security experts is due,
+> which is important and I believe those review comments can be accommodated
+> without major changes from here.
 
-I'm definitely interested.  Something I would love to see is a list or
-description of the tests that a particular version of btrfs passes or
-doesn't pass.  I think that would add a bit of "rationality" to the
-issue.  Also interesting would be the results of test-suites that are
-used for other filesystems (ext4, xfs).
+I disagree. Others commented on the crypto stuff, I see enough points to
+address that would lead to major changes.
 
-Helmut
+> Also yes, thanks for the emails, I hear, per file encryption and inline
+> with vfs layer is also important, which is wip among other things in the
+> list.
+
+Implementing the recent vfs encryption in btrfs is ok, it's just feature
+parity using an existing API.
+
+And a note from me with maintainer's hat on, there are enough pending
+patches and patchsets that need review, and bugs to fix, I'm not going
+to spend time on something that we don't need at the moment if there are
+alternatives.

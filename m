@@ -1,64 +1,117 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:18720 "EHLO
-        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S933782AbcIPLyR (ORCPT
+Received: from mail-io0-f172.google.com ([209.85.223.172]:36798 "EHLO
+        mail-io0-f172.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1756183AbcIPMAs (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 16 Sep 2016 07:54:17 -0400
-Subject: Re: [RFC] Preliminary BTRFS Encryption
-To: linux-btrfs@vger.kernel.org, clm@fb.com, dsterba@suse.cz
-References: <1473773990-3071-1-git-send-email-anand.jain@oracle.com>
- <20160916084958.GA933@twin.jikos.cz>
-From: Anand Jain <anand.jain@oracle.com>
-Message-ID: <313b1db1-cf32-7103-e259-328517d1c81f@oracle.com>
-Date: Fri, 16 Sep 2016 19:56:02 +0800
+        Fri, 16 Sep 2016 08:00:48 -0400
+Received: by mail-io0-f172.google.com with SMTP id m79so23008119ioo.3
+        for <linux-btrfs@vger.kernel.org>; Fri, 16 Sep 2016 05:00:47 -0700 (PDT)
+Subject: Re: Is stability a joke? (wiki updated)
+To: Chris Murphy <lists@colorremedies.com>, Hugo Mills <hugo@carfax.org.uk>,
+        David Sterba <dsterba@suse.cz>, Waxhead <waxhead@online.no>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+References: <57D51BF9.2010907@online.no>
+ <20160912142714.GE16983@twin.jikos.cz> <20160912162747.GF16983@twin.jikos.cz>
+ <8df2691f-94c1-61de-881f-075682d4a28d@gmail.com>
+ <CAJCQCtQUS-8F+pOtQ2VA9=j=-TGV=wOfj+3SnnMvY3HMTzd=9g@mail.gmail.com>
+ <1ef8e6db-89a1-6639-cd9a-4e81590456c5@gmail.com>
+ <CAJCQCtQq08bOpRbZq90wRLUGD62Rnqwx6vjJOv5hvPVwp=jz0w@mail.gmail.com>
+ <24d64f38-f036-3ae9-71fd-0c626cfbb52c@gmail.com>
+ <CAJCQCtR_hMPj8Nrf=U1L=WvDWq48Ns1K25p4JtKEJnVwb1231Q@mail.gmail.com>
+ <20160915201657.GK7138@carfax.org.uk>
+ <CAJCQCtSKU78Tvak_q=3xnh-Hm6=zXs6ffd1o=uYMpBmp6CxWtA@mail.gmail.com>
+From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Message-ID: <954df3cd-0554-b86f-9dae-47517f3fbad7@gmail.com>
+Date: Fri, 16 Sep 2016 08:00:44 -0400
 MIME-Version: 1.0
-In-Reply-To: <20160916084958.GA933@twin.jikos.cz>
-Content-Type: text/plain; charset=windows-1252; format=flowed
+In-Reply-To: <CAJCQCtSKU78Tvak_q=3xnh-Hm6=zXs6ffd1o=uYMpBmp6CxWtA@mail.gmail.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
-
->> however here below is the quick example
->> on the cli usage. Please try out, let me know if I have missed something.
+On 2016-09-15 16:26, Chris Murphy wrote:
+> On Thu, Sep 15, 2016 at 2:16 PM, Hugo Mills <hugo@carfax.org.uk> wrote:
+>> On Thu, Sep 15, 2016 at 01:02:43PM -0600, Chris Murphy wrote:
+>>> On Thu, Sep 15, 2016 at 12:20 PM, Austin S. Hemmelgarn
+>>> <ahferroin7@gmail.com> wrote:
+>>>
+>>>> 2. We're developing new features without making sure that check can fix
+>>>> issues in any associated metadata.  Part of merging a new feature needs to
+>>>> be proving that fsck can handle fixing any issues in the metadata for that
+>>>> feature short of total data loss or complete corruption.
+>>>>
+>>>> 3. Fsck should be needed only for un-mountable filesystems.  Ideally, we
+>>>> should be handling things like Windows does.  Preform slightly better
+>>>> checking when reading data, and if we see an error, flag the filesystem for
+>>>> expensive repair on the next mount.
+>>>
+>>> Right, well I'm vaguely curious why ZFS, as different as it is,
+>>> basically take the position that if the hardware went so batshit that
+>>> they can't unwind it on a normal mount, then an fsck probably can't
+>>> help either... they still don't have an fsck and don't appear to want
+>>> one.
+>>>
+>>> I'm not sure if the brfsck is really all that helpful to user as much
+>>> as it is for developers to better learn about the failure vectors of
+>>> the file system.
+>>>
+>>>
+>>>> 4. Btrfs check should know itself if it can fix something or not, and that
+>>>> should be reported.  I have an otherwise perfectly fine filesystem that
+>>>> throws some (apparently harmless) errors in check, and check can't repair
+>>>> them.  Despite this, it gives zero indication that it can't repair them,
+>>>> zero indication that it didn't repair them, and doesn't even seem to give a
+>>>> non-zero exit status for this filesystem.
+>>>
+>>> Yeah, it's really not a user tool in my view...
+>>>
+>>>
+>>>
+>>>>
+>>>> As far as the other tools:
+>>>> - Self-repair at mount time: This isn't a repair tool, if the FS mounts,
+>>>> it's not broken, it's just a messy and the kernel is tidying things up.
+>>>> - btrfsck/btrfs check: I think I covered the issues here well.
+>>>> - Mount options: These are mostly just for expensive checks during mount,
+>>>> and most people should never need them except in very unusual circumstances.
+>>>> - btrfs rescue *: These are all fixes for very specific issues.  They should
+>>>> be folded into check with special aliases, and not be separate tools.  The
+>>>> first fixes an issue that's pretty much non-existent in any modern kernel,
+>>>> and the other two are for very low-level data recovery of horribly broken
+>>>> filesystems.
+>>>> - scrub: This is a very purpose specific tool which is supposed to be part
+>>>> of regular maintainence, and only works to fix things as a side effect of
+>>>> what it does.
+>>>> - balance: This is also a relatively purpose specific tool, and again only
+>>>> fixes things as a side effect of what it does.
 >>
->> Also would like to mention that a review from the security experts is due,
->> which is important and I believe those review comments can be accommodated
->> without major changes from here.
+>>    You've forgotten btrfs-zero-log, which seems to have built itself a
+>> reputation on the internet as the tool you run to fix all btrfs ills,
+>> rather than a very finely-targeted tool that was introduced to deal
+>> with approximately one bug somewhere back in the 2.x era (IIRC).
+>>
+>>    Hugo.
 >
-> I disagree. Others commented on the crypto stuff, I see enough points to
-> address that would lead to major changes.
+> :-) It's in my original list, and it's in Austin's by way of being
+> lumped into 'btrfs rescue *' along with chunk and super recover. Seems
+> like super recover should be built into Btrfs check, and would be one
+> of the first ambiguities to get out of the way but I'm just an ape
+> that wears pants so what do I know.
 >
->> Also yes, thanks for the emails, I hear, per file encryption and inline
->> with vfs layer is also important, which is wip among other things in the
->> list.
+> Thing is?? zero log has fixed file systems in cases where I never
+> would have expected it to, and the user was recommended not to use it,
+> or use it as a 2nd to last resort. So, pfff....It's like throwing salt
+> around.
 >
-> Implementing the recent vfs encryption in btrfs is ok, it's just feature
-> parity using an existing API.
-
-
-  As mentioned 'inline with vfs layer' I mean to say to use
-  fs/crypto KPIs. Which I haven't seen what parts of the code
-  from ext4 was made as generic KPIs. If that's getting stuff
-  correct in the encryption related, I think it would here as well.
-
-  Internal to btrfs - I had challenges to get the extents encoding
-  done properly without bailout, and the test plan. Which I think
-  is addressed here in this code. as mentioned.
-
-
-
-> And a note from me with maintainer's hat on, there are enough pending
-> patches and patchsets that need review, and bugs to fix, I'm not going
-> to spend time on something that we don't need at the moment if there are
-> alternatives.
-
-  Honestly I agree. I even suggested but I had no choice.
-
-
-PS:
-  Pls, feel free to flame on the (raid) patches if its not correct,
-  because its rather more productive than no reply.
-
-
-Thanks, Anand
+To be entirely honest, both zero-log and super-recover could probably be 
+pretty easily integrated into btrfs check such that it detects when they 
+need to be run and does so.  zero-log has a very well defined situation 
+in which it's absolutely needed (log tree corrupted such that it can't 
+be replayed), which is pretty easy to detect (the kernel obviously does 
+so, albeit by crashing).  super-recover is also used in a pretty 
+specific set of circumstances (first SB corrupted, backups fine), which 
+are also pretty easy to detect.  In both cases, I'd like to see some 
+switch (--single-fix maybe?) for directly invoking just those functions 
+(as well as a few others like dropping the FSC/FST or cancelling a 
+paused or crashed balance) that operate at a filesystem level instead of 
+a block/inode/extent level like most of the other stuff in check does.

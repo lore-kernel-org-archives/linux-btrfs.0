@@ -1,93 +1,89 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dmz.skyward.com ([12.28.97.8]:52879 "EHLO dmz.skyward.com"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1755654AbcIPPKR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 16 Sep 2016 11:10:17 -0400
-Received: from mailhub.skyward.com (mailhub.skyward.com [10.1.1.28]) by dmz.skyward.com with ESMTP id zybW6VaEgypH44Oz (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Fri, 16 Sep 2016 09:57:45 -0500 (CDT)
-From: Jeffrey Michels <jeffreym@skyward.com>
-To: "'linux-btrfs@vger.kernel.org'" <linux-btrfs@vger.kernel.org>
-Subject: Filesystem will remount read-only
-Date: Fri, 16 Sep 2016 14:57:43 +0000
-Message-ID: <8AC4324B47948D40A1031D5AB7D077820141E77717@mailstore.skyward.com>
-Content-Type: text/plain; charset="us-ascii"
+Received: from email.routify.me ([162.208.10.182]:54435 "EHLO
+        cartman.routify.me" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S933595AbcIPTZD (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 16 Sep 2016 15:25:03 -0400
+Date: Fri, 16 Sep 2016 15:25:00 -0400
+From: Sean Greenslade <sean@seangreenslade.com>
+To: linux-btrfs@vger.kernel.org
+Subject: Post ext3 conversion problems
+Message-ID: <20160916192459.GA13514@coach.home>
 MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
+Hi, all. I've been playing around with an old laptop of mine, and I
+figured I'd use it as a learning / bugfinding opportunity. Its /home
+partition was originally ext3. I have a full partition image of this
+drive as a backup, so I can do (and have done) potentially destructive
+things. The system disk is a ~6 year old SSD.
 
-I have a system that has been in production for a few years.  The SAN the VM was running on had a hardware failure about a month ago and now one of the two btrfs filesystems will remount after boot read-only.  Here is the system information:
+To start, I rebooted to a livedisk (Arch, kernel 4.7.2 w/progs 4.7.1)
+and ran a simple btrfs-convert on it. After patching up the fstab and
+rebooting, everything seemed fine. I deleted the recovery subvol, ran a
+full balance, ran a full defrag, and rebooted again. I then decided to
+try (as an experiment) using DUP mode for data and metadata. I ran that
+balance without issue, then started using the machine. Sometime later, I
+got the following remount ro:
 
-uname -a
+[ 7316.764235] ------------[ cut here ]------------
+[ 7316.764292] WARNING: CPU: 2 PID: 14196 at fs/btrfs/inode.c:2954 btrfs_finish_ordered_io+0x6bc/0x6d0 [btrfs]
+[ 7316.764297] BTRFS: Transaction aborted (error -95)
+[ 7316.764301] Modules linked in: fuse sha256_ssse3 sha256_generic hmac drbg ansi_cprng ctr ccm joydev mousedev uvcvideo videobuf2_vmalloc videobuf2_memops videobuf2_v4l2 videobuf2_core videodev media crc32c_generic iTCO_wdt btrfs iTCO_vendor_support arc4 xor ath9k raid6_pq ath9k_common ath9k_hw ath mac80211 snd_hda_codec_realtek snd_hda_codec_generic psmouse input_leds coretemp snd_hda_intel led_class pcspkr snd_hda_codec cfg80211 snd_hwdep snd_hda_core snd_pcm lpc_ich snd_timer atl1c rfkill snd soundcore shpchp intel_agp wmi thermal fjes battery evdev ac tpm_tis mac_hid tpm sch_fq_codel vboxnetflt(O) vboxnetadp(O) pci_stub vboxpci(O) vboxdrv(O) loop sg acpi_cpufreq ip_tables x_tables ext4 crc16 jbd2 mbcache sd_mod serio_raw atkbd libps2 ahci libahci uhci_hcd libata scsi_mod ehci_pci ehci_hcd usbcore
+[ 7316.764434]  usb_common i8042 serio i915 video button intel_gtt i2c_algo_bit drm_kms_helper syscopyarea sysfillrect sysimgblt fb_sys_fops drm
+[ 7316.764462] CPU: 2 PID: 14196 Comm: kworker/u8:11 Tainted: G           O    4.7.3-5-ck #1
+[ 7316.764467] Hardware name: ASUSTeK Computer INC. 1015PEM/1015PE, BIOS 0903    11/08/2010
+[ 7316.764507] Workqueue: btrfs-endio-write btrfs_endio_write_helper [btrfs]
+[ 7316.764513]  0000000000000286 000000006101f47d ffff8800230dbc78 ffffffff812f0215
+[ 7316.764522]  ffff8800230dbcc8 0000000000000000 ffff8800230dbcb8 ffffffff8107ae6f
+[ 7316.764530]  00000b8a00000035 ffff88007791afa8 ffff8800751d9000 ffff880014101d40
+[ 7316.764538] Call Trace:
+[ 7316.764551]  [<ffffffff812f0215>] dump_stack+0x63/0x8e
+[ 7316.764560]  [<ffffffff8107ae6f>] __warn+0xcf/0xf0
+[ 7316.764567]  [<ffffffff8107aef1>] warn_slowpath_fmt+0x61/0x80
+[ 7316.764605]  [<ffffffffa07aa362>] ? unpin_extent_cache+0xa2/0xf0 [btrfs]
+[ 7316.764640]  [<ffffffffa07628e6>] ? btrfs_free_path+0x26/0x30 [btrfs]
+[ 7316.764677]  [<ffffffffa079aaac>] btrfs_finish_ordered_io+0x6bc/0x6d0 [btrfs]
+[ 7316.764715]  [<ffffffffa079adc5>] finish_ordered_fn+0x15/0x20 [btrfs]
+[ 7316.764753]  [<ffffffffa07c5f8e>] btrfs_scrubparity_helper+0x7e/0x360 [btrfs]
+[ 7316.764791]  [<ffffffffa07c62fe>] btrfs_endio_write_helper+0xe/0x10 [btrfs]
+[ 7316.764799]  [<ffffffff810949bd>] process_one_work+0x1ed/0x490
+[ 7316.764806]  [<ffffffff81094ca9>] worker_thread+0x49/0x500
+[ 7316.764813]  [<ffffffff81094c60>] ? process_one_work+0x490/0x490
+[ 7316.764820]  [<ffffffff8109ac3a>] kthread+0xda/0xf0
+[ 7316.764830]  [<ffffffff815c553f>] ret_from_fork+0x1f/0x40
+[ 7316.764838]  [<ffffffff8109ab60>] ? kthread_worker_fn+0x170/0x170
+[ 7316.764843] ---[ end trace 90f54effc5e294b0 ]---
+[ 7316.764851] BTRFS: error (device sda2) in btrfs_finish_ordered_io:2954: errno=-95 unknown
+[ 7316.764859] BTRFS info (device sda2): forced readonly
+[ 7316.765396] pending csums is 9437184
 
-Linux retain 3.0.101-0.47.71-default #1 SMP Thu Nov 12 12:22:22 UTC 2015 (b5b212e) x86_64 x86_64 x86_64 GNU/Linux
+After seeing this, I decided to attempt a repair (confident that I could
+restore from backup if it failed). At the time, I was unaware of the
+issues with progs 4.7.1, so when I ran the check and saw all the
+incorrect backrefs messages, I figured that was my problem and ran the
+--repair. Of course, this didn't make the messages go away on subsequent
+checks, so I looked further and found this bug:
 
-Btrfs --version
+https://bugzilla.kernel.org/show_bug.cgi?id=155791
 
-Btrfs v0.20+
+I updated progs to 4.7.2 and re-ran the --repair (I didn't save any of
+the logs from these, unfortunately). The repair seemed to work (I also
+used --init-extent-tree), as current checks don't report any errors.
 
-Btrfs fi show
+The system boots and mounts the FS just fine. I can read from it all
+day, scrubs complete without failure, but just using the system for a
+while will eventually trigger the same "Transaction aborted (error -95)"
+error.
 
-Label: none  uuid: f1e23038-22c1-44b2-8cf8-a3ca6363d2f4
-	Total devices 1 FS bytes used 303.01GiB
-	devid    1 size 1024.00GiB used 351.04GiB path /dev/dm-2
+I realize this is something of a mess, and that I was less than
+methodical with my actions so far. Given that I have a full backup that
+can be restored if need be (and I certainly could try running the
+convert again), what is my best course of action?
 
-Label: none  uuid: 85e58f4e-ce56-4b11-9ed9-16abeead8863
-	Total devices 1 FS bytes used 83.83GiB
-	devid    1 size 149.49GiB used 101.49GiB path /dev/dm-0
+Thanks,
 
-Btrfs v0.20+
+--Sean
 
-Btrfs fi df /retain
-
-Data: total=261.01GiB, used=259.23GiB
-System, DUP: total=8.00MiB, used=40.00KiB
-System: total=4.00MiB, used=0.00
-Metadata, DUP: total=45.00GiB, used=43.77GiB
-Metadata: total=8.00MiB, used=0.00
-
-Dmesg--Can provide the full output if needed via attachment.  Here is where the fs remounts read-only:
-
-[   55.181245] btrfs: parent transid verify failed on 153295646720 wanted 230487 found 230484
-[   55.187980] btrfs: parent transid verify failed on 153295646720 wanted 230487 found 230484
-[   55.187991] BTRFS debug (device dm-2): run_one_delayed_ref returned -5
-[   55.187994] ------------[ cut here ]------------
-[   55.188021] WARNING: at /usr/src/packages/BUILD/kernel-default-3.0.101/linux-3.0/fs/btrfs/super.c:255 __btrfs_abort_transaction+0x60/0x170 [btrfs]()
-[   55.188024] Hardware name: VMware Virtual Platform
-[   55.188026] btrfs: Transaction aborted (error -5)
-[   55.188028] Modules linked in: acpiphp microcode fuse xfs ext3 jbd mbcache loop sr_mod ppdev vmw_balloon(X) i2c_piix4 intel_agp pciehp ipv6_lib cdrom parport_pc shpchp parport rtc_cmos intel_gtt pci_hotplug floppy i2c_core sg container ac mptctl serio_raw button pcspkr btrfs zlib_deflate crc32c libcrc32c dm_mirror dm_region_hash dm_log linear sd_mod crc_t10dif processor thermal_sys hwmon scsi_dh_rdac scsi_dh_hp_sw scsi_dh_emc scsi_dh_alua scsi_dh dm_snapshot dm_mod vmw_pvscsi vmxnet3 ata_generic ata_piix libata mptspi mptscsih mptbase scsi_transport_spi scsi_mod
-[   55.188071] Supported: Yes, External
-[   55.188075] Pid: 1985, comm: sync Tainted: G             X 3.0.101-0.47.71-default #1
-[   55.188077] Call Trace:
-[   55.188090]  [<ffffffff81004b95>] dump_trace+0x75/0x300
-[   55.188097]  [<ffffffff814638a3>] dump_stack+0x69/0x6f
-[   55.188104]  [<ffffffff81061f07>] warn_slowpath_common+0x87/0xe0
-[   55.188109]  [<ffffffff81062015>] warn_slowpath_fmt+0x45/0x60
-[   55.188125]  [<ffffffffa018eb40>] __btrfs_abort_transaction+0x60/0x170 [btrfs]
-[   55.188152]  [<ffffffffa01ab466>] btrfs_run_delayed_refs+0x3a6/0x520 [btrfs]
-[   55.188192]  [<ffffffffa01bb3de>] btrfs_commit_transaction+0x42e/0xa00 [btrfs]
-[   55.188228]  [<ffffffff8118a0f2>] __sync_filesystem+0x62/0xb0
-[   55.188234]  [<ffffffff8116133a>] iterate_supers+0x6a/0xc0
-[   55.188239]  [<ffffffff8118a1b2>] sys_sync+0x52/0x80
-[   55.188244]  [<ffffffff8146e772>] system_call_fastpath+0x16/0x1b
-[   55.188251]  [<00007f45758cafc7>] 0x7f45758cafc6
-[   55.188253] ---[ end trace c5a604849514ffcd ]---
-[   55.188257] BTRFS error (device dm-2) in btrfs_run_delayed_refs:2688: errno=-5 IO failure
-[   55.188259] BTRFS info (device dm-2): forced readonly
-[   55.188263] BTRFS warning (device dm-2): Skipping commit of aborted transaction.
-[   55.188266] BTRFS error (device dm-2) in cleanup_transaction:1538: errno=-5 IO failure
-
-Thank you for your assistance,
-
-Jeff Michels
-
-iCon 2017 Registration is Now Open!
-Agents of Innovation
-March 8 - 10, 2017
-TradeWinds Island Resort, St. Pete Beach, Florida
-Register today at: www.skyward.com/icon
-
-PRIVILEGED AND CONFIDENTIAL
-Skyward Communication
-
-This is a transmission from Skyward, Inc. and may contain information which is privileged, confidential, and protected by service work privileges.  The response is in direct relationship to the information provided to Skyward.   If you are not the addressee, note that any disclosure, copying, distribution, or use of the contents of this message is prohibited.  If you have received this transmission in error, please destroy it and notify us immediately at 715-341-9406.

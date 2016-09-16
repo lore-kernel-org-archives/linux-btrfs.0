@@ -1,179 +1,136 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:46288 "EHLO
-        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751397AbcIPLdr (ORCPT
+Received: from userp1040.oracle.com ([156.151.31.81]:48422 "EHLO
+        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1759174AbcIPLoh (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 16 Sep 2016 07:33:47 -0400
-From: Anand Jain <anand.jain@oracle.com>
+        Fri, 16 Sep 2016 07:44:37 -0400
 Subject: Re: [RFC] Preliminary BTRFS Encryption
-To: Alex Elsayed <eternaleye@gmail.com>, linux-btrfs@vger.kernel.org
+To: Dave Chinner <david@fromorbit.com>
 References: <1473773990-3071-1-git-send-email-anand.jain@oracle.com>
- <nrd9ge$hdn$1@blaine.gmane.org>
- <542bb47d-c035-2b49-a39a-074a792af215@oracle.com>
- <nre1o9$hdn$2@blaine.gmane.org>
-Message-ID: <08d5b53f-f5df-65bb-cf79-fe0a87451f9c@oracle.com>
-Date: Fri, 16 Sep 2016 19:35:40 +0800
+ <20160916011213.GV22388@dastard>
+Cc: linux-btrfs@vger.kernel.org, clm@fb.com, dsterba@suse.cz
+From: Anand Jain <anand.jain@oracle.com>
+Message-ID: <ba84b8d5-e91e-73d6-55a5-4b7c8f57ab17@oracle.com>
+Date: Fri, 16 Sep 2016 19:46:23 +0800
 MIME-Version: 1.0
-In-Reply-To: <nre1o9$hdn$2@blaine.gmane.org>
-Content-Type: text/plain; charset=utf-8; format=flowed
+In-Reply-To: <20160916011213.GV22388@dastard>
+Content-Type: text/plain; charset=windows-1252; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
 
-On 09/15/2016 07:47 PM, Alex Elsayed wrote:
-> On Thu, 15 Sep 2016 19:33:48 +0800, Anand Jain wrote:
->
->> Thanks for commenting. pls see inline below.
+On 09/16/2016 09:12 AM, Dave Chinner wrote:
+> On Tue, Sep 13, 2016 at 09:39:46PM +0800, Anand Jain wrote:
 >>
->> On 09/15/2016 12:53 PM, Alex Elsayed wrote:
->>> On Tue, 13 Sep 2016 21:39:46 +0800, Anand Jain wrote:
->>>
->>>> This patchset adds btrfs encryption support.
->>>>
->>>> The main objective of this series is to have bugs fixed and stability.
->>>> I have verified with fstests to confirm that there is no regression.
->>>>
->>>> A design write-up is coming next, however here below is the quick
->>>> example on the cli usage. Please try out, let me know if I have missed
->>>> something.
->>>>
->>>> Also would like to mention that a review from the security experts is
->>>> due,
->>>> which is important and I believe those review comments can be
->>>> accommodated without major changes from here.
->>>>
->>>> Also yes, thanks for the emails, I hear, per file encryption and
->>>> inline with vfs layer is also important, which is wip among other
->>>> things in the list.
->>>>
->>>> As of now these patch set supports encryption on per subvolume, as
->>>> managing properties on per subvolume is a kind of core to btrfs, which
->>>> is easier for data center solution-ing, seamlessly persistent and easy
->>>> to manage.
->>>>
->>>>
->>>> Steps:
->>>> -----
->>>>
->>>> Make sure following kernel TFMs are compiled in.
->>>> # cat /proc/crypto | egrep 'cbc\(aes\)|ctr\(aes\)'
->>>> name         : ctr(aes)
->>>> name         : cbc(aes)
->>>
->>> First problem: These are purely encryption algorithms, rather than AE
->>> (Authenticated Encryption) or AEAD (Authenticated Encryption with
->>> Associated Data). As a result, they are necessarily vulnerable to
->>> adaptive chosen-ciphertext attacks, and CBC has historically had other
->>> issues. I highly recommend using a well-reviewed AE or AEAD mode, such
->>> as AES-GCM (as ecryptfs does), as long as the code can handle the
->>> ciphertext being longer than the plaintext.
->>>
->>> If it _cannot_ handle the ciphertext being longer than the plaintext,
->>> please consider that a very serious red flag: It means that you cannot
->>> provide better security than block-level encryption, which greatly
->>> reduces the benefit of filesystem-integrated encryption. Being at the
->>> extent level _should_ permit using AEAD - if it does not, something is
->>> wrong.
->>>
->>> If at all possible, I'd suggest _only_ permitting AEAD cipher modes to
->>> be used.
->>>
->>> Anyway, even for block-level encryption, CTR and CBC have been
->>> considered obsolete and potentially dangerous to use in disk encryption
->>> for quite a while - current recommendations for block-level encryption
->>> are to use either a narrow-block tweakable cipher mode (such as XTS),
->>> or a wide- block one (such as EME or CMC), with the latter providing
->>> slightly better security, but worse performance.
+>> This patchset adds btrfs encryption support.
 >>
->>    Yes. CTR should be changed, so I have kept it as a cli option. And
->>    with the current internal design, hope we can plugin more algorithms
->>    as suggested/if-its-outdated and yes code can handle (or with a
->>    little tweak) bigger ciphertext (than plaintext) as well.
+>> The main objective of this series is to have bugs fixed and stability.
+>> I have verified with fstests to confirm that there is no regression.
 >>
->>    encryption + keyhash (as below) + Btrfs-data-checksum provides
->>    similar to AE,  right ?
+>> A design write-up is coming next, however here below is the quick example
+>> on the cli usage. Please try out, let me know if I have missed something.
 >
-> No, it does not provide anything remotely similar to AE. AE requires
-> _cryptographic_ authentication of the data. Not only is a CRC (as Btrfs
-> uses for the data checksum) not enough, a _cryptographic hash_ (such as
-> SHA256) isn't even enough. A MAC (message authentication code) is
-> necessary.
+> Yup, that best practices say "do not roll your own encryption
+> infrastructure".
 >
-> Moreover, combining an encryption algorithm and a MAC is very easy to get
-> wrong, in ways that absolutely ruin security - as an example, see the
-> Vaudenay/Lucky13 padding oracle attacks on TLS.
+> This is just my 2c worth - take it or leave it, don't other flaming.
+> Keep in mind that I'm not picking on btrfs here - I asked similar
+> hard questions about the proposed f2fs encryption implementation.
+> That was a "copy and snowflake" version of the ext4 encryption code -
+> they made changes and now we have generic code and common
+> functionality between ext4 and f2fs.
 >
-> In order for this to be secure, you need to use a secure encryption
-> system that also authenticates the data in a cryptographically secure
-> manner. Certain schemes are well-studied and believed to be secure - AES-
-> GCM and ChaCha20-Poly1305 are common and well-regarded, and there's a
-> generic security reduction for Encrypt-then-MAC constructions (using CTR
-> together with HMAC in such a construction is generally acceptable).
+>> Also would like to mention that a review from the security experts is due,
+>> which is important and I believe those review comments can be accommodated
+>> without major changes from here.
 >
-> The Btrfs data checksum is wholly inadequate, and the keyhash is a non-
-> sequitur - it prevents accidentally opening the subvolume with the wrong
-> key, but neither it (nor the btrfs data checksum, which is a CRC rather
-> than a cryptographic MAC) protect adequately against malicious corruption
-> of the ciphertext.
+> That's a fairly significant red flag to me - security reviews need
+> to be done at the design phase against specific threat models -
+> security review is not a code/implementation review...
 >
-> I'd suggest pulling in Herbert Xu, as he'd likely be able to tell you
-> what of the Crypto API is actually sane to use for this.
+> The ext4 developers got this right by publishing threat models and
+> design docs, which got quite a lot of review and feedback before
+> code was published for review.
+>
+> https://docs.google.com/document/d/1ft26lUQyuSpiu6VleP70_npaWdRfXFoNnB8JYnykNTg/edit#heading=h.qmnirp22ipew
 
 
   As mentioned 'inline with vfs layer' I mean to say to use
   fs/crypto KPIs. Which I haven't seen what parts of the code
-  was made as generic KPIs from ext4. If that's solving the
-  problem, then it would here as well.
+  from ext4 was made as generic KPIs. If that's getting stuff
+  correct in the encryption related, I think it would here as well.
 
+  Internal to btrfs - I had challenges to get the extents encoding
+  done properly without bailout, and the test plan. Which I think
+  is addressed here in this code.
 
->>>> Create encrypted subvolume.
->>>> # btrfs su create -e 'ctr(aes)' /btrfs/e1 Create subvolume '/btrfs/e1'
->>>> Passphrase:
->>>> Again passphrase:
->>>
->>> I presume the command first creates a key, then creates a subvolume
->>> referencing that key? If so, that seems sensible.
->>
->>   Hmm I didn't get the why part, any help ? (this doesn't encrypt
->>   metadata part).
->
-> Basically, if your tool merely sets up an entry in the kernel keyring,
-> then calls the subvolume creation interface (passing in the key ID), then
-> it can be composed with more advanced tooling that generates the key in a
-> different manner.
->
-> If, instead, you call the subvolume creation API with a flag saying
-> "please also create a key", then it does not compose and is inflexible.
->
-> That then becomes an obstacle to later extensions, such as trusted &
-> encrypted keys.
-
-   Yes key creation and subvol create are separate and independent.
 
 Thanks, Anand
 
 
->>>> A key is created and its hash is updated into the subvolume item,
->>>> and then added to the system keyctl.
->>>> # btrfs su show /btrfs/e1 | egrep -i encrypt
->>>> 	Encryption: 		ctr(aes)@btrfs:75197c8e (594790215)
->>>>
->>>> # keyctl show 594790215 Keyring
->>>>  594790215 --alsw-v      0     0  logon: btrfs:75197c8e
->>>
->>> That's entirely reasonable, though you may want to support "trusted and
->>> encrypted keys" (Documentation/security/keys-trusted-encrypted.txt)
->>
->>    Yes. that's in the list.
->>
+> [small reorder of comments]
 >
-> Okay, good to hear!
+>> As of now these patch set supports encryption on per subvolume, as
+>> managing properties on per subvolume is a kind of core to btrfs, which is
+>> easier for data center solution-ing, seamlessly persistent and easy to
+>> manage.
 >
-> <snip>
+> We've got dmcrypt for this sort of transparent "device level"
+> encryption. Do we really need another btrfs layer that re-implements
+> generic, robust, widely deployed, stable functionality?
 >
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> What concerns me the most here is that it seems like that nothing
+> has been learnt from the btrfs RAID5/6 debacle. i.e. the btrfs
+> reimplementation of existing robust, stable, widely deployed
+> infrastructure was fatally flawed and despite regular corruption
+> reports they were ignored for, what, 2 years? And then a /user/
+> spent the time to isolate the problem, and now several months later
+> it still hasn't been fixed. I haven't seen any developer interest in
+> fixing it, either.
+>
+> This meets the definition of unmaintained software, and it sets a
+> poor example for how complex new btrfs features might be maintained
+> in the long term. Encryption simply cannot be treated like this - it
+> has to be right, and it has to be well maintained.
+>
+> So what is being done differently ito the RAID5/6 review process
+> this time that will make the new btrfs-specific encryption
+> implementation solid and have minimal risk of zero-day fatal flaws?
+> And how are you going to guarantee that it will be adequately
+> maintained several years down the track?
+>
+>> Also yes, thanks for the emails, I hear, per file encryption and inline
+>> with vfs layer is also important, which is wip among other things in the
+>> list.
+>
+> The generic file encryption code is solid, reviewed, tested and
+> already widely deployed via two separate filesystems. There is a
+> much wider pool of developers who will maintain it, reveiw changes
+> and know all the traps that a new implementation might fall into.
+> There's a much bigger safety net here, which significantly lowers
+> the risk of zero-day fatal flaws in a new implementation and of
+> flaws in future modifications and enhancements.
+>
+> Hence, IMO, the first thing to do is implement and make the generic
+> file encryption support solid and robust, not tack it on as an
+> afterthought for the magic btrfs encryption pixies to take care of.
+>
+> Indeed, with the generic file encryption, btrfs may not even need
+> the special subvolume encryption pixies. i.e. you can effectively
+> implement subvolume encryption via configuration of a multi-user
+> encryption key for each subvolume and apply it to the subvolume tree
+> root at creation time. Then only users with permission to unlock the
+> subvolume key can access it.
+>
+> Once the generic file encryption is solid and fulfils the needs of
+> most users, then you can look to solving the less common threat
+> models that neither dmcrypt or per-file encryption address. Only if
+> the generic code cannot be expanded to address specific threat
+> models should you then implement something that is unique to
+> btrfs....
+>
+> Cheers,
+>
+> Dave.
 >

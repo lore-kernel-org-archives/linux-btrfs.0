@@ -1,73 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [195.159.176.226] ([195.159.176.226]:50374 "EHLO
-        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
-        with ESMTP id S934609AbcIPXS1 (ORCPT
+Received: from email.routify.me ([162.208.10.182]:51014 "EHLO
+        cartman.routify.me" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1755337AbcIPXZ4 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 16 Sep 2016 19:18:27 -0400
-Received: from list by blaine.gmane.org with local (Exim 4.84_2)
-        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-        id 1bl2Og-0001w1-8d
-        for linux-btrfs@vger.kernel.org; Sat, 17 Sep 2016 01:18:18 +0200
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: Filesystem will remount read-only
-Date: Fri, 16 Sep 2016 23:18:03 +0000 (UTC)
-Message-ID: <pan$d74d4$cbd69fcd$ef8693ee$7eb1227f@cox.net>
-References: <8AC4324B47948D40A1031D5AB7D077820141E77717@mailstore.skyward.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+        Fri, 16 Sep 2016 19:25:56 -0400
+Date: Fri, 16 Sep 2016 19:25:53 -0400
+From: Sean Greenslade <sean@seangreenslade.com>
+To: Chris Murphy <lists@colorremedies.com>
+Cc: Qu Wenruo <quwenruo@cn.fujitsu.com>, David Sterba <dsterba@suse.cz>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Subject: Re: Post ext3 conversion problems
+Message-ID: <20160916232552.GA18014@coach.home>
+References: <20160916192459.GA13514@coach.home>
+ <CAJCQCtQutt6r2Jovr0jEbTk4W6HUaQpbGiipen97TH1C+k055g@mail.gmail.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <CAJCQCtQutt6r2Jovr0jEbTk4W6HUaQpbGiipen97TH1C+k055g@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Jeffrey Michels posted on Fri, 16 Sep 2016 14:57:43 +0000 as excerpted:
+On Fri, Sep 16, 2016 at 02:23:44PM -0600, Chris Murphy wrote:
+> Not a mess, I think it's a good bug report. I think Qu and David know
+> more about the latest iteration of the convert code. If you can wait
+> until next week at least to see if they have questions that'd be best.
+> If you need to get access to the computer sooner than later I suggest
+> btrfs-image -c9 -t4 -s to make a filename sanitized copy of the
+> filesystem metadata for them to look at, just in case. They might be
+> able to figure out the problem just from the stack trace, but better
+> to have the image before blowing away the file system, just in case
+> they want it.
 
-> Hello,
-> 
-> I have a system that has been in production for a few years.  The SAN
-> the VM was running on had a hardware failure about a month ago and now
-> one of the two btrfs filesystems will remount after boot read-only. 
-> Here is the system information:
-> 
-> uname -a
-> 
-> Linux retain 3.0.101-0.47.71-default #1 SMP Thu Nov 12 12:22:22 UTC 2015
-> (b5b212e) x86_64 x86_64 x86_64 GNU/Linux
-> 
-> Btrfs --version
-> 
-> Btrfs v0.20+
+I can hang on to the system in its current state, I don't particularly
+need this machine fully operational.
 
-That is positively /ancient/, both kernel and userspace (btrfs-progs).  
-Keep in mind that btrfs was still considered very experimental back then, 
-with the experimental labels coming off only with 3.14 or there abouts, 
-IIRC (userspace releases got version-synced with kernelspace in 3.12, so 
-3.14 applies to both).
+Just to be proactive, I ran the btrfs-image as follows:
 
-So you have been running an at-the-time still extremely experimental 
-filesystem for years now, and it's only now coming up with problems that 
-need fixed.  Pretty remarkable for the experimental state back then, but 
-it doesn't change the fact that it /was/ "may eat your data and burn your 
-kids alive as a sacrifice to appease the filesystem gods" level 
-experimental, with the according warnings, back then.
+btrfs-image -c9 -t4 -s -w /dev/sda2 dumpfile
 
-So first thing I'd suggest is to update to kernel 4.4 LTS series, and 
-something similar for btrfs-progs userspace.  Then, given the age and 
-experimental nature of the filesystem back then, I'd kill the filesystems 
-and do a fresh mkfs.btrfs, restoring from backups.  That way you're 
-starting with a well tested and stable LTS kernel that is both reasonably 
-mature already, and will be supported for some time to come, and 
-eliminate any possibility of long fixed and forgotten bugs coming back to 
-bite you years later.
+http://phead.us/tmp/sgreenslade_home_sanitized_2016-09-16.btrfs
 
-Alternatively, if you're using a long-term support distro, you have the 
-choice of going to them for that support, since unlike this list which 
-focuses on the state going forward, that sort of deep long-term support 
-of long outdated versions is a good part of the reason such distros 
-exist, and a good part of why a lot of people are willing to pay 
-sometimes rather sizable sums of money /for/ that level of support.
+In the mean time, is there any way to make the kernel more verbose about
+btrfs errors? It would be nice to see, for example, what was in the
+transaction that failed, or at least what files / metadata it was
+touching.
 
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+--Sean
 

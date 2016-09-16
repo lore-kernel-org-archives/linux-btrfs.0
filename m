@@ -1,136 +1,100 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:48422 "EHLO
-        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1759174AbcIPLoh (ORCPT
+Received: from mail-it0-f44.google.com ([209.85.214.44]:37430 "EHLO
+        mail-it0-f44.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1759475AbcIPLpG (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 16 Sep 2016 07:44:37 -0400
-Subject: Re: [RFC] Preliminary BTRFS Encryption
-To: Dave Chinner <david@fromorbit.com>
-References: <1473773990-3071-1-git-send-email-anand.jain@oracle.com>
- <20160916011213.GV22388@dastard>
-Cc: linux-btrfs@vger.kernel.org, clm@fb.com, dsterba@suse.cz
-From: Anand Jain <anand.jain@oracle.com>
-Message-ID: <ba84b8d5-e91e-73d6-55a5-4b7c8f57ab17@oracle.com>
-Date: Fri, 16 Sep 2016 19:46:23 +0800
+        Fri, 16 Sep 2016 07:45:06 -0400
+Received: by mail-it0-f44.google.com with SMTP id 186so14240288itf.0
+        for <linux-btrfs@vger.kernel.org>; Fri, 16 Sep 2016 04:45:06 -0700 (PDT)
+Received: from [191.9.212.201] (rrcs-70-62-41-24.central.biz.rr.com. [70.62.41.24])
+        by smtp.gmail.com with ESMTPSA id z130sm3583322iod.17.2016.09.16.04.45.04
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
+        Fri, 16 Sep 2016 04:45:04 -0700 (PDT)
+Subject: Re: Thoughts on btrfs RAID-1 for cold storage/archive?
+To: linux-btrfs@vger.kernel.org
+References: <CAJtFHUQOW4RBZcOu0FWe7dVoxTJWD9bMjvaXYLkXy_Pw7meC-g@mail.gmail.com>
+ <pan$2e9b3$e0d80028$f8a083d5$b81c2a7b@cox.net>
+From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Message-ID: <65ec0d34-9c50-299f-83bd-bd671a52970f@gmail.com>
+Date: Fri, 16 Sep 2016 07:45:03 -0400
 MIME-Version: 1.0
-In-Reply-To: <20160916011213.GV22388@dastard>
-Content-Type: text/plain; charset=windows-1252; format=flowed
+In-Reply-To: <pan$2e9b3$e0d80028$f8a083d5$b81c2a7b@cox.net>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On 2016-09-15 22:58, Duncan wrote:
+> E V posted on Thu, 15 Sep 2016 11:48:13 -0400 as excerpted:
+>
+>> I'm investigating using btrfs for archiving old data and offsite
+>> storage, essentially put 2 drives in btrfs RAID-1, copy the data to the
+>> filesystem and then unmount, remove a drive and take it to an offsite
+>> location. Remount the other drive -o ro,degraded until my systems slots
+>> fill up, then remove the local drive and put it on a shelf. I'd verify
+>> the file md5sums after data is written to the drive for piece of mind,
+>> but maybe a btrfs scrub would give the same assurances. Seem
+>> straightforward? Anything to look out for? Long term format stability
+>> seems good, right? Also, I like the idea of being able to pull the
+>> offsite drive back and scrub if the local drive ever has problems, a
+>> nice extra piece of mind we wouldn't get with ext4. Currently using the
+>> 4.1.32 kernel since the driver for the r750 card in our 45 drives system
+>> only supports up to 4.3 ATM.
+>
+> As described I believe it should work fine.
+>
+> Btrfs raid1 isn't like normal raid1 in some ways and in particular isn't
+> designed to be mounted degraded, writable, long term, only temporarily,
+> in ordered to replace a bad device.  As that's what I thought you were
+> going to propose when I read the subject line, I was all ready to tell
+> you no, don't try it and expect it to work, but of course you had
+> something different in mind, only read-only mounting of the degraded
+> raid1 (unless needed for scrub, etc), not mounting it writable, and as
+> long as you are careful to do just that, only mount it read-only, you
+> should be fine.
+>
+While I generally agree with Duncan that this should work if you're 
+careful, I will say that as things stand right now, you almost certainly 
+_SHOULD NOT_ be using BTRFS for archival storage, be it in the way 
+you're talking about, or even just as a back-end filesystem for some 
+other setup.  While I consider it stable enough for regular usage, the 
+number of issues is still too significant IMO to trust long term 
+archival data storage to it.
 
+There are lots of other options for high density archival storage, and 
+most of them are probably better than BTRFS at the moment.  For 
+reference, here's what I would do if I needed archival storage beyond a 
+few months:
+1. Use SquashFS to create a mountable filesystem image containing the 
+data to be archived.
+2. Compute and store checksums for the resultant FS image (probably SHA256)
+3. Using veritysetup, dm-verity, and the new forward error correction it 
+provides, generate block-level authenticated checksums for the whole 
+image, including enough data to repair reasonable data corruption.
+4. Compute and store checksums for the resultant dm-verity data.
+5. Compress the data from dm-verity (using the same compression 
+algorithm as used in the SquashFS image).
+6. Create a tar archive containing the SquashFS image, the compressed 
+dm-verity data, and a file with the checksums.
+7. Store that tar archive in at least two different places.
 
-On 09/16/2016 09:12 AM, Dave Chinner wrote:
-> On Tue, Sep 13, 2016 at 09:39:46PM +0800, Anand Jain wrote:
->>
->> This patchset adds btrfs encryption support.
->>
->> The main objective of this series is to have bugs fixed and stability.
->> I have verified with fstests to confirm that there is no regression.
->>
->> A design write-up is coming next, however here below is the quick example
->> on the cli usage. Please try out, let me know if I have missed something.
->
-> Yup, that best practices say "do not roll your own encryption
-> infrastructure".
->
-> This is just my 2c worth - take it or leave it, don't other flaming.
-> Keep in mind that I'm not picking on btrfs here - I asked similar
-> hard questions about the proposed f2fs encryption implementation.
-> That was a "copy and snowflake" version of the ext4 encryption code -
-> they made changes and now we have generic code and common
-> functionality between ext4 and f2fs.
->
->> Also would like to mention that a review from the security experts is due,
->> which is important and I believe those review comments can be accommodated
->> without major changes from here.
->
-> That's a fairly significant red flag to me - security reviews need
-> to be done at the design phase against specific threat models -
-> security review is not a code/implementation review...
->
-> The ext4 developers got this right by publishing threat models and
-> design docs, which got quite a lot of review and feedback before
-> code was published for review.
->
-> https://docs.google.com/document/d/1ft26lUQyuSpiu6VleP70_npaWdRfXFoNnB8JYnykNTg/edit#heading=h.qmnirp22ipew
+When restoring data:
+1. Collect copies of the tar archive from at least two different places.
+2. For both copies:
+	1. Extract the tar archive and decompress the dm-verity data.
+	2. Verify the checksum of the dm-verity data.
+	3. If the dm-verity data's checksum is correct, set up a dm-verity 
+target using that and the SquashFS image.
+	4. If the dm-verity data's checksum is incorrect, verify the checksum 
+of the SquashFS archive.
+	5. If the SquashFS archive's checksum is correct, use it directly, 
+otherwise discard this copy.
+3. Create a read-only dm-raid RAID1 array containing all of the 
+dm-verity backed devices and SquashFS images with in-core sync-logging.
+4. Mount the resultant device, and copy any data out.
 
-
-  As mentioned 'inline with vfs layer' I mean to say to use
-  fs/crypto KPIs. Which I haven't seen what parts of the code
-  from ext4 was made as generic KPIs. If that's getting stuff
-  correct in the encryption related, I think it would here as well.
-
-  Internal to btrfs - I had challenges to get the extents encoding
-  done properly without bailout, and the test plan. Which I think
-  is addressed here in this code.
-
-
-Thanks, Anand
-
-
-> [small reorder of comments]
->
->> As of now these patch set supports encryption on per subvolume, as
->> managing properties on per subvolume is a kind of core to btrfs, which is
->> easier for data center solution-ing, seamlessly persistent and easy to
->> manage.
->
-> We've got dmcrypt for this sort of transparent "device level"
-> encryption. Do we really need another btrfs layer that re-implements
-> generic, robust, widely deployed, stable functionality?
->
-> What concerns me the most here is that it seems like that nothing
-> has been learnt from the btrfs RAID5/6 debacle. i.e. the btrfs
-> reimplementation of existing robust, stable, widely deployed
-> infrastructure was fatally flawed and despite regular corruption
-> reports they were ignored for, what, 2 years? And then a /user/
-> spent the time to isolate the problem, and now several months later
-> it still hasn't been fixed. I haven't seen any developer interest in
-> fixing it, either.
->
-> This meets the definition of unmaintained software, and it sets a
-> poor example for how complex new btrfs features might be maintained
-> in the long term. Encryption simply cannot be treated like this - it
-> has to be right, and it has to be well maintained.
->
-> So what is being done differently ito the RAID5/6 review process
-> this time that will make the new btrfs-specific encryption
-> implementation solid and have minimal risk of zero-day fatal flaws?
-> And how are you going to guarantee that it will be adequately
-> maintained several years down the track?
->
->> Also yes, thanks for the emails, I hear, per file encryption and inline
->> with vfs layer is also important, which is wip among other things in the
->> list.
->
-> The generic file encryption code is solid, reviewed, tested and
-> already widely deployed via two separate filesystems. There is a
-> much wider pool of developers who will maintain it, reveiw changes
-> and know all the traps that a new implementation might fall into.
-> There's a much bigger safety net here, which significantly lowers
-> the risk of zero-day fatal flaws in a new implementation and of
-> flaws in future modifications and enhancements.
->
-> Hence, IMO, the first thing to do is implement and make the generic
-> file encryption support solid and robust, not tack it on as an
-> afterthought for the magic btrfs encryption pixies to take care of.
->
-> Indeed, with the generic file encryption, btrfs may not even need
-> the special subvolume encryption pixies. i.e. you can effectively
-> implement subvolume encryption via configuration of a multi-user
-> encryption key for each subvolume and apply it to the subvolume tree
-> root at creation time. Then only users with permission to unlock the
-> subvolume key can access it.
->
-> Once the generic file encryption is solid and fulfils the needs of
-> most users, then you can look to solving the less common threat
-> models that neither dmcrypt or per-file encryption address. Only if
-> the generic code cannot be expanded to address specific threat
-> models should you then implement something that is unique to
-> btrfs....
->
-> Cheers,
->
-> Dave.
->
+That will overall give a better level of protection than BTRFS, or ZFS, 
+or almost anything else available on Linux right now can offer, and 
+actually provides better data safety than many commercial solutions. 
+The only down side is that you need recent device-mapper userspace and a 
+recent kernel to create and extract things.

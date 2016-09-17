@@ -1,111 +1,205 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-001b2d01.pphosted.com ([148.163.158.5]:43158 "EHLO
-        mx0a-001b2d01.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
-        by vger.kernel.org with ESMTP id S1756012AbcINK3B (ORCPT
+Received: from mail-wm0-f65.google.com ([74.125.82.65]:34466 "EHLO
+        mail-wm0-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S932119AbcIQXKd (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 14 Sep 2016 06:29:01 -0400
-Received: from pps.filterd (m0098420.ppops.net [127.0.0.1])
-        by mx0b-001b2d01.pphosted.com (8.16.0.17/8.16.0.17) with SMTP id u8EAS7fH109166
-        for <linux-btrfs@vger.kernel.org>; Wed, 14 Sep 2016 06:29:00 -0400
-Received: from e34.co.us.ibm.com (e34.co.us.ibm.com [32.97.110.152])
-        by mx0b-001b2d01.pphosted.com with ESMTP id 25exbyhkgu-1
-        (version=TLSv1.2 cipher=AES256-SHA bits=256 verify=NOT)
-        for <linux-btrfs@vger.kernel.org>; Wed, 14 Sep 2016 06:28:59 -0400
-Received: from localhost
-        by e34.co.us.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
-        for <linux-btrfs@vger.kernel.org> from <chandan@linux.vnet.ibm.com>;
-        Wed, 14 Sep 2016 04:28:58 -0600
-From: Chandan Rajendra <chandan@linux.vnet.ibm.com>
+        Sat, 17 Sep 2016 19:10:33 -0400
+Received: by mail-wm0-f65.google.com with SMTP id l132so7941132wmf.1
+        for <linux-btrfs@vger.kernel.org>; Sat, 17 Sep 2016 16:10:33 -0700 (PDT)
+From: =?UTF-8?q?Domagoj=20Tr=C5=A1an?= <domagoj.trsan@gmail.com>
 To: linux-btrfs@vger.kernel.org
-Cc: Chandan Rajendra <chandan@linux.vnet.ibm.com>, jbacik@fb.com
-Subject: [PATCH] Btrfs: Free fs_info->eb_info only when it holds a valid pointer
-Date: Wed, 14 Sep 2016 15:58:37 +0530
-Message-Id: <1473848917-25442-1-git-send-email-chandan@linux.vnet.ibm.com>
+Cc: clm@fb.com, jbacik@fb.com, dsterba@suse.com,
+        =?UTF-8?q?Domagoj=20Tr=C5=A1an?= <domagoj.trsan@gmail.com>
+Subject: [PATCH] btrfs-progs: change btrfs_csum_final result param type to u8
+Date: Sun, 18 Sep 2016 00:10:23 +0100
+Message-Id: <1474153823-6671-2-git-send-email-domagoj.trsan@gmail.com>
+In-Reply-To: <1474153823-6671-1-git-send-email-domagoj.trsan@gmail.com>
+References: <1474153823-6671-1-git-send-email-domagoj.trsan@gmail.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The following command line sequence causes a NULL pointer dereference,
-
-mount /dev/loop0 /mnt/dir1
-mount /dev/loop0 /mnt/dir2
-
-[  159.964194] BUG: unable to handle kernel NULL pointer dereference at 0000000000000070
-[  159.965147] IP: [<ffffffff8114e438>] list_lru_destroy+0x8/0x20
-[  159.965147] PGD 0
-[  159.965147] Oops: 0000 [#1] SMP DEBUG_PAGEALLOC
-[  159.965147] Modules linked in:
-[  159.965147] CPU: 2 PID: 3043 Comm: mount Not tainted 4.7.0-ge96efee1-dirty #5
-[  159.965147] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS Bochs 01/01/2011
-[  159.965147] task: ffff8818b511a400 task.stack: ffff8818a5108000
-[  159.965147] RIP: 0010:[<ffffffff8114e438>]  [<ffffffff8114e438>] list_lru_destroy+0x8/0x20
-[  159.965147] RSP: 0018:ffff8818a510bbd8  EFLAGS: 00010246
-[  159.965147] RAX: 0000000000000000 RBX: 0000000000000070 RCX: 00000000c0000100
-[  159.965147] RDX: ffffffff82041b78 RSI: ffff8818b511a400 RDI: 0000000000000070
-[  159.965147] RBP: ffff8818a510bbe0 R08: ffff8818a5108000 R09: ffff8818a50a6000
-[  159.965147] R10: 0000000000000000 R11: 000000253e9b4bd4 R12: ffffffff82098f80
-[  159.965147] R13: ffff8818b266e000 R14: ffff8818a4760000 R15: ffff8818b5449b50
-[  159.965147] FS:  00007f29f0ab0840(0000) GS:ffff881933480000(0000) knlGS:0000000000000000
-[  159.965147] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
-[  159.965147] CR2: 0000000000000070 CR3: 00000018a5239000 CR4: 00000000000006e0
-[  159.965147] Stack:
-[  159.965147]  0000000000000000 ffff8818a510bcb8 ffffffff813464e5 0000000fa510bc00
-[  159.965147]  000000200100243e ffff8818a4004d18 0000000800000046 ffff8818a510bc20
-[  159.965147]  ffffffff8148243e ffff8818a510bc50 ffff8818b5449b30 0000000000000008
-[  159.965147] Call Trace:
-[  159.965147]  [<ffffffff813464e5>] btrfs_mount+0xad5/0xee0
-[  159.965147]  [<ffffffff8148243e>] ? find_next_zero_bit+0x1e/0x20
-[  159.965147]  [<ffffffff81184b64>] mount_fs+0x34/0x160
-[  159.965147]  [<ffffffff81146fa0>] ? __alloc_percpu+0x10/0x20
-[  159.965147]  [<ffffffff8119f032>] vfs_kern_mount+0x62/0x100
-[  159.965147]  [<ffffffff81345b96>] btrfs_mount+0x186/0xee0
-[  159.965147]  [<ffffffff8148243e>] ? find_next_zero_bit+0x1e/0x20
-[  159.965147]  [<ffffffff81184b64>] mount_fs+0x34/0x160
-[  159.965147]  [<ffffffff81146fa0>] ? __alloc_percpu+0x10/0x20
-[  159.965147]  [<ffffffff8119f032>] vfs_kern_mount+0x62/0x100
-[  159.965147]  [<ffffffff811a19b6>] do_mount+0x1b6/0xc40
-[  159.965147]  [<ffffffff811422dd>] ? memdup_user+0x3d/0x70
-[  159.965147]  [<ffffffff811a271e>] SyS_mount+0x7e/0xd0
-[  159.965147]  [<ffffffff81a3ef1b>] entry_SYSCALL_64_fastpath+0x13/0x8f
-[  159.965147] Code: 89 08 48 89 e5 48 8b 02 48 89 70 08 48 89 06 48 89 56 08 48 89 32 5d 48 83 6f 10 01 c3 66 0f 1f 44 00 00 55 48 89 e5 53 48 89 fb <48> 8b 3f 48 85 ff 74 0c e8 9b 99 02 00 48 c7 03 00 00 00 00 5b
-[  159.965147] RIP  [<ffffffff8114e438>] list_lru_destroy+0x8/0x20
-[  159.965147]  RSP <ffff8818a510bbd8>
-[  159.965147] CR2: 0000000000000070
-[  159.999634] ---[ end trace 04bad43e08a10198 ]---
-
-When servicing the second mount command, btrfs_mount() invokes
-free_fs_info() because super_block->s_root is already set. At this
-instance we would not have initialized btrfs_fs_info->eb_info to a valid
-memory address. Hence the statement,
-list_lru_destroy(&fs_info->eb_info->lru_list); causes a NULL pointer
-dereference.
-
-Signed-off-by: Chandan Rajendra <chandan@linux.vnet.ibm.com>
+Signed-off-by: Domagoj Tršan <domagoj.trsan@gmail.com>
 ---
- fs/btrfs/ctree.h | 7 +++++--
- 1 file changed, 5 insertions(+), 2 deletions(-)
+ btrfs-image.c             |  2 +-
+ chunk-recover.c           |  2 +-
+ cmds-check.c              |  2 +-
+ cmds-inspect-dump-super.c |  2 +-
+ disk-io.c                 | 10 +++++-----
+ disk-io.h                 |  2 +-
+ file-item.c               |  2 +-
+ free-space-cache.c        |  2 +-
+ super-recover.c           |  2 +-
+ utils.c                   |  2 +-
+ 10 files changed, 14 insertions(+), 14 deletions(-)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index ee6956c..33ce069 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -2882,8 +2882,11 @@ static inline int btrfs_need_cleaner_sleep(struct btrfs_root *root)
+diff --git a/btrfs-image.c b/btrfs-image.c
+index 953d368..6de163c 100644
+--- a/btrfs-image.c
++++ b/btrfs-image.c
+@@ -163,7 +163,7 @@ static struct extent_buffer *alloc_dummy_eb(u64 bytenr, u32 size);
  
- static inline void free_fs_info(struct btrfs_fs_info *fs_info)
+ static void csum_block(u8 *buf, size_t len)
  {
--	list_lru_destroy(&fs_info->eb_info->lru_list);
--	kfree(fs_info->eb_info);
-+	if (fs_info->eb_info) {
-+		list_lru_destroy(&fs_info->eb_info->lru_list);
-+		kfree(fs_info->eb_info);
-+	}
-+
- 	kfree(fs_info->balance_ctl);
- 	kfree(fs_info->delayed_root);
- 	kfree(fs_info->extent_root);
+-	char result[BTRFS_CRC32_SIZE];
++	u8 result[BTRFS_CRC32_SIZE];
+ 	u32 crc = ~(u32)0;
+ 	crc = crc32c(crc, buf + BTRFS_CSUM_SIZE, len - BTRFS_CSUM_SIZE);
+ 	btrfs_csum_final(crc, result);
+diff --git a/chunk-recover.c b/chunk-recover.c
+index 4a081db..32d2805 100644
+--- a/chunk-recover.c
++++ b/chunk-recover.c
+@@ -1914,7 +1914,7 @@ static int check_one_csum(int fd, u64 start, u32 len, u32 tree_csum)
+ 	}
+ 	ret = 0;
+ 	csum_result = btrfs_csum_data(NULL, data, csum_result, len);
+-	btrfs_csum_final(csum_result, (char *)&csum_result);
++	btrfs_csum_final(csum_result, (u8 *)&csum_result);
+ 	if (csum_result != tree_csum)
+ 		ret = 1;
+ out:
+diff --git a/cmds-check.c b/cmds-check.c
+index a453696..a36693d 100644
+--- a/cmds-check.c
++++ b/cmds-check.c
+@@ -5740,7 +5740,7 @@ again:
+ 
+ 			csum = btrfs_csum_data(NULL, (char *)data + tmp,
+ 					       csum, root->sectorsize);
+-			btrfs_csum_final(csum, (char *)&csum);
++			btrfs_csum_final(csum, (u8 *)&csum);
+ 
+ 			csum_offset = leaf_offset +
+ 				 tmp / root->sectorsize * csum_size;
+diff --git a/cmds-inspect-dump-super.c b/cmds-inspect-dump-super.c
+index aab5075..2f2c628 100644
+--- a/cmds-inspect-dump-super.c
++++ b/cmds-inspect-dump-super.c
+@@ -37,7 +37,7 @@
+ 
+ static int check_csum_sblock(void *sb, int csum_size)
+ {
+-	char result[BTRFS_CSUM_SIZE];
++	u8 result[BTRFS_CSUM_SIZE];
+ 	u32 crc = ~(u32)0;
+ 
+ 	crc = btrfs_csum_data(NULL, (char *)sb + BTRFS_CSUM_SIZE,
+diff --git a/disk-io.c b/disk-io.c
+index f5340c3..c16eda2 100644
+--- a/disk-io.c
++++ b/disk-io.c
+@@ -123,7 +123,7 @@ u32 btrfs_csum_data(struct btrfs_root *root, char *data, u32 seed, size_t len)
+ 	return crc32c(seed, data, len);
+ }
+ 
+-void btrfs_csum_final(u32 crc, char *result)
++void btrfs_csum_final(u32 crc, u8 *result)
+ {
+ 	put_unaligned_le32(~crc, result);
+ }
+@@ -131,7 +131,7 @@ void btrfs_csum_final(u32 crc, char *result)
+ static int __csum_tree_block_size(struct extent_buffer *buf, u16 csum_size,
+ 				  int verify, int silent)
+ {
+-	char result[BTRFS_CSUM_SIZE];
++	u8 result[BTRFS_CSUM_SIZE];
+ 	u32 len;
+ 	u32 crc = ~(u32)0;
+ 
+@@ -1423,7 +1423,7 @@ struct btrfs_root *open_ctree_fd(int fp, const char *path, u64 sb_bytenr,
+  */
+ static int check_super(struct btrfs_super_block *sb, unsigned sbflags)
+ {
+-	char result[BTRFS_CSUM_SIZE];
++	u8 result[BTRFS_CSUM_SIZE];
+ 	u32 crc;
+ 	u16 csum_type;
+ 	int csum_size;
+@@ -1647,7 +1647,7 @@ static int write_dev_supers(struct btrfs_root *root,
+ 		crc = ~(u32)0;
+ 		crc = btrfs_csum_data(NULL, (char *)sb + BTRFS_CSUM_SIZE, crc,
+ 				      BTRFS_SUPER_INFO_SIZE - BTRFS_CSUM_SIZE);
+-		btrfs_csum_final(crc, (char *)&sb->csum[0]);
++		btrfs_csum_final(crc, &sb->csum[0]);
+ 
+ 		/*
+ 		 * super_copy is BTRFS_SUPER_INFO_SIZE bytes and is
+@@ -1671,7 +1671,7 @@ static int write_dev_supers(struct btrfs_root *root,
+ 		crc = ~(u32)0;
+ 		crc = btrfs_csum_data(NULL, (char *)sb + BTRFS_CSUM_SIZE, crc,
+ 				      BTRFS_SUPER_INFO_SIZE - BTRFS_CSUM_SIZE);
+-		btrfs_csum_final(crc, (char *)&sb->csum[0]);
++		btrfs_csum_final(crc, &sb->csum[0]);
+ 
+ 		/*
+ 		 * super_copy is BTRFS_SUPER_INFO_SIZE bytes and is
+diff --git a/disk-io.h b/disk-io.h
+index c404d3f..1080fc1 100644
+--- a/disk-io.h
++++ b/disk-io.h
+@@ -175,7 +175,7 @@ int btrfs_set_buffer_uptodate(struct extent_buffer *buf);
+ int wait_on_tree_block_writeback(struct btrfs_root *root,
+ 				 struct extent_buffer *buf);
+ u32 btrfs_csum_data(struct btrfs_root *root, char *data, u32 seed, size_t len);
+-void btrfs_csum_final(u32 crc, char *result);
++void btrfs_csum_final(u32 crc, u8 *result);
+ 
+ int btrfs_commit_transaction(struct btrfs_trans_handle *trans,
+ 			     struct btrfs_root *root);
+diff --git a/file-item.c b/file-item.c
+index 7a3bbf3..dc3d404 100644
+--- a/file-item.c
++++ b/file-item.c
+@@ -297,7 +297,7 @@ csum:
+ 					  csum_offset * csum_size);
+ found:
+ 	csum_result = btrfs_csum_data(root, data, csum_result, len);
+-	btrfs_csum_final(csum_result, (char *)&csum_result);
++	btrfs_csum_final(csum_result, (u8 *)&csum_result);
+ 	if (csum_result == 0) {
+ 		printk("csum result is 0 for block %llu\n",
+ 		       (unsigned long long)bytenr);
+diff --git a/free-space-cache.c b/free-space-cache.c
+index 357d69e..1919d90 100644
+--- a/free-space-cache.c
++++ b/free-space-cache.c
+@@ -210,7 +210,7 @@ static int io_ctl_check_crc(struct io_ctl *io_ctl, int index)
+ 
+ 	io_ctl_map_page(io_ctl, 0);
+ 	crc = crc32c(crc, io_ctl->orig + offset, io_ctl->root->sectorsize - offset);
+-	btrfs_csum_final(crc, (char *)&crc);
++	btrfs_csum_final(crc, (u8 *)&crc);
+ 	if (val != crc) {
+ 		printk("btrfs: csum mismatch on free space cache\n");
+ 		io_ctl_unmap_page(io_ctl);
+diff --git a/super-recover.c b/super-recover.c
+index 635e804..ecd1215 100644
+--- a/super-recover.c
++++ b/super-recover.c
+@@ -91,7 +91,7 @@ void free_recover_superblock(struct btrfs_recover_superblock *recover)
+ static int check_super(u64 bytenr, struct btrfs_super_block *sb)
+ {
+ 	int csum_size = btrfs_super_csum_size(sb);
+-	char result[csum_size];
++	u8 result[csum_size];
+ 	u32 crc = ~(u32)0;
+ 
+ 	if (btrfs_super_bytenr(sb) != bytenr)
+diff --git a/utils.c b/utils.c
+index cec7c73..511e91f 100644
+--- a/utils.c
++++ b/utils.c
+@@ -223,7 +223,7 @@ static inline int write_temp_super(int fd, struct btrfs_super_block *sb,
+ 
+ 	crc = btrfs_csum_data(NULL, (char *)sb + BTRFS_CSUM_SIZE, crc,
+ 			      BTRFS_SUPER_INFO_SIZE - BTRFS_CSUM_SIZE);
+-	btrfs_csum_final(crc, (char *)&sb->csum[0]);
++	btrfs_csum_final(crc, &sb->csum[0]);
+ 	ret = pwrite(fd, sb, BTRFS_SUPER_INFO_SIZE, sb_bytenr);
+ 	if (ret < BTRFS_SUPER_INFO_SIZE)
+ 		ret = (ret < 0 ? -errno : -EIO);
 -- 
-2.5.5
+2.7.4
 
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-

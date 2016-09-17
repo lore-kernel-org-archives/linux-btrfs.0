@@ -1,57 +1,63 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from email.routify.me ([162.208.10.182]:49296 "EHLO
-        cartman.routify.me" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752144AbcIQADH (ORCPT
+Received: from mail-oi0-f53.google.com ([209.85.218.53]:36723 "EHLO
+        mail-oi0-f53.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1753923AbcIQAI0 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 16 Sep 2016 20:03:07 -0400
-Date: Fri, 16 Sep 2016 20:03:03 -0400
-From: Sean Greenslade <sean@seangreenslade.com>
-To: Chris Murphy <lists@colorremedies.com>
-Cc: Qu Wenruo <quwenruo@cn.fujitsu.com>, David Sterba <dsterba@suse.cz>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Subject: Re: Post ext3 conversion problems
-Message-ID: <20160917000302.GA1156@coach.home>
-References: <20160916192459.GA13514@coach.home>
- <CAJCQCtQutt6r2Jovr0jEbTk4W6HUaQpbGiipen97TH1C+k055g@mail.gmail.com>
- <20160916232552.GA18014@coach.home>
- <CAJCQCtSW0zrWdYgWsWmokBDGBY8Lkd0E-cKKmBf7CfoZdR5aFA@mail.gmail.com>
+        Fri, 16 Sep 2016 20:08:26 -0400
+Received: by mail-oi0-f53.google.com with SMTP id t83so1578678oie.3
+        for <linux-btrfs@vger.kernel.org>; Fri, 16 Sep 2016 17:08:26 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CAJCQCtSW0zrWdYgWsWmokBDGBY8Lkd0E-cKKmBf7CfoZdR5aFA@mail.gmail.com>
+In-Reply-To: <8AC4324B47948D40A1031D5AB7D077820141E77717@mailstore.skyward.com>
+References: <8AC4324B47948D40A1031D5AB7D077820141E77717@mailstore.skyward.com>
+From: Chris Murphy <lists@colorremedies.com>
+Date: Fri, 16 Sep 2016 18:08:25 -0600
+Message-ID: <CAJCQCtSxcVuE_ZFNvHR=4gF5hDaYTYoav_yV_wEbdjeEfrpOTw@mail.gmail.com>
+Subject: Re: Filesystem will remount read-only
+To: Jeffrey Michels <jeffreym@skyward.com>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Sep 16, 2016 at 05:45:59PM -0600, Chris Murphy wrote:
-> On Fri, Sep 16, 2016 at 5:25 PM, Sean Greenslade
-> <sean@seangreenslade.com> wrote:
-> 
-> > In the mean time, is there any way to make the kernel more verbose about
-> > btrfs errors? It would be nice to see, for example, what was in the
-> > transaction that failed, or at least what files / metadata it was
-> > touching.
-> 
-> No idea. Maybe one of the compile time options:
-> 
-> 
-> CONFIG_BTRFS_FS_CHECK_INTEGRITY=y
-> This also requires mount options, either check_int or check_int_data
-> CONFIG_BTRFS_FS_RUN_SANITY_TESTS
-> CONFIG_BTRFS_DEBUG=y
-> https://patchwork.kernel.org/patch/846462/
-> CONFIG_BTRFS_ASSERT=y
-> 
-> Actually, even before that maybe if you did a 'btrfs-debug-tree /dev/sdX'
-> 
-> That might explode in the vicinity of the problem. Thing is, btrfs
-> check doesn't see anything wrong with the metadata, so chances are
-> debug-tree won't either.
+On Fri, Sep 16, 2016 at 8:57 AM, Jeffrey Michels <jeffreym@skyward.com> wrote:
+> Hello,
+>
+> I have a system that has been in production for a few years.  The SAN the VM was running on had a hardware failure about a month ago and now one of the two btrfs filesystems will remount after boot read-only.  Here is the system information:
+>
+> uname -a
+>
+> Linux retain 3.0.101-0.47.71-default #1 SMP Thu Nov 12 12:22:22 UTC 2015 (b5b212e) x86_64 x86_64 x86_64 GNU/Linux
+>
+> Btrfs --version
+>
+> Btrfs v0.20+
 
-Hmm, I'll probably have a go at compiling the latest mainline kernel
-with CONFIG_BTRFS_DEBUG enabled. It certainly can't hurt to try.
+Impressive that it's been running in production this long and with old
+kernel. I like it!
 
-And as you suspected, btrfs-debug-tree didn't explode / error out on me.
-I didn't thoroughly inspect the output (as I have very little
-understanding of the btrfs internals), but it all seemed OK.
+Anyway, you could try mounting with -o recovery and see if that works.
+That's about the only thing I'd trust with such an old kernel and
+btrfs-progs. I don't even think it's worth trying the btrfsck on v0.20
+just to see what the problems might be, and certainly not for actually
+using the repair mode.  Actually I'm not even sure progs that old even
+does repairs, it might be the era of notify only.
 
---Sean
+If -o recovery doesn't work, you'll need to use something newer, you
+could use one of:
 
+Fedora Rawhide nightly with 4.8rc6 kernel and btrfs-progs 4.7.2. This
+is a small netinstall image. dd to a USB stick, choose Troubleshooting
+option, then the Rescue option, then after startup use the 3 option to
+get to a shell where you can try to mount normally, or use
+btrfs-check. Limited tty, no sshd.
+https://kojipkgs.fedoraproject.org/compose/rawhide/Fedora-Rawhide-20160914.n.0/compose/Everything/x86_64/iso/Fedora-Everything-netinst-x86_64-Rawhide-20160914.n.0.iso.n.0.iso
+
+Or something more official with published hash's for the image and a
+GUI, Fedora 24 workstation has kernel 4.5.5 and btrfs-progs 4.5.2
+https://getfedora.org/en/workstation/download/
+
+
+
+
+-- 
+Chris Murphy

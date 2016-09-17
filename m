@@ -1,53 +1,78 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oi0-f42.google.com ([209.85.218.42]:33462 "EHLO
-        mail-oi0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1754912AbcIQA4t (ORCPT
+Received: from james.kirk.hungrycats.org ([174.142.39.145]:45972 "EHLO
+        james.kirk.hungrycats.org" rhost-flags-OK-OK-OK-FAIL)
+        by vger.kernel.org with ESMTP id S1750774AbcIQCSI (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 16 Sep 2016 20:56:49 -0400
-Received: by mail-oi0-f42.google.com with SMTP id r126so130997794oib.0
-        for <linux-btrfs@vger.kernel.org>; Fri, 16 Sep 2016 17:56:48 -0700 (PDT)
+        Fri, 16 Sep 2016 22:18:08 -0400
+Date: Fri, 16 Sep 2016 22:18:06 -0400
+From: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
+To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Cc: Anand Jain <anand.jain@oracle.com>, linux-btrfs@vger.kernel.org,
+        clm@fb.com, dsterba@suse.cz
+Subject: Re: [RFC] Preliminary BTRFS Encryption
+Message-ID: <20160917021806.GB21290@hungrycats.org>
+References: <1473773990-3071-1-git-send-email-anand.jain@oracle.com>
+ <bce627a8-7dcc-71f6-dd44-0444f7993725@gmail.com>
+ <69c23d9b-c1be-41ba-1382-3505ba88fdf9@oracle.com>
+ <ee07da59-9c9d-10f8-8cf5-6dc86a8e3eab@gmail.com>
 MIME-Version: 1.0
-In-Reply-To: <CAJCQCtSxcVuE_ZFNvHR=4gF5hDaYTYoav_yV_wEbdjeEfrpOTw@mail.gmail.com>
-References: <8AC4324B47948D40A1031D5AB7D077820141E77717@mailstore.skyward.com> <CAJCQCtSxcVuE_ZFNvHR=4gF5hDaYTYoav_yV_wEbdjeEfrpOTw@mail.gmail.com>
-From: Chris Murphy <lists@colorremedies.com>
-Date: Fri, 16 Sep 2016 18:56:47 -0600
-Message-ID: <CAJCQCtQGOQ0=vmkGeDBBRug05jD1_Chm_=JQf+V+AJpym8JrUw@mail.gmail.com>
-Subject: Re: Filesystem will remount read-only
-Cc: Jeffrey Michels <jeffreym@skyward.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
-To: unlisted-recipients:; (no To-header on input)
+Content-Type: multipart/signed; micalg=pgp-sha1;
+        protocol="application/pgp-signature"; boundary="xXmbgvnjoT4axfJE"
+In-Reply-To: <ee07da59-9c9d-10f8-8cf5-6dc86a8e3eab@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Sep 16, 2016 at 6:08 PM, Chris Murphy <lists@colorremedies.com> wrote:
->
-> If -o recovery doesn't work, you'll need to use something newer, you
-> could use one of:
->
-> Fedora Rawhide nightly with 4.8rc6 kernel and btrfs-progs 4.7.2. This
-> is a small netinstall image. dd to a USB stick, choose Troubleshooting
-> option, then the Rescue option, then after startup use the 3 option to
-> get to a shell where you can try to mount normally, or use
-> btrfs-check. Limited tty, no sshd.
-> https://kojipkgs.fedoraproject.org/compose/rawhide/Fedora-Rawhide-20160914.n.0/compose/Everything/x86_64/iso/Fedora-Everything-netinst-x86_64-Rawhide-20160914.n.0.iso.n.0.iso
->
-> Or something more official with published hash's for the image and a
-> GUI, Fedora 24 workstation has kernel 4.5.5 and btrfs-progs 4.5.2
-> https://getfedora.org/en/workstation/download/
 
-Just to complete the thought... use these just to boot and have access
-to something newer. I'm not suggesting install them. First try a
-normal mount, and if that fails, try -o recovery, if that fails, I'm
-curious about
+--xXmbgvnjoT4axfJE
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-btrfs rescue super-recover -v <dev>
-btrfs check <dev>
+On Thu, Sep 15, 2016 at 10:24:02AM -0400, Austin S. Hemmelgarn wrote:
+> On 2016-09-15 10:06, Anand Jain wrote:
+> >>How does this handle cloning of extents?  Can extents be cloned across
+> >>subvolume boundaries when one of the subvolumes is encrypted?
+> >
+> > Yes only if both the subvol keys match.
+> OK, that makes sense.
+> >
+> >>Can they
+> >>be cloned within an encrypted subvolume?
+> >
+> > Yes. That's things as usual.
+> Glad to see that that still works.  Most people I know who do batch
+> deduplication do so within subvolumes but not across them, so that still
+> working with encrypted subvolumes is a good thing.
 
-What I'm after is a way to get it to mount cleanly with a new kernel,
-and then hoping you can then just reboot with the ancient kernel and
-it'll be back to normal.
+I do continual filesystem-wide deduplication across subvolumes, but I
+don't think this is a problem.
+
+There are already a number of conditions when IOC_FILE_EXTENT_SAME might
+fail and deduplicators must tolerate those failures.  Cross-subvol dedup
+has to loop over all duplicate block references (including those in
+other subvols) until all references to one of the blocks are eliminated.
+So dedup should still work by sheer brute force, banging extents together
+until they stick, but it would be noisy and slower if it was not aware
+of encrypted subvols.
+
+If there's a way to look at the subvolume properties and figure out
+whether the extents are clonable (e.g. equal key IDs =3D=3D clonable) then
+it should be easy to avoid submitting FILE_EXTENT_SAME extent pairs
+belonging to incompatibly encrypted subvols.  They can also be stored in
+separate DDT entries (e.g. by extending the hash field) so that blocks
+=66rom incompatibly encrypted subvols won't have matching extended hashes.
 
 
--- 
-Chris Murphy
+--xXmbgvnjoT4axfJE
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
+
+iEYEARECAAYFAlfcp94ACgkQgfmLGlazG5yYmACfc1JHg/FJtusyydAKM7mEM4ZW
+QW0AoMQyMiErlRMPmdK73gYqGyF/bj/D
+=hpAr
+-----END PGP SIGNATURE-----
+
+--xXmbgvnjoT4axfJE--

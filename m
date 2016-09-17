@@ -1,206 +1,110 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from email.routify.me ([162.208.10.182]:60383 "EHLO
-        cartman.routify.me" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750860AbcIQEQ1 (ORCPT
+Received: from james.kirk.hungrycats.org ([174.142.39.145]:35510 "EHLO
+        james.kirk.hungrycats.org" rhost-flags-OK-FAIL-OK-FAIL)
+        by vger.kernel.org with ESMTP id S1751050AbcIQEig (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 17 Sep 2016 00:16:27 -0400
-Date: Sat, 17 Sep 2016 00:16:23 -0400
-From: Sean Greenslade <sean@seangreenslade.com>
-To: Liu Bo <bo.li.liu@oracle.com>
+        Sat, 17 Sep 2016 00:38:36 -0400
+Date: Sat, 17 Sep 2016 00:38:30 -0400
+From: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
+To: Alex Elsayed <eternaleye@gmail.com>
 Cc: linux-btrfs@vger.kernel.org
-Subject: Re: Post ext3 conversion problems
-Message-ID: <20160917041622.GB1156@coach.home>
-References: <20160916192459.GA13514@coach.home>
- <20160917022758.GA6389@localhost.localdomain>
+Subject: Re: [RFC] Preliminary BTRFS Encryption
+Message-ID: <20160917043829.GC21290@hungrycats.org>
+References: <1473773990-3071-1-git-send-email-anand.jain@oracle.com>
+ <20160916011213.GV22388@dastard>
+ <nrg4mh$bkn$1@blaine.gmane.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20160917022758.GA6389@localhost.localdomain>
+Content-Type: multipart/signed; micalg=pgp-sha1;
+        protocol="application/pgp-signature"; boundary="p2kqVDKq5asng8Dg"
+In-Reply-To: <nrg4mh$bkn$1@blaine.gmane.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Sep 16, 2016 at 07:27:58PM -0700, Liu Bo wrote:
-> Interesting, seems that we get errors from 
-> 
-> btrfs_finish_ordered_io
->   insert_reserved_file_extent
->     __btrfs_drop_extents
-> 
-> And splitting an inline extent throws -95.
 
-Heh, you beat me to the draw. I was just coming to the same conclusion
-myself from poking at the source code. What's interesting is that it
-seems to be a quite explicit thing:
+--p2kqVDKq5asng8Dg
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-if (extent_type == BTRFS_FILE_EXTENT_INLINE) {
-	ret = -EOPNOTSUPP;
-	break;
-}
+On Fri, Sep 16, 2016 at 06:49:53AM +0000, Alex Elsayed wrote:
+> The main issue I see is that subvolumes as btrfs has them _do_ introduce=
+=20
+> novel concerns - in particular, how should snapshots interact with keying=
+=20
+> (and nonces)? None of the AEADs currently in the kernel are nonce-misuse=
+=20
+> resistant, which means that if different data is encrypted under the same=
+=20
+> key and nonce, things go _very_ badly wrong. With writable snapshots, I'd=
+=20
+> consider that a nontrivial risk.
 
-So now the question is why is this happening? Clearly the presence of
-inline extents isn't an issue by itself, since another one of my btrfs
-/home partitions has plenty of them.
+Snapshots should copy subvolume keys (or key UUIDs, since the keys aren't
+stored in the filesystem), i.e. an ioctl could say "create a new subvol
+'foo' with the same key as existing subvol 'bar'".  This could also
+handle nested subvols (child copies key of parent) if the nested
+subvols weren't created with their own separate keys.  For snapshots,
+we wouldn't even ask--the snapshot and its origin subvol would share a
+key unconditionally. (*)
 
-I added some debug prints to my kernel to catch the inode that tripped
-the error. Here's the relevant chunk (with filenames scrubbed) from
-btrfs-debug-tree:
+I don't see how snapshots could work, writable or otherwise, without
+separating the key identity from the subvol identity and having a
+many-to-one relationship between subvols and keys.  The extents in each
+subvol would be shared, and they'd be encrypted with a single secret,
+so there's not really another way to do this.
 
-Inode 140345 triggered the transaction abort.
+If the key is immutable (which it probably is, given that it's used to
+encrypt at the extent level, and extents are (mostly) immutable) then just
+giving each subvol a copy of the key ID is sufficient.
 
-leaf 175131459584 items 51 free space 7227 generation 118521 owner 5
-fs uuid 1d9ee7c7-d13a-4c3c-b730-256c70841c5b
-chunk uuid b67a1a82-ff22-48b5-af1b-9d5f85ebee25
-	item 0 key (140343 INODE_ITEM 0) itemoff 16123 itemsize 160
-		inode generation 1 transid 1 size 180 nbytes 0
-		block group 0 mode 40755 links 1 uid 1000 gid 1000
-		rdev 0 flags 0x0(none)
-	item 1 key (140343 INODE_REF 131327) itemoff 16107 itemsize 16
-		inode ref index 199 namelen 6 name: <scrubbed>
-	item 2 key (140343 DIR_ITEM 1073386496) itemoff 16072 itemsize 35
-		location key (142600 INODE_ITEM 0) type SYMLINK
-		namelen 5 datalen 0 name: <scrubbed>
-	item 3 key (140343 DIR_ITEM 1148422723) itemoff 16037 itemsize 35
-		location key (142601 INODE_ITEM 0) type SYMLINK
-		namelen 5 datalen 0 name: <scrubbed>
-	item 4 key (140343 DIR_ITEM 2415965623) itemoff 16004 itemsize 33
-		location key (131550 INODE_ITEM 0) type SYMLINK
-		namelen 3 datalen 0 name: <scrubbed>
-	item 5 key (140343 DIR_ITEM 2448077466) itemoff 15965 itemsize 39
-		location key (140565 INODE_ITEM 0) type FILE
-		namelen 9 datalen 0 name: <scrubbed>
-	item 6 key (140343 DIR_ITEM 2566671093) itemoff 15930 itemsize 35
-		location key (140564 INODE_ITEM 0) type SYMLINK
-		namelen 5 datalen 0 name: <scrubbed>
-	item 7 key (140343 DIR_ITEM 3391512089) itemoff 15873 itemsize 57
-		location key (142599 INODE_ITEM 0) type FILE
-		namelen 27 datalen 0 name: <scrubbed>
-	item 8 key (140343 DIR_ITEM 3621719155) itemoff 15838 itemsize 35
-		location key (131627 INODE_ITEM 0) type SYMLINK
-		namelen 5 datalen 0 name: <scrubbed>
-	item 9 key (140343 DIR_ITEM 3701680574) itemoff 15798 itemsize 40
-		location key (142603 INODE_ITEM 0) type FIFO
-		namelen 10 datalen 0 name: <scrubbed>
-	item 10 key (140343 DIR_ITEM 3816117430) itemoff 15763 itemsize 35
-		location key (140563 INODE_ITEM 0) type SYMLINK
-		namelen 5 datalen 0 name: <scrubbed>
-	item 11 key (140343 DIR_ITEM 4214885080) itemoff 15729 itemsize 34
-		location key (131544 INODE_ITEM 0) type SYMLINK
-		namelen 4 datalen 0 name: <scrubbed>
-	item 12 key (140343 DIR_ITEM 4253409616) itemoff 15687 itemsize 42
-		location key (140352 INODE_ITEM 0) type FILE
-		namelen 12 datalen 0 name: <scrubbed>
-	item 13 key (140343 DIR_INDEX 2) itemoff 15653 itemsize 34
-		location key (131544 INODE_ITEM 0) type SYMLINK
-		namelen 4 datalen 0 name: <scrubbed>
-	item 14 key (140343 DIR_INDEX 3) itemoff 15620 itemsize 33
-		location key (131550 INODE_ITEM 0) type SYMLINK
-		namelen 3 datalen 0 name: <scrubbed>
-	item 15 key (140343 DIR_INDEX 4) itemoff 15585 itemsize 35
-		location key (131627 INODE_ITEM 0) type SYMLINK
-		namelen 5 datalen 0 name: <scrubbed>
-	item 16 key (140343 DIR_INDEX 5) itemoff 15543 itemsize 42
-		location key (140352 INODE_ITEM 0) type FILE
-		namelen 12 datalen 0 name: <scrubbed>
-	item 17 key (140343 DIR_INDEX 6) itemoff 15508 itemsize 35
-		location key (140563 INODE_ITEM 0) type SYMLINK
-		namelen 5 datalen 0 name: <scrubbed>
-	item 18 key (140343 DIR_INDEX 7) itemoff 15473 itemsize 35
-		location key (140564 INODE_ITEM 0) type SYMLINK
-		namelen 5 datalen 0 name: <scrubbed>
-	item 19 key (140343 DIR_INDEX 8) itemoff 15434 itemsize 39
-		location key (140565 INODE_ITEM 0) type FILE
-		namelen 9 datalen 0 name: <scrubbed>
-	item 20 key (140343 DIR_INDEX 9) itemoff 15377 itemsize 57
-		location key (142599 INODE_ITEM 0) type FILE
-		namelen 27 datalen 0 name: <scrubbed>
-	item 21 key (140343 DIR_INDEX 10) itemoff 15342 itemsize 35
-		location key (142600 INODE_ITEM 0) type SYMLINK
-		namelen 5 datalen 0 name: <scrubbed>
-	item 22 key (140343 DIR_INDEX 11) itemoff 15307 itemsize 35
-		location key (142601 INODE_ITEM 0) type SYMLINK
-		namelen 5 datalen 0 name: <scrubbed>
-	item 23 key (140343 DIR_INDEX 12) itemoff 15267 itemsize 40
-		location key (142603 INODE_ITEM 0) type FIFO
-		namelen 10 datalen 0 name: <scrubbed>
-	item 24 key (140344 INODE_ITEM 0) itemoff 15107 itemsize 160
-		inode generation 1 transid 3804 size 2779 nbytes 2779
-		block group 0 mode 100644 links 1 uid 1000 gid 1000
-		rdev 0 flags 0x0(none)
-	item 25 key (140344 INODE_REF 131327) itemoff 15088 itemsize 19
-		inode ref index 7 namelen 9 name: <scrubbed>
-	item 26 key (140344 EXTENT_DATA 0) itemoff 12288 itemsize 2800
-		inline extent data size 2779 ram 2779 compress(none)
-	item 27 key (140345 INODE_ITEM 0) itemoff 12128 itemsize 160
-		inode generation 1 transid 3812 size 53212 nbytes 53248
-		block group 0 mode 100644 links 1 uid 1000 gid 1000
-		rdev 0 flags 0x0(none)
-	item 28 key (140345 INODE_REF 147957) itemoff 12109 itemsize 19
-		inode ref index 17 namelen 9 name: <scrubbed>
-	item 29 key (140345 EXTENT_DATA 0) itemoff 12056 itemsize 53
-		extent data disk byte 189201358848 nr 53248
-		extent data offset 0 nr 53248 ram 53248
-		extent compression(none)
-	item 30 key (140347 INODE_ITEM 0) itemoff 11896 itemsize 160
-		inode generation 1 transid 1 size 89666 nbytes 90112
-		block group 0 mode 100644 links 1 uid 1000 gid 1000
-		rdev 0 flags 0x0(none)
-	item 31 key (140347 INODE_REF 131327) itemoff 11878 itemsize 18
-		inode ref index 140 namelen 8 name: <scrubbed>
-	item 32 key (140347 EXTENT_DATA 0) itemoff 11825 itemsize 53
-		extent data disk byte 154930053120 nr 90112
-		extent data offset 0 nr 90112 ram 90112
-		extent compression(none)
-	item 33 key (140348 INODE_ITEM 0) itemoff 11665 itemsize 160
-		inode generation 1 transid 1 size 27 nbytes 28
-		block group 0 mode 120777 links 1 uid 1000 gid 1000
-		rdev 0 flags 0x0(none)
-	item 34 key (140348 INODE_REF 131327) itemoff 11646 itemsize 19
-		inode ref index 197 namelen 9 name: <scrubbed>
-	item 35 key (140348 EXTENT_DATA 0) itemoff 11597 itemsize 49
-		inline extent data size 28 ram 28 compress(none)
-	item 36 key (140349 INODE_ITEM 0) itemoff 11437 itemsize 160
-		inode generation 1 transid 1 size 37963 nbytes 40960
-		block group 0 mode 100644 links 1 uid 1000 gid 1000
-		rdev 0 flags 0x0(none)
-	item 37 key (140349 INODE_REF 180481) itemoff 11408 itemsize 29
-		inode ref index 2 namelen 19 name: <scrubbed>
-	item 38 key (140349 EXTENT_DATA 0) itemoff 11355 itemsize 53
-		extent data disk byte 157136482304 nr 180224
-		extent data offset 139264 nr 40960 ram 180224
-		extent compression(none)
-	item 39 key (140352 INODE_ITEM 0) itemoff 11195 itemsize 160
-		inode generation 1 transid 1 size 826 nbytes 826
-		block group 0 mode 100644 links 1 uid 1000 gid 1000
-		rdev 0 flags 0x0(none)
-	item 40 key (140352 INODE_REF 140343) itemoff 11173 itemsize 22
-		inode ref index 5 namelen 12 name: <scrubbed>
-	item 41 key (140352 EXTENT_DATA 0) itemoff 10326 itemsize 847
-		inline extent data size 826 ram 826 compress(none)
-	item 42 key (140354 INODE_ITEM 0) itemoff 10166 itemsize 160
-		inode generation 1 transid 1 size 1032 nbytes 1032
-		block group 0 mode 100644 links 1 uid 1000 gid 1000
-		rdev 0 flags 0x0(none)
-	item 43 key (140354 INODE_REF 246185) itemoff 10112 itemsize 54
-		inode ref index 301 namelen 44 name: <scrubbed>
-	item 44 key (140354 EXTENT_DATA 0) itemoff 9059 itemsize 1053
-		inline extent data size 1032 ram 1032 compress(none)
-	item 45 key (140357 INODE_ITEM 0) itemoff 8899 itemsize 160
-		inode generation 1 transid 1 size 0 nbytes 0
-		block group 0 mode 100644 links 1 uid 1000 gid 1000
-		rdev 0 flags 0x0(none)
-	item 46 key (140357 INODE_REF 247133) itemoff 8865 itemsize 34
-		inode ref index 18 namelen 24 name: <scrubbed>
-	item 47 key (140358 INODE_ITEM 0) itemoff 8705 itemsize 160
-		inode generation 1 transid 3811 size 0 nbytes 0
-		block group 0 mode 100644 links 1 uid 1000 gid 1000
-		rdev 0 flags 0x0(none)
-	item 48 key (140358 INODE_REF 140136) itemoff 8686 itemsize 19
-		inode ref index 3 namelen 9 name: <scrubbed>
-	item 49 key (140359 INODE_ITEM 0) itemoff 8526 itemsize 160
-		inode generation 1 transid 3812 size 1150 nbytes 1150
-		block group 0 mode 100644 links 1 uid 1000 gid 1000
-		rdev 0 flags 0x0(none)
-	item 50 key (140359 INODE_REF 147967) itemoff 8502 itemsize 24
-		inode ref index 11 namelen 14 name: <scrubbed>
+(*) OK, we could ask, but if the answer was "no, please do not use the
+origin subvol's key", then btrfs would return EINVAL and not create
+the snapshot, since there would be no way to read any data contained
+within it without the key.
 
---Sean
+> > Indeed, with the generic file encryption, btrfs may not even need the
+> > special subvolume encryption pixies. i.e. you can effectively implement
+> > subvolume encryption via configuration of a multi-user encryption key
+> > for each subvolume and apply it to the subvolume tree root at creation
+> > time. Then only users with permission to unlock the subvolume key can
+> > access it.
 
+Life is pretty easy when we're only encrypting data extents.
+
+Encrypted subvol trees cause quite a few problems for btrfs when it needs
+to relocate extents (e.g. to shrink a filesystem or change RAID profile)
+or validate data integrity.  Ideally it would still be able to do these
+operations without decrypting the data; otherwise, there are bad cases,
+e.g. if a disk fails, all of the subvolumes would have to be unlocked
+in order to replace a disk.
+
+Still, there could be a half way point here.  If btrfs could tie
+block groups to subvol encryption keys, it could arrange for all of
+the extents in a metadata block group to use the same encryption key.
+Then it would be possible to relocate the entire metadata block group
+without decrypting its contents.  It would only be necessary to copy
+the block group's encrypted data, then update the virtual-to-physical
+address mappings in the chunk tree.  Something would have to be done
+about checksums during the copy but that's a larger question (are there
+two sets of checksums, one authenticated for the encrypted data, and
+the crc32 check for device-level data corruption?).
+
+There's also a nasty problem with the extent tree--there's only one per
+filesystem, it's shared between all subvols and block groups, and every
+extent in that tree has back references to the (possibly encrypted) subvol
+trees.  I'll leave that problem as an exercise for other readers.  ;)
+
+
+--p2kqVDKq5asng8Dg
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
+
+iEYEARECAAYFAlfcyMUACgkQgfmLGlazG5xoWACeM6s1gIGEyf+oxQwvAYm+C/KG
+sbMAnRCvVbcG0R0HOm/9S+isga0/mWZF
+=PwAi
+-----END PGP SIGNATURE-----
+
+--p2kqVDKq5asng8Dg--

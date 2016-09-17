@@ -1,72 +1,51 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [195.159.176.226] ([195.159.176.226]:40394 "EHLO
+Received: from [195.159.176.226] ([195.159.176.226]:51283 "EHLO
         blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
-        with ESMTP id S1753823AbcIQHOG (ORCPT
+        with ESMTP id S1754203AbcIQJbL (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 17 Sep 2016 03:14:06 -0400
+        Sat, 17 Sep 2016 05:31:11 -0400
 Received: from list by blaine.gmane.org with local (Exim 4.84_2)
         (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-        id 1bl9ox-0002PP-I6
-        for linux-btrfs@vger.kernel.org; Sat, 17 Sep 2016 09:13:55 +0200
+        id 1blBxc-00078y-KN
+        for linux-btrfs@vger.kernel.org; Sat, 17 Sep 2016 11:31:00 +0200
 To: linux-btrfs@vger.kernel.org
-From: Alex Elsayed <eternaleye@gmail.com>
-Subject: Re: [RFC] Preliminary BTRFS Encryption
-Date: Sat, 17 Sep 2016 07:13:45 +0000 (UTC)
-Message-ID: <nriqf8$da6$2@blaine.gmane.org>
-References: <1473773990-3071-1-git-send-email-anand.jain@oracle.com>
-        <20160917065831.GA14388@google.com>
+From: Kai Krakow <hurikhan77@gmail.com>
+Subject: Re: compress=lzo safe to use?
+Date: Sat, 17 Sep 2016 11:30:42 +0200
+Message-ID: <20160917113042.111eb022@jupiter.sol.kaishome.de>
+References: <15415597-7f29-396e-8425-8cbbeb32e897@crc.id.au>
+        <pan$e8a2$15460093$3bb59e30$70ebaf89@cox.net>
+        <21b8852b-fba6-6f8f-feed-7bbfa12312d2@crc.id.au>
+        <4096253.hu8ZAHGEqT@merkaba>
+        <6ef80ffd-6a56-3538-0778-a99cb4b9851e@mendix.com>
+        <pan$56316$8902276c$b806652$f5dac40c@cox.net>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=US-ASCII
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, 16 Sep 2016 23:58:31 -0700, Eric Biggers wrote:
+Am Mon, 12 Sep 2016 04:36:07 +0000 (UTC)
+schrieb Duncan <1i5t5.duncan@cox.net>:
 
-> On Tue, Sep 13, 2016 at 09:39:46PM +0800, Anand Jain wrote:
->>
->> This patchset adds btrfs encryption support.
->>
->>
-> Hi Anand,
+> Again, I once thought all this was just the stage at which btrfs was, 
+> until I found out that it doesn't seem to happen if btrfs compression 
+> isn't being used.  Something about the way it recovers from checksum 
+> errors on compressed data differs from the way it recovers from
+> checksum errors on uncompressed data, and there's a bug in the
+> compressed data processing path.  But beyond that, I'm not a dev and
+> it gets a bit fuzzy, which also explains why I've not gone code
+> diving and submitted patches to try to fix it, myself.
 
-<snip>
+I suspect that may very well come from the decompression routine which
+crashes - and not from btrfs itself. So essentially, the decompression
+needs to be fixed instead (which probably slows it down by factors).
 
-> Note: even better would be an authenticated encryption mode.  That isn't
-> yet done by ext4 or f2fs --- I think because there wasn't a good place
-> to store a per-page authentication tag.  It would be interesting to know
-> whether this would be possible for btrfs.
+Only when this is tested and fixed, one should look into why btrfs
+fails when decompression fails.
 
-IMO, this is already a flawed framing - in particular, if encrypting at 
-the extent level, one _should not_ be encrypting (or authenticating) 
-individual pages. The meaningful unit is the extent, and encrypting at 
-page granularity puts you right back where dmcrypt is: dealing with fixed-
-size space, and needing to find somewhere else to put the auth tag.
+-- 
+Regards,
+Kai
 
-This is not a good place to be, and I strongly suspect it motivated 
-choosing XTS in the first place - something I feel is an _error_ in the 
-long run, and a dangerous one. (IMO, anything _but_ AEAD should be 
-forbidden in FS-level encryption.)
-
-In a nonce-misuse-resistent AEAD, there _is_ no auth tag: There's some 
-amount of inherent ciphertext expansion, and the ciphertext _cannot be 
-decrypted at all_ unless all of it is present. In essence, a built-in all-
-or-nothing transform.
-
-You could, potentially, chop off part of that and store it elsewhere, but 
-now you're dealing with significant added complexity, for absolutely zero 
-gain.
-
-If you're _not_ using a nonce-misuse-resistant AEAD, it's even worse: 
-keeping the tag out-of-band makes it far too easy to fail to verify it, 
-or verify it only after decrypting the ciphertext to plaintext. Bluntly: 
-that is an immediate security vulnerability.
-
-tl;dr: Don't encrypt pages, encrypt extents. They grow a little for the 
-auth tag, and that's fine.
-
-Btrfs already handles needing to read the full extent in order to get a 
-page out of it with compression, anyway.
-
-<snip>
-
+Replies to list-only preferred.
 

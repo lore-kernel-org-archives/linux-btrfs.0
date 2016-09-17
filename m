@@ -1,50 +1,74 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oi0-f67.google.com ([209.85.218.67]:35327 "EHLO
-        mail-oi0-f67.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1754121AbcIQS5G (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 17 Sep 2016 14:57:06 -0400
-Received: by mail-oi0-f67.google.com with SMTP id 2so9345831oif.2
-        for <linux-btrfs@vger.kernel.org>; Sat, 17 Sep 2016 11:57:05 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <b205136c-5680-c7cd-0862-b81d24a4b8e0@oracle.com>
-References: <20160917065831.GA14388@google.com> <b205136c-5680-c7cd-0862-b81d24a4b8e0@oracle.com>
-From: Chris Murphy <lists@colorremedies.com>
-Date: Sat, 17 Sep 2016 12:57:04 -0600
-Message-ID: <CAJCQCtRiNbxu0W9tdJ+qvo7LyKMXpF=pvGbMU1h=i9rrb4gkEQ@mail.gmail.com>
-Subject: Re: [RFC] Preliminary BTRFS Encryption
+Received: from twin.jikos.cz ([89.185.236.188]:48719 "EHLO twin.jikos.cz"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1752226AbcIQUfh (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sat, 17 Sep 2016 16:35:37 -0400
+Date: Sat, 17 Sep 2016 22:35:19 +0200
+From: David Sterba <dave@jikos.cz>
 To: Anand Jain <anand.jain@oracle.com>
-Cc: Eric Biggers <ebiggers@google.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>, eternaleye@gmail.com
-Content-Type: text/plain; charset=UTF-8
+Cc: linux-btrfs@vger.kernel.org, clm@fb.com, dsterba@suse.cz
+Subject: Re: [RFC] Preliminary BTRFS Encryption
+Message-ID: <20160917203519.GE933@twin.jikos.cz>
+Reply-To: dave@jikos.cz
+References: <1473773990-3071-1-git-send-email-anand.jain@oracle.com>
+ <20160916084958.GA933@twin.jikos.cz>
+ <313b1db1-cf32-7103-e259-328517d1c81f@oracle.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <313b1db1-cf32-7103-e259-328517d1c81f@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, Sep 17, 2016 at 10:12 AM, Anand Jain <anand.jain@oracle.com> wrote:
+On Fri, Sep 16, 2016 at 07:56:02PM +0800, Anand Jain wrote:
+> 
+> 
+> >> however here below is the quick example
+> >> on the cli usage. Please try out, let me know if I have missed something.
+> >>
+> >> Also would like to mention that a review from the security experts is due,
+> >> which is important and I believe those review comments can be accommodated
+> >> without major changes from here.
+> >
+> > I disagree. Others commented on the crypto stuff, I see enough points to
+> > address that would lead to major changes.
+> >
+> >> Also yes, thanks for the emails, I hear, per file encryption and inline
+> >> with vfs layer is also important, which is wip among other things in the
+> >> list.
+> >
+> > Implementing the recent vfs encryption in btrfs is ok, it's just feature
+> > parity using an existing API.
+> 
+> 
+>   As mentioned 'inline with vfs layer' I mean to say to use
+>   fs/crypto KPIs. Which I haven't seen what parts of the code
+>   from ext4 was made as generic KPIs. If that's getting stuff
+>   correct in the encryption related, I think it would here as well.
 
->   btrfs keeps it only in-memory and key hash goes to the disk.
->   Further in the long we need an integration with key management
->   system as well.
+So you were not talking about the 'fs/crypto' that was merged in 4.6?
 
-Maybe LUKS2 is usable for this part, and still adaptable since it's
-not finished yet? It looks to me like essentially unlimited keyslots
-compared to the current 8. You don't really care about the dm-crypt
-part of it, but the key management part of it, perhaps.
+>   Internal to btrfs - I had challenges to get the extents encoding
+>   done properly without bailout, and the test plan. Which I think
+>   is addressed here in this code. as mentioned.
 
-Both the original and new subvolumes initially share one DEK that go
-with the shared encrypted extents, but upon snapshot happening the new
-extents in each subvolume need their own DEK. Policy wise these DEKs
-can be wrapped in the same or separate passphrases or KEKs, as there
-could be hundreds or thousands of DEKs that apply to the many possible
-shared encrypted extents in a subvolume. If that's true, then it's an
-explosive number of keys per subvolume potentially. It doesn't depend
-on space as much as it depends on fs lifetime
+Sorry, I don't understand what you mean.
 
-Otherwise I don't see how this is different than using a single DEK
-across all company hard drives. Compromise one, you've compromised
-them all.
+> > And a note from me with maintainer's hat on, there are enough pending
+> > patches and patchsets that need review, and bugs to fix, I'm not going
+> > to spend time on something that we don't need at the moment if there are
+> > alternatives.
+> 
+>   Honestly I agree. I even suggested but I had no choice.
+> 
+> 
+> PS:
+>   Pls, feel free to flame on the (raid) patches if its not correct,
+>   because its rather more productive than no reply.
 
+If it's the hot-spare and auto-replace feature, I've expressed my stance
+in http://marc.info/?l=linux-btrfs&m=146252575330106, there hasn't
+been any change. IMO the hot-spare feature makes most sense with the
+raid56, which is stuck where it is, so we need to get it working first.
 
-
--- 
-Chris Murphy
+Lack of reply usually means lack of time (which I would not spend on
+flaming but evaluation and review).

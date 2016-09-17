@@ -1,78 +1,101 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from james.kirk.hungrycats.org ([174.142.39.145]:45972 "EHLO
-        james.kirk.hungrycats.org" rhost-flags-OK-OK-OK-FAIL)
-        by vger.kernel.org with ESMTP id S1750774AbcIQCSI (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:21700 "EHLO
+        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750774AbcIQCWf (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 16 Sep 2016 22:18:08 -0400
-Date: Fri, 16 Sep 2016 22:18:06 -0400
-From: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
-To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Cc: Anand Jain <anand.jain@oracle.com>, linux-btrfs@vger.kernel.org,
-        clm@fb.com, dsterba@suse.cz
-Subject: Re: [RFC] Preliminary BTRFS Encryption
-Message-ID: <20160917021806.GB21290@hungrycats.org>
-References: <1473773990-3071-1-git-send-email-anand.jain@oracle.com>
- <bce627a8-7dcc-71f6-dd44-0444f7993725@gmail.com>
- <69c23d9b-c1be-41ba-1382-3505ba88fdf9@oracle.com>
- <ee07da59-9c9d-10f8-8cf5-6dc86a8e3eab@gmail.com>
+        Fri, 16 Sep 2016 22:22:35 -0400
+Date: Fri, 16 Sep 2016 19:27:58 -0700
+From: Liu Bo <bo.li.liu@oracle.com>
+To: Sean Greenslade <sean@seangreenslade.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: Post ext3 conversion problems
+Message-ID: <20160917022758.GA6389@localhost.localdomain>
+Reply-To: bo.li.liu@oracle.com
+References: <20160916192459.GA13514@coach.home>
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-        protocol="application/pgp-signature"; boundary="xXmbgvnjoT4axfJE"
-In-Reply-To: <ee07da59-9c9d-10f8-8cf5-6dc86a8e3eab@gmail.com>
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20160916192459.GA13514@coach.home>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Fri, Sep 16, 2016 at 03:25:00PM -0400, Sean Greenslade wrote:
+> Hi, all. I've been playing around with an old laptop of mine, and I
+> figured I'd use it as a learning / bugfinding opportunity. Its /home
+> partition was originally ext3. I have a full partition image of this
+> drive as a backup, so I can do (and have done) potentially destructive
+> things. The system disk is a ~6 year old SSD.
+> 
+> To start, I rebooted to a livedisk (Arch, kernel 4.7.2 w/progs 4.7.1)
+> and ran a simple btrfs-convert on it. After patching up the fstab and
+> rebooting, everything seemed fine. I deleted the recovery subvol, ran a
+> full balance, ran a full defrag, and rebooted again. I then decided to
+> try (as an experiment) using DUP mode for data and metadata. I ran that
+> balance without issue, then started using the machine. Sometime later, I
+> got the following remount ro:
+> 
+> [ 7316.764235] ------------[ cut here ]------------
+> [ 7316.764292] WARNING: CPU: 2 PID: 14196 at fs/btrfs/inode.c:2954 btrfs_finish_ordered_io+0x6bc/0x6d0 [btrfs]
+> [ 7316.764297] BTRFS: Transaction aborted (error -95)
+> [ 7316.764301] Modules linked in: fuse sha256_ssse3 sha256_generic hmac drbg ansi_cprng ctr ccm joydev mousedev uvcvideo videobuf2_vmalloc videobuf2_memops videobuf2_v4l2 videobuf2_core videodev media crc32c_generic iTCO_wdt btrfs iTCO_vendor_support arc4 xor ath9k raid6_pq ath9k_common ath9k_hw ath mac80211 snd_hda_codec_realtek snd_hda_codec_generic psmouse input_leds coretemp snd_hda_intel led_class pcspkr snd_hda_codec cfg80211 snd_hwdep snd_hda_core snd_pcm lpc_ich snd_timer atl1c rfkill snd soundcore shpchp intel_agp wmi thermal fjes battery evdev ac tpm_tis mac_hid tpm sch_fq_codel vboxnetflt(O) vboxnetadp(O) pci_stub vboxpci(O) vboxdrv(O) loop sg acpi_cpufreq ip_tables x_tables ext4 crc16 jbd2 mbcache sd_mod serio_raw atkbd libps2 ahci libahci uhci_hcd libata scsi_mod ehci_pci ehci_hcd usbcore
+> [ 7316.764434]  usb_common i8042 serio i915 video button intel_gtt i2c_algo_bit drm_kms_helper syscopyarea sysfillrect sysimgblt fb_sys_fops drm
+> [ 7316.764462] CPU: 2 PID: 14196 Comm: kworker/u8:11 Tainted: G           O    4.7.3-5-ck #1
+> [ 7316.764467] Hardware name: ASUSTeK Computer INC. 1015PEM/1015PE, BIOS 0903    11/08/2010
+> [ 7316.764507] Workqueue: btrfs-endio-write btrfs_endio_write_helper [btrfs]
+> [ 7316.764513]  0000000000000286 000000006101f47d ffff8800230dbc78 ffffffff812f0215
+> [ 7316.764522]  ffff8800230dbcc8 0000000000000000 ffff8800230dbcb8 ffffffff8107ae6f
+> [ 7316.764530]  00000b8a00000035 ffff88007791afa8 ffff8800751d9000 ffff880014101d40
+> [ 7316.764538] Call Trace:
+> [ 7316.764551]  [<ffffffff812f0215>] dump_stack+0x63/0x8e
+> [ 7316.764560]  [<ffffffff8107ae6f>] __warn+0xcf/0xf0
+> [ 7316.764567]  [<ffffffff8107aef1>] warn_slowpath_fmt+0x61/0x80
+> [ 7316.764605]  [<ffffffffa07aa362>] ? unpin_extent_cache+0xa2/0xf0 [btrfs]
+> [ 7316.764640]  [<ffffffffa07628e6>] ? btrfs_free_path+0x26/0x30 [btrfs]
+> [ 7316.764677]  [<ffffffffa079aaac>] btrfs_finish_ordered_io+0x6bc/0x6d0 [btrfs]
+> [ 7316.764715]  [<ffffffffa079adc5>] finish_ordered_fn+0x15/0x20 [btrfs]
+> [ 7316.764753]  [<ffffffffa07c5f8e>] btrfs_scrubparity_helper+0x7e/0x360 [btrfs]
+> [ 7316.764791]  [<ffffffffa07c62fe>] btrfs_endio_write_helper+0xe/0x10 [btrfs]
+> [ 7316.764799]  [<ffffffff810949bd>] process_one_work+0x1ed/0x490
+> [ 7316.764806]  [<ffffffff81094ca9>] worker_thread+0x49/0x500
+> [ 7316.764813]  [<ffffffff81094c60>] ? process_one_work+0x490/0x490
+> [ 7316.764820]  [<ffffffff8109ac3a>] kthread+0xda/0xf0
+> [ 7316.764830]  [<ffffffff815c553f>] ret_from_fork+0x1f/0x40
+> [ 7316.764838]  [<ffffffff8109ab60>] ? kthread_worker_fn+0x170/0x170
+> [ 7316.764843] ---[ end trace 90f54effc5e294b0 ]---
+> [ 7316.764851] BTRFS: error (device sda2) in btrfs_finish_ordered_io:2954: errno=-95 unknown
+> [ 7316.764859] BTRFS info (device sda2): forced readonly
+> [ 7316.765396] pending csums is 9437184
+> 
+> After seeing this, I decided to attempt a repair (confident that I could
+> restore from backup if it failed). At the time, I was unaware of the
+> issues with progs 4.7.1, so when I ran the check and saw all the
+> incorrect backrefs messages, I figured that was my problem and ran the
+> --repair. Of course, this didn't make the messages go away on subsequent
+> checks, so I looked further and found this bug:
+> 
+> https://bugzilla.kernel.org/show_bug.cgi?id=155791
+> 
+> I updated progs to 4.7.2 and re-ran the --repair (I didn't save any of
+> the logs from these, unfortunately). The repair seemed to work (I also
+> used --init-extent-tree), as current checks don't report any errors.
+> 
+> The system boots and mounts the FS just fine. I can read from it all
+> day, scrubs complete without failure, but just using the system for a
+> while will eventually trigger the same "Transaction aborted (error -95)"
+> error.
+> 
+> I realize this is something of a mess, and that I was less than
+> methodical with my actions so far. Given that I have a full backup that
+> can be restored if need be (and I certainly could try running the
+> convert again), what is my best course of action?
 
---xXmbgvnjoT4axfJE
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+Interesting, seems that we get errors from 
 
-On Thu, Sep 15, 2016 at 10:24:02AM -0400, Austin S. Hemmelgarn wrote:
-> On 2016-09-15 10:06, Anand Jain wrote:
-> >>How does this handle cloning of extents?  Can extents be cloned across
-> >>subvolume boundaries when one of the subvolumes is encrypted?
-> >
-> > Yes only if both the subvol keys match.
-> OK, that makes sense.
-> >
-> >>Can they
-> >>be cloned within an encrypted subvolume?
-> >
-> > Yes. That's things as usual.
-> Glad to see that that still works.  Most people I know who do batch
-> deduplication do so within subvolumes but not across them, so that still
-> working with encrypted subvolumes is a good thing.
+btrfs_finish_ordered_io
+  insert_reserved_file_extent
+    __btrfs_drop_extents
 
-I do continual filesystem-wide deduplication across subvolumes, but I
-don't think this is a problem.
+And splitting an inline extent throws -95.
 
-There are already a number of conditions when IOC_FILE_EXTENT_SAME might
-fail and deduplicators must tolerate those failures.  Cross-subvol dedup
-has to loop over all duplicate block references (including those in
-other subvols) until all references to one of the blocks are eliminated.
-So dedup should still work by sheer brute force, banging extents together
-until they stick, but it would be noisy and slower if it was not aware
-of encrypted subvols.
+Thanks,
 
-If there's a way to look at the subvolume properties and figure out
-whether the extents are clonable (e.g. equal key IDs =3D=3D clonable) then
-it should be easy to avoid submitting FILE_EXTENT_SAME extent pairs
-belonging to incompatibly encrypted subvols.  They can also be stored in
-separate DDT entries (e.g. by extending the hash field) so that blocks
-=66rom incompatibly encrypted subvols won't have matching extended hashes.
-
-
---xXmbgvnjoT4axfJE
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
-
-iEYEARECAAYFAlfcp94ACgkQgfmLGlazG5yYmACfc1JHg/FJtusyydAKM7mEM4ZW
-QW0AoMQyMiErlRMPmdK73gYqGyF/bj/D
-=hpAr
------END PGP SIGNATURE-----
-
---xXmbgvnjoT4axfJE--
+-liubo

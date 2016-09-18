@@ -1,75 +1,110 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:31673 "EHLO
-        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753640AbcIRJwX (ORCPT
+Received: from mail-oi0-f50.google.com ([209.85.218.50]:34034 "EHLO
+        mail-oi0-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1753274AbcIRR2m (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 18 Sep 2016 05:52:23 -0400
-Subject: Re: [RFC] Preliminary BTRFS Encryption
-To: dsterba@suse.cz
-References: <1473773990-3071-1-git-send-email-anand.jain@oracle.com>
- <20160916084958.GA933@twin.jikos.cz>
- <313b1db1-cf32-7103-e259-328517d1c81f@oracle.com>
- <20160917203519.GE933@twin.jikos.cz>
-From: Anand Jain <anand.jain@oracle.com>
-Cc: linux-btrfs@vger.kernel.org, clm@fb.com
-Message-ID: <b57797f0-224f-4874-ce76-c7a8e9b412d3@oracle.com>
-Date: Sun, 18 Sep 2016 17:54:12 +0800
+        Sun, 18 Sep 2016 13:28:42 -0400
+Received: by mail-oi0-f50.google.com with SMTP id a62so33812421oib.1
+        for <linux-btrfs@vger.kernel.org>; Sun, 18 Sep 2016 10:28:42 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <20160917203519.GE933@twin.jikos.cz>
-Content-Type: text/plain; charset=windows-1252; format=flowed
+In-Reply-To: <f1b74a5d-1fdf-2970-86fc-206a4bb26d78@oracle.com>
+References: <1473773990-3071-1-git-send-email-anand.jain@oracle.com>
+ <20160916084958.GA933@twin.jikos.cz> <313b1db1-cf32-7103-e259-328517d1c81f@oracle.com>
+ <20160917203519.GE933@twin.jikos.cz> <f1b74a5d-1fdf-2970-86fc-206a4bb26d78@oracle.com>
+From: Chris Murphy <lists@colorremedies.com>
+Date: Sun, 18 Sep 2016 11:28:41 -0600
+Message-ID: <CAJCQCtStO0eO9CqLTW00mZHZd8jDJJV4V-ir4-OQzd2AfyXWSQ@mail.gmail.com>
+Subject: Re: RAID1 availability issue[2], Hot-spare and auto-replace
+To: Anand Jain <anand.jain@oracle.com>
+Cc: David Sterba <dsterba@suse.cz>, Btrfs BTRFS <linux-btrfs@vger.kernel.org>,
+        Chris Mason <clm@fb.com>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
-
-On 09/18/2016 04:35 AM, David Sterba wrote:
-> On Fri, Sep 16, 2016 at 07:56:02PM +0800, Anand Jain wrote:
->>
->>
->>>> however here below is the quick example
->>>> on the cli usage. Please try out, let me know if I have missed something.
->>>>
->>>> Also would like to mention that a review from the security experts is due,
->>>> which is important and I believe those review comments can be accommodated
->>>> without major changes from here.
->>>
->>> I disagree. Others commented on the crypto stuff, I see enough points to
->>> address that would lead to major changes.
->>>
->>>> Also yes, thanks for the emails, I hear, per file encryption and inline
->>>> with vfs layer is also important, which is wip among other things in the
->>>> list.
->>>
->>> Implementing the recent vfs encryption in btrfs is ok, it's just feature
->>> parity using an existing API.
->>
->>
->>   As mentioned 'inline with vfs layer' I mean to say to use
->>   fs/crypto KPIs. Which I haven't seen what parts of the code
->>   from ext4 was made as generic KPIs. If that's getting stuff
->>   correct in the encryption related, I think it would here as well.
+On Sun, Sep 18, 2016 at 2:34 AM, Anand Jain <anand.jain@oracle.com> wrote:
 >
-> So you were not talking about the 'fs/crypto' that was merged in 4.6?
-
-  Looks like I am out of sync here, looks like I miss understood,
-   'Implementing the recent vfs encryption in btrfs is ok'
-  I was ref to fs/crypto
-
->>   Internal to btrfs - I had challenges to get the extents encoding
->>   done properly without bailout, and the test plan. Which I think
->>   is addressed here in this code. as mentioned.
+> (updated the subject, was [1])
 >
-> Sorry, I don't understand what you mean.
+>> IMO the hot-spare feature makes most sense with the raid56,
+>
+>
+>   Why. ?
 
-    basically making sure all the extents are really encoded, does not
-    matter which crypto (unless like in compress where extents may not
-    be encoded,in some situation) and having a test plan, now the test
-    plan is same as
-      mount option -o 'compress=ctr(aes)' with dummykey or dummy encrypt.
-    for encryption.
+Raid56 is not scalable, has less redundancy in most all
+configurations, rebuild impacts the entire array performance, and in
+the case of raid6 two drives lost means incredibly slow rebuild. All
+of that adds up to more disk for raid56 to be mitigated with a hot
+spare being available for immediate rebuild.
+
+Who currently would use hot spare right now? Problem 1 is Btrfs raid10
+is not scalable like other raid10 implementations (mdadm, lvm,
+hardware). Problem 2 is Btrfs the raid56 parity scrub bug; and
+arguably also partial stripe writes not being CoW. I think hot spare
+is pointless with those two problems still being true, and the way to
+mitigate them right now is a clusterfs. Hot spare doesn't mitigate
+these Btrfs weaknesses.
 
 
-  Thanks for integrating  most of the patches in the ML.
+>
+>> which is stuck where it is, so we need to get it working first.
+>
+>
+>
+>   We need at least one RAID which does not have the availability
+>   issue. We could achieve that with raid1, there are patches
+>   which needs maintainer time.
+
+I agree with the idea of degraded raid1 chunks. It's a nasty surprise
+to realize this only once it's too late and there's data loss. That
+there is a user space work around, maybe makes it less of a big deal?
+But I don't think it's documented on gotchas page with the soft
+conversion work around to do the rebuild properly: scrub/balance alone
+is not correct.
+
+I kinda think we need a list of priorities for multiple device stuff,
+and honestly hot spare while important I think is bottom of the list.
+
+1. multiple fs UUID dev UUID corruption problem (the cloned device problem)
+2. degraded volumes new bg's are single profile (Anand's April patchset)
+3. raid56 bad parity created during scrub when data strip is bad and gets fixed
+4. better faulty device tolerance (no crashing)
+5. raid10 scaling, needs a way for even number block devices of the
+same size to get fixed mirroring so it can tolerate multiple drive
+failures so long as a mirrored pair don't fail
+6. raid56 partial stripe RMW need to be CoW, doesn't matter if it
+slows things down, if you don't like it, use raid10
+7. raid1 threaded/async reads (whatever the correct term is to read
+from all raid1 drives rather than PID based)
+8. better faulty device notifications
+9. raid56 parity needs to be checksummed
+10. hotspare
 
 
--Anand
+2 and 3 might seem tied. Both can result in data loss, both have user
+space work arounds (undocumented); but 2 has a greater chance of
+happening than 3.
+
+4 is probably worse than 3, but 4 is much more nebulous and 3 produces
+a big negative perception.
+
+I'm sure someone could argue hotspare could get squeezed in between 4
+and 5; but that's really my one bias in the list, I don't care about
+hot spare. I think it's more scalable to take advantage of Btrfs
+uniqueness to shrink the file system to drop the bad drive to regain
+full redundancy, rather than do hot spares, this is faster, and
+doesn't waste a drive that's not doing any work.
+
+I see shrink as more scalable with hard drives than hot spares,
+especially in the case of data single profile with clusterfs's: drop
+the bad device and its data, autodelete the lost files, rebuild
+metadata to regain complete fs redundancy,  inform the cluster of
+partial data loss - boom the array is completely fixed, let the
+cluster figure out what to do next. Plus each brick isn't spinning an
+unused hot spare. There is in effect a hot spare *somewhere* partially
+used somewhere else in a cluster fs anyway. I see hot spare as an edge
+case need, especially with hard drives. It's not a general purpose
+need.
+
+-- 
+Chris Murphy

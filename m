@@ -1,73 +1,32 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:60251 "EHLO song.cn.fujitsu.com"
-        rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-        id S1753183AbcIVJbB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 22 Sep 2016 05:31:01 -0400
-From: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
-To: linux-btrfs@vger.kernel.org
-Cc: jbacik@fb.com, dsterba@suse.cz
-Subject: [RFC 3/3] btrfs: make shrink_delalloc() try harder to reclaim metadata space
-Date: Thu, 22 Sep 2016 17:25:19 +0800
-Message-Id: <1474536319-22659-1-git-send-email-wangxg.fnst@cn.fujitsu.com>
-In-Reply-To: <1474441173-31049-2-git-send-email-wangxg.fnst@cn.fujitsu.com>
-References: <1474441173-31049-2-git-send-email-wangxg.fnst@cn.fujitsu.com>
+Received: from mx2.suse.de ([195.135.220.15]:49881 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751608AbcISSPM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 19 Sep 2016 14:15:12 -0400
+Date: Mon, 19 Sep 2016 20:13:15 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Nikolay Borisov <kernel@kyup.com>
+Cc: clm@fb.com, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs: Fix handling of -ENOENT from btrfs_uuid_iter_rem
+Message-ID: <20160919181315.GS16983@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <b369cabe-9269-800c-cce7-5f5c71147660@fb.com>
+ <1473233938-21560-1-git-send-email-kernel@kyup.com>
 MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1473233938-21560-1-git-send-email-kernel@kyup.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Since commit b02441999efcc6152b87cd58e7970bb7843f76cf, we don't wait all
-ordered extents, but I run into some enospc errors when doing large file
-create and delete test, it's because shrink_delalloc() does not write
-enough delalloc bytes and wait them finished:
-    From: Miao Xie <miaox@cn.fujitsu.com>
-    Date: Mon, 4 Nov 2013 23:13:25 +0800
-    Subject: [PATCH] Btrfs: don't wait for the completion of all the ordered extents
+On Wed, Sep 07, 2016 at 10:38:58AM +0300, Nikolay Borisov wrote:
+> btrfs_uuid_iter_rem is able to return -ENOENT, however this condition
+> is not handled in btrfs_uuid_tree_iterate which can lead to calling
+> btrfs_next_item with freed path argument, leading to a null pointer
+> dereference. Fix it by redoing the search but with an incremented
+> objectid so we don't loop over the same key.
+> 
+> Signed-off-by: Nikolay Borisov <kernel@kyup.com>
+> Suggested-by: Chris Mason <clm@fb.com>
+> Link: https://lkml.kernel.org/r/57A473B0.2040203@kyup.com
 
-    It is very likely that there are lots of ordered extents in the filesytem,
-    if we wait for the completion of all of them when we want to reclaim some
-    space for the metadata space reservation, we would be blocked for a long
-    time. The performance would drop down suddenly for a long time.
-
-But since Josef introduced "Btrfs: introduce ticketed enospc infrastructure",
-shrink_delalloc() starts to be run asynchronously, then If we want to reclaim
-metadata space, we can try harder, after all, false enospc error is not
-acceptable.
-
-Signed-off-by: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
----
- fs/btrfs/extent-tree.c | 10 +++++++++-
- 1 file changed, 9 insertions(+), 1 deletion(-)
-
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 46c2a37..f7c420b 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -4721,7 +4721,7 @@ static void shrink_delalloc(struct btrfs_root *root, u64 to_reclaim, u64 orig,
- 		if (trans)
- 			return;
- 		if (wait_ordered)
--			btrfs_wait_ordered_roots(root->fs_info, items,
-+			btrfs_wait_ordered_roots(root->fs_info, -1,
- 						 0, (u64)-1);
- 		return;
- 	}
-@@ -4775,6 +4775,14 @@ skip_async:
- 		}
- 		delalloc_bytes = percpu_counter_sum_positive(
- 						&root->fs_info->delalloc_bytes);
-+		if (loops == 2) {
-+			/*
-+			 * Try to write all current delalloc bytes and wait all
-+			 * ordered extents to have a last try.
-+			 */
-+			to_reclaim = delalloc_bytes;
-+			items = -1;
-+		}
- 	}
- }
- 
--- 
-2.7.4
-
-
-
+I'll queue the patch for 4.9, thanks.

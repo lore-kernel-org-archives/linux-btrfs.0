@@ -1,176 +1,135 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mailgw-02.dd24.net ([193.46.215.43]:41125 "EHLO
-        mailgw-02.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S932109AbcISTxA (ORCPT
+Received: from [195.159.176.226] ([195.159.176.226]:36690 "EHLO
+        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
+        with ESMTP id S932418AbcISUBo (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 19 Sep 2016 15:53:00 -0400
-Message-ID: <1474314776.10189.24.camel@scientia.net>
-Subject: Re: stability matrix
-From: Christoph Anton Mitterer <calestyo@scientia.net>
-To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>, linux-btrfs@vger.kernel.org,
-        dave@jikos.cz
-Date: Mon, 19 Sep 2016 21:52:56 +0200
-In-Reply-To: <bc71caf0-4656-382b-479d-e135ee7f4bc7@gmail.com>
-References: <57D51BF9.2010907@online.no>
-         <20160912142714.GE16983@twin.jikos.cz>
-         <52304724-5bca-a1e6-527f-040085c7ab19@gmail.com>
-         <20160912165107.GG16983@twin.jikos.cz>
-         <58a954fc-bbd5-3fb5-9f23-008ed7f7121d@gmail.com>
-         <20160915010759.GD32452@DigitalMercury.dynalias.net>
-         <5dec6544a78a0301a8e0cd9086179f99@crc.id.au>
-         <1473905644.8603.44.camel@scientia.net>
-         <20160919152753.GG933@twin.jikos.cz>
-         <bc71caf0-4656-382b-479d-e135ee7f4bc7@gmail.com>
-Content-Type: multipart/signed; micalg="sha-512";
-        protocol="application/x-pkcs7-signature";
-        boundary="=-xzcN7UwYFedUlq8rXOhL"
+        Mon, 19 Sep 2016 16:01:44 -0400
+Received: from list by blaine.gmane.org with local (Exim 4.84_2)
+        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+        id 1bm4kd-0000w5-Hq
+        for linux-btrfs@vger.kernel.org; Mon, 19 Sep 2016 22:01:15 +0200
+To: linux-btrfs@vger.kernel.org
+From: Alex Elsayed <eternaleye@gmail.com>
+Subject: Re: [RFC] Preliminary BTRFS Encryption
+Date: Mon, 19 Sep 2016 20:01:06 +0000 (UTC)
+Message-ID: <nrpg62$g72$2@blaine.gmane.org>
+References: <1473773990-3071-1-git-send-email-anand.jain@oracle.com>
+        <20160916011213.GV22388@dastard> <nrg4mh$bkn$1@blaine.gmane.org>
+        <20160917043829.GC21290@hungrycats.org> <nrioas$da6$1@blaine.gmane.org>
+        <20160919180805.GG21290@hungrycats.org>
 Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Mon, 19 Sep 2016 14:08:06 -0400, Zygo Blaxell wrote:
 
---=-xzcN7UwYFedUlq8rXOhL
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+> On Sat, Sep 17, 2016 at 06:37:16AM +0000, Alex Elsayed wrote:
+>> > Encryption in ext4 is a per-directory-tree affair. One starts by
+>> > setting an encryption policy (using an ioctl() call) for a given
+>> > directory, which must be empty at the time; that policy includes a
+>> > master key used for all files and directories stored below the target
+>> > directory. Each individual file is encrypted with its own key, which
+>> > is derived from the master key and a per-file random nonce value
+>> > (which is stored in an extended attribute attached to the file's
+>> > inode). File names and symbolic links are also encrypted.
+> 
+> Probably the simplest way to map this to btrfs is to move the nonce from
+> the inode to the extent.
 
-On Mon, 2016-09-19 at 13:18 -0400, Austin S. Hemmelgarn wrote:
-> > > - even mounting a fs ro, may cause it to be changed
-> >=20
-> > This would go to the UseCases
-> My same argument about the UUID issues applies here, just without
-> the=C2=A0
-> security aspect.
+I agree. Mostly, I was making a point about how the ext4/VFS code (which 
+_does_ put it on the inode) can't just be transported over to btrfs 
+unchanged, which is what I read Dave Chinner as advocating.
 
-I personally could agree to have that "just" in the usecases.
+> Inodes aren't unique within a btrfs filesystem, extents can be shared by
+> multiple inodes, and a single extent can appear multiple times in the
+> same inode at different offsets.  Attaching the nonce to the inode would
+> not be sufficient to read the extent in all but the special case of a
+> single reference at the original offset where it was written, and it
+> also leads to the replay problems with duplicate inodes you pointed out.
 
-That a fs my be changed even though it's mounted ro is not unique to
-btrfs.... and the need for not having that happen goes probably rather
-into data-forensics and rescue use cases.
+Yup.
 
-IMO there's rather a general problem, namely that the different
-filesystems don't provide a mount option that implies every other mount
-options currently needed to get an actual "hard ro", i.e. one where the
-device is never written to.
+> Extents in a btrfs filesystem are unique and carry their own attributes
+> (e.g. compression format, checksums) and reference count.  They can
+> easily carry a reference to an encryption policy object and a nonce
+> attribute.
 
-Qu was about to add such option when=C2=A0nologreplay was added, but IIRC h=
-e
-got some resistance by linux-fs, who probably didn't care enough
-whether the end-user can easily do such "hard ro" mount ;)
+Definitely agreed.
 
+> Nonces within metadata are more complicated.  btrfs doesn't have
+> directory files like ext4 does, so it doesn't get directory filename
+> encryption for free with file encryption.  Encryption could be done
+> per-item in the metadata trees, but in the special case of directories
+> that happen to the the roots of subvols, it would be possible to encrypt
+> entire pages of metadata at a time (with the caveat that a snapshot
+> would require shared encryption policy between the origin and snapshot
+> subvols).
 
-Cheers,
-Chris.
---=-xzcN7UwYFedUlq8rXOhL
-Content-Type: application/x-pkcs7-signature; name="smime.p7s"
-Content-Disposition: attachment; filename="smime.p7s"
-Content-Transfer-Encoding: base64
+Encrypting tree values per-item is actually one of the best arguments in 
+_favor_ of nonce-misuse-resistant AEAD. Its security notion is very, very 
+strong:
 
-MIAGCSqGSIb3DQEHAqCAMIACAQExDzANBglghkgBZQMEAgMFADCABgkqhkiG9w0BBwEAAKCCEmow
-ggXiMIIDyqADAgECAhBctkhuRwyYxn/2gNtkSuKNMA0GCSqGSIb3DQEBCwUAMH0xCzAJBgNVBAYT
-AklMMRYwFAYDVQQKEw1TdGFydENvbSBMdGQuMSswKQYDVQQLEyJTZWN1cmUgRGlnaXRhbCBDZXJ0
-aWZpY2F0ZSBTaWduaW5nMSkwJwYDVQQDEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0
-eTAeFw0xNTEyMTYwMTAwMDVaFw0zMDEyMTYwMTAwMDVaMHUxCzAJBgNVBAYTAklMMRYwFAYDVQQK
-Ew1TdGFydENvbSBMdGQuMSkwJwYDVQQLEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0
-eTEjMCEGA1UEAxMaU3RhcnRDb20gQ2xhc3MgMiBDbGllbnQgQ0EwggEiMA0GCSqGSIb3DQEBAQUA
-A4IBDwAwggEKAoIBAQDuD1CMlQkjhKz1UGqP1jeiTiH9MgllRz6vOPrVG/eE0H/J4QQLV/PeL8RT
-4xc44bEzsoJu0IhwnEchb+TxE/qw88w7hxODuw3N8Faxix6a1jp83+RWvZHZf78+O+3GYBpekZfT
-Oe9A/FoTXbcgwZfLTMQodn+ckNnX31M/1M2f2/7VA7QBlvihontyHQOlIlryQXnGI0UMCD21oopK
-tW48ckv0wUVg8irBKGMeD65gTON/Fsw/ZBbBqadoD1jt85FIM1ql24WUBEBwO1d0ykCKOIbgcqes
-3fbcjQpruUNMBbIu1MMIRMqwjx/M7IvSKcS7VYRWl0/K2byzWvBAHh/1AgMBAAGjggFkMIIBYDAO
-BgNVHQ8BAf8EBAMCAQYwHQYDVR0lBBYwFAYIKwYBBQUHAwIGCCsGAQUFBwMEMBIGA1UdEwEB/wQI
-MAYBAf8CAQAwMgYDVR0fBCswKTAnoCWgI4YhaHR0cDovL2NybC5zdGFydHNzbC5jb20vc2ZzY2Eu
-Y3JsMGYGCCsGAQUFBwEBBFowWDAkBggrBgEFBQcwAYYYaHR0cDovL29jc3Auc3RhcnRzc2wuY29t
-MDAGCCsGAQUFBzAChiRodHRwOi8vYWlhLnN0YXJ0c3NsLmNvbS9jZXJ0cy9jYS5jcnQwHQYDVR0O
-BBYEFJmXqxg1OotZRUOYsnJxyPT7Cc8WMB8GA1UdIwQYMBaAFE4L7xqkQFulF2mHMMo0aEPQQa7y
-MD8GA1UdIAQ4MDYwNAYEVR0gADAsMCoGCCsGAQUFBwIBFh5odHRwOi8vd3d3LnN0YXJ0c3NsLmNv
-bS9wb2xpY3kwDQYJKoZIhvcNAQELBQADggIBAJlBQQTO9iT1TjA0eEO7V/1AbBvMAfibjAgofxmJ
-01jBmHKg0pbTjWInTTYoxb3LBgz3mfjvvS1PjnIfb29MyVm0G/PSHjgq7Ews1dEJMPC9XTuxPf2c
-+MWLkynBlotW542JprW+iTWfZafyUtzIKW1hk0YASJ8zSSj8D++9yR+0UhkbvlECJkdi1+et0EaI
-7HIX6ccj1rfcFFflWX/fPT64dn9jpg9s0nuJug4WsVkEK236WndZoMHrZmgF7CIyZ3T0muqYwkAS
-DDcRt9A21o/Mc+D8Q6GVmKRGB3gEKvOtsioHZEqJv6CdAm3a6gloo5pX3RL1eCzc8Lzfs4T0ISZj
-r8xNMbTGlsuHaFH+stDewKsfnpo4N64OtAGrzmVfFFsMIRENRHsVlSEe/6LVpBpjn00+7bqEN3qe
-qSxIOraYJ12mJ08G4YnP2U1fadHIaS50O5ZXqAivoBl9pi/6CBNc5wIMlkXMyFZ0sLsI+9ErFDu9
-OJhX7iWCo69X0ydlzXj08+2K1PKyr+g6/vTPHur63JotNrhyoWEJyWEjBLA4QmJXfGpB5u+bCwNf
-sFpcYAlkiFt1Rs2vemgSBy3q4DHDbPKvr1YImZNRSHP+TX9NP94JRkmqcyD/qaN7u2JV1pRAlwG0
-npyrn6ZQM1QHV+iFbwQ4VqLMWk//QVo/rZy1MIIGPjCCBSagAwIBAgIQPZ6tDP/RHLwcz1F+2kRA
-DzANBgkqhkiG9w0BAQsFADB1MQswCQYDVQQGEwJJTDEWMBQGA1UEChMNU3RhcnRDb20gTHRkLjEp
-MCcGA1UECxMgU3RhcnRDb20gQ2VydGlmaWNhdGlvbiBBdXRob3JpdHkxIzAhBgNVBAMTGlN0YXJ0
-Q29tIENsYXNzIDIgQ2xpZW50IENBMB4XDTE2MDEwMjAyMDIzNloXDTE4MDEwMjAyMDIzNlowejEL
-MAkGA1UEBhMCREUxDzANBgNVBAgMBkJheWVybjERMA8GA1UEBwwITcO8bmNoZW4xITAfBgNVBAMM
-GENocmlzdG9waCBBbnRvbiBNaXR0ZXJlcjEkMCIGCSqGSIb3DQEJARYVY2FsZXN0eW9Ac2NpZW50
-aWEubmV0MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAsoxs789VtR81tlqeP2vwE3Cp
-YosZYRfrovj+Wb91paoV5OQcFuXA7yONnLsWxOnJ3AGgy1/wG79Ko+yHSmF2K88pEWjrFe0zmZWZ
-0b2OtMoKLEjxz7Nz2N7/lmgss8XinJ083LwLKSe4f+JLjnF5hX/g6wG4NkFXVOIf2YFZ0+c1NYFQ
-T6Vy42EWdk+JLDoXjyd2hEperLCz9rQr2k3wh0cn8R1FDUGerBGpMnvyKV6JXj5vZsqJnmiiId9e
-0IdBj4Wcs3hT2usk6dJYwHrZ8b7Fkv6BRq90DUI7i8+ukTdp5hnAb8TPSbe1JS4h3Jc7r2NVLkpo
-Gbuw98er9s2PEAvpECD3toO3ojBevL56vEDbGa5tXpvvcWCz6t3QyEKJ2E54hWw1fbUA0BtydQC0
-mhKBtrENVnnCDrSgiyBMnd8y+kw6iPKeJEjNObGubc4BZp47zPn/ZiDBaHue6S0MXsoS7XEGOuCU
-09S/8kD8wTecBg+KdlLSNkLm+xqx6Cy7zwcj3IuQv0PeWi4kfEkAJfl8IeAP/4049iA6a1rkhJl7
-1rDjpEGBCG+i9BAgBeNdHLtQ7bugdvU+GfHjFXEU1emUk91E2liML8kpCvhUAXcLhhL8bxPJiX2/
-VQ2esrpQVO56OzpivNauonLaWmHEKOSfPC3s5AKMytMTiUiszEUCAwEAAaOCAcMwggG/MAsGA1Ud
-DwQEAwIEsDAdBgNVHSUEFjAUBggrBgEFBQcDAgYIKwYBBQUHAwQwCQYDVR0TBAIwADAdBgNVHQ4E
-FgQUwRklxF1ZV2ooSMkFwLiK13apkK0wHwYDVR0jBBgwFoAUmZerGDU6i1lFQ5iycnHI9PsJzxYw
-bwYIKwYBBQUHAQEEYzBhMCQGCCsGAQUFBzABhhhodHRwOi8vb2NzcC5zdGFydHNzbC5jb20wOQYI
-KwYBBQUHMAKGLWh0dHA6Ly9haWEuc3RhcnRzc2wuY29tL2NlcnRzL3NjYS5jbGllbnQyLmNydDA4
-BgNVHR8EMTAvMC2gK6AphidodHRwOi8vY3JsLnN0YXJ0c3NsLmNvbS9zY2EtY2xpZW50Mi5jcmww
-IAYDVR0RBBkwF4EVY2FsZXN0eW9Ac2NpZW50aWEubmV0MCMGA1UdEgQcMBqGGGh0dHA6Ly93d3cu
-c3RhcnRzc2wuY29tLzBUBgNVHSAETTBLMAwGCisGAQQBgbU3BgEwOwYLKwYBBAGBtTcBAgQwLDAq
-BggrBgEFBQcCARYeaHR0cDovL3d3dy5zdGFydHNzbC5jb20vcG9saWN5MA0GCSqGSIb3DQEBCwUA
-A4IBAQBb8EIsoUN/tgUgQqrNXNtlksPep84kx5yRBgr71uf3ITLddGtzfDBj6KdZUoy7SG3MQkyO
-kvYmXBClj23rv8Iol48/3oi9XWZw5EV3uHrRse1TzQgMPZE0hZsDgkqXVoxMQfk55ndjZIHMfSkn
-hdnqSP5zZ4TCmDEKLppPMDcQSSrjilnbthpxlIJzeGeEFtrh6ssh/oF6mUaEGFcd8kx9RS51K1gt
-H4J36y4E6pKB7EdxG2+0yVzAIta8dkD/BiMCKRWhp1EmzQ2uIh2nX5y8t4e2xHHuiy11Yeq6UTW/
-JmfxF4xcbkNK/rv9ISBg9K+mZtg2QXr+P/CJBtej2RLUMIIGPjCCBSagAwIBAgIQPZ6tDP/RHLwc
-z1F+2kRADzANBgkqhkiG9w0BAQsFADB1MQswCQYDVQQGEwJJTDEWMBQGA1UEChMNU3RhcnRDb20g
-THRkLjEpMCcGA1UECxMgU3RhcnRDb20gQ2VydGlmaWNhdGlvbiBBdXRob3JpdHkxIzAhBgNVBAMT
-GlN0YXJ0Q29tIENsYXNzIDIgQ2xpZW50IENBMB4XDTE2MDEwMjAyMDIzNloXDTE4MDEwMjAyMDIz
-NlowejELMAkGA1UEBhMCREUxDzANBgNVBAgMBkJheWVybjERMA8GA1UEBwwITcO8bmNoZW4xITAf
-BgNVBAMMGENocmlzdG9waCBBbnRvbiBNaXR0ZXJlcjEkMCIGCSqGSIb3DQEJARYVY2FsZXN0eW9A
-c2NpZW50aWEubmV0MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAsoxs789VtR81tlqe
-P2vwE3CpYosZYRfrovj+Wb91paoV5OQcFuXA7yONnLsWxOnJ3AGgy1/wG79Ko+yHSmF2K88pEWjr
-Fe0zmZWZ0b2OtMoKLEjxz7Nz2N7/lmgss8XinJ083LwLKSe4f+JLjnF5hX/g6wG4NkFXVOIf2YFZ
-0+c1NYFQT6Vy42EWdk+JLDoXjyd2hEperLCz9rQr2k3wh0cn8R1FDUGerBGpMnvyKV6JXj5vZsqJ
-nmiiId9e0IdBj4Wcs3hT2usk6dJYwHrZ8b7Fkv6BRq90DUI7i8+ukTdp5hnAb8TPSbe1JS4h3Jc7
-r2NVLkpoGbuw98er9s2PEAvpECD3toO3ojBevL56vEDbGa5tXpvvcWCz6t3QyEKJ2E54hWw1fbUA
-0BtydQC0mhKBtrENVnnCDrSgiyBMnd8y+kw6iPKeJEjNObGubc4BZp47zPn/ZiDBaHue6S0MXsoS
-7XEGOuCU09S/8kD8wTecBg+KdlLSNkLm+xqx6Cy7zwcj3IuQv0PeWi4kfEkAJfl8IeAP/4049iA6
-a1rkhJl71rDjpEGBCG+i9BAgBeNdHLtQ7bugdvU+GfHjFXEU1emUk91E2liML8kpCvhUAXcLhhL8
-bxPJiX2/VQ2esrpQVO56OzpivNauonLaWmHEKOSfPC3s5AKMytMTiUiszEUCAwEAAaOCAcMwggG/
-MAsGA1UdDwQEAwIEsDAdBgNVHSUEFjAUBggrBgEFBQcDAgYIKwYBBQUHAwQwCQYDVR0TBAIwADAd
-BgNVHQ4EFgQUwRklxF1ZV2ooSMkFwLiK13apkK0wHwYDVR0jBBgwFoAUmZerGDU6i1lFQ5iycnHI
-9PsJzxYwbwYIKwYBBQUHAQEEYzBhMCQGCCsGAQUFBzABhhhodHRwOi8vb2NzcC5zdGFydHNzbC5j
-b20wOQYIKwYBBQUHMAKGLWh0dHA6Ly9haWEuc3RhcnRzc2wuY29tL2NlcnRzL3NjYS5jbGllbnQy
-LmNydDA4BgNVHR8EMTAvMC2gK6AphidodHRwOi8vY3JsLnN0YXJ0c3NsLmNvbS9zY2EtY2xpZW50
-Mi5jcmwwIAYDVR0RBBkwF4EVY2FsZXN0eW9Ac2NpZW50aWEubmV0MCMGA1UdEgQcMBqGGGh0dHA6
-Ly93d3cuc3RhcnRzc2wuY29tLzBUBgNVHSAETTBLMAwGCisGAQQBgbU3BgEwOwYLKwYBBAGBtTcB
-AgQwLDAqBggrBgEFBQcCARYeaHR0cDovL3d3dy5zdGFydHNzbC5jb20vcG9saWN5MA0GCSqGSIb3
-DQEBCwUAA4IBAQBb8EIsoUN/tgUgQqrNXNtlksPep84kx5yRBgr71uf3ITLddGtzfDBj6KdZUoy7
-SG3MQkyOkvYmXBClj23rv8Iol48/3oi9XWZw5EV3uHrRse1TzQgMPZE0hZsDgkqXVoxMQfk55ndj
-ZIHMfSknhdnqSP5zZ4TCmDEKLppPMDcQSSrjilnbthpxlIJzeGeEFtrh6ssh/oF6mUaEGFcd8kx9
-RS51K1gtH4J36y4E6pKB7EdxG2+0yVzAIta8dkD/BiMCKRWhp1EmzQ2uIh2nX5y8t4e2xHHuiy11
-Yeq6UTW/JmfxF4xcbkNK/rv9ISBg9K+mZtg2QXr+P/CJBtej2RLUMYIEfjCCBHoCAQEwgYkwdTEL
-MAkGA1UEBhMCSUwxFjAUBgNVBAoTDVN0YXJ0Q29tIEx0ZC4xKTAnBgNVBAsTIFN0YXJ0Q29tIENl
-cnRpZmljYXRpb24gQXV0aG9yaXR5MSMwIQYDVQQDExpTdGFydENvbSBDbGFzcyAyIENsaWVudCBD
-QQIQPZ6tDP/RHLwcz1F+2kRADzANBglghkgBZQMEAgMFAKCCAcUwGAYJKoZIhvcNAQkDMQsGCSqG
-SIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTYwOTE5MTk1MjU2WjBPBgkqhkiG9w0BCQQxQgRAUlAv
-n3n395fFJdq34g6EOmZZuyWZuiIdXczaCR2Hasfc1/MaTC+mELuGcpyeTHJmHgqz6QaBylPJGRCi
-1wUVVzCBmgYJKwYBBAGCNxAEMYGMMIGJMHUxCzAJBgNVBAYTAklMMRYwFAYDVQQKEw1TdGFydENv
-bSBMdGQuMSkwJwYDVQQLEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0eTEjMCEGA1UE
-AxMaU3RhcnRDb20gQ2xhc3MgMiBDbGllbnQgQ0ECED2erQz/0Ry8HM9RftpEQA8wgZwGCyqGSIb3
-DQEJEAILMYGMoIGJMHUxCzAJBgNVBAYTAklMMRYwFAYDVQQKEw1TdGFydENvbSBMdGQuMSkwJwYD
-VQQLEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0eTEjMCEGA1UEAxMaU3RhcnRDb20g
-Q2xhc3MgMiBDbGllbnQgQ0ECED2erQz/0Ry8HM9RftpEQA8wDQYJKoZIhvcNAQEBBQAEggIABDgI
-DxTG2Rmb64c8wDbneR1kJcaA9+C902pR1uwvDuXXCDqVL4GqKEY07YUszUOQl4nC1wlx1VfGE0ak
-w8zd2ENOD/Wmc+ZUQCxzbr3xvr6007CVr110zkDKAkhFU2R5oRu5v4N/EdgFftoEG7n8xOgKJIuo
-QPDYfJNEmube58QXztxeJoHNBBek1jUTSyTMWJwkODcPSf/c80w10/EZW4pkxNCico+eUyTjJgBK
-fyRPgwvV/QhHDE4g888c1ItXctd73b+hYn97AC7TiCVeMtrpKcAIJ3d838ZJrNSWsSm/GTWeLvuk
-ZxC24P6AKyAMdhUk6uxdIiJucx6ONFBHVX0/yQkB4VuzqEmpUV0jEHJ7IB9dDlxD5g7pJfHEGxvW
-378amd2bD5g8dlV3HCoguzpbFX3Lre/RmEZTC3AtIf2y8cuGycFpiSbUHI4XoTEErOqwtZRsmoiK
-ZS0CywsaUjp3ZfAOyH+u8RgsaEQ0879w3dOb4LePKmQ+8N17NyHAfLr6mAd+6vtWiwuyIcft8YPI
-g9uIEyyG6yYwG0LkvkSKi1M2HNXvXG+g4Nv/Yo+DE2qIZ7Qje7xQr4UH7Q37/tiT2CZwEUA4Iz18
-OXa6jTomMLSkRjA2Y8/ScJdGC9i5EDZPAYa4nd6fC76t1nYtJ4qb93XN1bxxM+b+ePfCoUsAAAAA
-AAA=
+If a (key, nonce, associated data, message) tuple is repeated, the only 
+data an attacker can discover is the fact that the two ciphertexts have 
+the same value (a one-bit leak).
 
+In other words, if you encrypt each value in the b-tree with some key, 
+some nonce, use the b-tree key as the associated data, and use the value 
+as the message, you get a _very_ secure system against a _very_ wide 
+variety of attacks - essentially for free. And all _without_ sacrificing 
+flexibility, as one could use distinct (crypto) keys for distinct (b-
+tree) keys.
 
---=-xzcN7UwYFedUlq8rXOhL--
+(You still need something for protecting the _structure_ of the B-tree, 
+but that's a different issue).
+
+> This is what makes keys at the subvol root level so attractive.
+
+Pretty much.
+
+>> So there isn't quite a "subvol key" in the VFS approach - each
+>> directory has a key, and there are derived keys for the entries below
+>> it. (I'll note that this framing does not address shared extents _at
+>> all_, and would love to have clarification on that).
+> 
+> Files are modified by creating new extents (using parameters inherited
+> from the inode to fill in the extent attributes) and updating the inode
+> to refer to the new extent instead of the old one at the modified
+> offset. Cloned extents are references to existing extents associated
+> with a different inode or at a different place within the same inode (if
+> the extent is not compatible with the destination inode, clone fails
+> with an error).  A snapshot is an efficient way to clone an entire
+> subvol tree at once, including all inodes and attributes.
+
+There is the caveat of chattr +C, which would need hard-disabled for 
+extent-level encryption (vs block level).
+
+> Inode attributes and extent attributes can sometimes conflict,
+> especially during a clone operation.  Encryption attributes could become
+> one of these cases (i.e. to prevent an extent from one encryption policy
+> from being cloned to an inode under a different encryption policy).
+
+That is a good approach.
+
+>> > I don't see how snapshots could work, writable or otherwise, without
+>> > separating the key identity from the subvol identity and having a
+>> > many-to-one relationship between subvols and keys.  The extents in
+>> > each subvol would be shared, and they'd be encrypted with a single
+>> > secret, so there's not really another way to do this.
+>> 
+>> That's not the issue. The issue is that, assuming the key stays the
+>> same,
+>> then a user could quite possibly create a snapshot, write into both the
+>> original and the snapshot, causing encryption to occur twice with the
+>> same key, same nonce, and different data.
+> 
+> If the extents have nonces (and inodes do not) then this doesn't happen.
+> A write to either snapshot necessarily creates new extents in all cases
+> (the nodatacow feature, the only way to modify a data extent in-place,
+> is disabled when the extent is shared).
+
+As above, note that if encryption is applied to extents rather than 
+blocks, nodatacow becomes a data loss vector (partial write -> AEAD 
+verify failure).
 

@@ -1,79 +1,66 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f182.google.com ([209.85.223.182]:36008 "EHLO
-        mail-io0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1758961AbcISMcT (ORCPT
+Received: from mail-io0-f170.google.com ([209.85.223.170]:33121 "EHLO
+        mail-io0-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1760368AbcISMh3 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 19 Sep 2016 08:32:19 -0400
-Received: by mail-io0-f182.google.com with SMTP id m79so89496595ioo.3
-        for <linux-btrfs@vger.kernel.org>; Mon, 19 Sep 2016 05:32:18 -0700 (PDT)
+        Mon, 19 Sep 2016 08:37:29 -0400
+Received: by mail-io0-f170.google.com with SMTP id r145so89513999ior.0
+        for <linux-btrfs@vger.kernel.org>; Mon, 19 Sep 2016 05:37:28 -0700 (PDT)
 Subject: Re: Is stability a joke? (wiki updated)
 To: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
-References: <57D51BF9.2010907@online.no>
- <20160912142714.GE16983@twin.jikos.cz> <20160912162747.GF16983@twin.jikos.cz>
+References: <20160912162747.GF16983@twin.jikos.cz>
  <8df2691f-94c1-61de-881f-075682d4a28d@gmail.com>
- <20160919034701.GE21290@hungrycats.org>
-Cc: dsterba@suse.cz, Waxhead <waxhead@online.no>, linux-btrfs@vger.kernel.org
+ <CAJCQCtQUS-8F+pOtQ2VA9=j=-TGV=wOfj+3SnnMvY3HMTzd=9g@mail.gmail.com>
+ <1ef8e6db-89a1-6639-cd9a-4e81590456c5@gmail.com>
+ <CAJCQCtQq08bOpRbZq90wRLUGD62Rnqwx6vjJOv5hvPVwp=jz0w@mail.gmail.com>
+ <24d64f38-f036-3ae9-71fd-0c626cfbb52c@gmail.com>
+ <CAJCQCtR_hMPj8Nrf=U1L=WvDWq48Ns1K25p4JtKEJnVwb1231Q@mail.gmail.com>
+ <20160915201657.GK7138@carfax.org.uk>
+ <CAJCQCtSKU78Tvak_q=3xnh-Hm6=zXs6ffd1o=uYMpBmp6CxWtA@mail.gmail.com>
+ <954df3cd-0554-b86f-9dae-47517f3fbad7@gmail.com>
+ <20160919025756.GD21290@hungrycats.org>
+Cc: Chris Murphy <lists@colorremedies.com>, Hugo Mills <hugo@carfax.org.uk>,
+        David Sterba <dsterba@suse.cz>, Waxhead <waxhead@online.no>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <8dc842dc-c9a9-5662-1222-2d6785a66359@gmail.com>
-Date: Mon, 19 Sep 2016 08:32:14 -0400
+Message-ID: <70bd3855-7fda-dfcc-587b-db88d6834fef@gmail.com>
+Date: Mon, 19 Sep 2016 08:37:24 -0400
 MIME-Version: 1.0
-In-Reply-To: <20160919034701.GE21290@hungrycats.org>
+In-Reply-To: <20160919025756.GD21290@hungrycats.org>
 Content-Type: text/plain; charset=windows-1252; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2016-09-18 23:47, Zygo Blaxell wrote:
-> On Mon, Sep 12, 2016 at 12:56:03PM -0400, Austin S. Hemmelgarn wrote:
->> 4. File Range Cloning and Out-of-band Dedupe: Similarly, work fine if the FS
->> is healthy.
+On 2016-09-18 22:57, Zygo Blaxell wrote:
+> On Fri, Sep 16, 2016 at 08:00:44AM -0400, Austin S. Hemmelgarn wrote:
+>> To be entirely honest, both zero-log and super-recover could probably be
+>> pretty easily integrated into btrfs check such that it detects when they
+>> need to be run and does so.  zero-log has a very well defined situation in
+>> which it's absolutely needed (log tree corrupted such that it can't be
+>> replayed), which is pretty easy to detect (the kernel obviously does so,
+>> albeit by crashing).
 >
-> I've found issues with OOB dedup (clone/extent-same):
+> Check already includes zero-log.  It loses a little data that way, but
+> that is probably better than the alternative (try to teach btrfs check
+> how to replay the log tree and keep up with kernel changes).
+Interesting, as I've never seen check try to zero the log (even in cases 
+where it would fix things) unless it makes some other change in the FS. 
+I won't dispute that it clears the log tree _if_ it makes other changes 
+to the FS (it kind of has to for safety reasons), but that's the only 
+circumstance that I've seen it do so (even on filesystems where the log 
+tree was corrupted, but the rest of the FS was fine).
 >
-> 1.  Don't dedup data that has not been committed--either call fsync()
-> on it, or check the generation numbers on each extent before deduping
-> it, or make sure the data is not being actively modified during dedup;
-> otherwise, a race condition may lead to the the filesystem locking up and
-> becoming inaccessible until the kernel is rebooted.  This is particularly
-> important if you are doing bedup-style incremental dedup on a live system.
+> There have been at least two log-tree bugs (or, more accurately,
+> bugs triggered while processing the log tree during mount) in the 3.x
+> and 4.x kernels.  The most recent I've encountered was in one of the
+> 4.7-rc kernels.  zero-log is certainly not obsolete.
+I won't dispute this, as I've had it happen myself (albeit not quite 
+that recently), all I was trying to say was that it fixes a very well 
+defined problem.
 >
-> I've worked around #1 by placing a fsync() call on the src FD immediately
-> before calling FILE_EXTENT_SAME.  When I do an A/B experiment with and
-> without the fsync, "with-fsync" runs for weeks at a time without issues,
-> while "without-fsync" hangs, sometimes in just a matter of hours.  Note
-> that the fsync() doesn't resolve the underlying race condition, it just
-> makes the filesystem hang less often.
->
-> 2.  There is a practical limit to the number of times a single duplicate
-> extent can be deduplicated.  As more references to a shared extent
-> are created, any part of the filesystem that uses backref walking code
-> gets slower.  This includes dedup itself, balance, device replace/delete,
-> FIEMAP, LOGICAL_INO, and mmap() (which can be bad news if the duplicate
-> files are executables).  Several factors (including file size and number
-> of snapshots) are involved, making it difficult to devise workarounds or
-> set up test cases.  99.5% of the time, these operations just get slower
-> by a few ms each time a new reference is created, but the other 0.5% of
-> the time, write operations will abruptly grow to consume hours of CPU
-> time or dozens of gigabytes of RAM (in millions of kmalloc-32 slabs)
-> when they touch one of these over-shared extents.  When this occurs,
-> it effectively (but not literally) crashes the host machine.
->
-> I've worked around #2 by building tables of "toxic" hashes that occur too
-> frequently in a filesystem to be deduped, and using these tables in dedup
-> software to ignore any duplicate data matching them.  These tables can
-> be relatively small as they only need to list hashes that are repeated
-> more than a few thousand times, and typical filesystems (up to 10TB or
-> so) have only a few hundred such hashes.
->
-> I happened to have a couple of machines taken down by these issues this
-> very weekend, so I can confirm the issues are present in kernels 4.4.21,
-> 4.5.7, and 4.7.4.
-OK, that's good to know.  In my case, I'm not operating on a very big 
-data set (less than 40GB, but the storage cluster I'm doing this on only 
-has about 200GB of total space, so I'm trying to conserve as much as 
-possible), and it's mostly static data (less than 100MB worth of changes 
-a day except on Sunday when I run backups), so it makes sense that I've 
-not seen either of these issues.
+> For a filesystem where availablity is more important than integrity
+> (e.g. root filesystems) it's really handy to have zero-log as a separate
+> tool without the huge overhead (and regression risk) of check.
+Agreed, hence my later statement that if it gets fully merged, there 
+should be an option to run just that.
 
-The second one sounds like the same performance issue caused by having 
-very large numbers of snapshots, and based on what's happening, I don't 
-think there's any way we could fix it without rewriting certain core code.

@@ -1,47 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from twin.jikos.cz ([89.185.236.188]:34105 "EHLO twin.jikos.cz"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751564AbcISOiW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 19 Sep 2016 10:38:22 -0400
-Date: Mon, 19 Sep 2016 16:38:07 +0200
-From: David Sterba <dave@jikos.cz>
-To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Cc: Hans van Kranenburg <hans.van.kranenburg@mendix.com>,
-        Christoph Anton Mitterer <calestyo@scientia.net>,
-        linux-btrfs@vger.kernel.org
-Subject: Re: stability matrix
-Message-ID: <20160919143807.GF933@twin.jikos.cz>
-Reply-To: dave@jikos.cz
-References: <57D51BF9.2010907@online.no>
- <20160912142714.GE16983@twin.jikos.cz>
- <52304724-5bca-a1e6-527f-040085c7ab19@gmail.com>
- <20160912165107.GG16983@twin.jikos.cz>
- <58a954fc-bbd5-3fb5-9f23-008ed7f7121d@gmail.com>
- <20160915010759.GD32452@DigitalMercury.dynalias.net>
- <5dec6544a78a0301a8e0cd9086179f99@crc.id.au>
- <1473905644.8603.44.camel@scientia.net>
- <c58cd350-a1e8-7d1c-cf8c-84f7f0c05682@mendix.com>
- <b21c740b-5d71-7edd-f2fd-1ba6ea156dba@gmail.com>
+Received: from email.routify.me ([162.208.10.182]:44928 "EHLO
+        cartman.routify.me" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750745AbcISPNo (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 19 Sep 2016 11:13:44 -0400
+Date: Mon, 19 Sep 2016 11:13:41 -0400
+From: Sean Greenslade <sean@seangreenslade.com>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: Chris Murphy <lists@colorremedies.com>, David Sterba <dsterba@suse.cz>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Subject: Re: Post ext3 conversion problems
+Message-ID: <20160919151341.GA1431@coach.home>
+References: <20160916192459.GA13514@coach.home>
+ <CAJCQCtQutt6r2Jovr0jEbTk4W6HUaQpbGiipen97TH1C+k055g@mail.gmail.com>
+ <17ca9019-836b-f4f1-f84c-f8c1edcd9925@cn.fujitsu.com>
+ <20160919041247.GA32208@coach.home>
+ <ae8fd0d5-0d38-aa8e-0114-36ef62b1a783@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <b21c740b-5d71-7edd-f2fd-1ba6ea156dba@gmail.com>
+In-Reply-To: <ae8fd0d5-0d38-aa8e-0114-36ef62b1a783@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Sep 15, 2016 at 07:54:26AM -0400, Austin S. Hemmelgarn wrote:
-> > I'd like to help creating/maintaining this bug overview. A good start
-> > would be to just crawl through all stable kernels and some distro
-> > kernels and see which commits show up in fs/btrfs.
-> >
-> As of right now, we kind of do have such a page:
-> https://btrfs.wiki.kernel.org/index.php/Gotchas
-> It's not really well labeled though, ans it's easy to overlook.
+On Mon, Sep 19, 2016 at 02:30:28PM +0800, Qu Wenruo wrote:
+> All chunks are completed convert to DUP, no small chunk, all to its maximum
+> chunk size.
+> So from chunk level, nothing related to convert yet.
+> 
+> But for extent tree, I found several extents are heavily referred to.
+> Like extent 158173081600 or 183996522496.
+> 
+> If you're not using off-band dedupe, then it's quite possible that's the
+> remaining structure of convert.
 
-The page has been created long time ago, if you'd need to start a new
-page with similar content I can add a redirect so the link still works.
+I never ran any sort of dedup on this partition.
 
-A more detailed bug page would be welcome by users. The changelogs I
-write per release are terse as I don't want to spend the day just on
-that. All the information should be in the git log and possibly in
-recent mails, so this is manual work to present in on the wiki and does
-not need devs to assist.
+> Not pretty sure if it's related to the bug, but did you do the
+> balance/defrag operation just after removing ext_save subvolume?
+
+That's quite possible. I did it in a live boot, so I don't have the bash
+history to check. I checked it just now using "btrfs subvol list -d",
+and there's nothing listed. I ran a full balance after that, but the
+problem remains. So whatever the problem is, it can survive a full
+balance after the ext_save subvol is completely deleted.
+
+--Sean

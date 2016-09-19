@@ -1,69 +1,90 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f171.google.com ([209.85.223.171]:34997 "EHLO
-        mail-io0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S932392AbcISSer (ORCPT
+Received: from james.kirk.hungrycats.org ([174.142.39.145]:42954 "EHLO
+        james.kirk.hungrycats.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750708AbcISS6C (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 19 Sep 2016 14:34:47 -0400
-Received: by mail-io0-f171.google.com with SMTP id m186so100665792ioa.2
-        for <linux-btrfs@vger.kernel.org>; Mon, 19 Sep 2016 11:34:46 -0700 (PDT)
-Subject: Re: Is stability a joke? (wiki updated)
-To: Chris Murphy <lists@colorremedies.com>
-References: <57D51BF9.2010907@online.no>
- <20160912142714.GE16983@twin.jikos.cz> <20160912162747.GF16983@twin.jikos.cz>
- <8df2691f-94c1-61de-881f-075682d4a28d@gmail.com>
- <CAJCQCtQUS-8F+pOtQ2VA9=j=-TGV=wOfj+3SnnMvY3HMTzd=9g@mail.gmail.com>
- <1ef8e6db-89a1-6639-cd9a-4e81590456c5@gmail.com>
- <CAJCQCtQq08bOpRbZq90wRLUGD62Rnqwx6vjJOv5hvPVwp=jz0w@mail.gmail.com>
- <24d64f38-f036-3ae9-71fd-0c626cfbb52c@gmail.com>
- <CAJCQCtR_hMPj8Nrf=U1L=WvDWq48Ns1K25p4JtKEJnVwb1231Q@mail.gmail.com>
- <20160919040855.GF21290@hungrycats.org>
- <7c55ba5a-9193-d88f-e92f-b5f34f99ce57@gmail.com>
- <CAJCQCtSZoNYREngbba0NZX4wpeKsOJV21zKu9+v4i23jdcyiAg@mail.gmail.com>
-Cc: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>,
-        David Sterba <dsterba@suse.cz>, Waxhead <waxhead@online.no>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <4f8a3a72-3b66-1fbd-c2dd-e3496d1485b6@gmail.com>
-Date: Mon, 19 Sep 2016 14:34:37 -0400
+        Mon, 19 Sep 2016 14:58:02 -0400
+Date: Mon, 19 Sep 2016 14:57:33 -0400
+From: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
+To: Alex Elsayed <eternaleye@gmail.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [RFC] Preliminary BTRFS Encryption
+Message-ID: <20160919185733.GH21290@hungrycats.org>
+References: <1473773990-3071-1-git-send-email-anand.jain@oracle.com>
+ <20160917065831.GA14388@google.com>
+ <nriqf8$da6$2@blaine.gmane.org>
 MIME-Version: 1.0
-In-Reply-To: <CAJCQCtSZoNYREngbba0NZX4wpeKsOJV21zKu9+v4i23jdcyiAg@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Type: multipart/signed; micalg=pgp-sha1;
+        protocol="application/pgp-signature"; boundary="9jHkwA2TBA/ec6v+"
+In-Reply-To: <nriqf8$da6$2@blaine.gmane.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2016-09-19 14:27, Chris Murphy wrote:
-> On Mon, Sep 19, 2016 at 11:38 AM, Austin S. Hemmelgarn
-> <ahferroin7@gmail.com> wrote:
->>> ReiserFS had no working fsck for all of the 8 years I used it (and still
->>> didn't last year when I tried to use it on an old disk).  "Not working"
->>> here means "much less data is readable from the filesystem after running
->>> fsck than before."  It's not that much of an inconvenience if you have
->>> backups.
->>
->> For a small array, this may be the case.  Once you start looking into double
->> digit TB scale arrays though, restoring backups becomes a very expensive
->> operation.  If you had a multi-PB array with a single dentry which had no
->> inode, would you rather be spending multiple days restoring files and
->> possibly losing recent changes, or spend a few hours to check the filesystem
->> and fix it with minimal data loss?
->
-> Yep restoring backups, even fully re-replicating data in a cluster, is
-> untenable it's so expensive. But even offline fsck is sufficiently
-> non-scalable that at a certain volume size it's not tenable. 100TB
-> takes a long time to fsck offline, and is it even possible to fsck 1PB
-> Btrfs? Seems to me it's another case were if it were possible to
-> isolate what tree limbs are sick, just cut them off and report the
-> data loss rather than consider the whole fs unusable. That's what we
-> do with living things.
->
-This is part of why I said the ZFS approach is valid.  At the moment 
-though, we can't even do that, and to do it properly, we'd need a tool 
-to bypass the VFS layer to prune the tree, which is non-trivial in and 
-of itself.  It would be nice to have a mode in check where you could say 
-'I know this path in the FS has some kind of issue, figure out what's 
-wrong and fix it if possible, otherwise optionally prune that branch 
-from the appropriate tree'.  On the same note, it would be nice to be 
-able to manually restrict it to specific checks (eg, 'check only for 
-orphaned inodes', or 'only validate the FSC/FST').  If we were to add 
-such functionality, dealing with some minor corruption in a 100TB+ array 
-wouldn't be quite as much of an issue.
+
+--9jHkwA2TBA/ec6v+
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
+
+On Sat, Sep 17, 2016 at 07:13:45AM +0000, Alex Elsayed wrote:
+> IMO, this is already a flawed framing - in particular, if encrypting at=
+=20
+> the extent level, one _should not_ be encrypting (or authenticating)=20
+> individual pages. The meaningful unit is the extent, and encrypting at=20
+> page granularity puts you right back where dmcrypt is: dealing with fixed-
+> size space, and needing to find somewhere else to put the auth tag.
+>=20
+> This is not a good place to be, and I strongly suspect it motivated=20
+> choosing XTS in the first place - something I feel is an _error_ in the=
+=20
+> long run, and a dangerous one. (IMO, anything _but_ AEAD should be=20
+> forbidden in FS-level encryption.)
+>=20
+> In a nonce-misuse-resistent AEAD, there _is_ no auth tag: There's some=20
+> amount of inherent ciphertext expansion, and the ciphertext _cannot be=20
+> decrypted at all_ unless all of it is present. In essence, a built-in all-
+> or-nothing transform.
+>=20
+> You could, potentially, chop off part of that and store it elsewhere, but=
+=20
+> now you're dealing with significant added complexity, for absolutely zero=
+=20
+> gain.
+
+That would be true if the problem were not already long solved in btrfs.
+The 32-bit CRC tree stores 4 bytes per block separately and efficiently.
+With minor changes it can store a 32-byte HMAC for each block.
+
+> If you're _not_ using a nonce-misuse-resistant AEAD, it's even worse:=20
+> keeping the tag out-of-band makes it far too easy to fail to verify it,=
+=20
+> or verify it only after decrypting the ciphertext to plaintext. Bluntly:=
+=20
+> that is an immediate security vulnerability.
+>=20
+> tl;dr: Don't encrypt pages, encrypt extents. They grow a little for the=
+=20
+> auth tag, and that's fine.
+>=20
+> Btrfs already handles needing to read the full extent in order to get a=
+=20
+> page out of it with compression, anyway.
+
+It does, but compressed extents are limited to 128K.  Uncompressed extents
+come in sizes up to 128M, far too large to read in their entirety for
+many applications.
+
+
+--9jHkwA2TBA/ec6v+
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
+
+iEYEARECAAYFAlfgNR0ACgkQgfmLGlazG5w60QCfWDNZmLstTX9my7Iof2SL6ign
+kSEAn02fy9+WXKaNHZbfBNrYFwKkd8kc
+=cwDE
+-----END PGP SIGNATURE-----
+
+--9jHkwA2TBA/ec6v+--

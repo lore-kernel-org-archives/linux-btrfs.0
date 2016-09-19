@@ -1,146 +1,128 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wm0-f47.google.com ([74.125.82.47]:35120 "EHLO
-        mail-wm0-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751443AbcISWF3 (ORCPT
+Received: from james.kirk.hungrycats.org ([174.142.39.145]:40036 "EHLO
+        james.kirk.hungrycats.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S932333AbcISWMX (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 19 Sep 2016 18:05:29 -0400
-Received: by mail-wm0-f47.google.com with SMTP id l132so175627128wmf.0
-        for <linux-btrfs@vger.kernel.org>; Mon, 19 Sep 2016 15:05:28 -0700 (PDT)
-Subject: Re: multi-device btrfs with single data mode and disk failure
-To: Chris Murphy <lists@colorremedies.com>
-References: <1634818f-ff1d-722c-6d73-747ed7203a13@gmail.com>
- <CAJCQCtQHBkx8kjcAdSbmgYcHCo_w3VPj8jvgby3cE-S6rLAPdw@mail.gmail.com>
- <ecac8c64-8ed4-7c8d-29ad-5b3687981a33@gmail.com>
- <CAJCQCtSupa8LT+RK3=w3t7+T_nDcgUzzjSdfEi16DpiQxbm0hQ@mail.gmail.com>
- <760be1b7-79b2-a25d-7c60-04ceac1b6e40@gmail.com>
- <CAJCQCtR2t+3w6ovo88L0_2GqnVWveK5DNJ-vWdw18y+Sng4chQ@mail.gmail.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-From: Alexandre Poux <pums974@gmail.com>
-Message-ID: <3460a1ac-7e66-cf6f-b229-06a0825401a5@gmail.com>
-Date: Tue, 20 Sep 2016 00:05:25 +0200
+        Mon, 19 Sep 2016 18:12:23 -0400
+Date: Mon, 19 Sep 2016 18:12:22 -0400
+From: Zygo Blaxell <zblaxell@furryterror.org>
+To: Alex Elsayed <eternaleye@gmail.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [RFC] Preliminary BTRFS Encryption
+Message-ID: <20160919221221.GI21290@hungrycats.org>
+References: <1473773990-3071-1-git-send-email-anand.jain@oracle.com>
+ <20160917065831.GA14388@google.com>
+ <nriqf8$da6$2@blaine.gmane.org>
+ <20160919185733.GH21290@hungrycats.org>
+ <nrpfhf$g72$1@blaine.gmane.org>
 MIME-Version: 1.0
-In-Reply-To: <CAJCQCtR2t+3w6ovo88L0_2GqnVWveK5DNJ-vWdw18y+Sng4chQ@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8
+Content-Type: multipart/signed; micalg=pgp-sha1;
+        protocol="application/pgp-signature"; boundary="o7gdRJTuwFmWapyH"
+In-Reply-To: <nrpfhf$g72$1@blaine.gmane.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
+--o7gdRJTuwFmWapyH
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-Le 15/09/2016 à 23:54, Chris Murphy a écrit :
-> On Thu, Sep 15, 2016 at 3:48 PM, Alexandre Poux <pums974@gmail.com> wrote:
->> Le 15/09/2016 à 18:54, Chris Murphy a écrit :
->>> On Thu, Sep 15, 2016 at 10:30 AM, Alexandre Poux <pums974@gmail.com> wrote:
->>>> Thank you very much for your answers
->>>>
->>>> Le 15/09/2016 à 17:38, Chris Murphy a écrit :
->>>>> On Thu, Sep 15, 2016 at 1:44 AM, Alexandre Poux <pums974@gmail.com> wrote:
->>>>>>     Is it possible to do some king of a "btrfs delete missing" on this
->>>>>>     kind of setup, in order to recover access in rw to my other data, or
->>>>>>     I must copy all my data on a new partition
->>>>> That *should* work :) Except that your file system with 6 drives is
->>>>> too full to be shrunk to 5 drives. Btrfs will either refuse, or get
->>>>> confused, about how to shrink a nearly full 6 drive volume into 5.
->>>>>
->>>>> So you'll have to do one of three things:
->>>>>
->>>>> 1. Add a 2+TB drive, then remove the missing one; OR
->>>>> 2. btrfs replace is faster and is raid10 reliable; OR
->>>>> 3. Read only scrub to get a file listing of bad files, then remount
->>>>> read-write degraded and delete them all. Now you maybe can do a device
->>>>> delete missing. But it's still a tight fit, it basically has to
->>>>> balance things out to get it to fit on an odd number of drives, it may
->>>>> actually not work even though there seems to be enough total space,
->>>>> there has to be enough space on FOUR drives.
->>>>>
->>>> Are you sure you are talking about data in single mode ?
->>>> I don't understand why you are talking about raid10,
->>>> or the fact that it will have to rebalance everything.
->>> Yeah sorry I got confused in that very last sentence. Single, it will
->>> find space in 1GiB increments. Of course this fails because that data
->>> doesn't exist anymore, but to start the operation it needs to be
->>> possible.
->> No problem
->>>> Moreover, even in degraded mode I cannot mount it in rw
->>>> It tells me
->>>> "too many missing devices, writeable remount is not allowed"
->>>> due to the fact I'm in single mode.
->>> Oh you're in that trap. Well now you're stuck. I've had the case where
->>> I could mount read write degraded with metadata raid1 and data single,
->>> but it was good for only one mount and then I get the same message you
->>> get and it was only possible to mount read only. At that point it's
->>> totally suck unless you're adept at manipulating the file system with
->>> a hex editor...
->>>
->>> Someone might have a patch somewhere that drops this check and lets
->>> too many missing devices to mount anyway... I seem to recall this.
->>> It'd be in the archives if it exists.
->>>
->>>
->>>
->>>> And as far as as know, btrfs replace and btrfs delete, are not supposed
->>>> to work in read only...
->>> It doesn't. Must be read write mounted.
->>>
->>>
->>>> I would like to tell him forgot about the missing data, and give me back
->>>> my partition.
->>> This feature doesn't exist yet. I really want to see this, it'd be
->>> great for ceph and gluster if the volume could lose a drive, report
->>> all the missing files to the cluster file system, delete the device
->>> and the file references, and then the cluster knows that brick doesn't
->>> have those files and can replicate them somewhere else or even back to
->>> the brick that had them.
->>>
->> So I found this patch : https://patchwork.kernel.org/patch/7014141/
->>
->> Does this seems ok ?
-> No idea I haven't tried it.
->
->> So after patching my kernel with it,
->> I should be able to mount in rw my partition, and thus,
->> I will be able to do a btrfs delete missing
->> Which will just forgot about the old disk and everything should be fine
->> afterward ?
-> It will forget about the old disk but it will try to migrate all
-> metadata and data that was on that disk to the remaining drives; so
-> until you delete all files that are corrupt, you'll continue to get
-> corruption messages about them.
->
->> Is this risky ? or not so much ?
-> Probably. If you care about the data, mount read only, back up what
-> you can, then see if you can fix it after that.
->
->> The scrubing is almost finished, and as I was expecting, I lost no data
->> at all.
-> Well I'd guess the device delete should work then, but I still have no
-> idea if that patch will let you mount it degraded read-write. Worth a
-> shot though, it'll save time.
->
-OK, so I found some time to work on it.
+On Mon, Sep 19, 2016 at 07:50:07PM +0000, Alex Elsayed wrote:
+> > That would be true if the problem were not already long solved in btrfs.
+> > The 32-bit CRC tree stores 4 bytes per block separately and efficiently.
+> > With minor changes it can store a 32-byte HMAC for each block.
+>=20
+> I disagree that this "solves" it - in particular, the fact that the fsck=
+=20
+> tool support dropping/regenerating the extent tree is wildly unsafe in=20
+> the face of this.
 
-I decided to do some tests in a vm (virtualbox) with 3 disks
-after making an array with 3 disks, metadata in raid1 and data in single,
-I remove one disk to reproduce my situation.
+Those fsck features should no longer work on the AEAD tree (or would
+require the keys to work if there was enough filesystem left to salvage).
 
-I tried the patch, and, after updated it (nothing fancy),
-I can indeed mount a degraded partition with data in single.
+> For an AEAD that lacks nonce-misuse-resistance, it's "merely" downgrading=
+=20
+> security from AEAD to simple encryption (GCM, for instance, becomes=20
+> exactly CTR). This would be almost okay (it's a fsck tool, after all),=20
+> but the fact that it's a fsck tool makes the next part worse.
+>=20
+> In the case of nonce-misuse-resistant AEAD, it's much worse: Dropping the=
+=20
+> checksum tree would permanently and irrevocably corrupt every single=20
+> extent, with no data recoverable at all. This is the _exact_ opposite of=
+=20
+> _anything_ you would _ever_ want a fsck tool to do.
 
-But I can't remove the device :
-#btrfs device remove missing /mnt
-ERROR: error removing device 'missing': Input/output error
-or
-#btrfs device remove 2 /mnt
-ERROR: error removing devid 2: Input/output error
+So...don't put those features in fsck?
 
-replace doesn't work either
-btrfs replace start -B 2 /dev/sdb /mnt
-BTRFS error (device sda2): btrfs_scrub_dev(<missing disk>, 2, /dev/sdb)
-failed -12
-ERROR: ioctl(DEV_REPLACE_START) failed on "/mnt": Cannot allocate
-memory, <illegal result value>
+In my experience, if you're dropping the checksum or especially the
+extent tree, your filesystem is already so badly damaged you might as
+well mkfs+restore the filesystem.  It'll take longer to reverify the
+data at the application level or compare with the last backup.
 
-but scrub works, and I can add and remove an another device if I want.
-It's just the missing device that I cant get rid of.
+An AEAD tree would just be like that, except there's no point in even
+offering the option.  It would just be "rebuilding the AEAD tree will
+erase all your encrypted data, leaving only plaintext data on the
+filesystem if you had any, are you very sure about this y/N"
 
-Any other idea ?
+> This is, fundamentally, the problem with treating an "auth tag" as a=20
+> separate thing: It's only separate at all in weaker systems, and the act=
+=20
+> of separating the data induces incredibly nasty failure modes.
+>=20
+> It gets even worse if you consider _why_ that option exists for the fsck=
+=20
+> tool: Because of the possibility that the _structure_ of the checksum=20
+> tree becomes corrupted. As a result, two bit-flips (one for each=20
+> duplicate of the metadata) would be entirely capable of irrevocably=20
+> destroying _all encrypted data on the FS_.
 
+That event already destroys a btrfs filesystem, even without encryption.
+btrfs already includes much of the verification process of a Merkle tree,
+with weak checksums and no auth.  Currently, if you lose both copies of an
+interior tree node, it is only possible to recover the filesystem offline
+by brute-force search of the metadata.  It's one of the reasons why it's
+so important to have duplicate metadata even on a single disk.
+
+The only difference with encryption is that recovery would be
+theoretically impossible instead of just practically infeasible.
+
+> Separating the "auth tag" - simply considering an "auth tag" a separate=
+=20
+> thing from the overall ciphertext - is a dangerous thing to do.
+>=20
+> >> If you're _not_ using a nonce-misuse-resistant AEAD, it's even worse:
+> >> keeping the tag out-of-band makes it far too easy to fail to verify it,
+> >> or verify it only after decrypting the ciphertext to plaintext.
+> >> Bluntly: that is an immediate security vulnerability.
+> >>=20
+> >> tl;dr: Don't encrypt pages, encrypt extents. They grow a little for the
+> >> auth tag, and that's fine.
+> >>=20
+> >> Btrfs already handles needing to read the full extent in order to get a
+> >> page out of it with compression, anyway.
+> >=20
+> > It does, but compressed extents are limited to 128K.  Uncompressed
+> > extents come in sizes up to 128M, far too large to read in their
+> > entirety for many applications.
+>=20
+> Er, yes, and? Just as compressed extents have a different cap for reasons=
+=20
+> of practicality, so too can encrypted extents.
+
+=2E..which very inefficient space usage for short extents.
+
+--o7gdRJTuwFmWapyH
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
+
+iEYEARECAAYFAlfgYsUACgkQgfmLGlazG5xDpACgi0e49WPzEiO23fUNHjLKuBrr
+INkAnArBC7EVVDVlLyCT688H+L9Sws5l
+=8tCB
+-----END PGP SIGNATURE-----
+
+--o7gdRJTuwFmWapyH--

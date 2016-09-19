@@ -1,72 +1,87 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from james.kirk.hungrycats.org ([174.142.39.145]:34762 "EHLO
+Received: from james.kirk.hungrycats.org ([174.142.39.145]:37416 "EHLO
         james.kirk.hungrycats.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S936454AbcISC6B (ORCPT
+        with ESMTP id S938459AbcISDrH (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 18 Sep 2016 22:58:01 -0400
-Date: Sun, 18 Sep 2016 22:57:57 -0400
+        Sun, 18 Sep 2016 23:47:07 -0400
+Date: Sun, 18 Sep 2016 23:47:02 -0400
 From: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
 To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Cc: Chris Murphy <lists@colorremedies.com>, Hugo Mills <hugo@carfax.org.uk>,
-        David Sterba <dsterba@suse.cz>, Waxhead <waxhead@online.no>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Cc: dsterba@suse.cz, Waxhead <waxhead@online.no>, linux-btrfs@vger.kernel.org
 Subject: Re: Is stability a joke? (wiki updated)
-Message-ID: <20160919025756.GD21290@hungrycats.org>
-References: <20160912162747.GF16983@twin.jikos.cz>
+Message-ID: <20160919034701.GE21290@hungrycats.org>
+References: <57D51BF9.2010907@online.no>
+ <20160912142714.GE16983@twin.jikos.cz>
+ <20160912162747.GF16983@twin.jikos.cz>
  <8df2691f-94c1-61de-881f-075682d4a28d@gmail.com>
- <CAJCQCtQUS-8F+pOtQ2VA9=j=-TGV=wOfj+3SnnMvY3HMTzd=9g@mail.gmail.com>
- <1ef8e6db-89a1-6639-cd9a-4e81590456c5@gmail.com>
- <CAJCQCtQq08bOpRbZq90wRLUGD62Rnqwx6vjJOv5hvPVwp=jz0w@mail.gmail.com>
- <24d64f38-f036-3ae9-71fd-0c626cfbb52c@gmail.com>
- <CAJCQCtR_hMPj8Nrf=U1L=WvDWq48Ns1K25p4JtKEJnVwb1231Q@mail.gmail.com>
- <20160915201657.GK7138@carfax.org.uk>
- <CAJCQCtSKU78Tvak_q=3xnh-Hm6=zXs6ffd1o=uYMpBmp6CxWtA@mail.gmail.com>
- <954df3cd-0554-b86f-9dae-47517f3fbad7@gmail.com>
 MIME-Version: 1.0
 Content-Type: multipart/signed; micalg=pgp-sha1;
-        protocol="application/pgp-signature"; boundary="J5MfuwkIyy7RmF4Q"
-In-Reply-To: <954df3cd-0554-b86f-9dae-47517f3fbad7@gmail.com>
+        protocol="application/pgp-signature"; boundary="4Epv4kl9IRBfg3rk"
+In-Reply-To: <8df2691f-94c1-61de-881f-075682d4a28d@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---J5MfuwkIyy7RmF4Q
+--4Epv4kl9IRBfg3rk
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
 
-On Fri, Sep 16, 2016 at 08:00:44AM -0400, Austin S. Hemmelgarn wrote:
-> To be entirely honest, both zero-log and super-recover could probably be
-> pretty easily integrated into btrfs check such that it detects when they
-> need to be run and does so.  zero-log has a very well defined situation in
-> which it's absolutely needed (log tree corrupted such that it can't be
-> replayed), which is pretty easy to detect (the kernel obviously does so,
-> albeit by crashing). =20
+On Mon, Sep 12, 2016 at 12:56:03PM -0400, Austin S. Hemmelgarn wrote:
+> 4. File Range Cloning and Out-of-band Dedupe: Similarly, work fine if the FS
+> is healthy.
 
-Check already includes zero-log.  It loses a little data that way, but
-that is probably better than the alternative (try to teach btrfs check
-how to replay the log tree and keep up with kernel changes).
+I've found issues with OOB dedup (clone/extent-same):
 
-There have been at least two log-tree bugs (or, more accurately,
-bugs triggered while processing the log tree during mount) in the 3.x
-and 4.x kernels.  The most recent I've encountered was in one of the
-4.7-rc kernels.  zero-log is certainly not obsolete.
+1.  Don't dedup data that has not been committed--either call fsync()
+on it, or check the generation numbers on each extent before deduping
+it, or make sure the data is not being actively modified during dedup;
+otherwise, a race condition may lead to the the filesystem locking up and
+becoming inaccessible until the kernel is rebooted.  This is particularly
+important if you are doing bedup-style incremental dedup on a live system.
 
-For a filesystem where availablity is more important than integrity
-(e.g. root filesystems) it's really handy to have zero-log as a separate
-tool without the huge overhead (and regression risk) of check.
+I've worked around #1 by placing a fsync() call on the src FD immediately
+before calling FILE_EXTENT_SAME.  When I do an A/B experiment with and
+without the fsync, "with-fsync" runs for weeks at a time without issues,
+while "without-fsync" hangs, sometimes in just a matter of hours.  Note
+that the fsync() doesn't resolve the underlying race condition, it just
+makes the filesystem hang less often.
+
+2.  There is a practical limit to the number of times a single duplicate
+extent can be deduplicated.  As more references to a shared extent
+are created, any part of the filesystem that uses backref walking code
+gets slower.  This includes dedup itself, balance, device replace/delete,
+FIEMAP, LOGICAL_INO, and mmap() (which can be bad news if the duplicate
+files are executables).  Several factors (including file size and number
+of snapshots) are involved, making it difficult to devise workarounds or
+set up test cases.  99.5% of the time, these operations just get slower
+by a few ms each time a new reference is created, but the other 0.5% of
+the time, write operations will abruptly grow to consume hours of CPU
+time or dozens of gigabytes of RAM (in millions of kmalloc-32 slabs)
+when they touch one of these over-shared extents.  When this occurs,
+it effectively (but not literally) crashes the host machine.
+
+I've worked around #2 by building tables of "toxic" hashes that occur too
+frequently in a filesystem to be deduped, and using these tables in dedup
+software to ignore any duplicate data matching them.  These tables can
+be relatively small as they only need to list hashes that are repeated
+more than a few thousand times, and typical filesystems (up to 10TB or
+so) have only a few hundred such hashes.
+
+I happened to have a couple of machines taken down by these issues this
+very weekend, so I can confirm the issues are present in kernels 4.4.21,
+4.5.7, and 4.7.4.
 
 
---J5MfuwkIyy7RmF4Q
+--4Epv4kl9IRBfg3rk
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: Digital signature
 
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1
 
-iEYEARECAAYFAlffVDQACgkQgfmLGlazG5xLuQCgv1TTjzDt1Uvv1l/6fLywxeV8
-FXgAn2I0d3FZ4k6yarz8bX4Nydy0OLmw
-=UYVu
+iEYEARECAAYFAlffX7UACgkQgfmLGlazG5z7QQCggAUErTF3rx2+GEHDp35oZhzX
+JJcAoJ79VqZ9dzXBTUsJ5gIz3+cSIyTq
+=zFVv
 -----END PGP SIGNATURE-----
 
---J5MfuwkIyy7RmF4Q--
+--4Epv4kl9IRBfg3rk--

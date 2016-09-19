@@ -1,74 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:36392 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:41924 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1030224AbcIVSrs (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 22 Sep 2016 14:47:48 -0400
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id A3B3AABDB
-        for <linux-btrfs@vger.kernel.org>; Thu, 22 Sep 2016 18:47:47 +0000 (UTC)
-From: Goldwyn Rodrigues <rgoldwyn@suse.de>
-To: linux-btrfs@vger.kernel.org
-Cc: Goldwyn Rodrigues <rgoldwyn@suse.com>
-Subject: [PATCH] qgroup: Prevent qgroup->reserved from going subzero
-Date: Thu, 22 Sep 2016 13:47:30 -0500
-Message-Id: <1474570050-4715-1-git-send-email-rgoldwyn@suse.de>
+        id S1752020AbcISRHA (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 19 Sep 2016 13:07:00 -0400
+Date: Mon, 19 Sep 2016 19:05:03 +0200
+From: David Sterba <dsterba@suse.cz>
+To: "Lakshmipathi.G" <Lakshmipathi.G@giis.co.in>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH]btrfs-progs: Add fast,slow symlinks and fifo types to
+ convert test
+Message-ID: <20160919170503.GL16983@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20160915093407.GA17835@fedori>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20160915093407.GA17835@fedori>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Goldwyn Rodrigues <rgoldwyn@suse.com>
+On Thu, Sep 15, 2016 at 11:34:07AM +0200, Lakshmipathi.G wrote:
+> +		slow_symlink)
+> +			for num in $(seq 1 $DATASET_SIZE); do
+> +				fname64=`date +%s | sha256sum | cut -f1 -d'-'`
 
-While free'ing qgroup->reserved resources, we must check
-if the page is already commmitted to disk or still in memory.
-If not, the reserve free is doubly accounted, once while
-invalidating the page, and the next time while free'ing
-delalloc. This results is qgroup->reserved(u64) going subzero,
-thus very large value. So, no further I/O can be performed.
+Do you need to generate the date and sha all the time?
 
-This is also expressed in the comments, but not performed.
-
-Testcase:
-SCRATCH_DEV=/dev/vdb
-SCRATCH_MNT=/mnt
-mkfs.btrfs -f $SCRATCH_DEV
-mount -t btrfs $SCRATCH_DEV $SCRATCH_MNT
-cd $SCRATCH_MNT
-btrfs quota enable $SCRATCH_MNT
-btrfs subvolume create a
-btrfs qgroup limit 50m a $SCRATCH_MNT
-sync
-for c in {1..15}; do
-dd if=/dev/zero  bs=1M count=40 of=$SCRATCH_MNT/a/file;
-done
-
-sleep 10
-sync
-sleep 5
-
-touch $SCRATCH_MNT/a/newfile
-
-echo "Removing file"
-rm $SCRATCH_MNT/a/file
-
-Fixes: b9d0b38928 ("btrfs: Add handler for invalidate page")
-Signed-off-by: Goldwyn Rodrigues <rgoldwyn@suse.com>
----
- fs/btrfs/inode.c | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
-
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index e6811c4..2e2a026 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -8917,7 +8917,8 @@ again:
- 	 * 2) Not written to disk
- 	 *    This means the reserved space should be freed here.
- 	 */
--	btrfs_qgroup_free_data(inode, page_start, PAGE_SIZE);
-+	if (PageDirty(page))
-+		btrfs_qgroup_free_data(inode, page_start, PAGE_SIZE);
- 	if (!inode_evicting) {
- 		clear_extent_bit(tree, page_start, page_end,
- 				 EXTENT_LOCKED | EXTENT_DIRTY |
--- 
-2.6.6
-
+> +				run_check $SUDO_HELPER touch $dirpath/$fname64
+> +				run_check $SUDO_HELPER ln -s $dirpath/$fname64 $dirpath/slow_slink.$num
+> +			done
+> +			;;
+>  	esac
+>  }
+>  
+>  populate_fs() {
+>  
+> -        for dataset_type in 'small' 'hardlink' 'symlink' 'brokenlink' 'perm' 'sparse' 'acls'; do
+> +        for dataset_type in 'small' 'hardlink' 'fast_symlink' 'brokenlink' 'perm' 'sparse' 'acls' 'fifo' 'slow_symlink'; do
+>  		generate_dataset "$dataset_type"
+>  	done
+>  }
+> -- 
+> 1.9.3
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

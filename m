@@ -1,80 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:17968 "EHLO
-        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1764344AbcINPqa (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 14 Sep 2016 11:46:30 -0400
-From: Liu Bo <bo.li.liu@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.cz>
-Subject: [PATCH] Btrfs: return gracefully from balance if fs tree is corrupted
-Date: Wed, 14 Sep 2016 08:51:46 -0700
-Message-Id: <1473868306-30578-1-git-send-email-bo.li.liu@oracle.com>
+Received: from mx2.suse.de ([195.135.220.15]:39954 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751124AbcITNSf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 20 Sep 2016 09:18:35 -0400
+Date: Tue, 20 Sep 2016 15:16:36 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Liu Bo <bo.li.liu@oracle.com>
+Cc: linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.cz>,
+        Josef Bacik <jbacik@fb.com>, Chris Mason <clm@fb.com>
+Subject: Re: [PATCH] Btrfs: memset to avoid stale content in btree node block
+Message-ID: <20160920131636.GY16983@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1473898977-29406-1-git-send-email-bo.li.liu@oracle.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1473898977-29406-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When relocating tree blocks, we firstly get block information from
-back references in the extent tree, we then search fs tree to try to
-find all parents of a block.
+On Wed, Sep 14, 2016 at 05:22:57PM -0700, Liu Bo wrote:
+> During updating btree, we could push items between sibling
+> nodes/leaves, for leaves data sections starts reversely from
+> the end of the block while for nodes we only have key pairs
+> which are stored one by one from the start of the block.
+> 
+> So we could do try to push key pairs from one node to the next
+> node right in the tree, and after that, we update the node's
+> nritems to reflect the correct end while leaving the stale
+> content in the node.  One may intentionally corrupt the fs
+> image and access the stale content by bumping the nritems and
+> causes various crashes.
+> 
+> This takes the in-memory @nritems as the correct one and
+> gets to memset the unused part of a btree node.
+> 
+> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
 
-However, if fs tree is corrupted, eg. if there're some missing
-items, we could come across these WARN_ONs and BUG_ONs.
+Reviewed-by: David Sterba <dsterba@suse.com>
 
-This makes us print some error messages and return gracefully
-from balance.
+> ---
+>  fs/btrfs/extent_io.c | 11 +++++++++++
+>  1 file changed, 11 insertions(+)
+> 
+> diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+> index c2325c3..56c9dee 100644
+> --- a/fs/btrfs/extent_io.c
+> +++ b/fs/btrfs/extent_io.c
+> @@ -3732,6 +3732,17 @@ static noinline_for_stack int write_one_eb(struct extent_buffer *eb,
+>  	if (btrfs_header_owner(eb) == BTRFS_TREE_LOG_OBJECTID)
+>  		bio_flags = EXTENT_BIO_TREE_LOG;
+>  
+> +	/* set btree node beyond nritems with 0 to avoid stale content */
+> +	if (btrfs_header_level(eb) > 0) {
 
-Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
----
- fs/btrfs/relocation.c | 23 +++++++++++++++++------
- 1 file changed, 17 insertions(+), 6 deletions(-)
-
-diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-index c0c13dc..680e234 100644
---- a/fs/btrfs/relocation.c
-+++ b/fs/btrfs/relocation.c
-@@ -923,9 +923,16 @@ again:
- 			path2->slots[level]--;
- 
- 		eb = path2->nodes[level];
--		WARN_ON(btrfs_node_blockptr(eb, path2->slots[level]) !=
--			cur->bytenr);
--
-+		if (btrfs_node_blockptr(eb, path2->slots[level]) !=
-+		    cur->bytenr) {
-+			btrfs_err(root->fs_info,
-+	"couldn't find block (%llu) (level %d) in tree (%llu) with key (%llu %u %llu)",
-+				  cur->bytenr, level - 1, root->objectid,
-+				  node_key->objectid, node_key->type,
-+				  node_key->offset);
-+			err = -ENOENT;
-+			goto out;
-+		}
- 		lower = cur;
- 		need_check = true;
- 		for (; level < BTRFS_MAX_LEVEL; level++) {
-@@ -2686,11 +2693,15 @@ static int do_relocation(struct btrfs_trans_handle *trans,
- 
- 		if (!upper->eb) {
- 			ret = btrfs_search_slot(trans, root, key, path, 0, 1);
--			if (ret < 0) {
--				err = ret;
-+			if (ret) {
-+				if (ret < 0)
-+					err = ret;
-+				else
-+					err = -ENOENT;
-+
-+				btrfs_release_path(path);
- 				break;
- 			}
--			BUG_ON(ret > 0);
- 
- 			if (!upper->eb) {
- 				upper->eb = path->nodes[upper->level];
--- 
-2.5.5
-
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-
+We can do the same for leaves.

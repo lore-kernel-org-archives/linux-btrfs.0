@@ -1,166 +1,158 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:42997 "EHLO
-        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751610AbcITEDP (ORCPT
+Received: from mail-lf0-f47.google.com ([209.85.215.47]:34242 "EHLO
+        mail-lf0-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752978AbcITJKy (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 20 Sep 2016 00:03:15 -0400
-Subject: Re: Experimental btrfs encryption
-To: "Theodore Ts'o" <tytso@mit.edu>
-Cc: linux-btrfs@vger.kernel.org, clm@fb.com, dsterba@suse.cz
-From: Anand Jain <anand.jain@oracle.com>
-Message-ID: <aea1da38-1514-f37c-b28b-68a62a934af8@oracle.com>
-Date: Tue, 20 Sep 2016 12:05:02 +0800
+        Tue, 20 Sep 2016 05:10:54 -0400
+Received: by mail-lf0-f47.google.com with SMTP id y6so7903452lff.1
+        for <linux-btrfs@vger.kernel.org>; Tue, 20 Sep 2016 02:10:53 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <20160919151518.i2aon4axmfzt54rn@thunk.org>
-Content-Type: text/plain; charset=windows-1252; format=flowed
+In-Reply-To: <CAEtw4r2XDvYUVRC5x=dcQbF8k3L5-7VcAHojhDPZP15+nvpuRQ@mail.gmail.com>
+References: <566e9000fe30d5b8e0d7e73ebe1d44a0@admin.virtall.com>
+ <20160920065827.GO7138@carfax.org.uk> <CAEtw4r16f10PPsVw6r5t0KP-gJbSmKEYP-zt-s5De9kSBpZEqg@mail.gmail.com>
+ <6596b749c3c4b37dc1db8c3a766be491@admin.virtall.com> <CAEtw4r1NW8Yg9KnGEuUtSe-NYVP-burkB0mDOdKLWsWQ4vy1rw@mail.gmail.com>
+ <CAEtw4r1FYDkUxoOW-hrngBX5XD+AydiPY8B1eQv8a=dmA9B8eQ@mail.gmail.com>
+ <20160920084838.GQ7138@carfax.org.uk> <CAEtw4r2XDvYUVRC5x=dcQbF8k3L5-7VcAHojhDPZP15+nvpuRQ@mail.gmail.com>
+From: Peter Becker <floyd.net@gmail.com>
+Date: Tue, 20 Sep 2016 11:10:51 +0200
+Message-ID: <CAEtw4r0XzqUFhV5phiSH5+53eCq2S2EzQm7rJR+y-vjWYWpn+A@mail.gmail.com>
+Subject: Re: how to understand "btrfs fi show" output? "No space left" issues
+To: Hugo Mills <hugo@carfax.org.uk>, Peter Becker <floyd.net@gmail.com>,
+        Tomasz Chmielewski <mangoo@wpkg.org>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
-References: <20160919151518.i2aon4axmfzt54rn@thunk.org>
+
+Output from my nightly balance script for my 15 TB Raid 1 btrfs pool
+(3x 3TB + 1x 6TB) with ~100 snapshots:
+
+Before balance of /media/RAID
+Data, RAID1: total=5.57TiB, used=5.45TiB
+System, RAID1: total=32.00MiB, used=832.00KiB
+Metadata, RAID1: total=7.00GiB, used=6.03GiB
+GlobalReserve, single: total=512.00MiB, used=0.00B
+Filesystem      Size  Used Avail Use% Mounted on
+/dev/sde        7.6T  6.1T  1.5T  81% /media/RAID
+Done, had to relocate 0 out of 5710 chunks
+Dumping filters: flags 0x1, state 0x0, force is off
+  DATA (flags 0x2): balancing, usage=1
+Done, had to relocate 0 out of 5710 chunks
+Dumping filters: flags 0x1, state 0x0, force is off
+  DATA (flags 0x2): balancing, usage=5
+Done, had to relocate 0 out of 5710 chunks
+Dumping filters: flags 0x1, state 0x0, force is off
+  DATA (flags 0x2): balancing, usage=10
+Done, had to relocate 0 out of 5710 chunks
+Dumping filters: flags 0x1, state 0x0, force is off
+  DATA (flags 0x2): balancing, usage=20
+Done, had to relocate 0 out of 5710 chunks
+Dumping filters: flags 0x1, state 0x0, force is off
+  DATA (flags 0x2): balancing, usage=30
+Done, had to relocate 0 out of 5710 chunks
+Dumping filters: flags 0x1, state 0x0, force is off
+  DATA (flags 0x2): balancing, usage=40
+Done, had to relocate 0 out of 5710 chunks
+Dumping filters: flags 0x1, state 0x0, force is off
+  DATA (flags 0x2): balancing, usage=50
+Done, had to relocate 0 out of 5710 chunks
+Done, had to relocate 0 out of 5710 chunks
+Dumping filters: flags 0x6, state 0x0, force is off
+  METADATA (flags 0x2): balancing, usage=1
+  SYSTEM (flags 0x2): balancing, usage=1
+Done, had to relocate 0 out of 5710 chunks
+Dumping filters: flags 0x6, state 0x0, force is off
+  METADATA (flags 0x2): balancing, usage=5
+  SYSTEM (flags 0x2): balancing, usage=5
+Done, had to relocate 1 out of 5710 chunks
+Dumping filters: flags 0x6, state 0x0, force is off
+  METADATA (flags 0x2): balancing, usage=10
+  SYSTEM (flags 0x2): balancing, usage=10
+Done, had to relocate 1 out of 5710 chunks
+Dumping filters: flags 0x6, state 0x0, force is off
+  METADATA (flags 0x2): balancing, usage=20
+  SYSTEM (flags 0x2): balancing, usage=20
+Done, had to relocate 1 out of 5710 chunks
+Dumping filters: flags 0x6, state 0x0, force is off
+  METADATA (flags 0x2): balancing, usage=30
+  SYSTEM (flags 0x2): balancing, usage=30
+Done, had to relocate 1 out of 5710 chunks
+After balance of /media/RAID
+Data, RAID1: total=5.57TiB, used=5.45TiB
+System, RAID1: total=32.00MiB, used=832.00KiB
+Metadata, RAID1: total=7.00GiB, used=6.03GiB
+GlobalReserve, single: total=512.00MiB, used=0.00B
+Filesystem      Size  Used Avail Use% Mounted on
+/dev/sde        7.6T  6.1T  1.5T  81% /media/RAID
 
 
-Hi Ted,
+Its effective reduce the internal fragmentation (to 0,12 TB data and
+~1GB metadata).
 
-  I appreciate your email, thanks for taking time to review.
-
-
-  Before I wrote the current version, I had a version which used
-  fs/crypto. BTRFS needs a highly scalable solution, I am experimenting
-  and evaluating, integration with fs/crypto is needed, I will discuss
-  that in the fsdevel ML when its appropriate.
-
-
-  Data center storage requisites and Scalability is very important
-  to BTRFS. Based on my experiences with the engineered storage(s),
-  of course I do have the requirement list in the background for
-  this project. Chris mentioned one of it.
-
-
-  Yes, we need crypto experts to review the document or in other words
-  its not integration-ready unless crypto experts has reviewed/approved.
-
-  Thanks. I shall cc you for further development on this.
-
-Regds, -Anand
-
-
-On 09/19/2016 11:15 PM, Theodore Ts'o wrote:
-> (I'm not on linux-btrfs@, so please keep me on the cc list.  Or
-> perhpas better yet, maybe we can move discussion to the linux-fsdevel@
-> list.)
+2016-09-20 10:59 GMT+02:00 Peter Becker <floyd.net@gmail.com>:
+> 2016-09-20 10:48 GMT+02:00 Hugo Mills <hugo@carfax.org.uk>:
+>> On Tue, Sep 20, 2016 at 10:34:49AM +0200, Peter Becker wrote:
+>>> More details on the issue and a complete explantion you can find here:
+>>>
+>>> http://marc.merlins.org/perso/btrfs/post_2014-05-04_Fixing-Btrfs-Filesystem-Full-Problems.html
+>>> and
+>>> (Help! I ran out of disk space! )
+>>> https://btrfs.wiki.kernel.org/index.php/FAQ#Help.21_I_ran_out_of_disk_space.21
+>>>
+>>> And an explantion for the "dlimit" solution:
+>>
+>>    It's not "dlimit". It's "d" with option "limit". You could just as
+>> easily write -dusage=99,limit=10 or -dlimit=10,usage=99 (although
+>> those aren't the options I'd pick... see below).
+>>
+>>> Quote From: Uncommon solutions for BTRFS
+>>> (http://blog.schmorp.de/2015-10-08-smr-archive-drives-fast-now.html)
+>>>
+>>> > For my purposes, I define internal fragmentation as space allocated but not usable by the filesystem. In BTRFS, each time you delete files, the space used by those files cannot be reused for new files automatically.
+>>> > It's not a hard requirement to do this maintenance regularly, but doing it regularly spares you waiting for hours when the disk is full and you need to wait for a balance clean up command - and of course also reduces the number of > times you get unexpected disk full errors. As a side note, this can also be useful to prolong the life of your SSD because it allows the SSD to reuse space not needed by the filesystem (although there is a trade-off, frequent balancing is bad, no balancing is bad, the sweet spot is somewhere in between).
+>>>
+>>> 2016-09-20 10:20 GMT+02:00 Peter Becker <floyd.net@gmail.com>:
+>>> > Normaly total and used should deviate us a few gb.
+>>> > depend on your write workload you should run
+>>> >
+>>> > btrfs balance start -dusage=60 /mnt
+>>> >
+>>> > every week to avoid "ENOSPC"
+>>> >
+>>> > if you use newer btrfs-progs who supper balance limit filters you should run
+>>> >
+>>> > btrfs balance start -dusage=99 -dlimit=10 /mnt
+>>> >
+>>> > every 3 hours.
+>>
+>>    These two options both feel horrible to me. Particularly the second
+>> option, which is going to result in huge write load on the FS, and is
+>> almost certainly going to be unnecessary most of the time.
 >
-> Hi Anand,
+> I take this from kdave's btrfs maintence scripts and this works for me
+> since one year. (https://github.com/kdave/btrfsmaintenance)
 >
-> After reading this thread on the web archives, and seeing that some
-> folks seem to be a bit confused about "vfs level crypto", fs/crypto,
-> and ext4/f2fs encryption, I thought I would give a few comments.
+>>    My recommendation would be to check at regular intervals (daily,
+>> say) whether the used value is equal to the size value in btrfs fi
+>> show. If it is (and only if), then you should run a balance with no
+>> usage= option, and with limit=<n>, for some relatively small value of
+>> <n> (3, say). That will give you some unallocated space that the FS
+>> can take for metadata should it need it, which is all that's required
+>> to avoid early ENOSPC.
 >
-> First of all, these are all the same thing.  Initially ext4 encryption
-> was implemented targetting ChromeOS as the initial customer, and as a
-> replacement for ecryptfs.  Folks have already pointed you at the
-> design document[1].  Also of interest is the is the 2015 Linux
-> Security Symposium slides set[2].  The first deployed use of this was
-> for Android N's File-based Encryption and Direct boot[3]; a technical
-> description which left out some of the product details (since LSS 2016
-> was before the Android N release) can be found at the 2016 LSS
-> slides[4].
+> With no usage-option, how to avoid balance full blocks? -dusage=99
+> only balance blocks with empty space.
 >
-> [1] https://docs.google.com/document/d/1ft26lUQyuSpiu6VleP70_npaWdRfXFoNnB8JYnykNTg/preview
-> [2] http://kernsec.org/files/lss2014/Halcrow_EXT4_Encryption.pdf
-> [3] https://android.googleblog.com/2016/08/android-70-nougat-more-powerful-os-made.html
-> [4] http://kernsec.org/files/lss2015/halcrow.pdf
+>>    If you regularly find that your usage patterns result in large
+>> numbers of empty or near-empty block groups (i.e. lots of headroom in
+>> data shown by btrfs fi df), then a regular (but probably less
+>> frequent) balance with something like usage=5 should keep that down.
+>>
+>>> > This will balance 2 Blocks (dlimit=10; corresponds to 10 gb) with are
+>>
+>>    No, it will balance 10 complete block groups, not 10 GiB. Depending
+>> on the RAID configuration, that could be a very large amount of data
+>> indeed. (For example, an 8-disk RAID-10 would be rewriting up to 80
+>> GiB of data with that command).
 >
-> The other thing that perhaps would be worth noting is that Michael
-> Halcrow started this as an encryption/security expert who had dabbled
-> in file systems, while I was someone for whom encryption/security is a
-> hobby (although in a previous life I was the tech lead for Kerberos
-> and chaired the IPSEC working group) who was a file system expert.  In
-> order to do file system security well, you need people who are well
-> versed in both discplines working together.
->
-> With all due respect, the fact that you chose counter mode and how use
-> used it pretty clearly demonstrates that you would be well advised to
-> find someone who is a crypto expert to collaborate with you --- or use
-> the fs/crypto framework since it was designed and vetted by multiple
-> crypto experts as well as file system experts.
->
-> Having someone who is a product manager who can discuss with you
-> specific goals is also important, because there are lots of tradeoffs
-> and lots of design choices ---- and so what you chose to do is (or at
-> least should be!)  very much dependent on your threat model, who is
-> planning on using the feature, what you can and can not upon via-a-vis
-> hardware support, performance requirements, and so on.
->
->
-> Secondly, in terms of how it all works.  Each user as a "master key"
-> which is stored on a keyring.  We use a hash of the key to serve as
-> the key identifier, and associated with each inode we store a nonce (a
-> random unique string) and the key identifier.  We use the nonce and
-> the user's master key to generate a unique key for that inode.
->
-> That key is used to protect the contents of the data file, and to
-> encrypt filenames and symlink targets --- since filenames can leak
-> significant information about what the user is doing.  (For example,
-> in the downloads directory of their web browser, leaking filenames is
-> just as good as leaking part of their browsing history.)
->
-> As far as using the fs/crypto infrastructure, it's actually pretty
-> simple.  The file system needs to provide a flag indicating whether or
-> not the file is encrypted, and support extended attributes.  When you
-> create an inode in an encrypted directory, you call
-> fscrypt_inherit_context() and the fscrypto layer will take care of
-> creating the necessary xattr for the per-inode key.  When you need
-> open a encrypted file, or operate on an encrypted inode, you call
-> fscrypt_get_encryption_info() on the inode.  The per-inode encryption
-> key is cached in the i_crypt_info structure, which hangs off of the
-> struct inode.
->
-> When you write to an encrypted file, you call fscrypt_encrypt_page(),
-> which returns a struct page with the encrypted contents to be written.
-> After the write is completed (or in the error case), you call
-> fscrypt_restore_control_page() to release encrypted page.
->
-> To read from an encrypted page, you call fscrypt_get_ctx() to get an
-> encryption context, which gets stashed in the bio's bi_private
-> pointer.  (If btrfs is already using bi_private, then you'll need to
-> add a field in the structure which hangs off of bi_private to stash
-> the encryption context.)  After the read completes, you call
-> fscrypt_decrypt_bio_pages() to decrypt all of the pages read as part
-> of the read/write operation.
->
-> It's actually relatively straightforward to use.  If you have any
-> questions please feel free to ask on linux-fsdevel.
->
->
-> As far as poeple commenting that it might be better to encrypt on the
-> extent level --- the reason why we didn't chose that path is because
-> while it does make it easier to do authenticated encryption modes, the
-> downside is that you can only do the data integrity check if you read
-> in the entire extent.  This has obvious memory utilization impacts and
-> will also impact your 4k random read/write performance.
->
-> We do have a solution in mind to solve the authenticated encryption
-> problem; in fact, an intern has recently finished a prototype using
-> Authenticated Skip Lists[5][6].  Hopefully we'll be able to get some
-> patches for review in the near future.
->
-> [5] http://cs.brown.edu/cgc/stms/papers/hashskip.pdf
-> [6] http://cs.brown.edu/cgc/stms/papers/discex2001.pdf
->
-> One of the challenges with data integrity is that you need to be able
-> to update authentication data and the data blocks atomically, or else
-> you could end up breaking the file on a crash.  For ext4, we're going
-> to simply only support data integrity for those files which are
-> written and then closed, and if you crash, the file which is being
-> written may not have valid data integrity checksums.  This is good
-> enough for many use cases, since most files are not updated after they
-> are initially written.  Obviously, btrfs would be able to do much
-> better since it has COW properties.
->
-> Cheers,
->
-> 							- Ted
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
+> Thanks for this clarification.

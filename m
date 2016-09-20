@@ -1,50 +1,35 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pa0-f51.google.com ([209.85.220.51]:33904 "EHLO
-        mail-pa0-f51.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753816AbcITDFt (ORCPT
+Received: from james.kirk.hungrycats.org ([174.142.39.145]:35338 "EHLO
+        james.kirk.hungrycats.org" rhost-flags-OK-FAIL-OK-FAIL)
+        by vger.kernel.org with ESMTP id S1750995AbcITEJ0 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 19 Sep 2016 23:05:49 -0400
-Received: by mail-pa0-f51.google.com with SMTP id wk8so1897624pab.1
-        for <linux-btrfs@vger.kernel.org>; Mon, 19 Sep 2016 20:05:49 -0700 (PDT)
-From: Alex Elsayed <eternaleye@gmail.com>
+        Tue, 20 Sep 2016 00:09:26 -0400
+Date: Tue, 20 Sep 2016 00:09:17 -0400
+From: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
 To: "Theodore Ts'o" <tytso@mit.edu>
-Cc: Chris Mason <clm@fb.com>, linux-btrfs@vger.kernel.org
+Cc: Chris Mason <clm@fb.com>, Alex Elsayed <eternaleye@gmail.com>,
+        linux-btrfs@vger.kernel.org
 Subject: Re: Experimental btrfs encryption
-Date: Mon, 19 Sep 2016 20:05:37 -0700
-Message-ID: <2482412.ISOtnf003W@arkadios>
-In-Reply-To: <20160920025041.mzeljxxzclikktxn@thunk.org>
+Message-ID: <20160920040917.GM21290@hungrycats.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: multipart/signed; micalg=pgp-sha1;
+        protocol="application/pgp-signature"; boundary="NZtAI5QFBF0GmLcW"
+In-Reply-To: <20160920025041.mzeljxxzclikktxn@thunk.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 References: <20160919151518.i2aon4axmfzt54rn@thunk.org>
+ <nrpjhc$g72$3@blaine.gmane.org>
  <a8dc3c28-5629-d870-f202-de35d2f941f1@fb.com>
  <20160920025041.mzeljxxzclikktxn@thunk.org>
 
-Taking a stab at a different way of replying, to try and keep Ted in the loop.
 
-On Monday, 19 September 2016 22:50:41 PDT Theodore Ts'o wrote:
+--NZtAI5QFBF0GmLcW
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
+
+On Mon, Sep 19, 2016 at 10:50:41PM -0400, Theodore Ts'o wrote:
 > On Mon, Sep 19, 2016 at 08:32:34PM -0400, Chris Mason wrote:
-> > > > That key is used to protect the contents of the data file, and to
-> > > > encrypt filenames and symlink targets --- since filenames can leak
-> > > > significant information about what the user is doing.  (For example,
-> > > > in the downloads directory of their web browser, leaking filenames is
-> > > > just as good as leaking part of their browsing history.)
-> > 
-> > One of the things that makes per-subvolume encryption attractive to me is
-> > that we're able to enforce the idea that an entire directory tree is
-> > encrypted by one key.  It can't be snapshotted again without the key, and
-> > it just fits with the rest of the btrfs management code.  I do want to
-> > support the existing vfs interfaces as well too though.
-> 
-> One of the main reasons for doing fs-level encryption is so you can
-> allow multiple users to have different keys.  In some cases you can
-> assume that different users will be in different distinct subvolumes
-> (e.g., each user has their own home directory), but that's not always
-> going to be possible.
-
-Mm, that's definitely something to keep in mind.
-
 > One of the other things that was in the original design, but which got
 > dropped in our initial implementation, was the concept of having the
 > per-inode key wrapped by multiple user keys.  This would allow a file
@@ -52,56 +37,10 @@ Mm, that's definitely something to keep in mind.
 > that there may very well be situations where you *want* to have more
 > than one key associated with a directory hierarchy.
 
-Makes sense.
-
-> > > The issue, here, is that inodes are fundamentally not a safe scope to
-> > > attach that information to in btrfs. As extents can be shared between
-> > > inodes (and thus both will need to decrypt them), and inodes can be
-> > > duplicated unmodified (snapshots), attaching keys and nonces to inodes
-> > > opens up a whole host of (possibly insoluble) issues, including
-> > > catastrophic nonce reuse via writable snapshots.
-> > 
-> > I'm going to have to read harder about nonce reuse.  In btrfs an inode is
-> > really a pair [ root id, inode number ], so strictly speaking two writable
-> > snapshots won't have the same inode in memory and when a snapshot is
-> > modified we'd end up with a different nonce for the new modifications.
-> 
-> Nonce reuse is not necessrily catastrophic.  It all depends on the
-> context.  In the case of Counter or GCM mode, nonce (or IV) reuse is
-> absolutely catastrophic.  It must *never* be done or you completely
-> lose all security.  As the Soviets discovered the hard way courtesy of
-> the Venona project (well, they didn't discover it until after they
-> lost the cold war, but...) one time pads are completely secure.
-> Two-time pads, are most emphatically _not_.  :-)
-
-Aaaand now I wish I'd seen this before I sent my Big Ol' Mail Full of 
-References to Chris, so I could have tried this and kept you on CC.
-
-> In the case of the nonces used in fscrypt's key derivation, reuse of
-> the nonce basically means that two files share the same key.  Assuming
-> you're using a competently designed block cipher (e.g., AES), reuse of
-> the key is not necessarily a problem.  What it would mean is that two
-> files which are are reflinked would share the same key.  And if you
-> have writable snapshots, that's definitely not a problem, since with
-> AES we use the a fixed key and a fixed IV given a logical block
-> number, and we can do block overwrites without having to guarantee
-> unique nonces (which you *do* need to worry about if you use counter
-> mode or some other stream cipher such as ChaCha20 --- Kent Overstreet
-> had some clever tricks to avoid IV reuse since he used a stream cipher
-> in his proposed bcachefs encryption).
-
-Er, not quite on the "safe" bit - part of the problem is that without going 
-AEAD, you lose out on a good bit of security relative to GCM without reusing 
-nonces. The reason (say) EME or CMC are safe for block-overwrite is actually 
-_not_ that they're block ciphers - it's that they implement a security notion 
-called SPRP, Strong Pseudorandom Permutation, which has a direct equivalence 
-with misuse-resistant AEAD. XTS _not_ meeting that is in fact exactly why it's 
-not as strong.
-
-If you take an SPRP, reserve `p` bits at the end for zeroes, fill the rest with 
-your message, and encrypt it, the result is _exactly_ a misuse-resistant AEAD 
-with `p`-bit integrity. Modern misuse-resistant AEADs differ from EME and CMC 
-only in 1.) efficiency and 2.) supporting variable-length messages.
+That can get very complicated very quickly, unless you push the keys
+off to one side and make them objects with separate lifetimes from the
+files and subvols that use them by reference.  Any problem can be made
+different by another layer of indirection.
 
 > The main issue is if you want to reflink a file and then have the two
 > files have different permissions / ownerships.  In that case, you
@@ -110,7 +49,25 @@ only in 1.) efficiency and 2.) supporting variable-length messages.
 > different keys for different users anyway, so you're kind of toast for
 > that use case in any case.
 
-Mm.
+The gotcha there is that reflink file copies are just a special case
+of shared extent refs in which all the individual extents in a file are
+reflinked at once, but that's not the only case (or even a common one).
+
+Currently any extent in the filesystem can be shared by any inode in
+the filesystem (assuming the two inodes have compatible attributes,
+which could include encryption policy), including multiple references
+=66rom the same inode to the same extent at different logical offsets.
+This is the basis of the deduplication and copy_file_range features.
+
+This confuses the VFS caching layer when dealing with deduped reflinked,
+or snapshotted files.  It's not surprising that VFS crypto has problems
+coping with it as well.
+
+It's much more natural for btrfs to attach nonces to the extents rather
+than the inodes, and even put references to keys on the extents as well.
+Key references could be inherited from the inode (directory, parent,
+subvol, wherever you want to put them) that was used to create the extent,
+the same way extents inherit their other attributes from inodes now.
 
 > So in any case, assuming you're using block encryption (which is what
 > fscrypt uses) there really isn't a problem with nonce reuse, although
@@ -122,56 +79,36 @@ Mm.
 > by a particular user.  So you would want to break the reflink and have
 > separate copies for both users anyway.
 
-Agreed.
+It would probably be most naturally implemented as not allowing the
+reflink in the first place, or not allowing a key change on a non-empty
+file (the same way that attributes like nodatasum and nodatacow are
+implemented).  'cp' would then have to fall back to a brute-force copy.
+Cloning reflinks after the fact would be a radical change of direction
+for btrfs.
 
-> One final thought --- something which is really going to be a factor
-> in many use cases is going to be hardware accelerated encryption.  For
-> example, Qualcomm is already shipping an SOC where the encryption can
-> be done in the data path between the CPU and the eMMC storage device.
-> If you want to support certain applications that try to read megabytes
-> and megabytes of data before painting a single pixel, in-line hardware
-> crypto at line speeds is going to be critical if you don't want to
-> sacrifice performance, and keep users from being cranky because it
-> took extra seconds before they could start reading their news feed (or
-> saving bird eggs from voracious porcine predators, or whatever).
+This does create all sorts of interesting interactions with snapshots.
+What happens if you remove a user's key to a file in a snapshot?  If the
+key is embedded in an inode, only one snapshot is affected, but if the
+key is stored separately by reference, it could revoke access to files
+in all the snapshots at once.
 
-I heavily recommend reading the AES-GCM-SIV paper from my response to Chris - 
-it uses exactly the same hardware acceleration as GCM, but achieves nonce-
-misuse-resistance. Less than one cycle per byte, too.
+The only information I know of that one (non-root) user gets about
+modifications to the other user's reflink file is the SHARED bit in
+FIEMAP, which goes from 1 to 0 when the user holds the last reference
+to the file.  That could simply be forced to always be 1 if the extent
+is encrypted so it doesn't leak information.
 
-> This may very well be an issue in the future not just for mobile
-> devices, but I could imagine this potentially being an issue for other
-> form factors as well.  Yes, Skylake can encrypt multiple bytes per
-> clock cycle using the miracles of hardware acceleration and
-> pipelining.  But in-line encryption will still have the advantage of
-> avoiding the memory bandwidth costs.  So while it is fun to talk about
-> exotic encryption modes, it would be wise to have file system
-> encryption architectures to have modes which are compatible with
-> hardware in-line encryption schemes.
 
-Considering AES-GCM-SIV is being heavily considered for use in TLS 1.3, that 
-may well be viable.
+--NZtAI5QFBF0GmLcW
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
 
-> This is also why I'm not all that excited by Kent's work trying to
-> implement fast encryption using a stream cipher such as Chacha20.
-> Technically, it's interesting, sure.  But on most modern systems, you
-> will either have really really good AES acceleration (any recent x86
-> system), or you will probably have at your disposal a hardware in-line
-> cyptographic engine (ICE) that is going to be way faster than Chacha20
-> implemented in software, and it means you don't have to go to extreme
-> lengths to avoid never reusing a nonce or risk losing all security
-> guarantees.  Block ciphers are much safer, and with hardware support,
-> any speed advantage of using a stream cipher disappears; indeed, a
-> stream cipher in software will be slower than a hardware accelerated
-> block cipher.
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
 
-I agree regarding ChaCha20 (The cases it's good for - devices without AES - 
-are already fading, with deep embedded using AES-CTR-CCM and mobile gaining 
-AES-GCM accel), but I really think that nonce-misuse-resistant AEAD is going 
-to be incredibly important to keep in mind.
+iEYEARECAAYFAlfgtmwACgkQgfmLGlazG5wILQCgiYPAKH+gxXydiossZ0GSf4pi
+Hd4An2Rp1FrgnL1jCoZ0ztiSgOrNfzQz
+=b8Ye
+-----END PGP SIGNATURE-----
 
-In crypto, it's far more often a subtle tool misapplied that causes problems 
-than anything else - and both non-AEAD (due to CCA2) and nonce-dependent AEAD 
-(due to nonce misuse catastrophes) are subtle tools indeed. Nonce-misuse-
-resistant AEAD is a much less subtle tool.
-
+--NZtAI5QFBF0GmLcW--

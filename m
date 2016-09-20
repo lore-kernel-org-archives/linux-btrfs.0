@@ -1,109 +1,60 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:41264 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1751029AbcITFCx (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 20 Sep 2016 01:02:53 -0400
-Subject: Re: Post ext3 conversion problems
-To: Sean Greenslade <sean@seangreenslade.com>
-References: <20160916192459.GA13514@coach.home>
- <CAJCQCtQutt6r2Jovr0jEbTk4W6HUaQpbGiipen97TH1C+k055g@mail.gmail.com>
- <17ca9019-836b-f4f1-f84c-f8c1edcd9925@cn.fujitsu.com>
- <20160919041247.GA32208@coach.home>
- <ae8fd0d5-0d38-aa8e-0114-36ef62b1a783@cn.fujitsu.com>
- <20160919151341.GA1431@coach.home>
- <5f07d365-1eec-7f90-7969-af761834ee48@cn.fujitsu.com>
- <20160920033933.GA13425@coach.home>
-CC: Chris Murphy <lists@colorremedies.com>, David Sterba <dsterba@suse.cz>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <fbfb851d-34a7-62df-d24e-0fd5b3a2e5e4@cn.fujitsu.com>
-Date: Tue, 20 Sep 2016 13:02:38 +0800
+Received: from mail.virtall.com ([178.63.195.102]:45065 "EHLO mail.virtall.com"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751146AbcITG4i (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 20 Sep 2016 02:56:38 -0400
+Received: from localhost (localhost [127.0.0.1])
+        by mailext.virtall.com (Postfix) with ESMTP id F232627481A
+        for <linux-btrfs@vger.kernel.org>; Tue, 20 Sep 2016 08:47:15 +0200 (CEST)
+Received: from mailext.virtall.com ([127.0.0.1])
+        by localhost (web1.virtall.com [127.0.0.1]) (amavisd-new, port 10024)
+        with ESMTP id tRRWv9NV77mQ for <linux-btrfs@vger.kernel.org>;
+        Tue, 20 Sep 2016 08:47:14 +0200 (CEST)
+Received: from admin.virtall.com (localhost [127.0.0.1])
+        by mailext.virtall.com (Postfix) with ESMTP
+        for <linux-btrfs@vger.kernel.org>; Tue, 20 Sep 2016 08:47:14 +0200 (CEST)
 MIME-Version: 1.0
-In-Reply-To: <20160920033933.GA13425@coach.home>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+Content-Type: text/plain; charset=US-ASCII;
+ format=flowed
+Date: Tue, 20 Sep 2016 15:47:14 +0900
+From: Tomasz Chmielewski <mangoo@wpkg.org>
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: how to understand "btrfs fi show" output? "No space left" issues
+Message-ID: <566e9000fe30d5b8e0d7e73ebe1d44a0@admin.virtall.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+How to understand the following "btrfs fi show" output?
+
+# btrfs fi show /var/lib/lxd
+Label: 'btrfs'  uuid: f5f30428-ec5b-4497-82de-6e20065e6f61
+         Total devices 2 FS bytes used 136.18GiB
+         devid    1 size 423.13GiB used 423.13GiB path /dev/sda3
+         devid    2 size 423.13GiB used 423.13GiB path /dev/sdb3
+
+Why is it "size 423.13GiB used 423.13GiB"? Is it full?
+
+I had "No space left" on this filesystem just yesterday (running kernel 
+4.7.4). This is btrfs RAID-1 on SSD disks. This filesystem is used for 
+20-30 LXD containers with different roles (mongo, mysql, postgres 
+databases, webservers etc.), around 150 read-only snapshots, btrfs 
+compression is disabled.
 
 
-At 09/20/2016 11:39 AM, Sean Greenslade wrote:
-> On Tue, Sep 20, 2016 at 10:49:42AM +0800, Qu Wenruo wrote:
->> OK, I see the problem now.
->>
->> The new convert is designed to create minimal number of extents, so it
->> result the following file extents layout:
->>
->> Ext2_save/image
->>         |
->> /-------------------------------\
->> |           Extent A             |
->> |<---Old Ext3 Used space  ------>|<--- Free space--->|
->>       \---/\---/\---/
->>         |    |    |
->>        F1    F2   F3
->>
->> This causes a large extent A, refered by ext2_save/image, and files like
->> F1/2/3 just refer to part of the large extent A.
->>
->> After removing the whole ext2_save subvolume, Extent A is still there, since
->> F1/2/3 are still referring it.
->>
->> |<---Old Ext3 Used space  ------>|<--- Free space--->|
->> |           Extent A             |
->>       \---/\---/\---/
->>         |    |    |
->>        F1    F2   F3
->>
->>
->>
->> In that case, not balance but defrag is responsible to "split" the large
->> extent and free the unused space.
->>
->> However btrfs defrag doesn't work for case like subvolume or reflink for a
->> long time, which leaves the extent layout unchanged.
->> And balance doesn't handle it, as balance just relocated the large extent A
->> and modify all referencers' pointer.
->>
->> Sigh, I just forgot the fact that defrag doesn't work for a long time when
->> designing the new convert.
->>
->> So, we still need a working kernel defrag to make the fs to  be a "native"
->> btrfs.
->>
->>
->> However, such layout is completely valid for btrfs, one can generate it
->> quite easily which following script:
->> ----
->> xfs_io -f -c "pwrite 0 16M" $mnt/orig
->> for i in $(seq 0 15); do
->> 	xfs_io -f -c "reflink $mnt/orig ${i}M 0 1M" $mnt/file${i}
->> done
->> ----
->>
->> So there is still something wrong in your backtrace so that we need to dig
->> further.
->>
->> Any idea of your load pattern to trigger the bug?
->
-> Glad to hear you've found the core of the issue.
->
-> At this point, I can trigger it immediately. As soon as I log in and run
-> dmenu, it will attempt to rebuild its cache file (small text file that's
-> just a list of all executables in the PATH). Once that write happens,
-> the bug triggers and the fs goes read only.
+Both "btrfs fi df" and "df -h" show plenty of space:
 
-Rewrite? Or write into new inode?
-
-And is the same inode always causing the problem?
-
-Thanks,
-Qu
-
->
-> --Sean
->
->
->
+# btrfs fi df /var/lib/lxd
+Data, RAID1: total=417.12GiB, used=131.33GiB
+System, RAID1: total=8.00MiB, used=80.00KiB
+Metadata, RAID1: total=6.00GiB, used=4.86GiB
+GlobalReserve, single: total=512.00MiB, used=0.00B
 
 
+# df -h
+Filesystem      Size  Used Avail Use% Mounted on
+/dev/sda3       424G  137G  286G  33% /var/lib/lxd
+
+
+
+Tomasz Chmielewski
+https://lxadm.com

@@ -1,80 +1,149 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f170.google.com ([209.85.223.170]:32824 "EHLO
-        mail-io0-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751539AbcITMJZ (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 20 Sep 2016 08:09:25 -0400
-Received: by mail-io0-f170.google.com with SMTP id r145so17324840ior.0
-        for <linux-btrfs@vger.kernel.org>; Tue, 20 Sep 2016 05:09:24 -0700 (PDT)
-Subject: Re: Is stability a joke? (wiki updated)
-To: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
-References: <20160912142714.GE16983@twin.jikos.cz>
- <20160912162747.GF16983@twin.jikos.cz>
- <8df2691f-94c1-61de-881f-075682d4a28d@gmail.com>
- <CAJCQCtQUS-8F+pOtQ2VA9=j=-TGV=wOfj+3SnnMvY3HMTzd=9g@mail.gmail.com>
- <1ef8e6db-89a1-6639-cd9a-4e81590456c5@gmail.com>
- <CAJCQCtQq08bOpRbZq90wRLUGD62Rnqwx6vjJOv5hvPVwp=jz0w@mail.gmail.com>
- <24d64f38-f036-3ae9-71fd-0c626cfbb52c@gmail.com>
- <CAJCQCtR_hMPj8Nrf=U1L=WvDWq48Ns1K25p4JtKEJnVwb1231Q@mail.gmail.com>
- <20160919040855.GF21290@hungrycats.org>
- <7c55ba5a-9193-d88f-e92f-b5f34f99ce57@gmail.com>
- <20160919201501.GB4703@hungrycats.org>
-Cc: Chris Murphy <lists@colorremedies.com>, David Sterba <dsterba@suse.cz>,
-        Waxhead <waxhead@online.no>, Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <0f54b80b-1aa0-c3af-0f66-4369c279fe27@gmail.com>
-Date: Tue, 20 Sep 2016 08:09:19 -0400
+Received: from mx2.suse.de ([195.135.220.15]:39267 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1754109AbcITNPP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 20 Sep 2016 09:15:15 -0400
+Subject: Re: stat(2) returning device ID not existing in mountinfo
+To: Tomasz Sterna <tomek@xiaoka.com>, linux-btrfs@vger.kernel.org
+References: <1474057691.16275.16.camel@xiaoka.com>
+From: Jeff Mahoney <jeffm@suse.com>
+Message-ID: <d5df5a17-fb7f-80a2-9308-66fe0e5335f3@suse.com>
+Date: Tue, 20 Sep 2016 09:15:10 -0400
 MIME-Version: 1.0
-In-Reply-To: <20160919201501.GB4703@hungrycats.org>
-Content-Type: text/plain; charset=windows-1252; format=flowed
+In-Reply-To: <1474057691.16275.16.camel@xiaoka.com>
+Content-Type: multipart/signed; micalg=pgp-sha1;
+ protocol="application/pgp-signature";
+ boundary="GfXrqqpxG1X43FJVSV7wMUEuUqFwQCl6M"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2016-09-19 16:15, Zygo Blaxell wrote:
-> On Mon, Sep 19, 2016 at 01:38:36PM -0400, Austin S. Hemmelgarn wrote:
->>>> I'm not sure if the brfsck is really all that helpful to user as much
->>>> as it is for developers to better learn about the failure vectors of
->>>> the file system.
->>>
->>> ReiserFS had no working fsck for all of the 8 years I used it (and still
->>> didn't last year when I tried to use it on an old disk).  "Not working"
->>> here means "much less data is readable from the filesystem after running
->>> fsck than before."  It's not that much of an inconvenience if you have
->>> backups.
->> For a small array, this may be the case.  Once you start looking into double
->> digit TB scale arrays though, restoring backups becomes a very expensive
->> operation.  If you had a multi-PB array with a single dentry which had no
->> inode, would you rather be spending multiple days restoring files and
->> possibly losing recent changes, or spend a few hours to check the filesystem
->> and fix it with minimal data loss?
->
-> I'd really prefer to be able to delete the dead dentry with 'rm' as root,
-> or failing that, with a ZDB-like tool or ioctl, if it's the only known
-> instance of such a bad metadata object and I already know where it's
-> located.
-I entirely agree on that.  The problem is that because the VFS layer 
-chokes on it, it can't be rm, and it would be non-trivial to implement 
-as an ioctl.  It pretty much has to be out-of-band.  I'd love to see 
-btrfs check add the ability to process subsets of the filesystem (for 
-example 'I know that something is screwed up somehow in 
-/path/to/random/directory, check only that path in the filesystem 
-(possibly recursively) and tell me what's wrong (and possibly try to fix 
-it)').
->
-> Usually the ultimate failure mode of a btrfs filesystem is a read-only
-> filesystem from which you can read most or all of your data, but you
-> can't ever make it writable again because of fsck limitations.
->
-> The one thing I do miss about every filesystem that isn't ext2/ext3 is
-> automated fsck that prioritizes availability, making the filesystem
-> safely writable even if it can't recover lost data.  On the other
-> hand, fixing an ext[23] filesystem is utterly trivial compared to any
-> btree-based filesystem.
-For a data center or corporate entity, dropping broken parts of the FS 
-and recovering from backups makes sense.  For a traditional home user 
-(that is, the type of person Ubuntu and Windows traditionally target), 
-it usually doesn't, as they almost certainly don't have a backup. 
-Personally, I'd rather have a tool that gives me the option of whether 
-to try and fix a given path or just remove it, instead of assuming that 
-it knows how I want to fix it.  That would allow for both use cases.
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--GfXrqqpxG1X43FJVSV7wMUEuUqFwQCl6M
+Content-Type: multipart/mixed; boundary="eE9jNWI2HE1MKuuJe0IsK0neGFpBvWOSK";
+ protected-headers="v1"
+From: Jeff Mahoney <jeffm@suse.com>
+To: Tomasz Sterna <tomek@xiaoka.com>, linux-btrfs@vger.kernel.org
+Message-ID: <d5df5a17-fb7f-80a2-9308-66fe0e5335f3@suse.com>
+Subject: Re: stat(2) returning device ID not existing in mountinfo
+References: <1474057691.16275.16.camel@xiaoka.com>
+In-Reply-To: <1474057691.16275.16.camel@xiaoka.com>
 
+--eE9jNWI2HE1MKuuJe0IsK0neGFpBvWOSK
+Content-Type: text/plain; charset=utf-8
+Content-Transfer-Encoding: quoted-printable
+
+On 9/16/16 4:28 PM, Tomasz Sterna wrote:
+> Hi.
+>=20
+> I have spotted an issue with stat(2) call on files on btrfs.
+> It is giving me dev_t st_dev number that does not correspond to any
+> mounted filesystem in proc's mountinfo.
+
+That's by design.  Your particular file system may only use one device
+but, internally, btrfs uses virtualized storage that may be spread
+across multiple devices.  To make things more complicated, snapshots
+mean that:
+
+sled1a:/mnt # btrfs sub list .
+ID 257 gen 14 top level 5 path a
+ID 258 gen 14 top level 5 path b
+
+sled1a:/mnt # ls -laRi
+=2E:
+total 16
+256 drwxr-xr-x 1 root root   4 Sep 20 09:08 .
+256 drwxr-xr-x 1 root root 220 Sep 16 09:49 ..
+256 drwxr-xr-x 1 root root   8 Sep 14 10:24 a
+256 drwxr-xr-x 1 root root   8 Sep 14 10:24 b
+
+=2E/a:
+total 4112
+256 drwxr-xr-x 1 root root       8 Sep 14 10:24 .
+256 drwxr-xr-x 1 root root       4 Sep 20 09:08 ..
+257 -rw-r--r-- 1 root root 4194304 Sep 14 10:24 file
+
+=2E/b:
+total 4112
+256 drwxr-xr-x 1 root root       8 Sep 14 10:24 .
+256 drwxr-xr-x 1 root root       4 Sep 20 09:08 ..
+257 -rw-r--r-- 1 root root 4194304 Sep 14 10:24 file
+
+Under normal circumstances those are two files with the same st_dev and
+the same inode number.  That would normally correspond to a hard link,
+but the files do not (necessarily) correspond to the same file.
+
+=2E.. but because we use anonymous device numbers for each subvolume, we
+have different device numbers for each one.
+
+sled1a:/mnt # stat --format "%n st_dev=3D%d" {a,b}/file
+a/file st_dev=3D69
+b/file st_dev=3D70
+
+It's a pretty big usability wart that we don't consistently report the
+device number.  We do it correctly in stat() but there are other places
+in the code that assume that inode->i_sb->s_dev will work.  In the SUSE
+kernels, we have patches that add a super_operation to report the
+correct device number everywhere, but even that is a hack.
+
+> I already attempted a illinformed-patch in fs/btrfs/super.c:
+>=20
+> @@ -1127,6 +1127,7 @@ static int btrfs_fill_super(struct super_block *s=
+b,
+>  		goto fail_close;
+>  	}
+> =20
+> +	sb->s_dev =3D inode->i_sb->s_dev;
+>  	sb->s_root =3D d_make_root(inode);
+>  	if (!sb->s_root) {
+>  		err =3D -ENOMEM;
+>=20
+> but it didn't help.
+
+It wouldn't.  That is assigning a variable to itself.
+
+> I would like to dig deeper and fix it, but first I have to ask:
+> - Which number is wrong?
+>   The one returned by stat() or the one in mountinfo?
+
+The one in mountinfo, but then that means that the user only sees the
+anonymous devices in mount(8), which isn't what we want either.
+
+I'm afraid the correct fix is very involved and requires non-trivial
+changes in the VFS layer as well.  It's on my long-term TODO list.  I
+currently have some patches that do the magic with vfsmounts but it's
+far from being usable.
+
+-Jeff
+
+--=20
+Jeff Mahoney
+SUSE Labs
+
+
+--eE9jNWI2HE1MKuuJe0IsK0neGFpBvWOSK--
+
+--GfXrqqpxG1X43FJVSV7wMUEuUqFwQCl6M
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG/MacGPG2 v2.0.19 (Darwin)
+Comment: GPGTools - http://gpgtools.org
+
+iQIcBAEBAgAGBQJX4TZeAAoJEB57S2MheeWyz8sP/2DuI5ncXNCoLcrG6+rH21qJ
+9iyqxxX5XbDvOqYgNt2DR9wZkSIL/slb5+q/9R5sngnsGhOC9X+NaLrfHmVPX18y
+YcepD6Ml3Fjibc1V+PFGMxOgI1K8LAgkzBSfhEZU5kVddX0xEd+NWXuVHXgZ5bpj
+zqtYLbB/Aysebjt1KnxGn3LRJJXMsPdRE230Xdh1GgRkIP+YLE0aqHp6QCOjiPYY
+WZjjL0vtJW2hFu1AmRrD82q1c7uJWg4tZV2eksF/lfjPBdljEZngkKnUFiwtIe/G
+JmaENyLrlf5WhAZeUGMBRbd7U+eVv4NysX8B1tWFFS9HTKEPp22o9FKfwnjQyyj4
+DLnogMfYVCAqJgRd5n9zJYX3PEvPmYv1IWGDvsjrMDXxWgKpKf4TFS2VgC01v0+i
+/iy//T5atf3qqnBGVhhZDRcom8HKjG0bpsvgTA69kOjv30QpZNOTZj51nBDowEXJ
+pxGdSDOM9owdwAVfWpia630IBnwV/52SvLOL/WVU2auKgBQnwiI5V6AnGy4gerdd
+rgezq79vgAPvdCJOm+NdCvAsd/5uDXeX96Bzcu4BJdSvYkCZYDI/sgU2o59VcAYK
+2piAEB16BYts5mU3vbCwxfSBxP4eN8uxU5VOS3vMCBOCNfwZUhAEYRFOS6I03uyl
+Wf5sJqj55E86etkd6PFq
+=b9np
+-----END PGP SIGNATURE-----
+
+--GfXrqqpxG1X43FJVSV7wMUEuUqFwQCl6M--

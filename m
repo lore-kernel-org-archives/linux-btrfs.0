@@ -1,43 +1,83 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:37686 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:45362 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S964828AbcIWMjG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 23 Sep 2016 08:39:06 -0400
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 17870AC71
-        for <linux-btrfs@vger.kernel.org>; Fri, 23 Sep 2016 12:39:05 +0000 (UTC)
-Date: Fri, 23 Sep 2016 14:37:03 +0200
-From: David Sterba <dsterba@suse.cz>
-To: jeffm@suse.com
-Cc: linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.com>
-Subject: Re: [PATCH 4/5] btrfs: convert pr_* to btrfs_* where possible
-Message-ID: <20160923123703.GX16983@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
+        id S1752187AbcITOFH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 20 Sep 2016 10:05:07 -0400
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id 6C927AC4B
+        for <linux-btrfs@vger.kernel.org>; Tue, 20 Sep 2016 14:05:05 +0000 (UTC)
+From: jeffm@suse.com
+To: linux-btrfs@vger.kernel.org
+Cc: David Sterba <dsterba@suse.com>, Jeff Mahoney <jeffm@suse.com>
+Subject: [PATCH 1/5] btrfs: add dynamic debug support
+Date: Tue, 20 Sep 2016 10:04:59 -0400
+Message-Id: <1474380303-25995-2-git-send-email-jeffm@suse.com>
+In-Reply-To: <1474380303-25995-1-git-send-email-jeffm@suse.com>
 References: <1474380303-25995-1-git-send-email-jeffm@suse.com>
- <1474380303-25995-5-git-send-email-jeffm@suse.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1474380303-25995-5-git-send-email-jeffm@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Sep 20, 2016 at 10:05:02AM -0400, jeffm@suse.com wrote:
-> From: Jeff Mahoney <jeffm@suse.com>
-> 
-> For many printks, we want to know which file system issued the message.
-> 
-> This patch converts most pr_* calls to use the btrfs_* versions instead.
-> In some cases, this means adding plumbing to allow call sites access to
-> an fs_info pointer.
-> 
-> fs/btrfs/check-integrity.c is left alone for another day.
-> 
-> Signed-off-by: Jeff Mahoney <jeffm@suse.com>
+From: Jeff Mahoney <jeffm@suse.com>
 
-I've spotted some extra newline in one of the messages so I went through
-the patch again and did some whitespace changes (shifting the strings
-left where it exceeded 80 cols, though it hasn't helped too much).
+We can re-use the dynamic debugging descriptor to make use of the dynamic
+debugging mechanism but still use our own printk interface.
 
-Reviewed-by: David Sterba <dsterba@suse.com>
+Defining the DEBUG macro works as it did before.  When it's defined,
+all of the messages default to print.  We can also enable all debug
+messages at boot or module-load time using the 'dyndbg' and
+'btrfs.dyndbg' options.
 
-Otherwise I like this series, we'll get almost all messges prefixed.
+Signed-off-by: Jeff Mahoney <jeffm@suse.com>
+
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 33fe035..9267436 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -37,6 +37,7 @@
+ #include <linux/workqueue.h>
+ #include <linux/security.h>
+ #include <linux/sizes.h>
++#include <linux/dynamic_debug.h>
+ #include "extent_io.h"
+ #include "extent_map.h"
+ #include "async-thread.h"
+@@ -3315,7 +3316,35 @@ void btrfs_printk(const struct btrfs_fs_info *fs_info, const char *fmt, ...)
+ 	btrfs_printk_ratelimited(fs_info, KERN_NOTICE fmt, ##args)
+ #define btrfs_info_rl(fs_info, fmt, args...) \
+ 	btrfs_printk_ratelimited(fs_info, KERN_INFO fmt, ##args)
+-#ifdef DEBUG
++
++#if defined(CONFIG_DYNAMIC_DEBUG)
++#define btrfs_debug(fs_info, fmt, args...)				\
++do {									\
++	DEFINE_DYNAMIC_DEBUG_METADATA(descriptor, fmt);			\
++	if (unlikely(descriptor.flags & _DPRINTK_FLAGS_PRINT))		\
++		btrfs_printk(fs_info, KERN_DEBUG fmt, ##args);		\
++} while (0)
++#define btrfs_debug_in_rcu(fs_info, fmt, args...)			\
++do {									\
++	DEFINE_DYNAMIC_DEBUG_METADATA(descriptor, fmt);			\
++	if (unlikely(descriptor.flags & _DPRINTK_FLAGS_PRINT))		\
++		btrfs_printk_in_rcu(fs_info, KERN_DEBUG fmt, ##args);	\
++} while (0)
++#define btrfs_debug_rl_in_rcu(fs_info, fmt, args...)			\
++do {									\
++	DEFINE_DYNAMIC_DEBUG_METADATA(descriptor, fmt);			\
++	if (unlikely(descriptor.flags & _DPRINTK_FLAGS_PRINT))		\
++		btrfs_printk_rl_in_rcu(fs_info, KERN_DEBUG fmt,		\
++					##args);\
++} while (0)
++#define btrfs_debug_rl(fs_info, fmt, args...)				\
++do {									\
++	DEFINE_DYNAMIC_DEBUG_METADATA(descriptor, fmt);			\
++	if (unlikely(descriptor.flags & _DPRINTK_FLAGS_PRINT))		\
++		btrfs_printk_ratelimited(fs_info, KERN_DEBUG fmt,	\
++					 ##args);			\
++} while (0)
++#elif defined(DEBUG)
+ #define btrfs_debug(fs_info, fmt, args...) \
+ 	btrfs_printk(fs_info, KERN_DEBUG fmt, ##args)
+ #define btrfs_debug_in_rcu(fs_info, fmt, args...) \
+-- 
+2.7.1
+

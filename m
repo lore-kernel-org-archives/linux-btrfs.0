@@ -1,40 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:33481 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S932090AbcISUUB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 19 Sep 2016 16:20:01 -0400
-Date: Mon, 19 Sep 2016 22:18:04 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Chris Mason <clm@fb.com>
-Cc: Nikolay Borisov <kernel@kyup.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs: Fix handling of -ENOENT from btrfs_uuid_iter_rem
-Message-ID: <20160919201804.GT16983@suse.cz>
-Reply-To: dsterba@suse.cz
-References: <2c9c27c6-5e2d-5035-de11-0cf021dfd9a1@fb.com>
+Received: from mail-io0-f173.google.com ([209.85.223.173]:35749 "EHLO
+        mail-io0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752007AbcITHgo (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 20 Sep 2016 03:36:44 -0400
+Received: by mail-io0-f173.google.com with SMTP id m186so11587403ioa.2
+        for <linux-btrfs@vger.kernel.org>; Tue, 20 Sep 2016 00:36:43 -0700 (PDT)
+Received: from mail-io0-f182.google.com (mail-io0-f182.google.com. [209.85.223.182])
+        by smtp.gmail.com with ESMTPSA id u76sm9701795ita.15.2016.09.20.00.36.42
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
+        Tue, 20 Sep 2016 00:36:42 -0700 (PDT)
+Received: by mail-io0-f182.google.com with SMTP id m79so11546465ioo.3
+        for <linux-btrfs@vger.kernel.org>; Tue, 20 Sep 2016 00:36:42 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <2c9c27c6-5e2d-5035-de11-0cf021dfd9a1@fb.com>
+In-Reply-To: <CAJFSNy5eOdkn=YSA1-T7goOUNuX6ozUiGAM3tCTq7dvzsiJCug@mail.gmail.com>
+References: <b369cabe-9269-800c-cce7-5f5c71147660@fb.com> <1473233938-21560-1-git-send-email-kernel@kyup.com>
+ <20160919181315.GS16983@twin.jikos.cz> <2c9c27c6-5e2d-5035-de11-0cf021dfd9a1@fb.com>
+ <CAJFSNy5eOdkn=YSA1-T7goOUNuX6ozUiGAM3tCTq7dvzsiJCug@mail.gmail.com>
+From: Nikolay Borisov <kernel@kyup.com>
+Date: Tue, 20 Sep 2016 10:36:42 +0300
+Message-ID: <CAJFSNy7MRLvg6u7c-rbXBR-Mp3vFaW+bq7O+gbEY7q4YfO8uAw@mail.gmail.com>
+Subject: Re: [PATCH] btrfs: Fix handling of -ENOENT from btrfs_uuid_iter_rem
+To: linux-btrfs@vger.kernel.org
+Cc: Chris Mason <clm@fb.com>, "dsterba@suse.cz" <dsterba@suse.cz>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Sep 19, 2016 at 02:49:41PM -0400, Chris Mason wrote:
-> On 09/19/2016 02:13 PM, David Sterba wrote:
-> > On Wed, Sep 07, 2016 at 10:38:58AM +0300, Nikolay Borisov wrote:
-> >> btrfs_uuid_iter_rem is able to return -ENOENT, however this condition
-> >> is not handled in btrfs_uuid_tree_iterate which can lead to calling
-> >> btrfs_next_item with freed path argument, leading to a null pointer
-> >> dereference. Fix it by redoing the search but with an incremented
-> >> objectid so we don't loop over the same key.
-> >>
-> >> Signed-off-by: Nikolay Borisov <kernel@kyup.com>
-> >> Suggested-by: Chris Mason <clm@fb.com>
-> >> Link: https://lkml.kernel.org/r/57A473B0.2040203@kyup.com
-> >
-> > I'll queue the patch for 4.9, thanks.
-> >
-> 
-> Not having a good test for this kept me from trying the patch cold.  I 
-> think bumping the objectid will end up missing items.
-
-Ok, so I can keep it in the branches that are not for the upcoming
-merges but still in for-next.
+[Resend due to gmail mobile interface defaulting to html layout]
+>>
+>> We know its returning -ENOENT, so it should in theory be enough to just
+>> goto again_search_slot, assuming that we just raced with the deletion.
+>
+>
+> I will apply this on the machine which are exhibitting problems and will
+> report whether it rectified the situation. i bump the objectid wince this is
+> what you suggested. i can also try without it.
+>>
+>>
+>> -chris

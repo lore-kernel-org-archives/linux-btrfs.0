@@ -1,48 +1,63 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.virtall.com ([178.63.195.102]:53317 "EHLO mail.virtall.com"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752070AbcITH4x (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 20 Sep 2016 03:56:53 -0400
-MIME-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII;
- format=flowed
-Date: Tue, 20 Sep 2016 16:56:50 +0900
-From: Tomasz Chmielewski <mangoo@wpkg.org>
-To: Peter Becker <floyd.net@gmail.com>
-Cc: Hugo Mills <hugo@carfax.org.uk>, linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: how to understand "btrfs fi show" output? "No space left" issues
-In-Reply-To: <CAEtw4r16f10PPsVw6r5t0KP-gJbSmKEYP-zt-s5De9kSBpZEqg@mail.gmail.com>
-References: <566e9000fe30d5b8e0d7e73ebe1d44a0@admin.virtall.com>
- <20160920065827.GO7138@carfax.org.uk>
- <CAEtw4r16f10PPsVw6r5t0KP-gJbSmKEYP-zt-s5De9kSBpZEqg@mail.gmail.com>
-Message-ID: <6596b749c3c4b37dc1db8c3a766be491@admin.virtall.com>
+Received: from [195.159.176.226] ([195.159.176.226]:59138 "EHLO
+        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
+        with ESMTP id S932313AbcITIAF (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 20 Sep 2016 04:00:05 -0400
+Received: from list by blaine.gmane.org with local (Exim 4.84_2)
+        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+        id 1bmFy8-0006Dy-15
+        for linux-btrfs@vger.kernel.org; Tue, 20 Sep 2016 09:59:56 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: stability matrix (was: Is stability a joke?)
+Date: Tue, 20 Sep 2016 07:59:44 +0000 (UTC)
+Message-ID: <pan$9faa9$336f6d31$1fa59209$17e07862@cox.net>
+References: <57D51BF9.2010907@online.no>
+        <20160912142714.GE16983@twin.jikos.cz>
+        <52304724-5bca-a1e6-527f-040085c7ab19@gmail.com>
+        <20160912165107.GG16983@twin.jikos.cz>
+        <58a954fc-bbd5-3fb5-9f23-008ed7f7121d@gmail.com>
+        <20160915010759.GD32452@DigitalMercury.dynalias.net>
+        <5dec6544a78a0301a8e0cd9086179f99@crc.id.au>
+        <1473905644.8603.44.camel@scientia.net>
+        <20160919152753.GG933@twin.jikos.cz>
+        <1474314346.10189.19.camel@scientia.net>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2016-09-20 16:27, Peter Becker wrote:
+Christoph Anton Mitterer posted on Mon, 19 Sep 2016 21:45:46 +0200 as
+excerpted:
 
-> You have 417(total)-131(used) blocks wo are only partial filled.
-> You should balance your file-system.
+> On Mon, 2016-09-19 at 17:27 +0200, David Sterba wrote:
+> 
+>> > For specific features:
+>> > - Autodefrag
+>> >   - didn't that also cause reflinks to be broken up?
+>> 
+>> No and never had.
+> 
+> Absolutely sure? One year ago, I was told that at first too so I started
+> using it, but later on some (IIRC) developer said auto-defrag would also
+> suffer from it.
 
-(...)
+AFAIK it was Hugo that said he looked into that, and that (if I'm 
+representing it correctly) autodefrag breaks reflinks and triggers space-
+using duplication much as defrag does, but that it does it on a much 
+smaller scale, since it (1) only triggers when some parts of a file are 
+being rewritten anyway, thus breaking the reflink for those specific 
+parts of the file due to COW (COW1 on otherwise NOCOW files) in any case, 
+and (2) unlike defrag, doesn't rewrite and thus break the reflinks on 
+entire files, just somewhat larger extents than the pure rewrite by 
+itself without autodefrag would.
 
-> #or a full balance
-> btrfs balance start /mnt
+Thus making the reflink-breaking and duplication effect of autodefrag 
+there, but relatively quite small compared to on-demand per-file defrag.
 
-OK, does it mean that btrfs needs some userspace daemon which does the 
-following from time to time (how often?):
-
-1) btrfs fi show /mountpoint(s)
-
-2) if "used" is more than 90% (or 80%? or 70%?) of "size" - run a full 
-balance
-
-3) ...unless "btrfs fi df" shows that "used" is 95% (?) or more of 
-"total", then don't bother, as we're "really" full
-
-?
-
-
-Tomasz Chmielewski
-https://lxadm.com
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 

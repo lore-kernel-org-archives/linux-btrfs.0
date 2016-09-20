@@ -1,69 +1,60 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from james.kirk.hungrycats.org ([174.142.39.145]:43180 "EHLO
-        james.kirk.hungrycats.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752021AbcISWbh (ORCPT
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:37750 "EHLO
+        mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
+        by vger.kernel.org with ESMTP id S1752643AbcITAMv (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 19 Sep 2016 18:31:37 -0400
-Date: Mon, 19 Sep 2016 18:31:22 -0400
-From: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
-To: Chris Murphy <lists@colorremedies.com>
-Cc: Alex Elsayed <eternaleye@gmail.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+        Mon, 19 Sep 2016 20:12:51 -0400
 Subject: Re: [RFC] Preliminary BTRFS Encryption
-Message-ID: <20160919223119.GK21290@hungrycats.org>
+To: Anand Jain <anand.jain@oracle.com>, <linux-btrfs@vger.kernel.org>,
+        <dsterba@suse.cz>
 References: <1473773990-3071-1-git-send-email-anand.jain@oracle.com>
- <20160916011213.GV22388@dastard>
- <nrg4mh$bkn$1@blaine.gmane.org>
- <20160917043829.GC21290@hungrycats.org>
- <nrioas$da6$1@blaine.gmane.org>
- <20160919180805.GG21290@hungrycats.org>
- <nrpg62$g72$2@blaine.gmane.org>
- <CAJCQCtR=6_cLa_f2BdcfhkfWGB_4kHSG-JfFh4w+40R7zOMtWQ@mail.gmail.com>
+ <20160916084958.GA933@twin.jikos.cz>
+From: Chris Mason <clm@fb.com>
+Message-ID: <a7612c6e-00cd-29cd-e843-a60586d6c408@fb.com>
+Date: Mon, 19 Sep 2016 20:12:26 -0400
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-        protocol="application/pgp-signature"; boundary="yr6OvWOSyJed8q4v"
-In-Reply-To: <CAJCQCtR=6_cLa_f2BdcfhkfWGB_4kHSG-JfFh4w+40R7zOMtWQ@mail.gmail.com>
+In-Reply-To: <20160916084958.GA933@twin.jikos.cz>
+Content-Type: text/plain; charset="windows-1252"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---yr6OvWOSyJed8q4v
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
 
-On Mon, Sep 19, 2016 at 04:25:55PM -0600, Chris Murphy wrote:
-> >> Files are modified by creating new extents (using parameters inherited
-> >> from the inode to fill in the extent attributes) and updating the inode
-> >> to refer to the new extent instead of the old one at the modified
-> >> offset. Cloned extents are references to existing extents associated
-> >> with a different inode or at a different place within the same inode (=
-if
-> >> the extent is not compatible with the destination inode, clone fails
-> >> with an error).  A snapshot is an efficient way to clone an entire
-> >> subvol tree at once, including all inodes and attributes.
-> >
-> > There is the caveat of chattr +C, which would need hard-disabled for
-> > extent-level encryption (vs block level).
->=20
-> What about raid56 partial stripe writes? Aren't these effectively nocow?
+On 09/16/2016 04:49 AM, David Sterba wrote:
+> On Tue, Sep 13, 2016 at 09:39:46PM +0800, Anand Jain wrote:
+>> This patchset adds btrfs encryption support.
+>>
+>> The main objective of this series is to have bugs fixed and stability.
+>> I have verified with fstests to confirm that there is no regression.
+>>
+>> A design write-up is coming next,
+>
+> You're approaching it from the wrong side. The detailed specification
+> must come first.
 
-Those are a straight-up bug that should be fixed.  They are mixing committed
-data with uncommitted data from two different transactions, and the stripe
-temporarily contains garbage.  Combine that with unclean shutdown in degrad=
-ed
-mode and the data is gone.
+Hi Anand,
 
---yr6OvWOSyJed8q4v
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+Thanks for sending these out.  It's an important feature and I'm glad to 
+see it getting some love.
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
+Right now, the design doc is really the most important part.  The 
+encryption side of things requires a layer of extra verification that we 
+can't get from reviewing the code alone.  We need to sit down with the 
+use cases and the workflow and make sure it meets all the requirements 
+of a secure system.
 
-iEYEARECAAYFAlfgZzcACgkQgfmLGlazG5zlRQCgu/Jcm/4DoVbrNfyp1Fo3dwhh
-3/sAoLmps7+5tzx3nZpGXuwu5z8yhAeH
-=+Lc1
------END PGP SIGNATURE-----
+I'm the first to admit this needs a broader consensus than just 
+linux-btrfs@, and we want our reviewers to be able to go through things 
+without also having to understand every line of btrfs.
 
---yr6OvWOSyJed8q4v--
+I do want to make sure that we can send/recv signed and encrypted 
+subvolumes, and be able to send them again unmodified.  This will end up 
+needing a revision of the send/recv protocol, but it adds a use case 
+wrinkle that we need to iron out in the design docs.
+
+I still prefer encryption at the subvolume level, but it's going to need 
+to be a superset of what is already possible with the vfs interfaces. 
+If we can do it with the existing interfaces, great.  If not we should 
+be adding features into the generic code where it makes sense.
+
+-chris

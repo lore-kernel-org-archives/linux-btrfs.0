@@ -1,46 +1,64 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:60401 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S932234AbcIZDGK (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 25 Sep 2016 23:06:10 -0400
-Subject: Re: [PATCH 2/2] btrfs-progs: super-recover: Reuse
- btrfs_read_dev_super function
-To: <dsterba@suse.cz>, <linux-btrfs@vger.kernel.org>, <hawken@thehawken.org>
-References: <20160920021902.818-1-quwenruo@cn.fujitsu.com>
- <20160920021902.818-2-quwenruo@cn.fujitsu.com>
- <20160923132603.GZ16983@twin.jikos.cz>
+Received: from cn.fujitsu.com ([222.73.24.84]:43954 "EHLO song.cn.fujitsu.com"
+        rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+        id S1753276AbcITCTf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 19 Sep 2016 22:19:35 -0400
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <451661f2-4273-8877-d3de-2ea364613286@cn.fujitsu.com>
-Date: Mon, 26 Sep 2016 11:05:50 +0800
+To: linux-btrfs@vger.kernel.org
+Cc: hawken@thehawken.org
+Subject: [PATCH 1/2] btrfs-progs: Return more meaningful value for btrfs_read_dev_super
+Date: Tue, 20 Sep 2016 10:19:01 +0800
+Message-Id: <20160920021902.818-1-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-In-Reply-To: <20160923132603.GZ16983@twin.jikos.cz>
-Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+btrfs_read_dev_super() only returns 0 or -1, which doesn't really help,
+caller won't know if it's caused by bad superblock or superblock out of
+range.
 
+Change it to return -ENOENT for superblock which is out of range, and
+return -EIO for bad superblocks.
 
-At 09/23/2016 09:26 PM, David Sterba wrote:
-> On Tue, Sep 20, 2016 at 10:19:02AM +0800, Qu Wenruo wrote:
->> We have enhanced super block validation check in disk_io.c, while
->> super-recover doesn't use that function and use a custom one.
->>
->> That is duplicated, so reuse btrfs_read_dev_super to handle it, which
->> not only enhanced super check, but also reduce the code length.
->
-> Yeah, the existing check_super does way more checks compared to this
-> one. Applied, thanks.
->
->
-Sorry David, this patch can't be applied without previous patch.
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+---
+ disk-io.c | 9 +++++----
+ 1 file changed, 5 insertions(+), 4 deletions(-)
 
-As this patch relies on previous patch to get meaningful return value, 
-to check if it's a real error or that superblock just doesn't exist.
+diff --git a/disk-io.c b/disk-io.c
+index 854c285..26852ee 100644
+--- a/disk-io.c
++++ b/disk-io.c
+@@ -1590,14 +1590,15 @@ int btrfs_read_dev_super(int fd, struct btrfs_super_block *sb, u64 sb_bytenr,
+ 
+ 	if (sb_bytenr != BTRFS_SUPER_INFO_OFFSET) {
+ 		ret = pread64(fd, buf, BTRFS_SUPER_INFO_SIZE, sb_bytenr);
++		/* Special return value for out of dev/file range */
+ 		if (ret < BTRFS_SUPER_INFO_SIZE)
+-			return -1;
++			return -ENOENT;
+ 
+ 		if (btrfs_super_bytenr(buf) != sb_bytenr)
+-			return -1;
++			return -EIO;
+ 
+ 		if (check_super(buf, sbflags))
+-			return -1;
++			return -EIO;
+ 		memcpy(sb, buf, BTRFS_SUPER_INFO_SIZE);
+ 		return 0;
+ 	}
+@@ -1641,7 +1642,7 @@ int btrfs_read_dev_super(int fd, struct btrfs_super_block *sb, u64 sb_bytenr,
+ 		}
+ 	}
+ 
+-	return transid > 0 ? 0 : -1;
++	return transid > 0 ? 0 : -EIO;
+ }
+ 
+ static int write_dev_supers(struct btrfs_root *root,
+-- 
+2.10.0
 
-I'll update previous patch soon.
-
-Thanks,
-Qu
 
 

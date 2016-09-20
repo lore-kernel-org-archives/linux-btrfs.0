@@ -1,51 +1,29 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:21202 "EHLO
-        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1755955AbcIOCNp (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 14 Sep 2016 22:13:45 -0400
-From: Liu Bo <bo.li.liu@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.cz>
-Subject: [PATCH] Btrfs: kill BUG_ON in run_delayed_tree_ref
-Date: Wed, 14 Sep 2016 19:19:05 -0700
-Message-Id: <1473905945-3227-1-git-send-email-bo.li.liu@oracle.com>
+Received: from mx2.suse.de ([195.135.220.15]:40639 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1752092AbcITNYP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 20 Sep 2016 09:24:15 -0400
+Date: Tue, 20 Sep 2016 15:22:17 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Liu Bo <bo.li.liu@oracle.com>
+Cc: linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.cz>
+Subject: Re: [PATCH] Btrfs: add error handling for extent buffer in print tree
+Message-ID: <20160920132217.GZ16983@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1473899019-29882-1-git-send-email-bo.li.liu@oracle.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1473899019-29882-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-In a corrupted btrfs image, we can come across this BUG_ON and
-get an unreponsive system, but if we return errors instead,
-its caller can handle everything gracefully by aborting the current
-transaction.
+On Wed, Sep 14, 2016 at 05:23:39PM -0700, Liu Bo wrote:
+> Somehow we missed btrfs_print_tree when last time we
+> updated error handling for read_extent_block().
+> 
+> This keeps us from getting a NULL pointer panic when
+> btrfs_print_tree's read_extent_block() fails.
+> 
+> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
 
-Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
----
- fs/btrfs/extent-tree.c | 8 +++++++-
- 1 file changed, 7 insertions(+), 1 deletion(-)
-
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 779fd72..290c673 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -2360,7 +2360,13 @@ static int run_delayed_tree_ref(struct btrfs_trans_handle *trans,
- 		ins.type = BTRFS_EXTENT_ITEM_KEY;
- 	}
- 
--	BUG_ON(node->ref_mod != 1);
-+	if (node->ref_mod != 1) {
-+		btrfs_err(root->fs_info,
-+	"btree block(%llu) has %d references rather than 1: action %d ref_root %llu parent %llu",
-+			  node->bytenr, node->ref_mod, node->action, ref_root,
-+			  parent);
-+		return -EIO;
-+	}
- 	if (node->action == BTRFS_ADD_DELAYED_REF && insert_reserved) {
- 		BUG_ON(!extent_op || !extent_op->update_flags);
- 		ret = alloc_reserved_tree_block(trans, root,
--- 
-2.5.5
-
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-
+Reviewed-by: David Sterba <dsterba@suse.com>

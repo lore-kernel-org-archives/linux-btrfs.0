@@ -1,124 +1,156 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:3275 "EHLO song.cn.fujitsu.com"
-        rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-        id S1753066AbcIUDQb (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 20 Sep 2016 23:16:31 -0400
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-To: linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.cz
-Subject: [PATCH v2 14/14] btrfs-progs: check: Enhance leaf traversal function to handle missing inode item
-Date: Wed, 21 Sep 2016 11:16:04 +0800
-Message-Id: <20160921031604.23334-15-quwenruo@cn.fujitsu.com>
-In-Reply-To: <20160921031604.23334-1-quwenruo@cn.fujitsu.com>
-References: <20160921031604.23334-1-quwenruo@cn.fujitsu.com>
+Received: from mx2.suse.de ([195.135.220.15]:38031 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1752028AbcITNAv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 20 Sep 2016 09:00:51 -0400
+Subject: Re: Fs: Btrfs - Fix possible ERR_PTR() dereferencing.
+To: Shailendra Verma <shailendra.v@samsung.com>, Chris Mason <clm@fb.com>,
+        Josef Bacik <jbacik@fb.com>, David Sterba <dsterba@suse.com>,
+        linux-btrfs@vger.kernel.org, Ravikant Sharma <ravikant.s2@samsung.com>
+References: <1474354107-18774-1-git-send-email-shailendra.v@samsung.com>
+Cc: linux-kernel@vger.kernel.org, vidushi.koul@samsung.com
+From: Jeff Mahoney <jeffm@suse.com>
+Message-ID: <7050d410-dbf1-15a3-a6ba-2ae28f1fb0ee@suse.com>
+Date: Tue, 20 Sep 2016 09:00:44 -0400
 MIME-Version: 1.0
+In-Reply-To: <1474354107-18774-1-git-send-email-shailendra.v@samsung.com>
+Content-Type: multipart/signed; micalg=pgp-sha1;
+ protocol="application/pgp-signature";
+ boundary="nR2Hi0wAWAMg0GeRjnoBhu93s7qLFQif8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The leaf traversal function in lowmem mode will skip to the first inode
-item of leaf and begin to check the inode.
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--nR2Hi0wAWAMg0GeRjnoBhu93s7qLFQif8
+Content-Type: multipart/mixed; boundary="cUsA7MmLHaL9L586xDCiEM6b1sJ4R5dVx";
+ protected-headers="v1"
+From: Jeff Mahoney <jeffm@suse.com>
+To: Shailendra Verma <shailendra.v@samsung.com>, Chris Mason <clm@fb.com>,
+ Josef Bacik <jbacik@fb.com>, David Sterba <dsterba@suse.com>,
+ linux-btrfs@vger.kernel.org, Ravikant Sharma <ravikant.s2@samsung.com>
+Cc: linux-kernel@vger.kernel.org, vidushi.koul@samsung.com
+Message-ID: <7050d410-dbf1-15a3-a6ba-2ae28f1fb0ee@suse.com>
+Subject: Re: Fs: Btrfs - Fix possible ERR_PTR() dereferencing.
+References: <1474354107-18774-1-git-send-email-shailendra.v@samsung.com>
+In-Reply-To: <1474354107-18774-1-git-send-email-shailendra.v@samsung.com>
 
-That's designed to avoid checking overlapping part of a leaf.
+--cUsA7MmLHaL9L586xDCiEM6b1sJ4R5dVx
+Content-Type: text/plain; charset=windows-1252
+Content-Transfer-Encoding: quoted-printable
 
-But that will cause problem in fsck/010 test case, as in that case inode
-item of the first inode(256) is missing.
-So above traversal will check from inode 257 and found nothing wrong.
+On 9/20/16 2:48 AM, Shailendra Verma wrote:
+> This is of course wrong to call kfree() if memdup_user() fails,
+> no memory was allocated and the error in the error-valued pointer
+> should be returned.
+>=20
+> Reviewed-by: Ravikant Sharma <ravikant.s2@samsung.com>
+> Signed-off-by: Shailendra Verma <shailendra.v@samsung.com>
 
-The fix is done in 2 part:
-1) Manually check the first inode
-   To avoid case like fsck/010
+Hi Shailendra -
 
-2) Check inode if ino changes from the first ino of a leaf
-   To avoid missing inode_item problem.
+In all three cases, the return value is set using the error-valued
+pointer and the pointer is set to NULL.  kfree() checks to see if the
+pointer is NULL and, if so, does nothing.  This allows us to use a
+common exit path which is an extremely common pattern in the kernel.  So
+there's never any possible ERR_PTR dereferencing happening.
 
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
----
- cmds-check.c | 46 ++++++++++++++++++++++++++++++++++++++++++++--
- 1 file changed, 44 insertions(+), 2 deletions(-)
+However, in all three cases, the allocation you're checking is the first
+in each routine and there's no additional cleanup to do.  So your patch
+is an improvement, but it's an improvement in code readability instead
+of a bug fix.  I'd ask that you re-submit with a commit message that
+reflects that.
 
-diff --git a/cmds-check.c b/cmds-check.c
-index d290a66..f5be153 100644
---- a/cmds-check.c
-+++ b/cmds-check.c
-@@ -1875,6 +1875,7 @@ static int process_one_leaf_v2(struct btrfs_root *root, struct btrfs_path *path,
- 	struct btrfs_key key;
- 	u64 cur_bytenr;
- 	u32 nritems;
-+	u64 first_ino = 0;
- 	int root_level = btrfs_header_level(root->node);
- 	int i;
- 	int ret = 0; /* Final return value */
-@@ -1882,11 +1883,14 @@ static int process_one_leaf_v2(struct btrfs_root *root, struct btrfs_path *path,
- 
- 	cur_bytenr = cur->start;
- 
--	/* skip to first inode item in this leaf */
-+	/* skip to first inode item or the first inode number change */
- 	nritems = btrfs_header_nritems(cur);
- 	for (i = 0; i < nritems; i++) {
- 		btrfs_item_key_to_cpu(cur, &key, i);
--		if (key.type == BTRFS_INODE_ITEM_KEY)
-+		if (i == 0)
-+			first_ino = key.objectid;
-+		if (key.type == BTRFS_INODE_ITEM_KEY ||
-+		    (first_ino && first_ino != key.objectid))
- 			break;
- 	}
- 	if (i == nritems) {
-@@ -4951,6 +4955,34 @@ out:
- 	return err;
- }
- 
-+static int check_fs_first_inode(struct btrfs_root *root, unsigned int ext_ref)
-+{
-+	struct btrfs_path *path;
-+	struct btrfs_key key;
-+	int err = 0;
-+	int ret;
-+
-+	path = btrfs_alloc_path();
-+	key.objectid = 256;
-+	key.type = BTRFS_INODE_ITEM_KEY;
-+	key.offset = 0;
-+
-+	ret = btrfs_search_slot(NULL, root, &key, path, 0, 0);
-+	if (ret < 0)
-+		return ret;
-+	if (ret > 0) {
-+		ret = 0;
-+		err |= INODE_ITEM_MISSING;
-+	}
-+
-+	err |= check_inode_item(root, path, ext_ref);
-+	err &= ~LAST_ITEM;
-+	if (err && !ret)
-+		ret = -EIO;
-+	btrfs_free_path(path);
-+	return ret;
-+}
-+
- /*
-  * Iterate all item on the tree and call check_inode_item() to check.
-  *
-@@ -4968,6 +5000,16 @@ static int check_fs_root_v2(struct btrfs_root *root, unsigned int ext_ref)
- 	int ret, wret;
- 	int level;
- 
-+	/*
-+	 * We need to manually check the first inode item(256)
-+	 * As the following traversal function will only start from
-+	 * the first inode item in the leaf, if inode item(256) is missing
-+	 * we will just skip it forever.
-+	 */
-+	ret = check_fs_first_inode(root, ext_ref);
-+	if (ret < 0)
-+		return ret;
-+
- 	path = btrfs_alloc_path();
- 	if (!path)
- 		return -ENOMEM;
--- 
-2.10.0
+Thanks,
+
+-Jeff
+
+> ---
+>  fs/btrfs/ioctl.c | 21 ++++++---------------
+>  1 file changed, 6 insertions(+), 15 deletions(-)
+>=20
+> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+> index da94138..58a40f8 100644
+> --- a/fs/btrfs/ioctl.c
+> +++ b/fs/btrfs/ioctl.c
+> @@ -4512,11 +4512,8 @@ static long btrfs_ioctl_logical_to_ino(struct bt=
+rfs_root *root,
+>  		return -EPERM;
+> =20
+>  	loi =3D memdup_user(arg, sizeof(*loi));
+> -	if (IS_ERR(loi)) {
+> -		ret =3D PTR_ERR(loi);
+> -		loi =3D NULL;
+> -		goto out;
+> -	}
+> +	if (IS_ERR(loi))
+> +		return PTR_ERR(loi);
+> =20
+>  	path =3D btrfs_alloc_path();
+>  	if (!path) {
 
 
+> @@ -5143,11 +5140,8 @@ static long btrfs_ioctl_set_received_subvol_32(s=
+truct file *file,
+>  	int ret =3D 0;
+> =20
+>  	args32 =3D memdup_user(arg, sizeof(*args32));
+> -	if (IS_ERR(args32)) {
+> -		ret =3D PTR_ERR(args32);
+> -		args32 =3D NULL;
+> -		goto out;
+> -	}
+> +	if (IS_ERR(args32))
+> +		return PTR_ERR(args32);
+> =20
+>  	args64 =3D kmalloc(sizeof(*args64), GFP_NOFS);
+>  	if (!args64) {
+> @@ -5195,11 +5189,8 @@ static long btrfs_ioctl_set_received_subvol(stru=
+ct file *file,
+>  	int ret =3D 0;
+> =20
+>  	sa =3D memdup_user(arg, sizeof(*sa));
+> -	if (IS_ERR(sa)) {
+> -		ret =3D PTR_ERR(sa);
+> -		sa =3D NULL;
+> -		goto out;
+> -	}
+> +	if (IS_ERR(sa))
+> +		return PTR_ERR(sa);
+> =20
+>  	ret =3D _btrfs_ioctl_set_received_subvol(file, sa);
+> =20
+>=20
 
+
+--=20
+Jeff Mahoney
+SUSE Labs
+
+
+--cUsA7MmLHaL9L586xDCiEM6b1sJ4R5dVx--
+
+--nR2Hi0wAWAMg0GeRjnoBhu93s7qLFQif8
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG/MacGPG2 v2.0.19 (Darwin)
+Comment: GPGTools - http://gpgtools.org
+
+iQIcBAEBAgAGBQJX4TL8AAoJEB57S2MheeWybwQP/2nD1G8KS5o4FxdYIHnmiJQM
+vv5u/A6hmbtc09Bz9JAVB7TZEHygPdGG5fJNAuQhL+FuZq7JL7J5ZWG9v9Eb1lXF
+/FHXVgpapWuOS7zDS7kTT5IzgFilGEypkQHusdZDGkpaOMMX0zUc+2R9QD2f7oth
+DghgjSAy4pa1USXiUuZfbSvTC2P8IgGTbGzk6XY6wxL4vGK7izwn4AJRQ516QOCC
+rFPhH7ND/jQ3pO6T93ascz5d3rJKnz+eNcC9O9hXt+0kyUpIZaS2wyQq9RlbgvLj
+izD4xjV4eGzCG8UIdNouxhtf0TvknQWwaVHhfau1lvc0Jo5/HmW3k31JmNn+2BjH
+z32MJrHSBo/RCAJBt2qaQl+sjVKpO7EeoIwb0wKpbg06v28KijBW5XFBVLsjz0JY
+uF9sUyfZQG+HbYyexZD7L6GN33pVCFl5E6PGGEyPQ6O9x+iDyMVIefmzNmNEg1CU
+G1o20bHId1CSuxPttKsCtCHfgPHt9rQGPreB0FQNmuZavrD3kn8o+/CO4x61wPhW
+UYA1LEqE07nTkfNFdWMCtoe3KHXypmomk3KcTu1Zkl1OTfRKkHhjPlqNfymxg/6v
+h0Du6UAcUEV/KdLR7muDpTT6CZmvnG5JgVqxEePPiZd46Y99VqvOnj3r9DkAKCXL
+won0iBfoudLT5rlP5w3y
+=ZzFG
+-----END PGP SIGNATURE-----
+
+--nR2Hi0wAWAMg0GeRjnoBhu93s7qLFQif8--

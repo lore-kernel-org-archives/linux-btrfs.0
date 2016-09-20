@@ -1,114 +1,166 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from james.kirk.hungrycats.org ([174.142.39.145]:35338 "EHLO
-        james.kirk.hungrycats.org" rhost-flags-OK-FAIL-OK-FAIL)
-        by vger.kernel.org with ESMTP id S1750995AbcITEJ0 (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:42997 "EHLO
+        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751610AbcITEDP (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 20 Sep 2016 00:09:26 -0400
-Date: Tue, 20 Sep 2016 00:09:17 -0400
-From: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
-To: "Theodore Ts'o" <tytso@mit.edu>
-Cc: Chris Mason <clm@fb.com>, Alex Elsayed <eternaleye@gmail.com>,
-        linux-btrfs@vger.kernel.org
+        Tue, 20 Sep 2016 00:03:15 -0400
 Subject: Re: Experimental btrfs encryption
-Message-ID: <20160920040917.GM21290@hungrycats.org>
+To: "Theodore Ts'o" <tytso@mit.edu>
+Cc: linux-btrfs@vger.kernel.org, clm@fb.com, dsterba@suse.cz
+From: Anand Jain <anand.jain@oracle.com>
+Message-ID: <aea1da38-1514-f37c-b28b-68a62a934af8@oracle.com>
+Date: Tue, 20 Sep 2016 12:05:02 +0800
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-        protocol="application/pgp-signature"; boundary="NZtAI5QFBF0GmLcW"
-In-Reply-To: <20160920025041.mzeljxxzclikktxn@thunk.org>
+In-Reply-To: <20160919151518.i2aon4axmfzt54rn@thunk.org>
+Content-Type: text/plain; charset=windows-1252; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 References: <20160919151518.i2aon4axmfzt54rn@thunk.org>
- <nrpjhc$g72$3@blaine.gmane.org>
- <a8dc3c28-5629-d870-f202-de35d2f941f1@fb.com>
- <20160920025041.mzeljxxzclikktxn@thunk.org>
 
 
---NZtAI5QFBF0GmLcW
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+Hi Ted,
 
-On Mon, Sep 19, 2016 at 10:50:41PM -0400, Theodore Ts'o wrote:
-> On Mon, Sep 19, 2016 at 08:32:34PM -0400, Chris Mason wrote:
-> One of the other things that was in the original design, but which got
-> dropped in our initial implementation, was the concept of having the
-> per-inode key wrapped by multiple user keys.  This would allow a file
-> to be accessible by more than one user.  So something to consider is
-> that there may very well be situations where you *want* to have more
-> than one key associated with a directory hierarchy.
-
-That can get very complicated very quickly, unless you push the keys
-off to one side and make them objects with separate lifetimes from the
-files and subvols that use them by reference.  Any problem can be made
-different by another layer of indirection.
-
-> The main issue is if you want to reflink a file and then have the two
-> files have different permissions / ownerships.  In that case, you
-> really want to use different keys for user A and for user B --- but if
-> you are assuming a single key per subvolume, you can't support
-> different keys for different users anyway, so you're kind of toast for
-> that use case in any case.
-
-The gotcha there is that reflink file copies are just a special case
-of shared extent refs in which all the individual extents in a file are
-reflinked at once, but that's not the only case (or even a common one).
-
-Currently any extent in the filesystem can be shared by any inode in
-the filesystem (assuming the two inodes have compatible attributes,
-which could include encryption policy), including multiple references
-=66rom the same inode to the same extent at different logical offsets.
-This is the basis of the deduplication and copy_file_range features.
-
-This confuses the VFS caching layer when dealing with deduped reflinked,
-or snapshotted files.  It's not surprising that VFS crypto has problems
-coping with it as well.
-
-It's much more natural for btrfs to attach nonces to the extents rather
-than the inodes, and even put references to keys on the extents as well.
-Key references could be inherited from the inode (directory, parent,
-subvol, wherever you want to put them) that was used to create the extent,
-the same way extents inherit their other attributes from inodes now.
-
-> So in any case, assuming you're using block encryption (which is what
-> fscrypt uses) there really isn't a problem with nonce reuse, although
-> in some cases if you really do want to reflink a file and have it be
-> protected by different user keys, this would have to force copy of the
-> duplicated blocks at that point.  But arguably, that is a feature, not
-> a bug.  If the two users are mutually suspicious, you don't _want_ to
-> leak information about who much of a particular file had been changed
-> by a particular user.  So you would want to break the reflink and have
-> separate copies for both users anyway.
-
-It would probably be most naturally implemented as not allowing the
-reflink in the first place, or not allowing a key change on a non-empty
-file (the same way that attributes like nodatasum and nodatacow are
-implemented).  'cp' would then have to fall back to a brute-force copy.
-Cloning reflinks after the fact would be a radical change of direction
-for btrfs.
-
-This does create all sorts of interesting interactions with snapshots.
-What happens if you remove a user's key to a file in a snapshot?  If the
-key is embedded in an inode, only one snapshot is affected, but if the
-key is stored separately by reference, it could revoke access to files
-in all the snapshots at once.
-
-The only information I know of that one (non-root) user gets about
-modifications to the other user's reflink file is the SHARED bit in
-FIEMAP, which goes from 1 to 0 when the user holds the last reference
-to the file.  That could simply be forced to always be 1 if the extent
-is encrypted so it doesn't leak information.
+  I appreciate your email, thanks for taking time to review.
 
 
---NZtAI5QFBF0GmLcW
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+  Before I wrote the current version, I had a version which used
+  fs/crypto. BTRFS needs a highly scalable solution, I am experimenting
+  and evaluating, integration with fs/crypto is needed, I will discuss
+  that in the fsdevel ML when its appropriate.
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
 
-iEYEARECAAYFAlfgtmwACgkQgfmLGlazG5wILQCgiYPAKH+gxXydiossZ0GSf4pi
-Hd4An2Rp1FrgnL1jCoZ0ztiSgOrNfzQz
-=b8Ye
------END PGP SIGNATURE-----
+  Data center storage requisites and Scalability is very important
+  to BTRFS. Based on my experiences with the engineered storage(s),
+  of course I do have the requirement list in the background for
+  this project. Chris mentioned one of it.
 
---NZtAI5QFBF0GmLcW--
+
+  Yes, we need crypto experts to review the document or in other words
+  its not integration-ready unless crypto experts has reviewed/approved.
+
+  Thanks. I shall cc you for further development on this.
+
+Regds, -Anand
+
+
+On 09/19/2016 11:15 PM, Theodore Ts'o wrote:
+> (I'm not on linux-btrfs@, so please keep me on the cc list.  Or
+> perhpas better yet, maybe we can move discussion to the linux-fsdevel@
+> list.)
+>
+> Hi Anand,
+>
+> After reading this thread on the web archives, and seeing that some
+> folks seem to be a bit confused about "vfs level crypto", fs/crypto,
+> and ext4/f2fs encryption, I thought I would give a few comments.
+>
+> First of all, these are all the same thing.  Initially ext4 encryption
+> was implemented targetting ChromeOS as the initial customer, and as a
+> replacement for ecryptfs.  Folks have already pointed you at the
+> design document[1].  Also of interest is the is the 2015 Linux
+> Security Symposium slides set[2].  The first deployed use of this was
+> for Android N's File-based Encryption and Direct boot[3]; a technical
+> description which left out some of the product details (since LSS 2016
+> was before the Android N release) can be found at the 2016 LSS
+> slides[4].
+>
+> [1] https://docs.google.com/document/d/1ft26lUQyuSpiu6VleP70_npaWdRfXFoNnB8JYnykNTg/preview
+> [2] http://kernsec.org/files/lss2014/Halcrow_EXT4_Encryption.pdf
+> [3] https://android.googleblog.com/2016/08/android-70-nougat-more-powerful-os-made.html
+> [4] http://kernsec.org/files/lss2015/halcrow.pdf
+>
+> The other thing that perhaps would be worth noting is that Michael
+> Halcrow started this as an encryption/security expert who had dabbled
+> in file systems, while I was someone for whom encryption/security is a
+> hobby (although in a previous life I was the tech lead for Kerberos
+> and chaired the IPSEC working group) who was a file system expert.  In
+> order to do file system security well, you need people who are well
+> versed in both discplines working together.
+>
+> With all due respect, the fact that you chose counter mode and how use
+> used it pretty clearly demonstrates that you would be well advised to
+> find someone who is a crypto expert to collaborate with you --- or use
+> the fs/crypto framework since it was designed and vetted by multiple
+> crypto experts as well as file system experts.
+>
+> Having someone who is a product manager who can discuss with you
+> specific goals is also important, because there are lots of tradeoffs
+> and lots of design choices ---- and so what you chose to do is (or at
+> least should be!)  very much dependent on your threat model, who is
+> planning on using the feature, what you can and can not upon via-a-vis
+> hardware support, performance requirements, and so on.
+>
+>
+> Secondly, in terms of how it all works.  Each user as a "master key"
+> which is stored on a keyring.  We use a hash of the key to serve as
+> the key identifier, and associated with each inode we store a nonce (a
+> random unique string) and the key identifier.  We use the nonce and
+> the user's master key to generate a unique key for that inode.
+>
+> That key is used to protect the contents of the data file, and to
+> encrypt filenames and symlink targets --- since filenames can leak
+> significant information about what the user is doing.  (For example,
+> in the downloads directory of their web browser, leaking filenames is
+> just as good as leaking part of their browsing history.)
+>
+> As far as using the fs/crypto infrastructure, it's actually pretty
+> simple.  The file system needs to provide a flag indicating whether or
+> not the file is encrypted, and support extended attributes.  When you
+> create an inode in an encrypted directory, you call
+> fscrypt_inherit_context() and the fscrypto layer will take care of
+> creating the necessary xattr for the per-inode key.  When you need
+> open a encrypted file, or operate on an encrypted inode, you call
+> fscrypt_get_encryption_info() on the inode.  The per-inode encryption
+> key is cached in the i_crypt_info structure, which hangs off of the
+> struct inode.
+>
+> When you write to an encrypted file, you call fscrypt_encrypt_page(),
+> which returns a struct page with the encrypted contents to be written.
+> After the write is completed (or in the error case), you call
+> fscrypt_restore_control_page() to release encrypted page.
+>
+> To read from an encrypted page, you call fscrypt_get_ctx() to get an
+> encryption context, which gets stashed in the bio's bi_private
+> pointer.  (If btrfs is already using bi_private, then you'll need to
+> add a field in the structure which hangs off of bi_private to stash
+> the encryption context.)  After the read completes, you call
+> fscrypt_decrypt_bio_pages() to decrypt all of the pages read as part
+> of the read/write operation.
+>
+> It's actually relatively straightforward to use.  If you have any
+> questions please feel free to ask on linux-fsdevel.
+>
+>
+> As far as poeple commenting that it might be better to encrypt on the
+> extent level --- the reason why we didn't chose that path is because
+> while it does make it easier to do authenticated encryption modes, the
+> downside is that you can only do the data integrity check if you read
+> in the entire extent.  This has obvious memory utilization impacts and
+> will also impact your 4k random read/write performance.
+>
+> We do have a solution in mind to solve the authenticated encryption
+> problem; in fact, an intern has recently finished a prototype using
+> Authenticated Skip Lists[5][6].  Hopefully we'll be able to get some
+> patches for review in the near future.
+>
+> [5] http://cs.brown.edu/cgc/stms/papers/hashskip.pdf
+> [6] http://cs.brown.edu/cgc/stms/papers/discex2001.pdf
+>
+> One of the challenges with data integrity is that you need to be able
+> to update authentication data and the data blocks atomically, or else
+> you could end up breaking the file on a crash.  For ext4, we're going
+> to simply only support data integrity for those files which are
+> written and then closed, and if you crash, the file which is being
+> written may not have valid data integrity checksums.  This is good
+> enough for many use cases, since most files are not updated after they
+> are initially written.  Obviously, btrfs would be able to do much
+> better since it has COW properties.
+>
+> Cheers,
+>
+> 							- Ted
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>

@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:45361 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:45378 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752045AbcITOFI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 20 Sep 2016 10:05:08 -0400
+        id S1752187AbcITOFK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 20 Sep 2016 10:05:10 -0400
 Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id AEEA4AD89
-        for <linux-btrfs@vger.kernel.org>; Tue, 20 Sep 2016 14:05:05 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id E45FAADB1
+        for <linux-btrfs@vger.kernel.org>; Tue, 20 Sep 2016 14:05:06 +0000 (UTC)
 From: jeffm@suse.com
 To: linux-btrfs@vger.kernel.org
 Cc: David Sterba <dsterba@suse.com>, Jeff Mahoney <jeffm@suse.com>
-Subject: [PATCH 4/5] btrfs: convert pr_* to btrfs_* where possible
-Date: Tue, 20 Sep 2016 10:05:02 -0400
-Message-Id: <1474380303-25995-5-git-send-email-jeffm@suse.com>
+Subject: [PATCH 5/5] btrfs: convert send's verbose_printk to btrfs_debug
+Date: Tue, 20 Sep 2016 10:05:03 -0400
+Message-Id: <1474380303-25995-6-git-send-email-jeffm@suse.com>
 In-Reply-To: <1474380303-25995-1-git-send-email-jeffm@suse.com>
 References: <1474380303-25995-1-git-send-email-jeffm@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -19,1203 +19,251 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Jeff Mahoney <jeffm@suse.com>
 
-For many printks, we want to know which file system issued the message.
-
-This patch converts most pr_* calls to use the btrfs_* versions instead.
-In some cases, this means adding plumbing to allow call sites access to
-an fs_info pointer.
-
-fs/btrfs/check-integrity.c is left alone for another day.
+This was basically an open-coded, less flexible dynamic printk.  We can
+just use btrfs_debug instead.
 
 Signed-off-by: Jeff Mahoney <jeffm@suse.com>
 
-diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
-index c2cd4c2..16ec215 100644
---- a/fs/btrfs/backref.c
-+++ b/fs/btrfs/backref.c
-@@ -390,7 +390,8 @@ static int __resolve_indirect_ref(struct btrfs_fs_info *fs_info,
- 	/* root node has been locked, we can release @subvol_srcu safely here */
- 	srcu_read_unlock(&fs_info->subvol_srcu, index);
+diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
+index ee10345..96bc99d 100644
+--- a/fs/btrfs/send.c
++++ b/fs/btrfs/send.c
+@@ -36,10 +36,6 @@
+ #include "transaction.h"
+ #include "compression.h"
  
--	pr_debug("search slot in root %llu (level %d, ref count %d) returned %d for key (%llu %u %llu)\n",
-+	btrfs_debug(fs_info,
-+		    "search slot in root %llu (level %d, ref count %d) returned %d for key (%llu %u %llu)",
- 		 ref->root_id, level, ref->count, ret,
- 		 ref->key_for_search.objectid, ref->key_for_search.type,
- 		 ref->key_for_search.offset);
-@@ -1491,7 +1492,8 @@ int extent_from_logical(struct btrfs_fs_info *fs_info, u64 logical,
- 
- 	if (found_key->objectid > logical ||
- 	    found_key->objectid + size <= logical) {
--		pr_debug("logical %llu is not within any extent\n", logical);
-+		btrfs_debug(fs_info,
-+			    "logical %llu is not within any extent", logical);
- 		return -ENOENT;
- 	}
- 
-@@ -1502,7 +1504,8 @@ int extent_from_logical(struct btrfs_fs_info *fs_info, u64 logical,
- 	ei = btrfs_item_ptr(eb, path->slots[0], struct btrfs_extent_item);
- 	flags = btrfs_extent_flags(eb, ei);
- 
--	pr_debug("logical %llu is at position %llu within the extent (%llu EXTENT_ITEM %llu) flags %#llx size %u\n",
-+	btrfs_debug(fs_info,
-+		    "logical %llu is at position %llu within the extent (%llu EXTENT_ITEM %llu) flags %#llx size %u",
- 		 logical, logical - found_key->objectid, found_key->objectid,
- 		 found_key->offset, flags, item_size);
- 
-@@ -1623,20 +1626,24 @@ int tree_backref_for_extent(unsigned long *ptr, struct extent_buffer *eb,
- 	return 0;
- }
- 
--static int iterate_leaf_refs(struct extent_inode_elem *inode_list,
--				u64 root, u64 extent_item_objectid,
--				iterate_extent_inodes_t *iterate, void *ctx)
-+static int iterate_leaf_refs(struct btrfs_fs_info *fs_info,
-+			     struct extent_inode_elem *inode_list,
-+			     u64 root, u64 extent_item_objectid,
-+			     iterate_extent_inodes_t *iterate, void *ctx)
+-static int g_verbose = 0;
+-
+-#define verbose_printk(...) if (g_verbose) printk(__VA_ARGS__)
+-
+ /*
+  * A fs_path is a helper to dynamically build path names with unknown size.
+  * It reallocates the internal buffer on demand.
+@@ -727,9 +723,10 @@ static int send_cmd(struct send_ctx *sctx)
+ static int send_rename(struct send_ctx *sctx,
+ 		     struct fs_path *from, struct fs_path *to)
  {
- 	struct extent_inode_elem *eie;
- 	int ret = 0;
- 
- 	for (eie = inode_list; eie; eie = eie->next) {
--		pr_debug("ref for %llu resolved, key (%llu EXTEND_DATA %llu), root %llu\n", extent_item_objectid,
--			 eie->inum, eie->offset, root);
-+		btrfs_debug(fs_info,
-+			    "ref for %llu resolved, key (%llu EXTEND_DATA %llu), root %llu",
-+			    extent_item_objectid, eie->inum,
-+			    eie->offset, root);
- 		ret = iterate(eie->inum, eie->offset, root, ctx);
- 		if (ret) {
--			pr_debug("stopping iteration for %llu due to ret=%d\n",
--				 extent_item_objectid, ret);
-+			btrfs_debug(fs_info,
-+				    "stopping iteration for %llu due to ret=%d",
-+				    extent_item_objectid, ret);
- 			break;
- 		}
- 	}
-@@ -1664,7 +1671,7 @@ int iterate_extent_inodes(struct btrfs_fs_info *fs_info,
- 	struct ulist_iterator ref_uiter;
- 	struct ulist_iterator root_uiter;
- 
--	pr_debug("resolving all inodes for extent %llu\n",
-+	btrfs_debug(fs_info, "resolving all inodes for extent %llu",
- 			extent_item_objectid);
- 
- 	if (!search_commit_root) {
-@@ -1690,9 +1697,12 @@ int iterate_extent_inodes(struct btrfs_fs_info *fs_info,
- 			break;
- 		ULIST_ITER_INIT(&root_uiter);
- 		while (!ret && (root_node = ulist_next(roots, &root_uiter))) {
--			pr_debug("root %llu references leaf %llu, data list %#llx\n", root_node->val, ref_node->val,
--				 ref_node->aux);
--			ret = iterate_leaf_refs((struct extent_inode_elem *)
-+			btrfs_debug(fs_info,
-+				    "root %llu references leaf %llu, data list %#llx",
-+				    root_node->val, ref_node->val,
-+				    ref_node->aux);
-+			ret = iterate_leaf_refs(fs_info,
-+						(struct extent_inode_elem *)
- 						(uintptr_t)ref_node->aux,
- 						root_node->val,
- 						extent_item_objectid,
-@@ -1788,8 +1798,9 @@ static int iterate_inode_refs(u64 inum, struct btrfs_root *fs_root,
- 		for (cur = 0; cur < btrfs_item_size(eb, item); cur += len) {
- 			name_len = btrfs_inode_ref_name_len(eb, iref);
- 			/* path must be released before calling iterate()! */
--			pr_debug("following ref at offset %u for inode %llu in tree %llu\n", cur, found_key.objectid,
--				 fs_root->objectid);
-+			btrfs_debug(fs_root->fs_info,
-+				    "following ref at offset %u for inode %llu in tree %llu",
-+				    cur, found_key.objectid, fs_root->objectid);
- 			ret = iterate(parent, name_len,
- 				      (unsigned long)(iref + 1), eb, ctx);
- 			if (ret)
-diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
-index d635d0f..ccc70d9 100644
---- a/fs/btrfs/compression.c
-+++ b/fs/btrfs/compression.c
-@@ -853,7 +853,7 @@ again:
- 					/* no burst */ 1);
- 
- 			if (__ratelimit(&_rs)) {
--				pr_warn("no compression workspaces, low memory, retrying\n");
-+				pr_warn("BTRFS: no compression workspaces, low memory, retrying\n");
- 			}
- 		}
- 		goto again;
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 6683326..b967af5 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -3392,7 +3392,7 @@ do {								\
- __cold
- static inline void assfail(char *expr, char *file, int line)
- {
--	pr_err("BTRFS: assertion failed: %s, file: %s, line: %d",
-+	pr_err("assertion failed: %s, file: %s, line: %d",
- 	       expr, file, line);
- 	BUG();
- }
-diff --git a/fs/btrfs/delayed-ref.c b/fs/btrfs/delayed-ref.c
-index ac02e04..7a9d345 100644
---- a/fs/btrfs/delayed-ref.c
-+++ b/fs/btrfs/delayed-ref.c
-@@ -322,10 +322,11 @@ int btrfs_check_delayed_seq(struct btrfs_fs_info *fs_info,
- 		elem = list_first_entry(&fs_info->tree_mod_seq_list,
- 					struct seq_list, list);
- 		if (seq >= elem->seq) {
--			pr_debug("holding back delayed_ref %#x.%x, lowest is %#x.%x (%p)\n",
--				 (u32)(seq >> 32), (u32)seq,
--				 (u32)(elem->seq >> 32), (u32)elem->seq,
--				 delayed_refs);
-+			btrfs_debug(fs_info,
-+				    "holding back delayed_ref %#x.%x, lowest is %#x.%x (%p)",
-+				    (u32)(seq >> 32), (u32)seq,
-+				    (u32)(elem->seq >> 32), (u32)elem->seq,
-+				    delayed_refs);
- 			ret = 1;
- 		}
- 	}
-diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
-index 26c6a77..05169ef 100644
---- a/fs/btrfs/dev-replace.c
-+++ b/fs/btrfs/dev-replace.c
-@@ -385,7 +385,7 @@ int btrfs_dev_replace_start(struct btrfs_root *root, char *tgtdev_name,
- 
- 	ret = btrfs_sysfs_add_device_link(tgt_device->fs_devices, tgt_device);
- 	if (ret)
--		btrfs_err(fs_info, "kobj add dev failed %d\n", ret);
-+		btrfs_err(fs_info, "kobj add dev failed %d", ret);
- 
- 	btrfs_wait_ordered_roots(root->fs_info, -1, 0, (u64)-1);
- 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index c7f2cc8..a87cf6b 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -401,7 +401,8 @@ out:
-  * Return 0 if the superblock checksum type matches the checksum value of that
-  * algorithm. Pass the raw disk superblock data.
-  */
--static int btrfs_check_super_csum(char *raw_disk_sb)
-+static int btrfs_check_super_csum(struct btrfs_fs_info *fs_info,
-+				  char *raw_disk_sb)
- {
- 	struct btrfs_super_block *disk_sb =
- 		(struct btrfs_super_block *)raw_disk_sb;
-@@ -427,7 +428,7 @@ static int btrfs_check_super_csum(char *raw_disk_sb)
- 	}
- 
- 	if (csum_type >= ARRAY_SIZE(btrfs_csum_sizes)) {
--		pr_err("BTRFS: unsupported checksum algorithm %u\n",
-+		btrfs_err(fs_info, "unsupported checksum algorithm %u",
- 				csum_type);
- 		ret = 1;
- 	}
-@@ -2761,7 +2762,7 @@ int open_ctree(struct super_block *sb,
- 	 * We want to check superblock checksum, the type is stored inside.
- 	 * Pass the whole disk block of size BTRFS_SUPER_INFO_SIZE (4k).
- 	 */
--	if (btrfs_check_super_csum(bh->b_data)) {
-+	if (btrfs_check_super_csum(fs_info, bh->b_data)) {
- 		btrfs_err(fs_info, "superblock checksum mismatch");
- 		err = -EINVAL;
- 		brelse(bh);
-@@ -3606,7 +3607,7 @@ int btrfs_get_num_tolerated_disk_barrier_failures(u64 flags)
- 	}
- 
- 	if (min_tolerated == INT_MAX) {
--		pr_warn("BTRFS: unknown raid flag: %llu\n", flags);
-+		pr_warn("BTRFS: unknown raid flag: %llu", flags);
- 		min_tolerated = 0;
- 	}
- 
-@@ -4098,24 +4099,24 @@ static int btrfs_check_super_valid(struct btrfs_fs_info *fs_info,
- 	int ret = 0;
- 
- 	if (btrfs_super_magic(sb) != BTRFS_MAGIC) {
--		pr_err("BTRFS: no valid FS found\n");
-+		btrfs_err(fs_info, "no valid FS found");
- 		ret = -EINVAL;
- 	}
- 	if (btrfs_super_flags(sb) & ~BTRFS_SUPER_FLAG_SUPP)
--		pr_warn("BTRFS: unrecognized super flag: %llu\n",
-+		btrfs_warn(fs_info, "unrecognized super flag: %llu",
- 				btrfs_super_flags(sb) & ~BTRFS_SUPER_FLAG_SUPP);
- 	if (btrfs_super_root_level(sb) >= BTRFS_MAX_LEVEL) {
--		pr_err("BTRFS: tree_root level too big: %d >= %d\n",
-+		btrfs_err(fs_info, "tree_root level too big: %d >= %d",
- 				btrfs_super_root_level(sb), BTRFS_MAX_LEVEL);
- 		ret = -EINVAL;
- 	}
- 	if (btrfs_super_chunk_root_level(sb) >= BTRFS_MAX_LEVEL) {
--		pr_err("BTRFS: chunk_root level too big: %d >= %d\n",
-+		btrfs_err(fs_info, "chunk_root level too big: %d >= %d",
- 				btrfs_super_chunk_root_level(sb), BTRFS_MAX_LEVEL);
- 		ret = -EINVAL;
- 	}
- 	if (btrfs_super_log_root_level(sb) >= BTRFS_MAX_LEVEL) {
--		pr_err("BTRFS: log_root level too big: %d >= %d\n",
-+		btrfs_err(fs_info, "log_root level too big: %d >= %d",
- 				btrfs_super_log_root_level(sb), BTRFS_MAX_LEVEL);
- 		ret = -EINVAL;
- 	}
-@@ -4126,47 +4127,48 @@ static int btrfs_check_super_valid(struct btrfs_fs_info *fs_info,
- 	 */
- 	if (!is_power_of_2(sectorsize) || sectorsize < 4096 ||
- 	    sectorsize > BTRFS_MAX_METADATA_BLOCKSIZE) {
--		pr_err("BTRFS: invalid sectorsize %llu\n", sectorsize);
-+		btrfs_err(fs_info, "invalid sectorsize %llu", sectorsize);
- 		ret = -EINVAL;
- 	}
- 	/* Only PAGE SIZE is supported yet */
- 	if (sectorsize != PAGE_SIZE) {
--		pr_err("BTRFS: sectorsize %llu not supported yet, only support %lu\n",
--				sectorsize, PAGE_SIZE);
-+		btrfs_err(fs_info,
-+			  "sectorsize %llu not supported yet, only support %lu",
-+			  sectorsize, PAGE_SIZE);
- 		ret = -EINVAL;
- 	}
- 	if (!is_power_of_2(nodesize) || nodesize < sectorsize ||
- 	    nodesize > BTRFS_MAX_METADATA_BLOCKSIZE) {
--		pr_err("BTRFS: invalid nodesize %llu\n", nodesize);
-+		btrfs_err(fs_info, "invalid nodesize %llu", nodesize);
- 		ret = -EINVAL;
- 	}
- 	if (nodesize != le32_to_cpu(sb->__unused_leafsize)) {
--		pr_err("BTRFS: invalid leafsize %u, should be %llu\n",
--				le32_to_cpu(sb->__unused_leafsize),
--				nodesize);
-+		btrfs_err(fs_info, "invalid leafsize %u, should be %llu",
-+			  le32_to_cpu(sb->__unused_leafsize), nodesize);
- 		ret = -EINVAL;
- 	}
- 
- 	/* Root alignment check */
- 	if (!IS_ALIGNED(btrfs_super_root(sb), sectorsize)) {
--		pr_warn("BTRFS: tree_root block unaligned: %llu\n",
--				btrfs_super_root(sb));
-+		btrfs_warn(fs_info, "tree_root block unaligned: %llu",
-+			   btrfs_super_root(sb));
- 		ret = -EINVAL;
- 	}
- 	if (!IS_ALIGNED(btrfs_super_chunk_root(sb), sectorsize)) {
--		pr_warn("BTRFS: chunk_root block unaligned: %llu\n",
--				btrfs_super_chunk_root(sb));
-+		btrfs_warn(fs_info, "chunk_root block unaligned: %llu",
-+			   btrfs_super_chunk_root(sb));
- 		ret = -EINVAL;
- 	}
- 	if (!IS_ALIGNED(btrfs_super_log_root(sb), sectorsize)) {
--		pr_warn("BTRFS: log_root block unaligned: %llu\n",
--				btrfs_super_log_root(sb));
-+		btrfs_warn(fs_info, "log_root block unaligned: %llu",
-+			   btrfs_super_log_root(sb));
- 		ret = -EINVAL;
- 	}
- 
- 	if (memcmp(fs_info->fsid, sb->dev_item.fsid, BTRFS_UUID_SIZE) != 0) {
--		pr_err("BTRFS: dev_item UUID does not match fsid: %pU != %pU\n",
--				fs_info->fsid, sb->dev_item.fsid);
-+		btrfs_err(fs_info,
-+			   "dev_item UUID does not match fsid: %pU != %pU",
-+			   fs_info->fsid, sb->dev_item.fsid);
- 		ret = -EINVAL;
- 	}
- 
-@@ -4176,25 +4178,25 @@ static int btrfs_check_super_valid(struct btrfs_fs_info *fs_info,
- 	 */
- 	if (btrfs_super_bytes_used(sb) < 6 * btrfs_super_nodesize(sb)) {
- 		btrfs_err(fs_info, "bytes_used is too small %llu",
--		       btrfs_super_bytes_used(sb));
-+			  btrfs_super_bytes_used(sb));
- 		ret = -EINVAL;
- 	}
- 	if (!is_power_of_2(btrfs_super_stripesize(sb))) {
- 		btrfs_err(fs_info, "invalid stripesize %u",
--		       btrfs_super_stripesize(sb));
-+			  btrfs_super_stripesize(sb));
- 		ret = -EINVAL;
- 	}
- 	if (btrfs_super_num_devices(sb) > (1UL << 31))
--		pr_warn("BTRFS: suspicious number of devices: %llu\n",
--				btrfs_super_num_devices(sb));
-+		btrfs_warn(fs_info, "suspicious number of devices: %llu",
-+			   btrfs_super_num_devices(sb));
- 	if (btrfs_super_num_devices(sb) == 0) {
--		pr_err("BTRFS: number of devices is 0\n");
-+		btrfs_err(fs_info, "number of devices is 0");
- 		ret = -EINVAL;
- 	}
- 
- 	if (btrfs_super_bytenr(sb) != BTRFS_SUPER_INFO_OFFSET) {
--		pr_err("BTRFS: super offset mismatch %llu != %u\n",
--				btrfs_super_bytenr(sb), BTRFS_SUPER_INFO_OFFSET);
-+		btrfs_err(fs_info, "super offset mismatch %llu != %u",
-+			  btrfs_super_bytenr(sb), BTRFS_SUPER_INFO_OFFSET);
- 		ret = -EINVAL;
- 	}
- 
-@@ -4203,17 +4205,17 @@ static int btrfs_check_super_valid(struct btrfs_fs_info *fs_info,
- 	 * and one chunk
- 	 */
- 	if (btrfs_super_sys_array_size(sb) > BTRFS_SYSTEM_CHUNK_ARRAY_SIZE) {
--		pr_err("BTRFS: system chunk array too big %u > %u\n",
--				btrfs_super_sys_array_size(sb),
--				BTRFS_SYSTEM_CHUNK_ARRAY_SIZE);
-+		btrfs_err(fs_info, "system chunk array too big %u > %u",
-+			  btrfs_super_sys_array_size(sb),
-+			  BTRFS_SYSTEM_CHUNK_ARRAY_SIZE);
- 		ret = -EINVAL;
- 	}
- 	if (btrfs_super_sys_array_size(sb) < sizeof(struct btrfs_disk_key)
- 			+ sizeof(struct btrfs_chunk)) {
--		pr_err("BTRFS: system chunk array too small %u < %zu\n",
--				btrfs_super_sys_array_size(sb),
--				sizeof(struct btrfs_disk_key)
--				+ sizeof(struct btrfs_chunk));
-+		btrfs_err(fs_info, "system chunk array too small %u < %zu",
-+			  btrfs_super_sys_array_size(sb),
-+			  sizeof(struct btrfs_disk_key)
-+			  + sizeof(struct btrfs_chunk));
- 		ret = -EINVAL;
- 	}
- 
-@@ -4222,12 +4224,16 @@ static int btrfs_check_super_valid(struct btrfs_fs_info *fs_info,
- 	 * but it's still possible that it's the one that's wrong.
- 	 */
- 	if (btrfs_super_generation(sb) < btrfs_super_chunk_root_generation(sb))
--		pr_warn("BTRFS: suspicious: generation < chunk_root_generation: %llu < %llu\n",
--			btrfs_super_generation(sb), btrfs_super_chunk_root_generation(sb));
-+		btrfs_warn(fs_info,
-+			   "suspicious: generation < chunk_root_generation: %llu < %llu",
-+			   btrfs_super_generation(sb),
-+			   btrfs_super_chunk_root_generation(sb));
- 	if (btrfs_super_generation(sb) < btrfs_super_cache_generation(sb)
- 	    && btrfs_super_cache_generation(sb) != (u64)-1)
--		pr_warn("BTRFS: suspicious: generation < cache_generation: %llu < %llu\n",
--			btrfs_super_generation(sb), btrfs_super_cache_generation(sb));
-+		btrfs_warn(fs_info,
-+			  "suspicious: generation < cache_generation: %llu < %llu",
-+			  btrfs_super_generation(sb),
-+			  btrfs_super_cache_generation(sb));
- 
- 	return ret;
- }
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 07f0e91..b76cb66 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -87,7 +87,8 @@ static int do_chunk_alloc(struct btrfs_trans_handle *trans,
- 			  int force);
- static int find_next_key(struct btrfs_path *path, int level,
- 			 struct btrfs_key *key);
--static void dump_space_info(struct btrfs_space_info *info, u64 bytes,
-+static void dump_space_info(struct btrfs_fs_info *fs_info,
-+			    struct btrfs_space_info *info, u64 bytes,
- 			    int dump_block_groups);
- static int btrfs_add_reserved_bytes(struct btrfs_block_group_cache *cache,
- 				    u64 ram_bytes, u64 num_bytes, int delalloc);
-@@ -266,9 +267,8 @@ static int exclude_super_stripes(struct btrfs_root *root,
- 
- 	for (i = 0; i < BTRFS_SUPER_MIRROR_MAX; i++) {
- 		bytenr = btrfs_sb_offset(i);
--		ret = btrfs_rmap_block(&root->fs_info->mapping_tree,
--				       cache->key.objectid, bytenr,
--				       0, &logical, &nr, &stripe_len);
-+		ret = btrfs_rmap_block(root->fs_info, cache->key.objectid,
-+				       bytenr, 0, &logical, &nr, &stripe_len);
- 		if (ret)
- 			return ret;
- 
-@@ -4432,7 +4432,7 @@ void check_system_chunk(struct btrfs_trans_handle *trans,
- 	if (left < thresh && btrfs_test_opt(root->fs_info, ENOSPC_DEBUG)) {
- 		btrfs_info(root->fs_info, "left=%llu, need=%llu, flags=%llu",
- 			left, thresh, type);
--		dump_space_info(info, 0, 0);
-+		dump_space_info(root->fs_info, info, 0, 0);
- 	}
- 
- 	if (left < thresh) {
-@@ -7907,22 +7907,24 @@ out:
- 	return ret;
- }
- 
--static void dump_space_info(struct btrfs_space_info *info, u64 bytes,
-+static void dump_space_info(struct btrfs_fs_info *fs_info,
-+			    struct btrfs_space_info *info, u64 bytes,
- 			    int dump_block_groups)
- {
- 	struct btrfs_block_group_cache *cache;
- 	int index = 0;
- 
- 	spin_lock(&info->lock);
--	pr_info("BTRFS: space_info %llu has %llu free, is %sfull\n",
--	       info->flags,
--	       info->total_bytes - info->bytes_used - info->bytes_pinned -
--	       info->bytes_reserved - info->bytes_readonly -
--	       info->bytes_may_use, (info->full) ? "" : "not ");
--	pr_info("BTRFS: space_info total=%llu, used=%llu, pinned=%llu, reserved=%llu, may_use=%llu, readonly=%llu\n",
--	       info->total_bytes, info->bytes_used, info->bytes_pinned,
--	       info->bytes_reserved, info->bytes_may_use,
--	       info->bytes_readonly);
-+	btrfs_info(fs_info, "space_info %llu has %llu free, is %sfull",
-+		   info->flags,
-+		   info->total_bytes - info->bytes_used - info->bytes_pinned -
-+		   info->bytes_reserved - info->bytes_readonly -
-+		   info->bytes_may_use, (info->full) ? "" : "not ");
-+	btrfs_info(fs_info,
-+		   "space_info total=%llu, used=%llu, pinned=%llu, reserved=%llu, may_use=%llu, readonly=%llu",
-+		   info->total_bytes, info->bytes_used, info->bytes_pinned,
-+		   info->bytes_reserved, info->bytes_may_use,
-+		   info->bytes_readonly);
- 	spin_unlock(&info->lock);
- 
- 	if (!dump_block_groups)
-@@ -7932,10 +7934,11 @@ static void dump_space_info(struct btrfs_space_info *info, u64 bytes,
- again:
- 	list_for_each_entry(cache, &info->block_groups[index], list) {
- 		spin_lock(&cache->lock);
--		pr_info("BTRFS: block group %llu has %llu bytes, %llu used %llu pinned %llu reserved %s\n",
--		       cache->key.objectid, cache->key.offset,
--		       btrfs_block_group_used(&cache->item), cache->pinned,
--		       cache->reserved, cache->ro ? "[readonly]" : "");
-+		btrfs_info(fs_info,
-+			   "block group %llu has %llu bytes, %llu used %llu pinned %llu reserved %s",
-+			   cache->key.objectid, cache->key.offset,
-+			   btrfs_block_group_used(&cache->item), cache->pinned,
-+			   cache->reserved, cache->ro ? "[readonly]" : "");
- 		btrfs_dump_free_space(cache, bytes);
- 		spin_unlock(&cache->lock);
- 	}
-@@ -7949,6 +7952,7 @@ int btrfs_reserve_extent(struct btrfs_root *root, u64 ram_bytes,
- 			 u64 empty_size, u64 hint_byte,
- 			 struct btrfs_key *ins, int is_data, int delalloc)
- {
-+	struct btrfs_fs_info *fs_info = root->fs_info;
- 	bool final_tried = num_bytes == min_alloc_size;
- 	u64 flags;
++	struct btrfs_fs_info *fs_info = sctx->send_root->fs_info;
  	int ret;
-@@ -7959,8 +7963,7 @@ again:
- 	ret = find_free_extent(root, ram_bytes, num_bytes, empty_size,
- 			       hint_byte, ins, flags, delalloc);
- 	if (!ret && !is_data) {
--		btrfs_dec_block_group_reservations(root->fs_info,
--						   ins->objectid);
-+		btrfs_dec_block_group_reservations(fs_info, ins->objectid);
- 	} else if (ret == -ENOSPC) {
- 		if (!final_tried && ins->offset) {
- 			num_bytes = min(num_bytes >> 1, ins->offset);
-@@ -7970,15 +7973,15 @@ again:
- 			if (num_bytes == min_alloc_size)
- 				final_tried = true;
- 			goto again;
--		} else if (btrfs_test_opt(root->fs_info, ENOSPC_DEBUG)) {
-+		} else if (btrfs_test_opt(fs_info, ENOSPC_DEBUG)) {
- 			struct btrfs_space_info *sinfo;
  
--			sinfo = __find_space_info(root->fs_info, flags);
-+			sinfo = __find_space_info(fs_info, flags);
- 			btrfs_err(root->fs_info,
- 				  "allocation failed flags %llu, wanted %llu",
- 				  flags, num_bytes);
- 			if (sinfo)
--				dump_space_info(sinfo, num_bytes, 1);
-+				dump_space_info(fs_info, sinfo, num_bytes, 1);
- 		}
- 	}
+-verbose_printk("btrfs: send_rename %s -> %s\n", from->start, to->start);
++	btrfs_debug(fs_info, "send_rename %s -> %s", from->start, to->start);
  
-@@ -9180,9 +9183,10 @@ int btrfs_drop_snapshot(struct btrfs_root *root,
- 			 struct btrfs_block_rsv *block_rsv, int update_ref,
- 			 int for_reloc)
+ 	ret = begin_cmd(sctx, BTRFS_SEND_C_RENAME);
+ 	if (ret < 0)
+@@ -751,9 +748,10 @@ out:
+ static int send_link(struct send_ctx *sctx,
+ 		     struct fs_path *path, struct fs_path *lnk)
  {
-+	struct btrfs_fs_info *fs_info = root->fs_info;
- 	struct btrfs_path *path;
- 	struct btrfs_trans_handle *trans;
--	struct btrfs_root *tree_root = root->fs_info->tree_root;
-+	struct btrfs_root *tree_root = fs_info->tree_root;
- 	struct btrfs_root_item *root_item = &root->root_item;
- 	struct walk_control *wc;
- 	struct btrfs_key key;
-@@ -9191,7 +9195,7 @@ int btrfs_drop_snapshot(struct btrfs_root *root,
- 	int level;
- 	bool root_dropped = false;
++	struct btrfs_fs_info *fs_info = sctx->send_root->fs_info;
+ 	int ret;
  
--	btrfs_debug(root->fs_info, "Drop subvolume %llu", root->objectid);
-+	btrfs_debug(fs_info, "Drop subvolume %llu", root->objectid);
+-verbose_printk("btrfs: send_link %s -> %s\n", path->start, lnk->start);
++	btrfs_debug(fs_info, "send_link %s -> %s", path->start, lnk->start);
  
- 	path = btrfs_alloc_path();
- 	if (!path) {
-@@ -9320,7 +9324,8 @@ int btrfs_drop_snapshot(struct btrfs_root *root,
+ 	ret = begin_cmd(sctx, BTRFS_SEND_C_LINK);
+ 	if (ret < 0)
+@@ -774,9 +772,10 @@ out:
+  */
+ static int send_unlink(struct send_ctx *sctx, struct fs_path *path)
+ {
++	struct btrfs_fs_info *fs_info = sctx->send_root->fs_info;
+ 	int ret;
  
- 			btrfs_end_transaction_throttle(trans, tree_root);
- 			if (!for_reloc && btrfs_need_cleaner_sleep(root)) {
--				pr_debug("BTRFS: drop snapshot early exit\n");
-+				btrfs_debug(fs_info,
-+					    "drop snapshot early exit");
- 				err = -EAGAIN;
- 				goto out_free;
- 			}
-@@ -9386,7 +9391,7 @@ out:
- 	if (!for_reloc && root_dropped == false)
- 		btrfs_add_dead_root(root);
- 	if (err && err != -EAGAIN)
--		btrfs_handle_fs_error(root->fs_info, err, NULL);
-+		btrfs_handle_fs_error(fs_info, err, NULL);
- 	return err;
- }
+-verbose_printk("btrfs: send_unlink %s\n", path->start);
++	btrfs_debug(fs_info, "send_unlink %s", path->start);
  
-@@ -10020,7 +10025,7 @@ int btrfs_free_block_groups(struct btrfs_fs_info *info)
- 		if (WARN_ON(space_info->bytes_pinned > 0 ||
- 			    space_info->bytes_reserved > 0 ||
- 			    space_info->bytes_may_use > 0))
--			dump_space_info(space_info, 0, 0);
-+			dump_space_info(info, space_info, 0, 0);
- 		list_del(&space_info->list);
- 		for (i = 0; i < BTRFS_NR_RAID_TYPES; i++) {
- 			struct kobject *kobj;
-@@ -10069,7 +10074,8 @@ static void __link_block_group(struct btrfs_space_info *space_info,
+ 	ret = begin_cmd(sctx, BTRFS_SEND_C_UNLINK);
+ 	if (ret < 0)
+@@ -796,9 +795,10 @@ out:
+  */
+ static int send_rmdir(struct send_ctx *sctx, struct fs_path *path)
+ {
++	struct btrfs_fs_info *fs_info = sctx->send_root->fs_info;
+ 	int ret;
  
- 	return;
- out_err:
--	pr_warn("BTRFS: failed to add kobject for block cache. ignoring.\n");
-+	btrfs_warn(cache->fs_info,
-+		   "failed to add kobject for block cache. ignoring.");
- }
+-verbose_printk("btrfs: send_rmdir %s\n", path->start);
++	btrfs_debug(fs_info, "send_rmdir %s", path->start);
  
- static struct btrfs_block_group_cache *
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 6fdc701..c9bb727 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -2119,8 +2119,9 @@ int clean_io_failure(struct inode *inode, u64 start, struct page *page,
+ 	ret = begin_cmd(sctx, BTRFS_SEND_C_RMDIR);
+ 	if (ret < 0)
+@@ -1313,6 +1313,7 @@ static int find_extent_clone(struct send_ctx *sctx,
+ 			     u64 ino_size,
+ 			     struct clone_root **found)
+ {
++	struct btrfs_fs_info *fs_info = sctx->send_root->fs_info;
+ 	int ret;
+ 	int extent_type;
+ 	u64 logical;
+@@ -1371,10 +1372,10 @@ static int find_extent_clone(struct send_ctx *sctx,
+ 	}
+ 	logical = disk_byte + btrfs_file_extent_offset(eb, fi);
  
- 	if (failrec->in_validation) {
- 		/* there was no real error, just free the record */
--		pr_debug("clean_io_failure: freeing dummy error at %llu\n",
--			 failrec->start);
-+		btrfs_debug(fs_info,
-+			    "clean_io_failure: freeing dummy error at %llu",
-+			    failrec->start);
+-	down_read(&sctx->send_root->fs_info->commit_root_sem);
+-	ret = extent_from_logical(sctx->send_root->fs_info, disk_byte, tmp_path,
++	down_read(&fs_info->commit_root_sem);
++	ret = extent_from_logical(fs_info, disk_byte, tmp_path,
+ 				  &found_key, &flags);
+-	up_read(&sctx->send_root->fs_info->commit_root_sem);
++	up_read(&fs_info->commit_root_sem);
+ 	btrfs_release_path(tmp_path);
+ 
+ 	if (ret < 0)
+@@ -1429,7 +1430,7 @@ static int find_extent_clone(struct send_ctx *sctx,
+ 		extent_item_pos = logical - found_key.objectid;
+ 	else
+ 		extent_item_pos = 0;
+-	ret = iterate_extent_inodes(sctx->send_root->fs_info,
++	ret = iterate_extent_inodes(fs_info,
+ 					found_key.objectid, extent_item_pos, 1,
+ 					__iterate_backrefs, backref_ctx);
+ 
+@@ -1439,17 +1440,18 @@ static int find_extent_clone(struct send_ctx *sctx,
+ 	if (!backref_ctx->found_itself) {
+ 		/* found a bug in backref code? */
+ 		ret = -EIO;
+-		btrfs_err(sctx->send_root->fs_info,
++		btrfs_err(fs_info,
+ 			  "did not find backref in send_root. inode=%llu, offset=%llu, disk_byte=%llu found extent=%llu",
+-				ino, data_offset, disk_byte, found_key.objectid);
++			  ino, data_offset, disk_byte, found_key.objectid);
  		goto out;
  	}
- 	if (fs_info->sb->s_flags & MS_RDONLY)
-@@ -2186,6 +2187,7 @@ void btrfs_free_io_failure_record(struct inode *inode, u64 start, u64 end)
- int btrfs_get_io_failure_record(struct inode *inode, u64 start, u64 end,
- 		struct io_failure_record **failrec_ret)
- {
-+	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
- 	struct io_failure_record *failrec;
- 	struct extent_map *em;
- 	struct extent_io_tree *failure_tree = &BTRFS_I(inode)->io_failure_tree;
-@@ -2233,8 +2235,9 @@ int btrfs_get_io_failure_record(struct inode *inode, u64 start, u64 end,
- 						 em->compress_type);
- 		}
  
--		pr_debug("Get IO Failure Record: (new) logical=%llu, start=%llu, len=%llu\n",
--			 logical, start, failrec->len);
-+		btrfs_debug(fs_info,
-+			    "Get IO Failure Record: (new) logical=%llu, start=%llu, len=%llu",
-+			    logical, start, failrec->len);
- 
- 		failrec->logical = logical;
- 		free_extent_map(em);
-@@ -2252,9 +2255,10 @@ int btrfs_get_io_failure_record(struct inode *inode, u64 start, u64 end,
- 			return ret;
- 		}
- 	} else {
--		pr_debug("Get IO Failure Record: (found) logical=%llu, start=%llu, len=%llu, validation=%d\n",
--			 failrec->logical, failrec->start, failrec->len,
--			 failrec->in_validation);
-+		btrfs_debug(fs_info,
-+			    "Get IO Failure Record: (found) logical=%llu, start=%llu, len=%llu, validation=%d",
-+			    failrec->logical, failrec->start, failrec->len,
-+			    failrec->in_validation);
- 		/*
- 		 * when data can be on disk more than twice, add to failrec here
- 		 * (e.g. with a list for failed_mirror) to make
-@@ -2270,18 +2274,19 @@ int btrfs_get_io_failure_record(struct inode *inode, u64 start, u64 end,
- int btrfs_check_repairable(struct inode *inode, struct bio *failed_bio,
- 			   struct io_failure_record *failrec, int failed_mirror)
- {
-+	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
- 	int num_copies;
- 
--	num_copies = btrfs_num_copies(BTRFS_I(inode)->root->fs_info,
--				      failrec->logical, failrec->len);
-+	num_copies = btrfs_num_copies(fs_info, failrec->logical, failrec->len);
- 	if (num_copies == 1) {
- 		/*
- 		 * we only have a single copy of the data, so don't bother with
- 		 * all the retry and error correction code that follows. no
- 		 * matter what the error is, it is very likely to persist.
- 		 */
--		pr_debug("Check Repairable: cannot repair, num_copies=%d, next_mirror %d, failed_mirror %d\n",
--			 num_copies, failrec->this_mirror, failed_mirror);
-+		btrfs_debug(fs_info,
-+			    "Check Repairable: cannot repair, num_copies=%d, next_mirror %d, failed_mirror %d",
-+			    num_copies, failrec->this_mirror, failed_mirror);
- 		return 0;
- 	}
- 
-@@ -2320,8 +2325,9 @@ int btrfs_check_repairable(struct inode *inode, struct bio *failed_bio,
- 	}
- 
- 	if (failrec->this_mirror > num_copies) {
--		pr_debug("Check Repairable: (fail) num_copies=%d, next_mirror %d, failed_mirror %d\n",
--			 num_copies, failrec->this_mirror, failed_mirror);
-+		btrfs_debug(fs_info,
-+			    "Check Repairable: (fail) num_copies=%d, next_mirror %d, failed_mirror %d",
-+			    num_copies, failrec->this_mirror, failed_mirror);
- 		return 0;
- 	}
- 
-@@ -2412,8 +2418,9 @@ static int bio_readpage_error(struct bio *failed_bio, u64 phy_offset,
- 	}
- 	bio_set_op_attrs(bio, REQ_OP_READ, read_mode);
- 
--	pr_debug("Repair Read Error: submitting new read[%#x] to this_mirror=%d, in_validation=%d\n",
--		 read_mode, failrec->this_mirror, failrec->in_validation);
-+	btrfs_debug(btrfs_sb(inode->i_sb),
-+		    "Repair Read Error: submitting new read[%#x] to this_mirror=%d, in_validation=%d",
-+		    read_mode, failrec->this_mirror, failrec->in_validation);
- 
- 	ret = tree->ops->submit_bio_hook(inode, bio, failrec->this_mirror,
- 					 failrec->bio_flags, 0);
-@@ -2537,10 +2544,12 @@ static void end_bio_extent_readpage(struct bio *bio)
- 	bio_for_each_segment_all(bvec, bio, i) {
- 		struct page *page = bvec->bv_page;
- 		struct inode *inode = page->mapping->host;
-+		struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
- 
--		pr_debug("end_bio_extent_readpage: bi_sector=%llu, err=%d, mirror=%u\n",
--			 (u64)bio->bi_iter.bi_sector,
--			 bio->bi_error, io_bio->mirror_num);
-+		btrfs_debug(fs_info,
-+			    "end_bio_extent_readpage: bi_sector=%llu, err=%d, mirror=%u",
-+			    (u64)bio->bi_iter.bi_sector, bio->bi_error,
-+			    io_bio->mirror_num);
- 		tree = &BTRFS_I(inode)->io_tree;
- 
- 		/* We always issue full-page reads, but if some block
-@@ -2550,13 +2559,13 @@ static void end_bio_extent_readpage(struct bio *bio)
- 		 * if they don't add up to a full page.  */
- 		if (bvec->bv_offset || bvec->bv_len != PAGE_SIZE) {
- 			if (bvec->bv_offset + bvec->bv_len != PAGE_SIZE)
--				btrfs_err(BTRFS_I(page->mapping->host)->root->fs_info,
--				   "partial page read in btrfs with offset %u and length %u",
--					bvec->bv_offset, bvec->bv_len);
-+				btrfs_err(fs_info,
-+					  "partial page read in btrfs with offset %u and length %u",
-+					  bvec->bv_offset, bvec->bv_len);
- 			else
--				btrfs_info(BTRFS_I(page->mapping->host)->root->fs_info,
--				   "incomplete page read in btrfs with offset %u and length %u",
--					bvec->bv_offset, bvec->bv_len);
-+				btrfs_info(fs_info,
-+					   "incomplete page read in btrfs with offset %u and length %u",
-+					   bvec->bv_offset, bvec->bv_len);
- 		}
- 
- 		start = page_offset(page);
-diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
-index 60dedf4..31f1a8d 100644
---- a/fs/btrfs/free-space-cache.c
-+++ b/fs/btrfs/free-space-cache.c
-@@ -2299,7 +2299,8 @@ static void steal_from_bitmap(struct btrfs_free_space_ctl *ctl,
- 	}
- }
- 
--int __btrfs_add_free_space(struct btrfs_free_space_ctl *ctl,
-+int __btrfs_add_free_space(struct btrfs_fs_info *fs_info,
-+			   struct btrfs_free_space_ctl *ctl,
- 			   u64 offset, u64 bytes)
- {
- 	struct btrfs_free_space *info;
-@@ -2346,7 +2347,7 @@ out:
- 	spin_unlock(&ctl->tree_lock);
- 
- 	if (ret) {
--		pr_crit("BTRFS: unable to add free space :%d\n", ret);
-+		btrfs_crit(fs_info, "unable to add free space :%d\n", ret);
- 		ASSERT(ret != -EEXIST);
- 	}
- 
-@@ -2622,7 +2623,8 @@ out:
- 	spin_unlock(&ctl->tree_lock);
- 
- 	if (align_gap_len)
--		__btrfs_add_free_space(ctl, align_gap, align_gap_len);
-+		__btrfs_add_free_space(block_group->fs_info, ctl,
-+				       align_gap, align_gap_len);
- 	return ret;
- }
- 
-diff --git a/fs/btrfs/free-space-cache.h b/fs/btrfs/free-space-cache.h
-index 3af651c..363fdd9 100644
---- a/fs/btrfs/free-space-cache.h
-+++ b/fs/btrfs/free-space-cache.h
-@@ -89,13 +89,15 @@ int btrfs_write_out_ino_cache(struct btrfs_root *root,
- 			      struct inode *inode);
- 
- void btrfs_init_free_space_ctl(struct btrfs_block_group_cache *block_group);
--int __btrfs_add_free_space(struct btrfs_free_space_ctl *ctl,
-+int __btrfs_add_free_space(struct btrfs_fs_info *fs_info,
-+			   struct btrfs_free_space_ctl *ctl,
- 			   u64 bytenr, u64 size);
- static inline int
- btrfs_add_free_space(struct btrfs_block_group_cache *block_group,
- 		     u64 bytenr, u64 size)
- {
--	return __btrfs_add_free_space(block_group->free_space_ctl,
-+	return __btrfs_add_free_space(block_group->fs_info,
-+				      block_group->free_space_ctl,
- 				      bytenr, size);
- }
- int btrfs_remove_free_space(struct btrfs_block_group_cache *block_group,
-diff --git a/fs/btrfs/free-space-tree.c b/fs/btrfs/free-space-tree.c
-index 4a23466..dc99046 100644
---- a/fs/btrfs/free-space-tree.c
-+++ b/fs/btrfs/free-space-tree.c
-@@ -107,7 +107,7 @@ search_free_space_info(struct btrfs_trans_handle *trans,
- 	if (ret < 0)
- 		return ERR_PTR(ret);
- 	if (ret != 0) {
--		btrfs_warn(fs_info, "missing free space info for %llu\n",
-+		btrfs_warn(fs_info, "missing free space info for %llu",
- 			   block_group->key.objectid);
- 		ASSERT(0);
- 		return ERR_PTR(-ENOENT);
-diff --git a/fs/btrfs/inode-map.c b/fs/btrfs/inode-map.c
-index 359ee86..d27014b 100644
---- a/fs/btrfs/inode-map.c
-+++ b/fs/btrfs/inode-map.c
-@@ -104,7 +104,7 @@ again:
- 			break;
- 
- 		if (last != (u64)-1 && last + 1 != key.objectid) {
--			__btrfs_add_free_space(ctl, last + 1,
-+			__btrfs_add_free_space(fs_info, ctl, last + 1,
- 					       key.objectid - last - 1);
- 			wake_up(&root->ino_cache_wait);
- 		}
-@@ -115,7 +115,7 @@ next:
- 	}
- 
- 	if (last < root->highest_objectid - 1) {
--		__btrfs_add_free_space(ctl, last + 1,
-+		__btrfs_add_free_space(fs_info, ctl, last + 1,
- 				       root->highest_objectid - last - 1);
- 	}
- 
-@@ -136,12 +136,13 @@ out:
- 
- static void start_caching(struct btrfs_root *root)
- {
-+	struct btrfs_fs_info *fs_info = root->fs_info;
- 	struct btrfs_free_space_ctl *ctl = root->free_ino_ctl;
- 	struct task_struct *tsk;
- 	int ret;
- 	u64 objectid;
- 
--	if (!btrfs_test_opt(root->fs_info, INODE_MAP_CACHE))
-+	if (!btrfs_test_opt(fs_info, INODE_MAP_CACHE))
- 		return;
- 
- 	spin_lock(&root->ino_cache_lock);
-@@ -153,7 +154,7 @@ static void start_caching(struct btrfs_root *root)
- 	root->ino_cache_state = BTRFS_CACHE_STARTED;
- 	spin_unlock(&root->ino_cache_lock);
- 
--	ret = load_free_ino_cache(root->fs_info, root);
-+	ret = load_free_ino_cache(fs_info, root);
- 	if (ret == 1) {
- 		spin_lock(&root->ino_cache_lock);
- 		root->ino_cache_state = BTRFS_CACHE_FINISHED;
-@@ -170,15 +171,15 @@ static void start_caching(struct btrfs_root *root)
- 	 */
- 	ret = btrfs_find_free_objectid(root, &objectid);
- 	if (!ret && objectid <= BTRFS_LAST_FREE_OBJECTID) {
--		__btrfs_add_free_space(ctl, objectid,
-+		__btrfs_add_free_space(fs_info, ctl, objectid,
- 				       BTRFS_LAST_FREE_OBJECTID - objectid + 1);
- 	}
- 
- 	tsk = kthread_run(caching_kthread, root, "btrfs-ino-cache-%llu",
- 			  root->root_key.objectid);
- 	if (IS_ERR(tsk)) {
--		btrfs_warn(root->fs_info, "failed to start inode caching task");
--		btrfs_clear_pending_and_info(root->fs_info, INODE_MAP_CACHE,
-+		btrfs_warn(fs_info, "failed to start inode caching task");
-+		btrfs_clear_pending_and_info(fs_info, INODE_MAP_CACHE,
- 				"disabling inode map caching");
- 	}
- }
-@@ -209,28 +210,29 @@ again:
- 
- void btrfs_return_ino(struct btrfs_root *root, u64 objectid)
- {
-+	struct btrfs_fs_info *fs_info = root->fs_info;
- 	struct btrfs_free_space_ctl *pinned = root->free_ino_pinned;
- 
--	if (!btrfs_test_opt(root->fs_info, INODE_MAP_CACHE))
-+	if (!btrfs_test_opt(fs_info, INODE_MAP_CACHE))
- 		return;
- again:
- 	if (root->ino_cache_state == BTRFS_CACHE_FINISHED) {
--		__btrfs_add_free_space(pinned, objectid, 1);
-+		__btrfs_add_free_space(fs_info, pinned, objectid, 1);
- 	} else {
--		down_write(&root->fs_info->commit_root_sem);
-+		down_write(&fs_info->commit_root_sem);
- 		spin_lock(&root->ino_cache_lock);
- 		if (root->ino_cache_state == BTRFS_CACHE_FINISHED) {
- 			spin_unlock(&root->ino_cache_lock);
--			up_write(&root->fs_info->commit_root_sem);
-+			up_write(&fs_info->commit_root_sem);
- 			goto again;
- 		}
- 		spin_unlock(&root->ino_cache_lock);
- 
- 		start_caching(root);
- 
--		__btrfs_add_free_space(pinned, objectid, 1);
-+		__btrfs_add_free_space(fs_info, pinned, objectid, 1);
- 
--		up_write(&root->fs_info->commit_root_sem);
-+		up_write(&fs_info->commit_root_sem);
- 	}
- }
- 
-@@ -277,7 +279,8 @@ void btrfs_unpin_free_ino(struct btrfs_root *root)
- 		rb_erase(&info->offset_index, rbroot);
- 		spin_unlock(rbroot_lock);
- 		if (add_to_ctl)
--			__btrfs_add_free_space(ctl, info->offset, count);
-+			__btrfs_add_free_space(root->fs_info, ctl,
-+					       info->offset, count);
- 		kmem_cache_free(btrfs_free_space_cachep, info);
- 	}
- }
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 375e8f4..c1b6f3d 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -2309,7 +2309,7 @@ static noinline int record_one_backref(u64 inum, u64 offset, u64 root_id,
- 		if (PTR_ERR(root) == -ENOENT)
- 			return 0;
- 		WARN_ON(1);
--		pr_debug("inum=%llu, offset=%llu, root_id=%llu\n",
-+		btrfs_debug(fs_info, "inum=%llu, offset=%llu, root_id=%llu",
- 			 inum, offset, root_id);
- 		return PTR_ERR(root);
- 	}
-@@ -7866,18 +7866,19 @@ static int btrfs_check_dio_repairable(struct inode *inode,
- 				      struct io_failure_record *failrec,
- 				      int failed_mirror)
- {
-+	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
- 	int num_copies;
- 
--	num_copies = btrfs_num_copies(BTRFS_I(inode)->root->fs_info,
--				      failrec->logical, failrec->len);
-+	num_copies = btrfs_num_copies(fs_info, failrec->logical, failrec->len);
- 	if (num_copies == 1) {
- 		/*
- 		 * we only have a single copy of the data, so don't bother with
- 		 * all the retry and error correction code that follows. no
- 		 * matter what the error is, it is very likely to persist.
- 		 */
--		pr_debug("Check DIO Repairable: cannot repair, num_copies=%d, next_mirror %d, failed_mirror %d\n",
--			 num_copies, failrec->this_mirror, failed_mirror);
-+		btrfs_debug(fs_info,
-+			    "Check DIO Repairable: cannot repair, num_copies=%d, next_mirror %d, failed_mirror %d",
-+			    num_copies, failrec->this_mirror, failed_mirror);
- 		return 0;
- 	}
- 
-@@ -7887,8 +7888,9 @@ static int btrfs_check_dio_repairable(struct inode *inode,
- 		failrec->this_mirror++;
- 
- 	if (failrec->this_mirror > num_copies) {
--		pr_debug("Check DIO Repairable: (fail) num_copies=%d, next_mirror %d, failed_mirror %d\n",
--			 num_copies, failrec->this_mirror, failed_mirror);
-+		btrfs_debug(fs_info,
-+			    "Check DIO Repairable: (fail) num_copies=%d, next_mirror %d, failed_mirror %d",
-+			    num_copies, failrec->this_mirror, failed_mirror);
- 		return 0;
- 	}
- 
-diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-index 1c36ec1..cc8db0d 100644
---- a/fs/btrfs/qgroup.c
-+++ b/fs/btrfs/qgroup.c
-@@ -2254,10 +2254,11 @@ qgroup_rescan_leaf(struct btrfs_fs_info *fs_info, struct btrfs_path *path,
- 					 &fs_info->qgroup_rescan_progress,
- 					 path, 1, 0);
- 
--	pr_debug("current progress key (%llu %u %llu), search_slot ret %d\n",
--		 fs_info->qgroup_rescan_progress.objectid,
--		 fs_info->qgroup_rescan_progress.type,
--		 fs_info->qgroup_rescan_progress.offset, ret);
+-verbose_printk(KERN_DEBUG "btrfs: find_extent_clone: data_offset=%llu, ino=%llu, num_bytes=%llu, logical=%llu\n",
+-		data_offset, ino, num_bytes, logical);
 +	btrfs_debug(fs_info,
-+		    "current progress key (%llu %u %llu), search_slot ret %d",
-+		    fs_info->qgroup_rescan_progress.objectid,
-+		    fs_info->qgroup_rescan_progress.type,
-+		    fs_info->qgroup_rescan_progress.offset, ret);
++		    "find_extent_clone: data_offset=%llu, ino=%llu, num_bytes=%llu, logical=%llu",
++		    data_offset, ino, num_bytes, logical);
  
- 	if (ret) {
- 		/*
-@@ -2387,7 +2388,7 @@ out:
- 	ret = update_qgroup_status_item(trans, fs_info, fs_info->quota_root);
- 	if (ret < 0) {
- 		err = ret;
--		btrfs_err(fs_info, "fail to update qgroup status: %d\n", err);
-+		btrfs_err(fs_info, "fail to update qgroup status: %d", err);
- 	}
- 	btrfs_end_transaction(trans, fs_info->quota_root);
+ 	if (!backref_ctx->found)
+-		verbose_printk("btrfs:    no clones found\n");
++		btrfs_debug(fs_info, "no clones found");
  
-diff --git a/fs/btrfs/reada.c b/fs/btrfs/reada.c
-index 9e85300..75bab76 100644
---- a/fs/btrfs/reada.c
-+++ b/fs/btrfs/reada.c
-@@ -820,7 +820,7 @@ static void dump_devs(struct btrfs_fs_info *fs_info, int all)
+ 	cur_clone_root = NULL;
+ 	for (i = 0; i < sctx->clone_roots_cnt; i++) {
+@@ -2420,10 +2422,11 @@ out:
  
- 	spin_lock(&fs_info->reada_lock);
- 	list_for_each_entry(device, &fs_devices->devices, dev_list) {
--		pr_debug("dev %lld has %d in flight\n", device->devid,
-+		btrfs_debug(fs_info, "dev %lld has %d in flight", device->devid,
- 			atomic_read(&device->reada_in_flight));
- 		index = 0;
- 		while (1) {
-@@ -830,8 +830,8 @@ static void dump_devs(struct btrfs_fs_info *fs_info, int all)
- 			if (ret == 0)
- 				break;
- 			pr_debug("  zone %llu-%llu elems %llu locked %d devs",
--			       zone->start, zone->end, zone->elems,
--			       zone->locked);
-+				    zone->start, zone->end, zone->elems,
-+				    zone->locked);
- 			for (j = 0; j < zone->ndevs; ++j) {
- 				pr_cont(" %lld",
- 					zone->devs[j]->devid);
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 52f5835..ef8a888 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -1148,7 +1148,7 @@ static int btrfs_fill_super(struct super_block *sb,
- 	sb->s_iflags |= SB_I_CGROUPWB;
- 	err = open_ctree(sb, fs_devices, (char *)data);
- 	if (err) {
--		pr_err("BTRFS: open_ctree failed\n");
-+		btrfs_err(fs_info, "open_ctree failed");
- 		return err;
- 	}
- 
-@@ -1446,12 +1446,13 @@ static struct dentry *mount_subvol(const char *subvol_name, u64 subvol_objectid,
- 
- 	if (!IS_ERR(root)) {
- 		struct super_block *s = root->d_sb;
-+		struct btrfs_fs_info *fs_info = btrfs_sb(s);
- 		struct inode *root_inode = d_inode(root);
- 		u64 root_objectid = BTRFS_I(root_inode)->root->root_key.objectid;
- 
- 		ret = 0;
- 		if (!is_subvolume_inode(root_inode)) {
--			pr_err("BTRFS: '%s' is not a valid subvolume\n",
-+			btrfs_err(fs_info, "'%s' is not a valid subvolume",
- 			       subvol_name);
- 			ret = -EINVAL;
- 		}
-@@ -1461,8 +1462,9 @@ static struct dentry *mount_subvol(const char *subvol_name, u64 subvol_objectid,
- 			 * subvolume which was passed by ID is renamed and
- 			 * another subvolume is renamed over the old location.
- 			 */
--			pr_err("BTRFS: subvol '%s' does not match subvolid %llu\n",
--			       subvol_name, subvol_objectid);
-+			btrfs_err(fs_info,
-+				  "subvol '%s' does not match subvolid %llu",
-+				  subvol_name, subvol_objectid);
- 			ret = -EINVAL;
- 		}
- 		if (ret) {
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index 5478f50..c06c3d2 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -65,8 +65,9 @@ void btrfs_put_transaction(struct btrfs_transaction *transaction)
- 		BUG_ON(!list_empty(&transaction->list));
- 		WARN_ON(!RB_EMPTY_ROOT(&transaction->delayed_refs.href_root));
- 		if (transaction->delayed_refs.pending_csums)
--			pr_err("pending csums is %llu\n",
--			       transaction->delayed_refs.pending_csums);
-+			btrfs_err(transaction->fs_info,
-+				  "pending csums is %llu",
-+				  transaction->delayed_refs.pending_csums);
- 		while (!list_empty(&transaction->pending_chunks)) {
- 			struct extent_map *em;
- 
-@@ -245,6 +246,7 @@ loop:
- 		return -EROFS;
- 	}
- 
-+	cur_trans->fs_info = fs_info;
- 	atomic_set(&cur_trans->num_writers, 1);
- 	extwriter_counter_init(cur_trans, type);
- 	init_waitqueue_head(&cur_trans->writer_wait);
-@@ -1298,11 +1300,11 @@ int btrfs_defrag_root(struct btrfs_root *root)
- 		btrfs_btree_balance_dirty(info->tree_root);
- 		cond_resched();
- 
--		if (btrfs_fs_closing(root->fs_info) || ret != -EAGAIN)
-+		if (btrfs_fs_closing(info) || ret != -EAGAIN)
- 			break;
- 
--		if (btrfs_defrag_cancelled(root->fs_info)) {
--			pr_debug("BTRFS: defrag_root cancelled\n");
-+		if (btrfs_defrag_cancelled(info)) {
-+			btrfs_debug(info, "defrag_root cancelled");
- 			ret = -EAGAIN;
- 			break;
- 		}
-@@ -2326,7 +2328,7 @@ int btrfs_clean_one_deleted_snapshot(struct btrfs_root *root)
- 	list_del_init(&root->root_list);
- 	spin_unlock(&fs_info->trans_lock);
- 
--	pr_debug("BTRFS: cleaner removing %llu\n", root->objectid);
-+	btrfs_debug(fs_info, "cleaner removing %llu", root->objectid);
- 
- 	btrfs_kill_all_delayed_nodes(root);
- 
-diff --git a/fs/btrfs/transaction.h b/fs/btrfs/transaction.h
-index efb1226..6cf0d37 100644
---- a/fs/btrfs/transaction.h
-+++ b/fs/btrfs/transaction.h
-@@ -82,6 +82,7 @@ struct btrfs_transaction {
- 	spinlock_t dropped_roots_lock;
- 	struct btrfs_delayed_ref_root delayed_refs;
- 	int aborted;
-+	struct btrfs_fs_info *fs_info;
- };
- 
- #define __TRANS_FREEZABLE	(1U << 0)
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 89c499e..3adf5ce 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -5892,10 +5892,11 @@ int btrfs_map_sblock(struct btrfs_fs_info *fs_info, int op,
- 				 mirror_num, need_raid_map);
- }
- 
--int btrfs_rmap_block(struct btrfs_mapping_tree *map_tree,
-+int btrfs_rmap_block(struct btrfs_fs_info *fs_info,
- 		     u64 chunk_start, u64 physical, u64 devid,
- 		     u64 **logical, int *naddrs, int *stripe_len)
+ static int send_truncate(struct send_ctx *sctx, u64 ino, u64 gen, u64 size)
  {
-+	struct btrfs_mapping_tree *map_tree = &fs_info->mapping_tree;
- 	struct extent_map_tree *em_tree = &map_tree->map_tree;
- 	struct extent_map *em;
- 	struct map_lookup *map;
-@@ -5911,13 +5912,13 @@ int btrfs_rmap_block(struct btrfs_mapping_tree *map_tree,
- 	read_unlock(&em_tree->lock);
++	struct btrfs_fs_info *fs_info = sctx->send_root->fs_info;
+ 	int ret = 0;
+ 	struct fs_path *p;
  
- 	if (!em) {
--		pr_err("BTRFS: couldn't find em for chunk %Lu\n",
-+		btrfs_err(fs_info, "couldn't find em for chunk %Lu",
- 		       chunk_start);
- 		return -EIO;
- 	}
+-verbose_printk("btrfs: send_truncate %llu size=%llu\n", ino, size);
++	btrfs_debug(fs_info, "send_truncate %llu size=%llu", ino, size);
  
- 	if (em->start != chunk_start) {
--		pr_err("BTRFS: bad chunk start, em=%Lu, wanted=%Lu\n",
-+		btrfs_err(fs_info, "bad chunk start, em=%Lu, wanted=%Lu",
- 		       em->start, chunk_start);
- 		free_extent_map(em);
- 		return -EIO;
-@@ -6122,10 +6123,12 @@ static void submit_stripe_bio(struct btrfs_root *root, struct btrfs_bio *bbio,
+ 	p = fs_path_alloc();
+ 	if (!p)
+@@ -2449,10 +2452,11 @@ out:
  
- 		rcu_read_lock();
- 		name = rcu_dereference(dev->name);
--		pr_debug("btrfs_map_bio: rw %d 0x%x, sector=%llu, dev=%lu (%s id %llu), size=%u\n",
--			 bio_op(bio), bio->bi_opf, (u64)bio->bi_iter.bi_sector,
--			 (u_long)dev->bdev->bd_dev, name->str, dev->devid,
--			 bio->bi_iter.bi_size);
-+		btrfs_debug(fs_info,
-+			    "btrfs_map_bio: rw %d 0x%x, sector=%llu, dev=%lu (%s id %llu), size=%u",
-+			    bio_op(bio), bio->bi_opf,
-+			    (u64)bio->bi_iter.bi_sector,
-+			    (u_long)dev->bdev->bd_dev, name->str, dev->devid,
-+			    bio->bi_iter.bi_size);
- 		rcu_read_unlock();
- 	}
- #endif
-@@ -6648,7 +6651,8 @@ static int read_one_dev(struct btrfs_root *root,
- 
- int btrfs_read_sys_array(struct btrfs_root *root)
+ static int send_chmod(struct send_ctx *sctx, u64 ino, u64 gen, u64 mode)
  {
--	struct btrfs_super_block *super_copy = root->fs_info->super_copy;
-+	struct btrfs_fs_info *fs_info = root->fs_info;
-+	struct btrfs_super_block *super_copy = fs_info->super_copy;
- 	struct extent_buffer *sb;
- 	struct btrfs_disk_key *disk_key;
- 	struct btrfs_chunk *chunk;
-@@ -6719,15 +6723,16 @@ int btrfs_read_sys_array(struct btrfs_root *root)
++	struct btrfs_fs_info *fs_info = sctx->send_root->fs_info;
+ 	int ret = 0;
+ 	struct fs_path *p;
  
- 			num_stripes = btrfs_chunk_num_stripes(sb, chunk);
- 			if (!num_stripes) {
--				pr_err("BTRFS: invalid number of stripes %u in sys_array at offset %u\n",
--					num_stripes, cur_offset);
-+				btrfs_err(fs_info,
-+					  "invalid number of stripes %u in sys_array at offset %u",
-+					  num_stripes, cur_offset);
- 				ret = -EIO;
- 				break;
- 			}
+-verbose_printk("btrfs: send_chmod %llu mode=%llu\n", ino, mode);
++	btrfs_debug(fs_info, "send_chmod %llu mode=%llu", ino, mode);
  
- 			type = btrfs_chunk_type(sb, chunk);
- 			if ((type & BTRFS_BLOCK_GROUP_SYSTEM) == 0) {
--				btrfs_err(root->fs_info,
-+				btrfs_err(fs_info,
- 			    "invalid chunk type %llu in sys_array at offset %u",
- 					type, cur_offset);
- 				ret = -EIO;
-@@ -6742,8 +6747,9 @@ int btrfs_read_sys_array(struct btrfs_root *root)
- 			if (ret)
- 				break;
- 		} else {
--			pr_err("BTRFS: unexpected item type %u in sys_array at offset %u\n",
--				(u32)key.type, cur_offset);
-+			btrfs_err(fs_info,
-+			    "unexpected item type %u in sys_array at offset %u",
-+				  (u32)key.type, cur_offset);
- 			ret = -EIO;
- 			break;
- 		}
-@@ -6756,7 +6762,7 @@ int btrfs_read_sys_array(struct btrfs_root *root)
- 	return ret;
+ 	p = fs_path_alloc();
+ 	if (!p)
+@@ -2478,10 +2482,12 @@ out:
  
- out_short_read:
--	pr_err("BTRFS: sys_array too short to read %u bytes at offset %u\n",
-+	btrfs_err(fs_info, "sys_array too short to read %u bytes at offset %u",
- 			len, cur_offset);
- 	clear_extent_buffer_uptodate(sb);
- 	free_extent_buffer_stale(sb);
-diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-index 6613e63..09ed29c 100644
---- a/fs/btrfs/volumes.h
-+++ b/fs/btrfs/volumes.h
-@@ -382,7 +382,7 @@ int btrfs_map_sblock(struct btrfs_fs_info *fs_info, int op,
- 		     u64 logical, u64 *length,
- 		     struct btrfs_bio **bbio_ret, int mirror_num,
- 		     int need_raid_map);
--int btrfs_rmap_block(struct btrfs_mapping_tree *map_tree,
-+int btrfs_rmap_block(struct btrfs_fs_info *fs_info,
- 		     u64 chunk_start, u64 physical, u64 devid,
- 		     u64 **logical, int *naddrs, int *stripe_len);
- int btrfs_read_sys_array(struct btrfs_root *root);
+ static int send_chown(struct send_ctx *sctx, u64 ino, u64 gen, u64 uid, u64 gid)
+ {
++	struct btrfs_fs_info *fs_info = sctx->send_root->fs_info;
+ 	int ret = 0;
+ 	struct fs_path *p;
+ 
+-verbose_printk("btrfs: send_chown %llu uid=%llu, gid=%llu\n", ino, uid, gid);
++	btrfs_debug(fs_info, "send_chown %llu uid=%llu, gid=%llu",
++		    ino, uid, gid);
+ 
+ 	p = fs_path_alloc();
+ 	if (!p)
+@@ -2508,6 +2514,7 @@ out:
+ 
+ static int send_utimes(struct send_ctx *sctx, u64 ino, u64 gen)
+ {
++	struct btrfs_fs_info *fs_info = sctx->send_root->fs_info;
+ 	int ret = 0;
+ 	struct fs_path *p = NULL;
+ 	struct btrfs_inode_item *ii;
+@@ -2516,7 +2523,7 @@ static int send_utimes(struct send_ctx *sctx, u64 ino, u64 gen)
+ 	struct btrfs_key key;
+ 	int slot;
+ 
+-verbose_printk("btrfs: send_utimes %llu\n", ino);
++	btrfs_debug(fs_info, "send_utimes %llu", ino);
+ 
+ 	p = fs_path_alloc();
+ 	if (!p)
+@@ -2570,6 +2577,7 @@ out:
+  */
+ static int send_create_inode(struct send_ctx *sctx, u64 ino)
+ {
++	struct btrfs_fs_info *fs_info = sctx->send_root->fs_info;
+ 	int ret = 0;
+ 	struct fs_path *p;
+ 	int cmd;
+@@ -2577,7 +2585,7 @@ static int send_create_inode(struct send_ctx *sctx, u64 ino)
+ 	u64 mode;
+ 	u64 rdev;
+ 
+-verbose_printk("btrfs: send_create_inode %llu\n", ino);
++	btrfs_debug(fs_info, "send_create_inode %llu", ino);
+ 
+ 	p = fs_path_alloc();
+ 	if (!p)
+@@ -3635,6 +3643,7 @@ out:
+  */
+ static int process_recorded_refs(struct send_ctx *sctx, int *pending_move)
+ {
++	struct btrfs_fs_info *fs_info = sctx->send_root->fs_info;
+ 	int ret = 0;
+ 	struct recorded_ref *cur;
+ 	struct recorded_ref *cur2;
+@@ -3647,7 +3656,7 @@ static int process_recorded_refs(struct send_ctx *sctx, int *pending_move)
+ 	u64 last_dir_ino_rm = 0;
+ 	bool can_rename = true;
+ 
+-verbose_printk("btrfs: process_recorded_refs %llu\n", sctx->cur_ino);
++	btrfs_debug(fs_info, "process_recorded_refs %llu", sctx->cur_ino);
+ 
+ 	/*
+ 	 * This should never happen as the root dir always has the same ref
+@@ -4661,6 +4670,7 @@ out:
+  */
+ static int send_write(struct send_ctx *sctx, u64 offset, u32 len)
+ {
++	struct btrfs_fs_info *fs_info = sctx->send_root->fs_info;
+ 	int ret = 0;
+ 	struct fs_path *p;
+ 	ssize_t num_read = 0;
+@@ -4669,7 +4679,7 @@ static int send_write(struct send_ctx *sctx, u64 offset, u32 len)
+ 	if (!p)
+ 		return -ENOMEM;
+ 
+-verbose_printk("btrfs: send_write offset=%llu, len=%d\n", offset, len);
++	btrfs_debug(fs_info, "send_write offset=%llu, len=%d", offset, len);
+ 
+ 	num_read = fill_read_buf(sctx, offset, len);
+ 	if (num_read <= 0) {
+@@ -4711,9 +4721,10 @@ static int send_clone(struct send_ctx *sctx,
+ 	struct fs_path *p;
+ 	u64 gen;
+ 
+-verbose_printk("btrfs: send_clone offset=%llu, len=%d, clone_root=%llu, clone_inode=%llu, clone_offset=%llu\n",
+-		offset, len, clone_root->root->objectid, clone_root->ino,
+-		clone_root->offset);
++	btrfs_debug(sctx->send_root->fs_info,
++		    "send_clone offset=%llu, len=%d, clone_root=%llu, clone_inode=%llu, clone_offset=%llu",
++		    offset, len, clone_root->root->objectid, clone_root->ino,
++		    clone_root->offset);
+ 
+ 	p = fs_path_alloc();
+ 	if (!p)
 -- 
 2.7.1
 

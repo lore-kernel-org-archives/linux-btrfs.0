@@ -1,61 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from email.routify.me ([162.208.10.182]:60128 "EHLO
-        cartman.routify.me" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751783AbcITUvY (ORCPT
+Received: from zaphod.cobb.me.uk ([213.138.97.131]:49887 "EHLO
+        zaphod.cobb.me.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1753699AbcITU7w (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 20 Sep 2016 16:51:24 -0400
-Date: Tue, 20 Sep 2016 16:51:21 -0400
-From: Sean Greenslade <sean@seangreenslade.com>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Cc: Chris Murphy <lists@colorremedies.com>, David Sterba <dsterba@suse.cz>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Subject: Re: Post ext3 conversion problems
-Message-ID: <20160920205121.GA23668@coach.home>
-References: <20160916192459.GA13514@coach.home>
- <CAJCQCtQutt6r2Jovr0jEbTk4W6HUaQpbGiipen97TH1C+k055g@mail.gmail.com>
- <17ca9019-836b-f4f1-f84c-f8c1edcd9925@cn.fujitsu.com>
- <20160919041247.GA32208@coach.home>
- <ae8fd0d5-0d38-aa8e-0114-36ef62b1a783@cn.fujitsu.com>
- <20160919151341.GA1431@coach.home>
- <5f07d365-1eec-7f90-7969-af761834ee48@cn.fujitsu.com>
- <20160920033933.GA13425@coach.home>
- <fbfb851d-34a7-62df-d24e-0fd5b3a2e5e4@cn.fujitsu.com>
+        Tue, 20 Sep 2016 16:59:52 -0400
+Received: from black.home.cobb.me.uk (unknown [192.168.0.205])
+        by zaphod.cobb.me.uk (Postfix) with ESMTP id 64E4C9B8D7
+        for <linux-btrfs@vger.kernel.org>; Tue, 20 Sep 2016 21:59:48 +0100 (BST)
+Received: from [192.168.0.211] (novatech.home.cobb.me.uk [192.168.0.211])
+        by black.home.cobb.me.uk (Postfix) with ESMTPS id 419885FB9F
+        for <linux-btrfs@vger.kernel.org>; Tue, 20 Sep 2016 21:59:48 +0100 (BST)
+Subject: Re: multi-device btrfs with single data mode and disk failure
+References: <1634818f-ff1d-722c-6d73-747ed7203a13@gmail.com>
+ <CAJCQCtQHBkx8kjcAdSbmgYcHCo_w3VPj8jvgby3cE-S6rLAPdw@mail.gmail.com>
+ <ecac8c64-8ed4-7c8d-29ad-5b3687981a33@gmail.com>
+ <CAJCQCtSupa8LT+RK3=w3t7+T_nDcgUzzjSdfEi16DpiQxbm0hQ@mail.gmail.com>
+ <760be1b7-79b2-a25d-7c60-04ceac1b6e40@gmail.com>
+ <CAJCQCtR2t+3w6ovo88L0_2GqnVWveK5DNJ-vWdw18y+Sng4chQ@mail.gmail.com>
+ <3460a1ac-7e66-cf6f-b229-06a0825401a5@gmail.com>
+ <b880821f-bfb5-5265-53a4-213b22487ddb@gmail.com>
+ <CAJCQCtRYpvnGurLSbxu2N0ELuvVKrM5w=jBkAneecaEog213dQ@mail.gmail.com>
+ <64102181-e02d-69a8-ead7-a27acadbe6a8@gmail.com>
+ <CAJCQCtQT=j+P=Dy=VtNOBGkpwenK0AngB2k5xk40BE=hZnEfjA@mail.gmail.com>
+ <df35fe50-8195-b2b9-e6d9-687b0c883a28@gmail.com>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+From: Graham Cobb <g.btrfs@cobb.uk.net>
+Message-ID: <13e4ed6d-1ee7-4b3e-bbbc-6425cb908746@cobb.uk.net>
+Date: Tue, 20 Sep 2016 21:59:48 +0100
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <fbfb851d-34a7-62df-d24e-0fd5b3a2e5e4@cn.fujitsu.com>
+In-Reply-To: <df35fe50-8195-b2b9-e6d9-687b0c883a28@gmail.com>
+Content-Type: text/plain; charset=utf-8
+To: unlisted-recipients:; (no To-header on input)
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Sep 20, 2016 at 01:02:38PM +0800, Qu Wenruo wrote:
-> > Glad to hear you've found the core of the issue.
-> > 
-> > At this point, I can trigger it immediately. As soon as I log in and run
-> > dmenu, it will attempt to rebuild its cache file (small text file that's
-> > just a list of all executables in the PATH). Once that write happens,
-> > the bug triggers and the fs goes read only.
-> 
-> Rewrite? Or write into new inode?
-> 
-> And is the same inode always causing the problem?
+On 20/09/16 19:53, Alexandre Poux wrote:
+> As for moving data to an another volume, since it's only data and
+> nothing fancy (no subvolume or anything), a simple rsync would do the trick.
+> My problem in this case is that I don't have enough available space
+> elsewhere to move my data.
+> That's why I'm trying this hard to recover the partition...
 
-It's not always the same. It seems like whatever triggers a write first
-is what kills it. I went to test it, and this time it triggered on my
-.bash_history file. I have bash set up with "history -a", so presumably
-that was an append, not an overwrite.
+I am sure you have already thought about this, but... it might be
+easier, and even maybe faster, to backup the data to a cloud server,
+then recreate and download again.
 
-To cut down on the number of variables, I booted my system with the
-"rescue" systemd target, then su'd to my user. Simply running a few
-commands (with the history -a writes that bash triggered) was enough to
-trigger the bug. This is on 4.8.0-rc6, with the following compile time
-options enabled:
+Backblaze B2 is very cheap for upload and storage (don't know about
+download charges, though).  And rclone works well to handle rsync-style
+copies (although you might want to use tar or dar if you need to
+preserve file attributes).
 
-CONFIG_BTRFS_FS_RUN_SANITY_TESTS=y
-CONFIG_BTRFS_DEBUG=y
-CONFIG_BTRFS_ASSERT=y
+And if that works, rclone + B2 might make a reasonable offsite backup
+solution for the future!
 
-If I run the stock Arch kernel (4.7.2 at the moment), the issue still
-appears, but it takes longer. My most reliable trigger is Firefox, whose
-constant DB writes will trigger it within minutes.
-
---Sean
-
+Graham

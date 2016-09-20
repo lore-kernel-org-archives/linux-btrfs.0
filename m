@@ -1,39 +1,111 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:36684 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:37153 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S932385AbcIUOPW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 21 Sep 2016 10:15:22 -0400
+        id S932223AbcITMuX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 20 Sep 2016 08:50:23 -0400
 Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 90609AB9F
-        for <linux-btrfs@vger.kernel.org>; Wed, 21 Sep 2016 14:15:20 +0000 (UTC)
-Date: Wed, 21 Sep 2016 16:13:21 +0200
-From: David Sterba <dsterba@suse.cz>
-To: jeffm@suse.com
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs: clean the old superblocks before freeing the
- device
-Message-ID: <20160921141321.GH16983@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1474375821-3163-1-git-send-email-jeffm@suse.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1474375821-3163-1-git-send-email-jeffm@suse.com>
+        by mx2.suse.de (Postfix) with ESMTP id 93CECAAEF
+        for <linux-btrfs@vger.kernel.org>; Tue, 20 Sep 2016 12:50:22 +0000 (UTC)
+From: jeffm@suse.com
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH] btrfs: clean the old superblocks before freeing the device
+Date: Tue, 20 Sep 2016 08:50:21 -0400
+Message-Id: <1474375821-3163-1-git-send-email-jeffm@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Sep 20, 2016 at 08:50:21AM -0400, jeffm@suse.com wrote:
-> From: Jeff Mahoney <jeffm@suse.com>
-> 
-> btrfs_rm_device frees the block device but then re-opens it using
-> the saved device name.  A race exists between the close and the
-> re-open that allows the block size to be changed.  The result
-> is getting stuck forever in the reclaim loop in __getblk_slow.
-> 
-> This patch moves the superblock cleanup before closing the block
-> device, which is also consistent with other callers.  We also don't
-> need a private copy of dev_name as the whole routine operates under
-> the uuid_mutex.
-> 
-> Signed-off-by: Jeff Mahoney <jeffm@suse.com>
+From: Jeff Mahoney <jeffm@suse.com>
 
-Reviewed-by: David Sterba <dsterba@suse.com>
+btrfs_rm_device frees the block device but then re-opens it using
+the saved device name.  A race exists between the close and the
+re-open that allows the block size to be changed.  The result
+is getting stuck forever in the reclaim loop in __getblk_slow.
+
+This patch moves the superblock cleanup before closing the block
+device, which is also consistent with other callers.  We also don't
+need a private copy of dev_name as the whole routine operates under
+the uuid_mutex.
+
+Signed-off-by: Jeff Mahoney <jeffm@suse.com>
+---
+ fs/btrfs/volumes.c | 38 +++++++++++---------------------------
+ 1 file changed, 11 insertions(+), 27 deletions(-)
+
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index c41f8c1..3adf5ce 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -1846,7 +1846,6 @@ int btrfs_rm_device(struct btrfs_root *root, char *device_path, u64 devid)
+ 	u64 num_devices;
+ 	int ret = 0;
+ 	bool clear_super = false;
+-	char *dev_name = NULL;
+ 
+ 	mutex_lock(&uuid_mutex);
+ 
+@@ -1882,11 +1881,6 @@ int btrfs_rm_device(struct btrfs_root *root, char *device_path, u64 devid)
+ 		list_del_init(&device->dev_alloc_list);
+ 		device->fs_devices->rw_devices--;
+ 		unlock_chunks(root);
+-		dev_name = kstrdup(device->name->str, GFP_KERNEL);
+-		if (!dev_name) {
+-			ret = -ENOMEM;
+-			goto error_undo;
+-		}
+ 		clear_super = true;
+ 	}
+ 
+@@ -1936,14 +1930,21 @@ int btrfs_rm_device(struct btrfs_root *root, char *device_path, u64 devid)
+ 		btrfs_sysfs_rm_device_link(root->fs_info->fs_devices, device);
+ 	}
+ 
+-	btrfs_close_bdev(device);
+-
+-	call_rcu(&device->rcu, free_device);
+-
+ 	num_devices = btrfs_super_num_devices(root->fs_info->super_copy) - 1;
+ 	btrfs_set_super_num_devices(root->fs_info->super_copy, num_devices);
+ 	mutex_unlock(&root->fs_info->fs_devices->device_list_mutex);
+ 
++	/*
++	 * at this point, the device is zero sized and detached from
++	 * the devices list.  All that's left is to zero out the old
++	 * supers and free the device.
++	 */
++	if (device->writeable)
++		btrfs_scratch_superblocks(device->bdev, device->name->str);
++
++	btrfs_close_bdev(device);
++	call_rcu(&device->rcu, free_device);
++
+ 	if (cur_devices->open_devices == 0) {
+ 		struct btrfs_fs_devices *fs_devices;
+ 		fs_devices = root->fs_info->fs_devices;
+@@ -1962,24 +1963,7 @@ int btrfs_rm_device(struct btrfs_root *root, char *device_path, u64 devid)
+ 	root->fs_info->num_tolerated_disk_barrier_failures =
+ 		btrfs_calc_num_tolerated_disk_barrier_failures(root->fs_info);
+ 
+-	/*
+-	 * at this point, the device is zero sized.  We want to
+-	 * remove it from the devices list and zero out the old super
+-	 */
+-	if (clear_super) {
+-		struct block_device *bdev;
+-
+-		bdev = blkdev_get_by_path(dev_name, FMODE_READ | FMODE_EXCL,
+-						root->fs_info->bdev_holder);
+-		if (!IS_ERR(bdev)) {
+-			btrfs_scratch_superblocks(bdev, dev_name);
+-			blkdev_put(bdev, FMODE_READ | FMODE_EXCL);
+-		}
+-	}
+-
+ out:
+-	kfree(dev_name);
+-
+ 	mutex_unlock(&uuid_mutex);
+ 	return ret;
+ 
+-- 
+2.7.1
+

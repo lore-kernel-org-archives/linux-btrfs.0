@@ -1,33 +1,36 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oi0-f46.google.com ([209.85.218.46]:36473 "EHLO
-        mail-oi0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751594AbcITTLL (ORCPT
+Received: from mail-io0-f175.google.com ([209.85.223.175]:33402 "EHLO
+        mail-io0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752263AbcITTnS (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 20 Sep 2016 15:11:11 -0400
-Received: by mail-oi0-f46.google.com with SMTP id t83so33728862oie.3
-        for <linux-btrfs@vger.kernel.org>; Tue, 20 Sep 2016 12:11:11 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <df35fe50-8195-b2b9-e6d9-687b0c883a28@gmail.com>
+        Tue, 20 Sep 2016 15:43:18 -0400
+Received: by mail-io0-f175.google.com with SMTP id r145so31052187ior.0
+        for <linux-btrfs@vger.kernel.org>; Tue, 20 Sep 2016 12:43:17 -0700 (PDT)
+Subject: Re: multi-device btrfs with single data mode and disk failure
+To: Alexandre Poux <pums974@gmail.com>, Chris Murphy <lists@colorremedies.com>
 References: <1634818f-ff1d-722c-6d73-747ed7203a13@gmail.com>
  <CAJCQCtQHBkx8kjcAdSbmgYcHCo_w3VPj8jvgby3cE-S6rLAPdw@mail.gmail.com>
- <ecac8c64-8ed4-7c8d-29ad-5b3687981a33@gmail.com> <CAJCQCtSupa8LT+RK3=w3t7+T_nDcgUzzjSdfEi16DpiQxbm0hQ@mail.gmail.com>
- <760be1b7-79b2-a25d-7c60-04ceac1b6e40@gmail.com> <CAJCQCtR2t+3w6ovo88L0_2GqnVWveK5DNJ-vWdw18y+Sng4chQ@mail.gmail.com>
- <3460a1ac-7e66-cf6f-b229-06a0825401a5@gmail.com> <b880821f-bfb5-5265-53a4-213b22487ddb@gmail.com>
+ <ecac8c64-8ed4-7c8d-29ad-5b3687981a33@gmail.com>
+ <CAJCQCtSupa8LT+RK3=w3t7+T_nDcgUzzjSdfEi16DpiQxbm0hQ@mail.gmail.com>
+ <760be1b7-79b2-a25d-7c60-04ceac1b6e40@gmail.com>
+ <CAJCQCtR2t+3w6ovo88L0_2GqnVWveK5DNJ-vWdw18y+Sng4chQ@mail.gmail.com>
+ <3460a1ac-7e66-cf6f-b229-06a0825401a5@gmail.com>
+ <b880821f-bfb5-5265-53a4-213b22487ddb@gmail.com>
  <CAJCQCtRYpvnGurLSbxu2N0ELuvVKrM5w=jBkAneecaEog213dQ@mail.gmail.com>
- <64102181-e02d-69a8-ead7-a27acadbe6a8@gmail.com> <CAJCQCtQT=j+P=Dy=VtNOBGkpwenK0AngB2k5xk40BE=hZnEfjA@mail.gmail.com>
+ <64102181-e02d-69a8-ead7-a27acadbe6a8@gmail.com>
+ <CAJCQCtQT=j+P=Dy=VtNOBGkpwenK0AngB2k5xk40BE=hZnEfjA@mail.gmail.com>
  <df35fe50-8195-b2b9-e6d9-687b0c883a28@gmail.com>
-From: Chris Murphy <lists@colorremedies.com>
-Date: Tue, 20 Sep 2016 13:11:09 -0600
-Message-ID: <CAJCQCtTNiJ=E--v5gb5reyzTBqVeZx70-gUfj67EN+BjmcOTmw@mail.gmail.com>
-Subject: Re: multi-device btrfs with single data mode and disk failure
-To: Alexandre Poux <pums974@gmail.com>
-Cc: Chris Murphy <lists@colorremedies.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Message-ID: <689d4d03-a122-502d-fda0-8b055ee4a182@gmail.com>
+Date: Tue, 20 Sep 2016 15:43:12 -0400
+MIME-Version: 1.0
+In-Reply-To: <df35fe50-8195-b2b9-e6d9-687b0c883a28@gmail.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Sep 20, 2016 at 12:53 PM, Alexandre Poux <pums974@gmail.com> wrote:
+On 2016-09-20 14:53, Alexandre Poux wrote:
 >
 >
 > Le 20/09/2016 à 20:38, Chris Murphy a écrit :
@@ -90,35 +93,37 @@ On Tue, Sep 20, 2016 at 12:53 PM, Alexandre Poux <pums974@gmail.com> wrote:
 > My problem in this case is that I don't have enough available space
 > elsewhere to move my data.
 > That's why I'm trying this hard to recover the partition...
+First off, as Chris said, if you can read the data and don't already 
+have a backup, that should be your first priority.  This really is an 
+edge case that's not well tested, and the kernel technically doesn't 
+officially support it.
 
-And no backup? Umm, I'd resolve that sooner than anything else. It
-should be true that it'll tolerate a read only mount indefinitely, but
-read write? Not sure. This sort of edge case isn't well tested at all
-seeing as it required changing the kernel to reduce safe guards. So
-all bets are off the whole thing could become unmountable, not even
-read only, and then it's a scraping job.
+Now, beyond that and his suggestions, there's another option, but it's 
+risky, so I wouldn't even think about trying it without a backup (unless 
+of course you can trivially regenerate the data).  Multiple devices 
+support and online resizing allows for a rather neat trick to regenerate 
+a filesystem in place.  The process is pretty simple:
+1. Shrink the existing filesystem down to the minimum size possible.
+2. Create a new partition in the free space, and format it as a 
+temporary BTRFS filesystem.  Ideally, this FS should be mixed mode, and 
+ideally single profile.  If you don't have much free space, you can use 
+a flash drive to start this temporary filesystem instead.
+3. Start copying files from the old filesystem to the temporary one.
+4. Once the new filesystem is about 95% full, stop copying, shrink the 
+old filesystem again, create a new partition, and add that partition to 
+the temporary filesystem.
+5. Repeat steps 3-4 until you have everything off of the old filesystem.
+6. Re-format the remaining portion of the old filesystem using the 
+parameters you want for the replacement filesystem.
+7. Start copying files from the temporary filesystem to the new filesystem.
+8. As you empty out each temporary partition, remove it from the 
+temporary filesystem, delete the partition, and expand the new filesystem.
 
-I think what you want to do here is reasonable, there's no missing
-data on the missing device. If the device were present and you deleted
-it, Btrfs would presumably have nothing to migrate, it'd just shrink
-the fs, update all supers, wipe the signatures off the device being
-removed, that's it. So there's some safeguard in place that's
-disallowing the remove missing in this case even though there's no
-data or metadata to migrate off the drive.
+This takes a while, and is only safe if you have reliable hardware, but 
+I've done it before and it works reliably as long as you don't have many 
+big files on the old filesystem (things can get complicated if you do). 
+The other negative aspect is that if you aren't careful, it's possible 
+to get stuck half-way, but in such a case, adding a flash drive to the 
+temporary filesystem can usually give you enough extra space to get 
+things unstuck.
 
-In another thread about clusters and planned data loss, I describe how
-this functionality has a practical real world benefit other than your
-particular situation. So it would be nice if it were possible but I
-can't tell you what the safe guard is that's preventing it from being
-removed, or if it's even just one safeguard.
-
-What do you get for btrfs-debug-tree -t 3 <dev>
-
-That should show the chunk tree, and what I'm wondering if if the
-chunk tree has any references to chunks on the missing device. Even if
-there are no extents on that device, if there are chunks, that might
-be one of the safeguards.
-
-
--- 
-Chris Murphy

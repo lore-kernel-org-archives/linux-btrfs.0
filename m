@@ -1,45 +1,40 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wm0-f45.google.com ([74.125.82.45]:38092 "EHLO
-        mail-wm0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753596AbcITVFe (ORCPT
+Received: from mail-oi0-f54.google.com ([209.85.218.54]:36135 "EHLO
+        mail-oi0-f54.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752737AbcITVPi (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 20 Sep 2016 17:05:34 -0400
-Received: by mail-wm0-f45.google.com with SMTP id l132so56724763wmf.1
-        for <linux-btrfs@vger.kernel.org>; Tue, 20 Sep 2016 14:05:33 -0700 (PDT)
-Subject: Re: multi-device btrfs with single data mode and disk failure
-To: Chris Murphy <lists@colorremedies.com>
-References: <1634818f-ff1d-722c-6d73-747ed7203a13@gmail.com>
- <CAJCQCtQHBkx8kjcAdSbmgYcHCo_w3VPj8jvgby3cE-S6rLAPdw@mail.gmail.com>
- <ecac8c64-8ed4-7c8d-29ad-5b3687981a33@gmail.com>
- <CAJCQCtSupa8LT+RK3=w3t7+T_nDcgUzzjSdfEi16DpiQxbm0hQ@mail.gmail.com>
- <760be1b7-79b2-a25d-7c60-04ceac1b6e40@gmail.com>
- <CAJCQCtR2t+3w6ovo88L0_2GqnVWveK5DNJ-vWdw18y+Sng4chQ@mail.gmail.com>
- <3460a1ac-7e66-cf6f-b229-06a0825401a5@gmail.com>
- <b880821f-bfb5-5265-53a4-213b22487ddb@gmail.com>
- <CAJCQCtRYpvnGurLSbxu2N0ELuvVKrM5w=jBkAneecaEog213dQ@mail.gmail.com>
- <64102181-e02d-69a8-ead7-a27acadbe6a8@gmail.com>
- <CAJCQCtQT=j+P=Dy=VtNOBGkpwenK0AngB2k5xk40BE=hZnEfjA@mail.gmail.com>
- <df35fe50-8195-b2b9-e6d9-687b0c883a28@gmail.com>
- <CAJCQCtTNiJ=E--v5gb5reyzTBqVeZx70-gUfj67EN+BjmcOTmw@mail.gmail.com>
- <4e7ec5eb-7fb6-2d19-f29d-82461e2d0bd2@gmail.com>
- <CAJCQCtQ=sjj9jWHQ+9Xm1FSmVtMVgNbqGC6Mc7r6ZuBZpJ8U1g@mail.gmail.com>
- <0b29471c-363a-1e2f-d352-1d422c07df64@gmail.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-From: Alexandre Poux <pums974@gmail.com>
-Message-ID: <c05574ee-7d47-dea6-af71-b60d14aeb129@gmail.com>
-Date: Tue, 20 Sep 2016 23:05:29 +0200
+        Tue, 20 Sep 2016 17:15:38 -0400
+Received: by mail-oi0-f54.google.com with SMTP id t83so37644363oie.3
+        for <linux-btrfs@vger.kernel.org>; Tue, 20 Sep 2016 14:15:17 -0700 (PDT)
 MIME-Version: 1.0
 In-Reply-To: <0b29471c-363a-1e2f-d352-1d422c07df64@gmail.com>
-Content-Type: text/plain; charset=utf-8
+References: <1634818f-ff1d-722c-6d73-747ed7203a13@gmail.com>
+ <CAJCQCtQHBkx8kjcAdSbmgYcHCo_w3VPj8jvgby3cE-S6rLAPdw@mail.gmail.com>
+ <ecac8c64-8ed4-7c8d-29ad-5b3687981a33@gmail.com> <CAJCQCtSupa8LT+RK3=w3t7+T_nDcgUzzjSdfEi16DpiQxbm0hQ@mail.gmail.com>
+ <760be1b7-79b2-a25d-7c60-04ceac1b6e40@gmail.com> <CAJCQCtR2t+3w6ovo88L0_2GqnVWveK5DNJ-vWdw18y+Sng4chQ@mail.gmail.com>
+ <3460a1ac-7e66-cf6f-b229-06a0825401a5@gmail.com> <b880821f-bfb5-5265-53a4-213b22487ddb@gmail.com>
+ <CAJCQCtRYpvnGurLSbxu2N0ELuvVKrM5w=jBkAneecaEog213dQ@mail.gmail.com>
+ <64102181-e02d-69a8-ead7-a27acadbe6a8@gmail.com> <CAJCQCtQT=j+P=Dy=VtNOBGkpwenK0AngB2k5xk40BE=hZnEfjA@mail.gmail.com>
+ <df35fe50-8195-b2b9-e6d9-687b0c883a28@gmail.com> <CAJCQCtTNiJ=E--v5gb5reyzTBqVeZx70-gUfj67EN+BjmcOTmw@mail.gmail.com>
+ <4e7ec5eb-7fb6-2d19-f29d-82461e2d0bd2@gmail.com> <CAJCQCtQ=sjj9jWHQ+9Xm1FSmVtMVgNbqGC6Mc7r6ZuBZpJ8U1g@mail.gmail.com>
+ <0b29471c-363a-1e2f-d352-1d422c07df64@gmail.com>
+From: Chris Murphy <lists@colorremedies.com>
+Date: Tue, 20 Sep 2016 15:15:16 -0600
+Message-ID: <CAJCQCtQrKVsBTU=B+5qMbvCdzTZfaY_z3uqU_LHumisQ4Ex5kg@mail.gmail.com>
+Subject: Re: multi-device btrfs with single data mode and disk failure
+To: Alexandre Poux <pums974@gmail.com>
+Cc: Chris Murphy <lists@colorremedies.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
-
-Le 20/09/2016 à 22:18, Alexandre Poux a écrit :
+On Tue, Sep 20, 2016 at 2:18 PM, Alexandre Poux <pums974@gmail.com> wrote:
+>
 >
 > Le 20/09/2016 à 21:46, Chris Murphy a écrit :
 >> On Tue, Sep 20, 2016 at 1:31 PM, Alexandre Poux <pums974@gmail.com> wrote:
+>>>
 >>> Le 20/09/2016 à 21:11, Chris Murphy a écrit :
 >>>> And no backup? Umm, I'd resolve that sooner than anything else.
 >>> Yeah you are absolutely right, this was a temporary solution which came
@@ -63,61 +58,13 @@ Le 20/09/2016 à 22:18, Alexandre Poux a écrit :
 > In fact in my virtual setup there was more chunk missing (1 metadata 1
 > System and 1 Data).
 > I will try to do a setup closer to my real one.
-Good news, I made a test were in my virtual setup, I was missing no
-chunk at all
-And in this case, It has no problem to remove it !
-What I did is
-- make an array with 6 disks (data single, metadata raid1)
-- dd if=/dev/zero of=/mnt/somefile bs=64M count=16 # make a 1G file
-- use btrfs-debug-tree to identify which device was not used
-- shutdown the vm, remove this virtual device, and restart the vm
-- mount the array in degraded but with read write thanks to the patched
-kernel
-- btrfs remove missing
-- and voilà !
-I will try with something else than /dev/null, but this is very encouraging
-Do you think that my test is too trivial ?
-Should I try something else before trying on the real partition with the
-overlay ?
 
->> You could try some sort of overlay for your remaining drives.
->> Something like this:
->> https://raid.wiki.kernel.org/index.php/Recovering_a_failed_software_RAID#Making_the_harddisks_read-only_using_an_overlay_file
->>
->> Make sure you understand the gotcha about cloning which applies here:
->> https://btrfs.wiki.kernel.org/index.php/Gotchas
->>
->> I think it's safe to use blockdev --setro on every real device  you're
->> trying to protect from changes. And when mounting you'll at least need
->> to use device= mount option to explicitly mount each of the overlay
->> devices. Based on the wiki, I'm wincing, I don't really know for sure
->> if device mount option is enough to compel Btrfs to only use those
->> devices and not go off the rails and still use one of the real
->> devices, but at least if they're setro it won't matter (the mount will
->> just fail somehow due to write failures).
->>
->> So now you can try removing the missing device... and see what
->> happens. You could inspect the overlay files and see what changes were
->> made.
-> Wow that looks like nice.
-> So, if it work, and if we find a way to fix the filesystem inside the vm,
-> I can use this over the real partion to check if it works before trying
-> the fix for real.
-> Nice idea.
->>>> What do you get for btrfs-debug-tree -t 3 <dev>
->>>>
->>>> That should show the chunk tree, and what I'm wondering if if the
->>>> chunk tree has any references to chunks on the missing device. Even if
->>>> there are no extents on that device, if there are chunks, that might
->>>> be one of the safeguards.
->>>>
->>> You'll find it attached.
->>> The missing device is the devid 8 (since it's the only one missing in
->>> btrfs fi show)
->>> I found it only once line 63
->> Yeah bummer. Not used for system, data, or metadata chunks at all.
->>
->>
->
+Probably the reason why that missing device has no used chunks is
+because it's so small. Btrfs allocates block groups to devices with
+the most unallocated space first. Only once the unallocated space is
+even (approximately) on all devices would it allocate a block group to
+the small device.
 
 
+-- 
+Chris Murphy

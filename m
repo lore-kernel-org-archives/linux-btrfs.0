@@ -1,162 +1,134 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:36369 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751387AbcITIgB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 20 Sep 2016 04:36:01 -0400
-Date: Tue, 20 Sep 2016 10:34:02 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Christoph Anton Mitterer <calestyo@scientia.net>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: stability matrix (was: Is stability a joke?)
-Message-ID: <20160920083402.GW16983@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <57D51BF9.2010907@online.no>
- <20160912142714.GE16983@twin.jikos.cz>
- <52304724-5bca-a1e6-527f-040085c7ab19@gmail.com>
- <20160912165107.GG16983@twin.jikos.cz>
- <58a954fc-bbd5-3fb5-9f23-008ed7f7121d@gmail.com>
- <20160915010759.GD32452@DigitalMercury.dynalias.net>
- <5dec6544a78a0301a8e0cd9086179f99@crc.id.au>
- <1473905644.8603.44.camel@scientia.net>
- <20160919152753.GG933@twin.jikos.cz>
- <1474314346.10189.19.camel@scientia.net>
+Received: from frost.carfax.org.uk ([85.119.82.111]:47597 "EHLO
+        frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752098AbcITIsp (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 20 Sep 2016 04:48:45 -0400
+Date: Tue, 20 Sep 2016 08:48:38 +0000
+From: Hugo Mills <hugo@carfax.org.uk>
+To: Peter Becker <floyd.net@gmail.com>
+Cc: Tomasz Chmielewski <mangoo@wpkg.org>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: how to understand "btrfs fi show" output? "No space left" issues
+Message-ID: <20160920084838.GQ7138@carfax.org.uk>
+References: <566e9000fe30d5b8e0d7e73ebe1d44a0@admin.virtall.com>
+ <20160920065827.GO7138@carfax.org.uk>
+ <CAEtw4r16f10PPsVw6r5t0KP-gJbSmKEYP-zt-s5De9kSBpZEqg@mail.gmail.com>
+ <6596b749c3c4b37dc1db8c3a766be491@admin.virtall.com>
+ <CAEtw4r1NW8Yg9KnGEuUtSe-NYVP-burkB0mDOdKLWsWQ4vy1rw@mail.gmail.com>
+ <CAEtw4r1FYDkUxoOW-hrngBX5XD+AydiPY8B1eQv8a=dmA9B8eQ@mail.gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
-In-Reply-To: <1474314346.10189.19.camel@scientia.net>
+Content-Type: multipart/signed; micalg=pgp-sha1;
+        protocol="application/pgp-signature"; boundary="bAr+fMtvBxbbbkvl"
+In-Reply-To: <CAEtw4r1FYDkUxoOW-hrngBX5XD+AydiPY8B1eQv8a=dmA9B8eQ@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Sep 19, 2016 at 09:45:46PM +0200, Christoph Anton Mitterer wrote:
-> +1 for all your changes with the following comments in addition...
-> 
-> 
-> On Mon, 2016-09-19 at 17:27 +0200, David Sterba wrote:
-> > That's more like a usecase, thats out of the scope of the tabular
-> > overview. But we have an existing page UseCases that I'd like to
-> > transform to a more structured and complete overview of usceases of
-> > various features, so the UUID collisions would build on top of that
-> > with
-> > "and this could hapen if ...".
-> Well I don't agree here and see it basically like Austin.
 
-So we'd have to make that two separate topics so the "what if" has
-better visibility, and possibly marked "with security implications".
+--bAr+fMtvBxbbbkvl
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-> It's not that these UUID collisions can only happen in special
-> circumstances but plain normal situations that always used to work with
-> probably literally each and every fs. (So much for the accidental
-> corruptions).
+On Tue, Sep 20, 2016 at 10:34:49AM +0200, Peter Becker wrote:
+> More details on the issue and a complete explantion you can find here:
 > 
-> And an attack is probably never "usecase dependant"... it always
-> depends on the attacker.
-> And since that seems to be a pretty real attack vector, I'd also say
-> it's mandatory to quite clearly warn about that deficiency...
+> http://marc.merlins.org/perso/btrfs/post_2014-05-04_Fixing-Btrfs-Filesystem-Full-Problems.html
+> and
+> (Help! I ran out of disk space! )
+> https://btrfs.wiki.kernel.org/index.php/FAQ#Help.21_I_ran_out_of_disk_space.21
 > 
-> TBH, I'm rather surprised that this situation seems to be kinda
-> "accepted".
-> 
-> I had a chat with CM recently and he implied things might be solved
-> with encryption.
-> While this is probably the case for at least some of the described
-> problems, it rather seems like a workaround:
-> - why making btrfs-encryption mandatory for devices who have partially
->   secured access (e.g. where a systemdisk with btrfs is not physically
->   accessible but a USB port is)
-> - what about users that rather want to use block device encryption
->   instead of fs-level-encryption?
-> 
-> 
-> > > - in-band dedupe
-> > >   deduped are IIRC not bitwise compared by the kernel before de-
-> > > duping,
-> > >   as it's the case with offline dedupe.
-> > >   Even if this is considered safe by the community... I think users
-> > >   should be told.
-> > Only features merged are reflected. And the out-of-band dedupe does
-> > full
-> > memcpy. See btrfs_cmp_data() called from btrfs_extent_same().
-> Ah,... I kinda thought it was already merged ... possibly got confused
-> by the countless patch iterations of it ;)
-> 
-> 
-> > > - btrfs check --repair (and others?)
-> > >   Telling people that this may often cause more harm than good.
-> > I think userspace tools do not belong to the overview.
-> Well... I wouldn't mind if there was a btrfs-progs status page... (and
-> both link each other).
-> OTOH,... the user probably wants one central point where all relevant
-> info can be found... and not again having to dig through n websites.
+> And an explantion for the "dlimit" solution:
 
-The Status page should give enough overview about all main topics, so
-the progs can be one section there. Any details should go to separate
-pages and be linked from there.
+   It's not "dlimit". It's "d" with option "limit". You could just as
+easily write -dusage=99,limit=10 or -dlimit=10,usage=99 (although
+those aren't the options I'd pick... see below).
 
-> > > - even mounting a fs ro, may cause it to be changed
+> Quote From: Uncommon solutions for BTRFS
+> (http://blog.schmorp.de/2015-10-08-smr-archive-drives-fast-now.html)
+> 
+> > For my purposes, I define internal fragmentation as space allocated but not usable by the filesystem. In BTRFS, each time you delete files, the space used by those files cannot be reused for new files automatically.
+> > It's not a hard requirement to do this maintenance regularly, but doing it regularly spares you waiting for hours when the disk is full and you need to wait for a balance clean up command - and of course also reduces the number of > times you get unexpected disk full errors. As a side note, this can also be useful to prolong the life of your SSD because it allows the SSD to reuse space not needed by the filesystem (although there is a trade-off, frequent balancing is bad, no balancing is bad, the sweet spot is somewhere in between).
+> 
+> 2016-09-20 10:20 GMT+02:00 Peter Becker <floyd.net@gmail.com>:
+> > Normaly total and used should deviate us a few gb.
+> > depend on your write workload you should run
+> >
+> > btrfs balance start -dusage=60 /mnt
+> >
+> > every week to avoid "ENOSPC"
 > > 
-> > This would go to the UseCases
-> Fine for me.
-> 
-> 
-> > 
-> > > 
-> > > - DB/VM-image like IO patterns + nodatacow + (!)checksumming
-> > >   + (auto)defrag + snapshots
-> > >   a)
-> > >   People typically may have the impression:
-> > >   btrfs = checksummed => als is guaranteed to be "valid" (or at
-> > > least
-> > >   noticed)
-> > >   However this isn't the case for nodatacow'ed files, which in turn
-> > > is
-> > >   kinda "mandatory" for DB/VM-image like IO patterns, cause
-> > > otherwise
-> > >   these would fragment to heavily (see (b).
-> > >   Unless claimed by some people, none of the major DBs or VM-image
-> > >   formats do general checksumming on their own, most even don't
-> > > support
-> > >   it, some that do wouldn't do it without app-support and few
-> > > "just"
-> > >   don't do it per default.
-> > >   Thus one should bump people to this situation and that they may
-> > > not
-> > >   get this "correctness" guarantee here.
-> > >   b)
-> > >   IIRC, it doesn't even help to simply not use nodatacow on such
-> > > files
-> > >   and using auto-defrag instead to countermeasure the fragmenting,
-> > > as
-> > >   that one doesn't perform too well on large files.
-> > 
-> > Same.
-> Fine for me either... you already said above you would mention the
-> nodatacow=>no-checksumming=>no-verification-and-no-raid-repair in the
-> general section... this is enough for that place.
-> 
-> 
-> > > For specific features:
-> > > - Autodefrag
-> > >   - didn't that also cause reflinks to be broken up?
-> > 
-> > No and never had.
-> 
-> Absolutely sure? One year ago, I was told that at first too so I
-> started using it, but later on some (IIRC) developer said auto-defrag
-> would also suffer from it.
+> > if you use newer btrfs-progs who supper balance limit filters you should run
+> >
+> > btrfs balance start -dusage=99 -dlimit=10 /mnt
+> >
+> > every 3 hours.
 
-Reading the subthread, I have to change the statement. Autodefrag can
-read surrounding blocks up to 64k and write it to a new location, on
-that write the links will get broken. I'll update the page.
+   These two options both feel horrible to me. Particularly the second
+option, which is going to result in huge write load on the FS, and is
+almost certainly going to be unnecessary most of the time.
 
-> 
-> > > - RAID*
-> > >   No userland tools for monitoring/etc.
-> > 
-> > That's a usability bug.
-> 
-> Well it is and it will probably go away sooner or later... but the
-> unaware user may not really realise that he actually has to take care
-> on this by himself for now.
-> So I though it would be helpful to have it added.
+   My recommendation would be to check at regular intervals (daily,
+say) whether the used value is equal to the size value in btrfs fi
+show. If it is (and only if), then you should run a balance with no
+usage= option, and with limit=<n>, for some relatively small value of
+<n> (3, say). That will give you some unallocated space that the FS
+can take for metadata should it need it, which is all that's required
+to avoid early ENOSPC.
 
-I agree and I'm not dismissing it, we need a section for such topic
-(like system support tools for automatic snapshotting, monitoring etc).
+   If you regularly find that your usage patterns result in large
+numbers of empty or near-empty block groups (i.e. lots of headroom in
+data shown by btrfs fi df), then a regular (but probably less
+frequent) balance with something like usage=5 should keep that down.
+
+> > This will balance 2 Blocks (dlimit=10; corresponds to 10 gb) with are
+
+   No, it will balance 10 complete block groups, not 10 GiB. Depending
+on the RAID configuration, that could be a very large amount of data
+indeed. (For example, an 8-disk RAID-10 would be rewriting up to 80
+GiB of data with that command).
+
+   Hugo.
+
+> > not filled full into new blocks. You could/should adjust the intervall
+> > and the limit-filter depend on your write workload.
+> > For example if you write (change files + new files) only 10GB a day it
+> > will be enough to run this ever night.
+> > The last option completly avoid the ENOSPC issue but produce aditional
+> > workload for your harddrives.
+> >
+> > Note: you should avoid making snapshots during balance. Use a simple
+> > lock-mechanic for that.
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+
+-- 
+Hugo Mills             | There isn't a noun that can't be verbed.
+hugo@... carfax.org.uk |
+http://carfax.org.uk/  |
+PGP: E2AB1DE4          |
+
+--bAr+fMtvBxbbbkvl
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.12 (GNU/Linux)
+
+iQIcBAEBAgAGBQJX4PflAAoJEFheFHXiqx3kTs4QAI2L1dSMf0b+KDujPa+90Rab
+uIygE4lK+4giA9CuDpzNHvt4M+eayoPTs2pjTWeCXWs4oQacUc19EfPH+YH+3XMd
+/MQv526mMJLgwPct8mpgkjbVH+OIHw3MloVe7rligxfeRWMO1queYcGXoASjtsbl
+k7mO5IjohfObu3mdlkc/1HExDlwkT6ZKRlaaXvhSctUVB00zi9A1aLjaeUKPGRwU
+Yx9vFDzFCHg0tEeCPlOdSea+OFwPGIcmf229nu/pw060SfWpCKeWg5BCWQsC3v/t
+g97WTE4Frlzj+BaTniyyAMBV1tWLtD0t8kjlHKRtLO2Ix7RC0cHCYLK3OX4mZtog
+KNQHGBQ95CcYYIviO6didHwmDSDLqQ05oy0CmajPMwu9xgKKyQy1+WYa9txXBmeA
+yN8rr3J4bJjcIASR7rVw/DuHojb3Dm9yG8y0Ml0Ufmz1p+mGusTQzYjlspGDg7II
+P5Nj0HyuhjJ88Gz5RnCbtXAvP8w0vKuv86VzXyc6nUk0PEJJYyA2j7iD48cvYZ+W
+OIscJbLwq5xxgBhKTsq/Z+y7K+NSVUhWhQMlC2W42oxYjqTp2ndxqNOMgfI8sjGs
+LGvVvUfeq/SMEvTadIaMAzXHtbLYcp/fybpPxtdB9KkL5HCMy+HsTWtXg5X3YOVM
+ZRoTSgMS8fDFfNsXab7d
+=CBod
+-----END PGP SIGNATURE-----
+
+--bAr+fMtvBxbbbkvl--

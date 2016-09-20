@@ -1,78 +1,63 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [195.159.176.226] ([195.159.176.226]:44094 "EHLO
-        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
-        with ESMTP id S1751783AbcITUgY (ORCPT
+Received: from relay5-d.mail.gandi.net ([217.70.183.197]:42254 "EHLO
+        relay5-d.mail.gandi.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1753020AbcITWlC (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 20 Sep 2016 16:36:24 -0400
-Received: from list by blaine.gmane.org with local (Exim 4.84_2)
-        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-        id 1bmRlz-0002Kc-Kp
-        for linux-btrfs@vger.kernel.org; Tue, 20 Sep 2016 22:36:11 +0200
-To: linux-btrfs@vger.kernel.org
-From: Alex Elsayed <eternaleye@gmail.com>
+        Tue, 20 Sep 2016 18:41:02 -0400
+Date: Wed, 21 Sep 2016 00:40:57 +0200
+From: Mathieu Chouquet-Stringer <m2n@csetco.com>
+To: Kent Overstreet <kent.overstreet@gmail.com>
+Cc: "Theodore Ts'o" <tytso@mit.edu>, linux-btrfs@vger.kernel.org
 Subject: Re: ChaCha20 vs. AES performance
-Date: Tue, 20 Sep 2016 20:35:56 +0000 (UTC)
-Message-ID: <nrs6jc$rd$1@blaine.gmane.org>
-References: <20160920111519.3n5ijtusvevasjl4@kmo-pixel>
-        <20160920142320.ubkifckpfvzvuzom@thunk.org>
-        <20160920155152.eopgz7h2z6kpsfdy@kmo-pixel>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Message-ID: <20160920224057.GA28476@bosco>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20160920155152.eopgz7h2z6kpsfdy@kmo-pixel>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, 20 Sep 2016 07:51:52 -0800, Kent Overstreet wrote:
-
+kent.overstreet@gmail.com (Kent Overstreet) writes:
 > On Tue, Sep 20, 2016 at 10:23:20AM -0400, Theodore Ts'o wrote:
 >> On Tue, Sep 20, 2016 at 03:15:19AM -0800, Kent Overstreet wrote:
->> > Not on the list or I would've replied directly, but on Haswell,
->> > ChaCha20 (in software) is over 2x as fast as AES (in hardware), at
->> > realistic (for a filesystem) block sizes:
-
-Apologies if this doesn't CC you - replying via gmane, since (not being 
-subscribed via email either) I can't try the same trick I did to include 
-Ted (i.e., reply via my mail client).
-
-One useful trick, though - if you have a Usenet client, gmane _will_ let 
-you reply directly, even to old messages. That's what I'm doing.
-
->> On Skylake and Broadwell processors, AES is faster (the posting is from
->> a ChaCha20 enthusiast):
+>> > Not on the list or I would've replied directly, but on Haswell, ChaCha20 (in
+>> > software) is over 2x as fast as AES (in hardware), at realistic (for a
+>> > filesystem) block sizes:
+>> 
+>> On Skylake and Broadwell processors, AES is faster (the posting is
+>> from a ChaCha20 enthusiast):
 >> 
 >>      https://blog.cloudflare.com/it-takes-two-to-chacha-poly/
-> 
-> The performance delta in his graphs isn't near as big as what I've
-> measured, which makes me suspect OpenSSL's ChaCha20 implementation isn't
-> nearly as fast as the kernel's.
-> 
->> My big worry though is that schemes that require that nonces/IV's must
->> **never** be reused are fragile.  It's for the same reason that DSA
->> makes my skin crawl.  If you ever screw up --- maybe after a crash, or
->> a file system bug, you end up reusing a nonce, it's game over.
->> 
->> So if there are hardware solutions which are faster or fast enough that
->> the crypto is no longer dominant cost, why not use a cipher scheme
->> which is more robust?
-> 
-> Block ciphers have their own downsides though - XTS is really a big pile
-> of hacks and workarounds. On the whole, if you can get nonces right, a
-> stream cipher cryptosystem (and ChaCha20 especially) is on the whole
-> drastically simpler, and thus easier to understand and audit.
+>
+> The performance delta in his graphs isn't near as big as what I've measured,
+> which makes me suspect OpenSSL's ChaCha20 implementation isn't nearly as fast as
+> the kernel's.
 
-Yes, I would entirely agree with your assessment of XTS (in particular, 
-the doubling of the length of the key is rooted in the original authors 
-misunderstanding the XEX paper...).
+The other thing to keep in mind is this (aka what's true for a big intel
+cpu isn't true everywhere): "The new cipher suites are fast. As Adam
+Langley described, ChaCha20-Poly1305 is three times faster than
+AES-128-GCM on mobile devices. Spending less time on decryption means
+faster page rendering and better battery life."
 
-> And if you can do nonces correctly, ChaCha20/Poly1305 is pretty much one
-> of the gold standards - it's secure against pretty much any vaguely
-> realistic threat model. XTS, not so much - it's just the best you can do
-> given the constraints of typical disk crypto. The gold standards of
-> encryption today are the AEADs - and AES/GCM fails badly with nonce
-> reuse too, there aren't any AEADs yet that don't fail badly with nonce
-> reuse.
+https://blog.cloudflare.com/do-the-chacha-better-mobile-performance-with-cryptography/
 
-Not true - SIV is a generic construction, which has been applied to AES 
-(AES-SIV, RFC 5297) and ChaCha20 (HS1-SIV, submitted to CAESAR). There's 
-also AES-GCM-SIV, which takes advantage of GCM hardware acceleration as 
-well as AES acceleration.
+The argument made by Bernstein is in a nutshell than "CPUs are optimized
+for video games and thus ciphers should use the same instructions which
+makes games 'faster'" (I'd recommend to read his whole email to understand
+what he means):
+https://moderncrypto.org/mail-archive/noise/2016/000699.html )
 
+Or as one person commented on the net
+https://news.ycombinator.com/item?id=12264321 :
+
+Bernstein agrees with you. His point isn't that it's dumb that CPUs are
+optimized for games. It's that cipher designers should have enough
+awareness of trends in CPU development to design ciphers that take
+advantage of the same features that games do. That's what he did with
+Salsa/ChaCha. *His subtext is that over the medium term he believes his
+ciphers will outperform AES, despite AES having AES-NI hardware
+support.* (emphasis mine)
+
+-- 
+Mathieu Chouquet-Stringer
+            The sun itself sees not till heaven clears.
+	             -- William Shakespeare --
